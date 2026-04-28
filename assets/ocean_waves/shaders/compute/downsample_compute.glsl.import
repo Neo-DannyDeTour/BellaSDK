@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://dksk1jxkjpr1w"
+path="res://.godot/imported/downsample_compute.glsl-bc3017e10324c6a3625ace2d519dddf3.res"
+
+[deps]
+
+source_file="res://assets/ocean_waves/shaders/compute/downsample_compute.glsl"
+dest_files=["res://.godot/imported/downsample_compute.glsl-bc3017e10324c6a3625ace2d519dddf3.res"]
+
+[params]
+
