@@ -526,7 +526,10 @@ func _physics_process(delta: float) -> void:
 			if distance_to_hang < 1.5 and (velocity.y < 2.0 or distance_to_hang < 0.4):
 				current_monkey_bar_volume = available_monkey_bar
 				enter_monkey_bars(available_monkey_bar)
-
+				
+	if SmokeManager:
+		SmokeManager.update_player_position(global_position)
+		
 func _process(delta: float) -> void:
 	if Input.is_action_just_pressed("ui_cancel"):
 		toggle_pause()

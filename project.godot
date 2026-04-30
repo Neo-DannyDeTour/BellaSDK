@@ -24,6 +24,7 @@ Events="*uid://duejfvfifyd20"
 DebugManager="*uid://psgaa5vua8a3"
 SaveSystem="*uid://c3xdhyb03qflr"
 CsgToolkitAutoload="*uid://w8ad8q4lneis"
+SmokeManager="*uid://b1t38dkohipue"
 
 [debug]
 

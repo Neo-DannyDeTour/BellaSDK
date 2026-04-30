@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://bc5qosotowfdv"
+path="res://.godot/imported/smoke_compute.glsl-5714418dc3ff8aa01c5db7095d358fba.res"
+
+[deps]
+
+source_file="res://scripts/smoke_simulation/smoke_compute.glsl"
+dest_files=["res://.godot/imported/smoke_compute.glsl-5714418dc3ff8aa01c5db7095d358fba.res"]
+
+[params]
+
