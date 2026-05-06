@@ -4,9 +4,96 @@
 [ext_resource type="Texture2D" uid="uid://dutrfuowe3e1q" path="res://assets/images/Concept/Key_art.PNG" id="1_ovrgc"]
 [ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="2_2o76q"]
 [ext_resource type="Script" uid="uid://c06mok6hxvipa" path="res://scripts/menus/fullscreen_control.gd" id="4_6bivr"]
+[ext_resource type="Script" uid="uid://g1iralse1net" path="res://scripts/menus/HorrorButton.gd" id="5_8r73w"]
+[ext_resource type="Shader" uid="uid://6lomg4ekdndh" path="res://assets/shaders/HorrorTextShader.gdshader" id="5_ng0o5"]
+[ext_resource type="Shader" uid="uid://gqm2yghwiqry" path="res://scenes/menus/black_glass.gdshader" id="6_8r73w"]
+[ext_resource type="Shader" uid="uid://coifevcbmk5s2" path="res://scenes/menus/BorderGlow.gdshader" id="7_1hnlc"]
+[ext_resource type="Texture2D" uid="uid://b18hseul05yj" path="res://assets/images/Menu/blood_splatter.png" id="8_50h1w"]
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_50h1w"]
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_6bivr"]
 texture = ExtResource("1_ovrgc")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_euy4r"]
+shader = ExtResource("6_8r73w")
+shader_parameter/sweep_progress = -0.5
+shader_parameter/hover_intensity = 0.0
+shader_parameter/angle = 25.0
+shader_parameter/rect_size = Vector2(0, 0)
+shader_parameter/base_color = Color(0, 0, 0, 1)
+shader_parameter/shine_color = Color(1, 0.33999997, 0.33999997, 0.6)
+shader_parameter/shine_width = 0.15
+shader_parameter/rim_light_color = Color(0.8, 0.9, 1, 0.25)
+shader_parameter/slab_opacity = 0.95
+shader_parameter/blood_texture = ExtResource("8_50h1w")
+shader_parameter/mouse_pos_uv = Vector2(0, 0)
+shader_parameter/reveal_radius = 0.15
+shader_parameter/reveal_softness = 0.1
+shader_parameter/blood_offset = Vector2(0, 0)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_1hnlc"]
+shader = ExtResource("5_ng0o5")
+shader_parameter/shadow_color = Color(0, 0, 0, 1)
+shader_parameter/shadow_1_x = -0.5
+shader_parameter/shadow_2_x = 1.5
+shader_parameter/speed = 0.5
+shader_parameter/shadow_width = 0.15
+shader_parameter/softness = 0.1
+shader_parameter/tilt = 0.3
+shader_parameter/hover_intensity = 0.0
+shader_parameter/glow_color = Color(1, 0.85, 0.4, 1)
+shader_parameter/glow_strength = 4.0
+
+[sub_resource type="LabelSettings" id="LabelSettings_8r73w"]
+font = ExtResource("2_2o76q")
+font_size = 42
+outline_size = 3
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_3w8rc"]
+shader = ExtResource("7_1hnlc")
+shader_parameter/line_color = Color(1, 1, 1, 1)
+shader_parameter/line_thickness = 2.0
+shader_parameter/rect_size = Vector2(0, 0)
+shader_parameter/speed = 1.5
+shader_parameter/trail_length = 0.3
+shader_parameter/hover_intensity = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_50h1w"]
+shader = ExtResource("6_8r73w")
+shader_parameter/sweep_progress = -0.5
+shader_parameter/hover_intensity = 0.0
+shader_parameter/angle = 25.0000011875
+shader_parameter/rect_size = Vector2(0, 0)
+shader_parameter/base_color = Color(0, 0, 0, 1)
+shader_parameter/shine_color = Color(1, 0.33999997, 0.33999997, 0.6)
+shader_parameter/shine_width = 0.15
+shader_parameter/rim_light_color = Color(0.8, 0.9, 1, 0.25)
+shader_parameter/slab_opacity = 0.95
+shader_parameter/blood_texture = ExtResource("8_50h1w")
+shader_parameter/mouse_pos_uv = Vector2(0, 0)
+shader_parameter/reveal_radius = 0.15
+shader_parameter/reveal_softness = 0.1
+shader_parameter/blood_offset = Vector2(0, 0)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ng0o5"]
+shader = ExtResource("5_ng0o5")
+shader_parameter/shadow_color = Color(0, 0, 0, 1)
+shader_parameter/shadow_1_x = -0.5
+shader_parameter/shadow_2_x = 1.5
+shader_parameter/speed = 0.5
+shader_parameter/shadow_width = 0.15
+shader_parameter/softness = 0.1
+shader_parameter/tilt = 0.3
+shader_parameter/hover_intensity = 0.0
+shader_parameter/glow_color = Color(1, 0.85, 0.4, 1)
+shader_parameter/glow_strength = 4.0
+
+[sub_resource type="LabelSettings" id="LabelSettings_1hnlc"]
+font = ExtResource("2_2o76q")
+font_size = 42
+font_color = Color(1, 1, 1, 0)
+outline_size = 3
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vn8vg"]
 bg_color = Color(0.08, 0.08, 0.08, 1)
@@ -17,12 +104,98 @@ bg_color = Color(0.08, 0.08, 0.08, 1)
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ovrgc"]
 bg_color = Color(0.25882354, 0.25882354, 0.25882354, 1)
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_bre17"]
+shader = ExtResource("6_8r73w")
+shader_parameter/sweep_progress = -0.5
+shader_parameter/hover_intensity = 0.0
+shader_parameter/angle = 25.0
+shader_parameter/rect_size = Vector2(0, 0)
+shader_parameter/base_color = Color(0, 0, 0, 1)
+shader_parameter/shine_color = Color(1, 0.33999997, 0.33999997, 0.6)
+shader_parameter/shine_width = 0.15
+shader_parameter/rim_light_color = Color(0.8, 0.9, 1, 0.25)
+shader_parameter/slab_opacity = 0.95
+shader_parameter/blood_texture = ExtResource("8_50h1w")
+shader_parameter/mouse_pos_uv = Vector2(0, 0)
+shader_parameter/reveal_radius = 0.15
+shader_parameter/reveal_softness = 0.1
+shader_parameter/blood_offset = Vector2(0, 0)
+
+[sub_resource type="LabelSettings" id="LabelSettings_50h1w"]
+font = ExtResource("2_2o76q")
+font_size = 42
+outline_size = 3
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_88kup"]
+shader = ExtResource("6_8r73w")
+shader_parameter/sweep_progress = -0.5
+shader_parameter/hover_intensity = 0.0
+shader_parameter/angle = 25.0
+shader_parameter/rect_size = Vector2(0, 0)
+shader_parameter/base_color = Color(0, 0, 0, 1)
+shader_parameter/shine_color = Color(1, 0.33999997, 0.33999997, 0.6)
+shader_parameter/shine_width = 0.15
+shader_parameter/rim_light_color = Color(0.8, 0.9, 1, 0.25)
+shader_parameter/slab_opacity = 0.95
+shader_parameter/blood_texture = ExtResource("8_50h1w")
+shader_parameter/mouse_pos_uv = Vector2(0, 0)
+shader_parameter/reveal_radius = 0.150000007125
+shader_parameter/reveal_softness = 0.10000000475
+shader_parameter/blood_offset = Vector2(0, 0)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8r73w"]
+shader = ExtResource("5_ng0o5")
+shader_parameter/shadow_color = Color(0, 0, 0, 1)
+shader_parameter/shadow_1_x = -0.5
+shader_parameter/shadow_2_x = 1.5
+shader_parameter/speed = 0.5
+shader_parameter/shadow_width = 0.15
+shader_parameter/softness = 0.1
+shader_parameter/tilt = 0.3
+shader_parameter/hover_intensity = 0.0
+shader_parameter/glow_color = Color(1, 0.85, 0.4, 1)
+shader_parameter/glow_strength = 4.0
+
+[sub_resource type="LabelSettings" id="LabelSettings_euy4r"]
+font = ExtResource("2_2o76q")
+font_size = 42
+outline_size = 3
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_bh4e2"]
+shader = ExtResource("6_8r73w")
+shader_parameter/sweep_progress = -0.5
+shader_parameter/hover_intensity = 0.0
+shader_parameter/angle = 25.0
+shader_parameter/rect_size = Vector2(0, 0)
+shader_parameter/base_color = Color(0, 0, 0, 1)
+shader_parameter/shine_color = Color(1, 0.33999997, 0.33999997, 0.6)
+shader_parameter/shine_width = 0.15
+shader_parameter/rim_light_color = Color(0.8, 0.9, 1, 0.25)
+shader_parameter/slab_opacity = 0.95
+shader_parameter/blood_texture = ExtResource("8_50h1w")
+shader_parameter/mouse_pos_uv = Vector2(0, 0)
+shader_parameter/reveal_radius = 0.15
+shader_parameter/reveal_softness = 0.1
+shader_parameter/blood_offset = Vector2(0, 0)
+
+[sub_resource type="LabelSettings" id="LabelSettings_bre17"]
+font = ExtResource("2_2o76q")
+font_size = 42
+font_color = Color(1, 1, 1, 0)
+outline_size = 3
+
+[sub_resource type="Environment" id="Environment_1hnlc"]
+background_mode = 3
+glow_enabled = true
+glow_intensity = 2.5
+
 [node name="MainMenu" type="CanvasLayer" unique_id=1244757478]
 process_mode = 3
 layer = 10
 script = ExtResource("1_2o76q")
 
 [node name="Background" type="Panel" parent="." unique_id=267339091]
+material = SubResource("CanvasItemMaterial_50h1w")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -30,33 +203,118 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxTexture_6bivr")
 
-[node name="MainButtons" type="VBoxContainer" parent="." unique_id=988684812]
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1680358888]
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -157.0
-offset_top = -112.0
-offset_right = 157.0
-offset_bottom = 112.0
+offset_left = -125.0
+offset_top = -150.0
+offset_right = 125.0
+offset_bottom = 150.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/margin_top = 75
+
+[node name="MainButtons" type="VBoxContainer" parent="MarginContainer" unique_id=988684812]
+custom_minimum_size = Vector2(250, 300)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 theme_override_constants/separation = 12
 
-[node name="Continue" type="Button" parent="MainButtons" unique_id=1604496560]
+[node name="Continue" type="Button" parent="MarginContainer/MainButtons" unique_id=1604496560]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_fonts/font = ExtResource("2_2o76q")
 theme_override_font_sizes/font_size = 42
 text = "Continue"
+script = ExtResource("5_8r73w")
+max_rotation_degrees = 5.0
 
-[node name="NewGame" type="Button" parent="MainButtons" unique_id=665868782]
+[node name="Background" type="ColorRect" parent="MarginContainer/MainButtons/Continue" unique_id=664105335]
+material = SubResource("ShaderMaterial_euy4r")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+scale = Vector2(1, 0.98917264)
+mouse_filter = 2
+
+[node name="Label2" type="Label" parent="MarginContainer/MainButtons/Continue" unique_id=1042436901]
+material = SubResource("ShaderMaterial_1hnlc")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("2_2o76q")
+theme_override_font_sizes/font_size = 42
+text = "Continue"
+label_settings = SubResource("LabelSettings_8r73w")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Border" type="ColorRect" parent="MarginContainer/MainButtons/Continue" unique_id=533919047]
+material = SubResource("ShaderMaterial_3w8rc")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="NewGame" type="Button" parent="MarginContainer/MainButtons" unique_id=665868782]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_vertical = 3
+theme_override_fonts/font = ExtResource("2_2o76q")
+theme_override_font_sizes/font_size = 42
+script = ExtResource("5_8r73w")
+hover_scale = Vector2(1.08, 1.08)
 
-[node name="StartGame" type="Button" parent="MainButtons" unique_id=1877365184]
+[node name="Background" type="ColorRect" parent="MarginContainer/MainButtons/NewGame" unique_id=269998739]
+material = SubResource("ShaderMaterial_50h1w")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Label" type="Label" parent="MarginContainer/MainButtons/NewGame" unique_id=1304521814]
+material = SubResource("ShaderMaterial_ng0o5")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("2_2o76q")
+theme_override_font_sizes/font_size = 42
+text = "New Game"
+label_settings = SubResource("LabelSettings_1hnlc")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Border" type="ColorRect" parent="MarginContainer/MainButtons/NewGame" unique_id=359165981]
+material = SubResource("ShaderMaterial_3w8rc")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="StartGame" type="Button" parent="MarginContainer/MainButtons" unique_id=1877365184]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
@@ -66,26 +324,131 @@ theme_override_styles/normal = SubResource("StyleBoxFlat_vn8vg")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_2o76q")
 theme_override_styles/hover = SubResource("StyleBoxFlat_ovrgc")
 text = "Start Game"
+script = ExtResource("5_8r73w")
+max_rotation_degrees = 5.0
 
-[node name="Options" type="Button" parent="MainButtons" unique_id=161708687]
+[node name="Background" type="ColorRect" parent="MarginContainer/MainButtons/StartGame" unique_id=613823549]
+material = SubResource("ShaderMaterial_bre17")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Label" type="Label" parent="MarginContainer/MainButtons/StartGame" unique_id=1703071279]
+material = SubResource("ShaderMaterial_1hnlc")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("2_2o76q")
+theme_override_font_sizes/font_size = 42
+text = "Start Game"
+label_settings = SubResource("LabelSettings_50h1w")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Border" type="ColorRect" parent="MarginContainer/MainButtons/StartGame" unique_id=448249569]
+material = SubResource("ShaderMaterial_3w8rc")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Options" type="Button" parent="MarginContainer/MainButtons" unique_id=161708687]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_fonts/font = ExtResource("2_2o76q")
 theme_override_font_sizes/font_size = 42
-theme_override_styles/normal = SubResource("StyleBoxFlat_vn8vg")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_2o76q")
-theme_override_styles/hover = SubResource("StyleBoxFlat_ovrgc")
+script = ExtResource("5_8r73w")
+hover_scale = Vector2(1.08, 1.08)
+max_rotation_degrees = 5.0
+
+[node name="Background" type="ColorRect" parent="MarginContainer/MainButtons/Options" unique_id=265741086]
+material = SubResource("ShaderMaterial_88kup")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Label" type="Label" parent="MarginContainer/MainButtons/Options" unique_id=499086795]
+material = SubResource("ShaderMaterial_8r73w")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("2_2o76q")
+theme_override_font_sizes/font_size = 42
 text = "Options"
+label_settings = SubResource("LabelSettings_euy4r")
+horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="Exit" type="Button" parent="MainButtons" unique_id=251971665]
+[node name="Border" type="ColorRect" parent="MarginContainer/MainButtons/Options" unique_id=1422869393]
+material = SubResource("ShaderMaterial_3w8rc")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Exit" type="Button" parent="MarginContainer/MainButtons" unique_id=251971665]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_fonts/font = ExtResource("2_2o76q")
 theme_override_font_sizes/font_size = 42
-theme_override_styles/normal = SubResource("StyleBoxFlat_vn8vg")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_2o76q")
-theme_override_styles/hover = SubResource("StyleBoxFlat_ovrgc")
 text = "Exit"
+script = ExtResource("5_8r73w")
+max_rotation_degrees = 5.0
+
+[node name="Background" type="ColorRect" parent="MarginContainer/MainButtons/Exit" unique_id=1095930513]
+material = SubResource("ShaderMaterial_bh4e2")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Label" type="Label" parent="MarginContainer/MainButtons/Exit" unique_id=1306654329]
+material = SubResource("ShaderMaterial_1hnlc")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_fonts/font = ExtResource("2_2o76q")
+theme_override_font_sizes/font_size = 42
+text = "Exit"
+label_settings = SubResource("LabelSettings_bre17")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Border" type="ColorRect" parent="MarginContainer/MainButtons/Exit" unique_id=1245582425]
+material = SubResource("ShaderMaterial_3w8rc")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="Name" type="Label" parent="." unique_id=1725804782]
 anchors_preset = 8
@@ -290,9 +653,12 @@ layout_mode = 2
 size_flags_horizontal = 8
 theme_override_fonts/font = ExtResource("2_2o76q")
 
-[connection signal="pressed" from="MainButtons/StartGame" to="." method="_on_start_game_pressed"]
-[connection signal="pressed" from="MainButtons/Options" to="." method="_on_options_pressed"]
-[connection signal="pressed" from="MainButtons/Exit" to="." method="_on_exit_pressed"]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1919384477]
+environment = SubResource("Environment_1hnlc")
+
+[connection signal="pressed" from="MarginContainer/MainButtons/StartGame" to="." method="_on_start_game_pressed"]
+[connection signal="pressed" from="MarginContainer/MainButtons/Options" to="." method="_on_options_pressed"]
+[connection signal="pressed" from="MarginContainer/MainButtons/Exit" to="." method="_on_exit_pressed"]
 [connection signal="pressed" from="Options/Back" to="." method="_on_back_pressed"]
 [connection signal="pressed" from="Options/MarginContainer/OptionsButtons/Contols" to="." method="_on_contols_pressed"]
 [connection signal="toggled" from="Options/VBoxContainer/FullscreenControl" to="Options/VBoxContainer/FullscreenControl" method="_on_toggled"]

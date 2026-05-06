@@ -1,6 +1,6 @@
 extends CanvasLayer
 
-@onready var main_buttons: VBoxContainer = $MainButtons
+@onready var main_buttons: VBoxContainer = $MarginContainer/MainButtons
 @onready var options: Panel = $Options
 @onready var controls_panel: Panel = $ControlsPanel
 
@@ -63,7 +63,7 @@ func _ready() -> void:
 		# We are at the MAIN MENU (First time launch)
 		continue_button.hide()
 		start_button.hide() # <-- HIDE Restart Level on the Main Menu
-		new_game_button.text = "New Game"
+		new_game_button.text = ""
 	
 	# 4. Set up the UI visibility
 	main_buttons.visible = true

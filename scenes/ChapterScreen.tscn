@@ -6,6 +6,11 @@
 [ext_resource type="Texture2D" uid="uid://yxgdfvdpfmu7" path="res://assets/images/chapter_imgs/VisTEST.png" id="4_1symm"]
 [ext_resource type="Shader" uid="uid://d3hb763n705g4" path="res://scenes/ChapterScreen.gdshader" id="5_ef8iv"]
 [ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="5_sl2hs"]
+[ext_resource type="Script" uid="uid://g1iralse1net" path="res://scripts/menus/HorrorButton.gd" id="7_1symm"]
+[ext_resource type="Shader" uid="uid://6lomg4ekdndh" path="res://assets/shaders/HorrorTextShader.gdshader" id="8_53ons"]
+[ext_resource type="Shader" uid="uid://gqm2yghwiqry" path="res://scenes/menus/black_glass.gdshader" id="8_h04da"]
+[ext_resource type="Shader" uid="uid://coifevcbmk5s2" path="res://scenes/menus/BorderGlow.gdshader" id="8_xokdh"]
+[ext_resource type="Texture2D" uid="uid://cqsm2o4tsvbg2" path="res://assets/images/Menu/skulls.png" id="9_qx2xq"]
 
 [sub_resource type="Resource" id="Resource_53ons"]
 script = ExtResource("2_sl2hs")
@@ -32,6 +37,92 @@ shader = ExtResource("5_ef8iv")
 shader_parameter/blur_size = 3.0000001425
 shader_parameter/pan_amount = 0.10000000149012
 shader_parameter/pan_speed = 0.10000000475
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_qx2xq"]
+shader = ExtResource("8_h04da")
+shader_parameter/sweep_progress = -0.5
+shader_parameter/hover_intensity = 0.0
+shader_parameter/angle = 25.0
+shader_parameter/rect_size = Vector2(0, 0)
+shader_parameter/base_color = Color(0, 0, 0, 1)
+shader_parameter/shine_color = Color(1, 1, 1, 0.6)
+shader_parameter/shine_width = 0.15
+shader_parameter/rim_light_color = Color(0.8, 0.9, 1, 0.25)
+shader_parameter/slab_opacity = 0.95
+shader_parameter/blood_texture = ExtResource("9_qx2xq")
+shader_parameter/mouse_pos_uv = Vector2(0, 0)
+shader_parameter/reveal_radius = 0.15
+shader_parameter/reveal_softness = 0.1
+shader_parameter/blood_offset = Vector2(0, 0)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_h04da"]
+shader = ExtResource("8_53ons")
+shader_parameter/shadow_color = Color(0, 0, 0, 1)
+shader_parameter/shadow_1_x = -0.5
+shader_parameter/shadow_2_x = 1.5
+shader_parameter/shadow_width = 0.15
+shader_parameter/softness = 0.1
+shader_parameter/tilt = 0.3
+shader_parameter/hover_intensity = 0.0
+shader_parameter/glow_color = Color(1, 0.85, 0.4, 1)
+shader_parameter/glow_strength = 4.0
+
+[sub_resource type="LabelSettings" id="LabelSettings_h04da"]
+font = ExtResource("5_sl2hs")
+font_size = 32
+outline_size = 3
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_mhu1t"]
+shader = ExtResource("8_xokdh")
+shader_parameter/line_color = Color(1, 1, 1, 1)
+shader_parameter/line_thickness = 2.0
+shader_parameter/rect_size = Vector2(0, 0)
+shader_parameter/speed = 1.5
+shader_parameter/trail_length = 0.3
+shader_parameter/hover_intensity = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_as3aa"]
+shader = ExtResource("8_h04da")
+shader_parameter/sweep_progress = -0.5
+shader_parameter/hover_intensity = 0.0
+shader_parameter/angle = 25.0
+shader_parameter/rect_size = Vector2(0, 0)
+shader_parameter/base_color = Color(0, 0, 0, 1)
+shader_parameter/shine_color = Color(1, 1, 1, 0.6)
+shader_parameter/shine_width = 0.15
+shader_parameter/rim_light_color = Color(0.8, 0.9, 1, 0.25)
+shader_parameter/slab_opacity = 0.95
+shader_parameter/blood_texture = ExtResource("9_qx2xq")
+shader_parameter/mouse_pos_uv = Vector2(0, 0)
+shader_parameter/reveal_radius = 0.15
+shader_parameter/reveal_softness = 0.1
+shader_parameter/blood_offset = Vector2(0, 0)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_xokdh"]
+shader = ExtResource("8_53ons")
+shader_parameter/shadow_color = Color(0, 0, 0, 1)
+shader_parameter/shadow_1_x = -0.5
+shader_parameter/shadow_2_x = 1.5
+shader_parameter/shadow_width = 0.15
+shader_parameter/softness = 0.1
+shader_parameter/tilt = 0.3
+shader_parameter/hover_intensity = 0.0
+shader_parameter/glow_color = Color(1, 0.85, 0.4, 1)
+shader_parameter/glow_strength = 4.0
+
+[sub_resource type="LabelSettings" id="LabelSettings_xokdh"]
+font = ExtResource("5_sl2hs")
+font_size = 32
+outline_size = 3
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_uoioa"]
+shader = ExtResource("8_xokdh")
+shader_parameter/line_color = Color(1, 1, 1, 1)
+shader_parameter/line_thickness = 2.0
+shader_parameter/rect_size = Vector2(0, 0)
+shader_parameter/speed = 1.5
+shader_parameter/trail_length = 0.3
+shader_parameter/hover_intensity = 0.0
 
 [node name="ChapterScreen" type="Control" unique_id=76184905]
 layout_mode = 3
@@ -144,14 +235,112 @@ size_flags_vertical = 3
 text = "Test Description"
 
 [node name="ButtonSection" type="VBoxContainer" parent="MarginContainer/VBoxContainer/MainLayout/DetailsPanel/MarginContainer/BottomSplit" unique_id=773401128]
+custom_minimum_size = Vector2(150, 75)
 layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 10
 
 [node name="PlayButton" type="Button" parent="MarginContainer/VBoxContainer/MainLayout/DetailsPanel/MarginContainer/BottomSplit/ButtonSection" unique_id=213882705]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_vertical = 3
+theme_override_fonts/font = ExtResource("5_sl2hs")
+theme_override_font_sizes/font_size = 42
 text = "Play Chapter"
+script = ExtResource("7_1symm")
+hover_scale = null
+response_speed = null
+walk_speed = null
+hunt_speed = null
+glitch_text = null
+glitch_duration = null
+min_glitch_time = null
+max_glitch_time = null
+pulse_speed = null
+pulse_intensity = null
+max_rotation_degrees = null
+parallax_intensity = null
+
+[node name="Background" type="ColorRect" parent="MarginContainer/VBoxContainer/MainLayout/DetailsPanel/MarginContainer/BottomSplit/ButtonSection/PlayButton" unique_id=1036043634]
+material = SubResource("ShaderMaterial_qx2xq")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/MainLayout/DetailsPanel/MarginContainer/BottomSplit/ButtonSection/PlayButton" unique_id=1109630314]
+material = SubResource("ShaderMaterial_h04da")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+label_settings = SubResource("LabelSettings_h04da")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Border" type="ColorRect" parent="MarginContainer/VBoxContainer/MainLayout/DetailsPanel/MarginContainer/BottomSplit/ButtonSection/PlayButton" unique_id=348176302]
+material = SubResource("ShaderMaterial_mhu1t")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
 [node name="BackButton" type="Button" parent="MarginContainer/VBoxContainer/MainLayout/DetailsPanel/MarginContainer/BottomSplit/ButtonSection" unique_id=356699486]
 layout_mode = 2
+size_flags_vertical = 3
+theme_override_fonts/font = ExtResource("5_sl2hs")
+theme_override_font_sizes/font_size = 42
 text = "Back to Main Menu"
+script = ExtResource("7_1symm")
+hover_scale = null
+response_speed = null
+walk_speed = null
+hunt_speed = null
+glitch_text = null
+glitch_duration = null
+min_glitch_time = null
+max_glitch_time = null
+pulse_speed = null
+pulse_intensity = null
+max_rotation_degrees = 5.0
+parallax_intensity = null
+
+[node name="Background" type="ColorRect" parent="MarginContainer/VBoxContainer/MainLayout/DetailsPanel/MarginContainer/BottomSplit/ButtonSection/BackButton" unique_id=241964077]
+material = SubResource("ShaderMaterial_as3aa")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Label" type="Label" parent="MarginContainer/VBoxContainer/MainLayout/DetailsPanel/MarginContainer/BottomSplit/ButtonSection/BackButton" unique_id=333126503]
+material = SubResource("ShaderMaterial_xokdh")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+label_settings = SubResource("LabelSettings_xokdh")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Border" type="ColorRect" parent="MarginContainer/VBoxContainer/MainLayout/DetailsPanel/MarginContainer/BottomSplit/ButtonSection/BackButton" unique_id=1141783053]
+material = SubResource("ShaderMaterial_uoioa")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2

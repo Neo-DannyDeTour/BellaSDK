@@ -34,9 +34,7 @@ func _ready() -> void:
 		btn.gui_input.connect(_on_image_gui_input.bind(chapter))
 		
 		# ADD THIS: Connect the hover signal
-		btn.mouse_entered.connect(_on_chapter_hovered.bind(chapter))
-		# Optional: Revert to the selected chapter's image when the mouse leaves
-		btn.mouse_exited.connect(_on_chapter_unhovered)
+		btn.mouse_entered.connect(_on_chapter_selected.bind(chapter))
 		
 		chapter_list.add_child(item)
 	
