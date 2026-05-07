@@ -1,0 +1,32 @@
+[gd_scene format=3 uid="uid://cf8pnlqxpdri3"]
+
+[ext_resource type="PackedScene" uid="uid://mqae3mth7tfx" path="res://scenes/pickable_object.tscn" id="1_aapj8"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://assets/shaders/UnlitOutlineMaterial.gdshader" id="2_425a4"]
+[ext_resource type="PackedScene" uid="uid://bjqfwcgq1p1j2" path="res://scenes/barrel_red.tscn" id="3_wkfba"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_u0s6k"]
+render_priority = 0
+shader = ExtResource("2_425a4")
+shader_parameter/highlight_color = Color(0.6666667, 0.76862746, 0.9882353, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.050000002375
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_ryygw"]
+height = 1.2868652
+radius = 0.43847656
+
+[node name="PickableBarrel" unique_id=594279821 instance=ExtResource("1_aapj8")]
+mass = 10.0
+
+[node name="HighlightComponent" parent="." index="1" unique_id=1233358358]
+outline_material = SubResource("ShaderMaterial_u0s6k")
+
+[node name="MeshInstance3D" parent="." index="2" unique_id=1239371319]
+visible = false
+
+[node name="CollisionShape3D" parent="." index="3" unique_id=1677444331]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6487124, 0)
+shape = SubResource("CylinderShape3D_ryygw")
+
+[node name="Barrel_red" parent="." index="5" unique_id=1477624360 instance=ExtResource("3_wkfba")]

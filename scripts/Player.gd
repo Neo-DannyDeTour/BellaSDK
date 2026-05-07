@@ -1954,8 +1954,18 @@ func apply_instability(delta: float) -> void:
 	flash_light_node.rotation.y += jitter_y
 
 func _on_fullbright_toggled(is_fullbright: bool) -> void:
+	# 1. Handle the Environment via the Camera
 	if is_fullbright:
-		# Use single '=' for assignment
+		# Override the world graphics with our debug environment
 		cam.environment = fullbright_env
 	else:
+		# Setting it to null instantly restores the global WorldEnvironment!
 		cam.environment = null
+		
+	# 2. Handle the Sun
+	# Grab the sun from the group we just made
+	var sun := get_tree().get_first_node_in_group("sun") as DirectionalLight3D
+	if sun:
+		# If fullbright is ON, sun is hidden/disabled. Vice versa.
+		sun.visible = not is_fullbright
+		sun.shadow_enabled = not is_fullbright

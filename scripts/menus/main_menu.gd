@@ -6,7 +6,7 @@ extends CanvasLayer
 
 @onready var continue_button: Button = %Continue
 @onready var new_game_button: Button = %NewGame
-@onready var start_button: Button = %StartGame
+@onready var restart_button: Button = %RestartGame
 
 # --- EXPLICIT UI REFERENCES ---
 @onready var sens_slider: HSlider = %MouseSensitivitySlider
@@ -56,13 +56,13 @@ func _ready() -> void:
 	if get_parent().has_method("toggle_pause"):
 		# We are IN-GAME (Attached to the Player)
 		continue_button.show()
-		start_button.show() # Show Restart button
-		start_button.text = "Restart Level" 
-		new_game_button.text = "Select Level" # Optional: rename it while in-game so it makes sense!
+		restart_button.show() # Show Restart button
+		#restart_button.text = "Restart Level" 
+		#new_game_button.text = "Select Level" # Optional: rename it while in-game so it makes sense!
 	else:
 		# We are at the MAIN MENU (First time launch)
 		continue_button.hide()
-		start_button.hide() # <-- HIDE Restart Level on the Main Menu
+		restart_button.hide() # <-- HIDE Restart Level on the Main Menu
 		new_game_button.text = ""
 	
 	# 4. Set up the UI visibility

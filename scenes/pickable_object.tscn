@@ -3,6 +3,15 @@
 [ext_resource type="Script" uid="uid://cwma4einbwr2q" path="res://scripts/pickable_object.gd" id="1_gl7hy"]
 [ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://scripts/Interact_Component.gd" id="2_spxwp"]
 [ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://scripts/highlight_component.gd" id="3_tkhgv"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://assets/shaders/UnlitOutlineMaterial.gdshader" id="4_spxwp"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_tkhgv"]
+render_priority = 0
+shader = ExtResource("4_spxwp")
+shader_parameter/highlight_color = Color(0.6666667, 0.76862746, 0.9882353, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.050000002375
 
 [node name="PickableObject" type="RigidBody3D" unique_id=594279821 node_paths=PackedStringArray("interact_comp", "mesh", "label", "probe_container")]
 script = ExtResource("1_gl7hy")
@@ -20,6 +29,7 @@ metadata/_custom_type_script = "uid://cqawbvidns1th"
 
 [node name="HighlightComponent" type="Node" parent="." unique_id=1233358358]
 script = ExtResource("3_tkhgv")
+outline_material = SubResource("ShaderMaterial_tkhgv")
 metadata/_custom_type_script = "uid://dgig0tamvkdxx"
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1239371319]

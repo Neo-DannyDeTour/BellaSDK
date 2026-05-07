@@ -5,13 +5,8 @@ var max_points: int = 100 # How many frames to draw across the screen
 var target_ms: float = 16.67 # 60 FPS target
 var ceiling_ms: float = 33.33 # 30 FPS ceiling (the top of the graph)
 
-# Explicitly typed class variables
-var spectrum_seed := Vector2i.ZERO
-var should_generate_spectrum: bool = true
-
-var time: float = 0.0
-var foam_grow_rate: float = 0.0
-var foam_decay_rate: float = 0.0
+# NEW: Padding to push the top of the graph down, leaving room for text
+var top_padding: float = 150.0 
 
 func _process(delta: float) -> void:
 	# PERFORMANCE: Don't do math if the debug menu is closed
@@ -35,36 +30,44 @@ func _draw() -> void:
 		
 	var w := size.x
 	var h := size.y
-
-	# 1. PREPARE AND DRAW THE GREEN POLYGON FIRST
+	
+	# The actual vertical space we are allowed to draw in
+	var graph_h := h - top_padding
 	var step := w / max_points
-	var points := PackedVector2Array()
-	points.append(Vector2(0, h)) 
 
-	for i in range(history.size()):
-		var x := i * step
-		var current_ms: float = min(history[i], ceiling_ms) 
-		var y: float = h - (current_ms / float(ceiling_ms)) * h
-		points.append(Vector2(x, y))
+	# 1. DRAW THE GRAPH LINE (Segment by Segment for color changing)
+	for i in range(history.size() - 1):
+		var x1 := i * step
+		var x2 := (i + 1) * step
+		
+		var ms1: float = min(history[i], ceiling_ms)
+		var ms2: float = min(history[i + 1], ceiling_ms)
+		
+		# Calculate Y starting from the bottom (h) and going up
+		var y1: float = h - (ms1 / ceiling_ms) * graph_h
+		var y2: float = h - (ms2 / ceiling_ms) * graph_h
+		
+		var p1 := Vector2(x1, y1)
+		var p2 := Vector2(x2, y2)
+		
+		# If the frame exceeds target_ms, draw this segment RED. Otherwise GREEN.
+		var line_color := Color(0.2, 0.8, 0.2, 0.8) # Green
+		if ms2 > target_ms or ms1 > target_ms:
+			line_color = Color(0.9, 0.2, 0.2, 0.8) # Red Spike
+			
+		# Draw the individual segment
+		draw_line(p1, p2, line_color, 2.0, true)
 
-	points.append(Vector2((history.size() - 1) * step, h)) 
-	if points.size() >= 2: # Polylines only need 2 points to draw a line
-		draw_polyline(points, Color(0.2, 0.8, 0.2, 0.6), 2.0, true) # 2.0 is line width, true is anti-aliased
-
-	# 2. DRAW THE YELLOW 60 FPS LINE ON TOP
-	var target_y := h - (target_ms / ceiling_ms) * h
-	draw_line(Vector2(0, target_y), Vector2(w, target_y), Color(1, 1, 0, 0.8), 2.0)
+	# 2. DRAW THE YELLOW 60 FPS LINE
+	var target_y := h - (target_ms / ceiling_ms) * graph_h
+	draw_line(Vector2(0, target_y), Vector2(w, target_y), Color(1, 1, 0, 0.6), 2.0)
 
 	# 3. DRAW THE TEXT STATUS
-	# Grab the very last frame time we recorded
 	var latest_ms: float = history.back() if not history.is_empty() else 0.0
-
-	# Grab the default system font so we don't have to load a custom one
 	var font := ThemeDB.fallback_font 
 	var text_color := Color.GREEN
 	var status_text := "16.66ms - Good"
 
-	# If the frame took longer than our target, turn the text red and yell!
 	if latest_ms > target_ms:
 		text_color = Color.RED
 		status_text = "16.66ms - Problem!"

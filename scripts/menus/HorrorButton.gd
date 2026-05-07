@@ -1,7 +1,7 @@
 extends Button 
 
 # --- BUTTON CONFIGURATION ---
-@export var hover_scale := Vector2(1.05, 1.05)
+@export var hover_scale := Vector2(1.08, 1.08)
 @export var response_speed := 12.0
 
 # --- SHADOW AI CONFIGURATION ---
@@ -81,10 +81,12 @@ func _ready() -> void:
 		bg_material.set_shader_parameter("blood_offset", Vector2(randf_range(0.0, 100.0), randf_range(0.0, 100.0)))
 		
 	# Force Full Rect and Centering
+	# Force manual sizing and Centering
 	if text_label != null:
-		text_label.set_anchors_preset(Control.PRESET_FULL_RECT)
+		text_label.set_anchors_preset(Control.PRESET_TOP_LEFT)
+		text_label.size = size
+		text_label.position = Vector2.ZERO
 		text_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		text_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 			
 	# Automatically move and clear text 
 	if text != "" and text_label != null:
@@ -118,9 +120,15 @@ func _ready() -> void:
 
 func _on_resized() -> void:
 	pivot_offset = size / 2.0
-	
+
 	if text_label:
-		text_label.pivot_offset = text_label.size / 2.0
+		text_label.set_deferred("size", size)
+		text_label.pivot_offset = size / 2.0
+		
+	if bg_rect: 
+		bg_rect.set_deferred("size", size)
+	if border_rect: 
+		border_rect.set_deferred("size", size)
 		
 func _on_mouse_entered() -> void:
 	is_mouse_over = true
@@ -215,7 +223,7 @@ func _process(delta: float) -> void:
 		label_material.set_shader_parameter("hover_intensity", current_hover_intensity)
 		
 		for i in 2:
-			if is_hovered:
+			if is_mouse_over:
 				var uv_target := clampf(mouse_pos.x / size.x, -0.2, 1.2)
 				shadows_x[i] = move_toward(shadows_x[i], uv_target, hunt_speed * delta)
 			else:

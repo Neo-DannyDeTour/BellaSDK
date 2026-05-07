@@ -47,9 +47,13 @@ func _process(_delta: float) -> void:
 	elif player.is_on_floor(): state = "WALKING" if is_pressing_keys else "IDLE"
 	else: state = "AIRBORNE"
 
+	# --- MEMORY & RENDERING METRICS ---
 	var static_mem := OS.get_static_memory_usage()
-	# VRAM is the memory on your Graphics Card
 	var vram_usage := Performance.get_monitor(Performance.RENDER_TEXTURE_MEM_USED)
+	
+	var draw_calls := Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)
+	var objects := Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME)
+	var primitives := Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)
 
 	# --- NEW BOOLEAN CHECKS ---
 	var flashlight_str := "ON" if player.flashlight.visible else "OFF"
@@ -57,11 +61,17 @@ func _process(_delta: float) -> void:
 	if player.get_node("%WeaponHolder").get_child_count() > 0:
 		weapon_str = player.get_node("%WeaponHolder").get_child(0).name
 
+	# --- TEXT ASSEMBLY ---
 	var text := ""
 	text += "--- ENGINE ---\n"
 	text += "[color=%s]FPS: %d[/color]\n" % [fps_color, fps]
 	text += "RAM: %s\n" % String.humanize_size(static_mem)
 	text += "VRAM: %s\n" % String.humanize_size(int(vram_usage))
+	
+	text += "\n--- RENDERING ---\n"
+	text += "Draw Calls: %d\n" % draw_calls
+	text += "Objects: %d\n" % objects
+	text += "Primitives: %d\n" % primitives
 
 	text += "\n--- PLAYER STATE ---\n"
 	text += "STATE: %s\n" % state

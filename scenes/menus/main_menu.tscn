@@ -94,7 +94,6 @@ shader_parameter/glow_strength = 4.0
 [sub_resource type="LabelSettings" id="LabelSettings_1hnlc"]
 font = ExtResource("2_2o76q")
 font_size = 42
-font_color = Color(1, 1, 1, 0)
 outline_size = 3
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vn8vg"]
@@ -209,25 +208,24 @@ grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxTexture_6bivr")
 
 [node name="MarginContainer" type="MarginContainer" parent="." unique_id=1680358888]
-anchors_preset = 8
+anchors_preset = 7
 anchor_left = 0.5
-anchor_top = 0.5
+anchor_top = 1.0
 anchor_right = 0.5
-anchor_bottom = 0.5
+anchor_bottom = 1.0
 offset_left = -125.0
-offset_top = -150.0
+offset_top = -425.0
 offset_right = 125.0
-offset_bottom = 150.0
 grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/margin_top = 75
+grow_vertical = 0
+theme_override_constants/margin_bottom = 50
 
 [node name="MainButtons" type="VBoxContainer" parent="MarginContainer" unique_id=988684812]
-custom_minimum_size = Vector2(250, 300)
+custom_minimum_size = Vector2(300, 350)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-theme_override_constants/separation = 12
+theme_override_constants/separation = 8
 
 [node name="Continue" type="Button" parent="MarginContainer/MainButtons" unique_id=1604496560]
 unique_name_in_owner = true
@@ -235,9 +233,7 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_fonts/font = ExtResource("2_2o76q")
 theme_override_font_sizes/font_size = 42
-text = "Continue"
 script = ExtResource("5_8r73w")
-max_rotation_degrees = 5.0
 
 [node name="Background" type="ColorRect" parent="MarginContainer/MainButtons/Continue" unique_id=664105335]
 material = SubResource("ShaderMaterial_euy4r")
@@ -282,7 +278,6 @@ size_flags_vertical = 3
 theme_override_fonts/font = ExtResource("2_2o76q")
 theme_override_font_sizes/font_size = 42
 script = ExtResource("5_8r73w")
-hover_scale = Vector2(1.08, 1.08)
 
 [node name="Background" type="ColorRect" parent="MarginContainer/MainButtons/NewGame" unique_id=269998739]
 material = SubResource("ShaderMaterial_50h1w")
@@ -319,7 +314,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="StartGame" type="Button" parent="MarginContainer/MainButtons" unique_id=1877365184]
+[node name="RestartGame" type="Button" parent="MarginContainer/MainButtons" unique_id=1877365184]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
@@ -328,11 +323,10 @@ theme_override_font_sizes/font_size = 42
 theme_override_styles/normal = SubResource("StyleBoxFlat_vn8vg")
 theme_override_styles/pressed = SubResource("StyleBoxFlat_2o76q")
 theme_override_styles/hover = SubResource("StyleBoxFlat_ovrgc")
-text = "Start Game"
 script = ExtResource("5_8r73w")
 max_rotation_degrees = 5.0
 
-[node name="Background" type="ColorRect" parent="MarginContainer/MainButtons/StartGame" unique_id=613823549]
+[node name="Background" type="ColorRect" parent="MarginContainer/MainButtons/RestartGame" unique_id=613823549]
 material = SubResource("ShaderMaterial_bre17")
 layout_mode = 1
 anchors_preset = 15
@@ -342,7 +336,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Label" type="Label" parent="MarginContainer/MainButtons/StartGame" unique_id=1703071279]
+[node name="Label" type="Label" parent="MarginContainer/MainButtons/RestartGame" unique_id=1703071279]
 material = SubResource("ShaderMaterial_1hnlc")
 layout_mode = 1
 anchors_preset = 15
@@ -352,12 +346,12 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_fonts/font = ExtResource("2_2o76q")
 theme_override_font_sizes/font_size = 42
-text = "Start Game"
+text = "Restart Game"
 label_settings = SubResource("LabelSettings_50h1w")
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Border" type="ColorRect" parent="MarginContainer/MainButtons/StartGame" unique_id=448249569]
+[node name="Border" type="ColorRect" parent="MarginContainer/MainButtons/RestartGame" unique_id=448249569]
 material = SubResource("ShaderMaterial_3w8rc")
 layout_mode = 1
 anchors_preset = 15
@@ -373,7 +367,6 @@ size_flags_vertical = 3
 theme_override_fonts/font = ExtResource("2_2o76q")
 theme_override_font_sizes/font_size = 42
 script = ExtResource("5_8r73w")
-hover_scale = Vector2(1.08, 1.08)
 max_rotation_degrees = 5.0
 
 [node name="Background" type="ColorRect" parent="MarginContainer/MainButtons/Options" unique_id=265741086]
@@ -416,7 +409,6 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_fonts/font = ExtResource("2_2o76q")
 theme_override_font_sizes/font_size = 42
-text = "Exit"
 script = ExtResource("5_8r73w")
 max_rotation_degrees = 5.0
 
@@ -661,7 +653,7 @@ theme_override_fonts/font = ExtResource("2_2o76q")
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1919384477]
 environment = SubResource("Environment_1hnlc")
 
-[connection signal="pressed" from="MarginContainer/MainButtons/StartGame" to="." method="_on_start_game_pressed"]
+[connection signal="pressed" from="MarginContainer/MainButtons/RestartGame" to="." method="_on_start_game_pressed"]
 [connection signal="pressed" from="MarginContainer/MainButtons/Options" to="." method="_on_options_pressed"]
 [connection signal="pressed" from="MarginContainer/MainButtons/Exit" to="." method="_on_exit_pressed"]
 [connection signal="pressed" from="Options/Back" to="." method="_on_back_pressed"]
