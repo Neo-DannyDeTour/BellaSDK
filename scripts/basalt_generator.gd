@@ -23,17 +23,25 @@ extends Node3D
 		_queue_generation()
 
 @export_group("Basalt Properties")
+
+# Your original sides variable
 @export var sides: int = 6 : 
 	set(value):
 		sides = value
 		_queue_generation()
 
+# The new surface group variable
+@export var surface_group: String = "stone" :
+	set(value):
+		surface_group = value
+		_queue_generation()
+
 # Ensure you have ": int = 0" right here!
 @export var rings: int = 0 : 
 	set(value):
-		# We also enforce it here just in case the editor passes a weird value on load
 		rings = int(value) if value != null else 0
 		_queue_generation()
+
 @export var column_radius: float = 1.0 :
 	set(value):
 		column_radius = value
@@ -192,6 +200,11 @@ func _generate() -> void:
 		# --- ADD COLLISION ---
 		var static_body: StaticBody3D = StaticBody3D.new()
 		var collision_shape: CollisionShape3D = CollisionShape3D.new()
+		
+		# --> ADD THIS BLOCK <--
+		# Assign the physics body to the chosen footstep group (e.g. "stone")
+		if surface_group != "":
+			static_body.add_to_group(surface_group, true)
 		
 		collision_shape.shape = mesh.create_convex_shape()
 		

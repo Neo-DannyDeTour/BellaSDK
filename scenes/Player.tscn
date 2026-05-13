@@ -4,7 +4,19 @@
 [ext_resource type="PackedScene" uid="uid://cv4syvckbtm2f" path="res://scenes/ui.tscn" id="2_k2mo6"]
 [ext_resource type="Texture2D" uid="uid://dnv1e6gebl5gj" path="res://assets/images/UI/flashlight_pattern.png" id="3_di6f5"]
 [ext_resource type="Shader" uid="uid://e5j85108j8s0" path="res://utils/WaterMaker3D/CameraWaterOverlay2.gdshader" id="5_qu4a1"]
+[ext_resource type="AudioStream" uid="uid://bp7lht4opa4rr" path="res://assets/sounds/ConcreteFS_1.wav" id="6_khinc"]
+[ext_resource type="AudioStream" uid="uid://oot00opauoyd" path="res://assets/sounds/ConcreteFS_2.wav" id="7_bruh7"]
 [ext_resource type="Texture2D" uid="uid://c7cbvlpeqy6d5" path="res://assets/images/Concept/BellaInGameReflection.png" id="7_cw2d6"]
+[ext_resource type="AudioStream" uid="uid://bom6y42228vr" path="res://assets/sounds/ConcreteFS_3.wav" id="8_6eyey"]
+[ext_resource type="AudioStream" uid="uid://dxncav7a6yobd" path="res://assets/sounds/MetalFS_1.wav" id="9_d3wef"]
+[ext_resource type="AudioStream" uid="uid://0v4mc2msfgb5" path="res://assets/sounds/MetalFS_2.wav" id="10_o4126"]
+[ext_resource type="AudioStream" uid="uid://uxf83pmc6tqt" path="res://assets/sounds/MetalFS_3.wav" id="11_lkdrv"]
+[ext_resource type="AudioStream" uid="uid://v1nx1mi0054m" path="res://assets/sounds/StoneFS_1.wav" id="12_p7iby"]
+[ext_resource type="AudioStream" uid="uid://cfc3fe6a652f3" path="res://assets/sounds/StoneFS_2.wav" id="13_0rnld"]
+[ext_resource type="AudioStream" uid="uid://vlp6ss6t753l" path="res://assets/sounds/StoneFS_3.wav" id="14_srp4u"]
+[ext_resource type="AudioStream" uid="uid://5hwtbp804ek" path="res://assets/sounds/WetFS_1.wav" id="15_jfpux"]
+[ext_resource type="AudioStream" uid="uid://dnki3f8vfkxp5" path="res://assets/sounds/WetFS_2.wav" id="16_61ith"]
+[ext_resource type="AudioStream" uid="uid://oh71h2dp43vr" path="res://assets/sounds/WetFS_3.wav" id="17_ebwui"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_cw2d6"]
 radius = 0.1
@@ -265,11 +277,41 @@ shader_parameter/chromatic_aberration = 0.0010000000475
 shader_parameter/water_tint = Color(0.1, 0.4, 0.7, 0.2)
 shader_parameter/highlight_punch = 0.02000000095
 
-[node name="Player" type="CharacterBody3D" unique_id=1502339238 node_paths=PackedStringArray("player_ui") groups=["player"]]
+[sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_d3wef"]
+streams_count = 3
+stream_0/stream = ExtResource("6_khinc")
+stream_1/stream = ExtResource("7_bruh7")
+stream_2/stream = ExtResource("8_6eyey")
+stream_2/weight = 0.4
+
+[sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_p7iby"]
+streams_count = 3
+stream_0/stream = ExtResource("9_d3wef")
+stream_1/stream = ExtResource("10_o4126")
+stream_2/stream = ExtResource("11_lkdrv")
+
+[sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_jfpux"]
+streams_count = 3
+stream_0/stream = ExtResource("12_p7iby")
+stream_1/stream = ExtResource("13_0rnld")
+stream_2/stream = ExtResource("14_srp4u")
+
+[sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_sfy4j"]
+streams_count = 3
+stream_0/stream = ExtResource("15_jfpux")
+stream_1/stream = ExtResource("16_61ith")
+stream_2/stream = ExtResource("17_ebwui")
+
+[node name="Player" type="CharacterBody3D" unique_id=1502339238 node_paths=PackedStringArray("player_ui", "footstep_audio_default", "footstep_audio_metal", "footstep_audio_stone", "footstep_audio_wet_dirt") groups=["player"]]
 process_mode = 3
 collision_mask = 7
 script = ExtResource("1_34orh")
 player_ui = NodePath("UI")
+footstep_audio_default = NodePath("Audio/FootstepDefaultAudio")
+footstep_audio_metal = NodePath("Audio/FootstepMetalAudio")
+footstep_audio_stone = NodePath("Audio/FootstepStoneAudio")
+footstep_audio_wet_dirt = NodePath("Audio/FootstepWetDirtAudio")
+crouch_step_interval = 0.55
 
 [node name="Head" type="Node3D" parent="." unique_id=1584872370]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
@@ -365,6 +407,23 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+
+[node name="Audio" type="Node" parent="." unique_id=51504732]
+
+[node name="FootstepDefaultAudio" type="AudioStreamPlayer" parent="Audio" unique_id=1100202989]
+stream = SubResource("AudioStreamRandomizer_d3wef")
+volume_db = -20.0
+
+[node name="FootstepMetalAudio" type="AudioStreamPlayer" parent="Audio" unique_id=469023765]
+stream = SubResource("AudioStreamRandomizer_p7iby")
+volume_db = -20.0
+
+[node name="FootstepStoneAudio" type="AudioStreamPlayer" parent="Audio" unique_id=506548274]
+stream = SubResource("AudioStreamRandomizer_jfpux")
+volume_db = -20.0
+
+[node name="FootstepWetDirtAudio" type="AudioStreamPlayer" parent="Audio" unique_id=875564003]
+stream = SubResource("AudioStreamRandomizer_sfy4j")
 
 [connection signal="area_entered" from="WaterDetector" to="." method="_on_water_detector_area_entered"]
 [connection signal="area_exited" from="WaterDetector" to="." method="_on_water_detector_area_exited"]

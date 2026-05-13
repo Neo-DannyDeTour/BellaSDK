@@ -12,15 +12,18 @@ extends Node3D
 
 var player_on_rope: bool = false
 
-# --- SWING VARS ---
 @export_category("Rope Properties")
 @export var is_swingable: bool = false
 @export var swing_force: float = 150.0 
 @export var label_offset_amount: float = 0.35
+@export var rope_sound: AudioStreamPlayer3D
+@export var slide_sound: AudioStreamPlayer3D
 
 # --- SLOMO VARS ---
 @export var activate_slomo: bool = false
 var slomo_tween: Tween
+
+
 
 @export_range(2.0, 30.0, 0.1) var rope_length: float = 5.0:
 	set(value):
@@ -130,6 +133,12 @@ func _on_interacted(player: CharacterBody3D) -> void:
 
 func on_player_released() -> void:
 	player_on_rope = false
+	
+	if rope_sound and rope_sound.playing:
+		rope_sound.stop()
+	if slide_sound and slide_sound.playing:
+		slide_sound.stop()
+	# ----------------------------------
 		
 	if rope_body:
 		rope_body.angular_damp = 2.5
@@ -140,3 +149,22 @@ func on_player_released() -> void:
 		
 	if activate_slomo:
 		Engine.time_scale = 1.0
+
+func handle_rope_sounds(is_climbing: bool, is_sliding: bool) -> void:
+	# 1. Handle the normal climbing/slow descending sound
+	if rope_sound:
+		if is_climbing and not is_sliding:
+			if not rope_sound.playing:
+				rope_sound.play()
+		else:
+			if rope_sound.playing:
+				rope_sound.stop()
+				
+	# 2. Handle the fast sliding sound
+	if slide_sound:
+		if is_sliding:
+			if not slide_sound.playing:
+				slide_sound.play()
+		else:
+			if slide_sound.playing:
+				slide_sound.stop()

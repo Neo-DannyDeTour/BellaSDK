@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="SoundscapeData" format=3 uid="uid://dgeq5qtgkvo7m"]
+
+[ext_resource type="AudioStream" uid="uid://76hyigva6yr2" path="res://assets/sounds/SoundscapeCave.wav" id="1_31sob"]
+[ext_resource type="Script" uid="uid://cl68g6jurgp0h" path="res://scripts/soundscape_data.gd" id="1_al5vj"]
+[ext_resource type="AudioStream" uid="uid://v1nx1mi0054m" path="res://assets/sounds/StoneFS_1.wav" id="2_55tws"]
+[ext_resource type="AudioStream" uid="uid://cfc3fe6a652f3" path="res://assets/sounds/StoneFS_2.wav" id="3_sjtmu"]
+[ext_resource type="AudioStream" uid="uid://vlp6ss6t753l" path="res://assets/sounds/StoneFS_3.wav" id="4_aeefp"]
+[ext_resource type="AudioStream" uid="uid://bv5p4qug3kjny" path="res://assets/sounds/WaterLeak_3.wav" id="5_aeefp"]
+
+[resource]
+resource_local_to_scene = true
+script = ExtResource("1_al5vj")
+ambient_track = ExtResource("1_31sob")
+random_sounds = Array[AudioStream]([ExtResource("2_55tws"), ExtResource("3_sjtmu"), ExtResource("4_aeefp"), ExtResource("5_aeefp")])
+random_volume_db = 20.0
+min_interval = 1.0
+max_interval = 2.0
+metadata/_custom_type_script = "uid://cl68g6jurgp0h"

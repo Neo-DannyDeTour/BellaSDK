@@ -52,6 +52,20 @@ extends CharacterBody3D
 
 @export_category("Physics Interaction")
 @export var push_force: float = 2.0
+# --- INSTABILITY VARIABLES ---
+@export var base_energy: float = 10.0
+
+@export_category("Audio Interaction")
+@export var footstep_audio_default: AudioStreamPlayer
+@export var footstep_audio_metal: AudioStreamPlayer
+@export var footstep_audio_stone: AudioStreamPlayer
+@export var footstep_audio_wet_dirt: AudioStreamPlayer
+
+@export var walk_step_interval: float = 0.45
+@export var sprint_step_interval: float = 0.28  # Faster steps for sprinting
+@export var crouch_step_interval: float = 0.65  # Slower steps for crouching
+
+var step_timer: float = 0.0
 
 var fullbright_env: Environment
 
@@ -131,9 +145,6 @@ var sway_target: Vector2 = Vector2.ZERO
 # HL2-like flashlight
 var default_spot_angle: float = 45.0
 var flashlight_maintain_distance: float = 1.5 # Starts compensating when closer than 1.5 meters
-
-# --- INSTABILITY VARIABLES ---
-@export var base_energy: float = 10.0
 
 # Electrical Instability
 var flicker_timer: float = 0.0
@@ -573,6 +584,53 @@ func _physics_process(delta: float) -> void:
 				
 	if SmokeManager:
 		SmokeManager.update_player_position(global_position)
+	
+	# ---------------------------------------------------------
+	# FOOTSTEP LOGIC
+	# Check if the player is on the ground and actually moving
+	if is_on_floor() and velocity.length() > 0.5:
+		step_timer -= delta
+		
+		if step_timer <= 0.0:
+			var active_audio_player: AudioStreamPlayer = footstep_audio_default
+			
+			# 1. Shoot a laser straight down from the player's center to find the floor
+			var space_state := get_world_3d().direct_space_state
+			var ray_start := global_position + Vector3(0, 0.5, 0) # Start slightly above feet
+			var ray_end := global_position + Vector3(0, -1.0, 0)  # Cast down past the feet
+			
+			var query := PhysicsRayQueryParameters3D.create(ray_start, ray_end)
+			query.exclude = [self.get_rid()] # Ignore the player's own body
+			
+			var result := space_state.intersect_ray(query)
+			
+			# 2. Check what the laser hit
+			if result:
+				var collider: Object = result["collider"]
+				if is_instance_valid(collider):
+					if collider.is_in_group("metal") and footstep_audio_metal:
+						active_audio_player = footstep_audio_metal
+					elif collider.is_in_group("stone") and footstep_audio_stone:
+						active_audio_player = footstep_audio_stone
+					elif collider.is_in_group("wet_dirt") and footstep_audio_wet_dirt:
+						active_audio_player = footstep_audio_wet_dirt
+			
+			# 3. Play the correct sound
+			if active_audio_player:
+				active_audio_player.play()
+			
+			# 4. Figure out how long to wait before the next step
+			var current_interval: float = walk_step_interval
+			
+			if sprinting:
+				current_interval = sprint_step_interval
+			elif crouching:
+				current_interval = crouch_step_interval
+				
+			step_timer = current_interval # Reset the timer with the correct speed
+	else:
+		# Reset the timer when stopped so the first step plays immediately
+		step_timer = 0.0
 		
 func _process(delta: float) -> void:
 	if Input.is_action_just_pressed("ui_cancel"):
@@ -1635,6 +1693,7 @@ func _handle_rope_physics(delta: float) -> void:
 	var max_length: float = rope_root.get("rope_length") as float if "rope_length" in rope_root else 10.0
 	var top_limit: float = local_top - 2.5
 	var bottom_limit: float = local_top - max_length + 0.5
+	var old_offset: float = rope_offset
 
 	if is_sliding:
 		rope_offset -= (ROPE_CLIMB_SPEED * 7.0) * delta
@@ -1653,16 +1712,25 @@ func _handle_rope_physics(delta: float) -> void:
 
 			if push_dir.length_squared() > 0.01:
 				current_rope.apply_force(push_dir.normalized() * force_amount, center_grab_pos - current_rope.global_position)
+	
+	var actually_moved: bool = absf(rope_offset - old_offset) > 0.001
+	var play_slide_sound: bool = is_sliding and actually_moved
+	var play_climb_sound: bool = is_climbing_actively and actually_moved
 
-	if is_climbing_actively:
+	if is_climbing_actively and actually_moved:
 		if has_method("_handle_headbob"):
 			_handle_headbob(delta, 0.6)
 	else:
 		cam.transform.origin = cam.transform.origin.lerp(Vector3.ZERO, delta * 10.0)
-	# -------------------------------------------
+
+	# --- UPDATED AUDIO LOGIC ---
+	if rope_root.has_method("handle_rope_sounds"):
+		rope_root.handle_rope_sounds(play_climb_sound, play_slide_sound)
+	# ---------------------------
 
 	# --- APPLY POSITIONS & COMFORT ---
 	var cam_fwd := -cam.global_transform.basis.z.normalized()
+	# (The rest of your code continues normally...)
 	var cam_right := -cam.global_transform.basis.x.normalized()
 
 	var orbit_fwd := Vector3(cam_fwd.x, 0, cam_fwd.z).normalized()
@@ -1763,7 +1831,7 @@ func _handle_headbob(delta: float, intensity_modifier: float = 1.0) -> void:
 	# Calculate how fast to increment the bob index based on state
 	var bob_speed: float = head_bobbing_idle_speed
 	if is_climbing_rope:
-		bob_speed = 12.6 # Standardized rope speed
+		bob_speed = 6.0 # Standardized rope speed
 		head_bobbing_current_intensity = head_bobbing_walking_intensity * 1.5
 	elif is_zipline_moving:
 		bob_speed = 6.0

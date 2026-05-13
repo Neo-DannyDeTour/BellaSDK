@@ -14,6 +14,7 @@ extends StaticBody3D
 
 @export_category("Connections")
 @export var targets: Array[Node3D]
+@export var click_sound: AudioStreamPlayer3D
 
 var press_tween: Tween
 var can_press: bool = true
@@ -46,6 +47,10 @@ func _on_interact(_player: CharacterBody3D) -> void:
 		return
 		
 	can_press = false
+	
+	if click_sound:
+		click_sound.play()
+	# ---------------------------
 	
 	if highlight_component:
 		highlight_component.suppress(true)

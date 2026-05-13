@@ -4,6 +4,8 @@
 [ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://scripts/Interact_Component.gd" id="2_ghbyf"]
 [ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://scripts/highlight_component.gd" id="3_1f3ew"]
 [ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://assets/shaders/UnlitOutlineMaterial.gdshader" id="4_lfily"]
+[ext_resource type="AudioStream" uid="uid://dgnxwid3n7ce3" path="res://assets/sounds/ClimbRope.wav" id="5_lfily"]
+[ext_resource type="AudioStream" uid="uid://b81edi4tvhu8f" path="res://assets/sounds/Zipline.wav" id="6_pi0m5"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_icxtj"]
 
@@ -28,9 +30,11 @@ shader_parameter/blink_speed = 4.0
 shader_parameter/min_intensity = 0.0
 shader_parameter/max_intensity = 0.5
 
-[node name="ClimableRope" type="Node3D" unique_id=1704021531]
+[node name="ClimableRope" type="Node3D" unique_id=1704021531 node_paths=PackedStringArray("rope_sound", "slide_sound")]
 script = ExtResource("1_icxtj")
 is_swingable = true
+rope_sound = NodePath("AudioStreamPlayer3D")
+slide_sound = NodePath("SlideSound")
 
 [node name="Anchor" type="StaticBody3D" parent="." unique_id=499367877]
 
@@ -70,6 +74,13 @@ no_depth_test = true
 text = "[E] to grab"
 font_size = 16
 outline_size = 8
+
+[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="." unique_id=789231734]
+stream = ExtResource("5_lfily")
+volume_db = -10.0
+
+[node name="SlideSound" type="AudioStreamPlayer3D" parent="." unique_id=232669121]
+stream = ExtResource("6_pi0m5")
 
 [connection signal="body_entered" from="RopeBody" to="RopeBody" method="_on_body_entered"]
 [connection signal="focused" from="RopeBody/Interact_Component" to="RopeBody" method="_on_focus"]

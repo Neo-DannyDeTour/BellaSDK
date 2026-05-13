@@ -1,0 +1,19 @@
+[gd_scene format=3 uid="uid://jvgnyc7a68n6"]
+
+[ext_resource type="Script" uid="uid://ctliepsue23ik" path="res://scripts/soundscape_zone.gd" id="1_74h8o"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_38j8q"]
+resource_local_to_scene = true
+
+[node name="SoundscapeZone" type="Area3D" unique_id=297960288]
+script = ExtResource("1_74h8o")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1628676536]
+shape = SubResource("BoxShape3D_38j8q")
+debug_color = Color(0, 1, 0.43529412, 1)
+
+[node name="AmbientPlayer" type="AudioStreamPlayer" parent="." unique_id=427616135]
+
+[node name="OneShotPlayer" type="AudioStreamPlayer" parent="." unique_id=274425712]
+
+[node name="RandomSoundTimer" type="Timer" parent="." unique_id=1340882841]

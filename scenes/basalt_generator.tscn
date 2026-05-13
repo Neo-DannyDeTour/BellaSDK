@@ -4,4 +4,3 @@
 
 [node name="BasaltGenerator" type="Node3D" unique_id=2106228636]
 script = ExtResource("1_4nyu1")
-min_spacing = null

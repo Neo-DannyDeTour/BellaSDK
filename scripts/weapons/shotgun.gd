@@ -9,6 +9,8 @@ class_name Shotgun
 @export var damage_per_pellet: int = 10
 @export var max_range: float = 50.0
 @export var fire_rate: float = 1.0 # Seconds between shots
+@export var shotgun_fire: AudioStreamPlayer3D
+
 var last_shot_time: float = -1000.0
 
 # Preload the dot so it's ready in memory the moment we shoot
@@ -51,6 +53,11 @@ func shoot(player_camera: Camera3D) -> void:
 		return # Too soon! Abort the function.
 
 	last_shot_time = current_time
+	
+	# --- PLAY FIRE SOUND ---
+	if shotgun_fire:
+		shotgun_fire.play()
+	
 	# 1. Get access to the raw Physics Engine
 	var space_state := get_world_3d().direct_space_state
 

@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="SoundscapeData" format=3 uid="uid://clxrpmynwo16"]
+
+[ext_resource type="Script" uid="uid://cl68g6jurgp0h" path="res://scripts/soundscape_data.gd" id="1_0v4c8"]
+[ext_resource type="AudioStream" uid="uid://bwb4asy3wyt3l" path="res://assets/sounds/SoundscapeStreet.wav" id="1_qw55r"]
+
+[resource]
+script = ExtResource("1_0v4c8")
+ambient_track = ExtResource("1_qw55r")
+metadata/_custom_type_script = "uid://cl68g6jurgp0h"

@@ -129,130 +129,130 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16, 0, 7.7)
 [node name="Column10" parent="Columns" unique_id=1376139792 instance=ExtResource("3_egx04")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 19.18414, 0, 7.7)
 
-[node name="Ladder_2m" parent="." unique_id=2127978841 instance=ExtResource("6_ki5bd")]
+[node name="Ladder_2m" parent="." unique_id=2127978841 groups=["metal"] instance=ExtResource("6_ki5bd")]
 transform = Transform3D(-4.851964e-08, 0, 1.11, 0, 1.11, 0, -1.11, 0, -4.851964e-08, 3, 0.05604756, 2.3454103)
 
 [node name="SecondFloor" type="Node3D" parent="." unique_id=1978912397]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2)
 
-[node name="Floor_Grille_1x1m" parent="SecondFloor" unique_id=554379228 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m" parent="SecondFloor" unique_id=554379228 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 2.5, -2)
 
-[node name="Floor_Grille_1x1m2" parent="SecondFloor" unique_id=1752296467 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m2" parent="SecondFloor" unique_id=1752296467 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, -2)
 
-[node name="Floor_Grille_1x1m3" parent="SecondFloor" unique_id=674469460 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m3" parent="SecondFloor" unique_id=674469460 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 2.5, -2)
 
-[node name="Floor_Grille_1x1m5" parent="SecondFloor" unique_id=849061188 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m5" parent="SecondFloor" unique_id=849061188 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 2.5, -1)
 
-[node name="Floor_Grille_1x1m6" parent="SecondFloor" unique_id=1486534019 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m6" parent="SecondFloor" unique_id=1486534019 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, -1)
 
-[node name="Floor_Grille_1x1m7" parent="SecondFloor" unique_id=826043599 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m7" parent="SecondFloor" unique_id=826043599 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 2.5, -1)
 
-[node name="Floor_Grille_1x1m8" parent="SecondFloor" unique_id=1888763446 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m8" parent="SecondFloor" unique_id=1888763446 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 2.5, -1)
 
-[node name="Floor_Grille_1x1m9" parent="SecondFloor" unique_id=1958634724 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m9" parent="SecondFloor" unique_id=1958634724 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 2.5, 0)
 
-[node name="Floor_Grille_1x1m11" parent="SecondFloor" unique_id=2114287478 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m11" parent="SecondFloor" unique_id=2114287478 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 2.5, 0)
 
-[node name="Floor_Grille_1x1m12" parent="SecondFloor" unique_id=1790809289 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m12" parent="SecondFloor" unique_id=1790809289 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 2.5, 0)
 
-[node name="Floor_Grille_1x1m13" parent="SecondFloor" unique_id=1181209238 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m13" parent="SecondFloor" unique_id=1181209238 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 2.5, 1)
 
-[node name="Floor_Grille_1x1m15" parent="SecondFloor" unique_id=1014486843 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m15" parent="SecondFloor" unique_id=1014486843 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 2.5, 1)
 
-[node name="Floor_Grille_1x1m16" parent="SecondFloor" unique_id=1793227612 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m16" parent="SecondFloor" unique_id=1793227612 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 2.5, 1)
 
-[node name="Floor_Grille_1x1m17" parent="SecondFloor" unique_id=2122738952 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m17" parent="SecondFloor" unique_id=2122738952 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 2.5, 2)
 
-[node name="Floor_Grille_1x1m33" parent="SecondFloor" unique_id=972666591 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m33" parent="SecondFloor" unique_id=972666591 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2.5, 2)
 
-[node name="Floor_Grille_1x1m20" parent="SecondFloor" unique_id=383830972 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m20" parent="SecondFloor" unique_id=383830972 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 2.5, 2)
 
-[node name="Floor_Grille_1x1m21" parent="SecondFloor" unique_id=183706077 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m21" parent="SecondFloor" unique_id=183706077 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 2.5, 3)
 
-[node name="Floor_Grille_1x1m22" parent="SecondFloor" unique_id=148289843 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m22" parent="SecondFloor" unique_id=148289843 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 3)
 
-[node name="Floor_Grille_1x1m23" parent="SecondFloor" unique_id=1330354080 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m23" parent="SecondFloor" unique_id=1330354080 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 2.5, 3)
 
-[node name="Floor_Grille_1x1m24" parent="SecondFloor" unique_id=1150021016 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m24" parent="SecondFloor" unique_id=1150021016 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 2.5, 3)
 
-[node name="Floor_Grille_1x1m25" parent="SecondFloor" unique_id=1503832657 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m25" parent="SecondFloor" unique_id=1503832657 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 2.5, 4)
 
-[node name="Floor_Grille_1x1m30" parent="SecondFloor" unique_id=2123050750 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m30" parent="SecondFloor" unique_id=2123050750 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2.5, 3)
 
-[node name="Floor_Grille_1x1m31" parent="SecondFloor" unique_id=702990215 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m31" parent="SecondFloor" unique_id=702990215 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2.5, 4)
 
-[node name="Floor_Grille_1x1m26" parent="SecondFloor" unique_id=187052010 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m26" parent="SecondFloor" unique_id=187052010 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 4)
 
-[node name="Floor_Grille_1x1m27" parent="SecondFloor" unique_id=2086701363 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m27" parent="SecondFloor" unique_id=2086701363 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 2.5, 4)
 
-[node name="Floor_Grille_1x1m28" parent="SecondFloor" unique_id=1477518494 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m28" parent="SecondFloor" unique_id=1477518494 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 2.5, 4)
 
-[node name="Floor_Grille_1x1m29" parent="SecondFloor" unique_id=2041231834 instance=ExtResource("4_swa3n")]
+[node name="Floor_Grille_1x1m29" parent="SecondFloor" unique_id=2041231834 groups=["metal"] instance=ExtResource("4_swa3n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 2.5, 5)
 
-[node name="Floor_Metal_1x1m2" parent="SecondFloor" unique_id=553914709 instance=ExtResource("5_387by")]
+[node name="Floor_Metal_1x1m2" parent="SecondFloor" unique_id=553914709 groups=["metal"] instance=ExtResource("5_387by")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2.5, 0)
 
-[node name="Floor_Metal_1x1m3" parent="SecondFloor" unique_id=1623447731 instance=ExtResource("5_387by")]
+[node name="Floor_Metal_1x1m3" parent="SecondFloor" unique_id=1623447731 groups=["metal"] instance=ExtResource("5_387by")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2.5, -1)
 
-[node name="Floor_Metal_1x1m4" parent="SecondFloor" unique_id=614830335 instance=ExtResource("5_387by")]
+[node name="Floor_Metal_1x1m4" parent="SecondFloor" unique_id=614830335 groups=["metal"] instance=ExtResource("5_387by")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2.5, -2)
 
-[node name="Floor_Metal_1x1m5" parent="SecondFloor" unique_id=831074138 instance=ExtResource("5_387by")]
+[node name="Floor_Metal_1x1m5" parent="SecondFloor" unique_id=831074138 groups=["metal"] instance=ExtResource("5_387by")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2.5, 1)
 
-[node name="Floor_Metal_1x1m" parent="SecondFloor" unique_id=745162844 instance=ExtResource("5_387by")]
+[node name="Floor_Metal_1x1m" parent="SecondFloor" unique_id=745162844 groups=["metal"] instance=ExtResource("5_387by")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 5)
 
-[node name="Floor_Metal_1x1m6" parent="SecondFloor" unique_id=83029585 instance=ExtResource("5_387by")]
+[node name="Floor_Metal_1x1m6" parent="SecondFloor" unique_id=83029585 groups=["metal"] instance=ExtResource("5_387by")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2.5, 5)
 
-[node name="Floor_Metal_1x1m7" parent="SecondFloor" unique_id=1379458482 instance=ExtResource("5_387by")]
+[node name="Floor_Metal_1x1m7" parent="SecondFloor" unique_id=1379458482 groups=["metal"] instance=ExtResource("5_387by")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 2.5, 5)
 
-[node name="Floor_Metal_1x1m13" parent="SecondFloor" unique_id=1425621395 instance=ExtResource("5_387by")]
+[node name="Floor_Metal_1x1m13" parent="SecondFloor" unique_id=1425621395 groups=["metal"] instance=ExtResource("5_387by")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 2.5, 5)
 
-[node name="Floor_Metal_1x1m8" parent="SecondFloor" unique_id=463753089 instance=ExtResource("5_387by")]
+[node name="Floor_Metal_1x1m8" parent="SecondFloor" unique_id=463753089 groups=["metal"] instance=ExtResource("5_387by")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 2)
 
-[node name="Floor_Metal_1x1m9" parent="SecondFloor" unique_id=2015037278 instance=ExtResource("5_387by")]
+[node name="Floor_Metal_1x1m9" parent="SecondFloor" unique_id=2015037278 groups=["metal"] instance=ExtResource("5_387by")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 1)
 
-[node name="Floor_Metal_1x1m10" parent="SecondFloor" unique_id=1169875444 instance=ExtResource("5_387by")]
+[node name="Floor_Metal_1x1m10" parent="SecondFloor" unique_id=1169875444 groups=["metal"] instance=ExtResource("5_387by")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.5, 0)
 
-[node name="Floor_Metal_1x1m12" parent="SecondFloor" unique_id=1376407435 instance=ExtResource("5_387by")]
+[node name="Floor_Metal_1x1m12" parent="SecondFloor" unique_id=1376407435 groups=["metal"] instance=ExtResource("5_387by")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 2.5, -2)
 
-[node name="Floor_Metal_1x1m11" parent="SecondFloor" unique_id=475847624 instance=ExtResource("5_387by")]
+[node name="Floor_Metal_1x1m11" parent="SecondFloor" unique_id=475847624 groups=["metal"] instance=ExtResource("5_387by")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 2.5, 2)
 
 [node name="Walkway_center" parent="." unique_id=1924020799 instance=ExtResource("7_dtxxv")]

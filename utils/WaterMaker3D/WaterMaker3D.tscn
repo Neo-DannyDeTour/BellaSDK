@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://dtm30dwmcgd8n" path="res://utils/WaterMaker3D/WaterMaker3D.gd" id="2_ejx8y"]
 [ext_resource type="Script" uid="uid://grkqw00wxiwn" path="res://utils/WaterMaker3D/FogVolumeFadeScript.gd" id="3_b5ytn"]
 [ext_resource type="Shader" uid="uid://e5j85108j8s0" path="res://utils/WaterMaker3D/CameraWaterOverlay2.gdshader" id="4_70utq"]
+[ext_resource type="AudioStream" uid="uid://c3gfubvks8j8o" path="res://assets/sounds/WaterSplash.mp3" id="6_266v4"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_70utq"]
 noise_type = 2
@@ -32,6 +33,9 @@ shader_parameter/shallow_color = Color(0.3, 0.54, 0.86, 0.6)
 shader_parameter/deep_color = Color(0, 0.04, 0.16, 1)
 shader_parameter/depth_distance = 2.50000011549012
 shader_parameter/beers_law = 2.0
+shader_parameter/underwater_ceiling_color = Color(0, 0.1, 0.2, 1)
+shader_parameter/underwater_ripple_strength = 3.0
+shader_parameter/impenetrable = false
 shader_parameter/refraction_strength = 0.02
 shader_parameter/foam_color = Color(0.9, 0.95, 1, 1)
 shader_parameter/foam_distance = 0.3
@@ -85,6 +89,8 @@ script = ExtResource("2_ejx8y")
 wave_amplitude = 0.0
 wave_frequency = 0.0
 wave_speed = 0.0
+splash_sound = ExtResource("6_266v4")
+min_splash_velocity = null
 
 [node name="SwimmableArea3D" type="Area3D" parent="." unique_id=1515298068 groups=["water_area"]]
 unique_name_in_owner = true
@@ -119,3 +125,8 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 texture = SubResource("PlaceholderTexture2D_dcd7l")
+
+[node name="SurfaceAudio" type="AudioStreamPlayer3D" parent="." unique_id=590476800]
+unique_name_in_owner = true
+autoplay = true
+max_distance = 10.0

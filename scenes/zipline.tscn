@@ -4,8 +4,10 @@
 [ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://scripts/Interact_Component.gd" id="2_1tsh7"]
 [ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://scripts/highlight_component.gd" id="3_v6pup"]
 [ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://assets/shaders/UnlitOutlineMaterial.gdshader" id="4_um8yc"]
+[ext_resource type="AudioStream" uid="uid://b81edi4tvhu8f" path="res://assets/sounds/Zipline.wav" id="5_um8yc"]
+[ext_resource type="AudioStream" uid="uid://dgnxwid3n7ce3" path="res://assets/sounds/ClimbRope.wav" id="6_6k1gw"]
 
-[sub_resource type="Curve3D" id="Curve3D_v6pup"]
+[sub_resource type="Curve3D" id="Curve3D_6k1gw"]
 resource_local_to_scene = true
 _data = {
 "points": PackedVector3Array(0, 0, 0, 0, 0, 0, -0.5033784, 7.850241, -1.3896141, 0, 0, 0, 0, 0, 0, 0.24442816, -3.2556992, 0.5654783),
@@ -35,7 +37,7 @@ shader_parameter/min_intensity = 0.0
 shader_parameter/max_intensity = 0.5
 
 [node name="Zipline" type="Path3D" unique_id=862410081]
-curve = SubResource("Curve3D_v6pup")
+curve = SubResource("Curve3D_6k1gw")
 script = ExtResource("1_nr4xa")
 metadata/_custom_type_script = "uid://co0yykjjmnb8w"
 
@@ -64,3 +66,9 @@ metadata/_custom_type_script = "uid://dgig0tamvkdxx"
 billboard = 1
 double_sided = false
 no_depth_test = true
+
+[node name="SlideAudio" type="AudioStreamPlayer3D" parent="." unique_id=879196766]
+stream = ExtResource("5_um8yc")
+
+[node name="ClimbAudio" type="AudioStreamPlayer3D" parent="." unique_id=405680289]
+stream = ExtResource("6_6k1gw")

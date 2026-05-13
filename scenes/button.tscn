@@ -5,6 +5,7 @@
 [ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://assets/shaders/UnlitOutlineMaterial.gdshader" id="3_1bdt2"]
 [ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://scripts/highlight_component.gd" id="3_i7y4x"]
 [ext_resource type="PackedScene" uid="uid://c5h1le8vd6lj5" path="res://assets/props/valve/button.fbx" id="5_1bdt2"]
+[ext_resource type="AudioStream" uid="uid://0d4rc3osf2n" path="res://assets/sounds/Button.mp3" id="6_8m7bo"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_1bdt2"]
 render_priority = 0
@@ -25,13 +26,14 @@ shader_parameter/blink_speed = 8.00000038
 shader_parameter/min_intensity = 0.01
 shader_parameter/max_intensity = 0.5
 
-[node name="Button" type="StaticBody3D" unique_id=1567218577 node_paths=PackedStringArray("pressable_part", "mesh_to_highlight")]
+[node name="Button" type="StaticBody3D" unique_id=1567218577 node_paths=PackedStringArray("pressable_part", "mesh_to_highlight", "click_sound")]
 transform = Transform3D(-1, 8.742278e-08, -3.821371e-15, 0, -4.371139e-08, -1, -8.742278e-08, -1, 4.371139e-08, 0, 0, 0)
 collision_layer = 5
 script = ExtResource("1_rhj8v")
 pressable_part = NodePath("Button/button")
 mesh_to_highlight = NodePath("Button/button")
 outline_material = SubResource("ShaderMaterial_1bdt2")
+click_sound = NodePath("AudioStreamPlayer3D")
 
 [node name="Button" parent="." unique_id=2020801330 instance=ExtResource("5_1bdt2")]
 transform = Transform3D(-2, 1.7484555e-07, -7.6427436e-15, -1.7484555e-07, -2, 1.7484555e-07, 7.642742e-15, 1.7484555e-07, 2, 0, 0, 0)
@@ -56,5 +58,8 @@ script = ExtResource("3_i7y4x")
 outline_material = SubResource("ShaderMaterial_8m7bo")
 target_meshes = [NodePath("../Button/button")]
 metadata/_custom_type_script = "uid://dgig0tamvkdxx"
+
+[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="." unique_id=1964384606]
+stream = ExtResource("6_8m7bo")
 
 [editable path="Button"]
