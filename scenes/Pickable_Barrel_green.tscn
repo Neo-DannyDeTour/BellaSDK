@@ -4,10 +4,10 @@
 [ext_resource type="PackedScene" uid="uid://dxjvfecyxxbn5" path="res://assets/VisTEST/2. Modular_Models/Props/barrel_green.tscn" id="2_nag1q"]
 
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_cgl81"]
-height = 1.2
+height = 1.2494141
 radius = 0.45
 
-[node name="PickableObject" unique_id=594279821 node_paths=PackedStringArray("mesh") instance=ExtResource("1_cgl81")]
+[node name="PickableBarrelGreen" unique_id=594279821 node_paths=PackedStringArray("mesh") instance=ExtResource("1_cgl81")]
 mass = 10.0
 mesh = NodePath("Barrel_green")
 held_transparency = 0.75
@@ -16,7 +16,7 @@ held_transparency = 0.75
 visible = false
 
 [node name="CollisionShape3D" parent="." index="3" unique_id=1677444331]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6422119, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6175049, 0)
 shape = SubResource("CylinderShape3D_cgl81")
 
 [node name="Barrel_green" parent="." index="5" unique_id=2129049427 instance=ExtResource("2_nag1q")]

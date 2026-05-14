@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://fxl0fqjgla74"]
 
-[ext_resource type="Script" uid="uid://ccxtu6rccjfsm" path="res://scripts/socket.gd" id="1_rlwot"]
+[ext_resource type="Script" uid="uid://ccxtu6rccjfsm" path="res://scripts/PuzzleSocket.gd" id="1_rlwot"]
 [ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://scripts/Interact_Component.gd" id="2_bme3t"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_bme3t"]

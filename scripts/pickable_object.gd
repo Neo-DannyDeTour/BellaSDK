@@ -23,6 +23,11 @@ class_name PickableObject
 ## How transparent the object gets when held (0.0 = solid, 1.0 = completely invisible)
 @export_range(0.0, 1.0) var held_transparency: float = 0.25
 
+## NEW: The mass at which an object is forced to be held low (e.g., barrels).
+@export var heavy_mass_threshold: float = 10.0
+## NEW: How far down heavy objects are held (0.5 was your old default).
+@export var heavy_y_drop: float = 0.5
+
 var is_held: bool = false
 var hold_target: Marker3D = null
 var holder: Node3D = null
@@ -261,23 +266,38 @@ func _on_interact_component_unfocused() -> void:
 
 func _physics_process(_delta: float) -> void:
 	if is_held and hold_target and holder:
-		var player_pos: Vector3 = holder.global_position
 		var target_pos: Vector3 = hold_target.global_position
 		
 		# 1. APPLY OFFSETS FIRST
-		# Pull closer to face
+		var player_pos: Vector3 = holder.global_position
 		var cam_forward: Vector3 = -holder.cam.global_transform.basis.z
+		
+		# Pull closer to face based on export setting
 		target_pos -= cam_forward * hold_distance_offset
 		
-		# Lower on screen (Base offset)
-		target_pos.y -= 0.5 
+		# --- NEW: ADVANCED MASS MATH ---
+		# 0.0 for things 5kg and under (Valves). 1.0 for 10kg and over (Barrels).
+		var weight_ratio: float = clamp((mass - 5.0) / 5.0, 0.0, 1.0)
 		
-		# --- NEW: LOOK DOWN LOWERING ---
-		# cam_forward.y is 0.0 when looking straight, and approaches -1.0 as you look down.
-		# We add this negative value (multiplied by a strength factor) to push the object lower!
+		# 1. BASE DROP: Heavy items sag down automatically. Light items (0.0) have NO drop.
+		var current_y_drop: float = lerp(0.0, 0.5, weight_ratio)
+		target_pos.y -= current_y_drop 
+		
+		# 2. THE "NO-DIP" LOOK-DOWN LOGIC
+		# By multiplying by weight_ratio, a 5kg object multiplies this by 0.0 (No dip at all!)
+		# A 10kg barrel will multiply by 1.0, pulling it down as you look at your toes.
 		if cam_forward.y < 0.0:
-			target_pos.y += (cam_forward.y * 8.6) # Tweak the 0.6 to make it dip more or less
+			var dip_strength: float = abs(cam_forward.y) * 6.0
+			target_pos.y -= (dip_strength * weight_ratio)
+			
+		# 3. THE UNBREAKABLE CEILING
+		# We base this on your FEET (player_pos.y), NOT the camera.
+		# Light objects can go up to 3 meters (above head). Heavy objects hard-capped at 1.0 meter (waist/chest).
+		var max_allowed_height: float = lerp(player_pos.y + 3.0, player_pos.y + 1.0, weight_ratio)
 		
+		if target_pos.y > max_allowed_height:
+			target_pos.y = max_allowed_height
+			
 		# 2. APPLY CONSTRAINTS (Hula Hoop & Floor)
 		var flat_offset := Vector2(target_pos.x - player_pos.x, target_pos.z - player_pos.z)
 		if flat_offset.length() < 0.8:

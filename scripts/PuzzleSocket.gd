@@ -118,14 +118,17 @@ func plug_in(plug: Node3D) -> void:
 		_on_socket_focused()
 			
 	socket_powered_on.emit()
+	
+	# --- NEW: Tell all targets to turn on! ---
+	for target in targets:
+		if target and target.has_method("power_on"):
+			target.power_on()
 
 func unplug() -> void:
 	if not can_be_unplugged or not is_powered:
 		return
 		
 	is_powered = false
-	
-	# --- THE FIX: Give the player 1 second to pull it away! ---
 	install_cooldown = 1.0 
 	
 	if current_plug is RigidBody3D:
@@ -139,6 +142,11 @@ func unplug() -> void:
 		indicator_light.visible = false
 		
 	socket_powered_off.emit()
+	
+	# --- NEW: Tell all targets to turn off! ---
+	for target in targets:
+		if target and target.has_method("power_off"):
+			target.power_off()
 
 # --- THE MISSING UI LOGIC ---
 func _on_socket_focused() -> void:

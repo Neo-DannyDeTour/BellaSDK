@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://cr3adndxlef4e"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_iyygd"]
+radius = 0.04
+height = 0.2
+
+[node name="CableLink" type="RigidBody3D" unique_id=1773264658]
+mass = 0.1
+linear_damp_mode = 1
+linear_damp = 2.0
+angular_damp_mode = 1
+angular_damp = 3.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=110331895]
+shape = SubResource("CapsuleShape3D_iyygd")
+
+[node name="PinJoint3D" type="PinJoint3D" parent="." unique_id=1238817699]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
