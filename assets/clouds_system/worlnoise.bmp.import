@@ -1,0 +1,30 @@
+[remap]
+
+importer="3d_texture"
+type="CompressedTexture3D"
+uid="uid://csilusd8mcaes"
+path.bptc="res://.godot/imported/worlnoise.bmp-c389da4e7c806b04cd5c6626fa8c0fc2.bptc.ctex3d"
+path.astc="res://.godot/imported/worlnoise.bmp-c389da4e7c806b04cd5c6626fa8c0fc2.astc.ctex3d"
+metadata={
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
+}
+
+[deps]
+
+source_file="res://assets/clouds_system/worlnoise.bmp"
+dest_files=["res://.godot/imported/worlnoise.bmp-c389da4e7c806b04cd5c6626fa8c0fc2.bptc.ctex3d", "res://.godot/imported/worlnoise.bmp-c389da4e7c806b04cd5c6626fa8c0fc2.astc.ctex3d"]
+
+[params]
+
+compress/mode=2
+compress/high_quality=true
+compress/lossy_quality=0.7
+compress/uastc_level=0
+compress/rdo_quality_loss=0.0
+compress/hdr_compression=1
+compress/channel_pack=0
+mipmaps/generate=true
+mipmaps/limit=-1
+slices/horizontal=32
+slices/vertical=1
