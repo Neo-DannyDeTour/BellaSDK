@@ -1,5 +1,7 @@
 <img src="https://github.com/UnrealDanny/BellaSDK/blob/main/Bella_SDK_Logo.svg">
 
+BellaSDK - a modern replacement for Hammer/Source to help noobs quickly start prototyping their next masterpiece instead of wasting valuable months trying to add fucking crouching mechanic!
+
 [COMPILED PROJECT](https://drive.google.com/drive/folders/1EIplMuRXGZBpfP5XdidS_mtlFUrvjh8J?usp=sharing) - will be updated infrequently.
 There you can also find the ASSETS.zip - just unzip it into the main folder
 
@@ -34,4 +36,5 @@ And most importantly: I need your help. Take it, critisize it, send feedback, gi
 
 ------------------
 3D Assets are made by Lucas Manzoni [@luanmanz on Fiverr](https://www.fiverr.com/luanmanz?source=inbox)
+
 Sounds are made by Gerard Velez [@gerard_98 on Fiverr](https://www.fiverr.com/inbox/gerard_98)
