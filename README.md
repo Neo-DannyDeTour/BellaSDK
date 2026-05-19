@@ -34,3 +34,4 @@ And most importantly: I need your help. Take it, critisize it, send feedback, gi
 
 ------------------
 3D Assets are made by Lucas Manzoni [@luanmanz on Fiverr](https://www.fiverr.com/luanmanz?source=inbox)
+Sounds are made by Gerard Velez [@gerard_98 on Fiverr](https://www.fiverr.com/inbox/gerard_98)
