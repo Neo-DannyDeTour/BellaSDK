@@ -193,3 +193,4 @@ void main() {
     density = clamp(density, 0.0, 1.0);
     imageStore(smoke_grid, voxel_pos, vec4(density, 0.0, 0.0, 1.0));
 }
+
