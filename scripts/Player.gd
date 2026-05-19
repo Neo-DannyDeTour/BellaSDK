@@ -79,6 +79,8 @@ static var SURFACE_METAL: StringName = &"metal"
 static var SURFACE_STONE: StringName = &"stone"
 static var SURFACE_WET: StringName = &"wet_dirt"
 
+static var DETACH_MOMENTUM_MULTIPLIER: float = 1.1
+
 var step_timer: float = 0.0
 
 var fullbright_env: Environment
@@ -232,6 +234,7 @@ var zipline_progress: float = 0.0
 var is_zipline_sliding: bool = false
 var is_zipline_transitioning: bool = false
 var zipline_grace_timer: float = 0.0
+var zipline_cooldown: float = 0.0
 
 var ZIPLINE_SLIDE_SPEED: float = 8.0
 var ZIPLINE_HANG_OFFSET: float = 2.0 # Adjust this until your hands line up with the rope
@@ -516,7 +519,10 @@ func _slide_camera_smooth_back_to_origin(delta: float) -> void:
 	stair_offset = move_toward(stair_offset, 0.0, move_amount)
 
 func _physics_process(delta: float) -> void:
-	if is_paused or is_stunned or is_menu_open: # <--- ADDED HERE
+	if zipline_cooldown > 0.0:
+		zipline_cooldown -= delta
+		
+	if is_paused or is_stunned or is_menu_open: 
 		velocity = Vector3.ZERO
 		#move_and_slide()
 		return
@@ -1279,8 +1285,37 @@ func _on_zipline_grabbed(zipline_ref: Node3D, start_pos: Vector3, end_pos: Vecto
 	)
 
 func _on_zipline_released() -> void:
-	if current_zipline and current_zipline.has_method("on_player_released"):
-		current_zipline.on_player_released()
+	# Start the cooldown! (0.5 seconds is usually a sweet spot)
+	zipline_cooldown = 0.5 
+	
+	if current_zipline:
+		var zip_vel: Vector3 = current_zipline.current_travel_velocity
+		
+		# 1. If we hit the absolute end, the cable velocity is 0. 
+		# We guarantee a forward and downward launch!
+		if zip_vel.length() < 2.0:
+			var look_dir := -cam.global_transform.basis.z
+			
+			# --- RENAMED TO avoid CONFUSABLE_LOCAL_DECLARATION ---
+			var launch_flat_fwd := Vector3(look_dir.x, 0.0, look_dir.z).normalized()
+			if launch_flat_fwd.length_squared() < 0.01: 
+				launch_flat_fwd = Vector3.FORWARD
+			# Apply slide speed forward, and half slide speed down
+			zip_vel = (launch_flat_fwd * ZIPLINE_SLIDE_SPEED) + Vector3(0, -ZIPLINE_SLIDE_SPEED * 0.5, 0)
+		
+		velocity = zip_vel * DETACH_MOMENTUM_MULTIPLIER
+		
+		# 2. Sync the kinematic ground variables so momentum transfers perfectly!
+		var flat_vel := Vector3(velocity.x, 0.0, velocity.z)
+		if flat_vel.length() > 0:
+			direction = flat_vel.normalized()
+			current_speed = flat_vel.length()
+			
+		if Input.is_action_just_pressed("jump"):
+			velocity.y += 5.0 
+			
+		if current_zipline.has_method("on_player_released"):
+			current_zipline.on_player_released()
 
 	on_zipline = false
 	current_zipline = null
@@ -1295,7 +1330,7 @@ func _on_zipline_released() -> void:
 	var upright_basis := Basis.looking_at(flat_fwd, Vector3.UP)
 
 	var detach_tween := create_tween().set_parallel(true)
-	detach_tween.tween_property(self , "quaternion", upright_basis.get_rotation_quaternion(), 0.15) \
+	detach_tween.tween_property(self, "quaternion", upright_basis.get_rotation_quaternion(), 0.15) \
 		.set_trans(Tween.TRANS_SINE)
 
 	# Reset camera shake/tilt
@@ -1337,17 +1372,19 @@ func _handle_ground_physics(delta: float, is_truly_grounded: bool) -> void:
 		sprint_active = true
 	else:
 		sprint_active = false
-
+	
+	var speed_lerp: float = lerp_speed if is_on_floor() else air_lerp_speed
+	
 	if sprint_active:
-		current_speed = lerpf(current_speed, sprinting_speed, delta * lerp_speed)
+		current_speed = lerpf(current_speed, sprinting_speed, delta * speed_lerp)
 		walking = false
 		sprinting = true
 	elif is_moving and crouching_collision_shape.disabled == true:
 		# --- NEW: Check if we are lifting something heavy ---
 		if is_heavy_lifting:
-			current_speed = lerpf(current_speed, crouching_speed, delta * lerp_speed)
+			current_speed = lerpf(current_speed, crouching_speed, delta * speed_lerp)
 		else:
-			current_speed = lerpf(current_speed, walking_speed, delta * lerp_speed)
+			current_speed = lerpf(current_speed, walking_speed, delta * speed_lerp)
 		# ----------------------------------------------------
 		walking = true
 		sprinting = false
@@ -1425,16 +1462,18 @@ func _handle_ground_physics(delta: float, is_truly_grounded: bool) -> void:
 
 	# 2. Velocity Application & Deceleration
 	if input_dir != Vector2.ZERO or on_ice:
-		# Player is pressing keys, OR we are gliding on ice! 
-		# By tying velocity directly to the lerping direction, you get a beautiful 
-		# slide effect that applies to both stopping AND wide turns.
 		velocity.x = direction.x * current_speed
 		velocity.z = direction.z * current_speed
 	else:
-		# Player let go of keys on normal ground - Snappy FPS stop
-		velocity.x = move_toward(velocity.x, 0.0, current_speed)
-		velocity.z = move_toward(velocity.z, 0.0, current_speed)
-		direction = Vector3.ZERO
+		if is_on_floor():
+			# Player let go of keys on normal ground - Snappy FPS stop
+			velocity.x = move_toward(velocity.x, 0.0, current_speed)
+			velocity.z = move_toward(velocity.z, 0.0, current_speed)
+			direction = Vector3.ZERO
+		else:
+			# IN THE AIR: Coast and retain momentum!
+			velocity.x = direction.x * current_speed
+			velocity.z = direction.z * current_speed
 		
 	# 3. Kill micro-drifting when completely stopped on ice
 	if on_ice and input_dir == Vector2.ZERO and velocity.length() < 0.2:

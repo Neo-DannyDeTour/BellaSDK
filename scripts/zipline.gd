@@ -16,6 +16,7 @@ var current_player: CharacterBody3D = null
 
 # NEW: We need to track real position changes in case the player's built-in velocity is zero
 var last_player_pos: Vector3 = Vector3.ZERO
+var current_travel_velocity: Vector3 = Vector3.ZERO # NEW: Store this globally for the player to grab
 
 func _ready() -> void:
 	super._ready()
@@ -48,36 +49,29 @@ func _physics_process(delta: float) -> void:
 	if not is_inside_tree() or Engine.is_editor_hint(): return
 	
 	if player_on_zipline and is_instance_valid(current_player):
-		# 1. Update the position of both sounds to follow the player
 		if slide_audio: slide_audio.global_position = current_player.global_position
 		if climb_audio: climb_audio.global_position = current_player.global_position
 		
-		# NEW: Calculate ACTUAL velocity manually based on position change
-		var actual_velocity: Vector3 = (current_player.global_position - last_player_pos) / delta
-		var speed: float = actual_velocity.length()
+		# UPDATED: Use the class-level variable
+		current_travel_velocity = (current_player.global_position - last_player_pos) / delta
+		var speed: float = current_travel_velocity.length()
 		
-		# 2. Check movement state against our manually calculated velocity
 		if speed < 0.5: 
-			# NOT MOVING 
 			if slide_audio and slide_audio.playing: slide_audio.stop()
 			if climb_audio and climb_audio.playing: climb_audio.stop()
 			
-		elif actual_velocity.y < -0.1: 
-			# MOVING DOWN 
+		elif current_travel_velocity.y < -0.1: 
 			if climb_audio and climb_audio.playing: climb_audio.stop()
 			if slide_audio and not slide_audio.playing: slide_audio.play()
 			
-		elif actual_velocity.y > 0.1: 
-			# MOVING UP 
+		elif current_travel_velocity.y > 0.1: 
 			if slide_audio and slide_audio.playing: slide_audio.stop()
 			if climb_audio and not climb_audio.playing: climb_audio.play()
 		
 		else:
-			# HORIZONTAL MOVEMENT
 			if climb_audio and climb_audio.playing: climb_audio.stop()
 			if slide_audio and not slide_audio.playing: slide_audio.play()
 
-		# Update last position for the next frame's calculation
 		last_player_pos = current_player.global_position
 
 	# Label logic remains the same
@@ -117,14 +111,19 @@ func on_player_released() -> void:
 	if highlight_component:
 		highlight_component.suppress(false)
 
+# Inside UniversalCable3D (Zipline) script
+
 func force_grab_zipline(player: CharacterBody3D) -> void:
 	if player_on_zipline: return
+
+	# NEW: Check if the player is currently locked out of grabbing
+	if "zipline_cooldown" in player and player.zipline_cooldown > 0.0:
+		return # Reject the grab attempt!
 
 	if player and player.has_method("_on_zipline_grabbed"):
 		player_on_zipline = true
 		current_player = player 
 		
-		# NEW: Initialize the last_player_pos the exact moment they grab it
 		last_player_pos = current_player.global_position
 		
 		if interact_label:

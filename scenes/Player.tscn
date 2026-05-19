@@ -267,8 +267,6 @@ _data = {
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_34orh"]
 height = 1.2
 
-[sub_resource type="SphereShape3D" id="SphereShape3D_mdl7e"]
-
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_70d11"]
 shader = ExtResource("5_qu4a1")
 shader_parameter/clear_progress = 1.5
@@ -282,6 +280,8 @@ shader_parameter/highlight_punch = 0.02000000095
 shader = ExtResource("6_61ith")
 shader_parameter/drop_intensity = 0.0
 shader_parameter/wash_intensity = 0.0
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_mdl7e"]
 
 [sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_d3wef"]
 streams_count = 3
@@ -396,13 +396,6 @@ transparent = false
 double_sided = false
 texture = ExtResource("7_cw2d6")
 
-[node name="UI" parent="." unique_id=1944889716 groups=["player"] instance=ExtResource("2_k2mo6")]
-
-[node name="WaterDetector" type="Area3D" parent="." unique_id=1554540487]
-
-[node name="CollisionShape3D" type="CollisionShape3D" parent="WaterDetector" unique_id=1446250573]
-shape = SubResource("SphereShape3D_mdl7e")
-
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=336625951]
 
 [node name="WaterRippleOverlay" type="ColorRect" parent="CanvasLayer" unique_id=1942721923]
@@ -421,6 +414,14 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+
+[node name="UI" parent="." unique_id=1944889716 groups=["player"] instance=ExtResource("2_k2mo6")]
+
+[node name="WaterDetector" type="Area3D" parent="." unique_id=1554540487]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="WaterDetector" unique_id=1446250573]
+shape = SubResource("SphereShape3D_mdl7e")
 
 [node name="Audio" type="Node" parent="." unique_id=51504732]
 
