@@ -30,6 +30,14 @@ extends CanvasLayer
 @onready var options_content: VBoxContainer = $Options/VBoxContainer # The container holding Resolution/Sens
 @onready var back_accessibility_button: Button = %BackAccessibilityButton
 
+# --- NEW: FOV SETTINGS ---
+@onready var fov_slider: HSlider = %FOVSlider
+@onready var fov_input: LineEdit = %FOVLine
+@onready var sprint_fov_checkbox: CheckBox = %SprintFovCheckbox
+
+const DEFAULT_FOV: float = 75.0
+const DEFAULT_DISABLE_SPRINT_FOV: bool = false
+
 const RESOLUTIONS: Dictionary = {
 	"1920 x 1080": Vector2i(1920, 1080),
 	"1600 x 900": Vector2i(1600, 900),
@@ -87,6 +95,14 @@ func _ready() -> void:
 	new_game_button.pressed.connect(_on_new_game_pressed) 
 	back_accessibility_button.pressed.connect(_on_back_accessibility_pressed)
 	
+	fov_slider.value_changed.connect(_on_fov_changed)
+	fov_slider.drag_ended.connect(_on_fov_drag_ended)
+	fov_input.text_submitted.connect(_on_fov_input_submitted)
+	fov_input.focus_entered.connect(_on_fov_focus_entered)
+	fov_input.focus_exited.connect(_on_fov_focus_exited)
+	
+	sprint_fov_checkbox.toggled.connect(_on_sprint_fov_toggled)
+	
 	# --- NEW: ACCESSIBILITY SIGNAL BINDING ---
 	# Binding allows us to reuse the same 5 functions for all 3 sliders
 	_connect_adjustment_signals(brightness_slider, brightness_input, "brightness")
@@ -104,6 +120,18 @@ func _ready() -> void:
 		continue_button.hide()
 		restart_button.hide() 
 		new_game_button.text = ""
+		
+	## 3. CONTEXT CHECK: Are we at the Title Screen or in the Game?
+	#if get_parent().has_method("toggle_pause"):
+		## We are IN-GAME
+		#continue_button.show()
+		#restart_button.show() 
+		#new_game_button.hide() # Properly hide instead of erasing text
+	#else:
+		## We are at the TITLE SCREEN
+		#continue_button.hide()
+		#restart_button.hide() 
+		#new_game_button.show()
 	
 	# 4. Set up the UI visibility
 	main_buttons.visible = true
@@ -184,15 +212,34 @@ func _apply_bucket_calibration() -> void:
 	has_calibrated = true
 	var auto_sens: float = DEFAULT_SENSITIVITY
 	
-	if max_mouse_speed > 4000.0:
-		auto_sens = 0.5 
-	elif max_mouse_speed > 1500.0:
-		auto_sens = 0.1
+	# 7-TIER BUCKET SYSTEM (0.05 to 0.70)
+	if max_mouse_speed > 6500.0:
+		auto_sens = 0.70
+		print("Calibrated: TIER 7 - Extreme (Speed: ", max_mouse_speed, ")")
+	elif max_mouse_speed > 5000.0:
+		auto_sens = 0.50
+		print("Calibrated: TIER 6 - Fast (Speed: ", max_mouse_speed, ")")
+	elif max_mouse_speed > 4000.0:
+		auto_sens = 0.40
+		print("Calibrated: TIER 5 - Moderately Fast (Speed: ", max_mouse_speed, ")")
+	elif max_mouse_speed > 3000.0:
+		auto_sens = 0.30
+		print("Calibrated: TIER 4 - Average (Speed: ", max_mouse_speed, ")")
+	elif max_mouse_speed > 2000.0:
+		auto_sens = 0.20
+		print("Calibrated: TIER 3 - Moderately Low (Speed: ", max_mouse_speed, ")")
+	elif max_mouse_speed > 1000.0:
+		auto_sens = 0.10
+		print("Calibrated: TIER 2 - Low (Speed: ", max_mouse_speed, ")")
 	else:
 		auto_sens = 0.05
+		print("Calibrated: TIER 1 - Precise/Arm Aimer (Speed: ", max_mouse_speed, ")")
 
+	# Update the slider (which automatically applies it to the player)
 	sens_slider.value = auto_sens
-	_save_setting_to_disk("mouse_sensitivity", auto_sens) # Updated to use generic saver
+	
+	# Save it to disk so they don't get auto-calibrated again next time
+	_save_setting_to_disk("mouse_sensitivity", auto_sens)
 	
 func _on_exit_pressed() -> void:
 	get_tree().quit()
@@ -327,6 +374,10 @@ func _on_reset_button_pressed() -> void:
 	max_mouse_speed = 0.0   
 	
 	refresh_all_button_labels()
+	
+	# --- Reset FOV ---
+	fov_slider.value = DEFAULT_FOV
+	sprint_fov_checkbox.button_pressed = DEFAULT_DISABLE_SPRINT_FOV
 
 func refresh_all_button_labels() -> void:
 	var container := $ControlsPanel/VBoxContainer
@@ -381,25 +432,40 @@ func load_controls() -> void:
 	contrast_input.text = "%.2f" % contrast_slider.value
 	saturation_input.text = "%.2f" % saturation_slider.value
 	
-	# --- Load Resolution ---
+	# --- Load Resolution (Inside load_controls) ---
 	if config.has_section_key("Settings", "resolution_x") and config.has_section_key("Settings", "resolution_y"):
 		var res_x: int = config.get_value("Settings", "resolution_x")
 		var res_y: int = config.get_value("Settings", "resolution_y")
 		var saved_res := Vector2i(res_x, res_y)
 		
-		DisplayServer.window_set_size(saved_res)
+		# Apply internal render resolution
+		get_window().content_scale_size = saved_res
 		
-		@warning_ignore("integer_division")
-		var screen_center := DisplayServer.screen_get_position() + DisplayServer.screen_get_size() / 2
-		@warning_ignore("integer_division")
-		var window_position := screen_center - saved_res / 2
-		DisplayServer.window_set_position(window_position)
+		# Only apply physical window sizing if we aren't starting in fullscreen
+		var is_fullscreen: bool = get_window().mode == Window.MODE_EXCLUSIVE_FULLSCREEN or get_window().mode == Window.MODE_FULLSCREEN
+		if not is_fullscreen:
+			get_window().mode = Window.MODE_WINDOWED
+			get_window().size = saved_res
+			_center_window(saved_res)
 		
 		var res_string := str(res_x) + " x " + str(res_y)
 		for i in range(resolution_options.get_item_count()):
 			if resolution_options.get_item_text(i) == res_string:
 				resolution_options.select(i)
 				break
+				
+	# --- Load FOV Settings ---
+	fov_slider.value = config.get_value("Settings", "base_fov", DEFAULT_FOV)
+	sprint_fov_checkbox.button_pressed = config.get_value("Settings", "disable_sprint_fov", DEFAULT_DISABLE_SPRINT_FOV)
+	fov_input.text = str(int(fov_slider.value))
+	
+	# Push the loaded values directly to the player
+	var player: Node = get_parent()
+	if player:
+		if "base_fov" in player:
+			player.base_fov = fov_slider.value
+		if "disable_sprint_fov" in player:
+			player.disable_sprint_fov = sprint_fov_checkbox.button_pressed
 			
 func get_action_with_event(new_event: InputEvent) -> String:
 	for action: String in my_actions:
@@ -535,13 +601,67 @@ func _on_resolution_selected(index: int) -> void:
 	var key: String = resolution_options.get_item_text(index)
 	var new_size: Vector2i = RESOLUTIONS[key]
 	
-	DisplayServer.window_set_size(new_size)
+	# 1. Update the INTERNAL render resolution (This is what makes it work in fullscreen)
+	get_window().content_scale_size = new_size
 	
-	@warning_ignore("integer_division")
-	var screen_center := DisplayServer.screen_get_position() + DisplayServer.screen_get_size() / 2
-	@warning_ignore("integer_division")
-	var window_position := screen_center - new_size / 2
-	DisplayServer.window_set_position(window_position)
+	# 2. Check if we are currently in a windowed mode
+	var is_fullscreen: bool = get_window().mode == Window.MODE_EXCLUSIVE_FULLSCREEN or get_window().mode == Window.MODE_FULLSCREEN
+	
+	# 3. Only resize and center the physical window if we are NOT in fullscreen
+	if not is_fullscreen:
+		get_window().size = new_size
+		_center_window(new_size)
 	
 	_save_setting_to_disk("resolution_x", new_size.x)
 	_save_setting_to_disk("resolution_y", new_size.y)
+
+# Helper function to properly center the window on the active monitor
+func _center_window(new_size: Vector2i) -> void:
+	var current_screen: int = get_window().current_screen
+	
+	@warning_ignore("integer_division")
+	var screen_center: Vector2i = DisplayServer.screen_get_position(current_screen) + DisplayServer.screen_get_size(current_screen) / 2
+	
+	@warning_ignore("integer_division")
+	var window_position: Vector2i = screen_center - new_size / 2
+	
+	get_window().position = window_position
+
+# ==========================================
+# FOV & ACCESSIBILITY CAMERA LOGIC
+# ==========================================
+
+func _on_fov_changed(value: float) -> void:
+	if not fov_input.has_focus():
+		fov_input.text = str(int(value))
+
+	var player: Node = get_parent()
+	if player and "base_fov" in player:
+		player.base_fov = value
+
+func _on_fov_drag_ended(value_changed: bool) -> void:
+	if value_changed:
+		_save_setting_to_disk("base_fov", fov_slider.value)
+
+func _on_fov_input_submitted(new_text: String) -> void:
+	# Clamp between 60 (narrow) and 120 (ultrawide)
+	var new_val: float = clamp(new_text.to_float(), 60.0, 120.0) 
+	fov_slider.value = new_val 
+	fov_input.release_focus()
+	_save_setting_to_disk("base_fov", new_val)
+
+func _on_fov_focus_entered() -> void:
+	fov_input.text = ""
+
+func _on_fov_focus_exited() -> void:
+	var current_text := fov_input.text.strip_edges()
+	if current_text == "":
+		fov_input.text = str(int(fov_slider.value))
+	else:
+		_on_fov_input_submitted(current_text)
+
+func _on_sprint_fov_toggled(toggled_on: bool) -> void:
+	_save_setting_to_disk("disable_sprint_fov", toggled_on)
+	var player: Node = get_parent()
+	if player and "disable_sprint_fov" in player:
+		player.disable_sprint_fov = toggled_on

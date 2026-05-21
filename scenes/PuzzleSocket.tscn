@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://ccxtu6rccjfsm" path="res://scripts/PuzzleSocket.gd" id="1_rlwot"]
 [ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://scripts/Interact_Component.gd" id="2_bme3t"]
+[ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://scripts/highlight_component.gd" id="3_ngqtq"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_bme3t"]
 size = Vector3(1, 1, 0.20678711)
@@ -18,23 +19,28 @@ radial_segments = 32
 rings = 0
 
 [node name="Socket" type="Area3D" unique_id=1509623913 node_paths=PackedStringArray("snap_position", "indicator_light")]
+collision_mask = 5
 script = ExtResource("1_rlwot")
+requires_power_link = null
 snap_position = NodePath("Marker3D")
 indicator_light = NodePath("OmniLight3D")
 
 [node name="Marker3D" type="Marker3D" parent="." unique_id=1039557250]
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1266546364]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.09899902)
 shape = SubResource("BoxShape3D_bme3t")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1416615503]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0)
 mesh = SubResource("CylinderMesh_bme3t")
 
+[node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=1137449554]
+light_color = Color(0.029999971, 1, 0.11083323, 1)
+
 [node name="Interact_Component" type="Node" parent="." unique_id=100716333]
 script = ExtResource("2_bme3t")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 
-[node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=1137449554]
-light_color = Color(0.029999971, 1, 0.11083323, 1)
+[node name="HighlightComponent" type="Node" parent="." unique_id=417254049]
+script = ExtResource("3_ngqtq")
+metadata/_custom_type_script = "uid://dgig0tamvkdxx"

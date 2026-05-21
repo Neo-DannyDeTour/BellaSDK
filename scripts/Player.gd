@@ -174,6 +174,7 @@ var noise_time: float = 0.0
 var zoom_fov: float = 10.0
 var fov_change_speed: float = 12.0
 var target_fov: float = base_fov
+var disable_sprint_fov: bool = false
 
 # INTERACT VARS
 var current_interactable: Interact_Component = null
@@ -392,6 +393,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	# --- 2. COMBAT & THROW INPUTS ---
 	if event.is_action_pressed("shoot"):
 		if held_object:
+			if held_object is TetheredPlug:
+				held_object.on_released()
+				
 			var throw_force: float = 12.0
 			var throw_direction: Vector3 = - cam.global_transform.basis.z.normalized()
 			throw_direction.y += 0.2
@@ -736,7 +740,9 @@ func _process(delta: float) -> void:
 
 	if Input.is_action_just_pressed("interact"):
 		if held_object:
-			#remove_collision_exception_with(held_object)
+			if held_object is TetheredPlug:
+				held_object.on_released()
+				
 			held_object.drop()
 			held_object = null
 			if weapon_holder:
@@ -749,7 +755,9 @@ func _process(delta: float) -> void:
 			if parent_node is PickableObject:
 				held_object = parent_node as PickableObject
 				held_object.pick_up(hold_position, self )
-				#add_collision_exception_with(held_object)
+				
+				if held_object is TetheredPlug:
+					held_object.on_grabbed()
 
 				if weapon_holder:
 					weapon_holder.hide()
@@ -768,7 +776,8 @@ func _process(delta: float) -> void:
 	if Input.is_action_pressed("zoom"):
 		target_fov = zoom_fov
 		mouse_sensitivity = mouse_sensitivity_zoom
-	elif is_valid_sprint and not is_swimming:
+	# --- UPDATED: Added the 'and not disable_sprint_fov' check ---
+	elif is_valid_sprint and not is_swimming and not disable_sprint_fov:
 		target_fov = sprint_fov
 		mouse_sensitivity = mouse_sensitivity_base
 	else:
@@ -1394,7 +1403,7 @@ func _handle_ground_physics(delta: float, is_truly_grounded: bool) -> void:
 	if Input.is_action_just_pressed("jump"):
 		# --- NEW: Quick-release the box instead of jumping! ---
 		if is_heavy_lifting and held_object:
-			#remove_collision_exception_with(held_object)
+			if held_object is TetheredPlug: held_object.on_released()
 			held_object.drop()
 		# ------------------------------------------------------
 		elif _try_vault():
@@ -1422,7 +1431,7 @@ func _handle_ground_physics(delta: float, is_truly_grounded: bool) -> void:
 	# --- REFACTORED: Buffered & Coyote Jump Logic ---
 	if jump_buffer_timer > 0.0:
 		if is_heavy_lifting and held_object:
-			#remove_collision_exception_with(held_object) # <--- AND ADD IT HERE
+			if held_object is TetheredPlug: held_object.on_released()
 			held_object.drop()
 			jump_buffer_timer = 0.0 # Consume input
 		elif _try_vault():
@@ -2229,6 +2238,7 @@ func enter_fast_rope() -> void:
 
 	# Drop anything heavy we are holding so it doesn't look weird
 	if is_heavy_lifting and held_object:
+		if held_object is TetheredPlug: held_object.on_released()
 		held_object.drop()
 
 func exit_fast_rope() -> void:

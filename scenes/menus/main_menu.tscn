@@ -243,6 +243,7 @@ grow_vertical = 0
 theme_override_constants/margin_bottom = 50
 
 [node name="MainButtons" type="VBoxContainer" parent="MarginContainer" unique_id=988684812]
+process_mode = 3
 custom_minimum_size = Vector2(300, 350)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -596,7 +597,7 @@ text = "Resolution"
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="FullscreenControl" type="CheckButton" parent="Options/VBoxContainer" unique_id=129794192]
+[node name="FullscreenControl" type="CheckBox" parent="Options/VBoxContainer" unique_id=84963542]
 layout_mode = 2
 theme_override_fonts/font = ExtResource("2_2o76q")
 theme_override_font_sizes/font_size = 32
@@ -790,11 +791,49 @@ max_value = 3.0
 step = 0.01
 value = 1.0
 
+[node name="FOVRow" type="HBoxContainer" parent="AccessibilityPanel/VBoxContainer" unique_id=1997377428]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="AccessibilityPanel/VBoxContainer/FOVRow" unique_id=796633531]
+layout_mode = 2
+text = "FOV"
+
+[node name="FOVLine" type="LineEdit" parent="AccessibilityPanel/VBoxContainer/FOVRow" unique_id=361602091]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="FOVSlider" type="HSlider" parent="AccessibilityPanel/VBoxContainer/FOVRow" unique_id=1134095588]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 10.0
+max_value = 150.0
+value = 75.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="AccessibilityPanel/VBoxContainer" unique_id=166703369]
+layout_mode = 2
+
+[node name="SprintFovCheckbox" type="CheckBox" parent="AccessibilityPanel/VBoxContainer/HBoxContainer" unique_id=1799810779]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Disable Sprint FOV"
+
 [node name="BackAccessibilityButton" type="Button" parent="AccessibilityPanel" unique_id=1101262896]
 unique_name_in_owner = true
-layout_mode = 0
-offset_right = 8.0
-offset_bottom = 8.0
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -22.5
+offset_top = -31.0
+offset_right = 22.5
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_fonts/font = ExtResource("2_2o76q")
+theme_override_font_sizes/font_size = 64
 text = "Back"
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1919384477]

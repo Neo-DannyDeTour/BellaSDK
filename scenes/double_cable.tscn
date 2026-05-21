@@ -1,0 +1,34 @@
+[gd_scene format=3 uid="uid://5pcccugnarba"]
+
+[ext_resource type="PackedScene" uid="uid://dyf7vm72a0cch" path="res://plug.tscn" id="1_uj281"]
+[ext_resource type="Script" uid="uid://wmd8opr5ggk6" path="res://scripts/PhysicsCable3D.gd" id="2_82r2a"]
+[ext_resource type="PackedScene" uid="uid://cr3adndxlef4e" path="res://scenes/cable_link.tscn" id="3_o247q"]
+
+[node name="DoubleCable" type="Node3D" unique_id=1939299263]
+
+[node name="Plug_A" parent="." unique_id=212565744 instance=ExtResource("1_uj281")]
+cable_elasticity = null
+float_force = null
+water_drag = null
+water_angular_drag = null
+hold_distance_offset = null
+held_transparency = null
+heavy_mass_threshold = null
+heavy_y_drop = null
+
+[node name="Plug_B" parent="." unique_id=1795750179 instance=ExtResource("1_uj281")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, 0)
+cable_elasticity = null
+float_force = null
+water_drag = null
+water_angular_drag = null
+hold_distance_offset = null
+held_transparency = null
+heavy_mass_threshold = null
+heavy_y_drop = null
+
+[node name="PhysicsCable" type="Node3D" parent="." unique_id=664439673 node_paths=PackedStringArray("start_anchor", "end_plug")]
+script = ExtResource("2_82r2a")
+start_anchor = NodePath("../Plug_A")
+end_plug = NodePath("../Plug_B")
+link_scene = ExtResource("3_o247q")

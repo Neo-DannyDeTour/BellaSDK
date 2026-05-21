@@ -12,7 +12,6 @@
 [ext_resource type="PackedScene" uid="uid://dbiloclt28h15" path="res://assets/VisTEST/2. Modular_Models/Props/sandbag.tscn" id="10_nv65l"]
 [ext_resource type="PackedScene" uid="uid://cope17rh1w8jq" path="res://assets/VisTEST/2. Modular_Models/Props/roof.tscn" id="10_qbdbd"]
 [ext_resource type="PackedScene" uid="uid://dhbqbvn7ywtt7" path="res://assets/VisTEST/2. Modular_Models/Props/desktop.tscn" id="11_o0bkj"]
-[ext_resource type="PackedScene" uid="uid://cbxynoafnl4fh" path="res://assets/VisTEST/2. Modular_Models/Props/chair_small.tscn" id="12_rvs22"]
 [ext_resource type="PackedScene" uid="uid://c42ysrk8ho87s" path="res://assets/VisTEST/2. Modular_Models/Props/door.tscn" id="13_4xq3w"]
 [ext_resource type="PackedScene" uid="uid://bdny561f5io7k" path="res://assets/VisTEST/2. Modular_Models/Props/beams_18m.tscn" id="14_o0bkj"]
 [ext_resource type="PackedScene" uid="uid://c8uuoccaxotl7" path="res://assets/VisTEST/2. Modular_Models/Props/handrail.tscn" id="15_rvs22"]
@@ -33,7 +32,6 @@
 [ext_resource type="Texture2D" uid="uid://hjtae12r5r6v" path="res://assets/VisTEST/2. Modular_Models/Walls/Walls_Concrete_Holes/Walls_Concrete_Holes_T_Concrete_Holes_Normal.png" id="31_5ywpj"]
 [ext_resource type="Texture2D" uid="uid://dgkssstugiddt" path="res://assets/VisTEST/2. Modular_Models/Walls/Walls_Concrete_Holes/Walls_Concrete_Holes_T_Concrete_Holes_Metallic-T_Concrete_Holes_Roughness.png" id="32_gh7m2"]
 [ext_resource type="PackedScene" uid="uid://c0cvl8ftmnbgv" path="res://assets/VisTEST/2. Modular_Models/Walkway/walkway_right.tscn" id="33_r02c6"]
-[ext_resource type="PackedScene" uid="uid://doye0x78kds5e" path="res://assets/VisTEST/2. Modular_Models/Props/computer_old.tscn" id="34_5ywpj"]
 [ext_resource type="PackedScene" uid="uid://dr5pltmyu223j" path="res://assets/VisTEST/2. Modular_Models/Props/apply_light.tscn" id="35_gh7m2"]
 [ext_resource type="Texture2D" uid="uid://b4mtef0obdnql" path="res://assets/HDR/qwantani_moonrise_puresky_2k.hdr" id="36_6sdu6"]
 [ext_resource type="PackedScene" uid="uid://c4ns10vnlk1hx" path="res://assets/VisTEST/2. Modular_Models/Props/boxs_cables_wall_big.tscn" id="37_kja8q"]
@@ -47,6 +45,8 @@
 [ext_resource type="PackedScene" uid="uid://cre2eqhw64w1f" path="res://assets/VisTEST/2. Modular_Models/Props/scaffolding_structure.tscn" id="45_52h53"]
 [ext_resource type="PackedScene" uid="uid://cf8pnlqxpdri3" path="res://scenes/Pickable_Barrel_red.tscn" id="46_ubk4r"]
 [ext_resource type="Texture2D" uid="uid://dqbpt2iyril23" path="res://assets/VisTEST/2. Modular_Models/Walls/Wall_Fan/Wall_Fan_T_Concrete_BaseColor-T_Concrete_Alpha.png" id="47_6vg87"]
+[ext_resource type="PackedScene" uid="uid://bpn41lsyperm8" path="res://assets/VisTEST/2. Modular_Models/Props/pickable_computer_old.tscn" id="47_mhg1j"]
+[ext_resource type="PackedScene" uid="uid://b85u3svdjg12c" path="res://assets/VisTEST/2. Modular_Models/Props/pickable_chair_small.tscn" id="48_mhg1j"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_kja8q"]
 panorama = ExtResource("36_6sdu6")
@@ -95,7 +95,7 @@ transform = Transform3D(1, 0, 0, 0, -0.92831075, 0.37180543, 0, -0.37180543, -0.
 shadow_enabled = true
 
 [node name="Player" parent="." unique_id=1502339238 instance=ExtResource("6_ns8v3")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.13312268, 3, 5.241954)
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 8.203204, 0.5999999, 0.33588982)
 
 [node name="Columns" type="Node3D" parent="." unique_id=834293260]
 
@@ -851,15 +851,6 @@ transform = Transform3D(-1.3946973e-07, 0, -1, 0, 1, 0, 1.3, 0, -1.07284414e-07,
 
 [node name="Desktop" parent="." unique_id=402484042 instance=ExtResource("11_o0bkj")]
 transform = Transform3D(-6.556708e-08, 0, 1.5, 0, 1.5, 0, -1.5, 0, -6.556708e-08, 9.155037, 0.099999905, -4.5026655)
-
-[node name="Curb2" parent="." unique_id=1397843185 instance=ExtResource("12_rvs22")]
-transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 9.191555, 0.099999905, -3.5991843)
-
-[node name="Curb3" parent="." unique_id=1204066966 instance=ExtResource("12_rvs22")]
-transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 10.376285, 0.099999905, 0.93304515)
-
-[node name="Curb4" parent="." unique_id=2094512757 instance=ExtResource("12_rvs22")]
-transform = Transform3D(0.13886863, 1.493558, 0, -1.493558, 0.13886863, 0, 0, 0, 1.5000002, 10.376285, 0.2890054, 5.542974)
 
 [node name="Door2" parent="." unique_id=1696181094 instance=ExtResource("13_4xq3w")]
 transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, -1.8, 2.2, 4)
@@ -1617,20 +1608,8 @@ shape = SubResource("ConcavePolygonShape3D_ubk4r")
 [node name="Walkway_Right2" parent="." unique_id=136757007 instance=ExtResource("33_r02c6")]
 transform = Transform3D(-1.3113416e-07, 0, 1, 0, 1.2, 0, -3, 0, -4.371139e-08, 16, 0, -5.347)
 
-[node name="Computer_old" parent="." unique_id=655820456 instance=ExtResource("34_5ywpj")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.827341, 1.2249999, -4.3851495)
-
-[node name="Computer_old2" parent="." unique_id=327768226 instance=ExtResource("34_5ywpj")]
-transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 10.719657, 1.225, 3.040649)
-
 [node name="Table3" parent="." unique_id=652175312 instance=ExtResource("10_4xq3w")]
 transform = Transform3D(-6.556708e-08, 0, 1.5, 0, 1.5, 0, -1.5, 0, -6.556708e-08, 17.794891, 0.099999905, 7.098495)
-
-[node name="Computer_old4" parent="." unique_id=1439367095 instance=ExtResource("34_5ywpj")]
-transform = Transform3D(0.14095655, -0.9694197, -0.20088987, -0.98959386, -0.14388993, 8.607167e-08, -0.028906109, 0.19879934, -0.9796139, 18.125662, 1.4628223, 6.966184)
-
-[node name="Computer_old3" parent="." unique_id=338227068 instance=ExtResource("34_5ywpj")]
-transform = Transform3D(0.9659258, 0, -0.25881922, 0, 1, 0, 0.25881922, 0, 0.9659258, 11.433253, 1.225, 4.6870403)
 
 [node name="Lights" type="Node3D" parent="." unique_id=1989465477]
 
@@ -1975,3 +1954,32 @@ transform = Transform3D(-0.87457746, -0.4725532, -0.10866326, 0, 0.22410071, -0.
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=330572922]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.257725, 0.3337083, -8.055398)
 mesh = SubResource("PlaneMesh_ubk4r")
+
+[node name="PickableObject" parent="." unique_id=998803613 instance=ExtResource("48_mhg1j")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.779611, 0.100000024, 1.2330317)
+
+[node name="PickableObject3" parent="." unique_id=777159233 instance=ExtResource("48_mhg1j")]
+transform = Transform3D(-0.6343529, 0, 0.7730436, 0, 1, 0, -0.7730436, 0, -0.6343529, 18.828419, 0.099999905, 5.3362646)
+
+[node name="PickableChairSmall" parent="." unique_id=2036281333 instance=ExtResource("48_mhg1j")]
+transform = Transform3D(0.70710677, 0.70710677, 0, -0.70710677, 0.70710677, 0, 0, 0, 1, 11.373505, 0.53358066, 6.0474205)
+
+[node name="PickableChairSmall2" parent="." unique_id=1133744404 instance=ExtResource("48_mhg1j")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.209952, 0.100000024, -2.901669)
+
+[node name="PickableObject2" parent="." unique_id=449858058 instance=ExtResource("47_mhg1j")]
+transform = Transform3D(-0.0015470906, -0.99999875, 0.0002715692, 0.9849396, -0.0015707447, -0.1728918, 0.17289202, 0, 0.9849408, 17.723475, 1.5510979, 7.0966377)
+
+[node name="PickableObject4" parent="." unique_id=1089681237 instance=ExtResource("47_mhg1j")]
+transform = Transform3D(0.9690589, 0, -0.24682985, 0, 1, 0, 0.24682985, 0, 0.9690589, 11.085868, 1.225, 3.0739083)
+
+[node name="PickableObject5" parent="." unique_id=733427909 instance=ExtResource("47_mhg1j")]
+transform = Transform3D(-0.81328356, 0, 0.58186746, 0, 1, 0, -0.58186746, 0, -0.81328356, 10.8490095, 1.2249999, 4.543701)
+
+[node name="Label3D2" type="Label3D" parent="." unique_id=1734334926]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.391062, 9.684599, 1.9035821)
+billboard = 1
+double_sided = false
+text = "Yes, you can break the game here. Congrats.
+Metrics and item placement is a lot harder than I thought.
+Are you happy now?"

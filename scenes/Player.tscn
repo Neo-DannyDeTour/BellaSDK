@@ -310,7 +310,8 @@ stream_2/stream = ExtResource("17_ebwui")
 
 [node name="Player" type="CharacterBody3D" unique_id=1502339238 node_paths=PackedStringArray("player_ui", "footstep_audio_default", "footstep_audio_metal", "footstep_audio_stone", "footstep_audio_wet_dirt") groups=["player"]]
 process_mode = 3
-collision_mask = 7
+collision_layer = 2
+collision_mask = 3
 script = ExtResource("1_34orh")
 player_ui = NodePath("UI")
 footstep_audio_default = NodePath("Audio/FootstepDefaultAudio")

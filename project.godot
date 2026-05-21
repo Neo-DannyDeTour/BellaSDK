@@ -34,7 +34,7 @@ gdscript/warnings/untyped_declaration=2
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
-window/stretch/mode="canvas_items"
+window/stretch/mode="viewport"
 
 [dotnet]
 
@@ -129,10 +129,11 @@ exit={
 
 [layer_names]
 
-3d_render/layer_1="Player"
+3d_render/layer_1="Environment"
+3d_render/layer_2="Player"
 3d_render/layer_3="Interactive"
-3d_physics/layer_1="Player"
-3d_physics/layer_2="Environment"
+3d_physics/layer_1="Environment"
+3d_physics/layer_2="Player"
 3d_physics/layer_3="Interactive"
 
 [physics]

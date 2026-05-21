@@ -4,13 +4,8 @@
 radius = 0.04
 height = 0.2
 
-[sub_resource type="CapsuleMesh" id="CapsuleMesh_ie54b"]
-radius = 0.02
-height = 0.25
-radial_segments = 8
-rings = 0
-
 [node name="CableLink" type="RigidBody3D" unique_id=1773264658]
+collision_layer = 4
 mass = 0.1
 linear_damp_mode = 1
 linear_damp = 2.0
@@ -20,8 +15,3 @@ angular_damp = 3.0
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=110331895]
 transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0)
 shape = SubResource("CapsuleShape3D_iyygd")
-
-[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=2000108984]
-transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0)
-gi_mode = 0
-mesh = SubResource("CapsuleMesh_ie54b")

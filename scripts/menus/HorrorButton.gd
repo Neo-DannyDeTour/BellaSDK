@@ -1,5 +1,8 @@
 extends Button
 
+# --- GLOBAL AI CONFIGURATION ---
+static var active_horror_buttons: int = 0
+
 # --- BUTTON CONFIGURATION ---
 @export var hover_scale := Vector2(1.08, 1.08)
 @export var response_speed := 12.0
@@ -59,6 +62,7 @@ var is_glitching := false
 var can_glitch := false
 
 func _ready() -> void:
+	active_horror_buttons += 1
 	flat = true 
 
 	var empty_style := StyleBoxEmpty.new()
@@ -68,6 +72,7 @@ func _ready() -> void:
 	add_theme_stylebox_override("disabled", empty_style)
 	add_theme_stylebox_override("focus", empty_style)
 
+	# Use Godot 4's global randomization
 	randomize()
 	pivot_offset = size / 2.0
 	original_scale = scale
@@ -78,6 +83,10 @@ func _ready() -> void:
 	glitch_timer = randf_range(min_glitch_time, max_glitch_time)
 
 	for child in get_children():
+		# FIX 1: Prevent children from stealing the mouse events from the Button
+		if child is Control:
+			child.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			
 		if child is Label:
 			text_label = child
 		elif child is ColorRect and child.name == "Border":
@@ -92,8 +101,6 @@ func _ready() -> void:
 		bg_material.set_shader_parameter("hover_intensity", 0.0)
 		bg_material.set_shader_parameter("rect_size", size)
 		bg_material.set_shader_parameter("blood_offset", Vector2(randf_range(0.0, 100.0), randf_range(0.0, 100.0)))
-		
-		# --- ADD THIS LINE TO SEND THE FLASHLIGHT TEXTURE ---
 		bg_material.set_shader_parameter("custom_light_texture", flashlight_texture)
 		
 		if background_images.size() > 0:
@@ -118,9 +125,18 @@ func _ready() -> void:
 	if text != "" and text_label != null:
 		text_label.text = text
 		original_button_text = text
+		
+		# --- FIX: Prevent Container Crush ---
+		# Lock in the minimum size before clearing the text so 
+		# VBox/HBox containers don't crush the button to 0 pixels.
+		if custom_minimum_size == Vector2.ZERO:
+			custom_minimum_size = get_minimum_size()
+			
 		text = ""
 	elif text_label != null:
 		original_button_text = text_label.text
+		if custom_minimum_size == Vector2.ZERO:
+			custom_minimum_size = text_label.get_minimum_size()
 
 	can_glitch = (glitch_text != "")
 
@@ -180,8 +196,13 @@ func _on_mouse_exited() -> void:
 		pace_timers[i] = 0.0
 
 func _process(delta: float) -> void:
-	var target_rotation := 0.0
+	# Halt process until Godot's container system actually gives the button a size.
+	# Prevents math from dividing by 0 and breaking the vectors permanently.
+	if size.x <= 0.1 or size.y <= 0.1:
+		return
 
+	var target_rotation := 0.0
+	
 	var mouse_pos := get_local_mouse_position()
 	var center_x := size.x / 2.0
 	var center_y := size.y / 2.0
@@ -236,12 +257,10 @@ func _process(delta: float) -> void:
 		
 	current_tilt = current_tilt.lerp(tilt_target, response_speed * delta)
 	
-	# --- FEED DATA TO YOUR BACKGROUND SHADER ---
 	if bg_rect and bg_material:
 		bg_material.set_shader_parameter("hover_intensity", current_hover_intensity)
 		bg_material.set_shader_parameter("ui_tilt", current_tilt * current_hover_intensity)
 		
-		# Calculate exactly where the mouse is over the button and send it to your shader's flashlight logic
 		var local_mouse_pos := bg_rect.get_local_mouse_position()
 		var mouse_uv := Vector2(local_mouse_pos.x / bg_rect.size.x, local_mouse_pos.y / bg_rect.size.y)
 		bg_material.set_shader_parameter("mouse_pos_uv", mouse_uv)

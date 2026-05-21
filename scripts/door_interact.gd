@@ -23,15 +23,17 @@ func _ready() -> void:
 	if power_component:
 		is_powered_door = true
 		power_component.required_power = self.required_power
-		power_component.powered_on.connect(_on_powered_on)
-		power_component.powered_off.connect(_on_powered_off)
+		# --- THE FIX: Point these to our renamed functions below ---
+		power_component.powered_on.connect(power_on)
+		power_component.powered_off.connect(power_off)
 
 # --- PUZZLE LOGIC ---
-func _on_powered_on() -> void:
+# --- THE FIX: We removed the "_on_" so the Socket can call these directly! ---
+func power_on() -> void:
 	# We bypass the toggle_open() cooldown so puzzle buttons feel instantly responsive!
 	open = true
 
-func _on_powered_off() -> void:
+func power_off() -> void:
 	open = false
 
 # --- ANIMATION LOGIC ---

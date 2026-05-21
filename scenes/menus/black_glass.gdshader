@@ -73,7 +73,7 @@ void fragment() {
     // --- UPDATED FLASHLIGHT LOGIC ---
     // Calculate UVs to map your custom flashlight image around the mouse pointer
     // --- UPDATED FLASHLIGHT LOGIC ---
-    vec2 light_uv = (aspect_uv - aspect_mouse) / reveal_radius;
+    vec2 light_uv = (aspect_uv - aspect_mouse) / max(reveal_radius, 0.001);
     light_uv = (light_uv * 0.5) + 0.5; 
     
     float reveal_mask = 0.0;

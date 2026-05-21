@@ -61,6 +61,9 @@ var _proc_mat: ParticleProcessMaterial
 var _draw_mesh: QuadMesh
 var _shader_mat: ShaderMaterial
 
+# Godot 4 static variable: 2 = Layer 2. (Use 4 for Layer 3, 8 for Layer 4, etc.)
+static var player_collision_mask: int = 2
+
 const RAIN_SHADER_CODE = """
 shader_type spatial;
 // Removed depth_draw_never so it sorts properly, changed to unshaded for speed
@@ -229,7 +232,7 @@ func _setup_auto_volume() -> void:
 	var rain_area := Area3D.new()
 	# Collision Layer 0 (detects nothing by default), Mask 1 (detects Player)
 	rain_area.collision_layer = 0 
-	rain_area.collision_mask = 1
+	rain_area.collision_mask = player_collision_mask
 	add_child(rain_area)
 	
 	var shape_node := CollisionShape3D.new()

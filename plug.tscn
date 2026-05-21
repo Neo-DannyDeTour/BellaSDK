@@ -1,8 +1,9 @@
 [gd_scene format=3 uid="uid://dyf7vm72a0cch"]
 
-[ext_resource type="Script" uid="uid://qlsciv0xkovb" path="res://scripts/TetheredPlug.gd.gd" id="1_fjqrt"]
+[ext_resource type="Script" uid="uid://qlsciv0xkovb" path="res://scripts/TetheredPlug.gd" id="1_fjqrt"]
 [ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://scripts/Interact_Component.gd" id="2_h4h36"]
 [ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://scripts/highlight_component.gd" id="3_4jngg"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://assets/shaders/UnlitOutlineMaterial.gdshader" id="4_4jngg"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_5w8tk"]
 size = Vector3(0.5, 0.5, 0.5)
@@ -14,9 +15,19 @@ albedo_color = Color(0.5085073, 1, 0, 1)
 material = SubResource("StandardMaterial3D_h4h36")
 size = Vector3(0.5, 0.5, 0.5)
 
-[node name="Plug" type="RigidBody3D" unique_id=212565744 node_paths=PackedStringArray("interact_comp", "mesh", "label")]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_a0kgb"]
+render_priority = 0
+shader = ExtResource("4_4jngg")
+shader_parameter/highlight_color = Color(0.6666667, 0.76862746, 0.9882353, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.050000002375
+
+[node name="Plug" type="RigidBody3D" unique_id=212565744 node_paths=PackedStringArray("snap_marker", "interact_comp", "mesh", "label")]
+collision_layer = 4
 mass = 3.0
 script = ExtResource("1_fjqrt")
+snap_marker = NodePath("SnapMarker")
 interact_comp = NodePath("Interact_Component")
 mesh = NodePath("MeshInstance3D")
 label = NodePath("Label3D")
@@ -33,9 +44,13 @@ metadata/_custom_type_script = "uid://cqawbvidns1th"
 
 [node name="HighlightComponent" type="Node" parent="." unique_id=388521927]
 script = ExtResource("3_4jngg")
+outline_material = SubResource("ShaderMaterial_a0kgb")
 metadata/_custom_type_script = "uid://dgig0tamvkdxx"
 
 [node name="Label3D" type="Label3D" parent="." unique_id=435385800]
 billboard = 1
 double_sided = false
 no_depth_test = true
+
+[node name="SnapMarker" type="Marker3D" parent="." unique_id=2042180164]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.25)
