@@ -172,3 +172,7 @@ normals={
 "type": "sampler2DArray",
 "value": ""
 }
+global_player_pos={
+"type": "vec3",
+"value": Vector3(0, 0, 0)
+}

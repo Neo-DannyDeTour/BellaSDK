@@ -79,6 +79,8 @@ var has_calibrated: bool = false
 const CHAPTER_SCREEN = preload("res://scenes/ChapterScreen.tscn")
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	
 	_populate_resolution_dropdown()
 	resolution_options.item_selected.connect(_on_resolution_selected)
 	
@@ -300,7 +302,7 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 			
-		# 2. If a menu panel is opevar is_menu_open: bool = main_buttons.visible or options.visible or controls_panel.visible or accessibility_panel.visiblen, close it!
+		# 2. If a menu panel is open, close it!
 		if controls_panel.visible:
 			_on_back_controls_pressed()
 			get_viewport().set_input_as_handled()
@@ -311,6 +313,7 @@ func _input(event: InputEvent) -> void:
 			_on_back_pressed()
 			get_viewport().set_input_as_handled()
 		elif main_buttons.visible and get_parent().has_method("toggle_pause"):
+			# This triggers when you are at the main menu and press ESC
 			_on_resume_pressed()
 			get_viewport().set_input_as_handled()
 

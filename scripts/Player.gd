@@ -373,6 +373,10 @@ func _ready() -> void:
 	fullbright_env.glow_enabled = false
 	
 func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("ui_cancel"):
+		toggle_pause()
+		return # Stop reading this specific input so we don't accidentally do anything else
+		
 	if is_paused or is_menu_open:
 		return
 
@@ -663,18 +667,21 @@ func _physics_process(delta: float) -> void:
 	else:
 		# Reset the timer when stopped so the first step plays immediately
 		step_timer = 0.0
-		
+	
+	# Send the player's current location to the graphics card
+	RenderingServer.global_shader_parameter_set("global_player_pos", global_position)
+	
 func _process(delta: float) -> void:
-	if Input.is_action_just_pressed("ui_cancel"):
-		toggle_pause()
+	#if Input.is_action_just_pressed("ui_cancel"):
+		#toggle_pause()
 
-	if is_paused or is_menu_open: # <--- ADDED HERE
+	if is_paused or is_menu_open:
 		return
 	
 	_handle_rain_drops(delta)
 	
 	if is_in_terminal_mode:
-		# --- NEW: Exit if the player starts moving with WASD ---
+		# --- Exit if the player starts moving with WASD ---
 		# Replace these strings with your actual movement Input Map names!
 		if Input.is_action_pressed("forward") or Input.is_action_pressed("backward") or \
 		   Input.is_action_pressed("left") or Input.is_action_pressed("right"):

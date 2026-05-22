@@ -39,6 +39,9 @@ var _is_reading_back: bool = false
 
 var _last_cam_pos: Vector3 = Vector3.ZERO
 
+static var player_target: Node3D = null
+static var max_sim_distance: float = 200.0
+
 # ==========================================
 # 1. VISUALS (Colors & Glow)
 # ==========================================
@@ -148,10 +151,15 @@ func _process(delta: float) -> void:
 	if cam:
 		var cam_speed := _last_cam_pos.distance_to(cam.global_position) / delta
 		_last_cam_pos = cam.global_position
-		
-		# If flying faster than 100 meters per second, pause the ocean!
 		if cam_speed > 100.0:
 			return 
+			
+	# --- Distance Culling ---
+	if player_target:
+		# Stop sending compute commands if we are too far away
+		if global_position.distance_to(player_target.global_position) > max_sim_distance:
+			return
+			
 	# ---------------------------------------
 	
 	just_calculated_water = false
