@@ -1,6 +1,6 @@
 @tool
 extends Node3D
-class_name DevHologramTool # This makes it a globally recognized component in your project!
+class_name DevHologramTool  # This makes it a globally recognized component in your project!
 
 @export_group("Node Connections")
 # By exporting the Nodes, this script no longer cares what they are named in the scene tree!
@@ -8,7 +8,7 @@ class_name DevHologramTool # This makes it a globally recognized component in yo
 	set(value):
 		target_mesh = value
 		_update_visuals()
-		
+
 @export var target_label: Label3D:
 	set(value):
 		target_label = value
@@ -19,7 +19,7 @@ class_name DevHologramTool # This makes it a globally recognized component in yo
 	set(value):
 		label_text = value
 		_update_visuals()
-		
+
 @export var line_color: Color = Color.GREEN:
 	set(value):
 		line_color = value
@@ -50,8 +50,10 @@ class_name DevHologramTool # This makes it a globally recognized component in yo
 		glow_multiplier = value
 		_update_visuals()
 
+
 func _ready() -> void:
 	_update_visuals()
+
 
 func _update_visuals() -> void:
 	# 1. Update the Mesh (if one is connected)
@@ -62,7 +64,7 @@ func _update_visuals() -> void:
 		target_mesh.set_instance_shader_parameter("line_count", line_count)
 		target_mesh.set_instance_shader_parameter("line_thickness", line_thickness)
 		target_mesh.set_instance_shader_parameter("glow_multiplier", glow_multiplier)
-		
+
 	# 2. Update the Label (if one is connected)
 	if target_label:
 		target_label.text = label_text

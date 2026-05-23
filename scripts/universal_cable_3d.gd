@@ -1,13 +1,14 @@
 @tool
 extends Path3D
-class_name UniversalCable3D # <-- This puts it in your "Add Node" menu!
+class_name UniversalCable3D  # <-- This puts it in your "Add Node" menu!
+
 
 func _ready() -> void:
 	if not curve:
 		curve = Curve3D.new()
 		curve.add_point(Vector3.ZERO)
 		curve.add_point(Vector3(0, -3.0, 0))
-		
+
 	# --- NEW: THE RESOURCE DECOUPLER ---
 	# Forces Godot to make this curve completely unique so ropes don't share dots!
 	curve = curve.duplicate()
@@ -15,11 +16,13 @@ func _ready() -> void:
 	# Hook directly into Godot's curve editor
 	if not curve.changed.is_connected(_update_cable):
 		curve.changed.connect(_update_cable)
-		
+
 	_update_cable()
 
+
 func _update_cable() -> void:
-	if not curve or curve.get_point_count() < 2: return
+	if not curve or curve.get_point_count() < 2:
+		return
 
 	# 1. The Foolproof 2-Point Lock
 	while curve.get_point_count() > 2:
@@ -43,9 +46,10 @@ func _update_cable() -> void:
 
 	# 4. Shape the Mesh
 	if mesh_node:
-		if not mesh_node.mesh is CylinderMesh: mesh_node.mesh = CylinderMesh.new()
+		if not mesh_node.mesh is CylinderMesh:
+			mesh_node.mesh = CylinderMesh.new()
 		mesh_node.mesh.height = distance
-		mesh_node.mesh.top_radius = 0.05 # Rope thickness
+		mesh_node.mesh.top_radius = 0.05  # Rope thickness
 		mesh_node.mesh.bottom_radius = 0.05
 
 		mesh_node.global_position = global_center
@@ -54,17 +58,21 @@ func _update_cable() -> void:
 
 	# 5. Shape the Collision to match exactly
 	if col_node:
-		if not col_node.shape is CylinderShape3D: col_node.shape = CylinderShape3D.new()
+		if not col_node.shape is CylinderShape3D:
+			col_node.shape = CylinderShape3D.new()
 		col_node.shape.height = distance
 		col_node.shape.radius = 0.05
-		
+
 		if mesh_node:
 			col_node.global_transform = mesh_node.global_transform
+
 
 # The Secret Sauce: Recursively digs through children to find what it needs
 func _get_first_node_of_type(parent: Node, type_name: String) -> Node:
 	for child in parent.get_children():
-		if child.is_class(type_name): return child
+		if child.is_class(type_name):
+			return child
 		var found := _get_first_node_of_type(child, type_name)
-		if found: return found
-	return null	
+		if found:
+			return found
+	return null

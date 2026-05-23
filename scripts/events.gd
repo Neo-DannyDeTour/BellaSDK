@@ -45,25 +45,27 @@ signal font_changed(font_name: String)
 # --- FONT SWAPPING LOGIC ---
 var fonts: Dictionary[String, Font] = {}
 
+
 func _ready() -> void:
 	font_changed.connect(_on_font_changed)
-	
-	# Load all your fonts into the dictionary. 
+
+	# Load all your fonts into the dictionary.
 	# CRITICAL: Make sure these file extensions and paths match your actual files!
 	fonts["dyslexic"] = preload("res://assets/fonts/opendyslexic-0.92/OpenDyslexic-Regular.otf")
 	fonts["papyrus"] = preload("res://assets/fonts/papyrus-font/papyrus.ttf")
 	fonts["comic"] = preload("res://assets/fonts/Comic Sans MS.ttf")
-	
+
 	# Save Godot's built-in font as "default" so you can always go back
 	fonts["default"] = ThemeDB.fallback_font
+
 
 func _on_font_changed(font_name: String) -> void:
 	if fonts.has(font_name):
 		# We explicitly state this is a Font, and cast the dictionary item 'as Font'
 		var target_font: Font = fonts[font_name] as Font
-		
+
 		# 1. Update all standard UI
 		ThemeDB.fallback_font = target_font
-		
+
 		# 2. Update all 3D Text
 		get_tree().call_group("3d_text", "set", "font", target_font)

@@ -1,11 +1,12 @@
 extends Area3D
 
-@export var trigger_once  : bool   = true
+@export var trigger_once: bool = true
 
-@onready var overlay  : ColorRect      = $CanvasLayer/ColorRect
-@onready var anim     : AnimationPlayer = $CanvasLayer/ColorRect/AnimationPlayer
+@onready var overlay: ColorRect = $CanvasLayer/ColorRect
+@onready var anim: AnimationPlayer = $CanvasLayer/ColorRect/AnimationPlayer
 
-var triggered : bool = false
+var triggered: bool = false
+
 
 func _on_body_entered(body: Node3D) -> void:
 	if not body.is_in_group("player"):

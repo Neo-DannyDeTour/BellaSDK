@@ -3,6 +3,7 @@ extends StaticBody3D
 
 var is_open := false
 
+
 func interact() -> void:
 	if is_open:
 		print("Closing Door")

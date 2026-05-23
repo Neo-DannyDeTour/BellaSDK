@@ -13,14 +13,14 @@ static var active_horror_buttons: int = 0
 @export var press_speed := 20.0
 
 # --- BACKGROUND CONFIGURATION ---
-@export var background_images: Array[Texture2D] = [] 
+@export var background_images: Array[Texture2D] = []
 
 # --- SHADOW AI CONFIGURATION ---
 @export var walk_speed := 0.2
 @export var hunt_speed := 6.0
 
 # --- GLITCH CONFIGURATION ---
-@export var glitch_text := "" 
+@export var glitch_text := ""
 @export var glitch_duration := 0.666
 @export var min_glitch_time := 15.0
 @export var max_glitch_time := 20.0
@@ -61,9 +61,10 @@ var glitch_timer := 0.0
 var is_glitching := false
 var can_glitch := false
 
+
 func _ready() -> void:
 	active_horror_buttons += 1
-	flat = true 
+	flat = true
 
 	var empty_style := StyleBoxEmpty.new()
 	add_theme_stylebox_override("normal", empty_style)
@@ -86,7 +87,7 @@ func _ready() -> void:
 		# FIX 1: Prevent children from stealing the mouse events from the Button
 		if child is Control:
 			child.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			
+
 		if child is Label:
 			text_label = child
 		elif child is ColorRect and child.name == "Border":
@@ -102,7 +103,7 @@ func _ready() -> void:
 		bg_material.set_shader_parameter("rect_size", size)
 		bg_material.set_shader_parameter("blood_offset", Vector2(randf_range(0.0, 100.0), randf_range(0.0, 100.0)))
 		bg_material.set_shader_parameter("custom_light_texture", flashlight_texture)
-		
+
 		if background_images.size() > 0:
 			var random_index: int = randi() % background_images.size()
 			bg_material.set_shader_parameter("blood_texture", background_images[random_index])
@@ -125,13 +126,13 @@ func _ready() -> void:
 	if text != "" and text_label != null:
 		text_label.text = text
 		original_button_text = text
-		
+
 		# --- FIX: Prevent Container Crush ---
-		# Lock in the minimum size before clearing the text so 
+		# Lock in the minimum size before clearing the text so
 		# VBox/HBox containers don't crush the button to 0 pixels.
 		if custom_minimum_size == Vector2.ZERO:
 			custom_minimum_size = get_minimum_size()
-			
+
 		text = ""
 	elif text_label != null:
 		original_button_text = text_label.text
@@ -155,6 +156,7 @@ func _ready() -> void:
 	mouse_exited.connect(_on_mouse_exited)
 	resized.connect(_on_resized)
 
+
 func _on_resized() -> void:
 	pivot_offset = size / 2.0
 
@@ -168,25 +170,32 @@ func _on_resized() -> void:
 	if border_rect:
 		border_rect.set_deferred("size", size)
 
-	if bg_material: bg_material.set_shader_parameter("rect_size", size)
-	if border_material: border_material.set_shader_parameter("rect_size", size)
-	if label_material: label_material.set_shader_parameter("rect_size", size)
+	if bg_material:
+		bg_material.set_shader_parameter("rect_size", size)
+	if border_material:
+		border_material.set_shader_parameter("rect_size", size)
+	if label_material:
+		label_material.set_shader_parameter("rect_size", size)
+
 
 func _on_mouse_entered() -> void:
 	is_mouse_over = true
-	
+
 	if bg_material:
 		current_hover_intensity = 1.0
 		if shine_tween and shine_tween.is_valid():
 			shine_tween.kill()
 		shine_tween = create_tween()
 		bg_material.set_shader_parameter("sweep_progress", -0.3)
-		shine_tween.tween_method(
-			func(val: float) -> void: bg_material.set_shader_parameter("sweep_progress", val), 
-			-0.3, 
-			1.8, 
-			0.6 
-		).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		(
+			shine_tween
+			. tween_method(
+				func(val: float) -> void: bg_material.set_shader_parameter("sweep_progress", val), -0.3, 1.8, 0.6
+			)
+			. set_trans(Tween.TRANS_SINE)
+			. set_ease(Tween.EASE_IN_OUT)
+		)
+
 
 func _on_mouse_exited() -> void:
 	is_mouse_over = false
@@ -195,6 +204,7 @@ func _on_mouse_exited() -> void:
 	for i in 2:
 		pace_timers[i] = 0.0
 
+
 func _process(delta: float) -> void:
 	# Halt process until Godot's container system actually gives the button a size.
 	# Prevents math from dividing by 0 and breaking the vectors permanently.
@@ -202,7 +212,7 @@ func _process(delta: float) -> void:
 		return
 
 	var target_rotation := 0.0
-	
+
 	var mouse_pos := get_local_mouse_position()
 	var center_x := size.x / 2.0
 	var center_y := size.y / 2.0
@@ -220,59 +230,59 @@ func _process(delta: float) -> void:
 
 			if text_label:
 				var target_text_pos := Vector2(-normalized_x, -normalized_y) * parallax_intensity
-				target_text_pos.y += press_depth 
+				target_text_pos.y += press_depth
 				text_label.position = text_label.position.lerp(target_text_pos, press_speed * delta)
 				text_label.scale = text_label.scale.lerp(Vector2(1.0, 1.0), press_speed * delta)
 		else:
-			var pitch_scale_modifier : float = 1.0 - (abs(normalized_y) * 0.04) 
+			var pitch_scale_modifier: float = 1.0 - (abs(normalized_y) * 0.04)
 			var final_target_scale := hover_scale * Vector2(1.0, pitch_scale_modifier)
 			scale = scale.lerp(final_target_scale, response_speed * delta)
-			
+
 			if text_label:
 				var target_text_pos := Vector2(-normalized_x, -normalized_y) * parallax_intensity
 				text_label.position = text_label.position.lerp(target_text_pos, response_speed * delta)
-				
+
 				var time_sec := Time.get_ticks_msec() / 1000.0
 				var pulse := pow(sin(time_sec * pulse_speed), 4.0)
 				var current_text_scale := 1.0 + (pulse * pulse_intensity)
 				text_label.scale = Vector2(current_text_scale, current_text_scale)
-			
+
 	else:
 		current_hover_intensity = move_toward(current_hover_intensity, 0.0, 3.0 * delta)
 		scale = scale.lerp(original_scale, response_speed * delta)
 		target_rotation = 0.0
-		
+
 		if text_label:
 			text_label.position = text_label.position.lerp(Vector2.ZERO, response_speed * delta)
 			text_label.scale = text_label.scale.lerp(Vector2(1.0, 1.0), response_speed * delta)
 
 	rotation = lerpf(rotation, target_rotation, response_speed * delta)
-	
+
 	var tilt_target := Vector2.ZERO
 
 	if is_mouse_over:
 		var normalized_x := clampf((mouse_pos.x - center_x) / center_x, -1.0, 1.0)
 		var normalized_y := clampf((mouse_pos.y - center_y) / center_y, -1.0, 1.0)
 		tilt_target = Vector2(normalized_x, normalized_y)
-		
+
 	current_tilt = current_tilt.lerp(tilt_target, response_speed * delta)
-	
+
 	if bg_rect and bg_material:
 		bg_material.set_shader_parameter("hover_intensity", current_hover_intensity)
 		bg_material.set_shader_parameter("ui_tilt", current_tilt * current_hover_intensity)
-		
+
 		var local_mouse_pos := bg_rect.get_local_mouse_position()
 		var mouse_uv := Vector2(local_mouse_pos.x / bg_rect.size.x, local_mouse_pos.y / bg_rect.size.y)
 		bg_material.set_shader_parameter("mouse_pos_uv", mouse_uv)
-		
+
 	if border_material:
 		border_material.set_shader_parameter("hover_intensity", current_hover_intensity)
 		border_material.set_shader_parameter("ui_tilt", current_tilt * current_hover_intensity)
-		
+
 	if label_material:
 		label_material.set_shader_parameter("hover_intensity", current_hover_intensity)
 		label_material.set_shader_parameter("ui_tilt", current_tilt * current_hover_intensity)
-		
+
 		for i in 2:
 			if is_mouse_over:
 				var uv_target := clampf(mouse_pos.x / size.x, -0.2, 1.2)

@@ -22,16 +22,19 @@ static var _fallback_material: StandardMaterial3D
 # Stores the snapshot of the cable's last known state to prevent editor freezing
 var _last_state_hash: int = 0
 
+
 func _ready() -> void:
 	_update_cable_positions()
-	
+
 	# Turn off processing during gameplay — it only runs in the editor!
 	if not Engine.is_editor_hint():
 		set_process(false)
 
+
 func _process(_delta: float) -> void:
 	if Engine.is_editor_hint():
 		_update_cable_positions()
+
 
 func _update_cable_positions() -> void:
 	var valid_anchors: Array[Node3D] = []
@@ -53,26 +56,26 @@ func _update_cable_positions() -> void:
 			current_state.append(float(anchor.get("droop")))
 		if "segments" in anchor:
 			current_state.append(int(anchor.get("segments")))
-	
+
 	var current_hash: int = current_state.hash()
-	
+
 	# If nothing moved or changed, abort the heavy geometry math
 	if current_hash == _last_state_hash and mesh != null:
 		return
-		
+
 	_last_state_hash = current_hash
 	# --------------------------------------------
 
 	var st: SurfaceTool = SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
-	
+
 	var vertex_count: int = 0
 	var cable_phase: float = float(get_instance_id() % 1000) / 1000.0 * TAU
 
 	for span_index: int in range(span_count):
 		var start_node: Node3D = valid_anchors[span_index]
 		var end_node: Node3D = valid_anchors[span_index + 1]
-		
+
 		# Duck-typing: grab custom droop/segments if available, else fallback
 		var span_droop: float = float(start_node.get("droop")) if "droop" in start_node else default_droop
 		var span_segments: int = int(start_node.get("segments")) if "segments" in start_node else default_segments
@@ -92,32 +95,32 @@ func _update_cable_positions() -> void:
 		for i: int in range(points.size()):
 			var p: Vector3 = points[i]
 			var t_progression: float = float(i) / float(span_segments)
-			
+
 			var forward: Vector3 = Vector3.FORWARD
 			if i < points.size() - 1:
-				forward = (points[i+1] - p).normalized()
+				forward = (points[i + 1] - p).normalized()
 			elif i > 0:
-				forward = (p - points[i-1]).normalized()
-				
+				forward = (p - points[i - 1]).normalized()
+
 			var up: Vector3 = Vector3.UP
 			if abs(forward.y) > 0.99:
 				up = Vector3.RIGHT
 			var right: Vector3 = up.cross(forward).normalized()
 			up = forward.cross(right).normalized()
-			
+
 			var t_matrix: Transform3D = Transform3D(Basis(right, up, forward), p)
-			t_matrix = global_transform.affine_inverse() * t_matrix 
+			t_matrix = global_transform.affine_inverse() * t_matrix
 
 			for j: int in range(radial_segments + 1):
 				var angle: float = (float(j) / float(radial_segments)) * TAU
 				var local_circle: Vector3 = Vector3(cos(angle) * thickness, sin(angle) * thickness, 0.0)
-				
+
 				var normal: Vector3 = (t_matrix.basis * local_circle).normalized()
 				var vertex: Vector3 = t_matrix * local_circle
-				
+
 				st.set_normal(normal)
 				st.set_uv(Vector2(float(j) / float(radial_segments), t_progression))
-				
+
 				# Send data to wind shader: R = Curve %, B = Random Sync Phase
 				st.set_color(Color(t_progression, 0.0, cable_phase, 1.0))
 				st.add_vertex(vertex)
@@ -135,16 +138,16 @@ func _update_cable_positions() -> void:
 				st.add_index(current)
 				st.add_index(next_vert)
 				st.add_index(top)
-				
+
 				st.add_index(next_vert)
 				st.add_index(top_next)
 				st.add_index(top)
-		
+
 		vertex_count += points.size() * verts_per_ring
 
 	st.generate_tangents()
 	mesh = st.commit()
-	
+
 	# Apply materials
 	if cable_material != null:
 		material_override = cable_material
@@ -154,6 +157,7 @@ func _update_cable_positions() -> void:
 			_fallback_material.albedo_color = Color(0.1, 0.1, 0.1)
 			_fallback_material.roughness = 0.8
 		material_override = _fallback_material
+
 
 func _get_bezier_point(p0: Vector3, p1: Vector3, p2: Vector3, t: float) -> Vector3:
 	var q0: Vector3 = p0.lerp(p1, t)

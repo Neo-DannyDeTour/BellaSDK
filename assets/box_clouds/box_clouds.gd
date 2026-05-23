@@ -5,7 +5,7 @@ extends Node
 # 1. The static variables remain exactly as they were
 static var wind_dir: Vector3 = Vector3(1.0, 0.0, 0.5)
 static var wind_spd: float = 2.5
-static var coverage: float = 0.45 
+static var coverage: float = 0.45
 
 # 2. Proxy variables exposed to the Inspector
 @export_group("Weather Settings")
@@ -27,12 +27,14 @@ static var coverage: float = 0.45
 @export_group("Nodes")
 @export var local_cloud_volume: FogVolume
 
+
 func _ready() -> void:
 	if not local_cloud_volume:
 		push_error("WeatherController: FogVolume is missing or unassigned!")
 	elif not local_cloud_volume.material:
 		push_error("WeatherController: Assigned FogVolume has no material!")
-		
+
+
 func _process(_delta: float) -> void:
 	if local_cloud_volume and local_cloud_volume.material:
 		var mat := local_cloud_volume.material as ShaderMaterial

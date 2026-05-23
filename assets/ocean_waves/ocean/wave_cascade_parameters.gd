@@ -5,63 +5,63 @@ signal scale_changed
 
 ## Denotes the distance the cascade's tile should cover (in meters).
 @export var tile_length := Vector2(50.0, 50.0):
-	set(value): 
+	set(value):
 		tile_length = value
 		should_generate_spectrum = true
 		scale_changed.emit()
 
 @export_range(0.0, 2.0) var displacement_scale := 1.0:
-	set(value): 
+	set(value):
 		displacement_scale = value
 		scale_changed.emit()
 
 @export_range(0.0, 2.0) var normal_scale := 1.0:
-	set(value): 
+	set(value):
 		normal_scale = value
 		scale_changed.emit()
 
 ## Denotes the average wind speed above the water (in meters per second). Increasing makes waves steeper and more 'chaotic'.
 @export var wind_speed := 20.0:
-	set(value): 
+	set(value):
 		wind_speed = max(0.0001, value)
 		should_generate_spectrum = true
 
 @export_range(-360.0, 360.0) var wind_direction := 0.0:
-	set(value): 
+	set(value):
 		wind_direction = value
 		should_generate_spectrum = true
 
 ## Denotes the distance from shoreline (in kilometers). Increasing makes waves steeper, but reduces their 'choppiness'.
 @export var fetch_length := 550.0:
-	set(value): 
+	set(value):
 		fetch_length = max(0.0001, value)
 		should_generate_spectrum = true
 
 @export_range(0.0, 2.0) var swell := 0.8:
-	set(value): 
+	set(value):
 		swell = value
 		should_generate_spectrum = true
 
 ## Modifies how much wind and swell affect the direction of the waves.
 @export_range(0.0, 1.0) var spread := 0.2:
-	set(value): 
+	set(value):
 		spread = value
 		should_generate_spectrum = true
 
 ## Modifies the attenuation of high frequency waves.
 @export_range(0.0, 1.0) var detail := 1.0:
-	set(value): 
+	set(value):
 		detail = value
 		should_generate_spectrum = true
 
 ## Modifies how steep a wave needs to be before foam can accumulate.
 @export_range(0.0, 2.0) var whitecap := 0.5:
-	set(value): 
+	set(value):
 		whitecap = value
 		should_generate_spectrum = true
 
 @export_range(0.0, 10.0) var foam_amount := 5.0:
-	set(value): 
+	set(value):
 		foam_amount = value
 		should_generate_spectrum = true
 

@@ -1,8 +1,10 @@
 extends Node
 
+
 func _ready() -> void:
 	# Connect to the signal from your debug menu
 	Events.wireframe_toggled.connect(_on_events_wireframe_toggled)
+
 
 func _on_events_wireframe_toggled(is_on: bool) -> void:
 	if is_on:

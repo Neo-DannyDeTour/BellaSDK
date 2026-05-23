@@ -44,3 +44,11 @@ assets/ocean_waves/ocean/clipmap_low.obj
 assets/ocean_waves/ocean/clipmap_high.obj.import
 
 assets/ocean_waves/ocean/clipmap_low.obj.import
+
+diagnostic.sh
+
+api_response.json
+
+gdlint_report.txt
+
+payload.json

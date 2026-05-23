@@ -7,7 +7,7 @@ extends Node3D
 	set(value):
 		label_text = value
 		_update_visuals()
-		
+
 @export var line_color: Color = Color.GREEN:
 	set(value):
 		line_color = value
@@ -38,15 +38,17 @@ extends Node3D
 		glow_multiplier = value
 		_update_visuals()
 
+
 func _ready() -> void:
 	_update_visuals()
 
+
 func _update_visuals() -> void:
-	var mesh := get_node_or_null("Hologram") 
-	
+	var mesh := get_node_or_null("Hologram")
+
 	if not mesh:
 		return
-		
+
 	# Push every single inspector value down into the shader
 	mesh.set_instance_shader_parameter("line_color", line_color)
 	mesh.set_instance_shader_parameter("base_color", base_color)
@@ -54,7 +56,7 @@ func _update_visuals() -> void:
 	mesh.set_instance_shader_parameter("line_count", line_count)
 	mesh.set_instance_shader_parameter("line_thickness", line_thickness)
 	mesh.set_instance_shader_parameter("glow_multiplier", glow_multiplier)
-	
+
 	var label := get_node_or_null("Label3D")
 	if label:
 		label.text = label_text

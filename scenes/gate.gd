@@ -5,9 +5,11 @@ extends Node3D
 
 var closed_position: Vector3
 
+
 func _ready() -> void:
 	# Remember where we started in the editor!
 	closed_position = position
+
 
 # This is called every single frame by the Valve!
 func set_progress(val: float) -> void:
