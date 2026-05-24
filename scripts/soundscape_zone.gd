@@ -87,12 +87,16 @@ func _stop_soundscape() -> void:
 	_fade_volume(ambient_player, -80.0, true)
 
 
-func _fade_volume(player: AudioStreamPlayer, target_vol: float, stop_on_finish: bool = false) -> void:
+func _fade_volume(
+	player: AudioStreamPlayer, target_vol: float, stop_on_finish: bool = false
+) -> void:
 	if current_tween and current_tween.is_running():
 		current_tween.kill()
 
 	current_tween = create_tween()
-	current_tween.tween_property(player, "volume_db", target_vol, fade_duration).set_trans(Tween.TRANS_SINE)
+	current_tween.tween_property(player, "volume_db", target_vol, fade_duration).set_trans(
+		Tween.TRANS_SINE
+	)
 
 	if stop_on_finish:
 		current_tween.tween_callback(player.stop)

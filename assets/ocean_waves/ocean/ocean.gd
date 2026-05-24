@@ -87,7 +87,9 @@ static var max_sim_distance: float = 200.0
 				value[i] = WaveCascadeParameters.new()
 			if not value[i].is_connected(&"scale_changed", _update_scales_uniform):
 				value[i].scale_changed.connect(_update_scales_uniform)
-			value[i].spectrum_seed = Vector2i(rng.randi_range(-10000, 10000), rng.randi_range(-10000, 10000))
+			value[i].spectrum_seed = Vector2i(
+				rng.randi_range(-10000, 10000), rng.randi_range(-10000, 10000)
+			)
 			value[i].time = 120.0 + PI * i
 		parameters = value
 		_setup_wave_generator()
@@ -115,7 +117,9 @@ static var max_sim_distance: float = 200.0
 
 @export_range(0, 60) var updates_per_second: float = 50.0:
 	set(value):
-		next_update_time = (next_update_time - (1.0 / (updates_per_second + 1e-10) - 1.0 / (value + 1e-10)))
+		next_update_time = (
+			next_update_time - (1.0 / (updates_per_second + 1e-10) - 1.0 / (value + 1e-10))
+		)
 		updates_per_second = value
 
 # ==========================================
@@ -218,7 +222,9 @@ func _update_scales_uniform() -> void:
 	for i: int in parameters.size():
 		var params: WaveCascadeParameters = parameters[i]
 		var uv_scale: Vector2 = Vector2.ONE / params.tile_length
-		map_scales[i] = Vector4(uv_scale.x, uv_scale.y, params.displacement_scale, params.normal_scale)
+		map_scales[i] = Vector4(
+			uv_scale.x, uv_scale.y, params.displacement_scale, params.normal_scale
+		)
 
 	WATER_MAT.set_shader_parameter(&"map_scales", map_scales)
 	SPRAY_MAT.set_shader_parameter(&"map_scales", map_scales)
@@ -293,7 +299,9 @@ func _setup_cpu_displacement_textures() -> void:
 			_actually_used_textures_idx.append(i)
 
 	# We must also push the initial setup to the Render Thread!
-	RenderingServer.call_on_render_thread(_do_initial_texture_readback.bind(_actually_used_textures_idx))
+	RenderingServer.call_on_render_thread(
+		_do_initial_texture_readback.bind(_actually_used_textures_idx)
+	)
 
 
 func _do_initial_texture_readback(used_indices: Array[int]) -> void:

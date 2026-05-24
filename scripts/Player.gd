@@ -394,7 +394,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	# --- 1. TERMINAL MODE CLICKING OVERRIDE ---
 	if is_in_terminal_mode and is_instance_valid(active_terminal):
 		# Handle left-clicking the keypad buttons
-		if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.pressed:
+		if (
+			event is InputEventMouseButton
+			and event.button_index == MOUSE_BUTTON_LEFT
+			and event.pressed
+		):
 			shoot_terminal_raycast(true)
 			get_viewport().set_input_as_handled()
 			return  # IMPORTANT: Stop running this function so we don't shoot the gun!
@@ -460,17 +464,22 @@ func is_surface_too_steep(normal: Vector3) -> bool:
 	return normal.angle_to(Vector3.UP) > self.floor_max_angle
 
 
-func _run_body_test_motion(from: Transform3D, motion: Vector3, result: PhysicsTestMotionResult3D = null) -> bool:
+func _run_body_test_motion(
+	from: Transform3D, motion: Vector3, result: PhysicsTestMotionResult3D = null
+) -> bool:
 	_motion_params.from = from
 	_motion_params.motion = motion
 	# Using the PhysicsServer directly is faster than body_test_motion on the node
-	return PhysicsServer3D.body_test_motion(self.get_rid(), _motion_params, result if result else _motion_result)
+	return PhysicsServer3D.body_test_motion(
+		self.get_rid(), _motion_params, result if result else _motion_result
+	)
 
 
 func _snap_down_to_stairs_check() -> void:
 	var did_snap: bool = false
 	var floor_below: bool = (
-		stairs_below_cast.is_colliding() and not is_surface_too_steep(stairs_below_cast.get_collision_normal())
+		stairs_below_cast.is_colliding()
+		and not is_surface_too_steep(stairs_below_cast.get_collision_normal())
 	)
 	var was_on_floor_last_frame: bool = Engine.get_physics_frames() - _last_frame_was_on_floor == 1
 
@@ -481,7 +490,9 @@ func _snap_down_to_stairs_check() -> void:
 		and floor_below
 	):
 		var body_test_result := PhysicsTestMotionResult3D.new()
-		if _run_body_test_motion(self.global_transform, Vector3(0, -MAX_STEP_HEIGHT, 0), body_test_result):
+		if _run_body_test_motion(
+			self.global_transform, Vector3(0, -MAX_STEP_HEIGHT, 0), body_test_result
+		):
 			var travel_y: float = body_test_result.get_travel().y
 
 			if travel_y < -0.05:
@@ -516,14 +527,20 @@ func _snap_up_stairs_check(delta: float) -> bool:
 	# 3. NOW test moving DOWN onto the step
 	var down_check_result := PhysicsTestMotionResult3D.new()
 	if (
-		_run_body_test_motion(step_pos_with_clearance, Vector3(0, -MAX_STEP_HEIGHT * 2, 0), down_check_result)
+		_run_body_test_motion(
+			step_pos_with_clearance, Vector3(0, -MAX_STEP_HEIGHT * 2, 0), down_check_result
+		)
 		and (
 			down_check_result.get_collider().is_class("StaticBody3D")
 			or down_check_result.get_collider().is_class("CSGShape3D")
 		)
 	):
 		var step_height: float = (
-			((step_pos_with_clearance.origin + down_check_result.get_travel()) - self.global_position).y
+			(
+				(step_pos_with_clearance.origin + down_check_result.get_travel())
+				- self.global_position
+			)
+			. y
 		)
 
 		if (
@@ -540,7 +557,10 @@ func _snap_up_stairs_check(delta: float) -> bool:
 		)
 		stairs_ahead_cast.force_raycast_update()
 
-		if stairs_ahead_cast.is_colliding() and not is_surface_too_steep(stairs_ahead_cast.get_collision_normal()):
+		if (
+			stairs_ahead_cast.is_colliding()
+			and not is_surface_too_steep(stairs_ahead_cast.get_collision_normal())
+		):
 			var old_pos_y: float = self.global_position.y
 			self.global_position = step_pos_with_clearance.origin + down_check_result.get_travel()
 			apply_floor_snap()
@@ -824,7 +844,8 @@ func _process(delta: float) -> void:
 	# Determine if we should be in sprint FOV.
 	# True IF: (Button pressed + moving) OR (In the air + already using sprint FOV)
 	var is_valid_sprint := (
-		(sprint_active and input_dir.length() > 0.1) or (not is_on_floor() and target_fov == sprint_fov)
+		(sprint_active and input_dir.length() > 0.1)
+		or (not is_on_floor() and target_fov == sprint_fov)
 	)
 
 	if Input.is_action_pressed("zoom"):
@@ -850,7 +871,9 @@ func update_flashlight(delta: float) -> void:
 	target_pos.y += sin(head_bobbing_index) * light_intensity
 
 	# Smooth the positional movement and rotation (Sway/Lag)
-	flash_light_node.position = flash_light_node.position.lerp(target_pos, delta * flashlight_position_smoothness)
+	flash_light_node.position = flash_light_node.position.lerp(
+		target_pos, delta * flashlight_position_smoothness
+	)
 
 	# Calculate target rotation for sway (when looking around)
 	var max_sway: float = 150.0
@@ -858,9 +881,13 @@ func update_flashlight(delta: float) -> void:
 	sway_target.y = clampf(sway_target.y, -max_sway, max_sway)
 
 	# Adjusted the multiplier to make the sway noticeable
-	var target_rot := Vector3(sway_target.y * (sway_amount * 0.0015), sway_target.x * (sway_amount * 0.0015), 0.0)
+	var target_rot := Vector3(
+		sway_target.y * (sway_amount * 0.0015), sway_target.x * (sway_amount * 0.0015), 0.0
+	)
 	# Move the flashlight towards the target
-	flash_light_node.rotation = flash_light_node.rotation.lerp(target_rot, delta * flashlight_rotation_smoothness)
+	flash_light_node.rotation = flash_light_node.rotation.lerp(
+		target_rot, delta * flashlight_rotation_smoothness
+	)
 
 	# Recover the target back to zero much slower than the node rotates.
 	# This creates that natural heavy "lag and catch-up" feeling.
@@ -889,7 +916,9 @@ func update_flashlight(delta: float) -> void:
 			var base_push_back: float = flashlight_maintain_distance - distance_to_wall
 
 			# 2. The 25% Growth: Push it back slightly further as you get closer!
-			var proximity: float = clampf(1.0 - (distance_to_wall / flashlight_maintain_distance), 0.0, 1.0)
+			var proximity: float = clampf(
+				1.0 - (distance_to_wall / flashlight_maintain_distance), 0.0, 1.0
+			)
 			var extra_growth_push: float = (flashlight_maintain_distance * 0.25) * proximity
 
 			var final_push_back: float = base_push_back + extra_growth_push
@@ -957,7 +986,12 @@ func enter_ladder(ladder_node: Node3D) -> void:
 
 	# Smoothly move global_position to target_pos over 0.15 seconds
 	# Using slightly eased movement so it feels organic
-	tween.tween_property(self, "global_position", target_pos, 0.15).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	(
+		tween
+		. tween_property(self, "global_position", target_pos, 0.15)
+		. set_trans(Tween.TRANS_SINE)
+		. set_ease(Tween.EASE_OUT)
+	)
 
 
 func exit_ladder(ladder_node: Node3D = null) -> void:
@@ -1068,12 +1102,16 @@ func _on_rope_grabbed(rope_body: RigidBody3D) -> void:
 	current_rope = rope_body
 
 	var rope_root: Node3D = current_rope.get_parent() as Node3D
-	var can_swing: bool = rope_root.get("is_swingable") as bool if "is_swingable" in rope_root else false
+	var can_swing: bool = (
+		rope_root.get("is_swingable") as bool if "is_swingable" in rope_root else false
+	)
 
 	# --- Momentum Transfer ---
 	if can_swing:
 		var entry_momentum := Vector3(velocity.x, velocity.y * 0.2, velocity.z)
-		current_rope.apply_impulse(entry_momentum * 1.5, global_position - current_rope.global_position)
+		current_rope.apply_impulse(
+			entry_momentum * 1.5, global_position - current_rope.global_position
+		)
 
 	# Safely lock the player
 	velocity = Vector3.ZERO
@@ -1087,18 +1125,26 @@ func _on_rope_grabbed(rope_body: RigidBody3D) -> void:
 
 	# Clamp the initial grab so you don't grab above or below the rope limits
 	var local_top: float = current_rope.to_local(rope_root.global_position).y
-	var max_length: float = rope_root.get("rope_length") as float if "rope_length" in rope_root else 10.0
+	var max_length: float = (
+		rope_root.get("rope_length") as float if "rope_length" in rope_root else 10.0
+	)
 	var top_limit: float = local_top - 2.5
 	var bottom_limit: float = local_top - max_length + 0.5
 	rope_offset = clampf(rope_offset, bottom_limit, top_limit)
 
 	# Smoothly turn the camera to face the rope exactly when you grab it
-	var face_pos := Vector3(current_rope.global_position.x, global_position.y, current_rope.global_position.z)
+	var face_pos := Vector3(
+		current_rope.global_position.x, global_position.y, current_rope.global_position.z
+	)
 	if global_position.distance_to(face_pos) > 0.1:
 		var target_transform := global_transform.looking_at(face_pos, Vector3.UP)
 		var tween := create_tween()
-		tween.tween_property(self, "quaternion", target_transform.basis.get_rotation_quaternion(), 0.3).set_trans(
-			Tween.TRANS_SINE
+		(
+			tween
+			. tween_property(
+				self, "quaternion", target_transform.basis.get_rotation_quaternion(), 0.3
+			)
+			. set_trans(Tween.TRANS_SINE)
 		)
 
 
@@ -1117,7 +1163,9 @@ func _on_rope_released(target_forward: Vector3 = Vector3.ZERO) -> void:
 	if target_forward != Vector3.ZERO:
 		release_forward = Vector3(target_forward.x, 0.0, target_forward.z).normalized()
 	else:
-		release_forward = (Vector3(-global_transform.basis.z.x, 0.0, -global_transform.basis.z.z).normalized())
+		release_forward = (
+			Vector3(-global_transform.basis.z.x, 0.0, -global_transform.basis.z.z).normalized()
+		)
 
 	if release_forward.length_squared() < 0.001:
 		release_forward = -global_transform.basis.z
@@ -1132,8 +1180,11 @@ func _on_rope_released(target_forward: Vector3 = Vector3.ZERO) -> void:
 		. set_ease(Tween.EASE_OUT)
 	)
 
-	release_tween.tween_property(eyes, "rotation", Vector3.ZERO, 0.3).set_trans(Tween.TRANS_SINE).set_ease(
-		Tween.EASE_OUT
+	(
+		release_tween
+		. tween_property(eyes, "rotation", Vector3.ZERO, 0.3)
+		. set_trans(Tween.TRANS_SINE)
+		. set_ease(Tween.EASE_OUT)
 	)
 
 
@@ -1208,7 +1259,9 @@ func _handle_water_physics(delta: float) -> bool:
 	head.position.y = lerpf(head.position.y, 1.8, delta * lerp_speed)
 
 	input_dir = Input.get_vector("left", "right", "forward", "backward")
-	var swim_dir: Vector3 = (cam.global_transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
+	var swim_dir: Vector3 = (
+		(cam.global_transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
+	)
 	var target_velocity: Vector3 = swim_dir * swimming_speed
 
 	var actively_swimming_vertical: bool = false
@@ -1263,10 +1316,14 @@ func _handle_water_physics(delta: float) -> bool:
 	var target_anim: String = ""
 	if input_dir.x > 0.1:
 		target_anim = "swimming_underwater_sideways_right"
-		eyes.rotation.z = lerpf(eyes.rotation.z, deg_to_rad(CAMERA_TILT_RIGHT * 2), delta * lerp_speed / 3.0)
+		eyes.rotation.z = lerpf(
+			eyes.rotation.z, deg_to_rad(CAMERA_TILT_RIGHT * 2), delta * lerp_speed / 3.0
+		)
 	elif input_dir.x < -0.1:
 		target_anim = "swimming_underwater_sideways_left"
-		eyes.rotation.z = lerpf(eyes.rotation.z, deg_to_rad(CAMERA_TILT_LEFT * 2), delta * lerp_speed / 3.0)
+		eyes.rotation.z = lerpf(
+			eyes.rotation.z, deg_to_rad(CAMERA_TILT_LEFT * 2), delta * lerp_speed / 3.0
+		)
 	elif absf(input_dir.y) > 0.1:
 		target_anim = "swimming"
 		eyes.rotation.z = lerpf(eyes.rotation.z, 0.0, delta * lerp_speed / 3.0)
@@ -1357,12 +1414,16 @@ func _on_zipline_grabbed(zipline_ref: Node3D, start_pos: Vector3, end_pos: Vecto
 	real_target_pos.y -= ZIPLINE_HANG_OFFSET
 
 	var attach_tween := create_tween().set_parallel(true)
-	attach_tween.tween_property(self, "global_position", real_target_pos, 0.25).set_trans(Tween.TRANS_SINE)
+	attach_tween.tween_property(self, "global_position", real_target_pos, 0.25).set_trans(
+		Tween.TRANS_SINE
+	)
 
 	if grabbed_at_top:
 		var downhill_dir := zipline_dir if is_start_highest else -zipline_dir
 		var target_quat := Basis.looking_at(downhill_dir, Vector3.UP).get_rotation_quaternion()
-		attach_tween.tween_property(self, "quaternion", target_quat, 0.25).set_trans(Tween.TRANS_SINE)
+		attach_tween.tween_property(self, "quaternion", target_quat, 0.25).set_trans(
+			Tween.TRANS_SINE
+		)
 
 	attach_tween.set_parallel(false)
 	attach_tween.tween_callback(func() -> void: is_zipline_transitioning = false)
@@ -1385,7 +1446,9 @@ func _on_zipline_released() -> void:
 			if launch_flat_fwd.length_squared() < 0.01:
 				launch_flat_fwd = Vector3.FORWARD
 			# Apply slide speed forward, and half slide speed down
-			zip_vel = ((launch_flat_fwd * ZIPLINE_SLIDE_SPEED) + Vector3(0, -ZIPLINE_SLIDE_SPEED * 0.5, 0))
+			zip_vel = (
+				(launch_flat_fwd * ZIPLINE_SLIDE_SPEED) + Vector3(0, -ZIPLINE_SLIDE_SPEED * 0.5, 0)
+			)
 
 		velocity = zip_vel * DETACH_MOMENTUM_MULTIPLIER
 
@@ -1415,8 +1478,10 @@ func _on_zipline_released() -> void:
 	var upright_basis := Basis.looking_at(flat_fwd, Vector3.UP)
 
 	var detach_tween := create_tween().set_parallel(true)
-	detach_tween.tween_property(self, "quaternion", upright_basis.get_rotation_quaternion(), 0.15).set_trans(
-		Tween.TRANS_SINE
+	(
+		detach_tween
+		. tween_property(self, "quaternion", upright_basis.get_rotation_quaternion(), 0.15)
+		. set_trans(Tween.TRANS_SINE)
 	)
 
 	# Reset camera shake/tilt
@@ -1660,7 +1725,9 @@ func _handle_ladder_physics(_delta: float) -> void:
 			# --- 5. DEPTH PULL (Stick to surface) ---
 			var depth_pull: Vector3 = -ladder_forward * (local_pos.z * 4.0)
 
-			velocity = ((Vector3.UP * up_down_movement * LADDER_SPEED) + lateral_movement + depth_pull)
+			velocity = (
+				(Vector3.UP * up_down_movement * LADDER_SPEED) + lateral_movement + depth_pull
+			)
 
 		else:
 			# Fallback if current_ladder isn't set yet
@@ -1714,7 +1781,11 @@ func _handle_ladder_physics(_delta: float) -> void:
 			global_position += (flat_right * strafe_input) * 0.2
 
 		# CONDITION C: Upward leap (Looking strictly UP)
-		elif is_looking_up and (is_looking_at_ladder or is_shapecast_hitting) and abs(strafe_input) < 0.1:
+		elif (
+			is_looking_up
+			and (is_looking_at_ladder or is_shapecast_hitting)
+			and abs(strafe_input) < 0.1
+		):
 			var current_time := Time.get_ticks_msec()
 
 			# 1000 milliseconds = 1 second cooldown
@@ -1842,10 +1913,16 @@ func _handle_rope_physics(delta: float) -> void:
 	var look_dot_rope: float = look_dir.dot(rope_up)
 
 	# Logic Flags
-	var can_swing: bool = rope_root.get("is_swingable") as bool if "is_swingable" in rope_root else false
-	var force_amount: float = rope_root.get("swing_force") as float if "swing_force" in rope_root else 300.0
+	var can_swing: bool = (
+		rope_root.get("is_swingable") as bool if "is_swingable" in rope_root else false
+	)
+	var force_amount: float = (
+		rope_root.get("swing_force") as float if "swing_force" in rope_root else 300.0
+	)
 	var swing_angle_deg: float = rad_to_deg(acos(clampf(rope_up.dot(Vector3.UP), -1.0, 1.0)))
-	var is_actively_swinging: bool = swing_angle_deg > 5.0 or current_rope.angular_velocity.length() > 0.2
+	var is_actively_swinging: bool = (
+		swing_angle_deg > 5.0 or current_rope.angular_velocity.length() > 0.2
+	)
 
 	var is_pressing_w: bool = input_dir.y < -0.1
 	var is_pressing_s: bool = input_dir.y > 0.1
@@ -1872,7 +1949,9 @@ func _handle_rope_physics(delta: float) -> void:
 
 	var is_climbing_actively: bool = false
 	var local_top: float = current_rope.to_local(rope_root.global_position).y
-	var max_length: float = rope_root.get("rope_length") as float if "rope_length" in rope_root else 10.0
+	var max_length: float = (
+		rope_root.get("rope_length") as float if "rope_length" in rope_root else 10.0
+	)
 	var top_limit: float = local_top - 2.5
 	var bottom_limit: float = local_top - max_length + 0.5
 	var old_offset: float = rope_offset
@@ -1894,7 +1973,8 @@ func _handle_rope_physics(delta: float) -> void:
 
 			if push_dir.length_squared() > 0.01:
 				current_rope.apply_force(
-					push_dir.normalized() * force_amount, center_grab_pos - current_rope.global_position
+					push_dir.normalized() * force_amount,
+					center_grab_pos - current_rope.global_position
 				)
 
 	var actually_moved: bool = absf(rope_offset - old_offset) > 0.001
@@ -2003,9 +2083,13 @@ func _handle_noclip_physics(delta: float) -> void:
 
 	if not swimming:
 		if Input.is_action_pressed("left"):
-			eyes.rotation.z = lerpf(eyes.rotation.z, deg_to_rad(CAMERA_TILT_LEFT), delta * lerp_speed)
+			eyes.rotation.z = lerpf(
+				eyes.rotation.z, deg_to_rad(CAMERA_TILT_LEFT), delta * lerp_speed
+			)
 		elif Input.is_action_pressed("right"):
-			eyes.rotation.z = lerpf(eyes.rotation.z, deg_to_rad(CAMERA_TILT_RIGHT), delta * lerp_speed)
+			eyes.rotation.z = lerpf(
+				eyes.rotation.z, deg_to_rad(CAMERA_TILT_RIGHT), delta * lerp_speed
+			)
 		else:
 			eyes.rotation.z = lerpf(eyes.rotation.z, 0.0, delta * lerp_speed)
 
@@ -2036,13 +2120,19 @@ func _handle_headbob(delta: float, intensity_modifier: float = 1.0) -> void:
 
 	# Increment the shared timer
 	head_bobbing_index += (
-		bob_speed * delta * (1.0 if input_dir.length() > 0.1 or is_zipline_moving or is_climbing_rope else 0.5)
+		bob_speed
+		* delta
+		* (1.0 if input_dir.length() > 0.1 or is_zipline_moving or is_climbing_rope else 0.5)
 	)
 
 	# Calculate actual offsets (Sine waves)
 	# Vector2(X = Side-to-Side, Y = Up-and-Down)
-	var target_bob_y: float = sin(head_bobbing_index) * (head_bobbing_current_intensity / 2.0) * intensity_modifier
-	var target_bob_x: float = sin(head_bobbing_index / 2.0) * head_bobbing_current_intensity * intensity_modifier
+	var target_bob_y: float = (
+		sin(head_bobbing_index) * (head_bobbing_current_intensity / 2.0) * intensity_modifier
+	)
+	var target_bob_x: float = (
+		sin(head_bobbing_index / 2.0) * head_bobbing_current_intensity * intensity_modifier
+	)
 
 	# Smooth the transition to the new bob position
 	headbob_offset.y = lerpf(headbob_offset.y, target_bob_y, delta * lerp_speed)
@@ -2110,7 +2200,9 @@ func _scan_for_ledges() -> void:
 
 	# --- FORWARD CAST (Find Wall) ---
 	var detect_start := global_position + Vector3(0, 0.5, 0)
-	var forward_query := PhysicsRayQueryParameters3D.create(detect_start, detect_start + forward_dir * 1.2)
+	var forward_query := PhysicsRayQueryParameters3D.create(
+		detect_start, detect_start + forward_dir * 1.2
+	)
 	forward_query.exclude = exclude_rids
 
 	var forward_result := space_state.intersect_ray(forward_query)
@@ -2128,7 +2220,9 @@ func _scan_for_ledges() -> void:
 	var wall_hit: Vector3 = forward_result["position"]
 	var down_start := wall_hit - (wall_normal * 0.15) + Vector3(0, 2.0, 0)
 
-	var down_query := PhysicsRayQueryParameters3D.create(down_start, down_start + Vector3(0, -2.5, 0))
+	var down_query := PhysicsRayQueryParameters3D.create(
+		down_start, down_start + Vector3(0, -2.5, 0)
+	)
 	down_query.exclude = exclude_rids
 
 	var down_result := space_state.intersect_ray(down_query)
@@ -2187,7 +2281,9 @@ func _try_vault() -> bool:
 
 		vault_indicator.hide()
 		# PASS THE NEW CROUCH FLAG HERE:
-		_perform_vault(current_ledge_point, forward_dir, current_vault_height, current_vault_requires_crouch)
+		_perform_vault(
+			current_ledge_point, forward_dir, current_vault_height, current_vault_requires_crouch
+		)
 		return true
 
 	return false
@@ -2237,10 +2333,15 @@ func _perform_vault(
 		)
 
 	var tilt_amount: float = deg_to_rad(5.0)
-	vault_tween.tween_property(eyes, "rotation:z", tilt_amount, vault_time * 0.5).set_trans(Tween.TRANS_SINE).set_ease(
-		Tween.EASE_IN_OUT
+	(
+		vault_tween
+		. tween_property(eyes, "rotation:z", tilt_amount, vault_time * 0.5)
+		. set_trans(Tween.TRANS_SINE)
+		. set_ease(Tween.EASE_IN_OUT)
 	)
-	vault_tween.tween_property(eyes, "rotation:z", 0.0, vault_time * 0.5).set_delay(vault_time * 0.5)
+	vault_tween.tween_property(eyes, "rotation:z", 0.0, vault_time * 0.5).set_delay(
+		vault_time * 0.5
+	)
 
 	vault_tween.chain().tween_callback(
 		func() -> void:
@@ -2279,7 +2380,9 @@ func _trigger_screen_water_wipe() -> void:
 	water_clear_tween.tween_interval(0.5)
 
 	# 2. Animate the wipe to 1.0 (dry) over 1.5 seconds
-	water_clear_tween.tween_property(mat, "shader_parameter/clear_progress", 1.0, 1.5).set_trans(Tween.TRANS_SINE)
+	water_clear_tween.tween_property(mat, "shader_parameter/clear_progress", 1.0, 1.5).set_trans(
+		Tween.TRANS_SINE
+	)
 
 	# 3. Hide the UI when it's totally dry
 	water_clear_tween.tween_callback(screen_water_ui.hide)
@@ -2416,7 +2519,9 @@ func apply_instability(delta: float) -> void:
 		# THE SUBLIMINAL BUZZ: Even when "stable", it's never perfectly 10.0
 		# It constantly fluctuates by tiny margins. This creates subconscious tension.
 		var micro_fluctuation := randf_range(-0.4, 0.4)
-		flashlight.light_energy = lerpf(flashlight.light_energy, base_energy + micro_fluctuation, delta * 20.0)
+		flashlight.light_energy = lerpf(
+			flashlight.light_energy, base_energy + micro_fluctuation, delta * 20.0
+		)
 
 	# ---------------------------------------------------------
 	# 2. PHYSICAL INSTABILITY (The Shaking Hand)

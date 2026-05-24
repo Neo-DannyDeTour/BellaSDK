@@ -93,7 +93,9 @@ func add_bullet_hole(start: Vector3, dir: Vector3, length: float, radius: float 
 	# ------------------------------------------------------------------
 
 	# We've removed 'intensity' argument. It's now handled globally in the editor.
-	active_holes.append({"start": start, "end": start + (dir * length), "radius": radius, "time_alive": 0.0})
+	active_holes.append(
+		{"start": start, "end": start + (dir * length), "radius": radius, "time_alive": 0.0}
+	)
 
 
 func _process(delta: float) -> void:
@@ -187,7 +189,9 @@ func _dispatch_to_compute_shader(delta: float) -> void:
 	rd.compute_list_bind_uniform_set(compute_list, uniform_set, 0)
 
 	# CRITICAL FIX: Pass the byte array, and use its exact size
-	rd.compute_list_set_push_constant(compute_list, push_constants_bytes, push_constants_bytes.size())
+	rd.compute_list_set_push_constant(
+		compute_list, push_constants_bytes, push_constants_bytes.size()
+	)
 
 	rd.compute_list_dispatch(compute_list, 16, 16, 8)
 	rd.compute_list_end()

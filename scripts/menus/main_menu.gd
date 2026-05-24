@@ -26,7 +26,8 @@ extends CanvasLayer
 @onready var resolution_options: OptionButton = %ResolutionOptionButton
 
 #@onready var accessibility_button: Button = $MarginContainer/OptionsButtons/AccessibilityButton # Adjust path if needed
-@onready var accessibility_button: Button = $Options/MarginContainer/OptionsButtons/HBoxContainer/AccessibilityButton
+@onready
+var accessibility_button: Button = $Options/MarginContainer/OptionsButtons/HBoxContainer/AccessibilityButton
 @onready var options_content: VBoxContainer = $Options/VBoxContainer  # The container holding Resolution/Sens
 @onready var back_accessibility_button: Button = %BackAccessibilityButton
 
@@ -59,7 +60,17 @@ var pending_conflict_action: String = ""
 
 # List every action exactly as it appears in your Project Settings > Input Map
 var my_actions := [
-	"forward", "backward", "left", "right", "jump", "crouch", "interact", "flashlight", "zoom", "noclip", "console"
+	"forward",
+	"backward",
+	"left",
+	"right",
+	"jump",
+	"crouch",
+	"interact",
+	"flashlight",
+	"zoom",
+	"noclip",
+	"console"
 ]
 
 const SAVE_PATH = "user://settings.cfg"
@@ -150,12 +161,16 @@ func _ready() -> void:
 
 
 # --- NEW: ACCESSIBILITY HELPER ---
-func _connect_adjustment_signals(slider: HSlider, input_box: LineEdit, setting_name: String) -> void:
+func _connect_adjustment_signals(
+	slider: HSlider, input_box: LineEdit, setting_name: String
+) -> void:
 	slider.value_changed.connect(_on_adjustment_changed.bind(input_box))
 	slider.drag_ended.connect(_on_adjustment_drag_ended.bind(setting_name, slider))
 	input_box.text_submitted.connect(_on_adjustment_input_submitted.bind(setting_name, slider))
 	input_box.focus_entered.connect(_on_adjustment_focus_entered.bind(input_box))
-	input_box.focus_exited.connect(_on_adjustment_focus_exited.bind(input_box, slider, setting_name))
+	input_box.focus_exited.connect(
+		_on_adjustment_focus_exited.bind(input_box, slider, setting_name)
+	)
 
 
 func create_control_list() -> void:
@@ -361,7 +376,9 @@ func _input(event: InputEvent) -> void:
 					)
 					%ConflictPanel.show()
 
-					get_tree().create_timer(4.0).timeout.connect(func() -> void: %ConflictPanel.hide())
+					get_tree().create_timer(4.0).timeout.connect(
+						func() -> void: %ConflictPanel.hide()
+					)
 					get_viewport().set_input_as_handled()
 					return
 
@@ -465,7 +482,10 @@ func load_controls() -> void:
 	saturation_input.text = "%.2f" % saturation_slider.value
 
 	# --- Load Resolution (Inside load_controls) ---
-	if config.has_section_key("Settings", "resolution_x") and config.has_section_key("Settings", "resolution_y"):
+	if (
+		config.has_section_key("Settings", "resolution_x")
+		and config.has_section_key("Settings", "resolution_y")
+	):
 		var res_x: int = config.get_value("Settings", "resolution_x")
 		var res_y: int = config.get_value("Settings", "resolution_y")
 		var saved_res := Vector2i(res_x, res_y)
@@ -475,7 +495,8 @@ func load_controls() -> void:
 
 		# Only apply physical window sizing if we aren't starting in fullscreen
 		var is_fullscreen: bool = (
-			get_window().mode == Window.MODE_EXCLUSIVE_FULLSCREEN or get_window().mode == Window.MODE_FULLSCREEN
+			get_window().mode == Window.MODE_EXCLUSIVE_FULLSCREEN
+			or get_window().mode == Window.MODE_FULLSCREEN
 		)
 		if not is_fullscreen:
 			get_window().mode = Window.MODE_WINDOWED
@@ -490,7 +511,9 @@ func load_controls() -> void:
 
 	# --- Load FOV Settings ---
 	fov_slider.value = config.get_value("Settings", "base_fov", DEFAULT_FOV)
-	sprint_fov_checkbox.button_pressed = config.get_value("Settings", "disable_sprint_fov", DEFAULT_DISABLE_SPRINT_FOV)
+	sprint_fov_checkbox.button_pressed = config.get_value(
+		"Settings", "disable_sprint_fov", DEFAULT_DISABLE_SPRINT_FOV
+	)
 	fov_input.text = str(int(fov_slider.value))
 
 	# Push the loaded values directly to the player
@@ -604,12 +627,16 @@ func _on_adjustment_changed(value: float, input_node: LineEdit) -> void:
 	_apply_visual_settings()
 
 
-func _on_adjustment_drag_ended(value_changed: bool, setting_name: String, slider_node: HSlider) -> void:
+func _on_adjustment_drag_ended(
+	value_changed: bool, setting_name: String, slider_node: HSlider
+) -> void:
 	if value_changed:
 		_save_setting_to_disk(setting_name, slider_node.value)
 
 
-func _on_adjustment_input_submitted(new_text: String, setting_name: String, slider_node: HSlider) -> void:
+func _on_adjustment_input_submitted(
+	new_text: String, setting_name: String, slider_node: HSlider
+) -> void:
 	# Clamping color adjustments between 0.0 (dark/grey) and 3.0 (blown out) to prevent black screens
 	var new_val: float = clamp(new_text.to_float(), 0.0, 3.0)
 	slider_node.value = new_val
@@ -621,7 +648,9 @@ func _on_adjustment_focus_entered(input_node: LineEdit) -> void:
 	input_node.text = ""
 
 
-func _on_adjustment_focus_exited(input_node: LineEdit, slider_node: HSlider, setting_name: String) -> void:
+func _on_adjustment_focus_exited(
+	input_node: LineEdit, slider_node: HSlider, setting_name: String
+) -> void:
 	var current_text := input_node.text.strip_edges()
 	if current_text == "":
 		input_node.text = "%.2f" % slider_node.value
@@ -659,7 +688,8 @@ func _on_resolution_selected(index: int) -> void:
 
 	# 2. Check if we are currently in a windowed mode
 	var is_fullscreen: bool = (
-		get_window().mode == Window.MODE_EXCLUSIVE_FULLSCREEN or get_window().mode == Window.MODE_FULLSCREEN
+		get_window().mode == Window.MODE_EXCLUSIVE_FULLSCREEN
+		or get_window().mode == Window.MODE_FULLSCREEN
 	)
 
 	# 3. Only resize and center the physical window if we are NOT in fullscreen
@@ -677,7 +707,8 @@ func _center_window(new_size: Vector2i) -> void:
 
 	@warning_ignore("integer_division")
 	var screen_center: Vector2i = (
-		DisplayServer.screen_get_position(current_screen) + DisplayServer.screen_get_size(current_screen) / 2
+		DisplayServer.screen_get_position(current_screen)
+		+ DisplayServer.screen_get_size(current_screen) / 2
 	)
 
 	@warning_ignore("integer_division")

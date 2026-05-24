@@ -60,6 +60,7 @@ _data = {
 }
 
 [node name="GroundButton" type="StaticBody3D" unique_id=1371832190]
+collision_mask = 7
 script = ExtResource("1_foth2")
 
 [node name="ButtonBase" type="MeshInstance3D" parent="." unique_id=854242677]
@@ -73,6 +74,7 @@ mesh = SubResource("CylinderMesh_fofb2")
 shape = SubResource("BoxShape3D_fofb2")
 
 [node name="Area3D" type="Area3D" parent="." unique_id=15132593]
+collision_mask = 7
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="Area3D" unique_id=41758470]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)

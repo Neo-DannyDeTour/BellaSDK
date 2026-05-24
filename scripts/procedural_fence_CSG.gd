@@ -113,7 +113,9 @@ func _rebuild() -> void:
 	bars_combiner.add_child(clipper)
 
 	if has_border:
-		ProceduralFence._generate_border(self, fence_width, fence_height, fence_depth, border_thickness)
+		ProceduralFence._generate_border(
+			self, fence_width, fence_height, fence_depth, border_thickness
+		)
 
 
 # --- STATIC FUNCTIONS ---
@@ -160,7 +162,12 @@ static func _generate_angled_bars(
 			var px: float = origin_x + t * dir_x
 			var py: float = origin_y + t * dir_y
 			# Only accept hits that occur within the actual visual bounds (with a tiny epsilon for corners)
-			if px >= -w / 2.0 - 0.001 and px <= w / 2.0 + 0.001 and py >= -h / 2.0 - 0.001 and py <= h / 2.0 + 0.001:
+			if (
+				px >= -w / 2.0 - 0.001
+				and px <= w / 2.0 + 0.001
+				and py >= -h / 2.0 - 0.001
+				and py <= h / 2.0 + 0.001
+			):
 				valid_t.append(t)
 
 		if valid_t.size() >= 2:

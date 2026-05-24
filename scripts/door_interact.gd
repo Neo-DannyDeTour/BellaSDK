@@ -51,7 +51,10 @@ func update_door() -> void:
 			animation_player.play("open")
 	else:
 		print("closing")
-		if animation_player.current_animation != "open" or animation_player.current_animation_position > 0:
+		if (
+			animation_player.current_animation != "open"
+			or animation_player.current_animation_position > 0
+		):
 			animation_player.play_backwards("open")
 
 

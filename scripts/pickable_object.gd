@@ -371,7 +371,10 @@ func _physics_process(_delta: float) -> void:
 		# --- KEEP YOUR ROTATION LOGIC THE SAME ---
 		var target_basis: Basis = holder.global_basis
 
-		var diff_quat := target_basis.get_rotation_quaternion() * global_basis.get_rotation_quaternion().inverse()
+		var diff_quat := (
+			target_basis.get_rotation_quaternion()
+			* global_basis.get_rotation_quaternion().inverse()
+		)
 		var axis := Vector3(diff_quat.x, diff_quat.y, diff_quat.z)
 		var angle := 2.0 * acos(clamp(diff_quat.w, -1.0, 1.0))
 		if angle > PI:
@@ -402,7 +405,9 @@ func _physics_process(_delta: float) -> void:
 				# Clamp at 4.0: If pulled deep, it fights back 4x harder to overpower the drag of 6.0!
 				var depth_multiplier: float = clamp(depth * 4.0, 0.0, 4.0)
 
-				var force: Vector3 = Vector3.UP * probe_mass * float_force * gravity * depth_multiplier
+				var force: Vector3 = (
+					Vector3.UP * probe_mass * float_force * gravity * depth_multiplier
+				)
 				var offset: Vector3 = p.global_position - global_position
 				apply_force(force, offset)
 
@@ -451,8 +456,11 @@ func _wait_to_enable_collision(player: Node3D) -> void:
 
 			# 3. SMOOTH TWEEN SLIDE
 			var tween := get_tree().create_tween()
-			tween.tween_property(player, "global_position", target_pos, 0.15).set_trans(Tween.TRANS_SINE).set_ease(
-				Tween.EASE_OUT
+			(
+				tween
+				. tween_property(player, "global_position", target_pos, 0.15)
+				. set_trans(Tween.TRANS_SINE)
+				. set_ease(Tween.EASE_OUT)
 			)
 
 			linear_velocity = Vector3.ZERO

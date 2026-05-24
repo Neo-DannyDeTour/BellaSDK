@@ -32,7 +32,11 @@ func pick_up(_target: Marker3D, player: Node3D) -> void:
 
 	var height_diff := player.global_position.y - global_position.y
 	var flat_dist := (
-		Vector2(player.global_position.x - global_position.x, player.global_position.z - global_position.z).length()
+		Vector2(
+			player.global_position.x - global_position.x,
+			player.global_position.z - global_position.z
+		)
+		. length()
 	)
 
 	# Lowered the height threshold to 0.3. If your feet are slightly above the center, it rejects the grab.
@@ -61,7 +65,9 @@ func pick_up(_target: Marker3D, player: Node3D) -> void:
 	shape.radius = player_radius * 0.8
 	shape.height = player_height * 0.8
 	query.shape = shape
-	query.transform = Transform3D(Basis(), target_stand_pos + Vector3(0, (player_height / 2) + 0.5, 0))
+	query.transform = Transform3D(
+		Basis(), target_stand_pos + Vector3(0, (player_height / 2) + 0.5, 0)
+	)
 	query.collision_mask = environment_collision_mask
 	query.exclude = [self.get_rid(), player.get_rid()]
 
@@ -85,7 +91,9 @@ func pick_up(_target: Marker3D, player: Node3D) -> void:
 	var look_at_box_basis := Basis.looking_at(-snap_normal, Vector3.UP)
 	var tween := get_tree().create_tween().set_parallel(true)
 	tween.tween_property(holder, "global_position", target_stand_pos, snap_duration)
-	tween.tween_property(holder, "quaternion", look_at_box_basis.get_rotation_quaternion(), snap_duration)
+	tween.tween_property(
+		holder, "quaternion", look_at_box_basis.get_rotation_quaternion(), snap_duration
+	)
 
 	tween.chain().tween_callback(_finish_pickup)
 
@@ -223,21 +231,28 @@ func drop() -> void:
 		if "velocity" in previous_holder:
 			previous_holder.velocity = Vector3.ZERO
 
-		var p_pos_2d := Vector2(previous_holder.global_position.x, previous_holder.global_position.z)
+		var p_pos_2d := Vector2(
+			previous_holder.global_position.x, previous_holder.global_position.z
+		)
 		var b_pos_2d := Vector2(global_position.x, global_position.z)
 
 		var push_dir := (p_pos_2d - b_pos_2d).normalized()
 
 		if push_dir.length_squared() < 0.001:
 			push_dir = (
-				Vector2(-previous_holder.global_transform.basis.z.x, -previous_holder.global_transform.basis.z.z)
+				Vector2(
+					-previous_holder.global_transform.basis.z.x,
+					-previous_holder.global_transform.basis.z.z
+				)
 				. normalized()
 			)
 
 		var safe_dist := box_half_width + player_radius + 0.2
 
 		var target_pos_2d := b_pos_2d + (push_dir * safe_dist)
-		var target_pos := Vector3(target_pos_2d.x, previous_holder.global_position.y, target_pos_2d.y)
+		var target_pos := Vector3(
+			target_pos_2d.x, previous_holder.global_position.y, target_pos_2d.y
+		)
 
 		var eject_vec := target_pos - previous_holder.global_position
 
@@ -311,7 +326,11 @@ func throw(_impulse: Vector3) -> void:
 func is_valid_pickup_position(player: Node3D) -> bool:
 	var height_diff := player.global_position.y - global_position.y
 	var flat_dist := (
-		Vector2(player.global_position.x - global_position.x, player.global_position.z - global_position.z).length()
+		Vector2(
+			player.global_position.x - global_position.x,
+			player.global_position.z - global_position.z
+		)
+		. length()
 	)
 
 	# If the player's feet are above the center and they are on top of the box

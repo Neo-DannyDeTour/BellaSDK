@@ -11,7 +11,8 @@ albedo_color = Color(0.66999996, 1, 0.64, 1)
 material = SubResource("StandardMaterial3D_yqsag")
 size = Vector3(1.5, 0.1, 1.5)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_ywqth"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_vsimk"]
+size = Vector3(2, 2, 2)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vsimk"]
 transparency = 1
@@ -19,28 +20,39 @@ albedo_color = Color(1, 1, 0.078431375, 0.19607843)
 
 [sub_resource type="BoxMesh" id="BoxMesh_yqsag"]
 material = SubResource("StandardMaterial3D_vsimk")
+size = Vector3(2, 2, 2)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_c45tw"]
 render_priority = 0
 shader = ExtResource("2_yqsag")
 
 [node name="Checkpoint" type="Area3D" unique_id=1794218671]
+collision_mask = 2
 script = ExtResource("1_vsimk")
 
 [node name="Base" type="MeshInstance3D" parent="." unique_id=1127149194]
 mesh = SubResource("BoxMesh_vsimk")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1043040143]
-shape = SubResource("BoxShape3D_ywqth")
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("BoxShape3D_vsimk")
 
 [node name="TriggerField" type="MeshInstance3D" parent="." unique_id=1783728773]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 mesh = SubResource("BoxMesh_yqsag")
 
 [node name="HologramMesh" type="MeshInstance3D" parent="." unique_id=1510068088]
 transform = Transform3D(0.5, 0, 0, 0, 1, 0, 0, 0, 0.5, 0, 1, 0)
 material_override = SubResource("ShaderMaterial_c45tw")
+instance_shader_parameters/base_color = Color(0, 0.2, 0.8, 0.1)
+instance_shader_parameters/glow_multiplier = 2.0
+instance_shader_parameters/line_color = Color(0, 1, 0, 1)
+instance_shader_parameters/line_count = 2.0
+instance_shader_parameters/line_thickness = 0.1
+instance_shader_parameters/speed = 1.0
 mesh = ExtResource("1_yyywg")
 
 [node name="Label3D" type="Label3D" parent="." unique_id=674038350]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 billboard = 1
+text = "Checkpoint"

@@ -101,14 +101,18 @@ func _ready() -> void:
 		bg_rect.material = bg_material
 		bg_material.set_shader_parameter("hover_intensity", 0.0)
 		bg_material.set_shader_parameter("rect_size", size)
-		bg_material.set_shader_parameter("blood_offset", Vector2(randf_range(0.0, 100.0), randf_range(0.0, 100.0)))
+		bg_material.set_shader_parameter(
+			"blood_offset", Vector2(randf_range(0.0, 100.0), randf_range(0.0, 100.0))
+		)
 		bg_material.set_shader_parameter("custom_light_texture", flashlight_texture)
 
 		if background_images.size() > 0:
 			var random_index: int = randi() % background_images.size()
 			bg_material.set_shader_parameter("blood_texture", background_images[random_index])
 	else:
-		printerr("Button script could not find a ColorRect named 'Background' with a ShaderMaterial.")
+		printerr(
+			"Button script could not find a ColorRect named 'Background' with a ShaderMaterial."
+		)
 
 	if border_rect and border_rect.material is ShaderMaterial:
 		border_material = border_rect.material.duplicate()
@@ -190,7 +194,10 @@ func _on_mouse_entered() -> void:
 		(
 			shine_tween
 			. tween_method(
-				func(val: float) -> void: bg_material.set_shader_parameter("sweep_progress", val), -0.3, 1.8, 0.6
+				func(val: float) -> void: bg_material.set_shader_parameter("sweep_progress", val),
+				-0.3,
+				1.8,
+				0.6
 			)
 			. set_trans(Tween.TRANS_SINE)
 			. set_ease(Tween.EASE_IN_OUT)
@@ -240,7 +247,9 @@ func _process(delta: float) -> void:
 
 			if text_label:
 				var target_text_pos := Vector2(-normalized_x, -normalized_y) * parallax_intensity
-				text_label.position = text_label.position.lerp(target_text_pos, response_speed * delta)
+				text_label.position = text_label.position.lerp(
+					target_text_pos, response_speed * delta
+				)
 
 				var time_sec := Time.get_ticks_msec() / 1000.0
 				var pulse := pow(sin(time_sec * pulse_speed), 4.0)
@@ -272,7 +281,9 @@ func _process(delta: float) -> void:
 		bg_material.set_shader_parameter("ui_tilt", current_tilt * current_hover_intensity)
 
 		var local_mouse_pos := bg_rect.get_local_mouse_position()
-		var mouse_uv := Vector2(local_mouse_pos.x / bg_rect.size.x, local_mouse_pos.y / bg_rect.size.y)
+		var mouse_uv := Vector2(
+			local_mouse_pos.x / bg_rect.size.x, local_mouse_pos.y / bg_rect.size.y
+		)
 		bg_material.set_shader_parameter("mouse_pos_uv", mouse_uv)
 
 	if border_material:
@@ -293,7 +304,9 @@ func _process(delta: float) -> void:
 					pace_timers[i] = randf_range(1.0, 3.0)
 					target_shadows_x[i] = randf_range(-0.2, 1.2)
 					walk_speeds[i] = randf_range(walk_speed * 0.5, walk_speed * 1.5)
-				shadows_x[i] = move_toward(shadows_x[i], target_shadows_x[i], walk_speeds[i] * delta)
+				shadows_x[i] = move_toward(
+					shadows_x[i], target_shadows_x[i], walk_speeds[i] * delta
+				)
 
 			label_material.set_shader_parameter("shadow_" + str(i + 1) + "_x", shadows_x[i])
 

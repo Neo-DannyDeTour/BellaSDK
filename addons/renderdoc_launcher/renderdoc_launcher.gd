@@ -1,7 +1,9 @@
 @tool
 extends EditorPlugin
 
-static var button_res: PackedScene = preload("res://addons/renderdoc_launcher/res/renderdoc_button.tscn")
+static var button_res: PackedScene = preload(
+	"res://addons/renderdoc_launcher/res/renderdoc_button.tscn"
+)
 static var path_tres: String = "res://addons/renderdoc_launcher/res/renderdoc_path.tres"
 static var renderdoc_settings_path: String = "res://addons/renderdoc_launcher/res/settings.cap"
 
@@ -53,7 +55,9 @@ func open_renderdoc() -> void:
 	var path = get_renderdoc_path()
 	if path == null or path == "" or not FileAccess.file_exists(path):
 		print("RenderDoc path empty or not valid, please locate RenderDoc on your system.")
-		print("Typical Windows installation would be at 'C:\\Program Files\\RenderDoc\\qrenderdoc.exe'.")
+		print(
+			"Typical Windows installation would be at 'C:\\Program Files\\RenderDoc\\qrenderdoc.exe'."
+		)
 		file_dialog.popup_centered()
 	else:
 		execute_renderdoc()
@@ -78,14 +82,18 @@ func execute_renderdoc() -> void:
 		data = json.data
 		match option_button.get_selected_id():
 			0:
-				data["settings"]["commandLine"] = ('--path "%s"' % ProjectSettings.globalize_path("res://"))
+				data["settings"]["commandLine"] = (
+					'--path "%s"' % ProjectSettings.globalize_path("res://")
+				)
 			1:
 				var current_scene = get_editor_interface().get_edited_scene_root()
 				if current_scene:
 					var scene_path = current_scene.scene_file_path
 					var abs_scene_path = ProjectSettings.globalize_path(scene_path)
 					var abs_project_path = ProjectSettings.globalize_path("res://")
-					data["settings"]["commandLine"] = ('--path "%s" --scene "%s"' % [abs_project_path, abs_scene_path])
+					data["settings"]["commandLine"] = (
+						'--path "%s" --scene "%s"' % [abs_project_path, abs_scene_path]
+					)
 
 		data["settings"]["executable"] = OS.get_executable_path()
 	else:

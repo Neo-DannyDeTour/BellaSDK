@@ -7,7 +7,8 @@ extends CanvasLayer
 @onready var fisheye_zoom: ColorRect = $FisheyeZoom
 
 @onready var noclip_message_container: PanelContainer = $MarginContainer3/NoclipMessageContainer
-@onready var noclip_label_message: Label = $MarginContainer3/NoclipMessageContainer/NoclipLabelMessage
+@onready
+var noclip_label_message: Label = $MarginContainer3/NoclipMessageContainer/NoclipLabelMessage
 @onready var noclip_button: Button = $DebugPanel/VBoxContainer/NoclipButton
 @onready var metrics_button: Button = $DebugPanel/VBoxContainer/MetricsButton
 @onready var collision_button: Button = $DebugPanel/VBoxContainer/CollisionButton
@@ -109,7 +110,9 @@ func _on_player_zoomed(is_zooming: bool) -> void:
 	if zoom_tween and zoom_tween.is_valid():
 		zoom_tween.kill()
 
-	zoom_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	zoom_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(
+		Tween.EASE_OUT
+	)
 
 	if is_zooming:
 		# Hide standard crosshair, show zoom circles
@@ -122,15 +125,23 @@ func _on_player_zoomed(is_zooming: bool) -> void:
 		ui_circle_zoom_inner.scale = Vector2.ZERO
 		ui_circle_zoom_inner.modulate.a = 0.0
 
-		zoom_tween.tween_property(ui_circle_zoom, "scale", Vector2(1.0, 1.0), 0.5).from(Vector2.ZERO)
+		zoom_tween.tween_property(ui_circle_zoom, "scale", Vector2(1.0, 1.0), 0.5).from(
+			Vector2.ZERO
+		)
 		zoom_tween.tween_property(ui_circle_zoom, "modulate:a", 1.0, 0.3).from(0.0)
 		zoom_tween.tween_property(ui_circle_zoom, "rotation", deg_to_rad(15), 1.0).from(0.0)
 
-		zoom_tween.tween_property(ui_circle_zoom_inner, "scale", Vector2(1.0, 1.0), 0.5).from(Vector2.ZERO)
+		zoom_tween.tween_property(ui_circle_zoom_inner, "scale", Vector2(1.0, 1.0), 0.5).from(
+			Vector2.ZERO
+		)
 		zoom_tween.tween_property(ui_circle_zoom_inner, "modulate:a", 0.1, 0.3).from(0.0)
 		zoom_tween.tween_property(ui_circle_zoom_inner, "rotation", deg_to_rad(-45), 1.0).from(0.0)
 
-		zoom_tween.tween_property(fisheye_zoom, "material:shader_parameter/effect_strength", 0.4, 0.2).from(0.0)
+		(
+			zoom_tween
+			. tween_property(fisheye_zoom, "material:shader_parameter/effect_strength", 0.4, 0.2)
+			. from(0.0)
+		)
 
 	else:
 		center_dot.show()
@@ -143,7 +154,9 @@ func _on_player_zoomed(is_zooming: bool) -> void:
 		zoom_tween.tween_property(ui_circle_zoom_inner, "modulate:a", 0.0, 0.3)
 		zoom_tween.tween_property(ui_circle_zoom_inner, "rotation", deg_to_rad(0), 0.25)
 
-		zoom_tween.tween_property(fisheye_zoom, "material:shader_parameter/effect_strength", 0.0, 0.2)
+		zoom_tween.tween_property(
+			fisheye_zoom, "material:shader_parameter/effect_strength", 0.0, 0.2
+		)
 
 		zoom_tween.finished.connect(
 			func() -> void:
@@ -253,7 +266,9 @@ func _on_terminal_mode_toggled(is_active: bool) -> void:
 	if crosshair_tween and crosshair_tween.is_valid():
 		crosshair_tween.kill()
 
-	crosshair_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	crosshair_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(
+		Tween.EASE_OUT
+	)
 
 	if is_active:
 		# Animate down to 8x8 pixels
@@ -265,7 +280,9 @@ func _on_terminal_mode_toggled(is_active: bool) -> void:
 		# crosshair_tween.tween_property(center_dot, "modulate:a", 0.7, 0.3)
 	else:
 		# Animate back to the default size
-		crosshair_tween.tween_property(center_dot, "custom_minimum_size", default_crosshair_size, 0.3)
+		crosshair_tween.tween_property(
+			center_dot, "custom_minimum_size", default_crosshair_size, 0.3
+		)
 		crosshair_tween.tween_property(center_dot, "size", default_crosshair_size, 0.3)
 
 		# Optional: Restore full opacity

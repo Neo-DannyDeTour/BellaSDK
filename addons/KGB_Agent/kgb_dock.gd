@@ -126,7 +126,11 @@ func _load_api_key() -> void:
 			api_key = content.strip_edges()
 
 		if api_key.length() > 5:
-			print_rich("[color=green]KGB Agent: Key Loaded Successfully! (Starts with: [/color]", api_key.left(5), ")")
+			print_rich(
+				"[color=green]KGB Agent: Key Loaded Successfully! (Starts with: [/color]",
+				api_key.left(5),
+				")"
+			)
 		else:
 			print_rich("[color=red]KGB Agent: Key found but seems too short![/color]")
 	else:
@@ -154,7 +158,9 @@ func _on_generate_pressed() -> void:
 		sequence_display.text += str(i + 1) + ". " + beat + "\n"
 
 	if sequence_has_backtracking:
-		sequence_display.text += ("\n--- BACKTRACKING MODIFIERS ---\n" + "\n".join(backtracking_options))
+		sequence_display.text += (
+			"\n--- BACKTRACKING MODIFIERS ---\n" + "\n".join(backtracking_options)
+		)
 
 
 func _on_ask_ai_pressed() -> void:
@@ -185,7 +191,9 @@ func _on_ask_ai_pressed() -> void:
 	var body = JSON.stringify({"contents": [{"parts": [{"text": prompt}]}]})
 
 	var body_bytes = body.to_utf8_buffer()
-	var headers = PackedStringArray(["Content-Type: application/json", "Content-Length: " + str(body_bytes.size())])
+	var headers = PackedStringArray(
+		["Content-Type: application/json", "Content-Length: " + str(body_bytes.size())]
+	)
 
 	print_rich("[color=cyan]KGB Agent: Requesting [/color]", model_name)
 

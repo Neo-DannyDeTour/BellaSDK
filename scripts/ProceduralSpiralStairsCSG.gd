@@ -83,8 +83,12 @@ func _update_mesh() -> void:
 				h_bot_next = next_height - step_thickness
 
 		# Calculate 3D points
-		var A := Vector3(cos(current_angle) * inner_radius, h_top_cur, sin(current_angle) * inner_radius)
-		var B := Vector3(cos(current_angle) * outer_radius, h_top_cur, sin(current_angle) * outer_radius)
+		var A := Vector3(
+			cos(current_angle) * inner_radius, h_top_cur, sin(current_angle) * inner_radius
+		)
+		var B := Vector3(
+			cos(current_angle) * outer_radius, h_top_cur, sin(current_angle) * outer_radius
+		)
 		var C := Vector3(cos(next_angle) * outer_radius, h_top_next, sin(next_angle) * outer_radius)
 		var D := Vector3(cos(next_angle) * inner_radius, h_top_next, sin(next_angle) * inner_radius)
 

@@ -28,14 +28,24 @@ func init_gpu(num_cascades: int) -> void:
 	var spectrum_compute_shader: RID = context.load_shader(
 		"res://assets/ocean_waves/shaders/compute/spectrum_compute.glsl"
 	)
-	var fft_butterfly_shader: RID = context.load_shader("res://assets/ocean_waves/shaders/compute/fft_butterfly.glsl")
+	var fft_butterfly_shader: RID = context.load_shader(
+		"res://assets/ocean_waves/shaders/compute/fft_butterfly.glsl"
+	)
 	var spectrum_modulate_shader: RID = context.load_shader(
 		"res://assets/ocean_waves/shaders/compute/spectrum_modulate.glsl"
 	)
-	var fft_compute_shader: RID = context.load_shader("res://assets/ocean_waves/shaders/compute/fft_compute.glsl")
-	var transpose_shader: RID = context.load_shader("res://assets/ocean_waves/shaders/compute/transpose.glsl")
-	var fft_unpack_shader: RID = context.load_shader("res://assets/ocean_waves/shaders/compute/fft_unpack.glsl")
-	var downsample_shader: RID = context.load_shader("res://assets/ocean_waves/shaders/compute/downsample_compute.glsl")
+	var fft_compute_shader: RID = context.load_shader(
+		"res://assets/ocean_waves/shaders/compute/fft_compute.glsl"
+	)
+	var transpose_shader: RID = context.load_shader(
+		"res://assets/ocean_waves/shaders/compute/transpose.glsl"
+	)
+	var fft_unpack_shader: RID = context.load_shader(
+		"res://assets/ocean_waves/shaders/compute/fft_unpack.glsl"
+	)
+	var downsample_shader: RID = context.load_shader(
+		"res://assets/ocean_waves/shaders/compute/downsample_compute.glsl"
+	)
 
 	# --- DESCRIPTOR PREPARATION ---
 	var dims: Vector2i = Vector2i(map_size, map_size)
@@ -48,8 +58,12 @@ func init_gpu(num_cascades: int) -> void:
 		RenderingDevice.TEXTURE_USAGE_STORAGE_BIT | RenderingDevice.TEXTURE_USAGE_CAN_COPY_FROM_BIT,
 		num_cascades
 	)
-	descriptors[&"butterfly_factors"] = context.create_storage_buffer(num_fft_stages * map_size * 4 * 4)
-	descriptors[&"fft_buffer"] = context.create_storage_buffer(num_cascades * map_size * map_size * 4 * 2 * 2 * 4)
+	descriptors[&"butterfly_factors"] = context.create_storage_buffer(
+		num_fft_stages * map_size * 4 * 4
+	)
+	descriptors[&"fft_buffer"] = context.create_storage_buffer(
+		num_cascades * map_size * map_size * 4 * 2 * 2 * 4
+	)
 	descriptors[&"displacement_map"] = context.create_texture(
 		dims,
 		RenderingDevice.DATA_FORMAT_R16G16B16A16_SFLOAT,
@@ -79,7 +93,9 @@ func init_gpu(num_cascades: int) -> void:
 	)
 
 	# --- STRICT DESCRIPTOR SET BINDINGS ---
-	var spectrum_set: RID = context.create_descriptor_set([descriptors[&"spectrum"]], spectrum_compute_shader, 0)
+	var spectrum_set: RID = context.create_descriptor_set(
+		[descriptors[&"spectrum"]], spectrum_compute_shader, 0
+	)
 
 	var spectrum_modulate_set_0: RID = context.create_descriptor_set(
 		[descriptors[&"spectrum"]], spectrum_modulate_shader, 0
@@ -101,7 +117,9 @@ func init_gpu(num_cascades: int) -> void:
 	var unpack_set_0: RID = context.create_descriptor_set(
 		[descriptors[&"displacement_map"], descriptors[&"normal_map"]], fft_unpack_shader, 0
 	)
-	var unpack_set_1: RID = context.create_descriptor_set([descriptors[&"fft_buffer"]], fft_unpack_shader, 1)
+	var unpack_set_1: RID = context.create_descriptor_set(
+		[descriptors[&"fft_buffer"]], fft_unpack_shader, 1
+	)
 
 	var downsample_set: RID = context.create_descriptor_set(
 		[descriptors[&"displacement_map"], descriptors[&"downsampled_map"]], downsample_shader, 0
@@ -119,7 +137,9 @@ func init_gpu(num_cascades: int) -> void:
 	pipelines[&"fft_butterfly"] = context.create_pipeline(
 		[map_size / 2.0 / 64.0, num_fft_stages, 1], [fft_butterfly_set], fft_butterfly_shader
 	)
-	pipelines[&"fft_compute"] = context.create_pipeline([1, map_size, 4], [fft_compute_set], fft_compute_shader)
+	pipelines[&"fft_compute"] = context.create_pipeline(
+		[1, map_size, 4], [fft_compute_set], fft_compute_shader
+	)
 	pipelines[&"transpose"] = context.create_pipeline(
 		[map_size / 32.0, map_size / 32.0, 4], [transpose_set], transpose_shader
 	)
@@ -151,13 +171,17 @@ func _process(_delta: float) -> void:
 	context.compute_list_end()
 
 
-func _update(compute_list: int, cascade_index: int, parameters: Array[WaveCascadeParameters]) -> void:
+func _update(
+	compute_list: int, cascade_index: int, parameters: Array[WaveCascadeParameters]
+) -> void:
 	var params: WaveCascadeParameters = parameters[cascade_index]
 
 	## --- WAVE SPECTRA UPDATE ---
 	if params.should_generate_spectrum:
 		var alpha: float = JONSWAP_alpha(float(params.wind_speed), float(params.fetch_length) * 1e3)
-		var omega: float = JONSWAP_peak_angular_frequency(float(params.wind_speed), float(params.fetch_length) * 1e3)
+		var omega: float = JONSWAP_peak_angular_frequency(
+			float(params.wind_speed), float(params.fetch_length) * 1e3
+		)
 
 		# STRICT CASTING: Forces Godot to pack these as correct IEEE 754 floats and 32-bit ints
 		pipelines[&"spectrum_compute"].call(
@@ -199,7 +223,9 @@ func _update(compute_list: int, cascade_index: int, parameters: Array[WaveCascad
 	)
 
 	## --- WAVE SPECTRA INVERSE FOURIER TRANSFORM ---
-	var fft_push_constant: PackedByteArray = RenderingContext.create_push_constant([int(cascade_index)])
+	var fft_push_constant: PackedByteArray = RenderingContext.create_push_constant(
+		[int(cascade_index)]
+	)
 	pipelines[&"fft_compute"].call(context, compute_list, fft_push_constant)
 	pipelines[&"transpose"].call(context, compute_list, fft_push_constant)
 
@@ -212,7 +238,12 @@ func _update(compute_list: int, cascade_index: int, parameters: Array[WaveCascad
 		context,
 		compute_list,
 		RenderingContext.create_push_constant(
-			[int(cascade_index), float(params.whitecap), float(params.foam_grow_rate), float(params.foam_decay_rate)]
+			[
+				int(cascade_index),
+				float(params.whitecap),
+				float(params.foam_grow_rate),
+				float(params.foam_decay_rate)
+			]
 		)
 	)
 
@@ -220,7 +251,9 @@ func _update(compute_list: int, cascade_index: int, parameters: Array[WaveCascad
 	context.compute_list_add_barrier(compute_list)
 	var ratio: float = float(map_size) / float(cpu_map_size)
 	pipelines[&"downsample"].call(
-		context, compute_list, RenderingContext.create_push_constant([int(cascade_index), float(ratio)])
+		context,
+		compute_list,
+		RenderingContext.create_push_constant([int(cascade_index), float(ratio)])
 	)
 
 

@@ -34,7 +34,9 @@ func build_cable() -> void:
 
 	# Math & World Space Conversion
 	var start_pos := path_node.to_global(path_node.curve.get_point_position(0))
-	var end_pos := path_node.to_global(path_node.curve.get_point_position(path_node.curve.get_point_count() - 1))
+	var end_pos := path_node.to_global(
+		path_node.curve.get_point_position(path_node.curve.get_point_count() - 1)
+	)
 
 	var distance := start_pos.distance_to(end_pos)
 	var center := start_pos.lerp(end_pos, 0.5)

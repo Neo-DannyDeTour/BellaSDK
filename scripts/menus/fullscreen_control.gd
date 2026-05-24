@@ -18,7 +18,8 @@ func _on_toggled(toggled_on: bool) -> void:
 
 		@warning_ignore("integer_division")
 		var screen_center: Vector2i = (
-			DisplayServer.screen_get_position(current_screen) + (DisplayServer.screen_get_size(current_screen) / 2)
+			DisplayServer.screen_get_position(current_screen)
+			+ (DisplayServer.screen_get_size(current_screen) / 2)
 		)
 
 		@warning_ignore("integer_division")

@@ -57,10 +57,12 @@ func get_wave_height_at_pos(global_pos: Vector3) -> float:
 	# 1:1 replica of the vertex shader math to find the exact wave crest/trough
 	var h1: float = sin(local_pos.x * wave_frequency + time) * wave_amplitude
 	var h2: float = (
-		sin((local_pos.x * 0.8 + local_pos.z * 0.6) * (wave_frequency * 1.5) - time * 1.2) * (wave_amplitude * 0.6)
+		sin((local_pos.x * 0.8 + local_pos.z * 0.6) * (wave_frequency * 1.5) - time * 1.2)
+		* (wave_amplitude * 0.6)
 	)
 	var h3: float = (
-		cos((local_pos.z * 1.2 - local_pos.x * 0.3) * (wave_frequency * 0.8) + time * 0.7) * (wave_amplitude * 0.4)
+		cos((local_pos.z * 1.2 - local_pos.x * 0.3) * (wave_frequency * 0.8) + time * 0.7)
+		* (wave_amplitude * 0.4)
 	)
 
 	# Calculate the flat surface height + the chaotic wave math

@@ -323,7 +323,8 @@ func _process_command(cmd: String, _args: PackedStringArray) -> void:
 		"impulse":
 			if _args.size() > 0 and _args[0] == "101":
 				write(
-					"Bella doesn't need to hear about safety preconscious. She's a highly trained professional", "white"
+					"Bella doesn't need to hear about safety preconscious. She's a highly trained professional",
+					"white"
 				)
 			else:
 				write("Usage: sv_cheats 1", "red")
@@ -356,7 +357,10 @@ func _process_command(cmd: String, _args: PackedStringArray) -> void:
 						)
 			else:
 				write("Usage: colorblind <type>", "red")
-				write("Types: normal, protanopia, deuteranopia, tritanopia, mono, achromatopsia", "yellow")
+				write(
+					"Types: normal, protanopia, deuteranopia, tritanopia, mono, achromatopsia",
+					"yellow"
+				)
 		"gamespeed":
 			if _args.size() > 0:
 				var new_speed := _args[0].to_float()

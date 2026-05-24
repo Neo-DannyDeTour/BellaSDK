@@ -134,4 +134,6 @@ func animate_door(door: Node3D, target: Vector3) -> void:
 	active_tweens[door] = tween
 
 	# CHANGED: "transform:origin" is now "position"
-	tween.tween_property(door, "position", target, speed).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	tween.tween_property(door, "position", target, speed).set_trans(Tween.TRANS_SINE).set_ease(
+		Tween.EASE_OUT
+	)

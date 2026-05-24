@@ -12,6 +12,7 @@ resource_local_to_scene = true
 material = ExtResource("2_dhcj5")
 
 [node name="Ladder" type="Area3D" unique_id=273226209]
+collision_mask = 2
 script = ExtResource("1_y6w7a")
 ladder_size = Vector3(1, 1, 1)
 

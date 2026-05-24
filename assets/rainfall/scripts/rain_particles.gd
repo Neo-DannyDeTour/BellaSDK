@@ -262,7 +262,9 @@ func _setup_auto_volume() -> void:
 			depth = process_material.emission_box_extents.z * 2.0
 
 		# Estimate how far the particles fall: (Velocity * Lifetime)
-		var fall_speed: float = (process_material.initial_velocity_min + process_material.initial_velocity_max) / 2.0
+		var fall_speed: float = (
+			(process_material.initial_velocity_min + process_material.initial_velocity_max) / 2.0
+		)
 		height = fall_speed * lifetime
 
 	box_shape.size = Vector3(width, height, depth)

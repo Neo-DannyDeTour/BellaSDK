@@ -290,4 +290,6 @@ func _snap_and_freeze_plug(plug: Node3D) -> void:
 
 		# We removed the collision layer changes here!
 
-		PhysicsServer3D.body_set_state(plug.get_rid(), PhysicsServer3D.BODY_STATE_TRANSFORM, plug.global_transform)
+		PhysicsServer3D.body_set_state(
+			plug.get_rid(), PhysicsServer3D.BODY_STATE_TRANSFORM, plug.global_transform
+		)

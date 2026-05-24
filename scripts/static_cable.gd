@@ -77,8 +77,12 @@ func _update_cable_positions() -> void:
 		var end_node: Node3D = valid_anchors[span_index + 1]
 
 		# Duck-typing: grab custom droop/segments if available, else fallback
-		var span_droop: float = float(start_node.get("droop")) if "droop" in start_node else default_droop
-		var span_segments: int = int(start_node.get("segments")) if "segments" in start_node else default_segments
+		var span_droop: float = (
+			float(start_node.get("droop")) if "droop" in start_node else default_droop
+		)
+		var span_segments: int = (
+			int(start_node.get("segments")) if "segments" in start_node else default_segments
+		)
 		span_segments = max(1, span_segments)
 
 		var start_pos: Vector3 = start_node.global_position
@@ -113,7 +117,9 @@ func _update_cable_positions() -> void:
 
 			for j: int in range(radial_segments + 1):
 				var angle: float = (float(j) / float(radial_segments)) * TAU
-				var local_circle: Vector3 = Vector3(cos(angle) * thickness, sin(angle) * thickness, 0.0)
+				var local_circle: Vector3 = Vector3(
+					cos(angle) * thickness, sin(angle) * thickness, 0.0
+				)
 
 				var normal: Vector3 = (t_matrix.basis * local_circle).normalized()
 				var vertex: Vector3 = t_matrix * local_circle

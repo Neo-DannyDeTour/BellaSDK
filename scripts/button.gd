@@ -68,11 +68,17 @@ func _on_interact(_player: CharacterBody3D) -> void:
 	var base_y := pressable_part.position.y
 
 	# Animate it down slightly, then back up to its original base_y
-	press_tween.tween_property(pressable_part, "position:y", base_y - 0.02, 0.1).set_trans(Tween.TRANS_CUBIC).set_ease(
-		Tween.EASE_OUT
+	(
+		press_tween
+		. tween_property(pressable_part, "position:y", base_y - 0.02, 0.1)
+		. set_trans(Tween.TRANS_CUBIC)
+		. set_ease(Tween.EASE_OUT)
 	)
-	press_tween.tween_property(pressable_part, "position:y", base_y, 0.15).set_trans(Tween.TRANS_CUBIC).set_ease(
-		Tween.EASE_IN_OUT
+	(
+		press_tween
+		. tween_property(pressable_part, "position:y", base_y, 0.15)
+		. set_trans(Tween.TRANS_CUBIC)
+		. set_ease(Tween.EASE_IN_OUT)
 	)
 
 	for target in targets:

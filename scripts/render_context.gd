@@ -41,7 +41,9 @@ var needs_sync := false
 
 static func create(target_device: RenderingDevice = null) -> RenderingContext:
 	var context := RenderingContext.new()
-	context.device = (RenderingServer.create_local_rendering_device() if not target_device else target_device)
+	context.device = (
+		RenderingServer.create_local_rendering_device() if not target_device else target_device
+	)
 	return context
 
 
@@ -125,17 +127,22 @@ func create_texture(
 	texture_format.width = dimensions.x
 	texture_format.height = dimensions.y
 	texture_format.texture_type = (
-		RenderingDevice.TEXTURE_TYPE_2D if num_layers == 1 else RenderingDevice.TEXTURE_TYPE_2D_ARRAY
+		RenderingDevice.TEXTURE_TYPE_2D
+		if num_layers == 1
+		else RenderingDevice.TEXTURE_TYPE_2D_ARRAY
 	)
 	texture_format.usage_bits = usage
 	return Descriptor.new(
-		deletion_queue.push(device.texture_create(texture_format, view, data)), RenderingDevice.UNIFORM_TYPE_IMAGE
+		deletion_queue.push(device.texture_create(texture_format, view, data)),
+		RenderingDevice.UNIFORM_TYPE_IMAGE
 	)
 
 
 ## Creates a descriptor set. The ordering of the provided descriptors matches the binding ordering
 ## within the shader.
-func create_descriptor_set(descriptors: Array[Descriptor], shader: RID, descriptor_set_index := 0) -> RID:
+func create_descriptor_set(
+	descriptors: Array[Descriptor], shader: RID, descriptor_set_index := 0
+) -> RID:
 	var uniforms: Array[RDUniform] = []
 	for i in range(descriptors.size()):
 		var uniform := RDUniform.new()
@@ -159,7 +166,9 @@ func create_pipeline(block_dimensions: Array, descriptor_sets: Array, shader: RI
 		block_dimensions_overwrite_buffer_byte_offset := 0
 	) -> void:
 		var current_device := ctx.device
-		var sets := descriptor_sets if descriptor_set_overwrites.is_empty() else descriptor_set_overwrites
+		var sets := (
+			descriptor_sets if descriptor_set_overwrites.is_empty() else descriptor_set_overwrites
+		)
 
 		assert(
 			block_dimensions.size() == 3 or block_dimensions_overwrite_buffer.is_valid(),
@@ -169,14 +178,18 @@ func create_pipeline(block_dimensions: Array, descriptor_sets: Array, shader: RI
 
 		current_device.compute_list_bind_compute_pipeline(compute_list, pipeline)
 		if push_constant.size() > 0:
-			current_device.compute_list_set_push_constant(compute_list, push_constant, push_constant.size())
+			current_device.compute_list_set_push_constant(
+				compute_list, push_constant, push_constant.size()
+			)
 
 		for i in range(sets.size()):
 			current_device.compute_list_bind_uniform_set(compute_list, sets[i], i)
 
 		if block_dimensions_overwrite_buffer.is_valid():
 			current_device.compute_list_dispatch_indirect(
-				compute_list, block_dimensions_overwrite_buffer, block_dimensions_overwrite_buffer_byte_offset
+				compute_list,
+				block_dimensions_overwrite_buffer,
+				block_dimensions_overwrite_buffer_byte_offset
 			)
 		else:
 			current_device.compute_list_dispatch(

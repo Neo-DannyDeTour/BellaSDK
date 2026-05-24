@@ -117,7 +117,9 @@ func shoot(player_camera: Camera3D) -> void:
 			var dot := DEBUG_PELLET.instantiate()
 			get_tree().current_scene.add_child(dot)
 			dot.global_position = result.position
-			Console.write("Pellet hit: " + str(collider.name) + " at " + str(result.position), "orange")
+			Console.write(
+				"Pellet hit: " + str(collider.name) + " at " + str(result.position), "orange"
+			)
 
 
 func _on_interact_component_interacted(_player: CharacterBody3D = null) -> void:

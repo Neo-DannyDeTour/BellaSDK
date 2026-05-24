@@ -53,4 +53,6 @@ func _process(delta: float) -> void:
 	var target_basis: Basis = Basis(target_right, surface_normal, target_forward)
 
 	# Slerp (Spherical Linear Interpolation) blends the rotation smoothly
-	global_transform.basis = (current_basis.slerp(target_basis, responsiveness * delta).orthonormalized())
+	global_transform.basis = (
+		current_basis.slerp(target_basis, responsiveness * delta).orthonormalized()
+	)
