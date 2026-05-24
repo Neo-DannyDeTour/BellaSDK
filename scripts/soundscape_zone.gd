@@ -13,12 +13,11 @@ extends Area3D
 @export var base_volume_db: float = 0.0
 @export var fade_duration: float = 2.0
 
+var current_tween: Tween
 @onready var ambient_player: AudioStreamPlayer = $AmbientPlayer
 @onready var one_shot_player: AudioStreamPlayer = $OneShotPlayer
 @onready var timer: Timer = $RandomSoundTimer
 @onready var collision_shape: CollisionShape3D = $CollisionShape3D
-
-var current_tween: Tween
 
 
 func _ready() -> void:

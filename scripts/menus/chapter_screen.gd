@@ -1,10 +1,11 @@
 extends Control
 
+@export var chapters: Array[ChapterData] = []
+
 # Track the active screen instance globally
 static var active_instance: Control = null
 
-@export var chapters: Array[ChapterData] = []
-
+var selected_chapter: ChapterData = null
 @onready var chapter_list: HBoxContainer = %ChapterList
 @onready var chapter_button_template: VBoxContainer = %ChapterButtonTemplate
 
@@ -14,8 +15,6 @@ static var active_instance: Control = null
 @onready
 var back_button: Button = $MarginContainer/VBoxContainer/MainLayout/DetailsPanel/MarginContainer/BottomSplit/ButtonSection/BackButton
 @onready var background: TextureRect = %Background
-
-var selected_chapter: ChapterData = null
 
 
 func _ready() -> void:

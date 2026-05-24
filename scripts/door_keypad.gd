@@ -7,12 +7,11 @@ signal code_accepted
 @export var validCode: int = 1234
 @export var targets: Array[Node3D]  # Assign the doors you want to open in the inspector!
 
+# --- EDITOR DEBUG LINE ---
+var debug_line: MeshInstance3D
 @onready var mesh_instance_3d: MeshInstance3D = $MeshInstance3D
 @onready var sub_viewport: SubViewport = $SubViewport
 @onready var interact_component: Interact_Component = $Interact_Component
-
-# --- EDITOR DEBUG LINE ---
-var debug_line: MeshInstance3D
 
 
 func _ready() -> void:

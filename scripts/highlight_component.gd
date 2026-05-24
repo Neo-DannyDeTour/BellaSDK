@@ -1,5 +1,5 @@
-extends Node
 class_name HighlightComponent
+extends Node
 
 @export var outline_material: ShaderMaterial
 ## Leave this EMPTY for FBX/GLTF/OBJ files! The script will find them automatically.

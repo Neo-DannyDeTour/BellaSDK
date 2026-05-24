@@ -1,6 +1,6 @@
 @tool  # This tells Godot to run the script inside the editor!
-extends Node3D
 class_name PhysicsCable3D
+extends Node3D
 
 @export_category("Cable Connections")
 @export var start_anchor: Node3D

@@ -2,8 +2,9 @@ extends FogVolume
 
 @export var fade_distance := 5
 
-
 # Called every frame. 'delta' is the elapsed time since the previous frame.
+
+
 func _process(_delta: float) -> void:
 	var cam := get_viewport().get_camera_3d() if get_viewport() else null
 	if cam:

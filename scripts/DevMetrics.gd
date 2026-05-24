@@ -1,8 +1,8 @@
 extends PanelContainer
 
-@onready var metrics_label: RichTextLabel = $MetricsLabel
-
 var player: CharacterBody3D
+
+@onready var metrics_label: RichTextLabel = $MetricsLabel
 
 
 func _ready() -> void:

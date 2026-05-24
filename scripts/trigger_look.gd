@@ -1,5 +1,5 @@
-extends Area3D
 class_name TriggerLook
+extends Area3D
 
 @export_group("Trigger Settings")
 ## The object the player needs to look at (e.g., your Marker3D)

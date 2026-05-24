@@ -1,47 +1,15 @@
 @tool
 extends MeshInstance3D
+
+enum MeshQuality { LOW, HIGH, HIGH8K }
 ## Handles updating the displacement/normal maps for the water material as well as
 ## managing wave generation pipelines.
 
 const WATER_MAT := preload("res://assets/ocean_waves/ocean/mat_ocean.tres")
 const SPRAY_MAT := preload("res://assets/ocean_waves/ocean/mat_spray.tres")
-const WATER_MESH_HIGH8K := preload("res://assets/ocean_waves/ocean/clipmap_high_8k.obj")
+const WATER_MESH_HIGH8_K := preload("res://assets/ocean_waves/ocean/clipmap_high_8k.obj")
 const WATER_MESH_HIGH := preload("res://assets/ocean_waves/ocean/clipmap_high.obj")
 const WATER_MESH_LOW := preload("res://assets/ocean_waves/ocean/clipmap_low.obj")
-
-enum MeshQuality { LOW, HIGH, HIGH8K }
-
-# ==========================================
-# INTERNAL STATE VARIABLES (Restored)
-# ==========================================
-var rng: RandomNumberGenerator = RandomNumberGenerator.new()
-var wave_generator: WaveGenerator:
-	set(value):
-		if wave_generator:
-			wave_generator.queue_free()
-		wave_generator = value
-		add_child(wave_generator)
-
-var time: float = 0.0
-var next_update_time: float = 0.0
-var displacement_maps: Texture2DArrayRD = Texture2DArrayRD.new()
-var normal_maps: Texture2DArrayRD = Texture2DArrayRD.new()
-
-var update_textures: bool = true
-var just_calculated_water: bool = false
-
-# CPU readback variables
-var mutex: Mutex = Mutex.new()
-var _cpu_displacement_textures: Dictionary = {}
-var _displacement_textures_total_update_interval: float = 1.0 / 120.0
-var _displacement_textures_update_time: float = 0.0
-var _texture_loading_index: int = 0
-var _is_reading_back: bool = false
-
-var _last_cam_pos: Vector3 = Vector3.ZERO
-
-static var player_target: Node3D = null
-static var max_sim_distance: float = 200.0
 
 # ==========================================
 # 1. VISUALS (Colors & Glow)
@@ -137,6 +105,38 @@ static var max_sim_distance: float = 200.0
 		if value:
 			force_reset_cascades()
 		reset_cascades = false
+
+# ==========================================
+# INTERNAL STATE VARIABLES (Restored)
+# ==========================================
+var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+var wave_generator: WaveGenerator:
+	set(value):
+		if wave_generator:
+			wave_generator.queue_free()
+		wave_generator = value
+		add_child(wave_generator)
+
+var time: float = 0.0
+var next_update_time: float = 0.0
+var displacement_maps: Texture2DArrayRD = Texture2DArrayRD.new()
+var normal_maps: Texture2DArrayRD = Texture2DArrayRD.new()
+
+var update_textures: bool = true
+var just_calculated_water: bool = false
+
+# CPU readback variables
+var mutex: Mutex = Mutex.new()
+
+static var player_target: Node3D = null
+static var max_sim_distance: float = 200.0
+var _cpu_displacement_textures: Dictionary = {}
+var _displacement_textures_total_update_interval: float = 1.0 / 120.0
+var _displacement_textures_update_time: float = 0.0
+var _texture_loading_index: int = 0
+var _is_reading_back: bool = false
+
+var _last_cam_pos: Vector3 = Vector3.ZERO
 # ==========================================
 
 

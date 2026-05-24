@@ -1,6 +1,58 @@
 @tool
 extends GPUParticles3D
 
+const RAIN_SHADER_CODE = """
+shader_type spatial;
+// Removed depth_draw_never so it sorts properly, changed to unshaded for speed
+render_mode blend_mix, cull_disabled, unshaded;
+
+uniform sampler2D albedo_tex : hint_default_black, filter_linear_mipmap_anisotropic;
+uniform sampler2D normal_tex : hint_normal, filter_linear_mipmap_anisotropic;
+
+uniform vec4 tint_color : source_color = vec4(0.9, 0.95, 1.0, 0.5);
+uniform float shine_strength = 0.6;
+
+void vertex() {
+    // Keep your billboard logic exactly as it was
+    mat4 modified_model_view = VIEW_MATRIX * mat4(INV_VIEW_MATRIX[0], INV_VIEW_MATRIX[1], INV_VIEW_MATRIX[2], MODEL_MATRIX[3]);
+    modified_model_view = modified_model_view * mat4(
+        vec4(length(MODEL_MATRIX[0].xyz), 0.0, 0.0, 0.0),
+        vec4(0.0, length(MODEL_MATRIX[1].xyz), 0.0, 0.0),
+        vec4(0.0, 0.0, length(MODEL_MATRIX[2].xyz), 0.0),
+        vec4(0.0, 0.0, 0.0, 1.0)
+    );
+    MODELVIEW_MATRIX = modified_model_view;
+    MODELVIEW_NORMAL_MATRIX = mat3(MODELVIEW_MATRIX);
+}
+
+void fragment() {
+    vec4 base = texture(albedo_tex, UV);
+    vec3 n_tex = texture(normal_tex, UV).rgb * 2.0 - 1.0;
+
+    vec4 pColor = COLOR;
+    float final_mask = base.r * tint_color.a * pColor.a;
+
+    if (final_mask < 0.05) {
+        discard;
+    }
+
+    // --- FAKED REFRACTION (No Screen Reading) ---
+    // Instead of reading the screen, we just tint the drop slightly based on the normal
+    // This gives the illusion of volume without the massive cost.
+    vec3 base_color = tint_color.rgb * (1.0 - abs(n_tex.z) * 0.3);
+
+    // --- ENHANCED SHINE ---
+    // We use a fixed light direction (representing moonlight or ambient sky light)
+    vec3 light_dir = normalize(vec3(0.1, 0.8, 0.4));
+    float spec = max(dot(n_tex, light_dir), 0.0);
+    // Tighten the specular highlight
+    vec3 shine = pow(spec, 12.0) * shine_strength * vec3(1.0);
+
+    ALBEDO = base_color + shine;
+    ALPHA = final_mask;
+}
+"""
+
 # --- INSTRUCTIONS ---
 # 1. Assign this script to a GPUParticles3D node.
 # 2. Assign textures for 'droplet_shape_tex' and 'droplet_normal_tex'.
@@ -56,65 +108,13 @@ extends GPUParticles3D
 		droplet_size = value
 		_update_draw_mesh()
 
+# Godot 4 static variable: 2 = Layer 2. (Use 4 for Layer 3, 8 for Layer 4, etc.)
+static var player_collision_mask: int = 2
+
 # --- INTERNAL RESOURCES ---
 var _proc_mat: ParticleProcessMaterial
 var _draw_mesh: QuadMesh
 var _shader_mat: ShaderMaterial
-
-# Godot 4 static variable: 2 = Layer 2. (Use 4 for Layer 3, 8 for Layer 4, etc.)
-static var player_collision_mask: int = 2
-
-const RAIN_SHADER_CODE = """
-shader_type spatial;
-// Removed depth_draw_never so it sorts properly, changed to unshaded for speed
-render_mode blend_mix, cull_disabled, unshaded;
-
-uniform sampler2D albedo_tex : hint_default_black, filter_linear_mipmap_anisotropic;
-uniform sampler2D normal_tex : hint_normal, filter_linear_mipmap_anisotropic;
-
-uniform vec4 tint_color : source_color = vec4(0.9, 0.95, 1.0, 0.5);
-uniform float shine_strength = 0.6;
-
-void vertex() {
-    // Keep your billboard logic exactly as it was
-    mat4 modified_model_view = VIEW_MATRIX * mat4(INV_VIEW_MATRIX[0], INV_VIEW_MATRIX[1], INV_VIEW_MATRIX[2], MODEL_MATRIX[3]);
-    modified_model_view = modified_model_view * mat4(
-        vec4(length(MODEL_MATRIX[0].xyz), 0.0, 0.0, 0.0), 
-        vec4(0.0, length(MODEL_MATRIX[1].xyz), 0.0, 0.0), 
-        vec4(0.0, 0.0, length(MODEL_MATRIX[2].xyz), 0.0), 
-        vec4(0.0, 0.0, 0.0, 1.0)
-    );
-    MODELVIEW_MATRIX = modified_model_view;
-    MODELVIEW_NORMAL_MATRIX = mat3(MODELVIEW_MATRIX);
-}
-
-void fragment() {
-    vec4 base = texture(albedo_tex, UV);
-    vec3 n_tex = texture(normal_tex, UV).rgb * 2.0 - 1.0; 
-    
-    vec4 pColor = COLOR;
-    float final_mask = base.r * tint_color.a * pColor.a;
-    
-    if (final_mask < 0.05) {
-        discard;
-    }
-
-    // --- FAKED REFRACTION (No Screen Reading) ---
-    // Instead of reading the screen, we just tint the drop slightly based on the normal
-    // This gives the illusion of volume without the massive cost.
-    vec3 base_color = tint_color.rgb * (1.0 - abs(n_tex.z) * 0.3);
-
-    // --- ENHANCED SHINE ---
-    // We use a fixed light direction (representing moonlight or ambient sky light)
-    vec3 light_dir = normalize(vec3(0.1, 0.8, 0.4));
-    float spec = max(dot(n_tex, light_dir), 0.0);
-    // Tighten the specular highlight
-    vec3 shine = pow(spec, 12.0) * shine_strength * vec3(1.0);
-    
-    ALBEDO = base_color + shine;
-    ALPHA = final_mask;
-}
-"""
 
 
 func _ready() -> void:

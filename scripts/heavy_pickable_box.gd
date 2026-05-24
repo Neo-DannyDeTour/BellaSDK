@@ -1,8 +1,5 @@
-extends PickableObject
 class_name HeavyPickableBox
-
-var is_heavy_held: bool = false
-var _is_animating: bool = false
+extends PickableObject
 
 @export_group("Movement Settings")
 @export var drop_distance: float = 2.5
@@ -16,6 +13,9 @@ var _is_animating: bool = false
 @export var player_height: float = 1.8
 @export var hold_padding: float = 0.75
 @export_flags_3d_physics var environment_collision_mask: int = 1
+
+var is_heavy_held: bool = false
+var _is_animating: bool = false
 
 
 func pick_up(_target: Marker3D, player: Node3D) -> void:

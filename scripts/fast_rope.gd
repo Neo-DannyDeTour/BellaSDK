@@ -2,9 +2,6 @@
 class_name FastRope
 extends StaticBody3D
 
-# Keep track of all ropes globally using a Godot 4 static variable
-static var all_fast_ropes: Array[FastRope] = []
-
 @export_category("Fast Rope Settings")
 
 ## CHANGE THIS to make the rope longer/shorter without using Transform Scale!
@@ -20,6 +17,8 @@ static var all_fast_ropes: Array[FastRope] = []
 @export var label_offset_amount: float = 0.35
 @export var climb_radius: float = 0.6
 
+# Keep track of all ropes globally using a Godot 4 static variable
+static var all_fast_ropes: Array[FastRope] = []
 var attached_player: CharacterBody3D = null
 var attach_timer: float = 0.0
 

@@ -1,13 +1,6 @@
 @tool
 extends UniversalCable3D
 
-@onready var interact_component: Interact_Component = $InteractArea/Interact_Component
-@onready var highlight_component: HighlightComponent = $InteractArea/HighlightComponent
-@onready var interact_label: Label3D = $InteractArea/Label3D
-
-@onready var slide_audio: AudioStreamPlayer3D = $SlideAudio
-@onready var climb_audio: AudioStreamPlayer3D = $ClimbAudio
-
 @export var label_offset_amount: float = 0.35
 
 # --- THE LOCK ---
@@ -17,6 +10,13 @@ var current_player: CharacterBody3D = null
 # NEW: We need to track real position changes in case the player's built-in velocity is zero
 var last_player_pos: Vector3 = Vector3.ZERO
 var current_travel_velocity: Vector3 = Vector3.ZERO  # NEW: Store this globally for the player to grab
+
+@onready var interact_component: Interact_Component = $InteractArea/Interact_Component
+@onready var highlight_component: HighlightComponent = $InteractArea/HighlightComponent
+@onready var interact_label: Label3D = $InteractArea/Label3D
+
+@onready var slide_audio: AudioStreamPlayer3D = $SlideAudio
+@onready var climb_audio: AudioStreamPlayer3D = $ClimbAudio
 
 
 func _ready() -> void:

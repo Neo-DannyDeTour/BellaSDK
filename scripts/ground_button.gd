@@ -1,11 +1,11 @@
 @tool
 extends StaticBody3D
-
-@onready var anim: AnimationPlayer = $AnimationPlayer
 @export var targets: Array[Node3D]
 
 var bodies_on_button: int = 0
 var is_pressed: bool = false
+
+@onready var anim: AnimationPlayer = $AnimationPlayer
 
 
 func _ready() -> void:

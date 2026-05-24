@@ -1,12 +1,12 @@
-extends Control
 class_name UIKeypad
+extends Control
 
 signal code_entered(code: int)
 
+var enteredCode := ""
+
 @onready var line_edit: LineEdit = $VBoxContainer/LineEdit
 @onready var grid_container: GridContainer = $VBoxContainer/GridContainer
-
-var enteredCode := ""
 
 
 func _ready() -> void:

@@ -252,8 +252,9 @@ var _last_frame_was_on_floor: int = -999999  # Safe integer instead of -INF
 @onready var screen_water_ui: ColorRect = $CanvasLayer/WaterRippleOverlay
 @onready var rain_drops_overlay: ColorRect = $CanvasLayer/RainDropsOverlay
 
-
 # Add these receiver functions anywhere in your player script
+
+
 func set_available_monkey_bar(bar: Node3D) -> void:
 	available_monkey_bar = bar
 

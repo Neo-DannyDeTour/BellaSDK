@@ -1,12 +1,12 @@
 extends Node3D
 #
-@onready var anim_player := $Anim
-@onready var close_timer: Timer = $CloseTimer
-#
 var is_moving := false
 var is_open := false
 var player_detected := false
 var pending_open := false
+#
+@onready var anim_player := $Anim
+@onready var close_timer: Timer = $CloseTimer
 
 
 func _on_detector_body_entered(body: Node3D) -> void:

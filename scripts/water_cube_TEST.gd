@@ -1,9 +1,9 @@
 extends StaticBody3D
 
-@onready var water_wrapper := $WaterWrapper
-
 var target_scale_y: float = 1.0
 var drain_speed: float = 0.5  # How fast the water lowers
+
+@onready var water_wrapper := $WaterWrapper
 
 
 func leak_at(hit_pos: Vector3) -> void:

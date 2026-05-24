@@ -1,5 +1,5 @@
-extends Resource
 class_name SoundscapeData
+extends Resource
 
 @export_group("Ambient Loop")
 @export var ambient_track: AudioStream

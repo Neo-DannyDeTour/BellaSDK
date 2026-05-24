@@ -1,10 +1,6 @@
 @tool
 extends StaticBody3D
 
-@onready var interact_component: Interact_Component = $Interact_Component
-@onready var highlight_component: HighlightComponent = $HighlightComponent
-@onready var label_interact: Label3D = $LabelInteract
-
 @export_category("Button References")
 # Drag the node you want to physically move down here (e.g., the 'button' Node3D)
 @export var pressable_part: Node3D
@@ -18,6 +14,10 @@ extends StaticBody3D
 
 var press_tween: Tween
 var can_press: bool = true
+
+@onready var interact_component: Interact_Component = $Interact_Component
+@onready var highlight_component: HighlightComponent = $HighlightComponent
+@onready var label_interact: Label3D = $LabelInteract
 
 
 func _ready() -> void:

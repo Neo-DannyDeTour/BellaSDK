@@ -1,5 +1,5 @@
-extends Node3D
 class_name PowerComponent
+extends Node3D
 
 signal powered_on
 signal powered_off

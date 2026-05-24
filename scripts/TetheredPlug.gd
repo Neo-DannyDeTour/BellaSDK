@@ -1,5 +1,5 @@
-extends PickableObject
 class_name TetheredPlug
+extends PickableObject
 
 signal power_state_changed(is_energized: bool)
 

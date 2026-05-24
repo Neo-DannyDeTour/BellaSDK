@@ -1,7 +1,7 @@
 extends StaticBody3D
-@onready var label: Label = $Label
 
 var is_open := false
+@onready var label: Label = $Label
 
 
 func interact() -> void:

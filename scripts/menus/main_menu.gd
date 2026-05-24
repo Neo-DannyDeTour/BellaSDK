@@ -1,5 +1,56 @@
 extends CanvasLayer
 
+const DEFAULT_FOV: float = 75.0
+const DEFAULT_DISABLE_SPRINT_FOV: bool = false
+
+const RESOLUTIONS: Dictionary = {
+	"1920 x 1080": Vector2i(1920, 1080),
+	"1600 x 900": Vector2i(1600, 900),
+	"1366 x 768": Vector2i(1366, 768),
+	"1280 x 720": Vector2i(1280, 720),
+	"1024 x 768": Vector2i(1024, 768),
+	"800 x 600": Vector2i(800, 600),
+	"640 x 480": Vector2i(640, 480)
+}
+
+const SAVE_PATH = "user://settings.cfg"
+const DEFAULT_SENSITIVITY: float = 0.05
+
+# --- NEW: ACCESSIBILITY DEFAULTS ---
+const DEFAULT_BRIGHTNESS: float = 1.0
+const DEFAULT_CONTRAST: float = 1.0
+const DEFAULT_SATURATION: float = 1.0
+
+const CHAPTER_SCREEN = preload("res://scenes/ChapterScreen.tscn")
+
+# --- AUTOMATED REMAPPING ---
+var is_remapping: bool = false
+var action_to_remap: String = ""
+var remapping_button: Button = null
+
+# --- NEW SWAP VARIABLES ---
+var pending_swap_event: InputEvent = null
+var pending_conflict_action: String = ""
+
+# List every action exactly as it appears in your Project Settings > Input Map
+var my_actions := [
+	"forward",
+	"backward",
+	"left",
+	"right",
+	"jump",
+	"crouch",
+	"interact",
+	"flashlight",
+	"zoom",
+	"noclip",
+	"console"
+]
+
+# --- AUTO-CALIBRATION VARIABLES ---
+var max_mouse_speed: float = 0.0
+var has_calibrated: bool = false
+
 @onready var main_buttons: VBoxContainer = $MarginContainer/MainButtons
 @onready var options: Panel = $Options
 @onready var controls_panel: Panel = $ControlsPanel
@@ -35,57 +86,6 @@ var accessibility_button: Button = $Options/MarginContainer/OptionsButtons/HBoxC
 @onready var fov_slider: HSlider = %FOVSlider
 @onready var fov_input: LineEdit = %FOVLine
 @onready var sprint_fov_checkbox: CheckBox = %SprintFovCheckbox
-
-const DEFAULT_FOV: float = 75.0
-const DEFAULT_DISABLE_SPRINT_FOV: bool = false
-
-const RESOLUTIONS: Dictionary = {
-	"1920 x 1080": Vector2i(1920, 1080),
-	"1600 x 900": Vector2i(1600, 900),
-	"1366 x 768": Vector2i(1366, 768),
-	"1280 x 720": Vector2i(1280, 720),
-	"1024 x 768": Vector2i(1024, 768),
-	"800 x 600": Vector2i(800, 600),
-	"640 x 480": Vector2i(640, 480)
-}
-
-# --- AUTOMATED REMAPPING ---
-var is_remapping: bool = false
-var action_to_remap: String = ""
-var remapping_button: Button = null
-
-# --- NEW SWAP VARIABLES ---
-var pending_swap_event: InputEvent = null
-var pending_conflict_action: String = ""
-
-# List every action exactly as it appears in your Project Settings > Input Map
-var my_actions := [
-	"forward",
-	"backward",
-	"left",
-	"right",
-	"jump",
-	"crouch",
-	"interact",
-	"flashlight",
-	"zoom",
-	"noclip",
-	"console"
-]
-
-const SAVE_PATH = "user://settings.cfg"
-const DEFAULT_SENSITIVITY: float = 0.05
-
-# --- NEW: ACCESSIBILITY DEFAULTS ---
-const DEFAULT_BRIGHTNESS: float = 1.0
-const DEFAULT_CONTRAST: float = 1.0
-const DEFAULT_SATURATION: float = 1.0
-
-# --- AUTO-CALIBRATION VARIABLES ---
-var max_mouse_speed: float = 0.0
-var has_calibrated: bool = false
-
-const CHAPTER_SCREEN = preload("res://scenes/ChapterScreen.tscn")
 
 
 func _ready() -> void:

@@ -1,9 +1,16 @@
 extends Node3D
 
+enum State { CLOSED, RIGHT_OPEN, LEFT_OPEN }
+
 @export var slide_dist: float = 2.0
 @export var speed: float = 0.4
 @export var double_click_delay: int = 300
 
+var left_origin: Vector3
+var right_origin: Vector3
+var last_click_time: int = 0
+var current_state: State = State.CLOSED
+var active_tweens: Dictionary = {}
 @onready var left_door: StaticBody3D = $DoorLeft
 @onready var right_door: StaticBody3D = $DoorRight
 
@@ -12,14 +19,6 @@ extends Node3D
 
 @onready var left_interact: Node = $DoorLeft/Interact_Component
 @onready var right_interact: Node = $DoorRight/Interact_Component
-
-var left_origin: Vector3
-var right_origin: Vector3
-var last_click_time: int = 0
-
-enum State { CLOSED, RIGHT_OPEN, LEFT_OPEN }
-var current_state: State = State.CLOSED
-var active_tweens: Dictionary = {}
 
 
 func _ready() -> void:

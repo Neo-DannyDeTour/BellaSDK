@@ -1,5 +1,5 @@
-extends RigidBody3D
 class_name PickableObject
+extends RigidBody3D
 
 @export_category("Pickable Nodes")
 @export var interact_comp: Interact_Component
@@ -31,14 +31,11 @@ class_name PickableObject
 var is_held: bool = false
 var hold_target: Marker3D = null
 var holder: Node3D = null
-var _grab_time: int = 0
 
 # --- WATER TRACKING ---
 var is_in_water: bool = false
 var submerged: bool = false
 var current_water_node: Node3D = null
-
-@onready var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 
 var is_locked: bool = false:
 	set(value):
@@ -48,6 +45,9 @@ var is_locked: bool = false:
 				mesh.material_overlay = null
 			if label:
 				label.hide()
+var _grab_time: int = 0
+
+@onready var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 
 
 func _ready() -> void:

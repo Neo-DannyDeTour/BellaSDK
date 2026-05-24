@@ -1,5 +1,6 @@
 @tool
 extends StaticBody3D
+const DOUBLE_TAP_DELAY: float = 0.3  # Seconds allowed between taps
 
 @export_category("Connections")
 @export var targets: Array[Node3D]
@@ -53,7 +54,6 @@ var is_installed: bool = true
 
 # --- NEW: DOUBLE TAP VARS ---
 var last_interact_time: float = 0.0
-const DOUBLE_TAP_DELAY: float = 0.3  # Seconds allowed between taps
 
 var wheel: Node3D
 var debug_line: MeshInstance3D

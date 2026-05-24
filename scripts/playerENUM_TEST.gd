@@ -3,20 +3,25 @@ extends CharacterBody3D
 # 1. Define the States
 enum State { IDLE, WALKING, SPRINTING, SWIMMING, CROUCHING, FLYING, JUMPING }  # Acts as our general "In Air / Falling" state
 
-@onready var head: Node3D = $Head
-@onready var eyes: Node3D = $Head/Eyes
-@onready var standing_collision_shape: CollisionShape3D = $StandingCollisionShape
-@onready var crouching_collision_shape: CollisionShape3D = $CrouchingCollisionShape
-@onready var crouch_cast_check: RayCast3D = $CrouchCastCheck
-@onready var cam: Camera3D = $Head/Eyes/Camera3D
-@onready var jump_anim: AnimationPlayer = $Head/Eyes/JumpAnim
+# SPEED VARS
 
-@onready var flash_light_node: Node3D = $FlashLightNode
-@onready var flashlight: SpotLight3D = $FlashLightNode/Flashlight
+const CROUCH_JUMP_VELOCITY := 3.5
+const SPRINT_JUMP_VELOCITY := 5
 
-# 2. State Variables
-var current_state: State = State.IDLE
-var current_speed: float = 0.0
+# INPUT VARS
+
+const MOUSE_SENSITIVITY = 0.5
+
+# HEADBOB VARS
+const HEAD_BOBBING_SPRINTING_SPEED := 22.0
+const HEAD_BOBBING_WALKING_SPEED := 14.0
+const HEAD_BOBBING_CROUCHING_SPEED := 10.0
+const HEAD_BOBBING_IDLE_SPEED := 3.0
+
+const HEAD_BOBBING_SPRINTING_INTENSITY := 0.2
+const HEAD_BOBBING_WALKING_INTENSITY := 0.1
+const HEAD_BOBBING_CROUCHING_INTENSITY := 0.08
+const HEAD_BOBBING_IDLE_INTENSITY := 0.02
 
 # Movement Speeds
 @export var walk_speed: float = 5.0
@@ -26,29 +31,17 @@ var current_speed: float = 0.0
 @export var fly_speed: float = 20.0
 @export var jump_velocity: float = 4.5
 
+# SPRINT FOV VARS
+@export var base_fov := 75.0
+@export var sprint_fov := 90.0
+var fov_change_speed := 10.0
+
+# 2. State Variables
+var current_state: State = State.IDLE
+var current_speed: float = 0.0
 # Get gravity from project settings
 var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
-
-# SPEED VARS
-
-const CROUCH_JUMP_VELOCITY := 3.5
-const SPRINT_JUMP_VELOCITY := 5
-
-# INPUT VARS
-
-const mouse_sensitivity = 0.5
 var direction := Vector3.ZERO
-
-# HEADBOB VARS
-const head_bobbing_sprinting_speed := 22.0
-const head_bobbing_walking_speed := 14.0
-const head_bobbing_crouching_speed := 10.0
-const head_bobbing_idle_speed := 3.0
-
-const head_bobbing_sprinting_intensity := 0.2
-const head_bobbing_walking_intensity := 0.1
-const head_bobbing_crouching_intensity := 0.08
-const head_bobbing_idle_intensity := 0.02
 
 var head_bobbing_vector := Vector2.ZERO
 var head_bobbing_index := 0.0
@@ -71,13 +64,19 @@ var bob_freq := 2.0
 var bob_amp := 1.0
 var bob_time := 0.0
 
-# SPRINT FOV VARS
-@export var base_fov := 75.0
-@export var sprint_fov := 90.0
-var fov_change_speed := 10.0
-
 # DEVTOOLS VARS
 var noclip_speed_multiplier := 4.0
+
+@onready var head: Node3D = $Head
+@onready var eyes: Node3D = $Head/Eyes
+@onready var standing_collision_shape: CollisionShape3D = $StandingCollisionShape
+@onready var crouching_collision_shape: CollisionShape3D = $CrouchingCollisionShape
+@onready var crouch_cast_check: RayCast3D = $CrouchCastCheck
+@onready var cam: Camera3D = $Head/Eyes/Camera3D
+@onready var jump_anim: AnimationPlayer = $Head/Eyes/JumpAnim
+
+@onready var flash_light_node: Node3D = $FlashLightNode
+@onready var flashlight: SpotLight3D = $FlashLightNode/Flashlight
 #var is_menu_open: bool = false
 
 

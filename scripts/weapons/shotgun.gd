@@ -1,8 +1,9 @@
-extends Node3D
 class_name Shotgun
+extends Node3D
 
-#@onready var anim: AnimationPlayer = $ShotgunAnim
-@onready var muzzle_point: Marker3D = $MuzzlePoint
+# Preload the dot so it's ready in memory the moment we shoot
+const DEBUG_PELLET = preload("res://scenes/debug_pellet.tscn")
+const DUST_PUFF = preload("res://scenes/effects/dust_puff.tscn")
 
 @export var pellet_count: int = 8
 @export var spread_angle: float = 4.0  # Degrees of spread
@@ -13,11 +14,10 @@ class_name Shotgun
 
 var last_shot_time: float = -1000.0
 
-# Preload the dot so it's ready in memory the moment we shoot
-const DEBUG_PELLET = preload("res://scenes/debug_pellet.tscn")
-const DUST_PUFF = preload("res://scenes/effects/dust_puff.tscn")
-
 var is_equipped: bool = false
+
+#@onready var anim: AnimationPlayer = $ShotgunAnim
+@onready var muzzle_point: Marker3D = $MuzzlePoint
 
 
 func _ready() -> void:

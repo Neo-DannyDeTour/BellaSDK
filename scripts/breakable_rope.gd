@@ -5,8 +5,9 @@ signal rope_broken
 var health: int = 10
 var is_broken: bool = false
 
-
 # We add the parameters here so it catches what the shotgun throws!
+
+
 func take_damage(amount: int, _direction: Vector3) -> void:
 	if is_broken:
 		return  # Stop right here! We are already dead.

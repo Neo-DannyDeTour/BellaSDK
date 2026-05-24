@@ -1,8 +1,5 @@
 extends Button
 
-# --- GLOBAL AI CONFIGURATION ---
-static var active_horror_buttons: int = 0
-
 # --- BUTTON CONFIGURATION ---
 @export var hover_scale := Vector2(1.08, 1.08)
 @export var response_speed := 12.0
@@ -35,6 +32,8 @@ static var active_horror_buttons: int = 0
 
 @export var flashlight_texture: Texture2D
 
+# --- GLOBAL AI CONFIGURATION ---
+static var active_horror_buttons: int = 0
 # --- INTERNAL REFERENCES ---
 var text_label: Label
 var label_material: ShaderMaterial

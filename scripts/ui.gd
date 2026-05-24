@@ -1,5 +1,21 @@
 extends CanvasLayer
 
+var is_fullbright: bool = false
+var is_wireframe: bool = false
+var is_wireframe_overlay: bool = false
+var is_collision_visible: bool = false
+var is_ui_hidden: bool = false
+
+var green_wireframe_material: ShaderMaterial
+
+# NEW UI VARS
+var zoom_tween: Tween
+var is_player_crouching: bool = false
+var ui_lerp_speed: float = 15.0
+
+var crosshair_tween: Tween
+var default_crosshair_size: Vector2
+
 @onready var center_dot: TextureRect = $MarginContainer/CenterDot
 @onready var ui_circle_zoom: TextureRect = $MarginContainer/UICircleZoom
 @onready var ui_circle_zoom_inner: TextureRect = $MarginContainer/UICircleZoomInner
@@ -23,22 +39,6 @@ var noclip_label_message: Label = $MarginContainer3/NoclipMessageContainer/Nocli
 @onready var hide_ui_button: Button = $DebugPanel/VBoxContainer/HideUIButton
 @onready var margin_container: CenterContainer = $MarginContainer
 @onready var margin_container3: MarginContainer = $MarginContainer3
-
-var is_fullbright: bool = false
-var is_wireframe: bool = false
-var is_wireframe_overlay: bool = false
-var is_collision_visible: bool = false
-var is_ui_hidden: bool = false
-
-var green_wireframe_material: ShaderMaterial
-
-# NEW UI VARS
-var zoom_tween: Tween
-var is_player_crouching: bool = false
-var ui_lerp_speed: float = 15.0
-
-var crosshair_tween: Tween
-var default_crosshair_size: Vector2
 
 
 func _ready() -> void:

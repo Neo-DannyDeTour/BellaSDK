@@ -1,5 +1,5 @@
-extends Resource
 class_name ChapterData
+extends Resource
 
 @export var chapter_name: String
 @export_multiline var description: String

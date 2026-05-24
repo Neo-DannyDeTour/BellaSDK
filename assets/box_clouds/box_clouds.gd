@@ -2,11 +2,6 @@
 class_name LowAltitudeWeather
 extends Node
 
-# 1. The static variables remain exactly as they were
-static var wind_dir: Vector3 = Vector3(1.0, 0.0, 0.5)
-static var wind_spd: float = 2.5
-static var coverage: float = 0.45
-
 # 2. Proxy variables exposed to the Inspector
 @export_group("Weather Settings")
 @export var editor_wind_dir: Vector3 = Vector3(1.0, 0.0, 0.5):
@@ -26,6 +21,11 @@ static var coverage: float = 0.45
 
 @export_group("Nodes")
 @export var local_cloud_volume: FogVolume
+
+# 1. The static variables remain exactly as they were
+static var wind_dir: Vector3 = Vector3(1.0, 0.0, 0.5)
+static var wind_spd: float = 2.5
+static var coverage: float = 0.45
 
 
 func _ready() -> void:

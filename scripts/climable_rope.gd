@@ -1,17 +1,6 @@
 @tool
 extends Node3D
 
-@onready var rope_body: RigidBody3D = $RopeBody
-@onready var interact_component: Interact_Component = $RopeBody/Interact_Component
-@onready var highlight_component: HighlightComponent = $RopeBody/HighlightComponent
-@onready var rope_mesh: MeshInstance3D = $RopeBody/MeshInstance3D
-@onready var rope_col: CollisionShape3D = $RopeBody/CollisionShape3D
-@onready var anchor: StaticBody3D = $Anchor
-@onready var pivot: ConeTwistJoint3D = $Pivot
-@onready var interact_label: Label3D = $RopeBody/Label3D
-
-var player_on_rope: bool = false
-
 @export_category("Rope Properties")
 @export var is_swingable: bool = false
 @export var swing_force: float = 150.0
@@ -27,6 +16,17 @@ var slomo_tween: Tween
 	set(value):
 		rope_length = value
 		_update_rope_size()
+
+var player_on_rope: bool = false
+
+@onready var rope_body: RigidBody3D = $RopeBody
+@onready var interact_component: Interact_Component = $RopeBody/Interact_Component
+@onready var highlight_component: HighlightComponent = $RopeBody/HighlightComponent
+@onready var rope_mesh: MeshInstance3D = $RopeBody/MeshInstance3D
+@onready var rope_col: CollisionShape3D = $RopeBody/CollisionShape3D
+@onready var anchor: StaticBody3D = $Anchor
+@onready var pivot: ConeTwistJoint3D = $Pivot
+@onready var interact_label: Label3D = $RopeBody/Label3D
 
 
 func _ready() -> void:

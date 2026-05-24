@@ -1,20 +1,20 @@
 extends Node3D
 
-@onready var animation_player: AnimationPlayer = $AnimatableBody3D/AnimationPlayer
-@onready var timer: Timer = $Timer
-
 # --- POWER SYSTEM ---
 @export var required_power: int = 1
 var power_component: PowerComponent
-var is_powered_door: bool = false  # Tracks if this is a puzzle door or normal door
-
-var is_on_cooldown: bool = false
 
 @export var open := false:
 	set(v):
 		if v != open:
 			open = v
 			update_door()
+var is_powered_door: bool = false  # Tracks if this is a puzzle door or normal door
+
+var is_on_cooldown: bool = false
+
+@onready var animation_player: AnimationPlayer = $AnimatableBody3D/AnimationPlayer
+@onready var timer: Timer = $Timer
 
 
 func _ready() -> void:

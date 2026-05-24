@@ -1,10 +1,7 @@
 extends Node
-# SmokeManager.gd (Autoload)
-# Now supports cinematic turbulence (swirls) and editor controls.
 
-var active_holes: Array[Dictionary] = []
-var current_player_pos: Vector3 = Vector3.ZERO
-var global_time: float = 0.0
+const MAX_HOLES = 50
+const BUFFER_SIZE = MAX_HOLES * 32
 
 @export_group("System Controls")
 # How long the holes and swirls persist in seconds
@@ -20,6 +17,12 @@ var global_time: float = 0.0
 # Controls the complexity of the swirl pattern. Lower is tighter, higher is more turbulent.
 @export var swirl_frequency: float = 0.5
 
+# SmokeManager.gd (Autoload)
+# Now supports cinematic turbulence (swirls) and editor controls.
+
+var active_holes: Array[Dictionary] = []
+var current_player_pos: Vector3 = Vector3.ZERO
+var global_time: float = 0.0
 # GPU Variables
 var rd: RenderingDevice
 var shader: RID
@@ -29,9 +32,6 @@ var texture_rid: RID
 # Buffer and Uniforms
 var buffer_rid: RID
 var uniform_set: RID
-
-const MAX_HOLES = 50
-const BUFFER_SIZE = MAX_HOLES * 32
 
 var active_fog_volume: FogVolume
 

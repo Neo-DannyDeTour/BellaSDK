@@ -1,2 +1,2 @@
-extends PickableObject
 class_name PickableValve
+extends PickableObject
