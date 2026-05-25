@@ -76,10 +76,11 @@ var has_calibrated: bool = false
 # --- RESOLUTION VARIABLES ---
 @onready var resolution_options: OptionButton = %ResolutionOptionButton
 
-#@onready var accessibility_button: Button = $MarginContainer/OptionsButtons/AccessibilityButton # Adjust path if needed
-@onready
-var accessibility_button: Button = $Options/MarginContainer/OptionsButtons/HBoxContainer/AccessibilityButton
-@onready var options_content: VBoxContainer = $Options/VBoxContainer  # The container holding Resolution/Sens
+@onready var accessibility_button: Button = (
+	$Options/MarginContainer/OptionsButtons/HBoxContainer/\
+AccessibilityButton
+)
+@onready var options_content: VBoxContainer = $Options/VBoxContainer
 @onready var back_accessibility_button: Button = %BackAccessibilityButton
 
 # --- NEW: FOV SETTINGS ---
