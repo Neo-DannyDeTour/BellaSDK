@@ -1,0 +1,60 @@
+[gd_scene format=3 uid="uid://53qah8ldarrq"]
+
+[ext_resource type="Script" uid="uid://c14l6by6hsspk" path="res://scenes/effects/jelly_gel/emitter.gd" id="1_wei6y"]
+[ext_resource type="Shader" uid="uid://uwyf7jhuq3gk" path="res://scenes/effects/jelly_gel/splat.gdshader" id="2_vqt4x"]
+
+[sub_resource type="Curve" id="Curve_uepgp"]
+_data = [Vector2(0, 0.212), 0.0, 0.0, 0, 0, Vector2(1, 0.632), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_n8oyj"]
+curve = SubResource("Curve_uepgp")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_hqxry"]
+lifetime_randomness = 0.68
+angle_min = -511.8
+angle_max = 390.4
+inherit_velocity_ratio = 0.319
+direction = Vector3(2.08165e-12, 1, 2.08165e-12)
+spread = 28.735
+flatness = 0.06
+initial_velocity_min = 1.0
+initial_velocity_max = 6.0
+scale_min = 0.0
+scale_curve = SubResource("CurveTexture_n8oyj")
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_h7pk2"]
+frequency = 0.0088
+offset = Vector3(-279.07, 2.08167e-14, 2.08167e-14)
+fractal_type = 0
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_a5lw6"]
+noise = SubResource("FastNoiseLite_h7pk2")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8fvx4"]
+render_priority = 0
+shader = ExtResource("2_vqt4x")
+shader_parameter/noise_texture = SubResource("NoiseTexture2D_a5lw6")
+shader_parameter/color = Color(0.00784314, 0, 0.992157, 1)
+
+[sub_resource type="QuadMesh" id="QuadMesh_svfcg"]
+material = SubResource("ShaderMaterial_8fvx4")
+
+[node name="emitter" type="Node3D" unique_id=1180408185]
+script = ExtResource("1_wei6y")
+
+[node name="decals" type="Node3D" parent="." unique_id=1277718283]
+unique_name_in_owner = true
+
+[node name="splat_emitter" type="GPUParticles3D" parent="." unique_id=1436368420]
+unique_name_in_owner = true
+cast_shadow = 0
+emitting = false
+amount = 32
+lifetime = 0.13
+one_shot = true
+explosiveness = 0.43
+randomness = 0.34
+collision_base_size = 9.9
+process_material = SubResource("ParticleProcessMaterial_hqxry")
+draw_pass_1 = SubResource("QuadMesh_svfcg")
