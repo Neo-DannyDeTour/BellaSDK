@@ -6,6 +6,7 @@
 resource_local_to_scene = true
 
 [node name="SoundscapeZone" type="Area3D" unique_id=297960288]
+collision_mask = 2
 script = ExtResource("1_74h8o")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1628676536]

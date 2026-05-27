@@ -3,7 +3,6 @@
 
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 8) in;
 
-// FIXED: Explicitly added set = 0 to prevent binding errors.
 layout(set = 0, binding = 0, rgba8) uniform restrict image3D smoke_grid;
 
 struct Hole {
@@ -74,48 +73,46 @@ void main() {
     vec3 flow = vec3(params.time * 0.15, params.time * 0.25, params.time * 0.1);
     vec3 warp_coords = world_pos * 0.05; 
     
-    // FIXED: Replaced texture() with textureLod() for safe compute sampling
     vec3 distortion = vec3(
         textureLod(noise_texture, warp_coords + flow, 0.0).r,
         textureLod(noise_texture, warp_coords - flow, 0.0).r,
         textureLod(noise_texture, warp_coords + vec3(flow.y, -flow.z, flow.x), 0.0).r
     );
     
-    // FIXED: Replaced texture() with textureLod()
     float billow = textureLod(
         noise_texture, (warp_coords) + (distortion * 0.5), 0.0
     ).r;
     
-    float target_density = smoothstep(0.3, 0.75, billow); 
+    float target_density = smoothstep(0.2, 0.55, billow); 
     density = min(
         density + (params.heal_rate * params.delta_time), 
         target_density
     );
     
-    // Player Interaction
+    // --- Player Interaction ---
     float player_dist = distance(world_pos, params.player_pos);
     if (player_dist < params.player_radius) {
         float clear_amount = 1.0 - smoothstep(
-            params.player_radius * 0.3, 
+            params.player_radius * 0.4, 
             params.player_radius, 
             player_dist
         ); 
         density -= clear_amount;
     }
     
-    // Bullet Interaction
+    // --- Bullet Interaction ---
     int hole_count = int(params.num_holes);
     for (int i = 0; i < hole_count; i++) {
-        float hole_normalized_age = holes[i].age * params.heal_rate;
-        if (hole_normalized_age > 1.0) continue; 
+        float age = holes[i].age;
+        if (age > 1.0) continue; 
         
         float base_radius = holes[i].radius;
-        float dynamic_radius = base_radius * (1.0 + hole_normalized_age * 0.5); 
+        float dynamic_radius = base_radius * (1.0 + age * 0.1); 
+        float max_effect = dynamic_radius * 2.5; 
         
-        float max_effect_distance = dynamic_radius * 2.5; 
-        
-        vec3 min_bound = min(holes[i].start, holes[i].end) - vec3(max_effect_distance);
-        vec3 max_bound = max(holes[i].start, holes[i].end) + vec3(max_effect_distance);
+        // Fast AABB early-exit to maintain 60 FPS
+        vec3 min_bound = min(holes[i].start, holes[i].end) - vec3(max_effect);
+        vec3 max_bound = max(holes[i].start, holes[i].end) + vec3(max_effect);
         
         if (any(lessThan(world_pos, min_bound)) || any(greaterThan(world_pos, max_bound))) {
             continue;
@@ -125,28 +122,30 @@ void main() {
             world_pos, holes[i].start, holes[i].end
         );
         
-        if (hit.dist < dynamic_radius * 2.0) { 
-            float clear_mask = 1.0 - smoothstep(0.0, dynamic_radius, hit.dist);
+        if (hit.dist < max_effect) { 
+            float fade = 1.0 - age;
             
-            float swirl_fade_over_time = smoothstep(1.0, 0.0, hole_normalized_age);
-            float swirl_mask = smoothstep(
-                base_radius * 0.5, base_radius, hit.dist
-            ) * (1.0 - smoothstep(base_radius, base_radius * 2.5, hit.dist));
+            // Sharp core clearing
+            float core_radius = dynamic_radius * 0.4;
+            float clear_mask = 1.0 - smoothstep(core_radius * 0.3, core_radius, hit.dist);
             
-            swirl_mask *= swirl_fade_over_time; 
+            // Pronounced swirl rim
+            float rim_mask = smoothstep(core_radius * 0.8, dynamic_radius * 1.5, hit.dist) 
+                           * (1.0 - smoothstep(dynamic_radius * 1.5, max_effect, hit.dist));
             
             vec3 pellet_dir = normalize(holes[i].end - holes[i].start);
             vec3 rotAxis = normalize(cross(pellet_dir, hit.radialVector)); 
             
-            vec3 turbulent_coords = (world_pos * params.swirl_frequency * 0.05) + (distortion * 0.5);
-            turbulent_coords += rotAxis * (params.swirl_strength * swirl_fade_over_time);
+            // Swirl calculation
+            vec3 turb_coords = (world_pos * params.swirl_frequency) + (distortion * 0.5);
+            turb_coords += rotAxis * (params.swirl_strength * fade * 2.0);
             
-            // FIXED: Replaced texture() with textureLod()
-            float raw_noise = textureLod(noise_texture, turbulent_coords, 0.0).r;
-            float turbulence = abs(2.0 * raw_noise - 1.0);
+            float raw_noise = textureLod(noise_texture, turb_coords, 0.0).r;
+            float swirl_addition = raw_noise * params.swirl_strength * rim_mask * fade;
             
-            density -= (clear_mask * params.hole_clear_intensity);
-            density += (turbulence * swirl_mask * params.swirl_strength);
+            // Apply modifications
+            density -= (clear_mask * params.hole_clear_intensity * fade);
+            density += swirl_addition;
         }
     }
     

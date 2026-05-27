@@ -3,8 +3,9 @@
 [ext_resource type="Script" uid="uid://ca4mn3j02b5bi" path="res://scripts/Player.gd" id="1_34orh"]
 [ext_resource type="PackedScene" uid="uid://cv4syvckbtm2f" path="res://scenes/ui.tscn" id="2_k2mo6"]
 [ext_resource type="Texture2D" uid="uid://dnv1e6gebl5gj" path="res://assets/images/UI/flashlight_pattern.png" id="3_di6f5"]
-[ext_resource type="Shader" uid="uid://e5j85108j8s0" path="res://utils/WaterMaker3D/CameraWaterOverlay2.gdshader" id="5_qu4a1"]
+[ext_resource type="Shader" uid="uid://spngok2sru6f" path="res://assets/shaders/water_wipe_overlay.gdshader" id="4_61ith"]
 [ext_resource type="Shader" uid="uid://onn1sa83xj6n" path="res://scenes/WaterRippleOverlay.gdshader" id="6_61ith"]
+[ext_resource type="Shader" uid="uid://blvci46gmtq30" path="res://assets/shaders/waterfall_wipe_overlay.gdshader" id="6_ebwui"]
 [ext_resource type="AudioStream" uid="uid://bp7lht4opa4rr" path="res://assets/sounds/ConcreteFS_1.wav" id="6_khinc"]
 [ext_resource type="AudioStream" uid="uid://oot00opauoyd" path="res://assets/sounds/ConcreteFS_2.wav" id="7_bruh7"]
 [ext_resource type="Texture2D" uid="uid://c7cbvlpeqy6d5" path="res://assets/images/Concept/BellaInGameReflection.png" id="7_cw2d6"]
@@ -18,6 +19,7 @@
 [ext_resource type="AudioStream" uid="uid://5hwtbp804ek" path="res://assets/sounds/WetFS_1.wav" id="15_jfpux"]
 [ext_resource type="AudioStream" uid="uid://dnki3f8vfkxp5" path="res://assets/sounds/WetFS_2.wav" id="16_61ith"]
 [ext_resource type="AudioStream" uid="uid://oh71h2dp43vr" path="res://assets/sounds/WetFS_3.wav" id="17_ebwui"]
+[ext_resource type="Script" uid="uid://dkjdvshv5ieah" path="res://scenes/effects/smoke_wake_collider.gd" id="20_sfy4j"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_cw2d6"]
 radius = 0.1
@@ -267,19 +269,24 @@ _data = {
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_34orh"]
 height = 1.2
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_70d11"]
-shader = ExtResource("5_qu4a1")
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_61ith"]
+shader = ExtResource("4_61ith")
+shader_parameter/drop_intensity = 0.0
+shader_parameter/wash_intensity = 0.0
 shader_parameter/clear_progress = 1.5
-shader_parameter/ripple_magnitude = 1.0000000475
-shader_parameter/ripple_speed = 2.000000095
-shader_parameter/chromatic_aberration = 0.0010000000475
-shader_parameter/water_tint = Color(0.1, 0.4, 0.7, 0.2)
-shader_parameter/highlight_punch = 0.02000000095
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_jfpux"]
 shader = ExtResource("6_61ith")
 shader_parameter/drop_intensity = 0.0
 shader_parameter/wash_intensity = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_sfy4j"]
+shader = ExtResource("6_ebwui")
+shader_parameter/clear_progress = 0.0
+shader_parameter/drop_intensity = 0.0
+shader_parameter/wash_intensity = 0.0
+shader_parameter/distortion_strength = 0.04
+shader_parameter/time_scale = 3.0
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_mdl7e"]
 
@@ -399,13 +406,16 @@ texture = ExtResource("7_cw2d6")
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=336625951]
 
 [node name="WaterRippleOverlay" type="ColorRect" parent="CanvasLayer" unique_id=1942721923]
-material = SubResource("ShaderMaterial_70d11")
+material = SubResource("ShaderMaterial_61ith")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+
+[node name="BackBufferCopy1" type="BackBufferCopy" parent="CanvasLayer" unique_id=64470784]
+copy_mode = 2
 
 [node name="RainDropsOverlay" type="ColorRect" parent="CanvasLayer" unique_id=1203447522]
 material = SubResource("ShaderMaterial_jfpux")
@@ -415,6 +425,17 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+
+[node name="BackBufferCopy2" type="BackBufferCopy" parent="CanvasLayer" unique_id=1946410601]
+copy_mode = 2
+
+[node name="WaterfallOverlay" type="ColorRect" parent="CanvasLayer" unique_id=498107626]
+material = SubResource("ShaderMaterial_sfy4j")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="UI" parent="." unique_id=1944889716 groups=["player"] instance=ExtResource("2_k2mo6")]
 
@@ -439,6 +460,10 @@ volume_db = -20.0
 
 [node name="FootstepWetDirtAudio" type="AudioStreamPlayer" parent="Audio" unique_id=875564003]
 stream = SubResource("AudioStreamRandomizer_sfy4j")
+
+[node name="GPUParticlesCollisionSphere3D" type="GPUParticlesCollisionSphere3D" parent="." unique_id=1390424873]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+script = ExtResource("20_sfy4j")
 
 [connection signal="area_entered" from="WaterDetector" to="." method="_on_water_detector_area_entered"]
 [connection signal="area_exited" from="WaterDetector" to="." method="_on_water_detector_area_exited"]

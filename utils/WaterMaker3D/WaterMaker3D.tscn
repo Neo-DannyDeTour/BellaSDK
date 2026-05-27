@@ -4,7 +4,7 @@
 [ext_resource type="Shader" uid="uid://2pyqpr2qew6o" path="res://utils/WaterMaker3D/FogFade.gdshader" id="2_5f01f"]
 [ext_resource type="Script" uid="uid://dtm30dwmcgd8n" path="res://utils/WaterMaker3D/WaterMaker3D.gd" id="2_ejx8y"]
 [ext_resource type="Script" uid="uid://grkqw00wxiwn" path="res://utils/WaterMaker3D/FogVolumeFadeScript.gd" id="3_b5ytn"]
-[ext_resource type="Shader" uid="uid://e5j85108j8s0" path="res://utils/WaterMaker3D/CameraWaterOverlay2.gdshader" id="4_70utq"]
+[ext_resource type="Shader" uid="uid://e5j85108j8s0" path="res://utils/WaterMaker3D/DEPRECATED_CameraWaterOverlay2.gdshader" id="4_70utq"]
 [ext_resource type="AudioStream" uid="uid://c3gfubvks8j8o" path="res://assets/sounds/WaterSplash.mp3" id="6_266v4"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_70utq"]
@@ -90,10 +90,10 @@ wave_amplitude = 0.0
 wave_frequency = 0.0
 wave_speed = 0.0
 splash_sound = ExtResource("6_266v4")
-min_splash_velocity = null
 
 [node name="SwimmableArea3D" type="Area3D" parent="." unique_id=1515298068 groups=["water_area"]]
 unique_name_in_owner = true
+collision_mask = 2
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="SwimmableArea3D" unique_id=1110896874]
 unique_name_in_owner = true
@@ -103,6 +103,7 @@ shape = SubResource("BoxShape3D_om5f8")
 unique_name_in_owner = true
 shape = SubResource("BoxShape3D_cfplo")
 target_position = Vector3(0, 0, 0)
+collision_mask = 2
 collide_with_areas = true
 collide_with_bodies = false
 

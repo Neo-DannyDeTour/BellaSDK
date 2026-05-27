@@ -92,6 +92,9 @@ var sprint_active: bool = false
 var flying: bool = false
 var swimming: bool = false
 
+var waterfall_clear_tween: Tween
+var in_waterfall: bool = false
+
 var can_sprint: bool = true
 
 var is_heavy_lifting: bool = false:
@@ -251,6 +254,7 @@ var _last_frame_was_on_floor: int = -999999  # Safe integer instead of -INF
 
 @onready var screen_water_ui: ColorRect = $CanvasLayer/WaterRippleOverlay
 @onready var rain_drops_overlay: ColorRect = $CanvasLayer/RainDropsOverlay
+@onready var waterfall_overlay: ColorRect = $CanvasLayer/WaterfallOverlay
 
 # Add these receiver functions anywhere in your player script
 
@@ -298,6 +302,7 @@ var input_dir: Vector2 = Vector2.ZERO
 var _frames_since_grounded: int = 0
 var is_using_zoom: bool = false
 var overlapping_water_areas: Array[Area3D] = []
+var overlapping_waterfall_areas: Array[Area3D] = []
 
 
 # --------------------------------------
@@ -376,6 +381,16 @@ func _ready() -> void:
 	fullbright_env.ssil_enabled = false
 	fullbright_env.sdfgi_enabled = false
 	fullbright_env.glow_enabled = false
+	
+	# Force Godot to give each overlay its own isolated Material in memory
+	if waterfall_overlay and waterfall_overlay.material:
+		waterfall_overlay.material = waterfall_overlay.material.duplicate()
+		
+	if rain_drops_overlay and rain_drops_overlay.material:
+		rain_drops_overlay.material = rain_drops_overlay.material.duplicate()
+		
+	if screen_water_ui and screen_water_ui.material:
+		screen_water_ui.material = screen_water_ui.material.duplicate()
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -2351,15 +2366,35 @@ func _perform_vault(
 	)
 
 
+#func _on_water_detector_area_entered(area: Area3D) -> void:
+	#if area.is_in_group("water_area"):
+		#overlapping_water_areas.append(area)
+	#elif area.is_in_group("waterfall_area"):
+		#_enter_waterfall()
+#
+#
+#func _on_water_detector_area_exited(area: Area3D) -> void:
+	#if area.is_in_group("water_area"):
+		#overlapping_water_areas.erase(area)
+	#elif area.is_in_group("waterfall_area"):
+		#_exit_waterfall()
 func _on_water_detector_area_entered(area: Area3D) -> void:
 	if area.is_in_group("water_area"):
 		overlapping_water_areas.append(area)
+	elif area.is_in_group("waterfall_area"):
+		if overlapping_waterfall_areas.is_empty():
+			_enter_waterfall()
+		if not overlapping_waterfall_areas.has(area):
+			overlapping_waterfall_areas.append(area)
 
 
 func _on_water_detector_area_exited(area: Area3D) -> void:
 	if area.is_in_group("water_area"):
 		overlapping_water_areas.erase(area)
-
+	elif area.is_in_group("waterfall_area"):
+		overlapping_waterfall_areas.erase(area)
+		if overlapping_waterfall_areas.is_empty():
+			_exit_waterfall()
 
 func _trigger_screen_water_wipe() -> void:
 	if not screen_water_ui:
@@ -2370,24 +2405,54 @@ func _trigger_screen_water_wipe() -> void:
 		return
 
 	screen_water_ui.show()
+	
+	# Start completely submerged
 	mat.set_shader_parameter("clear_progress", 0.0)
+	
+	# Pre-load the intensities. Because the shader masks these behind the wipe,
+	# you won't see them until the water actually slides down the lens.
+	mat.set_shader_parameter("drop_intensity", 0.8)
+	mat.set_shader_parameter("wash_intensity", 0.5)
 
 	if water_clear_tween and water_clear_tween.is_valid():
 		water_clear_tween.kill()
 
 	water_clear_tween = create_tween()
 
-	# 1. Hold the fully wet screen for 0.5 seconds
-	water_clear_tween.tween_interval(0.5)
-
-	# 2. Animate the wipe to 1.0 (dry) over 1.5 seconds
-	water_clear_tween.tween_property(mat, "shader_parameter/clear_progress", 1.0, 1.5).set_trans(
-		Tween.TRANS_SINE
+	# Phase 1: Rapid diagonal wipe to 65% clean
+	(
+		water_clear_tween
+		.tween_property(mat, "shader_parameter/clear_progress", 0.65, 0.1)
+		.set_trans(Tween.TRANS_SINE)
+	)
+	
+	# Phase 2: The hold
+	water_clear_tween.tween_interval(0.1)
+	
+	# Phase 3: Finish the thick wipe sweep completely
+	(
+		water_clear_tween
+		.tween_property(mat, "shader_parameter/clear_progress", 1.2, 0.2)
+		.set_trans(Tween.TRANS_CUBIC)
+		.set_ease(Tween.EASE_OUT)
 	)
 
-	# 3. Hide the UI when it's totally dry
-	water_clear_tween.tween_callback(screen_water_ui.hide)
+	# Phase 4: Smoothly fade ALL remaining droplets and ripples simultaneously.
+	# This guarantees no abrupt popping!
+	(
+		water_clear_tween
+		.tween_property(mat, "shader_parameter/drop_intensity", 0.0, 1.0)
+		.set_trans(Tween.TRANS_SINE)
+	)
+	(
+		water_clear_tween
+		.parallel()
+		.tween_property(mat, "shader_parameter/wash_intensity", 0.0, 1.0)
+		.set_trans(Tween.TRANS_SINE)
+	)
 
+	# Phase 5: Hide UI only when all values have safely reached 0.0
+	water_clear_tween.tween_callback(screen_water_ui.hide)
 
 # -----------------------------------------------
 # TERMINAL / KEYPAD
@@ -2622,7 +2687,7 @@ func _handle_rain_drops(delta: float) -> void:
 	current_drop_intensity = lerpf(current_drop_intensity, target_drop, delta * 4.0)
 	current_wash_intensity = lerpf(current_wash_intensity, target_wash, delta * 2.5)
 
-	# Render handling
+	## Render handling
 	if current_drop_intensity < 0.01 and current_wash_intensity < 0.01:
 		rain_drops_overlay.hide()
 	else:
@@ -2659,3 +2724,70 @@ func _check_floor_surface() -> void:
 		var collider: Object = result["collider"]
 		if is_instance_valid(collider) and collider.is_in_group(SURFACE_ICE):
 			on_ice = true
+
+func _enter_waterfall() -> void:
+	in_waterfall = true
+	if not waterfall_overlay:
+		return
+
+	var mat: ShaderMaterial = waterfall_overlay.material as ShaderMaterial
+	if not mat:
+		return
+
+	if waterfall_clear_tween and waterfall_clear_tween.is_valid():
+		waterfall_clear_tween.kill()
+
+	waterfall_overlay.show()
+	
+	# Apply maximum flowing water, but NO droplets yet
+	mat.set_shader_parameter("clear_progress", 0.0)
+	mat.set_shader_parameter("wash_intensity", 1.0)
+	mat.set_shader_parameter("drop_intensity", 0.0)
+
+
+func _exit_waterfall() -> void:
+	in_waterfall = false
+	if not waterfall_overlay:
+		return
+
+	var mat: ShaderMaterial = waterfall_overlay.material as ShaderMaterial
+	if not mat:
+		return
+
+	if waterfall_clear_tween and waterfall_clear_tween.is_valid():
+		waterfall_clear_tween.kill()
+
+	# Instantly splatter the droplets on the screen as you step out
+	mat.set_shader_parameter("drop_intensity", 1.0)
+
+	waterfall_clear_tween = create_tween()
+
+	# 1. Sweep the heavy flowing water downward quickly (0.4s)
+	(
+		waterfall_clear_tween
+		. tween_property(mat, "shader_parameter/clear_progress", 1.2, 0.4)
+		. set_trans(Tween.TRANS_CUBIC)
+		. set_ease(Tween.EASE_OUT)
+	)
+
+	# 2. Fade the heavy flow out simultaneously
+	(
+		waterfall_clear_tween
+		. parallel()
+		. tween_property(mat, "shader_parameter/wash_intensity", 0.0, 0.4)
+		. set_trans(Tween.TRANS_SINE)
+	)
+	
+	# 3. THE LINGER: Fade the droplets out much slower (1.2 seconds)
+	(
+		waterfall_clear_tween
+		. parallel()
+		. tween_property(mat, "shader_parameter/drop_intensity", 0.0, 1.2)
+		. set_trans(Tween.TRANS_QUAD) # Quad gives a nice slow start to the fade
+		. set_ease(Tween.EASE_IN)
+	)
+
+	# 4. Use chain() so it only hides after the droplets are fully gone
+	#waterfall_clear_tween.chain().tween_callback(waterfall_overlay.hide)
+	# 4. tween_callback naturally waits for the previous parallel block to finish
+	waterfall_clear_tween.tween_callback(waterfall_overlay.hide)
