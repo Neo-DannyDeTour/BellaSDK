@@ -20,6 +20,7 @@
 [ext_resource type="AudioStream" uid="uid://dnki3f8vfkxp5" path="res://assets/sounds/WetFS_2.wav" id="16_61ith"]
 [ext_resource type="AudioStream" uid="uid://oh71h2dp43vr" path="res://assets/sounds/WetFS_3.wav" id="17_ebwui"]
 [ext_resource type="Script" uid="uid://dkjdvshv5ieah" path="res://scenes/effects/smoke_wake_collider.gd" id="20_sfy4j"]
+[ext_resource type="Script" uid="uid://cbwy13aembb7w" path="res://scripts/HealthComponent.gd" id="21_gv3ic"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_cw2d6"]
 radius = 0.1
@@ -464,6 +465,9 @@ stream = SubResource("AudioStreamRandomizer_sfy4j")
 [node name="GPUParticlesCollisionSphere3D" type="GPUParticlesCollisionSphere3D" parent="." unique_id=1390424873]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 script = ExtResource("20_sfy4j")
+
+[node name="HealthComponent" type="Node" parent="." unique_id=217395835]
+script = ExtResource("21_gv3ic")
 
 [connection signal="area_entered" from="WaterDetector" to="." method="_on_water_detector_area_entered"]
 [connection signal="area_exited" from="WaterDetector" to="." method="_on_water_detector_area_exited"]

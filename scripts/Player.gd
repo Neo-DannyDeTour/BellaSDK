@@ -256,7 +256,7 @@ var _last_frame_was_on_floor: int = -999999  # Safe integer instead of -INF
 @onready var rain_drops_overlay: ColorRect = $CanvasLayer/RainDropsOverlay
 @onready var waterfall_overlay: ColorRect = $CanvasLayer/WaterfallOverlay
 
-# Add these receiver functions anywhere in your player script
+@onready var health_component: HealthComponent = $HealthComponent
 
 
 func set_available_monkey_bar(bar: Node3D) -> void:
@@ -309,6 +309,11 @@ var overlapping_waterfall_areas: Array[Area3D] = []
 # MAIN SCRIPT
 # --------------------------------------
 func _ready() -> void:
+	# 1. Connect the local health component to a function in this script
+	health_component.health_changed.connect(_on_health_changed)
+	# 2. You can also listen for the death signal here
+	health_component.died.connect(_on_player_died)
+	
 	spring_arm.add_excluded_object(self.get_rid())
 
 	# --- DYNAMIC VAULT INDICATOR ---
@@ -1620,7 +1625,12 @@ func _handle_ground_physics(delta: float, is_truly_grounded: bool) -> void:
 			coyote_timer = 0.0
 
 	if is_on_floor() and not _snapped_to_stairs_last_frame:
-		if last_velocity.y < -2.0:
+		# Check for fatal fall velocity (20 m/s or faster downwards)
+		if last_velocity.y <= -20.0:
+			health_component.take_damage(health_component.max_health)
+			
+		# Normal landing animations for non-fatal falls
+		elif last_velocity.y < -2.0:
 			if sprinting:
 				camera_anims.play("jump_landing")
 			else:
@@ -2791,3 +2801,12 @@ func _exit_waterfall() -> void:
 	#waterfall_clear_tween.chain().tween_callback(waterfall_overlay.hide)
 	# 4. tween_callback naturally waits for the previous parallel block to finish
 	waterfall_clear_tween.tween_callback(waterfall_overlay.hide)
+
+func _on_health_changed(new_health: int) -> void:
+	# Broadcast the global signal so the UI knows to update the hearts
+	Events.player_health_changed.emit(new_health)
+
+
+func _on_player_died() -> void:
+	print("Player has died. Triggering game over sequence...")
+	# You could emit an Events.player_died signal here too

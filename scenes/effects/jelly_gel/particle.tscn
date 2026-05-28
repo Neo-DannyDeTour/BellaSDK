@@ -36,6 +36,7 @@ radial_segments = 4
 rings = 10
 
 [node name="Node3D" type="RigidBody3D" unique_id=214825485]
+top_level = true
 collision_layer = 2
 script = ExtResource("1_acnqk")
 

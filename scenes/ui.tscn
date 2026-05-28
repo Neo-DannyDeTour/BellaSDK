@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://cv4syvckbtm2f"]
 
 [ext_resource type="Script" uid="uid://bu8f1lqdsjgks" path="res://scripts/ui.gd" id="1_nt7q6"]
+[ext_resource type="Texture2D" uid="uid://cf8wtadq3xspg" path="res://assets/images/UI/bella_hearts_atlas.png" id="2_cgfq5"]
 [ext_resource type="Shader" uid="uid://bqd5soqdscvly" path="res://assets/shaders/outline_shader_adaptable.gdshader" id="2_x4jx1"]
 [ext_resource type="Texture2D" uid="uid://bp1lwvb0tg06g" path="res://assets/images/UI/UI_Circle_Zoom.png" id="3_gdt2y"]
 [ext_resource type="Texture2D" uid="uid://d11qvtoiajmle" path="res://assets/images/UI/UI_Circle_Zoom_Inner.png" id="4_wm3ai"]
@@ -8,6 +9,7 @@
 [ext_resource type="Shader" uid="uid://bly82k8d04nmt" path="res://assets/shaders/ui_zoom_fisheye_blur.gdshader" id="6_p7vwb"]
 [ext_resource type="Script" uid="uid://yhhwmqo4b0yi" path="res://scripts/DevMetrics.gd" id="7_p7vwb"]
 [ext_resource type="Script" uid="uid://cnewwxia7j3ay" path="res://scripts/frame_graph.gd" id="8_ktti3"]
+[ext_resource type="Shader" uid="uid://dqjxwnsg8c5f0" path="res://assets/shaders/outline_hearts_adaptable.gdshader" id="10_7dvkv"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_p7vwb"]
 shader = ExtResource("5_8dubc")
@@ -41,8 +43,13 @@ bg_color = Color(0.040375, 0.041947637, 0.037145004, 1)
 bg_color = Color(0.012920001, 0.012920001, 0.012920001, 0.2)
 shadow_size = 2
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_7dvkv"]
+shader = ExtResource("10_7dvkv")
+shader_parameter/fill_threshold = 0.5
+
 [node name="UI" type="CanvasLayer" unique_id=1944889716]
 script = ExtResource("1_nt7q6")
+hearts_atlas = ExtResource("2_cgfq5")
 
 [node name="Vignette" type="ColorRect" parent="." unique_id=123181987]
 material = SubResource("ShaderMaterial_p7vwb")
@@ -193,6 +200,20 @@ custom_minimum_size = Vector2(250, 100)
 layout_mode = 2
 color = Color(0, 0, 0, 0.53333336)
 script = ExtResource("8_ktti3")
+
+[node name="HealthMargin" type="MarginContainer" parent="." unique_id=2046781798]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -40.0
+offset_right = 40.0
+grow_vertical = 0
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="HeartsContainer" type="HBoxContainer" parent="HealthMargin" unique_id=887507209]
+material = SubResource("ShaderMaterial_7dvkv")
+layout_mode = 2
 
 [connection signal="pressed" from="DebugPanel/VBoxContainer/WireframeButton" to="." method="_on_wireframe_button_pressed"]
 [connection signal="pressed" from="DebugPanel/VBoxContainer/WireframeOverlayButton" to="." method="_on_wireframe_overlay_button_pressed"]

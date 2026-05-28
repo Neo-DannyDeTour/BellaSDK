@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://opttt7tvnuir"]
+
+[ext_resource type="Script" uid="uid://dos2gajmpo6s1" path="res://scripts/HealthModifier.gd" id="1_tv85v"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_5kuhq"]
+size = Vector3(2, 2, 2)
+
+[node name="HealthModifier" type="Area3D" unique_id=1142556164]
+collision_mask = 2
+script = ExtResource("1_tv85v")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1743148784]
+shape = SubResource("BoxShape3D_5kuhq")
+debug_color = Color(0.9490196, 0, 0.5686275, 1)
