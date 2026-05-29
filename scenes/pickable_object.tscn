@@ -14,6 +14,7 @@ shader_parameter/min_intensity = 0.01
 shader_parameter/max_intensity = 0.050000002375
 
 [node name="PickableObject" type="RigidBody3D" unique_id=594279821 node_paths=PackedStringArray("interact_comp", "mesh", "label", "probe_container")]
+collision_layer = 4
 script = ExtResource("1_gl7hy")
 interact_comp = NodePath("Interact_Component")
 mesh = NodePath("MeshInstance3D")

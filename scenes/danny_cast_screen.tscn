@@ -1,0 +1,32 @@
+[gd_scene format=3 uid="uid://c13bfkvjg5gkg"]
+
+[ext_resource type="Script" uid="uid://b8sdcwdoc1ek" path="res://scripts/danny_cast_screen.gd" id="1_qm3kc"]
+[ext_resource type="VideoStream" uid="uid://dfdk6f1las4du" path="res://assets/videos/bella_hidden_face.ogv" id="1_syxbc"]
+
+[sub_resource type="VideoStreamTheora" id="VideoStreamTheora_qm3kc"]
+file = "res://assets/videos/bella_hidden_face.ogv"
+
+[sub_resource type="QuadMesh" id="QuadMesh_qm3kc"]
+
+[node name="DannyCastScreen" type="Node3D" unique_id=296409196]
+script = ExtResource("1_qm3kc")
+video_stream = SubResource("VideoStreamTheora_qm3kc")
+
+[node name="MonitorMesh" type="MeshInstance3D" parent="." unique_id=1245117336]
+mesh = SubResource("QuadMesh_qm3kc")
+
+[node name="VideoViewport" type="SubViewport" parent="." unique_id=1108541622]
+size = Vector2i(1280, 720)
+render_target_update_mode = 0
+
+[node name="Player" type="VideoStreamPlayer" parent="VideoViewport" unique_id=1723217578]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stream = ExtResource("1_syxbc")
+expand = true
+loop = true
+
+[node name="VisibilityNotifier" type="VisibleOnScreenNotifier3D" parent="." unique_id=406171640]

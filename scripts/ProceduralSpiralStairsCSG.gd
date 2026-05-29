@@ -1,6 +1,6 @@
 @tool
 extends CSGMesh3D
-class_name ProceduralStairsCSG
+class_name ProceduralSpiralStairsCSG
 
 @export_category("Staircase Dimensions")
 @export var outer_radius: float = 2.5:

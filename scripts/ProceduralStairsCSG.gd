@@ -1,6 +1,6 @@
 @tool
 extends CSGPolygon3D
-class_name ProceduralSpiralStairsCSG
+class_name ProceduralStairsCSG
 
 @export_category("Stair Dimensions")
 @export_range(1, 100) var step_count: int = 10:

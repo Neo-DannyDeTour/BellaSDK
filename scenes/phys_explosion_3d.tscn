@@ -1,0 +1,76 @@
+[gd_scene format=3 uid="uid://dcnnfxaptl1bj"]
+
+[ext_resource type="Script" uid="uid://djxeq0vbpxctr" path="res://scripts/phys_explosion_3d.gd" id="1_fywa5"]
+[ext_resource type="Texture2D" uid="uid://cu4itxpxvv4dj" path="res://assets/images/PhysicsExplosion3D_EditorIcon.png" id="2_xtp0q"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_xtp0q"]
+radius = 0.1
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_pe3vo"]
+
+[sub_resource type="Gradient" id="Gradient_fywa5"]
+offsets = PackedFloat32Array(0, 0.48078805, 1)
+colors = PackedColorArray(0.9993774, 0.8972909, 0.59308845, 1, 0.9995603, 0.6342527, 0, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_xtp0q"]
+gradient = SubResource("Gradient_fywa5")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_pe3vo"]
+direction = Vector3(0, 1, 0)
+spread = 180.0
+initial_velocity_min = 3.0
+initial_velocity_max = 5.0
+damping_min = 5.0
+damping_max = 5.0
+scale_min = 0.5
+color_ramp = SubResource("GradientTexture1D_xtp0q")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fywa5"]
+transparency = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+use_particle_trails = true
+
+[sub_resource type="RibbonTrailMesh" id="RibbonTrailMesh_xtp0q"]
+material = SubResource("StandardMaterial3D_fywa5")
+size = 0.02
+
+[node name="PhysExplosion3D" type="RigidBody3D" unique_id=62383969]
+collision_mask = 5
+script = ExtResource("1_fywa5")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=372111054]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=2109718640]
+shape = SubResource("SphereShape3D_xtp0q")
+
+[node name="BlastArea" type="Area3D" parent="." unique_id=455294078]
+collision_mask = 5
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="BlastArea" unique_id=272822155]
+shape = SubResource("SphereShape3D_pe3vo")
+
+[node name="BurstSparks" type="GPUParticles3D" parent="." unique_id=648562206]
+emitting = false
+amount = 40
+lifetime = 0.2
+one_shot = true
+explosiveness = 1.0
+fixed_fps = 0
+trail_enabled = true
+trail_lifetime = 0.09999999999999999
+process_material = SubResource("ParticleProcessMaterial_pe3vo")
+draw_pass_1 = SubResource("RibbonTrailMesh_xtp0q")
+
+[node name="ConstantSparks" type="GPUParticles3D" parent="." unique_id=2062962594]
+lifetime = 0.2
+fixed_fps = 0
+trail_enabled = true
+trail_lifetime = 0.09999999999999999
+process_material = SubResource("ParticleProcessMaterial_pe3vo")
+draw_pass_1 = SubResource("RibbonTrailMesh_xtp0q")
+
+[node name="EditorIcon" type="Sprite3D" parent="." unique_id=1461974655]
+unique_name_in_owner = true
+billboard = 1
+texture = ExtResource("2_xtp0q")

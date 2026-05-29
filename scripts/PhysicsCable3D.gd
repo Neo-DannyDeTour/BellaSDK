@@ -1,4 +1,4 @@
-@tool  # This tells Godot to run the script inside the editor!
+@tool
 class_name PhysicsCable3D
 extends Node3D
 
@@ -7,7 +7,7 @@ extends Node3D
 @export var end_plug: RigidBody3D
 
 @export_category("Physics Properties")
-@export var link_scene: PackedScene
+@export var link_scene: PackedScene = preload("res://scenes/cable_link.tscn")
 @export var cable_length_meters: float = 3.0
 @export var link_spacing: float = 0.2
 
@@ -15,7 +15,9 @@ extends Node3D
 @export var cable_color: Color = Color(0.1, 0.1, 0.1)
 @export var thickness: float = 0.04
 
-# We cache the materials statically so 100 identical cables only use 1 material in memory!
+# Grab the internal node directly. Ensure the name exactly matches your node!
+@onready var _editor_icon: Node3D = get_node_or_null("%EditorIcon")
+
 static var _material_cache: Dictionary = {}
 
 var _links: Array[RigidBody3D] = []
@@ -24,15 +26,19 @@ var _base_mesh: CylinderMesh
 
 
 func _ready() -> void:
-	# 1. Create a perfectly smooth base cylinder
+	# 1. Purge the editor icon immediately at runtime (Zero overhead!)
+	if not Engine.is_editor_hint():
+		if is_instance_valid(_editor_icon):
+			_editor_icon.queue_free()
+			
+	# 2. Create a perfectly smooth base cylinder
 	_base_mesh = CylinderMesh.new()
 	_base_mesh.top_radius = thickness
 	_base_mesh.bottom_radius = thickness
-	_base_mesh.height = 1.0  # We stretch this dynamically in _process
+	_base_mesh.height = 1.0 
 	_base_mesh.radial_segments = 8
 	_base_mesh.rings = 1
 
-	# Apply statically cached material for extreme performance
 	if not _material_cache.has(cable_color):
 		var mat := StandardMaterial3D.new()
 		mat.albedo_color = cable_color
@@ -40,11 +46,9 @@ func _ready() -> void:
 		_material_cache[cable_color] = mat
 	_base_mesh.material = _material_cache[cable_color]
 
-	# 2. ONLY generate physics if we are actually playing the game
+	# 3. ONLY generate physics if we are actually playing the game
 	if not Engine.is_editor_hint():
 		call_deferred("_generate_physics_chain")
-
-		# Call a new function to build the visual mesh segments AFTER physics generate
 		call_deferred("_generate_visual_segments")
 
 

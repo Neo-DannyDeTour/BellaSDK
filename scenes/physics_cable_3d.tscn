@@ -1,0 +1,12 @@
+[gd_scene format=3 uid="uid://cphtj6064h4fe"]
+
+[ext_resource type="Script" uid="uid://wmd8opr5ggk6" path="res://scripts/PhysicsCable3D.gd" id="1_nxk7b"]
+[ext_resource type="Texture2D" uid="uid://de0hxret4so7v" path="res://assets/images/PhysicsCable3D_EditorIcon.png" id="2_re0k3"]
+
+[node name="PhysicsCable3D" type="Node3D" unique_id=2020250001]
+script = ExtResource("1_nxk7b")
+
+[node name="EditorIcon" type="Sprite3D" parent="." unique_id=844290086]
+unique_name_in_owner = true
+billboard = 1
+texture = ExtResource("2_re0k3")
