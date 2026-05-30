@@ -2,6 +2,8 @@
 class_name Particle
 extends Node3D
 
+const GRACE_PERIOD: float = 0.05
+
 @export_group("Editor Preview")
 @export var editor_floor_y: float = 0.0
 
@@ -9,13 +11,12 @@ var fall_speed: float = 5.0
 var melt_speed: float = 0.5
 var initial_radius: float = 0.2
 var current_radius: float = 0.2
-
 var is_melting: bool = false
 var is_active: bool = false
-
 # Tracks how long the particle has been alive to prevent instant self-collision
 var alive_time: float = 0.0
-const GRACE_PERIOD: float = 0.05
+
+var _shader_material: ShaderMaterial
 
 @onready var mesh_instance_3d: MeshInstance3D = $MeshInstance3D as MeshInstance3D
 @onready var area_3d: Area3D = $Area3D as Area3D
@@ -33,7 +34,8 @@ func _ready() -> void:
 		area_3d.collision_mask = 1
 		
 	if not Engine.is_editor_hint():
-		area_3d.body_entered.connect(_on_area_body_entered)
+		if area_3d != null:
+			area_3d.body_entered.connect(_on_area_body_entered)
 
 
 func _process(delta: float) -> void:
@@ -75,18 +77,32 @@ func deactivate() -> void:
 	is_melting = false
 	visible = false
 	
-	# Teleport to the void to save 60 FPS physics calculations
+	# Teleport to the void to save physics calculations
 	global_position = Vector3(0.0, -1000.0, 0.0)
 
 
+func _get_shader_material() -> ShaderMaterial:
+	if _shader_material != null:
+		return _shader_material
+		
+	# Fallback if called before _ready() assigns the @onready variable
+	if mesh_instance_3d == null:
+		mesh_instance_3d = get_node_or_null("MeshInstance3D") as MeshInstance3D
+		
+	if mesh_instance_3d != null:
+		_shader_material = mesh_instance_3d.get_active_material(0) as ShaderMaterial
+		
+	return _shader_material
+
+
 func set_particle_image(image: ImageTexture) -> void:
-	var mat: ShaderMaterial = mesh_instance_3d.get_active_material(0) as ShaderMaterial
+	var mat: ShaderMaterial = _get_shader_material()
 	if mat != null:
 		mat.set_shader_parameter(&"particles", image)
 
 
 func update_n_particles(n: int) -> void:
-	var mat: ShaderMaterial = mesh_instance_3d.get_active_material(0) as ShaderMaterial
+	var mat: ShaderMaterial = _get_shader_material()
 	if mat != null:
 		mat.set_shader_parameter(&"n_particles", n)
 
@@ -98,7 +114,7 @@ func update_shader_params(
 	p_metallic: float,
 	p_k_blend: float
 ) -> void:
-	var mat: ShaderMaterial = mesh_instance_3d.get_active_material(0) as ShaderMaterial
+	var mat: ShaderMaterial = _get_shader_material()
 	if mat != null:
 		mat.set_shader_parameter(&"color", p_color)
 		mat.set_shader_parameter(&"opacity", p_opacity)

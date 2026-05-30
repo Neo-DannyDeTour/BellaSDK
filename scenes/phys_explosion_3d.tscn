@@ -58,7 +58,7 @@ one_shot = true
 explosiveness = 1.0
 fixed_fps = 0
 trail_enabled = true
-trail_lifetime = 0.09999999999999999
+trail_lifetime = 0.1
 process_material = SubResource("ParticleProcessMaterial_pe3vo")
 draw_pass_1 = SubResource("RibbonTrailMesh_xtp0q")
 
@@ -66,7 +66,7 @@ draw_pass_1 = SubResource("RibbonTrailMesh_xtp0q")
 lifetime = 0.2
 fixed_fps = 0
 trail_enabled = true
-trail_lifetime = 0.09999999999999999
+trail_lifetime = 0.1
 process_material = SubResource("ParticleProcessMaterial_pe3vo")
 draw_pass_1 = SubResource("RibbonTrailMesh_xtp0q")
 

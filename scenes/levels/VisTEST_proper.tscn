@@ -46,6 +46,7 @@
 [ext_resource type="PackedScene" uid="uid://cf8pnlqxpdri3" path="res://scenes/Pickable_Barrel_red.tscn" id="46_ubk4r"]
 [ext_resource type="Texture2D" uid="uid://dqbpt2iyril23" path="res://assets/VisTEST/2. Modular_Models/Walls/Wall_Fan/Wall_Fan_T_Concrete_BaseColor-T_Concrete_Alpha.png" id="47_6vg87"]
 [ext_resource type="PackedScene" uid="uid://bpn41lsyperm8" path="res://assets/VisTEST/2. Modular_Models/Props/pickable_computer_old.tscn" id="47_mhg1j"]
+[ext_resource type="PackedScene" uid="uid://c4jdpcnpsoerv" path="res://scenes/mirror.tscn" id="48_k4uoe"]
 [ext_resource type="PackedScene" uid="uid://b85u3svdjg12c" path="res://assets/VisTEST/2. Modular_Models/Props/pickable_chair_small.tscn" id="48_mhg1j"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_kja8q"]
@@ -1983,3 +1984,9 @@ double_sided = false
 text = "Yes, you can break the game here. Congrats.
 Metrics and item placement is a lot harder than I thought.
 Are you happy now?"
+
+[node name="Mirror" parent="." unique_id=2122574524 instance=ExtResource("48_k4uoe")]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 2.134491, 1.0696852, 6.931567)
+size = Vector2(3, 2)
+max_update_distance = 50.0
+cull_far = 25.0
