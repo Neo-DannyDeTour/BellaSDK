@@ -29,13 +29,13 @@ func _ready() -> void:
 	if blast_shape.shape is SphereShape3D:
 		blast_shape.shape = blast_shape.shape.duplicate()
 		blast_shape.shape.radius = explosion_radius
-		
+
 	_reset_fuse()
 
 
 func _physics_process(delta: float) -> void:
 	_fuse_timer -= delta
-	
+
 	if _fuse_timer <= 0.0:
 		_detonate()
 		_reset_fuse()
@@ -48,34 +48,32 @@ func _reset_fuse() -> void:
 func _detonate() -> void:
 	# Trigger the heavy burst of sparks
 	burst_sparks.restart()
-	
+
 	var bodies: Array[Node3D] = blast_area.get_overlapping_bodies()
 	var center: Vector3 = global_position
-	
+
 	for body: Node3D in bodies:
 		if body is RigidBody3D and body != self:
 			if body.get_parent() is PhysicsCable3D:
 				continue
-				
-			body.sleeping = false 
-			
+
+			body.sleeping = false
+
 			var dir: Vector3 = center.direction_to(body.global_position)
 			var dist: float = center.distance_to(body.global_position)
-			
+
 			if dist < 0.01:
 				dir = Vector3.UP
 				dist = 0.1
-				
+
 			var falloff: float = maxf(0.0, 1.0 - (dist / explosion_radius))
 			var impulse: Vector3 = dir * explosion_force * falloff * body.mass
-			
+
 			body.apply_impulse(impulse, Vector3(0.0, 0.1, 0.0))
-			
-	var random_kick: Vector3 = Vector3(
-		randf_range(-1.0, 1.0),
-		randf_range(0.5, 1.5),
-		randf_range(-1.0, 1.0)
-	).normalized()
-	
+
+	var random_kick: Vector3 = (
+		Vector3(randf_range(-1.0, 1.0), randf_range(0.5, 1.5), randf_range(-1.0, 1.0)).normalized()
+	)
+
 	var final_kick: Vector3 = random_kick * explosion_force * self_kick_multiplier * mass
 	apply_central_impulse(final_kick)

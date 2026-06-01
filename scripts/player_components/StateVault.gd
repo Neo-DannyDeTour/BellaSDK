@@ -1,10 +1,11 @@
 class_name StateVault
 extends PlayerState
 
+
 func enter(_msg: Dictionary = {}) -> void:
 	# Listen for the VaultController to tell us it's done
 	player.vault_controller.vault_finished.connect(_on_vault_finished)
-	
+
 	# Kill momentum so the player doesn't slide during the vault
 	player.velocity = Vector3.ZERO
 

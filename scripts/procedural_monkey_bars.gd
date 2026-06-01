@@ -50,9 +50,9 @@ func _update_trigger_box() -> void:
 func _on_body_entered(body: Node3D) -> void:
 	if Engine.is_editor_hint():
 		return
-	
-	print("Monkey Bar Trigger touched by: ", body.name) # Add this!
-	
+
+	print("Monkey Bar Trigger touched by: ", body.name)  # Add this!
+
 	if body.has_method("set_available_monkey_bar"):
 		body.set_available_monkey_bar(self)
 

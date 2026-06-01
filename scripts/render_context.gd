@@ -16,15 +16,16 @@ class DeletionQueue:
 			if not queue[i].is_valid():
 				continue
 			device.free_rid(queue[i])
-			
+
 		queue.clear()
 
 	func free_rid(device: RenderingDevice, rid: RID) -> void:
 		var rid_idx: int = queue.find(rid)
 		assert(rid_idx != -1, "RID was not found in deletion queue!")
-		
+
 		# Removed device.sync()
 		device.free_rid(queue.pop_at(rid_idx))
+
 
 class Descriptor:
 	var rid: RID

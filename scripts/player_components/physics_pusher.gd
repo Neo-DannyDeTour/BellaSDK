@@ -14,7 +14,9 @@ extends Node
 # --------------------------------------
 # CORE PROCESS LOGIC
 # --------------------------------------
-func process_pushes(held_object: Node3D, last_velocity: Vector3, reference_max_speed: float) -> void:
+func process_pushes(
+	held_object: Node3D, last_velocity: Vector3, reference_max_speed: float
+) -> void:
 	if not player_body:
 		return
 

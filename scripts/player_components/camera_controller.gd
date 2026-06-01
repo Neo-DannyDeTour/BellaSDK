@@ -52,7 +52,7 @@ var stair_offset: float = 0.0
 func _ready() -> void:
 	mouse_sensitivity = mouse_sensitivity_base
 	target_fov = base_fov
-	
+
 	# If you have a settings file loader, you can call a setup function from Player.gd
 	# to inject the saved sensitivity here.
 
@@ -60,7 +60,12 @@ func _ready() -> void:
 # --------------------------------------
 # INPUT HANDLING
 # --------------------------------------
-func handle_mouse_input(event: InputEventMouseMotion, is_terminal_mode: bool, is_heavy_lifting: bool, heavy_lift_yaw_base: float) -> void:
+func handle_mouse_input(
+	event: InputEventMouseMotion,
+	is_terminal_mode: bool,
+	is_heavy_lifting: bool,
+	heavy_lift_yaw_base: float
+) -> void:
 	var active_sens: float = mouse_sensitivity
 	if is_terminal_mode:
 		active_sens *= 0.5
@@ -81,11 +86,11 @@ func handle_mouse_input(event: InputEventMouseMotion, is_terminal_mode: bool, is
 # PROCESS UPDATES
 # --------------------------------------
 func update_camera(
-	delta: float, 
-	input_dir: Vector2, 
-	is_sprinting: bool, 
-	is_crouching: bool, 
-	is_grounded: bool, 
+	delta: float,
+	input_dir: Vector2,
+	is_sprinting: bool,
+	is_crouching: bool,
+	is_grounded: bool,
 	player_velocity: float
 ) -> void:
 	_update_fov(delta, is_sprinting, is_grounded, input_dir)
@@ -95,7 +100,10 @@ func update_camera(
 
 
 func _update_fov(delta: float, is_sprinting: bool, is_grounded: bool, input_dir: Vector2) -> void:
-	var is_valid_sprint: bool = (is_sprinting and input_dir.length() > 0.1) or (not is_grounded and target_fov == sprint_fov)
+	var is_valid_sprint: bool = (
+		(is_sprinting and input_dir.length() > 0.1)
+		or (not is_grounded and target_fov == sprint_fov)
+	)
 
 	if Input.is_action_pressed("zoom"):
 		target_fov = zoom_fov
@@ -125,9 +133,15 @@ func _update_tilt(delta: float, input_dir: Vector2) -> void:
 	eyes.rotation.z = lerpf(eyes.rotation.z, deg_to_rad(-target_tilt), delta * lerp_speed)
 
 
-func _update_headbob(delta: float, input_dir: Vector2, is_sprinting: bool, is_crouching: bool, intensity_modifier: float = 1.0) -> void:
+func _update_headbob(
+	delta: float,
+	input_dir: Vector2,
+	is_sprinting: bool,
+	is_crouching: bool,
+	intensity_modifier: float = 1.0
+) -> void:
 	var bob_speed: float = HEAD_BOBBING_IDLE_SPEED
-	
+
 	if is_sprinting and input_dir != Vector2.ZERO:
 		bob_speed = HEAD_BOBBING_SPRINTING_SPEED
 		head_bobbing_current_intensity = HEAD_BOBBING_SPRINTING_INTENSITY
@@ -146,8 +160,12 @@ func _update_headbob(delta: float, input_dir: Vector2, is_sprinting: bool, is_cr
 	head_bobbing_index += bob_speed * delta * movement_multiplier
 
 	# Calculate offset
-	var target_bob_y: float = sin(head_bobbing_index) * (head_bobbing_current_intensity / 2.0) * intensity_modifier
-	var target_bob_x: float = sin(head_bobbing_index / 2.0) * head_bobbing_current_intensity * intensity_modifier
+	var target_bob_y: float = (
+		sin(head_bobbing_index) * (head_bobbing_current_intensity / 2.0) * intensity_modifier
+	)
+	var target_bob_x: float = (
+		sin(head_bobbing_index / 2.0) * head_bobbing_current_intensity * intensity_modifier
+	)
 
 	headbob_offset.y = lerpf(headbob_offset.y, target_bob_y, delta * lerp_speed)
 	headbob_offset.x = lerpf(headbob_offset.x, target_bob_x, delta * lerp_speed)

@@ -37,6 +37,7 @@ var step_timer: float = 0.0
 var is_on_ice: bool = false
 var active_audio_player: AudioStreamPlayer = null
 
+
 func _ready() -> void:
 	active_audio_player = audio_default
 
@@ -45,13 +46,8 @@ func _ready() -> void:
 # CORE PROCESS LOGIC
 # --------------------------------------
 func process_surface_and_footsteps(
-	delta: float, 
-	is_grounded: bool, 
-	velocity_length: float, 
-	is_sprinting: bool, 
-	is_crouching: bool
+	delta: float, is_grounded: bool, velocity_length: float, is_sprinting: bool, is_crouching: bool
 ) -> void:
-	
 	if not is_grounded:
 		# Reset timer so the first step plays instantly upon landing/moving
 		step_timer = 0.0
@@ -64,11 +60,11 @@ func process_surface_and_footsteps(
 	# 2. Handle the audio timing
 	if velocity_length > 0.5:
 		step_timer -= delta
-		
+
 		if step_timer <= 0.0:
 			if active_audio_player:
 				active_audio_player.play()
-				
+
 			_reset_timer(is_sprinting, is_crouching)
 	else:
 		step_timer = 0.0
@@ -93,12 +89,13 @@ func _scan_surface_material() -> void:
 
 	if result:
 		var collider: Object = result.get("collider")
-		
+
 		if is_instance_valid(collider):
 			# Check Ice (Also updates physics state)
 			if collider.is_in_group(SURFACE_ICE):
 				is_on_ice = true
-				if audio_ice: active_audio_player = audio_ice
+				if audio_ice:
+					active_audio_player = audio_ice
 			# Check Metal
 			elif collider.is_in_group(SURFACE_METAL) and audio_metal:
 				active_audio_player = audio_metal

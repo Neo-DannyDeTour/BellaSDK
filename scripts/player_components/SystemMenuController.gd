@@ -149,9 +149,9 @@ func toggle_noclip() -> void:
 
 	if flying:
 		print("Noclip ON")
-		# Reset vertical velocity so you don't rocket upwards if you 
+		# Reset vertical velocity so you don't rocket upwards if you
 		# turn it on while falling!
-		player_body.velocity.y = 0.0 
+		player_body.velocity.y = 0.0
 	else:
 		print("Noclip OFF")
 
@@ -166,10 +166,10 @@ func process_noclip(delta: float) -> void:
 
 	var input_dir := Input.get_vector("left", "right", "forward", "backward")
 	var basis: Basis = camera.global_transform.basis
-	
+
 	var fly_dir: Vector3 = basis * Vector3(input_dir.x, 0.0, input_dir.y)
 	var vertical_input: float = Input.get_axis("crouch", "jump")
-	
+
 	fly_dir += Vector3.UP * vertical_input
 	fly_dir = fly_dir.normalized()
 

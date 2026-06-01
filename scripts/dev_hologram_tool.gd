@@ -1,6 +1,6 @@
 @tool
-extends Node3D
 class_name DevHologramTool  # This makes it a globally recognized component in your project!
+extends Node3D
 
 @export_group("Node Connections")
 # By exporting the Nodes, this script no longer cares what they are named in the scene tree!

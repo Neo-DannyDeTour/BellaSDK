@@ -25,8 +25,8 @@ signal heavy_lift_state_changed(is_lifting: bool, yaw_base: float)
 # --------------------------------------
 # VARIABLES
 # --------------------------------------
-var current_interactable: Node = null # Assuming Interact_Component is a Node
-var held_object: Node3D = null # Assuming PickableObject extends Node3D
+var current_interactable: Node = null  # Assuming Interact_Component is a Node
+var held_object: Node3D = null  # Assuming PickableObject extends Node3D
 
 var is_heavy_lifting: bool = false
 var heavy_lift_yaw_base: float = 0.0
@@ -35,6 +35,7 @@ var heavy_lift_yaw_base: float = 0.0
 var is_in_terminal_mode: bool = false
 var active_terminal: Node3D = null
 var terminal_start_pos: Vector3 = Vector3.ZERO
+
 
 # --------------------------------------
 # CORE PROCESS LOGIC
@@ -45,14 +46,14 @@ func process_interaction(_delta: float) -> void:
 		if _should_exit_terminal_mode():
 			exit_terminal_mode()
 			return
-		return # Block standard interactions while in the terminal
+		return  # Block standard interactions while in the terminal
 
 	# 2. Dynamic Reach Fix
 	_update_dynamic_reach()
 
 	# 3. Scan for Interactables
 	current_interactable = _get_interactable_component_at_shapecast()
-	
+
 	if current_interactable:
 		var hit_point: Vector3 = interact_shapecast.get_collision_point(0)
 		if current_interactable.has_method("hover_cursor"):
@@ -70,14 +71,14 @@ func handle_interact_input() -> void:
 	# Drop Object
 	if held_object:
 		if held_object.has_method("on_released"):
-			held_object.on_released() # Handle TetheredPlug logic safely
-			
+			held_object.on_released()  # Handle TetheredPlug logic safely
+
 		if held_object.has_method("drop"):
 			held_object.drop()
-			
+
 		held_object = null
 		set_heavy_lifting(false)
-		
+
 		if weapon_holder:
 			weapon_holder.show()
 
@@ -85,15 +86,15 @@ func handle_interact_input() -> void:
 	elif current_interactable:
 		if current_interactable.has_method("interact_with"):
 			current_interactable.interact_with(player_body)
-			
+
 		var parent_node: Node = current_interactable.get_parent()
-		if parent_node.has_method("pick_up"): # Duck typing for PickableObject
+		if parent_node.has_method("pick_up"):  # Duck typing for PickableObject
 			held_object = parent_node as Node3D
 			held_object.pick_up(hold_position, player_body)
-			
+
 			if held_object.has_method("on_grabbed"):
 				held_object.on_grabbed()
-				
+
 			if weapon_holder:
 				weapon_holder.hide()
 
@@ -112,17 +113,17 @@ func handle_shoot_input() -> void:
 
 		var throw_direction: Vector3 = -camera.global_transform.basis.z.normalized()
 		throw_direction.y += 0.2
-		
+
 		if held_object.has_method("throw"):
 			held_object.throw(throw_direction.normalized() * throw_force)
-			
+
 		held_object = null
 		set_heavy_lifting(false)
-		
+
 		if weapon_holder:
 			weapon_holder.show()
-			
-		return # <-- ADDED: Stop the function here so we don't shoot while throwing!
+
+		return  # <-- ADDED: Stop the function here so we don't shoot while throwing!
 
 	# 3. ---> THE MISSING WEAPON LOGIC <---
 	# If we aren't using a terminal and aren't holding a box, fire the gun!
@@ -162,7 +163,7 @@ func _update_dynamic_reach() -> void:
 	var look_pitch: float = interact_shapecast.global_rotation.x
 	var down_weight: float = clampf(-look_pitch / (PI / 2.0), 0.0, 1.0)
 	var current_reach: float = lerpf(base_reach, floor_reach, down_weight)
-	
+
 	interact_shapecast.target_position = Vector3(0, 0, -current_reach)
 
 
@@ -184,7 +185,7 @@ func _get_interactable_component_at_shapecast() -> Node:
 				if collider.has_method("is_valid_pickup_position"):
 					if not collider.is_valid_pickup_position(player_body):
 						continue
-						
+
 				var hit_point: Vector3 = interact_shapecast.get_collision_point(i)
 				var dist: float = cast_origin.distance_squared_to(hit_point)
 
@@ -202,7 +203,7 @@ func enter_terminal_mode(terminal: Node3D) -> void:
 	is_in_terminal_mode = true
 	active_terminal = terminal
 	terminal_start_pos = player_body.global_position
-	
+
 	Events.terminal_mode_toggled.emit(true)
 	terminal_mode_toggled.emit(true)
 
@@ -210,25 +211,30 @@ func enter_terminal_mode(terminal: Node3D) -> void:
 func exit_terminal_mode() -> void:
 	is_in_terminal_mode = false
 	active_terminal = null
-	
+
 	Events.terminal_mode_toggled.emit(false)
 	terminal_mode_toggled.emit(false)
 
 
 func _should_exit_terminal_mode() -> bool:
-	if Input.is_action_pressed("forward") or Input.is_action_pressed("backward") or Input.is_action_pressed("left") or Input.is_action_pressed("right"):
+	if (
+		Input.is_action_pressed("forward")
+		or Input.is_action_pressed("backward")
+		or Input.is_action_pressed("left")
+		or Input.is_action_pressed("right")
+	):
 		return true
 	if Input.is_action_just_pressed("jump") or Input.is_action_just_pressed("crouch"):
 		return true
 	if player_body.global_position.distance_to(terminal_start_pos) > 1.0:
 		return true
-		
+
 	if active_terminal:
 		var dir_to_terminal := camera.global_position.direction_to(active_terminal.global_position)
 		var camera_forward := -camera.global_transform.basis.z
 		if rad_to_deg(camera_forward.angle_to(dir_to_terminal)) > 45.0:
 			return true
-			
+
 	return false
 
 

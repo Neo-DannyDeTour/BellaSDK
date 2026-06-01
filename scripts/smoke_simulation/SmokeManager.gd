@@ -13,7 +13,7 @@ const BUFFER_SIZE: int = MAX_HOLES * 32
 @export var swirl_frequency: float = 0.5
 
 @export_group("Optimizations")
-@export var precomputed_noise: Texture3D 
+@export var precomputed_noise: Texture3D
 
 var active_holes: Array[Dictionary] = []
 var current_player_pos: Vector3 = Vector3.ZERO
@@ -28,18 +28,14 @@ var uniform_set: RID
 var active_fog_volume: FogVolume
 var is_initialized: bool = false
 
+
 func _ready() -> void:
 	rd = RenderingServer.get_rendering_device()
 
 	if precomputed_noise == null:
-		precomputed_noise = load(
-            "res://scripts/smoke_simulation/smoke_noise_3d.tres"
-		) as Texture3D
+		precomputed_noise = load("res://scripts/smoke_simulation/smoke_noise_3d.tres") as Texture3D
 
-	assert(
-		precomputed_noise != null,
-        "SmokeManager requires smoke_noise_3d.tres to be valid!"
-	)
+	assert(precomputed_noise != null, "SmokeManager requires smoke_noise_3d.tres to be valid!")
 
 	# THE FINAL FIX: Check the raw internal RID instead of get_data().
 	# If the RID is invalid, the background thread is still generating the noise.
@@ -48,8 +44,9 @@ func _ready() -> void:
 
 	_initialize_gpu()
 
+
 # ---------------------------------------------------------
-# Extracts raw bytes from Godot's Texture3D to create a 
+# Extracts raw bytes from Godot's Texture3D to create a
 # dedicated Vulkan RDTexture, avoiding sync/flag errors.
 # ---------------------------------------------------------
 func _create_rd_noise_texture(tex: Texture3D) -> RID:
@@ -57,7 +54,7 @@ func _create_rd_noise_texture(tex: Texture3D) -> RID:
 	if images.is_empty():
 		push_error("SmokeManager: Noise texture is empty!")
 		return RID()
-		
+
 	var base_image: Image = images[0]
 	var fmt := RDTextureFormat.new()
 	fmt.width = base_image.get_width()
@@ -66,24 +63,22 @@ func _create_rd_noise_texture(tex: Texture3D) -> RID:
 	fmt.texture_type = RenderingDevice.TEXTURE_TYPE_3D
 	fmt.format = RenderingDevice.DATA_FORMAT_R8G8B8A8_UNORM
 	fmt.usage_bits = (
-		RenderingDevice.TEXTURE_USAGE_SAMPLING_BIT 
-		| RenderingDevice.TEXTURE_USAGE_CAN_UPDATE_BIT
+		RenderingDevice.TEXTURE_USAGE_SAMPLING_BIT | RenderingDevice.TEXTURE_USAGE_CAN_UPDATE_BIT
 	)
-	
+
 	var bytes := PackedByteArray()
 	for img: Image in images:
 		# Force uniform RGBA8 format mapping to match our RDTextureFormat
 		if img.get_format() != Image.FORMAT_RGBA8:
 			img.convert(Image.FORMAT_RGBA8)
 		bytes.append_array(img.get_data())
-		
+
 	var view := RDTextureView.new()
 	return rd.texture_create(fmt, view, [bytes])
 
+
 func _initialize_gpu() -> void:
-	var shader_file: RDShaderFile = load(
-        "res://scripts/smoke_simulation/smoke_compute.glsl"
-	)
+	var shader_file: RDShaderFile = load("res://scripts/smoke_simulation/smoke_compute.glsl")
 	var shader_spirv: RDShaderSPIRV = shader_file.get_spirv()
 	shader = rd.shader_create_from_spirv(shader_spirv)
 	pipeline = rd.compute_pipeline_create(shader)
@@ -119,7 +114,7 @@ func _initialize_gpu() -> void:
 	sampler_state.repeat_w = RenderingDevice.SAMPLER_REPEAT_MODE_REPEAT
 	sampler_state.min_filter = RenderingDevice.SAMPLER_FILTER_LINEAR
 	sampler_state.mag_filter = RenderingDevice.SAMPLER_FILTER_LINEAR
-	
+
 	var sampler_rid: RID = rd.sampler_create(sampler_state)
 
 	# --- Bind Uniforms ---
@@ -139,38 +134,34 @@ func _initialize_gpu() -> void:
 	noise_uniform.add_id(sampler_rid)
 	noise_uniform.add_id(noise_rd_rid)
 
-	uniform_set = rd.uniform_set_create(
-		[tex_uniform, buf_uniform, noise_uniform], shader, 0
-	)
-	
+	uniform_set = rd.uniform_set_create([tex_uniform, buf_uniform, noise_uniform], shader, 0)
+
 	# Catch shader layout mismatches immediately upon initialization
 	assert(
-		uniform_set.is_valid(), 
-        "SmokeManager: uniform_set_create returned null. Check your GLSL layouts!"
+		uniform_set.is_valid(),
+		"SmokeManager: uniform_set_create returned null. Check your GLSL layouts!"
 	)
-	
+
 	is_initialized = true
+
 
 func update_player_position(pos: Vector3) -> void:
 	current_player_pos = pos
 
-func add_bullet_hole(
-	start: Vector3, dir: Vector3, length: float, radius: float = 1.0
-) -> void:
+
+func add_bullet_hole(start: Vector3, dir: Vector3, length: float, radius: float = 1.0) -> void:
 	if active_holes.size() >= MAX_HOLES:
 		active_holes.pop_front()
 
-	active_holes.append({
-		"start": start, 
-		"end": start + (dir * length), 
-		"radius": radius, 
-		"time_alive": 0.0
-	})
+	active_holes.append(
+		{"start": start, "end": start + (dir * length), "radius": radius, "time_alive": 0.0}
+	)
+
 
 func _process(delta: float) -> void:
 	if not is_initialized:
 		return
-		
+
 	global_time += delta
 
 	for i: int in range(active_holes.size() - 1, -1, -1):
@@ -182,11 +173,11 @@ func _process(delta: float) -> void:
 	var safe_holes: Array[Dictionary] = active_holes.duplicate(true)
 	var safe_fog_size: Vector3 = Vector3.ZERO
 	var safe_fog_pos: Vector3 = Vector3.ZERO
-	
+
 	if is_instance_valid(active_fog_volume) and active_fog_volume.is_inside_tree():
 		safe_fog_size = active_fog_volume.size
 		safe_fog_pos = active_fog_volume.global_position
-		
+
 	var safe_player_pos: Vector3 = current_player_pos
 	var safe_time: float = global_time
 
@@ -195,6 +186,7 @@ func _process(delta: float) -> void:
 			delta, safe_holes, safe_fog_size, safe_fog_pos, safe_player_pos, safe_time
 		)
 	)
+
 
 func _dispatch_to_compute_shader(
 	delta: float,
@@ -217,7 +209,7 @@ func _dispatch_to_compute_shader(
 
 	for i: int in range(holes_to_process):
 		var hole: Dictionary = compute_holes[i]
-		
+
 		hole_data.append(hole.start.x)
 		hole_data.append(hole.start.y)
 		hole_data.append(hole.start.z)
@@ -235,13 +227,30 @@ func _dispatch_to_compute_shader(
 	var is_even_frame: bool = Engine.get_process_frames() % 2 == 0
 	var z_offset: float = 64.0 if is_even_frame else 0.0
 
-	var push_constants_array := PackedFloat32Array([
-		player_pos.x, player_pos.y, player_pos.z, float(holes_to_process),
-		grid_pos.x, grid_pos.y, grid_pos.z, delta * 2.0,
-		fog_size.x, fog_size.y, fog_size.z, current_time,
-		hole_clear_intensity, swirl_strength, swirl_frequency, player_trail_radius,
-		z_offset, heal_rate, 0.0, 0.0
-	])
+	var push_constants_array := PackedFloat32Array(
+		[
+			player_pos.x,
+			player_pos.y,
+			player_pos.z,
+			float(holes_to_process),
+			grid_pos.x,
+			grid_pos.y,
+			grid_pos.z,
+			delta * 2.0,
+			fog_size.x,
+			fog_size.y,
+			fog_size.z,
+			current_time,
+			hole_clear_intensity,
+			swirl_strength,
+			swirl_frequency,
+			player_trail_radius,
+			z_offset,
+			heal_rate,
+			0.0,
+			0.0
+		]
+	)
 
 	var push_constants_bytes: PackedByteArray = push_constants_array.to_byte_array()
 

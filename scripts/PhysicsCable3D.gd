@@ -30,12 +30,12 @@ func _ready() -> void:
 	if not Engine.is_editor_hint():
 		if is_instance_valid(_editor_icon):
 			_editor_icon.queue_free()
-			
+
 	# 2. Create a perfectly smooth base cylinder
 	_base_mesh = CylinderMesh.new()
 	_base_mesh.top_radius = thickness
 	_base_mesh.bottom_radius = thickness
-	_base_mesh.height = 1.0 
+	_base_mesh.height = 1.0
 	_base_mesh.radial_segments = 8
 	_base_mesh.rings = 1
 

@@ -361,7 +361,7 @@ func _physics_process(_delta: float) -> void:
 		var is_flying: bool = false
 		if "system_menu" in holder:
 			is_flying = holder.system_menu.flying
-			
+
 		if distance_to_target > 1.5 and not is_flying:
 			drop()
 			return

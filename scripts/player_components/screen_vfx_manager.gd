@@ -27,10 +27,10 @@ func _ready() -> void:
 	# This prevents changing one shader from accidentally changing another
 	if waterfall_overlay and waterfall_overlay.material:
 		waterfall_overlay.material = waterfall_overlay.material.duplicate()
-		
+
 	if rain_drops_overlay and rain_drops_overlay.material:
 		rain_drops_overlay.material = rain_drops_overlay.material.duplicate()
-		
+
 	if screen_water_ui and screen_water_ui.material:
 		screen_water_ui.material = screen_water_ui.material.duplicate()
 
@@ -90,7 +90,7 @@ func _handle_rain_drops(delta: float, camera_pitch: float) -> void:
 func set_underwater_state(is_underwater: bool) -> void:
 	if not screen_water_ui:
 		return
-		
+
 	var mat: ShaderMaterial = screen_water_ui.material as ShaderMaterial
 	if not mat:
 		return
@@ -121,20 +121,29 @@ func trigger_surface_wipe() -> void:
 	water_clear_tween = create_tween()
 
 	# Phase 1 & 2: Rapid wipe to 65%, then hold
-	(water_clear_tween.tween_property(mat, "shader_parameter/clear_progress", 0.65, 0.1)
-		.set_trans(Tween.TRANS_SINE))
+	water_clear_tween.tween_property(mat, "shader_parameter/clear_progress", 0.65, 0.1).set_trans(
+		Tween.TRANS_SINE
+	)
 	water_clear_tween.tween_interval(0.1)
-	
+
 	# Phase 3: Finish sweep
-	(water_clear_tween.tween_property(mat, "shader_parameter/clear_progress", 1.2, 0.2)
-		.set_trans(Tween.TRANS_CUBIC)
-		.set_ease(Tween.EASE_OUT))
+	(
+		water_clear_tween
+		. tween_property(mat, "shader_parameter/clear_progress", 1.2, 0.2)
+		. set_trans(Tween.TRANS_CUBIC)
+		. set_ease(Tween.EASE_OUT)
+	)
 
 	# Phase 4: Fade droplets
-	(water_clear_tween.tween_property(mat, "shader_parameter/drop_intensity", 0.0, 1.0)
-		.set_trans(Tween.TRANS_SINE))
-	(water_clear_tween.parallel().tween_property(mat, "shader_parameter/wash_intensity", 0.0, 1.0)
-		.set_trans(Tween.TRANS_SINE))
+	water_clear_tween.tween_property(mat, "shader_parameter/drop_intensity", 0.0, 1.0).set_trans(
+		Tween.TRANS_SINE
+	)
+	(
+		water_clear_tween
+		. parallel()
+		. tween_property(mat, "shader_parameter/wash_intensity", 0.0, 1.0)
+		. set_trans(Tween.TRANS_SINE)
+	)
 
 	# Phase 5: Hide
 	water_clear_tween.tween_callback(screen_water_ui.hide)
@@ -177,15 +186,26 @@ func exit_waterfall() -> void:
 
 	waterfall_clear_tween = create_tween()
 
-	(waterfall_clear_tween.tween_property(mat, "shader_parameter/clear_progress", 1.2, 0.4)
-		.set_trans(Tween.TRANS_CUBIC)
-		.set_ease(Tween.EASE_OUT))
-		
-	(waterfall_clear_tween.parallel().tween_property(mat, "shader_parameter/wash_intensity", 0.0, 0.4)
-		.set_trans(Tween.TRANS_SINE))
-		
-	(waterfall_clear_tween.parallel().tween_property(mat, "shader_parameter/drop_intensity", 0.0, 1.2)
-		.set_trans(Tween.TRANS_QUAD)
-		.set_ease(Tween.EASE_IN))
+	(
+		waterfall_clear_tween
+		. tween_property(mat, "shader_parameter/clear_progress", 1.2, 0.4)
+		. set_trans(Tween.TRANS_CUBIC)
+		. set_ease(Tween.EASE_OUT)
+	)
+
+	(
+		waterfall_clear_tween
+		. parallel()
+		. tween_property(mat, "shader_parameter/wash_intensity", 0.0, 0.4)
+		. set_trans(Tween.TRANS_SINE)
+	)
+
+	(
+		waterfall_clear_tween
+		. parallel()
+		. tween_property(mat, "shader_parameter/drop_intensity", 0.0, 1.2)
+		. set_trans(Tween.TRANS_QUAD)
+		. set_ease(Tween.EASE_IN)
+	)
 
 	waterfall_clear_tween.tween_callback(waterfall_overlay.hide)

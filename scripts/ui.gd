@@ -23,7 +23,8 @@ var default_crosshair_size: Vector2
 @onready var fisheye_zoom: ColorRect = $FisheyeZoom
 
 @onready var noclip_message_container: PanelContainer = $MarginContainer3/NoclipMessageContainer
-@onready var noclip_label_message: Label = $MarginContainer3/NoclipMessageContainer/NoclipLabelMessage
+@onready
+var noclip_label_message: Label = $MarginContainer3/NoclipMessageContainer/NoclipLabelMessage
 @onready var noclip_button: Button = $DebugPanel/VBoxContainer/NoclipButton
 @onready var metrics_button: Button = $DebugPanel/VBoxContainer/MetricsButton
 @onready var collision_button: Button = $DebugPanel/VBoxContainer/CollisionButton
@@ -46,7 +47,7 @@ var default_crosshair_size: Vector2
 
 var heart_textures: Array[AtlasTexture] = []
 var heart_nodes: Array[TextureRect] = []
-var heart_tweens: Array[Tween] = [] # Track active animations
+var heart_tweens: Array[Tween] = []  # Track active animations
 var current_health: int = 300
 
 
@@ -62,7 +63,7 @@ func _ready() -> void:
 	Events.noclip_speed_changed.connect(_on_noclip_speed_changed)
 	Events.player_zoomed.connect(_on_player_zoomed)
 	Events.player_crouch_changed.connect(_on_player_crouched)
-	
+
 	# Assuming you add a player_health_changed signal to your Events singleton:
 	# Safely connect the signal only if it isn't connected yet
 	if Events.has_signal("player_health_changed"):
@@ -89,7 +90,7 @@ func _ready() -> void:
 
 	default_crosshair_size = center_dot.custom_minimum_size
 	if default_crosshair_size == Vector2.ZERO:
-		default_crosshair_size = center_dot.size 
+		default_crosshair_size = center_dot.size
 
 	# BUILD THE HL2 GREEN WIREFRAME SHADER
 	green_wireframe_material = ShaderMaterial.new()
@@ -103,7 +104,7 @@ func _ready() -> void:
     }
     """
 	green_wireframe_material.shader = shader
-	
+
 	# Connect the global event to the UI's update function
 	#Events.player_health_changed.connect(update_health)
 	_initialize_hearts()
@@ -139,25 +140,25 @@ func _initialize_hearts() -> void:
 		tex.region = Rect2(i * frame_width, 0.0, frame_width, atlas_height)
 		heart_textures.append(tex)
 
-	for i in range(3): # This can later be changed to your 'max_hearts' variable
+	for i in range(3):  # This can later be changed to your 'max_hearts' variable
 		# Create a layout wrapper so the HBoxContainer doesn't override our animation
 		var wrapper: Control = Control.new()
 		wrapper.custom_minimum_size = target_size
-		wrapper.use_parent_material = true # Pass the shader down to the texture
+		wrapper.use_parent_material = true  # Pass the shader down to the texture
 		hearts_container.add_child(wrapper)
 
 		var rect: TextureRect = TextureRect.new()
-		rect.texture = heart_textures[0] 
-		
+		rect.texture = heart_textures[0]
+
 		rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		rect.custom_minimum_size = target_size
 		rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		rect.use_parent_material = true 
-		
+		rect.use_parent_material = true
+
 		wrapper.add_child(rect)
 		heart_nodes.append(rect)
-		heart_tweens.append(null) # Initialize empty tween slots
+		heart_tweens.append(null)  # Initialize empty tween slots
 
 	update_health(current_health)
 
@@ -167,7 +168,7 @@ func update_health(new_health: int) -> void:
 	var health_increased: bool = new_health > current_health
 	var previous_health: int = current_health
 	current_health = new_health
-	
+
 	if heart_nodes.is_empty() or heart_textures.is_empty():
 		return
 
@@ -189,13 +190,13 @@ func update_health(new_health: int) -> void:
 			frame_index = 4
 
 		heart_nodes[i].texture = heart_textures[frame_index]
-		
+
 		# Trigger respective animations
 		if health_decreased and heart_val < prev_heart_val:
 			_animate_heart_damage(i)
 		elif health_increased and heart_val > prev_heart_val:
 			_animate_heart_heal(i, frame_index)
-		
+
 		# Ensure the layout never collapses (target the wrapper node now)
 		heart_nodes[i].get_parent().visible = true
 
@@ -217,7 +218,7 @@ func _animate_heart_damage(index: int) -> void:
 	var tween: Tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	heart_tweens[index] = tween
 
-	var jump_height: float = -15.0 # Move up 15 pixels (negative Y is up)
+	var jump_height: float = -15.0  # Move up 15 pixels (negative Y is up)
 	var duration: float = 0.08
 
 	# Sequence: Jump up -> Bounce down slightly past center -> Return to center
@@ -458,7 +459,7 @@ func _animate_heart_heal(index: int, frame_index: int) -> void:
 
 	var heart: TextureRect = heart_nodes[index]
 	var ghost: TextureRect = TextureRect.new()
-	
+
 	# Mirror the base heart properties
 	ghost.texture = heart_textures[frame_index]
 	ghost.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -467,23 +468,23 @@ func _animate_heart_heal(index: int, frame_index: int) -> void:
 	ghost.size = heart.size
 	ghost.position = Vector2.ZERO
 	ghost.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	
+
 	# Set pivot to center so it grows outward
 	ghost.pivot_offset = ghost.size / 2.0
-	
+
 	# Set to green color with 50% opacity
 	ghost.modulate = Color(0.0, 1.0, 0.0, 0.5)
-	
+
 	heart.add_child(ghost)
-	
+
 	# Run the animations in parallel
 	var tween: Tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(
 		Tween.EASE_OUT
 	)
-	
+
 	var anim_duration: float = 0.5
 	tween.tween_property(ghost, "scale", Vector2(3.0, 3.0), anim_duration)
 	tween.tween_property(ghost, "modulate:a", 0.0, anim_duration)
-	
+
 	# Chain ensures queue_free only fires after all parallel tweens finish
 	tween.chain().tween_callback(ghost.queue_free)

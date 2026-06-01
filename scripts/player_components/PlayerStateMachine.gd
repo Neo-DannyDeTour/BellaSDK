@@ -18,13 +18,13 @@ signal transitioned(state_name: String)
 func _ready() -> void:
 	# Wait for the player body (owner) to be fully ready
 	await owner.ready
-	
+
 	# Automatically inject dependencies into every child state
 	for child: Node in get_children():
 		if child is PlayerState:
 			child.state_machine = self
 			child.player = owner as CharacterBody3D
-			
+
 	# Boot up the first state
 	state.enter()
 
@@ -50,17 +50,19 @@ func _physics_process(delta: float) -> void:
 func transition_to(target_state_name: String, msg: Dictionary = {}) -> void:
 	# Safety check: Does the state exist?
 	if not has_node(target_state_name):
-		push_error("StateMachine: Cannot transition to state '%s' (Node not found)." % target_state_name)
+		push_error(
+			"StateMachine: Cannot transition to state '%s' (Node not found)." % target_state_name
+		)
 		return
 
 	# 1. Clean up the current state
 	state.exit()
-	
+
 	# 2. Swap the active state reference
 	state = get_node(target_state_name)
-	
+
 	# 3. Initialize the new state
 	state.enter(msg)
-	
+
 	# 4. Notify external systems (like UI or animation controllers)
 	transitioned.emit(state.name)

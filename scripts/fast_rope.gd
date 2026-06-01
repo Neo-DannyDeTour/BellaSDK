@@ -130,11 +130,11 @@ func _physics_process(delta: float) -> void:
 		if is_descending:
 			attached_player.global_position.y -= ascend_speed * delta
 			if attached_player.global_position.y <= global_position.y:
-				detach(false) # false = don't launch them into the floor
+				detach(false)  # false = don't launch them into the floor
 		else:
 			attached_player.global_position.y += ascend_speed * delta
 			if attached_player.global_position.y >= top_marker.global_position.y:
-				detach(true) # true = apply launch velocity
+				detach(true)  # true = apply launch velocity
 
 	# --- 2. DYNAMIC UI POSITIONING ---
 	elif interact_comp and interact_comp.is_currently_focused and interact_label.visible:
@@ -156,10 +156,10 @@ func attach(player: CharacterBody3D) -> void:
 
 	# --- CALCULATE PERIMETER POSITION ---
 	var offset_dir := attached_player.global_position - global_position
-	offset_dir.y = 0.0 
+	offset_dir.y = 0.0
 
 	if offset_dir.length_squared() < 0.001:
-		offset_dir = Vector3.FORWARD 
+		offset_dir = Vector3.FORWARD
 	else:
 		offset_dir = offset_dir.normalized()
 

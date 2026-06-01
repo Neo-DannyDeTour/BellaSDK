@@ -2,3 +2,14 @@ excluded_directories: !!set
   .git: null
   addons: null
   "TESTS(delete later)": null
+
+excluded_files: !!set
+  scripts/menus/main_menu.gd: null
+  scripts/player_components/Player_OLD.gd: null
+  scripts/playerENUM_TEST.gd: null
+  utils/WaterMaker3D/WaterMaker3D.gd: null
+
+max_file_lines: 3000
+max_returns: 20
+max_public_methods: 100
+max_line_length: 200

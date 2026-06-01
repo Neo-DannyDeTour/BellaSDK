@@ -12,10 +12,8 @@ var selected_chapter: ChapterData = null
 @onready var desc_title: Label = %DescTitle
 @onready var desc_text: RichTextLabel = %DescText
 @onready var play_button: Button = %PlayButton
-@onready var back_button: Button = (
-	$MarginContainer/VBoxContainer/MainLayout/DetailsPanel/MarginContainer/BottomSplit/\
-ButtonSection/BackButton
-)
+@onready
+var back_button: Button = $MarginContainer/VBoxContainer/MainLayout/DetailsPanel/MarginContainer/BottomSplit/ButtonSection/BackButton
 @onready var background: TextureRect = %Background
 
 

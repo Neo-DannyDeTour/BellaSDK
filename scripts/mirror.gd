@@ -27,11 +27,15 @@ var _last_cam_transform: Transform3D
 var _init_frames: int = 0
 var _texture_assigned: bool = false
 
-var _skip_frame: bool = false #new code
+var _skip_frame: bool = false  #new code
+
 
 func _ready() -> void:
-	if not is_instance_valid(mirror_quad) or not is_instance_valid(mirror_viewport) or \
-			not is_instance_valid(mirror_camera):
+	if (
+		not is_instance_valid(mirror_quad)
+		or not is_instance_valid(mirror_viewport)
+		or not is_instance_valid(mirror_camera)
+	):
 		printerr("Mirror Error: Missing exported node references in base scene!")
 		return
 
@@ -80,13 +84,13 @@ func _sync_camera_settings() -> void:
 func _assign_texture() -> void:
 	if not is_instance_valid(mirror_viewport) or not is_instance_valid(mirror_quad):
 		return
-		
+
 	var mat: Material = mirror_quad.get_active_material(0)
 	if mat == null:
 		return
 
 	var tex: ViewportTexture = mirror_viewport.get_texture()
-	
+
 	if mat is ShaderMaterial:
 		mat.set_shader_parameter(&"tex", tex)
 	elif mat is StandardMaterial3D:
@@ -150,19 +154,20 @@ func _get_mirror_transform(normal: Vector3, pos: Vector3) -> Transform3D:
 
 
 func _update_cam() -> void:
-	if not is_instance_valid(_main_cam) or not is_instance_valid(mirror_camera) or \
-			not is_instance_valid(mirror_quad):
+	if (
+		not is_instance_valid(_main_cam)
+		or not is_instance_valid(mirror_camera)
+		or not is_instance_valid(mirror_quad)
+	):
 		return
 
 	var mirror_norm: Vector3 = mirror_quad.global_basis.z
 	var mirror_trans: Transform3D = _get_mirror_transform(mirror_norm, global_position)
 	mirror_camera.global_transform = mirror_trans * _main_cam.global_transform
 
-	var target: Vector3 = (mirror_camera.global_position / 2.0) + \
-			(_last_cam_transform.origin / 2.0)
+	var target: Vector3 = (mirror_camera.global_position / 2.0) + (_last_cam_transform.origin / 2.0)
 	mirror_camera.global_transform = mirror_camera.global_transform.looking_at(
-		target,
-		mirror_quad.global_basis.y
+		target, mirror_quad.global_basis.y
 	)
 
 	var offset: Vector3 = mirror_quad.global_position - mirror_camera.global_position
@@ -173,6 +178,7 @@ func _update_cam() -> void:
 
 	var frustum_offset: Vector2 = Vector2(offset_local.x, offset_local.y)
 	mirror_camera.set_frustum(size.x, frustum_offset, near, far)
+
 
 func _process(_delta: float) -> void:
 	if not is_visible_in_tree():
@@ -197,16 +203,16 @@ func _process(_delta: float) -> void:
 		if not _texture_assigned:
 			_assign_texture()
 			_texture_assigned = true
-			
+
 		# Optimization Phase: Resume standard culling and transform checks
 		if _last_cam_transform.is_equal_approx(cur_trans):
 			return
-			
+
 		if is_instance_valid(mirror_viewport):
 			var diff: Vector3 = global_position - cur_trans.origin
 			var dist_sq: float = diff.length_squared()
 			var max_dist_sq: float = max_update_distance * max_update_distance
-			
+
 			if dist_sq > max_dist_sq:
 				mirror_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 			else:
@@ -220,43 +226,42 @@ func _process(_delta: float) -> void:
 
 	_last_cam_transform = cur_trans
 	_update_cam()
-	
-	
+
 	#OLD BACKUP
 #func _process(_delta: float) -> void:
-	#if not is_visible_in_tree():
-		#return
+#if not is_visible_in_tree():
+#return
 #
-	#if not is_instance_valid(_main_cam):
-		#_main_cam = _find_camera()
-		#if not is_instance_valid(_main_cam):
-			#return
-		## Sync the FOV and initial transform the moment the game camera initializes
-		#_sync_camera_settings()
+#if not is_instance_valid(_main_cam):
+#_main_cam = _find_camera()
+#if not is_instance_valid(_main_cam):
+#return
+## Sync the FOV and initial transform the moment the game camera initializes
+#_sync_camera_settings()
 #
-	#var cur_trans: Transform3D = _main_cam.global_transform
+#var cur_trans: Transform3D = _main_cam.global_transform
 #
-	## Shield Phase: Force rendering for the first 5 frames to guarantee buffer allocation
-	#if _init_frames < 5:
-		#if is_instance_valid(mirror_viewport):
-			#mirror_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
-		#_init_frames += 1
-	#else:
-		## Lock the generated texture proxy into the material only AFTER buffers exist
-		#if not _texture_assigned:
-			#_assign_texture()
-			#_texture_assigned = true
-			#
-		## Optimization Phase: Resume standard culling and transform checks
-		#if _last_cam_transform.is_equal_approx(cur_trans):
-			#return
-			#
-		#if is_instance_valid(mirror_viewport):
-			#var diff: Vector3 = global_position - cur_trans.origin
-			#if diff.length_squared() > (max_update_distance * max_update_distance):
-				#mirror_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
-			#else:
-				#mirror_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+## Shield Phase: Force rendering for the first 5 frames to guarantee buffer allocation
+#if _init_frames < 5:
+#if is_instance_valid(mirror_viewport):
+#mirror_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+#_init_frames += 1
+#else:
+## Lock the generated texture proxy into the material only AFTER buffers exist
+#if not _texture_assigned:
+#_assign_texture()
+#_texture_assigned = true
 #
-	#_last_cam_transform = cur_trans
-	#_update_cam()
+## Optimization Phase: Resume standard culling and transform checks
+#if _last_cam_transform.is_equal_approx(cur_trans):
+#return
+#
+#if is_instance_valid(mirror_viewport):
+#var diff: Vector3 = global_position - cur_trans.origin
+#if diff.length_squared() > (max_update_distance * max_update_distance):
+#mirror_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+#else:
+#mirror_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+#
+#_last_cam_transform = cur_trans
+#_update_cam()

@@ -10,13 +10,13 @@ extends Node3D
 
 # --- SLOMO VARS ---
 @export var activate_slomo: bool = false
-var slomo_tween: Tween
 
 @export_range(2.0, 30.0, 0.1) var rope_length: float = 5.0:
 	set(value):
 		rope_length = value
 		_update_rope_size()
 
+var slomo_tween: Tween
 var player_on_rope: bool = false
 
 @onready var rope_body: RigidBody3D = $RopeBody

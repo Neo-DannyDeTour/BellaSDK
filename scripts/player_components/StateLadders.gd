@@ -18,7 +18,7 @@ var is_hoisting: bool = false
 
 func enter(msg: Dictionary = {}) -> void:
 	is_hoisting = false
-	
+
 	if msg.has("ladder_node"):
 		current_ladder = msg["ladder_node"]
 		_snap_to_ladder()
@@ -37,7 +37,7 @@ func physics_update(_delta: float) -> void:
 	_handle_crouch_state()
 
 	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
-	
+
 	# Calculate movement and apply it
 	_calculate_ladder_velocity(input_dir)
 	player.move_and_slide()
@@ -53,16 +53,19 @@ func physics_update(_delta: float) -> void:
 func _snap_to_ladder() -> void:
 	if not current_ladder:
 		return
-		
+
 	var push_out_distance: float = 0.6
 	var ladder_forward: Vector3 = current_ladder.global_transform.basis.z.normalized()
 	var target_pos: Vector3 = current_ladder.global_position + (ladder_forward * push_out_distance)
-	target_pos.y = player.global_position.y # Keep current height
+	target_pos.y = player.global_position.y  # Keep current height
 
 	var tween := create_tween()
-	(tween.tween_property(player, "global_position", target_pos, 0.15)
-		.set_trans(Tween.TRANS_SINE)
-		.set_ease(Tween.EASE_OUT))
+	(
+		tween
+		. tween_property(player, "global_position", target_pos, 0.15)
+		. set_trans(Tween.TRANS_SINE)
+		. set_ease(Tween.EASE_OUT)
+	)
 
 
 func _handle_crouch_state() -> void:
@@ -94,7 +97,8 @@ func _calculate_ladder_velocity(input_dir: Vector2) -> void:
 	# 1. W/S Input Projection
 	var lateral_weight_ws: float = look_dir.dot(ladder_right)
 	var vertical_weight_ws: float = 1.0 - absf(lateral_weight_ws)
-	if look_dir.y < -0.15: vertical_weight_ws *= -1.0
+	if look_dir.y < -0.15:
+		vertical_weight_ws *= -1.0
 
 	var forward_input: float = -input_dir.y
 	var ws_lateral: float = lateral_weight_ws * forward_input
@@ -103,7 +107,8 @@ func _calculate_ladder_velocity(input_dir: Vector2) -> void:
 	# 2. A/D Input Projection
 	var lateral_weight_ad: float = right_dir.dot(ladder_right)
 	var vertical_weight_ad: float = 1.0 - absf(lateral_weight_ad)
-	if right_dir.y < -0.15: vertical_weight_ad *= -1.0
+	if right_dir.y < -0.15:
+		vertical_weight_ad *= -1.0
 
 	var strafe_input: float = input_dir.x
 	var ad_lateral: float = lateral_weight_ad * strafe_input
@@ -164,7 +169,11 @@ func _handle_jump_input(input_dir: Vector2) -> void:
 		return
 
 	# CONDITION B: Upward leap / Hoist (Looking strictly UP)
-	if is_looking_up and (is_looking_at_ladder or is_shapecast_hitting) and absf(strafe_input) < 0.1:
+	if (
+		is_looking_up
+		and (is_looking_at_ladder or is_shapecast_hitting)
+		and absf(strafe_input) < 0.1
+	):
 		var current_time := Time.get_ticks_msec()
 		if current_time - last_hoist_time >= 1000:
 			last_hoist_time = current_time
@@ -174,9 +183,12 @@ func _handle_jump_input(input_dir: Vector2) -> void:
 				is_hoisting = true
 				var hoist_target := player.global_position + (Vector3.UP * 1.5)
 				var tween := create_tween()
-				(tween.tween_property(player, "global_position", hoist_target, 0.2)
-					.set_trans(Tween.TRANS_QUAD)
-					.set_ease(Tween.EASE_OUT))
+				(
+					tween
+					. tween_property(player, "global_position", hoist_target, 0.2)
+					. set_trans(Tween.TRANS_QUAD)
+					. set_ease(Tween.EASE_OUT)
+				)
 				tween.tween_callback(func() -> void: state_machine.transition_to("Air"))
 			else:
 				# Vault over ledge
@@ -190,7 +202,7 @@ func _handle_jump_input(input_dir: Vector2) -> void:
 	flat_jump_dir = Vector3(look_dir.x, 0.0, look_dir.z).normalized()
 	var camera_lift: float = maxf(look_dir.y, 0.0) * 2.5
 	var vertical_hop: float = 4.5 + camera_lift
-	
+
 	player.velocity = (flat_jump_dir * 6.0) + Vector3(0.0, vertical_hop, 0.0)
 	player.global_position += look_dir * 0.2
 	state_machine.transition_to("Air")

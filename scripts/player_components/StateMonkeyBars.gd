@@ -19,20 +19,20 @@ func enter(msg: Dictionary = {}) -> void:
 		return
 
 	current_monkey_bar_volume = msg["volume_node"]
-	
+
 	# Instantly kill vertical momentum so we "catch" the bar
 	player.velocity.y = 0.0
-	
-	if player.has_node("%CameraAnims"): # Or whatever your AnimationPlayer is named
+
+	if player.has_node("%CameraAnims"):  # Or whatever your AnimationPlayer is named
 		player.get_node("%CameraAnims").play("monkey_bar_idle")
 
 
 func exit() -> void:
 	current_monkey_bar_volume = null
-	
+
 	# Start the cooldown on the main player script so they don't instantly regrab
 	player.monkey_bar_cooldown = 0.5
-	
+
 	if player.has_node("%CameraAnims"):
 		# Play a falling/idle animation, or use a crossfade transition
 		player.get_node("%CameraAnims").play("idle", 0.2)
@@ -47,28 +47,21 @@ func physics_update(delta: float) -> void:
 	if player.available_monkey_bar == null:
 		state_machine.transition_to("Air")
 		return
-		
+
 	if not is_instance_valid(current_monkey_bar_volume):
 		_perform_dismount()
 		return
 
 	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
-	
+
 	_apply_horizontal_movement(input_dir)
 	_apply_vertical_magnetism()
 	_handle_animations(input_dir)
-	
+
 	player.move_and_slide()
 
 	# Update the camera and headbob (passing our custom speed)
-	player.camera_controller.update_camera(
-		delta, 
-		input_dir, 
-		false, # is_sprinting
-		false, # is_crouching
-		false, # is_grounded
-		MONKEY_BAR_SPEED
-	)
+	player.camera_controller.update_camera(delta, input_dir, false, false, false, MONKEY_BAR_SPEED)  # is_sprinting  # is_crouching  # is_grounded
 
 	_check_dismount_conditions()
 
@@ -79,7 +72,7 @@ func physics_update(delta: float) -> void:
 func _apply_horizontal_movement(input_dir: Vector2) -> void:
 	var look_dir: Vector3 = -player.camera.global_transform.basis.z
 	var right_dir: Vector3 = player.camera.global_transform.basis.x
-	
+
 	# Flatten directions
 	look_dir.y = 0.0
 	right_dir.y = 0.0
@@ -129,5 +122,5 @@ func _check_dismount_conditions() -> void:
 
 
 func _perform_dismount() -> void:
-	player.velocity.y = -2.0 # Slight downward push to cleanly exit the trigger volume
+	player.velocity.y = -2.0  # Slight downward push to cleanly exit the trigger volume
 	state_machine.transition_to("Air")

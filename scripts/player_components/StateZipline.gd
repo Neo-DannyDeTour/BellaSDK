@@ -31,7 +31,7 @@ func enter(msg: Dictionary = {}) -> void:
 	current_zipline = msg["zipline_node"]
 	zipline_start = msg["start_pos"]
 	zipline_end = msg["end_pos"]
-	
+
 	zipline_dir = (zipline_end - zipline_start).normalized()
 	zipline_length = zipline_start.distance_to(zipline_end)
 	zipline_grace_timer = 0.0
@@ -54,8 +54,11 @@ func exit() -> void:
 
 	var upright_basis := Basis.looking_at(flat_fwd, Vector3.UP)
 	var detach_tween := create_tween().set_parallel(true)
-	(detach_tween.tween_property(player, "quaternion", upright_basis.get_rotation_quaternion(), 0.15)
-		.set_trans(Tween.TRANS_SINE))
+	(
+		detach_tween
+		. tween_property(player, "quaternion", upright_basis.get_rotation_quaternion(), 0.15)
+		. set_trans(Tween.TRANS_SINE)
+	)
 	detach_tween.tween_property(player.eyes, "rotation:z", 0.0, 0.15)
 
 
@@ -66,18 +69,13 @@ func physics_update(delta: float) -> void:
 	zipline_grace_timer += delta
 
 	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
-	
+
 	_calculate_movement(delta, input_dir)
 	_apply_position()
-	
+
 	# Update camera (passing 0 velocity since we override position directly)
 	player.camera_controller.update_camera(
-		delta, 
-		input_dir, 
-		false, # is_sprinting
-		false, # is_crouching
-		false, # is_grounded
-		ZIPLINE_SLIDE_SPEED # Fake speed for headbob scaling
+		delta, input_dir, false, false, false, ZIPLINE_SLIDE_SPEED  # is_sprinting  # is_crouching  # is_grounded  # Fake speed for headbob scaling
 	)
 
 	_check_dismount_conditions()
@@ -106,15 +104,19 @@ func _perform_attach_tween() -> void:
 	real_target_pos.y -= ZIPLINE_HANG_OFFSET
 
 	var attach_tween := create_tween().set_parallel(true)
-	(attach_tween.tween_property(player, "global_position", real_target_pos, 0.25)
-		.set_trans(Tween.TRANS_SINE))
+	attach_tween.tween_property(player, "global_position", real_target_pos, 0.25).set_trans(
+		Tween.TRANS_SINE
+	)
 
 	if is_auto_sliding:
 		var is_start_highest: bool = zipline_start.y > zipline_end.y
 		var downhill_dir: Vector3 = zipline_dir if is_start_highest else -zipline_dir
-		var target_quat: Quaternion = Basis.looking_at(downhill_dir, Vector3.UP).get_rotation_quaternion()
-		(attach_tween.tween_property(player, "quaternion", target_quat, 0.25)
-			.set_trans(Tween.TRANS_SINE))
+		var target_quat: Quaternion = (
+			Basis.looking_at(downhill_dir, Vector3.UP).get_rotation_quaternion()
+		)
+		attach_tween.tween_property(player, "quaternion", target_quat, 0.25).set_trans(
+			Tween.TRANS_SINE
+		)
 
 	attach_tween.set_parallel(false)
 	attach_tween.tween_callback(func() -> void: is_zipline_transitioning = false)
@@ -164,7 +166,9 @@ func _apply_position() -> void:
 
 
 func _check_dismount_conditions() -> void:
-	var hit_end: bool = zipline_grace_timer > 0.5 and (zipline_progress >= 0.999 or zipline_progress <= 0.001)
+	var hit_end: bool = (
+		zipline_grace_timer > 0.5 and (zipline_progress >= 0.999 or zipline_progress <= 0.001)
+	)
 	var pressed_jump: bool = Input.is_action_just_pressed("jump")
 	var pressed_crouch: bool = Input.is_action_just_pressed("crouch")
 
@@ -174,7 +178,7 @@ func _check_dismount_conditions() -> void:
 
 func _perform_dismount() -> void:
 	player.zipline_cooldown = 0.5
-	
+
 	var zip_vel: Vector3 = Vector3.ZERO
 	if current_zipline and current_zipline.has_method("get_current_travel_velocity"):
 		zip_vel = current_zipline.get_current_travel_velocity()
@@ -184,11 +188,13 @@ func _perform_dismount() -> void:
 	if zip_vel.length() < 2.0:
 		var look_dir: Vector3 = -player.camera.global_transform.basis.z
 		var launch_flat_fwd: Vector3 = Vector3(look_dir.x, 0.0, look_dir.z).normalized()
-		
+
 		if launch_flat_fwd.length_squared() < 0.01:
 			launch_flat_fwd = Vector3.FORWARD
-			
-		zip_vel = (launch_flat_fwd * ZIPLINE_SLIDE_SPEED) + Vector3(0.0, -ZIPLINE_SLIDE_SPEED * 0.5, 0.0)
+
+		zip_vel = (
+			(launch_flat_fwd * ZIPLINE_SLIDE_SPEED) + Vector3(0.0, -ZIPLINE_SLIDE_SPEED * 0.5, 0.0)
+		)
 
 	player.velocity = zip_vel * DETACH_MOMENTUM_MULTIPLIER
 

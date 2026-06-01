@@ -45,54 +45,26 @@ const DEFAULT_VSYNC: DisplayServer.VSyncMode = DisplayServer.VSYNC_ENABLED
 
 # --- NEW CONSTANTS FOR FSR ---
 const FSR_MODES: Dictionary = {
-	"Disabled (Native)": 1.0,
-	"Quality": 0.77,
-	"Balanced": 0.59,
-	"Performance": 0.50
+	"Disabled (Native)": 1.0, "Quality": 0.77, "Balanced": 0.59, "Performance": 0.50
 }
 const DEFAULT_FSR_MODE: String = "Disabled (Native)"
 
-
 # --- UNIFIED ANTI-ALIASING SYSTEM ---
 const AA_MODES: Dictionary = {
-	"Disabled": {
-		"msaa": Viewport.MSAA_DISABLED, 
-		"taa": false, 
-		"fxaa": Viewport.SCREEN_SPACE_AA_DISABLED
-	},
-	"FXAA (Fast)": {
-		"msaa": Viewport.MSAA_DISABLED, 
-		"taa": false, 
-		"fxaa": Viewport.SCREEN_SPACE_AA_FXAA
-	},
-	"TAA (Smooth)": {
-		"msaa": Viewport.MSAA_DISABLED, 
-		"taa": true, 
-		"fxaa": Viewport.SCREEN_SPACE_AA_DISABLED
-	},
-	"MSAA 2x": {
-		"msaa": Viewport.MSAA_2X, 
-		"taa": false, 
-		"fxaa": Viewport.SCREEN_SPACE_AA_DISABLED
-	},
-	"MSAA 4x": {
-		"msaa": Viewport.MSAA_4X, 
-		"taa": false, 
-		"fxaa": Viewport.SCREEN_SPACE_AA_DISABLED
-	},
-	"MSAA 8x (Heavy)": {
-		"msaa": Viewport.MSAA_8X, 
-		"taa": false, 
-		"fxaa": Viewport.SCREEN_SPACE_AA_DISABLED
-	},
-	"MSAA 2x + TAA (High)": {
-		"msaa": Viewport.MSAA_2X, 
-		"taa": true, 
-		"fxaa": Viewport.SCREEN_SPACE_AA_DISABLED
-	}
+	"Disabled":
+	{"msaa": Viewport.MSAA_DISABLED, "taa": false, "fxaa": Viewport.SCREEN_SPACE_AA_DISABLED},
+	"FXAA (Fast)":
+	{"msaa": Viewport.MSAA_DISABLED, "taa": false, "fxaa": Viewport.SCREEN_SPACE_AA_FXAA},
+	"TAA (Smooth)":
+	{"msaa": Viewport.MSAA_DISABLED, "taa": true, "fxaa": Viewport.SCREEN_SPACE_AA_DISABLED},
+	"MSAA 2x": {"msaa": Viewport.MSAA_2X, "taa": false, "fxaa": Viewport.SCREEN_SPACE_AA_DISABLED},
+	"MSAA 4x": {"msaa": Viewport.MSAA_4X, "taa": false, "fxaa": Viewport.SCREEN_SPACE_AA_DISABLED},
+	"MSAA 8x (Heavy)":
+	{"msaa": Viewport.MSAA_8X, "taa": false, "fxaa": Viewport.SCREEN_SPACE_AA_DISABLED},
+	"MSAA 2x + TAA (High)":
+	{"msaa": Viewport.MSAA_2X, "taa": true, "fxaa": Viewport.SCREEN_SPACE_AA_DISABLED}
 }
 const DEFAULT_AA_MODE: String = "Disabled"
-
 
 # --- AUTOMATED REMAPPING ---
 var is_remapping: bool = false
@@ -147,10 +119,8 @@ var has_calibrated: bool = false
 # --- RESOLUTION VARIABLES ---
 @onready var resolution_options: OptionButton = %ResolutionOptionButton
 
-@onready var accessibility_button: Button = (
-	$Options/MarginContainer/OptionsButtons/HBoxContainer/\
-AccessibilityButton
-)
+@onready
+var accessibility_button: Button = $Options/MarginContainer/OptionsButtons/HBoxContainer/AccessibilityButton
 @onready var options_content: VBoxContainer = $Options/VBoxContainer
 @onready var back_accessibility_button: Button = %BackAccessibilityButton
 
@@ -167,6 +137,7 @@ AccessibilityButton
 # --- AA REFERENCE ---
 @onready var aa_options: OptionButton = %AAOptionButton
 
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
@@ -180,10 +151,10 @@ func _ready() -> void:
 	# VSYNC
 	_populate_vsync_dropdown()
 	vsync_options.item_selected.connect(_on_vsync_selected)
-	
+
 	_populate_fsr_dropdown()
 	fsr_options.item_selected.connect(_on_fsr_selected)
-	
+
 	_populate_aa_dropdown()
 	aa_options.item_selected.connect(_on_aa_selected)
 
@@ -535,8 +506,7 @@ func _on_reset_button_pressed() -> void:
 			vsync_options.select(i)
 			break
 	_save_setting_to_disk("vsync_mode", DEFAULT_VSYNC)
-	
-	
+
 	# --- Reset AA ---
 	_apply_aa(DEFAULT_AA_MODE)
 	for i: int in range(aa_options.get_item_count()):
@@ -545,12 +515,14 @@ func _on_reset_button_pressed() -> void:
 			break
 	_save_setting_to_disk("aa_mode", DEFAULT_AA_MODE)
 
+
 func refresh_all_button_labels() -> void:
 	var container := $ControlsPanel/VBoxContainer
 	for child in container.get_children():
 		if child is Button and child.has_meta("action"):
 			var action_name: String = child.get_meta("action")
 			update_button_text(child, action_name)
+
 
 func save_controls() -> void:
 	var config := ConfigFile.new()
@@ -637,11 +609,11 @@ func load_controls() -> void:
 	await get_tree().process_frame
 
 	# Push the loaded values directly to the player's CameraController
-	var player: Node = _get_player() 
+	var player: Node = _get_player()
 	if player and "camera_controller" in player and player.camera_controller:
 		player.camera_controller.base_fov = fov_slider.value
 		player.camera_controller.disable_sprint_fov = sprint_fov_checkbox.button_pressed
-		
+
 		# Force the camera to accept the loaded sensitivity!
 		player.camera_controller.mouse_sensitivity_base = sens_slider.value
 		player.camera_controller.mouse_sensitivity = sens_slider.value
@@ -665,26 +637,25 @@ func load_controls() -> void:
 		if VSYNC_MODES[key] == saved_vsync:
 			vsync_options.select(i)
 			break
-			
-	var saved_fsr: String = config.get_value(
-		"Settings", "fsr_mode", DEFAULT_FSR_MODE
-	)
+
+	var saved_fsr: String = config.get_value("Settings", "fsr_mode", DEFAULT_FSR_MODE)
 	_apply_fsr(saved_fsr)
-	
+
 	for i: int in range(fsr_options.get_item_count()):
 		if fsr_options.get_item_text(i) == saved_fsr:
 			fsr_options.select(i)
 			break
-			
+
 	# --- Load AA ---
 	var saved_aa: String = config.get_value("Settings", "aa_mode", DEFAULT_AA_MODE)
 	_apply_aa(saved_aa)
-	
+
 	for i: int in range(aa_options.get_item_count()):
 		if aa_options.get_item_text(i) == saved_aa:
 			aa_options.select(i)
 			break
-			
+
+
 func get_action_with_event(new_event: InputEvent) -> String:
 	for action: String in my_actions:
 		if InputMap.action_has_event(action, new_event):
@@ -744,12 +715,12 @@ func _on_sensitivity_changed(value: float) -> void:
 		sens_input.text = "%.2f" % value
 
 	var player: Node = _get_player()
-	
+
 	if player and "camera_controller" in player and player.camera_controller:
 		player.camera_controller.mouse_sensitivity_base = value
 		player.camera_controller.mouse_sensitivity = value
-		
-		# DELETED the line assigning mouse_sensitivity_zoom! 
+
+		# DELETED the line assigning mouse_sensitivity_zoom!
 		# The CameraController handles it automatically now.
 
 
@@ -887,7 +858,7 @@ func _on_fov_changed(value: float) -> void:
 	if not fov_input.has_focus():
 		fov_input.text = str(int(value))
 
-	var player: Node = _get_player() # <-- CHANGED
+	var player: Node = _get_player()  # <-- CHANGED
 	if player and "camera_controller" in player and player.camera_controller:
 		player.camera_controller.base_fov = value
 
@@ -919,19 +890,22 @@ func _on_fov_focus_exited() -> void:
 
 func _on_sprint_fov_toggled(toggled_on: bool) -> void:
 	_save_setting_to_disk("disable_sprint_fov", toggled_on)
-	
-	var player: Node = _get_player() # <-- CHANGED
+
+	var player: Node = _get_player()  # <-- CHANGED
 	if player and "camera_controller" in player and player.camera_controller:
 		player.camera_controller.disable_sprint_fov = toggled_on
+
 
 # ==========================================
 # FRAMERATE SYSTEM
 # ==========================================
 
+
 func _populate_fps_dropdown() -> void:
 	fps_options.clear()
 	for fps_string: String in FPS_LIMITS.keys():
 		fps_options.add_item(fps_string)
+
 
 func _on_fps_selected(index: int) -> void:
 	var key: String = fps_options.get_item_text(index)
@@ -940,14 +914,17 @@ func _on_fps_selected(index: int) -> void:
 	Engine.max_fps = limit
 	_save_setting_to_disk("fps_limit", limit)
 
+
 # ==========================================
 # VSYNC SYSTEM
 # ==========================================
+
 
 func _populate_vsync_dropdown() -> void:
 	vsync_options.clear()
 	for vsync_string: String in VSYNC_MODES.keys():
 		vsync_options.add_item(vsync_string)
+
 
 func _on_vsync_selected(index: int) -> void:
 	var key: String = vsync_options.get_item_text(index)
@@ -955,6 +932,7 @@ func _on_vsync_selected(index: int) -> void:
 
 	DisplayServer.window_set_vsync_mode(mode)
 	_save_setting_to_disk("vsync_mode", mode)
+
 
 # ==========================================
 # UPSCALER SYSTEM
@@ -974,7 +952,7 @@ func _on_fsr_selected(index: int) -> void:
 func _apply_fsr(mode_key: String) -> void:
 	var fsr_scale: float = FSR_MODES[mode_key]
 	var current_viewport: Viewport = get_viewport()
-	
+
 	if fsr_scale >= 1.0:
 		current_viewport.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
 		# We are back at native resolution, re-apply the user's chosen AA
@@ -983,13 +961,15 @@ func _apply_fsr(mode_key: String) -> void:
 	else:
 		# FSR 2 is active, which is a temporal upscaler. We MUST disable TAA to prevent conflicts.
 		current_viewport.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR2
-		current_viewport.use_taa = false 
-		
+		current_viewport.use_taa = false
+
 	current_viewport.scaling_3d_scale = fsr_scale
+
 
 # ==========================================
 # UNIFIED ANTI-ALIASING SYSTEM
 # ==========================================
+
 
 func _populate_aa_dropdown() -> void:
 	aa_options.clear()
@@ -1006,18 +986,19 @@ func _on_aa_selected(index: int) -> void:
 func _apply_aa(mode_key: String) -> void:
 	if not AA_MODES.has(mode_key):
 		mode_key = DEFAULT_AA_MODE
-		
+
 	var settings: Dictionary = AA_MODES[mode_key]
 	var current_viewport: Viewport = get_viewport()
-	
+
 	current_viewport.msaa_3d = settings["msaa"] as Viewport.MSAA
 	current_viewport.screen_space_aa = settings["fxaa"] as Viewport.ScreenSpaceAA
-	
+
 	# Only apply TAA if FSR2 is NOT currently active
 	if current_viewport.scaling_3d_mode == Viewport.SCALING_3D_MODE_FSR2:
 		current_viewport.use_taa = false
 	else:
 		current_viewport.use_taa = settings["taa"] as bool
+
 
 func _get_player() -> Node:
 	var parent: Node = get_parent()

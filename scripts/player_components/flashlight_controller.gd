@@ -20,27 +20,31 @@ var is_flickering: bool = false
 var noise_time: float = 0.0
 var jitter_noise: FastNoiseLite = FastNoiseLite.new()
 
+
 func _ready() -> void:
 	default_pos = position
 	flashlight.visible = false
-	
+
 	jitter_noise.noise_type = FastNoiseLite.TYPE_PERLIN
 	jitter_noise.frequency = 0.8
+
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("flashlight"):
 		flashlight.visible = not flashlight.visible
-		
+
 	if event is InputEventMouseMotion and flashlight.visible:
 		sway_target += event.relative
+
 
 func _process(delta: float) -> void:
 	if not flashlight.visible:
 		return
-		
+
 	_apply_sway(delta)
 	_apply_pushback(delta)
 	_apply_instability(delta)
+
 
 func _apply_sway(delta: float) -> void:
 	var max_sway: float = 150.0
@@ -48,13 +52,12 @@ func _apply_sway(delta: float) -> void:
 	sway_target.y = clampf(sway_target.y, -max_sway, max_sway)
 
 	var target_rot := Vector3(
-		sway_target.y * (sway_amount * 0.0015), 
-		sway_target.x * (sway_amount * 0.0015), 
-		0.0
+		sway_target.y * (sway_amount * 0.0015), sway_target.x * (sway_amount * 0.0015), 0.0
 	)
-	
+
 	rotation = rotation.lerp(target_rot, delta * flashlight_rot_smoothness)
 	sway_target = sway_target.lerp(Vector2.ZERO, delta * (smooth_speed * 0.5))
+
 
 func _apply_pushback(delta: float) -> void:
 	var space_state := get_world_3d().direct_space_state
@@ -72,10 +75,11 @@ func _apply_pushback(delta: float) -> void:
 		var base_push: float = flashlight_maintain_distance - dist
 		var proximity: float = clampf(1.0 - (dist / flashlight_maintain_distance), 0.0, 1.0)
 		var extra_push: float = (flashlight_maintain_distance * 0.25) * proximity
-		
+
 		flashlight.position.z = lerpf(flashlight.position.z, base_push + extra_push, delta * 15.0)
 	else:
 		flashlight.position.z = lerpf(flashlight.position.z, 0.0, delta * 15.0)
+
 
 func _apply_instability(delta: float) -> void:
 	if not is_flickering and randf() < 0.003:

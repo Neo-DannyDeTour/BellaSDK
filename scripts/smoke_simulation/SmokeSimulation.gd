@@ -15,9 +15,9 @@ func _ready() -> void:
 	if fog_material:
 		fog_material.density_texture = texture_rd
 		fog_material.albedo = smoke_color
-		
+
 		# Increase base density significantly for thick, opaque smoke.
 		# Default is 1.0, which is often too thin for weapon smoke.
-		fog_material.density = 4.0 
-		
+		fog_material.density = 4.0
+
 		self.material = fog_material

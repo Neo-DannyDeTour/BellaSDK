@@ -1,6 +1,6 @@
 @tool
-extends Node3D
 class_name BasaltMagnet
+extends Node3D
 
 @export var push_force: float = 5.0  ## Positive to push up, negative to push down
 @export var effect_radius: float = 5.0
