@@ -33,33 +33,28 @@ func _process(_delta: float) -> void:
 	else:
 		fps_color = "red"
 
-	var is_pressing_keys: bool = player.input_dir.length() > 0.1
+	var current_input: Vector2 = Input.get_vector("left", "right", "forward", "backward")
+	var is_pressing_keys: bool = current_input.length() > 0.1
 
-	var state := "IDLE"
-	if player.flying:
+	# 2. Update the state logic to read from our new State Machine and Components!
+	var state: String = "UNKNOWN"
+	
+	if player.system_menu and player.system_menu.flying:
 		state = "NOCLIP"
-	elif player.swimming:
-		state = "SWIMMING"
-	elif player.on_zipline:
-		state = "ZIPLINE"
-	elif player.on_ladder:
-		state = "LADDER"
-	elif player.crouching:
-		state = "CROUCHING" if is_pressing_keys else "CROUCH IDLE"
-	elif player.sprinting:
-		state = "SPRINTING"
-	elif player.on_monkey_bars:
-		state = "MONKE"
-	elif player.on_rope:
-		state = "ROPE"
-	elif player.in_updraft:
-		state = "AIRBORNE UPDRAFT"
-	elif player.is_using_zoom:
-		state = "ZOOM"
-	elif player.is_on_floor():
-		state = "WALKING" if is_pressing_keys else "IDLE"
-	else:
-		state = "AIRBORNE"
+	elif player.state_machine and player.state_machine.state:
+		# Automatically grab the name of the active state (e.g., "Air", "Ladder", "Swim")
+		state = player.state_machine.state.name.to_upper()
+		
+		# Add specific modifiers if the state is "GROUND"
+		if state == "GROUND":
+			if player.crouching:
+				state = "CROUCHING" if is_pressing_keys else "CROUCH IDLE"
+			elif player.sprint_active:
+				state = "SPRINTING"
+			elif is_pressing_keys:
+				state = "WALKING"
+			else:
+				state = "IDLE"
 
 	# --- MEMORY & RENDERING METRICS ---
 	var static_mem := OS.get_static_memory_usage()
@@ -70,7 +65,10 @@ func _process(_delta: float) -> void:
 	var primitives := Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)
 
 	# --- NEW BOOLEAN CHECKS ---
-	var flashlight_str := "ON" if player.flashlight.visible else "OFF"
+	var flashlight_str := "OFF"
+	if player.has_node("%Flashlight"): # Or whatever unique name you gave the spotlight
+		flashlight_str = "ON" if player.get_node("%Flashlight").visible else "OFF"
+		
 	var weapon_str := "NONE"
 	if player.get_node("%WeaponHolder").get_child_count() > 0:
 		weapon_str = player.get_node("%WeaponHolder").get_child(0).name

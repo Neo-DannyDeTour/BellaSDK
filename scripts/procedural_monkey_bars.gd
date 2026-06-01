@@ -50,13 +50,16 @@ func _update_trigger_box() -> void:
 func _on_body_entered(body: Node3D) -> void:
 	if Engine.is_editor_hint():
 		return
-	if body.has_method("enter_monkey_bars"):
-		body.enter_monkey_bars(self)
+	
+	print("Monkey Bar Trigger touched by: ", body.name) # Add this!
+	
+	if body.has_method("set_available_monkey_bar"):
+		body.set_available_monkey_bar(self)
 
 
 func _on_body_exited(body: Node3D) -> void:
 	if Engine.is_editor_hint():
 		return
-	if body.has_method("exit_monkey_bars"):
-		# THE FIX: Pass 'self' so the player knows exactly which box we are leaving!
-		body.exit_monkey_bars(self)
+	# FIXED: Call the clear function so we don't accidentally grab thin air later!
+	if body.has_method("clear_available_monkey_bar"):
+		body.clear_available_monkey_bar(self)

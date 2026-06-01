@@ -1,10 +1,9 @@
-[gd_scene format=3 uid="uid://2db87kewe2f2"]
+[gd_scene format=3 uid="uid://q1rn8gvecnp"]
 
 [ext_resource type="Script" uid="uid://ca4mn3j02b5bi" path="res://scripts/Player.gd" id="1_34orh"]
 [ext_resource type="PackedScene" uid="uid://cv4syvckbtm2f" path="res://scenes/ui.tscn" id="2_k2mo6"]
 [ext_resource type="Script" uid="uid://f70me5087r7i" path="res://scripts/player_components/flashlight_controller.gd" id="3_b8lor"]
 [ext_resource type="Texture2D" uid="uid://dnv1e6gebl5gj" path="res://assets/images/UI/flashlight_pattern.png" id="3_di6f5"]
-[ext_resource type="Script" uid="uid://c0epxmhenit7" path="res://scripts/player_components/camera_controller.gd" id="4_6e537"]
 [ext_resource type="Shader" uid="uid://spngok2sru6f" path="res://assets/shaders/water_wipe_overlay.gdshader" id="4_61ith"]
 [ext_resource type="Shader" uid="uid://onn1sa83xj6n" path="res://scenes/WaterRippleOverlay.gdshader" id="6_61ith"]
 [ext_resource type="Shader" uid="uid://blvci46gmtq30" path="res://assets/shaders/waterfall_wipe_overlay.gdshader" id="6_ebwui"]
@@ -17,28 +16,12 @@
 [ext_resource type="AudioStream" uid="uid://uxf83pmc6tqt" path="res://assets/sounds/MetalFS_3.wav" id="11_lkdrv"]
 [ext_resource type="AudioStream" uid="uid://v1nx1mi0054m" path="res://assets/sounds/StoneFS_1.wav" id="12_p7iby"]
 [ext_resource type="AudioStream" uid="uid://cfc3fe6a652f3" path="res://assets/sounds/StoneFS_2.wav" id="13_0rnld"]
-[ext_resource type="Script" uid="uid://64e5um7dt7pk" path="res://scripts/player_components/footstep_manager.gd" id="13_viqgg"]
 [ext_resource type="AudioStream" uid="uid://vlp6ss6t753l" path="res://assets/sounds/StoneFS_3.wav" id="14_srp4u"]
 [ext_resource type="AudioStream" uid="uid://5hwtbp804ek" path="res://assets/sounds/WetFS_1.wav" id="15_jfpux"]
 [ext_resource type="AudioStream" uid="uid://dnki3f8vfkxp5" path="res://assets/sounds/WetFS_2.wav" id="16_61ith"]
 [ext_resource type="AudioStream" uid="uid://oh71h2dp43vr" path="res://assets/sounds/WetFS_3.wav" id="17_ebwui"]
 [ext_resource type="Script" uid="uid://dkjdvshv5ieah" path="res://scenes/effects/smoke_wake_collider.gd" id="20_sfy4j"]
 [ext_resource type="Script" uid="uid://cbwy13aembb7w" path="res://scripts/HealthComponent.gd" id="21_gv3ic"]
-[ext_resource type="Script" uid="uid://byrbifw8m750a" path="res://scripts/player_components/interaction_scanner.gd" id="24_p07f3"]
-[ext_resource type="Script" uid="uid://cgaeaskksqytc" path="res://scripts/player_components/screen_vfx_manager.gd" id="26_fgkxt"]
-[ext_resource type="Script" uid="uid://b2b2ewoakmxoj" path="res://scripts/player_components/vault_controller.gd" id="27_xsi7p"]
-[ext_resource type="Script" uid="uid://rdk3qrjsr6sf" path="res://scripts/player_components/physics_pusher.gd" id="28_1jpwa"]
-[ext_resource type="Script" uid="uid://c1xnt2yo0oo2g" path="res://scripts/player_components/SystemMenuController.gd" id="29_pfeki"]
-[ext_resource type="Script" uid="uid://drduud6mr6jpb" path="res://scripts/player_components/PlayerStateMachine.gd" id="30_axnmu"]
-[ext_resource type="Script" uid="uid://l8jxyaeiyhyw" path="res://scripts/player_components/StateGround.gd" id="31_fvsjc"]
-[ext_resource type="Script" uid="uid://b6id2mbr5hdwl" path="res://scripts/player_components/StateAir.gd" id="32_hxdpb"]
-[ext_resource type="Script" uid="uid://bsu54rp3pvytw" path="res://scripts/player_components/StateLadders.gd" id="33_agngo"]
-[ext_resource type="Script" uid="uid://cvpwmre7ptbmv" path="res://scripts/player_components/StateZipline.gd" id="34_qrixf"]
-[ext_resource type="Script" uid="uid://2wxjkijgcx2h" path="res://scripts/player_components/StateRope.gd" id="35_qmt83"]
-[ext_resource type="Script" uid="uid://doxrsfqucen26" path="res://scripts/player_components/StateSwim.gd" id="36_m4as6"]
-[ext_resource type="Script" uid="uid://y0srs23sa364" path="res://scripts/player_components/StateMonkeyBars.gd" id="37_b1r6t"]
-[ext_resource type="Script" uid="uid://i3kw0oxxm0jm" path="res://scripts/player_components/StateFastRope.gd" id="38_c0asu"]
-[ext_resource type="Script" uid="uid://cmnw5toa1h643" path="res://scripts/player_components/StateVault.gd" id="39_fq1a3"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_cw2d6"]
 radius = 0.1
@@ -334,10 +317,16 @@ stream_0/stream = ExtResource("15_jfpux")
 stream_1/stream = ExtResource("16_61ith")
 stream_2/stream = ExtResource("17_ebwui")
 
-[node name="Player" type="CharacterBody3D" unique_id=1502339238 groups=["player"]]
+[node name="Player" type="CharacterBody3D" unique_id=1502339238 node_paths=PackedStringArray("player_ui", "footstep_audio_default", "footstep_audio_metal", "footstep_audio_stone", "footstep_audio_wet_dirt") groups=["player"]]
 process_mode = 3
 collision_layer = 2
 script = ExtResource("1_34orh")
+player_ui = NodePath("UI")
+footstep_audio_default = NodePath("Audio/FootstepDefaultAudio")
+footstep_audio_metal = NodePath("Audio/FootstepMetalAudio")
+footstep_audio_stone = NodePath("Audio/FootstepStoneAudio")
+footstep_audio_wet_dirt = NodePath("Audio/FootstepWetDirtAudio")
+crouch_step_interval = 0.55
 
 [node name="Head" type="Node3D" parent="." unique_id=1584872370]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
@@ -386,21 +375,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.1)
 light_color = Color(1, 1, 0.8356356, 1)
 light_energy = 0.5
 
-[node name="FlashlightController" type="Node3D" parent="Head/Eyes/Camera3D" unique_id=1702426416 node_paths=PackedStringArray("camera", "flashlight")]
+[node name="FlashlightController" type="Node3D" parent="Head/Eyes/Camera3D" unique_id=1702426416]
 script = ExtResource("3_b8lor")
-camera = NodePath("..")
-flashlight = NodePath("../FlashLightNode/Flashlight")
 
 [node name="CameraAnims" type="AnimationPlayer" parent="Head/Eyes" unique_id=1765016502]
 libraries/ = SubResource("AnimationLibrary_xfc2n")
-
-[node name="CameraController" type="Node3D" parent="Head" unique_id=1011773041 node_paths=PackedStringArray("player_body", "head", "eyes", "camera")]
-unique_name_in_owner = true
-script = ExtResource("4_6e537")
-player_body = NodePath("../..")
-head = NodePath("..")
-eyes = NodePath("../Eyes")
-camera = NodePath("../Eyes/Camera3D")
 
 [node name="StandingCollisionShape" type="CollisionShape3D" parent="." unique_id=74353325]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
@@ -470,101 +449,29 @@ grow_vertical = 2
 [node name="CollisionShape3D" type="CollisionShape3D" parent="WaterDetector" unique_id=1446250573]
 shape = SubResource("SphereShape3D_mdl7e")
 
+[node name="Audio" type="Node" parent="." unique_id=51504732]
+
+[node name="FootstepDefaultAudio" type="AudioStreamPlayer" parent="Audio" unique_id=1100202989]
+stream = SubResource("AudioStreamRandomizer_d3wef")
+volume_db = -20.0
+
+[node name="FootstepMetalAudio" type="AudioStreamPlayer" parent="Audio" unique_id=469023765]
+stream = SubResource("AudioStreamRandomizer_p7iby")
+volume_db = -20.0
+
+[node name="FootstepStoneAudio" type="AudioStreamPlayer" parent="Audio" unique_id=506548274]
+stream = SubResource("AudioStreamRandomizer_jfpux")
+volume_db = -20.0
+
+[node name="FootstepWetDirtAudio" type="AudioStreamPlayer" parent="Audio" unique_id=875564003]
+stream = SubResource("AudioStreamRandomizer_sfy4j")
+
 [node name="GPUParticlesCollisionSphere3D" type="GPUParticlesCollisionSphere3D" parent="." unique_id=1390424873]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 script = ExtResource("20_sfy4j")
 
 [node name="HealthComponent" type="Node" parent="." unique_id=217395835]
 script = ExtResource("21_gv3ic")
-
-[node name="InteractionScanner" type="Node3D" parent="." unique_id=1246891363 node_paths=PackedStringArray("player_body", "camera", "interact_shapecast", "hold_position", "weapon_holder")]
-script = ExtResource("24_p07f3")
-player_body = NodePath("..")
-camera = NodePath("../Head/Eyes/Camera3D")
-interact_shapecast = NodePath("../Head/Eyes/Camera3D/InteractShapeCast")
-hold_position = NodePath("../Head/Eyes/Camera3D/SpringArm3D/HoldPosition")
-weapon_holder = NodePath("../Head/Eyes/Camera3D/WeaponHolder")
-
-[node name="FootstepManager" type="Node3D" parent="." unique_id=8024466 node_paths=PackedStringArray("player_body", "audio_default", "audio_metal", "audio_stone", "audio_wet_dirt")]
-script = ExtResource("13_viqgg")
-player_body = NodePath("..")
-audio_default = NodePath("FootstepDefaultAudio")
-audio_metal = NodePath("FootstepMetalAudio")
-audio_stone = NodePath("FootstepStoneAudio")
-audio_wet_dirt = NodePath("FootstepWetDirtAudio")
-
-[node name="FootstepDefaultAudio" type="AudioStreamPlayer" parent="FootstepManager" unique_id=1100202989]
-stream = SubResource("AudioStreamRandomizer_d3wef")
-volume_db = -20.0
-
-[node name="FootstepMetalAudio" type="AudioStreamPlayer" parent="FootstepManager" unique_id=469023765]
-stream = SubResource("AudioStreamRandomizer_p7iby")
-volume_db = -20.0
-
-[node name="FootstepStoneAudio" type="AudioStreamPlayer" parent="FootstepManager" unique_id=506548274]
-stream = SubResource("AudioStreamRandomizer_jfpux")
-volume_db = -20.0
-
-[node name="FootstepWetDirtAudio" type="AudioStreamPlayer" parent="FootstepManager" unique_id=875564003]
-stream = SubResource("AudioStreamRandomizer_sfy4j")
-
-[node name="ScreenVFXManager" type="Node3D" parent="." unique_id=461355015 node_paths=PackedStringArray("screen_water_ui", "rain_drops_overlay", "waterfall_overlay")]
-script = ExtResource("26_fgkxt")
-screen_water_ui = NodePath("../CanvasLayer/WaterRippleOverlay")
-rain_drops_overlay = NodePath("../CanvasLayer/RainDropsOverlay")
-waterfall_overlay = NodePath("../CanvasLayer/WaterfallOverlay")
-
-[node name="VaultController" type="Node3D" parent="." unique_id=1292397910 node_paths=PackedStringArray("player_body", "camera", "head", "eyes", "standing_collision", "crouching_collision")]
-script = ExtResource("27_xsi7p")
-player_body = NodePath("..")
-camera = NodePath("../Head/Eyes/Camera3D")
-head = NodePath("../Head")
-eyes = NodePath("../Head/Eyes")
-standing_collision = NodePath("../StandingCollisionShape")
-crouching_collision = NodePath("../CrouchingCollisionShape")
-
-[node name="PhysicsPusher" type="Node" parent="." unique_id=1720256570 node_paths=PackedStringArray("player_body")]
-script = ExtResource("28_1jpwa")
-player_body = NodePath("..")
-
-[node name="SystemMenuController" type="Node" parent="." unique_id=207353890 node_paths=PackedStringArray("player_body", "camera", "eyes", "standing_collision", "crouching_collision")]
-script = ExtResource("29_pfeki")
-player_body = NodePath("..")
-camera = NodePath("../Head/Eyes/Camera3D")
-eyes = NodePath("../Head/Eyes")
-standing_collision = NodePath("../StandingCollisionShape")
-crouching_collision = NodePath("../CrouchingCollisionShape")
-
-[node name="StateMachine" type="Node" parent="." unique_id=2011174862]
-script = ExtResource("30_axnmu")
-initial_state = NodePath("Ground")
-
-[node name="Ground" type="Node" parent="StateMachine" unique_id=1499192672]
-script = ExtResource("31_fvsjc")
-
-[node name="Air" type="Node" parent="StateMachine" unique_id=1102320837]
-script = ExtResource("32_hxdpb")
-
-[node name="Ladders" type="Node" parent="StateMachine" unique_id=37171048]
-script = ExtResource("33_agngo")
-
-[node name="Zipline" type="Node" parent="StateMachine" unique_id=780864794]
-script = ExtResource("34_qrixf")
-
-[node name="Rope" type="Node" parent="StateMachine" unique_id=1094535125]
-script = ExtResource("35_qmt83")
-
-[node name="Swim" type="Node" parent="StateMachine" unique_id=386107787]
-script = ExtResource("36_m4as6")
-
-[node name="MonkeyBars" type="Node" parent="StateMachine" unique_id=1577884756]
-script = ExtResource("37_b1r6t")
-
-[node name="FastRope" type="Node" parent="StateMachine" unique_id=1140288696]
-script = ExtResource("38_c0asu")
-
-[node name="Vault" type="Node" parent="StateMachine" unique_id=1605824677]
-script = ExtResource("39_fq1a3")
 
 [connection signal="area_entered" from="WaterDetector" to="." method="_on_water_detector_area_entered"]
 [connection signal="area_exited" from="WaterDetector" to="." method="_on_water_detector_area_exited"]

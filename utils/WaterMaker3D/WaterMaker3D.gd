@@ -154,7 +154,10 @@ func _on_swimmable_area_body_entered(body: Node3D) -> void:
 		impact_speed = body.linear_velocity.length()
 	elif body is CharacterBody3D:  # Usually the Player
 		impact_speed = body.velocity.length()
-
+		
+		if body.has_method("enter_water"):
+			body.enter_water(self)
+			
 	# If they hit the water fast enough, trigger the sound!
 	if impact_speed >= min_splash_velocity:
 		play_splash_sound(body.global_position, impact_speed)
@@ -197,3 +200,6 @@ func _on_swimmable_area_body_exited(body: Node3D) -> void:
 			floating_bodies.erase(body)
 			body.is_in_water = false
 			body.current_water_node = null
+			
+	elif body.has_method("exit_water"):
+		body.exit_water(self)

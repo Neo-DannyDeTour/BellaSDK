@@ -115,12 +115,8 @@ func drop() -> void:
 		if "velocity" in holder:
 			linear_velocity = holder.velocity
 
-		var cam_forward: Vector3 = -holder.cam.global_transform.basis.z
+		var cam_forward: Vector3 = -holder.camera.global_transform.basis.z
 		var flat_cam_forward := Vector3(cam_forward.x, 0.0, cam_forward.z)
-
-		if flat_cam_forward.length_squared() < 0.01:
-			flat_cam_forward = -holder.global_transform.basis.z
-			flat_cam_forward.y = 0.0
 
 		var push_dir := flat_cam_forward.normalized()
 
@@ -193,7 +189,9 @@ func drop() -> void:
 			push_dir.y = 0.5
 			apply_central_impulse(push_dir * 5.0)
 
-		if "held_object" in holder:
+		if "interaction_scanner" in holder:
+			holder.interaction_scanner.held_object = null
+		elif "held_object" in holder:
 			holder.held_object = null
 
 		#var push_dir := flat_cam_forward.normalized()
@@ -313,7 +311,7 @@ func _physics_process(_delta: float) -> void:
 
 		# 1. APPLY OFFSETS FIRST
 		var player_pos: Vector3 = holder.global_position
-		var cam_forward: Vector3 = -holder.cam.global_transform.basis.z
+		var cam_forward: Vector3 = -holder.camera.global_transform.basis.z
 
 		# Pull closer to face based on export setting
 		target_pos -= cam_forward * hold_distance_offset
@@ -357,10 +355,14 @@ func _physics_process(_delta: float) -> void:
 			target_pos.y = min_height
 
 		# 3. NOW DO THE SNAG CHECK
-		# We check distance to our modified target_pos, NOT the Marker3D
 		var distance_to_target := global_position.distance_to(target_pos)
 
-		if distance_to_target > 1.5 and holder.get("flying") != true:
+		# FIXED: Route the flying check through the SystemMenuController
+		var is_flying: bool = false
+		if "system_menu" in holder:
+			is_flying = holder.system_menu.flying
+			
+		if distance_to_target > 1.5 and not is_flying:
 			drop()
 			return
 

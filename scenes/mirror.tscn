@@ -21,6 +21,8 @@ render_priority = 0
 shader = ExtResource("1_5o7h0")
 shader_parameter/tex = SubResource("ViewportTexture_652kc")
 
+[sub_resource type="Environment" id="Environment_652kc"]
+
 [sub_resource type="Compositor" id="Compositor_0dm0a"]
 
 [node name="Mirror" type="Node3D" unique_id=2122574524 node_paths=PackedStringArray("mirror_viewport", "mirror_camera", "mirror_quad")]
@@ -39,6 +41,7 @@ render_target_update_mode = 4
 
 [node name="Camera3D" type="Camera3D" parent="SubViewport" unique_id=1441297324]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.71903896, 1.5242157, -3.9149313)
+environment = SubResource("Environment_652kc")
 compositor = SubResource("Compositor_0dm0a")
 projection = 2
 fov = 70.01

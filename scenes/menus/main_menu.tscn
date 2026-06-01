@@ -656,6 +656,28 @@ text = "VSync"
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="FSRContainer" type="HBoxContainer" parent="Options/VBoxContainer" unique_id=2049310238]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Options/VBoxContainer/FSRContainer" unique_id=130060986]
+layout_mode = 2
+text = "FSR Mode"
+
+[node name="FSROptionButton" type="OptionButton" parent="Options/VBoxContainer/FSRContainer" unique_id=81733496]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="AAContainer" type="HBoxContainer" parent="Options/VBoxContainer" unique_id=1673172509]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Options/VBoxContainer/AAContainer" unique_id=1412213152]
+layout_mode = 2
+text = "Anti-Aliasing"
+
+[node name="AAOptionButton" type="OptionButton" parent="Options/VBoxContainer/AAContainer" unique_id=338059281]
+unique_name_in_owner = true
+layout_mode = 2
+
 [node name="ControlsPanel" type="Panel" parent="." unique_id=653725202]
 anchors_preset = 8
 anchor_left = 0.5

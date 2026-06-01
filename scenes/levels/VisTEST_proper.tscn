@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://dhh7c5j6i8bkk"]
 
 [ext_resource type="PackedScene" uid="uid://k40mfreic8ql" path="res://assets/VisTEST/2. Modular_Models/Floors/floor_tiles_2x2.tscn" id="1_d4pdq"]
+[ext_resource type="Texture2D" uid="uid://bqru753kemdt6" path="res://assets/HDR/moon_night_2k.hdr" id="1_mhg1j"]
 [ext_resource type="PackedScene" uid="uid://duhfa76y4aubr" path="res://assets/VisTEST/2. Modular_Models/Columns/column.tscn" id="3_egx04"]
 [ext_resource type="PackedScene" uid="uid://b7cj6grg5fqy3" path="res://assets/VisTEST/2. Modular_Models/Floors/floor_grille_1x1.tscn" id="4_swa3n"]
 [ext_resource type="PackedScene" uid="uid://bhvyfa8oulq7m" path="res://assets/VisTEST/2. Modular_Models/Floors/floor_metal_1x1.tscn" id="5_387by"]
@@ -33,7 +34,6 @@
 [ext_resource type="Texture2D" uid="uid://dgkssstugiddt" path="res://assets/VisTEST/2. Modular_Models/Walls/Walls_Concrete_Holes/Walls_Concrete_Holes_T_Concrete_Holes_Metallic-T_Concrete_Holes_Roughness.png" id="32_gh7m2"]
 [ext_resource type="PackedScene" uid="uid://c0cvl8ftmnbgv" path="res://assets/VisTEST/2. Modular_Models/Walkway/walkway_right.tscn" id="33_r02c6"]
 [ext_resource type="PackedScene" uid="uid://dr5pltmyu223j" path="res://assets/VisTEST/2. Modular_Models/Props/apply_light.tscn" id="35_gh7m2"]
-[ext_resource type="Texture2D" uid="uid://b4mtef0obdnql" path="res://assets/HDR/qwantani_moonrise_puresky_2k.hdr" id="36_6sdu6"]
 [ext_resource type="PackedScene" uid="uid://c4ns10vnlk1hx" path="res://assets/VisTEST/2. Modular_Models/Props/boxs_cables_wall_big.tscn" id="37_kja8q"]
 [ext_resource type="PackedScene" uid="uid://204v6if7d32m" path="res://assets/VisTEST/2. Modular_Models/Props/straight_cables.tscn" id="38_lwyc6"]
 [ext_resource type="PackedScene" uid="uid://q2hchnwur7h3" path="res://assets/VisTEST/2. Modular_Models/Props/wood_beam.tscn" id="39_46sxa"]
@@ -50,7 +50,7 @@
 [ext_resource type="PackedScene" uid="uid://b85u3svdjg12c" path="res://assets/VisTEST/2. Modular_Models/Props/pickable_chair_small.tscn" id="48_mhg1j"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_kja8q"]
-panorama = ExtResource("36_6sdu6")
+panorama = ExtResource("1_mhg1j")
 
 [sub_resource type="Sky" id="Sky_lwyc6"]
 sky_material = SubResource("PanoramaSkyMaterial_kja8q")
