@@ -522,6 +522,9 @@ head = NodePath("../Head")
 eyes = NodePath("../Head/Eyes")
 standing_collision = NodePath("../StandingCollisionShape")
 crouching_collision = NodePath("../CrouchingCollisionShape")
+max_step_height = null
+crouching_depth = null
+vault_depth_clearance = null
 
 [node name="PhysicsPusher" type="Node" parent="." unique_id=1720256570 node_paths=PackedStringArray("player_body")]
 script = ExtResource("28_1jpwa")

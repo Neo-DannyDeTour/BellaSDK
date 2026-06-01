@@ -95,7 +95,7 @@ func _apply_swim_velocity(delta: float, input_dir: Vector2) -> void:
 	var actively_swimming_vertical: bool = false
 	just_water_jumped = false
 
-	# Handle Ascend / Descend Input
+	# 1. Handle Vaulting or Jumping Out
 	if Input.is_action_just_pressed("jump") and not head_in_water:
 		# ---> THE FIX: Tell the vault controller to look for a ledge first! <---
 		player.vault_controller.process_vault_scan()
@@ -113,23 +113,30 @@ func _apply_swim_velocity(delta: float, input_dir: Vector2) -> void:
 			target_velocity.y = 4.5  # JUMP_VELOCITY from your Air state
 			actively_swimming_vertical = true
 			just_water_jumped = true
+			state_machine.transition_to("Air") # Instantly hand over physics control
+			return
 
-	# Handle Buoyancy Zones
+	# 2. Handle Vertical Swimming (Up / Down)
+	if Input.is_action_pressed("jump") and head_in_water:
+		target_velocity.y = player.swim_up_speed
+		actively_swimming_vertical = true
+	elif Input.is_action_pressed("crouch") and (head_in_water or chest_in_water):
+		target_velocity.y = -player.swim_up_speed
+		actively_swimming_vertical = true
+
+	# 3. Handle Buoyancy Zones
 	if not actively_swimming_vertical:
 		if head_in_water:
-			# ZONE 3: UNDERWATER (Horror pull)
 			target_velocity.y = SINK_SPEED
 		elif chest_in_water:
-			# ZONE 2: THE SURFACE (Safe zone)
 			target_velocity.y = 0.0
 		else:
-			# ZONE 1: ENTERING WATER (Plunge momentum)
 			if player.velocity.y < -1.0:
 				target_velocity.y = player.velocity.y
 			else:
 				target_velocity.y = PLUNGE_SPEED
 
-	# Apply XZ Velocity
+	# 4. Apply XZ Velocity
 	var target_xz := Vector2(target_velocity.x, target_velocity.z)
 	var current_xz := Vector2(player.velocity.x, player.velocity.z)
 	current_xz = current_xz.lerp(target_xz, 8.0 * delta)
@@ -137,7 +144,7 @@ func _apply_swim_velocity(delta: float, input_dir: Vector2) -> void:
 	player.velocity.x = current_xz.x
 	player.velocity.z = current_xz.y
 
-	# Apply Y Velocity
+	# 5. Apply Y Velocity
 	if not just_water_jumped:
 		player.velocity.y = lerpf(player.velocity.y, target_velocity.y, 4.0 * delta)
 
