@@ -39,6 +39,7 @@
 [ext_resource type="Script" uid="uid://y0srs23sa364" path="res://scripts/player_components/StateMonkeyBars.gd" id="37_b1r6t"]
 [ext_resource type="Script" uid="uid://i3kw0oxxm0jm" path="res://scripts/player_components/StateFastRope.gd" id="38_c0asu"]
 [ext_resource type="Script" uid="uid://cmnw5toa1h643" path="res://scripts/player_components/StateVault.gd" id="39_fq1a3"]
+[ext_resource type="Script" uid="uid://dvouurrwuii16" path="res://scripts/player_components/stair_controller.gd" id="40_gu4mg"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_cw2d6"]
 radius = 0.1
@@ -525,6 +526,9 @@ crouching_collision = NodePath("../CrouchingCollisionShape")
 max_step_height = null
 crouching_depth = null
 vault_depth_clearance = null
+
+[node name="StairController" type="Node" parent="." unique_id=665311218]
+script = ExtResource("40_gu4mg")
 
 [node name="PhysicsPusher" type="Node" parent="." unique_id=1720256570 node_paths=PackedStringArray("player_body")]
 script = ExtResource("28_1jpwa")

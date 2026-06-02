@@ -50,7 +50,10 @@ var valid_commands: Array[String] = [
 	"mono_audio",
 	"uiscale",
 	"photosensitivity",
-	"setfont"
+	"setfont",
+	"photosensitivity",
+	"setfont",
+	"screenfilter"
 ]
 
 # Sub-arguments for autocomplete
@@ -60,6 +63,13 @@ var valid_colorblind_args: Array[String] = [
 var valid_font_args: Array[String] = ["default", "dyslexic", "papyrus", "comic"]
 var valid_on_off_args: Array[String] = ["on", "off"]
 
+var valid_screenfilter_args: Array[String] = [
+	"off", "crt", "vhs", "pixelate", "toon", 
+	"gameboy", "glitch", "grain", "halftone", "nightvision", "kuwahara", "ascii"
+]
+# --- Screen Filter State ---
+var screen_filter_rect: ColorRect
+var cached_shaders: Dictionary = {}
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -121,6 +131,13 @@ func _ready() -> void:
 	hc_mat.shader = load("res://assets/shaders/high_contrast.gdshader")
 	high_contrast_rect.material = hc_mat
 	filter_layer.add_child(high_contrast_rect)
+
+	# --- Screen Filter Setup ---
+	screen_filter_rect = ColorRect.new()
+	screen_filter_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
+	screen_filter_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	screen_filter_rect.visible = false # <-- ADD THIS LINE
+	filter_layer.add_child(screen_filter_rect)
 
 	write("Developer console initialized. Press ~ to toggle.", "cyan")
 
@@ -224,6 +241,10 @@ func _attempt_autocomplete() -> void:
 		elif arg_matches.size() > 1:
 			write("Matches: " + ", ".join(arg_matches), "yellow")
 
+		elif main_cmd == "screenfilter":
+			for arg: String in valid_screenfilter_args:
+				if arg.begins_with(sub_term):
+					arg_matches.append(arg)
 
 # --- LOGGING ---
 func write(message: String, color: String = "white") -> void:
@@ -420,5 +441,34 @@ func _process_command(cmd: String, _args: PackedStringArray) -> void:
 			else:
 				write("Usage: setfont <font_name>", "yellow")
 				write("Available: default, dyslexic, papyrus, comic", "darkgray")
+		"screenfilter":
+			if _args.size() > 0:
+				var filter_type := _args[0].to_lower()
+
+				if filter_type == "off":
+					screen_filter_rect.material = null
+					screen_filter_rect.visible = false # <-- HIDE IT HERE
+					write("Screen filter disabled.", "green")
+				elif filter_type in valid_screenfilter_args:
+					var mat := ShaderMaterial.new()
+					var shader_path := "res://assets/shaders/" + filter_type + ".gdshader"
+
+					# Cache the shader to maintain 60 FPS on subsequent loads
+					if not cached_shaders.has(filter_type):
+						if ResourceLoader.exists(shader_path):
+							cached_shaders[filter_type] = load(shader_path)
+						else:
+							write("Shader not found at: " + shader_path, "red")
+							return
+
+					mat.shader = cached_shaders[filter_type] as Shader
+					screen_filter_rect.material = mat
+					screen_filter_rect.visible = true # <-- SHOW IT HERE
+					write(filter_type.to_upper() + " filter enabled.", "green")
+				else:
+					write("Unknown filter. Available: off, crt, vhs, pixelate, toon", "red")
+			else:
+				write("Usage: screenfilter <type>", "yellow")
+				write("Available: off, crt, vhs, pixelate, toon", "darkgray")
 		_:
 			write("Unknown command: '" + cmd + "'. Type 'help' for a list.", "red")

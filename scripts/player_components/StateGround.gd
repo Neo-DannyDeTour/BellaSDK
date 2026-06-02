@@ -25,45 +25,47 @@ func enter(msg: Dictionary = {}) -> void:
 
 func physics_update(delta: float) -> void:
 	# 1. State Transitions (Leaving the Ground)
-	if not player.is_on_floor():
-		# If we walk off a ledge while wading, let the Swim state catch us
+	if not player.is_on_floor() and not player.stair_controller._snapped_to_stairs_last_frame:
 		if player.current_water_node != null:
 			state_machine.transition_to("Swim")
 			return
-
-		# Standard cliff drop
 		state_machine.transition_to("Air", {"coyote_time": true})
 		return
 
+	# 2. Read Inputs FIRST
+	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
+	if Input.is_action_pressed("zoom"):
+		input_dir = Vector2.ZERO
+
+	# 3. Handle Jump / Vault Logic
 	if Input.is_action_just_pressed("jump"):
-		# Check if we should vault first (handled by our component!)
-		if player.vault_controller.try_vault(player.crouching):
+		# Only scan for a vault if the player is actively pushing the movement keys.
+		if input_dir != Vector2.ZERO and player.vault_controller.try_vault(player.crouching):
 			state_machine.transition_to("Vault")
 			return
 		else:
 			_perform_jump()
-			return  # Exit early so we don't apply ground friction while jumping
+			return 
 
-	# 2. Read Inputs
-	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
-
-	# Handle Zoom (which forces walking/slow speed)
-	if Input.is_action_pressed("zoom"):
-		input_dir = Vector2.ZERO
-
-	# 3. Determine Speed State
+	# 4. Determine Speed State
 	_calculate_target_speed(delta, input_dir)
 
-	# 4. Apply Physics (Momentum & Friction)
+	# 5. Apply Physics (Momentum & Friction)
 	_apply_movement(delta, input_dir)
-
-	# Save velocity before we slide so the PhysicsPusher knows our speed!
 	player.last_velocity = player.velocity
 
-	# 5. Move the Character
-	player.move_and_slide()
+	# 6. Try snapping UP stairs. If it returns true, SKIP move_and_slide!
+	if not player.stair_controller.snap_up_stairs_check(delta):
+		# Move the Character (Normal movement)
+		player.move_and_slide()
 
-	# 6. Update our decoupled components!
+	# 7. Try snapping DOWN to keep the player grounded on descending stairs
+	player.stair_controller.snap_down_to_stairs_check()
+	
+	# 8. Keep track of floor timing for the next frame
+	player.stair_controller.track_floor_state()
+
+	# 9. Update our decoupled components
 	_update_components(delta, input_dir)
 
 
@@ -71,7 +73,6 @@ func physics_update(delta: float) -> void:
 # PRIVATE METHODS
 # --------------------------------------
 func _perform_jump() -> void:
-	# CHANGE THIS LINE from player.sprinting to player.sprint_active:
 	if player.sprint_active:
 		player.velocity.y = SPRINT_JUMP_VELOCITY
 	elif player.crouching:
@@ -79,8 +80,11 @@ func _perform_jump() -> void:
 	else:
 		player.velocity.y = JUMP_VELOCITY
 
-	# player.camera_anims.play("jump")
-	state_machine.transition_to("Air")
+	# Force a physics update right now so the engine registers we left the ground
+	player.move_and_slide() 
+	
+	# Send the jump dictionary so StateAir knows this was intentional
+	state_machine.transition_to("Air", {"jump": true})
 
 
 func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
@@ -129,11 +133,16 @@ func _apply_movement(delta: float, input_dir: Vector2) -> void:
 
 	player.direction = player.direction.lerp(target_dir, delta * active_lerp)
 
+	# THE FIX: Enforce floor stickiness so the State Machine doesn't thrash.
+	if player.is_on_floor():
+		player.velocity.y = -0.1
+	else:
+		player.velocity.y -= player.gravity * delta
+
 	if input_dir != Vector2.ZERO or player.on_ice:
 		player.velocity.x = player.direction.x * current_speed
 		player.velocity.z = player.direction.z * current_speed
 	else:
-		# Snappy FPS stop when no input is given on normal ground
 		player.velocity.x = move_toward(player.velocity.x, 0.0, current_speed)
 		player.velocity.z = move_toward(player.velocity.z, 0.0, current_speed)
 		player.direction = Vector3.ZERO

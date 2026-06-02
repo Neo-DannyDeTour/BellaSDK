@@ -78,31 +78,41 @@ func process_vault_scan(max_reach: float = 2.8) -> void:
 	forward_dir.y = 0.0
 	forward_dir = forward_dir.normalized()
 
-	# 1. FORWARD CAST (Find Wall)
-	var detect_start: Vector3 = player_body.global_position + Vector3(0.0, 0.5, 0.0)
-	var forward_query := PhysicsRayQueryParameters3D.create(
-		detect_start, detect_start + forward_dir * 1.2
-	)
-	forward_query.exclude = exclude_rids
+	# OPTIMIZATION: Create the query object once and update its properties.
+	var ray_query := PhysicsRayQueryParameters3D.create(Vector3.ZERO, Vector3.ZERO)
+	ray_query.exclude = exclude_rids
 
-	var forward_result: Dictionary = space_state.intersect_ray(forward_query)
+	# 1. FORWARD CAST (Multi-Height Wall Check)
+	# Checks knee, waist, and chest heights so empty gaps under platforms don't cause a miss.
+	var heights_to_check: Array[float] = [0.5, 1.0, 1.5]
+	var forward_result: Dictionary = {}
+	
+	for height_offset: float in heights_to_check:
+		var detect_start: Vector3 = player_body.global_position + Vector3(0.0, height_offset, 0.0)
+		ray_query.from = detect_start
+		ray_query.to = detect_start + (forward_dir * 1.2)
+		
+		var hit: Dictionary = space_state.intersect_ray(ray_query)
+		if not hit.is_empty():
+			# From OLD code: Guard clause to ignore sloped walls
+			if absf(hit["normal"].y) <= 0.2:
+				forward_result = hit
+				break
+
 	if forward_result.is_empty():
 		return
 
-	# 2. DOWNWARD CAST (Find exact ledge entirely inside the opening)
+	var highest_hit: Vector3 = forward_result["position"]
+	var hit_normal: Vector3 = forward_result["normal"]
+
+	# 2. DOWNWARD CAST (Find Ledge)
 	var down_start: Vector3 = highest_hit - (hit_normal * 0.15)
-	down_start.y = player_body.global_position.y + gap_height
+	down_start.y = player_body.global_position.y + max_reach
 
-	# Cast down slightly below our highest known hit to guarantee contact
-	var hit_relative_y: float = highest_hit.y - player_body.global_position.y
-	var ray_length: float = (gap_height - hit_relative_y) + 0.4
-
-	var down_query := PhysicsRayQueryParameters3D.create(
-		down_start, down_start + Vector3(0.0, -2.5, 0.0)
-	)
-	down_query.exclude = exclude_rids
-
-	var down_result: Dictionary = space_state.intersect_ray(down_query)
+	ray_query.from = down_start
+	ray_query.to = down_start + Vector3(0.0, -max_reach - 0.5, 0.0)
+	
+	var down_result: Dictionary = space_state.intersect_ray(ray_query)
 	if down_result.is_empty():
 		return
 
@@ -112,37 +122,20 @@ func process_vault_scan(max_reach: float = 2.8) -> void:
 	if vault_height <= max_step_height or vault_height > max_reach:
 		return
 
-	# 3. DEPTH CAST (Check for Handrails/Obstacles on the ledge)
-	var depth_start: Vector3 = ledge_point + Vector3(0.0, 0.15, 0.0)
-	var depth_query := PhysicsRayQueryParameters3D.create(
-		depth_start, depth_start + (forward_dir * vault_depth_clearance)
-	)
-	depth_query.exclude = exclude_rids
-
-	var depth_result: Dictionary = space_state.intersect_ray(depth_query)
-	if not depth_result.is_empty():
-		# GLITCH FIX: If the normal points up (like a floor or ramp), allow it.
-		# Only abort the vault if the object is a steep obstacle (wall/fence).
-		if absf(depth_result["normal"].y) < 0.5:
-			return
-
-	# 4. CLEARANCE CAST (Headroom Check)
-	# GLITCH FIX: Use the wall's normal to push inward instead of the camera's
-	# forward direction. This guarantees you won't clip into sloped geometry 
-	# regardless of which angle you are looking from.
-	var clearance_start: Vector3 = ledge_point - (hit_normal * 0.15)
-	clearance_start += Vector3(0.0, 0.05, 0.0)
-	
+	# 3. CLEARANCE CAST (Headroom Check)
+	# Using forward_dir from the OLD code prevents round pipe normals from skewing the cast sideways.
+	var clearance_start: Vector3 = ledge_point + (forward_dir * 0.15) + Vector3(0.0, 0.05, 0.0)
 	var clearance_end: Vector3 = clearance_start + Vector3(0.0, 1.8, 0.0)
-	var clearance_query := PhysicsRayQueryParameters3D.create(clearance_start, clearance_end)
-	clearance_query.exclude = exclude_rids
-
+	
+	ray_query.from = clearance_start
+	ray_query.to = clearance_end
+	
+	var clearance_result: Dictionary = space_state.intersect_ray(ray_query)
 	var requires_crouch: bool = false
-	var clearance_result: Dictionary = space_state.intersect_ray(clearance_query)
-
+	
 	if not clearance_result.is_empty():
-		var room_height: float = clearance_result["position"].y - ledge_point.y
-		if room_height < 0.9:
+		var hit_height: float = clearance_result["position"].y - ledge_point.y
+		if hit_height < 0.9:
 			return
 		requires_crouch = true
 
@@ -199,7 +192,7 @@ func _perform_vault(
 		if not is_currently_crouching:
 			crouch_state_changed.emit(true)
 		standing_collision.disabled = true
-		crouching_collision.disabled = false # <-- Fixed variable name
+		crouching_collision.disabled = false # <-- Corrected identifier
 
 	var vault_time: float = clampf(vault_height * 0.75, 0.4, 1.5)
 	var final_pos: Vector3 = target_point + (forward_dir * 0.2)
@@ -209,32 +202,32 @@ func _perform_vault(
 
 	(
 		vault_tween
-		. tween_property(player_body, "global_position:y", final_pos.y + 0.1, vault_time * 0.7)
-		. set_trans(Tween.TRANS_QUAD)
-		. set_ease(Tween.EASE_OUT)
+		.tween_property(player_body, "global_position:y", final_pos.y + 0.1, vault_time * 0.7)
+		.set_trans(Tween.TRANS_QUAD)
+		.set_ease(Tween.EASE_OUT)
 	)
 
 	(
 		vault_tween
-		. tween_property(player_body, "global_position", final_pos, vault_time * 0.3)
-		. set_trans(Tween.TRANS_LINEAR)
-		. set_delay(vault_time * 0.7)
+		.tween_property(player_body, "global_position", final_pos, vault_time * 0.3)
+		.set_trans(Tween.TRANS_LINEAR)
+		.set_delay(vault_time * 0.7)
 	)
 
 	if force_crouch:
 		(
 			vault_tween
-			. tween_property(head, "position:y", crouching_depth, vault_time * 0.6)
-			. set_trans(Tween.TRANS_SINE)
-			. set_ease(Tween.EASE_OUT)
+			.tween_property(head, "position:y", crouching_depth, vault_time * 0.6)
+			.set_trans(Tween.TRANS_SINE)
+			.set_ease(Tween.EASE_OUT)
 		)
 
 	var tilt_amount: float = deg_to_rad(5.0)
 	(
 		vault_tween
-		. tween_property(eyes, "rotation:z", tilt_amount, vault_time * 0.5)
-		. set_trans(Tween.TRANS_SINE)
-		. set_ease(Tween.EASE_IN_OUT)
+		.tween_property(eyes, "rotation:z", tilt_amount, vault_time * 0.5)
+		.set_trans(Tween.TRANS_SINE)
+		.set_ease(Tween.EASE_IN_OUT)
 	)
 
 	vault_tween.tween_property(eyes, "rotation:z", 0.0, vault_time * 0.5).set_delay(

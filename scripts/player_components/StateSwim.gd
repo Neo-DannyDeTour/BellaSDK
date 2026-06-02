@@ -151,19 +151,19 @@ func _apply_swim_velocity(delta: float, input_dir: Vector2) -> void:
 
 func _handle_camera_and_vfx(delta: float, input_dir: Vector2) -> void:
 	# 1. Camera Tilt & Animations
-	var target_anim: String = "RESET"
+	var _target_anim: String = "RESET"
 	var target_tilt: float = 0.0
 
 	if input_dir.x > 0.1:
-		target_anim = "swimming_underwater_sideways_right"
+		_target_anim = "swimming_underwater_sideways_right"
 		target_tilt = deg_to_rad(player.camera_controller.camera_tilt_amount * 2.0)
 	elif input_dir.x < -0.1:
-		target_anim = "swimming_underwater_sideways_left"
+		_target_anim = "swimming_underwater_sideways_left"
 		target_tilt = deg_to_rad(-player.camera_controller.camera_tilt_amount * 2.0)
 	elif absf(input_dir.y) > 0.1:
-		target_anim = "swimming"
+		_target_anim = "swimming"
 	elif (Input.is_action_pressed("jump") or Input.is_action_pressed("sprint")) and head_in_water:
-		target_anim = "swimming_up"
+		_target_anim = "swimming_up"
 
 	# if player.camera_anims.current_animation != target_anim:
 	# 	player.camera_anims.play(target_anim, 2.0)

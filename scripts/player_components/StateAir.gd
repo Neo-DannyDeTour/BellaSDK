@@ -130,17 +130,14 @@ func _apply_air_movement(delta: float, input_dir: Vector2) -> void:
 
 
 func _check_transitions() -> void:
-	# DELETE the old guard clause that looked like this:
-	# if player.current_water_node != null:
-	#     return
-
-	# 1. Landing on the floor (Works in puddles now!)
-	if player.is_on_floor():
+	# 1. Landing on the floor
+	# FIX: Ensure we are actively falling (velocity.y <= 0) before forcing a land.
+	# This prevents instant jump-cancels from single-frame collision overlaps.
+	if player.is_on_floor() and player.velocity.y <= 0.0:
 		_handle_landing()
 		return
 
 	# 2. Catching deep water falls
-	# If falling fast enough inside a water volume and there's no floor, let buoyancy take over
 	if player.current_water_node != null and player.velocity.y < -1.0:
 		state_machine.transition_to("Swim")
 		return
