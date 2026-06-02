@@ -62,7 +62,6 @@ var flashlight_controller: Node = null
 @onready var health_component: Node = $HealthComponent  # Adjust type as needed
 @onready var stair_controller: StairController = $StairController
 
-
 # --------------------------------------
 # NODE REFERENCES
 # --------------------------------------
@@ -73,6 +72,7 @@ var flashlight_controller: Node = null
 @onready var standing_collision: CollisionShape3D = $StandingCollisionShape
 @onready var crouching_collision: CollisionShape3D = $CrouchingCollisionShape
 @onready var crouch_cast_check: RayCast3D = $CrouchCastCheck
+
 
 # --------------------------------------
 # INITIALIZATION

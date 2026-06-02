@@ -2,7 +2,6 @@
 class_name GelStream3D
 extends GPUParticles3D
 
-
 @export var gel_color: Color = Color(0.0, 0.5, 1.0, 0.8):
 	set(value):
 		gel_color = value
@@ -44,20 +43,20 @@ func _initialize_materials() -> void:
 		current_mesh = TubeTrailMesh.new()
 		current_mesh.radial_steps = 4
 		current_mesh.sections = 5
-		
+
 		# Remove the disjointed flat caps entirely
 		current_mesh.cap_top = false
 		current_mesh.cap_bottom = false
-		
+
 		# Create a teardrop curve profile (0.0 is top of drop, 1.0 is the tail)
 		var shape_curve: Curve = Curve.new()
 		shape_curve.add_point(Vector2(0.0, 0.0))
 		shape_curve.add_point(Vector2(0.2, 1.0))
 		shape_curve.add_point(Vector2(1.0, 0.0))
 		current_mesh.curve = shape_curve
-		
+
 		draw_pass_1 = current_mesh
-	
+
 	if current_mesh.material is ShaderMaterial:
 		_draw_mat = current_mesh.material as ShaderMaterial
 	else:
@@ -88,13 +87,13 @@ func _update_visuals() -> void:
 	amount = int(lerpf(float(min_amt), float(max_amt), stream_unity))
 
 	_process_mat.direction = Vector3.DOWN
-	
+
 	var min_spread: float = 10.0
 	var max_spread: float = 1.0
 	_process_mat.spread = lerpf(min_spread, max_spread, stream_unity)
-	
+
 	_process_mat.initial_velocity_min = 3.0
-	
+
 	var min_vel: float = 6.0
 	var max_vel: float = 3.0
 	_process_mat.initial_velocity_max = lerpf(min_vel, max_vel, stream_unity)

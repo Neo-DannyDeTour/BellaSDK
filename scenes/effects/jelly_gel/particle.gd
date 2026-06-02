@@ -25,14 +25,14 @@ var _shader_material: ShaderMaterial
 func _ready() -> void:
 	current_radius = initial_radius
 	set_as_top_level(true)
-	
+
 	if area_3d != null:
 		# Layer 0: The particle exists on no layer
 		area_3d.collision_layer = 0
-		
+
 		# Mask 1: The particle ONLY scans the Environment layer
 		area_3d.collision_mask = 1
-		
+
 	if not Engine.is_editor_hint():
 		if area_3d != null:
 			area_3d.body_entered.connect(_on_area_body_entered)
@@ -41,7 +41,7 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if not is_active:
 		return
-		
+
 	alive_time += delta
 
 	if Engine.is_editor_hint() and not is_melting:
@@ -51,10 +51,10 @@ func _process(delta: float) -> void:
 	if is_melting:
 		var shrink_amount: float = melt_speed * delta
 		current_radius -= shrink_amount
-		
+
 		# Visually sink the particle to keep its bottom flush with the floor
 		global_position.y -= shrink_amount
-		
+
 		if current_radius <= 0.0:
 			deactivate()
 	else:
@@ -68,7 +68,7 @@ func reset_particle() -> void:
 	current_radius = initial_radius
 	alive_time = 0.0
 	visible = true
-	
+
 	force_update_transform()
 
 
@@ -76,7 +76,7 @@ func deactivate() -> void:
 	is_active = false
 	is_melting = false
 	visible = false
-	
+
 	# Teleport to the void to save physics calculations
 	global_position = Vector3(0.0, -1000.0, 0.0)
 
@@ -84,14 +84,14 @@ func deactivate() -> void:
 func _get_shader_material() -> ShaderMaterial:
 	if _shader_material != null:
 		return _shader_material
-		
+
 	# Fallback if called before _ready() assigns the @onready variable
 	if mesh_instance_3d == null:
 		mesh_instance_3d = get_node_or_null("MeshInstance3D") as MeshInstance3D
-		
+
 	if mesh_instance_3d != null:
 		_shader_material = mesh_instance_3d.get_active_material(0) as ShaderMaterial
-		
+
 	return _shader_material
 
 
@@ -108,11 +108,7 @@ func update_n_particles(n: int) -> void:
 
 
 func update_shader_params(
-	p_color: Color,
-	p_opacity: float,
-	p_roughness: float,
-	p_metallic: float,
-	p_k_blend: float
+	p_color: Color, p_opacity: float, p_roughness: float, p_metallic: float, p_k_blend: float
 ) -> void:
 	var mat: ShaderMaterial = _get_shader_material()
 	if mat != null:
@@ -127,7 +123,7 @@ func _on_area_body_entered(_body: Node3D) -> void:
 	# If the particle just spawned, ignore collisions during the grace period
 	if not is_active or is_melting or alive_time < GRACE_PERIOD:
 		return
-		
-	# Because we fixed the collision layers, ANY body detected here 
+
+	# Because we fixed the collision layers, ANY body detected here
 	# is mathematically guaranteed to be the floor. No string checks needed.
 	is_melting = true
