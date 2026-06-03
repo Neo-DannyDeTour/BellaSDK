@@ -258,3 +258,7 @@ func exit_water(water_volume: Node3D) -> void:
 		# If we are Vaulting (or on a Zipline, Rope, etc.), let that state finish!
 		if state_machine.state.name == "Swim":
 			state_machine.transition_to("Air")
+
+func enter_terminal_mode(terminal: Node3D) -> void:
+	if is_instance_valid(interaction_scanner):
+		interaction_scanner.enter_terminal_mode(terminal)

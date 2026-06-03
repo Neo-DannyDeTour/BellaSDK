@@ -56,3 +56,5 @@ payload.json
 addons/gdLinter/
 
 assets/videos/
+
+gemini_pipe.py

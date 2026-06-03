@@ -1,0 +1,39 @@
+[gd_scene format=3 uid="uid://bkxrbjc7txin4"]
+
+[ext_resource type="Script" uid="uid://tsbhvaf6xw4i" path="res://scripts/tv_screen_scene.gd" id="1_6scty"]
+[ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://scripts/Interact_Component.gd" id="2_38cqg"]
+[ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://scripts/highlight_component.gd" id="3_qkb5d"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5wexd"]
+resource_local_to_scene = true
+
+[sub_resource type="QuadMesh" id="QuadMesh_g0bd1"]
+size = Vector2(2, 2)
+
+[sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_6scty"]
+data = PackedVector3Array(1, -1, 0, -1, -1, 0, 1, 1, 0, -1, -1, 0, -1, 1, 0, 1, 1, 0)
+
+[node name="TVScreen" type="StaticBody3D" unique_id=2083472752 node_paths=PackedStringArray("camera_vp")]
+collision_layer = 4
+script = ExtResource("1_6scty")
+camera_vp = NodePath("CameraViewport")
+
+[node name="ScreenMesh" type="MeshInstance3D" parent="." unique_id=186381411]
+material_override = SubResource("StandardMaterial3D_5wexd")
+mesh = SubResource("QuadMesh_g0bd1")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1559636351]
+shape = SubResource("ConcavePolygonShape3D_6scty")
+
+[node name="Interact_Component" type="Node" parent="." unique_id=1020718314]
+script = ExtResource("2_38cqg")
+metadata/_custom_type_script = "uid://cqawbvidns1th"
+
+[node name="HighlightComponent" type="Node" parent="." unique_id=584284193]
+script = ExtResource("3_qkb5d")
+metadata/_custom_type_script = "uid://dgig0tamvkdxx"
+
+[node name="CameraViewport" type="SubViewport" parent="." unique_id=849164279]
+
+[node name="CCTVCamera" type="Camera3D" parent="CameraViewport" unique_id=445713227]
+current = true

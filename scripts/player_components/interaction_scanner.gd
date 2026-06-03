@@ -247,6 +247,15 @@ func shoot_terminal_raycast(is_click: bool) -> void:
 	var ray_end := ray_origin + ray_normal * 3.0
 
 	var query := PhysicsRayQueryParameters3D.create(ray_origin, ray_end)
+	
+	# 1. Exclude the player's own collision body (Layer 2)
+	if is_instance_valid(player_body):
+		query.exclude = [player_body.get_rid()]
+	
+	# 2. Optimize the mask to only check Layer 1 (Value: 1) and Layer 3 (Value: 4)
+	# 1 + 4 = 5
+	query.collision_mask = 5
+
 	var space_state := player_body.get_world_3d().direct_space_state
 	var result := space_state.intersect_ray(query)
 
