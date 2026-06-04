@@ -137,6 +137,20 @@ var accessibility_button: Button = $Options/MarginContainer/OptionsButtons/HBoxC
 # --- AA REFERENCE ---
 @onready var aa_options: OptionButton = %AAOptionButton
 
+# --- SAVE/LOAD PANEL REFERENCES ---
+@onready var save_load_panel: Panel = $SaveLoadPanel
+@onready var save_load_title: Label = %SaveLoadTitle
+@onready var close_save_menu_button: Button = %CloseSaveMenuButton
+@onready var create_new_save_button: Button = %CreateNewSaveButton
+@onready var save_list_container: VBoxContainer = %SaveListContainer
+@onready var save_button: Button = %SaveGame
+@onready var load_button: Button = %LoadGame
+
+
+const SAVE_SLOT_SCENE = preload("res://scenes/save_slot.tscn")
+
+var is_currently_saving: bool = false
+
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -178,6 +192,11 @@ func _ready() -> void:
 	fov_input.focus_exited.connect(_on_fov_focus_exited)
 
 	sprint_fov_checkbox.toggled.connect(_on_sprint_fov_toggled)
+	
+	save_button.pressed.connect(_on_save_pressed)
+	load_button.pressed.connect(_on_load_pressed)
+	close_save_menu_button.pressed.connect(_on_close_save_menu)
+	create_new_save_button.pressed.connect(_on_create_new_save)
 
 	# --- NEW: ACCESSIBILITY SIGNAL BINDING ---
 	# Binding allows us to reuse the same 5 functions for all 3 sliders
@@ -189,32 +208,27 @@ func _ready() -> void:
 	load_controls()
 
 	# 3. CONTEXT CHECK: Are we at the Title Screen or in the Game?
+	var saves_exist: bool = SaveManager.has_saves()
+	load_button.visible = saves_exist
+
 	if get_parent().has_method("toggle_pause"):
+		# We are IN-GAME
 		continue_button.show()
 		restart_button.show()
+		save_button.show()
+		new_game_button.text = "" 
 	else:
+		# We are at the TITLE SCREEN
 		continue_button.hide()
 		restart_button.hide()
-		new_game_button.text = ""
-
-	## 3. CONTEXT CHECK: Are we at the Title Screen or in the Game?
-	#if get_parent().has_method("toggle_pause"):
-	## We are IN-GAME
-	#continue_button.show()
-	#restart_button.show()
-	#new_game_button.hide() # Properly hide instead of erasing text
-	#else:
-	## We are at the TITLE SCREEN
-	#continue_button.hide()
-	#restart_button.hide()
-	#new_game_button.show()
+		save_button.hide()
 
 	# 4. Set up the UI visibility
 	main_buttons.visible = true
 	options.visible = false
 	controls_panel.visible = false
 	if accessibility_panel:
-		accessibility_panel.visible = false  # --- NEW ---
+		accessibility_panel.visible = false
 	create_control_list()
 
 	# Connect the new button
@@ -223,6 +237,18 @@ func _ready() -> void:
 	# Make sure the panel is hidden at start
 	accessibility_panel.visible = false
 
+	# 3. CONTEXT CHECK: Are we at the Title Screen or in the Game?
+	if get_parent().has_method("toggle_pause"):
+		# We are IN-GAME
+		continue_button.show()
+		restart_button.show()
+		save_button.show()
+		new_game_button.text = "" 
+	else:
+		# We are at the TITLE SCREEN
+		continue_button.hide()
+		restart_button.hide()
+		save_button.hide()
 
 # --- NEW: ACCESSIBILITY HELPER ---
 func _connect_adjustment_signals(
@@ -690,8 +716,9 @@ func execute_swap(new_event: InputEvent) -> void:
 
 
 func _on_resume_pressed() -> void:
-	if get_parent().has_method("toggle_pause"):
-		get_parent().toggle_pause()
+	var parent: Node = get_parent()
+	if parent and parent.has_method("toggle_pause"):
+		parent.toggle_pause()
 
 
 # ==========================================
@@ -1007,3 +1034,110 @@ func _get_player() -> Node:
 		return parent.player_body
 	# Fallback if it's attached directly to the player
 	return parent
+
+
+func _on_save_pressed() -> void:
+	is_currently_saving = true
+	_open_save_load_panel()
+
+
+func _on_load_pressed() -> void:
+	is_currently_saving = false
+	_open_save_load_panel()
+
+
+func _open_save_load_panel() -> void:
+	main_buttons.visible = false
+	options.visible = false
+	controls_panel.visible = false
+	accessibility_panel.visible = false
+	
+	save_load_panel.visible = true
+	
+	save_load_title.text = "SAVE GAME" if is_currently_saving else "LOAD GAME"
+	create_new_save_button.visible = is_currently_saving
+	
+	_populate_save_list()
+
+
+func _on_close_save_menu() -> void:
+	save_load_panel.visible = false
+	main_buttons.visible = true
+
+
+func _on_create_new_save() -> void:
+	save_load_panel.visible = false
+	
+	# Fire the function, then await the signal instead of the void return
+	SaveManager.create_save()
+	await SaveManager.save_completed
+	
+	_populate_save_list()
+	save_load_panel.visible = true
+
+
+func _populate_save_list() -> void:
+	# 1. Clear existing slots
+	for child in save_list_container.get_children():
+		child.queue_free()
+		
+	# 2. Get sorted saves
+	var saves: Array[Dictionary] = SaveManager.get_all_saves()
+	print("[UI] Building save list. Found files: ", saves.size())
+	
+	# 3. Instantiate UI slots
+	for save_data: Dictionary in saves:
+		var slot: SaveSlot = SAVE_SLOT_SCENE.instantiate()
+		save_list_container.add_child(slot)
+		
+		# Give it the data and tell it if we are loading or overwriting
+		slot.setup(save_data, is_currently_saving)
+		
+		# Connect the custom signals emitted by the slot
+		slot.action_pressed.connect(_on_slot_action_pressed)
+		slot.meta_updated.connect(_on_slot_meta_updated)
+		slot.delete_pressed.connect(_on_slot_delete_pressed)
+
+
+func _on_slot_action_pressed(base_path: String) -> void:
+	if is_currently_saving:
+		# (Your existing overwrite logic here)
+		pass 
+	else:
+		# Load logic
+		save_load_panel.visible = false
+		main_buttons.visible = true # <-- ADD THIS LINE to reset the UI state
+		
+		# 1. Await the save manager so it finishes its process frames
+		await SaveManager.load_save_game(base_path)
+		
+		# 2. Safely check if this menu even exists in the tree anymore
+		if is_inside_tree():
+			_on_resume_pressed()
+
+
+func _on_slot_meta_updated(save_id: String, new_name: String, is_favorite: bool) -> void:
+	SaveManager.update_save_meta(save_id, new_name, is_favorite)
+	
+	# Only refresh the list if the favorite status changed (since that affects sorting order)
+	# If they just typed a name, we don't want to steal their focus by rebuilding the list.
+	# We will just let the file save silently in the background.
+
+
+func _on_slot_delete_pressed(save_id: String, base_path: String) -> void:
+	var meta_path: String = base_path + ".meta"
+	var dat_path: String = base_path + ".dat"
+	var img_path: String = base_path + ".webp"
+	
+	# Safely delete the files from the disk
+	if FileAccess.file_exists(meta_path):
+		DirAccess.remove_absolute(meta_path)
+	if FileAccess.file_exists(dat_path):
+		DirAccess.remove_absolute(dat_path)
+	if FileAccess.file_exists(img_path):
+		DirAccess.remove_absolute(img_path)
+		
+	print("[SaveManager] Deleted save: ", save_id)
+	
+	# Rebuild the UI to remove the deleted slot from the screen
+	_populate_save_list()

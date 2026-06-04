@@ -1,0 +1,85 @@
+[gd_scene format=3 uid="uid://b1guushamlm6s"]
+
+[ext_resource type="Script" uid="uid://ca85vg335hp5b" path="res://scripts/save_slot.gd" id="1_7sf3s"]
+
+[node name="SaveSlot" type="PanelContainer" unique_id=349196431]
+custom_minimum_size = Vector2(120, 180)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -218.0
+offset_top = -90.0
+offset_right = 357.0
+offset_bottom = 106.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+script = ExtResource("1_7sf3s")
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1782554592]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="HighlightBorder" type="ReferenceRect" parent="MarginContainer" unique_id=1881269848]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+border_color = Color(1, 0.84313726, 0, 1)
+border_width = 3.0
+editor_only = false
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer" unique_id=754476797]
+layout_mode = 2
+
+[node name="Thumbnail" type="TextureRect" parent="MarginContainer/HBoxContainer" unique_id=921978155]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 180)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/HBoxContainer" unique_id=234996748]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="MarginContainer/HBoxContainer/VBoxContainer" unique_id=1479115523]
+layout_mode = 2
+size_flags_vertical = 4
+
+[node name="NameInput" type="LineEdit" parent="MarginContainer/HBoxContainer/VBoxContainer/VBoxContainer2" unique_id=582051496]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+placeholder_text = "Save Name"
+
+[node name="DateLabel" type="Label" parent="MarginContainer/HBoxContainer/VBoxContainer/VBoxContainer2" unique_id=2042154245]
+unique_name_in_owner = true
+layout_mode = 2
+text = "10/24/2026 14:00
+"
+
+[node name="FavButton" type="Button" parent="MarginContainer/HBoxContainer/VBoxContainer/VBoxContainer2" unique_id=1192480349]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 5
+toggle_mode = true
+text = "FAV"
+
+[node name="ActionButton" type="Button" parent="MarginContainer/HBoxContainer/VBoxContainer/VBoxContainer2" unique_id=449813754]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(100, 0)
+layout_mode = 2
+size_flags_horizontal = 5
+text = "Load
+"
+
+[node name="DeleteButton" type="Button" parent="MarginContainer/HBoxContainer/VBoxContainer/VBoxContainer2" unique_id=190442480]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 5
+text = "Delete"

@@ -215,7 +215,7 @@ background_mode = 3
 glow_enabled = true
 glow_intensity = 2.5
 
-[node name="MainMenu" type="CanvasLayer" unique_id=1244757478]
+[node name="MainMenu" type="CanvasLayer" unique_id=1244757478 groups=["hide_on_save"]]
 process_mode = 3
 layer = 10
 script = ExtResource("1_2o76q")
@@ -391,6 +391,16 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+
+[node name="SaveGame" type="Button" parent="MarginContainer/MainButtons" unique_id=2020779341]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Save Game"
+
+[node name="LoadGame" type="Button" parent="MarginContainer/MainButtons" unique_id=1044819519]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Load Game"
 
 [node name="Options" type="Button" parent="MarginContainer/MainButtons" unique_id=161708687]
 layout_mode = 2
@@ -884,6 +894,77 @@ text = "Back"
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1919384477]
 environment = SubResource("Environment_1hnlc")
+
+[node name="SaveLoadPanel" type="Panel" parent="." unique_id=377481609]
+visible = false
+custom_minimum_size = Vector2(800, 600)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -300.0
+offset_right = 400.0
+offset_bottom = 300.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="SaveLoadPanel" unique_id=1691621012]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -277.0
+offset_top = -435.5
+offset_right = 276.0
+offset_bottom = 435.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 150
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 32
+
+[node name="VBoxContainer" type="VBoxContainer" parent="SaveLoadPanel/MarginContainer" unique_id=514304003]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="SaveLoadPanel/MarginContainer/VBoxContainer" unique_id=923057019]
+layout_mode = 2
+
+[node name="SaveLoadTitle" type="Label" parent="SaveLoadPanel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=233848958]
+unique_name_in_owner = true
+layout_mode = 2
+text = "SAVE GAME"
+
+[node name="Control" type="Control" parent="SaveLoadPanel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=564041884]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CloseSaveMenuButton" type="Button" parent="SaveLoadPanel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=2020433397]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Back"
+
+[node name="CreateNewSaveButton" type="Button" parent="SaveLoadPanel/MarginContainer/VBoxContainer" unique_id=1759943659]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "+ CREATE NEW SAVE"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="SaveLoadPanel/MarginContainer/VBoxContainer" unique_id=1722428261]
+custom_minimum_size = Vector2(300, 600)
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="SaveListContainer" type="VBoxContainer" parent="SaveLoadPanel/MarginContainer/VBoxContainer/ScrollContainer" unique_id=886901956]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 600)
+layout_mode = 2
+size_flags_horizontal = 3
 
 [connection signal="pressed" from="MarginContainer/MainButtons/RestartGame" to="." method="_on_start_game_pressed"]
 [connection signal="pressed" from="MarginContainer/MainButtons/Options" to="." method="_on_options_pressed"]

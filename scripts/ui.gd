@@ -31,6 +31,7 @@ var noclip_label_message: Label = $MarginContainer3/NoclipMessageContainer/Nocli
 
 @onready var debug_panel: Panel = $DebugPanel
 @onready var metrics_panel: PanelContainer = $MetricsPanel
+@onready var frame_graph: ColorRect = $FrameGraph
 
 @onready var fullbright_button: Button = $DebugPanel/VBoxContainer/FullbrightButton
 @onready var wireframe_button: Button = $DebugPanel/VBoxContainer/WireframeButton
@@ -55,6 +56,9 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	get_tree().paused = false
 	debug_panel.hide()
+	
+	if frame_graph:
+		frame_graph.hide()
 
 	metrics_button.pressed.connect(_on_metrics_button_pressed)
 
@@ -294,17 +298,36 @@ func _on_player_crouched(crouching: bool) -> void:
 
 # --- DEBUG & NOCLIP LOGIC ---
 func _input(event: InputEvent) -> void:
-	if event.is_action_pressed("console"):
-		var is_open := not debug_panel.visible
+	# Check for console key OR if the debug panel is open and ui_cancel is pressed
+	var console_pressed: bool = event.is_action_pressed("console")
+	var cancel_pressed: bool = event.is_action_pressed("ui_cancel")
+	
+	if console_pressed or (cancel_pressed and debug_panel.visible):
+		var is_open: bool = not debug_panel.visible
 		debug_panel.visible = is_open
 		get_tree().paused = is_open
-
+		
 		if is_open:
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		else:
 			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-
+			
 		Events.debug_menu_toggled.emit(is_open)
+		
+		# Prevent SystemMenuController from double-firing on the same Esc press
+		get_viewport().set_input_as_handled()
+#func _input(event: InputEvent) -> void:
+	#if event.is_action_pressed("console"):
+		#var is_open := not debug_panel.visible
+		#debug_panel.visible = is_open
+		#get_tree().paused = is_open
+#
+		#if is_open:
+			#Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		#else:
+			#Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+#
+		#Events.debug_menu_toggled.emit(is_open)
 
 
 func _on_noclip_button_pressed() -> void:
@@ -375,6 +398,10 @@ func _apply_wireframe_to_node(node: Node, is_overlay: bool) -> void:
 func _on_metrics_button_pressed() -> void:
 	if metrics_panel:
 		metrics_panel.toggle_window()
+		
+		# Mirror the metrics panel's visibility
+		if frame_graph:
+			frame_graph.visible = metrics_panel.visible
 
 
 # --- NEW CROSSHAIR ANIMATION ---
@@ -433,7 +460,8 @@ func _force_collision_redraw(node: Node, show_collisions: bool) -> void:
 
 
 func _on_hide_ui_button_pressed() -> void:
-	_toggle_ui_elements(!is_ui_hidden)
+	hide_ui_button.release_focus()
+	_toggle_ui_elements(not is_ui_hidden)
 
 
 func _toggle_ui_elements(should_hide: bool) -> void:

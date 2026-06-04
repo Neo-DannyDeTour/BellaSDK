@@ -77,6 +77,8 @@ var flashlight_controller: Node = null
 # INITIALIZATION
 # --------------------------------------
 func _ready() -> void:
+	add_to_group("saveable")
+	
 	# 1. Connect Health
 	if health_component.has_signal("health_changed"):
 		health_component.health_changed.connect(_on_health_changed)
@@ -95,25 +97,33 @@ func _ready() -> void:
 # --------------------------------------
 # HARDWARE INPUT ROUTING
 # --------------------------------------
+func _input(event: InputEvent) -> void:
+	# 1. Route Mouse Look here to bypass GUI swallowing bugs when UI is hidden
+	if event is InputEventMouseMotion:
+		# Block camera rotation if paused, in a menu, or stunned
+		if system_menu.is_paused or system_menu.is_menu_open or system_menu.get("is_stunned"):
+			return
+			
+		# Only rotate if the mouse is actively captured by the game
+		if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+			camera_controller.handle_mouse_input(
+				event,
+				interaction_scanner.is_in_terminal_mode,
+				interaction_scanner.is_heavy_lifting,
+				interaction_scanner.heavy_lift_yaw_base
+			)
+
+			# If you extracted the flashlight, route sway here too:
+			# if has_node("CameraController/FlashlightController"):
+			#    $CameraController/FlashlightController.sway_target += event.relative
+
+
 func _unhandled_input(event: InputEvent) -> void:
-	# 1. Block all other inputs if we are paused, in a menu, or stunned
+	# 1. Block all other unhandled inputs if we are paused, in a menu, or stunned
 	if system_menu.is_paused or system_menu.is_menu_open or system_menu.get("is_stunned"):
 		return
 
-	# 2. Route Mouse Look to the Camera Controller
-	if event is InputEventMouseMotion:
-		camera_controller.handle_mouse_input(
-			event,
-			interaction_scanner.is_in_terminal_mode,
-			interaction_scanner.is_heavy_lifting,
-			interaction_scanner.heavy_lift_yaw_base
-		)
-
-		# If you extracted the flashlight, route sway here too:
-		# if has_node("CameraController/FlashlightController"):
-		#     $CameraController/FlashlightController.sway_target += event.relative
-
-	# 3. Route Interactions and Combat to the Scanner
+	# 2. Route Interactions and Combat to the Scanner
 	if event.is_action_pressed("interact"):
 		interaction_scanner.handle_interact_input()
 
@@ -259,6 +269,57 @@ func exit_water(water_volume: Node3D) -> void:
 		if state_machine.state.name == "Swim":
 			state_machine.transition_to("Air")
 
+
 func enter_terminal_mode(terminal: Node3D) -> void:
 	if is_instance_valid(interaction_scanner):
 		interaction_scanner.enter_terminal_mode(terminal)
+
+
+# --------------------------------------
+# SAVE / LOAD SYSTEM INTERFACE
+# --------------------------------------
+func get_save_data() -> Dictionary:
+	var head_rot := camera_controller.global_rotation if is_instance_valid(camera_controller) else Vector3.ZERO
+	
+	# FIX: Dynamically check property names to prevent silent crashes during the save loop
+	var health_val: int = 100
+	if is_instance_valid(health_component):
+		if "current_health" in health_component:
+			health_val = health_component.get("current_health")
+		elif "health" in health_component:
+			health_val = health_component.get("health")
+	
+	return {
+		"pos_x": global_position.x,
+		"pos_y": global_position.y,
+		"pos_z": global_position.z,
+		"rot_y": global_rotation.y, # Body rotation
+		"head_rot_x": head_rot.x,   # Camera pitch
+		"head_rot_y": head_rot.y,   # Camera yaw
+		"health": health_val
+	}
+
+
+func load_save_data(data: Dictionary) -> void:
+	# 1. Restore Position & Body Rotation
+	global_position.x = data.get("pos_x", global_position.x)
+	global_position.y = data.get("pos_y", global_position.y)
+	global_position.z = data.get("pos_z", global_position.z)
+	global_rotation.y = data.get("rot_y", global_rotation.y)
+	
+	# 2. Restore Camera Angle
+	if is_instance_valid(camera_controller):
+		var pitch: float = data.get("head_rot_x", camera_controller.global_rotation.x)
+		var yaw: float = data.get("head_rot_y", camera_controller.global_rotation.y)
+		camera_controller.global_rotation = Vector3(pitch, yaw, 0.0)
+		
+	# 3. Restore Health safely
+	if is_instance_valid(health_component):
+		var saved_health: int = data.get("health", 100)
+		
+		if "current_health" in health_component:
+			health_component.set("current_health", saved_health)
+		elif "health" in health_component:
+			health_component.set("health", saved_health)
+			
+		_on_health_changed(saved_health)
