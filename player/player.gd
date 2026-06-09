@@ -84,7 +84,7 @@ var throw_strength: float = 15.0
 @onready var crouch_cast_check: RayCast3D = $CrouchCastCheck
 
 @onready var interact_cast: ShapeCast3D = %InteractShapeCast
-@onready var hold_position: Node3D = $Head/Eyes/Camera3D/SpringArm3D/HoldPosition
+@onready var hold_position: Marker3D = $Head/Eyes/Camera3D/SpringArm3D/HoldPosition
 @onready var weapon_holder: Node3D = %WeaponHolder
 
 # --------------------------------------
@@ -190,7 +190,7 @@ func _try_pick_up() -> bool:
 				held_item = target_body as RigidBody3D
 
 				# Attach it to the visible weapon holder
-				held_item.pick_up(weapon_holder, self)
+				held_item.pick_up(hold_position, self)
 
 				# DELETE OR COMMENT OUT THIS LINE:
 				# _set_weapon_active(false) 
