@@ -2,7 +2,7 @@
 
 <b>BellaSDK</b> - a modern replacement for Hammer/Source to help noobs quickly start prototyping their next masterpiece instead of wasting valuable months trying to add fucking crouching mechanic to a 35 year old engine that was specifically made for FPS! Fuck Unreal you fucking sack of shit!!!
 
-[COMPILED PROJECT](https://drive.google.com/drive/folders/1EIplMuRXGZBpfP5XdidS_mtlFUrvjh8J?usp=sharing) - will be updated infrequently.
+[COMPILED PROJECT](https://drive.google.com/drive/folders/1EIplMuRXGZBpfP5XdidS_mtlFUrvjh8J?usp=sharing) (no longer necessary since I figured out how to create releases)- will be updated infrequently.
 There you can also find the ASSETS.zip - just unzip it into the main folder
 
 ## <u>BellaSDK - a fun project</u>
