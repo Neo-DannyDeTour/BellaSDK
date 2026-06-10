@@ -1,0 +1,63 @@
+[gd_scene format=3 uid="uid://dvymoxg1v0hbq"]
+
+[ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="1_8pdjq"]
+[ext_resource type="Script" uid="uid://c0cyknk7ktoqe" path="res://reflector_mirror.gd" id="1_oena0"]
+[ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="2_oena0"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="4_xwuss"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_8pdjq"]
+size = Vector3(0.4, 0.4, 0.4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_oena0"]
+size = Vector3(0.4, 0.4, 0.4)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_0jhp4"]
+render_priority = 0
+shader = ExtResource("4_xwuss")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.050000002375
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_0jhp4"]
+size = Vector3(1, 1.9608154, 1)
+
+[node name="ReflectorMirror" type="AnimatableBody3D" unique_id=715562454 node_paths=PackedStringArray("reflect_marker")]
+script = ExtResource("1_oena0")
+rotation_speed = 1.0
+reflect_marker = NodePath("MirrorHead/ReflectMarker")
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="." unique_id=1193011253]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
+radius = 0.1
+height = 1.5
+
+[node name="MirrorHead" type="AnimatableBody3D" parent="." unique_id=40326137]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
+
+[node name="HeadMesh" type="MeshInstance3D" parent="MirrorHead" unique_id=2000393190]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+mesh = SubResource("BoxMesh_8pdjq")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="MirrorHead" unique_id=123787464]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+shape = SubResource("BoxShape3D_oena0")
+
+[node name="ReflectMarker" type="Marker3D" parent="MirrorHead" unique_id=1916103676]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+
+[node name="StanceMarker" type="Marker3D" parent="." unique_id=999649063]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.7)
+
+[node name="Interact_Component" type="Node" parent="." unique_id=1041927048]
+script = ExtResource("1_8pdjq")
+metadata/_custom_type_script = "uid://cqawbvidns1th"
+
+[node name="HighlightComponent" type="Node" parent="." unique_id=327255255]
+script = ExtResource("2_oena0")
+outline_material = SubResource("ShaderMaterial_0jhp4")
+metadata/_custom_type_script = "uid://dgig0tamvkdxx"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=294701083]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.4804077, 0)
+shape = SubResource("BoxShape3D_0jhp4")

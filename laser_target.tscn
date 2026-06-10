@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://c63gjeg0yfvr2"]
+
+[ext_resource type="Script" uid="uid://bo4y60g2334pl" path="res://laser_target.gd" id="1_5gv6w"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_swtb5"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_qpjad"]
+
+[node name="LaserTarget" type="StaticBody3D" unique_id=1230606927]
+script = ExtResource("1_5gv6w")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1075473098]
+shape = SubResource("BoxShape3D_swtb5")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=574446764]
+mesh = SubResource("BoxMesh_qpjad")
+
+[node name="Label3D" type="Label3D" parent="." unique_id=1029662236]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.86548615, 0)
+billboard = 1
+double_sided = false
+text = "Laser Target"

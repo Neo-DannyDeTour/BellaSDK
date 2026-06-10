@@ -104,7 +104,7 @@ func _ready() -> void:
 	colorblind_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	var mat := ShaderMaterial.new()
-	mat.shader = load("res://vfx/colorblind.gdshader")
+	mat.shader = preload("res://vfx/colorblind.gdshader")
 	colorblind_rect.material = mat
 	filter_layer.add_child(colorblind_rect)
 
@@ -115,7 +115,7 @@ func _ready() -> void:
 	high_contrast_rect.visible = false
 
 	var hc_mat := ShaderMaterial.new()
-	hc_mat.shader = load("res://vfx/high_contrast.gdshader")
+	hc_mat.shader = preload("res://vfx/high_contrast.gdshader")
 	high_contrast_rect.material = hc_mat
 	filter_layer.add_child(high_contrast_rect)
 

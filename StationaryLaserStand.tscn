@@ -1,0 +1,62 @@
+[gd_scene format=3 uid="uid://g4evrb4isbwd"]
+
+[ext_resource type="Script" uid="uid://bgfrkky6ktf6s" path="res://StationaryLaserStand.gd" id="1_3nf4h"]
+[ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="2_2bfhh"]
+[ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="3_bowf1"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="4_xidcn"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_yubuw"]
+size = Vector3(0.5, 2.1274414, 0.5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_71oyk"]
+shading_mode = 0
+albedo_color = Color(1, 0, 0, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_onubs"]
+material = SubResource("StandardMaterial3D_71oyk")
+size = Vector3(0.05, 0.05, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_2c5bn"]
+render_priority = 0
+shader = ExtResource("4_xidcn")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.050000002375
+
+[node name="StationaryLaserStand" type="StaticBody3D" unique_id=537276294]
+script = ExtResource("1_3nf4h")
+rotation_speed = 1.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=902953235]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.673645, 0)
+shape = SubResource("BoxShape3D_yubuw")
+
+[node name="PillarMesh" type="CSGCylinder3D" parent="." unique_id=2052673219]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
+radius = 0.1
+height = 1.5
+
+[node name="Turret" type="Node3D" parent="." unique_id=1066301723]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -0.1)
+
+[node name="CSGBox3D" type="CSGBox3D" parent="Turret" unique_id=2053084450]
+size = Vector3(0.4, 0.4, 0.4)
+
+[node name="BeamMesh" type="MeshInstance3D" parent="Turret" unique_id=1083674601]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.5)
+mesh = SubResource("BoxMesh_onubs")
+
+[node name="LaserOrigin" type="Marker3D" parent="Turret" unique_id=1316763259]
+
+[node name="Interact_Component" type="Node" parent="." unique_id=1654017051]
+script = ExtResource("2_2bfhh")
+metadata/_custom_type_script = "uid://cqawbvidns1th"
+
+[node name="HighlightComponent" type="Node" parent="." unique_id=1732499041]
+script = ExtResource("3_bowf1")
+outline_material = SubResource("ShaderMaterial_2c5bn")
+metadata/_custom_type_script = "uid://dgig0tamvkdxx"
+
+[node name="StanceMarker" type="Marker3D" parent="." unique_id=1259799610]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.7)

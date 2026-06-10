@@ -1,7 +1,6 @@
 [gd_resource type="ShaderMaterial" format=3 uid="uid://df0bpn85ml870"]
 
 [ext_resource type="Shader" uid="uid://dwim01em30eij" path="res://environment/raineffects.gdshader" id="1_qerq6"]
-[ext_resource type="Texture2D" uid="uid://cd5dir3k75m8p" path="res://environment/cobblestone_curved_albedo.png" id="2_2bu0p"]
 [ext_resource type="Texture2D" uid="uid://c6jeh3gabgiob" path="res://environment/drops512.png" id="3_hg115"]
 [ext_resource type="Texture2D" uid="uid://b0udqjcmhcb5e" path="res://environment/cobblestone_curved_normal_ogl.png" id="4_82l2o"]
 [ext_resource type="Texture2D" uid="uid://sv6qrt2wvmdn" path="res://environment/cobblestone_curved_roughness.png" id="5_rt368"]
@@ -18,6 +17,12 @@ seamless = true
 noise = SubResource("FastNoiseLite_ka4qh")
 seamless = true
 
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_wl8do"]
+noise_type = 3
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_l8kl6"]
+noise = SubResource("FastNoiseLite_wl8do")
+
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_m3486"]
 noise_type = 3
 seed = 12
@@ -30,27 +35,31 @@ seamless = true
 [resource]
 render_priority = 0
 shader = ExtResource("1_qerq6")
-shader_parameter/albedo_tex = ExtResource("2_2bu0p")
 shader_parameter/normal_tex = ExtResource("4_82l2o")
 shader_parameter/roughness_tex = ExtResource("5_rt368")
 shader_parameter/height_tex = ExtResource("4_82l2o")
-shader_parameter/uv_scale = 1.5000000679901202
-shader_parameter/rain_amount = 1.0
-shader_parameter/wetness = 0.6050000287375
-shader_parameter/puddle_darkening = 0.0
+shader_parameter/uv_scale = 1.0
+shader_parameter/rain_amount = 0.2230000105925
+shader_parameter/wetness = 0.4810000228475
+shader_parameter/puddle_darkening = 0.142000006745
+shader_parameter/rain_falloff_angle = -0.18499996128749996
 shader_parameter/macro_noise_tex = SubResource("NoiseTexture2D_ej1r6")
-shader_parameter/macro_noise_scale = 0.16100000694898
-shader_parameter/macro_noise_contrast = 0.2210000104975
-shader_parameter/puddle_spread = 1.0
-shader_parameter/puddle_edge_softness = 0.5
+shader_parameter/macro_noise_scale = 0.41300001891897997
+shader_parameter/macro_noise_contrast = 0.170000008075
+shader_parameter/puddle_spread = 0.9970000473575
+shader_parameter/puddle_edge_softness = 0.2490000118275
 shader_parameter/drops_tex = ExtResource("3_hg115")
-shader_parameter/drops_size = 5.0590002370426195
-shader_parameter/drops_intensity = 2.306000109535
+shader_parameter/drops_size = 5.90500027722762
+shader_parameter/drops_intensity = 2.03200009652
 shader_parameter/static_drops = 0.0
+shader_parameter/streaks_tex = SubResource("NoiseTexture2D_l8kl6")
+shader_parameter/streaks_scale = 10.0
+shader_parameter/streaks_speed = 0.2
+shader_parameter/streaks_angle = 0.5550000263625
 shader_parameter/ripples_tex = SubResource("NoiseTexture2D_kop5k")
 shader_parameter/ripples_scale = 2.0
-shader_parameter/ripples_intensity = 0.010000000475
+shader_parameter/ripples_intensity = 0.2450000116375
 shader_parameter/wave_noise_tex = SubResource("NoiseTexture2D_it5tn")
 shader_parameter/wave_scale = 10.0
-shader_parameter/wave_speed = 0.4650000220875
-shader_parameter/wave_strength = 0.014000000665
+shader_parameter/wave_speed = 0.77600003686
+shader_parameter/wave_strength = 0.0510000024225

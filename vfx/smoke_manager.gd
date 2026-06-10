@@ -35,7 +35,7 @@ func _ready() -> void:
 	rd = RenderingServer.get_rendering_device()
 
 	if precomputed_noise == null:
-		precomputed_noise = load("res://vfx/smoke_noise_3d.tres") as Texture3D
+		precomputed_noise = preload("res://vfx/smoke_noise_3d.tres") as Texture3D
 
 	assert(precomputed_noise != null, "SmokeManager requires smoke_noise_3d.tres to be valid!")
 
@@ -75,7 +75,7 @@ func _create_rd_noise_texture(tex: Texture3D) -> RID:
 
 func _initialize_gpu() -> void:
 	print("SmokeManager: _initialize_gpu() called.")
-	var shader_file: RDShaderFile = load("res://vfx/smoke_compute.glsl")
+	var shader_file: RDShaderFile = preload("res://vfx/smoke_compute.glsl")
 	var shader_spirv: RDShaderSPIRV = shader_file.get_spirv()
 	shader = rd.shader_create_from_spirv(shader_spirv)
 	pipeline = rd.compute_pipeline_create(shader)

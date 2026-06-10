@@ -61,7 +61,7 @@ func _initialize_materials() -> void:
 		_draw_mat = current_mesh.material as ShaderMaterial
 	else:
 		_draw_mat = ShaderMaterial.new()
-		_draw_mat.shader = load("res://ui/gel.gdshader") as Shader
+		_draw_mat.shader = preload("res://ui/gel.gdshader") as Shader
 		current_mesh.material = _draw_mat
 
 	trail_enabled = true

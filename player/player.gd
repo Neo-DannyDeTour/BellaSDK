@@ -58,6 +58,11 @@ var flashlight_controller: Node = null
 var held_item: RigidBody3D = null
 var throw_strength: float = 15.0
 
+# Tracks only the waterfalls the player is currently touching.
+var active_waterfalls: Array[Area3D] = []
+
+var is_operating_machine: bool = false
+
 # --------------------------------------
 # COMPONENT REFERENCES
 # --------------------------------------
@@ -261,8 +266,9 @@ func _physics_process(delta: float) -> void:
 	if monkey_bar_cooldown > 0.0:
 		monkey_bar_cooldown -= delta
 
-	# 1. Handle Pauses & Stuns
-	if system_menu.is_paused or system_menu.is_menu_open or system_menu.get("is_stunned"):
+	# 1. Handle Pauses, Stuns & Machines
+	# Added "is_operating_machine" here to lock the player in place
+	if system_menu.is_paused or system_menu.is_menu_open or system_menu.get("is_stunned") or is_operating_machine:
 		state_machine.set_physics_process(false)
 		state_machine.set_process_unhandled_input(false)
 		velocity = Vector3.ZERO
@@ -489,3 +495,22 @@ func _apply_weight_to_floor() -> void:
 				_last_weighed_body = collider
 
 			return
+
+
+func _on_waterfall_body_entered(body: Node3D, area: Area3D) -> void:
+	if body == self and area.is_in_group("waterfall_area"):
+		active_waterfalls.append(area)
+
+
+func _on_waterfall_body_exited(body: Node3D, area: Area3D) -> void:
+	if body == self and area in active_waterfalls:
+		active_waterfalls.erase(area)
+
+
+func interact_with_water(area: Area3D) -> void:
+	print("Player action: Interacting with waterfall area: ", area.name)
+
+
+func set_machine_lock(locked: bool) -> void:
+	print("Player: set_machine_lock() called. State updated to: ", locked)
+	is_operating_machine = locked
