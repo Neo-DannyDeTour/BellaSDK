@@ -139,6 +139,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	# 1. Block all other unhandled inputs if we are paused, in a menu, or stunned
 	if system_menu.is_paused or system_menu.is_menu_open or system_menu.get("is_stunned"):
 		return
+		
+	# Drop glider with interact key if on the ground
+	if event.is_action_pressed("interact") and is_instance_valid(held_item) and held_item is GliderItem:
+		if is_on_floor():
+			_drop_held_item()
+			return
 
 	# 2. Item Throwing (Mapped to 'G' via the 'throw' action)
 	if event.is_action_pressed("grenade_throw") and is_instance_valid(held_item):
@@ -216,8 +222,13 @@ func _throw_held_item() -> void:
 	var throw_force: Vector3 = throw_dir.normalized() * throw_strength
 
 	held_item.throw_item(throw_force, get_tree().current_scene)
+	
+	# NEW: Restore sprint if they drop the glider
+	if held_item is GliderItem:
+		print("Player: Dropped GliderItem. Restoring ability to sprint.")
+		can_sprint = true
+		
 	held_item = null
-
 	_set_weapon_active(true)
 
 # --------------------------------------
@@ -514,3 +525,19 @@ func interact_with_water(area: Area3D) -> void:
 func set_machine_lock(locked: bool) -> void:
 	print("Player: set_machine_lock() called. State updated to: ", locked)
 	is_operating_machine = locked
+
+
+func _drop_held_item() -> void:
+	print("Player: _drop_held_item() called. Placing item on the ground.")
+	
+	if held_item.has_method("drop_item"):
+		# Drop it at the player's current global position
+		held_item.drop_item(get_tree().current_scene, global_position)
+		
+	if held_item is GliderItem:
+		print("Player: Dropped GliderItem. Restoring sprint and camera look.")
+		can_sprint = true
+		interaction_scanner.is_heavy_lifting = false
+		
+	held_item = null
+	_set_weapon_active(true)

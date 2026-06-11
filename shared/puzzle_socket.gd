@@ -99,14 +99,16 @@ func _on_body_exited(body: Node3D) -> void:
 
 
 func plug_in(plug: Node3D) -> void:
+	print("Socket: Plugging in ", plug.name)
 	if plug.has_method("drop") and plug.get("is_held"):
+		print("Socket: Plug is currently held. Forcing drop.")
 		plug.drop()
 
 	is_powered = true
 	current_plug = plug
 
-	# 1. Let the deferred function handle ALL the physics and snapping
-	call_deferred("_snap_and_freeze_plug", plug)
+	# 1. Ensure physics from drop() completely settle before snapping
+	_trigger_delayed_snap(plug)
 
 	if not can_be_unplugged:
 		if "is_locked" in plug:
@@ -138,6 +140,13 @@ func plug_in(plug: Node3D) -> void:
 				indicator_light.light_color = Color.GREEN
 			_energize_targets()
 
+
+func _trigger_delayed_snap(plug: Node3D) -> void:
+	print("Socket: Awaiting physics frame to guarantee clean state.")
+	await get_tree().physics_frame
+	
+	if is_instance_valid(plug) and is_powered:
+		_snap_and_freeze_plug(plug)
 
 func unplug() -> void:
 	if not can_be_unplugged or not is_powered:
@@ -274,22 +283,30 @@ func _deenergize_targets() -> void:
 
 
 func _snap_and_freeze_plug(plug: Node3D) -> void:
-	if not is_instance_valid(plug) or not snap_position:
+	print("Socket: Snapping and freezing plug to exact center.")
+	if not is_instance_valid(plug) or not is_instance_valid(snap_position):
 		return
+
+	var target_transform: Transform3D = snap_position.global_transform
 
 	if "snap_marker" in plug and is_instance_valid(plug.get("snap_marker")):
 		var marker: Marker3D = plug.get("snap_marker") as Marker3D
-		plug.global_transform = snap_position.global_transform * marker.transform.affine_inverse()
-	else:
-		plug.global_transform = snap_position.global_transform
+		target_transform = target_transform * marker.transform.affine_inverse()
 
 	if plug is RigidBody3D:
-		plug.freeze = true
+		# Clear momentum to prevent physics engine fighting
 		plug.linear_velocity = Vector3.ZERO
 		plug.angular_velocity = Vector3.ZERO
 
-		# We removed the collision layer changes here!
-
+		# Force Transform on the Physics server FIRST
 		PhysicsServer3D.body_set_state(
-			plug.get_rid(), PhysicsServer3D.BODY_STATE_TRANSFORM, plug.global_transform
+			plug.get_rid(),
+			PhysicsServer3D.BODY_STATE_TRANSFORM,
+			target_transform
 		)
+
+		# Apply to node and freeze LAST
+		plug.global_transform = target_transform
+		plug.freeze = true
+	else:
+		plug.global_transform = target_transform

@@ -64,22 +64,29 @@ func handle_mouse_input(
 	event: InputEventMouseMotion,
 	is_terminal_mode: bool,
 	is_heavy_lifting: bool,
-	heavy_lift_yaw_base: float
+	_heavy_lift_yaw_base: float
 ) -> void:
 	var active_sens: float = mouse_sensitivity
 	if is_terminal_mode:
 		active_sens *= 0.5
 
 	if is_heavy_lifting:
-		var new_yaw: float = player_body.rotation.y - deg_to_rad(event.relative.x * active_sens)
-		var diff: float = angle_difference(heavy_lift_yaw_base, new_yaw)
-		var clamped_diff: float = clampf(diff, deg_to_rad(-15.0), deg_to_rad(15.0))
-		player_body.rotation.y = heavy_lift_yaw_base + clamped_diff
+		# 1. YAW: Modify Euler angles directly to prevent Gimbal lock / Z-roll
+		head.rotation.y -= deg_to_rad(event.relative.x * active_sens)
+		head.rotation.y = clampf(head.rotation.y, deg_to_rad(-15.0), deg_to_rad(15.0))
+		
+		# 2. PITCH: Restrict Up/Down Look
+		head.rotation.x -= deg_to_rad(event.relative.y * active_sens)
+		head.rotation.x = clampf(head.rotation.x, deg_to_rad(-15.0), deg_to_rad(89.0))
 	else:
+		# Standard FPS control: Body handles Y, Head handles X
 		player_body.rotate_y(deg_to_rad(-event.relative.x * active_sens))
-
-	head.rotate_x(deg_to_rad(-event.relative.y * active_sens))
-	head.rotation.x = clampf(head.rotation.x, deg_to_rad(-89.0), deg_to_rad(89.0))
+		
+		head.rotation.x -= deg_to_rad(event.relative.y * active_sens)
+		head.rotation.x = clampf(head.rotation.x, deg_to_rad(-89.0), deg_to_rad(89.0))
+		
+	# Strictly lock the Z-axis to prevent the camera from permanently tilting
+	head.rotation.z = 0.0
 
 
 # --------------------------------------

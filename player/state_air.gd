@@ -160,7 +160,12 @@ func _check_transitions() -> void:
 				print("StateAir: Vaulting ledge mid-air.")
 				state_machine.transition_to("Vault")
 				return
-
+	
+	# Transition to Glide if holding the glider and falling
+	if player.held_item is GliderItem and player.velocity.y < 0.0:
+		print("StateAir: Player is holding a GliderItem and falling. Transitioning to Glide.")
+		state_machine.transition_to("Glide")
+		return
 
 func _handle_landing() -> void:
 	print("StateAir: Player landed. Impact velocity: ", player.last_velocity.y)
