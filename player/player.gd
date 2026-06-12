@@ -390,11 +390,11 @@ func exit_water(water_volume: Node3D) -> void:
 		if state_machine.state.name == "Swim":
 			state_machine.transition_to("Air")
 
-# 7. Terminals
-func enter_terminal_mode(terminal: Node3D) -> void:
-	print("Player: enter_terminal_mode() called. Passing to InteractionScanner.")
-	if is_instance_valid(interaction_scanner):
-		interaction_scanner.enter_terminal_mode(terminal)
+## 7. Terminals
+#func enter_terminal_mode(terminal: Node3D) -> void:
+	#print("Player: enter_terminal_mode() called. Passing to InteractionScanner.")
+	#if is_instance_valid(interaction_scanner):
+		#interaction_scanner.enter_terminal_mode(terminal)
 
 # --------------------------------------
 # SAVE / LOAD SYSTEM INTERFACE

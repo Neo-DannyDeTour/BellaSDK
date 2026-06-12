@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://c63gjeg0yfvr2"]
 
 [ext_resource type="Script" uid="uid://bo4y60g2334pl" path="res://laser_target.gd" id="1_5gv6w"]
+[ext_resource type="Script" uid="uid://cnmn3hgnt0afn" path="res://interactables/output_transmitter_3d.gd" id="2_swtb5"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_swtb5"]
 
@@ -20,3 +21,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.86548615, 0)
 billboard = 1
 double_sided = false
 text = "Laser Target"
+
+[node name="OutputTransmitter3D" type="Node3D" parent="." unique_id=42813313]
+script = ExtResource("2_swtb5")
+metadata/_custom_type_script = "uid://cnmn3hgnt0afn"

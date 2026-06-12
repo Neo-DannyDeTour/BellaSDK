@@ -53,9 +53,6 @@ func _ready() -> void:
 	mouse_sensitivity = mouse_sensitivity_base
 	target_fov = base_fov
 
-	# If you have a settings file loader, you can call a setup function from Player.gd
-	# to inject the saved sensitivity here.
-
 
 # --------------------------------------
 # INPUT HANDLING
@@ -66,6 +63,10 @@ func handle_mouse_input(
 	is_heavy_lifting: bool,
 	_heavy_lift_yaw_base: float
 ) -> void:
+	# Safely trace mouse input only on major threshold movements to preserve 60 FPS
+	if absf(event.relative.x) > 50.0 or absf(event.relative.y) > 50.0:
+		print("CameraController: Large mouse movement detected, processing input.")
+
 	var active_sens: float = mouse_sensitivity
 	if is_terminal_mode:
 		active_sens *= 0.5
@@ -100,6 +101,10 @@ func update_camera(
 	is_grounded: bool,
 	player_velocity: float
 ) -> void:
+	# Trace wrapped in a state-change check to prevent console flooding on every frame
+	if Input.is_action_just_pressed("zoom") or Input.is_action_just_pressed("sprint"):
+		print("CameraController: update_camera processing state change.")
+
 	_update_fov(delta, is_sprinting, is_grounded, input_dir)
 	_update_tilt(delta, input_dir)
 	_update_headbob(delta, input_dir, is_sprinting, is_crouching)
@@ -140,7 +145,6 @@ func _update_fov(delta: float, is_sprinting: bool, is_grounded: bool, input_dir:
 
 
 func _update_tilt(delta: float, input_dir: Vector2) -> void:
-	# This automatically tilts left/right based on A/D or analog stick input!
 	var target_tilt: float = input_dir.x * camera_tilt_amount
 	eyes.rotation.z = lerpf(eyes.rotation.z, deg_to_rad(-target_tilt), delta * lerp_speed)
 
@@ -167,11 +171,9 @@ func _update_headbob(
 	else:
 		head_bobbing_current_intensity = HEAD_BOBBING_IDLE_INTENSITY
 
-	# Increment timer
 	var movement_multiplier: float = 1.0 if input_dir.length() > 0.1 else 0.5
 	head_bobbing_index += bob_speed * delta * movement_multiplier
 
-	# Calculate offset
 	var target_bob_y: float = (
 		sin(head_bobbing_index) * (head_bobbing_current_intensity / 2.0) * intensity_modifier
 	)
@@ -182,7 +184,6 @@ func _update_headbob(
 	headbob_offset.y = lerpf(headbob_offset.y, target_bob_y, delta * lerp_speed)
 	headbob_offset.x = lerpf(headbob_offset.x, target_bob_x, delta * lerp_speed)
 
-	# Apply to eyes (combining headbob with stair offset)
 	eyes.position.y = headbob_offset.y + stair_offset
 	eyes.position.x = headbob_offset.x
 
@@ -191,6 +192,7 @@ func _update_headbob(
 # STAIR SMOOTHING
 # --------------------------------------
 func add_stair_offset(snap_amount: float) -> void:
+	print("CameraController: Applying stair snap offset: ", snap_amount)
 	stair_offset -= snap_amount
 	stair_offset = clampf(stair_offset, -0.5, 0.5)
 
@@ -199,6 +201,5 @@ func _update_stair_smoothing(delta: float, player_velocity: float) -> void:
 	if stair_offset == 0.0:
 		return
 
-	# Recovers back to 0.0 smoothly based on movement speed
 	var move_amount: float = maxf(player_velocity * delta, 2.5 * delta)
 	stair_offset = move_toward(stair_offset, 0.0, move_amount)

@@ -13,7 +13,7 @@ const RESOLUTIONS: Dictionary = {
 	"640 x 480": Vector2i(640, 480)
 }
 
-const SAVE_PATH = "user://settings.cfg"
+const SAVE_PATH: String = "user://settings.cfg"
 const DEFAULT_SENSITIVITY: float = 0.05
 
 # --- NEW: ACCESSIBILITY DEFAULTS ---
@@ -21,7 +21,7 @@ const DEFAULT_BRIGHTNESS: float = 1.0
 const DEFAULT_CONTRAST: float = 1.0
 const DEFAULT_SATURATION: float = 1.0
 
-const CHAPTER_SCREEN = preload("res://ui/chapter_screen.tscn")
+const CHAPTER_SCREEN: PackedScene = preload("res://ui/chapter_screen.tscn")
 
 const FPS_LIMITS: Dictionary = {
 	"30 FPS": 30,
@@ -45,24 +45,50 @@ const DEFAULT_VSYNC: DisplayServer.VSyncMode = DisplayServer.VSYNC_ENABLED
 
 # --- NEW CONSTANTS FOR FSR ---
 const FSR_MODES: Dictionary = {
-	"Disabled (Native)": 1.0, "Quality": 0.77, "Balanced": 0.59, "Performance": 0.50
+	"Disabled (Native)": 1.0, 
+	"Quality": 0.77, 
+	"Balanced": 0.59, 
+	"Performance": 0.50
 }
 const DEFAULT_FSR_MODE: String = "Disabled (Native)"
 
 # --- UNIFIED ANTI-ALIASING SYSTEM ---
 const AA_MODES: Dictionary = {
-	"Disabled":
-	{"msaa": Viewport.MSAA_DISABLED, "taa": false, "fxaa": Viewport.SCREEN_SPACE_AA_DISABLED},
-	"FXAA (Fast)":
-	{"msaa": Viewport.MSAA_DISABLED, "taa": false, "fxaa": Viewport.SCREEN_SPACE_AA_FXAA},
-	"TAA (Smooth)":
-	{"msaa": Viewport.MSAA_DISABLED, "taa": true, "fxaa": Viewport.SCREEN_SPACE_AA_DISABLED},
-	"MSAA 2x": {"msaa": Viewport.MSAA_2X, "taa": false, "fxaa": Viewport.SCREEN_SPACE_AA_DISABLED},
-	"MSAA 4x": {"msaa": Viewport.MSAA_4X, "taa": false, "fxaa": Viewport.SCREEN_SPACE_AA_DISABLED},
-	"MSAA 8x (Heavy)":
-	{"msaa": Viewport.MSAA_8X, "taa": false, "fxaa": Viewport.SCREEN_SPACE_AA_DISABLED},
-	"MSAA 2x + TAA (High)":
-	{"msaa": Viewport.MSAA_2X, "taa": true, "fxaa": Viewport.SCREEN_SPACE_AA_DISABLED}
+	"Disabled": {
+		"msaa": Viewport.MSAA_DISABLED, 
+		"taa": false, 
+		"fxaa": Viewport.SCREEN_SPACE_AA_DISABLED
+	},
+	"FXAA (Fast)": {
+		"msaa": Viewport.MSAA_DISABLED, 
+		"taa": false, 
+		"fxaa": Viewport.SCREEN_SPACE_AA_FXAA
+	},
+	"TAA (Smooth)": {
+		"msaa": Viewport.MSAA_DISABLED, 
+		"taa": true, 
+		"fxaa": Viewport.SCREEN_SPACE_AA_DISABLED
+	},
+	"MSAA 2x": {
+		"msaa": Viewport.MSAA_2X, 
+		"taa": false, 
+		"fxaa": Viewport.SCREEN_SPACE_AA_DISABLED
+	},
+	"MSAA 4x": {
+		"msaa": Viewport.MSAA_4X, 
+		"taa": false, 
+		"fxaa": Viewport.SCREEN_SPACE_AA_DISABLED
+	},
+	"MSAA 8x (Heavy)": {
+		"msaa": Viewport.MSAA_8X, 
+		"taa": false, 
+		"fxaa": Viewport.SCREEN_SPACE_AA_DISABLED
+	},
+	"MSAA 2x + TAA (High)": {
+		"msaa": Viewport.MSAA_2X, 
+		"taa": true, 
+		"fxaa": Viewport.SCREEN_SPACE_AA_DISABLED
+	}
 }
 const DEFAULT_AA_MODE: String = "Disabled"
 
@@ -76,7 +102,7 @@ var pending_swap_event: InputEvent = null
 var pending_conflict_action: String = ""
 
 # List every action exactly as it appears in your Project Settings > Input Map
-var my_actions := [
+var my_actions: Array[String] = [
 	"forward",
 	"backward",
 	"left",
@@ -119,8 +145,9 @@ var has_calibrated: bool = false
 # --- RESOLUTION VARIABLES ---
 @onready var resolution_options: OptionButton = %ResolutionOptionButton
 
-@onready
-var accessibility_button: Button = $Options/MarginContainer/OptionsButtons/HBoxContainer/AccessibilityButton
+@onready var accessibility_button: Button = (
+	$Options/MarginContainer/OptionsButtons/HBoxContainer/AccessibilityButton
+)
 @onready var options_content: VBoxContainer = $Options/VBoxContainer
 @onready var back_accessibility_button: Button = %BackAccessibilityButton
 
@@ -146,8 +173,7 @@ var accessibility_button: Button = $Options/MarginContainer/OptionsButtons/HBoxC
 @onready var save_button: Button = %SaveGame
 @onready var load_button: Button = %LoadGame
 
-
-const SAVE_SLOT_SCENE = preload("res://core/save_slot.tscn")
+const SAVE_SLOT_SCENE: PackedScene = preload("res://core/save_slot.tscn")
 
 var is_currently_saving: bool = false
 
@@ -199,7 +225,6 @@ func _ready() -> void:
 	create_new_save_button.pressed.connect(_on_create_new_save)
 
 	# --- NEW: ACCESSIBILITY SIGNAL BINDING ---
-	# Binding allows us to reuse the same 5 functions for all 3 sliders
 	_connect_adjustment_signals(brightness_slider, brightness_input, "brightness")
 	_connect_adjustment_signals(contrast_slider, contrast_input, "contrast")
 	_connect_adjustment_signals(saturation_slider, saturation_input, "saturation")
@@ -224,31 +249,12 @@ func _ready() -> void:
 		save_button.hide()
 
 	# 4. Set up the UI visibility
-	main_buttons.visible = true
-	options.visible = false
-	controls_panel.visible = false
-	if accessibility_panel:
-		accessibility_panel.visible = false
+	_return_to_main_buttons()
 	create_control_list()
 
 	# Connect the new button
 	accessibility_button.pressed.connect(_on_accessibility_pressed)
 
-	# Make sure the panel is hidden at start
-	accessibility_panel.visible = false
-
-	# 3. CONTEXT CHECK: Are we at the Title Screen or in the Game?
-	if get_parent().has_method("toggle_pause"):
-		# We are IN-GAME
-		continue_button.show()
-		restart_button.show()
-		save_button.show()
-		new_game_button.text = "" 
-	else:
-		# We are at the TITLE SCREEN
-		continue_button.hide()
-		restart_button.hide()
-		save_button.hide()
 
 # --- NEW: ACCESSIBILITY HELPER ---
 func _connect_adjustment_signals(
@@ -264,11 +270,11 @@ func _connect_adjustment_signals(
 
 
 func create_control_list() -> void:
-	var container := $ControlsPanel/VBoxContainer
-	var template := $ControlsPanel/VBoxContainer/RemapButtonTemplate
+	var container: VBoxContainer = $ControlsPanel/VBoxContainer
+	var template: Button = $ControlsPanel/VBoxContainer/RemapButtonTemplate
 
 	for action: String in my_actions:
-		var new_button := template.duplicate()
+		var new_button: Button = template.duplicate() as Button
 		new_button.show()
 		container.add_child(new_button)
 		new_button.set_meta("action", action)
@@ -289,11 +295,11 @@ func _on_any_remap_button_toggled(toggled_on: bool, button: Button) -> void:
 
 
 func update_button_text(button: Button, action: String) -> void:
-	var events := InputMap.action_get_events(action)
-	var key_name := "Unassigned"
+	var events: Array[InputEvent] = InputMap.action_get_events(action)
+	var key_name: String = "Unassigned"
 
 	if events.size() > 0:
-		var raw_text := events[0].as_text()
+		var raw_text: String = events[0].as_text()
 		key_name = (
 			raw_text
 			. replace(" (Physical)", "")
@@ -311,7 +317,7 @@ func _on_new_game_pressed() -> void:
 		_apply_bucket_calibration()
 
 	main_buttons.hide()
-	var chapter_window := CHAPTER_SCREEN.instantiate()
+	var chapter_window: Node = CHAPTER_SCREEN.instantiate()
 	add_child(chapter_window)
 
 
@@ -352,10 +358,7 @@ func _apply_bucket_calibration() -> void:
 		auto_sens = 0.05
 		print("Calibrated: TIER 1 - Precise/Arm Aimer (Speed: ", max_mouse_speed, ")")
 
-	# Update the slider (which automatically applies it to the player)
 	sens_slider.value = auto_sens
-
-	# Save it to disk so they don't get auto-calibrated again next time
 	_save_setting_to_disk("mouse_sensitivity", auto_sens)
 
 
@@ -364,16 +367,9 @@ func _on_exit_pressed() -> void:
 
 
 # --- UPDATED: PANEL ROUTING ---
-func _on_options_pressed() -> void:
-	main_buttons.visible = false
-	options.visible = true
-	# Ensure the sub-panels and main content are reset correctly
-	options_content.visible = true
-	controls_panel.visible = false
-	accessibility_panel.visible = false
 
-
-func _on_back_pressed() -> void:
+# Helper function to clear duplicated linter warnings for resetting UI panels
+func _return_to_main_buttons() -> void:
 	main_buttons.visible = true
 	options.visible = false
 	controls_panel.visible = false
@@ -381,41 +377,43 @@ func _on_back_pressed() -> void:
 		accessibility_panel.visible = false
 
 
+func _on_options_pressed() -> void:
+	main_buttons.visible = false
+	options.visible = true
+	options_content.visible = true
+	controls_panel.visible = false
+	accessibility_panel.visible = false
+
+
+func _on_back_pressed() -> void:
+	_return_to_main_buttons()
+
+
 func _on_contols_pressed() -> void:
-	# Hide the main options list
 	options_content.visible = false
-	# Show the controls panel
 	controls_panel.visible = true
 
 
 func _on_back_controls_pressed() -> void:
-	# Show the options list again
 	options_content.visible = true
-	# Hide the sub-panel
 	controls_panel.visible = false
 
 
 func _on_accessibility_pressed() -> void:
-	# Hide the main options list
 	options_content.visible = false
-	# Show the accessibility panel
 	accessibility_panel.visible = true
 
 
 func _on_back_accessibility_pressed() -> void:
-	# Show the options list again
 	options_content.visible = true
-	# Hide the sub-panel
 	accessibility_panel.visible = false
 
 
 func _input(event: InputEvent) -> void:
-	# --- NEW: ESCAPE TO GO BACK OR PAUSE ---
 	if event.is_action_pressed("ui_cancel"):
 		if not self.visible:
 			return
 
-		# 1. Cancel remapping safely
 		if is_remapping:
 			is_remapping = false
 			pending_swap_event = null
@@ -426,7 +424,6 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 
-		# 2. If a menu panel is open, close it!
 		if controls_panel.visible:
 			_on_back_controls_pressed()
 			get_viewport().set_input_as_handled()
@@ -437,11 +434,9 @@ func _input(event: InputEvent) -> void:
 			_on_back_pressed()
 			get_viewport().set_input_as_handled()
 		elif main_buttons.visible and get_parent().has_method("toggle_pause"):
-			# This triggers when you are at the main menu and press ESC
 			_on_resume_pressed()
 			get_viewport().set_input_as_handled()
 
-	# --- EXISTING REMAPPING AND MOUSE TRACKING LOGIC ---
 	if is_remapping:
 		if event is InputEventKey or event is InputEventMouseButton:
 			if event.is_pressed():
@@ -449,13 +444,13 @@ func _input(event: InputEvent) -> void:
 					execute_swap(event)
 					return
 
-				var conflicting_action := get_action_with_event(event)
+				var conflicting_action: String = get_action_with_event(event)
 
 				if conflicting_action != "" and conflicting_action != action_to_remap:
 					pending_swap_event = event
 					pending_conflict_action = conflicting_action
 
-					var key_name := event.as_text().split("(")[0].strip_edges()
+					var key_name: String = event.as_text().split("(")[0].strip_edges()
 					%ConflictLabel.text = (
 						action_to_remap.capitalize()
 						+ " and "
@@ -494,13 +489,12 @@ func _input(event: InputEvent) -> void:
 func _on_reset_button_pressed() -> void:
 	InputMap.load_from_project_settings()
 
-	var dir := DirAccess.open("user://")
-	if dir.file_exists("settings.cfg"):
+	var dir: DirAccess = DirAccess.open("user://")
+	if dir and dir.file_exists("settings.cfg"):
 		dir.remove("settings.cfg")
 
 	sens_slider.value = DEFAULT_SENSITIVITY
 
-	# --- NEW: RESET COLOR ADJUSTMENTS ---
 	brightness_slider.value = DEFAULT_BRIGHTNESS
 	contrast_slider.value = DEFAULT_CONTRAST
 	saturation_slider.value = DEFAULT_SATURATION
@@ -511,11 +505,9 @@ func _on_reset_button_pressed() -> void:
 
 	refresh_all_button_labels()
 
-	# --- Reset FOV ---
 	fov_slider.value = DEFAULT_FOV
 	sprint_fov_checkbox.button_pressed = DEFAULT_DISABLE_SPRINT_FOV
 
-	# --- Reset FPS ---
 	Engine.max_fps = DEFAULT_FPS
 	for i: int in range(fps_options.get_item_count()):
 		var key: String = fps_options.get_item_text(i)
@@ -524,7 +516,6 @@ func _on_reset_button_pressed() -> void:
 			break
 	_save_setting_to_disk("fps_limit", DEFAULT_FPS)
 
-	# --- Reset VSync ---
 	DisplayServer.window_set_vsync_mode(DEFAULT_VSYNC)
 	for i: int in range(vsync_options.get_item_count()):
 		var key: String = vsync_options.get_item_text(i)
@@ -533,7 +524,6 @@ func _on_reset_button_pressed() -> void:
 			break
 	_save_setting_to_disk("vsync_mode", DEFAULT_VSYNC)
 
-	# --- Reset AA ---
 	_apply_aa(DEFAULT_AA_MODE)
 	for i: int in range(aa_options.get_item_count()):
 		if aa_options.get_item_text(i) == DEFAULT_AA_MODE:
@@ -543,19 +533,19 @@ func _on_reset_button_pressed() -> void:
 
 
 func refresh_all_button_labels() -> void:
-	var container := $ControlsPanel/VBoxContainer
-	for child in container.get_children():
+	var container: VBoxContainer = $ControlsPanel/VBoxContainer
+	for child: Node in container.get_children():
 		if child is Button and child.has_meta("action"):
 			var action_name: String = child.get_meta("action")
 			update_button_text(child, action_name)
 
 
 func save_controls() -> void:
-	var config := ConfigFile.new()
+	var config: ConfigFile = ConfigFile.new()
 	config.load(SAVE_PATH)
 
 	for action: String in my_actions:
-		var events := InputMap.action_get_events(action)
+		var events: Array[InputEvent] = InputMap.action_get_events(action)
 		if events.size() > 0:
 			config.set_value("Controls", action, events[0])
 
@@ -564,8 +554,8 @@ func save_controls() -> void:
 
 
 func load_controls() -> void:
-	var config := ConfigFile.new()
-	var err := config.load(SAVE_PATH)
+	var config: ConfigFile = ConfigFile.new()
+	var err: Error = config.load(SAVE_PATH)
 
 	if err != OK:
 		sens_slider.value = DEFAULT_SENSITIVITY
@@ -575,20 +565,17 @@ func load_controls() -> void:
 		_apply_visual_settings()
 		return
 
-	# --- Load Controls ---
 	for action: String in my_actions:
 		if config.has_section_key("Controls", action):
-			var event := config.get_value("Controls", action) as InputEvent
+			var event: InputEvent = config.get_value("Controls", action) as InputEvent
 			InputMap.action_erase_events(action)
 			InputMap.action_add_event(action, event)
 
-	# --- Load Sensitivity ---
 	if config.has_section_key("Settings", "mouse_sensitivity"):
 		var saved_sens: float = config.get_value("Settings", "mouse_sensitivity")
 		sens_slider.value = saved_sens
 		has_calibrated = true
 
-	# --- NEW: Load Adjustments ---
 	brightness_slider.value = config.get_value("Settings", "brightness", DEFAULT_BRIGHTNESS)
 	contrast_slider.value = config.get_value("Settings", "contrast", DEFAULT_CONTRAST)
 	saturation_slider.value = config.get_value("Settings", "saturation", DEFAULT_SATURATION)
@@ -597,19 +584,16 @@ func load_controls() -> void:
 	contrast_input.text = "%.2f" % contrast_slider.value
 	saturation_input.text = "%.2f" % saturation_slider.value
 
-	# --- Load Resolution (Inside load_controls) ---
 	if (
 		config.has_section_key("Settings", "resolution_x")
 		and config.has_section_key("Settings", "resolution_y")
 	):
 		var res_x: int = config.get_value("Settings", "resolution_x")
 		var res_y: int = config.get_value("Settings", "resolution_y")
-		var saved_res := Vector2i(res_x, res_y)
+		var saved_res: Vector2i = Vector2i(res_x, res_y)
 
-		# Apply internal render resolution
 		get_window().content_scale_size = saved_res
 
-		# Only apply physical window sizing if we aren't starting in fullscreen
 		var is_fullscreen: bool = (
 			get_window().mode == Window.MODE_EXCLUSIVE_FULLSCREEN
 			or get_window().mode == Window.MODE_FULLSCREEN
@@ -619,13 +603,12 @@ func load_controls() -> void:
 			get_window().size = saved_res
 			_center_window(saved_res)
 
-		var res_string := str(res_x) + " x " + str(res_y)
-		for i in range(resolution_options.get_item_count()):
+		var res_string: String = str(res_x) + " x " + str(res_y)
+		for i: int in range(resolution_options.get_item_count()):
 			if resolution_options.get_item_text(i) == res_string:
 				resolution_options.select(i)
 				break
 
-	# --- Load FOV Settings ---
 	fov_slider.value = config.get_value("Settings", "base_fov", DEFAULT_FOV)
 	sprint_fov_checkbox.button_pressed = config.get_value(
 		"Settings", "disable_sprint_fov", DEFAULT_DISABLE_SPRINT_FOV
@@ -634,27 +617,22 @@ func load_controls() -> void:
 
 	await get_tree().process_frame
 
-	# Push the loaded values directly to the player's CameraController
 	var player: Node = _get_player()
 	if player and "camera_controller" in player and player.camera_controller:
 		player.camera_controller.base_fov = fov_slider.value
 		player.camera_controller.disable_sprint_fov = sprint_fov_checkbox.button_pressed
 
-		# Force the camera to accept the loaded sensitivity!
 		player.camera_controller.mouse_sensitivity_base = sens_slider.value
 		player.camera_controller.mouse_sensitivity = sens_slider.value
 
-	# --- Load FPS Limit ---
 	var saved_fps: int = config.get_value("Settings", "fps_limit", DEFAULT_FPS)
 
-	# Update the UI to match the loaded setting
 	for i: int in range(fps_options.get_item_count()):
 		var key: String = fps_options.get_item_text(i)
 		if FPS_LIMITS[key] == saved_fps:
 			fps_options.select(i)
 			break
 
-	# --- Load VSync ---
 	var saved_vsync: int = config.get_value("Settings", "vsync_mode", DEFAULT_VSYNC)
 	DisplayServer.window_set_vsync_mode(saved_vsync as DisplayServer.VSyncMode)
 
@@ -672,7 +650,6 @@ func load_controls() -> void:
 			fsr_options.select(i)
 			break
 
-	# --- Load AA ---
 	var saved_aa: String = config.get_value("Settings", "aa_mode", DEFAULT_AA_MODE)
 	_apply_aa(saved_aa)
 
@@ -690,8 +667,8 @@ func get_action_with_event(new_event: InputEvent) -> String:
 
 
 func execute_swap(new_event: InputEvent) -> void:
-	var old_events := InputMap.action_get_events(action_to_remap)
-	var old_event := old_events[0] if old_events.size() > 0 else null
+	var old_events: Array[InputEvent] = InputMap.action_get_events(action_to_remap)
+	var old_event: InputEvent = old_events[0] if old_events.size() > 0 else null
 
 	InputMap.action_erase_events(action_to_remap)
 	InputMap.action_erase_events(pending_conflict_action)
@@ -721,21 +698,13 @@ func _on_resume_pressed() -> void:
 		parent.toggle_pause()
 
 
-# ==========================================
-# UNIVERSAL SETTINGS I/O (Replaces old Sens logic)
-# ==========================================
-
-
 func _save_setting_to_disk(key: String, value: Variant) -> void:
-	var config := ConfigFile.new()
+	var config: ConfigFile = ConfigFile.new()
 	config.load(SAVE_PATH)
 	config.set_value("Settings", key, value)
 	config.save(SAVE_PATH)
 
 
-# ==========================================
-# SENSITIVITY SYSTEM
-# ==========================================
 func _on_sensitivity_changed(value: float) -> void:
 	sens_label.text = "Mouse Sensitivity: "
 	if not sens_input.has_focus():
@@ -746,9 +715,6 @@ func _on_sensitivity_changed(value: float) -> void:
 	if player and "camera_controller" in player and player.camera_controller:
 		player.camera_controller.mouse_sensitivity_base = value
 		player.camera_controller.mouse_sensitivity = value
-
-		# DELETED the line assigning mouse_sensitivity_zoom!
-		# The CameraController handles it automatically now.
 
 
 func _on_sensitivity_drag_ended(value_changed: bool) -> void:
@@ -768,16 +734,11 @@ func _on_sensitivity_focus_entered() -> void:
 
 
 func _on_sensitivity_focus_exited() -> void:
-	var current_text := sens_input.text.strip_edges()
+	var current_text: String = sens_input.text.strip_edges()
 	if current_text == "":
 		sens_input.text = "%.2f" % sens_slider.value
 	else:
 		_on_sensitivity_input_submitted(current_text)
-
-
-# ==========================================
-# NEW: ACCESSIBILITY (BRIGHTNESS/CONTRAST/SATURATION)
-# ==========================================
 
 
 func _on_adjustment_changed(value: float, input_node: LineEdit) -> void:
@@ -796,7 +757,6 @@ func _on_adjustment_drag_ended(
 func _on_adjustment_input_submitted(
 	new_text: String, setting_name: String, slider_node: HSlider
 ) -> void:
-	# Clamping color adjustments between 0.0 (dark/grey) and 3.0 (blown out) to prevent black screens
 	var new_val: float = clamp(new_text.to_float(), 0.0, 3.0)
 	slider_node.value = new_val
 	slider_node.release_focus()
@@ -810,7 +770,7 @@ func _on_adjustment_focus_entered(input_node: LineEdit) -> void:
 func _on_adjustment_focus_exited(
 	input_node: LineEdit, slider_node: HSlider, setting_name: String
 ) -> void:
-	var current_text := input_node.text.strip_edges()
+	var current_text: String = input_node.text.strip_edges()
 	if current_text == "":
 		input_node.text = "%.2f" % slider_node.value
 	else:
@@ -818,18 +778,12 @@ func _on_adjustment_focus_exited(
 
 
 func _apply_visual_settings() -> void:
-	# This seeks out the active Environment in your game to apply the color changes
 	var env_node: WorldEnvironment = get_tree().root.find_child("WorldEnvironment", true, false)
 	if env_node and env_node.environment:
 		env_node.environment.adjustment_enabled = true
 		env_node.environment.adjustment_brightness = brightness_slider.value
 		env_node.environment.adjustment_contrast = contrast_slider.value
 		env_node.environment.adjustment_saturation = saturation_slider.value
-
-
-# ==========================================
-# RESOLUTION SYSTEM
-# ==========================================
 
 
 func _populate_resolution_dropdown() -> void:
@@ -842,16 +796,13 @@ func _on_resolution_selected(index: int) -> void:
 	var key: String = resolution_options.get_item_text(index)
 	var new_size: Vector2i = RESOLUTIONS[key]
 
-	# 1. Update the INTERNAL render resolution (This is what makes it work in fullscreen)
 	get_window().content_scale_size = new_size
 
-	# 2. Check if we are currently in a windowed mode
 	var is_fullscreen: bool = (
 		get_window().mode == Window.MODE_EXCLUSIVE_FULLSCREEN
 		or get_window().mode == Window.MODE_FULLSCREEN
 	)
 
-	# 3. Only resize and center the physical window if we are NOT in fullscreen
 	if not is_fullscreen:
 		get_window().size = new_size
 		_center_window(new_size)
@@ -860,7 +811,6 @@ func _on_resolution_selected(index: int) -> void:
 	_save_setting_to_disk("resolution_y", new_size.y)
 
 
-# Helper function to properly center the window on the active monitor
 func _center_window(new_size: Vector2i) -> void:
 	var current_screen: int = get_window().current_screen
 
@@ -876,16 +826,11 @@ func _center_window(new_size: Vector2i) -> void:
 	get_window().position = window_position
 
 
-# ==========================================
-# FOV & ACCESSIBILITY CAMERA LOGIC
-# ==========================================
-
-
 func _on_fov_changed(value: float) -> void:
 	if not fov_input.has_focus():
 		fov_input.text = str(int(value))
 
-	var player: Node = _get_player()  # <-- CHANGED
+	var player: Node = _get_player() 
 	if player and "camera_controller" in player and player.camera_controller:
 		player.camera_controller.base_fov = value
 
@@ -896,7 +841,6 @@ func _on_fov_drag_ended(value_changed: bool) -> void:
 
 
 func _on_fov_input_submitted(new_text: String) -> void:
-	# Clamp between 60 (narrow) and 120 (ultrawide)
 	var new_val: float = clamp(new_text.to_float(), 60.0, 120.0)
 	fov_slider.value = new_val
 	fov_input.release_focus()
@@ -908,7 +852,7 @@ func _on_fov_focus_entered() -> void:
 
 
 func _on_fov_focus_exited() -> void:
-	var current_text := fov_input.text.strip_edges()
+	var current_text: String = fov_input.text.strip_edges()
 	if current_text == "":
 		fov_input.text = str(int(fov_slider.value))
 	else:
@@ -918,14 +862,9 @@ func _on_fov_focus_exited() -> void:
 func _on_sprint_fov_toggled(toggled_on: bool) -> void:
 	_save_setting_to_disk("disable_sprint_fov", toggled_on)
 
-	var player: Node = _get_player()  # <-- CHANGED
+	var player: Node = _get_player() 
 	if player and "camera_controller" in player and player.camera_controller:
 		player.camera_controller.disable_sprint_fov = toggled_on
-
-
-# ==========================================
-# FRAMERATE SYSTEM
-# ==========================================
 
 
 func _populate_fps_dropdown() -> void:
@@ -942,11 +881,6 @@ func _on_fps_selected(index: int) -> void:
 	_save_setting_to_disk("fps_limit", limit)
 
 
-# ==========================================
-# VSYNC SYSTEM
-# ==========================================
-
-
 func _populate_vsync_dropdown() -> void:
 	vsync_options.clear()
 	for vsync_string: String in VSYNC_MODES.keys():
@@ -961,9 +895,6 @@ func _on_vsync_selected(index: int) -> void:
 	_save_setting_to_disk("vsync_mode", mode)
 
 
-# ==========================================
-# UPSCALER SYSTEM
-# ==========================================
 func _populate_fsr_dropdown() -> void:
 	fsr_options.clear()
 	for mode_string: String in FSR_MODES.keys():
@@ -982,20 +913,13 @@ func _apply_fsr(mode_key: String) -> void:
 
 	if fsr_scale >= 1.0:
 		current_viewport.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
-		# We are back at native resolution, re-apply the user's chosen AA
 		var current_aa_key: String = aa_options.get_item_text(aa_options.selected)
 		_apply_aa(current_aa_key)
 	else:
-		# FSR 2 is active, which is a temporal upscaler. We MUST disable TAA to prevent conflicts.
 		current_viewport.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR2
 		current_viewport.use_taa = false
 
 	current_viewport.scaling_3d_scale = fsr_scale
-
-
-# ==========================================
-# UNIFIED ANTI-ALIASING SYSTEM
-# ==========================================
 
 
 func _populate_aa_dropdown() -> void:
@@ -1020,7 +944,6 @@ func _apply_aa(mode_key: String) -> void:
 	current_viewport.msaa_3d = settings["msaa"] as Viewport.MSAA
 	current_viewport.screen_space_aa = settings["fxaa"] as Viewport.ScreenSpaceAA
 
-	# Only apply TAA if FSR2 is NOT currently active
 	if current_viewport.scaling_3d_mode == Viewport.SCALING_3D_MODE_FSR2:
 		current_viewport.use_taa = false
 	else:
@@ -1029,10 +952,8 @@ func _apply_aa(mode_key: String) -> void:
 
 func _get_player() -> Node:
 	var parent: Node = get_parent()
-	# If the menu is attached to the SystemMenuController, grab its player reference
 	if parent and "player_body" in parent:
 		return parent.player_body
-	# Fallback if it's attached directly to the player
 	return parent
 
 
@@ -1068,7 +989,6 @@ func _on_close_save_menu() -> void:
 func _on_create_new_save() -> void:
 	save_load_panel.visible = false
 	
-	# Fire the function, then await the signal instead of the void return
 	SaveManager.create_save()
 	await SaveManager.save_completed
 	
@@ -1077,51 +997,42 @@ func _on_create_new_save() -> void:
 
 
 func _populate_save_list() -> void:
-	# 1. Clear existing slots
-	for child in save_list_container.get_children():
+	for child: Node in save_list_container.get_children():
 		child.queue_free()
 		
-	# 2. Get sorted saves
-	var saves: Array[Dictionary] = SaveManager.get_all_saves()
+	var saves: Array = SaveManager.get_all_saves()
 	print("[UI] Building save list. Found files: ", saves.size())
 	
-	# 3. Instantiate UI slots
 	for save_data: Dictionary in saves:
-		var slot: SaveSlot = SAVE_SLOT_SCENE.instantiate()
+		var slot: Node = SAVE_SLOT_SCENE.instantiate()
 		save_list_container.add_child(slot)
 		
-		# Give it the data and tell it if we are loading or overwriting
-		slot.setup(save_data, is_currently_saving)
+		if slot.has_method("setup"):
+			slot.setup(save_data, is_currently_saving)
 		
-		# Connect the custom signals emitted by the slot
-		slot.action_pressed.connect(_on_slot_action_pressed)
-		slot.meta_updated.connect(_on_slot_meta_updated)
-		slot.delete_pressed.connect(_on_slot_delete_pressed)
+		if slot.has_signal("action_pressed"):
+			slot.action_pressed.connect(_on_slot_action_pressed)
+		if slot.has_signal("meta_updated"):
+			slot.meta_updated.connect(_on_slot_meta_updated)
+		if slot.has_signal("delete_pressed"):
+			slot.delete_pressed.connect(_on_slot_delete_pressed)
 
 
 func _on_slot_action_pressed(base_path: String) -> void:
 	if is_currently_saving:
-		# (Your existing overwrite logic here)
 		pass 
 	else:
-		# Load logic
 		save_load_panel.visible = false
-		main_buttons.visible = true # <-- ADD THIS LINE to reset the UI state
+		main_buttons.visible = true 
 		
-		# 1. Await the save manager so it finishes its process frames
 		await SaveManager.load_save_game(base_path)
 		
-		# 2. Safely check if this menu even exists in the tree anymore
 		if is_inside_tree():
 			_on_resume_pressed()
 
 
 func _on_slot_meta_updated(save_id: String, new_name: String, is_favorite: bool) -> void:
 	SaveManager.update_save_meta(save_id, new_name, is_favorite)
-	
-	# Only refresh the list if the favorite status changed (since that affects sorting order)
-	# If they just typed a name, we don't want to steal their focus by rebuilding the list.
-	# We will just let the file save silently in the background.
 
 
 func _on_slot_delete_pressed(save_id: String, base_path: String) -> void:
@@ -1129,7 +1040,6 @@ func _on_slot_delete_pressed(save_id: String, base_path: String) -> void:
 	var dat_path: String = base_path + ".dat"
 	var img_path: String = base_path + ".webp"
 	
-	# Safely delete the files from the disk
 	if FileAccess.file_exists(meta_path):
 		DirAccess.remove_absolute(meta_path)
 	if FileAccess.file_exists(dat_path):
@@ -1139,5 +1049,4 @@ func _on_slot_delete_pressed(save_id: String, base_path: String) -> void:
 		
 	print("[SaveManager] Deleted save: ", save_id)
 	
-	# Rebuild the UI to remove the deleted slot from the screen
 	_populate_save_list()

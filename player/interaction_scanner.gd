@@ -2,7 +2,7 @@ class_name InteractionScanner
 extends Node3D
 
 # --------------------------------------
-# SIGNALS (To talk to Player.gd safely later)
+# SIGNALS
 # --------------------------------------
 signal terminal_mode_toggled(is_active: bool)
 signal heavy_lift_state_changed(is_lifting: bool, yaw_base: float)
@@ -25,8 +25,8 @@ signal heavy_lift_state_changed(is_lifting: bool, yaw_base: float)
 # --------------------------------------
 # VARIABLES
 # --------------------------------------
-var current_interactable: Node = null  # Assuming Interact_Component is a Node
-var held_object: Node3D = null  # Assuming PickableObject extends Node3D
+var current_interactable: Node = null
+var held_object: Node3D = null
 
 var is_heavy_lifting: bool = false
 var heavy_lift_yaw_base: float = 0.0
@@ -41,12 +41,16 @@ var terminal_start_pos: Vector3 = Vector3.ZERO
 # CORE PROCESS LOGIC
 # --------------------------------------
 func process_interaction(_delta: float) -> void:
+	# Trace wrapped in a state-change check to prevent 60 FPS performance drops from console spam
+	if Input.is_action_just_pressed("interact") or Input.is_action_just_pressed("shoot"):
+		print("InteractionScanner: process_interaction scanning on input tick.")
+
 	# 1. Handle Terminal Mode Exit Conditions
 	if is_in_terminal_mode:
 		if _should_exit_terminal_mode():
 			exit_terminal_mode()
 			return
-		return  # Block standard interactions while in the terminal
+		return
 
 	# 2. Dynamic Reach Fix
 	_update_dynamic_reach()
@@ -64,6 +68,8 @@ func process_interaction(_delta: float) -> void:
 # INPUT HANDLING
 # --------------------------------------
 func handle_interact_input() -> void:
+	print("InteractionScanner: handle_interact_input called.")
+	
 	if is_in_terminal_mode:
 		exit_terminal_mode()
 		return
@@ -71,7 +77,7 @@ func handle_interact_input() -> void:
 	# Drop Object
 	if held_object:
 		if held_object.has_method("on_released"):
-			held_object.on_released()  # Handle TetheredPlug logic safely
+			held_object.on_released()
 
 		if held_object.has_method("drop"):
 			held_object.drop()
@@ -87,8 +93,8 @@ func handle_interact_input() -> void:
 		if current_interactable.has_method("interact_with"):
 			current_interactable.interact_with(player_body)
 
-		var parent_node: Node = current_interactable.get_parent()
-		if parent_node.has_method("pick_up"):  # Duck typing for PickableObject
+		var parent_node: Node = current_interactable.get_parent() as Node
+		if parent_node and parent_node.has_method("pick_up"):
 			held_object = parent_node as Node3D
 			held_object.pick_up(hold_position, player_body)
 
@@ -100,6 +106,8 @@ func handle_interact_input() -> void:
 
 
 func handle_shoot_input() -> void:
+	print("InteractionScanner: handle_shoot_input called.")
+	
 	# 1. Click Terminal
 	if is_in_terminal_mode and is_instance_valid(active_terminal):
 		shoot_terminal_raycast(true)
@@ -123,13 +131,12 @@ func handle_shoot_input() -> void:
 		if weapon_holder:
 			weapon_holder.show()
 
-		return  # <-- ADDED: Stop the function here so we don't shoot while throwing!
+		return 
 
-	# 3. ---> THE MISSING WEAPON LOGIC <---
-	# If we aren't using a terminal and aren't holding a box, fire the gun!
+	# 3. Fire Weapon
 	if weapon_holder and weapon_holder.get_child_count() > 0:
-		var active_weapon: Node3D = weapon_holder.get_child(0)
-		if active_weapon.has_method("shoot"):
+		var active_weapon: Node3D = weapon_holder.get_child(0) as Node3D
+		if active_weapon and active_weapon.has_method("shoot"):
 			active_weapon.shoot(camera)
 
 
@@ -137,6 +144,7 @@ func handle_shoot_input() -> void:
 # HEAVY LIFTING
 # --------------------------------------
 func set_heavy_lifting(value: bool) -> void:
+	print("InteractionScanner: set_heavy_lifting called with value: ", value)
 	is_heavy_lifting = value
 	if is_heavy_lifting:
 		heavy_lift_yaw_base = player_body.rotation.y
@@ -144,6 +152,7 @@ func set_heavy_lifting(value: bool) -> void:
 
 
 func drop_heavy_object_safely() -> void:
+	print("InteractionScanner: drop_heavy_object_safely called.")
 	if is_heavy_lifting and held_object:
 		if held_object.has_method("on_released"):
 			held_object.on_released()
@@ -159,7 +168,6 @@ func drop_heavy_object_safely() -> void:
 # DYNAMIC REACH & SCANNING
 # --------------------------------------
 func _update_dynamic_reach() -> void:
-	# Looking forward is 0, straight down is roughly -1.57 rads
 	var look_pitch: float = interact_shapecast.global_rotation.x
 	var down_weight: float = clampf(-look_pitch / (PI / 2.0), 0.0, 1.0)
 	var current_reach: float = lerpf(base_reach, floor_reach, down_weight)
@@ -181,7 +189,6 @@ func _get_interactable_component_at_shapecast() -> Node:
 		if collider is Node:
 			var comp: Node = collider.get_node_or_null("Interact_Component")
 			if comp:
-				# Heavy Box Anti-Stand Check
 				if collider.has_method("is_valid_pickup_position"):
 					if not collider.is_valid_pickup_position(player_body):
 						continue
@@ -200,6 +207,7 @@ func _get_interactable_component_at_shapecast() -> Node:
 # TERMINAL MODE
 # --------------------------------------
 func enter_terminal_mode(terminal: Node3D) -> void:
+	print("InteractionScanner: enter_terminal_mode called.")
 	is_in_terminal_mode = true
 	active_terminal = terminal
 	terminal_start_pos = player_body.global_position
@@ -209,6 +217,7 @@ func enter_terminal_mode(terminal: Node3D) -> void:
 
 
 func exit_terminal_mode() -> void:
+	print("InteractionScanner: exit_terminal_mode called.")
 	is_in_terminal_mode = false
 	active_terminal = null
 
@@ -239,6 +248,7 @@ func _should_exit_terminal_mode() -> bool:
 
 
 func shoot_terminal_raycast(is_click: bool) -> void:
+	print("InteractionScanner: shoot_terminal_raycast called. Click: ", is_click)
 	var viewport_size := get_viewport().get_visible_rect().size
 	var screen_center := viewport_size / 2.0
 
@@ -248,12 +258,9 @@ func shoot_terminal_raycast(is_click: bool) -> void:
 
 	var query := PhysicsRayQueryParameters3D.create(ray_origin, ray_end)
 	
-	# 1. Exclude the player's own collision body (Layer 2)
 	if is_instance_valid(player_body):
 		query.exclude = [player_body.get_rid()]
 	
-	# 2. Optimize the mask to only check Layer 1 (Value: 1) and Layer 3 (Value: 4)
-	# 1 + 4 = 5
 	query.collision_mask = 5
 
 	var space_state := player_body.get_world_3d().direct_space_state
