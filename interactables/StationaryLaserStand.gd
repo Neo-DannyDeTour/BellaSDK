@@ -1,46 +1,35 @@
 class_name StationaryLaserStand
 extends StaticBody3D
 
+const MAX_TRAIL_DECALS: int = 60
+
 @export var max_distance: float = 50.0
 @export var max_bounces: int = 5
 @export var rotation_speed: float = 2.0
 @export var stance_marker: Marker3D
 
-@onready var turret: Node3D = $Turret
-@onready var laser_origin: Marker3D = $Turret/LaserOrigin
-@onready var base_beam_mesh: MeshInstance3D = $Turret/BeamMesh
-@onready var interact_comp: Interact_Component = $Interact_Component
-
-# Particle templates for pooling
-@onready var base_beam_particles: GPUParticles3D = (
-	get_node_or_null("Turret/BeamParticles")
-)
-@onready var base_impact_particles: GPUParticles3D = (
-	get_node_or_null("Turret/ImpactParticles")
-)
-@onready var base_smoke_particles: GPUParticles3D = (
-	get_node_or_null("Turret/SmokeParticles")
-)
-
-var _last_target: Node3D = null
 var is_controlled: bool = false
 var controlling_player: CharacterBody3D = null
 
-# 60 FPS Optimization Pools
+var _last_target: Node3D = null
 var _beam_pool: Array[MeshInstance3D] = []
 var _beam_particles_pool: Array[GPUParticles3D] = []
 var _impact_particles_pool: Array[GPUParticles3D] = []
 var _smoke_particles_pool: Array[GPUParticles3D] = []
 var _decal_pool: Array[Decal] = []
 var _last_point_count: int = 0
-
-# Trail system variables
 var _trail_pool: Array[Decal] = []
 var _trail_index: int = 0
-const MAX_TRAIL_DECALS: int = 60
-
 var _scorch_texture: GradientTexture2D
 var _trail_texture: GradientTexture2D
+
+@onready var base_beam_particles: GPUParticles3D = get_node_or_null("Turret/BeamParticles")
+@onready var base_impact_particles: GPUParticles3D = get_node_or_null("Turret/ImpactParticles")
+@onready var base_smoke_particles: GPUParticles3D = get_node_or_null("Turret/SmokeParticles")
+@onready var turret: Node3D = $Turret
+@onready var laser_origin: Marker3D = $Turret/LaserOrigin
+@onready var base_beam_mesh: MeshInstance3D = $Turret/BeamMesh
+@onready var interact_comp: Interact_Component = $Interact_Component
 
 
 func _ready() -> void:
@@ -80,12 +69,14 @@ func _create_scorch_texture() -> GradientTexture2D:
 	var grad: Gradient = Gradient.new()
 
 	grad.offsets = PackedFloat32Array([0.0, 0.15, 0.3, 1.0])
-	grad.colors = PackedColorArray([
-		Color(1.0, 0.4, 0.0, 1.0),
-		Color(0.1, 0.05, 0.0, 0.9),
-		Color(0.0, 0.0, 0.0, 0.0),
-		Color(0.0, 0.0, 0.0, 0.0)
-	])
+	grad.colors = PackedColorArray(
+		[
+			Color(1.0, 0.4, 0.0, 1.0),
+			Color(0.1, 0.05, 0.0, 0.9),
+			Color(0.0, 0.0, 0.0, 0.0),
+			Color(0.0, 0.0, 0.0, 0.0)
+		]
+	)
 
 	var tex: GradientTexture2D = GradientTexture2D.new()
 	tex.gradient = grad
@@ -103,11 +94,9 @@ func _create_trail_texture() -> GradientTexture2D:
 	var grad: Gradient = Gradient.new()
 
 	grad.offsets = PackedFloat32Array([0.0, 0.4, 1.0])
-	grad.colors = PackedColorArray([
-		Color(0.0, 0.0, 0.0, 0.9),
-		Color(0.0, 0.0, 0.0, 0.5),
-		Color(0.0, 0.0, 0.0, 0.0)
-	])
+	grad.colors = PackedColorArray(
+		[Color(0.0, 0.0, 0.0, 0.9), Color(0.0, 0.0, 0.0, 0.5), Color(0.0, 0.0, 0.0, 0.0)]
+	)
 
 	var tex: GradientTexture2D = GradientTexture2D.new()
 	tex.gradient = grad
@@ -137,9 +126,7 @@ func _handle_rotation_input(delta: float) -> void:
 
 func _check_auto_release() -> void:
 	if controlling_player:
-		var distance: float = (
-			global_position.distance_to(controlling_player.global_position)
-		)
+		var distance: float = global_position.distance_to(controlling_player.global_position)
 		if distance > 3.0:
 			print("StationaryLaserStand: Player out of range. Auto-releasing.")
 			_release_control()
@@ -148,9 +135,7 @@ func _check_auto_release() -> void:
 func _process_laser() -> void:
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var current_origin: Vector3 = laser_origin.global_position
-	var current_direction: Vector3 = (
-		-laser_origin.global_transform.basis.z.normalized()
-	)
+	var current_direction: Vector3 = -laser_origin.global_transform.basis.z.normalized()
 
 	var bounces: int = 0
 	var hit_target: Node3D = null
@@ -165,8 +150,8 @@ func _process_laser() -> void:
 
 	while bounces <= max_bounces:
 		var target_pos: Vector3 = current_origin + (current_direction * max_distance)
-		var query: PhysicsRayQueryParameters3D = (
-			PhysicsRayQueryParameters3D.create(current_origin, target_pos)
+		var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
+			current_origin, target_pos
 		)
 		query.exclude = exclude_rids
 
@@ -191,9 +176,7 @@ func _process_laser() -> void:
 				var marker: Marker3D = mirror.get_reflect_marker()
 
 				if marker:
-					var perfect_normal: Vector3 = (
-						marker.global_transform.basis.z.normalized()
-					)
+					var perfect_normal: Vector3 = marker.global_transform.basis.z.normalized()
 					current_direction = current_direction.bounce(perfect_normal)
 					current_origin = marker.global_position + (current_direction * 0.01)
 				else:
@@ -272,10 +255,7 @@ func _release_control() -> void:
 	controlling_player = null
 
 
-func _update_beam_visuals(
-	points: PackedVector3Array,
-	normals: PackedVector3Array
-) -> void:
+func _update_beam_visuals(points: PackedVector3Array, normals: PackedVector3Array) -> void:
 	var segments_needed: int = points.size() - 1
 
 	if segments_needed != _last_point_count:
@@ -385,9 +365,7 @@ func _update_beam_visuals(
 						up_dir = Vector3.RIGHT
 					bp.look_at(end, up_dir)
 
-				var mat: ParticleProcessMaterial = (
-					bp.process_material as ParticleProcessMaterial
-				)
+				var mat: ParticleProcessMaterial = bp.process_material as ParticleProcessMaterial
 				if mat:
 					mat.emission_box_extents = Vector3(0.05, 0.05, distance / 2.0)
 
@@ -412,12 +390,10 @@ func _update_beam_visuals(
 						up_dir = Vector3.RIGHT
 					sp.look_at(end, up_dir)
 
-				var mat: ParticleProcessMaterial = (
-					sp.process_material as ParticleProcessMaterial
-				)
+				var mat: ParticleProcessMaterial = sp.process_material as ParticleProcessMaterial
 				if mat:
 					mat.emission_box_extents = Vector3(0.15, 0.15, distance / 2.0)
-					
+
 					var density_per_meter: float = 20.0
 					var target_particles: float = distance * density_per_meter
 					var max_capacity: float = float(sp.amount)

@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://dvymoxg1v0hbq"]
 
 [ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="1_8pdjq"]
-[ext_resource type="Script" uid="uid://c0cyknk7ktoqe" path="res://reflector_mirror.gd" id="1_oena0"]
+[ext_resource type="Script" uid="uid://c0cyknk7ktoqe" path="res://interactables/reflector_mirror.gd" id="1_oena0"]
 [ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="2_oena0"]
 [ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="4_xwuss"]
 

@@ -5,18 +5,18 @@ extends AnimatableBody3D
 @export var stance_marker: Marker3D
 @export var reflect_marker: Marker3D
 
-@onready var mirror_head: Node3D = $MirrorHead
-@onready var interact_comp: Interact_Component = $Interact_Component
-
 var is_controlled: bool = false
 var controlling_player: CharacterBody3D = null
+
+@onready var mirror_head: Node3D = $MirrorHead
+@onready var interact_comp: Interact_Component = $Interact_Component
 
 
 func _ready() -> void:
 	print("ReflectorMirror: _ready() initialized.")
 	add_to_group("mirror")
 	_mark_children_as_mirrors(self)
-	
+
 	if interact_comp:
 		interact_comp.interacted.connect(_on_interacted)
 
@@ -33,7 +33,7 @@ func get_reflect_marker() -> Marker3D:
 
 func _handle_rotation_input(delta: float) -> void:
 	var turn_input: float = Input.get_axis("left", "right")
-	
+
 	if turn_input != 0.0:
 		print("ReflectorMirror: Player rotating mirror head.")
 		mirror_head.rotate_y(-turn_input * rotation_speed * delta)
@@ -42,7 +42,7 @@ func _handle_rotation_input(delta: float) -> void:
 func _check_auto_release() -> void:
 	if controlling_player == null:
 		return
-		
+
 	var dist: float = global_position.distance_to(controlling_player.global_position)
 	if dist > 3.0:
 		print("ReflectorMirror: Player walked too far away. Auto-releasing.")
@@ -61,11 +61,11 @@ func _take_control(character: CharacterBody3D) -> void:
 	print("ReflectorMirror: Player took control of the mirror.")
 	is_controlled = true
 	controlling_player = character
-	
+
 	if stance_marker:
 		controlling_player.global_transform = stance_marker.global_transform
 		controlling_player.velocity = Vector3.ZERO
-		
+
 	if controlling_player.has_method("set_machine_lock"):
 		controlling_player.set_machine_lock(true)
 
@@ -73,10 +73,10 @@ func _take_control(character: CharacterBody3D) -> void:
 func _release_control() -> void:
 	print("ReflectorMirror: Player released control of the mirror.")
 	is_controlled = false
-	
+
 	if controlling_player and controlling_player.has_method("set_machine_lock"):
 		controlling_player.set_machine_lock(false)
-		
+
 	controlling_player = null
 
 

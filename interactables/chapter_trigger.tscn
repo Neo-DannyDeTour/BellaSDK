@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bqmsu8rh0h335"]
 
-[ext_resource type="Script" uid="uid://cxno1j2i4qwas" path="res://chapter_trigger.gd" id="1_n7sen"]
+[ext_resource type="Script" uid="uid://cxno1j2i4qwas" path="res://interactables/chapter_trigger.gd" id="1_n7sen"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_ehemb"]
 
