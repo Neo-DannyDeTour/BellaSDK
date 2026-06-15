@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://c63gjeg0yfvr2"]
 
-[ext_resource type="Script" uid="uid://bo4y60g2334pl" path="res://laser_target.gd" id="1_5gv6w"]
+[ext_resource type="Script" uid="uid://bo4y60g2334pl" path="res://interactables/laser_target.gd" id="1_5gv6w"]
 [ext_resource type="Script" uid="uid://cnmn3hgnt0afn" path="res://interactables/output_transmitter_3d.gd" id="2_swtb5"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_swtb5"]

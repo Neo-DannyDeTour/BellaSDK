@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dj3w6odnul44v"]
 
-[ext_resource type="Script" uid="uid://i367yjemtpbu" path="res://procedural_barbwire.gd" id="1_42dbs"]
+[ext_resource type="Script" uid="uid://i367yjemtpbu" path="res://environment/procedural_barbwire.gd" id="1_42dbs"]
 
 [node name="ProceduralBarbwire" type="Node3D" unique_id=354756580]
 script = ExtResource("1_42dbs")

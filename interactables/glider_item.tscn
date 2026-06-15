@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://b55ogt2gevlr7"]
 
-[ext_resource type="Script" uid="uid://bx4xvxuxackvg" path="res://glider_item.gd" id="1_s5xsx"]
+[ext_resource type="Script" uid="uid://bx4xvxuxackvg" path="res://interactables/glider_item.gd" id="1_s5xsx"]
 [ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="2_4dxby"]
 [ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="3_15xtf"]
 [ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="4_dnr4k"]
