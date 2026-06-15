@@ -3,6 +3,15 @@
 [ext_resource type="PackedScene" uid="uid://bwx87famw5p7u" path="res://interactables/pickable_box.tscn" id="1_h1kgl"]
 [ext_resource type="Script" uid="uid://c3pb1k0kh7v3u" path="res://interactables/heavy_pickable_box.gd" id="2_4o347"]
 [ext_resource type="Texture2D" uid="uid://6jbvqeu8qf1j" path="res://assets/images/dev_textures/standard_5_orange_512.png" id="3_4o347"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="3_detrj"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_m7kiq"]
+render_priority = 0
+shader = ExtResource("3_detrj")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.05
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fj5oh"]
 albedo_texture = ExtResource("3_4o347")
@@ -20,18 +29,19 @@ mass = 100.0
 center_of_mass_mode = 1
 center_of_mass = Vector3(0, 0.2, 0)
 script = ExtResource("2_4o347")
-drag_speed = 12.0
 drop_distance = 1.0
 snap_duration = 0.3
 box_half_width = 0.75
 player_radius = 0.5
 player_height = 1.8
+hold_padding = 0.75
 environment_collision_mask = 1
 float_force = 3.0
 water_drag = 0.5
 water_angular_drag = 0.5
 
 [node name="HighlightComponent" parent="." index="1" unique_id=1233358358 node_paths=PackedStringArray("target_meshes")]
+outline_material = SubResource("ShaderMaterial_m7kiq")
 target_meshes = [NodePath("../MeshInstance3D")]
 
 [node name="MeshInstance3D" parent="." index="2" unique_id=1239371319]

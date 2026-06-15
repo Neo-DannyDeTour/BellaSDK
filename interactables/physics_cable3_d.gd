@@ -102,6 +102,8 @@ func _process(_delta: float) -> void:
 
 
 func _generate_physics_chain() -> void:
+	print("PhysicsCable3D: _generate_physics_chain() generating bi-directional cable.")
+	
 	if not link_scene:
 		printerr("CABLE ERROR: You forgot to assign the link_scene in the inspector!")
 		return
@@ -116,7 +118,6 @@ func _generate_physics_chain() -> void:
 		end_plug.max_cable_length = cable_length_meters
 		end_plug.anchor_point = start_anchor
 
-		# If the start anchor is ALSO a plug, introduce them to each other
 		if start_anchor is TetheredPlug:
 			end_plug.partner_plug = start_anchor
 
@@ -135,6 +136,10 @@ func _generate_physics_chain() -> void:
 
 	for i in range(total_links):
 		var link := link_scene.instantiate() as RigidBody3D
+		
+		# NEW: Force cable links to be incredibly light so they don't drag the held plug
+		link.mass = 0.05 
+		
 		add_child(link)
 
 		for prev in _links:
@@ -155,11 +160,8 @@ func _generate_physics_chain() -> void:
 		add_child(joint)
 		joint.global_position = previous_body.global_position.lerp(link.global_position, 0.5)
 
-		# Only assign node_a if it's an actual Physics Body
 		if previous_body is PhysicsBody3D:
 			joint.node_a = joint.get_path_to(previous_body)
-		# If it's a Marker3D, we do nothing to node_a!
-		# Godot will pin it directly to the world at joint.global_position.
 
 		joint.node_b = joint.get_path_to(link)
 
@@ -174,10 +176,3 @@ func _generate_physics_chain() -> void:
 	if end_plug is CollisionObject3D:
 		for prev in _links:
 			end_plug.add_collision_exception_with(prev)
-
-#func _build_circular_profile(t: float) -> PackedVector2Array:
-#var circle_points := PackedVector2Array()
-#for i in range(8):
-#var angle := (i / 8.0) * TAU
-#circle_points.append(Vector2(cos(angle), sin(angle)) * t)
-#return circle_points

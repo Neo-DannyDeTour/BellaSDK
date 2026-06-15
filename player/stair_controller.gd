@@ -14,9 +14,9 @@ var _forward_test := PhysicsTestMotionResult3D.new()
 var _down_test := PhysicsTestMotionResult3D.new()
 var _body_test := PhysicsTestMotionResult3D.new()
 var _test_params := PhysicsTestMotionParameters3D.new()
+var time_since_step_feedback: float = 100.0
 
 @onready var stairs_below_cast: RayCast3D = %StairsBelowCast
-@onready var stairs_ahead_cast: RayCast3D = %StairsAheadCast
 @onready var player: CharacterBody3D = owner as CharacterBody3D
 
 func _ready() -> void:
@@ -24,11 +24,12 @@ func _ready() -> void:
 	_test_params.from = player.global_transform
 	_test_params.exclude_bodies = [player.get_rid()]
 
-func snap_up_stairs_check(delta: float) -> bool:
+func snap_up_stairs_check(delta: float, is_sprinting: bool = false) -> bool:
 	if not is_enabled:
 		return false
 		
 	time_since_step_up += delta
+	time_since_step_feedback += delta
 	var was_snapped_last_frame: bool = _snapped_to_stairs_last_frame
 	_snapped_to_stairs_last_frame = false
 	
@@ -36,7 +37,7 @@ func snap_up_stairs_check(delta: float) -> bool:
 		return false
 		
 	var flat_velocity: Vector3 = player.velocity * Vector3(1.0, 0.0, 1.0)
-	if player.velocity.y > 0 or flat_velocity.length() == 0:
+	if player.velocity.y > 0.0 or flat_velocity.length() == 0.0:
 		return false
 
 	var check_distance: float = maxf(flat_velocity.length() * delta, 0.05)
@@ -59,42 +60,39 @@ func snap_up_stairs_check(delta: float) -> bool:
 	_run_body_test_motion(step_pos_with_clearance, expected_move_motion, _forward_test)
 	step_pos_with_clearance.origin += _forward_test.get_travel()
 
+	# Rely entirely on the motion test, which follows velocity direction perfectly
 	if _run_body_test_motion(step_pos_with_clearance, Vector3(0.0, -MAX_STEP_HEIGHT * 1.5, 0.0), _down_test):
 		var travel_point: Vector3 = step_pos_with_clearance.origin + _down_test.get_travel()
 		var step_height: float = (travel_point - player.global_position).y
 
-		if (
-			step_height > MAX_STEP_HEIGHT
-			or step_height <= 0.01
-			or (_down_test.get_collision_point() - player.global_position).y > MAX_STEP_HEIGHT
-		):
+		# Restoring this block kills the micro-jitter entirely
+		if step_height > MAX_STEP_HEIGHT or step_height <= 0.01:
 			return false
 
-		stairs_ahead_cast.target_position = Vector3(0.0, -MAX_STEP_HEIGHT - 0.2, 0.0)
-		stairs_ahead_cast.global_position = (
-			_down_test.get_collision_point()
-			+ Vector3(0.0, MAX_STEP_HEIGHT, 0.0)
-			+ expected_move_motion.normalized() * 0.1
-		)
-		stairs_ahead_cast.force_raycast_update()
+		# Validate the surface normal we are stepping onto
+		if _is_surface_too_steep(_down_test.get_collision_normal()):
+			return false
 
-		if (
-			stairs_ahead_cast.is_colliding()
-			and not _is_surface_too_steep(stairs_ahead_cast.get_collision_normal())
-		):
-			var previous_y: float = player.global_position.y
-			player.global_position.y = travel_point.y
-			player.apply_floor_snap()
+		var previous_y: float = player.global_position.y
+		player.global_position.y = travel_point.y
+		player.apply_floor_snap()
+		
+		_snapped_to_stairs_last_frame = true
+		time_since_step_up = 0.0
+		
+		var actual_step_height: float = player.global_position.y - previous_y
+		
+		if is_instance_valid(player.head):
+			player.head.position.y -= actual_step_height
 			
-			_snapped_to_stairs_last_frame = true
-			time_since_step_up = 0.0
-			
-			var actual_step_height: float = player.global_position.y - previous_y
-			if is_instance_valid(player.head):
-				player.head.position.y -= actual_step_height
-				print("StairController: Snapped UP. Camera offset by: ", -actual_step_height)
+			var feedback_threshold: float = 0.35 if is_sprinting else 0.25
+			if time_since_step_feedback > feedback_threshold:
+				time_since_step_feedback = 0.0
+				print("StairController: Snapped UP visually. Camera offset: ", -actual_step_height)
+			else:
+				print("StairController: Micro-step handled physics. Audio suppressed.")
 				
-			return true
+		return true
 
 	return false
 
@@ -102,7 +100,6 @@ func snap_down_to_stairs_check() -> void:
 	if not is_enabled:
 		return
 		
-	# 0.2s debounce completely prevents fighting between up/down casts
 	if time_since_step_up < 0.2:
 		return
 
@@ -118,7 +115,7 @@ func snap_down_to_stairs_check() -> void:
 
 	if (
 		not player.is_on_floor()
-		and player.velocity.y <= 0
+		and player.velocity.y <= 0.0
 		and (was_on_floor_last_frame or _snapped_to_stairs_last_frame)
 		and floor_below
 	):
@@ -140,7 +137,7 @@ func snap_down_to_stairs_check() -> void:
 		_snapped_to_stairs_last_frame = true
 
 func track_floor_state() -> void:
-	if player.is_on_floor():
+	if player.is_on_floor() or _snapped_to_stairs_last_frame:
 		_last_frame_was_on_floor = Engine.get_physics_frames()
 
 func _run_body_test_motion(from: Transform3D, motion: Vector3, result: PhysicsTestMotionResult3D) -> bool:

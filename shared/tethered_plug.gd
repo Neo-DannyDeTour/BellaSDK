@@ -14,14 +14,21 @@ var anchor_point: Node3D
 var max_cable_length: float
 var partner_plug: Node3D = null
 var is_energized: bool = false
+var is_trailing_mode: bool = false
 
 # --- NEW DRAG LOGIC ---
 var _original_mass: float = 3.0
 var _original_friction: float = 1.0
+var _original_linear_damp: float = 0.0
+var _original_angular_damp: float = 0.0
 
 
 func _ready() -> void:
+	print("TetheredPlug: _ready() called. Initializing physics cache.")
 	_original_mass = mass
+	_original_linear_damp = linear_damp
+	_original_angular_damp = angular_damp
+	
 	if physics_material_override:
 		_original_friction = physics_material_override.friction
 
@@ -105,18 +112,20 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	if not is_instance_valid(anchor_point):
 		return
 
+	# 1. The player dictates movement. The held plug ignores limits.
+	if not is_trailing_mode:
+		return
+
+	# 2. The trailing plug forcefully pulls itself to keep up with the held plug.
 	var to_anchor := anchor_point.global_position - state.transform.origin
 	var dist := to_anchor.length()
 
-	if dist > (max_cable_length + 0.1):
-		#if is_held:
-			#drop()
-
+	if dist > max_cable_length:
 		var dir := to_anchor.normalized()
 		var overshoot := dist - max_cable_length
 
 		var outward_vel := state.linear_velocity.dot(-dir)
-		if outward_vel > 0:
+		if outward_vel > 0.0:
 			state.linear_velocity -= (-dir) * outward_vel
 
 		if cable_elasticity <= 0.01:
@@ -128,29 +137,37 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 
 # Call this from your Player/Hand script when picking up THIS plug
 func on_grabbed() -> void:
+	print("TetheredPlug: on_grabbed() called. Initializing trailing mode on partner.")
 	if is_instance_valid(partner_plug) and partner_plug is TetheredPlug:
 		partner_plug.set_trailing_mode(true)
 
 
 # Call this from your Player/Hand script when dropping THIS plug
 func on_released() -> void:
+	print("TetheredPlug: on_released() called. Disabling trailing mode on partner.")
 	if is_instance_valid(partner_plug) and partner_plug is TetheredPlug:
 		partner_plug.set_trailing_mode(false)
 
 
 # Modifies the physics state of the trailing plug
 func set_trailing_mode(is_trailing: bool) -> void:
+	print("TetheredPlug: set_trailing_mode() called. Mode active: ", is_trailing)
+	is_trailing_mode = is_trailing
+	
 	if is_trailing:
-		mass = 0.01          # 10 grams. Practically non-existent.
-		gravity_scale = 0.0  # Stop it from dragging on the floor entirely!
+		mass = 0.05           # Extremely light
+		gravity_scale = 0.0   # No falling
+		linear_damp = 0.0     # ZERO air friction
+		angular_damp = 0.0    # ZERO rotational friction
 
 		if physics_material_override:
-			# Duplicate so we don't accidentally freeze the held plug's friction
 			physics_material_override = physics_material_override.duplicate()
 			physics_material_override.friction = 0.0
 	else:
 		mass = _original_mass
 		gravity_scale = 1.0
+		linear_damp = _original_linear_damp
+		angular_damp = _original_angular_damp
 
 		if physics_material_override:
 			physics_material_override.friction = _original_friction

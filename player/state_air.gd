@@ -153,13 +153,11 @@ func _check_transitions() -> void:
 		state_machine.transition_to("Swim")
 		return
 
-	# NEW CONDITION: Check if the player is holding an object.
-	# This prevents the vault scanner from detecting the held box as a ledge,
-	# completely eliminating the prop-flying exploit.
 	var is_holding_item: bool = is_instance_valid(player.held_item)
+	var is_pressing_forward: bool = Input.is_action_pressed("forward")
 
-	# Requiring ladder_cooldown <= 0.2 gives the player 0.3 seconds to clear the wall geometry.
-	if player.velocity.y < 2.0 and not player.vault_controller.is_vaulting and player.ladder_cooldown <= 0.2:
+	# Enforce forward input requirement to prevent backwards mid-air vaulting
+	if is_pressing_forward and player.velocity.y < 2.0 and not player.vault_controller.is_vaulting and player.ladder_cooldown <= 0.2:
 		if not is_holding_item:
 			player.vault_controller.process_vault_scan()
 			if player.vault_controller.can_vault_current_ledge:

@@ -48,6 +48,10 @@
 [ext_resource type="PackedScene" uid="uid://bpn41lsyperm8" path="res://assets/VisTEST/2. Modular_Models/Props/pickable_computer_old.tscn" id="47_mhg1j"]
 [ext_resource type="PackedScene" uid="uid://c4jdpcnpsoerv" path="res://interactables/mirror.tscn" id="48_k4uoe"]
 [ext_resource type="PackedScene" uid="uid://b85u3svdjg12c" path="res://assets/VisTEST/2. Modular_Models/Props/pickable_chair_small.tscn" id="48_mhg1j"]
+[ext_resource type="PackedScene" uid="uid://jvgnyc7a68n6" path="res://shared/soundscape_zone.tscn" id="49_5jhqv"]
+[ext_resource type="AudioStream" uid="uid://1w1y07mxmm0h" path="res://assets/sounds/SoundscapeHorror.wav" id="50_wkfn1"]
+[ext_resource type="Script" uid="uid://cl68g6jurgp0h" path="res://shared/soundscape_data.gd" id="51_yuk8b"]
+[ext_resource type="PackedScene" uid="uid://bqmsu8rh0h335" path="res://chapter_trigger.tscn" id="52_wkfn1"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_kja8q"]
 panorama = ExtResource("1_mhg1j")
@@ -87,6 +91,11 @@ albedo_texture = ExtResource("47_6vg87")
 material = SubResource("StandardMaterial3D_mhg1j")
 size = Vector2(20, 5)
 
+[sub_resource type="Resource" id="Resource_43coy"]
+script = ExtResource("51_yuk8b")
+ambient_track = ExtResource("50_wkfn1")
+metadata/_custom_type_script = "uid://cl68g6jurgp0h"
+
 [node name="VisTEST" type="Node3D" unique_id=240456945]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1907814161]
@@ -97,7 +106,18 @@ transform = Transform3D(1, 0, 0, 0, -0.92831075, 0.37180543, 0, -0.37180543, -0.
 shadow_enabled = true
 
 [node name="Player" parent="." unique_id=1502339238 instance=ExtResource("6_ns8v3")]
-transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 8.203204, 0.5999999, 0.33588982)
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -0.3411603, 3, 3.6207736)
+walking_speed = 5.0
+sprinting_speed = 6.5
+crouching_speed = 3.0
+swimming_speed = 4.0
+swim_up_speed = 5.0
+jump_buffer_duration = 0.15
+coyote_time_duration = 0.15
+fall_gravity_multiplier = 1.5
+default_lerp_speed = 15.0
+air_lerp_speed = 3.0
+ice_lerp_speed = 1.5
 
 [node name="Columns" type="Node3D" parent="." unique_id=834293260]
 
@@ -1720,164 +1740,167 @@ light_energy = 15.0
 shadow_enabled = true
 spot_range = 15.272589
 
-[node name="Wood_Structure" parent="." unique_id=1125850334 instance=ExtResource("39_46sxa")]
-transform = Transform3D(1, 0, 0, 0, 1.5626458, 0, 0, 0, 1, 16, 0.1, -0.206)
+[node name="Shack" type="Node3D" parent="." unique_id=465905829]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.194672, 2.3841858e-07, 0.13223338)
 
-[node name="Wood_Structure14" parent="." unique_id=272238732 instance=ExtResource("39_46sxa")]
-transform = Transform3D(1, 0, 0, 0, 0.5392061, 0, 0, 0, 1, 17.239424, 1.0506954, -0.206)
+[node name="Wood_Structure" parent="Shack" unique_id=1125850334 groups=["not_climbable"] instance=ExtResource("39_46sxa")]
+transform = Transform3D(1, 0, 0, 0, 1.5626458, 0, 0, 0, 1, -0.20223999, 0.1, -0.206)
 
-[node name="Wood_Structure15" parent="." unique_id=1482442016 instance=ExtResource("39_46sxa")]
-transform = Transform3D(1, 0, 0, 0, 0.5392061, 0, 0, 0, 1, 18.669424, 1.0506954, -0.206)
+[node name="Wood_Structure14" parent="Shack" unique_id=272238732 groups=["not_climbable"] instance=ExtResource("39_46sxa")]
+transform = Transform3D(1, 0, 0, 0, 0.5392061, 0, 0, 0, 1, 1.0371838, 1.0506954, -0.206)
 
-[node name="Wood_Structure16" parent="." unique_id=119174734 instance=ExtResource("39_46sxa")]
-transform = Transform3D(1, 0, 0, 0, 0.5392061, 0, 0, 0, 1, 16.00769, 1.0506954, 4.059179)
+[node name="Wood_Structure15" parent="Shack" unique_id=1482442016 groups=["not_climbable"] instance=ExtResource("39_46sxa")]
+transform = Transform3D(1, 0, 0, 0, 0.5392061, 0, 0, 0, 1, 2.467184, 1.0506954, -0.206)
 
-[node name="Wood_Structure17" parent="." unique_id=1189288577 instance=ExtResource("39_46sxa")]
-transform = Transform3D(1, 0, 0, 0, 0.5392061, 0, 0, 0, 1, 16.00769, 1.0506954, 5.00798)
+[node name="Wood_Structure16" parent="Shack" unique_id=119174734 groups=["not_climbable"] instance=ExtResource("39_46sxa")]
+transform = Transform3D(1, 0, 0, 0, 0.5392061, 0, 0, 0, 1, -0.19454956, 1.0506954, 4.059179)
 
-[node name="Wood_Structure6" parent="." unique_id=1400689093 instance=ExtResource("39_46sxa")]
-transform = Transform3D(1, 0, 0, 0, 2.0991497, 0, 0, 0, 1, 19.73281, 0.1, -0.206)
+[node name="Wood_Structure17" parent="Shack" unique_id=1189288577 groups=["not_climbable"] instance=ExtResource("39_46sxa")]
+transform = Transform3D(1, 0, 0, 0, 0.5392061, 0, 0, 0, 1, -0.19454956, 1.0506954, 5.00798)
 
-[node name="Wood_Structure7" parent="." unique_id=2049413304 instance=ExtResource("39_46sxa")]
-transform = Transform3D(-4.3711385e-08, -1.8222736, 0, 0.99999994, -7.965411e-08, 0, 0, 0, 0.99999994, 19.606556, 3.2235415, -0.206)
+[node name="Wood_Structure6" parent="Shack" unique_id=1400689093 groups=["not_climbable"] instance=ExtResource("39_46sxa")]
+transform = Transform3D(1, 0, 0, 0, 2.0991497, 0, 0, 0, 1, 3.530569, 0.1, -0.206)
 
-[node name="Wood_Structure12" parent="." unique_id=1041378972 instance=ExtResource("39_46sxa")]
-transform = Transform3D(-4.3711385e-08, -1.8222736, 0, 0.99999994, -7.965411e-08, 0, 0, 0, 0.99999994, 19.606556, 2.2095869, -0.206)
+[node name="Wood_Structure7" parent="Shack" unique_id=2049413304 groups=["not_climbable"] instance=ExtResource("39_46sxa")]
+transform = Transform3D(-4.3711385e-08, -1.8222736, 0, 0.99999994, -7.965411e-08, 0, 0, 0, 0.99999994, 3.404316, 3.2235415, -0.206)
 
-[node name="Wood_Structure13" parent="." unique_id=1777797321 instance=ExtResource("39_46sxa")]
-transform = Transform3D(-4.3711385e-08, -1.8222736, 0, 0.99999994, -7.965411e-08, 0, 0, 0, 0.99999994, 19.606556, 1.1947048, -0.206)
+[node name="Wood_Structure12" parent="Shack" unique_id=1041378972 groups=["not_climbable"] instance=ExtResource("39_46sxa")]
+transform = Transform3D(-4.3711385e-08, -1.8222736, 0, 0.99999994, -7.965411e-08, 0, 0, 0, 0.99999994, 3.404316, 2.2095869, -0.206)
 
-[node name="Wood_Structure3" parent="." unique_id=1646027257 instance=ExtResource("39_46sxa")]
-transform = Transform3D(1, 0, 0, 0, 1.5546663, 0, 0, 0, 1, 16, 0.1, 1.7939999)
+[node name="Wood_Structure13" parent="Shack" unique_id=1777797321 groups=["not_climbable"] instance=ExtResource("39_46sxa")]
+transform = Transform3D(-4.3711385e-08, -1.8222736, 0, 0.99999994, -7.965411e-08, 0, 0, 0, 0.99999994, 3.404316, 1.1947048, -0.206)
 
-[node name="Wood_Structure4" parent="." unique_id=1616583550 instance=ExtResource("39_46sxa")]
-transform = Transform3D(1, 0, 0, 0, 1.5546663, 0, 0, 0, 1, 16, 0.1, 3.0512934)
+[node name="Wood_Structure3" parent="Shack" unique_id=1646027257 groups=["not_climbable"] instance=ExtResource("39_46sxa")]
+transform = Transform3D(1, 0, 0, 0, 1.5546663, 0, 0, 0, 1, -0.20223999, 0.1, 1.7939999)
 
-[node name="Wood_Structure5" parent="." unique_id=1915442977 instance=ExtResource("39_46sxa")]
-transform = Transform3D(0.99999994, 0, 0, 0, -1.5559414e-07, -0.99999994, 0, 3.5595787, -4.3711385e-08, 16, 3.2540262, -0.018220767)
+[node name="Wood_Structure4" parent="Shack" unique_id=1616583550 groups=["not_climbable"] instance=ExtResource("39_46sxa")]
+transform = Transform3D(1, 0, 0, 0, 1.5546663, 0, 0, 0, 1, -0.20223999, 0.1, 3.0512934)
 
-[node name="Wood_Structure10" parent="." unique_id=1258946579 instance=ExtResource("39_46sxa")]
-transform = Transform3D(0.99999994, 0, 0, 0, -8.678148e-08, -0.99999994, 0, 1.9853287, -4.3711385e-08, 16.00837, 2.2473786, 3.0974753)
+[node name="Wood_Structure5" parent="Shack" unique_id=1915442977 groups=["not_climbable"] instance=ExtResource("39_46sxa")]
+transform = Transform3D(0.99999994, 0, 0, 0, -1.5559414e-07, -0.99999994, 0, 3.5595787, -4.3711385e-08, -0.20223999, 3.2540262, -0.018220767)
 
-[node name="Wood_Structure11" parent="." unique_id=1669115938 instance=ExtResource("39_46sxa")]
-transform = Transform3D(0.99999994, 0, 0, 0, -8.678148e-08, -0.99999994, 0, 1.9853287, -4.3711385e-08, 16.00521, 1.2086403, 3.0974753)
+[node name="Wood_Structure10" parent="Shack" unique_id=1258946579 groups=["not_climbable"] instance=ExtResource("39_46sxa")]
+transform = Transform3D(0.99999994, 0, 0, 0, -8.678148e-08, -0.99999994, 0, 1.9853287, -4.3711385e-08, -0.19387054, 2.2473786, 3.0974753)
 
-[node name="Wood_Structure8" parent="." unique_id=51856978 instance=ExtResource("39_46sxa")]
-transform = Transform3D(0.99999994, 0, 0, 0, -1.8028558e-07, -0.99999994, 0, 4.124453, -4.3711385e-08, 19.837444, 4.3755245, -0.5325766)
+[node name="Wood_Structure11" parent="Shack" unique_id=1669115938 groups=["not_climbable"] instance=ExtResource("39_46sxa")]
+transform = Transform3D(0.99999994, 0, 0, 0, -8.678148e-08, -0.99999994, 0, 1.9853287, -4.3711385e-08, -0.19702911, 1.2086403, 3.0974753)
 
-[node name="Wood_Structure9" parent="." unique_id=1628845416 instance=ExtResource("39_46sxa")]
-transform = Transform3D(0.99999994, 0, 0, 0, -1.8028558e-07, -0.99999994, 0, 4.124453, -4.3711385e-08, 17.179081, 4.3755245, -0.5325766)
+[node name="Wood_Structure8" parent="Shack" unique_id=51856978 groups=["not_climbable"] instance=ExtResource("39_46sxa")]
+transform = Transform3D(0.99999994, 0, 0, 0, -1.8028558e-07, -0.99999994, 0, 4.124453, -4.3711385e-08, 3.6352043, 4.3755245, -0.5325766)
 
-[node name="Wood_Structure2" parent="." unique_id=747183760 instance=ExtResource("39_46sxa")]
-transform = Transform3D(1, 0, 0, 0, 1.5546663, 0, 0, 0, 1, 16, 0.1, 6.945)
+[node name="Wood_Structure9" parent="Shack" unique_id=1628845416 groups=["not_climbable"] instance=ExtResource("39_46sxa")]
+transform = Transform3D(0.99999994, 0, 0, 0, -1.8028558e-07, -0.99999994, 0, 4.124453, -4.3711385e-08, 0.976841, 4.3755245, -0.5325766)
 
-[node name="Sheet_Metal" parent="." unique_id=1388500482 instance=ExtResource("40_u8874")]
-transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 16, 0.1, 1.9)
+[node name="Wood_Structure2" parent="Shack" unique_id=747183760 groups=["not_climbable"] instance=ExtResource("39_46sxa")]
+transform = Transform3D(1, 0, 0, 0, 1.5546663, 0, 0, 0, 1, -0.20223999, 0.1, 6.945)
 
-[node name="Sheet_Metal17" parent="." unique_id=290166882 instance=ExtResource("40_u8874")]
-transform = Transform3D(-2.8876517e-08, 0.75072247, -0.6606177, 3.2815123e-08, 0.6606177, 0.75072247, 1, 0, -4.371139e-08, 15.601992, 3.0736175, 1.5794727)
+[node name="Sheet_Metal" parent="Shack" unique_id=1388500482 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -0.20223999, 0.1, 1.9)
 
-[node name="Sheet_Metal18" parent="." unique_id=138336386 instance=ExtResource("40_u8874")]
-transform = Transform3D(-2.8876517e-08, 0.75072247, -0.6606177, 3.2815123e-08, 0.6606177, 0.75072247, 1, 0, -4.371139e-08, 15.601992, 3.0736175, 3.5794725)
+[node name="Sheet_Metal17" parent="Shack" unique_id=290166882 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(-2.8876517e-08, 0.75072247, -0.6606177, 3.2815123e-08, 0.6606177, 0.75072247, 1, 0, -4.371139e-08, -0.60024834, 3.0736175, 1.5794727)
 
-[node name="Sheet_Metal19" parent="." unique_id=2004411246 instance=ExtResource("40_u8874")]
-transform = Transform3D(-2.8876517e-08, 0.75072247, -0.6606177, 3.2815123e-08, 0.6606177, 0.75072247, 1, 0, -4.371139e-08, 15.601992, 3.0736175, 5.5794725)
+[node name="Sheet_Metal18" parent="Shack" unique_id=138336386 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(-2.8876517e-08, 0.75072247, -0.6606177, 3.2815123e-08, 0.6606177, 0.75072247, 1, 0, -4.371139e-08, -0.60024834, 3.0736175, 3.5794725)
 
-[node name="Sheet_Metal20" parent="." unique_id=1959795528 instance=ExtResource("40_u8874")]
-transform = Transform3D(-2.8876517e-08, 0.75072247, -0.6606177, 3.2815123e-08, 0.6606177, 0.75072247, 1, 0, -4.371139e-08, 15.601992, 3.0736175, 7.5794725)
+[node name="Sheet_Metal19" parent="Shack" unique_id=2004411246 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(-2.8876517e-08, 0.75072247, -0.6606177, 3.2815123e-08, 0.6606177, 0.75072247, 1, 0, -4.371139e-08, -0.60024834, 3.0736175, 5.5794725)
 
-[node name="Sheet_Metal21" parent="." unique_id=404233322 instance=ExtResource("40_u8874")]
-transform = Transform3D(-2.8876517e-08, 0.75072247, -0.6606177, 3.2815123e-08, 0.6606177, 0.75072247, 1, 0, -4.371139e-08, 16.337881, 3.7068295, 1.5794727)
+[node name="Sheet_Metal20" parent="Shack" unique_id=1959795528 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(-2.8876517e-08, 0.75072247, -0.6606177, 3.2815123e-08, 0.6606177, 0.75072247, 1, 0, -4.371139e-08, -0.60024834, 3.0736175, 7.5794725)
 
-[node name="Sheet_Metal22" parent="." unique_id=90053845 instance=ExtResource("40_u8874")]
-transform = Transform3D(-2.8876517e-08, 0.75072247, -0.6606177, 3.2815123e-08, 0.6606177, 0.75072247, 1, 0, -4.371139e-08, 16.337881, 3.7068295, 3.5794725)
+[node name="Sheet_Metal21" parent="Shack" unique_id=404233322 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(-2.8876517e-08, 0.75072247, -0.6606177, 3.2815123e-08, 0.6606177, 0.75072247, 1, 0, -4.371139e-08, 0.1356411, 3.7068295, 1.5794727)
 
-[node name="Sheet_Metal23" parent="." unique_id=666872106 instance=ExtResource("40_u8874")]
-transform = Transform3D(-2.8876517e-08, 0.75072247, -0.6606177, 3.2815123e-08, 0.6606177, 0.75072247, 1, 0, -4.371139e-08, 16.337881, 3.7068295, 5.5794725)
+[node name="Sheet_Metal22" parent="Shack" unique_id=90053845 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(-2.8876517e-08, 0.75072247, -0.6606177, 3.2815123e-08, 0.6606177, 0.75072247, 1, 0, -4.371139e-08, 0.1356411, 3.7068295, 3.5794725)
 
-[node name="Sheet_Metal24" parent="." unique_id=362117179 instance=ExtResource("40_u8874")]
-transform = Transform3D(-2.8876517e-08, 0.75072247, -0.6606177, 3.2815123e-08, 0.6606177, 0.75072247, 1, 0, -4.371139e-08, 16.337881, 3.7068295, 7.5794725)
+[node name="Sheet_Metal23" parent="Shack" unique_id=666872106 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(-2.8876517e-08, 0.75072247, -0.6606177, 3.2815123e-08, 0.6606177, 0.75072247, 1, 0, -4.371139e-08, 0.1356411, 3.7068295, 5.5794725)
 
-[node name="Sheet_Metal25" parent="." unique_id=1859663037 instance=ExtResource("40_u8874")]
-transform = Transform3D(1.1924897e-08, 0.99999994, -4.3711385e-08, -2.7443449e-14, 4.3711385e-08, 0.99999994, 1, -1.1924896e-08, 2.7964701e-14, 17.093548, 4.325969, 1.5794725)
+[node name="Sheet_Metal24" parent="Shack" unique_id=362117179 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(-2.8876517e-08, 0.75072247, -0.6606177, 3.2815123e-08, 0.6606177, 0.75072247, 1, 0, -4.371139e-08, 0.1356411, 3.7068295, 7.5794725)
 
-[node name="Sheet_Metal26" parent="." unique_id=1739032234 instance=ExtResource("40_u8874")]
-transform = Transform3D(1.1924897e-08, 0.99999994, -4.3711385e-08, -2.7443449e-14, 4.3711385e-08, 0.99999994, 1, -1.1924896e-08, 2.7964701e-14, 17.093548, 4.325969, 3.5794725)
+[node name="Sheet_Metal25" parent="Shack" unique_id=1859663037 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(1.1924897e-08, 0.99999994, -4.3711385e-08, -2.7443449e-14, 4.3711385e-08, 0.99999994, 1, -1.1924896e-08, 2.7964701e-14, 0.89130783, 4.325969, 1.5794725)
 
-[node name="Sheet_Metal27" parent="." unique_id=931996848 instance=ExtResource("40_u8874")]
-transform = Transform3D(1.1924897e-08, 0.99999994, -4.3711385e-08, -2.7443449e-14, 4.3711385e-08, 0.99999994, 1, -1.1924896e-08, 2.7964701e-14, 17.093548, 4.325969, 5.5794725)
+[node name="Sheet_Metal26" parent="Shack" unique_id=1739032234 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(1.1924897e-08, 0.99999994, -4.3711385e-08, -2.7443449e-14, 4.3711385e-08, 0.99999994, 1, -1.1924896e-08, 2.7964701e-14, 0.89130783, 4.325969, 3.5794725)
 
-[node name="Sheet_Metal28" parent="." unique_id=678474324 instance=ExtResource("40_u8874")]
-transform = Transform3D(1.1924897e-08, 0.99999994, -4.3711385e-08, -2.7443449e-14, 4.3711385e-08, 0.99999994, 1, -1.1924896e-08, 2.7964701e-14, 17.093548, 4.325969, 7.5794725)
+[node name="Sheet_Metal27" parent="Shack" unique_id=931996848 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(1.1924897e-08, 0.99999994, -4.3711385e-08, -2.7443449e-14, 4.3711385e-08, 0.99999994, 1, -1.1924896e-08, 2.7964701e-14, 0.89130783, 4.325969, 5.5794725)
 
-[node name="Sheet_Metal29" parent="." unique_id=87936809 instance=ExtResource("40_u8874")]
-transform = Transform3D(1.1924897e-08, 0.99999994, -4.3711385e-08, -2.7443449e-14, 4.3711385e-08, 0.99999994, 1, -1.1924896e-08, 2.7964701e-14, 18.093548, 4.325969, 1.5794725)
+[node name="Sheet_Metal28" parent="Shack" unique_id=678474324 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(1.1924897e-08, 0.99999994, -4.3711385e-08, -2.7443449e-14, 4.3711385e-08, 0.99999994, 1, -1.1924896e-08, 2.7964701e-14, 0.89130783, 4.325969, 7.5794725)
 
-[node name="Sheet_Metal30" parent="." unique_id=585366907 instance=ExtResource("40_u8874")]
-transform = Transform3D(1.1924897e-08, 0.99999994, -4.3711385e-08, -2.7443449e-14, 4.3711385e-08, 0.99999994, 1, -1.1924896e-08, 2.7964701e-14, 18.093548, 4.325969, 3.5794725)
+[node name="Sheet_Metal29" parent="Shack" unique_id=87936809 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(1.1924897e-08, 0.99999994, -4.3711385e-08, -2.7443449e-14, 4.3711385e-08, 0.99999994, 1, -1.1924896e-08, 2.7964701e-14, 1.8913078, 4.325969, 1.5794725)
 
-[node name="Sheet_Metal31" parent="." unique_id=1935845435 instance=ExtResource("40_u8874")]
-transform = Transform3D(1.1924897e-08, 0.99999994, -4.3711385e-08, -2.7443449e-14, 4.3711385e-08, 0.99999994, 1, -1.1924896e-08, 2.7964701e-14, 18.093548, 4.325969, 5.5794725)
+[node name="Sheet_Metal30" parent="Shack" unique_id=585366907 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(1.1924897e-08, 0.99999994, -4.3711385e-08, -2.7443449e-14, 4.3711385e-08, 0.99999994, 1, -1.1924896e-08, 2.7964701e-14, 1.8913078, 4.325969, 3.5794725)
 
-[node name="Sheet_Metal32" parent="." unique_id=1257271245 instance=ExtResource("40_u8874")]
-transform = Transform3D(1.1924897e-08, 0.99999994, -4.3711385e-08, -2.7443449e-14, 4.3711385e-08, 0.99999994, 1, -1.1924896e-08, 2.7964701e-14, 18.093548, 4.325969, 7.5794725)
+[node name="Sheet_Metal31" parent="Shack" unique_id=1935845435 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(1.1924897e-08, 0.99999994, -4.3711385e-08, -2.7443449e-14, 4.3711385e-08, 0.99999994, 1, -1.1924896e-08, 2.7964701e-14, 1.8913078, 4.325969, 5.5794725)
 
-[node name="Sheet_Metal33" parent="." unique_id=348511092 instance=ExtResource("40_u8874")]
-transform = Transform3D(1.1924897e-08, 0.99999994, -4.3711385e-08, -2.7443449e-14, 4.3711385e-08, 0.99999994, 1, -1.1924896e-08, 2.7964701e-14, 19.093548, 4.325969, 1.5794725)
+[node name="Sheet_Metal32" parent="Shack" unique_id=1257271245 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(1.1924897e-08, 0.99999994, -4.3711385e-08, -2.7443449e-14, 4.3711385e-08, 0.99999994, 1, -1.1924896e-08, 2.7964701e-14, 1.8913078, 4.325969, 7.5794725)
 
-[node name="Sheet_Metal34" parent="." unique_id=461084382 instance=ExtResource("40_u8874")]
-transform = Transform3D(1.1924897e-08, 0.99999994, -4.3711385e-08, -2.7443449e-14, 4.3711385e-08, 0.99999994, 1, -1.1924896e-08, 2.7964701e-14, 19.093548, 4.325969, 3.5794725)
+[node name="Sheet_Metal33" parent="Shack" unique_id=348511092 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(1.1924897e-08, 0.99999994, -4.3711385e-08, -2.7443449e-14, 4.3711385e-08, 0.99999994, 1, -1.1924896e-08, 2.7964701e-14, 2.8913078, 4.325969, 1.5794725)
 
-[node name="Sheet_Metal35" parent="." unique_id=529869880 instance=ExtResource("40_u8874")]
-transform = Transform3D(1.1924897e-08, 0.99999994, -4.3711385e-08, -2.7443449e-14, 4.3711385e-08, 0.99999994, 1, -1.1924896e-08, 2.7964701e-14, 19.093548, 4.325969, 5.5794725)
+[node name="Sheet_Metal34" parent="Shack" unique_id=461084382 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(1.1924897e-08, 0.99999994, -4.3711385e-08, -2.7443449e-14, 4.3711385e-08, 0.99999994, 1, -1.1924896e-08, 2.7964701e-14, 2.8913078, 4.325969, 3.5794725)
 
-[node name="Sheet_Metal36" parent="." unique_id=924215170 instance=ExtResource("40_u8874")]
-transform = Transform3D(1.1924897e-08, 0.99999994, -4.3711385e-08, -2.7443449e-14, 4.3711385e-08, 0.99999994, 1, -1.1924896e-08, 2.7964701e-14, 19.093548, 4.325969, 7.5794725)
+[node name="Sheet_Metal35" parent="Shack" unique_id=529869880 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(1.1924897e-08, 0.99999994, -4.3711385e-08, -2.7443449e-14, 4.3711385e-08, 0.99999994, 1, -1.1924896e-08, 2.7964701e-14, 2.8913078, 4.325969, 5.5794725)
 
-[node name="Sheet_Metal11" parent="." unique_id=567150809 instance=ExtResource("40_u8874")]
-transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 16, 0.1, -0.1273042)
+[node name="Sheet_Metal36" parent="Shack" unique_id=924215170 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(1.1924897e-08, 0.99999994, -4.3711385e-08, -2.7443449e-14, 4.3711385e-08, 0.99999994, 1, -1.1924896e-08, 2.7964701e-14, 2.8913078, 4.325969, 7.5794725)
 
-[node name="Sheet_Metal12" parent="." unique_id=2134094557 instance=ExtResource("40_u8874")]
-transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 18, 0.1, -0.1273042)
+[node name="Sheet_Metal11" parent="Shack" unique_id=567150809 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, -0.20223999, 0.1, -0.1273042)
 
-[node name="Sheet_Metal15" parent="." unique_id=292308932 instance=ExtResource("40_u8874")]
-transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 16, 2.1, -0.1273042)
+[node name="Sheet_Metal12" parent="Shack" unique_id=2134094557 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 1.79776, 0.1, -0.1273042)
 
-[node name="Sheet_Metal16" parent="." unique_id=2036021617 instance=ExtResource("40_u8874")]
-transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 18, 2.1, -0.1273042)
+[node name="Sheet_Metal15" parent="Shack" unique_id=292308932 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, -0.20223999, 2.1, -0.1273042)
 
-[node name="Sheet_Metal5" parent="." unique_id=1370529900 instance=ExtResource("40_u8874")]
-transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 16, 1.1, 1.9)
+[node name="Sheet_Metal16" parent="Shack" unique_id=2036021617 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 1.79776, 2.1, -0.1273042)
 
-[node name="Sheet_Metal6" parent="." unique_id=1849428732 instance=ExtResource("40_u8874")]
-transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 16, 2.1, 1.9)
+[node name="Sheet_Metal5" parent="Shack" unique_id=1370529900 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -0.20223999, 1.1, 1.9)
 
-[node name="Sheet_Metal2" parent="." unique_id=656549778 instance=ExtResource("40_u8874")]
-transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 16, 0.099999905, 5.0737815)
+[node name="Sheet_Metal6" parent="Shack" unique_id=1849428732 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -0.20223999, 2.1, 1.9)
 
-[node name="Sheet_Metal3" parent="." unique_id=216627140 instance=ExtResource("40_u8874")]
-transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 16, 0.099999905, 7.0737815)
+[node name="Sheet_Metal2" parent="Shack" unique_id=656549778 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -0.20223999, 0.099999905, 5.0737815)
 
-[node name="Sheet_Metal9" parent="." unique_id=564139771 instance=ExtResource("40_u8874")]
-transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 16, 2.1, 7.0737815)
+[node name="Sheet_Metal3" parent="Shack" unique_id=216627140 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -0.20223999, 0.099999905, 7.0737815)
 
-[node name="Sheet_Metal10" parent="." unique_id=1225797594 instance=ExtResource("40_u8874")]
-transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 16, 2.1, 5.0737815)
+[node name="Sheet_Metal9" parent="Shack" unique_id=564139771 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -0.20223999, 2.1, 7.0737815)
 
-[node name="Sheet_Metal4" parent="." unique_id=1450781659 instance=ExtResource("41_nv65l")]
-transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 16, 1.1, 4.16)
+[node name="Sheet_Metal10" parent="Shack" unique_id=1225797594 groups=["not_climbable"] instance=ExtResource("40_u8874")]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -0.20223999, 2.1, 5.0737815)
 
-[node name="Sheet_Metal13" parent="." unique_id=1751100612 instance=ExtResource("41_nv65l")]
-transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 16, 1.1, -0.124569565)
+[node name="Sheet_Metal4" parent="Shack" unique_id=1450781659 groups=["not_climbable"] instance=ExtResource("41_nv65l")]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -0.20223999, 1.1, 4.16)
 
-[node name="Sheet_Metal14" parent="." unique_id=729811191 instance=ExtResource("41_nv65l")]
-transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 18.544119, 1.1, -0.124569565)
+[node name="Sheet_Metal13" parent="Shack" unique_id=1751100612 groups=["not_climbable"] instance=ExtResource("41_nv65l")]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, -0.20223999, 1.1, -0.124569565)
 
-[node name="Sheet_Metal7" parent="." unique_id=540575812 instance=ExtResource("41_nv65l")]
-transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 16, 1.1, 6.16)
+[node name="Sheet_Metal14" parent="Shack" unique_id=729811191 groups=["not_climbable"] instance=ExtResource("41_nv65l")]
+transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 2.341879, 1.1, -0.124569565)
 
-[node name="Sheet_Metal8" parent="." unique_id=1440794727 instance=ExtResource("41_nv65l")]
-transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 16, 1.1, 7.16)
+[node name="Sheet_Metal7" parent="Shack" unique_id=540575812 groups=["not_climbable"] instance=ExtResource("41_nv65l")]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -0.20223999, 1.1, 6.16)
+
+[node name="Sheet_Metal8" parent="Shack" unique_id=1440794727 groups=["not_climbable"] instance=ExtResource("41_nv65l")]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -0.20223999, 1.1, 7.16)
 
 [node name="Label3D" type="Label3D" parent="." unique_id=1058892914]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -1.6844381, 4.4444304, 3.936422)
@@ -1932,8 +1955,8 @@ transform = Transform3D(1, 0, 0, 0, 1.25, 0, 0, 0, 1, -1.7734308, 0.099999905, 0
 [node name="Scaffolding_Base2" parent="." unique_id=744635450 instance=ExtResource("44_1pcfk")]
 transform = Transform3D(-1.4127835e-08, -0.9463282, -0.32320726, -4.136532e-08, 0.32320726, -0.9463282, 1, 0, -4.371139e-08, 17.099304, 1.0749024, -1.2265959)
 
-[node name="Scaffolding_Structure2" parent="." unique_id=2095906468 instance=ExtResource("45_52h53")]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 18.350954, 0.099999905, -1.2556756)
+[node name="Scaffolding_Structure2" parent="." unique_id=2095906468 groups=["not_climbable"] instance=ExtResource("45_52h53")]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 18.350954, 0.099999905, -1.2556756)
 
 [node name="Scaffolding_Base3" parent="." unique_id=1532292188 instance=ExtResource("44_1pcfk")]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 2.499636, 1.9998392, -4.5810113)
@@ -1941,17 +1964,17 @@ transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 2.49
 [node name="Scaffolding_Structure4" parent="." unique_id=1211845623 instance=ExtResource("45_52h53")]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 2.486875, 0.099999905, -4.610091)
 
-[node name="Scaffolding_Structure3" parent="." unique_id=1264227722 instance=ExtResource("45_52h53")]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 18.350954, 1.980885, -1.2556756)
+[node name="Scaffolding_Structure3" parent="." unique_id=1264227722 groups=["not_climbable"] instance=ExtResource("45_52h53")]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 18.350954, 2.0152442, -1.2556756)
 
 [node name="PickableBarrel" parent="." unique_id=594279821 instance=ExtResource("46_ubk4r")]
 transform = Transform3D(1, 0, 0, 0, 0.99999994, 0, 0, 0, 0.99999994, 2.2025905, 2.5041263, 4.0817776)
 
 [node name="PickableBarrel3" parent="." unique_id=2010947971 instance=ExtResource("46_ubk4r")]
-transform = Transform3D(0.1474469, 0, 0.98906976, 0, 0.99999976, 0, -0.98906976, 0, 0.14744681, 1.6127716, 2.5041263, 2.9903486)
+transform = Transform3D(0.1474469, 0, 0.98906976, 0, 0.99999976, 0, -0.98906976, 0, 0.14744681, 1.6127716, 2.5041263, 5.448118)
 
 [node name="PickableBarrel2" parent="." unique_id=547637893 instance=ExtResource("46_ubk4r")]
-transform = Transform3D(-0.87457746, -0.4725532, -0.10866326, 0, 0.22410071, -0.97456586, 0.48488584, -0.85233337, -0.19599342, 2.3589222, 2.7746546, 1.9679065)
+transform = Transform3D(-0.87457746, -0.4725532, -0.10866326, 0, 0.22410071, -0.97456586, 0.48488584, -0.85233337, -0.19599342, -0.28068686, 2.7746546, 1.72006)
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=330572922]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.257725, 0.3337083, -8.055398)
@@ -1991,3 +2014,13 @@ transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 2.13
 size = Vector2(3, 2)
 max_update_distance = 50.0
 cull_far = 25.0
+
+[node name="SoundscapeZone" parent="." unique_id=297960288 instance=ExtResource("49_5jhqv")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.3823644, 3.5, 3.427269)
+zone_size = Vector3(2, 2, 2)
+soundscape = SubResource("Resource_43coy")
+persist_after_exit = true
+
+[node name="ChapterTrigger" parent="." unique_id=1955767946 instance=ExtResource("52_wkfn1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.72450435, 2.0262184, -7.4385567)
+animation_style = 1

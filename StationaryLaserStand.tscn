@@ -4,6 +4,7 @@
 [ext_resource type="Shader" uid="uid://jn5ny2fhowtg" path="res://vfx/beam.gdshader" id="2_1cv0y"]
 [ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="2_2bfhh"]
 [ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="3_bowf1"]
+[ext_resource type="Texture2D" uid="uid://p8cs4aem3kyx" path="res://assets/textures/LeLu_Smoke/T_smoke_b7.png" id="3_ogymw"]
 [ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="4_xidcn"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_yubuw"]
@@ -34,6 +35,31 @@ height = 1.0
 radial_segments = 8
 rings = 0
 
+[sub_resource type="Gradient" id="Gradient_ogymw"]
+offsets = PackedFloat32Array(0, 0.19014767, 0.8994817, 1)
+colors = PackedColorArray(0.003921569, 0, 0, 0, 1, 0, 0, 0.078431375, 1, 0, 0, 0.039215688, 1, 0, 0, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_ey25j"]
+gradient = SubResource("Gradient_ogymw")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_1cv0y"]
+emission_shape = 3
+emission_box_extents = Vector3(0.1, 0.1, 1)
+gravity = Vector3(0, -0.5, 0)
+color_ramp = SubResource("GradientTexture1D_ey25j")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ogymw"]
+transparency = 1
+cull_mode = 2
+vertex_color_use_as_albedo = true
+albedo_texture = ExtResource("3_ogymw")
+disable_receive_shadows = true
+
+[sub_resource type="QuadMesh" id="QuadMesh_ey25j"]
+material = SubResource("StandardMaterial3D_ogymw")
+size = Vector2(0.4, 0.4)
+orientation = 0
+
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_2c5bn"]
 render_priority = 0
 shader = ExtResource("4_xidcn")
@@ -45,7 +71,6 @@ shader_parameter/max_intensity = 0.050000002375
 [node name="StationaryLaserStand" type="StaticBody3D" unique_id=537276294]
 script = ExtResource("1_3nf4h")
 max_distance = 10.0
-max_bounces = null
 rotation_speed = 1.0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=902953235]
@@ -58,7 +83,7 @@ radius = 0.1
 height = 1.5
 
 [node name="Turret" type="Node3D" parent="." unique_id=1066301723]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -0.1)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -0.09069554)
 
 [node name="CSGBox3D" type="CSGBox3D" parent="Turret" unique_id=2053084450]
 size = Vector3(0.4, 0.4, 0.4)
@@ -68,6 +93,11 @@ transform = Transform3D(1, 0, 0, 0, 1.3113416e-07, -1, 0, 1, 1.3113416e-07, 0, 0
 mesh = SubResource("CylinderMesh_hymf2")
 
 [node name="LaserOrigin" type="Marker3D" parent="Turret" unique_id=1316763259]
+
+[node name="SmokeParticles" type="GPUParticles3D" parent="Turret" unique_id=1281079379]
+gi_mode = 0
+process_material = SubResource("ParticleProcessMaterial_1cv0y")
+draw_pass_1 = SubResource("QuadMesh_ey25j")
 
 [node name="Interact_Component" type="Node" parent="." unique_id=1654017051]
 script = ExtResource("2_2bfhh")

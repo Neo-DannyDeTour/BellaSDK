@@ -77,7 +77,8 @@ func physics_update(delta: float) -> void:
 	player.last_velocity = player.velocity
 
 	# 6. Try snapping UP stairs
-	player.stair_controller.snap_up_stairs_check(delta)
+	# Pass the sprint state to physically reach further and throttle camera shake
+	player.stair_controller.snap_up_stairs_check(delta, player.sprint_active)
 
 	# Move the Character (Normal movement)
 	player.move_and_slide()
@@ -110,8 +111,10 @@ func _perform_jump() -> void:
 
 
 func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
-	# Handle Crouching
 	var previous_crouch: bool = player.crouching
+	# Track if we are currently ascending stairs
+	var is_recently_stepped: bool = player.stair_controller.time_since_step_up < 0.2
+
 	if Input.is_action_pressed("crouch"):
 		player.crouching = true
 		player.standing_collision.disabled = true
@@ -119,16 +122,19 @@ func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
 		player.head.position.y = lerpf(
 			player.head.position.y, player.vault_controller.crouching_depth, delta * 15.0
 		)
-	elif not player.crouch_cast_check.is_colliding():  # Ensure headroom before standing up
+	elif not player.crouch_cast_check.is_colliding():  
 		player.crouching = false
 		player.standing_collision.disabled = false
 		player.crouching_collision.disabled = true
-		player.head.position.y = lerpf(player.head.position.y, 1.8, delta * 15.0)
+		
+		# THE FIX: Use a relaxed lerp (4.0) on stairs to glide, and standard (15.0) for flat ground
+		var head_lerp: float = 4.0 if is_recently_stepped else 15.0
+		player.head.position.y = lerpf(player.head.position.y, 1.8, delta * head_lerp)
 
 	if previous_crouch != player.crouching:
 		Events.player_crouch_changed.emit(player.crouching)
+		print("StateGround: Player crouch state changed to ", player.crouching)
 
-	# Handle Sprinting
 	var is_moving: bool = input_dir.length() > 0.1
 	player.sprint_active = (
 		Input.is_action_pressed("sprint")
@@ -137,7 +143,6 @@ func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
 		and player.can_sprint
 	)
 
-	# Lerp target speed
 	var target_speed: float = player.walking_speed
 	if player.sprint_active:
 		target_speed = player.sprinting_speed
