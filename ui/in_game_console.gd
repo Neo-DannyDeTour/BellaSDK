@@ -149,7 +149,9 @@ func _input(event: InputEvent) -> void:
 			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 			print("Console UI toggled: CLOSED.")
 
-		Events.terminal_mode_toggled.emit(visible)
+		# REMOVE OR COMMENT OUT THIS LINE:
+		# Events.terminal_mode_toggled.emit(visible)
+
 		get_viewport().set_input_as_handled()
 
 

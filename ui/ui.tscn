@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://cv4syvckbtm2f"]
 
 [ext_resource type="Script" uid="uid://bu8f1lqdsjgks" path="res://ui/ui.gd" id="1_nt7q6"]
-[ext_resource type="Texture2D" uid="uid://cf8wtadq3xspg" path="res://assets/images/UI/bella_hearts_atlas.png" id="2_cgfq5"]
+[ext_resource type="Texture2D" uid="uid://cf8wtadq3xspg" path="res://assets/images/UI/bella_hearts_atlas.png" id="2_bi8hs"]
 [ext_resource type="Shader" uid="uid://bqd5soqdscvly" path="res://vfx/outline_shader_adaptable.gdshader" id="2_x4jx1"]
 [ext_resource type="Texture2D" uid="uid://bp1lwvb0tg06g" path="res://assets/images/UI/UI_Circle_Zoom.png" id="3_gdt2y"]
 [ext_resource type="Texture2D" uid="uid://d11qvtoiajmle" path="res://assets/images/UI/UI_Circle_Zoom_Inner.png" id="4_wm3ai"]
@@ -10,6 +10,7 @@
 [ext_resource type="Script" uid="uid://yhhwmqo4b0yi" path="res://core/dev_metrics.gd" id="7_p7vwb"]
 [ext_resource type="Script" uid="uid://cnewwxia7j3ay" path="res://core/frame_graph.gd" id="8_ktti3"]
 [ext_resource type="Shader" uid="uid://dqjxwnsg8c5f0" path="res://vfx/outline_hearts_adaptable.gdshader" id="10_7dvkv"]
+[ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="11_bi8hs"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_p7vwb"]
 shader = ExtResource("5_8dubc")
@@ -39,17 +40,14 @@ shader = ExtResource("2_x4jx1")
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nt7q6"]
 bg_color = Color(0.040375, 0.041947637, 0.037145004, 1)
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_x4jx1"]
-bg_color = Color(0.012920001, 0.012920001, 0.012920001, 0.2)
-shadow_size = 2
-
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_7dvkv"]
 shader = ExtResource("10_7dvkv")
 shader_parameter/fill_threshold = 0.5
 
 [node name="UI" type="CanvasLayer" unique_id=1944889716]
+process_mode = 3
 script = ExtResource("1_nt7q6")
-hearts_atlas = ExtResource("2_cgfq5")
+hearts_atlas = ExtResource("2_bi8hs")
 
 [node name="Vignette" type="ColorRect" parent="." unique_id=123181987]
 material = SubResource("ShaderMaterial_p7vwb")
@@ -79,6 +77,7 @@ grow_horizontal = 2
 grow_vertical = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+mouse_filter = 2
 
 [node name="CenterDot" type="TextureRect" parent="MarginContainer" unique_id=1855431409]
 material = SubResource("ShaderMaterial_yev5y")
@@ -129,13 +128,77 @@ layout_mode = 2
 size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 16
 
-[node name="DebugPanel" type="Panel" parent="." unique_id=2144133476]
-offset_right = 555.0
-offset_bottom = 360.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_x4jx1")
+[node name="MetricsPanel" type="PanelContainer" parent="." unique_id=1400618986]
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -349.0
+grow_horizontal = 0
+grow_vertical = 2
+script = ExtResource("7_p7vwb")
+
+[node name="MetricsLabel" type="RichTextLabel" parent="MetricsPanel" unique_id=551908532]
+layout_mode = 2
+bbcode_enabled = true
+fit_content = true
+
+[node name="FrameGraph" type="ColorRect" parent="." unique_id=389888062]
+custom_minimum_size = Vector2(250, 250)
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -125.0
+offset_top = -250.0
+offset_right = 125.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+color = Color(0, 0, 0, 0.53333336)
+script = ExtResource("8_ktti3")
+
+[node name="HealthMargin" type="MarginContainer" parent="." unique_id=2046781798]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -40.0
+offset_right = 40.0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="HeartsContainer" type="HBoxContainer" parent="HealthMargin" unique_id=887507209]
+material = SubResource("ShaderMaterial_7dvkv")
+layout_mode = 2
+
+[node name="MarginContainer2" type="MarginContainer" parent="." unique_id=464429887]
+anchors_preset = 14
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_top = -75.0
+offset_bottom = 75.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_top = 100
+
+[node name="ChapterLabel" type="RichTextLabel" parent="MarginContainer2" unique_id=839489251]
+layout_mode = 2
+mouse_filter = 2
+theme_override_fonts/normal_font = ExtResource("11_bi8hs")
+theme_override_font_sizes/normal_font_size = 64
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+
+[node name="DebugPanel" type="CanvasLayer" parent="." unique_id=1244748191]
+layer = 100
 
 [node name="VBoxContainer" type="VBoxContainer" parent="DebugPanel" unique_id=785923227]
-layout_mode = 0
 offset_right = 148.0
 offset_bottom = 109.0
 
@@ -179,50 +242,6 @@ alignment = 0
 layout_mode = 2
 text = "Hide UI"
 alignment = 0
-
-[node name="MetricsPanel" type="PanelContainer" parent="." unique_id=1400618986]
-anchors_preset = 11
-anchor_left = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -349.0
-grow_horizontal = 0
-grow_vertical = 2
-script = ExtResource("7_p7vwb")
-
-[node name="MetricsLabel" type="RichTextLabel" parent="MetricsPanel" unique_id=551908532]
-layout_mode = 2
-bbcode_enabled = true
-fit_content = true
-
-[node name="FrameGraph" type="ColorRect" parent="." unique_id=389888062]
-custom_minimum_size = Vector2(250, 250)
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -125.0
-offset_top = -250.0
-offset_right = 125.0
-grow_horizontal = 2
-grow_vertical = 0
-color = Color(0, 0, 0, 0.53333336)
-script = ExtResource("8_ktti3")
-
-[node name="HealthMargin" type="MarginContainer" parent="." unique_id=2046781798]
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_top = -40.0
-offset_right = 40.0
-grow_vertical = 0
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_bottom = 20
-
-[node name="HeartsContainer" type="HBoxContainer" parent="HealthMargin" unique_id=887507209]
-material = SubResource("ShaderMaterial_7dvkv")
-layout_mode = 2
 
 [connection signal="pressed" from="DebugPanel/VBoxContainer/WireframeButton" to="." method="_on_wireframe_button_pressed"]
 [connection signal="pressed" from="DebugPanel/VBoxContainer/WireframeOverlayButton" to="." method="_on_wireframe_overlay_button_pressed"]

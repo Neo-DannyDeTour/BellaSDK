@@ -31,38 +31,39 @@ var held_object: Node3D = null
 var is_heavy_lifting: bool = false
 var heavy_lift_yaw_base: float = 0.0
 
-# Terminal Mode Vars
 var is_in_terminal_mode: bool = false
 var active_terminal: Node3D = null
 var terminal_start_pos: Vector3 = Vector3.ZERO
-
 
 # --------------------------------------
 # CORE PROCESS LOGIC
 # --------------------------------------
 func process_interaction(_delta: float) -> void:
-	# Trace wrapped in a state-change check to prevent 60 FPS performance drops from console spam
 	if Input.is_action_just_pressed("interact") or Input.is_action_just_pressed("shoot"):
 		print("InteractionScanner: process_interaction scanning on input tick.")
 
-	# 1. Handle Terminal Mode Exit Conditions
 	if is_in_terminal_mode:
 		if _should_exit_terminal_mode():
 			exit_terminal_mode()
 			return
+			
+		if is_instance_valid(active_terminal):
+			if Input.is_action_just_pressed("shoot"):
+				shoot_terminal_raycast(true)
+				get_viewport().set_input_as_handled()
+			else:
+				shoot_terminal_raycast(false)
+				
 		return
 
-	# 2. Dynamic Reach Fix
 	_update_dynamic_reach()
-
-	# 3. Scan for Interactables
 	current_interactable = _get_interactable_component_at_shapecast()
 
 	if current_interactable:
 		var hit_point: Vector3 = interact_shapecast.get_collision_point(0)
 		if current_interactable.has_method("hover_cursor"):
+			print("InteractionScanner: Hovering cursor over interactable.")
 			current_interactable.hover_cursor(player_body, hit_point)
-
 
 # --------------------------------------
 # INPUT HANDLING
@@ -74,12 +75,13 @@ func handle_interact_input() -> void:
 		exit_terminal_mode()
 		return
 
-	# Drop Object
 	if held_object:
 		if held_object.has_method("on_released"):
+			print("InteractionScanner: Releasing held object.")
 			held_object.on_released()
 
 		if held_object.has_method("drop"):
+			print("InteractionScanner: Dropping held object.")
 			held_object.drop()
 
 		held_object = null
@@ -88,14 +90,15 @@ func handle_interact_input() -> void:
 		if weapon_holder:
 			weapon_holder.show()
 
-	# Pick Up / Interact
 	elif current_interactable:
 		if current_interactable.has_method("interact_with"):
+			print("InteractionScanner: Interacting with object.")
 			current_interactable.interact_with(player_body)
 
 		var parent_node: Node = current_interactable.get_parent() as Node
 		if parent_node and parent_node.has_method("pick_up"):
 			held_object = parent_node as Node3D
+			print("InteractionScanner: Picking up object.")
 			held_object.pick_up(hold_position, player_body)
 
 			if held_object.has_method("on_grabbed"):
@@ -108,22 +111,21 @@ func handle_interact_input() -> void:
 func handle_shoot_input() -> void:
 	print("InteractionScanner: handle_shoot_input called.")
 	
-	# 1. Click Terminal
 	if is_in_terminal_mode and is_instance_valid(active_terminal):
 		shoot_terminal_raycast(true)
 		get_viewport().set_input_as_handled()
 		return
 
-	# 2. Throw Object
 	if held_object:
 		if held_object.has_method("on_released"):
 			held_object.on_released()
 
-		var throw_direction: Vector3 = -camera.global_transform.basis.z.normalized()
-		throw_direction.y += 0.2
+		var throw_dir: Vector3 = -camera.global_transform.basis.z.normalized()
+		throw_dir.y += 0.2
 
 		if held_object.has_method("throw"):
-			held_object.throw(throw_direction.normalized() * throw_force)
+			print("InteractionScanner: Throwing held object.")
+			held_object.throw(throw_dir.normalized() * throw_force)
 
 		held_object = null
 		set_heavy_lifting(false)
@@ -133,10 +135,10 @@ func handle_shoot_input() -> void:
 
 		return 
 
-	# 3. Fire Weapon
 	if weapon_holder and weapon_holder.get_child_count() > 0:
 		var active_weapon: Node3D = weapon_holder.get_child(0) as Node3D
 		if active_weapon and active_weapon.has_method("shoot"):
+			print("InteractionScanner: Shooting active weapon.")
 			active_weapon.shoot(camera)
 
 
@@ -212,12 +214,18 @@ func enter_terminal_mode(terminal: Node3D) -> void:
 	active_terminal = terminal
 	terminal_start_pos = player_body.global_position
 
+	# Assuming Events is an autoloaded globally available script
 	Events.terminal_mode_toggled.emit(true)
 	terminal_mode_toggled.emit(true)
 
 
 func exit_terminal_mode() -> void:
 	print("InteractionScanner: exit_terminal_mode called.")
+	
+	if is_instance_valid(active_terminal):
+		if active_terminal.has_method("clear_mouse_hover"):
+			active_terminal.clear_mouse_hover()
+		
 	is_in_terminal_mode = false
 	active_terminal = null
 
@@ -233,8 +241,10 @@ func _should_exit_terminal_mode() -> bool:
 		or Input.is_action_pressed("right")
 	):
 		return true
+		
 	if Input.is_action_just_pressed("jump") or Input.is_action_just_pressed("crouch"):
 		return true
+		
 	if player_body.global_position.distance_to(terminal_start_pos) > 1.0:
 		return true
 
@@ -248,13 +258,15 @@ func _should_exit_terminal_mode() -> bool:
 
 
 func shoot_terminal_raycast(is_click: bool) -> void:
-	print("InteractionScanner: shoot_terminal_raycast called. Click: ", is_click)
-	var viewport_size := get_viewport().get_visible_rect().size
-	var screen_center := viewport_size / 2.0
+	if is_click:
+		print("InteractionScanner: shoot_terminal_raycast executed a click.")
+		
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	var screen_center: Vector2 = viewport_size / 2.0
 
-	var ray_origin := camera.project_ray_origin(screen_center)
-	var ray_normal := camera.project_ray_normal(screen_center)
-	var ray_end := ray_origin + ray_normal * 3.0
+	var ray_origin: Vector3 = camera.project_ray_origin(screen_center)
+	var ray_normal: Vector3 = camera.project_ray_normal(screen_center)
+	var ray_end: Vector3 = ray_origin + ray_normal * 3.0
 
 	var query := PhysicsRayQueryParameters3D.create(ray_origin, ray_end)
 	
@@ -263,8 +275,8 @@ func shoot_terminal_raycast(is_click: bool) -> void:
 	
 	query.collision_mask = 5
 
-	var space_state := player_body.get_world_3d().direct_space_state
-	var result := space_state.intersect_ray(query)
+	var space_state: PhysicsDirectSpaceState3D = player_body.get_world_3d().direct_space_state
+	var result: Dictionary = space_state.intersect_ray(query)
 
 	if result and result.collider == active_terminal:
 		if is_click and active_terminal.has_method("inject_mouse_click"):

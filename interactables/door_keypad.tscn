@@ -1,26 +1,35 @@
 [gd_scene format=3 uid="uid://drp82vy3f2sny"]
 
-[ext_resource type="PackedScene" uid="uid://c3kkyqotkri5v" path="res://shared/keypad.tscn" id="1_koi6h"]
+[ext_resource type="PackedScene" uid="uid://c3kkyqotkri5v" path="res://shared/UIkeypad.tscn" id="1_koi6h"]
 [ext_resource type="Script" uid="uid://6my7yh0731pm" path="res://interactables/door_keypad.gd" id="1_mcbx6"]
 [ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="2_wk8ac"]
 [ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="3_tae6v"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="4_f1hol"]
 
-[sub_resource type="ViewportTexture" id="ViewportTexture_mcbx6"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_jyx7n"]
+render_priority = 0
+shader = ExtResource("4_f1hol")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.050000002375
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_f1hol"]
 viewport_path = NodePath("SubViewport")
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2p8yu"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jyx7n"]
 resource_local_to_scene = true
-albedo_texture = SubResource("ViewportTexture_mcbx6")
+shading_mode = 0
+albedo_texture = SubResource("ViewportTexture_f1hol")
 
-[sub_resource type="PlaneMesh" id="PlaneMesh_qkvq5"]
-resource_local_to_scene = true
-material = SubResource("StandardMaterial3D_2p8yu")
+[sub_resource type="QuadMesh" id="QuadMesh_f1hol"]
 size = Vector2(0.5, 0.5)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_koi6h"]
 size = Vector3(0.001, 0.5, 0.5)
 
 [node name="DoorKeypad" type="StaticBody3D" unique_id=224452826]
+transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 0, 0, 0)
 script = ExtResource("1_mcbx6")
 
 [node name="Interact_Component" type="Node" parent="." unique_id=546308194]
@@ -29,14 +38,16 @@ metadata/_custom_type_script = "uid://cqawbvidns1th"
 
 [node name="HighlightComponent" type="Node" parent="." unique_id=547704663 node_paths=PackedStringArray("target_meshes")]
 script = ExtResource("3_tae6v")
+outline_material = SubResource("ShaderMaterial_jyx7n")
 target_meshes = [NodePath("../MeshInstance3D")]
 metadata/_custom_type_script = "uid://dgig0tamvkdxx"
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1878620317]
-transform = Transform3D(-4.371139e-08, 1, 0, 4.371139e-08, 1.9106855e-15, -1, -1, -4.371139e-08, -4.371139e-08, 0, 0, 0)
-mesh = SubResource("PlaneMesh_qkvq5")
+material_override = SubResource("StandardMaterial3D_jyx7n")
+mesh = SubResource("QuadMesh_f1hol")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=999078879]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0, 0, 0)
 shape = SubResource("BoxShape3D_koi6h")
 
 [node name="SubViewport" type="SubViewport" parent="." unique_id=1935440404]

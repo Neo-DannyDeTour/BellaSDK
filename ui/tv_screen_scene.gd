@@ -20,7 +20,6 @@ var current_player: CharacterBody3D = null
 var target_fov: float = 75.0
 var current_yaw: float = 0.0
 var current_pitch: float = 0.0
-
 var _interaction_cooldown: float = 0.0
 
 func _ready() -> void:
@@ -29,7 +28,6 @@ func _ready() -> void:
 		interact_comp.interacted.connect(_on_interacted)
 
 	screen_mat_override = screen_mesh.get_material_override() as StandardMaterial3D
-	
 	if not screen_mat_override:
 		screen_mat_override = screen_mesh.get_surface_override_material(0) as StandardMaterial3D
 		
@@ -39,7 +37,8 @@ func _ready() -> void:
 
 	if screen_mat_override and camera_vp:
 		screen_mat_override.albedo_texture = camera_vp.get_texture()
-		# Draw a single starting frame, then automatically disable rendering to save FPS
+		# Drop CCTV resolution to save frame time
+		camera_vp.size = Vector2(512, 512) 
 		camera_vp.render_target_update_mode = SubViewport.UPDATE_ONCE
 
 	if is_instance_valid(cctv_camera):
@@ -71,9 +70,7 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 
-	# Assuming "shoot" is mapped to Left Click
 	if event.is_action_pressed("shoot"):
-		print("[CCTV] Cycling to next camera...")
 		_cycle_camera()
 		get_viewport().set_input_as_handled()
 		return
@@ -111,7 +108,6 @@ func _on_interacted(player: CharacterBody3D) -> void:
 	current_player = player
 	_interaction_cooldown = 0.3 
 
-	# Activate the viewport rendering so the screen visually updates at 60 FPS
 	if camera_vp:
 		camera_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 
@@ -122,7 +118,6 @@ func _stop_controlling() -> void:
 	is_controlling = false
 	_interaction_cooldown = 0.3 
 
-	# Disable the viewport to reclaim frame rates
 	if camera_vp:
 		camera_vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
 
@@ -139,6 +134,7 @@ func _set_camera(index: int) -> void:
 	if not is_instance_valid(target_loc):
 		return
 
+	print("[CCTV] Setting active camera to index: ", index)
 	active_cam_idx = index
 	cctv_camera.global_position = target_loc.global_position
 	
@@ -155,6 +151,7 @@ func _cycle_camera() -> void:
 		return
 
 	var next_idx: int = (active_cam_idx + 1) % camera_locations.size()
+	print("[CCTV] Cycling to next camera...")
 	_set_camera(next_idx)
 	
 func _pan_camera(delta: float) -> void:
@@ -164,8 +161,6 @@ func _pan_camera(delta: float) -> void:
 
 	if input_dir.length_squared() < 0.01:
 		return
-
-	print("[CCTV] Panning camera. Input Dir: ", input_dir)
 
 	var pan_rad: float = deg_to_rad(pan_speed)
 	current_yaw += -input_dir.x * pan_rad * delta

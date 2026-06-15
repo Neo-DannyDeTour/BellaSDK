@@ -79,6 +79,7 @@ var last_ladder: Node3D = null
 @onready var health_component: Node = $HealthComponent
 @onready var stair_controller: StairController = $StairController
 @onready var smoke_manager: Node = get_node_or_null("/root/SmokeManager")
+@onready var in_game_console: CanvasLayer = get_node_or_null("/root/Console")
 
 # --------------------------------------
 # NODE REFERENCES
@@ -122,13 +123,11 @@ func _ready() -> void:
 # HARDWARE INPUT ROUTING
 # --------------------------------------
 func _input(event: InputEvent) -> void:
-	# Route Mouse Look here to bypass GUI swallowing bugs when UI is hidden
 	if event is InputEventMouseMotion:
-		# Block camera rotation if paused, in a menu, or stunned
-		if system_menu.is_paused or system_menu.is_menu_open or system_menu.get("is_stunned"):
+		var is_console_open: bool = is_instance_valid(in_game_console) and in_game_console.visible
+		if system_menu.is_paused or system_menu.is_menu_open or system_menu.get("is_stunned") or is_console_open:
 			return
 
-		# Only rotate if the mouse is actively captured by the game
 		if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 			camera_controller.handle_mouse_input(
 				event,
@@ -138,9 +137,11 @@ func _input(event: InputEvent) -> void:
 			)
 
 func _unhandled_input(event: InputEvent) -> void:
-	# 1. Block all other unhandled inputs if we are paused, in a menu, or stunned
-	if system_menu.is_paused or system_menu.is_menu_open or system_menu.get("is_stunned"):
+	var is_console_open: bool = is_instance_valid(in_game_console) and in_game_console.visible
+	if system_menu.is_paused or system_menu.is_menu_open or system_menu.get("is_stunned") or is_console_open:
 		return
+		
+	# ... (Keep the rest of your item dropping/throwing logic exactly the same) ...
 		
 	# 2. Item Dropping (Priority over new interactions)
 	if event.is_action_pressed("interact") and is_instance_valid(held_item):
@@ -165,11 +166,11 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	# 5. Route standard Interactions and Combat to the Scanner
 	if event.is_action_pressed("interact"):
-		print("Player: Routing interact input to interaction scanner.")
+		print("Player: Routing unhandled interact input to interaction scanner.")
 		interaction_scanner.handle_interact_input()
 
 	if event.is_action_pressed("shoot"):
-		print("Player: Routing shoot input to interaction scanner.")
+		print("Player: Routing unhandled shoot input to interaction scanner.")
 		interaction_scanner.handle_shoot_input()
 
 # --------------------------------------
@@ -285,11 +286,11 @@ func _physics_process(delta: float) -> void:
 	if ladder_cooldown > 0.0:
 		ladder_cooldown -= delta
 		if ladder_cooldown <= 0.0:
-			last_ladder = null  # Free the reference once cooldown is over
+			last_ladder = null 
 
-	# 1. Handle Pauses, Stuns & Machines
-	# Added "is_operating_machine" here to lock the player in place
-	if system_menu.is_paused or system_menu.is_menu_open or system_menu.get("is_stunned") or is_operating_machine:
+	# 1. Handle Pauses, Stuns, Machines & Debug Console
+	var is_console_open: bool = is_instance_valid(in_game_console) and in_game_console.visible
+	if system_menu.is_paused or system_menu.is_menu_open or system_menu.get("is_stunned") or is_operating_machine or is_console_open:
 		state_machine.set_physics_process(false)
 		state_machine.set_process_unhandled_input(false)
 		velocity = Vector3.ZERO
@@ -390,11 +391,11 @@ func exit_water(water_volume: Node3D) -> void:
 		if state_machine.state.name == "Swim":
 			state_machine.transition_to("Air")
 
-## 7. Terminals
-#func enter_terminal_mode(terminal: Node3D) -> void:
-	#print("Player: enter_terminal_mode() called. Passing to InteractionScanner.")
-	#if is_instance_valid(interaction_scanner):
-		#interaction_scanner.enter_terminal_mode(terminal)
+# 7. Terminals
+func enter_terminal_mode(terminal: Node3D) -> void:
+	print("Player: enter_terminal_mode() called. Passing to InteractionScanner.")
+	if is_instance_valid(interaction_scanner):
+		interaction_scanner.enter_terminal_mode(terminal)
 
 # --------------------------------------
 # SAVE / LOAD SYSTEM INTERFACE

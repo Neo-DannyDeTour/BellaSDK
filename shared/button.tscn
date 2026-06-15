@@ -26,9 +26,9 @@ shader_parameter/blink_speed = 8.00000038
 shader_parameter/min_intensity = 0.01
 shader_parameter/max_intensity = 0.5
 
-[node name="Button" type="StaticBody3D" unique_id=1567218577 node_paths=PackedStringArray("pressable_part", "mesh_to_highlight", "click_sound")]
+[node name="Button" type="StaticBody3D" unique_id=1567218577 node_paths=PackedStringArray("pressable_part", "mesh_to_highlight", "click_sound") groups=["not_climbable"]]
 transform = Transform3D(-1, 8.742278e-08, -3.821371e-15, 0, -4.371139e-08, -1, -8.742278e-08, -1, 4.371139e-08, 0, 0, 0)
-collision_layer = 5
+collision_layer = 4
 script = ExtResource("1_rhj8v")
 pressable_part = NodePath("Button/button")
 mesh_to_highlight = NodePath("Button/button")

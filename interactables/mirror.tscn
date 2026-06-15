@@ -12,14 +12,14 @@ shader = ExtResource("1_5o7h0")
 resource_local_to_scene = true
 material = SubResource("ShaderMaterial_nha6m")
 
-[sub_resource type="ViewportTexture" id="ViewportTexture_652kc"]
+[sub_resource type="ViewportTexture" id="ViewportTexture_8mm88"]
 viewport_path = NodePath("SubViewport")
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_5823m"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ngsht"]
 resource_local_to_scene = true
 render_priority = 0
 shader = ExtResource("1_5o7h0")
-shader_parameter/tex = SubResource("ViewportTexture_652kc")
+shader_parameter/tex = SubResource("ViewportTexture_8mm88")
 
 [sub_resource type="Environment" id="Environment_652kc"]
 
@@ -33,18 +33,17 @@ mirror_quad = NodePath("Quad")
 
 [node name="Quad" type="MeshInstance3D" parent="." unique_id=644621512]
 mesh = SubResource("QuadMesh_652kc")
-surface_material_override/0 = SubResource("ShaderMaterial_5823m")
+surface_material_override/0 = SubResource("ShaderMaterial_ngsht")
 
 [node name="SubViewport" type="SubViewport" parent="." unique_id=1790894113]
 size = Vector2i(200, 200)
-render_target_update_mode = 4
 
 [node name="Camera3D" type="Camera3D" parent="SubViewport" unique_id=1441297324]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.71903896, 1.5242157, -3.9149313)
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 1.682942, 1.9177022, -3.0806046)
 environment = SubResource("Environment_652kc")
 compositor = SubResource("Compositor_0dm0a")
 projection = 2
 fov = 70.01
-frustum_offset = Vector2(0.71903896, -1.5242157)
-near = 3.9649312
-far = 54.262268
+frustum_offset = Vector2(1.682942, -1.9177022)
+near = 3.1306045
+far = 54.0

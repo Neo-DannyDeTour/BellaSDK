@@ -98,26 +98,15 @@ metadata/_custom_type_script = "uid://cl68g6jurgp0h"
 
 [node name="VisTEST" type="Node3D" unique_id=240456945]
 
+[node name="Player" parent="." unique_id=1502339238 instance=ExtResource("6_ns8v3")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 3.9198194)
+
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1907814161]
 environment = SubResource("Environment_46sxa")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="WorldEnvironment" unique_id=798207688]
 transform = Transform3D(1, 0, 0, 0, -0.92831075, 0.37180543, 0, -0.37180543, -0.92831075, 9.384303, 7.540174, -17.82357)
 shadow_enabled = true
-
-[node name="Player" parent="." unique_id=1502339238 instance=ExtResource("6_ns8v3")]
-transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -0.3411603, 3, 3.6207736)
-walking_speed = 5.0
-sprinting_speed = 6.5
-crouching_speed = 3.0
-swimming_speed = 4.0
-swim_up_speed = 5.0
-jump_buffer_duration = 0.15
-coyote_time_duration = 0.15
-fall_gravity_multiplier = 1.5
-default_lerp_speed = 15.0
-air_lerp_speed = 3.0
-ice_lerp_speed = 1.5
 
 [node name="Columns" type="Node3D" parent="." unique_id=834293260]
 
@@ -2023,4 +2012,9 @@ persist_after_exit = true
 
 [node name="ChapterTrigger" parent="." unique_id=1955767946 instance=ExtResource("52_wkfn1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.72450435, 2.0262184, -7.4385567)
+
+[node name="ChapterTrigger2" parent="." unique_id=986591175 instance=ExtResource("52_wkfn1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.6088676, 3.6163845, 2.8420885)
+editor_color = Color(1, 0, 0, 0.5921569)
+chapter_name = "VISTEST"
 animation_style = 1

@@ -29,7 +29,7 @@ var noclip_label_message: Label = $MarginContainer3/NoclipMessageContainer/Nocli
 @onready var metrics_button: Button = $DebugPanel/VBoxContainer/MetricsButton
 @onready var collision_button: Button = $DebugPanel/VBoxContainer/CollisionButton
 
-@onready var debug_panel: Panel = $DebugPanel
+@onready var debug_panel: CanvasLayer = $DebugPanel
 @onready var metrics_panel: PanelContainer = $MetricsPanel
 @onready var frame_graph: ColorRect = $FrameGraph
 
@@ -46,10 +46,14 @@ var noclip_label_message: Label = $MarginContainer3/NoclipMessageContainer/Nocli
 @onready var health_margin: MarginContainer = $HealthMargin
 @onready var hearts_container: HBoxContainer = $HealthMargin/HeartsContainer
 
+@onready var chapter_label: RichTextLabel = $MarginContainer2/ChapterLabel
+
 var heart_textures: Array[AtlasTexture] = []
 var heart_nodes: Array[TextureRect] = []
 var heart_tweens: Array[Tween] = []  # Track active animations
 var current_health: int = 300
+
+var chapter_tween: Tween
 
 
 func _ready() -> void:
@@ -100,18 +104,27 @@ func _ready() -> void:
 	green_wireframe_material = ShaderMaterial.new()
 	var shader := Shader.new()
 	shader.code = """
-    shader_type spatial;
-    render_mode wireframe, unshaded, cull_disabled;
-    
-    void fragment() {
-        ALBEDO = vec3(0.0, 1.0, 0.0); // Bright Green!
-    }
-    """
+	shader_type spatial;
+	render_mode wireframe, unshaded, cull_disabled;
+	
+	void fragment() {
+		ALBEDO = vec3(0.0, 1.0, 0.0); // Bright Green!
+	}
+	"""
 	green_wireframe_material.shader = shader
 
 	# Connect the global event to the UI's update function
 	#Events.player_health_changed.connect(update_health)
 	_initialize_hearts()
+	
+	if not Events.chapter_triggered.is_connected(_on_chapter_triggered):
+		Events.chapter_triggered.connect(_on_chapter_triggered)
+		
+	chapter_label.modulate.a = 0.0
+	chapter_label.visible = false
+	
+	# Check if we are loading into the Testbed map
+	call_deferred("_check_if_testbed")
 
 
 func _process(delta: float) -> void:
@@ -306,6 +319,11 @@ func _input(event: InputEvent) -> void:
 func _toggle_debug_panel() -> void:
 	debug_panel.visible = not debug_panel.visible
 	print("CanvasLayer: Debug panel visibility toggled -> ", debug_panel.visible)
+	
+	if debug_panel.visible:
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	else:
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _on_noclip_button_pressed() -> void:
 	Events.noclip_ui_button_pressed.emit()
@@ -494,3 +512,70 @@ func _animate_heart_heal(index: int, frame_index: int) -> void:
 
 	# Chain ensures queue_free only fires after all parallel tweens finish
 	tween.chain().tween_callback(ghost.queue_free)
+
+
+# --- CHAPTER TITLE LOGIC ---
+func _on_chapter_triggered(chapter_name: String, anim_style: int, display_duration: float, text_color: Color) -> void:
+	print("UI received chapter_triggered signal. Displaying: ", chapter_name, " in color: ", text_color)
+	
+	# Apply the color from the trigger directly to the text
+	chapter_label.add_theme_color_override("default_color", text_color)
+	chapter_label.visible = true
+
+	if chapter_tween and chapter_tween.is_valid():
+		chapter_tween.kill()
+
+	chapter_tween = create_tween()
+
+	match anim_style:
+		Events.ChapterAnimStyle.SIMPLE:
+			print("UI animating chapter using SIMPLE style.")
+			chapter_label.text = "[center]" + chapter_name + "[/center]"
+			chapter_label.visible_ratio = 1.0
+			chapter_tween.tween_property(chapter_label, "modulate:a", 1.0, 1.0)
+			chapter_tween.tween_interval(display_duration)
+			chapter_tween.tween_property(chapter_label, "modulate:a", 0.0, 1.0)
+
+		Events.ChapterAnimStyle.TYPEWRITER:
+			print("UI animating chapter using TYPEWRITER style.")
+			chapter_label.modulate.a = 1.0
+			chapter_label.text = "[center]" + chapter_name + "[/center]"
+			chapter_label.visible_ratio = 0.0
+			
+			var time_per_char: float = 0.05
+			var total_time: float = chapter_name.length() * time_per_char
+			
+			chapter_tween.tween_property(chapter_label, "visible_ratio", 1.0, total_time)
+			chapter_tween.tween_interval(display_duration)
+			chapter_tween.tween_property(chapter_label, "modulate:a", 0.0, 1.0)
+
+		Events.ChapterAnimStyle.WAVE:
+			print("UI animating chapter using WAVE style.")
+			var wave_tag: String = "[wave amp=50.0 freq=5.0 connected=1]"
+			chapter_label.text = "[center]" + wave_tag + chapter_name + "[/wave][/center]"
+			chapter_label.visible_ratio = 1.0
+			chapter_tween.tween_property(chapter_label, "modulate:a", 1.0, 1.0)
+			chapter_tween.tween_interval(display_duration)
+			chapter_tween.tween_property(chapter_label, "modulate:a", 0.0, 1.0)
+
+	chapter_tween.tween_callback(chapter_label.hide)
+
+
+func _check_if_testbed() -> void:
+	print("Checking if current scene is TestbedMap...")
+	var current_scene: Node = get_tree().current_scene
+	
+	# We check the file path to explicitly target your testbed.scn file
+	if current_scene and "testbed.scn" in current_scene.scene_file_path.to_lower():
+		_open_metrics_panel()
+
+
+func _open_metrics_panel() -> void:
+	print("TestbedMap detected. Opening metrics panel automatically.")
+	
+	if metrics_panel and not metrics_panel.visible:
+		metrics_panel.toggle_window()
+		
+		# Mirror the metrics panel's visibility for the frame graph
+		if frame_graph:
+			frame_graph.visible = metrics_panel.visible

@@ -22,6 +22,9 @@ shader_parameter/blink_speed = 8.00000038
 shader_parameter/min_intensity = 0.01
 shader_parameter/max_intensity = 0.050000002375
 
+[sub_resource type="Environment" id="Environment_dcbol"]
+reflected_light_source = 1
+
 [node name="TVScreen" type="StaticBody3D" unique_id=2083472752 node_paths=PackedStringArray("camera_vp")]
 collision_layer = 4
 script = ExtResource("1_6scty")
@@ -44,9 +47,12 @@ outline_material = SubResource("ShaderMaterial_y4bl1")
 metadata/_custom_type_script = "uid://dgig0tamvkdxx"
 
 [node name="CameraViewport" type="SubViewport" parent="." unique_id=849164279]
+positional_shadow_atlas_size = 0
 
 [node name="CCTVCamera" type="Camera3D" parent="CameraViewport" unique_id=445713227]
+environment = SubResource("Environment_dcbol")
 current = true
+far = 1000.0
 
 [node name="CanvasLayer" type="CanvasLayer" parent="CameraViewport" unique_id=751183537]
 

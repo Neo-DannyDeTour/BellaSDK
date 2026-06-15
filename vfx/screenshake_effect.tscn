@@ -1,8 +1,11 @@
 [gd_scene format=3 uid="uid://b6saw37qcvs0i"]
 
 [ext_resource type="Script" uid="uid://cyo1ru2r8j23r" path="res://vfx/screenshake_effect.gd" id="1_we1fn"]
+[ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://shared/editor_trigger_visualizer.gd" id="2_07aef"]
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_we1fn"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_07aef"]
+resource_local_to_scene = true
+size = Vector3(2, 2, 2)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_07aef"]
 transparency = 1
@@ -10,13 +13,24 @@ albedo_color = Color(1, 0.4509804, 0.4509804, 0.40392157)
 
 [sub_resource type="BoxMesh" id="BoxMesh_a5t3k"]
 material = SubResource("StandardMaterial3D_07aef")
+size = Vector3(2, 2, 2)
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_07aef"]
+viewport_path = NodePath("EditorVisual/@SubViewport@19095")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_a5t3k"]
+transparency = 1
+cull_mode = 2
+albedo_texture = SubResource("ViewportTexture_07aef")
 
 [node name="screenshake_effect" type="Area3D" unique_id=1581639647]
 collision_mask = 2
 script = ExtResource("1_we1fn")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=713318068]
-shape = SubResource("BoxShape3D_we1fn")
+shape = SubResource("BoxShape3D_07aef")
 
 [node name="EditorVisual" type="MeshInstance3D" parent="." unique_id=1107187512]
 mesh = SubResource("BoxMesh_a5t3k")
+surface_material_override/0 = SubResource("StandardMaterial3D_a5t3k")
+script = ExtResource("2_07aef")

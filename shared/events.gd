@@ -51,6 +51,15 @@ signal font_changed(font_name: String)
 # --- FONT SWAPPING LOGIC ---
 var fonts: Dictionary[String, Font] = {}
 
+enum ChapterAnimStyle {
+	SIMPLE,
+	TYPEWRITER,
+	WAVE
+}
+
+@warning_ignore("unused_signal")
+signal chapter_triggered(chapter_name: String, anim_style: int, display_duration: float, text_color: Color)
+
 
 func _ready() -> void:
 	font_changed.connect(_on_font_changed)

@@ -36,16 +36,17 @@ radial_segments = 8
 rings = 0
 
 [sub_resource type="Gradient" id="Gradient_ogymw"]
-offsets = PackedFloat32Array(0, 0.19014767, 0.8994817, 1)
-colors = PackedColorArray(0.003921569, 0, 0, 0, 1, 0, 0, 0.078431375, 1, 0, 0, 0.039215688, 1, 0, 0, 0)
+offsets = PackedFloat32Array(0.0031086819, 0.36062163, 0.48497397, 0.5678755, 0.6870465, 1)
+colors = PackedColorArray(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.3137255, 1, 0, 0, 0.3137255, 1, 0, 0, 0, 1, 0, 0, 0)
 
 [sub_resource type="GradientTexture1D" id="GradientTexture1D_ey25j"]
 gradient = SubResource("Gradient_ogymw")
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_1cv0y"]
+emission_shape_scale = Vector3(1, 0.5, 1)
 emission_shape = 3
 emission_box_extents = Vector3(0.1, 0.1, 1)
-gravity = Vector3(0, -0.5, 0)
+gravity = Vector3(0, -0.1, 0)
 color_ramp = SubResource("GradientTexture1D_ey25j")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ogymw"]
@@ -57,7 +58,7 @@ disable_receive_shadows = true
 
 [sub_resource type="QuadMesh" id="QuadMesh_ey25j"]
 material = SubResource("StandardMaterial3D_ogymw")
-size = Vector2(0.4, 0.4)
+size = Vector2(0.2, 0.2)
 orientation = 0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_2c5bn"]
