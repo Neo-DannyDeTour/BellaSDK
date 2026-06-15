@@ -8,13 +8,13 @@ extends Node3D
 		if is_node_ready():
 			_update_mirror_size()
 
-@export var pixels_per_unit: int = 200
-@export var max_update_distance: float = 100.0
-@export var max_viewport_size: Vector2i = Vector2i(2048, 2048)
+@export var pixels_per_unit: int = 50
+@export var max_update_distance: float = 15.0
+@export var max_viewport_size: Vector2i = Vector2i(512, 512)
 
 @export_group("Culling Settings")
 @export var cull_near: float = 0.05
-@export var cull_far: float = 50.0
+@export var cull_far: float = 20.0
 @export_flags_3d_render var cull_mask: int = 0xFFFFF
 
 @export_group("Internal References")

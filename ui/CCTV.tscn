@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bkxrbjc7txin4"]
 
-[ext_resource type="Script" uid="uid://tsbhvaf6xw4i" path="res://ui/tv_screen_scene.gd" id="1_6scty"]
+[ext_resource type="Script" uid="uid://tsbhvaf6xw4i" path="res://ui/CCTV.gd" id="1_6scty"]
 [ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="2_38cqg"]
 [ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="3_qkb5d"]
 [ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="4_qkb5d"]
@@ -23,6 +23,8 @@ shader_parameter/min_intensity = 0.01
 shader_parameter/max_intensity = 0.050000002375
 
 [sub_resource type="Environment" id="Environment_dcbol"]
+background_mode = 1
+ambient_light_source = 1
 reflected_light_source = 1
 
 [node name="TVScreen" type="StaticBody3D" unique_id=2083472752 node_paths=PackedStringArray("camera_vp")]
@@ -50,6 +52,7 @@ metadata/_custom_type_script = "uid://dgig0tamvkdxx"
 positional_shadow_atlas_size = 0
 
 [node name="CCTVCamera" type="Camera3D" parent="CameraViewport" unique_id=445713227]
+cull_mask = 1047559
 environment = SubResource("Environment_dcbol")
 current = true
 far = 1000.0
@@ -73,3 +76,4 @@ theme_override_constants/margin_bottom = 20
 
 [node name="TutorialLabel" type="Label" parent="CameraViewport/CanvasLayer/MarginContainer" unique_id=790318665]
 layout_mode = 2
+theme_override_font_sizes/font_size = 64
