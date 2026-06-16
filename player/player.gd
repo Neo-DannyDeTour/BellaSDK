@@ -125,7 +125,16 @@ func _ready() -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventMouseMotion:
 		var is_console_open: bool = is_instance_valid(in_game_console) and in_game_console.visible
-		if system_menu.is_paused or system_menu.is_menu_open or system_menu.get("is_stunned") or is_console_open:
+		
+		var is_blocked: bool = (
+			system_menu.is_paused
+			or system_menu.is_menu_open
+			or system_menu.get("is_stunned")
+			or is_console_open
+			or is_operating_machine
+		)
+		
+		if is_blocked:
 			return
 
 		if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
@@ -138,10 +147,17 @@ func _input(event: InputEvent) -> void:
 
 func _unhandled_input(event: InputEvent) -> void:
 	var is_console_open: bool = is_instance_valid(in_game_console) and in_game_console.visible
-	if system_menu.is_paused or system_menu.is_menu_open or system_menu.get("is_stunned") or is_console_open:
+	
+	var is_blocked: bool = (
+		system_menu.is_paused 
+		or system_menu.is_menu_open 
+		or system_menu.get("is_stunned") 
+		or is_console_open 
+		or is_operating_machine
+	)
+	
+	if is_blocked:
 		return
-		
-	# ... (Keep the rest of your item dropping/throwing logic exactly the same) ...
 		
 	# 2. Item Dropping (Priority over new interactions)
 	if event.is_action_pressed("interact") and is_instance_valid(held_item):
@@ -568,3 +584,21 @@ func _drop_held_item() -> void:
 		
 	held_item = null
 	_set_weapon_active(true)
+
+
+# --------------------------------------
+# MACHINE OPERATION
+# --------------------------------------
+func start_operating_machine() -> void:
+	print("Player: start_operating_machine() called. Yielding control.")
+	is_operating_machine = true
+	camera.current = false
+	velocity = Vector3.ZERO
+	direction = Vector3.ZERO
+
+
+func stop_operating_machine() -> void:
+	print("Player: stop_operating_machine() called. Resuming control.")
+	is_operating_machine = false
+	camera.current = true
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED

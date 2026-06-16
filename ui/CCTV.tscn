@@ -23,7 +23,6 @@ shader_parameter/min_intensity = 0.01
 shader_parameter/max_intensity = 0.050000002375
 
 [sub_resource type="Environment" id="Environment_dcbol"]
-background_mode = 1
 ambient_light_source = 1
 reflected_light_source = 1
 

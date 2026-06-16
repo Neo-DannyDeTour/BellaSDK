@@ -1,0 +1,88 @@
+[gd_scene format=3 uid="uid://crfas2bkomdv6"]
+
+[ext_resource type="Script" uid="uid://dmp1p8su8ecr7" path="res://interactables/player_drone.gd" id="1_o4pg3"]
+[ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="2_k5qpy"]
+[ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="3_uydbv"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="4_ysqd2"]
+[ext_resource type="Shader" uid="uid://n5i6lxxhv2jh" path="res://vfx/vhs.gdshader" id="5_uydbv"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_g8x0s"]
+render_priority = 0
+shader = ExtResource("4_ysqd2")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.05
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_k5qpy"]
+size = Vector3(2, 1, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_o4pg3"]
+size = Vector3(0.5, 0.4, 0.5)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_qvdf2"]
+top_radius = 0.4
+bottom_radius = 0.4
+height = 0.2
+radial_segments = 8
+rings = 0
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_571xk"]
+top_radius = 0.4
+bottom_radius = 0.4
+height = 0.2
+radial_segments = 8
+rings = 0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ysqd2"]
+shader = ExtResource("5_uydbv")
+shader_parameter/wave_speed = 0.20000000298024
+shader_parameter/wave_frequency = 1.90000002831228
+shader_parameter/wave_width = 0.12999999709423998
+shader_parameter/refraction_strength = 0.01200000057
+shader_parameter/aberration_amount = 0.00400000019
+shader_parameter/dither_intensity = 0.10999999754128
+shader_parameter/desaturation = 0.4
+
+[node name="PlayerDrone" type="CharacterBody3D" unique_id=654692039]
+script = ExtResource("1_o4pg3")
+
+[node name="Interact_Component" type="Node" parent="." unique_id=343396685]
+script = ExtResource("2_k5qpy")
+metadata/_custom_type_script = "uid://cqawbvidns1th"
+
+[node name="HighlightComponent" type="Node" parent="." unique_id=422315545]
+script = ExtResource("3_uydbv")
+outline_material = SubResource("ShaderMaterial_g8x0s")
+metadata/_custom_type_script = "uid://dgig0tamvkdxx"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1336812213]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.019104004, 0, 0)
+shape = SubResource("BoxShape3D_k5qpy")
+
+[node name="TiltPivot" type="Node3D" parent="." unique_id=1389104512]
+
+[node name="Body" type="MeshInstance3D" parent="TiltPivot" unique_id=1081545852]
+mesh = SubResource("BoxMesh_o4pg3")
+
+[node name="PropellerL" type="MeshInstance3D" parent="TiltPivot" unique_id=1492769564]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.6, 0, 0)
+mesh = SubResource("CylinderMesh_qvdf2")
+
+[node name="PropellerR" type="MeshInstance3D" parent="TiltPivot" unique_id=204440956]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6, 0, 0)
+mesh = SubResource("CylinderMesh_571xk")
+
+[node name="DroneCamera" type="Camera3D" parent="TiltPivot" unique_id=41560190]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.022696257)
+
+[node name="DroneHUD" type="CanvasLayer" parent="." unique_id=1979516526]
+visible = false
+
+[node name="ColorRect" type="ColorRect" parent="DroneHUD" unique_id=553749274]
+material = SubResource("ShaderMaterial_ysqd2")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2

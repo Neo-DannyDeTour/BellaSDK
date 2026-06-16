@@ -1,0 +1,38 @@
+[gd_scene format=3 uid="uid://u03hpjl4b83a"]
+
+[ext_resource type="Shader" uid="uid://dyjl3wmb46lpt" path="res://interactables/conveyor_belt.gdshader" id="1_kcjdk"]
+[ext_resource type="Script" uid="uid://dkg0rirae83gd" path="res://interactables/conveyor_belt.gd" id="1_s730f"]
+[ext_resource type="Texture2D" uid="uid://bk34dpfhypro0" path="res://assets/images/Moving_Floor.png" id="2_key31"]
+[ext_resource type="ArrayMesh" uid="uid://bkdktt4rqjra1" path="res://assets/dev_meshes/dev_arrow.obj" id="4_i2gnb"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_2bp38"]
+resource_local_to_scene = true
+size = Vector3(2, 0.1, 10)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_key31"]
+resource_local_to_scene = true
+render_priority = 0
+shader = ExtResource("1_kcjdk")
+shader_parameter/albedo_texture = ExtResource("2_key31")
+shader_parameter/scroll_speed = 2.0
+shader_parameter/rotation_angle = 3.141592653589793
+shader_parameter/texture_scale = 1.0
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_kcjdk"]
+resource_local_to_scene = true
+size = Vector2(2, 10)
+
+[node name="ConveyorBelt" type="StaticBody3D" unique_id=1269575891]
+constant_linear_velocity = Vector3(0, 0, 2)
+script = ExtResource("1_s730f")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1861403763]
+shape = SubResource("BoxShape3D_2bp38")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1102015546]
+material_override = SubResource("ShaderMaterial_key31")
+mesh = SubResource("PlaneMesh_kcjdk")
+
+[node name="DirectionArrow" type="MeshInstance3D" parent="." unique_id=125089575]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+mesh = ExtResource("4_i2gnb")
