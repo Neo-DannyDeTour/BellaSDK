@@ -1,0 +1,33 @@
+[gd_scene load_steps=5 format=3 uid="uid://c3qg02p76y398"]
+
+[ext_resource type="Script" path="res://interactables/destructible_glass/destructible_glass.gd" id="1_glass"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_glass"]
+transparency = 1
+albedo_color = Color(0.6, 0.8, 0.9, 0.3)
+roughness = 0.1
+refraction_enabled = true
+refraction_scale = 0.05
+
+[sub_resource type="BoxMesh" id="BoxMesh_glass"]
+material = SubResource("StandardMaterial3D_glass")
+size = Vector3(2, 2, 0.1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_glass"]
+size = Vector3(2, 2, 0.1)
+
+[node type="DestructibleGlass" type="RigidBody3D"]
+freeze = true
+contact_monitor = true
+max_contacts_reported = 5
+script = ExtResource("1_glass")
+
+[node type="IntactMesh" type="MeshInstance3D" parent="."]
+mesh = SubResource("BoxMesh_glass")
+
+[node type="IntactCollision" type="CollisionShape3D" parent="."]
+shape = SubResource("BoxShape3D_glass")
+
+[node type="BreakSound" type="AudioStreamPlayer3D" parent="."]
+
+[node type="ShardsContainer" type="Node3D" parent="."]
