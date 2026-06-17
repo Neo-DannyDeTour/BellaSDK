@@ -123,6 +123,39 @@ func _ready() -> void:
 # HARDWARE INPUT ROUTING
 # --------------------------------------
 func _input(event: InputEvent) -> void:
+	# --- DEBUG BLOCK: Find what is eating the shoot input ---
+	if event.is_action_pressed("shoot") or (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
+		print("Player: _input() caught a Shoot/LMB event. Scanning for blockers...")
+
+		# 1. Check Godot's built-in GUI hover
+		var hovered_control: Control = get_viewport().gui_get_hovered_control()
+		if is_instance_valid(hovered_control):
+			print(" -> UI BLOCKER: The node '", hovered_control.name, "' is currently hovered!")
+			print(" -> FIX: Change 'mouse_filter' on '", hovered_control.name, "' to MOUSE_FILTER_IGNORE.")
+		else:
+			print(" -> UI STATUS: Clear. No Control nodes are hovered.")
+
+		# 2. Check internal game logic blockers
+		var is_console_open: bool = is_instance_valid(in_game_console) and in_game_console.visible
+		var is_blocked: bool = (
+			system_menu.is_paused
+			or system_menu.is_menu_open
+			or system_menu.get("is_stunned")
+			or is_console_open
+			or is_operating_machine
+		)
+
+		if is_blocked:
+			print(" -> STATE BLOCKER: Player logic is blocking input.")
+			print("    - is_paused: ", system_menu.is_paused)
+			print("    - is_menu_open: ", system_menu.is_menu_open)
+			print("    - is_stunned: ", system_menu.get("is_stunned"))
+			print("    - is_console_open: ", is_console_open)
+			print("    - is_operating_machine: ", is_operating_machine)
+		else:
+			print(" -> STATE STATUS: Clear. Input should route to _unhandled_input().")
+	# --- END DEBUG BLOCK ---
+
 	if event is InputEventMouseMotion:
 		var is_console_open: bool = is_instance_valid(in_game_console) and in_game_console.visible
 		

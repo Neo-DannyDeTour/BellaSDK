@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://24jaluj1cq3p"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_8ufpc"]
+height = 5.0
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_ma58d"]
+top_radius = 0.3
+bottom_radius = 0.3
+height = 4.0
+
+[sub_resource type="BoxMesh" id="BoxMesh_07awm"]
+size = Vector3(5, 0.2, 2)
+
+[node name="RaisePlatform" type="Node3D" unique_id=1926299170]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=336593007]
+mesh = SubResource("CylinderMesh_8ufpc")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="." unique_id=1545191071]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.4420214, 0)
+mesh = SubResource("CylinderMesh_ma58d")
+
+[node name="MeshInstance3D3" type="MeshInstance3D" parent="." unique_id=731934662]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4.565014, 0)
+mesh = SubResource("BoxMesh_07awm")

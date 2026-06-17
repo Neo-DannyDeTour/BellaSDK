@@ -21,7 +21,7 @@ const DEFAULT_BRIGHTNESS: float = 1.0
 const DEFAULT_CONTRAST: float = 1.0
 const DEFAULT_SATURATION: float = 1.0
 
-const CHAPTER_SCREEN: PackedScene = preload("res://ui/chapter_screen.tscn")
+const CHAPTER_SCREEN: PackedScene = preload("res://ui/menu_chapter_screen.tscn")
 
 const FPS_LIMITS: Dictionary = {
 	"30 FPS": 30,

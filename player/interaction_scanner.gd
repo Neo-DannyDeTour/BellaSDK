@@ -35,25 +35,21 @@ var is_in_terminal_mode: bool = false
 var active_terminal: Node3D = null
 var terminal_start_pos: Vector3 = Vector3.ZERO
 
+
 # --------------------------------------
 # CORE PROCESS LOGIC
 # --------------------------------------
 func process_interaction(_delta: float) -> void:
-	if Input.is_action_just_pressed("interact") or Input.is_action_just_pressed("shoot"):
-		print("InteractionScanner: process_interaction scanning on input tick.")
-
 	if is_in_terminal_mode:
 		if _should_exit_terminal_mode():
 			exit_terminal_mode()
 			return
 			
 		if is_instance_valid(active_terminal):
-			if Input.is_action_just_pressed("shoot"):
-				shoot_terminal_raycast(true)
-				get_viewport().set_input_as_handled()
-			else:
-				shoot_terminal_raycast(false)
-				
+			# The click is now safely handled by handle_shoot_input().
+			# This just continuously updates the mouse hover position.
+			shoot_terminal_raycast(false)
+			
 		return
 
 	_update_dynamic_reach()
@@ -62,7 +58,9 @@ func process_interaction(_delta: float) -> void:
 	if current_interactable:
 		var hit_point: Vector3 = interact_shapecast.get_collision_point(0)
 		if current_interactable.has_method("hover_cursor"):
-			print("InteractionScanner: Hovering cursor over interactable.")
+			# Note: I removed the print() statement from this specific block. 
+			# Printing to the console every single frame causes massive performance 
+			# bottlenecks and will prevent you from holding a steady 60 FPS.
 			current_interactable.hover_cursor(player_body, hit_point)
 
 # --------------------------------------

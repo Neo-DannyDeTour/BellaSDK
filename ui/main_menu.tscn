@@ -210,11 +210,6 @@ font_size = 42
 font_color = Color(1, 1, 1, 0)
 outline_size = 3
 
-[sub_resource type="Environment" id="Environment_1hnlc"]
-background_mode = 3
-glow_enabled = true
-glow_intensity = 2.5
-
 [node name="MainMenu" type="CanvasLayer" unique_id=1244757478 groups=["hide_on_save"]]
 process_mode = 3
 layer = 10
@@ -891,9 +886,6 @@ grow_vertical = 0
 theme_override_fonts/font = ExtResource("2_2o76q")
 theme_override_font_sizes/font_size = 64
 text = "Back"
-
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1919384477]
-environment = SubResource("Environment_1hnlc")
 
 [node name="SaveLoadPanel" type="Panel" parent="." unique_id=377481609]
 visible = false

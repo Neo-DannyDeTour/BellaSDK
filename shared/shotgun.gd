@@ -107,7 +107,7 @@ func shoot(player_camera: Camera3D) -> void:
 			print("Shotgun: Pellet hit " + str(collider.name) + " at " + str(result.position))
 
 			if collider.has_method("take_damage"):
-				collider.take_damage(damage_per_pellet, pellet_dir)
+				collider.take_damage(damage_per_pellet, result.position, pellet_dir)
 			elif collider is RigidBody3D:
 				var hit_offset: Vector3 = result.position - (collider as RigidBody3D).global_position
 				(collider as RigidBody3D).apply_impulse(pellet_dir * 2.0, hit_offset)

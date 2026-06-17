@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bqmsu8rh0h335"]
 
-[ext_resource type="Script" uid="uid://cxno1j2i4qwas" path="res://interactables/chapter_trigger.gd" id="1_n7sen"]
+[ext_resource type="Script" uid="uid://cxno1j2i4qwas" path="res://interactables/env_chapter_trigger.gd" id="1_n7sen"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_ehemb"]
 
@@ -20,6 +20,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
 
 [node name="RichTextLabel" type="RichTextLabel" parent="CanvasLayer/Control" unique_id=609386561]
 layout_mode = 0

@@ -14,6 +14,9 @@ var _noise: FastNoiseLite = FastNoiseLite.new()
 
 
 func _ready() -> void:
+	make_current()
+	print("Player camera has been set as the current active camera.")
+	
 	_noise.seed = randi()
 	_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
 	Events.screenshake_requested.connect(_on_screenshake_requested)

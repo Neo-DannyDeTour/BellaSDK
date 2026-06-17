@@ -1,0 +1,49 @@
+[gd_scene format=3 uid="uid://bupgqxe5b5fg6"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_37eh5"]
+size = Vector3(1, 1, 0.2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qbyiv"]
+albedo_color = Color(0.23529412, 1, 0, 1)
+
+[sub_resource type="PrismMesh" id="PrismMesh_200yy"]
+material = SubResource("StandardMaterial3D_qbyiv")
+size = Vector3(0.3, 0.3, 0.3)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nc6s5"]
+albedo_color = Color(0.27, 0.27, 0.27, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_eaax5"]
+material = SubResource("StandardMaterial3D_nc6s5")
+size = Vector3(0.2, 0.5, 0.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_gyi2g"]
+size = Vector3(0.05, 0.3, 0.05)
+
+[sub_resource type="BoxMesh" id="BoxMesh_y3wc8"]
+size = Vector3(0.4, 0.05, 0.05)
+
+[node name="Node3D" type="Node3D" unique_id=1234076453]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1294777555]
+mesh = SubResource("BoxMesh_37eh5")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="." unique_id=273055178]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.27594778, 0.27375817, 0.032174706)
+mesh = SubResource("PrismMesh_200yy")
+
+[node name="MeshInstance3D4" type="MeshInstance3D" parent="." unique_id=1201909353]
+transform = Transform3D(-1, -8.742278e-08, 0, 8.742278e-08, -1, 0, 0, 0, 1, -0.27594778, -0.1647291, 0.032174706)
+mesh = SubResource("PrismMesh_200yy")
+
+[node name="MeshInstance3D3" type="MeshInstance3D" parent="." unique_id=2015216000]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.18788743, 0.031142041, 0.058429718)
+mesh = SubResource("BoxMesh_eaax5")
+
+[node name="MeshInstance3D5" type="MeshInstance3D" parent="." unique_id=754978995]
+transform = Transform3D(1, 0, 0, 0, 0.7722126, -0.6353642, 0, 0.6353642, 0.7722126, 0.17430288, 0.07224411, 0.18486762)
+mesh = SubResource("BoxMesh_gyi2g")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="MeshInstance3D5" unique_id=1919025413]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+mesh = SubResource("BoxMesh_y3wc8")

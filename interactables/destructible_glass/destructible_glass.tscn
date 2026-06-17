@@ -1,33 +1,43 @@
-[gd_scene load_steps=5 format=3 uid="uid://c3qg02p76y398"]
+[gd_scene format=3 uid="uid://c3qg02p76y4a8"]
 
-[ext_resource type="Script" path="res://interactables/destructible_glass/destructible_glass.gd" id="1_glass"]
+[ext_resource type="Script" uid="uid://dijyb12lij8yt" path="res://interactables/destructible_glass/destructible_glass.gd" id="1"]
+[ext_resource type="Shader" uid="uid://dj3o0nbu33jde" path="res://vfx/breakable_glass.gdshader" id="2_im3k5"]
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_glass"]
-transparency = 1
-albedo_color = Color(0.6, 0.8, 0.9, 0.3)
-roughness = 0.1
-refraction_enabled = true
-refraction_scale = 0.05
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_kwvy0"]
+resource_local_to_scene = true
+render_priority = 0
+shader = ExtResource("2_im3k5")
+shader_parameter/roughness = 0.1
+shader_parameter/distortion_amount = 0.05
+shader_parameter/block_tiles = 1.0
+shader_parameter/block_deform = 0.0
+shader_parameter/net_thickness = 0.05
 
 [sub_resource type="BoxMesh" id="BoxMesh_glass"]
-material = SubResource("StandardMaterial3D_glass")
+resource_local_to_scene = true
+material = SubResource("ShaderMaterial_kwvy0")
 size = Vector3(2, 2, 0.1)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_glass"]
 size = Vector3(2, 2, 0.1)
 
-[node type="DestructibleGlass" type="RigidBody3D"]
+[node name="DestructibleGlass" type="RigidBody3D" unique_id=1302624192]
 freeze = true
 contact_monitor = true
 max_contacts_reported = 5
-script = ExtResource("1_glass")
+script = ExtResource("1")
 
-[node type="IntactMesh" type="MeshInstance3D" parent="."]
+[node name="IntactMesh" type="MeshInstance3D" parent="." unique_id=687538703]
+instance_shader_parameters/glass_color = Color(0.8, 0.9, 1, 0.4)
+instance_shader_parameters/glass_scale = Vector2(2, 2)
+instance_shader_parameters/is_armored = false
+instance_shader_parameters/net_color = Color(0.1, 0.1, 0.1, 1)
+instance_shader_parameters/net_scale = 20.0
 mesh = SubResource("BoxMesh_glass")
 
-[node type="IntactCollision" type="CollisionShape3D" parent="."]
+[node name="IntactCollision" type="CollisionShape3D" parent="." unique_id=1142397340]
 shape = SubResource("BoxShape3D_glass")
 
-[node type="BreakSound" type="AudioStreamPlayer3D" parent="."]
+[node name="BreakSound" type="AudioStreamPlayer3D" parent="." unique_id=1023463514]
 
-[node type="ShardsContainer" type="Node3D" parent="."]
+[node name="ShardsContainer" type="Node3D" parent="." unique_id=943371745]

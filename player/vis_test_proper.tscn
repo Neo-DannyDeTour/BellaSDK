@@ -51,7 +51,7 @@
 [ext_resource type="PackedScene" uid="uid://jvgnyc7a68n6" path="res://shared/soundscape_zone.tscn" id="49_5jhqv"]
 [ext_resource type="AudioStream" uid="uid://1w1y07mxmm0h" path="res://assets/sounds/SoundscapeHorror.wav" id="50_wkfn1"]
 [ext_resource type="Script" uid="uid://cl68g6jurgp0h" path="res://shared/soundscape_data.gd" id="51_yuk8b"]
-[ext_resource type="PackedScene" uid="uid://bqmsu8rh0h335" path="res://interactables/chapter_trigger.tscn" id="52_wkfn1"]
+[ext_resource type="PackedScene" uid="uid://bqmsu8rh0h335" path="res://interactables/env_chapter_trigger.tscn" id="52_wkfn1"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_kja8q"]
 panorama = ExtResource("1_mhg1j")

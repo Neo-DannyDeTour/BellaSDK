@@ -1,10 +1,10 @@
 [gd_scene format=3 uid="uid://bb7ydpnyyqnba"]
 
-[ext_resource type="Script" uid="uid://ppgk345pd5rf" path="res://ui/chapter_screen.gd" id="1_w8ad5"]
-[ext_resource type="Script" uid="uid://45jvq8yps1jm" path="res://ui/chapter_data.gd" id="2_sl2hs"]
+[ext_resource type="Script" uid="uid://ppgk345pd5rf" path="res://ui/menu_chapter_screen.gd" id="1_w8ad5"]
+[ext_resource type="Script" uid="uid://45jvq8yps1jm" path="res://ui/menu_chapter_data.gd" id="2_sl2hs"]
 [ext_resource type="Texture2D" uid="uid://dqqg54m0bl4k1" path="res://assets/images/chapter_imgs/TestBED.png" id="3_ef8iv"]
 [ext_resource type="Texture2D" uid="uid://yxgdfvdpfmu7" path="res://assets/images/chapter_imgs/VisTEST.png" id="4_1symm"]
-[ext_resource type="Shader" uid="uid://d3hb763n705g4" path="res://ui/chapter_screen.gdshader" id="5_ef8iv"]
+[ext_resource type="Shader" uid="uid://d3hb763n705g4" path="res://ui/menu_chapter_screen.gdshader" id="5_ef8iv"]
 [ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="5_sl2hs"]
 [ext_resource type="Script" uid="uid://g1iralse1net" path="res://ui/horror_button.gd" id="7_1symm"]
 [ext_resource type="Shader" uid="uid://6lomg4ekdndh" path="res://vfx/horror_text_shader.gdshader" id="8_53ons"]

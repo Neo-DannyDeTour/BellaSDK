@@ -1,0 +1,37 @@
+[gd_scene format=3 uid="uid://dkwgx5rjoegaa"]
+
+[ext_resource type="Script" uid="uid://de8cwimnsris8" path="res://interactables/spike_trap.gd" id="1_1emr3"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_ysihx"]
+top_radius = 0.1
+bottom_radius = 0.1
+height = 3.0
+radial_segments = 8
+rings = 0
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_g257e"]
+size = Vector3(0.2, 3, 0.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_k2dab"]
+size = Vector3(3, 3, 3)
+
+[node name="SpikeTrap" type="Node3D" unique_id=1966813817 node_paths=PackedStringArray("proximity_area", "proximity_shape_node", "spike_body")]
+script = ExtResource("1_1emr3")
+proximity_area = NodePath("ProximityArea")
+proximity_shape_node = NodePath("ProximityArea/CollisionShape3D")
+spike_body = NodePath("SpikeBody")
+
+[node name="SpikeBody" type="AnimatableBody3D" parent="." unique_id=1920060177]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="SpikeBody" unique_id=1675999373]
+mesh = SubResource("CylinderMesh_ysihx")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SpikeBody" unique_id=534461734]
+shape = SubResource("BoxShape3D_g257e")
+
+[node name="ProximityArea" type="Area3D" parent="." unique_id=1130204732]
+collision_layer = 4
+collision_mask = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ProximityArea" unique_id=784032335]
+shape = SubResource("BoxShape3D_k2dab")

@@ -22,6 +22,7 @@ var noise_time: float = 0.0
 var jitter_noise: FastNoiseLite = FastNoiseLite.new()
 
 func _ready() -> void:
+	print("FlashlightController: _ready() called. Initializing setup.")
 	default_pos = position
 	flashlight.visible = false
 	
@@ -30,6 +31,13 @@ func _ready() -> void:
 
 	jitter_noise.noise_type = FastNoiseLite.TYPE_PERLIN
 	jitter_noise.frequency = 0.8
+	
+	# Register this node directly to the Player's existing variable
+	var player_node: Node = get_tree().get_first_node_in_group("player")
+	if is_instance_valid(player_node) and "flashlight_controller" in player_node:
+		player_node.set("flashlight_controller", self)
+		print("FlashlightController: Successfully registered self to Player.")
+
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("flashlight"):
@@ -38,9 +46,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		
 		if omni_light != null:
 			omni_light.visible = new_state
-
-	if event is InputEventMouseMotion and flashlight.visible:
-		sway_target += event.relative
+			
+		print("FlashlightController: Toggled visibility to ", new_state)
 
 func _process(delta: float) -> void:
 	if not flashlight.visible:

@@ -81,10 +81,13 @@ func _process(_delta: float) -> void:
 	var objects: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME))
 	var primitives: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))
 
+	# --- FLASHLIGHT CHECK OVERHAUL ---
 	var flashlight_str: String = "OFF"
-	var flashlight: Node = player.get_node_or_null("%Flashlight")
-	if flashlight:
-		flashlight_str = "ON" if flashlight.visible else "OFF"
+	
+	if is_instance_valid(player) and is_instance_valid(player.get("flashlight_controller")):
+		var f_ctrl: FlashlightController = player.flashlight_controller as FlashlightController
+		if is_instance_valid(f_ctrl.flashlight):
+			flashlight_str = "ON" if f_ctrl.flashlight.visible else "OFF"
 
 	var weapon_str: String = "NONE"
 	var weapon_holder: Node = player.get_node_or_null("%WeaponHolder")
@@ -128,7 +131,8 @@ func _process(_delta: float) -> void:
 
 
 func toggle_window() -> void:
-	visible = !visible
+	visible = not visible
+	print("DebugPanel visibility toggled to: ", visible)
 
 
 func _update_frametime_history() -> void:

@@ -44,6 +44,14 @@ bg_color = Color(0.040375, 0.041947637, 0.037145004, 1)
 shader = ExtResource("10_7dvkv")
 shader_parameter/fill_threshold = 0.5
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bi8hs"]
+bg_color = Color(0, 0, 0, 1)
+border_width_left = 10
+border_width_top = 10
+border_width_right = 10
+border_width_bottom = 10
+border_color = Color(0.21960784, 0.21960784, 0.21960784, 0)
+
 [node name="UI" type="CanvasLayer" unique_id=1944889716]
 process_mode = 3
 script = ExtResource("1_nt7q6")
@@ -69,7 +77,7 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="MarginContainer" type="CenterContainer" parent="." unique_id=1733915005]
+[node name="CrosshairContainer" type="CenterContainer" parent="." unique_id=1733915005]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -79,7 +87,7 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 mouse_filter = 2
 
-[node name="CenterDot" type="TextureRect" parent="MarginContainer" unique_id=1855431409]
+[node name="CenterDot" type="TextureRect" parent="CrosshairContainer" unique_id=1855431409]
 material = SubResource("ShaderMaterial_yev5y")
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
@@ -90,7 +98,7 @@ texture = SubResource("CompressedTexture2D_xlq6p")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="UICircleZoom" type="TextureRect" parent="MarginContainer" unique_id=752600801]
+[node name="UICircleZoom" type="TextureRect" parent="CrosshairContainer" unique_id=752600801]
 material = SubResource("ShaderMaterial_gdt2y")
 custom_minimum_size = Vector2(512, 512)
 layout_mode = 2
@@ -99,7 +107,7 @@ texture = ExtResource("3_gdt2y")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="UICircleZoomInner" type="TextureRect" parent="MarginContainer" unique_id=486480165]
+[node name="UICircleZoomInner" type="TextureRect" parent="CrosshairContainer" unique_id=486480165]
 material = SubResource("ShaderMaterial_8dubc")
 custom_minimum_size = Vector2(512, 512)
 layout_mode = 2
@@ -108,7 +116,7 @@ texture = ExtResource("4_wm3ai")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="MarginContainer3" type="MarginContainer" parent="." unique_id=116442504]
+[node name="NoclipAlertContainer" type="MarginContainer" parent="." unique_id=116442504]
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
@@ -116,14 +124,15 @@ offset_left = -39.5
 offset_right = 39.5
 offset_bottom = 40.0
 grow_horizontal = 2
+mouse_filter = 2
 theme_override_constants/margin_top = 30
 
-[node name="NoclipMessageContainer" type="PanelContainer" parent="MarginContainer3" unique_id=842353472]
+[node name="NoclipMessageContainer" type="PanelContainer" parent="NoclipAlertContainer" unique_id=842353472]
 visible = false
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_nt7q6")
 
-[node name="NoclipLabelMessage" type="Label" parent="MarginContainer3/NoclipMessageContainer" unique_id=1471769217]
+[node name="NoclipLabelMessage" type="Label" parent="NoclipAlertContainer/NoclipMessageContainer" unique_id=1471769217]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 16
@@ -136,6 +145,7 @@ anchor_bottom = 1.0
 offset_left = -349.0
 grow_horizontal = 0
 grow_vertical = 2
+mouse_filter = 2
 script = ExtResource("7_p7vwb")
 
 [node name="MetricsLabel" type="RichTextLabel" parent="MetricsPanel" unique_id=551908532]
@@ -174,7 +184,7 @@ theme_override_constants/margin_bottom = 20
 material = SubResource("ShaderMaterial_7dvkv")
 layout_mode = 2
 
-[node name="MarginContainer2" type="MarginContainer" parent="." unique_id=464429887]
+[node name="ChapterTitleContainer" type="MarginContainer" parent="." unique_id=464429887]
 anchors_preset = 14
 anchor_top = 0.5
 anchor_right = 1.0
@@ -186,7 +196,7 @@ grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/margin_top = 100
 
-[node name="ChapterLabel" type="RichTextLabel" parent="MarginContainer2" unique_id=839489251]
+[node name="ChapterLabel" type="RichTextLabel" parent="ChapterTitleContainer" unique_id=839489251]
 layout_mode = 2
 mouse_filter = 2
 theme_override_fonts/normal_font = ExtResource("11_bi8hs")
@@ -196,53 +206,56 @@ fit_content = true
 scroll_active = false
 
 [node name="DebugPanel" type="CanvasLayer" parent="." unique_id=1244748191]
-layer = 100
 
-[node name="VBoxContainer" type="VBoxContainer" parent="DebugPanel" unique_id=785923227]
-offset_right = 148.0
-offset_bottom = 109.0
+[node name="PanelContainer" type="PanelContainer" parent="DebugPanel" unique_id=223301833]
+offset_right = 40.0
+offset_bottom = 40.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_bi8hs")
 
-[node name="FullbrightButton" type="Button" parent="DebugPanel/VBoxContainer" unique_id=331063187]
+[node name="VBoxContainer" type="VBoxContainer" parent="DebugPanel/PanelContainer" unique_id=785923227]
+layout_mode = 2
+
+[node name="FullbrightButton" type="Button" parent="DebugPanel/PanelContainer/VBoxContainer" unique_id=331063187]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_font_sizes/font_size = 16
 text = "Fullbright Off"
 alignment = 0
 
-[node name="WireframeButton" type="Button" parent="DebugPanel/VBoxContainer" unique_id=821633458]
+[node name="WireframeButton" type="Button" parent="DebugPanel/PanelContainer/VBoxContainer" unique_id=821633458]
 layout_mode = 2
 size_flags_vertical = 3
 text = "Wireframe Off"
 alignment = 0
 
-[node name="WireframeOverlayButton" type="Button" parent="DebugPanel/VBoxContainer" unique_id=496048571]
+[node name="WireframeOverlayButton" type="Button" parent="DebugPanel/PanelContainer/VBoxContainer" unique_id=496048571]
 layout_mode = 2
 size_flags_vertical = 3
 text = "Wireframe Overlay Off"
 alignment = 0
 
-[node name="NoclipButton" type="Button" parent="DebugPanel/VBoxContainer" unique_id=720158026]
+[node name="NoclipButton" type="Button" parent="DebugPanel/PanelContainer/VBoxContainer" unique_id=720158026]
 layout_mode = 2
 size_flags_vertical = 3
 text = "Noclip Off"
 alignment = 0
 
-[node name="MetricsButton" type="Button" parent="DebugPanel/VBoxContainer" unique_id=2062671107]
+[node name="MetricsButton" type="Button" parent="DebugPanel/PanelContainer/VBoxContainer" unique_id=2062671107]
 layout_mode = 2
 size_flags_vertical = 3
 text = "Metrics Off"
 alignment = 0
 
-[node name="CollisionButton" type="Button" parent="DebugPanel/VBoxContainer" unique_id=1630206710]
+[node name="CollisionButton" type="Button" parent="DebugPanel/PanelContainer/VBoxContainer" unique_id=1630206710]
 layout_mode = 2
 text = "Collisions OFF"
 alignment = 0
 
-[node name="HideUIButton" type="Button" parent="DebugPanel/VBoxContainer" unique_id=1558548453]
+[node name="HideUIButton" type="Button" parent="DebugPanel/PanelContainer/VBoxContainer" unique_id=1558548453]
 layout_mode = 2
 text = "Hide UI"
 alignment = 0
 
-[connection signal="pressed" from="DebugPanel/VBoxContainer/WireframeButton" to="." method="_on_wireframe_button_pressed"]
-[connection signal="pressed" from="DebugPanel/VBoxContainer/WireframeOverlayButton" to="." method="_on_wireframe_overlay_button_pressed"]
-[connection signal="pressed" from="DebugPanel/VBoxContainer/NoclipButton" to="." method="_on_noclip_button_pressed"]
+[connection signal="pressed" from="DebugPanel/PanelContainer/VBoxContainer/WireframeButton" to="." method="_on_wireframe_button_pressed"]
+[connection signal="pressed" from="DebugPanel/PanelContainer/VBoxContainer/WireframeOverlayButton" to="." method="_on_wireframe_overlay_button_pressed"]
+[connection signal="pressed" from="DebugPanel/PanelContainer/VBoxContainer/NoclipButton" to="." method="_on_noclip_button_pressed"]
