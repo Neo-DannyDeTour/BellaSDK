@@ -1,0 +1,60 @@
+[gd_scene format=3 uid="uid://qonbj2pqdiof"]
+
+[ext_resource type="Script" uid="uid://dgxtx7hcu714c" path="res://texture_baker.gd" id="1_5q8br"]
+[ext_resource type="Shader" uid="uid://f2f6cao5ccqd" path="res://vfx/dev_texture.gdshader" id="2_xvil0"]
+[ext_resource type="Texture2D" uid="uid://c6opaq1cojk2x" path="res://assets/images/dev_textures/Godiva_White_outline.png" id="3_xvil0"]
+
+[sub_resource type="QuadMesh" id="QuadMesh_jw2cl"]
+size = Vector2(2, 2)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_xvil0"]
+render_priority = 0
+shader = ExtResource("2_xvil0")
+shader_parameter/bg_color_a = Color(0.37535203, 0.44, 0.17599998, 1)
+shader_parameter/bg_color_b = Color(0.49535203, 0.56, 0.296, 1)
+shader_parameter/major_line_color = Color(0.8, 0.8, 0.8, 1)
+shader_parameter/minor_line_color = Color(0.4, 0.4, 0.4, 0.5)
+shader_parameter/bg_alpha = 1.0
+shader_parameter/unit_scale = 2.0
+shader_parameter/major_subdivisions = 4.0
+shader_parameter/minor_subdivisions = 8.0
+shader_parameter/line_thickness = 0.05
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6bwb7"]
+transparency = 1
+shading_mode = 0
+albedo_texture = ExtResource("3_xvil0")
+
+[sub_resource type="QuadMesh" id="QuadMesh_iknee"]
+material = SubResource("StandardMaterial3D_6bwb7")
+size = Vector2(2, 2)
+
+[node name="TextureBaker" type="SubViewport" unique_id=328934711 node_paths=PackedStringArray("background_mesh", "godiva_outline_mesh", "target_camera")]
+size = Vector2i(1024, 1024)
+render_target_update_mode = 1
+script = ExtResource("1_5q8br")
+save_directory = "res://assets/images/dev_textures"
+background_mesh = NodePath("background_mesh")
+godiva_outline_mesh = NodePath("godiva_outline_mesh")
+target_camera = NodePath("Camera3D")
+unit_scale = 2.0
+major_subdivisions = 4.0
+line_thickness = 0.05
+
+[node name="Camera3D" type="Camera3D" parent="." unique_id=884542846]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1)
+projection = 1
+size = 2.0
+
+[node name="background_mesh" type="MeshInstance3D" parent="." unique_id=663738301]
+mesh = SubResource("QuadMesh_jw2cl")
+surface_material_override/0 = SubResource("ShaderMaterial_xvil0")
+
+[node name="godiva_outline_mesh" type="MeshInstance3D" parent="." unique_id=833452559]
+transform = Transform3D(1.07, 0, 0, 0, 1.07, 0, 0, 0, 1.07, -0.25, 0, 0.01)
+mesh = SubResource("QuadMesh_iknee")
+
+[node name="Label3D" type="Label3D" parent="godiva_outline_mesh" unique_id=1349301773]
+transform = Transform3D(0.9345794, 0, 0, 0, 0.9345794, 0, 0, 0, 0.9345794, -0.45, 0.7, 0)
+text = "2m"
+outline_size = 0

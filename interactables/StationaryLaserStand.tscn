@@ -3,12 +3,17 @@
 [ext_resource type="Script" uid="uid://bgfrkky6ktf6s" path="res://interactables/StationaryLaserStand.gd" id="1_3nf4h"]
 [ext_resource type="Shader" uid="uid://jn5ny2fhowtg" path="res://vfx/beam.gdshader" id="2_1cv0y"]
 [ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="2_2bfhh"]
+[ext_resource type="Texture2D" uid="uid://civnfn7yss1n" path="res://assets/images/dev_textures/dev_texture_green_1024.png" id="2_bd0g5"]
 [ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="3_bowf1"]
 [ext_resource type="Texture2D" uid="uid://p8cs4aem3kyx" path="res://assets/textures/LeLu_Smoke/T_smoke_b7.png" id="3_ogymw"]
 [ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="4_xidcn"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_yubuw"]
 size = Vector3(0.5, 2.1274414, 0.5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tctc8"]
+albedo_texture = ExtResource("2_bd0g5")
+uv1_triplanar = true
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_1cv0y"]
 
@@ -88,6 +93,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -0.09069554)
 
 [node name="CSGBox3D" type="CSGBox3D" parent="Turret" unique_id=2053084450]
 size = Vector3(0.4, 0.4, 0.4)
+material = SubResource("StandardMaterial3D_tctc8")
 
 [node name="BeamMesh" type="MeshInstance3D" parent="Turret" unique_id=1083674601]
 transform = Transform3D(1, 0, 0, 0, 1.3113416e-07, -1, 0, 1, 1.3113416e-07, 0, 0, -0.5)

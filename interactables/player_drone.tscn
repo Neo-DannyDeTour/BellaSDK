@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="3_uydbv"]
 [ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="4_ysqd2"]
 [ext_resource type="Shader" uid="uid://n5i6lxxhv2jh" path="res://vfx/vhs.gdshader" id="5_uydbv"]
+[ext_resource type="Texture2D" uid="uid://civnfn7yss1n" path="res://assets/images/dev_textures/dev_texture_green_1024.png" id="5_ysqd2"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_g8x0s"]
 render_priority = 0
@@ -17,7 +18,11 @@ shader_parameter/max_intensity = 0.05
 [sub_resource type="BoxShape3D" id="BoxShape3D_k5qpy"]
 size = Vector3(2, 1, 1)
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_g8x0s"]
+albedo_texture = ExtResource("5_ysqd2")
+
 [sub_resource type="BoxMesh" id="BoxMesh_o4pg3"]
+material = SubResource("StandardMaterial3D_g8x0s")
 size = Vector3(0.5, 0.4, 0.5)
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_qvdf2"]

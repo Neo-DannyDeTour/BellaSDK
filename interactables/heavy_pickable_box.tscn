@@ -2,8 +2,8 @@
 
 [ext_resource type="PackedScene" uid="uid://bwx87famw5p7u" path="res://interactables/pickable_box.tscn" id="1_h1kgl"]
 [ext_resource type="Script" uid="uid://c3pb1k0kh7v3u" path="res://interactables/heavy_pickable_box.gd" id="2_4o347"]
-[ext_resource type="Texture2D" uid="uid://6jbvqeu8qf1j" path="res://assets/images/dev_textures/standard_5_orange_512.png" id="3_4o347"]
 [ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="3_detrj"]
+[ext_resource type="Texture2D" uid="uid://civnfn7yss1n" path="res://assets/images/dev_textures/dev_texture_green_1024.png" id="4_detrj"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_m7kiq"]
 render_priority = 0
@@ -14,7 +14,7 @@ shader_parameter/min_intensity = 0.01
 shader_parameter/max_intensity = 0.05
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fj5oh"]
-albedo_texture = ExtResource("3_4o347")
+albedo_texture = ExtResource("4_detrj")
 uv1_triplanar = true
 
 [sub_resource type="BoxMesh" id="BoxMesh_3773a"]

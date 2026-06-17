@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://bwx87famw5p7u"]
 
 [ext_resource type="PackedScene" uid="uid://mqae3mth7tfx" path="res://interactables/pickable_object.tscn" id="1_cfr4d"]
-[ext_resource type="Texture2D" uid="uid://6jbvqeu8qf1j" path="res://assets/images/dev_textures/standard_5_orange_512.png" id="2_yxn7w"]
 [ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="3_bdkj8"]
+[ext_resource type="Texture2D" uid="uid://civnfn7yss1n" path="res://assets/images/dev_textures/dev_texture_green_1024.png" id="3_j3pq3"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_wxffa"]
 render_priority = 0
@@ -13,7 +13,7 @@ shader_parameter/min_intensity = 0.01
 shader_parameter/max_intensity = 0.02000000095
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fj5oh"]
-albedo_texture = ExtResource("2_yxn7w")
+albedo_texture = ExtResource("3_j3pq3")
 uv1_triplanar = true
 
 [sub_resource type="BoxMesh" id="BoxMesh_k01c1"]

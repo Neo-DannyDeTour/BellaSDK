@@ -5,7 +5,11 @@
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_swtb5"]
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hnol6"]
+albedo_color = Color(0.23529412, 1, 0, 1)
+
 [sub_resource type="BoxMesh" id="BoxMesh_qpjad"]
+material = SubResource("StandardMaterial3D_hnol6")
 
 [node name="LaserTarget" type="StaticBody3D" unique_id=1230606927]
 script = ExtResource("1_5gv6w")
