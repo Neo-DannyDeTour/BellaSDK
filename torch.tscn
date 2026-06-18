@@ -1,0 +1,109 @@
+[gd_scene format=3 uid="uid://b3622m00bjqxf"]
+
+[ext_resource type="Script" uid="uid://cfwnw3af2ykej" path="res://torch.gd" id="1_pa17o"]
+[ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="2_kx7w4"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="3_72pgl"]
+[ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="4_wfdi7"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_pa17o"]
+noise_type = 3
+
+[sub_resource type="Gradient" id="Gradient_s1444"]
+colors = PackedColorArray(1, 1, 0, 1, 1, 0, 0, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_w3qnr"]
+gradient = SubResource("Gradient_s1444")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_kx7w4"]
+emission_shape = 1
+emission_sphere_radius = 0.1
+direction = Vector3(0, 1, 0)
+spread = 15.0
+initial_velocity_min = 1.0
+initial_velocity_max = 2.0
+gravity = Vector3(0, 0, 0)
+color_ramp = SubResource("GradientTexture1D_w3qnr")
+
+[sub_resource type="Gradient" id="Gradient_pa17o"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_s1444"]
+gradient = SubResource("Gradient_pa17o")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.5, 0)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_72pgl"]
+transparency = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_texture = SubResource("GradientTexture2D_s1444")
+billboard_mode = 3
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="QuadMesh" id="QuadMesh_wfdi7"]
+material = SubResource("StandardMaterial3D_72pgl")
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_pa17o"]
+top_radius = 0.05
+bottom_radius = 0.05
+height = 1.0
+radial_segments = 8
+rings = 0
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_cfb3y"]
+size = Vector3(0.2, 1, 0.2)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vkaj5"]
+render_priority = 0
+shader = ExtResource("3_72pgl")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.05
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_kx7w4"]
+
+[node name="Torch" type="Node3D" unique_id=1897747306]
+script = ExtResource("1_pa17o")
+equip_position_offset = Vector3(0.3, 0.5, -1)
+equip_rotation_degrees = Vector3(-35, 0, 0)
+noise = SubResource("FastNoiseLite_pa17o")
+
+[node name="FlameParticles" type="GPUParticles3D" parent="." unique_id=1493383392]
+amount = 16
+process_material = SubResource("ParticleProcessMaterial_kx7w4")
+draw_pass_1 = SubResource("QuadMesh_wfdi7")
+
+[node name="FlickerLight" type="OmniLight3D" parent="." unique_id=916275153]
+light_color = Color(0.9933772, 0.7917869, 0.5085073, 1)
+
+[node name="TorchHandle" type="MeshInstance3D" parent="." unique_id=1046586005]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.8, 0)
+mesh = SubResource("CylinderMesh_pa17o")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=1076510690]
+collision_layer = 4
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=915962901]
+shape = SubResource("BoxShape3D_cfb3y")
+
+[node name="HighlightComponent" type="Node" parent="StaticBody3D" unique_id=2029755930]
+script = ExtResource("2_kx7w4")
+outline_material = SubResource("ShaderMaterial_vkaj5")
+metadata/_custom_type_script = "uid://dgig0tamvkdxx"
+
+[node name="Interact_Component" type="Node" parent="StaticBody3D" unique_id=175546838]
+script = ExtResource("4_wfdi7")
+metadata/_custom_type_script = "uid://cqawbvidns1th"
+
+[node name="FlameTrigger" type="Area3D" parent="." unique_id=1061603472 groups=["torch_flame"]]
+collision_layer = 4
+collision_mask = 4
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="FlameTrigger" unique_id=912377785]
+shape = SubResource("SphereShape3D_kx7w4")
+
+[connection signal="interacted" from="StaticBody3D/Interact_Component" to="." method="_on_interact_component_interacted"]

@@ -9,6 +9,25 @@ enum BakeResolution {
 	RES_4096 = 4096
 }
 
+enum ArchitectureType {
+	NONE = 0,
+	LADDER = 1,
+	VENT = 2,
+	HAZARD = 3,
+	RULER = 4,
+	SPAWN_POINT = 5,
+	WINDOW = 6,
+	DOOR = 7,
+	STAIRS = 8
+}
+
+@export_group("Architecture Elements")
+@export var architecture_type: ArchitectureType = ArchitectureType.NONE:
+	set(value):
+		architecture_type = value
+		_update_shader_parameter("architecture_type", value)
+		print("set_architecture_type(): Active architectural pattern changed to index ", value)
+
 @export_group("Export Settings")
 @export_dir var save_directory: String = "res://"
 @export var base_file_name: String = "dev_texture"

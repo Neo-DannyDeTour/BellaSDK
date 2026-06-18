@@ -1,0 +1,53 @@
+[gd_scene format=3 uid="uid://lt3im032pfmx"]
+
+[ext_resource type="Script" uid="uid://def278lppor4d" path="res://interactables/burnable_obstacle.gd" id="1_3sa1l"]
+[ext_resource type="Shader" uid="uid://d37ety2wnr0tu" path="res://vfx/3DBurnShader.gdshader" id="1_6oanr"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_3sa1l"]
+resource_local_to_scene = true
+size = Vector3(2, 2, 0.1)
+
+[sub_resource type="Gradient" id="Gradient_3sa1l"]
+colors = PackedColorArray(0.9529412, 0.8235294, 0, 1, 0.869829, 0, 0.12842989, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_7iqo5"]
+gradient = SubResource("Gradient_3sa1l")
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_3sa1l"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_7iqo5"]
+noise = SubResource("FastNoiseLite_3sa1l")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_7iqo5"]
+render_priority = 0
+shader = ExtResource("1_6oanr")
+shader_parameter/noise_texture = SubResource("NoiseTexture2D_7iqo5")
+shader_parameter/burn_texture = SubResource("GradientTexture1D_7iqo5")
+shader_parameter/hit_uv = Vector2(0.5, 0.5)
+shader_parameter/radius = 0.0
+shader_parameter/border_width = 0.05
+shader_parameter/noise_scale = 0.15
+
+[sub_resource type="QuadMesh" id="QuadMesh_yh4by"]
+material = SubResource("ShaderMaterial_7iqo5")
+size = Vector2(2, 2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_kuidg"]
+size = Vector3(1, 1, 0.1)
+
+[node name="BurnableObstacle" type="StaticBody3D" unique_id=1793786556]
+collision_mask = 0
+script = ExtResource("1_3sa1l")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=257067829]
+shape = SubResource("BoxShape3D_3sa1l")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1538366757]
+mesh = SubResource("QuadMesh_yh4by")
+
+[node name="TriggerArea" type="Area3D" parent="." unique_id=2008811747]
+collision_layer = 4
+collision_mask = 4
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="TriggerArea" unique_id=1693881490]
+shape = SubResource("BoxShape3D_kuidg")

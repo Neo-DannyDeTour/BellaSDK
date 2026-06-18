@@ -19,6 +19,7 @@ shader_parameter/unit_scale = 2.0
 shader_parameter/major_subdivisions = 4.0
 shader_parameter/minor_subdivisions = 8.0
 shader_parameter/line_thickness = 0.05
+shader_parameter/architecture_type = 8
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6bwb7"]
 transparency = 1
@@ -33,6 +34,7 @@ size = Vector2(2, 2)
 size = Vector2i(1024, 1024)
 render_target_update_mode = 1
 script = ExtResource("1_5q8br")
+architecture_type = 8
 save_directory = "res://assets/images/dev_textures"
 background_mesh = NodePath("background_mesh")
 godiva_outline_mesh = NodePath("godiva_outline_mesh")
@@ -52,6 +54,7 @@ surface_material_override/0 = SubResource("ShaderMaterial_xvil0")
 
 [node name="godiva_outline_mesh" type="MeshInstance3D" parent="." unique_id=833452559]
 transform = Transform3D(1.07, 0, 0, 0, 1.07, 0, 0, 0, 1.07, -0.25, 0, 0.01)
+visible = false
 mesh = SubResource("QuadMesh_iknee")
 
 [node name="Label3D" type="Label3D" parent="godiva_outline_mesh" unique_id=1349301773]

@@ -1,10 +1,10 @@
 [gd_scene format=3 uid="uid://ijiwot5majtv"]
 
-[ext_resource type="Texture2D" uid="uid://6jbvqeu8qf1j" path="res://assets/images/dev_textures/standard_5_orange_512.png" id="1_xfvdi"]
 [ext_resource type="Script" uid="uid://bi2uy4dlwp2f6" path="res://interactables/gate.gd" id="1_xwxio"]
+[ext_resource type="Texture2D" uid="uid://c8kwxoba4guv4" path="res://assets/images/dev_textures/dev_texture_purple_1024.png" id="2_12dku"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_xwxio"]
-albedo_texture = ExtResource("1_xfvdi")
+albedo_texture = ExtResource("2_12dku")
 uv1_triplanar = true
 
 [sub_resource type="BoxMesh" id="BoxMesh_ghoj6"]
