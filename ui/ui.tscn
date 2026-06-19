@@ -186,21 +186,36 @@ material = SubResource("ShaderMaterial_7dvkv")
 layout_mode = 2
 
 [node name="ChapterTitleContainer" type="MarginContainer" parent="." unique_id=464429887]
-anchors_preset = 14
-anchor_top = 0.5
+anchors_preset = 15
 anchor_right = 1.0
-anchor_bottom = 0.5
-offset_top = -75.0
-offset_bottom = 75.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/margin_top = 100
 script = ExtResource("11_hrmpd")
-metadata/_edit_use_anchors_ = true
 
-[node name="ChapterLabel" type="RichTextLabel" parent="ChapterTitleContainer" unique_id=839489251]
+[node name="EffectContainer" type="SubViewportContainer" parent="ChapterTitleContainer" unique_id=1394021885]
+custom_minimum_size = Vector2(0, 250)
 layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="ChapterTitleContainer/EffectContainer" unique_id=178570349]
+transparent_bg = true
+handle_input_locally = false
+size = Vector2i(1280, 250)
+render_target_update_mode = 4
+
+[node name="ChapterLabel" type="RichTextLabel" parent="ChapterTitleContainer/EffectContainer/SubViewport" unique_id=839489251]
+anchors_preset = 14
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_right = -1279.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 theme_override_fonts/normal_font = ExtResource("11_bi8hs")
 theme_override_font_sizes/normal_font_size = 64

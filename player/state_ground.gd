@@ -24,6 +24,9 @@ func enter(msg: Dictionary = {}) -> void:
 
 
 func physics_update(delta: float) -> void:
+	if player.vault_controller.is_vaulting:
+		return
+		
 	# 0. Slide Surface Detection
 	for i: int in range(player.get_slide_collision_count()):
 		var collision: KinematicCollision3D = player.get_slide_collision(i)

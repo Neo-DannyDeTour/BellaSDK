@@ -429,15 +429,26 @@ func enter_water(water_volume: Node3D) -> void:
 	print("Player: enter_water() called.")
 	current_water_node = water_volume
 
+	if vault_controller.is_vaulting:
+		print("Player: Vault active. Suppressing Swim transition.")
+		return
+
 	if state_machine.state.name not in ["Vault", "Zipline", "Rope"]:
+		print("Player: Transitioning to Swim state.")
 		state_machine.transition_to("Swim")
+
 
 func exit_water(water_volume: Node3D) -> void:
 	print("Player: exit_water() called.")
 	if current_water_node == water_volume:
 		current_water_node = null
 
+		if vault_controller.is_vaulting:
+			print("Player: Vault active. Suppressing Air transition.")
+			return
+
 		if state_machine.state.name == "Swim":
+			print("Player: Transitioning to Air state.")
 			state_machine.transition_to("Air")
 
 # 7. Terminals

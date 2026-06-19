@@ -2000,12 +2000,11 @@ persist_after_exit = true
 
 [node name="ChapterTrigger" parent="." unique_id=1955767946 instance=ExtResource("52_wkfn1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.16013467, 2.0262184, -7.4385567)
-play_random_effects = true
+animation_style = 5
 
 [node name="ChapterTrigger2" parent="." unique_id=986591175 instance=ExtResource("52_wkfn1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.6088676, 3.6163845, 2.8420885)
 animation_style = 15
-play_random_effects = null
 
 [node name="LightmapGI" type="LightmapGI" parent="." unique_id=1597095081]
 quality = 2

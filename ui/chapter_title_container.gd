@@ -1,9 +1,10 @@
 class_name ChapterDisplay
 extends MarginContainer
 
-@onready var chapter_label: RichTextLabel = $ChapterLabel
-var _chapter_tween: Tween
+@onready var effect_container: SubViewportContainer = $EffectContainer
+@onready var chapter_label: RichTextLabel = $EffectContainer/SubViewport/ChapterLabel
 
+var _chapter_tween: Tween
 
 func _ready() -> void:
 	print("ChapterDisplay: _ready() called. Hooking into Events bus.")
@@ -12,6 +13,26 @@ func _ready() -> void:
 	
 	if not Events.chapter_triggered.is_connected(_on_chapter_triggered):
 		Events.chapter_triggered.connect(_on_chapter_triggered)
+		
+	resized.connect(_on_resized)
+	_on_resized()
+
+
+func _on_resized() -> void:
+	print("ChapterDisplay: Container resized. Updating layout constraints.")
+	if is_instance_valid(effect_container) and is_instance_valid(chapter_label):
+		
+		# 1. Use theme margins to shift the UI down instead of forcing node positions.
+		# This allows the Container engine to process the layout optimally in a single pass.
+		add_theme_constant_override("margin_top", 50)
+		
+		# 2. Get the actual dimensions of the SubViewport (1280x250)
+		var viewport_node: SubViewport = effect_container.get_node("SubViewport")
+		var current_viewport_size: Vector2 = viewport_node.size
+		
+		# 3. Anchor the label cleanly to the viewport's bounds so BBCode [center] works properly
+		chapter_label.position = Vector2.ZERO
+		chapter_label.size = current_viewport_size
 
 
 func _on_chapter_triggered(
@@ -219,11 +240,27 @@ func _play_spring(chapter_name: String, duration: float) -> void:
 	chapter_label.modulate.a = 1.0
 	chapter_label.scale = Vector2.ZERO
 	
-	_chapter_tween.tween_property(chapter_label, "scale", Vector2.ONE, 0.8) \
-		.set_trans(Tween.TRANS_SPRING).set_ease(Tween.EASE_OUT)
-	_chapter_tween.tween_property(chapter_label, "modulate:a", 0.0, 0.5) \
-		.set_delay(duration - 1.3)
+	# Ensure pivot is perfectly centered right before scaling
+	chapter_label.pivot_offset = chapter_label.size / 2.0
+	
+	var intro_time: float = 0.8
+	var outro_time: float = 0.5
+	# Safely calculate hold time to prevent negative delay crashes
+	var hold_time: float = maxf(0.0, duration - intro_time - outro_time)
+	
+	_chapter_tween.tween_property(chapter_label, "scale", Vector2.ONE, intro_time) \
+		.set_trans(Tween.TRANS_SPRING) \
+		.set_ease(Tween.EASE_OUT)
+		
+	_chapter_tween.tween_interval(hold_time)
+	
+	_chapter_tween.tween_property(chapter_label, "modulate:a", 0.0, outro_time)
 	_chapter_tween.tween_callback(chapter_label.hide)
+	
+	# Cleanup: Reset scale so other animations aren't squashed if triggered next
+	_chapter_tween.tween_callback(
+		func() -> void: chapter_label.scale = Vector2.ONE
+	)
 
 
 func _play_drift(chapter_name: String, duration: float) -> void:
@@ -246,16 +283,26 @@ func _play_drift(chapter_name: String, duration: float) -> void:
 	_chapter_tween.chain().tween_callback(chapter_label.hide)
 
 
-func _play_shader_effect(chapter_name: String, duration: float, shader_res: Shader) -> void:
-	print("ChapterDisplay: Playing SHADER effect -> ", shader_res.resource_path)
+func _play_shader_effect(
+	chapter_name: String, 
+	duration: float, 
+	shader_res: Shader
+) -> void:
+	print("ChapterDisplay: Playing SHADER effect on SubViewportContainer -> ", shader_res.resource_path)
+	
 	chapter_label.text = "[center]" + chapter_name + "[/center]"
 	chapter_label.visible_ratio = 1.0
-	chapter_label.scale = Vector2.ONE
 	chapter_label.modulate.a = 1.0
+	
+	effect_container.scale = Vector2.ONE
+	effect_container.modulate.a = 1.0
+	effect_container.visible = true
 	
 	var mat: ShaderMaterial = ShaderMaterial.new()
 	mat.shader = shader_res
-	chapter_label.material = mat
+	
+	# Apply the material to the SubViewportContainer
+	effect_container.material = mat
 	
 	mat.set_shader_parameter("progress", 0.0)
 	
@@ -266,7 +313,10 @@ func _play_shader_effect(chapter_name: String, duration: float, shader_res: Shad
 		duration
 	)
 	
-	_chapter_tween.tween_callback(chapter_label.hide)
+	_chapter_tween.tween_callback(effect_container.hide)
+	_chapter_tween.tween_callback(
+		func() -> void: effect_container.material = null
+	)
 
 
 func _play_blur(chapter_name: String, duration: float, shader_res: Shader) -> void:

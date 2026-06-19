@@ -25,7 +25,7 @@ func _ready() -> void:
 	_test_params.exclude_bodies = [player.get_rid()]
 
 func snap_up_stairs_check(delta: float, is_sprinting: bool = false) -> bool:
-	if not is_enabled:
+	if not is_enabled or player.vault_controller.is_vaulting:
 		return false
 		
 	time_since_step_up += delta
@@ -97,7 +97,7 @@ func snap_up_stairs_check(delta: float, is_sprinting: bool = false) -> bool:
 	return false
 
 func snap_down_to_stairs_check() -> void:
-	if not is_enabled:
+	if not is_enabled or player.vault_controller.is_vaulting:
 		return
 		
 	if time_since_step_up < 0.2:
