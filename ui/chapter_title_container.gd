@@ -6,8 +6,17 @@ extends MarginContainer
 
 var _chapter_tween: Tween
 
+
 func _ready() -> void:
 	print("ChapterDisplay: _ready() called. Hooking into Events bus.")
+	
+	# --- PROGRAMMATIC INSPECTOR OVERRIDES ---
+	# Disabling fit_content forces the label to respect the full screen width we give it,
+	# which allows the BBCode [center] tag to actually work.
+	chapter_label.fit_content = false 
+	# Disabling clip_contents ensures wild shader effects don't get cut off at the edges.
+	chapter_label.clip_contents = false 
+	
 	chapter_label.modulate.a = 0.0
 	chapter_label.visible = false
 	
@@ -22,17 +31,32 @@ func _on_resized() -> void:
 	print("ChapterDisplay: Container resized. Updating layout constraints.")
 	if is_instance_valid(effect_container) and is_instance_valid(chapter_label):
 		
-		# 1. Use theme margins to shift the UI down instead of forcing node positions.
-		# This allows the Container engine to process the layout optimally in a single pass.
-		add_theme_constant_override("margin_top", 50)
+		# 1. Force the root container to the full screen.
+		# We stop using margins to push the container down so the SubViewport 
+		# has the maximum possible canvas to draw shaders without clipping.
+		set_anchors_preset(Control.PRESET_FULL_RECT)
+		remove_theme_constant_override("margin_top")
 		
-		# 2. Get the actual dimensions of the SubViewport (1280x250)
 		var viewport_node: SubViewport = effect_container.get_node("SubViewport")
 		var current_viewport_size: Vector2 = viewport_node.size
 		
-		# 3. Anchor the label cleanly to the viewport's bounds so BBCode [center] works properly
-		chapter_label.position = Vector2.ZERO
-		chapter_label.size = current_viewport_size
+		# 2. Calculate the vertical drop
+		var vertical_center: float = current_viewport_size.y / 2.0
+		var drop_offset: float = 60.0 # Increase this to push the text further down
+		
+		# 3. Apply the coordinates
+		# X starts at 0, Y starts exactly below the center of the screen
+		var target_position: Vector2 = Vector2(0.0, vertical_center + drop_offset)
+		
+		# Width takes up the entire screen so [center] is perfectly aligned.
+		# Height takes up the remaining space to the bottom of the screen.
+		var target_size: Vector2 = Vector2(
+			current_viewport_size.x, 
+			current_viewport_size.y - target_position.y
+		)
+		
+		chapter_label.set_deferred("position", target_position)
+		chapter_label.set_deferred("size", target_size)
 
 
 func _on_chapter_triggered(
@@ -142,6 +166,22 @@ func _on_chapter_triggered(
 				display_duration,
 				preload("res://vfx/chapter_text_doom_melt.gdshader")
 			)
+		Events.ChapterAnimStyle.HEARTBEAT:
+			_play_heartbeat(chapter_name, display_duration)
+		Events.ChapterAnimStyle.VHS:
+			print("ChapterDisplay: Triggering VHS shader.")
+			_play_shader_effect(
+				chapter_name,
+				display_duration,
+				preload("res://vfx/chapter_text_vhs.gdshader")
+			)
+		Events.ChapterAnimStyle.LIGHT_SWEEP:
+			print("ChapterDisplay: Triggering LIGHT SWEEP shader.")
+			_play_shader_effect(
+				chapter_name,
+				display_duration,
+				preload("res://vfx/chapter_text_light_sweep.gdshader")
+			)
 		_:
 			print("ChapterDisplay: Unknown style ID, triggering fallback.")
 			_play_simple(chapter_name, display_duration)
@@ -188,7 +228,8 @@ func _play_typewriter(chapter_name: String, duration: float) -> void:
 
 
 func _play_slam(chapter_name: String, duration: float) -> void:
-	print("ChapterDisplay: Playing SLAM (falling) animation.")
+	print("ChapterDisplay: Playing SLAM (falling) animation with anticipation jump.")
+	
 	chapter_label.text = "[center]" + chapter_name + "[/center]"
 	chapter_label.visible_ratio = 1.0
 	chapter_label.modulate.a = 0.0
@@ -196,33 +237,46 @@ func _play_slam(chapter_name: String, duration: float) -> void:
 	
 	var base_pos: Vector2 = chapter_label.position
 	var drop_offset: float = 120.0
+	var final_drop_offset: float = 350.0 # Travels much further down
+	var anticipation_height: float = 40.0 # How high it jumps before the final slam
+	
 	chapter_label.position = base_pos + Vector2(0.0, -drop_offset)
 	
-	var fall_time: float = 0.4
-	var hold_time: float = maxf(0.1, duration - (fall_time * 2.0))
+	var intro_time: float = 0.4
+	var anticipation_time: float = 0.15
+	var outro_time: float = 0.25
+	# Safely calculate hold time to prevent negative delay crashes on very short durations
+	var hold_time: float = maxf(0.0, duration - intro_time - anticipation_time - outro_time)
 	
 	# Phase 1: Fall in from above and fade in
 	_chapter_tween.set_parallel(true)
 	_chapter_tween.tween_property(
-		chapter_label, "position", base_pos, fall_time
+		chapter_label, "position", base_pos, intro_time
 	).set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 	
 	_chapter_tween.tween_property(
-		chapter_label, "modulate:a", 1.0, fall_time
+		chapter_label, "modulate:a", 1.0, intro_time
 	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	
 	# Phase 2: Hold position
 	_chapter_tween.set_parallel(false)
 	_chapter_tween.tween_interval(hold_time)
 	
-	# Phase 3: Fall down completely and fade out
-	_chapter_tween.set_parallel(true)
+	# Phase 3: Anticipation (Jump up a bit)
+	var peak_pos: Vector2 = base_pos + Vector2(0.0, -anticipation_height)
 	_chapter_tween.tween_property(
-		chapter_label, "position", base_pos + Vector2(0.0, drop_offset), fall_time
-	).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+		chapter_label, "position", peak_pos, anticipation_time
+	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	
+	# Phase 4: Slam hard way down and fade out completely
+	_chapter_tween.set_parallel(true)
+	var end_pos: Vector2 = base_pos + Vector2(0.0, final_drop_offset)
+	_chapter_tween.tween_property(
+		chapter_label, "position", end_pos, outro_time
+	).set_trans(Tween.TRANS_EXPO).set_ease(Tween.EASE_IN)
 	
 	_chapter_tween.tween_property(
-		chapter_label, "modulate:a", 0.0, fall_time
+		chapter_label, "modulate:a", 0.0, outro_time
 	).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
 	
 	# Cleanup: Hide and restore original position for future animations
@@ -270,17 +324,27 @@ func _play_drift(chapter_name: String, duration: float) -> void:
 	chapter_label.modulate.a = 0.0
 	chapter_label.scale = Vector2.ONE
 	
-	var start_pos: Vector2 = chapter_label.position + Vector2(0.0, 50.0)
-	var end_pos: Vector2 = chapter_label.position - Vector2(0.0, 50.0)
+	# Explicitly lock the base position to ZERO so the label doesn't "walk" 
+	# off the SubViewport bounds on repeated triggers.
+	var base_pos: Vector2 = Vector2.ZERO
+	var start_pos: Vector2 = base_pos + Vector2(0.0, 250.0)
+	var end_pos: Vector2 = base_pos - Vector2(0.0, -200.0)
+	
 	chapter_label.position = start_pos
 	
 	_chapter_tween.set_parallel(true)
 	_chapter_tween.tween_property(chapter_label, "modulate:a", 1.0, 1.0)
-	_chapter_tween.tween_property(chapter_label, "position", end_pos, duration) \
-		.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_chapter_tween.tween_property(
+		chapter_label, "position", end_pos, duration
+	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	
 	_chapter_tween.chain().tween_property(chapter_label, "modulate:a", 0.0, 1.0)
 	_chapter_tween.chain().tween_callback(chapter_label.hide)
+	
+	# Cleanup: Restore position so subsequent animations render correctly.
+	_chapter_tween.chain().tween_callback(
+		func() -> void: chapter_label.position = base_pos
+	)
 
 
 func _play_shader_effect(
@@ -405,4 +469,40 @@ func _play_glow(chapter_name: String, duration: float) -> void:
 		func() -> void:
 			chapter_label.remove_theme_constant_override("outline_size")
 			chapter_label.remove_theme_color_override("font_outline_color")
+	)
+
+
+func _play_heartbeat(chapter_name: String, duration: float) -> void:
+	print("ChapterDisplay: Playing HEARTBEAT animation.")
+	chapter_label.text = "[center]" + chapter_name + "[/center]"
+	chapter_label.visible_ratio = 1.0
+	chapter_label.modulate.a = 0.0
+	chapter_label.scale = Vector2.ONE
+	chapter_label.pivot_offset = chapter_label.size / 2.0
+	
+	var fade_time: float = 0.5
+	var pulse_time: float = 0.35
+	var active_time: float = maxf(0.0, duration - (fade_time * 2.0))
+	var loops: int = int(active_time / (pulse_time * 2.0))
+	
+	# 1. Fade in
+	_chapter_tween.tween_property(chapter_label, "modulate:a", 1.0, fade_time)
+	
+	# 2. Rhythmic scale pulsing
+	for i in range(loops):
+		_chapter_tween.tween_property(
+			chapter_label, "scale", Vector2(1.08, 1.08), pulse_time
+		).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		
+		_chapter_tween.tween_property(
+			chapter_label, "scale", Vector2.ONE, pulse_time
+		).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+		
+	# 3. Fade out
+	_chapter_tween.tween_property(chapter_label, "modulate:a", 0.0, fade_time)
+	_chapter_tween.tween_callback(chapter_label.hide)
+	
+	# Cleanup: Reset scale for future animations
+	_chapter_tween.tween_callback(
+		func() -> void: chapter_label.scale = Vector2.ONE
 	)

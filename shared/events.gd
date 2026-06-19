@@ -72,7 +72,10 @@ enum ChapterAnimStyle {
 	NEON,
 	SHATTER,
 	BLUR,
-	DOOM_MELT
+	DOOM_MELT,
+	HEARTBEAT,
+	VHS,
+	LIGHT_SWEEP
 }
 
 
