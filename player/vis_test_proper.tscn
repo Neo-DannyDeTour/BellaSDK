@@ -65,6 +65,7 @@ sky = SubResource("Sky_lwyc6")
 sky_rotation = Vector3(0, 2.3841197, 0)
 sdfgi_enabled = true
 sdfgi_use_occlusion = true
+sdfgi_cascades = 2
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6sdu6"]
 albedo_texture = ExtResource("29_6hbgt")
@@ -99,7 +100,7 @@ metadata/_custom_type_script = "uid://cl68g6jurgp0h"
 [node name="VisTEST" type="Node3D" unique_id=240456945]
 
 [node name="Player" parent="." unique_id=1502339238 instance=ExtResource("6_ns8v3")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 3, 3.9198194)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.7, -5.1545496)
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1907814161]
 environment = SubResource("Environment_46sxa")
@@ -1709,25 +1710,11 @@ transform = Transform3D(1.3113416e-07, 0, 1, 0, 1, 0, -1, 0, 1.3113416e-07, 19.7
 transform = Transform3D(-2.1855694e-08, 0, -0.5, 0, 1, 0, 0.5, 0, -2.1855694e-08, 19.589993, 2.396727, -7.3855953)
 
 [node name="SpotLight3D" type="SpotLight3D" parent="." unique_id=223940174]
-transform = Transform3D(-1, 0, 8.742278e-08, 4.371139e-08, 0.8660254, 0.5, -7.5710346e-08, 0.5, -0.8660254, 4.7274375, 5.206429, -12.061014)
+transform = Transform3D(-1, 0, 8.742278e-08, 4.371139e-08, 0.8660254, 0.5, -7.5710346e-08, 0.5, -0.8660254, 10.824263, 7.9405446, -17.505405)
 light_color = Color(0.8039216, 1, 1, 1)
-light_energy = 15.0
+light_energy = 16.0
 shadow_enabled = true
-spot_range = 15.272589
-
-[node name="SpotLight3D2" type="SpotLight3D" parent="." unique_id=1390425938]
-transform = Transform3D(-1, 0, 8.742278e-08, 4.371139e-08, 0.8660254, 0.5, -7.5710346e-08, 0.5, -0.8660254, 11.073243, 5.206429, -12.061014)
-light_color = Color(0.8039216, 1, 1, 1)
-light_energy = 15.0
-shadow_enabled = true
-spot_range = 15.272589
-
-[node name="SpotLight3D3" type="SpotLight3D" parent="." unique_id=114404013]
-transform = Transform3D(-1, 0, 8.742278e-08, 4.371139e-08, 0.8660254, 0.5, -7.5710346e-08, 0.5, -0.8660254, 17.698204, 5.206429, -12.061014)
-light_color = Color(0.8039216, 1, 1, 1)
-light_energy = 15.0
-shadow_enabled = true
-spot_range = 15.272589
+spot_range = 4096.0
 
 [node name="Shack" type="Node3D" parent="." unique_id=465905829]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.194672, 2.3841858e-07, 0.13223338)
@@ -2008,13 +1995,17 @@ cull_far = 25.0
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.3823644, 3.5, 3.427269)
 zone_size = Vector3(2, 2, 2)
 soundscape = SubResource("Resource_43coy")
+fade_duration = 2.0
 persist_after_exit = true
 
 [node name="ChapterTrigger" parent="." unique_id=1955767946 instance=ExtResource("52_wkfn1")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.72450435, 2.0262184, -7.4385567)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.16013467, 2.0262184, -7.4385567)
+play_random_effects = true
 
 [node name="ChapterTrigger2" parent="." unique_id=986591175 instance=ExtResource("52_wkfn1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.6088676, 3.6163845, 2.8420885)
-editor_color = Color(1, 0, 0, 0.5921569)
-chapter_name = "VISTEST"
-animation_style = 1
+animation_style = 15
+play_random_effects = null
+
+[node name="LightmapGI" type="LightmapGI" parent="." unique_id=1597095081]
+quality = 2

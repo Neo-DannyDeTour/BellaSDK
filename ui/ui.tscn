@@ -11,6 +11,7 @@
 [ext_resource type="Script" uid="uid://cnewwxia7j3ay" path="res://core/frame_graph.gd" id="8_ktti3"]
 [ext_resource type="Shader" uid="uid://dqjxwnsg8c5f0" path="res://vfx/outline_hearts_adaptable.gdshader" id="10_7dvkv"]
 [ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="11_bi8hs"]
+[ext_resource type="Script" uid="uid://bq62qlt337705" path="res://ui/chapter_title_container.gd" id="11_hrmpd"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_p7vwb"]
 shader = ExtResource("5_8dubc")
@@ -195,6 +196,8 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 theme_override_constants/margin_top = 100
+script = ExtResource("11_hrmpd")
+metadata/_edit_use_anchors_ = true
 
 [node name="ChapterLabel" type="RichTextLabel" parent="ChapterTitleContainer" unique_id=839489251]
 layout_mode = 2

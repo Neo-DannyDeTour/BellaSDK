@@ -11,14 +11,18 @@ extends Area3D
 @export_category("Soundscape Settings")
 @export var soundscape: SoundscapeData
 @export var base_volume_db: float = 0.0
-@export var fade_duration: float = 2.0
+## Duration in seconds for fading volume in and out.
+@export var fade_duration: float = 0.5
 ## Check this to keep the soundscape playing until another one is entered.
 @export var persist_after_exit: bool = false
 ## Check this to loop the ambient track when it finishes.
 @export var loop_ambient: bool = true
+## Check this to make this the fallback soundscape when no others are active.
+@export var is_default_soundscape: bool = false
 
-# Shared across all instances of this script to track the globally active zone
+# Shared across all instances to track global state
 static var current_active_zone: Area3D = null
+static var default_zone: Area3D = null
 
 var current_tween: Tween
 
@@ -27,6 +31,8 @@ var current_tween: Tween
 @onready var timer: Timer = $RandomSoundTimer
 @onready var collision_shape: CollisionShape3D = $CollisionShape3D
 
+var _last_exit_time: int = 0
+const DEBOUNCE_MSEC: int = 100
 
 func _ready() -> void:
 	print("Readying Soundscape Zone: ", name)
@@ -35,7 +41,11 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 
-	# Add to a group so zones can communicate with each other dynamically
+	# Register default soundscape on initialization
+	if is_default_soundscape:
+		default_zone = self
+
+	# Add to a group so zones can communicate dynamically
 	add_to_group("soundscape_zones")
 
 	ambient_player.volume_db = -80.0
@@ -45,6 +55,10 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
 	ambient_player.finished.connect(_on_ambient_finished)
+
+	# Initialize the default soundscape if we are the default
+	if is_default_soundscape:
+		call_deferred("_deferred_check_fallback")
 
 
 # --- Editor Only: Update Shape Size ---
@@ -67,11 +81,11 @@ func _on_body_entered(body: Node3D) -> void:
 		return
 
 	if body.is_in_group("player") and soundscape:
-		# Ignore if we are already the active soundscape zone
 		if current_active_zone == self:
-			print("Ignoring re-entry: ", name, " is already the active zone.")
+			if Time.get_ticks_msec() - _last_exit_time > DEBOUNCE_MSEC:
+				print("Ignoring re-entry: ", name, " is already the active zone.")
 			return
-			
+
 		print("Player entered NEW soundscape: ", name)
 		current_active_zone = self
 		_start_soundscape()
@@ -82,22 +96,36 @@ func _on_body_exited(body: Node3D) -> void:
 		return
 
 	if body.is_in_group("player") and soundscape:
+		_last_exit_time = Time.get_ticks_msec()
 		print("Player exited soundscape: ", name)
+
+		if current_active_zone == self:
+			current_active_zone = null
+
 		if not persist_after_exit:
 			_stop_soundscape()
+			call_deferred("_deferred_check_fallback")
 		else:
 			print("Persist is TRUE: ", name, " will continue playing.")
 
 
+func _deferred_check_fallback() -> void:
+	# If no new zone claimed the active spot this frame, trigger the default
+	if current_active_zone == null and default_zone != null:
+		if not default_zone.ambient_player.playing or default_zone.ambient_player.stream_paused:
+			print("No active zones. Resuming default soundscape: ", default_zone.name)
+			default_zone._start_soundscape()
+
+
 func _start_soundscape() -> void:
-	print("Starting soundscape: ", name)
-	
+	print("Starting/Resuming soundscape: ", name)
+
 	# Tell all other zones in the group to stop playing
 	get_tree().call_group("soundscape_zones", "_remote_stop", self)
 
 	if soundscape.ambient_track:
 		ambient_player.stream = soundscape.ambient_track
-		
+
 		# Resume if paused, otherwise start from the beginning
 		if ambient_player.stream_paused:
 			print("Unpausing ambient track in: ", name)
@@ -114,14 +142,16 @@ func _start_soundscape() -> void:
 
 
 func _stop_soundscape() -> void:
-	print("Stopping soundscape: ", name)
+	print("Stopping soundscape (pausing via fade): ", name)
 	timer.stop()
+	# Passing true ensures _pause_player is called after the fadeout
 	_fade_volume(ambient_player, -80.0, true)
 
 
 func _remote_stop(new_zone: Area3D) -> void:
-	# Called by a newly entered zone. If we are currently playing, we should stop.
-	if new_zone != self and ambient_player.playing:
+	# Stop if another zone overrides us while we are actively playing
+	var is_playing: bool = ambient_player.playing and not ambient_player.stream_paused
+	if new_zone != self and is_playing:
 		print("Remote stop triggered on ", name, " by new zone: ", new_zone.name)
 		_stop_soundscape()
 
@@ -131,8 +161,8 @@ func _fade_volume(
 	target_vol: float, 
 	pause_on_finish: bool = false
 ) -> void:
-	print("Fading volume for ", player.name, " to ", target_vol, " dB.")
-	
+	print("Fading volume for ", player.name, " to ", target_vol, " dB over ", fade_duration, "s.")
+
 	if current_tween and current_tween.is_running():
 		current_tween.kill()
 
@@ -149,7 +179,7 @@ func _fade_volume(
 
 
 func _pause_player(player: AudioStreamPlayer) -> void:
-	print("Pausing player: ", player.name)
+	print("Pausing player to preserve stream progress: ", player.name)
 	player.stream_paused = true
 
 
@@ -161,7 +191,7 @@ func _schedule_next_random_sound() -> void:
 
 func _on_timer_timeout() -> void:
 	print("Random sound timer timeout in: ", name)
-	
+
 	if soundscape.random_sounds.is_empty():
 		return
 

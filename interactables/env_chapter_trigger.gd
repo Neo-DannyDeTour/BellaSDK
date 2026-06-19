@@ -1,4 +1,5 @@
 @tool
+class_name EnvChapterTrigger
 extends Area3D
 
 @export_category("Level Design")
@@ -18,7 +19,11 @@ extends Area3D
 @export var chapter_name: String = "Chapter 1"
 @export var text_color: Color = Color.WHITE
 @export var animation_style: Events.ChapterAnimStyle = Events.ChapterAnimStyle.SIMPLE
-@export var display_duration: float = 3.0
+@export var display_duration: float = 5.0
+
+@export_category("Randomization")
+## If true, overrides the settings above with random effects when the player enters.
+@export var play_random_effects: bool = false
 
 var _has_triggered: bool = false
 
@@ -27,24 +32,22 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 
-	print("ChapterTrigger ready: ", chapter_name)
+	print("EnvChapterTrigger: _ready() initialized for '", chapter_name, "'.")
 
-	# Optimization: Delete the visual mesh so it costs zero performance in the compiled game
 	var editor_mesh: MeshInstance3D = get_node_or_null("EditorVisual")
 	if editor_mesh:
 		editor_mesh.queue_free()
+		print("EnvChapterTrigger: Editor visual mesh freed for performance.")
 
 	body_entered.connect(_on_body_entered)
 
 
 func _update_bounds() -> void:
-	# 1. Update the invisible physics collision shape
 	var col: CollisionShape3D = get_node_or_null("CollisionShape3D")
 	if col:
 		if not col.shape:
 			col.shape = BoxShape3D.new()
 
-		# Duplicate the shape so resizing one trigger doesn't resize all of them
 		if not col.shape.resource_local_to_scene:
 			col.shape = col.shape.duplicate()
 			col.shape.resource_local_to_scene = true
@@ -53,13 +56,11 @@ func _update_bounds() -> void:
 			var box: BoxShape3D = col.shape as BoxShape3D
 			box.size = trigger_size
 
-	# 2. Update the visible editor mesh and force the color
 	var mesh: MeshInstance3D = get_node_or_null("EditorVisual")
 	if mesh and mesh.mesh is BoxMesh:
 		var box_mesh: BoxMesh = mesh.mesh as BoxMesh
 		box_mesh.size = trigger_size
 
-		# Apply an unshaded, transparent material so it ignores lighting and stays bright
 		var mat: StandardMaterial3D = mesh.material_override as StandardMaterial3D
 		if not mat:
 			mat = StandardMaterial3D.new()
@@ -71,18 +72,46 @@ func _update_bounds() -> void:
 
 
 func _on_body_entered(body: Node3D) -> void:
-	# Prevent the editor from executing gameplay code
-	if Engine.is_editor_hint():
+	if Engine.is_editor_hint() or _has_triggered:
 		return
 
-	if not body.is_in_group("player"):
-		return
+	if body.is_in_group("player"):
+		_has_triggered = true
+		_apply_random_effects_if_enabled()
+		
+		print(
+			"EnvChapterTrigger: Player entered. Emitting chapter '", 
+			chapter_name, 
+			"' with style ID ", 
+			animation_style
+		)
+		
+		Events.chapter_triggered.emit(
+			chapter_name, 
+			animation_style as int, 
+			display_duration, 
+			text_color
+		)
 
-	if _has_triggered:
-		return
 
-	_has_triggered = true
-	print("Player entered chapter volume. Emitting signal for: ", chapter_name)
-	Events.chapter_triggered.emit(
-		chapter_name, animation_style as int, display_duration, text_color
+func _apply_random_effects_if_enabled() -> void:
+	if not play_random_effects:
+		return
+		
+	print("EnvChapterTrigger: _apply_random_effects_if_enabled() called.")
+	
+	# Grab all available integer values from the enum and pick one at random
+	var style_values: Array = Events.ChapterAnimStyle.values()
+	animation_style = style_values.pick_random() as Events.ChapterAnimStyle
+	
+	# Generate a random, fully opaque color
+	text_color = Color(randf(), randf(), randf(), 1.0)
+	
+	# Randomize the duration slightly between 3.0 and 7.0 seconds
+	display_duration = randf_range(3.0, 7.0)
+	
+	print(
+		"EnvChapterTrigger: Random effects generated -> Style: ", animation_style, 
+		", Color: ", text_color, 
+		", Duration: ", display_duration
 	)

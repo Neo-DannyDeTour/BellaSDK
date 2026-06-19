@@ -51,14 +51,29 @@ signal font_changed(font_name: String)
 # --- FONT SWAPPING LOGIC ---
 var fonts: Dictionary[String, Font] = {}
 
+# --- CHAPTER TEXT ANIMATIONS ---
+@warning_ignore("unused_signal")
+signal chapter_triggered(chapter_name: String, style: int, duration: float, color: Color)
+
 enum ChapterAnimStyle {
 	SIMPLE,
+	WAVE,
+	GLOW,
+	GLITCH,
+	REVEAL,
+	CHROMATIC,
+	DRIFT,
+	DISSOLVE,
+	LIQUID,
+	HOLOGRAM,
 	TYPEWRITER,
-	WAVE
+	SLAM,
+	SPRING,
+	NEON,
+	SHATTER,
+	BLUR,
+	DOOM_MELT
 }
-
-@warning_ignore("unused_signal")
-signal chapter_triggered(chapter_name: String, anim_style: int, display_duration: float, text_color: Color)
 
 
 func _ready() -> void:

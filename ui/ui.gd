@@ -48,16 +48,10 @@ var default_crosshair_size: Vector2
 @onready var health_margin: MarginContainer = $HealthMargin
 @onready var hearts_container: HBoxContainer = $HealthMargin/HeartsContainer
 
-# Updated Path
-@onready var chapter_title_container: MarginContainer = $ChapterTitleContainer
-@onready var chapter_label: RichTextLabel = $ChapterTitleContainer/ChapterLabel
-
 var heart_textures: Array[AtlasTexture] = []
 var heart_nodes: Array[TextureRect] = []
 var heart_tweens: Array[Tween] = []
 var current_health: int = 300
-
-var chapter_tween: Tween
 
 
 func _ready() -> void:
@@ -112,12 +106,6 @@ func _ready() -> void:
 	green_wireframe_material.shader = shader
 
 	_initialize_hearts()
-	
-	if not Events.chapter_triggered.is_connected(_on_chapter_triggered):
-		Events.chapter_triggered.connect(_on_chapter_triggered)
-		
-	chapter_label.modulate.a = 0.0
-	chapter_label.visible = false
 	
 	call_deferred("_check_if_testbed")
 
@@ -500,52 +488,6 @@ func _toggle_ui_elements(should_hide: bool) -> void:
 
 	hide_ui_button.text = "Show UI" if is_ui_hidden else "Hide UI"
 	print("UI Visibility: ", visibility)
-
-
-# --- CHAPTER TITLE LOGIC ---
-func _on_chapter_triggered(chapter_name: String, anim_style: int, display_duration: float, text_color: Color) -> void:
-	print("UI received chapter_triggered signal. Displaying: ", chapter_name, " in color: ", text_color)
-	
-	chapter_label.add_theme_color_override("default_color", text_color)
-	chapter_label.visible = true
-
-	if chapter_tween and chapter_tween.is_valid():
-		chapter_tween.kill()
-
-	chapter_tween = create_tween()
-
-	match anim_style:
-		Events.ChapterAnimStyle.SIMPLE:
-			print("UI animating chapter using SIMPLE style.")
-			chapter_label.text = "[center]" + chapter_name + "[/center]"
-			chapter_label.visible_ratio = 1.0
-			chapter_tween.tween_property(chapter_label, "modulate:a", 1.0, 1.0)
-			chapter_tween.tween_interval(display_duration)
-			chapter_tween.tween_property(chapter_label, "modulate:a", 0.0, 1.0)
-
-		Events.ChapterAnimStyle.TYPEWRITER:
-			print("UI animating chapter using TYPEWRITER style.")
-			chapter_label.modulate.a = 1.0
-			chapter_label.text = "[center]" + chapter_name + "[/center]"
-			chapter_label.visible_ratio = 0.0
-			
-			var time_per_char: float = 0.05
-			var total_time: float = chapter_name.length() * time_per_char
-			
-			chapter_tween.tween_property(chapter_label, "visible_ratio", 1.0, total_time)
-			chapter_tween.tween_interval(display_duration)
-			chapter_tween.tween_property(chapter_label, "modulate:a", 0.0, 1.0)
-
-		Events.ChapterAnimStyle.WAVE:
-			print("UI animating chapter using WAVE style.")
-			var wave_tag: String = "[wave amp=50.0 freq=5.0 connected=1]"
-			chapter_label.text = "[center]" + wave_tag + chapter_name + "[/wave][/center]"
-			chapter_label.visible_ratio = 1.0
-			chapter_tween.tween_property(chapter_label, "modulate:a", 1.0, 1.0)
-			chapter_tween.tween_interval(display_duration)
-			chapter_tween.tween_property(chapter_label, "modulate:a", 0.0, 1.0)
-
-	chapter_tween.tween_callback(chapter_label.hide)
 
 
 func _check_if_testbed() -> void:
