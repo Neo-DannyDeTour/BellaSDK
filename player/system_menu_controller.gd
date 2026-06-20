@@ -143,29 +143,37 @@ func _on_fullbright_toggled(is_fullbright: bool) -> void:
 func toggle_noclip() -> void:
 	flying = not flying
 
-	# Turn off collisions when flying, turn them back on when walking
-	player_body.standing_collision.disabled = flying
-	player_body.crouching_collision.disabled = flying
+	# THE FIX: Use our directly exported variables, not the player body!
+	if is_instance_valid(standing_collision):
+		standing_collision.disabled = flying
+	if is_instance_valid(crouching_collision):
+		crouching_collision.disabled = flying
 
 	if flying:
 		print("Noclip ON")
 		# Reset vertical velocity so you don't rocket upwards if you
 		# turn it on while falling!
-		player_body.velocity.y = 0.0
+		if is_instance_valid(player_body):
+			player_body.velocity.y = 0.0
 	else:
 		print("Noclip OFF")
-		# Kill all momentum to stop dead in tracks
-		player_body.velocity = Vector3.ZERO
-		# Clear last_velocity so StateAir doesn't calculate massive fall damage
-		player_body.last_velocity = Vector3.ZERO 
+		if is_instance_valid(player_body):
+			# Kill all momentum to stop dead in tracks
+			player_body.velocity = Vector3.ZERO
+			
+			# THE FIX: Clear last_velocity via the locomotion component
+			var loco: Node = player_body.get("locomotion_component")
+			if is_instance_valid(loco):
+				loco.set("last_velocity", Vector3.ZERO) 
 
 	# Emit global and local signals to update the UI and resolve the warning
-	Events.noclip_toggled.emit(flying)
+	if Events.has_signal("noclip_toggled"):
+		Events.noclip_toggled.emit(flying)
 	noclip_toggled.emit(flying)
 
 
 func process_noclip(delta: float) -> void:
-	if not flying:
+	if not flying or not is_instance_valid(player_body):
 		return
 
 	var input_dir := Input.get_vector("left", "right", "forward", "backward")
@@ -178,7 +186,8 @@ func process_noclip(delta: float) -> void:
 	fly_dir = fly_dir.normalized()
 
 	var current_speed: float = base_sprinting_speed * noclip_speed_multiplier
-	Events.noclip_speed_changed.emit(noclip_speed_multiplier)
+	if Events.has_signal("noclip_speed_changed"):
+		Events.noclip_speed_changed.emit(noclip_speed_multiplier)
 
 	if fly_dir.length() > 0:
 		player_body.velocity = fly_dir * current_speed

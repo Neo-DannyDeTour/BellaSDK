@@ -15,20 +15,26 @@ extends PlayerState
 func enter(_msg: Dictionary = {}) -> void:
 	print("StateSlide: enter() called. Player locked into slide.")
 	
-	player.crouching = true
-	player.standing_collision.disabled = true
-	player.crouching_collision.disabled = false
+	var loco: Node = player.locomotion_component
+	if is_instance_valid(loco):
+		loco.crouching = true
+		loco.standing_collision.disabled = true
+		loco.crouching_collision.disabled = false
 
 func exit() -> void:
 	print("StateSlide: exit() called. Restoring default collision state.")
 	
-	if not player.crouch_cast_check.is_colliding():
+	var loco: Node = player.locomotion_component
+	if is_instance_valid(loco) and not loco.crouch_cast_check.is_colliding():
 		print("StateSlide: Headroom clear. Standing up.")
-		player.crouching = false
-		player.standing_collision.disabled = false
-		player.crouching_collision.disabled = true
+		loco.crouching = false
+		loco.standing_collision.disabled = false
+		loco.crouching_collision.disabled = true
 
 func physics_update(delta: float) -> void:
+	var loco: Node = player.locomotion_component
+	var interact: Node = player.interaction_component
+	
 	# 1. Exit Condition: Airborne
 	if not player.is_on_floor():
 		print("StateSlide: Floor lost. Transitioning to Air.")
@@ -55,7 +61,14 @@ func physics_update(delta: float) -> void:
 
 	# 5. Handle Steering (Left/Right)
 	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
-	var camera_right: Vector3 = player.camera.global_transform.basis.x.normalized()
+	
+	# Safely fetch the camera right-vector through the component architecture
+	var camera_right: Vector3 = Vector3.RIGHT
+	if is_instance_valid(interact) and is_instance_valid(interact.get("camera")):
+		camera_right = interact.camera.global_transform.basis.x.normalized()
+	elif is_instance_valid(player.camera_controller):
+		camera_right = player.camera_controller.global_transform.basis.x.normalized()
+		
 	var steer_dir: Vector3 = camera_right.slide(floor_normal)
 	
 	if steer_dir.length_squared() > 0.0001:
@@ -76,11 +89,12 @@ func physics_update(delta: float) -> void:
 
 	# 6. Absolute speed cap
 	if player.velocity.length_squared() > (max_slide_speed * max_slide_speed):
-		print("StateSlide: Max speed reached. Capping velocity.")
+		# Print omitted to prevent 60 FPS console spam
 		player.velocity = player.velocity.limit_length(max_slide_speed)
 
 	# Apply gravity to keep glued to slopes
-	player.velocity.y -= player.gravity * delta
+	var current_gravity: float = loco.gravity if is_instance_valid(loco) else 9.8
+	player.velocity.y -= current_gravity * delta
 
 	player.move_and_slide()
 
@@ -88,13 +102,20 @@ func physics_update(delta: float) -> void:
 	_update_components(delta, input_dir)
 
 func _update_components(delta: float, input_dir: Vector2) -> void:
-	print("StateSlide: Updating camera, footsteps, and interaction scanner.")
-	player.camera_controller.update_camera(
-		delta, input_dir, false, true, true, player.velocity.length() 
-	)
+	# Print omitted to prevent 60 FPS console spam
 	
-	player.footstep_manager.process_surface_and_footsteps(
-		delta, true, player.velocity.length(), false, true
-	)
+	var loco: Node = player.locomotion_component
+	var interact: Node = player.interaction_component
 	
-	player.interaction_scanner.process_interaction(delta)
+	if is_instance_valid(player.camera_controller):
+		player.camera_controller.update_camera(
+			delta, input_dir, false, true, true, player.velocity.length() 
+		)
+	
+	if is_instance_valid(loco) and is_instance_valid(loco.get("footstep_manager")):
+		loco.footstep_manager.process_surface_and_footsteps(
+			delta, true, player.velocity.length(), false, true
+		)
+	
+	if is_instance_valid(interact) and is_instance_valid(interact.get("interaction_scanner")):
+		interact.interaction_scanner.process_interaction(delta)

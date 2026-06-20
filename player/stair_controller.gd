@@ -25,7 +25,10 @@ func _ready() -> void:
 	_test_params.exclude_bodies = [player.get_rid()]
 
 func snap_up_stairs_check(delta: float, is_sprinting: bool = false) -> bool:
-	if not is_enabled or player.vault_controller.is_vaulting:
+	var env: Node = player.get("environment_component")
+	var is_vaulting: bool = is_instance_valid(env) and is_instance_valid(env.get("vault_controller")) and env.get("vault_controller").get("is_vaulting")
+	
+	if not is_enabled or is_vaulting:
 		return false
 		
 	time_since_step_up += delta
@@ -81,9 +84,11 @@ func snap_up_stairs_check(delta: float, is_sprinting: bool = false) -> bool:
 		time_since_step_up = 0.0
 		
 		var actual_step_height: float = player.global_position.y - previous_y
+		var loco: Node = player.get("locomotion_component")
 		
-		if is_instance_valid(player.head):
-			player.head.position.y -= actual_step_height
+		if is_instance_valid(loco) and is_instance_valid(loco.get("head")):
+			var head: Node3D = loco.get("head")
+			head.position.y -= actual_step_height
 			
 			var feedback_threshold: float = 0.35 if is_sprinting else 0.25
 			if time_since_step_feedback > feedback_threshold:
@@ -91,13 +96,16 @@ func snap_up_stairs_check(delta: float, is_sprinting: bool = false) -> bool:
 				print("StairController: Snapped UP visually. Camera offset: ", -actual_step_height)
 			else:
 				print("StairController: Micro-step handled physics. Audio suppressed.")
-				
+			
 		return true
 
 	return false
 
 func snap_down_to_stairs_check() -> void:
-	if not is_enabled or player.vault_controller.is_vaulting:
+	var env: Node = player.get("environment_component")
+	var is_vaulting: bool = is_instance_valid(env) and is_instance_valid(env.get("vault_controller")) and env.get("vault_controller").get("is_vaulting")
+
+	if not is_enabled or is_vaulting:
 		return
 		
 	if time_since_step_up < 0.2:
@@ -129,8 +137,11 @@ func snap_down_to_stairs_check() -> void:
 				did_snap = true
 				
 				var drop_distance: float = player.global_position.y - previous_y
-				if is_instance_valid(player.head):
-					player.head.position.y -= drop_distance 
+				var loco: Node = player.get("locomotion_component")
+				
+				if is_instance_valid(loco) and is_instance_valid(loco.get("head")):
+					var head: Node3D = loco.get("head")
+					head.position.y -= drop_distance 
 					print("StairController: Snapped DOWN. Camera offset by: ", -drop_distance)
 
 	if did_snap:

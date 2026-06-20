@@ -3,17 +3,27 @@ extends PlayerState
 
 
 func enter(_msg: Dictionary = {}) -> void:
-	# Listen for the VaultController to tell us it's done
-	player.vault_controller.vault_finished.connect(_on_vault_finished)
+	# 1. Safely route to the vault controller via the new component architecture
+	var env: Node = player.environment_component
+	var vault_ctrl: Node = env.get("vault_controller") if is_instance_valid(env) else null
+	
+	if is_instance_valid(vault_ctrl):
+		# Listen for the VaultController to tell us it's done
+		if not vault_ctrl.vault_finished.is_connected(_on_vault_finished):
+			vault_ctrl.vault_finished.connect(_on_vault_finished)
 
-	# Kill momentum so the player doesn't slide during the vault
+	# 2. Kill momentum so the player doesn't slide during the vault
 	player.velocity = Vector3.ZERO
 
 
 func exit() -> void:
-	# Clean up the connection so it doesn't fire multiple times
-	if player.vault_controller.vault_finished.is_connected(_on_vault_finished):
-		player.vault_controller.vault_finished.disconnect(_on_vault_finished)
+	var env: Node = player.environment_component
+	var vault_ctrl: Node = env.get("vault_controller") if is_instance_valid(env) else null
+	
+	if is_instance_valid(vault_ctrl):
+		# Clean up the connection so it doesn't fire multiple times
+		if vault_ctrl.vault_finished.is_connected(_on_vault_finished):
+			vault_ctrl.vault_finished.disconnect(_on_vault_finished)
 
 
 func physics_update(_delta: float) -> void:

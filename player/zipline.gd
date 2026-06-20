@@ -131,18 +131,21 @@ func on_player_released() -> void:
 		highlight_component.suppress(false)
 
 
-# Inside UniversalCable3D (Zipline) script
+func get_current_travel_velocity() -> Vector3:
+	return current_travel_velocity
 
 
 func force_grab_zipline(player: CharacterBody3D) -> void:
 	if player_on_zipline:
 		return
 
-	# NEW: Check if the player is currently locked out of grabbing
-	if "zipline_cooldown" in player and player.zipline_cooldown > 0.0:
-		return  # Reject the grab attempt!
+	# FIXED: Use the facade getter instead of direct variable access
+	if player.has_method("has_zipline_cooldown") and player.has_zipline_cooldown():
+		print("Zipline: Player has cooldown. Rejecting grab.")
+		return  
 
 	if player and player.has_method("_on_zipline_grabbed"):
+		print("Zipline: Player accepted. Attaching to cable.")
 		player_on_zipline = true
 		current_player = player
 

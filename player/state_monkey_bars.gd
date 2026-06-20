@@ -30,27 +30,27 @@ func enter(msg: Dictionary = {}) -> void:
 func exit() -> void:
 	current_monkey_bar_volume = null
 
-	# Start the cooldown on the main player script so they don't instantly regrab
-	player.monkey_bar_cooldown = 0.5
+	# FIX: Route cooldown to your environment_component
+	if is_instance_valid(player.environment_component):
+		player.environment_component.monkey_bar_cooldown = 0.5
 
 	if player.has_node("%CameraAnims"):
-		# Play a falling/idle animation, or use a crossfade transition
 		player.get_node("%CameraAnims").play("idle", 0.2)
-
-	# Reset animations
-	# if player.camera_anims:
-	# 	player.camera_anims.play("RESET", 0.3)
-	# 	player.camera_anims.speed_scale = 1.0
 
 
 func physics_update(delta: float) -> void:
-	if player.available_monkey_bar == null:
+	# Print statement omitted here to prevent console spam at 60 FPS
+	var active_bar: Node3D = null
+	
+	if is_instance_valid(player.environment_component):
+		active_bar = player.environment_component.get("available_monkey_bar") as Node3D
+
+	if active_bar == null:
 		state_machine.transition_to("Air")
 		return
 
-	# FIX: Dynamically update the volume if the player swings onto a new bar
-	if current_monkey_bar_volume != player.available_monkey_bar:
-		current_monkey_bar_volume = player.available_monkey_bar
+	if current_monkey_bar_volume != active_bar:
+		current_monkey_bar_volume = active_bar
 
 	if not is_instance_valid(current_monkey_bar_volume):
 		_perform_dismount()
@@ -73,10 +73,10 @@ func physics_update(delta: float) -> void:
 # PRIVATE METHODS
 # --------------------------------------
 func _apply_horizontal_movement(input_dir: Vector2) -> void:
-	var look_dir: Vector3 = -player.camera.global_transform.basis.z
-	var right_dir: Vector3 = player.camera.global_transform.basis.x
+	# FIX: Route camera reference through camera_controller
+	var look_dir: Vector3 = -player.camera_controller.global_transform.basis.z
+	var right_dir: Vector3 = player.camera_controller.global_transform.basis.x
 
-	# Flatten directions
 	look_dir.y = 0.0
 	right_dir.y = 0.0
 	look_dir = look_dir.normalized()
@@ -88,7 +88,9 @@ func _apply_horizontal_movement(input_dir: Vector2) -> void:
 
 	var flat_vel := Vector3(player.velocity.x, 0.0, player.velocity.z)
 	if flat_vel.length() > 0.0:
-		player.direction = flat_vel.normalized()
+		# FIX: Route direction to locomotion_component
+		if is_instance_valid(player.locomotion_component):
+			player.locomotion_component.direction = flat_vel.normalized()
 
 
 func _apply_vertical_magnetism() -> void:

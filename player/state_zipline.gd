@@ -59,7 +59,10 @@ func exit() -> void:
 		. tween_property(player, "quaternion", upright_basis.get_rotation_quaternion(), 0.15)
 		. set_trans(Tween.TRANS_SINE)
 	)
-	detach_tween.tween_property(player.eyes, "rotation:z", 0.0, 0.15)
+	
+	# FIXED: Target the camera_controller instead of 'eyes'
+	if is_instance_valid(player.camera_controller):
+		detach_tween.tween_property(player.camera_controller, "rotation:z", 0.0, 0.15)
 
 
 func physics_update(delta: float) -> void:
@@ -126,7 +129,7 @@ func _calculate_movement(delta: float, input_dir: Vector2) -> void:
 	var downhill_sign: float = 1.0 if zipline_dir.y < 0.0 else -1.0
 	var downhill_vector: Vector3 = zipline_dir * downhill_sign
 
-	var look_forward: Vector3 = -player.camera.global_transform.basis.z
+	var look_forward: Vector3 = -player.camera_controller.global_transform.basis.z
 	var look_dot_downhill: float = look_forward.dot(downhill_vector)
 
 	var is_looking_downhill: bool = look_dot_downhill > 0.1
@@ -177,16 +180,17 @@ func _check_dismount_conditions() -> void:
 
 
 func _perform_dismount() -> void:
-	player.zipline_cooldown = 0.5
+	# FIX: Route cooldown to the appropriate component (likely environment or locomotion)
+	if is_instance_valid(player.environment_component):
+		player.environment_component.zipline_cooldown = 0.5
 
 	var zip_vel: Vector3 = Vector3.ZERO
 	if current_zipline and current_zipline.has_method("get_current_travel_velocity"):
 		zip_vel = current_zipline.get_current_travel_velocity()
 
-	# If we hit the absolute end, the cable velocity is 0.
-	# We guarantee a forward and downward launch!
 	if zip_vel.length() < 2.0:
-		var look_dir: Vector3 = -player.camera.global_transform.basis.z
+		# FIX: Route camera reference through camera_controller
+		var look_dir: Vector3 = -player.camera_controller.global_transform.basis.z
 		var launch_flat_fwd: Vector3 = Vector3(look_dir.x, 0.0, look_dir.z).normalized()
 
 		if launch_flat_fwd.length_squared() < 0.01:
@@ -200,7 +204,9 @@ func _perform_dismount() -> void:
 
 	var flat_vel: Vector3 = Vector3(player.velocity.x, 0.0, player.velocity.z)
 	if flat_vel.length() > 0.0:
-		player.direction = flat_vel.normalized()
+		# FIX: If direction was moved to locomotion_component, route it here:
+		if is_instance_valid(player.locomotion_component):
+			player.locomotion_component.direction = flat_vel.normalized()
 
 	if Input.is_action_just_pressed("jump"):
 		player.velocity.y += 5.0

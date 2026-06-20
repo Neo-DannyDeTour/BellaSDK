@@ -3,10 +3,8 @@ extends RigidBody3D
 
 @export_category("Pickable Nodes")
 @export var interact_comp: Interact_Component
-#@export var mesh: MeshInstance3D
 @export var mesh: Node3D
 @export var label: Label3D
-#@export var outline_material: ShaderMaterial
 
 @export_category("Buoyancy")
 @export var probe_container: Node3D
@@ -133,12 +131,20 @@ func drop() -> void:
 		if "velocity" in holder:
 			linear_velocity = holder.velocity
 
-		var cam_forward: Vector3 = -holder.camera.global_transform.basis.z
+		# Safely fetch the camera through the new component architecture
+		var holder_cam: Node3D = holder.get("camera")
+		if "interaction_component" in holder and is_instance_valid(holder.get("interaction_component")):
+			holder_cam = holder.get("interaction_component").get("camera")
+			
+		var cam_forward := Vector3.FORWARD
+		if is_instance_valid(holder_cam):
+			cam_forward = -holder_cam.global_transform.basis.z
+
 		var flat_cam_forward := Vector3(cam_forward.x, 0.0, cam_forward.z)
 		var push_dir := flat_cam_forward.normalized()
 
 		# Velocity Compensation
-		var player_vel: Vector3 = holder.velocity if "velocity" in holder else Vector3.ZERO
+		var player_vel: Vector3 = holder.get("velocity") if "velocity" in holder else Vector3.ZERO
 		var velocity_offset := Vector3(player_vel.x, 0.0, player_vel.z) * 0.15
 
 		# Smart Object Nudge (Looking Down Check)
@@ -195,12 +201,15 @@ func drop() -> void:
 			push_dir.y = 0.5
 			apply_central_impulse(push_dir * 5.0)
 
-		# CORRECTED: Safely clear the player's reference to this item
-		if "held_item" in holder:
-			holder.held_item = null
-			
-		if "interaction_scanner" in holder and "held_object" in holder.interaction_scanner:
-			holder.interaction_scanner.held_object = null
+		# CORRECTED: Safely clear the player's reference to this item via Component
+		var int_comp: Node = holder.get("interaction_component") if "interaction_component" in holder else holder
+		if is_instance_valid(int_comp):
+			if "held_item" in int_comp:
+				int_comp.set("held_item", null)
+				
+			var scanner: Node = int_comp.get("interaction_scanner") if "interaction_scanner" in int_comp else null
+			if is_instance_valid(scanner) and "held_object" in scanner:
+				scanner.set("held_object", null)
 
 		var previous_holder := holder
 		_wait_to_enable_collision(previous_holder)
@@ -244,10 +253,6 @@ func _on_interact_component_focused() -> void:
 			mesh.material_overlay = null
 		return
 
-	# 2. Only apply highlight if NOT held.
-	#if mesh and outline_material:
-	#mesh.material_overlay = outline_material
-
 	# 3. Show the label
 	if label:
 		_update_label_text()
@@ -276,7 +281,6 @@ func _update_label_text() -> void:
 
 
 func _on_interact_component_unfocused() -> void:
-	#if mesh: mesh.material_overlay = null
 	if label:
 		label.hide()
 
@@ -287,7 +291,15 @@ func _physics_process(_delta: float) -> void:
 
 		# 1. APPLY OFFSETS FIRST
 		var player_pos: Vector3 = holder.global_position
-		var cam_forward: Vector3 = -holder.camera.global_transform.basis.z
+		
+		# Safely fetch the camera through the new component architecture
+		var holder_cam: Node3D = holder.get("camera")
+		if "interaction_component" in holder and is_instance_valid(holder.get("interaction_component")):
+			holder_cam = holder.get("interaction_component").get("camera")
+			
+		var cam_forward := Vector3.FORWARD
+		if is_instance_valid(holder_cam):
+			cam_forward = -holder_cam.global_transform.basis.z
 
 		# Pull closer to face based on export setting
 		target_pos -= cam_forward * hold_distance_offset
@@ -333,10 +345,10 @@ func _physics_process(_delta: float) -> void:
 		# 3. NOW DO THE SNAG CHECK
 		var distance_to_target := global_position.distance_to(target_pos)
 
-		# FIXED: Route the flying check through the SystemMenuController
+		# FIXED: Route the flying check through the new component architecture
 		var is_flying: bool = false
-		if "system_menu" in holder:
-			is_flying = holder.system_menu.flying
+		if "system_menu" in holder and is_instance_valid(holder.get("system_menu")):
+			is_flying = holder.get("system_menu").get("flying")
 
 		if distance_to_target > 1.5 and not is_flying:
 			drop()

@@ -32,8 +32,12 @@
 [ext_resource type="Script" uid="uid://c1xnt2yo0oo2g" path="res://player/system_menu_controller.gd" id="29_pfeki"]
 [ext_resource type="Script" uid="uid://drduud6mr6jpb" path="res://player/player_state_machine.gd" id="30_axnmu"]
 [ext_resource type="Script" uid="uid://l8jxyaeiyhyw" path="res://player/state_ground.gd" id="31_fvsjc"]
+[ext_resource type="Script" uid="uid://cqelntv2ip8o4" path="res://player/locomotion_component.gd" id="31_gswnw"]
 [ext_resource type="Script" uid="uid://b6id2mbr5hdwl" path="res://player/state_air.gd" id="32_hxdpb"]
+[ext_resource type="Script" uid="uid://c87uo5x0l5ceb" path="res://player/interaction_component.gd" id="32_j55il"]
 [ext_resource type="Script" uid="uid://bsu54rp3pvytw" path="res://player/state_ladders.gd" id="33_agngo"]
+[ext_resource type="Script" uid="uid://b8fdogx35s7dx" path="res://player/environment_component.gd" id="33_hjies"]
+[ext_resource type="Script" uid="uid://dfvgluktimmle" path="res://player/stats_component.gd" id="34_hjies"]
 [ext_resource type="Script" uid="uid://cvpwmre7ptbmv" path="res://player/state_zipline.gd" id="34_qrixf"]
 [ext_resource type="Script" uid="uid://2wxjkijgcx2h" path="res://player/state_rope.gd" id="35_qmt83"]
 [ext_resource type="Script" uid="uid://doxrsfqucen26" path="res://player/state_swim.gd" id="36_m4as6"]
@@ -338,11 +342,16 @@ stream_0/stream = ExtResource("15_jfpux")
 stream_1/stream = ExtResource("16_61ith")
 stream_2/stream = ExtResource("17_ebwui")
 
-[node name="Player" type="CharacterBody3D" unique_id=1502339238 groups=["player"]]
+[node name="Player" type="CharacterBody3D" unique_id=1502339238 node_paths=PackedStringArray("locomotion_component", "interaction_component", "environment_component", "stats_component", "camera_controller", "system_menu") groups=["player"]]
 process_mode = 3
 collision_layer = 2
 script = ExtResource("1_34orh")
-player_mass = 60.0
+locomotion_component = NodePath("Components/LocomotionComponent")
+interaction_component = NodePath("Components/InteractionComponent")
+environment_component = NodePath("Components/EnvironmentComponent")
+stats_component = NodePath("Components/StatsComponent")
+camera_controller = NodePath("Head/CameraController")
+system_menu = NodePath("SystemMenuController")
 
 [node name="Head" type="Node3D" parent="." unique_id=1584872370]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
@@ -489,9 +498,6 @@ shape = SubResource("SphereShape3D_mdl7e")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 script = ExtResource("20_sfy4j")
 
-[node name="HealthComponent" type="Node" parent="." unique_id=217395835]
-script = ExtResource("21_gv3ic")
-
 [node name="InteractionScanner" type="Node3D" parent="." unique_id=1246891363 node_paths=PackedStringArray("player_body", "camera", "interact_shapecast", "hold_position", "weapon_holder")]
 script = ExtResource("24_p07f3")
 player_body = NodePath("..")
@@ -556,6 +562,41 @@ eyes = NodePath("../Head/Eyes")
 standing_collision = NodePath("../StandingCollisionShape")
 crouching_collision = NodePath("../CrouchingCollisionShape")
 
+[node name="Components" type="Node" parent="." unique_id=1203401137]
+
+[node name="LocomotionComponent" type="Node" parent="Components" unique_id=1018939051 node_paths=PackedStringArray("stats_component", "stair_controller", "footstep_manager", "physics_pusher", "standing_collision", "crouching_collision", "crouch_cast_check", "head")]
+script = ExtResource("31_gswnw")
+stats_component = NodePath("../StatsComponent")
+stair_controller = NodePath("../../StairController")
+footstep_manager = NodePath("../../FootstepManager")
+physics_pusher = NodePath("../../PhysicsPusher")
+standing_collision = NodePath("../../StandingCollisionShape")
+crouching_collision = NodePath("../../CrouchingCollisionShape")
+crouch_cast_check = NodePath("../../CrouchCastCheck")
+head = NodePath("../../Head")
+
+[node name="InteractionComponent" type="Node" parent="Components" unique_id=1246392467 node_paths=PackedStringArray("interact_cast", "hold_position", "weapon_holder", "camera", "interaction_scanner")]
+script = ExtResource("32_j55il")
+interact_cast = NodePath("../../Head/Eyes/Camera3D/InteractShapeCast")
+hold_position = NodePath("../../Head/Eyes/Camera3D/SpringArm3D/HoldPosition")
+weapon_holder = NodePath("../../Head/Eyes/Camera3D/WeaponHolder")
+camera = NodePath("../../Head/Eyes/Camera3D")
+interaction_scanner = NodePath("../../InteractionScanner")
+
+[node name="EnvironmentComponent" type="Node" parent="Components" unique_id=821995305 node_paths=PackedStringArray("vfx_manager", "state_machine", "vault_controller")]
+script = ExtResource("33_hjies")
+vfx_manager = NodePath("../../ScreenVFXManager")
+state_machine = NodePath("../../StateMachine")
+vault_controller = NodePath("../../VaultController")
+
+[node name="StatsComponent" type="Node" parent="Components" unique_id=227307689 node_paths=PackedStringArray("health_component")]
+script = ExtResource("34_hjies")
+player_mass = 60.0
+health_component = NodePath("../HealthComponent")
+
+[node name="HealthComponent" type="Node" parent="Components" unique_id=217395835]
+script = ExtResource("21_gv3ic")
+
 [node name="StateMachine" type="Node" parent="." unique_id=2011174862]
 script = ExtResource("30_axnmu")
 initial_state = NodePath("Ground")
@@ -592,12 +633,6 @@ script = ExtResource("42_art4l")
 
 [node name="Glide" type="Node" parent="StateMachine" unique_id=474297086]
 script = ExtResource("43_fjxoa")
-forward_speed = null
-max_fall_speed = null
-debug_updraft_force = null
-turn_speed = null
-max_bank_angle = null
-bank_lerp_speed = null
 
 [connection signal="area_entered" from="WaterDetector" to="." method="_on_water_detector_area_entered"]
 [connection signal="area_exited" from="WaterDetector" to="." method="_on_water_detector_area_exited"]

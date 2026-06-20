@@ -31,4 +31,7 @@ visible = false
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6205874, 0)
 shape = SubResource("CylinderShape3D_ryygw")
 
+[node name="Label3D" parent="." index="4" unique_id=1035008069]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
+
 [node name="Barrel_red" parent="." index="5" unique_id=1477624360 instance=ExtResource("3_wkfba")]
