@@ -39,6 +39,16 @@ const DOUBLE_TAP_DELAY: float = 0.3  # Seconds allowed between taps
 		reverts_on_release = value
 		if reverts_on_release:
 			is_back_and_forth = false
+		else:
+			fast_revert_on_release = false
+
+@export var fast_revert_on_release: bool = false:
+	set(value):
+		fast_revert_on_release = value
+		if fast_revert_on_release:
+			reverts_on_release = true
+
+@export var fast_revert_multiplier: float = 4.0
 
 @export var spin_axis: Vector3 = Vector3(0, 1, 0)
 @export var label: Label3D
@@ -147,7 +157,14 @@ func _process(delta: float) -> void:
 	else:
 		if reverts_on_release:
 			var revert_target := 0.0 if current_target_progress == 1.0 else 1.0
-			progress = move_toward(progress, revert_target, delta / turn_duration)
+			var current_turn_duration: float = turn_duration
+			
+			if fast_revert_on_release:
+				current_turn_duration = turn_duration / fast_revert_multiplier
+				if was_interacting:
+					print("Valve released: Initiating fast revert towards ", revert_target)
+			
+			progress = move_toward(progress, revert_target, delta / current_turn_duration)
 
 	if is_back_and_forth and not is_interacting:
 		if progress >= 1.0:
