@@ -46,7 +46,8 @@ var valid_font_args: Array[String] = ["default", "dyslexic", "papyrus", "comic"]
 var valid_on_off_args: Array[String] = ["on", "off"]
 var valid_screenfilter_args: Array[String] = [
 	"off", "crt", "vhs", "pixelate", "toon", 
-	"gameboy", "glitch", "grain", "halftone", "nightvision", "kuwahara", "ascii"
+	"gameboy", "glitch", "grain", "halftone", "nightvision", "kuwahara", "ascii", "90anime", 
+	"manga", "handdrawn", "moebius", "obra", "psychedelic"
 ]
 
 # --- Screen Filter State ---
