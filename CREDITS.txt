@@ -20,3 +20,9 @@
 - player/procedural_spiral_stairs_csg.gd
 - texture_baker.gd
 - environment/water_maker3_d.gd
+
+## Special Thanks
+- mobile-bungalow
+- FencerDevLog
+- Garbaj
+- Lexpartizan
