@@ -1,0 +1,22 @@
+# Credits
+
+## Addons/Plugins
+- KGB Agent: DannyDeTour
+- RenderDocLauncher: José Lico
+- SunshineClouds2: Bonkahe
+
+## Individual Scripts
+- player/player_old.gd (FPS Controller logic): Lukky, StayAtHome
+
+## UNKNOWN AUTHOR - NEEDS VERIFICATION
+- ui/chapter_title_container.gd
+- ui/loading_screen_anim.gd
+- vfx/screenshake_effect.gd
+- vfx/smoke_manager.gd
+- vfx/emitter.gd
+- vfx/3Dshockwave_manager.gd
+- vfx/phys_explosion_3d.gd
+- interactables/destructible_glass/destructible_glass.gd
+- player/procedural_spiral_stairs_csg.gd
+- texture_baker.gd
+- environment/water_maker3_d.gd
