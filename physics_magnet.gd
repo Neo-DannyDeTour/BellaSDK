@@ -25,8 +25,15 @@ enum MagnetMode { THROWN_ONLY, ALL, REPEL }
 @export var collision_shape: CollisionShape3D
 @export var visual_mesh: MeshInstance3D
 
+@onready var _editor_icon: Sprite3D = %EditorIcon
+
+
 
 func _ready() -> void:
+	if not Engine.is_editor_hint():
+		if is_instance_valid(_editor_icon):
+			_editor_icon.queue_free()
+			
 	if not Engine.is_editor_hint():
 		print("PhysicsMagnet: _ready() initialized.")
 	collision_layer = 0

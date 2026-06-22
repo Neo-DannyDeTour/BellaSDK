@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://ccxtu6rccjfsm" path="res://shared/puzzle_socket.gd" id="1_rlwot"]
 [ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="2_bme3t"]
 [ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="3_ngqtq"]
+[ext_resource type="Script" uid="uid://cnmn3hgnt0afn" path="res://interactables/output_transmitter_3d.gd" id="4_88djp"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_bme3t"]
 size = Vector3(1, 1, 0.20678711)
@@ -18,12 +19,13 @@ height = 0.1
 radial_segments = 32
 rings = 0
 
-[node name="Socket" type="Area3D" unique_id=1509623913 node_paths=PackedStringArray("snap_position", "indicator_light")]
+[node name="Socket" type="Area3D" unique_id=1509623913 node_paths=PackedStringArray("snap_position", "indicator_light", "socket_interact_comp", "transmitter")]
 collision_mask = 5
 script = ExtResource("1_rlwot")
-requires_power_link = null
 snap_position = NodePath("Marker3D")
 indicator_light = NodePath("OmniLight3D")
+socket_interact_comp = NodePath("Interact_Component")
+transmitter = NodePath("OutputTransmitter3D")
 
 [node name="Marker3D" type="Marker3D" parent="." unique_id=1039557250]
 
@@ -44,3 +46,7 @@ metadata/_custom_type_script = "uid://cqawbvidns1th"
 [node name="HighlightComponent" type="Node" parent="." unique_id=417254049]
 script = ExtResource("3_ngqtq")
 metadata/_custom_type_script = "uid://dgig0tamvkdxx"
+
+[node name="OutputTransmitter3D" type="Node3D" parent="." unique_id=607250813]
+script = ExtResource("4_88djp")
+metadata/_custom_type_script = "uid://cnmn3hgnt0afn"

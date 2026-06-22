@@ -12,7 +12,8 @@ class_name DeveloperCommentary
 @onready var audio_player: AudioStreamPlayer3D = $AudioStreamPlayer3D
 @onready var commentary_ui: CanvasLayer = $CommentaryUI
 @onready var label_title: Label = $CommentaryUI/Panel/VBoxContainer/TitleLabel
-@onready var label_content: RichTextLabel = $CommentaryUI/Panel/VBoxContainer/AutoScrollContainer/MarginContainer/ContentLabel
+@onready var label_content: RichTextLabel = \
+	$CommentaryUI/Panel/VBoxContainer/AutoScrollContainer/MarginContainer/ContentLabel
 @onready var sprite: Sprite3D = $Sprite3D
 @onready var equalizer_mesh: MeshInstance3D = $EqualizerMesh
 
@@ -22,7 +23,8 @@ var _initial_billboard_mode: BaseMaterial3D.BillboardMode = BaseMaterial3D.BILLB
 
 var _spectrum_analyzer: AudioEffectSpectrumAnalyzerInstance
 var _bus_idx: int = -1
-var _audio_data: Array[float] = []
+# Use PackedFloat32Array for Godot 4 shader uniform compatibility and performance
+var _audio_data: PackedFloat32Array = PackedFloat32Array()
 const VU_COUNT: int = 32
 
 
@@ -42,14 +44,18 @@ func _ready() -> void:
 	if interact_comp:
 		interact_comp.interacted.connect(_on_interacted)
 		
+	if audio_player:
+		audio_player.finished.connect(_on_audio_finished)
+		
 	_initialize_audio_spectrum()
 
 
 func _process(delta: float) -> void:
 	if is_open:
+		# Rotate Y so it spins horizontally instead of tumbling vertically
 		sprite.rotate_x(spin_speed * delta)
 	
-	_update_equalizer()
+	_update_equalizer(delta)
 
 
 func _initialize_audio_spectrum() -> void:
@@ -59,21 +65,34 @@ func _initialize_audio_spectrum() -> void:
 	
 	_bus_idx = AudioServer.get_bus_index("Commentary")
 	if _bus_idx >= 0:
-		_spectrum_analyzer = AudioServer.get_bus_effect_instance(_bus_idx, 0) as AudioEffectSpectrumAnalyzerInstance
+		_spectrum_analyzer = \
+			AudioServer.get_bus_effect_instance(_bus_idx, 0) as AudioEffectSpectrumAnalyzerInstance
 
 
-func _update_equalizer() -> void:
+func _update_equalizer(delta: float) -> void:
 	var mat: ShaderMaterial = equalizer_mesh.material_override as ShaderMaterial
 	if not mat:
 		return
 		
 	if _spectrum_analyzer and audio_player.playing:
-		var prev_hz: float = 20.0
+		var prev_hz: float = 100.0
+		var max_hz: float = 8000.0
+		var hz_multi: float = pow(max_hz / prev_hz, 1.0 / float(VU_COUNT))
+		
 		for i: int in range(VU_COUNT):
-			var hz: float = prev_hz * 1.3 
-			var magnitude: Vector2 = _spectrum_analyzer.get_magnitude_for_frequency_range(prev_hz, hz)
-			var energy: float = clampf((linear_to_db(magnitude.length()) + 80.0) / 80.0, 0.0, 1.0)
-			_audio_data[i] = energy
+			var hz: float = prev_hz * hz_multi
+			
+			# Use MAGNITUDE_MAX to grab the sharpest spike, avoiding a muddy average
+			var mag: Vector2 = _spectrum_analyzer.get_magnitude_for_frequency_range(
+				prev_hz, hz, AudioEffectSpectrumAnalyzerInstance.MAGNITUDE_MAX
+			)
+			
+			var raw_energy: float = clampf((linear_to_db(mag.length()) + 60.0) / 50.0, 0.0, 1.0)
+			
+			# Exaggerate the peaks and crush the noise by squaring the value
+			raw_energy = pow(raw_energy, 2.0)
+			
+			_audio_data[i] = lerpf(_audio_data[i], raw_energy, 15.0 * delta)
 			prev_hz = hz
 			
 		mat.set_shader_parameter("audio_data", _audio_data)
@@ -100,7 +119,8 @@ func open_commentary() -> void:
 		var target_pos: Vector3 = active_player.global_position
 		target_pos.y = sprite.global_position.y
 		if sprite.global_position.distance_to(target_pos) > 0.01:
-			sprite.look_at(target_pos, Vector3.UP)
+			# Pass 'true' to use_model_front to prevent the 180-degree sprite flip
+			sprite.look_at(target_pos, Vector3.UP, true)
 			
 	sprite.billboard = BaseMaterial3D.BILLBOARD_DISABLED as BaseMaterial3D.BillboardMode
 	
@@ -135,3 +155,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		print("DeveloperCommentary: Player pressed cancel/menu. Closing.")
 		close_commentary()
 		get_viewport().set_input_as_handled()
+
+
+func _on_audio_finished() -> void:
+	print("DeveloperCommentary: Audio track finished. Returning to idle state.")
+	
+	# Check if it's currently open just to be safe, then close everything
+	if is_open:
+		close_commentary()
+		
+	# Optional: Zero out the audio data so there are no visual spikes 
+	# if the player interacts with it again immediately.
+	_audio_data.fill(0.0)

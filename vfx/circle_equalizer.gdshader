@@ -1,51 +1,72 @@
 shader_type spatial;
-// Unshaded means it ignores scene lighting, perfect for floating UI elements
 render_mode unshaded, blend_mix, depth_draw_opaque, cull_back;
 
 uniform float audio_data[32];
 uniform bool is_playing = false;
-uniform vec4 base_color : source_color = vec4(0.8, 0.8, 0.8, 1.0);
+
+void vertex() {
+    MODELVIEW_MATRIX = VIEW_MATRIX * mat4(
+        INV_VIEW_MATRIX[0],
+        INV_VIEW_MATRIX[1],
+        INV_VIEW_MATRIX[2],
+        MODEL_MATRIX[3]
+    );
+    MODELVIEW_MATRIX = MODELVIEW_MATRIX * mat4(
+        vec4(length(MODEL_MATRIX[0].xyz), 0.0, 0.0, 0.0),
+        vec4(0.0, length(MODEL_MATRIX[1].xyz), 0.0, 0.0),
+        vec4(0.0, 0.0, length(MODEL_MATRIX[2].xyz), 0.0),
+        vec4(0.0, 0.0, 0.0, 1.0)
+    );
+    MODELVIEW_NORMAL_MATRIX = mat3(MODELVIEW_MATRIX);
+}
 
 void fragment() {
-    // Center the UV coordinates to 0,0
     vec2 uv = UV - 0.5;
-    
-    // Convert to polar coordinates
     float radius = length(uv);
+    
+    // atan(y,x) gives an angle from -PI to PI
     float angle = atan(uv.y, uv.x); 
     
-    // Map angle from -PI..PI to 0..1
-    float norm_angle = (angle + 3.14159265) / 6.2831853;
+    // Shift the angle so that the bottom of the circle is 0
+    float shifted_angle = angle + 1.57079632;
+    shifted_angle = mod(shifted_angle + 3.14159265, 6.2831853) - 3.14159265;
     
-    // Define 32 discrete bars to match our GDScript array
+    // Mirror the circle: 0.0 is bottom, 1.0 is top (mirrored on left and right)
+    float norm_angle = abs(shifted_angle) / 3.14159265;
+    
     float bars = 32.0;
     float bar_index = floor(norm_angle * bars);
     
-    // Fetch audio data or generate idle noise
     float current_val = 0.0;
     if (is_playing) {
-        current_val = audio_data[int(bar_index)];
+        // Clamp index to 31 to prevent array out-of-bounds at the very top pixel
+        current_val = audio_data[int(clamp(bar_index, 0.0, 31.0))];
     } else {
-        // Generate a smooth idle wave using TIME and the bar index
         current_val = (sin(TIME * 3.0 + bar_index * 0.4) * 0.5 + 0.5) * 0.15;
     }
     
-    // Define the inner circle boundary and max extrusion
     float inner_radius = 0.15;
-    float max_radius = inner_radius + (current_val * 0.3);
+    // Pushed the extrusion to 0.35 for taller, more dramatic spikes
+    float max_radius = inner_radius + (current_val * 0.35);
     
-    // Mask out the inner circle and everything past the max radius
     float alpha = step(inner_radius, radius) * step(radius, max_radius);
     
-    // Slice the circle into distinct bars (adds gaps between them)
+    // Create clean gaps between the bars
     float gap = fract(norm_angle * bars);
     alpha *= step(0.15, gap) * step(gap, 0.85); 
     
-    // Slice the bars radially into segments (creates the dotted look)
-    float segment_count = 30.0;
-    float segments = step(0.2, fract(radius * segment_count));
-    alpha *= segments;
+    // Colors
+    vec3 color_blue = vec3(0.1, 0.6, 1.0);
+    vec3 color_pink = vec3(0.9, 0.1, 0.7);
+    vec3 color_orange = vec3(1.0, 0.4, 0.1);
     
-    ALBEDO = base_color.rgb;
-    ALPHA = alpha * base_color.a;
+    vec3 final_color;
+    if (norm_angle < 0.5) {
+        final_color = mix(color_blue, color_pink, norm_angle * 2.0);
+    } else {
+        final_color = mix(color_pink, color_orange, (norm_angle - 0.5) * 2.0);
+    }
+    
+    ALBEDO = final_color;
+    ALPHA = alpha;
 }

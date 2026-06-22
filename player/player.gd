@@ -19,8 +19,9 @@ extends CharacterBody3D
 @export_category("System References")
 @export var camera_controller: CameraController
 @export var system_menu: SystemMenuController
-# REMOVE the @export tag from the console variable!
+
 var in_game_console: CanvasLayer
+var flashlight_controller: FlashlightController
 
 # --------------------------------------
 # INITIALIZATION
@@ -78,17 +79,30 @@ func _is_input_blocked() -> bool:
 # MASTER PHYSICS ROUTING
 # --------------------------------------
 func _physics_process(delta: float) -> void:
-	# Print statement omitted here to prevent console spam at 60 FPS
+	# 1. Determine if the StateMachine should be completely frozen
+	var disable_states: bool = _is_input_blocked() or system_menu.flying
+	
+	# 2. Safely toggle the StateMachine's process mode
+	if disable_states:
+		if is_instance_valid(state_machine) and state_machine.process_mode != Node.PROCESS_MODE_DISABLED:
+			state_machine.process_mode = Node.PROCESS_MODE_DISABLED
+	else:
+		if is_instance_valid(state_machine) and state_machine.process_mode != Node.PROCESS_MODE_INHERIT:
+			state_machine.process_mode = Node.PROCESS_MODE_INHERIT
+
+	# 3. Handle Menu / Console Blocking
 	if _is_input_blocked():
 		locomotion_component.set_physics_active(false)
 		velocity = Vector3.ZERO
 		return
 		
+	# 4. Handle Noclip Bypassing
 	if system_menu.flying:
 		locomotion_component.set_physics_active(false)
 		system_menu.process_noclip(delta)
 		return
 
+	# 5. Standard Game Loop
 	locomotion_component.set_physics_active(true)
 	locomotion_component.process_movement(delta)
 	environment_component.process_environment_physics(delta)
@@ -123,7 +137,6 @@ func exit_updraft() -> void:
 	print("Player: exit_updraft() called. Forwarding to EnvironmentComponent.")
 	environment_component.exit_updraft()
 
-
 func teleport_to(new_position: Vector3, stun_time: float = 0.1) -> void:
 	print("Player: teleport_to() called. Forwarding to LocomotionComponent.")
 	global_position = new_position
@@ -135,32 +148,25 @@ func teleport_to(new_position: Vector3, stun_time: float = 0.1) -> void:
 			func() -> void: system_menu.is_stunned = false
 		)
 
-
 func set_available_monkey_bar(bar_node: Node3D) -> void:
-	print("Player: set_available_monkey_bar() called. Forwarding to EnvironmentComponent.")
+	print("Player: set_available_monkey_bar() called.")
 	environment_component.available_monkey_bar = bar_node
 
-
 func clear_available_monkey_bar(bar_node: Node3D) -> void:
-	print("Player: clear_available_monkey_bar() called. Forwarding to EnvironmentComponent.")
+	print("Player: clear_available_monkey_bar() called.")
 	if environment_component.available_monkey_bar == bar_node:
 		environment_component.available_monkey_bar = null
 
-
 func has_zipline_cooldown() -> bool:
-	# No print here to avoid spamming the console if checked frequently
 	return environment_component.zipline_cooldown > 0.0
 
-
 func _on_zipline_grabbed(zipline_node: Node3D, start_pos: Vector3, end_pos: Vector3) -> void:
-	print("Player: _on_zipline_grabbed() called. Forwarding to EnvironmentComponent.")
+	print("Player: _on_zipline_grabbed() called.")
 	environment_component.enter_zipline(zipline_node, start_pos, end_pos)
 
-
 func _on_rope_grabbed(rope_node: RigidBody3D) -> void:
-	print("Player: _on_rope_grabbed() called. Forwarding to EnvironmentComponent.")
+	print("Player: _on_rope_grabbed() called.")
 	environment_component.enter_rope(rope_node)
-
 
 func set_glider_visible(p_is_visible: bool) -> void:
 	print("Player: set_glider_visible() called. Forwarding to InteractionComponent.")
@@ -169,45 +175,37 @@ func set_glider_visible(p_is_visible: bool) -> void:
 		if item.has_method("set_glider_mesh_visible"):
 			item.set_glider_mesh_visible(p_is_visible)
 
-
 # --------------------------------------
 # STATE & MACHINE ROUTING
 # --------------------------------------
 func enter_terminal_mode(terminal: Node3D) -> void:
-	print("Player: enter_terminal_mode() called. Forwarding to InteractionComponent.")
+	print("Player: enter_terminal_mode() called.")
 	interaction_component.enter_terminal_mode(terminal)
 
-
 func set_machine_lock(locked: bool) -> void:
-	print("Player: set_machine_lock() called. Transitioning state. Locked: ", locked)
+	print("Player: set_machine_lock() called. Locked: ", locked)
 	interaction_component.is_operating_machine = locked
 	
 	if locked:
 		state_machine.transition_to("MachineLock")
 	else:
-		# Return the player to their default state when they detach.
-		# Ensure "Ground" matches the exact name of your default state node.
 		state_machine.transition_to("Ground")
 
-
 func start_operating_machine() -> void:
-	print("Player: start_operating_machine() called. Yielding control and locking state.")
+	print("Player: start_operating_machine() called.")
 	interaction_component.is_operating_machine = true
 	
 	if is_instance_valid(locomotion_component):
 		locomotion_component.reset_momentum()
 		
-	# Ensure this path matches your StateMachine node's actual location
 	$StateMachine.transition_to("MachineLock")
 
-
 func stop_operating_machine() -> void:
-	print("Player: stop_operating_machine() called. Resuming control and unlocking state.")
+	print("Player: stop_operating_machine() called.")
 	interaction_component.is_operating_machine = false
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	
 	$StateMachine.transition_to("Ground")
-
 
 # --------------------------------------
 # SAVE / LOAD SYSTEM INTERFACE
@@ -227,7 +225,6 @@ func get_save_data() -> Dictionary:
 		
 	return data
 
-
 func load_save_data(data: Dictionary) -> void:
 	print("Player: load_save_data() called. Restoring component data.")
 	global_position.x = data.get("pos_x", global_position.x)
@@ -242,12 +239,10 @@ func load_save_data(data: Dictionary) -> void:
 
 	stats_component.load_save_data(data)
 
-
 func enter_rain_volume() -> void:
-	print("Player: enter_rain_volume() called. Forwarding to EnvironmentComponent.")
+	print("Player: enter_rain_volume() called.")
 	environment_component.enter_rain_volume()
 
-
 func exit_rain_volume() -> void:
-	print("Player: exit_rain_volume() called. Forwarding to EnvironmentComponent.")
+	print("Player: exit_rain_volume() called.")
 	environment_component.exit_rain_volume()

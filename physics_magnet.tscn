@@ -2,8 +2,10 @@
 
 [ext_resource type="Script" uid="uid://b764gf75fwgc1" path="res://physics_magnet.gd" id="1_4yskg"]
 [ext_resource type="Shader" uid="uid://tupgxy6wa6dy" path="res://vfx/phys_magnet.gdshader" id="2_brq1f"]
+[ext_resource type="Texture2D" uid="uid://cqyvho0qa36b0" path="res://assets/images/icon_phys_magnet.png" id="3_pmfcl"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_brq1f"]
+radius = 3.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_pmfcl"]
 render_priority = 0
@@ -18,9 +20,11 @@ shader_parameter/ripple_amplitude = 0.3
 
 [sub_resource type="SphereMesh" id="SphereMesh_k7dap"]
 material = SubResource("ShaderMaterial_pmfcl")
+radius = 3.0
+height = 6.0
 
 [node name="PhysicsMagnet" type="Area3D" unique_id=414016059 node_paths=PackedStringArray("collision_shape", "visual_mesh")]
-collision_mask = 4
+collision_layer = 0
 script = ExtResource("1_4yskg")
 collision_shape = NodePath("CollisionShape3D")
 visual_mesh = NodePath("MeshInstance3D")
@@ -30,3 +34,8 @@ shape = SubResource("SphereShape3D_brq1f")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1857255927]
 mesh = SubResource("SphereMesh_k7dap")
+
+[node name="EditorIcon" type="Sprite3D" parent="." unique_id=446936244]
+unique_name_in_owner = true
+billboard = 1
+texture = ExtResource("3_pmfcl")

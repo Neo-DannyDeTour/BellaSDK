@@ -38,12 +38,11 @@ var noclip_speed_multiplier: float = 8.0
 var fullbright_env: Environment
 var is_stunned: bool = false
 
-
 func _ready() -> void:
 	_setup_menu()
 	_setup_fullbright_environment()
 
-	# Connect to global event buses (Assuming 'Events' is an Autoload)
+	# Connect to global event buses
 	if Events.has_signal("debug_menu_toggled"):
 		Events.debug_menu_toggled.connect(_on_debug_menu_toggled)
 	if Events.has_signal("noclip_ui_button_pressed"):
@@ -51,13 +50,11 @@ func _ready() -> void:
 	if Events.has_signal("fullbright_toggled"):
 		Events.fullbright_toggled.connect(_on_fullbright_toggled)
 
-
 func _setup_menu() -> void:
 	if menu_scene:
 		menu_instance = menu_scene.instantiate() as CanvasLayer
 		add_child(menu_instance)
 		menu_instance.hide()
-
 
 func _setup_fullbright_environment() -> void:
 	fullbright_env = Environment.new()
@@ -71,7 +68,6 @@ func _setup_fullbright_environment() -> void:
 	fullbright_env.ssil_enabled = false
 	fullbright_env.sdfgi_enabled = false
 	fullbright_env.glow_enabled = false
-
 
 # --------------------------------------
 # INPUT HANDLING
@@ -101,13 +97,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 
-
 # --------------------------------------
 # META LOGIC
 # --------------------------------------
 func toggle_pause() -> void:
 	is_paused = not is_paused
 	get_tree().paused = is_paused
+	print("SystemMenuController: toggle_pause() called. Paused state: ", is_paused)
 
 	if is_paused:
 		if menu_instance:
@@ -120,12 +116,12 @@ func toggle_pause() -> void:
 
 	pause_toggled.emit(is_paused)
 
-
 func _on_debug_menu_toggled(is_open: bool) -> void:
 	is_menu_open = is_open
-
+	print("SystemMenuController: _on_debug_menu_toggled() called. Open state: ", is_open)
 
 func _on_fullbright_toggled(is_fullbright: bool) -> void:
+	print("SystemMenuController: _on_fullbright_toggled() called. Active: ", is_fullbright)
 	if is_fullbright:
 		camera.environment = fullbright_env
 	else:
@@ -136,41 +132,33 @@ func _on_fullbright_toggled(is_fullbright: bool) -> void:
 		sun.visible = not is_fullbright
 		sun.shadow_enabled = not is_fullbright
 
-
 # --------------------------------------
 # NOCLIP LOGIC
 # --------------------------------------
 func toggle_noclip() -> void:
 	flying = not flying
 
-	# THE FIX: Use our directly exported variables, not the player body!
 	if is_instance_valid(standing_collision):
 		standing_collision.disabled = flying
 	if is_instance_valid(crouching_collision):
 		crouching_collision.disabled = flying
 
 	if flying:
-		print("Noclip ON")
-		# Reset vertical velocity so you don't rocket upwards if you
-		# turn it on while falling!
+		print("SystemMenuController: Noclip ON")
 		if is_instance_valid(player_body):
 			player_body.velocity.y = 0.0
 	else:
-		print("Noclip OFF")
+		print("SystemMenuController: Noclip OFF")
 		if is_instance_valid(player_body):
-			# Kill all momentum to stop dead in tracks
 			player_body.velocity = Vector3.ZERO
 			
-			# THE FIX: Clear last_velocity via the locomotion component
 			var loco: Node = player_body.get("locomotion_component")
 			if is_instance_valid(loco):
 				loco.set("last_velocity", Vector3.ZERO) 
 
-	# Emit global and local signals to update the UI and resolve the warning
 	if Events.has_signal("noclip_toggled"):
 		Events.noclip_toggled.emit(flying)
 	noclip_toggled.emit(flying)
-
 
 func process_noclip(delta: float) -> void:
 	if not flying or not is_instance_valid(player_body):
@@ -204,4 +192,5 @@ func process_noclip(delta: float) -> void:
 	else:
 		eyes.rotation.z = lerpf(eyes.rotation.z, 0.0, delta * lerp_speed)
 
-	player_body.move_and_slide()
+	# Bypass physics calculations to prevent internal CharacterBody3D floor_snap drift
+	player_body.global_position += player_body.velocity * delta

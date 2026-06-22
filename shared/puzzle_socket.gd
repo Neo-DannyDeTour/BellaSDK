@@ -11,61 +11,74 @@ signal socket_powered_off
 @export var can_be_unplugged: bool = true
 @export var snap_position: Marker3D
 @export var indicator_light: Light3D
-@export var targets: Array[Node3D]
 @export var label: Label3D
 @export var socket_interact_comp: Interact_Component
 
-var is_powered: bool = false  # (Note: This means "Plug is Inserted" in your base logic)
-var current_plug: Node3D = null
+@export_category("Connections")
+@export var transmitter: OutputTransmitter3D:
+	set(value):
+		transmitter = value
+		_sync_transmitter()
 
-var debug_line: MeshInstance3D
+# Keeps targets on the parent for easy level design, syncing automatically
+@export var targets: Array[Node3D]:
+	set(value):
+		targets = value
+		_sync_transmitter()
+
+var is_powered: bool = false  # (Note: This means "Plug is Inserted" in base logic)
+var current_plug: Node3D = null
 var install_cooldown: float = 0.0
 
 
 func _ready() -> void:
+	_sync_transmitter()
+	
 	if not Engine.is_editor_hint():
-		if indicator_light:
+		if is_instance_valid(indicator_light):
 			indicator_light.visible = true
 			indicator_light.light_color = Color.RED  # <-- Default to Red
 
 		body_entered.connect(_on_body_entered)
 		body_exited.connect(_on_body_exited)
 
-		if label:
+		if is_instance_valid(label):
 			label.hide()
 
-		if socket_interact_comp:
+		if is_instance_valid(socket_interact_comp):
 			socket_interact_comp.interacted.connect(_on_socket_interacted)
-
-			# --- THE UI FIX: Wire up the focus signals ---
 			socket_interact_comp.focused.connect(_on_socket_focused)
 			socket_interact_comp.unfocused.connect(_on_socket_unfocused)
 
 
 func _process(delta: float) -> void:
-	if Engine.is_editor_hint():
-		_draw_connection_line()
-	else:
+	# We completely removed the editor drawing process for 60 FPS optimization
+	if not Engine.is_editor_hint():
 		if install_cooldown > 0.0:
 			install_cooldown -= delta
 
 
+func _sync_transmitter() -> void:
+	# Automatically pass the targets to the transmitter so it handles visual lines and logic
+	if is_instance_valid(transmitter):
+		transmitter.targets = targets
+
+
 # --- THE INSTANT GRAB MAGIC ---
 func _on_socket_interacted(character: CharacterBody3D) -> void:
+	print("Socket: Player interacted with socket.")
 	if is_powered and can_be_unplugged:
-		var released_plug := current_plug
+		var released_plug: Node3D = current_plug
 		unplug()
 
-		if released_plug and released_plug.has_method("pick_up"):
+		if is_instance_valid(released_plug) and released_plug.has_method("pick_up"):
 			var player_hand_marker: Marker3D = character.get("hold_position") as Marker3D
 
-			if player_hand_marker:
+			if is_instance_valid(player_hand_marker):
 				# 1. Update the Player's inventory reference!
 				character.set("held_object", released_plug)
 
 				# 2. THE MASTER TELEPORT KEY
-				# This bypasses the RigidBody system and forces the 3D server
-				# to move the object instantly before picking it up.
 				if released_plug is RigidBody3D:
 					PhysicsServer3D.body_set_state(
 						released_plug.get_rid(),
@@ -84,11 +97,7 @@ func _on_socket_interacted(character: CharacterBody3D) -> void:
 				push_warning("Socket: Could not find hold_position on Player!")
 
 
-# ------------------------------
-
-
 func _on_body_entered(body: Node3D) -> void:
-	# --- THE FIX: Only allow plugging in if the cooldown is at 0 ---
 	if not is_powered and body.is_in_group("plug") and install_cooldown <= 0.0:
 		plug_in(body)
 
@@ -114,7 +123,7 @@ func plug_in(plug: Node3D) -> void:
 		if "is_locked" in plug:
 			plug.is_locked = true
 
-	if socket_interact_comp and socket_interact_comp.is_currently_focused:
+	if is_instance_valid(socket_interact_comp) and socket_interact_comp.is_currently_focused:
 		_on_socket_focused()
 
 	# --- ELECTRICITY & LIGHT LOGIC ---
@@ -122,21 +131,21 @@ func plug_in(plug: Node3D) -> void:
 		plug.power_state_changed.connect(_on_plug_power_changed)
 
 	if is_power_source:
-		if indicator_light:
+		if is_instance_valid(indicator_light):
 			indicator_light.light_color = Color.GREEN
 		if plug.has_method("set_power_state"):
 			plug.set_power_state(true)
 	else:
 		if requires_power_link:
 			if plug.get("is_energized") == true:
-				if indicator_light:
+				if is_instance_valid(indicator_light):
 					indicator_light.light_color = Color.GREEN
 				_energize_targets()
 			else:
-				if indicator_light:
+				if is_instance_valid(indicator_light):
 					indicator_light.light_color = Color.YELLOW
 		else:
-			if indicator_light:
+			if is_instance_valid(indicator_light):
 				indicator_light.light_color = Color.GREEN
 			_energize_targets()
 
@@ -148,11 +157,13 @@ func _trigger_delayed_snap(plug: Node3D) -> void:
 	if is_instance_valid(plug) and is_powered:
 		_snap_and_freeze_plug(plug)
 
+
 func unplug() -> void:
+	print("Socket: Unplug sequence initiated.")
 	if not can_be_unplugged or not is_powered:
 		return
 
-	if current_plug:
+	if is_instance_valid(current_plug):
 		if is_power_source:
 			if current_plug.has_method("set_power_state"):
 				current_plug.set_power_state(false)
@@ -172,37 +183,36 @@ func unplug() -> void:
 
 	if current_plug is RigidBody3D:
 		current_plug.freeze = false
-		# We removed the collision layer changes here!
 		if "is_locked" in current_plug:
 			current_plug.is_locked = false
 
 	current_plug = null
 
 	# --- Reset to Default State ---
-	if indicator_light:
+	if is_instance_valid(indicator_light):
 		indicator_light.visible = true
 		indicator_light.light_color = Color.RED
 
 
 # --- THE MISSING UI LOGIC ---
 func _on_socket_focused() -> void:
-	if not label:
+	if not is_instance_valid(label):
 		return
 
-	var events := InputMap.action_get_events("interact")
-	var key_name := "???"
+	var events: Array[InputEvent] = InputMap.action_get_events("interact")
+	var key_name: String = "???"
 	if events.size() > 0:
-		var raw_text := events[0].as_text()
+		var raw_text: String = events[0].as_text()
 		key_name = (
 			raw_text
-			. replace(" (Physical)", "")
-			. replace(" - Physical", "")
-			. replace(" (Physics)", "")
-			. replace(" - Physics", "")
-			. replace("Left Mouse Button", "LMB")
-			. replace("Right Mouse Button", "RMB")
-			. replace("Middle Mouse Button", "MMB")
-			. strip_edges()
+			.replace(" (Physical)", "")
+			.replace(" - Physical", "")
+			.replace(" (Physics)", "")
+			.replace(" - Physics", "")
+			.replace("Left Mouse Button", "LMB")
+			.replace("Right Mouse Button", "RMB")
+			.replace("Middle Mouse Button", "MMB")
+			.strip_edges()
 		)
 
 	if is_powered and can_be_unplugged:
@@ -216,42 +226,8 @@ func _on_socket_focused() -> void:
 
 
 func _on_socket_unfocused() -> void:
-	if label:
+	if is_instance_valid(label):
 		label.hide()
-
-
-# ----------------------------
-
-
-# --- EDITOR DEBUG LINE ---
-func _draw_connection_line() -> void:
-	if not targets:
-		if debug_line:
-			debug_line.queue_free()
-		return
-
-	if not debug_line:
-		debug_line = MeshInstance3D.new()
-		add_child(debug_line)
-
-		var immediate_mesh := ImmediateMesh.new()
-		debug_line.mesh = immediate_mesh
-
-		var mat := StandardMaterial3D.new()
-		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		mat.albedo_color = Color.RED
-		debug_line.material_override = mat
-
-	var mesh := debug_line.mesh as ImmediateMesh
-	mesh.clear_surfaces()
-	mesh.surface_begin(Mesh.PRIMITIVE_LINES)
-
-	for target in targets:
-		if target:
-			mesh.surface_add_vertex(Vector3.ZERO)
-			mesh.surface_add_vertex(to_local(target.global_position))
-
-	mesh.surface_end()
 
 
 # --- Helpers to manage Target Triggers cleanly ---
@@ -259,27 +235,31 @@ func _on_plug_power_changed(has_power: bool) -> void:
 	# If a plug is sitting in a receiver socket, and the OTHER end changes state
 	if not is_power_source and is_powered and requires_power_link:
 		if has_power:
-			if indicator_light:
+			if is_instance_valid(indicator_light):
 				indicator_light.light_color = Color.GREEN
 			_energize_targets()
 		else:
-			if indicator_light:
+			if is_instance_valid(indicator_light):
 				indicator_light.light_color = Color.YELLOW
 			_deenergize_targets()
 
 
 func _energize_targets() -> void:
+	print("Socket: Energizing targets via Transmitter.")
 	socket_powered_on.emit()
-	for target in targets:
-		if target and target.has_method("power_on"):
-			target.power_on()
+	if is_instance_valid(transmitter):
+		transmitter.power_on()
+	else:
+		push_warning("Socket: Missing OutputTransmitter3D! Cannot energize targets.")
 
 
 func _deenergize_targets() -> void:
+	print("Socket: De-energizing targets via Transmitter.")
 	socket_powered_off.emit()
-	for target in targets:
-		if target and target.has_method("power_off"):
-			target.power_off()
+	if is_instance_valid(transmitter):
+		transmitter.power_off()
+	else:
+		push_warning("Socket: Missing OutputTransmitter3D! Cannot de-energize targets.")
 
 
 func _snap_and_freeze_plug(plug: Node3D) -> void:

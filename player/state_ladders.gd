@@ -85,8 +85,8 @@ func _calculate_ladder_velocity(input_dir: Vector2) -> void:
 		return
 
 	# FIXED: Target the camera_controller
-	var look_dir: Vector3 = -player.camera_controller.global_transform.basis.z
-	var right_dir: Vector3 = player.camera_controller.global_transform.basis.x
+	var look_dir: Vector3 = -player.camera_controller.camera.global_transform.basis.z
+	var right_dir: Vector3 = player.camera_controller.camera.global_transform.basis.x
 
 	var local_pos: Vector3 = current_ladder.to_local(player.global_position)
 	var offset_from_center: float = local_pos.x
@@ -149,7 +149,7 @@ func _handle_jump_input(input_dir: Vector2) -> void:
 		return
 
 	# FIXED: Target the camera_controller
-	var look_dir: Vector3 = -player.camera_controller.global_transform.basis.z
+	var look_dir: Vector3 = -player.camera_controller.camera.global_transform.basis.z
 	
 	if look_dir.y > 0.3:
 		print("StateLadder: Jump blocked. Player is looking up.")

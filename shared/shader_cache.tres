@@ -1,0 +1,8 @@
+[gd_resource type="Resource" script_class="ShaderCache" format=3 uid="uid://ckk5joev7dak8"]
+
+[ext_resource type="Material" uid="uid://c2niiwlud067p" path="res://vfx/smart_outline_material.tres" id="1_63tbl"]
+[ext_resource type="Script" uid="uid://7lscyxblla3t" path="res://core/shader_cache.gd" id="2_akgxa"]
+
+[resource]
+script = ExtResource("2_akgxa")
+materials = Array[Material]([ExtResource("1_63tbl")])
