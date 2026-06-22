@@ -11,7 +11,9 @@ const SPRINT_JUMP_VELOCITY: float = 5.0
 var current_speed: float = 0.0
 
 func enter(msg: Dictionary = {}) -> void:
+	print("StateGround: enter() called. Resetting Y velocity and current speed.")
 	player.velocity.y = 0.0
+	current_speed = 0.0 
 
 	# Consume the buffer from StateAir and immediately jump!
 	if msg.has("jump_buffered") and msg["jump_buffered"] == true:

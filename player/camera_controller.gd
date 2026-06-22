@@ -1,5 +1,5 @@
 class_name CameraController
-extends Node3D
+extends Node
 
 # --------------------------------------
 # EXPORTS

@@ -16,12 +16,14 @@ material = SubResource("StandardMaterial3D_07aef")
 size = Vector3(2, 2, 2)
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_07aef"]
-viewport_path = NodePath("EditorVisual/@SubViewport@19095")
+viewport_path = NodePath("EditorVisual/@SubViewport@19183")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_a5t3k"]
 transparency = 1
 cull_mode = 2
 albedo_texture = SubResource("ViewportTexture_07aef")
+uv1_scale = Vector3(0.5, 0.5, 0.5)
+uv1_triplanar = true
 
 [node name="screenshake_effect" type="Area3D" unique_id=1581639647]
 collision_mask = 2
@@ -34,3 +36,4 @@ shape = SubResource("BoxShape3D_07aef")
 mesh = SubResource("BoxMesh_a5t3k")
 surface_material_override/0 = SubResource("StandardMaterial3D_a5t3k")
 script = ExtResource("2_07aef")
+show_in_game = true

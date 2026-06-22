@@ -1,0 +1,32 @@
+[gd_scene format=3 uid="uid://f4suk10ex6ha"]
+
+[ext_resource type="Script" uid="uid://b764gf75fwgc1" path="res://physics_magnet.gd" id="1_4yskg"]
+[ext_resource type="Shader" uid="uid://tupgxy6wa6dy" path="res://vfx/phys_magnet.gdshader" id="2_brq1f"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_brq1f"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_pmfcl"]
+render_priority = 0
+shader = ExtResource("2_brq1f")
+shader_parameter/distortion_strength = 0.05
+shader_parameter/chromatic_aberration = 0.01
+shader_parameter/pulse_speed = 4.0
+shader_parameter/rim_color = Color(0.5, 0.8, 1, 1)
+shader_parameter/ripple_frequency = 20.0
+shader_parameter/ripple_speed = 5.0
+shader_parameter/ripple_amplitude = 0.3
+
+[sub_resource type="SphereMesh" id="SphereMesh_k7dap"]
+material = SubResource("ShaderMaterial_pmfcl")
+
+[node name="PhysicsMagnet" type="Area3D" unique_id=414016059 node_paths=PackedStringArray("collision_shape", "visual_mesh")]
+collision_mask = 4
+script = ExtResource("1_4yskg")
+collision_shape = NodePath("CollisionShape3D")
+visual_mesh = NodePath("MeshInstance3D")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=222043276]
+shape = SubResource("SphereShape3D_brq1f")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1857255927]
+mesh = SubResource("SphereMesh_k7dap")

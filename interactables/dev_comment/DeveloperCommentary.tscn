@@ -1,0 +1,101 @@
+[gd_scene format=3 uid="uid://c2t21qbkevaof"]
+
+[ext_resource type="Script" uid="uid://v2qyhm84c2or" path="res://interactables/dev_comment/developer_commentary.gd" id="1_q3mh6"]
+[ext_resource type="Texture2D" uid="uid://c4ky7lw37yt20" path="res://assets/images/comment_sprite.png" id="2_8ajrr"]
+[ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="3_07hoi"]
+[ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="4_suldx"]
+[ext_resource type="Script" uid="uid://cnfoocnvyo4p" path="res://interactables/dev_comment/auto_scroll_container.gd" id="5_f3oyn"]
+[ext_resource type="Shader" uid="uid://bhwyt6vq58tbd" path="res://vfx/circle_equalizer.gdshader" id="6_8ajrr"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_n25yf"]
+radius = 0.3
+
+[sub_resource type="QuadMesh" id="QuadMesh_q3mh6"]
+size = Vector2(2, 2)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8ajrr"]
+render_priority = 0
+shader = ExtResource("6_8ajrr")
+shader_parameter/audio_data = PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+shader_parameter/is_playing = false
+shader_parameter/base_color = Color(0.8, 0.8, 0.8, 1)
+
+[node name="DeveloperCommentary" type="StaticBody3D" unique_id=1230983170]
+transform = Transform3D(-4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0, 0, 1, 0, 0, 0)
+collision_layer = 4
+script = ExtResource("1_q3mh6")
+commentary_title = "Developer Note TEST"
+commentary_content = "HI!
+My name is Danny and this is my favorite comment section on the Citadel."
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=809337992]
+shape = SubResource("SphereShape3D_n25yf")
+
+[node name="Sprite3D" type="Sprite3D" parent="." unique_id=1691322307]
+transform = Transform3D(0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0, 0, 0)
+gi_mode = 0
+billboard = 1
+texture = ExtResource("2_8ajrr")
+
+[node name="Interact_Component" type="Node" parent="." unique_id=1911344659]
+script = ExtResource("3_07hoi")
+metadata/_custom_type_script = "uid://cqawbvidns1th"
+
+[node name="HighlightComponent" type="Node" parent="." unique_id=1294595540]
+script = ExtResource("4_suldx")
+metadata/_custom_type_script = "uid://dgig0tamvkdxx"
+
+[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="." unique_id=451751758]
+bus = &"Commentary"
+
+[node name="CommentaryUI" type="CanvasLayer" parent="." unique_id=1942646613]
+
+[node name="Panel" type="Panel" parent="CommentaryUI" unique_id=1015274874]
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -60.0
+offset_right = 400.0
+offset_bottom = 340.0
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CommentaryUI/Panel" unique_id=1054117194]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 12
+
+[node name="TitleLabel" type="Label" parent="CommentaryUI/Panel/VBoxContainer" unique_id=987695092]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+
+[node name="HSeparator" type="HSeparator" parent="CommentaryUI/Panel/VBoxContainer" unique_id=1245860777]
+layout_mode = 2
+
+[node name="AutoScrollContainer" type="ScrollContainer" parent="CommentaryUI/Panel/VBoxContainer" unique_id=519325636]
+layout_mode = 2
+size_flags_vertical = 3
+script = ExtResource("5_f3oyn")
+
+[node name="MarginContainer" type="MarginContainer" parent="CommentaryUI/Panel/VBoxContainer/AutoScrollContainer" unique_id=1008297160]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="ContentLabel" type="RichTextLabel" parent="CommentaryUI/Panel/VBoxContainer/AutoScrollContainer/MarginContainer" unique_id=441112995]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_font_sizes/normal_font_size = 32
+fit_content = true
+
+[node name="EqualizerMesh" type="MeshInstance3D" parent="." unique_id=1269847005]
+mesh = SubResource("QuadMesh_q3mh6")
+surface_material_override/0 = SubResource("ShaderMaterial_8ajrr")

@@ -24,13 +24,13 @@ func take_damage(amount: int) -> void:
 
 	current_health -= amount
 	current_health = clampi(current_health, 0, max_health)
+	print("HealthComponent: take_damage() called. Took ", amount, " damage. Health is now: ", current_health)
 
 	health_changed.emit(current_health)
 
 	if current_health == 0:
 		died.emit()
-		print("you're dead")
-
+		print("HealthComponent: Health reached 0. you're dead")
 
 func heal(amount: int) -> void:
 	if current_health <= 0:
@@ -38,4 +38,6 @@ func heal(amount: int) -> void:
 
 	current_health += amount
 	current_health = clampi(current_health, 0, max_health)
+	print("HealthComponent: heal() called. Healed for ", amount, ". Health is now: ", current_health)
+	
 	health_changed.emit(current_health)

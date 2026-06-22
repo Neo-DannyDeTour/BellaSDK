@@ -5,10 +5,11 @@ signal rope_broken
 var health: int = 10
 var is_broken: bool = false
 
+
 # We add the parameters here so it catches what the shotgun throws!
-
-
-func take_damage(amount: int, _direction: Vector3) -> void:
+func take_damage(amount: int, hit_position: Vector3, direction: Vector3) -> void:
+	print("BreakableRope: take_damage() called. Amount: ", amount, " | Pos: ", hit_position, " | Dir: ", direction)
+	
 	if is_broken:
 		return  # Stop right here! We are already dead.
 
@@ -22,7 +23,7 @@ func take_damage(amount: int, _direction: Vector3) -> void:
 
 
 func snap_rope() -> void:
-	print("Rope snapped!")
+	print("BreakableRope: snap_rope() called. Rope snapped!")
 
 	# 3. Emit the EXACT signal the drawbridge is listening for
 	rope_broken.emit()
@@ -31,6 +32,8 @@ func snap_rope() -> void:
 
 	# 4. Delete the entire Path3D root, not just the StaticBody!
 	if owner:
+		print("BreakableRope: Freeing owner node.")
 		owner.queue_free()
 	else:
+		print("BreakableRope: Freeing self.")
 		queue_free()

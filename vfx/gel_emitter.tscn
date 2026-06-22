@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://53qah8ldarrq"]
 
-[ext_resource type="Script" uid="uid://c14l6by6hsspk" path="res://vfx/emitter.gd" id="1_wei6y"]
+[ext_resource type="Script" uid="uid://c14l6by6hsspk" path="res://vfx/gel_emitter.gd" id="1_wei6y"]
 [ext_resource type="Shader" uid="uid://uwyf7jhuq3gk" path="res://vfx/splat.gdshader" id="2_vqt4x"]
 
 [sub_resource type="Curve" id="Curve_uepgp"]

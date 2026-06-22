@@ -1,5 +1,5 @@
 class_name VaultController
-extends Node3D
+extends Node
 
 # --------------------------------------
 # SIGNALS

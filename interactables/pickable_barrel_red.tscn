@@ -16,7 +16,7 @@ shader_parameter/max_intensity = 0.050000002375
 height = 1.25
 radius = 0.45
 
-[node name="PickableBarrel" unique_id=594279821 node_paths=PackedStringArray("mesh") instance=ExtResource("1_aapj8")]
+[node name="PickableBarrel" unique_id=594279821 node_paths=PackedStringArray("mesh") groups=["not_climbable"] instance=ExtResource("1_aapj8")]
 mass = 10.0
 mesh = NodePath("Barrel_red")
 held_transparency = 0.75

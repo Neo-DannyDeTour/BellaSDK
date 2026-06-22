@@ -38,8 +38,8 @@ func exit() -> void:
 		
 	# FIXED: Route head reset through CameraController
 	if is_instance_valid(player.camera_controller):
-		player.camera_controller.rotation.y = 0.0
-		player.camera_controller.rotation.z = 0.0
+		player.camera_controller.camera.rotation.y = 0.0
+		player.camera_controller.camera.rotation.z = 0.0
 
 
 func physics_update(delta: float) -> void:

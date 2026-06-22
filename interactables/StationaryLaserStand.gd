@@ -6,10 +6,10 @@ const MAX_TRAIL_DECALS: int = 60
 @export var max_distance: float = 50.0
 @export var max_bounces: int = 5
 @export var rotation_speed: float = 2.0
-@export var stance_marker: Marker3D
 
 var is_controlled: bool = false
 var controlling_player: CharacterBody3D = null
+var _just_attached: bool = false
 
 var _last_target: Node3D = null
 var _beam_pool: Array[MeshInstance3D] = []
@@ -113,6 +113,12 @@ func _physics_process(delta: float) -> void:
 	if is_controlled:
 		_handle_rotation_input(delta)
 		_check_auto_release()
+		
+		# Skip checking detachment on the exact frame we attached
+		if _just_attached:
+			_just_attached = false
+		else:
+			_handle_detachment_input()
 
 	_process_laser()
 
@@ -235,11 +241,8 @@ func _on_interacted(character: CharacterBody3D) -> void:
 func _take_control(character: CharacterBody3D) -> void:
 	print("StationaryLaserStand: Player took control of the machine.")
 	is_controlled = true
+	_just_attached = true
 	controlling_player = character
-
-	if stance_marker:
-		controlling_player.global_transform = stance_marker.global_transform
-		controlling_player.velocity = Vector3.ZERO
 
 	if controlling_player.has_method("set_machine_lock"):
 		controlling_player.set_machine_lock(true)
@@ -457,3 +460,10 @@ func _leave_trail_mark(pos: Vector3, xform: Transform3D) -> void:
 	var tween: Tween = create_tween()
 	tween.tween_property(trail, "albedo_mix", 0.0, 1.0)
 	tween.tween_callback(func() -> void: trail.visible = false)
+
+
+func _handle_detachment_input() -> void:
+	# Ensure these string names match your Project Settings -> Input Map exactly!
+	if Input.is_action_just_pressed("interact") or Input.is_action_just_pressed("jump") or Input.is_action_just_pressed("crouch"):
+		print("StationaryLaserStand: Player requested detachment.")
+		_release_control()

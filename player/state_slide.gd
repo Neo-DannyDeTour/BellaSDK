@@ -9,6 +9,7 @@ extends PlayerState
 @export var max_slide_speed: float = 25.0
 @export var slide_steering_speed: float = 8.0
 
+
 # --------------------------------------
 # STATE METHODS
 # --------------------------------------
@@ -21,6 +22,7 @@ func enter(_msg: Dictionary = {}) -> void:
 		loco.standing_collision.disabled = true
 		loco.crouching_collision.disabled = false
 
+
 func exit() -> void:
 	print("StateSlide: exit() called. Restoring default collision state.")
 	
@@ -30,6 +32,7 @@ func exit() -> void:
 		loco.crouching = false
 		loco.standing_collision.disabled = false
 		loco.crouching_collision.disabled = true
+
 
 func physics_update(delta: float) -> void:
 	var loco: Node = player.locomotion_component
@@ -67,7 +70,7 @@ func physics_update(delta: float) -> void:
 	if is_instance_valid(interact) and is_instance_valid(interact.get("camera")):
 		camera_right = interact.camera.global_transform.basis.x.normalized()
 	elif is_instance_valid(player.camera_controller):
-		camera_right = player.camera_controller.global_transform.basis.x.normalized()
+		camera_right = player.camera_controller.camera.global_transform.basis.x.normalized()
 		
 	var steer_dir: Vector3 = camera_right.slide(floor_normal)
 	
@@ -89,7 +92,6 @@ func physics_update(delta: float) -> void:
 
 	# 6. Absolute speed cap
 	if player.velocity.length_squared() > (max_slide_speed * max_slide_speed):
-		# Print omitted to prevent 60 FPS console spam
 		player.velocity = player.velocity.limit_length(max_slide_speed)
 
 	# Apply gravity to keep glued to slopes
@@ -101,12 +103,14 @@ func physics_update(delta: float) -> void:
 	# 7. Update Decoupled Components
 	_update_components(delta, input_dir)
 
+
 func _update_components(delta: float, input_dir: Vector2) -> void:
 	# Print omitted to prevent 60 FPS console spam
 	
 	var loco: Node = player.locomotion_component
 	var interact: Node = player.interaction_component
 	
+	# FIX: update_camera belongs to the CameraController Node, not the Camera3D child
 	if is_instance_valid(player.camera_controller):
 		player.camera_controller.update_camera(
 			delta, input_dir, false, true, true, player.velocity.length() 

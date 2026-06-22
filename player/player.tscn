@@ -47,6 +47,7 @@
 [ext_resource type="Script" uid="uid://dvouurrwuii16" path="res://player/stair_controller.gd" id="40_gu4mg"]
 [ext_resource type="Script" uid="uid://fu6m53wtps66" path="res://player/state_slide.gd" id="42_art4l"]
 [ext_resource type="Script" uid="uid://eabartkybdls" path="res://player/state_glide.gd" id="43_fjxoa"]
+[ext_resource type="Script" uid="uid://7lmc8o36ewqw" path="res://player/StateMachineLock.gd" id="48_mmwog"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_cw2d6"]
 radius = 0.1
@@ -342,7 +343,7 @@ stream_0/stream = ExtResource("15_jfpux")
 stream_1/stream = ExtResource("16_61ith")
 stream_2/stream = ExtResource("17_ebwui")
 
-[node name="Player" type="CharacterBody3D" unique_id=1502339238 node_paths=PackedStringArray("locomotion_component", "interaction_component", "environment_component", "stats_component", "camera_controller", "system_menu") groups=["player"]]
+[node name="Player" type="CharacterBody3D" unique_id=1502339238 node_paths=PackedStringArray("locomotion_component", "interaction_component", "environment_component", "stats_component", "state_machine", "camera_controller", "system_menu") groups=["player"]]
 process_mode = 3
 collision_layer = 2
 script = ExtResource("1_34orh")
@@ -350,6 +351,7 @@ locomotion_component = NodePath("Components/LocomotionComponent")
 interaction_component = NodePath("Components/InteractionComponent")
 environment_component = NodePath("Components/EnvironmentComponent")
 stats_component = NodePath("Components/StatsComponent")
+state_machine = NodePath("StateMachine")
 camera_controller = NodePath("Head/CameraController")
 system_menu = NodePath("SystemMenuController")
 
@@ -361,7 +363,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
 [node name="Camera3D" type="Camera3D" parent="Head/Eyes" unique_id=1414380114]
 script = ExtResource("2_a2xo5")
 
-[node name="InteractShapeCast" type="ShapeCast3D" parent="Head/Eyes/Camera3D" unique_id=1917702885]
+[node name="InteractionShapeCast" type="ShapeCast3D" parent="Head/Eyes/Camera3D" unique_id=1917702885]
 unique_name_in_owner = true
 shape = SubResource("SphereShape3D_cw2d6")
 target_position = Vector3(0, 0, -1.5)
@@ -377,10 +379,10 @@ margin = 0.1
 [node name="HoldPosition" type="Marker3D" parent="Head/Eyes/Camera3D/SpringArm3D" unique_id=988079669]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -1)
 
-[node name="FlashLightNode" type="Node3D" parent="Head/Eyes/Camera3D" unique_id=120381391]
+[node name="FlashlightMount" type="Node3D" parent="Head/Eyes/Camera3D" unique_id=120381391]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.8, 0)
 
-[node name="Flashlight" type="SpotLight3D" parent="Head/Eyes/Camera3D/FlashLightNode" unique_id=2067377290]
+[node name="Flashlight" type="SpotLight3D" parent="Head/Eyes/Camera3D/FlashlightMount" unique_id=2067377290]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, -0.25)
 light_color = Color(1, 1, 0.8356356, 1)
 light_energy = 10.0
@@ -401,22 +403,16 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.1)
 light_color = Color(1, 1, 0.8356356, 1)
 light_energy = 0.5
 
-[node name="FlashlightController" type="Node3D" parent="Head/Eyes/Camera3D" unique_id=1702426416 node_paths=PackedStringArray("camera", "flashlight", "omni_light")]
+[node name="FlashlightController" type="Node3D" parent="Head/Eyes/Camera3D" unique_id=1150317330 node_paths=PackedStringArray("camera", "flashlight", "omni_light")]
 script = ExtResource("3_b8lor")
 camera = NodePath("..")
-flashlight = NodePath("../FlashLightNode/Flashlight")
+flashlight = NodePath("../FlashlightMount/Flashlight")
 omni_light = NodePath("../OmniLight3D")
-flashlight_maintain_distance = null
-base_energy = null
-sway_amount = null
-smooth_speed = null
-flashlight_pos_smoothness = null
-flashlight_rot_smoothness = null
 
 [node name="CameraAnims" type="AnimationPlayer" parent="Head/Eyes" unique_id=1765016502]
 libraries/ = SubResource("AnimationLibrary_xfc2n")
 
-[node name="CameraController" type="Node3D" parent="Head" unique_id=1011773041 node_paths=PackedStringArray("player_body", "head", "eyes", "camera")]
+[node name="CameraController" type="Node" parent="Head" unique_id=411961146 node_paths=PackedStringArray("player_body", "head", "eyes", "camera")]
 unique_name_in_owner = true
 script = ExtResource("4_6e537")
 player_body = NodePath("../..")
@@ -433,7 +429,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
 shape = SubResource("CapsuleShape3D_34orh")
 disabled = true
 
-[node name="CrouchCastCheck" type="RayCast3D" parent="." unique_id=1427954589]
+[node name="CrouchCast" type="RayCast3D" parent="." unique_id=1427954589]
 target_position = Vector3(0, 2, 0)
 
 [node name="StairsAheadCast" type="RayCast3D" parent="." unique_id=1957762492]
@@ -498,44 +494,44 @@ shape = SubResource("SphereShape3D_mdl7e")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 script = ExtResource("20_sfy4j")
 
-[node name="InteractionScanner" type="Node3D" parent="." unique_id=1246891363 node_paths=PackedStringArray("player_body", "camera", "interact_shapecast", "hold_position", "weapon_holder")]
+[node name="InteractionScanner" type="Node" parent="." unique_id=807129051 node_paths=PackedStringArray("player_body", "camera", "interact_shapecast", "hold_position", "weapon_holder")]
 script = ExtResource("24_p07f3")
 player_body = NodePath("..")
 camera = NodePath("../Head/Eyes/Camera3D")
-interact_shapecast = NodePath("../Head/Eyes/Camera3D/InteractShapeCast")
+interact_shapecast = NodePath("../Head/Eyes/Camera3D/InteractionShapeCast")
 hold_position = NodePath("../Head/Eyes/Camera3D/SpringArm3D/HoldPosition")
 weapon_holder = NodePath("../Head/Eyes/Camera3D/WeaponHolder")
 
 [node name="FootstepManager" type="Node3D" parent="." unique_id=8024466 node_paths=PackedStringArray("player_body", "audio_default", "audio_metal", "audio_stone", "audio_wet_dirt")]
 script = ExtResource("13_viqgg")
 player_body = NodePath("..")
-audio_default = NodePath("FootstepDefaultAudio")
-audio_metal = NodePath("FootstepMetalAudio")
-audio_stone = NodePath("FootstepStoneAudio")
-audio_wet_dirt = NodePath("FootstepWetDirtAudio")
+audio_default = NodePath("DefaultAudio")
+audio_metal = NodePath("MetalAudio")
+audio_stone = NodePath("StoneAudio")
+audio_wet_dirt = NodePath("WetDirtAudio")
 
-[node name="FootstepDefaultAudio" type="AudioStreamPlayer" parent="FootstepManager" unique_id=1100202989]
+[node name="DefaultAudio" type="AudioStreamPlayer" parent="FootstepManager" unique_id=1100202989]
 stream = SubResource("AudioStreamRandomizer_d3wef")
 volume_db = -20.0
 
-[node name="FootstepMetalAudio" type="AudioStreamPlayer" parent="FootstepManager" unique_id=469023765]
+[node name="MetalAudio" type="AudioStreamPlayer" parent="FootstepManager" unique_id=469023765]
 stream = SubResource("AudioStreamRandomizer_p7iby")
 volume_db = -20.0
 
-[node name="FootstepStoneAudio" type="AudioStreamPlayer" parent="FootstepManager" unique_id=506548274]
+[node name="StoneAudio" type="AudioStreamPlayer" parent="FootstepManager" unique_id=506548274]
 stream = SubResource("AudioStreamRandomizer_jfpux")
 volume_db = -20.0
 
-[node name="FootstepWetDirtAudio" type="AudioStreamPlayer" parent="FootstepManager" unique_id=875564003]
+[node name="WetDirtAudio" type="AudioStreamPlayer" parent="FootstepManager" unique_id=875564003]
 stream = SubResource("AudioStreamRandomizer_sfy4j")
 
-[node name="ScreenVFXManager" type="Node3D" parent="." unique_id=461355015 node_paths=PackedStringArray("screen_water_ui", "rain_drops_overlay", "waterfall_overlay")]
+[node name="ScreenVFXManager" type="Node" parent="." unique_id=1920257755 node_paths=PackedStringArray("screen_water_ui", "rain_drops_overlay", "waterfall_overlay")]
 script = ExtResource("26_fgkxt")
 screen_water_ui = NodePath("../CanvasLayer/WaterRippleOverlay")
 rain_drops_overlay = NodePath("../CanvasLayer/RainDropsOverlay")
 waterfall_overlay = NodePath("../CanvasLayer/WaterfallOverlay")
 
-[node name="VaultController" type="Node3D" parent="." unique_id=1292397910 node_paths=PackedStringArray("player_body", "camera", "head", "eyes", "standing_collision", "crouching_collision")]
+[node name="VaultController" type="Node" parent="." unique_id=1112136417 node_paths=PackedStringArray("player_body", "camera", "head", "eyes", "standing_collision", "crouching_collision")]
 script = ExtResource("27_xsi7p")
 player_body = NodePath("..")
 camera = NodePath("../Head/Eyes/Camera3D")
@@ -543,9 +539,6 @@ head = NodePath("../Head")
 eyes = NodePath("../Head/Eyes")
 standing_collision = NodePath("../StandingCollisionShape")
 crouching_collision = NodePath("../CrouchingCollisionShape")
-max_step_height = null
-crouching_depth = null
-vault_depth_clearance = null
 
 [node name="StairController" type="Node" parent="." unique_id=665311218]
 script = ExtResource("40_gu4mg")
@@ -572,12 +565,12 @@ footstep_manager = NodePath("../../FootstepManager")
 physics_pusher = NodePath("../../PhysicsPusher")
 standing_collision = NodePath("../../StandingCollisionShape")
 crouching_collision = NodePath("../../CrouchingCollisionShape")
-crouch_cast_check = NodePath("../../CrouchCastCheck")
+crouch_cast_check = NodePath("../../CrouchCast")
 head = NodePath("../../Head")
 
 [node name="InteractionComponent" type="Node" parent="Components" unique_id=1246392467 node_paths=PackedStringArray("interact_cast", "hold_position", "weapon_holder", "camera", "interaction_scanner")]
 script = ExtResource("32_j55il")
-interact_cast = NodePath("../../Head/Eyes/Camera3D/InteractShapeCast")
+interact_cast = NodePath("../../Head/Eyes/Camera3D/InteractionShapeCast")
 hold_position = NodePath("../../Head/Eyes/Camera3D/SpringArm3D/HoldPosition")
 weapon_holder = NodePath("../../Head/Eyes/Camera3D/WeaponHolder")
 camera = NodePath("../../Head/Eyes/Camera3D")
@@ -633,6 +626,9 @@ script = ExtResource("42_art4l")
 
 [node name="Glide" type="Node" parent="StateMachine" unique_id=474297086]
 script = ExtResource("43_fjxoa")
+
+[node name="MachineLock" type="Node" parent="StateMachine" unique_id=899012239]
+script = ExtResource("48_mmwog")
 
 [connection signal="area_entered" from="WaterDetector" to="." method="_on_water_detector_area_entered"]
 [connection signal="area_exited" from="WaterDetector" to="." method="_on_water_detector_area_exited"]

@@ -17,15 +17,19 @@ config/features=PackedStringArray("4.6", "Forward Plus")
 run/max_fps=60
 config/icon="uid://cijw0jse7sfs8"
 
+[audio]
+
+buses/default_bus_layout="uid://blb10t72ak8ru"
+
 [autoload]
 
 Console="*uid://bwtvwv1xx6x2"
 Events="*uid://duejfvfifyd20"
 DebugManager="*uid://psgaa5vua8a3"
 SaveSystem="*uid://c3xdhyb03qflr"
-CsgToolkitAutoload="*uid://w8ad8q4lneis"
 SmokeManager="*uid://b1t38dkohipue"
 SaveManager="*uid://bdthpju22khmx"
+CsgToolkitAutoload="*uid://w8ad8q4lneis"
 
 [debug]
 

@@ -1,5 +1,5 @@
 class_name InteractionScanner
-extends Node3D
+extends Node
 
 # --------------------------------------
 # SIGNALS

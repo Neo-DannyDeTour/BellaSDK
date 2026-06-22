@@ -97,7 +97,7 @@ func exit() -> void:
 
 	(
 		release_tween
-		. tween_property(player.camera_controller, "rotation", Vector3.ZERO, 0.3)
+		. tween_property(player.camera_controller.camera, "rotation", Vector3.ZERO, 0.3)
 		. set_trans(Tween.TRANS_SINE)
 		. set_ease(Tween.EASE_OUT)
 	)
@@ -123,7 +123,7 @@ func physics_update(delta: float) -> void:
 func _handle_climbing_and_swinging(delta: float, input_dir: Vector2) -> void:
 	var rope_root: Node3D = current_rope.get_parent() as Node3D
 	var rope_up: Vector3 = current_rope.global_transform.basis.y.normalized()
-	var look_dir: Vector3 = -player.camera_controller.global_transform.basis.z
+	var look_dir: Vector3 = -player.camera_controller.camera.global_transform.basis.z
 
 	var can_swing: bool = (
 		rope_root.get("is_swingable") as bool if "is_swingable" in rope_root else false
@@ -206,7 +206,7 @@ func _handle_climbing_and_swinging(delta: float, input_dir: Vector2) -> void:
 		player.camera_controller.update_camera(delta, input_dir, false, false, false, 6.0)
 	else:
 		# Ease camera back to center
-		player.camera_controller.transform.origin = player.camera_controller.transform.origin.lerp(
+		player.camera_controller.camera.transform.origin = player.camera_controller.camera.transform.origin.lerp(
 			Vector3.ZERO, delta * 10.0
 		)
 
@@ -219,8 +219,8 @@ func _apply_rope_position(delta: float) -> void:
 		rope_root.get("is_swingable") as bool if "is_swingable" in rope_root else false
 	)
 
-	var cam_fwd: Vector3 = -player.camera_controller.global_transform.basis.z.normalized()
-	var cam_right: Vector3 = -player.camera_controller.global_transform.basis.x.normalized()
+	var cam_fwd: Vector3 = -player.camera_controller.camera.global_transform.basis.z.normalized()
+	var cam_right: Vector3 = -player.camera_controller.camera.global_transform.basis.x.normalized()
 	var orbit_fwd: Vector3 = Vector3(cam_fwd.x, 0.0, cam_fwd.z).normalized()
 	var orbit_right: Vector3 = Vector3(cam_right.x, 0.0, cam_right.z).normalized()
 
@@ -240,7 +240,7 @@ func _apply_rope_position(delta: float) -> void:
 	player.global_rotation.z = 0.0
 
 	var tilt_quat := Quaternion(Vector3.UP, rope_up)
-	player.camera_controller.quaternion = Quaternion.IDENTITY.slerp(tilt_quat, 0.15)
+	player.camera_controller.camera.quaternion = Quaternion.IDENTITY.slerp(tilt_quat, 0.15)
 	player.velocity = Vector3.ZERO
 
 
@@ -249,7 +249,7 @@ func _check_dismount(input_dir: Vector2) -> void:
 		_perform_jump_dismount(input_dir)
 	elif Input.is_action_just_pressed("interact"):
 		if rope_lerp_weight > 10.0:
-			var release_dir: Vector3 = -player.camera_controller.global_transform.basis.z
+			var release_dir: Vector3 = -player.camera_controller.camera.global_transform.basis.z
 			_transition_out_of_rope(release_dir, 0.0, 0.0)
 
 
@@ -261,7 +261,7 @@ func _perform_jump_dismount(input_dir: Vector2) -> void:
 
 	var grab_offset: Vector3 = player.global_position - current_rope.global_position
 	var rope_momentum: Vector3 = current_rope.angular_velocity.cross(grab_offset)
-	var jump_dir: Vector3 = -player.camera_controller.global_transform.basis.z.normalized()
+	var jump_dir: Vector3 = -player.camera_controller.camera.global_transform.basis.z.normalized()
 	var flat_jump_dir: Vector3 = Vector3(jump_dir.x, 0.0, jump_dir.z).normalized()
 
 	var vertical_hop: float = 0.0

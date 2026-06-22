@@ -7,7 +7,7 @@
 height = 1.2494141
 radius = 0.45
 
-[node name="PickableBarrelGreen" unique_id=594279821 node_paths=PackedStringArray("mesh") instance=ExtResource("1_cgl81")]
+[node name="PickableBarrelGreen" unique_id=594279821 node_paths=PackedStringArray("mesh") groups=["magnetizable"] instance=ExtResource("1_cgl81")]
 mass = 10.0
 mesh = NodePath("Barrel_green")
 held_transparency = 0.75

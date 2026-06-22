@@ -20,7 +20,9 @@ func _on_tick_timer_timeout() -> void:
 	var bodies: Array[Node3D] = get_overlapping_bodies()
 
 	for body: Node3D in bodies:
-		var health_node: Node = body.get_node_or_null("HealthComponent")
+		# Added "Components/" to the relative path
+		var health_node: Node = body.get_node_or_null("Components/HealthComponent")
+		
 		if health_node is HealthComponent:
 			if modify_amount < 0:
 				health_node.take_damage(abs(modify_amount))

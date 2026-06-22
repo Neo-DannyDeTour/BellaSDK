@@ -137,3 +137,15 @@ func enter_rope(rope_node: RigidBody3D) -> void:
 	print("EnvironmentComponent: enter_rope() called. Triggering Rope state.")
 	if is_instance_valid(state_machine):
 		state_machine.transition_to("Rope", {"rope_node": rope_node})
+
+
+func enter_rain_volume() -> void:
+	print("EnvironmentComponent: enter_rain_volume() called.")
+	if is_instance_valid(vfx_manager) and vfx_manager.has_method("set_rain_volume"):
+		vfx_manager.set_rain_volume(true)
+
+
+func exit_rain_volume() -> void:
+	print("EnvironmentComponent: exit_rain_volume() called.")
+	if is_instance_valid(vfx_manager) and vfx_manager.has_method("set_rain_volume"):
+		vfx_manager.set_rain_volume(false)

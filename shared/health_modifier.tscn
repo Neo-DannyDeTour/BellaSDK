@@ -6,6 +6,7 @@
 size = Vector3(2, 2, 2)
 
 [node name="HealthModifier" type="Area3D" unique_id=1142556164]
+collision_layer = 4
 collision_mask = 2
 script = ExtResource("1_tv85v")
 

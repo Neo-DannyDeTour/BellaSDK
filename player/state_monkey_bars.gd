@@ -74,8 +74,8 @@ func physics_update(delta: float) -> void:
 # --------------------------------------
 func _apply_horizontal_movement(input_dir: Vector2) -> void:
 	# FIX: Route camera reference through camera_controller
-	var look_dir: Vector3 = -player.camera_controller.global_transform.basis.z
-	var right_dir: Vector3 = player.camera_controller.global_transform.basis.x
+	var look_dir: Vector3 = -player.camera_controller.camera.global_transform.basis.z
+	var right_dir: Vector3 = player.camera_controller.camera.global_transform.basis.x
 
 	look_dir.y = 0.0
 	right_dir.y = 0.0
