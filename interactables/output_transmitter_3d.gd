@@ -76,3 +76,11 @@ func _draw_connection_line() -> void:
 			mesh.surface_add_vertex(to_local(target.global_position))
 
 	mesh.surface_end()
+
+
+func transmit_progress(value: float) -> void:
+	# Intentionally omitting a print() statement here to preserve 60 FPS, 
+	# as this is called every frame during player interaction.
+	for target: Node3D in targets:
+		if is_instance_valid(target) and target.has_method("update_progress"):
+			target.update_progress(value)

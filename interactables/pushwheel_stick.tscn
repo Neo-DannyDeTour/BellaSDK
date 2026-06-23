@@ -1,0 +1,106 @@
+[gd_scene format=3 uid="uid://ddiuuadl1qmaw"]
+
+[ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="1_ffoe3"]
+[ext_resource type="Texture2D" uid="uid://civnfn7yss1n" path="res://assets/images/dev_textures/dev_texture_green_1024.png" id="2_bk77a"]
+[ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="2_jmjch"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="3_bk77a"]
+
+[sub_resource type="GDScript" id="GDScript_jmjch"]
+script/source = "class_name PushwheelStick
+extends RigidBody3D
+
+var original_collision_layer: int
+var original_collision_mask: int
+
+
+func _ready() -> void:
+	original_collision_layer = collision_layer
+	original_collision_mask = collision_mask
+
+
+func pick_up(hold_pos: Marker3D, _player: CharacterBody3D) -> void:
+	# Disable physics simulation while held to eliminate jitter
+	freeze = true
+	collision_layer = 0
+	collision_mask = 0
+	
+	# Reparent smoothly to the player's hand
+	var current_parent: Node = get_parent()
+	if is_instance_valid(current_parent):
+		current_parent.remove_child(self)
+		
+	hold_pos.add_child(self)
+	
+	# Snap perfectly into the hold marker
+	position = Vector3.ZERO
+	rotation = Vector3.ZERO
+
+
+func drop() -> void:
+	_release_from_hand()
+
+
+func throw(force: Vector3) -> void:
+	_release_from_hand()
+	apply_central_impulse(force)
+
+
+func _release_from_hand() -> void:
+	var current_global_pos: Vector3 = global_position
+	var current_global_rot: Vector3 = global_rotation
+	
+	var current_parent: Node = get_parent()
+	if is_instance_valid(current_parent):
+		current_parent.remove_child(self)
+		
+	# Drop it back into the main world space
+	var scene_root: Node = get_tree().current_scene
+	scene_root.add_child(self)
+	
+	global_position = current_global_pos
+	global_rotation = current_global_rot
+	
+	# Re-enable physics simulation
+	freeze = false
+	collision_layer = original_collision_layer
+	collision_mask = original_collision_mask
+"
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mx6xk"]
+albedo_texture = ExtResource("2_bk77a")
+uv1_triplanar = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_5blo6"]
+material = SubResource("StandardMaterial3D_mx6xk")
+size = Vector3(0.1, 0.1, 1.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_5blo6"]
+size = Vector3(0.1, 0.1, 1.5)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_mx6xk"]
+render_priority = 0
+shader = ExtResource("3_bk77a")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.05
+
+[node name="PushwheelStick" type="RigidBody3D" unique_id=1881415021]
+collision_layer = 5
+collision_mask = 2
+script = SubResource("GDScript_jmjch")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1910067241]
+mesh = SubResource("BoxMesh_5blo6")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1743972707]
+shape = SubResource("BoxShape3D_5blo6")
+
+[node name="Interact_Component" type="Node" parent="." unique_id=98492970]
+script = ExtResource("1_ffoe3")
+metadata/_custom_type_script = "uid://cqawbvidns1th"
+
+[node name="HighlightComponent" type="Node" parent="." unique_id=2002031227]
+script = ExtResource("2_jmjch")
+outline_material = SubResource("ShaderMaterial_mx6xk")
+metadata/_custom_type_script = "uid://dgig0tamvkdxx"

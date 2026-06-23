@@ -47,7 +47,7 @@ var valid_on_off_args: Array[String] = ["on", "off"]
 var valid_screenfilter_args: Array[String] = [
 	"off", "crt", "vhs", "pixelate", "toon", 
 	"gameboy", "glitch", "grain", "halftone", "nightvision", "kuwahara", "ascii", "90anime", 
-	"manga", "handdrawn", "moebius", "obra", "psychedelic", "botw", "ghibli"
+	"manga", "handdrawn", "moebius", "obra", "psychedelic", "botw", "ghibli", "reaction"
 ]
 
 # --- Screen Filter State ---

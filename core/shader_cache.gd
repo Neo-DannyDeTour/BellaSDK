@@ -3,5 +3,6 @@ extends Resource
 
 @export var materials: Array[Material] = []
 
+
 func initialize() -> void:
-	print("ShaderCache resource initialized.")
+	print("ShaderCache: Initializing cache with %d materials." % materials.size())

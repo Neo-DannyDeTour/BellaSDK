@@ -2,7 +2,15 @@
 
 [ext_resource type="Material" uid="uid://c2niiwlud067p" path="res://vfx/smart_outline_material.tres" id="1_63tbl"]
 [ext_resource type="Script" uid="uid://7lscyxblla3t" path="res://core/shader_cache.gd" id="2_akgxa"]
+[ext_resource type="Material" uid="uid://coniyskrwahs4" path="res://assets/textures/dev_material_area.tres" id="2_y6egi"]
+[ext_resource type="Material" uid="uid://drmq7gpguytcl" path="res://addons/csg_toolkit/demo/red.material" id="3_ot8cs"]
+[ext_resource type="Material" uid="uid://bvlrolerfilhd" path="res://addons/csg_toolkit/demo/new_shader_material.tres" id="4_ibucx"]
+[ext_resource type="Material" uid="uid://b3fgicfsq7yvh" path="res://addons/SunshineClouds2/Dock/Materials/DrawBrushToolsMaterial.tres" id="5_xqk0g"]
+[ext_resource type="Material" uid="uid://df0bpn85ml870" path="res://environment/rain_effects.tres" id="6_eoyls"]
+[ext_resource type="Material" uid="uid://byumtcccq4ew3" path="res://environment/mat_ocean.tres" id="7_aai07"]
+[ext_resource type="Material" uid="uid://cb4w5bg7xjju1" path="res://environment/rainy_window.material" id="8_m1nfi"]
+[ext_resource type="Material" uid="uid://5xqyddws6rt5" path="res://environment/mat_spray.tres" id="9_wtntw"]
 
 [resource]
 script = ExtResource("2_akgxa")
-materials = Array[Material]([ExtResource("1_63tbl")])
+materials = Array[Material]([ExtResource("1_63tbl"), ExtResource("2_y6egi"), ExtResource("3_ot8cs"), ExtResource("4_ibucx"), ExtResource("5_xqk0g"), ExtResource("6_eoyls"), ExtResource("7_aai07"), ExtResource("8_m1nfi"), ExtResource("9_wtntw")])

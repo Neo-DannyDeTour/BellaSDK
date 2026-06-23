@@ -1,0 +1,134 @@
+[gd_scene format=3 uid="uid://b2ugsvj62h314"]
+
+[ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="1_eikni"]
+[ext_resource type="Script" uid="uid://da7rw1lj7pejk" path="res://interactables/push_wheel.gd" id="1_hkbtf"]
+[ext_resource type="Script" uid="uid://cnmn3hgnt0afn" path="res://interactables/output_transmitter_3d.gd" id="2_7rave"]
+[ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="2_8ctuu"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="3_hkbtf"]
+[ext_resource type="Texture2D" uid="uid://civnfn7yss1n" path="res://assets/images/dev_textures/dev_texture_green_1024.png" id="6_7rave"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_hkbtf"]
+size = Vector3(0.5, 2, 0.5)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_7rave"]
+render_priority = 0
+shader = ExtResource("3_hkbtf")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.05
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mfqgi"]
+albedo_texture = ExtResource("6_7rave")
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_mfqgi"]
+material = SubResource("StandardMaterial3D_mfqgi")
+top_radius = 0.25
+bottom_radius = 0.25
+radial_segments = 16
+rings = 0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_7rave"]
+albedo_texture = ExtResource("6_7rave")
+uv1_triplanar = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_hkbtf"]
+size = Vector3(0.1, 0.1, 1.5)
+
+[node name="PushWheel" type="StaticBody3D" unique_id=1136326807 node_paths=PackedStringArray("transmitter", "wheel", "intact_sticks", "broken_stubs", "restored_handle")]
+collision_layer = 5
+collision_mask = 2
+script = ExtResource("1_hkbtf")
+transmitter = NodePath("OutputTransmitter3D")
+is_broken_variant = true
+wheel = NodePath("Wheel")
+intact_sticks = NodePath("Wheel/Visuals/Hub/Intact_Sticks")
+broken_stubs = NodePath("Wheel/Visuals/Hub/Broken_Stubs")
+restored_handle = NodePath("Wheel/Visuals/Hub/Restored_Handle")
+turn_duration = 3.0
+
+[node name="Base_Collision" type="CollisionShape3D" parent="." unique_id=1733911830]
+shape = SubResource("BoxShape3D_hkbtf")
+
+[node name="OutputTransmitter3D" type="Node3D" parent="." unique_id=570541689]
+script = ExtResource("2_7rave")
+metadata/_custom_type_script = "uid://cnmn3hgnt0afn"
+
+[node name="Interact_Component" type="Node" parent="." unique_id=366997497]
+script = ExtResource("1_eikni")
+metadata/_custom_type_script = "uid://cqawbvidns1th"
+
+[node name="HighlightComponent" type="Node" parent="." unique_id=1988589278]
+script = ExtResource("2_8ctuu")
+outline_material = SubResource("ShaderMaterial_7rave")
+metadata/_custom_type_script = "uid://dgig0tamvkdxx"
+
+[node name="Wheel" type="AnimatableBody3D" parent="." unique_id=954599458]
+collision_layer = 5
+collision_mask = 2
+sync_to_physics = false
+
+[node name="Visuals" type="Node3D" parent="Wheel" unique_id=479294023]
+
+[node name="Hub" type="MeshInstance3D" parent="Wheel/Visuals" unique_id=202434922]
+mesh = SubResource("CylinderMesh_mfqgi")
+
+[node name="Intact_Sticks" type="Node3D" parent="Wheel/Visuals/Hub" unique_id=422595957]
+
+[node name="Stick_1" type="CSGBox3D" parent="Wheel/Visuals/Hub/Intact_Sticks" unique_id=1055498006]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -1)
+collision_layer = 5
+collision_mask = 2
+size = Vector3(0.1, 0.1, 1.5)
+material = SubResource("StandardMaterial3D_7rave")
+
+[node name="Stick_2" type="CSGBox3D" parent="Wheel/Visuals/Hub/Intact_Sticks" unique_id=46382781]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0.5, 0)
+collision_layer = 5
+collision_mask = 2
+size = Vector3(1.5, 0.1, 0.1)
+material = SubResource("StandardMaterial3D_7rave")
+
+[node name="Stick_3" type="CSGBox3D" parent="Wheel/Visuals/Hub/Intact_Sticks" unique_id=331262859]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 1)
+collision_layer = 5
+collision_mask = 2
+size = Vector3(0.1, 0.1, 1.5)
+material = SubResource("StandardMaterial3D_7rave")
+
+[node name="Stick_4" type="CSGBox3D" parent="Wheel/Visuals/Hub/Intact_Sticks" unique_id=1502675525]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0.5, 0)
+collision_layer = 5
+collision_mask = 2
+size = Vector3(1.5, 0.1, 0.1)
+material = SubResource("StandardMaterial3D_7rave")
+
+[node name="Broken_Stubs" type="Node3D" parent="Wheel/Visuals/Hub" unique_id=575020920]
+
+[node name="Stick_5" type="CSGBox3D" parent="Wheel/Visuals/Hub/Broken_Stubs" unique_id=1455100968]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -0.27001953)
+collision_layer = 5
+collision_mask = 2
+size = Vector3(0.1, 0.1, 0.040039063)
+
+[node name="Stick_6" type="CSGBox3D" parent="Wheel/Visuals/Hub/Broken_Stubs" unique_id=658296218]
+transform = Transform3D(0.95336264, 0.1607598, -0.25545275, -0.15528204, 0.98699355, 0.041607697, 0.25881907, 0, 0.96592593, 0.2640086, 0.5, -0.0053394064)
+collision_layer = 5
+collision_mask = 2
+size = Vector3(0.10913086, 0.1, 0.1)
+
+[node name="Stick_7" type="CSGBox3D" parent="Wheel/Visuals/Hub/Broken_Stubs" unique_id=335700583]
+transform = Transform3D(1, 0, 0, 0, 0.9249844, 0.38000512, 0, -0.38000512, 0.9249844, 0, 0.48807845, 0.3066747)
+collision_layer = 5
+collision_mask = 2
+size = Vector3(0.1, 0.1, 0.23413086)
+
+[node name="Stick_8" type="CSGBox3D" parent="Wheel/Visuals/Hub/Broken_Stubs" unique_id=1837165702]
+transform = Transform3D(0.964516, -0.26402456, 0, 0.26402456, 0.964516, 0, 0, 0, 1, -0.30704516, 0.5, 0)
+collision_layer = 5
+collision_mask = 2
+size = Vector3(0.20117188, 0.1, 0.1)
+
+[node name="Restored_Handle" type="MeshInstance3D" parent="Wheel/Visuals/Hub" unique_id=518647199]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 1)
+mesh = SubResource("BoxMesh_hkbtf")

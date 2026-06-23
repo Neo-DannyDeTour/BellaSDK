@@ -1,17 +1,41 @@
 extends Node3D
 
-## How far the gate moves when the valve is at 100% (e.g., up 4 meters on the Y axis)
-@export var open_offset: Vector3 = Vector3(0, 4, 0)
+## How far the gate moves when powered on
+@export var open_offset: Vector3 = Vector3(0.0, 4.0, 0.0)
+## Duration of the opening/closing animation in seconds
+@export var move_duration: float = 2.0
 
 var closed_position: Vector3
+var _move_tween: Tween
 
 
 func _ready() -> void:
-	# Remember where we started in the editor!
 	closed_position = position
 
 
-# This is called every single frame by the Valve!
-func set_progress(val: float) -> void:
-	# Lerp perfectly blends between the closed and open position based on the valve's 0.0 to 1.0 value
-	position = closed_position.lerp(closed_position + open_offset, val)
+func power_on() -> void:
+	print("Gate: power_on() called. Opening gate.")
+	_animate_gate(closed_position + open_offset)
+
+
+func power_off() -> void:
+	print("Gate: power_off() called. Closing gate.")
+	_animate_gate(closed_position)
+
+
+func _animate_gate(target_pos: Vector3) -> void:
+	# Kill the existing tween to prevent conflicting movements if spammed
+	if is_instance_valid(_move_tween):
+		_move_tween.kill()
+
+	_move_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	_move_tween.tween_property(self, "position", target_pos, move_duration)
+
+
+func update_progress(progress_value: float) -> void:
+	# Kill the digital on/off tween so it doesn't fight the analog wheel movement
+	if is_instance_valid(_move_tween) and _move_tween.is_running():
+		_move_tween.kill()
+		
+	# Direct lerp ensures optimal 60 FPS matching with the wheel's movement
+	position = closed_position.lerp(closed_position + open_offset, progress_value)

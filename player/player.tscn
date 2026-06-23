@@ -48,6 +48,7 @@
 [ext_resource type="Script" uid="uid://fu6m53wtps66" path="res://player/state_slide.gd" id="42_art4l"]
 [ext_resource type="Script" uid="uid://eabartkybdls" path="res://player/state_glide.gd" id="43_fjxoa"]
 [ext_resource type="Script" uid="uid://7lmc8o36ewqw" path="res://player/StateMachineLock.gd" id="48_mmwog"]
+[ext_resource type="Script" uid="uid://be6128jq53jja" path="res://player/push_wheel.gd" id="49_8pxes"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_cw2d6"]
 radius = 0.1
@@ -629,6 +630,9 @@ script = ExtResource("43_fjxoa")
 
 [node name="MachineLock" type="Node" parent="StateMachine" unique_id=899012239]
 script = ExtResource("48_mmwog")
+
+[node name="PushWheel" type="Node" parent="StateMachine" unique_id=2018159737]
+script = ExtResource("49_8pxes")
 
 [connection signal="area_entered" from="WaterDetector" to="." method="_on_water_detector_area_entered"]
 [connection signal="area_exited" from="WaterDetector" to="." method="_on_water_detector_area_exited"]

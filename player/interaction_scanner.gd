@@ -187,10 +187,21 @@ func _get_interactable_component_at_shapecast() -> Node:
 			continue
 
 		if collider is Node:
-			var comp: Node = collider.get_node_or_null("Interact_Component")
-			if comp:
-				if collider.has_method("is_valid_pickup_position"):
-					if not collider.is_valid_pickup_position(player_body):
+			var current_node: Node = collider
+			var comp: Node = null
+			
+			# Climb up the scene tree to find the Interact_Component
+			while is_instance_valid(current_node) and current_node != get_tree().root:
+				comp = current_node.get_node_or_null("Interact_Component")
+				if is_instance_valid(comp):
+					break # Component found, stop climbing
+				current_node = current_node.get_parent()
+
+			if is_instance_valid(comp):
+				var interactable_parent: Node = comp.get_parent()
+				
+				if interactable_parent.has_method("is_valid_pickup_position"):
+					if not interactable_parent.is_valid_pickup_position(player_body):
 						continue
 
 				var hit_point: Vector3 = interact_shapecast.get_collision_point(i)

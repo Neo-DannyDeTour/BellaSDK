@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://c4g8uvpoc7rpw"]
+
+[ext_resource type="PackedScene" uid="uid://mqae3mth7tfx" path="res://interactables/pickable_object.tscn" id="1_tnnd2"]
+[ext_resource type="Texture2D" uid="uid://civnfn7yss1n" path="res://assets/images/dev_textures/dev_texture_green_1024.png" id="2_awmse"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_trbn0"]
+albedo_texture = ExtResource("2_awmse")
+uv1_triplanar = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_tnnd2"]
+material = SubResource("StandardMaterial3D_trbn0")
+size = Vector3(0.1, 0.1, 1.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_awmse"]
+size = Vector3(0.1, 0.1, 1.5)
+
+[node name="PickableObject" unique_id=594279821 instance=ExtResource("1_tnnd2")]
+
+[node name="MeshInstance3D" parent="." index="2" unique_id=1239371319]
+mesh = SubResource("BoxMesh_tnnd2")
+
+[node name="CollisionShape3D" parent="." index="3" unique_id=1677444331]
+shape = SubResource("BoxShape3D_awmse")
