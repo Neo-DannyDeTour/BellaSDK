@@ -9,7 +9,10 @@ var is_ui_hidden: bool = false
 
 var green_wireframe_material: ShaderMaterial
 
-# --- UI VARS ---
+# --- KEYCARD UI VARS ---
+@export var card_textures: Dictionary[StringName, Texture2D] = {}
+var active_card_icons: Dictionary = {}
+
 var zoom_tween: Tween
 var is_player_crouching: bool = false
 var ui_lerp_speed: float = 15.0
@@ -46,13 +49,14 @@ var default_crosshair_size: Vector2
 # --- NEW HEALTH UI VARS ---
 @export var hearts_atlas: Texture2D
 @onready var health_margin: MarginContainer = $HealthMargin
-@onready var hearts_container: HBoxContainer = $HealthMargin/HeartsContainer
+@onready var hearts_container: HBoxContainer = $HealthMargin/VBoxContainer/HeartsContainer
+
+@onready var keycards_container: HBoxContainer = $HealthMargin/VBoxContainer/KeycardsContainer
 
 var heart_textures: Array[AtlasTexture] = []
 var heart_nodes: Array[TextureRect] = []
 var heart_tweens: Array[Tween] = []
 var current_health: int = 300
-
 
 func _ready() -> void:
 	print("UI: _ready() called. Initializing canvas elements.")
@@ -108,7 +112,9 @@ func _ready() -> void:
 	_initialize_hearts()
 	
 	call_deferred("_check_if_testbed")
-
+	
+	KeycardSystem.card_picked_up.connect(_on_card_picked_up)
+	KeycardSystem.card_used.connect(_on_card_used)
 
 func _process(delta: float) -> void:
 	var target_vignette_opacity := 0.8 if is_player_crouching else 0.0
@@ -506,3 +512,36 @@ func _open_metrics_panel() -> void:
 		
 		if frame_graph:
 			frame_graph.visible = metrics_panel.visible
+
+
+func _on_card_picked_up(card_id: StringName) -> void:
+	print("UI: Displaying new card ID ", card_id)
+	var card_rect := TextureRect.new()
+	card_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	card_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	card_rect.custom_minimum_size = Vector2(80.0, 130.0)
+	card_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	
+	if card_textures.has(card_id):
+		card_rect.texture = card_textures[card_id]
+	else:
+		print("UI Warning: No texture mapped in UIController for card ID: ", card_id)
+		
+	keycards_container.add_child(card_rect)
+	active_card_icons[card_id] = card_rect
+	
+	# Bounce animation
+	card_rect.scale = Vector2.ZERO
+	card_rect.pivot_offset = card_rect.custom_minimum_size / 2.0
+	var tween: Tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(card_rect, "scale", Vector2.ONE, 0.4)
+
+
+func _on_card_used(card_id: StringName) -> void:
+	print("UI: Removing used card ID ", card_id)
+	if active_card_icons.has(card_id):
+		var card_rect: TextureRect = active_card_icons[card_id]
+		var tween: Tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+		tween.tween_property(card_rect, "scale", Vector2.ZERO, 0.2)
+		tween.finished.connect(card_rect.queue_free)
+		active_card_icons.erase(card_id)

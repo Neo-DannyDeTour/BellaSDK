@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="KeycardData" format=3 uid="uid://dmv3bq7lmyo8r"]
+
+[ext_resource type="Texture2D" uid="uid://belmiy3g7h2d6" path="res://assets/images/icon_keycard_r.png" id="1_28fqj"]
+[ext_resource type="Script" uid="uid://bt7me8s2f62kq" path="res://interactables/keycard_data.gd" id="1_odagn"]
+
+[resource]
+script = ExtResource("1_odagn")
+card_id = &"R"
+display_letter = "R"
+display_number = "0"
+card_color = Color(1, 0, 0, 1)
+card_texture = ExtResource("1_28fqj")
+metadata/_custom_type_script = "uid://bt7me8s2f62kq"

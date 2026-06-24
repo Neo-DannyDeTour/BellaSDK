@@ -30,6 +30,8 @@ SaveSystem="*uid://c3xdhyb03qflr"
 SmokeManager="*uid://b1t38dkohipue"
 SaveManager="*uid://bdthpju22khmx"
 CsgToolkitAutoload="*uid://w8ad8q4lneis"
+KeycardSystem="*uid://0q0pxgqqqrbh"
+GraphicsManager="*uid://c165uw26ca5hj"
 
 [debug]
 

@@ -1,0 +1,50 @@
+[gd_scene format=3 uid="uid://cdvgjdonukhng"]
+
+[ext_resource type="Script" uid="uid://c24xv83vdb1wf" path="res://keycard_lock.gd" id="1_f84it"]
+[ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="2_kmlfq"]
+[ext_resource type="Texture2D" uid="uid://e61paiyqpdq7" path="res://assets/images/dev_textures/dev_texture_black_1024.png" id="2_vbwsd"]
+[ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="3_vbwsd"]
+[ext_resource type="Script" uid="uid://cnmn3hgnt0afn" path="res://interactables/output_transmitter_3d.gd" id="5_23cjj"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cvnb8"]
+albedo_texture = ExtResource("2_vbwsd")
+
+[node name="KeycardLock" type="Node3D" unique_id=1950226616 node_paths=PackedStringArray("reader_mesh", "status_label", "interact_component", "output_transmitter")]
+script = ExtResource("1_f84it")
+reader_mesh = NodePath("ReaderMesh")
+status_label = NodePath("Label3D")
+interact_component = NodePath("Interact_Component")
+output_transmitter = NodePath("OutputTransmitter3D")
+
+[node name="CSGBox3D" type="CSGBox3D" parent="." unique_id=831973141]
+use_collision = true
+collision_layer = 5
+collision_mask = 2
+material = SubResource("StandardMaterial3D_cvnb8")
+
+[node name="CSGBox3D2" type="CSGBox3D" parent="CSGBox3D" unique_id=1215626028]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.50647956, 0)
+operation = 2
+size = Vector3(0.9, 0.1, 0.9)
+
+[node name="ReaderMesh" type="CSGBox3D" parent="." unique_id=369500021]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.40858936, 0)
+size = Vector3(0.9, 0.1, 0.9)
+
+[node name="Label3D" type="Label3D" parent="." unique_id=41483796]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6876091, 0)
+billboard = 1
+double_sided = false
+no_depth_test = true
+
+[node name="Interact_Component" type="Node" parent="." unique_id=730461124]
+script = ExtResource("2_kmlfq")
+metadata/_custom_type_script = "uid://cqawbvidns1th"
+
+[node name="HighlightComponent" type="Node" parent="." unique_id=882950323]
+script = ExtResource("3_vbwsd")
+metadata/_custom_type_script = "uid://dgig0tamvkdxx"
+
+[node name="OutputTransmitter3D" type="Node3D" parent="." unique_id=606514624]
+script = ExtResource("5_23cjj")
+metadata/_custom_type_script = "uid://cnmn3hgnt0afn"

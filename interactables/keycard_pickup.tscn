@@ -1,0 +1,53 @@
+[gd_scene format=3 uid="uid://bt5hmrx4nu85y"]
+
+[ext_resource type="Script" uid="uid://buqeq4tdhgpyl" path="res://interactables/keycard_pickup.gd" id="1_ebnu4"]
+[ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="1_tr0af"]
+[ext_resource type="Texture2D" uid="uid://belmiy3g7h2d6" path="res://assets/images/icon_keycard_r.png" id="2_270r3"]
+[ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="2_dsyyt"]
+[ext_resource type="Script" uid="uid://bt7me8s2f62kq" path="res://interactables/keycard_data.gd" id="3_0m1fb"]
+
+[sub_resource type="Resource" id="Resource_e6v7a"]
+script = ExtResource("3_0m1fb")
+card_id = &"0"
+display_letter = "R"
+display_number = "0"
+card_color = Color(1, 0.09803922, 1, 1)
+card_texture = ExtResource("2_270r3")
+metadata/_custom_type_script = "uid://bt7me8s2f62kq"
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ebnu4"]
+size = Vector3(0.5, 0.1, 0.7)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dsyyt"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_ebnu4"]
+material = SubResource("StandardMaterial3D_dsyyt")
+size = Vector3(0.5, 0.05, 0.65)
+
+[node name="keycard_pickup" type="StaticBody3D" unique_id=1120120285 node_paths=PackedStringArray("interact_component", "top_face_sprite")]
+collision_layer = 5
+collision_mask = 2
+script = ExtResource("1_ebnu4")
+interact_component = NodePath("Interact_Component")
+top_face_sprite = NodePath("Sprite3D")
+card_data = SubResource("Resource_e6v7a")
+
+[node name="Interact_Component" type="Node" parent="." unique_id=704736027]
+script = ExtResource("1_tr0af")
+metadata/_custom_type_script = "uid://cqawbvidns1th"
+
+[node name="HighlightComponent" type="Node" parent="." unique_id=1450301244]
+script = ExtResource("2_dsyyt")
+metadata/_custom_type_script = "uid://dgig0tamvkdxx"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1278293046]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
+shape = SubResource("BoxShape3D_ebnu4")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=303423007]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.025, 0)
+mesh = SubResource("BoxMesh_ebnu4")
+
+[node name="Sprite3D" type="Sprite3D" parent="." unique_id=1493993362]
+transform = Transform3D(0.5, 0, 0, 0, -2.1855694e-08, 0.5, 0, -0.5, -2.1855694e-08, 0, 0.051, 0)
+texture = ExtResource("2_270r3")

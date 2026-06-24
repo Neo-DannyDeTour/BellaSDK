@@ -2,8 +2,11 @@
 
 [ext_resource type="Script" uid="uid://bu8f1lqdsjgks" path="res://ui/ui.gd" id="1_nt7q6"]
 [ext_resource type="Texture2D" uid="uid://cf8wtadq3xspg" path="res://assets/images/UI/bella_hearts_atlas.png" id="2_bi8hs"]
+[ext_resource type="Texture2D" uid="uid://belmiy3g7h2d6" path="res://assets/images/icon_keycard_r.png" id="2_diyc5"]
 [ext_resource type="Shader" uid="uid://bqd5soqdscvly" path="res://vfx/outline_shader_adaptable.gdshader" id="2_x4jx1"]
 [ext_resource type="Texture2D" uid="uid://bp1lwvb0tg06g" path="res://assets/images/UI/UI_Circle_Zoom.png" id="3_gdt2y"]
+[ext_resource type="Texture2D" uid="uid://bqc3mai8fmoq7" path="res://assets/images/icon_keycard_l.png" id="3_mf2ns"]
+[ext_resource type="Texture2D" uid="uid://bwk3r3s3o1j1t" path="res://assets/images/icon_keycard_g.png" id="4_ju45i"]
 [ext_resource type="Texture2D" uid="uid://d11qvtoiajmle" path="res://assets/images/UI/UI_Circle_Zoom_Inner.png" id="4_wm3ai"]
 [ext_resource type="Shader" uid="uid://b7hv0lpr3sylm" path="res://ui/ui_vignette.gdshader" id="5_8dubc"]
 [ext_resource type="Shader" uid="uid://bly82k8d04nmt" path="res://ui/ui_zoom_fisheye_blur.gdshader" id="6_p7vwb"]
@@ -56,6 +59,11 @@ border_color = Color(0.21960784, 0.21960784, 0.21960784, 0)
 [node name="UI" type="CanvasLayer" unique_id=1944889716]
 process_mode = 3
 script = ExtResource("1_nt7q6")
+card_textures = Dictionary[StringName, Texture2D]({
+&"G": ExtResource("4_ju45i"),
+&"L": ExtResource("3_mf2ns"),
+&"R": ExtResource("2_diyc5")
+})
 hearts_atlas = ExtResource("2_bi8hs")
 
 [node name="Vignette" type="ColorRect" parent="." unique_id=123181987]
@@ -181,7 +189,14 @@ mouse_filter = 2
 theme_override_constants/margin_left = 20
 theme_override_constants/margin_bottom = 20
 
-[node name="HeartsContainer" type="HBoxContainer" parent="HealthMargin" unique_id=887507209]
+[node name="VBoxContainer" type="VBoxContainer" parent="HealthMargin" unique_id=2080919768]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="KeycardsContainer" type="HBoxContainer" parent="HealthMargin/VBoxContainer" unique_id=843247494]
+layout_mode = 2
+
+[node name="HeartsContainer" type="HBoxContainer" parent="HealthMargin/VBoxContainer" unique_id=887507209]
 material = SubResource("ShaderMaterial_7dvkv")
 layout_mode = 2
 
