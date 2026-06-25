@@ -1,0 +1,75 @@
+[gd_scene format=3 uid="uid://cnkqhlliod1js"]
+
+[ext_resource type="Script" uid="uid://di1nms7lvv0vh" path="res://interactables/combination_lock.gd" id="1_clqj2"]
+[ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="1_wl2jg"]
+[ext_resource type="PackedScene" uid="uid://bp0uuam6ip8gd" path="res://ui/machine_lock_ui.tscn" id="2_4i234"]
+[ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="2_34qrm"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="3_34qrm"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_clqj2"]
+size = Vector3(0.4, 0.3, 0.1)
+
+[sub_resource type="TorusMesh" id="TorusMesh_4i234"]
+inner_radius = 0.1
+outer_radius = 0.17
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_wl2jg"]
+top_radius = 0.1
+bottom_radius = 0.1
+height = 0.1
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_clqj2"]
+render_priority = 0
+shader = ExtResource("3_34qrm")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.05
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_4i234"]
+size = Vector3(0.49023438, 0.54504395, 0.27160645)
+
+[node name="CombinationLock" type="StaticBody3D" unique_id=557636298 node_paths=PackedStringArray("camera_view_point")]
+collision_layer = 5
+collision_mask = 2
+script = ExtResource("1_clqj2")
+camera_view_point = NodePath("CameraViewPoint")
+lock_ui_scene = ExtResource("2_4i234")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1387815911]
+mesh = SubResource("BoxMesh_clqj2")
+
+[node name="MeshInstance3D2" type="MeshInstance3D" parent="." unique_id=129422850]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0.15, 0)
+mesh = SubResource("TorusMesh_4i234")
+
+[node name="MeshInstance3D3" type="MeshInstance3D" parent="." unique_id=1131851166]
+transform = Transform3D(-4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0, 0, 1, -0.112809345, 0, -0.0017826483)
+mesh = SubResource("CylinderMesh_wl2jg")
+
+[node name="MeshInstance3D4" type="MeshInstance3D" parent="." unique_id=2091675669]
+transform = Transform3D(-4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0, 0, 1, 0.00531175, 0, -0.0017826483)
+mesh = SubResource("CylinderMesh_wl2jg")
+
+[node name="MeshInstance3D5" type="MeshInstance3D" parent="." unique_id=1292779947]
+transform = Transform3D(-4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0, 0, 1, 0.12049995, 0, -0.0017826483)
+mesh = SubResource("CylinderMesh_wl2jg")
+
+[node name="Interact_Component" type="Node" parent="." unique_id=1898998554]
+script = ExtResource("1_wl2jg")
+metadata/_custom_type_script = "uid://cqawbvidns1th"
+
+[node name="HighlightComponent" type="Node" parent="." unique_id=84485347]
+script = ExtResource("2_34qrm")
+outline_material = SubResource("ShaderMaterial_clqj2")
+metadata/_custom_type_script = "uid://dgig0tamvkdxx"
+
+[node name="CameraViewPoint" type="Marker3D" parent="." unique_id=1039356456]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.5)
+
+[node name="SpotLight3D" type="SpotLight3D" parent="." unique_id=943862404]
+transform = Transform3D(0.7852953, 0, -0.6191214, 0.1992556, 0.9467954, 0.25273636, 0.5861813, -0.32183608, 0.743514, -1.180145, 0.92569304, 1.9776454)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=588936266]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.0009765625, 0.07476807, 0.018493652)
+shape = SubResource("BoxShape3D_4i234")

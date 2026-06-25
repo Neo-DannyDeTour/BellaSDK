@@ -1,3 +1,4 @@
+@tool
 class_name KeycardLock
 extends Node3D
 
@@ -15,9 +16,16 @@ signal access_granted
 
 @export_category("Transmitter Settings")
 ## Drag the child OutputTransmitter3D here.
-@export var output_transmitter: OutputTransmitter3D
+@export var output_transmitter: OutputTransmitter3D:
+	set(value):
+		output_transmitter = value
+		_update_editor_targets()
+
 ## Assign your targets here in the parent inspector.
-@export var transmitter_targets: Array[Node3D] = []
+@export var transmitter_targets: Array[Node3D] = []:
+	set(value):
+		transmitter_targets = value
+		_update_editor_targets()
 
 var _is_unlocked: bool = false
 var _reader_material: StandardMaterial3D
@@ -25,6 +33,9 @@ var _cached_requirement_text: String = ""
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		return
+		
 	print("KeycardLock: Initialized. Requires card ID: ", required_card_id)
 	
 	_cached_requirement_text = "LOCKED - requires %s card" % required_card_id
@@ -39,6 +50,11 @@ func _ready() -> void:
 			interact_component.focused.connect(_on_focused)
 		if interact_component.has_signal("unfocused"):
 			interact_component.unfocused.connect(_on_unfocused)
+
+
+func _update_editor_targets() -> void:
+	if Engine.is_editor_hint() and is_instance_valid(output_transmitter):
+		output_transmitter.targets = transmitter_targets
 
 
 func _setup_transmitter() -> void:

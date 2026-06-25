@@ -48,6 +48,11 @@ extends Area3D
 		glow_multiplier = value
 		_update_visuals()
 
+@export_group("Audio Settings")
+@export var activation_sound: AudioStream
+
+@onready var audio_player: AudioStreamPlayer3D = $AudioStreamPlayer3D
+
 var is_activated: bool = false
 
 # NEW: We need to remember what this checkpoint looked like before it was activated!
@@ -136,12 +141,20 @@ func activate_checkpoint() -> void:
 	# 2. TURN THIS ONE ON
 	is_activated = true
 	SaveSystem.last_checkpoint_pos = global_position
-	print("Checkpoint Saved at: ", SaveSystem.last_checkpoint_pos)
+	print("Checkpoint executing: Checkpoint position saved at ", SaveSystem.last_checkpoint_pos)
 
 	label_text = "Checkpoint Activated"
 	speed = -1.0
 	line_thickness = 0.8
 	base_color = Color(0.0, 0.906, 0.471, 0.102)
+
+	# 3. PLAY ACTIVATION SOUND
+	if is_instance_valid(audio_player) and activation_sound:
+		print("Checkpoint executing: Playing activation sound.")
+		audio_player.stream = activation_sound
+		audio_player.play()
+	else:
+		print("Checkpoint executing: Warning - No audio_player or activation_sound assigned.")
 
 
 # --- NEW: THE RESET FUNCTION ---

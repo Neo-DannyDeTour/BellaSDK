@@ -115,7 +115,6 @@ func _generate_stick_collisions() -> void:
 		var col := CollisionShape3D.new()
 		var box := BoxShape3D.new()
 		
-		# Dimensions optimized for standard interaction raycasts
 		box.size = Vector3(stick_radius, 0.2, 0.2)
 		col.shape = box
 		
@@ -124,9 +123,7 @@ func _generate_stick_collisions() -> void:
 		var angle: float = i * angle_step
 		var stick_dir := Vector3(cos(angle), 0.0, sin(angle))
 		
-		# Shift collision center to the middle of the stick's length
 		col.position = stick_dir * (stick_radius * 0.5)
-		# Orient outward along the Y axis for Godot's BoxShape3D format
 		col.rotation.y = -angle
 
 
@@ -134,7 +131,7 @@ func _update_transmitter_targets() -> void:
 	if is_instance_valid(transmitter):
 		transmitter.targets = transmitter_targets
 		if not Engine.is_editor_hint():
-			print("PushWheel: Synced ", transmitter_targets.size(), " targets to OutputTransmitter3D.")
+			print("PushWheel: Synced ", transmitter_targets.size(), " targets to Transmitter.")
 
 
 func push(delta_amount: float) -> void:
@@ -158,26 +155,42 @@ func push(delta_amount: float) -> void:
 	_update_visuals()
 	_check_transmitter_power()
 	
+	# NEW FIX: Direct target array fallback if a transmitter isn't being used
 	if is_instance_valid(transmitter) and transmitter.has_method("transmit_progress"):
 		transmitter.transmit_progress(progress)
+	else:
+		for target in transmitter_targets:
+			if is_instance_valid(target) and target.has_method("set_progress"):
+				target.set_progress(progress)
 
 
 func _check_transmitter_power() -> void:
-	if not is_instance_valid(transmitter):
-		return
-		
-	if progress >= 1.0 and not _was_powered_on:
-		print("PushWheel: Progress reached 100%. Triggering OutputTransmitter3D.")
-		transmitter.power_on()
-		_was_powered_on = true
-	elif progress < 1.0 and _was_powered_on:
-		print("PushWheel: Progress dropped below 100%. Turning off OutputTransmitter3D.")
-		transmitter.power_off()
-		_was_powered_on = false
+	if is_instance_valid(transmitter):
+		if progress >= 1.0 and not _was_powered_on:
+			print("PushWheel: Progress 100%. Triggering OutputTransmitter3D.")
+			transmitter.power_on()
+			_was_powered_on = true
+		elif progress < 1.0 and _was_powered_on:
+			print("PushWheel: Progress < 100%. Turning off OutputTransmitter3D.")
+			transmitter.power_off()
+			_was_powered_on = false
+	else:
+		# NEW FIX: Direct target power fallback if a transmitter isn't being used
+		if progress >= 1.0 and not _was_powered_on:
+			print("PushWheel: Progress 100%. Triggering targets directly.")
+			for target in transmitter_targets:
+				if is_instance_valid(target) and target.has_method("power_on"):
+					target.power_on()
+			_was_powered_on = true
+		elif progress < 1.0 and _was_powered_on:
+			print("PushWheel: Progress < 100%. Turning off targets directly.")
+			for target in transmitter_targets:
+				if is_instance_valid(target) and target.has_method("power_off"):
+					target.power_off()
+			_was_powered_on = false
 
 
 func _update_visuals() -> void:
-	# Print omitted to preserve 60 FPS performance during continuous execution
 	if is_instance_valid(wheel):
 		var dir_multi: float = -1.0 if turn_clockwise else 1.0
 		var total_angle: float = 360.0 * visual_rotations * dir_multi * progress
@@ -192,10 +205,10 @@ func _on_interacted(character: CharacterBody3D) -> void:
 	
 	if is_instance_valid(state_machine) and state_machine.get("state") != null:
 		if state_machine.state.name == "PushWheel":
-			print("PushWheel: Player is already attached. Ignoring duplicate interact call.")
+			print("PushWheel: Player is already attached. Ignoring duplicate call.")
 			return
 
-	print("PushWheel: Player interacted. Requesting State transition to PushWheelState.")
+	print("PushWheel: Player interacted. Requesting State transition to PushWheel.")
 	
 	var target_t: Transform3D = get_interaction_transform(character.global_position)
 	
@@ -211,7 +224,6 @@ func _check_for_installation() -> void:
 	if not is_instance_valid(player):
 		return
 
-	# Safely locate the held item through the new component architecture
 	var current_held_item: Node3D = null
 	var int_comp: Node = player.get("interaction_component")
 	var scanner: Node = null
@@ -220,22 +232,19 @@ func _check_for_installation() -> void:
 		current_held_item = int_comp.get("held_item")
 		scanner = int_comp.get("interaction_scanner")
 		
-		# Fallback to the scanner if the main component didn't catch it
 		if not is_instance_valid(current_held_item) and is_instance_valid(scanner):
 			current_held_item = scanner.get("held_object")
 
-	# Verify we actually have a PickableObject
 	if is_instance_valid(current_held_item) and current_held_item is PickableObject:
 		if install_cooldown <= 0.0:
 			var dist: float = global_position.distance_to(current_held_item.global_position)
-			if dist < 2.0: # Increased slightly to 2.0m to guarantee fluid feel
+			if dist < 2.0: 
 				_install_stick(current_held_item, int_comp, scanner)
 
 
 func _install_stick(held_item: Node3D, int_comp: Node, scanner: Node) -> void:
 	print("PushWheel: Removing stick from player hands for installation.")
 	
-	# Safely nullify component references before destroying the object
 	if is_instance_valid(int_comp) and "held_item" in int_comp:
 		int_comp.set("held_item", null)
 		
@@ -251,8 +260,10 @@ func _install_stick(held_item: Node3D, int_comp: Node, scanner: Node) -> void:
 	is_installed = true
 	is_locked = false
 
-	if is_instance_valid(broken_stubs): broken_stubs.hide()
-	if is_instance_valid(restored_handle): restored_handle.show()
+	if is_instance_valid(broken_stubs): 
+		broken_stubs.hide()
+	if is_instance_valid(restored_handle): 
+		restored_handle.show()
 
 	print("PushWheel: Stick Auto-Installed! Wheel is now functional.")
 
@@ -278,7 +289,6 @@ func _detach_stick() -> void:
 	else:
 		spawned_stick.global_position = global_position
 
-	# Re-attach the stick using the component architecture
 	var int_comp: Node = player.get("interaction_component")
 	var scanner: Node = int_comp.get("interaction_scanner") if is_instance_valid(int_comp) else null
 	
@@ -303,8 +313,10 @@ func _detach_stick() -> void:
 	is_locked = false
 	install_cooldown = 1.0
 	
-	if is_instance_valid(broken_stubs): broken_stubs.show()
-	if is_instance_valid(restored_handle): restored_handle.hide()
+	if is_instance_valid(broken_stubs): 
+		broken_stubs.show()
+	if is_instance_valid(restored_handle): 
+		restored_handle.hide()
 
 	print("PushWheel: Stick detached and returned to player hands.")
 
@@ -372,11 +384,17 @@ func _update_visual_state() -> void:
 
 	if is_broken_variant:
 		is_installed = false
-		if is_instance_valid(intact_sticks): intact_sticks.hide()
-		if is_instance_valid(broken_stubs): broken_stubs.show()
-		if is_instance_valid(restored_handle): restored_handle.hide()
+		if is_instance_valid(intact_sticks): 
+			intact_sticks.hide()
+		if is_instance_valid(broken_stubs): 
+			broken_stubs.show()
+		if is_instance_valid(restored_handle): 
+			restored_handle.hide()
 	else:
 		is_installed = true
-		if is_instance_valid(intact_sticks): intact_sticks.show()
-		if is_instance_valid(broken_stubs): broken_stubs.hide()
-		if is_instance_valid(restored_handle): restored_handle.hide()
+		if is_instance_valid(intact_sticks): 
+			intact_sticks.show()
+		if is_instance_valid(broken_stubs): 
+			broken_stubs.hide()
+		if is_instance_valid(restored_handle): 
+			restored_handle.hide()

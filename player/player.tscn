@@ -16,15 +16,21 @@
 [ext_resource type="AudioStream" uid="uid://dxncav7a6yobd" path="res://assets/sounds/MetalFS_1.wav" id="9_d3wef"]
 [ext_resource type="AudioStream" uid="uid://0v4mc2msfgb5" path="res://assets/sounds/MetalFS_2.wav" id="10_o4126"]
 [ext_resource type="AudioStream" uid="uid://uxf83pmc6tqt" path="res://assets/sounds/MetalFS_3.wav" id="11_lkdrv"]
-[ext_resource type="AudioStream" uid="uid://v1nx1mi0054m" path="res://assets/sounds/StoneFS_1.wav" id="12_p7iby"]
-[ext_resource type="AudioStream" uid="uid://cfc3fe6a652f3" path="res://assets/sounds/StoneFS_2.wav" id="13_0rnld"]
+[ext_resource type="AudioStream" uid="uid://v1nx1mi0054m" path="res://assets/sounds/FootstepStone4.wav" id="12_p7iby"]
+[ext_resource type="AudioStream" uid="uid://cfc3fe6a652f3" path="res://assets/sounds/3_FootstepStone5.wav" id="13_0rnld"]
 [ext_resource type="Script" uid="uid://64e5um7dt7pk" path="res://player/footstep_manager.gd" id="13_viqgg"]
-[ext_resource type="AudioStream" uid="uid://vlp6ss6t753l" path="res://assets/sounds/StoneFS_3.wav" id="14_srp4u"]
+[ext_resource type="AudioStream" uid="uid://vlp6ss6t753l" path="res://assets/sounds/3_FootstepStone6.wav" id="14_srp4u"]
 [ext_resource type="AudioStream" uid="uid://5hwtbp804ek" path="res://assets/sounds/WetFS_1.wav" id="15_jfpux"]
 [ext_resource type="AudioStream" uid="uid://dnki3f8vfkxp5" path="res://assets/sounds/WetFS_2.wav" id="16_61ith"]
 [ext_resource type="AudioStream" uid="uid://oh71h2dp43vr" path="res://assets/sounds/WetFS_3.wav" id="17_ebwui"]
+[ext_resource type="AudioStream" uid="uid://d1ka4eofpu2mx" path="res://assets/sounds/2_Footstep1.wav" id="17_wpyo2"]
+[ext_resource type="AudioStream" uid="uid://dtg0rlu4gvt8g" path="res://assets/sounds/2_Footstep2.wav" id="18_7crtr"]
+[ext_resource type="AudioStream" uid="uid://s8m08oixbyst" path="res://assets/sounds/2_Footstep3.wav" id="19_vgvch"]
+[ext_resource type="AudioStream" uid="uid://cu2qxcce0v0g6" path="res://assets/sounds/FootstepStone1.wav" id="20_n0b8q"]
 [ext_resource type="Script" uid="uid://dkjdvshv5ieah" path="res://vfx/smoke_wake_collider.gd" id="20_sfy4j"]
 [ext_resource type="Script" uid="uid://cbwy13aembb7w" path="res://shared/health_component.gd" id="21_gv3ic"]
+[ext_resource type="AudioStream" uid="uid://cj2n6q5onaxhj" path="res://assets/sounds/FootstepStone2.wav" id="21_jfgyi"]
+[ext_resource type="AudioStream" uid="uid://bvnw8qksa0le4" path="res://assets/sounds/FootstepStone3.wav" id="22_237xx"]
 [ext_resource type="Script" uid="uid://byrbifw8m750a" path="res://player/player_interaction_scanner.gd" id="24_p07f3"]
 [ext_resource type="Script" uid="uid://cgaeaskksqytc" path="res://player/screen_vfx_manager.gd" id="26_fgkxt"]
 [ext_resource type="Script" uid="uid://b2b2ewoakmxoj" path="res://player/vault_controller.gd" id="27_xsi7p"]
@@ -33,10 +39,13 @@
 [ext_resource type="Script" uid="uid://drduud6mr6jpb" path="res://player/player_state_machine.gd" id="30_axnmu"]
 [ext_resource type="Script" uid="uid://l8jxyaeiyhyw" path="res://player/state_ground.gd" id="31_fvsjc"]
 [ext_resource type="Script" uid="uid://cqelntv2ip8o4" path="res://player/locomotion_component.gd" id="31_gswnw"]
+[ext_resource type="AudioStream" uid="uid://v2wm3peietke" path="res://assets/sounds/WetFS_04.wav" id="32_a1u5o"]
 [ext_resource type="Script" uid="uid://b6id2mbr5hdwl" path="res://player/state_air.gd" id="32_hxdpb"]
 [ext_resource type="Script" uid="uid://c87uo5x0l5ceb" path="res://player/player_interaction_component.gd" id="32_j55il"]
+[ext_resource type="AudioStream" uid="uid://bfgchtl7dsrn7" path="res://assets/sounds/WetFS_05.wav" id="33_3dxkp"]
 [ext_resource type="Script" uid="uid://bsu54rp3pvytw" path="res://player/state_ladders.gd" id="33_agngo"]
 [ext_resource type="Script" uid="uid://b8fdogx35s7dx" path="res://player/environment_component.gd" id="33_hjies"]
+[ext_resource type="AudioStream" uid="uid://he8qlt4ijsi7" path="res://assets/sounds/WetFS_06.wav" id="34_6wior"]
 [ext_resource type="Script" uid="uid://dfvgluktimmle" path="res://player/stats_component.gd" id="34_hjies"]
 [ext_resource type="Script" uid="uid://cvpwmre7ptbmv" path="res://player/state_zipline.gd" id="34_qrixf"]
 [ext_resource type="Script" uid="uid://2wxjkijgcx2h" path="res://player/state_rope.gd" id="35_qmt83"]
@@ -320,11 +329,14 @@ shader_parameter/time_scale = 3.0
 [sub_resource type="SphereShape3D" id="SphereShape3D_mdl7e"]
 
 [sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_d3wef"]
-streams_count = 3
+streams_count = 6
 stream_0/stream = ExtResource("6_khinc")
 stream_1/stream = ExtResource("7_bruh7")
 stream_2/stream = ExtResource("8_6eyey")
 stream_2/weight = 0.4
+stream_3/stream = ExtResource("17_wpyo2")
+stream_4/stream = ExtResource("18_7crtr")
+stream_5/stream = ExtResource("19_vgvch")
 
 [sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_p7iby"]
 streams_count = 3
@@ -333,16 +345,22 @@ stream_1/stream = ExtResource("10_o4126")
 stream_2/stream = ExtResource("11_lkdrv")
 
 [sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_jfpux"]
-streams_count = 3
-stream_0/stream = ExtResource("12_p7iby")
-stream_1/stream = ExtResource("13_0rnld")
-stream_2/stream = ExtResource("14_srp4u")
+streams_count = 6
+stream_0/stream = ExtResource("20_n0b8q")
+stream_1/stream = ExtResource("21_jfgyi")
+stream_2/stream = ExtResource("22_237xx")
+stream_3/stream = ExtResource("12_p7iby")
+stream_4/stream = ExtResource("13_0rnld")
+stream_5/stream = ExtResource("14_srp4u")
 
 [sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_sfy4j"]
-streams_count = 3
+streams_count = 6
 stream_0/stream = ExtResource("15_jfpux")
 stream_1/stream = ExtResource("16_61ith")
 stream_2/stream = ExtResource("17_ebwui")
+stream_3/stream = ExtResource("32_a1u5o")
+stream_4/stream = ExtResource("33_3dxkp")
+stream_5/stream = ExtResource("34_6wior")
 
 [node name="Player" type="CharacterBody3D" unique_id=1502339238 node_paths=PackedStringArray("locomotion_component", "interaction_component", "environment_component", "stats_component", "state_machine", "camera_controller", "system_menu") groups=["player"]]
 process_mode = 3
@@ -387,7 +405,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.8, 0)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, -0.25)
 light_color = Color(1, 1, 0.8356356, 1)
 light_energy = 10.0
-light_volumetric_fog_energy = 2.0
+light_volumetric_fog_energy = 8.0
 light_projector = ExtResource("3_di6f5")
 shadow_enabled = true
 shadow_blur = 2.0

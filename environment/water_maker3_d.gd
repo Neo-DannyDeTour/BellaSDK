@@ -15,6 +15,8 @@ extends MeshInstance3D  # Or CSGMesh3D depending on what you chose in Step 1
 
 var floating_bodies: Array[RigidBody3D] = []
 var can_splash := true
+var _was_underwater: bool = false
+var _last_camera_y: float = 0.0
 
 static var last_frame_drew_underwater_effect: int = -999
 
@@ -30,21 +32,6 @@ func _ready() -> void:
 	# NEW: Wait for 1 second after the scene loads, then allow splashes
 	await get_tree().create_timer(1.0).timeout
 	can_splash = true
-
-
-# --- THE UPDATE LOOP ---
-
-#func _physics_process(_delta: float) -> void:
-## Continuously update the water height for all objects currently in the pool
-#for i in range(floating_bodies.size() - 1, -1, -1):
-#var body := floating_bodies[i]
-#
-## Safety check in case the object was destroyed/freed while in the water
-#if is_instance_valid(body):
-#if body.is_in_water:
-#body.current_water_height = get_wave_height_at_pos(body.global_position)
-#else:
-#floating_bodies.remove_at(i)
 
 
 # NEW FUNCTION: Replicates the shader math to find the exact surface height at the camera's position
@@ -100,21 +87,29 @@ func should_draw_camera_underwater_effect() -> bool:
 	return false
 
 
-func _process(_delta: float) -> void:
-	# Update shader parameters dynamically so editor sliders work
-	if self.material_override is ShaderMaterial:  # Using material_override is usually safer for MeshInstances
+func _process(delta: float) -> void:
+	if self.material_override is ShaderMaterial:
 		var mat := self.material_override as ShaderMaterial
 		mat.set_shader_parameter("albedo", water_color)
 		mat.set_shader_parameter("wave_amplitude", wave_amplitude)
 		mat.set_shader_parameter("wave_frequency", wave_frequency)
 		mat.set_shader_parameter("wave_speed", wave_speed)
 
-	# Keep your fog logic...
 	%FogVolume.material.set_shader_parameter("albedo", fog_color)
 	%FogVolume.material.set_shader_parameter("emission", fog_color)
-	%FogVolume.fade_distance = self.fog_fade_dist
+	%FogVolume.base_fade_dist = self.fog_fade_dist
 
 	if not Engine.is_editor_hint():
+		# --- NEW: Track Camera Vertical Speed ---
+		var viewport := get_viewport()
+		var camera: Camera3D = viewport.get_camera_3d() if viewport else null
+		var cam_velocity_y := 0.0
+		
+		if camera:
+			# Calculate upward speed (distance moved / time)
+			cam_velocity_y = (camera.global_position.y - _last_camera_y) / delta
+			_last_camera_y = camera.global_position.y
+
 		var is_underwater := should_draw_camera_underwater_effect()
 
 		if is_underwater:
@@ -122,20 +117,38 @@ func _process(_delta: float) -> void:
 			%FogVolume.material.set_shader_parameter("edge_fade", 0.1)
 			last_frame_drew_underwater_effect = Engine.get_process_frames()
 
-			# --- AUDIO TRICK: Pause the surface sound when underwater ---
-			if %SurfaceAudio.playing:
-				%SurfaceAudio.stream_paused = true
+			if not _was_underwater:
+				print("Water executing: Camera entered water. Switching to underwater audio.")
+				_was_underwater = true
+				
+				if %SurfaceAudio.playing:
+					%SurfaceAudio.stream_paused = true
+					
+				if not %UnderwaterAudio.playing:
+					%UnderwaterAudio.play()
+				elif %UnderwaterAudio.stream_paused:
+					%UnderwaterAudio.stream_paused = false
+
 		else:
 			%WaterRippleOverlay.visible = false
 			%FogVolume.material.set_shader_parameter("edge_fade", 1.1)
 
-			# --- AUDIO TRICK: Resume the surface sound when above water ---
-			%SurfaceAudio.stream_paused = false
-			if not %SurfaceAudio.playing:
-				%SurfaceAudio.play()
-
-
-# --- PHYSICS & BUOYANCY SIGNALS ---
+			if _was_underwater:
+				print("Water executing: Camera exited water. Switching to surface audio.")
+				_was_underwater = false
+				
+				if %UnderwaterAudio.playing:
+					%UnderwaterAudio.stream_paused = true
+					
+				if not %SurfaceAudio.playing:
+					%SurfaceAudio.play()
+				elif %SurfaceAudio.stream_paused:
+					%SurfaceAudio.stream_paused = false
+					
+				# --- NEW: Instant Surface-Break Splash ---
+				if camera and cam_velocity_y >= min_splash_velocity:
+					print("Water executing: Head broke surface fast enough, triggering exit splash.")
+					play_splash_sound(camera.global_position, cam_velocity_y)
 
 
 func _on_swimmable_area_body_entered(body: Node3D) -> void:
@@ -194,12 +207,13 @@ func play_splash_sound(impact_pos: Vector3, speed: float) -> void:
 
 
 func _on_swimmable_area_body_exited(body: Node3D) -> void:
-	# THE FIX: Only check the array if the body is actually a PickableObject
+	print("Water executing: Body exiting water tracking bounds for ", body.name)
+
 	if body is PickableObject:
 		if floating_bodies.has(body):
 			floating_bodies.erase(body)
 			body.is_in_water = false
 			body.current_water_node = null
-
+			
 	elif body.has_method("exit_water"):
 		body.exit_water(self)

@@ -1,6 +1,8 @@
 [gd_scene format=3 uid="uid://dd2fqqtwajwjn"]
 
 [ext_resource type="Shader" uid="uid://urdfn0l44h32" path="res://vfx/circle_shader.tres" id="1_v4ilp"]
+[ext_resource type="AudioStream" uid="uid://cl6k3bvusmiow" path="res://assets/sounds/Teleport.wav" id="2_w3mjf"]
+[ext_resource type="AudioStream" uid="uid://dntykqflgcrby" path="res://assets/sounds/Teleport_2.wav" id="3_o8h7c"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_iqxsw"]
 albedo_color = Color(0.5861698, 0.9925607, 0.8856659, 1)
@@ -23,6 +25,11 @@ bottom_radius = 1.5
 height = 0.1
 rings = 0
 
+[sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_8qgjy"]
+streams_count = 2
+stream_0/stream = ExtResource("2_w3mjf")
+stream_1/stream = ExtResource("3_o8h7c")
+
 [node name="TeleportDestination" type="Area3D" unique_id=621859534]
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=232123369]
@@ -39,3 +46,6 @@ text = "Teleport Destination.
 Also looks like tripmines from
  KOTOR or Republic Commando. 
 "
+
+[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="." unique_id=273693909]
+stream = SubResource("AudioStreamRandomizer_8qgjy")

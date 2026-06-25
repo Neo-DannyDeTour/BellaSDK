@@ -30,7 +30,8 @@ func _ready() -> void:
 	print("Player: _ready() called. Initializing Facade Controller.")
 	add_to_group("saveable")
 	
-	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	# Defer the mouse capture to prevent the X11/Linux "NO GRAB" error
+	call_deferred("_capture_mouse")
 	
 	# Grab the Autoload console right as the game starts
 	in_game_console = get_node_or_null("/root/Console") as CanvasLayer
@@ -40,6 +41,11 @@ func _ready() -> void:
 	interaction_component.initialize(self)
 	environment_component.initialize(self)
 	stats_component.initialize(self)
+
+
+func _capture_mouse() -> void:
+	print("Player: _capture_mouse() called. Capturing mouse cursor.")
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 # --------------------------------------
 # INPUT ROUTING

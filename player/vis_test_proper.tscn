@@ -2003,6 +2003,3 @@ persist_after_exit = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.6088676, 3.6163845, 2.8420885)
 chapter_name = "VisTEST"
 animation_style = 15
-
-[node name="LightmapGI" type="LightmapGI" parent="." unique_id=1597095081]
-quality = 2

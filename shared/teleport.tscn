@@ -2,6 +2,8 @@
 
 [ext_resource type="Script" uid="uid://cbd6lh52hb6wh" path="res://shared/teleport.gd" id="1_w4hbs"]
 [ext_resource type="Shader" uid="uid://urdfn0l44h32" path="res://vfx/circle_shader.tres" id="2_2ayim"]
+[ext_resource type="AudioStream" uid="uid://cl6k3bvusmiow" path="res://assets/sounds/Teleport.wav" id="3_ikmk0"]
+[ext_resource type="AudioStream" uid="uid://dntykqflgcrby" path="res://assets/sounds/Teleport_2.wav" id="4_psaf1"]
 
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_8vwj3"]
 radius = 1.0
@@ -24,6 +26,11 @@ height = 0.1
 radial_segments = 32
 rings = 0
 
+[sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_31vfq"]
+streams_count = 2
+stream_0/stream = ExtResource("3_ikmk0")
+stream_1/stream = ExtResource("4_psaf1")
+
 [node name="Teleport" type="Area3D" unique_id=498528318]
 collision_mask = 2
 script = ExtResource("1_w4hbs")
@@ -43,5 +50,8 @@ mesh = SubResource("CylinderMesh_jfydb")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
 billboard = 1
 text = "Simple Teleport"
+
+[node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="." unique_id=511273850]
+stream = SubResource("AudioStreamRandomizer_31vfq")
 
 [connection signal="body_entered" from="." to="." method="_on_body_entered"]

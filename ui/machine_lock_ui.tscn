@@ -1,0 +1,79 @@
+[gd_scene format=3 uid="uid://bp0uuam6ip8gd"]
+
+[ext_resource type="Script" uid="uid://p87ahcsd6l8x" path="res://ui/machine_lock_ui.gd" id="1_mxad0"]
+
+[node name="MachineLockUI" type="CanvasLayer" unique_id=1649692988 node_paths=PackedStringArray("labels", "up_buttons", "down_buttons")]
+script = ExtResource("1_mxad0")
+labels = [NodePath("CenterContainer/PanelContainer/HBoxContainer/Wheel0/DigitLabel"), NodePath("CenterContainer/PanelContainer/HBoxContainer/Wheel1/DigitLabel"), NodePath("CenterContainer/PanelContainer/HBoxContainer/Wheel2/DigitLabel")]
+up_buttons = [NodePath("CenterContainer/PanelContainer/HBoxContainer/Wheel0/UpButton"), NodePath("CenterContainer/PanelContainer/HBoxContainer/Wheel1/UpButton"), NodePath("CenterContainer/PanelContainer/HBoxContainer/Wheel2/UpButton")]
+down_buttons = [NodePath("CenterContainer/PanelContainer/HBoxContainer/Wheel0/DownButton"), NodePath("CenterContainer/PanelContainer/HBoxContainer/Wheel1/DownButton"), NodePath("CenterContainer/PanelContainer/HBoxContainer/Wheel2/DownButton")]
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=540205364]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PanelContainer" type="PanelContainer" parent="CenterContainer" unique_id=1636445557]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="CenterContainer/PanelContainer" unique_id=1327247122]
+layout_mode = 2
+
+[node name="Wheel0" type="VBoxContainer" parent="CenterContainer/PanelContainer/HBoxContainer" unique_id=58757634]
+layout_mode = 2
+
+[node name="UpButton" type="Button" parent="CenterContainer/PanelContainer/HBoxContainer/Wheel0" unique_id=1790469740]
+layout_mode = 2
+theme_override_font_sizes/font_size = 64
+text = "^"
+
+[node name="DigitLabel" type="Label" parent="CenterContainer/PanelContainer/HBoxContainer/Wheel0" unique_id=1050737811]
+layout_mode = 2
+theme_override_font_sizes/font_size = 96
+text = "0"
+horizontal_alignment = 1
+
+[node name="DownButton" type="Button" parent="CenterContainer/PanelContainer/HBoxContainer/Wheel0" unique_id=572534299]
+layout_mode = 2
+theme_override_font_sizes/font_size = 64
+text = "v"
+
+[node name="Wheel1" type="VBoxContainer" parent="CenterContainer/PanelContainer/HBoxContainer" unique_id=154058157]
+layout_mode = 2
+
+[node name="UpButton" type="Button" parent="CenterContainer/PanelContainer/HBoxContainer/Wheel1" unique_id=447215560]
+layout_mode = 2
+theme_override_font_sizes/font_size = 64
+text = "^"
+
+[node name="DigitLabel" type="Label" parent="CenterContainer/PanelContainer/HBoxContainer/Wheel1" unique_id=1857441049]
+layout_mode = 2
+theme_override_font_sizes/font_size = 96
+text = "0"
+horizontal_alignment = 1
+
+[node name="DownButton" type="Button" parent="CenterContainer/PanelContainer/HBoxContainer/Wheel1" unique_id=130756414]
+layout_mode = 2
+theme_override_font_sizes/font_size = 64
+text = "v"
+
+[node name="Wheel2" type="VBoxContainer" parent="CenterContainer/PanelContainer/HBoxContainer" unique_id=1116231438]
+layout_mode = 2
+
+[node name="UpButton" type="Button" parent="CenterContainer/PanelContainer/HBoxContainer/Wheel2" unique_id=1119858795]
+layout_mode = 2
+theme_override_font_sizes/font_size = 64
+text = "^"
+
+[node name="DigitLabel" type="Label" parent="CenterContainer/PanelContainer/HBoxContainer/Wheel2" unique_id=2028739098]
+layout_mode = 2
+theme_override_font_sizes/font_size = 96
+text = "0"
+horizontal_alignment = 1
+
+[node name="DownButton" type="Button" parent="CenterContainer/PanelContainer/HBoxContainer/Wheel2" unique_id=658043849]
+layout_mode = 2
+theme_override_font_sizes/font_size = 64
+text = "v"

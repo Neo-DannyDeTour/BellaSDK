@@ -3,9 +3,10 @@
 [ext_resource type="Shader" uid="uid://cwqt2rruv7eum" path="res://environment/water_maker3_d.gdshader" id="1_70utq"]
 [ext_resource type="Shader" uid="uid://2pyqpr2qew6o" path="res://environment/fog_fade.gdshader" id="2_5f01f"]
 [ext_resource type="Script" uid="uid://dtm30dwmcgd8n" path="res://environment/water_maker3_d.gd" id="2_ejx8y"]
-[ext_resource type="Script" uid="uid://grkqw00wxiwn" path="res://environment/fog_volume_fade_script.gd" id="3_b5ytn"]
+[ext_resource type="Script" uid="uid://grkqw00wxiwn" path="res://environment/UnderwaterFogVolume.gd" id="3_b5ytn"]
 [ext_resource type="Shader" uid="uid://e5j85108j8s0" path="res://environment/deprecated_camera_water_overlay2.gdshader" id="4_70utq"]
 [ext_resource type="AudioStream" uid="uid://c3gfubvks8j8o" path="res://assets/sounds/WaterSplash.mp3" id="6_266v4"]
+[ext_resource type="AudioStream" uid="uid://dtv3gp57rb7kd" path="res://assets/sounds/Underwater.wav" id="7_d7iy8"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_70utq"]
 noise_type = 2
@@ -131,3 +132,8 @@ texture = SubResource("PlaceholderTexture2D_dcd7l")
 unique_name_in_owner = true
 autoplay = true
 max_distance = 10.0
+
+[node name="UnderwaterAudio" type="AudioStreamPlayer3D" parent="." unique_id=88705801]
+unique_name_in_owner = true
+stream = ExtResource("7_d7iy8")
+pitch_scale = 0.5

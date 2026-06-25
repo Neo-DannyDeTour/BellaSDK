@@ -82,5 +82,5 @@ func transmit_progress(value: float) -> void:
 	# Intentionally omitting a print() statement here to preserve 60 FPS, 
 	# as this is called every frame during player interaction.
 	for target: Node3D in targets:
-		if is_instance_valid(target) and target.has_method("update_progress"):
-			target.update_progress(value)
+		if is_instance_valid(target) and target.has_method("set_progress"):
+			target.set_progress(value)

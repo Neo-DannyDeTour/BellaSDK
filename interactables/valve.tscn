@@ -4,8 +4,8 @@
 [ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="2_bxo18"]
 [ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="2_tqme0"]
 [ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="3_bxo18"]
-[ext_resource type="PackedScene" uid="uid://djch67ud4o5fw" path="res://assets/props/valve_wheel/valve_wheel.fbx" id="5_iygui"]
-[ext_resource type="PackedScene" uid="uid://c5xcq2xug3ti" path="res://assets/props/valve_wheel/valve_base.fbx" id="6_mhmik"]
+[ext_resource type="PackedScene" uid="uid://djch67ud4o5fw" path="res://assets/props/valve/valve_wheel.fbx" id="5_iygui"]
+[ext_resource type="PackedScene" uid="uid://c5xcq2xug3ti" path="res://assets/props/valve/valve_base.fbx" id="6_mhmik"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_sid1s"]
 render_priority = 0

@@ -1,9 +1,11 @@
 [gd_scene format=3 uid="uid://ce2qkw8w155wt"]
 
+[ext_resource type="Script" uid="uid://bqmbjelgd1xtt" path="res://player/fast_rope.gd" id="1_7majv"]
 [ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="1_u1eb6"]
 [ext_resource type="Texture2D" uid="uid://civnfn7yss1n" path="res://assets/images/dev_textures/dev_texture_green_1024.png" id="1_vesjl"]
 [ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="2_880wj"]
 [ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="3_880wj"]
+[ext_resource type="AudioStream" uid="uid://dpd175i6vd8mw" path="res://assets/sounds/FastRope.wav" id="6_a0ufi"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_880wj"]
 albedo_texture = ExtResource("1_vesjl")
@@ -27,6 +29,8 @@ shader_parameter/min_intensity = 0.01
 shader_parameter/max_intensity = 0.050000002375
 
 [node name="FastRope" type="StaticBody3D" unique_id=159492631]
+script = ExtResource("1_7majv")
+slide_sound = ExtResource("6_a0ufi")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1911394542]
 mesh = SubResource("BoxMesh_acy5l")
@@ -49,3 +53,8 @@ metadata/_custom_type_script = "uid://dgig0tamvkdxx"
 billboard = 1
 double_sided = false
 no_depth_test = true
+
+[node name="OneShotAudio" type="AudioStreamPlayer3D" parent="." unique_id=545668300]
+
+[node name="LoopAudio" type="AudioStreamPlayer3D" parent="." unique_id=1033470975]
+stream = ExtResource("6_a0ufi")

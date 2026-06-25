@@ -17,6 +17,14 @@ extends StaticBody3D
 @export var label_offset_amount: float = 0.35
 @export var climb_radius: float = 0.6
 
+@export_category("Audio Settings")
+@export var attach_sound: AudioStream
+@export var slide_sound: AudioStream
+@export var detach_sound: AudioStream
+
+@onready var one_shot_audio: AudioStreamPlayer3D = $OneShotAudio
+@onready var loop_audio: AudioStreamPlayer3D = $LoopAudio
+
 # Keep track of all ropes globally using a Godot 4 static variable
 static var all_fast_ropes: Array[FastRope] = []
 
@@ -124,6 +132,10 @@ func _physics_process(delta: float) -> void:
 	if attached_player:
 		attach_timer += delta
 
+		# Keep the sliding sound locked exactly to the player's position
+		if is_instance_valid(loop_audio) and loop_audio.playing:
+			loop_audio.global_position = attached_player.global_position
+
 		if attach_timer > 0.15 and Input.is_action_just_pressed("interact"):
 			detach(false)
 			return
@@ -195,13 +207,27 @@ func attach(player: CharacterBody3D) -> void:
 
 	if attached_player.has_method("enter_fast_rope"):
 		attached_player.enter_fast_rope()
+	
+	if attached_player.has_method("enter_fast_rope"):
+		attached_player.enter_fast_rope()
+		
+	print("FastRope executing: Player attached, triggering attach and slide audio.")
+	
+	if is_instance_valid(one_shot_audio) and attach_sound:
+		one_shot_audio.stream = attach_sound
+		one_shot_audio.global_position = attached_player.global_position
+		one_shot_audio.play()
 
+	if is_instance_valid(loop_audio) and slide_sound:
+		loop_audio.stream = slide_sound
+		loop_audio.global_position = attached_player.global_position
+		loop_audio.play()
 
 func detach(reached_top: bool) -> void:
 	if not attached_player:
 		return
 
-	interaction_cooldown = 0.5 
+	interaction_cooldown = 0.5
 
 	# Re-enable the StairController instantly
 	var stair_ctrl: Node = attached_player.find_child("StairController", true, false)
@@ -220,5 +246,17 @@ func detach(reached_top: bool) -> void:
 		attached_player.velocity.y = launch_velocity
 	else:
 		attached_player.velocity.y = 0.0
+
+	print("FastRope executing: Player detached, stopping loop and triggering detach audio.")
+
+	if is_instance_valid(loop_audio):
+		loop_audio.stop()
+
+	if is_instance_valid(one_shot_audio) and detach_sound:
+		# Cache the position before nullifying the attached_player reference
+		var cached_pos: Vector3 = attached_player.global_position
+		one_shot_audio.stream = detach_sound
+		one_shot_audio.global_position = cached_pos
+		one_shot_audio.play()
 
 	attached_player = null

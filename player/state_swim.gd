@@ -190,6 +190,14 @@ func _handle_camera_and_vfx(delta: float, input_dir: Vector2) -> void:
 		elif was_head_in_water and not head_in_water:
 			if vfx.has_method("trigger_surface_wipe"):
 				vfx.trigger_surface_wipe()
+				
+			# --- NEW: Trigger splash sound exactly when head breaks surface ---
+			var water_node: Node = player.environment_component.current_water_node
+			if is_instance_valid(water_node) and water_node.has_method("play_splash_sound"):
+				print("StateSwim _handle_camera_and_vfx: Head broke surface. Triggering splash.")
+				# We use maxf with 10.0 to ensure a solid baseline volume multiplier
+				var exit_speed: float = maxf(absf(player.velocity.y), 10.0)
+				water_node.play_splash_sound(player.global_position, exit_speed)
 
 
 func _update_flashlight_underwater(is_submerged: bool, delta: float) -> void:

@@ -1,9 +1,38 @@
 extends Area3D
 
+@export_category("Portal References")
 @export var connect_portal: Area3D
+
+# Highly recommended: Change this node to an AudioStreamPlayer (non-3D) in your scene
+# if you want the sound to be heard clearly regardless of player position.
+@onready var portal_sound: AudioStreamPlayer = $AudioStreamPlayer
+
+
+func _ready() -> void:
+	if not body_entered.is_connected(_on_body_entered):
+		body_entered.connect(_on_body_entered)
 
 
 func _on_body_entered(body: Node3D) -> void:
-	if body.name == "Player":
-		var destination := connect_portal.global_transform.origin
+	if body.name != "Player":
+		return
+
+	print("Portal triggered: Player detected, starting teleport sequence.")
+
+	if is_instance_valid(connect_portal):
+		var destination: Vector3 = connect_portal.global_transform.origin
 		body.global_transform.origin = destination
+		print("Portal executing: Player transformed to destination.")
+		
+		_play_portal_sounds()
+	else:
+		print("Portal executing: Warning - No connect_portal assigned.")
+
+
+func _play_portal_sounds() -> void:
+	if not is_instance_valid(portal_sound):
+		print("Portal executing: Warning - No portal_sound node found.")
+		return
+
+	print("Portal executing: Playing random portal stream.")
+	portal_sound.play()

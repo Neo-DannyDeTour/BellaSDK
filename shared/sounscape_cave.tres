@@ -2,9 +2,9 @@
 
 [ext_resource type="AudioStream" uid="uid://76hyigva6yr2" path="res://assets/sounds/SoundscapeCave.wav" id="1_31sob"]
 [ext_resource type="Script" uid="uid://cl68g6jurgp0h" path="res://shared/soundscape_data.gd" id="1_al5vj"]
-[ext_resource type="AudioStream" uid="uid://v1nx1mi0054m" path="res://assets/sounds/StoneFS_1.wav" id="2_55tws"]
-[ext_resource type="AudioStream" uid="uid://cfc3fe6a652f3" path="res://assets/sounds/StoneFS_2.wav" id="3_sjtmu"]
-[ext_resource type="AudioStream" uid="uid://vlp6ss6t753l" path="res://assets/sounds/StoneFS_3.wav" id="4_aeefp"]
+[ext_resource type="AudioStream" uid="uid://v1nx1mi0054m" path="res://assets/sounds/FootstepStone4.wav" id="2_55tws"]
+[ext_resource type="AudioStream" uid="uid://cfc3fe6a652f3" path="res://assets/sounds/3_FootstepStone5.wav" id="3_sjtmu"]
+[ext_resource type="AudioStream" uid="uid://vlp6ss6t753l" path="res://assets/sounds/3_FootstepStone6.wav" id="4_aeefp"]
 [ext_resource type="AudioStream" uid="uid://bv5p4qug3kjny" path="res://assets/sounds/WaterLeak_3.wav" id="5_aeefp"]
 
 [resource]
