@@ -1,0 +1,73 @@
+./player/procedural_spiral_stairs_csg.gd: Linting failed
+./player/state_rope.gd: Untyped variables or functions found
+./player/player.gd: Linting failed
+./player/physics_pusher.gd: Untyped variables or functions found
+./player/fast_rope.gd: Linting failed
+./player/state_ground.gd: Linting failed
+./player/zipline.gd: Linting failed
+./player/camera_controller.gd: Linting failed
+./player/vault_controller.gd: Linting failed
+./player/locomotion_component.gd: Linting failed
+./player/system_menu_controller.gd: Linting failed
+./player/procedural_stairs_csg.gd: Linting failed
+./player/state_zipline.gd: Linting failed
+./player/footstep_manager.gd: Linting failed
+./player/stair_controller.gd: Linting failed
+./core/dev_metrics.gd: Linting failed
+./core/frame_graph.gd: Untyped variables or functions found
+./core/save_slot.gd: Linting failed
+./core/fuzzer.gd: Linting failed
+./environment/highlight_component.gd: Untyped variables or functions found
+./environment/wave_generator.gd: Linting failed
+./environment/ocean.gd: Linting failed
+./environment/rain_particles.gd: Linting failed
+./environment/wave_cascade_parameters.gd: Linting failed
+./environment/water_maker3_d.gd: Linting failed
+./shared/trigger_look.gd: Untyped variables or functions found
+./shared/render_context.gd: Linting failed
+./shared/procedural_monkey_bars.gd: Linting failed
+./shared/UIkeypad.gd: Linting failed
+./shared/ground_button.gd: Linting failed
+./shared/cloth.gd: Untyped variables or functions found
+./shared/fade_trigger.gd: Untyped variables or functions found
+./shared/procedural_fence_csg.gd: Linting failed
+./shared/pulley_controller.gd: Linting failed
+./shared/updraft_volume.gd: Untyped variables or functions found
+./shared/soundscape_zone.gd: Linting failed
+./shared/box_clouds.gd: Linting failed
+./shared/drawbridge.gd: Untyped variables or functions found
+./shared/events.gd: Linting failed
+./shared/editor_trigger_visualizer.gd: Linting failed
+./interactables/cable_point_3d.gd: Linting failed
+./interactables/cable_builder.gd: Linting failed
+./interactables/push_wheel.gd: Untyped variables or functions found
+./interactables/glider_item.gd: Linting failed
+./interactables/spike_trap.gd: Linting failed
+./interactables/static_cable.gd: Linting failed
+./interactables/pickable_object.gd: Linting failed
+./interactables/door_keypad.gd: Linting failed
+./interactables/door_interact.gd: Linting failed
+./interactables/universal_cable_3d.gd: Linting failed
+./interactables/interact_component.gd: Linting failed
+./interactables/player_drone.gd: Linting failed
+./interactables/dev_comment/auto_scroll_container.gd: Linting failed
+./interactables/dev_comment/developer_commentary.gd: Linting failed
+./interactables/checkpoint.gd: Linting failed
+./interactables/combination_lock.gd: Linting failed
+./interactables/valve.gd: Linting failed
+./interactables/physics_cable3_d.gd: Linting failed
+./interactables/destructible_glass/destructible_glass.gd: Linting failed
+./texture_baker.gd: Linting failed
+./ui/menu_chapter_screen.gd: Linting failed
+./ui/ui.gd: Linting failed
+./ui/in_game_console.gd: Linting failed
+./ui/horror_button.gd: Untyped variables or functions found
+./ui/CCTV.gd: Linting failed
+./ui/machine_lock_ui.gd: Linting failed
+./ui/danny_cast_screen.gd: Linting failed
+./ui/chapter_title_container.gd: Linting failed
+./vfx/smoke_manager.gd: Linting failed
+./vfx/phys_explosion_3d.gd: Linting failed
+./vfx/particle.gd: Untyped variables or functions found
+./physics_magnet.gd: Untyped variables or functions found
+./vfx_volume.gd: Linting failed
