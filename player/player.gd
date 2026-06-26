@@ -245,10 +245,32 @@ func load_save_data(data: Dictionary) -> void:
 
 	stats_component.load_save_data(data)
 
+
 func enter_rain_volume() -> void:
 	print("Player: enter_rain_volume() called.")
 	environment_component.enter_rain_volume()
 
+
 func exit_rain_volume() -> void:
 	print("Player: exit_rain_volume() called.")
 	environment_component.exit_rain_volume()
+
+
+func enter_path_slide(stick: Node3D) -> void:
+	print("Player: enter_path_slide() called.")
+	
+	if is_instance_valid(locomotion_component):
+		locomotion_component.reset_momentum()
+		
+	state_machine.transition_to("PathSlide", {"stick": stick})
+
+func exit_path_slide() -> void:
+	print("Player: exit_path_slide() called.")
+	state_machine.transition_to("Air")
+
+func launch_from_path(throw_vel: Vector3) -> void:
+	print("Player: launch_from_path() called with velocity: ", throw_vel)
+	velocity = throw_vel
+	
+	# We pass release_dir to integrate perfectly with your StateAir momentum logic
+	state_machine.transition_to("Air", {"release_dir": throw_vel})

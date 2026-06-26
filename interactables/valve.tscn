@@ -6,6 +6,7 @@
 [ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="3_bxo18"]
 [ext_resource type="PackedScene" uid="uid://djch67ud4o5fw" path="res://assets/props/valve/valve_wheel.fbx" id="5_iygui"]
 [ext_resource type="PackedScene" uid="uid://c5xcq2xug3ti" path="res://assets/props/valve/valve_base.fbx" id="6_mhmik"]
+[ext_resource type="AudioStream" uid="uid://bglhejcpnyquo" path="res://assets/sounds/Valve_Move.wav" id="7_0ogc3"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_sid1s"]
 render_priority = 0
@@ -46,3 +47,6 @@ transform = Transform3D(1.7, 0, 0, 0, 1.7, 0, 0, 0, 1.7, 0, 0, 0)
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1748411192]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.042541504, 0)
 shape = SubResource("BoxShape3D_epeg1")
+
+[node name="ValveAudio" type="AudioStreamPlayer3D" parent="." unique_id=783260385]
+stream = ExtResource("7_0ogc3")

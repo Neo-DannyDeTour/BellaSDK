@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="2_wk8ac"]
 [ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="3_tae6v"]
 [ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="4_f1hol"]
+[ext_resource type="AudioStream" uid="uid://kqb187s7hql2" path="res://assets/sounds/Keypad.wav" id="6_jyx7n"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_jyx7n"]
 render_priority = 0
@@ -53,5 +54,8 @@ shape = SubResource("BoxShape3D_koi6h")
 [node name="SubViewport" type="SubViewport" parent="." unique_id=1935440404]
 
 [node name="Keypad" parent="SubViewport" unique_id=1879186767 instance=ExtResource("1_koi6h")]
+
+[node name="KeypadAudio" type="AudioStreamPlayer3D" parent="." unique_id=1237021702]
+stream = ExtResource("6_jyx7n")
 
 [connection signal="code_entered" from="SubViewport/Keypad" to="." method="_on_keypad_code_entered"]

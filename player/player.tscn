@@ -18,6 +18,7 @@
 [ext_resource type="AudioStream" uid="uid://uxf83pmc6tqt" path="res://assets/sounds/MetalFS_3.wav" id="11_lkdrv"]
 [ext_resource type="AudioStream" uid="uid://v1nx1mi0054m" path="res://assets/sounds/FootstepStone4.wav" id="12_p7iby"]
 [ext_resource type="AudioStream" uid="uid://cfc3fe6a652f3" path="res://assets/sounds/3_FootstepStone5.wav" id="13_0rnld"]
+[ext_resource type="AudioStream" uid="uid://bn0p48j34q140" path="res://assets/sounds/Interact_None.wav" id="13_or4qq"]
 [ext_resource type="Script" uid="uid://64e5um7dt7pk" path="res://player/footstep_manager.gd" id="13_viqgg"]
 [ext_resource type="AudioStream" uid="uid://vlp6ss6t753l" path="res://assets/sounds/3_FootstepStone6.wav" id="14_srp4u"]
 [ext_resource type="AudioStream" uid="uid://5hwtbp804ek" path="res://assets/sounds/WetFS_1.wav" id="15_jfpux"]
@@ -48,16 +49,24 @@
 [ext_resource type="AudioStream" uid="uid://he8qlt4ijsi7" path="res://assets/sounds/WetFS_06.wav" id="34_6wior"]
 [ext_resource type="Script" uid="uid://dfvgluktimmle" path="res://player/stats_component.gd" id="34_hjies"]
 [ext_resource type="Script" uid="uid://cvpwmre7ptbmv" path="res://player/state_zipline.gd" id="34_qrixf"]
+[ext_resource type="AudioStream" uid="uid://cjrvsfakqhx1u" path="res://assets/sounds/10_LadderMetal1.wav" id="35_pjwc4"]
 [ext_resource type="Script" uid="uid://2wxjkijgcx2h" path="res://player/state_rope.gd" id="35_qmt83"]
 [ext_resource type="Script" uid="uid://doxrsfqucen26" path="res://player/state_swim.gd" id="36_m4as6"]
+[ext_resource type="AudioStream" uid="uid://n3ruw6t8x8yo" path="res://assets/sounds/10_LadderMetal2.wav" id="36_or4qq"]
 [ext_resource type="Script" uid="uid://y0srs23sa364" path="res://player/state_monkey_bars.gd" id="37_b1r6t"]
+[ext_resource type="AudioStream" uid="uid://dpyhloit5darh" path="res://assets/sounds/10_LadderMetal3.wav" id="37_hggc2"]
+[ext_resource type="AudioStream" uid="uid://nhc6txg2ug38" path="res://assets/sounds/10_LadderMetal4.wav" id="38_b2j0d"]
 [ext_resource type="Script" uid="uid://i3kw0oxxm0jm" path="res://player/state_fast_rope.gd" id="38_c0asu"]
+[ext_resource type="AudioStream" uid="uid://cy8jgooeaqi7" path="res://assets/sounds/10_LadderMetal5.wav" id="39_7l6ig"]
 [ext_resource type="Script" uid="uid://cmnw5toa1h643" path="res://player/state_vault.gd" id="39_fq1a3"]
 [ext_resource type="Script" uid="uid://dvouurrwuii16" path="res://player/stair_controller.gd" id="40_gu4mg"]
+[ext_resource type="AudioStream" uid="uid://wrogadbbmxln" path="res://assets/sounds/10_LadderMetal6.wav" id="40_j3r50"]
 [ext_resource type="Script" uid="uid://fu6m53wtps66" path="res://player/state_slide.gd" id="42_art4l"]
+[ext_resource type="AudioStream" uid="uid://ijv08d8vlo5c" path="res://assets/sounds/MonkeyBar.wav" id="42_hggc2"]
 [ext_resource type="Script" uid="uid://eabartkybdls" path="res://player/state_glide.gd" id="43_fjxoa"]
 [ext_resource type="Script" uid="uid://7lmc8o36ewqw" path="res://player/StateMachineLock.gd" id="48_mmwog"]
 [ext_resource type="Script" uid="uid://be6128jq53jja" path="res://player/push_wheel.gd" id="49_8pxes"]
+[ext_resource type="Script" uid="uid://b71yx1y4kvv2e" path="res://player/state_path_slide.gd" id="59_3dxkp"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_cw2d6"]
 radius = 0.1
@@ -362,6 +371,15 @@ stream_3/stream = ExtResource("32_a1u5o")
 stream_4/stream = ExtResource("33_3dxkp")
 stream_5/stream = ExtResource("34_6wior")
 
+[sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_utr5e"]
+streams_count = 6
+stream_0/stream = ExtResource("35_pjwc4")
+stream_1/stream = ExtResource("36_or4qq")
+stream_2/stream = ExtResource("37_hggc2")
+stream_3/stream = ExtResource("38_b2j0d")
+stream_4/stream = ExtResource("39_7l6ig")
+stream_5/stream = ExtResource("40_j3r50")
+
 [node name="Player" type="CharacterBody3D" unique_id=1502339238 node_paths=PackedStringArray("locomotion_component", "interaction_component", "environment_component", "stats_component", "state_machine", "camera_controller", "system_menu") groups=["player"]]
 process_mode = 3
 collision_layer = 2
@@ -513,21 +531,27 @@ shape = SubResource("SphereShape3D_mdl7e")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 script = ExtResource("20_sfy4j")
 
-[node name="InteractionScanner" type="Node" parent="." unique_id=807129051 node_paths=PackedStringArray("player_body", "camera", "interact_shapecast", "hold_position", "weapon_holder")]
+[node name="InteractionScanner" type="Node" parent="." unique_id=807129051 node_paths=PackedStringArray("player_body", "camera", "interact_shapecast", "hold_position", "weapon_holder", "empty_interact_audio")]
 script = ExtResource("24_p07f3")
 player_body = NodePath("..")
 camera = NodePath("../Head/Eyes/Camera3D")
 interact_shapecast = NodePath("../Head/Eyes/Camera3D/InteractionShapeCast")
 hold_position = NodePath("../Head/Eyes/Camera3D/SpringArm3D/HoldPosition")
 weapon_holder = NodePath("../Head/Eyes/Camera3D/WeaponHolder")
+empty_interact_audio = NodePath("EmptyInteractAudio")
 
-[node name="FootstepManager" type="Node3D" parent="." unique_id=8024466 node_paths=PackedStringArray("player_body", "audio_default", "audio_metal", "audio_stone", "audio_wet_dirt")]
+[node name="EmptyInteractAudio" type="AudioStreamPlayer" parent="InteractionScanner" unique_id=1912212616]
+stream = ExtResource("13_or4qq")
+
+[node name="FootstepManager" type="Node3D" parent="." unique_id=8024466 node_paths=PackedStringArray("player_body", "audio_default", "audio_metal", "audio_stone", "audio_wet_dirt", "audio_ladder", "audio_monkey_bar")]
 script = ExtResource("13_viqgg")
 player_body = NodePath("..")
 audio_default = NodePath("DefaultAudio")
 audio_metal = NodePath("MetalAudio")
 audio_stone = NodePath("StoneAudio")
 audio_wet_dirt = NodePath("WetDirtAudio")
+audio_ladder = NodePath("LadderAudio")
+audio_monkey_bar = NodePath("MonkeBarAudio")
 
 [node name="DefaultAudio" type="AudioStreamPlayer" parent="FootstepManager" unique_id=1100202989]
 stream = SubResource("AudioStreamRandomizer_d3wef")
@@ -543,6 +567,13 @@ volume_db = -20.0
 
 [node name="WetDirtAudio" type="AudioStreamPlayer" parent="FootstepManager" unique_id=875564003]
 stream = SubResource("AudioStreamRandomizer_sfy4j")
+
+[node name="LadderAudio" type="AudioStreamPlayer" parent="FootstepManager" unique_id=538789310]
+stream = SubResource("AudioStreamRandomizer_utr5e")
+
+[node name="MonkeBarAudio" type="AudioStreamPlayer" parent="FootstepManager" unique_id=325559454]
+stream = ExtResource("42_hggc2")
+pitch_scale = 2.0
 
 [node name="ScreenVFXManager" type="Node" parent="." unique_id=1920257755 node_paths=PackedStringArray("screen_water_ui", "rain_drops_overlay", "waterfall_overlay")]
 script = ExtResource("26_fgkxt")
@@ -651,6 +682,9 @@ script = ExtResource("48_mmwog")
 
 [node name="PushWheel" type="Node" parent="StateMachine" unique_id=2018159737]
 script = ExtResource("49_8pxes")
+
+[node name="PathSlide" type="Node" parent="StateMachine" unique_id=1793153979]
+script = ExtResource("59_3dxkp")
 
 [connection signal="area_entered" from="WaterDetector" to="." method="_on_water_detector_area_entered"]
 [connection signal="area_exited" from="WaterDetector" to="." method="_on_water_detector_area_exited"]

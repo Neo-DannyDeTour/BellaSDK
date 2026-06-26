@@ -18,7 +18,6 @@ var is_heavy_lifting: bool = false
 var heavy_lift_yaw_base: float = 0.0
 var is_in_terminal_mode: bool = false
 
-
 func initialize(p_player: Player) -> void:
 	print("InteractionComponent: initialize() called. Caching player reference.")
 	player = p_player

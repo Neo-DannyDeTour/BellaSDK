@@ -55,6 +55,8 @@ const DOUBLE_TAP_DELAY: float = 0.3  # Seconds allowed between taps
 
 @export var outline_material: ShaderMaterial
 
+@onready var valve_audio: AudioStreamPlayer3D = get_node_or_null("ValveAudio")
+
 var progress: float = 0.0
 var is_focused: bool = false
 var current_target_progress: float = 1.0
@@ -117,20 +119,18 @@ func _process(delta: float) -> void:
 	if install_cooldown > 0.0:
 		install_cooldown -= delta
 
-	# 1. REMOVE THE 'return' HERE!
 	if not is_installed:
-		var player := get_tree().get_first_node_in_group("player")
+		var player: Node3D = get_tree().get_first_node_in_group("player")
 		if player and player.held_object is PickableValve and install_cooldown <= 0.0:
-			var dist := global_position.distance_to(player.held_object.global_position)
+			var dist: float = global_position.distance_to(player.held_object.global_position)
 			if dist < 0.3:
 				_install_valve(player)
 
-	# 2. ADD 'and is_installed' TO THESE CHECKS!
-	var is_interacting := is_focused and Input.is_action_pressed("interact") and is_installed
-	var just_pressed := is_focused and Input.is_action_just_pressed("interact") and is_installed
+	var is_interacting: bool = is_focused and Input.is_action_pressed("interact") and is_installed
+	var just_pressed: bool = is_focused and Input.is_action_just_pressed("interact") and is_installed
 
 	if can_be_detached and just_pressed:
-		var current_time := Time.get_ticks_msec() / 1000.0
+		var current_time: float = Time.get_ticks_msec() / 1000.0
 		if current_time - last_interact_time <= DOUBLE_TAP_DELAY:
 			_detach_valve()
 			last_interact_time = 0.0
@@ -139,6 +139,7 @@ func _process(delta: float) -> void:
 			last_interact_time = current_time
 
 	if is_locked:
+		_manage_audio(false)
 		return
 
 	if highlight_comp:
@@ -148,6 +149,9 @@ func _process(delta: float) -> void:
 		if is_back_and_forth and progress > 0.0 and progress < 1.0:
 			current_target_progress = 0.0 if current_target_progress == 1.0 else 1.0
 
+	# --- NEW: TRACK OLD PROGRESS FOR AUDIO ---
+	var old_progress: float = progress
+
 	# Standard Movement Logic
 	if is_interacting:
 		progress = move_toward(progress, current_target_progress, delta / turn_duration)
@@ -156,13 +160,13 @@ func _process(delta: float) -> void:
 			progress = 1.0
 	else:
 		if reverts_on_release:
-			var revert_target := 0.0 if current_target_progress == 1.0 else 1.0
+			var revert_target: float = 0.0 if current_target_progress == 1.0 else 1.0
 			var current_turn_duration: float = turn_duration
 			
 			if fast_revert_on_release:
 				current_turn_duration = turn_duration / fast_revert_multiplier
 				if was_interacting:
-					print("Valve released: Initiating fast revert towards ", revert_target)
+					print("Valve: Released, initiating fast revert towards ", revert_target)
 			
 			progress = move_toward(progress, revert_target, delta / current_turn_duration)
 
@@ -174,15 +178,31 @@ func _process(delta: float) -> void:
 
 	# Safely rotate the wheel (even if it's invisible, the math stays accurate)
 	if wheel:
-		var dir_multiplier := -1.0 if turn_clockwise else 1.0
-		var total_angle := 360.0 * visual_rotations * dir_multiplier * progress
+		var dir_multiplier: float = -1.0 if turn_clockwise else 1.0
+		var total_angle: float = 360.0 * visual_rotations * dir_multiplier * progress
 		wheel.rotation_degrees = initial_rotation + (spin_axis * total_angle)
 
-	for target in targets:
+	for target: Node3D in targets:
 		if target and target.has_method("set_progress"):
 			target.set_progress(progress)
 
+	# --- NEW: CHECK MOVEMENT AND PLAY/STOP AUDIO ---
+	var is_moving: bool = not is_equal_approx(progress, old_progress)
+	_manage_audio(is_moving)
+
 	was_interacting = is_interacting
+
+
+func _manage_audio(is_moving: bool) -> void:
+	if not valve_audio:
+		return
+		
+	if is_moving and not valve_audio.playing:
+		print("Valve: Started playing turning audio.")
+		valve_audio.play()
+	elif not is_moving and valve_audio.playing:
+		print("Valve: Stopped turning audio.")
+		valve_audio.stop()
 
 
 # --- INSTALL AND DETACH FUNCTIONS ---

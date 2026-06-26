@@ -1,0 +1,59 @@
+[gd_scene format=3 uid="uid://chhlrf4a5wlja"]
+
+[ext_resource type="Script" uid="uid://62f407x1o76k" path="res://shared/path_stick.gd" id="1_qg3if"]
+[ext_resource type="Script" uid="uid://xvvamwwb0k7y" path="res://interactables/slide_track.gd" id="1_ugdqt"]
+[ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="2_ugdqt"]
+[ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="4_ua8gp"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="5_rifuv"]
+
+[sub_resource type="Curve3D" id="Curve3D_wb3wn"]
+_data = {
+"points": PackedVector3Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 30, 4, 0, 0, 0, 0, 0, 0, 0, 44.431007, 12.067547, -5.3904114, 0, 0, 0, 0, 0, 0, 14.033075, 13.458485, -7.121933),
+"tilts": PackedFloat32Array(0, 0, 0, 0)
+}
+point_count = 4
+
+[sub_resource type="BoxMesh" id="BoxMesh_amd4b"]
+size = Vector3(2, 0.1, 0.1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_spvsq"]
+size = Vector3(2, 0.1, 0.1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_bwnwt"]
+render_priority = 0
+shader = ExtResource("5_rifuv")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.05
+
+[node name="SlideTrack" type="Path3D" unique_id=1413042693]
+curve = SubResource("Curve3D_wb3wn")
+script = ExtResource("1_ugdqt")
+
+[node name="PathStick" type="PathFollow3D" parent="." unique_id=1929664360]
+transform = Transform3D(0, -0.13216373, -0.9912279, 0, 0.9912279, -0.13216373, 1, 0, 0, 0, 0, 0)
+rotation_mode = 4
+loop = false
+script = ExtResource("1_qg3if")
+
+[node name="Handle" type="AnimatableBody3D" parent="PathStick" unique_id=1607330997]
+collision_layer = 5
+collision_mask = 2
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="PathStick/Handle" unique_id=892112298]
+mesh = SubResource("BoxMesh_amd4b")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PathStick/Handle" unique_id=882893478]
+shape = SubResource("BoxShape3D_spvsq")
+
+[node name="Interact_Component" type="Node" parent="PathStick/Handle" unique_id=1541498766]
+script = ExtResource("2_ugdqt")
+metadata/_custom_type_script = "uid://cqawbvidns1th"
+
+[node name="HighlightComponent" type="Node" parent="PathStick/Handle" unique_id=1550059057]
+script = ExtResource("4_ua8gp")
+outline_material = SubResource("ShaderMaterial_bwnwt")
+metadata/_custom_type_script = "uid://dgig0tamvkdxx"
+
+[connection signal="interacted" from="PathStick/Handle/Interact_Component" to="PathStick" method="_on_interact_component_interacted"]

@@ -78,7 +78,7 @@ func _setup_reader_visuals() -> void:
 		status_label.modulate = lock_color
 
 
-func _on_interacted(_interactor: Node) -> void:
+func _on_interacted(_interactor: CharacterBody3D) -> void:
 	print("KeycardLock: Interacted by player.")
 	if _is_unlocked:
 		print("KeycardLock: Already unlocked. Ignoring.")

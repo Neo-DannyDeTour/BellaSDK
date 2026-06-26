@@ -16,6 +16,7 @@ signal heavy_lift_state_changed(is_lifting: bool, yaw_base: float)
 @export var interact_shapecast: ShapeCast3D
 @export var hold_position: Marker3D
 @export var weapon_holder: Node3D
+@export var empty_interact_audio: AudioStreamPlayer
 
 @export_category("Interaction Settings")
 @export var base_reach: float = 0.7
@@ -35,6 +36,7 @@ var is_in_terminal_mode: bool = false
 var active_terminal: Node3D = null
 var terminal_start_pos: Vector3 = Vector3.ZERO
 
+var current_hit_point: Vector3 = Vector3.ZERO
 
 # --------------------------------------
 # CORE PROCESS LOGIC
@@ -104,6 +106,12 @@ func handle_interact_input() -> void:
 
 			if weapon_holder:
 				weapon_holder.hide()
+				
+	else:
+		# --- NEW: NOTHING TO INTERACT WITH ---
+		print("InteractionScanner: Nothing to interact with. Playing empty sound.")
+		if is_instance_valid(empty_interact_audio):
+			empty_interact_audio.play()
 
 
 func handle_shoot_input() -> void:
@@ -182,7 +190,7 @@ func _get_interactable_component_at_shapecast() -> Node:
 
 	for i: int in interact_shapecast.get_collision_count():
 		var collider: Object = interact_shapecast.get_collider(i)
-
+		
 		if not is_instance_valid(collider) or collider == player_body:
 			continue
 
@@ -190,11 +198,10 @@ func _get_interactable_component_at_shapecast() -> Node:
 			var current_node: Node = collider
 			var comp: Node = null
 			
-			# Climb up the scene tree to find the Interact_Component
 			while is_instance_valid(current_node) and current_node != get_tree().root:
 				comp = current_node.get_node_or_null("Interact_Component")
 				if is_instance_valid(comp):
-					break # Component found, stop climbing
+					break
 				current_node = current_node.get_parent()
 
 			if is_instance_valid(comp):
@@ -210,6 +217,7 @@ func _get_interactable_component_at_shapecast() -> Node:
 				if dist < closest_dist:
 					closest_dist = dist
 					closest_comp = comp
+					current_hit_point = hit_point # Cache the precise hit location
 
 	return closest_comp
 

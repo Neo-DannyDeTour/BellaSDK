@@ -26,7 +26,7 @@ func exit() -> void:
 	current_ladder = null
 
 
-func physics_update(_delta: float) -> void:
+func physics_update(delta: float) -> void:
 	_handle_crouch_state()
 
 	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
@@ -34,6 +34,13 @@ func physics_update(_delta: float) -> void:
 	# Calculate movement and apply it
 	_calculate_ladder_velocity(input_dir)
 	player.move_and_slide()
+	
+	# --- NEW: Play Ladder Sounds ---
+	if is_instance_valid(player.locomotion_component) and is_instance_valid(player.locomotion_component.get("footstep_manager")):
+		# We pass 'true' as the final argument (is_on_ladder) to bypass the raycast logic
+		player.locomotion_component.footstep_manager.process_surface_and_footsteps(
+			delta, false, player.velocity.length(), false, false, true
+		)
 
 	# Check for dismounts (Jumping off, climbing to the top, hitting the floor)
 	_handle_jump_input(input_dir)

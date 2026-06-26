@@ -1,4 +1,3 @@
-@tool
 class_name PushWheel
 extends StaticBody3D
 
@@ -20,7 +19,7 @@ const DOUBLE_TAP_DELAY: float = 0.3
 @export var pickable_stick_scene: PackedScene
 
 @export_category("Node References")
-@export var wheel: Node3D
+@export var wheel: AnimatableBody3D
 @export var intact_sticks: Node3D
 @export var broken_stubs: Node3D
 @export var restored_handle: Node3D
@@ -35,6 +34,7 @@ const DOUBLE_TAP_DELAY: float = 0.3
 @export var stick_count: int = 4
 @export var stick_radius: float = 1.5
 @export var push_stand_offset: float = 0.8
+@export var restored_stick_index: int = 0
 
 @export var can_be_detached: bool = false:
 	set(value):
@@ -62,6 +62,7 @@ var initial_rotation: Vector3
 
 var current_active_anchor: Marker3D = null
 var _was_powered_on: bool = false
+var _stick_collisions: Array[CollisionShape3D] = []
 
 
 func _ready() -> void:
@@ -75,7 +76,7 @@ func _ready() -> void:
 
 	if is_instance_valid(wheel):
 		initial_rotation = wheel.rotation_degrees
-		_generate_stick_collisions()
+		_update_stick_collisions()
 	else:
 		push_error("PushWheel: 'Wheel' reference is missing!")
 
@@ -107,11 +108,31 @@ func _process(delta: float) -> void:
 			last_interact_time = current_time
 
 
-func _generate_stick_collisions() -> void:
-	print("PushWheel: Generating physical collisions for individual sticks.")
-	var angle_step: float = TAU / float(max(1, stick_count))
+func _update_stick_collisions() -> void:
+	if not is_instance_valid(wheel):
+		return
+		
+	print("PushWheel: Updating physical collisions for sticks.")
 	
-	for i in range(stick_count):
+	for col in _stick_collisions:
+		if is_instance_valid(col):
+			col.queue_free()
+	_stick_collisions.clear()
+
+	if is_broken_variant and not is_installed:
+		print("PushWheel: Broken variant missing stick. No collisions generated.")
+		return
+
+	var angle_step: float = TAU / float(max(1, stick_count))
+	var indices_to_generate: Array[int] = []
+
+	if not is_broken_variant:
+		for i in range(stick_count):
+			indices_to_generate.append(i)
+	elif is_installed:
+		indices_to_generate.append(restored_stick_index)
+
+	for i in indices_to_generate:
 		var col := CollisionShape3D.new()
 		var box := BoxShape3D.new()
 		
@@ -119,19 +140,22 @@ func _generate_stick_collisions() -> void:
 		col.shape = box
 		
 		wheel.add_child(col)
+		_stick_collisions.append(col)
 		
 		var angle: float = i * angle_step
 		var stick_dir := Vector3(cos(angle), 0.0, sin(angle))
 		
 		col.position = stick_dir * (stick_radius * 0.5)
 		col.rotation.y = -angle
+		
+	print("PushWheel: Generated ", indices_to_generate.size(), " stick collision(s).")
 
 
 func _update_transmitter_targets() -> void:
 	if is_instance_valid(transmitter):
 		transmitter.targets = transmitter_targets
 		if not Engine.is_editor_hint():
-			print("PushWheel: Synced ", transmitter_targets.size(), " targets to Transmitter.")
+			print("PushWheel: Synced ", transmitter_targets.size(), " targets.")
 
 
 func push(delta_amount: float) -> void:
@@ -155,7 +179,6 @@ func push(delta_amount: float) -> void:
 	_update_visuals()
 	_check_transmitter_power()
 	
-	# NEW FIX: Direct target array fallback if a transmitter isn't being used
 	if is_instance_valid(transmitter) and transmitter.has_method("transmit_progress"):
 		transmitter.transmit_progress(progress)
 	else:
@@ -167,15 +190,14 @@ func push(delta_amount: float) -> void:
 func _check_transmitter_power() -> void:
 	if is_instance_valid(transmitter):
 		if progress >= 1.0 and not _was_powered_on:
-			print("PushWheel: Progress 100%. Triggering OutputTransmitter3D.")
+			print("PushWheel: Progress 100%. Triggering Transmitter.")
 			transmitter.power_on()
 			_was_powered_on = true
 		elif progress < 1.0 and _was_powered_on:
-			print("PushWheel: Progress < 100%. Turning off OutputTransmitter3D.")
+			print("PushWheel: Progress < 100%. Turning off Transmitter.")
 			transmitter.power_off()
 			_was_powered_on = false
 	else:
-		# NEW FIX: Direct target power fallback if a transmitter isn't being used
 		if progress >= 1.0 and not _was_powered_on:
 			print("PushWheel: Progress 100%. Triggering targets directly.")
 			for target in transmitter_targets:
@@ -198,6 +220,8 @@ func _update_visuals() -> void:
 
 
 func _on_interacted(character: CharacterBody3D) -> void:
+	print("PushWheel: _on_interacted called by player.")
+	
 	if not is_installed or is_locked:
 		return
 
@@ -205,12 +229,21 @@ func _on_interacted(character: CharacterBody3D) -> void:
 	
 	if is_instance_valid(state_machine) and state_machine.get("state") != null:
 		if state_machine.state.name == "PushWheel":
-			print("PushWheel: Player is already attached. Ignoring duplicate call.")
+			print("PushWheel: Player already attached. Ignoring duplicate call.")
 			return
 
-	print("PushWheel: Player interacted. Requesting State transition to PushWheel.")
+	print("PushWheel: Requesting transition to PushWheel state.")
 	
-	var target_t: Transform3D = get_interaction_transform(character.global_position)
+	# Retrieve the cached hit_point directly from the component
+	var interact_comp: Interact_Component = get_node_or_null("Interact_Component") as Interact_Component
+	var hit_point: Vector3 = Vector3.ZERO
+	
+	if is_instance_valid(interact_comp):
+		hit_point = interact_comp.last_hit_position
+		
+	# Use hit_point if valid, fallback to character position
+	var target_pos: Vector3 = hit_point if hit_point != Vector3.ZERO else character.global_position
+	var target_t: Transform3D = get_interaction_transform(target_pos)
 	
 	if is_instance_valid(state_machine) and state_machine.has_method("transition_to"):
 		state_machine.transition_to("PushWheel", {
@@ -265,6 +298,7 @@ func _install_stick(held_item: Node3D, int_comp: Node, scanner: Node) -> void:
 	if is_instance_valid(restored_handle): 
 		restored_handle.show()
 
+	_update_stick_collisions()
 	print("PushWheel: Stick Auto-Installed! Wheel is now functional.")
 
 
@@ -290,7 +324,9 @@ func _detach_stick() -> void:
 		spawned_stick.global_position = global_position
 
 	var int_comp: Node = player.get("interaction_component")
-	var scanner: Node = int_comp.get("interaction_scanner") if is_instance_valid(int_comp) else null
+	var scanner: Node = null
+	if is_instance_valid(int_comp):
+		scanner = int_comp.get("interaction_scanner")
 	
 	var hold_pos: Marker3D = player.get("hold_position")
 	if is_instance_valid(scanner) and scanner.get("hold_position"):
@@ -318,6 +354,7 @@ func _detach_stick() -> void:
 	if is_instance_valid(restored_handle): 
 		restored_handle.hide()
 
+	_update_stick_collisions()
 	print("PushWheel: Stick detached and returned to player hands.")
 
 
@@ -333,13 +370,13 @@ func _on_unfocused() -> void:
 	print("PushWheel: Unfocused by player.")
 
 
-func get_interaction_transform(player_pos: Vector3) -> Transform3D:
-	print("PushWheel: Calculating fluid interaction transform for player.")
+func get_interaction_transform(target_pos: Vector3) -> Transform3D:
+	print("PushWheel: Calculating fluid interaction transform for target point.")
 	if not is_instance_valid(wheel):
 		return global_transform
 
-	var local_player_pos: Vector3 = wheel.to_local(player_pos)
-	var angle: float = atan2(local_player_pos.z, local_player_pos.x)
+	var local_pos: Vector3 = wheel.to_local(target_pos)
+	var angle: float = atan2(local_pos.z, local_pos.x)
 
 	var angle_step: float = TAU / float(max(1, stick_count))
 	var snapped_angle: float = round(angle / angle_step) * angle_step
@@ -348,15 +385,19 @@ func get_interaction_transform(player_pos: Vector3) -> Transform3D:
 	var stick_center := stick_local_dir * stick_radius
 
 	var tangent := spin_axis.cross(stick_local_dir).normalized()
-
-	var vector_to_player := local_player_pos - stick_center
-	var is_right_side: bool = tangent.dot(vector_to_player) > 0.0
+	var vector_to_target := local_pos - stick_center
+	
+	var is_right_side: bool = tangent.dot(vector_to_target) > 0.0
 	var side_multiplier: float = 1.0 if is_right_side else -1.0
 
 	var stand_local_pos := stick_center + (tangent * push_stand_offset * side_multiplier)
 
 	var global_stand_pos: Vector3 = wheel.to_global(stand_local_pos)
-	global_stand_pos.y = player_pos.y
+	
+	# Keep the player's ground height stable while referencing the hit point
+	var player: Node3D = get_tree().get_first_node_in_group("player")
+	if is_instance_valid(player):
+		global_stand_pos.y = player.global_position.y
 
 	var global_look_target: Vector3 = wheel.to_global(stick_center)
 	global_look_target.y = global_stand_pos.y
@@ -398,3 +439,6 @@ func _update_visual_state() -> void:
 			broken_stubs.hide()
 		if is_instance_valid(restored_handle): 
 			restored_handle.hide()
+
+	if not Engine.is_editor_hint() and is_instance_valid(wheel):
+		_update_stick_collisions()

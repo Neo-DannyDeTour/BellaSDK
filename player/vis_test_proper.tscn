@@ -52,6 +52,7 @@
 [ext_resource type="AudioStream" uid="uid://1w1y07mxmm0h" path="res://assets/sounds/SoundscapeHorror.wav" id="50_wkfn1"]
 [ext_resource type="Script" uid="uid://cl68g6jurgp0h" path="res://shared/soundscape_data.gd" id="51_yuk8b"]
 [ext_resource type="PackedScene" uid="uid://bqmsu8rh0h335" path="res://interactables/env_chapter_trigger.tscn" id="52_wkfn1"]
+[ext_resource type="VoxelGIData" uid="uid://n7qpbweipxh3" path="res://bakes/vis_test_proper.VoxelGI_data.res" id="53_yuk8b"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_kja8q"]
 panorama = ExtResource("1_mhg1j")
@@ -2003,3 +2004,8 @@ persist_after_exit = true
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.6088676, 3.6163845, 2.8420885)
 chapter_name = "VisTEST"
 animation_style = 15
+
+[node name="VoxelGI" type="VoxelGI" parent="." unique_id=1442148886]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.4175415, 4.881592, 0.008972168)
+size = Vector3(38.835083, 10.236816, 22.344116)
+data = ExtResource("53_yuk8b")

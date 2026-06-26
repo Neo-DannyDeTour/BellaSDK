@@ -2,6 +2,7 @@ extends Control
 class_name UIKeypad
 
 signal code_entered(code: String)
+signal button_clicked(button_name: String)
 
 var entered_code: String = ""
 var is_locked_out: bool = false
@@ -13,7 +14,6 @@ func _ready() -> void:
 	print("UIKeypad: Initialization started.")
 	for child: Node in grid_container.get_children():
 		if child is Button:
-			# Prevent the button from permanently stealing UI focus
 			child.focus_mode = Control.FOCUS_NONE 
 			child.pressed.connect(_on_button_pressed.bind(child.name))
 	print("UIKeypad: Button signals connected successfully.")
@@ -23,6 +23,7 @@ func _on_button_pressed(button_name: String) -> void:
 		return
 		
 	print("UIKeypad: Button pressed -> ", button_name)
+	button_clicked.emit(button_name)
 
 	if button_name.is_valid_int():
 		if entered_code.length() < 4:

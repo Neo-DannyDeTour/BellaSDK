@@ -18,6 +18,7 @@ extends Node3D
 
 var slomo_tween: Tween
 var player_on_rope: bool = false
+var _cached_camera: Camera3D
 
 @onready var rope_body: RigidBody3D = $RopeBody
 @onready var interact_component: Interact_Component = $RopeBody/Interact_Component
@@ -41,8 +42,7 @@ func _ready() -> void:
 		rope_body.freeze = not is_swingable
 		rope_body.angular_damp_mode = RigidBody3D.DAMP_MODE_REPLACE
 		rope_body.linear_damp_mode = RigidBody3D.DAMP_MODE_REPLACE
-		rope_body.angular_damp = 2.5
-		rope_body.linear_damp = 1.5
+		_reset_rope_dampening()
 
 	if interact_component == null:
 		return
@@ -65,6 +65,29 @@ func _ready() -> void:
 		interact_component.unfocused.connect(_on_unfocused)
 
 
+func _process(_delta: float) -> void:
+	if not is_inside_tree() or interact_component == null:
+		return
+
+	# Process UI updates for visual smoothness
+	if interact_component.get("is_currently_focused") == true and not player_on_rope:
+		if _cached_camera == null:
+			_cached_camera = get_viewport().get_camera_3d()
+		
+		if _cached_camera:
+			var hit_point_val: Variant = interact_component.get("last_hit_position")
+			var hit_point: Vector3 = Vector3.ZERO
+
+			if hit_point_val is Vector3:
+				hit_point = hit_point_val
+
+			var cam_right: Vector3 = _cached_camera.global_transform.basis.x
+			var cam_up: Vector3 = _cached_camera.global_transform.basis.y
+
+			var final_pos: Vector3 = hit_point + (cam_right * label_offset_amount) + (cam_up * 0.1)
+			interact_label.global_position = final_pos
+
+
 # --- THE SLOMO ENGINE ---
 func _set_slomo(target_scale: float) -> void:
 	if slomo_tween and slomo_tween.is_valid():
@@ -77,25 +100,10 @@ func _set_slomo(target_scale: float) -> void:
 	slomo_tween.tween_property(Engine, "time_scale", target_scale, 0.25)
 
 
-func _physics_process(_delta: float) -> void:
-	if not is_inside_tree() or interact_component == null:
-		return
-
-	# Use the pre-cached interact_component instead of querying the tree every frame
-	if interact_component.get("is_currently_focused") == true and not player_on_rope:
-		var cam: Camera3D = get_viewport().get_camera_3d()
-		if cam:
-			var hit_point_val: Variant = interact_component.get("last_hit_position")
-			var hit_point: Vector3 = Vector3.ZERO
-
-			if hit_point_val is Vector3:
-				hit_point = hit_point_val
-
-			var cam_right: Vector3 = cam.global_transform.basis.x
-			var cam_up: Vector3 = cam.global_transform.basis.y
-
-			var final_pos: Vector3 = hit_point + (cam_right * label_offset_amount) + (cam_up * 0.1)
-			interact_label.global_position = final_pos
+func _reset_rope_dampening() -> void:
+	if rope_body:
+		rope_body.angular_damp = 2.5
+		rope_body.linear_damp = 1.5
 
 
 # Helper functions for the signals
@@ -136,6 +144,8 @@ func _update_rope_size() -> void:
 
 
 func _on_interacted(player: CharacterBody3D) -> void:
+	print("Player interacted with the rope.")
+	
 	if player.has_method("_on_rope_grabbed"):
 		player.call("_on_rope_grabbed", rope_body)
 		player_on_rope = true
@@ -151,26 +161,22 @@ func _on_interacted(player: CharacterBody3D) -> void:
 
 
 func on_player_released() -> void:
+	print("Player released the rope.")
 	player_on_rope = false
 
-	if rope_sound and rope_sound.playing:
-		rope_sound.stop()
-	if slide_sound and slide_sound.playing:
-		slide_sound.stop()
-	# ----------------------------------
-
-	if rope_body:
-		rope_body.angular_damp = 2.5
-		rope_body.linear_damp = 1.5
+	handle_rope_sounds(false, false)
+	_reset_rope_dampening()
 
 	if highlight_component:
 		highlight_component.suppress(false)
 
 	if activate_slomo:
-		Engine.time_scale = 1.0
+		_set_slomo(1.0)
 
 
 func handle_rope_sounds(is_climbing: bool, is_sliding: bool) -> void:
+	print("Rope handling sounds - Climbing: ", is_climbing, " | Sliding: ", is_sliding)
+	
 	# 1. Handle the normal climbing/slow descending sound
 	if rope_sound:
 		if is_climbing and not is_sliding:

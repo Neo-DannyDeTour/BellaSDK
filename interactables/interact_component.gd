@@ -12,6 +12,7 @@ var last_hit_position := Vector3.ZERO  # NEW: Store the exact hit point
 
 
 func interact_with(character: CharacterBody3D) -> void:
+	print("Interact_Component: Passing interaction to parent.")
 	interacted.emit(character)
 
 

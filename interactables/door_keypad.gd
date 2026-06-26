@@ -11,6 +11,7 @@ var debug_line: MeshInstance3D
 @onready var mesh_instance_3d: MeshInstance3D = $MeshInstance3D
 @onready var sub_viewport: SubViewport = $SubViewport
 @onready var interact_component: Interact_Component = $Interact_Component
+@onready var keypad_audio: AudioStreamPlayer3D = $KeypadAudio
 
 func _ready() -> void:
 	if Engine.is_editor_hint():
@@ -23,15 +24,25 @@ func _ready() -> void:
 		var ui: Control = sub_viewport.get_child(0)
 		if ui.has_signal("code_entered"):
 			ui.code_entered.connect(_on_ui_code_entered)
+		if ui.has_signal("button_clicked"):
+			ui.button_clicked.connect(_on_ui_button_clicked)
+
+func _on_ui_button_clicked(_button_name: String) -> void:
+	print("DoorKeypad: Playing spatialized button click sound.")
+	if keypad_audio and keypad_audio.stream != null:
+		keypad_audio.play()
+
 
 func _process(_delta: float) -> void:
 	if Engine.is_editor_hint():
 		_draw_connection_line()
 
+
 func _on_player_interacted(character: CharacterBody3D) -> void:
 	print("DoorKeypad: Player interacting with keypad.")
 	if character.has_method("enter_terminal_mode"):
 		character.enter_terminal_mode(self)
+
 
 func get_viewport_pos_from_3d(global_hit: Vector3) -> Vector2:
 	var local_pos: Vector3 = mesh_instance_3d.to_local(global_hit)
@@ -51,6 +62,7 @@ func get_viewport_pos_from_3d(global_hit: Vector3) -> Vector2:
 
 	return Vector2(percent_x * sub_viewport.size.x, percent_y * sub_viewport.size.y)
 
+
 func inject_mouse_motion(global_hit: Vector3) -> void:
 	var event := InputEventMouseMotion.new()
 	var pos: Vector2 = get_viewport_pos_from_3d(global_hit)
@@ -58,6 +70,7 @@ func inject_mouse_motion(global_hit: Vector3) -> void:
 	event.position = pos
 	event.global_position = pos
 	sub_viewport.push_input(event)
+
 
 func inject_mouse_click(global_hit: Vector3) -> void:
 	print("DoorKeypad: Injecting mouse click at ", global_hit)
@@ -75,6 +88,7 @@ func inject_mouse_click(global_hit: Vector3) -> void:
 	# Delay the mouse release by exactly one frame so the UI registers the click down state
 	get_tree().process_frame.connect(_release_mouse_click.bind(pos), CONNECT_ONE_SHOT)
 
+
 func _release_mouse_click(pos: Vector2) -> void:
 	var event_release := InputEventMouseButton.new()
 	event_release.device = 1
@@ -84,6 +98,7 @@ func _release_mouse_click(pos: Vector2) -> void:
 	event_release.global_position = pos
 	event_release.pressed = false
 	sub_viewport.push_input(event_release)
+
 
 func _on_ui_code_entered(code: String) -> void:
 	var ui: Control = sub_viewport.get_child(0)
@@ -99,6 +114,7 @@ func _on_ui_code_entered(code: String) -> void:
 		if ui and ui.has_method("display_result"):
 			ui.display_result(false)
 
+
 func _trigger_targets() -> void:
 	for target: Node3D in targets:
 		if target == null:
@@ -112,6 +128,7 @@ func _trigger_targets() -> void:
 				comp.add_power()
 			elif "open" in target:
 				target.open = true
+
 
 func _draw_connection_line() -> void:
 	if targets.is_empty():
@@ -140,6 +157,7 @@ func _draw_connection_line() -> void:
 			mesh.surface_add_vertex(to_local(target.global_position))
 
 	mesh.surface_end()
+
 
 func clear_mouse_hover() -> void:
 	print("DoorKeypad: Clearing SubViewport mouse hover state.")
