@@ -10,25 +10,29 @@ extends Node
 
 var player: Player
 
+
 func initialize(p_player: Player) -> void:
 	print("StatsComponent: initialize() called. Caching player reference.")
 	player = p_player
-	
+
 	if is_instance_valid(health_component):
 		if health_component.has_signal("health_changed"):
 			health_component.health_changed.connect(_on_health_changed)
 		if health_component.has_signal("died"):
 			health_component.died.connect(_on_player_died)
 
+
 func _on_health_changed(new_health: int) -> void:
 	print("StatsComponent: _on_health_changed() called. New health: ", new_health)
 	if Events.has_signal("player_health_changed"):
 		Events.player_health_changed.emit(new_health)
 
+
 func _on_player_died() -> void:
 	print("StatsComponent: _on_player_died() called. Triggering game over.")
 	if Events.has_signal("player_died"):
 		Events.player_died.emit()
+
 
 func get_save_data() -> Dictionary:
 	print("StatsComponent: get_save_data() called. Fetching health.")
@@ -40,9 +44,8 @@ func get_save_data() -> Dictionary:
 		elif "health" in health_component:
 			health_val = health_component.get("health")
 
-	return {
-		"health": health_val
-	}
+	return {"health": health_val}
+
 
 func load_save_data(data: Dictionary) -> void:
 	print("StatsComponent: load_save_data() called. Restoring health.")

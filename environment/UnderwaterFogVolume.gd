@@ -3,7 +3,7 @@ extends FogVolume
 
 @export_category("Fog Settings")
 @export var base_density: float = 1.0
-@export var flashlight_density: float = 0.15 # Lowers density so you can see further
+@export var flashlight_density: float = 0.15  # Lowers density so you can see further
 @export var base_fade_dist: float = 3.0
 @export var flashlight_fade_dist: float = 5.0
 @export var transition_speed: float = 2.5
@@ -49,7 +49,5 @@ func _process(delta: float) -> void:
 			var fade_normal: Vector3 = cam.global_transform.basis.z * -1.0
 			var fade_pos: Vector3 = cam.global_transform.origin + (fade_normal * _current_fade_dist)
 			var fade_distance: float = fade_pos.dot(fade_normal)
-			var fade_plane := Vector4(
-				fade_normal.x, fade_normal.y, fade_normal.z, fade_distance
-			)
+			var fade_plane := Vector4(fade_normal.x, fade_normal.y, fade_normal.z, fade_distance)
 			mat.set_shader_parameter("fade_plane", fade_plane)

@@ -206,8 +206,8 @@ func _handle_climbing_and_swinging(delta: float, input_dir: Vector2) -> void:
 		player.camera_controller.update_camera(delta, input_dir, false, false, false, 6.0)
 	else:
 		# Ease camera back to center
-		player.camera_controller.camera.transform.origin = player.camera_controller.camera.transform.origin.lerp(
-			Vector3.ZERO, delta * 10.0
+		player.camera_controller.camera.transform.origin = (
+			player.camera_controller.camera.transform.origin.lerp(Vector3.ZERO, delta * 10.0)
 		)
 
 
@@ -283,7 +283,9 @@ func _perform_jump_dismount(input_dir: Vector2) -> void:
 	_transition_out_of_rope(jump_dir, forward_push, vertical_hop)
 
 
-func _transition_out_of_rope(release_dir: Vector3, forward_push: float, vertical_hop: float) -> void:
+func _transition_out_of_rope(
+	release_dir: Vector3, forward_push: float, vertical_hop: float
+) -> void:
 	var flat_jump_dir: Vector3 = Vector3(release_dir.x, 0.0, release_dir.z).normalized()
 
 	player.velocity = (flat_jump_dir * forward_push) + Vector3(0.0, vertical_hop, 0.0)

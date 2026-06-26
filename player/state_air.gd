@@ -12,6 +12,7 @@ var coyote_timer: float = 0.0
 var jump_buffer_timer: float = 0.0
 var has_jumped: bool = false
 
+
 func enter(msg: Dictionary = {}) -> void:
 	print("StateAir: Entered air state.")
 	has_jumped = msg.has("jump") and msg["jump"] == true
@@ -93,7 +94,7 @@ func _handle_timers(delta: float) -> void:
 
 func _handle_jump_input() -> void:
 	var loco: Node = player.locomotion_component
-	
+
 	if Input.is_action_just_pressed("jump"):
 		if coyote_timer > 0.0 and not has_jumped:
 			_perform_coyote_jump()
@@ -128,13 +129,15 @@ func _apply_air_movement(delta: float, input_dir: Vector2) -> void:
 	if current_speed > loco.walking_speed:
 		var air_drag: float = 1.2
 		horizontal_velocity = horizontal_velocity.lerp(Vector2.ZERO, air_drag * delta)
-		
+
 		# Allow slight air-steering influence while retaining momentum
 		if input_dir != Vector2.ZERO:
-			var steer_vec: Vector2 = Vector2(target_dir.x, target_dir.z) * (loco.walking_speed * delta)
+			var steer_vec: Vector2 = (
+				Vector2(target_dir.x, target_dir.z) * (loco.walking_speed * delta)
+			)
 			horizontal_velocity += steer_vec
 			loco.direction = loco.direction.lerp(target_dir, delta * loco.air_lerp_speed)
-			
+
 		player.velocity.x = horizontal_velocity.x
 		player.velocity.z = horizontal_velocity.y
 		return
@@ -143,9 +146,7 @@ func _apply_air_movement(delta: float, input_dir: Vector2) -> void:
 	if input_dir != Vector2.ZERO:
 		loco.direction = loco.direction.lerp(target_dir, delta * loco.air_lerp_speed)
 		if current_speed < loco.walking_speed:
-			current_speed = lerpf(
-				current_speed, loco.walking_speed, delta * loco.air_lerp_speed
-			)
+			current_speed = lerpf(current_speed, loco.walking_speed, delta * loco.air_lerp_speed)
 	else:
 		# Smoothly slow down horizontal drift if inputs are released
 		current_speed = lerpf(current_speed, 0.0, delta * loco.air_lerp_speed)
@@ -172,7 +173,13 @@ func _check_transitions() -> void:
 	var is_pressing_forward: bool = Input.is_action_pressed("forward")
 
 	# Enforce forward input requirement to prevent backwards mid-air vaulting
-	if is_pressing_forward and player.velocity.y < 2.0 and is_instance_valid(env.vault_controller) and not env.vault_controller.get("is_vaulting") and env.ladder_cooldown <= 0.2:
+	if (
+		is_pressing_forward
+		and player.velocity.y < 2.0
+		and is_instance_valid(env.vault_controller)
+		and not env.vault_controller.get("is_vaulting")
+		and env.ladder_cooldown <= 0.2
+	):
 		if not is_holding_item:
 			env.vault_controller.process_vault_scan()
 			if env.vault_controller.get("can_vault_current_ledge"):
@@ -187,11 +194,12 @@ func _check_transitions() -> void:
 		state_machine.transition_to("Glide")
 		return
 
+
 func _handle_landing() -> void:
 	print("StateAir: _handle_landing() called. Processing ground impact.")
 	var loco: Node = player.locomotion_component
 	var stats: Node = player.stats_component
-	
+
 	if loco.last_velocity.y <= -20.0 and is_instance_valid(stats.health_component):
 		print("StateAir: Heavy impact detected. Applying fall damage.")
 		var max_hp: int = stats.health_component.get("max_health")
@@ -202,18 +210,18 @@ func _handle_landing() -> void:
 	for i: int in range(slide_count):
 		var collision: KinematicCollision3D = player.get_slide_collision(i)
 		var collider: Object = collision.get_collider()
-		
+
 		if not collider is Node:
 			continue
-			
+
 		# Ensure we only slide if the surface is under us (not a vertical wall)
 		if collision.get_normal().y > 0.1:
 			var is_slide_surface: bool = collider.is_in_group("slide_surface")
-			
+
 			# Check parent node if the collider itself doesn't have the group
 			if not is_slide_surface and is_instance_valid(collider.get_parent()):
 				is_slide_surface = collider.get_parent().is_in_group("slide_surface")
-				
+
 			if is_slide_surface:
 				print("StateAir: Slide surface detected. Transitioning to Slide.")
 				state_machine.transition_to("Slide")
@@ -231,19 +239,19 @@ func _handle_landing() -> void:
 func _update_components(delta: float, input_dir: Vector2) -> void:
 	var loco: Node = player.locomotion_component
 	var interact: Node = player.interaction_component
-	
+
 	if is_instance_valid(player.camera_controller):
 		player.camera_controller.update_camera(
 			delta, input_dir, false, loco.crouching, false, player.velocity.length()
 		)
-		
+
 	if is_instance_valid(interact.interaction_scanner):
 		interact.interaction_scanner.process_interaction(delta)
 
 
 func _check_monkey_bar_grab() -> void:
 	var env: Node = player.environment_component
-	
+
 	if not is_instance_valid(env):
 		return
 

@@ -19,7 +19,7 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 # --- TAKING DAMAGE & KNOCKBACK ---
 func take_damage(amount: int, hit_position: Vector3, dir: Vector3) -> void:
 	print("EnemyTest: take_damage() called. Amount: ", amount, " | Pos: ", hit_position)
-	
+
 	health -= amount
 	print("EnemyTest: Hit! Remaining Health: ", health)
 

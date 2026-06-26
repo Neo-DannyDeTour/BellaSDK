@@ -13,7 +13,7 @@ func _ready() -> void:
 	print("GraphicsManager: Initializing and detecting hardware.")
 	_is_low_end = _detect_low_end_hardware()
 	_apply_global_viewport_settings()
-	
+
 	var error: Error = get_tree().node_added.connect(_on_node_added) as Error
 	if error != OK:
 		push_error("GraphicsManager: Failed to connect node_added signal.")
@@ -23,7 +23,7 @@ func _process(delta: float) -> void:
 	# Monitor FPS for everyone unless we already downgraded performance
 	if _performance_downgraded or _active_environment == null:
 		return
-		
+
 	_fps_check_timer += delta
 	if _fps_check_timer >= FPS_CHECK_INTERVAL:
 		_fps_check_timer = 0.0
@@ -32,14 +32,15 @@ func _process(delta: float) -> void:
 
 func _detect_low_end_hardware() -> bool:
 	print("GraphicsManager: Evaluating current video adapter.")
-	
-	var adapter_type: RenderingDevice.DeviceType = \
+
+	var adapter_type: RenderingDevice.DeviceType = (
 		RenderingServer.get_video_adapter_type() as RenderingDevice.DeviceType
-		
+	)
+
 	if adapter_type == RenderingDevice.DEVICE_TYPE_INTEGRATED_GPU:
 		print("GraphicsManager: Integrated GPU detected.")
 		return true
-		
+
 	print("GraphicsManager: Discrete GPU detected.")
 	return false
 
@@ -47,7 +48,7 @@ func _detect_low_end_hardware() -> bool:
 func _apply_global_viewport_settings() -> void:
 	print("GraphicsManager: Applying global viewport settings.")
 	var root_viewport: Window = get_tree().root
-	
+
 	if _is_low_end:
 		print("GraphicsManager: Applying low-end viewport limits.")
 		root_viewport.msaa_3d = Viewport.MSAA_DISABLED
@@ -69,7 +70,7 @@ func _tweak_environment(env: Environment) -> void:
 	print("GraphicsManager: Tweaking Environment based on capabilities.")
 	if not env:
 		return
-		
+
 	if _is_low_end:
 		print("GraphicsManager: Disabling SSAO and SSR for low-end hardware.")
 		env.ssao_enabled = false
@@ -84,14 +85,14 @@ func _tweak_environment(env: Environment) -> void:
 func _evaluate_runtime_performance() -> void:
 	var current_fps: float = Engine.get_frames_per_second()
 	print("GraphicsManager: Checking runtime performance. Current FPS: ", current_fps)
-	
+
 	if current_fps > 0.0 and current_fps < TARGET_FPS_MINIMUM:
 		print("GraphicsManager: FPS below target. Downgrading graphics dynamically.")
 		_active_environment.volumetric_fog_enabled = false
-		
+
 		# If the system started as high-end but is failing, strip the heavy effects
 		if not _is_low_end:
 			_active_environment.ssao_enabled = false
 			_active_environment.ssr_enabled = false
-			
+
 		_performance_downgraded = true

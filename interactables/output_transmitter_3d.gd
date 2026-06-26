@@ -79,7 +79,7 @@ func _draw_connection_line() -> void:
 
 
 func transmit_progress(value: float) -> void:
-	# Intentionally omitting a print() statement here to preserve 60 FPS, 
+	# Intentionally omitting a print() statement here to preserve 60 FPS,
 	# as this is called every frame during player interaction.
 	for target: Node3D in targets:
 		if is_instance_valid(target) and target.has_method("set_progress"):

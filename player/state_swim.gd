@@ -15,11 +15,11 @@ var just_water_jumped: bool = false
 
 func enter(_msg: Dictionary = {}) -> void:
 	print("StateSwim: enter() called. Setting up water physics.")
-	
+
 	var loco := player.locomotion_component as PlayerLocomotionComponent
 	loco.standing_collision.disabled = false
 	loco.crouching_collision.disabled = true
-	
+
 	head_in_water = false
 	chest_in_water = false
 	was_head_in_water = false
@@ -28,12 +28,12 @@ func enter(_msg: Dictionary = {}) -> void:
 
 func exit() -> void:
 	print("StateSwim: exit() called. Cleaning up water state.")
-	
+
 	if head_in_water:
 		var vfx: Node = player.environment_component.vfx_manager
 		if is_instance_valid(vfx) and vfx.has_method("trigger_surface_wipe"):
 			vfx.trigger_surface_wipe()
-			
+
 		_update_flashlight_underwater(false, 1.0)
 
 	head_in_water = false
@@ -94,20 +94,16 @@ func _calculate_water_depth() -> void:
 
 func _apply_swim_velocity(delta: float, input_dir: Vector2) -> void:
 	var loco := player.locomotion_component as PlayerLocomotionComponent
-	
-	loco.head.position.y = lerpf(
-		loco.head.position.y, 
-		1.8, 
-		delta * loco.default_lerp_speed
-	)
+
+	loco.head.position.y = lerpf(loco.head.position.y, 1.8, delta * loco.default_lerp_speed)
 
 	var input_vec := Vector3(input_dir.x, 0.0, input_dir.y)
 	var cam_basis: Basis = player.camera_controller.camera.global_transform.basis
 	var swim_dir := (cam_basis * input_vec).normalized()
-	
+
 	# Now the compiler knows loco.swimming_speed is a float!
 	var target_velocity: Vector3 = swim_dir * loco.swimming_speed
-	
+
 	var actively_swimming_vertical: bool = false
 	just_water_jumped = false
 
@@ -126,7 +122,7 @@ func _apply_swim_velocity(delta: float, input_dir: Vector2) -> void:
 
 		elif player.is_on_floor() and not chest_in_water:
 			print("StateSwim: Shallow water jump. Transitioning to Air.")
-			target_velocity.y = 4.5 
+			target_velocity.y = 4.5
 			actively_swimming_vertical = true
 			just_water_jumped = true
 			state_machine.transition_to("Air")
@@ -190,7 +186,7 @@ func _handle_camera_and_vfx(delta: float, input_dir: Vector2) -> void:
 		elif was_head_in_water and not head_in_water:
 			if vfx.has_method("trigger_surface_wipe"):
 				vfx.trigger_surface_wipe()
-				
+
 			# --- NEW: Trigger splash sound exactly when head breaks surface ---
 			var water_node: Node = player.environment_component.current_water_node
 			if is_instance_valid(water_node) and water_node.has_method("play_splash_sound"):
@@ -202,7 +198,7 @@ func _handle_camera_and_vfx(delta: float, input_dir: Vector2) -> void:
 
 func _update_flashlight_underwater(is_submerged: bool, delta: float) -> void:
 	# Safely checks the interaction component or main player for the flashlight
-	var flash_ctrl: Node = player.get("flashlight_controller") 
+	var flash_ctrl: Node = player.get("flashlight_controller")
 	if flash_ctrl == null and player.get("interaction_component"):
 		flash_ctrl = player.interaction_component.get("flashlight_controller")
 
@@ -211,9 +207,7 @@ func _update_flashlight_underwater(is_submerged: bool, delta: float) -> void:
 		var target_energy: float = base_energy * 4.0 if is_submerged else base_energy
 
 		flash_ctrl.flashlight.light_energy = lerpf(
-			flash_ctrl.flashlight.light_energy, 
-			target_energy, 
-			4.0 * delta
+			flash_ctrl.flashlight.light_energy, target_energy, 4.0 * delta
 		)
 
 

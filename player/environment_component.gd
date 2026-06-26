@@ -19,41 +19,46 @@ var updraft_top_y: float = 0.0
 var current_water_node: Node3D = null
 var last_ladder: Node3D = null
 
+
 func initialize(p_player: Player) -> void:
 	print("EnvironmentComponent: initialize() called. Caching player reference.")
 	player = p_player
 	_connect_waterfall_group()
+
 
 func process_environment_physics(delta: float) -> void:
 	if zipline_cooldown > 0.0:
 		zipline_cooldown -= delta
 	if monkey_bar_cooldown > 0.0:
 		monkey_bar_cooldown -= delta
-		
+
 	if ladder_cooldown > 0.0:
 		ladder_cooldown -= delta
 		if ladder_cooldown <= 0.0:
-			last_ladder = null 
+			last_ladder = null
 
 	if is_instance_valid(vfx_manager) and is_instance_valid(player.get_node_or_null("Head")):
 		var head: Node3D = player.get_node("Head")
 		vfx_manager.process_vfx(delta, head.rotation.x)
 
+
 func enter_ladder(ladder_node: Node3D) -> void:
 	print("EnvironmentComponent: enter_ladder() called.")
 	if is_instance_valid(vault_controller) and vault_controller.get("is_vaulting"):
 		return
-		
+
 	if ladder_node == last_ladder and ladder_cooldown > 0.0:
 		return
-		
+
 	if is_instance_valid(state_machine):
 		state_machine.transition_to("Ladders", {"ladder_node": ladder_node})
+
 
 func exit_ladder(_ladder_node: Node3D) -> void:
 	print("EnvironmentComponent: exit_ladder() called.")
 	if is_instance_valid(state_machine) and state_machine.get("state").name == "Ladders":
 		state_machine.transition_to("Air")
+
 
 func enter_water(water_volume: Node3D) -> void:
 	print("EnvironmentComponent: enter_water() called.")
@@ -62,8 +67,12 @@ func enter_water(water_volume: Node3D) -> void:
 	if is_instance_valid(vault_controller) and vault_controller.get("is_vaulting"):
 		return
 
-	if is_instance_valid(state_machine) and state_machine.get("state").name not in ["Vault", "Zipline", "Rope"]:
+	if (
+		is_instance_valid(state_machine)
+		and state_machine.get("state").name not in ["Vault", "Zipline", "Rope"]
+	):
 		state_machine.transition_to("Swim")
+
 
 func exit_water(water_volume: Node3D) -> void:
 	print("EnvironmentComponent: exit_water() called.")
@@ -76,6 +85,7 @@ func exit_water(water_volume: Node3D) -> void:
 		if is_instance_valid(state_machine) and state_machine.get("state").name == "Swim":
 			state_machine.transition_to("Air")
 
+
 func enter_updraft(strength: float, top_y: float) -> void:
 	print("EnvironmentComponent: enter_updraft() called. Strength: ", strength)
 	in_updraft = true
@@ -85,10 +95,12 @@ func enter_updraft(strength: float, top_y: float) -> void:
 	if is_instance_valid(state_machine) and state_machine.get("state").name == "Ground":
 		state_machine.transition_to("Air")
 
+
 func exit_updraft() -> void:
 	print("EnvironmentComponent: exit_updraft() called.")
 	in_updraft = false
 	updraft_strength = 0.0
+
 
 func _connect_waterfall_group() -> void:
 	print("EnvironmentComponent: Scanning for 'waterfall_area' group...")
@@ -126,11 +138,9 @@ func _on_waterfall_exited(body: Node3D, area: Area3D) -> void:
 func enter_zipline(zipline_node: Node3D, start_pos: Vector3, end_pos: Vector3) -> void:
 	print("EnvironmentComponent: enter_zipline() called. Triggering Zipline state.")
 	if is_instance_valid(state_machine):
-		state_machine.transition_to("Zipline", {
-			"zipline_node": zipline_node,
-			"start_pos": start_pos,
-			"end_pos": end_pos
-		})
+		state_machine.transition_to(
+			"Zipline", {"zipline_node": zipline_node, "start_pos": start_pos, "end_pos": end_pos}
+		)
 
 
 func enter_rope(rope_node: RigidBody3D) -> void:

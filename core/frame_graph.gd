@@ -5,6 +5,7 @@ var max_points: int = 100
 var target_ms: float = 16.67
 var ceiling_ms: float = 33.33
 
+
 func _process(delta: float) -> void:
 	if not is_visible_in_tree():
 		return
@@ -15,6 +16,7 @@ func _process(delta: float) -> void:
 		history.pop_front()
 
 	queue_redraw()
+
 
 func _draw() -> void:
 	if history.size() < 2:
@@ -60,4 +62,4 @@ func _draw() -> void:
 		status_text = "16.66ms - Problem!"
 
 	var text_pos := Vector2(5, target_y - 5)
-	draw_string(font, text_pos, status_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, text_color)	
+	draw_string(font, text_pos, status_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, text_color)

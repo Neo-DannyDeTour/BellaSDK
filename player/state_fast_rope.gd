@@ -1,6 +1,7 @@
 class_name StateFastRope
 extends PlayerState
 
+
 func enter(_msg: Dictionary = {}) -> void:
 	print("StateFastRope: Entered fast rope state. Disabling StairController.")
 	# 1. Kill all momentum instantly

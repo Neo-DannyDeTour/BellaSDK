@@ -35,14 +35,14 @@ var _cached_requirement_text: String = ""
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
-		
+
 	print("KeycardLock: Initialized. Requires card ID: ", required_card_id)
-	
+
 	_cached_requirement_text = "LOCKED - requires %s card" % required_card_id
-	
+
 	_setup_reader_visuals()
 	_setup_transmitter()
-	
+
 	if is_instance_valid(interact_component):
 		if interact_component.has_signal("interacted"):
 			interact_component.interacted.connect(_on_interacted)
@@ -72,9 +72,9 @@ func _setup_reader_visuals() -> void:
 		_reader_material.emission = lock_color
 		_reader_material.emission_energy_multiplier = 2.0
 		reader_mesh.material_override = _reader_material
-		
+
 	if is_instance_valid(status_label):
-		status_label.text = "" # Start completely blank
+		status_label.text = ""  # Start completely blank
 		status_label.modulate = lock_color
 
 
@@ -83,7 +83,7 @@ func _on_interacted(_interactor: CharacterBody3D) -> void:
 	if _is_unlocked:
 		print("KeycardLock: Already unlocked. Ignoring.")
 		return
-		
+
 	if KeycardSystem.has_card(required_card_id):
 		print("KeycardLock: Correct card found. Unlocking.")
 		KeycardSystem.consume_card(required_card_id)
@@ -97,7 +97,7 @@ func _on_focused() -> void:
 	print("KeycardLock: Player focused lock. Displaying requirement.")
 	if _is_unlocked:
 		return
-		
+
 	if is_instance_valid(status_label):
 		status_label.text = _cached_requirement_text
 
@@ -106,7 +106,7 @@ func _on_unfocused() -> void:
 	print("KeycardLock: Player unfocused lock. Hiding text.")
 	if _is_unlocked:
 		return
-		
+
 	if is_instance_valid(status_label):
 		status_label.text = ""
 
@@ -115,14 +115,14 @@ func _unlock() -> void:
 	_is_unlocked = true
 	print("KeycardLock: Access granted. Firing signals.")
 	access_granted.emit()
-	
+
 	if is_instance_valid(output_transmitter):
 		output_transmitter.power_on()
-	
+
 	if is_instance_valid(_reader_material):
 		_reader_material.albedo_color = Color.GREEN
 		_reader_material.emission = Color.GREEN
-		
+
 	if is_instance_valid(status_label):
 		status_label.text = "GRANTED"
 		status_label.modulate = Color.GREEN
@@ -136,14 +136,18 @@ func _deny_access() -> void:
 		tween.tween_property(status_label, "modulate", Color.RED, 0.1)
 		tween.tween_property(status_label, "modulate", Color.WHITE, 0.1)
 		tween.tween_property(status_label, "modulate", Color.RED, 0.1)
-		
-		tween.finished.connect(func() -> void:
-			print("KeycardLock: Denied animation finished. Reverting text.")
-			if not _is_unlocked and is_instance_valid(status_label):
-				if is_instance_valid(interact_component) and interact_component.is_currently_focused:
-					status_label.text = _cached_requirement_text
-				else:
-					status_label.text = ""
-				
-				status_label.modulate = lock_color
+
+		tween.finished.connect(
+			func() -> void:
+				print("KeycardLock: Denied animation finished. Reverting text.")
+				if not _is_unlocked and is_instance_valid(status_label):
+					if (
+						is_instance_valid(interact_component)
+						and interact_component.is_currently_focused
+					):
+						status_label.text = _cached_requirement_text
+					else:
+						status_label.text = ""
+
+					status_label.modulate = lock_color
 		)

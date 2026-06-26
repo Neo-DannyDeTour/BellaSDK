@@ -9,7 +9,7 @@ extends Node3D
 @export_category("Flashlight Settings")
 @export var flashlight_maintain_distance: float = 1.5
 @export var base_energy: float = 10.0
-@export var volumetric_energy: float = 8.0 # High value to make the beam visible
+@export var volumetric_energy: float = 8.0  # High value to make the beam visible
 @export var sway_amount: float = 5.0
 @export var smooth_speed: float = 10.0
 @export var flashlight_pos_smoothness: float = 10.0
@@ -27,16 +27,16 @@ func _ready() -> void:
 	print("FlashlightController executing: Initializing setup.")
 	default_pos = position
 	flashlight.visible = false
-	
+
 	# Enforce the volumetric beam energy required for the custom fog shader
 	flashlight.light_volumetric_fog_energy = volumetric_energy
-	
+
 	if omni_light != null:
 		omni_light.visible = false
 
 	jitter_noise.noise_type = FastNoiseLite.TYPE_PERLIN
 	jitter_noise.frequency = 0.8
-	
+
 	var player_node: Node = get_tree().get_first_node_in_group("player")
 	if is_instance_valid(player_node) and "flashlight_controller" in player_node:
 		player_node.set("flashlight_controller", self)
@@ -46,10 +46,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("flashlight"):
 		var new_state: bool = not flashlight.visible
 		flashlight.visible = new_state
-		
+
 		if omni_light != null:
 			omni_light.visible = new_state
-			
+
 		print("Player executing: Toggled flashlight visibility to ", new_state)
 
 
@@ -68,9 +68,7 @@ func _apply_sway(delta: float) -> void:
 	sway_target.y = clampf(sway_target.y, -max_sway, max_sway)
 
 	var target_rot := Vector3(
-		sway_target.y * (sway_amount * 0.0015),
-		sway_target.x * (sway_amount * 0.0015),
-		0.0
+		sway_target.y * (sway_amount * 0.0015), sway_target.x * (sway_amount * 0.0015), 0.0
 	)
 
 	rotation = rotation.lerp(target_rot, delta * flashlight_rot_smoothness)
@@ -93,7 +91,7 @@ func _apply_pushback(delta: float) -> void:
 		var prox: float = clampf(1.0 - (dist / flashlight_maintain_distance), 0.0, 1.0)
 		var extra_push: float = (flashlight_maintain_distance * 0.25) * prox
 		var target_z: float = base_push + extra_push
-		
+
 		flashlight.position.z = lerpf(flashlight.position.z, target_z, delta * 15.0)
 	else:
 		flashlight.position.z = lerpf(flashlight.position.z, 0.0, delta * 15.0)

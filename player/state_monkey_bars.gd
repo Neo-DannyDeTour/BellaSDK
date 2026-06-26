@@ -38,7 +38,10 @@ func exit() -> void:
 		player.get_node("%CameraAnims").play("idle", 0.2)
 
 	# --- NEW: Kill the looping audio when we let go ---
-	if is_instance_valid(player.locomotion_component) and is_instance_valid(player.locomotion_component.get("footstep_manager")):
+	if (
+		is_instance_valid(player.locomotion_component)
+		and is_instance_valid(player.locomotion_component.get("footstep_manager"))
+	):
 		if player.locomotion_component.footstep_manager.has_method("stop_looping_sounds"):
 			player.locomotion_component.footstep_manager.stop_looping_sounds()
 
@@ -46,7 +49,7 @@ func exit() -> void:
 func physics_update(delta: float) -> void:
 	# Print statement omitted here to prevent console spam at 60 FPS
 	var active_bar: Node3D = null
-	
+
 	if is_instance_valid(player.environment_component):
 		active_bar = player.environment_component.get("available_monkey_bar") as Node3D
 
@@ -68,11 +71,14 @@ func physics_update(delta: float) -> void:
 	_handle_animations(input_dir)
 
 	player.move_and_slide()
-	
+
 	# --- NEW: Play Monkey Bar Sounds ---
 	# We only pass horizontal velocity so the vertical magnetism wobble doesn't trigger audio
 	var flat_vel := Vector2(player.velocity.x, player.velocity.z)
-	if is_instance_valid(player.locomotion_component) and is_instance_valid(player.locomotion_component.get("footstep_manager")):
+	if (
+		is_instance_valid(player.locomotion_component)
+		and is_instance_valid(player.locomotion_component.get("footstep_manager"))
+	):
 		player.locomotion_component.footstep_manager.process_surface_and_footsteps(
 			delta, false, flat_vel.length(), false, false, false, true
 		)

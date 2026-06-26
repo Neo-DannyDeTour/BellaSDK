@@ -35,10 +35,10 @@ func _animate_gate(target_pos: Vector3) -> void:
 func set_progress(progress_value: float) -> void:
 	# We omit a print() statement here because this function runs every frame
 	# during interaction. Printing to the console 60 times a second will cause stuttering.
-	
+
 	# Kill the digital on/off tween so it doesn't fight the analog wheel movement
 	if is_instance_valid(_move_tween) and _move_tween.is_running():
 		_move_tween.kill()
-		
+
 	# Direct lerp ensures optimal 60 FPS matching with the wheel's movement
 	position = closed_position.lerp(closed_position + open_offset, progress_value)

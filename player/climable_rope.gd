@@ -73,7 +73,7 @@ func _process(_delta: float) -> void:
 	if interact_component.get("is_currently_focused") == true and not player_on_rope:
 		if _cached_camera == null:
 			_cached_camera = get_viewport().get_camera_3d()
-		
+
 		if _cached_camera:
 			var hit_point_val: Variant = interact_component.get("last_hit_position")
 			var hit_point: Vector3 = Vector3.ZERO
@@ -145,7 +145,7 @@ func _update_rope_size() -> void:
 
 func _on_interacted(player: CharacterBody3D) -> void:
 	print("Player interacted with the rope.")
-	
+
 	if player.has_method("_on_rope_grabbed"):
 		player.call("_on_rope_grabbed", rope_body)
 		player_on_rope = true
@@ -176,7 +176,7 @@ func on_player_released() -> void:
 
 func handle_rope_sounds(is_climbing: bool, is_sliding: bool) -> void:
 	print("Rope handling sounds - Climbing: ", is_climbing, " | Sliding: ", is_sliding)
-	
+
 	# 1. Handle the normal climbing/slow descending sound
 	if rope_sound:
 		if is_climbing and not is_sliding:

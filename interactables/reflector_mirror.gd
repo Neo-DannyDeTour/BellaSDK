@@ -25,7 +25,7 @@ func _physics_process(delta: float) -> void:
 	if is_controlled:
 		_handle_rotation_input(delta)
 		_check_auto_release()
-		
+
 		# Skip checking detachment on the exact frame we attached
 		if _just_attached:
 			_just_attached = false
@@ -91,6 +91,10 @@ func _mark_children_as_mirrors(node: Node) -> void:
 
 
 func _handle_detachment_input() -> void:
-	if Input.is_action_just_pressed("interact") or Input.is_action_just_pressed("jump") or Input.is_action_just_pressed("crouch"):
+	if (
+		Input.is_action_just_pressed("interact")
+		or Input.is_action_just_pressed("jump")
+		or Input.is_action_just_pressed("crouch")
+	):
 		print("ReflectorMirror: Player requested detachment.")
 		_release_control()

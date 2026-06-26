@@ -34,9 +34,12 @@ func physics_update(delta: float) -> void:
 	# Calculate movement and apply it
 	_calculate_ladder_velocity(input_dir)
 	player.move_and_slide()
-	
+
 	# --- NEW: Play Ladder Sounds ---
-	if is_instance_valid(player.locomotion_component) and is_instance_valid(player.locomotion_component.get("footstep_manager")):
+	if (
+		is_instance_valid(player.locomotion_component)
+		and is_instance_valid(player.locomotion_component.get("footstep_manager"))
+	):
 		# We pass 'true' as the final argument (is_on_ladder) to bypass the raycast logic
 		player.locomotion_component.footstep_manager.process_surface_and_footsteps(
 			delta, false, player.velocity.length(), false, false, true
@@ -71,7 +74,7 @@ func _snap_to_ladder() -> void:
 func _handle_crouch_state() -> void:
 	if not is_instance_valid(player.locomotion_component):
 		return
-		
+
 	var loco: Node = player.locomotion_component
 	var previous_crouch: bool = loco.crouching
 	loco.crouching = Input.is_action_pressed("crouch")
@@ -97,7 +100,7 @@ func _calculate_ladder_velocity(input_dir: Vector2) -> void:
 
 	var local_pos: Vector3 = current_ladder.to_local(player.global_position)
 	var offset_from_center: float = local_pos.x
-	
+
 	# ... (Rest of your math remains exactly the same)
 
 	var ladder_right: Vector3 = current_ladder.global_transform.basis.x.normalized()
@@ -157,56 +160,56 @@ func _handle_jump_input(input_dir: Vector2) -> void:
 
 	# FIXED: Target the camera_controller
 	var look_dir: Vector3 = -player.camera_controller.camera.global_transform.basis.z
-	
+
 	if look_dir.y > 0.3:
 		print("StateLadder: Jump blocked. Player is looking up.")
 		return
 
 	var ladder_outward: Vector3 = current_ladder.global_transform.basis.z.normalized()
-	var ladder_right: Vector3 = current_ladder.global_transform.basis.x.normalized() 
-	
+	var ladder_right: Vector3 = current_ladder.global_transform.basis.x.normalized()
+
 	var flat_look: Vector3 = Vector3(look_dir.x, 0.0, look_dir.z).normalized()
 	var flat_outward: Vector3 = Vector3(ladder_outward.x, 0.0, ladder_outward.z).normalized()
 	var flat_ladder_right: Vector3 = Vector3(ladder_right.x, 0.0, ladder_right.z).normalized()
-	
+
 	var dot_outward: float = flat_look.dot(flat_outward)
 	var strafe_input: float = input_dir.x
 	var env: Node = player.environment_component
-	
+
 	# ---------------------------------------------------------
 	# INTENT 1: PURE SIDE JUMP
 	# ---------------------------------------------------------
 	if absf(strafe_input) > 0.1:
 		print("StateLadder: Intentional Side Jump. Pushing strictly laterally.")
 		var jump_dir: Vector3 = (flat_ladder_right * sign(strafe_input)).normalized()
-		
+
 		player.velocity = (jump_dir * 7.5) + Vector3(0.0, 4.5, 0.0)
-		
+
 		# FIXED: Apply cooldown to Environment Component
 		if is_instance_valid(env):
 			env.last_ladder = current_ladder
-			env.ladder_cooldown = 0.5 
-		
-		player.move_and_slide() 
+			env.ladder_cooldown = 0.5
+
+		player.move_and_slide()
 		state_machine.transition_to("Air", {"jump": true, "release_dir": jump_dir})
 		return
-		
+
 	# ---------------------------------------------------------
 	# INTENT 2: BACK / SIDE EJECT
 	# ---------------------------------------------------------
 	if dot_outward > -0.2:
 		print("StateLadder: Intentional Eject. Pushing in look direction.")
 		player.velocity = (flat_look * 7.0) + Vector3(0.0, 4.5, 0.0)
-		
+
 		# FIXED: Apply cooldown to Environment Component
 		if is_instance_valid(env):
 			env.last_ladder = current_ladder
 			env.ladder_cooldown = 0.5
-		
-		player.move_and_slide() 
+
+		player.move_and_slide()
 		state_machine.transition_to("Air", {"jump": true, "release_dir": flat_look})
 		return
-		
+
 	print("StateLadder: Jump blocked. Player is facing the ladder.")
 
 

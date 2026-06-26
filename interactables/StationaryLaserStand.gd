@@ -113,7 +113,7 @@ func _physics_process(delta: float) -> void:
 	if is_controlled:
 		_handle_rotation_input(delta)
 		_check_auto_release()
-		
+
 		# Skip checking detachment on the exact frame we attached
 		if _just_attached:
 			_just_attached = false
@@ -464,6 +464,10 @@ func _leave_trail_mark(pos: Vector3, xform: Transform3D) -> void:
 
 func _handle_detachment_input() -> void:
 	# Ensure these string names match your Project Settings -> Input Map exactly!
-	if Input.is_action_just_pressed("interact") or Input.is_action_just_pressed("jump") or Input.is_action_just_pressed("crouch"):
+	if (
+		Input.is_action_just_pressed("interact")
+		or Input.is_action_just_pressed("jump")
+		or Input.is_action_just_pressed("crouch")
+	):
 		print("StationaryLaserStand: Player requested detachment.")
 		_release_control()

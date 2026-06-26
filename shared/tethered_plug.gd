@@ -28,7 +28,7 @@ func _ready() -> void:
 	_original_mass = mass
 	_original_linear_damp = linear_damp
 	_original_angular_damp = angular_damp
-	
+
 	if physics_material_override:
 		_original_friction = physics_material_override.friction
 
@@ -44,10 +44,10 @@ func _ready() -> void:
 			interact_comp.unfocused.connect(_on_unfocus)
 
 	# --- FULL PLUG SHADER WARM-UP ---
-	# By passing 'self' instead of 'mesh', we recursively compile 
+	# By passing 'self' instead of 'mesh', we recursively compile
 	# every single mesh attached to this plug, not just the main one.
 	_set_model_transparency(self, held_transparency)
-	
+
 	# We yield twice to ensure the renderer catches the state
 	await get_tree().process_frame
 	await get_tree().process_frame
@@ -153,12 +153,12 @@ func on_released() -> void:
 func set_trailing_mode(is_trailing: bool) -> void:
 	print("TetheredPlug: set_trailing_mode() called. Mode active: ", is_trailing)
 	is_trailing_mode = is_trailing
-	
+
 	if is_trailing:
-		mass = 0.05           # Extremely light
-		gravity_scale = 0.0   # No falling
-		linear_damp = 0.0     # ZERO air friction
-		angular_damp = 0.0    # ZERO rotational friction
+		mass = 0.05  # Extremely light
+		gravity_scale = 0.0  # No falling
+		linear_damp = 0.0  # ZERO air friction
+		angular_damp = 0.0  # ZERO rotational friction
 
 		if physics_material_override:
 			physics_material_override = physics_material_override.duplicate()

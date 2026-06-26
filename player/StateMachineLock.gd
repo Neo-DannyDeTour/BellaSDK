@@ -4,13 +4,13 @@ extends PlayerState
 
 func enter(_msg: Dictionary = {}) -> void:
 	print("StateMachineLock: enter() initialized. Player physics locked.")
-	
+
 	# Safely halt any residual momentum
 	if is_instance_valid(player):
 		player.velocity = Vector3.ZERO
 		if is_instance_valid(player.locomotion_component):
 			player.locomotion_component.reset_momentum()
-			
+
 	# 1. Show the cursor so the player can click the UI
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
