@@ -8,8 +8,15 @@ var is_broken: bool = false
 
 # We add the parameters here so it catches what the shotgun throws!
 func take_damage(amount: int, hit_position: Vector3, direction: Vector3) -> void:
-	print("BreakableRope: take_damage() called. Amount: ", amount, " | Pos: ", hit_position, " | Dir: ", direction)
-	
+	print(
+		"BreakableRope: take_damage() called. Amount: ",
+		amount,
+		" | Pos: ",
+		hit_position,
+		" | Dir: ",
+		direction
+	)
+
 	if is_broken:
 		return  # Stop right here! We are already dead.
 

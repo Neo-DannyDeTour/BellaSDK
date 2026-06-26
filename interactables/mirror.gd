@@ -56,7 +56,7 @@ func _ready() -> void:
 
 func _setup_mirror() -> void:
 	print("Mirror system: Initializing viewport and assigning target camera.")
-	
+
 	if is_instance_valid(mirror_camera):
 		mirror_camera.cull_mask = cull_mask
 
@@ -168,7 +168,7 @@ func _update_cam() -> void:
 	mirror_camera.global_transform = mirror_trans * _main_cam.global_transform
 
 	var target: Vector3 = (mirror_camera.global_position / 2.0) + (_last_cam_transform.origin / 2.0)
-	
+
 	# Fix: Prevent looking_at() math explosion if origin and target are identical
 	if not mirror_camera.global_position.is_equal_approx(target):
 		mirror_camera.global_transform = mirror_camera.global_transform.looking_at(
@@ -176,7 +176,7 @@ func _update_cam() -> void:
 		)
 
 	var offset: Vector3 = mirror_quad.global_position - mirror_camera.global_position
-	
+
 	# Note: Upgraded abs() to absf() to strictly handle floats in Godot 4
 	var near: float = absf(offset.dot(mirror_norm)) + cull_near
 	var far: float = offset.length() + cull_far

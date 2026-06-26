@@ -38,6 +38,7 @@ var terminal_start_pos: Vector3 = Vector3.ZERO
 
 var current_hit_point: Vector3 = Vector3.ZERO
 
+
 # --------------------------------------
 # CORE PROCESS LOGIC
 # --------------------------------------
@@ -46,12 +47,12 @@ func process_interaction(_delta: float) -> void:
 		if _should_exit_terminal_mode():
 			exit_terminal_mode()
 			return
-			
+
 		if is_instance_valid(active_terminal):
 			# The click is now safely handled by handle_shoot_input().
 			# This just continuously updates the mouse hover position.
 			shoot_terminal_raycast(false)
-			
+
 		return
 
 	_update_dynamic_reach()
@@ -60,17 +61,18 @@ func process_interaction(_delta: float) -> void:
 	if current_interactable:
 		var hit_point: Vector3 = interact_shapecast.get_collision_point(0)
 		if current_interactable.has_method("hover_cursor"):
-			# Note: I removed the print() statement from this specific block. 
-			# Printing to the console every single frame causes massive performance 
+			# Note: I removed the print() statement from this specific block.
+			# Printing to the console every single frame causes massive performance
 			# bottlenecks and will prevent you from holding a steady 60 FPS.
 			current_interactable.hover_cursor(player_body, hit_point)
+
 
 # --------------------------------------
 # INPUT HANDLING
 # --------------------------------------
 func handle_interact_input() -> void:
 	print("InteractionScanner: handle_interact_input called.")
-	
+
 	if is_in_terminal_mode:
 		exit_terminal_mode()
 		return
@@ -106,7 +108,7 @@ func handle_interact_input() -> void:
 
 			if weapon_holder:
 				weapon_holder.hide()
-				
+
 	else:
 		# --- NEW: NOTHING TO INTERACT WITH ---
 		print("InteractionScanner: Nothing to interact with. Playing empty sound.")
@@ -116,7 +118,7 @@ func handle_interact_input() -> void:
 
 func handle_shoot_input() -> void:
 	print("InteractionScanner: handle_shoot_input called.")
-	
+
 	if is_in_terminal_mode and is_instance_valid(active_terminal):
 		shoot_terminal_raycast(true)
 		get_viewport().set_input_as_handled()
@@ -139,7 +141,7 @@ func handle_shoot_input() -> void:
 		if weapon_holder:
 			weapon_holder.show()
 
-		return 
+		return
 
 	if weapon_holder and weapon_holder.get_child_count() > 0:
 		var active_weapon: Node3D = weapon_holder.get_child(0) as Node3D
@@ -190,14 +192,14 @@ func _get_interactable_component_at_shapecast() -> Node:
 
 	for i: int in interact_shapecast.get_collision_count():
 		var collider: Object = interact_shapecast.get_collider(i)
-		
+
 		if not is_instance_valid(collider) or collider == player_body:
 			continue
 
 		if collider is Node:
 			var current_node: Node = collider
 			var comp: Node = null
-			
+
 			while is_instance_valid(current_node) and current_node != get_tree().root:
 				comp = current_node.get_node_or_null("Interact_Component")
 				if is_instance_valid(comp):
@@ -206,7 +208,7 @@ func _get_interactable_component_at_shapecast() -> Node:
 
 			if is_instance_valid(comp):
 				var interactable_parent: Node = comp.get_parent()
-				
+
 				if interactable_parent.has_method("is_valid_pickup_position"):
 					if not interactable_parent.is_valid_pickup_position(player_body):
 						continue
@@ -217,7 +219,7 @@ func _get_interactable_component_at_shapecast() -> Node:
 				if dist < closest_dist:
 					closest_dist = dist
 					closest_comp = comp
-					current_hit_point = hit_point # Cache the precise hit location
+					current_hit_point = hit_point  # Cache the precise hit location
 
 	return closest_comp
 
@@ -238,11 +240,11 @@ func enter_terminal_mode(terminal: Node3D) -> void:
 
 func exit_terminal_mode() -> void:
 	print("InteractionScanner: exit_terminal_mode called.")
-	
+
 	if is_instance_valid(active_terminal):
 		if active_terminal.has_method("clear_mouse_hover"):
 			active_terminal.clear_mouse_hover()
-		
+
 	is_in_terminal_mode = false
 	active_terminal = null
 
@@ -258,10 +260,10 @@ func _should_exit_terminal_mode() -> bool:
 		or Input.is_action_pressed("right")
 	):
 		return true
-		
+
 	if Input.is_action_just_pressed("jump") or Input.is_action_just_pressed("crouch"):
 		return true
-		
+
 	if player_body.global_position.distance_to(terminal_start_pos) > 1.0:
 		return true
 
@@ -277,7 +279,7 @@ func _should_exit_terminal_mode() -> bool:
 func shoot_terminal_raycast(is_click: bool) -> void:
 	if is_click:
 		print("InteractionScanner: shoot_terminal_raycast executed a click.")
-		
+
 	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
 	var screen_center: Vector2 = viewport_size / 2.0
 
@@ -286,10 +288,10 @@ func shoot_terminal_raycast(is_click: bool) -> void:
 	var ray_end: Vector3 = ray_origin + ray_normal * 3.0
 
 	var query := PhysicsRayQueryParameters3D.create(ray_origin, ray_end)
-	
+
 	if is_instance_valid(player_body):
 		query.exclude = [player_body.get_rid()]
-	
+
 	query.collision_mask = 5
 
 	var space_state: PhysicsDirectSpaceState3D = player_body.get_world_3d().direct_space_state

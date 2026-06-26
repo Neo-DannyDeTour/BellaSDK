@@ -23,7 +23,7 @@ func _on_body_entered(body: Node3D) -> void:
 		var destination: Vector3 = connect_portal.global_transform.origin
 		body.global_transform.origin = destination
 		print("Portal executing: Player transformed to destination.")
-		
+
 		_play_portal_sounds()
 	else:
 		print("Portal executing: Warning - No connect_portal assigned.")

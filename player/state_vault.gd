@@ -6,7 +6,7 @@ func enter(_msg: Dictionary = {}) -> void:
 	# 1. Safely route to the vault controller via the new component architecture
 	var env: Node = player.environment_component
 	var vault_ctrl: Node = env.get("vault_controller") if is_instance_valid(env) else null
-	
+
 	if is_instance_valid(vault_ctrl):
 		# Listen for the VaultController to tell us it's done
 		if not vault_ctrl.vault_finished.is_connected(_on_vault_finished):
@@ -19,7 +19,7 @@ func enter(_msg: Dictionary = {}) -> void:
 func exit() -> void:
 	var env: Node = player.environment_component
 	var vault_ctrl: Node = env.get("vault_controller") if is_instance_valid(env) else null
-	
+
 	if is_instance_valid(vault_ctrl):
 		# Clean up the connection so it doesn't fire multiple times
 		if vault_ctrl.vault_finished.is_connected(_on_vault_finished):

@@ -26,7 +26,7 @@ func _on_interacted(_interactor: Node) -> void:
 	if card_data == null:
 		print("KeycardPickup: Interaction failed. No card data assigned.")
 		return
-		
+
 	print("KeycardPickup: Player interacted. Picking up card ID ", card_data.card_id)
 	KeycardSystem.add_card(card_data.card_id)
 	queue_free()

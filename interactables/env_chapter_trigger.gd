@@ -78,40 +78,40 @@ func _on_body_entered(body: Node3D) -> void:
 	if body.is_in_group("player"):
 		_has_triggered = true
 		_apply_random_effects_if_enabled()
-		
+
 		print(
-			"EnvChapterTrigger: Player entered. Emitting chapter '", 
-			chapter_name, 
-			"' with style ID ", 
+			"EnvChapterTrigger: Player entered. Emitting chapter '",
+			chapter_name,
+			"' with style ID ",
 			animation_style
 		)
-		
+
 		Events.chapter_triggered.emit(
-			chapter_name, 
-			animation_style as int, 
-			display_duration, 
-			text_color
+			chapter_name, animation_style as int, display_duration, text_color
 		)
 
 
 func _apply_random_effects_if_enabled() -> void:
 	if not play_random_effects:
 		return
-		
+
 	print("EnvChapterTrigger: _apply_random_effects_if_enabled() called.")
-	
+
 	# Grab all available integer values from the enum and pick one at random
 	var style_values: Array = Events.ChapterAnimStyle.values()
 	animation_style = style_values.pick_random() as Events.ChapterAnimStyle
-	
+
 	# Generate a random, fully opaque color
 	text_color = Color(randf(), randf(), randf(), 1.0)
-	
+
 	# Randomize the duration slightly between 3.0 and 7.0 seconds
 	display_duration = randf_range(3.0, 7.0)
-	
+
 	print(
-		"EnvChapterTrigger: Random effects generated -> Style: ", animation_style, 
-		", Color: ", text_color, 
-		", Duration: ", display_duration
+		"EnvChapterTrigger: Random effects generated -> Style: ",
+		animation_style,
+		", Color: ",
+		text_color,
+		", Duration: ",
+		display_duration
 	)

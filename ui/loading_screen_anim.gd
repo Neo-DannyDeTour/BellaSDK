@@ -20,17 +20,13 @@ func _ready() -> void:
 	print("LoadingScreen: Initializing load screen. Requesting level: ", level_scene_path)
 	animation.play("default")
 	audio_player.play()
-	
-	var error: Error = ResourceLoader.load_threaded_request(
-		level_scene_path, 
-		"", 
-		true
-	)
-	
+
+	var error: Error = ResourceLoader.load_threaded_request(level_scene_path, "", true)
+
 	if error != OK:
 		push_error("LoadingScreen: Background load error: " + error_string(error))
 		return
-		
+
 	print("LoadingScreen: Threaded load requested successfully. Monitoring progress...")
 	_status = ResourceLoader.load_threaded_get_status(level_scene_path)
 
@@ -39,26 +35,23 @@ func _process(_delta: float) -> void:
 	if _is_precompiling:
 		_process_shader_compilation()
 		return
-		
-	_status = ResourceLoader.load_threaded_get_status(
-		level_scene_path, 
-		_progress_array
-	)
-	
+
+	_status = ResourceLoader.load_threaded_get_status(level_scene_path, _progress_array)
+
 	match _status:
 		ResourceLoader.THREAD_LOAD_IN_PROGRESS:
 			progress_bar.value = _progress_array[0] * 100.0
-			
+
 		ResourceLoader.THREAD_LOAD_LOADED:
 			print("LoadingScreen: Level loaded in background. Starting shader precompilation.")
 			_is_precompiling = true
 			_setup_precompilation()
-			
+
 		ResourceLoader.THREAD_LOAD_FAILED:
 			set_process(false)
 			audio_player.stop()
 			push_error("LoadingScreen: Loading failed. Check the file path or assets.")
-			
+
 		ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
 			set_process(false)
 			audio_player.stop()
@@ -67,20 +60,20 @@ func _process(_delta: float) -> void:
 
 func _setup_precompilation() -> void:
 	print("LoadingScreen: Setting up temporary instances to force shader compilation.")
-	
+
 	if not baked_shader_cache or baked_shader_cache.materials.is_empty():
 		print("LoadingScreen: No shader cache found or cache is empty. Skipping precompile.")
 		_change_to_loaded_level()
 		return
-		
+
 	_dummy_parent_3d = Node3D.new()
 	_dummy_parent_3d.position = Vector3(0.0, -1000.0, 0.0)
 	add_child(_dummy_parent_3d)
-	
+
 	_dummy_parent_2d = Control.new()
 	_dummy_parent_2d.position = Vector2(-10000.0, -10000.0)
 	add_child(_dummy_parent_2d)
-	
+
 	_current_compile_index = 0
 
 
@@ -98,7 +91,7 @@ func _process_shader_compilation() -> void:
 
 func _create_dummy_element(mat: Material) -> void:
 	var is_2d: bool = false
-	
+
 	if mat is CanvasItemMaterial:
 		is_2d = true
 	elif mat is ShaderMaterial:
@@ -124,9 +117,10 @@ func _change_to_loaded_level() -> void:
 	print("LoadingScreen: Instantiating and switching to the loaded packed scene.")
 	set_process(false)
 	audio_player.stop()
-	
-	var loaded_scene: PackedScene = \
+
+	var loaded_scene: PackedScene = (
 		ResourceLoader.load_threaded_get(level_scene_path) as PackedScene
-	
+	)
+
 	if loaded_scene:
 		get_tree().change_scene_to_packed(loaded_scene)

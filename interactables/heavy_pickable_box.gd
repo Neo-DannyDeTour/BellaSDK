@@ -30,7 +30,7 @@ func pick_up(_target: Marker3D, player: Node3D) -> void:
 
 	var p_pos: Vector3 = player.global_position
 	var b_pos: Vector3 = global_position
-	
+
 	var to_player: Vector3 = p_pos - b_pos
 	var height_diff: float = p_pos.y - b_pos.y
 	var flat_dist: float = Vector2(p_pos.x - b_pos.x, p_pos.z - b_pos.z).length()
@@ -59,11 +59,11 @@ func pick_up(_target: Marker3D, player: Node3D) -> void:
 	var shape: CapsuleShape3D = CapsuleShape3D.new()
 	shape.radius = player_radius * 0.8
 	shape.height = player_height * 0.8
-	
+
 	query.shape = shape
 	var query_y: float = target_stand_pos.y + (player_height / 2.0) + 0.5
 	var query_pos: Vector3 = Vector3(target_stand_pos.x, query_y, target_stand_pos.z)
-	
+
 	query.transform = Transform3D(Basis(), query_pos)
 	query.collision_mask = environment_collision_mask
 	query.exclude = [self.get_rid(), player.get_rid()]
@@ -78,7 +78,7 @@ func pick_up(_target: Marker3D, player: Node3D) -> void:
 
 	if "is_stunned" in holder:
 		holder.is_stunned = true
-		
+
 	if interact_comp:
 		if "monitorable" in interact_comp:
 			interact_comp.set_deferred("monitorable", false)
@@ -88,9 +88,7 @@ func pick_up(_target: Marker3D, player: Node3D) -> void:
 	var look_basis: Basis = Basis.looking_at(-snap_normal, Vector3.UP)
 	var tween: Tween = get_tree().create_tween().set_parallel(true)
 	tween.tween_property(holder, "global_position", target_stand_pos, snap_duration)
-	tween.tween_property(
-		holder, "quaternion", look_basis.get_rotation_quaternion(), snap_duration
-	)
+	tween.tween_property(holder, "quaternion", look_basis.get_rotation_quaternion(), snap_duration)
 
 	tween.chain().tween_callback(_finish_pickup)
 
@@ -100,7 +98,7 @@ func _finish_pickup() -> void:
 	_is_animating = false
 	is_heavy_held = true
 	_grab_time = Time.get_ticks_msec()
-	_fall_velocity = 0.0 
+	_fall_velocity = 0.0
 
 	global_rotation.x = 0.0
 	global_rotation.z = 0.0
@@ -122,7 +120,7 @@ func _finish_pickup() -> void:
 
 	if "is_stunned" in holder:
 		holder.is_stunned = false
-		
+
 	if "is_heavy_lifting" in holder:
 		holder.is_heavy_lifting = true
 
@@ -158,7 +156,7 @@ func _physics_process(delta: float) -> void:
 
 		var motion: Vector3 = target_pos - global_position
 		var max_speed: float = 8.0 * delta
-		
+
 		if motion.length() > max_speed:
 			motion = motion.normalized() * max_speed
 
@@ -169,7 +167,7 @@ func _physics_process(delta: float) -> void:
 		if col:
 			if col.get_normal().y > 0.5:
 				_fall_velocity = 0.0
-				
+
 			var remainder: Vector3 = motion.slide(col.get_normal())
 			remainder.y = min(0.0, remainder.y)
 			move_and_collide(remainder)
@@ -181,11 +179,11 @@ func _physics_process(delta: float) -> void:
 			global_position, ray_end
 		)
 		query.exclude = [get_rid(), holder.get_rid()]
-		
+
 		var hit: Dictionary = space_state.intersect_ray(query)
 		if not hit.is_empty():
 			is_supported = true
-			
+
 		if not is_supported:
 			drop()
 			return
@@ -209,9 +207,7 @@ func _physics_process(delta: float) -> void:
 			else:
 				holder.global_position += push_vec
 
-			var post_p_2d: Vector2 = Vector2(
-				holder.global_position.x, holder.global_position.z
-			)
+			var post_p_2d: Vector2 = Vector2(holder.global_position.x, holder.global_position.z)
 			if post_p_2d.distance_to(b_pos_2d) < safe_dist - 0.05:
 				drop()
 				return
@@ -258,19 +254,19 @@ func _finish_drop(previous_holder: Node3D) -> void:
 
 		if "is_heavy_lifting" in previous_holder:
 			previous_holder.is_heavy_lifting = false
-			
+
 		if "interaction_scanner" in previous_holder:
 			var scanner: Node = previous_holder.interaction_scanner
-			
+
 			if "is_heavy_lifting" in scanner:
 				scanner.is_heavy_lifting = false
 			if "held_object" in scanner:
 				scanner.held_object = null
-				
+
 			if "current_interactable" in scanner:
 				if scanner.current_interactable == interact_comp:
 					scanner.current_interactable = null
-			
+
 			if "closest_interactable" in scanner:
 				if scanner.closest_interactable == interact_comp:
 					scanner.closest_interactable = null
@@ -282,7 +278,7 @@ func _finish_drop(previous_holder: Node3D) -> void:
 		if "held_item" in previous_holder:
 			previous_holder.held_item = null
 			print("HeavyPickableBox: Confirmed detachment. 'held_item' cleared on Player.")
-			
+
 			# Restore the weapon holder since the player didn't trigger this drop manually
 			if previous_holder.has_method("_set_weapon_active"):
 				previous_holder._set_weapon_active(true)
@@ -305,7 +301,7 @@ func throw(_impulse: Vector3) -> void:
 func is_valid_pickup_position(player: Node3D) -> bool:
 	var p_pos: Vector3 = player.global_position
 	var b_pos: Vector3 = global_position
-	
+
 	var height_diff: float = p_pos.y - b_pos.y
 	var flat_dist: float = Vector2(p_pos.x - b_pos.x, p_pos.z - b_pos.z).length()
 

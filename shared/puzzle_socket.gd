@@ -33,7 +33,7 @@ var install_cooldown: float = 0.0
 
 func _ready() -> void:
 	_sync_transmitter()
-	
+
 	if not Engine.is_editor_hint():
 		if is_instance_valid(indicator_light):
 			indicator_light.visible = true
@@ -153,7 +153,7 @@ func plug_in(plug: Node3D) -> void:
 func _trigger_delayed_snap(plug: Node3D) -> void:
 	print("Socket: Awaiting physics frame to guarantee clean state.")
 	await get_tree().physics_frame
-	
+
 	if is_instance_valid(plug) and is_powered:
 		_snap_and_freeze_plug(plug)
 
@@ -205,14 +205,14 @@ func _on_socket_focused() -> void:
 		var raw_text: String = events[0].as_text()
 		key_name = (
 			raw_text
-			.replace(" (Physical)", "")
-			.replace(" - Physical", "")
-			.replace(" (Physics)", "")
-			.replace(" - Physics", "")
-			.replace("Left Mouse Button", "LMB")
-			.replace("Right Mouse Button", "RMB")
-			.replace("Middle Mouse Button", "MMB")
-			.strip_edges()
+			. replace(" (Physical)", "")
+			. replace(" - Physical", "")
+			. replace(" (Physics)", "")
+			. replace(" - Physics", "")
+			. replace("Left Mouse Button", "LMB")
+			. replace("Right Mouse Button", "RMB")
+			. replace("Middle Mouse Button", "MMB")
+			. strip_edges()
 		)
 
 	if is_powered and can_be_unplugged:
@@ -280,9 +280,7 @@ func _snap_and_freeze_plug(plug: Node3D) -> void:
 
 		# Force Transform on the Physics server FIRST
 		PhysicsServer3D.body_set_state(
-			plug.get_rid(),
-			PhysicsServer3D.BODY_STATE_TRANSFORM,
-			target_transform
+			plug.get_rid(), PhysicsServer3D.BODY_STATE_TRANSFORM, target_transform
 		)
 
 		# Apply to node and freeze LAST

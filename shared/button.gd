@@ -33,7 +33,7 @@ var can_press: bool = true
 
 func _ready() -> void:
 	_sync_transmitter()
-	
+
 	if is_instance_valid(interact_component) and not Engine.is_editor_hint():
 		interact_component.focused.connect(_on_focus)
 		interact_component.unfocused.connect(_on_unfocus)
@@ -88,15 +88,15 @@ func _on_interact(_player: CharacterBody3D) -> void:
 
 	(
 		press_tween
-		.tween_property(pressable_part, "position:y", base_y - 0.02, 0.1)
-		.set_trans(Tween.TRANS_CUBIC)
-		.set_ease(Tween.EASE_OUT)
+		. tween_property(pressable_part, "position:y", base_y - 0.02, 0.1)
+		. set_trans(Tween.TRANS_CUBIC)
+		. set_ease(Tween.EASE_OUT)
 	)
 	(
 		press_tween
-		.tween_property(pressable_part, "position:y", base_y, 0.15)
-		.set_trans(Tween.TRANS_CUBIC)
-		.set_ease(Tween.EASE_IN_OUT)
+		. tween_property(pressable_part, "position:y", base_y, 0.15)
+		. set_trans(Tween.TRANS_CUBIC)
+		. set_ease(Tween.EASE_IN_OUT)
 	)
 
 	if is_instance_valid(transmitter):

@@ -24,7 +24,7 @@ extends Path3D
 # --------------------------------------
 func _ready() -> void:
 	print("SlideTrack: _ready() called. Pushing configuration to PathStick.")
-	
+
 	if is_instance_valid(path_stick):
 		path_stick.move_speed = move_speed
 		path_stick.throw_speed_threshold = throw_speed_threshold

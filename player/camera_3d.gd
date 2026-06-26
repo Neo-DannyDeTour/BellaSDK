@@ -16,7 +16,7 @@ var _noise: FastNoiseLite = FastNoiseLite.new()
 func _ready() -> void:
 	make_current()
 	print("Player camera has been set as the current active camera.")
-	
+
 	_noise.seed = randi()
 	_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
 	Events.screenshake_requested.connect(_on_screenshake_requested)
@@ -35,7 +35,7 @@ func _process(delta: float) -> void:
 
 func _apply_shake(delta: float) -> void:
 	_time_passed += delta * noise_speed
-	
+
 	# Square the 0-1 trauma for a smooth dropoff, then multiply by the raw HL2 intensity
 	var shake_power: float = (_trauma * _trauma) * _amplitude
 
@@ -45,12 +45,18 @@ func _apply_shake(delta: float) -> void:
 
 
 func _on_screenshake_requested(intensity: float, duration: float) -> void:
-	print("Camera3D triggered: Applying screenshake (Intensity: ", intensity, ", Duration: ", duration, "s)")
-	
+	print(
+		"Camera3D triggered: Applying screenshake (Intensity: ",
+		intensity,
+		", Duration: ",
+		duration,
+		"s)"
+	)
+
 	# If overlapping shakes occur, take the strongest one
 	_amplitude = maxf(_amplitude, clampf(intensity, 0.0, 16.0))
-	_trauma = 1.0 # Reset the timing envelope to 100%
-	
+	_trauma = 1.0  # Reset the timing envelope to 100%
+
 	if duration > 0.0:
 		_decay_rate = 1.0 / duration
 	else:

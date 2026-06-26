@@ -9,7 +9,7 @@ var _is_mounting: bool = false
 
 func enter(msg: Dictionary = {}) -> void:
 	_is_mounting = false
-	
+
 	if msg.has("target_transform"):
 		var t: Transform3D = msg["target_transform"]
 		_is_mounting = true
@@ -17,13 +17,13 @@ func enter(msg: Dictionary = {}) -> void:
 		tween.tween_property(player, "global_transform", t, 0.4)
 		# Strict typing for the lambda callback
 		tween.finished.connect(func() -> void: _is_mounting = false)
-		
+
 	if msg.has("wheel"):
 		active_wheel = msg["wheel"] as PushWheel
 		print("PushWheelState: Entered. Attached to wheel.")
-		
-		_exit_cooldown = 0.2 
-		
+
+		_exit_cooldown = 0.2
+
 		loco_component = player.get_node_or_null("LocomotionComponent")
 		if is_instance_valid(loco_component):
 			loco_component.set_physics_active(false)
@@ -55,7 +55,7 @@ func physics_update(delta: float) -> void:
 	# Only lock the transform IF the mounting tween is finished
 	if not _is_mounting and is_instance_valid(active_wheel.current_active_anchor):
 		player.global_transform = active_wheel.current_active_anchor.global_transform
-	
+
 	if player.get("head") != null:
 		var head: Node3D = player.head as Node3D
 		head.rotation.x = lerp_angle(head.rotation.x, 0.0, 10.0 * delta)
@@ -85,5 +85,5 @@ func exit() -> void:
 	if is_instance_valid(loco_component):
 		loco_component.set_physics_active(true)
 		print("PushWheelState: Re-enabled LocomotionComponent.")
-	
+
 	active_wheel = null
