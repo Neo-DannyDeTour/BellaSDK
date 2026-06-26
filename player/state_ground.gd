@@ -8,6 +8,9 @@ const JUMP_VELOCITY: float = 4.5
 const CROUCH_JUMP_VELOCITY: float = 3.5
 const SPRINT_JUMP_VELOCITY: float = 5.0
 
+# The rate at which the player slows down when no input is pressed
+const GROUND_FRICTION: float = 25.0 
+
 var current_speed: float = 0.0
 
 func enter(msg: Dictionary = {}) -> void:
@@ -15,7 +18,6 @@ func enter(msg: Dictionary = {}) -> void:
 	player.velocity.y = 0.0
 	current_speed = 0.0 
 
-	# Consume the buffer from StateAir and immediately jump!
 	if msg.has("jump_buffered") and msg["jump_buffered"] == true:
 		_perform_jump()
 		return
@@ -28,7 +30,8 @@ func physics_update(delta: float) -> void:
 		return
 		
 	# 0. Slide Surface Detection
-	for i: int in range(player.get_slide_collision_count()):
+	var slide_count: int = player.get_slide_collision_count()
+	for i: int in range(slide_count):
 		var collision: KinematicCollision3D = player.get_slide_collision(i)
 		var collider: Object = collision.get_collider()
 		
@@ -41,7 +44,6 @@ func physics_update(delta: float) -> void:
 	var is_recently_stepped: bool = loco.stair_controller.get("time_since_step_up") < 0.2
 	var snapped_last_frame: bool = loco.stair_controller.get("_snapped_to_stairs_last_frame")
 	
-	# We ignore false negatives from is_on_floor if we are in the middle of a step traversal
 	if not player.is_on_floor() and not snapped_last_frame and not is_recently_stepped:
 		if env.current_water_node != null:
 			print("StateGround: Transitioning to Swim.")
@@ -61,7 +63,6 @@ func physics_update(delta: float) -> void:
 	if Input.is_action_just_pressed("jump"):
 		var is_pressing_forward: bool = Input.is_action_pressed("forward")
 		
-		# Hard requirement: MUST be actively holding W. S bypasses vault.
 		if is_pressing_forward and not snapped_last_frame and is_instance_valid(env.vault_controller) and env.vault_controller.try_vault(loco.crouching):
 			print("StateGround: Valid vault detected. Transitioning.")
 			state_machine.transition_to("Vault")
@@ -80,18 +81,17 @@ func physics_update(delta: float) -> void:
 	# 6. Try snapping UP stairs
 	loco.stair_controller.snap_up_stairs_check(delta, loco.sprint_active)
 
-	# Move the Character (Normal movement)
+	# Move the Character
 	player.move_and_slide()
 
-	# 7. Try snapping DOWN to keep the player grounded on descending stairs
+	# 7. Try snapping DOWN stairs
 	loco.stair_controller.snap_down_to_stairs_check()
 	
-	# 8. Keep track of floor timing for the next frame
+	# 8. Keep track of floor timing
 	loco.stair_controller.track_floor_state()
 
-	# 9. Update our decoupled components
+	# 9. Update decoupled components
 	_update_components(delta, input_dir)
-
 
 func _perform_jump() -> void:
 	var loco: Node = player.locomotion_component
@@ -104,13 +104,10 @@ func _perform_jump() -> void:
 		player.velocity.y = JUMP_VELOCITY
 
 	print("StateGround: Executing jump. Velocity Y set to ", player.velocity.y)
-
-	# Force a physics update right now so the engine registers we left the ground
-	player.move_and_slide() 
 	
-	# Send the jump dictionary so StateAir knows this was intentional
+	# Removed move_and_slide() here to prevent double-processing collisions. 
+	# StateAir will handle the physical movement smoothly on the next frame.
 	state_machine.transition_to("Air", {"jump": true})
-
 
 func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
 	var loco: Node = player.locomotion_component
@@ -133,7 +130,6 @@ func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
 		loco.standing_collision.disabled = false
 		loco.crouching_collision.disabled = true
 		
-		# THE FIX: Use a relaxed lerp (4.0) on stairs to glide, and standard (15.0) for flat ground
 		var head_lerp: float = 4.0 if is_recently_stepped else 15.0
 		loco.head.position.y = lerpf(loco.head.position.y, 1.8, delta * head_lerp)
 
@@ -157,17 +153,13 @@ func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
 
 	current_speed = lerpf(current_speed, target_speed, delta * 15.0)
 
-
 func _apply_movement(delta: float, input_dir: Vector2) -> void:
 	var loco: Node = player.locomotion_component
 	var active_lerp: float = loco.ice_lerp_speed if loco.on_ice else loco.default_lerp_speed
-	var target_dir: Vector3 = (
-		(player.transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
-	)
+	var target_dir: Vector3 = (player.transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
 
 	loco.direction = loco.direction.lerp(target_dir, delta * active_lerp)
 
-	# THE FIX: Enforce floor stickiness so the State Machine doesn't thrash.
 	if player.is_on_floor():
 		player.velocity.y = -0.1
 	else:
@@ -177,31 +169,33 @@ func _apply_movement(delta: float, input_dir: Vector2) -> void:
 		player.velocity.x = loco.direction.x * current_speed
 		player.velocity.z = loco.direction.z * current_speed
 	else:
-		player.velocity.x = move_toward(player.velocity.x, 0.0, current_speed)
-		player.velocity.z = move_toward(player.velocity.z, 0.0, current_speed)
-		loco.direction = Vector3.ZERO
-
+		# Replaced the instant stop with delta-based friction
+		var friction_step: float = GROUND_FRICTION * delta
+		player.velocity.x = move_toward(player.velocity.x, 0.0, friction_step)
+		player.velocity.z = move_toward(player.velocity.z, 0.0, friction_step)
+		
+		# Smoothly reset direction when fully stopped
+		if player.velocity.length() < 0.01:
+			loco.direction = Vector3.ZERO
 
 func _update_components(delta: float, input_dir: Vector2) -> void:
 	var loco: Node = player.locomotion_component
 	var interact: Node = player.interaction_component
 
-	# Tell the camera to handle headbobbing and FOV changes
-	player.camera_controller.update_camera(
-		delta, input_dir, loco.sprint_active, loco.crouching, true, player.velocity.length()
-	)
+	if is_instance_valid(player.camera_controller):
+		player.camera_controller.update_camera(
+			delta, input_dir, loco.sprint_active, loco.crouching, true, player.velocity.length()
+		)
 
-	# Tell the audio manager to play footsteps
-	loco.footstep_manager.process_surface_and_footsteps(
-		delta, true, player.velocity.length(), loco.sprint_active, loco.crouching
-	)
-	loco.on_ice = loco.footstep_manager.get("is_on_ice")
+	if is_instance_valid(loco.footstep_manager):
+		loco.footstep_manager.process_surface_and_footsteps(
+			delta, true, player.velocity.length(), loco.sprint_active, loco.crouching
+		)
+		loco.on_ice = loco.footstep_manager.get("is_on_ice")
 
-	# Run the interaction raycast while on the ground
 	if is_instance_valid(interact.interaction_scanner):
 		interact.interaction_scanner.process_interaction(delta)
 
-	# Push physical objects out of the way
 	if is_instance_valid(loco.physics_pusher):
 		loco.physics_pusher.process_pushes(
 			interact.held_item, loco.last_velocity, loco.sprinting_speed

@@ -5,8 +5,8 @@ const TARGET_FPS_MINIMUM: float = 55.0
 
 var _is_low_end: bool = false
 var _active_environment: Environment = null
-var _fps_check_timer: float = 0.0
 var _performance_downgraded: bool = false
+var _fps_timer: Timer = null
 
 
 func _ready() -> void:
@@ -17,17 +17,30 @@ func _ready() -> void:
 	var error: Error = get_tree().node_added.connect(_on_node_added) as Error
 	if error != OK:
 		push_error("GraphicsManager: Failed to connect node_added signal.")
+		
+	_setup_fps_timer()
 
 
-func _process(delta: float) -> void:
-	# Monitor FPS for everyone unless we already downgraded performance
+func _setup_fps_timer() -> void:
+	print("GraphicsManager: Setting up periodic FPS check timer.")
+	_fps_timer = Timer.new()
+	_fps_timer.wait_time = FPS_CHECK_INTERVAL
+	_fps_timer.one_shot = false
+	_fps_timer.autostart = true
+	
+	var error: Error = _fps_timer.timeout.connect(_on_fps_timer_timeout) as Error
+	if error != OK:
+		push_error("GraphicsManager: Failed to connect Timer timeout signal.")
+		
+	add_child(_fps_timer)
+
+
+func _on_fps_timer_timeout() -> void:
+	print("GraphicsManager: FPS Timer timeout triggered.")
 	if _performance_downgraded or _active_environment == null:
 		return
-
-	_fps_check_timer += delta
-	if _fps_check_timer >= FPS_CHECK_INTERVAL:
-		_fps_check_timer = 0.0
-		_evaluate_runtime_performance()
+		
+	_evaluate_runtime_performance()
 
 
 func _detect_low_end_hardware() -> bool:
@@ -96,3 +109,7 @@ func _evaluate_runtime_performance() -> void:
 			_active_environment.ssr_enabled = false
 
 		_performance_downgraded = true
+		
+		# Stop the timer immediately to save CPU cycles once downgraded
+		_fps_timer.stop()
+		print("GraphicsManager: Downgrade complete. FPS timer stopped to optimize performance.")
