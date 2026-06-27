@@ -17,8 +17,8 @@ If you feel unsure - just ask Japan. They've been doing samurai chicks, sci-fi c
 I'd've paid a huge buck to play a game about chicks doing knight shit in semi-historically accurate armor and setting! IT'S SO COOL!
 Just hire [Jill Bearup](https://www.youtube.com/@JillBearup/videos) and [Lindsay Holiday](https://www.youtube.com/@LindsayHoliday/videos) or somebody along those lines! Don't try to outsmart history.  
 
-https://github.com/user-attachments/assets/3af4ddb5-a152-4f3e-83b0-2a49336eb4a1
-https://github.com/user-attachments/assets/73c22186-72a1-4604-bfb0-c6b80381f615
+<video src="https://github.com/user-attachments/assets/3af4ddb5-a152-4f3e-83b0-2a49336eb4a1" width="50%" autoplay loop muted playsinline></video>
+<video src="https://github.com/user-attachments/assets/73c22186-72a1-4604-bfb0-c6b80381f615" width="50%" autoplay loop muted playsinline></video>
 
 A bit of cool shit is all I want these days.
 What is cool: dark ambient is cool, Arnold is cool, war is cool (to be fair: I'm a sweet kind of guy, a chill guy, a peace loving guy but if a dude doesn't wanna kill infidels to retake the Holy Land every once in a while - that's no dude. That's a reverse trap at best), Warhammer40k is cool (not the modern day stuff of course. I'm talking about Adrian Smiths 3rd and 4th editions), loud boom-sticks are cool, goth/alt chicks are cool (but no tattoos and I'm not into piercings either), horrors are cool (body horror, psychological), break-core is cool, Half-Life is... meh (it insists upon itself), Resident Evil 2 remake level design is sweet, gothic and post-soviet architecture is Pure At Moe's Sphere, fast (red) cars, Giger, zombies, John Carpenter, such classics as Dorian Grey, The Metamorphosis by Kafka, Kholstomer. The first 5 minutes after shower. Quesadillas with marinated hot peppers. 
