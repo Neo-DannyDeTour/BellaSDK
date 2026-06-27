@@ -29,9 +29,8 @@ And so I decided to create BellaSDK - a free Source/Hammer killer to help noobs 
 
 Back to BellaSDK: I want this sweet little princess to have everything: all the gameplay mechanics such as boom-sticks, interactions, movements, AI, physics, puzzles, dialogue systems, handholding, (at least) 5 kids, a nice house, plenty of sausages, a good economy around, you name it. High level of interactivity and hand-crafted approach all the way through!
 
-https://github.com/user-attachments/assets/32fe27de-3671-461e-9789-0ebccb831cc7
-https://github.com/user-attachments/assets/17393d66-4208-4b34-a6a3-3508d1e72c7b
-
+<video src="https://github.com/user-attachments/assets/32fe27de-3671-461e-9789-0ebccb831cc7" width="50%" autoplay loop muted playsinline></video>
+<video src="https://github.com/user-attachments/assets/17393d66-4208-4b34-a6a3-3508d1e72c7b" width="50%" autoplay loop muted playsinline></video>
 
 Besides that I also want textures, models (especially barrels), sounds, animations, VFX, elves, good and easy-to-use scripting system, doors that always open AWAY from you (if you are into that sort of thing)! 
 
