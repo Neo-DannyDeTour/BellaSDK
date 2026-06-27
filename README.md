@@ -17,6 +17,9 @@ If you feel unsure - just ask Japan. They've been doing samurai chicks, sci-fi c
 I'd've paid a huge buck to play a game about chicks doing knight shit in semi-historically accurate armor and setting! IT'S SO COOL!
 Just hire [Jill Bearup](https://www.youtube.com/@JillBearup/videos) and [Lindsay Holiday](https://www.youtube.com/@LindsayHoliday/videos) or somebody along those lines! Don't try to outsmart history.  
 
+https://github.com/user-attachments/assets/3af4ddb5-a152-4f3e-83b0-2a49336eb4a1
+https://github.com/user-attachments/assets/73c22186-72a1-4604-bfb0-c6b80381f615
+
 A bit of cool shit is all I want these days.
 What is cool: dark ambient is cool, Arnold is cool, war is cool (to be fair: I'm a sweet kind of guy, a chill guy, a peace loving guy but if a dude doesn't wanna kill infidels to retake the Holy Land every once in a while - that's no dude. That's a reverse trap at best), Warhammer40k is cool (not the modern day stuff of course. I'm talking about Adrian Smiths 3rd and 4th editions), loud boom-sticks are cool, goth/alt chicks are cool (but no tattoos and I'm not into piercings either), horrors are cool (body horror, psychological), break-core is cool, Half-Life is... meh (it insists upon itself), Resident Evil 2 remake level design is sweet, gothic and post-soviet architecture is Pure At Moe's Sphere, fast (red) cars, Giger, zombies, John Carpenter, such classics as Dorian Grey, The Metamorphosis by Kafka, Kholstomer. The first 5 minutes after shower. Quesadillas with marinated hot peppers. 
 
@@ -25,6 +28,10 @@ Anyway, all I wanna say is that <i>"The client is always right"</i> and if our m
 And so I decided to create BellaSDK - a free Source/Hammer killer to help noobs quickly get into GD/LD using modern day tools. Hammer was a good hoor. A total beast! Great memories but it's time to move on. Unity keeps shooting itself in the foot and Unreal is a huge pile of shit that is thousands of years old. Everybody pooped there: mammonths, seals, birds, the whales and the snail, and even Gary The Stinky Pooper. You know who I'm talking about.  
 
 Back to BellaSDK: I want this sweet little princess to have everything: all the gameplay mechanics such as boom-sticks, interactions, movements, AI, physics, puzzles, dialogue systems, handholding, (at least) 5 kids, a nice house, plenty of sausages, a good economy around, you name it. High level of interactivity and hand-crafted approach all the way through!
+
+https://github.com/user-attachments/assets/32fe27de-3671-461e-9789-0ebccb831cc7
+https://github.com/user-attachments/assets/17393d66-4208-4b34-a6a3-3508d1e72c7b
+
 
 Besides that I also want textures, models (especially barrels), sounds, animations, VFX, elves, good and easy-to-use scripting system, doors that always open AWAY from you (if you are into that sort of thing)! 
 
