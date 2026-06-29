@@ -141,15 +141,6 @@ func _apply_vertical_magnetism() -> void:
 
 func _handle_animations(_input_dir: Vector2) -> void:
 	pass
-	# Uncomment and hook up to your AnimationPlayer once ready
-	# if input_dir.length() > 0.1:
-	# 	if player.camera_anims.current_animation != "MonkeMoves":
-	# 		player.camera_anims.play("MonkeMoves", 0.3)
-	# 	player.camera_anims.speed_scale = 1.0 if input_dir.y < 0.0 else -1.0
-	# else:
-	# 	if player.camera_anims.current_animation == "MonkeMoves":
-	# 		player.camera_anims.play("RESET", 0.3)
-	# 		player.camera_anims.speed_scale = 1.0
 
 
 func _check_dismount_conditions() -> void:

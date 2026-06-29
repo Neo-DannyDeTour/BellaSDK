@@ -16,7 +16,7 @@ shader_parameter/max_intensity = 0.050000002375
 [sub_resource type="BoxShape3D" id="BoxShape3D_5yorj"]
 size = Vector3(0.6, 0.15, 0.6)
 
-[node name="PickableValve" unique_id=594279821 instance=ExtResource("1_a558m")]
+[node name="PickableValve" unique_id=594279821 groups=["magnetizable"] instance=ExtResource("1_a558m")]
 mass = 3.0
 continuous_cd = true
 script = ExtResource("2_hwiju")

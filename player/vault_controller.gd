@@ -35,20 +35,20 @@ var current_vault_requires_crouch: bool = false
 
 var vault_indicator: MeshInstance3D
 
-
 func _ready() -> void:
 	print("VaultController: Initializing and setting up vault indicator.")
 	_setup_vault_indicator()
 
-
 func _setup_vault_indicator() -> void:
+	print("VaultController: Setting up vault indicator.")
 	vault_indicator = MeshInstance3D.new()
-	var dot_mesh := SphereMesh.new()
+	
+	var dot_mesh: SphereMesh = SphereMesh.new()
 	dot_mesh.radius = 0.03
 	dot_mesh.height = 0.06
 	vault_indicator.mesh = dot_mesh
 
-	var dot_mat := StandardMaterial3D.new()
+	var dot_mat: StandardMaterial3D = StandardMaterial3D.new()
 	dot_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	dot_mat.albedo_color = Color.WHITE
 	dot_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -60,12 +60,13 @@ func _setup_vault_indicator() -> void:
 	add_child(vault_indicator)
 	vault_indicator.hide()
 
-
 # --------------------------------------
 # CORE PROCESS LOGIC
 # --------------------------------------
 func process_vault_scan(max_reach: float = 2.8) -> void:
+	print("VaultController: Processing vault scan.")
 	can_vault_current_ledge = false
+	
 	if vault_indicator:
 		vault_indicator.hide()
 
@@ -79,7 +80,10 @@ func process_vault_scan(max_reach: float = 2.8) -> void:
 	forward_dir.y = 0.0
 	forward_dir = forward_dir.normalized()
 
-	var ray_query := PhysicsRayQueryParameters3D.create(Vector3.ZERO, Vector3.ZERO)
+	var ray_query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
+		Vector3.ZERO, 
+		Vector3.ZERO
+	)
 	ray_query.exclude = exclude_rids
 
 	# 1. FORWARD CAST (Multi-Height Wall Check & Exclusion Group)
@@ -95,7 +99,7 @@ func process_vault_scan(max_reach: float = 2.8) -> void:
 		if not hit.is_empty():
 			if absf(hit["normal"].y) <= 0.2:
 				if _is_collider_or_parent_in_group(hit["collider"], "not_climbable"):
-					print("VaultController: Ledge rejected. Forward object/parent is 'not_climbable'.")
+					print("VaultController: Ledge rejected. Forward object is 'not_climbable'.")
 					return
 				
 				forward_result = hit
@@ -119,12 +123,12 @@ func process_vault_scan(max_reach: float = 2.8) -> void:
 		return
 
 	if _is_collider_or_parent_in_group(down_result["collider"], "not_climbable"):
-		print("VaultController: Ledge rejected. Top landing surface/parent is 'not_climbable'.")
+		print("VaultController: Ledge rejected. Top landing surface is 'not_climbable'.")
 		return
 
 	var down_collider: Object = down_result["collider"]
 	if down_collider is Node and down_collider.is_in_group("not_climbable"):
-		print("VaultController: Ledge rejected. Top landing surface is in 'not_climbable' group.")
+		print("VaultController: Ledge rejected. Surface is in 'not_climbable' group.")
 		return
 
 	var ledge_point: Vector3 = down_result["position"]
@@ -162,7 +166,6 @@ func process_vault_scan(max_reach: float = 2.8) -> void:
 		vault_indicator.global_position = exact_edge
 		vault_indicator.show()
 
-
 # --------------------------------------
 # VAULT EXECUTION
 # --------------------------------------
@@ -187,7 +190,6 @@ func try_vault(is_currently_crouching: bool) -> bool:
 	)
 
 	return true
-
 
 func _perform_vault(
 	target_point: Vector3,
@@ -257,16 +259,15 @@ func _perform_vault(
 			vault_finished.emit()
 	)
 
-
 func _ensure_player_unstuck(forward_dir: Vector3) -> void:
 	print("VaultController: Running anti-stuck depenetration routine.")
 	
-	var params := PhysicsTestMotionParameters3D.new()
+	var params: PhysicsTestMotionParameters3D = PhysicsTestMotionParameters3D.new()
 	params.from = player_body.global_transform
 	params.motion = Vector3.ZERO
 	params.recovery_as_collision = true
 	
-	var result := PhysicsTestMotionResult3D.new()
+	var result: PhysicsTestMotionResult3D = PhysicsTestMotionResult3D.new()
 	var is_stuck: bool = PhysicsServer3D.body_test_motion(player_body.get_rid(), params, result)
 	
 	if is_stuck:
@@ -279,8 +280,8 @@ func _ensure_player_unstuck(forward_dir: Vector3) -> void:
 			player_body.global_position += push_vector
 			print("VaultController: Geometry overlap detected. Nudged player by: ", push_vector)
 
-
 func _is_collider_or_parent_in_group(collider: Object, group_name: String) -> bool:
+	print("VaultController: Checking collider tree for group: ", group_name)
 	if not collider is Node:
 		return false
 		

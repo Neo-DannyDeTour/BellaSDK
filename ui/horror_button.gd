@@ -1,7 +1,17 @@
+@tool
 extends Button
 
 # --- GLOBAL AI CONFIGURATION ---
 static var active_horror_buttons: int = 0
+
+@export var custom_text: String = "":
+	set(value):
+		custom_text = value
+		# Update the label live in the editor
+		if Engine.is_editor_hint():
+			for child: Node in get_children():
+				if child is Label:
+					child.text = value
 
 # --- BUTTON CONFIGURATION ---
 @export var hover_scale := Vector2(1.08, 1.08)
@@ -60,9 +70,13 @@ var original_button_text := ""
 var glitch_timer := 0.0
 var is_glitching := false
 var can_glitch := false
+var _last_known_size := Vector2.ZERO
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		return
+
 	active_horror_buttons += 1
 	flat = true
 
@@ -73,9 +87,7 @@ func _ready() -> void:
 	add_theme_stylebox_override("disabled", empty_style)
 	add_theme_stylebox_override("focus", empty_style)
 
-	# Use Godot 4's global randomization
 	randomize()
-	pivot_offset = size / 2.0
 	original_scale = scale
 
 	button_down.connect(func() -> void: is_clicking = true)
@@ -83,8 +95,7 @@ func _ready() -> void:
 
 	glitch_timer = randf_range(min_glitch_time, max_glitch_time)
 
-	for child in get_children():
-		# FIX 1: Prevent children from stealing the mouse events from the Button
+	for child: Node in get_children():
 		if child is Control:
 			child.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
@@ -95,12 +106,11 @@ func _ready() -> void:
 		elif child is ColorRect and child.name == "Background":
 			bg_rect = child
 
-	# --- SETUP SHADER BACKGROUND & RANDOM TEXTURE ---
 	if bg_rect and bg_rect.material is ShaderMaterial:
-		bg_material = bg_rect.material.duplicate()
+		bg_material = bg_rect.material.duplicate() as ShaderMaterial
 		bg_rect.material = bg_material
 		bg_material.set_shader_parameter("hover_intensity", 0.0)
-		bg_material.set_shader_parameter("rect_size", size)
+		# We no longer set rect_size here; _on_resized() handles it safely.
 		bg_material.set_shader_parameter(
 			"blood_offset", Vector2(randf_range(0.0, 100.0), randf_range(0.0, 100.0))
 		)
@@ -111,46 +121,39 @@ func _ready() -> void:
 			bg_material.set_shader_parameter("blood_texture", background_images[random_index])
 	else:
 		printerr(
-			"Button script could not find a ColorRect named 'Background' with a ShaderMaterial."
+            "Button script could not find a ColorRect named 'Background' with a ShaderMaterial."
 		)
 
 	if border_rect and border_rect.material is ShaderMaterial:
-		border_material = border_rect.material.duplicate()
+		border_material = border_rect.material.duplicate() as ShaderMaterial
 		border_rect.material = border_material
 		border_material.set_shader_parameter("hover_intensity", 0.0)
-		border_material.set_shader_parameter("rect_size", size)
 
 	if text_label != null:
 		text_label.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		text_label.size = size
 		text_label.position = Vector2.ZERO
 		text_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		text_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 
-	if text != "" and text_label != null:
-		text_label.text = text
-		original_button_text = text
-
-		# --- FIX: Prevent Container Crush ---
-		# Lock in the minimum size before clearing the text so
-		# VBox/HBox containers don't crush the button to 0 pixels.
+	if custom_text != "" and text_label != null:
+		text_label.text = custom_text
+		original_button_text = custom_text
+		
 		if custom_minimum_size == Vector2.ZERO:
-			custom_minimum_size = get_minimum_size()
-
-		text = ""
+			custom_minimum_size = text_label.get_minimum_size()
 	elif text_label != null:
 		original_button_text = text_label.text
 		if custom_minimum_size == Vector2.ZERO:
 			custom_minimum_size = text_label.get_minimum_size()
-
+			
+	text = ""
 	can_glitch = (glitch_text != "")
 
 	if text_label and text_label.material is ShaderMaterial:
-		label_material = text_label.material.duplicate()
+		label_material = text_label.material.duplicate() as ShaderMaterial
 		text_label.material = label_material
-		label_material.set_shader_parameter("rect_size", size)
 
-		for i in 2:
+		for i: int in 2:
 			shadows_x[i] = randf_range(-0.5, 1.5)
 			target_shadows_x[i] = shadows_x[i]
 			pace_timers[i] = randf_range(0.0, 2.0)
@@ -159,6 +162,13 @@ func _ready() -> void:
 	mouse_entered.connect(_on_mouse_entered)
 	mouse_exited.connect(_on_mouse_exited)
 	resized.connect(_on_resized)
+	
+	# Wait one frame for VBox/Margin containers to calculate their layout
+	await get_tree().process_frame
+	
+	# Force the layout variables into the shader now that sizes are true
+	_on_resized()
+	print("Horror button initialized: Layout sizes locked and shaders updated.")
 
 
 func _on_resized() -> void:
@@ -213,10 +223,34 @@ func _on_mouse_exited() -> void:
 
 
 func _process(delta: float) -> void:
-	# Halt process until Godot's container system actually gives the button a size.
-	# Prevents math from dividing by 0 and breaking the vectors permanently.
+	if Engine.is_editor_hint():
+		return
+
 	if size.x <= 0.1 or size.y <= 0.1:
 		return
+
+	# --- THE BULLETPROOF FIX ---
+	# Enforce sizes directly to survive startup race conditions,
+	# optimized to only update when the size actually changes.
+	if size != _last_known_size:
+		_last_known_size = size
+		pivot_offset = size / 2.0
+		
+		if bg_rect and bg_rect.size != size:
+			bg_rect.size = size
+			if bg_material:
+				bg_material.set_shader_parameter("rect_size", size)
+				
+		if border_rect and border_rect.size != size:
+			border_rect.size = size
+			if border_material:
+				border_material.set_shader_parameter("rect_size", size)
+				
+		if text_label and text_label.size != size:
+			text_label.size = size
+			text_label.pivot_offset = size / 2.0
+			if label_material:
+				label_material.set_shader_parameter("rect_size", size)
 
 	var target_rotation := 0.0
 

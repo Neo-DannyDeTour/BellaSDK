@@ -1,33 +1,22 @@
 class_name InteractionScanner
 extends Node
 
-# --------------------------------------
-# SIGNALS
-# --------------------------------------
 signal terminal_mode_toggled(is_active: bool)
 signal heavy_lift_state_changed(is_lifting: bool, yaw_base: float)
 
-# --------------------------------------
-# EXPORTS
-# --------------------------------------
 @export_category("Node References")
 @export var player_body: CharacterBody3D
 @export var camera: Camera3D
 @export var interact_shapecast: ShapeCast3D
-@export var hold_position: Marker3D
-@export var weapon_holder: Node3D
 @export var empty_interact_audio: AudioStreamPlayer
 
 @export_category("Interaction Settings")
 @export var base_reach: float = 0.7
 @export var floor_reach: float = 2.2
-@export var throw_force: float = 12.0
 
-# --------------------------------------
-# VARIABLES
-# --------------------------------------
+# --- CLEANED UP VARIABLES ---
 var current_interactable: Node = null
-var held_object: Node3D = null
+var master_component: Node = null # NEW: Reference to the Master
 
 var is_heavy_lifting: bool = false
 var heavy_lift_yaw_base: float = 0.0
@@ -35,13 +24,14 @@ var heavy_lift_yaw_base: float = 0.0
 var is_in_terminal_mode: bool = false
 var active_terminal: Node3D = null
 var terminal_start_pos: Vector3 = Vector3.ZERO
-
 var current_hit_point: Vector3 = Vector3.ZERO
 
 
-# --------------------------------------
-# CORE PROCESS LOGIC
-# --------------------------------------
+func setup_master_link(master: Node) -> void:
+	print("InteractionScanner: Link to Master Component established.")
+	master_component = master
+
+
 func process_interaction(_delta: float) -> void:
 	if is_in_terminal_mode:
 		if _should_exit_terminal_mode():
@@ -49,10 +39,7 @@ func process_interaction(_delta: float) -> void:
 			return
 
 		if is_instance_valid(active_terminal):
-			# The click is now safely handled by handle_shoot_input().
-			# This just continuously updates the mouse hover position.
 			shoot_terminal_raycast(false)
-
 		return
 
 	_update_dynamic_reach()
@@ -61,117 +48,63 @@ func process_interaction(_delta: float) -> void:
 	if current_interactable:
 		var hit_point: Vector3 = interact_shapecast.get_collision_point(0)
 		if current_interactable.has_method("hover_cursor"):
-			# Note: I removed the print() statement from this specific block.
-			# Printing to the console every single frame causes massive performance
-			# bottlenecks and will prevent you from holding a steady 60 FPS.
 			current_interactable.hover_cursor(player_body, hit_point)
 
 
-# --------------------------------------
-# INPUT HANDLING
-# --------------------------------------
 func handle_interact_input() -> void:
-	print("InteractionScanner: handle_interact_input called.")
-
+	# 1. We ONLY reach this function if the Master Component confirmed hands are empty!
 	if is_in_terminal_mode:
 		exit_terminal_mode()
 		return
 
-	if held_object:
-		if held_object.has_method("on_released"):
-			print("InteractionScanner: Releasing held object.")
-			held_object.on_released()
-
-		if held_object.has_method("drop"):
-			print("InteractionScanner: Dropping held object.")
-			held_object.drop()
-
-		held_object = null
-		set_heavy_lifting(false)
-
-		if weapon_holder:
-			weapon_holder.show()
-
-	elif current_interactable:
+	if current_interactable:
 		if current_interactable.has_method("interact_with"):
-			print("InteractionScanner: Interacting with object.")
+			print("InteractionScanner: Triggering interaction on object.")
 			current_interactable.interact_with(player_body)
 
 		var parent_node: Node = current_interactable.get_parent() as Node
-		if parent_node and parent_node.has_method("pick_up"):
-			held_object = parent_node as Node3D
-			print("InteractionScanner: Picking up object.")
-			held_object.pick_up(hold_position, player_body)
-
-			if held_object.has_method("on_grabbed"):
-				held_object.on_grabbed()
-
-			if weapon_holder:
-				weapon_holder.hide()
-
+		if is_instance_valid(parent_node) and parent_node.has_method("pick_up"):
+			print("InteractionScanner: Found pickable object. Instructing Master to grab.")
+			if is_instance_valid(master_component):
+				master_component.force_grab_item(parent_node as RigidBody3D)
+				
+			if parent_node.has_method("on_grabbed"):
+				parent_node.on_grabbed()
 	else:
-		# --- NEW: NOTHING TO INTERACT WITH ---
-		print("InteractionScanner: Nothing to interact with. Playing empty sound.")
 		if is_instance_valid(empty_interact_audio):
 			empty_interact_audio.play()
 
 
 func handle_shoot_input() -> void:
-	print("InteractionScanner: handle_shoot_input called.")
-
+	# 1. We ONLY reach this function if the Master Component confirmed hands are empty!
 	if is_in_terminal_mode and is_instance_valid(active_terminal):
+		print("InteractionScanner: Shooting terminal raycast.")
 		shoot_terminal_raycast(true)
 		get_viewport().set_input_as_handled()
 		return
 
-	if held_object:
-		if held_object.has_method("on_released"):
-			held_object.on_released()
-
-		var throw_dir: Vector3 = -camera.global_transform.basis.z.normalized()
-		throw_dir.y += 0.2
-
-		if held_object.has_method("throw"):
-			print("InteractionScanner: Throwing held object.")
-			held_object.throw(throw_dir.normalized() * throw_force)
-
-		held_object = null
-		set_heavy_lifting(false)
-
-		if weapon_holder:
-			weapon_holder.show()
-
-		return
-
-	if weapon_holder and weapon_holder.get_child_count() > 0:
+	# Weapon shooting logic handled here since it's an "empty hand" action
+	# (Assuming weapon logic is separate from picked-up physics objects)
+	var weapon_holder: Node = master_component.get("weapon_holder") if is_instance_valid(master_component) else null
+	if is_instance_valid(weapon_holder) and weapon_holder.get_child_count() > 0:
 		var active_weapon: Node3D = weapon_holder.get_child(0) as Node3D
-		if active_weapon and active_weapon.has_method("shoot"):
-			print("InteractionScanner: Shooting active weapon.")
+		if is_instance_valid(active_weapon) and active_weapon.has_method("shoot"):
 			active_weapon.shoot(camera)
 
 
-# --------------------------------------
-# HEAVY LIFTING
-# --------------------------------------
 func set_heavy_lifting(value: bool) -> void:
-	print("InteractionScanner: set_heavy_lifting called with value: ", value)
 	is_heavy_lifting = value
-	if is_heavy_lifting:
+	if is_heavy_lifting and is_instance_valid(player_body):
 		heavy_lift_yaw_base = player_body.rotation.y
 	heavy_lift_state_changed.emit(is_heavy_lifting, heavy_lift_yaw_base)
 
 
 func drop_heavy_object_safely() -> void:
-	print("InteractionScanner: drop_heavy_object_safely called.")
-	if is_heavy_lifting and held_object:
-		if held_object.has_method("on_released"):
-			held_object.on_released()
-		if held_object.has_method("drop"):
-			held_object.drop()
-		held_object = null
+	# Route the drop command back up to the Master
+	if is_heavy_lifting and is_instance_valid(master_component):
+		print("InteractionScanner: Routing heavy drop request to Master.")
+		master_component.drop_held_item()
 		set_heavy_lifting(false)
-		if weapon_holder:
-			weapon_holder.show()
 
 
 # --------------------------------------
@@ -181,7 +114,6 @@ func _update_dynamic_reach() -> void:
 	var look_pitch: float = interact_shapecast.global_rotation.x
 	var down_weight: float = clampf(-look_pitch / (PI / 2.0), 0.0, 1.0)
 	var current_reach: float = lerpf(base_reach, floor_reach, down_weight)
-
 	interact_shapecast.target_position = Vector3(0, 0, -current_reach)
 
 
@@ -197,7 +129,7 @@ func _get_interactable_component_at_shapecast() -> Node:
 			continue
 
 		if collider is Node:
-			var current_node: Node = collider
+			var current_node: Node = collider as Node
 			var comp: Node = null
 
 			while is_instance_valid(current_node) and current_node != get_tree().root:
@@ -219,7 +151,7 @@ func _get_interactable_component_at_shapecast() -> Node:
 				if dist < closest_dist:
 					closest_dist = dist
 					closest_comp = comp
-					current_hit_point = hit_point  # Cache the precise hit location
+					current_hit_point = hit_point
 
 	return closest_comp
 
@@ -231,10 +163,14 @@ func enter_terminal_mode(terminal: Node3D) -> void:
 	print("InteractionScanner: enter_terminal_mode called.")
 	is_in_terminal_mode = true
 	active_terminal = terminal
-	terminal_start_pos = player_body.global_position
+	if is_instance_valid(player_body):
+		terminal_start_pos = player_body.global_position
 
-	# Assuming Events is an autoloaded globally available script
-	Events.terminal_mode_toggled.emit(true)
+	if has_node("/root/Events"):
+		var events: Node = get_node("/root/Events")
+		if events.has_signal("terminal_mode_toggled"):
+			events.emit_signal("terminal_mode_toggled", true)
+			
 	terminal_mode_toggled.emit(true)
 
 
@@ -248,7 +184,11 @@ func exit_terminal_mode() -> void:
 	is_in_terminal_mode = false
 	active_terminal = null
 
-	Events.terminal_mode_toggled.emit(false)
+	if has_node("/root/Events"):
+		var events: Node = get_node("/root/Events")
+		if events.has_signal("terminal_mode_toggled"):
+			events.emit_signal("terminal_mode_toggled", false)
+			
 	terminal_mode_toggled.emit(false)
 
 
@@ -264,12 +204,12 @@ func _should_exit_terminal_mode() -> bool:
 	if Input.is_action_just_pressed("jump") or Input.is_action_just_pressed("crouch"):
 		return true
 
-	if player_body.global_position.distance_to(terminal_start_pos) > 1.0:
+	if is_instance_valid(player_body) and player_body.global_position.distance_to(terminal_start_pos) > 1.0:
 		return true
 
-	if active_terminal:
-		var dir_to_terminal := camera.global_position.direction_to(active_terminal.global_position)
-		var camera_forward := -camera.global_transform.basis.z
+	if is_instance_valid(active_terminal) and is_instance_valid(camera):
+		var dir_to_terminal: Vector3 = camera.global_position.direction_to(active_terminal.global_position)
+		var camera_forward: Vector3 = -camera.global_transform.basis.z
 		if rad_to_deg(camera_forward.angle_to(dir_to_terminal)) > 45.0:
 			return true
 
@@ -282,6 +222,9 @@ func shoot_terminal_raycast(is_click: bool) -> void:
 
 	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
 	var screen_center: Vector2 = viewport_size / 2.0
+
+	if not is_instance_valid(camera):
+		return
 
 	var ray_origin: Vector3 = camera.project_ray_origin(screen_center)
 	var ray_normal: Vector3 = camera.project_ray_normal(screen_center)
@@ -297,7 +240,7 @@ func shoot_terminal_raycast(is_click: bool) -> void:
 	var space_state: PhysicsDirectSpaceState3D = player_body.get_world_3d().direct_space_state
 	var result: Dictionary = space_state.intersect_ray(query)
 
-	if result and result.collider == active_terminal:
+	if result and result.get("collider") == active_terminal:
 		if is_click and active_terminal.has_method("inject_mouse_click"):
 			active_terminal.inject_mouse_click(result.position)
 		elif active_terminal.has_method("inject_mouse_motion"):

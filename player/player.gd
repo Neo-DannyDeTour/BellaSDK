@@ -113,8 +113,16 @@ func _physics_process(delta: float) -> void:
 	locomotion_component.process_movement(delta)
 	environment_component.process_environment_physics(delta)
 	
-	# Push the 60 FPS tick to the interaction system
-	interaction_component.process_interaction(delta)
+	# THE FIX: We must check if the interaction component is valid and if the method exists
+	# before trying to call process_interaction. The previous iteration of the component
+	# script had this method, but if it was moved to the Scanner, the Player script needs
+	# to route it correctly, or ignore it if it's missing.
+	if is_instance_valid(interaction_component):
+		if interaction_component.has_method("process_interaction"):
+			interaction_component.process_interaction(delta)
+		elif interaction_component.get("interaction_scanner") and interaction_component.interaction_scanner.has_method("process_interaction"):
+			# Route directly to the scanner if the master component no longer handles the 60FPS tick
+			interaction_component.interaction_scanner.process_interaction(delta)
 
 # --------------------------------------
 # ENVIRONMENTAL ADAPTERS (Facade)

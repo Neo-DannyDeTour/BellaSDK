@@ -1,6 +1,7 @@
 @tool
 extends StaticBody3D
-const DOUBLE_TAP_DELAY: float = 0.3  # Seconds allowed between taps
+
+const DOUBLE_TAP_DELAY: float = 0.3
 
 @export_category("Connections")
 @export var targets: Array[Node3D]
@@ -12,7 +13,6 @@ const DOUBLE_TAP_DELAY: float = 0.3  # Seconds allowed between taps
 @export var can_be_detached: bool = false:
 	set(value):
 		can_be_detached = value
-		# Force Lock OFF if we make it detachable
 		if can_be_detached:
 			lock_when_finished = false
 
@@ -24,7 +24,6 @@ const DOUBLE_TAP_DELAY: float = 0.3  # Seconds allowed between taps
 @export var lock_when_finished: bool = false:
 	set(value):
 		lock_when_finished = value
-		# Force Detach OFF if we make it lockable
 		if lock_when_finished:
 			can_be_detached = false
 
@@ -49,10 +48,8 @@ const DOUBLE_TAP_DELAY: float = 0.3  # Seconds allowed between taps
 			reverts_on_release = true
 
 @export var fast_revert_multiplier: float = 4.0
-
 @export var spin_axis: Vector3 = Vector3(0, 1, 0)
 @export var label: Label3D
-
 @export var outline_material: ShaderMaterial
 
 @onready var valve_audio: AudioStreamPlayer3D = get_node_or_null("ValveAudio")
@@ -64,51 +61,45 @@ var is_locked: bool = false
 var was_interacting: bool = false
 var is_installed: bool = true
 
-# --- NEW: DOUBLE TAP VARS ---
 var last_interact_time: float = 0.0
-
 var wheel: Node3D
 var debug_line: MeshInstance3D
 var initial_rotation: Vector3
-var highlight_comp: HighlightComponent
-
+var highlight_comp: Node
 var install_cooldown: float = 0.0
-
 var has_been_installed: bool = false
+
+var _cached_player: Node3D = null
 
 
 func _ready() -> void:
+	print("Valve: _ready() initialized.")
+	
 	if requires_installation:
 		is_installed = false
-		has_been_installed = false  # It has never seen a valve
-		if wheel:
-			wheel.hide()
+		has_been_installed = false
 	else:
-		has_been_installed = true  # It spawned with a valve already in it!
-
+		has_been_installed = true
+		
 	if Engine.is_editor_hint():
 		return
 
 	wheel = get_node_or_null("Wheel")
 	if wheel:
 		initial_rotation = wheel.rotation_degrees
+		if requires_installation:
+			wheel.hide()
 	else:
-		push_warning("Valve: Please group your meshes under a Node3D named 'Wheel'!")
+		push_warning("Valve: Please group meshes under Node3D named 'Wheel'!")
 
 	highlight_comp = get_node_or_null("HighlightComponent")
 
-	var interact_comp := get_node_or_null("Interact_Component")
+	var interact_comp: Node = get_node_or_null("Interact_Component")
 	if interact_comp:
 		if not interact_comp.focused.is_connected(_on_interact_component_focused):
 			interact_comp.focused.connect(_on_interact_component_focused)
-
 		if not interact_comp.unfocused.is_connected(_on_interact_component_unfocused):
 			interact_comp.unfocused.connect(_on_interact_component_unfocused)
-
-	if requires_installation:
-		is_installed = false
-		if wheel:
-			wheel.hide()
 
 
 func _process(delta: float) -> void:
@@ -119,15 +110,25 @@ func _process(delta: float) -> void:
 	if install_cooldown > 0.0:
 		install_cooldown -= delta
 
-	if not is_installed:
-		var player: Node3D = get_tree().get_first_node_in_group("player")
-		if player and player.held_object is PickableValve and install_cooldown <= 0.0:
-			var dist: float = global_position.distance_to(player.held_object.global_position)
-			if dist < 0.3:
-				_install_valve(player)
+	if not is_installed and install_cooldown <= 0.0:
+		if not is_instance_valid(_cached_player):
+			_cached_player = get_tree().get_first_node_in_group("player") as Node3D
+			
+		var held: Node3D = _get_player_held_object(_cached_player)
+		
+		# NOTE: You can add `and held is PickableValve` here if that class is globally registered
+		if is_instance_valid(held):
+			var dist: float = global_position.distance_to(held.global_position)
+			# Bumped to 0.6 to compensate for PickableObject's flat_offset pushing it 0.8m away
+			if dist < 0.6:
+				_install_valve(_cached_player, held)
 
-	var is_interacting: bool = is_focused and Input.is_action_pressed("interact") and is_installed
-	var just_pressed: bool = is_focused and Input.is_action_just_pressed("interact") and is_installed
+	var is_interacting: bool = (
+		is_focused and Input.is_action_pressed("interact") and is_installed
+	)
+	var just_pressed: bool = (
+		is_focused and Input.is_action_just_pressed("interact") and is_installed
+	)
 
 	if can_be_detached and just_pressed:
 		var current_time: float = Time.get_ticks_msec() / 1000.0
@@ -142,17 +143,15 @@ func _process(delta: float) -> void:
 		_manage_audio(false)
 		return
 
-	if highlight_comp:
+	if highlight_comp and highlight_comp.has_method("suppress"):
 		highlight_comp.suppress(is_interacting)
 
 	if is_interacting and not was_interacting:
 		if is_back_and_forth and progress > 0.0 and progress < 1.0:
 			current_target_progress = 0.0 if current_target_progress == 1.0 else 1.0
 
-	# --- NEW: TRACK OLD PROGRESS FOR AUDIO ---
 	var old_progress: float = progress
 
-	# Standard Movement Logic
 	if is_interacting:
 		progress = move_toward(progress, current_target_progress, delta / turn_duration)
 		if lock_when_finished and progress >= 1.0:
@@ -176,7 +175,6 @@ func _process(delta: float) -> void:
 		elif progress <= 0.0:
 			current_target_progress = 1.0
 
-	# Safely rotate the wheel (even if it's invisible, the math stays accurate)
 	if wheel:
 		var dir_multiplier: float = -1.0 if turn_clockwise else 1.0
 		var total_angle: float = 360.0 * visual_rotations * dir_multiplier * progress
@@ -186,7 +184,6 @@ func _process(delta: float) -> void:
 		if target and target.has_method("set_progress"):
 			target.set_progress(progress)
 
-	# --- NEW: CHECK MOVEMENT AND PLAY/STOP AUDIO ---
 	var is_moving: bool = not is_equal_approx(progress, old_progress)
 	_manage_audio(is_moving)
 
@@ -205,77 +202,116 @@ func _manage_audio(is_moving: bool) -> void:
 		valve_audio.stop()
 
 
-# --- INSTALL AND DETACH FUNCTIONS ---
-func _install_valve(player: Node3D) -> void:
-	player.held_object.queue_free()
-	player.held_object = null
+# --- COMPATIBILITY BRIDGE ---
+func _get_player_held_object(player: Node3D) -> Node3D:
+	if not is_instance_valid(player):
+		return null
+		
+	# 1. Legacy Check
+	if "held_object" in player and player.get("held_object") != null:
+		return player.get("held_object") as Node3D
+		
+	# 2. Component Check
+	var int_comp: Node = player.get("interaction_component") if "interaction_component" in player else null
+	if is_instance_valid(int_comp):
+		if "held_item" in int_comp and int_comp.get("held_item") != null:
+			return int_comp.get("held_item") as Node3D
+			
+		var scanner: Node = int_comp.get("interaction_scanner") if "interaction_scanner" in int_comp else null
+		if is_instance_valid(scanner) and "held_object" in scanner and scanner.get("held_object") != null:
+			return scanner.get("held_object") as Node3D
+			
+	return null
+
+
+func _clear_player_held_object(player: Node3D) -> void:
+	print("Valve: Clearing player held object references.")
+	if "held_object" in player:
+		player.set("held_object", null)
+		
+	var int_comp: Node = player.get("interaction_component") if "interaction_component" in player else null
+	if is_instance_valid(int_comp):
+		if int_comp.has_method("force_clear_hands"):
+			int_comp.force_clear_hands()
+		elif "held_item" in int_comp:
+			int_comp.set("held_item", null)
+
+
+func _install_valve(player: Node3D, held_valve: Node3D) -> void:
+	print("Valve: _install_valve() called. Destroying pickable valve.")
+	if is_instance_valid(held_valve):
+		held_valve.queue_free()
+		
+	_clear_player_held_object(player)
 
 	is_installed = true
 	has_been_installed = true
 	is_locked = false
 	current_target_progress = 1.0
 
-	# --- THE FIX ---
-	# Deleted 'progress = 0.0' so re-installing mid-close feels natural!
-
 	if wheel:
 		wheel.show()
 
-	var weapon_holder := player.get_node_or_null("%WeaponHolder")
+	var weapon_holder: Node3D = player.get_node_or_null("%WeaponHolder")
 	if weapon_holder:
 		weapon_holder.show()
-	print("Valve Auto-Installed!")
+	print("Valve: Valve Auto-Installed!")
 
 
 func _detach_valve() -> void:
+	print("Valve: _detach_valve() called.")
 	if not pickable_valve_scene:
 		push_warning("Cannot detach: No Pickable Valve Scene assigned!")
 		return
 
-	var player := get_tree().get_first_node_in_group("player")
+	var player: Node3D = get_tree().get_first_node_in_group("player") as Node3D
 	if not player:
 		return
 
-	var spawned_valve := pickable_valve_scene.instantiate()
+	var spawned_valve: Node3D = pickable_valve_scene.instantiate() as Node3D
 
-	if outline_material:
+	if outline_material and "outline_material" in spawned_valve:
 		spawned_valve.outline_material = outline_material
 
-	#get_tree().current_scene.add_child(spawned_valve)
 	get_tree().current_scene.add_child(spawned_valve)
-	spawned_valve.global_position = player.hold_position.global_position
-	#spawned_valve.global_transform = Transform3D.IDENTITY
-	#spawned_valve.scale = Vector3.ONE
+	
+	if "hold_position" in player:
+		spawned_valve.global_position = player.hold_position.global_position
 
 	if wheel:
-		# Copy position and rotation individually so we don't accidentally copy scale!
 		spawned_valve.global_position = wheel.global_position
 		spawned_valve.global_rotation = wheel.global_rotation
 	else:
 		spawned_valve.global_position = global_position
 
-	player.held_object = spawned_valve
-	spawned_valve.pick_up(player.hold_position, player)
+	# Use the new forceful component grab if it exists
+	var grabbed_successfully: bool = false
+	var int_comp: Node = player.get("interaction_component") if "interaction_component" in player else null
+	
+	if is_instance_valid(int_comp) and int_comp.has_method("force_grab_item"):
+		int_comp.force_grab_item(spawned_valve as RigidBody3D)
+		grabbed_successfully = true
+	elif "held_object" in player:
+		player.held_object = spawned_valve
 
-	var weapon_holder := player.get_node_or_null("%WeaponHolder")
-	if weapon_holder:
+	# Only manually call pick_up if the component didn't already handle it
+	if not grabbed_successfully and spawned_valve.has_method("pick_up") and "hold_position" in player:
+		spawned_valve.pick_up(player.hold_position, player)
+
+	var weapon_holder: Node3D = player.get_node_or_null("%WeaponHolder")
+	if weapon_holder and not grabbed_successfully:
 		weapon_holder.hide()
 
 	is_installed = false
 	is_locked = false
 	install_cooldown = 1.0
 
-	# --- THE FIX ---
-	# We DELETED the lines that reset 'progress' and the 'targets' loop!
-	# The socket will now naturally drift the progress back to 0.0
-	# over the next few seconds using the 'reverts_on_release' math.
-
 	if wheel:
 		wheel.hide()
 
 
-# --- INTERACT SIGNALS & DEBUG LINE ---
 func _on_interact_component_focused() -> void:
+	print("Valve: _on_interact_component_focused() called.")
 	if is_locked:
 		return
 	is_focused = true
@@ -285,6 +321,7 @@ func _on_interact_component_focused() -> void:
 
 
 func _on_interact_component_unfocused() -> void:
+	print("Valve: _on_interact_component_unfocused() called.")
 	is_focused = false
 	if label:
 		label.hide()
@@ -312,11 +349,11 @@ func _draw_connection_line() -> void:
 		mat.no_depth_test = true
 		debug_line.material_override = mat
 
-	var mesh := debug_line.mesh as ImmediateMesh
+	var mesh: ImmediateMesh = debug_line.mesh as ImmediateMesh
 	mesh.clear_surfaces()
 	mesh.surface_begin(Mesh.PRIMITIVE_LINES)
 
-	for target in targets:
+	for target: Node3D in targets:
 		if target:
 			mesh.surface_add_vertex(global_position)
 			mesh.surface_add_vertex(target.global_position)
@@ -324,19 +361,17 @@ func _draw_connection_line() -> void:
 	mesh.surface_end()
 
 
-# --- THE DYNAMIC LABEL LOGIC ---
 func _update_valve_label() -> void:
+	print("Valve: _update_valve_label() called.")
 	if not label:
 		return
 
-	# STATE 1: The valve is currently in the socket
 	if is_installed:
-		# 1. Get the current key name
-		var events := InputMap.action_get_events("interact")
-		var key_name := "???"
+		var events: Array = InputMap.action_get_events("interact")
+		var key_name: String = "???"
 
 		if events.size() > 0:
-			var raw_text := events[0].as_text()
+			var raw_text: String = events[0].as_text()
 			key_name = (
 				raw_text
 				. replace(" (Physical)", "")
@@ -349,17 +384,13 @@ func _update_valve_label() -> void:
 				. strip_edges()
 			)
 
-		# 2. Build the string
-		var text := "Hold [%s]" % key_name
+		var text: String = "Hold [%s]" % key_name
 		if can_be_detached:
 			text += "\nDouble tap [%s] to detach" % key_name
 
 		label.text = text
 
-	# STATE 2: The valve is missing, but the player has attached it before
 	elif has_been_installed:
 		label.text = "Attach the valve"
-
-	# STATE 3: The valve is missing, and the player has never attached one
 	else:
 		label.text = "Find the valve"

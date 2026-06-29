@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dudx3baxpmytw"]
 
-[ext_resource type="Script" uid="uid://dmt1r3bg7rmth" path="res://interactables/valve.gd" id="1_epeg1"]
+[ext_resource type="Script" uid="uid://dmt1r3bg7rmth" path="res://interactables/valve_base.gd" id="1_epeg1"]
 [ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="2_bxo18"]
 [ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="2_tqme0"]
 [ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="3_bxo18"]
@@ -19,7 +19,7 @@ shader_parameter/max_intensity = 0.02000000095
 [sub_resource type="BoxShape3D" id="BoxShape3D_epeg1"]
 size = Vector3(0.6, 0.1, 0.6)
 
-[node name="Valve" type="StaticBody3D" unique_id=86858914 node_paths=PackedStringArray("label")]
+[node name="ValveBase" type="StaticBody3D" unique_id=86858914 node_paths=PackedStringArray("label")]
 script = ExtResource("1_epeg1")
 is_back_and_forth = false
 label = NodePath("Label3D")

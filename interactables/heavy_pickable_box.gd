@@ -121,19 +121,25 @@ func _finish_pickup() -> void:
 	if "is_stunned" in holder:
 		holder.is_stunned = false
 
-	if "is_heavy_lifting" in holder:
-		holder.is_heavy_lifting = true
+	# --- ROUTE THROUGH COMPONENTS ---
+	var int_comp: Node = holder.get("interaction_component") if "interaction_component" in holder else null
+	if is_instance_valid(int_comp):
+		if "is_heavy_lifting" in int_comp:
+			int_comp.is_heavy_lifting = true
+			
+		var scanner: Node = int_comp.get("interaction_scanner") if "interaction_scanner" in int_comp else null
+		if is_instance_valid(scanner):
+			if "heavy_lift_yaw_base" in scanner:
+				scanner.heavy_lift_yaw_base = holder.global_rotation.y
+			if scanner.has_method("set_heavy_lifting"):
+				scanner.set_heavy_lifting(true)
 
-	if "interaction_scanner" in holder:
-		var scanner: Node = holder.interaction_scanner
-		scanner.heavy_lift_yaw_base = holder.global_rotation.y
-		if "is_heavy_lifting" in scanner:
-			scanner.is_heavy_lifting = true
-
-	if "can_sprint" in holder:
-		holder.can_sprint = false
-	if "sprint_active" in holder:
-		holder.sprint_active = false
+	var loco_comp: Node = holder.get("locomotion_component") if "locomotion_component" in holder else holder
+	if is_instance_valid(loco_comp):
+		if "can_sprint" in loco_comp:
+			loco_comp.can_sprint = false
+		if "sprint_active" in loco_comp:
+			loco_comp.sprint_active = false
 
 
 func _physics_process(delta: float) -> void:
@@ -252,36 +258,26 @@ func _finish_drop(previous_holder: Node3D) -> void:
 		if "is_stunned" in previous_holder:
 			previous_holder.is_stunned = false
 
-		if "is_heavy_lifting" in previous_holder:
-			previous_holder.is_heavy_lifting = false
+		# --- ROUTE THROUGH COMPONENTS ---
+		var int_comp: Node = previous_holder.get("interaction_component") if "interaction_component" in previous_holder else null
+		if is_instance_valid(int_comp):
+			if "is_heavy_lifting" in int_comp:
+				int_comp.is_heavy_lifting = false
+				
+			# THIS IS THE FIX: Tell the Master Component to drop it!
+			if int_comp.has_method("force_clear_hands"):
+				int_comp.force_clear_hands()
+				print("HeavyPickableBox: Confirmed detachment via Master Component.")
 
-		if "interaction_scanner" in previous_holder:
-			var scanner: Node = previous_holder.interaction_scanner
+			var scanner: Node = int_comp.get("interaction_scanner") if "interaction_scanner" in int_comp else null
+			if is_instance_valid(scanner):
+				if scanner.has_method("set_heavy_lifting"):
+					scanner.set_heavy_lifting(false)
 
-			if "is_heavy_lifting" in scanner:
-				scanner.is_heavy_lifting = false
-			if "held_object" in scanner:
-				scanner.held_object = null
-
-			if "current_interactable" in scanner:
-				if scanner.current_interactable == interact_comp:
-					scanner.current_interactable = null
-
-			if "closest_interactable" in scanner:
-				if scanner.closest_interactable == interact_comp:
-					scanner.closest_interactable = null
-
-		if "can_sprint" in previous_holder:
-			previous_holder.can_sprint = true
-
-		# Safely clear the exact variable the Player uses
-		if "held_item" in previous_holder:
-			previous_holder.held_item = null
-			print("HeavyPickableBox: Confirmed detachment. 'held_item' cleared on Player.")
-
-			# Restore the weapon holder since the player didn't trigger this drop manually
-			if previous_holder.has_method("_set_weapon_active"):
-				previous_holder._set_weapon_active(true)
+		var loco_comp: Node = previous_holder.get("locomotion_component") if "locomotion_component" in previous_holder else previous_holder
+		if is_instance_valid(loco_comp):
+			if "can_sprint" in loco_comp:
+				loco_comp.can_sprint = true
 
 		if has_method("_wait_to_enable_collision"):
 			_wait_to_enable_collision(previous_holder)

@@ -209,6 +209,7 @@ func _ready() -> void:
 
 	continue_button.pressed.connect(_on_resume_pressed)
 	new_game_button.pressed.connect(_on_new_game_pressed)
+	restart_button.pressed.connect(_on_start_game_pressed)
 	back_accessibility_button.pressed.connect(_on_back_accessibility_pressed)
 
 	fov_slider.value_changed.connect(_on_fov_changed)
@@ -598,10 +599,13 @@ func load_controls() -> void:
 			get_window().mode == Window.MODE_EXCLUSIVE_FULLSCREEN
 			or get_window().mode == Window.MODE_FULLSCREEN
 		)
-		if not is_fullscreen:
-			get_window().mode = Window.MODE_WINDOWED
-			get_window().size = saved_res
-			_center_window(saved_res)
+		
+		# FIX: Ensure we do not touch mode, size, or position if embedded
+		if not get_window().is_embedded():
+			if not is_fullscreen:
+				get_window().mode = Window.MODE_WINDOWED
+				get_window().size = saved_res
+				_center_window(saved_res)
 
 		var res_string: String = str(res_x) + " x " + str(res_y)
 		for i: int in range(resolution_options.get_item_count()):
@@ -621,7 +625,6 @@ func load_controls() -> void:
 	if player and "camera_controller" in player and player.camera_controller:
 		player.camera_controller.base_fov = fov_slider.value
 		player.camera_controller.disable_sprint_fov = sprint_fov_checkbox.button_pressed
-
 		player.camera_controller.mouse_sensitivity_base = sens_slider.value
 		player.camera_controller.mouse_sensitivity = sens_slider.value
 
@@ -657,6 +660,8 @@ func load_controls() -> void:
 		if aa_options.get_item_text(i) == saved_aa:
 			aa_options.select(i)
 			break
+			
+	print("Controls loaded successfully.")
 
 
 func get_action_with_event(new_event: InputEvent) -> String:
@@ -803,15 +808,21 @@ func _on_resolution_selected(index: int) -> void:
 		or get_window().mode == Window.MODE_FULLSCREEN
 	)
 
-	if not is_fullscreen:
+	# Ensure we do not try to move/resize an embedded window
+	if not is_fullscreen and not get_window().is_embedded():
 		get_window().size = new_size
 		_center_window(new_size)
 
 	_save_setting_to_disk("resolution_x", new_size.x)
 	_save_setting_to_disk("resolution_y", new_size.y)
+	print("Resolution selected: ", key)
 
 
 func _center_window(new_size: Vector2i) -> void:
+	# Safely abort if Godot is running this as an embedded debug window
+	if get_window().is_embedded():
+		return
+
 	var current_screen: int = get_window().current_screen
 
 	@warning_ignore("integer_division")

@@ -950,6 +950,7 @@ transform = Transform3D(0.9659258, 0, 0.25881904, 0, 1, 0, -0.25881904, 0, 0.965
 transform = Transform3D(0.69681466, -0.71725094, 3.1352034e-08, 0, -4.371138e-08, -0.9999999, 0.71725106, 0.6968148, -3.0458732e-08, 0.7185837, 0.34200022, -1.8195441)
 
 [node name="Pipes" type="Node3D" parent="." unique_id=90528418]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.31967044, 0.44729424)
 
 [node name="Pipes" parent="Pipes" unique_id=1108414820 instance=ExtResource("18_ua125")]
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 2, 5, 6)
@@ -1130,31 +1131,31 @@ transform = Transform3D(1.3113416e-07, 0, 1, 0, 1, 0, -1, 0, 1.3113416e-07, 10.0
 [node name="Corruged_Cable6" parent="Cables" unique_id=1623290841 instance=ExtResource("22_mchul")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.088837, 3.587872, 7.8543563)
 
-[node name="Boxs_Cables_wall_small13" parent="Cables" unique_id=1437928067 groups=["not_climbable"] instance=ExtResource("20_204m3")]
+[node name="Boxs_Cables_wall_small13" parent="Cables" unique_id=1437928067 instance=ExtResource("20_204m3")]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 10.584922, 3.8810039, 7.858917)
 
-[node name="Cable_Holder4" parent="Cables" unique_id=886268757 groups=["not_climbable"] instance=ExtResource("21_jpbpo")]
+[node name="Cable_Holder4" parent="Cables" unique_id=886268757 instance=ExtResource("21_jpbpo")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 13.261389, 3.7639842, 8.034461)
 
-[node name="Corruged_Cable7" parent="Cables" unique_id=1438560327 groups=["not_climbable"] instance=ExtResource("22_mchul")]
+[node name="Corruged_Cable7" parent="Cables" unique_id=1438560327 instance=ExtResource("22_mchul")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.088837, 3.9949012, 7.873298)
 
-[node name="Boxs_Cables_wall_small14" parent="Cables" unique_id=269750048 groups=["not_climbable"] instance=ExtResource("20_204m3")]
+[node name="Boxs_Cables_wall_small14" parent="Cables" unique_id=269750048 instance=ExtResource("20_204m3")]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 10.584922, 3.6728935, 7.8399754)
 
-[node name="Corruged_Cable8" parent="Cables" unique_id=1459108347 groups=["not_climbable"] instance=ExtResource("22_mchul")]
+[node name="Corruged_Cable8" parent="Cables" unique_id=1459108347 instance=ExtResource("22_mchul")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.088837, 3.7867908, 7.8543563)
 
-[node name="Boxs_Cables_wall_small15" parent="Cables" unique_id=614856269 groups=["not_climbable"] instance=ExtResource("20_204m3")]
+[node name="Boxs_Cables_wall_small15" parent="Cables" unique_id=614856269 instance=ExtResource("20_204m3")]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 10.584922, 3.4739747, 7.8399754)
 
-[node name="Boxs_Cables_wall_small16" parent="Cables" unique_id=1232561105 groups=["not_climbable"] instance=ExtResource("20_204m3")]
+[node name="Boxs_Cables_wall_small16" parent="Cables" unique_id=1232561105 instance=ExtResource("20_204m3")]
 transform = Transform3D(1.3113416e-07, 0, 1, 0, 1, 0, -1, 0, 1.3113416e-07, 16.015648, 3.9089284, 7.833661)
 
-[node name="Boxs_Cables_wall_small17" parent="Cables" unique_id=1944094549 groups=["not_climbable"] instance=ExtResource("20_204m3")]
+[node name="Boxs_Cables_wall_small17" parent="Cables" unique_id=1944094549 instance=ExtResource("20_204m3")]
 transform = Transform3D(1.3113416e-07, 0, 1, 0, 1, 0, -1, 0, 1.3113416e-07, 16.015648, 3.700818, 7.852603)
 
-[node name="Boxs_Cables_wall_small18" parent="Cables" unique_id=1222060491 groups=["not_climbable"] instance=ExtResource("20_204m3")]
+[node name="Boxs_Cables_wall_small18" parent="Cables" unique_id=1222060491 instance=ExtResource("20_204m3")]
 transform = Transform3D(1.3113416e-07, 0, 1, 0, 1, 0, -1, 0, 1.3113416e-07, 16.015648, 3.5018992, 7.852603)
 
 [node name="Boxs_Cables_wall_small22" parent="Cables" unique_id=130297522 instance=ExtResource("20_204m3")]
@@ -1166,7 +1167,7 @@ transform = Transform3D(1.3113416e-07, 0, 1, 0, 1, 0, -1, 0, 1.3113416e-07, 19.2
 [node name="Boxs_Cables_wall_small24" parent="Cables" unique_id=770330335 instance=ExtResource("20_204m3")]
 transform = Transform3D(1.3113416e-07, 0, 1, 0, 1, 0, -1, 0, 1.3113416e-07, 19.228907, 3.471764, 7.852603)
 
-[node name="Corruged_Cable9" parent="Cables" unique_id=563992181 groups=["not_climbable"] instance=ExtResource("22_mchul")]
+[node name="Corruged_Cable9" parent="Cables" unique_id=563992181 instance=ExtResource("22_mchul")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.088837, 3.587872, 7.8543563)
 
 [node name="Boxs_Cables_wall_small19" parent="Cables" unique_id=1989265521 instance=ExtResource("20_204m3")]

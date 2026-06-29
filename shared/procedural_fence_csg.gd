@@ -2,6 +2,7 @@
 class_name ProceduralFence
 extends CSGCombiner3D
 
+
 enum Orientation { VERTICAL, HORIZONTAL, DIAGONAL }
 
 @export_category("Fence Dimensions")
@@ -56,21 +57,24 @@ var _is_dirty: bool = false
 
 
 func _init() -> void:
-	# Forces Godot to enable collision by default when creating a new fence
+	print("ProceduralFence: _init() called, initializing collision.")
 	use_collision = true
 
 
 func _ready() -> void:
+	print("ProceduralFence: _ready() called, requesting initial build.")
 	_request_rebuild()
 
 
 func _request_rebuild() -> void:
 	if not _is_dirty:
+		print("ProceduralFence: Rebuild requested and deferred.")
 		_is_dirty = true
 		call_deferred(&"_rebuild")
 
 
 func _rebuild() -> void:
+	print("ProceduralFence: Rebuilding geometry.")
 	_is_dirty = false
 
 	for child: Node in get_children():
@@ -80,8 +84,8 @@ func _rebuild() -> void:
 	var inner_height: float = fence_height
 
 	if has_border:
-		inner_width = max(0.01, fence_width - border_thickness * 2.0)
-		inner_height = max(0.01, fence_height - border_thickness * 2.0)
+		inner_width = maxf(0.01, fence_width - border_thickness * 2.0)
+		inner_height = maxf(0.01, fence_height - border_thickness * 2.0)
 
 	var bars_combiner: CSGCombiner3D = CSGCombiner3D.new()
 	bars_combiner.operation = CSGShape3D.OPERATION_UNION
@@ -99,14 +103,25 @@ func _rebuild() -> void:
 		Orientation.DIAGONAL:
 			var count_right: int = ceili(float(bar_count) / 2.0)
 			var count_left: int = floori(float(bar_count) / 2.0)
+			
 			ProceduralFence._generate_angled_bars(
-				bars_combiner, inner_width, inner_height, count_right, bar_thickness, diagonal_angle
+				bars_combiner,
+				inner_width,
+				inner_height,
+				count_right,
+				bar_thickness,
+				diagonal_angle
 			)
 			ProceduralFence._generate_angled_bars(
-				bars_combiner, inner_width, inner_height, count_left, bar_thickness, -diagonal_angle
+				bars_combiner,
+				inner_width,
+				inner_height,
+				count_left,
+				bar_thickness,
+				-diagonal_angle
 			)
 
-	# We still use the Intersection box just to cleanly slice the sharp rotated corners of the tightly-fitted boxes
+	# Intersection box to cleanly slice rotated corners
 	var clipper: CSGBox3D = CSGBox3D.new()
 	clipper.operation = CSGShape3D.OPERATION_INTERSECTION
 	clipper.size = Vector3(inner_width, inner_height, fence_depth * 2.0)
@@ -124,18 +139,17 @@ func _rebuild() -> void:
 static func _generate_angled_bars(
 	parent: Node3D, w: float, h: float, count: int, thickness: float, angle_deg: float
 ) -> void:
+	print("ProceduralFence: Generating %d angled bars at %f degrees." % [count, angle_deg])
 	if count <= 0:
 		return
 
 	var angle_rad: float = deg_to_rad(angle_deg)
-	var cos_a: float = abs(cos(angle_rad))
-	var sin_a: float = abs(sin(angle_rad))
+	var cos_a: float = absf(cos(angle_rad))
+	var sin_a: float = absf(sin(angle_rad))
 
-	# Calculate the exact dimension of the theoretical rotated grid
 	var grid_w: float = w * cos_a + h * sin_a
 	var spacing: float = grid_w / float(count + 1)
 
-	# Mathematical direction vectors for the bar rotation
 	var dir_x: float = -sin(angle_rad)
 	var dir_y: float = cos(angle_rad)
 	var origin_dir_x: float = cos(angle_rad)
@@ -146,14 +160,13 @@ static func _generate_angled_bars(
 		var origin_x: float = local_x * origin_dir_x
 		var origin_y: float = local_x * origin_dir_y
 
-		# Algebraically cast a ray to find EXACTLY where this bar hits the bounding box walls
 		var t_vals: Array[float] = []
 
-		if abs(dir_x) > 0.0001:
+		if absf(dir_x) > 0.0001:
 			t_vals.append((-w / 2.0 - origin_x) / dir_x)
 			t_vals.append((w / 2.0 - origin_x) / dir_x)
 
-		if abs(dir_y) > 0.0001:
+		if absf(dir_y) > 0.0001:
 			t_vals.append((-h / 2.0 - origin_y) / dir_y)
 			t_vals.append((h / 2.0 - origin_y) / dir_y)
 
@@ -161,7 +174,6 @@ static func _generate_angled_bars(
 		for t: float in t_vals:
 			var px: float = origin_x + t * dir_x
 			var py: float = origin_y + t * dir_y
-			# Only accept hits that occur within the actual visual bounds (with a tiny epsilon for corners)
 			if (
 				px >= -w / 2.0 - 0.001
 				and px <= w / 2.0 + 0.001
@@ -188,7 +200,6 @@ static func _generate_angled_bars(
 			var center_x: float = (p1_x + p2_x) / 2.0
 			var center_y: float = (p1_y + p2_y) / 2.0
 
-			# Add a tiny buffer so the CSG Intersection block slices the sharp tips off flawlessly
 			length += thickness * 1.5
 
 			var bar: CSGBox3D = CSGBox3D.new()
@@ -202,24 +213,28 @@ static func _generate_angled_bars(
 static func _generate_border(
 	parent: Node3D, f_width: float, f_height: float, f_depth: float, b_thickness: float
 ) -> void:
-	var left: CSGBox3D = CSGBox3D.new()
-	left.size = Vector3(b_thickness, f_height, f_depth)
-	left.position = Vector3(-f_width / 2.0 + b_thickness / 2.0, 0.0, 0.0)
-	parent.add_child(left)
+	print("ProceduralFence: Generating border constraints.")
+	var lr_size: Vector3 = Vector3(b_thickness, f_height, f_depth)
+	ProceduralFence._add_csg_box(
+		parent, lr_size, Vector3(-f_width / 2.0 + b_thickness / 2.0, 0.0, 0.0)
+	)
+	ProceduralFence._add_csg_box(
+		parent, lr_size, Vector3(f_width / 2.0 - b_thickness / 2.0, 0.0, 0.0)
+	)
 
-	var right: CSGBox3D = CSGBox3D.new()
-	right.size = Vector3(b_thickness, f_height, f_depth)
-	right.position = Vector3(f_width / 2.0 - b_thickness / 2.0, 0.0, 0.0)
-	parent.add_child(right)
+	var inner_w: float = maxf(0.01, f_width - b_thickness * 2.0)
+	var tb_size: Vector3 = Vector3(inner_w, b_thickness, f_depth)
+	
+	ProceduralFence._add_csg_box(
+		parent, tb_size, Vector3(0.0, f_height / 2.0 - b_thickness / 2.0, 0.0)
+	)
+	ProceduralFence._add_csg_box(
+		parent, tb_size, Vector3(0.0, -f_height / 2.0 + b_thickness / 2.0, 0.0)
+	)
 
-	var inner_w: float = max(0.01, f_width - b_thickness * 2.0)
 
-	var top: CSGBox3D = CSGBox3D.new()
-	top.size = Vector3(inner_w, b_thickness, f_depth)
-	top.position = Vector3(0.0, f_height / 2.0 - b_thickness / 2.0, 0.0)
-	parent.add_child(top)
-
-	var bottom: CSGBox3D = CSGBox3D.new()
-	bottom.size = Vector3(inner_w, b_thickness, f_depth)
-	bottom.position = Vector3(0.0, -f_height / 2.0 + b_thickness / 2.0, 0.0)
-	parent.add_child(bottom)
+static func _add_csg_box(parent: Node3D, size: Vector3, pos: Vector3) -> void:
+	var box: CSGBox3D = CSGBox3D.new()
+	box.size = size
+	box.position = pos
+	parent.add_child(box)
