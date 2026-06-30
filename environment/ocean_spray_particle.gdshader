@@ -75,7 +75,7 @@ void process() {
     if (TIME > START_TIME + PARTICLE_LIFETIME) {
         ACTIVE = false;
     } else if (TIME >= START_TIME) {
-        if (HAS_STARTED == 0.0) { 
+        if (HAS_STARTED == 0.0) {
             // --- PARTICLE INITIALIZATION ---
             // Read foam and normal information from normal maps using textureLod
             vec3 gradient = vec3(0.0);
@@ -83,15 +83,19 @@ void process() {
                 // CHANGED: Added textureLod with 0.0 LOD explicit mapping
                 gradient += textureLod(normals, vec3(START_POS.xz * map_scales[i].xy, float(i)), 0.0).xyw;
             }
-            
+
             vec3 normal = normalize(vec3(-gradient.x, 1.0, -gradient.y));
             float foam = gradient.z;
             float normal_factor = mix(0.25, 1.0, smoothstep(0.92, 0.99, normal.y));
-			float foam_factor = mix(0.25, 1.0, smoothstep(0.9, 1.0, foam));       
+			float foam_factor = mix(0.25, 1.0, smoothstep(0.9, 1.0, foam));
 
-            ACTIVE = normal_factor >= 0.0 && normal_factor <= 1.0 && foam > 0.9;
-            SCALE_FACTOR = normal_factor * foam_factor;
-            
+            // --- NEW: Better Splash Logic ---
+            // Allow splashes on general wave heights, not just 0.9+ strict foam values
+            // Use the particle's random seed (CUSTOM.z) to randomly trigger them across the surface
+            bool random_splash = CUSTOM.z > 0.7 && foam > 0.3;
+            ACTIVE = (normal_factor >= 0.0 && normal_factor <= 1.0) && (foam > 0.75 || random_splash);
+            SCALE_FACTOR = normal_factor * mix(0.5, 1.0, foam_factor);
+
             // Size of particle is based on foam amount and is flattened based on normal height.
             PARTICLE_SCALE = vec3(foam_factor * (float(ACTIVE) + 1e-3));
             PARTICLE_SCALE *= vec3(1.0, normal_factor, 1.0);
@@ -110,17 +114,17 @@ void process() {
                 // CHANGED: Added textureLod with 0.0 LOD explicit mapping
                 displacement += textureLod(displacements, vec3(START_POS.xz * scales.xy, float(i)), 0.0).xyz * scales.z;
             }
-            
-            // We multiply the horizontal displacement by a factor < 1 to prevent jittering 
+
+            // We multiply the horizontal displacement by a factor < 1 to prevent jittering
             displacement *= vec3(0.75, 1.0, 0.75);
             // The particle will follow a parabolic trajectory vertically w.r.t. the displacement height
             displacement += vec3(0.0, -5.0 * pow(2.5 * t - 0.45, 2.0) * SCALE_FACTOR + 0.5, 0.0);
             POSITION = START_POS + displacement;
 
             // --- PARTICLE SCALE SHAPING ---
-            float size = PARTICLE_LIFETIME / lifetime; 
+            float size = PARTICLE_LIFETIME / lifetime;
             vec3 scale_modifier = vec3(size * size);
-            
+
             // Some shaping functions to get a splash-like animation.
             scale_modifier.y *= exp_impulse(t, 3.0);
             scale_modifier.xz *= vec2(log(1.0 + t));
