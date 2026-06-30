@@ -3,6 +3,7 @@ render_mode cull_back, unshaded, shadows_disabled;
 
 /**
  * Handles the opacity and billboarding for the sea spray mesh.
+ * need to double check these ocean shaders
  */
 
 global uniform vec4 water_color : source_color;

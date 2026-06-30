@@ -454,3 +454,4 @@ func force_reset_cascades() -> void:
 
 	# Trigger a uniform update
 	_update_scales_uniform()
+# comment
