@@ -165,9 +165,9 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	# --- Mach 3 Noclip Speed Freeze ---
-	var cam := get_viewport().get_camera_3d()
+	var cam: Camera3D = get_viewport().get_camera_3d()
 	if cam:
-		var cam_speed := _last_cam_pos.distance_to(cam.global_position) / delta
+		var cam_speed: float = _last_cam_pos.distance_to(cam.global_position) / delta
 		_last_cam_pos = cam.global_position
 		if cam_speed > 100.0:
 			return
@@ -186,13 +186,21 @@ func _process(delta: float) -> void:
 		var update_delta: float = (
 			delta if updates_per_second == 0.0 else target_update_delta + (time - next_update_time)
 		)
-		next_update_time = time + target_update_delta
+		
+		# FIX: Advance the target interval rigidly to prevent time drift and jitter.
+		# The fallback prevents the timer from falling infinitely behind during lag spikes.
+		if updates_per_second > 0.0:
+			if time > next_update_time + target_update_delta * 2.0:
+				next_update_time = time + target_update_delta
+			else:
+				next_update_time += target_update_delta
 
 		_update_water(update_delta)
 
 		if update_textures:
 			_manage_cpu_displacement_textures_updates(delta)
 		just_calculated_water = true
+		
 	time += delta
 
 
