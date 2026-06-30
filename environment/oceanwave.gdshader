@@ -89,4 +89,3 @@ void fragment() {
     ROUGHNESS = mix(roughness, 1.0, foam_factor);
     METALLIC = metallic;
 }
-//comment

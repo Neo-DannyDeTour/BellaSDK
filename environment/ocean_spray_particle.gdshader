@@ -1,15 +1,9 @@
 shader_type particles;
 render_mode disable_velocity;
 
-/**
- * Handles where sea spray particles should spawn and determines their animation.
- * asdasda
- */
-
 #define MAX_CASCADES      8
 #define G                 (vec3(0.0, -9.81, 0.0))
 
-// Some definitions for convenience...
 #define POSITION          (TRANSFORM[3].xyz)
 #define START_POS         (USERDATA1.xyz)
 #define START_TIME        (USERDATA1.w)
@@ -20,16 +14,15 @@ render_mode disable_velocity;
 
 uniform uint num_particles;
 uniform vec3 particle_scale;
-uniform float lifetime = 3.0; // Actual lifetime of a particle.
+uniform float lifetime = 3.0; 
 uniform float lifetime_randomness : hint_range(0.0, 1.0) = 0.25;
 
 group_uniforms cascade_data;
-uniform vec4 map_scales[MAX_CASCADES];               // Scales for displacement/normal maps. Packed: [uv scale, displacement scale, normal scale]
+uniform vec4 map_scales[MAX_CASCADES];
 global uniform int num_cascades;
-global uniform sampler2DArray displacements;         // Each layer represents one wave cascade.
-global uniform sampler2DArray normals : hint_normal; // Each layer represents one wave cascade.
+global uniform sampler2DArray displacements;
+global uniform sampler2DArray normals : hint_normal;
 
-// Source: https://www.shadertoy.com/view/Xt3cDn
 vec3 hash32(uvec2 p) {
     p = 1103515245U * ((p >> 1U) ^ p.yx);
     uint h32 = 1103515245U * (p.x ^ (p.y>>3U));
@@ -49,10 +42,9 @@ void start() {
         uint t = uint(sqrt(float(num_particles)));
         vec3 rand = hash32(uvec2(NUMBER, 1U) + uint(TIME) + RANDOM_SEED);
 
-        // These are the coords of the (roughly) equally-distributed particles within the
-        // emitter's box (in local space).
-        vec2 coords = (vec2(uvec2(INDEX / t, INDEX % t)) / (float(t) - 1.0) - 0.5) * 10.0;
-        TRANSFORM[3].xyz = vec3(coords.x, 0.0, coords.y); // POSITION
+        // Expanded the spawn area to 300x300 meters
+        vec2 coords = (vec2(uvec2(INDEX / t, INDEX % t)) / (float(t) - 1.0) - 0.5) * 300.0;
+        TRANSFORM[3].xyz = vec3(coords.x, 0.0, coords.y); 
         TRANSFORM = EMISSION_TRANSFORM * TRANSFORM;
 
         CUSTOM.z = rand.x;
@@ -61,12 +53,11 @@ void start() {
         START_TIME = TIME + rand.z * (LIFETIME - PARTICLE_LIFETIME);
 
         HAS_STARTED = 0.0;
-        POSITION = vec3(0.0, -1e10, 0.0); // Keep particle hidden before it starts
+        POSITION = vec3(0.0, -1e10, 0.0); 
         set_scale(TRANSFORM, vec3(1e-3));
     }
 }
 
-// Source: https://iquilezles.org/articles/functions/
 float exp_impulse(float x, float k) {
     float h = k * x;
     return h * exp(1.0 - h);
@@ -77,58 +68,53 @@ void process() {
         ACTIVE = false;
     } else if (TIME >= START_TIME) {
         if (HAS_STARTED == 0.0) {
-            // --- PARTICLE INITIALIZATION ---
-            // Read foam and normal information from normal maps using textureLod
             vec3 gradient = vec3(0.0);
             for (int i = 0; i < num_cascades; ++i) {
-                // CHANGED: Added textureLod with 0.0 LOD explicit mapping
                 gradient += textureLod(normals, vec3(START_POS.xz * map_scales[i].xy, float(i)), 0.0).xyw;
             }
 
             vec3 normal = normalize(vec3(-gradient.x, 1.0, -gradient.y));
             float foam = gradient.z;
             float normal_factor = mix(0.25, 1.0, smoothstep(0.92, 0.99, normal.y));
-			float foam_factor = mix(0.25, 1.0, smoothstep(0.9, 1.0, foam));
+            float foam_factor = mix(0.25, 1.0, smoothstep(0.9, 1.0, foam));
 
-            // --- NEW: Better Splash Logic ---
-            // Allow splashes on general wave heights, not just 0.9+ strict foam values
-            // Use the particle's random seed (CUSTOM.z) to randomly trigger them across the surface
             bool random_splash = CUSTOM.z > 0.7 && foam > 0.3;
-            ACTIVE = (normal_factor >= 0.0 && normal_factor <= 1.0) && (foam > 0.75 || random_splash);
-            SCALE_FACTOR = normal_factor * mix(0.5, 1.0, foam_factor);
-
-            // Size of particle is based on foam amount and is flattened based on normal height.
-            PARTICLE_SCALE = vec3(foam_factor * (float(ACTIVE) + 1e-3));
-            PARTICLE_SCALE *= vec3(1.0, normal_factor, 1.0);
-            PARTICLE_SCALE *= particle_scale;
-            HAS_STARTED = 1.0;
+            bool should_spawn = (normal_factor >= 0.0 && normal_factor <= 1.0) && (foam > 0.75 || random_splash);
+            
+            if (should_spawn) {
+                ACTIVE = true;
+                SCALE_FACTOR = normal_factor * mix(0.5, 1.0, foam_factor);
+                PARTICLE_SCALE = vec3(foam_factor) * vec3(1.0, normal_factor, 1.0) * particle_scale;
+                HAS_STARTED = 1.0;
+            } else {
+                POSITION = vec3(0.0, -1e10, 0.0);
+                HAS_STARTED = 1.0; 
+                SCALE_FACTOR = 0.0;
+            }
         }
 
-        if (ACTIVE) {
+        if (ACTIVE && SCALE_FACTOR > 0.0) {
             float t = (TIME - START_TIME) / PARTICLE_LIFETIME;
-            CUSTOM.a = exp_impulse(t, 10.0); // For use in mesh shader (`sea_spray.gdshader`)
+            CUSTOM.a = exp_impulse(t, 10.0); 
 
-            // --- PARTICLE POSITION SHAPING ---
             vec3 displacement = vec3(0.0);
             for (int i = 0; i < num_cascades; ++i) {
                 vec3 scales = map_scales[i].xyz;
-                // CHANGED: Added textureLod with 0.0 LOD explicit mapping
                 displacement += textureLod(displacements, vec3(START_POS.xz * scales.xy, float(i)), 0.0).xyz * scales.z;
             }
 
-            // We multiply the horizontal displacement by a factor < 1 to prevent jittering
             displacement *= vec3(0.75, 1.0, 0.75);
-            // The particle will follow a parabolic trajectory vertically w.r.t. the displacement height
-            displacement += vec3(0.0, -5.0 * pow(2.5 * t - 0.45, 2.0) * SCALE_FACTOR + 0.5, 0.0);
+            float jump = 4.0 * t * (1.0 - t); 
+            displacement += vec3(0.0, jump * 3.0 * SCALE_FACTOR, 0.0);
             POSITION = START_POS + displacement;
 
-            // --- PARTICLE SCALE SHAPING ---
             float size = PARTICLE_LIFETIME / lifetime;
             vec3 scale_modifier = vec3(size * size);
-
-            // Some shaping functions to get a splash-like animation.
             scale_modifier.y *= exp_impulse(t, 3.0);
-            scale_modifier.xz *= vec2(log(1.0 + t));
+            
+            // Fixed the NaN matrix collapse by adding + 0.01
+            scale_modifier.xz *= vec2(log(1.0 + t) + 0.01);
+            
             set_scale(TRANSFORM, PARTICLE_SCALE * scale_modifier);
         }
     }
