@@ -68,7 +68,10 @@ const WATER_MESH_LOW := preload("res://assets/ocean_waves/ocean/clipmap_low.obj"
 # 3. PERFORMANCE
 # ==========================================
 @export_group("Performance Parameters")
-@export_enum("128x128:128", "256x256:256", "512x512:512", "1024x1024:1024") var map_size: int = 1024:
+@export_enum(
+	"128x128:128", "256x256:256", "512x512:512", "1024x1024:1024"
+)
+var map_size: int = 1024:
 	set(value):
 		map_size = value
 		_setup_wave_generator()
@@ -82,13 +85,6 @@ const WATER_MESH_LOW := preload("res://assets/ocean_waves/ocean/clipmap_low.obj"
 			mesh = WATER_MESH_HIGH
 		if mesh_quality == MeshQuality.HIGH8K:
 			mesh = WATER_MESH_HIGH8_K
-
-@export_range(0, 60) var updates_per_second: float = 50.0:
-	set(value):
-		next_update_time = (
-			next_update_time - (1.0 / (updates_per_second + 1e-10) - 1.0 / (value + 1e-10))
-		)
-		updates_per_second = value
 
 # ==========================================
 # 4. TOOLS (The "Buttons")
@@ -118,7 +114,6 @@ var wave_generator: WaveGenerator:
 		add_child(wave_generator)
 
 var time: float = 0.0
-var next_update_time: float = 0.0
 var displacement_maps: Texture2DArrayRD = Texture2DArrayRD.new()
 var normal_maps: Texture2DArrayRD = Texture2DArrayRD.new()
 
@@ -127,10 +122,7 @@ var just_calculated_water: bool = false
 
 # CPU readback variables
 var mutex: Mutex = Mutex.new()
-
-static var player_target: Node3D = null
-static var max_sim_distance: float = 200.0
-var _cpu_displacement_textures: Dictionary = {}
+var cpu_displacement_textures: Dictionary = {}
 var _displacement_textures_total_update_interval: float = 1.0 / 120.0
 var _displacement_textures_update_time: float = 0.0
 var _texture_loading_index: int = 0
@@ -181,30 +173,17 @@ func _process(delta: float) -> void:
 	# ---------------------------------------
 
 	just_calculated_water = false
-	if updates_per_second == 0.0 or time >= next_update_time:
-		var target_update_delta: float = 1.0 / (updates_per_second + 1e-10)
-		var update_delta: float = (
-			delta if updates_per_second == 0.0 else target_update_delta + (time - next_update_time)
-		)
-		
-		# FIX: Advance the target interval rigidly to prevent time drift and jitter.
-		# The fallback prevents the timer from falling infinitely behind during lag spikes.
-		if updates_per_second > 0.0:
-			if time > next_update_time + target_update_delta * 2.0:
-				next_update_time = time + target_update_delta
-			else:
-				next_update_time += target_update_delta
+	_update_water(delta)
 
-		_update_water(update_delta)
+	if update_textures:
+		_manage_cpu_displacement_textures_updates(delta)
+	just_calculated_water = true
 
-		if update_textures:
-			_manage_cpu_displacement_textures_updates(delta)
-		just_calculated_water = true
-		
 	time += delta
 
 
 func _setup_wave_generator() -> void:
+	print("ocean.gd: _setup_wave_generator() called")
 	if parameters.size() <= 0:
 		return
 	for param: WaveCascadeParameters in parameters:
@@ -256,25 +235,23 @@ func _notification(what: int) -> void:
 
 
 func _manage_cpu_displacement_textures_updates(delta: float) -> void:
-	if _cpu_displacement_textures.size() < 1:
+	if cpu_displacement_textures.size() < 1:
 		return
 
 	# Ensure we don't queue another readback if the render thread is still processing the last one
 	if _is_reading_back:
 		return
 
-	var time_per_texture: float = (
-		_displacement_textures_total_update_interval / float(_cpu_displacement_textures.size())
-	)
-	var _cpu_displacement_textures_indeces: Array = _cpu_displacement_textures.keys()
-	_cpu_displacement_textures_indeces.sort()
+	var cache_size: int = cpu_displacement_textures.size()
+	var time_per_texture: float = _displacement_textures_total_update_interval / float(cache_size)
+	# Removed array creation/sorting in tight loop
 
 	if _displacement_textures_update_time > time_per_texture:
 		_texture_loading_index += 1
-		if _texture_loading_index >= _cpu_displacement_textures.size():
+		if _texture_loading_index >= cpu_displacement_textures.size():
 			_texture_loading_index = 0
 
-		var target_idx: int = _cpu_displacement_textures_indeces[_texture_loading_index]
+		var target_idx: int = cpu_displacement_textures.keys()[_texture_loading_index]
 
 		_is_reading_back = true
 		# Dispatch directly to the engine's Render Thread to satisfy the RenderingDevice requirement
@@ -285,52 +262,54 @@ func _manage_cpu_displacement_textures_updates(delta: float) -> void:
 
 
 func _do_texture_readback(idx: int) -> void:
+	print("ocean.gd: _do_texture_readback() called for index: ", idx)
 	var rid_downsampled_map: RID = wave_generator.descriptors[&"downsampled_map"].rid
 	var device: RenderingDevice = RenderingServer.get_rendering_device()
 
 	# CRITICAL FIX: Request the data asynchronously instead of blocking the CPU.
 	# We bind 'idx' so the callback knows which layer it is processing.
 	var callable: Callable = _on_texture_data_received.bind(idx)
-	var _err: int = device.texture_get_data_async(rid_downsampled_map, idx, callable)
-	
-	if _err != OK:
+	var err: int = device.texture_get_data_async(rid_downsampled_map, idx, callable)
+
+	if err != OK:
 		push_error("Failed to enqueue asynchronous texture readback for layer: ", idx)
 		# Handle the error state if necessary (e.g., release the lock if it was set prior)
 
+
 # NEW: The callback function triggered by the RenderingDevice when the data is ready
 func _on_texture_data_received(tex: PackedByteArray, idx: int) -> void:
+	print("ocean.gd: _on_texture_data_received() called for index: ", idx)
 	# Ensure the wave_generator reference is still valid if this node can be destroyed
 	if not is_instance_valid(wave_generator):
 		return
-		
+
 	var img: Image = Image.create_from_data(
-		wave_generator.cpu_map_size, 
-		wave_generator.cpu_map_size, 
-		false, 
-		Image.FORMAT_RGBAH, 
-		tex
+		wave_generator.cpu_map_size, wave_generator.cpu_map_size, false, Image.FORMAT_RGBAH, tex
 	)
 
 	# Safely lock the mutex and update the dictionary/array
 	mutex.lock()
-	_cpu_displacement_textures[idx] = img
+	cpu_displacement_textures[idx] = img
 	_is_reading_back = false
 	mutex.unlock()
 
+
 func _setup_cpu_displacement_textures() -> void:
-	var _actually_used_textures_idx: Array[int] = []
+	print("ocean.gd: _setup_cpu_displacement_textures() called")
+	var actually_used_textures_idx: Array[int] = []
 	for i: int in range(parameters.size()):
 		var cascade: WaveCascadeParameters = parameters[i]
 		if cascade.displacement_scale > 0.001:
-			_actually_used_textures_idx.append(i)
+			actually_used_textures_idx.append(i)
 
 	# We must also push the initial setup to the Render Thread!
 	RenderingServer.call_on_render_thread(
-		_do_initial_texture_readback.bind(_actually_used_textures_idx)
+		_do_initial_texture_readback.bind(actually_used_textures_idx)
 	)
 
 
 func _do_initial_texture_readback(used_indices: Array[int]) -> void:
+	print("ocean.gd: _do_initial_texture_readback() called")
 	if not wave_generator or not wave_generator.descriptors.has(&"displacement_map"):
 		return
 
@@ -343,14 +322,14 @@ func _do_initial_texture_readback(used_indices: Array[int]) -> void:
 		var img: Image = Image.create_from_data(
 			wave_generator.map_size, wave_generator.map_size, false, Image.FORMAT_RGBAH, tex
 		)
-		_cpu_displacement_textures[i] = img
+		cpu_displacement_textures[i] = img
 	mutex.unlock()
 
 
-func _world_to_uv(W: Vector2, tile_length: Vector2) -> Vector2:
+func _world_to_uv(w: Vector2, tile_length: Vector2) -> Vector2:
 	return Vector2(
-		(W[0] - tile_length.x * floor(W[0] / tile_length.x)) / tile_length.x,
-		(W[1] - tile_length.y * floor(W[1] / tile_length.y)) / tile_length.y
+		(w[0] - tile_length.x * floor(w[0] / tile_length.x)) / tile_length.x,
+		(w[1] - tile_length.y * floor(w[1] / tile_length.y)) / tile_length.y
 	)
 
 
@@ -359,22 +338,25 @@ func get_height(world_pos: Vector3, steps: int = 3) -> float:
 	var summed_height: float = 0.0
 
 	mutex.lock()  # Lock while reading to prevent the thread pool from writing at the same time
-	for cascade_index: int in _cpu_displacement_textures.keys():
+	var map_size_cache: int = wave_generator.cpu_map_size
+	var map_size_float: float = float(map_size_cache)
+
+	for cascade_index: int in cpu_displacement_textures.keys():
 		var displacement_scale: float = parameters[cascade_index].displacement_scale
 		var tile_length: Vector2 = parameters[cascade_index].tile_length
 		var x: Vector2 = world_pos_xz
 		var y: Vector2 = Vector2.ZERO
-		var y_raw: Color = Color.BLACK
+		var y_raw: Color
 
 		for i: int in range(steps):
 			# Calculate the raw floating point pixel coordinate based on the TINY map
-			var img_v: Vector2 = _world_to_uv(x, tile_length) * float(wave_generator.cpu_map_size)
+			var img_v: Vector2 = _world_to_uv(x, tile_length) * map_size_float
 
-			# Wrap safely within 128
-			var pixel_x: int = wrapi(int(img_v.x), 0, wave_generator.cpu_map_size)
-			var pixel_y: int = wrapi(int(img_v.y), 0, wave_generator.cpu_map_size)
+			# Wrap safely
+			var pixel_x: int = wrapi(int(img_v.x), 0, map_size_cache)
+			var pixel_y: int = wrapi(int(img_v.y), 0, map_size_cache)
 
-			y_raw = _cpu_displacement_textures[cascade_index].get_pixel(pixel_x, pixel_y)
+			y_raw = cpu_displacement_textures[cascade_index].get_pixel(pixel_x, pixel_y)
 			y = Vector2(y_raw.r, y_raw.b)
 			x = world_pos_xz - y
 
@@ -385,6 +367,7 @@ func get_height(world_pos: Vector3, steps: int = 3) -> float:
 
 
 func bake_waves_to_res_routine() -> void:
+	print("ocean.gd: bake_waves_to_res_routine() called")
 	print("Starting Ocean Bake...")
 	var frames_to_bake: int = 64
 	var time_step: float = 0.05
@@ -438,6 +421,7 @@ func bake_waves_to_res_routine() -> void:
 
 
 func force_reset_cascades() -> void:
+	print("ocean.gd: force_reset_cascades() called")
 	if parameters.size() == 0:
 		return
 
