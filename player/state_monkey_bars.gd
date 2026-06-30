@@ -23,8 +23,13 @@ func enter(msg: Dictionary = {}) -> void:
 	# Instantly kill vertical momentum so we "catch" the bar
 	player.velocity.y = 0.0
 
-	if player.has_node("%CameraAnims"):  # Or whatever your AnimationPlayer is named
+	if player.has_node("%CameraAnims"):
 		player.get_node("%CameraAnims").play("monkey_bar_idle")
+
+	# Force the camera back to base_fov
+	if is_instance_valid(player.camera_controller):
+		print("StateMonkeyBars: Disabling sprint FOV flag")
+		player.camera_controller.disable_sprint_fov = true
 
 
 func exit() -> void:
@@ -44,6 +49,12 @@ func exit() -> void:
 	):
 		if player.locomotion_component.footstep_manager.has_method("stop_looping_sounds"):
 			player.locomotion_component.footstep_manager.stop_looping_sounds()
+			print("StateMonkeyBars: Stopped looping monkey bar sounds")
+
+	# Re-enable the ability to sprint FOV when returning to ground/air
+	if is_instance_valid(player.camera_controller):
+		print("StateMonkeyBars: Re-enabling sprint FOV flag")
+		player.camera_controller.disable_sprint_fov = false
 
 
 func physics_update(delta: float) -> void:

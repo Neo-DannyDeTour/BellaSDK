@@ -39,6 +39,7 @@ var sprint_active: bool = false
 var crouching: bool = false
 var can_sprint: bool = true
 var on_ice: bool = false
+var on_sand: bool = false
 var direction: Vector3 = Vector3.ZERO
 var last_velocity: Vector3 = Vector3.ZERO
 

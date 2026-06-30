@@ -26,8 +26,7 @@ var _main_cam: Camera3D
 var _last_cam_transform: Transform3D
 var _init_frames: int = 0
 var _texture_assigned: bool = false
-
-var _skip_frame: bool = false  #new code
+var _skip_frame: bool = false
 
 
 func _ready() -> void:
@@ -176,8 +175,7 @@ func _update_cam() -> void:
 		)
 
 	var offset: Vector3 = mirror_quad.global_position - mirror_camera.global_position
-
-	# Note: Upgraded abs() to absf() to strictly handle floats in Godot 4
+	
 	var near: float = absf(offset.dot(mirror_norm)) + cull_near
 	var far: float = offset.length() + cull_far
 	var inv_basis: Basis = mirror_camera.global_basis.inverse()
@@ -205,31 +203,36 @@ func _process(_delta: float) -> void:
 		if is_instance_valid(mirror_viewport):
 			mirror_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 		_init_frames += 1
-	else:
-		# Lock the generated texture proxy into the material only AFTER buffers exist
-		if not _texture_assigned:
-			_assign_texture()
-			_texture_assigned = true
+		_last_cam_transform = cur_trans
+		_update_cam()
+		return
 
-		# Optimization Phase: Resume standard culling and transform checks
-		if _last_cam_transform.is_equal_approx(cur_trans):
-			return
+	# Lock the generated texture proxy into the material only AFTER buffers exist
+	if not _texture_assigned:
+		_assign_texture()
+		_texture_assigned = true
 
-		if is_instance_valid(mirror_viewport):
-			var diff: Vector3 = global_position - cur_trans.origin
-			var dist_sq: float = diff.length_squared()
-			var max_dist_sq: float = max_update_distance * max_update_distance
+	# Optimization Phase: Resume standard culling and transform checks
+	if _last_cam_transform.is_equal_approx(cur_trans):
+		return
 
-			if dist_sq > max_dist_sq:
-				mirror_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
-			else:
-				# Interleave updates: Only render the mirror on alternating frames
-				_skip_frame = not _skip_frame
-				if _skip_frame:
-					mirror_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
-				else:
-					# Keep disabled on the off-frame to save compute budget
-					mirror_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	if is_instance_valid(mirror_viewport):
+		var diff: Vector3 = global_position - cur_trans.origin
+		var dist_sq: float = diff.length_squared()
+		var max_dist_sq: float = max_update_distance * max_update_distance
+
+		if dist_sq > max_dist_sq:
+			mirror_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+			return # OPTIMIZATION: Skip camera math entirely when too far away
+
+		# Interleave updates: Only render the mirror on alternating frames
+		_skip_frame = not _skip_frame
+		if _skip_frame:
+			mirror_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+		else:
+			# Keep disabled on the off-frame to save compute budget
+			mirror_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+			return # OPTIMIZATION: Skip camera math entirely on off-frames
 
 	_last_cam_transform = cur_trans
 	_update_cam()

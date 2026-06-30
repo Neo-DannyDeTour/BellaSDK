@@ -23,6 +23,8 @@ extends CharacterBody3D
 var in_game_console: CanvasLayer
 var flashlight_controller: FlashlightController
 
+@onready var health_component: HealthComponent = $Components/HealthComponent
+
 # --------------------------------------
 # INITIALIZATION
 # --------------------------------------
@@ -30,17 +32,16 @@ func _ready() -> void:
 	print("Player: _ready() called. Initializing Facade Controller.")
 	add_to_group("saveable")
 	
-	# Defer the mouse capture to prevent the X11/Linux "NO GRAB" error
 	call_deferred("_capture_mouse")
 	
-	# Grab the Autoload console right as the game starts
 	in_game_console = get_node_or_null("/root/Console") as CanvasLayer
 	
-	# Pass the root player reference to all components
 	locomotion_component.initialize(self)
 	interaction_component.initialize(self)
 	environment_component.initialize(self)
 	stats_component.initialize(self)
+	
+	_bridge_health_signals()
 
 
 func _capture_mouse() -> void:
@@ -194,7 +195,8 @@ func set_glider_visible(p_is_visible: bool) -> void:
 # --------------------------------------
 func enter_terminal_mode(terminal: Node3D) -> void:
 	print("Player: enter_terminal_mode() called.")
-	interaction_component.enter_terminal_mode(terminal)
+	#interaction_component.enter_terminal_mode(terminal)
+	interaction_component.interaction_scanner.enter_terminal_mode(terminal)
 
 func set_machine_lock(locked: bool) -> void:
 	print("Player: set_machine_lock() called. Locked: ", locked)
@@ -272,9 +274,11 @@ func enter_path_slide(stick: Node3D) -> void:
 		
 	state_machine.transition_to("PathSlide", {"stick": stick})
 
+
 func exit_path_slide() -> void:
 	print("Player: exit_path_slide() called.")
 	state_machine.transition_to("Air")
+
 
 func launch_from_path(throw_vel: Vector3) -> void:
 	print("Player: launch_from_path() called with velocity: ", throw_vel)
@@ -282,3 +286,20 @@ func launch_from_path(throw_vel: Vector3) -> void:
 	
 	# We pass release_dir to integrate perfectly with your StateAir momentum logic
 	state_machine.transition_to("Air", {"release_dir": throw_vel})
+
+
+func _bridge_health_signals() -> void:
+	print("Player: _bridge_health_signals() connecting local HealthComponent.")
+	
+	if is_instance_valid(health_component):
+		if not health_component.health_changed.is_connected(_on_local_health_changed):
+			health_component.health_changed.connect(_on_local_health_changed)
+			print("Player: Successfully bridged HealthComponent to global Events.")
+	else:
+		push_warning("Player: HealthComponent node not found at $Components/HealthComponent!")
+
+
+func _on_local_health_changed(new_health: int) -> void:
+	if Events.has_user_signal("player_health_changed") or Events.has_signal("player_health_changed"):
+		print("Player: Broadcasting health change to Events bus: ", new_health)
+		Events.player_health_changed.emit(new_health)

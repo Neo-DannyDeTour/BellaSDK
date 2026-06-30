@@ -1,0 +1,51 @@
+[gd_scene format=3 uid="uid://bsf5h24ondpnx"]
+
+[ext_resource type="Script" uid="uid://btywr3upucyy" path="res://interactables/feedback_station.gd" id="1_f7hnv"]
+[ext_resource type="Texture2D" uid="uid://cuq1mdypwuahb" path="res://assets/images/logo_google_form.png" id="1_fy5ia"]
+[ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="2_bqlrl"]
+[ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="3_f7hnv"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="4_raqlj"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_jjfyh"]
+size = Vector3(1.2, 1.2, 1.2)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_7uxg4"]
+render_priority = 0
+shader = ExtResource("4_raqlj")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.05
+
+[node name="FeedbackStation" type="StaticBody3D" unique_id=1120467328 node_paths=PackedStringArray("interact_comp", "label", "sprite")]
+script = ExtResource("1_f7hnv")
+interact_comp = NodePath("Interact_Component")
+label = NodePath("Label3D")
+sprite = NodePath("Sprite3D")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1916524118]
+shape = SubResource("BoxShape3D_jjfyh")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1014601576]
+
+[node name="Label3D" type="Label3D" parent="." unique_id=1081557241]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8039786, 0)
+billboard = 1
+double_sided = false
+text = "Leave Feedback"
+font_size = 48
+
+[node name="Sprite3D" type="Sprite3D" parent="." unique_id=1256890132]
+transform = Transform3D(0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0, 0, 0)
+gi_mode = 0
+billboard = 1
+texture = ExtResource("1_fy5ia")
+
+[node name="Interact_Component" type="Node" parent="." unique_id=1057979123]
+script = ExtResource("2_bqlrl")
+metadata/_custom_type_script = "uid://cqawbvidns1th"
+
+[node name="HighlightComponent" type="Node" parent="." unique_id=1644840214]
+script = ExtResource("3_f7hnv")
+outline_material = SubResource("ShaderMaterial_7uxg4")
+metadata/_custom_type_script = "uid://dgig0tamvkdxx"

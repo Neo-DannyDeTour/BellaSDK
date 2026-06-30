@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://ch7t3y803k6mx"]
+
+[ext_resource type="Script" uid="uid://c4tytlo3p0y8v" path="res://core/splash_screen.gd" id="1_1vx44"]
+
+[node name="SplashScreen" type="Control" unique_id=1407637174]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_1vx44")
+
+[node name="TextureRect" type="TextureRect" parent="." unique_id=1445215117]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5

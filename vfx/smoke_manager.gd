@@ -29,10 +29,15 @@ var active_fog_volume: FogVolume
 var is_initialized: bool = false
 var godot_texture: Texture3DRD
 
+# OPTIMIZATION: Pre-allocated buffer to prevent Garbage Collection stutters
+var _hole_buffer := PackedFloat32Array()
+
 
 func _ready() -> void:
 	print("SmokeManager: _ready() called. Initializing atmospheric manager.")
 	rd = RenderingServer.get_rendering_device()
+	
+	_hole_buffer.resize(MAX_HOLES * 8)
 
 	if precomputed_noise == null:
 		precomputed_noise = preload("res://vfx/smoke_noise_3d.tres") as Texture3D
@@ -177,35 +182,36 @@ func _process(delta: float) -> void:
 		if active_holes[i].time_alive > heal_time_seconds:
 			active_holes.remove_at(i)
 
-	# 2. Extract safe state on MAIN THREAD
-	var safe_fog_size: Vector3 = Vector3.ZERO
-	var safe_fog_pos: Vector3 = Vector3.ZERO
+	# OPTIMIZATION: Do not process arrays or dispatch shader if there's no fog volume to draw to
+	if not is_instance_valid(active_fog_volume) or not active_fog_volume.is_inside_tree():
+		return
 
-	if is_instance_valid(active_fog_volume) and active_fog_volume.is_inside_tree():
-		safe_fog_size = active_fog_volume.size
-		safe_fog_pos = active_fog_volume.global_position
+	# 2. Extract safe state on MAIN THREAD
+	var safe_fog_size: Vector3 = active_fog_volume.size
+	var safe_fog_pos: Vector3 = active_fog_volume.global_position
 
 	# Evaluate frames on the Main Thread to guarantee it flips properly
 	var is_even_frame: bool = Engine.get_process_frames() % 2 == 0
 	var holes_to_process: int = mini(active_holes.size(), MAX_HOLES)
 
-	# 3. Pre-allocate and build buffer on MAIN THREAD to prevent Render Thread locking
-	var hole_data := PackedFloat32Array()
-	hole_data.resize(holes_to_process * 8)
+	# 3. Use pre-allocated buffer on MAIN THREAD to prevent dynamic allocation spikes
+	var safe_hole_bytes := PackedByteArray()
+	
+	if holes_to_process > 0:
+		for i: int in range(holes_to_process):
+			var hole: Dictionary = active_holes[i]
+			var offset: int = i * 8
+			_hole_buffer[offset] = hole.start.x
+			_hole_buffer[offset + 1] = hole.start.y
+			_hole_buffer[offset + 2] = hole.start.z
+			_hole_buffer[offset + 3] = hole.radius
+			_hole_buffer[offset + 4] = hole.end.x
+			_hole_buffer[offset + 5] = hole.end.y
+			_hole_buffer[offset + 6] = hole.end.z
+			_hole_buffer[offset + 7] = hole.time_alive
 
-	for i: int in range(holes_to_process):
-		var hole: Dictionary = active_holes[i]
-		var offset: int = i * 8
-		hole_data[offset] = hole.start.x
-		hole_data[offset + 1] = hole.start.y
-		hole_data[offset + 2] = hole.start.z
-		hole_data[offset + 3] = hole.radius
-		hole_data[offset + 4] = hole.end.x
-		hole_data[offset + 5] = hole.end.y
-		hole_data[offset + 6] = hole.end.z
-		hole_data[offset + 7] = hole.time_alive
-
-	var safe_hole_bytes: PackedByteArray = hole_data.to_byte_array()
+		# Slicing the used portion prevents passing junk data or sending a zero-sized array
+		safe_hole_bytes = _hole_buffer.slice(0, holes_to_process * 8).to_byte_array()
 
 	# 4. Dispatch with fully prepared, thread-safe primitives
 	RenderingServer.call_on_render_thread(
@@ -229,7 +235,7 @@ func _dispatch_to_compute_shader(
 	if not is_initialized or not uniform_set.is_valid() or fog_size == Vector3.ZERO:
 		return
 
-	# Buffer updates are safe here, but we no longer allocate memory to do it
+	# Buffer updates are safe here, and we only send valid bytes
 	if hole_bytes.size() > 0:
 		rd.buffer_update(buffer_rid, 0, hole_bytes.size(), hole_bytes)
 
@@ -237,6 +243,7 @@ func _dispatch_to_compute_shader(
 	var heal_rate: float = 1.0 / heal_time_seconds
 	var z_offset: float = 64.0 if is_even_frame else 0.0
 
+	# These push constants are highly optimized struct copies in C++, safe to leave alone
 	var push_constants_array := PackedFloat32Array([
 		player_pos.x, player_pos.y, player_pos.z,
 		float(holes_count),

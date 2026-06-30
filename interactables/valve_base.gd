@@ -85,7 +85,7 @@ func _ready() -> void:
 		return
 
 	wheel = get_node_or_null("Wheel")
-	if wheel:
+	if is_instance_valid(wheel):
 		initial_rotation = wheel.rotation_degrees
 		if requires_installation:
 			wheel.hide()
@@ -95,7 +95,7 @@ func _ready() -> void:
 	highlight_comp = get_node_or_null("HighlightComponent")
 
 	var interact_comp: Node = get_node_or_null("Interact_Component")
-	if interact_comp:
+	if is_instance_valid(interact_comp):
 		if not interact_comp.focused.is_connected(_on_interact_component_focused):
 			interact_comp.focused.connect(_on_interact_component_focused)
 		if not interact_comp.unfocused.is_connected(_on_interact_component_unfocused):
@@ -114,14 +114,14 @@ func _process(delta: float) -> void:
 		if not is_instance_valid(_cached_player):
 			_cached_player = get_tree().get_first_node_in_group("player") as Node3D
 			
-		var held: Node3D = _get_player_held_object(_cached_player)
-		
-		# NOTE: You can add `and held is PickableValve` here if that class is globally registered
-		if is_instance_valid(held):
-			var dist: float = global_position.distance_to(held.global_position)
-			# Bumped to 0.6 to compensate for PickableObject's flat_offset pushing it 0.8m away
-			if dist < 0.6:
-				_install_valve(_cached_player, held)
+		if is_instance_valid(_cached_player):
+			var held: Node3D = _get_player_held_object(_cached_player)
+			
+			if is_instance_valid(held):
+				# OPTIMIZATION: Avoid square root math by using distance_squared_to (0.6 * 0.6 = 0.36)
+				var dist_sq: float = global_position.distance_squared_to(held.global_position)
+				if dist_sq < 0.36: 
+					_install_valve(_cached_player, held)
 
 	var is_interacting: bool = (
 		is_focused and Input.is_action_pressed("interact") and is_installed
@@ -143,7 +143,7 @@ func _process(delta: float) -> void:
 		_manage_audio(false)
 		return
 
-	if highlight_comp and highlight_comp.has_method("suppress"):
+	if is_instance_valid(highlight_comp) and highlight_comp.has_method("suppress"):
 		highlight_comp.suppress(is_interacting)
 
 	if is_interacting and not was_interacting:
@@ -175,23 +175,25 @@ func _process(delta: float) -> void:
 		elif progress <= 0.0:
 			current_target_progress = 1.0
 
-	if wheel:
-		var dir_multiplier: float = -1.0 if turn_clockwise else 1.0
-		var total_angle: float = 360.0 * visual_rotations * dir_multiplier * progress
-		wheel.rotation_degrees = initial_rotation + (spin_axis * total_angle)
-
-	for target: Node3D in targets:
-		if target and target.has_method("set_progress"):
-			target.set_progress(progress)
-
+	# OPTIMIZATION: Only calculate rotation matrix and loop targets if the valve is actively spinning
 	var is_moving: bool = not is_equal_approx(progress, old_progress)
-	_manage_audio(is_moving)
+	
+	if is_moving:
+		if is_instance_valid(wheel):
+			var dir_multiplier: float = -1.0 if turn_clockwise else 1.0
+			var total_angle: float = 360.0 * visual_rotations * dir_multiplier * progress
+			wheel.rotation_degrees = initial_rotation + (spin_axis * total_angle)
 
+		for target: Node3D in targets:
+			if is_instance_valid(target) and target.has_method("set_progress"):
+				target.set_progress(progress)
+
+	_manage_audio(is_moving)
 	was_interacting = is_interacting
 
 
 func _manage_audio(is_moving: bool) -> void:
-	if not valve_audio:
+	if not is_instance_valid(valve_audio):
 		return
 		
 	if is_moving and not valve_audio.playing:
@@ -249,11 +251,11 @@ func _install_valve(player: Node3D, held_valve: Node3D) -> void:
 	is_locked = false
 	current_target_progress = 1.0
 
-	if wheel:
+	if is_instance_valid(wheel):
 		wheel.show()
 
 	var weapon_holder: Node3D = player.get_node_or_null("%WeaponHolder")
-	if weapon_holder:
+	if is_instance_valid(weapon_holder):
 		weapon_holder.show()
 	print("Valve: Valve Auto-Installed!")
 
@@ -265,20 +267,20 @@ func _detach_valve() -> void:
 		return
 
 	var player: Node3D = get_tree().get_first_node_in_group("player") as Node3D
-	if not player:
+	if not is_instance_valid(player):
 		return
 
 	var spawned_valve: Node3D = pickable_valve_scene.instantiate() as Node3D
 
-	if outline_material and "outline_material" in spawned_valve:
-		spawned_valve.outline_material = outline_material
+	if is_instance_valid(outline_material) and "outline_material" in spawned_valve:
+		spawned_valve.set("outline_material", outline_material)
 
 	get_tree().current_scene.add_child(spawned_valve)
 	
-	if "hold_position" in player:
-		spawned_valve.global_position = player.hold_position.global_position
+	if "hold_position" in player and is_instance_valid(player.get("hold_position")):
+		spawned_valve.global_position = player.get("hold_position").global_position
 
-	if wheel:
+	if is_instance_valid(wheel):
 		spawned_valve.global_position = wheel.global_position
 		spawned_valve.global_rotation = wheel.global_rotation
 	else:
@@ -292,21 +294,21 @@ func _detach_valve() -> void:
 		int_comp.force_grab_item(spawned_valve as RigidBody3D)
 		grabbed_successfully = true
 	elif "held_object" in player:
-		player.held_object = spawned_valve
+		player.set("held_object", spawned_valve)
 
 	# Only manually call pick_up if the component didn't already handle it
 	if not grabbed_successfully and spawned_valve.has_method("pick_up") and "hold_position" in player:
-		spawned_valve.pick_up(player.hold_position, player)
+		spawned_valve.pick_up(player.get("hold_position"), player)
 
 	var weapon_holder: Node3D = player.get_node_or_null("%WeaponHolder")
-	if weapon_holder and not grabbed_successfully:
+	if is_instance_valid(weapon_holder) and not grabbed_successfully:
 		weapon_holder.hide()
 
 	is_installed = false
 	is_locked = false
 	install_cooldown = 1.0
 
-	if wheel:
+	if is_instance_valid(wheel):
 		wheel.hide()
 
 
@@ -315,7 +317,7 @@ func _on_interact_component_focused() -> void:
 	if is_locked:
 		return
 	is_focused = true
-	if label:
+	if is_instance_valid(label):
 		_update_valve_label()
 		label.show()
 
@@ -323,18 +325,18 @@ func _on_interact_component_focused() -> void:
 func _on_interact_component_unfocused() -> void:
 	print("Valve: _on_interact_component_unfocused() called.")
 	is_focused = false
-	if label:
+	if is_instance_valid(label):
 		label.hide()
 
 
 func _draw_connection_line() -> void:
 	if not targets or targets.is_empty():
-		if debug_line:
+		if is_instance_valid(debug_line):
 			debug_line.queue_free()
 			debug_line = null
 		return
 
-	if not debug_line:
+	if not is_instance_valid(debug_line):
 		debug_line = MeshInstance3D.new()
 		add_child(debug_line)
 		debug_line.top_level = true
@@ -354,7 +356,7 @@ func _draw_connection_line() -> void:
 	mesh.surface_begin(Mesh.PRIMITIVE_LINES)
 
 	for target: Node3D in targets:
-		if target:
+		if is_instance_valid(target):
 			mesh.surface_add_vertex(global_position)
 			mesh.surface_add_vertex(target.global_position)
 
@@ -363,7 +365,7 @@ func _draw_connection_line() -> void:
 
 func _update_valve_label() -> void:
 	print("Valve: _update_valve_label() called.")
-	if not label:
+	if not is_instance_valid(label):
 		return
 
 	if is_installed:

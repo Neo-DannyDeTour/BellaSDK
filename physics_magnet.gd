@@ -25,46 +25,70 @@ enum MagnetMode { THROWN_ONLY, ALL, REPEL }
 @export var collision_shape: CollisionShape3D
 @export var visual_mesh: MeshInstance3D
 
-@onready var _editor_icon: Sprite3D = %EditorIcon
+@onready var _editor_icon: Sprite3D = get_node_or_null("%EditorIcon")
+
+# OPTIMIZATION: Track bodies via signals instead of polling get_overlapping_bodies()
+var _active_bodies: Dictionary = {}
 
 
 func _ready() -> void:
 	if not Engine.is_editor_hint():
 		if is_instance_valid(_editor_icon):
 			_editor_icon.queue_free()
-
-	if not Engine.is_editor_hint():
+			
 		print("PhysicsMagnet: _ready() initialized.")
+		
+		# Connect signals for event-driven tracking
+		body_entered.connect(_on_body_entered)
+		body_exited.connect(_on_body_exited)
+		
+		# Disable process by default until something enters the field
+		set_physics_process(false)
+
 	collision_layer = 0
 	collision_mask = 1
 	_update_size()
 	_update_visibility()
 
 
+func _on_body_entered(body: Node3D) -> void:
+	if not body is RigidBody3D:
+		return
+
+	if not body.is_in_group(allowed_group):
+		return
+
+	_active_bodies[body] = true
+	set_physics_process(true) # Wake up the magnet
+
+
+func _on_body_exited(body: Node3D) -> void:
+	if _active_bodies.has(body):
+		_active_bodies.erase(body)
+		
+		if _active_bodies.is_empty():
+			set_physics_process(false) # Put the magnet to sleep to save CPU
+
+
 func _physics_process(_delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
 
-	var bodies: Array[Node3D] = get_overlapping_bodies()
-
-	for body in bodies:
-		if not body is RigidBody3D:
-			continue
-
-		if not body.is_in_group(allowed_group):
-			continue
-
-		if _should_affect(body):
-			_apply_magnet_force(body as RigidBody3D)
+	# OPTIMIZATION: Iterate over the pre-filtered dictionary
+	for body: RigidBody3D in _active_bodies:
+		if is_instance_valid(body) and _should_affect(body):
+			_apply_magnet_force(body)
 
 
-func _should_affect(body: Node3D) -> bool:
+func _should_affect(body: RigidBody3D) -> bool:
 	if body.get("is_held") == true:
 		return false
 
 	if mode == MagnetMode.THROWN_ONLY:
-		var vel: Vector3 = body.get("linear_velocity")
-		if vel.length() < throw_velocity_threshold:
+		var vel: Vector3 = body.linear_velocity
+		# OPTIMIZATION: Compare squared lengths to avoid square root math
+		var threshold_sq: float = throw_velocity_threshold * throw_velocity_threshold
+		if vel.length_squared() < threshold_sq:
 			return false
 
 	return true
@@ -72,12 +96,14 @@ func _should_affect(body: Node3D) -> bool:
 
 func _apply_magnet_force(body: RigidBody3D) -> void:
 	var direction: Vector3 = global_position - body.global_position
-	var distance: float = direction.length()
+	var dist_sq: float = direction.length_squared()
 
-	if distance < 0.2:
+	# OPTIMIZATION: 0.2 squared is 0.04
+	if dist_sq < 0.04:
 		return
 
-	var force_dir: Vector3 = direction.normalized()
+	var distance: float = sqrt(dist_sq)
+	var force_dir: Vector3 = direction / distance
 	var applied_force: Vector3 = Vector3.ZERO
 
 	if mode == MagnetMode.REPEL:

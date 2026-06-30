@@ -13,7 +13,7 @@ var descriptors: Dictionary = {}
 
 # Generator state per invocation of `update()`.
 var pass_parameters: Array[WaveCascadeParameters]
-var pass_num_cascades_remaining: int
+var _current_cascade_index: int = 0
 
 
 func init_gpu(num_cascades: int) -> void:
@@ -157,18 +157,20 @@ func init_gpu(num_cascades: int) -> void:
 
 
 func _process(_delta: float) -> void:
-	# --- NEW: Safety valve to prevent editor error spam ---
+	# Safety valve to prevent editor error spam
 	if pipelines.is_empty() or not pipelines.has(&"spectrum_compute"):
 		return
-
-	# Update one cascade each frame for load balancing.
-	if pass_num_cascades_remaining == 0:
+		
+	if pass_parameters.is_empty():
 		return
-	pass_num_cascades_remaining -= 1
 
+	# Update exactly one cascade per frame for strict load balancing.
 	var compute_list: int = context.compute_list_begin()
-	_update(compute_list, pass_num_cascades_remaining, pass_parameters)
+	_update(compute_list, _current_cascade_index, pass_parameters)
 	context.compute_list_end()
+	
+	# Cycle to the next cascade for the next frame
+	_current_cascade_index = (_current_cascade_index + 1) % pass_parameters.size()
 
 
 func _update(
@@ -258,22 +260,21 @@ func _update(
 
 
 func update(delta: float, parameters: Array[WaveCascadeParameters]) -> void:
+	#print("WaveGenerator: update() called. Updating cascade parameters.")
 	assert(parameters.size() != 0)
+	
 	if not context or pipelines.is_empty():
 		init_gpu(maxi(2, parameters.size()))
 
-	# --- NEW: STRICT SAFETY SHIELD ---
+	# STRICT SAFETY SHIELD
 	# If the pipeline failed to compile, silently abort to prevent error spam!
 	if not pipelines.has(&"spectrum_compute") or not pipelines[&"spectrum_compute"].is_valid():
 		return
-	# ---------------------------------
 
-	if pass_num_cascades_remaining != 0:
-		var compute_list: int = context.compute_list_begin()
-		for i: int in range(pass_num_cascades_remaining):
-			_update(compute_list, i, pass_parameters)
-		context.compute_list_end()
+	# Store parameters for the _process loop to consume
+	pass_parameters = parameters
 
+	# Only update the CPU-side mathematics here. No GPU dispatching.
 	for i: int in range(parameters.size()):
 		var params: WaveCascadeParameters = parameters[i]
 		if params == null:
@@ -286,9 +287,6 @@ func update(delta: float, parameters: Array[WaveCascadeParameters]) -> void:
 		params.time = f_time + delta
 		params.foam_grow_rate = delta * f_amount * 7.5
 		params.foam_decay_rate = float(delta * max(0.5, 10.0 - f_amount) * 1.15)
-
-	pass_parameters = parameters
-	pass_num_cascades_remaining = parameters.size()
 
 
 func _notification(what: int) -> void:

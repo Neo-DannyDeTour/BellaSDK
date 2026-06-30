@@ -39,6 +39,5 @@ rings = 16
 
 [node name="3DShockwave" type="GPUParticles3D" unique_id=1451759977]
 amount = 1
-lifetime = 0.5
 process_material = SubResource("ParticleProcessMaterial_uua0r")
 draw_pass_1 = SubResource("SphereMesh_lu0na")

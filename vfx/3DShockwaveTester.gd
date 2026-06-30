@@ -3,9 +3,11 @@ extends Node3D
 
 @export var shockwave_manager: ShockwaveManager
 @export var trigger_interval: float = 2.0
+@export var test_radius: float = 5.0
 
 
 func _ready() -> void:
+	print("ShockwaveTester: _ready() called. Setting up timer.")
 	var timer: Timer = Timer.new()
 	timer.wait_time = trigger_interval
 	timer.autostart = true
@@ -14,6 +16,8 @@ func _ready() -> void:
 
 
 func _on_timer_timeout() -> void:
-	print("Tester is firing a new shockwave.")
+	print("ShockwaveTester: _on_timer_timeout() called. Firing shockwave with radius: ", test_radius)
 	if shockwave_manager != null:
-		shockwave_manager.trigger_shockwave(global_position)
+		shockwave_manager.trigger_shockwave(global_position, test_radius)
+	else:
+		print("ShockwaveTester: shockwave_manager is not assigned!")

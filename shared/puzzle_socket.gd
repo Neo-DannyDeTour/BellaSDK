@@ -28,7 +28,7 @@ signal socket_powered_off
 
 var is_powered: bool = false  # (Note: This means "Plug is Inserted" in base logic)
 var current_plug: Node3D = null
-var install_cooldown: float = 0.0
+var is_cooling_down: bool = false
 
 
 func _ready() -> void:
@@ -49,13 +49,6 @@ func _ready() -> void:
 			socket_interact_comp.interacted.connect(_on_socket_interacted)
 			socket_interact_comp.focused.connect(_on_socket_focused)
 			socket_interact_comp.unfocused.connect(_on_socket_unfocused)
-
-
-func _process(delta: float) -> void:
-	# We completely removed the editor drawing process for 60 FPS optimization
-	if not Engine.is_editor_hint():
-		if install_cooldown > 0.0:
-			install_cooldown -= delta
 
 
 func _sync_transmitter() -> void:
@@ -98,7 +91,7 @@ func _on_socket_interacted(character: CharacterBody3D) -> void:
 
 
 func _on_body_entered(body: Node3D) -> void:
-	if not is_powered and body.is_in_group("plug") and install_cooldown <= 0.0:
+	if not is_powered and body.is_in_group("plug") and not is_cooling_down:
 		plug_in(body)
 
 
@@ -121,7 +114,7 @@ func plug_in(plug: Node3D) -> void:
 
 	if not can_be_unplugged:
 		if "is_locked" in plug:
-			plug.is_locked = true
+			plug.set("is_locked", true)
 
 	if is_instance_valid(socket_interact_comp) and socket_interact_comp.is_currently_focused:
 		_on_socket_focused()
@@ -179,12 +172,16 @@ func unplug() -> void:
 			current_plug.power_state_changed.disconnect(_on_plug_power_changed)
 
 	is_powered = false
-	install_cooldown = 1.0
+	
+	# OPTIMIZATION: Use a SceneTreeTimer instead of calculating cooldown mathematically in _process
+	is_cooling_down = true
+	get_tree().create_timer(1.0, false).timeout.connect(func() -> void: is_cooling_down = false)
 
 	if current_plug is RigidBody3D:
-		current_plug.freeze = false
-		if "is_locked" in current_plug:
-			current_plug.is_locked = false
+		var rb_plug := current_plug as RigidBody3D
+		rb_plug.freeze = false
+		if "is_locked" in rb_plug:
+			rb_plug.set("is_locked", false)
 
 	current_plug = null
 

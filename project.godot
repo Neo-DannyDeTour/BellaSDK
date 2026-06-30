@@ -15,6 +15,8 @@ config/description="A replacement for Source. Something to help you start buildi
 run/main_scene="uid://dn6pth4ryiv4s"
 config/features=PackedStringArray("4.6", "Forward Plus")
 run/max_fps=60
+boot_splash/bg_color=Color(0, 0, 0, 1)
+boot_splash/image="uid://bjct27ta2nogv"
 config/icon="uid://cijw0jse7sfs8"
 
 [audio]
@@ -32,6 +34,7 @@ SaveManager="*uid://bdthpju22khmx"
 CsgToolkitAutoload="*uid://w8ad8q4lneis"
 KeycardSystem="*uid://0q0pxgqqqrbh"
 GraphicsManager="*uid://c165uw26ca5hj"
+ShockwaveManager3d="*uid://l8cg0oru71au"
 
 [debug]
 

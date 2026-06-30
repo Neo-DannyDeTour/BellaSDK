@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://dpaeeg7o4poex"]
+
+[ext_resource type="PackedScene" uid="uid://mqae3mth7tfx" path="res://interactables/pickable_object.tscn" id="1_fra8e"]
+[ext_resource type="Script" uid="uid://dyabs2bhrtpuc" path="res://interactables/explosive_barrel.gd" id="1_i7e6k"]
+[ext_resource type="Texture2D" uid="uid://cnxjdm6ulhxep" path="res://assets/textures/barrel_explosive_texture.png" id="2_i7e6k"]
+[ext_resource type="PackedScene" uid="uid://bnenavtkhbxvh" path="res://vfx/3d_shockwave.tscn" id="3_qcbrd"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_g8nd5"]
+albedo_texture = ExtResource("2_i7e6k")
+uv1_scale = Vector3(1, 2, 1)
+uv1_offset = Vector3(0.255, 0, 0)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_qcbrd"]
+material = SubResource("StandardMaterial3D_g8nd5")
+height = 1.5
+radial_segments = 16
+rings = 0
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_i7e6k"]
+height = 1.5
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_i7e6k"]
+radius = 5.0
+
+[node name="ExplosiveBarrel" unique_id=594279821 instance=ExtResource("1_fra8e")]
+collision_layer = 5
+collision_mask = 7
+mass = 10.0
+script = ExtResource("1_i7e6k")
+max_health = 10
+explosion_scene = ExtResource("3_qcbrd")
+max_distance = 3.0
+max_force = 50.0
+chain_reaction_threshold = 1.5
+shockwave_radius = 5.0
+
+[node name="MeshInstance3D" parent="." index="2" unique_id=1239371319]
+mesh = SubResource("CylinderMesh_qcbrd")
+
+[node name="CollisionShape3D" parent="." index="3" unique_id=1677444331]
+shape = SubResource("CylinderShape3D_i7e6k")
+
+[node name="Area3D" type="Area3D" parent="." index="6" unique_id=835747817]
+collision_layer = 4
+collision_mask = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Area3D" index="0" unique_id=690668077]
+shape = SubResource("SphereShape3D_i7e6k")

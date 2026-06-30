@@ -449,7 +449,7 @@ omni_light = NodePath("../OmniLight3D")
 [node name="CameraAnims" type="AnimationPlayer" parent="Head/Eyes" unique_id=1765016502]
 libraries/ = SubResource("AnimationLibrary_xfc2n")
 
-[node name="CameraController" type="Node" parent="Head" unique_id=411961146 node_paths=PackedStringArray("player_body", "head", "eyes", "camera")]
+[node name="CameraController" type="Node3D" parent="Head" unique_id=686809450 node_paths=PackedStringArray("player_body", "head", "eyes", "camera")]
 unique_name_in_owner = true
 script = ExtResource("4_6e537")
 player_body = NodePath("../..")
@@ -531,13 +531,11 @@ shape = SubResource("SphereShape3D_mdl7e")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 script = ExtResource("20_sfy4j")
 
-[node name="InteractionScanner" type="Node" parent="." unique_id=807129051 node_paths=PackedStringArray("player_body", "camera", "interact_shapecast", "hold_position", "weapon_holder", "empty_interact_audio")]
+[node name="InteractionScanner" type="Node" parent="." unique_id=807129051 node_paths=PackedStringArray("player_body", "camera", "interact_shapecast", "empty_interact_audio")]
 script = ExtResource("24_p07f3")
 player_body = NodePath("..")
 camera = NodePath("../Head/Eyes/Camera3D")
 interact_shapecast = NodePath("../Head/Eyes/Camera3D/InteractionShapeCast")
-hold_position = NodePath("../Head/Eyes/Camera3D/SpringArm3D/HoldPosition")
-weapon_holder = NodePath("../Head/Eyes/Camera3D/WeaponHolder")
 empty_interact_audio = NodePath("EmptyInteractAudio")
 
 [node name="EmptyInteractAudio" type="AudioStreamPlayer" parent="InteractionScanner" unique_id=1912212616]

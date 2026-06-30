@@ -1,5 +1,5 @@
 class_name CameraController
-extends Node
+extends Node3D
 
 # --------------------------------------
 # EXPORTS
@@ -49,7 +49,11 @@ var headbob_offset: Vector2 = Vector2.ZERO
 var stair_offset: float = 0.0
 
 
+# --------------------------------------
+# INITIALIZATION
+# --------------------------------------
 func _ready() -> void:
+	print("CameraController: _ready() called. Initializing FOV and Sensitivity.")
 	mouse_sensitivity = mouse_sensitivity_base
 	target_fov = base_fov
 
@@ -63,7 +67,7 @@ func handle_mouse_input(
 	is_heavy_lifting: bool,
 	_heavy_lift_yaw_base: float
 ) -> void:
-	# Safely trace mouse input only on major threshold movements to preserve 60 FPS
+	# Print restricted to large movements to maintain 60 FPS performance
 	if absf(event.relative.x) > 50.0 or absf(event.relative.y) > 50.0:
 		print("CameraController: Large mouse movement detected, processing input.")
 
@@ -103,7 +107,7 @@ func update_camera(
 ) -> void:
 	# Trace wrapped in a state-change check to prevent console flooding on every frame
 	if Input.is_action_just_pressed("zoom") or Input.is_action_just_pressed("sprint"):
-		print("CameraController: update_camera processing state change.")
+		print("CameraController: update_camera() processing state change.")
 
 	_update_fov(delta, is_sprinting, is_grounded, input_dir)
 	_update_tilt(delta, input_dir)
@@ -203,3 +207,18 @@ func _update_stair_smoothing(delta: float, player_velocity: float) -> void:
 
 	var move_amount: float = maxf(player_velocity * delta, 2.5 * delta)
 	stair_offset = move_toward(stair_offset, 0.0, move_amount)
+
+
+# --------------------------------------
+# SAVE SYSTEM UTILITIES
+# --------------------------------------
+func apply_saved_rotation(pitch: float, yaw: float) -> void:
+	print("CameraController: apply_saved_rotation() called. Forcing camera vectors.")
+	global_rotation = Vector3(pitch, yaw, 0.0)
+	
+	# Ensure local logic nodes perfectly mirror the forced global transform
+	if is_instance_valid(head):
+		head.rotation.x = pitch
+		
+	if is_instance_valid(player_body):
+		player_body.rotation.y = yaw

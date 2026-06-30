@@ -31,7 +31,12 @@ var hold_target: Marker3D = null
 var holder: Node3D = null
 
 # --- WATER TRACKING ---
-var is_in_water: bool = false
+var is_in_water: bool = false:
+	set(value):
+		if is_in_water != value:
+			is_in_water = value
+			_update_process_state()
+
 var submerged: bool = false
 var current_water_node: Node3D = null
 
@@ -60,10 +65,26 @@ func _ready() -> void:
 		if not interact_comp.unfocused.is_connected(_on_interact_component_unfocused):
 			interact_comp.unfocused.connect(_on_interact_component_unfocused)
 
+	# Allow Rigidbody to sleep when sitting still
+	sleeping_state_changed.connect(_on_sleeping_state_changed)
+	
+	# Initialize process state
+	_update_process_state()
+
 	# --- SHADER WARM-UP (Fixes the first-pickup frame drop) ---
 	if mesh:
 		_set_model_transparency(mesh, held_transparency)
 		_revert_warmup_deferred()
+
+
+func _on_sleeping_state_changed() -> void:
+	_update_process_state()
+
+
+func _update_process_state() -> void:
+	# OPTIMIZATION: Only run _physics_process if we are held, in water, or actively falling/moving
+	var should_process: bool = is_held or is_in_water or not sleeping
+	set_physics_process(should_process)
 
 
 func _revert_warmup_deferred() -> void:
@@ -93,6 +114,7 @@ func pick_up(target: Marker3D, player: Node3D) -> void:
 	linear_velocity = Vector3.ZERO
 	angular_velocity = Vector3.ZERO
 	freeze = false
+	sleeping = false
 	gravity_scale = 0.0
 	
 	if mesh:
@@ -104,6 +126,7 @@ func pick_up(target: Marker3D, player: Node3D) -> void:
 		interact_comp.process_mode = Node.PROCESS_MODE_DISABLED
 
 	add_collision_exception_with(holder)
+	_update_process_state()
 
 
 func drop() -> void:
@@ -120,9 +143,11 @@ func drop() -> void:
 		holder = null
 		if interact_comp:
 			interact_comp.is_currently_focused = false
+		_update_process_state()
 		return
 
 	freeze = false
+	sleeping = false
 	gravity_scale = 1.0
 	if mesh:
 		_set_model_transparency(mesh, 0.0)
@@ -217,6 +242,8 @@ func drop() -> void:
 	holder = null
 	if interact_comp:
 		interact_comp.is_currently_focused = false
+		
+	_update_process_state()
 
 
 # --- NEW FUNCTION ---
@@ -249,14 +276,31 @@ func _on_interact_component_focused() -> void:
 
 	# 1. If we are holding it, NO highlight and NO label. Bail out!
 	if is_held:
-		if mesh:
+		# Verify mesh is a GeometryInstance3D before trying to access material_overlay
+		if is_instance_valid(mesh) and mesh is GeometryInstance3D:
 			mesh.material_overlay = null
 		return
 
 	# 3. Show the label
-	if label:
+	if is_instance_valid(label):
 		_update_label_text()
 		label.show()
+
+
+#func _on_interact_component_focused() -> void:
+	#if is_locked:
+		#return
+#
+	## 1. If we are holding it, NO highlight and NO label. Bail out!
+	#if is_held:
+		#if mesh:
+			#mesh.material_overlay = null
+		#return
+#
+	## 3. Show the label
+	#if label:
+		#_update_label_text()
+		#label.show()
 
 
 func _update_label_text() -> void:
@@ -286,7 +330,7 @@ func _on_interact_component_unfocused() -> void:
 
 
 func _physics_process(_delta: float) -> void:
-	if is_held and hold_target and holder:
+	if is_held and is_instance_valid(hold_target) and is_instance_valid(holder):
 		var target_pos: Vector3 = hold_target.global_position
 
 		# 1. APPLY OFFSETS FIRST
@@ -306,23 +350,23 @@ func _physics_process(_delta: float) -> void:
 
 		# --- NEW: ADVANCED MASS MATH ---
 		# 0.0 for things 5kg and under (Valves). 1.0 for 10kg and over (Barrels).
-		var weight_ratio: float = clamp((mass - 5.0) / 5.0, 0.0, 1.0)
+		var weight_ratio: float = clampf((mass - 5.0) / 5.0, 0.0, 1.0)
 
 		# 1. BASE DROP: Heavy items sag down automatically. Light items (0.0) have NO drop.
-		var current_y_drop: float = lerp(0.0, 0.5, weight_ratio)
+		var current_y_drop: float = lerpf(0.0, 0.5, weight_ratio)
 		target_pos.y -= current_y_drop
 
 		# 2. THE "NO-DIP" LOOK-DOWN LOGIC
 		# By multiplying by weight_ratio, a 5kg object multiplies this by 0.0 (No dip at all!)
 		# A 10kg barrel will multiply by 1.0, pulling it down as you look at your toes.
 		if cam_forward.y < 0.0:
-			var dip_strength: float = abs(cam_forward.y) * 6.0
+			var dip_strength: float = absf(cam_forward.y) * 6.0
 			target_pos.y -= (dip_strength * weight_ratio)
 
 		# 3. THE UNBREAKABLE CEILING
 		# We base this on your FEET (player_pos.y), NOT the camera.
 		# Light objects can go up to 3 meters (above head). Heavy objects hard-capped at 1.0 meter (waist/chest).
-		var max_allowed_height: float = lerp(player_pos.y + 3.0, player_pos.y + 1.0, weight_ratio)
+		var max_allowed_height: float = lerpf(player_pos.y + 3.0, player_pos.y + 1.0, weight_ratio)
 
 		if target_pos.y > max_allowed_height:
 			target_pos.y = max_allowed_height
@@ -366,7 +410,7 @@ func _physics_process(_delta: float) -> void:
 			* global_basis.get_rotation_quaternion().inverse()
 		)
 		var axis := Vector3(diff_quat.x, diff_quat.y, diff_quat.z)
-		var angle := 2.0 * acos(clamp(diff_quat.w, -1.0, 1.0))
+		var angle := 2.0 * acos(clampf(diff_quat.w, -1.0, 1.0))
 		if angle > PI:
 			angle -= TAU
 
@@ -379,21 +423,21 @@ func _physics_process(_delta: float) -> void:
 	# 2. MULTI-PROBE BUOYANCY
 	submerged = false
 
-	if is_in_water and is_instance_valid(current_water_node) and probe_container:
+	if is_in_water and is_instance_valid(current_water_node) and is_instance_valid(probe_container):
 		var probe_count: int = probe_container.get_child_count()
 		var probe_mass: float = mass / float(probe_count)
 
-		for p in probe_container.get_children():
+		for p: Node3D in probe_container.get_children():
 			var wave_height: float = current_water_node.get_wave_height_at_pos(p.global_position)
 			var depth: float = wave_height - p.global_position.y
 
-			if depth > 0:
+			if depth > 0.0:
 				submerged = true
 
 				# --- THE SURFACE & PLUNGE FIX ---
 				# Multiply depth by 4.0: Reaches neutral buoyancy at just 0.25 meters deep!
 				# Clamp at 4.0: If pulled deep, it fights back 4x harder to overpower the drag of 6.0!
-				var depth_multiplier: float = clamp(depth * 4.0, 0.0, 4.0)
+				var depth_multiplier: float = clampf(depth * 4.0, 0.0, 4.0)
 
 				var force: Vector3 = (
 					Vector3.UP * probe_mass * float_force * gravity * depth_multiplier
@@ -478,5 +522,5 @@ func _set_model_transparency(parent_node: Node, alpha: float) -> void:
 		parent_node.transparency = alpha
 
 	# Dig through all of its children and do the exact same thing
-	for child in parent_node.get_children():
+	for child: Node in parent_node.get_children():
 		_set_model_transparency(child, alpha)

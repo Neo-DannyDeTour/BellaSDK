@@ -22,7 +22,7 @@ var _cached_camera: Camera3D
 
 @onready var rope_body: RigidBody3D = $RopeBody
 @onready var interact_component: Interact_Component = $RopeBody/Interact_Component
-@onready var highlight_component: HighlightComponent = $RopeBody/HighlightComponent
+@onready var highlight_component: Node = get_node_or_null("RopeBody/HighlightComponent")
 @onready var rope_mesh: MeshInstance3D = $RopeBody/MeshInstance3D
 @onready var rope_col: CollisionShape3D = $RopeBody/CollisionShape3D
 @onready var anchor: StaticBody3D = $Anchor
@@ -36,6 +36,9 @@ func _ready() -> void:
 
 	if Engine.is_editor_hint():
 		return
+
+	# OPTIMIZATION: Disable process loop entirely until the player hovers over the rope
+	set_process(false)
 
 	# --- PHYSICS SETUP ---
 	if rope_body:
@@ -66,31 +69,32 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	if not is_inside_tree() or interact_component == null:
+	# We no longer need to check if interact_component.is_currently_focused is true
+	# because this function only runs when the rope IS focused.
+	
+	if player_on_rope:
 		return
 
-	# Process UI updates for visual smoothness
-	if interact_component.get("is_currently_focused") == true and not player_on_rope:
-		if _cached_camera == null:
-			_cached_camera = get_viewport().get_camera_3d()
+	if not is_instance_valid(_cached_camera):
+		_cached_camera = get_viewport().get_camera_3d()
 
-		if _cached_camera:
-			var hit_point_val: Variant = interact_component.get("last_hit_position")
-			var hit_point: Vector3 = Vector3.ZERO
+	if is_instance_valid(_cached_camera):
+		var hit_point_val: Variant = interact_component.get("last_hit_position")
+		var hit_point := Vector3.ZERO
 
-			if hit_point_val is Vector3:
-				hit_point = hit_point_val
+		if hit_point_val is Vector3:
+			hit_point = hit_point_val
 
-			var cam_right: Vector3 = _cached_camera.global_transform.basis.x
-			var cam_up: Vector3 = _cached_camera.global_transform.basis.y
+		var cam_right: Vector3 = _cached_camera.global_transform.basis.x
+		var cam_up: Vector3 = _cached_camera.global_transform.basis.y
 
-			var final_pos: Vector3 = hit_point + (cam_right * label_offset_amount) + (cam_up * 0.1)
-			interact_label.global_position = final_pos
+		var final_pos: Vector3 = hit_point + (cam_right * label_offset_amount) + (cam_up * 0.1)
+		interact_label.global_position = final_pos
 
 
 # --- THE SLOMO ENGINE ---
 func _set_slomo(target_scale: float) -> void:
-	if slomo_tween and slomo_tween.is_valid():
+	if is_instance_valid(slomo_tween):
 		slomo_tween.kill()
 
 	print("Rope: Engine time_scale transitioning to ", target_scale)
@@ -101,7 +105,7 @@ func _set_slomo(target_scale: float) -> void:
 
 
 func _reset_rope_dampening() -> void:
-	if rope_body:
+	if is_instance_valid(rope_body):
 		rope_body.angular_damp = 2.5
 		rope_body.linear_damp = 1.5
 
@@ -110,18 +114,24 @@ func _reset_rope_dampening() -> void:
 func _on_focused() -> void:
 	if not player_on_rope:
 		interact_label.show()
+		# Wake up the process loop to handle UI math
+		set_process(true)
+		
 		if activate_slomo:
 			_set_slomo(0.3)
 
 
 func _on_unfocused() -> void:
 	interact_label.hide()
+	# Shut down the process loop to save CPU
+	set_process(false)
+	
 	if activate_slomo:
 		_set_slomo(1.0)
 
 
 func _update_rope_size() -> void:
-	if not is_inside_tree() or rope_mesh == null or rope_col == null:
+	if not is_inside_tree() or not is_instance_valid(rope_mesh) or not is_instance_valid(rope_col):
 		return
 
 	if rope_mesh.mesh:
@@ -129,17 +139,15 @@ func _update_rope_size() -> void:
 	if rope_col.shape:
 		rope_col.shape.height = rope_length
 
-	if rope_mesh:
-		rope_mesh.position.y = -rope_length * 0.5
-	if rope_col:
-		rope_col.position.y = -rope_length * 0.5
+	rope_mesh.position.y = -rope_length * 0.5
+	rope_col.position.y = -rope_length * 0.5
 
-	if anchor:
+	if is_instance_valid(anchor):
 		anchor.position.y = 0.0
-	if pivot:
+	if is_instance_valid(pivot):
 		pivot.position.y = 0.0
 
-	if rope_body:
+	if is_instance_valid(rope_body):
 		rope_body.position = Vector3.ZERO
 
 
@@ -150,13 +158,15 @@ func _on_interacted(player: CharacterBody3D) -> void:
 		player.call("_on_rope_grabbed", rope_body)
 		player_on_rope = true
 		interact_label.hide()
+		set_process(false) # Shut down UI math
 
 		if activate_slomo:
 			_set_slomo(1.0)
 
 		rope_body.angular_damp = 0.0
 		rope_body.linear_damp = 0.0
-		if highlight_component:
+		
+		if is_instance_valid(highlight_component) and highlight_component.has_method("suppress"):
 			highlight_component.suppress(true)
 
 
@@ -167,7 +177,7 @@ func on_player_released() -> void:
 	handle_rope_sounds(false, false)
 	_reset_rope_dampening()
 
-	if highlight_component:
+	if is_instance_valid(highlight_component) and highlight_component.has_method("suppress"):
 		highlight_component.suppress(false)
 
 	if activate_slomo:
@@ -178,7 +188,7 @@ func handle_rope_sounds(is_climbing: bool, is_sliding: bool) -> void:
 	print("Rope handling sounds - Climbing: ", is_climbing, " | Sliding: ", is_sliding)
 
 	# 1. Handle the normal climbing/slow descending sound
-	if rope_sound:
+	if is_instance_valid(rope_sound):
 		if is_climbing and not is_sliding:
 			if not rope_sound.playing:
 				rope_sound.play()
@@ -187,7 +197,7 @@ func handle_rope_sounds(is_climbing: bool, is_sliding: bool) -> void:
 				rope_sound.stop()
 
 	# 2. Handle the fast sliding sound
-	if slide_sound:
+	if is_instance_valid(slide_sound):
 		if is_sliding:
 			if not slide_sound.playing:
 				slide_sound.play()

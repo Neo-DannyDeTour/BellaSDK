@@ -29,16 +29,20 @@ func physics_update(delta: float) -> void:
 	if is_instance_valid(env.vault_controller) and env.vault_controller.get("is_vaulting"):
 		return
 		
-	# 0. Slide Surface Detection
+	# 0. Slide Surface & Sand Detection
+	loco.on_sand = false
 	var slide_count: int = player.get_slide_collision_count()
 	for i: int in range(slide_count):
 		var collision: KinematicCollision3D = player.get_slide_collision(i)
 		var collider: Object = collision.get_collider()
 		
-		if collider is Node and collider.is_in_group("slide_surface"):
-			print("StateGround: Slide surface detected via collision. Transitioning to Slide.")
-			state_machine.transition_to("Slide")
-			return
+		if collider is Node:
+			if collider.is_in_group("slide_surface"):
+				print("StateGround: Slide surface detected via collision. Transitioning to Slide.")
+				state_machine.transition_to("Slide")
+				return
+			if collider.is_in_group("sand"):
+				loco.on_sand = true
 			
 	# 1. State Transitions (Leaving the Ground)
 	var is_recently_stepped: bool = loco.stair_controller.get("time_since_step_up") < 0.2
@@ -138,18 +142,30 @@ func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
 		print("StateGround: Player crouch state changed to ", loco.crouching)
 
 	var is_moving: bool = input_dir.length() > 0.1
+	var was_sprinting: bool = loco.sprint_active
+	
+	# Sprint logic updated to factor in deadly sand
 	loco.sprint_active = (
 		Input.is_action_pressed("sprint")
 		and not loco.crouching
+		and not loco.on_sand
 		and is_moving
 		and loco.can_sprint
 	)
 
+	if was_sprinting and not loco.sprint_active and loco.on_sand:
+		print("StateGround: Sprint cancelled due to deadly sand.")
+
 	var target_speed: float = loco.walking_speed
 	if loco.sprint_active:
 		target_speed = loco.sprinting_speed
-	elif loco.crouching or interact.is_heavy_lifting:
-		target_speed = loco.crouching_speed
+	elif loco.crouching or interact.is_heavy_lifting or loco.on_sand:
+		# Fall back to crouching speed if they are walking on sand for a sluggish feel, 
+		# or leave this condition out if you want regular walk speed on sand.
+		target_speed = loco.crouching_speed if loco.on_sand else loco.crouching_speed
+		
+		if not loco.crouching and not interact.is_heavy_lifting:
+			target_speed = loco.walking_speed
 
 	current_speed = lerpf(current_speed, target_speed, delta * 15.0)
 
