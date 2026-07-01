@@ -152,6 +152,7 @@ grenade_throw={
 3d_physics/layer_2="Player"
 3d_physics/layer_3="Interactive"
 3d_physics/layer_4="Debris"
+3d_physics/layer_5="Enemies"
 
 [physics]
 
