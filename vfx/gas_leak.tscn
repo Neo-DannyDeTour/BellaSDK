@@ -1,0 +1,58 @@
+[gd_scene format=3 uid="uid://dhopg67s57gx"]
+
+[ext_resource type="Shader" uid="uid://djceheg0mgxyk" path="res://vfx/gas_leak.gdshader" id="1_514km"]
+[ext_resource type="Script" uid="uid://q1m6r72e202n" path="res://vfx/gas_leak_emitter.gd" id="2_ryda5"]
+
+[sub_resource type="Gradient" id="Gradient_p1x1t"]
+offsets = PackedFloat32Array(0, 0.39771414, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_ugtkr"]
+gradient = SubResource("Gradient_p1x1t")
+
+[sub_resource type="Curve" id="Curve_1xoxf"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_u0qp0"]
+curve = SubResource("Curve_1xoxf")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_ryda5"]
+initial_velocity_min = 2.0
+initial_velocity_max = 4.0
+gravity = Vector3(0, 1, 0)
+scale_curve = SubResource("CurveTexture_u0qp0")
+color_ramp = SubResource("GradientTexture1D_ugtkr")
+
+[sub_resource type="Gradient" id="Gradient_xcoi1"]
+colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_p1x1t"]
+gradient = SubResource("Gradient_xcoi1")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(1, 0.5)
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_ugtkr"]
+frequency = 0.02
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_1xoxf"]
+noise = SubResource("FastNoiseLite_ugtkr")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_u0qp0"]
+render_priority = 0
+shader = ExtResource("1_514km")
+shader_parameter/noise_texture = SubResource("NoiseTexture2D_1xoxf")
+shader_parameter/mask_texture = SubResource("GradientTexture2D_p1x1t")
+shader_parameter/distortion_strength = 0.05
+shader_parameter/scroll_speed = 0.5
+shader_parameter/blur_lod = 2.0
+
+[sub_resource type="QuadMesh" id="QuadMesh_85inf"]
+material = SubResource("ShaderMaterial_u0qp0")
+
+[node name="GasLeakEmitter" type="GPUParticles3D" unique_id=1448000292]
+amount = 15
+process_material = SubResource("ParticleProcessMaterial_ryda5")
+draw_pass_1 = SubResource("QuadMesh_85inf")
+script = ExtResource("2_ryda5")

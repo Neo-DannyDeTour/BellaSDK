@@ -25,9 +25,14 @@ func initialize(p_player: Node3D) -> void:
 	print("InteractionComponent: initialize() called. Caching player reference.")
 	player = p_player
 	
-	# NEW: Establish the hard link so the Scanner can talk back to the Master
+	# Establish the hard link so the Scanner can talk back to the Master
 	if is_instance_valid(interaction_scanner) and interaction_scanner.has_method("setup_master_link"):
 		interaction_scanner.setup_master_link(self)
+		
+	# NEW: Listen for the item dropping so we can clear our hands automatically,
+	# regardless of whether the player dropped it or it snagged on a wall.
+	if not Events.item_dropped.is_connected(_on_global_item_dropped):
+		Events.item_dropped.connect(_on_global_item_dropped)
 
 
 func process_unhandled_input(event: InputEvent) -> void:
@@ -39,7 +44,7 @@ func process_unhandled_input(event: InputEvent) -> void:
 		if Time.get_ticks_msec() - _last_grab_time < 100:
 			return
 
-		print("InteractionComponent: Interact pressed while holding item. Dropping.")
+		print("InteractionComponent: Interact pressed while holding item. Requesting drop.")
 		drop_held_item()
 		return
 
@@ -82,8 +87,10 @@ func _try_pick_up() -> bool:
 # --- MADE PUBLIC FOR EXTERNAL ACCESS ---
 func throw_held_item() -> void:
 	print("InteractionComponent: throw_held_item() called.")
+	if not is_instance_valid(held_item):
+		return
+		
 	var item_to_throw: RigidBody3D = held_item
-	held_item = null
 
 	var throw_dir: Vector3 = -camera.global_transform.basis.z.normalized()
 	throw_dir.y += 0.2
@@ -94,22 +101,28 @@ func throw_held_item() -> void:
 	elif item_to_throw.has_method("throw_item"):
 		item_to_throw.throw_item(throw_force, get_tree().current_scene)
 
-	_check_glider_restore(item_to_throw)
-	_set_weapon_active(true)
-
 
 func drop_held_item() -> void:
 	print("InteractionComponent: drop_held_item() called. Placing item on ground.")
+	if not is_instance_valid(held_item):
+		return
+		
 	var item_to_drop: RigidBody3D = held_item
-	held_item = null
 
 	if item_to_drop.has_method("drop"):
 		item_to_drop.drop()
 	elif item_to_drop.has_method("drop_item"):
 		item_to_drop.drop_item(get_tree().current_scene, player.global_position)
 
-	_check_glider_restore(item_to_drop)
-	_set_weapon_active(true)
+
+func _on_global_item_dropped(item: Node3D, actor: Node3D) -> void:
+	# If the actor that dropped the item was this player, clear hands and reset state.
+	# This fires whether the player chose to drop it, threw it, or a wall knocked it loose!
+	if actor == player:
+		print("InteractionComponent: Global drop received. Restoring hands/weapons.")
+		held_item = null
+		_check_glider_restore(item)
+		_set_weapon_active(true)
 
 
 func _check_glider_restore(item: Node) -> void:

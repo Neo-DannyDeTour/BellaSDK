@@ -39,16 +39,14 @@ var fullbright_env: Environment
 var is_stunned: bool = false
 
 func _ready() -> void:
+	print("SystemMenuController: _ready() called. Initializing sub-systems.")
 	_setup_menu()
 	_setup_fullbright_environment()
 
-	# Connect to global event buses
-	if Events.has_signal("debug_menu_toggled"):
-		Events.debug_menu_toggled.connect(_on_debug_menu_toggled)
-	if Events.has_signal("noclip_ui_button_pressed"):
-		Events.noclip_ui_button_pressed.connect(toggle_noclip)
-	if Events.has_signal("fullbright_toggled"):
-		Events.fullbright_toggled.connect(_on_fullbright_toggled)
+	# Connect to global event buses directly
+	Events.debug_menu_toggled.connect(_on_debug_menu_toggled)
+	Events.noclip_ui_button_pressed.connect(toggle_noclip)
+	Events.fullbright_toggled.connect(_on_fullbright_toggled)
 
 func _setup_menu() -> void:
 	if menu_scene:
@@ -74,6 +72,7 @@ func _setup_fullbright_environment() -> void:
 # --------------------------------------
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
+		print("SystemMenuController: ui_cancel intercepted. Toggling pause.")
 		toggle_pause()
 		get_viewport().set_input_as_handled()
 		return
@@ -85,14 +84,17 @@ func _unhandled_input(event: InputEvent) -> void:
 	if flying and event is InputEventMouseButton and event.is_pressed():
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			noclip_speed_multiplier = minf(100.0, noclip_speed_multiplier * 1.1)
+			print("SystemMenuController: Noclip speed increased to ", noclip_speed_multiplier)
 			get_viewport().set_input_as_handled()
 			return
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			noclip_speed_multiplier = maxf(0.1, noclip_speed_multiplier * 0.9)
+			print("SystemMenuController: Noclip speed decreased to ", noclip_speed_multiplier)
 			get_viewport().set_input_as_handled()
 			return
 
 	if event.is_action_pressed("noclip", false):
+		print("SystemMenuController: Noclip hotkey intercepted.")
 		toggle_noclip()
 		get_viewport().set_input_as_handled()
 		return
@@ -106,11 +108,11 @@ func toggle_pause() -> void:
 	print("SystemMenuController: toggle_pause() called. Paused state: ", is_paused)
 
 	if is_paused:
-		if menu_instance:
+		if is_instance_valid(menu_instance):
 			menu_instance.show()
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	else:
-		if menu_instance:
+		if is_instance_valid(menu_instance):
 			menu_instance.hide()
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
@@ -128,7 +130,7 @@ func _on_fullbright_toggled(is_fullbright: bool) -> void:
 		camera.environment = null
 
 	var sun: DirectionalLight3D = get_tree().get_first_node_in_group("sun") as DirectionalLight3D
-	if sun:
+	if is_instance_valid(sun):
 		sun.visible = not is_fullbright
 		sun.shadow_enabled = not is_fullbright
 
@@ -156,8 +158,7 @@ func toggle_noclip() -> void:
 			if is_instance_valid(loco):
 				loco.set("last_velocity", Vector3.ZERO) 
 
-	if Events.has_signal("noclip_toggled"):
-		Events.noclip_toggled.emit(flying)
+	Events.noclip_toggled.emit(flying)
 	noclip_toggled.emit(flying)
 
 func process_noclip(delta: float) -> void:
@@ -174,8 +175,7 @@ func process_noclip(delta: float) -> void:
 	fly_dir = fly_dir.normalized()
 
 	var current_speed: float = base_sprinting_speed * noclip_speed_multiplier
-	if Events.has_signal("noclip_speed_changed"):
-		Events.noclip_speed_changed.emit(noclip_speed_multiplier)
+	Events.noclip_speed_changed.emit(noclip_speed_multiplier)
 
 	if fly_dir.length() > 0:
 		player_body.velocity = fly_dir * current_speed

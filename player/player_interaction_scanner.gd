@@ -16,7 +16,7 @@ signal heavy_lift_state_changed(is_lifting: bool, yaw_base: float)
 
 # --- CLEANED UP VARIABLES ---
 var current_interactable: Node = null
-var master_component: Node = null # NEW: Reference to the Master
+var master_component: Node = null # Reference to the Master
 
 var is_heavy_lifting: bool = false
 var heavy_lift_yaw_base: float = 0.0
@@ -166,11 +166,8 @@ func enter_terminal_mode(terminal: Node3D) -> void:
 	if is_instance_valid(player_body):
 		terminal_start_pos = player_body.global_position
 
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("terminal_mode_toggled"):
-			events.emit_signal("terminal_mode_toggled", true)
-			
+	# Standardized Event Bus Emission
+	Events.terminal_mode_toggled.emit(true)
 	terminal_mode_toggled.emit(true)
 
 
@@ -184,11 +181,8 @@ func exit_terminal_mode() -> void:
 	is_in_terminal_mode = false
 	active_terminal = null
 
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("terminal_mode_toggled"):
-			events.emit_signal("terminal_mode_toggled", false)
-			
+	# Standardized Event Bus Emission
+	Events.terminal_mode_toggled.emit(false)
 	terminal_mode_toggled.emit(false)
 
 

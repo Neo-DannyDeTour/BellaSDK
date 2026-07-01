@@ -8,7 +8,11 @@ extends StaticBody3D
 @export var mesh_to_highlight: MeshInstance3D
 @export var outline_material: ShaderMaterial
 
-@export_category("Connections")
+@export_category("Global Architecture")
+## If populated, this button will broadcast this string to the Event Bus across all scenes.
+@export var global_event_name: String = ""
+
+@export_category("Local Connections")
 @export var transmitter: OutputTransmitter3D:
 	set(value):
 		transmitter = value
@@ -46,7 +50,7 @@ func _ready() -> void:
 
 
 func _sync_transmitter() -> void:
-	# Automatically pass the targets to the transmitter so it can handle the logic
+	# Automatically pass the targets to the transmitter so it can handle the local logic
 	if is_instance_valid(transmitter):
 		transmitter.targets = targets
 
@@ -74,7 +78,6 @@ func _on_interact(_player: CharacterBody3D) -> void:
 
 	if is_instance_valid(click_sound):
 		click_sound.play()
-	# ---------------------------
 
 	if is_instance_valid(highlight_component):
 		highlight_component.suppress(true)
@@ -99,14 +102,24 @@ func _on_interact(_player: CharacterBody3D) -> void:
 		. set_ease(Tween.EASE_IN_OUT)
 	)
 
+	var is_turning_on: bool = true
+
+	# 1. Local Legacy Trigger
 	if is_instance_valid(transmitter):
-		print("Button executing: Toggling transmitter state.")
+		print("Button executing: Toggling local transmitter state.")
 		if transmitter.is_active:
+			is_turning_on = false
 			transmitter.power_off()
 		else:
+			is_turning_on = true
 			transmitter.power_on()
 	else:
-		print("Button executing: Warning - No transmitter assigned.")
+		print("Button executing: No local transmitter assigned.")
+
+	# 2. Global Event Bus Trigger (Cross-Scene Decoupling)
+	if global_event_name != "":
+		print("Button executing: Broadcasting global event -> ", global_event_name)
+		Events.level_event_triggered.emit(global_event_name, is_turning_on)
 
 	await get_tree().create_timer(1.0).timeout
 	can_press = true

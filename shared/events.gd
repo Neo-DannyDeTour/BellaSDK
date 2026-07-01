@@ -45,6 +45,19 @@ signal player_health_changed(new_health: int)
 @warning_ignore("unused_signal")
 signal screenshake_requested(intensity: float, duration: float)
 
+# --- INTERACTION LIFECYCLE SIGNALS ---
+@warning_ignore("unused_signal")
+signal item_picked_up(item: Node3D, actor: Node3D)
+
+@warning_ignore("unused_signal")
+signal item_dropped(item: Node3D, actor: Node3D)
+
+@warning_ignore("unused_signal")
+signal keycard_collected(card_id: String)
+
+@warning_ignore("unused_signal")
+signal level_event_triggered(event_name: String, is_active: bool)
+
 # --- REPLACED FONT SIGNAL ---
 signal font_changed(font_name: String)
 

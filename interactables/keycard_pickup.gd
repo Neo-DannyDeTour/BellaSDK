@@ -16,7 +16,8 @@ func _ready() -> void:
 	if not Engine.is_editor_hint():
 		if card_data != null:
 			print("KeycardPickup: Initialized in world with ID ", card_data.card_id)
-		if interact_component and interact_component.has_signal("interacted"):
+			
+		if is_instance_valid(interact_component) and interact_component.has_signal("interacted"):
 			interact_component.interacted.connect(_on_interacted)
 
 	_update_texture()
@@ -27,13 +28,22 @@ func _on_interacted(_interactor: Node) -> void:
 		print("KeycardPickup: Interaction failed. No card data assigned.")
 		return
 
-	print("KeycardPickup: Player interacted. Picking up card ID ", card_data.card_id)
-	KeycardSystem.add_card(card_data.card_id)
+	print("KeycardPickup: Player interacted. Broadcasting collection of ID: ", card_data.card_id)
+	
+	# 1. NEW: Global broadcast for UI, audio, and standard systems
+	Events.keycard_collected.emit(card_data.card_id)
+	
+	# 2. OPTIONAL FALLBACK: If you still use a dedicated Autoload for the data structure
+	if has_node("/root/KeycardSystem"):
+		var sys: Node = get_node("/root/KeycardSystem")
+		if sys.has_method("add_card"):
+			sys.add_card(card_data.card_id)
+
 	queue_free()
 
 
 func _update_texture() -> void:
-	if top_face_sprite == null:
+	if not is_instance_valid(top_face_sprite):
 		return
 
 	if card_data != null and card_data.card_texture != null:

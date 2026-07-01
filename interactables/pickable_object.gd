@@ -30,6 +30,9 @@ var is_held: bool = false
 var hold_target: Marker3D = null
 var holder: Node3D = null
 
+# --- GLOBAL STATE TRACKING ---
+var _is_player_flying: bool = false
+
 # --- WATER TRACKING ---
 var is_in_water: bool = false:
 	set(value):
@@ -48,6 +51,7 @@ var is_locked: bool = false:
 				mesh.material_overlay = null
 			if label:
 				label.hide()
+
 var _grab_time: int = 0
 
 @onready var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
@@ -68,6 +72,10 @@ func _ready() -> void:
 	# Allow Rigidbody to sleep when sitting still
 	sleeping_state_changed.connect(_on_sleeping_state_changed)
 	
+	# Listen to the global Event Bus for state changes
+	if Events.noclip_toggled.is_connected(_on_noclip_toggled) == false:
+		Events.noclip_toggled.connect(_on_noclip_toggled)
+	
 	# Initialize process state
 	_update_process_state()
 
@@ -75,6 +83,11 @@ func _ready() -> void:
 	if mesh:
 		_set_model_transparency(mesh, held_transparency)
 		_revert_warmup_deferred()
+
+
+func _on_noclip_toggled(is_flying: bool) -> void:
+	print("PickableObject: Noclip state updated via Event Bus -> ", is_flying)
+	_is_player_flying = is_flying
 
 
 func _on_sleeping_state_changed() -> void:
@@ -127,6 +140,9 @@ func pick_up(target: Marker3D, player: Node3D) -> void:
 
 	add_collision_exception_with(holder)
 	_update_process_state()
+	
+	# Notify the rest of the game that this item was picked up
+	Events.item_picked_up.emit(self, holder)
 
 
 func drop() -> void:
@@ -156,14 +172,11 @@ func drop() -> void:
 		if "velocity" in holder:
 			linear_velocity = holder.velocity
 
-		# Safely fetch the camera through the new component architecture
-		var holder_cam: Node3D = holder.get("camera")
-		if "interaction_component" in holder and is_instance_valid(holder.get("interaction_component")):
-			holder_cam = holder.get("interaction_component").get("camera")
-			
+		# Safely fetch the camera directly from the viewport
 		var cam_forward := Vector3.FORWARD
-		if is_instance_valid(holder_cam):
-			cam_forward = -holder_cam.global_transform.basis.z
+		var cam: Camera3D = get_viewport().get_camera_3d()
+		if is_instance_valid(cam):
+			cam_forward = -cam.global_transform.basis.z
 
 		var flat_cam_forward := Vector3(cam_forward.x, 0.0, cam_forward.z)
 		var push_dir := flat_cam_forward.normalized()
@@ -226,15 +239,9 @@ func drop() -> void:
 			push_dir.y = 0.5
 			apply_central_impulse(push_dir * 5.0)
 
-		# CORRECTED: Safely clear the player's reference to this item via Component
-		var int_comp: Node = holder.get("interaction_component") if "interaction_component" in holder else holder
-		if is_instance_valid(int_comp):
-			if "held_item" in int_comp:
-				int_comp.set("held_item", null)
-				
-			var scanner: Node = int_comp.get("interaction_scanner") if "interaction_scanner" in int_comp else null
-			if is_instance_valid(scanner) and "held_object" in scanner:
-				scanner.set("held_object", null)
+		# Broadcast the drop event globally. The player's InteractionComponent 
+		# should connect to this signal and nullify its own variables.
+		Events.item_dropped.emit(self, holder)
 
 		var previous_holder := holder
 		_wait_to_enable_collision(previous_holder)
@@ -246,7 +253,6 @@ func drop() -> void:
 	_update_process_state()
 
 
-# --- NEW FUNCTION ---
 func _attempt_enable_collision(player: Node3D) -> void:
 	if not is_instance_valid(self) or not is_instance_valid(player):
 		return
@@ -287,22 +293,6 @@ func _on_interact_component_focused() -> void:
 		label.show()
 
 
-#func _on_interact_component_focused() -> void:
-	#if is_locked:
-		#return
-#
-	## 1. If we are holding it, NO highlight and NO label. Bail out!
-	#if is_held:
-		#if mesh:
-			#mesh.material_overlay = null
-		#return
-#
-	## 3. Show the label
-	#if label:
-		#_update_label_text()
-		#label.show()
-
-
 func _update_label_text() -> void:
 	if not label:
 		return
@@ -336,19 +326,16 @@ func _physics_process(_delta: float) -> void:
 		# 1. APPLY OFFSETS FIRST
 		var player_pos: Vector3 = holder.global_position
 		
-		# Safely fetch the camera through the new component architecture
-		var holder_cam: Node3D = holder.get("camera")
-		if "interaction_component" in holder and is_instance_valid(holder.get("interaction_component")):
-			holder_cam = holder.get("interaction_component").get("camera")
-			
+		# Safely fetch the camera directly from the viewport
 		var cam_forward := Vector3.FORWARD
-		if is_instance_valid(holder_cam):
-			cam_forward = -holder_cam.global_transform.basis.z
+		var cam: Camera3D = get_viewport().get_camera_3d()
+		if is_instance_valid(cam):
+			cam_forward = -cam.global_transform.basis.z
 
 		# Pull closer to face based on export setting
 		target_pos -= cam_forward * hold_distance_offset
 
-		# --- NEW: ADVANCED MASS MATH ---
+		# --- ADVANCED MASS MATH ---
 		# 0.0 for things 5kg and under (Valves). 1.0 for 10kg and over (Barrels).
 		var weight_ratio: float = clampf((mass - 5.0) / 5.0, 0.0, 1.0)
 
@@ -365,7 +352,7 @@ func _physics_process(_delta: float) -> void:
 
 		# 3. THE UNBREAKABLE CEILING
 		# We base this on your FEET (player_pos.y), NOT the camera.
-		# Light objects can go up to 3 meters (above head). Heavy objects hard-capped at 1.0 meter (waist/chest).
+		# Light objects can go up to 3 meters (above head). Heavy objects hard-capped at 1.0 meter.
 		var max_allowed_height: float = lerpf(player_pos.y + 3.0, player_pos.y + 1.0, weight_ratio)
 
 		if target_pos.y > max_allowed_height:
@@ -378,8 +365,7 @@ func _physics_process(_delta: float) -> void:
 			target_pos.x = player_pos.x + flat_offset.x
 			target_pos.z = player_pos.z + flat_offset.y
 
-		# --- THE TRUE FIX: PURE FLOOR CLAMP ---
-		# Forget tracking the head. Just stop the box from clipping through the floor!
+		# --- PURE FLOOR CLAMP ---
 		# 0.2 meters above your feet gives it a nice physical resting spot on the ground.
 		var min_height: float = player_pos.y + 0.2
 
@@ -389,12 +375,8 @@ func _physics_process(_delta: float) -> void:
 		# 3. NOW DO THE SNAG CHECK
 		var distance_to_target := global_position.distance_to(target_pos)
 
-		# FIXED: Route the flying check through the new component architecture
-		var is_flying: bool = false
-		if "system_menu" in holder and is_instance_valid(holder.get("system_menu")):
-			is_flying = holder.get("system_menu").get("flying")
-
-		if distance_to_target > 1.5 and not is_flying:
+		# Evaluate flying locally based on Event Bus state
+		if distance_to_target > 1.5 and not _is_player_flying:
 			drop()
 			return
 
@@ -402,7 +384,7 @@ func _physics_process(_delta: float) -> void:
 		var distance_vector := target_pos - global_position
 		linear_velocity = distance_vector * 15.0
 
-		# --- KEEP YOUR ROTATION LOGIC THE SAME ---
+		# --- ROTATION LOGIC ---
 		var target_basis: Basis = holder.global_basis
 
 		var diff_quat := (
@@ -435,8 +417,6 @@ func _physics_process(_delta: float) -> void:
 				submerged = true
 
 				# --- THE SURFACE & PLUNGE FIX ---
-				# Multiply depth by 4.0: Reaches neutral buoyancy at just 0.25 meters deep!
-				# Clamp at 4.0: If pulled deep, it fights back 4x harder to overpower the drag of 6.0!
 				var depth_multiplier: float = clampf(depth * 4.0, 0.0, 4.0)
 
 				var force: Vector3 = (
@@ -480,7 +460,6 @@ func _wait_to_enable_collision(player: Node3D) -> void:
 			var push_vector := flat_backward * push_distance
 
 			# 2. TEST THE WALL COLLISION (true = test_only)
-			# This calculates exactly how far we can slide without clipping a wall
 			var safe_travel := push_vector
 			var collision: KinematicCollision3D = player.move_and_collide(push_vector, true)
 			if collision:
@@ -512,7 +491,7 @@ func _wait_to_enable_collision(player: Node3D) -> void:
 		remove_collision_exception_with(player)
 
 
-# --- NEW: Recursive Transparency Function ---
+# --- Recursive Transparency Function ---
 func _set_model_transparency(parent_node: Node, alpha: float) -> void:
 	if not is_instance_valid(parent_node):
 		return
