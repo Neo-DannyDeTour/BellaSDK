@@ -1,0 +1,103 @@
+[gd_scene format=3 uid="uid://b2q17sc6ru25s"]
+
+[ext_resource type="Script" uid="uid://dkrrsnoe8tdhx" path="res://environment/citadel_core.gd" id="1_pfsm0"]
+[ext_resource type="Shader" uid="uid://ctskhyclvxi55" path="res://vfx/CitadelCore_HeatDistortion.gdshader" id="2_jk3od"]
+[ext_resource type="Shader" uid="uid://cooqdxubo17sr" path="res://vfx/CitadelCode_Glowing_Circle.gdshader" id="2_pthc5"]
+[ext_resource type="Shader" uid="uid://dc3dcg00quhvy" path="res://vfx/CitadelCore_Waves.gdshader" id="3_701dt"]
+[ext_resource type="Shader" uid="uid://djgi2op4ogb2q" path="res://vfx/OuterLiquidShell.gdshader" id="4_701dt"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3mjtv"]
+cull_mode = 2
+shading_mode = 0
+albedo_color = Color(0, 0, 0, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_pfsm0"]
+material = SubResource("StandardMaterial3D_3mjtv")
+radius = 2.0
+height = 4.0
+radial_segments = 16
+rings = 16
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8kt4k"]
+render_priority = 0
+shader = ExtResource("2_pthc5")
+shader_parameter/wave_color = Color(1, 0.5, 0, 1)
+shader_parameter/core_thickness = 0.02
+shader_parameter/glow_thickness = 0.08
+shader_parameter/emission_strength = 2.0
+shader_parameter/min_radius = 0.5
+shader_parameter/max_radius = 0.9
+shader_parameter/transition_time = 1.0
+shader_parameter/pause_time = 1.5
+
+[sub_resource type="QuadMesh" id="QuadMesh_2tcvs"]
+material = SubResource("ShaderMaterial_8kt4k")
+size = Vector2(8, 8)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_uofb1"]
+render_priority = 0
+shader = ExtResource("3_701dt")
+shader_parameter/color_orange = Color(1, 0.4, 0, 1)
+shader_parameter/color_blue = Color(0, 0.5, 1, 1)
+shader_parameter/wave_speed_multiplier = 8.0
+shader_parameter/start_time = 0.0
+
+[sub_resource type="QuadMesh" id="QuadMesh_jk3od"]
+material = SubResource("ShaderMaterial_uofb1")
+size = Vector2(9, 9)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_pe2vq"]
+render_priority = 0
+shader = ExtResource("4_701dt")
+shader_parameter/base_color = Color(0.1, 0.25, 0.35, 0.4)
+shader_parameter/deformation_speed = 4.0
+shader_parameter/deformation_strength = 0.1
+shader_parameter/ripple_grid_size = 100.0
+shader_parameter/ripple_frequency = 200.0
+shader_parameter/ripple_speed = 1.0
+shader_parameter/ripple_strength = 0.2
+
+[sub_resource type="SphereMesh" id="SphereMesh_701dt"]
+material = SubResource("ShaderMaterial_pe2vq")
+radius = 4.0
+height = 8.0
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_uofb1"]
+noise_type = 3
+frequency = 0.05
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_gfr4g"]
+noise = SubResource("FastNoiseLite_uofb1")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_3871f"]
+render_priority = 0
+shader = ExtResource("2_jk3od")
+shader_parameter/noise_tex = SubResource("NoiseTexture2D_gfr4g")
+shader_parameter/distortion_strength = 0.03
+shader_parameter/distortion_speed = 0.05
+
+[sub_resource type="SphereMesh" id="SphereMesh_3mjtv"]
+material = SubResource("ShaderMaterial_3871f")
+radius = 8.0
+height = 16.0
+radial_segments = 16
+rings = 16
+
+[node name="CitadelCore" type="Node3D" unique_id=1957982287]
+script = ExtResource("1_pfsm0")
+
+[node name="BlackHole" type="MeshInstance3D" parent="." unique_id=761131917]
+mesh = SubResource("SphereMesh_pfsm0")
+
+[node name="GlowingCircle" type="MeshInstance3D" parent="." unique_id=891301]
+mesh = SubResource("QuadMesh_2tcvs")
+
+[node name="WaveMesh" type="MeshInstance3D" parent="." unique_id=1652585094]
+mesh = SubResource("QuadMesh_jk3od")
+
+[node name="OuterLiquidShell" type="MeshInstance3D" parent="." unique_id=232530928]
+mesh = SubResource("SphereMesh_701dt")
+
+[node name="HeatDistortion" type="MeshInstance3D" parent="." unique_id=899920502]
+visible = false
+mesh = SubResource("SphereMesh_3mjtv")
