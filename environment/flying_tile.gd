@@ -84,19 +84,23 @@ func _start_attack() -> void:
 	print("Tile attacking towards player!")
 
 func _on_body_entered(body: Node3D) -> void:
-	# We only care about collisions when the tile is actually flying
 	if _current_state != State.ATTACKING:
 		return
 		
-	if body.is_in_group("player"):
-		print("Tile hit player! Dealing damage: ", damage)
-		if body.has_method("take_damage"):
-			body.take_damage(damage)
+	# Check if the body hit has a HealthComponent
+	var health_comp: HealthComponent = body.find_child("HealthComponent", true, false) as HealthComponent
+	
+	if health_comp:
+		print("FlyingTile: Direct hit! Calling HealthComponent.take_damage(100)")
+		health_comp.take_damage(100)
 		_destroy_tile("Succeeded in hitting player.")
+	elif body.is_in_group("player"):
+		# Fallback if for some reason the component isn't found
+		push_warning("FlyingTile: Player hit but no HealthComponent found!")
+		_destroy_tile("Hit player, but no HealthComponent found.")
 	else:
-		# If it hits a wall, pillar, or static floor
-		print("Tile hit the environment.")
-		_destroy_tile("Collided with a wall or object.")
+		print("FlyingTile: Collided with environment.")
+		_destroy_tile("Collided with environment.")
 
 func _destroy_tile(reason: String) -> void:
 	print("Tile destroyed. Reason: ", reason)

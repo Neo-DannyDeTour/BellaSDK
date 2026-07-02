@@ -45,7 +45,7 @@ intact_sticks = NodePath("Wheel/Visuals/Hub/Intact_Sticks")
 broken_stubs = NodePath("Wheel/Visuals/Hub/Broken_Stubs")
 restored_handle = NodePath("Wheel/Visuals/Hub/Restored_Handle")
 turn_duration = 3.0
-restored_stick_index = null
+show_debug_colliders = false
 
 [node name="HighlightComponent" type="Node" parent="." unique_id=1988589278]
 script = ExtResource("2_8ctuu")

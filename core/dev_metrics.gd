@@ -18,10 +18,11 @@ var _gpu_sum: float = 0.0
 
 # Cached strings for things that rarely/never change
 var _hardware_info_str: String = ""
-var _settings_info_str: String = ""
+var _settings_info_static_str: String = ""
 
 
 func _ready() -> void:
+	print("DebugPanel: Initializing and caching hardware info.")
 	visible = false
 
 	player = get_tree().get_first_node_in_group("player") as CharacterBody3D
@@ -35,8 +36,7 @@ func _ready() -> void:
 	RenderingServer.viewport_set_measure_render_time(vp_rid, true)
 
 	_cache_hardware_info()
-	_cache_settings_info()
-	get_viewport().size_changed.connect(_cache_settings_info)
+	_cache_static_settings_info()
 
 
 func _process(_delta: float) -> void:
@@ -86,9 +86,7 @@ func _process(_delta: float) -> void:
 	var objects: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME))
 	var primitives: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))
 
-	# --- FLASHLIGHT CHECK OVERHAUL ---
 	var flashlight_str: String = "OFF"
-
 	if is_instance_valid(player):
 		var f_ctrl: Variant = player.get("flashlight_controller")
 		if is_instance_valid(f_ctrl):
@@ -115,8 +113,9 @@ func _process(_delta: float) -> void:
 	text += _format_metric_row("GPU:", _gpu_sum, _gpu_history)
 	text += "[/table]\n"
 
-	# Append the cached hardware/settings matching the requested image layout
-	text += "[color=gray]" + _hardware_info_str + _settings_info_str + "[/color]\n"
+	# Append the cached hardware + dynamic settings
+	text += "[color=gray]" + _hardware_info_str + _settings_info_static_str
+	text += _get_dynamic_settings_string() + "[/color]\n"
 
 	text += "\n[color=gray]--- MEMORY & RENDERING ---[/color]\n"
 	text += "RAM: %s\n" % String.humanize_size(static_mem)
@@ -138,7 +137,7 @@ func _process(_delta: float) -> void:
 
 func toggle_window() -> void:
 	visible = not visible
-	print("DebugPanel visibility toggled to: ", visible)
+	print("DebugPanel: Visibility toggled to ", visible)
 
 
 func _update_frametime_history() -> void:
@@ -186,10 +185,10 @@ func _format_metric_row(title: String, sum_val: float, history: Array[float]) ->
 
 
 func _get_ms_color(ms: float) -> String:
-	if ms < 8.34: return "#38bdf8"    # Cyan (120+ FPS)
-	if ms < 16.67: return "#80e25f"   # Green (60+ FPS)
-	if ms < 33.34: return "#facc15"   # Yellow (30+ FPS)
-	return "#ef4444"                  # Red (Below 30 FPS)
+	if ms < 8.34: return "#38bdf8"
+	if ms < 16.67: return "#80e25f"
+	if ms < 33.34: return "#facc15"
+	return "#ef4444"
 
 
 func _cache_hardware_info() -> void:
@@ -209,25 +208,48 @@ func _cache_hardware_info() -> void:
 	]
 
 
-func _cache_settings_info() -> void:
-	_settings_info_str = ""
+func _cache_static_settings_info() -> void:
+	_settings_info_static_str = ""
 	var method: String = str(ProjectSettings.get_setting("rendering/renderer/rendering_method"))
 	var method_str: String = "Forward+" if method == "forward_plus" else method.capitalize()
-	_settings_info_str += "Rendering Method: %s\n" % method_str
+	_settings_info_static_str += "Rendering Method: %s\n" % method_str
 
+
+func _get_dynamic_settings_string() -> String:
+	var dyn_str: String = ""
 	var vp: Viewport = get_viewport()
-	var res: Vector2i = vp.size
-	_settings_info_str += "Viewport: %d×%d\n" % [res.x, res.y]
+	var win: Window = get_window()
+
+	dyn_str += "Viewport: %dx%d\n" % [win.size.x, win.size.y]
+
+	var fsr_str: String = "Disabled"
+	if vp.scaling_3d_mode == Viewport.SCALING_3D_MODE_FSR2:
+		fsr_str = "FSR2 (Scale: %.2f)" % vp.scaling_3d_scale
+	elif vp.scaling_3d_scale < 1.0:
+		fsr_str = "Bilinear (Scale: %.2f)" % vp.scaling_3d_scale
+	dyn_str += "FSR/Scaling: %s\n" % fsr_str
+
+	var aa_str: String = "Disabled"
+	if vp.msaa_3d != Viewport.MSAA_DISABLED:
+		aa_str = "MSAA"
+	if vp.use_taa:
+		aa_str += " + TAA"
+	if vp.screen_space_aa == Viewport.SCREEN_SPACE_AA_FXAA:
+		aa_str = "FXAA"
+	dyn_str += "Anti-Aliasing: %s\n" % aa_str
 
 	var cam: Camera3D = vp.get_camera_3d()
-	if not cam: return
+	if cam and cam.get_world_3d() and cam.get_world_3d().environment:
+		var env: Environment = cam.get_world_3d().environment
+		dyn_str += "SSR: %s\n" % ("On" if env.ssr_enabled else "Off")
+		dyn_str += "SSAO: %s\n" % ("On" if env.ssao_enabled else "Off")
+		dyn_str += "SSIL: %s\n" % ("On" if env.ssil_enabled else "Off")
+		var sdfgi_str: String = "On (%d Cascades)" % env.sdfgi_cascades
+		dyn_str += "SDFGI: %s\n" % (sdfgi_str if env.sdfgi_enabled else "Off")
+		dyn_str += "Glow: %s\n" % ("On" if env.glow_enabled else "Off")
+		dyn_str += "Volumetric Fog: %s\n" % ("On" if env.volumetric_fog_enabled else "Off")
 
-	var world: World3D = cam.get_world_3d()
-	if world and world.environment:
-		var env: Environment = world.environment
-		if env.ssr_enabled: _settings_info_str += "SSR: %d Steps\n" % env.ssr_max_steps
-		if env.ssao_enabled: _settings_info_str += "SSAO: On\n"
-		if env.ssil_enabled: _settings_info_str += "SSIL: On\n"
-		if env.sdfgi_enabled: _settings_info_str += "SDFGI: %d Cascades\n" % env.sdfgi_cascades
-		if env.glow_enabled: _settings_info_str += "Glow: On\n"
-		if env.volumetric_fog_enabled: _settings_info_str += "Volumetric Fog: On\n"
+	dyn_str += "Shadow Atlas Size: %d\n" % vp.positional_shadow_atlas_size
+	dyn_str += "Mesh LOD Threshold: %.2f\n" % vp.mesh_lod_threshold
+
+	return dyn_str

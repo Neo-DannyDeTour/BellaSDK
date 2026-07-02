@@ -32,7 +32,10 @@ const DOUBLE_TAP_DELAY: float = 0.3
 
 @export_category("Wheel Alignment")
 @export var stick_count: int = 4
-@export var stick_radius: float = 1.5
+@export var stick_radius: float = 1.5 # The length of the stick (1.5m in your screenshot)
+@export var stick_thickness: float = 0.1 # The thickness of the stick (0.1m in your screenshot)
+@export var stick_center_distance: float = 1.0 # The outward offset (1.0m from your Z = -1.0 transform)
+@export var stick_y_offset: float = 0.5 # The vertical offset (0.5m in your screenshot)
 @export var push_stand_offset: float = 0.8
 @export var restored_stick_index: int = 0
 
@@ -51,6 +54,9 @@ const DOUBLE_TAP_DELAY: float = 0.3
 @export var spin_axis: Vector3 = Vector3(0, 1, 0)
 @export var outline_material: ShaderMaterial
 
+@export_category("Debug")
+@export var show_debug_colliders: bool = true
+
 var progress: float = 0.0
 var is_focused: bool = false
 var is_locked: bool = false
@@ -66,19 +72,24 @@ var _stick_collisions: Array[CollisionShape3D] = []
 
 
 func _ready() -> void:
+	if is_instance_valid(wheel):
+		initial_rotation = wheel.rotation_degrees
+		if not Engine.is_editor_hint():
+			# Layer 1 = value 1, Layer 3 = value 4. Total = 5.
+			wheel.collision_layer = 5
+			wheel.collision_mask = 5
+			print("PushWheel: Forced Wheel collision layer to 5 (Layers 1 and 3).")
+	else:
+		push_error("PushWheel: 'Wheel' reference is missing!")
+
 	_update_transmitter_targets()
+	# This call now handles visual state AND triggering _update_stick_collisions safely
 	_update_visual_state()
 
 	if Engine.is_editor_hint():
 		return
 
 	print("PushWheel: Initialized. Broken Variant = ", is_broken_variant)
-
-	if is_instance_valid(wheel):
-		initial_rotation = wheel.rotation_degrees
-		_update_stick_collisions()
-	else:
-		push_error("PushWheel: 'Wheel' reference is missing!")
 
 	var interact_comp: Node = get_node_or_null("Interact_Component")
 	if is_instance_valid(interact_comp):
@@ -136,17 +147,34 @@ func _update_stick_collisions() -> void:
 		var col := CollisionShape3D.new()
 		var box := BoxShape3D.new()
 
-		box.size = Vector3(stick_radius, 0.2, 0.2)
+		# Aligning with your 0.1 thickness and stick_radius (1.5) length
+		box.size = Vector3(stick_radius, stick_thickness, stick_thickness)
 		col.shape = box
-
-		wheel.add_child(col)
-		_stick_collisions.append(col)
 
 		var angle: float = i * angle_step
 		var stick_dir := Vector3(cos(angle), 0.0, sin(angle))
 
-		col.position = stick_dir * (stick_radius * 0.5)
+		# Applying your exact visual transform math
+		col.position = stick_dir * stick_center_distance
+		col.position.y = stick_y_offset
 		col.rotation.y = -angle
+
+		wheel.add_child(col)
+		_stick_collisions.append(col)
+
+		if show_debug_colliders:
+			var debug_mesh := MeshInstance3D.new()
+			var mat := StandardMaterial3D.new()
+			mat.albedo_color = Color(1.0, 0.0, 0.0, 0.5)
+			mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+			
+			var box_mesh := BoxMesh.new()
+			box_mesh.size = box.size
+			box_mesh.material = mat
+			debug_mesh.mesh = box_mesh
+			
+			col.add_child(debug_mesh)
+			print("PushWheel: Spawned red debug box for stick collision.")
 
 	print("PushWheel: Generated ", indices_to_generate.size(), " stick collision(s).")
 
@@ -234,7 +262,6 @@ func _on_interacted(character: CharacterBody3D) -> void:
 
 	print("PushWheel: Requesting transition to PushWheel state.")
 
-	# Retrieve the cached hit_point directly from the component
 	var interact_comp: Interact_Component = (
 		get_node_or_null("Interact_Component") as Interact_Component
 	)
@@ -243,7 +270,6 @@ func _on_interacted(character: CharacterBody3D) -> void:
 	if is_instance_valid(interact_comp):
 		hit_point = interact_comp.last_hit_position
 
-	# Use hit_point if valid, fallback to character position
 	var target_pos: Vector3 = hit_point if hit_point != Vector3.ZERO else character.global_position
 	var target_t: Transform3D = get_interaction_transform(target_pos)
 
@@ -381,7 +407,9 @@ func get_interaction_transform(target_pos: Vector3) -> Transform3D:
 	var snapped_angle: float = round(angle / angle_step) * angle_step
 
 	var stick_local_dir := Vector3(cos(snapped_angle), 0.0, sin(snapped_angle))
-	var stick_center := stick_local_dir * stick_radius
+	
+	# Updated to use the new accurate visual center distance
+	var stick_center := stick_local_dir * stick_center_distance
 
 	var tangent := spin_axis.cross(stick_local_dir).normalized()
 	var vector_to_target := local_pos - stick_center
@@ -393,7 +421,6 @@ func get_interaction_transform(target_pos: Vector3) -> Transform3D:
 
 	var global_stand_pos: Vector3 = wheel.to_global(stand_local_pos)
 
-	# Keep the player's ground height stable while referencing the hit point
 	var player: Node3D = get_tree().get_first_node_in_group("player")
 	if is_instance_valid(player):
 		global_stand_pos.y = player.global_position.y
