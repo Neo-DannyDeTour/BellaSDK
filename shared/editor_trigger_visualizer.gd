@@ -35,7 +35,8 @@ var _label: Label3D
 
 
 func _ready() -> void:
-	print("EditorTriggerVisualizer: _ready() - Generating visuals.")
+	if Engine.is_editor_hint():
+		print("EditorTriggerVisualizer: _ready() - Generating visuals.")
 	_update_mesh()
 	_update_material()
 	_update_text()
@@ -50,7 +51,7 @@ func _update_mesh() -> void:
 	elif shape_type == ShapeType.SPHERE:
 		if mesh == null or not mesh is SphereMesh:
 			mesh = SphereMesh.new()
-		# SphereMesh uses radius and height. A sphere's radius is half of its total width (size.x)
+		# SphereMesh uses radius and height. Radius is half of total width (size.x)
 		(mesh as SphereMesh).radius = trigger_size.x / 2.0
 		(mesh as SphereMesh).height = trigger_size.x
 

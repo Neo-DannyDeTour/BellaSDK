@@ -637,6 +637,8 @@ health_component = NodePath("../HealthComponent")
 
 [node name="HealthComponent" type="Node" parent="Components" unique_id=217395835]
 script = ExtResource("21_gv3ic")
+max_health = 300
+use_pooling = false
 
 [node name="StateMachine" type="Node" parent="." unique_id=2011174862]
 script = ExtResource("30_axnmu")

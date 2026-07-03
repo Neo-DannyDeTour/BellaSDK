@@ -5,7 +5,7 @@ signal health_changed(current_health: int)
 signal died()
 
 @export var max_health: int = 100
-@export var use_pooling: bool = false # Changed default to false to protect players
+@export var use_pooling: bool = true 
 
 var current_health: int = 100
 
@@ -55,8 +55,8 @@ func die() -> void:
 	if target_node == null:
 		return
 		
-	# Failsafe: Never pool the player to prevent softlocks
-	if use_pooling and not target_node.is_in_group("player"):
+	# Trust the 'use_pooling' export toggle strictly instead of checking groups
+	if use_pooling:
 		print("HealthComponent: die() - Hiding and teleporting actor for pooling.")
 		if target_node is Node3D:
 			target_node.global_position = Vector3(0.0, -10000.0, 0.0)
@@ -67,7 +67,7 @@ func die() -> void:
 		target_node.process_mode = Node.PROCESS_MODE_DISABLED
 	else:
 		print("HealthComponent: die() - Freeing actor (or handling player death).")
-		# If this is the player, we just emit the signal and let the game manager handle death
+		# Only queue_free if this isn't the actual player character
 		if not target_node.is_in_group("player"):
 			target_node.queue_free()
 
@@ -75,4 +75,10 @@ func die() -> void:
 func reset() -> void:
 	print("HealthComponent: reset() - Restoring health for next spawn.")
 	current_health = max_health
+	
+	var target_node: Node = get_parent()
+	if target_node is Node3D:
+		target_node.visible = true
+		target_node.process_mode = Node.PROCESS_MODE_INHERIT
+		
 	health_changed.emit(current_health)
