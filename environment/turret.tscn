@@ -1,0 +1,68 @@
+[gd_scene format=3 uid="uid://bn5ay1rfbr545"]
+
+[ext_resource type="Script" uid="uid://q7h0rb2kx2vx" path="res://environment/turret.gd" id="1_svvud"]
+[ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://shared/editor_trigger_visualizer.gd" id="2_60227"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_wkqx2"]
+height = 1.0
+radial_segments = 8
+rings = 0
+
+[sub_resource type="BoxMesh" id="BoxMesh_svvud"]
+size = Vector3(0.2, 0.2, 1)
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_60227"]
+direction = Vector3(0, 0, 1)
+spread = 2.0
+initial_velocity_min = 20.0
+initial_velocity_max = 20.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8dg3q"]
+albedo_color = Color(1, 0.81960785, 0.30980393, 1)
+emission_enabled = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_w4oxr"]
+material = SubResource("StandardMaterial3D_8dg3q")
+size = Vector3(0.1, 0.1, 0.3)
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_svvud"]
+
+[node name="Turret" type="Node3D" unique_id=1468587336]
+script = ExtResource("1_svvud")
+fire_rate = 0.01
+
+[node name="BaseMesh" type="MeshInstance3D" parent="." unique_id=631327319]
+mesh = SubResource("CylinderMesh_wkqx2")
+
+[node name="Head" type="Node3D" parent="." unique_id=1662107289]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+
+[node name="BarrelMesh" type="MeshInstance3D" parent="Head" unique_id=753525428]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.75)
+mesh = SubResource("BoxMesh_svvud")
+
+[node name="Muzzle" type="Marker3D" parent="Head" unique_id=639170651]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1.25)
+
+[node name="GPUParticles3D" type="GPUParticles3D" parent="Head/Muzzle" unique_id=1028344747]
+emitting = false
+amount = 10
+lifetime = 3.0
+process_material = SubResource("ParticleProcessMaterial_60227")
+draw_pass_1 = SubResource("BoxMesh_w4oxr")
+
+[node name="HitscanRay" type="RayCast3D" parent="Head/Muzzle" unique_id=1955621470]
+target_position = Vector3(0, 0, 50)
+collision_mask = 19
+hit_from_inside = true
+
+[node name="DetectionArea" type="Area3D" parent="." unique_id=490816664]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
+collision_layer = 16
+collision_mask = 18
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="DetectionArea" unique_id=346760763]
+shape = SubResource("SphereShape3D_svvud")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=458599368]
+script = ExtResource("2_60227")
