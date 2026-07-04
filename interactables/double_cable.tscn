@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://5pcccugnarba"]
 
-[ext_resource type="PackedScene" uid="uid://dyf7vm72a0cch" path="res://plug.tscn" id="1_uj281"]
+[ext_resource type="PackedScene" uid="uid://dyf7vm72a0cch" path="res://interactables/plug.tscn" id="1_uj281"]
 [ext_resource type="Script" uid="uid://wmd8opr5ggk6" path="res://interactables/physics_cable3_d.gd" id="2_82r2a"]
 
 [node name="DoubleCable" type="Node3D" unique_id=1939299263]

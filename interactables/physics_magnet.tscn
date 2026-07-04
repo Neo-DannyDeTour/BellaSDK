@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://f4suk10ex6ha"]
 
-[ext_resource type="Script" uid="uid://b764gf75fwgc1" path="res://physics_magnet.gd" id="1_4yskg"]
+[ext_resource type="Script" uid="uid://b764gf75fwgc1" path="res://interactables/physics_magnet.gd" id="1_4yskg"]
 [ext_resource type="Shader" uid="uid://tupgxy6wa6dy" path="res://vfx/phys_magnet.gdshader" id="2_brq1f"]
 [ext_resource type="Texture2D" uid="uid://cqyvho0qa36b0" path="res://assets/images/icon_phys_magnet.png" id="3_pmfcl"]
 
