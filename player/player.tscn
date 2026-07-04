@@ -676,6 +676,12 @@ script = ExtResource("42_art4l")
 
 [node name="Glide" type="Node" parent="StateMachine" unique_id=474297086]
 script = ExtResource("43_fjxoa")
+forward_speed = null
+max_fall_speed = null
+debug_updraft_force = null
+turn_speed = null
+max_bank_angle = null
+bank_lerp_speed = null
 
 [node name="MachineLock" type="Node" parent="StateMachine" unique_id=899012239]
 script = ExtResource("48_mmwog")

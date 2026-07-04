@@ -131,4 +131,9 @@ func _update_components(delta: float) -> void:
 		delta, input_dir, false, false, false, player.velocity.length()
 	)
 
-	player.interaction_component.process_interaction(delta)
+	# Safely route the interaction processing based on where the method currently lives
+	var interact: Node = player.interaction_component
+	if interact.has_method("process_interaction"):
+		interact.process_interaction(delta)
+	elif interact.get("interaction_scanner") and interact.interaction_scanner.has_method("process_interaction"):
+		interact.interaction_scanner.process_interaction(delta)

@@ -6,6 +6,7 @@ const SAVES_DIR: String = "user://saves/"
 const THUMB_WIDTH: int = 320
 const THUMB_HEIGHT: int = 180
 
+var last_checkpoint_pos: Vector3 = Vector3.ZERO
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -109,9 +110,9 @@ func _write_metadata(path: String, display_name: String, time_str: String, fav: 
 
 
 func _write_game_state(path: String) -> void:
-	print("[SaveManager] Writing game state to: ", path)
+	print("[SaveManager] Preparing game state for: ", path)
 	var total_state: Dictionary = {}
-	var saveables := get_tree().get_nodes_in_group("saveable")
+	var saveables: Array[Node] = get_tree().get_nodes_in_group("saveable")
 	print("[SaveManager] Found ", saveables.size(), " nodes in 'saveable' group.")
 
 	if saveables.is_empty():
@@ -128,15 +129,22 @@ func _write_game_state(path: String) -> void:
 		else:
 			push_warning("[SaveManager] Node missing 'get_save_data' method: " + node.name)
 
+	# OPTIMIZATION: Deep duplicate the dictionary to prevent main-thread 
+	# modification while the background thread writes it to disk.
+	var thread_safe_state: Dictionary = total_state.duplicate(true)
+	WorkerThreadPool.add_task(_threaded_write_data.bind(path, thread_safe_state, saved_nodes_count))
+
+
+# --- NEW: Offloaded writing to prevent 60 FPS drops ---
+func _threaded_write_data(path: String, data: Dictionary, count: int) -> void:
 	var file := FileAccess.open(path, FileAccess.WRITE)
 	if file:
-		file.store_var(total_state)
+		file.store_var(data)
 		file.close()
-		print("[SaveManager] Game state written. Total nodes saved: ", saved_nodes_count)
+		print("[SaveManager] Game state written to disk. Total nodes saved: ", count)
 	else:
-		push_error(
-			"[SaveManager] Failed to write game state. Error: " + str(FileAccess.get_open_error())
-		)
+		var err: Error = FileAccess.get_open_error()
+		push_error("[SaveManager] Failed to write game state. Error: " + str(err))
 
 
 func _load_game_state(path: String) -> void:

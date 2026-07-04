@@ -14,26 +14,33 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 
-	var interact := get_parent().get_node_or_null("Interact_Component")
-	if interact:
-		interact.focused.connect(_on_focus)
-		interact.unfocused.connect(_on_unfocus)
+	var parent := get_parent()
+	if is_instance_valid(parent):
+		var interact := parent.get_node_or_null("Interact_Component")
+		if is_instance_valid(interact):
+			interact.focused.connect(_on_focus)
+			interact.unfocused.connect(_on_unfocus)
+		else:
+			push_warning("HighlightComponent: No Interact_Component found in parent!")
 	else:
-		push_warning("HighlightComponent: No Interact_Component found in parent!")
+		push_warning("HighlightComponent: Node has no valid parent!")
 
 
 func _on_focus() -> void:
+	print("HighlightComponent: Target focused.")
 	_is_focused = true
 	if not _is_suppressed:
 		_update_materials(outline_material)
 
 
 func _on_unfocus() -> void:
+	print("HighlightComponent: Target unfocused.")
 	_is_focused = false
 	_update_materials(null)
 
 
 func suppress(state: bool) -> void:
+	#print("HighlightComponent: Suppress state set to ", state)
 	_is_suppressed = state
 	if _is_suppressed:
 		_update_materials(null)
@@ -46,22 +53,26 @@ func _update_materials(mat: Material) -> void:
 
 	# 1. Assigned meshes (Supports both MeshInstance3D and CSGShape3D)
 	if target_meshes.size() > 0:
-		for m in target_meshes:
-			if m != null:
+		for m: GeometryInstance3D in target_meshes:
+			if is_instance_valid(m):
 				_apply_to_mesh(m, mat)
 				actually_applied += 1
 
 	# 2. THE FBX/OBJ/CSG MAGIC
 	if actually_applied == 0:
-		# Grab standard meshes
-		var all_hidden_meshes := get_parent().find_children("*", "MeshInstance3D")
-		for m in all_hidden_meshes:
-			_apply_to_mesh(m as GeometryInstance3D, mat)
+		var parent := get_parent()
+		if is_instance_valid(parent):
+			# Grab standard meshes
+			var all_hidden_meshes := parent.find_children("*", "MeshInstance3D")
+			for m: Node in all_hidden_meshes:
+				if is_instance_valid(m) and m is GeometryInstance3D:
+					_apply_to_mesh(m as GeometryInstance3D, mat)
 
-		# Grab CSG meshes so your blockouts highlight properly!
-		var all_hidden_csg := get_parent().find_children("*", "CSGShape3D")
-		for c in all_hidden_csg:
-			_apply_to_mesh(c as GeometryInstance3D, mat)
+			# Grab CSG meshes so your blockouts highlight properly!
+			var all_hidden_csg := parent.find_children("*", "CSGShape3D")
+			for c: Node in all_hidden_csg:
+				if is_instance_valid(c) and c is GeometryInstance3D:
+					_apply_to_mesh(c as GeometryInstance3D, mat)
 
 
 # --- THE FIX ---
@@ -92,11 +103,11 @@ func _apply_to_mesh(base_mesh: GeometryInstance3D, mat: Material) -> void:
 
 			base_mesh.add_child(hl_mesh)
 
-		base_mesh.custom_aabb = AABB(Vector3(-2, -2, -2), Vector3(4, 4, 4))
+		base_mesh.custom_aabb = AABB(Vector3(-2.0, -2.0, -2.0), Vector3(4.0, 4.0, 4.0))
 	else:
 		# Unfocus: safely delete the child highlight mesh
 		var existing_hl := base_mesh.get_node_or_null(child_name)
-		if existing_hl:
+		if is_instance_valid(existing_hl):
 			existing_hl.queue_free()
 
 		base_mesh.custom_aabb = AABB()

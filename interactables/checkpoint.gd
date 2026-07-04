@@ -140,8 +140,8 @@ func activate_checkpoint() -> void:
 
 	# 2. TURN THIS ONE ON
 	is_activated = true
-	SaveSystem.last_checkpoint_pos = global_position
-	print("Checkpoint executing: Checkpoint position saved at ", SaveSystem.last_checkpoint_pos)
+	SaveManager.last_checkpoint_pos = global_position
+	print("Checkpoint executing: Checkpoint position saved at ", SaveManager.last_checkpoint_pos)
 
 	label_text = "Checkpoint Activated"
 	speed = -1.0

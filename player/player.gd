@@ -243,9 +243,18 @@ func get_save_data() -> Dictionary:
 
 func load_save_data(data: Dictionary) -> void:
 	print("Player: load_save_data() called. Restoring component data.")
-	global_position.x = data.get("pos_x", global_position.x)
-	global_position.y = data.get("pos_y", global_position.y)
-	global_position.z = data.get("pos_z", global_position.z)
+	
+	var loaded_pos := Vector3(
+		data.get("pos_x", global_position.x),
+		data.get("pos_y", global_position.y),
+		data.get("pos_z", global_position.z)
+	)
+	
+	# Reset momentum before moving the body
+	if is_instance_valid(locomotion_component):
+		locomotion_component.reset_momentum()
+		
+	global_position = loaded_pos
 	global_rotation.y = data.get("rot_y", global_rotation.y)
 
 	if is_instance_valid(camera_controller):

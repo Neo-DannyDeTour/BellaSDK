@@ -53,7 +53,7 @@ func physics_update(delta: float) -> void:
 	# 2. THE STEERING BOOST
 	if env.in_updraft and input_dir != Vector2.ZERO:
 		var walk_dir := (
-			(player.global_transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
+			(player.global_transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
 		)
 		player.velocity.x += walk_dir.x * 15.0 * delta
 		player.velocity.z += walk_dir.z * 15.0 * delta
@@ -96,9 +96,11 @@ func _handle_jump_input() -> void:
 	var loco: Node = player.locomotion_component
 
 	if Input.is_action_just_pressed("jump"):
+		print("StateAir: Jump input detected.")
 		if coyote_timer > 0.0 and not has_jumped:
 			_perform_coyote_jump()
 		else:
+			print("StateAir: Jump input buffered.")
 			jump_buffer_timer = loco.jump_buffer_duration
 
 
@@ -164,7 +166,7 @@ func _check_transitions() -> void:
 		_handle_landing()
 		return
 
-	if env.current_water_node != null and player.velocity.y < -1.0:
+	if is_instance_valid(env.current_water_node) and player.velocity.y < -1.0:
 		print("StateAir: Entering deep water.")
 		state_machine.transition_to("Swim")
 		return
@@ -188,7 +190,6 @@ func _check_transitions() -> void:
 					state_machine.transition_to("Vault")
 					return
 
-	# Replace the old duck-typed string check with this:
 	if is_holding_item and interact.held_item is GliderItem and player.velocity.y < 0.0:
 		print("StateAir: Player is holding a GliderItem and falling. Transitioning to Glide.")
 		state_machine.transition_to("Glide")
@@ -202,7 +203,7 @@ func _handle_landing() -> void:
 
 	if loco.last_velocity.y <= -20.0 and is_instance_valid(stats.health_component):
 		print("StateAir: Heavy impact detected. Applying fall damage.")
-		var max_hp: int = stats.health_component.get("max_health")
+		var max_hp: int = stats.health_component.get("max_health") as int
 		stats.health_component.take_damage(max_hp)
 
 	# 1. Intercept the landing to check for a slide surface
@@ -218,9 +219,11 @@ func _handle_landing() -> void:
 		if collision.get_normal().y > 0.1:
 			var is_slide_surface: bool = collider.is_in_group("slide_surface")
 
-			# Check parent node if the collider itself doesn't have the group
-			if not is_slide_surface and is_instance_valid(collider.get_parent()):
-				is_slide_surface = collider.get_parent().is_in_group("slide_surface")
+			# Safely check parent node if the collider itself doesn't have the group
+			if not is_slide_surface:
+				var parent_node: Node = collider.get_parent()
+				if is_instance_valid(parent_node):
+					is_slide_surface = parent_node.is_in_group("slide_surface")
 
 			if is_slide_surface:
 				print("StateAir: Slide surface detected. Transitioning to Slide.")
@@ -255,6 +258,6 @@ func _check_monkey_bar_grab() -> void:
 	if not is_instance_valid(env):
 		return
 
-	if env.available_monkey_bar != null and env.monkey_bar_cooldown <= 0.0:
+	if is_instance_valid(env.available_monkey_bar) and env.monkey_bar_cooldown <= 0.0:
 		print("StateAir: Grabbed monkey bar.")
 		state_machine.transition_to("MonkeyBars", {"volume_node": env.available_monkey_bar})
