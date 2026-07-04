@@ -6,6 +6,7 @@
 ![Genre](https://img.shields.io/badge/Genre-FPS-red.svg)
 ![Last Commit](https://img.shields.io/github/last-commit/Neo-DannyDeTour/BellaSDK)
 ![Repo Size](https://img.shields.io/github/repo-size/Neo-DannyDeTour/BellaSDK)
+![Lines of Code](https://tokei.rs/b1/github/Neo-DannyDeTour/BellaSDK)
 ![Static Typing](https://img.shields.io/badge/Static_Typing-Strict-success.svg)
 ![GDLint](https://img.shields.io/badge/GDLint-Enabled-blueviolet.svg)
 ![Performance](https://img.shields.io/badge/Target-60_FPS-brightgreen.svg)
@@ -49,7 +50,7 @@ Besides that I also want textures, models (especially barrels), sounds, animatio
 
 As for the story: I asked myself "what's the most honest thing?" A cute, lost, vulnerable girl in a dire situation, survivng against insurmountable odds because she's dedicated, confident, witty and (most importantly) has a good soul. That's HONEST! Always has been. 
 
-As someone from Igromania Magazine once said: HL was created by enthusiasts. HL2 - by professionals. Based on that logic HL3 is going to be created by old farts who couldn't care less. The real HL3 can only be created by US - The People. 
+As someone from the Igromania Magazine once said: HL was created by enthusiasts. HL2 - by professionals. Based on that logic HL3 is going to be created by old farts who couldn't care less. The real HL3 can only be created by US - The People. 
 
 And most importantly: I need your help. Take it, critisize it, send feedback, give advice. Just please don't ignore me.
 
