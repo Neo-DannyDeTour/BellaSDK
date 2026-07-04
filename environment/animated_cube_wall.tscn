@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://berpaisna5lji"]
 
-[ext_resource type="Script" uid="uid://c4l5y1qhoqam0" path="res://animated_cube_wall.gd" id="1_ptrhj"]
+[ext_resource type="Script" uid="uid://c4l5y1qhoqam0" path="res://environment/animated_cube_wall.gd" id="1_ptrhj"]
 
 [node name="animated_cube_wall" type="Node3D" unique_id=1025499043]
 script = ExtResource("1_ptrhj")

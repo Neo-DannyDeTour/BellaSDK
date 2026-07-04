@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bn5ay1rfbr545"]
 
-[ext_resource type="Script" uid="uid://q7h0rb2kx2vx" path="res://environment/turret.gd" id="1_svvud"]
+[ext_resource type="Script" uid="uid://q7h0rb2kx2vx" path="res://enemies/turret.gd" id="1_svvud"]
 [ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://shared/editor_trigger_visualizer.gd" id="2_60227"]
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_wkqx2"]

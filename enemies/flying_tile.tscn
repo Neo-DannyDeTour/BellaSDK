@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://d20son7tecjec"]
 
-[ext_resource type="Script" uid="uid://dmq0e2k5fb642" path="res://environment/flying_tile.gd" id="1_acit5"]
+[ext_resource type="Script" uid="uid://dmq0e2k5fb642" path="res://enemies/flying_tile.gd" id="1_acit5"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_l6v0r"]
 albedo_color = Color(1, 0, 0, 1)

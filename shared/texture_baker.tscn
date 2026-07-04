@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://qonbj2pqdiof"]
 
-[ext_resource type="Script" uid="uid://dgxtx7hcu714c" path="res://texture_baker.gd" id="1_5q8br"]
+[ext_resource type="Script" uid="uid://dgxtx7hcu714c" path="res://core/texture_baker.gd" id="1_5q8br"]
 [ext_resource type="Shader" uid="uid://f2f6cao5ccqd" path="res://vfx/dev_texture.gdshader" id="2_xvil0"]
 [ext_resource type="Texture2D" uid="uid://c6opaq1cojk2x" path="res://assets/images/dev_textures/Godiva_White_outline.png" id="3_xvil0"]
 

@@ -1,6 +1,6 @@
 extends Control
 
-@export_file("*.tscn") var level_scene_path: String = "res://shared/testbed.scn"
+@export_file("*.tscn") var level_scene_path: String = "res://levels/testbed.scn"
 @export var baked_shader_cache: ShaderCache
 
 var _progress_array: Array[float] = [0.0]

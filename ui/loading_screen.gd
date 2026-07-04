@@ -1,7 +1,7 @@
 extends Control
 
 # Change this to the exact path of your heavy level scene
-@export_file("*.tscn") var level_scene_path: String = "res://shared/testbed.scn"
+@export_file("*.tscn") var level_scene_path: String = "res://levels/testbed.scn"
 
 var _progress_array: Array[float] = [0.0]
 var _status: ResourceLoader.ThreadLoadStatus = ResourceLoader.THREAD_LOAD_INVALID_RESOURCE

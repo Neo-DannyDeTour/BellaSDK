@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cpcqqr5g0oqpp"]
 
-[ext_resource type="Script" uid="uid://bwhrcojn3qenr" path="res://vfx_volume.gd" id="1_unfur"]
+[ext_resource type="Script" uid="uid://bwhrcojn3qenr" path="res://vfx/vfx_volume.gd" id="1_unfur"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_lfn30"]
 
