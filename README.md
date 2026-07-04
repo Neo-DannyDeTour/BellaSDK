@@ -1,5 +1,10 @@
 <img src="https://github.com/UnrealDanny/BellaSDK/blob/main/Bella_SDK_Logo.svg">
 
+![Godot 4.6](https://img.shields.io/badge/Godot-4.6-478CBF?logo=godotengine&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Platforms](https://img.shields.io/badge/Platforms-Windows%20%7C%20Linux-lightgray.svg)
+![Genre](https://img.shields.io/badge/Genre-FPS-red.svg)
+
 <b>BellaSDK</b> - a modern replacement for Hammer/Source to help noobs quickly start prototyping their next masterpiece instead of wasting valuable months trying to add fucking crouching mechanic to a 35 year old engine that was specifically made for FPS! Fuck Unreal you fucking sack of shit!!!
 
 [GOOGLE FORM - please leave your thoughts and prayers there. DO YOU WANT BETTER GAMES OR NOT?!! HOW AM I SUPPOSED TO GIVE YOU WHAT YOU WANT IF YOU'RE NOT SHARING YOUR DEEPEST, DARKEST DESIRES WITH ME? CONFESS!!!](https://forms.gle/JnrmTWLiLv5Mhzfg8)
