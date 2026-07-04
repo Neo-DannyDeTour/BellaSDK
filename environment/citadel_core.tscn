@@ -47,13 +47,15 @@ material = SubResource("ShaderMaterial_uofb1")
 size = Vector2(9, 9)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_pe2vq"]
-render_priority = 0
+render_priority = -1
 shader = ExtResource("4_701dt")
 shader_parameter/base_color = Color(0.1, 0.25, 0.35, 0.4)
-shader_parameter/deformation_speed = 4.0
-shader_parameter/deformation_strength = 0.1
-shader_parameter/ripple_grid_size = 100.0
-shader_parameter/ripple_frequency = 200.0
+shader_parameter/deformation_speed = 2.0
+shader_parameter/deformation_strength = 0.08
+shader_parameter/refraction_strength = 0.0
+shader_parameter/blur_amount = 0.0
+shader_parameter/ripple_grid_size = 50.0
+shader_parameter/ripple_frequency = 100.0
 shader_parameter/ripple_speed = 1.0
 shader_parameter/ripple_strength = 0.2
 
@@ -94,6 +96,8 @@ mesh = SubResource("QuadMesh_2tcvs")
 
 [node name="WaveMesh" type="MeshInstance3D" parent="." unique_id=1652585094]
 mesh = SubResource("QuadMesh_jk3od")
+
+[node name="BackBufferCopy" type="BackBufferCopy" parent="." unique_id=2095415200]
 
 [node name="OuterLiquidShell" type="MeshInstance3D" parent="." unique_id=232530928]
 mesh = SubResource("SphereMesh_701dt")
