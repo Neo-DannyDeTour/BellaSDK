@@ -6,7 +6,6 @@
 ![Genre](https://img.shields.io/badge/Genre-FPS-red.svg)
 ![Last Commit](https://img.shields.io/github/last-commit/Neo-DannyDeTour/BellaSDK)
 ![Repo Size](https://img.shields.io/github/repo-size/Neo-DannyDeTour/BellaSDK)
-![Lines of Code](https://img.shields.io/tokei/lines/github/Neo-DannyDeTour/BellaSDK?label=Lines%20of%20Code)
 ![Static Typing](https://img.shields.io/badge/Static_Typing-Strict-success.svg)
 ![GDLint](https://img.shields.io/badge/GDLint-Enabled-blueviolet.svg)
 ![Performance](https://img.shields.io/badge/Target-60_FPS-brightgreen.svg)
