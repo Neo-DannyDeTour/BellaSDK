@@ -1,5 +1,5 @@
 shader_type spatial;
-render_mode blend_mix, depth_draw_always, cull_back, world_vertex_coords;
+render_mode blend_mix, depth_draw_always, cull_back, world_vertex_coords; 
 
 #define MAX_CASCADES 8
 #define REFLECTANCE  0.02
@@ -67,9 +67,9 @@ void fragment() {
     vec4 view_pos = INV_PROJECTION_MATRIX * vec4(SCREEN_UV * 2.0 - 1.0, depth_tex, 1.0);
     view_pos.xyz /= view_pos.w;
 
-    // FIX 1: Convert the World Space VERTEX to View Space so it matches the depth buffer coordinates safely.
-    vec3 view_vertex = (VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
-    float physical_depth = view_vertex.z - view_pos.z;
+    // FIX 1: VERTEX is ALREADY in View Space in the fragment function!
+    // We just subtract the depth buffer's view position Z from the water's view position Z.
+    float physical_depth = VERTEX.z - view_pos.z;
 
     float smooth_alpha = smoothstep(0.0, 0.66, physical_depth);
     ALPHA *= clamp(smooth_alpha, 0.0, 1.0);

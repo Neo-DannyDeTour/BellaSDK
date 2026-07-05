@@ -1,0 +1,50 @@
+[gd_scene format=3 uid="uid://dkkb1kcbkcq8b"]
+
+[ext_resource type="Shader" uid="uid://dodt38f0qe7b6" path="res://environment/Citadel_TEST_2.gdshader" id="1_dhpac"]
+[ext_resource type="Script" uid="uid://psw7h75jpdxt" path="res://environment/citadel_test_2.gd" id="1_f2eow"]
+[ext_resource type="Texture2D" uid="uid://cctekxiycxvgl" path="res://assets/images/flow_citadel_texture.png" id="3_pjkus"]
+[ext_resource type="Texture2D" uid="uid://cibcqggbo1j1m" path="res://assets/images/citadel_ripple.jpg" id="4_4nt2e"]
+
+[sub_resource type="Gradient" id="Gradient_qcfu7"]
+offsets = PackedFloat32Array(0, 0.49518704, 1)
+colors = PackedColorArray(0, 0, 0, 1, 0, 0.5168811, 0.97587764, 1, 1, 1, 1, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_ce3kg"]
+gradient = SubResource("Gradient_qcfu7")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_f2eow"]
+render_priority = 0
+shader = ExtResource("1_dhpac")
+shader_parameter/flow_map = ExtResource("3_pjkus")
+shader_parameter/normal_map = ExtResource("4_4nt2e")
+shader_parameter/color_ramp = SubResource("GradientTexture1D_ce3kg")
+shader_parameter/core_color = Color(0.2, 0.5, 1, 1)
+shader_parameter/flow_speed = 0.3
+shader_parameter/flow_strength = 0.15
+shader_parameter/refraction_strength = 0.05
+shader_parameter/emission_energy = 2.0
+
+[sub_resource type="SphereMesh" id="SphereMesh_ftxw1"]
+material = SubResource("ShaderMaterial_f2eow")
+radius = 3.0
+height = 6.0
+radial_segments = 32
+rings = 16
+
+[sub_resource type="Environment" id="Environment_sm02r"]
+glow_enabled = true
+glow_intensity = 1.5
+glow_hdr_threshold = 2.5
+
+[node name="Node3D" type="Node3D" unique_id=1568538133]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=887385367]
+mesh = SubResource("SphereMesh_ftxw1")
+script = ExtResource("1_f2eow")
+overload_multiplier = 30.0
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1980755794]
+environment = SubResource("Environment_sm02r")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=1668644893]
+light_color = Color(0.41568628, 0.7490196, 1, 1)

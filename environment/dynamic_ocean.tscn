@@ -50,7 +50,6 @@ extra_cull_margin = 150.0
 mesh = ExtResource("2_wv76p")
 script = ExtResource("3_6nay4")
 parameters = Array[ExtResource("4_yo2dh")]([SubResource("Resource_adqv5"), SubResource("Resource_luhq0"), SubResource("Resource_83u3u")])
-updates_per_second = 60.0
 
 [node name="WaterSprayEmitter" type="GPUParticles3D" parent="." unique_id=1366948172]
 transform = Transform3D(15, 0, 0, 0, 15, 0, 0, 0, 15, 0, 0, 0)

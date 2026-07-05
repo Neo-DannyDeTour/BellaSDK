@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://dbn0n2ov4d7d1"]
+
+[ext_resource type="Script" uid="uid://wpqj7h6xi74u" path="res://environment/decal.gd" id="1_ltf0i"]
+
+[node name="Decal" type="Node3D" unique_id=705501392]
+script = ExtResource("1_ltf0i")
