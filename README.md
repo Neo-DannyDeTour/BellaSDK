@@ -1,5 +1,17 @@
 <img src="https://github.com/UnrealDanny/BellaSDK/blob/main/Bella_SDK_Logo.svg">
 
+![Godot 4.6](https://img.shields.io/badge/Godot-4.6-478CBF?logo=godotengine&logoColor=white)
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+![Platforms](https://img.shields.io/badge/Platforms-Windows%20%7C%20Linux-lightgray.svg)
+![Genre](https://img.shields.io/badge/Genre-FPS-red.svg)
+![Last Commit](https://img.shields.io/github/last-commit/Neo-DannyDeTour/BellaSDK)
+![Repo Size](https://img.shields.io/github/repo-size/Neo-DannyDeTour/BellaSDK)
+![Lines of Code](https://img.shields.io/tokei/lines/github/Neo-DannyDeTour/BellaSDK?label=Lines%20of%20Code)
+![Static Typing](https://img.shields.io/badge/Static_Typing-Strict-success.svg)
+![GDLint](https://img.shields.io/badge/GDLint-Enabled-blueviolet.svg)
+![Performance](https://img.shields.io/badge/Target-60_FPS-brightgreen.svg)
+[![YouTube](https://img.shields.io/badge/YouTube-DannyDeTour-FF0000?logo=youtube&logoColor=white)](https://www.youtube.com/@DannyDeTour)
+
 <b>BellaSDK</b> - a modern replacement for Hammer/Source to help noobs quickly start prototyping their next masterpiece instead of wasting valuable months trying to add fucking crouching mechanic to a 35 year old engine that was specifically made for FPS! Fuck Unreal you fucking sack of shit!!!
 
 [GOOGLE FORM - please leave your thoughts and prayers there. DO YOU WANT BETTER GAMES OR NOT?!! HOW AM I SUPPOSED TO GIVE YOU WHAT YOU WANT IF YOU'RE NOT SHARING YOUR DEEPEST, DARKEST DESIRES WITH ME? CONFESS!!!](https://forms.gle/JnrmTWLiLv5Mhzfg8)
@@ -38,7 +50,7 @@ Besides that I also want textures, models (especially barrels), sounds, animatio
 
 As for the story: I asked myself "what's the most honest thing?" A cute, lost, vulnerable girl in a dire situation, survivng against insurmountable odds because she's dedicated, confident, witty and (most importantly) has a good soul. That's HONEST! Always has been. 
 
-As someone from Igromania Magazine once said: HL was created by enthusiasts. HL2 - by professionals. Based on that logic HL3 is going to be created by old farts who couldn't care less. The real HL3 can only be created by US - The People. 
+As someone from the Igromania Magazine once said: HL was created by enthusiasts. HL2 - by professionals. Based on that logic HL3 is going to be created by old farts who couldn't care less. The real HL3 can only be created by US - The People. 
 
 And most importantly: I need your help. Take it, critisize it, send feedback, give advice. Just please don't ignore me.
 
