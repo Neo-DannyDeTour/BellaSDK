@@ -9,6 +9,9 @@
 ![Static Typing](https://img.shields.io/badge/Static_Typing-Strict-success.svg)
 ![GDLint](https://img.shields.io/badge/GDLint-Enabled-blueviolet.svg)
 ![Performance](https://img.shields.io/badge/Target-60_FPS-brightgreen.svg)
+![GitHub Repo stars](https://img.shields.io/github/stars/godotengine/godot?style=for-the-badge&color=223b47)
+![GitHub forks](https://img.shields.io/github/forks/godotengine/godot?style=for-the-badge&color=223b47)
+![GitHub Downloads (all assets, latest release)](https://img.shields.io/github/downloads/godotengine/godot/latest/total?style=for-the-badge&label=downloads%20%28latest%20release%29&color=478cbf)
 [![YouTube](https://img.shields.io/badge/YouTube-DannyDeTour-FF0000?logo=youtube&logoColor=white)](https://www.youtube.com/@DannyDeTour)
 
 <b>BellaSDK</b> - a modern replacement for Hammer/Source to help noobs quickly start prototyping their next masterpiece instead of wasting valuable months trying to add fucking crouching mechanic to a 35 year old engine that was specifically made for FPS! Fuck Unreal you fucking sack of shit!!!
