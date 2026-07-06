@@ -16,7 +16,7 @@ signal heavy_lift_state_changed(is_lifting: bool, yaw_base: float)
 
 # --- CLEANED UP VARIABLES ---
 var current_interactable: Node = null
-var master_component: Node = null # Reference to the Master
+var master_component: Node = null  # Reference to the Master
 
 var is_heavy_lifting: bool = false
 var heavy_lift_yaw_base: float = 0.0
@@ -33,6 +33,7 @@ func setup_master_link(master: Node) -> void:
 
 
 func process_interaction(_delta: float) -> void:
+	print("PlayerInteractionScanner: process_interaction() called. Processing focus target.")
 	if is_in_terminal_mode:
 		if _should_exit_terminal_mode():
 			exit_terminal_mode()
@@ -67,7 +68,7 @@ func handle_interact_input() -> void:
 			print("InteractionScanner: Found pickable object. Instructing Master to grab.")
 			if is_instance_valid(master_component):
 				master_component.force_grab_item(parent_node as RigidBody3D)
-				
+
 			if parent_node.has_method("on_grabbed"):
 				parent_node.on_grabbed()
 	else:
@@ -85,7 +86,9 @@ func handle_shoot_input() -> void:
 
 	# Weapon shooting logic handled here since it's an "empty hand" action
 	# (Assuming weapon logic is separate from picked-up physics objects)
-	var weapon_holder: Node = master_component.get("weapon_holder") if is_instance_valid(master_component) else null
+	var weapon_holder: Node = (
+		master_component.get("weapon_holder") if is_instance_valid(master_component) else null
+	)
 	if is_instance_valid(weapon_holder) and weapon_holder.get_child_count() > 0:
 		var active_weapon: Node3D = weapon_holder.get_child(0) as Node3D
 		if is_instance_valid(active_weapon) and active_weapon.has_method("shoot"):
@@ -198,11 +201,16 @@ func _should_exit_terminal_mode() -> bool:
 	if Input.is_action_just_pressed("jump") or Input.is_action_just_pressed("crouch"):
 		return true
 
-	if is_instance_valid(player_body) and player_body.global_position.distance_to(terminal_start_pos) > 1.0:
+	if (
+		is_instance_valid(player_body)
+		and player_body.global_position.distance_to(terminal_start_pos) > 1.0
+	):
 		return true
 
 	if is_instance_valid(active_terminal) and is_instance_valid(camera):
-		var dir_to_terminal: Vector3 = camera.global_position.direction_to(active_terminal.global_position)
+		var dir_to_terminal: Vector3 = camera.global_position.direction_to(
+			active_terminal.global_position
+		)
 		var camera_forward: Vector3 = -camera.global_transform.basis.z
 		if rad_to_deg(camera_forward.angle_to(dir_to_terminal)) > 45.0:
 			return true

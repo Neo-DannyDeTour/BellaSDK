@@ -10,14 +10,14 @@ extends RigidBody3D
 @export var min_fuse_time: float = 1.0
 @export var max_fuse_time: float = 4.0
 
+var _fuse_timer: float = 0.0
+
 @onready var blast_area: Area3D = $BlastArea
 @onready var blast_shape: CollisionShape3D = $BlastArea/CollisionShape3D
 @onready var burst_sparks: GPUParticles3D = $BurstSparks
 
 # Grab the internal editor icon directly using Scene Unique Nodes
 @onready var _editor_icon: Node3D = get_node_or_null("%EditorIcon")
-
-var _fuse_timer: float = 0.0
 
 
 func _ready() -> void:

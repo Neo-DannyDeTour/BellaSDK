@@ -74,13 +74,13 @@ var _cached_player: Node3D = null
 
 func _ready() -> void:
 	print("Valve: _ready() initialized.")
-	
+
 	if requires_installation:
 		is_installed = false
 		has_been_installed = false
 	else:
 		has_been_installed = true
-		
+
 	if Engine.is_editor_hint():
 		return
 
@@ -113,19 +113,17 @@ func _process(delta: float) -> void:
 	if not is_installed and install_cooldown <= 0.0:
 		if not is_instance_valid(_cached_player):
 			_cached_player = get_tree().get_first_node_in_group("player") as Node3D
-			
+
 		if is_instance_valid(_cached_player):
 			var held: Node3D = _get_player_held_object(_cached_player)
-			
+
 			if is_instance_valid(held):
 				# OPTIMIZATION: Avoid square root math by using distance_squared_to (0.6 * 0.6 = 0.36)
 				var dist_sq: float = global_position.distance_squared_to(held.global_position)
-				if dist_sq < 0.36: 
+				if dist_sq < 0.36:
 					_install_valve(_cached_player, held)
 
-	var is_interacting: bool = (
-		is_focused and Input.is_action_pressed("interact") and is_installed
-	)
+	var is_interacting: bool = is_focused and Input.is_action_pressed("interact") and is_installed
 	var just_pressed: bool = (
 		is_focused and Input.is_action_just_pressed("interact") and is_installed
 	)
@@ -161,12 +159,12 @@ func _process(delta: float) -> void:
 		if reverts_on_release:
 			var revert_target: float = 0.0 if current_target_progress == 1.0 else 1.0
 			var current_turn_duration: float = turn_duration
-			
+
 			if fast_revert_on_release:
 				current_turn_duration = turn_duration / fast_revert_multiplier
 				if was_interacting:
 					print("Valve: Released, initiating fast revert towards ", revert_target)
-			
+
 			progress = move_toward(progress, revert_target, delta / current_turn_duration)
 
 	if is_back_and_forth and not is_interacting:
@@ -177,7 +175,7 @@ func _process(delta: float) -> void:
 
 	# OPTIMIZATION: Only calculate rotation matrix and loop targets if the valve is actively spinning
 	var is_moving: bool = not is_equal_approx(progress, old_progress)
-	
+
 	if is_moving:
 		if is_instance_valid(wheel):
 			var dir_multiplier: float = -1.0 if turn_clockwise else 1.0
@@ -195,7 +193,7 @@ func _process(delta: float) -> void:
 func _manage_audio(is_moving: bool) -> void:
 	if not is_instance_valid(valve_audio):
 		return
-		
+
 	if is_moving and not valve_audio.playing:
 		print("Valve: Started playing turning audio.")
 		valve_audio.play()
@@ -208,21 +206,29 @@ func _manage_audio(is_moving: bool) -> void:
 func _get_player_held_object(player: Node3D) -> Node3D:
 	if not is_instance_valid(player):
 		return null
-		
+
 	# 1. Legacy Check
 	if "held_object" in player and player.get("held_object") != null:
 		return player.get("held_object") as Node3D
-		
+
 	# 2. Component Check
-	var int_comp: Node = player.get("interaction_component") if "interaction_component" in player else null
+	var int_comp: Node = (
+		player.get("interaction_component") if "interaction_component" in player else null
+	)
 	if is_instance_valid(int_comp):
 		if "held_item" in int_comp and int_comp.get("held_item") != null:
 			return int_comp.get("held_item") as Node3D
-			
-		var scanner: Node = int_comp.get("interaction_scanner") if "interaction_scanner" in int_comp else null
-		if is_instance_valid(scanner) and "held_object" in scanner and scanner.get("held_object") != null:
+
+		var scanner: Node = (
+			int_comp.get("interaction_scanner") if "interaction_scanner" in int_comp else null
+		)
+		if (
+			is_instance_valid(scanner)
+			and "held_object" in scanner
+			and scanner.get("held_object") != null
+		):
 			return scanner.get("held_object") as Node3D
-			
+
 	return null
 
 
@@ -230,8 +236,10 @@ func _clear_player_held_object(player: Node3D) -> void:
 	print("Valve: Clearing player held object references.")
 	if "held_object" in player:
 		player.set("held_object", null)
-		
-	var int_comp: Node = player.get("interaction_component") if "interaction_component" in player else null
+
+	var int_comp: Node = (
+		player.get("interaction_component") if "interaction_component" in player else null
+	)
 	if is_instance_valid(int_comp):
 		if int_comp.has_method("force_clear_hands"):
 			int_comp.force_clear_hands()
@@ -243,7 +251,7 @@ func _install_valve(player: Node3D, held_valve: Node3D) -> void:
 	print("Valve: _install_valve() called. Destroying pickable valve.")
 	if is_instance_valid(held_valve):
 		held_valve.queue_free()
-		
+
 	_clear_player_held_object(player)
 
 	is_installed = true
@@ -276,7 +284,7 @@ func _detach_valve() -> void:
 		spawned_valve.set("outline_material", outline_material)
 
 	get_tree().current_scene.add_child(spawned_valve)
-	
+
 	if "hold_position" in player and is_instance_valid(player.get("hold_position")):
 		spawned_valve.global_position = player.get("hold_position").global_position
 
@@ -288,8 +296,10 @@ func _detach_valve() -> void:
 
 	# Use the new forceful component grab if it exists
 	var grabbed_successfully: bool = false
-	var int_comp: Node = player.get("interaction_component") if "interaction_component" in player else null
-	
+	var int_comp: Node = (
+		player.get("interaction_component") if "interaction_component" in player else null
+	)
+
 	if is_instance_valid(int_comp) and int_comp.has_method("force_grab_item"):
 		int_comp.force_grab_item(spawned_valve as RigidBody3D)
 		grabbed_successfully = true
@@ -297,7 +307,11 @@ func _detach_valve() -> void:
 		player.set("held_object", spawned_valve)
 
 	# Only manually call pick_up if the component didn't already handle it
-	if not grabbed_successfully and spawned_valve.has_method("pick_up") and "hold_position" in player:
+	if (
+		not grabbed_successfully
+		and spawned_valve.has_method("pick_up")
+		and "hold_position" in player
+	):
 		spawned_valve.pick_up(player.get("hold_position"), player)
 
 	var weapon_holder: Node3D = player.get_node_or_null("%WeaponHolder")

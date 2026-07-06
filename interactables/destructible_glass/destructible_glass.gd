@@ -48,7 +48,7 @@ signal glass_broken
 		_update_material()
 
 var _is_broken: bool = false
-var _shard_grid: Array = [] 
+var _shard_grid: Array = []
 
 @onready var intact_mesh: MeshInstance3D = $IntactMesh
 @onready var intact_collision: CollisionShape3D = $IntactCollision
@@ -59,7 +59,8 @@ var _shard_grid: Array = []
 # ==========================================
 # Inner Class: Intercepts damage on shards
 # ==========================================
-class GlassShard extends RigidBody3D:
+class GlassShard:
+	extends RigidBody3D
 	var main_glass: DestructibleGlass
 	var grid_x: int = -1
 	var grid_y: int = -1
@@ -73,7 +74,7 @@ class GlassShard extends RigidBody3D:
 	func take_damage(amount: float, hit_position: Vector3, hit_dir: Vector3) -> void:
 		if main_glass == null:
 			return
-			
+
 		print("GlassShard: take_damage registered. Relaying to root glass node.")
 		if freeze and not is_destroyed:
 			main_glass.chip_glass(hit_position, hit_dir)
@@ -83,10 +84,10 @@ class GlassShard extends RigidBody3D:
 	func _on_shard_body_entered(body: Node) -> void:
 		if not freeze or is_destroyed or main_glass == null:
 			return
-			
+
 		var speed: float = 0.0
 		var rel_vel: Vector3 = Vector3.ZERO
-		
+
 		if body is RigidBody3D:
 			rel_vel = body.linear_velocity - linear_velocity
 			speed = rel_vel.length()
@@ -108,51 +109,47 @@ func _ready() -> void:
 
 	if Engine.is_editor_hint():
 		return
-		
+
 	if not scale.is_equal_approx(Vector3.ONE):
 		print("DestructibleGlass (", name, "): Baking scale into dimensions.")
 		# FIX 1: Assign the whole vector to guarantee the setter fires
 		glass_size = Vector2(glass_size.x * scale.x, glass_size.y * scale.y)
 		glass_thickness *= scale.z
 		scale = Vector3.ONE
-		
+
 	print("DestructibleGlass (", name, "): _ready called. Precalculating shards...")
 	body_entered.connect(_on_body_entered)
-	
+
 	if break_sound != null:
 		break_sound_player.stream = break_sound
-		
+
 	_precalculate_shards()
 
 
 func _apply_dimensions() -> void:
 	if not is_inside_tree():
 		return
-		
+
 	var mesh_inst: MeshInstance3D = get_node_or_null("IntactMesh")
 	var coll: CollisionShape3D = get_node_or_null("IntactCollision")
-	
+
 	if mesh_inst != null and mesh_inst.mesh is BoxMesh:
-		(mesh_inst.mesh as BoxMesh).size = Vector3(
-			glass_size.x, glass_size.y, glass_thickness
-		)
-		
+		(mesh_inst.mesh as BoxMesh).size = Vector3(glass_size.x, glass_size.y, glass_thickness)
+
 	if coll != null and coll.shape is BoxShape3D:
-		(coll.shape as BoxShape3D).size = Vector3(
-			glass_size.x, glass_size.y, glass_thickness
-		)
+		(coll.shape as BoxShape3D).size = Vector3(glass_size.x, glass_size.y, glass_thickness)
 
 
 func _update_material() -> void:
 	if not is_inside_tree():
 		return
-		
+
 	print("DestructibleGlass (", name, "): Updating material parameters on all meshes.")
-		
+
 	var mesh_inst: MeshInstance3D = get_node_or_null("IntactMesh")
 	if mesh_inst != null:
 		_apply_instance_shader_parameters(mesh_inst)
-		
+
 	var container: Node3D = get_node_or_null("ShardsContainer")
 	if container != null:
 		for child: Node in container.get_children():
@@ -173,7 +170,7 @@ func _apply_instance_shader_parameters(mesh_instance: MeshInstance3D) -> void:
 func take_damage(amount: float, hit_position: Vector3, hit_dir: Vector3) -> void:
 	# Removed the early return that blocked damage when can_break was false.
 	print("DestructibleGlass (", name, "): take_damage registered: ", amount)
-	
+
 	if amount >= damage_threshold:
 		if not _is_broken:
 			_is_broken = true
@@ -189,7 +186,7 @@ func _on_body_entered(body: Node) -> void:
 	print("DestructibleGlass (", name, "): Checking body impact velocity.")
 	var speed: float = 0.0
 	var rel_vel: Vector3 = Vector3.ZERO
-	
+
 	if body is RigidBody3D:
 		rel_vel = body.linear_velocity - linear_velocity
 		speed = rel_vel.length()
@@ -207,7 +204,7 @@ func _on_body_entered(body: Node) -> void:
 
 func _precalculate_shards() -> void:
 	print("DestructibleGlass (", name, "): Building grid and shard vertices...")
-	
+
 	var size: Vector3 = Vector3(glass_size.x, glass_size.y, glass_thickness)
 	var cell_width: float = size.x / float(shard_cols)
 	var cell_height: float = size.y / float(shard_rows)
@@ -237,17 +234,17 @@ func _precalculate_shards() -> void:
 	# MATERIAL EXTRACTION FIX
 	# ---------------------------------------------------------
 	var active_mat: Material = intact_mesh.material_override
-	
+
 	if active_mat == null:
 		active_mat = intact_mesh.get_surface_override_material(0)
-		
+
 	if active_mat == null and intact_mesh.mesh != null:
 		if intact_mesh.mesh is PrimitiveMesh:
 			# Safely targets the BoxMesh material property
 			active_mat = intact_mesh.mesh.material
 		elif intact_mesh.mesh.get_surface_count() > 0:
 			active_mat = intact_mesh.mesh.surface_get_material(0)
-			
+
 	if active_mat == null:
 		print("DestructibleGlass (", name, "): WARNING - No material found on IntactMesh to copy!")
 	else:
@@ -263,8 +260,8 @@ func _precalculate_shards() -> void:
 			shard_body.main_glass = self
 			shard_body.grid_x = col
 			shard_body.grid_y = row
-			shard_body.collision_layer = 8 
-			shard_body.collision_mask = (1 << 0) | (1 << 1) 
+			shard_body.collision_layer = 8
+			shard_body.collision_mask = (1 << 0) | (1 << 1)
 
 			var v1: Vector2 = grid_points[row][col]
 			var v2: Vector2 = grid_points[row][col + 1]
@@ -282,17 +279,13 @@ func _precalculate_shards() -> void:
 
 			var shard_mesh_inst: MeshInstance3D = MeshInstance3D.new()
 			var st: SurfaceTool = SurfaceTool.new()
-			
+
 			st.begin(Mesh.PRIMITIVE_TRIANGLES)
 			_add_faces_to_surfacetool(
-				st, 
-				lv1, lv2, lv3, lv4, 
-				v1, v2, v3, v4, 
-				half_thickness, 
-				Vector2(size.x, size.y)
+				st, lv1, lv2, lv3, lv4, v1, v2, v3, v4, half_thickness, Vector2(size.x, size.y)
 			)
 			shard_mesh_inst.mesh = st.commit()
-			
+
 			if active_mat != null:
 				shard_mesh_inst.material_override = active_mat
 
@@ -309,7 +302,7 @@ func _precalculate_shards() -> void:
 				Vector3(lv3.x, lv3.y, -half_thickness),
 				Vector3(lv4.x, lv4.y, -half_thickness)
 			]
-			
+
 			convex_shape.points = points
 			shard_collision.shape = convex_shape
 
@@ -323,17 +316,24 @@ func _precalculate_shards() -> void:
 
 			shards_container.add_child(shard_body)
 			row_arr.append(shard_body)
-			
+
 		_shard_grid.append(row_arr)
 
 	_update_material()
 
 
 func _add_faces_to_surfacetool(
-	st: SurfaceTool, 
-	lv1: Vector2, lv2: Vector2, lv3: Vector2, lv4: Vector2, 
-	gv1: Vector2, gv2: Vector2, gv3: Vector2, gv4: Vector2, 
-	ht: float, size: Vector2
+	st: SurfaceTool,
+	lv1: Vector2,
+	lv2: Vector2,
+	lv3: Vector2,
+	lv4: Vector2,
+	gv1: Vector2,
+	gv2: Vector2,
+	gv3: Vector2,
+	gv4: Vector2,
+	ht: float,
+	size: Vector2
 ) -> void:
 	var uv1: Vector2 = Vector2(gv1.x / size.x + 0.5, 0.5 - (gv1.y / size.y))
 	var uv2: Vector2 = Vector2(gv2.x / size.x + 0.5, 0.5 - (gv2.y / size.y))
@@ -440,13 +440,13 @@ func _break_initial(hit_position: Vector3, hit_dir: Vector3) -> void:
 		if child is GlassShard:
 			child.visible = true
 			_enable_shard_collision(child)
-			
+
 	chip_glass(hit_position, hit_dir)
 
 
 func chip_glass(hit_position: Vector3, hit_dir: Vector3) -> void:
 	print("DestructibleGlass (", name, "): Chipping shards at impact point.")
-	
+
 	if break_sound_player.stream != null:
 		break_sound_player.pitch_scale = randf_range(0.85, 1.15)
 		break_sound_player.play()
@@ -454,13 +454,18 @@ func chip_glass(hit_position: Vector3, hit_dir: Vector3) -> void:
 	for child: Node in shards_container.get_children():
 		if child is GlassShard and child.freeze and not child.is_destroyed:
 			var dist: float = child.global_position.distance_to(hit_position)
-			
+
 			if dist <= shatter_radius:
-				child.is_destroyed = true 
-				
+				child.is_destroyed = true
+
 				# Erase the dead reference from the tracking grid
-				if child.grid_y >= 0 and child.grid_y < shard_rows and child.grid_x >= 0 and child.grid_x < shard_cols:
-					_shard_grid[child.grid_y][child.grid_x] = null 
+				if (
+					child.grid_y >= 0
+					and child.grid_y < shard_rows
+					and child.grid_x >= 0
+					and child.grid_x < shard_cols
+				):
+					_shard_grid[child.grid_y][child.grid_x] = null
 
 				# Only unfreeze and explode the glass if it is breakable
 				if can_break:
@@ -469,7 +474,7 @@ func chip_glass(hit_position: Vector3, hit_dir: Vector3) -> void:
 					var explode_dir: Vector3 = (shard_world_pos - hit_position).normalized()
 					var final_dir: Vector3 = (hit_dir + explode_dir * 0.5).normalized()
 					var force_mag: float = randf_range(5.0, 15.0)
-					
+
 					child.apply_impulse(final_dir * force_mag)
 					_schedule_shard_cleanup(child)
 
@@ -481,7 +486,7 @@ func chip_glass(hit_position: Vector3, hit_dir: Vector3) -> void:
 func _update_shard_connectivity() -> void:
 	print("DestructibleGlass (", name, "): Checking shard graph connectivity...")
 	var visited: Array = []
-	
+
 	for r: int in range(shard_rows):
 		var row_vis: Array[bool] = []
 		for c: int in range(shard_cols):
@@ -531,12 +536,16 @@ func _update_shard_connectivity() -> void:
 				if is_instance_valid(cell):
 					var shard: GlassShard = cell as GlassShard
 					if shard.freeze and not shard.is_destroyed:
-						print("DestructibleGlass (", name, "): Island detected. Dropping floating shard.")
+						print(
+							"DestructibleGlass (",
+							name,
+							"): Island detected. Dropping floating shard."
+						)
 						shard.freeze = false
-						shard.is_destroyed = true 
-						
-						_shard_grid[r][c] = null 
-						
+						shard.is_destroyed = true
+
+						_shard_grid[r][c] = null
+
 						var natural_tumble: Vector3 = Vector3(
 							randf_range(-0.5, 0.5), randf_range(-0.5, 0.5), randf_range(-0.5, 0.5)
 						)
@@ -553,7 +562,7 @@ func _enable_shard_collision(shard: RigidBody3D) -> void:
 
 func _schedule_shard_cleanup(shard: RigidBody3D) -> void:
 	var mesh_inst: MeshInstance3D = null
-	
+
 	for child: Node in shard.get_children():
 		if child is CollisionShape3D:
 			child.set_deferred("disabled", true)
@@ -563,9 +572,11 @@ func _schedule_shard_cleanup(shard: RigidBody3D) -> void:
 	if mesh_inst != null:
 		var tween: Tween = get_tree().create_tween()
 		var random_delay: float = randf_range(0.1, shard_cleanup_time * 0.8)
-		
+
 		tween.tween_interval(random_delay)
-		tween.tween_property(mesh_inst, "scale", Vector3(0.01, 0.01, 0.01), 0.5).set_ease(Tween.EASE_IN)
+		tween.tween_property(mesh_inst, "scale", Vector3(0.01, 0.01, 0.01), 0.5).set_ease(
+			Tween.EASE_IN
+		)
 		tween.tween_callback(shard.queue_free)
 	else:
 		shard.queue_free()

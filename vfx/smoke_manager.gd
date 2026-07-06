@@ -36,7 +36,7 @@ var _hole_buffer := PackedFloat32Array()
 func _ready() -> void:
 	print("SmokeManager: _ready() called. Initializing atmospheric manager.")
 	rd = RenderingServer.get_rendering_device()
-	
+
 	_hole_buffer.resize(MAX_HOLES * 8)
 
 	if precomputed_noise == null:
@@ -80,8 +80,8 @@ func _create_rd_noise_texture(tex: Texture3D) -> RID:
 
 func _initialize_gpu() -> void:
 	print("SmokeManager: _initialize_gpu() called.")
-	var shader_file: RDShaderFile = preload("res://vfx/smoke_compute.glsl")
-	var shader_spirv: RDShaderSPIRV = shader_file.get_spirv()
+	const SHADER_FILE = preload("res://vfx/smoke_compute.glsl")
+	var shader_spirv: RDShaderSPIRV = SHADER_FILE.get_spirv()
 	shader = rd.shader_create_from_spirv(shader_spirv)
 	pipeline = rd.compute_pipeline_create(shader)
 
@@ -196,7 +196,7 @@ func _process(delta: float) -> void:
 
 	# 3. Use pre-allocated buffer on MAIN THREAD to prevent dynamic allocation spikes
 	var safe_hole_bytes := PackedByteArray()
-	
+
 	if holes_to_process > 0:
 		for i: int in range(holes_to_process):
 			var hole: Dictionary = active_holes[i]
@@ -216,8 +216,14 @@ func _process(delta: float) -> void:
 	# 4. Dispatch with fully prepared, thread-safe primitives
 	RenderingServer.call_on_render_thread(
 		_dispatch_to_compute_shader.bind(
-			delta, safe_hole_bytes, holes_to_process, safe_fog_size,
-			safe_fog_pos, current_player_pos, global_time, is_even_frame
+			delta,
+			safe_hole_bytes,
+			holes_to_process,
+			safe_fog_size,
+			safe_fog_pos,
+			current_player_pos,
+			global_time,
+			is_even_frame
 		)
 	)
 
@@ -244,15 +250,30 @@ func _dispatch_to_compute_shader(
 	var z_offset: float = 64.0 if is_even_frame else 0.0
 
 	# These push constants are highly optimized struct copies in C++, safe to leave alone
-	var push_constants_array := PackedFloat32Array([
-		player_pos.x, player_pos.y, player_pos.z,
-		float(holes_count),
-		grid_pos.x, grid_pos.y, grid_pos.z,
-		delta * 2.0,
-		fog_size.x, fog_size.y, fog_size.z,
-		current_time, hole_clear_intensity, swirl_strength, swirl_frequency,
-		player_trail_radius, z_offset, heal_rate, 0.0, 0.0
-	])
+	var push_constants_array := PackedFloat32Array(
+		[
+			player_pos.x,
+			player_pos.y,
+			player_pos.z,
+			float(holes_count),
+			grid_pos.x,
+			grid_pos.y,
+			grid_pos.z,
+			delta * 2.0,
+			fog_size.x,
+			fog_size.y,
+			fog_size.z,
+			current_time,
+			hole_clear_intensity,
+			swirl_strength,
+			swirl_frequency,
+			player_trail_radius,
+			z_offset,
+			heal_rate,
+			0.0,
+			0.0
+		]
+	)
 
 	var push_constants_bytes: PackedByteArray = push_constants_array.to_byte_array()
 

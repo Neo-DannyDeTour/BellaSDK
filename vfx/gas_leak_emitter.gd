@@ -1,5 +1,5 @@
-extends GPUParticles3D
 class_name GasLeakEmitter
+extends GPUParticles3D
 
 ## Toggles the gas leak refraction effect on or off.
 @export var is_leaking: bool = false:

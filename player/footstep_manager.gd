@@ -50,9 +50,14 @@ func _ready() -> void:
 # CORE PROCESS LOGIC
 # --------------------------------------
 func process_surface_and_footsteps(
-	delta: float, is_grounded: bool, velocity_length: float, is_sprinting: bool, is_crouching: bool, is_on_ladder: bool = false, is_on_monkey_bar: bool = false
+	delta: float,
+	is_grounded: bool,
+	velocity_length: float,
+	is_sprinting: bool,
+	is_crouching: bool,
+	is_on_ladder: bool = false,
+	is_on_monkey_bar: bool = false
 ) -> void:
-	
 	# --- FIXED: Monkey Bar Looping Logic ---
 	if is_on_monkey_bar:
 		active_audio_player = audio_monkey_bar
@@ -66,7 +71,7 @@ func process_surface_and_footsteps(
 			if active_audio_player and active_audio_player.playing:
 				print("FootstepManager: Stopped monkey bar sound.")
 				active_audio_player.stop()
-				
+
 		# Return early so we bypass the rest of the footstep logic
 		return
 

@@ -24,11 +24,14 @@ var _last_grab_time: int = 0
 func initialize(p_player: Node3D) -> void:
 	print("InteractionComponent: initialize() called. Caching player reference.")
 	player = p_player
-	
+
 	# Establish the hard link so the Scanner can talk back to the Master
-	if is_instance_valid(interaction_scanner) and interaction_scanner.has_method("setup_master_link"):
+	if (
+		is_instance_valid(interaction_scanner)
+		and interaction_scanner.has_method("setup_master_link")
+	):
 		interaction_scanner.setup_master_link(self)
-		
+
 	# NEW: Listen for the item dropping so we can clear our hands automatically,
 	# regardless of whether the player dropped it or it snagged on a wall.
 	if not Events.item_dropped.is_connected(_on_global_item_dropped):
@@ -38,9 +41,13 @@ func initialize(p_player: Node3D) -> void:
 func process_unhandled_input(event: InputEvent) -> void:
 	# 1. Master Intercepts Held Item Actions First
 	if event.is_action_pressed("interact") and is_instance_valid(held_item):
-		if held_item.has_method("is_class") and held_item.get("class_name") == "GliderItem" and not player.is_on_floor():
+		if (
+			held_item.has_method("is_class")
+			and held_item.get("class_name") == "GliderItem"
+			and not player.is_on_floor()
+		):
 			return
-			
+
 		if Time.get_ticks_msec() - _last_grab_time < 100:
 			return
 
@@ -48,7 +55,10 @@ func process_unhandled_input(event: InputEvent) -> void:
 		drop_held_item()
 		return
 
-	if (event.is_action_pressed("grenade_throw") or event.is_action_pressed("shoot")) and is_instance_valid(held_item):
+	if (
+		(event.is_action_pressed("grenade_throw") or event.is_action_pressed("shoot"))
+		and is_instance_valid(held_item)
+	):
 		print("InteractionComponent: Throw action pressed. Throwing item.")
 		throw_held_item()
 		return
@@ -89,7 +99,7 @@ func throw_held_item() -> void:
 	print("InteractionComponent: throw_held_item() called.")
 	if not is_instance_valid(held_item):
 		return
-		
+
 	var item_to_throw: RigidBody3D = held_item
 
 	var throw_dir: Vector3 = -camera.global_transform.basis.z.normalized()
@@ -106,7 +116,7 @@ func drop_held_item() -> void:
 	print("InteractionComponent: drop_held_item() called. Placing item on ground.")
 	if not is_instance_valid(held_item):
 		return
-		
+
 	var item_to_drop: RigidBody3D = held_item
 
 	if item_to_drop.has_method("drop"):
@@ -145,13 +155,13 @@ func force_grab_item(item: RigidBody3D) -> void:
 	print("InteractionComponent: force_grab_item() taking ownership of ", item.name)
 	if is_instance_valid(held_item):
 		drop_held_item()
-		
+
 	held_item = item
 	_last_grab_time = Time.get_ticks_msec()
-	
+
 	if held_item.has_method("pick_up"):
 		held_item.pick_up(hold_position, player)
-		
+
 	_set_weapon_active(false)
 
 

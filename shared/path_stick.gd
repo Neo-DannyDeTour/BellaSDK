@@ -43,6 +43,7 @@ func _physics_process(delta: float) -> void:
 # INTERACTION & LOGIC
 # --------------------------------------
 func _on_interact_component_interacted(character: CharacterBody3D) -> void:
+	print("PathStick: _on_interact_component_interacted() called. Triggering path stick action.")
 	if is_active or not character is Player:
 		return
 

@@ -20,7 +20,8 @@ signal scale_changed
 		normal_scale = value
 		scale_changed.emit()
 
-## Denotes the average wind speed above the water (in meters per second). Increasing makes waves steeper and more 'chaotic'.
+## Denotes the average wind speed above the water (in meters per second).
+## Increasing makes waves steeper and more 'chaotic'.
 @export var wind_speed := 20.0:
 	set(value):
 		wind_speed = max(0.0001, value)
@@ -31,7 +32,8 @@ signal scale_changed
 		wind_direction = value
 		should_generate_spectrum = true
 
-## Denotes the distance from shoreline (in kilometers). Increasing makes waves steeper, but reduces their 'choppiness'.
+## Denotes the distance from shoreline (in kilometers).
+## Increasing makes waves steeper, but reduces their 'choppiness'.
 @export var fetch_length := 550.0:
 	set(value):
 		fetch_length = max(0.0001, value)

@@ -32,10 +32,10 @@ const DOUBLE_TAP_DELAY: float = 0.3
 
 @export_category("Wheel Alignment")
 @export var stick_count: int = 4
-@export var stick_radius: float = 1.5 # The length of the stick (1.5m in your screenshot)
-@export var stick_thickness: float = 0.1 # The thickness of the stick (0.1m in your screenshot)
-@export var stick_center_distance: float = 1.0 # The outward offset (1.0m from your Z = -1.0 transform)
-@export var stick_y_offset: float = 0.5 # The vertical offset (0.5m in your screenshot)
+@export var stick_radius: float = 1.5  # The length of the stick (1.5m in your screenshot)
+@export var stick_thickness: float = 0.1  # The thickness of the stick (0.1m in your screenshot)
+@export var stick_center_distance: float = 1.0  # The outward offset (from Z = -1.0 transform)
+@export var stick_y_offset: float = 0.5  # The vertical offset (0.5m in your screenshot)
 @export var push_stand_offset: float = 0.8
 @export var restored_stick_index: int = 0
 
@@ -167,12 +167,12 @@ func _update_stick_collisions() -> void:
 			var mat := StandardMaterial3D.new()
 			mat.albedo_color = Color(1.0, 0.0, 0.0, 0.5)
 			mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-			
+
 			var box_mesh := BoxMesh.new()
 			box_mesh.size = box.size
 			box_mesh.material = mat
 			debug_mesh.mesh = box_mesh
-			
+
 			col.add_child(debug_mesh)
 			print("PushWheel: Spawned red debug box for stick collision.")
 
@@ -407,7 +407,7 @@ func get_interaction_transform(target_pos: Vector3) -> Transform3D:
 	var snapped_angle: float = round(angle / angle_step) * angle_step
 
 	var stick_local_dir := Vector3(cos(snapped_angle), 0.0, sin(snapped_angle))
-	
+
 	# Updated to use the new accurate visual center distance
 	var stick_center := stick_local_dir * stick_center_distance
 

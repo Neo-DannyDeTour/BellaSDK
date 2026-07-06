@@ -135,5 +135,8 @@ func _update_components(delta: float) -> void:
 	var interact: Node = player.interaction_component
 	if interact.has_method("process_interaction"):
 		interact.process_interaction(delta)
-	elif interact.get("interaction_scanner") and interact.interaction_scanner.has_method("process_interaction"):
+	elif (
+		interact.get("interaction_scanner")
+		and interact.interaction_scanner.has_method("process_interaction")
+	):
 		interact.interaction_scanner.process_interaction(delta)

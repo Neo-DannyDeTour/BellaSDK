@@ -144,6 +144,7 @@ func _on_rope_broken() -> void:
 
 
 func drop_bridge() -> void:
+	print("Drawbridge: drop_bridge() called. Dropping the bridge.")
 	if Engine.is_editor_hint():
 		return
 

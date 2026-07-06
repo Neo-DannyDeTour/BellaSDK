@@ -122,19 +122,25 @@ func _finish_pickup() -> void:
 		holder.is_stunned = false
 
 	# --- ROUTE THROUGH COMPONENTS ---
-	var int_comp: Node = holder.get("interaction_component") if "interaction_component" in holder else null
+	var int_comp: Node = (
+		holder.get("interaction_component") if "interaction_component" in holder else null
+	)
 	if is_instance_valid(int_comp):
 		if "is_heavy_lifting" in int_comp:
 			int_comp.is_heavy_lifting = true
-			
-		var scanner: Node = int_comp.get("interaction_scanner") if "interaction_scanner" in int_comp else null
+
+		var scanner: Node = (
+			int_comp.get("interaction_scanner") if "interaction_scanner" in int_comp else null
+		)
 		if is_instance_valid(scanner):
 			if "heavy_lift_yaw_base" in scanner:
 				scanner.heavy_lift_yaw_base = holder.global_rotation.y
 			if scanner.has_method("set_heavy_lifting"):
 				scanner.set_heavy_lifting(true)
 
-	var loco_comp: Node = holder.get("locomotion_component") if "locomotion_component" in holder else holder
+	var loco_comp: Node = (
+		holder.get("locomotion_component") if "locomotion_component" in holder else holder
+	)
 	if is_instance_valid(loco_comp):
 		if "can_sprint" in loco_comp:
 			loco_comp.can_sprint = false
@@ -259,22 +265,32 @@ func _finish_drop(previous_holder: Node3D) -> void:
 			previous_holder.is_stunned = false
 
 		# --- ROUTE THROUGH COMPONENTS ---
-		var int_comp: Node = previous_holder.get("interaction_component") if "interaction_component" in previous_holder else null
+		var int_comp: Node = (
+			previous_holder.get("interaction_component")
+			if "interaction_component" in previous_holder
+			else null
+		)
 		if is_instance_valid(int_comp):
 			if "is_heavy_lifting" in int_comp:
 				int_comp.is_heavy_lifting = false
-				
+
 			# THIS IS THE FIX: Tell the Master Component to drop it!
 			if int_comp.has_method("force_clear_hands"):
 				int_comp.force_clear_hands()
 				print("HeavyPickableBox: Confirmed detachment via Master Component.")
 
-			var scanner: Node = int_comp.get("interaction_scanner") if "interaction_scanner" in int_comp else null
+			var scanner: Node = (
+				int_comp.get("interaction_scanner") if "interaction_scanner" in int_comp else null
+			)
 			if is_instance_valid(scanner):
 				if scanner.has_method("set_heavy_lifting"):
 					scanner.set_heavy_lifting(false)
 
-		var loco_comp: Node = previous_holder.get("locomotion_component") if "locomotion_component" in previous_holder else previous_holder
+		var loco_comp: Node = (
+			previous_holder.get("locomotion_component")
+			if "locomotion_component" in previous_holder
+			else previous_holder
+		)
 		if is_instance_valid(loco_comp):
 			if "can_sprint" in loco_comp:
 				loco_comp.can_sprint = true
