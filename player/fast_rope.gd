@@ -2,6 +2,9 @@
 class_name FastRope
 extends StaticBody3D
 
+# Keep track of all ropes globally using a Godot 4 static variable
+static var all_fast_ropes: Array[FastRope] = []
+
 @export_category("Fast Rope Settings")
 
 ## CHANGE THIS to make the rope longer/shorter without using Transform Scale!
@@ -22,12 +25,6 @@ extends StaticBody3D
 @export var slide_sound: AudioStream
 @export var detach_sound: AudioStream
 
-@onready var one_shot_audio: AudioStreamPlayer3D = $OneShotAudio
-@onready var loop_audio: AudioStreamPlayer3D = $LoopAudio
-
-# Keep track of all ropes globally using a Godot 4 static variable
-static var all_fast_ropes: Array[FastRope] = []
-
 var attached_player: CharacterBody3D = null
 var attach_timer: float = 0.0
 var locked_x: float = 0.0
@@ -38,6 +35,8 @@ var is_descending: bool = false
 var interact_key_name: String = "E"
 var interaction_cooldown: float = 0.0
 
+@onready var one_shot_audio: AudioStreamPlayer3D = $OneShotAudio
+@onready var loop_audio: AudioStreamPlayer3D = $LoopAudio
 @onready var collision_shape: CollisionShape3D = $CollisionShape3D
 @onready var top_marker: Marker3D = $TopMarker
 @onready var interact_comp: Interact_Component = $Interact_Component
@@ -116,8 +115,8 @@ func _on_unfocused() -> void:
 
 
 #func _on_interacted(character: CharacterBody3D) -> void:
-	#if not attached_player:
-		#attach(character)
+#if not attached_player:
+#attach(character)
 
 
 func _physics_process(delta: float) -> void:
@@ -147,11 +146,11 @@ func _physics_process(delta: float) -> void:
 		if is_descending:
 			attached_player.global_position.y -= ascend_speed * delta
 			if attached_player.global_position.y <= global_position.y:
-				detach(false) 
+				detach(false)
 		else:
 			attached_player.global_position.y += ascend_speed * delta
 			if attached_player.global_position.y >= top_marker.global_position.y:
-				detach(true) 
+				detach(true)
 
 	# --- 2. DYNAMIC UI POSITIONING ---
 	elif interact_comp and interact_comp.is_currently_focused and interact_label.visible:
@@ -164,6 +163,7 @@ func _physics_process(delta: float) -> void:
 
 
 func _on_interacted(character: CharacterBody3D) -> void:
+	print("FastRope: _on_interacted() called. Initiating attach sequence.")
 	# Check cooldown before allowing attachment
 	if not attached_player and interaction_cooldown <= 0.0:
 		attach(character)
@@ -207,12 +207,12 @@ func attach(player: CharacterBody3D) -> void:
 
 	if attached_player.has_method("enter_fast_rope"):
 		attached_player.enter_fast_rope()
-	
+
 	if attached_player.has_method("enter_fast_rope"):
 		attached_player.enter_fast_rope()
-		
+
 	print("FastRope executing: Player attached, triggering attach and slide audio.")
-	
+
 	if is_instance_valid(one_shot_audio) and attach_sound:
 		one_shot_audio.stream = attach_sound
 		one_shot_audio.global_position = attached_player.global_position
@@ -222,6 +222,7 @@ func attach(player: CharacterBody3D) -> void:
 		loop_audio.stream = slide_sound
 		loop_audio.global_position = attached_player.global_position
 		loop_audio.play()
+
 
 func detach(reached_top: bool) -> void:
 	if not attached_player:

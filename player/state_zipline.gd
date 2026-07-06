@@ -59,7 +59,7 @@ func exit() -> void:
 		. tween_property(player, "quaternion", upright_basis.get_rotation_quaternion(), 0.15)
 		. set_trans(Tween.TRANS_SINE)
 	)
-	
+
 	# FIX: Target the actual 3D node handling the tilt (camera or eyes)
 	if is_instance_valid(player.camera_controller):
 		detach_tween.tween_property(player.camera_controller.eyes, "rotation:z", 0.0, 0.15)
@@ -78,7 +78,7 @@ func physics_update(delta: float) -> void:
 
 	# Update camera (passing 0 velocity since we override position directly)
 	player.camera_controller.update_camera(
-		delta, input_dir, false, false, false, ZIPLINE_SLIDE_SPEED  # is_sprinting  # is_crouching  # is_grounded  # Fake speed for headbob scaling
+		delta, input_dir, false, false, false, ZIPLINE_SLIDE_SPEED
 	)
 
 	_check_dismount_conditions()

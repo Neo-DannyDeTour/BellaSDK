@@ -1,6 +1,6 @@
 @tool
-extends CSGMesh3D
 class_name ProceduralSpiralStairsCSG
+extends CSGMesh3D
 
 @export_category("Staircase Dimensions")
 @export var outer_radius: float = 2.5:
@@ -83,37 +83,41 @@ func _update_mesh() -> void:
 				h_bot_next = next_height - step_thickness
 
 		# Calculate 3D points
-		var A := Vector3(
+		var point_a := Vector3(
 			cos(current_angle) * inner_radius, h_top_cur, sin(current_angle) * inner_radius
 		)
-		var B := Vector3(
+		var point_b := Vector3(
 			cos(current_angle) * outer_radius, h_top_cur, sin(current_angle) * outer_radius
 		)
-		var C := Vector3(cos(next_angle) * outer_radius, h_top_next, sin(next_angle) * outer_radius)
-		var D := Vector3(cos(next_angle) * inner_radius, h_top_next, sin(next_angle) * inner_radius)
+		var point_c := Vector3(
+			cos(next_angle) * outer_radius, h_top_next, sin(next_angle) * outer_radius
+		)
+		var point_d := Vector3(
+			cos(next_angle) * inner_radius, h_top_next, sin(next_angle) * inner_radius
+		)
 
-		var E := Vector3(A.x, h_bot_cur, A.z)
-		var F := Vector3(B.x, h_bot_cur, B.z)
-		var G := Vector3(C.x, h_bot_next, C.z)
-		var H := Vector3(D.x, h_bot_next, D.z)
+		var point_e := Vector3(point_a.x, h_bot_cur, point_a.z)
+		var point_f := Vector3(point_b.x, h_bot_cur, point_b.z)
+		var point_g := Vector3(point_c.x, h_bot_next, point_c.z)
+		var point_h := Vector3(point_d.x, h_bot_next, point_d.z)
 
 		# Core Faces (Top, Bottom, Inner, Outer)
-		_add_quad(st, A, B, C, D)  # Top
-		_add_quad(st, H, G, F, E)  # Bottom
-		_add_quad(st, B, F, G, C)  # Outer Edge
-		_add_quad(st, A, D, H, E)  # Inner Edge
+		_add_quad(st, point_a, point_b, point_c, point_d)  # Top
+		_add_quad(st, point_h, point_g, point_f, point_e)  # Bottom
+		_add_quad(st, point_b, point_f, point_g, point_c)  # Outer Edge
+		_add_quad(st, point_a, point_d, point_h, point_e)  # Inner Edge
 
 		# Risers and Caps
 		if smooth_ramp:
 			# For a continuous ramp, we only need to cap the very start and very end
 			if i == 0:
-				_add_quad(st, E, F, B, A)  # Front cap
+				_add_quad(st, point_e, point_f, point_b, point_a)  # Front cap
 			if i == step_count - 1:
-				_add_quad(st, D, C, G, H)  # Back cap
+				_add_quad(st, point_d, point_c, point_g, point_h)  # Back cap
 		else:
 			# Standard stairs need every vertical riser closed
-			_add_quad(st, E, F, B, A)  # Front
-			_add_quad(st, D, C, G, H)  # Back
+			_add_quad(st, point_e, point_f, point_b, point_a)  # Front
+			_add_quad(st, point_d, point_c, point_g, point_h)  # Back
 
 	# Finalize mesh and apply to the CSG node
 	st.generate_normals()

@@ -86,6 +86,7 @@ func _on_unfocus(side: String) -> void:
 # MOVEMENT LOGIC
 # ==========================================
 func _on_interact(_character: CharacterBody3D, side: String) -> void:
+	print("DoubleSlidingDoors: _on_interact() called. Operating doors.")
 	var now := Time.get_ticks_msec()
 
 	if now - last_click_time < double_click_delay:

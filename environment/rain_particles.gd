@@ -14,7 +14,9 @@ uniform float shine_strength = 0.6;
 
 void vertex() {
     // Keep your billboard logic exactly as it was
-    mat4 modified_model_view = VIEW_MATRIX * mat4(INV_VIEW_MATRIX[0], INV_VIEW_MATRIX[1], INV_VIEW_MATRIX[2], MODEL_MATRIX[3]);
+    mat4 modified_model_view = VIEW_MATRIX * mat4(
+        INV_VIEW_MATRIX[0], INV_VIEW_MATRIX[1], INV_VIEW_MATRIX[2], MODEL_MATRIX[3]
+    );
     modified_model_view = modified_model_view * mat4(
         vec4(length(MODEL_MATRIX[0].xyz), 0.0, 0.0, 0.0),
         vec4(0.0, length(MODEL_MATRIX[1].xyz), 0.0, 0.0),
@@ -60,6 +62,9 @@ void fragment() {
 # 3. Adjust particle physics (Amount, Lifetime, Velocity, Emission Shape) natively in the Inspector!
 
 # --- EXPORTS ---
+# Godot 4 static variable: 2 = Layer 2. (Use 4 for Layer 3, 8 for Layer 4, etc.)
+static var player_collision_mask: int = 2
+
 @export_group("Rain Textures")
 # The alpha mask of the droplet (capsule or stretched drop shape)
 @export var droplet_shape_tex: Texture2D:
@@ -85,7 +90,8 @@ void fragment() {
 		_update_shader_params()
 
 # Determines how heavily the background bends.
-# NOTE: Use NEGATIVE values to pull from the "opposite" direction (inverting the image like a real water drop).
+# NOTE: Use NEGATIVE values to pull from the "opposite" direction
+# (inverting the image like a real water drop).
 @export_range(-2.0, 2.0, 0.01) var refraction_strength: float = 0.35:
 	set(value):
 		refraction_strength = value
@@ -107,9 +113,6 @@ void fragment() {
 	set(value):
 		droplet_size = value
 		_update_draw_mesh()
-
-# Godot 4 static variable: 2 = Layer 2. (Use 4 for Layer 3, 8 for Layer 4, etc.)
-static var player_collision_mask: int = 2
 
 # --- INTERNAL RESOURCES ---
 var _proc_mat: ParticleProcessMaterial

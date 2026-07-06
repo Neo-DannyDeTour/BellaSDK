@@ -18,18 +18,20 @@ func _ready() -> void:
 
 
 func _get_position_relative_to_control(a: Control, b: Control) -> Vector2:
-	return b.get_global_rect().position - a.get_global_rect().position 
+	return b.get_global_rect().position - a.get_global_rect().position
 
 
 func _on_focus_changed(focus: Control) -> void:
 	if _last_input_event is InputEventMouseButton:
 		return
-		
+
 	if not scrollable:
 		return
-		
-	var scroll_destination: int = int(_get_position_relative_to_control(scrollable, focus).y - (get_rect().size.y / 2.0))
-	
+
+	var scroll_destination: int = int(
+		_get_position_relative_to_control(scrollable, focus).y - (get_rect().size.y / 2.0)
+	)
+
 	if animate:
 		var tween: Tween = create_tween().set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 		tween.tween_property(self, "scroll_vertical", scroll_destination, transition_time)
@@ -42,7 +44,7 @@ func _input(event: InputEvent) -> void:
 
 	if event is InputEventJoypadMotion:
 		# JOY_AXIS_RIGHT_Y is typically axis 3, but using the constant is safer
-		if event.get_axis() == JOY_AXIS_RIGHT_Y: 
+		if event.get_axis() == JOY_AXIS_RIGHT_Y:
 			gamepad_scroll = event.get_axis_value()
 
 

@@ -1,8 +1,8 @@
 extends PanelContainer
-
 const HISTORY_NUM_FRAMES: int = 150
 
-@onready var metrics_label: RichTextLabel = $MetricsLabel
+@export_category("Dev Metrics")
+@export var is_enabled: bool = true
 
 var player: CharacterBody3D
 
@@ -19,6 +19,8 @@ var _gpu_sum: float = 0.0
 # Cached strings for things that rarely/never change
 var _hardware_info_str: String = ""
 var _settings_info_static_str: String = ""
+
+@onready var metrics_label: RichTextLabel = $MetricsLabel
 
 
 func _ready() -> void:
@@ -147,7 +149,9 @@ func _update_frametime_history() -> void:
 
 	var vp_rid: RID = get_viewport().get_viewport_rid()
 	var frame_setup: float = RenderingServer.get_frame_setup_time_cpu()
-	var frametime_cpu: float = RenderingServer.viewport_get_measured_render_time_cpu(vp_rid) + frame_setup
+	var frametime_cpu: float = (
+		RenderingServer.viewport_get_measured_render_time_cpu(vp_rid) + frame_setup
+	)
 	var frametime_gpu: float = RenderingServer.viewport_get_measured_render_time_gpu(vp_rid)
 
 	_total_sum += frametime_total
@@ -175,19 +179,31 @@ func _format_metric_row(title: String, sum_val: float, history: Array[float]) ->
 	var max_val: float = history.max()
 	var last_val: float = history.back()
 
-	return "[cell]%s [/cell][cell][color=%s]%.2f[/color][/cell][cell][color=%s]%.2f[/color][/cell][cell][color=%s]%.2f[/color][/cell][cell][color=%s]%.2f[/color][/cell]\n" % [
-		title,
-		_get_ms_color(avg_val), avg_val,
-		_get_ms_color(min_val), min_val,
-		_get_ms_color(max_val), max_val,
-		_get_ms_color(last_val), last_val
-	]
+	return (
+		"[cell]%s [/cell][cell][color=%s]%.2f[/color][/cell]" \
+			+ "[cell][color=%s]%.2f[/color][/cell][cell][color=%s]%.2f[/color][/cell]" \
+			+ "[cell][color=%s]%.2f[/color][/cell]\n"
+		% [
+			title,
+			_get_ms_color(avg_val),
+			avg_val,
+			_get_ms_color(min_val),
+			min_val,
+			_get_ms_color(max_val),
+			max_val,
+			_get_ms_color(last_val),
+			last_val
+		]
+	)
 
 
 func _get_ms_color(ms: float) -> String:
-	if ms < 8.34: return "#38bdf8"
-	if ms < 16.67: return "#80e25f"
-	if ms < 33.34: return "#facc15"
+	if ms < 8.34:
+		return "#38bdf8"
+	if ms < 16.67:
+		return "#80e25f"
+	if ms < 33.34:
+		return "#facc15"
 	return "#ef4444"
 
 
@@ -203,9 +219,10 @@ func _cache_hardware_info() -> void:
 	var driver: String = str(ProjectSettings.get_setting("rendering/rendering_device/driver"))
 	var api_str: String = "Vulkan" if driver == "vulkan" else driver.capitalize()
 
-	_hardware_info_str = "%s, %d threads\n%s %s, %s %s\n%s\n" % [
-		cpu_name, threads, os_name, bitness, api_str, api_ver, gpu_name
-	]
+	_hardware_info_str = (
+		"%s, %d threads\n%s %s, %s %s\n%s\n"
+		% [cpu_name, threads, os_name, bitness, api_str, api_ver, gpu_name]
+	)
 
 
 func _cache_static_settings_info() -> void:

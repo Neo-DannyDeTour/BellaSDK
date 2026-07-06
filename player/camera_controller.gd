@@ -1,9 +1,16 @@
 class_name CameraController
 extends Node3D
 
-# --------------------------------------
-# EXPORTS
-# --------------------------------------
+const HEAD_BOBBING_SPRINTING_SPEED: float = 22.0
+const HEAD_BOBBING_WALKING_SPEED: float = 14.0
+const HEAD_BOBBING_CROUCHING_SPEED: float = 10.0
+const HEAD_BOBBING_IDLE_SPEED: float = 3.0
+
+const HEAD_BOBBING_SPRINTING_INTENSITY: float = 0.2
+const HEAD_BOBBING_WALKING_INTENSITY: float = 0.1
+const HEAD_BOBBING_CROUCHING_INTENSITY: float = 0.08
+const HEAD_BOBBING_IDLE_INTENSITY: float = 0.02
+
 @export_category("Node References")
 @export var player_body: CharacterBody3D
 @export var head: Node3D
@@ -21,22 +28,6 @@ extends Node3D
 @export var lerp_speed: float = 15.0
 @export var camera_tilt_amount: float = 3.0
 
-# --------------------------------------
-# CONSTANTS
-# --------------------------------------
-const HEAD_BOBBING_SPRINTING_SPEED: float = 22.0
-const HEAD_BOBBING_WALKING_SPEED: float = 14.0
-const HEAD_BOBBING_CROUCHING_SPEED: float = 10.0
-const HEAD_BOBBING_IDLE_SPEED: float = 3.0
-
-const HEAD_BOBBING_SPRINTING_INTENSITY: float = 0.2
-const HEAD_BOBBING_WALKING_INTENSITY: float = 0.1
-const HEAD_BOBBING_CROUCHING_INTENSITY: float = 0.08
-const HEAD_BOBBING_IDLE_INTENSITY: float = 0.02
-
-# --------------------------------------
-# VARIABLES
-# --------------------------------------
 var mouse_sensitivity: float = 0.05
 var target_fov: float = 75.0
 var disable_sprint_fov: bool = false
@@ -49,25 +40,27 @@ var headbob_offset: Vector2 = Vector2.ZERO
 var stair_offset: float = 0.0
 
 
-# --------------------------------------
 # INITIALIZATION
-# --------------------------------------
 func _ready() -> void:
-	print("CameraController: _ready() called. Initializing FOV and Sensitivity from GlobalSettings.")
-	
+	print(
+		"CameraController: _ready() called. Initializing FOV and Sensitivity from GlobalSettings."
+	)
+
 	# Load the saved settings, falling back to the export variables if no save exists
-	mouse_sensitivity_base = GlobalSettings.get_setting("Settings", "mouse_sensitivity", mouse_sensitivity_base)
+	mouse_sensitivity_base = GlobalSettings.get_setting(
+		"Settings", "mouse_sensitivity", mouse_sensitivity_base
+	)
 	base_fov = GlobalSettings.get_setting("Settings", "base_fov", base_fov)
-	disable_sprint_fov = GlobalSettings.get_setting("Settings", "disable_sprint_fov", disable_sprint_fov)
-	
+	disable_sprint_fov = GlobalSettings.get_setting(
+		"Settings", "disable_sprint_fov", disable_sprint_fov
+	)
+
 	# Apply the loaded base values to the active variables
 	mouse_sensitivity = mouse_sensitivity_base
 	target_fov = base_fov
 
 
-# --------------------------------------
 # INPUT HANDLING
-# --------------------------------------
 func handle_mouse_input(
 	event: InputEventMouseMotion,
 	is_terminal_mode: bool,
@@ -86,24 +79,22 @@ func handle_mouse_input(
 		# 1. YAW: Modify Euler angles directly to prevent Gimbal lock / Z-roll
 		head.rotation.y -= deg_to_rad(event.relative.x * active_sens)
 		head.rotation.y = clampf(head.rotation.y, deg_to_rad(-15.0), deg_to_rad(15.0))
-		
+
 		# 2. PITCH: Restrict Up/Down Look
 		head.rotation.x -= deg_to_rad(event.relative.y * active_sens)
 		head.rotation.x = clampf(head.rotation.x, deg_to_rad(-15.0), deg_to_rad(89.0))
 	else:
 		# Standard FPS control: Body handles Y, Head handles X
 		player_body.rotate_y(deg_to_rad(-event.relative.x * active_sens))
-		
+
 		head.rotation.x -= deg_to_rad(event.relative.y * active_sens)
 		head.rotation.x = clampf(head.rotation.x, deg_to_rad(-89.0), deg_to_rad(89.0))
-		
+
 	# Strictly lock the Z-axis to prevent the camera from permanently tilting
 	head.rotation.z = 0.0
 
 
-# --------------------------------------
 # PROCESS UPDATES
-# --------------------------------------
 func update_camera(
 	delta: float,
 	input_dir: Vector2,
@@ -134,23 +125,23 @@ func _update_fov(delta: float, is_sprinting: bool, is_grounded: bool, input_dir:
 		if not is_using_zoom:
 			is_using_zoom = true
 			print("CameraController: Zoom activated. Emitting player_zoomed(true).")
-			Events.player_zoomed.emit(true) 
-			
+			Events.player_zoomed.emit(true)
+
 	elif is_valid_sprint and not disable_sprint_fov:
 		target_fov = sprint_fov
 		mouse_sensitivity = mouse_sensitivity_base
 		if is_using_zoom:
 			is_using_zoom = false
 			print("CameraController: Sprint overriding zoom. Emitting player_zoomed(false).")
-			Events.player_zoomed.emit(false) 
-			
+			Events.player_zoomed.emit(false)
+
 	else:
 		target_fov = base_fov
 		mouse_sensitivity = mouse_sensitivity_base
 		if is_using_zoom:
 			is_using_zoom = false
 			print("CameraController: Zoom deactivated. Emitting player_zoomed(false).")
-			Events.player_zoomed.emit(false) 
+			Events.player_zoomed.emit(false)
 
 	camera.fov = lerpf(camera.fov, target_fov, delta * fov_change_speed)
 
@@ -199,9 +190,7 @@ func _update_headbob(
 	eyes.position.x = headbob_offset.x
 
 
-# --------------------------------------
 # STAIR SMOOTHING
-# --------------------------------------
 func add_stair_offset(snap_amount: float) -> void:
 	print("CameraController: Applying stair snap offset: ", snap_amount)
 	stair_offset -= snap_amount
@@ -216,16 +205,14 @@ func _update_stair_smoothing(delta: float, player_velocity: float) -> void:
 	stair_offset = move_toward(stair_offset, 0.0, move_amount)
 
 
-# --------------------------------------
 # SAVE SYSTEM UTILITIES
-# --------------------------------------
 func apply_saved_rotation(pitch: float, yaw: float) -> void:
 	print("CameraController: apply_saved_rotation() called. Forcing camera vectors.")
 	global_rotation = Vector3(pitch, yaw, 0.0)
-	
+
 	# Ensure local logic nodes perfectly mirror the forced global transform
 	if is_instance_valid(head):
 		head.rotation.x = pitch
-		
+
 	if is_instance_valid(player_body):
 		player_body.rotation.y = yaw

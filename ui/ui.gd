@@ -32,7 +32,8 @@ var default_crosshair_size: Vector2
 # Updated Paths
 @onready var noclip_alert_container: MarginContainer = $NoclipAlertContainer
 @onready var noclip_message_container: PanelContainer = $NoclipAlertContainer/NoclipMessageContainer
-@onready var noclip_label_message: Label = $NoclipAlertContainer/NoclipMessageContainer/NoclipLabelMessage
+@onready
+var noclip_label_message: Label = $NoclipAlertContainer/NoclipMessageContainer/NoclipLabelMessage
 
 @onready var debug_panel: CanvasLayer = $DebugPanel
 @onready var noclip_button: Button = $DebugPanel/PanelContainer/VBoxContainer/NoclipButton
@@ -40,7 +41,8 @@ var default_crosshair_size: Vector2
 @onready var collision_button: Button = $DebugPanel/PanelContainer/VBoxContainer/CollisionButton
 @onready var fullbright_button: Button = $DebugPanel/PanelContainer/VBoxContainer/FullbrightButton
 @onready var wireframe_button: Button = $DebugPanel/PanelContainer/VBoxContainer/WireframeButton
-@onready var wireframe_overlay_button: Button = $DebugPanel/PanelContainer/VBoxContainer/WireframeOverlayButton
+@onready
+var wireframe_overlay_button: Button = $DebugPanel/PanelContainer/VBoxContainer/WireframeOverlayButton
 @onready var hide_ui_button: Button = $DebugPanel/PanelContainer/VBoxContainer/HideUIButton
 
 @onready var metrics_panel: PanelContainer = $MetricsPanel
@@ -58,12 +60,13 @@ var heart_nodes: Array[TextureRect] = []
 var heart_tweens: Array[Tween] = []
 var current_health: int = 300
 
+
 func _ready() -> void:
 	print("UI: _ready() called. Initializing canvas elements.")
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	get_tree().paused = false
 	debug_panel.hide()
-	
+
 	if frame_graph:
 		frame_graph.hide()
 
@@ -110,11 +113,12 @@ func _ready() -> void:
 	green_wireframe_material.shader = shader
 
 	_initialize_hearts()
-	
+
 	call_deferred("_check_if_testbed")
-	
+
 	KeycardSystem.card_picked_up.connect(_on_card_picked_up)
 	KeycardSystem.card_used.connect(_on_card_used)
+
 
 func _process(delta: float) -> void:
 	var target_vignette_opacity := 0.8 if is_player_crouching else 0.0
@@ -330,14 +334,16 @@ func _input(event: InputEvent) -> void:
 		if event.keycode == KEY_QUOTELEFT:
 			_toggle_debug_panel()
 
+
 func _toggle_debug_panel() -> void:
 	debug_panel.visible = not debug_panel.visible
 	print("UI: Debug panel visibility toggled -> ", debug_panel.visible)
-	
+
 	if debug_panel.visible:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	else:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
 
 func _on_noclip_button_pressed() -> void:
 	print("UI: Noclip button pressed.")
@@ -413,7 +419,7 @@ func _on_metrics_button_pressed() -> void:
 	print("UI: Metrics button pressed.")
 	if metrics_panel:
 		metrics_panel.toggle_window()
-		
+
 		if frame_graph:
 			frame_graph.visible = metrics_panel.visible
 
@@ -421,7 +427,7 @@ func _on_metrics_button_pressed() -> void:
 # --- NEW CROSSHAIR ANIMATION ---
 func _on_terminal_mode_toggled(is_active: bool) -> void:
 	print("UI: Terminal mode toggled to ", is_active, ". Animating crosshair.")
-	
+
 	if crosshair_tween and crosshair_tween.is_valid():
 		crosshair_tween.kill()
 
@@ -499,17 +505,17 @@ func _toggle_ui_elements(should_hide: bool) -> void:
 func _check_if_testbed() -> void:
 	print("UI: Checking if current scene is TestbedMap...")
 	var current_scene: Node = get_tree().current_scene
-	
+
 	if current_scene and "testbed.scn" in current_scene.scene_file_path.to_lower():
 		_open_metrics_panel()
 
 
 func _open_metrics_panel() -> void:
 	print("UI: TestbedMap detected. Opening metrics panel automatically.")
-	
+
 	if metrics_panel and not metrics_panel.visible:
 		metrics_panel.toggle_window()
-		
+
 		if frame_graph:
 			frame_graph.visible = metrics_panel.visible
 
@@ -521,15 +527,15 @@ func _on_card_picked_up(card_id: StringName) -> void:
 	card_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	card_rect.custom_minimum_size = Vector2(80.0, 130.0)
 	card_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	
+
 	if card_textures.has(card_id):
 		card_rect.texture = card_textures[card_id]
 	else:
 		print("UI Warning: No texture mapped in UIController for card ID: ", card_id)
-		
+
 	keycards_container.add_child(card_rect)
 	active_card_icons[card_id] = card_rect
-	
+
 	# Bounce animation
 	card_rect.scale = Vector2.ZERO
 	card_rect.pivot_offset = card_rect.custom_minimum_size / 2.0

@@ -31,9 +31,9 @@ class Descriptor:
 	var rid: RID
 	var type: RenderingDevice.UniformType
 
-	func _init(rid_: RID, type_: RenderingDevice.UniformType) -> void:
-		rid = rid_
-		type = type_
+	func _init(new_rid: RID, new_type: RenderingDevice.UniformType) -> void:
+		rid = new_rid
+		type = new_type
 
 
 var device: RenderingDevice

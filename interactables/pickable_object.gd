@@ -6,11 +6,19 @@ extends RigidBody3D
 @export var mesh: Node3D
 @export var label: Label3D
 
+@onready var interact_comp: Interact_Component = $Interact_Component
+@onready var mesh: Node3D = $Mesh
+@onready var label: Label3D = $Label3D
+@onready var probe_container: Node3D = $ProbeContainer
+@onready var highlight_comp: HighlightComponent = $HighlightComponent
+@onready var collision: CollisionShape3D = $CollisionShape3D
+@onready var interaction_shape: CollisionShape3D = $Interact_Component/CollisionShape3D
+
 @export_category("Buoyancy")
 @export var probe_container: Node3D
 ## How strongly the water pushes up. (3.0 is a great value!)
 @export var float_force: float = 3.0
-## Friction. (Because we fixed the math, you may need to increase this to 2.0 or 4.0 to stop bouncing!)
+## Friction. (May need to increase this to 2.0 or 4.0 to stop bouncing!)
 @export var water_drag: float = 0.5
 @export var water_angular_drag: float = 0.5
 
@@ -31,10 +39,32 @@ var hold_target: Marker3D = null
 var holder: Node3D = null
 
 # --- GLOBAL STATE TRACKING ---
-var _is_player_flying: bool = false
-
-# --- WATER TRACKING ---
+var is_locked: bool = false:
+	set(value):
+		is_locked = value
+		if is_locked:
+			if mesh:
+				mesh.material_overlay = null
+			if label:
+				label.hide()
 var is_in_water: bool = false:
+	set(value):
+		if is_in_water != value:
+			is_in_water = value
+			_update_process_state()
+	set(value):
+		is_locked = value
+		if is_locked:
+			if mesh:
+				mesh.material_overlay = null
+			if label:
+				label.hide()
+	set(value):
+		if is_in_water != value:
+			is_in_water = value
+			_update_process_state()
+var _is_player_flying: bool = false
+# --- WATER TRACKING ---
 	set(value):
 		if is_in_water != value:
 			is_in_water = value
@@ -42,8 +72,6 @@ var is_in_water: bool = false:
 
 var submerged: bool = false
 var current_water_node: Node3D = null
-
-var is_locked: bool = false:
 	set(value):
 		is_locked = value
 		if is_locked:
@@ -53,8 +81,6 @@ var is_locked: bool = false:
 				label.hide()
 
 var _grab_time: int = 0
-
-@onready var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 
 
 func _ready() -> void:
@@ -71,11 +97,11 @@ func _ready() -> void:
 
 	# Allow Rigidbody to sleep when sitting still
 	sleeping_state_changed.connect(_on_sleeping_state_changed)
-	
+
 	# Listen to the global Event Bus for state changes
 	if Events.noclip_toggled.is_connected(_on_noclip_toggled) == false:
 		Events.noclip_toggled.connect(_on_noclip_toggled)
-	
+
 	# Initialize process state
 	_update_process_state()
 
@@ -102,11 +128,11 @@ func _update_process_state() -> void:
 
 func _revert_warmup_deferred() -> void:
 	print("PickableObject: _revert_warmup_deferred() executing shader compilation.")
-	
+
 	# Wait for the GPU to actually render the transparent pipeline state
 	await get_tree().process_frame
 	await get_tree().process_frame
-	
+
 	if is_instance_valid(mesh):
 		_set_model_transparency(mesh, 0.0)
 
@@ -114,13 +140,13 @@ func _revert_warmup_deferred() -> void:
 func pick_up(target: Marker3D, player: Node3D) -> void:
 	if is_locked:
 		return
-		
+
 	print("PickableObject: pick_up() called. Grabbed: ", name)
 	_grab_time = Time.get_ticks_msec()
 	is_held = true
 	hold_target = target
 	holder = player
-	
+
 	if label:
 		label.hide()
 
@@ -129,7 +155,7 @@ func pick_up(target: Marker3D, player: Node3D) -> void:
 	freeze = false
 	sleeping = false
 	gravity_scale = 0.0
-	
+
 	if mesh:
 		_set_model_transparency(mesh, held_transparency)
 
@@ -140,7 +166,7 @@ func pick_up(target: Marker3D, player: Node3D) -> void:
 
 	add_collision_exception_with(holder)
 	_update_process_state()
-	
+
 	# Notify the rest of the game that this item was picked up
 	Events.item_picked_up.emit(self, holder)
 
@@ -148,7 +174,7 @@ func pick_up(target: Marker3D, player: Node3D) -> void:
 func drop() -> void:
 	if Time.get_ticks_msec() - _grab_time < 100:
 		return
-		
+
 	print("PickableObject: drop() called. Releasing: ", name)
 	is_held = false
 
@@ -190,7 +216,7 @@ func drop() -> void:
 		if cam_forward.y < -0.2:
 			var space_state := get_world_3d().direct_space_state
 			var intended_slide := (push_dir * 0.35) + velocity_offset
-			
+
 			var check_dir := intended_slide.normalized()
 			var check_dist := intended_slide.length() + 0.1
 			var ray_end := global_position + (check_dir * check_dist)
@@ -215,16 +241,16 @@ func drop() -> void:
 				var nudge_tween := create_tween()
 				(
 					nudge_tween
-					.tween_property(self, "global_position:x", target_pos.x, 0.15)
-					.set_trans(Tween.TRANS_SINE)
-					.set_ease(Tween.EASE_OUT)
+					. tween_property(self, "global_position:x", target_pos.x, 0.15)
+					. set_trans(Tween.TRANS_SINE)
+					. set_ease(Tween.EASE_OUT)
 				)
 				(
 					nudge_tween
-					.parallel()
-					.tween_property(self, "global_position:z", target_pos.z, 0.15)
-					.set_trans(Tween.TRANS_SINE)
-					.set_ease(Tween.EASE_OUT)
+					. parallel()
+					. tween_property(self, "global_position:z", target_pos.z, 0.15)
+					. set_trans(Tween.TRANS_SINE)
+					. set_ease(Tween.EASE_OUT)
 				)
 
 				nudge_tween.tween_callback(
@@ -239,7 +265,7 @@ func drop() -> void:
 			push_dir.y = 0.5
 			apply_central_impulse(push_dir * 5.0)
 
-		# Broadcast the drop event globally. The player's InteractionComponent 
+		# Broadcast the drop event globally. The player's InteractionComponent
 		# should connect to this signal and nullify its own variables.
 		Events.item_dropped.emit(self, holder)
 
@@ -249,7 +275,7 @@ func drop() -> void:
 	holder = null
 	if interact_comp:
 		interact_comp.is_currently_focused = false
-		
+
 	_update_process_state()
 
 
@@ -270,13 +296,16 @@ func _attempt_enable_collision(player: Node3D) -> void:
 
 
 func throw(impulse_vector: Vector3) -> void:
-	print("PickableObject: throw() called. Throwing: ", name, " with force: ", impulse_vector.length())
+	print(
+		"PickableObject: throw() called. Throwing: ", name, " with force: ", impulse_vector.length()
+	)
 	drop()
 	if not is_locked:
 		apply_central_impulse(impulse_vector)
 
 
 func _on_interact_component_focused() -> void:
+	print("PickableObject: _on_interact_component_focused() called. Highlighting object.")
 	if is_locked:
 		return
 
@@ -315,6 +344,7 @@ func _update_label_text() -> void:
 
 
 func _on_interact_component_unfocused() -> void:
+	print("PickableObject: _on_interact_component_unfocused() called. Removing highlight.")
 	if label:
 		label.hide()
 
@@ -325,7 +355,7 @@ func _physics_process(_delta: float) -> void:
 
 		# 1. APPLY OFFSETS FIRST
 		var player_pos: Vector3 = holder.global_position
-		
+
 		# Safely fetch the camera directly from the viewport
 		var cam_forward := Vector3.FORWARD
 		var cam: Camera3D = get_viewport().get_camera_3d()

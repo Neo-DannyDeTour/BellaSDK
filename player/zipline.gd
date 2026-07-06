@@ -115,6 +115,7 @@ func _on_unfocused() -> void:
 
 
 func _on_interact_component_interacted(player: CharacterBody3D) -> void:
+	print("Zipline: _on_interact_component_interacted() called. Engaging zipline.")
 	force_grab_zipline(player)
 
 
@@ -142,7 +143,7 @@ func force_grab_zipline(player: CharacterBody3D) -> void:
 	# FIXED: Use the facade getter instead of direct variable access
 	if player.has_method("has_zipline_cooldown") and player.has_zipline_cooldown():
 		print("Zipline: Player has cooldown. Rejecting grab.")
-		return  
+		return
 
 	if player and player.has_method("_on_zipline_grabbed"):
 		print("Zipline: Player accepted. Attaching to cable.")

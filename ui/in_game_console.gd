@@ -20,14 +20,36 @@ var match_index: int = -1
 var is_navigating_matches: bool = false
 
 var valid_commands: Array[String] = [
-	"help", "clear", "quit", "noclip", "iddqd", "idkfa", "kirov",
-	"sv_cheats", "soyuz", "motherlode", "konami",
-	"upupdowndownleftrightleftrightbastart", "showmethemoney",
-	"thereisnocowlevel", "whosyourdaddy", "dnkroz", "hesoyam",
-	"leavemealone", "impulse", "thegodfather", "colorblind",
-	"gamespeed", "highcontrast", "screenshake", "subtitles",
-	"mono_audio", "uiscale", "photosensitivity", "setfont",
-    "screenfilter"
+	"help",
+	"clear",
+	"quit",
+	"noclip",
+	"iddqd",
+	"idkfa",
+	"kirov",
+	"sv_cheats",
+	"soyuz",
+	"motherlode",
+	"konami",
+	"upupdowndownleftrightleftrightbastart",
+	"showmethemoney",
+	"thereisnocowlevel",
+	"whosyourdaddy",
+	"dnkroz",
+	"hesoyam",
+	"leavemealone",
+	"impulse",
+	"thegodfather",
+	"colorblind",
+	"gamespeed",
+	"highcontrast",
+	"screenshake",
+	"subtitles",
+	"mono_audio",
+	"uiscale",
+	"photosensitivity",
+	"setfont",
+	"screenfilter"
 ]
 
 var valid_colorblind_args: Array[String] = [
@@ -36,14 +58,35 @@ var valid_colorblind_args: Array[String] = [
 var valid_font_args: Array[String] = ["default", "dyslexic", "papyrus", "comic"]
 var valid_on_off_args: Array[String] = ["on", "off"]
 var valid_screenfilter_args: Array[String] = [
-	"off", "crt", "vhs", "pixelate", "toon", 
-	"gameboy", "glitch", "grain", "halftone", "nightvision", "kuwahara", "ascii", "90anime", 
-	"manga", "handdrawn", "moebius", "obra", "psychedelic", "botw", "ghibli", "reaction", "software",
-	"swirl", "mandelbrot"
+	"off",
+	"crt",
+	"vhs",
+	"pixelate",
+	"toon",
+	"gameboy",
+	"glitch",
+	"grain",
+	"halftone",
+	"nightvision",
+	"kuwahara",
+	"ascii",
+	"90anime",
+	"manga",
+	"handdrawn",
+	"moebius",
+	"obra",
+	"psychedelic",
+	"botw",
+	"ghibli",
+	"reaction",
+	"software",
+	"swirl",
+	"mandelbrot"
 ]
 
 var screen_filter_rect: ColorRect
 var cached_shaders: Dictionary = {}
+
 
 func _ready() -> void:
 	print("InGameConsole: _ready() initializing console.")
@@ -124,7 +167,7 @@ func _ready() -> void:
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("console") or (event.is_action_pressed("ui_cancel") and visible):
 		visible = !visible
-		
+
 		if visible:
 			get_tree().paused = true
 			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -150,7 +193,7 @@ func _on_line_edit_gui_input(event: InputEvent) -> void:
 				_navigate_history(-1)
 			else:
 				_navigate_suggestions(-1)
-		
+
 		elif event.keycode == KEY_DOWN:
 			print("InGameConsole: Key DOWN pressed.")
 			command_input.accept_event()
@@ -158,19 +201,19 @@ func _on_line_edit_gui_input(event: InputEvent) -> void:
 				_navigate_history(1)
 			else:
 				_navigate_suggestions(1)
-		
+
 		elif event.keycode == KEY_TAB:
 			print("InGameConsole: Key TAB pressed.")
 			command_input.accept_event()
 			if current_matches.size() > 0:
 				print("Tab Autocomplete triggered.")
 				var match_text: String = current_matches[max(0, match_index)]
-				
+
 				command_input.text = match_text + " "
 				command_input.caret_column = command_input.text.length()
-				
+
 				_on_text_changed(command_input.text)
-				
+
 		elif event.keycode in [KEY_ENTER, KEY_KP_ENTER]:
 			print("InGameConsole: Key ENTER pressed.")
 			command_input.accept_event()
@@ -182,7 +225,7 @@ func _on_text_changed(new_text: String) -> void:
 		return
 
 	var search_text := new_text.lstrip(" ").replace("  ", " ")
-	
+
 	if search_text == "":
 		_reset_suggestions()
 		return
@@ -195,7 +238,12 @@ func _on_text_changed(new_text: String) -> void:
 	else:
 		suggestion_label.visible = true
 		_update_suggestion_ui()
-		print("Console fetching suggestions for input: '", search_text, "' -> Found: ", current_matches.size())
+		print(
+			"Console fetching suggestions for input: '",
+			search_text,
+			"' -> Found: ",
+			current_matches.size()
+		)
 
 
 func _get_autocomplete_matches(current_text: String) -> Array[String]:
@@ -248,7 +296,7 @@ func _get_autocomplete_matches(current_text: String) -> Array[String]:
 
 func _navigate_suggestions(direction: int) -> void:
 	print("Navigating console suggestions. Direction: ", direction)
-	
+
 	match_index += direction
 	if match_index < 0:
 		match_index = current_matches.size() - 1
@@ -270,7 +318,7 @@ func _update_suggestion_ui() -> void:
 			bbcode += "[color=yellow]> " + current_matches[i] + "[/color]\n"
 		else:
 			bbcode += "[color=gray]  " + current_matches[i] + "[/color]\n"
-	
+
 	suggestion_label.text = bbcode.strip_edges()
 
 
@@ -299,7 +347,7 @@ func _navigate_history(direction: int) -> void:
 
 func write(message: String, color: String = "white") -> void:
 	print("Console Output: ", message)
-	
+
 	if not is_ui_ready:
 		message_history.append({"text": message, "color": color})
 		return
@@ -397,7 +445,10 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 			write("Tommy! Remember the good old times?!")
 		"impulse":
 			if args.size() > 0 and args[0] == "101":
-				write("Bella doesn't need to hear about safety preconscious. She's a highly trained professional", "white")
+				write(
+					"Bella doesn't need to hear about safety preconscious. She's a highly trained professional",
+					"white"
+				)
 			else:
 				write("Usage: sv_cheats 1", "red")
 		"thegodfather":
@@ -423,9 +474,15 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 						material.set_shader_parameter("mode", 4)
 						write("Achromatopsia (Monochrome) filter enabled.", "green")
 					_:
-						write("Unknown type. Available: normal, protanopia, deuteranopia, tritanopia, mono, achromatopsia", "red")
+						write(
+							"Unknown type. Available: normal, protanopia, deuteranopia, tritanopia, mono, achromatopsia",
+							"red"
+						)
 			else:
-				write("Usage: colorblind <type>\nTypes: normal, protanopia, deuteranopia, tritanopia, mono, achromatopsia", "yellow")
+				write(
+					"Usage: colorblind <type>\nTypes: normal, protanopia, deuteranopia, tritanopia, mono, achromatopsia",
+					"yellow"
+				)
 		"gamespeed":
 			if args.size() > 0:
 				var new_speed := args[0].to_float()
@@ -446,17 +503,23 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 		"screenshake":
 			if args.size() > 0:
 				var amount := args[0].to_float()
-				var duration := 1.0 
-				
+				var duration := 1.0
+
 				if args.size() > 1:
 					duration = args[1].to_float()
-					
+
 				if has_node("/root/Events"):
 					var events: Node = get_node("/root/Events")
 					if events.has_signal("screenshake_requested"):
 						events.emit_signal("screenshake_requested", amount, duration)
-				
-				var msg := "Screenshake: Intensity " + str(clampf(amount, 0.0, 16.0)) + ", Duration " + str(duration) + "s"
+
+				var msg := (
+					"Screenshake: Intensity "
+					+ str(clampf(amount, 0.0, 16.0))
+					+ ", Duration "
+					+ str(duration)
+					+ "s"
+				)
 				write(msg, "green")
 			else:
 				write("Usage: screenshake <intensity 0.0-16.0> [duration_in_seconds]", "yellow")
@@ -504,7 +567,10 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 				else:
 					write("Unknown font. Available: default, dyslexic, papyrus, comic", "red")
 			else:
-				write("Usage: setfont <font_name>\nAvailable: default, dyslexic, papyrus, comic", "yellow")
+				write(
+					"Usage: setfont <font_name>\nAvailable: default, dyslexic, papyrus, comic",
+					"yellow"
+				)
 		"screenfilter":
 			if args.size() > 0:
 				var filter_type: String = args[0].to_lower()
@@ -514,12 +580,12 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 					write("Screen filter disabled.", "green")
 				elif filter_type in valid_screenfilter_args:
 					var shader_path: String = ""
-					
+
 					if filter_type == "grain":
 						shader_path = "res://environment/grain.gdshader"
 					else:
 						shader_path = "res://vfx/" + filter_type + ".gdshader"
-						
+
 					if not cached_shaders.has(filter_type):
 						if ResourceLoader.exists(shader_path):
 							cached_shaders[filter_type] = load(shader_path)
@@ -534,8 +600,14 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 					screen_filter_rect.visible = true
 					write(filter_type.to_upper() + " filter enabled.", "green")
 				else:
-					write("Unknown filter. Available: off, crt, vhs, pixelate, toon, gameboy, glitch, grain, halftone, nightvision, kuwahara, ascii", "red")
+					write(
+						"Unknown filter. Available: off, crt, vhs, pixelate, toon, gameboy, glitch, grain, halftone, nightvision, kuwahara, ascii",
+						"red"
+					)
 			else:
-				write("Usage: screenfilter <type>\nAvailable: off, crt, vhs, pixelate, toon...", "yellow")
+				write(
+					"Usage: screenfilter <type>\nAvailable: off, crt, vhs, pixelate, toon...",
+					"yellow"
+				)
 		_:
 			write("Unknown command: '" + cmd + "'. Type 'help' for a list.", "red")
