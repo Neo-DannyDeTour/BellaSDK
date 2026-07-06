@@ -34,6 +34,7 @@ CsgToolkitAutoload="*uid://w8ad8q4lneis"
 KeycardSystem="*uid://0q0pxgqqqrbh"
 GraphicsManager="*uid://c165uw26ca5hj"
 ShockwaveManager3d="*uid://l8cg0oru71au"
+GlobalSettings="*uid://c1qd5kgpbvddv"
 
 [debug]
 
@@ -57,6 +58,10 @@ enabled=PackedStringArray("res://addons/KGB_Agent/plugin.cfg", "res://addons/Sun
 [filesystem]
 
 import/blender/enabled=false
+
+[gui]
+
+theme/custom_font="uid://dg3xyu4f8ta7g"
 
 [importer_defaults]
 

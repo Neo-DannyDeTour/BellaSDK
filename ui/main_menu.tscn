@@ -4,7 +4,13 @@
 [ext_resource type="Texture2D" uid="uid://dutrfuowe3e1q" path="res://assets/images/Concept/Key_art.PNG" id="1_ovrgc"]
 [ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="2_2o76q"]
 [ext_resource type="PackedScene" uid="uid://8m8l0uplgvm" path="res://ui/HorrorButton.tscn" id="3_kaxbk"]
-[ext_resource type="Script" uid="uid://c06mok6hxvipa" path="res://ui/fullscreen_control.gd" id="4_6bivr"]
+[ext_resource type="Script" uid="uid://dbuos71yhftq2" path="res://ui/options_menu.gd" id="5_lsdqh"]
+[ext_resource type="PackedScene" uid="uid://c15j43t1ffjw7" path="res://ui/video_options_panel.tscn" id="5_ubpvv"]
+[ext_resource type="PackedScene" uid="uid://b60lfsypp4cwo" path="res://ui/controls_panel.tscn" id="6_arv2f"]
+[ext_resource type="PackedScene" uid="uid://b5o5hk3behhk" path="res://ui/accessibility_panel.tscn" id="7_5klac"]
+[ext_resource type="PackedScene" uid="uid://yy0ptjchxmtl" path="res://ui/save_load_panel.tscn" id="8_lsdqh"]
+[ext_resource type="PackedScene" uid="uid://c2lwvhw1w368r" path="res://ui/audio_panel.tscn" id="9_jiymt"]
+[ext_resource type="PackedScene" uid="uid://da3q2bu5xkp72" path="res://ui/GameplayPanel.tscn" id="10_bgtsx"]
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_50h1w"]
 
@@ -107,456 +113,84 @@ text = "Bella Bittersweet: Tunnel Vision"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="Options" type="Panel" parent="." unique_id=1979166347]
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -441.0
-offset_top = -289.0
-offset_right = 441.0
-offset_bottom = 289.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="OptionsMenu" type="Control" parent="." unique_id=1105521583]
+unique_name_in_owner = true
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("5_lsdqh")
 
-[node name="Label" type="Label" parent="Options" unique_id=760161344]
+[node name="TabButtons" type="HBoxContainer" parent="OptionsMenu" unique_id=712872147]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="VideoButton" type="Button" parent="OptionsMenu/TabButtons" unique_id=603167491]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Graphics"
+
+[node name="AudioButton" type="Button" parent="OptionsMenu/TabButtons" unique_id=2106604539]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Audio"
+
+[node name="GameplayButton" type="Button" parent="OptionsMenu/TabButtons" unique_id=1138285378]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Gameplay"
+
+[node name="ControlsButton" type="Button" parent="OptionsMenu/TabButtons" unique_id=177390856]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Controls"
+
+[node name="AccessibilityButton" type="Button" parent="OptionsMenu/TabButtons" unique_id=250063746]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Accessibility"
+
+[node name="BackButton" type="Button" parent="OptionsMenu/TabButtons" unique_id=2140274583]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Back"
+
+[node name="VideoOptionsPanel" parent="OptionsMenu" unique_id=1944788422 instance=ExtResource("5_ubpvv")]
+unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -147.0
-offset_right = 147.0
-offset_bottom = 94.0
-grow_horizontal = 2
-theme_override_fonts/font = ExtResource("2_2o76q")
-theme_override_font_sizes/font_size = 32
-text = "Options"
-horizontal_alignment = 1
-vertical_alignment = 1
+offset_left = 179.0
+offset_top = 51.0
+offset_right = 1061.0
+offset_bottom = 629.0
 
-[node name="Back" parent="Options" unique_id=1724045716 instance=ExtResource("3_kaxbk")]
+[node name="AccessibilityPanel" parent="OptionsMenu" unique_id=1445857146 instance=ExtResource("7_5klac")]
+unique_name_in_owner = true
+layout_mode = 1
+offset_left = 179.0
+offset_top = 51.0
+offset_right = 1061.0
+offset_bottom = 629.0
+
+[node name="ControlsPanel" parent="OptionsMenu" unique_id=1661150765 instance=ExtResource("6_arv2f")]
+unique_name_in_owner = true
+layout_mode = 1
+offset_left = 179.0
+offset_top = 51.0
+offset_right = 1061.0
+offset_bottom = 629.0
+
+[node name="AudioPanel" parent="OptionsMenu" unique_id=755109423 instance=ExtResource("9_jiymt")]
+unique_name_in_owner = true
 layout_mode = 0
 anchors_preset = 0
 anchor_right = 0.0
 anchor_bottom = 0.0
-offset_right = 8.0
-offset_bottom = 8.0
 grow_horizontal = 1
 grow_vertical = 1
-custom_text = "Back"
 
-[node name="MarginContainer" type="MarginContainer" parent="Options" unique_id=75243293]
-layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-grow_horizontal = 2
-theme_override_constants/margin_top = 100
-
-[node name="OptionsButtons" type="VBoxContainer" parent="Options/MarginContainer" unique_id=16186041]
-layout_mode = 2
-
-[node name="HBoxContainer" type="HBoxContainer" parent="Options/MarginContainer/OptionsButtons" unique_id=1199260749]
-layout_mode = 2
-
-[node name="Contols" type="Button" parent="Options/MarginContainer/OptionsButtons/HBoxContainer" unique_id=1783187329]
-layout_mode = 2
-theme_override_fonts/font = ExtResource("2_2o76q")
-theme_override_font_sizes/font_size = 32
-text = "Controls"
-
-[node name="AccessibilityButton" type="Button" parent="Options/MarginContainer/OptionsButtons/HBoxContainer" unique_id=1386859692]
-layout_mode = 2
-text = "Accessibility
-"
-
-[node name="VBoxContainer" type="VBoxContainer" parent="Options" unique_id=426590616]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -219.0
-offset_top = -39.0
-offset_right = 219.0
-offset_bottom = 39.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="ResolutionContainer" type="HBoxContainer" parent="Options/VBoxContainer" unique_id=362797068]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="Options/VBoxContainer/ResolutionContainer" unique_id=1949453308]
-layout_mode = 2
-theme_override_fonts/font = ExtResource("2_2o76q")
-theme_override_font_sizes/font_size = 32
-text = "Resolution"
-
-[node name="ResolutionOptionButton" type="OptionButton" parent="Options/VBoxContainer/ResolutionContainer" unique_id=277477321]
+[node name="GameplayPanel" parent="OptionsMenu" unique_id=1532565924 instance=ExtResource("10_bgtsx")]
 unique_name_in_owner = true
-layout_mode = 2
-
-[node name="FullscreenControl" type="CheckBox" parent="Options/VBoxContainer" unique_id=84963542]
-layout_mode = 2
-theme_override_fonts/font = ExtResource("2_2o76q")
-theme_override_font_sizes/font_size = 32
-text = "Fullscreen"
-script = ExtResource("4_6bivr")
-
-[node name="MouseSensitivityContainer" type="HBoxContainer" parent="Options/VBoxContainer" unique_id=239103484]
-layout_mode = 2
-
-[node name="MouseSensitivityLabel" type="Label" parent="Options/VBoxContainer/MouseSensitivityContainer" unique_id=995227736]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_fonts/font = ExtResource("2_2o76q")
-theme_override_font_sizes/font_size = 32
-text = "Mouse Sensitivity"
-
-[node name="MouseSensitivityLine" type="LineEdit" parent="Options/VBoxContainer/MouseSensitivityContainer" unique_id=1418971371]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_fonts/font = ExtResource("2_2o76q")
-theme_override_font_sizes/font_size = 32
-placeholder_text = "0.05"
-alignment = 1
-
-[node name="MouseSensitivitySlider" type="HSlider" parent="Options/VBoxContainer/MouseSensitivityContainer" unique_id=1157526147]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(200, 0)
-layout_mode = 2
-size_flags_horizontal = 3
-min_value = 0.01
-max_value = 3.0
-step = 0.01
-value = 0.05
-
-[node name="FPSSettingContainer" type="HBoxContainer" parent="Options/VBoxContainer" unique_id=767427533]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="Options/VBoxContainer/FPSSettingContainer" unique_id=568846903]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Max Framerate"
-
-[node name="FPSOptionButton" type="OptionButton" parent="Options/VBoxContainer/FPSSettingContainer" unique_id=332259636]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="VSyncSettingContainer" type="HBoxContainer" parent="Options/VBoxContainer" unique_id=1786201877]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="Options/VBoxContainer/VSyncSettingContainer" unique_id=700873295]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "VSync"
-
-[node name="VSyncOptionButton" type="OptionButton" parent="Options/VBoxContainer/VSyncSettingContainer" unique_id=1724991678]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="FSRContainer" type="HBoxContainer" parent="Options/VBoxContainer" unique_id=2049310238]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="Options/VBoxContainer/FSRContainer" unique_id=130060986]
-layout_mode = 2
-text = "FSR Mode"
-
-[node name="FSROptionButton" type="OptionButton" parent="Options/VBoxContainer/FSRContainer" unique_id=81733496]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="AAContainer" type="HBoxContainer" parent="Options/VBoxContainer" unique_id=1673172509]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="Options/VBoxContainer/AAContainer" unique_id=1412213152]
-layout_mode = 2
-text = "Anti-Aliasing"
-
-[node name="AAOptionButton" type="OptionButton" parent="Options/VBoxContainer/AAContainer" unique_id=338059281]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="ControlsPanel" type="Panel" parent="." unique_id=653725202]
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -441.0
-offset_top = -289.0
-offset_right = 441.0
-offset_bottom = 289.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="BackControls" type="Button" parent="ControlsPanel" unique_id=776633126]
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -64.5
-offset_top = -73.0
-offset_right = 64.5
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_fonts/font = ExtResource("2_2o76q")
-theme_override_font_sizes/font_size = 64
-text = "Back"
-
-[node name="ResetButton" type="Button" parent="ControlsPanel" unique_id=1662859474]
-layout_mode = 1
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -8.0
-offset_top = -8.0
-grow_horizontal = 0
-grow_vertical = 0
-theme_override_fonts/font = ExtResource("2_2o76q")
-theme_override_font_sizes/font_size = 32
-text = "Reset Controls"
-
-[node name="VBoxContainer" type="VBoxContainer" parent="ControlsPanel" unique_id=2013107556]
 layout_mode = 0
-offset_left = 30.0
-offset_top = 30.0
-offset_right = 330.0
-offset_bottom = 70.0
-theme_override_constants/separation = 10
 
-[node name="RemapButtonTemplate" type="Button" parent="ControlsPanel/VBoxContainer" unique_id=1766891879]
-custom_minimum_size = Vector2(300, 0)
-layout_mode = 2
-theme_override_fonts/font = ExtResource("2_2o76q")
-toggle_mode = true
-
-[node name="ConflictPanel" type="PanelContainer" parent="ControlsPanel" unique_id=1975698769]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -40.0
-offset_bottom = 40.0
-grow_horizontal = 0
-
-[node name="ConflictLabel" type="Label" parent="ControlsPanel/ConflictPanel" unique_id=710127501]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 8
-theme_override_fonts/font = ExtResource("2_2o76q")
-
-[node name="AccessibilityPanel" type="Panel" parent="." unique_id=431138313]
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -441.0
-offset_top = -289.0
-offset_right = 441.0
-offset_bottom = 289.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="AccessibilityPanel" unique_id=1880548481]
-custom_minimum_size = Vector2(640, 0)
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -320.0
-offset_top = -50.5
-offset_right = 320.0
-offset_bottom = 50.5
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="BrightnessRow" type="HBoxContainer" parent="AccessibilityPanel/VBoxContainer" unique_id=476412237]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="AccessibilityPanel/VBoxContainer/BrightnessRow" unique_id=691327402]
-layout_mode = 2
-text = "Brightness"
-
-[node name="BrightnessLine" type="LineEdit" parent="AccessibilityPanel/VBoxContainer/BrightnessRow" unique_id=1110208814]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="BrightnessSlider" type="HSlider" parent="AccessibilityPanel/VBoxContainer/BrightnessRow" unique_id=945943110]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-max_value = 3.0
-step = 0.01
-value = 1.0
-
-[node name="ContrastRow" type="HBoxContainer" parent="AccessibilityPanel/VBoxContainer" unique_id=32356601]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="AccessibilityPanel/VBoxContainer/ContrastRow" unique_id=1440177983]
-layout_mode = 2
-text = "Contrast"
-
-[node name="ContrastLine" type="LineEdit" parent="AccessibilityPanel/VBoxContainer/ContrastRow" unique_id=1073436282]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="ContrastSlider" type="HSlider" parent="AccessibilityPanel/VBoxContainer/ContrastRow" unique_id=1797811631]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-max_value = 3.0
-step = 0.01
-value = 1.0
-
-[node name="SaturationRow" type="HBoxContainer" parent="AccessibilityPanel/VBoxContainer" unique_id=188704167]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="AccessibilityPanel/VBoxContainer/SaturationRow" unique_id=219917818]
-layout_mode = 2
-text = "Saturation"
-
-[node name="SaturationLine" type="LineEdit" parent="AccessibilityPanel/VBoxContainer/SaturationRow" unique_id=709576011]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="SaturationSlider" type="HSlider" parent="AccessibilityPanel/VBoxContainer/SaturationRow" unique_id=218519361]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-max_value = 3.0
-step = 0.01
-value = 1.0
-
-[node name="FOVRow" type="HBoxContainer" parent="AccessibilityPanel/VBoxContainer" unique_id=1997377428]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="AccessibilityPanel/VBoxContainer/FOVRow" unique_id=796633531]
-layout_mode = 2
-text = "FOV"
-
-[node name="FOVLine" type="LineEdit" parent="AccessibilityPanel/VBoxContainer/FOVRow" unique_id=361602091]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="FOVSlider" type="HSlider" parent="AccessibilityPanel/VBoxContainer/FOVRow" unique_id=1134095588]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-min_value = 10.0
-max_value = 150.0
-value = 75.0
-
-[node name="HBoxContainer" type="HBoxContainer" parent="AccessibilityPanel/VBoxContainer" unique_id=166703369]
-layout_mode = 2
-
-[node name="SprintFovCheckbox" type="CheckBox" parent="AccessibilityPanel/VBoxContainer/HBoxContainer" unique_id=1799810779]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Disable Sprint FOV"
-
-[node name="BackAccessibilityButton" type="Button" parent="AccessibilityPanel" unique_id=1101262896]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -22.5
-offset_top = -31.0
-offset_right = 22.5
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_fonts/font = ExtResource("2_2o76q")
-theme_override_font_sizes/font_size = 64
-text = "Back"
-
-[node name="SaveLoadPanel" type="Panel" parent="." unique_id=377481609]
-visible = false
-custom_minimum_size = Vector2(800, 600)
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -400.0
-offset_top = -300.0
-offset_right = 400.0
-offset_bottom = 300.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="MarginContainer" type="MarginContainer" parent="SaveLoadPanel" unique_id=1691621012]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -277.0
-offset_top = -435.5
-offset_right = 276.0
-offset_bottom = 435.5
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/margin_left = 32
-theme_override_constants/margin_top = 150
-theme_override_constants/margin_right = 32
-theme_override_constants/margin_bottom = 32
-
-[node name="VBoxContainer" type="VBoxContainer" parent="SaveLoadPanel/MarginContainer" unique_id=514304003]
-layout_mode = 2
-
-[node name="HBoxContainer" type="HBoxContainer" parent="SaveLoadPanel/MarginContainer/VBoxContainer" unique_id=923057019]
-layout_mode = 2
-
-[node name="SaveLoadTitle" type="Label" parent="SaveLoadPanel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=233848958]
-unique_name_in_owner = true
-layout_mode = 2
-text = "SAVE GAME"
-
-[node name="Control" type="Control" parent="SaveLoadPanel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=564041884]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="CloseSaveMenuButton" type="Button" parent="SaveLoadPanel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=2020433397]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Back"
-
-[node name="CreateNewSaveButton" type="Button" parent="SaveLoadPanel/MarginContainer/VBoxContainer" unique_id=1759943659]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 50)
-layout_mode = 2
-text = "+ CREATE NEW SAVE"
-
-[node name="ScrollContainer" type="ScrollContainer" parent="SaveLoadPanel/MarginContainer/VBoxContainer" unique_id=1722428261]
-custom_minimum_size = Vector2(300, 600)
-layout_mode = 2
-size_flags_vertical = 3
-horizontal_scroll_mode = 0
-
-[node name="SaveListContainer" type="VBoxContainer" parent="SaveLoadPanel/MarginContainer/VBoxContainer/ScrollContainer" unique_id=886901956]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(300, 600)
-layout_mode = 2
-size_flags_horizontal = 3
-
-[connection signal="pressed" from="MarginContainer/MainButtons/Options" to="." method="_on_options_pressed"]
-[connection signal="pressed" from="MarginContainer/MainButtons/Exit" to="." method="_on_exit_pressed"]
-[connection signal="pressed" from="Options/Back" to="." method="_on_back_pressed"]
-[connection signal="pressed" from="Options/MarginContainer/OptionsButtons/HBoxContainer/Contols" to="." method="_on_contols_pressed"]
-[connection signal="toggled" from="Options/VBoxContainer/FullscreenControl" to="Options/VBoxContainer/FullscreenControl" method="_on_toggled"]
-[connection signal="pressed" from="ControlsPanel/BackControls" to="." method="_on_back_controls_pressed"]
-[connection signal="pressed" from="ControlsPanel/ResetButton" to="." method="_on_reset_button_pressed"]
+[node name="SaveLoadPanel" parent="." unique_id=1719296314 instance=ExtResource("8_lsdqh")]

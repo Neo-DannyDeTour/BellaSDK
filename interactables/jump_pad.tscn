@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://uj3w4ru83pkl"]
+
+[ext_resource type="Script" uid="uid://68jq6nfjih21" path="res://interactables/jump_pad.gd" id="1_1t17a"]
+
+[node name="jump_pad" type="Area3D" unique_id=1306747576]
+script = ExtResource("1_1t17a")

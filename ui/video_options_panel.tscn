@@ -1,0 +1,152 @@
+[gd_scene format=3 uid="uid://c15j43t1ffjw7"]
+
+[ext_resource type="Script" uid="uid://d1sra0p7nb585" path="res://ui/video_options_panel.gd" id="1_ebbri"]
+[ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="1_x0cy0"]
+[ext_resource type="PackedScene" uid="uid://8m8l0uplgvm" path="res://ui/HorrorButton.tscn" id="2_ebbri"]
+[ext_resource type="Script" uid="uid://c06mok6hxvipa" path="res://ui/fullscreen_control.gd" id="3_pq2we"]
+
+[node name="VideoOptions" type="Panel" unique_id=1944788422]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -441.0
+offset_top = -289.0
+offset_right = 441.0
+offset_bottom = 289.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_ebbri")
+
+[node name="Label" type="Label" parent="." unique_id=2040522153]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -147.0
+offset_right = 147.0
+offset_bottom = 94.0
+grow_horizontal = 2
+theme_override_fonts/font = ExtResource("1_x0cy0")
+theme_override_font_sizes/font_size = 32
+text = "Options"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Back" parent="." unique_id=929896540 instance=ExtResource("2_ebbri")]
+layout_mode = 0
+anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_right = 8.0
+offset_bottom = 8.0
+grow_horizontal = 1
+grow_vertical = 1
+custom_text = "Back"
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1397208820]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+grow_horizontal = 2
+theme_override_constants/margin_top = 100
+
+[node name="OptionsButtons" type="VBoxContainer" parent="MarginContainer" unique_id=1642721521]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/OptionsButtons" unique_id=1809189918]
+layout_mode = 2
+
+[node name="ControlsButton" type="Button" parent="MarginContainer/OptionsButtons/HBoxContainer" unique_id=1003515985]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("1_x0cy0")
+theme_override_font_sizes/font_size = 32
+text = "Controls"
+
+[node name="AccessibilityButton" type="Button" parent="MarginContainer/OptionsButtons/HBoxContainer" unique_id=904302339]
+layout_mode = 2
+text = "Accessibility
+"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=2066477877]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -219.0
+offset_top = -39.0
+offset_right = 219.0
+offset_bottom = 39.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ResolutionContainer" type="HBoxContainer" parent="VBoxContainer" unique_id=474475190]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/ResolutionContainer" unique_id=1371178557]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("1_x0cy0")
+theme_override_font_sizes/font_size = 32
+text = "Resolution"
+
+[node name="ResolutionOptionButton" type="OptionButton" parent="VBoxContainer/ResolutionContainer" unique_id=1477684047]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="FullscreenControl" type="CheckBox" parent="VBoxContainer" unique_id=1528103789]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("1_x0cy0")
+theme_override_font_sizes/font_size = 32
+text = "Fullscreen"
+script = ExtResource("3_pq2we")
+
+[node name="FPSSettingContainer" type="HBoxContainer" parent="VBoxContainer" unique_id=1521660342]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/FPSSettingContainer" unique_id=241894333]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Max Framerate"
+
+[node name="FPSOptionButton" type="OptionButton" parent="VBoxContainer/FPSSettingContainer" unique_id=1195211591]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VSyncSettingContainer" type="HBoxContainer" parent="VBoxContainer" unique_id=1757429206]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/VSyncSettingContainer" unique_id=1827045058]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "VSync"
+
+[node name="VSyncOptionButton" type="OptionButton" parent="VBoxContainer/VSyncSettingContainer" unique_id=96274167]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="FSRContainer" type="HBoxContainer" parent="VBoxContainer" unique_id=1372662853]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/FSRContainer" unique_id=1087673016]
+layout_mode = 2
+text = "FSR Mode"
+
+[node name="FSROptionButton" type="OptionButton" parent="VBoxContainer/FSRContainer" unique_id=1097038544]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="AAContainer" type="HBoxContainer" parent="VBoxContainer" unique_id=364432574]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/AAContainer" unique_id=1972856726]
+layout_mode = 2
+text = "Anti-Aliasing"
+
+[node name="AAOptionButton" type="OptionButton" parent="VBoxContainer/AAContainer" unique_id=1153147286]
+unique_name_in_owner = true
+layout_mode = 2
+
+[connection signal="toggled" from="VBoxContainer/FullscreenControl" to="VBoxContainer/FullscreenControl" method="_on_toggled"]

@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://da3q2bu5xkp72"]
+
+[ext_resource type="Script" uid="uid://biu52uuyxi5n" path="res://ui/gameplay_panel.gd" id="1_sq5h0"]
+
+[node name="GameplayPanel" type="Panel" unique_id=1532565924]
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("1_sq5h0")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1594872106]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="HeadbobCheckbox" type="CheckBox" parent="VBoxContainer" unique_id=817980614]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="CrosshairCheckbox" type="CheckBox" parent="VBoxContainer" unique_id=75308936]
+unique_name_in_owner = true
+layout_mode = 2

@@ -1,0 +1,47 @@
+[gd_scene format=3 uid="uid://c2lwvhw1w368r"]
+
+[ext_resource type="Script" uid="uid://cimt2k5d53xhu" path="res://ui/audio_panel.gd" id="1_vmtda"]
+
+[node name="AudioPanel" type="Panel" unique_id=755109423]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_vmtda")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=937005811]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="MasterRow" type="HBoxContainer" parent="VBoxContainer" unique_id=1536459648]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/MasterRow" unique_id=695135965]
+layout_mode = 2
+text = "Master Volume"
+
+[node name="MasterSlider" type="HSlider" parent="VBoxContainer/MasterRow" unique_id=672617986]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SFXRow" type="HBoxContainer" parent="VBoxContainer" unique_id=1399529447]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/SFXRow" unique_id=490748844]
+layout_mode = 2
+
+[node name="SFXSlider" type="HSlider" parent="VBoxContainer/SFXRow" unique_id=54287623]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="MusicRow" type="HBoxContainer" parent="VBoxContainer" unique_id=1888860139]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/MusicRow" unique_id=1291749741]
+layout_mode = 2
+
+[node name="MusicSlider" type="HSlider" parent="VBoxContainer/MusicRow" unique_id=1348410465]
+unique_name_in_owner = true
+layout_mode = 2

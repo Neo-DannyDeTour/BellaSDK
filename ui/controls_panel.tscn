@@ -1,0 +1,79 @@
+[gd_scene format=3 uid="uid://b60lfsypp4cwo"]
+
+[ext_resource type="Script" uid="uid://cmo4glk0cv6wb" path="res://ui/controls_panel.gd" id="1_q5nxy"]
+[ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="1_q31ga"]
+
+[node name="ControlsPanel" type="Panel" unique_id=1661150765]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -441.0
+offset_top = -289.0
+offset_right = 441.0
+offset_bottom = 289.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_q5nxy")
+
+[node name="BackControls" type="Button" parent="." unique_id=1623519218]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -64.5
+offset_top = -73.0
+offset_right = 64.5
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_fonts/font = ExtResource("1_q31ga")
+theme_override_font_sizes/font_size = 64
+text = "Back"
+
+[node name="ResetButton" type="Button" parent="." unique_id=870217602]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -8.0
+offset_top = -8.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_fonts/font = ExtResource("1_q31ga")
+theme_override_font_sizes/font_size = 32
+text = "Reset Controls"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1186022108]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 30.0
+offset_right = 330.0
+offset_bottom = 70.0
+theme_override_constants/separation = 10
+
+[node name="RemapButtonTemplate" type="Button" parent="VBoxContainer" unique_id=118083260]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("1_q31ga")
+toggle_mode = true
+
+[node name="ConflictPanel" type="PanelContainer" parent="." unique_id=1863091515]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -40.0
+offset_bottom = 40.0
+grow_horizontal = 0
+
+[node name="ConflictLabel" type="Label" parent="ConflictPanel" unique_id=1444255497]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_fonts/font = ExtResource("1_q31ga")

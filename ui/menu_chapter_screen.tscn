@@ -15,7 +15,7 @@ description = "Уровень, на котором есть все геймпл�
 
 This is where you can find all the gameplay mechanics and effects"
 image = ExtResource("3_ef8iv")
-scene_path = "uid://omwvkueo82i7"
+scene_path = "uid://dn6pth4ryiv4s"
 metadata/_custom_type_script = "uid://45jvq8yps1jm"
 
 [sub_resource type="Resource" id="Resource_h04da"]

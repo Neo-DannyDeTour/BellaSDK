@@ -1,0 +1,93 @@
+[gd_scene format=3 uid="uid://yy0ptjchxmtl"]
+
+[ext_resource type="Script" uid="uid://bv7v1wblts54y" path="res://ui/save_load_panel.gd" id="1_ifwmm"]
+
+[node name="SaveLoadPanel" type="Panel" unique_id=1719296314]
+visible = false
+custom_minimum_size = Vector2(800, 600)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -300.0
+offset_right = 400.0
+offset_bottom = 300.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_ifwmm")
+
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1815836209]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -277.0
+offset_top = -435.5
+offset_right = 276.0
+offset_bottom = 435.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 150
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 32
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=957529261]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=1526560678]
+layout_mode = 2
+
+[node name="SaveLoadTitle" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=1653546332]
+unique_name_in_owner = true
+layout_mode = 2
+text = "SAVE GAME"
+
+[node name="Control" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=1721800097]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CloseSaveMenuButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=1490033104]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Back"
+
+[node name="CreateNewSaveButton" type="Button" parent="MarginContainer/VBoxContainer" unique_id=1828245050]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+text = "+ CREATE NEW SAVE"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/VBoxContainer" unique_id=1986193705]
+custom_minimum_size = Vector2(300, 600)
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="SaveListContainer" type="VBoxContainer" parent="MarginContainer/VBoxContainer/ScrollContainer" unique_id=437335403]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 600)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SaveListContainer" type="VBoxContainer" parent="." unique_id=1381065982]
+layout_mode = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="SaveSlotTemplate" type="HBoxContainer" parent="SaveListContainer" unique_id=2032570648]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SaveNameLabel" type="Label" parent="SaveListContainer/SaveSlotTemplate" unique_id=1718199573]
+layout_mode = 2
+
+[node name="LoadButton" type="Button" parent="SaveListContainer/SaveSlotTemplate" unique_id=1298628787]
+layout_mode = 2
+
+[node name="DeleteButton" type="Button" parent="SaveListContainer/SaveSlotTemplate" unique_id=1462589503]
+layout_mode = 2

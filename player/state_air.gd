@@ -12,10 +12,20 @@ var coyote_timer: float = 0.0
 var jump_buffer_timer: float = 0.0
 var has_jumped: bool = false
 
+var is_launched: bool = false
+var launch_gravity: float = 9.8
+var launch_fall_gravity: float = 9.8
+
 
 func enter(msg: Dictionary = {}) -> void:
 	print("StateAir: Entered air state.")
 	has_jumped = msg.has("jump") and msg["jump"] == true
+	
+	is_launched = msg.has("jump_pad") and msg["jump_pad"] == true
+	if is_launched:
+		print("StateAir: Player is caught in a jump pad trajectory.")
+		launch_gravity = msg.get("launch_gravity", 9.8) as float
+		launch_fall_gravity = msg.get("launch_fall_gravity", 9.8) as float
 
 	var loco: Node = player.locomotion_component
 
@@ -37,7 +47,9 @@ func enter(msg: Dictionary = {}) -> void:
 func physics_update(delta: float) -> void:
 	_handle_gravity(delta)
 	_handle_timers(delta)
-	_handle_jump_input()
+	
+	if not is_launched:
+		_handle_jump_input()
 
 	var loco: Node = player.locomotion_component
 	var env: Node = player.environment_component
@@ -51,7 +63,7 @@ func physics_update(delta: float) -> void:
 	_apply_air_movement(delta, input_dir)
 
 	# 2. THE STEERING BOOST
-	if env.in_updraft and input_dir != Vector2.ZERO:
+	if env.in_updraft and input_dir != Vector2.ZERO and not is_launched:
 		var walk_dir := (
 			(player.global_transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
 		)
@@ -60,6 +72,12 @@ func physics_update(delta: float) -> void:
 
 	loco.last_velocity = player.velocity
 	player.move_and_slide()
+	
+	# If launched and we hit a wall, break the launch lock to restore air control
+	if is_launched and player.get_slide_collision_count() > 0:
+		if not player.is_on_floor():
+			is_launched = false
+			print("StateAir: Collision detected mid-launch. Restoring air control.")
 
 	_check_transitions()
 	_update_components(delta, input_dir)
@@ -72,6 +90,13 @@ func physics_update(delta: float) -> void:
 func _handle_gravity(delta: float) -> void:
 	var loco: Node = player.locomotion_component
 	var env: Node = player.environment_component
+
+	if is_launched:
+		if player.velocity.y < 0.0:
+			player.velocity.y -= launch_fall_gravity * delta
+		else:
+			player.velocity.y -= launch_gravity * delta
+		return
 
 	if env.in_updraft:
 		if player.is_on_ceiling():
@@ -120,6 +145,10 @@ func _perform_coyote_jump() -> void:
 
 
 func _apply_air_movement(delta: float, input_dir: Vector2) -> void:
+	# Skip air drag and steering if we are locked in a jump pad arc
+	if is_launched:
+		return
+
 	var loco: Node = player.locomotion_component
 	var target_dir: Vector3 = (
 		(player.transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()

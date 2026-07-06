@@ -1,0 +1,156 @@
+[gd_scene format=3 uid="uid://b5o5hk3behhk"]
+
+[ext_resource type="Script" uid="uid://y4udm76gj87c" path="res://ui/accessibility_panel.gd" id="1_cw2tg"]
+[ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="1_mh53v"]
+
+[node name="AccessibilityPanel" type="Panel" unique_id=1445857146]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -441.0
+offset_top = -289.0
+offset_right = 441.0
+offset_bottom = 289.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_cw2tg")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1955520081]
+custom_minimum_size = Vector2(640, 0)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -320.0
+offset_top = -50.5
+offset_right = 320.0
+offset_bottom = 50.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BrightnessRow" type="HBoxContainer" parent="VBoxContainer" unique_id=1643653765]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/BrightnessRow" unique_id=686284605]
+layout_mode = 2
+text = "Brightness"
+
+[node name="BrightnessLine" type="LineEdit" parent="VBoxContainer/BrightnessRow" unique_id=976196478]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="BrightnessSlider" type="HSlider" parent="VBoxContainer/BrightnessRow" unique_id=1042379306]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 3.0
+step = 0.01
+value = 1.0
+
+[node name="ContrastRow" type="HBoxContainer" parent="VBoxContainer" unique_id=24904282]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/ContrastRow" unique_id=1266853019]
+layout_mode = 2
+text = "Contrast"
+
+[node name="ContrastLine" type="LineEdit" parent="VBoxContainer/ContrastRow" unique_id=1430935328]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ContrastSlider" type="HSlider" parent="VBoxContainer/ContrastRow" unique_id=1909607972]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 3.0
+step = 0.01
+value = 1.0
+
+[node name="SaturationRow" type="HBoxContainer" parent="VBoxContainer" unique_id=679676210]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/SaturationRow" unique_id=749161311]
+layout_mode = 2
+text = "Saturation"
+
+[node name="SaturationLine" type="LineEdit" parent="VBoxContainer/SaturationRow" unique_id=2022102502]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SaturationSlider" type="HSlider" parent="VBoxContainer/SaturationRow" unique_id=2049954714]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 3.0
+step = 0.01
+value = 1.0
+
+[node name="FOVRow" type="HBoxContainer" parent="VBoxContainer" unique_id=151633125]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/FOVRow" unique_id=785792894]
+layout_mode = 2
+text = "FOV"
+
+[node name="FOVLine" type="LineEdit" parent="VBoxContainer/FOVRow" unique_id=199507414]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="FOVSlider" type="HSlider" parent="VBoxContainer/FOVRow" unique_id=723988044]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 10.0
+max_value = 150.0
+value = 75.0
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer" unique_id=1459993854]
+layout_mode = 2
+
+[node name="SprintFovCheckbox" type="CheckBox" parent="VBoxContainer/HBoxContainer" unique_id=1933881178]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Disable Sprint FOV"
+
+[node name="MouseSensitivityRow" type="HBoxContainer" parent="VBoxContainer" unique_id=422392785]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer/MouseSensitivityRow" unique_id=1649790367]
+layout_mode = 2
+text = "Mouse Sensitivity"
+
+[node name="MouseSensitivityLine" type="LineEdit" parent="VBoxContainer/MouseSensitivityRow" unique_id=1808565643]
+unique_name_in_owner = true
+layout_mode = 2
+text = "0.5"
+
+[node name="MouseSensitivitySlider" type="HSlider" parent="VBoxContainer/MouseSensitivityRow" unique_id=1461459401]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.01
+max_value = 2.0
+step = 0.1
+value = 0.01
+
+[node name="BackAccessibilityButton" type="Button" parent="." unique_id=1836055298]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -22.5
+offset_top = -31.0
+offset_right = 22.5
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_fonts/font = ExtResource("1_mh53v")
+theme_override_font_sizes/font_size = 64
+text = "Back"
