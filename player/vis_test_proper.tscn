@@ -103,7 +103,7 @@ metadata/_custom_type_script = "uid://cl68g6jurgp0h"
 [node name="Player" parent="." unique_id=1502339238 instance=ExtResource("6_ns8v3")]
 transform = Transform3D(0.49999997, 0, -0.86602545, 0, 1, 0, 0.86602545, 0, 0.49999997, 0, 3, 3.9127436)
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1907814161]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1907814161 groups=["level_environment"]]
 environment = SubResource("Environment_46sxa")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="WorldEnvironment" unique_id=798207688]

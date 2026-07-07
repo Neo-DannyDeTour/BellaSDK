@@ -16,13 +16,13 @@ shader_parameter/max_intensity = 0.050000002375
 [node name="PickableObject" type="RigidBody3D" unique_id=594279821 node_paths=PackedStringArray("interact_comp", "mesh", "label", "probe_container")]
 collision_layer = 4
 script = ExtResource("1_gl7hy")
+float_force = 1.3
+water_drag = 6.0
+water_angular_drag = 6.0
 interact_comp = NodePath("Interact_Component")
 mesh = NodePath("MeshInstance3D")
 label = NodePath("Label3D")
 probe_container = NodePath("ProbeContainer")
-float_force = 1.3
-water_drag = 6.0
-water_angular_drag = 6.0
 
 [node name="Interact_Component" type="Node" parent="." unique_id=518401438]
 script = ExtResource("2_spxwp")

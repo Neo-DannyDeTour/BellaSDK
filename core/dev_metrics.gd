@@ -174,27 +174,29 @@ func _format_metric_row(title: String, sum_val: float, history: Array[float]) ->
 	if history.is_empty():
 		return ""
 
-	var avg_val: float = sum_val / history.size()
-	var min_val: float = history.min()
-	var max_val: float = history.max()
-	var last_val: float = history.back()
-
-	return (
-		"[cell]%s [/cell][cell][color=%s]%.2f[/color][/cell]" \
-			+ "[cell][color=%s]%.2f[/color][/cell][cell][color=%s]%.2f[/color][/cell]" \
-			+ "[cell][color=%s]%.2f[/color][/cell]\n"
-		% [
-			title,
-			_get_ms_color(avg_val),
-			avg_val,
-			_get_ms_color(min_val),
-			min_val,
-			_get_ms_color(max_val),
-			max_val,
-			_get_ms_color(last_val),
-			last_val
-		]
+	# Explicitly cast to float to prevent Godot string formatting errors with Variants
+	var avg_val: float = float(sum_val) / float(history.size())
+	var min_val: float = float(history.min())
+	var max_val: float = float(history.max())
+	var last_val: float = float(history.back())
+	
+	var row_format: String = (
+		"[cell]%s [/cell][cell][color=%s]%.2f[/color][/cell]" +
+		"[cell][color=%s]%.2f[/color][/cell][cell][color=%s]%.2f[/color][/cell]" +
+		"[cell][color=%s]%.2f[/color][/cell]\n"
 	)
+
+	return row_format % [
+		title,
+		_get_ms_color(avg_val),
+		avg_val,
+		_get_ms_color(min_val),
+		min_val,
+		_get_ms_color(max_val),
+		max_val,
+		_get_ms_color(last_val),
+		last_val
+	]
 
 
 func _get_ms_color(ms: float) -> String:

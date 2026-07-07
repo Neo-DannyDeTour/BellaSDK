@@ -4,8 +4,13 @@ class_name MainMenu
 const DEFAULT_SENSITIVITY: float = 0.5
 const CHAPTER_SCREEN: PackedScene = preload("res://ui/menu_chapter_screen.tscn")
 
+@export_group("Options Tabs & Navigation")
+@export var back_buttons: Array[Button]
+@export var tab_buttons: Array[Button]
+@export var option_panels: Array[Control]
+
 @onready var main_buttons: VBoxContainer = $MarginContainer/MainButtons
-@onready var options_menu: OptionsRouter = %OptionsMenu
+@onready var options_menu: Control = %CenterContainer
 @onready var save_load_panel: Panel = $SaveLoadPanel
 
 # Main Menu Buttons
@@ -20,10 +25,12 @@ const CHAPTER_SCREEN: PackedScene = preload("res://ui/menu_chapter_screen.tscn")
 var has_calibrated: bool = false
 var max_mouse_speed: float = 0.0
 
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	print("UI: MainMenu initialized.")
 	
+	# Connect Main Buttons
 	continue_button.pressed.connect(_on_resume_pressed)
 	new_game_button.pressed.connect(_on_new_game_pressed)
 	restart_button.pressed.connect(_on_start_game_pressed)
@@ -31,15 +38,25 @@ func _ready() -> void:
 	load_button.pressed.connect(_on_load_pressed)
 	exit_button.pressed.connect(_on_exit_pressed)
 	
-	options_menu.back_requested.connect(_return_to_main_buttons)
+	# Connect Navigation Buttons
+	for btn: Button in back_buttons:
+		if btn:
+			btn.pressed.connect(_return_to_main_buttons)
+			
+	# Connect Options Tab Buttons
+	for i: int in range(tab_buttons.size()):
+		var btn: Button = tab_buttons[i]
+		if btn:
+			btn.pressed.connect(_on_tab_pressed.bind(i))
 	
 	_check_game_context()
 	_return_to_main_buttons()
 
 
 func _check_game_context() -> void:
+	print("UI: Checking game context for SaveManager and Pause state.")
 	if SaveManager.has_method("has_saves"):
-		var saves_exist: bool = SaveManager.has_saves()
+		var saves_exist: bool = SaveManager.has_saves() as bool
 		load_button.visible = saves_exist
 
 	if get_parent().has_method("toggle_pause"):
@@ -64,7 +81,7 @@ func _on_resume_pressed() -> void:
 	print("UI: Player clicked Resume.")
 	var parent: Node = get_parent()
 	if parent and parent.has_method("toggle_pause"):
-		parent.toggle_pause()
+		parent.call("toggle_pause")
 
 
 func _on_new_game_pressed() -> void:
@@ -90,12 +107,18 @@ func _on_start_game_pressed() -> void:
 func _on_options_pressed() -> void:
 	print("UI: Player clicked Options.")
 	main_buttons.visible = false
+	save_load_panel.visible = false
 	options_menu.visible = true
+	
+	# Open the first tab automatically so the panel isn't empty
+	if tab_buttons.size() > 0 and option_panels.size() > 0:
+		_on_tab_pressed(0)
 
 
 func _on_load_pressed() -> void:
 	print("UI: Player clicked Load Game.")
 	main_buttons.visible = false
+	options_menu.visible = false
 	save_load_panel.visible = true
 
 
@@ -104,7 +127,15 @@ func _on_exit_pressed() -> void:
 	get_tree().quit()
 
 
+func _on_tab_pressed(tab_index: int) -> void:
+	print("UI: Switched to options tab index: ", tab_index)
+	for i: int in range(option_panels.size()):
+		if option_panels[i]:
+			option_panels[i].visible = (i == tab_index)
+
+
 func _apply_bucket_calibration() -> void:
+	print("System: Running mouse sensitivity bucket calibration.")
 	# If the user has already manually set a sensitivity, skip calibration
 	var saved_sens: Variant = GlobalSettings.get_setting("Settings", "mouse_sensitivity", null)
 	if saved_sens != null:
@@ -117,25 +148,25 @@ func _apply_bucket_calibration() -> void:
 	# 7-TIER BUCKET SYSTEM (0.05 to 0.70)
 	if max_mouse_speed > 6500.0:
 		auto_sens = 0.70
-		print("Calibrated: TIER 7 - Extreme (Speed: ", max_mouse_speed, ")")
+		print("System: Calibrated TIER 7 - Extreme (Speed: ", max_mouse_speed, ")")
 	elif max_mouse_speed > 5000.0:
 		auto_sens = 0.50
-		print("Calibrated: TIER 6 - Fast (Speed: ", max_mouse_speed, ")")
+		print("System: Calibrated TIER 6 - Fast (Speed: ", max_mouse_speed, ")")
 	elif max_mouse_speed > 4000.0:
 		auto_sens = 0.40
-		print("Calibrated: TIER 5 - Moderately Fast (Speed: ", max_mouse_speed, ")")
+		print("System: Calibrated TIER 5 - Moderately Fast (Speed: ", max_mouse_speed, ")")
 	elif max_mouse_speed > 3000.0:
 		auto_sens = 0.30
-		print("Calibrated: TIER 4 - Average (Speed: ", max_mouse_speed, ")")
+		print("System: Calibrated TIER 4 - Average (Speed: ", max_mouse_speed, ")")
 	elif max_mouse_speed > 2000.0:
 		auto_sens = 0.20
-		print("Calibrated: TIER 3 - Moderately Low (Speed: ", max_mouse_speed, ")")
+		print("System: Calibrated TIER 3 - Moderately Low (Speed: ", max_mouse_speed, ")")
 	elif max_mouse_speed > 1000.0:
 		auto_sens = 0.10
-		print("Calibrated: TIER 2 - Low (Speed: ", max_mouse_speed, ")")
+		print("System: Calibrated TIER 2 - Low (Speed: ", max_mouse_speed, ")")
 	else:
 		auto_sens = 0.05
-		print("Calibrated: TIER 1 - Precise/Arm Aimer (Speed: ", max_mouse_speed, ")")
+		print("System: Calibrated TIER 1 - Precise (Speed: ", max_mouse_speed, ")")
 
 	GlobalSettings.save_setting("Settings", "mouse_sensitivity", auto_sens)
 

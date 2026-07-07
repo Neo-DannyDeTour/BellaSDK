@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://b5o5hk3behhk"]
 
 [ext_resource type="Script" uid="uid://y4udm76gj87c" path="res://ui/accessibility_panel.gd" id="1_cw2tg"]
-[ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="1_mh53v"]
 
 [node name="AccessibilityPanel" type="Panel" unique_id=1445857146]
 anchors_preset = 8
@@ -137,20 +136,3 @@ min_value = 0.01
 max_value = 2.0
 step = 0.1
 value = 0.01
-
-[node name="BackAccessibilityButton" type="Button" parent="." unique_id=1836055298]
-unique_name_in_owner = true
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -22.5
-offset_top = -31.0
-offset_right = 22.5
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_fonts/font = ExtResource("1_mh53v")
-theme_override_font_sizes/font_size = 64
-text = "Back"

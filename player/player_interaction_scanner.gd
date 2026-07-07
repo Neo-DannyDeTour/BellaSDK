@@ -33,7 +33,7 @@ func setup_master_link(master: Node) -> void:
 
 
 func process_interaction(_delta: float) -> void:
-	print("PlayerInteractionScanner: process_interaction() called. Processing focus target.")
+	# print("PlayerInteractionScanner: process_interaction() called. Processing focus target.")
 	if is_in_terminal_mode:
 		if _should_exit_terminal_mode():
 			exit_terminal_mode()

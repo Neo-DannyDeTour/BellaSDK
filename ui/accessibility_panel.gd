@@ -47,31 +47,39 @@ func _ready() -> void:
 
 func _load_accessibility_settings() -> void:
 	print("UI: Loading accessibility data from GlobalSettings.")
+	
 	brightness_slider.value = GlobalSettings.get_setting(
 		"Settings", "brightness", DEFAULT_BRIGHTNESS
-	)
-	contrast_slider.value = GlobalSettings.get_setting("Settings", "contrast", DEFAULT_CONTRAST)
+	) as float
+	contrast_slider.value = GlobalSettings.get_setting(
+		"Settings", "contrast", DEFAULT_CONTRAST
+	) as float
 	saturation_slider.value = GlobalSettings.get_setting(
 		"Settings", "saturation", DEFAULT_SATURATION
-	)
+	) as float
 
 	brightness_input.text = "%.2f" % brightness_slider.value
 	contrast_input.text = "%.2f" % contrast_slider.value
 	saturation_input.text = "%.2f" % saturation_slider.value
 	_apply_visual_settings()
 
-	fov_slider.value = GlobalSettings.get_setting("Settings", "base_fov", DEFAULT_FOV)
+	fov_slider.value = GlobalSettings.get_setting("Settings", "base_fov", DEFAULT_FOV) as float
 	fov_input.text = str(int(fov_slider.value))
 	sprint_fov_checkbox.button_pressed = GlobalSettings.get_setting(
 		"Settings", "disable_sprint_fov", DEFAULT_DISABLE_SPRINT_FOV
-	)
+	) as bool
 	_apply_fov_settings()
 
+	# FIXED: Added explicit 'as float' cast to prevent strict typing assignment crash.
 	var saved_sens: float = GlobalSettings.get_setting(
 		"Settings", "mouse_sensitivity", DEFAULT_SENSITIVITY
-	)
+	) as float
+	
 	sens_slider.value = saved_sens
 	sens_input.text = "%.2f" % saved_sens
+	
+	# FIXED: Actually apply the setting to the player on load
+	_apply_sensitivity_settings()
 
 
 func _connect_adjustment_signals(
@@ -183,11 +191,7 @@ func _apply_fov_settings() -> void:
 func _on_sensitivity_changed(value: float) -> void:
 	if not sens_input.has_focus():
 		sens_input.text = "%.2f" % value
-
-	var player: Node = _get_player()
-	if player and "camera_controller" in player and player.camera_controller:
-		player.camera_controller.mouse_sensitivity_base = value
-		player.camera_controller.mouse_sensitivity = value
+	_apply_sensitivity_settings()
 
 
 func _on_sensitivity_drag_ended(value_changed: bool) -> void:
@@ -216,8 +220,19 @@ func _on_sensitivity_focus_exited() -> void:
 		_on_sensitivity_input_submitted(current_text)
 
 
+func _apply_sensitivity_settings() -> void:
+	var player: Node = _get_player()
+	if player and "camera_controller" in player and player.camera_controller:
+		print("Engine: Applying mouse sensitivity settings to Player Camera.")
+		player.camera_controller.mouse_sensitivity_base = sens_slider.value
+		player.camera_controller.mouse_sensitivity = sens_slider.value
+
+
 func _get_player() -> Node:
-	var root_node: Node = get_tree().current_scene
-	if root_node and "player_body" in root_node:
-		return root_node.player_body
+	var player_node: Node = get_tree().get_first_node_in_group("player")
+	if player_node:
+		print("UI: Successfully located player node via group.")
+		return player_node
+		
+	push_warning("UI: Player node not found in scene tree.")
 	return null

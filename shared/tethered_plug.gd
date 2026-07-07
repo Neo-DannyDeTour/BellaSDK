@@ -3,11 +3,11 @@ extends PickableObject
 
 signal power_state_changed(is_energized: bool)
 
-@export_category("UI Components")
-@export var highlight_comp: HighlightComponent
-
 @export_category("Cable Physics")
+## Defines how stretchy the cable is (0.0 is completely rigid, 1.0 is highly elastic).
 @export_range(0.0, 1.0) var cable_elasticity: float = 0.0
+
+## The Marker3D node used to determine the exact snapping position when plugging into a socket.
 @export var snap_marker: Marker3D
 
 var anchor_point: Node3D
@@ -56,6 +56,7 @@ func _ready() -> void:
 
 # --- UI & HIGHLIGHT LOGIC ---
 func _update_lock_state() -> void:
+	print("TetheredPlug: _update_lock_state() called. Lock state: ", is_locked)
 	if is_locked:
 		if label:
 			label.hide()
@@ -70,6 +71,7 @@ func _on_focus() -> void:
 	if is_locked:
 		return  # Ignore the cursor entirely if permanently plugged in
 
+	print("TetheredPlug: _on_focus() called. Updating UI label.")
 	if label:
 		# Dynamically grab the player's keybind, just like you did in the socket!
 		var events := InputMap.action_get_events("interact")
@@ -78,14 +80,14 @@ func _on_focus() -> void:
 			var raw_text := events[0].as_text()
 			key_name = (
 				raw_text
-				. replace(" (Physical)", "")
-				. replace(" - Physical", "")
-				. replace(" (Physics)", "")
-				. replace(" - Physics", "")
-				. replace("Left Mouse Button", "LMB")
-				. replace("Right Mouse Button", "RMB")
-				. replace("Middle Mouse Button", "MMB")
-				. strip_edges()
+				.replace(" (Physical)", "")
+				.replace(" - Physical", "")
+				.replace(" (Physics)", "")
+				.replace(" - Physics", "")
+				.replace("Left Mouse Button", "LMB")
+				.replace("Right Mouse Button", "RMB")
+				.replace("Middle Mouse Button", "MMB")
+				.strip_edges()
 			)
 
 		label.text = "Grab Plug [%s]" % key_name
@@ -93,12 +95,14 @@ func _on_focus() -> void:
 
 
 func _on_unfocus() -> void:
+	print("TetheredPlug: _on_unfocus() called. Hiding UI label.")
 	if label:
 		label.hide()
 
 
 # --- POWER TRANSMISSION ---
 func set_power_state(state: bool) -> void:
+	print("TetheredPlug: set_power_state() called. Energized: ", state)
 	if is_energized != state:
 		is_energized = state
 		power_state_changed.emit(is_energized)

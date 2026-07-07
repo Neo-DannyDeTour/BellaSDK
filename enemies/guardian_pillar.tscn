@@ -1,0 +1,67 @@
+[gd_scene format=3 uid="uid://dpxo4bhdunfmw"]
+
+[ext_resource type="Script" uid="uid://dff5s5nicrwpj" path="res://enemies/guardian_pillar.gd" id="1_wg6l8"]
+[ext_resource type="PackedScene" uid="uid://bapys8vo4s75w" path="res://enemies/energy_blast.tscn" id="2_nxpo7"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_wg6l8"]
+height = 3.0
+radius = 0.4
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_nxpo7"]
+top_radius = 0.4
+bottom_radius = 0.4
+height = 3.0
+radial_segments = 8
+rings = 0
+
+[sub_resource type="SphereMesh" id="SphereMesh_wg6l8"]
+radius = 0.6
+height = 1.2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nxpo7"]
+albedo_color = Color(1, 0, 0, 1)
+
+[sub_resource type="TorusMesh" id="TorusMesh_xntm1"]
+material = SubResource("StandardMaterial3D_nxpo7")
+inner_radius = 0.025
+outer_radius = 0.3
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wg6l8"]
+albedo_color = Color(1, 0, 0, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_wg6l8"]
+material = SubResource("StandardMaterial3D_wg6l8")
+top_radius = 0.025
+bottom_radius = 0.025
+radial_segments = 8
+rings = 0
+
+[node name="GuardianPillar" type="StaticBody3D" unique_id=1217551866 groups=["not_climbable"]]
+script = ExtResource("1_wg6l8")
+projectile_scene = ExtResource("2_nxpo7")
+vision_radius = 15.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=508936746]
+shape = SubResource("CylinderShape3D_wg6l8")
+
+[node name="BaseMesh" type="MeshInstance3D" parent="." unique_id=368480645]
+mesh = SubResource("CylinderMesh_nxpo7")
+
+[node name="Head" type="Node3D" parent="." unique_id=1599558751]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+
+[node name="HeadMesh" type="MeshInstance3D" parent="Head" unique_id=388687564]
+mesh = SubResource("SphereMesh_wg6l8")
+
+[node name="Eye" type="MeshInstance3D" parent="Head" unique_id=995052748]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, -0.47719908)
+mesh = SubResource("TorusMesh_xntm1")
+
+[node name="ProjectileSpawnPoint" type="Marker3D" parent="Head" unique_id=1443515029]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.6)
+
+[node name="LaserBeam" type="MeshInstance3D" parent="Head" unique_id=1820096006]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, 1, 0, -1, -4.371139e-08, 0, 0, -1.5)
+mesh = SubResource("CylinderMesh_wg6l8")
+
+[node name="StateTimer" type="Timer" parent="." unique_id=1533305336]

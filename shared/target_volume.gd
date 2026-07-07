@@ -26,10 +26,7 @@ enum SpawnMode { TIME_BASED, WAIT_FOR_KILL }
 @export var randomize_position_timer: float = 0.0
 
 @export_category("Visualizer Controls")
-@export
-var visualizer_shape_type: EditorTriggerVisualizer.ShapeType = (
-	EditorTriggerVisualizer.ShapeType.BOX
-):
+@export var visualizer_shape_type: EditorTriggerVisualizer.ShapeType = EditorTriggerVisualizer.ShapeType.BOX:
 	set(value):
 		visualizer_shape_type = value
 		_update_visualizer()
@@ -49,7 +46,8 @@ var visualizer_shape_type: EditorTriggerVisualizer.ShapeType = (
 		show_visualizer_in_game = value
 		_update_visualizer()
 
-
+# Declared the missing spawn_area variable with proper static typing
+var spawn_area: CollisionShape3D = null
 var active_targets: Array[Node3D] = []
 var inactive_targets: Array[Node3D] = []
 var spawn_timer: float = 0.0
@@ -58,7 +56,6 @@ var targets_spawned_so_far: int = 0
 
 
 func _ready() -> void:
-	# Ensure this volume NEVER blocks turret raycasts
 	collision_layer = 0
 	collision_mask = 0
 
@@ -69,7 +66,6 @@ func _ready() -> void:
 		return
 
 	print("TargetVolume: _ready() - Volume initialized.")
-	# Initialize the spawn timer so the first wave spawns instantly
 	spawn_timer = spawn_interval_seconds
 	_initialize_pool()
 
@@ -117,7 +113,6 @@ func _handle_repositioning(delta: float) -> void:
 
 
 func _handle_spawning(delta: float) -> void:
-	# Check if we have hit our maximum spawn limit
 	if not spawn_infinitely and targets_spawned_so_far >= total_targets_to_spawn:
 		if active_targets.is_empty():
 			print("TargetVolume: All targets depleted. Shutting down volume.")
@@ -131,28 +126,23 @@ func _handle_spawning(delta: float) -> void:
 			spawn_timer = 0.0
 			print("TargetVolume: Interval reached. Cycling TIME_BASED targets.")
 
-			# 1. Despawn current targets (make them disappear)
-			# We duplicate the array to safely modify the original while looping
 			var targets_to_disable: Array[Node3D] = active_targets.duplicate()
 			for t: Node3D in targets_to_disable:
 				if is_instance_valid(t):
 					t.visible = false
 
-			# 2. Determine how many new ones we are allowed to spawn
 			var spawn_count: int = max_active_targets
 			if not spawn_infinitely:
 				var remaining: int = total_targets_to_spawn - targets_spawned_so_far
 				spawn_count = mini(spawn_count, remaining)
 
-			# 3. Spawn the new wave
 			for i: int in range(spawn_count):
 				_spawn_target()
 
 	elif spawn_mode == SpawnMode.WAIT_FOR_KILL:
-		# Instantly replaces missing targets in a single frame using a while loop
 		while active_targets.size() < max_active_targets:
 			if not spawn_infinitely and targets_spawned_so_far >= total_targets_to_spawn:
-				break  # Stop filling if we hit the hard limit
+				break
 			_spawn_target()
 
 
@@ -173,7 +163,6 @@ func _update_visualizer() -> void:
 	if not is_inside_tree():
 		return
 
-	# Find the visualizer child dynamically rather than relying on a hardcoded name
 	var visualizer: EditorTriggerVisualizer = null
 	for child: Node in get_children():
 		if child is EditorTriggerVisualizer:

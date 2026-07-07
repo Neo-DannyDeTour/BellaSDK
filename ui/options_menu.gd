@@ -1,8 +1,6 @@
 extends Control
 class_name OptionsRouter
 
-signal back_requested
-
 @onready var video_panel: Panel = %VideoOptionsPanel
 @onready var audio_panel: Panel = %AudioPanel
 @onready var gameplay_panel: Panel = %GameplayPanel
@@ -14,7 +12,7 @@ signal back_requested
 @onready var gameplay_button: Button = %GameplayButton
 @onready var controls_button: Button = %ControlsButton
 @onready var accessibility_button: Button = %AccessibilityButton
-@onready var back_button: Button = %BackButton
+
 
 func _ready() -> void:
 	print("UI: Options routing system initialized.")
@@ -25,13 +23,11 @@ func _ready() -> void:
 	controls_button.pressed.connect(_on_tab_pressed.bind(controls_panel))
 	accessibility_button.pressed.connect(_on_tab_pressed.bind(accessibility_panel))
 	
-	back_button.pressed.connect(func() -> void: back_requested.emit())
-	
-	# Default to showing the Video panel first
 	_on_tab_pressed(video_panel)
 
+
 func _on_tab_pressed(active_panel: Panel) -> void:
-	print("Player swapped options tab to: ", active_panel.name)
+	print("UI: Player swapped options tab to: ", active_panel.name)
 	
 	video_panel.visible = (active_panel == video_panel)
 	audio_panel.visible = (active_panel == audio_panel)

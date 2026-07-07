@@ -32,6 +32,7 @@ var flashlight_controller: FlashlightController
 func _ready() -> void:
 	print("Player: _ready() called. Initializing Facade Controller.")
 	add_to_group("saveable")
+	add_to_group("player")
 
 	call_deferred("_capture_mouse")
 

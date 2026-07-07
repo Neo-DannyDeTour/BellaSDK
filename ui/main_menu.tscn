@@ -17,10 +17,13 @@
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_6bivr"]
 texture = ExtResource("1_ovrgc")
 
-[node name="MainMenu" type="CanvasLayer" unique_id=1244757478 groups=["hide_on_save"]]
+[node name="MainMenu" type="CanvasLayer" unique_id=1244757478 node_paths=PackedStringArray("back_buttons", "tab_buttons", "option_panels") groups=["hide_on_save"]]
 process_mode = 3
 layer = 10
 script = ExtResource("1_2o76q")
+back_buttons = [NodePath("CenterContainer/OptionsMenu/MasterBackButton")]
+tab_buttons = [NodePath("CenterContainer/OptionsMenu/TabButtons/VideoButton"), NodePath("CenterContainer/OptionsMenu/TabButtons/AudioButton"), NodePath("CenterContainer/OptionsMenu/TabButtons/GameplayButton"), NodePath("CenterContainer/OptionsMenu/TabButtons/ControlsButton"), NodePath("CenterContainer/OptionsMenu/TabButtons/AccessibilityButton")]
+option_panels = [null]
 
 [node name="Background" type="Panel" parent="." unique_id=267339091]
 material = SubResource("CanvasItemMaterial_50h1w")
@@ -42,6 +45,7 @@ offset_top = -425.0
 offset_right = 125.0
 grow_horizontal = 2
 grow_vertical = 0
+mouse_filter = 2
 theme_override_constants/margin_bottom = 50
 
 [node name="MainButtons" type="VBoxContainer" parent="MarginContainer" unique_id=988684812]
@@ -50,6 +54,7 @@ custom_minimum_size = Vector2(300, 350)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+mouse_filter = 2
 theme_override_constants/separation = 8
 
 [node name="Continue" parent="MarginContainer/MainButtons" unique_id=929896540 instance=ExtResource("3_kaxbk")]
@@ -113,84 +118,84 @@ text = "Bella Bittersweet: Tunnel Vision"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="OptionsMenu" type="Control" parent="." unique_id=1105521583]
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=8224348]
 unique_name_in_owner = true
-layout_mode = 3
-anchors_preset = 0
-offset_right = 40.0
-offset_bottom = 40.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="OptionsMenu" type="VBoxContainer" parent="CenterContainer" unique_id=909708633]
+custom_minimum_size = Vector2(800, 500)
+layout_mode = 2
 script = ExtResource("5_lsdqh")
 
-[node name="TabButtons" type="HBoxContainer" parent="OptionsMenu" unique_id=712872147]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+[node name="MenuTitle" type="Label" parent="CenterContainer/OptionsMenu" unique_id=158210883]
+layout_mode = 2
+text = "Options"
+horizontal_alignment = 1
 
-[node name="VideoButton" type="Button" parent="OptionsMenu/TabButtons" unique_id=603167491]
+[node name="TabButtons" type="HBoxContainer" parent="CenterContainer/OptionsMenu" unique_id=712872147]
+layout_mode = 2
+
+[node name="VideoButton" type="Button" parent="CenterContainer/OptionsMenu/TabButtons" unique_id=603167491]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Graphics"
 
-[node name="AudioButton" type="Button" parent="OptionsMenu/TabButtons" unique_id=2106604539]
+[node name="AudioButton" type="Button" parent="CenterContainer/OptionsMenu/TabButtons" unique_id=2106604539]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Audio"
 
-[node name="GameplayButton" type="Button" parent="OptionsMenu/TabButtons" unique_id=1138285378]
+[node name="GameplayButton" type="Button" parent="CenterContainer/OptionsMenu/TabButtons" unique_id=1138285378]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Gameplay"
 
-[node name="ControlsButton" type="Button" parent="OptionsMenu/TabButtons" unique_id=177390856]
+[node name="ControlsButton" type="Button" parent="CenterContainer/OptionsMenu/TabButtons" unique_id=177390856]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Controls"
 
-[node name="AccessibilityButton" type="Button" parent="OptionsMenu/TabButtons" unique_id=250063746]
+[node name="AccessibilityButton" type="Button" parent="CenterContainer/OptionsMenu/TabButtons" unique_id=250063746]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Accessibility"
 
-[node name="BackButton" type="Button" parent="OptionsMenu/TabButtons" unique_id=2140274583]
-unique_name_in_owner = true
+[node name="SettingsArea" type="MarginContainer" parent="CenterContainer/OptionsMenu" unique_id=170907656]
 layout_mode = 2
-text = "Back"
+size_flags_vertical = 3
 
-[node name="VideoOptionsPanel" parent="OptionsMenu" unique_id=1944788422 instance=ExtResource("5_ubpvv")]
+[node name="VideoOptionsPanel" parent="CenterContainer/OptionsMenu/SettingsArea" unique_id=1944788422 instance=ExtResource("5_ubpvv")]
 unique_name_in_owner = true
-layout_mode = 1
-offset_left = 179.0
-offset_top = 51.0
-offset_right = 1061.0
-offset_bottom = 629.0
+custom_minimum_size = Vector2(800, 500)
+layout_mode = 2
 
-[node name="AccessibilityPanel" parent="OptionsMenu" unique_id=1445857146 instance=ExtResource("7_5klac")]
+[node name="AccessibilityPanel" parent="CenterContainer/OptionsMenu/SettingsArea" unique_id=1445857146 instance=ExtResource("7_5klac")]
 unique_name_in_owner = true
-layout_mode = 1
-offset_left = 179.0
-offset_top = 51.0
-offset_right = 1061.0
-offset_bottom = 629.0
+custom_minimum_size = Vector2(800, 500)
+layout_mode = 2
 
-[node name="ControlsPanel" parent="OptionsMenu" unique_id=1661150765 instance=ExtResource("6_arv2f")]
+[node name="ControlsPanel" parent="CenterContainer/OptionsMenu/SettingsArea" unique_id=1661150765 instance=ExtResource("6_arv2f")]
 unique_name_in_owner = true
-layout_mode = 1
-offset_left = 179.0
-offset_top = 51.0
-offset_right = 1061.0
-offset_bottom = 629.0
+custom_minimum_size = Vector2(800, 500)
+layout_mode = 2
 
-[node name="AudioPanel" parent="OptionsMenu" unique_id=755109423 instance=ExtResource("9_jiymt")]
+[node name="AudioPanel" parent="CenterContainer/OptionsMenu/SettingsArea" unique_id=755109423 instance=ExtResource("9_jiymt")]
 unique_name_in_owner = true
-layout_mode = 0
-anchors_preset = 0
-anchor_right = 0.0
-anchor_bottom = 0.0
-grow_horizontal = 1
-grow_vertical = 1
+custom_minimum_size = Vector2(800, 500)
+layout_mode = 2
 
-[node name="GameplayPanel" parent="OptionsMenu" unique_id=1532565924 instance=ExtResource("10_bgtsx")]
+[node name="GameplayPanel" parent="CenterContainer/OptionsMenu/SettingsArea" unique_id=1532565924 instance=ExtResource("10_bgtsx")]
 unique_name_in_owner = true
-layout_mode = 0
+custom_minimum_size = Vector2(800, 500)
+layout_mode = 2
+
+[node name="MasterBackButton" parent="CenterContainer/OptionsMenu" unique_id=910947946 instance=ExtResource("3_kaxbk")]
+layout_mode = 2
+custom_text = "Back"
+glitch_text = "No Going Back"
 
 [node name="SaveLoadPanel" parent="." unique_id=1719296314 instance=ExtResource("8_lsdqh")]
