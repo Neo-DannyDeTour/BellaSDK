@@ -4,16 +4,31 @@ extends PlayerState
 # --------------------------------------
 # CONSTANTS & VARIABLES
 # --------------------------------------
+## The upward velocity applied when executing a standard jump.
 const JUMP_VELOCITY: float = 4.5
+
+## The upward velocity applied when jumping while sprinting.
 const SPRINT_JUMP_VELOCITY: float = 5.0
+
+## The upward velocity applied when jumping from a crouched position.
 const CROUCH_JUMP_VELOCITY: float = 3.5
 
+## Tracks the remaining time the player is allowed to jump after walking off a ledge.
 var coyote_timer: float = 0.0
+
+## Tracks the remaining time a jump input is cached while falling towards the ground.
 var jump_buffer_timer: float = 0.0
+
+## Flags whether a jump has already been executed during this airborne phase to prevent double jumps.
 var has_jumped: bool = false
 
+## Flags whether the player's current airborne trajectory was initiated by a jump pad or external launch force.
 var is_launched: bool = false
+
+## The specialized upward gravity force applied while ascending during a jump pad launch.
 var launch_gravity: float = 9.8
+
+## The specialized downward gravity force applied while descending during a jump pad launch.
 var launch_fall_gravity: float = 9.8
 
 

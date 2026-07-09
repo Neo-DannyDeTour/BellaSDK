@@ -4,20 +4,39 @@ extends PlayerState
 # --------------------------------------
 # CONSTANTS & VARIABLES
 # --------------------------------------
+## The upward velocity applied when executing a standard jump.
 const JUMP_VELOCITY: float = 4.5
+
+## The upward velocity applied when jumping from a crouched position.
 const CROUCH_JUMP_VELOCITY: float = 3.5
+
+## The upward velocity applied when jumping while sprinting.
 const SPRINT_JUMP_VELOCITY: float = 5.0
 
-# The rate at which the player slows down when no input is pressed
+## The friction applied to smoothly decelerate the player when input ceases.
 const GROUND_FRICTION: float = 25.0
 
+## The active velocity magnitude of the player, interpolated frame-by-frame.
 var current_speed: float = 0.0
+
+## Cached accessibility preference determining if crouch functions as a toggle.
+var _toggle_crouch_enabled: bool = false
+
+## Cached accessibility preference determining if sprint functions as a toggle.
+var _toggle_sprint_enabled: bool = false
+
+## Cached accessibility preference determining if jumping cancels the crouch state.
+var _cancel_crouch_on_jump: bool = false
 
 
 func enter(msg: Dictionary = {}) -> void:
 	print("StateGround: enter() called. Resetting Y velocity and current speed.")
 	player.velocity.y = 0.0
 	current_speed = 0.0
+
+	_toggle_crouch_enabled = GlobalSettings.get_setting("Accessibility", "toggle_crouch", false) as bool
+	_toggle_sprint_enabled = GlobalSettings.get_setting("Accessibility", "toggle_sprint", false) as bool
+	_cancel_crouch_on_jump = GlobalSettings.get_setting("Accessibility", "cancel_crouch_on_jump", false) as bool
 
 	if msg.has("jump_buffered") and msg["jump_buffered"] == true:
 		_perform_jump()
@@ -97,7 +116,6 @@ func physics_update(delta: float) -> void:
 	# 6. Try snapping UP stairs
 	loco.stair_controller.snap_up_stairs_check(delta, loco.sprint_active)
 
-	# Move the Character
 	player.move_and_slide()
 
 	# 7. Try snapping DOWN stairs
@@ -117,72 +135,84 @@ func _perform_jump() -> void:
 		player.velocity.y = SPRINT_JUMP_VELOCITY
 	elif loco.crouching:
 		player.velocity.y = CROUCH_JUMP_VELOCITY
+		if _cancel_crouch_on_jump and not loco.crouch_cast_check.is_colliding():
+			print("StateGround: Jumping while crouched. Canceling crouch state (Interpolation handled externally).")
+			loco.crouching = false
+			loco.standing_collision.disabled = false
+			loco.crouching_collision.disabled = true
+			Events.player_crouch_changed.emit(false)
 	else:
 		player.velocity.y = JUMP_VELOCITY
 
 	print("StateGround: Executing jump. Velocity Y set to ", player.velocity.y)
-
-	# Removed move_and_slide() here to prevent double-processing collisions.
-	# StateAir will handle the physical movement smoothly on the next frame.
 	state_machine.transition_to("Air", {"jump": true})
 
 
 func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
 	var loco: Node = player.locomotion_component
-	var env: Node = player.environment_component
 	var interact: Node = player.interaction_component
 
 	var previous_crouch: bool = loco.crouching
-	var is_recently_stepped: bool = loco.stair_controller.get("time_since_step_up") < 0.2
+	var is_moving: bool = input_dir.length() > 0.1
 
-	if Input.is_action_pressed("crouch"):
+	# --- 1. GATHER INTENTIONS ---
+	var wants_to_crouch: bool = loco.crouching
+	if _toggle_crouch_enabled:
+		if Input.is_action_just_pressed("crouch"):
+			wants_to_crouch = not loco.crouching
+	else:
+		wants_to_crouch = Input.is_action_pressed("crouch")
+
+	var wants_to_sprint: bool = loco.sprint_active
+	if _toggle_sprint_enabled:
+		if Input.is_action_just_pressed("sprint"):
+			wants_to_sprint = not loco.sprint_active
+	else:
+		wants_to_sprint = Input.is_action_pressed("sprint")
+
+	# --- 2. PRIORITY OVERRIDES ---
+	if wants_to_sprint and wants_to_crouch:
+		if Input.is_action_just_pressed("crouch"):
+			print("StateGround: Crouch requested. Prioritizing crouch state.")
+			wants_to_sprint = false
+		elif Input.is_action_just_pressed("sprint") or loco.sprint_active:
+			if not loco.crouch_cast_check.is_colliding():
+				print("StateGround: Sprint requested. Prioritizing sprint state.")
+				wants_to_crouch = false
+			else:
+				wants_to_sprint = false
+		else:
+			wants_to_sprint = false
+
+	# --- 3. SPRINT RESTRICTIONS ---
+	if not is_moving or wants_to_crouch or loco.on_sand or not loco.can_sprint:
+		wants_to_sprint = false
+		
+	loco.sprint_active = wants_to_sprint
+
+	# --- 4. CROUCH LOGIC & COLLISION ---
+	if wants_to_crouch:
 		loco.crouching = true
 		loco.standing_collision.disabled = true
 		loco.crouching_collision.disabled = false
-
-		var target_depth: float = (
-			env.vault_controller.get("crouching_depth")
-			if is_instance_valid(env.vault_controller)
-			else 1.0
-		)
-		loco.head.position.y = lerpf(loco.head.position.y, target_depth, delta * 15.0)
-
 	elif not loco.crouch_cast_check.is_colliding():
 		loco.crouching = false
 		loco.standing_collision.disabled = false
 		loco.crouching_collision.disabled = true
-
-		var head_lerp: float = 4.0 if is_recently_stepped else 15.0
-		loco.head.position.y = lerpf(loco.head.position.y, 1.8, delta * head_lerp)
+	else:
+		loco.crouching = true
+		loco.standing_collision.disabled = true
+		loco.crouching_collision.disabled = false
 
 	if previous_crouch != loco.crouching:
 		Events.player_crouch_changed.emit(loco.crouching)
-		print("StateGround: Player crouch state changed to ", loco.crouching)
 
-	var is_moving: bool = input_dir.length() > 0.1
-	var was_sprinting: bool = loco.sprint_active
-
-	# Sprint logic updated to factor in deadly sand
-	loco.sprint_active = (
-		Input.is_action_pressed("sprint")
-		and not loco.crouching
-		and not loco.on_sand
-		and is_moving
-		and loco.can_sprint
-	)
-
-	if was_sprinting and not loco.sprint_active and loco.on_sand:
-		print("StateGround: Sprint cancelled due to deadly sand.")
-
+	# --- 5. SPEED TARGETING ---
 	var target_speed: float = loco.walking_speed
 	if loco.sprint_active:
 		target_speed = loco.sprinting_speed
 	elif loco.crouching or interact.is_heavy_lifting or loco.on_sand:
-		# Fall back to crouching speed if they are walking on sand for a sluggish feel
-		target_speed = loco.crouching_speed if loco.on_sand else loco.crouching_speed
-
-		if not loco.crouching and not interact.is_heavy_lifting:
-			target_speed = loco.walking_speed
+		target_speed = loco.crouching_speed
 
 	current_speed = lerpf(current_speed, target_speed, delta * 15.0)
 
@@ -205,12 +235,10 @@ func _apply_movement(delta: float, input_dir: Vector2) -> void:
 		player.velocity.x = loco.direction.x * current_speed
 		player.velocity.z = loco.direction.z * current_speed
 	else:
-		# Replaced the instant stop with delta-based friction
 		var friction_step: float = GROUND_FRICTION * delta
 		player.velocity.x = move_toward(player.velocity.x, 0.0, friction_step)
 		player.velocity.z = move_toward(player.velocity.z, 0.0, friction_step)
 
-		# Smoothly reset direction when fully stopped
 		if player.velocity.length() < 0.01:
 			loco.direction = Vector3.ZERO
 

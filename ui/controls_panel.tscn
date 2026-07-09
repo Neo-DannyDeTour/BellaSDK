@@ -17,53 +17,76 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_q5nxy")
 
-[node name="BackControls" type="Button" parent="." unique_id=1623519218]
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1912037677]
 layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -64.5
-offset_top = -73.0
-offset_right = 64.5
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_fonts/font = ExtResource("1_q31ga")
-theme_override_font_sizes/font_size = 64
-text = "Back"
-
-[node name="ResetButton" type="Button" parent="." unique_id=870217602]
-layout_mode = 1
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -8.0
-offset_top = -8.0
-grow_horizontal = 0
-grow_vertical = 0
-theme_override_fonts/font = ExtResource("1_q31ga")
-theme_override_font_sizes/font_size = 32
-text = "Reset Controls"
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1186022108]
-layout_mode = 0
-offset_left = 30.0
-offset_top = 30.0
-offset_right = 330.0
-offset_bottom = 70.0
-theme_override_constants/separation = 10
-
-[node name="RemapButtonTemplate" type="Button" parent="VBoxContainer" unique_id=118083260]
-custom_minimum_size = Vector2(300, 0)
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer" unique_id=1406048210]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("1_q31ga")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer/ScrollContainer" unique_id=492548289]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+alignment = 1
+
+[node name="HeaderLabel" type="Label" parent="MarginContainer/ScrollContainer/VBoxContainer" unique_id=1238118003]
+layout_mode = 2
+text = "Controls / Input"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/ScrollContainer/VBoxContainer" unique_id=1699420982]
+layout_mode = 2
+
+[node name="GridContainer" type="GridContainer" parent="MarginContainer/ScrollContainer/VBoxContainer" unique_id=1525289737]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+columns = 2
+
+[node name="ActionLabelTemplate" type="Label" parent="MarginContainer/ScrollContainer/VBoxContainer/GridContainer" unique_id=861321049]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Action"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="RemapButtonTemplate" type="Button" parent="MarginContainer/ScrollContainer/VBoxContainer/GridContainer" unique_id=1308510986]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
 toggle_mode = true
+alignment = 0
+
+[node name="HSeparator2" type="HSeparator" parent="MarginContainer/ScrollContainer/VBoxContainer" unique_id=338325079]
+layout_mode = 2
+
+[node name="ToggleCrouchButton" type="CheckButton" parent="MarginContainer/ScrollContainer/VBoxContainer" unique_id=1365062952]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Toggle Crouch"
+
+[node name="ToggleSprintButton" type="CheckButton" parent="MarginContainer/ScrollContainer/VBoxContainer" unique_id=1738941552]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Toggle Sprint"
+
+[node name="CancelCrouchOnJumpButton" type="CheckButton" parent="MarginContainer/ScrollContainer/VBoxContainer" unique_id=2117077119]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+text = "Cancel Crouch on Jump"
 
 [node name="ConflictPanel" type="PanelContainer" parent="." unique_id=1863091515]
 unique_name_in_owner = true
+visible = false
 layout_mode = 1
 anchors_preset = 1
 anchor_left = 1.0
@@ -71,6 +94,7 @@ anchor_right = 1.0
 offset_left = -40.0
 offset_bottom = 40.0
 grow_horizontal = 0
+mouse_filter = 2
 
 [node name="ConflictLabel" type="Label" parent="ConflictPanel" unique_id=1444255497]
 unique_name_in_owner = true
