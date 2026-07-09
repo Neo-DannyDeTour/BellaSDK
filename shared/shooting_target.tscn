@@ -7,7 +7,7 @@
 [sub_resource type="BoxShape3D" id="BoxShape3D_3456p"]
 size = Vector3(2, 2, 2)
 
-[node name="ShootingTarget" type="StaticBody3D" unique_id=451482835 groups=["player"]]
+[node name="ShootingTarget" type="StaticBody3D" unique_id=451482835]
 collision_layer = 16
 collision_mask = 0
 script = ExtResource("1_d0hho")

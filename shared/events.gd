@@ -45,6 +45,11 @@ signal player_health_changed(new_health: int)
 @warning_ignore("unused_signal")
 signal screenshake_requested(intensity: float, duration: float)
 
+# --- NEW COLORBLIND SIGNAL ---
+@warning_ignore("unused_signal")
+signal colorblind_mode_changed(mode: int)
+
+
 # --- INTERACTION LIFECYCLE SIGNALS ---
 @warning_ignore("unused_signal")
 signal item_picked_up(item: Node3D, actor: Node3D)
@@ -106,12 +111,23 @@ func _ready() -> void:
 
 
 func _on_font_changed(font_name: String) -> void:
+	print("Events: Changing global font to '", font_name, "'.")
+	
 	if fonts.has(font_name):
-		# We explicitly state this is a Font, and cast the dictionary item 'as Font'
 		var target_font: Font = fonts[font_name] as Font
 
-		# 1. Update all standard UI
-		ThemeDB.fallback_font = target_font
+		# 1. Update the actual default font for the UI
+		if ThemeDB.get_project_theme():
+			# If you have a custom theme set in Project Settings, update it
+			ThemeDB.get_project_theme().default_font = target_font
+		else:
+			# Otherwise, apply a new theme override directly to the root window
+			var root_window: Window = get_tree().root
+			if not root_window.theme:
+				root_window.theme = Theme.new()
+			root_window.theme.default_font = target_font
 
-		# 2. Update all 3D Text
+		# 2. Update all 3D Text in the world
 		get_tree().call_group("3d_text", "set", "font", target_font)
+	else:
+		push_warning("Events: Attempted to set unknown font - ", font_name)

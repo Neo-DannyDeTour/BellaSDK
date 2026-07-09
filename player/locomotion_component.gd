@@ -42,15 +42,19 @@ var on_ice: bool = false
 var on_sand: bool = false
 var direction: Vector3 = Vector3.ZERO
 var last_velocity: Vector3 = Vector3.ZERO
+var on_safe_landing: bool = false
+
 
 func initialize(p_player: Player) -> void:
 	print("LocomotionComponent: initialize() called. Caching player reference.")
 	player = p_player
 
+
 func set_physics_active(active: bool) -> void:
 	if is_active != active:
 		print("LocomotionComponent: set_physics_active() called. Setting active state to: ", active)
 		is_active = active
+
 
 func process_movement(_delta: float) -> void:
 	if not is_active or not is_instance_valid(player):
@@ -58,12 +62,14 @@ func process_movement(_delta: float) -> void:
 		
 	_apply_weight_to_floor()
 
+
 func reset_momentum() -> void:
 	print("LocomotionComponent: reset_momentum() called. Clearing velocity arrays.")
 	if is_instance_valid(player):
 		player.velocity = Vector3.ZERO
 	last_velocity = Vector3.ZERO
 	direction = Vector3.ZERO
+
 
 func _apply_weight_to_floor() -> void:
 	if not player.is_on_floor():

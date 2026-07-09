@@ -1,18 +1,39 @@
 extends Control
 
+## The file path to the level scene that needs to be loaded in the background.
 @export_file("*.tscn") var level_scene_path: String = "res://shared/testbed.scn"
+
+## A custom resource containing a list of materials to precompile to prevent in-game hitches.
 @export var baked_shader_cache: ShaderCache
 
+## An array used to retrieve the background loading progress percentage from the ResourceLoader.
 var _progress_array: Array[float] = [0.0]
+
+## Tracks the current state of the threaded load operation (e.g., in progress, loaded, failed).
 var _status: ResourceLoader.ThreadLoadStatus = ResourceLoader.THREAD_LOAD_INVALID_RESOURCE
+
+## A flag indicating whether the loading screen has transitioned to the shader precompilation phase.
 var _is_precompiling: bool = false
+
+## The current index in the shader cache array being processed during precompilation.
 var _current_compile_index: int = 0
 
+## The maximum number of milliseconds allowed per frame for shader compilation to maintain smooth UI.
+var _max_compile_time_ms: int = 8
+
+## A hidden 3D node used to spawn temporary 3D meshes for forcing shader compilation.
 var _dummy_parent_3d: Node3D
+
+## A hidden 2D node used to spawn temporary CanvasItems for forcing 2D shader compilation.
 var _dummy_parent_2d: Control
 
+## The visual indicator showing loading progress to the player.
 @onready var animation: AnimatedSprite2D = $AnimatedSprite2D
+
+## The progress bar UI element that fills up as the background loading completes.
 @onready var progress_bar: ProgressBar = $ProgressBar
+
+## The audio player responsible for playing background music or sounds during the loading screen.
 @onready var audio_player: AudioStreamPlayer = $AudioStreamPlayer
 
 
@@ -78,18 +99,25 @@ func _setup_precompilation() -> void:
 
 
 func _process_shader_compilation() -> void:
-	if _current_compile_index < baked_shader_cache.materials.size():
+	print("LoadingScreen: Processing shader compilation chunk...")
+	var start_time: int = Time.get_ticks_msec()
+	
+	while _current_compile_index < baked_shader_cache.materials.size():
 		var mat: Material = baked_shader_cache.materials[_current_compile_index]
 		_create_dummy_element(mat)
 		_current_compile_index += 1
-	else:
-		print("LoadingScreen: Precompilation finished. Cleaning up dummies.")
-		_dummy_parent_3d.queue_free()
-		_dummy_parent_2d.queue_free()
-		_change_to_loaded_level()
+		
+		if (Time.get_ticks_msec() - start_time) >= _max_compile_time_ms:
+			return 
+			
+	print("LoadingScreen: Precompilation finished. Cleaning up dummies.")
+	_dummy_parent_3d.queue_free()
+	_dummy_parent_2d.queue_free()
+	_change_to_loaded_level()
 
 
 func _create_dummy_element(mat: Material) -> void:
+	print("LoadingScreen: Instantiating dummy for material: ", mat.resource_path)
 	var is_2d: bool = false
 
 	if mat is CanvasItemMaterial:
@@ -100,12 +128,10 @@ func _create_dummy_element(mat: Material) -> void:
 			is_2d = true
 
 	if is_2d:
-		print("LoadingScreen: Instantiating 2D CanvasItem dummy for material: ", mat.resource_path)
 		var rect: ColorRect = ColorRect.new()
 		rect.material = mat
 		_dummy_parent_2d.add_child(rect)
 	else:
-		print("LoadingScreen: Instantiating 3D Spatial dummy for material: ", mat.resource_path)
 		var mesh_instance: MeshInstance3D = MeshInstance3D.new()
 		var quad: QuadMesh = QuadMesh.new()
 		quad.material = mat

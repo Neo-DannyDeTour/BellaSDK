@@ -162,6 +162,11 @@ func _ready() -> void:
 	filter_layer.add_child(screen_filter_rect)
 
 	write("Developer console initialized. Press ~ to toggle.", "cyan")
+	
+	if has_node("/root/Events"):
+		var events: Node = get_node("/root/Events")
+		if events.has_signal("colorblind_mode_changed"):
+			events.colorblind_mode_changed.connect(_on_ui_colorblind_changed)
 
 
 func _input(event: InputEvent) -> void:
@@ -611,3 +616,10 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 				)
 		_:
 			write("Unknown command: '" + cmd + "'. Type 'help' for a list.", "red")
+
+
+func _on_ui_colorblind_changed(mode: int) -> void:
+	print("Console: Intercepted colorblind UI change to mode index: ", mode)
+	if colorblind_rect and colorblind_rect.material:
+		var material: ShaderMaterial = colorblind_rect.material as ShaderMaterial
+		material.set_shader_parameter("mode", mode)

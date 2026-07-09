@@ -9,6 +9,8 @@ var is_ui_hidden: bool = false
 
 var green_wireframe_material: ShaderMaterial
 
+var pain_tween: Tween
+
 # --- KEYCARD UI VARS ---
 @export var card_textures: Dictionary[StringName, Texture2D] = {}
 var active_card_icons: Dictionary = {}
@@ -47,8 +49,9 @@ var wireframe_overlay_button: Button = $DebugPanel/PanelContainer/VBoxContainer/
 
 @onready var metrics_panel: PanelContainer = $MetricsPanel
 @onready var frame_graph: ColorRect = $FrameGraph
+@onready var pain_overlay: ColorRect = $PainOverlay
 
-# --- NEW HEALTH UI VARS ---
+# --- HEALTH UI VARS ---
 @export var hearts_atlas: Texture2D
 @onready var health_margin: MarginContainer = $HealthMargin
 @onready var hearts_container: HBoxContainer = $HealthMargin/VBoxContainer/HeartsContainer
@@ -178,6 +181,9 @@ func update_health(new_health: int) -> void:
 	var previous_health: int = current_health
 	current_health = new_health
 
+	if health_decreased:
+		_trigger_pain_effect()
+
 	if heart_nodes.is_empty() or heart_textures.is_empty():
 		return
 
@@ -206,6 +212,26 @@ func update_health(new_health: int) -> void:
 			_animate_heart_heal(i, frame_index)
 
 		heart_nodes[i].get_parent().visible = true
+
+
+func _trigger_pain_effect() -> void:
+	print("UI: _trigger_pain_effect() called. Flashing screen red.")
+	if pain_overlay == null:
+		return
+		
+	pain_overlay.show()
+	
+	# 1. Kill any existing pain tween so rapid hits don't break the animation
+	if pain_tween and pain_tween.is_valid():
+		pain_tween.kill()
+		
+	# 2. FORCE pure red (RGB 1,0,0) with 0.4 alpha, bypassing any inspector settings
+	pain_overlay.color = Color(1.0, 0.0, 0.0, 0.4)
+	
+	# 3. Tween the entire color property down to 0.0 alpha
+	pain_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	pain_tween.tween_property(pain_overlay, "color", Color(1.0, 0.0, 0.0, 0.0), 0.3)
+	pain_tween.finished.connect(pain_overlay.hide)
 
 
 func _animate_heart_damage(index: int) -> void:

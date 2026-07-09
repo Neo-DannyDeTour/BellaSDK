@@ -61,7 +61,7 @@ import/blender/enabled=false
 
 [gui]
 
-theme/custom_font="uid://dg3xyu4f8ta7g"
+theme/custom="uid://c2y5wbxwkb3fp"
 
 [importer_defaults]
 

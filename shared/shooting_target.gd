@@ -16,7 +16,7 @@ var _default_collision_mask: int
 
 func _ready() -> void:
 	print("ShootingTarget: _ready() - Target spawned.")
-	add_to_group("player")
+	# WARNING: Removed add_to_group("player"). Targets should NOT be in the player group!
 	
 	_default_collision_layer = collision_layer
 	_default_collision_mask = collision_mask

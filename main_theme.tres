@@ -1,0 +1,6 @@
+[gd_resource type="Theme" format=3 uid="uid://c2y5wbxwkb3fp"]
+
+[ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="1_470mv"]
+
+[resource]
+default_font = ExtResource("1_470mv")

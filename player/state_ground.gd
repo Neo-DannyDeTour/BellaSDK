@@ -31,8 +31,10 @@ func physics_update(delta: float) -> void:
 	if is_instance_valid(env.vault_controller) and env.vault_controller.get("is_vaulting"):
 		return
 
-	# 0. Slide Surface & Sand Detection
+	# 0. Slide Surface, Sand & Safe Landing Detection
 	loco.on_sand = false
+	loco.on_safe_landing = false
+	
 	var slide_count: int = player.get_slide_collision_count()
 	for i: int in range(slide_count):
 		var collision: KinematicCollision3D = player.get_slide_collision(i)
@@ -45,6 +47,9 @@ func physics_update(delta: float) -> void:
 				return
 			if collider.is_in_group("sand"):
 				loco.on_sand = true
+			if collider.is_in_group("safe_landing"):
+				loco.on_safe_landing = true
+				print("StateGround: Safe landing material detected. Fall damage neutralized.")
 
 	# 1. State Transitions (Leaving the Ground)
 	var is_recently_stepped: bool = loco.stair_controller.get("time_since_step_up") < 0.2
@@ -173,8 +178,7 @@ func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
 	if loco.sprint_active:
 		target_speed = loco.sprinting_speed
 	elif loco.crouching or interact.is_heavy_lifting or loco.on_sand:
-		# Fall back to crouching speed if they are walking on sand for a sluggish feel,
-		# or leave this condition out if you want regular walk speed on sand.
+		# Fall back to crouching speed if they are walking on sand for a sluggish feel
 		target_speed = loco.crouching_speed if loco.on_sand else loco.crouching_speed
 
 		if not loco.crouching and not interact.is_heavy_lifting:

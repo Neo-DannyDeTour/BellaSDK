@@ -6,6 +6,7 @@ signal died()
 
 @export var max_health: int = 100
 @export var use_pooling: bool = true 
+@export var is_player_health: bool = false
 
 var current_health: int = 100
 
@@ -26,6 +27,11 @@ func take_damage(amount: int) -> void:
 	
 	health_changed.emit(current_health)
 	print("HealthComponent: take_damage() - Current health is now ", current_health, ".")
+	
+	# Strictly check the export variable instead of the group tag
+	if is_player_health and Events.has_signal("player_health_changed"):
+		print("HealthComponent: take_damage() - Relaying health to global Events bus.")
+		Events.player_health_changed.emit(current_health)
 	
 	if current_health == 0:
 		die()

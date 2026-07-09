@@ -42,22 +42,12 @@ var stair_offset: float = 0.0
 
 # INITIALIZATION
 func _ready() -> void:
-	print(
-        "CameraController: _ready() called. Initializing FOV and Sensitivity."
-	)
-
-	# Added explicit 'as float' casts to guarantee assignment
-	mouse_sensitivity_base = GlobalSettings.get_setting(
-		"Settings", "mouse_sensitivity", mouse_sensitivity_base
-	) as float
+	print("CameraController: Initializing settings.")
 	
-	base_fov = GlobalSettings.get_setting(
-		"Settings", "base_fov", base_fov
-	) as float
-	
-	disable_sprint_fov = GlobalSettings.get_setting(
-		"Settings", "disable_sprint_fov", disable_sprint_fov
-	) as bool
+	# GlobalSettings is an Autoload, so it's accessible globally
+	mouse_sensitivity_base = GlobalSettings.get_setting("Settings", "mouse_sensitivity", 0.5) as float
+	base_fov = GlobalSettings.get_setting("Settings", "base_fov", 75.0) as float
+	disable_sprint_fov = GlobalSettings.get_setting("Settings", "disable_sprint_fov", false) as bool
 
 	mouse_sensitivity = mouse_sensitivity_base
 	target_fov = base_fov

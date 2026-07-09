@@ -7,6 +7,11 @@ const DEFAULT_FOV: float = 75.0
 const DEFAULT_DISABLE_SPRINT_FOV: bool = false
 const DEFAULT_SENSITIVITY: float = 0.5
 
+# New Default Constants
+const DEFAULT_UI_SCALE: float = 1.0
+const DEFAULT_COLORBLIND_MODE: int = 0
+const DEFAULT_FONT_MODE: int = 0
+
 @onready var brightness_slider: HSlider = %BrightnessSlider
 @onready var brightness_input: LineEdit = %BrightnessLine
 @onready var contrast_slider: HSlider = %ContrastSlider
@@ -21,13 +26,24 @@ const DEFAULT_SENSITIVITY: float = 0.5
 @onready var sens_slider: HSlider = %MouseSensitivitySlider
 @onready var sens_input: LineEdit = %MouseSensitivityLine
 
+# New UI Elements
+@onready var ui_scale_slider: HSlider = %UIScaleSlider
+@onready var ui_scale_input: LineEdit = %UIScaleLine
+@onready var colorblind_option: OptionButton = %ColorblindOption
+@onready var font_option: OptionButton = %FontOption
+
 
 func _ready() -> void:
 	print("UI: Accessibility Panel initialized.")
+	
+	_populate_dropdowns()
 
 	_connect_adjustment_signals(brightness_slider, brightness_input, "brightness")
 	_connect_adjustment_signals(contrast_slider, contrast_input, "contrast")
 	_connect_adjustment_signals(saturation_slider, saturation_input, "saturation")
+	
+	# Connecting new UI Scale slider utilizing the same helper
+	_connect_adjustment_signals(ui_scale_slider, ui_scale_input, "ui_scale")
 
 	fov_slider.value_changed.connect(_on_fov_changed)
 	fov_slider.drag_ended.connect(_on_fov_drag_ended)
@@ -41,6 +57,9 @@ func _ready() -> void:
 	sens_input.text_submitted.connect(_on_sensitivity_input_submitted)
 	sens_input.focus_entered.connect(_on_sensitivity_focus_entered)
 	sens_input.focus_exited.connect(_on_sensitivity_focus_exited)
+	
+	colorblind_option.item_selected.connect(_on_colorblind_selected)
+	font_option.item_selected.connect(_on_font_selected)
 
 	_load_accessibility_settings()
 
@@ -70,22 +89,36 @@ func _load_accessibility_settings() -> void:
 	) as bool
 	_apply_fov_settings()
 
-	# FIXED: Added explicit 'as float' cast to prevent strict typing assignment crash.
 	var saved_sens: float = GlobalSettings.get_setting(
 		"Settings", "mouse_sensitivity", DEFAULT_SENSITIVITY
 	) as float
 	
 	sens_slider.value = saved_sens
 	sens_input.text = "%.2f" % saved_sens
-	
-	# FIXED: Actually apply the setting to the player on load
 	_apply_sensitivity_settings()
+
+	# Load New Settings
+	ui_scale_slider.value = GlobalSettings.get_setting(
+		"Settings", "ui_scale", DEFAULT_UI_SCALE
+	) as float
+	ui_scale_input.text = "%.2f" % ui_scale_slider.value
+	_apply_ui_scale_settings()
+
+	colorblind_option.selected = GlobalSettings.get_setting(
+		"Settings", "colorblind_mode", DEFAULT_COLORBLIND_MODE
+	) as int
+	_apply_colorblind_settings()
+
+	font_option.selected = GlobalSettings.get_setting(
+		"Settings", "font_mode", DEFAULT_FONT_MODE
+	) as int
+	_apply_font_settings()
 
 
 func _connect_adjustment_signals(
 	slider: HSlider, input_box: LineEdit, setting_name: String
 ) -> void:
-	slider.value_changed.connect(_on_adjustment_changed.bind(input_box))
+	slider.value_changed.connect(_on_adjustment_changed.bind(input_box, setting_name))
 	slider.drag_ended.connect(_on_adjustment_drag_ended.bind(setting_name, slider))
 	input_box.text_submitted.connect(_on_adjustment_input_submitted.bind(setting_name, slider))
 	input_box.focus_entered.connect(_on_adjustment_focus_entered.bind(input_box))
@@ -94,10 +127,17 @@ func _connect_adjustment_signals(
 	)
 
 
-func _on_adjustment_changed(value: float, input_node: LineEdit) -> void:
+func _on_adjustment_changed(
+	value: float, input_node: LineEdit, setting_name: String
+) -> void:
 	if not input_node.has_focus():
 		input_node.text = "%.2f" % value
-	_apply_visual_settings()
+		
+	# Route the application based on what changed to remain optimized
+	if setting_name == "ui_scale":
+		_apply_ui_scale_settings()
+	else:
+		_apply_visual_settings()
 
 
 func _on_adjustment_drag_ended(
@@ -134,13 +174,64 @@ func _on_adjustment_focus_exited(
 
 func _apply_visual_settings() -> void:
 	print("Engine: Applying visual adjustments to WorldEnvironment.")
-	var env_node: WorldEnvironment = get_tree().root.find_child("WorldEnvironment", true, false)
-	if env_node and env_node.environment:
-		env_node.environment.adjustment_enabled = true
-		env_node.environment.adjustment_brightness = brightness_slider.value
-		env_node.environment.adjustment_contrast = contrast_slider.value
-		env_node.environment.adjustment_saturation = saturation_slider.value
+	# OPTIMIZED: Replaced the slow find_child() with a group check.
+	var env_nodes: Array[Node] = get_tree().get_nodes_in_group("world_environment")
+	
+	if not env_nodes.is_empty():
+		var env_node: WorldEnvironment = env_nodes[0] as WorldEnvironment
+		if env_node and env_node.environment:
+			env_node.environment.adjustment_enabled = true
+			env_node.environment.adjustment_brightness = brightness_slider.value
+			env_node.environment.adjustment_contrast = contrast_slider.value
+			env_node.environment.adjustment_saturation = saturation_slider.value
 
+
+# --- NEW APPLY FUNCTIONS ---
+
+func _apply_ui_scale_settings() -> void:
+	var current_scale: float = ui_scale_slider.value
+	print("Engine: Applying UI Scale adjustments: ", current_scale)
+	# Using window content scale is the most optimized method in Godot 4
+	get_window().content_scale_factor = current_scale
+
+
+func _on_colorblind_selected(index: int) -> void:
+	print("Player changed colorblind mode to index: ", index)
+	GlobalSettings.save_setting("Settings", "colorblind_mode", index)
+	_apply_colorblind_settings()
+
+
+func _apply_colorblind_settings() -> void:
+	var mode: int = colorblind_option.selected
+	print("Engine: Applying Colorblind shader mode: ", mode)
+	
+	# Broadcast to the Events bus so the filter layer can intercept it
+	if has_node("/root/Events"):
+		var events: Node = get_node("/root/Events")
+		if events.has_signal("colorblind_mode_changed"):
+			events.emit_signal("colorblind_mode_changed", mode)
+
+
+func _on_font_selected(index: int) -> void:
+	print("Player changed font mode to index: ", index)
+	GlobalSettings.save_setting("Settings", "font_mode", index)
+	_apply_font_settings()
+
+
+func _apply_font_settings() -> void:
+	var mode: int = font_option.selected
+	print("Engine: Applying Font Override mode: ", mode)
+	
+	# Map the dropdown integer to the exact strings your Events bus expects
+	if has_node("/root/Events"):
+		var events: Node = get_node("/root/Events")
+		if events.has_signal("font_changed"):
+			var font_strings: Array[String] = ["default", "dyslexic", "papyrus", "comic"]
+			if mode >= 0 and mode < font_strings.size():
+				events.emit_signal("font_changed", font_strings[mode])
+
+
+# --- FOV & SENSITIVITY ---
 
 func _on_fov_changed(value: float) -> void:
 	if not fov_input.has_focus():
@@ -231,8 +322,36 @@ func _apply_sensitivity_settings() -> void:
 func _get_player() -> Node:
 	var player_node: Node = get_tree().get_first_node_in_group("player")
 	if player_node:
-		print("UI: Successfully located player node via group.")
 		return player_node
 		
-	push_warning("UI: Player node not found in scene tree.")
+	# Removed the push_warning. It is completely normal for the player to be 
+	# null if this panel is loaded during the Main Menu or transition screens.
 	return null
+
+
+func _populate_dropdowns() -> void:
+	print("UI: Populating OptionButton dropdowns with available modes.")
+	
+	colorblind_option.clear()
+	font_option.clear()
+	
+	var colorblind_modes: Array[String] = [
+		"Normal", 
+		"Protanopia", 
+		"Deuteranopia", 
+		"Tritanopia", 
+        "Achromatopsia"
+	]
+	
+	for mode: String in colorblind_modes:
+		colorblind_option.add_item(mode)
+		
+	var font_modes: Array[String] = [
+		"Default", 
+		"Dyslexic", 
+		"Papyrus", 
+        "Comic"
+	]
+	
+	for font: String in font_modes:
+		font_option.add_item(font)

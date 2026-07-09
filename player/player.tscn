@@ -383,6 +383,7 @@ stream_5/stream = ExtResource("40_j3r50")
 [node name="Player" type="CharacterBody3D" unique_id=1502339238 node_paths=PackedStringArray("locomotion_component", "interaction_component", "environment_component", "stats_component", "state_machine", "camera_controller", "system_menu") groups=["player"]]
 process_mode = 3
 collision_layer = 2
+collision_mask = 17
 script = ExtResource("1_34orh")
 locomotion_component = NodePath("Components/LocomotionComponent")
 interaction_component = NodePath("Components/InteractionComponent")
@@ -646,6 +647,7 @@ health_component = NodePath("../HealthComponent")
 script = ExtResource("21_gv3ic")
 max_health = 300
 use_pooling = false
+is_player_health = true
 
 [node name="StateMachine" type="Node" parent="." unique_id=2011174862]
 script = ExtResource("30_axnmu")

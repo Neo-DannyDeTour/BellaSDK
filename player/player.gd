@@ -349,3 +349,26 @@ func _on_local_health_changed(new_health: int) -> void:
 	):
 		print("Player: Broadcasting health change to Events bus: ", new_health)
 		Events.player_health_changed.emit(new_health)
+
+
+# --------------------------------------
+# HEALTH & DAMAGE ROUTING
+# --------------------------------------
+func take_damage(amount: int) -> void:
+	print("Player: take_damage() called. Routing ", amount, " damage to HealthComponent.")
+	if is_instance_valid(health_component) and health_component.has_method("take_damage"):
+		health_component.take_damage(amount)
+
+
+func heal(amount: int) -> void:
+	print("Player: heal() called. Routing ", amount, " healing to HealthComponent.")
+	if is_instance_valid(health_component) and health_component.has_method("heal"):
+		health_component.heal(amount)
+
+
+func apply_knockback(force: Vector3) -> void:
+	print("Player: apply_knockback() called. Forcing transition to Air state.")
+	
+	if is_instance_valid(state_machine):
+		if state_machine.has_method("transition_to"):
+			state_machine.transition_to("Air", {"knockback_force": force})

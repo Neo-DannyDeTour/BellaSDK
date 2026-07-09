@@ -1,0 +1,58 @@
+[gd_scene format=3 uid="uid://viaarbcifqjx"]
+
+[ext_resource type="Script" uid="uid://s7rq7d6udcr1" path="res://interactables/portal.gd" id="1_harnn"]
+[ext_resource type="Shader" uid="uid://dsnpt64m2j0il" path="res://interactables/portal.gdshader" id="1_m77tu"]
+[ext_resource type="Texture2D" uid="uid://bqru753kemdt6" path="res://assets/HDR/moon_night_2k.hdr" id="3_g6j5g"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_harnn"]
+size = Vector3(2, 3, 0.2)
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_m77tu"]
+viewport_path = NodePath("SubViewport")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_g6j5g"]
+resource_local_to_scene = true
+render_priority = 0
+shader = ExtResource("1_m77tu")
+shader_parameter/viewport_texture = SubResource("ViewportTexture_m77tu")
+
+[sub_resource type="QuadMesh" id="QuadMesh_gh40b"]
+material = SubResource("ShaderMaterial_g6j5g")
+size = Vector2(2, 3)
+
+[sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_gh40b"]
+panorama = ExtResource("3_g6j5g")
+
+[sub_resource type="Sky" id="Sky_0b0md"]
+sky_material = SubResource("PanoramaSkyMaterial_gh40b")
+
+[sub_resource type="Environment" id="Environment_0b0md"]
+sky = SubResource("Sky_0b0md")
+ambient_light_source = 1
+reflected_light_source = 1
+
+[node name="Portal" type="Area3D" unique_id=1893124656]
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("1_harnn")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=180804059]
+shape = SubResource("BoxShape3D_harnn")
+
+[node name="PortalMesh" type="MeshInstance3D" parent="." unique_id=1997887805]
+mesh = SubResource("QuadMesh_gh40b")
+
+[node name="SubViewport" type="SubViewport" parent="." unique_id=150245908]
+render_target_update_mode = 4
+
+[node name="PortalCamera" type="Camera3D" parent="SubViewport" unique_id=917421883]
+cull_mask = 1047559
+environment = SubResource("Environment_0b0md")
+
+[node name="CSGBox3D" type="CSGBox3D" parent="." unique_id=242446752]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.0034179688, 0)
+size = Vector3(2.3, 3.3, 0.7)
+
+[node name="CSGBox3D" type="CSGBox3D" parent="CSGBox3D" unique_id=657165426]
+operation = 2
+size = Vector3(2, 3, 1)

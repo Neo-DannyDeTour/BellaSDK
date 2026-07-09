@@ -21,6 +21,13 @@ func enter(msg: Dictionary = {}) -> void:
 	print("StateAir: Entered air state.")
 	has_jumped = msg.has("jump") and msg["jump"] == true
 	
+	# 1. Catch the knockback force and apply it immediately
+	if msg.has("knockback_force"):
+		player.velocity = msg["knockback_force"] as Vector3
+		coyote_timer = 0.0
+		jump_buffer_timer = 0.0
+		print("StateAir: Knockback applied with force: ", player.velocity)
+	
 	is_launched = msg.has("jump_pad") and msg["jump_pad"] == true
 	if is_launched:
 		print("StateAir: Player is caught in a jump pad trajectory.")
@@ -35,10 +42,10 @@ func enter(msg: Dictionary = {}) -> void:
 		loco.direction = Vector3(r_dir.x, 0.0, r_dir.z).normalized()
 		print("StateAir: Inherited momentum direction from previous state.")
 
-	# Only grant Coyote Time if the player fell off a ledge (didn't jump)
-	if msg.has("coyote_time") and msg["coyote_time"] == true:
+	# Only grant Coyote Time if the player fell off a ledge AND wasn't knocked back
+	if msg.has("coyote_time") and msg["coyote_time"] == true and not msg.has("knockback_force"):
 		coyote_timer = loco.coyote_time_duration
-	else:
+	elif not msg.has("knockback_force"):
 		coyote_timer = 0.0
 
 	jump_buffer_timer = 0.0
@@ -230,12 +237,10 @@ func _handle_landing() -> void:
 	var loco: Node = player.locomotion_component
 	var stats: Node = player.stats_component
 
-	if loco.last_velocity.y <= -20.0 and is_instance_valid(stats.health_component):
-		print("StateAir: Heavy impact detected. Applying fall damage.")
-		var max_hp: int = stats.health_component.get("max_health") as int
-		stats.health_component.take_damage(max_hp)
+	var is_safe_landing: bool = false
+	var is_slide_surface: bool = false
 
-	# 1. Intercept the landing to check for a slide surface
+	# 1. Inspect the surface we just landed on
 	var slide_count: int = player.get_slide_collision_count()
 	for i: int in range(slide_count):
 		var collision: KinematicCollision3D = player.get_slide_collision(i)
@@ -244,22 +249,34 @@ func _handle_landing() -> void:
 		if not collider is Node:
 			continue
 
-		# Ensure we only slide if the surface is under us (not a vertical wall)
 		if collision.get_normal().y > 0.1:
-			var is_slide_surface: bool = collider.is_in_group("slide_surface")
+			if collider.is_in_group("safe_landing"):
+				is_safe_landing = true
 
-			# Safely check parent node if the collider itself doesn't have the group
-			if not is_slide_surface:
+			var current_is_slide: bool = collider.is_in_group("slide_surface")
+			if not current_is_slide:
 				var parent_node: Node = collider.get_parent()
 				if is_instance_valid(parent_node):
-					is_slide_surface = parent_node.is_in_group("slide_surface")
+					current_is_slide = parent_node.is_in_group("slide_surface")
+			
+			if current_is_slide:
+				is_slide_surface = true
 
-			if is_slide_surface:
-				print("StateAir: Slide surface detected. Transitioning to Slide.")
-				state_machine.transition_to("Slide")
-				return
+	# 2. Process Fall Damage
+	if loco.last_velocity.y <= -20.0 and is_instance_valid(stats.health_component):
+		if is_safe_landing:
+			print("StateAir: Heavy impact detected, but safe landing material neutralized fall damage.")
+		else:
+			print("StateAir: Heavy impact detected. Applying fall damage.")
+			var max_hp: int = stats.health_component.get("max_health") as int
+			stats.health_component.take_damage(max_hp)
 
-	# 2. If no slide surface is found, proceed to Ground normally
+	# 3. Transition State
+	if is_slide_surface:
+		print("StateAir: Slide surface detected. Transitioning to Slide.")
+		state_machine.transition_to("Slide")
+		return
+
 	print("StateAir: Standard ground detected. Transitioning to Ground.")
 	var msg: Dictionary = {}
 	if jump_buffer_timer > 0.0:

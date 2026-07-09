@@ -33,6 +33,7 @@ size_flags_vertical = 4
 [node name="HeaderLabel" type="Label" parent="MarginContainer/VBoxContainer" unique_id=800405349]
 layout_mode = 2
 text = "Graphics / Video"
+horizontal_alignment = 1
 
 [node name="HSeparator" type="HSeparator" parent="MarginContainer/VBoxContainer" unique_id=676280285]
 layout_mode = 2
