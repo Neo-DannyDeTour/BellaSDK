@@ -1,0 +1,119 @@
+[gd_scene format=3 uid="uid://c2wwhkmcnb4em"]
+
+[ext_resource type="Script" uid="uid://cgo0pos2g0uop" path="res://environment/twisted_hallway_logic.gd" id="1_g0xi4"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_o7iyr"]
+size = Vector3(4, 0.1, 30)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_h4sld"]
+size = Vector3(4, 0.1, 30)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_es2ux"]
+size = Vector3(0.1, 4, 30)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_34whf"]
+size = Vector3(0.1, 4, 30)
+
+[sub_resource type="Shader" id="Shader_g0xi4"]
+code = "shader_type spatial;
+render_mode cull_front;
+
+// The maximum permanent twist applied to the mesh geometry.
+// Set this to the OPPOSITE of your GDScript's max_twist_degrees.
+// If your script rotates the pivot by -90, this must be 90.
+uniform float permanent_twist_degrees = 90.0;
+
+// The length of the hallway mesh.
+uniform float hallway_length = 10.0;
+
+// Offsets the math so the twist starts exactly at the entrance.
+// Since the mesh is 10m long and centered at Z = -5, its local top is at +5.
+uniform float z_offset = 5.0;
+
+void vertex() {
+    // Calculate progress from 0.0 (entrance) to 1.0 (exit)
+    float progress = clamp((-VERTEX.z + z_offset) / hallway_length, 0.0, 1.0);
+    
+    // Calculate the static twist angle for this specific vertex
+    float angle = radians(permanent_twist_degrees) * progress;
+    
+    // Rotate the X and Y coordinates around the Z axis
+    float cos_a = cos(angle);
+    float sin_a = sin(angle);
+    
+    float new_x = VERTEX.x * cos_a - VERTEX.y * sin_a;
+    float new_y = VERTEX.x * sin_a + VERTEX.y * cos_a;
+    
+    VERTEX.x = new_x;
+    VERTEX.y = new_y;
+    
+    // Rotate the normals so lighting accurately reflects off the twisted walls
+    float norm_x = NORMAL.x * cos_a - NORMAL.y * sin_a;
+    float norm_y = NORMAL.x * sin_a + NORMAL.y * cos_a;
+    
+    NORMAL.x = norm_x;
+    NORMAL.y = norm_y;
+}"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_o7iyr"]
+render_priority = 0
+shader = SubResource("Shader_g0xi4")
+shader_parameter/permanent_twist_degrees = 180.0
+shader_parameter/hallway_length = 30.0
+shader_parameter/z_offset = 15.0
+
+[sub_resource type="BoxMesh" id="BoxMesh_h4sld"]
+material = SubResource("ShaderMaterial_o7iyr")
+size = Vector3(4, 4, 30)
+subdivide_depth = 20
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_g0xi4"]
+size = Vector3(4, 4, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1blif"]
+size = Vector3(4, 4, 1)
+
+[node name="TwistedHallway" type="Node3D" unique_id=683320468 node_paths=PackedStringArray("visual_pivot", "entry_trigger", "exit_trigger")]
+script = ExtResource("1_g0xi4")
+visual_pivot = NodePath("VisualPivot")
+entry_trigger = NodePath("EntryTrigger")
+exit_trigger = NodePath("ExitTrigger")
+
+[node name="PhysicalBounds" type="StaticBody3D" parent="." unique_id=1812734391]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -15)
+collision_mask = 2
+
+[node name="Floor" type="CollisionShape3D" parent="PhysicalBounds" unique_id=6568230]
+shape = SubResource("BoxShape3D_o7iyr")
+
+[node name="Ceiling" type="CollisionShape3D" parent="PhysicalBounds" unique_id=2055124061]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
+shape = SubResource("BoxShape3D_h4sld")
+
+[node name="LeftWall" type="CollisionShape3D" parent="PhysicalBounds" unique_id=502231234]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2, 2, 0)
+shape = SubResource("BoxShape3D_es2ux")
+
+[node name="RightWall" type="CollisionShape3D" parent="PhysicalBounds" unique_id=40902964]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2, 0)
+shape = SubResource("BoxShape3D_34whf")
+
+[node name="VisualPivot" type="Node3D" parent="." unique_id=1458093957]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -15)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="VisualPivot" unique_id=758558229]
+mesh = SubResource("BoxMesh_h4sld")
+
+[node name="EntryTrigger" type="Area3D" parent="." unique_id=421965355]
+collision_mask = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="EntryTrigger" unique_id=371101102]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
+shape = SubResource("BoxShape3D_g0xi4")
+
+[node name="ExitTrigger" type="Area3D" parent="." unique_id=1622526127]
+collision_mask = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ExitTrigger" unique_id=1273625274]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, -30)
+shape = SubResource("BoxShape3D_1blif")
