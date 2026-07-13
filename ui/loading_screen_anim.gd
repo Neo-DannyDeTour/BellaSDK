@@ -1,7 +1,7 @@
 extends Control
 
 ## The file path to the level scene that needs to be loaded in the background.
-@export_file("*.tscn") var level_scene_path: String = "res://shared/testbed.scn"
+@export_file("*.tscn") var level_scene_path: String = "res://levels/testbed.scn"
 
 ## A custom resource containing a list of materials to precompile to prevent in-game hitches.
 @export var baked_shader_cache: ShaderCache

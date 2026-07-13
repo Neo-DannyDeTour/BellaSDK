@@ -1,21 +1,28 @@
+@tool
 class_name PushWheel
 extends StaticBody3D
 
+## The time in seconds allowed between inputs to trigger a detachment.
 const DOUBLE_TAP_DELAY: float = 0.3
 
 @export_category("Transmitter")
+## The specific transmitter component used to send signals to connected devices.
 @export var transmitter: OutputTransmitter3D
+
+## The external nodes (like the violet gate) that will be triggered when this wheel is turned.
 @export var transmitter_targets: Array[Node3D] = []:
 	set(value):
 		transmitter_targets = value
 		_update_transmitter_targets()
 
 @export_category("Wheel Setup")
+## Determines if the wheel spawns in a broken state, requiring repair before use.
 @export var is_broken_variant: bool = false:
 	set(value):
 		is_broken_variant = value
 		_update_visual_state()
 
+## The scene instantiated when the player detaches a stick from the wheel.
 @export var pickable_stick_scene: PackedScene
 
 @export_category("Node References")

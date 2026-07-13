@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://dn6pth4ryiv4s"]
 
 [ext_resource type="Script" uid="uid://mlc5e56gmbf1" path="res://ui/loading_screen_anim.gd" id="1_jp8si"]
-[ext_resource type="Resource" uid="uid://ckk5joev7dak8" path="res://shared/shader_cache.tres" id="2_7kl3d"]
 [ext_resource type="Texture2D" uid="uid://b4ygi4s0hyes7" path="res://assets/images/loading_screens/bella_wrench_loading_frames/loading_frame_0001.png" id="2_473av"]
 [ext_resource type="Texture2D" uid="uid://bqjj86chnbi62" path="res://assets/images/loading_screens/bella_wrench_loading_frames/loading_frame_0002.png" id="3_i2epk"]
 [ext_resource type="Texture2D" uid="uid://ct2irl84iaxkr" path="res://assets/images/loading_screens/bella_wrench_loading_frames/loading_frame_0003.png" id="4_0e0j8"]
@@ -499,14 +498,9 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 20.0
-offset_bottom = 20.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_jp8si")
-baked_shader_cache = ExtResource("2_7kl3d")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=626525078]
 sprite_frames = SubResource("SpriteFrames_nnsx1")
@@ -515,17 +509,13 @@ frame_progress = 0.5247829
 [node name="ProgressBar" type="ProgressBar" parent="." unique_id=739553667]
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -150.0
-offset_top = -13.5
-offset_right = 150.0
-offset_bottom = 13.5
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -21.0
 grow_horizontal = 2
-grow_vertical = 2
+grow_vertical = 0
 
 [node name="AudioStreamPlayer" type="AudioStreamPlayer" parent="." unique_id=1091334007]
 stream = ExtResource("122_473av")

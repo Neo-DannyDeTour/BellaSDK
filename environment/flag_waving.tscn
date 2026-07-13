@@ -1,0 +1,44 @@
+[gd_scene format=3 uid="uid://uqjho8dqv70h"]
+
+[ext_resource type="Shader" uid="uid://cfhngn43hlwu4" path="res://environment/flag_waving.gdshader" id="1_mpfsw"]
+[ext_resource type="Script" uid="uid://certwl81b3kwr" path="res://environment/flag_waving.gd" id="1_uirjs"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_85f7d"]
+render_priority = 0
+shader = ExtResource("1_mpfsw")
+shader_parameter/wave_speed = 2.5
+shader_parameter/wave_amplitude = 0.15
+shader_parameter/wave_frequency = 3.0
+shader_parameter/wave_phases = 2.0
+shader_parameter/roughness = 0.6
+
+[sub_resource type="QuadMesh" id="QuadMesh_uirjs"]
+material = SubResource("ShaderMaterial_85f7d")
+subdivide_width = 64
+subdivide_depth = 32
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_bsdtl"]
+render_priority = 0
+shader = ExtResource("1_mpfsw")
+shader_parameter/wave_speed = 2.5
+shader_parameter/wave_amplitude = 0.15
+shader_parameter/wave_frequency = 3.0
+shader_parameter/wave_phases = 2.0
+shader_parameter/roughness = 0.6
+
+[sub_resource type="QuadMesh" id="QuadMesh_gsg4x"]
+material = SubResource("ShaderMaterial_bsdtl")
+flip_faces = true
+subdivide_width = 64
+subdivide_depth = 32
+
+[node name="Flag" type="Node3D" unique_id=1217202066 node_paths=PackedStringArray("front_mesh", "back_mesh")]
+script = ExtResource("1_uirjs")
+front_mesh = NodePath("Front")
+back_mesh = NodePath("Back")
+
+[node name="Front" type="MeshInstance3D" parent="." unique_id=1595903470]
+mesh = SubResource("QuadMesh_uirjs")
+
+[node name="Back" type="MeshInstance3D" parent="." unique_id=387078032]
+mesh = SubResource("QuadMesh_gsg4x")
