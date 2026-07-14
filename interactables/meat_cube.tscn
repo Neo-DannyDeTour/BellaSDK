@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://b1mqjhfxiy6bc"]
+
+[ext_resource type="Script" uid="uid://bdq5cyrq7ofas" path="res://interactables/meat_cube.gd" id="1_bxs5d"]
+[ext_resource type="ArrayMesh" uid="uid://c3b6adx33trvb" path="res://assets/dev_meshes/dev_box.tres" id="1_ucve1"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ucve1"]
+size = Vector3(1.8, 1.8, 1.8)
+
+[node name="MeatCube" type="SoftBody3D" unique_id=283655227 node_paths=PackedStringArray("meat_visual")]
+layers = 5
+mesh = ExtResource("1_ucve1")
+collision_layer = 5
+collision_mask = 7
+simulation_precision = 10
+total_mass = 15.0
+pressure_coefficient = 3.0
+damping_coefficient = 0.5
+script = ExtResource("1_bxs5d")
+meat_visual = NodePath(".")
+meat_cube_scene_path = "uid://b1mqjhfxiy6bc"
+
+[node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=1967780440]
+collision_layer = 5
+collision_mask = 7
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=875126131]
+shape = SubResource("BoxShape3D_ucve1")

@@ -115,6 +115,15 @@ func shoot(player_camera: Camera3D) -> void:
 					result.position - (collider as RigidBody3D).global_position
 				)
 				(collider as RigidBody3D).apply_impulse(pellet_dir * 2.0, hit_offset)
+			
+			# --- MEAT CUBE INTEGRATION ---
+			# Check the collider, its parent, and its owner for the deformation logic
+			if collider.has_method("_spawn_poker_at"):
+				collider._spawn_poker_at(result.position, pellet_dir)
+			elif collider.get_parent() and collider.get_parent().has_method("_spawn_poker_at"):
+				collider.get_parent()._spawn_poker_at(result.position, pellet_dir)
+			elif collider.get("owner") and collider.owner.has_method("_spawn_poker_at"):
+				collider.owner._spawn_poker_at(result.position, pellet_dir)
 
 			if collider.has_method("leak_at"):
 				collider.leak_at(result.position)
