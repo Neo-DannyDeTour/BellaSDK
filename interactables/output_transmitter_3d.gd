@@ -37,14 +37,22 @@ func power_off() -> void:
 
 func _energize_targets() -> void:
 	for target: Node3D in targets:
-		if is_instance_valid(target) and target.has_method("power_on"):
-			target.power_on()
+		if is_instance_valid(target):
+			var comp := target.get_node_or_null("PowerComponent")
+			if is_instance_valid(comp) and comp.has_method("add_power"):
+				comp.add_power()
+			elif target.has_method("power_on"): # Fallback for simple objects
+				target.power_on()
 
 
 func _deenergize_targets() -> void:
 	for target: Node3D in targets:
-		if is_instance_valid(target) and target.has_method("power_off"):
-			target.power_off()
+		if is_instance_valid(target):
+			var comp := target.get_node_or_null("PowerComponent")
+			if is_instance_valid(comp) and comp.has_method("remove_power"):
+				comp.remove_power()
+			elif target.has_method("power_off"):
+				target.power_off()
 
 
 func _draw_connection_line() -> void:

@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://ch288vfo8vdyj"]
+
+[ext_resource type="Script" uid="uid://cdipwygeyyiiq" path="res://environment/wind_controller.gd" id="1_5os7g"]
+[ext_resource type="Shader" uid="uid://cmb5hifosks4g" path="res://environment/windy_cloth.gdshader" id="2_itonv"]
+[ext_resource type="Texture2D" uid="uid://bc8k8iedf0b2g" path="res://assets/images/cloth_green_texture.png" id="3_bgtr8"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_7qoa7"]
+noise_type = 3
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_jsqy4"]
+noise = SubResource("FastNoiseLite_7qoa7")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_bgtr8"]
+render_priority = 0
+shader = ExtResource("2_itonv")
+shader_parameter/albedo_texture = ExtResource("3_bgtr8")
+shader_parameter/wind_noise_texture = SubResource("NoiseTexture2D_jsqy4")
+shader_parameter/uv_scale = 1.0
+shader_parameter/offset_multiplier = 1.0
+
+[sub_resource type="QuadMesh" id="QuadMesh_5os7g"]
+material = SubResource("ShaderMaterial_bgtr8")
+size = Vector2(5, 5)
+subdivide_width = 5
+subdivide_depth = 5
+
+[node name="WindyCloth" type="Node3D" unique_id=543555838]
+script = ExtResource("1_5os7g")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1377457470]
+mesh = SubResource("QuadMesh_5os7g")

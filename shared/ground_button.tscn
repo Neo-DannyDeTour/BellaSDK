@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://d2dtso8yjpyem"]
 
 [ext_resource type="Script" uid="uid://d3tp7ybudicy7" path="res://shared/ground_button.gd" id="1_foth2"]
+[ext_resource type="Script" uid="uid://cnmn3hgnt0afn" path="res://interactables/output_transmitter_3d.gd" id="2_gix17"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_fofb2"]
 size = Vector3(2, 0.1, 2)
@@ -59,9 +60,14 @@ _data = {
 &"button_down": SubResource("Animation_foth2")
 }
 
-[node name="GroundButton" type="StaticBody3D" unique_id=1371832190]
+[node name="GroundButton" type="StaticBody3D" unique_id=1371832190 node_paths=PackedStringArray("transmitter")]
 collision_mask = 7
 script = ExtResource("1_foth2")
+transmitter = NodePath("OutputTransmitter3D")
+
+[node name="OutputTransmitter3D" type="Node3D" parent="." unique_id=1725212126]
+script = ExtResource("2_gix17")
+metadata/_custom_type_script = "uid://cnmn3hgnt0afn"
 
 [node name="ButtonBase" type="MeshInstance3D" parent="." unique_id=854242677]
 mesh = SubResource("BoxMesh_fofb2")

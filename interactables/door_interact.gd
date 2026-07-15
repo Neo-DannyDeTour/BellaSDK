@@ -1,69 +1,85 @@
 extends Node3D
 
-# --- POWER SYSTEM ---
+## The total amount of power required to activate this door. Exposed here so level designers don't have to dig into child nodes.
 @export var required_power: int = 1
-var power_component: PowerComponent
 
-@export var open := false:
+## Determines if the door is currently open. Changing this automatically updates animations.
+@export var open: bool = false:
 	set(v):
 		if v != open:
 			open = v
 			update_door()
-var is_powered_door: bool = false  # Tracks if this is a puzzle door or normal door
 
+## Flags whether this is a locked puzzle door or a normal proximity/manual door.
+var is_powered_door: bool = false
+
+## Prevents the door from being toggled too rapidly by manual interactions.
 var is_on_cooldown: bool = false
 
+## The power component handling required and current power logic. Will be null if this is a standard manual door.
+var power_component: PowerComponent
+
+## The AnimationPlayer responsible for the physical movement of the door geometry.
 @onready var animation_player: AnimationPlayer = $AnimatableBody3D/AnimationPlayer
+
+## The Timer used to automatically close the door after a player leaves the detector area.
 @onready var timer: Timer = $Timer
 
 
 func _ready() -> void:
-	# 1. Look for a PowerComponent child dynamically
+	# 1. Dynamically check for the component
 	power_component = get_node_or_null("PowerComponent")
-
-	if power_component:
+	
+	if is_instance_valid(power_component):
 		is_powered_door = true
+		
+		# 2. Pass the designer's chosen number down to the component!
 		power_component.required_power = self.required_power
-		# --- THE FIX: Point these to our renamed functions below ---
-		power_component.powered_on.connect(power_on)
-		power_component.powered_off.connect(power_off)
+		
+		# 3. Connect the signals
+		power_component.powered_on.connect(_on_powered_on)
+		power_component.powered_off.connect(_on_powered_off)
 
 
 # --- PUZZLE LOGIC ---
-# --- THE FIX: We removed the "_on_" so the Socket can call these directly! ---
-func power_on() -> void:
-	# We bypass the toggle_open() cooldown so puzzle buttons feel instantly responsive!
+
+func _on_powered_on() -> void:
+	print("PoweredDoor: PowerComponent reached full power. Opening.")
 	open = true
 
 
-func power_off() -> void:
+func _on_powered_off() -> void:
+	print("PoweredDoor: PowerComponent lost full power. Closing.")
 	open = false
 
 
 # --- ANIMATION LOGIC ---
+
 func update_door() -> void:
 	if not is_node_ready():
 		await ready
 
 	if open:
-		print("opening")
+		print("PoweredDoor: Playing 'open' animation.")
 		if animation_player.current_animation != "open":
 			animation_player.play("open")
 	else:
-		print("closing")
+		print("PoweredDoor: Playing close animation (open backwards).")
 		if (
 			animation_player.current_animation != "open"
-			or animation_player.current_animation_position > 0
+			or animation_player.current_animation_position > 0.0
 		):
 			animation_player.play_backwards("open")
 
 
 # --- MANUAL INTERACT LOGIC ---
+
 func interact() -> void:
 	if is_powered_door:
-		print("This door is locked by a mechanism!")
-		return  # Block manual interaction if it requires a button!
+		print("PoweredDoor: Interaction blocked. This door is locked by a mechanism!")
+		return 
 
+	print("PoweredDoor: Player manually interacted with the door.")
 	toggle_open()
 
 
@@ -72,19 +88,20 @@ func toggle_open(_player: CharacterBody3D = null) -> void:
 		return
 
 	is_on_cooldown = true
-	open = !open
+	open = not open
 
 	await get_tree().create_timer(1.0).timeout
 	is_on_cooldown = false
 
 
 # --- DETECTOR LOGIC ---
+
 func _on_detector_body_exited(body: Node3D) -> void:
 	if is_powered_door:
-		return  # Don't auto-close puzzle doors!
+		return 
 
-	print("exited")
 	if open and body.is_in_group("player"):
+		print("PoweredDoor: Player exited proximity area. Starting auto-close timer.")
 		timer.start()
 
 
@@ -92,9 +109,10 @@ func _on_detector_body_entered(body: Node3D) -> void:
 	if is_powered_door:
 		return
 
-	print("entered")
-	if body.is_in_group("player") and not timer.is_stopped():
-		timer.stop()
+	if body.is_in_group("player"):
+		print("PoweredDoor: Player entered proximity area.")
+		if not timer.is_stopped():
+			timer.stop()
 
 
 func _on_timer_timeout() -> void:
@@ -105,6 +123,8 @@ func _on_timer_timeout() -> void:
 		if not is_on_cooldown:
 			is_on_cooldown = true
 			open = false
+			print("PoweredDoor: Auto-close timer finished. Closing.")
+			
 			await get_tree().create_timer(1.0).timeout
 			is_on_cooldown = false
 		else:

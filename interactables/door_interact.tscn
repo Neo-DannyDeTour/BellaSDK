@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="1_61k36"]
 [ext_resource type="Script" uid="uid://btxdtnedmofnq" path="res://interactables/door_interact.gd" id="1_ypp13"]
 [ext_resource type="Texture2D" uid="uid://c8kwxoba4guv4" path="res://assets/images/dev_textures/dev_texture_purple_1024.png" id="2_vme51"]
+[ext_resource type="Script" uid="uid://c6vsx15ci2q2y" path="res://shared/powered_object.gd" id="4_i4cgd"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_i4cgd"]
 albedo_texture = ExtResource("2_vme51")
@@ -57,6 +58,10 @@ size = Vector3(3, 4, 3)
 
 [node name="Door_Interact" type="Node3D" unique_id=1953886748]
 script = ExtResource("1_ypp13")
+
+[node name="PowerComponent" type="Node3D" parent="." unique_id=1018633668]
+script = ExtResource("4_i4cgd")
+metadata/_custom_type_script = "uid://c6vsx15ci2q2y"
 
 [node name="AnimatableBody3D" type="AnimatableBody3D" parent="." unique_id=590526470]
 
