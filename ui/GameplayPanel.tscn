@@ -3,19 +3,97 @@
 [ext_resource type="Script" uid="uid://biu52uuyxi5n" path="res://ui/gameplay_panel.gd" id="1_sq5h0"]
 
 [node name="GameplayPanel" type="Panel" unique_id=1532565924]
-offset_right = 40.0
-offset_bottom = 40.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1_sq5h0")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="." unique_id=1594872106]
-layout_mode = 0
-offset_right = 40.0
-offset_bottom = 40.0
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=2126148973]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 32
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 32
 
-[node name="HeadbobCheckbox" type="CheckBox" parent="VBoxContainer" unique_id=817980614]
+[node name="MainVBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=1622851961]
+layout_mode = 2
+
+[node name="HeaderLabel" type="Label" parent="MarginContainer/MainVBoxContainer" unique_id=1016777523]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Gameplay"
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/MainVBoxContainer" unique_id=1482006028]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/MainVBoxContainer" unique_id=1743019816]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ContentVBoxContainer" type="VBoxContainer" parent="MarginContainer/MainVBoxContainer/ScrollContainer" unique_id=311684409]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 6
+
+[node name="DifficultyHBox" type="HBoxContainer" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=1294400299]
+layout_mode = 2
+
+[node name="DifficultyLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer/DifficultyHBox" unique_id=1189323289]
+layout_mode = 2
+text = "Difficulty"
+
+[node name="DifficultyOption" type="OptionButton" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer/DifficultyHBox" unique_id=1079690915]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="CrosshairCheckbox" type="CheckBox" parent="VBoxContainer" unique_id=75308936]
+[node name="LanguageHBox" type="HBoxContainer" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=1407269568]
+layout_mode = 2
+
+[node name="LanguageLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer/LanguageHBox" unique_id=1882766298]
+layout_mode = 2
+text = "Language"
+
+[node name="LanguageOption" type="OptionButton" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer/LanguageHBox" unique_id=471881139]
 unique_name_in_owner = true
 layout_mode = 2
+
+[node name="RegionHBox" type="HBoxContainer" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=990589566]
+layout_mode = 2
+
+[node name="RegionLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer/RegionHBox" unique_id=311362195]
+layout_mode = 2
+text = "Matchmaking Region"
+
+[node name="RegionOption" type="OptionButton" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer/RegionHBox" unique_id=1883651464]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=1336961044]
+layout_mode = 2
+
+[node name="GodmodeToggle" type="CheckButton" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=259794659]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Godmode (Debug)"
+
+[node name="TutorialsToggle" type="CheckButton" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=212467166]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Enable Tutorials"
+
+[node name="HeadbobCheckbox" type="CheckButton" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=2008947024]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Enable Headbob"
+
+[node name="CrosshairCheckbox" type="CheckButton" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=988034891]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Show Crosshair"

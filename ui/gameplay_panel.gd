@@ -1,49 +1,46 @@
 extends Panel
 
-const DEFAULT_HEADBOB: bool = true
-const DEFAULT_CROSSHAIR: bool = true
+## Dropdown menu for selecting the active game difficulty.
+@onready var difficulty_option: OptionButton = %DifficultyOption
 
-@onready var headbob_checkbox: CheckBox = %HeadbobCheckbox
-@onready var crosshair_checkbox: CheckBox = %CrosshairCheckbox
+## Dropdown menu for selecting the localization language.
+@onready var language_option: OptionButton = %LanguageOption
+
+## Dropdown menu for selecting the multiplayer matchmaking region.
+@onready var region_option: OptionButton = %RegionOption
+
+## Toggles the invincible state where player health cannot drop below zero.
+@onready var godmode_toggle: CheckButton = %GodmodeToggle
+
+## Toggles the display of introductory hints and tooltips.
+@onready var tutorials_toggle: CheckButton = %TutorialsToggle
+
+## Toggles the camera headbobbing animation during movement.
+@onready var headbob_toggle: CheckButton = %HeadbobCheckbox
+
+## Toggles the visibility of the center screen crosshair.
+@onready var crosshair_toggle: CheckButton = %CrosshairCheckbox
+
 
 func _ready() -> void:
-	print("UI: Gameplay Panel initialized.")
-	headbob_checkbox.toggled.connect(_on_headbob_toggled)
-	crosshair_checkbox.toggled.connect(_on_crosshair_toggled)
-	_load_gameplay_settings()
+	_connect_signals()
 
-func _load_gameplay_settings() -> void:
-	print("UI: Loading gameplay data from GlobalSettings.")
-	var headbob_saved: bool = GlobalSettings.get_setting("Gameplay", "headbob", DEFAULT_HEADBOB)
-	var crosshair_saved: bool = GlobalSettings.get_setting("Gameplay", "crosshair", DEFAULT_CROSSHAIR)
-	
-	headbob_checkbox.button_pressed = headbob_saved
-	crosshair_checkbox.button_pressed = crosshair_saved
-	_apply_gameplay_settings()
 
-func _on_headbob_toggled(toggled_on: bool) -> void:
-	print("Player toggled Headbob to: ", toggled_on)
-	GlobalSettings.save_setting("Gameplay", "headbob", toggled_on)
-	_apply_gameplay_settings()
+func _connect_signals() -> void:
+	print("GameplayPanel: Connecting signals...")
+	difficulty_option.item_selected.connect(_on_difficulty_selected)
+	godmode_toggle.toggled.connect(_on_godmode_toggled)
+	tutorials_toggle.toggled.connect(_on_tutorials_toggled)
+	# Connect remaining signals here as you build them out
 
-func _on_crosshair_toggled(toggled_on: bool) -> void:
-	print("Player toggled Crosshair to: ", toggled_on)
-	GlobalSettings.save_setting("Gameplay", "crosshair", toggled_on)
-	_apply_gameplay_settings()
 
-func _apply_gameplay_settings() -> void:
-	var player: Node = _get_player()
-	if player:
-		print("Engine: Applying Gameplay settings to Player.")
-		if "camera_controller" in player and player.camera_controller:
-			player.camera_controller.enable_headbob = headbob_checkbox.button_pressed
-			
-		if "hud" in player and player.hud:
-			if player.hud.has_method("set_crosshair_visible"):
-				player.hud.set_crosshair_visible(crosshair_checkbox.button_pressed)
+func _on_difficulty_selected(index: int) -> void:
+	print("GameplayPanel: Difficulty changed to index ", index)
 
-func _get_player() -> Node:
-	var root_node: Node = get_tree().current_scene
-	if root_node and "player_body" in root_node:
-		return root_node.player_body
-	return null
+
+func _on_godmode_toggled(button_pressed: bool) -> void:
+	print("GameplayPanel: Godmode toggled. State: ", button_pressed)
+
+
+func _on_tutorials_toggled(button_pressed: bool) -> void:
+	print("GameplayPanel: Tutorials toggled. State: ", button_pressed)

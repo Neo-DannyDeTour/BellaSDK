@@ -23,10 +23,10 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 24
-theme_override_constants/margin_top = 24
-theme_override_constants/margin_right = 24
-theme_override_constants/margin_bottom = 24
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 32
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 32
 
 [node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=1955520081]
 custom_minimum_size = Vector2(640, 0)
@@ -34,8 +34,8 @@ layout_mode = 2
 
 [node name="HeaderLabel" type="Label" parent="MarginContainer/VBoxContainer" unique_id=328862559]
 layout_mode = 2
-text = "Accessibility
-"
+theme_override_font_sizes/font_size = 32
+text = "Accessibility"
 horizontal_alignment = 1
 
 [node name="HSeparator" type="HSeparator" parent="MarginContainer/VBoxContainer" unique_id=2130343895]

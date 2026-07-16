@@ -562,24 +562,30 @@ audio_monkey_bar = NodePath("MonkeBarAudio")
 [node name="DefaultAudio" type="AudioStreamPlayer" parent="FootstepManager" unique_id=1100202989]
 stream = SubResource("AudioStreamRandomizer_d3wef")
 volume_db = -20.0
+bus = &"SFX"
 
 [node name="MetalAudio" type="AudioStreamPlayer" parent="FootstepManager" unique_id=469023765]
 stream = SubResource("AudioStreamRandomizer_p7iby")
 volume_db = -20.0
+bus = &"SFX"
 
 [node name="StoneAudio" type="AudioStreamPlayer" parent="FootstepManager" unique_id=506548274]
 stream = SubResource("AudioStreamRandomizer_jfpux")
 volume_db = -20.0
+bus = &"SFX"
 
 [node name="WetDirtAudio" type="AudioStreamPlayer" parent="FootstepManager" unique_id=875564003]
 stream = SubResource("AudioStreamRandomizer_sfy4j")
+bus = &"SFX"
 
 [node name="LadderAudio" type="AudioStreamPlayer" parent="FootstepManager" unique_id=538789310]
 stream = SubResource("AudioStreamRandomizer_utr5e")
+bus = &"SFX"
 
 [node name="MonkeBarAudio" type="AudioStreamPlayer" parent="FootstepManager" unique_id=325559454]
 stream = ExtResource("42_hggc2")
 pitch_scale = 2.0
+bus = &"SFX"
 
 [node name="ScreenVFXManager" type="Node" parent="." unique_id=1920257755 node_paths=PackedStringArray("screen_water_ui", "rain_drops_overlay", "waterfall_overlay")]
 script = ExtResource("26_fgkxt")

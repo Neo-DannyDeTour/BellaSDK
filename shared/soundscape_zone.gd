@@ -41,6 +41,11 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 
+	# --- ROUTE TO AMBIENT BUS ---
+	print("Audio: Routing ", name, " players to Ambient bus.")
+	ambient_player.bus = &"Ambient"
+	one_shot_player.bus = &"Ambient"
+
 	# Register default soundscape on initialization
 	if is_default_soundscape:
 		default_zone = self

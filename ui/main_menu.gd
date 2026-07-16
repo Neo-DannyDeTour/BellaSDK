@@ -1,28 +1,59 @@
 extends CanvasLayer
 class_name MainMenu
 
+## The base sensitivity multiplier used when no player preference is found.
 const DEFAULT_SENSITIVITY: float = 0.5
+
+## Preloaded scene for the chapter selection screen to ensure instantaneous loading.
 const CHAPTER_SCREEN: PackedScene = preload("res://ui/menu_chapter_screen.tscn")
 
 @export_group("Options Tabs & Navigation")
+
+## Array of buttons used to navigate back to the main menu screen.
 @export var back_buttons: Array[Button]
+
+## Array of buttons that toggle between different option categories (Audio, Video, etc.).
 @export var tab_buttons: Array[Button]
+
+## Array of control panels corresponding to the tab_buttons.
 @export var option_panels: Array[Control]
 
+## The main vertical container holding the primary menu navigation buttons.
 @onready var main_buttons: VBoxContainer = $MarginContainer/MainButtons
+
+## The centralized container that holds the overarching options menu UI.
 @onready var options_menu: Control = %CenterContainer
+
+## The panel dedicated specifically to managing saved games and loading states.
 @onready var save_load_panel: Panel = $SaveLoadPanel
 
 # Main Menu Buttons
+
+## Button to unpause and return to the active gameplay session.
 @onready var continue_button: Button = %Continue
+
+## Button to initiate a fresh playthrough or end the current run.
 @onready var new_game_button: Button = %NewGame
+
+## Button to completely restart the active gameplay session.
 @onready var restart_button: Button = %RestartGame
+
+## Button to write the current game state to disk.
 @onready var save_button: Button = %SaveGame
+
+## Button to read a previously saved game state from disk.
 @onready var load_button: Button = %LoadGame
+
+## Button to open the settings and options overlay.
 @onready var options_button: Button = %Options
+
+## Button to completely terminate the game application.
 @onready var exit_button: Button = %Exit
 
+## Tracks whether the player's mouse sensitivity has been analyzed and set.
 var has_calibrated: bool = false
+
+## Records the highest velocity of the mouse to automatically determine comfortable sensitivity.
 var max_mouse_speed: float = 0.0
 
 
@@ -31,12 +62,12 @@ func _ready() -> void:
 	print("UI: MainMenu initialized.")
 	
 	# Connect Main Buttons
-	continue_button.pressed.connect(_on_resume_pressed)
-	new_game_button.pressed.connect(_on_new_game_pressed)
-	restart_button.pressed.connect(_on_start_game_pressed)
-	options_button.pressed.connect(_on_options_pressed)
-	load_button.pressed.connect(_on_load_pressed)
-	exit_button.pressed.connect(_on_exit_pressed)
+	if continue_button: continue_button.pressed.connect(_on_resume_pressed)
+	if new_game_button: new_game_button.pressed.connect(_on_new_game_pressed)
+	if restart_button: restart_button.pressed.connect(_on_start_game_pressed)
+	if options_button: options_button.pressed.connect(_on_options_pressed)
+	if load_button: load_button.pressed.connect(_on_load_pressed)
+	if exit_button: exit_button.pressed.connect(_on_exit_pressed)
 	
 	# Connect Navigation Buttons
 	for btn: Button in back_buttons:
@@ -57,24 +88,25 @@ func _check_game_context() -> void:
 	print("UI: Checking game context for SaveManager and Pause state.")
 	if SaveManager.has_method("has_saves"):
 		var saves_exist: bool = SaveManager.has_saves() as bool
-		load_button.visible = saves_exist
+		if load_button:
+			load_button.visible = saves_exist
 
 	if get_parent().has_method("toggle_pause"):
-		continue_button.show()
-		restart_button.show()
-		save_button.show()
-		new_game_button.text = "End Run" 
+		if continue_button: continue_button.show()
+		if restart_button: restart_button.show()
+		if save_button: save_button.show()
+		if new_game_button: new_game_button.text = "End Run" 
 	else:
-		continue_button.hide()
-		restart_button.hide()
-		save_button.hide()
+		if continue_button: continue_button.hide()
+		if restart_button: restart_button.hide()
+		if save_button: save_button.hide()
 
 
 func _return_to_main_buttons() -> void:
 	print("UI: Player routed to Main Buttons.")
-	main_buttons.visible = true
-	options_menu.visible = false
-	save_load_panel.visible = false
+	if main_buttons: main_buttons.visible = true
+	if options_menu: options_menu.visible = false
+	if save_load_panel: save_load_panel.visible = false
 
 
 func _on_resume_pressed() -> void:
@@ -89,7 +121,7 @@ func _on_new_game_pressed() -> void:
 	if not has_calibrated:
 		_apply_bucket_calibration()
 
-	main_buttons.hide()
+	if main_buttons: main_buttons.hide()
 	var chapter_window: Node = CHAPTER_SCREEN.instantiate()
 	add_child(chapter_window)
 
@@ -106,9 +138,9 @@ func _on_start_game_pressed() -> void:
 
 func _on_options_pressed() -> void:
 	print("UI: Player clicked Options.")
-	main_buttons.visible = false
-	save_load_panel.visible = false
-	options_menu.visible = true
+	if main_buttons: main_buttons.visible = false
+	if save_load_panel: save_load_panel.visible = false
+	if options_menu: options_menu.visible = true
 	
 	# Open the first tab automatically so the panel isn't empty
 	if tab_buttons.size() > 0 and option_panels.size() > 0:
@@ -117,9 +149,9 @@ func _on_options_pressed() -> void:
 
 func _on_load_pressed() -> void:
 	print("UI: Player clicked Load Game.")
-	main_buttons.visible = false
-	options_menu.visible = false
-	save_load_panel.visible = true
+	if main_buttons: main_buttons.visible = false
+	if options_menu: options_menu.visible = false
+	if save_load_panel: save_load_panel.visible = true
 
 
 func _on_exit_pressed() -> void:
@@ -136,7 +168,6 @@ func _on_tab_pressed(tab_index: int) -> void:
 
 func _apply_bucket_calibration() -> void:
 	print("System: Running mouse sensitivity bucket calibration.")
-	# If the user has already manually set a sensitivity, skip calibration
 	var saved_sens: Variant = GlobalSettings.get_setting("Settings", "mouse_sensitivity", null)
 	if saved_sens != null:
 		has_calibrated = true
@@ -184,8 +215,10 @@ func _input(event: InputEvent) -> void:
 			return
 		
 		if options_menu.visible or save_load_panel.visible:
+			print("UI: User canceled out of sub-menu.")
 			_return_to_main_buttons()
 			get_viewport().set_input_as_handled()
 		elif main_buttons.visible and get_parent().has_method("toggle_pause"):
+			print("UI: User canceled out of pause menu completely.")
 			_on_resume_pressed()
 			get_viewport().set_input_as_handled()
