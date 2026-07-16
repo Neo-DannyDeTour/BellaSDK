@@ -1,6 +1,6 @@
 <img src="https://github.com/UnrealDanny/BellaSDK/blob/main/Bella_SDK_Logo.svg">
 
-![Godot 4.6](https://img.shields.io/badge/Godot-4.6-478CBF?logo=godotengine&logoColor=white)
+![Godot 4.7](https://img.shields.io/badge/Godot-4.6-478CBF?logo=godotengine&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
 ![Platforms](https://img.shields.io/badge/Platforms-Windows%20%7C%20Linux-lightgray.svg)
 ![Genre](https://img.shields.io/badge/Genre-FPS-red.svg)
