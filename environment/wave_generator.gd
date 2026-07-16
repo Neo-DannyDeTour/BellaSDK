@@ -180,12 +180,13 @@ func _update(
 
 	## --- WAVE SPECTRA UPDATE ---
 	if params.should_generate_spectrum:
-		var alpha: float = JONSWAP_alpha(float(params.wind_speed), float(params.fetch_length) * 1e3)
+		var alpha: float = JONSWAP_alpha(
+			float(params.wind_speed), float(params.fetch_length) * 1e3
+		)
 		var omega: float = JONSWAP_peak_angular_frequency(
 			float(params.wind_speed), float(params.fetch_length) * 1e3
 		)
 
-		# STRICT CASTING: Forces Godot to pack these as correct IEEE 754 floats and 32-bit ints
 		pipelines[&"spectrum_compute"].call(
 			context,
 			compute_list,
@@ -203,7 +204,10 @@ func _update(
 					float(params.swell),
 					float(params.detail),
 					float(params.spread),
-					int(cascade_index)
+					int(cascade_index),
+					0.0, # pad1
+					0.0, # pad2
+					0.0  # pad3
 				]
 			)
 		)
@@ -219,15 +223,25 @@ func _update(
 				float(DEPTH),
 				float(params.time),
 				int(cascade_index),
-				float(params.loop_period)
+				float(params.loop_period),
+				0.0, # pad1
+				0.0  # pad2
 			]
 		)
 	)
 
 	## --- WAVE SPECTRA INVERSE FOURIER TRANSFORM ---
+	
+	## The 16-byte push constant shared by both fft_compute and transpose
 	var fft_push_constant: PackedByteArray = RenderingContext.create_push_constant(
-		[int(cascade_index)]
+		[
+			int(cascade_index),
+			0.0, # pad1
+			0.0, # pad2
+			0.0  # pad3
+		]
 	)
+	
 	pipelines[&"fft_compute"].call(context, compute_list, fft_push_constant)
 	pipelines[&"transpose"].call(context, compute_list, fft_push_constant)
 
@@ -249,13 +263,20 @@ func _update(
 		)
 	)
 
-	# --- NEW: Run the downsampler ---
+	# --- DOWNSAMPLER ---
 	context.compute_list_add_barrier(compute_list)
 	var ratio: float = float(map_size) / float(cpu_map_size)
 	pipelines[&"downsample"].call(
 		context,
 		compute_list,
-		RenderingContext.create_push_constant([int(cascade_index), float(ratio)])
+		RenderingContext.create_push_constant(
+			[
+				int(cascade_index),
+				float(ratio),
+				0.0, # pad1
+				0.0  # pad2
+			]
+		)
 	)
 
 

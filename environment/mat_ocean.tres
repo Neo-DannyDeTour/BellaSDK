@@ -11,4 +11,4 @@ shader_parameter/crest_glow_intensity = 0.2
 shader_parameter/aerated_foam_glow = 0.3
 shader_parameter/roughness = 0.4
 shader_parameter/normal_strength = 1.0
-shader_parameter/map_scales = PackedVector4Array(0.011, 0.011, 1.23, 1, 0.01754386, 0.01754386, 0.75, 1, 0.0625, 0.0625, 0, 0.25)
+shader_parameter/map_scales = PackedVector4Array(0.011363637, 0.011363637, 1, 1, 0.01754386, 0.01754386, 0.75, 1, 0.0625, 0.0625, 0, 0.25)

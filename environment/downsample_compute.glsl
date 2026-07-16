@@ -8,9 +8,12 @@ layout(rgba16f, set = 0, binding = 0) restrict readonly uniform image2DArray hig
 // Write to the lightweight 128x128 map
 layout(rgba16f, set = 0, binding = 1) restrict writeonly uniform image2DArray low_res_map;
 
-layout(push_constant) restrict readonly uniform PushConstants {
+layout(push_constant, std430) uniform PushConstants {
     uint cascade_index;
-    float ratio; // The scale difference (e.g., 1024 / 128 = 8.0)
+    float ratio;
+    float pad1;
+    float pad2;
+    // Total: 16 bytes tightly packed
 };
 
 void main() {

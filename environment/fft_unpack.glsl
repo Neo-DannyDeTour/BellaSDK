@@ -17,11 +17,12 @@ layout(std430, set = 1, binding = 0) restrict buffer FFTBuffer {
 	vec2 data[]; // map_size x map_size x num_spectra x 2 * num_cascades
 };
 
-layout(push_constant) restrict readonly uniform PushConstants {
-	uint cascade_index;
-	float whitecap;
-	float foam_grow_rate;
-	float foam_decay_rate;
+layout(push_constant, std430) uniform PushConstants {
+    uint cascade_index;
+    float whitecap;
+    float foam_grow_rate;
+    float foam_decay_rate;
+    // Total: Exactly 16 bytes. No padding needed!
 };
 
 // Tiling doesn't provide much of a benefit here (but it does a *little*)

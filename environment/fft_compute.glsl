@@ -19,8 +19,12 @@ layout(std430, set = 0, binding = 1) restrict buffer FFTBuffer {
 	vec2 data[]; // map_size x map_size x num_spectra x 2 * num_cascades
 };
 
-layout(push_constant) restrict readonly uniform PushConstants {
-	uint cascade_index;
+layout(push_constant, std430) uniform PushConstants {
+    uint cascade_index; // 4 bytes
+    float pad1;         // 4 bytes
+    float pad2;         // 4 bytes
+    float pad3;         // 4 bytes
+                        // Total: 16 bytes tightly packed
 };
 
 shared vec2 row_shared[2 * MAX_MAP_SIZE]; // "Ping-pong" shared buffer for a single row

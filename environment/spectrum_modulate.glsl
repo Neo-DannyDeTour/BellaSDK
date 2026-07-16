@@ -21,13 +21,15 @@ layout(std430, set = 1, binding = 0) restrict writeonly buffer FFTBuffer {
     vec2 data[]; // map_size x map_size x num_spectra x 2 * num_cascades
 };
 
-// FIXED: Removed "params" so these act as global variables, and restored vec2.
-layout(push_constant) uniform PushConstants {
-    vec2 tile_length;
-    float depth;
-    float time;
-    uint cascade_index;
-    float loop_period; // --- NEW ---
+layout(push_constant, std430) uniform PushConstants {
+    vec2 tile_length;   // 8 bytes
+    float depth;        // 4 bytes
+    float time;         // 4 bytes
+    uint cascade_index; // 4 bytes
+    float loop_period;  // 4 bytes
+    float pad1;         // 4 bytes
+    float pad2;         // 4 bytes
+                        // Total: 32 bytes tightly packed
 };
 
 /** Returns exp(j*x) assuming x >= 0. */
