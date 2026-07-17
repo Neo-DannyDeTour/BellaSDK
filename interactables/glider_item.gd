@@ -2,17 +2,22 @@ class_name GliderItem
 extends RigidBody3D
 
 
+var current_holder: CharacterBody3D = null
+
+
+@onready var player_anchor: Marker3D = $PlayerAnchor
+
+
 func set_glider_mesh_visible(p_is_visible: bool) -> void:
 	print("GliderItem: set_glider_mesh_visible() called. State: ", p_is_visible)
 	# Toggle your specific mesh node here. For example:
 	# get_node("MeshInstance3D").visible = p_is_visible
 
 
-@onready var player_anchor: Marker3D = $PlayerAnchor
-
-
 func pick_up(hold_position: Marker3D, player: CharacterBody3D) -> void:
 	print("GliderItem: pick_up() called. Initiating tween sequence for player.")
+
+	current_holder = player
 
 	# 1. Disable physics while being picked up and held
 	freeze = true
@@ -56,15 +61,19 @@ func _on_player_reached_anchor(player: CharacterBody3D, hold_position: Marker3D)
 	transform.basis = Basis.IDENTITY
 
 	# 4. Apply restrictions and unlock the player
-	# FIX: Route sprint restriction through locomotion_component
 	if is_instance_valid(player.locomotion_component):
 		player.locomotion_component.can_sprint = false
-		
+
 	player.set_machine_lock(false)
 
 
 func throw_item(force: Vector3, scene_root: Node) -> void:
 	print("GliderItem: throw_item() called. Releasing glider into the world.")
+
+	# Restore sprint restriction
+	if is_instance_valid(current_holder) and is_instance_valid(current_holder.locomotion_component):
+		current_holder.locomotion_component.can_sprint = true
+	current_holder = null
 
 	# Detach from player and put back in world
 	var current_parent: Node = get_parent()
@@ -83,6 +92,11 @@ func throw_item(force: Vector3, scene_root: Node) -> void:
 
 func drop_item(scene_root: Node, drop_pos: Vector3) -> void:
 	print("GliderItem: drop_item() called. Detaching from player.")
+
+	# Restore sprint restriction
+	if is_instance_valid(current_holder) and is_instance_valid(current_holder.locomotion_component):
+		current_holder.locomotion_component.can_sprint = true
+	current_holder = null
 
 	var current_parent: Node = get_parent()
 	if is_instance_valid(current_parent):
