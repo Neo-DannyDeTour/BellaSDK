@@ -35,13 +35,11 @@ func _ready() -> void:
 	if not Engine.is_editor_hint():
 		if is_instance_valid(_editor_icon):
 			_editor_icon.queue_free()
-			
-		print("PhysicsMagnet: _ready() initialized.")
-		
+
 		# Connect signals for event-driven tracking
 		body_entered.connect(_on_body_entered)
 		body_exited.connect(_on_body_exited)
-		
+
 		# Disable process by default until something enters the field
 		set_physics_process(false)
 
@@ -59,15 +57,15 @@ func _on_body_entered(body: Node3D) -> void:
 		return
 
 	_active_bodies[body] = true
-	set_physics_process(true) # Wake up the magnet
+	set_physics_process(true)  # Wake up the magnet
 
 
 func _on_body_exited(body: Node3D) -> void:
 	if _active_bodies.has(body):
 		_active_bodies.erase(body)
-		
+
 		if _active_bodies.is_empty():
-			set_physics_process(false) # Put the magnet to sleep to save CPU
+			set_physics_process(false)  # Put the magnet to sleep to save CPU
 
 
 func _physics_process(_delta: float) -> void:

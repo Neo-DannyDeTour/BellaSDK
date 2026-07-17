@@ -60,8 +60,6 @@ var _grab_time: int = 0
 
 
 func _ready() -> void:
-	print("PickableObject: _ready() initializing node -> ", name)
-	
 	# Fallback assignments in case export vars were left empty in the inspector
 	if not interact_comp:
 		interact_comp = $Interact_Component
@@ -74,7 +72,7 @@ func _ready() -> void:
 
 	collision_layer = 1
 	collision_mask = 1
-	
+
 	if label:
 		label.hide()
 
@@ -176,7 +174,7 @@ func drop() -> void:
 	freeze = false
 	sleeping = false
 	gravity_scale = 1.0
-	
+
 	if mesh:
 		_set_model_transparency(mesh, 0.0)
 
@@ -222,10 +220,19 @@ func drop() -> void:
 				angular_velocity = Vector3.ZERO
 
 				var nudge_tween := create_tween()
-				nudge_tween.tween_property(self, "global_position:x", target_pos.x, 0.15) \
-					.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-				nudge_tween.parallel().tween_property(self, "global_position:z", target_pos.z, 0.15) \
-					.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+				(
+					nudge_tween
+					. tween_property(self, "global_position:x", target_pos.x, 0.15)
+					. set_trans(Tween.TRANS_SINE)
+					. set_ease(Tween.EASE_OUT)
+				)
+				(
+					nudge_tween
+					. parallel()
+					. tween_property(self, "global_position:z", target_pos.z, 0.15)
+					. set_trans(Tween.TRANS_SINE)
+					. set_ease(Tween.EASE_OUT)
+				)
 
 				nudge_tween.tween_callback(
 					func() -> void:
@@ -264,7 +271,9 @@ func _attempt_enable_collision(player_node: Node3D) -> void:
 
 
 func throw(impulse_vector: Vector3) -> void:
-	print("PickableObject: throw() called. Throwing: ", name, " with force: ", impulse_vector.length())
+	print(
+		"PickableObject: throw() called. Throwing: ", name, " with force: ", impulse_vector.length()
+	)
 	drop()
 	if not is_locked:
 		apply_central_impulse(impulse_vector)
@@ -288,24 +297,24 @@ func _on_interact_component_focused() -> void:
 func _update_label_text() -> void:
 	if not label:
 		return
-		
+
 	var events := InputMap.action_get_events("interact")
 	var key_name := "???"
-	
+
 	if events.size() > 0:
 		var raw_text := events[0].as_text()
 		key_name = (
 			raw_text
-			.replace(" (Physical)", "")
-			.replace(" - Physical", "")
-			.replace(" (Physics)", "")
-			.replace(" - Physics", "")
-			.replace("Left Mouse Button", "LMB")
-			.replace("Right Mouse Button", "RMB")
-			.replace("Middle Mouse Button", "MMB")
-			.strip_edges()
+			. replace(" (Physical)", "")
+			. replace(" - Physical", "")
+			. replace(" (Physics)", "")
+			. replace(" - Physics", "")
+			. replace("Left Mouse Button", "LMB")
+			. replace("Right Mouse Button", "RMB")
+			. replace("Middle Mouse Button", "MMB")
+			. strip_edges()
 		)
-		
+
 	label.text = "[%s]" % [key_name]
 
 
@@ -361,10 +370,10 @@ func _physics_process(_delta: float) -> void:
 		var target_basis: Basis = holder.global_basis
 		var current_quat := global_basis.get_rotation_quaternion()
 		var diff_quat := target_basis.get_rotation_quaternion() * current_quat.inverse()
-		
+
 		var axis := Vector3(diff_quat.x, diff_quat.y, diff_quat.z)
 		var angle := 2.0 * acos(clampf(diff_quat.w, -1.0, 1.0))
-		
+
 		if angle > PI:
 			angle -= TAU
 
@@ -387,7 +396,9 @@ func _physics_process(_delta: float) -> void:
 			if depth > 0.0:
 				submerged = true
 				var depth_multiplier: float = clampf(depth * 4.0, 0.0, 4.0)
-				var force: Vector3 = Vector3.UP * probe_mass * float_force * gravity * depth_multiplier
+				var force: Vector3 = (
+					Vector3.UP * probe_mass * float_force * gravity * depth_multiplier
+				)
 				var offset: Vector3 = p.global_position - global_position
 				apply_force(force, offset)
 
@@ -401,7 +412,11 @@ func _wait_to_enable_collision(player_node: Node3D) -> void:
 	var max_wait_frames := 30
 	var current_frame := 0
 
-	while is_instance_valid(self) and is_instance_valid(player_node) and current_frame < max_wait_frames:
+	while (
+		is_instance_valid(self)
+		and is_instance_valid(player_node)
+		and current_frame < max_wait_frames
+	):
 		var flat_my_pos := Vector2(global_position.x, global_position.z)
 		var flat_player_pos := Vector2(player_node.global_position.x, player_node.global_position.z)
 
@@ -423,15 +438,21 @@ func _wait_to_enable_collision(player_node: Node3D) -> void:
 			var push_vector := flat_backward * push_distance
 
 			var safe_travel := push_vector
-			var kin_collision: KinematicCollision3D = player_node.move_and_collide(push_vector, true)
+			var kin_collision: KinematicCollision3D = player_node.move_and_collide(
+				push_vector, true
+			)
 			if kin_collision:
 				safe_travel = kin_collision.get_travel()
 
 			var target_pos := player_node.global_position + safe_travel
 
 			var tween := get_tree().create_tween()
-			tween.tween_property(player_node, "global_position", target_pos, 0.15) \
-				.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+			(
+				tween
+				. tween_property(player_node, "global_position", target_pos, 0.15)
+				. set_trans(Tween.TRANS_SINE)
+				. set_ease(Tween.EASE_OUT)
+			)
 
 			linear_velocity = Vector3.ZERO
 			angular_velocity = Vector3.ZERO

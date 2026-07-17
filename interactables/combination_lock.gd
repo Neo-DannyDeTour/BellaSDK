@@ -20,7 +20,6 @@ var camera_tween: Tween
 
 
 func _ready() -> void:
-	print("CombinationLock: _ready() called. Formatting secret code.")
 	# Enforce the 3 character limit AND force uppercase to prevent mismatch errors
 	secret_code = secret_code.left(3).to_upper()
 

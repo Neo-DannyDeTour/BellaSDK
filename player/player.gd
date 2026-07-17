@@ -30,7 +30,6 @@ var flashlight_controller: FlashlightController
 # INITIALIZATION
 # --------------------------------------
 func _ready() -> void:
-	print("Player: _ready() called. Initializing Facade Controller.")
 	add_to_group("saveable")
 	add_to_group("player")
 
@@ -368,7 +367,7 @@ func heal(amount: int) -> void:
 
 func apply_knockback(force: Vector3) -> void:
 	print("Player: apply_knockback() called. Forcing transition to Air state.")
-	
+
 	if is_instance_valid(state_machine):
 		if state_machine.has_method("transition_to"):
 			state_machine.transition_to("Air", {"knockback_force": force})

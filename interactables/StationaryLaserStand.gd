@@ -33,7 +33,6 @@ var _trail_texture: GradientTexture2D
 
 
 func _ready() -> void:
-	print("StationaryLaserStand: _ready() initialized.")
 	_scorch_texture = _create_scorch_texture()
 	_trail_texture = _create_trail_texture()
 

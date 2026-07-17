@@ -103,8 +103,6 @@ var _cached_player: Node3D = null
 
 
 func _ready() -> void:
-	print("Valve: _ready() initialized.")
-
 	if requires_installation:
 		is_installed = false
 		has_been_installed = false

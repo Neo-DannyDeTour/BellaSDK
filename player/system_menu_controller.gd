@@ -38,8 +38,8 @@ var noclip_speed_multiplier: float = 8.0
 var fullbright_env: Environment
 var is_stunned: bool = false
 
+
 func _ready() -> void:
-	print("SystemMenuController: _ready() called. Initializing sub-systems.")
 	_setup_menu()
 	_setup_fullbright_environment()
 
@@ -48,11 +48,13 @@ func _ready() -> void:
 	Events.noclip_ui_button_pressed.connect(toggle_noclip)
 	Events.fullbright_toggled.connect(_on_fullbright_toggled)
 
+
 func _setup_menu() -> void:
 	if menu_scene:
 		menu_instance = menu_scene.instantiate() as CanvasLayer
 		add_child(menu_instance)
 		menu_instance.hide()
+
 
 func _setup_fullbright_environment() -> void:
 	fullbright_env = Environment.new()
@@ -66,6 +68,7 @@ func _setup_fullbright_environment() -> void:
 	fullbright_env.ssil_enabled = false
 	fullbright_env.sdfgi_enabled = false
 	fullbright_env.glow_enabled = false
+
 
 # --------------------------------------
 # INPUT HANDLING
@@ -99,6 +102,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 
+
 # --------------------------------------
 # META LOGIC
 # --------------------------------------
@@ -118,9 +122,11 @@ func toggle_pause() -> void:
 
 	pause_toggled.emit(is_paused)
 
+
 func _on_debug_menu_toggled(is_open: bool) -> void:
 	is_menu_open = is_open
 	print("SystemMenuController: _on_debug_menu_toggled() called. Open state: ", is_open)
+
 
 func _on_fullbright_toggled(is_fullbright: bool) -> void:
 	print("SystemMenuController: _on_fullbright_toggled() called. Active: ", is_fullbright)
@@ -133,6 +139,7 @@ func _on_fullbright_toggled(is_fullbright: bool) -> void:
 	if is_instance_valid(sun):
 		sun.visible = not is_fullbright
 		sun.shadow_enabled = not is_fullbright
+
 
 # --------------------------------------
 # NOCLIP LOGIC
@@ -153,13 +160,14 @@ func toggle_noclip() -> void:
 		print("SystemMenuController: Noclip OFF")
 		if is_instance_valid(player_body):
 			player_body.velocity = Vector3.ZERO
-			
+
 			var loco: Node = player_body.get("locomotion_component")
 			if is_instance_valid(loco):
-				loco.set("last_velocity", Vector3.ZERO) 
+				loco.set("last_velocity", Vector3.ZERO)
 
 	Events.noclip_toggled.emit(flying)
 	noclip_toggled.emit(flying)
+
 
 func process_noclip(delta: float) -> void:
 	if not flying or not is_instance_valid(player_body):

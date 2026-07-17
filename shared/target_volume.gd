@@ -26,7 +26,8 @@ enum SpawnMode { TIME_BASED, WAIT_FOR_KILL }
 @export var randomize_position_timer: float = 0.0
 
 @export_category("Visualizer Controls")
-@export var visualizer_shape_type: EditorTriggerVisualizer.ShapeType = EditorTriggerVisualizer.ShapeType.BOX:
+@export
+var visualizer_shape_type: EditorTriggerVisualizer.ShapeType = EditorTriggerVisualizer.ShapeType.BOX:
 	set(value):
 		visualizer_shape_type = value
 		_update_visualizer()
@@ -65,7 +66,6 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 
-	print("TargetVolume: _ready() - Volume initialized.")
 	spawn_timer = spawn_interval_seconds
 	_initialize_pool()
 

@@ -8,8 +8,6 @@ var _chapter_tween: Tween
 
 
 func _ready() -> void:
-	print("ChapterDisplay: _ready() called. Hooking into Events bus.")
-
 	# --- PROGRAMMATIC INSPECTOR OVERRIDES ---
 	# Disabling fit_content forces the label to respect the full screen width we give it,
 	# which allows the BBCode [center] tag to actually work.

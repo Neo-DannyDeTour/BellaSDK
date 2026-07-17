@@ -16,13 +16,11 @@ var _is_intended_to_play: bool = false
 
 
 func _ready() -> void:
-	print("VideoCast: _ready() called. Initializing video setup.")
-	
 	# Connecting signals in code ensures they are always active and prevents editor errors.
 	if not visibility_notifier.screen_entered.is_connected(_on_visibility_notifier_screen_entered):
 		print("VideoCast: Connecting screen_entered signal.")
 		visibility_notifier.screen_entered.connect(_on_visibility_notifier_screen_entered)
-		
+
 	if not visibility_notifier.screen_exited.is_connected(_on_visibility_notifier_screen_exited):
 		print("VideoCast: Connecting screen_exited signal.")
 		visibility_notifier.screen_exited.connect(_on_visibility_notifier_screen_exited)
@@ -97,16 +95,16 @@ func _evaluate_playback_state() -> void:
 		if not video_player.is_playing():
 			print("VideoCast: Stream starting.")
 			video_player.play()
-		
+
 		# Trigger an immediate distance check instead of blindly pausing.
-		# This prevents the black screen lockup by allowing the viewport 
+		# This prevents the black screen lockup by allowing the viewport
 		# to update if the player is already within range.
 		_check_distance_to_camera()
 	else:
 		if not video_player.paused:
 			print("VideoCast: Conditions not met. Pausing video.")
 			video_player.paused = true
-			
+
 		viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 
 

@@ -117,7 +117,6 @@ func _ready() -> void:
 		glass_thickness *= scale.z
 		scale = Vector3.ONE
 
-	print("DestructibleGlass (", name, "): _ready called. Precalculating shards...")
 	body_entered.connect(_on_body_entered)
 
 	if break_sound != null:

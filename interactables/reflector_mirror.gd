@@ -13,7 +13,6 @@ var _just_attached: bool = false
 
 
 func _ready() -> void:
-	print("ReflectorMirror: _ready() initialized.")
 	add_to_group("mirror")
 	_mark_children_as_mirrors(self)
 

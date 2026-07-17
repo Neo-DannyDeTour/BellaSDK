@@ -23,7 +23,6 @@ var is_active: bool = false
 # BUILT-IN METHODS
 # --------------------------------------
 func _ready() -> void:
-	print("PathStick: _ready() called.")
 	loop = false
 	set_physics_process(false)
 

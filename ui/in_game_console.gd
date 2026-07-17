@@ -89,7 +89,6 @@ var cached_shaders: Dictionary = {}
 
 
 func _ready() -> void:
-	print("InGameConsole: _ready() initializing console.")
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 128
 	visible = false
@@ -162,7 +161,7 @@ func _ready() -> void:
 	filter_layer.add_child(screen_filter_rect)
 
 	write("Developer console initialized. Press ~ to toggle.", "cyan")
-	
+
 	if has_node("/root/Events"):
 		var events: Node = get_node("/root/Events")
 		if events.has_signal("colorblind_mode_changed"):
