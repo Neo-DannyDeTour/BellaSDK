@@ -46,23 +46,24 @@ func exit() -> void:
 	is_zipline_transitioning = false
 	player.scale = Vector3.ONE
 
-	# Fix "Standing Up" on release to ensure the camera is upright
-	var current_fwd: Vector3 = -player.global_transform.basis.z
-	var flat_fwd: Vector3 = Vector3(current_fwd.x, 0.0, current_fwd.z).normalized()
-	if flat_fwd.length_squared() < 0.01:
-		flat_fwd = Vector3.FORWARD
-
-	var upright_basis := Basis.looking_at(flat_fwd, Vector3.UP)
 	var detach_tween := create_tween().set_parallel(true)
-	(
-		detach_tween
-		. tween_property(player, "quaternion", upright_basis.get_rotation_quaternion(), 0.15)
-		. set_trans(Tween.TRANS_SINE)
-	)
 
-	# FIX: Target the actual 3D node handling the tilt (camera or eyes)
 	if is_instance_valid(player.camera_controller):
-		detach_tween.tween_property(player.camera_controller.eyes, "rotation:z", 0.0, 0.15)
+		# Fix "Standing Up" on release to ensure the camera is upright
+		if is_instance_valid(player.camera_controller.head):
+			(
+				detach_tween
+				. tween_property(player.camera_controller.head, "rotation:x", 0.0, 0.15)
+				. set_trans(Tween.TRANS_SINE)
+			)
+
+		# FIX: Target the actual 3D node handling the tilt (camera or eyes)
+		if is_instance_valid(player.camera_controller.eyes):
+			(
+				detach_tween
+				. tween_property(player.camera_controller.eyes, "rotation:z", 0.0, 0.15)
+				. set_trans(Tween.TRANS_SINE)
+			)
 
 
 func physics_update(delta: float) -> void:
@@ -114,12 +115,32 @@ func _perform_attach_tween() -> void:
 	if is_auto_sliding:
 		var is_start_highest: bool = zipline_start.y > zipline_end.y
 		var downhill_dir: Vector3 = zipline_dir if is_start_highest else -zipline_dir
-		var target_quat: Quaternion = (
-			Basis.looking_at(downhill_dir, Vector3.UP).get_rotation_quaternion()
+
+		# Separate pitch (vertical) and yaw (horizontal)
+		var flat_dir: Vector3 = Vector3(downhill_dir.x, 0.0, downhill_dir.z).normalized()
+		if flat_dir.length_squared() < 0.01:
+			flat_dir = Vector3.FORWARD
+
+		var target_yaw_quat: Quaternion = (
+			Basis.looking_at(flat_dir, Vector3.UP).get_rotation_quaternion()
 		)
-		attach_tween.tween_property(player, "quaternion", target_quat, 0.25).set_trans(
+
+		# Player body strictly rotates to horizontal yaw
+		attach_tween.tween_property(player, "quaternion", target_yaw_quat, 0.25).set_trans(
 			Tween.TRANS_SINE
 		)
+
+		# Only pitch the head, not the body
+		var pitch_angle: float = asin(downhill_dir.y)
+		if (
+			is_instance_valid(player.camera_controller)
+			and is_instance_valid(player.camera_controller.head)
+		):
+			(
+				attach_tween
+				. tween_property(player.camera_controller.head, "rotation:x", pitch_angle, 0.25)
+				. set_trans(Tween.TRANS_SINE)
+			)
 
 	attach_tween.set_parallel(false)
 	attach_tween.tween_callback(func() -> void: is_zipline_transitioning = false)
@@ -129,7 +150,7 @@ func _calculate_movement(delta: float, input_dir: Vector2) -> void:
 	var downhill_sign: float = 1.0 if zipline_dir.y < 0.0 else -1.0
 	var downhill_vector: Vector3 = zipline_dir * downhill_sign
 
-	var look_forward: Vector3 = -player.camera_controller.camera.global_transform.basis.z
+	var look_forward: Vector3 = player.camera_controller.get_camera_look_dir()
 	var look_dot_downhill: float = look_forward.dot(downhill_vector)
 
 	var is_looking_downhill: bool = look_dot_downhill > 0.1
@@ -190,7 +211,7 @@ func _perform_dismount() -> void:
 
 	if zip_vel.length() < 2.0:
 		# FIX: Route camera reference through camera_controller
-		var look_dir: Vector3 = -player.camera_controller.camera.global_transform.basis.z
+		var look_dir: Vector3 = player.camera_controller.get_camera_look_dir()
 		var launch_flat_fwd: Vector3 = Vector3(look_dir.x, 0.0, look_dir.z).normalized()
 
 		if launch_flat_fwd.length_squared() < 0.01:
