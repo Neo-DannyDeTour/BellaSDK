@@ -114,11 +114,6 @@ func _on_unfocused() -> void:
 		interact_label.hide()
 
 
-#func _on_interacted(character: CharacterBody3D) -> void:
-#if not attached_player:
-#attach(character)
-
-
 func _physics_process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		return

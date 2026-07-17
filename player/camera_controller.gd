@@ -43,9 +43,11 @@ var stair_offset: float = 0.0
 # INITIALIZATION
 func _ready() -> void:
 	print("CameraController: Initializing settings.")
-	
+
 	# GlobalSettings is an Autoload, so it's accessible globally
-	mouse_sensitivity_base = GlobalSettings.get_setting("Settings", "mouse_sensitivity", 0.5) as float
+	mouse_sensitivity_base = (
+		GlobalSettings.get_setting("Settings", "mouse_sensitivity", 0.5) as float
+	)
 	base_fov = GlobalSettings.get_setting("Settings", "base_fov", 75.0) as float
 	disable_sprint_fov = GlobalSettings.get_setting("Settings", "disable_sprint_fov", false) as bool
 
@@ -196,6 +198,19 @@ func _update_stair_smoothing(delta: float, player_velocity: float) -> void:
 
 	var move_amount: float = maxf(player_velocity * delta, 2.5 * delta)
 	stair_offset = move_toward(stair_offset, 0.0, move_amount)
+
+
+# CAMERA VECTOR HELPERS
+func get_camera_look_dir() -> Vector3:
+	if is_instance_valid(camera):
+		return -camera.global_transform.basis.z
+	return Vector3.FORWARD
+
+
+func get_camera_right_dir() -> Vector3:
+	if is_instance_valid(camera):
+		return camera.global_transform.basis.x
+	return Vector3.RIGHT
 
 
 # SAVE SYSTEM UTILITIES

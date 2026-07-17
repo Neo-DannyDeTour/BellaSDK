@@ -104,23 +104,29 @@ func physics_update(delta: float) -> void:
 # --------------------------------------
 func _apply_horizontal_movement(input_dir: Vector2) -> void:
 	# FIX: Route camera reference through camera_controller
-	var look_dir: Vector3 = -player.camera_controller.camera.global_transform.basis.z
-	var right_dir: Vector3 = player.camera_controller.camera.global_transform.basis.x
+	var look_dir: Vector3 = player.camera_controller.get_camera_look_dir()
+	var right_dir: Vector3 = player.camera_controller.get_camera_right_dir()
 
 	look_dir.y = 0.0
 	right_dir.y = 0.0
 	look_dir = look_dir.normalized()
 	right_dir = right_dir.normalized()
 
-	var bar_vel: Vector3 = (look_dir * -input_dir.y) + (right_dir * input_dir.x)
-	player.velocity.x = bar_vel.x * MONKEY_BAR_SPEED
-	player.velocity.z = bar_vel.z * MONKEY_BAR_SPEED
+	var target_dir: Vector3 = (look_dir * -input_dir.y) + (right_dir * input_dir.x)
+	var final_dir: Vector3 = Vector3.ZERO
 
-	var flat_vel := Vector3(player.velocity.x, 0.0, player.velocity.z)
-	if flat_vel.length() > 0.0:
-		# FIX: Route direction to locomotion_component
-		if is_instance_valid(player.locomotion_component):
-			player.locomotion_component.direction = flat_vel.normalized()
+	if is_instance_valid(player.locomotion_component):
+		if target_dir.length() > 0.0:
+			player.locomotion_component.direction = target_dir.normalized()
+		else:
+			player.locomotion_component.direction = Vector3.ZERO
+		final_dir = player.locomotion_component.direction
+	else:
+		if target_dir.length() > 0.0:
+			final_dir = target_dir.normalized()
+
+	player.velocity.x = final_dir.x * MONKEY_BAR_SPEED
+	player.velocity.z = final_dir.z * MONKEY_BAR_SPEED
 
 
 func _apply_vertical_magnetism() -> void:
