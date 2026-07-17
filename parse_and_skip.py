@@ -3,14 +3,30 @@ import subprocess
 
 skipped_files = []
 
-# Get list of all GDScript files
-find_cmd = 'find . -name "*.gd" | grep -v "addons/" | grep -iv "player_old.gd" | grep -iv "main_menu.gd" | grep -iv "playerENUM_TEST.gd"'
-result = subprocess.run(find_cmd, shell=True, capture_output=True, text=True)
-gd_files = result.stdout.strip().split('\n')
+# Get list of all GDScript files natively to avoid shell=True command injection risks
+gd_files = []
+for root, _, files in os.walk("."):
+    for file in files:
+        if file.endswith(".gd"):
+            filepath = os.path.join(root, file)
+            # Normalize path separators for consistent filtering
+            filepath_forward = filepath.replace(os.sep, "/")
+
+            # Apply filters
+            if "addons/" in filepath_forward:
+                continue
+
+            filepath_lower = filepath_forward.lower()
+            if "player_old.gd" in filepath_lower:
+                continue
+            if "main_menu.gd" in filepath_lower:
+                continue
+            if "playerenum_test.gd" in filepath_lower:
+                continue
+
+            gd_files.append(filepath_forward)
 
 for file in gd_files:
-    if not file:
-        continue
 
     # Try formatting
     fmt_res = subprocess.run(['gdformat', file], capture_output=True, text=True)
