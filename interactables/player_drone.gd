@@ -20,7 +20,6 @@ var original_player: CharacterBody3D = null
 
 
 func _ready() -> void:
-	print("PlayerDrone: _ready() initialized.")
 	camera.current = false
 	drone_hud.hide()
 	interact_comp.interacted.connect(_on_drone_interacted)

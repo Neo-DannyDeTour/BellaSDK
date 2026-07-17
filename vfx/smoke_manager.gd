@@ -34,7 +34,6 @@ var _hole_buffer := PackedFloat32Array()
 
 
 func _ready() -> void:
-	print("SmokeManager: _ready() called. Initializing atmospheric manager.")
 	rd = RenderingServer.get_rendering_device()
 
 	_hole_buffer.resize(MAX_HOLES * 8)

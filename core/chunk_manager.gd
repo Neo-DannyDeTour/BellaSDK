@@ -22,13 +22,14 @@ var loading_chunks: Dictionary = {}
 ## An array of chunk IDs that have been explicitly requested by trigger areas, bypassing distance checks.
 var trigger_active_chunks: Array[String] = []
 
+
 func _ready() -> void:
-	print("ChunkManager: _ready() executed. Setting up chunk management timer.")
 	var check_timer := Timer.new()
 	check_timer.wait_time = 0.5
 	check_timer.timeout.connect(_on_check_chunks)
 	add_child(check_timer)
 	check_timer.start()
+
 
 ## Called when a player enters an Area3D trigger to forcefully load a specific chunk.
 func trigger_load_chunk(chunk_id: String) -> void:
@@ -36,23 +37,25 @@ func trigger_load_chunk(chunk_id: String) -> void:
 	if not trigger_active_chunks.has(chunk_id):
 		trigger_active_chunks.append(chunk_id)
 
+
 ## Called when a player exits an Area3D trigger to release the forced load state of a chunk.
 func trigger_unload_chunk(chunk_id: String) -> void:
 	print("ChunkManager: trigger_unload_chunk() called for chunk ID: ", chunk_id)
 	if trigger_active_chunks.has(chunk_id):
 		trigger_active_chunks.erase(chunk_id)
 
+
 func _on_check_chunks() -> void:
 	print("ChunkManager: _on_check_chunks() executed. Evaluating chunk distances and triggers.")
 	if not is_instance_valid(player):
 		return
-		
+
 	var desired_chunks: Array[String] = []
-	
+
 	# 1. Add chunks requested by triggers
 	for chunk_id: String in trigger_active_chunks:
 		desired_chunks.append(chunk_id)
-		
+
 	# 2. Add chunks based on distance
 	var player_pos: Vector3 = player.global_position
 	for chunk_id: String in chunk_positions:
@@ -60,46 +63,54 @@ func _on_check_chunks() -> void:
 		if player_pos.distance_to(chunk_pos) <= load_distance:
 			if not desired_chunks.has(chunk_id):
 				desired_chunks.append(chunk_id)
-				
+
 	_process_chunk_queues(desired_chunks)
+
 
 func _process_chunk_queues(desired_chunks: Array[String]) -> void:
 	print("ChunkManager: _process_chunk_queues() executed. Managing memory and threads.")
-	
+
 	# Unload chunks that are no longer desired
 	var chunks_to_remove: Array[String] = []
 	for loaded_id: String in loaded_chunks:
 		if not desired_chunks.has(loaded_id):
 			_unload_chunk(loaded_id)
 			chunks_to_remove.append(loaded_id)
-			
+
 	for id: String in chunks_to_remove:
 		loaded_chunks.erase(id)
-	
+
 	# Request loads for desired chunks that aren't loaded or loading
 	for desired_id: String in desired_chunks:
 		if not loaded_chunks.has(desired_id) and not loading_chunks.has(desired_id):
 			_request_async_load(desired_id)
-			
+
 	# Check progress of currently loading chunks
 	var finished_loads: Array[String] = []
 	for loading_id: String in loading_chunks:
-		var status: ResourceLoader.ThreadLoadStatus = ResourceLoader.load_threaded_get_status(chunk_registry[loading_id])
+		var status: ResourceLoader.ThreadLoadStatus = ResourceLoader.load_threaded_get_status(
+			chunk_registry[loading_id]
+		)
 		if status == ResourceLoader.THREAD_LOAD_LOADED:
 			_instantiate_chunk(loading_id)
 			finished_loads.append(loading_id)
-		elif status == ResourceLoader.THREAD_LOAD_FAILED or status == ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
+		elif (
+			status == ResourceLoader.THREAD_LOAD_FAILED
+			or status == ResourceLoader.THREAD_LOAD_INVALID_RESOURCE
+		):
 			print("ChunkManager: Error loading chunk ID: ", loading_id)
 			finished_loads.append(loading_id)
-			
+
 	for id: String in finished_loads:
 		loading_chunks.erase(id)
+
 
 func _request_async_load(chunk_id: String) -> void:
 	print("ChunkManager: _request_async_load() called. Pushing to background thread: ", chunk_id)
 	if chunk_registry.has(chunk_id):
 		loading_chunks[chunk_id] = true
 		ResourceLoader.load_threaded_request(chunk_registry[chunk_id])
+
 
 func _instantiate_chunk(chunk_id: String) -> void:
 	print("ChunkManager: _instantiate_chunk() called. Spawning into world: ", chunk_id)
@@ -108,6 +119,7 @@ func _instantiate_chunk(chunk_id: String) -> void:
 		var instance: Node3D = chunk_resource.instantiate()
 		loaded_chunks[chunk_id] = instance
 		call_deferred("add_child", instance)
+
 
 func _unload_chunk(chunk_id: String) -> void:
 	print("ChunkManager: _unload_chunk() called. Freeing memory for: ", chunk_id)

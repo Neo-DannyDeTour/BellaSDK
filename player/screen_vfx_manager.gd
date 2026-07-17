@@ -29,8 +29,7 @@ var waterfall_mat: ShaderMaterial
 
 func _ready() -> void:
 	# 1. Added missing print() for initialization
-	print("ScreenVFXManager: _ready() called. Duplicating and caching materials.")
-	
+
 	# Force Godot to give each overlay its own isolated Material in memory
 	# and cache them strictly to avoid casting during process loops.
 	if waterfall_overlay and waterfall_overlay.material:

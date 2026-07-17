@@ -24,7 +24,6 @@ var _original_angular_damp: float = 0.0
 
 
 func _ready() -> void:
-	print("TetheredPlug: _ready() called. Initializing physics cache.")
 	_original_mass = mass
 	_original_linear_damp = linear_damp
 	_original_angular_damp = angular_damp
@@ -80,14 +79,14 @@ func _on_focus() -> void:
 			var raw_text := events[0].as_text()
 			key_name = (
 				raw_text
-				.replace(" (Physical)", "")
-				.replace(" - Physical", "")
-				.replace(" (Physics)", "")
-				.replace(" - Physics", "")
-				.replace("Left Mouse Button", "LMB")
-				.replace("Right Mouse Button", "RMB")
-				.replace("Middle Mouse Button", "MMB")
-				.strip_edges()
+				. replace(" (Physical)", "")
+				. replace(" - Physical", "")
+				. replace(" (Physics)", "")
+				. replace(" - Physics", "")
+				. replace("Left Mouse Button", "LMB")
+				. replace("Right Mouse Button", "RMB")
+				. replace("Middle Mouse Button", "MMB")
+				. strip_edges()
 			)
 
 		label.text = "Grab Plug [%s]" % key_name

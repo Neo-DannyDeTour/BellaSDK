@@ -36,7 +36,7 @@ var _label: Label3D
 
 func _ready() -> void:
 	if Engine.is_editor_hint():
-		print("EditorTriggerVisualizer: _ready() - Generating visuals.")
+		pass
 	_update_mesh()
 	_update_material()
 	_update_text()

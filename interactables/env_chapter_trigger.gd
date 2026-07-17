@@ -32,8 +32,6 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 
-	print("EnvChapterTrigger: _ready() initialized for '", chapter_name, "'.")
-
 	var editor_mesh: MeshInstance3D = get_node_or_null("EditorVisual")
 	if editor_mesh:
 		editor_mesh.queue_free()

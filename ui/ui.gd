@@ -65,7 +65,6 @@ var current_health: int = 300
 
 
 func _ready() -> void:
-	print("UI: _ready() called. Initializing canvas elements.")
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	get_tree().paused = false
 	debug_panel.hide()
@@ -218,16 +217,16 @@ func _trigger_pain_effect() -> void:
 	print("UI: _trigger_pain_effect() called. Flashing screen red.")
 	if pain_overlay == null:
 		return
-		
+
 	pain_overlay.show()
-	
+
 	# 1. Kill any existing pain tween so rapid hits don't break the animation
 	if pain_tween and pain_tween.is_valid():
 		pain_tween.kill()
-		
+
 	# 2. FORCE pure red (RGB 1,0,0) with 0.4 alpha, bypassing any inspector settings
 	pain_overlay.color = Color(1.0, 0.0, 0.0, 0.4)
-	
+
 	# 3. Tween the entire color property down to 0.0 alpha
 	pain_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	pain_tween.tween_property(pain_overlay, "color", Color(1.0, 0.0, 0.0, 0.0), 0.3)

@@ -21,7 +21,6 @@ var time_since_step_feedback: float = 100.0
 
 
 func _ready() -> void:
-	print("StairController: _ready() initialized.")
 	_test_params.from = player.global_transform
 	_test_params.exclude_bodies = [player.get_rid()]
 

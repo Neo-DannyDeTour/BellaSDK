@@ -2,7 +2,6 @@
 class_name ProceduralFence
 extends CSGCombiner3D
 
-
 enum Orientation { VERTICAL, HORIZONTAL, DIAGONAL }
 
 @export_category("Fence Dimensions")
@@ -62,7 +61,6 @@ func _init() -> void:
 
 
 func _ready() -> void:
-	print("ProceduralFence: _ready() called, requesting initial build.")
 	_request_rebuild()
 
 
@@ -103,22 +101,12 @@ func _rebuild() -> void:
 		Orientation.DIAGONAL:
 			var count_right: int = ceili(float(bar_count) / 2.0)
 			var count_left: int = floori(float(bar_count) / 2.0)
-			
+
 			ProceduralFence._generate_angled_bars(
-				bars_combiner,
-				inner_width,
-				inner_height,
-				count_right,
-				bar_thickness,
-				diagonal_angle
+				bars_combiner, inner_width, inner_height, count_right, bar_thickness, diagonal_angle
 			)
 			ProceduralFence._generate_angled_bars(
-				bars_combiner,
-				inner_width,
-				inner_height,
-				count_left,
-				bar_thickness,
-				-diagonal_angle
+				bars_combiner, inner_width, inner_height, count_left, bar_thickness, -diagonal_angle
 			)
 
 	# Intersection box to cleanly slice rotated corners
@@ -224,7 +212,7 @@ static func _generate_border(
 
 	var inner_w: float = maxf(0.01, f_width - b_thickness * 2.0)
 	var tb_size: Vector3 = Vector3(inner_w, b_thickness, f_depth)
-	
+
 	ProceduralFence._add_csg_box(
 		parent, tb_size, Vector3(0.0, f_height / 2.0 - b_thickness / 2.0, 0.0)
 	)

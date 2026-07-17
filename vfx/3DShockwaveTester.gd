@@ -7,7 +7,6 @@ extends Node3D
 
 
 func _ready() -> void:
-	print("ShockwaveTester: _ready() called. Setting up timer.")
 	var timer: Timer = Timer.new()
 	timer.wait_time = trigger_interval
 	timer.autostart = true
@@ -16,7 +15,9 @@ func _ready() -> void:
 
 
 func _on_timer_timeout() -> void:
-	print("ShockwaveTester: _on_timer_timeout() called. Firing shockwave with radius: ", test_radius)
+	print(
+		"ShockwaveTester: _on_timer_timeout() called. Firing shockwave with radius: ", test_radius
+	)
 	if shockwave_manager != null:
 		shockwave_manager.trigger_shockwave(global_position, test_radius)
 	else:
