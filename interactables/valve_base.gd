@@ -1,15 +1,23 @@
 @tool
 extends StaticBody3D
 
+## The time window in seconds to register two consecutive presses as a double tap.
 const DOUBLE_TAP_DELAY: float = 0.3
 
 @export_category("Connections")
-@export var targets: Array[Node3D]
+## The list of target nodes. These are automatically forwarded to a child OutputTransmitter3D.
+@export var targets: Array[Node3D]:
+	set(value):
+		targets = value
+		_update_transmitter_targets()
 
 @export_category("Installation Settings")
+## Determines if the valve is missing by default and needs to be attached by the player.
 @export var requires_installation: bool = false
+## The PackedScene used to spawn the physics-based valve when detached.
 @export var pickable_valve_scene: PackedScene
 
+## Allows the player to double-tap to remove the valve, dropping it into the world.
 @export var can_be_detached: bool = false:
 	set(value):
 		can_be_detached = value
@@ -17,22 +25,28 @@ const DOUBLE_TAP_DELAY: float = 0.3
 			lock_when_finished = false
 
 @export_category("Valve Settings")
+## The total time in seconds it takes to fully turn the valve.
 @export var turn_duration: float = 3.0
+## How many full 360-degree visual spins the wheel makes during a full turn.
 @export var visual_rotations: float = 2.0
+## The visual spin direction of the valve wheel.
 @export var turn_clockwise: bool = true
 
+## If true, the valve can no longer be interacted with once it reaches 100% progress.
 @export var lock_when_finished: bool = false:
 	set(value):
 		lock_when_finished = value
 		if lock_when_finished:
 			can_be_detached = false
 
+## If true, turning the valve cycles progress between 0.0 and 1.0 continuously.
 @export var is_back_and_forth: bool = true:
 	set(value):
 		is_back_and_forth = value
 		if is_back_and_forth:
 			reverts_on_release = false
 
+## If true, the valve will slowly spin back to 0.0 or 1.0 when the player lets go.
 @export var reverts_on_release: bool = false:
 	set(value):
 		reverts_on_release = value
@@ -41,34 +55,50 @@ const DOUBLE_TAP_DELAY: float = 0.3
 		else:
 			fast_revert_on_release = false
 
+## If true, releasing the valve causes it to revert to its resting state at an accelerated speed.
 @export var fast_revert_on_release: bool = false:
 	set(value):
 		fast_revert_on_release = value
 		if fast_revert_on_release:
 			reverts_on_release = true
 
+## The speed multiplier applied when the valve is quickly reverting to its resting state.
 @export var fast_revert_multiplier: float = 4.0
+## The local axis around which the valve wheel mesh will spin.
 @export var spin_axis: Vector3 = Vector3(0, 1, 0)
+## The 3D label used to display interaction prompts to the player.
 @export var label: Label3D
+## The shader material applied to highlight the detached valve item.
 @export var outline_material: ShaderMaterial
 
+## The audio stream player responsible for playing turning sounds.
 @onready var valve_audio: AudioStreamPlayer3D = get_node_or_null("ValveAudio")
 
+## The current normalized turning progress (0.0 to 1.0).
 var progress: float = 0.0
+## Tracks whether the player is currently looking directly at the valve.
 var is_focused: bool = false
+## The current target progress the valve is moving toward (either 0.0 or 1.0).
 var current_target_progress: float = 1.0
+## Tracks whether the valve has permanently locked into its final state.
 var is_locked: bool = false
+## Stores the interaction state of the previous frame to detect initial presses and releases.
 var was_interacting: bool = false
+## Tracks whether the physical valve is currently attached to the base.
 var is_installed: bool = true
-
+## A timestamp tracking the last time the player pressed the interact button.
 var last_interact_time: float = 0.0
+## The visual wheel node that rotates when the valve is turned.
 var wheel: Node3D
-var debug_line: MeshInstance3D
+## The original rotational state of the wheel used to calculate relative spin angles.
 var initial_rotation: Vector3
+## The component responsible for drawing an outline when the player looks at the valve.
 var highlight_comp: Node
+## A brief cooldown preventing immediate re-attachment right after detaching.
 var install_cooldown: float = 0.0
+## Tracks whether the valve has been installed at least once, used for label text logic.
 var has_been_installed: bool = false
-
+## A cached reference to the player node to avoid redundant scene tree queries.
 var _cached_player: Node3D = null
 
 
@@ -104,7 +134,7 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
-		_draw_connection_line()
+		_update_transmitter_targets()
 		return
 
 	if install_cooldown > 0.0:
@@ -118,7 +148,6 @@ func _process(delta: float) -> void:
 			var held: Node3D = _get_player_held_object(_cached_player)
 
 			if is_instance_valid(held):
-				# OPTIMIZATION: Avoid square root math by using distance_squared_to (0.6 * 0.6 = 0.36)
 				var dist_sq: float = global_position.distance_squared_to(held.global_position)
 				if dist_sq < 0.36:
 					_install_valve(_cached_player, held)
@@ -173,7 +202,6 @@ func _process(delta: float) -> void:
 		elif progress <= 0.0:
 			current_target_progress = 1.0
 
-	# OPTIMIZATION: Only calculate rotation matrix and loop targets if the valve is actively spinning
 	var is_moving: bool = not is_equal_approx(progress, old_progress)
 
 	if is_moving:
@@ -182,12 +210,25 @@ func _process(delta: float) -> void:
 			var total_angle: float = 360.0 * visual_rotations * dir_multiplier * progress
 			wheel.rotation_degrees = initial_rotation + (spin_axis * total_angle)
 
-		for target: Node3D in targets:
-			if is_instance_valid(target) and target.has_method("set_progress"):
-				target.set_progress(progress)
+		var transmitter: OutputTransmitter3D = _get_transmitter()
+		if is_instance_valid(transmitter):
+			transmitter.transmit_progress(progress)
 
 	_manage_audio(is_moving)
 	was_interacting = is_interacting
+
+
+func _get_transmitter() -> OutputTransmitter3D:
+	for child: Node in get_children():
+		if child is OutputTransmitter3D:
+			return child as OutputTransmitter3D
+	return null
+
+
+func _update_transmitter_targets() -> void:
+	var transmitter: OutputTransmitter3D = _get_transmitter()
+	if is_instance_valid(transmitter):
+		transmitter.targets = targets
 
 
 func _manage_audio(is_moving: bool) -> void:
@@ -202,16 +243,13 @@ func _manage_audio(is_moving: bool) -> void:
 		valve_audio.stop()
 
 
-# --- COMPATIBILITY BRIDGE ---
 func _get_player_held_object(player: Node3D) -> Node3D:
 	if not is_instance_valid(player):
 		return null
 
-	# 1. Legacy Check
 	if "held_object" in player and player.get("held_object") != null:
 		return player.get("held_object") as Node3D
 
-	# 2. Component Check
 	var int_comp: Node = (
 		player.get("interaction_component") if "interaction_component" in player else null
 	)
@@ -294,7 +332,6 @@ func _detach_valve() -> void:
 	else:
 		spawned_valve.global_position = global_position
 
-	# Use the new forceful component grab if it exists
 	var grabbed_successfully: bool = false
 	var int_comp: Node = (
 		player.get("interaction_component") if "interaction_component" in player else null
@@ -306,7 +343,6 @@ func _detach_valve() -> void:
 	elif "held_object" in player:
 		player.set("held_object", spawned_valve)
 
-	# Only manually call pick_up if the component didn't already handle it
 	if (
 		not grabbed_successfully
 		and spawned_valve.has_method("pick_up")
@@ -341,40 +377,6 @@ func _on_interact_component_unfocused() -> void:
 	is_focused = false
 	if is_instance_valid(label):
 		label.hide()
-
-
-func _draw_connection_line() -> void:
-	if not targets or targets.is_empty():
-		if is_instance_valid(debug_line):
-			debug_line.queue_free()
-			debug_line = null
-		return
-
-	if not is_instance_valid(debug_line):
-		debug_line = MeshInstance3D.new()
-		add_child(debug_line)
-		debug_line.top_level = true
-		debug_line.global_transform = Transform3D.IDENTITY
-
-		var immediate_mesh := ImmediateMesh.new()
-		debug_line.mesh = immediate_mesh
-
-		var mat := StandardMaterial3D.new()
-		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		mat.albedo_color = Color.RED
-		mat.no_depth_test = true
-		debug_line.material_override = mat
-
-	var mesh: ImmediateMesh = debug_line.mesh as ImmediateMesh
-	mesh.clear_surfaces()
-	mesh.surface_begin(Mesh.PRIMITIVE_LINES)
-
-	for target: Node3D in targets:
-		if is_instance_valid(target):
-			mesh.surface_add_vertex(global_position)
-			mesh.surface_add_vertex(target.global_position)
-
-	mesh.surface_end()
 
 
 func _update_valve_label() -> void:

@@ -5,9 +5,12 @@ extends Node3D
 signal activated
 signal deactivated
 
+## The list of nodes that this transmitter sends its signals or progress updates to.
 @export var targets: Array[Node3D]
 
+## A state flag marking whether the transmitter is actively outputting power/signal.
 var is_active: bool = false
+## The immediate mesh instance used to draw editor debug lines to all target nodes.
 var debug_line: MeshInstance3D
 
 
@@ -38,17 +41,17 @@ func power_off() -> void:
 func _energize_targets() -> void:
 	for target: Node3D in targets:
 		if is_instance_valid(target):
-			var comp := target.get_node_or_null("PowerComponent")
+			var comp: Node = target.get_node_or_null("PowerComponent")
 			if is_instance_valid(comp) and comp.has_method("add_power"):
 				comp.add_power()
-			elif target.has_method("power_on"): # Fallback for simple objects
+			elif target.has_method("power_on"): 
 				target.power_on()
 
 
 func _deenergize_targets() -> void:
 	for target: Node3D in targets:
 		if is_instance_valid(target):
-			var comp := target.get_node_or_null("PowerComponent")
+			var comp: Node = target.get_node_or_null("PowerComponent")
 			if is_instance_valid(comp) and comp.has_method("remove_power"):
 				comp.remove_power()
 			elif target.has_method("power_off"):
@@ -74,7 +77,7 @@ func _draw_connection_line() -> void:
 		mat.albedo_color = Color.RED
 		debug_line.material_override = mat
 
-	var mesh := debug_line.mesh as ImmediateMesh
+	var mesh: ImmediateMesh = debug_line.mesh as ImmediateMesh
 	mesh.clear_surfaces()
 	mesh.surface_begin(Mesh.PRIMITIVE_LINES)
 
@@ -87,8 +90,6 @@ func _draw_connection_line() -> void:
 
 
 func transmit_progress(value: float) -> void:
-	# Intentionally omitting a print() statement here to preserve 60 FPS,
-	# as this is called every frame during player interaction.
 	for target: Node3D in targets:
 		if is_instance_valid(target) and target.has_method("set_progress"):
 			target.set_progress(value)
