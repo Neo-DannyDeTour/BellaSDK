@@ -82,7 +82,10 @@ var backtracking_options: Array = [
 	"New visual and audio context (weather, lighting, music changes).",
 	"New plot details and cutscenes.",
 	"Optional content reveals.",
-	"Change of context: E.g., RE2 Remake corridor shifts from pure horror/gathering into an active combat zone.",
+	(
+		"Change of context: E.g., RE2 Remake corridor shifts from pure "
+		+ "horror/gathering into an active combat zone."
+	),
 	"Random encounters, skits, and dynamic puzzles.",
 	"Pumping/Power Fantasy: Return to old locations with new weapons to easily throw enemies away.",
 	"Traversal mastery: With new features and skills, complete old platforming levels in a second.",
@@ -202,13 +205,53 @@ func _on_ask_ai_pressed() -> void:
 		ai_output.text = "HTTP Error: " + str(error)
 
 
-func _on_http_request_completed(result, response_code, headers, body) -> void:
+func _on_http_request_completed(result, response_code, _headers, body) -> void:
+	if result != HTTPRequest.RESULT_SUCCESS:
+		ai_output.text = "HTTP Request Failed. Result code: " + str(result)
+		return
+
 	var response = body.get_string_from_utf8()
 	print_rich("[color=white]KGB Agent: Received Response Code [/color]", response_code)
 
 	if response_code == 200:
 		var json = JSON.parse_string(response)
-		ai_output.text = json["candidates"][0]["content"]["parts"][0]["text"]
+		if typeof(json) != TYPE_DICTIONARY:
+			ai_output.text = "Error: Invalid JSON response."
+			return
+
+		if (
+			not json.has("candidates")
+			or typeof(json["candidates"]) != TYPE_ARRAY
+			or json["candidates"].is_empty()
+		):
+			ai_output.text = "Error: JSON response missing 'candidates'."
+			return
+
+		var candidate = json["candidates"][0]
+		if typeof(candidate) != TYPE_DICTIONARY or not candidate.has("content"):
+			ai_output.text = "Error: JSON response missing 'content'."
+			return
+
+		var content = candidate["content"]
+		if (
+			typeof(content) != TYPE_DICTIONARY
+			or not content.has("parts")
+			or typeof(content["parts"]) != TYPE_ARRAY
+			or content["parts"].is_empty()
+		):
+			ai_output.text = "Error: JSON response missing 'parts'."
+			return
+
+		var part = content["parts"][0]
+		if (
+			typeof(part) != TYPE_DICTIONARY
+			or not part.has("text")
+			or typeof(part["text"]) != TYPE_STRING
+		):
+			ai_output.text = "Error: JSON response missing 'text'."
+			return
+
+		ai_output.text = part["text"]
 	else:
 		ai_output.text = "API Error: " + str(response_code) + "\n" + response
 
