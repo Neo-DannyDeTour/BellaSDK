@@ -1,14 +1,13 @@
 class_name GliderItem
 extends RigidBody3D
 
+@onready var player_anchor: Marker3D = $PlayerAnchor
+
 
 func set_glider_mesh_visible(p_is_visible: bool) -> void:
 	print("GliderItem: set_glider_mesh_visible() called. State: ", p_is_visible)
 	# Toggle your specific mesh node here. For example:
 	# get_node("MeshInstance3D").visible = p_is_visible
-
-
-@onready var player_anchor: Marker3D = $PlayerAnchor
 
 
 func pick_up(hold_position: Marker3D, player: CharacterBody3D) -> void:
@@ -37,29 +36,12 @@ func pick_up(hold_position: Marker3D, player: CharacterBody3D) -> void:
 	tween.tween_callback(_on_player_reached_anchor.bind(player, hold_position))
 
 
-func _on_player_reached_anchor(player: CharacterBody3D, hold_position: Marker3D) -> void:
+func _on_player_reached_anchor(player: CharacterBody3D, _hold_position: Marker3D) -> void:
 	print("GliderItem: Player reached anchor. Attaching glider to weapon holder.")
 
-	# 1. Move the glider node into the player's weapon holder via the InteractionComponent
-	var current_parent: Node = get_parent()
-	if is_instance_valid(current_parent):
-		current_parent.remove_child(self)
+	if is_instance_valid(player.interaction_component):
+		player.interaction_component.attach_item_to_weapon_holder(self, player_anchor, player)
 
-	# FIX: Route through interaction_component
-	player.interaction_component.weapon_holder.add_child(self)
-
-	# 2. Align the glider so the anchor sits exactly at the player's hold_position
-	var offset: Vector3 = global_position - player_anchor.global_position
-	global_position = hold_position.global_position + offset
-
-	# 3. Reset rotation so it faces forward relative to the camera/holder
-	transform.basis = Basis.IDENTITY
-
-	# 4. Apply restrictions and unlock the player
-	# FIX: Route sprint restriction through locomotion_component
-	if is_instance_valid(player.locomotion_component):
-		player.locomotion_component.can_sprint = false
-		
 	player.set_machine_lock(false)
 
 

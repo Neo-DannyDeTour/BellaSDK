@@ -169,3 +169,28 @@ func force_clear_hands() -> void:
 	print("InteractionComponent: force_clear_hands() called. Clearing tracking variables.")
 	held_item = null
 	_set_weapon_active(true)
+
+
+func attach_item_to_weapon_holder(
+	item: Node3D, item_anchor: Marker3D, p_player: Node3D = null
+) -> void:
+	print(
+		"InteractionComponent: attach_item_to_weapon_holder() called. Reparenting and aligning item."
+	)
+
+	var current_parent: Node = item.get_parent()
+	if is_instance_valid(current_parent):
+		current_parent.remove_child(item)
+
+	weapon_holder.add_child(item)
+
+	var offset: Vector3 = item.global_position - item_anchor.global_position
+	item.global_position = hold_position.global_position + offset
+	item.transform.basis = Basis.IDENTITY
+
+	var target_player: Node3D = p_player if p_player != null else player
+	if (
+		"locomotion_component" in target_player
+		and is_instance_valid(target_player.locomotion_component)
+	):
+		target_player.locomotion_component.can_sprint = false
