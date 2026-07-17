@@ -1,6 +1,6 @@
 @tool
-extends MeshInstance3D
 class_name EditorTriggerVisualizer
+extends MeshInstance3D
 
 enum ShapeType { BOX, SPHERE }
 
@@ -59,14 +59,14 @@ func _update_mesh() -> void:
 func _update_material() -> void:
 	if mesh == null:
 		return
-		
+
 	var mat: StandardMaterial3D = mesh.surface_get_material(0) as StandardMaterial3D
 	if mat == null:
 		mat = StandardMaterial3D.new()
 		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		mesh.surface_set_material(0, mat)
-		
+
 	mat.albedo_color = trigger_color
 
 
@@ -79,9 +79,5 @@ func _update_text() -> void:
 			_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 			_label.no_depth_test = true
 			add_child(_label)
-			
+
 	_label.text = trigger_text
-
-
-
-
