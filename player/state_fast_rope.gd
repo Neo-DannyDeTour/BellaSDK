@@ -32,4 +32,4 @@ func physics_update(delta: float) -> void:
 	# to trigger the aggressive, high-speed headbobting effect while sliding!
 	var fake_input := Vector2(0.0, 1.0)
 
-	player.camera_controller.camera.update_camera(delta, fake_input, true, false, false, 20.0)
+	player.camera_controller.update_camera(delta, fake_input, true, false, false, 20.0)
