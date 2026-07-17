@@ -129,7 +129,7 @@ func _calculate_movement(delta: float, input_dir: Vector2) -> void:
 	var downhill_sign: float = 1.0 if zipline_dir.y < 0.0 else -1.0
 	var downhill_vector: Vector3 = zipline_dir * downhill_sign
 
-	var look_forward: Vector3 = -player.camera_controller.camera.global_transform.basis.z
+	var look_forward: Vector3 = player.camera_controller.get_camera_look_dir()
 	var look_dot_downhill: float = look_forward.dot(downhill_vector)
 
 	var is_looking_downhill: bool = look_dot_downhill > 0.1
@@ -190,7 +190,7 @@ func _perform_dismount() -> void:
 
 	if zip_vel.length() < 2.0:
 		# FIX: Route camera reference through camera_controller
-		var look_dir: Vector3 = -player.camera_controller.camera.global_transform.basis.z
+		var look_dir: Vector3 = player.camera_controller.get_camera_look_dir()
 		var launch_flat_fwd: Vector3 = Vector3(look_dir.x, 0.0, look_dir.z).normalized()
 
 		if launch_flat_fwd.length_squared() < 0.01:
