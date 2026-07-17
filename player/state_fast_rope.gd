@@ -3,7 +3,7 @@ extends PlayerState
 
 
 func enter(_msg: Dictionary = {}) -> void:
-	print("StateFastRope: Entered fast rope state. Disabling StairController.")
+	print("StateFastRope: enter() called. Entered fast rope state. Disabling StairController.")
 	# 1. Kill all momentum instantly
 	player.velocity = Vector3.ZERO
 	player.direction = Vector3.ZERO
@@ -19,7 +19,7 @@ func enter(_msg: Dictionary = {}) -> void:
 
 # Add the exit function to re-enable stair handling
 func exit() -> void:
-	print("StateFastRope: Exited fast rope state. Enabling StairController.")
+	print("StateFastRope: exit() called. Exited fast rope state. Enabling StairController.")
 	if player.has_node("StairController"):
 		player.get_node("StairController").is_enabled = true
 
