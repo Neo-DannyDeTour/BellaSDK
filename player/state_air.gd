@@ -19,10 +19,10 @@ var coyote_timer: float = 0.0
 ## Tracks the remaining time a jump input is cached while falling towards the ground.
 var jump_buffer_timer: float = 0.0
 
-## Flags whether a jump has already been executed during this airborne phase to prevent double jumps.
+## Flags whether a jump has already been executed during this air phase to prevent double jumps.
 var has_jumped: bool = false
 
-## Flags whether the player's current airborne trajectory was initiated by a jump pad or external launch force.
+## Flags whether the airborne trajectory was initiated by a jump pad or external force.
 var is_launched: bool = false
 
 ## The specialized upward gravity force applied while ascending during a jump pad launch.
@@ -35,14 +35,14 @@ var launch_fall_gravity: float = 9.8
 func enter(msg: Dictionary = {}) -> void:
 	print("StateAir: Entered air state.")
 	has_jumped = msg.has("jump") and msg["jump"] == true
-	
+
 	# 1. Catch the knockback force and apply it immediately
 	if msg.has("knockback_force"):
 		player.velocity = msg["knockback_force"] as Vector3
 		coyote_timer = 0.0
 		jump_buffer_timer = 0.0
 		print("StateAir: Knockback applied with force: ", player.velocity)
-	
+
 	is_launched = msg.has("jump_pad") and msg["jump_pad"] == true
 	if is_launched:
 		print("StateAir: Player is caught in a jump pad trajectory.")
@@ -69,7 +69,7 @@ func enter(msg: Dictionary = {}) -> void:
 func physics_update(delta: float) -> void:
 	_handle_gravity(delta)
 	_handle_timers(delta)
-	
+
 	if not is_launched:
 		_handle_jump_input()
 
@@ -94,7 +94,7 @@ func physics_update(delta: float) -> void:
 
 	loco.last_velocity = player.velocity
 	player.move_and_slide()
-	
+
 	# If launched and we hit a wall, break the launch lock to restore air control
 	if is_launched and player.get_slide_collision_count() > 0:
 		if not player.is_on_floor():
@@ -273,14 +273,16 @@ func _handle_landing() -> void:
 				var parent_node: Node = collider.get_parent()
 				if is_instance_valid(parent_node):
 					current_is_slide = parent_node.is_in_group("slide_surface")
-			
+
 			if current_is_slide:
 				is_slide_surface = true
 
 	# 2. Process Fall Damage
 	if loco.last_velocity.y <= -20.0 and is_instance_valid(stats.health_component):
 		if is_safe_landing:
-			print("StateAir: Heavy impact detected, but safe landing material neutralized fall damage.")
+			print(
+				"StateAir: Heavy impact detected, but safe landing material neutralized fall damage."
+			)
 		else:
 			print("StateAir: Heavy impact detected. Applying fall damage.")
 			var max_hp: int = stats.health_component.get("max_health") as int

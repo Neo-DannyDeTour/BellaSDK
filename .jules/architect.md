@@ -1,0 +1,1 @@
+- Godot 4 linting edge-case: gdtoolkit (gdlint/gdformat) fails to parse standard line continuations (backslash `\`) within control flow conditions, resulting in 'No terminal matches' errors. Split complex boolean expressions across lines by nesting them inside parentheses instead.
