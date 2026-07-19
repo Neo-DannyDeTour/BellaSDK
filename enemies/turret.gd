@@ -47,8 +47,8 @@ func _ready() -> void:
 func _build_exclude_rids(node: Node) -> void:
 	if node is CollisionObject3D:
 		_exclude_rids.append(node.get_rid())
-	for child: Node in node.get_children():
-		_build_exclude_rids(child)
+	for i in node.get_child_count():
+		_build_exclude_rids(node.get_child(i))
 
 
 func _process(delta: float) -> void:
