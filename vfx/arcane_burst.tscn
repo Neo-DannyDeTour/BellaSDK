@@ -1,0 +1,37 @@
+[gd_scene load_steps=7 format=3 uid="uid://dngb6hpxl66n1"]
+
+[ext_resource type="Script" path="res://vfx/arcane_burst.gd" id="1_4n25y"]
+[ext_resource type="Shader" path="res://vfx/arcane_burst.gdshader" id="2_rht3f"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_x5kqp"]
+render_priority = 0
+shader = ExtResource("2_rht3f")
+shader_parameter/burst_color = Color(0.611765, 0.152941, 0.960784, 1)
+shader_parameter/edge_softness = 0.5
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_j8fxx"]
+lifetime_randomness = 0.5
+emission_shape = 1
+emission_sphere_radius = 0.5
+direction = Vector3(0, 1, 0)
+spread = 180.0
+initial_velocity_min = 2.0
+initial_velocity_max = 8.0
+gravity = Vector3(0, -1, 0)
+damping_min = 1.0
+damping_max = 2.0
+scale_min = 0.1
+scale_max = 0.5
+
+[sub_resource type="QuadMesh" id="QuadMesh_kww06"]
+
+[node name="ArcaneBurst" type="GPUParticles3D"]
+material_override = SubResource("ShaderMaterial_x5kqp")
+emitting = false
+amount = 100
+lifetime = 1.5
+one_shot = true
+explosiveness = 1.0
+process_material = SubResource("ParticleProcessMaterial_j8fxx")
+draw_pass_1 = SubResource("QuadMesh_kww06")
+script = ExtResource("1_4n25y")
