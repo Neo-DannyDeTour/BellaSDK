@@ -54,7 +54,7 @@ func enter(msg: Dictionary = {}) -> void:
 	# Inherit momentum direction from swinging ropes or fast-movement states
 	if msg.has("release_dir"):
 		var r_dir: Vector3 = msg["release_dir"]
-		loco.direction = Vector3(r_dir.x, 0.0, r_dir.z).normalized()
+		loco.set_direction(Vector3(r_dir.x, 0.0, r_dir.z).normalized())
 		print("StateAir: Inherited momentum direction from previous state.")
 
 	# Only grant Coyote Time if the player fell off a ledge AND wasn't knocked back
@@ -189,7 +189,7 @@ func _apply_air_movement(delta: float, input_dir: Vector2) -> void:
 				Vector2(target_dir.x, target_dir.z) * (loco.walking_speed * delta)
 			)
 			horizontal_velocity += steer_vec
-			loco.direction = loco.direction.lerp(target_dir, delta * loco.air_lerp_speed)
+			loco.set_direction(loco.get_direction().lerp(target_dir, delta * loco.air_lerp_speed))
 
 		player.velocity.x = horizontal_velocity.x
 		player.velocity.z = horizontal_velocity.y
@@ -197,15 +197,15 @@ func _apply_air_movement(delta: float, input_dir: Vector2) -> void:
 
 	# 2. Standard Air Movement
 	if input_dir != Vector2.ZERO:
-		loco.direction = loco.direction.lerp(target_dir, delta * loco.air_lerp_speed)
+		loco.set_direction(loco.get_direction().lerp(target_dir, delta * loco.air_lerp_speed))
 		if current_speed < loco.walking_speed:
 			current_speed = lerpf(current_speed, loco.walking_speed, delta * loco.air_lerp_speed)
 	else:
 		# Smoothly slow down horizontal drift if inputs are released
 		current_speed = lerpf(current_speed, 0.0, delta * loco.air_lerp_speed)
 
-	player.velocity.x = loco.direction.x * current_speed
-	player.velocity.z = loco.direction.z * current_speed
+	player.velocity.x = loco.get_direction().x * current_speed
+	player.velocity.z = loco.get_direction().z * current_speed
 
 
 func _check_transitions() -> void:

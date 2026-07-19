@@ -225,9 +225,8 @@ func _perform_dismount() -> void:
 
 	var flat_vel: Vector3 = Vector3(player.velocity.x, 0.0, player.velocity.z)
 	if flat_vel.length() > 0.0:
-		# FIX: If direction was moved to locomotion_component, route it here:
 		if is_instance_valid(player.locomotion_component):
-			player.locomotion_component.direction = flat_vel.normalized()
+			player.locomotion_component.set_direction(flat_vel.normalized())
 
 	if Input.is_action_just_pressed("jump"):
 		player.velocity.y += 5.0

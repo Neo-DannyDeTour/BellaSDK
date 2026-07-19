@@ -291,9 +291,8 @@ func _transition_out_of_rope(
 	player.velocity = (flat_jump_dir * forward_push) + Vector3(0.0, vertical_hop, 0.0)
 
 	if flat_jump_dir.length_squared() > 0.01:
-		# FIX: Route direction to locomotion_component
 		if is_instance_valid(player.locomotion_component):
-			player.locomotion_component.direction = flat_jump_dir
+			player.locomotion_component.set_direction(flat_jump_dir)
 
 	player.global_position += release_dir * 0.5
 	state_machine.transition_to("Air", {"release_dir": release_dir})
