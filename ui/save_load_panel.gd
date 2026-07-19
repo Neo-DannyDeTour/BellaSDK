@@ -2,11 +2,14 @@ extends Panel
 
 const SAVES_DIR: String = "user://saves/"
 
+var _save_name_regex: RegEx = RegEx.new()
+
 @onready var save_list_container: VBoxContainer = %SaveListContainer
 @onready var save_slot_template: Control = %SaveSlotTemplate
 
 
 func _ready() -> void:
+	_save_name_regex.compile("^[a-zA-Z0-9_]+$")
 	print("UI: Save/Load Panel initialized.")
 	save_slot_template.hide()
 	visibility_changed.connect(_on_visibility_changed)
@@ -15,6 +18,14 @@ func _ready() -> void:
 func _on_visibility_changed() -> void:
 	if visible:
 		_refresh_save_list()
+
+
+func _is_valid_save_filename(file_name: String) -> bool:
+	if not file_name.ends_with(".save"):
+		return false
+	var base_name: String = file_name.get_basename()
+	var result: RegExMatch = _save_name_regex.search(base_name)
+	return result != null
 
 
 func _refresh_save_list() -> void:
@@ -34,7 +45,7 @@ func _refresh_save_list() -> void:
 		var file_name: String = dir.get_next()
 
 		while file_name != "":
-			if not dir.current_is_dir() and file_name.ends_with(".save"):
+			if not dir.current_is_dir() and _is_valid_save_filename(file_name):
 				_create_save_slot(file_name)
 			file_name = dir.get_next()
 
@@ -63,6 +74,10 @@ func _create_save_slot(file_name: String) -> void:
 
 
 func _on_load_pressed(file_name: String) -> void:
+	if not _is_valid_save_filename(file_name):
+		print("Error: Invalid save file name detected during load operation: ", file_name)
+		return
+
 	print("Player clicked Load for save: ", file_name)
 	var path: String = SAVES_DIR + file_name
 
@@ -72,6 +87,10 @@ func _on_load_pressed(file_name: String) -> void:
 
 
 func _on_delete_pressed(file_name: String) -> void:
+	if not _is_valid_save_filename(file_name):
+		print("Error: Invalid save file name detected during delete operation: ", file_name)
+		return
+
 	print("Player clicked Delete for save: ", file_name)
 	var path: String = SAVES_DIR + file_name
 
