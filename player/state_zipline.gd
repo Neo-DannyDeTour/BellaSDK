@@ -224,9 +224,9 @@ func _perform_dismount() -> void:
 	player.velocity = zip_vel * DETACH_MOMENTUM_MULTIPLIER
 
 	var flat_vel: Vector3 = Vector3(player.velocity.x, 0.0, player.velocity.z)
+	var release_dir: Vector3 = Vector3.ZERO
 	if flat_vel.length() > 0.0:
-		if is_instance_valid(player.locomotion_component):
-			player.locomotion_component.set_direction(flat_vel.normalized())
+		release_dir = flat_vel.normalized()
 
 	if Input.is_action_just_pressed("jump"):
 		player.velocity.y += 5.0
@@ -234,4 +234,7 @@ func _perform_dismount() -> void:
 	if current_zipline and current_zipline.has_method("on_player_released"):
 		current_zipline.on_player_released()
 
-	state_machine.transition_to("Air")
+	if release_dir != Vector3.ZERO:
+		state_machine.transition_to("Air", {"release_dir": release_dir})
+	else:
+		state_machine.transition_to("Air")
