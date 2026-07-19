@@ -42,6 +42,11 @@ func process_environment_physics(delta: float) -> void:
 		vfx_manager.process_vfx(delta, head.rotation.x)
 
 
+func start_zipline_cooldown(duration: float = 0.5) -> void:
+	print("EnvironmentComponent: start_zipline_cooldown() called. Duration: ", duration)
+	zipline_cooldown = duration
+
+
 func enter_ladder(ladder_node: Node3D) -> void:
 	print("EnvironmentComponent: enter_ladder() called.")
 	if is_instance_valid(vault_controller) and vault_controller.get("is_vaulting"):

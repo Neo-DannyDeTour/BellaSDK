@@ -201,16 +201,14 @@ func _check_dismount_conditions() -> void:
 
 
 func _perform_dismount() -> void:
-	# FIX: Route cooldown to the appropriate component (likely environment or locomotion)
 	if is_instance_valid(player.environment_component):
-		player.environment_component.zipline_cooldown = 0.5
+		player.environment_component.start_zipline_cooldown(0.5)
 
 	var zip_vel: Vector3 = Vector3.ZERO
 	if current_zipline and current_zipline.has_method("get_current_travel_velocity"):
 		zip_vel = current_zipline.get_current_travel_velocity()
 
 	if zip_vel.length() < 2.0:
-		# FIX: Route camera reference through camera_controller
 		var look_dir: Vector3 = player.camera_controller.get_camera_look_dir()
 		var launch_flat_fwd: Vector3 = Vector3(look_dir.x, 0.0, look_dir.z).normalized()
 
