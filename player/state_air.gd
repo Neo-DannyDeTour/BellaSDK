@@ -19,10 +19,10 @@ var coyote_timer: float = 0.0
 ## Tracks the remaining time a jump input is cached while falling towards the ground.
 var jump_buffer_timer: float = 0.0
 
-## Flags whether a jump has already been executed during this airborne phase to prevent double jumps.
+## Flags whether a jump has already been executed during this air phase to prevent double jumps.
 var has_jumped: bool = false
 
-## Flags whether the player's current airborne trajectory was initiated by a jump pad or external launch force.
+## Flags whether the airborne trajectory was initiated by a jump pad or external force.
 var is_launched: bool = false
 
 ## The specialized upward gravity force applied while ascending during a jump pad launch.

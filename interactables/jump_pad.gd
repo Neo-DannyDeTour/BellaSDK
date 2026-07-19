@@ -2,34 +2,46 @@
 class_name JumpPad
 extends Area3D
 
+## The peak height the player reaches during the jump trajectory.
 @export var apex_height: float = 3.0:
 	set(value):
 		apex_height = maxf(0.1, value)
 		_update_trajectory()
 
+## Multiplier to increase or decrease the overall flight speed.
 @export_range(0.1, 5.0, 0.1) var flight_speed_multiplier: float = 1.0:
 	set(value):
 		flight_speed_multiplier = maxf(0.1, value)
 		_update_trajectory()
 
+## The base upward gravity applied to the player while ascending.
 @export var player_gravity: float = 9.8:
 	set(value):
 		player_gravity = maxf(0.1, value)
 		_update_trajectory()
 
+## Multiplier applied to the gravity while the player is falling.
 @export var fall_gravity_multiplier: float = 1.0:
 	set(value):
 		fall_gravity_multiplier = maxf(0.1, value)
 		_update_trajectory()
 
+## The total calculated time for the player to reach the target.
 var _flight_time: float = 0.0
+## The timer used to simulate the ball flight in the editor.
 var _timer: float = 0.0
+## The initial velocity applied to the player upon entering the jump pad.
 var _initial_velocity: Vector3 = Vector3.ZERO
+## The time it takes for the player to reach the apex of the jump.
 var _t_up: float = 0.0
+## The custom gravity applied while the player is ascending.
 var _custom_gravity_up: float = 9.8
+## The custom gravity applied while the player is descending.
 var _custom_gravity_down: float = 9.8
 
+## The last recorded position of the jump pad to detect movement.
 var _last_start_pos: Vector3 = Vector3.ZERO
+## The last recorded position of the target to detect movement.
 var _last_target_pos: Vector3 = Vector3.ZERO
 
 
@@ -174,7 +186,10 @@ func _get_position_at_time(t: float) -> Vector3:
 
 func _on_body_entered(body: Node3D) -> void:
 	if body.is_in_group("player") or body.get_class() == "CharacterBody3D":
-		print("JumpPad: Launching player with velocity: ", _initial_velocity)
+		print(
+			"JumpPad: _on_body_entered() called. Launching player with velocity: ",
+			_initial_velocity
+		)
 		body.velocity = _initial_velocity
 
 		var sm: Node = body.get_node_or_null("StateMachine")
