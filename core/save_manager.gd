@@ -42,10 +42,7 @@ func has_saves() -> bool:
 
 func create_save(custom_name: String = "", is_fav: bool = false, existing_id: String = "") -> void:
 	print("\n--- [SaveManager] STARTING SAVE PROCESS ---")
-	var ui_nodes: Array[Node] = get_tree().get_nodes_in_group("hide_on_save")
-	for node: Node in ui_nodes:
-		if node is CanvasItem:
-			node.hide()
+	get_tree().call_group("hide_on_save", "hide")
 
 	# OPTIMIZATION: Wait exactly until the renderer is done, no arbitrary timers.
 	await RenderingServer.frame_post_draw
@@ -53,9 +50,7 @@ func create_save(custom_name: String = "", is_fav: bool = false, existing_id: St
 	var viewport_texture: Texture2D = get_viewport().get_texture()
 	var viewport_img: Image = viewport_texture.get_image()
 
-	for node: Node in ui_nodes:
-		if node is CanvasItem:
-			node.show()
+	get_tree().call_group("hide_on_save", "show")
 
 	var timestamp: String = Time.get_datetime_string_from_system()
 	var save_id: String = existing_id if existing_id != "" else str(Time.get_ticks_usec())
