@@ -44,6 +44,15 @@ var _last_start_pos: Vector3 = Vector3.ZERO
 ## The last recorded position of the target to detect movement.
 var _last_target_pos: Vector3 = Vector3.ZERO
 
+## Cached Target node to avoid repeated get_node calls.
+var _target_node: Node3D
+## Cached BallVisual node.
+var _ball_visual: Node3D
+## Cached LineVisual node.
+var _line_visual: MeshInstance3D
+## Cached ApexVisual node.
+var _apex_visual: MeshInstance3D
+
 
 func _enter_tree() -> void:
 	_create_default_nodes()
@@ -67,12 +76,14 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	var target: Node3D = get_node_or_null("Target") as Node3D
-	if is_instance_valid(target):
-		if global_position != _last_start_pos or target.global_position != _last_target_pos:
+	if not is_instance_valid(_target_node):
+		_target_node = get_node_or_null("Target") as Node3D
+
+	if is_instance_valid(_target_node):
+		if global_position != _last_start_pos or _target_node.global_position != _last_target_pos:
 			_update_trajectory()
 			_last_start_pos = global_position
-			_last_target_pos = target.global_position
+			_last_target_pos = _target_node.global_position
 
 	# Simulate the ball flight in the editor
 	if _flight_time > 0.0 and Engine.is_editor_hint():
@@ -80,22 +91,26 @@ func _process(delta: float) -> void:
 		if _timer > _flight_time + 2.0:
 			_timer = 0.0
 
-		var ball: Node3D = get_node_or_null("BallVisual") as Node3D
-		if is_instance_valid(ball):
+		if not is_instance_valid(_ball_visual):
+			_ball_visual = get_node_or_null("BallVisual") as Node3D
+
+		if is_instance_valid(_ball_visual):
 			if _timer <= _flight_time:
-				ball.visible = true
-				ball.global_position = _get_position_at_time(_timer)
+				_ball_visual.visible = true
+				_ball_visual.global_position = _get_position_at_time(_timer)
 			else:
-				ball.visible = false
+				_ball_visual.visible = false
 
 
 func _update_trajectory() -> void:
-	var target: Node3D = get_node_or_null("Target") as Node3D
-	if not is_instance_valid(target):
+	if not is_instance_valid(_target_node):
+		_target_node = get_node_or_null("Target") as Node3D
+
+	if not is_instance_valid(_target_node):
 		return
 
 	var p_start: Vector3 = global_position
-	var p_end: Vector3 = target.global_position
+	var p_end: Vector3 = _target_node.global_position
 
 	var y_apex: float = maxf(p_start.y, p_end.y) + apex_height
 	var h_start: float = y_apex - p_start.y
@@ -130,31 +145,33 @@ func _update_visuals() -> void:
 		return
 
 	# Draw the Line
-	var line: MeshInstance3D = get_node_or_null("LineVisual") as MeshInstance3D
-	if is_instance_valid(line):
-		line.top_level = false  # Allow it to inherit transforms naturally
+	if not is_instance_valid(_line_visual):
+		_line_visual = get_node_or_null("LineVisual") as MeshInstance3D
+
+	if is_instance_valid(_line_visual):
+		_line_visual.top_level = false  # Allow it to inherit transforms naturally
 
 		var imm_mesh: ImmediateMesh
-		if line.mesh is ImmediateMesh:
-			imm_mesh = line.mesh as ImmediateMesh
+		if _line_visual.mesh is ImmediateMesh:
+			imm_mesh = _line_visual.mesh as ImmediateMesh
 		else:
 			imm_mesh = ImmediateMesh.new()
-			line.mesh = imm_mesh
+			_line_visual.mesh = imm_mesh
 			var mat: StandardMaterial3D = StandardMaterial3D.new()
 			mat.albedo_color = Color.CYAN
 			mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-			line.material_override = mat
+			_line_visual.material_override = mat
 
 		imm_mesh.clear_surfaces()
 		imm_mesh.surface_begin(Mesh.PRIMITIVE_LINES)
 		var segments: int = 40
 
 		# Convert global trajectory into local space for the ImmediateMesh
-		var prev_pos: Vector3 = line.to_local(_get_position_at_time(0.0))
+		var prev_pos: Vector3 = _line_visual.to_local(_get_position_at_time(0.0))
 
 		for i: int in range(1, segments + 1):
 			var t: float = _flight_time * (float(i) / float(segments))
-			var curr_pos: Vector3 = line.to_local(_get_position_at_time(t))
+			var curr_pos: Vector3 = _line_visual.to_local(_get_position_at_time(t))
 			imm_mesh.surface_add_vertex(prev_pos)
 			imm_mesh.surface_add_vertex(curr_pos)
 			prev_pos = curr_pos
@@ -162,22 +179,29 @@ func _update_visuals() -> void:
 		imm_mesh.surface_end()
 
 	# Position the Apex Marker
-	var apex: MeshInstance3D = get_node_or_null("ApexVisual") as MeshInstance3D
-	if is_instance_valid(apex):
-		apex.top_level = true
-		apex.global_position = _get_position_at_time(_t_up)
+	if not is_instance_valid(_apex_visual):
+		_apex_visual = get_node_or_null("ApexVisual") as MeshInstance3D
+
+	if is_instance_valid(_apex_visual):
+		_apex_visual.top_level = true
+		_apex_visual.global_position = _get_position_at_time(_t_up)
 
 
 func _get_position_at_time(t: float) -> Vector3:
 	var p0: Vector3 = global_position
-	var target: Node3D = get_node_or_null("Target") as Node3D
+	if not is_instance_valid(_target_node):
+		_target_node = get_node_or_null("Target") as Node3D
+
 	var y: float = 0.0
 
 	if t <= _t_up:
 		y = p0.y + _initial_velocity.y * t - 0.5 * _custom_gravity_up * t * t
 	else:
 		var td: float = t - _t_up
-		var y_apex: float = maxf(p0.y, target.global_position.y) + apex_height
+		var target_y: float = p0.y
+		if is_instance_valid(_target_node):
+			target_y = _target_node.global_position.y
+		var y_apex: float = maxf(p0.y, target_y) + apex_height
 		y = y_apex - 0.5 * _custom_gravity_down * td * td
 
 	var xz: Vector3 = Vector3(_initial_velocity.x, 0.0, _initial_velocity.z) * t
