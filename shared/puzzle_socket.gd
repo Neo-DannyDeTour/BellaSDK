@@ -12,7 +12,7 @@ signal socket_powered_off
 @export var snap_position: Marker3D
 @export var indicator_light: Light3D
 @export var label: Label3D
-@export var socket_interact_comp: Interact_Component
+@export var socket_interact_comp: InteractComponent
 
 @export_category("Connections")
 @export var transmitter: OutputTransmitter3D:
@@ -172,7 +172,7 @@ func unplug() -> void:
 			current_plug.power_state_changed.disconnect(_on_plug_power_changed)
 
 	is_powered = false
-	
+
 	# OPTIMIZATION: Use a SceneTreeTimer instead of calculating cooldown mathematically in _process
 	is_cooling_down = true
 	get_tree().create_timer(1.0, false).timeout.connect(func() -> void: is_cooling_down = false)

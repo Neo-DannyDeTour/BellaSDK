@@ -9,7 +9,7 @@ var controlling_player: CharacterBody3D = null
 var _just_attached: bool = false
 
 @onready var mirror_head: Node3D = $MirrorHead
-@onready var interact_comp: Interact_Component = $Interact_Component
+@onready var interact_comp: InteractComponent = $InteractComponent
 
 
 func _ready() -> void:

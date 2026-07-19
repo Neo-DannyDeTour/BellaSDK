@@ -96,7 +96,7 @@ mesh = SubResource("BoxMesh_5blo6")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1743972707]
 shape = SubResource("BoxShape3D_5blo6")
 
-[node name="Interact_Component" type="Node" parent="." unique_id=98492970]
+[node name="InteractComponent" type="Node" parent="." unique_id=98492970]
 script = ExtResource("1_ffoe3")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 

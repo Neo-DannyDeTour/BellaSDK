@@ -136,7 +136,7 @@ func _get_interactable_component_at_shapecast() -> Node:
 			var comp: Node = null
 
 			while is_instance_valid(current_node) and current_node != get_tree().root:
-				comp = current_node.get_node_or_null("Interact_Component")
+				comp = current_node.get_node_or_null("InteractComponent")
 				if is_instance_valid(comp):
 					break
 				current_node = current_node.get_parent()

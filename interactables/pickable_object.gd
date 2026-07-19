@@ -2,7 +2,7 @@ class_name PickableObject
 extends RigidBody3D
 
 @export_category("Pickable Nodes")
-@export var interact_comp: Interact_Component
+@export var interact_comp: InteractComponent
 @export var mesh: Node3D
 @export var label: Label3D
 
@@ -62,7 +62,7 @@ var _grab_time: int = 0
 func _ready() -> void:
 	# Fallback assignments in case export vars were left empty in the inspector
 	if not interact_comp:
-		interact_comp = $Interact_Component
+		interact_comp = $InteractComponent
 	if not mesh:
 		mesh = $Mesh
 	if not label:

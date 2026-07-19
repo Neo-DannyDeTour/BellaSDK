@@ -60,26 +60,32 @@ var max_mouse_speed: float = 0.0
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	print("UI: MainMenu initialized.")
-	
+
 	# Connect Main Buttons
-	if continue_button: continue_button.pressed.connect(_on_resume_pressed)
-	if new_game_button: new_game_button.pressed.connect(_on_new_game_pressed)
-	if restart_button: restart_button.pressed.connect(_on_start_game_pressed)
-	if options_button: options_button.pressed.connect(_on_options_pressed)
-	if load_button: load_button.pressed.connect(_on_load_pressed)
-	if exit_button: exit_button.pressed.connect(_on_exit_pressed)
-	
+	if continue_button:
+		continue_button.pressed.connect(_on_resume_pressed)
+	if new_game_button:
+		new_game_button.pressed.connect(_on_new_game_pressed)
+	if restart_button:
+		restart_button.pressed.connect(_on_start_game_pressed)
+	if options_button:
+		options_button.pressed.connect(_on_options_pressed)
+	if load_button:
+		load_button.pressed.connect(_on_load_pressed)
+	if exit_button:
+		exit_button.pressed.connect(_on_exit_pressed)
+
 	# Connect Navigation Buttons
 	for btn: Button in back_buttons:
 		if btn:
 			btn.pressed.connect(_return_to_main_buttons)
-			
+
 	# Connect Options Tab Buttons
 	for i: int in range(tab_buttons.size()):
 		var btn: Button = tab_buttons[i]
 		if btn:
 			btn.pressed.connect(_on_tab_pressed.bind(i))
-	
+
 	_check_game_context()
 	_return_to_main_buttons()
 
@@ -92,21 +98,31 @@ func _check_game_context() -> void:
 			load_button.visible = saves_exist
 
 	if get_parent().has_method("toggle_pause"):
-		if continue_button: continue_button.show()
-		if restart_button: restart_button.show()
-		if save_button: save_button.show()
-		if new_game_button: new_game_button.text = "End Run" 
+		if continue_button:
+			continue_button.show()
+		if restart_button:
+			restart_button.show()
+		if save_button:
+			save_button.show()
+		if new_game_button:
+			new_game_button.text = "End Run"
 	else:
-		if continue_button: continue_button.hide()
-		if restart_button: restart_button.hide()
-		if save_button: save_button.hide()
+		if continue_button:
+			continue_button.hide()
+		if restart_button:
+			restart_button.hide()
+		if save_button:
+			save_button.hide()
 
 
 func _return_to_main_buttons() -> void:
 	print("UI: Player routed to Main Buttons.")
-	if main_buttons: main_buttons.visible = true
-	if options_menu: options_menu.visible = false
-	if save_load_panel: save_load_panel.visible = false
+	if main_buttons:
+		main_buttons.visible = true
+	if options_menu:
+		options_menu.visible = false
+	if save_load_panel:
+		save_load_panel.visible = false
 
 
 func _on_resume_pressed() -> void:
@@ -121,7 +137,8 @@ func _on_new_game_pressed() -> void:
 	if not has_calibrated:
 		_apply_bucket_calibration()
 
-	if main_buttons: main_buttons.hide()
+	if main_buttons:
+		main_buttons.hide()
 	var chapter_window: Node = CHAPTER_SCREEN.instantiate()
 	add_child(chapter_window)
 
@@ -138,10 +155,13 @@ func _on_start_game_pressed() -> void:
 
 func _on_options_pressed() -> void:
 	print("UI: Player clicked Options.")
-	if main_buttons: main_buttons.visible = false
-	if save_load_panel: save_load_panel.visible = false
-	if options_menu: options_menu.visible = true
-	
+	if main_buttons:
+		main_buttons.visible = false
+	if save_load_panel:
+		save_load_panel.visible = false
+	if options_menu:
+		options_menu.visible = true
+
 	# Open the first tab automatically so the panel isn't empty
 	if tab_buttons.size() > 0 and option_panels.size() > 0:
 		_on_tab_pressed(0)
@@ -149,9 +169,12 @@ func _on_options_pressed() -> void:
 
 func _on_load_pressed() -> void:
 	print("UI: Player clicked Load Game.")
-	if main_buttons: main_buttons.visible = false
-	if options_menu: options_menu.visible = false
-	if save_load_panel: save_load_panel.visible = true
+	if main_buttons:
+		main_buttons.visible = false
+	if options_menu:
+		options_menu.visible = false
+	if save_load_panel:
+		save_load_panel.visible = true
 
 
 func _on_exit_pressed() -> void:
@@ -213,7 +236,7 @@ func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		if not self.visible:
 			return
-		
+
 		if options_menu.visible or save_load_panel.visible:
 			print("UI: User canceled out of sub-menu.")
 			_return_to_main_buttons()

@@ -30,21 +30,21 @@ func _ready() -> void:
 func setup(data: Dictionary, is_saving: bool) -> void:
 	_base_path = data.get("base_path", "")
 	_save_id = data.get("id", "")
-	
+
 	name_input.text = data.get("name", "Unknown Save")
 	date_label.text = data.get("timestamp", "Unknown Date")
-	
+
 	var is_fav: bool = data.get("is_favorite", false)
 	fav_button.set_pressed_no_signal(is_fav)
-	
+
 	# Apply the visual state immediately on load
 	_update_visuals(is_fav)
-	
+
 	if is_saving:
 		action_button.text = "Overwrite"
 	else:
 		action_button.text = "Load"
-		
+
 	var img_path: String = _base_path + ".webp"
 	if FileAccess.file_exists(img_path):
 		var image: Image = Image.load_from_file(img_path)
@@ -93,7 +93,7 @@ func _gui_input(event: InputEvent) -> void:
 func _update_visuals(is_fav: bool) -> void:
 	if highlight_border:
 		highlight_border.visible = is_fav
-		
+
 	if fav_button:
 		if is_fav:
 			fav_button.text = "un-FAV"

@@ -24,7 +24,7 @@ collision_mask = 5
 script = ExtResource("1_rlwot")
 snap_position = NodePath("Marker3D")
 indicator_light = NodePath("OmniLight3D")
-socket_interact_comp = NodePath("Interact_Component")
+socket_interact_comp = NodePath("InteractComponent")
 transmitter = NodePath("OutputTransmitter3D")
 
 [node name="Marker3D" type="Marker3D" parent="." unique_id=1039557250]
@@ -39,7 +39,7 @@ mesh = SubResource("CylinderMesh_bme3t")
 [node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=1137449554]
 light_color = Color(0.029999971, 1, 0.11083323, 1)
 
-[node name="Interact_Component" type="Node" parent="." unique_id=100716333]
+[node name="InteractComponent" type="Node" parent="." unique_id=100716333]
 script = ExtResource("2_bme3t")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 

@@ -3,9 +3,7 @@ extends RigidBody3D
 
 @onready var player_anchor: Marker3D = $PlayerAnchor
 
-
 var current_holder: CharacterBody3D = null
-
 
 @onready var player_anchor: Marker3D = $PlayerAnchor
 

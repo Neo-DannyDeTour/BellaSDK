@@ -71,7 +71,7 @@ mesh = SubResource("BoxMesh_5sdfl")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="AnimatableBody3D" unique_id=75038255]
 shape = SubResource("ConcavePolygonShape3D_5sdfl")
 
-[node name="Interact_Component" type="Node" parent="AnimatableBody3D" unique_id=1322770221]
+[node name="InteractComponent" type="Node" parent="AnimatableBody3D" unique_id=1322770221]
 script = ExtResource("1_61k36")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 
@@ -86,7 +86,7 @@ shape = SubResource("BoxShape3D_ypp13")
 
 [node name="Timer" type="Timer" parent="." unique_id=1621730705]
 
-[connection signal="interacted" from="AnimatableBody3D/Interact_Component" to="." method="toggle_open"]
+[connection signal="interacted" from="AnimatableBody3D/InteractComponent" to="." method="toggle_open"]
 [connection signal="body_entered" from="Detector" to="." method="_on_detector_body_entered"]
 [connection signal="body_exited" from="Detector" to="." method="_on_detector_body_exited"]
 [connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]

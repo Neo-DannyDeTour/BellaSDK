@@ -90,13 +90,15 @@ func _ready() -> void:
 	randomize()
 	original_scale = scale
 
-	button_down.connect(func() -> void:
-		print("HorrorButton: button_down triggered.")
-		is_clicking = true
+	button_down.connect(
+		func() -> void:
+			print("HorrorButton: button_down triggered.")
+			is_clicking = true
 	)
-	button_up.connect(func() -> void:
-		print("HorrorButton: button_up triggered.")
-		is_clicking = false
+	button_up.connect(
+		func() -> void:
+			print("HorrorButton: button_up triggered.")
+			is_clicking = false
 	)
 
 	glitch_timer = randf_range(min_glitch_time, max_glitch_time)
@@ -126,7 +128,7 @@ func _ready() -> void:
 			bg_material.set_shader_parameter("blood_texture", background_images[random_index])
 	else:
 		printerr(
-            "Button script could not find a ColorRect named 'Background' with a ShaderMaterial."
+			"Button script could not find a ColorRect named 'Background' with a ShaderMaterial."
 		)
 
 	if is_instance_valid(border_rect) and border_rect.material is ShaderMaterial:
@@ -149,7 +151,7 @@ func _ready() -> void:
 			original_button_text = text_label.text
 			if custom_minimum_size == Vector2.ZERO:
 				custom_minimum_size = text_label.get_minimum_size()
-			
+
 	text = ""
 	can_glitch = (glitch_text != "")
 
@@ -166,10 +168,10 @@ func _ready() -> void:
 	mouse_entered.connect(_on_mouse_entered)
 	mouse_exited.connect(_on_mouse_exited)
 	resized.connect(_update_layout_sizes)
-	
+
 	# Wait one frame for VBox/Margin containers to calculate their layout
 	await get_tree().process_frame
-	
+
 	# Force the layout variables into the shader now that sizes are true
 	_update_layout_sizes()
 	print("Horror button initialized: Layout sizes locked and shaders updated.")
@@ -178,22 +180,22 @@ func _ready() -> void:
 func _update_layout_sizes() -> void:
 	if size == _last_known_size:
 		return
-		
+
 	print("HorrorButton: _update_layout_sizes() updating layout sizes to: ", size)
 	_last_known_size = size
 	pivot_offset = size / 2.0
-	
+
 	# FIXED: Always pass rect_size to shaders separately from setting Control size
 	if is_instance_valid(bg_rect):
 		bg_rect.set_deferred("size", size)
 	if is_instance_valid(bg_material):
 		bg_material.set_shader_parameter("rect_size", size)
-			
+
 	if is_instance_valid(border_rect):
 		border_rect.set_deferred("size", size)
 	if is_instance_valid(border_material):
 		border_material.set_shader_parameter("rect_size", size)
-			
+
 	if is_instance_valid(text_label):
 		text_label.set_deferred("size", size)
 		text_label.set_deferred("pivot_offset", size / 2.0)
@@ -209,7 +211,7 @@ func _on_mouse_entered() -> void:
 		current_hover_intensity = 1.0
 		if is_instance_valid(shine_tween) and shine_tween.is_valid():
 			shine_tween.kill()
-			
+
 		shine_tween = create_tween()
 		bg_material.set_shader_parameter("sweep_progress", -0.3)
 		(
@@ -274,9 +276,13 @@ func _process(delta: float) -> void:
 				scale = scale.lerp(press_scale, press_speed * delta)
 
 				if is_instance_valid(text_label):
-					var target_text_pos := Vector2(-normalized_x, -normalized_y) * parallax_intensity
+					var target_text_pos := (
+						Vector2(-normalized_x, -normalized_y) * parallax_intensity
+					)
 					target_text_pos.y += press_depth
-					text_label.position = text_label.position.lerp(target_text_pos, press_speed * delta)
+					text_label.position = text_label.position.lerp(
+						target_text_pos, press_speed * delta
+					)
 					text_label.scale = text_label.scale.lerp(Vector2(1.0, 1.0), press_speed * delta)
 			else:
 				var pitch_scale_modifier: float = 1.0 - (absf(normalized_y) * 0.04)
@@ -284,7 +290,9 @@ func _process(delta: float) -> void:
 				scale = scale.lerp(final_target_scale, response_speed * delta)
 
 				if is_instance_valid(text_label):
-					var target_text_pos := Vector2(-normalized_x, -normalized_y) * parallax_intensity
+					var target_text_pos := (
+						Vector2(-normalized_x, -normalized_y) * parallax_intensity
+					)
 					text_label.position = text_label.position.lerp(
 						target_text_pos, response_speed * delta
 					)
@@ -297,7 +305,7 @@ func _process(delta: float) -> void:
 		else:
 			current_hover_intensity = move_toward(current_hover_intensity, 0.0, 3.0 * delta)
 			scale = scale.lerp(original_scale, response_speed * delta)
-			
+
 			if is_instance_valid(text_label):
 				text_label.position = text_label.position.lerp(Vector2.ZERO, response_speed * delta)
 				text_label.scale = text_label.scale.lerp(Vector2(1.0, 1.0), response_speed * delta)
@@ -349,7 +357,7 @@ func _process(delta: float) -> void:
 					pace_timers[i] = randf_range(1.0, 3.0)
 					target_shadows_x[i] = randf_range(-0.2, 1.2)
 					walk_speeds[i] = randf_range(walk_speed * 0.5, walk_speed * 1.5)
-					
+
 				if not is_equal_approx(shadows_x[i], target_shadows_x[i]):
 					shadows_x[i] = move_toward(
 						shadows_x[i], target_shadows_x[i], walk_speeds[i] * delta

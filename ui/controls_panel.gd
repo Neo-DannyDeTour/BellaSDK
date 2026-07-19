@@ -11,8 +11,16 @@ var remapping_button: Button = null
 
 ## List of all input actions available for the player to remap in the UI.
 var my_actions: Array[String] = [
-	"forward", "backward", "left", "right", "jump", 
-	"crouch", "sprint", "interact", "flashlight", "zoom"
+	"forward",
+	"backward",
+	"left",
+	"right",
+	"jump",
+	"crouch",
+	"sprint",
+	"interact",
+	"flashlight",
+	"zoom"
 ]
 
 ## Determines if the crouch action functions as a toggle (true) or a hold (false).
@@ -44,19 +52,19 @@ func _create_control_list() -> void:
 	for action: String in my_actions:
 		var action_label: Label = action_label_template.duplicate() as Label
 		var remap_btn: Button = remap_button_template.duplicate() as Button
-		
+
 		action_label.show()
 		remap_btn.show()
-		
+
 		grid_container.add_child(action_label)
 		grid_container.add_child(remap_btn)
-		
+
 		action_label.text = action.capitalize()
 		remap_btn.set_meta("action", action)
-		
+
 		_update_button_text(remap_btn, action)
 		remap_btn.toggled.connect(_on_any_remap_button_toggled.bind(remap_btn))
-		
+
 	action_label_template.queue_free()
 	remap_button_template.queue_free()
 
@@ -72,10 +80,10 @@ func _update_button_text(button: Button, action: String) -> void:
 	print("UI: Updating button text for action: ", action)
 	var events: Array[InputEvent] = InputMap.action_get_events(action)
 	var key_name: String = "Unassigned"
-	
+
 	if events.size() > 0:
 		key_name = events[0].as_text().replace(" (Physical)", "").strip_edges()
-	
+
 	button.text = key_name
 
 
@@ -113,14 +121,14 @@ func _on_cancel_crouch_on_jump_toggled(toggled_on: bool) -> void:
 func _input(event: InputEvent) -> void:
 	if not self.visible:
 		return
-		
+
 	if is_remapping:
 		if event is InputEventKey or event is InputEventMouseButton:
 			if event.is_pressed():
 				print("System: Player pressed key for remap: ", event.as_text())
 				InputMap.action_erase_events(action_to_remap)
 				InputMap.action_add_event(action_to_remap, event)
-				
+
 				_save_controls()
 				is_remapping = false
 				remapping_button.button_pressed = false
@@ -147,8 +155,10 @@ func _sync_ui_to_settings() -> void:
 	print("System: Syncing UI to global accessibility settings.")
 	toggle_crouch = GlobalSettings.get_setting("Accessibility", "toggle_crouch", false) as bool
 	toggle_sprint = GlobalSettings.get_setting("Accessibility", "toggle_sprint", false) as bool
-	cancel_crouch_on_jump = GlobalSettings.get_setting("Accessibility", "cancel_crouch_on_jump", false) as bool
-	
+	cancel_crouch_on_jump = (
+		GlobalSettings.get_setting("Accessibility", "cancel_crouch_on_jump", false) as bool
+	)
+
 	toggle_crouch_btn.set_pressed_no_signal(toggle_crouch)
 	toggle_sprint_btn.set_pressed_no_signal(toggle_sprint)
 	cancel_crouch_on_jump_btn.set_pressed_no_signal(cancel_crouch_on_jump)

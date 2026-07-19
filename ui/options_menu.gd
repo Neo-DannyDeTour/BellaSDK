@@ -16,19 +16,19 @@ class_name OptionsRouter
 
 func _ready() -> void:
 	print("UI: Options routing system initialized.")
-	
+
 	video_button.pressed.connect(_on_tab_pressed.bind(video_panel))
 	audio_button.pressed.connect(_on_tab_pressed.bind(audio_panel))
 	gameplay_button.pressed.connect(_on_tab_pressed.bind(gameplay_panel))
 	controls_button.pressed.connect(_on_tab_pressed.bind(controls_panel))
 	accessibility_button.pressed.connect(_on_tab_pressed.bind(accessibility_panel))
-	
+
 	_on_tab_pressed(video_panel)
 
 
 func _on_tab_pressed(active_panel: Panel) -> void:
 	print("UI: Player swapped options tab to: ", active_panel.name)
-	
+
 	video_panel.visible = (active_panel == video_panel)
 	audio_panel.visible = (active_panel == audio_panel)
 	gameplay_panel.visible = (active_panel == gameplay_panel)

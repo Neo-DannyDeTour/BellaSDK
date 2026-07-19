@@ -34,7 +34,7 @@ mesh = SubResource("PrismMesh_84l6x")
 [node name="PlayerAnchor" type="Marker3D" parent="." unique_id=319586467]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
 
-[node name="Interact_Component" type="Node" parent="." unique_id=794362282]
+[node name="InteractComponent" type="Node" parent="." unique_id=794362282]
 script = ExtResource("2_4dxby")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 

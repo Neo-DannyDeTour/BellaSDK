@@ -30,7 +30,7 @@ extends StaticBody3D
 var press_tween: Tween
 var can_press: bool = true
 
-@onready var interact_component: Interact_Component = $Interact_Component
+@onready var interact_component: InteractComponent = $InteractComponent
 @onready var highlight_component: HighlightComponent = $HighlightComponent
 @onready var label_interact: Label3D = $LabelInteract
 

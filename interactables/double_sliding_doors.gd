@@ -17,8 +17,8 @@ var active_tweens: Dictionary = {}
 @onready var left_label: Label3D = $DoorLeft/Label3D
 @onready var right_label: Label3D = $DoorRight/Label3D2
 
-@onready var left_interact: Node = $DoorLeft/Interact_Component
-@onready var right_interact: Node = $DoorRight/Interact_Component
+@onready var left_interact: Node = $DoorLeft/InteractComponent
+@onready var right_interact: Node = $DoorRight/InteractComponent
 
 
 func _ready() -> void:

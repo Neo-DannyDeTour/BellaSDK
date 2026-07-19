@@ -104,7 +104,7 @@ func _process(delta: float) -> void:
 		var viewport := get_viewport()
 		var camera: Camera3D = viewport.get_camera_3d() if viewport else null
 		var cam_velocity_y := 0.0
-		
+
 		if camera:
 			# Calculate upward speed (distance moved / time)
 			cam_velocity_y = (camera.global_position.y - _last_camera_y) / delta
@@ -120,10 +120,10 @@ func _process(delta: float) -> void:
 			if not _was_underwater:
 				print("Water executing: Camera entered water. Switching to underwater audio.")
 				_was_underwater = true
-				
+
 				if %SurfaceAudio.playing:
 					%SurfaceAudio.stream_paused = true
-					
+
 				if not %UnderwaterAudio.playing:
 					%UnderwaterAudio.play()
 				elif %UnderwaterAudio.stream_paused:
@@ -136,18 +136,20 @@ func _process(delta: float) -> void:
 			if _was_underwater:
 				print("Water executing: Camera exited water. Switching to surface audio.")
 				_was_underwater = false
-				
+
 				if %UnderwaterAudio.playing:
 					%UnderwaterAudio.stream_paused = true
-					
+
 				if not %SurfaceAudio.playing:
 					%SurfaceAudio.play()
 				elif %SurfaceAudio.stream_paused:
 					%SurfaceAudio.stream_paused = false
-					
+
 				# --- NEW: Instant Surface-Break Splash ---
 				if camera and cam_velocity_y >= min_splash_velocity:
-					print("Water executing: Head broke surface fast enough, triggering exit splash.")
+					print(
+						"Water executing: Head broke surface fast enough, triggering exit splash."
+					)
 					play_splash_sound(camera.global_position, cam_velocity_y)
 
 
@@ -214,6 +216,6 @@ func _on_swimmable_area_body_exited(body: Node3D) -> void:
 			floating_bodies.erase(body)
 			body.is_in_water = false
 			body.current_water_node = null
-			
+
 	elif body.has_method("exit_water"):
 		body.exit_water(self)

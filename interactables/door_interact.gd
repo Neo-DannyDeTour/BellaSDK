@@ -29,19 +29,20 @@ var power_component: PowerComponent
 func _ready() -> void:
 	# 1. Dynamically check for the component
 	power_component = get_node_or_null("PowerComponent")
-	
+
 	if is_instance_valid(power_component):
 		is_powered_door = true
-		
+
 		# 2. Pass the designer's chosen number down to the component!
 		power_component.required_power = self.required_power
-		
+
 		# 3. Connect the signals
 		power_component.powered_on.connect(_on_powered_on)
 		power_component.powered_off.connect(_on_powered_off)
 
 
 # --- PUZZLE LOGIC ---
+
 
 func _on_powered_on() -> void:
 	print("PoweredDoor: PowerComponent reached full power. Opening.")
@@ -54,6 +55,7 @@ func _on_powered_off() -> void:
 
 
 # --- ANIMATION LOGIC ---
+
 
 func update_door() -> void:
 	if not is_node_ready():
@@ -74,10 +76,11 @@ func update_door() -> void:
 
 # --- MANUAL INTERACT LOGIC ---
 
+
 func interact() -> void:
 	if is_powered_door:
 		print("PoweredDoor: Interaction blocked. This door is locked by a mechanism!")
-		return 
+		return
 
 	print("PoweredDoor: Player manually interacted with the door.")
 	toggle_open()
@@ -96,9 +99,10 @@ func toggle_open(_player: CharacterBody3D = null) -> void:
 
 # --- DETECTOR LOGIC ---
 
+
 func _on_detector_body_exited(body: Node3D) -> void:
 	if is_powered_door:
-		return 
+		return
 
 	if open and body.is_in_group("player"):
 		print("PoweredDoor: Player exited proximity area. Starting auto-close timer.")
@@ -124,7 +128,7 @@ func _on_timer_timeout() -> void:
 			is_on_cooldown = true
 			open = false
 			print("PoweredDoor: Auto-close timer finished. Closing.")
-			
+
 			await get_tree().create_timer(1.0).timeout
 			is_on_cooldown = false
 		else:

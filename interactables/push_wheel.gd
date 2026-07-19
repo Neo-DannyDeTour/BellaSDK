@@ -98,7 +98,7 @@ func _ready() -> void:
 
 	print("PushWheel: Initialized. Broken Variant = ", is_broken_variant)
 
-	var interact_comp: Node = get_node_or_null("Interact_Component")
+	var interact_comp: Node = get_node_or_null("InteractComponent")
 	if is_instance_valid(interact_comp):
 		interact_comp.focused.connect(_on_focused)
 		interact_comp.unfocused.connect(_on_unfocused)
@@ -269,8 +269,8 @@ func _on_interacted(character: CharacterBody3D) -> void:
 
 	print("PushWheel: Requesting transition to PushWheel state.")
 
-	var interact_comp: Interact_Component = (
-		get_node_or_null("Interact_Component") as Interact_Component
+	var interact_comp: InteractComponent = (
+		get_node_or_null("InteractComponent") as InteractComponent
 	)
 	var hit_point: Vector3 = Vector3.ZERO
 

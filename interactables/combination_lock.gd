@@ -10,7 +10,7 @@ extends Node3D
 @export var lock_ui_scene: PackedScene
 @export var enable_auto_light: bool = false
 
-@onready var interact_comp: Interact_Component = $Interact_Component
+@onready var interact_comp: InteractComponent = $InteractComponent
 @onready var puzzle_light: SpotLight3D = $SpotLight3D
 
 var active_ui: MachineLockUI

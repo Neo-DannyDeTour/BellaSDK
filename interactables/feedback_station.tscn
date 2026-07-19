@@ -19,7 +19,7 @@ shader_parameter/max_intensity = 0.05
 
 [node name="FeedbackStation" type="StaticBody3D" unique_id=1120467328 node_paths=PackedStringArray("interact_comp", "label", "sprite")]
 script = ExtResource("1_f7hnv")
-interact_comp = NodePath("Interact_Component")
+interact_comp = NodePath("InteractComponent")
 label = NodePath("Label3D")
 sprite = NodePath("Sprite3D")
 
@@ -41,7 +41,7 @@ gi_mode = 0
 billboard = 1
 texture = ExtResource("1_fy5ia")
 
-[node name="Interact_Component" type="Node" parent="." unique_id=1057979123]
+[node name="InteractComponent" type="Node" parent="." unique_id=1057979123]
 script = ExtResource("2_bqlrl")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 

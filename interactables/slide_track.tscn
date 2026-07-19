@@ -47,7 +47,7 @@ mesh = SubResource("BoxMesh_amd4b")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="PathStick/Handle" unique_id=882893478]
 shape = SubResource("BoxShape3D_spvsq")
 
-[node name="Interact_Component" type="Node" parent="PathStick/Handle" unique_id=1541498766]
+[node name="InteractComponent" type="Node" parent="PathStick/Handle" unique_id=1541498766]
 script = ExtResource("2_ugdqt")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 
@@ -56,4 +56,4 @@ script = ExtResource("4_ua8gp")
 outline_material = SubResource("ShaderMaterial_bwnwt")
 metadata/_custom_type_script = "uid://dgig0tamvkdxx"
 
-[connection signal="interacted" from="PathStick/Handle/Interact_Component" to="PathStick" method="_on_interact_component_interacted"]
+[connection signal="interacted" from="PathStick/Handle/InteractComponent" to="PathStick" method="_on_interact_component_interacted"]

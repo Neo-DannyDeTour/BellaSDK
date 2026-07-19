@@ -38,7 +38,7 @@ mesh = SubResource("QuadMesh_g0bd1")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1559636351]
 shape = SubResource("ConcavePolygonShape3D_6scty")
 
-[node name="Interact_Component" type="Node" parent="." unique_id=1020718314]
+[node name="InteractComponent" type="Node" parent="." unique_id=1020718314]
 script = ExtResource("2_38cqg")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 

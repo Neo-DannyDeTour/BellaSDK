@@ -10,8 +10,9 @@ var debug_line: MeshInstance3D
 
 @onready var mesh_instance_3d: MeshInstance3D = $MeshInstance3D
 @onready var sub_viewport: SubViewport = $SubViewport
-@onready var interact_component: Interact_Component = $Interact_Component
+@onready var interact_component: InteractComponent = $InteractComponent
 @onready var keypad_audio: AudioStreamPlayer3D = $KeypadAudio
+
 
 func _ready() -> void:
 	if Engine.is_editor_hint():
@@ -26,6 +27,7 @@ func _ready() -> void:
 			ui.code_entered.connect(_on_ui_code_entered)
 		if ui.has_signal("button_clicked"):
 			ui.button_clicked.connect(_on_ui_button_clicked)
+
 
 func _on_ui_button_clicked(_button_name: String) -> void:
 	print("DoorKeypad: Playing spatialized button click sound.")
@@ -51,7 +53,7 @@ func get_viewport_pos_from_3d(global_hit: Vector3) -> Vector2:
 	var percent_x: float = 0.5
 	if aabb.size.x > 0.001:
 		percent_x = (local_pos.x - aabb.position.x) / aabb.size.x
-	
+
 	var percent_y: float = 0.5
 	if aabb.size.y > 0.001:
 		percent_y = 1.0 - ((local_pos.y - aabb.position.y) / aabb.size.y)
@@ -66,7 +68,7 @@ func get_viewport_pos_from_3d(global_hit: Vector3) -> Vector2:
 func inject_mouse_motion(global_hit: Vector3) -> void:
 	var event := InputEventMouseMotion.new()
 	var pos: Vector2 = get_viewport_pos_from_3d(global_hit)
-	event.device = 1 # Hardware ID isolation
+	event.device = 1  # Hardware ID isolation
 	event.position = pos
 	event.global_position = pos
 	sub_viewport.push_input(event)
@@ -75,7 +77,7 @@ func inject_mouse_motion(global_hit: Vector3) -> void:
 func inject_mouse_click(global_hit: Vector3) -> void:
 	print("DoorKeypad: Injecting mouse click at ", global_hit)
 	var pos: Vector2 = get_viewport_pos_from_3d(global_hit)
-	
+
 	var event_press := InputEventMouseButton.new()
 	event_press.device = 1
 	event_press.button_index = MOUSE_BUTTON_LEFT
@@ -84,7 +86,7 @@ func inject_mouse_click(global_hit: Vector3) -> void:
 	event_press.global_position = pos
 	event_press.pressed = true
 	sub_viewport.push_input(event_press)
-	
+
 	# Delay the mouse release by exactly one frame so the UI registers the click down state
 	get_tree().process_frame.connect(_release_mouse_click.bind(pos), CONNECT_ONE_SHOT)
 
@@ -102,7 +104,7 @@ func _release_mouse_click(pos: Vector2) -> void:
 
 func _on_ui_code_entered(code: String) -> void:
 	var ui: Control = sub_viewport.get_child(0)
-	
+
 	if code == valid_code:
 		print("DoorKeypad: The code is correct!")
 		code_accepted.emit()
@@ -163,7 +165,7 @@ func clear_mouse_hover() -> void:
 	print("DoorKeypad: Clearing SubViewport mouse hover state.")
 	var event := InputEventMouseMotion.new()
 	event.device = 1
-	
+
 	var off_screen_pos := Vector2(-1000.0, -1000.0)
 	event.position = off_screen_pos
 	event.global_position = off_screen_pos

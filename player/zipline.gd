@@ -11,7 +11,7 @@ var current_player: CharacterBody3D = null
 var last_player_pos: Vector3 = Vector3.ZERO
 var current_travel_velocity: Vector3 = Vector3.ZERO  # NEW: Store this globally for the player to grab
 
-@onready var interact_component: Interact_Component = $InteractArea/Interact_Component
+@onready var interact_component: InteractComponent = $InteractArea/InteractComponent
 @onready var highlight_component: HighlightComponent = $InteractArea/HighlightComponent
 @onready var interact_label: Label3D = $InteractArea/Label3D
 

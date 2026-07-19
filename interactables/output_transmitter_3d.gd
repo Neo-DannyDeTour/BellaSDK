@@ -44,7 +44,7 @@ func _energize_targets() -> void:
 			var comp: Node = target.get_node_or_null("PowerComponent")
 			if is_instance_valid(comp) and comp.has_method("add_power"):
 				comp.add_power()
-			elif target.has_method("power_on"): 
+			elif target.has_method("power_on"):
 				target.power_on()
 
 

@@ -10,7 +10,6 @@ const STANDING_HEIGHT: float = 1.8
 ## The target local Y position of the head node when the player is crouched.
 const CROUCHING_HEIGHT: float = 1.0
 
-
 # --------------------------------------
 # EXPORTS
 # --------------------------------------
@@ -76,7 +75,6 @@ const CROUCHING_HEIGHT: float = 1.0
 ## The node representing the player's head or camera pivot, used for height interpolation.
 @export var head: Node3D
 
-
 # --------------------------------------
 # VARIABLES
 # --------------------------------------
@@ -131,7 +129,7 @@ func set_physics_active(active: bool) -> void:
 func process_movement(delta: float) -> void:
 	if not is_active or not is_instance_valid(player):
 		return
-		
+
 	_apply_weight_to_floor()
 	_interpolate_head_height(delta)
 
@@ -158,21 +156,28 @@ func _apply_weight_to_floor() -> void:
 
 		if collider is RigidBody3D and collision.get_normal().y > 0.5:
 			var is_cable_or_socket: bool = "CableLink" in collider.name or "Socket" in collider.name
-			
+
 			if is_cable_or_socket or collider.is_in_group("ignore_weight"):
 				if _last_weighed_body != collider:
 					print("LocomotionComponent: Stepped on ", collider.name, ". Ignoring weight.")
 					_last_weighed_body = collider
 				return
 
-			var mass: float = stats_component.player_mass if is_instance_valid(stats_component) else 80.0
+			var mass: float = (
+				stats_component.player_mass if is_instance_valid(stats_component) else 80.0
+			)
 			var downward_force: float = mass * gravity
 			var hit_position: Vector3 = collision.get_position() - collider.global_position
-			
+
 			collider.apply_force(Vector3.DOWN * downward_force, hit_position)
 
 			if _last_weighed_body != collider:
-				print("LocomotionComponent: Applied ", downward_force, " downward force to ", collider.name)
+				print(
+					"LocomotionComponent: Applied ",
+					downward_force,
+					" downward force to ",
+					collider.name
+				)
 				_last_weighed_body = collider
 			return
 
@@ -180,6 +185,6 @@ func _apply_weight_to_floor() -> void:
 func _interpolate_head_height(delta: float) -> void:
 	if not is_instance_valid(head):
 		return
-		
+
 	var target_height: float = CROUCHING_HEIGHT if crouching else STANDING_HEIGHT
 	head.position.y = lerpf(head.position.y, target_height, delta * 15.0)

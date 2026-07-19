@@ -29,7 +29,7 @@ var _trail_texture: GradientTexture2D
 @onready var turret: Node3D = $Turret
 @onready var laser_origin: Marker3D = $Turret/LaserOrigin
 @onready var base_beam_mesh: MeshInstance3D = $Turret/BeamMesh
-@onready var interact_comp: Interact_Component = $Interact_Component
+@onready var interact_comp: InteractComponent = $InteractComponent
 
 
 func _ready() -> void:

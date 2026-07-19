@@ -19,14 +19,14 @@ var _x_offset: Vector3 = Vector3.ZERO
 
 func _ready() -> void:
 	print("Initializing buoyancy script on: ", name)
-	
+
 	# 1. SAFETY: Cache the check once on startup instead of every frame
 	if water and water.has_method("get_height"):
 		_is_water_valid = true
 		print("Water node successfully linked for: ", name)
 	else:
 		print("Warning: Water node missing or lacks get_height() on: ", name)
-		
+
 	# Cache the vector math so we don't allocate objects every frame
 	_z_offset = Vector3(0.0, 0.0, probe_spacing)
 	_x_offset = Vector3(probe_spacing, 0.0, 0.0)
@@ -51,7 +51,7 @@ func _process(delta: float) -> void:
 	# 4. TILT
 	var slope_x: float = (h_right - h_left) / (probe_spacing * 2.0)
 	var slope_z: float = (h_front - h_back) / (probe_spacing * 2.0)
-	
+
 	var surface_normal: Vector3 = Vector3(-slope_x, 1.0, -slope_z).normalized()
 
 	# 5. SWAY
@@ -59,19 +59,15 @@ func _process(delta: float) -> void:
 	var sway_z: float = surface_normal.z * 2.0
 
 	# 6. APPLY POSITION
-	var target_pos: Vector3 = Vector3(
-		pos.x + (sway_x * delta), 
-		target_y, 
-		pos.z + (sway_z * delta)
-	)
-	
+	var target_pos: Vector3 = Vector3(pos.x + (sway_x * delta), target_y, pos.z + (sway_z * delta))
+
 	global_position = global_position.lerp(target_pos, responsiveness * delta)
 
 	# 7. APPLY ROTATION
 	var current_basis: Basis = global_transform.basis
 	var target_right: Vector3 = surface_normal.cross(current_basis.z).normalized()
 	var target_forward: Vector3 = target_right.cross(surface_normal).normalized()
-	
+
 	var target_basis: Basis = Basis(target_right, surface_normal, target_forward)
 
 	global_transform.basis = (

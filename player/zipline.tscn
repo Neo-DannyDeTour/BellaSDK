@@ -52,7 +52,7 @@ collision_layer = 5
 transform = Transform3D(-0.9340086, -0.06616887, -0.35106927, 0, 0.98269767, -0.18521698, 0.35725054, -0.17299426, -0.91784805, -0.12947512, 2.2972713, -0.4120679)
 shape = SubResource("CylinderShape3D_1tsh7")
 
-[node name="Interact_Component" type="Node" parent="InteractArea" unique_id=74740240]
+[node name="InteractComponent" type="Node" parent="InteractArea" unique_id=74740240]
 script = ExtResource("2_1tsh7")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 

@@ -28,24 +28,14 @@ func init_gpu(num_cascades: int) -> void:
 	var spectrum_compute_shader: RID = context.load_shader(
 		"res://environment/spectrum_compute.glsl"
 	)
-	var fft_butterfly_shader: RID = context.load_shader(
-		"res://environment/fft_butterfly.glsl"
-	)
+	var fft_butterfly_shader: RID = context.load_shader("res://environment/fft_butterfly.glsl")
 	var spectrum_modulate_shader: RID = context.load_shader(
 		"res://environment/spectrum_modulate.glsl"
 	)
-	var fft_compute_shader: RID = context.load_shader(
-		"res://environment/fft_compute.glsl"
-	)
-	var transpose_shader: RID = context.load_shader(
-		"res://environment/transpose.glsl"
-	)
-	var fft_unpack_shader: RID = context.load_shader(
-		"res://environment/fft_unpack.glsl"
-	)
-	var downsample_shader: RID = context.load_shader(
-		"res://environment/downsample_compute.glsl"
-	)
+	var fft_compute_shader: RID = context.load_shader("res://environment/fft_compute.glsl")
+	var transpose_shader: RID = context.load_shader("res://environment/transpose.glsl")
+	var fft_unpack_shader: RID = context.load_shader("res://environment/fft_unpack.glsl")
+	var downsample_shader: RID = context.load_shader("res://environment/downsample_compute.glsl")
 
 	# --- DESCRIPTOR PREPARATION ---
 	var dims: Vector2i = Vector2i(map_size, map_size)
@@ -160,7 +150,7 @@ func _process(_delta: float) -> void:
 	# Safety valve to prevent editor error spam
 	if pipelines.is_empty() or not pipelines.has(&"spectrum_compute"):
 		return
-		
+
 	if pass_parameters.is_empty():
 		return
 
@@ -168,7 +158,7 @@ func _process(_delta: float) -> void:
 	var compute_list: int = context.compute_list_begin()
 	_update(compute_list, _current_cascade_index, pass_parameters)
 	context.compute_list_end()
-	
+
 	# Cycle to the next cascade for the next frame
 	_current_cascade_index = (_current_cascade_index + 1) % pass_parameters.size()
 
@@ -180,10 +170,8 @@ func _update(
 
 	## --- WAVE SPECTRA UPDATE ---
 	if params.should_generate_spectrum:
-		var alpha: float = JONSWAP_alpha(
-			float(params.wind_speed), float(params.fetch_length) * 1e3
-		)
-		var omega: float = JONSWAP_peak_angular_frequency(
+		var alpha: float = jonswap_alpha(float(params.wind_speed), float(params.fetch_length) * 1e3)
+		var omega: float = jonswap_peak_angular_frequency(
 			float(params.wind_speed), float(params.fetch_length) * 1e3
 		)
 
@@ -205,8 +193,8 @@ func _update(
 					float(params.detail),
 					float(params.spread),
 					int(cascade_index),
-					0.0, # pad1
-					0.0, # pad2
+					0.0,  # pad1
+					0.0,  # pad2
 					0.0  # pad3
 				]
 			)
@@ -224,24 +212,19 @@ func _update(
 				float(params.time),
 				int(cascade_index),
 				float(params.loop_period),
-				0.0, # pad1
+				0.0,  # pad1
 				0.0  # pad2
 			]
 		)
 	)
 
 	## --- WAVE SPECTRA INVERSE FOURIER TRANSFORM ---
-	
+
 	## The 16-byte push constant shared by both fft_compute and transpose
 	var fft_push_constant: PackedByteArray = RenderingContext.create_push_constant(
-		[
-			int(cascade_index),
-			0.0, # pad1
-			0.0, # pad2
-			0.0  # pad3
-		]
+		[int(cascade_index), 0.0, 0.0, 0.0]  # pad1  # pad2  # pad3
 	)
-	
+
 	pipelines[&"fft_compute"].call(context, compute_list, fft_push_constant)
 	pipelines[&"transpose"].call(context, compute_list, fft_push_constant)
 
@@ -269,21 +252,14 @@ func _update(
 	pipelines[&"downsample"].call(
 		context,
 		compute_list,
-		RenderingContext.create_push_constant(
-			[
-				int(cascade_index),
-				float(ratio),
-				0.0, # pad1
-				0.0  # pad2
-			]
-		)
+		RenderingContext.create_push_constant([int(cascade_index), float(ratio), 0.0, 0.0])  # pad1  # pad2
 	)
 
 
 func update(delta: float, parameters: Array[WaveCascadeParameters]) -> void:
 	#print("WaveGenerator: update() called. Updating cascade parameters.")
 	assert(parameters.size() != 0)
-	
+
 	if not context or pipelines.is_empty():
 		init_gpu(maxi(2, parameters.size()))
 
@@ -316,9 +292,9 @@ func _notification(what: int) -> void:
 			context.free()
 
 
-func JONSWAP_alpha(wind_speed: float = 20.0, fetch_length: float = 550e3) -> float:
+func jonswap_alpha(wind_speed: float = 20.0, fetch_length: float = 550e3) -> float:
 	return 0.076 * pow(pow(wind_speed, 2.0) / (fetch_length * G), 0.22)
 
 
-func JONSWAP_peak_angular_frequency(wind_speed: float = 20.0, fetch_length: float = 550e3) -> float:
+func jonswap_peak_angular_frequency(wind_speed: float = 20.0, fetch_length: float = 550e3) -> float:
 	return 22.0 * pow((G * G) / (wind_speed * fetch_length), 1.0 / 3.0)

@@ -122,7 +122,7 @@ func _ready() -> void:
 
 	highlight_comp = get_node_or_null("HighlightComponent")
 
-	var interact_comp: Node = get_node_or_null("Interact_Component")
+	var interact_comp: Node = get_node_or_null("InteractComponent")
 	if is_instance_valid(interact_comp):
 		if not interact_comp.focused.is_connected(_on_interact_component_focused):
 			interact_comp.focused.connect(_on_interact_component_focused)

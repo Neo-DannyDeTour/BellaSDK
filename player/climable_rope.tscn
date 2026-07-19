@@ -58,7 +58,7 @@ mesh = SubResource("CylinderMesh_wmsjs")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.5, 0)
 shape = SubResource("CylinderShape3D_icxtj")
 
-[node name="Interact_Component" type="Node" parent="RopeBody" unique_id=64496704]
+[node name="InteractComponent" type="Node" parent="RopeBody" unique_id=64496704]
 script = ExtResource("2_ghbyf")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 
@@ -83,5 +83,5 @@ volume_db = -10.0
 stream = ExtResource("6_pi0m5")
 
 [connection signal="body_entered" from="RopeBody" to="RopeBody" method="_on_body_entered"]
-[connection signal="focused" from="RopeBody/Interact_Component" to="RopeBody" method="_on_focus"]
-[connection signal="interacted" from="RopeBody/Interact_Component" to="RopeBody" method="_on_interact_component_interacted"]
+[connection signal="focused" from="RopeBody/InteractComponent" to="RopeBody" method="_on_focus"]
+[connection signal="interacted" from="RopeBody/InteractComponent" to="RopeBody" method="_on_interact_component_interacted"]

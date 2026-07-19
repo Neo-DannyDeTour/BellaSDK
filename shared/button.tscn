@@ -51,7 +51,7 @@ billboard = 1
 text = "[E]"
 font_size = 16
 
-[node name="Interact_Component" type="Node" parent="." unique_id=1334598762]
+[node name="InteractComponent" type="Node" parent="." unique_id=1334598762]
 script = ExtResource("1_mi6dp")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 
