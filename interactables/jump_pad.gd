@@ -58,10 +58,15 @@ func _ready() -> void:
 
 	# Clean up visualizer nodes when the game actually runs
 	if not Engine.is_editor_hint():
-		for node_name: String in ["BallVisual", "LineVisual", "ApexVisual"]:
-			var n: Node = get_node_or_null(node_name)
-			if is_instance_valid(n):
-				n.queue_free()
+		var n: Node = get_node_or_null("BallVisual")
+		if is_instance_valid(n):
+			n.queue_free()
+		n = get_node_or_null("LineVisual")
+		if is_instance_valid(n):
+			n.queue_free()
+		n = get_node_or_null("ApexVisual")
+		if is_instance_valid(n):
+			n.queue_free()
 
 	_update_trajectory()
 
