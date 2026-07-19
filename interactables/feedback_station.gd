@@ -29,7 +29,16 @@ func _ready() -> void:
 
 
 func _on_interacted(_character: CharacterBody3D) -> void:
-	print("FeedbackStation: Player interacted. Opening browser to: ", form_url)
+	print("FeedbackStation: Player interacted. Attempting to open browser to: ", form_url)
+
+	if not form_url.begins_with("https://"):
+		var error_msg := (
+			"FeedbackStation ERROR: URL must begin with 'https://'. Blocked: " + form_url
+		)
+		print(error_msg)
+		if Console:
+			Console.log_error(error_msg)
+		return
 
 	# OS.shell_open safely boots the user's default web browser
 	var err: Error = OS.shell_open(form_url)
