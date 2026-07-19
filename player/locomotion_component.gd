@@ -134,6 +134,14 @@ func process_movement(delta: float) -> void:
 	_interpolate_head_height(delta)
 
 
+func set_direction(new_dir: Vector3) -> void:
+	direction = new_dir
+
+
+func get_direction() -> Vector3:
+	return direction
+
+
 func reset_momentum() -> void:
 	print("LocomotionComponent: reset_momentum() called. Clearing velocity arrays.")
 	if is_instance_valid(player):
