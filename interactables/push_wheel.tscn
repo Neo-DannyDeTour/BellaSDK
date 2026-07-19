@@ -47,9 +47,10 @@ restored_handle = NodePath("Wheel/Visuals/Hub/Restored_Handle")
 turn_duration = 3.0
 show_debug_colliders = false
 
-[node name="HighlightComponent" type="Node" parent="." unique_id=1988589278]
+[node name="HighlightComponent" type="Node" parent="." unique_id=1988589278 node_paths=PackedStringArray("interact_component")]
 script = ExtResource("2_8ctuu")
 outline_material = SubResource("ShaderMaterial_7rave")
+interact_component = NodePath("../InteractComponent")
 metadata/_custom_type_script = "uid://dgig0tamvkdxx"
 
 [node name="InteractComponent" type="Node" parent="." unique_id=366997497]

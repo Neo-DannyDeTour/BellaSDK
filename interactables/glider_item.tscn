@@ -38,7 +38,8 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)
 script = ExtResource("2_4dxby")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 
-[node name="HighlightComponent" type="Node" parent="." unique_id=194486389]
+[node name="HighlightComponent" type="Node" parent="." unique_id=194486389 node_paths=PackedStringArray("interact_component")]
 script = ExtResource("3_15xtf")
 outline_material = SubResource("ShaderMaterial_j8qkd")
+interact_component = NodePath("../InteractComponent")
 metadata/_custom_type_script = "uid://dgig0tamvkdxx"

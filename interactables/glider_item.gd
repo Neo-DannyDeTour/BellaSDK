@@ -5,8 +5,6 @@ extends RigidBody3D
 
 var current_holder: CharacterBody3D = null
 
-@onready var player_anchor: Marker3D = $PlayerAnchor
-
 
 func set_glider_mesh_visible(p_is_visible: bool) -> void:
 	print("GliderItem: set_glider_mesh_visible() called. State: ", p_is_visible)
