@@ -34,9 +34,15 @@ func enter(msg: Dictionary = {}) -> void:
 	player.velocity.y = 0.0
 	current_speed = 0.0
 
-	_toggle_crouch_enabled = GlobalSettings.get_setting("Accessibility", "toggle_crouch", false) as bool
-	_toggle_sprint_enabled = GlobalSettings.get_setting("Accessibility", "toggle_sprint", false) as bool
-	_cancel_crouch_on_jump = GlobalSettings.get_setting("Accessibility", "cancel_crouch_on_jump", false) as bool
+	_toggle_crouch_enabled = (
+		GlobalSettings.get_setting("Accessibility", "toggle_crouch", false) as bool
+	)
+	_toggle_sprint_enabled = (
+		GlobalSettings.get_setting("Accessibility", "toggle_sprint", false) as bool
+	)
+	_cancel_crouch_on_jump = (
+		GlobalSettings.get_setting("Accessibility", "cancel_crouch_on_jump", false) as bool
+	)
 
 	if msg.has("jump_buffered") and msg["jump_buffered"] == true:
 		_perform_jump()
@@ -53,7 +59,7 @@ func physics_update(delta: float) -> void:
 	# 0. Slide Surface, Sand & Safe Landing Detection
 	loco.on_sand = false
 	loco.on_safe_landing = false
-	
+
 	var slide_count: int = player.get_slide_collision_count()
 	for i: int in range(slide_count):
 		var collision: KinematicCollision3D = player.get_slide_collision(i)
@@ -136,7 +142,9 @@ func _perform_jump() -> void:
 	elif loco.crouching:
 		player.velocity.y = CROUCH_JUMP_VELOCITY
 		if _cancel_crouch_on_jump and not loco.crouch_cast_check.is_colliding():
-			print("StateGround: Jumping while crouched. Canceling crouch state (Interpolation handled externally).")
+			print(
+				"StateGround: Jumping while crouched. Canceling crouch state (Interpolation handled externally)."
+			)
 			loco.crouching = false
 			loco.standing_collision.disabled = false
 			loco.crouching_collision.disabled = true
@@ -187,7 +195,7 @@ func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
 	# --- 3. SPRINT RESTRICTIONS ---
 	if not is_moving or wants_to_crouch or loco.on_sand or not loco.can_sprint:
 		wants_to_sprint = false
-		
+
 	loco.sprint_active = wants_to_sprint
 
 	# --- 4. CROUCH LOGIC & COLLISION ---

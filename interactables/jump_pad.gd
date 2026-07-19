@@ -39,7 +39,7 @@ func _enter_tree() -> void:
 
 func _ready() -> void:
 	collision_layer = 0
-	collision_mask = 2 # Only detect Layer 2 (Player)
+	collision_mask = 2  # Only detect Layer 2 (Player)
 
 	if not body_entered.is_connected(_on_body_entered):
 		body_entered.connect(_on_body_entered)
@@ -120,8 +120,8 @@ func _update_visuals() -> void:
 	# Draw the Line
 	var line: MeshInstance3D = get_node_or_null("LineVisual") as MeshInstance3D
 	if is_instance_valid(line):
-		line.top_level = false # Allow it to inherit transforms naturally
-		
+		line.top_level = false  # Allow it to inherit transforms naturally
+
 		var imm_mesh: ImmediateMesh
 		if line.mesh is ImmediateMesh:
 			imm_mesh = line.mesh as ImmediateMesh
@@ -136,17 +136,17 @@ func _update_visuals() -> void:
 		imm_mesh.clear_surfaces()
 		imm_mesh.surface_begin(Mesh.PRIMITIVE_LINES)
 		var segments: int = 40
-		
+
 		# Convert global trajectory into local space for the ImmediateMesh
 		var prev_pos: Vector3 = line.to_local(_get_position_at_time(0.0))
-		
+
 		for i: int in range(1, segments + 1):
 			var t: float = _flight_time * (float(i) / float(segments))
 			var curr_pos: Vector3 = line.to_local(_get_position_at_time(t))
 			imm_mesh.surface_add_vertex(prev_pos)
 			imm_mesh.surface_add_vertex(curr_pos)
 			prev_pos = curr_pos
-		
+
 		imm_mesh.surface_end()
 
 	# Position the Apex Marker
@@ -185,11 +185,14 @@ func _on_body_entered(body: Node3D) -> void:
 					break
 
 		if is_instance_valid(sm) and sm.has_method("transition_to"):
-			sm.transition_to("Air", {
-				"jump_pad": true,
-				"launch_gravity": _custom_gravity_up,
-				"launch_fall_gravity": _custom_gravity_down
-			})
+			sm.transition_to(
+				"Air",
+				{
+					"jump_pad": true,
+					"launch_gravity": _custom_gravity_up,
+					"launch_fall_gravity": _custom_gravity_down
+				}
+			)
 
 
 func _get_or_create_internal_node(node_name: String, node_class: Variant) -> Node:
@@ -204,17 +207,17 @@ func _get_or_create_internal_node(node_name: String, node_class: Variant) -> Nod
 
 func _create_default_nodes() -> void:
 	# 1. Generate Hidden / Internal Nodes (Visible in viewport, hidden in Scene Tree)
-	var col: CollisionShape3D = _get_or_create_internal_node(
-		"CollisionShape3D", CollisionShape3D
-	) as CollisionShape3D
+	var col: CollisionShape3D = (
+		_get_or_create_internal_node("CollisionShape3D", CollisionShape3D) as CollisionShape3D
+	)
 	if not col.shape:
 		var shape: BoxShape3D = BoxShape3D.new()
 		shape.size = Vector3(2.0, 0.2, 2.0)
 		col.shape = shape
 
-	var pad: MeshInstance3D = _get_or_create_internal_node(
-		"PadMesh", MeshInstance3D
-	) as MeshInstance3D
+	var pad: MeshInstance3D = (
+		_get_or_create_internal_node("PadMesh", MeshInstance3D) as MeshInstance3D
+	)
 	if not pad.mesh:
 		var box: BoxMesh = BoxMesh.new()
 		box.size = Vector3(2.0, 0.2, 2.0)
@@ -224,9 +227,9 @@ func _create_default_nodes() -> void:
 		pad.mesh = box
 
 	if Engine.is_editor_hint():
-		var ball: MeshInstance3D = _get_or_create_internal_node(
-			"BallVisual", MeshInstance3D
-		) as MeshInstance3D
+		var ball: MeshInstance3D = (
+			_get_or_create_internal_node("BallVisual", MeshInstance3D) as MeshInstance3D
+		)
 		ball.top_level = true
 		if not ball.mesh:
 			var sphere: SphereMesh = SphereMesh.new()
@@ -239,14 +242,14 @@ func _create_default_nodes() -> void:
 			sphere.material = b_mat
 			ball.mesh = sphere
 
-		var line: MeshInstance3D = _get_or_create_internal_node(
-			"LineVisual", MeshInstance3D
-		) as MeshInstance3D
+		var line: MeshInstance3D = (
+			_get_or_create_internal_node("LineVisual", MeshInstance3D) as MeshInstance3D
+		)
 		line.top_level = true
 
-		var apex: MeshInstance3D = _get_or_create_internal_node(
-			"ApexVisual", MeshInstance3D
-		) as MeshInstance3D
+		var apex: MeshInstance3D = (
+			_get_or_create_internal_node("ApexVisual", MeshInstance3D) as MeshInstance3D
+		)
 		apex.top_level = true
 		if not apex.mesh:
 			var apex_box: BoxMesh = BoxMesh.new()

@@ -29,7 +29,7 @@ func equip_to_player(p_node: CharacterBody3D) -> void:
 	is_equipped = true
 
 	# 1. FIND THE PHYSICS BODY (StaticBody3D or RigidBody3D)
-	# If your Interact_Component is a child of the StaticBody,
+	# If your InteractComponent is a child of the StaticBody,
 	# we grab the parent of the component.
 	var physics_body := get_node("StaticBody3D")  # Update path if named differently
 
@@ -115,7 +115,7 @@ func shoot(player_camera: Camera3D) -> void:
 					result.position - (collider as RigidBody3D).global_position
 				)
 				(collider as RigidBody3D).apply_impulse(pellet_dir * 2.0, hit_offset)
-			
+
 			# --- MEAT CUBE INTEGRATION ---
 			# Check the collider, its parent, and its owner for the deformation logic
 			if collider.has_method("_spawn_poker_at"):

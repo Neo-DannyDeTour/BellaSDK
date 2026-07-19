@@ -101,15 +101,15 @@ func _setup_precompilation() -> void:
 func _process_shader_compilation() -> void:
 	print("LoadingScreen: Processing shader compilation chunk...")
 	var start_time: int = Time.get_ticks_msec()
-	
+
 	while _current_compile_index < baked_shader_cache.materials.size():
 		var mat: Material = baked_shader_cache.materials[_current_compile_index]
 		_create_dummy_element(mat)
 		_current_compile_index += 1
-		
+
 		if (Time.get_ticks_msec() - start_time) >= _max_compile_time_ms:
-			return 
-			
+			return
+
 	print("LoadingScreen: Precompilation finished. Cleaning up dummies.")
 	_dummy_parent_3d.queue_free()
 	_dummy_parent_2d.queue_free()

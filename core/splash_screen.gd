@@ -5,17 +5,18 @@ extends Control
 
 @onready var texture_rect: TextureRect = $TextureRect
 
+
 func _ready() -> void:
 	# Randomize the seed so we get a different result every time the game runs
 	randomize()
-	
+
 	# Check to make sure the array isn't empty before trying to pull from it
 	if splash_images.size() > 0:
 		var random_index: int = randi() % splash_images.size()
 		texture_rect.texture = splash_images[random_index]
-		
+
 	# Wait for a few seconds before transitioning (e.g., 3 seconds)
 	await get_tree().create_timer(3.0).timeout
-	
+
 	# Change to your actual main menu or game scene
 	get_tree().change_scene_to_file("res://scenes/main_menu.tscn")

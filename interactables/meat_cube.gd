@@ -45,16 +45,21 @@ func _record_initial_height() -> void:
 func _physics_process(delta: float) -> void:
 	if _is_resetting or meat_visual == null or _initial_height <= 0.0:
 		return
-		
+
 	# Continuously calculate the global AABB as the soft body deforms
 	var global_aabb: AABB = meat_visual.global_transform * meat_visual.get_aabb()
 	var current_height: float = global_aabb.size.y
-	
+
 	_debug_timer += delta
 	if _debug_timer >= 1.0:
-		print("Checking geometry - Current height: ", current_height, " | Target to collapse: ", (_initial_height * collapse_threshold))
+		print(
+			"Checking geometry - Current height: ",
+			current_height,
+			" | Target to collapse: ",
+			_initial_height * collapse_threshold
+		)
 		_debug_timer = 0.0
-		
+
 	if current_height < (_initial_height * collapse_threshold):
 		print("Autonomous detection: Cube geometry collapsed! Current height: ", current_height)
 		trigger_1_second_reset()
@@ -65,16 +70,16 @@ func trigger_1_second_reset() -> void:
 	print("Meat cube structural integrity compromised. Initiating 1-second reset timer.")
 	if _is_resetting:
 		return
-		
+
 	_is_resetting = true
-	
+
 	var timer: SceneTreeTimer = get_tree().create_timer(1.0)
 	timer.timeout.connect(_respawn_cube)
 
 
 func _respawn_cube() -> void:
 	print("Respawning a fresh meat cube to restore initial form.")
-	
+
 	if meat_cube_scene_path != "":
 		var meat_cube_scene: PackedScene = load(meat_cube_scene_path) as PackedScene
 		if meat_cube_scene:

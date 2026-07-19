@@ -11,7 +11,7 @@ const FONT_MAP: Array[String] = ["default", "dyslexic", "papyrus", "comic"]
 
 
 func _init() -> void:
-	# LOAD FIRST: We load data the moment this class is instanced, guaranteeing 
+	# LOAD FIRST: We load data the moment this class is instanced, guaranteeing
 	# the config is populated before other Autoloads attempt to save to it.
 	_load_all_settings()
 
@@ -35,11 +35,11 @@ func _apply_boot_settings() -> void:
 	var ui_scale: float = get_setting("Settings", "ui_scale", 1.0) as float
 	get_window().content_scale_factor = ui_scale
 
-	if Events: 
+	if Events:
 		var saved_font: int = get_setting("Settings", "font_mode", 0) as int
 		if saved_font >= 0 and saved_font < FONT_MAP.size():
 			Events.font_changed.emit(FONT_MAP[saved_font])
-			
+
 		var saved_cb: int = get_setting("Settings", "colorblind_mode", 0) as int
 		Events.colorblind_mode_changed.emit(saved_cb)
 

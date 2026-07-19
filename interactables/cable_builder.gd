@@ -1,6 +1,6 @@
 @tool
 extends Node
-class_name CableBuilder_Component
+class_name CableBuilderComponent
 
 @export var path_node: Path3D
 @export var mesh_node: MeshInstance3D

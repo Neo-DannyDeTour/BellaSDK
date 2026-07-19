@@ -44,9 +44,13 @@ func _input(event: InputEvent) -> void:
 	# 3. Check for typing
 	if event is InputEventKey and event.is_pressed() and not event.is_echo():
 		var key_str: String = OS.get_keycode_string(event.physical_keycode).to_upper()
-		
+
 		if use_letters:
-			if key_str.length() == 1 and key_str.unicode_at(0) >= 65 and key_str.unicode_at(0) <= 90:
+			if (
+				key_str.length() == 1
+				and key_str.unicode_at(0) >= 65
+				and key_str.unicode_at(0) <= 90
+			):
 				_type_character(key_str)
 		else:
 			if key_str.length() == 1 and key_str.is_valid_int():
@@ -60,7 +64,7 @@ func _input(event: InputEvent) -> void:
 func _type_character(char_str: String) -> void:
 	var target_set: String = LETTERS if use_letters else NUMBERS
 	var char_index: int = target_set.find(char_str)
-	
+
 	if char_index != -1:
 		wheel_indices[active_wheel] = char_index
 		active_wheel = (active_wheel + 1) % 3
@@ -70,7 +74,7 @@ func _type_character(char_str: String) -> void:
 func _on_button_pressed(wheel_index: int, direction: int) -> void:
 	var set_length: int = LETTERS.length() if use_letters else NUMBERS.length()
 	wheel_indices[wheel_index] = (wheel_indices[wheel_index] + direction + set_length) % set_length
-	active_wheel = wheel_index 
+	active_wheel = wheel_index
 	_update_all_labels()
 
 
@@ -84,8 +88,8 @@ func _update_all_labels() -> void:
 func _submit_code() -> void:
 	var target_set: String = LETTERS if use_letters else NUMBERS
 	var final_code: String = ""
-	
+
 	for idx: int in wheel_indices:
 		final_code += target_set.substr(idx, 1)
-		
+
 	code_submitted.emit(final_code)

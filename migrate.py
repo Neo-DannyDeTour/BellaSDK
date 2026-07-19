@@ -357,7 +357,7 @@ mapping = {
 
 	"scripts/InteractBodyTEST.gd": "interactables/interact_body_test.gd",
 
-	"scripts/Interact_Component.gd": "interactables/interact_component.gd",
+	"scripts/InteractComponent.gd": "interactables/interact_component.gd",
 
 	"scripts/PhysicsCable3D.gd": "interactables/physics_cable3_d.gd",
 

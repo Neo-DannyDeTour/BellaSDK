@@ -55,7 +55,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 [node name="StanceMarker" type="Marker3D" parent="." unique_id=999649063]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.7)
 
-[node name="Interact_Component" type="Node" parent="." unique_id=1041927048]
+[node name="InteractComponent" type="Node" parent="." unique_id=1041927048]
 script = ExtResource("1_8pdjq")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 

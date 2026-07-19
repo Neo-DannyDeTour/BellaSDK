@@ -15,7 +15,7 @@ var original_player: CharacterBody3D = null
 
 @onready var tilt_pivot: Node3D = $TiltPivot
 @onready var camera: Camera3D = $TiltPivot/DroneCamera
-@onready var interact_comp: Interact_Component = $Interact_Component
+@onready var interact_comp: InteractComponent = $InteractComponent
 @onready var drone_hud: CanvasLayer = $DroneHUD
 
 

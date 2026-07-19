@@ -8,6 +8,7 @@ const THUMB_HEIGHT: int = 180
 
 var last_checkpoint_pos: Vector3 = Vector3.ZERO
 
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	print("[SaveManager] Initializing...")
@@ -129,7 +130,7 @@ func _write_game_state(path: String) -> void:
 		else:
 			push_warning("[SaveManager] Node missing 'get_save_data' method: " + node.name)
 
-	# OPTIMIZATION: Deep duplicate the dictionary to prevent main-thread 
+	# OPTIMIZATION: Deep duplicate the dictionary to prevent main-thread
 	# modification while the background thread writes it to disk.
 	var thread_safe_state: Dictionary = total_state.duplicate(true)
 	WorkerThreadPool.add_task(_threaded_write_data.bind(path, thread_safe_state, saved_nodes_count))

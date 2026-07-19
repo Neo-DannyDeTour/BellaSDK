@@ -95,7 +95,7 @@ script = ExtResource("2_kx7w4")
 outline_material = SubResource("ShaderMaterial_vkaj5")
 metadata/_custom_type_script = "uid://dgig0tamvkdxx"
 
-[node name="Interact_Component" type="Node" parent="StaticBody3D" unique_id=175546838]
+[node name="InteractComponent" type="Node" parent="StaticBody3D" unique_id=175546838]
 script = ExtResource("4_wfdi7")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 
@@ -106,4 +106,4 @@ collision_mask = 4
 [node name="CollisionShape3D" type="CollisionShape3D" parent="FlameTrigger" unique_id=912377785]
 shape = SubResource("SphereShape3D_kx7w4")
 
-[connection signal="interacted" from="StaticBody3D/Interact_Component" to="." method="_on_interact_component_interacted"]
+[connection signal="interacted" from="StaticBody3D/InteractComponent" to="." method="_on_interact_component_interacted"]

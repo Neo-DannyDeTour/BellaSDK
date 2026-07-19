@@ -106,7 +106,7 @@ gi_mode = 0
 process_material = SubResource("ParticleProcessMaterial_1cv0y")
 draw_pass_1 = SubResource("QuadMesh_ey25j")
 
-[node name="Interact_Component" type="Node" parent="." unique_id=1654017051]
+[node name="InteractComponent" type="Node" parent="." unique_id=1654017051]
 script = ExtResource("2_2bfhh")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 

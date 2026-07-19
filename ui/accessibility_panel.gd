@@ -35,13 +35,13 @@ const DEFAULT_FONT_MODE: int = 0
 
 func _ready() -> void:
 	print("UI: Accessibility Panel initialized.")
-	
+
 	_populate_dropdowns()
 
 	_connect_adjustment_signals(brightness_slider, brightness_input, "brightness")
 	_connect_adjustment_signals(contrast_slider, contrast_input, "contrast")
 	_connect_adjustment_signals(saturation_slider, saturation_input, "saturation")
-	
+
 	# Connecting new UI Scale slider utilizing the same helper
 	_connect_adjustment_signals(ui_scale_slider, ui_scale_input, "ui_scale")
 
@@ -57,7 +57,7 @@ func _ready() -> void:
 	sens_input.text_submitted.connect(_on_sensitivity_input_submitted)
 	sens_input.focus_entered.connect(_on_sensitivity_focus_entered)
 	sens_input.focus_exited.connect(_on_sensitivity_focus_exited)
-	
+
 	colorblind_option.item_selected.connect(_on_colorblind_selected)
 	font_option.item_selected.connect(_on_font_selected)
 
@@ -66,16 +66,16 @@ func _ready() -> void:
 
 func _load_accessibility_settings() -> void:
 	print("UI: Loading accessibility data from GlobalSettings.")
-	
-	brightness_slider.value = GlobalSettings.get_setting(
-		"Settings", "brightness", DEFAULT_BRIGHTNESS
-	) as float
-	contrast_slider.value = GlobalSettings.get_setting(
-		"Settings", "contrast", DEFAULT_CONTRAST
-	) as float
-	saturation_slider.value = GlobalSettings.get_setting(
-		"Settings", "saturation", DEFAULT_SATURATION
-	) as float
+
+	brightness_slider.value = (
+		GlobalSettings.get_setting("Settings", "brightness", DEFAULT_BRIGHTNESS) as float
+	)
+	contrast_slider.value = (
+		GlobalSettings.get_setting("Settings", "contrast", DEFAULT_CONTRAST) as float
+	)
+	saturation_slider.value = (
+		GlobalSettings.get_setting("Settings", "saturation", DEFAULT_SATURATION) as float
+	)
 
 	brightness_input.text = "%.2f" % brightness_slider.value
 	contrast_input.text = "%.2f" % contrast_slider.value
@@ -84,34 +84,35 @@ func _load_accessibility_settings() -> void:
 
 	fov_slider.value = GlobalSettings.get_setting("Settings", "base_fov", DEFAULT_FOV) as float
 	fov_input.text = str(int(fov_slider.value))
-	sprint_fov_checkbox.button_pressed = GlobalSettings.get_setting(
-		"Settings", "disable_sprint_fov", DEFAULT_DISABLE_SPRINT_FOV
-	) as bool
+	sprint_fov_checkbox.button_pressed = (
+		GlobalSettings.get_setting("Settings", "disable_sprint_fov", DEFAULT_DISABLE_SPRINT_FOV)
+		as bool
+	)
 	_apply_fov_settings()
 
-	var saved_sens: float = GlobalSettings.get_setting(
-		"Settings", "mouse_sensitivity", DEFAULT_SENSITIVITY
-	) as float
-	
+	var saved_sens: float = (
+		GlobalSettings.get_setting("Settings", "mouse_sensitivity", DEFAULT_SENSITIVITY) as float
+	)
+
 	sens_slider.value = saved_sens
 	sens_input.text = "%.2f" % saved_sens
 	_apply_sensitivity_settings()
 
 	# Load New Settings
-	ui_scale_slider.value = GlobalSettings.get_setting(
-		"Settings", "ui_scale", DEFAULT_UI_SCALE
-	) as float
+	ui_scale_slider.value = (
+		GlobalSettings.get_setting("Settings", "ui_scale", DEFAULT_UI_SCALE) as float
+	)
 	ui_scale_input.text = "%.2f" % ui_scale_slider.value
 	_apply_ui_scale_settings()
 
-	colorblind_option.selected = GlobalSettings.get_setting(
-		"Settings", "colorblind_mode", DEFAULT_COLORBLIND_MODE
-	) as int
+	colorblind_option.selected = (
+		GlobalSettings.get_setting("Settings", "colorblind_mode", DEFAULT_COLORBLIND_MODE) as int
+	)
 	_apply_colorblind_settings()
 
-	font_option.selected = GlobalSettings.get_setting(
-		"Settings", "font_mode", DEFAULT_FONT_MODE
-	) as int
+	font_option.selected = (
+		GlobalSettings.get_setting("Settings", "font_mode", DEFAULT_FONT_MODE) as int
+	)
 	_apply_font_settings()
 
 
@@ -127,12 +128,10 @@ func _connect_adjustment_signals(
 	)
 
 
-func _on_adjustment_changed(
-	value: float, input_node: LineEdit, setting_name: String
-) -> void:
+func _on_adjustment_changed(value: float, input_node: LineEdit, setting_name: String) -> void:
 	if not input_node.has_focus():
 		input_node.text = "%.2f" % value
-		
+
 	# Route the application based on what changed to remain optimized
 	if setting_name == "ui_scale":
 		_apply_ui_scale_settings()
@@ -176,7 +175,7 @@ func _apply_visual_settings() -> void:
 	print("Engine: Applying visual adjustments to WorldEnvironment.")
 	# OPTIMIZED: Replaced the slow find_child() with a group check.
 	var env_nodes: Array[Node] = get_tree().get_nodes_in_group("world_environment")
-	
+
 	if not env_nodes.is_empty():
 		var env_node: WorldEnvironment = env_nodes[0] as WorldEnvironment
 		if env_node and env_node.environment:
@@ -187,6 +186,7 @@ func _apply_visual_settings() -> void:
 
 
 # --- NEW APPLY FUNCTIONS ---
+
 
 func _apply_ui_scale_settings() -> void:
 	var current_scale: float = ui_scale_slider.value
@@ -204,7 +204,7 @@ func _on_colorblind_selected(index: int) -> void:
 func _apply_colorblind_settings() -> void:
 	var mode: int = colorblind_option.selected
 	print("Engine: Applying Colorblind shader mode: ", mode)
-	
+
 	# Broadcast to the Events bus so the filter layer can intercept it
 	if has_node("/root/Events"):
 		var events: Node = get_node("/root/Events")
@@ -221,7 +221,7 @@ func _on_font_selected(index: int) -> void:
 func _apply_font_settings() -> void:
 	var mode: int = font_option.selected
 	print("Engine: Applying Font Override mode: ", mode)
-	
+
 	# Map the dropdown integer to the exact strings your Events bus expects
 	if has_node("/root/Events"):
 		var events: Node = get_node("/root/Events")
@@ -232,6 +232,7 @@ func _apply_font_settings() -> void:
 
 
 # --- FOV & SENSITIVITY ---
+
 
 func _on_fov_changed(value: float) -> void:
 	if not fov_input.has_focus():
@@ -323,35 +324,26 @@ func _get_player() -> Node:
 	var player_node: Node = get_tree().get_first_node_in_group("player")
 	if player_node:
 		return player_node
-		
-	# Removed the push_warning. It is completely normal for the player to be 
+
+	# Removed the push_warning. It is completely normal for the player to be
 	# null if this panel is loaded during the Main Menu or transition screens.
 	return null
 
 
 func _populate_dropdowns() -> void:
 	print("UI: Populating OptionButton dropdowns with available modes.")
-	
+
 	colorblind_option.clear()
 	font_option.clear()
-	
+
 	var colorblind_modes: Array[String] = [
-		"Normal", 
-		"Protanopia", 
-		"Deuteranopia", 
-		"Tritanopia", 
-        "Achromatopsia"
+		"Normal", "Protanopia", "Deuteranopia", "Tritanopia", "Achromatopsia"
 	]
-	
+
 	for mode: String in colorblind_modes:
 		colorblind_option.add_item(mode)
-		
-	var font_modes: Array[String] = [
-		"Default", 
-		"Dyslexic", 
-		"Papyrus", 
-        "Comic"
-	]
-	
+
+	var font_modes: Array[String] = ["Default", "Dyslexic", "Papyrus", "Comic"]
+
 	for font: String in font_modes:
 		font_option.add_item(font)

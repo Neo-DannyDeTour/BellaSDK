@@ -29,7 +29,7 @@ label = NodePath("Label3D")
 script = ExtResource("2_84u8d")
 metadata/_custom_type_script = "uid://cnmn3hgnt0afn"
 
-[node name="Interact_Component" type="Node" parent="." unique_id=1430550788]
+[node name="InteractComponent" type="Node" parent="." unique_id=1430550788]
 script = ExtResource("2_tqme0")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 

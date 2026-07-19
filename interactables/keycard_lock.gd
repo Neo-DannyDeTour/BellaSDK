@@ -12,7 +12,7 @@ signal access_granted
 @export var reader_mesh: GeometryInstance3D
 @export var status_label: Label3D
 ## Type this directly to your component class for better autocomplete
-@export var interact_component: Interact_Component
+@export var interact_component: InteractComponent
 
 @export_category("Transmitter Settings")
 ## Drag the child OutputTransmitter3D here.

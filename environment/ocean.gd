@@ -77,8 +77,7 @@ const WATER_MESH_LOW: Mesh = preload("res://assets/ocean_waves/ocean/clipmap_low
 # 3. PERFORMANCE
 # ==========================================
 @export_group("Performance Parameters")
-@export_enum("128x128:128", "256x256:256", "512x512:512", "1024x1024:1024")
-var map_size: int = 1024:
+@export_enum("128x128:128", "256x256:256", "512x512:512", "1024x1024:1024") var map_size: int = 1024:
 	set(value):
 		map_size = value
 		_setup_wave_generator()
@@ -133,12 +132,13 @@ var cpu_displacement_textures: Dictionary = {}
 
 # OPTIMIZATION: Lowered from 120.0 to 30.0 for 60 FPS stability
 # Buoyancy does not require sub-millisecond precision.
-var _displacement_textures_total_update_interval: float = 1.0 / 30.0 
+var _displacement_textures_total_update_interval: float = 1.0 / 30.0
 var _displacement_textures_update_time: float = 0.0
 var _texture_loading_index: int = 0
 var _is_reading_back: bool = false
 var _last_cam_pos: Vector3 = Vector3.ZERO
 # ==========================================
+
 
 func _enter_tree() -> void:
 	RenderingServer.global_shader_parameter_set(&"water_color", water_color.srgb_to_linear())
@@ -148,13 +148,16 @@ func _enter_tree() -> void:
 		_setup_wave_generator()
 		_update_scales_uniform()
 
+
 func _init() -> void:
 	rng.set_seed(1234)
+
 
 func _ready() -> void:
 	extra_cull_margin = 150.0
 	RenderingServer.global_shader_parameter_set(&"water_color", water_color.srgb_to_linear())
 	RenderingServer.global_shader_parameter_set(&"foam_color", foam_color.srgb_to_linear())
+
 
 func _process(delta: float) -> void:
 	# 1. Editor Bypass
@@ -173,7 +176,7 @@ func _process(delta: float) -> void:
 		# Check raw distance rather than dividing by process delta to prevent physics-step spikes
 		var distance_moved: float = _last_cam_pos.distance_to(cam.global_position)
 		_last_cam_pos = cam.global_position
-		
+
 		# If camera moves more than 5 units in a single frame, assume teleport/extreme speed
 		if distance_moved > 5.0:
 			if update_textures:
@@ -189,7 +192,7 @@ func _process(delta: float) -> void:
 
 	if update_textures:
 		_manage_cpu_displacement_textures_updates(delta)
-	
+
 	just_calculated_water = true
 	time += delta
 
@@ -212,6 +215,7 @@ func _setup_wave_generator() -> void:
 	RenderingServer.global_shader_parameter_set(&"displacements", displacement_maps)
 	RenderingServer.global_shader_parameter_set(&"normals", normal_maps)
 
+
 func _update_scales_uniform() -> void:
 	var map_scales: PackedVector4Array
 	map_scales.resize(parameters.size())
@@ -229,15 +233,18 @@ func _update_scales_uniform() -> void:
 	if spray_particles and spray_particles.process_material:
 		spray_particles.process_material.set_shader_parameter(&"map_scales", map_scales)
 
+
 func _update_water(delta: float) -> void:
 	if wave_generator == null:
 		_setup_wave_generator()
 	wave_generator.update(delta, parameters)
 
+
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
 		displacement_maps.texture_rd_rid = RID()
 		normal_maps.texture_rd_rid = RID()
+
 
 func _manage_cpu_displacement_textures_updates(delta: float) -> void:
 	if cpu_displacement_textures.size() < 1 or _is_reading_back:
@@ -258,6 +265,7 @@ func _manage_cpu_displacement_textures_updates(delta: float) -> void:
 
 	_displacement_textures_update_time += delta
 
+
 func _do_texture_readback(idx: int) -> void:
 	var rid_downsampled_map: RID = wave_generator.descriptors[&"downsampled_map"].rid
 	var device: RenderingDevice = RenderingServer.get_rendering_device()
@@ -266,7 +274,8 @@ func _do_texture_readback(idx: int) -> void:
 	var err: int = device.texture_get_data_async(rid_downsampled_map, idx, callable)
 	if err != OK:
 		push_error("Failed to enqueue asynchronous texture readback for layer: ", idx)
-		_is_reading_back = false 
+		_is_reading_back = false
+
 
 func _on_texture_data_received(tex: PackedByteArray, idx: int) -> void:
 	if not is_instance_valid(wave_generator):
@@ -280,6 +289,7 @@ func _on_texture_data_received(tex: PackedByteArray, idx: int) -> void:
 	_is_reading_back = false
 	mutex.unlock()
 
+
 func _setup_cpu_displacement_textures() -> void:
 	print("ocean.gd: _setup_cpu_displacement_textures() called")
 	var actually_used_textures_idx: Array[int] = []
@@ -291,6 +301,7 @@ func _setup_cpu_displacement_textures() -> void:
 	RenderingServer.call_on_render_thread(
 		_do_initial_texture_readback.bind(actually_used_textures_idx)
 	)
+
 
 func _do_initial_texture_readback(used_indices: Array[int]) -> void:
 	print("ocean.gd: _do_initial_texture_readback() called")
@@ -309,11 +320,12 @@ func _do_initial_texture_readback(used_indices: Array[int]) -> void:
 		cpu_displacement_textures[i] = img
 	mutex.unlock()
 
+
 func _world_to_uv(w: Vector2, tile_length: Vector2) -> Vector2:
 	return Vector2(
-		fposmod(w.x, tile_length.x) / tile_length.x, 
-		fposmod(w.y, tile_length.y) / tile_length.y
+		fposmod(w.x, tile_length.x) / tile_length.x, fposmod(w.y, tile_length.y) / tile_length.y
 	)
+
 
 func get_height(world_pos: Vector3, steps: int = 3) -> float:
 	var world_pos_xz: Vector2 = Vector2(world_pos.x, world_pos.z)
@@ -344,6 +356,7 @@ func get_height(world_pos: Vector3, steps: int = 3) -> float:
 
 	return summed_height
 
+
 func bake_waves_to_res_routine() -> void:
 	print("ocean.gd: bake_waves_to_res_routine() called")
 	print("Starting Ocean Bake...")
@@ -355,8 +368,8 @@ func bake_waves_to_res_routine() -> void:
 
 	for p: WaveCascadeParameters in parameters:
 		p.loop_period = total_bake_duration
-		p.time = 0.0 
-		p.should_generate_spectrum = true 
+		p.time = 0.0
+		p.should_generate_spectrum = true
 
 	_update_water(0.0)
 	RenderingServer.force_sync()
@@ -393,6 +406,7 @@ func bake_waves_to_res_routine() -> void:
 	else:
 		print("Failed to create Texture2DArray. Error code: ", err)
 
+
 func force_reset_cascades() -> void:
 	print("ocean.gd: force_reset_cascades() called")
 	if parameters.size() == 0:
@@ -407,6 +421,6 @@ func force_reset_cascades() -> void:
 		p.swell = 0.5
 		p.spread = 0.5
 		p.detail = 1.0
-		p.should_generate_spectrum = true 
+		p.should_generate_spectrum = true
 
 	_update_scales_uniform()

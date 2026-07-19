@@ -31,7 +31,9 @@ func _ready() -> void:
 	get_tree().node_added.connect(_on_node_added)
 
 	var default_auto: bool = _is_low_end
-	var use_auto: bool = GlobalSettings.get_setting("Settings", "use_auto_optimizer", default_auto) as bool
+	var use_auto: bool = (
+		GlobalSettings.get_setting("Settings", "use_auto_optimizer", default_auto) as bool
+	)
 
 	if use_auto:
 		print("GraphicsManager: Booting directly into Auto-Optimization mode.")
@@ -48,36 +50,38 @@ func enable_user_mode() -> void:
 	is_auto_optimizing = false
 	_sdfgi_downgrade_level = 0
 	GlobalSettings.save_setting("Settings", "use_auto_optimizer", false)
-	
+
 	if _fps_timer:
 		_fps_timer.stop()
-		
+
 	profile_mode_changed.emit(is_auto_optimizing)
 
 
 func enable_auto_mode() -> void:
 	if is_auto_optimizing:
 		return
-		
+
 	print("GraphicsManager: Switching to 60 FPS Target Auto-Optimization.")
 	is_auto_optimizing = true
 	GlobalSettings.save_setting("Settings", "use_auto_optimizer", true)
-	
+
 	if _fps_timer == null:
 		_setup_fps_timer()
 	else:
 		_fps_timer.start()
-		
+
 	profile_mode_changed.emit(is_auto_optimizing)
-	
+
 	if _is_low_end:
 		call_deferred("_apply_global_viewport_settings")
 
-	var saved_level: int = GlobalSettings.get_setting("Settings", "optimized_downgrade_level", 0) as int
+	var saved_level: int = (
+		GlobalSettings.get_setting("Settings", "optimized_downgrade_level", 0) as int
+	)
 	if saved_level > 0:
 		print("GraphicsManager: Restoring previous optimization level: ", saved_level)
 		_fast_forward_downgrades(saved_level - 1)
-		
+
 		if _sdfgi_downgrade_level <= 7 and _fps_timer:
 			_fps_timer.start()
 	elif _is_low_end:
@@ -116,7 +120,7 @@ func _detect_low_end_hardware() -> bool:
 		RenderingServer.get_video_adapter_type() as RenderingDevice.DeviceType
 	)
 	var adapter_name: String = RenderingServer.get_video_adapter_name().to_lower()
-	
+
 	if adapter_type == RenderingDevice.DEVICE_TYPE_INTEGRATED_GPU or "intel" in adapter_name:
 		print("GraphicsManager: Integrated GPU detected.")
 		return true
@@ -136,9 +140,11 @@ func _on_node_added(node: Node) -> void:
 	if node is WorldEnvironment:
 		print("GraphicsManager: WorldEnvironment added. Registering environment.")
 		_active_environment = node.environment
-		
+
 		if is_auto_optimizing:
-			var saved_level: int = GlobalSettings.get_setting("Settings", "optimized_downgrade_level", 0) as int
+			var saved_level: int = (
+				GlobalSettings.get_setting("Settings", "optimized_downgrade_level", 0) as int
+			)
 			if saved_level > 0:
 				_fast_forward_downgrades(saved_level - 1)
 			elif _is_low_end:
@@ -154,7 +160,7 @@ func _get_current_environment() -> Environment:
 			return world.environment
 		if world.fallback_environment:
 			return world.fallback_environment
-			
+
 	return _active_environment
 
 
@@ -167,7 +173,7 @@ func _tweak_environment(env: Environment) -> void:
 
 func _evaluate_runtime_performance() -> void:
 	var current_fps: float = Engine.get_frames_per_second()
-	
+
 	if current_fps > 0.0 and current_fps < TARGET_FPS_MINIMUM:
 		print("GraphicsManager: FPS (", current_fps, ") below target. Applying step down.")
 		_apply_stepwise_downgrade()
@@ -179,7 +185,7 @@ func _fast_forward_downgrades(target_level: int) -> void:
 	print("GraphicsManager: Bypassing timer, fast-forwarding to step ", target_level)
 	while _sdfgi_downgrade_level <= target_level:
 		_apply_stepwise_downgrade()
-	
+
 	if _fps_timer:
 		_fps_timer.stop()
 
@@ -221,7 +227,7 @@ func _apply_stepwise_downgrade() -> void:
 		7:
 			vp.positional_shadow_atlas_size = 0
 			vp.mesh_lod_threshold = 2.0
-			
+
 			if _fps_timer and not _fps_timer.is_stopped():
 				_fps_timer.stop()
 

@@ -21,7 +21,7 @@ var player_on_rope: bool = false
 var _cached_camera: Camera3D
 
 @onready var rope_body: RigidBody3D = $RopeBody
-@onready var interact_component: Interact_Component = $RopeBody/Interact_Component
+@onready var interact_component: InteractComponent = $RopeBody/InteractComponent
 @onready var highlight_component: Node = get_node_or_null("RopeBody/HighlightComponent")
 @onready var rope_mesh: MeshInstance3D = $RopeBody/MeshInstance3D
 @onready var rope_col: CollisionShape3D = $RopeBody/CollisionShape3D
@@ -71,7 +71,7 @@ func _ready() -> void:
 func _process(_delta: float) -> void:
 	# We no longer need to check if interact_component.is_currently_focused is true
 	# because this function only runs when the rope IS focused.
-	
+
 	if player_on_rope:
 		return
 
@@ -116,7 +116,7 @@ func _on_focused() -> void:
 		interact_label.show()
 		# Wake up the process loop to handle UI math
 		set_process(true)
-		
+
 		if activate_slomo:
 			_set_slomo(0.3)
 
@@ -125,7 +125,7 @@ func _on_unfocused() -> void:
 	interact_label.hide()
 	# Shut down the process loop to save CPU
 	set_process(false)
-	
+
 	if activate_slomo:
 		_set_slomo(1.0)
 
@@ -158,14 +158,14 @@ func _on_interacted(player: CharacterBody3D) -> void:
 		player.call("_on_rope_grabbed", rope_body)
 		player_on_rope = true
 		interact_label.hide()
-		set_process(false) # Shut down UI math
+		set_process(false)  # Shut down UI math
 
 		if activate_slomo:
 			_set_slomo(1.0)
 
 		rope_body.angular_damp = 0.0
 		rope_body.linear_damp = 0.0
-		
+
 		if is_instance_valid(highlight_component) and highlight_component.has_method("suppress"):
 			highlight_component.suppress(true)
 

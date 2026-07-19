@@ -49,7 +49,6 @@ signal screenshake_requested(intensity: float, duration: float)
 @warning_ignore("unused_signal")
 signal colorblind_mode_changed(mode: int)
 
-
 # --- INTERACTION LIFECYCLE SIGNALS ---
 @warning_ignore("unused_signal")
 signal item_picked_up(item: Node3D, actor: Node3D)
@@ -112,7 +111,7 @@ func _ready() -> void:
 
 func _on_font_changed(font_name: String) -> void:
 	print("Events: Changing global font to '", font_name, "'.")
-	
+
 	if fonts.has(font_name):
 		var target_font: Font = fonts[font_name] as Font
 

@@ -16,7 +16,7 @@ func _ready() -> void:
 	if not Engine.is_editor_hint():
 		if card_data != null:
 			print("KeycardPickup: Initialized in world with ID ", card_data.card_id)
-			
+
 		if is_instance_valid(interact_component) and interact_component.has_signal("interacted"):
 			interact_component.interacted.connect(_on_interacted)
 
@@ -29,10 +29,10 @@ func _on_interacted(_interactor: Node) -> void:
 		return
 
 	print("KeycardPickup: Player interacted. Broadcasting collection of ID: ", card_data.card_id)
-	
+
 	# 1. NEW: Global broadcast for UI, audio, and standard systems
 	Events.keycard_collected.emit(card_data.card_id)
-	
+
 	# 2. OPTIONAL FALLBACK: If you still use a dedicated Autoload for the data structure
 	if has_node("/root/KeycardSystem"):
 		var sys: Node = get_node("/root/KeycardSystem")

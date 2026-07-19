@@ -55,7 +55,7 @@ mesh = SubResource("BoxMesh_udaya")
 [node name="CollisionShape3D2" type="CollisionShape3D" parent="DoorLeft" unique_id=392464859]
 shape = SubResource("BoxShape3D_f50cn")
 
-[node name="Interact_Component" type="Node" parent="DoorLeft" unique_id=1420559404]
+[node name="InteractComponent" type="Node" parent="DoorLeft" unique_id=1420559404]
 script = ExtResource("1_vlp63")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 
@@ -82,7 +82,7 @@ mesh = SubResource("BoxMesh_ayun4")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 0, -0.1)
 shape = SubResource("BoxShape3D_vsomv")
 
-[node name="Interact_Component" type="Node" parent="DoorRight" unique_id=1254268336]
+[node name="InteractComponent" type="Node" parent="DoorRight" unique_id=1254268336]
 script = ExtResource("1_vlp63")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 

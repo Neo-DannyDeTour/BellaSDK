@@ -36,7 +36,7 @@ gi_mode = 0
 billboard = 1
 texture = ExtResource("2_8ajrr")
 
-[node name="Interact_Component" type="Node" parent="." unique_id=1911344659]
+[node name="InteractComponent" type="Node" parent="." unique_id=1911344659]
 script = ExtResource("3_07hoi")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 

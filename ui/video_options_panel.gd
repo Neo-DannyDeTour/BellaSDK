@@ -46,41 +46,18 @@ const FSR_MODES: Dictionary = {
 }
 
 const AA_MODES: Dictionary = {
-	"Disabled": {
-		"msaa": Viewport.MSAA_DISABLED, 
-		"taa": false, 
-		"fxaa": Viewport.SCREEN_SPACE_AA_DISABLED
-	},
-	"FXAA (Fast)": {
-		"msaa": Viewport.MSAA_DISABLED, 
-		"taa": false, 
-		"fxaa": Viewport.SCREEN_SPACE_AA_FXAA
-	},
-	"TAA (Smooth)": {
-		"msaa": Viewport.MSAA_DISABLED, 
-		"taa": true, 
-		"fxaa": Viewport.SCREEN_SPACE_AA_DISABLED
-	},
-	"MSAA 2x": {
-		"msaa": Viewport.MSAA_2X, 
-		"taa": false, 
-		"fxaa": Viewport.SCREEN_SPACE_AA_DISABLED
-	},
-	"MSAA 4x": {
-		"msaa": Viewport.MSAA_4X, 
-		"taa": false, 
-		"fxaa": Viewport.SCREEN_SPACE_AA_DISABLED
-	},
-	"MSAA 8x (Heavy)": {
-		"msaa": Viewport.MSAA_8X, 
-		"taa": false, 
-		"fxaa": Viewport.SCREEN_SPACE_AA_DISABLED
-	},
-	"MSAA 2x + TAA (High)": {
-		"msaa": Viewport.MSAA_2X, 
-		"taa": true, 
-		"fxaa": Viewport.SCREEN_SPACE_AA_DISABLED
-	}
+	"Disabled":
+	{"msaa": Viewport.MSAA_DISABLED, "taa": false, "fxaa": Viewport.SCREEN_SPACE_AA_DISABLED},
+	"FXAA (Fast)":
+	{"msaa": Viewport.MSAA_DISABLED, "taa": false, "fxaa": Viewport.SCREEN_SPACE_AA_FXAA},
+	"TAA (Smooth)":
+	{"msaa": Viewport.MSAA_DISABLED, "taa": true, "fxaa": Viewport.SCREEN_SPACE_AA_DISABLED},
+	"MSAA 2x": {"msaa": Viewport.MSAA_2X, "taa": false, "fxaa": Viewport.SCREEN_SPACE_AA_DISABLED},
+	"MSAA 4x": {"msaa": Viewport.MSAA_4X, "taa": false, "fxaa": Viewport.SCREEN_SPACE_AA_DISABLED},
+	"MSAA 8x (Heavy)":
+	{"msaa": Viewport.MSAA_8X, "taa": false, "fxaa": Viewport.SCREEN_SPACE_AA_DISABLED},
+	"MSAA 2x + TAA (High)":
+	{"msaa": Viewport.MSAA_2X, "taa": true, "fxaa": Viewport.SCREEN_SPACE_AA_DISABLED}
 }
 
 const SHADOW_QUALITIES: Dictionary = {
@@ -112,13 +89,13 @@ func _ready() -> void:
 	_populate_all_dropdowns()
 	_connect_signals()
 	_load_video_settings()
-	
+
 	if GraphicsManager.has_signal("profile_mode_changed"):
 		GraphicsManager.profile_mode_changed.connect(_on_profile_mode_changed)
-	
+
 	if GraphicsManager.has_signal("performance_profile_adjusted"):
 		GraphicsManager.performance_profile_adjusted.connect(_on_performance_adjusted)
-			
+
 	_on_profile_mode_changed(GraphicsManager.is_auto_optimizing)
 
 
@@ -126,7 +103,7 @@ func _connect_signals() -> void:
 	print("UI: Connecting video option signals.")
 	user_mode_btn.pressed.connect(_on_user_mode_pressed)
 	optimize_mode_btn.pressed.connect(_on_optimize_mode_pressed)
-	
+
 	display_options.item_selected.connect(_on_display_selected)
 	resolution_options.item_selected.connect(_on_resolution_selected)
 	fps_options.item_selected.connect(_on_fps_selected)
@@ -135,7 +112,7 @@ func _connect_signals() -> void:
 	aa_options.item_selected.connect(_on_aa_selected)
 	shadow_options.item_selected.connect(_on_shadow_selected)
 	preset_options.item_selected.connect(_on_preset_selected)
-	
+
 	ssao_checkbox.toggled.connect(_on_ssao_toggled)
 	ssr_checkbox.toggled.connect(_on_ssr_toggled)
 	sdfgi_checkbox.toggled.connect(_on_sdfgi_toggled)
@@ -155,19 +132,27 @@ func _on_optimize_mode_pressed() -> void:
 
 func _on_profile_mode_changed(is_optimized: bool) -> void:
 	print("UI: Toggling UI lock state. Auto-optimized: ", is_optimized)
-	
+
 	user_mode_btn.disabled = not is_optimized
 	optimize_mode_btn.disabled = is_optimized
-	
+
 	var controls: Array[BaseButton] = [
-		display_options, resolution_options, fps_options, vsync_options,
-		fsr_options, aa_options, preset_options, shadow_options,
-		ssao_checkbox, ssr_checkbox, sdfgi_checkbox
+		display_options,
+		resolution_options,
+		fps_options,
+		vsync_options,
+		fsr_options,
+		aa_options,
+		preset_options,
+		shadow_options,
+		ssao_checkbox,
+		ssr_checkbox,
+		sdfgi_checkbox
 	]
-	
+
 	for control: BaseButton in controls:
 		control.disabled = is_optimized
-		
+
 	if is_optimized:
 		_sync_ui_to_live_engine_state()
 
@@ -181,13 +166,13 @@ func _on_performance_adjusted(_level: int) -> void:
 func _sync_ui_to_live_engine_state() -> void:
 	print("UI: Syncing visual widgets to reflect current engine downgrades.")
 	var vp: Viewport = get_viewport()
-	
+
 	if vp.scaling_3d_mode == Viewport.SCALING_3D_MODE_FSR2:
 		if vp.scaling_3d_scale <= 0.51:
 			_select_dropdown_by_text(fsr_options, "Performance")
 	else:
 		_select_dropdown_by_text(fsr_options, "Disabled (Native)")
-		
+
 	if vp.msaa_3d == Viewport.MSAA_DISABLED:
 		if vp.screen_space_aa == Viewport.SCREEN_SPACE_AA_FXAA:
 			_select_dropdown_by_text(aa_options, "FXAA (Fast)")
@@ -195,12 +180,12 @@ func _sync_ui_to_live_engine_state() -> void:
 			_select_dropdown_by_text(aa_options, "TAA (Smooth)")
 		else:
 			_select_dropdown_by_text(aa_options, "Disabled")
-			
+
 	if vp.positional_shadow_atlas_size == 0:
 		_select_dropdown_by_text(shadow_options, "Off")
 	elif vp.positional_shadow_atlas_size <= 1024:
 		_select_dropdown_by_text(shadow_options, "Low (Fast)")
-		
+
 	var win: Window = vp as Window
 	if win and not win.is_embedded():
 		var res_str: String = str(win.size.x) + " x " + str(win.size.y)
@@ -237,7 +222,7 @@ func _populate_all_dropdowns() -> void:
 	_fill_dropdown(fsr_options, FSR_MODES)
 	_fill_dropdown(aa_options, AA_MODES)
 	_fill_dropdown(shadow_options, SHADOW_QUALITIES)
-	
+
 	preset_options.add_item("Low")
 	preset_options.add_item("Medium")
 	preset_options.add_item("High")
@@ -259,16 +244,16 @@ func _load_video_settings() -> void:
 	_sync_dropdown_to_setting(fsr_options, FSR_MODES, "fsr_mode", DEFAULT_FSR_MODE)
 	_sync_dropdown_to_setting(aa_options, AA_MODES, "aa_mode", DEFAULT_AA_MODE)
 	_sync_dropdown_to_setting(shadow_options, SHADOW_QUALITIES, "shadow_quality", "High (Smooth)")
-	
+
 	var res_x: int = GlobalSettings.get_setting("Settings", "resolution_x", 1920) as int
 	var res_y: int = GlobalSettings.get_setting("Settings", "resolution_y", 1080) as int
 	var res_string: String = str(res_x) + " x " + str(res_y)
 	_select_dropdown_by_text(resolution_options, res_string)
-	
+
 	ssao_checkbox.button_pressed = GlobalSettings.get_setting("Settings", "ssao", true) as bool
 	ssr_checkbox.button_pressed = GlobalSettings.get_setting("Settings", "ssr", false) as bool
 	sdfgi_checkbox.button_pressed = GlobalSettings.get_setting("Settings", "sdfgi", true) as bool
-	
+
 	_apply_all_current_settings()
 
 
@@ -291,34 +276,39 @@ func _sync_dropdown_to_setting(
 
 func _apply_all_current_settings() -> void:
 	print("Engine: Applying all saved video and rendering settings.")
-	var mode: DisplayServer.WindowMode = DISPLAY_MODES[display_options.get_item_text(display_options.selected)] as DisplayServer.WindowMode
+	var mode: DisplayServer.WindowMode = (
+		DISPLAY_MODES[display_options.get_item_text(display_options.selected)]
+		as DisplayServer.WindowMode
+	)
 	DisplayServer.window_set_mode(mode)
-	
+
 	var res_key: String = resolution_options.get_item_text(resolution_options.selected)
 	var new_size: Vector2i = RESOLUTIONS.get(res_key, Vector2i(1920, 1080)) as Vector2i
 	get_window().content_scale_size = new_size
 	if not get_window().is_embedded() and get_window().mode == Window.MODE_WINDOWED:
 		get_window().size = new_size
-	
+
 	Engine.max_fps = FPS_LIMITS[fps_options.get_item_text(fps_options.selected)] as int
-	
-	var vsync: DisplayServer.VSyncMode = VSYNC_MODES[vsync_options.get_item_text(vsync_options.selected)] as DisplayServer.VSyncMode
+
+	var vsync: DisplayServer.VSyncMode = (
+		VSYNC_MODES[vsync_options.get_item_text(vsync_options.selected)] as DisplayServer.VSyncMode
+	)
 	DisplayServer.window_set_vsync_mode(vsync)
-	
+
 	var current_viewport: Viewport = get_viewport()
 	var fsr_scale: float = FSR_MODES[fsr_options.get_item_text(fsr_options.selected)] as float
 	var aa_settings: Dictionary = AA_MODES[aa_options.get_item_text(aa_options.selected)]
-	
+
 	if fsr_scale >= 1.0:
 		current_viewport.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
 	else:
 		current_viewport.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR2
 		current_viewport.use_taa = false
-		
+
 	current_viewport.scaling_3d_scale = fsr_scale
 	current_viewport.msaa_3d = aa_settings["msaa"] as Viewport.MSAA
 	current_viewport.screen_space_aa = aa_settings["fxaa"] as Viewport.ScreenSpaceAA
-	
+
 	if current_viewport.scaling_3d_mode != Viewport.SCALING_3D_MODE_FSR2:
 		current_viewport.use_taa = aa_settings["taa"] as bool
 
@@ -330,7 +320,7 @@ func _apply_all_current_settings() -> void:
 	if current_viewport.find_world_3d():
 		var world: World3D = current_viewport.find_world_3d()
 		env = world.environment if world.environment else world.fallback_environment
-		
+
 	if env:
 		env.ssao_enabled = ssao_checkbox.button_pressed
 		env.ssr_enabled = ssr_checkbox.button_pressed
@@ -353,13 +343,11 @@ func _on_preset_selected(index: int) -> void:
 			sdfgi_checkbox.button_pressed = true
 			GlobalSettings.save_setting("Settings", "ssao", true)
 			GlobalSettings.save_setting("Settings", "sdfgi", true)
-			
+
 	_apply_all_current_settings()
 
 
-func _update_ui_and_save(
-	dropdown: OptionButton, target_key: String, setting_name: String
-) -> void:
+func _update_ui_and_save(dropdown: OptionButton, target_key: String, setting_name: String) -> void:
 	print("UI: Automatically updating settings array map and disk.")
 	for i: int in range(dropdown.get_item_count()):
 		if dropdown.get_item_text(i) == target_key:
@@ -396,7 +384,9 @@ func _on_fps_selected(index: int) -> void:
 
 func _on_vsync_selected(index: int) -> void:
 	print("UI: Player toggled V-Sync mode options.")
-	var mode: DisplayServer.VSyncMode = VSYNC_MODES[vsync_options.get_item_text(index)] as DisplayServer.VSyncMode
+	var mode: DisplayServer.VSyncMode = (
+		VSYNC_MODES[vsync_options.get_item_text(index)] as DisplayServer.VSyncMode
+	)
 	DisplayServer.window_set_vsync_mode(mode)
 	GlobalSettings.save_setting("Settings", "vsync_mode", mode as int)
 

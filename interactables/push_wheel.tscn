@@ -52,7 +52,7 @@ script = ExtResource("2_8ctuu")
 outline_material = SubResource("ShaderMaterial_7rave")
 metadata/_custom_type_script = "uid://dgig0tamvkdxx"
 
-[node name="Interact_Component" type="Node" parent="." unique_id=366997497]
+[node name="InteractComponent" type="Node" parent="." unique_id=366997497]
 script = ExtResource("1_eikni")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 

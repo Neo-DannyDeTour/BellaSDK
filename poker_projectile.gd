@@ -8,7 +8,7 @@ class_name PokerProjectile
 
 func _ready() -> void:
 	print("Poker projectile spawned and moving to deform the meat cube.")
-	
+
 	# Create a timer to automatically clean up the projectile
 	var timer: SceneTreeTimer = get_tree().create_timer(lifespan)
 	timer.timeout.connect(_on_lifespan_timeout)

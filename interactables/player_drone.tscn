@@ -52,7 +52,7 @@ shader_parameter/desaturation = 0.4
 [node name="PlayerDrone" type="CharacterBody3D" unique_id=654692039]
 script = ExtResource("1_o4pg3")
 
-[node name="Interact_Component" type="Node" parent="." unique_id=343396685]
+[node name="InteractComponent" type="Node" parent="." unique_id=343396685]
 script = ExtResource("2_k5qpy")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 

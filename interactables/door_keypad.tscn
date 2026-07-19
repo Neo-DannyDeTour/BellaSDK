@@ -33,7 +33,7 @@ size = Vector3(0.001, 0.5, 0.5)
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 0, 0, 0)
 script = ExtResource("1_mcbx6")
 
-[node name="Interact_Component" type="Node" parent="." unique_id=546308194]
+[node name="InteractComponent" type="Node" parent="." unique_id=546308194]
 script = ExtResource("2_wk8ac")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 

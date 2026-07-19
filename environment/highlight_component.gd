@@ -16,12 +16,12 @@ func _ready() -> void:
 
 	var parent := get_parent()
 	if is_instance_valid(parent):
-		var interact := parent.get_node_or_null("Interact_Component")
+		var interact := parent.get_node_or_null("InteractComponent")
 		if is_instance_valid(interact):
 			interact.focused.connect(_on_focus)
 			interact.unfocused.connect(_on_unfocus)
 		else:
-			push_warning("HighlightComponent: No Interact_Component found in parent!")
+			push_warning("HighlightComponent: No InteractComponent found in parent!")
 	else:
 		push_warning("HighlightComponent: Node has no valid parent!")
 

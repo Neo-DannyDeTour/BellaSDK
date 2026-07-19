@@ -40,7 +40,7 @@ shape = SubResource("BoxShape3D_p1f3w")
 
 [node name="TopMarker" type="Marker3D" parent="." unique_id=1220540449]
 
-[node name="Interact_Component" type="Node" parent="." unique_id=1056666983]
+[node name="InteractComponent" type="Node" parent="." unique_id=1056666983]
 script = ExtResource("1_u1eb6")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 

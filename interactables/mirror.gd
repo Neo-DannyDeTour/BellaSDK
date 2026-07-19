@@ -175,7 +175,7 @@ func _update_cam() -> void:
 		)
 
 	var offset: Vector3 = mirror_quad.global_position - mirror_camera.global_position
-	
+
 	var near: float = absf(offset.dot(mirror_norm)) + cull_near
 	var far: float = offset.length() + cull_far
 	var inv_basis: Basis = mirror_camera.global_basis.inverse()
@@ -223,7 +223,7 @@ func _process(_delta: float) -> void:
 
 		if dist_sq > max_dist_sq:
 			mirror_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
-			return # OPTIMIZATION: Skip camera math entirely when too far away
+			return  # OPTIMIZATION: Skip camera math entirely when too far away
 
 		# Interleave updates: Only render the mirror on alternating frames
 		_skip_frame = not _skip_frame
@@ -232,7 +232,7 @@ func _process(_delta: float) -> void:
 		else:
 			# Keep disabled on the off-frame to save compute budget
 			mirror_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
-			return # OPTIMIZATION: Skip camera math entirely on off-frames
+			return  # OPTIMIZATION: Skip camera math entirely on off-frames
 
 	_last_cam_transform = cur_trans
 	_update_cam()

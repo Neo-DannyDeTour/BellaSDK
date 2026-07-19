@@ -28,11 +28,11 @@ size = Vector3(0.5, 0.05, 0.65)
 collision_layer = 5
 collision_mask = 2
 script = ExtResource("1_ebnu4")
-interact_component = NodePath("Interact_Component")
+interact_component = NodePath("InteractComponent")
 top_face_sprite = NodePath("Sprite3D")
 card_data = SubResource("Resource_e6v7a")
 
-[node name="Interact_Component" type="Node" parent="." unique_id=704736027]
+[node name="InteractComponent" type="Node" parent="." unique_id=704736027]
 script = ExtResource("1_tr0af")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 
