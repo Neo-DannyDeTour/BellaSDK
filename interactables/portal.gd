@@ -91,7 +91,8 @@ func _process(_delta: float) -> void:
 	portal_camera.fov = player_camera.fov
 
 	# REMOVED: portal_camera.cull_mask = player_camera.cull_mask
-	# We no longer sync the cull mask so the inspector settings (excluding the cloud layer) are preserved.
+	# We no longer sync the cull mask so the inspector settings (excluding the cloud layer) are
+	# preserved.
 
 
 func _physics_process(_delta: float) -> void:

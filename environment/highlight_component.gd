@@ -20,7 +20,7 @@ var _is_suppressed: bool = false
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
-		
+
 	print("HighlightComponent: Initializing component.")
 
 	# Optimized check: Prefer the exported variable, fallback to string lookup only if unassigned.

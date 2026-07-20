@@ -6,7 +6,8 @@ extends Button
 ## Tracks the global count of active horror buttons currently instantiated in the scene.
 static var active_horror_buttons: int = 0
 
-## The text string displayed by the button, editable from the inspector and updated live in the editor.
+## The text string displayed by the button, editable from the inspector and updated live in the
+## editor.
 @export var custom_text: String = "":
 	set(value):
 		custom_text = value
@@ -17,7 +18,8 @@ static var active_horror_buttons: int = 0
 
 # --- BUTTON CONFIGURATION ---
 
-## The target visual scale multiplier applied via offset transform when the player hovers over the button.
+## The target visual scale multiplier applied via offset transform when the player hovers over the
+## button.
 @export var hover_scale := Vector2(1.08, 1.08)
 
 ## The interpolation speed used when transitioning to hover animations.
@@ -28,7 +30,8 @@ static var active_horror_buttons: int = 0
 ## The target visual scale multiplier applied when the button is actively pressed.
 @export var press_scale := Vector2(0.94, 0.94)
 
-## The downward pixel offset added to the text position to simulate physical button depth when clicked.
+## The downward pixel offset added to the text position to simulate physical button depth when
+## clicked.
 @export var press_depth := 8.0
 
 ## The interpolation speed used for button click and release animations.
@@ -91,7 +94,8 @@ var label_material: ShaderMaterial
 ## Reference to the internal background ColorRect element.
 var bg_rect: ColorRect
 
-## Cached duplicate shader material instance handling blood sweep and light mapping on the background.
+## Cached duplicate shader material instance handling blood sweep and light mapping on the
+## background.
 var bg_material: ShaderMaterial
 
 ## Reference to the internal frame/border ColorRect node.
@@ -134,7 +138,8 @@ var current_tilt := Vector2.ZERO
 
 # --- GLITCH VARIABLES ---
 
-## Preserved original textual configuration string restored automatically following a corruption glitch.
+## Preserved original textual configuration string restored automatically following a corruption
+## glitch.
 var original_button_text := ""
 
 ## Ongoing count-down timer tracking the remaining duration until the next glitch cycle phase.
@@ -143,7 +148,8 @@ var glitch_timer := 0.0
 ## Flag status checking whether a terrifying text corruption sequence is actively running.
 var is_glitching := false
 
-## Prerequisite safety check ensuring the component contains valid corruption text parameters to run.
+## Prerequisite safety check ensuring the component contains valid corruption text parameters to
+## run.
 var can_glitch := false
 
 ## Memory tracker of the component layout boundaries to catch layout container resizing safely.
@@ -387,7 +393,8 @@ func _process(delta: float) -> void:
 				text_label.position = text_label.position.lerp(Vector2.ZERO, response_speed * delta)
 				text_label.scale = text_label.scale.lerp(Vector2(1.0, 1.0), response_speed * delta)
 
-		offset_transform_rotation = lerpf(offset_transform_rotation, target_rotation, response_speed * delta)
+		offset_transform_rotation = \
+			lerpf(offset_transform_rotation, target_rotation, response_speed * delta)
 		current_tilt = current_tilt.lerp(tilt_target, response_speed * delta)
 
 		if not is_mouse_over and current_hover_intensity < 0.001:

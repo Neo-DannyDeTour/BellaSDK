@@ -18,7 +18,8 @@ var _is_precompiling: bool = false
 ## The current index in the shader cache array being processed during precompilation.
 var _current_compile_index: int = 0
 
-## The maximum number of milliseconds allowed per frame for shader compilation to maintain smooth UI.
+## The maximum number of milliseconds allowed per frame for shader compilation to maintain smooth
+## UI.
 var _max_compile_time_ms: int = 8
 
 ## A hidden 3D node used to spawn temporary 3D meshes for forcing shader compilation.

@@ -77,7 +77,8 @@ const WATER_MESH_LOW: Mesh = preload("res://assets/ocean_waves/ocean/clipmap_low
 # 3. PERFORMANCE
 # ==========================================
 @export_group("Performance Parameters")
-@export_enum("128x128:128", "256x256:256", "512x512:512", "1024x1024:1024") var map_size: int = 1024:
+@export_enum("128x128:128", "256x256:256", "512x512:512"," +
+	" "1024x1024:1024") var map_size: int = 1024:
 	set(value):
 		map_size = value
 		_setup_wave_generator()

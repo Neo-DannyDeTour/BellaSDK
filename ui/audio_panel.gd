@@ -174,7 +174,8 @@ func _apply_mono_audio(is_mono: bool) -> void:
 		var effect: AudioEffect = AudioServer.get_bus_effect(master_idx, i)
 		if effect is AudioEffectStereoEnhance:
 			# If mono is true, bypass the stereo enhancement (or vice versa depending on your effect setup)
-			# Alternatively, if you are using an effect specifically to crush to mono, toggle its bypass here.
+			# Alternatively, if you are using an effect specifically to crush to mono, toggle its bypass
+			# here.
 			AudioServer.set_bus_effect_enabled(master_idx, i, is_mono)
 			print("System: Mono effect toggle applied at index: ", i)
 			return

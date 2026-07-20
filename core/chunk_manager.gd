@@ -1,25 +1,32 @@
 extends Node3D
 class_name ChunkManager
 
-## Reference to the player node used to calculate spatial distances for proximity-based chunk loading.
+## Reference to the player node used to calculate spatial distances for proximity-based chunk
+## loading.
 @export var player: Node3D
 
-## The maximum distance in meters before a chunk is considered out of range and gets queued for unloading.
+## The maximum distance in meters before a chunk is considered out of range and gets queued for
+## unloading.
 @export var load_distance: float = 150.0
 
-## A dictionary mapping a unique chunk ID (String) to its corresponding scene file path (String) on disk.
+## A dictionary mapping a unique chunk ID (String) to its corresponding scene file path (String)
+## on disk.
 @export var chunk_registry: Dictionary = {}
 
-## A dictionary mapping a unique chunk ID (String) to its central Vector3 world position for distance checks.
+## A dictionary mapping a unique chunk ID (String) to its central Vector3 world position for
+## distance checks.
 @export var chunk_positions: Dictionary = {}
 
-## A dictionary storing the active chunk IDs as keys and their instantiated Node3D references as values.
+## A dictionary storing the active chunk IDs as keys and their instantiated Node3D references as
+## values.
 var loaded_chunks: Dictionary = {}
 
-## A dictionary tracking chunks that are currently in the background loading queue to prevent duplicate requests.
+## A dictionary tracking chunks that are currently in the background loading queue to prevent
+## duplicate requests.
 var loading_chunks: Dictionary = {}
 
-## An array of chunk IDs that have been explicitly requested by trigger areas, bypassing distance checks.
+## An array of chunk IDs that have been explicitly requested by trigger areas, bypassing distance
+## checks.
 var trigger_active_chunks: Array[String] = []
 
 

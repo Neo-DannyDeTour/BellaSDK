@@ -252,7 +252,8 @@ func _update(
 	pipelines[&"downsample"].call(
 		context,
 		compute_list,
-		RenderingContext.create_push_constant([int(cascade_index), float(ratio), 0.0, 0.0])  # pad1  # pad2
+		# pad2
+		RenderingContext.create_push_constant([int(cascade_index), float(ratio), 0.0, 0.0])  # pad1
 	)
 
 
