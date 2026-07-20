@@ -17,13 +17,15 @@ extends StaticBody3D
 ## The number of valid physics bodies currently pressing down on the button.
 var bodies_on_button: int = 0
 
-## Tracks the active state of the button to ensure animations and signals only trigger once per press.
+## Tracks the active state of the button to ensure animations and signals only trigger once per
+## press.
 var is_pressed: bool = false
 
 ## The visual mesh utilized strictly in the editor to draw connection lines.
 var debug_line: MeshInstance3D
 
-## The AnimationPlayer responsible for playing the physical button depression and release animations.
+## The AnimationPlayer responsible for playing the physical button depression and release
+## animations.
 @onready var anim: AnimationPlayer = $AnimationPlayer
 
 

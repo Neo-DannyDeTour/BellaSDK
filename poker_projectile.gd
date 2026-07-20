@@ -2,7 +2,8 @@ class_name PokerProjectile
 extends RigidBody3D
 
 ## The amount of time in seconds before the projectile deletes itself.
-## Deleting physical objects quickly ensures physics calculations remain lightweight for a stable 60 FPS.
+## Deleting physical objects quickly ensures physics calculations remain lightweight for a stable
+## 60 FPS.
 @export var lifespan: float = 0.2
 
 

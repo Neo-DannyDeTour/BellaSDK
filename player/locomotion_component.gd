@@ -36,7 +36,8 @@ const CROUCHING_HEIGHT: float = 1.0
 ## The time window in seconds where the player can still jump after walking off a ledge.
 @export var coyote_time_duration: float = 0.15
 
-## The multiplier applied to default gravity when the player is falling downwards to create a heavier feel.
+## The multiplier applied to default gravity when the player is falling downwards to create a
+## heavier feel.
 @export var fall_gravity_multiplier: float = 1.5
 
 @export_category("Physics Lerping")
@@ -69,7 +70,8 @@ const CROUCHING_HEIGHT: float = 1.0
 ## The reduced-height collision shape used when the player is crouching or sliding.
 @export var crouching_collision: CollisionShape3D
 
-## Raycast pointing upwards to ensure there is overhead clearance before the player stands up from a crouch.
+## Raycast pointing upwards to ensure there is overhead clearance before the player stands up from
+## a crouch.
 @export var crouch_cast_check: RayCast3D
 
 ## The node representing the player's head or camera pivot, used for height interpolation.

@@ -1,6 +1,7 @@
 extends Node3D
 
-## The total amount of power required to activate this door. Exposed here so level designers don't have to dig into child nodes.
+## The total amount of power required to activate this door. Exposed here so level designers don't
+## have to dig into child nodes.
 @export var required_power: int = 1
 
 ## Determines if the door is currently open. Changing this automatically updates animations.
@@ -16,7 +17,8 @@ var is_powered_door: bool = false
 ## Prevents the door from being toggled too rapidly by manual interactions.
 var is_on_cooldown: bool = false
 
-## The power component handling required and current power logic. Will be null if this is a standard manual door.
+## The power component handling required and current power logic. Will be null if this is a
+## standard manual door.
 var power_component: PowerComponent
 
 ## The AnimationPlayer responsible for the physical movement of the door geometry.

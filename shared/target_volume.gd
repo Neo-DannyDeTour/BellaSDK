@@ -27,7 +27,8 @@ enum SpawnMode { TIME_BASED, WAIT_FOR_KILL }
 
 @export_category("Visualizer Controls")
 @export
-var visualizer_shape_type: EditorTriggerVisualizer.ShapeType = EditorTriggerVisualizer.ShapeType.BOX:
+var visualizer_shape_type: EditorTriggerVisualizer.ShapeType = \
+	EditorTriggerVisualizer.ShapeType.BOX:
 	set(value):
 		visualizer_shape_type = value
 		_update_visualizer()
