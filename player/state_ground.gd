@@ -232,7 +232,7 @@ func _apply_movement(delta: float, input_dir: Vector2) -> void:
 		(player.transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
 	)
 
-	loco.direction = loco.direction.lerp(target_dir, delta * active_lerp)
+	loco.set_direction(loco.get_direction().lerp(target_dir, delta * active_lerp))
 
 	if player.is_on_floor():
 		player.velocity.y = -0.1
@@ -240,15 +240,15 @@ func _apply_movement(delta: float, input_dir: Vector2) -> void:
 		player.velocity.y -= loco.gravity * delta
 
 	if input_dir != Vector2.ZERO or loco.on_ice:
-		player.velocity.x = loco.direction.x * current_speed
-		player.velocity.z = loco.direction.z * current_speed
+		player.velocity.x = loco.get_direction().x * current_speed
+		player.velocity.z = loco.get_direction().z * current_speed
 	else:
 		var friction_step: float = GROUND_FRICTION * delta
 		player.velocity.x = move_toward(player.velocity.x, 0.0, friction_step)
 		player.velocity.z = move_toward(player.velocity.z, 0.0, friction_step)
 
 		if player.velocity.length() < 0.01:
-			loco.direction = Vector3.ZERO
+			loco.set_direction(Vector3.ZERO)
 
 
 func _update_components(delta: float, input_dir: Vector2) -> void:

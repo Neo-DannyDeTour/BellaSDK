@@ -117,10 +117,10 @@ func _apply_horizontal_movement(input_dir: Vector2) -> void:
 
 	if is_instance_valid(player.locomotion_component):
 		if target_dir.length() > 0.0:
-			player.locomotion_component.direction = target_dir.normalized()
+			player.locomotion_component.set_direction(target_dir.normalized())
 		else:
-			player.locomotion_component.direction = Vector3.ZERO
-		final_dir = player.locomotion_component.direction
+			player.locomotion_component.set_direction(Vector3.ZERO)
+		final_dir = player.locomotion_component.get_direction()
 	else:
 		if target_dir.length() > 0.0:
 			final_dir = target_dir.normalized()

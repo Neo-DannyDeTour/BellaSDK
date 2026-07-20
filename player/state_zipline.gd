@@ -201,16 +201,14 @@ func _check_dismount_conditions() -> void:
 
 
 func _perform_dismount() -> void:
-	# FIX: Route cooldown to the appropriate component (likely environment or locomotion)
 	if is_instance_valid(player.environment_component):
-		player.environment_component.zipline_cooldown = 0.5
+		player.environment_component.start_zipline_cooldown(0.5)
 
 	var zip_vel: Vector3 = Vector3.ZERO
 	if current_zipline and current_zipline.has_method("get_current_travel_velocity"):
 		zip_vel = current_zipline.get_current_travel_velocity()
 
 	if zip_vel.length() < 2.0:
-		# FIX: Route camera reference through camera_controller
 		var look_dir: Vector3 = player.camera_controller.get_camera_look_dir()
 		var launch_flat_fwd: Vector3 = Vector3(look_dir.x, 0.0, look_dir.z).normalized()
 
@@ -224,10 +222,9 @@ func _perform_dismount() -> void:
 	player.velocity = zip_vel * DETACH_MOMENTUM_MULTIPLIER
 
 	var flat_vel: Vector3 = Vector3(player.velocity.x, 0.0, player.velocity.z)
+	var release_dir: Vector3 = Vector3.ZERO
 	if flat_vel.length() > 0.0:
-		# FIX: If direction was moved to locomotion_component, route it here:
-		if is_instance_valid(player.locomotion_component):
-			player.locomotion_component.direction = flat_vel.normalized()
+		release_dir = flat_vel.normalized()
 
 	if Input.is_action_just_pressed("jump"):
 		player.velocity.y += 5.0
@@ -235,4 +232,7 @@ func _perform_dismount() -> void:
 	if current_zipline and current_zipline.has_method("on_player_released"):
 		current_zipline.on_player_released()
 
-	state_machine.transition_to("Air")
+	if release_dir != Vector3.ZERO:
+		state_machine.transition_to("Air", {"release_dir": release_dir})
+	else:
+		state_machine.transition_to("Air")
