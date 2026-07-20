@@ -35,6 +35,7 @@ KeycardSystem="*uid://0q0pxgqqqrbh"
 GraphicsManager="*uid://c165uw26ca5hj"
 ShockwaveManager3d="*uid://l8cg0oru71au"
 GlobalSettings="*uid://c1qd5kgpbvddv"
+HighContrastManager="*uid://dsoaonf445p5r"
 
 [debug]
 

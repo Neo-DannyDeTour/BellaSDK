@@ -1,4 +1,5 @@
 extends Panel
+class_name ControlsPanel
 
 ## Indicates if the player is currently pressing a key to remap an action.
 var is_remapping: bool = false
@@ -11,40 +12,23 @@ var remapping_button: Button = null
 
 ## List of all input actions available for the player to remap in the UI.
 var my_actions: Array[String] = [
-	"forward",
-	"backward",
-	"left",
-	"right",
-	"jump",
-	"crouch",
-	"sprint",
-	"interact",
-	"flashlight",
-	"zoom"
+	"forward", "backward", "left", "right", "jump", 
+	"crouch", "sprint", "interact", "flashlight", "zoom"
 ]
 
-## Determines if the crouch action functions as a toggle (true) or a hold (false).
-var toggle_crouch: bool = false
-
-## Determines if the sprint action functions as a toggle (true) or a hold (false).
-var toggle_sprint: bool = false
-
-## Determines if jumping while crouched automatically cancels the crouch state.
-var cancel_crouch_on_jump: bool = false
-
+## Container that holds the generated list of remappable actions.
 @onready var grid_container: GridContainer = %GridContainer
+
+## Template label used to display the action name.
 @onready var action_label_template: Label = %ActionLabelTemplate
+
+## Template button used to trigger the remapping process.
 @onready var remap_button_template: Button = %RemapButtonTemplate
-@onready var toggle_crouch_btn: CheckButton = %ToggleCrouchButton
-@onready var toggle_sprint_btn: CheckButton = %ToggleSprintButton
-@onready var cancel_crouch_on_jump_btn: CheckButton = %CancelCrouchOnJumpButton
 
 
 func _ready() -> void:
 	print("UI: Controls Panel initialized.")
 	_create_control_list()
-	_connect_toggle_buttons()
-	_sync_ui_to_settings()
 
 
 func _create_control_list() -> void:
@@ -69,15 +53,7 @@ func _create_control_list() -> void:
 	remap_button_template.queue_free()
 
 
-func _connect_toggle_buttons() -> void:
-	print("UI: Connecting accessibility toggle buttons.")
-	toggle_crouch_btn.toggled.connect(_on_crouch_toggled)
-	toggle_sprint_btn.toggled.connect(_on_sprint_toggled)
-	cancel_crouch_on_jump_btn.toggled.connect(_on_cancel_crouch_on_jump_toggled)
-
-
 func _update_button_text(button: Button, action: String) -> void:
-	print("UI: Updating button text for action: ", action)
 	var events: Array[InputEvent] = InputMap.action_get_events(action)
 	var key_name: String = "Unassigned"
 
@@ -98,24 +74,6 @@ func _on_any_remap_button_toggled(toggled_on: bool, button: Button) -> void:
 		print("UI: Player canceled key remap for: ", button.get_meta("action"))
 		is_remapping = false
 		_update_button_text(button, button.get_meta("action"))
-
-
-func _on_crouch_toggled(toggled_on: bool) -> void:
-	print("System: Player set Toggle Crouch to: ", toggled_on)
-	toggle_crouch = toggled_on
-	_save_accessibility_settings()
-
-
-func _on_sprint_toggled(toggled_on: bool) -> void:
-	print("System: Player set Toggle Sprint to: ", toggled_on)
-	toggle_sprint = toggled_on
-	_save_accessibility_settings()
-
-
-func _on_cancel_crouch_on_jump_toggled(toggled_on: bool) -> void:
-	print("System: Player set Cancel Crouch On Jump to: ", toggled_on)
-	cancel_crouch_on_jump = toggled_on
-	_save_accessibility_settings()
 
 
 func _input(event: InputEvent) -> void:
@@ -142,23 +100,3 @@ func _save_controls() -> void:
 		var events: Array[InputEvent] = InputMap.action_get_events(action)
 		if events.size() > 0:
 			GlobalSettings.save_setting("Controls", action, events[0])
-
-
-func _save_accessibility_settings() -> void:
-	print("System: Saving accessibility hold/toggle parameters.")
-	GlobalSettings.save_setting("Accessibility", "toggle_crouch", toggle_crouch)
-	GlobalSettings.save_setting("Accessibility", "toggle_sprint", toggle_sprint)
-	GlobalSettings.save_setting("Accessibility", "cancel_crouch_on_jump", cancel_crouch_on_jump)
-
-
-func _sync_ui_to_settings() -> void:
-	print("System: Syncing UI to global accessibility settings.")
-	toggle_crouch = GlobalSettings.get_setting("Accessibility", "toggle_crouch", false) as bool
-	toggle_sprint = GlobalSettings.get_setting("Accessibility", "toggle_sprint", false) as bool
-	cancel_crouch_on_jump = (
-		GlobalSettings.get_setting("Accessibility", "cancel_crouch_on_jump", false) as bool
-	)
-
-	toggle_crouch_btn.set_pressed_no_signal(toggle_crouch)
-	toggle_sprint_btn.set_pressed_no_signal(toggle_sprint)
-	cancel_crouch_on_jump_btn.set_pressed_no_signal(cancel_crouch_on_jump)
