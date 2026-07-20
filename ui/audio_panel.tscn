@@ -40,124 +40,129 @@ layout_mode = 2
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ContentVBoxContainer" type="VBoxContainer" parent="MarginContainer/MainVBoxContainer/ScrollContainer" unique_id=937005811]
+[node name="GridContainer" type="GridContainer" parent="MarginContainer/MainVBoxContainer/ScrollContainer" unique_id=547319572]
 layout_mode = 2
 size_flags_horizontal = 6
-size_flags_vertical = 6
-theme_override_constants/separation = 12
+columns = 3
 
-[node name="MasterLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=695135965]
+[node name="MasterLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=695135965]
 layout_mode = 2
 text = "Master Volume"
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=1966856040]
-layout_mode = 2
-
-[node name="MasterLine" type="LineEdit" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer/HBoxContainer" unique_id=1900685203]
+[node name="MasterLine" type="LineEdit" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=1900685203]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 
-[node name="MasterSlider" type="HSlider" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer/HBoxContainer" unique_id=672617986]
+[node name="MasterSlider" type="HSlider" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=672617986]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 value = 100.0
 
-[node name="MusicLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=1291749741]
+[node name="MusicLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=1291749741]
 layout_mode = 2
 text = "Music Volume"
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=1560073703]
-layout_mode = 2
-
-[node name="MusicLine" type="LineEdit" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer/HBoxContainer2" unique_id=727267716]
+[node name="MusicLine" type="LineEdit" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=727267716]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 
-[node name="MusicSlider" type="HSlider" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer/HBoxContainer2" unique_id=1348410465]
+[node name="MusicSlider" type="HSlider" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=1348410465]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 value = 100.0
 
-[node name="SFXLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=490748844]
+[node name="SFXLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=490748844]
 layout_mode = 2
 text = "SFX Volume"
 
-[node name="HBoxContainer3" type="HBoxContainer" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=1936228543]
-layout_mode = 2
-
-[node name="SFXLine" type="LineEdit" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer/HBoxContainer3" unique_id=485515937]
+[node name="SFXLine" type="LineEdit" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=485515937]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 
-[node name="SFXSlider" type="HSlider" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer/HBoxContainer3" unique_id=54287623]
+[node name="SFXSlider" type="HSlider" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=54287623]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 value = 100.0
 
-[node name="VoiceLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=957578827]
+[node name="VoiceLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=957578827]
 layout_mode = 2
 text = "Voice Volume"
 
-[node name="HBoxContainer4" type="HBoxContainer" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=1691813340]
-layout_mode = 2
-
-[node name="VoiceLine" type="LineEdit" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer/HBoxContainer4" unique_id=1086017812]
+[node name="VoiceLine" type="LineEdit" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=1086017812]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 
-[node name="VoiceSlider" type="HSlider" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer/HBoxContainer4" unique_id=298134572]
+[node name="VoiceSlider" type="HSlider" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=298134572]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 value = 100.0
 
-[node name="AmbientLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=1794011502]
+[node name="AmbientLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=1794011502]
 layout_mode = 2
 text = "Ambient Volume"
 
-[node name="HBoxContainer5" type="HBoxContainer" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=1501889340]
-layout_mode = 2
-
-[node name="AmbientLine" type="LineEdit" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer/HBoxContainer5" unique_id=1724548739]
+[node name="AmbientLine" type="LineEdit" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=1724548739]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 
-[node name="AmbientSlider" type="HSlider" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer/HBoxContainer5" unique_id=288262438]
+[node name="AmbientSlider" type="HSlider" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=288262438]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 value = 100.0
 
-[node name="HSeparator" type="HSeparator" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=777436757]
+[node name="HSeparator2" type="HSeparator" parent="MarginContainer/MainVBoxContainer" unique_id=777436757]
 layout_mode = 2
 
-[node name="MonoAudioToggle" type="CheckButton" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=621733051]
+[node name="GridContainer" type="GridContainer" parent="MarginContainer/MainVBoxContainer" unique_id=838375324]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 3
+columns = 3
+
+[node name="Control" type="Control" parent="MarginContainer/MainVBoxContainer/GridContainer" unique_id=1401765384]
+layout_mode = 2
+
+[node name="MonoAudioToggle" type="CheckButton" parent="MarginContainer/MainVBoxContainer/GridContainer" unique_id=621733051]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Mono Audio"
 
-[node name="VisualCuesToggle" type="CheckButton" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=479505621]
+[node name="Control2" type="Control" parent="MarginContainer/MainVBoxContainer/GridContainer" unique_id=244865379]
+layout_mode = 2
+
+[node name="Control3" type="Control" parent="MarginContainer/MainVBoxContainer/GridContainer" unique_id=2037575572]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer/MainVBoxContainer/GridContainer" unique_id=1313088636]
+layout_mode = 2
+text = "Output Profile"
+
+[node name="OutputProfileOption" type="OptionButton" parent="MarginContainer/MainVBoxContainer/GridContainer" unique_id=1691124953]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Visual Cues"
 
-[node name="NavAssistToggle" type="CheckButton" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=1975422921]
-unique_name_in_owner = true
+[node name="Control4" type="Control" parent="MarginContainer/MainVBoxContainer/GridContainer" unique_id=230390167]
 layout_mode = 2
-text = "Nav Assist"
 
-[node name="HBoxContainer6" type="HBoxContainer" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=1882418796]
+[node name="Label2" type="Label" parent="MarginContainer/MainVBoxContainer/GridContainer" unique_id=1461007866]
+layout_mode = 2
+text = "Mute on Focus Loss"
+
+[node name="MuteOnFocusToggle" type="CheckButton" parent="MarginContainer/MainVBoxContainer/GridContainer" unique_id=1423642329]
+unique_name_in_owner = true
 layout_mode = 2

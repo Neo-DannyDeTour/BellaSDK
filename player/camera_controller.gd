@@ -39,6 +39,8 @@ var headbob_offset: Vector2 = Vector2.ZERO
 
 var stair_offset: float = 0.0
 
+## Determines if vertical camera movement is inverted.
+var invert_y: bool = false
 
 # INITIALIZATION
 func _ready() -> void:
@@ -50,6 +52,9 @@ func _ready() -> void:
 	)
 	base_fov = GlobalSettings.get_setting("Settings", "base_fov", 75.0) as float
 	disable_sprint_fov = GlobalSettings.get_setting("Settings", "disable_sprint_fov", false) as bool
+	
+	# Load the inverted Y-axis preference so it applies on scene load
+	invert_y = GlobalSettings.get_setting("Settings", "invert_y", false) as bool
 
 	mouse_sensitivity = mouse_sensitivity_base
 	target_fov = base_fov
@@ -70,19 +75,23 @@ func handle_mouse_input(
 	if is_terminal_mode:
 		active_sens *= 0.5
 
+	# Determine if we need to flip the vertical mouse input
+	var y_multiplier: float = -1.0 if invert_y else 1.0
+	var pitch_input: float = event.relative.y * active_sens * y_multiplier
+
 	if is_heavy_lifting:
 		# 1. YAW: Modify Euler angles directly to prevent Gimbal lock / Z-roll
 		head.rotation.y -= deg_to_rad(event.relative.x * active_sens)
 		head.rotation.y = clampf(head.rotation.y, deg_to_rad(-15.0), deg_to_rad(15.0))
 
-		# 2. PITCH: Restrict Up/Down Look
-		head.rotation.x -= deg_to_rad(event.relative.y * active_sens)
+		# 2. PITCH: Restrict Up/Down Look using the modified pitch_input
+		head.rotation.x -= deg_to_rad(pitch_input)
 		head.rotation.x = clampf(head.rotation.x, deg_to_rad(-15.0), deg_to_rad(89.0))
 	else:
 		# Standard FPS control: Body handles Y, Head handles X
 		player_body.rotate_y(deg_to_rad(-event.relative.x * active_sens))
 
-		head.rotation.x -= deg_to_rad(event.relative.y * active_sens)
+		head.rotation.x -= deg_to_rad(pitch_input)
 		head.rotation.x = clampf(head.rotation.x, deg_to_rad(-89.0), deg_to_rad(89.0))
 
 	# Strictly lock the Z-axis to prevent the camera from permanently tilting
