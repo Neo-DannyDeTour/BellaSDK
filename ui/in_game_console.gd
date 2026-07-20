@@ -411,6 +411,12 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 			write("Exiting game...", "red")
 			get_tree().quit()
 		"noclip":
+			if not OS.is_debug_build():
+				print(
+					"InGameConsole: _process_command() - Security block triggered for production build."
+				)
+				write("Command disabled in production build.", "red")
+				return
 			if has_node("/root/Events"):
 				var events: Node = get_node("/root/Events")
 				if events.has_signal("noclip_ui_button_pressed"):
@@ -488,6 +494,12 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 					"yellow"
 				)
 		"gamespeed":
+			if not OS.is_debug_build():
+				print(
+					"InGameConsole: _process_command() - Security block triggered for production build."
+				)
+				write("Command disabled in production build.", "red")
+				return
 			if args.size() > 0:
 				var new_speed := args[0].to_float()
 				Engine.time_scale = clampf(new_speed, 0.1, 10.0)

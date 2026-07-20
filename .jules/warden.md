@@ -1,0 +1,1 @@
+- Client-side scripts like `ui/in_game_console.gd` must not expose debug commands (`noclip`, `gamespeed`) that modify global state without an environment check (e.g., `OS.is_debug_build()`), as these act as cheats in production builds.
