@@ -4,15 +4,9 @@
 [ext_resource type="PackedScene" uid="uid://8m8l0uplgvm" path="res://ui/HorrorButton.tscn" id="2_ebbri"]
 
 [node name="VideoOptions" type="Panel" unique_id=1944788422]
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -441.0
-offset_top = -289.0
-offset_right = 441.0
-offset_bottom = 289.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_ebbri")
@@ -24,16 +18,20 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 32
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 32
 
 [node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=2066477877]
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
 
 [node name="HeaderLabel" type="Label" parent="MarginContainer/VBoxContainer" unique_id=800405349]
 layout_mode = 2
+theme_override_font_sizes/font_size = 32
 text = "Graphics / Video"
 horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="HSeparator" type="HSeparator" parent="MarginContainer/VBoxContainer" unique_id=676280285]
 layout_mode = 2
@@ -64,6 +62,7 @@ glitch_text = "Weak Ones"
 
 [node name="GridContainer" type="GridContainer" parent="MarginContainer/VBoxContainer" unique_id=1601704330]
 layout_mode = 2
+size_flags_horizontal = 4
 columns = 2
 
 [node name="PresetLabel" type="Label" parent="MarginContainer/VBoxContainer/GridContainer" unique_id=547067975]

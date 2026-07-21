@@ -24,16 +24,15 @@ theme_override_constants/margin_bottom = 32
 
 [node name="MainVBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=718337972]
 layout_mode = 2
-theme_override_constants/separation = 16
 
 [node name="HeaderLabel" type="Label" parent="MarginContainer/MainVBoxContainer" unique_id=1410569502]
 layout_mode = 2
-size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 32
 text = "Audio"
 horizontal_alignment = 1
+vertical_alignment = 1
 
-[node name="HSeparator" type="HSeparator" parent="MarginContainer/MainVBoxContainer" unique_id=820053374]
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/MainVBoxContainer" unique_id=1127480135]
 layout_mode = 2
 
 [node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/MainVBoxContainer" unique_id=1002227739]

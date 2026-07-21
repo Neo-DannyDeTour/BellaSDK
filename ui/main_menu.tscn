@@ -127,14 +127,9 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="OptionsMenu" type="VBoxContainer" parent="CenterContainer" unique_id=909708633]
-custom_minimum_size = Vector2(800, 500)
+custom_minimum_size = Vector2(1280, 720)
 layout_mode = 2
 script = ExtResource("5_lsdqh")
-
-[node name="MenuTitle" type="Label" parent="CenterContainer/OptionsMenu" unique_id=158210883]
-layout_mode = 2
-text = "Options"
-horizontal_alignment = 1
 
 [node name="TabButtons" type="HBoxContainer" parent="CenterContainer/OptionsMenu" unique_id=712872147]
 layout_mode = 2
@@ -165,6 +160,7 @@ layout_mode = 2
 text = "Accessibility"
 
 [node name="SettingsArea" type="MarginContainer" parent="CenterContainer/OptionsMenu" unique_id=170907656]
+custom_minimum_size = Vector2(1280, 720)
 layout_mode = 2
 size_flags_vertical = 3
 
@@ -195,6 +191,8 @@ layout_mode = 2
 
 [node name="MasterBackButton" parent="CenterContainer/OptionsMenu" unique_id=910947946 instance=ExtResource("3_kaxbk")]
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 6
 custom_text = "Back"
 glitch_text = "No Going Back"
 

@@ -4,15 +4,9 @@
 [ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="1_q31ga"]
 
 [node name="ControlsPanel" type="Panel" unique_id=1661150765]
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -441.0
-offset_top = -289.0
-offset_right = 441.0
-offset_bottom = 289.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_q5nxy")
@@ -40,8 +34,10 @@ alignment = 1
 
 [node name="HeaderLabel" type="Label" parent="MarginContainer/ScrollContainer/VBoxContainer" unique_id=1238118003]
 layout_mode = 2
+theme_override_font_sizes/font_size = 32
 text = "Controls / Input"
 horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="HSeparator" type="HSeparator" parent="MarginContainer/ScrollContainer/VBoxContainer" unique_id=1699420982]
 layout_mode = 2
@@ -50,6 +46,7 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 4
+size_flags_vertical = 3
 columns = 2
 
 [node name="ActionLabelTemplate" type="Label" parent="MarginContainer/ScrollContainer/VBoxContainer/GridContainer" unique_id=861321049]
@@ -66,9 +63,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 toggle_mode = true
 alignment = 0
-
-[node name="HSeparator2" type="HSeparator" parent="MarginContainer/ScrollContainer/VBoxContainer" unique_id=338325079]
-layout_mode = 2
 
 [node name="ConflictPanel" type="PanelContainer" parent="." unique_id=1863091515]
 unique_name_in_owner = true

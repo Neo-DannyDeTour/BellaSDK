@@ -29,6 +29,8 @@ layout_mode = 2
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Gameplay"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="HSeparator" type="HSeparator" parent="MarginContainer/MainVBoxContainer" unique_id=1482006028]
 layout_mode = 2
@@ -40,7 +42,7 @@ size_flags_vertical = 3
 [node name="ContentVBoxContainer" type="VBoxContainer" parent="MarginContainer/MainVBoxContainer/ScrollContainer" unique_id=311684409]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 6
+size_flags_vertical = 4
 
 [node name="DifficultyHBox" type="HBoxContainer" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=1294400299]
 layout_mode = 2
