@@ -484,8 +484,10 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 						)
 			else:
 				write(
-					"Usage: colorblind <type>\nTypes: normal, protanopia," +
-						" deuteranopia, tritanopia, mono, achromatopsia",
+					(
+						"Usage: colorblind <type>\nTypes: normal, protanopia,"
+						+ " deuteranopia, tritanopia, mono, achromatopsia"
+					),
 					"yellow"
 				)
 		"gamespeed":
@@ -606,8 +608,10 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 					write(filter_type.to_upper() + " filter enabled.", "green")
 				else:
 					write(
-						"Unknown filter. Available: off, crt, vhs, pixelate, toon, gameboy, glitch," +
-							" grain, halftone, nightvision, kuwahara, ascii",
+						(
+							"Unknown filter. Available: off, crt, vhs, pixelate, toon, gameboy, glitch,"
+							+ " grain, halftone, nightvision, kuwahara, ascii"
+						),
 						"red"
 					)
 			else:

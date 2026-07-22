@@ -113,12 +113,12 @@ func _ready() -> void:
 
 
 func _load_api_key() -> void:
-	var path = "res://addons/gemini_copilot/gemini_key.cfg"
+	var path: String = "res://addons/gemini_copilot/gemini_key.cfg"
 	print_rich("[color=yellow]KGB Agent: Attempting to load key from [/color]", path)
 
 	if FileAccess.file_exists(path):
-		var file = FileAccess.open(path, FileAccess.READ)
-		var content = file.get_as_text()
+		var file: FileAccess = FileAccess.open(path, FileAccess.READ)
+		var content: String = file.get_as_text()
 
 		# SMART LOADER: Finds the key whether it's raw text or key="value"
 		if '="' in content:
@@ -146,13 +146,13 @@ func _on_generate_pressed() -> void:
 	sequence_display.text = "Generated Sequence:\n"
 
 	for i in range(int(atom_spinbox.value)):
-		var id = randi_range(1, 55)
-		var beat = gameplay_atoms.get(id, "Unknown")
+		var id: int = randi_range(1, 55)
+		var beat: String = gameplay_atoms.get(id, "Unknown")
 		if id == 31:
 			sequence_has_backtracking = true
 
 		if randf() * 100.0 <= merge_spinbox.value:
-			var id2 = randi_range(1, 55)
+			var id2: int = randi_range(1, 55)
 			beat += " + " + gameplay_atoms.get(id2, "Unknown")
 			if id2 == 31:
 				sequence_has_backtracking = true
@@ -176,45 +176,47 @@ func _on_ask_ai_pressed() -> void:
 	# --- 1. THE 2026 MODEL ID FIX ---
 	# As of March 2026, preview models REQUIRE the '-preview' suffix.
 	# Since you have a Pro key, use 3.1-pro for the best results!
-	var model_name = "gemini-3.1-pro-preview"
+	var model_name: String = "gemini-3.1-pro-preview"
 
 	# --- 2. ENDPOINT CHECK ---
 	# Preview models are most stable on the v1beta endpoint.
-	var url = (
+	var url: String = (
 		"https://generativelanguage.googleapis.com/v1beta/models/"
 		+ model_name
 		+ ":generateContent?key="
 		+ api_key.strip_edges()
 	)
 
-	var prompt = "Context: " + context_input.text + "\nSequence: " + ", ".join(current_sequence)
+	var prompt: String = (
+		"Context: " + context_input.text + "\nSequence: " + ", ".join(current_sequence)
+	)
 	if sequence_has_backtracking:
 		prompt += "\nBacktracking Rules: " + ", ".join(backtracking_options)
 
-	var body = JSON.stringify({"contents": [{"parts": [{"text": prompt}]}]})
+	var body: String = JSON.stringify({"contents": [{"parts": [{"text": prompt}]}]})
 
-	var body_bytes = body.to_utf8_buffer()
-	var headers = PackedStringArray(
+	var body_bytes: PackedByteArray = body.to_utf8_buffer()
+	var headers: PackedStringArray = PackedStringArray(
 		["Content-Type: application/json", "Content-Length: " + str(body_bytes.size())]
 	)
 
 	print_rich("[color=cyan]KGB Agent: Requesting [/color]", model_name)
 
-	var error = http_request.request(url, headers, HTTPClient.METHOD_POST, body)
+	var error: Error = http_request.request(url, headers, HTTPClient.METHOD_POST, body)
 	if error != OK:
 		ai_output.text = "HTTP Error: " + str(error)
 
 
-func _on_http_request_completed(result, response_code, _headers, body) -> void:
+func _on_http_request_completed(result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
 	if result != HTTPRequest.RESULT_SUCCESS:
 		ai_output.text = "HTTP Request Failed. Result code: " + str(result)
 		return
 
-	var response = body.get_string_from_utf8()
+	var response: String = body.get_string_from_utf8()
 	print_rich("[color=white]KGB Agent: Received Response Code [/color]", response_code)
 
 	if response_code == 200:
-		var json = JSON.parse_string(response)
+		var json: Variant = JSON.parse_string(response)
 		if typeof(json) != TYPE_DICTIONARY:
 			ai_output.text = "Error: Invalid JSON response."
 			return
@@ -227,12 +229,12 @@ func _on_http_request_completed(result, response_code, _headers, body) -> void:
 			ai_output.text = "Error: JSON response missing 'candidates'."
 			return
 
-		var candidate = json["candidates"][0]
+		var candidate: Dictionary = json["candidates"][0]
 		if typeof(candidate) != TYPE_DICTIONARY or not candidate.has("content"):
 			ai_output.text = "Error: JSON response missing 'content'."
 			return
 
-		var content = candidate["content"]
+		var content: Dictionary = candidate["content"]
 		if (
 			typeof(content) != TYPE_DICTIONARY
 			or not content.has("parts")
@@ -242,7 +244,7 @@ func _on_http_request_completed(result, response_code, _headers, body) -> void:
 			ai_output.text = "Error: JSON response missing 'parts'."
 			return
 
-		var part = content["parts"][0]
+		var part: Dictionary = content["parts"][0]
 		if (
 			typeof(part) != TYPE_DICTIONARY
 			or not part.has("text")
@@ -257,17 +259,17 @@ func _on_http_request_completed(result, response_code, _headers, body) -> void:
 
 
 # --- UI BUILDER (Separated for clarity) ---
-func _build_ui():
+func _build_ui() -> void:
 	# (Clean old UI first)
 	for child in get_children():
 		if child != http_request:
 			child.queue_free()
 
-	var vbox = VBoxContainer.new()
+	var vbox: VBoxContainer = VBoxContainer.new()
 	vbox.set_anchors_preset(PRESET_FULL_RECT)
 	add_child(vbox)
 
-	var hbox = HBoxContainer.new()
+	var hbox: HBoxContainer = HBoxContainer.new()
 	vbox.add_child(hbox)
 
 	atom_spinbox = SpinBox.new()

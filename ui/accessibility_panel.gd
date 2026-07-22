@@ -85,7 +85,7 @@ func _connect_signals() -> void:
 		fov_input.text_submitted.connect(_on_fov_input_submitted)
 		fov_input.focus_entered.connect(_on_fov_focus_entered)
 		fov_input.focus_exited.connect(_on_fov_focus_exited)
-	
+
 	if sprint_fov_checkbox:
 		sprint_fov_checkbox.toggled.connect(_on_sprint_fov_toggled)
 
@@ -103,7 +103,7 @@ func _connect_signals() -> void:
 		sub_size_option.item_selected.connect(_on_sub_size_selected)
 	if sub_colors_toggle:
 		sub_colors_toggle.toggled.connect(_on_sub_colors_toggled)
-		
+
 	_connect_adjustment_signals(sub_bg_opacity_slider, null, "subtitle_bg_opacity")
 	_connect_adjustment_signals(film_grain_slider, null, "film_grain_intensity")
 
@@ -118,35 +118,64 @@ func _load_accessibility_settings() -> void:
 
 	_load_slider_setting(fov_slider, fov_input, "base_fov", DEFAULT_FOV, true)
 	if sprint_fov_checkbox:
-		sprint_fov_checkbox.button_pressed = GlobalSettings.get_setting("Settings", "disable_sprint_fov", DEFAULT_DISABLE_SPRINT_FOV) as bool
+		sprint_fov_checkbox.button_pressed = (
+			GlobalSettings.get_setting("Settings", "disable_sprint_fov", DEFAULT_DISABLE_SPRINT_FOV)
+			as bool
+		)
 	_apply_fov_settings()
 
 	_load_slider_setting(ui_scale_slider, ui_scale_input, "ui_scale", DEFAULT_UI_SCALE)
 	_apply_ui_scale_settings()
 
 	if colorblind_option:
-		colorblind_option.selected = GlobalSettings.get_setting("Settings", "colorblind_mode", DEFAULT_COLORBLIND_MODE) as int
+		colorblind_option.selected = (
+			GlobalSettings.get_setting("Settings", "colorblind_mode", DEFAULT_COLORBLIND_MODE)
+			as int
+		)
 		_apply_colorblind_settings()
 
 	if font_option:
-		font_option.selected = GlobalSettings.get_setting("Settings", "font_mode", DEFAULT_FONT_MODE) as int
+		font_option.selected = (
+			GlobalSettings.get_setting("Settings", "font_mode", DEFAULT_FONT_MODE) as int
+		)
 		_apply_font_settings()
 
 	# Load new settings
 	if high_contrast_toggle:
-		high_contrast_toggle.set_pressed_no_signal(GlobalSettings.get_setting("Accessibility", "high_contrast_ui", DEFAULT_HIGH_CONTRAST) as bool)
+		high_contrast_toggle.set_pressed_no_signal(
+			(
+				GlobalSettings.get_setting(
+					"Accessibility", "high_contrast_ui", DEFAULT_HIGH_CONTRAST
+				)
+				as bool
+			)
+		)
 	if reduce_motion_toggle:
-		reduce_motion_toggle.set_pressed_no_signal(GlobalSettings.get_setting("Accessibility", "reduce_motion", DEFAULT_REDUCE_MOTION) as bool)
+		reduce_motion_toggle.set_pressed_no_signal(
+			(
+				GlobalSettings.get_setting("Accessibility", "reduce_motion", DEFAULT_REDUCE_MOTION)
+				as bool
+			)
+		)
 	if sub_size_option:
-		sub_size_option.selected = GlobalSettings.get_setting("Accessibility", "subtitle_size", DEFAULT_SUB_SIZE) as int
+		sub_size_option.selected = (
+			GlobalSettings.get_setting("Accessibility", "subtitle_size", DEFAULT_SUB_SIZE) as int
+		)
 	if sub_colors_toggle:
-		sub_colors_toggle.set_pressed_no_signal(GlobalSettings.get_setting("Accessibility", "subtitle_colors", DEFAULT_SUB_COLORS) as bool)
-		
+		sub_colors_toggle.set_pressed_no_signal(
+			(
+				GlobalSettings.get_setting("Accessibility", "subtitle_colors", DEFAULT_SUB_COLORS)
+				as bool
+			)
+		)
+
 	_load_slider_setting(sub_bg_opacity_slider, null, "subtitle_bg_opacity", DEFAULT_SUB_BG_OPACITY)
 	_load_slider_setting(film_grain_slider, null, "film_grain_intensity", DEFAULT_FILM_GRAIN)
 
 
-func _load_slider_setting(slider: HSlider, input_box: LineEdit, key: String, default_val: float, is_int: bool = false) -> void:
+func _load_slider_setting(
+	slider: HSlider, input_box: LineEdit, key: String, default_val: float, is_int: bool = false
+) -> void:
 	if slider:
 		var val: float = GlobalSettings.get_setting("Settings", key, default_val) as float
 		slider.value = val
@@ -154,14 +183,18 @@ func _load_slider_setting(slider: HSlider, input_box: LineEdit, key: String, def
 			input_box.text = str(int(val)) if is_int else ("%.2f" % val)
 
 
-func _connect_adjustment_signals(slider: HSlider, input_box: LineEdit, setting_name: String) -> void:
+func _connect_adjustment_signals(
+	slider: HSlider, input_box: LineEdit, setting_name: String
+) -> void:
 	if slider:
 		slider.value_changed.connect(_on_adjustment_changed.bind(input_box, setting_name))
 		slider.drag_ended.connect(_on_adjustment_drag_ended.bind(setting_name, slider))
 	if input_box:
 		input_box.text_submitted.connect(_on_adjustment_input_submitted.bind(setting_name, slider))
 		input_box.focus_entered.connect(_on_adjustment_focus_entered.bind(input_box))
-		input_box.focus_exited.connect(_on_adjustment_focus_exited.bind(input_box, slider, setting_name))
+		input_box.focus_exited.connect(
+			_on_adjustment_focus_exited.bind(input_box, slider, setting_name)
+		)
 
 
 func _on_adjustment_changed(value: float, input_node: LineEdit, setting_name: String) -> void:
@@ -172,18 +205,22 @@ func _on_adjustment_changed(value: float, input_node: LineEdit, setting_name: St
 	if setting_name == "ui_scale":
 		_apply_ui_scale_settings()
 	elif setting_name == "subtitle_bg_opacity" or setting_name == "film_grain_intensity":
-		pass # Handle real-time updates for these specific shaders/UI elements here if needed
+		pass  # Handle real-time updates for these specific shaders/UI elements here if needed
 	else:
 		_apply_visual_settings()
 
 
-func _on_adjustment_drag_ended(value_changed: bool, setting_name: String, slider_node: HSlider) -> void:
+func _on_adjustment_drag_ended(
+	value_changed: bool, setting_name: String, slider_node: HSlider
+) -> void:
 	if value_changed:
 		print("Player adjusted ", setting_name, " slider to: ", slider_node.value)
 		GlobalSettings.save_setting("Settings", setting_name, slider_node.value)
 
 
-func _on_adjustment_input_submitted(new_text: String, setting_name: String, slider_node: HSlider) -> void:
+func _on_adjustment_input_submitted(
+	new_text: String, setting_name: String, slider_node: HSlider
+) -> void:
 	var new_val: float = clamp(new_text.to_float(), 0.0, 3.0)
 	slider_node.value = new_val
 	slider_node.release_focus()
@@ -196,7 +233,9 @@ func _on_adjustment_focus_entered(input_node: LineEdit) -> void:
 	input_node.text = ""
 
 
-func _on_adjustment_focus_exited(input_node: LineEdit, slider_node: HSlider, setting_name: String) -> void:
+func _on_adjustment_focus_exited(
+	input_node: LineEdit, slider_node: HSlider, setting_name: String
+) -> void:
 	var current_text: String = input_node.text.strip_edges()
 	if current_text == "":
 		input_node.text = "%.2f" % slider_node.value
@@ -305,6 +344,7 @@ func _apply_fov_settings() -> void:
 
 # --- NEW ACCESSIBILITY TOGGLE CALLBACKS ---
 
+
 func _on_high_contrast_toggled(toggled_on: bool) -> void:
 	print("Player toggled High Contrast UI to: ", toggled_on)
 	GlobalSettings.save_setting("Accessibility", "high_contrast_ui", toggled_on)
@@ -343,10 +383,12 @@ func _get_player() -> Node:
 
 func _populate_dropdowns() -> void:
 	print("UI: Populating OptionButton dropdowns with available modes.")
-	
+
 	if colorblind_option:
 		colorblind_option.clear()
-		var colorblind_modes: Array[String] = ["Normal", "Protanopia", "Deuteranopia", "Tritanopia", "Achromatopsia"]
+		var colorblind_modes: Array[String] = [
+			"Normal", "Protanopia", "Deuteranopia", "Tritanopia", "Achromatopsia"
+		]
 		for mode: String in colorblind_modes:
 			colorblind_option.add_item(mode)
 
@@ -355,7 +397,7 @@ func _populate_dropdowns() -> void:
 		var font_modes: Array[String] = ["Default", "Dyslexic", "Papyrus", "Comic"]
 		for font: String in font_modes:
 			font_option.add_item(font)
-			
+
 	if sub_size_option:
 		sub_size_option.clear()
 		var size_modes: Array[String] = ["Small", "Medium", "Large"]

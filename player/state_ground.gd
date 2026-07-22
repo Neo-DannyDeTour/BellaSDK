@@ -143,8 +143,10 @@ func _perform_jump() -> void:
 		player.velocity.y = CROUCH_JUMP_VELOCITY
 		if _cancel_crouch_on_jump and not loco.crouch_cast_check.is_colliding():
 			print(
-				"StateGround: Jumping while crouched. Canceling crouch state" +
-					" (Interpolation handled externally)."
+				(
+					"StateGround: Jumping while crouched. Canceling crouch state"
+					+ " (Interpolation handled externally)."
+				)
 			)
 			loco.crouching = false
 			loco.standing_collision.disabled = false

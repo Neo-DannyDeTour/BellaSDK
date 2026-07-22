@@ -82,7 +82,7 @@ extends CompositorEffect
 ## Controls the height gradient behavior.
 @export var height_gradient: Texture2D
 ## The extra large noise patterns texture map applied to the clouds.
-@export var extra_large_noise_patterns: Texture2D # Revert this back to Texture2D
+@export var extra_large_noise_patterns: Texture2D  # Revert this back to Texture2D
 
 ## The large scale noise texture map applied to the clouds.
 @export var large_scale_noise: Texture3D

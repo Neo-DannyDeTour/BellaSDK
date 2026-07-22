@@ -62,10 +62,10 @@ func _connect_signals() -> void:
 	# Toggles and Options
 	if mono_audio_toggle:
 		mono_audio_toggle.toggled.connect(_on_mono_audio_toggled)
-	
+
 	if output_profile_option:
 		output_profile_option.item_selected.connect(_on_output_profile_selected)
-		
+
 	if mute_on_focus_toggle:
 		mute_on_focus_toggle.toggled.connect(_on_mute_focus_toggled)
 
@@ -107,7 +107,7 @@ func _load_audio_settings() -> void:
 		var profile_idx: int = GlobalSettings.get_setting("Audio", "output_profile", 0) as int
 		output_profile_option.selected = profile_idx
 		_apply_output_profile(profile_idx)
-		
+
 	# Load Mute on Focus
 	if mute_on_focus_toggle:
 		var mute_focus: bool = GlobalSettings.get_setting("Audio", "mute_on_focus", true) as bool
@@ -142,7 +142,7 @@ func _set_bus_volume(bus_name: String, slider_value: float) -> void:
 		var normalized_value: float = slider_value / 100.0
 		var clamped_value: float = maxf(normalized_value, 0.0001)
 		AudioServer.set_bus_volume_db(bus_idx, linear_to_db(clamped_value))
-		
+
 		var is_muted: bool = slider_value <= 0.1
 		AudioServer.set_bus_mute(bus_idx, is_muted)
 
@@ -178,7 +178,7 @@ func _apply_mono_audio(is_mono: bool) -> void:
 	var master_idx: int = AudioServer.get_bus_index("Master")
 	if master_idx < 0:
 		return
-		
+
 	var effect_count: int = AudioServer.get_bus_effect_count(master_idx)
 	for i: int in range(effect_count):
 		var effect: AudioEffect = AudioServer.get_bus_effect(master_idx, i)
@@ -208,5 +208,5 @@ func _on_mute_focus_toggled(button_pressed: bool) -> void:
 
 func _apply_mute_on_focus(mute_enabled: bool) -> void:
 	print("System: Setting engine to mute on focus loss: ", mute_enabled)
-	# The actual window focus logic usually runs in main node / process, 
+	# The actual window focus logic usually runs in main node / process,
 	# but we store the parameter here for the system to reference.

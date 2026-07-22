@@ -11,7 +11,7 @@ func _ready() -> void:
 	print("System: High Contrast Manager initialized.")
 	_setup_stylebox()
 	_connect_to_events()
-	
+
 	# Load default state on boot
 	is_active = GlobalSettings.get_setting("Accessibility", "high_contrast_ui", false) as bool
 	get_tree().node_added.connect(_on_scene_node_added)
@@ -55,7 +55,7 @@ func _apply_contrast_to_node(node: Node) -> void:
 			node.add_theme_stylebox_override("normal", high_contrast_style)
 		else:
 			node.remove_theme_stylebox_override("normal")
-			
+
 	elif node is RichTextLabel:
 		if is_active:
 			node.add_theme_stylebox_override("normal", high_contrast_style)

@@ -42,6 +42,7 @@ var stair_offset: float = 0.0
 ## Determines if vertical camera movement is inverted.
 var invert_y: bool = false
 
+
 # INITIALIZATION
 func _ready() -> void:
 	print("CameraController: Initializing settings.")
@@ -52,7 +53,7 @@ func _ready() -> void:
 	)
 	base_fov = GlobalSettings.get_setting("Settings", "base_fov", 75.0) as float
 	disable_sprint_fov = GlobalSettings.get_setting("Settings", "disable_sprint_fov", false) as bool
-	
+
 	# Load the inverted Y-axis preference so it applies on scene load
 	invert_y = GlobalSettings.get_setting("Settings", "invert_y", false) as bool
 
