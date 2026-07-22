@@ -82,7 +82,7 @@ const WATER_MESH_LOW: Mesh = preload("res://assets/ocean_waves/ocean/clipmap_low
 @export_enum(
 	"128x128:128", 
 	"256x256:256", 
-    "1024x1024:1024"
+	"1024x1024:1024",
 	"512x512:512", 
 ) 
 var map_size: int = 1024:
