@@ -893,27 +893,31 @@ void main() {
 
     vec4 reprojectedScreenPos = vec4(0.0);
 
-		vec4 reprojectedClipPos = genericData.data.prev_cam_view * vec4(worldFinalPos, 1.0);
-	reprojectedClipPos.z -= 0.01;
-	if (reprojectedClipPos.z > 0.0){
+	vec4 reprojectedClipPos = genericData.data.prev_cam_view * vec4(worldFinalPos, 1.0);
+
+	// Godot's forward in view space is -Z. A coordinate is visible if Z < 0.
+	// If it is behind the camera (Z >= 0), it's off-screen.
+	if (reprojectedClipPos.z >= 0.0){
 		override = true;
 	}
-	reprojectedScreenPos = genericData.data.prev_cam_projection * reprojectedClipPos;
 
+	reprojectedScreenPos = genericData.data.prev_cam_projection * reprojectedClipPos;
 
 	// Convert clip space to normalized device coordinates
 	ndc = (reprojectedScreenPos.xy / reprojectedScreenPos.w);
 
 	// Convert normalized device coordinates to screen space
 	vec2 screen_position = ndc * 0.5 + 0.5;
-	//screen_position = clamp(screen_position, vec2(0.0), vec2(1.0));
 	screen_position = screen_position - depthUV;
 
 	ivec2 adjustedUV = ivec2(int(screen_position.x * size.x), int(screen_position.y * size.y));
-	//float change = length(vec2(adjustedUV));
 	adjustedUV += uv; //Size is the screen resolution.
 
 	ivec2 clampedUV = clamp(adjustedUV, ivec2(0), size - ivec2(1)); //having two lets me check if clamping it changed the reprojected uv, if it did that means it was offscreen, so rebuild data.
+
+	if (clampedUV != adjustedUV) {
+	    override = true; // Offscreen during reprojection, so we must override history
+	}
 
 	//execute accumilation.
 	float accumdecay = genericData.data.accumilation_decay;

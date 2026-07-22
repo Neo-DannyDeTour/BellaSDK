@@ -992,7 +992,6 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 
 			last_size = size
 
-			update_matrices(render_scene_data, new_size)
 			if lights_updated or directional_lights_data.size() == 0:
 				update_lights()
 
@@ -1009,6 +1008,8 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 			var y_groups: int = ((size.y - 1) / 8 / resscale) + 1
 
 			for view in range(view_count):
+				update_matrices(render_scene_data, new_size, view)
+
 				## Controls the prepass list behavior.
 				var prepass_list: int = rd.compute_list_begin()
 				rd.compute_list_bind_compute_pipeline(prepass_list, prepass_pipeline)
@@ -1068,7 +1069,9 @@ func retrieve_position_queries(data: PackedByteArray) -> void:
 	position_resetting = false
 
 
-func update_matrices(render_scene_data: RenderSceneData, new_size: Vector2i) -> void:
+func update_matrices(
+	render_scene_data: RenderSceneData, new_size: Vector2i, view_index: int = 0
+) -> void:
 	## Array holding uniform data for float data.
 	var float_data: PackedFloat32Array = PackedFloat32Array()
 	float_data.resize(192)
@@ -1247,13 +1250,14 @@ func update_matrices(render_scene_data: RenderSceneData, new_size: Vector2i) -> 
 	float_data[idx] = int(pow(2.0, float(resolution_scale)))
 
 	## Controls the cam proj behavior.
-	var cam_proj: Projection = render_scene_data.get_cam_projection()
+	var cam_proj: Projection = render_scene_data.get_view_projection(view_index)
 	## Controls the cam inv proj behavior.
 	var cam_inv_proj: Projection = cam_proj.inverse()
+
+	var cam_inv_view_tr: Transform3D = render_scene_data.get_cam_transform()
 	## Controls the cam view tr behavior.
-	var cam_view_tr: Transform3D = render_scene_data.get_cam_transform().inverse()
+	var cam_view_tr: Transform3D = cam_inv_view_tr.inverse()
 	## Controls the cam inv view tr behavior.
-	var cam_inv_view_tr: Transform3D = cam_view_tr.inverse()
 
 	## Controls the cam view behavior.
 	var cam_view: Projection = Projection(cam_view_tr)

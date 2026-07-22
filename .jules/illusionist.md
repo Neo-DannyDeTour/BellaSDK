@@ -1,5 +1,3 @@
-# Illusionist's Journal
-
-## CRITICAL LEARNINGS
-- Shader compilation stutters: Specific to this project's asset pipeline, ensure custom shaders are simple and avoid heavy dynamic texture sampling unless cached.
-- Visual clutter issues: Previous VFX PRs showed performance drops with excessive particle counts. Enforce strict `one_shot = true` and `queue_free()` for transient bursts to maintain 60 FPS.
+# VFX Learnings (Illusionist)
+- When converting `Transform3D` (such as Godot's `RenderSceneData.get_cam_transform()`) to a 4x4 GLSL matrix for use in a Compute Shader, use `get_view_projection(view_index)` if rendering properties like custom Field-of-View or projection offsets (e.g. from camera shake) are needed.
+- In view-space coordinates derived directly from Godot's World Matrix, Godot uses -Z as forward. In shader reprojection logic, `clipPos.z >= 0.0` reliably detects coordinates behind the camera, allowing history buffers to be invalidated and preventing black-hole smearing artifacts when moving.
