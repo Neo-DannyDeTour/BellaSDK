@@ -82,7 +82,7 @@ extends CompositorEffect
 ## Controls the height gradient behavior.
 @export var height_gradient: Texture2D
 ## The extra large noise patterns texture map applied to the clouds.
-@export var extra_large_noise_patterns: Texture2D  # Revert this back to Texture2D
+@export var extra_large_noise_patterns: Texture2D
 
 ## The large scale noise texture map applied to the clouds.
 @export var large_scale_noise: Texture3D
@@ -284,6 +284,7 @@ func _notification(what: int) -> void:
 
 
 func clear_compute() -> void:
+	print("SunshineCloudsGD: Freeing rendering resources.")
 	if rd:
 		if pipeline.is_valid():
 			rd.free_rid(pipeline)
@@ -350,6 +351,7 @@ func clear_compute() -> void:
 
 
 func initialize_compute() -> void:
+	print("SunshineCloudsGD: Initializing compute shaders and buffers.")
 	first_run = true
 	if not rd:
 		rd = RenderingServer.get_rendering_device()
@@ -390,39 +392,39 @@ func initialize_compute() -> void:
 	# Setup resources
 	if not dither_noise:
 		dither_noise = ResourceLoader.load(
-			"res://addons/SunshineClouds2/NoiseTextures/bluenoise_Dither.png"
+            "res://addons/SunshineClouds2/NoiseTextures/bluenoise_Dither.png"
 		)
 	if not height_gradient:
 		height_gradient = ResourceLoader.load(
-			"res://addons/SunshineClouds2/NoiseTextures/HeightGradient.tres"
+            "res://addons/SunshineClouds2/NoiseTextures/HeightGradient.tres"
 		)
 	if not extra_large_noise_patterns:
 		extra_large_noise_patterns = ResourceLoader.load(
-			"res://addons/SunshineClouds2/NoiseTextures/ExtraLargeScaleNoise.tres"
+            "res://addons/SunshineClouds2/NoiseTextures/ExtraLargeScaleNoise.tres"
 		)
 	if not large_scale_noise:
 		large_scale_noise = ResourceLoader.load(
-			"res://addons/SunshineClouds2/NoiseTextures/LargeScaleNoise.tres"
+            "res://addons/SunshineClouds2/NoiseTextures/LargeScaleNoise.tres"
 		)
 	if not medium_scale_noise:
 		medium_scale_noise = ResourceLoader.load(
-			"res://addons/SunshineClouds2/NoiseTextures/MediumScaleNoise.tres"
+            "res://addons/SunshineClouds2/NoiseTextures/MediumScaleNoise.tres"
 		)
 	if not small_scale_noise:
 		small_scale_noise = ResourceLoader.load(
-			"res://addons/SunshineClouds2/NoiseTextures/SmallScaleNoise.tres"
+            "res://addons/SunshineClouds2/NoiseTextures/SmallScaleNoise.tres"
 		)
 	if not curl_noise:
 		curl_noise = ResourceLoader.load(
-			"res://addons/SunshineClouds2/NoiseTextures/curl_noise_varied.tga"
+            "res://addons/SunshineClouds2/NoiseTextures/curl_noise_varied.tga"
 		)
 	if not compute_shader:
 		compute_shader = ResourceLoader.load(
-			"res://addons/SunshineClouds2/SunshineCloudsCompute.glsl"
+            "res://addons/SunshineClouds2/SunshineCloudsCompute.glsl"
 		)
 	if not pre_pass_compute_shader:
 		pre_pass_compute_shader = ResourceLoader.load(
-			"res://addons/SunshineClouds2/SunshineCloudsPreCompute.glsl"
+            "res://addons/SunshineClouds2/SunshineCloudsPreCompute.glsl"
 		)
 
 	## The compute shader resource for the display shader file.
@@ -430,17 +432,17 @@ func initialize_compute() -> void:
 
 	if msaa_mode == RenderingServer.ViewportMSAA.VIEWPORT_MSAA_DISABLED:
 		post_pass_compute_shader = ResourceLoader.load(
-			"res://addons/SunshineClouds2/SunshineCloudsPostCompute.glsl"
+            "res://addons/SunshineClouds2/SunshineCloudsPostCompute.glsl"
 		)
 		display_shader_file = ResourceLoader.load(
-			"res://addons/SunshineClouds2/SunshineCloudsDisplay.glsl"
+            "res://addons/SunshineClouds2/SunshineCloudsDisplay.glsl"
 		)
 	else:
 		post_pass_compute_shader = ResourceLoader.load(
-			"res://addons/SunshineClouds2/SunshineCloudsPostCompute.msaa.glsl"
+            "res://addons/SunshineClouds2/SunshineCloudsPostCompute.msaa.glsl"
 		)
 		display_shader_file = ResourceLoader.load(
-			"res://addons/SunshineClouds2/SunshineCloudsDisplay.msaa.glsl"
+            "res://addons/SunshineClouds2/SunshineCloudsDisplay.msaa.glsl"
 		)
 
 	if (
@@ -596,6 +598,17 @@ func initialize_raster_pipelines(color_texture: RID, depth_texture: RID) -> void
 
 
 func _render_callback(_effect_callback_type: int, render_data: RenderData) -> void:
+	## The render scene data holding current camera, projection, and depth states.
+	var render_scene_data: RenderSceneData = render_data.get_render_scene_data()
+	
+	if render_scene_data:
+		## The active camera projection matrix provided by the renderer.
+		var camera_projection: Projection = render_scene_data.get_cam_projection()
+		
+		# Abort if rendering a shadow map or SDFGI cascade to prevent compute bleed/NaN explosion.
+		if camera_projection.is_orthogonal():
+			return
+
 	if rd == null:
 		initialize_compute()
 	elif (
@@ -624,8 +637,6 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 			var new_size: Vector2i = size / resscale
 			## Controls the view count behavior.
 			var view_count: int = buffers.get_view_count()
-			## Array holding uniform data for render scene data.
-			var render_scene_data: RenderSceneData = render_data.get_render_scene_data()
 
 			if (
 				size != last_size
@@ -1047,6 +1058,7 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 
 
 func retrieve_position_queries(data: PackedByteArray) -> void:
+	print("SunshineCloudsGD: Retrieving point sample position queries.")
 	## Controls the idx behavior.
 	var idx: int = 0
 	while idx < 512 and position_query_callables.size() > 0:
@@ -1254,10 +1266,10 @@ func update_matrices(
 	## Controls the cam inv proj behavior.
 	var cam_inv_proj: Projection = cam_proj.inverse()
 
+	## Controls the cam inv view tr behavior.
 	var cam_inv_view_tr: Transform3D = render_scene_data.get_cam_transform()
 	## Controls the cam view tr behavior.
 	var cam_view_tr: Transform3D = cam_inv_view_tr.inverse()
-	## Controls the cam inv view tr behavior.
 
 	## Controls the cam view behavior.
 	var cam_view: Projection = Projection(cam_view_tr)
@@ -1330,6 +1342,7 @@ func update_matrices(
 
 
 func update_lights() -> void:
+	print("SunshineCloudsGD: Passing updated light structure to storage buffers.")
 	lights_updated = false
 
 	if directional_lights_data.size() == 0:
@@ -1387,6 +1400,7 @@ func update_lights() -> void:
 
 
 func encode_sample_points() -> void:
+	print("SunshineCloudsGD: Encoding sample points into storage buffer.")
 	position_querying = true
 
 	## Array holding uniform data for float data.
