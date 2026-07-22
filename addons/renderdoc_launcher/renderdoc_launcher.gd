@@ -24,7 +24,7 @@ func _enter_tree() -> void:
 	button = button_res.instantiate()
 	add_control_to_container(EditorPlugin.CONTAINER_TOOLBAR, button)
 
-	var container = button.get_node("Panel/HBoxContainer")
+	var container: HBoxContainer = button.get_node("Panel/HBoxContainer")
 	container.get_node("RenderDocButton").pressed.connect(open_renderdoc)
 
 	option_button = container.get_node("OptionButton")
@@ -52,7 +52,7 @@ func open_renderdoc() -> void:
 		printerr("Failed to create renderdoc_path.tres.")
 		return
 
-	var path = get_renderdoc_path()
+	var path: String = get_renderdoc_path()
 	if path == null or path == "" or not FileAccess.file_exists(path):
 		print("RenderDoc path empty or not valid, please locate RenderDoc on your system.")
 		print(
@@ -68,15 +68,15 @@ func execute_renderdoc() -> void:
 		printerr("Error creating settings.cap for RenderDoc!")
 		return
 
-	var file = FileAccess.open(renderdoc_settings_path, FileAccess.READ)
+	var file: FileAccess = FileAccess.open(renderdoc_settings_path, FileAccess.READ)
 	if not file:
 		printerr("Error opening settings.cap!")
 		return
 
-	var text = file.get_as_text()
-	var json = JSON.new()
-	var error = json.parse(text)
-	var data
+	var text: String = file.get_as_text()
+	var json: JSON = JSON.new()
+	var error: Error = json.parse(text)
+	var data: Dictionary
 
 	if error == OK:
 		data = json.data
@@ -86,11 +86,11 @@ func execute_renderdoc() -> void:
 					'--path "%s"' % ProjectSettings.globalize_path("res://")
 				)
 			1:
-				var current_scene = get_editor_interface().get_edited_scene_root()
+				var current_scene: Node = get_editor_interface().get_edited_scene_root()
 				if current_scene:
-					var scene_path = current_scene.scene_file_path
-					var abs_scene_path = ProjectSettings.globalize_path(scene_path)
-					var abs_project_path = ProjectSettings.globalize_path("res://")
+					var scene_path: String = current_scene.scene_file_path
+					var abs_scene_path: String = ProjectSettings.globalize_path(scene_path)
+					var abs_project_path: String = ProjectSettings.globalize_path("res://")
 					data["settings"]["commandLine"] = (
 						'--path "%s" --scene "%s"' % [abs_project_path, abs_scene_path]
 					)
@@ -114,7 +114,7 @@ func execute_renderdoc() -> void:
 	print("Launching RenderDoc.")
 
 	# Always globalize paths before passing them to external processes
-	var global_settings_path = ProjectSettings.globalize_path(renderdoc_settings_path)
+	var global_settings_path: String = ProjectSettings.globalize_path(renderdoc_settings_path)
 	OS.create_process(get_renderdoc_path(), [global_settings_path])
 
 
@@ -130,7 +130,7 @@ func save_path(path: String) -> void:
 			printerr("RenderDoc can only be launched from a desktop platform!")
 			return
 
-	var error = ResourceSaver.save(renderdoc_path, path_tres)
+	var error: Error = ResourceSaver.save(renderdoc_path, path_tres)
 	if error != OK:
 		printerr("Error saving RenderDoc path in renderdoc_path.tres!")
 		return
@@ -156,7 +156,7 @@ func create_renderdoc_path_tres() -> Error:
 	# Safely check if the file exists without locking the file handle
 	if not FileAccess.file_exists(path_tres):
 		renderdoc_path = RenderDocPath.new()
-		var error = ResourceSaver.save(renderdoc_path, path_tres)
+		var error: Error = ResourceSaver.save(renderdoc_path, path_tres)
 		if error == OK:
 			print("Created renderdoc_path.tres.")
 		return error
@@ -167,17 +167,19 @@ func create_renderdoc_path_tres() -> Error:
 
 func create_renderdoc_settings() -> Error:
 	if not FileAccess.file_exists(renderdoc_settings_path):
-		var default_path = "res://addons/renderdoc_launcher/res/default_settings.cap"
+		var default_path: String = "res://addons/renderdoc_launcher/res/default_settings.cap"
 
 		if not FileAccess.file_exists(default_path):
 			printerr("Default Renderdoc settings not found!")
 			return ERR_FILE_NOT_FOUND
 
-		var default_settings_file = FileAccess.open(default_path, FileAccess.READ)
-		var content = default_settings_file.get_as_text()
+		var default_settings_file: FileAccess = FileAccess.open(default_path, FileAccess.READ)
+		var content: String = default_settings_file.get_as_text()
 		default_settings_file.close()
 
-		var renderdoc_settings_file = FileAccess.open(renderdoc_settings_path, FileAccess.WRITE)
+		var renderdoc_settings_file: FileAccess = FileAccess.open(
+			renderdoc_settings_path, FileAccess.WRITE
+		)
 		if not renderdoc_settings_file:
 			return ERR_FILE_CANT_WRITE
 

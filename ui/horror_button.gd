@@ -356,7 +356,9 @@ func _process(delta: float) -> void:
 			tilt_target = Vector2(normalized_x, normalized_y)
 
 			if is_clicking:
-				offset_transform_scale = offset_transform_scale.lerp(press_scale, press_speed * delta)
+				offset_transform_scale = offset_transform_scale.lerp(
+					press_scale, press_speed * delta
+				)
 
 				if is_instance_valid(text_label):
 					var target_text_pos := (
@@ -370,7 +372,9 @@ func _process(delta: float) -> void:
 			else:
 				var pitch_scale_modifier: float = 1.0 - (absf(normalized_y) * 0.04)
 				var final_target_scale := hover_scale * Vector2(1.0, pitch_scale_modifier)
-				offset_transform_scale = offset_transform_scale.lerp(final_target_scale, response_speed * delta)
+				offset_transform_scale = offset_transform_scale.lerp(
+					final_target_scale, response_speed * delta
+				)
 
 				if is_instance_valid(text_label):
 					var target_text_pos := (
@@ -387,14 +391,17 @@ func _process(delta: float) -> void:
 
 		else:
 			current_hover_intensity = move_toward(current_hover_intensity, 0.0, 3.0 * delta)
-			offset_transform_scale = offset_transform_scale.lerp(original_scale, response_speed * delta)
+			offset_transform_scale = offset_transform_scale.lerp(
+				original_scale, response_speed * delta
+			)
 
 			if is_instance_valid(text_label):
 				text_label.position = text_label.position.lerp(Vector2.ZERO, response_speed * delta)
 				text_label.scale = text_label.scale.lerp(Vector2(1.0, 1.0), response_speed * delta)
 
-		offset_transform_rotation = \
-			lerpf(offset_transform_rotation, target_rotation, response_speed * delta)
+		offset_transform_rotation = lerpf(
+			offset_transform_rotation, target_rotation, response_speed * delta
+		)
 		current_tilt = current_tilt.lerp(tilt_target, response_speed * delta)
 
 		if not is_mouse_over and current_hover_intensity < 0.001:
@@ -453,7 +460,9 @@ func _process(delta: float) -> void:
 		glitch_timer -= delta
 		if glitch_timer <= 0.0:
 			if is_glitching:
-				print("HorrorButton: Glitch execution window complete. Restoring text string profiles.")
+				print(
+					"HorrorButton: Glitch execution window complete. Restoring text string profiles."
+				)
 				is_glitching = false
 				text_label.text = original_button_text
 				glitch_timer = randf_range(min_glitch_time, max_glitch_time)

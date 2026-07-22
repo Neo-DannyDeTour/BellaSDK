@@ -12,8 +12,16 @@ var remapping_button: Button = null
 
 ## List of all input actions available for the player to remap in the UI.
 var my_actions: Array[String] = [
-	"forward", "backward", "left", "right", "jump", 
-	"crouch", "sprint", "interact", "flashlight", "zoom"
+	"forward",
+	"backward",
+	"left",
+	"right",
+	"jump",
+	"crouch",
+	"sprint",
+	"interact",
+	"flashlight",
+	"zoom"
 ]
 
 ## Container that holds the generated list of remappable actions.

@@ -249,11 +249,14 @@ func _update(
 	# --- DOWNSAMPLER ---
 	context.compute_list_add_barrier(compute_list)
 	var ratio: float = float(map_size) / float(cpu_map_size)
-	pipelines[&"downsample"].call(
-		context,
-		compute_list,
-		# pad2
-		RenderingContext.create_push_constant([int(cascade_index), float(ratio), 0.0, 0.0])  # pad1
+	(
+		pipelines[&"downsample"]
+		.call(
+			context,
+			compute_list,
+			# pad2
+			RenderingContext.create_push_constant([int(cascade_index), float(ratio), 0.0, 0.0])  # pad1
+		)
 	)
 
 
