@@ -20,10 +20,6 @@ layout(binding = 7) uniform LightsBuffer {
     PointEffector pointEffectors[64];
 };
 
-layout(binding = 8, std140) uniform SceneDataBlock {
-    SceneData data;
-    SceneData prev_data;
-} scene_data_block;
 
 
 // Helpers
@@ -227,9 +223,6 @@ vec4 sampleAllAtmospherics(
 
 void main() {
     // Prevent shader from executing on SDFGI or Shadow map passes
-    if ((scene_data_block.data.flags & SCENE_DATA_FLAGS_IN_SHADOW_PASS) != 0u) {
-        return;
-    }
 
     ivec2 uv = ivec2(gl_GlobalInvocationID.xy);
     ivec2 lowres_size = ivec2(genericData.data.raster_size);
@@ -302,12 +295,12 @@ void main() {
             // Sky bypass for the depth buffer
             linear_depth = 400000.0;
         } else {
-            vec4 view = scene_data_block.data.inv_projection_matrix * vec4(depthUV * 2.0 - 1.0, depth, 1.0);
+            vec4 view = genericData.data.cam_inv_projection * vec4(depthUV * 2.0 - 1.0, depth, 1.0);
             view.xyz /= view.w;
             linear_depth = length(view.xyz);
 
             // Optional fallback if linear_depth exceeds z_far significantly
-            if (linear_depth >= scene_data_block.data.z_far) {
+            if (linear_depth >= genericData.data.z_far) {
                 linear_depth = 400000.0;
             }
         }

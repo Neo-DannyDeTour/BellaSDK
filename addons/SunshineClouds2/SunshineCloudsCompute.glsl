@@ -41,10 +41,6 @@ layout(binding = 16, std430) restrict buffer SamplePointsBuffer {
 };
 
 
-layout(binding = 17, std140) uniform SceneDataBlock {
-	SceneData data;
-	SceneData prev_data;
-} scene_data_block;
 
 // Our push constant
 // layout(push_constant, std430) uniform Params {

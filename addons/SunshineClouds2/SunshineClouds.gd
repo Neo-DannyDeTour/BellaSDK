@@ -392,39 +392,39 @@ func initialize_compute() -> void:
 	# Setup resources
 	if not dither_noise:
 		dither_noise = ResourceLoader.load(
-            "res://addons/SunshineClouds2/NoiseTextures/bluenoise_Dither.png"
+			"res://addons/SunshineClouds2/NoiseTextures/bluenoise_Dither.png"
 		)
 	if not height_gradient:
 		height_gradient = ResourceLoader.load(
-            "res://addons/SunshineClouds2/NoiseTextures/HeightGradient.tres"
+			"res://addons/SunshineClouds2/NoiseTextures/HeightGradient.tres"
 		)
 	if not extra_large_noise_patterns:
 		extra_large_noise_patterns = ResourceLoader.load(
-            "res://addons/SunshineClouds2/NoiseTextures/ExtraLargeScaleNoise.tres"
+			"res://addons/SunshineClouds2/NoiseTextures/ExtraLargeScaleNoise.tres"
 		)
 	if not large_scale_noise:
 		large_scale_noise = ResourceLoader.load(
-            "res://addons/SunshineClouds2/NoiseTextures/LargeScaleNoise.tres"
+			"res://addons/SunshineClouds2/NoiseTextures/LargeScaleNoise.tres"
 		)
 	if not medium_scale_noise:
 		medium_scale_noise = ResourceLoader.load(
-            "res://addons/SunshineClouds2/NoiseTextures/MediumScaleNoise.tres"
+			"res://addons/SunshineClouds2/NoiseTextures/MediumScaleNoise.tres"
 		)
 	if not small_scale_noise:
 		small_scale_noise = ResourceLoader.load(
-            "res://addons/SunshineClouds2/NoiseTextures/SmallScaleNoise.tres"
+			"res://addons/SunshineClouds2/NoiseTextures/SmallScaleNoise.tres"
 		)
 	if not curl_noise:
 		curl_noise = ResourceLoader.load(
-            "res://addons/SunshineClouds2/NoiseTextures/curl_noise_varied.tga"
+			"res://addons/SunshineClouds2/NoiseTextures/curl_noise_varied.tga"
 		)
 	if not compute_shader:
 		compute_shader = ResourceLoader.load(
-            "res://addons/SunshineClouds2/SunshineCloudsCompute.glsl"
+			"res://addons/SunshineClouds2/SunshineCloudsCompute.glsl"
 		)
 	if not pre_pass_compute_shader:
 		pre_pass_compute_shader = ResourceLoader.load(
-            "res://addons/SunshineClouds2/SunshineCloudsPreCompute.glsl"
+			"res://addons/SunshineClouds2/SunshineCloudsPreCompute.glsl"
 		)
 
 	## The compute shader resource for the display shader file.
@@ -432,17 +432,17 @@ func initialize_compute() -> void:
 
 	if msaa_mode == RenderingServer.ViewportMSAA.VIEWPORT_MSAA_DISABLED:
 		post_pass_compute_shader = ResourceLoader.load(
-            "res://addons/SunshineClouds2/SunshineCloudsPostCompute.glsl"
+			"res://addons/SunshineClouds2/SunshineCloudsPostCompute.glsl"
 		)
 		display_shader_file = ResourceLoader.load(
-            "res://addons/SunshineClouds2/SunshineCloudsDisplay.glsl"
+			"res://addons/SunshineClouds2/SunshineCloudsDisplay.glsl"
 		)
 	else:
 		post_pass_compute_shader = ResourceLoader.load(
-            "res://addons/SunshineClouds2/SunshineCloudsPostCompute.msaa.glsl"
+			"res://addons/SunshineClouds2/SunshineCloudsPostCompute.msaa.glsl"
 		)
 		display_shader_file = ResourceLoader.load(
-            "res://addons/SunshineClouds2/SunshineCloudsDisplay.msaa.glsl"
+			"res://addons/SunshineClouds2/SunshineCloudsDisplay.msaa.glsl"
 		)
 
 	if (
@@ -600,13 +600,17 @@ func initialize_raster_pipelines(color_texture: RID, depth_texture: RID) -> void
 func _render_callback(_effect_callback_type: int, render_data: RenderData) -> void:
 	## The render scene data holding current camera, projection, and depth states.
 	var render_scene_data: RenderSceneData = render_data.get_render_scene_data()
-	
+
 	if render_scene_data:
 		## The active camera projection matrix provided by the renderer.
 		var camera_projection: Projection = render_scene_data.get_cam_projection()
-		
+
 		# Abort if rendering a shadow map or SDFGI cascade to prevent compute bleed/NaN explosion.
-		if camera_projection.is_orthogonal():
+		if (
+			camera_projection.is_orthogonal()
+			or render_data.get_camera_attributes() == null
+			or render_scene_data.get_view_count() > 1
+		):
 			return
 
 	if rd == null:
@@ -698,7 +702,7 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 							)
 						)
 
-					general_data_buffer = rd.uniform_buffer_create(1024)
+					general_data_buffer = rd.uniform_buffer_create(1040)
 
 					## Controls the depthformat behavior.
 					var depthformat: RDTextureFormat = rd.texture_get_format(depth_image)
@@ -851,15 +855,6 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 					point_sample_data_uniform.add_id(point_sample_data_buffer)
 					uniforms_array.append(point_sample_data_uniform)
 
-					## Array holding uniform data for camera data.
-					var camera_data: RID = render_scene_data.get_uniform_buffer()
-					## Array holding uniform data for camera data uniform.
-					var camera_data_uniform: RDUniform = RDUniform.new()
-					camera_data_uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_UNIFORM_BUFFER
-					camera_data_uniform.binding = 17
-					camera_data_uniform.add_id(camera_data)
-					uniforms_array.append(camera_data_uniform)
-
 					uniform_sets.append(rd.uniform_set_create(uniforms_array, shader, 0))
 
 					# Postpass Uniforms
@@ -945,15 +940,6 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 					postpass_light_data_uniform.binding = 7
 					postpass_light_data_uniform.add_id(light_data_buffer)
 					postpass_uniforms_array.append(postpass_light_data_uniform)
-
-					## Array holding uniform data for postpass camera data uniform.
-					var postpass_camera_data_uniform: RDUniform = RDUniform.new()
-					postpass_camera_data_uniform.uniform_type = (
-						RenderingDevice.UNIFORM_TYPE_UNIFORM_BUFFER
-					)
-					postpass_camera_data_uniform.binding = 8
-					postpass_camera_data_uniform.add_id(camera_data)
-					postpass_uniforms_array.append(postpass_camera_data_uniform)
 
 					uniform_sets.append(
 						rd.uniform_set_create(postpass_uniforms_array, postpass_shader, 0)
@@ -1086,7 +1072,7 @@ func update_matrices(
 ) -> void:
 	## Array holding uniform data for float data.
 	var float_data: PackedFloat32Array = PackedFloat32Array()
-	float_data.resize(192)
+	float_data.resize(196)
 	## Controls the idx behavior.
 	var idx: int = 0
 
@@ -1260,6 +1246,8 @@ func update_matrices(
 	float_data[idx] = 1.0 if accumulation_is_a else 0.0
 	idx += 1
 	float_data[idx] = int(pow(2.0, float(resolution_scale)))
+	idx += 1
+	float_data[idx] = 4000.0
 
 	## Controls the cam proj behavior.
 	var cam_proj: Projection = render_scene_data.get_view_projection(view_index)
@@ -1292,7 +1280,7 @@ func update_matrices(
 	_has_prev_matrices = true
 
 	## Controls the mat idx behavior.
-	var mat_idx: int = 64
+	var mat_idx: int = 68
 	for mat in [
 		cam_proj,
 		cam_inv_proj,
