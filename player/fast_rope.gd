@@ -2,46 +2,84 @@
 class_name FastRope
 extends StaticBody3D
 
-# Keep track of all ropes globally using a Godot 4 static variable
+## A global registry of all fast ropes in the level, used for tracking or managing rope interactions globally.
 static var all_fast_ropes: Array[FastRope] = []
 
 @export_category("Fast Rope Settings")
 
-## CHANGE THIS to make the rope longer/shorter without using Transform Scale!
+## CHANGE THIS to make the rope longer/shorter without using Transform Scale! Controls the physical and visual height.
 @export var rope_length: float = 10.0:
 	set(value):
 		rope_length = value
 		if is_node_ready():
 			_update_rope_size()
 
+## How fast the player moves up or down the rope in meters per second.
 @export var ascend_speed: float = 15.0
+
+## The upward velocity applied to the player when they detach at the very top of the rope.
 @export var launch_velocity: float = 7.7
-## How far down from the crosshair the text appears
+
+## How far down from the crosshair the text appears. Used to keep the UI from blocking the center view.
 @export var label_offset_amount: float = 0.35
+
+## The horizontal distance the player is offset from the center of the rope while climbing.
 @export var climb_radius: float = 0.6
 
 @export_category("Audio Settings")
+
+## The sound played once when the player grabs the rope.
 @export var attach_sound: AudioStream
+
+## The looping sound played while the player is moving on the rope.
 @export var slide_sound: AudioStream
+
+## The sound played once when the player lets go of the rope.
 @export var detach_sound: AudioStream
 
+## A reference to the player currently attached to this rope. Null if vacant.
 var attached_player: CharacterBody3D = null
+
+## Tracks how long the player has been attached to prevent instant accidental detachment.
 var attach_timer: float = 0.0
+
+## The cached X coordinate the player is locked to while climbing.
 var locked_x: float = 0.0
+
+## The cached Z coordinate the player is locked to while climbing.
 var locked_z: float = 0.0
 
-# Track whether the player is currently going up or down
+## Track whether the player is currently going up or down.
 var is_descending: bool = false
+
+## The keyboard or gamepad key required to interact with the rope, updated dynamically.
 var interact_key_name: String = "E"
+
+## A cooldown timer preventing the player from rapidly re-attaching to the rope.
 var interaction_cooldown: float = 0.0
 
+## The audio player used for instantaneous sounds like grabbing or letting go.
 @onready var one_shot_audio: AudioStreamPlayer3D = $OneShotAudio
+
+## The audio player used for continuous sliding sounds.
 @onready var loop_audio: AudioStreamPlayer3D = $LoopAudio
+
+## The physical collision boundary used to detect interactions and block movement.
 @onready var collision_shape: CollisionShape3D = $CollisionShape3D
+
+## A spatial marker designating the top end of the rope for detach calculations.
 @onready var top_marker: Marker3D = $TopMarker
+
+## The component responsible for handling player gaze and interaction logic.
 @onready var interact_comp: InteractComponent = $InteractComponent
+
+## The component that visually outlines the rope when looked at.
 @onready var highlight_comp: HighlightComponent = $HighlightComponent
+
+## The floating 3D text displaying the interact prompt.
 @onready var interact_label: Label3D = $Label3D
+
+## The visual geometry of the rope itself.
 @onready var rope_mesh: MeshInstance3D = $MeshInstance3D
 
 
@@ -165,6 +203,7 @@ func _on_interacted(character: CharacterBody3D) -> void:
 
 
 func attach(player: CharacterBody3D) -> void:
+	print("FastRope: attach() called. Locking player to rope trajectory.")
 	attached_player = player
 	attach_timer = 0.0
 
@@ -188,10 +227,11 @@ func attach(player: CharacterBody3D) -> void:
 	if not is_descending:
 		attached_player.global_position.y += 0.15
 
-	# 2. Instantly disable the StairController to prevent 1-frame execution lag
-	var stair_ctrl: Node = attached_player.find_child("StairController", true, false)
-	if is_instance_valid(stair_ctrl):
-		stair_ctrl.is_enabled = false
+	# 2. Instantly disable the StairController via direct property access, bypassing find_child
+	if "stair_controller" in attached_player:
+		var stair_ctrl: Node = attached_player.get("stair_controller") as Node
+		if is_instance_valid(stair_ctrl):
+			stair_ctrl.set("is_enabled", false)
 
 	attached_player.add_collision_exception_with(self)
 
@@ -199,9 +239,6 @@ func attach(player: CharacterBody3D) -> void:
 		interact_label.hide()
 	if highlight_comp:
 		highlight_comp.suppress(true)
-
-	if attached_player.has_method("enter_fast_rope"):
-		attached_player.enter_fast_rope()
 
 	if attached_player.has_method("enter_fast_rope"):
 		attached_player.enter_fast_rope()
@@ -220,15 +257,17 @@ func attach(player: CharacterBody3D) -> void:
 
 
 func detach(reached_top: bool) -> void:
+	print("FastRope: detach() called. Releasing player.")
 	if not attached_player:
 		return
 
 	interaction_cooldown = 0.5
 
-	# Re-enable the StairController instantly
-	var stair_ctrl: Node = attached_player.find_child("StairController", true, false)
-	if is_instance_valid(stair_ctrl):
-		stair_ctrl.is_enabled = true
+	# Re-enable the StairController via direct property access, bypassing find_child
+	if "stair_controller" in attached_player:
+		var stair_ctrl: Node = attached_player.get("stair_controller") as Node
+		if is_instance_valid(stair_ctrl):
+			stair_ctrl.set("is_enabled", true)
 
 	attached_player.remove_collision_exception_with(self)
 

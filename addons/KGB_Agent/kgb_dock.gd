@@ -2,18 +2,37 @@
 extends Control
 
 # --- UI Elements ---
+
+## The SpinBox controlling how many atomic gameplay beats are generated per sequence.
 var atom_spinbox: SpinBox
+
+## The SpinBox controlling the percentage chance of merging two atoms together.
 var merge_spinbox: SpinBox
+
+## The button that triggers the random sequence generation logic.
 var generate_btn: Button
+
+## The text area displaying the locally generated sequence outline.
 var sequence_display: RichTextLabel
+
+## The text input field where the user provides level context for the AI.
 var context_input: TextEdit
+
+## The button that sends the generated sequence and context to the Gemini API.
 var ask_ai_btn: Button
+
+## The text area displaying the final response from the AI.
 var ai_output: RichTextLabel
+
+## The node responsible for handling the asynchronous HTTP POST requests to the API.
 var http_request: HTTPRequest
 
+## The cached API key loaded from the local configuration file.
 var api_key: String = ""
 
 # --- The 55 Gameplay Atoms ---
+
+## The core dictionary defining the 55 fundamental gameplay atoms for generation.
 var gameplay_atoms: Dictionary = {
 	1: "Tutorial",
 	2: "Story beat",
@@ -73,7 +92,9 @@ var gameplay_atoms: Dictionary = {
 }
 
 # --- Backtracking Modifiers ---
-var backtracking_options: Array = [
+
+## A list of design modifiers appended if the sequence rolls a backtracking atom.
+var backtracking_options: Array[String] = [
 	"Add new enemies.",
 	"Add new obstacles and puzzles.",
 	"Change of route: Route changes slightly (HL2:EP1 railway) or map gradually opens (RE2 Remake).",
@@ -93,14 +114,17 @@ var backtracking_options: Array = [
 	"Competitive component: Neon White style speed-running of familiar areas."
 ]
 
-var current_sequence: Array = []
+## The locally cached array holding the text for the current generated sequence.
+var current_sequence: Array[String] = []
+
+## A flag identifying whether the current sequence requires backtracking logic.
 var sequence_has_backtracking: bool = false
 
 
 func _ready() -> void:
 	# 1. SETUP HTTP NODE
 	if has_node("HTTPRequest"):
-		http_request = $HTTPRequest
+		http_request = $HTTPRequest as HTTPRequest
 	else:
 		http_request = HTTPRequest.new()
 		add_child(http_request)
@@ -145,15 +169,18 @@ func _on_generate_pressed() -> void:
 	sequence_has_backtracking = false
 	sequence_display.text = "Generated Sequence:\n"
 
-	for i in range(int(atom_spinbox.value)):
+	var atom_count: int = int(atom_spinbox.value)
+	var merge_chance: float = merge_spinbox.value
+
+	for i: int in range(atom_count):
 		var id: int = randi_range(1, 55)
-		var beat: String = gameplay_atoms.get(id, "Unknown")
+		var beat: String = gameplay_atoms.get(id, "Unknown") as String
 		if id == 31:
 			sequence_has_backtracking = true
 
-		if randf() * 100.0 <= merge_spinbox.value:
+		if randf() * 100.0 <= merge_chance:
 			var id2: int = randi_range(1, 55)
-			beat += " + " + gameplay_atoms.get(id2, "Unknown")
+			beat += " + " + (gameplay_atoms.get(id2, "Unknown") as String)
 			if id2 == 31:
 				sequence_has_backtracking = true
 
@@ -207,7 +234,12 @@ func _on_ask_ai_pressed() -> void:
 		ai_output.text = "HTTP Error: " + str(error)
 
 
-func _on_http_request_completed(result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+func _on_http_request_completed(
+	result: int, 
+	response_code: int, 
+	_headers: PackedStringArray, 
+	body: PackedByteArray
+) -> void:
 	if result != HTTPRequest.RESULT_SUCCESS:
 		ai_output.text = "HTTP Request Failed. Result code: " + str(result)
 		return
@@ -221,10 +253,11 @@ func _on_http_request_completed(result: int, response_code: int, _headers: Packe
 			ai_output.text = "Error: Invalid JSON response."
 			return
 
+		var json_dict: Dictionary = json as Dictionary
 		if (
-			not json.has("candidates")
-			or typeof(json["candidates"]) != TYPE_ARRAY
-			or json["candidates"].is_empty()
+			not json_dict.has("candidates")
+			or typeof(json_dict["candidates"]) != TYPE_ARRAY
+			or (json_dict["candidates"] as Array).is_empty()
 		):
 			ai_output.text = "Error: JSON response missing 'candidates'."
 			return
@@ -237,9 +270,9 @@ func _on_http_request_completed(result: int, response_code: int, _headers: Packe
 		var content: Dictionary = candidate["content"]
 		if (
 			typeof(content) != TYPE_DICTIONARY
-			or not content.has("parts")
-			or typeof(content["parts"]) != TYPE_ARRAY
-			or content["parts"].is_empty()
+			or not (content as Dictionary).has("parts")
+			or typeof((content as Dictionary)["parts"]) != TYPE_ARRAY
+			or ((content as Dictionary)["parts"] as Array).is_empty()
 		):
 			ai_output.text = "Error: JSON response missing 'parts'."
 			return
@@ -247,13 +280,13 @@ func _on_http_request_completed(result: int, response_code: int, _headers: Packe
 		var part: Dictionary = content["parts"][0]
 		if (
 			typeof(part) != TYPE_DICTIONARY
-			or not part.has("text")
-			or typeof(part["text"]) != TYPE_STRING
+			or not (part as Dictionary).has("text")
+			or typeof((part as Dictionary)["text"]) != TYPE_STRING
 		):
 			ai_output.text = "Error: JSON response missing 'text'."
 			return
 
-		ai_output.text = part["text"]
+		ai_output.text = (part as Dictionary)["text"] as String
 	else:
 		ai_output.text = "API Error: " + str(response_code) + "\n" + response
 
@@ -261,27 +294,31 @@ func _on_http_request_completed(result: int, response_code: int, _headers: Packe
 # --- UI BUILDER (Separated for clarity) ---
 func _build_ui() -> void:
 	# (Clean old UI first)
-	for child in get_children():
+	for child: Node in get_children():
 		if child != http_request:
 			child.queue_free()
 
 	var vbox: VBoxContainer = VBoxContainer.new()
-	vbox.set_anchors_preset(PRESET_FULL_RECT)
+	vbox.set_anchors_preset(Control.PRESET_FULL_RECT)
 	add_child(vbox)
 
 	var hbox: HBoxContainer = HBoxContainer.new()
 	vbox.add_child(hbox)
 
 	atom_spinbox = SpinBox.new()
-	atom_spinbox.value = 5
-	hbox.add_child(Label.new())
-	hbox.get_child(-1).text = "Atoms:"
+	atom_spinbox.value = 5.0
+	
+	var label_atoms: Label = Label.new()
+	label_atoms.text = "Atoms:"
+	hbox.add_child(label_atoms)
 	hbox.add_child(atom_spinbox)
 
 	merge_spinbox = SpinBox.new()
-	merge_spinbox.value = 15
-	hbox.add_child(Label.new())
-	hbox.get_child(-1).text = " Merge%:"
+	merge_spinbox.value = 15.0
+	
+	var label_merge: Label = Label.new()
+	label_merge.text = " Merge%:"
+	hbox.add_child(label_merge)
 	hbox.add_child(merge_spinbox)
 
 	generate_btn = Button.new()
@@ -290,13 +327,12 @@ func _build_ui() -> void:
 	vbox.add_child(generate_btn)
 
 	sequence_display = RichTextLabel.new()
-	sequence_display.custom_minimum_size.y = 150
+	sequence_display.custom_minimum_size.y = 150.0
 	vbox.add_child(sequence_display)
 
 	context_input = TextEdit.new()
 	context_input.placeholder_text = "Level Context (Genre, Setting, etc)..."
-	context_input.custom_minimum_size.y = 100
-	# This forces the text to drop to the next line instead of scrolling forever
+	context_input.custom_minimum_size.y = 100.0
 	context_input.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
 	vbox.add_child(context_input)
 
@@ -306,13 +342,9 @@ func _build_ui() -> void:
 	vbox.add_child(ask_ai_btn)
 
 	ai_output = RichTextLabel.new()
-	ai_output.size_flags_vertical = SIZE_EXPAND_FILL
-
-	# These two lines allow you to click-drag to select and right-click to copy!
+	ai_output.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	ai_output.selection_enabled = true
 	ai_output.context_menu_enabled = true
-
-	# Optional: Keep the text readable
 	ai_output.bbcode_enabled = true
 
 	vbox.add_child(ai_output)

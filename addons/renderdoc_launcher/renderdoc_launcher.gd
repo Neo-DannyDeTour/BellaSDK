@@ -1,18 +1,33 @@
 @tool
 extends EditorPlugin
 
+## The packed scene containing the UI layout for the RenderDoc toolbar button.
 static var button_res: PackedScene = preload(
 	"res://addons/renderdoc_launcher/res/renderdoc_button.tscn"
 )
+
+## The file path where the RenderDoc executable location is saved as a custom resource.
 static var path_tres: String = "res://addons/renderdoc_launcher/res/renderdoc_path.tres"
+
+## The file path where the dynamic capture settings for RenderDoc are stored.
 static var renderdoc_settings_path: String = "res://addons/renderdoc_launcher/res/settings.cap"
 
+## An unused thread variable, potentially intended for asynchronous background launching.
 var thread: Thread
+
+## The loaded custom resource that holds OS-specific executable paths for RenderDoc.
 var renderdoc_path: RenderDocPath
+
+## The instantiated UI button control added to the Godot editor toolbar.
 var button: Control
+
+## The native file dialog used to locate the RenderDoc executable on the host system.
 var file_dialog: FileDialog
+
+## The dropdown menu used to select whether to capture the Main scene or the Current scene.
 var option_button: OptionButton
 
+## A flag tracking whether the toolbar button has been successfully added to the editor.
 var added: bool = false
 
 
@@ -21,17 +36,17 @@ func _enter_tree() -> void:
 		printerr("Failed to create renderdoc_path.tres.")
 		return
 
-	button = button_res.instantiate()
+	button = button_res.instantiate() as Control
 	add_control_to_container(EditorPlugin.CONTAINER_TOOLBAR, button)
 
-	var container: HBoxContainer = button.get_node("Panel/HBoxContainer")
+	var container: HBoxContainer = button.get_node("Panel/HBoxContainer") as HBoxContainer
 	container.get_node("RenderDocButton").pressed.connect(open_renderdoc)
 
-	option_button = container.get_node("OptionButton")
+	option_button = container.get_node("OptionButton") as OptionButton
 	option_button.add_item("Main")
 	option_button.add_item("Current")
 
-	file_dialog = button.get_node("FileDialog")
+	file_dialog = button.get_node("FileDialog") as FileDialog
 	file_dialog.file_selected.connect(save_path)
 	file_dialog.title = "RenderDoc Location"
 
@@ -79,7 +94,7 @@ func execute_renderdoc() -> void:
 	var data: Dictionary
 
 	if error == OK:
-		data = json.data
+		data = json.data as Dictionary
 		match option_button.get_selected_id():
 			0:
 				data["settings"]["commandLine"] = (
@@ -115,7 +130,7 @@ func execute_renderdoc() -> void:
 
 	# Always globalize paths before passing them to external processes
 	var global_settings_path: String = ProjectSettings.globalize_path(renderdoc_settings_path)
-	OS.create_process(get_renderdoc_path(), [global_settings_path])
+	OS.create_process(get_renderdoc_path(), PackedStringArray([global_settings_path]))
 
 
 func save_path(path: String) -> void:
@@ -142,11 +157,11 @@ func save_path(path: String) -> void:
 func get_renderdoc_path() -> String:
 	match OS.get_name():
 		"Windows":
-			return renderdoc_path.win_path
+			return renderdoc_path.win_path as String
 		"macOS":
-			return renderdoc_path.osx_path
+			return renderdoc_path.osx_path as String
 		"Linux", "FreeBSD", "NetBSD", "OpenBSD", "BSD":
-			return renderdoc_path.x11_path
+			return renderdoc_path.x11_path as String
 		_:
 			printerr("RenderDoc can only be launched from a desktop platform!")
 			return ""
@@ -161,7 +176,7 @@ func create_renderdoc_path_tres() -> Error:
 			print("Created renderdoc_path.tres.")
 		return error
 	else:
-		renderdoc_path = ResourceLoader.load(path_tres)
+		renderdoc_path = ResourceLoader.load(path_tres) as RenderDocPath
 		return OK if renderdoc_path != null else ERR_FILE_CANT_OPEN
 
 

@@ -5,17 +5,33 @@ extends Area3D
 enum SpawnMode { TIME_BASED, WAIT_FOR_KILL }
 
 @export_category("Target Spawner")
+
+## The scene to instantiate and pool for targets.
 @export var target_scene: PackedScene
+
+## Determines if targets spawn based on a timer or only when previous targets are killed.
 @export var spawn_mode: SpawnMode = SpawnMode.TIME_BASED
+
+## The maximum number of targets allowed to be active at once in this volume.
 @export var max_active_targets: int = 3
+
+## The total number of target instances created at startup to recycle without runtime instantiation.
 @export var pool_size: int = 10
+
+## How long to wait before cycling or spawning new targets in TIME_BASED mode.
 @export var spawn_interval_seconds: float = 2.0
 
 @export_category("Spawn Limits")
+
+## If true, ignores total_targets_to_spawn and keeps spawning targets infinitely.
 @export var spawn_infinitely: bool = true
+
+## The absolute maximum number of targets this volume will ever spawn if not infinite.
 @export var total_targets_to_spawn: int = 10
 
 @export_category("Volume Bounds")
+
+## The 3D boundaries defining the area where targets can spawn.
 @export var volume_size: Vector3 = Vector3(2.0, 2.0, 2.0):
 	set(value):
 		volume_size = value
@@ -23,37 +39,53 @@ enum SpawnMode { TIME_BASED, WAIT_FOR_KILL }
 		_update_visualizer()
 
 @export_category("Behavior")
+
+## If greater than zero, active targets will teleport to a new random location on this interval.
 @export var randomize_position_timer: float = 0.0
 
 @export_category("Visualizer Controls")
-@export
-var visualizer_shape_type: EditorTriggerVisualizer.ShapeType = \
+
+## The shape drawn in the editor to represent the spawn volume.
+@export var visualizer_shape_type: EditorTriggerVisualizer.ShapeType = \
 	EditorTriggerVisualizer.ShapeType.BOX:
 	set(value):
 		visualizer_shape_type = value
 		_update_visualizer()
 
+## The color of the debug visualization in the editor.
 @export var visualizer_color: Color = Color(0.9, 0.5, 0.1, 0.4):
 	set(value):
 		visualizer_color = value
 		_update_visualizer()
 
+## The label shown on the visualizer in the editor.
 @export var visualizer_text: String = "TRIGGER":
 	set(value):
 		visualizer_text = value
 		_update_visualizer()
 
+## If true, the editor visualization will also render during gameplay for debugging.
 @export var show_visualizer_in_game: bool = false:
 	set(value):
 		show_visualizer_in_game = value
 		_update_visualizer()
 
-# Declared the missing spawn_area variable with proper static typing
+## The collision shape node defining the physical bounds of the spawn area.
 var spawn_area: CollisionShape3D = null
+
+## A list of targets currently spawned and active in the world.
 var active_targets: Array[Node3D] = []
+
+## A list of pooled targets waiting to be spawned.
 var inactive_targets: Array[Node3D] = []
+
+## Tracks elapsed time for TIME_BASED spawning.
 var spawn_timer: float = 0.0
+
+## Tracks elapsed time for target repositioning.
 var jump_timer: float = 0.0
+
+## A running counter of how many targets have been spawned by this volume.
 var targets_spawned_so_far: int = 0
 
 
@@ -202,9 +234,10 @@ func _spawn_target() -> void:
 
 	if target.has_method("reset"):
 		target.reset()
-	else:
-		var health_comp: Node = target.find_child("HealthComponent", true, false)
-		if health_comp != null and health_comp.has_method("reset"):
+	# OPTIMIZATION: Replaced recursive find_child with direct property check
+	elif "health_component" in target:
+		var health_comp: Node = target.get("health_component") as Node
+		if is_instance_valid(health_comp) and health_comp.has_method("reset"):
 			health_comp.reset()
 
 	active_targets.append(target)

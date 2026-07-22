@@ -34,7 +34,8 @@ func _ready() -> void:
 		interact_component.unfocused.connect(_on_unfocus)
 		print("HighlightComponent: Successfully connected to InteractComponent.")
 	else:
-		push_warning("HighlightComponent: No InteractComponent assigned or found in parent!")
+		#push_warning("HighlightComponent: No InteractComponent assigned or found in parent!")
+		print("HighlightComponent: No InteractComponent assigned or found in parent!")
 
 
 func _on_focus() -> void:
@@ -51,7 +52,7 @@ func _on_unfocus() -> void:
 
 
 func suppress(state: bool) -> void:
-	print("HighlightComponent: Suppress state changed to: ", state)
+	#print("HighlightComponent: Suppress state changed to: ", state)
 	_is_suppressed = state
 	if _is_suppressed:
 		_update_materials(null)

@@ -55,8 +55,10 @@ var _is_player_flying: bool = false
 # --- WATER TRACKING ---
 var submerged: bool = false
 var current_water_node: Node3D = null
-
 var _grab_time: int = 0
+
+## Cached array of child probe nodes used to calculate buoyancy in water without recursive scene tree lookups.
+var _probes: Array[Node] = []
 
 
 func _ready() -> void:
@@ -69,6 +71,10 @@ func _ready() -> void:
 		label = $Label3D
 	if not probe_container:
 		probe_container = $ProbeContainer
+
+	# Cache the probe children once at startup to avoid runtime lookup spikes
+	if is_instance_valid(probe_container):
+		_probes = probe_container.get_children()
 
 	collision_layer = 1
 	collision_mask = 1
@@ -385,22 +391,28 @@ func _physics_process(_delta: float) -> void:
 
 	submerged = false
 
-	if is_in_water and is_instance_valid(current_water_node) and is_instance_valid(probe_container):
-		var probe_count: int = probe_container.get_child_count()
-		var probe_mass: float = mass / float(probe_count)
+	# REPLACED get_children() WITH CACHED _probes ARRAY
+	if is_in_water and is_instance_valid(current_water_node):
+		var probe_count: int = _probes.size()
+		if probe_count > 0:
+			var probe_mass: float = mass / float(probe_count)
 
-		for p: Node3D in probe_container.get_children():
-			var wave_height: float = current_water_node.get_wave_height_at_pos(p.global_position)
-			var depth: float = wave_height - p.global_position.y
+			for node: Node in _probes:
+				var p: Node3D = node as Node3D
+				if not is_instance_valid(p):
+					continue
+					
+				var wave_height: float = current_water_node.get_wave_height_at_pos(p.global_position)
+				var depth: float = wave_height - p.global_position.y
 
-			if depth > 0.0:
-				submerged = true
-				var depth_multiplier: float = clampf(depth * 4.0, 0.0, 4.0)
-				var force: Vector3 = (
-					Vector3.UP * probe_mass * float_force * gravity * depth_multiplier
-				)
-				var offset: Vector3 = p.global_position - global_position
-				apply_force(force, offset)
+				if depth > 0.0:
+					submerged = true
+					var depth_multiplier: float = clampf(depth * 4.0, 0.0, 4.0)
+					var force: Vector3 = (
+						Vector3.UP * probe_mass * float_force * gravity * depth_multiplier
+					)
+					var offset: Vector3 = p.global_position - global_position
+					apply_force(force, offset)
 
 	if submerged and not is_held:
 		apply_central_force(-linear_velocity * water_drag * mass)
