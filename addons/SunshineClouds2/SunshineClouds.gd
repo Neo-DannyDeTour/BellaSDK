@@ -2,70 +2,74 @@
 class_name SunshineCloudsGD
 extends CompositorEffect
 
-## Controls the refresh action behavior.
+## Triggers a full refresh of the compute shader pipeline and rendering parameters.
 @export_tool_button("Refresh Compute", "Clear") var refresh_action: Callable = refresh_compute
 
 @export_group("Basic Settings")
+## Defines the global coverage threshold of the clouds. Higher values mean more sky is covered.
 @export_range(0, 1) var clouds_coverage: float = 0.874
-## Controls the thickness and opacity of the clouds density.
+## Controls the overall thickness and opacity of the volumetric clouds.
 @export_range(0, 20) var clouds_density: float = 0.14
-## Controls the thickness and opacity of the atmospheric density.
+## Adjusts the visual density and scattering of the atmosphere surrounding the clouds.
 @export_range(0, 2) var atmospheric_density: float = 0.503
-## Controls the thickness and opacity of the lighting density.
+## Multiplies the intensity of light scattering through the cloud volumes.
 @export_range(0, 10) var lighting_density: float = 0.982
-## Controls the fog effect ground behavior.
+## Determines how strongly the cloud fog blends with the ground level geometry.
 @export_range(0, 1) var fog_effect_ground: float = 1.0
-## Controls the use environment fog behavior.
+## Blends the cloud atmospheric scattering with the scene's active environment fog.
 @export_range(0, 1) var use_environment_fog: float = 0.0
 
 @export_subgroup("Colors")
+## Controls the directional bias of light scattering (forward vs. backward scattering).
 @export_range(0, 1) var clouds_anisotropy: float = 0.16
-## Controls the clouds powder behavior.
+## Adjusts the "powder" effect, emphasizing dark edges facing the light source for a fluffy look.
 @export_range(0, 1) var clouds_powder: float = 0.5
-## The cloud ambient color used for cloud rendering.
+## The base ambient color applied to the unlit areas of the clouds.
 @export var cloud_ambient_color: Color = Color(0.761, 0.784, 0.824, 1.0)
-## Controls the cloud ambient tint behavior.
+## A secondary tint applied to the ambient color for stylistic adjustments.
 @export var cloud_ambient_tint: Color = Color(0.133, 0.2, 0.243, 1.0)
-## The atmosphere color used for cloud rendering.
+## The color of the atmospheric scattering behind and around the clouds.
 @export var atmosphere_color: Color = Color(1.0, 1.0, 1.0, 1.0)
-## The sampled environment fog color used for cloud rendering.
+## The sampled environment fog color used to integrate clouds with scene fog.
 @export var sampled_environment_fog_color: Color = Color(0.518, 0.553, 0.608, 1.0)
-## The ambient occlusion color used for cloud rendering.
+## The color used for the deepest, most dense shadowed areas within the clouds.
 @export var ambient_occlusion_color: Color = Color(1.0, 0.0, 0.0, 1.0)
 
 @export_subgroup("Structure")
+## Defines how quickly the temporal accumulation history decays over frames.
 @export_range(0, 1) var accumulation_decay: float = 0.7
-## The extra large noise scale texture map applied to the clouds.
+## The scaling factor for the largest 3D volumetric noise defining the macro-structure.
 @export_range(100, 1000000) var extra_large_noise_scale: float = 320000.0
-## The large noise scale texture map applied to the clouds.
+## The scaling factor for the large structural noise map applied to the clouds.
 @export_range(100, 500000) var large_noise_scale: float = 120000.0
-## The medium noise scale texture map applied to the clouds.
+## The scaling factor for the medium structural noise map applied to the clouds.
 @export_range(100, 100000) var medium_noise_scale: float = 20000.0
-## The small noise scale texture map applied to the clouds.
+## The scaling factor for the small detail noise map applied to the clouds.
 @export_range(100, 10000) var small_noise_scale: float = 8500.0
-## Controls the clouds sharpness behavior.
+## Sharpens the edges of the clouds, making them look less wispy and more solid.
 @export_range(0, 2) var clouds_sharpness: float = 0.746
-## The intensity multiplier for the clouds detail power effect.
+## Multiplier for the intensity of the high-frequency detail noise.
 @export_range(0, 3) var clouds_detail_power: float = 1.075
-## The curl noise strength texture map applied to the clouds.
+## The strength of the curl noise distortion applied to the cloud edges.
 @export_range(0, 50000) var curl_noise_strength: float = 4500.0
-## Controls the lighting sharpness behavior.
+## Controls how sharply light transitions from illuminated to shadowed within the cloud.
 @export_range(0, 2) var lighting_sharpness: float = 0.38
-## Controls the wind swept range behavior.
+## The vertical range affected by the wind sweep distortion effect.
 @export_range(0, 1) var wind_swept_range: float = 0.54
-## The intensity multiplier for the wind swept strength effect.
+## The horizontal strength of the wind shearing effect on the cloud shapes.
 @export_range(0, 5000) var wind_swept_strength: float = 0.0
-## Controls the cloud floor behavior.
+## The starting altitude (in meters) of the cloud layer.
 @export var cloud_floor: float = 1500.0
-## Controls the cloud ceiling behavior.
+## The ending altitude (in meters) of the cloud layer.
 @export var cloud_ceiling: float = 25000.0
 
 @export_subgroup("Performance")
+## The maximum number of raymarching steps taken to render the clouds.
 @export var max_step_count: float = 300.0
-## Controls the max lighting steps behavior.
+## The maximum number of steps taken when calculating internal cloud lighting/shadows.
 @export var max_lighting_steps: float = 32.0
 
-## The scaling factor applied to the resolution scale.
+## The internal resolution scale for the compute shader to optimize performance.
 @export_enum("Native", "Half", "Quarter", "Eighth") var resolution_scale: int = 1:
 	get:
 		return resolution_scale
@@ -74,77 +78,85 @@ extends CompositorEffect
 		last_size = Vector2i.ZERO
 		lights_updated = true
 
-## Controls the lod bias behavior.
+## Controls the mipmap Level of Detail (LOD) bias for texture sampling.
 @export_range(0, 2) var lod_bias: float = 1.0
 
 @export_subgroup("Noise Textures")
-@export var dither_noise: Texture3D
-## Controls the height gradient behavior.
+## The 2D blue noise texture used to dither raymarching steps and reduce banding.
+@export var dither_noise: Texture2D
+## A 2D gradient texture used to influence cloud density based on altitude.
 @export var height_gradient: Texture2D
-## The extra large noise patterns texture map applied to the clouds.
+## The 2D noise texture shaping the massive macro-structures of the cloud layout.
 @export var extra_large_noise_patterns: Texture2D
-
-## The large scale noise texture map applied to the clouds.
+## The 3D noise texture shaping the primary large structures of the clouds.
 @export var large_scale_noise: Texture3D
-## The medium scale noise texture map applied to the clouds.
+## The 3D noise texture adding medium-sized details to the cloud forms.
 @export var medium_scale_noise: Texture3D
-## The small scale noise texture map applied to the clouds.
+## The 3D noise texture responsible for the finest wispy details on the cloud edges.
 @export var small_scale_noise: Texture3D
-## The curl noise texture map applied to the clouds.
+## The 3D curl noise texture used to distort edges and simulate turbulence.
 @export var curl_noise: Texture3D
 
 @export_group("Advanced Settings")
 @export_subgroup("Visuals")
+## The speed at which the dither pattern animates over time to smooth temporal noise.
 @export_range(0, 1000) var dither_speed: float = 15.111
-## The intensity multiplier for the blur power effect.
+## The intensity of the blur applied during the upscaling or post-processing pass.
 @export_range(0, 20) var blur_power: float = 2.0
-## Controls the blur quality behavior.
+## Adjusts the sample count/quality of the blur pass.
 @export_range(0, 6) var blur_quality: float = 1.0
 
 @export_subgroup("Reflections")
+## The global shader parameter name used to pass cloud reflection data.
 @export var reflections_globalshaderparam: String = ""
 
 @export_subgroup("Performance")
+## The minimum distance a ray must travel before taking its first step.
 @export var min_step_distance: float = 400.0
-## Controls the max step distance behavior.
+## The maximum distance a ray is allowed to travel while marching through the volume.
 @export var max_step_distance: float = 500.0
-## Controls the lighting travel distance behavior.
+## The maximum distance a secondary light ray will travel to compute internal shadows.
 @export var lighting_travel_distance: float = 10000.0
 
 @export_subgroup("Mask")
+## If true, uses the extra large noise pattern strictly as an exclusion mask.
 @export var extra_large_used_as_mask: bool = false
-## Controls the mask width km behavior.
+## The physical width (in kilometers) of the applied cloud mask.
 @export var mask_width_km: float = 32.0
 
 @export_group("Compute Shaders")
+## The GLSL shader file executed before the main raymarching pass.
 @export var pre_pass_compute_shader: RDShaderFile
-## The compute shader resource for the compute shader.
+## The main GLSL raymarching compute shader file.
 @export var compute_shader: RDShaderFile
-## The compute shader resource for the post pass compute shader.
+## The GLSL shader file executed after the main pass for temporal accumulation/upscaling.
 @export var post_pass_compute_shader: RDShaderFile
 
 @export_group("Internal Use")
+## The global offset applied to cloud rendering to handle floating-point precision on large maps.
 @export var origin_offset: Vector3 = Vector3.ZERO
 
 @export_subgroup("Positions")
+## The global wind direction vector affecting cloud movement.
 @export var wind_direction: Vector3 = Vector3.ZERO
 
-## The 3D world coordinate for the extra large scale clouds position.
+## The offset position for sampling the extra large noise layer.
 var extra_large_scale_clouds_position: Vector3 = Vector3.ZERO
-## The 3D world coordinate for the large scale clouds position.
+## The offset position for sampling the large noise layer.
 var large_scale_clouds_position: Vector3 = Vector3.ZERO
-## The 3D world coordinate for the medium scale clouds position.
+## The offset position for sampling the medium noise layer.
 var medium_scale_clouds_position: Vector3 = Vector3.ZERO
-## The 3D world coordinate for the detail clouds position.
+## The offset position for sampling the small detail noise layer.
 var detail_clouds_position: Vector3 = Vector3.ZERO
-## Controls the current time behavior.
+## The running time variable used to animate shaders and dither offsets.
 var current_time: float = 0.0
 
 @export_subgroup("Lights")
+## Packed uniform data containing directional light vectors and properties.
 @export var directional_lights_data: Array[Vector4] = []
-## Array holding uniform data for point lights data.
+## Packed uniform data containing point light positions and properties.
 @export var point_lights_data: Array[Vector4] = []
-## Array holding uniform data for point effector data.
+## Packed uniform data containing effector positions used to carve out cloud shapes.
 @export var point_effector_data: Array[Vector4] = []
 
 ## The 3D world coordinate for the position queries.
@@ -284,7 +296,6 @@ func _notification(what: int) -> void:
 
 
 func clear_compute() -> void:
-	print("SunshineCloudsGD: Freeing rendering resources.")
 	if rd:
 		if pipeline.is_valid():
 			rd.free_rid(pipeline)
@@ -351,7 +362,6 @@ func clear_compute() -> void:
 
 
 func initialize_compute() -> void:
-	print("SunshineCloudsGD: Initializing compute shaders and buffers.")
 	first_run = true
 	if not rd:
 		rd = RenderingServer.get_rendering_device()
@@ -389,61 +399,61 @@ func initialize_compute() -> void:
 	linear_sampler_state_no_repeat.repeat_w = RenderingDevice.SAMPLER_REPEAT_MODE_CLAMP_TO_EDGE
 	linear_sampler_no_repeat = rd.sampler_create(linear_sampler_state_no_repeat)
 
-	# Setup resources
+	# Setup resources with explicit static casts
 	if not dither_noise:
 		dither_noise = ResourceLoader.load(
-			"res://addons/SunshineClouds2/NoiseTextures/bluenoise_Dither.png"
-		)
+            "res://addons/SunshineClouds2/NoiseTextures/bluenoise_Dither.png"
+		) as Texture2D
 	if not height_gradient:
 		height_gradient = ResourceLoader.load(
-			"res://addons/SunshineClouds2/NoiseTextures/HeightGradient.tres"
-		)
+            "res://addons/SunshineClouds2/NoiseTextures/HeightGradient.tres"
+		) as Texture2D
 	if not extra_large_noise_patterns:
 		extra_large_noise_patterns = ResourceLoader.load(
-			"res://addons/SunshineClouds2/NoiseTextures/ExtraLargeScaleNoise.tres"
-		)
+            "res://addons/SunshineClouds2/NoiseTextures/ExtraLargeScaleNoise.tres"
+		) as Texture2D
 	if not large_scale_noise:
 		large_scale_noise = ResourceLoader.load(
-			"res://addons/SunshineClouds2/NoiseTextures/LargeScaleNoise.tres"
-		)
+            "res://addons/SunshineClouds2/NoiseTextures/LargeScaleNoise.tres"
+		) as Texture3D
 	if not medium_scale_noise:
 		medium_scale_noise = ResourceLoader.load(
-			"res://addons/SunshineClouds2/NoiseTextures/MediumScaleNoise.tres"
-		)
+            "res://addons/SunshineClouds2/NoiseTextures/MediumScaleNoise.tres"
+		) as Texture3D
 	if not small_scale_noise:
 		small_scale_noise = ResourceLoader.load(
-			"res://addons/SunshineClouds2/NoiseTextures/SmallScaleNoise.tres"
-		)
+            "res://addons/SunshineClouds2/NoiseTextures/SmallScaleNoise.tres"
+		) as Texture3D
 	if not curl_noise:
 		curl_noise = ResourceLoader.load(
-			"res://addons/SunshineClouds2/NoiseTextures/curl_noise_varied.tga"
-		)
+            "res://addons/SunshineClouds2/NoiseTextures/curl_noise_varied.tga"
+		) as Texture3D
 	if not compute_shader:
 		compute_shader = ResourceLoader.load(
-			"res://addons/SunshineClouds2/SunshineCloudsCompute.glsl"
-		)
+            "res://addons/SunshineClouds2/SunshineCloudsCompute.glsl"
+		) as RDShaderFile
 	if not pre_pass_compute_shader:
 		pre_pass_compute_shader = ResourceLoader.load(
-			"res://addons/SunshineClouds2/SunshineCloudsPreCompute.glsl"
-		)
+            "res://addons/SunshineClouds2/SunshineCloudsPreCompute.glsl"
+		) as RDShaderFile
 
 	## The compute shader resource for the display shader file.
 	var display_shader_file: RDShaderFile
 
 	if msaa_mode == RenderingServer.ViewportMSAA.VIEWPORT_MSAA_DISABLED:
 		post_pass_compute_shader = ResourceLoader.load(
-			"res://addons/SunshineClouds2/SunshineCloudsPostCompute.glsl"
-		)
+            "res://addons/SunshineClouds2/SunshineCloudsPostCompute.glsl"
+		) as RDShaderFile
 		display_shader_file = ResourceLoader.load(
-			"res://addons/SunshineClouds2/SunshineCloudsDisplay.glsl"
-		)
+            "res://addons/SunshineClouds2/SunshineCloudsDisplay.glsl"
+		) as RDShaderFile
 	else:
 		post_pass_compute_shader = ResourceLoader.load(
-			"res://addons/SunshineClouds2/SunshineCloudsPostCompute.msaa.glsl"
-		)
+            "res://addons/SunshineClouds2/SunshineCloudsPostCompute.msaa.glsl"
+		) as RDShaderFile
 		display_shader_file = ResourceLoader.load(
-			"res://addons/SunshineClouds2/SunshineCloudsDisplay.msaa.glsl"
-		)
+            "res://addons/SunshineClouds2/SunshineCloudsDisplay.msaa.glsl"
+		) as RDShaderFile
 
 	if (
 		not compute_shader
@@ -598,21 +608,6 @@ func initialize_raster_pipelines(color_texture: RID, depth_texture: RID) -> void
 
 
 func _render_callback(_effect_callback_type: int, render_data: RenderData) -> void:
-	## The render scene data holding current camera, projection, and depth states.
-	var render_scene_data: RenderSceneData = render_data.get_render_scene_data()
-
-	if render_scene_data:
-		## The active camera projection matrix provided by the renderer.
-		var camera_projection: Projection = render_scene_data.get_cam_projection()
-
-		# Abort if rendering a shadow map or SDFGI cascade to prevent compute bleed/NaN explosion.
-		if (
-			camera_projection.is_orthogonal()
-			or render_data.get_camera_attributes() == null
-			or render_scene_data.get_view_count() > 1
-		):
-			return
-
 	if rd == null:
 		initialize_compute()
 	elif (
@@ -641,6 +636,8 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 			var new_size: Vector2i = size / resscale
 			## Controls the view count behavior.
 			var view_count: int = buffers.get_view_count()
+			## Array holding uniform data for render scene data.
+			var render_scene_data: RenderSceneData = render_data.get_render_scene_data()
 
 			if (
 				size != last_size
@@ -702,7 +699,7 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 							)
 						)
 
-					general_data_buffer = rd.uniform_buffer_create(1040)
+					general_data_buffer = rd.uniform_buffer_create(1024)
 
 					## Controls the depthformat behavior.
 					var depthformat: RDTextureFormat = rd.texture_get_format(depth_image)
@@ -855,6 +852,15 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 					point_sample_data_uniform.add_id(point_sample_data_buffer)
 					uniforms_array.append(point_sample_data_uniform)
 
+					## Array holding uniform data for camera data.
+					var camera_data: RID = render_scene_data.get_uniform_buffer()
+					## Array holding uniform data for camera data uniform.
+					var camera_data_uniform: RDUniform = RDUniform.new()
+					camera_data_uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_UNIFORM_BUFFER
+					camera_data_uniform.binding = 17
+					camera_data_uniform.add_id(camera_data)
+					uniforms_array.append(camera_data_uniform)
+
 					uniform_sets.append(rd.uniform_set_create(uniforms_array, shader, 0))
 
 					# Postpass Uniforms
@@ -941,6 +947,15 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 					postpass_light_data_uniform.add_id(light_data_buffer)
 					postpass_uniforms_array.append(postpass_light_data_uniform)
 
+					## Array holding uniform data for postpass camera data uniform.
+					var postpass_camera_data_uniform: RDUniform = RDUniform.new()
+					postpass_camera_data_uniform.uniform_type = (
+						RenderingDevice.UNIFORM_TYPE_UNIFORM_BUFFER
+					)
+					postpass_camera_data_uniform.binding = 8
+					postpass_camera_data_uniform.add_id(camera_data)
+					postpass_uniforms_array.append(postpass_camera_data_uniform)
+
 					uniform_sets.append(
 						rd.uniform_set_create(postpass_uniforms_array, postpass_shader, 0)
 					)
@@ -989,6 +1004,7 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 
 			last_size = size
 
+			update_matrices(render_scene_data, new_size)
 			if lights_updated or directional_lights_data.size() == 0:
 				update_lights()
 
@@ -1005,8 +1021,6 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 			var y_groups: int = ((size.y - 1) / 8 / resscale) + 1
 
 			for view in range(view_count):
-				update_matrices(render_scene_data, new_size, view)
-
 				## Controls the prepass list behavior.
 				var prepass_list: int = rd.compute_list_begin()
 				rd.compute_list_bind_compute_pipeline(prepass_list, prepass_pipeline)
@@ -1044,7 +1058,6 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 
 
 func retrieve_position_queries(data: PackedByteArray) -> void:
-	print("SunshineCloudsGD: Retrieving point sample position queries.")
 	## Controls the idx behavior.
 	var idx: int = 0
 	while idx < 512 and position_query_callables.size() > 0:
@@ -1067,12 +1080,10 @@ func retrieve_position_queries(data: PackedByteArray) -> void:
 	position_resetting = false
 
 
-func update_matrices(
-	render_scene_data: RenderSceneData, new_size: Vector2i, view_index: int = 0
-) -> void:
+func update_matrices(render_scene_data: RenderSceneData, new_size: Vector2i) -> void:
 	## Array holding uniform data for float data.
 	var float_data: PackedFloat32Array = PackedFloat32Array()
-	float_data.resize(196)
+	float_data.resize(192)
 	## Controls the idx behavior.
 	var idx: int = 0
 
@@ -1246,18 +1257,15 @@ func update_matrices(
 	float_data[idx] = 1.0 if accumulation_is_a else 0.0
 	idx += 1
 	float_data[idx] = int(pow(2.0, float(resolution_scale)))
-	idx += 1
-	float_data[idx] = 4000.0
 
 	## Controls the cam proj behavior.
-	var cam_proj: Projection = render_scene_data.get_view_projection(view_index)
+	var cam_proj: Projection = render_scene_data.get_cam_projection()
 	## Controls the cam inv proj behavior.
 	var cam_inv_proj: Projection = cam_proj.inverse()
-
-	## Controls the cam inv view tr behavior.
-	var cam_inv_view_tr: Transform3D = render_scene_data.get_cam_transform()
 	## Controls the cam view tr behavior.
-	var cam_view_tr: Transform3D = cam_inv_view_tr.inverse()
+	var cam_view_tr: Transform3D = render_scene_data.get_cam_transform().inverse()
+	## Controls the cam inv view tr behavior.
+	var cam_inv_view_tr: Transform3D = cam_view_tr.inverse()
 
 	## Controls the cam view behavior.
 	var cam_view: Projection = Projection(cam_view_tr)
@@ -1280,7 +1288,7 @@ func update_matrices(
 	_has_prev_matrices = true
 
 	## Controls the mat idx behavior.
-	var mat_idx: int = 68
+	var mat_idx: int = 64
 	for mat in [
 		cam_proj,
 		cam_inv_proj,
@@ -1330,7 +1338,6 @@ func update_matrices(
 
 
 func update_lights() -> void:
-	print("SunshineCloudsGD: Passing updated light structure to storage buffers.")
 	lights_updated = false
 
 	if directional_lights_data.size() == 0:
@@ -1388,7 +1395,6 @@ func update_lights() -> void:
 
 
 func encode_sample_points() -> void:
-	print("SunshineCloudsGD: Encoding sample points into storage buffer.")
 	position_querying = true
 
 	## Array holding uniform data for float data.

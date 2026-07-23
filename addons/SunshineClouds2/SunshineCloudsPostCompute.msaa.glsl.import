@@ -1,0 +1,14 @@
+[remap]
+
+importer="glsl"
+type="RDShaderFile"
+uid="uid://cpef10h5lggny"
+path="res://.godot/imported/SunshineCloudsPostCompute.msaa.glsl-80be32b2c971150f963527b62159d785.res"
+
+[deps]
+
+source_file="res://addons/SunshineClouds2/SunshineCloudsPostCompute.msaa.glsl"
+dest_files=["res://.godot/imported/SunshineCloudsPostCompute.msaa.glsl-80be32b2c971150f963527b62159d785.res"]
+
+[params]
+
