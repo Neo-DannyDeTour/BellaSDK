@@ -25,6 +25,10 @@ var pipeline: RID
 var texture_rid: RID
 var buffer_rid: RID
 var uniform_set: RID
+## Holds the GPU texture RID for the generated noise. Needs manual cleanup.
+var noise_rd_rid: RID
+## Holds the GPU sampler RID. Needs manual cleanup.
+var sampler_rid: RID
 var active_fog_volume: FogVolume
 var is_initialized: bool = false
 var godot_texture: Texture3DRD
@@ -108,7 +112,7 @@ func _initialize_gpu() -> void:
 	empty_bytes.resize(BUFFER_SIZE)
 	buffer_rid = rd.storage_buffer_create(BUFFER_SIZE, empty_bytes)
 
-	var noise_rd_rid: RID = _create_rd_noise_texture(precomputed_noise)
+	noise_rd_rid = _create_rd_noise_texture(precomputed_noise)
 	assert(noise_rd_rid.is_valid(), "Failed to create GPU noise texture!")
 
 	var sampler_state := RDSamplerState.new()
@@ -118,7 +122,7 @@ func _initialize_gpu() -> void:
 	sampler_state.min_filter = RenderingDevice.SAMPLER_FILTER_LINEAR
 	sampler_state.mag_filter = RenderingDevice.SAMPLER_FILTER_LINEAR
 
-	var sampler_rid: RID = rd.sampler_create(sampler_state)
+	sampler_rid = rd.sampler_create(sampler_state)
 
 	var tex_uniform := RDUniform.new()
 	tex_uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
@@ -140,6 +144,31 @@ func _initialize_gpu() -> void:
 	assert(uniform_set.is_valid(), "SmokeManager: uniform_set_create returned null.")
 
 	is_initialized = true
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		_cleanup_gpu()
+
+
+func _cleanup_gpu() -> void:
+	print("SmokeManager: _cleanup_gpu() called. Freeing GPU resources to prevent VRAM leak.")
+	if not rd:
+		return
+	if pipeline.is_valid():
+		rd.free_rid(pipeline)
+	if shader.is_valid():
+		rd.free_rid(shader)
+	if buffer_rid.is_valid():
+		rd.free_rid(buffer_rid)
+	if texture_rid.is_valid():
+		rd.free_rid(texture_rid)
+	if noise_rd_rid.is_valid():
+		rd.free_rid(noise_rd_rid)
+	if sampler_rid.is_valid():
+		rd.free_rid(sampler_rid)
+	if uniform_set.is_valid():
+		rd.free_rid(uniform_set)
 
 
 func register_fog_volume(volume: FogVolume) -> void:

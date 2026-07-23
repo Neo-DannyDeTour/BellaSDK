@@ -60,3 +60,4 @@ gemini_pipe.py
 addons/terrain_3d/
 
 demo/
+venv/
