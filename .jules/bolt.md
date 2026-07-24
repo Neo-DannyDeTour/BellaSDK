@@ -1,0 +1,1 @@
+- Caching get_viewport().get_camera_3d() requires careful use of is_instance_valid() and checking against null to ensure the active camera is always returned without crashing or locking onto a freed node.
