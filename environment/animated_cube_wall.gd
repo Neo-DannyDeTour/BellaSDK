@@ -20,7 +20,7 @@ void vertex() {
 	float sine_val = 0.0;
 	float cx = grid_width / 2.0;
 	float cy = grid_height / 2.0;
-	
+
 	// INSTANCE_CUSTOM contains: (random_offset, x_index, y_index, unused)
 	float rand_offset = INSTANCE_CUSTOM.x;
 	float curr_x = INSTANCE_CUSTOM.y;
@@ -46,7 +46,7 @@ void vertex() {
 	}
 
 	VERTEX.z += sine_val * movement_amplitude;
-	
+
 	float intensity = (sine_val + 1.0) / 2.0;
 	COLOR = vec4(emissive_color * intensity, 1.0);
 }
@@ -77,35 +77,40 @@ void fragment() {
 		cube_spacing = value
 		_request_update()
 
-## Selects the sine wave pattern logic. Used to alter the visual behavior of the wall without changing data.
+## Selects the sine wave pattern logic.
+## Used to alter the visual behavior of the wall without changing data.
 @export var animation_mode: AnimationMode = AnimationMode.WAVE:
 	set(value):
 		animation_mode = value
 		print("AnimatedCubeWall: animation_mode changed to ", value)
 		_update_shader_uniforms()
 
-## Determines how fast the sine wave propagates over time. Used to speed up or slow down the wave effect.
+## Determines how fast the sine wave propagates over time.
+## Used to speed up or slow down the wave effect.
 @export var movement_speed: float = 2.0:
 	set(value):
 		movement_speed = value
 		print("AnimatedCubeWall: movement_speed changed to ", value)
 		_update_shader_uniforms()
 
-## Determines the maximum depth displacement. Used to scale the physical push/pull distance of the cubes.
+## Determines the maximum depth displacement.
+## Used to scale the physical push/pull distance of the cubes.
 @export var movement_amplitude: float = 1.0:
 	set(value):
 		movement_amplitude = value
 		print("AnimatedCubeWall: movement_amplitude changed to ", value)
 		_update_shader_uniforms()
 
-## Sets the baseline color of the cubes. Used to multiply against the sine intensity for glowing effects.
+## Sets the baseline color of the cubes.
+## Used to multiply against the sine intensity for glowing effects.
 @export var emissive_color: Color = Color(0.0, 0.8, 1.0, 1.0):
 	set(value):
 		emissive_color = value
 		print("AnimatedCubeWall: emissive_color changed to ", value)
 		_update_shader_uniforms()
 
-## An optional custom mesh to use instead of a basic box. Used if you want custom shapes like hexes or spheres.
+## An optional custom mesh to use instead of a basic box.
+## Used if you want custom shapes like hexes or spheres.
 @export var custom_mesh: Mesh = null:
 	set(value):
 		custom_mesh = value
@@ -155,7 +160,7 @@ func _generate_wall() -> void:
 	if mm == null:
 		mm = MultiMesh.new()
 		mm.transform_format = MultiMesh.TRANSFORM_3D
-		mm.use_custom_data = true # Critical: Allows passing unique data to the shader
+		mm.use_custom_data = true  # Critical: Allows passing unique data to the shader
 		mm.use_colors = true
 		_multi_mesh_instance.multimesh = mm
 
@@ -178,7 +183,7 @@ func _generate_wall() -> void:
 		if mm.mesh == null or not mm.mesh is BoxMesh:
 			var box: BoxMesh = BoxMesh.new()
 			mm.mesh = box
-	
+
 	# Apply material to the mesh
 	mm.mesh.surface_set_material(0, _shader_material)
 
@@ -190,15 +195,15 @@ func _generate_wall() -> void:
 		for y: int in range(grid_height):
 			var pos_x: float = (float(x) - float(grid_width) / 2.0 + 0.5) * cube_spacing
 			var pos_y: float = (float(y) - float(grid_height) / 2.0 + 0.5) * cube_spacing
-			
+
 			var tform: Transform3D = Transform3D()
 			tform = tform.translated(Vector3(pos_x, pos_y, 0.0))
 			mm.set_instance_transform(instance_id, tform)
-			
+
 			# Pass: Random Offset (x), Grid X (y), Grid Y (z), and an unused w component
 			var custom_data: Color = Color(randf() * PI * 2.0, float(x), float(y), 0.0)
 			mm.set_instance_custom_data(instance_id, custom_data)
-			
+
 			instance_id += 1
 
 
@@ -210,4 +215,6 @@ func _update_shader_uniforms() -> void:
 	_shader_material.set_shader_parameter("movement_amplitude", movement_amplitude)
 	_shader_material.set_shader_parameter("grid_width", float(grid_width))
 	_shader_material.set_shader_parameter("grid_height", float(grid_height))
-	_shader_material.set_shader_parameter("emissive_color", Vector3(emissive_color.r, emissive_color.g, emissive_color.b))
+	_shader_material.set_shader_parameter(
+		"emissive_color", Vector3(emissive_color.r, emissive_color.g, emissive_color.b)
+	)
