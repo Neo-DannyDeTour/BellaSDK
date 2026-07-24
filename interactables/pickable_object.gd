@@ -401,8 +401,10 @@ func _physics_process(_delta: float) -> void:
 				var p: Node3D = node as Node3D
 				if not is_instance_valid(p):
 					continue
-					
-				var wave_height: float = current_water_node.get_wave_height_at_pos(p.global_position)
+
+				var wave_height: float = current_water_node.get_wave_height_at_pos(
+					p.global_position
+				)
 				var depth: float = wave_height - p.global_position.y
 
 				if depth > 0.0:

@@ -78,13 +78,13 @@ const WATER_MESH_LOW: Mesh = preload("res://assets/ocean_waves/ocean/clipmap_low
 # ==========================================
 @export_group("Performance Parameters")
 ## simulation accuracy and detail but require more processing overhead.
-## Defines the resolution dimensions of the map. Higher values increase 
+## Defines the resolution dimensions of the map. Higher values increase
 @export_enum(
-	"128x128:128", 
-	"256x256:256", 
+	"128x128:128",
+	"256x256:256",
 	"1024x1024:1024",
-	"512x512:512", 
-) 
+	"512x512:512",
+)
 var map_size: int = 1024:
 	set(value):
 		map_size = value

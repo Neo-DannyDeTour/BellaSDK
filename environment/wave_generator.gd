@@ -251,7 +251,7 @@ func _update(
 	var ratio: float = float(map_size) / float(cpu_map_size)
 	(
 		pipelines[&"downsample"]
-		.call(
+		. call(
 			context,
 			compute_list,
 			# pad2

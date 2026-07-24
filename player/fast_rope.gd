@@ -2,12 +2,14 @@
 class_name FastRope
 extends StaticBody3D
 
-## A global registry of all fast ropes in the level, used for tracking or managing rope interactions globally.
+## A global registry of all fast ropes in the level,
+## used for tracking or managing rope interactions globally.
 static var all_fast_ropes: Array[FastRope] = []
 
 @export_category("Fast Rope Settings")
 
-## CHANGE THIS to make the rope longer/shorter without using Transform Scale! Controls the physical and visual height.
+## CHANGE THIS to make the rope longer/shorter without using Transform Scale!
+## Controls the physical and visual height.
 @export var rope_length: float = 10.0:
 	set(value):
 		rope_length = value
@@ -20,7 +22,8 @@ static var all_fast_ropes: Array[FastRope] = []
 ## The upward velocity applied to the player when they detach at the very top of the rope.
 @export var launch_velocity: float = 7.7
 
-## How far down from the crosshair the text appears. Used to keep the UI from blocking the center view.
+## How far down from the crosshair the text appears.
+## Used to keep the UI from blocking the center view.
 @export var label_offset_amount: float = 0.35
 
 ## The horizontal distance the player is offset from the center of the rope while climbing.
