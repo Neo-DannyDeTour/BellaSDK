@@ -45,6 +45,8 @@ var attached_player: CharacterBody3D = null
 
 ## Tracks how long the player has been attached to prevent instant accidental detachment.
 var attach_timer: float = 0.0
+## Cached Camera3D reference to avoid expensive get_viewport().get_camera_3d() calls every frame.
+var _cached_camera: Camera3D = null
 
 ## The cached X coordinate the player is locked to while climbing.
 var locked_x: float = 0.0
@@ -140,7 +142,7 @@ func _update_rope_size() -> void:
 
 func _on_focused() -> void:
 	if not attached_player and interact_label:
-		var cam: Camera3D = get_viewport().get_camera_3d()
+		var cam: Camera3D = _get_camera()
 		if cam:
 			var mid_point: float = global_position.y + (rope_length / 2.0)
 			if cam.global_position.y > mid_point:
@@ -190,7 +192,7 @@ func _physics_process(delta: float) -> void:
 
 	# --- 2. DYNAMIC UI POSITIONING ---
 	elif interact_comp and interact_comp.is_currently_focused and interact_label.visible:
-		var cam: Camera3D = get_viewport().get_camera_3d()
+		var cam: Camera3D = _get_camera()
 		if cam:
 			var hit_point: Vector3 = interact_comp.last_hit_position
 			var cam_up: Vector3 = cam.global_transform.basis.y
@@ -298,3 +300,9 @@ func detach(reached_top: bool) -> void:
 		one_shot_audio.play()
 
 	attached_player = null
+
+
+func _get_camera() -> Camera3D:
+	if not is_instance_valid(_cached_camera):
+		_cached_camera = get_viewport().get_camera_3d() if get_viewport() else null
+	return _cached_camera

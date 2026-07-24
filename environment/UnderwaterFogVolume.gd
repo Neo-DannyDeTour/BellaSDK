@@ -11,6 +11,8 @@ extends FogVolume
 var _current_density: float = 1.0
 var _current_fade_dist: float = 3.0
 var _flashlight_controller: Node3D = null
+## Cached Camera3D reference to avoid expensive get_viewport().get_camera_3d() calls every frame.
+var _cached_camera: Camera3D = null
 
 
 func _ready() -> void:
@@ -44,10 +46,16 @@ func _process(delta: float) -> void:
 		var mat := self.material as ShaderMaterial
 		mat.set_shader_parameter("density", _current_density)
 
-		var cam: Camera3D = get_viewport().get_camera_3d() if get_viewport() else null
+		var cam: Camera3D = _get_camera()
 		if cam:
 			var fade_normal: Vector3 = cam.global_transform.basis.z * -1.0
 			var fade_pos: Vector3 = cam.global_transform.origin + (fade_normal * _current_fade_dist)
 			var fade_distance: float = fade_pos.dot(fade_normal)
 			var fade_plane := Vector4(fade_normal.x, fade_normal.y, fade_normal.z, fade_distance)
 			mat.set_shader_parameter("fade_plane", fade_plane)
+
+
+func _get_camera() -> Camera3D:
+	if not is_instance_valid(_cached_camera):
+		_cached_camera = get_viewport().get_camera_3d() if get_viewport() else null
+	return _cached_camera

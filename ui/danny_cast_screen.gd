@@ -13,6 +13,8 @@ extends Node3D
 # The visibility notifier will instantly correct this to false if the player is looking away.
 var _is_visible_on_screen: bool = true
 var _is_intended_to_play: bool = false
+## Cached Camera3D reference to avoid expensive get_viewport().get_camera_3d() calls every frame.
+var _cached_camera: Camera3D = null
 
 
 func _ready() -> void:
@@ -69,7 +71,7 @@ func _physics_process(_delta: float) -> void:
 
 
 func _check_distance_to_camera() -> void:
-	var camera: Camera3D = get_viewport().get_camera_3d()
+	var camera: Camera3D = _get_camera()
 	if not camera:
 		return
 
@@ -118,3 +120,9 @@ func _on_visibility_notifier_screen_exited() -> void:
 	print("VideoCast: _on_visibility_notifier_screen_exited() called.")
 	_is_visible_on_screen = false
 	_evaluate_playback_state()
+
+
+func _get_camera() -> Camera3D:
+	if not is_instance_valid(_cached_camera):
+		_cached_camera = get_viewport().get_camera_3d() if get_viewport() else null
+	return _cached_camera

@@ -57,7 +57,11 @@ var submerged: bool = false
 var current_water_node: Node3D = null
 var _grab_time: int = 0
 
-## Cached array of child probe nodes used to calculate buoyancy in water without recursive scene tree lookups.
+## Cached Camera3D reference to avoid expensive get_viewport().get_camera_3d() calls every frame.
+var _cached_camera: Camera3D = null
+
+## Cached array of child probe nodes used to calculate buoyancy in water without recursive scene
+## tree lookups.
 var _probes: Array[Node] = []
 
 
@@ -189,7 +193,7 @@ func drop() -> void:
 			linear_velocity = holder.velocity
 
 		var cam_forward := Vector3.FORWARD
-		var cam: Camera3D = get_viewport().get_camera_3d()
+		var cam: Camera3D = _get_camera()
 		if is_instance_valid(cam):
 			cam_forward = -cam.global_transform.basis.z
 
@@ -336,7 +340,7 @@ func _physics_process(_delta: float) -> void:
 		var player_pos: Vector3 = holder.global_position
 
 		var cam_forward := Vector3.FORWARD
-		var cam: Camera3D = get_viewport().get_camera_3d()
+		var cam: Camera3D = _get_camera()
 		if is_instance_valid(cam):
 			cam_forward = -cam.global_transform.basis.z
 
@@ -490,3 +494,9 @@ func _set_model_transparency(parent_node: Node, alpha: float) -> void:
 
 	for child: Node in parent_node.get_children():
 		_set_model_transparency(child, alpha)
+
+
+func _get_camera() -> Camera3D:
+	if not is_instance_valid(_cached_camera):
+		_cached_camera = get_viewport().get_camera_3d() if get_viewport() else null
+	return _cached_camera

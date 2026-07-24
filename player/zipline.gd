@@ -11,6 +11,8 @@ var current_player: CharacterBody3D = null
 var last_player_pos: Vector3 = Vector3.ZERO
 # NEW: Store this globally for the player to grab
 var current_travel_velocity: Vector3 = Vector3.ZERO
+## Cached Camera3D reference to avoid expensive get_viewport().get_camera_3d() calls every frame.
+var _cached_camera: Camera3D = null
 
 @onready var interact_component: InteractComponent = $InteractArea/InteractComponent
 @onready var highlight_component: HighlightComponent = $InteractArea/HighlightComponent
@@ -90,7 +92,7 @@ func _physics_process(delta: float) -> void:
 
 	# Label logic remains the same
 	if interact_component and interact_component.is_currently_focused and not player_on_zipline:
-		var cam: Camera3D = get_viewport().get_camera_3d()
+		var cam: Camera3D = _get_camera()
 		if cam and interact_label:
 			var hit_point_val: Variant = interact_component.last_hit_position
 			var hit_point: Vector3 = Vector3.ZERO
@@ -163,3 +165,9 @@ func force_grab_zipline(player: CharacterBody3D) -> void:
 
 		if highlight_component:
 			highlight_component.suppress(true)
+
+
+func _get_camera() -> Camera3D:
+	if not is_instance_valid(_cached_camera):
+		_cached_camera = get_viewport().get_camera_3d() if get_viewport() else null
+	return _cached_camera

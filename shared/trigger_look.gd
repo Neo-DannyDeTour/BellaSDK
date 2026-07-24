@@ -18,7 +18,8 @@ extends Area3D
 var _player_inside: bool = false
 var _current_look_time: float = 0.0
 var _has_triggered: bool = false
-var _camera: Camera3D
+## Cached Camera3D reference to avoid expensive get_viewport().get_camera_3d() calls every frame.
+var _cached_camera: Camera3D = null
 
 
 func _ready() -> void:
@@ -31,13 +32,11 @@ func _process(delta: float) -> void:
 	if not _player_inside or _has_triggered or not is_instance_valid(look_target):
 		return
 
-	if not _camera:
-		_camera = get_viewport().get_camera_3d()
-		if not _camera:
-			return
+	if not is_instance_valid(_get_camera()):
+		return
 
-	var dir_to_target := _camera.global_position.direction_to(look_target.global_position)
-	var camera_forward := -_camera.global_transform.basis.z
+	var dir_to_target := _cached_camera.global_position.direction_to(look_target.global_position)
+	var camera_forward := -_cached_camera.global_transform.basis.z
 	var dot_product := camera_forward.dot(dir_to_target)
 
 	if dot_product >= look_tolerance:
@@ -79,3 +78,9 @@ func _on_body_exited(body: Node3D) -> void:
 	if body is CharacterBody3D:
 		_player_inside = false
 		_current_look_time = 0.0
+
+
+func _get_camera() -> Camera3D:
+	if not is_instance_valid(_cached_camera):
+		_cached_camera = get_viewport().get_camera_3d() if get_viewport() else null
+	return _cached_camera

@@ -146,6 +146,8 @@ var _displacement_textures_update_time: float = 0.0
 var _texture_loading_index: int = 0
 var _is_reading_back: bool = false
 var _last_cam_pos: Vector3 = Vector3.ZERO
+## Cached Camera3D reference to avoid expensive get_viewport().get_camera_3d() calls every frame.
+var _cached_camera: Camera3D = null
 # ==========================================
 
 
@@ -180,7 +182,7 @@ func _process(delta: float) -> void:
 			return
 
 	# 3. Mach 3 Readback Freeze (Fixed for _physics_process desync)
-	var cam: Camera3D = get_viewport().get_camera_3d()
+	var cam: Camera3D = _get_camera()
 	if cam:
 		# Check raw distance rather than dividing by process delta to prevent physics-step spikes
 		var distance_moved: float = _last_cam_pos.distance_to(cam.global_position)
@@ -433,3 +435,9 @@ func force_reset_cascades() -> void:
 		p.should_generate_spectrum = true
 
 	_update_scales_uniform()
+
+
+func _get_camera() -> Camera3D:
+	if not is_instance_valid(_cached_camera):
+		_cached_camera = get_viewport().get_camera_3d() if get_viewport() else null
+	return _cached_camera
