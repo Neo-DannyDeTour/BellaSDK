@@ -32,7 +32,7 @@ func _ready() -> void:
 	if is_instance_valid(interact_component):
 		interact_component.focused.connect(_on_focus)
 		interact_component.unfocused.connect(_on_unfocus)
-		print("HighlightComponent: Successfully connected to InteractComponent.")
+		#print("HighlightComponent: Successfully connected to InteractComponent.")
 	else:
 		#push_warning("HighlightComponent: No InteractComponent assigned or found in parent!")
 		print("HighlightComponent: No InteractComponent assigned or found in parent!")

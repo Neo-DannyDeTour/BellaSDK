@@ -128,16 +128,17 @@ func _handle_climbing_and_swinging(delta: float, input_dir: Vector2) -> void:
 	var can_swing: bool = (
 		rope_root.get("is_swingable") as bool if "is_swingable" in rope_root else false
 	)
+	
+	# FIX: Set a more robust baseline swing fallback force.
 	var force_amount: float = (
-		rope_root.get("swing_force") as float if "swing_force" in rope_root else 300.0
+		rope_root.get("swing_force") as float if "swing_force" in rope_root else 1200.0 
 	)
 
 	var swing_angle_deg: float = rad_to_deg(acos(clampf(rope_up.dot(Vector3.UP), -1.0, 1.0)))
 	var is_actively_swinging: bool = (
 		swing_angle_deg > 5.0 or current_rope.angular_velocity.length() > 0.2
 	)
-	var center_grab_pos: Vector3 = current_rope.to_global(Vector3(0.0, rope_offset, 0.0))
-
+	
 	var look_dot_rope: float = look_dir.dot(rope_up)
 	var is_looking_up: bool = look_dot_rope > 0.6
 	var is_looking_down: bool = look_dot_rope < -0.2
@@ -176,22 +177,25 @@ func _handle_climbing_and_swinging(delta: float, input_dir: Vector2) -> void:
 	if is_sliding:
 		rope_offset -= (ROPE_CLIMB_SPEED * 7.0) * delta
 		rope_offset = clampf(rope_offset, bottom_limit, top_limit)
+		print("StateRope: Player sliding down rope.")
 	elif intent_is_climbing:
 		rope_offset += climb_direction * ROPE_CLIMB_SPEED * delta
 		rope_offset = clampf(rope_offset, bottom_limit, top_limit)
 		is_climbing_actively = true
+		print("StateRope: Player actively climbing rope.")
 	else:
 		if can_swing and input_dir.length() > 0.01:
 			current_rope.sleeping = false
+			
 			var flat_fwd := Vector3(look_dir.x, 0.0, look_dir.z).normalized()
 			var flat_right := flat_fwd.cross(Vector3.UP).normalized()
 			var push_dir := (flat_fwd * -input_dir.y) + (flat_right * input_dir.x)
 
 			if push_dir.length_squared() > 0.01:
-				current_rope.apply_force(
-					push_dir.normalized() * force_amount,
-					center_grab_pos - current_rope.global_position
-				)
+				# FIX: Apply a raw force disconnected from the mass multiplier.
+				var applied_force: Vector3 = push_dir.normalized() * force_amount
+				current_rope.apply_central_force(applied_force)
+				print("StateRope: Applying raw swing force: ", applied_force)
 
 	# 3. Audio & Camera Bob
 	var actually_moved: bool = absf(rope_offset - old_offset) > 0.001
@@ -202,13 +206,9 @@ func _handle_climbing_and_swinging(delta: float, input_dir: Vector2) -> void:
 		rope_root.handle_rope_sounds(play_climb_sound, play_slide_sound)
 
 	if is_climbing_actively and actually_moved:
-		# Fake velocity for the camera headbob
 		player.camera_controller.update_camera(delta, input_dir, false, false, false, 6.0)
 	else:
-		# Ease camera back to center
-		player.camera_controller.camera.transform.origin = (
-			player.camera_controller.camera.transform.origin.lerp(Vector3.ZERO, delta * 10.0)
-		)
+		player.camera_controller.update_camera(delta, Vector2.ZERO, false, false, false, 0.0)
 
 
 func _apply_rope_position(delta: float) -> void:

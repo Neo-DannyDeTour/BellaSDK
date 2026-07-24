@@ -32,9 +32,10 @@ shader_parameter/max_intensity = 0.5
 
 [node name="ClimableRope" type="Node3D" unique_id=1704021531 node_paths=PackedStringArray("rope_sound", "slide_sound")]
 script = ExtResource("1_icxtj")
-is_swingable = true
+swing_force = 1200.0
 rope_sound = NodePath("AudioStreamPlayer3D")
 slide_sound = NodePath("SlideSound")
+air_grab_radius = 0.5
 
 [node name="Anchor" type="StaticBody3D" parent="." unique_id=499367877]
 
@@ -62,9 +63,10 @@ shape = SubResource("CylinderShape3D_icxtj")
 script = ExtResource("2_ghbyf")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 
-[node name="HighlightComponent" type="Node" parent="RopeBody" unique_id=1788434797]
+[node name="HighlightComponent" type="Node" parent="RopeBody" unique_id=1788434797 node_paths=PackedStringArray("interact_component")]
 script = ExtResource("3_1f3ew")
 outline_material = SubResource("ShaderMaterial_pi0m5")
+interact_component = NodePath("../InteractComponent")
 metadata/_custom_type_script = "uid://dgig0tamvkdxx"
 
 [node name="Label3D" type="Label3D" parent="RopeBody" unique_id=1034509061]
