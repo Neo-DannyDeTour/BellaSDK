@@ -70,7 +70,7 @@ func initial_scene_load() -> void:
 	print("initial scene load")
 	await get_tree().create_timer(0.5).timeout
 	var version_info: Variant = Engine.get_version_info()
-	var file = FileAccess.open("res://addons/SunshineClouds2/CloudsInc.comp", FileAccess.READ_WRITE)
+	var file: FileAccess = FileAccess.open("res://addons/SunshineClouds2/CloudsInc.comp", FileAccess.READ_WRITE)
 	var content: Variant = file.get_as_text()
 	var major_index: Variant = content.find("GODOT_VERSION_MAJOR") + 20
 	var minor_index: Variant = content.find("GODOT_VERSION_MINOR") + 20
@@ -108,34 +108,34 @@ func find_scene_node() -> Node:
 func scene_changed(scene_root: Node) -> void:
 	print("Executing scene_changed: Resetting UI state and retrieving clouds driver.")
 	pause_updates = true
-	
+
 	# Safely check if UI elements are initialized before modifying them
 	if is_instance_valid(draw_weight_enable):
 		draw_weight_enable.button_pressed = false
-		
+
 	if is_instance_valid(draw_color_enable):
 		draw_color_enable.button_pressed = false
-		
+
 	last_image_data = PackedByteArray()
 	disable_draw_mode()
 	current_root = scene_root
 	driver = retrieve_clouds_driver(scene_root)
-	
+
 	if is_instance_valid(driver) and is_instance_valid(driver.clouds_resource):
 		driver.clouds_resource.mask_drawn_rid = RID()
-		
+
 		if is_instance_valid(mask_width):
 			mask_width.value = driver.clouds_resource.mask_width_km
-			
+
 		if is_instance_valid(use_mask_toggle):
 			use_mask_toggle.button_pressed = driver.clouds_resource.extra_large_used_as_mask
-			
+
 	if is_instance_valid(mask_file_path) and ResourceLoader.exists(mask_file_path.text):
 		var image: Image = ResourceLoader.load(mask_file_path.text) as Image
 		if image and is_instance_valid(mask_resolution):
 			print("Executing scene_changed: Retrieved mask scale successfully.")
 			mask_resolution.value = image.get_width()
-			
+
 	pause_updates = false
 	update_status_display()
 
@@ -156,13 +156,13 @@ func update_status_display() -> void:
 		if is_instance_valid(clouds_active_toggle):
 			clouds_active_toggle.disabled = false
 			clouds_active_toggle.button_pressed = driver.update_continuously
-			
+
 		if is_instance_valid(clouds_driver_refresh):
 			clouds_driver_refresh.visible = false
-			
+
 		if is_instance_valid(clouds_status_label):
 			clouds_status_label.text = "Clouds present"
-			
+
 		if is_instance_valid(mask_file_path) and ResourceLoader.exists(mask_file_path.text):
 			if is_instance_valid(mask_status_label):
 				mask_status_label.text = "Mask Detected: " + mask_file_path.text
@@ -177,19 +177,19 @@ func update_status_display() -> void:
 		if is_instance_valid(clouds_active_toggle):
 			clouds_active_toggle.disabled = true
 			clouds_active_toggle.button_pressed = false
-			
+
 		if is_instance_valid(clouds_driver_refresh):
 			clouds_driver_refresh.visible = true
-			
+
 		if is_instance_valid(draw_tools):
 			draw_tools.visible = false
-			
+
 		if is_instance_valid(clouds_driver_accordian_button):
 			clouds_driver_accordian_button.open_accordion()
-			
+
 		if is_instance_valid(clouds_status_label):
 			clouds_status_label.text = "Clouds not present"
-			
+
 	if is_instance_valid(driver) and is_instance_valid(driver.clouds_resource):
 		if is_instance_valid(use_mask_toggle):
 			use_mask_toggle.disabled = false
@@ -199,7 +199,7 @@ func update_status_display() -> void:
 			use_mask_toggle.button_pressed = false
 
 
-func update_mask_settings():
+func update_mask_settings() -> void:
 	if (pause_updates):
 		return
 	print("Update mask settings")
@@ -215,7 +215,7 @@ func update_mask_settings():
 	initialize_mask_texture()
 
 
-func initialize_mask_texture():
+func initialize_mask_texture() -> void:
 	if not rd:
 		rd = RenderingServer.get_rendering_device()
 		if not rd:
@@ -302,7 +302,7 @@ func clear_compute() -> void:
 		if current_drawing_mask.is_valid():
 			rd.free_rid(current_drawing_mask)
 		current_drawing_mask = RID()
-func execute_compute(delta : float, setvalue : bool, setvalue_color : Color):
+func execute_compute(delta : float, setvalue : bool, setvalue_color : Color) -> void:
 	if (!compute_enabled):
 		return
 	var resolution : float = mask_resolution.value
@@ -358,7 +358,7 @@ func complete_retrieval(data: PackedByteArray) -> void:
 	last_image_data = data
 
 
-func iterate_cursor_location(viewport_camera: Camera3D, event:InputEventMouse):
+func iterate_cursor_location(viewport_camera: Camera3D, event:InputEventMouse) -> void:
 	if (is_instance_valid(driver) && driver.clouds_resource != null):
 		current_clouds_height = (driver.clouds_resource.cloud_floor
 			+ driver.clouds_resource.cloud_ceiling) / 2.0
@@ -375,31 +375,31 @@ func iterate_cursor_location(viewport_camera: Camera3D, event:InputEventMouse):
 		draw_brush_tool.global_position.y = driver.clouds_resource.cloud_floor
 
 
-func begin_cursor_draw():
+func begin_cursor_draw() -> void:
 	drawing_currently = true
 
 
-func end_cursor_draw():
+func end_cursor_draw() -> void:
 	drawing_currently = false
 
 
-func scale_drawing_circle_up():
+func scale_drawing_circle_up() -> void:
 	draw_scale = min(draw_scale + (draw_scale * 0.1), 100000.0)
 	set_draw_scale()
 
 
-func scale_drawing_circle_down():
+func scale_drawing_circle_down() -> void:
 	draw_scale = max(draw_scale - (draw_scale * 0.1), 100.0)
 	set_draw_scale()
 
 
-func draw_mode_cancel():
+func draw_mode_cancel() -> void:
 	draw_weight_enable.button_pressed = false
 	draw_color_enable.button_pressed = false
 	disable_draw_mode()
 
 
-func set_draw_scale():
+func set_draw_scale() -> void:
 	if driver != null && driver.clouds_resource != null:
 		draw_brush_tool.scale = Vector3(draw_scale,
 			driver.clouds_resource.cloud_ceiling - driver.clouds_resource.cloud_floor, draw_scale)
@@ -413,13 +413,13 @@ func flood_fill() -> void:
 	RenderingServer.call_on_render_thread(execute_compute.bindv([0.0, true, result_color]))
 	await get_tree().create_timer(0.2).timeout
 	call_deferred("disable_draw_mode")
-func draw_weight_toggled():
+func draw_weight_toggled() -> void:
 	draw_color_enable.button_pressed = false
 	if draw_weight_enable.button_pressed && enable_draw_mode():
 		current_draw_mode = DRAWINGMODE.WEIGHT
 	else:
 		draw_weight_enable.button_pressed = false
-func draw_color_toggled():
+func draw_color_toggled() -> void:
 	draw_weight_enable.button_pressed = false
 	if draw_color_enable.button_pressed && enable_draw_mode():
 		current_draw_mode = DRAWINGMODE.COLOR
@@ -441,21 +441,21 @@ func enable_draw_mode() -> bool:
 func disable_draw_mode() -> void:
 	if is_instance_valid(draw_color_enable):
 		draw_color_enable.button_pressed = false
-		
+
 	if is_instance_valid(draw_weight_enable):
 		draw_weight_enable.button_pressed = false
-		
+
 	current_draw_mode = DRAWINGMODE.NONE
 	draw_inverted = false
-	
+
 	if drawing_currently:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		drawing_currently = false
-		
+
 	if is_instance_valid(draw_brush_tool):
 		draw_brush_tool.queue_free()
 		draw_brush_tool = null
-		
+
 	if last_image_data.size() > 0:
 		print("disable_draw_mode: Saved image to disc")
 		var image: Image = Image.create_from_data(mask_resolution.value, mask_resolution.value, false, Image.FORMAT_RGBAF, last_image_data)
@@ -463,12 +463,12 @@ func disable_draw_mode() -> void:
 		var editor_file_system: EditorFileSystem = EditorInterface.get_resource_filesystem()
 		editor_file_system.scan()
 		last_image_data = PackedByteArray()
-		
+
 		if is_instance_valid(driver) and is_instance_valid(driver.clouds_resource):
 			driver.clouds_resource.extra_large_noise_patterns = ResourceLoader.load(mask_file_path.text)
 
 
-func set_draw_invert(mode : bool):
+func set_draw_invert(mode : bool) -> void:
 	if (current_draw_mode == DRAWINGMODE.WEIGHT && draw_inverted != mode):
 		draw_inverted = mode
 		# gdlint: disable=max-line-length

@@ -37,7 +37,8 @@ extends Node3D
 		_update_editor_preview()
 
 @export_category("Physics Cable Options")
-## The mass of each individual rope link. Higher values prevent the joints from stretching when a heavy player attaches.
+## The mass of each individual rope link. Higher values prevent the joints from
+## stretching when a heavy player attaches.
 @export var link_mass: float = 1.5
 
 ## The distance between each physically simulated rope link.
@@ -78,7 +79,8 @@ var _current_cooldown: float = 0.0
 ## Caches the current active camera for UI positioning.
 var _cached_camera: Camera3D
 
-## A reference to the currently attached player character, used to safely manage and remove collision exceptions.
+## A reference to the currently attached player character, used to safely manage
+## and remove collision exceptions.
 var _attached_player: CharacterBody3D = null
 
 ## The currently focused interaction component for UI anchoring.
@@ -128,7 +130,7 @@ func _ready() -> void:
 		add_child(original_label)
 		interact_label = original_label
 		interact_label.hide()
-		
+
 		var action_name := "interact"
 		if InputMap.has_action(action_name):
 			var events := InputMap.action_get_events(action_name)
@@ -148,7 +150,7 @@ func _process(delta: float) -> void:
 		_current_cooldown -= delta
 
 	_update_visuals()
-	
+
 	if not player_on_rope and is_instance_valid(_focused_ic) and is_instance_valid(interact_label):
 		_update_label_position()
 
@@ -169,7 +171,7 @@ func _update_editor_preview() -> void:
 	if is_instance_valid(rope_mesh) and rope_mesh.mesh:
 		rope_mesh.mesh.height = rope_length
 		rope_mesh.position.y = -rope_length * 0.5
-		
+
 	if is_instance_valid(rope_col) and rope_col.shape:
 		rope_col.shape.height = rope_length
 		rope_col.position.y = -rope_length * 0.5
@@ -208,7 +210,7 @@ func _update_visuals() -> void:
 		if not is_instance_valid(link):
 			continue
 		var p2: Vector3 = link.global_position
-		
+
 		var segment: Node3D = _visual_segments[segment_index]
 		var dist: float = p1.distance_to(p2)
 		segment.global_position = p1.lerp(p2, 0.5)
@@ -235,7 +237,10 @@ func _update_visuals() -> void:
 
 
 func _create_base_mesh() -> void:
-	print("PhysicsClimbableRope3D: Generating base visual meshes and calculating interlocking chain size.")
+	print(
+		"PhysicsClimbableRope3D: Generating base visual meshes and "
+		+ "calculating interlocking chain size."
+	)
 	_base_mesh = CylinderMesh.new()
 	_base_mesh.top_radius = thickness
 	_base_mesh.bottom_radius = thickness
@@ -243,7 +248,8 @@ func _create_base_mesh() -> void:
 	_base_mesh.radial_segments = 8
 	_base_mesh.rings = 1
 
-	# Calculate Torus dimensions based on link_spacing so links overlap and interlock cleanly without gaps
+	# Calculate Torus dimensions based on link_spacing so links overlap and
+	# interlock cleanly without gaps
 	_default_chain_mesh = TorusMesh.new()
 	_default_chain_mesh.outer_radius = link_spacing * 0.65
 	_default_chain_mesh.inner_radius = link_spacing * 0.35
@@ -276,7 +282,7 @@ func _update_label_position() -> void:
 		var cam_right: Vector3 = _cached_camera.global_transform.basis.x
 		var cam_up: Vector3 = _cached_camera.global_transform.basis.y
 		var final_pos: Vector3 = hit_point + (cam_right * label_offset_amount) + (cam_up * 0.1)
-		
+
 		interact_label.global_position = final_pos
 
 # --------------------------------------
@@ -287,7 +293,7 @@ func _build_dynamic_rope() -> void:
 	print("PhysicsClimbableRope3D: Generating dynamic physics chain.")
 	var interact_template: Node = null
 	var highlight_template: Node = null
-	
+
 	if is_instance_valid(original_rope_body):
 		interact_template = original_rope_body.get_node_or_null("InteractComponent")
 		highlight_template = original_rope_body.get_node_or_null("HighlightComponent")
@@ -302,7 +308,7 @@ func _build_dynamic_rope() -> void:
 		link.linear_damp_mode = RigidBody3D.DAMP_MODE_REPLACE
 		link.angular_damp = 2.5
 		link.linear_damp = 1.5
-		
+
 		if not is_swingable:
 			link.axis_lock_angular_x = true
 			link.axis_lock_angular_y = true
@@ -310,7 +316,7 @@ func _build_dynamic_rope() -> void:
 
 		add_child(link)
 		link.global_position = anchor.global_position + (Vector3.DOWN * link_spacing * (i + 1))
-		
+
 		# 1. Physics Collision Shape
 		var col := CollisionShape3D.new()
 		var cap := CapsuleShape3D.new()
@@ -326,7 +332,7 @@ func _build_dynamic_rope() -> void:
 			ic.focused.connect(_on_link_focused.bind(ic))
 			ic.unfocused.connect(_on_link_unfocused.bind(ic))
 			ic.interacted.connect(_on_link_interacted.bind(link))
-			
+
 		if is_instance_valid(highlight_template):
 			var hc: Node = highlight_template.duplicate()
 			link.add_child(hc)
@@ -334,8 +340,8 @@ func _build_dynamic_rope() -> void:
 		# 3. Air Detection Area
 		var air_area := Area3D.new()
 		air_area.collision_layer = 0
-		air_area.collision_mask = 4294967295 
-		
+		air_area.collision_mask = 4294967295
+
 		var air_col := CollisionShape3D.new()
 		var air_shape := CapsuleShape3D.new()
 		air_shape.radius = air_grab_radius
@@ -347,7 +353,7 @@ func _build_dynamic_rope() -> void:
 
 		for prev: RigidBody3D in _links:
 			link.add_collision_exception_with(prev)
-		
+
 		_links.append(link)
 
 		# 4. Jointing
@@ -356,9 +362,9 @@ func _build_dynamic_rope() -> void:
 		joint.global_position = previous_body.global_position.lerp(link.global_position, 0.5)
 		joint.node_a = joint.get_path_to(previous_body)
 		joint.node_b = joint.get_path_to(link)
-		
+
 		previous_body = link
-		
+
 		# 5. Visual Segments Creation (Inside _build_dynamic_rope loop)
 		var segment: Node3D
 		if not is_swingable:
@@ -420,10 +426,10 @@ func _on_link_interacted(player: CharacterBody3D, link: RigidBody3D) -> void:
 func _on_air_area_entered(body: Node3D, link: RigidBody3D) -> void:
 	if player_on_rope:
 		return
-		
+
 	if _current_cooldown > 0.0:
 		return
-		
+
 	if body.has_method("is_on_floor") and body.has_method("_on_rope_grabbed"):
 		if not body.call("is_on_floor"):
 			print("PhysicsClimbableRope3D: Player mid-air collision detected. Auto-attaching.")
@@ -435,7 +441,7 @@ func _attach_to_link(player: CharacterBody3D, link: RigidBody3D) -> void:
 	player_on_rope = true
 	_attached_player = player
 	_focused_ic = null
-	
+
 	if is_instance_valid(interact_label):
 		interact_label.hide()
 
@@ -458,9 +464,9 @@ func on_player_released() -> void:
 	print("PhysicsClimbableRope3D: Player released the rope. Restoring damping and starting cooldown.")
 	player_on_rope = false
 	_current_cooldown = reattach_cooldown
-	
+
 	handle_rope_sounds(false, false)
-	
+
 	# Restore damping and remove collision exceptions
 	for link: RigidBody3D in _links:
 		if is_instance_valid(link):
@@ -469,7 +475,7 @@ func on_player_released() -> void:
 			link.linear_damp = 1.5
 			if is_instance_valid(_attached_player):
 				link.remove_collision_exception_with(_attached_player)
-				
+
 	_attached_player = null
 
 	if activate_slomo:
@@ -477,8 +483,11 @@ func on_player_released() -> void:
 
 
 func handle_rope_sounds(is_climbing: bool, is_sliding: bool) -> void:
-	print("PhysicsClimbableRope3D: Handling sounds - Climbing: ", is_climbing, " | Sliding: ", is_sliding)
-	
+	print(
+		"PhysicsClimbableRope3D: Handling sounds - Climbing: " + str(is_climbing)
+		+ " | Sliding: " + str(is_sliding)
+	)
+
 	if is_instance_valid(rope_sound):
 		if is_climbing and not is_sliding:
 			if not rope_sound.playing:

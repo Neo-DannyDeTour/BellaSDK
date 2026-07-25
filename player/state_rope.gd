@@ -128,17 +128,17 @@ func _handle_climbing_and_swinging(delta: float, input_dir: Vector2) -> void:
 	var can_swing: bool = (
 		rope_root.get("is_swingable") as bool if "is_swingable" in rope_root else false
 	)
-	
+
 	# FIX: Set a more robust baseline swing fallback force.
 	var force_amount: float = (
-		rope_root.get("swing_force") as float if "swing_force" in rope_root else 1200.0 
+		rope_root.get("swing_force") as float if "swing_force" in rope_root else 1200.0
 	)
 
 	var swing_angle_deg: float = rad_to_deg(acos(clampf(rope_up.dot(Vector3.UP), -1.0, 1.0)))
 	var is_actively_swinging: bool = (
 		swing_angle_deg > 5.0 or current_rope.angular_velocity.length() > 0.2
 	)
-	
+
 	var look_dot_rope: float = look_dir.dot(rope_up)
 	var is_looking_up: bool = look_dot_rope > 0.6
 	var is_looking_down: bool = look_dot_rope < -0.2
@@ -186,7 +186,7 @@ func _handle_climbing_and_swinging(delta: float, input_dir: Vector2) -> void:
 	else:
 		if can_swing and input_dir.length() > 0.01:
 			current_rope.sleeping = false
-			
+
 			var flat_fwd := Vector3(look_dir.x, 0.0, look_dir.z).normalized()
 			var flat_right := flat_fwd.cross(Vector3.UP).normalized()
 			var push_dir := (flat_fwd * -input_dir.y) + (flat_right * input_dir.x)

@@ -44,7 +44,8 @@ var noclip_label_message: Label = $NoclipAlertContainer/NoclipMessageContainer/N
 @onready var fullbright_button: Button = $DebugPanel/PanelContainer/VBoxContainer/FullbrightButton
 @onready var wireframe_button: Button = $DebugPanel/PanelContainer/VBoxContainer/WireframeButton
 @onready
-var wireframe_overlay_button: Button = $DebugPanel/PanelContainer/VBoxContainer/WireframeOverlayButton
+var wireframe_overlay_button: Button = \
+	$DebugPanel/PanelContainer/VBoxContainer/WireframeOverlayButton
 @onready var hide_ui_button: Button = $DebugPanel/PanelContainer/VBoxContainer/HideUIButton
 
 @onready var metrics_panel: PanelContainer = $MetricsPanel
