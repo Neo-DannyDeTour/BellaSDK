@@ -2,18 +2,26 @@ class_name Shotgun
 extends Node3D
 
 # Preload the dot so it's ready in memory the moment we shoot
-const DEBUG_PELLET = preload("res://ui/debug_pellet.tscn")
-const DUST_PUFF = preload("res://vfx/dust_puff.tscn")
+const DEBUG_PELLET: PackedScene = preload("res://ui/debug_pellet.tscn")
+const DUST_PUFF: PackedScene = preload("res://vfx/dust_puff.tscn")
 
+## The number of pellets fired per shot.
 @export var pellet_count: int = 8
+## The spread angle in degrees for the pellets.
 @export var spread_angle: float = 4.0  # Degrees of spread
+## The damage inflicted by each individual pellet.
 @export var damage_per_pellet: int = 10
+## The maximum range a pellet can travel.
 @export var max_range: float = 50.0
+## The time in seconds between consecutive shots.
 @export var fire_rate: float = 1.0  # Seconds between shots
+## The AudioStreamPlayer3D used to play the firing sound.
 @export var shotgun_fire: AudioStreamPlayer3D
 
+## The timestamp of the last fired shot, used for rate limiting.
 var last_shot_time: float = -1000.0
 
+## Indicates whether the shotgun is currently equipped by a player.
 var is_equipped: bool = false
 
 #@onready var anim: AnimationPlayer = $ShotgunAnim
@@ -26,6 +34,7 @@ func _ready() -> void:
 
 # --- EQUIP LOGIC ---
 func equip_to_player(p_node: CharacterBody3D) -> void:
+	print("Shotgun: equip_to_player() called. Equipping shotgun to player.")
 	is_equipped = true
 
 	# 1. FIND THE PHYSICS BODY (StaticBody3D or RigidBody3D)
