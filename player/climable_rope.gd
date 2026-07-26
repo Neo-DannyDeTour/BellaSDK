@@ -118,6 +118,7 @@ var interact_label: Label3D
 # ENGINE METHODS
 # --------------------------------------
 
+
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		_update_editor_preview()
@@ -154,9 +155,11 @@ func _process(delta: float) -> void:
 	if not player_on_rope and is_instance_valid(_focused_ic) and is_instance_valid(interact_label):
 		_update_label_position()
 
+
 # --------------------------------------
 # EDITOR PREVIEW
 # --------------------------------------
+
 
 func _update_editor_preview() -> void:
 	if not is_inside_tree():
@@ -183,9 +186,11 @@ func _update_editor_preview() -> void:
 	if is_instance_valid(rope_body):
 		rope_body.position = Vector3.ZERO
 
+
 # --------------------------------------
 # VISUALS & OPTIMIZATION
 # --------------------------------------
+
 
 func _update_visuals() -> void:
 	if _links.is_empty() or _visual_segments.is_empty():
@@ -238,8 +243,10 @@ func _update_visuals() -> void:
 
 func _create_base_mesh() -> void:
 	print(
-		"PhysicsClimbableRope3D: Generating base visual meshes and "
-		+ "calculating interlocking chain size."
+		(
+			"PhysicsClimbableRope3D: Generating base visual meshes and "
+			+ "calculating interlocking chain size."
+		)
 	)
 	_base_mesh = CylinderMesh.new()
 	_base_mesh.top_radius = thickness
@@ -285,9 +292,11 @@ func _update_label_position() -> void:
 
 		interact_label.global_position = final_pos
 
+
 # --------------------------------------
 # GENERATION LOGIC
 # --------------------------------------
+
 
 func _build_dynamic_rope() -> void:
 	print("PhysicsClimbableRope3D: Generating dynamic physics chain.")
@@ -303,7 +312,7 @@ func _build_dynamic_rope() -> void:
 
 	for i: int in range(total_links):
 		var link := RigidBody3D.new()
-		link.mass = link_mass # <--- Applied the new heavier mass here
+		link.mass = link_mass  # <--- Applied the new heavier mass here
 		link.angular_damp_mode = RigidBody3D.DAMP_MODE_REPLACE
 		link.linear_damp_mode = RigidBody3D.DAMP_MODE_REPLACE
 		link.angular_damp = 2.5
@@ -392,9 +401,11 @@ func _build_dynamic_rope() -> void:
 	if is_instance_valid(original_rope_body):
 		original_rope_body.queue_free()
 
+
 # --------------------------------------
 # ATTACHMENT & INTERACTION LOGIC
 # --------------------------------------
+
 
 func _on_link_focused(ic: Node) -> void:
 	if not player_on_rope:
@@ -437,7 +448,9 @@ func _on_air_area_entered(body: Node3D, link: RigidBody3D) -> void:
 
 
 func _attach_to_link(player: CharacterBody3D, link: RigidBody3D) -> void:
-	print("PhysicsClimbableRope3D: Attaching player to physics link. Removing damping for swinging.")
+	print(
+		"PhysicsClimbableRope3D: Attaching player to physics link. Removing damping for swinging."
+	)
 	player_on_rope = true
 	_attached_player = player
 	_focused_ic = null
@@ -461,7 +474,9 @@ func _attach_to_link(player: CharacterBody3D, link: RigidBody3D) -> void:
 
 
 func on_player_released() -> void:
-	print("PhysicsClimbableRope3D: Player released the rope. Restoring damping and starting cooldown.")
+	print(
+		"PhysicsClimbableRope3D: Player released the rope. Restoring damping and starting cooldown."
+	)
 	player_on_rope = false
 	_current_cooldown = reattach_cooldown
 
@@ -484,8 +499,12 @@ func on_player_released() -> void:
 
 func handle_rope_sounds(is_climbing: bool, is_sliding: bool) -> void:
 	print(
-		"PhysicsClimbableRope3D: Handling sounds - Climbing: " + str(is_climbing)
-		+ " | Sliding: " + str(is_sliding)
+		(
+			"PhysicsClimbableRope3D: Handling sounds - Climbing: "
+			+ str(is_climbing)
+			+ " | Sliding: "
+			+ str(is_sliding)
+		)
 	)
 
 	if is_instance_valid(rope_sound):
@@ -506,9 +525,11 @@ func handle_rope_sounds(is_climbing: bool, is_sliding: bool) -> void:
 			if slide_sound.playing:
 				slide_sound.stop()
 
+
 # --------------------------------------
 # UTILITY
 # --------------------------------------
+
 
 func _set_slomo(target_scale: float) -> void:
 	print("PhysicsClimbableRope3D: Engine time_scale transitioning to ", target_scale)
