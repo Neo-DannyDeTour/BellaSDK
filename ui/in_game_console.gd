@@ -19,11 +19,13 @@ var current_matches: Array[String] = []
 var match_index: int = -1
 var is_navigating_matches: bool = false
 
+## Security variable: Indicates if debug commands (noclip, gamespeed) are allowed.
+var is_debug_allowed: bool = OS.is_debug_build()
+
 var valid_commands: Array[String] = [
 	"help",
 	"clear",
 	"quit",
-	"noclip",
 	"iddqd",
 	"idkfa",
 	"kirov",
@@ -41,7 +43,6 @@ var valid_commands: Array[String] = [
 	"impulse",
 	"thegodfather",
 	"colorblind",
-	"gamespeed",
 	"highcontrast",
 	"screenshake",
 	"subtitles",
@@ -51,6 +52,13 @@ var valid_commands: Array[String] = [
 	"setfont",
 	"screenfilter"
 ]
+
+
+func _init() -> void:
+	if is_debug_allowed:
+		valid_commands.append("noclip")
+		valid_commands.append("gamespeed")
+
 
 var valid_colorblind_args: Array[String] = [
 	"normal", "protanopia", "deuteranopia", "tritanopia", "mono", "achromatopsia"
@@ -411,11 +419,15 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 			write("Exiting game...", "red")
 			get_tree().quit()
 		"noclip":
-			if has_node("/root/Events"):
-				var events: Node = get_node("/root/Events")
-				if events.has_signal("noclip_ui_button_pressed"):
-					events.emit_signal("noclip_ui_button_pressed")
-			write("Toggled Noclip.", "yellow")
+			if is_debug_allowed:
+				print("InGameConsole: _process_command() called. Action: Toggled Noclip")
+				if has_node("/root/Events"):
+					var events: Node = get_node("/root/Events")
+					if events.has_signal("noclip_ui_button_pressed"):
+						events.emit_signal("noclip_ui_button_pressed")
+				write("Toggled Noclip.", "yellow")
+			else:
+				write("Unknown command: '" + cmd + "'. Type 'help' for a list.", "red")
 		"iddqd":
 			write("good memory!", "gold")
 		"idkfa":
@@ -491,12 +503,16 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 					"yellow"
 				)
 		"gamespeed":
-			if args.size() > 0:
-				var new_speed := args[0].to_float()
-				Engine.time_scale = clampf(new_speed, 0.1, 10.0)
-				write("Time scale set to: " + str(Engine.time_scale), "green")
+			if is_debug_allowed:
+				print("InGameConsole: _process_command() called. Action: Set Gamespeed")
+				if args.size() > 0:
+					var new_speed := args[0].to_float()
+					Engine.time_scale = clampf(new_speed, 0.1, 10.0)
+					write("Time scale set to: " + str(Engine.time_scale), "green")
+				else:
+					write("Usage: gamespeed <value> (e.g., 0.7 for 70% speed)", "yellow")
 			else:
-				write("Usage: gamespeed <value> (e.g., 0.7 for 70% speed)", "yellow")
+				write("Unknown command: '" + cmd + "'. Type 'help' for a list.", "red")
 		"highcontrast":
 			if args.size() > 0:
 				var active := args[0].to_lower() == "on"
