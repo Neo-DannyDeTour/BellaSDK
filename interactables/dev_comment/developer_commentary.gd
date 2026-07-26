@@ -14,7 +14,7 @@ class_name DeveloperCommentary
 @onready var label_title: Label = $CommentaryUI/Panel/VBoxContainer/TitleLabel
 @onready
 var label_content: RichTextLabel = \
-	$CommentaryUI/Panel/VBoxContainer/AutoScrollContainer/MarginContainer/ContentLabel
+		$CommentaryUI/Panel/VBoxContainer/AutoScrollContainer/MarginContainer/ContentLabel
 @onready var sprite: Sprite3D = $Sprite3D
 @onready var equalizer_mesh: MeshInstance3D = $EqualizerMesh
 
