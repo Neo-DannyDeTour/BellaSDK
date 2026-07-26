@@ -1,1 +1,3 @@
 - Godot 4 linting edge-case: gdtoolkit (gdlint/gdformat) fails to parse standard line continuations (backslash `\`) within control flow conditions, resulting in 'No terminal matches' errors. Split complex boolean expressions across lines by nesting them inside parentheses instead.
+- For , when condensing multi-line parameters to fix trailing whitespace, ensure you prefer placing one parameter per line for long method signatures to adhere to project styling conventions.
+- When condensing multi-line parameters to fix trailing whitespace (e.g. in addons/KGB_Agent/kgb_dock.gd), ensure you prefer placing one parameter per line for long method signatures to adhere to project styling conventions.

@@ -235,10 +235,7 @@ func _on_ask_ai_pressed() -> void:
 
 
 func _on_http_request_completed(
-	result: int, 
-	response_code: int, 
-	_headers: PackedStringArray, 
-	body: PackedByteArray
+	result: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray
 ) -> void:
 	if result != HTTPRequest.RESULT_SUCCESS:
 		ai_output.text = "HTTP Request Failed. Result code: " + str(result)
@@ -307,7 +304,7 @@ func _build_ui() -> void:
 
 	atom_spinbox = SpinBox.new()
 	atom_spinbox.value = 5.0
-	
+
 	var label_atoms: Label = Label.new()
 	label_atoms.text = "Atoms:"
 	hbox.add_child(label_atoms)
@@ -315,7 +312,7 @@ func _build_ui() -> void:
 
 	merge_spinbox = SpinBox.new()
 	merge_spinbox.value = 15.0
-	
+
 	var label_merge: Label = Label.new()
 	label_merge.text = " Merge%:"
 	hbox.add_child(label_merge)
