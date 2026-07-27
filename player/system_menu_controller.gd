@@ -28,6 +28,9 @@ signal noclip_toggled(is_flying: bool)
 # --------------------------------------
 # VARIABLES
 # --------------------------------------
+## Security variable: Indicates if debug commands (noclip) are allowed via input or events.
+var is_debug_allowed: bool = OS.is_debug_build()
+
 var is_paused: bool = false
 var is_menu_open: bool = false
 var menu_instance: CanvasLayer
@@ -96,7 +99,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 
-	if event.is_action_pressed("noclip", false):
+	if is_debug_allowed and event.is_action_pressed("noclip", false):
 		print("SystemMenuController: Noclip hotkey intercepted.")
 		toggle_noclip()
 		get_viewport().set_input_as_handled()
@@ -145,6 +148,10 @@ func _on_fullbright_toggled(is_fullbright: bool) -> void:
 # NOCLIP LOGIC
 # --------------------------------------
 func toggle_noclip() -> void:
+	if not is_debug_allowed:
+		return
+
+	print("SystemMenuController: toggle_noclip() called.")
 	flying = not flying
 
 	if is_instance_valid(standing_collision):
