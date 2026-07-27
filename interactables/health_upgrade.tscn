@@ -1,0 +1,62 @@
+[gd_scene format=3 uid="uid://dskub5fflkv72"]
+
+[ext_resource type="Script" uid="uid://bht31ko0guy4f" path="res://interactables/health_upgrade.gd" id="1_0e0bm"]
+[ext_resource type="Texture2D" uid="uid://sylwf664lrho" path="res://assets/images/heart_icon.png" id="2_s1w4p"]
+[ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="3_tiyn0"]
+[ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="4_nm3ii"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="5_s1w4p"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_534t5"]
+radius = 0.8
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_7lgc2"]
+transparency = 2
+alpha_scissor_threshold = 0.5
+alpha_antialiasing_mode = 0
+albedo_texture = ExtResource("2_s1w4p")
+billboard_mode = 1
+billboard_keep_scale = true
+
+[sub_resource type="QuadMesh" id="QuadMesh_tx8to"]
+material = SubResource("StandardMaterial3D_7lgc2")
+size = Vector2(0.85, 1.2)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_p48nu"]
+render_priority = 0
+shader = ExtResource("5_s1w4p")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.2000000095
+shader_parameter/base_texture = ExtResource("2_s1w4p")
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[node name="HealthUpgrade" type="StaticBody3D" unique_id=916436158 node_paths=PackedStringArray("heart_visual", "interact_component", "prompt_label")]
+collision_layer = 5
+collision_mask = 0
+script = ExtResource("1_0e0bm")
+heart_visual = NodePath("HeartMesh")
+interact_component = NodePath("InteractComponent")
+prompt_label = NodePath("Label3D")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=545191542]
+shape = SubResource("SphereShape3D_534t5")
+
+[node name="HeartMesh" type="MeshInstance3D" parent="." unique_id=138387858]
+mesh = SubResource("QuadMesh_tx8to")
+
+[node name="InteractComponent" type="Node" parent="." unique_id=1151638927]
+script = ExtResource("3_tiyn0")
+metadata/_custom_type_script = "uid://cqawbvidns1th"
+
+[node name="HighlightComponent" type="Node" parent="." unique_id=1869463163 node_paths=PackedStringArray("target_meshes", "interact_component")]
+script = ExtResource("4_nm3ii")
+outline_material = SubResource("ShaderMaterial_p48nu")
+target_meshes = [NodePath("../HeartMesh")]
+interact_component = NodePath("../InteractComponent")
+metadata/_custom_type_script = "uid://dgig0tamvkdxx"
+
+[node name="Label3D" type="Label3D" parent="." unique_id=1690603224]
+billboard = 1
+double_sided = false
+no_depth_test = true

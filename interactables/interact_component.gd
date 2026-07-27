@@ -24,7 +24,7 @@ func interact_with(character: CharacterBody3D) -> void:
 
 
 func hover_cursor(character: CharacterBody3D, hit_position: Vector3) -> void:
-	print("InteractComponent: hover_cursor called by ", character.name)
+	#print("InteractComponent: hover_cursor called by ", character.name)
 
 	var current_time := Time.get_ticks_msec()
 	characters_hovering[character] = current_time

@@ -136,7 +136,7 @@ func _process(delta: float) -> void:
 
 # --- HEALTH LOGIC ---
 func _initialize_hearts() -> void:
-	print("UI: _initialize_hearts() called. Setting up health display.")
+	print("UIController: _initialize_hearts() called. Setting up health display.")
 	if not hearts_atlas:
 		push_warning("Hearts atlas not assigned in UI inspector!")
 		return
@@ -145,37 +145,52 @@ func _initialize_hearts() -> void:
 	var atlas_height: float = hearts_atlas.get_height()
 	var frame_width: float = atlas_width / 5.0
 
-	var target_size: Vector2 = Vector2(frame_width * 2.0, atlas_height * 2.0)
-
+	# Cache textures
 	for i in range(5):
 		var tex: AtlasTexture = AtlasTexture.new()
 		tex.atlas = hearts_atlas
 		tex.region = Rect2(i * frame_width, 0.0, frame_width, atlas_height)
 		heart_textures.append(tex)
 
-	for i in range(3):
-		var wrapper: Control = Control.new()
-		wrapper.custom_minimum_size = target_size
-		wrapper.use_parent_material = true
-		hearts_container.add_child(wrapper)
-
-		var rect: TextureRect = TextureRect.new()
-		rect.texture = heart_textures[0]
-		rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		rect.custom_minimum_size = target_size
-		rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		rect.use_parent_material = true
-
-		wrapper.add_child(rect)
-		heart_nodes.append(rect)
-		heart_tweens.append(null)
+	# Populate initial required hearts
+	while heart_nodes.size() * 100 < current_health:
+		_add_heart_node()
 
 	update_health(current_health)
 
 
+## Helper function to dynamically add a single heart UI node.
+func _add_heart_node() -> void:
+	print("UIController: _add_heart_node() - Expanding maximum heart UI count.")
+	var atlas_height: float = hearts_atlas.get_height()
+	var frame_width: float = hearts_atlas.get_width() / 5.0
+	var target_size: Vector2 = Vector2(frame_width * 2.0, atlas_height * 2.0)
+
+	var wrapper: Control = Control.new()
+	wrapper.custom_minimum_size = target_size
+	wrapper.use_parent_material = true
+	hearts_container.add_child(wrapper)
+
+	var rect: TextureRect = TextureRect.new()
+	rect.texture = heart_textures[0]
+	rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	rect.custom_minimum_size = target_size
+	rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	rect.use_parent_material = true
+
+	wrapper.add_child(rect)
+	heart_nodes.append(rect)
+	heart_tweens.append(null)
+
+
 func update_health(new_health: int) -> void:
-	print("UI: update_health() called with new value: ", new_health)
+	print("UIController: update_health() called with new value: ", new_health)
+	
+	# Expand UI dynamically if health exceeds current node count
+	while new_health > heart_nodes.size() * 100:
+		_add_heart_node()
+		
 	var health_decreased: bool = new_health < current_health
 	var health_increased: bool = new_health > current_health
 	var previous_health: int = current_health

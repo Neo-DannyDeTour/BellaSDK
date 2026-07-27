@@ -1,17 +1,30 @@
 extends Node
 class_name HealthComponent
 
+## Emitted when the current health changes.
 signal health_changed(current_health: int)
+
+## Emitted when the maximum health capacity changes.
+signal max_health_changed(new_max: int)
+
+## Emitted when current health reaches zero.
 signal died
 
+## The maximum health capacity of this entity.
 @export var max_health: int = 100
+
+## Determines if the entity is hidden and teleported for pooling instead of being freed on death.
 @export var use_pooling: bool = true
+
+## Flag to determine if this component belongs to the player, allowing broadcasting to the global Events bus.
 @export var is_player_health: bool = false
 
+## The current internal health amount of this entity.
 var current_health: int = 100
 
 
 func _ready() -> void:
+	print("HealthComponent: _ready() - Initializing health component.")
 	current_health = max_health
 
 
@@ -27,7 +40,6 @@ func take_damage(amount: int) -> void:
 	health_changed.emit(current_health)
 	print("HealthComponent: take_damage() - Current health is now ", current_health, ".")
 
-	# Strictly check the export variable instead of the group tag
 	if is_player_health and Events.has_signal("player_health_changed"):
 		print("HealthComponent: take_damage() - Relaying health to global Events bus.")
 		Events.player_health_changed.emit(current_health)
@@ -49,6 +61,23 @@ func heal(amount: int) -> void:
 	print("HealthComponent: heal() - Current health is now ", current_health, ".")
 
 
+func increase_max_health(amount: int) -> void:
+	print("HealthComponent: increase_max_health() - Increasing max health capacity by ", amount, ".")
+	
+	max_health += amount
+	current_health += amount
+	current_health = mini(current_health, max_health)
+	
+	health_changed.emit(current_health)
+	max_health_changed.emit(max_health)
+	
+	print("HealthComponent: increase_max_health() - New max is ", max_health, ". Current is ", current_health, ".")
+	
+	if is_player_health and Events.has_signal("player_health_changed"):
+		print("HealthComponent: increase_max_health() - Relaying new health to global Events bus.")
+		Events.player_health_changed.emit(current_health)
+
+
 func die() -> void:
 	print("HealthComponent: die() - Entity died.")
 	died.emit()
@@ -60,7 +89,6 @@ func die() -> void:
 	if target_node == null:
 		return
 
-	# Trust the 'use_pooling' export toggle strictly instead of checking groups
 	if use_pooling:
 		print("HealthComponent: die() - Hiding and teleporting actor for pooling.")
 		if target_node is Node3D:
@@ -72,7 +100,6 @@ func die() -> void:
 		target_node.process_mode = Node.PROCESS_MODE_DISABLED
 	else:
 		print("HealthComponent: die() - Freeing actor (or handling player death).")
-		# Only queue_free if this isn't the actual player character
 		if not target_node.is_in_group("player"):
 			target_node.queue_free()
 
