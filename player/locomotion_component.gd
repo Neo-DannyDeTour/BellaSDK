@@ -116,6 +116,9 @@ var last_velocity: Vector3 = Vector3.ZERO
 ## Tracks if the player has landed on a surface that negates fall damage.
 var on_safe_landing: bool = false
 
+## Tracks the engine time in milliseconds of the player's last sprint action.
+var _last_sprint_time: int = 0
+
 
 func initialize(p_player: Player) -> void:
 	print("LocomotionComponent: initialize() called. Caching player reference.")
@@ -131,9 +134,19 @@ func set_physics_active(active: bool) -> void:
 func process_movement(delta: float) -> void:
 	if not is_active or not is_instance_valid(player):
 		return
+		
+	# Continuously update the timestamp while the player is actively sprinting
+	if sprint_active:
+		_last_sprint_time = Time.get_ticks_msec()
 
 	_apply_weight_to_floor()
 	_interpolate_head_height(delta)
+
+
+## Evaluates whether the player was sprinting within the specified time window (in milliseconds).
+func did_run_recently(time_window_ms: int = 10000) -> bool:
+	print("LocomotionComponent: did_run_recently() evaluated.")
+	return (Time.get_ticks_msec() - _last_sprint_time) <= time_window_ms
 
 
 func set_direction(new_dir: Vector3) -> void:

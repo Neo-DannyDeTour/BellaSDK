@@ -15,6 +15,7 @@
 [ext_resource type="Shader" uid="uid://dqjxwnsg8c5f0" path="res://vfx/outline_hearts_adaptable.gdshader" id="10_7dvkv"]
 [ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="11_bi8hs"]
 [ext_resource type="Script" uid="uid://bq62qlt337705" path="res://ui/chapter_title_container.gd" id="11_hrmpd"]
+[ext_resource type="PackedScene" uid="uid://r7e1pqddjcjx" path="res://ui/death_screen.tscn" id="16_mf2ns"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_p7vwb"]
 shader = ExtResource("5_8dubc")
@@ -297,6 +298,9 @@ alignment = 0
 layout_mode = 2
 text = "Hide UI"
 alignment = 0
+
+[node name="DeathScreen" parent="." unique_id=1910211973 instance=ExtResource("16_mf2ns")]
+visible = false
 
 [connection signal="pressed" from="DebugPanel/PanelContainer/VBoxContainer/WireframeButton" to="." method="_on_wireframe_button_pressed"]
 [connection signal="pressed" from="DebugPanel/PanelContainer/VBoxContainer/WireframeOverlayButton" to="." method="_on_wireframe_overlay_button_pressed"]

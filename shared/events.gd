@@ -1,5 +1,12 @@
 extends Node
 
+## Tracks whether the player is currently invincible.
+var is_godmode: bool = false
+
+## Emitted when the player's health reaches exactly zero.
+@warning_ignore("unused_signal")
+signal player_died
+
 @warning_ignore("unused_signal")
 signal noclip_toggled(is_flying: bool)
 

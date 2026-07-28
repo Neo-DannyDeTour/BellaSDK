@@ -25,6 +25,8 @@ var flashlight_controller: FlashlightController
 
 @onready var health_component: HealthComponent = $Components/HealthComponent
 
+## Indicates if the player character has died, used to globally block input and physics.
+var is_dead: bool = false
 
 # --------------------------------------
 # INITIALIZATION
@@ -43,6 +45,10 @@ func _ready() -> void:
 	stats_component.initialize(self)
 
 	_bridge_health_signals()
+	
+	if is_instance_valid(health_component):
+		if not health_component.died.is_connected(_on_player_died):
+			health_component.died.connect(_on_player_died)
 
 
 func _capture_mouse() -> void:
@@ -76,6 +82,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _is_input_blocked() -> bool:
+	print("Player: _is_input_blocked() called. Evaluating input state.")
 	var is_console_open: bool = is_instance_valid(in_game_console) and in_game_console.visible
 	var is_blocked: bool = (
 		system_menu.is_paused
@@ -83,8 +90,27 @@ func _is_input_blocked() -> bool:
 		or system_menu.get("is_stunned")
 		or is_console_open
 		or interaction_component.is_operating_machine
+		or is_dead
 	)
 	return is_blocked
+
+
+func _on_player_died() -> void:
+	print("Player: _on_player_died() called. Locking controls and broadcasting death.")
+	is_dead = true
+	velocity = Vector3.ZERO
+	
+	var ran_recently: bool = false
+	
+	if is_instance_valid(locomotion_component):
+		locomotion_component.set_physics_active(false)
+		if locomotion_component.has_method("did_run_recently"):
+			ran_recently = locomotion_component.did_run_recently()
+			print("Player: Evaluated sprint history. Ran recently: ", ran_recently)
+		
+	if Events.has_signal("player_died"):
+		# We now pass the evaluated boolean through the global event
+		Events.player_died.emit(ran_recently)
 
 
 # --------------------------------------

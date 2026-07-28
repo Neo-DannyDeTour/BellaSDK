@@ -39,7 +39,8 @@ func _on_difficulty_selected(index: int) -> void:
 
 
 func _on_godmode_toggled(button_pressed: bool) -> void:
-	print("GameplayPanel: Godmode toggled. State: ", button_pressed)
+	print("GameplayPanel: _on_godmode_toggled() - Godmode toggled. State: ", button_pressed)
+	Events.is_godmode = button_pressed
 
 
 func _on_tutorials_toggled(button_pressed: bool) -> void:

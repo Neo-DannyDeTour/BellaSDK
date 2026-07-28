@@ -32,6 +32,10 @@ func _ready() -> void:
 func take_damage(amount: int) -> void:
 	print("HealthComponent: take_damage() - Took ", amount, " damage.")
 
+	if is_player_health and Events.get("is_godmode"):
+		print("HealthComponent: take_damage() - Godmode is active. Ignoring damage.")
+		return
+
 	if current_health <= 0:
 		return
 

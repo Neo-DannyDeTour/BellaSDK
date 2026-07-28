@@ -1,0 +1,59 @@
+[gd_scene format=3 uid="uid://r7e1pqddjcjx"]
+
+[ext_resource type="Script" uid="uid://bk52bpfkaco1t" path="res://ui/death_screen.gd" id="1_36x74"]
+[ext_resource type="Shader" uid="uid://b63gib5h5ed3p" path="res://ui/death_screen.gdshader" id="2_g3utg"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_g3utg"]
+shader = ExtResource("2_g3utg")
+shader_parameter/u_time = 0.0
+shader_parameter/resolution = Vector2(1920, 1080)
+shader_parameter/line_color = Color(0.1, 1, 0.1, 1)
+shader_parameter/grid_color = Color(0.01, 0.05, 0.01, 1)
+shader_parameter/line_thickness = 0.01
+shader_parameter/line_blur = 0.00999999977648
+shader_parameter/points = PackedVector2Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+
+[node name="DeathScreen" type="CanvasLayer" unique_id=1910211973]
+script = ExtResource("1_36x74")
+
+[node name="Background" type="ColorRect" parent="." unique_id=2114647612]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)
+
+[node name="ECGMonitor" type="ColorRect" parent="." unique_id=2040097807]
+material = SubResource("ShaderMaterial_g3utg")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="DeathLabel" type="Label" parent="." unique_id=1090943906]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = -8.5
+offset_right = 20.0
+offset_bottom = 8.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 64
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HeartAudio" type="AudioStreamPlayer" parent="." unique_id=168240611]
+bus = &"SFX"
+
+[node name="PainOverlay" type="ColorRect" parent="." unique_id=1681156949]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
