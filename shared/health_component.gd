@@ -16,7 +16,8 @@ signal died
 ## Determines if the entity is hidden and teleported for pooling instead of being freed on death.
 @export var use_pooling: bool = true
 
-## Flag to determine if this component belongs to the player, allowing broadcasting to the global Events bus.
+## Flag to determine if this component belongs to the player,
+## allowing broadcasting to the global Events bus.
 @export var is_player_health: bool = false
 
 ## The current internal health amount of this entity.
@@ -62,17 +63,25 @@ func heal(amount: int) -> void:
 
 
 func increase_max_health(amount: int) -> void:
-	print("HealthComponent: increase_max_health() - Increasing max health capacity by ", amount, ".")
-	
+	print(
+		"HealthComponent: increase_max_health() - Increasing max health capacity by ", amount, "."
+	)
+
 	max_health += amount
 	current_health += amount
 	current_health = mini(current_health, max_health)
-	
+
 	health_changed.emit(current_health)
 	max_health_changed.emit(max_health)
-	
-	print("HealthComponent: increase_max_health() - New max is ", max_health, ". Current is ", current_health, ".")
-	
+
+	print(
+		"HealthComponent: increase_max_health() - New max is ",
+		max_health,
+		". Current is ",
+		current_health,
+		"."
+	)
+
 	if is_player_health and Events.has_signal("player_health_changed"):
 		print("HealthComponent: increase_max_health() - Relaying new health to global Events bus.")
 		Events.player_health_changed.emit(current_health)

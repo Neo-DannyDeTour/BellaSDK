@@ -43,9 +43,9 @@ var noclip_label_message: Label = $NoclipAlertContainer/NoclipMessageContainer/N
 @onready var collision_button: Button = $DebugPanel/PanelContainer/VBoxContainer/CollisionButton
 @onready var fullbright_button: Button = $DebugPanel/PanelContainer/VBoxContainer/FullbrightButton
 @onready var wireframe_button: Button = $DebugPanel/PanelContainer/VBoxContainer/WireframeButton
-@onready
-var wireframe_overlay_button: Button = \
-		$DebugPanel/PanelContainer/VBoxContainer/WireframeOverlayButton
+@onready var wireframe_overlay_button: Button = get_node(
+	"DebugPanel/PanelContainer/VBoxContainer/WireframeOverlayButton"
+)
 @onready var hide_ui_button: Button = $DebugPanel/PanelContainer/VBoxContainer/HideUIButton
 
 @onready var metrics_panel: PanelContainer = $MetricsPanel
@@ -186,11 +186,11 @@ func _add_heart_node() -> void:
 
 func update_health(new_health: int) -> void:
 	print("UIController: update_health() called with new value: ", new_health)
-	
+
 	# Expand UI dynamically if health exceeds current node count
 	while new_health > heart_nodes.size() * 100:
 		_add_heart_node()
-		
+
 	var health_decreased: bool = new_health < current_health
 	var health_increased: bool = new_health > current_health
 	var previous_health: int = current_health

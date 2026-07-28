@@ -12,9 +12,9 @@ class_name DeveloperCommentary
 @onready var audio_player: AudioStreamPlayer3D = $AudioStreamPlayer3D
 @onready var commentary_ui: CanvasLayer = $CommentaryUI
 @onready var label_title: Label = $CommentaryUI/Panel/VBoxContainer/TitleLabel
-@onready
-var label_content: RichTextLabel = \
-		$CommentaryUI/Panel/VBoxContainer/AutoScrollContainer/MarginContainer/ContentLabel
+@onready var label_content: RichTextLabel = get_node(
+	"CommentaryUI/Panel/VBoxContainer/AutoScrollContainer/MarginContainer/ContentLabel"
+)
 @onready var sprite: Sprite3D = $Sprite3D
 @onready var equalizer_mesh: MeshInstance3D = $EqualizerMesh
 
