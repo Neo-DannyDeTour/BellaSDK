@@ -106,9 +106,9 @@ func _ready() -> void:
 	# Cache the interact key string once at startup
 	if interact_label:
 		interact_label.hide()
-		var events := InputMap.action_get_events("interact")
+		var events : Array[InputEvent] = InputMap.action_get_events("interact")
 		if events.size() > 0:
-			var raw_text := events[0].as_text()
+			var raw_text : String = events[0].as_text()
 			interact_key_name = raw_text.split(" ")[0]
 
 	# --- SIGNAL CONNECTIONS ---

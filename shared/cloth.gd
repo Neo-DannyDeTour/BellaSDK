@@ -1,7 +1,7 @@
 extends SoftBody3D
 
 @export var bake_action_key := KEY_SPACE
-@export var save_path := "res://baked_red_cloth.res"
+@export var save_path : String = "res://baked_red_cloth.res"
 
 
 func _input(event: InputEvent) -> void:
@@ -33,10 +33,10 @@ func _bake_cloth() -> void:
 	arrays[Mesh.ARRAY_NORMAL] = null
 	arrays[Mesh.ARRAY_TANGENT] = null
 
-	var temp_mesh := ArrayMesh.new()
+	var temp_mesh : ArrayMesh = ArrayMesh.new()
 	temp_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 
-	var st := SurfaceTool.new()
+	var st : SurfaceTool = SurfaceTool.new()
 	st.create_from(temp_mesh, 0)
 	st.generate_normals()
 	st.generate_tangents()

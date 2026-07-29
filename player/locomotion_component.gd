@@ -134,7 +134,7 @@ func set_physics_active(active: bool) -> void:
 func process_movement(delta: float) -> void:
 	if not is_active or not is_instance_valid(player):
 		return
-		
+
 	# Continuously update the timestamp while the player is actively sprinting
 	if sprint_active:
 		_last_sprint_time = Time.get_ticks_msec()

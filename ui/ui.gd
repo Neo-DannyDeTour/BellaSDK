@@ -104,7 +104,7 @@ func _ready() -> void:
 		default_crosshair_size = center_dot.size
 
 	green_wireframe_material = ShaderMaterial.new()
-	var shader := Shader.new()
+	var shader : Shader = Shader.new()
 	shader.code = """
     shader_type spatial;
     render_mode wireframe, unshaded, cull_disabled;
@@ -477,7 +477,7 @@ func _on_terminal_mode_toggled(is_active: bool) -> void:
 	)
 
 	if is_active:
-		var target_size := Vector2(16.0, 16.0)
+		var target_size : Vector2 = Vector2(16.0, 16.0)
 		crosshair_tween.tween_property(center_dot, "custom_minimum_size", target_size, 0.3)
 		crosshair_tween.tween_property(center_dot, "size", target_size, 0.3)
 	else:
@@ -563,7 +563,7 @@ func _open_metrics_panel() -> void:
 
 func _on_card_picked_up(card_id: StringName) -> void:
 	print("UI: Displaying new card ID ", card_id)
-	var card_rect := TextureRect.new()
+	var card_rect : TextureRect = TextureRect.new()
 	card_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	card_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	card_rect.custom_minimum_size = Vector2(80.0, 130.0)

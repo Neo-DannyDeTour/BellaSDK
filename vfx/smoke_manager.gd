@@ -61,7 +61,7 @@ func _create_rd_noise_texture(tex: Texture3D) -> RID:
 		return RID()
 
 	var base_image: Image = images[0]
-	var fmt := RDTextureFormat.new()
+	var fmt : RDTextureFormat = RDTextureFormat.new()
 	fmt.width = base_image.get_width()
 	fmt.height = base_image.get_height()
 	fmt.depth = images.size()
@@ -77,18 +77,18 @@ func _create_rd_noise_texture(tex: Texture3D) -> RID:
 			img.convert(Image.FORMAT_RGBA8)
 		bytes.append_array(img.get_data())
 
-	var view := RDTextureView.new()
+	var view : RDTextureView = RDTextureView.new()
 	return rd.texture_create(fmt, view, [bytes])
 
 
 func _initialize_gpu() -> void:
 	print("SmokeManager: _initialize_gpu() called.")
-	const SHADER_FILE = preload("res://vfx/smoke_compute.glsl")
+	const SHADER_FILE: RDShaderFile = preload("res://vfx/smoke_compute.glsl")
 	var shader_spirv: RDShaderSPIRV = SHADER_FILE.get_spirv()
 	shader = rd.shader_create_from_spirv(shader_spirv)
 	pipeline = rd.compute_pipeline_create(shader)
 
-	var fmt := RDTextureFormat.new()
+	var fmt : RDTextureFormat = RDTextureFormat.new()
 	fmt.format = RenderingDevice.DATA_FORMAT_R8G8B8A8_UNORM
 	fmt.texture_type = RenderingDevice.TEXTURE_TYPE_3D
 	fmt.width = 128
@@ -100,7 +100,7 @@ func _initialize_gpu() -> void:
 		| RenderingDevice.TEXTURE_USAGE_CAN_UPDATE_BIT
 	)
 
-	var view := RDTextureView.new()
+	var view : RDTextureView = RDTextureView.new()
 	texture_rid = rd.texture_create(fmt, view)
 
 	# --- THE MISSING BRIDGE ---
@@ -115,7 +115,7 @@ func _initialize_gpu() -> void:
 	noise_rd_rid = _create_rd_noise_texture(precomputed_noise)
 	assert(noise_rd_rid.is_valid(), "Failed to create GPU noise texture!")
 
-	var sampler_state := RDSamplerState.new()
+	var sampler_state : RDSamplerState = RDSamplerState.new()
 	sampler_state.repeat_u = RenderingDevice.SAMPLER_REPEAT_MODE_REPEAT
 	sampler_state.repeat_v = RenderingDevice.SAMPLER_REPEAT_MODE_REPEAT
 	sampler_state.repeat_w = RenderingDevice.SAMPLER_REPEAT_MODE_REPEAT
@@ -124,17 +124,17 @@ func _initialize_gpu() -> void:
 
 	sampler_rid = rd.sampler_create(sampler_state)
 
-	var tex_uniform := RDUniform.new()
+	var tex_uniform : RDUniform = RDUniform.new()
 	tex_uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
 	tex_uniform.binding = 0
 	tex_uniform.add_id(texture_rid)
 
-	var buf_uniform := RDUniform.new()
+	var buf_uniform : RDUniform = RDUniform.new()
 	buf_uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_STORAGE_BUFFER
 	buf_uniform.binding = 1
 	buf_uniform.add_id(buffer_rid)
 
-	var noise_uniform := RDUniform.new()
+	var noise_uniform : RDUniform = RDUniform.new()
 	noise_uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_SAMPLER_WITH_TEXTURE
 	noise_uniform.binding = 2
 	noise_uniform.add_id(sampler_rid)

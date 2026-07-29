@@ -132,11 +132,11 @@ func _ready() -> void:
 		interact_label = original_label
 		interact_label.hide()
 
-		var action_name := "interact"
+		var action_name : String = "interact"
 		if InputMap.has_action(action_name):
-			var events := InputMap.action_get_events(action_name)
+			var events : Array[InputEvent] = InputMap.action_get_events(action_name)
 			if events.size() > 0:
-				var key_name := events[0].as_text().split(" ")[0]
+				var key_name : String = events[0].as_text().split(" ")[0]
 				interact_label.text = "[" + key_name + "] CLIMB"
 
 	_create_base_mesh()
@@ -165,7 +165,7 @@ func _update_editor_preview() -> void:
 	if not is_inside_tree():
 		return
 
-	var rope_mesh := get_node_or_null("RopeBody/MeshInstance3D") as MeshInstance3D
+	var rope_mesh : MeshInstance3D = get_node_or_null("RopeBody/MeshInstance3D") as MeshInstance3D
 	var rope_col := get_node_or_null("RopeBody/CollisionShape3D") as CollisionShape3D
 	var rope_body := get_node_or_null("RopeBody") as RigidBody3D
 	var rope_anchor := get_node_or_null("Anchor") as StaticBody3D
@@ -196,7 +196,7 @@ func _update_visuals() -> void:
 	if _links.is_empty() or _visual_segments.is_empty():
 		return
 
-	var needs_update := false
+	var needs_update : bool = false
 	if player_on_rope:
 		needs_update = true
 	else:
@@ -264,7 +264,7 @@ func _create_base_mesh() -> void:
 	_default_chain_mesh.ring_segments = 8
 
 	if not _material_cache.has(cable_color):
-		var mat := StandardMaterial3D.new()
+		var mat : StandardMaterial3D = StandardMaterial3D.new()
 		mat.albedo_color = cable_color
 		mat.roughness = 0.8
 		_material_cache[cable_color] = mat
@@ -311,7 +311,7 @@ func _build_dynamic_rope() -> void:
 	var previous_body: PhysicsBody3D = anchor
 
 	for i: int in range(total_links):
-		var link := RigidBody3D.new()
+		var link : RigidBody3D = RigidBody3D.new()
 		link.mass = link_mass  # <--- Applied the new heavier mass here
 		link.angular_damp_mode = RigidBody3D.DAMP_MODE_REPLACE
 		link.linear_damp_mode = RigidBody3D.DAMP_MODE_REPLACE
@@ -327,8 +327,8 @@ func _build_dynamic_rope() -> void:
 		link.global_position = anchor.global_position + (Vector3.DOWN * link_spacing * (i + 1))
 
 		# 1. Physics Collision Shape
-		var col := CollisionShape3D.new()
-		var cap := CapsuleShape3D.new()
+		var col : CollisionShape3D = CollisionShape3D.new()
+		var cap : CapsuleShape3D = CapsuleShape3D.new()
 		cap.radius = thickness
 		cap.height = link_spacing
 		col.shape = cap
@@ -347,12 +347,12 @@ func _build_dynamic_rope() -> void:
 			link.add_child(hc)
 
 		# 3. Air Detection Area
-		var air_area := Area3D.new()
+		var air_area : Area3D = Area3D.new()
 		air_area.collision_layer = 0
 		air_area.collision_mask = 4294967295
 
-		var air_col := CollisionShape3D.new()
-		var air_shape := CapsuleShape3D.new()
+		var air_col : CollisionShape3D = CollisionShape3D.new()
+		var air_shape : CapsuleShape3D = CapsuleShape3D.new()
 		air_shape.radius = air_grab_radius
 		air_shape.height = link_spacing + (air_grab_radius * 2.0)
 		air_col.shape = air_shape
@@ -366,7 +366,7 @@ func _build_dynamic_rope() -> void:
 		_links.append(link)
 
 		# 4. Jointing
-		var joint := PinJoint3D.new()
+		var joint : PinJoint3D = PinJoint3D.new()
 		add_child(joint)
 		joint.global_position = previous_body.global_position.lerp(link.global_position, 0.5)
 		joint.node_a = joint.get_path_to(previous_body)
@@ -381,16 +381,16 @@ func _build_dynamic_rope() -> void:
 				segment = chain_scene.instantiate() as Node3D
 				segment.scale = chain_mesh_scale
 			elif chain_mesh != null:
-				var mesh_inst := MeshInstance3D.new()
+				var mesh_inst : MeshInstance3D = MeshInstance3D.new()
 				mesh_inst.mesh = chain_mesh
 				mesh_inst.scale = chain_mesh_scale
 				segment = mesh_inst
 			else:
-				var mesh_inst := MeshInstance3D.new()
+				var mesh_inst : MeshInstance3D = MeshInstance3D.new()
 				mesh_inst.mesh = _default_chain_mesh
 				segment = mesh_inst
 		else:
-			var mesh_inst := MeshInstance3D.new()
+			var mesh_inst : MeshInstance3D = MeshInstance3D.new()
 			mesh_inst.mesh = _base_mesh
 			segment = mesh_inst
 

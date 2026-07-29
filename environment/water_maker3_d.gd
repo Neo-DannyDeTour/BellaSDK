@@ -1,20 +1,20 @@
 @tool
 extends MeshInstance3D  # Or CSGMesh3D depending on what you chose in Step 1
 
-@export var water_color := Color(0.31, 0.54, 0.87, 0.38)
-@export var fog_color := Color(0, 0.04, 0.16)
-@export_range(0.0, 250.0) var fog_fade_dist := 5.0
+@export var water_color : Color = Color(0.31, 0.54, 0.87, 0.38)
+@export var fog_color : Color = Color(0, 0.04, 0.16)
+@export_range(0.0, 250.0) var fog_fade_dist : float = 5.0
 
 # Add these to match the shader
-@export var wave_amplitude := 0.2
-@export var wave_frequency := 2.0
-@export var wave_speed := 1.0
+@export var wave_amplitude : float = 0.2
+@export var wave_frequency : float = 2.0
+@export var wave_speed : float = 1.0
 
 @export var splash_sound: AudioStream
-@export var min_splash_velocity := 5.0
+@export var min_splash_velocity : float = 5.0
 
 var floating_bodies: Array[RigidBody3D] = []
-var can_splash := true
+var can_splash : bool = true
 var _was_underwater: bool = false
 var _last_camera_y: float = 0.0
 
@@ -56,7 +56,7 @@ func get_wave_height_at_pos(global_pos: Vector3) -> float:
 	# Note: Assumes your MeshInstance3D is using a BoxMesh.
 	var local_surface_y: float = (mesh.size.y / 2.0) + h1 + h2 + h3
 
-	var surface_global_pos := to_global(Vector3(local_pos.x, local_surface_y, local_pos.z))
+	var surface_global_pos : Vector3 = to_global(Vector3(local_pos.x, local_surface_y, local_pos.z))
 	return surface_global_pos.y
 
 
@@ -72,7 +72,7 @@ func should_draw_camera_underwater_effect() -> bool:
 	%CameraPosShapeCast3D.global_position = camera.global_position
 	%CameraPosShapeCast3D.force_shapecast_update()
 
-	var in_swimmable_area := false
+	var in_swimmable_area : bool = false
 	for i: int in range(%CameraPosShapeCast3D.get_collision_count()):
 		if %CameraPosShapeCast3D.get_collider(i) == %SwimmableArea3D:
 			in_swimmable_area = true
@@ -103,7 +103,7 @@ func _process(delta: float) -> void:
 		# --- NEW: Track Camera Vertical Speed ---
 		var viewport := get_viewport()
 		var camera: Camera3D = viewport.get_camera_3d() if viewport else null
-		var cam_velocity_y := 0.0
+		var cam_velocity_y : float = 0.0
 
 		if camera:
 			# Calculate upward speed (distance moved / time)
@@ -162,7 +162,7 @@ func _on_swimmable_area_body_entered(body: Node3D) -> void:
 			body.current_water_node = self
 
 	# 2. NEW: Velocity and Splash Logic
-	var impact_speed := 0.0
+	var impact_speed : float = 0.0
 
 	# Safely get the velocity depending on what kind of body jumped in
 	if body is RigidBody3D:
@@ -182,7 +182,7 @@ func play_splash_sound(impact_pos: Vector3, speed: float) -> void:
 	if not can_splash or not splash_sound:
 		return
 
-	var audio_player := AudioStreamPlayer3D.new()
+	var audio_player : AudioStreamPlayer3D = AudioStreamPlayer3D.new()
 	audio_player.stream = splash_sound
 
 	# NEW: Use speed to change the volume!

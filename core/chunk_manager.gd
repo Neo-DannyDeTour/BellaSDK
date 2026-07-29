@@ -31,7 +31,7 @@ var trigger_active_chunks: Array[String] = []
 
 
 func _ready() -> void:
-	var check_timer := Timer.new()
+	var check_timer : Timer = Timer.new()
 	check_timer.wait_time = 0.5
 	check_timer.timeout.connect(_on_check_chunks)
 	add_child(check_timer)

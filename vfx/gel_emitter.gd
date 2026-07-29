@@ -154,7 +154,7 @@ func spawn_splat(pos: Vector3) -> void:
 
 func spawn_decal(pos: Vector3) -> void:
 	print("GelEmitter: spawn_decal() called. Spawning gel decal.")
-	var dec_color := Color(pos.x, pos.y, pos.z, time)
+	var dec_color : Color = Color(pos.x, pos.y, pos.z, time)
 	splat_pos.set_pixel(splat_count, 0, dec_color)
 	splat_count += 1
 

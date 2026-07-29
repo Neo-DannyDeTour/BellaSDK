@@ -67,7 +67,7 @@ func _apply_sway(delta: float) -> void:
 	sway_target.x = clampf(sway_target.x, -max_sway, max_sway)
 	sway_target.y = clampf(sway_target.y, -max_sway, max_sway)
 
-	var target_rot := Vector3(
+	var target_rot : Vector3 = Vector3(
 		sway_target.y * (sway_amount * 0.0015), sway_target.x * (sway_amount * 0.0015), 0.0
 	)
 
@@ -81,7 +81,7 @@ func _apply_pushback(delta: float) -> void:
 	var ray_start: Vector3 = camera.global_position
 	var ray_end: Vector3 = ray_start + (forward_dir * flashlight_maintain_distance)
 
-	var query := PhysicsRayQueryParameters3D.create(ray_start, ray_end)
+	var query : PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(ray_start, ray_end)
 	query.hit_from_inside = false
 	var result: Dictionary = space_state.intersect_ray(query)
 

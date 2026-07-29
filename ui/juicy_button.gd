@@ -1,11 +1,11 @@
 extends Button
 
-@export var hover_scale := Vector2(1.08, 1.08)
+@export var hover_scale : Vector2 = Vector2(1.08, 1.08)
 @export var max_rotation_degrees := 5.0  # Maximum tilt amount
 @export var tilt_speed := 15.0  # How snappy it reacts to your mouse
 
 var original_scale: Vector2
-var is_hovered := false
+var is_hovered : bool = false
 
 
 func _ready() -> void:

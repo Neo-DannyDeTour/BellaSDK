@@ -33,12 +33,12 @@ func _update_cable() -> void:
 	var col_node := _get_first_node_of_type(self, "CollisionShape3D")
 
 	# 3. Math (Global space ensures it works perfectly no matter how you arrange the child nodes)
-	var global_start := to_global(curve.get_point_position(0))
-	var global_end := to_global(curve.get_point_position(1))
+	var global_start : Vector3 = to_global(curve.get_point_position(0))
+	var global_end : Vector3 = to_global(curve.get_point_position(1))
 
 	var distance := global_start.distance_to(global_end)
 	var global_center := global_start.lerp(global_end, 0.5)
-	var direction := (global_end - global_start).normalized()
+	var direction : Vector3 = (global_end - global_start).normalized()
 
 	var up_vector := Vector3.UP
 	if abs(direction.y) > 0.99:

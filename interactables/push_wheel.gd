@@ -151,15 +151,15 @@ func _update_stick_collisions() -> void:
 		indices_to_generate.append(restored_stick_index)
 
 	for i in indices_to_generate:
-		var col := CollisionShape3D.new()
-		var box := BoxShape3D.new()
+		var col : CollisionShape3D = CollisionShape3D.new()
+		var box : BoxShape3D = BoxShape3D.new()
 
 		# Aligning with your 0.1 thickness and stick_radius (1.5) length
 		box.size = Vector3(stick_radius, stick_thickness, stick_thickness)
 		col.shape = box
 
 		var angle: float = i * angle_step
-		var stick_dir := Vector3(cos(angle), 0.0, sin(angle))
+		var stick_dir : Vector3 = Vector3(cos(angle), 0.0, sin(angle))
 
 		# Applying your exact visual transform math
 		col.position = stick_dir * stick_center_distance
@@ -170,12 +170,12 @@ func _update_stick_collisions() -> void:
 		_stick_collisions.append(col)
 
 		if show_debug_colliders:
-			var debug_mesh := MeshInstance3D.new()
-			var mat := StandardMaterial3D.new()
+			var debug_mesh : MeshInstance3D = MeshInstance3D.new()
+			var mat : StandardMaterial3D = StandardMaterial3D.new()
 			mat.albedo_color = Color(1.0, 0.0, 0.0, 0.5)
 			mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 
-			var box_mesh := BoxMesh.new()
+			var box_mesh : BoxMesh = BoxMesh.new()
 			box_mesh.size = box.size
 			box_mesh.material = mat
 			debug_mesh.mesh = box_mesh
@@ -413,12 +413,12 @@ func get_interaction_transform(target_pos: Vector3) -> Transform3D:
 	var angle_step: float = TAU / float(max(1, stick_count))
 	var snapped_angle: float = round(angle / angle_step) * angle_step
 
-	var stick_local_dir := Vector3(cos(snapped_angle), 0.0, sin(snapped_angle))
+	var stick_local_dir : Vector3 = Vector3(cos(snapped_angle), 0.0, sin(snapped_angle))
 
 	# Updated to use the new accurate visual center distance
 	var stick_center := stick_local_dir * stick_center_distance
 
-	var tangent := spin_axis.cross(stick_local_dir).normalized()
+	var tangent : Vector3 = spin_axis.cross(stick_local_dir).normalized()
 	var vector_to_target := local_pos - stick_center
 
 	var is_right_side: bool = tangent.dot(vector_to_target) > 0.0
@@ -435,7 +435,7 @@ func get_interaction_transform(target_pos: Vector3) -> Transform3D:
 	var global_look_target: Vector3 = wheel.to_global(stick_center)
 	global_look_target.y = global_stand_pos.y
 
-	var target_transform := Transform3D()
+	var target_transform : Transform3D = Transform3D()
 	target_transform.origin = global_stand_pos
 	target_transform.basis = Basis.looking_at(global_look_target - global_stand_pos, Vector3.UP)
 

@@ -80,7 +80,7 @@ func _update_bridge_shape() -> void:
 		bridge.rotation_degrees = Vector3.ZERO
 
 	var z_shift := (bridge_size.z / 2.0) * -hinge_offset
-	var visual_offset := Vector3(0, 0, z_shift)
+	var visual_offset : Vector3 = Vector3(0, 0, z_shift)
 
 	var mesh_instance := $TheBridge/MeshInstance3D
 	if mesh_instance:
@@ -119,12 +119,12 @@ func _draw_debug_pin() -> void:
 	else:
 		debug_pin = get_node("DebugPin")
 
-	var cyl := CylinderMesh.new()
+	var cyl : CylinderMesh = CylinderMesh.new()
 	cyl.top_radius = 0.04
 	cyl.bottom_radius = 0.04
 	cyl.height = bridge_size.x + pin_extension
 
-	var mat := StandardMaterial3D.new()
+	var mat : StandardMaterial3D = StandardMaterial3D.new()
 	mat.albedo_color = Color.RED
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	cyl.material = mat

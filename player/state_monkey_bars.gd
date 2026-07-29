@@ -85,7 +85,7 @@ func physics_update(delta: float) -> void:
 
 	# --- NEW: Play Monkey Bar Sounds ---
 	# We only pass horizontal velocity so the vertical magnetism wobble doesn't trigger audio
-	var flat_vel := Vector2(player.velocity.x, player.velocity.z)
+	var flat_vel : Vector2 = Vector2(player.velocity.x, player.velocity.z)
 	if (
 		is_instance_valid(player.locomotion_component)
 		and is_instance_valid(player.locomotion_component.get("footstep_manager"))
@@ -130,7 +130,7 @@ func _apply_horizontal_movement(input_dir: Vector2) -> void:
 
 
 func _apply_vertical_magnetism() -> void:
-	var volume := current_monkey_bar_volume as MonkeyBarVolume
+	var volume : MonkeyBarVolume = current_monkey_bar_volume as MonkeyBarVolume
 	if not is_instance_valid(volume):
 		return
 

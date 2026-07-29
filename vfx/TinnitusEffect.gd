@@ -15,7 +15,7 @@ func _ready() -> void:
 		" seconds."
 	)
 
-	var generator := AudioStreamGenerator.new()
+	var generator : AudioStreamGenerator = AudioStreamGenerator.new()
 	generator.mix_rate = sample_rate
 	stream = generator
 

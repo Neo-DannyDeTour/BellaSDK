@@ -28,7 +28,9 @@ func enter(msg: Dictionary = {}) -> void:
 
 	# 1. Momentum Transfer
 	if can_swing:
-		var entry_momentum := Vector3(player.velocity.x, player.velocity.y * 0.2, player.velocity.z)
+		var entry_momentum: Vector3 = Vector3(
+			player.velocity.x, player.velocity.y * 0.2, player.velocity.z
+		)
 		current_rope.apply_impulse(
 			entry_momentum * 1.5, player.global_position - current_rope.global_position
 		)
@@ -52,12 +54,12 @@ func enter(msg: Dictionary = {}) -> void:
 	rope_offset = clampf(rope_offset, bottom_limit, top_limit)
 
 	# 4. Smoothly turn the camera to face the rope
-	var face_pos := Vector3(
+	var face_pos: Vector3 = Vector3(
 		current_rope.global_position.x, player.global_position.y, current_rope.global_position.z
 	)
 	if player.global_position.distance_to(face_pos) > 0.1:
 		var target_transform := player.global_transform.looking_at(face_pos, Vector3.UP)
-		var tween := create_tween()
+		var tween: Tween = create_tween()
 		(
 			tween
 			. tween_property(
@@ -86,7 +88,7 @@ func exit() -> void:
 		release_forward = -player.global_transform.basis.z
 
 	var target_basis := Basis.looking_at(release_forward, Vector3.UP)
-	var release_tween := create_tween().set_parallel(true)
+	var release_tween: Tween = create_tween().set_parallel(true)
 
 	(
 		release_tween
@@ -187,8 +189,8 @@ func _handle_climbing_and_swinging(delta: float, input_dir: Vector2) -> void:
 		if can_swing and input_dir.length() > 0.01:
 			current_rope.sleeping = false
 
-			var flat_fwd := Vector3(look_dir.x, 0.0, look_dir.z).normalized()
-			var flat_right := flat_fwd.cross(Vector3.UP).normalized()
+			var flat_fwd: Vector3 = Vector3(look_dir.x, 0.0, look_dir.z).normalized()
+			var flat_right: Vector3 = flat_fwd.cross(Vector3.UP).normalized()
 			var push_dir := (flat_fwd * -input_dir.y) + (flat_right * input_dir.x)
 
 			if push_dir.length_squared() > 0.01:
@@ -239,7 +241,7 @@ func _apply_rope_position(delta: float) -> void:
 	player.global_rotation.x = 0.0
 	player.global_rotation.z = 0.0
 
-	var tilt_quat := Quaternion(Vector3.UP, rope_up)
+	var tilt_quat: Quaternion = Quaternion(Vector3.UP, rope_up)
 	player.camera_controller.camera.quaternion = Quaternion.IDENTITY.slerp(tilt_quat, 0.15)
 	player.velocity = Vector3.ZERO
 

@@ -4,7 +4,7 @@ class_name WaveCascadeParameters extends Resource
 signal scale_changed
 
 ## Denotes the distance the cascade's tile should cover (in meters).
-@export var tile_length := Vector2(50.0, 50.0):
+@export var tile_length : Vector2 = Vector2(50.0, 50.0):
 	set(value):
 		tile_length = value
 		should_generate_spectrum = true
