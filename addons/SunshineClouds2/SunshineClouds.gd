@@ -667,8 +667,8 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 				color_images.clear()
 
 				#print(
-				#    "SunshineCloudsGD: Successfully freed prior rendering pass "
-				#	+ "arrays to prevent VRAM accumulation."
+					#"SunshineCloudsGD: Successfully freed prior rendering pass "
+					#+ "arrays to prevent VRAM accumulation."
 				#)
 
 				for item: RID in blit_screen_images:

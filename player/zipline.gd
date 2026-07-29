@@ -35,11 +35,19 @@ func _ready() -> void:
 	if interact_label:
 		interact_label.hide()
 
-	var action_name : String = "interact"
-	var events : Array[InputEvent] = InputMap.action_get_events(action_name)
+	## The action name mapped in the Input Map for zipline interaction.
+	var action_name: String = "interact"
+	
+	## The array of input events associated with the interact action.
+	var events: Array[InputEvent] = InputMap.action_get_events(action_name)
+	
 	if events.size() > 0 and interact_label:
-		var raw_text : String = events[0].as_text()
-		var key_name : PackedStringArray = raw_text.split(" ")[0]
+		## The raw text description of the first input event.
+		var raw_text: String = events[0].as_text()
+		
+		## The specific keyboard key or button parsed from the raw text.
+		var key_name: String = raw_text.split(" ")[0]
+		
 		interact_label.text = "[" + key_name + "] to use ZIPLINE"
 
 	interact_component.interacted.connect(_on_interact_component_interacted)

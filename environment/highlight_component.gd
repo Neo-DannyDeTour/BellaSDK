@@ -21,7 +21,7 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 
-	print("HighlightComponent: Initializing component.")
+	#print("HighlightComponent: Initializing component.")
 
 	if not is_instance_valid(interact_component):
 		var parent: Node = get_parent()
@@ -31,7 +31,7 @@ func _ready() -> void:
 	if is_instance_valid(interact_component):
 		interact_component.focused.connect(_on_focus)
 		interact_component.unfocused.connect(_on_unfocus)
-		print("HighlightComponent: Successfully connected to InteractComponent.")
+		#print("HighlightComponent: Successfully connected to InteractComponent.")
 	else:
 		print("HighlightComponent: No InteractComponent assigned or found in parent!")
 
