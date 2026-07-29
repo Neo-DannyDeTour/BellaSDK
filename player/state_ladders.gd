@@ -62,7 +62,7 @@ func _snap_to_ladder() -> void:
 	var target_pos: Vector3 = current_ladder.global_position + (ladder_forward * push_out_distance)
 	target_pos.y = player.global_position.y  # Keep current height
 
-	var tween := create_tween()
+	var tween : Tween = create_tween()
 	(
 		tween
 		. tween_property(player, "global_position", target_pos, 0.15)
@@ -127,7 +127,7 @@ func _calculate_ladder_velocity(input_dir: Vector2) -> void:
 	var ad_vertical: float = vertical_weight_ad * strafe_input
 
 	# 3. Combine Intent
-	var plane_intent := Vector2(ws_lateral + ad_lateral, ws_vertical + ad_vertical)
+	var plane_intent : Vector2 = Vector2(ws_lateral + ad_lateral, ws_vertical + ad_vertical)
 	if plane_intent.length() > 1.0:
 		plane_intent = plane_intent.normalized()
 

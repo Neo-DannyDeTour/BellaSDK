@@ -38,10 +38,10 @@ func _draw() -> void:
 		var y1: float = h - (ms1 / ceiling_ms) * h
 		var y2: float = h - (ms2 / ceiling_ms) * h
 
-		var p1 := Vector2(x1, y1)
-		var p2 := Vector2(x2, y2)
+		var p1 : Vector2 = Vector2(x1, y1)
+		var p2 : Vector2 = Vector2(x2, y2)
 
-		var line_color := Color(0.2, 0.8, 0.2, 0.8)
+		var line_color : Color = Color(0.2, 0.8, 0.2, 0.8)
 		if ms2 > target_ms or ms1 > target_ms:
 			line_color = Color(0.9, 0.2, 0.2, 0.8)
 
@@ -55,11 +55,11 @@ func _draw() -> void:
 	var latest_ms: float = history.back() if not history.is_empty() else 0.0
 	var font := ThemeDB.fallback_font
 	var text_color := Color.GREEN
-	var status_text := "16.66ms - Good"
+	var status_text : String = "16.66ms - Good"
 
 	if latest_ms > target_ms:
 		text_color = Color.RED
 		status_text = "16.66ms - Problem!"
 
-	var text_pos := Vector2(5, target_y - 5)
+	var text_pos : Vector2 = Vector2(5, target_y - 5)
 	draw_string(font, text_pos, status_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, text_color)

@@ -113,9 +113,9 @@ func _draw_path_lines() -> void:
 		if marker == null:
 			continue
 
-		var mesh_instance := MeshInstance3D.new()
-		var box_mesh := BoxMesh.new()
-		var mat := StandardMaterial3D.new()
+		var mesh_instance: MeshInstance3D = MeshInstance3D.new()
+		var box_mesh: BoxMesh = BoxMesh.new()
+		var mat: StandardMaterial3D = StandardMaterial3D.new()
 
 		mat.albedo_color = Color.BLACK
 		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
@@ -126,8 +126,10 @@ func _draw_path_lines() -> void:
 		)
 
 		# Lock the Y axis to the start position + track offset to ensure it's perfectly flat
-		var flat_start := Vector3(start_pos.x, start_pos.y + track_y_offset, start_pos.z)
-		var flat_marker := Vector3(marker.global_position.x, flat_start.y, marker.global_position.z)
+		var flat_start: Vector3 = Vector3(start_pos.x, start_pos.y + track_y_offset, start_pos.z)
+		var flat_marker: Vector3 = Vector3(
+			marker.global_position.x, flat_start.y, marker.global_position.z
+		)
 
 		var dist: float = flat_start.distance_to(flat_marker)
 
@@ -149,20 +151,22 @@ func _setup_trigger_areas() -> void:
 		if marker == null:
 			continue
 
-		var trigger_area := Area3D.new()
+		var trigger_area: Area3D = Area3D.new()
 		trigger_area.collision_layer = 0
 		trigger_area.collision_mask = 2  # Player mask
 
-		var coll_shape := CollisionShape3D.new()
-		var box := BoxShape3D.new()
+		var coll_shape: CollisionShape3D = CollisionShape3D.new()
+		var box: BoxShape3D = BoxShape3D.new()
 
 		var start_pos: Vector3 = (
 			_origin_position if _origin_position != Vector3.ZERO else global_position
 		)
 
 		# Flatten trigger areas exactly like the track meshes
-		var flat_start := Vector3(start_pos.x, start_pos.y + track_y_offset, start_pos.z)
-		var flat_marker := Vector3(marker.global_position.x, flat_start.y, marker.global_position.z)
+		var flat_start: Vector3 = Vector3(start_pos.x, start_pos.y + track_y_offset, start_pos.z)
+		var flat_marker: Vector3 = Vector3(
+			marker.global_position.x, flat_start.y, marker.global_position.z
+		)
 
 		var dist: float = flat_start.distance_to(flat_marker)
 

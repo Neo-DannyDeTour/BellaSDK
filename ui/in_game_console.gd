@@ -139,7 +139,7 @@ func _ready() -> void:
 		output_log.pop()
 		output_log.newline()
 
-	var filter_layer := CanvasLayer.new()
+	var filter_layer : CanvasLayer = CanvasLayer.new()
 	filter_layer.layer = 127
 	add_child(filter_layer)
 
@@ -147,7 +147,7 @@ func _ready() -> void:
 	colorblind_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
 	colorblind_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	var mat := ShaderMaterial.new()
+	var mat : ShaderMaterial = ShaderMaterial.new()
 	mat.shader = preload("res://vfx/colorblind.gdshader")
 	colorblind_rect.material = mat
 	filter_layer.add_child(colorblind_rect)
@@ -157,7 +157,7 @@ func _ready() -> void:
 	high_contrast_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	high_contrast_rect.visible = false
 
-	var hc_mat := ShaderMaterial.new()
+	var hc_mat : ShaderMaterial = ShaderMaterial.new()
 	hc_mat.shader = preload("res://vfx/high_contrast.gdshader")
 	high_contrast_rect.material = hc_mat
 	filter_layer.add_child(high_contrast_rect)
@@ -260,7 +260,7 @@ func _on_text_changed(new_text: String) -> void:
 
 func _get_autocomplete_matches(current_text: String) -> Array[String]:
 	print("Console calculating autocomplete matches for: '", current_text, "'")
-	var parts := current_text.split(" ")
+	var parts : PackedStringArray = current_text.split(" ")
 	var matches: Array[String] = []
 
 	if parts.size() == 1:
@@ -324,7 +324,7 @@ func _navigate_suggestions(direction: int) -> void:
 
 
 func _update_suggestion_ui() -> void:
-	var bbcode := ""
+	var bbcode : String = ""
 	for i: int in range(current_matches.size()):
 		if i == match_index:
 			bbcode += "[color=yellow]> " + current_matches[i] + "[/color]\n"
@@ -396,7 +396,7 @@ func _on_command_submitted(text: String) -> void:
 
 		write("> " + clean_text, "darkgray")
 
-		var parts := clean_text.split(" ")
+		var parts : PackedStringArray = clean_text.split(" ")
 		var command := parts[0].to_lower()
 		var args := parts.slice(1)
 
@@ -526,7 +526,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 		"screenshake":
 			if args.size() > 0:
 				var amount := args[0].to_float()
-				var duration := 1.0
+				var duration : float = 1.0
 
 				if args.size() > 1:
 					duration = args[1].to_float()
@@ -617,7 +617,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 							write("Shader not found at: " + shader_path, "red")
 							return
 
-					var mat := ShaderMaterial.new()
+					var mat : ShaderMaterial = ShaderMaterial.new()
 					mat.shader = cached_shaders[filter_type] as Shader
 					screen_filter_rect.material = mat
 					screen_filter_rect.visible = true

@@ -27,7 +27,7 @@ func pick_up(hold_position: Marker3D, player: CharacterBody3D) -> void:
 
 	# 3. Tween the player's global X/Z to the anchor, but keep their Y to avoid clipping into the floor
 	var tween: Tween = get_tree().create_tween()
-	var target_pos := Vector3(
+	var target_pos : Vector3 = Vector3(
 		player_anchor.global_position.x, player.global_position.y, player_anchor.global_position.z
 	)
 

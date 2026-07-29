@@ -197,22 +197,24 @@ func drop() -> void:
 		if is_instance_valid(cam):
 			cam_forward = -cam.global_transform.basis.z
 
-		var flat_cam_forward := Vector3(cam_forward.x, 0.0, cam_forward.z)
-		var push_dir := flat_cam_forward.normalized()
+		var flat_cam_forward: Vector3 = Vector3(cam_forward.x, 0.0, cam_forward.z)
+		var push_dir: Vector3 = flat_cam_forward.normalized()
 
 		var player_vel: Vector3 = holder.get("velocity") if "velocity" in holder else Vector3.ZERO
-		var velocity_offset := Vector3(player_vel.x, 0.0, player_vel.z) * 0.15
+		var velocity_offset: Vector3 = Vector3(player_vel.x, 0.0, player_vel.z) * 0.15
 
-		var is_nudging := false
+		var is_nudging: bool = false
 		if cam_forward.y < -0.2:
-			var space_state := get_world_3d().direct_space_state
+			var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 			var intended_slide := (push_dir * 0.35) + velocity_offset
 
-			var check_dir := intended_slide.normalized()
+			var check_dir: Vector3 = intended_slide.normalized()
 			var check_dist := intended_slide.length() + 0.1
 			var ray_end := global_position + (check_dir * check_dist)
 
-			var query := PhysicsRayQueryParameters3D.create(global_position, ray_end)
+			var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
+				global_position, ray_end
+			)
 			query.exclude = [self.get_rid(), holder.get_rid()]
 
 			var result := space_state.intersect_ray(query)
@@ -229,7 +231,7 @@ func drop() -> void:
 				is_nudging = true
 				angular_velocity = Vector3.ZERO
 
-				var nudge_tween := create_tween()
+				var nudge_tween: Tween = create_tween()
 				(
 					nudge_tween
 					. tween_property(self, "global_position:x", target_pos.x, 0.15)
@@ -308,11 +310,11 @@ func _update_label_text() -> void:
 	if not label:
 		return
 
-	var events := InputMap.action_get_events("interact")
-	var key_name := "???"
+	var events: Array[InputEvent] = InputMap.action_get_events("interact")
+	var key_name: String = "???"
 
 	if events.size() > 0:
-		var raw_text := events[0].as_text()
+		var raw_text: String = events[0].as_text()
 		key_name = (
 			raw_text
 			. replace(" (Physical)", "")
@@ -358,7 +360,7 @@ func _physics_process(_delta: float) -> void:
 		if target_pos.y > max_allowed_height:
 			target_pos.y = max_allowed_height
 
-		var flat_offset := Vector2(target_pos.x - player_pos.x, target_pos.z - player_pos.z)
+		var flat_offset: Vector2 = Vector2(target_pos.x - player_pos.x, target_pos.z - player_pos.z)
 		if flat_offset.length() < 0.8:
 			flat_offset = flat_offset.normalized() * 0.8
 			target_pos.x = player_pos.x + flat_offset.x
@@ -381,7 +383,7 @@ func _physics_process(_delta: float) -> void:
 		var current_quat := global_basis.get_rotation_quaternion()
 		var diff_quat := target_basis.get_rotation_quaternion() * current_quat.inverse()
 
-		var axis := Vector3(diff_quat.x, diff_quat.y, diff_quat.z)
+		var axis: Vector3 = Vector3(diff_quat.x, diff_quat.y, diff_quat.z)
 		var angle := 2.0 * acos(clampf(diff_quat.w, -1.0, 1.0))
 
 		if angle > PI:
@@ -427,16 +429,18 @@ func _physics_process(_delta: float) -> void:
 
 func _wait_to_enable_collision(player_node: Node3D) -> void:
 	print("PickableObject: _wait_to_enable_collision() waiting for clearance.")
-	var max_wait_frames := 30
-	var current_frame := 0
+	var max_wait_frames: int = 30
+	var current_frame: int = 0
 
 	while (
 		is_instance_valid(self)
 		and is_instance_valid(player_node)
 		and current_frame < max_wait_frames
 	):
-		var flat_my_pos := Vector2(global_position.x, global_position.z)
-		var flat_player_pos := Vector2(player_node.global_position.x, player_node.global_position.z)
+		var flat_my_pos: Vector2 = Vector2(global_position.x, global_position.z)
+		var flat_player_pos: Vector2 = Vector2(
+			player_node.global_position.x, player_node.global_position.z
+		)
 
 		if flat_my_pos.distance_to(flat_player_pos) >= 1.0:
 			break
@@ -445,14 +449,18 @@ func _wait_to_enable_collision(player_node: Node3D) -> void:
 		await get_tree().physics_frame
 
 	if is_instance_valid(self) and is_instance_valid(player_node):
-		var flat_my_pos := Vector2(global_position.x, global_position.z)
-		var flat_player_pos := Vector2(player_node.global_position.x, player_node.global_position.z)
+		var flat_my_pos: Vector2 = Vector2(global_position.x, global_position.z)
+		var flat_player_pos: Vector2 = Vector2(
+			player_node.global_position.x, player_node.global_position.z
+		)
 
 		if flat_my_pos.distance_to(flat_player_pos) < 1.0:
 			var player_forward := -player_node.global_transform.basis.z
-			var flat_backward := Vector3(-player_forward.x, 0.0, -player_forward.z).normalized()
+			var flat_backward: Vector3 = (
+				Vector3(-player_forward.x, 0.0, -player_forward.z).normalized()
+			)
 
-			var push_distance := 0.2
+			var push_distance: float = 0.2
 			var push_vector := flat_backward * push_distance
 
 			var safe_travel := push_vector
@@ -464,7 +472,7 @@ func _wait_to_enable_collision(player_node: Node3D) -> void:
 
 			var target_pos := player_node.global_position + safe_travel
 
-			var tween := get_tree().create_tween()
+			var tween: Tween = get_tree().create_tween()
 			(
 				tween
 				. tween_property(player_node, "global_position", target_pos, 0.15)

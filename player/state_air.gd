@@ -175,7 +175,7 @@ func _apply_air_movement(delta: float, input_dir: Vector2) -> void:
 	var target_dir: Vector3 = (
 		(player.transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
 	)
-	var horizontal_velocity := Vector2(player.velocity.x, player.velocity.z)
+	var horizontal_velocity : Vector2 = Vector2(player.velocity.x, player.velocity.z)
 	var current_speed: float = horizontal_velocity.length()
 
 	# 1. High Momentum Handling (Rope / Swing Dismount)

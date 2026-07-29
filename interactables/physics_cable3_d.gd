@@ -63,7 +63,7 @@ func _create_base_mesh() -> void:
 	_base_mesh.rings = 1
 
 	if not _material_cache.has(cable_color):
-		var mat := StandardMaterial3D.new()
+		var mat : StandardMaterial3D = StandardMaterial3D.new()
 		mat.albedo_color = cable_color
 		mat.roughness = 0.8
 		_material_cache[cable_color] = mat
@@ -84,8 +84,8 @@ func _setup_debug_sphere() -> void:
 	_debug_sphere = MeshInstance3D.new()
 	_debug_sphere.name = "DebugSphereMesh"  # Name it so we can easily find and destroy it later
 
-	var sphere_mesh := SphereMesh.new()
-	var mat := StandardMaterial3D.new()
+	var sphere_mesh : SphereMesh = SphereMesh.new()
+	var mat : StandardMaterial3D = StandardMaterial3D.new()
 
 	# Create a soft, unshaded transparent material for the editor
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -116,7 +116,7 @@ func _process(_delta: float) -> void:
 	var end_pos := end_plug.global_position
 
 	# OPTIMIZATION: Early exit if nothing is moving
-	var needs_update := false
+	var needs_update : bool = false
 	if not start_pos.is_equal_approx(_last_start_pos) or not end_pos.is_equal_approx(_last_end_pos):
 		needs_update = true
 	else:
@@ -133,7 +133,7 @@ func _process(_delta: float) -> void:
 
 	# OPTIMIZATION: Single pass iteration, zero array allocations per frame
 	var p1 := start_pos
-	var segment_index := 0
+	var segment_index : int = 0
 
 	for link: RigidBody3D in _links:
 		if not is_instance_valid(link):
@@ -177,7 +177,7 @@ func _generate_visual_segments() -> void:
 	var total_points: int = _links.size() + 1
 
 	for i: int in range(total_points):
-		var segment := MeshInstance3D.new()
+		var segment : MeshInstance3D = MeshInstance3D.new()
 		segment.mesh = _base_mesh
 		segment.top_level = true
 		add_child(segment)
@@ -243,7 +243,7 @@ func _generate_physics_chain() -> void:
 
 		_links.append(link)
 
-		var joint := PinJoint3D.new()
+		var joint : PinJoint3D = PinJoint3D.new()
 		add_child(joint)
 		joint.global_position = previous_body.global_position.lerp(link.global_position, 0.5)
 
@@ -253,7 +253,7 @@ func _generate_physics_chain() -> void:
 		joint.node_b = joint.get_path_to(link)
 		previous_body = link
 
-	var final_joint := PinJoint3D.new()
+	var final_joint : PinJoint3D = PinJoint3D.new()
 	add_child(final_joint)
 	final_joint.global_position = previous_body.global_position.lerp(end_pos, 0.5)
 	final_joint.node_a = final_joint.get_path_to(previous_body)

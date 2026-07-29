@@ -73,10 +73,10 @@ func _on_focus() -> void:
 	print("TetheredPlug: _on_focus() called. Updating UI label.")
 	if label:
 		# Dynamically grab the player's keybind, just like you did in the socket!
-		var events := InputMap.action_get_events("interact")
-		var key_name := "???"
+		var events : Array[InputEvent] = InputMap.action_get_events("interact")
+		var key_name : String = "???"
 		if events.size() > 0:
-			var raw_text := events[0].as_text()
+			var raw_text : String = events[0].as_text()
 			key_name = (
 				raw_text
 				. replace(" (Physical)", "")
@@ -124,7 +124,7 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	var dist := to_anchor.length()
 
 	if dist > max_cable_length:
-		var dir := to_anchor.normalized()
+		var dir : Vector3 = to_anchor.normalized()
 		var overshoot := dist - max_cable_length
 
 		var outward_vel := state.linear_velocity.dot(-dir)

@@ -20,22 +20,22 @@ static var active_horror_buttons: int = 0
 
 ## The target visual scale multiplier applied via offset transform when the player hovers over the
 ## button.
-@export var hover_scale := Vector2(1.08, 1.08)
+@export var hover_scale : Vector2 = Vector2(1.08, 1.08)
 
 ## The interpolation speed used when transitioning to hover animations.
-@export var response_speed := 12.0
+@export var response_speed : float = 12.0
 
 # --- PRESS CONFIGURATION ---
 
 ## The target visual scale multiplier applied when the button is actively pressed.
-@export var press_scale := Vector2(0.94, 0.94)
+@export var press_scale : Vector2 = Vector2(0.94, 0.94)
 
 ## The downward pixel offset added to the text position to simulate physical button depth when
 ## clicked.
-@export var press_depth := 8.0
+@export var press_depth : float = 8.0
 
 ## The interpolation speed used for button click and release animations.
-@export var press_speed := 20.0
+@export var press_speed : float = 20.0
 
 # --- BACKGROUND CONFIGURATION ---
 
@@ -45,40 +45,40 @@ static var active_horror_buttons: int = 0
 # --- SHADOW AI CONFIGURATION ---
 
 ## The baseline tracking movement speed for ambient text shadow drifting when idle.
-@export var walk_speed := 0.2
+@export var walk_speed : float = 0.2
 
 ## The rapid tracking movement speed for text shadows chasing the user's cursor on hover.
-@export var hunt_speed := 6.0
+@export var hunt_speed : float = 6.0
 
 # --- GLITCH CONFIGURATION ---
 
 ## Alternative frightening or corrupted text displayed temporarily during an active glitch event.
-@export var glitch_text := ""
+@export var glitch_text : String = ""
 
 ## The duration in seconds that a specific text corruption/glitch event lasts.
-@export var glitch_duration := 0.666
+@export var glitch_duration : float = 0.666
 
 ## The minimum random threshold boundary in seconds before another text glitch triggers.
-@export var min_glitch_time := 15.0
+@export var min_glitch_time : float = 15.0
 
 ## The maximum random threshold boundary in seconds before another text glitch triggers.
-@export var max_glitch_time := 20.0
+@export var max_glitch_time : float = 20.0
 
 # --- PULSE CONFIGURATION ---
 
 ## The speed/frequency of the pulsing text animation loop when hovered.
-@export var pulse_speed := 6.0
+@export var pulse_speed : float = 6.0
 
 ## The intensity variance added to the text label scale during a hover pulse.
-@export var pulse_intensity := 0.1
+@export var pulse_intensity : float = 0.1
 
 # --- 3D PARALLAX CONFIGURATION ---
 
 ## The maximum visual angular rotation in degrees allowed during mouse parallax tilting.
-@export var max_rotation_degrees := 8.0
+@export var max_rotation_degrees : float = 8.0
 
 ## The scaling factor applied to the translation offset of text layers during parallax tilting.
-@export var parallax_intensity := 3.0
+@export var parallax_intensity : float = 3.0
 
 ## The custom texture overlay utilized to render a simulated flashlight illumination mask.
 @export var flashlight_texture: Texture2D
@@ -105,13 +105,13 @@ var border_rect: ColorRect
 var border_material: ShaderMaterial
 
 ## Current blending state weight (0.0 to 1.0) governing active shader hover profiles.
-var current_hover_intensity := 0.0
+var current_hover_intensity : float = 0.0
 
 ## Flag monitoring whether the player's pointer is currently inside the button layout bounds.
-var is_mouse_over := false
+var is_mouse_over : bool = false
 
 ## Flag monitoring whether the player is currently clicking and holding the button down.
-var is_clicking := false
+var is_clicking : bool = false
 
 ## Cached initial visual transform scale recorded at initialization for accurate rest states.
 var original_scale: Vector2
@@ -140,17 +140,17 @@ var current_tilt := Vector2.ZERO
 
 ## Preserved original textual configuration string restored automatically following a corruption
 ## glitch.
-var original_button_text := ""
+var original_button_text : String = ""
 
 ## Ongoing count-down timer tracking the remaining duration until the next glitch cycle phase.
-var glitch_timer := 0.0
+var glitch_timer : float = 0.0
 
 ## Flag status checking whether a terrifying text corruption sequence is actively running.
-var is_glitching := false
+var is_glitching : bool = false
 
 ## Prerequisite safety check ensuring the component contains valid corruption text parameters to
 ## run.
-var can_glitch := false
+var can_glitch : bool = false
 
 ## Memory tracker of the component layout boundaries to catch layout container resizing safely.
 var _last_known_size := Vector2.ZERO
@@ -167,7 +167,7 @@ func _ready() -> void:
 	# Enable Godot 4.7 visual-only offset transforms to keep container layouts safe
 	offset_transform_enabled = true
 
-	var empty_style := StyleBoxEmpty.new()
+	var empty_style : StyleBoxEmpty = StyleBoxEmpty.new()
 	add_theme_stylebox_override("normal", empty_style)
 	add_theme_stylebox_override("hover", empty_style)
 	add_theme_stylebox_override("pressed", empty_style)
@@ -343,7 +343,7 @@ func _process(delta: float) -> void:
 	var center_y := size.y / 2.0
 
 	if not is_settled:
-		var target_rotation := 0.0
+		var target_rotation : float = 0.0
 		var tilt_target := Vector2.ZERO
 
 		if is_mouse_over:
@@ -418,7 +418,7 @@ func _process(delta: float) -> void:
 			bg_material.set_shader_parameter("ui_tilt", current_tilt * current_hover_intensity)
 			if is_mouse_over and is_instance_valid(bg_rect):
 				var local_mouse_pos := bg_rect.get_local_mouse_position()
-				var mouse_uv := Vector2(
+				var mouse_uv : Vector2 = Vector2(
 					local_mouse_pos.x / bg_rect.size.x, local_mouse_pos.y / bg_rect.size.y
 				)
 				bg_material.set_shader_parameter("mouse_pos_uv", mouse_uv)

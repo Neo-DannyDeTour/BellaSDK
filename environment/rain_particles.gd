@@ -1,7 +1,7 @@
 @tool
 extends GPUParticles3D
 
-const RAIN_SHADER_CODE = """
+const RAIN_SHADER_CODE: String = """
 shader_type spatial;
 // Removed depth_draw_never so it sorts properly, changed to unshaded for speed
 render_mode blend_mix, cull_disabled, unshaded;
@@ -139,7 +139,7 @@ func _init_system() -> void:
 	# 2. Material setup
 	if _shader_mat == null:
 		_shader_mat = ShaderMaterial.new()
-		var shader := Shader.new()
+		var shader : Shader = Shader.new()
 		shader.code = RAIN_SHADER_CODE
 		_shader_mat.shader = shader
 		_draw_mesh.material = _shader_mat
@@ -245,14 +245,14 @@ func _generate_fallback_normal() -> Texture2D:
 
 
 func _setup_auto_volume() -> void:
-	var rain_area := Area3D.new()
+	var rain_area : Area3D = Area3D.new()
 	# Collision Layer 0 (detects nothing by default), Mask 1 (detects Player)
 	rain_area.collision_layer = 0
 	rain_area.collision_mask = player_collision_mask
 	add_child(rain_area)
 
-	var shape_node := CollisionShape3D.new()
-	var box_shape := BoxShape3D.new()
+	var shape_node : CollisionShape3D = CollisionShape3D.new()
+	var box_shape : BoxShape3D = BoxShape3D.new()
 
 	var width: float = 20.0
 	var depth: float = 20.0

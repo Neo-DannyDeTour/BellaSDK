@@ -35,11 +35,11 @@ func _ready() -> void:
 	if interact_label:
 		interact_label.hide()
 
-	var action_name := "interact"
-	var events := InputMap.action_get_events(action_name)
+	var action_name : String = "interact"
+	var events : Array[InputEvent] = InputMap.action_get_events(action_name)
 	if events.size() > 0 and interact_label:
-		var raw_text := events[0].as_text()
-		var key_name := raw_text.split(" ")[0]
+		var raw_text : String = events[0].as_text()
+		var key_name : PackedStringArray = raw_text.split(" ")[0]
 		interact_label.text = "[" + key_name + "] to use ZIPLINE"
 
 	interact_component.interacted.connect(_on_interact_component_interacted)
@@ -158,8 +158,8 @@ func force_grab_zipline(player: CharacterBody3D) -> void:
 		if interact_label:
 			interact_label.hide()
 
-		var point_a := to_global(curve.get_point_position(0))
-		var point_b := to_global(curve.get_point_position(curve.get_point_count() - 1))
+		var point_a : Vector3 = to_global(curve.get_point_position(0))
+		var point_b : Vector3 = to_global(curve.get_point_position(curve.get_point_count() - 1))
 
 		player._on_zipline_grabbed(self, point_a, point_b)
 

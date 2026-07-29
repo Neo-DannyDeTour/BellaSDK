@@ -91,12 +91,12 @@ func _update_stairs() -> void:
 	points.append(Vector2(0, 0))
 	ramp_points.append(Vector2(0, 0))
 
-	var cx := 0.0
-	var cy := 0.0
+	var cx : float = 0.0
+	var cy : float = 0.0
 
 	# Generate both the visual stairs AND the physics ramp simultaneously
 	for i in range(step_count):
-		var extra := 0.0
+		var extra : float = 0.0
 
 		# Check if this specific step is marked as an EQ landing
 		if i in landing_step_indices:

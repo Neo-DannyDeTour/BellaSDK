@@ -33,14 +33,14 @@ func build_cable() -> void:
 		path_node.curve.remove_point(path_node.curve.get_point_count() - 1)
 
 	# Math & World Space Conversion
-	var start_pos := path_node.to_global(path_node.curve.get_point_position(0))
-	var end_pos := path_node.to_global(
+	var start_pos : Vector3 = path_node.to_global(path_node.curve.get_point_position(0))
+	var end_pos : Vector3 = path_node.to_global(
 		path_node.curve.get_point_position(path_node.curve.get_point_count() - 1)
 	)
 
 	var distance := start_pos.distance_to(end_pos)
 	var center := start_pos.lerp(end_pos, 0.5)
-	var direction := (end_pos - start_pos).normalized()
+	var direction : Vector3 = (end_pos - start_pos).normalized()
 
 	# Size
 	if mesh_node.mesh:

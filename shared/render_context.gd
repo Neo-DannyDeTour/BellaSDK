@@ -37,13 +37,13 @@ class Descriptor:
 
 
 var device: RenderingDevice
-var deletion_queue := DeletionQueue.new()
+var deletion_queue : DeletionQueue = DeletionQueue.new()
 var shader_cache: Dictionary
-var needs_sync := false
+var needs_sync : bool = false
 
 
 static func create(target_device: RenderingDevice = null) -> RenderingContext:
-	var context := RenderingContext.new()
+	var context : RenderingContext = RenderingContext.new()
 	context.device = (
 		RenderingServer.create_local_rendering_device() if not target_device else target_device
 	)
@@ -124,7 +124,7 @@ func create_texture(
 	data: PackedByteArray = []
 ) -> Descriptor:
 	assert(num_layers >= 1, "Texture must have at least 1 layer.")
-	var texture_format := RDTextureFormat.new()
+	var texture_format : RDTextureFormat = RDTextureFormat.new()
 	texture_format.array_layers = num_layers
 	texture_format.format = format
 	texture_format.width = dimensions.x
@@ -148,7 +148,7 @@ func create_descriptor_set(
 ) -> RID:
 	var uniforms: Array[RDUniform] = []
 	for i in range(descriptors.size()):
-		var uniform := RDUniform.new()
+		var uniform : RDUniform = RDUniform.new()
 		uniform.uniform_type = descriptors[i].type
 		uniform.binding = i  # This matches the binding in the shader.
 		uniform.add_id(descriptors[i].rid)

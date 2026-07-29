@@ -1,9 +1,9 @@
 extends Node3D
 #
-var is_moving := false
-var is_open := false
-var player_detected := false
-var pending_open := false
+var is_moving : bool = false
+var is_open : bool = false
+var player_detected : bool = false
+var pending_open : bool = false
 #
 @onready var anim_player := $Anim
 @onready var close_timer: Timer = $CloseTimer
