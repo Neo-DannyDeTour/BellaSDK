@@ -74,7 +74,7 @@ func _update_label_text() -> void:
 func _on_focused() -> void:
 	print(
 		"HealthUpgrade: _on_focused() - Player focused. ",
-		"Starting beat animation and showing label."
+        "Starting beat animation and showing label."
 	)
 
 	if is_instance_valid(prompt_label):
@@ -96,45 +96,37 @@ func _on_focused() -> void:
 
 	_beat_tween.tween_interval(0.5)
 
+
 func _on_unfocused() -> void:
-	print(
-		"HealthUpgrade: _on_unfocused() - Player unfocused. ",
-		"Stopping beat animation and hiding label."
-	)
-
-	if is_instance_valid(prompt_label):
-		prompt_label.hide()
-	print(
-		"HealthUpgrade: _on_focused() - Player focused. ",
-        "Starting beat animation and showing label."
-	)
-
-
-	_beat_tween.tween_property(
-		heart_visual, "scale", Vector3(1.3, 1.3, 1.3), 0.2
-	).set_trans(Tween.TRANS_SINE)
-
-	_beat_tween.tween_property(
-		heart_visual, "scale", Vector3(1.0, 1.0, 1.0), 0.2
-	).set_trans(Tween.TRANS_SINE)
-
 	print(
 		"HealthUpgrade: _on_unfocused() - Player unfocused. ",
         "Stopping beat animation and hiding label."
 	)
 
+	if is_instance_valid(prompt_label):
+		prompt_label.hide()
+	
+	# Safely kill the tween to prevent errors
+	if _beat_tween and _beat_tween.is_valid():
+		_beat_tween.kill()
+		_beat_tween = null
+		
+	# Reset the heart visual back to its default state
+	if is_instance_valid(heart_visual):
+		heart_visual.scale = Vector3(1.0, 1.0, 1.0)
 
 
 func _on_interacted(character: CharacterBody3D) -> void:
-	print("HealthUpgrade: _on_interacted() - Signal received. Searching for HealthComponent...")
+	print("HealthUpgrade: _on_interacted() - Signal received. Searching for HealthComp...")
 
 	var health_comp: Node = character.find_child("HealthComponent", true, false)
 
 	if is_instance_valid(health_comp) and health_comp.has_method("increase_max_health"):
-		print("HealthUpgrade: _on_interacted() - Success! Granting ", health_bonus, " max health.")
+		print("HealthUpgrade: _on_interacted() - Success! Granting ", health_bonus, " max hp.")
 		health_comp.increase_max_health(health_bonus)
 		queue_free()
 	else:
 		print(
-			"HealthUpgrade: _on_interacted() - ERROR: No HealthComponent found on ", character.name
+			"HealthUpgrade: _on_interacted() - ERROR: No HealthComponent found on ", 
+			character.name
 		)

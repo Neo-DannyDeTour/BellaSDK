@@ -644,7 +644,9 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 		if buffers:
 			msaa_mode = buffers.get_msaa_3d()
 			## Controls the is msaa on behavior.
-			var is_msaa_on: bool = msaa_mode != RenderingServer.ViewportMSAA.VIEWPORT_MSAA_DISABLED
+			var is_msaa_on: bool = (
+				msaa_mode != RenderingServer.ViewportMSAA.VIEWPORT_MSAA_DISABLED
+			)
 			## Controls the size behavior.
 			var size: Vector2i = buffers.get_internal_size()
 			if size.x == 0 and size.y == 0:
@@ -668,9 +670,16 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 				or blit_screen_images.size() == 0
 				or msaa_mode != last_msaa_mode
 			):
+				## Free uniform sets BEFORE initialize_compute destroys their dependencies.
+				if uniform_sets != null:
+					for uset: RID in uniform_sets:
+						if uset.is_valid():
+							rd.free_rid(uset)
+				
 				initialize_compute()
 				initialize_raster_pipelines(
-					buffers.get_color_layer(0, is_msaa_on), buffers.get_depth_layer(0, is_msaa_on)
+					buffers.get_color_layer(0, is_msaa_on),
+					buffers.get_depth_layer(0, is_msaa_on)
 				)
 
 				accumulation_textures.clear()
@@ -679,6 +688,11 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 						rd.free_rid(item)
 				uniform_sets.clear()
 				color_images.clear()
+
+				#print(
+				#    "SunshineCloudsGD: Successfully freed prior rendering pass "
+				#	+ "arrays to prevent VRAM accumulation."
+				#)
 
 				for item: RID in blit_screen_images:
 					if item.is_valid():
@@ -692,7 +706,7 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 
 					## Array holding uniform data for blank image data.
 					var blank_image_data: PackedByteArray = PackedByteArray()
-					blank_image_data.resize(new_size.x * new_size.y * 16)  # 4 channels * 4 bytes
+					blank_image_data.resize(new_size.x * new_size.y * 16)
 
 					## The base colorformat used for cloud rendering.
 					var base_colorformat: RDTextureFormat = rd.texture_get_format(

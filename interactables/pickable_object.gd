@@ -30,6 +30,16 @@ extends RigidBody3D
 ## NEW: How far down heavy objects are held (0.5 was your old default).
 @export var heavy_y_drop: float = 0.5
 
+# --- COMBAT / IMPACT CONFIG ---
+## The minimum speed the object must be traveling to register as a damaging impact.
+@export var damage_velocity_threshold: float = 8.0
+
+## The base amount of damage applied to the struck target upon a high-speed collision.
+@export var projectile_damage: int = 20
+
+## Tracks the velocity from the previous physics frame to accurately gauge impact speed.
+var _last_velocity: Vector3 = Vector3.ZERO
+
 var is_held: bool = false
 var hold_target: Marker3D = null
 var holder: Node3D = null
@@ -80,8 +90,8 @@ func _ready() -> void:
 	if is_instance_valid(probe_container):
 		_probes = probe_container.get_children()
 
-	collision_layer = 1
-	collision_mask = 1
+	#collision_layer = 1
+	#collision_mask = 1
 
 	if label:
 		label.hide()
@@ -98,6 +108,11 @@ func _ready() -> void:
 	# Listen to the global Event Bus for state changes
 	if Events.noclip_toggled.is_connected(_on_noclip_toggled) == false:
 		Events.noclip_toggled.connect(_on_noclip_toggled)
+		
+	# Enable collision monitoring so the physics server reports what this object hits
+	contact_monitor = true
+	max_contacts_reported = 2
+	body_entered.connect(_on_body_entered)
 
 	# Initialize process state
 	_update_process_state()
@@ -425,6 +440,25 @@ func _physics_process(_delta: float) -> void:
 	if submerged and not is_held:
 		apply_central_force(-linear_velocity * water_drag * mass)
 		apply_torque(-angular_velocity * water_angular_drag * mass)
+	
+	# Store the velocity at the very end of the physics frame. 
+	# We must do this because Godot's body_entered signal fires AFTER collision resolution.
+	_last_velocity = linear_velocity
+
+
+## Triggered by the physics engine whenever this rigid body collides with another physics body.
+func _on_body_entered(body: Node) -> void:
+	# If the object is currently physically held by a tentacle or player, don't deal impact damage
+	if is_held:
+		return
+		
+	var impact_speed: float = _last_velocity.length()
+	
+	# Check if the collision was forceful enough to warrant damage
+	if impact_speed >= damage_velocity_threshold:
+		if body.has_method("take_damage"):
+			print("PickableObject: _on_body_entered() - High-speed impact! Dealing ", projectile_damage, " damage to ", body.name)
+			body.take_damage(projectile_damage)
 
 
 func _wait_to_enable_collision(player_node: Node3D) -> void:

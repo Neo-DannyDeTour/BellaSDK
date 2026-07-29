@@ -1,0 +1,43 @@
+[gd_scene format=3 uid="uid://dne16cpdbsxy3"]
+
+[ext_resource type="Script" uid="uid://caryyrye5arsw" path="res://enemies/tentacle_enemy.gd" id="1_hobao"]
+[ext_resource type="Script" uid="uid://cbwy13aembb7w" path="res://shared/health_component.gd" id="1_jidhk"]
+[ext_resource type="Script" uid="uid://3ipxasm4sn3p" path="res://enemies/tentacle.gd" id="3_0qmb8"]
+
+[sub_resource type="SphereMesh" id="SphereMesh_hobao"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_jidhk"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_hobao"]
+radius = 8.0
+
+[node name="TentacleEnemy" type="StaticBody3D" unique_id=1499900301 groups=["enemy"]]
+collision_layer = 16
+collision_mask = 2
+script = ExtResource("1_hobao")
+charge_delay = 1.0
+strike_damage = 50
+
+[node name="BaseMesh" type="MeshInstance3D" parent="." unique_id=373031635]
+mesh = SubResource("SphereMesh_hobao")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1172593030]
+shape = SubResource("SphereShape3D_jidhk")
+
+[node name="DetectionArea" type="Area3D" parent="." unique_id=169572857]
+collision_layer = 16
+collision_mask = 7
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="DetectionArea" unique_id=471272176]
+shape = SubResource("SphereShape3D_hobao")
+
+[node name="TentacleTarget" type="Marker3D" parent="." unique_id=1177919005]
+
+[node name="HealthComponent" type="Node" parent="." unique_id=8784094]
+script = ExtResource("1_jidhk")
+metadata/_custom_type_script = "uid://cbwy13aembb7w"
+
+[node name="Tentacle" type="Node3D" parent="." unique_id=1980425239 node_paths=PackedStringArray("base_node", "target_node")]
+script = ExtResource("3_0qmb8")
+base_node = NodePath("../BaseMesh")
+target_node = NodePath("../TentacleTarget")
