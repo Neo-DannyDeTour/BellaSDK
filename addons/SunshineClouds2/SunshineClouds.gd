@@ -342,11 +342,6 @@ func clear_compute() -> void:
 				rd.free_rid(item)
 		blit_screen_images.clear()
 
-		for item: RID in uniform_sets:
-			if item.is_valid():
-				rd.free_rid(item)
-		uniform_sets.clear()
-
 		pipeline = RID()
 		shader = RID()
 		prepass_pipeline = RID()
@@ -406,74 +401,59 @@ func initialize_compute() -> void:
 
 	# Setup resources with explicit static casts
 	if not dither_noise:
-		dither_noise = (
-			ResourceLoader.load("res://addons/SunshineClouds2/NoiseTextures/bluenoise_Dither.png")
-			as Texture2D
-		)
+		dither_noise = ResourceLoader.load(
+            "res://addons/SunshineClouds2/NoiseTextures/bluenoise_Dither.png"
+		) as Texture2D
 	if not height_gradient:
-		height_gradient = (
-			ResourceLoader.load("res://addons/SunshineClouds2/NoiseTextures/HeightGradient.tres")
-			as Texture2D
-		)
+		height_gradient = ResourceLoader.load(
+            "res://addons/SunshineClouds2/NoiseTextures/HeightGradient.tres"
+		) as Texture2D
 	if not extra_large_noise_patterns:
-		extra_large_noise_patterns = (
-			ResourceLoader.load(
-				"res://addons/SunshineClouds2/NoiseTextures/ExtraLargeScaleNoise.tres"
-			)
-			as Texture2D
-		)
+		extra_large_noise_patterns = ResourceLoader.load(
+            "res://addons/SunshineClouds2/NoiseTextures/ExtraLargeScaleNoise.tres"
+		) as Texture2D
 	if not large_scale_noise:
-		large_scale_noise = (
-			ResourceLoader.load("res://addons/SunshineClouds2/NoiseTextures/LargeScaleNoise.tres")
-			as Texture3D
-		)
+		large_scale_noise = ResourceLoader.load(
+            "res://addons/SunshineClouds2/NoiseTextures/LargeScaleNoise.tres"
+		) as Texture3D
 	if not medium_scale_noise:
-		medium_scale_noise = (
-			ResourceLoader.load("res://addons/SunshineClouds2/NoiseTextures/MediumScaleNoise.tres")
-			as Texture3D
-		)
+		medium_scale_noise = ResourceLoader.load(
+            "res://addons/SunshineClouds2/NoiseTextures/MediumScaleNoise.tres"
+		) as Texture3D
 	if not small_scale_noise:
-		small_scale_noise = (
-			ResourceLoader.load("res://addons/SunshineClouds2/NoiseTextures/SmallScaleNoise.tres")
-			as Texture3D
-		)
+		small_scale_noise = ResourceLoader.load(
+            "res://addons/SunshineClouds2/NoiseTextures/SmallScaleNoise.tres"
+		) as Texture3D
 	if not curl_noise:
-		curl_noise = (
-			ResourceLoader.load("res://addons/SunshineClouds2/NoiseTextures/curl_noise_varied.tga")
-			as Texture3D
-		)
+		curl_noise = ResourceLoader.load(
+            "res://addons/SunshineClouds2/NoiseTextures/curl_noise_varied.tga"
+		) as Texture3D
 	if not compute_shader:
-		compute_shader = (
-			ResourceLoader.load("res://addons/SunshineClouds2/SunshineCloudsCompute.glsl")
-			as RDShaderFile
-		)
+		compute_shader = ResourceLoader.load(
+            "res://addons/SunshineClouds2/SunshineCloudsCompute.glsl"
+		) as RDShaderFile
 	if not pre_pass_compute_shader:
-		pre_pass_compute_shader = (
-			ResourceLoader.load("res://addons/SunshineClouds2/SunshineCloudsPreCompute.glsl")
-			as RDShaderFile
-		)
+		pre_pass_compute_shader = ResourceLoader.load(
+            "res://addons/SunshineClouds2/SunshineCloudsPreCompute.glsl"
+		) as RDShaderFile
 
 	## The compute shader resource for the display shader file.
 	var display_shader_file: RDShaderFile
 
 	if msaa_mode == RenderingServer.ViewportMSAA.VIEWPORT_MSAA_DISABLED:
-		post_pass_compute_shader = (
-			ResourceLoader.load("res://addons/SunshineClouds2/SunshineCloudsPostCompute.glsl")
-			as RDShaderFile
-		)
-		display_shader_file = (
-			ResourceLoader.load("res://addons/SunshineClouds2/SunshineCloudsDisplay.glsl")
-			as RDShaderFile
-		)
+		post_pass_compute_shader = ResourceLoader.load(
+            "res://addons/SunshineClouds2/SunshineCloudsPostCompute.glsl"
+		) as RDShaderFile
+		display_shader_file = ResourceLoader.load(
+            "res://addons/SunshineClouds2/SunshineCloudsDisplay.glsl"
+		) as RDShaderFile
 	else:
-		post_pass_compute_shader = (
-			ResourceLoader.load("res://addons/SunshineClouds2/SunshineCloudsPostCompute.msaa.glsl")
-			as RDShaderFile
-		)
-		display_shader_file = (
-			ResourceLoader.load("res://addons/SunshineClouds2/SunshineCloudsDisplay.msaa.glsl")
-			as RDShaderFile
-		)
+		post_pass_compute_shader = ResourceLoader.load(
+            "res://addons/SunshineClouds2/SunshineCloudsPostCompute.msaa.glsl"
+		) as RDShaderFile
+		display_shader_file = ResourceLoader.load(
+            "res://addons/SunshineClouds2/SunshineCloudsDisplay.msaa.glsl"
+		) as RDShaderFile
 
 	if (
 		not compute_shader
@@ -683,9 +663,6 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 				)
 
 				accumulation_textures.clear()
-				for item: RID in uniform_sets:
-					if item.is_valid():
-						rd.free_rid(item)
 				uniform_sets.clear()
 				color_images.clear()
 
