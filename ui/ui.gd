@@ -59,6 +59,27 @@ var noclip_label_message: Label = $NoclipAlertContainer/NoclipMessageContainer/N
 
 @onready var keycards_container: HBoxContainer = $HealthMargin/VBoxContainer/KeycardsContainer
 
+# --- DEBUFF UI VARS ---
+## Tracks if the player is currently under the effects of an immobilize debuff.
+var is_immobilized: bool = false
+
+## Tracks if the player is currently under the effects of a sprint block debuff.
+var is_sprint_blocked: bool = false
+
+@onready var debuff_container: HBoxContainer = $HealthMargin/VBoxContainer/DebuffContainer
+@onready var sprint_debuff_icon: TextureRect = $HealthMargin/VBoxContainer/DebuffContainer/SprintDebuffIcon
+@onready var sprint_debuff_bar: ProgressBar = $HealthMargin/VBoxContainer/DebuffContainer/SprintDebuffBar
+
+@onready var immobilize_container: HBoxContainer = $HealthMargin/VBoxContainer/ImmobilizeContainer
+@onready var immobilize_icon: TextureRect = $HealthMargin/VBoxContainer/ImmobilizeContainer/ImmobilizeIcon
+@onready var immobilize_bar: ProgressBar = $HealthMargin/VBoxContainer/ImmobilizeContainer/ImmobilizeBar
+
+@onready var warning_label: Label = $WarningLabel
+
+var debuff_tween: Tween
+var immobilize_tween: Tween
+var warning_tween: Tween
+
 var heart_textures: Array[AtlasTexture] = []
 var heart_nodes: Array[TextureRect] = []
 var heart_tweens: Array[Tween] = []
@@ -121,7 +142,18 @@ func _ready() -> void:
 
 	KeycardSystem.card_picked_up.connect(_on_card_picked_up)
 	KeycardSystem.card_used.connect(_on_card_used)
-
+	
+	debuff_container.hide()
+	immobilize_container.hide()
+	warning_label.modulate.a = 0.0
+	
+	if Events.has_signal("sprint_debuff_applied"):
+		if not Events.sprint_debuff_applied.is_connected(_on_sprint_debuff_applied):
+			Events.sprint_debuff_applied.connect(_on_sprint_debuff_applied)
+			
+	if Events.has_signal("immobilize_debuff_applied"):
+		if not Events.immobilize_debuff_applied.is_connected(_on_immobilize_debuff_applied):
+			Events.immobilize_debuff_applied.connect(_on_immobilize_debuff_applied)
 
 func _process(delta: float) -> void:
 	var target_vignette_opacity : float = 0.8 if is_player_crouching else 0.0
@@ -371,9 +403,14 @@ func _on_player_crouched(crouching: bool) -> void:
 
 # --- DEBUG & NOCLIP LOGIC ---
 func _input(event: InputEvent) -> void:
+	# Catch physical movement inputs to display warnings while debuffed
 	if event is InputEventKey and event.is_pressed() and not event.is_echo():
-		if event.keycode == KEY_QUOTELEFT:
-			_toggle_debug_panel()
+		if is_immobilized:
+			if event.keycode in [KEY_W, KEY_A, KEY_S, KEY_D, KEY_SPACE, KEY_SHIFT]:
+				_show_warning_message("Can't move!")
+		elif is_sprint_blocked:
+			if event.keycode == KEY_SHIFT:
+				_show_warning_message("Can't sprint")
 
 
 func _toggle_debug_panel() -> void:
@@ -592,3 +629,57 @@ func _on_card_used(card_id: StringName) -> void:
 		tween.tween_property(card_rect, "scale", Vector2.ZERO, 0.2)
 		tween.finished.connect(card_rect.queue_free)
 		active_card_icons.erase(card_id)
+
+
+func _show_warning_message(message: String) -> void:
+	warning_label.text = message
+	
+	if warning_tween and warning_tween.is_valid():
+		warning_tween.kill()
+		
+	warning_tween = create_tween().set_trans(Tween.TRANS_SINE)
+	warning_tween.tween_property(warning_label, "modulate:a", 1.0, 0.1)
+	warning_tween.tween_interval(1.0)
+	warning_tween.tween_property(warning_label, "modulate:a", 0.0, 0.5)
+
+
+func _on_sprint_debuff_applied(duration: float) -> void:
+	print("UIController: _on_sprint_debuff_applied() - Starting debuff UI for ", duration, " seconds.")
+	debuff_container.show()
+	is_sprint_blocked = true
+	
+	sprint_debuff_bar.max_value = duration
+	sprint_debuff_bar.value = duration
+	
+	if debuff_tween and debuff_tween.is_valid():
+		debuff_tween.kill()
+		
+	debuff_tween = create_tween()
+	debuff_tween.tween_property(sprint_debuff_bar, "value", 0.0, duration)
+	
+	debuff_tween.finished.connect(
+		func() -> void:
+			debuff_container.hide()
+			is_sprint_blocked = false
+	)
+
+
+func _on_immobilize_debuff_applied(duration: float) -> void:
+	print("UIController: _on_immobilize_debuff_applied() - Starting immobilize UI for ", duration, " seconds.")
+	immobilize_container.show()
+	is_immobilized = true
+	
+	immobilize_bar.max_value = duration
+	immobilize_bar.value = duration
+	
+	if immobilize_tween and immobilize_tween.is_valid():
+		immobilize_tween.kill()
+		
+	immobilize_tween = create_tween()
+	immobilize_tween.tween_property(immobilize_bar, "value", 0.0, duration)
+	
+	immobilize_tween.finished.connect(
+		func() -> void:
+			immobilize_container.hide()
+			is_immobilized = false
+	)

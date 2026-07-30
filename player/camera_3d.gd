@@ -12,6 +12,9 @@ var _decay_rate: float = 1.0
 var _time_passed: float = 0.0
 var _noise: FastNoiseLite = FastNoiseLite.new()
 
+## Reference to the full-screen quad mesh used for accessibility rendering.
+@onready var vision_assist_mesh: MeshInstance3D = $VisionAssistMesh
+
 
 func _ready() -> void:
 	make_current()
@@ -20,6 +23,11 @@ func _ready() -> void:
 	_noise.seed = randi()
 	_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
 	Events.screenshake_requested.connect(_on_screenshake_requested)
+	
+	# NEW: Connect the vision assist toggle signal
+	if Events.has_signal("vision_assist_toggled"):
+		if not Events.vision_assist_toggled.is_connected(_on_vision_assist_toggled):
+			Events.vision_assist_toggled.connect(_on_vision_assist_toggled)
 
 
 func _process(delta: float) -> void:
@@ -61,3 +69,9 @@ func _on_screenshake_requested(intensity: float, duration: float) -> void:
 		_decay_rate = 1.0 / duration
 	else:
 		_decay_rate = 1.0
+
+
+func _on_vision_assist_toggled(is_active: bool) -> void:
+	print("Camera3D: Vision assist overlay visibility changed to: ", is_active)
+	if is_instance_valid(vision_assist_mesh):
+		vision_assist_mesh.visible = is_active

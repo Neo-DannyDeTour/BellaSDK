@@ -69,6 +69,17 @@ signal keycard_collected(card_id: String)
 @warning_ignore("unused_signal")
 signal level_event_triggered(event_name: String, is_active: bool)
 
+@warning_ignore("unused_signal")
+signal vision_assist_toggled(is_active: bool)
+
+## Emitted when a sprint-blocking debuff is applied to the player.
+@warning_ignore("unused_signal")
+signal sprint_debuff_applied(duration: float)
+
+## Emitted when a movement-blocking debuff is applied to the player.
+@warning_ignore("unused_signal")
+signal immobilize_debuff_applied(duration: float)
+
 # --- REPLACED FONT SIGNAL ---
 signal font_changed(font_name: String)
 

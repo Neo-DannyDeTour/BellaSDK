@@ -37,6 +37,10 @@ extends RigidBody3D
 ## The base amount of damage applied to the struck target upon a high-speed collision.
 @export var projectile_damage: int = 20
 
+@export_category("Accessibility")
+## The dedicated shader material applied as an overlay to highlight this object through walls during vision assist.
+@export var vision_assist_material: ShaderMaterial
+
 ## Tracks the velocity from the previous physics frame to accurately gauge impact speed.
 var _last_velocity: Vector3 = Vector3.ZERO
 
@@ -106,7 +110,7 @@ func _ready() -> void:
 	sleeping_state_changed.connect(_on_sleeping_state_changed)
 
 	# Listen to the global Event Bus for state changes
-	if Events.noclip_toggled.is_connected(_on_noclip_toggled) == false:
+	if Events.has_signal("noclip_toggled") and not Events.noclip_toggled.is_connected(_on_noclip_toggled):
 		Events.noclip_toggled.connect(_on_noclip_toggled)
 
 	# Enable collision monitoring so the physics server reports what this object hits
@@ -547,3 +551,24 @@ func _get_camera() -> Camera3D:
 	if not is_instance_valid(_cached_camera):
 		_cached_camera = get_viewport().get_camera_3d() if get_viewport() else null
 	return _cached_camera
+
+
+# NEW: Signal callback for toggling the accessibility highlight
+func _on_vision_assist_toggled(is_active: bool) -> void:
+	print("PickableObject: _on_vision_assist_toggled() triggered. Applying material overlay: ", is_active)
+	
+	if is_instance_valid(mesh):
+		var target_material: ShaderMaterial = vision_assist_material if is_active else null
+		_set_model_overlay(mesh, target_material)
+
+
+# NEW: Recursive helper to apply the overlay material to the root mesh and all child meshes
+func _set_model_overlay(parent_node: Node, mat: ShaderMaterial) -> void:
+	if not is_instance_valid(parent_node):
+		return
+
+	if parent_node is GeometryInstance3D:
+		parent_node.material_overlay = mat
+
+	for child: Node in parent_node.get_children():
+		_set_model_overlay(child, mat)

@@ -1,0 +1,38 @@
+[gd_scene format=3 uid="uid://bdvsisn4xqkeo"]
+
+[ext_resource type="Script" uid="uid://c20bo0dutv8kj" path="res://enemies/bear_trap.gd" id="1_vlk60"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_534t5"]
+size = Vector3(1, 0.5, 1)
+
+[node name="BearTrap" type="Area3D" unique_id=327370642]
+collision_layer = 16
+collision_mask = 6
+script = ExtResource("1_vlk60")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=115627004]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
+shape = SubResource("BoxShape3D_534t5")
+
+[node name="BaseMesh" type="CSGBox3D" parent="." unique_id=994890784]
+size = Vector3(1, 0.1, 1)
+
+[node name="LeftJawPivot" type="Node3D" parent="." unique_id=2022528694]
+transform = Transform3D(0.70710677, -0.70710677, 0, 0.70710677, 0.70710677, 0, 0, 0, 1, -0.5, 0.05, 0)
+
+[node name="LeftJawMesh" type="CSGBox3D" parent="LeftJawPivot" unique_id=25290037]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
+size = Vector3(0.1, 0.5, 1)
+
+[node name="RightJawPivot" type="Node3D" parent="." unique_id=490973077]
+transform = Transform3D(0.70710677, 0.70710677, 0, -0.70710677, 0.70710677, 0, 0, 0, 1, 0.5, 0.05, 0)
+
+[node name="RightJawMesh" type="CSGBox3D" parent="RightJawPivot" unique_id=1004851947]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
+size = Vector3(0.1, 0.5, 1)
+
+[node name="ImmobilizeTimer" type="Timer" parent="." unique_id=657601480]
+one_shot = true
+
+[node name="SprintBlockTimer" type="Timer" parent="." unique_id=881245943]
+one_shot = true

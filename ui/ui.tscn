@@ -15,6 +15,8 @@
 [ext_resource type="Shader" uid="uid://dqjxwnsg8c5f0" path="res://vfx/outline_hearts_adaptable.gdshader" id="10_7dvkv"]
 [ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="11_bi8hs"]
 [ext_resource type="Script" uid="uid://bq62qlt337705" path="res://ui/chapter_title_container.gd" id="11_hrmpd"]
+[ext_resource type="Texture2D" uid="uid://buyk2btocs7de" path="res://assets/images/UI_icon_boot_sprint.png" id="13_ju45i"]
+[ext_resource type="Texture2D" uid="uid://4exusdjgfeuy" path="res://assets/images/UI_Icon_Boot.png" id="14_74toj"]
 [ext_resource type="PackedScene" uid="uid://r7e1pqddjcjx" path="res://ui/death_screen.tscn" id="16_mf2ns"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_p7vwb"]
@@ -203,6 +205,36 @@ theme_override_constants/margin_bottom = 20
 layout_mode = 2
 theme_override_constants/separation = 12
 
+[node name="DebuffContainer" type="HBoxContainer" parent="HealthMargin/VBoxContainer" unique_id=965267816]
+layout_mode = 2
+
+[node name="SprintDebuffIcon" type="TextureRect" parent="HealthMargin/VBoxContainer/DebuffContainer" unique_id=2140736571]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+texture = ExtResource("13_ju45i")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="SprintDebuffBar" type="ProgressBar" parent="HealthMargin/VBoxContainer/DebuffContainer" unique_id=835956002]
+custom_minimum_size = Vector2(150, 48)
+layout_mode = 2
+show_percentage = false
+
+[node name="ImmobilizeContainer" type="HBoxContainer" parent="HealthMargin/VBoxContainer" unique_id=1164473659]
+layout_mode = 2
+
+[node name="ImmobilizeIcon" type="TextureRect" parent="HealthMargin/VBoxContainer/ImmobilizeContainer" unique_id=1642914678]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+texture = ExtResource("14_74toj")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ImmobilizeBar" type="ProgressBar" parent="HealthMargin/VBoxContainer/ImmobilizeContainer" unique_id=665072689]
+custom_minimum_size = Vector2(150, 48)
+layout_mode = 2
+show_percentage = false
+
 [node name="KeycardsContainer" type="HBoxContainer" parent="HealthMargin/VBoxContainer" unique_id=843247494]
 layout_mode = 2
 
@@ -301,6 +333,22 @@ alignment = 0
 
 [node name="DeathScreen" parent="." unique_id=1910211973 instance=ExtResource("16_mf2ns")]
 visible = false
+
+[node name="WarningLabel" type="Label" parent="." unique_id=562618420]
+modulate = Color(1, 1, 1, 0)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -20.0
+offset_top = 20.0
+offset_right = 20.0
+offset_bottom = 37.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 32
+horizontal_alignment = 1
 
 [connection signal="pressed" from="DebugPanel/PanelContainer/VBoxContainer/WireframeButton" to="." method="_on_wireframe_button_pressed"]
 [connection signal="pressed" from="DebugPanel/PanelContainer/VBoxContainer/WireframeOverlayButton" to="." method="_on_wireframe_overlay_button_pressed"]
