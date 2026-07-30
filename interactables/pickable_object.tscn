@@ -1,9 +1,16 @@
 [gd_scene format=3 uid="uid://mqae3mth7tfx"]
 
 [ext_resource type="Script" uid="uid://cwma4einbwr2q" path="res://interactables/pickable_object.gd" id="1_gl7hy"]
+[ext_resource type="Shader" uid="uid://b7nch3qglcrbn" path="res://interactables/pickable_highlight.gdshader" id="2_rv2cu"]
 [ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="2_spxwp"]
 [ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="3_tkhgv"]
 [ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="4_spxwp"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_uedhb"]
+render_priority = 1
+shader = ExtResource("2_rv2cu")
+shader_parameter/highlight_color = Color(1, 0, 0, 1)
+shader_parameter/highlight_opacity = 1.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_tkhgv"]
 render_priority = 0
@@ -12,17 +19,20 @@ shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
 shader_parameter/blink_speed = 8.00000038
 shader_parameter/min_intensity = 0.01
 shader_parameter/max_intensity = 0.050000002375
+shader_parameter/alpha_scissor_threshold = 0.5
 
 [node name="PickableObject" type="RigidBody3D" unique_id=594279821 node_paths=PackedStringArray("interact_comp", "mesh", "label", "probe_container")]
 collision_layer = 4
+collision_mask = 7
 script = ExtResource("1_gl7hy")
-float_force = 1.3
-water_drag = 6.0
-water_angular_drag = 6.0
 interact_comp = NodePath("InteractComponent")
 mesh = NodePath("MeshInstance3D")
 label = NodePath("Label3D")
 probe_container = NodePath("ProbeContainer")
+float_force = 1.3
+water_drag = 6.0
+water_angular_drag = 6.0
+vision_assist_material = SubResource("ShaderMaterial_uedhb")
 
 [node name="InteractComponent" type="Node" parent="." unique_id=518401438]
 script = ExtResource("2_spxwp")

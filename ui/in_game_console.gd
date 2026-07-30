@@ -50,7 +50,8 @@ var valid_commands: Array[String] = [
 	"uiscale",
 	"photosensitivity",
 	"setfont",
-	"screenfilter"
+	"screenfilter",
+	"visionassist"
 ]
 
 
@@ -260,7 +261,7 @@ func _on_text_changed(new_text: String) -> void:
 
 func _get_autocomplete_matches(current_text: String) -> Array[String]:
 	print("Console calculating autocomplete matches for: '", current_text, "'")
-	var parts : PackedStringArray = current_text.split(" ")
+	var parts: PackedStringArray = current_text.split(" ")
 	var matches: Array[String] = []
 
 	if parts.size() == 1:
@@ -278,15 +279,15 @@ func _get_autocomplete_matches(current_text: String) -> Array[String]:
 		matches.append_array(partials)
 
 	elif parts.size() == 2:
-		var main_cmd := parts[0].to_lower()
-		var sub_term := parts[1].to_lower()
+		var main_cmd: String = parts[0].to_lower()
+		var sub_term: String = parts[1].to_lower()
 		var arg_matches: Array[String] = []
 
 		if main_cmd == "colorblind":
 			arg_matches = valid_colorblind_args
 		elif main_cmd == "setfont":
 			arg_matches = valid_font_args
-		elif main_cmd in ["subtitles", "mono_audio", "photosensitivity", "highcontrast"]:
+		elif main_cmd in ["subtitles", "mono_audio", "photosensitivity", "highcontrast", "visionassist"]:
 			arg_matches = valid_on_off_args
 		elif main_cmd == "screenfilter":
 			arg_matches = valid_screenfilter_args
@@ -635,6 +636,28 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 					"Usage: screenfilter <type>\nAvailable: off, crt, vhs, pixelate, toon...",
 					"yellow"
 				)
+		"visionassist":
+			var target_arg: String = ""
+			
+			# Filter out any empty strings caused by extra spaces in the console input
+			for arg: String in args:
+				if not arg.strip_edges().is_empty():
+					target_arg = arg.strip_edges()
+					break
+			
+			if not target_arg.is_empty():
+				## The boolean state determining if vision assist should be enabled, inferred from console arguments.
+				var active: bool = target_arg.to_lower() == "on"
+				
+				if has_node("/root/Events"):
+					var events: Node = get_node("/root/Events")
+					if events.has_signal("vision_assist_toggled"):
+						events.emit_signal("vision_assist_toggled", active)
+				
+				print("Console: visionassist toggled. State: ", active)
+				write("Vision Assist mode: " + ("ON" if active else "OFF"), "green")
+			else:
+				write("Usage: visionassist <on/off>", "yellow")
 		_:
 			write("Unknown command: '" + cmd + "'. Type 'help' for a list.", "red")
 

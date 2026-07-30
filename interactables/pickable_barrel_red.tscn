@@ -11,6 +11,7 @@ shader_parameter/highlight_color = Color(0.6666667, 0.76862746, 0.9882353, 1)
 shader_parameter/blink_speed = 8.00000038
 shader_parameter/min_intensity = 0.01
 shader_parameter/max_intensity = 0.050000002375
+shader_parameter/alpha_scissor_threshold = 0.5
 
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_ryygw"]
 height = 1.25
