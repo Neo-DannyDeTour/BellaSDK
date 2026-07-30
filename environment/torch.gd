@@ -42,11 +42,11 @@ func equip_to_player(p_node: CharacterBody3D) -> void:
 	)
 	is_equipped = true
 
-	var physics_body: PhysicsBody3D = get_node_or_null("StaticBody3D")
+	var physics_body: PhysicsBody3D = get_node_or_null("StaticBody3D") as PhysicsBody3D
 	if physics_body:
 		physics_body.process_mode = Node.PROCESS_MODE_DISABLED
 
-	var weapon_holder: Node3D = p_node.get_node_or_null("%WeaponHolder")
+	var weapon_holder: Node3D = p_node.get_node_or_null("%WeaponHolder") as Node3D
 	if weapon_holder:
 		reparent(weapon_holder, false)
 		# Apply the custom offsets instead of Vector3.ZERO

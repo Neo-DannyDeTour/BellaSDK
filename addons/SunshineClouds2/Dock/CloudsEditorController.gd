@@ -232,14 +232,14 @@ func initialize_mask_texture() -> void:
 				Image.FORMAT_RGBAF)
 			image.clear_mipmaps()
 			image.save_exr(mask_file_path.text)
-			var editor_file_system := EditorInterface.get_resource_filesystem()
+			var editor_file_system : EditorFileSystem = EditorInterface.get_resource_filesystem()
 			editor_file_system.scan()
 	else:
 		var image: Variant = Image.create(mask_resolution.value, mask_resolution.value, false,
 			Image.FORMAT_RGBAF)
 		image.clear_mipmaps()
 		image.save_exr(mask_file_path.text)
-		var editor_file_system := EditorInterface.get_resource_filesystem()
+		var editor_file_system : EditorFileSystem = EditorInterface.get_resource_filesystem()
 		editor_file_system.scan()
 	RenderingServer.call_on_render_thread(initialize_compute)
 	call_deferred("update_status_display")

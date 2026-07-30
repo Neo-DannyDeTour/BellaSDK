@@ -5,7 +5,7 @@ var is_open : bool = false
 var player_detected : bool = false
 var pending_open : bool = false
 #
-@onready var anim_player := $Anim
+@onready var anim_player : AnimationPlayer = $Anim
 @onready var close_timer: Timer = $CloseTimer
 
 

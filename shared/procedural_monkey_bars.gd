@@ -40,7 +40,7 @@ func _process(_delta: float) -> void:
 
 func _update_trigger_box() -> void:
 	if col_shape and col_shape.shape:
-		var box := col_shape.shape as BoxShape3D
+		var box : BoxShape3D = col_shape.shape as BoxShape3D
 		# The trigger box is identical to your CSG box,
 		#but extends 1.5m downward to catch the player's head
 		box.size = Vector3(size.x, size.y + 1.5, size.z)

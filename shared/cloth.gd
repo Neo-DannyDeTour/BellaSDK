@@ -1,6 +1,6 @@
 extends SoftBody3D
 
-@export var bake_action_key := KEY_SPACE
+@export var bake_action_key : int = KEY_SPACE
 @export var save_path : String = "res://baked_red_cloth.res"
 
 
@@ -12,19 +12,19 @@ func _input(event: InputEvent) -> void:
 
 func _bake_cloth() -> void:
 	print("Baking cloth simulation...")
-	var base_mesh := mesh
+	var base_mesh : ArrayMesh = mesh
 	if not base_mesh:
 		printerr("No mesh assigned to SoftBody3D!")
 		return
 
-	var arrays := base_mesh.surface_get_arrays(0)
+	var arrays : Array = base_mesh.surface_get_arrays(0)
 	var verts: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
 
 	# Retrieve deformed vertices directly from the physics server
-	var phys_rid := get_physics_rid()
+	var phys_rid : RID = get_physics_rid()
 
 	for i in range(verts.size()):
-		var global_pos := PhysicsServer3D.soft_body_get_point_global_position(phys_rid, i)
+		var global_pos : Vector3 = PhysicsServer3D.soft_body_get_point_global_position(phys_rid, i)
 		verts[i] = to_local(global_pos)
 
 	arrays[Mesh.ARRAY_VERTEX] = verts
@@ -41,9 +41,9 @@ func _bake_cloth() -> void:
 	st.generate_normals()
 	st.generate_tangents()
 
-	var baked_mesh := st.commit()
+	var baked_mesh : ArrayMesh = st.commit()
 
-	var err := ResourceSaver.save(baked_mesh, save_path)
+	var err : Error = ResourceSaver.save(baked_mesh, save_path)
 	if err == OK:
 		print("Successfully baked to: ", save_path)
 	else:

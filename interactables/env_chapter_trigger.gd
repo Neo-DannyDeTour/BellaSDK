@@ -32,7 +32,7 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 
-	var editor_mesh: MeshInstance3D = get_node_or_null("EditorVisual")
+	var editor_mesh: MeshInstance3D = get_node_or_null("EditorVisual") as MeshInstance3D
 	if editor_mesh:
 		editor_mesh.queue_free()
 		print("EnvChapterTrigger: Editor visual mesh freed for performance.")
@@ -41,7 +41,7 @@ func _ready() -> void:
 
 
 func _update_bounds() -> void:
-	var col: CollisionShape3D = get_node_or_null("CollisionShape3D")
+	var col: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
 	if col:
 		if not col.shape:
 			col.shape = BoxShape3D.new()
@@ -54,7 +54,7 @@ func _update_bounds() -> void:
 			var box: BoxShape3D = col.shape as BoxShape3D
 			box.size = trigger_size
 
-	var mesh: MeshInstance3D = get_node_or_null("EditorVisual")
+	var mesh: MeshInstance3D = get_node_or_null("EditorVisual") as MeshInstance3D
 	if mesh and mesh.mesh is BoxMesh:
 		var box_mesh: BoxMesh = mesh.mesh as BoxMesh
 		box_mesh.size = trigger_size

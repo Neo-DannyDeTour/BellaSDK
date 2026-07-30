@@ -216,7 +216,7 @@ func attach(player: CharacterBody3D) -> void:
 	is_descending = player.global_position.y > mid_point
 
 	# --- CALCULATE PERIMETER POSITION ---
-	var offset_dir := attached_player.global_position - global_position
+	var offset_dir : Vector3 = attached_player.global_position - global_position
 	offset_dir.y = 0.0
 
 	if offset_dir.length_squared() < 0.001:

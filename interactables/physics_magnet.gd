@@ -25,7 +25,7 @@ enum MagnetMode { THROWN_ONLY, ALL, REPEL }
 @export var collision_shape: CollisionShape3D
 @export var visual_mesh: MeshInstance3D
 
-@onready var _editor_icon: Sprite3D = get_node_or_null("%EditorIcon")
+@onready var _editor_icon: Sprite3D = get_node_or_null("%EditorIcon") as Sprite3D
 
 # OPTIMIZATION: Track bodies via signals instead of polling get_overlapping_bodies()
 var _active_bodies: Dictionary = {}

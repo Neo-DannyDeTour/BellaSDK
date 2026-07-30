@@ -13,11 +13,11 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	print("[SaveManager] Initializing...")
 
-	var dir := DirAccess.open("user://")
+	var dir : DirAccess = DirAccess.open("user://")
 	if dir:
 		if not dir.dir_exists("saves"):
 			print("[SaveManager] 'saves' directory not found. Creating it...")
-			var err := dir.make_dir("saves")
+			var err : Error = dir.make_dir("saves")
 			if err != OK:
 				push_error("[SaveManager] Failed to create 'saves' dir. Error: " + str(err))
 		else:
@@ -27,12 +27,12 @@ func _ready() -> void:
 
 
 func has_saves() -> bool:
-	var dir := DirAccess.open(SAVES_DIR)
+	var dir : DirAccess = DirAccess.open(SAVES_DIR)
 	if not dir:
 		return false
 
 	dir.list_dir_begin()
-	var file_name := dir.get_next()
+	var file_name : String = dir.get_next()
 	while file_name != "":
 		if not dir.current_is_dir() and file_name.ends_with(".dat"):
 			return true
@@ -82,7 +82,7 @@ func _write_metadata(path: String, display_name: String, time_str: String, fav: 
 	print("[SaveManager] Writing metadata to: ", path)
 
 	var current_scene_path: String = ""
-	var current_scene := get_tree().current_scene
+	var current_scene : Node = get_tree().current_scene
 	if current_scene:
 		current_scene_path = current_scene.scene_file_path
 		print("[SaveManager] Detected current level: ", current_scene_path)
@@ -94,7 +94,7 @@ func _write_metadata(path: String, display_name: String, time_str: String, fav: 
 		"level_path": current_scene_path
 	}
 
-	var file := FileAccess.open(path, FileAccess.WRITE)
+	var file : FileAccess = FileAccess.open(path, FileAccess.WRITE)
 	if file:
 		file.store_string(JSON.stringify(meta_dict))
 		file.close()
@@ -133,7 +133,7 @@ func _write_game_state(path: String) -> void:
 
 # --- NEW: Offloaded writing to prevent 60 FPS drops ---
 func _threaded_write_data(path: String, data: Dictionary, count: int) -> void:
-	var file := FileAccess.open(path, FileAccess.WRITE)
+	var file : FileAccess = FileAccess.open(path, FileAccess.WRITE)
 	if file:
 		file.store_var(data)
 		file.close()
@@ -151,9 +151,9 @@ func _load_game_state(path: String) -> void:
 		push_error("[SaveManager] Load failed: File does not exist at path.")
 		return
 
-	var file := FileAccess.open(path, FileAccess.READ)
+	var file : FileAccess = FileAccess.open(path, FileAccess.READ)
 	if not file:
-		var err := FileAccess.get_open_error()
+		var err : Error = FileAccess.get_open_error()
 		push_error("[SaveManager] Load failed: Cannot open file. Error: " + str(err))
 		return
 
@@ -172,7 +172,7 @@ func _load_game_state(path: String) -> void:
 
 	var loaded_nodes_count: int = 0
 	for node_path_str: String in keys:
-		var node := get_node_or_null(node_path_str)
+		var node : Node = get_node_or_null(node_path_str)
 		if node:
 			if node.has_method("load_save_data"):
 				var node_data: Dictionary = total_state[node_path_str]
@@ -189,17 +189,17 @@ func _load_game_state(path: String) -> void:
 
 func get_all_saves() -> Array[Dictionary]:
 	var saves: Array[Dictionary] = []
-	var dir := DirAccess.open(SAVES_DIR)
+	var dir : DirAccess = DirAccess.open(SAVES_DIR)
 	if not dir:
 		return saves
 
 	dir.list_dir_begin()
-	var file_name := dir.get_next()
+	var file_name : String = dir.get_next()
 
 	while file_name != "":
 		if not dir.current_is_dir() and file_name.ends_with(".meta"):
-			var base_path := SAVES_DIR + file_name.replace(".meta", "")
-			var meta_file := FileAccess.open(SAVES_DIR + file_name, FileAccess.READ)
+			var base_path : String = SAVES_DIR + file_name.replace(".meta", "")
+			var meta_file : FileAccess = FileAccess.open(SAVES_DIR + file_name, FileAccess.READ)
 			if meta_file:
 				var data: Dictionary = JSON.parse_string(meta_file.get_as_text())
 				data["base_path"] = base_path
@@ -224,11 +224,11 @@ func _sort_saves(a: Dictionary, b: Dictionary) -> bool:
 
 
 func update_save_meta(save_id: String, new_name: String, is_favorite: bool) -> void:
-	var path := SAVES_DIR + "save_" + save_id + ".meta"
+	var path : String = SAVES_DIR + "save_" + save_id + ".meta"
 	if not FileAccess.file_exists(path):
 		return
 
-	var file := FileAccess.open(path, FileAccess.READ)
+	var file : FileAccess = FileAccess.open(path, FileAccess.READ)
 	var data: Dictionary = JSON.parse_string(file.get_as_text())
 	file.close()
 
@@ -237,27 +237,27 @@ func update_save_meta(save_id: String, new_name: String, is_favorite: bool) -> v
 
 func load_save_game(base_path: String) -> void:
 	print("\n--- [SaveManager] INITIATING FULL LOAD ---")
-	var meta_path := base_path + ".meta"
-	var dat_path := base_path + ".dat"
+	var meta_path : String = base_path + ".meta"
+	var dat_path : String = base_path + ".dat"
 
 	if not FileAccess.file_exists(meta_path) or not FileAccess.file_exists(dat_path):
 		push_error("[SaveManager] Missing save files at: " + base_path)
 		return
 
 	# 1. Read Metadata to find out which level to load
-	var file := FileAccess.open(meta_path, FileAccess.READ)
+	var file : FileAccess = FileAccess.open(meta_path, FileAccess.READ)
 	var meta_data: Dictionary = JSON.parse_string(file.get_as_text())
 	file.close()
 
 	var level_path: String = meta_data.get("level_path", "")
 
 	# 2. Change Scene if we aren't already in it
-	var current_scene := get_tree().current_scene
-	var current_path := current_scene.scene_file_path if current_scene else ""
+	var current_scene : Node = get_tree().current_scene
+	var current_path : String = current_scene.scene_file_path if current_scene else ""
 
 	if level_path != "" and current_path != level_path:
 		print("[SaveManager] Changing scene to: ", level_path)
-		var err := get_tree().change_scene_to_file(level_path)
+		var err : Error = get_tree().change_scene_to_file(level_path)
 
 		if err != OK:
 			push_error("[SaveManager] Failed to load level: " + level_path)

@@ -178,7 +178,7 @@ func unplug() -> void:
 	get_tree().create_timer(1.0, false).timeout.connect(func() -> void: is_cooling_down = false)
 
 	if current_plug is RigidBody3D:
-		var rb_plug := current_plug as RigidBody3D
+		var rb_plug : RigidBody3D = current_plug as RigidBody3D
 		rb_plug.freeze = false
 		if "is_locked" in rb_plug:
 			rb_plug.set("is_locked", false)

@@ -304,7 +304,7 @@ func get_save_data() -> Dictionary:
 func load_save_data(data: Dictionary) -> void:
 	print("Player: load_save_data() called. Restoring component data.")
 
-	var loaded_pos := Vector3(
+	var loaded_pos : Vector3 = Vector3(
 		data.get("pos_x", global_position.x),
 		data.get("pos_y", global_position.y),
 		data.get("pos_z", global_position.z)

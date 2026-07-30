@@ -34,7 +34,7 @@ var is_initialized: bool = false
 var godot_texture: Texture3DRD
 
 # OPTIMIZATION: Pre-allocated buffer to prevent Garbage Collection stutters
-var _hole_buffer := PackedFloat32Array()
+var _hole_buffer : PackedFloat32Array = PackedFloat32Array()
 
 
 func _ready() -> void:
@@ -71,7 +71,7 @@ func _create_rd_noise_texture(tex: Texture3D) -> RID:
 		RenderingDevice.TEXTURE_USAGE_SAMPLING_BIT | RenderingDevice.TEXTURE_USAGE_CAN_UPDATE_BIT
 	)
 
-	var bytes := PackedByteArray()
+	var bytes : PackedByteArray = PackedByteArray()
 	for img: Image in images:
 		if img.get_format() != Image.FORMAT_RGBA8:
 			img.convert(Image.FORMAT_RGBA8)
@@ -108,7 +108,7 @@ func _initialize_gpu() -> void:
 	godot_texture = Texture3DRD.new()
 	godot_texture.texture_rd_rid = texture_rid
 
-	var empty_bytes := PackedByteArray()
+	var empty_bytes : PackedByteArray = PackedByteArray()
 	empty_bytes.resize(BUFFER_SIZE)
 	buffer_rid = rd.storage_buffer_create(BUFFER_SIZE, empty_bytes)
 
@@ -223,7 +223,7 @@ func _process(delta: float) -> void:
 	var holes_to_process: int = mini(active_holes.size(), MAX_HOLES)
 
 	# 3. Use pre-allocated buffer on MAIN THREAD to prevent dynamic allocation spikes
-	var safe_hole_bytes := PackedByteArray()
+	var safe_hole_bytes : PackedByteArray = PackedByteArray()
 
 	if holes_to_process > 0:
 		for i: int in range(holes_to_process):
@@ -278,7 +278,7 @@ func _dispatch_to_compute_shader(
 	var z_offset: float = 64.0 if is_even_frame else 0.0
 
 	# These push constants are highly optimized struct copies in C++, safe to leave alone
-	var push_constants_array := PackedFloat32Array(
+	var push_constants_array : PackedFloat32Array = PackedFloat32Array(
 		[
 			player_pos.x,
 			player_pos.y,

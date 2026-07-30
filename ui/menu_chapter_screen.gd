@@ -23,12 +23,12 @@ func _ready() -> void:
 	back_button.pressed.connect(_on_back_pressed)
 
 	for i in chapters.size():
-		var chapter := chapters[i]
-		var item := chapter_button_template.duplicate()
+		var chapter : Dictionary = chapters[i]
+		var item : Control = chapter_button_template.duplicate() as Control
 		item.show()
 
-		var btn: Button = item.get_node("Btn")
-		var label: Label = item.get_node("ChapterTitle")
+		var btn: Button = item.get_node("Btn") as Button
+		var label: Label = item.get_node("ChapterTitle") as Label
 
 		btn.icon = chapter.image
 		label.text = str(i + 1) + ". " + chapter.chapter_name
@@ -72,7 +72,7 @@ func _on_play_pressed() -> void:
 
 
 func _on_back_pressed() -> void:
-	var parent := get_parent()
+	var parent : Node = get_parent()
 	if parent and "main_buttons" in parent:
 		parent.main_buttons.show()
 		queue_free()

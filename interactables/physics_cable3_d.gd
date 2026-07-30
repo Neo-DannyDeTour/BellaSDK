@@ -24,7 +24,7 @@ extends Node3D
 			print("PhysicsCable3D: show_debug_sphere toggled to ", show_debug_sphere)
 
 # Grab the internal node directly. Ensure the name exactly matches your node!
-@onready var _editor_icon: Node3D = get_node_or_null("%EditorIcon")
+@onready var _editor_icon: Node3D = get_node_or_null("%EditorIcon") as Node3D
 
 static var _material_cache: Dictionary = {}
 
@@ -33,8 +33,8 @@ var _visual_segments: Array[MeshInstance3D] = []
 var _base_mesh: CylinderMesh
 var _debug_sphere: MeshInstance3D
 
-var _last_start_pos := Vector3.ZERO
-var _last_end_pos := Vector3.ZERO
+var _last_start_pos : Vector3 = Vector3.ZERO
+var _last_end_pos : Vector3 = Vector3.ZERO
 
 
 func _ready() -> void:
@@ -112,8 +112,8 @@ func _process(_delta: float) -> void:
 	if not is_instance_valid(start_anchor) or not is_instance_valid(end_plug):
 		return
 
-	var start_pos := start_anchor.global_position
-	var end_pos := end_plug.global_position
+	var start_pos : Vector3 = start_anchor.global_position
+	var end_pos : Vector3 = end_plug.global_position
 
 	# OPTIMIZATION: Early exit if nothing is moving
 	var needs_update : bool = false
@@ -132,13 +132,13 @@ func _process(_delta: float) -> void:
 	_last_end_pos = end_pos
 
 	# OPTIMIZATION: Single pass iteration, zero array allocations per frame
-	var p1 := start_pos
+	var p1 : Vector3 = start_pos
 	var segment_index : int = 0
 
 	for link: RigidBody3D in _links:
 		if not is_instance_valid(link):
 			continue
-		var p2 := link.global_position
+		var p2 : Vector3 = link.global_position
 		_update_visual_segment(_visual_segments[segment_index], p1, p2)
 		p1 = p2
 		segment_index += 1
@@ -149,13 +149,13 @@ func _process(_delta: float) -> void:
 
 
 func _update_visual_segment(segment: MeshInstance3D, p1: Vector3, p2: Vector3) -> void:
-	var dist := p1.distance_to(p2)
+	var dist : float = p1.distance_to(p2)
 	segment.global_position = p1.lerp(p2, 0.5)
 
-	var dir := p2 - p1
+	var dir : Vector3 = p2 - p1
 	if dir.length_squared() > 0.000001:
 		# Use absf strictly for floating point absolute values in Godot 4
-		var up := Vector3.UP if absf(dir.normalized().y) < 0.99 else Vector3.RIGHT
+		var up : Vector3 = Vector3.UP if absf(dir.normalized().y) < 0.99 else Vector3.RIGHT
 		segment.look_at(p2, up)
 		segment.rotate_object_local(Vector3.RIGHT, PI / 2.0)
 
@@ -167,7 +167,7 @@ func _update_debug_sphere_transform() -> void:
 		_debug_sphere.global_position = start_anchor.global_position
 
 		# Cable length is the radius, so the scale multiplier is length * 2
-		var diameter := cable_length_meters * 2.0
+		var diameter : float = cable_length_meters * 2.0
 		_debug_sphere.scale = Vector3(diameter, diameter, diameter)
 
 
@@ -214,15 +214,15 @@ func _generate_physics_chain() -> void:
 			start_anchor.partner_plug = end_plug
 	# -------------------------------------------------------
 
-	var start_pos := start_anchor.global_position
-	var end_pos := end_plug.global_position
+	var start_pos : Vector3 = start_anchor.global_position
+	var end_pos : Vector3 = end_plug.global_position
 	var previous_body: Node3D = start_anchor
 
-	var straight_dist := start_pos.distance_to(end_pos)
+	var straight_dist : float = start_pos.distance_to(end_pos)
 	var droop_amount: float = maxf(0.0, cable_length_meters - straight_dist) * 0.5
 
 	for i: int in range(total_links):
-		var link := link_scene.instantiate() as RigidBody3D
+		var link : RigidBody3D = link_scene.instantiate() as RigidBody3D
 
 		# Force cable links to be incredibly light so they don't drag the held plug
 		link.mass = 0.05
@@ -234,7 +234,7 @@ func _generate_physics_chain() -> void:
 		if start_anchor is PhysicsBody3D:
 			link.add_collision_exception_with(start_anchor as PhysicsBody3D)
 
-		var fraction := float(i + 1) / float(total_links + 1)
+		var fraction : float = float(i + 1) / float(total_links + 1)
 		var drop_offset: Vector3 = Vector3.DOWN * (4.0 * droop_amount * fraction * (1.0 - fraction))
 		link.global_position = start_pos.lerp(end_pos, fraction) + drop_offset
 

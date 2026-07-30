@@ -36,7 +36,7 @@ func _ready() -> void:
 	_update_bridge_shape()
 
 	if has_node("HingeAnchor"):
-		var anchor := get_node("HingeAnchor")
+		var anchor : Node = get_node("HingeAnchor")
 		if anchor is CollisionObject3D:
 			anchor.collision_layer = 0
 			anchor.collision_mask = 0
@@ -48,10 +48,10 @@ func _ready() -> void:
 		return
 
 	for rope_path in ropes:
-		var rope_root := get_node_or_null(rope_path)
+		var rope_root : Node = get_node_or_null(rope_path)
 		if rope_root:
 			# Tell the script to hunt for the signal inside the rope!
-			var signal_node := _find_signal_source(rope_root, "rope_broken")
+			var signal_node : Node = _find_signal_source(rope_root, "rope_broken")
 			if signal_node:
 				intact_ropes += 1
 				signal_node.rope_broken.connect(_on_rope_broken)
@@ -64,7 +64,7 @@ func _find_signal_source(parent: Node, sig_name: String) -> Node:
 		return parent
 
 	for child in parent.get_children():
-		var found := _find_signal_source(child, sig_name)
+		var found : Node = _find_signal_source(child, sig_name)
 		if found:
 			return found
 
@@ -79,10 +79,10 @@ func _update_bridge_shape() -> void:
 		bridge.position = Vector3.ZERO
 		bridge.rotation_degrees = Vector3.ZERO
 
-	var z_shift := (bridge_size.z / 2.0) * -hinge_offset
+	var z_shift : float = (bridge_size.z / 2.0) * -hinge_offset
 	var visual_offset : Vector3 = Vector3(0, 0, z_shift)
 
-	var mesh_instance := $TheBridge/MeshInstance3D
+	var mesh_instance : MeshInstance3D = $TheBridge/MeshInstance3D
 	if mesh_instance:
 		if not mesh_instance.mesh is BoxMesh:
 			mesh_instance.mesh = BoxMesh.new()
@@ -90,7 +90,7 @@ func _update_bridge_shape() -> void:
 		mesh_instance.mesh.size = bridge_size
 		mesh_instance.position = visual_offset
 
-	var collision := $TheBridge/CollisionShape3D
+	var collision : CollisionShape3D = $TheBridge/CollisionShape3D
 	if collision:
 		if not collision.shape is BoxShape3D:
 			collision.shape = BoxShape3D.new()

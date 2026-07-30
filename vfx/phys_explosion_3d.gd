@@ -17,7 +17,7 @@ var _fuse_timer: float = 0.0
 @onready var burst_sparks: GPUParticles3D = $BurstSparks
 
 # Grab the internal editor icon directly using Scene Unique Nodes
-@onready var _editor_icon: Node3D = get_node_or_null("%EditorIcon")
+@onready var _editor_icon: Node3D = get_node_or_null("%EditorIcon") as Node3D
 
 
 func _ready() -> void:

@@ -129,8 +129,8 @@ func _apply_dimensions() -> void:
 	if not is_inside_tree():
 		return
 
-	var mesh_inst: MeshInstance3D = get_node_or_null("IntactMesh")
-	var coll: CollisionShape3D = get_node_or_null("IntactCollision")
+	var mesh_inst: MeshInstance3D = get_node_or_null("IntactMesh") as MeshInstance3D
+	var coll: CollisionShape3D = get_node_or_null("IntactCollision") as CollisionShape3D
 
 	if mesh_inst != null and mesh_inst.mesh is BoxMesh:
 		(mesh_inst.mesh as BoxMesh).size = Vector3(glass_size.x, glass_size.y, glass_thickness)
@@ -145,11 +145,11 @@ func _update_material() -> void:
 
 	print("DestructibleGlass (", name, "): Updating material parameters on all meshes.")
 
-	var mesh_inst: MeshInstance3D = get_node_or_null("IntactMesh")
+	var mesh_inst: MeshInstance3D = get_node_or_null("IntactMesh") as MeshInstance3D
 	if mesh_inst != null:
 		_apply_instance_shader_parameters(mesh_inst)
 
-	var container: Node3D = get_node_or_null("ShardsContainer")
+	var container: Node3D = get_node_or_null("ShardsContainer") as Node3D
 	if container != null:
 		for child: Node in container.get_children():
 			if child is RigidBody3D:

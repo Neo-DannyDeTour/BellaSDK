@@ -37,7 +37,7 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	if local_cloud_volume and local_cloud_volume.material:
-		var mat := local_cloud_volume.material as ShaderMaterial
+		var mat : ShaderMaterial = local_cloud_volume.material as ShaderMaterial
 		mat.set_shader_parameter("wind_direction", LowAltitudeWeather.wind_dir)
 		mat.set_shader_parameter("wind_speed", LowAltitudeWeather.wind_spd)
 		mat.set_shader_parameter("cloud_coverage", LowAltitudeWeather.coverage)

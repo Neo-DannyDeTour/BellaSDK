@@ -120,14 +120,14 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		return
 
 	# 2. The trailing plug forcefully pulls itself to keep up with the held plug.
-	var to_anchor := anchor_point.global_position - state.transform.origin
-	var dist := to_anchor.length()
+	var to_anchor : Vector3 = anchor_point.global_position - state.transform.origin
+	var dist : float = to_anchor.length()
 
 	if dist > max_cable_length:
 		var dir : Vector3 = to_anchor.normalized()
-		var overshoot := dist - max_cable_length
+		var overshoot : float = dist - max_cable_length
 
-		var outward_vel := state.linear_velocity.dot(-dir)
+		var outward_vel : float = state.linear_velocity.dot(-dir)
 		if outward_vel > 0.0:
 			state.linear_velocity -= (-dir) * outward_vel
 

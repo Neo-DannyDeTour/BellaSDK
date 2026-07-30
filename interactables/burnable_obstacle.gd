@@ -15,7 +15,7 @@ func _ready() -> void:
 	_update_obstacle_size()
 
 	if not Engine.is_editor_hint():
-		var trigger_area: Area3D = get_node_or_null("TriggerArea")
+		var trigger_area: Area3D = get_node_or_null("TriggerArea") as Area3D
 		if trigger_area:
 			trigger_area.area_entered.connect(_on_trigger_area_entered)
 			print("BurnableObstacle: Connected trigger area for collisions.")
@@ -24,7 +24,7 @@ func _ready() -> void:
 
 
 func _initialize_material_state() -> void:
-	var mesh_node: MeshInstance3D = get_node_or_null("MeshInstance3D")
+	var mesh_node: MeshInstance3D = get_node_or_null("MeshInstance3D") as MeshInstance3D
 	if not mesh_node:
 		return
 
@@ -37,9 +37,9 @@ func _initialize_material_state() -> void:
 
 
 func _update_obstacle_size() -> void:
-	var mesh_node: MeshInstance3D = get_node_or_null("MeshInstance3D")
-	var coll_node: CollisionShape3D = get_node_or_null("CollisionShape3D")
-	var trigger_area: Area3D = get_node_or_null("TriggerArea")
+	var mesh_node: MeshInstance3D = get_node_or_null("MeshInstance3D") as MeshInstance3D
+	var coll_node: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
+	var trigger_area: Area3D = get_node_or_null("TriggerArea") as Area3D
 
 	if mesh_node and mesh_node.mesh is QuadMesh:
 		mesh_node.mesh.size = mesh_size
@@ -49,7 +49,9 @@ func _update_obstacle_size() -> void:
 		box.size = Vector3(mesh_size.x, mesh_size.y, box.size.z)
 
 	if trigger_area:
-		var trigger_coll: CollisionShape3D = trigger_area.get_node_or_null("CollisionShape3D")
+		var trigger_coll: CollisionShape3D = (
+				trigger_area.get_node_or_null("CollisionShape3D") as CollisionShape3D
+			)
 		if trigger_coll and trigger_coll.shape is BoxShape3D:
 			var t_box: BoxShape3D = trigger_coll.shape as BoxShape3D
 			t_box.size = Vector3(mesh_size.x, mesh_size.y, t_box.size.z + 0.1)
@@ -64,7 +66,7 @@ func _on_trigger_area_entered(area: Area3D) -> void:
 
 	if area.is_in_group("torch_flame"):
 		print("BurnableObstacle: Valid torch detected entering trigger area.")
-		var torch_node: Node3D = area.get_parent()
+		var torch_node: Node3D = area.get_parent() as Node3D
 		if torch_node:
 			_start_burn(torch_node, area.global_position)
 
@@ -86,7 +88,7 @@ func _start_burn(torch: Node3D, hit_global_pos: Vector3) -> void:
 					torch.queue_free()
 		)
 
-	var mesh_node: MeshInstance3D = get_node_or_null("MeshInstance3D")
+	var mesh_node: MeshInstance3D = get_node_or_null("MeshInstance3D") as MeshInstance3D
 	if not mesh_node:
 		return
 
@@ -111,7 +113,7 @@ func _update_radius(value: float, mat: ShaderMaterial) -> void:
 
 func _disable_solid_collision() -> void:
 	print("BurnableObstacle: _disable_solid_collision() called. Half burn duration reached.")
-	var coll_node: CollisionShape3D = get_node_or_null("CollisionShape3D")
+	var coll_node: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
 	if coll_node:
 		coll_node.set_deferred("disabled", true)
 

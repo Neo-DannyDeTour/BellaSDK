@@ -85,8 +85,8 @@ func _update_stairs() -> void:
 	var step_h: float = total_length / step_count
 	var step_v: float = total_height / step_count
 
-	var points := PackedVector2Array()
-	var ramp_points := PackedVector2Array()
+	var points : PackedVector2Array = PackedVector2Array()
+	var ramp_points : PackedVector2Array = PackedVector2Array()
 
 	points.append(Vector2(0, 0))
 	ramp_points.append(Vector2(0, 0))

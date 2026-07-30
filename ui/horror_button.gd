@@ -134,7 +134,7 @@ var walk_speeds: Array[float] = [0.0, 0.0]
 var shine_tween: Tween
 
 ## Tracked 2D vector mapping the current mouse-driven structural tilt deformation.
-var current_tilt := Vector2.ZERO
+var current_tilt : Vector2 = Vector2.ZERO
 
 # --- GLITCH VARIABLES ---
 
@@ -153,7 +153,7 @@ var is_glitching : bool = false
 var can_glitch : bool = false
 
 ## Memory tracker of the component layout boundaries to catch layout container resizing safely.
-var _last_known_size := Vector2.ZERO
+var _last_known_size : Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
@@ -338,19 +338,19 @@ func _process(delta: float) -> void:
 		and absf(offset_transform_rotation) < 0.001
 	)
 
-	var mouse_pos := get_local_mouse_position()
-	var center_x := size.x / 2.0
-	var center_y := size.y / 2.0
+	var mouse_pos : Vector2 = get_local_mouse_position()
+	var center_x : float = size.x / 2.0
+	var center_y : float = size.y / 2.0
 
 	if not is_settled:
 		var target_rotation : float = 0.0
-		var tilt_target := Vector2.ZERO
+		var tilt_target : Vector2 = Vector2.ZERO
 
 		if is_mouse_over:
 			current_hover_intensity = move_toward(current_hover_intensity, 1.0, 3.0 * delta)
 
-			var normalized_x := clampf((mouse_pos.x - center_x) / center_x, -1.0, 1.0)
-			var normalized_y := clampf((mouse_pos.y - center_y) / center_y, -1.0, 1.0)
+			var normalized_x : float = clampf((mouse_pos.x - center_x) / center_x, -1.0, 1.0)
+			var normalized_y : float = clampf((mouse_pos.y - center_y) / center_y, -1.0, 1.0)
 
 			target_rotation = deg_to_rad(max_rotation_degrees * normalized_x)
 			tilt_target = Vector2(normalized_x, normalized_y)
@@ -361,7 +361,7 @@ func _process(delta: float) -> void:
 				)
 
 				if is_instance_valid(text_label):
-					var target_text_pos := (
+					var target_text_pos : Vector2 = (
 						Vector2(-normalized_x, -normalized_y) * parallax_intensity
 					)
 					target_text_pos.y += press_depth
@@ -371,22 +371,22 @@ func _process(delta: float) -> void:
 					text_label.scale = text_label.scale.lerp(Vector2(1.0, 1.0), press_speed * delta)
 			else:
 				var pitch_scale_modifier: float = 1.0 - (absf(normalized_y) * 0.04)
-				var final_target_scale := hover_scale * Vector2(1.0, pitch_scale_modifier)
+				var final_target_scale : Vector2 = hover_scale * Vector2(1.0, pitch_scale_modifier)
 				offset_transform_scale = offset_transform_scale.lerp(
 					final_target_scale, response_speed * delta
 				)
 
 				if is_instance_valid(text_label):
-					var target_text_pos := (
+					var target_text_pos : Vector2 = (
 						Vector2(-normalized_x, -normalized_y) * parallax_intensity
 					)
 					text_label.position = text_label.position.lerp(
 						target_text_pos, response_speed * delta
 					)
 
-					var time_sec := Time.get_ticks_msec() / 1000.0
-					var pulse := pow(sin(time_sec * pulse_speed), 4.0)
-					var current_text_scale := 1.0 + (pulse * pulse_intensity)
+					var time_sec : int = Time.get_ticks_msec() / 1000.0
+					var pulse : float = pow(sin(time_sec * pulse_speed), 4.0)
+					var current_text_scale : float = 1.0 + (pulse * pulse_intensity)
 					text_label.scale = Vector2(current_text_scale, current_text_scale)
 
 		else:
@@ -417,7 +417,7 @@ func _process(delta: float) -> void:
 			bg_material.set_shader_parameter("hover_intensity", current_hover_intensity)
 			bg_material.set_shader_parameter("ui_tilt", current_tilt * current_hover_intensity)
 			if is_mouse_over and is_instance_valid(bg_rect):
-				var local_mouse_pos := bg_rect.get_local_mouse_position()
+				var local_mouse_pos : Vector2 = bg_rect.get_local_mouse_position()
 				var mouse_uv : Vector2 = Vector2(
 					local_mouse_pos.x / bg_rect.size.x, local_mouse_pos.y / bg_rect.size.y
 				)
@@ -435,7 +435,7 @@ func _process(delta: float) -> void:
 		var shadows_moved: bool = false
 		for i: int in 2:
 			if is_mouse_over:
-				var uv_target := clampf(mouse_pos.x / size.x, -0.2, 1.2)
+				var uv_target : float = clampf(mouse_pos.x / size.x, -0.2, 1.2)
 				if not is_equal_approx(shadows_x[i], uv_target):
 					shadows_x[i] = move_toward(shadows_x[i], uv_target, hunt_speed * delta)
 					shadows_moved = true

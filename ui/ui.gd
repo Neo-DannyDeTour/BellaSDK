@@ -156,9 +156,9 @@ func _ready() -> void:
 			Events.immobilize_debuff_applied.connect(_on_immobilize_debuff_applied)
 
 func _process(delta: float) -> void:
-	var target_vignette_opacity := 0.8 if is_player_crouching else 0.0
+	var target_vignette_opacity : float = 0.8 if is_player_crouching else 0.0
 
-	var current_opacity := vignette.material.get_shader_parameter("vignette_opacity") as float
+	var current_opacity : float = vignette.material.get_shader_parameter("vignette_opacity") as float
 	if current_opacity == null:
 		current_opacity = 0.0
 
@@ -477,7 +477,7 @@ func _on_wireframe_overlay_button_pressed() -> void:
 
 	Events.wireframe_overlay_toggled.emit(is_wireframe_overlay)
 
-	var root_node := get_tree().current_scene
+	var root_node : Node = get_tree().current_scene
 	if root_node:
 		_apply_wireframe_to_node(root_node, is_wireframe_overlay)
 
@@ -532,7 +532,7 @@ func _on_collision_button_pressed() -> void:
 	get_tree().debug_collisions_hint = is_collision_visible
 	collision_button.text = "Collisions ON" if is_collision_visible else "Collisions OFF"
 
-	var root_node := get_tree().current_scene
+	var root_node : Node = get_tree().current_scene
 	if root_node:
 		_force_collision_redraw(root_node, is_collision_visible)
 

@@ -416,15 +416,15 @@ func get_interaction_transform(target_pos: Vector3) -> Transform3D:
 	var stick_local_dir : Vector3 = Vector3(cos(snapped_angle), 0.0, sin(snapped_angle))
 
 	# Updated to use the new accurate visual center distance
-	var stick_center := stick_local_dir * stick_center_distance
+	var stick_center : Vector3 = stick_local_dir * stick_center_distance
 
 	var tangent : Vector3 = spin_axis.cross(stick_local_dir).normalized()
-	var vector_to_target := local_pos - stick_center
+	var vector_to_target : Vector3 = local_pos - stick_center
 
 	var is_right_side: bool = tangent.dot(vector_to_target) > 0.0
 	var side_multiplier: float = 1.0 if is_right_side else -1.0
 
-	var stand_local_pos := stick_center + (tangent * push_stand_offset * side_multiplier)
+	var stand_local_pos : Vector3 = stick_center + (tangent * push_stand_offset * side_multiplier)
 
 	var global_stand_pos: Vector3 = wheel.to_global(stand_local_pos)
 

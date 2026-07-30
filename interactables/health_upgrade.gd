@@ -105,12 +105,12 @@ func _on_unfocused() -> void:
 
 	if is_instance_valid(prompt_label):
 		prompt_label.hide()
-	
+
 	# Safely kill the tween to prevent errors
 	if _beat_tween and _beat_tween.is_valid():
 		_beat_tween.kill()
 		_beat_tween = null
-		
+
 	# Reset the heart visual back to its default state
 	if is_instance_valid(heart_visual):
 		heart_visual.scale = Vector3(1.0, 1.0, 1.0)
@@ -127,6 +127,6 @@ func _on_interacted(character: CharacterBody3D) -> void:
 		queue_free()
 	else:
 		print(
-			"HealthUpgrade: _on_interacted() - ERROR: No HealthComponent found on ", 
+			"HealthUpgrade: _on_interacted() - ERROR: No HealthComponent found on ",
 			character.name
 		)

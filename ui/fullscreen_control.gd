@@ -2,7 +2,7 @@ extends CheckBox
 
 
 func _on_toggled(toggled_on: bool) -> void:
-	var window := get_window()
+	var window : Window = get_window()
 
 	if toggled_on:
 		# EXCLUSIVE mode forcibly bypasses the standard X11/Windows manager rules

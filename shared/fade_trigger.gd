@@ -34,7 +34,7 @@ func _ready() -> void:
 		return
 
 	# Optimization: Delete the visual mesh so it costs zero performance in the compiled game
-	var editor_mesh: MeshInstance3D = get_node_or_null("EditorVisual")
+	var editor_mesh: MeshInstance3D = get_node_or_null("EditorVisual") as MeshInstance3D
 	if editor_mesh:
 		editor_mesh.queue_free()
 
@@ -53,7 +53,7 @@ func _ready() -> void:
 
 func _update_bounds() -> void:
 	# 1. Update the invisible physics collision shape
-	var col: CollisionShape3D = get_node_or_null("CollisionShape3D")
+	var col: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
 	if col:
 		if not col.shape:
 			col.shape = BoxShape3D.new()
@@ -68,7 +68,7 @@ func _update_bounds() -> void:
 			box.size = trigger_size
 
 	# 2. Update the visible editor mesh (if it exists)
-	var mesh: MeshInstance3D = get_node_or_null("EditorVisual")
+	var mesh: MeshInstance3D = get_node_or_null("EditorVisual") as MeshInstance3D
 	if mesh and mesh.mesh is BoxMesh:
 		var box_mesh: BoxMesh = mesh.mesh as BoxMesh
 		box_mesh.size = trigger_size
