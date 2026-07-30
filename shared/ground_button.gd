@@ -101,7 +101,7 @@ func _draw_connection_line() -> void:
 		mat.albedo_color = Color.DEEP_SKY_BLUE
 		debug_line.material_override = mat
 
-	var mesh := debug_line.mesh as ImmediateMesh
+	var mesh : ImmediateMesh = debug_line.mesh as ImmediateMesh
 	mesh.clear_surfaces()
 	mesh.surface_begin(Mesh.PRIMITIVE_LINES)
 

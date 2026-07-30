@@ -38,7 +38,7 @@ func process_environment_physics(delta: float) -> void:
 			last_ladder = null
 
 	if is_instance_valid(vfx_manager) and is_instance_valid(player.get_node_or_null("Head")):
-		var head: Node3D = player.get_node("Head")
+		var head: Node3D = player.get_node("Head") as Node3D
 		vfx_manager.process_vfx(delta, head.rotation.x)
 
 

@@ -100,7 +100,7 @@ func _apply_to_mesh(base_mesh: GeometryInstance3D, mat: Material) -> void:
 					hl_mesh.skeleton = base_mesh.skeleton
 				if base_mesh.skin:
 					hl_mesh.skin = base_mesh.skin
-				
+
 				# Detect if the mesh is a flat surface
 				if hl_mesh.mesh is QuadMesh or hl_mesh.mesh is PlaneMesh:
 					is_flat = true
@@ -112,7 +112,7 @@ func _apply_to_mesh(base_mesh: GeometryInstance3D, mat: Material) -> void:
 					hl_mesh.mesh = csg_data[1]
 
 			base_mesh.add_child(hl_mesh)
-			
+
 			# Optimized 60 FPS Instance Parameter Routing
 			# Enables billboarding ONLY if the mesh is flat.
 			if is_flat:

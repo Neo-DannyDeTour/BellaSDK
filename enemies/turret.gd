@@ -24,7 +24,9 @@ var _exclude_rids: Array[RID] = []
 
 
 func _ready() -> void:
-	var visualizer: EditorTriggerVisualizer = get_node_or_null("EditorTriggerVisualizer")
+	var visualizer: EditorTriggerVisualizer = (
+			get_node_or_null("EditorTriggerVisualizer") as EditorTriggerVisualizer
+		)
 	if visualizer != null:
 		visualizer.shape_type = EditorTriggerVisualizer.ShapeType.SPHERE
 		visualizer.trigger_size = Vector3.ONE * (detection_radius * 2.0)

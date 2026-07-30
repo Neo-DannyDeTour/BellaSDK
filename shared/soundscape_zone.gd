@@ -72,7 +72,7 @@ func _update_bounds() -> void:
 	if not is_inside_tree():
 		return
 
-	var shape_node: CollisionShape3D = get_node_or_null("CollisionShape3D")
+	var shape_node: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
 	if shape_node:
 		if not shape_node.shape is BoxShape3D:
 			shape_node.shape = BoxShape3D.new()

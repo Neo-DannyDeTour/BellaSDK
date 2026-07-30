@@ -86,7 +86,7 @@ func physics_update(delta: float) -> void:
 
 	# 2. THE STEERING BOOST
 	if env.in_updraft and input_dir != Vector2.ZERO and not is_launched:
-		var walk_dir := (
+		var walk_dir : Vector3 = (
 			(player.global_transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
 		)
 		player.velocity.x += walk_dir.x * 15.0 * delta

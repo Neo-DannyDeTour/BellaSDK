@@ -44,7 +44,7 @@ func _ready() -> void:
 
 
 func _update_visuals() -> void:
-	var mesh := get_node_or_null("Hologram")
+	var mesh : MeshInstance3D = get_node_or_null("Hologram") as MeshInstance3D
 
 	if not mesh:
 		return
@@ -57,6 +57,6 @@ func _update_visuals() -> void:
 	mesh.set_instance_shader_parameter("line_thickness", line_thickness)
 	mesh.set_instance_shader_parameter("glow_multiplier", glow_multiplier)
 
-	var label := get_node_or_null("Label3D")
+	var label : Label3D = get_node_or_null("Label3D") as Label3D
 	if label:
 		label.text = label_text

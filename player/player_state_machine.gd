@@ -12,7 +12,7 @@ signal transitioned(state_name: String)
 # Set this in the inspector (e.g., assign the "Walk" or "Idle" node)
 @export var initial_state: NodePath
 
-@onready var state: PlayerState = get_node(initial_state)
+@onready var state: PlayerState = get_node(initial_state) as PlayerState
 
 
 func _ready() -> void:

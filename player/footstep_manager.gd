@@ -113,13 +113,13 @@ func process_surface_and_footsteps(
 # --------------------------------------
 func _scan_surface_material() -> void:
 	var space_state : PhysicsDirectSpaceState3D = player_body.get_world_3d().direct_space_state
-	var ray_start := player_body.global_position + Vector3(0.0, 0.5, 0.0)
-	var ray_end := player_body.global_position + Vector3(0.0, -1.0, 0.0)
+	var ray_start : Vector3 = player_body.global_position + Vector3(0.0, 0.5, 0.0)
+	var ray_end : Vector3 = player_body.global_position + Vector3(0.0, -1.0, 0.0)
 
 	var query : PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(ray_start, ray_end)
 	query.exclude = [player_body.get_rid()]
 
-	var result := space_state.intersect_ray(query)
+	var result : Dictionary = space_state.intersect_ray(query)
 
 	# Reset defaults before checking
 	active_audio_player = audio_default

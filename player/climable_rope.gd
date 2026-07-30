@@ -109,7 +109,7 @@ static var _material_cache: Dictionary = {}
 @onready var anchor: StaticBody3D = $Anchor
 
 ## Original static rope body used as a template before generation.
-@onready var original_rope_body: RigidBody3D = get_node_or_null("RopeBody")
+@onready var original_rope_body: RigidBody3D = get_node_or_null("RopeBody") as RigidBody3D
 
 ## The UI label indicating interaction.
 var interact_label: Label3D
@@ -125,7 +125,7 @@ func _ready() -> void:
 		return
 
 	# Extract the UI label before destroying the static body template
-	var original_label: Label3D = get_node_or_null("RopeBody/Label3D")
+	var original_label: Label3D = get_node_or_null("RopeBody/Label3D") as Label3D
 	if is_instance_valid(original_label):
 		original_label.get_parent().remove_child(original_label)
 		add_child(original_label)
@@ -166,10 +166,12 @@ func _update_editor_preview() -> void:
 		return
 
 	var rope_mesh : MeshInstance3D = get_node_or_null("RopeBody/MeshInstance3D") as MeshInstance3D
-	var rope_col := get_node_or_null("RopeBody/CollisionShape3D") as CollisionShape3D
-	var rope_body := get_node_or_null("RopeBody") as RigidBody3D
-	var rope_anchor := get_node_or_null("Anchor") as StaticBody3D
-	var pivot := get_node_or_null("Pivot") as Joint3D
+	var rope_col : CollisionShape3D = (
+			get_node_or_null("RopeBody/CollisionShape3D") as CollisionShape3D
+		)
+	var rope_body : RigidBody3D = get_node_or_null("RopeBody") as RigidBody3D
+	var rope_anchor : StaticBody3D = get_node_or_null("Anchor") as StaticBody3D
+	var pivot : Joint3D = get_node_or_null("Pivot") as Joint3D
 
 	if is_instance_valid(rope_mesh) and rope_mesh.mesh:
 		rope_mesh.mesh.height = rope_length
@@ -279,7 +281,7 @@ func _update_label_position() -> void:
 
 	if is_instance_valid(_cached_camera) and is_instance_valid(_focused_ic):
 		var hit_point_val: Variant = _focused_ic.get("last_hit_position")
-		var hit_point := Vector3.ZERO
+		var hit_point : Vector3 = Vector3.ZERO
 
 		if hit_point_val is Vector3:
 			hit_point = hit_point_val

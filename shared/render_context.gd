@@ -85,15 +85,15 @@ func compute_list_add_barrier(compute_list: int) -> void:
 # --- HELPER FUNCTIONS ---
 func load_shader(path: String) -> RID:
 	if not shader_cache.has(path):
-		var shader_file := load(path) as RDShaderFile
+		var shader_file : RDShaderFile = load(path) as RDShaderFile
 		var shader_spirv: RDShaderSPIRV = shader_file.get_spirv()
 		shader_cache[path] = deletion_queue.push(device.shader_create_from_spirv(shader_spirv))
 	return shader_cache[path]
 
 
-func create_storage_buffer(size: int, data: PackedByteArray = [], usage := 0) -> Descriptor:
+func create_storage_buffer(size: int, data: PackedByteArray = [], usage: int = 0) -> Descriptor:
 	if size > data.size():
-		var padding := PackedByteArray()
+		var padding : PackedByteArray = PackedByteArray()
 		padding.resize(size - data.size())
 		data += padding
 	return Descriptor.new(
@@ -105,7 +105,7 @@ func create_storage_buffer(size: int, data: PackedByteArray = [], usage := 0) ->
 func create_uniform_buffer(size: int, data: PackedByteArray = []) -> Descriptor:
 	size = maxi(16, size)
 	if size > data.size():
-		var padding := PackedByteArray()
+		var padding : PackedByteArray = PackedByteArray()
 		padding.resize(size - data.size())
 		data += padding
 	return Descriptor.new(
@@ -118,9 +118,9 @@ func create_uniform_buffer(size: int, data: PackedByteArray = []) -> Descriptor:
 func create_texture(
 	dimensions: Vector2i,
 	format: RenderingDevice.DataFormat,
-	usage := 0x18B,
-	num_layers := 1,
-	view := RDTextureView.new(),
+	usage: int = 0x18B,
+	num_layers: int = 1,
+	view: RDTextureView = RDTextureView.new(),
 	data: PackedByteArray = []
 ) -> Descriptor:
 	assert(num_layers >= 1, "Texture must have at least 1 layer.")
@@ -144,7 +144,7 @@ func create_texture(
 ## Creates a descriptor set. The ordering of the provided descriptors matches the binding ordering
 ## within the shader.
 func create_descriptor_set(
-	descriptors: Array[Descriptor], shader: RID, descriptor_set_index := 0
+	descriptors: Array[Descriptor], shader: RID, descriptor_set_index: int = 0
 ) -> RID:
 	var uniforms: Array[RDUniform] = []
 	for i in range(descriptors.size()):
@@ -158,18 +158,18 @@ func create_descriptor_set(
 
 ## Returns a [Callable] which will dispatch a compute pipeline.
 func create_pipeline(block_dimensions: Array, descriptor_sets: Array, shader: RID) -> Callable:
-	var pipeline := deletion_queue.push(device.compute_pipeline_create(shader))
+	var pipeline : RID = deletion_queue.push(device.compute_pipeline_create(shader))
 
 	return func(
 		ctx: RenderingContext,
 		compute_list: int,
 		push_constant: PackedByteArray = [],
 		descriptor_set_overwrites: Array = [],
-		block_dimensions_overwrite_buffer := RID(),
-		block_dimensions_overwrite_buffer_byte_offset := 0
+		block_dimensions_overwrite_buffer: RID = RID(),
+		block_dimensions_overwrite_buffer_byte_offset: int = 0
 	) -> void:
-		var current_device := ctx.device
-		var sets := (
+		var current_device : RenderingDevice = ctx.device
+		var sets : Array = (
 			descriptor_sets if descriptor_set_overwrites.is_empty() else descriptor_set_overwrites
 		)
 
@@ -203,11 +203,11 @@ func create_pipeline(block_dimensions: Array, descriptor_sets: Array, shader: RI
 ## Returns a [PackedByteArray] from the provided data, whose size is rounded up to the nearest
 ## multiple of 16 for memory alignment.
 static func create_push_constant(data: Array) -> PackedByteArray:
-	var packed_size := data.size() * 4
+	var packed_size : int = data.size() * 4
 	assert(packed_size <= 128, "Push constant size must be at most 128 bytes!")
 
-	var padding := ceili(packed_size / 16.0) * 16 - packed_size
-	var packed_data := PackedByteArray()
+	var padding : int = ceili(packed_size / 16.0) * 16 - packed_size
+	var packed_data : PackedByteArray = PackedByteArray()
 	packed_data.resize(packed_size + (padding if padding > 0 else 0))
 	packed_data.fill(0)
 

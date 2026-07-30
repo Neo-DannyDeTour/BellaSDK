@@ -59,7 +59,7 @@ func _process(_delta: float) -> void:
 # LABEL LOGIC
 # ==========================================
 func _on_focus(side: String) -> void:
-	var target_label := left_label if side == "left" else right_label
+	var target_label : Label3D = left_label if side == "left" else right_label
 
 	var key_name : String = "E"
 	var events : Array[InputEvent] = InputMap.action_get_events("interact")
@@ -78,7 +78,7 @@ func _on_focus(side: String) -> void:
 
 
 func _on_unfocus(side: String) -> void:
-	var target_label := left_label if side == "left" else right_label
+	var target_label : Label3D = left_label if side == "left" else right_label
 	target_label.hide()
 
 
@@ -87,7 +87,7 @@ func _on_unfocus(side: String) -> void:
 # ==========================================
 func _on_interact(_character: CharacterBody3D, side: String) -> void:
 	print("DoubleSlidingDoors: _on_interact() called. Operating doors.")
-	var now := Time.get_ticks_msec()
+	var now : int = Time.get_ticks_msec()
 
 	if now - last_click_time < double_click_delay:
 		reset_doors()

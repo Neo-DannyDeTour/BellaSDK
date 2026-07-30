@@ -21,7 +21,7 @@ func remove_power() -> void:
 
 func _evaluate_power_state() -> void:
 	# Remember what we were before this check
-	var was_powered := is_powered
+	var was_powered : bool = is_powered
 
 	# Are we currently meeting the power requirement?
 	is_powered = (current_power >= required_power)

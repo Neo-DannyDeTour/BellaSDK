@@ -29,7 +29,7 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 
-	var editor_mesh: Node3D = get_node_or_null("EditorVisual")
+	var editor_mesh: Node3D = get_node_or_null("EditorVisual") as Node3D
 	if editor_mesh:
 		editor_mesh.queue_free()
 
@@ -37,7 +37,7 @@ func _ready() -> void:
 
 
 func _update_visuals() -> void:
-	var col: CollisionShape3D = get_node_or_null("CollisionShape3D")
+	var col: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
 	if col:
 		if not col.shape:
 			col.shape = BoxShape3D.new()
@@ -47,10 +47,10 @@ func _update_visuals() -> void:
 			col.shape.resource_local_to_scene = true
 
 		if col.shape is BoxShape3D:
-			var box := col.shape as BoxShape3D
+			var box : BoxShape3D = col.shape as BoxShape3D
 			box.size = trigger_size
 
-	var visual: Node3D = get_node_or_null("EditorVisual")
+	var visual: Node3D = get_node_or_null("EditorVisual") as Node3D
 	if visual:
 		# Using .set() safely pushes the values down even if the class cache is broken
 		visual.set("trigger_size", trigger_size)

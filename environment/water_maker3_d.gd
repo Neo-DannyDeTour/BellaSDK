@@ -36,10 +36,10 @@ func _ready() -> void:
 
 # NEW FUNCTION: Replicates the shader math to find the exact surface height at the camera's position
 func get_wave_height_at_pos(global_pos: Vector3) -> float:
-	var local_pos := to_local(global_pos)
+	var local_pos : Vector3 = to_local(global_pos)
 
 	# Time must match the shader's TIME variable perfectly
-	var time := (Time.get_ticks_msec() / 1000.0) * wave_speed
+	var time : float = (Time.get_ticks_msec() / 1000.0) * wave_speed
 
 	# 1:1 replica of the vertex shader math to find the exact wave crest/trough
 	var h1: float = sin(local_pos.x * wave_frequency + time) * wave_amplitude
@@ -89,7 +89,7 @@ func should_draw_camera_underwater_effect() -> bool:
 
 func _process(delta: float) -> void:
 	if self.material_override is ShaderMaterial:
-		var mat := self.material_override as ShaderMaterial
+		var mat : ShaderMaterial = self.material_override as ShaderMaterial
 		mat.set_shader_parameter("albedo", water_color)
 		mat.set_shader_parameter("wave_amplitude", wave_amplitude)
 		mat.set_shader_parameter("wave_frequency", wave_frequency)
@@ -101,7 +101,7 @@ func _process(delta: float) -> void:
 
 	if not Engine.is_editor_hint():
 		# --- NEW: Track Camera Vertical Speed ---
-		var viewport := get_viewport()
+		var viewport : Viewport = get_viewport()
 		var camera: Camera3D = viewport.get_camera_3d() if viewport else null
 		var cam_velocity_y : float = 0.0
 
@@ -110,7 +110,7 @@ func _process(delta: float) -> void:
 			cam_velocity_y = (camera.global_position.y - _last_camera_y) / delta
 			_last_camera_y = camera.global_position.y
 
-		var is_underwater := should_draw_camera_underwater_effect()
+		var is_underwater : bool = should_draw_camera_underwater_effect()
 
 		if is_underwater:
 			%WaterRippleOverlay.visible = true
@@ -188,7 +188,7 @@ func play_splash_sound(impact_pos: Vector3, speed: float) -> void:
 	# NEW: Use speed to change the volume!
 	# (Assuming a speed of 10.0 is a "normal" hard hit)
 	# clampf ensures the volume multiplier doesn't drop to 0 or go crazy high
-	var volume_multiplier := clampf(speed / 10.0, 0.2, 1.5)
+	var volume_multiplier : float = clampf(speed / 10.0, 0.2, 1.5)
 
 	# Convert linear multiplier to Decibels (Godot uses decibels for volume)
 	audio_player.volume_db = linear_to_db(volume_multiplier)
@@ -201,7 +201,7 @@ func play_splash_sound(impact_pos: Vector3, speed: float) -> void:
 
 	add_child(audio_player)
 
-	var surface_y := get_wave_height_at_pos(impact_pos)
+	var surface_y : float = get_wave_height_at_pos(impact_pos)
 	audio_player.global_position = Vector3(impact_pos.x, surface_y, impact_pos.z)
 
 	audio_player.finished.connect(audio_player.queue_free)

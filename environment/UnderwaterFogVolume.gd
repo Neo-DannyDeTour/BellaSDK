@@ -43,7 +43,7 @@ func _process(delta: float) -> void:
 
 	# 4. Apply to your custom shader
 	if self.material is ShaderMaterial:
-		var mat := self.material as ShaderMaterial
+		var mat : ShaderMaterial = self.material as ShaderMaterial
 		mat.set_shader_parameter("density", _current_density)
 
 		var cam: Camera3D = _get_camera()
@@ -51,7 +51,7 @@ func _process(delta: float) -> void:
 			var fade_normal: Vector3 = cam.global_transform.basis.z * -1.0
 			var fade_pos: Vector3 = cam.global_transform.origin + (fade_normal * _current_fade_dist)
 			var fade_distance: float = fade_pos.dot(fade_normal)
-			var fade_plane := Vector4(fade_normal.x, fade_normal.y, fade_normal.z, fade_distance)
+			var fade_plane : Vector4 = Vector4(fade_normal.x, fade_normal.y, fade_normal.z, fade_distance)
 			mat.set_shader_parameter("fade_plane", fade_plane)
 
 

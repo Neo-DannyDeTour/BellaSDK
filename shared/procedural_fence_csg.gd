@@ -32,7 +32,7 @@ enum Orientation { VERTICAL, HORIZONTAL, DIAGONAL }
 		_request_rebuild()
 
 @export_category("Bars")
-@export var bar_orientation := Orientation.DIAGONAL:
+@export var bar_orientation : Orientation = Orientation.DIAGONAL:
 	set(value):
 		bar_orientation = value
 		_request_rebuild()

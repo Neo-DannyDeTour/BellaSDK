@@ -34,7 +34,7 @@ func _on_resized() -> void:
 		set_anchors_preset(Control.PRESET_FULL_RECT)
 		remove_theme_constant_override("margin_top")
 
-		var viewport_node: SubViewport = effect_container.get_node("SubViewport")
+		var viewport_node: SubViewport = effect_container.get_node("SubViewport") as SubViewport
 		var current_viewport_size: Vector2 = viewport_node.size
 
 		# 2. Calculate the vertical drop

@@ -58,7 +58,7 @@ func enter(msg: Dictionary = {}) -> void:
 		current_rope.global_position.x, player.global_position.y, current_rope.global_position.z
 	)
 	if player.global_position.distance_to(face_pos) > 0.1:
-		var target_transform := player.global_transform.looking_at(face_pos, Vector3.UP)
+		var target_transform : Transform3D = player.global_transform.looking_at(face_pos, Vector3.UP)
 		var tween: Tween = create_tween()
 		(
 			tween
@@ -87,7 +87,7 @@ func exit() -> void:
 	if release_forward.length_squared() < 0.001:
 		release_forward = -player.global_transform.basis.z
 
-	var target_basis := Basis.looking_at(release_forward, Vector3.UP)
+	var target_basis : Basis = Basis.looking_at(release_forward, Vector3.UP)
 	var release_tween: Tween = create_tween().set_parallel(true)
 
 	(
@@ -191,7 +191,7 @@ func _handle_climbing_and_swinging(delta: float, input_dir: Vector2) -> void:
 
 			var flat_fwd: Vector3 = Vector3(look_dir.x, 0.0, look_dir.z).normalized()
 			var flat_right: Vector3 = flat_fwd.cross(Vector3.UP).normalized()
-			var push_dir := (flat_fwd * -input_dir.y) + (flat_right * input_dir.x)
+			var push_dir : Vector3 = (flat_fwd * -input_dir.y) + (flat_right * input_dir.x)
 
 			if push_dir.length_squared() > 0.01:
 				# FIX: Apply a raw force disconnected from the mass multiplier.

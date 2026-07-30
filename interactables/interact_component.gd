@@ -8,7 +8,7 @@ signal unfocused
 
 var characters_hovering : Dictionary = {}
 var is_currently_focused : bool = false
-var last_hit_position := Vector3.ZERO
+var last_hit_position : Vector3 = Vector3.ZERO
 var _last_hover_time_msec : int = 0
 
 
@@ -26,7 +26,7 @@ func interact_with(character: CharacterBody3D) -> void:
 func hover_cursor(character: CharacterBody3D, hit_position: Vector3) -> void:
 	#print("InteractComponent: hover_cursor called by ", character.name)
 
-	var current_time := Time.get_ticks_msec()
+	var current_time : int = Time.get_ticks_msec()
 	characters_hovering[character] = current_time
 	_last_hover_time_msec = current_time
 	last_hit_position = hit_position
@@ -44,7 +44,7 @@ func get_character_hovered_by_cur_camera() -> CharacterBody3D:
 
 
 func _process(_delta: float) -> void:
-	var current_time := Time.get_ticks_msec()
+	var current_time : int = Time.get_ticks_msec()
 
 	# Check a single global expiration timestamp instead of looping the dictionary
 	if current_time - _last_hover_time_msec > 50:

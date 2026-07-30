@@ -236,7 +236,7 @@ func _on_text_changed(new_text: String) -> void:
 	if is_navigating_matches:
 		return
 
-	var search_text := new_text.lstrip(" ").replace("  ", " ")
+	var search_text : String = new_text.lstrip(" ").replace("  ", " ")
 
 	if search_text == "":
 		_reset_suggestions()
@@ -264,7 +264,7 @@ func _get_autocomplete_matches(current_text: String) -> Array[String]:
 	var matches: Array[String] = []
 
 	if parts.size() == 1:
-		var search_term := parts[0].to_lower()
+		var search_term : String = parts[0].to_lower()
 		var exact_starts: Array[String] = []
 		var partials: Array[String] = []
 
@@ -278,8 +278,8 @@ func _get_autocomplete_matches(current_text: String) -> Array[String]:
 		matches.append_array(partials)
 
 	elif parts.size() == 2:
-		var main_cmd := parts[0].to_lower()
-		var sub_term := parts[1].to_lower()
+		var main_cmd : String = parts[0].to_lower()
+		var sub_term : String = parts[1].to_lower()
 		var arg_matches: Array[String] = []
 
 		if main_cmd == "colorblind":
@@ -387,7 +387,7 @@ func _on_command_submitted(text: String) -> void:
 	command_input.clear()
 	_reset_suggestions()
 
-	var clean_text := text.strip_edges()
+	var clean_text : String = text.strip_edges()
 
 	if clean_text != "":
 		if typed_history.is_empty() or typed_history.back() != clean_text:
@@ -397,8 +397,8 @@ func _on_command_submitted(text: String) -> void:
 		write("> " + clean_text, "darkgray")
 
 		var parts : PackedStringArray = clean_text.split(" ")
-		var command := parts[0].to_lower()
-		var args := parts.slice(1)
+		var command : String = parts[0].to_lower()
+		var args : PackedStringArray = parts.slice(1)
 
 		print("Executing Console Command: ", command, " | Args: ", args)
 		_process_command(command, args)
@@ -471,8 +471,8 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 			write("do not care")
 		"colorblind":
 			if args.size() > 0:
-				var mode := args[0].to_lower()
-				var material := colorblind_rect.material as ShaderMaterial
+				var mode : String = args[0].to_lower()
+				var material : ShaderMaterial = colorblind_rect.material as ShaderMaterial
 				match mode:
 					"off", "normal":
 						material.set_shader_parameter("mode", 0)
@@ -506,7 +506,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 			if is_debug_allowed:
 				print("InGameConsole: _process_command() called. Action: Set Gamespeed")
 				if args.size() > 0:
-					var new_speed := args[0].to_float()
+					var new_speed : float = args[0].to_float()
 					Engine.time_scale = clampf(new_speed, 0.1, 10.0)
 					write("Time scale set to: " + str(Engine.time_scale), "green")
 				else:
@@ -515,7 +515,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 				write("Unknown command: '" + cmd + "'. Type 'help' for a list.", "red")
 		"highcontrast":
 			if args.size() > 0:
-				var active := args[0].to_lower() == "on"
+				var active : bool = args[0].to_lower() == "on"
 				if has_node("/root/Events"):
 					var events: Node = get_node("/root/Events")
 					if events.has_signal("high_contrast_toggled"):
@@ -525,7 +525,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 				write("Usage: highcontrast <on/off>", "yellow")
 		"screenshake":
 			if args.size() > 0:
-				var amount := args[0].to_float()
+				var amount : float = args[0].to_float()
 				var duration : float = 1.0
 
 				if args.size() > 1:
@@ -536,7 +536,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 					if events.has_signal("screenshake_requested"):
 						events.emit_signal("screenshake_requested", amount, duration)
 
-				var msg := (
+				var msg : String = (
 					"Screenshake: Intensity "
 					+ str(clampf(amount, 0.0, 16.0))
 					+ ", Duration "
@@ -548,7 +548,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 				write("Usage: screenshake <intensity 0.0-16.0> [duration_in_seconds]", "yellow")
 		"subtitles":
 			if args.size() > 0:
-				var active := args[0].to_lower() == "on"
+				var active : bool = args[0].to_lower() == "on"
 				if has_node("/root/Events"):
 					var events: Node = get_node("/root/Events")
 					if events.has_signal("subtitles_toggled"):
@@ -558,19 +558,19 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 				write("Usage: subtitles <on/off>", "yellow")
 		"mono_audio":
 			if args.size() > 0:
-				var active := args[0].to_lower() == "on"
+				var active : bool = args[0].to_lower() == "on"
 				write("Mono Audio: " + ("ON" if active else "OFF"), "green")
 			else:
 				write("Usage: mono_audio <on/off>", "yellow")
 		"uiscale":
 			if args.size() > 0:
-				var scale_val := args[0].to_float()
+				var scale_val : float = args[0].to_float()
 				write("UI Scale set to: " + str(scale_val), "green")
 			else:
 				write("Usage: uiscale <float> (Default is usually 1.0)", "yellow")
 		"photosensitivity":
 			if args.size() > 0:
-				var active := args[0].to_lower() == "on"
+				var active : bool = args[0].to_lower() == "on"
 				if has_node("/root/Events"):
 					var events: Node = get_node("/root/Events")
 					if events.has_signal("photosensitivity_mode_toggled"):
@@ -580,7 +580,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 				write("Usage: photosensitivity <on/off>", "yellow")
 		"setfont":
 			if args.size() > 0:
-				var font_choice := args[0].to_lower()
+				var font_choice : String = args[0].to_lower()
 				if font_choice in valid_font_args:
 					if has_node("/root/Events"):
 						var events: Node = get_node("/root/Events")
