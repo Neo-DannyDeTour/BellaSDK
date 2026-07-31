@@ -12,8 +12,14 @@ const MONKEY_BAR_HANG_OFFSET: float = 2.1
 # --------------------------------------
 var current_monkey_bar_volume: Node3D = null
 
+# CACHED NODE
+var _camera_anims: AnimationPlayer = null
+
 
 func enter(msg: Dictionary = {}) -> void:
+	if not is_instance_valid(_camera_anims):
+		_camera_anims = player.get_node_or_null("%CameraAnims") as AnimationPlayer
+
 	if not msg.has("volume_node"):
 		state_machine.transition_to("Air")
 		return
@@ -23,8 +29,8 @@ func enter(msg: Dictionary = {}) -> void:
 	# Instantly kill vertical momentum so we "catch" the bar
 	player.velocity.y = 0.0
 
-	if player.has_node("%CameraAnims"):
-		player.get_node("%CameraAnims").play("monkey_bar_idle")
+	if is_instance_valid(_camera_anims):
+		_camera_anims.play("monkey_bar_idle")
 
 	# Force the camera back to base_fov
 	if is_instance_valid(player.camera_controller):
@@ -39,8 +45,8 @@ func exit() -> void:
 	if is_instance_valid(player.environment_component):
 		player.environment_component.monkey_bar_cooldown = 0.5
 
-	if player.has_node("%CameraAnims"):
-		player.get_node("%CameraAnims").play("idle", 0.2)
+	if is_instance_valid(_camera_anims):
+		_camera_anims.play("idle", 0.2)
 
 	# --- NEW: Kill the looping audio when we let go ---
 	if (
@@ -85,7 +91,7 @@ func physics_update(delta: float) -> void:
 
 	# --- NEW: Play Monkey Bar Sounds ---
 	# We only pass horizontal velocity so the vertical magnetism wobble doesn't trigger audio
-	var flat_vel : Vector2 = Vector2(player.velocity.x, player.velocity.z)
+	var flat_vel: Vector2 = Vector2(player.velocity.x, player.velocity.z)
 	if (
 		is_instance_valid(player.locomotion_component)
 		and is_instance_valid(player.locomotion_component.get("footstep_manager"))
@@ -130,7 +136,7 @@ func _apply_horizontal_movement(input_dir: Vector2) -> void:
 
 
 func _apply_vertical_magnetism() -> void:
-	var volume : MonkeyBarVolume = current_monkey_bar_volume as MonkeyBarVolume
+	var volume: MonkeyBarVolume = current_monkey_bar_volume as MonkeyBarVolume
 	if not is_instance_valid(volume):
 		return
 

@@ -1,1 +1,4 @@
 - Caching get_viewport().get_camera_3d() requires careful use of is_instance_valid() and checking against null to ensure the active camera is always returned without crashing or locking onto a freed node.
+- Use `distance_squared_to()` over `distance_to()` when comparing a specific threshold in hot loops, but make sure to square the threshold being checked against to ensure mathematical parity (e.g., `dist_sq > 2.25` instead of `dist > 1.5`).
+- Ensure any `has_node()` or `get_node()` calls inside frequently checked conditions (like state transition scripts `enter()` or `exit()`) are replaced with `@onready` cached variables for dynamic properties if they run constantly.
+- Remember to `import gdtoolkit` or run `pip install gdtoolkit` when utilizing `gdlint` and `gdformat` since it might not be natively found on some runner machines out of the box.

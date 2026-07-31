@@ -63,7 +63,8 @@ func _process(_delta: float) -> void:
 	var p2: Vector3 = target_node.global_position
 
 	# Calculate a central control point to force the tentacle to arc upwards like a snake
-	var distance: float = p0.distance_to(p2)
+	var distance_sq: float = p0.distance_squared_to(p2)
+	var distance: float = sqrt(distance_sq)
 	var p1: Vector3 = p0.lerp(p2, 0.5)
 	p1.y += (distance * 0.6)
 
@@ -85,7 +86,8 @@ func _get_quadratic_bezier(p0: Vector3, p1: Vector3, p2: Vector3, t: float) -> V
 
 
 func _update_visual_segment(segment: MeshInstance3D, p1: Vector3, p2: Vector3) -> void:
-	var dist: float = p1.distance_to(p2)
+	var dist_sq: float = p1.distance_squared_to(p2)
+	var dist: float = sqrt(dist_sq)
 	segment.global_position = p1.lerp(p2, 0.5)
 
 	var dir: Vector3 = p2 - p1

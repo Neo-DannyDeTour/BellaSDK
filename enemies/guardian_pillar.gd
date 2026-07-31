@@ -96,7 +96,8 @@ func _process_targeting() -> void:
 
 	head.look_at(target_pos, Vector3.UP)
 
-	var dist: float = head.global_position.distance_to(target_pos)
+	var dist_sq: float = head.global_position.distance_squared_to(target_pos)
+	var dist: float = sqrt(dist_sq)
 
 	laser_mesh.scale.y = dist / 2.0
 	laser_mesh.position = Vector3(0.0, 0.0, -dist / 2.0)
@@ -133,6 +134,7 @@ func _on_state_timer_timeout() -> void:
 
 
 func _shoot_projectile() -> void:
+	print("GuardianPillar: _shoot_projectile() called. Action: Firing energy blast.")
 	print("GuardianPillar: _shoot_projectile() - Firing energy blast.")
 	if projectile_scene == null:
 		printerr("GuardianPillar: No projectile scene assigned!")

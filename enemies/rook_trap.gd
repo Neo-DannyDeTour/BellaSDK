@@ -46,15 +46,17 @@ func _physics_process(delta: float) -> void:
 
 	var current_pos: Vector3 = moving_body.global_position
 	var direction: Vector3
-	var distance_to_target: float
+	var dist_sq: float
 	var move_step: float
+	var move_step_sq: float
 
 	if _state == State.ATTACKING:
 		direction = current_pos.direction_to(_target_position)
-		distance_to_target = current_pos.distance_to(_target_position)
+		dist_sq = current_pos.distance_squared_to(_target_position)
 		move_step = attack_speed * delta
+		move_step_sq = move_step * move_step
 
-		if distance_to_target <= move_step:
+		if dist_sq <= move_step_sq:
 			moving_body.global_position = _target_position
 			_state = State.RETURNING
 			print("RookTrap: Reached target. Returning slowly.")
@@ -63,10 +65,11 @@ func _physics_process(delta: float) -> void:
 
 	elif _state == State.RETURNING:
 		direction = current_pos.direction_to(_origin_position)
-		distance_to_target = current_pos.distance_to(_origin_position)
+		dist_sq = current_pos.distance_squared_to(_origin_position)
 		move_step = return_speed * delta
+		move_step_sq = move_step * move_step
 
-		if distance_to_target <= move_step:
+		if dist_sq <= move_step_sq:
 			moving_body.global_position = _origin_position
 			_state = State.IDLE
 			print("RookTrap: Returned to origin. Awaiting input.")
