@@ -9,8 +9,11 @@ func enter(_msg: Dictionary = {}) -> void:
 	player.direction = Vector3.ZERO
 
 	# Disable StairController to prevent ground snapping
-	if player.has_node("StairController"):
-		player.get_node("StairController").is_enabled = false
+	if (
+		is_instance_valid(player.locomotion_component)
+		and is_instance_valid(player.locomotion_component.stair_controller)
+	):
+		player.locomotion_component.stair_controller.is_enabled = false
 
 	# 2. Drop anything heavy we are holding so the animation doesn't break
 	if player.interaction_scanner.is_heavy_lifting:
@@ -20,8 +23,11 @@ func enter(_msg: Dictionary = {}) -> void:
 # Add the exit function to re-enable stair handling
 func exit() -> void:
 	print("StateFastRope: exit() called. Exited fast rope state. Enabling StairController.")
-	if player.has_node("StairController"):
-		player.get_node("StairController").is_enabled = true
+	if (
+		is_instance_valid(player.locomotion_component)
+		and is_instance_valid(player.locomotion_component.stair_controller)
+	):
+		player.locomotion_component.stair_controller.is_enabled = true
 
 
 func physics_update(delta: float) -> void:
@@ -30,6 +36,6 @@ func physics_update(delta: float) -> void:
 
 	# We fake a "sprinting forward" input specifically for the CameraController
 	# to trigger the aggressive, high-speed headbobting effect while sliding!
-	var fake_input : Vector2 = Vector2(0.0, 1.0)
+	var fake_input: Vector2 = Vector2(0.0, 1.0)
 
 	player.camera_controller.update_camera(delta, fake_input, true, false, false, 20.0)

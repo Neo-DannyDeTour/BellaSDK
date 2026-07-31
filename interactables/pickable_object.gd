@@ -38,8 +38,8 @@ extends RigidBody3D
 @export var projectile_damage: int = 20
 
 @export_category("Accessibility")
-## The dedicated shader material applied as an overlay to highlight
-## this object through walls during vision assist.
+## The dedicated shader material applied as an overlay to highlight this object
+## through walls during vision assist.
 @export var vision_assist_material: ShaderMaterial
 
 ## Tracks the velocity from the previous physics frame to accurately gauge impact speed.
@@ -111,8 +111,10 @@ func _ready() -> void:
 	sleeping_state_changed.connect(_on_sleeping_state_changed)
 
 	# Listen to the global Event Bus for state changes
-	if Events.has_signal("noclip_toggled") and \
-			not Events.noclip_toggled.is_connected(_on_noclip_toggled):
+	if (
+		Events.has_signal("noclip_toggled")
+		and not Events.noclip_toggled.is_connected(_on_noclip_toggled)
+	):
 		Events.noclip_toggled.connect(_on_noclip_toggled)
 
 	# Enable collision monitoring so the physics server reports what this object hits
@@ -186,6 +188,7 @@ func pick_up(target: Marker3D, player_node: Node3D) -> void:
 
 
 func drop() -> void:
+	print("PickableObject: drop() called. Action: Dropping object.")
 	if Time.get_ticks_msec() - _grab_time < 100:
 		return
 
@@ -213,7 +216,7 @@ func drop() -> void:
 		if "velocity" in holder:
 			linear_velocity = holder.velocity
 
-		var cam_forward : Vector3 = Vector3.FORWARD
+		var cam_forward: Vector3 = Vector3.FORWARD
 		var cam: Camera3D = _get_camera()
 		if is_instance_valid(cam):
 			cam_forward = -cam.global_transform.basis.z
@@ -227,22 +230,22 @@ func drop() -> void:
 		var is_nudging: bool = false
 		if cam_forward.y < -0.2:
 			var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
-			var intended_slide : Vector3 = (push_dir * 0.35) + velocity_offset
+			var intended_slide: Vector3 = (push_dir * 0.35) + velocity_offset
 
 			var check_dir: Vector3 = intended_slide.normalized()
-			var check_dist : float = intended_slide.length() + 0.1
-			var ray_end : Vector3 = global_position + (check_dir * check_dist)
+			var check_dist: float = intended_slide.length() + 0.1
+			var ray_end: Vector3 = global_position + (check_dir * check_dist)
 
 			var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
 				global_position, ray_end
 			)
 			query.exclude = [self.get_rid(), holder.get_rid()]
 
-			var result : Dictionary = space_state.intersect_ray(query)
-			var target_pos : Vector3 = global_position
+			var result: Dictionary = space_state.intersect_ray(query)
+			var target_pos: Vector3 = global_position
 
 			if result:
-				var safe_dist: float = global_position.distance_to(result.position) - 0.1
+				var safe_dist: float = sqrt(global_position.distance_squared_to(result.position)) - 0.1
 				if safe_dist > 0:
 					target_pos += check_dir * safe_dist
 			else:
@@ -269,7 +272,7 @@ func drop() -> void:
 
 				nudge_tween.tween_callback(
 					func() -> void:
-						var toss_dir : Vector3 = push_dir
+						var toss_dir: Vector3 = push_dir
 						toss_dir.y = 0.5
 						apply_central_impulse(toss_dir * 5.0)
 				)
@@ -280,7 +283,7 @@ func drop() -> void:
 
 		Events.item_dropped.emit(self, holder)
 
-		var previous_holder : Node3D = holder
+		var previous_holder: Node3D = holder
 		_wait_to_enable_collision(previous_holder)
 
 	holder = null
@@ -295,15 +298,16 @@ func _attempt_enable_collision(player_node: Node3D) -> void:
 	if not is_instance_valid(self) or not is_instance_valid(player_node):
 		return
 
-	var distance : float = global_position.distance_to(player_node.global_position)
+	var dist_sq: float = global_position.distance_squared_to(player_node.global_position)
 
-	if distance > 1.5:
+	if dist_sq > 2.25:  # 1.5 squared
 		remove_collision_exception_with(player_node)
 	else:
 		get_tree().create_timer(0.1).timeout.connect(_attempt_enable_collision.bind(player_node))
 
 
 func throw(impulse_vector: Vector3) -> void:
+	print("PickableObject: throw() called. Action: Throwing object.")
 	print(
 		"PickableObject: throw() called. Throwing: ", name, " with force: ", impulse_vector.length()
 	)
@@ -362,7 +366,7 @@ func _physics_process(_delta: float) -> void:
 		var target_pos: Vector3 = hold_target.global_position
 		var player_pos: Vector3 = holder.global_position
 
-		var cam_forward : Vector3 = Vector3.FORWARD
+		var cam_forward: Vector3 = Vector3.FORWARD
 		var cam: Camera3D = _get_camera()
 		if is_instance_valid(cam):
 			cam_forward = -cam.global_transform.basis.z
@@ -391,21 +395,21 @@ func _physics_process(_delta: float) -> void:
 		if target_pos.y < min_height:
 			target_pos.y = min_height
 
-		var distance_to_target : float = global_position.distance_to(target_pos)
+		var distance_to_target: float = global_position.distance_to(target_pos)
 
 		if distance_to_target > 1.5 and not _is_player_flying:
 			drop()
 			return
 
-		var distance_vector : Vector3 = target_pos - global_position
+		var distance_vector: Vector3 = target_pos - global_position
 		linear_velocity = distance_vector * 15.0
 
 		var target_basis: Basis = holder.global_basis
-		var current_quat : Quaternion = global_basis.get_rotation_quaternion()
-		var diff_quat : Quaternion = target_basis.get_rotation_quaternion() * current_quat.inverse()
+		var current_quat: Quaternion = global_basis.get_rotation_quaternion()
+		var diff_quat: Quaternion = target_basis.get_rotation_quaternion() * current_quat.inverse()
 
 		var axis: Vector3 = Vector3(diff_quat.x, diff_quat.y, diff_quat.z)
-		var angle : float = 2.0 * acos(clampf(diff_quat.w, -1.0, 1.0))
+		var angle: float = 2.0 * acos(clampf(diff_quat.w, -1.0, 1.0))
 
 		if angle > PI:
 			angle -= TAU
@@ -487,7 +491,7 @@ func _wait_to_enable_collision(player_node: Node3D) -> void:
 			player_node.global_position.x, player_node.global_position.z
 		)
 
-		if flat_my_pos.distance_to(flat_player_pos) >= 1.0:
+		if flat_my_pos.distance_squared_to(flat_player_pos) >= 1.0:  # 1.0 squared
 			break
 
 		current_frame += 1
@@ -499,23 +503,23 @@ func _wait_to_enable_collision(player_node: Node3D) -> void:
 			player_node.global_position.x, player_node.global_position.z
 		)
 
-		if flat_my_pos.distance_to(flat_player_pos) < 1.0:
-			var player_forward : Vector3 = -player_node.global_transform.basis.z
+		if flat_my_pos.distance_squared_to(flat_player_pos) < 1.0:  # 1.0 squared
+			var player_forward: Vector3 = -player_node.global_transform.basis.z
 			var flat_backward: Vector3 = (
 				Vector3(-player_forward.x, 0.0, -player_forward.z).normalized()
 			)
 
 			var push_distance: float = 0.2
-			var push_vector : Vector3 = flat_backward * push_distance
+			var push_vector: Vector3 = flat_backward * push_distance
 
-			var safe_travel : Vector3 = push_vector
+			var safe_travel: Vector3 = push_vector
 			var kin_collision: KinematicCollision3D = player_node.move_and_collide(
 				push_vector, true
 			)
 			if kin_collision:
 				safe_travel = kin_collision.get_travel()
 
-			var target_pos : Vector3 = player_node.global_position + safe_travel
+			var target_pos: Vector3 = player_node.global_position + safe_travel
 
 			var tween: Tween = get_tree().create_tween()
 			(

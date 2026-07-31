@@ -153,7 +153,8 @@ func _physics_process(delta: float) -> void:
 		if _is_animating:
 			return
 
-		if global_position.distance_to(holder.global_position) > drop_distance:
+		var drop_distance_sq: float = drop_distance * drop_distance
+		if global_position.distance_squared_to(holder.global_position) > drop_distance_sq:
 			drop()
 			return
 
@@ -202,10 +203,12 @@ func _physics_process(delta: float) -> void:
 
 		var p_pos_2d: Vector2 = Vector2(holder.global_position.x, holder.global_position.z)
 		var b_pos_2d: Vector2 = Vector2(global_position.x, global_position.z)
-		var dist_flat: float = p_pos_2d.distance_to(b_pos_2d)
+		var dist_flat_sq: float = p_pos_2d.distance_squared_to(b_pos_2d)
 		var safe_dist: float = box_half_width + player_radius + 0.15
+		var safe_dist_sq: float = safe_dist * safe_dist
 
-		if dist_flat < safe_dist:
+		if dist_flat_sq < safe_dist_sq:
+			var dist_flat: float = sqrt(dist_flat_sq)
 			var overlap: float = safe_dist - dist_flat
 			var push_dir: Vector2 = (p_pos_2d - b_pos_2d).normalized()
 
@@ -220,7 +223,9 @@ func _physics_process(delta: float) -> void:
 				holder.global_position += push_vec
 
 			var post_p_2d: Vector2 = Vector2(holder.global_position.x, holder.global_position.z)
-			if post_p_2d.distance_to(b_pos_2d) < safe_dist - 0.05:
+			var safe_dist_margin: float = safe_dist - 0.05
+			var safe_dist_margin_sq: float = safe_dist_margin * safe_dist_margin
+			if post_p_2d.distance_squared_to(b_pos_2d) < safe_dist_margin_sq:
 				drop()
 				return
 

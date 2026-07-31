@@ -203,7 +203,7 @@ func _should_exit_terminal_mode() -> bool:
 
 	if (
 		is_instance_valid(player_body)
-		and player_body.global_position.distance_to(terminal_start_pos) > 1.0
+		and player_body.global_position.distance_squared_to(terminal_start_pos) > 1.0
 	):
 		return true
 
@@ -232,7 +232,7 @@ func shoot_terminal_raycast(is_click: bool) -> void:
 	var ray_normal: Vector3 = camera.project_ray_normal(screen_center)
 	var ray_end: Vector3 = ray_origin + ray_normal * 3.0
 
-	var query : PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(ray_origin, ray_end)
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(ray_origin, ray_end)
 
 	if is_instance_valid(player_body):
 		query.exclude = [player_body.get_rid()]
