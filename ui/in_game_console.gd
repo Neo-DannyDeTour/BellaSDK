@@ -638,22 +638,23 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 				)
 		"visionassist":
 			var target_arg: String = ""
-			
+
 			# Filter out any empty strings caused by extra spaces in the console input
 			for arg: String in args:
 				if not arg.strip_edges().is_empty():
 					target_arg = arg.strip_edges()
 					break
-			
+
 			if not target_arg.is_empty():
-				## The boolean state determining if vision assist should be enabled, inferred from console arguments.
+				## The boolean state determining if vision assist should be enabled,
+				## inferred from console arguments.
 				var active: bool = target_arg.to_lower() == "on"
-				
+
 				if has_node("/root/Events"):
 					var events: Node = get_node("/root/Events")
 					if events.has_signal("vision_assist_toggled"):
 						events.emit_signal("vision_assist_toggled", active)
-				
+
 				print("Console: visionassist toggled. State: ", active)
 				write("Vision Assist mode: " + ("ON" if active else "OFF"), "green")
 			else:

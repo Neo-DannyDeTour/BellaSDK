@@ -655,7 +655,7 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 					for uset: RID in uniform_sets:
 						if uset.is_valid():
 							rd.free_rid(uset)
-				
+
 				initialize_compute()
 				initialize_raster_pipelines(
 					buffers.get_color_layer(0, is_msaa_on),
