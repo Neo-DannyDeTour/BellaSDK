@@ -67,12 +67,16 @@ var is_immobilized: bool = false
 var is_sprint_blocked: bool = false
 
 @onready var debuff_container: HBoxContainer = $HealthMargin/VBoxContainer/DebuffContainer
-@onready var sprint_debuff_icon: TextureRect = $HealthMargin/VBoxContainer/DebuffContainer/SprintDebuffIcon
-@onready var sprint_debuff_bar: ProgressBar = $HealthMargin/VBoxContainer/DebuffContainer/SprintDebuffBar
+@onready var sprint_debuff_icon: TextureRect = \
+		$HealthMargin/VBoxContainer/DebuffContainer/SprintDebuffIcon
+@onready var sprint_debuff_bar: ProgressBar = \
+		$HealthMargin/VBoxContainer/DebuffContainer/SprintDebuffBar
 
 @onready var immobilize_container: HBoxContainer = $HealthMargin/VBoxContainer/ImmobilizeContainer
-@onready var immobilize_icon: TextureRect = $HealthMargin/VBoxContainer/ImmobilizeContainer/ImmobilizeIcon
-@onready var immobilize_bar: ProgressBar = $HealthMargin/VBoxContainer/ImmobilizeContainer/ImmobilizeBar
+@onready var immobilize_icon: TextureRect = \
+		$HealthMargin/VBoxContainer/ImmobilizeContainer/ImmobilizeIcon
+@onready var immobilize_bar: ProgressBar = \
+		$HealthMargin/VBoxContainer/ImmobilizeContainer/ImmobilizeBar
 
 @onready var warning_label: Label = $WarningLabel
 
@@ -142,15 +146,15 @@ func _ready() -> void:
 
 	KeycardSystem.card_picked_up.connect(_on_card_picked_up)
 	KeycardSystem.card_used.connect(_on_card_used)
-	
+
 	debuff_container.hide()
 	immobilize_container.hide()
 	warning_label.modulate.a = 0.0
-	
+
 	if Events.has_signal("sprint_debuff_applied"):
 		if not Events.sprint_debuff_applied.is_connected(_on_sprint_debuff_applied):
 			Events.sprint_debuff_applied.connect(_on_sprint_debuff_applied)
-			
+
 	if Events.has_signal("immobilize_debuff_applied"):
 		if not Events.immobilize_debuff_applied.is_connected(_on_immobilize_debuff_applied):
 			Events.immobilize_debuff_applied.connect(_on_immobilize_debuff_applied)
@@ -633,10 +637,10 @@ func _on_card_used(card_id: StringName) -> void:
 
 func _show_warning_message(message: String) -> void:
 	warning_label.text = message
-	
+
 	if warning_tween and warning_tween.is_valid():
 		warning_tween.kill()
-		
+
 	warning_tween = create_tween().set_trans(Tween.TRANS_SINE)
 	warning_tween.tween_property(warning_label, "modulate:a", 1.0, 0.1)
 	warning_tween.tween_interval(1.0)
@@ -647,16 +651,16 @@ func _on_sprint_debuff_applied(duration: float) -> void:
 	print("UIController: _on_sprint_debuff_applied() - Starting debuff UI for ", duration, " seconds.")
 	debuff_container.show()
 	is_sprint_blocked = true
-	
+
 	sprint_debuff_bar.max_value = duration
 	sprint_debuff_bar.value = duration
-	
+
 	if debuff_tween and debuff_tween.is_valid():
 		debuff_tween.kill()
-		
+
 	debuff_tween = create_tween()
 	debuff_tween.tween_property(sprint_debuff_bar, "value", 0.0, duration)
-	
+
 	debuff_tween.finished.connect(
 		func() -> void:
 			debuff_container.hide()
@@ -665,19 +669,23 @@ func _on_sprint_debuff_applied(duration: float) -> void:
 
 
 func _on_immobilize_debuff_applied(duration: float) -> void:
-	print("UIController: _on_immobilize_debuff_applied() - Starting immobilize UI for ", duration, " seconds.")
+	print(
+		"UIController: _on_immobilize_debuff_applied() - Starting immobilize UI for ",
+		duration,
+		" seconds."
+	)
 	immobilize_container.show()
 	is_immobilized = true
-	
+
 	immobilize_bar.max_value = duration
 	immobilize_bar.value = duration
-	
+
 	if immobilize_tween and immobilize_tween.is_valid():
 		immobilize_tween.kill()
-		
+
 	immobilize_tween = create_tween()
 	immobilize_tween.tween_property(immobilize_bar, "value", 0.0, duration)
-	
+
 	immobilize_tween.finished.connect(
 		func() -> void:
 			immobilize_container.hide()

@@ -27,7 +27,7 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	immobilize_timer.timeout.connect(_on_immobilize_timeout)
 	sprint_block_timer.timeout.connect(_on_sprint_block_timeout)
-	
+
 	left_jaw.rotation_degrees.z = 45.0
 	right_jaw.rotation_degrees.z = -45.0
 
@@ -42,22 +42,22 @@ func snap_shut(player: Player) -> void:
 	print("BearTrap: snap_shut() - Closing jaws and applying debuffs to player.")
 	current_state = TrapState.CLOSED
 	trapped_player = player
-	
+
 	var tween: Tween = create_tween().set_parallel(true)
 	tween.tween_property(left_jaw, "rotation_degrees:z", 0.0, 0.1).set_trans(Tween.TRANS_BOUNCE)
 	tween.tween_property(right_jaw, "rotation_degrees:z", 0.0, 0.1).set_trans(Tween.TRANS_BOUNCE)
-	
+
 	trapped_player.take_damage(150)
-	
+
 	if is_instance_valid(trapped_player.system_menu):
 		trapped_player.system_menu.is_stunned = true
-		
+
 	if is_instance_valid(trapped_player.locomotion_component):
 		trapped_player.locomotion_component.can_sprint = false
-		
+
 	Events.sprint_debuff_applied.emit(5.0)
 	Events.immobilize_debuff_applied.emit(2.0)
-	
+
 	immobilize_timer.start(2.0)
 	sprint_block_timer.start(5.0)
 
