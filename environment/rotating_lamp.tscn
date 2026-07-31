@@ -1,0 +1,37 @@
+[gd_scene format=3 uid="uid://bb8gkbjly4ir6"]
+
+[ext_resource type="Script" uid="uid://b3eoqstfde2rc" path="res://environment/rotating_lamp.gd" id="1_qd872"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_wts27"]
+height = 0.1
+radial_segments = 16
+rings = 0
+
+[sub_resource type="BoxMesh" id="BoxMesh_wts27"]
+size = Vector3(0.4, 0.8, 0.5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ptton"]
+albedo_color = Color(0, 0, 0, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_qd872"]
+material = SubResource("StandardMaterial3D_ptton")
+size = Vector3(0.4, 1, 0.75)
+
+[node name="RotatingLamp" type="Node3D" unique_id=894994790]
+script = ExtResource("1_qd872")
+
+[node name="Base" type="MeshInstance3D" parent="." unique_id=1737373422]
+mesh = SubResource("CylinderMesh_wts27")
+
+[node name="Rotor" type="Node3D" parent="." unique_id=688723181]
+
+[node name="LightMesh" type="MeshInstance3D" parent="Rotor" unique_id=346408938]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.1, -0.5, 0)
+mesh = SubResource("BoxMesh_wts27")
+
+[node name="Blocker" type="MeshInstance3D" parent="Rotor" unique_id=382123604]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, -0.5, 0)
+mesh = SubResource("BoxMesh_qd872")
+
+[node name="SpotLight3D" type="SpotLight3D" parent="Rotor" unique_id=1689428239]
+transform = Transform3D(-3.785517e-08, -0.5, 0.86602545, -2.1855692e-08, 0.86602545, 0.5, -1, -1.7763568e-15, -4.3711385e-08, -0.5446497, -0.53712726, 0)

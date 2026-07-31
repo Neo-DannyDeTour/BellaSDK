@@ -384,7 +384,7 @@ func _process(delta: float) -> void:
 						target_text_pos, response_speed * delta
 					)
 
-					var time_sec : int = Time.get_ticks_msec() / 1000.0
+					var time_sec : float = Time.get_ticks_msec() / 1000.0
 					var pulse : float = pow(sin(time_sec * pulse_speed), 4.0)
 					var current_text_scale : float = 1.0 + (pulse * pulse_intensity)
 					text_label.scale = Vector2(current_text_scale, current_text_scale)

@@ -59,6 +59,7 @@ func _init() -> void:
 	if is_debug_allowed:
 		valid_commands.append("noclip")
 		valid_commands.append("gamespeed")
+		valid_commands.append("die")
 
 
 var valid_colorblind_args: Array[String] = [
@@ -659,6 +660,30 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 				write("Vision Assist mode: " + ("ON" if active else "OFF"), "green")
 			else:
 				write("Usage: visionassist <on/off>", "yellow")
+		"die":
+			if is_debug_allowed:
+				print("InGameConsole: _process_command() called. Action: Executing 'die' command.")
+				
+				var players: Array[Node] = get_tree().get_nodes_in_group("player")
+				if players.size() > 0:
+					var player: Node = players[0]
+					
+					# Target the exact path from your screenshot
+					var health_comp: Node = player.get_node_or_null("Components/HealthComponent")
+					
+					# Fallback search if the path changes in the future
+					if not health_comp:
+						health_comp = player.find_child("HealthComponent", true, false)
+
+					if health_comp and health_comp is HealthComponent:
+						health_comp.take_damage(health_comp.current_health)
+						write("You dropped dead.", "red")
+					else:
+						write("HealthComponent not found in the player's 'Components' node.", "yellow")
+				else:
+					write("Player node not found in the 'player' group.", "yellow")
+			else:
+				write("Unknown command: '" + cmd + "'. Type 'help' for a list.", "red")
 		_:
 			write("Unknown command: '" + cmd + "'. Type 'help' for a list.", "red")
 

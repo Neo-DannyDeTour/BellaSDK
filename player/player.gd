@@ -101,17 +101,23 @@ func _on_player_died() -> void:
 	is_dead = true
 	velocity = Vector3.ZERO
 
-	var ran_recently: bool = false
+	var current_death_state: int = DeathScreen.DeathState.WALKING
 
 	if is_instance_valid(locomotion_component):
 		locomotion_component.set_physics_active(false)
-		if locomotion_component.has_method("did_run_recently"):
-			ran_recently = locomotion_component.did_run_recently()
-			print("Player: Evaluated sprint history. Ran recently: ", ran_recently)
+		
+		# Properly evaluate the state to send the correct enum to the death screen
+		if locomotion_component.crouching:
+			current_death_state = DeathScreen.DeathState.CROUCHING
+			print("Player: Death state evaluated as CROUCHING.")
+		elif locomotion_component.has_method("did_run_recently") and locomotion_component.did_run_recently():
+			current_death_state = DeathScreen.DeathState.SPRINTING
+			print("Player: Death state evaluated as SPRINTING.")
+		else:
+			print("Player: Death state evaluated as WALKING.")
 
 	if Events.has_signal("player_died"):
-		# We now pass the evaluated boolean through the global event
-		Events.player_died.emit(ran_recently)
+		Events.player_died.emit(current_death_state)
 
 
 # --------------------------------------
@@ -152,10 +158,6 @@ func _physics_process(delta: float) -> void:
 	locomotion_component.process_movement(delta)
 	environment_component.process_environment_physics(delta)
 
-	# THE FIX: We must check if the interaction component is valid and if the method exists
-	# before trying to call process_interaction. The previous iteration of the component
-	# script had this method, but if it was moved to the Scanner, the Player script needs
-	# to route it correctly, or ignore it if it's missing.
 	if is_instance_valid(interaction_component):
 		if interaction_component.has_method("process_interaction"):
 			interaction_component.process_interaction(delta)
@@ -163,7 +165,6 @@ func _physics_process(delta: float) -> void:
 			interaction_component.get("interaction_scanner")
 			and interaction_component.interaction_scanner.has_method("process_interaction")
 		):
-			# Route directly to the scanner if the master component no longer handles the 60FPS tick
 			interaction_component.interaction_scanner.process_interaction(delta)
 
 
@@ -250,7 +251,6 @@ func set_glider_visible(p_is_visible: bool) -> void:
 # --------------------------------------
 func enter_terminal_mode(terminal: Node3D) -> void:
 	print("Player: enter_terminal_mode() called.")
-	#interaction_component.enter_terminal_mode(terminal)
 	interaction_component.interaction_scanner.enter_terminal_mode(terminal)
 
 
@@ -310,7 +310,6 @@ func load_save_data(data: Dictionary) -> void:
 		data.get("pos_z", global_position.z)
 	)
 
-	# Reset momentum before moving the body
 	if is_instance_valid(locomotion_component):
 		locomotion_component.reset_momentum()
 
@@ -352,8 +351,6 @@ func exit_path_slide() -> void:
 func launch_from_path(throw_vel: Vector3) -> void:
 	print("Player: launch_from_path() called with velocity: ", throw_vel)
 	velocity = throw_vel
-
-	# We pass release_dir to integrate perfectly with your StateAir momentum logic
 	state_machine.transition_to("Air", {"release_dir": throw_vel})
 
 

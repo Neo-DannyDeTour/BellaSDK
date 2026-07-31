@@ -1,6 +1,13 @@
 extends CanvasLayer
 class_name DeathScreen
 
+## Defines the player's movement state at the exact moment of death.
+enum DeathState {
+	CROUCHING,
+	WALKING,
+	SPRINTING
+}
+
 ## Array of randomized phrases displayed upon player death.
 const DEATH_MESSAGES: Array[String] = [
 	"You died", "You're dead", "Busted", "Fell from grace", "Bella is no more"
@@ -45,18 +52,27 @@ const FLATLINE_POINTS: Array[Vector2] = [
 @onready var death_label: Label = $DeathLabel
 @onready var pain_overlay: ColorRect = $PainOverlay
 
+## The audio stream generated for the healthy heartbeat beep.
 var _beep_stream: AudioStreamWAV
+## The audio stream generated for the continuous flatline tone.
 var _flatline_stream: AudioStreamWAV
+## The audio player node responsible for playing the ECG sounds.
 var heart_audio: AudioStreamPlayer
 
+## Tracks whether the player is currently allowed to skip the death screen.
 var _skip_allowed: bool = false
+## Indicates whether the death sequence is currently active.
 var _is_dead: bool = false
 
-# Variables to perfectly sync the shader and audio manually via _process
+## The current time passed into the shader to animate the ECG line.
 var _shader_time: float = 0.0
+## The aspect ratio of the screen to ensure the shader renders perfectly.
 var _aspect: float = 1.0
+## The playback speed of the ECG animation and audio sequence.
 var _target_speed: float = 2.0
+## The number of times the heartbeat visual has spiked across the screen.
 var _cycle_count: int = 0
+## Tracks whether the flatline sequence has already been initiated.
 var _flatline_started: bool = false
 
 
@@ -90,10 +106,9 @@ func _input(event: InputEvent) -> void:
 		_return_to_main_menu()
 
 
-func play_death_sequence(ran_in_last_10_secs: bool = false) -> void:
-	print("DeathScreen: play_death_sequence() - Triggering sequence.")
+func play_death_sequence(death_state: int = DeathState.WALKING) -> void:
+	print("DeathScreen: play_death_sequence() - Triggering sequence. State: ", death_state)
 
-	# FREE THE MOUSE so the player can actually click
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 	show()
@@ -102,9 +117,7 @@ func play_death_sequence(ran_in_last_10_secs: bool = false) -> void:
 
 	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
 	_aspect = viewport_size.x / viewport_size.y
-	_target_speed = 4.0 if ran_in_last_10_secs else 2.0
-
-	# Start the visual pulse slightly off-screen to the left
+	
 	_shader_time = -(_aspect * 0.5)
 	_cycle_count = 0
 	_flatline_started = false
@@ -113,6 +126,17 @@ func play_death_sequence(ran_in_last_10_secs: bool = false) -> void:
 	var mat: ShaderMaterial = ecg_monitor.material as ShaderMaterial
 	if mat:
 		mat.set_shader_parameter("points", HEALTHY_POINTS)
+
+	# Route the behavior based on the player's movement state
+	match death_state:
+		DeathState.CROUCHING:
+			_target_speed = 2.0
+			_cycle_count = 3 # Exceeds the beep threshold to bypass standard beats
+			_trigger_flatline()
+		DeathState.SPRINTING:
+			_target_speed = 4.0
+		DeathState.WALKING, _:
+			_target_speed = 2.0
 
 	var ui_tween: Tween = create_tween().set_parallel(true)
 	ui_tween.tween_property(background, "modulate:a", 1.0, 3.0)
@@ -128,7 +152,6 @@ func play_death_sequence(ran_in_last_10_secs: bool = false) -> void:
 	get_tree().create_timer(10.0).timeout.connect(_return_to_main_menu)
 
 
-## Drives the shader time manually to guarantee audio fires exactly on the visual spike.
 func _process(delta: float) -> void:
 	if not _is_dead:
 		return
@@ -140,24 +163,30 @@ func _process(delta: float) -> void:
 	if mat:
 		mat.set_shader_parameter("u_time", _shader_time)
 
-	# The visual spike crosses the exact center at 0.0, then every (aspect * 2.0)
 	var next_spike_time: float = float(_cycle_count) * (_aspect * 2.0)
 
 	if prev_time < next_spike_time and _shader_time >= next_spike_time:
 		if _cycle_count < 2:
 			_play_beep()
 		elif _cycle_count == 2 and not _flatline_started:
-			_flatline_started = true
-			_play_flatline()
-
-			var flatline_tween: Tween = create_tween()
-			var cycle_duration: float = (_aspect * 2.0) / _target_speed
-			flatline_tween.tween_method(_lerp_heartbeat_to_flatline, 0.0, 1.0, cycle_duration * 0.8)
-
-			var text_tween: Tween = create_tween()
-			text_tween.tween_property(death_label, "modulate:a", 1.0, 3.0)
+			_trigger_flatline()
 
 		_cycle_count += 1
+
+
+func _trigger_flatline() -> void:
+	if _flatline_started:
+		return
+		
+	_flatline_started = true
+	_play_flatline()
+
+	var flatline_tween: Tween = create_tween()
+	var cycle_duration: float = (_aspect * 2.0) / _target_speed
+	flatline_tween.tween_method(_lerp_heartbeat_to_flatline, 0.0, 1.0, cycle_duration * 0.8)
+
+	var text_tween: Tween = create_tween()
+	text_tween.tween_property(death_label, "modulate:a", 1.0, 3.0)
 
 
 func _generate_tone(
@@ -225,7 +254,6 @@ func _allow_skipping() -> void:
 
 
 func _return_to_main_menu() -> void:
-	# PREVENTS CRASH: Timer fires but scene is already gone / node is queued for deletion
 	if not is_inside_tree():
 		return
 

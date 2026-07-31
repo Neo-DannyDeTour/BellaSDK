@@ -1,4 +1,3 @@
-@tool
 class_name ProceduralFence
 extends CSGCombiner3D
 
@@ -32,7 +31,8 @@ enum Orientation { VERTICAL, HORIZONTAL, DIAGONAL }
 		_request_rebuild()
 
 @export_category("Bars")
-@export var bar_orientation : Orientation = Orientation.DIAGONAL:
+## Defines the directional alignment of the inner fence bars (Vertical, Horizontal, or Diagonal).
+@export var bar_orientation: ProceduralFence.Orientation = ProceduralFence.Orientation.DIAGONAL:
 	set(value):
 		bar_orientation = value
 		_request_rebuild()
@@ -90,15 +90,15 @@ func _rebuild() -> void:
 	add_child(bars_combiner)
 
 	match bar_orientation:
-		Orientation.VERTICAL:
+		ProceduralFence.Orientation.VERTICAL:
 			ProceduralFence._generate_angled_bars(
 				bars_combiner, inner_width, inner_height, bar_count, bar_thickness, 0.0
 			)
-		Orientation.HORIZONTAL:
+		ProceduralFence.Orientation.HORIZONTAL:
 			ProceduralFence._generate_angled_bars(
 				bars_combiner, inner_width, inner_height, bar_count, bar_thickness, 90.0
 			)
-		Orientation.DIAGONAL:
+		ProceduralFence.Orientation.DIAGONAL:
 			var count_right: int = ceili(float(bar_count) / 2.0)
 			var count_left: int = floori(float(bar_count) / 2.0)
 

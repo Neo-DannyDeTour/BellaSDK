@@ -80,13 +80,9 @@ render_priority = 0
 shader = ExtResource("5_b2j0d")
 shader_parameter/base_color = Color(1, 1, 1, 1)
 shader_parameter/outline_color = Color(0, 0, 0, 1)
-shader_parameter/highlight_color = Color(1, 0, 0, 1)
 shader_parameter/outline_thickness = 1.0
 shader_parameter/depth_threshold = 0.025
 shader_parameter/normal_threshold = 0.5
-shader_parameter/target_hue = 0.0
-shader_parameter/hue_tolerance = 0.05
-shader_parameter/saturation_threshold = 0.5
 
 [sub_resource type="QuadMesh" id="QuadMesh_534t5"]
 material = SubResource("ShaderMaterial_tx8to")
