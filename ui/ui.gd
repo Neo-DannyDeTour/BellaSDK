@@ -407,8 +407,13 @@ func _on_player_crouched(crouching: bool) -> void:
 
 # --- DEBUG & NOCLIP LOGIC ---
 func _input(event: InputEvent) -> void:
-	# Catch physical movement inputs to display warnings while debuffed
 	if event is InputEventKey and event.is_pressed() and not event.is_echo():
+		# Check for the tilde key to open the debug panel
+		if event.keycode == KEY_QUOTELEFT:
+			print("UIController: Tilde key pressed. Opening debug panel.")
+			_toggle_debug_panel()
+
+		# Catch physical movement inputs to display warnings while debuffed
 		if is_immobilized:
 			if event.keycode in [KEY_W, KEY_A, KEY_S, KEY_D, KEY_SPACE, KEY_SHIFT]:
 				_show_warning_message("Can't move!")
