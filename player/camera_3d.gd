@@ -23,7 +23,7 @@ func _ready() -> void:
 	_noise.seed = randi()
 	_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
 	Events.screenshake_requested.connect(_on_screenshake_requested)
-	
+
 	# NEW: Connect the vision assist toggle signal
 	if Events.has_signal("vision_assist_toggled"):
 		if not Events.vision_assist_toggled.is_connected(_on_vision_assist_toggled):
