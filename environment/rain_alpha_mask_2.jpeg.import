@@ -15,7 +15,7 @@ dest_files=["res://.godot/imported/rain_alpha_mask_2.jpeg-04b9f85c6d484b8a03f391
 
 [params]
 
-compress/mode=0
+compress/mode=2
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
