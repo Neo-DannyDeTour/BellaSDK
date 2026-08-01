@@ -663,14 +663,14 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 		"die":
 			if is_debug_allowed:
 				print("InGameConsole: _process_command() called. Action: Executing 'die' command.")
-				
+
 				var players: Array[Node] = get_tree().get_nodes_in_group("player")
 				if players.size() > 0:
 					var player: Node = players[0]
-					
+
 					# Target the exact path from your screenshot
 					var health_comp: Node = player.get_node_or_null("Components/HealthComponent")
-					
+
 					# Fallback search if the path changes in the future
 					if not health_comp:
 						health_comp = player.find_child("HealthComponent", true, false)

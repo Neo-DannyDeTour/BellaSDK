@@ -85,7 +85,7 @@ func _on_play_pressed() -> void:
 		print("Player pressed play for chapter: ", selected_chapter.chapter_name)
 	else:
 		print("Player pressed play but no chapter is selected.")
-		
+
 	if selected_chapter and selected_chapter.scene_path != "":
 		get_tree().paused = false
 		get_tree().change_scene_to_file(selected_chapter.scene_path)
