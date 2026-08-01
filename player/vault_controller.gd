@@ -12,37 +12,52 @@ signal crouch_state_changed(is_crouching: bool)
 # EXPORTS
 # --------------------------------------
 @export_category("Node References")
+## Reference to the character body for physical movement.
 @export var player_body: CharacterBody3D
+## Reference to the main player camera.
 @export var camera: Camera3D
+## Reference to the node representing the player's head.
 @export var head: Node3D
+## Reference to the node representing the player's eye level or view pivot.
 @export var eyes: Node3D
+## The collision shape used when the player is standing.
 @export var standing_collision: CollisionShape3D
+## The collision shape used when the player is crouching.
 @export var crouching_collision: CollisionShape3D
 
 @export_category("Vault Settings")
+## The maximum height difference allowed to consider an obstacle a step rather than a vault.
 @export var max_step_height: float = 0.5
+## The target depth for the head position during a crouching vault.
 @export var crouching_depth: float = 0.7
+## The required clearance depth behind the ledge to complete a vault.
 @export var vault_depth_clearance: float = 0.5
 
 # --------------------------------------
 # VARIABLES
 # --------------------------------------
+## Tracks if the player is currently executing a vault maneuver.
 var is_vaulting: bool = false
+## Tracks if the last scan found a valid ledge that can be vaulted.
 var can_vault_current_ledge: bool = false
+## The 3D position of the ledge currently identified for vaulting.
 var current_ledge_point: Vector3 = Vector3.ZERO
+## The calculated height of the current vault obstacle.
 var current_vault_height: float = 0.0
+## Determines if the player must end the vault in a crouching state due to limited headroom.
 var current_vault_requires_crouch: bool = false
 
+## Visual indicator showing where a vault will be executed.
 var vault_indicator: MeshInstance3D
 
 
 func _ready() -> void:
-	print("VaultController: Initializing and setting up vault indicator.")
+	print("VaultController: _ready() called. Initializing and setting up vault indicator.")
 	_setup_vault_indicator()
 
 
 func _setup_vault_indicator() -> void:
-	print("VaultController: Setting up vault indicator.")
+	print("VaultController: _setup_vault_indicator() called. Setting up vault indicator.")
 	vault_indicator = MeshInstance3D.new()
 
 	var dot_mesh: SphereMesh = SphereMesh.new()
@@ -67,7 +82,7 @@ func _setup_vault_indicator() -> void:
 # CORE PROCESS LOGIC
 # --------------------------------------
 func process_vault_scan(max_reach: float = 2.8) -> void:
-	print("VaultController: Processing vault scan.")
+	print("VaultController: process_vault_scan() called. Processing vault scan.")
 	can_vault_current_ledge = false
 
 	if vault_indicator:
@@ -173,10 +188,10 @@ func process_vault_scan(max_reach: float = 2.8) -> void:
 # VAULT EXECUTION
 # --------------------------------------
 func try_vault(is_currently_crouching: bool) -> bool:
+	print("VaultController: try_vault() called. Initiating vault sequence toward ledge point.")
 	if not can_vault_current_ledge:
 		return false
 
-	print("VaultController: Initiating vault sequence toward ledge point.")
 	can_vault_current_ledge = false
 
 	var forward_dir: Vector3 = -camera.global_transform.basis.z
@@ -202,8 +217,8 @@ func _perform_vault(
 	force_crouch: bool,
 	is_currently_crouching: bool
 ) -> void:
+	print("VaultController: _perform_vault() called. Vault started.")
 	is_vaulting = true
-	print("VaultController: Vault started.")
 	vault_started.emit()
 
 	if force_crouch:
@@ -265,7 +280,9 @@ func _perform_vault(
 
 
 func _ensure_player_unstuck(forward_dir: Vector3) -> void:
-	print("VaultController: Running anti-stuck depenetration routine.")
+	print(
+		"VaultController: _ensure_player_unstuck() called. Running anti-stuck depenetration routine."
+	)
 
 	var params: PhysicsTestMotionParameters3D = PhysicsTestMotionParameters3D.new()
 	params.from = player_body.global_transform
@@ -287,7 +304,10 @@ func _ensure_player_unstuck(forward_dir: Vector3) -> void:
 
 
 func _is_collider_or_parent_in_group(collider: Object, group_name: String) -> bool:
-	print("VaultController: Checking collider tree for group: ", group_name)
+	print(
+		"VaultController: _is_collider_or_parent_in_group() called. Checking collider tree for group: ",
+		group_name
+	)
 	if not collider is Node:
 		return false
 
