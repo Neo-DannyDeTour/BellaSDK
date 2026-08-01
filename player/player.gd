@@ -105,12 +105,13 @@ func _on_player_died() -> void:
 
 	if is_instance_valid(locomotion_component):
 		locomotion_component.set_physics_active(false)
-		
+
 		# Properly evaluate the state to send the correct enum to the death screen
 		if locomotion_component.crouching:
 			current_death_state = DeathScreen.DeathState.CROUCHING
 			print("Player: Death state evaluated as CROUCHING.")
-		elif locomotion_component.has_method("did_run_recently") and locomotion_component.did_run_recently():
+		elif locomotion_component.has_method("did_run_recently") and \
+				locomotion_component.did_run_recently():
 			current_death_state = DeathScreen.DeathState.SPRINTING
 			print("Player: Death state evaluated as SPRINTING.")
 		else:

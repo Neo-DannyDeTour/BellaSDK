@@ -46,7 +46,7 @@ func toggle_lamp() -> void:
 	is_active = not is_active
 	if spot_light:
 		spot_light.visible = is_active
-	
+
 	if is_active:
 		print("Rotating lamp activated by player.")
 	else:
@@ -58,8 +58,8 @@ func _update_lamp_visuals() -> void:
 		spot_light.light_color = lamp_color
 		spot_light.light_energy = lamp_energy
 		# Shadow kept false to maintain strict 60 FPS performance.
-		spot_light.shadow_enabled = false 
-	
+		spot_light.shadow_enabled = false
+
 	if _lamp_material:
 		_lamp_material.albedo_color = lamp_color
 		_lamp_material.emission_enabled = true

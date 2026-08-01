@@ -117,7 +117,7 @@ func play_death_sequence(death_state: int = DeathState.WALKING) -> void:
 
 	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
 	_aspect = viewport_size.x / viewport_size.y
-	
+
 	_shader_time = -(_aspect * 0.5)
 	_cycle_count = 0
 	_flatline_started = false
@@ -177,7 +177,7 @@ func _process(delta: float) -> void:
 func _trigger_flatline() -> void:
 	if _flatline_started:
 		return
-		
+
 	_flatline_started = true
 	_play_flatline()
 
