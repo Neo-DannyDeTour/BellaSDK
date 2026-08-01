@@ -293,10 +293,21 @@ func _init() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE and is_instance_valid(self):
 		RenderingServer.call_on_render_thread(clear_compute)
+#func _notification(what: int) -> void:
+	#if what == NOTIFICATION_PREDELETE and is_instance_valid(self):
+		#RenderingServer.call_on_render_thread(clear_compute)
 
 
 func clear_compute() -> void:
+	print("SunshineCloudsGD: Releasing compute resources and freeing VRAM.")
 	if rd:
+		# 1. FREE UNIFORM SETS FIRST to prevent dependency errors.
+		for uset: RID in uniform_sets:
+			if uset.is_valid():
+				rd.free_rid(uset)
+		uniform_sets.clear()
+
+		# 2. Free everything else...
 		if pipeline.is_valid():
 			rd.free_rid(pipeline)
 		if shader.is_valid():
@@ -341,6 +352,12 @@ func clear_compute() -> void:
 			if item.is_valid():
 				rd.free_rid(item)
 		blit_screen_images.clear()
+
+		# FIX: The actual leak was here! Properly release all dynamically created uniform sets.
+		for uset: RID in uniform_sets:
+			if uset.is_valid():
+				rd.free_rid(uset)
+		uniform_sets.clear()
 
 		pipeline = RID()
 		shader = RID()
@@ -650,11 +667,9 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 				or blit_screen_images.size() == 0
 				or msaa_mode != last_msaa_mode
 			):
-				## Free uniform sets BEFORE initialize_compute destroys their dependencies.
-				if uniform_sets != null:
-					for uset: RID in uniform_sets:
-						if uset.is_valid():
-							rd.free_rid(uset)
+				
+				# We removed the manual 'for uset: RID in uniform_sets' loop here.
+				# initialize_compute() now safely handles it at the top of clear_compute().
 
 				initialize_compute()
 				initialize_raster_pipelines(

@@ -3,15 +3,17 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://clpfox2nhj0ug"
-path="res://.godot/imported/rain_alpha_mask_2.jpeg-04b9f85c6d484b8a03f39149ea22a2cc.ctex"
+path.s3tc="res://.godot/imported/rain_alpha_mask_2.jpeg-04b9f85c6d484b8a03f39149ea22a2cc.s3tc.ctex"
+path.etc2="res://.godot/imported/rain_alpha_mask_2.jpeg-04b9f85c6d484b8a03f39149ea22a2cc.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://environment/rain_alpha_mask_2.jpeg"
-dest_files=["res://.godot/imported/rain_alpha_mask_2.jpeg-04b9f85c6d484b8a03f39149ea22a2cc.ctex"]
+dest_files=["res://.godot/imported/rain_alpha_mask_2.jpeg-04b9f85c6d484b8a03f39149ea22a2cc.s3tc.ctex", "res://.godot/imported/rain_alpha_mask_2.jpeg-04b9f85c6d484b8a03f39149ea22a2cc.etc2.ctex"]
 
 [params]
 

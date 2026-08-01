@@ -3,15 +3,17 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ccjgj3q4gxagh"
-path="res://.godot/imported/ripples.png-a1106a0541aaa5fb23a4cb2330fbe66c.ctex"
+path.s3tc="res://.godot/imported/ripples.png-a1106a0541aaa5fb23a4cb2330fbe66c.s3tc.ctex"
+path.etc2="res://.godot/imported/ripples.png-a1106a0541aaa5fb23a4cb2330fbe66c.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://environment/ripples.png"
-dest_files=["res://.godot/imported/ripples.png-a1106a0541aaa5fb23a4cb2330fbe66c.ctex"]
+dest_files=["res://.godot/imported/ripples.png-a1106a0541aaa5fb23a4cb2330fbe66c.s3tc.ctex", "res://.godot/imported/ripples.png-a1106a0541aaa5fb23a4cb2330fbe66c.etc2.ctex"]
 
 [params]
 
