@@ -13,7 +13,7 @@ func enter(msg: Dictionary = {}) -> void:
 	if msg.has("target_transform"):
 		var t: Transform3D = msg["target_transform"]
 		_is_mounting = true
-		var tween : Tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		var tween: Tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 		tween.tween_property(player, "global_transform", t, 0.4)
 		# Strict typing for the lambda callback
 		tween.finished.connect(func() -> void: _is_mounting = false)

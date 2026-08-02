@@ -37,13 +37,13 @@ class Descriptor:
 
 
 var device: RenderingDevice
-var deletion_queue : DeletionQueue = DeletionQueue.new()
+var deletion_queue: DeletionQueue = DeletionQueue.new()
 var shader_cache: Dictionary
-var needs_sync : bool = false
+var needs_sync: bool = false
 
 
 static func create(target_device: RenderingDevice = null) -> RenderingContext:
-	var context : RenderingContext = RenderingContext.new()
+	var context: RenderingContext = RenderingContext.new()
 	context.device = (
 		RenderingServer.create_local_rendering_device() if not target_device else target_device
 	)
@@ -85,7 +85,7 @@ func compute_list_add_barrier(compute_list: int) -> void:
 # --- HELPER FUNCTIONS ---
 func load_shader(path: String) -> RID:
 	if not shader_cache.has(path):
-		var shader_file : RDShaderFile = load(path) as RDShaderFile
+		var shader_file: RDShaderFile = load(path) as RDShaderFile
 		var shader_spirv: RDShaderSPIRV = shader_file.get_spirv()
 		shader_cache[path] = deletion_queue.push(device.shader_create_from_spirv(shader_spirv))
 	return shader_cache[path]
@@ -93,7 +93,7 @@ func load_shader(path: String) -> RID:
 
 func create_storage_buffer(size: int, data: PackedByteArray = [], usage: int = 0) -> Descriptor:
 	if size > data.size():
-		var padding : PackedByteArray = PackedByteArray()
+		var padding: PackedByteArray = PackedByteArray()
 		padding.resize(size - data.size())
 		data += padding
 	return Descriptor.new(
@@ -105,7 +105,7 @@ func create_storage_buffer(size: int, data: PackedByteArray = [], usage: int = 0
 func create_uniform_buffer(size: int, data: PackedByteArray = []) -> Descriptor:
 	size = maxi(16, size)
 	if size > data.size():
-		var padding : PackedByteArray = PackedByteArray()
+		var padding: PackedByteArray = PackedByteArray()
 		padding.resize(size - data.size())
 		data += padding
 	return Descriptor.new(
@@ -124,7 +124,7 @@ func create_texture(
 	data: PackedByteArray = []
 ) -> Descriptor:
 	assert(num_layers >= 1, "Texture must have at least 1 layer.")
-	var texture_format : RDTextureFormat = RDTextureFormat.new()
+	var texture_format: RDTextureFormat = RDTextureFormat.new()
 	texture_format.array_layers = num_layers
 	texture_format.format = format
 	texture_format.width = dimensions.x
@@ -147,8 +147,8 @@ func create_descriptor_set(
 	descriptors: Array[Descriptor], shader: RID, descriptor_set_index: int = 0
 ) -> RID:
 	var uniforms: Array[RDUniform] = []
-	for i in range(descriptors.size()):
-		var uniform : RDUniform = RDUniform.new()
+	for i: int in range(descriptors.size()):
+		var uniform: RDUniform = RDUniform.new()
 		uniform.uniform_type = descriptors[i].type
 		uniform.binding = i  # This matches the binding in the shader.
 		uniform.add_id(descriptors[i].rid)
@@ -158,7 +158,7 @@ func create_descriptor_set(
 
 ## Returns a [Callable] which will dispatch a compute pipeline.
 func create_pipeline(block_dimensions: Array, descriptor_sets: Array, shader: RID) -> Callable:
-	var pipeline : RID = deletion_queue.push(device.compute_pipeline_create(shader))
+	var pipeline: RID = deletion_queue.push(device.compute_pipeline_create(shader))
 
 	return func(
 		ctx: RenderingContext,
@@ -168,8 +168,8 @@ func create_pipeline(block_dimensions: Array, descriptor_sets: Array, shader: RI
 		block_dimensions_overwrite_buffer: RID = RID(),
 		block_dimensions_overwrite_buffer_byte_offset: int = 0
 	) -> void:
-		var current_device : RenderingDevice = ctx.device
-		var sets : Array = (
+		var current_device: RenderingDevice = ctx.device
+		var sets: Array = (
 			descriptor_sets if descriptor_set_overwrites.is_empty() else descriptor_set_overwrites
 		)
 
@@ -185,7 +185,7 @@ func create_pipeline(block_dimensions: Array, descriptor_sets: Array, shader: RI
 				compute_list, push_constant, push_constant.size()
 			)
 
-		for i in range(sets.size()):
+		for i: int in range(sets.size()):
 			current_device.compute_list_bind_uniform_set(compute_list, sets[i], i)
 
 		if block_dimensions_overwrite_buffer.is_valid():
@@ -203,15 +203,15 @@ func create_pipeline(block_dimensions: Array, descriptor_sets: Array, shader: RI
 ## Returns a [PackedByteArray] from the provided data, whose size is rounded up to the nearest
 ## multiple of 16 for memory alignment.
 static func create_push_constant(data: Array) -> PackedByteArray:
-	var packed_size : int = data.size() * 4
+	var packed_size: int = data.size() * 4
 	assert(packed_size <= 128, "Push constant size must be at most 128 bytes!")
 
-	var padding : int = ceili(packed_size / 16.0) * 16 - packed_size
-	var packed_data : PackedByteArray = PackedByteArray()
+	var padding: int = ceili(packed_size / 16.0) * 16 - packed_size
+	var packed_data: PackedByteArray = PackedByteArray()
 	packed_data.resize(packed_size + (padding if padding > 0 else 0))
 	packed_data.fill(0)
 
-	for i in range(data.size()):
+	for i: int in range(data.size()):
 		match typeof(data[i]):
 			TYPE_INT, TYPE_BOOL:
 				packed_data.encode_s32(i * 4, data[i])

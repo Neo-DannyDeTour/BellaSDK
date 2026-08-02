@@ -125,7 +125,7 @@ func _start_effect_sequence() -> void:
 	if use_blink:
 		var single_blink_time: float = fade_in_duration / float(blink_count)
 
-		for i in range(blink_count):
+		for i: int in range(blink_count):
 			var delay: float = i * single_blink_time
 			var is_last: bool = i == blink_count - 1
 

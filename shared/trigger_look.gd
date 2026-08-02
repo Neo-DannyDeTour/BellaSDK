@@ -35,11 +35,11 @@ func _process(delta: float) -> void:
 	if not is_instance_valid(_get_camera()):
 		return
 
-	var dir_to_target : Vector3 = _cached_camera.global_position.direction_to(
+	var dir_to_target: Vector3 = _cached_camera.global_position.direction_to(
 		look_target.global_position
 	)
-	var camera_forward : Vector3 = -_cached_camera.global_transform.basis.z
-	var dot_product : float = camera_forward.dot(dir_to_target)
+	var camera_forward: Vector3 = -_cached_camera.global_transform.basis.z
+	var dot_product: float = camera_forward.dot(dir_to_target)
 
 	if dot_product >= look_tolerance:
 		_current_look_time += delta
@@ -57,7 +57,7 @@ func _trigger_event() -> void:
 	print("Trigger Look completed!")
 
 	# --- SMART POWER SENDER ---
-	for target in targets:
+	for target: Variant in targets:
 		if target == null:
 			continue
 
@@ -66,7 +66,7 @@ func _trigger_event() -> void:
 			target.add_power()
 		# 2. Did they target the parent node? Look for the component!
 		else:
-			var comp : Node = target.get_node_or_null("PowerComponent")
+			var comp: Node = target.get_node_or_null("PowerComponent")
 			if comp and comp.has_method("add_power"):
 				comp.add_power()
 

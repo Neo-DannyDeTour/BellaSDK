@@ -433,7 +433,7 @@ func _play_glow(chapter_name: String, duration: float) -> void:
 	_chapter_tween.tween_property(chapter_label, "modulate:a", 1.0, fade_time)
 
 	# 2. Pulse the outline alpha dynamically using tween_method
-	for i in range(pulse_count):
+	for i: int in range(pulse_count):
 		var start_alpha: float = 0.1 if i % 2 == 0 else 0.6
 		var end_alpha: float = 0.6 if i % 2 == 0 else 0.1
 
@@ -481,7 +481,7 @@ func _play_heartbeat(chapter_name: String, duration: float) -> void:
 	_chapter_tween.tween_property(chapter_label, "modulate:a", 1.0, fade_time)
 
 	# 2. Rhythmic scale pulsing
-	for i in range(loops):
+	for i: int in range(loops):
 		(
 			_chapter_tween
 			. tween_property(chapter_label, "scale", Vector2(1.08, 1.08), pulse_time)

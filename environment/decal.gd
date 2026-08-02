@@ -11,7 +11,7 @@ var _current_index: int = 0
 
 func _ready() -> void:
 	# Pre-allocate decals to prevent runtime stuttering
-	for i in range(max_decals):
+	for i: int in range(max_decals):
 		var decal: Decal = Decal.new()
 		decal.texture_albedo = decal_texture
 		decal.size = decal_size

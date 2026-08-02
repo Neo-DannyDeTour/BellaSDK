@@ -141,7 +141,7 @@ func _ready() -> void:
 		output_log.pop()
 		output_log.newline()
 
-	var filter_layer : CanvasLayer = CanvasLayer.new()
+	var filter_layer: CanvasLayer = CanvasLayer.new()
 	filter_layer.layer = 127
 	add_child(filter_layer)
 
@@ -149,7 +149,7 @@ func _ready() -> void:
 	colorblind_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
 	colorblind_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
-	var mat : ShaderMaterial = ShaderMaterial.new()
+	var mat: ShaderMaterial = ShaderMaterial.new()
 	mat.shader = preload("res://vfx/colorblind.gdshader")
 	colorblind_rect.material = mat
 	filter_layer.add_child(colorblind_rect)
@@ -159,7 +159,7 @@ func _ready() -> void:
 	high_contrast_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	high_contrast_rect.visible = false
 
-	var hc_mat : ShaderMaterial = ShaderMaterial.new()
+	var hc_mat: ShaderMaterial = ShaderMaterial.new()
 	hc_mat.shader = preload("res://vfx/high_contrast.gdshader")
 	high_contrast_rect.material = hc_mat
 	filter_layer.add_child(high_contrast_rect)
@@ -238,7 +238,7 @@ func _on_text_changed(new_text: String) -> void:
 	if is_navigating_matches:
 		return
 
-	var search_text : String = new_text.lstrip(" ").replace("  ", " ")
+	var search_text: String = new_text.lstrip(" ").replace("  ", " ")
 
 	if search_text == "":
 		_reset_suggestions()
@@ -266,7 +266,7 @@ func _get_autocomplete_matches(current_text: String) -> Array[String]:
 	var matches: Array[String] = []
 
 	if parts.size() == 1:
-		var search_term : String = parts[0].to_lower()
+		var search_term: String = parts[0].to_lower()
 		var exact_starts: Array[String] = []
 		var partials: Array[String] = []
 
@@ -280,15 +280,18 @@ func _get_autocomplete_matches(current_text: String) -> Array[String]:
 		matches.append_array(partials)
 
 	elif parts.size() == 2:
-		var main_cmd : String = parts[0].to_lower()
-		var sub_term : String = parts[1].to_lower()
+		var main_cmd: String = parts[0].to_lower()
+		var sub_term: String = parts[1].to_lower()
 		var arg_matches: Array[String] = []
 
 		if main_cmd == "colorblind":
 			arg_matches = valid_colorblind_args
 		elif main_cmd == "setfont":
 			arg_matches = valid_font_args
-		elif main_cmd in ["subtitles", "mono_audio", "photosensitivity", "highcontrast", "visionassist"]:
+		elif (
+			main_cmd
+			in ["subtitles", "mono_audio", "photosensitivity", "highcontrast", "visionassist"]
+		):
 			arg_matches = valid_on_off_args
 		elif main_cmd == "screenfilter":
 			arg_matches = valid_screenfilter_args
@@ -326,7 +329,7 @@ func _navigate_suggestions(direction: int) -> void:
 
 
 func _update_suggestion_ui() -> void:
-	var bbcode : String = ""
+	var bbcode: String = ""
 	for i: int in range(current_matches.size()):
 		if i == match_index:
 			bbcode += "[color=yellow]> " + current_matches[i] + "[/color]\n"
@@ -389,7 +392,7 @@ func _on_command_submitted(text: String) -> void:
 	command_input.clear()
 	_reset_suggestions()
 
-	var clean_text : String = text.strip_edges()
+	var clean_text: String = text.strip_edges()
 
 	if clean_text != "":
 		if typed_history.is_empty() or typed_history.back() != clean_text:
@@ -398,9 +401,9 @@ func _on_command_submitted(text: String) -> void:
 
 		write("> " + clean_text, "darkgray")
 
-		var parts : PackedStringArray = clean_text.split(" ")
-		var command : String = parts[0].to_lower()
-		var args : PackedStringArray = parts.slice(1)
+		var parts: PackedStringArray = clean_text.split(" ")
+		var command: String = parts[0].to_lower()
+		var args: PackedStringArray = parts.slice(1)
 
 		print("Executing Console Command: ", command, " | Args: ", args)
 		_process_command(command, args)
@@ -473,8 +476,8 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 			write("do not care")
 		"colorblind":
 			if args.size() > 0:
-				var mode : String = args[0].to_lower()
-				var material : ShaderMaterial = colorblind_rect.material as ShaderMaterial
+				var mode: String = args[0].to_lower()
+				var material: ShaderMaterial = colorblind_rect.material as ShaderMaterial
 				match mode:
 					"off", "normal":
 						material.set_shader_parameter("mode", 0)
@@ -508,7 +511,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 			if is_debug_allowed:
 				print("InGameConsole: _process_command() called. Action: Set Gamespeed")
 				if args.size() > 0:
-					var new_speed : float = args[0].to_float()
+					var new_speed: float = args[0].to_float()
 					Engine.time_scale = clampf(new_speed, 0.1, 10.0)
 					write("Time scale set to: " + str(Engine.time_scale), "green")
 				else:
@@ -517,7 +520,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 				write("Unknown command: '" + cmd + "'. Type 'help' for a list.", "red")
 		"highcontrast":
 			if args.size() > 0:
-				var active : bool = args[0].to_lower() == "on"
+				var active: bool = args[0].to_lower() == "on"
 				if has_node("/root/Events"):
 					var events: Node = get_node("/root/Events")
 					if events.has_signal("high_contrast_toggled"):
@@ -527,8 +530,8 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 				write("Usage: highcontrast <on/off>", "yellow")
 		"screenshake":
 			if args.size() > 0:
-				var amount : float = args[0].to_float()
-				var duration : float = 1.0
+				var amount: float = args[0].to_float()
+				var duration: float = 1.0
 
 				if args.size() > 1:
 					duration = args[1].to_float()
@@ -538,7 +541,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 					if events.has_signal("screenshake_requested"):
 						events.emit_signal("screenshake_requested", amount, duration)
 
-				var msg : String = (
+				var msg: String = (
 					"Screenshake: Intensity "
 					+ str(clampf(amount, 0.0, 16.0))
 					+ ", Duration "
@@ -550,7 +553,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 				write("Usage: screenshake <intensity 0.0-16.0> [duration_in_seconds]", "yellow")
 		"subtitles":
 			if args.size() > 0:
-				var active : bool = args[0].to_lower() == "on"
+				var active: bool = args[0].to_lower() == "on"
 				if has_node("/root/Events"):
 					var events: Node = get_node("/root/Events")
 					if events.has_signal("subtitles_toggled"):
@@ -560,19 +563,19 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 				write("Usage: subtitles <on/off>", "yellow")
 		"mono_audio":
 			if args.size() > 0:
-				var active : bool = args[0].to_lower() == "on"
+				var active: bool = args[0].to_lower() == "on"
 				write("Mono Audio: " + ("ON" if active else "OFF"), "green")
 			else:
 				write("Usage: mono_audio <on/off>", "yellow")
 		"uiscale":
 			if args.size() > 0:
-				var scale_val : float = args[0].to_float()
+				var scale_val: float = args[0].to_float()
 				write("UI Scale set to: " + str(scale_val), "green")
 			else:
 				write("Usage: uiscale <float> (Default is usually 1.0)", "yellow")
 		"photosensitivity":
 			if args.size() > 0:
-				var active : bool = args[0].to_lower() == "on"
+				var active: bool = args[0].to_lower() == "on"
 				if has_node("/root/Events"):
 					var events: Node = get_node("/root/Events")
 					if events.has_signal("photosensitivity_mode_toggled"):
@@ -582,7 +585,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 				write("Usage: photosensitivity <on/off>", "yellow")
 		"setfont":
 			if args.size() > 0:
-				var font_choice : String = args[0].to_lower()
+				var font_choice: String = args[0].to_lower()
 				if font_choice in valid_font_args:
 					if has_node("/root/Events"):
 						var events: Node = get_node("/root/Events")
@@ -619,7 +622,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 							write("Shader not found at: " + shader_path, "red")
 							return
 
-					var mat : ShaderMaterial = ShaderMaterial.new()
+					var mat: ShaderMaterial = ShaderMaterial.new()
 					mat.shader = cached_shaders[filter_type] as Shader
 					screen_filter_rect.material = mat
 					screen_filter_rect.visible = true
@@ -679,7 +682,9 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 						health_comp.take_damage(health_comp.current_health)
 						write("You dropped dead.", "red")
 					else:
-						write("HealthComponent not found in the player's 'Components' node.", "yellow")
+						write(
+							"HealthComponent not found in the player's 'Components' node.", "yellow"
+						)
 				else:
 					write("Player node not found in the 'player' group.", "yellow")
 			else:

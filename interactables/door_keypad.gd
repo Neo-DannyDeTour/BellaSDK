@@ -66,7 +66,7 @@ func get_viewport_pos_from_3d(global_hit: Vector3) -> Vector2:
 
 
 func inject_mouse_motion(global_hit: Vector3) -> void:
-	var event : InputEventMouseMotion = InputEventMouseMotion.new()
+	var event: InputEventMouseMotion = InputEventMouseMotion.new()
 	var pos: Vector2 = get_viewport_pos_from_3d(global_hit)
 	event.device = 1  # Hardware ID isolation
 	event.position = pos
@@ -78,7 +78,7 @@ func inject_mouse_click(global_hit: Vector3) -> void:
 	print("DoorKeypad: Injecting mouse click at ", global_hit)
 	var pos: Vector2 = get_viewport_pos_from_3d(global_hit)
 
-	var event_press : InputEventMouseButton = InputEventMouseButton.new()
+	var event_press: InputEventMouseButton = InputEventMouseButton.new()
 	event_press.device = 1
 	event_press.button_index = MOUSE_BUTTON_LEFT
 	event_press.button_mask = MOUSE_BUTTON_MASK_LEFT
@@ -92,7 +92,7 @@ func inject_mouse_click(global_hit: Vector3) -> void:
 
 
 func _release_mouse_click(pos: Vector2) -> void:
-	var event_release : InputEventMouseButton = InputEventMouseButton.new()
+	var event_release: InputEventMouseButton = InputEventMouseButton.new()
 	event_release.device = 1
 	event_release.button_index = MOUSE_BUTTON_LEFT
 	event_release.button_mask = 0
@@ -142,9 +142,9 @@ func _draw_connection_line() -> void:
 	if not debug_line or not is_instance_valid(debug_line):
 		debug_line = MeshInstance3D.new()
 		add_child(debug_line)
-		var immediate_mesh : ImmediateMesh = ImmediateMesh.new()
+		var immediate_mesh: ImmediateMesh = ImmediateMesh.new()
 		debug_line.mesh = immediate_mesh
-		var mat : StandardMaterial3D = StandardMaterial3D.new()
+		var mat: StandardMaterial3D = StandardMaterial3D.new()
 		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		mat.albedo_color = Color.DEEP_SKY_BLUE
 		debug_line.material_override = mat
@@ -163,10 +163,10 @@ func _draw_connection_line() -> void:
 
 func clear_mouse_hover() -> void:
 	print("DoorKeypad: Clearing SubViewport mouse hover state.")
-	var event : InputEventMouseMotion = InputEventMouseMotion.new()
+	var event: InputEventMouseMotion = InputEventMouseMotion.new()
 	event.device = 1
 
-	var off_screen_pos : Vector2 = Vector2(-1000.0, -1000.0)
+	var off_screen_pos: Vector2 = Vector2(-1000.0, -1000.0)
 	event.position = off_screen_pos
 	event.global_position = off_screen_pos
 	sub_viewport.push_input(event)

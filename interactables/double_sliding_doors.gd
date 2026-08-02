@@ -44,7 +44,7 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	var label_offset : Vector3 = Vector3(0, -0.15, 0)
+	var label_offset: Vector3 = Vector3(0, -0.15, 0)
 	# Keep the label stuck to the exact hit point on the screen
 	if left_label.visible:
 		# Add the offset to the hit position
@@ -59,10 +59,10 @@ func _process(_delta: float) -> void:
 # LABEL LOGIC
 # ==========================================
 func _on_focus(side: String) -> void:
-	var target_label : Label3D = left_label if side == "left" else right_label
+	var target_label: Label3D = left_label if side == "left" else right_label
 
-	var key_name : String = "E"
-	var events : Array[InputEvent] = InputMap.action_get_events("interact")
+	var key_name: String = "E"
+	var events: Array[InputEvent] = InputMap.action_get_events("interact")
 	if events.size() > 0:
 		key_name = (
 			events[0]
@@ -78,7 +78,7 @@ func _on_focus(side: String) -> void:
 
 
 func _on_unfocus(side: String) -> void:
-	var target_label : Label3D = left_label if side == "left" else right_label
+	var target_label: Label3D = left_label if side == "left" else right_label
 	target_label.hide()
 
 
@@ -87,7 +87,7 @@ func _on_unfocus(side: String) -> void:
 # ==========================================
 func _on_interact(_character: CharacterBody3D, side: String) -> void:
 	print("DoubleSlidingDoors: _on_interact() called. Operating doors.")
-	var now : int = Time.get_ticks_msec()
+	var now: int = Time.get_ticks_msec()
 
 	if now - last_click_time < double_click_delay:
 		reset_doors()
@@ -130,7 +130,7 @@ func animate_door(door: Node3D, target: Vector3) -> void:
 	if active_tweens.has(door) and active_tweens[door] and active_tweens[door].is_valid():
 		active_tweens[door].kill()
 
-	var tween : Tween = create_tween()
+	var tween: Tween = create_tween()
 	active_tweens[door] = tween
 
 	# CHANGED: "transform:origin" is now "position"

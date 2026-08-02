@@ -12,7 +12,7 @@ func _on_body_entered(body: Node3D) -> void:
 		# Procedurally find the top of this specific vent volume
 		var top_height: float = global_position.y
 
-		for child in get_children():
+		for child: Node in get_children():
 			if child is CollisionShape3D and child.shape != null:
 				if child.shape is BoxShape3D:
 					top_height = child.global_position.y + (child.shape.size.y / 2.0)

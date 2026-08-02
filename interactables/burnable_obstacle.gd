@@ -50,8 +50,8 @@ func _update_obstacle_size() -> void:
 
 	if trigger_area:
 		var trigger_coll: CollisionShape3D = (
-				trigger_area.get_node_or_null("CollisionShape3D") as CollisionShape3D
-			)
+			trigger_area.get_node_or_null("CollisionShape3D") as CollisionShape3D
+		)
 		if trigger_coll and trigger_coll.shape is BoxShape3D:
 			var t_box: BoxShape3D = trigger_coll.shape as BoxShape3D
 			t_box.size = Vector3(mesh_size.x, mesh_size.y, t_box.size.z + 0.1)

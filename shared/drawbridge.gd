@@ -36,7 +36,7 @@ func _ready() -> void:
 	_update_bridge_shape()
 
 	if has_node("HingeAnchor"):
-		var anchor : Node = get_node("HingeAnchor")
+		var anchor: Node = get_node("HingeAnchor")
 		if anchor is CollisionObject3D:
 			anchor.collision_layer = 0
 			anchor.collision_mask = 0
@@ -47,11 +47,11 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 
-	for rope_path in ropes:
-		var rope_root : Node = get_node_or_null(rope_path)
+	for rope_path: Variant in ropes:
+		var rope_root: Node = get_node_or_null(rope_path)
 		if rope_root:
 			# Tell the script to hunt for the signal inside the rope!
-			var signal_node : Node = _find_signal_source(rope_root, "rope_broken")
+			var signal_node: Node = _find_signal_source(rope_root, "rope_broken")
 			if signal_node:
 				intact_ropes += 1
 				signal_node.rope_broken.connect(_on_rope_broken)
@@ -63,8 +63,8 @@ func _find_signal_source(parent: Node, sig_name: String) -> Node:
 	if parent.has_signal(sig_name):
 		return parent
 
-	for child in parent.get_children():
-		var found : Node = _find_signal_source(child, sig_name)
+	for child: Node in parent.get_children():
+		var found: Node = _find_signal_source(child, sig_name)
 		if found:
 			return found
 
@@ -79,10 +79,10 @@ func _update_bridge_shape() -> void:
 		bridge.position = Vector3.ZERO
 		bridge.rotation_degrees = Vector3.ZERO
 
-	var z_shift : float = (bridge_size.z / 2.0) * -hinge_offset
-	var visual_offset : Vector3 = Vector3(0, 0, z_shift)
+	var z_shift: float = (bridge_size.z / 2.0) * -hinge_offset
+	var visual_offset: Vector3 = Vector3(0, 0, z_shift)
 
-	var mesh_instance : MeshInstance3D = $TheBridge/MeshInstance3D
+	var mesh_instance: MeshInstance3D = $TheBridge/MeshInstance3D
 	if mesh_instance:
 		if not mesh_instance.mesh is BoxMesh:
 			mesh_instance.mesh = BoxMesh.new()
@@ -90,7 +90,7 @@ func _update_bridge_shape() -> void:
 		mesh_instance.mesh.size = bridge_size
 		mesh_instance.position = visual_offset
 
-	var collision : CollisionShape3D = $TheBridge/CollisionShape3D
+	var collision: CollisionShape3D = $TheBridge/CollisionShape3D
 	if collision:
 		if not collision.shape is BoxShape3D:
 			collision.shape = BoxShape3D.new()
@@ -119,12 +119,12 @@ func _draw_debug_pin() -> void:
 	else:
 		debug_pin = get_node("DebugPin")
 
-	var cyl : CylinderMesh = CylinderMesh.new()
+	var cyl: CylinderMesh = CylinderMesh.new()
 	cyl.top_radius = 0.04
 	cyl.bottom_radius = 0.04
 	cyl.height = bridge_size.x + pin_extension
 
-	var mat : StandardMaterial3D = StandardMaterial3D.new()
+	var mat: StandardMaterial3D = StandardMaterial3D.new()
 	mat.albedo_color = Color.RED
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	cyl.material = mat

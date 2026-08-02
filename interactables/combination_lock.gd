@@ -36,7 +36,7 @@ func _on_interacted(character: CharacterBody3D) -> void:
 		return  # Already in use
 
 	interacting_player = character
-	var state_machine : PlayerStateMachine = (
+	var state_machine: PlayerStateMachine = (
 		interacting_player.get_node_or_null("StateMachine") as PlayerStateMachine
 	)
 
@@ -47,7 +47,7 @@ func _on_interacted(character: CharacterBody3D) -> void:
 
 
 func _focus_camera_and_ui() -> void:
-	var camera : Camera3D = get_viewport().get_camera_3d()
+	var camera: Camera3D = get_viewport().get_camera_3d()
 	if camera and camera_view_point:
 		original_cam_transform = camera.global_transform
 
@@ -107,7 +107,7 @@ func _on_code_submitted(code: String) -> void:
 
 
 func _release_player() -> void:
-	var camera : Camera3D = get_viewport().get_camera_3d()
+	var camera: Camera3D = get_viewport().get_camera_3d()
 	if camera:
 		if camera_tween and camera_tween.is_valid():
 			camera_tween.kill()
@@ -127,7 +127,7 @@ func _release_player() -> void:
 		active_ui.queue_free()
 
 	if interacting_player:
-		var state_machine : PlayerStateMachine = (
+		var state_machine: PlayerStateMachine = (
 			interacting_player.get_node_or_null("StateMachine") as PlayerStateMachine
 		)
 		if state_machine:

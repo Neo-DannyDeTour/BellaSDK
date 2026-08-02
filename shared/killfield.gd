@@ -13,7 +13,7 @@ func _on_body_entered(body: Node3D) -> void:
 			return
 
 		if SaveManager.last_checkpoint_pos != Vector3.ZERO:
-			var safe_drop_position : Vector3 = (
+			var safe_drop_position: Vector3 = (
 				SaveManager.last_checkpoint_pos + Vector3(0, spawn_height_offset, 0)
 			)
 

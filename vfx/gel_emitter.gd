@@ -88,7 +88,7 @@ func _ready() -> void:
 func _initialize_pool() -> void:
 	particle_pool.clear()
 	for i: int in range(MAX_PARTICLES):
-		var p : Particle = subscene_instance.instantiate() as Particle
+		var p: Particle = subscene_instance.instantiate() as Particle
 		if p != null:
 			p.visible = false
 			p.is_active = false
@@ -154,7 +154,7 @@ func spawn_splat(pos: Vector3) -> void:
 
 func spawn_decal(pos: Vector3) -> void:
 	print("GelEmitter: spawn_decal() called. Spawning gel decal.")
-	var dec_color : Color = Color(pos.x, pos.y, pos.z, time)
+	var dec_color: Color = Color(pos.x, pos.y, pos.z, time)
 	splat_pos.set_pixel(splat_count, 0, dec_color)
 	splat_count += 1
 
@@ -181,7 +181,7 @@ func update_data_texture() -> void:
 		active_count += 1
 
 	if active_count > 0:
-		var byte_data : PackedByteArray = particle_data.to_byte_array()
+		var byte_data: PackedByteArray = particle_data.to_byte_array()
 		data_texture.set_data(1024, 1, false, Image.FORMAT_RGBAF, byte_data)
 		tc.update(data_texture)
 
@@ -193,7 +193,7 @@ func update_data_texture() -> void:
 			first_decal.call(&"set_pos_tex", splat_tex)
 
 	if particle_pool.size() > 0:
-		var ref_particle : Variant = particle_pool[0]
+		var ref_particle: Variant = particle_pool[0]
 		if ref_particle != null:
 			ref_particle.update_n_particles(active_count)
 			ref_particle.set_particle_image(tc)

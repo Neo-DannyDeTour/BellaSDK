@@ -34,7 +34,7 @@ var is_initialized: bool = false
 var godot_texture: Texture3DRD
 
 # OPTIMIZATION: Pre-allocated buffer to prevent Garbage Collection stutters
-var _hole_buffer : PackedFloat32Array = PackedFloat32Array()
+var _hole_buffer: PackedFloat32Array = PackedFloat32Array()
 
 
 func _ready() -> void:
@@ -61,7 +61,7 @@ func _create_rd_noise_texture(tex: Texture3D) -> RID:
 		return RID()
 
 	var base_image: Image = images[0]
-	var fmt : RDTextureFormat = RDTextureFormat.new()
+	var fmt: RDTextureFormat = RDTextureFormat.new()
 	fmt.width = base_image.get_width()
 	fmt.height = base_image.get_height()
 	fmt.depth = images.size()
@@ -71,13 +71,13 @@ func _create_rd_noise_texture(tex: Texture3D) -> RID:
 		RenderingDevice.TEXTURE_USAGE_SAMPLING_BIT | RenderingDevice.TEXTURE_USAGE_CAN_UPDATE_BIT
 	)
 
-	var bytes : PackedByteArray = PackedByteArray()
+	var bytes: PackedByteArray = PackedByteArray()
 	for img: Image in images:
 		if img.get_format() != Image.FORMAT_RGBA8:
 			img.convert(Image.FORMAT_RGBA8)
 		bytes.append_array(img.get_data())
 
-	var view : RDTextureView = RDTextureView.new()
+	var view: RDTextureView = RDTextureView.new()
 	return rd.texture_create(fmt, view, [bytes])
 
 
@@ -88,7 +88,7 @@ func _initialize_gpu() -> void:
 	shader = rd.shader_create_from_spirv(shader_spirv)
 	pipeline = rd.compute_pipeline_create(shader)
 
-	var fmt : RDTextureFormat = RDTextureFormat.new()
+	var fmt: RDTextureFormat = RDTextureFormat.new()
 	fmt.format = RenderingDevice.DATA_FORMAT_R8G8B8A8_UNORM
 	fmt.texture_type = RenderingDevice.TEXTURE_TYPE_3D
 	fmt.width = 128
@@ -100,7 +100,7 @@ func _initialize_gpu() -> void:
 		| RenderingDevice.TEXTURE_USAGE_CAN_UPDATE_BIT
 	)
 
-	var view : RDTextureView = RDTextureView.new()
+	var view: RDTextureView = RDTextureView.new()
 	texture_rid = rd.texture_create(fmt, view)
 
 	# --- THE MISSING BRIDGE ---
@@ -108,14 +108,14 @@ func _initialize_gpu() -> void:
 	godot_texture = Texture3DRD.new()
 	godot_texture.texture_rd_rid = texture_rid
 
-	var empty_bytes : PackedByteArray = PackedByteArray()
+	var empty_bytes: PackedByteArray = PackedByteArray()
 	empty_bytes.resize(BUFFER_SIZE)
 	buffer_rid = rd.storage_buffer_create(BUFFER_SIZE, empty_bytes)
 
 	noise_rd_rid = _create_rd_noise_texture(precomputed_noise)
 	assert(noise_rd_rid.is_valid(), "Failed to create GPU noise texture!")
 
-	var sampler_state : RDSamplerState = RDSamplerState.new()
+	var sampler_state: RDSamplerState = RDSamplerState.new()
 	sampler_state.repeat_u = RenderingDevice.SAMPLER_REPEAT_MODE_REPEAT
 	sampler_state.repeat_v = RenderingDevice.SAMPLER_REPEAT_MODE_REPEAT
 	sampler_state.repeat_w = RenderingDevice.SAMPLER_REPEAT_MODE_REPEAT
@@ -124,17 +124,17 @@ func _initialize_gpu() -> void:
 
 	sampler_rid = rd.sampler_create(sampler_state)
 
-	var tex_uniform : RDUniform = RDUniform.new()
+	var tex_uniform: RDUniform = RDUniform.new()
 	tex_uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
 	tex_uniform.binding = 0
 	tex_uniform.add_id(texture_rid)
 
-	var buf_uniform : RDUniform = RDUniform.new()
+	var buf_uniform: RDUniform = RDUniform.new()
 	buf_uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_STORAGE_BUFFER
 	buf_uniform.binding = 1
 	buf_uniform.add_id(buffer_rid)
 
-	var noise_uniform : RDUniform = RDUniform.new()
+	var noise_uniform: RDUniform = RDUniform.new()
 	noise_uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_SAMPLER_WITH_TEXTURE
 	noise_uniform.binding = 2
 	noise_uniform.add_id(sampler_rid)
@@ -223,7 +223,7 @@ func _process(delta: float) -> void:
 	var holes_to_process: int = mini(active_holes.size(), MAX_HOLES)
 
 	# 3. Use pre-allocated buffer on MAIN THREAD to prevent dynamic allocation spikes
-	var safe_hole_bytes : PackedByteArray = PackedByteArray()
+	var safe_hole_bytes: PackedByteArray = PackedByteArray()
 
 	if holes_to_process > 0:
 		for i: int in range(holes_to_process):
@@ -278,7 +278,7 @@ func _dispatch_to_compute_shader(
 	var z_offset: float = 64.0 if is_even_frame else 0.0
 
 	# These push constants are highly optimized struct copies in C++, safe to leave alone
-	var push_constants_array : PackedFloat32Array = PackedFloat32Array(
+	var push_constants_array: PackedFloat32Array = PackedFloat32Array(
 		[
 			player_pos.x,
 			player_pos.y,

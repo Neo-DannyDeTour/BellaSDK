@@ -25,8 +25,8 @@ var _exclude_rids: Array[RID] = []
 
 func _ready() -> void:
 	var visualizer: EditorTriggerVisualizer = (
-			get_node_or_null("EditorTriggerVisualizer") as EditorTriggerVisualizer
-		)
+		get_node_or_null("EditorTriggerVisualizer") as EditorTriggerVisualizer
+	)
 	if visualizer != null:
 		visualizer.shape_type = EditorTriggerVisualizer.ShapeType.SPHERE
 		visualizer.trigger_size = Vector3.ONE * (detection_radius * 2.0)
@@ -49,7 +49,7 @@ func _ready() -> void:
 func _build_exclude_rids(node: Node) -> void:
 	if node is CollisionObject3D:
 		_exclude_rids.append(node.get_rid())
-	for i in node.get_child_count():
+	for i: int in node.get_child_count():
 		_build_exclude_rids(node.get_child(i))
 
 

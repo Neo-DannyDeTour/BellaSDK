@@ -56,7 +56,7 @@ func _detect_player_in_cone() -> void:
 
 	var results: Array[Dictionary] = space_state.intersect_shape(query)
 
-	for result in results:
+	for result: Variant in results:
 		var collider: Object = result["collider"]
 		if collider is Node3D and collider.is_in_group("player"):
 			var dir_to_player: Vector3 = head.global_position.direction_to(collider.global_position)

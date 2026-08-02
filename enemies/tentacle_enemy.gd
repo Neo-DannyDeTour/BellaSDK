@@ -96,7 +96,7 @@ func _process_idle(delta: float) -> void:
 	var wander_y: float = (max_reach * 0.5) + sin(_idle_time * 0.8) * 2.0
 	var wander_z: float = cos(_idle_time * 1.5) * (max_reach * 0.4)
 
-	var desired_pos : Vector3 = Vector3(wander_x, wander_y, wander_z)
+	var desired_pos: Vector3 = Vector3(wander_x, wander_y, wander_z)
 	tentacle_target.position = tentacle_target.position.lerp(desired_pos, delta * track_speed)
 
 
@@ -216,11 +216,9 @@ func _check_for_pickables() -> void:
 
 func poke_object(body: RigidBody3D) -> void:
 	print("TentacleEnemy: poke_object() - Lightly tapping the toy.")
-	var poke_dir : Vector3 = Vector3(
-		randf_range(-1.0, 1.0),
-		randf_range(0.0, 0.5),
-		randf_range(-1.0, 1.0)
-	).normalized()
+	var poke_dir: Vector3 = (
+		Vector3(randf_range(-1.0, 1.0), randf_range(0.0, 0.5), randf_range(-1.0, 1.0)).normalized()
+	)
 	body.apply_impulse(poke_dir * 2.0)
 
 
@@ -246,9 +244,9 @@ func _perform_grab_and_throw(weapon: RigidBody3D) -> void:
 	# Dart to the object quickly
 	(
 		tween
-		.tween_property(tentacle_target, "global_position", weapon.global_position, 0.2)
-		.set_trans(Tween.TRANS_CUBIC)
-		.set_ease(Tween.EASE_OUT)
+		. tween_property(tentacle_target, "global_position", weapon.global_position, 0.2)
+		. set_trans(Tween.TRANS_CUBIC)
+		. set_ease(Tween.EASE_OUT)
 	)
 
 	# Freeze and secure it to the head
@@ -266,9 +264,9 @@ func _perform_grab_and_throw(weapon: RigidBody3D) -> void:
 	var lift_pos: Vector3 = global_position + Vector3(0.0, max_reach * 0.6, 0.0)
 	(
 		tween
-		.tween_property(tentacle_target, "global_position", lift_pos, 0.25)
-		.set_trans(Tween.TRANS_SINE)
-		.set_ease(Tween.EASE_IN_OUT)
+		. tween_property(tentacle_target, "global_position", lift_pos, 0.25)
+		. set_trans(Tween.TRANS_SINE)
+		. set_ease(Tween.EASE_IN_OUT)
 	)
 
 	# Execute the actual throw
@@ -309,15 +307,7 @@ func throw_object_at_player() -> void:
 
 	# Visual follow-through and recoil after throwing
 	var tween: Tween = create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
-	(
-		tween
-		.tween_property(
-			tentacle_target,
-			"position",
-			Vector3(0.0, max_reach * 0.5, 0.0),
-			0.3
-		)
-	)
+	tween.tween_property(tentacle_target, "position", Vector3(0.0, max_reach * 0.5, 0.0), 0.3)
 
 	tween.tween_callback(
 		func() -> void:
@@ -350,9 +340,9 @@ func strike_player() -> void:
 
 	(
 		tween
-		.tween_property(tentacle_target, "global_position", strike_target, 0.15)
-		.set_trans(Tween.TRANS_BACK)
-		.set_ease(Tween.EASE_IN)
+		. tween_property(tentacle_target, "global_position", strike_target, 0.15)
+		. set_trans(Tween.TRANS_BACK)
+		. set_ease(Tween.EASE_IN)
 	)
 
 	tween.tween_callback(
@@ -364,13 +354,8 @@ func strike_player() -> void:
 
 	(
 		tween
-		.tween_property(
-			tentacle_target,
-			"position",
-			Vector3(0.0, max_reach * 0.5, 0.0),
-			0.3
-		)
-		.set_delay(0.1)
+		. tween_property(tentacle_target, "position", Vector3(0.0, max_reach * 0.5, 0.0), 0.3)
+		. set_delay(0.1)
 	)
 
 	tween.tween_callback(

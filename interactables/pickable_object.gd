@@ -245,7 +245,9 @@ func drop() -> void:
 			var target_pos: Vector3 = global_position
 
 			if result:
-				var safe_dist: float = sqrt(global_position.distance_squared_to(result.position)) - 0.1
+				var safe_dist: float = (
+					sqrt(global_position.distance_squared_to(result.position)) - 0.1
+				)
 				if safe_dist > 0:
 					target_pos += check_dir * safe_dist
 			else:

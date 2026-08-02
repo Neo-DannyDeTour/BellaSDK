@@ -34,11 +34,11 @@ func _create_base_mesh() -> void:
 	_base_mesh = CylinderMesh.new()
 	_base_mesh.top_radius = thickness
 	_base_mesh.bottom_radius = thickness
-	_base_mesh.height = 1.0 # Height is scaled dynamically per frame
+	_base_mesh.height = 1.0  # Height is scaled dynamically per frame
 	_base_mesh.radial_segments = 8
 	_base_mesh.rings = 1
 
-	var mat : StandardMaterial3D = StandardMaterial3D.new()
+	var mat: StandardMaterial3D = StandardMaterial3D.new()
 	mat.albedo_color = tentacle_color
 	mat.roughness = 0.6
 	_base_mesh.material = mat
@@ -47,7 +47,7 @@ func _create_base_mesh() -> void:
 func _spawn_visual_segments() -> void:
 	print("ProceduralTentacle3D: _spawn_visual_segments() - Instantiating segments.")
 	for i: int in range(segment_count):
-		var segment : MeshInstance3D = MeshInstance3D.new()
+		var segment: MeshInstance3D = MeshInstance3D.new()
 		segment.mesh = _base_mesh
 		segment.top_level = true
 		segment.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
