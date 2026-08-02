@@ -106,9 +106,9 @@ func _ready() -> void:
 	# Cache the interact key string once at startup
 	if interact_label:
 		interact_label.hide()
-		var events : Array[InputEvent] = InputMap.action_get_events("interact")
+		var events: Array[InputEvent] = InputMap.action_get_events("interact")
 		if events.size() > 0:
-			var raw_text : String = events[0].as_text()
+			var raw_text: String = events[0].as_text()
 			interact_key_name = raw_text.split(" ")[0]
 
 	# --- SIGNAL CONNECTIONS ---
@@ -216,7 +216,7 @@ func attach(player: CharacterBody3D) -> void:
 	is_descending = player.global_position.y > mid_point
 
 	# --- CALCULATE PERIMETER POSITION ---
-	var offset_dir : Vector3 = attached_player.global_position - global_position
+	var offset_dir: Vector3 = attached_player.global_position - global_position
 	offset_dir.y = 0.0
 
 	if offset_dir.length_squared() < 0.001:

@@ -1,11 +1,11 @@
 extends Button
 
-@export var hover_scale : Vector2 = Vector2(1.08, 1.08)
-@export var max_rotation_degrees : float = 5.0  # Maximum tilt amount
-@export var tilt_speed : float = 15.0  # How snappy it reacts to your mouse
+@export var hover_scale: Vector2 = Vector2(1.08, 1.08)
+@export var max_rotation_degrees: float = 5.0  # Maximum tilt amount
+@export var tilt_speed: float = 15.0  # How snappy it reacts to your mouse
 
 var original_scale: Vector2
-var is_hovered : bool = false
+var is_hovered: bool = false
 
 
 func _ready() -> void:
@@ -35,17 +35,17 @@ func _process(delta: float) -> void:
 		scale = scale.lerp(hover_scale, tilt_speed * delta)
 
 		# 2. Find where the mouse is inside the button
-		var mouse_pos : Vector2 = get_local_mouse_position()
-		var center_x : float = size.x / 2.0
+		var mouse_pos: Vector2 = get_local_mouse_position()
+		var center_x: float = size.x / 2.0
 
 		# 3. Create a ratio from -1.0 (far left) to 1.0 (far right)
-		var normalized_x : float = (mouse_pos.x - center_x) / center_x
+		var normalized_x: float = (mouse_pos.x - center_x) / center_x
 		normalized_x = clamp(normalized_x, -1.0, 1.0)
 
 		# 4. Calculate target rotation
 		# If mouse is left (-1), rotation is negative (lowers left side)
 		# If mouse is right (1), rotation is positive (lowers right side)
-		var target_rotation : float = deg_to_rad(max_rotation_degrees * normalized_x)
+		var target_rotation: float = deg_to_rad(max_rotation_degrees * normalized_x)
 
 		# 5. Smoothly rotate towards the target
 		rotation = lerpf(rotation, target_rotation, tilt_speed * delta)

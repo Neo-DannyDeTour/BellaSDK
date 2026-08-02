@@ -552,7 +552,7 @@ func initialize_compute() -> void:
 				1.0,
 			]
 		)
-		. to_byte_array()
+		.to_byte_array()
 	)
 
 	display_vertex_buffer = rd.vertex_buffer_create(display_vertex_data.size(), display_vertex_data)
@@ -691,7 +691,7 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 						rd.free_rid(item)
 				blit_screen_images.clear()
 
-				for view in range(view_count):
+				for view: int in range(view_count):
 					color_images.append(buffers.get_color_layer(view, false))
 					## Rendering device handle for the depth image.
 					var depth_image: RID = buffers.get_depth_layer(view, false)
@@ -721,7 +721,7 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 					base_colorformat.width = new_size.x
 					base_colorformat.height = new_size.y
 
-					for _i in range(7):
+					for _i: int in range(7):
 						accumulation_textures.append(
 							rd.texture_create(
 								base_colorformat, RDTextureView.new(), [blank_image_data]
@@ -779,7 +779,7 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 					# Main Compute Uniforms
 					## Controls the uniforms array behavior.
 					var uniforms_array: Array[RDUniform] = []
-					for i in range(6):
+					for i: int in range(6):
 						## Controls the accum uniform behavior.
 						var accum_uniform: RDUniform = RDUniform.new()
 						accum_uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_IMAGE
@@ -816,7 +816,7 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 					var noise_samplers: Array = [
 						large_scale_noise, medium_scale_noise, small_scale_noise, curl_noise
 					]
-					for i in range(4):
+					for i: int in range(4):
 						## The noise uniform texture map applied to the clouds.
 						var noise_uniform: RDUniform = RDUniform.new()
 						noise_uniform.uniform_type = (
@@ -1049,7 +1049,7 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 			## Controls the y groups behavior.
 			var y_groups: int = ((size.y - 1) / 8 / resscale) + 1
 
-			for view in range(view_count):
+			for view: int in range(view_count):
 				## Controls the prepass list behavior.
 				var prepass_list: int = rd.compute_list_begin()
 				rd.compute_list_bind_compute_pipeline(prepass_list, prepass_pipeline)
@@ -1382,7 +1382,7 @@ func update_lights() -> void:
 	var idx: int = 0
 	## Controls the max dir behavior.
 	var max_dir: int = min(directional_lights_data.size(), 8)
-	for i in range(max_dir):
+	for i: int in range(max_dir):
 		float_data[idx] = directional_lights_data[i].x
 		idx += 1
 		float_data[idx] = directional_lights_data[i].y
@@ -1395,7 +1395,7 @@ func update_lights() -> void:
 	idx = 32  # 128 bytes / 4
 	## Controls the max pts behavior.
 	var max_pts: int = min(point_lights_data.size(), 256)
-	for i in range(max_pts):
+	for i: int in range(max_pts):
 		float_data[idx] = point_lights_data[i].x
 		idx += 1
 		float_data[idx] = point_lights_data[i].y
@@ -1408,7 +1408,7 @@ func update_lights() -> void:
 	idx = 1056  # 4224 bytes / 4
 	## Controls the max eff behavior.
 	var max_eff: int = min(point_effector_data.size(), 128)
-	for i in range(max_eff):
+	for i: int in range(max_eff):
 		float_data[idx] = point_effector_data[i].x
 		idx += 1
 		float_data[idx] = point_effector_data[i].y

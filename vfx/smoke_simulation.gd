@@ -9,7 +9,7 @@ var grid_size: int = 128
 func _ready() -> void:
 	SmokeManager.active_fog_volume = self
 
-	var texture_rd : Texture3DRD = Texture3DRD.new()
+	var texture_rd: Texture3DRD = Texture3DRD.new()
 	texture_rd.texture_rd_rid = SmokeManager.texture_rid
 
 	if fog_material:

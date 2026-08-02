@@ -33,8 +33,8 @@ var _visual_segments: Array[MeshInstance3D] = []
 var _base_mesh: CylinderMesh
 var _debug_sphere: MeshInstance3D
 
-var _last_start_pos : Vector3 = Vector3.ZERO
-var _last_end_pos : Vector3 = Vector3.ZERO
+var _last_start_pos: Vector3 = Vector3.ZERO
+var _last_end_pos: Vector3 = Vector3.ZERO
 
 
 func _ready() -> void:
@@ -63,7 +63,7 @@ func _create_base_mesh() -> void:
 	_base_mesh.rings = 1
 
 	if not _material_cache.has(cable_color):
-		var mat : StandardMaterial3D = StandardMaterial3D.new()
+		var mat: StandardMaterial3D = StandardMaterial3D.new()
 		mat.albedo_color = cable_color
 		mat.roughness = 0.8
 		_material_cache[cable_color] = mat
@@ -84,8 +84,8 @@ func _setup_debug_sphere() -> void:
 	_debug_sphere = MeshInstance3D.new()
 	_debug_sphere.name = "DebugSphereMesh"  # Name it so we can easily find and destroy it later
 
-	var sphere_mesh : SphereMesh = SphereMesh.new()
-	var mat : StandardMaterial3D = StandardMaterial3D.new()
+	var sphere_mesh: SphereMesh = SphereMesh.new()
+	var mat: StandardMaterial3D = StandardMaterial3D.new()
 
 	# Create a soft, unshaded transparent material for the editor
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -112,11 +112,11 @@ func _process(_delta: float) -> void:
 	if not is_instance_valid(start_anchor) or not is_instance_valid(end_plug):
 		return
 
-	var start_pos : Vector3 = start_anchor.global_position
-	var end_pos : Vector3 = end_plug.global_position
+	var start_pos: Vector3 = start_anchor.global_position
+	var end_pos: Vector3 = end_plug.global_position
 
 	# OPTIMIZATION: Early exit if nothing is moving
-	var needs_update : bool = false
+	var needs_update: bool = false
 	if not start_pos.is_equal_approx(_last_start_pos) or not end_pos.is_equal_approx(_last_end_pos):
 		needs_update = true
 	else:
@@ -132,13 +132,13 @@ func _process(_delta: float) -> void:
 	_last_end_pos = end_pos
 
 	# OPTIMIZATION: Single pass iteration, zero array allocations per frame
-	var p1 : Vector3 = start_pos
-	var segment_index : int = 0
+	var p1: Vector3 = start_pos
+	var segment_index: int = 0
 
 	for link: RigidBody3D in _links:
 		if not is_instance_valid(link):
 			continue
-		var p2 : Vector3 = link.global_position
+		var p2: Vector3 = link.global_position
 		_update_visual_segment(_visual_segments[segment_index], p1, p2)
 		p1 = p2
 		segment_index += 1
@@ -149,13 +149,13 @@ func _process(_delta: float) -> void:
 
 
 func _update_visual_segment(segment: MeshInstance3D, p1: Vector3, p2: Vector3) -> void:
-	var dist : float = p1.distance_to(p2)
+	var dist: float = p1.distance_to(p2)
 	segment.global_position = p1.lerp(p2, 0.5)
 
-	var dir : Vector3 = p2 - p1
+	var dir: Vector3 = p2 - p1
 	if dir.length_squared() > 0.000001:
 		# Use absf strictly for floating point absolute values in Godot 4
-		var up : Vector3 = Vector3.UP if absf(dir.normalized().y) < 0.99 else Vector3.RIGHT
+		var up: Vector3 = Vector3.UP if absf(dir.normalized().y) < 0.99 else Vector3.RIGHT
 		segment.look_at(p2, up)
 		segment.rotate_object_local(Vector3.RIGHT, PI / 2.0)
 
@@ -167,7 +167,7 @@ func _update_debug_sphere_transform() -> void:
 		_debug_sphere.global_position = start_anchor.global_position
 
 		# Cable length is the radius, so the scale multiplier is length * 2
-		var diameter : float = cable_length_meters * 2.0
+		var diameter: float = cable_length_meters * 2.0
 		_debug_sphere.scale = Vector3(diameter, diameter, diameter)
 
 
@@ -177,7 +177,7 @@ func _generate_visual_segments() -> void:
 	var total_points: int = _links.size() + 1
 
 	for i: int in range(total_points):
-		var segment : MeshInstance3D = MeshInstance3D.new()
+		var segment: MeshInstance3D = MeshInstance3D.new()
 		segment.mesh = _base_mesh
 		segment.top_level = true
 		add_child(segment)
@@ -214,15 +214,15 @@ func _generate_physics_chain() -> void:
 			start_anchor.partner_plug = end_plug
 	# -------------------------------------------------------
 
-	var start_pos : Vector3 = start_anchor.global_position
-	var end_pos : Vector3 = end_plug.global_position
+	var start_pos: Vector3 = start_anchor.global_position
+	var end_pos: Vector3 = end_plug.global_position
 	var previous_body: Node3D = start_anchor
 
-	var straight_dist : float = start_pos.distance_to(end_pos)
+	var straight_dist: float = start_pos.distance_to(end_pos)
 	var droop_amount: float = maxf(0.0, cable_length_meters - straight_dist) * 0.5
 
 	for i: int in range(total_links):
-		var link : RigidBody3D = link_scene.instantiate() as RigidBody3D
+		var link: RigidBody3D = link_scene.instantiate() as RigidBody3D
 
 		# Force cable links to be incredibly light so they don't drag the held plug
 		link.mass = 0.05
@@ -234,7 +234,7 @@ func _generate_physics_chain() -> void:
 		if start_anchor is PhysicsBody3D:
 			link.add_collision_exception_with(start_anchor as PhysicsBody3D)
 
-		var fraction : float = float(i + 1) / float(total_links + 1)
+		var fraction: float = float(i + 1) / float(total_links + 1)
 		var drop_offset: Vector3 = Vector3.DOWN * (4.0 * droop_amount * fraction * (1.0 - fraction))
 		link.global_position = start_pos.lerp(end_pos, fraction) + drop_offset
 
@@ -243,7 +243,7 @@ func _generate_physics_chain() -> void:
 
 		_links.append(link)
 
-		var joint : PinJoint3D = PinJoint3D.new()
+		var joint: PinJoint3D = PinJoint3D.new()
 		add_child(joint)
 		joint.global_position = previous_body.global_position.lerp(link.global_position, 0.5)
 
@@ -253,7 +253,7 @@ func _generate_physics_chain() -> void:
 		joint.node_b = joint.get_path_to(link)
 		previous_body = link
 
-	var final_joint : PinJoint3D = PinJoint3D.new()
+	var final_joint: PinJoint3D = PinJoint3D.new()
 	add_child(final_joint)
 	final_joint.global_position = previous_body.global_position.lerp(end_pos, 0.5)
 	final_joint.node_a = final_joint.get_path_to(previous_body)

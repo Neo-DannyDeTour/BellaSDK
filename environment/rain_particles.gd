@@ -139,7 +139,7 @@ func _init_system() -> void:
 	# 2. Material setup
 	if _shader_mat == null:
 		_shader_mat = ShaderMaterial.new()
-		var shader : Shader = Shader.new()
+		var shader: Shader = Shader.new()
 		shader.code = RAIN_SHADER_CODE
 		_shader_mat.shader = shader
 		_draw_mesh.material = _shader_mat
@@ -205,7 +205,7 @@ func _update_shader_params() -> void:
 	if _shader_mat == null:
 		return
 
-	var final_tint : Color = rain_tint
+	var final_tint: Color = rain_tint
 	final_tint.a = base_alpha
 	_shader_mat.set_shader_parameter("tint_color", final_tint)
 	_shader_mat.set_shader_parameter("refraction_strength", refraction_strength)
@@ -217,26 +217,26 @@ func _update_shader_params() -> void:
 
 
 func _generate_fallback_albedo() -> Texture2D:
-	var image : Image = Image.create(32, 128, false, Image.FORMAT_RGBA8)
-	for y in range(image.get_height()):
-		for x in range(image.get_width()):
-			var u : float = (float(x) / float(image.get_width() - 1)) * 2.0 - 1.0
-			var y_stretch : float = (float(y) / float(image.get_height() - 1)) * 2.0 - 1.0
-			var dist : float = sqrt(u * u + (y_stretch * y_stretch) * 0.01)
-			var val : float = 1.0 - smoothstep(0.7, 0.9, dist)
+	var image: Image = Image.create(32, 128, false, Image.FORMAT_RGBA8)
+	for y: int in range(image.get_height()):
+		for x: int in range(image.get_width()):
+			var u: float = (float(x) / float(image.get_width() - 1)) * 2.0 - 1.0
+			var y_stretch: float = (float(y) / float(image.get_height() - 1)) * 2.0 - 1.0
+			var dist: float = sqrt(u * u + (y_stretch * y_stretch) * 0.01)
+			var val: float = 1.0 - smoothstep(0.7, 0.9, dist)
 			image.set_pixel(x, y, Color(val, val, val, val))
 	return ImageTexture.create_from_image(image)
 
 
 func _generate_fallback_normal() -> Texture2D:
-	var image : Image = Image.create(32, 128, false, Image.FORMAT_RGBA8)
-	for y in range(image.get_height()):
-		for x in range(image.get_width()):
-			var u : float = float(x) / float(image.get_width() - 1)
-			var y_pct : float = float(y) / float(image.get_height() - 1)
-			var nx : float = (u * 2.0 - 1.0) * 0.8
-			var ny : float = (y_pct * 2.0 - 1.0) * 0.1
-			var nz : float = sqrt(1.0 - nx * nx - ny * ny)
+	var image: Image = Image.create(32, 128, false, Image.FORMAT_RGBA8)
+	for y: int in range(image.get_height()):
+		for x: int in range(image.get_width()):
+			var u: float = float(x) / float(image.get_width() - 1)
+			var y_pct: float = float(y) / float(image.get_height() - 1)
+			var nx: float = (u * 2.0 - 1.0) * 0.8
+			var ny: float = (y_pct * 2.0 - 1.0) * 0.1
+			var nz: float = sqrt(1.0 - nx * nx - ny * ny)
 			image.set_pixel(x, y, Color(nx * 0.5 + 0.5, ny * 0.5 + 0.5, nz * 0.5 + 0.5, 1.0))
 	return ImageTexture.create_from_image(image)
 
@@ -245,14 +245,14 @@ func _generate_fallback_normal() -> Texture2D:
 
 
 func _setup_auto_volume() -> void:
-	var rain_area : Area3D = Area3D.new()
+	var rain_area: Area3D = Area3D.new()
 	# Collision Layer 0 (detects nothing by default), Mask 1 (detects Player)
 	rain_area.collision_layer = 0
 	rain_area.collision_mask = player_collision_mask
 	add_child(rain_area)
 
-	var shape_node : CollisionShape3D = CollisionShape3D.new()
-	var box_shape : BoxShape3D = BoxShape3D.new()
+	var shape_node: CollisionShape3D = CollisionShape3D.new()
+	var box_shape: BoxShape3D = BoxShape3D.new()
 
 	var width: float = 20.0
 	var depth: float = 20.0

@@ -47,7 +47,7 @@ func _update_visuals() -> void:
 			col.shape.resource_local_to_scene = true
 
 		if col.shape is BoxShape3D:
-			var box : BoxShape3D = col.shape as BoxShape3D
+			var box: BoxShape3D = col.shape as BoxShape3D
 			box.size = trigger_size
 
 	var visual: Node3D = get_node_or_null("EditorVisual") as Node3D

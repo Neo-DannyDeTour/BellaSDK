@@ -93,15 +93,15 @@ func _draw_connection_line() -> void:
 		debug_line = MeshInstance3D.new()
 		add_child(debug_line)
 
-		var immediate_mesh : ImmediateMesh = ImmediateMesh.new()
+		var immediate_mesh: ImmediateMesh = ImmediateMesh.new()
 		debug_line.mesh = immediate_mesh
 
-		var mat : StandardMaterial3D = StandardMaterial3D.new()
+		var mat: StandardMaterial3D = StandardMaterial3D.new()
 		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 		mat.albedo_color = Color.DEEP_SKY_BLUE
 		debug_line.material_override = mat
 
-	var mesh : ImmediateMesh = debug_line.mesh as ImmediateMesh
+	var mesh: ImmediateMesh = debug_line.mesh as ImmediateMesh
 	mesh.clear_surfaces()
 	mesh.surface_begin(Mesh.PRIMITIVE_LINES)
 

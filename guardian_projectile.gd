@@ -76,7 +76,7 @@ func _explode() -> void:
 	var results: Array[Dictionary] = space_state.intersect_shape(query)
 	print("EnergyBlast: Explosion caught ", results.size(), " objects in radius.")
 
-	for result in results:
+	for result: Variant in results:
 		var collider: Object = result["collider"]
 		if collider is Node3D:
 			_apply_damage(collider as Node3D)
@@ -88,7 +88,7 @@ func _explode() -> void:
 func _apply_damage(target: Node3D) -> void:
 	print("EnergyBlast: _apply_damage() - Analyzing target: ", target.name)
 
-	for child in target.get_children():
+	for child: Node in target.get_children():
 		# 1. Check direct children first (in case it hits a standard enemy)
 		if child is HealthComponent:
 			print("EnergyBlast: Damaged direct component on ", target.name)
@@ -96,7 +96,7 @@ func _apply_damage(target: Node3D) -> void:
 			return
 
 		# 2. Unconditionally check one level deeper to reliably hit your Components folder
-		for subchild in child.get_children():
+		for subchild: Node in child.get_children():
 			if subchild is HealthComponent:
 				print("EnergyBlast: Damaged nested component inside ", child.name)
 				(subchild as HealthComponent).take_damage(damage)

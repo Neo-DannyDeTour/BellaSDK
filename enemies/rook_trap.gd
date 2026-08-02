@@ -100,7 +100,7 @@ func _check_immediate_overlap() -> void:
 		return
 
 	var overlapping_bodies: Array[Node3D] = player_hitbox.get_overlapping_bodies()
-	for body in overlapping_bodies:
+	for body: Variant in overlapping_bodies:
 		_on_player_hitbox_body_entered(body)
 
 
@@ -109,10 +109,10 @@ func _draw_path_lines() -> void:
 	if not path_lines_container:
 		return
 
-	for child in path_lines_container.get_children():
+	for child: Node in path_lines_container.get_children():
 		child.queue_free()
 
-	for marker in markers:
+	for marker: Variant in markers:
 		if marker == null:
 			continue
 
@@ -149,7 +149,7 @@ func _draw_path_lines() -> void:
 
 func _setup_trigger_areas() -> void:
 	print("RookTrap: _setup_trigger_areas() - Creating flat player detection zones.")
-	for i in range(markers.size()):
+	for i: int in range(markers.size()):
 		var marker: Marker3D = markers[i]
 		if marker == null:
 			continue

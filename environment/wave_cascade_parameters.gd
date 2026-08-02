@@ -4,65 +4,65 @@ class_name WaveCascadeParameters extends Resource
 signal scale_changed
 
 ## Denotes the distance the cascade's tile should cover (in meters).
-@export var tile_length : Vector2 = Vector2(50.0, 50.0):
+@export var tile_length: Vector2 = Vector2(50.0, 50.0):
 	set(value):
 		tile_length = value
 		should_generate_spectrum = true
 		scale_changed.emit()
 
-@export_range(0.0, 2.0) var displacement_scale : float = 1.0:
+@export_range(0.0, 2.0) var displacement_scale: float = 1.0:
 	set(value):
 		displacement_scale = value
 		scale_changed.emit()
 
-@export_range(0.0, 2.0) var normal_scale : float = 1.0:
+@export_range(0.0, 2.0) var normal_scale: float = 1.0:
 	set(value):
 		normal_scale = value
 		scale_changed.emit()
 
 ## Denotes the average wind speed above the water (in meters per second).
 ## Increasing makes waves steeper and more 'chaotic'.
-@export var wind_speed : float = 20.0:
+@export var wind_speed: float = 20.0:
 	set(value):
 		wind_speed = max(0.0001, value)
 		should_generate_spectrum = true
 
-@export_range(-360.0, 360.0) var wind_direction : float = 0.0:
+@export_range(-360.0, 360.0) var wind_direction: float = 0.0:
 	set(value):
 		wind_direction = value
 		should_generate_spectrum = true
 
 ## Denotes the distance from shoreline (in kilometers).
 ## Increasing makes waves steeper, but reduces their 'choppiness'.
-@export var fetch_length : float = 550.0:
+@export var fetch_length: float = 550.0:
 	set(value):
 		fetch_length = max(0.0001, value)
 		should_generate_spectrum = true
 
-@export_range(0.0, 2.0) var swell : float = 0.8:
+@export_range(0.0, 2.0) var swell: float = 0.8:
 	set(value):
 		swell = value
 		should_generate_spectrum = true
 
 ## Modifies how much wind and swell affect the direction of the waves.
-@export_range(0.0, 1.0) var spread : float = 0.2:
+@export_range(0.0, 1.0) var spread: float = 0.2:
 	set(value):
 		spread = value
 		should_generate_spectrum = true
 
 ## Modifies the attenuation of high frequency waves.
-@export_range(0.0, 1.0) var detail : float = 1.0:
+@export_range(0.0, 1.0) var detail: float = 1.0:
 	set(value):
 		detail = value
 		should_generate_spectrum = true
 
 ## Modifies how steep a wave needs to be before foam can accumulate.
-@export_range(0.0, 2.0) var whitecap : float = 0.5:
+@export_range(0.0, 2.0) var whitecap: float = 0.5:
 	set(value):
 		whitecap = value
 		should_generate_spectrum = true
 
-@export_range(0.0, 10.0) var foam_amount : float = 5.0:
+@export_range(0.0, 10.0) var foam_amount: float = 5.0:
 	set(value):
 		foam_amount = value
 		should_generate_spectrum = true
@@ -70,7 +70,7 @@ signal scale_changed
 @export var loop_period: float = 0.0
 
 # Explicitly typed class variables
-var spectrum_seed : Vector2i = Vector2i.ZERO
+var spectrum_seed: Vector2i = Vector2i.ZERO
 var should_generate_spectrum: bool = true
 
 var time: float

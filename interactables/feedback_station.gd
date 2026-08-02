@@ -32,7 +32,7 @@ func _on_interacted(_character: CharacterBody3D) -> void:
 	print("FeedbackStation: Player interacted. Attempting to open browser to: ", form_url)
 
 	if not form_url.begins_with("https://"):
-		var error_msg : String = (
+		var error_msg: String = (
 			"FeedbackStation ERROR: URL must begin with 'https://'. Blocked: " + form_url
 		)
 		print(error_msg)

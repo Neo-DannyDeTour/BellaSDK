@@ -16,7 +16,7 @@ var just_water_jumped: bool = false
 func enter(_msg: Dictionary = {}) -> void:
 	print("StateSwim: enter() called. Setting up water physics.")
 
-	var loco : PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
 	loco.standing_collision.disabled = false
 	loco.crouching_collision.disabled = true
 
@@ -46,7 +46,7 @@ func physics_update(delta: float) -> void:
 	_calculate_water_depth()
 
 	# 2. Read Input
-	var input_dir : Vector2 = Input.get_vector("left", "right", "forward", "backward")
+	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
 
 	# 3. Process Physics
 	_apply_swim_velocity(delta, input_dir)
@@ -65,8 +65,8 @@ func _calculate_water_depth() -> void:
 	head_in_water = false
 	chest_in_water = false
 
-	var space_state : PhysicsDirectSpaceState3D = player.get_world_3d().direct_space_state
-	var query : PhysicsPointQueryParameters3D = PhysicsPointQueryParameters3D.new()
+	var space_state: PhysicsDirectSpaceState3D = player.get_world_3d().direct_space_state
+	var query: PhysicsPointQueryParameters3D = PhysicsPointQueryParameters3D.new()
 	query.collide_with_areas = true
 	query.collide_with_bodies = false
 
@@ -93,13 +93,13 @@ func _calculate_water_depth() -> void:
 
 
 func _apply_swim_velocity(delta: float, input_dir: Vector2) -> void:
-	var loco : PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
 
 	loco.head.position.y = lerpf(loco.head.position.y, 1.8, delta * loco.default_lerp_speed)
 
-	var input_vec : Vector3 = Vector3(input_dir.x, 0.0, input_dir.y)
+	var input_vec: Vector3 = Vector3(input_dir.x, 0.0, input_dir.y)
 	var cam_basis: Basis = player.camera_controller.camera.global_transform.basis
-	var swim_dir : Vector3 = (cam_basis * input_vec).normalized()
+	var swim_dir: Vector3 = (cam_basis * input_vec).normalized()
 
 	# Now the compiler knows loco.swimming_speed is a float!
 	var target_velocity: Vector3 = swim_dir * loco.swimming_speed
@@ -149,8 +149,8 @@ func _apply_swim_velocity(delta: float, input_dir: Vector2) -> void:
 				target_velocity.y = PLUNGE_SPEED
 
 	# 4. Apply XZ Velocity
-	var target_xz : Vector2 = Vector2(target_velocity.x, target_velocity.z)
-	var current_xz : Vector2 = Vector2(player.velocity.x, player.velocity.z)
+	var target_xz: Vector2 = Vector2(target_velocity.x, target_velocity.z)
+	var current_xz: Vector2 = Vector2(player.velocity.x, player.velocity.z)
 	current_xz = current_xz.lerp(target_xz, 8.0 * delta)
 
 	player.velocity.x = current_xz.x
@@ -163,7 +163,7 @@ func _apply_swim_velocity(delta: float, input_dir: Vector2) -> void:
 
 func _handle_camera_and_vfx(delta: float, input_dir: Vector2) -> void:
 	var target_tilt: float = 0.0
-	var loco : PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
 
 	if input_dir.x > 0.1:
 		target_tilt = deg_to_rad(player.camera_controller.camera_tilt_amount * 2.0)

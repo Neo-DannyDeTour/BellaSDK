@@ -172,7 +172,7 @@ func force_light_update() -> void:
 
 func sample_clouds() -> void:
 	print("SunshineCloudsDriver: Sampling clouds data.")
-	for i in range(64):
+	for i: int in range(64):
 		clouds_resource.add_sample(return_data.bind(), Vector3(i * 1000, 6000.0, 0.0))
 
 
@@ -226,7 +226,7 @@ func clouds_res_added() -> void:
 
 
 func recursively_find_env(this_node: Node) -> WorldEnvironment:
-	for child in this_node.get_children():
+	for child: Node in this_node.get_children():
 		if child is WorldEnvironment:
 			return child as WorldEnvironment
 		## Controls the result behavior.
@@ -264,7 +264,7 @@ func retrieve_texture_data() -> void:
 	while tracked_directional_light_shadow_steps.size() < dir_count:
 		tracked_directional_light_shadow_steps.append(12)
 
-	for i in range(dir_count):
+	for i: int in range(dir_count):
 		## Controls the light behavior.
 		var light: DirectionalLight3D = tracked_directional_lights[i]
 		if light == null:
@@ -288,7 +288,7 @@ func retrieve_texture_data() -> void:
 			light.light_color.r, light.light_color.g, light.light_color.b, alpha_val
 		)
 
-	for i in range(pt_count):
+	for i: int in range(pt_count):
 		## Controls the light behavior.
 		var light: OmniLight3D = tracked_point_lights[i]
 		if light == null:
@@ -310,7 +310,7 @@ func retrieve_texture_data() -> void:
 			light.light_color.r, light.light_color.g, light.light_color.b, alpha_val
 		)
 
-	for i in range(eff_count):
+	for i: int in range(eff_count):
 		## Controls the node behavior.
 		var node: SunshineCloudsEffector = tracked_point_effectors[i]
 		if node == null:

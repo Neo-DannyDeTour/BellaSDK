@@ -2,11 +2,7 @@ extends CanvasLayer
 class_name DeathScreen
 
 ## Defines the player's movement state at the exact moment of death.
-enum DeathState {
-	CROUCHING,
-	WALKING,
-	SPRINTING
-}
+enum DeathState { CROUCHING, WALKING, SPRINTING }
 
 ## Array of randomized phrases displayed upon player death.
 const DEATH_MESSAGES: Array[String] = [
@@ -131,7 +127,7 @@ func play_death_sequence(death_state: int = DeathState.WALKING) -> void:
 	match death_state:
 		DeathState.CROUCHING:
 			_target_speed = 2.0
-			_cycle_count = 3 # Exceeds the beep threshold to bypass standard beats
+			_cycle_count = 3  # Exceeds the beep threshold to bypass standard beats
 			_trigger_flatline()
 		DeathState.SPRINTING:
 			_target_speed = 4.0
@@ -200,7 +196,7 @@ func _generate_tone(
 	var data: PackedByteArray = PackedByteArray()
 	data.resize(frames * 2)
 
-	for i in range(frames):
+	for i: int in range(frames):
 		var time: float = float(i) / float(stream.mix_rate)
 		var sample: float = sin(time * freq * TAU)
 
@@ -227,7 +223,7 @@ func _generate_tone(
 
 func _lerp_heartbeat_to_flatline(weight: float) -> void:
 	var current_points: Array[Vector2] = []
-	for i in range(HEALTHY_POINTS.size()):
+	for i: int in range(HEALTHY_POINTS.size()):
 		var lerped_point: Vector2 = HEALTHY_POINTS[i].lerp(FLATLINE_POINTS[i], weight)
 		current_points.append(lerped_point)
 

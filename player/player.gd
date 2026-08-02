@@ -110,8 +110,10 @@ func _on_player_died() -> void:
 		if locomotion_component.crouching:
 			current_death_state = DeathScreen.DeathState.CROUCHING
 			print("Player: Death state evaluated as CROUCHING.")
-		elif locomotion_component.has_method("did_run_recently") and \
-				locomotion_component.did_run_recently():
+		elif (
+			locomotion_component.has_method("did_run_recently")
+			and locomotion_component.did_run_recently()
+		):
 			current_death_state = DeathScreen.DeathState.SPRINTING
 			print("Player: Death state evaluated as SPRINTING.")
 		else:
@@ -305,7 +307,7 @@ func get_save_data() -> Dictionary:
 func load_save_data(data: Dictionary) -> void:
 	print("Player: load_save_data() called. Restoring component data.")
 
-	var loaded_pos : Vector3 = Vector3(
+	var loaded_pos: Vector3 = Vector3(
 		data.get("pos_x", global_position.x),
 		data.get("pos_y", global_position.y),
 		data.get("pos_z", global_position.z)

@@ -33,6 +33,6 @@ func _handle_visibility() -> void:
 		# gdlint: disable=max-line-length
 		icon = ResourceLoader.load("res://addons/SunshineClouds2/Dock/Icons/caret-up-solid.svg")
 
-	for child in get_parent().get_children():
+	for child: Node in get_parent().get_children():
 		if (child != self and child is Control):
 			child.visible = curvisible

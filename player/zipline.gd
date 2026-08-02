@@ -166,8 +166,8 @@ func force_grab_zipline(player: CharacterBody3D) -> void:
 		if interact_label:
 			interact_label.hide()
 
-		var point_a : Vector3 = to_global(curve.get_point_position(0))
-		var point_b : Vector3 = to_global(curve.get_point_position(curve.get_point_count() - 1))
+		var point_a: Vector3 = to_global(curve.get_point_position(0))
+		var point_b: Vector3 = to_global(curve.get_point_position(curve.get_point_count() - 1))
 
 		player._on_zipline_grabbed(self, point_a, point_b)
 

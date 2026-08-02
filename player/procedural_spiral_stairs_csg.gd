@@ -51,7 +51,7 @@ func _update_mesh() -> void:
 	if step_count <= 0:
 		return
 
-	var st : SurfaceTool = SurfaceTool.new()
+	var st: SurfaceTool = SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 
 	var unit_angle: float = (rotations * TAU) / step_count
@@ -83,23 +83,23 @@ func _update_mesh() -> void:
 				h_bot_next = next_height - step_thickness
 
 		# Calculate 3D points
-		var point_a : Vector3 = Vector3(
+		var point_a: Vector3 = Vector3(
 			cos(current_angle) * inner_radius, h_top_cur, sin(current_angle) * inner_radius
 		)
-		var point_b : Vector3 = Vector3(
+		var point_b: Vector3 = Vector3(
 			cos(current_angle) * outer_radius, h_top_cur, sin(current_angle) * outer_radius
 		)
-		var point_c : Vector3 = Vector3(
+		var point_c: Vector3 = Vector3(
 			cos(next_angle) * outer_radius, h_top_next, sin(next_angle) * outer_radius
 		)
-		var point_d : Vector3 = Vector3(
+		var point_d: Vector3 = Vector3(
 			cos(next_angle) * inner_radius, h_top_next, sin(next_angle) * inner_radius
 		)
 
-		var point_e : Vector3 = Vector3(point_a.x, h_bot_cur, point_a.z)
-		var point_f : Vector3 = Vector3(point_b.x, h_bot_cur, point_b.z)
-		var point_g : Vector3 = Vector3(point_c.x, h_bot_next, point_c.z)
-		var point_h : Vector3 = Vector3(point_d.x, h_bot_next, point_d.z)
+		var point_e: Vector3 = Vector3(point_a.x, h_bot_cur, point_a.z)
+		var point_f: Vector3 = Vector3(point_b.x, h_bot_cur, point_b.z)
+		var point_g: Vector3 = Vector3(point_c.x, h_bot_next, point_c.z)
+		var point_h: Vector3 = Vector3(point_d.x, h_bot_next, point_d.z)
 
 		# Core Faces (Top, Bottom, Inner, Outer)
 		_add_quad(st, point_a, point_b, point_c, point_d)  # Top

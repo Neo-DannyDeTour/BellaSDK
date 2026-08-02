@@ -1,6 +1,6 @@
 extends StaticBody3D
 
-var is_open : bool = false
+var is_open: bool = false
 @onready var label: Label = $Label
 
 

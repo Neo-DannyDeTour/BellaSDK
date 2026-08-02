@@ -142,7 +142,7 @@ func scene_changed(scene_root: Node) -> void:
 
 func retrieve_clouds_driver(scene_root : Node) -> SunshineCloudsDriverGD:
 	if (scene_root != null):
-		for child in scene_root.get_children():
+		for child: Node in scene_root.get_children():
 			if child is SunshineCloudsDriverGD:
 				return child
 			var new_driver: Variant = retrieve_clouds_driver(child)

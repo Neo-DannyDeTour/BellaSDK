@@ -67,16 +67,16 @@ var is_immobilized: bool = false
 var is_sprint_blocked: bool = false
 
 @onready var debuff_container: HBoxContainer = $HealthMargin/VBoxContainer/DebuffContainer
-@onready var sprint_debuff_icon: TextureRect = \
-		$HealthMargin/VBoxContainer/DebuffContainer/SprintDebuffIcon
-@onready var sprint_debuff_bar: ProgressBar = \
-		$HealthMargin/VBoxContainer/DebuffContainer/SprintDebuffBar
+@onready
+var sprint_debuff_icon: TextureRect = $HealthMargin/VBoxContainer/DebuffContainer/SprintDebuffIcon
+@onready
+var sprint_debuff_bar: ProgressBar = $HealthMargin/VBoxContainer/DebuffContainer/SprintDebuffBar
 
 @onready var immobilize_container: HBoxContainer = $HealthMargin/VBoxContainer/ImmobilizeContainer
-@onready var immobilize_icon: TextureRect = \
-		$HealthMargin/VBoxContainer/ImmobilizeContainer/ImmobilizeIcon
-@onready var immobilize_bar: ProgressBar = \
-		$HealthMargin/VBoxContainer/ImmobilizeContainer/ImmobilizeBar
+@onready
+var immobilize_icon: TextureRect = $HealthMargin/VBoxContainer/ImmobilizeContainer/ImmobilizeIcon
+@onready
+var immobilize_bar: ProgressBar = $HealthMargin/VBoxContainer/ImmobilizeContainer/ImmobilizeBar
 
 @onready var warning_label: Label = $WarningLabel
 
@@ -129,7 +129,7 @@ func _ready() -> void:
 		default_crosshair_size = center_dot.size
 
 	green_wireframe_material = ShaderMaterial.new()
-	var shader : Shader = Shader.new()
+	var shader: Shader = Shader.new()
 	shader.code = """
     shader_type spatial;
     render_mode wireframe, unshaded, cull_disabled;
@@ -159,10 +159,11 @@ func _ready() -> void:
 		if not Events.immobilize_debuff_applied.is_connected(_on_immobilize_debuff_applied):
 			Events.immobilize_debuff_applied.connect(_on_immobilize_debuff_applied)
 
-func _process(delta: float) -> void:
-	var target_vignette_opacity : float = 0.8 if is_player_crouching else 0.0
 
-	var current_opacity : float = vignette.material.get_shader_parameter("vignette_opacity") as float
+func _process(delta: float) -> void:
+	var target_vignette_opacity: float = 0.8 if is_player_crouching else 0.0
+
+	var current_opacity: float = vignette.material.get_shader_parameter("vignette_opacity") as float
 	if current_opacity == null:
 		current_opacity = 0.0
 
@@ -182,7 +183,7 @@ func _initialize_hearts() -> void:
 	var frame_width: float = atlas_width / 5.0
 
 	# Cache textures
-	for i in range(5):
+	for i: int in range(5):
 		var tex: AtlasTexture = AtlasTexture.new()
 		tex.atlas = hearts_atlas
 		tex.region = Rect2(i * frame_width, 0.0, frame_width, atlas_height)
@@ -238,7 +239,7 @@ func update_health(new_health: int) -> void:
 	if heart_nodes.is_empty() or heart_textures.is_empty():
 		return
 
-	for i in range(heart_nodes.size()):
+	for i: int in range(heart_nodes.size()):
 		var heart_min: int = i * 100
 		var heart_val: int = clampi(current_health - heart_min, 0, 100)
 		var prev_heart_val: int = clampi(previous_health - heart_min, 0, 100)
@@ -486,7 +487,7 @@ func _on_wireframe_overlay_button_pressed() -> void:
 
 	Events.wireframe_overlay_toggled.emit(is_wireframe_overlay)
 
-	var root_node : Node = get_tree().current_scene
+	var root_node: Node = get_tree().current_scene
 	if root_node:
 		_apply_wireframe_to_node(root_node, is_wireframe_overlay)
 
@@ -498,7 +499,7 @@ func _apply_wireframe_to_node(node: Node, is_overlay: bool) -> void:
 		else:
 			node.material_overlay = null
 
-	for child in node.get_children():
+	for child: Node in node.get_children():
 		_apply_wireframe_to_node(child, is_overlay)
 
 
@@ -523,7 +524,7 @@ func _on_terminal_mode_toggled(is_active: bool) -> void:
 	)
 
 	if is_active:
-		var target_size : Vector2 = Vector2(16.0, 16.0)
+		var target_size: Vector2 = Vector2(16.0, 16.0)
 		crosshair_tween.tween_property(center_dot, "custom_minimum_size", target_size, 0.3)
 		crosshair_tween.tween_property(center_dot, "size", target_size, 0.3)
 	else:
@@ -541,7 +542,7 @@ func _on_collision_button_pressed() -> void:
 	get_tree().debug_collisions_hint = is_collision_visible
 	collision_button.text = "Collisions ON" if is_collision_visible else "Collisions OFF"
 
-	var root_node : Node = get_tree().current_scene
+	var root_node: Node = get_tree().current_scene
 	if root_node:
 		_force_collision_redraw(root_node, is_collision_visible)
 
@@ -563,7 +564,7 @@ func _force_collision_redraw(node: Node, show_collisions: bool) -> void:
 	if node is CollisionShape3D or node is RayCast3D or node is ShapeCast3D:
 		node.visible = show_collisions
 
-	for child in node.get_children():
+	for child: Node in node.get_children():
 		_force_collision_redraw(child, show_collisions)
 
 
@@ -609,7 +610,7 @@ func _open_metrics_panel() -> void:
 
 func _on_card_picked_up(card_id: StringName) -> void:
 	print("UI: Displaying new card ID ", card_id)
-	var card_rect : TextureRect = TextureRect.new()
+	var card_rect: TextureRect = TextureRect.new()
 	card_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	card_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	card_rect.custom_minimum_size = Vector2(80.0, 130.0)
@@ -653,7 +654,9 @@ func _show_warning_message(message: String) -> void:
 
 
 func _on_sprint_debuff_applied(duration: float) -> void:
-	print("UIController: _on_sprint_debuff_applied() - Starting debuff UI for ", duration, " seconds.")
+	print(
+		"UIController: _on_sprint_debuff_applied() - Starting debuff UI for ", duration, " seconds."
+	)
 	debuff_container.show()
 	is_sprint_blocked = true
 

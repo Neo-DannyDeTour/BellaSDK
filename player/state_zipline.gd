@@ -46,7 +46,7 @@ func exit() -> void:
 	is_zipline_transitioning = false
 	player.scale = Vector3.ONE
 
-	var detach_tween : Tween = create_tween().set_parallel(true)
+	var detach_tween: Tween = create_tween().set_parallel(true)
 
 	if is_instance_valid(player.camera_controller):
 		# Fix "Standing Up" on release to ensure the camera is upright
@@ -107,7 +107,7 @@ func _perform_attach_tween() -> void:
 	var real_target_pos: Vector3 = zipline_start.lerp(zipline_end, zipline_progress)
 	real_target_pos.y -= ZIPLINE_HANG_OFFSET
 
-	var attach_tween : Tween = create_tween().set_parallel(true)
+	var attach_tween: Tween = create_tween().set_parallel(true)
 	attach_tween.tween_property(player, "global_position", real_target_pos, 0.25).set_trans(
 		Tween.TRANS_SINE
 	)

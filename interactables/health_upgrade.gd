@@ -58,14 +58,14 @@ func _update_label_text() -> void:
 		var raw_text: String = events[0].as_text()
 		key_name = (
 			raw_text
-			.replace(" (Physical)", "")
-			.replace(" - Physical", "")
-			.replace(" (Physics)", "")
-			.replace(" - Physics", "")
-			.replace("Left Mouse Button", "LMB")
-			.replace("Right Mouse Button", "RMB")
-			.replace("Middle Mouse Button", "MMB")
-			.strip_edges()
+			. replace(" (Physical)", "")
+			. replace(" - Physical", "")
+			. replace(" (Physics)", "")
+			. replace(" - Physics", "")
+			. replace("Left Mouse Button", "LMB")
+			. replace("Right Mouse Button", "RMB")
+			. replace("Middle Mouse Button", "MMB")
+			. strip_edges()
 		)
 
 	prompt_label.text = "Press [%s] to Interact" % [key_name]
@@ -74,7 +74,7 @@ func _update_label_text() -> void:
 func _on_focused() -> void:
 	print(
 		"HealthUpgrade: _on_focused() - Player focused. ",
-        "Starting beat animation and showing label."
+		"Starting beat animation and showing label."
 	)
 
 	if is_instance_valid(prompt_label):
@@ -86,13 +86,13 @@ func _on_focused() -> void:
 
 	_beat_tween = create_tween().set_loops()
 
-	_beat_tween.tween_property(
-		heart_visual, "scale", Vector3(1.3, 1.3, 1.3), 0.2
-	).set_trans(Tween.TRANS_SINE)
+	_beat_tween.tween_property(heart_visual, "scale", Vector3(1.3, 1.3, 1.3), 0.2).set_trans(
+		Tween.TRANS_SINE
+	)
 
-	_beat_tween.tween_property(
-		heart_visual, "scale", Vector3(1.0, 1.0, 1.0), 0.2
-	).set_trans(Tween.TRANS_SINE)
+	_beat_tween.tween_property(heart_visual, "scale", Vector3(1.0, 1.0, 1.0), 0.2).set_trans(
+		Tween.TRANS_SINE
+	)
 
 	_beat_tween.tween_interval(0.5)
 
@@ -100,7 +100,7 @@ func _on_focused() -> void:
 func _on_unfocused() -> void:
 	print(
 		"HealthUpgrade: _on_unfocused() - Player unfocused. ",
-        "Stopping beat animation and hiding label."
+		"Stopping beat animation and hiding label."
 	)
 
 	if is_instance_valid(prompt_label):
@@ -127,6 +127,5 @@ func _on_interacted(character: CharacterBody3D) -> void:
 		queue_free()
 	else:
 		print(
-			"HealthUpgrade: _on_interacted() - ERROR: No HealthComponent found on ",
-			character.name
+			"HealthUpgrade: _on_interacted() - ERROR: No HealthComponent found on ", character.name
 		)

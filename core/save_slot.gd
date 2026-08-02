@@ -72,8 +72,8 @@ func _on_fav_toggled(toggled_on: bool) -> void:
 
 
 func _emit_meta_update() -> void:
-	var current_name : String = name_input.text.strip_edges()
-	var is_fav : bool = fav_button.button_pressed
+	var current_name: String = name_input.text.strip_edges()
+	var is_fav: bool = fav_button.button_pressed
 	meta_updated.emit(_save_id, current_name, is_fav)
 
 

@@ -9,11 +9,11 @@ var _snapped_to_stairs_last_frame: bool = false
 var _last_frame_was_on_floor: int = 0
 var is_enabled: bool = true
 
-var _up_test : PhysicsTestMotionResult3D = PhysicsTestMotionResult3D.new()
-var _forward_test : PhysicsTestMotionResult3D = PhysicsTestMotionResult3D.new()
-var _down_test : PhysicsTestMotionResult3D = PhysicsTestMotionResult3D.new()
-var _body_test : PhysicsTestMotionResult3D = PhysicsTestMotionResult3D.new()
-var _test_params : PhysicsTestMotionParameters3D = PhysicsTestMotionParameters3D.new()
+var _up_test: PhysicsTestMotionResult3D = PhysicsTestMotionResult3D.new()
+var _forward_test: PhysicsTestMotionResult3D = PhysicsTestMotionResult3D.new()
+var _down_test: PhysicsTestMotionResult3D = PhysicsTestMotionResult3D.new()
+var _body_test: PhysicsTestMotionResult3D = PhysicsTestMotionResult3D.new()
+var _test_params: PhysicsTestMotionParameters3D = PhysicsTestMotionParameters3D.new()
 var time_since_step_feedback: float = 100.0
 
 @onready var stairs_below_cast: RayCast3D = %StairsBelowCast
