@@ -40,9 +40,7 @@ func equip_to_player(p_node: CharacterBody3D) -> void:
 	# 1. FIND THE PHYSICS BODY (StaticBody3D or RigidBody3D)
 	# If your InteractComponent is a child of the StaticBody,
 	# we grab the parent of the component.
-	var physics_body : StaticBody3D = (
-		get_node("StaticBody3D") as StaticBody3D
-	)  # Update path if named differently
+	var physics_body: StaticBody3D = get_node("StaticBody3D") as StaticBody3D  # Update path if named differently
 
 	# 2. DISABLE IT COMPLETELY
 	if physics_body:
@@ -51,7 +49,7 @@ func equip_to_player(p_node: CharacterBody3D) -> void:
 		physics_body.visible = false  # Optional: hide the interaction helper
 
 	# 3. REPARENT AS NORMAL
-	var weapon_holder : Node = p_node.get_node("%WeaponHolder")
+	var weapon_holder: Node = p_node.get_node("%WeaponHolder")
 	if weapon_holder:
 		reparent(weapon_holder, false)
 		position = Vector3.ZERO

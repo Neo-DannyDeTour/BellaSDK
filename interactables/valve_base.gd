@@ -72,7 +72,7 @@ const DOUBLE_TAP_DELAY: float = 0.3
 @export var outline_material: ShaderMaterial
 
 ## The audio stream player responsible for playing turning sounds.
-@onready var valve_audio: AudioStreamPlayer3D = get_node_or_null("ValveAudio")
+@onready var valve_audio: AudioStreamPlayer3D = get_node_or_null("ValveAudio") as AudioStreamPlayer3D
 
 ## The current normalized turning progress (0.0 to 1.0).
 var progress: float = 0.0
@@ -298,7 +298,7 @@ func _install_valve(player: Node3D, held_valve: Node3D) -> void:
 	if is_instance_valid(wheel):
 		wheel.show()
 
-	var weapon_holder: Node3D = player.get_node_or_null("%WeaponHolder")
+	var weapon_holder: Node3D = player.get_node_or_null("%WeaponHolder") as Node3D
 	if is_instance_valid(weapon_holder):
 		weapon_holder.show()
 	print("Valve: Valve Auto-Installed!")
@@ -348,7 +348,7 @@ func _detach_valve() -> void:
 	):
 		spawned_valve.pick_up(player.get("hold_position"), player)
 
-	var weapon_holder: Node3D = player.get_node_or_null("%WeaponHolder")
+	var weapon_holder: Node3D = player.get_node_or_null("%WeaponHolder") as Node3D
 	if is_instance_valid(weapon_holder) and not grabbed_successfully:
 		weapon_holder.hide()
 
