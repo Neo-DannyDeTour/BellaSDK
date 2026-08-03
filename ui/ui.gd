@@ -11,6 +11,9 @@ var green_wireframe_material: ShaderMaterial
 
 var pain_tween: Tween
 
+## Security variable: Indicates if debug commands (noclip) are allowed via input or events.
+var is_debug_allowed: bool = OS.has_feature("debug")
+
 # --- KEYCARD UI VARS ---
 @export var card_textures: Dictionary[StringName, Texture2D] = {}
 var active_card_icons: Dictionary = {}
@@ -97,6 +100,7 @@ var glitch_tween: Tween
 ## Controls the electricity vignette animation when shocked.
 var electro_tween: Tween
 
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	get_tree().paused = false
@@ -165,14 +169,14 @@ func _ready() -> void:
 	if Events.has_signal("immobilize_debuff_applied"):
 		if not Events.immobilize_debuff_applied.is_connected(_on_immobilize_debuff_applied):
 			Events.immobilize_debuff_applied.connect(_on_immobilize_debuff_applied)
-			
+
 	if not Events.player_electrocuted.is_connected(_on_player_electrocuted):
 		Events.player_electrocuted.connect(_on_player_electrocuted)
-			
+
 	if glitch_overlay != null and glitch_overlay.material is ShaderMaterial:
 		glitch_overlay.material.set_shader_parameter("intensity", 0.0)
 		glitch_overlay.hide()
-		
+
 	if electricity_vignette != null and electricity_vignette.material is ShaderMaterial:
 		electricity_vignette.material.set_shader_parameter("intensity", 0.0)
 		electricity_vignette.hide()
@@ -428,7 +432,7 @@ func _on_player_crouched(crouching: bool) -> void:
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.is_pressed() and not event.is_echo():
 		# Check for the tilde key to open the debug panel
-		if event.keycode == KEY_QUOTELEFT:
+		if event.keycode == KEY_QUOTELEFT and is_debug_allowed:
 			print("UIController: Tilde key pressed. Opening debug panel.")
 			_toggle_debug_panel()
 
@@ -721,20 +725,20 @@ func _on_immobilize_debuff_applied(duration: float) -> void:
 
 func _on_player_electrocuted() -> void:
 	print("UIController: _on_player_electrocuted() - Triggering electric shock UI effects.")
-	
+
 	# 1. Instantly kill the pain overlay if it was triggered by the damage tick
 	if pain_tween and pain_tween.is_valid():
 		pain_tween.kill()
 	if pain_overlay:
 		pain_overlay.hide()
-		
+
 	if glitch_overlay != null and glitch_overlay.material is ShaderMaterial:
 		glitch_overlay.show()
 		if glitch_tween and glitch_tween.is_valid():
 			glitch_tween.kill()
-			
+
 		glitch_tween = create_tween().set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
-		
+
 		glitch_tween.tween_method(
 			func(val: float) -> void:
 				glitch_overlay.material.set_shader_parameter("intensity", val)
@@ -744,14 +748,14 @@ func _on_player_electrocuted() -> void:
 			0.4
 		)
 		glitch_tween.finished.connect(glitch_overlay.hide)
-		
+
 	if electricity_vignette != null and electricity_vignette.material is ShaderMaterial:
 		electricity_vignette.show()
 		if electro_tween and electro_tween.is_valid():
 			electro_tween.kill()
-			
+
 		electro_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-		
+
 		electro_tween.tween_method(
 			func(val: float) -> void:
 				electricity_vignette.material.set_shader_parameter("intensity", val)
