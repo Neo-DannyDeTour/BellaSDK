@@ -22,6 +22,8 @@ disable:
 - class-definitions-order
 - no-else-return
 - no-elif-return
+- max-line-length
+- class-definitions-order
 duplicated-load: null
 enum-element-name: '[A-Z][A-Z0-9]*(_[A-Z0-9]+)*'
 enum-name: ([A-Z][a-z0-9]*)+

@@ -23,9 +23,14 @@ var _trail_index: int = 0
 var _scorch_texture: GradientTexture2D
 var _trail_texture: GradientTexture2D
 
-@onready var base_beam_particles: GPUParticles3D = get_node_or_null("Turret/BeamParticles")
-@onready var base_impact_particles: GPUParticles3D = get_node_or_null("Turret/ImpactParticles")
-@onready var base_smoke_particles: GPUParticles3D = get_node_or_null("Turret/SmokeParticles")
+@onready
+var base_beam_particles: GPUParticles3D = get_node_or_null("Turret/BeamParticles") as GPUParticles3D
+@onready var base_impact_particles: GPUParticles3D = (
+	get_node_or_null("Turret/ImpactParticles") as GPUParticles3D
+)
+@onready var base_smoke_particles: GPUParticles3D = (
+	get_node_or_null("Turret/SmokeParticles") as GPUParticles3D
+)
 @onready var turret: Node3D = $Turret
 @onready var laser_origin: Marker3D = $Turret/LaserOrigin
 @onready var base_beam_mesh: MeshInstance3D = $Turret/BeamMesh
