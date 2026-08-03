@@ -12,16 +12,17 @@ void fragment() {
     float time_snap = floor(TIME * 15.0);
     float block_y = floor(uv.y * 25.0);
     
-    // Calculate a random offset for this specific block of the screen
     float offset = (rand(vec2(block_y, time_snap)) - 0.5) * intensity * 0.5;
     float is_glitching = step(0.85, rand(vec2(block_y, time_snap + 1.0)));
     
     uv.x += offset * is_glitching;
     
-    // Split RGB
-    float r = texture(screen_texture, uv + vec2(0.015 * is_glitching, 0.0)).r;
+    // FIX: Multiply the RGB split offset by intensity so it scales down to 0
+    float split_amount = 0.05 * is_glitching * intensity;
+    
+    float r = texture(screen_texture, uv + vec2(split_amount, 0.0)).r;
     float g = texture(screen_texture, uv).g;
-    float b = texture(screen_texture, uv - vec2(0.015 * is_glitching, 0.0)).b;
+    float b = texture(screen_texture, uv - vec2(split_amount, 0.0)).b;
     
     COLOR = vec4(r, g, b, 1.0);
 }

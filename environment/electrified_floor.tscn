@@ -1,0 +1,57 @@
+[gd_scene format=3 uid="uid://db26qd2c60rhr"]
+
+[ext_resource type="Script" uid="uid://cwaw1awuua25p" path="res://environment/electrified_floor.gd" id="1_rhjqq"]
+[ext_resource type="Texture2D" uid="uid://cwoqwhcx3it2p" path="res://assets/images/electrified_floor.png" id="2_wbu1w"]
+[ext_resource type="Shader" uid="uid://ckhwv7iiq0vs" path="res://environment/electrified_floor.gdshader" id="3_6b0rb"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_534t5"]
+size = Vector3(2, 0.2, 2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tx8to"]
+albedo_texture = ExtResource("2_wbu1w")
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_534t5"]
+material = SubResource("StandardMaterial3D_tx8to")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_wbu1w"]
+render_priority = 0
+shader = ExtResource("3_6b0rb")
+shader_parameter/lightning_color = Color(0.288, 0.60480005, 0.72, 1)
+shader_parameter/emission_color = Color(0, 0, 0, 1)
+shader_parameter/emission_energy = 3.0
+shader_parameter/lightning_scale = 1.0
+shader_parameter/lightning_thickness = 0.02
+shader_parameter/speed = 8.0
+shader_parameter/jaggedness = 1.0
+shader_parameter/strike_frequency = 0.4770000226575
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_i44y8"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_1j7qv"]
+size = Vector3(2, 0.2, 2)
+
+[node name="ElectrifiedFloor" type="StaticBody3D" unique_id=1382971459 node_paths=PackedStringArray("damage_area")]
+collision_layer = 16
+collision_mask = 2
+script = ExtResource("1_rhjqq")
+damage_per_tick = 100
+damage_area = NodePath("DamageArea")
+
+[node name="FloorCollision" type="CollisionShape3D" parent="." unique_id=33790880]
+shape = SubResource("BoxShape3D_534t5")
+
+[node name="FloorMesh" type="MeshInstance3D" parent="." unique_id=1837527114]
+mesh = SubResource("PlaneMesh_534t5")
+
+[node name="LightningPlane" type="MeshInstance3D" parent="." unique_id=1945469529]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
+material_override = SubResource("ShaderMaterial_wbu1w")
+mesh = SubResource("PlaneMesh_i44y8")
+
+[node name="DamageArea" type="Area3D" parent="." unique_id=652318890]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+collision_layer = 16
+collision_mask = 18
+
+[node name="DamageCollision" type="CollisionShape3D" parent="DamageArea" unique_id=1091018607]
+shape = SubResource("BoxShape3D_1j7qv")

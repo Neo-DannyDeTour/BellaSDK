@@ -80,6 +80,9 @@ signal sprint_debuff_applied(duration: float)
 @warning_ignore("unused_signal")
 signal immobilize_debuff_applied(duration: float)
 
+@warning_ignore("unused_signal")
+signal player_electrocuted
+
 # --- REPLACED FONT SIGNAL ---
 signal font_changed(font_name: String)
 

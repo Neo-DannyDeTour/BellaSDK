@@ -11,6 +11,8 @@
 [ext_resource type="Shader" uid="uid://b7hv0lpr3sylm" path="res://ui/ui_vignette.gdshader" id="5_8dubc"]
 [ext_resource type="Shader" uid="uid://bly82k8d04nmt" path="res://ui/ui_zoom_fisheye_blur.gdshader" id="6_p7vwb"]
 [ext_resource type="Script" uid="uid://yhhwmqo4b0yi" path="res://core/dev_metrics.gd" id="7_p7vwb"]
+[ext_resource type="Shader" uid="uid://bcpssk465dbif" path="res://vfx/glitch.gdshader" id="7_x7nxp"]
+[ext_resource type="Shader" uid="uid://c2f1f2all860e" path="res://ui/electricityvignette.gdshader" id="8_3lbto"]
 [ext_resource type="Script" uid="uid://cnewwxia7j3ay" path="res://core/frame_graph.gd" id="8_ktti3"]
 [ext_resource type="Shader" uid="uid://dqjxwnsg8c5f0" path="res://vfx/outline_hearts_adaptable.gdshader" id="10_7dvkv"]
 [ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="11_bi8hs"]
@@ -25,6 +27,15 @@ shader_parameter/color = Color(0, 0, 0, 1)
 shader_parameter/multiplier = 0.4
 shader_parameter/softness = 0.7
 shader_parameter/vignette_opacity = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_tx8to"]
+shader = ExtResource("8_3lbto")
+shader_parameter/lightning_color = Color(0, 0.8, 1, 1)
+shader_parameter/intensity = 0.286000013585
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_534t5"]
+shader = ExtResource("7_x7nxp")
+shader_parameter/intensity = 0.400000019
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_cgfq5"]
 shader = ExtResource("6_p7vwb")
@@ -87,7 +98,24 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(1, 0, 0, 0)
 
-[node name="BackBufferCopy" type="Node" parent="." unique_id=1360596973]
+[node name="ElectricityVignette" type="ColorRect" parent="." unique_id=370217648]
+material = SubResource("ShaderMaterial_tx8to")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="GlitchOverlay" type="ColorRect" parent="." unique_id=93627812]
+material = SubResource("ShaderMaterial_534t5")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BackBufferCopy" type="BackBufferCopy" parent="." unique_id=178311884]
+copy_mode = 2
 
 [node name="FisheyeZoom" type="ColorRect" parent="." unique_id=1926985645]
 material = SubResource("ShaderMaterial_cgfq5")

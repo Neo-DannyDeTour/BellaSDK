@@ -30,6 +30,8 @@ var default_crosshair_size: Vector2
 
 @onready var vignette: ColorRect = $Vignette
 @onready var fisheye_zoom: ColorRect = $FisheyeZoom
+@onready var glitch_overlay: ColorRect = $GlitchOverlay
+@onready var electricity_vignette: ColorRect = $ElectricityVignette
 
 # Updated Paths
 @onready var noclip_alert_container: MarginContainer = $NoclipAlertContainer
@@ -89,6 +91,11 @@ var heart_nodes: Array[TextureRect] = []
 var heart_tweens: Array[Tween] = []
 var current_health: int = 300
 
+## Controls the glitch effect animation when shocked.
+var glitch_tween: Tween
+
+## Controls the electricity vignette animation when shocked.
+var electro_tween: Tween
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -158,6 +165,17 @@ func _ready() -> void:
 	if Events.has_signal("immobilize_debuff_applied"):
 		if not Events.immobilize_debuff_applied.is_connected(_on_immobilize_debuff_applied):
 			Events.immobilize_debuff_applied.connect(_on_immobilize_debuff_applied)
+			
+	if not Events.player_electrocuted.is_connected(_on_player_electrocuted):
+		Events.player_electrocuted.connect(_on_player_electrocuted)
+			
+	if glitch_overlay != null and glitch_overlay.material is ShaderMaterial:
+		glitch_overlay.material.set_shader_parameter("intensity", 0.0)
+		glitch_overlay.hide()
+		
+	if electricity_vignette != null and electricity_vignette.material is ShaderMaterial:
+		electricity_vignette.material.set_shader_parameter("intensity", 0.0)
+		electricity_vignette.hide()
 
 
 func _process(delta: float) -> void:
@@ -699,3 +717,47 @@ func _on_immobilize_debuff_applied(duration: float) -> void:
 			immobilize_container.hide()
 			is_immobilized = false
 	)
+
+
+func _on_player_electrocuted() -> void:
+	print("UIController: _on_player_electrocuted() - Triggering electric shock UI effects.")
+	
+	# 1. Instantly kill the pain overlay if it was triggered by the damage tick
+	if pain_tween and pain_tween.is_valid():
+		pain_tween.kill()
+	if pain_overlay:
+		pain_overlay.hide()
+		
+	if glitch_overlay != null and glitch_overlay.material is ShaderMaterial:
+		glitch_overlay.show()
+		if glitch_tween and glitch_tween.is_valid():
+			glitch_tween.kill()
+			
+		glitch_tween = create_tween().set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+		
+		glitch_tween.tween_method(
+			func(val: float) -> void:
+				glitch_overlay.material.set_shader_parameter("intensity", val)
+				glitch_overlay.queue_redraw(),
+			0.6,
+			0.0,
+			0.4
+		)
+		glitch_tween.finished.connect(glitch_overlay.hide)
+		
+	if electricity_vignette != null and electricity_vignette.material is ShaderMaterial:
+		electricity_vignette.show()
+		if electro_tween and electro_tween.is_valid():
+			electro_tween.kill()
+			
+		electro_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		
+		electro_tween.tween_method(
+			func(val: float) -> void:
+				electricity_vignette.material.set_shader_parameter("intensity", val)
+				electricity_vignette.queue_redraw(),
+			1.0,
+			0.0,
+			0.5
+		)
+		electro_tween.finished.connect(electricity_vignette.hide)

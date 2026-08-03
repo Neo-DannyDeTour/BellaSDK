@@ -299,7 +299,7 @@ func _notification(what: int) -> void:
 
 
 func clear_compute() -> void:
-	print("SunshineCloudsGD: Releasing compute resources and freeing VRAM.")
+	#print("SunshineCloudsGD: Releasing compute resources and freeing VRAM.")
 	if rd:
 		# 1. FREE UNIFORM SETS FIRST to prevent dependency errors.
 		for uset: RID in uniform_sets:
