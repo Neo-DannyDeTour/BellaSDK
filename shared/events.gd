@@ -72,6 +72,10 @@ signal level_event_triggered(event_name: String, is_active: bool)
 @warning_ignore("unused_signal")
 signal vision_assist_toggled(is_active: bool)
 
+## Emitted to change the background style of the vision assist shader.
+@warning_ignore("unused_signal")
+signal vision_assist_mode_changed(mode_name: String)
+
 ## Emitted when a sprint-blocking debuff is applied to the player.
 @warning_ignore("unused_signal")
 signal sprint_debuff_applied(duration: float)

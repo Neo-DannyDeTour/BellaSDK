@@ -14,6 +14,7 @@ shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
 shader_parameter/blink_speed = 8.0
 shader_parameter/min_intensity = 0.01
 shader_parameter/max_intensity = 0.05
+shader_parameter/alpha_scissor_threshold = 0.5
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_hkbtf"]
 size = Vector3(0.5, 2, 0.5)
@@ -35,7 +36,7 @@ uv1_triplanar = true
 [sub_resource type="BoxMesh" id="BoxMesh_hkbtf"]
 size = Vector3(0.1, 0.1, 1.5)
 
-[node name="PushWheel" type="StaticBody3D" unique_id=1136326807 node_paths=PackedStringArray("transmitter", "wheel", "intact_sticks", "broken_stubs", "restored_handle")]
+[node name="PushWheel" type="StaticBody3D" unique_id=1136326807 node_paths=PackedStringArray("transmitter", "wheel", "intact_sticks", "broken_stubs", "restored_handle") groups=["interactables"]]
 collision_layer = 5
 collision_mask = 2
 script = ExtResource("1_hkbtf")

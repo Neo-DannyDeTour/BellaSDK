@@ -14,11 +14,11 @@ uv1_triplanar = true
 [sub_resource type="BoxMesh" id="BoxMesh_acy5l"]
 resource_local_to_scene = true
 material = SubResource("StandardMaterial3D_880wj")
-size = Vector3(1, 50, 1)
+size = Vector3(1, 10, 1)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_p1f3w"]
 resource_local_to_scene = true
-size = Vector3(1, 50, 1)
+size = Vector3(1, 10, 1)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_acy5l"]
 render_priority = 0
@@ -27,18 +27,22 @@ shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
 shader_parameter/blink_speed = 8.00000038
 shader_parameter/min_intensity = 0.01
 shader_parameter/max_intensity = 0.050000002375
+shader_parameter/alpha_scissor_threshold = 0.5
 
-[node name="FastRope" type="StaticBody3D" unique_id=159492631]
+[node name="FastRope" type="StaticBody3D" unique_id=159492631 groups=["interactables"]]
 script = ExtResource("1_7majv")
 slide_sound = ExtResource("6_a0ufi")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1911394542]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 0)
 mesh = SubResource("BoxMesh_acy5l")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=863998140]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, 0)
 shape = SubResource("BoxShape3D_p1f3w")
 
 [node name="TopMarker" type="Marker3D" parent="." unique_id=1220540449]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 10, 0)
 
 [node name="InteractComponent" type="Node" parent="." unique_id=1056666983]
 script = ExtResource("1_u1eb6")

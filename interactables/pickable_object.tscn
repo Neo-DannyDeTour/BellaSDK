@@ -21,7 +21,7 @@ shader_parameter/min_intensity = 0.01
 shader_parameter/max_intensity = 0.050000002375
 shader_parameter/alpha_scissor_threshold = 0.5
 
-[node name="PickableObject" type="RigidBody3D" unique_id=594279821 node_paths=PackedStringArray("interact_comp", "mesh", "label", "probe_container")]
+[node name="PickableObject" type="RigidBody3D" unique_id=594279821 node_paths=PackedStringArray("interact_comp", "mesh", "label", "probe_container") groups=["interactables"]]
 collision_layer = 4
 collision_mask = 7
 script = ExtResource("1_gl7hy")

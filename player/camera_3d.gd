@@ -15,19 +15,34 @@ var _noise: FastNoiseLite = FastNoiseLite.new()
 ## Reference to the full-screen quad mesh used for accessibility rendering.
 @onready var vision_assist_mesh: MeshInstance3D = $VisionAssistMesh
 
+## Cached shader material to update background colors efficiently.
+var _vision_shader_material: ShaderMaterial
+
 
 func _ready() -> void:
 	make_current()
-	print("Player camera has been set as the current active camera.")
+	print("Camera3D: Player camera has been set as the current active camera.")
 
 	_noise.seed = randi()
 	_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
 	Events.screenshake_requested.connect(_on_screenshake_requested)
 
-	# NEW: Connect the vision assist toggle signal
 	if Events.has_signal("vision_assist_toggled"):
 		if not Events.vision_assist_toggled.is_connected(_on_vision_assist_toggled):
 			Events.vision_assist_toggled.connect(_on_vision_assist_toggled)
+			
+	# Cache the shader material for 60 FPS safe uniform updates
+	if is_instance_valid(vision_assist_mesh):
+		var active_mat: Material = vision_assist_mesh.get_active_material(0)
+		if active_mat is ShaderMaterial:
+			_vision_shader_material = active_mat as ShaderMaterial
+			print("Camera3D: Vision assist shader cached successfully.")
+		else:
+			push_error("Camera3D: VisionAssistMesh lacks a valid ShaderMaterial on surface 0.")
+			
+	if Events.has_signal("vision_assist_mode_changed"):
+		if not Events.vision_assist_mode_changed.is_connected(set_vision_assist_mode):
+			Events.vision_assist_mode_changed.connect(set_vision_assist_mode)
 
 
 func _process(delta: float) -> void:
@@ -75,3 +90,24 @@ func _on_vision_assist_toggled(is_active: bool) -> void:
 	print("Camera3D: Vision assist overlay visibility changed to: ", is_active)
 	if is_instance_valid(vision_assist_mesh):
 		vision_assist_mesh.visible = is_active
+
+
+## Changes the shader's base color to swap between Black/White, AAA Blue, and Pure Black modes.
+func set_vision_assist_mode(mode_name: String) -> void:
+	print("Camera3D: Changing vision assist mode to: ", mode_name)
+	if not is_instance_valid(_vision_shader_material):
+		return
+		
+	match mode_name:
+		"black_and_white":
+			_vision_shader_material.set_shader_parameter("base_color", Color.WHITE)
+			_vision_shader_material.set_shader_parameter("outline_color", Color.BLACK)
+		"aaa_blue":
+			# Adjust this color to match the exact background blue you want
+			_vision_shader_material.set_shader_parameter("base_color", Color(0.1, 0.1, 0.4, 1.0)) 
+			_vision_shader_material.set_shader_parameter("outline_color", Color.BLACK)
+		"pure_black":
+			_vision_shader_material.set_shader_parameter("base_color", Color.BLACK)
+			# Using white outlines for high-contrast wireframe navigation. 
+			# If you want a complete void where ONLY grouped items are visible, change this to Color.BLACK.
+			_vision_shader_material.set_shader_parameter("outline_color", Color.WHITE)

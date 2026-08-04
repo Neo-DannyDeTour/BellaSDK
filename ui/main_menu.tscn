@@ -11,19 +11,21 @@
 [ext_resource type="PackedScene" uid="uid://yy0ptjchxmtl" path="res://ui/save_load_panel.tscn" id="8_lsdqh"]
 [ext_resource type="PackedScene" uid="uid://c2lwvhw1w368r" path="res://ui/audio_panel.tscn" id="9_jiymt"]
 [ext_resource type="PackedScene" uid="uid://da3q2bu5xkp72" path="res://ui/GameplayPanel.tscn" id="10_bgtsx"]
+[ext_resource type="AudioStream" uid="uid://c1l53sh8s0och" path="res://assets/music/Concrete_and_Moss.mp3" id="12_jiymt"]
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_50h1w"]
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_6bivr"]
 texture = ExtResource("1_ovrgc")
 
-[node name="MainMenu" type="CanvasLayer" unique_id=1244757478 node_paths=PackedStringArray("back_buttons", "tab_buttons", "option_panels") groups=["hide_on_save"]]
+[node name="MainMenu" type="CanvasLayer" unique_id=1244757478 node_paths=PackedStringArray("back_buttons", "tab_buttons", "option_panels", "main_theme_player") groups=["hide_on_save"]]
 process_mode = 3
 layer = 10
 script = ExtResource("1_2o76q")
 back_buttons = [NodePath("CenterContainer/OptionsMenu/MasterBackButton")]
 tab_buttons = [NodePath("CenterContainer/OptionsMenu/TabButtons/VideoButton"), NodePath("CenterContainer/OptionsMenu/TabButtons/AudioButton"), NodePath("CenterContainer/OptionsMenu/TabButtons/GameplayButton"), NodePath("CenterContainer/OptionsMenu/TabButtons/ControlsButton"), NodePath("CenterContainer/OptionsMenu/TabButtons/AccessibilityButton")]
 option_panels = [null]
+main_theme_player = NodePath("MainThemePlayer")
 
 [node name="Background" type="Panel" parent="." unique_id=267339091]
 material = SubResource("CanvasItemMaterial_50h1w")
@@ -197,3 +199,7 @@ custom_text = "Back"
 glitch_text = "No Going Back"
 
 [node name="SaveLoadPanel" parent="." unique_id=1719296314 instance=ExtResource("8_lsdqh")]
+
+[node name="MainThemePlayer" type="AudioStreamPlayer" parent="." unique_id=122940660]
+stream = ExtResource("12_jiymt")
+bus = &"Music"

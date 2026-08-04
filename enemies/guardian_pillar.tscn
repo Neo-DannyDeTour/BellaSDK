@@ -36,7 +36,7 @@ bottom_radius = 0.025
 radial_segments = 8
 rings = 0
 
-[node name="GuardianPillar" type="StaticBody3D" unique_id=1217551866 groups=["not_climbable"]]
+[node name="GuardianPillar" type="StaticBody3D" unique_id=1217551866 groups=["enemies", "not_climbable"]]
 script = ExtResource("1_wg6l8")
 projectile_scene = ExtResource("2_nxpo7")
 vision_radius = 15.0

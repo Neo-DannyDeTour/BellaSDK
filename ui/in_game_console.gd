@@ -60,6 +60,7 @@ func _init() -> void:
 		valid_commands.append("noclip")
 		valid_commands.append("gamespeed")
 		valid_commands.append("die")
+		valid_commands.append("normals")
 
 
 var valid_colorblind_args: Array[String] = [
@@ -641,28 +642,43 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 					"yellow"
 				)
 		"visionassist":
-			var target_arg: String = ""
-
-			# Filter out any empty strings caused by extra spaces in the console input
-			for arg: String in args:
-				if not arg.strip_edges().is_empty():
-					target_arg = arg.strip_edges()
-					break
-
-			if not target_arg.is_empty():
-				## The boolean state determining if vision assist should be enabled,
-				## inferred from console arguments.
-				var active: bool = target_arg.to_lower() == "on"
-
-				if has_node("/root/Events"):
-					var events: Node = get_node("/root/Events")
-					if events.has_signal("vision_assist_toggled"):
-						events.emit_signal("vision_assist_toggled", active)
-
-				print("Console: visionassist toggled. State: ", active)
-				write("Vision Assist mode: " + ("ON" if active else "OFF"), "green")
+			if args.size() > 0:
+				var arg1: String = args[0].to_lower()
+				
+				if arg1 in ["on", "off"]:
+					var active: bool = (arg1 == "on")
+					if has_node("/root/Events"):
+						var events: Node = get_node("/root/Events")
+						if events.has_signal("vision_assist_toggled"):
+							events.emit_signal("vision_assist_toggled", active)
+					write("Vision Assist: " + ("ON" if active else "OFF"), "green")
+					print("Console: Vision assist toggled to ", active)
+				
+				# NEW: Handle background mode swapping with pure_black added
+				elif arg1 == "mode" and args.size() == 2:
+					var mode_name: String = args[1].to_lower()
+					if mode_name in ["black_and_white", "aaa_blue", "pure_black"]:
+						if has_node("/root/Events"):
+							var events: Node = get_node("/root/Events")
+							if events.has_signal("vision_assist_mode_changed"):
+								events.emit_signal("vision_assist_mode_changed", mode_name)
+						write("Vision Assist mode set to: " + mode_name, "green")
+						print("Console: Vision assist mode changed to ", mode_name)
+					else:
+						write("Invalid mode. Use 'black_and_white', 'aaa_blue', or 'pure_black'.", "yellow")
+				
+				elif arg1 == "color" and args.size() == 3:
+					var target_group: String = args[1].to_lower()
+					var color_name: String = args[2].to_lower()
+					
+					if has_node("/root/Events"):
+						var events: Node = get_node("/root/Events")
+						if events.has_signal("vision_assist_color_changed"):
+							events.emit_signal("vision_assist_color_changed", target_group, color_name)
+					write("Vision Assist: Changed " + target_group + " to " + color_name, "green")
+					print("Console: Vision assist color changed for ", target_group)
 			else:
-				write("Usage: visionassist <on/off>", "yellow")
+				write("Usage: visionassist <on/off> OR visionassist mode <black_and_white/aaa_blue/pure_black> OR visionassist color <group> <color>", "yellow")
 		"die":
 			if is_debug_allowed:
 				print("InGameConsole: _process_command() called. Action: Executing 'die' command.")
@@ -687,6 +703,18 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 						)
 				else:
 					write("Player node not found in the 'player' group.", "yellow")
+			else:
+				write("Unknown command: '" + cmd + "'. Type 'help' for a list.", "red")
+		"normals":
+			if is_debug_allowed:
+				print("InGameConsole: _process_command() called. Action: Toggled Normal View")
+				var vp: Viewport = get_viewport()
+				if vp.debug_draw == Viewport.DEBUG_DRAW_NORMAL_BUFFER:
+					vp.debug_draw = Viewport.DEBUG_DRAW_DISABLED
+					write("Normal view OFF.", "yellow")
+				else:
+					vp.debug_draw = Viewport.DEBUG_DRAW_NORMAL_BUFFER
+					write("Normal view ON.", "green")
 			else:
 				write("Unknown command: '" + cmd + "'. Type 'help' for a list.", "red")
 		_:

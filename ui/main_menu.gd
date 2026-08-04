@@ -18,6 +18,9 @@ const CHAPTER_SCREEN: PackedScene = preload("res://ui/menu_chapter_screen.tscn")
 ## Array of control panels corresponding to the tab_buttons.
 @export var option_panels: Array[Control]
 
+## The audio player responsible for playing the main theme music on the title screen.
+@export var main_theme_player: AudioStreamPlayer
+
 ## The main vertical container holding the primary menu navigation buttons.
 @onready var main_buttons: VBoxContainer = $MarginContainer/MainButtons
 
@@ -113,6 +116,21 @@ func _check_game_context() -> void:
 			restart_button.hide()
 		if save_button:
 			save_button.hide()
+		
+		# If we have no toggle_pause, we are on the main title screen. Play music.
+		_play_main_theme()
+
+
+func _play_main_theme() -> void:
+	if main_theme_player and not main_theme_player.playing:
+		print("Audio: Playing main theme music.")
+		main_theme_player.play()
+
+
+func _stop_main_theme() -> void:
+	if main_theme_player and main_theme_player.playing:
+		print("Audio: Stopping main theme music.")
+		main_theme_player.stop()
 
 
 func _return_to_main_buttons() -> void:
@@ -127,6 +145,7 @@ func _return_to_main_buttons() -> void:
 
 func _on_resume_pressed() -> void:
 	print("UI: Player clicked Resume.")
+	_stop_main_theme()
 	var parent: Node = get_parent()
 	if parent and parent.has_method("toggle_pause"):
 		parent.call("toggle_pause")
@@ -134,6 +153,7 @@ func _on_resume_pressed() -> void:
 
 func _on_new_game_pressed() -> void:
 	print("UI: Player clicked New Game.")
+	_stop_main_theme()
 	if not has_calibrated:
 		_apply_bucket_calibration()
 
@@ -145,6 +165,7 @@ func _on_new_game_pressed() -> void:
 
 func _on_start_game_pressed() -> void:
 	print("UI: Player clicked Restart Game.")
+	_stop_main_theme()
 	if not has_calibrated:
 		_apply_bucket_calibration()
 

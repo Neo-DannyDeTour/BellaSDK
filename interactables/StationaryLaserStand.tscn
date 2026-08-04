@@ -73,8 +73,9 @@ shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
 shader_parameter/blink_speed = 8.00000038
 shader_parameter/min_intensity = 0.01
 shader_parameter/max_intensity = 0.050000002375
+shader_parameter/alpha_scissor_threshold = 0.5
 
-[node name="StationaryLaserStand" type="StaticBody3D" unique_id=537276294]
+[node name="StationaryLaserStand" type="StaticBody3D" unique_id=537276294 groups=["interactables"]]
 script = ExtResource("1_3nf4h")
 max_distance = 10.0
 rotation_speed = 1.0
@@ -83,19 +84,19 @@ rotation_speed = 1.0
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.673645, 0)
 shape = SubResource("BoxShape3D_yubuw")
 
-[node name="PillarMesh" type="CSGCylinder3D" parent="." unique_id=2052673219]
+[node name="PillarMesh" type="CSGCylinder3D" parent="." unique_id=2052673219 groups=["interactables"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
 radius = 0.1
 height = 1.5
 
-[node name="Turret" type="Node3D" parent="." unique_id=1066301723]
+[node name="Turret" type="Node3D" parent="." unique_id=1066301723 groups=["interactables"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -0.09069554)
 
-[node name="CSGBox3D" type="CSGBox3D" parent="Turret" unique_id=2053084450]
+[node name="CSGBox3D" type="CSGBox3D" parent="Turret" unique_id=2053084450 groups=["interactables"]]
 size = Vector3(0.4, 0.4, 0.4)
 material = SubResource("StandardMaterial3D_tctc8")
 
-[node name="BeamMesh" type="MeshInstance3D" parent="Turret" unique_id=1083674601]
+[node name="BeamMesh" type="MeshInstance3D" parent="Turret" unique_id=1083674601 groups=["interactables"]]
 transform = Transform3D(1, 0, 0, 0, 1.3113416e-07, -1, 0, 1, 1.3113416e-07, 0, 0, -0.5)
 mesh = SubResource("CylinderMesh_hymf2")
 

@@ -11,7 +11,7 @@
 [sub_resource type="SphereShape3D" id="SphereShape3D_hobao"]
 radius = 8.0
 
-[node name="TentacleEnemy" type="StaticBody3D" unique_id=1499900301 groups=["enemy"]]
+[node name="TentacleEnemy" type="StaticBody3D" unique_id=1499900301 groups=["enemies"]]
 collision_layer = 16
 collision_mask = 2
 script = ExtResource("1_hobao")

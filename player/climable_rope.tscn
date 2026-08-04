@@ -29,8 +29,9 @@ shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
 shader_parameter/blink_speed = 4.0
 shader_parameter/min_intensity = 0.0
 shader_parameter/max_intensity = 0.5
+shader_parameter/alpha_scissor_threshold = 0.5
 
-[node name="ClimableRope" type="Node3D" unique_id=1704021531 node_paths=PackedStringArray("rope_sound", "slide_sound")]
+[node name="ClimableRope" type="Node3D" unique_id=1704021531 node_paths=PackedStringArray("rope_sound", "slide_sound") groups=["interactables"]]
 script = ExtResource("1_icxtj")
 swing_force = 1200.0
 rope_sound = NodePath("AudioStreamPlayer3D")

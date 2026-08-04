@@ -36,6 +36,7 @@ GraphicsManager="*uid://c165uw26ca5hj"
 ShockwaveManager3d="*uid://l8cg0oru71au"
 GlobalSettings="*uid://c1qd5kgpbvddv"
 HighContrastManager="*uid://dsoaonf445p5r"
+VisionAssistManager="*uid://clh0dnaj1r33x"
 
 [debug]
 

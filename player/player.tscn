@@ -414,6 +414,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
 
 [node name="Camera3D" type="Camera3D" parent="Head/Eyes" unique_id=1414380114]
 script = ExtResource("2_a2xo5")
+noise_speed = null
+max_offset_x = null
+max_offset_y = null
+max_roll_z = null
 
 [node name="InteractionShapeCast" type="ShapeCast3D" parent="Head/Eyes/Camera3D" unique_id=1917702885]
 unique_name_in_owner = true
