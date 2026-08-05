@@ -30,7 +30,7 @@ func _ready() -> void:
 	if Events.has_signal("vision_assist_toggled"):
 		if not Events.vision_assist_toggled.is_connected(_on_vision_assist_toggled):
 			Events.vision_assist_toggled.connect(_on_vision_assist_toggled)
-			
+
 	# Cache the shader material for 60 FPS safe uniform updates
 	if is_instance_valid(vision_assist_mesh):
 		var active_mat: Material = vision_assist_mesh.get_active_material(0)
@@ -39,7 +39,7 @@ func _ready() -> void:
 			print("Camera3D: Vision assist shader cached successfully.")
 		else:
 			push_error("Camera3D: VisionAssistMesh lacks a valid ShaderMaterial on surface 0.")
-			
+
 	if Events.has_signal("vision_assist_mode_changed"):
 		if not Events.vision_assist_mode_changed.is_connected(set_vision_assist_mode):
 			Events.vision_assist_mode_changed.connect(set_vision_assist_mode)
@@ -97,17 +97,17 @@ func set_vision_assist_mode(mode_name: String) -> void:
 	print("Camera3D: Changing vision assist mode to: ", mode_name)
 	if not is_instance_valid(_vision_shader_material):
 		return
-		
+
 	match mode_name:
 		"black_and_white":
 			_vision_shader_material.set_shader_parameter("base_color", Color.WHITE)
 			_vision_shader_material.set_shader_parameter("outline_color", Color.BLACK)
 		"aaa_blue":
 			# Adjust this color to match the exact background blue you want
-			_vision_shader_material.set_shader_parameter("base_color", Color(0.1, 0.1, 0.4, 1.0)) 
+			_vision_shader_material.set_shader_parameter("base_color", Color(0.1, 0.1, 0.4, 1.0))
 			_vision_shader_material.set_shader_parameter("outline_color", Color.BLACK)
 		"pure_black":
 			_vision_shader_material.set_shader_parameter("base_color", Color.BLACK)
-			# Using white outlines for high-contrast wireframe navigation. 
+			# Using white outlines for high-contrast wireframe navigation.
 			# If you want a complete void where ONLY grouped items are visible, change this to Color.BLACK.
 			_vision_shader_material.set_shader_parameter("outline_color", Color.WHITE)

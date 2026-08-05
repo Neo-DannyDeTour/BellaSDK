@@ -644,16 +644,16 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 		"visionassist":
 			if args.size() > 0:
 				var arg1: String = args[0].to_lower()
-				
+
 				if arg1 in ["on", "off"]:
-					var active: bool = (arg1 == "on")
+					var active: bool = arg1 == "on"
 					if has_node("/root/Events"):
 						var events: Node = get_node("/root/Events")
 						if events.has_signal("vision_assist_toggled"):
 							events.emit_signal("vision_assist_toggled", active)
 					write("Vision Assist: " + ("ON" if active else "OFF"), "green")
 					print("Console: Vision assist toggled to ", active)
-				
+
 				# NEW: Handle background mode swapping with pure_black added
 				elif arg1 == "mode" and args.size() == 2:
 					var mode_name: String = args[1].to_lower()
@@ -665,20 +665,28 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 						write("Vision Assist mode set to: " + mode_name, "green")
 						print("Console: Vision assist mode changed to ", mode_name)
 					else:
-						write("Invalid mode. Use 'black_and_white', 'aaa_blue', or 'pure_black'.", "yellow")
-				
+						write(
+							"Invalid mode. Use 'black_and_white', 'aaa_blue', or 'pure_black'.",
+							"yellow"
+						)
+
 				elif arg1 == "color" and args.size() == 3:
 					var target_group: String = args[1].to_lower()
 					var color_name: String = args[2].to_lower()
-					
+
 					if has_node("/root/Events"):
 						var events: Node = get_node("/root/Events")
 						if events.has_signal("vision_assist_color_changed"):
-							events.emit_signal("vision_assist_color_changed", target_group, color_name)
+							events.emit_signal(
+								"vision_assist_color_changed", target_group, color_name
+							)
 					write("Vision Assist: Changed " + target_group + " to " + color_name, "green")
 					print("Console: Vision assist color changed for ", target_group)
 			else:
-				write("Usage: visionassist <on/off> OR visionassist mode <black_and_white/aaa_blue/pure_black> OR visionassist color <group> <color>", "yellow")
+				write(
+					"Usage: visionassist <on/off> OR visionassist mode <black_and_white/aaa_blue/pure_black> OR visionassist color <group> <color>",
+					"yellow"
+				)
 		"die":
 			if is_debug_allowed:
 				print("InGameConsole: _process_command() called. Action: Executing 'die' command.")
