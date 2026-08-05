@@ -91,7 +91,7 @@ func load_shader(path: String) -> RID:
 	return shader_cache[path]
 
 
-func create_storage_buffer(size: int, data: PackedByteArray = [], usage: int = 0) -> Descriptor:
+func create_storage_buffer(size: int, data: PackedByteArray = [], usage: int = 0) -> RID:
 	if size > data.size():
 		var padding: PackedByteArray = PackedByteArray()
 		padding.resize(size - data.size())
@@ -102,7 +102,7 @@ func create_storage_buffer(size: int, data: PackedByteArray = [], usage: int = 0
 	)
 
 
-func create_uniform_buffer(size: int, data: PackedByteArray = []) -> Descriptor:
+func create_uniform_buffer(size: int, data: PackedByteArray = []) -> RID:
 	size = maxi(16, size)
 	if size > data.size():
 		var padding: PackedByteArray = PackedByteArray()
@@ -122,7 +122,7 @@ func create_texture(
 	num_layers: int = 1,
 	view: RDTextureView = RDTextureView.new(),
 	data: PackedByteArray = []
-) -> Descriptor:
+) -> RID:
 	assert(num_layers >= 1, "Texture must have at least 1 layer.")
 	var texture_format: RDTextureFormat = RDTextureFormat.new()
 	texture_format.array_layers = num_layers

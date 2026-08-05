@@ -116,7 +116,7 @@ func _check_game_context() -> void:
 			restart_button.hide()
 		if save_button:
 			save_button.hide()
-		
+
 		# If we have no toggle_pause, we are on the main title screen. Play music.
 		_play_main_theme()
 
