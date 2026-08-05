@@ -2,6 +2,12 @@
 class_name JumpPad
 extends Area3D
 
+## Drag and drop your target node here in the Inspector
+@export var assigned_target: Node3D:
+	set(value):
+		assigned_target = value
+		_update_trajectory()
+
 ## The peak height the player reaches during the jump trajectory.
 @export var apex_height: float = 3.0:
 	set(value):
@@ -39,13 +45,14 @@ var _custom_gravity_up: float = 9.8
 ## The custom gravity applied while the player is descending.
 var _custom_gravity_down: float = 9.8
 
+## Cached reference to the fallback child 'Target' node, used to determine the final destination's Y-position during flight simulation.
+var _target_node: Node3D
+
 ## The last recorded position of the jump pad to detect movement.
 var _last_start_pos: Vector3 = Vector3.ZERO
 ## The last recorded position of the target to detect movement.
 var _last_target_pos: Vector3 = Vector3.ZERO
 
-## Cached Target node to avoid repeated get_node calls.
-var _target_node: Node3D
 ## Cached BallVisual node.
 var _ball_visual: Node3D
 ## Cached LineVisual node.
@@ -81,14 +88,11 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	if not is_instance_valid(_target_node):
-		_target_node = get_node_or_null("Target") as Node3D
-
-	if is_instance_valid(_target_node):
-		if global_position != _last_start_pos or _target_node.global_position != _last_target_pos:
+	if is_instance_valid(assigned_target):
+		if global_position != _last_start_pos or assigned_target.global_position != _last_target_pos:
 			_update_trajectory()
 			_last_start_pos = global_position
-			_last_target_pos = _target_node.global_position
+			_last_target_pos = assigned_target.global_position
 
 	# Simulate the ball flight in the editor
 	if _flight_time > 0.0 and Engine.is_editor_hint():
@@ -108,14 +112,14 @@ func _process(delta: float) -> void:
 
 
 func _update_trajectory() -> void:
-	if not is_instance_valid(_target_node):
-		_target_node = get_node_or_null("Target") as Node3D
+	if not is_inside_tree():
+		return
 
-	if not is_instance_valid(_target_node):
+	if not is_instance_valid(assigned_target):
 		return
 
 	var p_start: Vector3 = global_position
-	var p_end: Vector3 = _target_node.global_position
+	var p_end: Vector3 = assigned_target.global_position
 
 	var y_apex: float = maxf(p_start.y, p_end.y) + apex_height
 	var h_start: float = y_apex - p_start.y

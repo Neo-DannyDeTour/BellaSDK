@@ -87,6 +87,9 @@ signal immobilize_debuff_applied(duration: float)
 @warning_ignore("unused_signal")
 signal player_electrocuted
 
+@warning_ignore("unused_signal")
+signal hint_requested(message: String, duration: float)
+
 # --- REPLACED FONT SIGNAL ---
 signal font_changed(font_name: String)
 

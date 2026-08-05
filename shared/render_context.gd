@@ -10,21 +10,17 @@ class DeletionQueue:
 		queue.push_back(rid)
 		return rid
 
-	func flush(device: RenderingDevice) -> void:
-		# Removed device.sync() - The global RenderingServer manages deferred cleanup natively.
+	func flush(current_device: RenderingDevice) -> void:
 		for i: int in range(queue.size() - 1, -1, -1):
 			if not queue[i].is_valid():
 				continue
-			device.free_rid(queue[i])
-
+			current_device.free_rid(queue[i])
 		queue.clear()
 
-	func free_rid(device: RenderingDevice, rid: RID) -> void:
+	func free_rid(current_device: RenderingDevice, rid: RID) -> void:
 		var rid_idx: int = queue.find(rid)
 		assert(rid_idx != -1, "RID was not found in deletion queue!")
-
-		# Removed device.sync()
-		device.free_rid(queue.pop_at(rid_idx))
+		current_device.free_rid(queue.pop_at(rid_idx))
 
 
 class Descriptor:
@@ -36,23 +32,27 @@ class Descriptor:
 		type = new_type
 
 
+## The core Godot RenderingDevice instance used for all low-level GPU operations.
 var device: RenderingDevice
+## A specialized queue that tracks allocated RIDs and safely frees them to prevent VRAM memory leaks.
 var deletion_queue: DeletionQueue = DeletionQueue.new()
+## A dictionary mapping file paths (String) to compiled shader RIDs to avoid duplicate compilations.
 var shader_cache: Dictionary
+## A flag indicating whether the rendering device has pending submissions that require synchronization.
 var needs_sync: bool = false
 
 
 static func create(target_device: RenderingDevice = null) -> RenderingContext:
 	var context: RenderingContext = RenderingContext.new()
+	# CRITICAL FIX: Default to the global rendering device so Texture2DArrayRD can read the RIDs.
 	context.device = (
-		RenderingServer.create_local_rendering_device() if not target_device else target_device
+		RenderingServer.get_rendering_device() if not target_device else target_device
 	)
 	return context
 
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
-		# All resources must be freed after use to avoid memory leaks.
 		deletion_queue.flush(device)
 		shader_cache.clear()
 		if device != RenderingServer.get_rendering_device():
@@ -91,7 +91,7 @@ func load_shader(path: String) -> RID:
 	return shader_cache[path]
 
 
-func create_storage_buffer(size: int, data: PackedByteArray = [], usage: int = 0) -> RID:
+func create_storage_buffer(size: int, data: PackedByteArray = [], usage: int = 0) -> Descriptor:
 	if size > data.size():
 		var padding: PackedByteArray = PackedByteArray()
 		padding.resize(size - data.size())
@@ -102,7 +102,7 @@ func create_storage_buffer(size: int, data: PackedByteArray = [], usage: int = 0
 	)
 
 
-func create_uniform_buffer(size: int, data: PackedByteArray = []) -> RID:
+func create_uniform_buffer(size: int, data: PackedByteArray = []) -> Descriptor:
 	size = maxi(16, size)
 	if size > data.size():
 		var padding: PackedByteArray = PackedByteArray()
@@ -114,7 +114,6 @@ func create_uniform_buffer(size: int, data: PackedByteArray = []) -> RID:
 	)
 
 
-# CHANGED: Default num_layers is now 1 to prevent assertion failure
 func create_texture(
 	dimensions: Vector2i,
 	format: RenderingDevice.DataFormat,
@@ -122,7 +121,7 @@ func create_texture(
 	num_layers: int = 1,
 	view: RDTextureView = RDTextureView.new(),
 	data: PackedByteArray = []
-) -> RID:
+) -> Descriptor:
 	assert(num_layers >= 1, "Texture must have at least 1 layer.")
 	var texture_format: RDTextureFormat = RDTextureFormat.new()
 	texture_format.array_layers = num_layers
@@ -141,8 +140,6 @@ func create_texture(
 	)
 
 
-## Creates a descriptor set. The ordering of the provided descriptors matches the binding ordering
-## within the shader.
 func create_descriptor_set(
 	descriptors: Array[Descriptor], shader: RID, descriptor_set_index: int = 0
 ) -> RID:
@@ -150,13 +147,12 @@ func create_descriptor_set(
 	for i: int in range(descriptors.size()):
 		var uniform: RDUniform = RDUniform.new()
 		uniform.uniform_type = descriptors[i].type
-		uniform.binding = i  # This matches the binding in the shader.
+		uniform.binding = i 
 		uniform.add_id(descriptors[i].rid)
 		uniforms.push_back(uniform)
 	return deletion_queue.push(device.uniform_set_create(uniforms, shader, descriptor_set_index))
 
 
-## Returns a [Callable] which will dispatch a compute pipeline.
 func create_pipeline(block_dimensions: Array, descriptor_sets: Array, shader: RID) -> Callable:
 	var pipeline: RID = deletion_queue.push(device.compute_pipeline_create(shader))
 
@@ -175,7 +171,7 @@ func create_pipeline(block_dimensions: Array, descriptor_sets: Array, shader: RI
 
 		assert(
 			block_dimensions.size() == 3 or block_dimensions_overwrite_buffer.is_valid(),
-			"Must specify block dimensions or specify a dispatch indirect buffer!"
+            "Must specify block dimensions or specify a dispatch indirect buffer!"
 		)
 		assert(sets.size() >= 1, "Must specify at least one descriptor set!")
 
@@ -200,8 +196,6 @@ func create_pipeline(block_dimensions: Array, descriptor_sets: Array, shader: RI
 			)
 
 
-## Returns a [PackedByteArray] from the provided data, whose size is rounded up to the nearest
-## multiple of 16 for memory alignment.
 static func create_push_constant(data: Array) -> PackedByteArray:
 	var packed_size: int = data.size() * 4
 	assert(packed_size <= 128, "Push constant size must be at most 128 bytes!")

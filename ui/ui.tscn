@@ -45,15 +45,18 @@ shader_parameter/effect_strength = 0.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_yev5y"]
 shader = ExtResource("2_x4jx1")
+shader_parameter/outline_width = 1.0
 
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_xlq6p"]
 load_path = "res://.godot/imported/UI_Circle.svg-cd8c28fc9c5e0f9653f2a35a84217264.ctex"
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_gdt2y"]
 shader = ExtResource("2_x4jx1")
+shader_parameter/outline_width = 1.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_8dubc"]
 shader = ExtResource("2_x4jx1")
+shader_parameter/outline_width = 1.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nt7q6"]
 bg_color = Color(0.040375, 0.041947637, 0.037145004, 1)
@@ -362,17 +365,19 @@ alignment = 0
 [node name="DeathScreen" parent="." unique_id=1910211973 instance=ExtResource("16_mf2ns")]
 visible = false
 
-[node name="WarningLabel" type="Label" parent="." unique_id=562618420]
+[node name="WarningCanvasGroup" type="CanvasGroup" parent="." unique_id=741384814]
+
+[node name="WarningLabel" type="Label" parent="WarningCanvasGroup" unique_id=562618420]
 modulate = Color(1, 1, 1, 0)
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = 20.0
-offset_right = 20.0
-offset_bottom = 37.0
+offset_left = -0.5
+offset_top = -16.5
+offset_right = 0.5
+offset_bottom = 16.5
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_font_sizes/font_size = 32

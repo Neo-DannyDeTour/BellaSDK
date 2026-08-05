@@ -9,7 +9,9 @@ extends Area3D
 		_update_bounds()
 
 @export_category("Soundscape Settings")
+## The resource containing the ambient track and random sounds.
 @export var soundscape: SoundscapeData
+## The target volume for the ambient track when fully faded in.
 @export var base_volume_db: float = 0.0
 ## Duration in seconds for fading volume in and out.
 @export var fade_duration: float = 0.5
@@ -19,6 +21,8 @@ extends Area3D
 @export var loop_ambient: bool = true
 ## Check this to make this the fallback soundscape when no others are active.
 @export var is_default_soundscape: bool = false
+## Check this to ensure the soundscape only activates the very first time the player enters.
+@export var activate_once: bool = false
 
 # Shared across all instances to track global state
 static var current_active_zone: Area3D = null
@@ -32,6 +36,7 @@ var current_tween: Tween
 @onready var collision_shape: CollisionShape3D = $CollisionShape3D
 
 var _last_exit_time: int = 0
+var _has_been_activated: bool = false
 const DEBOUNCE_MSEC: int = 100
 
 
@@ -69,6 +74,7 @@ func _ready() -> void:
 
 # --- Editor Only: Update Shape Size ---
 func _update_bounds() -> void:
+	print("Updating bounds for: ", name)
 	if not is_inside_tree():
 		return
 
@@ -83,10 +89,15 @@ func _update_bounds() -> void:
 
 # --- Gameplay Logic ---
 func _on_body_entered(body: Node3D) -> void:
+	print("Body entered zone: ", name)
 	if Engine.is_editor_hint():
 		return
 
 	if body.is_in_group("player") and soundscape:
+		if activate_once and _has_been_activated:
+			print("Ignoring re-entry: ", name, " is set to activate_once and has already fired.")
+			return
+
 		if current_active_zone == self:
 			if Time.get_ticks_msec() - _last_exit_time > DEBOUNCE_MSEC:
 				print("Ignoring re-entry: ", name, " is already the active zone.")
@@ -94,10 +105,12 @@ func _on_body_entered(body: Node3D) -> void:
 
 		print("Player entered NEW soundscape: ", name)
 		current_active_zone = self
+		_has_been_activated = true
 		_start_soundscape()
 
 
 func _on_body_exited(body: Node3D) -> void:
+	print("Body exited zone: ", name)
 	if Engine.is_editor_hint():
 		return
 
@@ -116,6 +129,7 @@ func _on_body_exited(body: Node3D) -> void:
 
 
 func _deferred_check_fallback() -> void:
+	print("Checking fallback soundscape state.")
 	# If no new zone claimed the active spot this frame, trigger the default
 	if current_active_zone == null and default_zone != null:
 		if not default_zone.ambient_player.playing or default_zone.ambient_player.stream_paused:
@@ -144,7 +158,9 @@ func _start_soundscape() -> void:
 
 	if soundscape.random_sounds.size() > 0:
 		one_shot_player.volume_db = soundscape.random_volume_db
-		_schedule_next_random_sound()
+		# Only schedule if it isn't already running from a persist state
+		if timer.is_stopped():
+			_schedule_next_random_sound()
 
 
 func _stop_soundscape() -> void:
@@ -155,6 +171,7 @@ func _stop_soundscape() -> void:
 
 
 func _remote_stop(new_zone: Area3D) -> void:
+	print("Remote stop evaluated on: ", name)
 	# Stop if another zone overrides us while we are actively playing
 	var is_playing: bool = ambient_player.playing and not ambient_player.stream_paused
 	if new_zone != self and is_playing:
@@ -162,18 +179,14 @@ func _remote_stop(new_zone: Area3D) -> void:
 		_stop_soundscape()
 
 
-func _fade_volume(
-	player: AudioStreamPlayer, target_vol: float, pause_on_finish: bool = false
-) -> void:
+func _fade_volume(player: AudioStreamPlayer, target_vol: float, pause_on_finish: bool = false) -> void:
 	print("Fading volume for ", player.name, " to ", target_vol, " dB over ", fade_duration, "s.")
 
 	if current_tween and current_tween.is_running():
 		current_tween.kill()
 
 	current_tween = create_tween()
-	current_tween.tween_property(player, "volume_db", target_vol, fade_duration).set_trans(
-		Tween.TRANS_SINE
-	)
+	current_tween.tween_property(player, "volume_db", target_vol, fade_duration).set_trans(Tween.TRANS_SINE)
 
 	if pause_on_finish:
 		current_tween.tween_callback(_pause_player.bind(player))
@@ -204,8 +217,9 @@ func _on_timer_timeout() -> void:
 
 
 func _on_ambient_finished() -> void:
+	print("Ambient track finished in: ", name)
 	if loop_ambient:
-		print("Ambient track finished. Looping enabled, restarting: ", name)
+		print("Looping enabled, restarting: ", name)
 		ambient_player.play()
 	else:
-		print("Ambient track finished. Looping disabled: ", name)
+		print("Looping disabled: ", name)
