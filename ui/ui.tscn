@@ -20,6 +20,7 @@
 [ext_resource type="Texture2D" uid="uid://buyk2btocs7de" path="res://assets/images/UI_icon_boot_sprint.png" id="13_ju45i"]
 [ext_resource type="Texture2D" uid="uid://4exusdjgfeuy" path="res://assets/images/UI_Icon_Boot.png" id="14_74toj"]
 [ext_resource type="PackedScene" uid="uid://r7e1pqddjcjx" path="res://ui/death_screen.tscn" id="16_mf2ns"]
+[ext_resource type="PackedScene" uid="uid://sf0r2kupvakg" path="res://ui/magnifying_glass_ui.tscn" id="21_3lbto"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_p7vwb"]
 shader = ExtResource("5_8dubc")
@@ -45,18 +46,15 @@ shader_parameter/effect_strength = 0.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_yev5y"]
 shader = ExtResource("2_x4jx1")
-shader_parameter/outline_width = 1.0
 
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_xlq6p"]
 load_path = "res://.godot/imported/UI_Circle.svg-cd8c28fc9c5e0f9653f2a35a84217264.ctex"
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_gdt2y"]
 shader = ExtResource("2_x4jx1")
-shader_parameter/outline_width = 1.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_8dubc"]
 shader = ExtResource("2_x4jx1")
-shader_parameter/outline_width = 1.0
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nt7q6"]
 bg_color = Color(0.040375, 0.041947637, 0.037145004, 1)
@@ -382,6 +380,19 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_font_sizes/font_size = 32
 horizontal_alignment = 1
+
+[node name="NoteOverlayUI" type="CanvasLayer" parent="." unique_id=825799846]
+
+[node name="NoteText" type="RichTextLabel" parent="NoteOverlayUI" unique_id=1426030487 groups=["note_instruction_label"]]
+visible = false
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -40.0
+offset_right = 40.0
+grow_vertical = 0
+
+[node name="MagnifyingGlassUI" parent="." unique_id=1398682804 instance=ExtResource("21_3lbto")]
 
 [connection signal="pressed" from="DebugPanel/PanelContainer/VBoxContainer/WireframeButton" to="." method="_on_wireframe_button_pressed"]
 [connection signal="pressed" from="DebugPanel/PanelContainer/VBoxContainer/WireframeOverlayButton" to="." method="_on_wireframe_overlay_button_pressed"]

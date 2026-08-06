@@ -1,0 +1,45 @@
+[gd_scene format=3 uid="uid://rwrkhcgtcnw4"]
+
+[ext_resource type="Script" uid="uid://dephst365aauh" path="res://interactables/note_item.gd" id="1_8a0pr"]
+[ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="1_hvpk8"]
+[ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="2_8a0pr"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="3_2ls84"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_cmsnd"]
+size = Vector3(0.2, 0.05, 0.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_8a0pr"]
+size = Vector3(0.2, 0.01, 0.2)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_tx8to"]
+render_priority = 0
+shader = ExtResource("3_2ls84")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.2
+shader_parameter/max_intensity = 1.0
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[node name="NoteItem" type="StaticBody3D" unique_id=817414519]
+collision_layer = 5
+collision_mask = 2
+script = ExtResource("1_8a0pr")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1828273434]
+shape = SubResource("BoxShape3D_cmsnd")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=234232508]
+mesh = SubResource("BoxMesh_8a0pr")
+
+[node name="InteractComponent" type="Node" parent="." unique_id=20050436]
+script = ExtResource("1_hvpk8")
+metadata/_custom_type_script = "uid://cqawbvidns1th"
+
+[node name="HighlightComponent" type="Node" parent="." unique_id=1215106020 node_paths=PackedStringArray("target_meshes", "interact_component")]
+script = ExtResource("2_8a0pr")
+outline_material = SubResource("ShaderMaterial_tx8to")
+target_meshes = [NodePath("../MeshInstance3D")]
+interact_component = NodePath("../InteractComponent")
+metadata/_custom_type_script = "uid://dgig0tamvkdxx"
+
+[node name="Label3D" type="Label3D" parent="." unique_id=1780790879]

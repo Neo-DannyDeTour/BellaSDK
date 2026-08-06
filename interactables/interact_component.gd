@@ -20,7 +20,12 @@ func _ready() -> void:
 
 func interact_with(character: CharacterBody3D) -> void:
 	print("InteractComponent: Passing interaction to parent from ", character.name)
-	interacted.emit(character)
+	interacted.emit(character) # Keep this in case you use signals elsewhere
+	
+	# Actually pass the call up to the parent node (e.g., your NoteItem)
+	var parent: Node = get_parent()
+	if parent and parent.has_method("interact_with"):
+		parent.interact_with(character)
 
 
 func hover_cursor(character: CharacterBody3D, hit_position: Vector3) -> void:

@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://sf0r2kupvakg"]
+
+[ext_resource type="Shader" uid="uid://b0hfpkkdhy5bc" path="res://vfx/magnifying_glass.gdshader" id="1_e2ne2"]
+[ext_resource type="Script" uid="uid://denaeseps36x4" path="res://ui/magnifying_glass_ui.gd" id="1_put1x"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_534t5"]
+shader = ExtResource("1_e2ne2")
+shader_parameter/mouse_uv = Vector2(0.5, 0.5)
+shader_parameter/glass_radius_uv = 0.15
+shader_parameter/zoom = 2.0
+shader_parameter/aspect_ratio = 1.777
+
+[node name="MagnifyingGlassUI" type="CanvasLayer" unique_id=1398682804]
+script = ExtResource("1_put1x")
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=197508022]
+material = SubResource("ShaderMaterial_534t5")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2

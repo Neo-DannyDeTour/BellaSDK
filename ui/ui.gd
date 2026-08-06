@@ -131,12 +131,11 @@ var default_crosshair_size: Vector2
 ## Container arranging collected keycard icons horizontally.
 @onready var keycards_container: HBoxContainer = $HealthMargin/VBoxContainer/KeycardsContainer
 
-# --- DEBUFF UI VARS ---
-## Tracks if the player is currently under the effects of an immobilize debuff.
-var is_immobilized: bool = false
+## Container for the note reading screen dimming and text.
+@onready var note_overlay_ui: CanvasLayer = $NoteOverlayUI
 
-## Tracks if the player is currently under the effects of a sprint block debuff.
-var is_sprint_blocked: bool = false
+## Label displaying the actual contents of the read note.
+@onready var note_text_label: RichTextLabel = $NoteOverlayUI/NoteText
 
 ## Container managing the layout of the sprint debuff UI.
 @onready var debuff_container: HBoxContainer = $HealthMargin/VBoxContainer/DebuffContainer
@@ -165,6 +164,13 @@ var is_sprint_blocked: bool = false
 
 ## Label displaying temporary hint or warning text to the player.
 @onready var warning_label: Label = $WarningCanvasGroup/WarningLabel
+
+# --- DEBUFF UI VARS ---
+## Tracks if the player is currently under the effects of an immobilize debuff.
+var is_immobilized: bool = false
+
+## Tracks if the player is currently under the effects of a sprint block debuff.
+var is_sprint_blocked: bool = false
 
 ## Animates the sprint debuff progress bar.
 var debuff_tween: Tween
@@ -289,7 +295,17 @@ func _ready() -> void:
 	if Events.has_signal("hint_requested"):
 		if not Events.hint_requested.is_connected(_show_warning_message):
 			Events.hint_requested.connect(_show_warning_message)
-
+	
+	if note_overlay_ui != null:
+		note_overlay_ui.hide()
+		
+	if Events.has_signal("note_opened"):
+		if not Events.note_opened.is_connected(_on_note_opened):
+			Events.note_opened.connect(_on_note_opened)
+			
+	if Events.has_signal("note_closed"):
+		if not Events.note_closed.is_connected(_on_note_closed):
+			Events.note_closed.connect(_on_note_closed)
 
 func _recenter_warning_ui() -> void:
 	print("UIController: _recenter_warning_ui() called to position hint text.")
@@ -894,3 +910,17 @@ func _on_player_electrocuted() -> void:
 			0.5
 		)
 		electro_tween.finished.connect(electricity_vignette.hide)
+
+
+func _on_note_opened(note_text: String) -> void:
+	print("UIController: _on_note_opened() received. Displaying text.")
+	if note_overlay_ui != null and note_text_label != null:
+		var formatted_text: String = note_text.replace("\\n", "\n")
+		note_text_label.text = formatted_text
+		note_overlay_ui.show()
+
+
+func _on_note_closed() -> void:
+	print("UIController: _on_note_closed() received. Hiding UI.")
+	if note_overlay_ui != null:
+		note_overlay_ui.hide()
