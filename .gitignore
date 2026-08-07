@@ -65,3 +65,7 @@ venv/
 assets/kenney_sounds/
 
 assets/the_goat_comic/
+
+models/
+
+addons/piper_tts_extension/

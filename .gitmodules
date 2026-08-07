@@ -1,0 +1,4 @@
+[submodule "addons/piper_tts_extension/godot-cpp"]
+	path = addons/piper_tts_extension/godot-cpp
+	url = https://github.com/godotengine/godot-cpp.git
+	branch = 4.2
