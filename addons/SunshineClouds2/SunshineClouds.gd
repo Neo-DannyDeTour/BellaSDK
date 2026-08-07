@@ -667,7 +667,7 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 				or blit_screen_images.size() == 0
 				or msaa_mode != last_msaa_mode
 			):
-				
+
 				# We removed the manual 'for uset: RID in uniform_sets' loop here.
 				# initialize_compute() now safely handles it at the top of clear_compute().
 

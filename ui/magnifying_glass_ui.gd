@@ -40,10 +40,10 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.physical_keycode == KEY_Z:
 		if event.pressed and not event.echo:
 			_toggle_glass()
-			
+
 	if not _is_active:
 		return
-		
+
 	# Handle mouse wheel scaling
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
@@ -56,18 +56,18 @@ func _process(_delta: float) -> void:
 	if _is_active and is_instance_valid(glass_rect) and glass_rect.material != null:
 		var mouse_pos: Vector2 = get_viewport().get_mouse_position()
 		var screen_size: Vector2 = get_viewport().get_visible_rect().size
-		
+
 		# Convert standard mouse position into 0.0 to 1.0 UV space for the shader
 		var mouse_uv: Vector2 = mouse_pos / screen_size
 		var aspect: float = screen_size.x / screen_size.y
-		
+
 		glass_rect.material.set_shader_parameter("mouse_uv", mouse_uv)
 		glass_rect.material.set_shader_parameter("aspect_ratio", aspect)
 
 
 func _toggle_glass() -> void:
 	_is_active = not _is_active
-	
+
 	if _is_active:
 		if is_instance_valid(glass_rect):
 			glass_rect.show()
@@ -82,7 +82,7 @@ func _toggle_glass() -> void:
 func _adjust_glass(direction: float) -> void:
 	_current_zoom = clampf(_current_zoom + (zoom_step * direction), min_zoom, max_zoom)
 	_current_radius = clampf(_current_radius + (radius_step * direction), min_radius, max_radius)
-	
+
 	_update_shader_params()
 	print("MagnifyingGlassUI: Adjusted | Zoom: ", _current_zoom, " | Radius: ", _current_radius)
 
