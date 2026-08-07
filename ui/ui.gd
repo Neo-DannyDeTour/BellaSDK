@@ -160,7 +160,7 @@ var default_crosshair_size: Vector2
 	$HealthMargin/VBoxContainer/ImmobilizeContainer/ImmobilizeBar
 
 ## CanvasGroup for grouping the warning/hint text UI.
-@onready var warning_canvas_group: CanvasGroup = $WarningCanvasGroup 
+@onready var warning_canvas_group: CanvasGroup = $WarningCanvasGroup
 
 ## Label displaying temporary hint or warning text to the player.
 @onready var warning_label: Label = $WarningCanvasGroup/WarningLabel
@@ -259,16 +259,16 @@ func _ready() -> void:
 
 	debuff_container.hide()
 	immobilize_container.hide()
-	
+
 	if warning_label:
 		warning_label.modulate.a = 0.0
 		# Apply simple outline theme override to solve the white box background bug
 		warning_label.add_theme_color_override("font_outline_color", Color.BLACK)
 		warning_label.add_theme_constant_override("outline_size", 12)
-	
+
 	if warning_canvas_group:
 		warning_canvas_group.material = null
-		
+
 	# Fix placement of the CanvasGroup Node2D relative to the screen
 	_recenter_warning_ui()
 	get_viewport().size_changed.connect(_recenter_warning_ui)
@@ -291,18 +291,18 @@ func _ready() -> void:
 	if electricity_vignette != null and electricity_vignette.material is ShaderMaterial:
 		electricity_vignette.material.set_shader_parameter("intensity", 0.0)
 		electricity_vignette.hide()
-		
+
 	if Events.has_signal("hint_requested"):
 		if not Events.hint_requested.is_connected(_show_warning_message):
 			Events.hint_requested.connect(_show_warning_message)
-	
+
 	if note_overlay_ui != null:
 		note_overlay_ui.hide()
-		
+
 	if Events.has_signal("note_opened"):
 		if not Events.note_opened.is_connected(_on_note_opened):
 			Events.note_opened.connect(_on_note_opened)
-			
+
 	if Events.has_signal("note_closed"):
 		if not Events.note_closed.is_connected(_on_note_closed):
 			Events.note_closed.connect(_on_note_closed)
@@ -311,16 +311,16 @@ func _recenter_warning_ui() -> void:
 	print("UIController: _recenter_warning_ui() called to position hint text.")
 	if not warning_canvas_group or not warning_label:
 		return
-		
+
 	var screen_size: Vector2 = get_viewport().get_visible_rect().size
-	
+
 	# Place the Node2D (CanvasGroup) exactly in the X center and 80px below the Y center
 	warning_canvas_group.position = Vector2(
-		screen_size.x / 2.0, 
+		screen_size.x / 2.0,
 		(screen_size.y / 2.0) + 70.0
 	)
-	
-	# Setting this preset relative to a 0x0 Node2D origin causes the label 
+
+	# Setting this preset relative to a 0x0 Node2D origin causes the label
 	# to perfectly center its own text bounds directly underneath that anchor point.
 	warning_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 
@@ -331,7 +331,7 @@ func _process(delta: float) -> void:
 	var current_opacity: float = vignette.material.get_shader_parameter(
 		"vignette_opacity"
 	) as float
-	
+
 	if current_opacity == null:
 		current_opacity = 0.0
 

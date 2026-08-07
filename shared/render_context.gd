@@ -147,7 +147,7 @@ func create_descriptor_set(
 	for i: int in range(descriptors.size()):
 		var uniform: RDUniform = RDUniform.new()
 		uniform.uniform_type = descriptors[i].type
-		uniform.binding = i 
+		uniform.binding = i
 		uniform.add_id(descriptors[i].rid)
 		uniforms.push_back(uniform)
 	return deletion_queue.push(device.uniform_set_create(uniforms, shader, descriptor_set_index))
