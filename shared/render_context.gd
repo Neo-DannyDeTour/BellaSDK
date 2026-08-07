@@ -171,7 +171,7 @@ func create_pipeline(block_dimensions: Array, descriptor_sets: Array, shader: RI
 
 		assert(
 			block_dimensions.size() == 3 or block_dimensions_overwrite_buffer.is_valid(),
-            "Must specify block dimensions or specify a dispatch indirect buffer!"
+			"Must specify block dimensions or specify a dispatch indirect buffer!"
 		)
 		assert(sets.size() >= 1, "Must specify at least one descriptor set!")
 

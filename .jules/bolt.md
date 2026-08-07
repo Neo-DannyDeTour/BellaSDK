@@ -2,3 +2,4 @@
 - Use `distance_squared_to()` over `distance_to()` when comparing a specific threshold in hot loops, but make sure to square the threshold being checked against to ensure mathematical parity (e.g., `dist_sq > 2.25` instead of `dist > 1.5`).
 - Ensure any `has_node()` or `get_node()` calls inside frequently checked conditions (like state transition scripts `enter()` or `exit()`) are replaced with `@onready` cached variables for dynamic properties if they run constantly.
 - Remember to `import gdtoolkit` or run `pip install gdtoolkit` when utilizing `gdlint` and `gdformat` since it might not be natively found on some runner machines out of the box.
+- For GDScript performance optimization, cache frequently accessed child nodes (such as StateMachine states) in a Dictionary during `_ready()` to replace expensive string-based `get_node()` or `has_node()` lookups inside hot functions with O(1) dictionary lookups.

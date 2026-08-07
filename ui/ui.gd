@@ -77,12 +77,11 @@ var default_crosshair_size: Vector2
 @onready var noclip_alert_container: MarginContainer = $NoclipAlertContainer
 
 ## Panel background for the noclip alert message.
-@onready var noclip_message_container: PanelContainer = \
-	$NoclipAlertContainer/NoclipMessageContainer
+@onready var noclip_message_container: PanelContainer = $NoclipAlertContainer/NoclipMessageContainer
 
 ## Label displaying the current noclip speed or status.
-@onready var noclip_label_message: Label = \
-	$NoclipAlertContainer/NoclipMessageContainer/NoclipLabelMessage
+@onready
+var noclip_label_message: Label = $NoclipAlertContainer/NoclipMessageContainer/NoclipLabelMessage
 
 ## CanvasLayer providing the debug overlay menu.
 @onready var debug_panel: CanvasLayer = $DebugPanel
@@ -103,8 +102,8 @@ var default_crosshair_size: Vector2
 @onready var wireframe_button: Button = $DebugPanel/PanelContainer/VBoxContainer/WireframeButton
 
 ## Button to toggle the green wireframe material overlay.
-@onready var wireframe_overlay_button: Button = \
-	$DebugPanel/PanelContainer/VBoxContainer/WireframeOverlayButton
+@onready
+var wireframe_overlay_button: Button = $DebugPanel/PanelContainer/VBoxContainer/WireframeOverlayButton
 
 ## Button to hide the main user interface.
 @onready var hide_ui_button: Button = $DebugPanel/PanelContainer/VBoxContainer/HideUIButton
@@ -141,23 +140,23 @@ var default_crosshair_size: Vector2
 @onready var debuff_container: HBoxContainer = $HealthMargin/VBoxContainer/DebuffContainer
 
 ## Icon indicating the sprint blocked debuff is active.
-@onready var sprint_debuff_icon: TextureRect = \
-	$HealthMargin/VBoxContainer/DebuffContainer/SprintDebuffIcon
+@onready
+var sprint_debuff_icon: TextureRect = $HealthMargin/VBoxContainer/DebuffContainer/SprintDebuffIcon
 
 ## Progress bar showing the remaining duration of the sprint debuff.
-@onready var sprint_debuff_bar: ProgressBar = \
-	$HealthMargin/VBoxContainer/DebuffContainer/SprintDebuffBar
+@onready
+var sprint_debuff_bar: ProgressBar = $HealthMargin/VBoxContainer/DebuffContainer/SprintDebuffBar
 
 ## Container managing the layout of the immobilize debuff UI.
 @onready var immobilize_container: HBoxContainer = $HealthMargin/VBoxContainer/ImmobilizeContainer
 
 ## Icon indicating the immobilize debuff is active.
-@onready var immobilize_icon: TextureRect = \
-	$HealthMargin/VBoxContainer/ImmobilizeContainer/ImmobilizeIcon
+@onready
+var immobilize_icon: TextureRect = $HealthMargin/VBoxContainer/ImmobilizeContainer/ImmobilizeIcon
 
 ## Progress bar showing the remaining duration of the immobilize debuff.
-@onready var immobilize_bar: ProgressBar = \
-	$HealthMargin/VBoxContainer/ImmobilizeContainer/ImmobilizeBar
+@onready
+var immobilize_bar: ProgressBar = $HealthMargin/VBoxContainer/ImmobilizeContainer/ImmobilizeBar
 
 ## CanvasGroup for grouping the warning/hint text UI.
 @onready var warning_canvas_group: CanvasGroup = $WarningCanvasGroup
@@ -307,6 +306,7 @@ func _ready() -> void:
 		if not Events.note_closed.is_connected(_on_note_closed):
 			Events.note_closed.connect(_on_note_closed)
 
+
 func _recenter_warning_ui() -> void:
 	print("UIController: _recenter_warning_ui() called to position hint text.")
 	if not warning_canvas_group or not warning_label:
@@ -315,10 +315,7 @@ func _recenter_warning_ui() -> void:
 	var screen_size: Vector2 = get_viewport().get_visible_rect().size
 
 	# Place the Node2D (CanvasGroup) exactly in the X center and 80px below the Y center
-	warning_canvas_group.position = Vector2(
-		screen_size.x / 2.0,
-		(screen_size.y / 2.0) + 70.0
-	)
+	warning_canvas_group.position = Vector2(screen_size.x / 2.0, (screen_size.y / 2.0) + 70.0)
 
 	# Setting this preset relative to a 0x0 Node2D origin causes the label
 	# to perfectly center its own text bounds directly underneath that anchor point.
@@ -328,9 +325,7 @@ func _recenter_warning_ui() -> void:
 func _process(delta: float) -> void:
 	var target_vignette_opacity: float = 0.8 if is_player_crouching else 0.0
 
-	var current_opacity: float = vignette.material.get_shader_parameter(
-		"vignette_opacity"
-	) as float
+	var current_opacity: float = vignette.material.get_shader_parameter("vignette_opacity") as float
 
 	if current_opacity == null:
 		current_opacity = 0.0
@@ -540,9 +535,11 @@ func _on_player_zoomed(is_zooming: bool) -> void:
 		zoom_tween.tween_property(ui_circle_zoom_inner, "modulate:a", 0.1, 0.3).from(0.0)
 		zoom_tween.tween_property(ui_circle_zoom_inner, "rotation", deg_to_rad(-45), 1.0).from(0.0)
 
-		zoom_tween.tween_property(
-			fisheye_zoom, "material:shader_parameter/effect_strength", 0.4, 0.2
-		).from(0.0)
+		(
+			zoom_tween
+			. tween_property(fisheye_zoom, "material:shader_parameter/effect_strength", 0.4, 0.2)
+			. from(0.0)
+		)
 
 	else:
 		center_dot.show()
