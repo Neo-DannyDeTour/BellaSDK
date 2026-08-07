@@ -172,14 +172,10 @@ func _process(delta: float) -> void:
 
 	# Used lerp_angle instead of lerp so it always takes the shortest path
 	_proxy_mesh_instance.rotation.x = lerp_angle(
-		_proxy_mesh_instance.rotation.x,
-		final_x,
-		sway_return_speed * delta
+		_proxy_mesh_instance.rotation.x, final_x, sway_return_speed * delta
 	)
 	_proxy_mesh_instance.rotation.y = lerp_angle(
-		_proxy_mesh_instance.rotation.y,
-		final_y,
-		sway_return_speed * delta
+		_proxy_mesh_instance.rotation.y, final_y, sway_return_speed * delta
 	)
 
 	# Decay relative mouse sway back to center
@@ -215,7 +211,10 @@ func _process(delta: float) -> void:
 
 				if intersection != null:
 					# Convert intersection from global space back to the quad's local space
-					var local_pt: Vector3 = _proxy_mesh_instance.global_transform.affine_inverse() * (intersection as Vector3)
+					var local_pt: Vector3 = (
+						_proxy_mesh_instance.global_transform.affine_inverse()
+						* (intersection as Vector3)
+					)
 					var quad: QuadMesh = _proxy_mesh_instance.mesh as QuadMesh
 					if is_instance_valid(quad):
 						# Map local coordinates to 0.0 - 1.0 UV space
@@ -228,7 +227,7 @@ func open_note(note_node: Node3D, note_text: String, player: CharacterBody3D) ->
 	print("NoteReader: Opening note UI and spawning proxy reading mesh.")
 	_is_reading = true
 	_is_inverted = false
-	_is_glass_active = false # Reset zoom state on new note
+	_is_glass_active = false  # Reset zoom state on new note
 	_current_zoom = 2.0
 	_current_radius = 0.2
 	_current_note = note_node
@@ -405,7 +404,9 @@ func _create_instruction_ui() -> void:
 	var ui_label: Label = get_tree().get_first_node_in_group("note_instruction_label") as Label
 
 	if not is_instance_valid(ui_label):
-		print("NoteReader: 'note_instruction_label' missing. Spawning dynamic CanvasLayer fallback.")
+		print(
+			"NoteReader: 'note_instruction_label' missing. Spawning dynamic CanvasLayer fallback."
+		)
 		_instruction_ui = CanvasLayer.new()
 		_instruction_ui.layer = 100
 		add_child(_instruction_ui)
@@ -416,9 +417,11 @@ func _create_instruction_ui() -> void:
 		ui_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
 
 		# Anchor to bottom and force it to grow upwards so text doesn't fall off-screen
-		ui_label.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE, Control.PRESET_MODE_MINSIZE)
+		ui_label.set_anchors_and_offsets_preset(
+			Control.PRESET_BOTTOM_WIDE, Control.PRESET_MODE_MINSIZE
+		)
 		ui_label.grow_vertical = Control.GROW_DIRECTION_BEGIN
-		ui_label.offset_bottom = -40 # Pushed slightly up from the absolute bottom edge
+		ui_label.offset_bottom = -40  # Pushed slightly up from the absolute bottom edge
 
 		ui_label.add_theme_color_override("font_outline_color", Color.BLACK)
 		ui_label.add_theme_constant_override("outline_size", 10)
@@ -452,15 +455,16 @@ func _update_instruction_text() -> void:
 
 	# Updated to include Z for the glass and Mouse Wheel for scaling
 	var text_format: String = (
-		"--- [ %s MODE ] ---\n" +
-		"Use %s%s%s%s or Hold [%s] + Mouse to Rotate.\n" +
-		"Double L-Click to Reset | Double R-Click to Invert Axis.\n" +
-        "Press [Z] for Magnifying Glass (Scroll to Scale) | Press [%s] to Close."
+		"--- [ %s MODE ] ---\n"
+		+ "Use %s%s%s%s or Hold [%s] + Mouse to Rotate.\n"
+		+ "Double L-Click to Reset | Double R-Click to Invert Axis.\n"
+		+ "Press [Z] for Magnifying Glass (Scroll to Scale) | Press [%s] to Close."
 	)
 
-	ui_label.text = text_format % [
-		mode_str, forward_key, left_key, backward_key, right_key, shoot_str, interact_key
-	]
+	ui_label.text = (
+		text_format
+		% [mode_str, forward_key, left_key, backward_key, right_key, shoot_str, interact_key]
+	)
 	print("NoteReader: Instruction UI updated and displayed.")
 
 

@@ -179,14 +179,18 @@ func _remote_stop(new_zone: Area3D) -> void:
 		_stop_soundscape()
 
 
-func _fade_volume(player: AudioStreamPlayer, target_vol: float, pause_on_finish: bool = false) -> void:
+func _fade_volume(
+	player: AudioStreamPlayer, target_vol: float, pause_on_finish: bool = false
+) -> void:
 	print("Fading volume for ", player.name, " to ", target_vol, " dB over ", fade_duration, "s.")
 
 	if current_tween and current_tween.is_running():
 		current_tween.kill()
 
 	current_tween = create_tween()
-	current_tween.tween_property(player, "volume_db", target_vol, fade_duration).set_trans(Tween.TRANS_SINE)
+	current_tween.tween_property(player, "volume_db", target_vol, fade_duration).set_trans(
+		Tween.TRANS_SINE
+	)
 
 	if pause_on_finish:
 		current_tween.tween_callback(_pause_player.bind(player))

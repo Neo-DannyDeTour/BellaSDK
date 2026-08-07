@@ -94,7 +94,7 @@ signal hint_requested(message: String, duration: float)
 signal note_opened(note_text: String)
 
 @warning_ignore("unused_signal")
-signal note_closed()
+signal note_closed
 
 # --- REPLACED FONT SIGNAL ---
 signal font_changed(font_name: String)

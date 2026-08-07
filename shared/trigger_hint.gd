@@ -2,15 +2,7 @@
 class_name HintTrigger
 extends Area3D
 
-enum HintType {
-	CUSTOM,
-	INTERACT,
-	JUMP,
-	CROUCH,
-	SPRINT,
-	FLASHLIGHT,
-	ZOOM
-}
+enum HintType { CUSTOM, INTERACT, JUMP, CROUCH, SPRINT, FLASHLIGHT, ZOOM }
 
 @export_category("Level Design")
 
@@ -94,7 +86,15 @@ func _on_body_entered(body: Node3D) -> void:
 	var raw_message: String = _get_raw_message()
 	var formatted_message: String = _format_message_with_keys(raw_message)
 
-	print("HintTrigger: Activated by ", body.name, " | Duration: ", duration, "s | Emitting: '", formatted_message, "'")
+	print(
+		"HintTrigger: Activated by ",
+		body.name,
+		" | Duration: ",
+		duration,
+		"s | Emitting: '",
+		formatted_message,
+		"'"
+	)
 	Events.hint_requested.emit(formatted_message, duration)
 
 
@@ -122,9 +122,16 @@ func _format_message_with_keys(text: String) -> String:
 	print("HintTrigger: Parsing keys for message template...")
 	var final_text: String = text
 	var actions: Array[String] = [
-		"forward", "backward", "left", "right",
-		"jump", "crouch", "sprint", "interact",
-		"flashlight", "zoom"
+		"forward",
+		"backward",
+		"left",
+		"right",
+		"jump",
+		"crouch",
+		"sprint",
+		"interact",
+		"flashlight",
+		"zoom"
 	]
 
 	for action: String in actions:

@@ -89,7 +89,10 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if is_instance_valid(assigned_target):
-		if global_position != _last_start_pos or assigned_target.global_position != _last_target_pos:
+		if (
+			global_position != _last_start_pos
+			or assigned_target.global_position != _last_target_pos
+		):
 			_update_trajectory()
 			_last_start_pos = global_position
 			_last_target_pos = assigned_target.global_position
