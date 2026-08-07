@@ -7,6 +7,7 @@
 
 ## Individual Scripts
 - player/player_old.gd (FPS Controller logic): Lukky, StayAtHome
+- the note system - CrookedSmile (https://www.youtube.com/@CrookedSmileStudios)
 
 ## UNKNOWN AUTHOR - NEEDS VERIFICATION
 - ui/chapter_title_container.gd

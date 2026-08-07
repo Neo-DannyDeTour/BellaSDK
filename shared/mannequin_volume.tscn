@@ -1,0 +1,18 @@
+[gd_scene format=3 uid="uid://yg35bulus8yr"]
+
+[ext_resource type="Script" uid="uid://khdx7cuw00h4" path="res://shared/mannequin_volume.gd" id="1_pbci5"]
+[ext_resource type="Texture2D" uid="uid://yg8prt8xbx2k" path="res://assets/images/Godiva_transparent.png" id="2_6ccmu"]
+[ext_resource type="Texture2D" uid="uid://bd22i52fao6pp" path="res://assets/images/Godiva_sit.png" id="3_7amp5"]
+[ext_resource type="PackedScene" uid="uid://2db87kewe2f2" path="res://player/player.tscn" id="3_bng1x"]
+[ext_resource type="Texture2D" uid="uid://c4wbsf0qffmsj" path="res://assets/images/Godiva_jump_climb.png" id="4_y5whk"]
+
+[node name="MannequinVolume" type="Node3D" unique_id=1254605603]
+script = ExtResource("1_pbci5")
+mannequin_texture = ExtResource("2_6ccmu")
+crouch_texture = ExtResource("3_7amp5")
+jump_climb_texture = ExtResource("4_y5whk")
+player_scene = ExtResource("3_bng1x")
+enable_depth_test = true
+box_heights = Array[float]([1.0, 1.8, 3.075510204081633])
+jump_forward_speed = 6.5
+show_collision_capsules = false
