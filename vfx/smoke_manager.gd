@@ -19,11 +19,17 @@ var active_holes: Array[Dictionary] = []
 var current_player_pos: Vector3 = Vector3.ZERO
 var global_time: float = 0.0
 
+## The RenderingDevice used for compute operations. Needs manual cleanup.
 var rd: RenderingDevice
+## The compiled compute shader. Needs manual cleanup.
 var shader: RID
+## The compute pipeline instance. Needs manual cleanup.
 var pipeline: RID
+## The 3D texture RID used for density storage. Needs manual cleanup.
 var texture_rid: RID
+## The storage buffer for hole data. Needs manual cleanup.
 var buffer_rid: RID
+## The uniform set binding all resources. MUST BE FREED FIRST during cleanup.
 var uniform_set: RID
 ## Holds the GPU texture RID for the generated noise. Needs manual cleanup.
 var noise_rd_rid: RID
@@ -155,6 +161,8 @@ func _cleanup_gpu() -> void:
 	print("SmokeManager: _cleanup_gpu() called. Freeing GPU resources to prevent VRAM leak.")
 	if not rd:
 		return
+	if uniform_set.is_valid():
+		rd.free_rid(uniform_set)
 	if pipeline.is_valid():
 		rd.free_rid(pipeline)
 	if shader.is_valid():
@@ -167,8 +175,6 @@ func _cleanup_gpu() -> void:
 		rd.free_rid(noise_rd_rid)
 	if sampler_rid.is_valid():
 		rd.free_rid(sampler_rid)
-	if uniform_set.is_valid():
-		rd.free_rid(uniform_set)
 
 
 func register_fog_volume(volume: FogVolume) -> void:
