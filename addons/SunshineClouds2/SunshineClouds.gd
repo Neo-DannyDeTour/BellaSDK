@@ -293,9 +293,11 @@ func _init() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE and is_instance_valid(self):
 		RenderingServer.call_on_render_thread(clear_compute)
+
+
 #func _notification(what: int) -> void:
-	#if what == NOTIFICATION_PREDELETE and is_instance_valid(self):
-		#RenderingServer.call_on_render_thread(clear_compute)
+#if what == NOTIFICATION_PREDELETE and is_instance_valid(self):
+#RenderingServer.call_on_render_thread(clear_compute)
 
 
 func clear_compute() -> void:
@@ -418,59 +420,74 @@ func initialize_compute() -> void:
 
 	# Setup resources with explicit static casts
 	if not dither_noise:
-		dither_noise = ResourceLoader.load(
-            "res://addons/SunshineClouds2/NoiseTextures/bluenoise_Dither.png"
-		) as Texture2D
+		dither_noise = (
+			ResourceLoader.load("res://addons/SunshineClouds2/NoiseTextures/bluenoise_Dither.png")
+			as Texture2D
+		)
 	if not height_gradient:
-		height_gradient = ResourceLoader.load(
-            "res://addons/SunshineClouds2/NoiseTextures/HeightGradient.tres"
-		) as Texture2D
+		height_gradient = (
+			ResourceLoader.load("res://addons/SunshineClouds2/NoiseTextures/HeightGradient.tres")
+			as Texture2D
+		)
 	if not extra_large_noise_patterns:
-		extra_large_noise_patterns = ResourceLoader.load(
-            "res://addons/SunshineClouds2/NoiseTextures/ExtraLargeScaleNoise.tres"
-		) as Texture2D
+		extra_large_noise_patterns = (
+			ResourceLoader.load(
+				"res://addons/SunshineClouds2/NoiseTextures/ExtraLargeScaleNoise.tres"
+			)
+			as Texture2D
+		)
 	if not large_scale_noise:
-		large_scale_noise = ResourceLoader.load(
-            "res://addons/SunshineClouds2/NoiseTextures/LargeScaleNoise.tres"
-		) as Texture3D
+		large_scale_noise = (
+			ResourceLoader.load("res://addons/SunshineClouds2/NoiseTextures/LargeScaleNoise.tres")
+			as Texture3D
+		)
 	if not medium_scale_noise:
-		medium_scale_noise = ResourceLoader.load(
-            "res://addons/SunshineClouds2/NoiseTextures/MediumScaleNoise.tres"
-		) as Texture3D
+		medium_scale_noise = (
+			ResourceLoader.load("res://addons/SunshineClouds2/NoiseTextures/MediumScaleNoise.tres")
+			as Texture3D
+		)
 	if not small_scale_noise:
-		small_scale_noise = ResourceLoader.load(
-            "res://addons/SunshineClouds2/NoiseTextures/SmallScaleNoise.tres"
-		) as Texture3D
+		small_scale_noise = (
+			ResourceLoader.load("res://addons/SunshineClouds2/NoiseTextures/SmallScaleNoise.tres")
+			as Texture3D
+		)
 	if not curl_noise:
-		curl_noise = ResourceLoader.load(
-            "res://addons/SunshineClouds2/NoiseTextures/curl_noise_varied.tga"
-		) as Texture3D
+		curl_noise = (
+			ResourceLoader.load("res://addons/SunshineClouds2/NoiseTextures/curl_noise_varied.tga")
+			as Texture3D
+		)
 	if not compute_shader:
-		compute_shader = ResourceLoader.load(
-            "res://addons/SunshineClouds2/SunshineCloudsCompute.glsl"
-		) as RDShaderFile
+		compute_shader = (
+			ResourceLoader.load("res://addons/SunshineClouds2/SunshineCloudsCompute.glsl")
+			as RDShaderFile
+		)
 	if not pre_pass_compute_shader:
-		pre_pass_compute_shader = ResourceLoader.load(
-            "res://addons/SunshineClouds2/SunshineCloudsPreCompute.glsl"
-		) as RDShaderFile
+		pre_pass_compute_shader = (
+			ResourceLoader.load("res://addons/SunshineClouds2/SunshineCloudsPreCompute.glsl")
+			as RDShaderFile
+		)
 
 	## The compute shader resource for the display shader file.
 	var display_shader_file: RDShaderFile
 
 	if msaa_mode == RenderingServer.ViewportMSAA.VIEWPORT_MSAA_DISABLED:
-		post_pass_compute_shader = ResourceLoader.load(
-            "res://addons/SunshineClouds2/SunshineCloudsPostCompute.glsl"
-		) as RDShaderFile
-		display_shader_file = ResourceLoader.load(
-            "res://addons/SunshineClouds2/SunshineCloudsDisplay.glsl"
-		) as RDShaderFile
+		post_pass_compute_shader = (
+			ResourceLoader.load("res://addons/SunshineClouds2/SunshineCloudsPostCompute.glsl")
+			as RDShaderFile
+		)
+		display_shader_file = (
+			ResourceLoader.load("res://addons/SunshineClouds2/SunshineCloudsDisplay.glsl")
+			as RDShaderFile
+		)
 	else:
-		post_pass_compute_shader = ResourceLoader.load(
-            "res://addons/SunshineClouds2/SunshineCloudsPostCompute.msaa.glsl"
-		) as RDShaderFile
-		display_shader_file = ResourceLoader.load(
-            "res://addons/SunshineClouds2/SunshineCloudsDisplay.msaa.glsl"
-		) as RDShaderFile
+		post_pass_compute_shader = (
+			ResourceLoader.load("res://addons/SunshineClouds2/SunshineCloudsPostCompute.msaa.glsl")
+			as RDShaderFile
+		)
+		display_shader_file = (
+			ResourceLoader.load("res://addons/SunshineClouds2/SunshineCloudsDisplay.msaa.glsl")
+			as RDShaderFile
+		)
 
 	if (
 		not compute_shader
@@ -552,7 +569,7 @@ func initialize_compute() -> void:
 				1.0,
 			]
 		)
-		.to_byte_array()
+		. to_byte_array()
 	)
 
 	display_vertex_buffer = rd.vertex_buffer_create(display_vertex_data.size(), display_vertex_data)
@@ -641,9 +658,7 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 		if buffers:
 			msaa_mode = buffers.get_msaa_3d()
 			## Controls the is msaa on behavior.
-			var is_msaa_on: bool = (
-				msaa_mode != RenderingServer.ViewportMSAA.VIEWPORT_MSAA_DISABLED
-			)
+			var is_msaa_on: bool = msaa_mode != RenderingServer.ViewportMSAA.VIEWPORT_MSAA_DISABLED
 			## Controls the size behavior.
 			var size: Vector2i = buffers.get_internal_size()
 			if size.x == 0 and size.y == 0:
@@ -667,14 +682,12 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 				or blit_screen_images.size() == 0
 				or msaa_mode != last_msaa_mode
 			):
-
 				# We removed the manual 'for uset: RID in uniform_sets' loop here.
 				# initialize_compute() now safely handles it at the top of clear_compute().
 
 				initialize_compute()
 				initialize_raster_pipelines(
-					buffers.get_color_layer(0, is_msaa_on),
-					buffers.get_depth_layer(0, is_msaa_on)
+					buffers.get_color_layer(0, is_msaa_on), buffers.get_depth_layer(0, is_msaa_on)
 				)
 
 				accumulation_textures.clear()
@@ -682,8 +695,8 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 				color_images.clear()
 
 				#print(
-					#"SunshineCloudsGD: Successfully freed prior rendering pass "
-					#+ "arrays to prevent VRAM accumulation."
+				#"SunshineCloudsGD: Successfully freed prior rendering pass "
+				#+ "arrays to prevent VRAM accumulation."
 				#)
 
 				for item: RID in blit_screen_images:
