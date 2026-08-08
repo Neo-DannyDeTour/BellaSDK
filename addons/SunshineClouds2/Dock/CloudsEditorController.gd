@@ -45,9 +45,13 @@ var draw_brush_tool_prefab: PackedScene = preload(
 )
 var draw_brush_tool: MeshInstance3D
 var compute_enabled: bool = false
+## The RenderingDevice used for mask generation. Needs manual cleanup.
 var rd: RenderingDevice
+## The compute shader RID. Needs manual cleanup.
 var shader: RID = RID()
+## The compute pipeline RID. Needs manual cleanup.
 var pipeline: RID = RID()
+## The uniform set holding resources. MUST BE FREED FIRST during cleanup.
 var uniform_set: RID
 var push_constants: PackedByteArray
 var last_image_data: PackedByteArray = []
@@ -347,6 +351,11 @@ func initialize_compute() -> void:
 
 func clear_compute() -> void:
 	if rd:
+		## Frees the bound uniform set from VRAM to prevent orphan allocations.
+		if uniform_set.is_valid():
+			rd.free_rid(uniform_set)
+		uniform_set = RID()
+
 		if shader.is_valid():
 			rd.free_rid(shader)
 		shader = RID()
