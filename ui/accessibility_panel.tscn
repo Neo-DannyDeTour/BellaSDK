@@ -261,6 +261,10 @@ text = "Sub Colors"
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="TTSToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=636854834]
+unique_name_in_owner = true
+layout_mode = 2
+
 [node name="Control9" type="Control" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=876018615]
 layout_mode = 2
 

@@ -17,6 +17,8 @@ const DEFAULT_SUB_BG_OPACITY: float = 0.5
 const DEFAULT_SUB_COLORS: bool = true
 const DEFAULT_FILM_GRAIN: float = 0.0
 
+const DEFAULT_TTS_ENABLED: bool = false
+
 ## Controls the overall brightness of the game world environment.
 @onready var brightness_slider: HSlider = %BrightnessSlider
 ## Displays and accepts manual text input for the brightness value.
@@ -63,7 +65,8 @@ const DEFAULT_FILM_GRAIN: float = 0.0
 @onready var sub_colors_toggle: CheckButton = %SubColorsToggle
 ## Slider to adjust the visual intensity of the film grain post-processing effect.
 @onready var film_grain_slider: HSlider = %FilmGrainSlider
-
+## Toggles the AI Text-to-Speech system for reading UI elements and in-game text.
+@onready var tts_toggle: CheckButton = %TTSToggle
 
 func _ready() -> void:
 	print("UI: Accessibility Panel initialized.")
@@ -103,6 +106,8 @@ func _connect_signals() -> void:
 		sub_size_option.item_selected.connect(_on_sub_size_selected)
 	if sub_colors_toggle:
 		sub_colors_toggle.toggled.connect(_on_sub_colors_toggled)
+	if tts_toggle:
+		tts_toggle.toggled.connect(_on_tts_toggled)
 
 	_connect_adjustment_signals(sub_bg_opacity_slider, null, "subtitle_bg_opacity")
 	_connect_adjustment_signals(film_grain_slider, null, "film_grain_intensity")
@@ -167,6 +172,11 @@ func _load_accessibility_settings() -> void:
 				GlobalSettings.get_setting("Accessibility", "subtitle_colors", DEFAULT_SUB_COLORS)
 				as bool
 			)
+		)
+		
+	if tts_toggle:
+		tts_toggle.set_pressed_no_signal(
+			(GlobalSettings.get_setting("Accessibility", "tts_enabled", DEFAULT_TTS_ENABLED) as bool)
 		)
 
 	_load_slider_setting(sub_bg_opacity_slider, null, "subtitle_bg_opacity", DEFAULT_SUB_BG_OPACITY)
@@ -403,3 +413,11 @@ func _populate_dropdowns() -> void:
 		var size_modes: Array[String] = ["Small", "Medium", "Large"]
 		for size_mode: String in size_modes:
 			sub_size_option.add_item(size_mode)
+
+
+## Handles the toggle event for the TTS system, saving the state and broadcasting the change.
+func _on_tts_toggled(toggled_on: bool) -> void:
+	print("Player toggled Text-to-Speech to: ", toggled_on)
+	GlobalSettings.save_setting("Accessibility", "tts_enabled", toggled_on)
+	if has_node("/root/Events") and get_node("/root/Events").has_signal("tts_state_changed"):
+		get_node("/root/Events").emit_signal("tts_state_changed", toggled_on)

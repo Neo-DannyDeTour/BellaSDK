@@ -352,7 +352,7 @@ alignment = 0
 
 [node name="CollisionButton" type="Button" parent="DebugPanel/PanelContainer/VBoxContainer" unique_id=1630206710]
 layout_mode = 2
-text = "Collisions OFF"
+text = "Collisions Off"
 alignment = 0
 
 [node name="HideUIButton" type="Button" parent="DebugPanel/PanelContainer/VBoxContainer" unique_id=1558548453]

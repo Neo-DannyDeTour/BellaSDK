@@ -96,6 +96,9 @@ signal note_opened(note_text: String)
 @warning_ignore("unused_signal")
 signal note_closed
 
+@warning_ignore("unused_signal")
+signal tts_state_changed(enabled: bool)
+
 # --- REPLACED FONT SIGNAL ---
 signal font_changed(font_name: String)
 
