@@ -29,7 +29,7 @@ signal noclip_toggled(is_flying: bool)
 # VARIABLES
 # --------------------------------------
 ## Security variable: Indicates if debug commands (noclip) are allowed via input or events.
-var is_debug_allowed: bool = OS.is_debug_build()
+var is_debug_allowed: bool = OS.has_feature("debug")
 
 var is_paused: bool = false
 var is_menu_open: bool = false

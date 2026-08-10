@@ -20,7 +20,7 @@ var match_index: int = -1
 var is_navigating_matches: bool = false
 
 ## Security variable: Indicates if debug commands (noclip, gamespeed) are allowed.
-var is_debug_allowed: bool = OS.is_debug_build()
+var is_debug_allowed: bool = OS.has_feature("debug")
 
 var valid_commands: Array[String] = [
 	"help",
