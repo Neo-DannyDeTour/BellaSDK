@@ -34,7 +34,7 @@ var match_index: int = -1
 var is_navigating_matches: bool = false
 
 ## Security variable: Indicates if debug commands (noclip, gamespeed, sethealth) are allowed.
-var is_debug_allowed: bool = OS.is_debug_build()
+var is_debug_allowed: bool = OS.has_feature("debug")
 
 ## Tracks the active state of toggleable boolean commands to allow single-word toggling.
 var toggle_states: Dictionary = {
