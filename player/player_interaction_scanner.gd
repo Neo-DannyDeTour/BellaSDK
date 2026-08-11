@@ -33,7 +33,6 @@ func setup_master_link(master: Node) -> void:
 
 
 func process_interaction(_delta: float) -> void:
-	# print("PlayerInteractionScanner: process_interaction() called. Processing focus target.")
 	if is_in_terminal_mode:
 		if _should_exit_terminal_mode():
 			exit_terminal_mode()
@@ -50,6 +49,16 @@ func process_interaction(_delta: float) -> void:
 		var hit_point: Vector3 = interact_shapecast.get_collision_point(0)
 		if current_interactable.has_method("hover_cursor"):
 			current_interactable.hover_cursor(player_body, hit_point)
+
+		# --- NEW: Continuous Hold Logic ---
+		# Poll the input every frame to support holding the button.
+		if Input.is_action_pressed("interact"):
+			var is_hands_empty: bool = true
+			if is_instance_valid(master_component) and master_component.get("held_item") != null:
+				is_hands_empty = false
+
+			if is_hands_empty and current_interactable.has_method("interact_held"):
+				current_interactable.interact_held(player_body)
 
 
 func handle_interact_input() -> void:

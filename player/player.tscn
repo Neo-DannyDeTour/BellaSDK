@@ -7,7 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://dnv1e6gebl5gj" path="res://assets/images/UI/flashlight_pattern.png" id="3_di6f5"]
 [ext_resource type="Script" uid="uid://c0epxmhenit7" path="res://player/camera_controller.gd" id="4_6e537"]
 [ext_resource type="Shader" uid="uid://spngok2sru6f" path="res://environment/water_wipe_overlay.gdshader" id="4_61ith"]
-[ext_resource type="Shader" uid="uid://cp26motkbojta" path="res://ui/AccessibilityOverlay.gdshader" id="5_b2j0d"]
+[ext_resource type="Shader" uid="uid://cp26motkbojta" path="res://ui/VisionAssist.gdshader" id="5_b2j0d"]
 [ext_resource type="Script" uid="uid://dootou1joopw7" path="res://player/note_reader.gd" id="6_7l6ig"]
 [ext_resource type="Shader" uid="uid://onn1sa83xj6n" path="res://environment/water_ripple_overlay.gdshader" id="6_61ith"]
 [ext_resource type="Shader" uid="uid://blvci46gmtq30" path="res://environment/waterfall_wipe_overlay.gdshader" id="6_ebwui"]

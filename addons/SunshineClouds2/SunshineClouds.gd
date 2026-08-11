@@ -70,13 +70,15 @@ extends CompositorEffect
 @export var max_lighting_steps: float = 32.0
 
 ## The internal resolution scale for the compute shader to optimize performance.
-@export_enum("Native", "Half", "Quarter", "Eighth") var resolution_scale: int = 1:
+## Defaulting to Quarter (2) to guarantee headroom for 60 FPS.
+@export_enum("Native", "Half", "Quarter", "Eighth") var resolution_scale: int = 2:
 	get:
 		return resolution_scale
 	set(value):
 		resolution_scale = value
 		last_size = Vector2i.ZERO
 		lights_updated = true
+		print("SunshineCloudsGD: Adjusting resolution scale to: ", resolution_scale)
 
 ## Controls the mipmap Level of Detail (LOD) bias for texture sampling.
 @export_range(0, 2) var lod_bias: float = 1.0
@@ -711,12 +713,14 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 
 					## Array holding uniform data for blank image data.
 					var blank_image_data: PackedByteArray = PackedByteArray()
-					blank_image_data.resize(new_size.x * new_size.y * 16)
+					# OPTIMIZATION: 8 bytes per pixel instead of 16 for half-float textures
+					blank_image_data.resize(new_size.x * new_size.y * 8)
 
 					## The base colorformat used for cloud rendering.
 					var base_colorformat: RDTextureFormat = rd.texture_get_format(
 						color_images[view]
 					)
+					
 					## Controls the blit screen format behavior.
 					var blit_screen_format: RDTextureFormat = rd.texture_get_format(
 						buffers.get_color_layer(view, is_msaa_on)
@@ -730,7 +734,8 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 						rd.texture_create(blit_screen_format, RDTextureView.new())
 					)
 
-					base_colorformat.format = RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT
+					# OPTIMIZATION: Halved memory bandwidth by switching to 16-bit floats.
+					base_colorformat.format = RenderingDevice.DATA_FORMAT_R16G16B16A16_SFLOAT
 					base_colorformat.width = new_size.x
 					base_colorformat.height = new_size.y
 

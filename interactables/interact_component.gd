@@ -61,3 +61,10 @@ func _process(_delta: float) -> void:
 
 		# Disable process loop completely until hovered again
 		set_process(false)
+
+
+func interact_held(character: CharacterBody3D) -> void:
+	# Pass the continuous hold state up to the parent node
+	var parent: Node = get_parent()
+	if parent and parent.has_method("interact_held"):
+		parent.interact_held(character)

@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bk52bpfkaco1t" path="res://ui/death_screen.gd" id="1_36x74"]
 [ext_resource type="Shader" uid="uid://b63gib5h5ed3p" path="res://ui/death_screen.gdshader" id="2_g3utg"]
+[ext_resource type="Shader" uid="uid://bjmce8wrb84ff" path="res://vfx/lava.gdshader" id="3_3qirs"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_g3utg"]
 shader = ExtResource("2_g3utg")
@@ -12,6 +13,20 @@ shader_parameter/grid_color = Color(0.01, 0.05, 0.01, 1)
 shader_parameter/line_thickness = 0.01
 shader_parameter/line_blur = 0.00999999977648
 shader_parameter/points = PackedVector2Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_534t5"]
+shader = ExtResource("3_3qirs")
+shader_parameter/resolution = Vector2(1920, 1080)
+shader_parameter/zoom = 4.0
+shader_parameter/speed = 0.6
+shader_parameter/warp_primary = 0.2
+shader_parameter/warp_secondary = 0.3
+shader_parameter/brightness = 0.5
+shader_parameter/sharpness = 2.0
+shader_parameter/contrast = 1.3
+shader_parameter/emission = 1.5
+shader_parameter/color_core = Color(1.2, 0, 0, 1)
+shader_parameter/color_edge = Color(0.9, 0.7, 0.3, 1)
 
 [node name="DeathScreen" type="CanvasLayer" unique_id=1910211973]
 script = ExtResource("1_36x74")
@@ -26,6 +41,14 @@ color = Color(0, 0, 0, 1)
 
 [node name="ECGMonitor" type="ColorRect" parent="." unique_id=2040097807]
 material = SubResource("ShaderMaterial_g3utg")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="LavaOverlay" type="ColorRect" parent="." unique_id=330996643]
+material = SubResource("ShaderMaterial_534t5")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0

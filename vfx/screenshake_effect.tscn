@@ -23,6 +23,7 @@ script = ExtResource("1_we1fn")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=713318068]
 shape = SubResource("BoxShape3D_07aef")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1032199272]
+[node name="EditorTriggerVisualizer" type="MeshInstance3D" parent="." unique_id=1828268970]
 mesh = SubResource("BoxMesh_a5t3k")
 script = ExtResource("2_07aef")
+metadata/_custom_type_script = "uid://q4v42nidwdr2"

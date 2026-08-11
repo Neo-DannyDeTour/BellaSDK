@@ -1,0 +1,73 @@
+[gd_scene format=3 uid="uid://hq37a7ka1vwb"]
+
+[ext_resource type="Script" uid="uid://biyo3fbrbhhjl" path="res://interactables/health_dispenser.gd" id="1_hf1jj"]
+[ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="1_mtknx"]
+[ext_resource type="Texture2D" uid="uid://1ps6qegulumi" path="res://assets/images/healthcharger_bella_low_censored.png" id="2_1d2q4"]
+[ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="2_1pc3e"]
+[ext_resource type="Texture2D" uid="uid://b2u0ujwdygp77" path="res://assets/images/healthcharger_bella_mid_censored.png" id="3_5tgvb"]
+[ext_resource type="Texture2D" uid="uid://bx7riingyhi5v" path="res://assets/images/healthcharger_bella_almost_censored.png" id="4_0y2jq"]
+[ext_resource type="Texture2D" uid="uid://bt8jnb8vysa1c" path="res://assets/images/healthcharger_bella_full_censored.png" id="5_dwsg7"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="8_1d2q4"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_mtknx"]
+size = Vector3(1.5, 1.5, 0.2)
+
+[sub_resource type="BoxMesh" id="BoxMesh_1pc3e"]
+size = Vector3(1.5, 1.5, 0.2)
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_mtknx"]
+radius = 3.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hf1jj"]
+render_priority = 0
+shader = ExtResource("8_1d2q4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.2
+shader_parameter/max_intensity = 1.0
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[node name="HealthDispenser" type="StaticBody3D" unique_id=1629233460 node_paths=PackedStringArray("screen_sprite", "tentacle_pivot", "detection_area") groups=["interactables"]]
+script = ExtResource("1_hf1jj")
+tex_low_health = ExtResource("2_1d2q4")
+tex_mid_health = ExtResource("3_5tgvb")
+tex_almost_health = ExtResource("4_0y2jq")
+tex_ready_health = ExtResource("5_dwsg7")
+screen_sprite = NodePath("ScreenSprite")
+tentacle_pivot = NodePath("TentaclePivot")
+detection_area = NodePath("DetectionArea")
+thickness = 0.05
+max_reach = 1.5
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=792176276]
+shape = SubResource("BoxShape3D_mtknx")
+
+[node name="BlockMesh" type="MeshInstance3D" parent="." unique_id=1148041408]
+mesh = SubResource("BoxMesh_1pc3e")
+
+[node name="ScreenSprite" type="Sprite3D" parent="." unique_id=1645974949]
+transform = Transform3D(0.15, 0, 0, 0, 0.15, 0, 0, 0, 0.15, 0.2, 0.175, 0.11)
+double_sided = false
+alpha_cut = 1
+texture = ExtResource("5_dwsg7")
+
+[node name="TentaclePivot" type="Node3D" parent="." unique_id=324808458]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, -0.5, 0, 0.1)
+
+[node name="DetectionArea" type="Area3D" parent="." unique_id=930658938]
+collision_layer = 5
+collision_mask = 2
+
+[node name="CollisionShape3D2" type="CollisionShape3D" parent="DetectionArea" unique_id=2028721572]
+shape = SubResource("SphereShape3D_mtknx")
+
+[node name="InteractComponent" type="Node" parent="." unique_id=1545910006]
+script = ExtResource("1_mtknx")
+metadata/_custom_type_script = "uid://cqawbvidns1th"
+
+[node name="HighlightComponent" type="Node" parent="." unique_id=23654351 node_paths=PackedStringArray("target_meshes", "interact_component")]
+script = ExtResource("2_1pc3e")
+outline_material = SubResource("ShaderMaterial_hf1jj")
+target_meshes = [NodePath("../BlockMesh")]
+interact_component = NodePath("../InteractComponent")
+metadata/_custom_type_script = "uid://dgig0tamvkdxx"

@@ -1,27 +1,51 @@
 extends CanvasLayer
 
+## The rich text label used to display the console's output log.
 var output_log: RichTextLabel
+## The main container panel for the console UI.
 var panel: PanelContainer
+## The vertical box container organizing the console UI elements.
 var vbox: VBoxContainer
+## The line edit field where the user types console commands.
 var command_input: LineEdit
 
+## The full-screen color rectangle used to apply the colorblind shader.
 var colorblind_rect: ColorRect
+## The full-screen color rectangle used to apply the high contrast shader.
 var high_contrast_rect: ColorRect
 
+## Stores the history of output messages to populate the log when the UI initializes.
 var message_history: Array[Dictionary] = []
+## Indicates whether the console UI nodes have been fully initialized.
 var is_ui_ready: bool = false
 
+## Stores the history of typed commands to allow the user to navigate previous inputs.
 var typed_history: Array[String] = []
+## Tracks the current position in the typed command history during navigation.
 var history_index: int = 0
 
+## The rich text label used to display autocomplete suggestions above the input field.
 var suggestion_label: RichTextLabel
+## Holds the list of autocomplete string matches for the current input.
 var current_matches: Array[String] = []
+## Tracks the currently selected index within the autocomplete matches list.
 var match_index: int = -1
+## Prevents text change events from triggering while navigating autocomplete matches.
 var is_navigating_matches: bool = false
 
-## Security variable: Indicates if debug commands (noclip, gamespeed) are allowed.
+## Security variable: Indicates if debug commands (noclip, gamespeed, sethealth) are allowed.
 var is_debug_allowed: bool = OS.is_debug_build()
 
+## Tracks the active state of toggleable boolean commands to allow single-word toggling.
+var toggle_states: Dictionary = {
+	"highcontrast": false,
+	"subtitles": false,
+	"mono_audio": false,
+	"photosensitivity": false,
+	"visionassist": false
+}
+
+## A list of all base commands available in the console. 
 var valid_commands: Array[String] = [
 	"help",
 	"clear",
@@ -51,55 +75,40 @@ var valid_commands: Array[String] = [
 	"photosensitivity",
 	"setfont",
 	"screenfilter",
-	"visionassist"
+    "visionassist"
 ]
+
+## A list of valid arguments specifically for the colorblind command.
+var valid_colorblind_args: Array[String] = [
+	"normal", "protanopia", "deuteranopia", "tritanopia", "mono", "achromatopsia"
+]
+## A list of valid font choices for the setfont command.
+var valid_font_args: Array[String] = ["default", "dyslexic", "papyrus", "comic"]
+## A list of valid screen filter shaders for the screenfilter command.
+var valid_screenfilter_args: Array[String] = [
+	"off", "crt", "vhs", "pixelate", "toon", "gameboy", "glitch", "grain", "halftone",
+	"nightvision", "kuwahara", "ascii", "90anime", "manga", "handdrawn", "moebius",
+	"obra", "psychedelic", "botw", "ghibli", "reaction", "software", "swirl", "mandelbrot"
+]
+
+## The full-screen color rectangle used to apply generalized screen filter shaders.
+var screen_filter_rect: ColorRect
+## A dictionary mapping shader names to their loaded Resource objects for optimization.
+var cached_shaders: Dictionary = {}
 
 
 func _init() -> void:
+	print("InGameConsole: _init() called. Initializing command list.")
 	if is_debug_allowed:
 		valid_commands.append("noclip")
 		valid_commands.append("gamespeed")
 		valid_commands.append("die")
 		valid_commands.append("normals")
-
-
-var valid_colorblind_args: Array[String] = [
-	"normal", "protanopia", "deuteranopia", "tritanopia", "mono", "achromatopsia"
-]
-var valid_font_args: Array[String] = ["default", "dyslexic", "papyrus", "comic"]
-var valid_on_off_args: Array[String] = ["on", "off"]
-var valid_screenfilter_args: Array[String] = [
-	"off",
-	"crt",
-	"vhs",
-	"pixelate",
-	"toon",
-	"gameboy",
-	"glitch",
-	"grain",
-	"halftone",
-	"nightvision",
-	"kuwahara",
-	"ascii",
-	"90anime",
-	"manga",
-	"handdrawn",
-	"moebius",
-	"obra",
-	"psychedelic",
-	"botw",
-	"ghibli",
-	"reaction",
-	"software",
-	"swirl",
-	"mandelbrot"
-]
-
-var screen_filter_rect: ColorRect
-var cached_shaders: Dictionary = {}
+		valid_commands.append("sethealth")
 
 
 func _ready() -> void:
+	print("InGameConsole: _ready() called. Building UI elements.")
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 128
 	visible = false
@@ -223,10 +232,8 @@ func _on_line_edit_gui_input(event: InputEvent) -> void:
 			if current_matches.size() > 0:
 				print("Tab Autocomplete triggered.")
 				var match_text: String = current_matches[max(0, match_index)]
-
 				command_input.text = match_text + " "
 				command_input.caret_column = command_input.text.length()
-
 				_on_text_changed(command_input.text)
 
 		elif event.keycode in [KEY_ENTER, KEY_KP_ENTER]:
@@ -289,13 +296,10 @@ func _get_autocomplete_matches(current_text: String) -> Array[String]:
 			arg_matches = valid_colorblind_args
 		elif main_cmd == "setfont":
 			arg_matches = valid_font_args
-		elif (
-			main_cmd
-			in ["subtitles", "mono_audio", "photosensitivity", "highcontrast", "visionassist"]
-		):
-			arg_matches = valid_on_off_args
 		elif main_cmd == "screenfilter":
 			arg_matches = valid_screenfilter_args
+		elif main_cmd == "visionassist":
+			arg_matches = ["mode", "color"]
 
 		var exact_starts: Array[String] = []
 		var partials: Array[String] = []
@@ -330,6 +334,7 @@ func _navigate_suggestions(direction: int) -> void:
 
 
 func _update_suggestion_ui() -> void:
+	print("InGameConsole: Updating suggestion UI graphics.")
 	var bbcode: String = ""
 	for i: int in range(current_matches.size()):
 		if i == match_index:
@@ -341,7 +346,7 @@ func _update_suggestion_ui() -> void:
 
 
 func _reset_suggestions() -> void:
-	print("InGameConsole: _reset_suggestions() called.")
+	print("InGameConsole: _reset_suggestions() called. Clearing match data.")
 	current_matches.clear()
 	match_index = -1
 	suggestion_label.visible = false
@@ -377,14 +382,17 @@ func write(message: String, color: String = "white") -> void:
 
 
 func log_info(msg: String) -> void:
+	print("InGameConsole logging info: ", msg)
 	write(msg, "lightgray")
 
 
 func log_warn(msg: String) -> void:
+	print("InGameConsole logging warning: ", msg)
 	write("[WARNING] " + msg, "yellow")
 
 
 func log_error(msg: String) -> void:
+	print("InGameConsole logging error: ", msg)
 	write("[ERROR] " + msg, "red")
 
 
@@ -414,6 +422,7 @@ func _on_command_submitted(text: String) -> void:
 
 
 func _process_command(cmd: String, args: PackedStringArray) -> void:
+	print("InGameConsole: Processing core command switch: ", cmd)
 	match cmd:
 		"help":
 			write("Available commands: " + ", ".join(valid_commands), "green")
@@ -426,7 +435,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 			get_tree().quit()
 		"noclip":
 			if is_debug_allowed:
-				print("InGameConsole: _process_command() called. Action: Toggled Noclip")
+				print("InGameConsole: Action toggled Noclip")
 				if has_node("/root/Events"):
 					var events: Node = get_node("/root/Events")
 					if events.has_signal("noclip_ui_button_pressed"):
@@ -468,8 +477,8 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 		"impulse":
 			if args.size() > 0 and args[0] == "101":
 				write(
-					"Bella doesn't need to hear about safety preconscious. She's a highly trained professional",
-					"white"
+					"Bella doesn't need to hear about safety preconscious. She's a trained pro",
+                    "white"
 				)
 			else:
 				write("Usage: sv_cheats 1", "red")
@@ -497,20 +506,17 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 						write("Achromatopsia (Monochrome) filter enabled.", "green")
 					_:
 						write(
-							"Unknown type. Available: normal, protanopia, deuteranopia, tritanopia, mono, achromatopsia",
-							"red"
+							"Unknown type. Try: normal, protanopia, deuteranopia, tritanopia",
+                            "red"
 						)
 			else:
 				write(
-					(
-						"Usage: colorblind <type>\nTypes: normal, protanopia,"
-						+ " deuteranopia, tritanopia, mono, achromatopsia"
-					),
-					"yellow"
+					"Usage: colorblind <type>\nTypes: normal, protanopia, deuteranopia...",
+                    "yellow"
 				)
 		"gamespeed":
 			if is_debug_allowed:
-				print("InGameConsole: _process_command() called. Action: Set Gamespeed")
+				print("InGameConsole: Action Set Gamespeed")
 				if args.size() > 0:
 					var new_speed: float = args[0].to_float()
 					Engine.time_scale = clampf(new_speed, 0.1, 10.0)
@@ -520,15 +526,14 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 			else:
 				write("Unknown command: '" + cmd + "'. Type 'help' for a list.", "red")
 		"highcontrast":
-			if args.size() > 0:
-				var active: bool = args[0].to_lower() == "on"
-				if has_node("/root/Events"):
-					var events: Node = get_node("/root/Events")
-					if events.has_signal("high_contrast_toggled"):
-						events.emit_signal("high_contrast_toggled", active)
-				write("High contrast mode: " + ("Enabled" if active else "Disabled"), "green")
-			else:
-				write("Usage: highcontrast <on/off>", "yellow")
+			toggle_states["highcontrast"] = !toggle_states["highcontrast"]
+			var active: bool = toggle_states["highcontrast"]
+			print("InGameConsole: Toggled highcontrast to ", active)
+			if has_node("/root/Events"):
+				var events: Node = get_node("/root/Events")
+				if events.has_signal("high_contrast_toggled"):
+					events.emit_signal("high_contrast_toggled", active)
+			write("High contrast mode: " + ("Enabled" if active else "Disabled"), "green")
 		"screenshake":
 			if args.size() > 0:
 				var amount: float = args[0].to_float()
@@ -543,7 +548,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 						events.emit_signal("screenshake_requested", amount, duration)
 
 				var msg: String = (
-					"Screenshake: Intensity "
+                    "Screenshake: Intensity "
 					+ str(clampf(amount, 0.0, 16.0))
 					+ ", Duration "
 					+ str(duration)
@@ -553,21 +558,19 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 			else:
 				write("Usage: screenshake <intensity 0.0-16.0> [duration_in_seconds]", "yellow")
 		"subtitles":
-			if args.size() > 0:
-				var active: bool = args[0].to_lower() == "on"
-				if has_node("/root/Events"):
-					var events: Node = get_node("/root/Events")
-					if events.has_signal("subtitles_toggled"):
-						events.emit_signal("subtitles_toggled", active)
-				write("Subtitles: " + ("ON" if active else "OFF"), "green")
-			else:
-				write("Usage: subtitles <on/off>", "yellow")
+			toggle_states["subtitles"] = !toggle_states["subtitles"]
+			var active: bool = toggle_states["subtitles"]
+			print("InGameConsole: Toggled subtitles to ", active)
+			if has_node("/root/Events"):
+				var events: Node = get_node("/root/Events")
+				if events.has_signal("subtitles_toggled"):
+					events.emit_signal("subtitles_toggled", active)
+			write("Subtitles: " + ("ON" if active else "OFF"), "green")
 		"mono_audio":
-			if args.size() > 0:
-				var active: bool = args[0].to_lower() == "on"
-				write("Mono Audio: " + ("ON" if active else "OFF"), "green")
-			else:
-				write("Usage: mono_audio <on/off>", "yellow")
+			toggle_states["mono_audio"] = !toggle_states["mono_audio"]
+			var active: bool = toggle_states["mono_audio"]
+			print("InGameConsole: Toggled mono_audio to ", active)
+			write("Mono Audio: " + ("ON" if active else "OFF"), "green")
 		"uiscale":
 			if args.size() > 0:
 				var scale_val: float = args[0].to_float()
@@ -575,15 +578,14 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 			else:
 				write("Usage: uiscale <float> (Default is usually 1.0)", "yellow")
 		"photosensitivity":
-			if args.size() > 0:
-				var active: bool = args[0].to_lower() == "on"
-				if has_node("/root/Events"):
-					var events: Node = get_node("/root/Events")
-					if events.has_signal("photosensitivity_mode_toggled"):
-						events.emit_signal("photosensitivity_mode_toggled", active)
-				write("Photosensitivity safe mode: " + ("ON" if active else "OFF"), "green")
-			else:
-				write("Usage: photosensitivity <on/off>", "yellow")
+			toggle_states["photosensitivity"] = !toggle_states["photosensitivity"]
+			var active: bool = toggle_states["photosensitivity"]
+			print("InGameConsole: Toggled photosensitivity to ", active)
+			if has_node("/root/Events"):
+				var events: Node = get_node("/root/Events")
+				if events.has_signal("photosensitivity_mode_toggled"):
+					events.emit_signal("photosensitivity_mode_toggled", active)
+			write("Photosensitivity safe mode: " + ("ON" if active else "OFF"), "green")
 		"setfont":
 			if args.size() > 0:
 				var font_choice: String = args[0].to_lower()
@@ -598,7 +600,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 			else:
 				write(
 					"Usage: setfont <font_name>\nAvailable: default, dyslexic, papyrus, comic",
-					"yellow"
+                    "yellow"
 				)
 		"screenfilter":
 			if args.size() > 0:
@@ -630,32 +632,29 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 					write(filter_type.to_upper() + " filter enabled.", "green")
 				else:
 					write(
-						(
-							"Unknown filter. Available: off, crt, vhs, pixelate, toon, gameboy, glitch,"
-							+ " grain, halftone, nightvision, kuwahara, ascii"
-						),
-						"red"
+						"Unknown filter. Available: off, crt, vhs, pixelate, toon...",
+                        "red"
 					)
 			else:
 				write(
-					"Usage: screenfilter <type>\nAvailable: off, crt, vhs, pixelate, toon...",
-					"yellow"
+					"Usage: screenfilter <type>\nAvailable: off, crt, vhs, pixelate...",
+                    "yellow"
 				)
 		"visionassist":
-			if args.size() > 0:
+			if args.size() == 0:
+				toggle_states["visionassist"] = !toggle_states["visionassist"]
+				var active: bool = toggle_states["visionassist"]
+				print("InGameConsole: Vision assist toggled to ", active)
+				if has_node("/root/Events"):
+					var events: Node = get_node("/root/Events")
+					if events.has_signal("vision_assist_toggled"):
+						events.emit_signal("vision_assist_toggled", active)
+				write("Vision Assist: " + ("ON" if active else "OFF"), "green")
+
+			elif args.size() > 0:
 				var arg1: String = args[0].to_lower()
-
-				if arg1 in ["on", "off"]:
-					var active: bool = arg1 == "on"
-					if has_node("/root/Events"):
-						var events: Node = get_node("/root/Events")
-						if events.has_signal("vision_assist_toggled"):
-							events.emit_signal("vision_assist_toggled", active)
-					write("Vision Assist: " + ("ON" if active else "OFF"), "green")
-					print("Console: Vision assist toggled to ", active)
-
-				# NEW: Handle background mode swapping with pure_black added
-				elif arg1 == "mode" and args.size() == 2:
+				
+				if arg1 == "mode" and args.size() == 2:
 					var mode_name: String = args[1].to_lower()
 					if mode_name in ["black_and_white", "aaa_blue", "pure_black"]:
 						if has_node("/root/Events"):
@@ -667,9 +666,8 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 					else:
 						write(
 							"Invalid mode. Use 'black_and_white', 'aaa_blue', or 'pure_black'.",
-							"yellow"
+                            "yellow"
 						)
-
 				elif arg1 == "color" and args.size() == 3:
 					var target_group: String = args[1].to_lower()
 					var color_name: String = args[2].to_lower()
@@ -682,23 +680,21 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 							)
 					write("Vision Assist: Changed " + target_group + " to " + color_name, "green")
 					print("Console: Vision assist color changed for ", target_group)
-			else:
-				write(
-					"Usage: visionassist <on/off> OR visionassist mode <black_and_white/aaa_blue/pure_black> OR visionassist color <group> <color>",
-					"yellow"
-				)
+				else:
+					write(
+						"Usage: visionassist OR visionassist mode <mode> OR color <group> <color>",
+                        "yellow"
+					)
 		"die":
 			if is_debug_allowed:
-				print("InGameConsole: _process_command() called. Action: Executing 'die' command.")
+				print("InGameConsole: Action Executing 'die' command.")
 
 				var players: Array[Node] = get_tree().get_nodes_in_group("player")
 				if players.size() > 0:
 					var player: Node = players[0]
 
-					# Target the exact path from your screenshot
 					var health_comp: Node = player.get_node_or_null("Components/HealthComponent")
 
-					# Fallback search if the path changes in the future
 					if not health_comp:
 						health_comp = player.find_child("HealthComponent", true, false)
 
@@ -715,7 +711,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 				write("Unknown command: '" + cmd + "'. Type 'help' for a list.", "red")
 		"normals":
 			if is_debug_allowed:
-				print("InGameConsole: _process_command() called. Action: Toggled Normal View")
+				print("InGameConsole: Action Toggled Normal View")
 				var vp: Viewport = get_viewport()
 				if vp.debug_draw == Viewport.DEBUG_DRAW_NORMAL_BUFFER:
 					vp.debug_draw = Viewport.DEBUG_DRAW_DISABLED
@@ -725,12 +721,57 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 					write("Normal view ON.", "green")
 			else:
 				write("Unknown command: '" + cmd + "'. Type 'help' for a list.", "red")
+		"sethealth":
+			if is_debug_allowed:
+				print("InGameConsole: Action Executing 'sethealth' command.")
+				if args.size() > 0:
+					var health_val: int = args[0].to_int()
+					health_val = clampi(health_val, 0, 300)
+					
+					var players: Array[Node] = get_tree().get_nodes_in_group("player")
+					if players.size() > 0:
+						var player: Node = players[0]
+						var health_comp: Node = player.get_node_or_null(
+                            "Components/HealthComponent"
+						)
+						
+						if not health_comp:
+							health_comp = player.find_child("HealthComponent", true, false)
+							
+						if health_comp and health_comp is HealthComponent:
+							print("InGameConsole: Found HealthComponent, updating values.")
+							health_comp.current_health = health_val
+							
+							# Force the component to broadcast the new health so the UI updates
+							health_comp.health_changed.emit(health_comp.current_health)
+							
+							if health_comp.is_player_health and has_node("/root/Events"):
+								var events: Node = get_node("/root/Events")
+								if events.has_signal("player_health_changed"):
+									events.emit_signal("player_health_changed", health_comp.current_health)
+									print("InGameConsole: Relayed health to global Events bus.")
+							
+							# Handle instant death if set to 0
+							if health_comp.current_health == 0:
+								print("InGameConsole: Health set to 0, triggering die().")
+								health_comp.die()
+
+							write("Player health forcefully set to: " + str(health_val), "green")
+						else:
+							write("HealthComponent not found on the player entity.", "yellow")
+					else:
+						write("Player node not found in the 'player' group.", "yellow")
+				else:
+					write("Usage: sethealth <value 0-300>", "yellow")
+			else:
+				write("Unknown command: '" + cmd + "'. Type 'help' for a list.", "red")
+
 		_:
 			write("Unknown command: '" + cmd + "'. Type 'help' for a list.", "red")
 
 
 func _on_ui_colorblind_changed(mode: int) -> void:
-	print("Console: Intercepted colorblind UI change to mode index: ", mode)
+	print("InGameConsole: Intercepted colorblind UI change to mode index: ", mode)
 	if colorblind_rect and colorblind_rect.material:
 		var material: ShaderMaterial = colorblind_rect.material as ShaderMaterial
 		material.set_shader_parameter("mode", mode)

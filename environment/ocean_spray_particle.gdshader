@@ -16,6 +16,7 @@ uniform uint num_particles;
 uniform vec3 particle_scale;
 uniform float lifetime = 3.0; 
 uniform float lifetime_randomness : hint_range(0.0, 1.0) = 0.25;
+uniform float spawn_radius = 40.0;
 
 group_uniforms cascade_data;
 uniform vec4 map_scales[MAX_CASCADES];
@@ -25,9 +26,9 @@ global uniform sampler2DArray normals : hint_normal;
 
 vec3 hash32(uvec2 p) {
     p = 1103515245U * ((p >> 1U) ^ p.yx);
-    uint h32 = 1103515245U * (p.x ^ (p.y>>3U));
+    uint h32 = 1103515245U * (p.x ^ (p.y >> 3U));
     uint n = h32 ^ (h32 >> 16U);
-    uvec3 rz = uvec3(n, n*16807U, n*48271U);
+    uvec3 rz = uvec3(n, n * 16807U, n * 48271U);
     return vec3((rz >> 1U) & uvec3(0x7FFFFFFFU)) / float(0x7FFFFFFF);
 }
 
@@ -39,11 +40,11 @@ void set_scale(inout mat4 transform, in vec3 scale) {
 
 void start() {
     if (RESTART_POSITION) {
-        uint t = uint(sqrt(float(num_particles)));
         vec3 rand = hash32(uvec2(NUMBER, 1U) + uint(TIME) + RANDOM_SEED);
 
-        // Expanded the spawn area to 300x300 meters
-        vec2 coords = (vec2(uvec2(INDEX / t, INDEX % t)) / (float(t) - 1.0) - 0.5) * 300.0;
+        // Optimized random distribution - faster than the modulo grid math
+        vec2 coords = (rand.xy - 0.5) * (spawn_radius * 2.0);
+
         TRANSFORM[3].xyz = vec3(coords.x, 0.0, coords.y); 
         TRANSFORM = EMISSION_TRANSFORM * TRANSFORM;
 
@@ -66,11 +67,18 @@ float exp_impulse(float x, float k) {
 void process() {
     if (TIME > START_TIME + PARTICLE_LIFETIME) {
         ACTIVE = false;
+    } else if (HAS_STARTED == 1.0 && length(POSITION - EMISSION_TRANSFORM[3].xyz) > spawn_radius * 1.5) {
+        // OPTIMIZATION: Now correctly culls only spawned particles that drift beyond visibility range.
+        ACTIVE = false;
     } else if (TIME >= START_TIME) {
         if (HAS_STARTED == 0.0) {
             vec3 gradient = vec3(0.0);
             for (int i = 0; i < num_cascades; ++i) {
-                gradient += textureLod(normals, vec3(START_POS.xz * map_scales[i].xy, float(i)), 0.0).xyw;
+                gradient += textureLod(
+                    normals,
+                    vec3(START_POS.xz * map_scales[i].xy, float(i)),
+                    0.0
+                ).xyw;
             }
 
             vec3 normal = normalize(vec3(-gradient.x, 1.0, -gradient.y));
@@ -100,7 +108,11 @@ void process() {
             vec3 displacement = vec3(0.0);
             for (int i = 0; i < num_cascades; ++i) {
                 vec3 scales = map_scales[i].xyz;
-                displacement += textureLod(displacements, vec3(START_POS.xz * scales.xy, float(i)), 0.0).xyz * scales.z;
+                displacement += textureLod(
+                    displacements,
+                    vec3(START_POS.xz * scales.xy, float(i)),
+                    0.0
+                ).xyz * scales.z;
             }
 
             displacement *= vec3(0.75, 1.0, 0.75);
@@ -111,8 +123,6 @@ void process() {
             float size = PARTICLE_LIFETIME / lifetime;
             vec3 scale_modifier = vec3(size * size);
             scale_modifier.y *= exp_impulse(t, 3.0);
-            
-            // Fixed the NaN matrix collapse by adding + 0.01
             scale_modifier.xz *= vec2(log(1.0 + t) + 0.01);
             
             set_scale(TRANSFORM, PARTICLE_SCALE * scale_modifier);
