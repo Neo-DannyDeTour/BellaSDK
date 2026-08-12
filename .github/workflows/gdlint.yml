@@ -1,4 +1,4 @@
-name: Strict GDScript Linting
+name: Strict GDScript Auto-Format & Lint
 
 on:
   push:
@@ -6,12 +6,18 @@ on:
   pull_request:
     branches: ["main"]
 
+# Grant permissions for the action to push commits back to the repo
+permissions:
+  contents: write
+
 jobs:
-  lint:
+  format_and_lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -25,7 +31,17 @@ jobs:
           pip install --upgrade pip
           pip install gdtoolkit
 
+      - name: Auto-format GDScript files
+        run: |
+          source .venv/bin/activate
+          gdformat .
+
       - name: Enforce strict gdlint rules
         run: |
           source .venv/bin/activate
           gdlint .
+
+      - name: Commit formatting changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "style: auto-format gdscript files"
