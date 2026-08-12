@@ -13,6 +13,8 @@
 ![GitHub forks](https://img.shields.io/github/forks/Neo-DannyDeTour/BellaSDK?style=flat-square&label=FORKS&labelColor=444444&color=223b47)
 ![GitHub Downloads (latest release)](https://img.shields.io/github/downloads/Neo-DannyDeTour/BellaSDK/latest/total?style=flat-square&label=DOWNLOADS%20%28LATEST%20RELEASE%29&labelColor=444444&color=223b47)
 [![YouTube](https://img.shields.io/badge/YouTube-DannyDeTour-FF0000?logo=youtube&logoColor=white)](https://www.youtube.com/@DannyDeTour)
+[![Build Status](https://github.com/Neo-DannyDeTour/BellaSDK/actions/workflows/ci-build.yml/badge.svg)](https://github.com/Neo-DannyDeTour/BellaSDK/actions)
+[![Tests Status](https://github.com/Neo-DannyDeTour/BellaSDK/actions/workflows/ci-test.yml/badge.svg)](https://github.com/Neo-DannyDeTour/BellaSDK/actions)
 
 <b>BellaSDK</b> - a modern replacement for Hammer/Source to help noobs quickly start prototyping their next masterpiece instead of wasting valuable months trying to add fucking crouching mechanic to a 35 year old engine that was specifically made for FPS! Fuck Unreal you fucking sack of shit!!!
 
