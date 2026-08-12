@@ -1,0 +1,71 @@
+name: Publish API Documentation
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy-docs:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Godot Engine
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: "4.3"
+          use-dotnet: false
+
+      - name: Generate XML Documentation
+        run: |
+          mkdir -p docs_xml
+          godot --headless --doctool docs_xml || true
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install gdscript-docs-maker
+        run: pip install gdscript-docs-maker
+
+      - name: Generate Markdown Documentation
+        run: |
+          mkdir -p docs_md
+          if [ -d "docs_xml/classes" ]; then
+             generate_reference docs_xml/classes -o docs_md
+          else
+             echo "docs_xml/classes directory not found. Using docs_xml/"
+             generate_reference docs_xml -o docs_md
+          fi
+
+      - name: Generate HTML
+        run: |
+          mkdir -p site
+          cp -R docs_md/* site/ || true
+
+          if [ ! -f "site/index.html" ]; then
+            echo "<html><body><h1>BellaSDK API Documentation</h1><p>See markdown files for class docs.</p></body></html>" > site/index.html
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: 'site'
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

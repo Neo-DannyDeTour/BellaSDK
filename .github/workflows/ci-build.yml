@@ -1,0 +1,50 @@
+name: Build and Export Godot Project
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  push:
+    branches: [ "main" ]
+
+jobs:
+  export-game:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # These names must match the presets in your export_presets.cfg
+        include:
+          - target: "Linux/X11"
+            platform: "linux"
+            binary_name: "BellaSDK.x86_64"
+            artifact_name: "linux-build"
+          - target: "Windows Desktop"
+            platform: "windows"
+            binary_name: "BellaSDK.exe"
+            artifact_name: "windows-build"
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Setup Godot Engine
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          # Ensure this matches the Godot version your project uses (e.g. 4.3 or 4.2.2)
+          version: "4.3"
+          use-dotnet: false
+
+      - name: Create export directory
+        run: mkdir -p build/${{ matrix.platform }}
+
+      - name: Export Project
+        run: |
+          godot --headless --export-release "${{ matrix.target }}" "build/${{ matrix.platform }}/${{ matrix.binary_name }}"
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: build/${{ matrix.platform }}
+          retention-days: 7

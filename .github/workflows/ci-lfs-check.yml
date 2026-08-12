@@ -1,0 +1,38 @@
+name: Strict Git LFS Validation
+
+on:
+  pull_request:
+    branches: [ "main" ]
+  push:
+    branches: [ "main" ]
+
+jobs:
+  check-lfs:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify Git LFS is tracking binary files
+        run: |
+          EXTENSIONS="png wav exr ogg mp3 glb gltf blend fbx obj mkv mp4 webm"
+          FAIL_WORKFLOW=0
+
+          for EXT in $EXTENSIONS; do
+            while IFS= read -r -d '' FILE; do
+              IS_LFS=$(git check-attr filter "$FILE" | grep -i "lfs" || true)
+              if [ -z "$IS_LFS" ]; then
+                echo "::error file=$FILE::File '$FILE' is NOT tracked by Git LFS! Please run 'git lfs track \"*.$EXT\"' and commit the .gitattributes file."
+                FAIL_WORKFLOW=1
+              fi
+            done < <(find . -name "*.$EXT" -type f -not -path "*/.git/*" -print0)
+          done
+
+          if [ $FAIL_WORKFLOW -eq 1 ]; then
+            echo "LFS validation failed. Ensure all large binary assets are tracked."
+            exit 1
+          fi
+
+          echo "All checked binary files are properly tracked by Git LFS."
