@@ -2,7 +2,7 @@ name: Publish API Documentation
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
 
 permissions:
   contents: read
@@ -40,7 +40,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install gdscript-docs-maker
-        run: pip install gdscript-docs-maker
+        run: pip install gdscript-docs-maker --break-system-packages
 
       - name: Generate Markdown Documentation
         run: |
@@ -64,7 +64,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: 'site'
+          path: "site"
 
       - name: Deploy to GitHub Pages
         id: deployment
