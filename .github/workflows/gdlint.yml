@@ -10,7 +10,6 @@ permissions:
   contents: write
 
 env:
-  # Forces all actions to utilize the Node.js 24 runtime
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
@@ -18,25 +17,23 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v5 # Updated to Node 24 native version
+        uses: actions/checkout@v5
         with:
           ref: ${{ github.head_ref }}
 
       - name: Set up Python
-        uses: actions/setup-python@v7 # Updated to Node 24 native version
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install gdtoolkit in isolated environment
-        run: |
-          python3 -m venv .venv
-          source .venv/bin/activate
-          pip install --upgrade pip
-          pip install gdtoolkit
+      - name: Install gdtoolkit (Global Isolation)
+        # pipx avoids local .venv creation and externally-managed errors
+        run: pipx install gdtoolkit
 
-      - name: Auto-format GDScript files
+      - name: Force strip trailing whitespace & Auto-format
         run: |
-          source .venv/bin/activate
+          # Aggressively remove trailing whitespaces that gdformat misses
+          find . -name "*.gd" -type f -exec sed -i 's/[ \t]*$//' {} +
           gdformat .
 
       - name: Commit formatting changes
@@ -45,6 +42,5 @@ jobs:
           commit_message: "style: auto-format gdscript files"
 
       - name: Enforce strict gdlint rules
-        run: |
-          source .venv/bin/activate
-          gdlint .
+        # Runs last to ensure the newly committed code strictly passes all rules
+        run: gdlint .
