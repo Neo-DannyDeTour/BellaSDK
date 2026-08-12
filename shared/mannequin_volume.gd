@@ -118,9 +118,13 @@ extends Node3D
 			_bake_meshes()
 		bake_to_scene = false
 
+## Property: Update Queued.
 var _update_queued: bool = false
+## Property: Container.
 var _container: Node3D
+## Property: Standing Height.
 var _standing_height: float = 2.0
+## Property: Crouch Height.
 var _crouch_height: float = 1.0
 
 
@@ -191,7 +195,7 @@ func _find_locomotion_component(node: Node) -> Node:
 	if node.get_script() != null and "STANDING_HEIGHT" in node:
 		return node
 
-	for child in node.get_children():
+	for child: Node in node.get_children():
 		var found: Node = _find_locomotion_component(child)
 		if found:
 			return found
@@ -224,8 +228,8 @@ func _generate_references() -> void:
 	var climb_xforms: Array[Transform3D] = []
 	var jump_climb_xforms: Array[Transform3D] = []
 
-	for x in range(x_steps + 1):
-		for z in range(z_steps + 1):
+	for x: int in range(x_steps + 1):
+		for z: int in range(z_steps + 1):
 			var pos_x: float = -half_size.x + (x * spacing)
 			var pos_z: float = -half_size.z + (z * spacing)
 
@@ -307,7 +311,7 @@ func _process_posture_and_walls(
 	var dirs: Array[Vector3] = [Vector3.FORWARD, Vector3.BACK, Vector3.LEFT, Vector3.RIGHT]
 	var max_jump: float = (pow(jump_velocity, 2.0)) / (2.0 * jump_gravity)
 
-	for dir in dirs:
+	for dir: Vector3 in dirs:
 		var wall_start: Vector3 = global_floor + Vector3(0.0, _standing_height * 0.5, 0.0)
 		var wall_end: Vector3 = wall_start + (dir * spacing * 0.8)
 		var wall_hit: Dictionary = _raycast(wall_start, wall_end)
@@ -354,11 +358,11 @@ func _draw_grid(half_size: Vector3, x_steps: int, z_steps: int) -> void:
 	mesh_instance.material_override = mat
 
 	grid_mesh.surface_begin(Mesh.PRIMITIVE_LINES)
-	for x in range(x_steps + 1):
+	for x: int in range(x_steps + 1):
 		var pos_x: float = -half_size.x + (x * spacing)
 		grid_mesh.surface_add_vertex(Vector3(pos_x, -half_size.y, -half_size.z))
 		grid_mesh.surface_add_vertex(Vector3(pos_x, -half_size.y, half_size.z))
-	for z in range(z_steps + 1):
+	for z: int in range(z_steps + 1):
 		var pos_z: float = -half_size.z + (z * spacing)
 		grid_mesh.surface_add_vertex(Vector3(-half_size.x, -half_size.y, pos_z))
 		grid_mesh.surface_add_vertex(Vector3(half_size.x, -half_size.y, pos_z))
@@ -396,14 +400,14 @@ func _build_sprite_multimesh(
 
 	var quad: ArrayMesh = ArrayMesh.new()
 
-	## A structured array holding rendering data for the custom mesh surface creation.
+	# A structured array holding rendering data for the custom mesh surface creation.
 	var arr: Array = []
 	arr.resize(Mesh.ARRAY_MAX)
 
-	## The calculated horizontal span of the sprite based on its height and aspect ratio.
+	# The calculated horizontal span of the sprite based on its height and aspect ratio.
 	var visual_width: float = sprite_height * aspect
 
-	## The specific 3D spatial coordinates defining the four corners of the quad mesh.
+	# The specific 3D spatial coordinates defining the four corners of the quad mesh.
 	var vertices: PackedVector3Array = PackedVector3Array(
 		[
 			Vector3(-visual_width / 2.0, 0.0, 0.0),
@@ -443,7 +447,7 @@ func _build_sprite_multimesh(
 	multimesh.mesh = quad
 	multimesh.instance_count = xforms.size()
 
-	for i in range(xforms.size()):
+	for i: int in range(xforms.size()):
 		multimesh.set_instance_transform(i, xforms[i])
 
 	var mm_instance: MultiMeshInstance3D = MultiMeshInstance3D.new()
@@ -470,7 +474,7 @@ func _build_boxes_multimesh(positions: Array[Vector3]) -> void:
 	multimesh.mesh = base_box
 
 	var valid_indices: Array[int] = []
-	for i in range(box_heights.size()):
+	for i: int in range(box_heights.size()):
 		if i < box_toggles.size() and box_toggles[i]:
 			valid_indices.append(i)
 
@@ -481,9 +485,9 @@ func _build_boxes_multimesh(positions: Array[Vector3]) -> void:
 	multimesh.instance_count = total_boxes
 
 	var index: int = 0
-	for pos in positions:
+	for pos: Vector3 in positions:
 		var offset_x: float = 0.5
-		for i in valid_indices:
+		for i: int in valid_indices:
 			var height: float = box_heights[i]
 			var color: Color = Color(1.0, 0.0, 0.0, 0.4)
 			if i < box_colors.size():
@@ -522,7 +526,7 @@ func _build_capsule_multimesh(positions: Array[Vector3]) -> void:
 	multimesh.mesh = capsule_mesh
 	multimesh.instance_count = positions.size()
 
-	for i in range(positions.size()):
+	for i: int in range(positions.size()):
 		var xform: Transform3D = Transform3D()
 		# Change: Base at positions[i], pivot bottom.
 		xform = xform.translated(positions[i])
@@ -539,7 +543,7 @@ func _create_wireframe_capsule_mesh(radius: float, height: float) -> ArrayMesh:
 	var arr: PackedVector3Array = PackedVector3Array()
 	var segments: int = 8
 
-	for i in range(segments):
+	for i: int in range(segments):
 		var angle1: float = (PI * 2.0 * i) / segments
 		var angle2: float = (PI * 2.0 * (i + 1)) / segments
 		var x1: float = cos(angle1) * radius
@@ -553,7 +557,7 @@ func _create_wireframe_capsule_mesh(radius: float, height: float) -> ArrayMesh:
 		arr.append(Vector3(x1, height, z1))
 		arr.append(Vector3(x2, height, z2))
 
-	for i in range(4):
+	for i: int in range(4):
 		var angle: float = (PI * 2.0 * i) / 4.0
 		var x: float = cos(angle) * radius
 		var z: float = sin(angle) * radius
@@ -588,7 +592,7 @@ func _build_slope_warnings_multimesh(slope_data: Array[Dictionary]) -> void:
 	multimesh.mesh = quad
 	multimesh.instance_count = slope_data.size()
 
-	for i in range(slope_data.size()):
+	for i: int in range(slope_data.size()):
 		var data: Dictionary = slope_data[i]
 		var pos: Vector3 = data["pos"]
 		var normal: Vector3 = data["normal"]
@@ -632,7 +636,7 @@ func _draw_jump_trajectories(positions: Array[Vector3]) -> void:
 	var time_step: float = 0.05
 	var max_time: float = 2.0
 
-	for pos in positions:
+	for pos: Vector3 in positions:
 		var current_time: float = 0.0
 		var prev_point: Vector3 = pos
 		var is_first: bool = true
@@ -681,6 +685,6 @@ func _bake_meshes() -> void:
 
 ## Iterates recursively to set the scene owner so baked nodes are saved with the scene.
 func _set_owner_recursive(node: Node, new_owner: Node) -> void:
-	for child in node.get_children():
+	for child: Node in node.get_children():
 		child.owner = new_owner
 		_set_owner_recursive(child, new_owner)

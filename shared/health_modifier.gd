@@ -1,9 +1,12 @@
+class_name HealthModifier
 extends Area3D
 
 ## Negative values deal damage. Positive values heal.
 @export var modify_amount: int = -25
+## Time interval in seconds between health modifications.
 @export var tick_interval: float = 1.0
 
+## Internal timer used for scheduling health ticks.
 var _tick_timer: Timer
 
 

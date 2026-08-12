@@ -1,5 +1,7 @@
+class_name Killfield
 extends Area3D
 
+## Vertical offset applied to the respawn position.
 @export var spawn_height_offset: float = 1.0
 
 

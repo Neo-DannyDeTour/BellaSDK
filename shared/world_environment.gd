@@ -1,6 +1,9 @@
+class_name GameWorldEnvironment
 extends WorldEnvironment
 
+## Reference to the WorldEnvironment node.
 @onready var world_env: WorldEnvironment = $"."
+## Reference to the main DirectionalLight3D sun.
 @onready var sun: DirectionalLight3D = $DirectionalLight3D
 
 

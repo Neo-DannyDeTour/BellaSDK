@@ -1,6 +1,7 @@
 @tool
 extends Node3D
 
+## Property: Generate Basalt.
 @export_group("Generation Trigger")
 @export var generate_basalt: bool = false:
 	set(value):
@@ -8,15 +9,18 @@ extends Node3D
 			_generate()
 		generate_basalt = false
 
+## Property: Field Width.
 @export_group("Field Properties")
 @export var field_width: float = 20.0:
 	set(value):
 		field_width = value
 		_queue_generation()
+## Property: Field Depth.
 @export var field_depth: float = 20.0:
 	set(value):
 		field_depth = value
 		_queue_generation()
+## Property: Amount.
 @export var amount: int = 100:
 	set(value):
 		amount = value
@@ -25,46 +29,57 @@ extends Node3D
 @export_group("Basalt Properties")
 
 # Your original sides variable
+## Property: Sides.
 @export var sides: int = 6:
 	set(value):
 		sides = value
 		_queue_generation()
 
 # The new surface group variable
+## Property: Surface Group.
 @export var surface_group: String = "stone":
 	set(value):
 		surface_group = value
 		_queue_generation()
 
 # Ensure you have ": int = 0" right here!
+## Property: Rings.
 @export var rings: int = 0:
 	set(value):
 		rings = int(value) if value != null else 0
 		_queue_generation()
 
+## Property: Column Radius.
 @export var column_radius: float = 1.0:
 	set(value):
 		column_radius = value
 		_queue_generation()
+## Property: Base Height.
 @export var base_height: float = 2.0:
 	set(value):
 		base_height = value
 		_queue_generation()
+## Property: Chaos.
 @export var chaos: float = 0.5:
 	set(value):
 		chaos = value
 		_queue_generation()
+## Property: Min Spacing.
 @export var min_spacing: float = 1.8:
 	set(value):
 		min_spacing = value
 		_queue_generation()
 
 # Group to store generated columns so we can clear them easily
+## Property: Generated Group Name.
 var generated_group_name: String = "generated_basalt"
 
 # --- DEBOUNCE TIMER VARIABLES ---
+## Property: Needs Generation.
 var _needs_generation: bool = false
+## Property: Last Edit Time.
 var _last_edit_time: int = 0
+## Property: Debounce Delay Ms.
 var _debounce_delay_ms: int = 1000  # 1 second (1000 milliseconds)
 
 

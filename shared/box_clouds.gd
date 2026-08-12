@@ -3,28 +3,35 @@ class_name LowAltitudeWeather
 extends Node
 
 # 2. Proxy variables exposed to the Inspector
+## The direction vector of the wind affecting the clouds.
 @export_group("Weather Settings")
 @export var editor_wind_dir: Vector3 = Vector3(1.0, 0.0, 0.5):
 	set(value):
 		editor_wind_dir = value
 		LowAltitudeWeather.wind_dir = value
 
+## The speed of the wind affecting the clouds.
 @export var editor_wind_spd: float = 2.5:
 	set(value):
 		editor_wind_spd = value
 		LowAltitudeWeather.wind_spd = value
 
+## The density or coverage amount of the clouds.
 @export var editor_coverage: float = 0.45:
 	set(value):
 		editor_coverage = value
 		LowAltitudeWeather.coverage = value
 
+## The FogVolume node used to render the local clouds.
 @export_group("Nodes")
 @export var local_cloud_volume: FogVolume
 
 # 1. The static variables remain exactly as they were
+## Static variable for wind direction.
 static var wind_dir: Vector3 = Vector3(1.0, 0.0, 0.5)
+## Static variable for wind speed.
 static var wind_spd: float = 2.5
+## Static variable for cloud coverage.
 static var coverage: float = 0.45
 
 

@@ -4,47 +4,56 @@ extends Node3D
 
 @export_group("Node Connections")
 # By exporting the Nodes, this script no longer cares what they are named in the scene tree!
+## Property: Target Mesh.
 @export var target_mesh: MeshInstance3D:
 	set(value):
 		target_mesh = value
 		_update_visuals()
 
+## Property: Target Label.
 @export var target_label: Label3D:
 	set(value):
 		target_label = value
 		_update_visuals()
 
+## Property: Label Text.
 @export_group("Hologram Settings")
 @export var label_text: String = "Checkpoint":
 	set(value):
 		label_text = value
 		_update_visuals()
 
+## Property: Line Color.
 @export var line_color: Color = Color.GREEN:
 	set(value):
 		line_color = value
 		_update_visuals()
 
+## Property: Base Color.
 @export var base_color: Color = Color(0.0, 0.2, 0.8, 0.1):
 	set(value):
 		base_color = value
 		_update_visuals()
 
+## Property: Speed.
 @export var speed: float = 1.0:
 	set(value):
 		speed = value
 		_update_visuals()
 
+## Property: Line Count.
 @export var line_count: float = 2.0:
 	set(value):
 		line_count = value
 		_update_visuals()
 
+## Property: Line Thickness.
 @export_range(0.01, 1.0) var line_thickness: float = 0.1:
 	set(value):
 		line_thickness = value
 		_update_visuals()
 
+## Property: Glow Multiplier.
 @export var glow_multiplier: float = 2.0:
 	set(value):
 		glow_multiplier = value

@@ -1,10 +1,15 @@
+class_name EnemyTest
 extends RigidBody3D
 
+## The current health of the enemy test dummy.
 @export var health: int = 200
+## The force applied to the dummy when hit.
 @export var knockback_force: float = 0.5
+## The vertical impulse applied when knocked back.
 @export var vertical_kick: float = 0.7
 
 # --- THE FIGHTING BAG BOBBING ---
+## Internal timer used for the bobbing motion.
 var time_passed: float = 0.0
 
 

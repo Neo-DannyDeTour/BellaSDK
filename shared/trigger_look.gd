@@ -1,8 +1,8 @@
 class_name TriggerLook
 extends Area3D
 
-@export_group("Trigger Settings")
 ## The object the player needs to look at (e.g., your Marker3D)
+@export_group("Trigger Settings")
 @export var look_target: Node3D
 ## How long the player must look at the target (in seconds)
 @export var required_look_time: float = 2.0
@@ -11,12 +11,15 @@ extends Area3D
 ## If true, the trigger can only be fired once.
 @export var fire_once: bool = true
 
-@export_group("Action Settings")
 ## Array of nodes to power on. Can be the PowerComponent itself or the Parent node.
+@export_group("Action Settings")
 @export var targets: Array[Node]
 
+## Property: Player Inside.
 var _player_inside: bool = false
+## Property: Current Look Time.
 var _current_look_time: float = 0.0
+## Property: Has Triggered.
 var _has_triggered: bool = false
 ## Cached Camera3D reference to avoid expensive get_viewport().get_camera_3d() calls every frame.
 var _cached_camera: Camera3D = null

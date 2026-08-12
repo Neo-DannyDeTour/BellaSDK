@@ -1,31 +1,43 @@
 @tool
 extends Area3D
 
-@export_category("Level Design")
 ## Changes the size of the trigger box directly from the inspector.
+@export_category("Level Design")
 @export var trigger_size: Vector3 = Vector3(2.0, 2.0, 2.0):
 	set(value):
 		trigger_size = value
 		_update_bounds()
 
+## Property: Trigger Once.
 @export_category("Trigger Settings")
 @export var trigger_once: bool = true
 
+## Property: Fade In Duration.
 @export_category("Fade Timings")
 @export var fade_in_duration: float = 1.0
+## Property: Hold Duration.
 @export var hold_duration: float = 0.5
+## Property: Fade Out Duration.
 @export var fade_out_duration: float = 1.0
 
+## Property: Fade Color.
 @export_category("Visual Effects")
 @export var fade_color: Color = Color.BLACK
+## Property: Use Blur.
 @export var use_blur: bool = true
+## Property: Max Blur.
 @export var max_blur: float = 2.5
+## Property: Use Blink.
 @export var use_blink: bool = false
+## Property: Blink Count.
 @export_range(1, 10) var blink_count: int = 1
 
+## Property: Triggered.
 var _triggered: bool = false
+## Property: Active Tween.
 var _active_tween: Tween
 
+## Property: Overlay.
 @onready var overlay: ColorRect = $CanvasLayer/ColorRect
 
 

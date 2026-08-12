@@ -6,31 +6,37 @@ enum ShapeType { BOX, SPHERE }
 
 @export_category("Trigger Visuals")
 
+## Property: Shape Type.
 @export var shape_type: ShapeType = ShapeType.BOX:
 	set(value):
 		shape_type = value
 		_update_mesh()
 
+## Property: Show In Game.
 @export var show_in_game: bool = false:
 	set(value):
 		show_in_game = value
 		visible = Engine.is_editor_hint() or show_in_game
 
+## Property: Trigger Size.
 @export var trigger_size: Vector3 = Vector3(2.0, 2.0, 2.0):
 	set(value):
 		trigger_size = value
 		_update_mesh()
 
+## Property: Trigger Color.
 @export var trigger_color: Color = Color(0.9, 0.5, 0.1, 0.4):
 	set(value):
 		trigger_color = value
 		_update_material()
 
+## Property: Trigger Text.
 @export var trigger_text: String = "TRIGGER":
 	set(value):
 		trigger_text = value
 		_update_text()
 
+## Property: Label.
 var _label: Label3D
 
 

@@ -5,17 +5,25 @@ extends PathFollow3D
 # CONFIGURATION VARIABLES
 # (These are now populated automatically by the SlideTrack parent)
 # --------------------------------------
+## The speed at which the stick moves along the path.
 var move_speed: float = 15.0
+## The minimum speed required to throw the player at the end of the path.
 var throw_speed_threshold: float = 8.0
+## The local velocity vector applied to the player when thrown.
 var throw_velocity_local: Vector3 = Vector3(0.0, 5.0, -20.0)
+## Determines if the player should hang at the end of the path if not thrown.
 var stay_at_end: bool = false
+## Determines if the stick should instantly reset to the start after use.
 var return_immediately: bool = false
 
 # --------------------------------------
 # STATE VARIABLES
 # --------------------------------------
+## Reference to the player currently holding the stick.
 var current_player: Player = null
+## The current active speed of the stick along the path.
 var current_speed: float = 0.0
+## Indicates whether the stick is currently in motion.
 var is_active: bool = false
 
 

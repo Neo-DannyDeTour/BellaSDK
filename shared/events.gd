@@ -103,6 +103,7 @@ signal tts_state_changed(enabled: bool)
 signal font_changed(font_name: String)
 
 # --- FONT SWAPPING LOGIC ---
+## Property: Fonts.
 var fonts: Dictionary[String, Font] = {}
 
 # --- CHAPTER TEXT ANIMATIONS ---

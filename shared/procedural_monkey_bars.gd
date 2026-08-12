@@ -1,8 +1,10 @@
 @tool
-extends CSGBox3D
 class_name MonkeyBarVolume
+extends CSGBox3D
 
+## The Area3D node used to detect player entry for monkey bars.
 var interact_area: Area3D
+## The CollisionShape3D representing the interaction volume.
 var col_shape: CollisionShape3D
 
 

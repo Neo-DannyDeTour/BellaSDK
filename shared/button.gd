@@ -1,17 +1,22 @@
 @tool
+class_name LogicButton
 extends StaticBody3D
 
 @export_category("Button References")
 # Drag the node you want to physically move down here (e.g., the 'button' Node3D)
+## The visual part of the button that moves down when pressed.
 @export var pressable_part: Node3D
 # Drag the actual mesh you want to glow here (e.g., 'Circle_017')
+## The specific mesh instance that receives the highlight effect.
 @export var mesh_to_highlight: MeshInstance3D
+## The shader material applied to outline the button.
 @export var outline_material: ShaderMaterial
 
-@export_category("Global Architecture")
 ## If populated, this button will broadcast this string to the Event Bus across all scenes.
+@export_category("Global Architecture")
 @export var global_event_name: String = ""
 
+## The component used to send signals to local targets.
 @export_category("Local Connections")
 @export var transmitter: OutputTransmitter3D:
 	set(value):
@@ -20,18 +25,25 @@ extends StaticBody3D
 
 # The targets are back on the parent for easy level design access.
 # Whenever this changes in the Inspector, it updates the child.
+## List of target nodes to activate when the button is pressed.
 @export var targets: Array[Node3D]:
 	set(value):
 		targets = value
 		_sync_transmitter()
 
+## The audio player for the mechanical click sound.
 @export var click_sound: AudioStreamPlayer3D
 
+## Internal tween handling the physical button press animation.
 var press_tween: Tween
+## State flag indicating if the button is currently available to be pressed.
 var can_press: bool = true
 
+## Reference to the internal interaction handler.
 @onready var interact_component: InteractComponent = $InteractComponent
+## Reference to the internal highlighting handler.
 @onready var highlight_component: HighlightComponent = $HighlightComponent
+## Reference to the 3D label displaying interaction prompts.
 @onready var label_interact: Label3D = $LabelInteract
 
 

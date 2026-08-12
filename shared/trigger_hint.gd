@@ -38,6 +38,7 @@ enum HintType { CUSTOM, INTERACT, JUMP, CROUCH, SPRINT, FLASHLIGHT, ZOOM }
 ## Determines how long the hint message remains visible on the screen in seconds.
 @export var duration: float = 3.0
 
+## Internal flag indicating if the hint has already been shown.
 var _triggered: bool = false
 
 
