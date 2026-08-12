@@ -33,17 +33,17 @@ var _active_weight: float = 0.0  # 0.0 = Limp, 1.0 = Fully active
 
 func _ready() -> void:
 	print("HealthDispenser: _ready() - Initializing dispenser and procedural tentacle.")
-	
+
 	_create_base_mesh()
 	_spawn_visual_segments()
-	
+
 	if is_instance_valid(tentacle_pivot):
 		# Set initial resting position straight down
 		_current_target_pos = tentacle_pivot.global_position + (Vector3.DOWN * 1.5)
 		_update_tentacle_visuals()
-	
+
 	set_physics_process(false)
-	
+
 	if is_instance_valid(detection_area):
 		detection_area.body_entered.connect(_on_body_entered)
 		detection_area.body_exited.connect(_on_body_exited)
@@ -52,19 +52,19 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	var is_targeting: bool = is_instance_valid(_nearby_player)
 	var desired_target: Vector3
-	
+
 	if is_targeting:
 		_active_weight = move_toward(_active_weight, 1.0, delta * 3.0)
 		desired_target = _nearby_player.global_position + Vector3(0.0, 1.0, 0.0)
 	else:
 		_active_weight = move_toward(_active_weight, 0.0, delta * 2.0)
 		desired_target = tentacle_pivot.global_position + (Vector3.DOWN * 1.5)
-	
+
 	# Smoothly move the tip of the tentacle toward the desired position
 	_current_target_pos = _current_target_pos.lerp(desired_target, delta * 6.0)
-	
+
 	_update_tentacle_visuals()
-	
+
 	# Optimization: Turn off processing once fully limp and settled
 	if _active_weight <= 0.0 and _current_target_pos.is_equal_approx(desired_target):
 		print("HealthDispenser: _physics_process() - Tentacle settled, disabling loop.")
@@ -72,6 +72,7 @@ func _physics_process(delta: float) -> void:
 
 
 # --- PROCEDURAL TENTACLE LOGIC ---
+
 
 func _create_base_mesh() -> void:
 	_base_mesh = CylinderMesh.new()
@@ -90,7 +91,7 @@ func _create_base_mesh() -> void:
 func _spawn_visual_segments() -> void:
 	if not is_instance_valid(tentacle_pivot):
 		return
-		
+
 	for i: int in range(segment_count):
 		var segment: MeshInstance3D = MeshInstance3D.new()
 		segment.mesh = _base_mesh
@@ -103,10 +104,10 @@ func _spawn_visual_segments() -> void:
 func _update_tentacle_visuals() -> void:
 	if not is_instance_valid(tentacle_pivot) or _segments.is_empty():
 		return
-		
+
 	var p0: Vector3 = tentacle_pivot.global_position
 	var p2: Vector3 = _current_target_pos
-	
+
 	# Clamp maximum distance so it doesn't stretch infinitely
 	var raw_dist: float = p0.distance_to(p2)
 	if raw_dist > max_reach:
@@ -149,12 +150,13 @@ func _update_visual_segment(segment: MeshInstance3D, p1: Vector3, p2: Vector3) -
 
 # --- INTERACTION & HEALTH LOGIC ---
 
+
 func interact_held(_character: CharacterBody3D) -> void:
 	var current_time: int = Time.get_ticks_msec()
-	
+
 	if current_time - _last_heal_time >= heal_cooldown_msec:
 		_last_heal_time = current_time
-		
+
 		if is_instance_valid(_player_health_component):
 			_player_health_component.heal(heal_amount)
 
@@ -175,13 +177,13 @@ func _on_body_exited(body: Node3D) -> void:
 
 func _connect_player_health(player: CharacterBody3D) -> void:
 	var health_node: Node = player.get_node_or_null("Components/HealthComponent")
-	
+
 	if is_instance_valid(health_node) and health_node is HealthComponent:
 		_player_health_component = health_node as HealthComponent
-		
+
 		if not _player_health_component.health_changed.is_connected(_on_player_health_changed):
 			_player_health_component.health_changed.connect(_on_player_health_changed)
-			
+
 		_update_screen()
 
 
@@ -189,7 +191,7 @@ func _disconnect_player_health() -> void:
 	if is_instance_valid(_player_health_component):
 		if _player_health_component.health_changed.is_connected(_on_player_health_changed):
 			_player_health_component.health_changed.disconnect(_on_player_health_changed)
-	
+
 	_player_health_component = null
 
 
@@ -200,14 +202,14 @@ func _on_player_health_changed(_new_health: int) -> void:
 func _update_screen() -> void:
 	if not is_instance_valid(screen_sprite) or not is_instance_valid(_player_health_component):
 		return
-		
+
 	var current: float = float(_player_health_component.current_health)
 	var maximum: float = float(_player_health_component.max_health)
 	var ratio: float = 0.0
-	
+
 	if maximum > 0.0:
 		ratio = current / maximum
-	
+
 	if ratio <= 0.33:
 		screen_sprite.texture = tex_low_health
 	elif ratio <= 0.66:

@@ -85,9 +85,7 @@ func _detect_player_in_cone() -> void:
 	for result: Variant in results:
 		var collider: Object = result["collider"]
 		if collider is Node3D and collider.is_in_group("player"):
-			var dir_to_player: Vector3 = head.global_position.direction_to(
-				collider.global_position
-			)
+			var dir_to_player: Vector3 = head.global_position.direction_to(collider.global_position)
 			var forward_dir: Vector3 = -head.global_basis.z
 			var angle_to_player: float = rad_to_deg(forward_dir.angle_to(dir_to_player))
 
@@ -171,7 +169,7 @@ func _shoot_projectile() -> void:
 	var proj: EnergyBlast = projectile_scene.instantiate() as EnergyBlast
 	get_tree().current_scene.add_child(proj)
 
-	# Lock the projectile to the exact orientation of the spawn point 
+	# Lock the projectile to the exact orientation of the spawn point
 	# (which stopped tracking the player during the FROZEN state).
 	proj.global_transform = spawn_point.global_transform
 	var aim_direction: Vector3 = -spawn_point.global_transform.basis.z

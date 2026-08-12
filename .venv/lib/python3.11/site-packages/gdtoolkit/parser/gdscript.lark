@@ -1,0 +1,318 @@
+start: _class_stmt* [_simple_class_stmt | annotation+]
+
+_class_stmt: _simple_class_stmt _NL
+           | annotation* compound_class_stmt
+           | annotation* _NL
+_simple_class_stmt: annotation* single_class_stmt (";" annotation* single_class_stmt)* [";"]
+?single_class_stmt: pass_stmt
+                  | enum_stmt
+                  | signal_stmt
+                  | extends_stmt
+                  | classname_extends_stmt
+                  | classname_stmt
+                  | class_var_stmt
+                  | "static" class_var_stmt -> static_class_var_stmt
+                  | const_stmt
+                  | docstr_stmt
+?compound_class_stmt: class_def
+                    | property_body_def
+                    | func_def
+                    | "static" func_def -> static_func_def
+                    | abstract_func_def
+annotation: "@" NAME [annotation_args]
+annotation_args: "(" [test_expr ("," test_expr)* [trailing_comma]] ")"
+
+pass_stmt: "pass"
+enum_stmt: enum_regular
+         | enum_named
+enum_regular: "enum" enum_body
+enum_named: "enum" NAME [_NL] enum_body
+enum_body: "{" [enum_element ("," enum_element)* [trailing_comma]] "}"
+enum_element: NAME ["=" type_cast]
+signal_stmt: "signal" NAME [signal_args]
+signal_args: "(" [signal_arg ("," signal_arg)* [trailing_comma]] ")"
+?signal_arg: NAME -> signal_arg_regular
+           | NAME ":" TYPE_HINT -> signal_arg_typed
+extends_stmt: "extends" (NAME | string) ("." NAME)*
+classname_stmt: "class_name" NAME
+!classname_extends_stmt: "class_name" NAME "extends" (NAME | string) ("." NAME)*
+class_var_stmt: class_var_empty
+              | class_var_assigned
+              | class_var_typed
+              | class_var_typed_assgnd
+              | class_var_inf
+class_var_empty: "var" NAME [inline_property_body]
+class_var_assigned: "var" NAME "=" expr [inline_property_body]
+_var_typed: "var" NAME ":" TYPE_HINT
+class_var_typed: _var_typed [inline_property_body]
+class_var_typed_assgnd: _var_typed "=" expr [inline_property_body]
+class_var_inf: "var" NAME ":" "=" expr [inline_property_body]
+_for_iterator_var_typed: NAME ":" TYPE_HINT
+inline_property_body: ":" [property_delegate_set ["," property_delegate_get]]
+                    | ":" [property_delegate_get ["," property_delegate_set]]
+const_stmt: const_assigned
+          | const_typed_assigned
+          | const_inf
+const_assigned: "const" NAME "=" expr
+const_typed_assigned: "const" NAME ":" TYPE_HINT "=" expr
+const_inf: "const" NAME ":" "=" expr
+docstr_stmt: string
+
+class_def: "class" NAME [extends_stmt] ":" (_class_body | _class_stmt)
+_class_body: _NL _INDENT (_class_stmt+ | _class_stmt* (_simple_class_stmt | annotation+)) _DEDENT
+
+property_body_def: _INDENT _property_delegates _NL _DEDENT
+                 | _INDENT property_custom_etter+ _DEDENT
+_property_delegates: property_delegate_set ["," [_NL] property_delegate_get]
+                   | property_delegate_get ["," [_NL] property_delegate_set]
+!property_delegate_set: SET "=" NAME
+!property_delegate_get: GET "=" NAME
+?property_custom_etter: SET "(" NAME ")" ":" _func_suite -> property_custom_setter
+                      | GET [property_custom_getter_args] ":" _func_suite -> property_custom_getter
+property_custom_getter_args: "(" ")"
+
+func_def: func_header _func_suite
+abstract_func_def: abstract_func_header
+func_header: "func" NAME func_args ["->" TYPE_HINT] ":"
+abstract_func_header: "func" NAME func_args ["->" TYPE_HINT]
+// TODO: Accept func_arg_variadic as last one only.
+func_args: "(" [func_arg ("," func_arg)* [trailing_comma]] ")"
+?func_arg: func_arg_variadic
+         | func_arg_regular
+         | func_arg_inf
+         | func_arg_typed
+func_arg_variadic: "..." (func_arg_regular | func_arg_typed)
+func_arg_regular: NAME ["=" expr]
+func_arg_inf: NAME ":" "=" expr
+func_arg_typed: NAME ":" TYPE_HINT ["=" expr]
+_func_suite: _func_body _NL
+           | _func_stmt
+_func_body: _NL _INDENT (_func_stmt+ | _func_stmt* (_simple_func_stmt | annotation+)) _DEDENT
+_func_stmt: _simple_func_stmt _NL
+          | annotation* compound_func_stmt
+          | annotation* _NL
+_simple_func_stmt: annotation* single_func_stmt (";" annotation* single_func_stmt)* [";"]
+?single_func_stmt: pass_stmt
+                 | return_stmt
+                 | func_var_stmt
+                 | break_stmt
+                 | breakpoint_stmt
+                 | continue_stmt
+                 | expr_stmt
+                 | const_stmt
+?compound_func_stmt: if_stmt
+                   | while_stmt
+                   | for_stmt
+                   | for_stmt_typed
+                   | match_stmt
+return_stmt: "return" [expr]
+func_var_stmt: func_var_empty
+             | func_var_assigned
+             | func_var_typed
+             | func_var_typed_assgnd
+             | func_var_inf
+func_var_empty: "var" NAME
+func_var_assigned: "var" NAME "=" expr
+func_var_typed: _var_typed
+func_var_typed_assgnd: _var_typed "=" expr
+func_var_inf: "var" NAME ":" "=" expr
+break_stmt.2: "break"
+breakpoint_stmt.2: "breakpoint"
+continue_stmt.2: "continue"
+expr_stmt: expr
+if_stmt: if_branch (_NL? elif_branch)* [_NL? else_branch]
+if_branch: "if" expr ":" _func_suite
+elif_branch: "elif" expr ":" _func_suite
+else_branch: "else" ":" _func_suite
+while_stmt: "while" expr ":" _func_suite
+for_stmt: "for" NAME "in" expr ":" _func_suite
+for_stmt_typed: "for" _for_iterator_var_typed "in" expr ":" _func_suite
+match_stmt: "match" expr ":" _match_body
+_match_body: _NL _INDENT match_branch+ _DEDENT
+?match_branch: pattern ":" _func_suite
+             | pattern "when" expr ":" _func_suite -> guarded_match_branch
+
+pattern: list_pattern
+?list_pattern: test_pattern ("," test_pattern)*
+!?test_pattern: or_pattern ["if" or_pattern "else" test_pattern]
+!?or_pattern: and_pattern (("or" | "||") and_pattern)*
+!?and_pattern: not_pattern (("and" | "&&") not_pattern)*
+!?not_pattern: ("not" | "!") not_pattern | comp_pattern
+?comp_pattern: bitw_or_pattern [_comp_op bitw_or_pattern]
+!?bitw_or_pattern: bitw_xor_pattern ("|" bitw_xor_pattern)*
+!?bitw_xor_pattern: bitw_and_pattern ("^" bitw_and_pattern)*
+!?bitw_and_pattern: shift_pattern ("&" shift_pattern)*
+!?shift_pattern: arith_pattern (("<<" | ">>") arith_pattern)*
+!?arith_pattern: mdr_pattern (("-" | "+") mdr_pattern)*
+!?mdr_pattern: neg_pattern (("*" | "/" | "%") neg_pattern)*
+!?neg_pattern: "-" neg_pattern
+             | bitw_not_pattern
+!?bitw_not_pattern: "~" bitw_not_pattern
+                  | attr_pattern
+!?attr_pattern: call_pattern ("." call_pattern)*
+?call_pattern: NAME "(" list_pattern ")"
+             | atom_pattern
+?atom_pattern: "(" test_pattern ")" -> par_pattern
+             | "var" NAME -> var_capture_pattern
+             | ".." -> etc_pattern
+             | "_" -> wildcard_pattern
+             | array_pattern
+             | dict_pattern
+             | NAME
+             | HEX
+             | BIN
+             | literal
+array_pattern: "[" [test_pattern ("," test_pattern)* [trailing_comma]] "]"
+dict_pattern: "{" [dict_pattern_element ("," dict_pattern_element)* [trailing_comma]] "}"
+?dict_pattern_element: kv_pair_pattern
+                     | atom_pattern
+kv_pair_pattern: test_pattern ":" test_pattern
+
+expr: type_cast
+    | assnmnt_expr
+assnmnt_expr: attr_expr _assnmnt_op type_cast
+!_assnmnt_op: "=" | "+=" | "-=" | "*=" | "/=" | "%=" | "&=" | "|=" | "^=" | ">>=" | "<<=" | "**="
+?type_cast: test_expr
+          | actual_type_cast
+!?actual_type_cast: test_expr ("as" TYPE_HINT)+
+!?test_expr: or_test ["if" asless_or_test "else" asless_test_expr]
+           | actual_type_cast "if" asless_or_test "else" asless_test_expr
+!?asless_test_expr: asless_or_test ["if" asless_or_test "else" asless_test_expr]
+!?or_test: and_test (("or" | "||") asless_and_test)*
+         | actual_type_cast (("or" | "||") asless_and_test)+
+!?asless_or_test: asless_and_test (("or" | "||") asless_and_test)*
+!?and_test: not_test (("and" | "&&") asless_not_test)*
+          | actual_type_cast (("and" | "&&") asless_not_test)+
+!?asless_and_test: asless_not_test (("and" | "&&") asless_not_test)*
+?not_test: content_test
+         | asless_actual_not_test
+!?asless_actual_not_test: ("not" | "!") asless_not_test
+?asless_not_test: asless_content_test
+                | asless_actual_not_test
+not_in_op: "not" "in"
+!_content_test_op: not_in_op | "in"
+!?content_test: comparison (_content_test_op asless_comparison)*
+              | actual_type_cast (_content_test_op asless_comparison)+
+!?asless_content_test: asless_comparison (_content_test_op asless_comparison)*
+?comparison: bitw_or [_comp_op asless_bitw_or]
+           | actual_type_cast _comp_op asless_bitw_or
+?asless_comparison: asless_bitw_or [_comp_op asless_bitw_or]
+!_comp_op: ">" | "<" | "==" | "!=" | "<=" | ">="
+!?bitw_or: bitw_xor ("|" asless_bitw_xor)*
+         | actual_type_cast ("|" asless_bitw_xor)+
+!?asless_bitw_or: asless_bitw_xor ("|" asless_bitw_xor)*
+!?bitw_xor: bitw_and ("^" asless_bitw_and)*
+          | actual_type_cast ("^" asless_bitw_and)+
+!?asless_bitw_xor: asless_bitw_and ("^" asless_bitw_and)*
+!?bitw_and: shift_expr ("&" asless_shift_expr)*
+          | actual_type_cast ("&" asless_shift_expr)+
+!?asless_bitw_and: asless_shift_expr ("&" asless_shift_expr)*
+!?shift_expr: arith_expr (("<<" | ">>") asless_arith_expr)*
+            | actual_type_cast (("<<" | ">>") asless_arith_expr)+
+!?asless_shift_expr: asless_arith_expr (("<<" | ">>") asless_arith_expr)*
+!?arith_expr: mdr_expr (("-" | "+") asless_mdr_expr)*
+            | actual_type_cast (("-" | "+") asless_mdr_expr)+
+!?asless_arith_expr: asless_mdr_expr (("-" | "+") asless_mdr_expr)*
+!?mdr_expr: neg_expr (("*" | "/" | "%") asless_neg_expr)*
+          | actual_type_cast (("*" | "/" | "%") asless_neg_expr)+
+!?asless_mdr_expr: asless_neg_expr (("*" | "/" | "%") asless_neg_expr)*
+?neg_expr: bitw_not
+         | asless_actual_neg_expr
+!?asless_actual_neg_expr: "-" asless_neg_expr
+?asless_neg_expr: asless_bitw_not
+                | asless_actual_neg_expr
+?bitw_not: pow_expr
+         | asless_actual_bitw_not
+!?asless_actual_bitw_not: "~" asless_bitw_not
+?asless_bitw_not: asless_pow_expr
+                | asless_actual_bitw_not
+!?pow_expr: type_test ("**" asless_type_test)*
+          | actual_type_cast ("**" asless_type_test)+
+!?asless_pow_expr: asless_type_test ("**" asless_type_test)*
+!?type_test: await_expr (("is" | "is not") TYPE_HINT)*
+           | actual_type_cast (("is" | "is not") TYPE_HINT)+
+!?asless_type_test: await_expr (("is" | "is not") TYPE_HINT)*
+!?await_expr: ("await")* call_expr
+?call_expr: attr_expr
+          | (NAME | GET | SET) _call_arglist -> standalone_call
+          | getattr _call_arglist -> getattr_call
+_call_arglist: "(" [type_cast ("," type_cast)* [trailing_comma]] ")"
+?attr_expr: subscr_expr
+          | getattr
+getattr: call_expr _attr+
+!_attr: ("." (NAME | GET | SET))
+?subscr_expr: call_expr "[" type_cast "]"
+            | _plus_atom
+_plus_atom: ["+"] atom
+?atom: "(" type_cast ")" -> par_expr
+     | array
+     | dict
+     | NAME
+     | HEX
+     | BIN
+     | lambda
+     | literal
+lambda: lambda_header _lambda_suite
+lambda_header: "func" [NAME] func_args ["->" TYPE_HINT] ":"
+// the only difference between _lambda_suite and _func_suite is that
+// _lambda_suite never consumes last _NL (after stmt or _DEDENT)
+// as the last _NL in every lambda case belongs to parent stmt
+_lambda_suite: _lambda_body
+             | _standalone_lambda_stmt
+_lambda_body: _NL _INDENT _func_stmt+ _DEDENT
+_standalone_lambda_stmt: _simple_func_stmt
+                       | annotation* compound_func_stmt
+                       | annotation*
+?literal: NUMBER
+        | string
+        | rstring
+        | get_node
+        | "^" string -> node_path
+        | "&" string -> string_name
+        | unique_node_path
+HEX.2: /-?0x[a-fA-F0-9][a-fA-F0-9_]*/
+BIN.2: /-?0b[01][01_]*/
+get_node: "$" (path | string | unique_node_path)
+!path: ["/"] NAME ("/" ["%"] NAME)*
+!unique_node_path: "%" (path | REGULAR_STRING)
+array: "[" [type_cast ("," type_cast)* [trailing_comma]] "]"
+trailing_comma: ","
+dict: "{" [c_dict_element ("," c_dict_element)* [trailing_comma]] "}"
+    | "{" [eq_dict_element ("," eq_dict_element)* [trailing_comma]] "}"
+c_dict_element: type_cast ":" type_cast
+eq_dict_element: NAME "=" type_cast
+
+SET: "set"
+GET: "get"
+// TODO: fix whitespaces
+TYPE: NAME ([" "] "." [" "] NAME)*
+TYPE_HINT: TYPE ["[" TYPE [[" "] "," [" "] TYPE] "]"]
+NUMBER: ["+"|"-"] (FLOAT | INT)
+FLOAT: INT _EXP | DECIMAL _EXP?
+_EXP: ("e"|"E") SIGNED_INT
+SIGNED_INT: ["+"|"-"] INT
+DECIMAL: INT "." INT? | "." INT
+INT: DIGIT (DIGIT | "_")*
+DIGIT: "0".."9"
+
+string: LONG_STRING | REGULAR_STRING
+rstring: LONG_RSTRING | REGULAR_RSTRING
+LONG_STRING: /""".*?(?<!\\)(\\\\)*?"""/is | /'''.*?(?<!\\)(\\\\)*?'''/is
+LONG_RSTRING: /r""".*?(?<!\\)(\\\\)*?"""/is | /r'''.*?(?<!\\)(\\\\)*?'''/is
+REGULAR_STRING: /("(?!"").*?(?<!\\)(\\\\)*?"|'(?!'').*?(?<!\\)(\\\\)*?')/i
+REGULAR_RSTRING: /(r"(?!"").*?(?<!\\)(\\\\)*?"|r'(?!'').*?(?<!\\)(\\\\)*?')/i
+
+_NL: ( /\r?\n[\t ]*/ | COMMENT )+
+COMMENT: /#[^\n]*/
+LINE_CONT: /\\[\t \f]*\r?\n/
+
+// UAX#31 with GDScript modifications.
+NAME: /[\p{XID_Start}_\u037a-\u037d\u309b-\u309f\ufe70-\ufe74\ufe76-\ufefc\u0000][\p{XID_Continue}_\u037a-\u037d\ufe76-\ufefc\u0000]*/
+
+%declare _INDENT _DEDENT
+
+%ignore WS_INLINE
+%ignore COMMENT
+%ignore LINE_CONT
+
+%import common.WS_INLINE

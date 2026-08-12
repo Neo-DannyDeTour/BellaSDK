@@ -93,10 +93,7 @@ func _process(delta: float) -> void:
 		active_target = get_node_or_null("Target") as Node3D
 
 	if is_instance_valid(active_target):
-		if (
-			global_position != _last_start_pos
-			or active_target.global_position != _last_target_pos
-		):
+		if global_position != _last_start_pos or active_target.global_position != _last_target_pos:
 			_update_trajectory()
 			_last_start_pos = global_position
 			_last_target_pos = active_target.global_position
@@ -171,7 +168,7 @@ func _update_trajectory() -> void:
 func _update_visuals() -> void:
 	if not Engine.is_editor_hint():
 		return
-		
+
 	if _flight_time <= 0.0:
 		if is_instance_valid(_line_visual):
 			_line_visual.visible = false
@@ -236,13 +233,13 @@ func _get_position_at_time(t: float) -> Vector3:
 	else:
 		var td: float = t - _t_up
 		var target_y: float = p0.y
-		
+
 		# Prioritize the assigned target over the internal node to match _update_trajectory math
 		if is_instance_valid(assigned_target):
 			target_y = assigned_target.global_position.y
 		elif is_instance_valid(_target_node):
 			target_y = _target_node.global_position.y
-			
+
 		var y_apex: float = maxf(p0.y, target_y) + apex_height
 		y = y_apex - 0.5 * _custom_gravity_down * td * td
 
