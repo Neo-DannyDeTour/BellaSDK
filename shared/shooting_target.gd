@@ -15,8 +15,12 @@ var _default_collision_mask: int
 
 
 func _ready() -> void:
+	print("ShootingTarget: _ready() - Initializing target.")
 	# WARNING: Removed add_to_group("player"). Targets should NOT be in the player group!
-
+	
+	# Register this node as a valid target for turrets
+	add_to_group("target")
+	
 	_default_collision_layer = collision_layer
 	_default_collision_mask = collision_mask
 

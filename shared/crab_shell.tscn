@@ -1,0 +1,102 @@
+[gd_scene format=3 uid="uid://b4p7caf5dads7"]
+
+[ext_resource type="Script" uid="uid://duvxo8vpo163h" path="res://shared/crab_shell.gd" id="1_vrq53"]
+[ext_resource type="Texture2D" uid="uid://bvicax8m3kdh5" path="res://assets/textures/LeLu_Smoke/T_smoke_flipbook.png" id="2_bfw4i"]
+[ext_resource type="Texture2D" uid="uid://p8cs4aem3kyx" path="res://assets/textures/LeLu_Smoke/T_smoke_b7.png" id="3_jviwg"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_534t5"]
+height = 1.7
+radial_segments = 8
+rings = 0
+
+[sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_bfw4i"]
+data = PackedVector3Array(0, 0.84999996, 0.5, 0.3536, 0.84999996, 0.3536, 0, -0.84999996, 0.5, 0.3536, 0.84999996, 0.3536, 0.3536, -0.84999996, 0.3536, 0, -0.84999996, 0.5, 0.3536, 0.84999996, 0.3536, 0.5, 0.84999996, 0, 0.3536, -0.84999996, 0.3536, 0.5, 0.84999996, 0, 0.5, -0.84999996, 0, 0.3536, -0.84999996, 0.3536, 0.5, 0.84999996, 0, 0.3536, 0.84999996, -0.3536, 0.5, -0.84999996, 0, 0.3536, 0.84999996, -0.3536, 0.3536, -0.84999996, -0.3536, 0.5, -0.84999996, 0, 0.3536, 0.84999996, -0.3536, 0, 0.84999996, -0.5, 0.3536, -0.84999996, -0.3536, 0, 0.84999996, -0.5, 0, -0.84999996, -0.5, 0.3536, -0.84999996, -0.3536, 0, 0.84999996, -0.5, -0.3536, 0.84999996, -0.3536, 0, -0.84999996, -0.5, -0.3536, 0.84999996, -0.3536, -0.3536, -0.84999996, -0.3536, 0, -0.84999996, -0.5, -0.3536, 0.84999996, -0.3536, -0.5, 0.84999996, 0, -0.3536, -0.84999996, -0.3536, -0.5, 0.84999996, 0, -0.5, -0.84999996, 0, -0.3536, -0.84999996, -0.3536, -0.5, 0.84999996, 0, -0.3536, 0.84999996, 0.3536, -0.5, -0.84999996, 0, -0.3536, 0.84999996, 0.3536, -0.3536, -0.84999996, 0.3536, -0.5, -0.84999996, 0, -0.3536, 0.84999996, 0.3536, 0, 0.84999996, 0.5, -0.3536, -0.84999996, 0.3536, 0, 0.84999996, 0.5, 0, -0.84999996, 0.5, -0.3536, -0.84999996, 0.3536, 0, 0.84999996, 0, 0.3536, 0.84999996, 0.3536, 0, 0.84999996, 0.5, 0, 0.84999996, 0, 0.5, 0.84999996, 0, 0.3536, 0.84999996, 0.3536, 0, 0.84999996, 0, 0.3536, 0.84999996, -0.3536, 0.5, 0.84999996, 0, 0, 0.84999996, 0, 0, 0.84999996, -0.5, 0.3536, 0.84999996, -0.3536, 0, 0.84999996, 0, -0.3536, 0.84999996, -0.3536, 0, 0.84999996, -0.5, 0, 0.84999996, 0, -0.5, 0.84999996, 0, -0.3536, 0.84999996, -0.3536, 0, 0.84999996, 0, -0.3536, 0.84999996, 0.3536, -0.5, 0.84999996, 0, 0, 0.84999996, 0, 0, 0.84999996, 0.5, -0.3536, 0.84999996, 0.3536, 0, -0.84999996, 0, 0, -0.84999996, 0.5, 0.3536, -0.84999996, 0.3536, 0, -0.84999996, 0, 0.3536, -0.84999996, 0.3536, 0.5, -0.84999996, 0, 0, -0.84999996, 0, 0.5, -0.84999996, 0, 0.3536, -0.84999996, -0.3536, 0, -0.84999996, 0, 0.3536, -0.84999996, -0.3536, 0, -0.84999996, -0.5, 0, -0.84999996, 0, 0, -0.84999996, -0.5, -0.3536, -0.84999996, -0.3536, 0, -0.84999996, 0, -0.3536, -0.84999996, -0.3536, -0.5, -0.84999996, 0, 0, -0.84999996, 0, -0.5, -0.84999996, 0, -0.3536, -0.84999996, 0.3536, 0, -0.84999996, 0, -0.3536, -0.84999996, 0.3536, 0, -0.84999996, 0.5)
+
+[sub_resource type="Curve" id="Curve_jviwg"]
+_data = [Vector2(0, 0.5), 0.0, 0.0, 0, 0, Vector2(0.5209825, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_0p1cd"]
+curve = SubResource("Curve_jviwg")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_jviwg"]
+gravity = Vector3(0, 1, 0)
+scale_curve = SubResource("CurveTexture_0p1cd")
+anim_speed_min = 1.0
+anim_speed_max = 1.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bfw4i"]
+transparency = 1
+blend_mode = 1
+shading_mode = 0
+albedo_texture = ExtResource("2_bfw4i")
+billboard_mode = 3
+billboard_keep_scale = true
+particles_anim_h_frames = 8
+particles_anim_v_frames = 8
+particles_anim_loop = false
+
+[sub_resource type="QuadMesh" id="QuadMesh_vrq53"]
+material = SubResource("StandardMaterial3D_bfw4i")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3tx63"]
+transparency = 1
+shading_mode = 0
+albedo_texture = ExtResource("3_jviwg")
+billboard_mode = 3
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="Gradient" id="Gradient_jviwg"]
+colors = PackedColorArray(0, 0, 0, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_0p1cd"]
+gradient = SubResource("Gradient_jviwg")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_0p1cd"]
+angle_min = 1.0728835e-05
+angle_max = 360.00003
+gravity = Vector3(0, 0, 0)
+scale_min = 0.5
+scale_max = 2.0
+color_ramp = SubResource("GradientTexture1D_0p1cd")
+
+[sub_resource type="Curve" id="Curve_bfw4i"]
+_data = [Vector2(0, 0.5536107), 0.0, 0.0, 0, 0, Vector2(0.21045089, 0.7505472), 0.0, 0.0, 0, 0, Vector2(0.40372217, 0.41137874), 0.0, 0.0, 0, 0, Vector2(0.7151037, 0.5207879), 0.0, 0.0, 0, 0, Vector2(1, 0.061269283), 0.0, 0.0, 0, 0]
+point_count = 5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_7lgc2"]
+shading_mode = 0
+use_particle_trails = true
+
+[sub_resource type="RibbonTrailMesh" id="RibbonTrailMesh_tx8to"]
+material = SubResource("StandardMaterial3D_7lgc2")
+curve = SubResource("Curve_bfw4i")
+
+[node name="CrabShell" type="AnimatableBody3D" unique_id=959130236 node_paths=PackedStringArray("smoke_trail")]
+script = ExtResource("1_vrq53")
+smoke_trail = NodePath("GPUParticles3D2")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1282891805]
+mesh = SubResource("CylinderMesh_534t5")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1472668922]
+shape = SubResource("ConcavePolygonShape3D_bfw4i")
+
+[node name="GPUParticles3D" type="GPUParticles3D" parent="." unique_id=2124981745]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5610279, 0)
+visible = false
+amount = 512
+lifetime = 0.5
+process_material = SubResource("ParticleProcessMaterial_jviwg")
+draw_pass_1 = SubResource("QuadMesh_vrq53")
+
+[node name="GPUParticles3D2" type="GPUParticles3D" parent="." unique_id=286644159]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.84468377, 0)
+material_override = SubResource("StandardMaterial3D_3tx63")
+gi_mode = 0
+amount = 512
+trail_enabled = true
+process_material = SubResource("ParticleProcessMaterial_0p1cd")
+draw_pass_1 = SubResource("RibbonTrailMesh_tx8to")

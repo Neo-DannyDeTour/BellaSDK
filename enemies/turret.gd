@@ -3,13 +3,22 @@ class_name Turret
 
 enum TurretState { SCANNING, ENGAGING }
 
+## Defines whether the turret is friendly to the player, disabling its hostile tracking.
 @export var is_friendly: bool = false
+## The rotational speed at which the turret scans when no target is present.
 @export var scan_speed: float = 1.5
+## The speed at which the turret head interpolates to aim at a tracked target.
 @export var turn_speed: float = 8.0
+## The time interval in seconds between consecutive shots.
 @export var fire_rate: float = 0.15
+## The maximum distance in meters at which the turret can detect targets.
 @export var detection_radius: float = 15.0
+## The amount of health subtracted from a target upon a successful hit.
 @export var damage: int = 10
+## The 3D positional offset applied to the target's center to adjust the aiming reticle.
 @export var aim_offset: Vector3 = Vector3(0.0, 1.2, 0.0)
+## The groups that this turret considers hostile and will actively attempt to shoot.
+@export var hostile_groups: Array[StringName] = [&"player", &"target"]
 
 @onready var head: Node3D = $Head
 @onready var detection_area: Area3D = $DetectionArea
@@ -17,13 +26,18 @@ enum TurretState { SCANNING, ENGAGING }
 @onready var bullet_particles: GPUParticles3D = $Head/Muzzle/GPUParticles3D
 @onready var hitscan_ray: RayCast3D = $Head/Muzzle/HitscanRay
 
+## The current operational mode of the turret, determining if it is scanning or engaging.
 var current_state: TurretState = TurretState.SCANNING
+## The current entity that the turret is actively tracking and attempting to shoot.
 var target: Node3D = null
+## The remaining time in seconds before the turret is allowed to fire again.
 var fire_cooldown: float = 0.0
+## A cached list of Physics RIDs representing the turret's own collision shapes to avoid self-intersection.
 var _exclude_rids: Array[RID] = []
 
 
 func _ready() -> void:
+	print("Turret: _ready() - Initializing turret systems.")
 	var visualizer: EditorTriggerVisualizer = (
 		get_node_or_null("EditorTriggerVisualizer") as EditorTriggerVisualizer
 	)
@@ -41,8 +55,6 @@ func _ready() -> void:
 	detection_area.area_exited.connect(_on_area_exited)
 
 	hitscan_ray.collide_with_areas = true
-
-	# Cache all of the turret's own collision objects to prevent self-hitting
 	_build_exclude_rids(self)
 
 
@@ -78,7 +90,8 @@ func _process_scanning(delta: float) -> void:
 
 
 func _process_engaging(delta: float) -> void:
-	if target == null or not is_instance_valid(target):
+	# Safely verifies if the target is physically in play, stopping the pooling bug.
+	if not _is_active_target(target):
 		_change_state(TurretState.SCANNING)
 		return
 
@@ -88,6 +101,22 @@ func _process_engaging(delta: float) -> void:
 		_handle_shooting(delta)
 	else:
 		bullet_particles.emitting = false
+
+
+func _is_active_target(node: Node3D) -> bool:
+	if node == null or not is_instance_valid(node):
+		return false
+	# Pooled targets hide themselves and disable processing when dead.
+	if not node.visible or node.process_mode == Node.PROCESS_MODE_DISABLED:
+		return false
+	return true
+
+
+func _is_hostile(node: Node) -> bool:
+	for group: StringName in hostile_groups:
+		if node.is_in_group(group):
+			return true
+	return false
 
 
 func _get_actual_aim_offset() -> Vector3:
@@ -115,7 +144,7 @@ func _has_line_of_sight() -> bool:
 
 	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(start_pos, end_pos)
 	query.collide_with_areas = true
-	query.exclude = _exclude_rids  # Pre-cached RIDs prevent hitting the detection sphere
+	query.exclude = _exclude_rids 
 
 	var result: Dictionary = space_state.intersect_ray(query)
 
@@ -173,8 +202,8 @@ func _on_body_entered(body: Node3D) -> void:
 	if is_friendly:
 		return
 
-	if body.is_in_group("player"):
-		print("Turret: _on_body_entered() - Detected body target: ", body.name)
+	if _is_hostile(body) and _is_active_target(body):
+		print("Turret: _on_body_entered() - Detected hostile body: ", body.name)
 		target = body
 		_change_state(TurretState.ENGAGING)
 
@@ -195,8 +224,8 @@ func _on_area_entered(area: Area3D) -> void:
 	if is_friendly:
 		return
 
-	if area.is_in_group("player"):
-		print("Turret: _on_area_entered() - Detected area target: ", area.name)
+	if _is_hostile(area) and _is_active_target(area):
+		print("Turret: _on_area_entered() - Detected hostile area: ", area.name)
 		target = area
 		_change_state(TurretState.ENGAGING)
 
@@ -207,7 +236,7 @@ func _acquire_new_target() -> void:
 
 	var bodies: Array[Node3D] = detection_area.get_overlapping_bodies()
 	for b: Node3D in bodies:
-		if b.is_in_group("player") and is_instance_valid(b) and b != self:
+		if _is_hostile(b) and _is_active_target(b) and b != self:
 			print("Turret: _acquire_new_target() - Found new body target: ", b.name)
 			target = b
 			_change_state(TurretState.ENGAGING)
@@ -215,11 +244,11 @@ func _acquire_new_target() -> void:
 
 	var areas: Array[Area3D] = detection_area.get_overlapping_areas()
 	for a: Area3D in areas:
-		if a.is_in_group("player") and is_instance_valid(a):
+		if _is_hostile(a) and _is_active_target(a):
 			print("Turret: _acquire_new_target() - Found new area target: ", a.name)
 			target = a
 			_change_state(TurretState.ENGAGING)
 			return
 
-	print("Turret: _acquire_new_target() - No targets remaining. Resuming scan.")
+	print("Turret: _acquire_new_target() - No active targets remaining. Resuming scan.")
 	_change_state(TurretState.SCANNING)

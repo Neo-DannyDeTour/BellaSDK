@@ -1,0 +1,28 @@
+[gd_scene format=3 uid="uid://cwopkjkkwl7rx"]
+
+[ext_resource type="Script" uid="uid://qh1hnwea2fu8" path="res://crab_shell_trigger.gd" id="1_5jt65"]
+[ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://shared/editor_trigger_visualizer.gd" id="2_tfdxq"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_534t5"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ovkku"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.9, 0.5, 0.1, 0.4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_84qkm"]
+material = SubResource("StandardMaterial3D_ovkku")
+size = Vector3(2, 2, 2)
+
+[node name="ShellTrigger" type="Area3D" unique_id=2136957574]
+collision_layer = 5
+collision_mask = 2
+script = ExtResource("1_5jt65")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=2051159940]
+shape = SubResource("BoxShape3D_534t5")
+
+[node name="EditorTriggerVisualizer" type="MeshInstance3D" parent="." unique_id=1244340459]
+mesh = SubResource("BoxMesh_84qkm")
+script = ExtResource("2_tfdxq")
+metadata/_custom_type_script = "uid://q4v42nidwdr2"

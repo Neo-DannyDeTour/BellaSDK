@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://shared/editor_trigger_visualizer.gd" id="2_npu2o"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_npu2o"]
-size = Vector3(8, 4, 8)
+size = Vector3(2, 2, 2)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_npu2o"]
 transparency = 1
@@ -13,7 +13,7 @@ albedo_color = Color(0.9, 0.5, 0.1, 0.4)
 
 [sub_resource type="BoxMesh" id="BoxMesh_16tk7"]
 material = SubResource("StandardMaterial3D_npu2o")
-size = Vector3(8, 4, 8)
+size = Vector3(2, 2, 2)
 
 [node name="TargetVolume" type="Area3D" unique_id=706083759]
 collision_layer = 0
@@ -23,6 +23,7 @@ script = ExtResource("1_n1xgv")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1433049225]
 shape = SubResource("BoxShape3D_npu2o")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=897909108]
+[node name="EditorTriggerVisualizer" type="MeshInstance3D" parent="." unique_id=1972330217]
 mesh = SubResource("BoxMesh_16tk7")
 script = ExtResource("2_npu2o")
+metadata/_custom_type_script = "uid://q4v42nidwdr2"

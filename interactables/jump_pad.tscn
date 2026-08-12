@@ -2,10 +2,17 @@
 
 [ext_resource type="Script" uid="uid://68jq6nfjih21" path="res://interactables/jump_pad.gd" id="1_1t17a"]
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_50wyh"]
+albedo_color = Color(0.30943933, 1, 0.52912915, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_534t5"]
+material = SubResource("StandardMaterial3D_50wyh")
+size = Vector3(1, 0.1, 1)
+
 [node name="jump_pad" type="Area3D" unique_id=1306747576 groups=["traversal"]]
 collision_layer = 0
 collision_mask = 2
 script = ExtResource("1_1t17a")
 
-[node name="Target" type="Marker3D" parent="." unique_id=919193048]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 5, -10)
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1406734021]
+mesh = SubResource("BoxMesh_534t5")

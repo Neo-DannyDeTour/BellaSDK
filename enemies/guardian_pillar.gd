@@ -3,27 +3,49 @@ class_name GuardianPillar
 
 enum State { SCANNING, TARGETING, FROZEN, COOLDOWN }
 
+## Determines if the pillar is friendly. If true, it ignores the player and only scans idly.
+@export var is_friendly: bool = false
+
+## The rotation speed at which the guardian's head turns while searching for targets.
 @export var scan_speed: float = 1.5
+
+## The duration in seconds the pillar tracks the target before locking into the frozen state.
 @export var targeting_time: float = 2.0
+
+## The duration in seconds the pillar remains locked in position before firing its projectile.
 @export var freeze_time: float = 1.0
+
+## The packed scene (EnergyBlast) to be instantiated and fired at the target.
 @export var projectile_scene: PackedScene
+
+## The maximum distance in meters the pillar can detect targets within its line of sight.
 @export var vision_radius: float = 25.0
+
+## The vision cone angle in degrees for detecting targets.
 @export var field_of_view_degrees: float = 60.0
 
+## Tracks the current operational phase of the pillar (SCANNING, TARGETING, FROZEN, COOLDOWN).
 var current_state: State = State.SCANNING
+
+## A reference to the currently tracked player node. Null if no player is actively targeted.
 var target_player: Node3D = null
 
+## The spatial node representing the rotating head of the pillar.
 @onready var head: Node3D = $Head
+
+## The visual representation of the targeting laser beam.
 @onready var laser_mesh: MeshInstance3D = $Head/LaserBeam
+
+## The exact 3D position marker where projectiles are instantiated.
 @onready var spawn_point: Marker3D = $Head/ProjectileSpawnPoint
+
+## The timer governing state transitions (e.g., how long to target, freeze, or cooldown).
 @onready var state_timer: Timer = $StateTimer
 
 
 func _ready() -> void:
 	laser_mesh.hide()
-
 	laser_mesh.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
-
 	state_timer.timeout.connect(_on_state_timer_timeout)
 
 
@@ -45,6 +67,10 @@ func _process_scanning(delta: float) -> void:
 
 
 func _detect_player_in_cone() -> void:
+	# Optimization: Skip expensive physics queries if the pillar is friendly
+	if is_friendly:
+		return
+
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var shape: SphereShape3D = SphereShape3D.new()
 	shape.radius = vision_radius
@@ -59,7 +85,9 @@ func _detect_player_in_cone() -> void:
 	for result: Variant in results:
 		var collider: Object = result["collider"]
 		if collider is Node3D and collider.is_in_group("player"):
-			var dir_to_player: Vector3 = head.global_position.direction_to(collider.global_position)
+			var dir_to_player: Vector3 = head.global_position.direction_to(
+				collider.global_position
+			)
 			var forward_dir: Vector3 = -head.global_basis.z
 			var angle_to_player: float = rad_to_deg(forward_dir.angle_to(dir_to_player))
 
@@ -87,8 +115,9 @@ func _has_line_of_sight(target: Node3D) -> bool:
 
 
 func _process_targeting() -> void:
-	if not is_instance_valid(target_player):
-		print("GuardianPillar: Target lost. Resuming scan.")
+	# Drop target if the pillar was dynamically switched to friendly or the player vanished
+	if is_friendly or not is_instance_valid(target_player):
+		print("GuardianPillar: Target lost or friendly mode engaged. Resuming scan.")
 		_change_state(State.SCANNING)
 		return
 
@@ -135,7 +164,6 @@ func _on_state_timer_timeout() -> void:
 
 func _shoot_projectile() -> void:
 	print("GuardianPillar: _shoot_projectile() called. Action: Firing energy blast.")
-	print("GuardianPillar: _shoot_projectile() - Firing energy blast.")
 	if projectile_scene == null:
 		printerr("GuardianPillar: No projectile scene assigned!")
 		return
@@ -143,14 +171,9 @@ func _shoot_projectile() -> void:
 	var proj: EnergyBlast = projectile_scene.instantiate() as EnergyBlast
 	get_tree().current_scene.add_child(proj)
 
+	# Lock the projectile to the exact orientation of the spawn point 
+	# (which stopped tracking the player during the FROZEN state).
 	proj.global_transform = spawn_point.global_transform
-
 	var aim_direction: Vector3 = -spawn_point.global_transform.basis.z
-
-	if is_instance_valid(target_player):
-		# Calculate exactly point A to point B
-		aim_direction = spawn_point.global_position.direction_to(target_player.global_position)
-		# Visually aim the projectile's local -Z at the player
-		proj.look_at(target_player.global_position, Vector3.UP)
 
 	proj.set_trajectory(aim_direction)

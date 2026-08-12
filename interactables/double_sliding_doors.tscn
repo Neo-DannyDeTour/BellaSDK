@@ -24,6 +24,7 @@ shader_parameter/highlight_color = Color(0.6666667, 0.76862746, 0.9882353, 1)
 shader_parameter/blink_speed = 8.00000038
 shader_parameter/min_intensity = 0.01
 shader_parameter/max_intensity = 0.050000002375
+shader_parameter/alpha_scissor_threshold = 0.5
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ayun4"]
 albedo_texture = ExtResource("2_1ldl5")
@@ -43,8 +44,9 @@ shader_parameter/highlight_color = Color(0.6666667, 0.76862746, 0.9882353, 1)
 shader_parameter/blink_speed = 8.00000038
 shader_parameter/min_intensity = 0.01
 shader_parameter/max_intensity = 0.050000002375
+shader_parameter/alpha_scissor_threshold = 0.5
 
-[node name="DoubleSlidingDoors" type="Node3D" unique_id=369066608]
+[node name="DoubleSlidingDoors" type="Node3D" unique_id=369066608 groups=["interactables"]]
 script = ExtResource("1_kd02f")
 
 [node name="DoorLeft" type="AnimatableBody3D" parent="." unique_id=2065203433]

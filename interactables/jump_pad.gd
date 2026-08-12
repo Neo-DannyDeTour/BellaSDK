@@ -88,14 +88,18 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
-	if is_instance_valid(assigned_target):
+	var active_target: Node3D = assigned_target
+	if not is_instance_valid(active_target):
+		active_target = get_node_or_null("Target") as Node3D
+
+	if is_instance_valid(active_target):
 		if (
 			global_position != _last_start_pos
-			or assigned_target.global_position != _last_target_pos
+			or active_target.global_position != _last_target_pos
 		):
 			_update_trajectory()
 			_last_start_pos = global_position
-			_last_target_pos = assigned_target.global_position
+			_last_target_pos = active_target.global_position
 
 	# Simulate the ball flight in the editor
 	if _flight_time > 0.0 and Engine.is_editor_hint():
@@ -114,15 +118,27 @@ func _process(delta: float) -> void:
 				_ball_visual.visible = false
 
 
+## Suppresses the editor warning regarding the missing collision shape, as it is generated internally.
+func _get_configuration_warnings() -> PackedStringArray:
+	return PackedStringArray()
+
+
 func _update_trajectory() -> void:
 	if not is_inside_tree():
 		return
 
-	if not is_instance_valid(assigned_target):
+	# Fallback to the auto-generated target if the user hasn't assigned one manually
+	var active_target: Node3D = assigned_target
+	if not is_instance_valid(active_target):
+		active_target = get_node_or_null("Target") as Node3D
+
+	if not is_instance_valid(active_target):
+		_flight_time = 0.0
+		_update_visuals()
 		return
 
 	var p_start: Vector3 = global_position
-	var p_end: Vector3 = assigned_target.global_position
+	var p_end: Vector3 = active_target.global_position
 
 	var y_apex: float = maxf(p_start.y, p_end.y) + apex_height
 	var h_start: float = y_apex - p_start.y
@@ -153,7 +169,14 @@ func _update_trajectory() -> void:
 
 
 func _update_visuals() -> void:
-	if not Engine.is_editor_hint() or _flight_time <= 0.0:
+	if not Engine.is_editor_hint():
+		return
+		
+	if _flight_time <= 0.0:
+		if is_instance_valid(_line_visual):
+			_line_visual.visible = false
+		if is_instance_valid(_apex_visual):
+			_apex_visual.visible = false
 		return
 
 	# Draw the Line
@@ -161,6 +184,7 @@ func _update_visuals() -> void:
 		_line_visual = get_node_or_null("LineVisual") as MeshInstance3D
 
 	if is_instance_valid(_line_visual):
+		_line_visual.visible = true
 		_line_visual.top_level = false  # Allow it to inherit transforms naturally
 
 		var imm_mesh: ImmediateMesh
@@ -195,6 +219,7 @@ func _update_visuals() -> void:
 		_apex_visual = get_node_or_null("ApexVisual") as MeshInstance3D
 
 	if is_instance_valid(_apex_visual):
+		_apex_visual.visible = true
 		_apex_visual.top_level = true
 		_apex_visual.global_position = _get_position_at_time(_t_up)
 
@@ -211,8 +236,13 @@ func _get_position_at_time(t: float) -> Vector3:
 	else:
 		var td: float = t - _t_up
 		var target_y: float = p0.y
-		if is_instance_valid(_target_node):
+		
+		# Prioritize the assigned target over the internal node to match _update_trajectory math
+		if is_instance_valid(assigned_target):
+			target_y = assigned_target.global_position.y
+		elif is_instance_valid(_target_node):
 			target_y = _target_node.global_position.y
+			
 		var y_apex: float = maxf(p0.y, target_y) + apex_height
 		y = y_apex - 0.5 * _custom_gravity_down * td * td
 
