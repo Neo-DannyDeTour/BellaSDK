@@ -144,7 +144,7 @@ func _has_line_of_sight() -> bool:
 
 	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(start_pos, end_pos)
 	query.collide_with_areas = true
-	query.exclude = _exclude_rids 
+	query.exclude = _exclude_rids
 
 	var result: Dictionary = space_state.intersect_ray(query)
 

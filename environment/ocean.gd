@@ -197,6 +197,7 @@ var _last_cam_pos: Vector3 = Vector3.ZERO
 ## Cached reference to the active viewport camera.
 var _cached_camera: Camera3D = null
 
+
 func _enter_tree() -> void:
 	RenderingServer.global_shader_parameter_set(&"water_color", water_color.srgb_to_linear())
 	RenderingServer.global_shader_parameter_set(&"foam_color", foam_color.srgb_to_linear())
@@ -204,13 +205,16 @@ func _enter_tree() -> void:
 		_setup_wave_generator()
 		_update_scales_uniform()
 
+
 func _init() -> void:
 	rng.set_seed(1234)
+
 
 func _ready() -> void:
 	extra_cull_margin = 150.0
 	RenderingServer.global_shader_parameter_set(&"water_color", water_color.srgb_to_linear())
 	RenderingServer.global_shader_parameter_set(&"foam_color", foam_color.srgb_to_linear())
+
 
 func _process(delta: float) -> void:
 	# 1. Spray Boundary Lock
@@ -225,14 +229,14 @@ func _process(delta: float) -> void:
 
 		# Calculate target offset relative to the ocean center
 		var local_target: Vector3 = target_pos - global_position
-		
+
 		# Clamp the emitter so it never gets close enough to the edge to push particles outside
 		var max_dist: float = maxf(0.0, (ocean_plane_size / 2.0) - spray_spawn_radius)
 		local_target.x = clampf(local_target.x, -max_dist, max_dist)
 		local_target.z = clampf(local_target.z, -max_dist, max_dist)
 
-		spray_particles.global_position = global_position + Vector3(
-			local_target.x, 0.0, local_target.z
+		spray_particles.global_position = (
+			global_position + Vector3(local_target.x, 0.0, local_target.z)
 		)
 
 	# 2. Editor Bypass
@@ -266,6 +270,7 @@ func _process(delta: float) -> void:
 	just_calculated_water = true
 	time += delta
 
+
 func _setup_wave_generator() -> void:
 	print("ocean.gd: Setting up wave generator and binding RD texture RIDs.")
 	if parameters.size() <= 0:
@@ -289,7 +294,9 @@ func _update_scales_uniform() -> void:
 	for i: int in range(parameters.size()):
 		var params: WaveCascadeParameters = parameters[i]
 		var uv_scale: Vector2 = Vector2.ONE / params.tile_length
-		map_scales[i] = Vector4(uv_scale.x, uv_scale.y, params.displacement_scale, params.normal_scale)
+		map_scales[i] = Vector4(
+			uv_scale.x, uv_scale.y, params.displacement_scale, params.normal_scale
+		)
 	if WATER_MAT:
 		WATER_MAT.set_shader_parameter(&"map_scales", map_scales)
 	if SPRAY_MAT:
@@ -339,7 +346,9 @@ func _do_texture_readback(idx: int) -> void:
 func _on_texture_data_received(tex: PackedByteArray, idx: int) -> void:
 	if not is_instance_valid(wave_generator):
 		return
-	var img: Image = Image.create_from_data(wave_generator.cpu_map_size, wave_generator.cpu_map_size, false, Image.FORMAT_RGBAH, tex)
+	var img: Image = Image.create_from_data(
+		wave_generator.cpu_map_size, wave_generator.cpu_map_size, false, Image.FORMAT_RGBAH, tex
+	)
 	mutex.lock()
 	cpu_displacement_textures[idx] = img
 	_is_reading_back = false
@@ -352,7 +361,9 @@ func _setup_cpu_displacement_textures() -> void:
 		var cascade: WaveCascadeParameters = parameters[i]
 		if cascade.displacement_scale > 0.001:
 			actually_used_textures_idx.append(i)
-	RenderingServer.call_on_render_thread(_do_initial_texture_readback.bind(actually_used_textures_idx))
+	RenderingServer.call_on_render_thread(
+		_do_initial_texture_readback.bind(actually_used_textures_idx)
+	)
 
 
 func _do_initial_texture_readback(used_indices: Array[int]) -> void:
@@ -363,13 +374,17 @@ func _do_initial_texture_readback(used_indices: Array[int]) -> void:
 	mutex.lock()
 	for i: int in used_indices:
 		var tex: PackedByteArray = device.texture_get_data(rid_displacement_map, i)
-		var img: Image = Image.create_from_data(wave_generator.map_size, wave_generator.map_size, false, Image.FORMAT_RGBAH, tex)
+		var img: Image = Image.create_from_data(
+			wave_generator.map_size, wave_generator.map_size, false, Image.FORMAT_RGBAH, tex
+		)
 		cpu_displacement_textures[i] = img
 	mutex.unlock()
 
 
 func _world_to_uv(w: Vector2, tile_length: Vector2) -> Vector2:
-	return Vector2(fposmod(w.x, tile_length.x) / tile_length.x, fposmod(w.y, tile_length.y) / tile_length.y)
+	return Vector2(
+		fposmod(w.x, tile_length.x) / tile_length.x, fposmod(w.y, tile_length.y) / tile_length.y
+	)
 
 
 func get_height(world_pos: Vector3, steps: int = 3) -> float:
@@ -415,7 +430,9 @@ func bake_waves_to_res_routine() -> void:
 		var rid_displacement_map: RID = wave_generator.descriptors[&"displacement_map"].rid
 		var device: RenderingDevice = RenderingServer.get_rendering_device()
 		var tex: PackedByteArray = device.texture_get_data(rid_displacement_map, cascade_to_bake)
-		var img: Image = Image.create_from_data(wave_generator.map_size, wave_generator.map_size, false, Image.FORMAT_RGBAH, tex)
+		var img: Image = Image.create_from_data(
+			wave_generator.map_size, wave_generator.map_size, false, Image.FORMAT_RGBAH, tex
+		)
 		baked_images.append(img)
 	for p: WaveCascadeParameters in parameters:
 		p.loop_period = 0.0

@@ -132,10 +132,7 @@ func _input(event: InputEvent) -> void:
 
 
 func play_death_sequence(death_state: int = DeathState.WALKING) -> void:
-	print(
-		"DeathScreen: play_death_sequence() - Triggering sequence. State: ",
-		death_state
-	)
+	print("DeathScreen: play_death_sequence() - Triggering sequence. State: ", death_state)
 
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	show()
@@ -248,9 +245,7 @@ func _trigger_flatline() -> void:
 
 	var flatline_tween: Tween = create_tween()
 	var cycle_duration: float = (_aspect * 2.0) / _target_speed
-	flatline_tween.tween_method(
-		_lerp_heartbeat_to_flatline, 0.0, 1.0, cycle_duration * 0.8
-	)
+	flatline_tween.tween_method(_lerp_heartbeat_to_flatline, 0.0, 1.0, cycle_duration * 0.8)
 
 	var text_tween: Tween = create_tween()
 	text_tween.tween_property(death_label, "modulate:a", 1.0, 3.0)

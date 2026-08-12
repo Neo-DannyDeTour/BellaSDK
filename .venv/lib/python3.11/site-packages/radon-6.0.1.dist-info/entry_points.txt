@@ -1,0 +1,8 @@
+[console_scripts]
+radon = radon:main
+
+[flake8.extension]
+R70 = radon.contrib.flake8:Flake8Checker
+
+[setuptools.installation]
+eggsecutable = radon:main
