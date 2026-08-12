@@ -17,7 +17,7 @@ var is_active: bool = false
 ## Base shader used to enforce solid silhouettes while respecting alpha cutouts and billboarding.
 var _silhouette_shader: Shader = Shader.new()
 
-## The upgraded shader logic now includes a toggle for vertex instructions 
+## The upgraded shader logic now includes a toggle for vertex instructions
 ## to conditionally billboard the overlay.
 const OVERLAY_SHADER_CODE: String = """
 shader_type spatial;
@@ -39,10 +39,10 @@ void vertex() {
 
         // Reconstruct the MODELVIEW_MATRIX so its rotation is aligned with the view matrix.
         mat4 billboard_matrix = mat4(
-            normalize(VIEW_MATRIX[0]), 
-            normalize(VIEW_MATRIX[1]), 
-            normalize(VIEW_MATRIX[2]), 
-            MODELVIEW_MATRIX[3]        
+            normalize(VIEW_MATRIX[0]),
+            normalize(VIEW_MATRIX[1]),
+            normalize(VIEW_MATRIX[2]),
+            MODELVIEW_MATRIX[3]
         );
 
         // Apply the extracted scale to the reconstructed matrix
@@ -134,9 +134,7 @@ func _apply_overlay_to_meshes(
 			# Detect textures and billboard settings on Sprite3D or standard meshes
 			if target_node is Sprite3D:
 				base_tex = target_node.texture
-				needs_billboard = (
-					target_node.billboard != BaseMaterial3D.BILLBOARD_DISABLED
-				)
+				needs_billboard = (target_node.billboard != BaseMaterial3D.BILLBOARD_DISABLED)
 			elif target_node is MeshInstance3D and target_node.mesh:
 				var active_mat: Material = target_node.get_active_material(0)
 				if is_instance_valid(active_mat):
@@ -150,17 +148,17 @@ func _apply_overlay_to_meshes(
 			# Inject texture for alpha testing and set billboarding state
 			if is_instance_valid(base_tex) or needs_billboard:
 				final_mat = target_material.duplicate() as ShaderMaterial
-				
+
 				if is_instance_valid(base_tex):
 					final_mat.set_shader_parameter("base_texture", base_tex)
-					
+
 				final_mat.set_shader_parameter("enable_billboard", needs_billboard)
 
 			target_node.material_overlay = final_mat
 			print(
-				"VisionAssistManager: Applied overlay to ", 
-				target_node.name, 
-				" | Billboard: ", 
+				"VisionAssistManager: Applied overlay to ",
+				target_node.name,
+				" | Billboard: ",
 				needs_billboard
 			)
 		else:

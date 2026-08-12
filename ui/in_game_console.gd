@@ -45,7 +45,7 @@ var toggle_states: Dictionary = {
 	"visionassist": false
 }
 
-## A list of all base commands available in the console. 
+## A list of all base commands available in the console.
 var valid_commands: Array[String] = [
 	"help",
 	"clear",
@@ -75,7 +75,7 @@ var valid_commands: Array[String] = [
 	"photosensitivity",
 	"setfont",
 	"screenfilter",
-    "visionassist"
+	"visionassist"
 ]
 
 ## A list of valid arguments specifically for the colorblind command.
@@ -86,9 +86,30 @@ var valid_colorblind_args: Array[String] = [
 var valid_font_args: Array[String] = ["default", "dyslexic", "papyrus", "comic"]
 ## A list of valid screen filter shaders for the screenfilter command.
 var valid_screenfilter_args: Array[String] = [
-	"off", "crt", "vhs", "pixelate", "toon", "gameboy", "glitch", "grain", "halftone",
-	"nightvision", "kuwahara", "ascii", "90anime", "manga", "handdrawn", "moebius",
-	"obra", "psychedelic", "botw", "ghibli", "reaction", "software", "swirl", "mandelbrot"
+	"off",
+	"crt",
+	"vhs",
+	"pixelate",
+	"toon",
+	"gameboy",
+	"glitch",
+	"grain",
+	"halftone",
+	"nightvision",
+	"kuwahara",
+	"ascii",
+	"90anime",
+	"manga",
+	"handdrawn",
+	"moebius",
+	"obra",
+	"psychedelic",
+	"botw",
+	"ghibli",
+	"reaction",
+	"software",
+	"swirl",
+	"mandelbrot"
 ]
 
 ## The full-screen color rectangle used to apply generalized screen filter shaders.
@@ -478,7 +499,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 			if args.size() > 0 and args[0] == "101":
 				write(
 					"Bella doesn't need to hear about safety preconscious. She's a trained pro",
-                    "white"
+					"white"
 				)
 			else:
 				write("Usage: sv_cheats 1", "red")
@@ -506,13 +527,11 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 						write("Achromatopsia (Monochrome) filter enabled.", "green")
 					_:
 						write(
-							"Unknown type. Try: normal, protanopia, deuteranopia, tritanopia",
-                            "red"
+							"Unknown type. Try: normal, protanopia, deuteranopia, tritanopia", "red"
 						)
 			else:
 				write(
-					"Usage: colorblind <type>\nTypes: normal, protanopia, deuteranopia...",
-                    "yellow"
+					"Usage: colorblind <type>\nTypes: normal, protanopia, deuteranopia...", "yellow"
 				)
 		"gamespeed":
 			if is_debug_allowed:
@@ -548,7 +567,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 						events.emit_signal("screenshake_requested", amount, duration)
 
 				var msg: String = (
-                    "Screenshake: Intensity "
+					"Screenshake: Intensity "
 					+ str(clampf(amount, 0.0, 16.0))
 					+ ", Duration "
 					+ str(duration)
@@ -600,7 +619,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 			else:
 				write(
 					"Usage: setfont <font_name>\nAvailable: default, dyslexic, papyrus, comic",
-                    "yellow"
+					"yellow"
 				)
 		"screenfilter":
 			if args.size() > 0:
@@ -631,15 +650,9 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 					screen_filter_rect.visible = true
 					write(filter_type.to_upper() + " filter enabled.", "green")
 				else:
-					write(
-						"Unknown filter. Available: off, crt, vhs, pixelate, toon...",
-                        "red"
-					)
+					write("Unknown filter. Available: off, crt, vhs, pixelate, toon...", "red")
 			else:
-				write(
-					"Usage: screenfilter <type>\nAvailable: off, crt, vhs, pixelate...",
-                    "yellow"
-				)
+				write("Usage: screenfilter <type>\nAvailable: off, crt, vhs, pixelate...", "yellow")
 		"visionassist":
 			if args.size() == 0:
 				toggle_states["visionassist"] = !toggle_states["visionassist"]
@@ -653,7 +666,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 
 			elif args.size() > 0:
 				var arg1: String = args[0].to_lower()
-				
+
 				if arg1 == "mode" and args.size() == 2:
 					var mode_name: String = args[1].to_lower()
 					if mode_name in ["black_and_white", "aaa_blue", "pure_black"]:
@@ -666,7 +679,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 					else:
 						write(
 							"Invalid mode. Use 'black_and_white', 'aaa_blue', or 'pure_black'.",
-                            "yellow"
+							"yellow"
 						)
 				elif arg1 == "color" and args.size() == 3:
 					var target_group: String = args[1].to_lower()
@@ -683,7 +696,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 				else:
 					write(
 						"Usage: visionassist OR visionassist mode <mode> OR color <group> <color>",
-                        "yellow"
+						"yellow"
 					)
 		"die":
 			if is_debug_allowed:
@@ -727,30 +740,32 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 				if args.size() > 0:
 					var health_val: int = args[0].to_int()
 					health_val = clampi(health_val, 0, 300)
-					
+
 					var players: Array[Node] = get_tree().get_nodes_in_group("player")
 					if players.size() > 0:
 						var player: Node = players[0]
 						var health_comp: Node = player.get_node_or_null(
-                            "Components/HealthComponent"
+							"Components/HealthComponent"
 						)
-						
+
 						if not health_comp:
 							health_comp = player.find_child("HealthComponent", true, false)
-							
+
 						if health_comp and health_comp is HealthComponent:
 							print("InGameConsole: Found HealthComponent, updating values.")
 							health_comp.current_health = health_val
-							
+
 							# Force the component to broadcast the new health so the UI updates
 							health_comp.health_changed.emit(health_comp.current_health)
-							
+
 							if health_comp.is_player_health and has_node("/root/Events"):
 								var events: Node = get_node("/root/Events")
 								if events.has_signal("player_health_changed"):
-									events.emit_signal("player_health_changed", health_comp.current_health)
+									events.emit_signal(
+										"player_health_changed", health_comp.current_health
+									)
 									print("InGameConsole: Relayed health to global Events bus.")
-							
+
 							# Handle instant death if set to 0
 							if health_comp.current_health == 0:
 								print("InGameConsole: Health set to 0, triggering die().")

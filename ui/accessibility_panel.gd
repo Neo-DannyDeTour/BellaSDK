@@ -68,6 +68,7 @@ const DEFAULT_TTS_ENABLED: bool = false
 ## Toggles the AI Text-to-Speech system for reading UI elements and in-game text.
 @onready var tts_toggle: CheckButton = %TTSToggle
 
+
 func _ready() -> void:
 	print("UI: Accessibility Panel initialized.")
 	_populate_dropdowns()
@@ -173,10 +174,10 @@ func _load_accessibility_settings() -> void:
 				as bool
 			)
 		)
-		
+
 	if tts_toggle:
 		tts_toggle.set_pressed_no_signal(
-			(GlobalSettings.get_setting("Accessibility", "tts_enabled", DEFAULT_TTS_ENABLED) as bool)
+			GlobalSettings.get_setting("Accessibility", "tts_enabled", DEFAULT_TTS_ENABLED) as bool
 		)
 
 	_load_slider_setting(sub_bg_opacity_slider, null, "subtitle_bg_opacity", DEFAULT_SUB_BG_OPACITY)
