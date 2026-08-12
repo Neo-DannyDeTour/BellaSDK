@@ -1,0 +1,31 @@
+name: Strict GDScript Linting
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install gdtoolkit in isolated environment
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip
+          pip install gdtoolkit
+
+      - name: Enforce strict gdlint rules
+        run: |
+          source .venv/bin/activate
+          gdlint .
