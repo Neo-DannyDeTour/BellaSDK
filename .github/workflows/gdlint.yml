@@ -19,7 +19,8 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v5
         with:
-          ref: ${{ github.head_ref }}
+          # Uses the PR branch if available, otherwise falls back to the push branch (main)
+          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -27,12 +28,10 @@ jobs:
           python-version: "3.11"
 
       - name: Install gdtoolkit (Global Isolation)
-        # pipx avoids local .venv creation and externally-managed errors
         run: pipx install gdtoolkit
 
       - name: Force strip trailing whitespace & Auto-format
         run: |
-          # Aggressively remove trailing whitespaces that gdformat misses
           find . -name "*.gd" -type f -exec sed -i 's/[ \t]*$//' {} +
           gdformat .
 
@@ -42,5 +41,4 @@ jobs:
           commit_message: "style: auto-format gdscript files"
 
       - name: Enforce strict gdlint rules
-        # Runs last to ensure the newly committed code strictly passes all rules
         run: gdlint .
