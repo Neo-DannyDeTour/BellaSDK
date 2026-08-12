@@ -1,10 +1,13 @@
+class_name Teleport
 extends Area3D
 
+## The target portal Area3D to teleport the player to.
 @export_category("Portal References")
 @export var connect_portal: Area3D
 
 # Highly recommended: Change this node to an AudioStreamPlayer (non-3D) in your scene
 # if you want the sound to be heard clearly regardless of player position.
+## The audio player for the teleportation sound effect.
 @onready var portal_sound: AudioStreamPlayer = $AudioStreamPlayer
 
 

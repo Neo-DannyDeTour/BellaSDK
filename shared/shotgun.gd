@@ -25,6 +25,7 @@ var last_shot_time: float = -1000.0
 var is_equipped: bool = false
 
 #@onready var anim: AnimationPlayer = $ShotgunAnim
+## Property: Muzzle Point.
 @onready var muzzle_point: Marker3D = $MuzzlePoint
 
 

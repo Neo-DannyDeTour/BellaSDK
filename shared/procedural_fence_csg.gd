@@ -3,55 +3,64 @@ extends CSGCombiner3D
 
 enum Orientation { VERTICAL, HORIZONTAL, DIAGONAL }
 
+## Property: Fence Width.
 @export_category("Fence Dimensions")
 @export var fence_width: float = 4.0:
 	set(value):
 		fence_width = value
 		_request_rebuild()
 
+## Property: Fence Height.
 @export var fence_height: float = 2.0:
 	set(value):
 		fence_height = value
 		_request_rebuild()
 
+## Property: Fence Depth.
 @export var fence_depth: float = 0.1:
 	set(value):
 		fence_depth = value
 		_request_rebuild()
 
+## Property: Has Border.
 @export_category("Border")
 @export var has_border: bool = true:
 	set(value):
 		has_border = value
 		_request_rebuild()
 
+## Property: Border Thickness.
 @export var border_thickness: float = 0.2:
 	set(value):
 		border_thickness = value
 		_request_rebuild()
 
-@export_category("Bars")
 ## Defines the directional alignment of the inner fence bars (Vertical, Horizontal, or Diagonal).
+@export_category("Bars")
 @export var bar_orientation: ProceduralFence.Orientation = ProceduralFence.Orientation.DIAGONAL:
 	set(value):
 		bar_orientation = value
 		_request_rebuild()
 
+## Property: Bar Count.
 @export var bar_count: int = 12:
 	set(value):
 		bar_count = value
 		_request_rebuild()
 
+## Property: Bar Thickness.
 @export var bar_thickness: float = 0.05:
 	set(value):
 		bar_thickness = value
 		_request_rebuild()
 
+## Property: Diagonal Angle.
 @export_range(10.0, 80.0) var diagonal_angle: float = 45.0:
 	set(value):
 		diagonal_angle = value
 		_request_rebuild()
 
+## Property: Is Dirty.
 var _is_dirty: bool = false
 
 

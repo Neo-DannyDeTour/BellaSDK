@@ -1,26 +1,35 @@
 extends StaticBody3D
 class_name ShootingTarget
 
+## Property: Target Health.
 @export var target_health: int = 100
+## Property: Can Player Hit.
 @export var can_player_hit: bool = true
+## Property: Hide In Game.
 @export var hide_in_game: bool = false
+## Property: Despawn Time.
 @export var despawn_time: float = 0.5
 
+## Property: Health Component.
 @onready var health_component: Node = $HealthComponent
+## Property: Icon Sprite.
 @onready var icon_sprite: Sprite3D = $Sprite3D
 
+## Property: Jiggle Tween.
 var _jiggle_tween: Tween
+## Property: Default Collision Layer.
 var _default_collision_layer: int
+## Property: Default Collision Mask.
 var _default_collision_mask: int
 
 
 func _ready() -> void:
 	print("ShootingTarget: _ready() - Initializing target.")
 	# WARNING: Removed add_to_group("player"). Targets should NOT be in the player group!
-	
+
 	# Register this node as a valid target for turrets
 	add_to_group("target")
-	
+
 	_default_collision_layer = collision_layer
 	_default_collision_mask = collision_mask
 

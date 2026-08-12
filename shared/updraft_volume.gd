@@ -1,5 +1,7 @@
+class_name UpdraftVolume
 extends Area3D
 
+## The vertical force applied to entities entering the updraft.
 @export var lift_strength: float = 12.0
 
 

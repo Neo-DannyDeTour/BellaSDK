@@ -1,34 +1,42 @@
 @tool
 extends Node3D
 
+## Property: Bridge Size.
 @export_category("Bridge Setup")
 @export var bridge_size: Vector3 = Vector3(2.0, 0.2, 5.0):
 	set(value):
 		bridge_size = value
 		_update_bridge_shape()
 
+## Property: Hinge Offset.
 @export_range(-1.0, 1.0) var hinge_offset: float = -1.0:
 	set(value):
 		hinge_offset = value
 		_update_bridge_shape()
 
+## Property: Show Debug Pin.
 @export_category("Debug Visuals")
 @export var show_debug_pin: bool = true:
 	set(value):
 		show_debug_pin = value
 		_update_bridge_shape()
 
+## Property: Pin Extension.
 @export var pin_extension: float = 0.5:
 	set(value):
 		pin_extension = value
 		_update_bridge_shape()
 
+## Property: Ropes.
 @export_category("Puzzle Logic")
 @export var ropes: Array[NodePath]
 
+## Property: Intact Ropes.
 var intact_ropes: int = 0
+## Property: Bridge Fallen.
 var bridge_fallen: bool = false
 
+## Property: Bridge.
 @onready var bridge: RigidBody3D = $TheBridge
 
 

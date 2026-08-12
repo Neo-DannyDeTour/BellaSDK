@@ -4,8 +4,11 @@ extends Node3D
 signal powered_on
 signal powered_off
 
+## The minimum amount of power required to turn on the object.
 @export var required_power: int = 1
+## The current amount of power supplied to the object.
 var current_power: int = 0
+## Indicates whether the object is currently meeting its power requirements.
 var is_powered: bool = false
 
 

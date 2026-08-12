@@ -1,3 +1,4 @@
+class_name FpsCounter
 extends Label
 
 

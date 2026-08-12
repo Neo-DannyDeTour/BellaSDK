@@ -3,23 +3,32 @@ extends PickableObject
 
 signal power_state_changed(is_energized: bool)
 
-@export_category("Cable Physics")
 ## Defines how stretchy the cable is (0.0 is completely rigid, 1.0 is highly elastic).
+@export_category("Cable Physics")
 @export_range(0.0, 1.0) var cable_elasticity: float = 0.0
 
 ## The Marker3D node used to determine the exact snapping position when plugging into a socket.
 @export var snap_marker: Marker3D
 
+## The point where the cable originates.
 var anchor_point: Node3D
+## The maximum allowed length of the cable.
 var max_cable_length: float
+## The connected partner plug at the other end of the cable.
 var partner_plug: Node3D = null
+## Indicates whether the plug is currently supplying power.
 var is_energized: bool = false
+## Indicates whether the plug is currently being dragged heavily.
 var is_trailing_mode: bool = false
 
 # --- NEW DRAG LOGIC ---
+## Internal cache for the original physics mass.
 var _original_mass: float = 3.0
+## Internal cache for the original physics friction.
 var _original_friction: float = 1.0
+## Internal cache for the original physics linear dampening.
 var _original_linear_damp: float = 0.0
+## Internal cache for the original physics angular dampening.
 var _original_angular_damp: float = 0.0
 
 

@@ -1,10 +1,11 @@
+class_name RotatorComponent
 extends Node3D
 
+## The speed of rotation in radians per second. Negative values reverse the direction.
 @export_group("Rotation Settings")
-# How fast it spins. Negative numbers will spin it in reverse!
 @export var speed: float = 5.0
 
-# Choose which axis the fan spins around (0 = X, 1 = Y, 2 = Z)
+## The axis to rotate around: 0 for X, 1 for Y, 2 for Z.
 @export_enum("X (Pitch)", "Y (Yaw)", "Z (Roll)") var axis: int = 2
 
 

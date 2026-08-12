@@ -5,15 +5,23 @@ extends Area3D
 signal socket_powered_on
 signal socket_powered_off
 
+## Property: Is Power Source.
 @export_group("Socket Settings")
 @export var is_power_source: bool = false
+## Property: Requires Power Link.
 @export var requires_power_link: bool = false
+## Property: Can Be Unplugged.
 @export var can_be_unplugged: bool = true
+## Property: Snap Position.
 @export var snap_position: Marker3D
+## Property: Indicator Light.
 @export var indicator_light: Light3D
+## Property: Label.
 @export var label: Label3D
+## Property: Socket Interact Comp.
 @export var socket_interact_comp: InteractComponent
 
+## Property: Transmitter.
 @export_category("Connections")
 @export var transmitter: OutputTransmitter3D:
 	set(value):
@@ -21,13 +29,17 @@ signal socket_powered_off
 		_sync_transmitter()
 
 # Keeps targets on the parent for easy level design, syncing automatically
+## Property: Targets.
 @export var targets: Array[Node3D]:
 	set(value):
 		targets = value
 		_sync_transmitter()
 
+## Property: Is Powered.
 var is_powered: bool = false  # (Note: This means "Plug is Inserted" in base logic)
+## Property: Current Plug.
 var current_plug: Node3D = null
+## Property: Is Cooling Down.
 var is_cooling_down: bool = false
 
 

@@ -1,13 +1,17 @@
-extends Control
 class_name UIKeypad
+extends Control
 
 signal code_entered(code: String)
 signal button_clicked(button_name: String)
 
+## The currently entered numeric code.
 var entered_code: String = ""
+## Indicates whether the keypad is locked temporarily after submission.
 var is_locked_out: bool = false
 
+## Reference to the UI LineEdit for displaying the code.
 @onready var line_edit: LineEdit = $VBoxContainer/LineEdit
+## Reference to the GridContainer holding the keypad buttons.
 @onready var grid_container: GridContainer = $VBoxContainer/GridContainer
 
 

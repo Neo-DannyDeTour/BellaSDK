@@ -1,15 +1,15 @@
 @tool
 extends Area3D
 
-@export_category("Zone Dimensions")
 ## Type your exact box dimensions here!
+@export_category("Zone Dimensions")
 @export var zone_size: Vector3 = Vector3(1.0, 1.0, 1.0):
 	set(value):
 		zone_size = value
 		_update_bounds()
 
-@export_category("Soundscape Settings")
 ## The resource containing the ambient track and random sounds.
+@export_category("Soundscape Settings")
 @export var soundscape: SoundscapeData
 ## The target volume for the ambient track when fully faded in.
 @export var base_volume_db: float = 0.0
@@ -25,17 +25,26 @@ extends Area3D
 @export var activate_once: bool = false
 
 # Shared across all instances to track global state
+## Property: Current Active Zone.
 static var current_active_zone: Area3D = null
+## Property: Default Zone.
 static var default_zone: Area3D = null
 
+## Property: Current Tween.
 var current_tween: Tween
 
+## Property: Ambient Player.
 @onready var ambient_player: AudioStreamPlayer = $AmbientPlayer
+## Property: One Shot Player.
 @onready var one_shot_player: AudioStreamPlayer = $OneShotPlayer
+## Property: Timer.
 @onready var timer: Timer = $RandomSoundTimer
+## Property: Collision Shape.
 @onready var collision_shape: CollisionShape3D = $CollisionShape3D
 
+## Property: Last Exit Time.
 var _last_exit_time: int = 0
+## Property: Has Been Activated.
 var _has_been_activated: bool = false
 const DEBOUNCE_MSEC: int = 100
 

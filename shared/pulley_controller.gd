@@ -1,32 +1,42 @@
 class_name PulleyConstraint3D
 extends Node3D
 
+## Property: Cart A.
 @export_category("Connected Bodies")
 @export var cart_a: RigidBody3D
+## Property: Cart B.
 @export var cart_b: RigidBody3D
 
+## Property: Visual Cable.
 @export_category("Visuals")
 @export var visual_cable: SeamlessCable3D
 
-@export_category("Constraint Settings")
 ## How stiff the imaginary rope is. Higher values mean less rubber-banding.
+@export_category("Constraint Settings")
 @export var tension_stiffness: float = 250.0
+## Property: Damping.
 @export var damping: float = 10.0
 
-@export_category("Travel Limits")
 ## The max distance (in meters) a cart can drop. 0.0 means unlimited.
+@export_category("Travel Limits")
 @export var max_travel_meters: float = 0.0
 ## How violently the rope stops the cart when it reaches the max length.
 @export var hard_stop_stiffness: float = 1000.0
 
+## Property: Editor Icon.
 @onready var _editor_icon: Sprite3D = %EditorIcon
 
+## Property: Target Total Length.
 var _target_total_length: float = 0.0
+## Property: Cart A Start Y.
 var _cart_a_start_y: float = 0.0
+## Property: Cart B Start Y.
 var _cart_b_start_y: float = 0.0
 
 # Track states to prevent print() spamming every frame at 60 FPS
+## Property: Hit Limit A.
 var _hit_limit_a: bool = false
+## Property: Hit Limit B.
 var _hit_limit_b: bool = false
 
 
