@@ -6,21 +6,24 @@ on:
   pull_request:
     branches: ["main"]
 
-# Grant permissions for the action to push commits back to the repo
 permissions:
   contents: write
+
+env:
+  # Forces all actions to utilize the Node.js 24 runtime
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   format_and_lint:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5 # Updated to Node 24 native version
         with:
           ref: ${{ github.head_ref }}
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7 # Updated to Node 24 native version
         with:
           python-version: "3.11"
 
@@ -36,12 +39,12 @@ jobs:
           source .venv/bin/activate
           gdformat .
 
-      - name: Enforce strict gdlint rules
-        run: |
-          source .venv/bin/activate
-          gdlint .
-
       - name: Commit formatting changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "style: auto-format gdscript files"
+
+      - name: Enforce strict gdlint rules
+        run: |
+          source .venv/bin/activate
+          gdlint .
