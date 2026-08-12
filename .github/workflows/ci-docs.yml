@@ -26,7 +26,7 @@ jobs:
       - name: Setup Godot Engine
         uses: chickensoft-games/setup-godot@v2
         with:
-          version: "4.3"
+          version: "4.7.0"
           use-dotnet: false
 
       - name: Generate XML Documentation
