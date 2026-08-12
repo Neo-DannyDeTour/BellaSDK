@@ -720,7 +720,7 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 					var base_colorformat: RDTextureFormat = rd.texture_get_format(
 						color_images[view]
 					)
-					
+
 					## Controls the blit screen format behavior.
 					var blit_screen_format: RDTextureFormat = rd.texture_get_format(
 						buffers.get_color_layer(view, is_msaa_on)

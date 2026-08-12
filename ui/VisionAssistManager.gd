@@ -39,10 +39,10 @@ void vertex() {
 
         // Reconstruct the MODELVIEW_MATRIX so its rotation is aligned with the view matrix.
         mat4 billboard_matrix = mat4(
-            normalize(VIEW_MATRIX[0]), 
-            normalize(VIEW_MATRIX[1]), 
-            normalize(VIEW_MATRIX[2]), 
-            MODELVIEW_MATRIX[3]        
+            normalize(VIEW_MATRIX[0]),
+            normalize(VIEW_MATRIX[1]),
+            normalize(VIEW_MATRIX[2]),
+            MODELVIEW_MATRIX[3]
         );
 
         // Apply the extracted scale to the reconstructed matrix
