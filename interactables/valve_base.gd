@@ -72,7 +72,7 @@ const DOUBLE_TAP_DELAY: float = 0.3
 @export var outline_material: ShaderMaterial
 
 ## The audio stream player responsible for playing turning sounds.
-@onready var valve_audio: AudioStreamPlayer3D = get_node_or_null("ValveAudio") as AudioStreamPlayer3D
+@onready var valve_audio := get_node_or_null("ValveAudio") as AudioStreamPlayer3D
 
 ## The current normalized turning progress (0.0 to 1.0).
 var progress: float = 0.0
@@ -161,8 +161,7 @@ func _process(delta: float) -> void:
 			_detach_valve()
 			last_interact_time = 0.0
 			return
-		else:
-			last_interact_time = current_time
+		last_interact_time = current_time
 
 	if is_locked:
 		_manage_audio(false)

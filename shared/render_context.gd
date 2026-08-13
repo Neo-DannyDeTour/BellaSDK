@@ -34,11 +34,14 @@ class Descriptor:
 
 ## The core Godot RenderingDevice instance used for all low-level GPU operations.
 var device: RenderingDevice
-## A specialized queue that tracks allocated RIDs and safely frees them to prevent VRAM memory leaks.
+## A specialized queue that tracks allocated RIDs and safely frees them
+## to prevent VRAM memory leaks.
 var deletion_queue: DeletionQueue = DeletionQueue.new()
-## A dictionary mapping file paths (String) to compiled shader RIDs to avoid duplicate compilations.
+## A dictionary mapping file paths (String) to compiled shader RIDs to avoid
+## duplicate compilations.
 var shader_cache: Dictionary
-## A flag indicating whether the rendering device has pending submissions that require synchronization.
+## A flag indicating whether the rendering device has pending submissions
+## that require synchronization.
 var needs_sync: bool = false
 
 

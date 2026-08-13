@@ -32,7 +32,8 @@ var current_state: TurretState = TurretState.SCANNING
 var target: Node3D = null
 ## The remaining time in seconds before the turret is allowed to fire again.
 var fire_cooldown: float = 0.0
-## A cached list of Physics RIDs representing the turret's own collision shapes to avoid self-intersection.
+## A cached list of Physics RIDs representing the turret's
+## own collision shapes to avoid self-intersection.
 var _exclude_rids: Array[RID] = []
 
 
