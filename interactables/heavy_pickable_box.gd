@@ -2,21 +2,32 @@ class_name HeavyPickableBox
 extends PickableObject
 
 @export_group("Movement Settings")
+## Drop distance.
 @export var drop_distance: float = 2.5
+## Snap duration.
 @export var snap_duration: float = 0.3
 
 @export_group("Box Dimensions")
+## Box half width.
 @export var box_half_width: float = 1.0
 
 @export_group("Player Settings")
+## Player radius.
 @export var player_radius: float = 0.5
+## Player height.
 @export var player_height: float = 1.8
+## Hold padding.
 @export var hold_padding: float = 0.75
+## Environment collision mask.
 @export_flags_3d_physics var environment_collision_mask: int = 1
 
+## Is heavy held.
 var is_heavy_held: bool = false
+## Is animating.
 var _is_animating: bool = false
+## Locked player fwd.
 var _locked_player_fwd: Vector3 = Vector3.ZERO
+## Fall velocity.
 var _fall_velocity: float = 0.0
 
 

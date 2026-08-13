@@ -2,20 +2,28 @@ class_name PickableObject
 extends RigidBody3D
 
 @export_category("Pickable Nodes")
+## Interact comp.
 @export var interact_comp: InteractComponent
+## Mesh.
 @export var mesh: Node3D
+## Label.
 @export var label: Label3D
 
+## Highlight comp.
 @onready var highlight_comp: HighlightComponent = $HighlightComponent
+## Collision.
 @onready var collision: CollisionShape3D = $CollisionShape3D
+## Gravity.
 @onready var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 
 @export_category("Buoyancy")
+## Probe container.
 @export var probe_container: Node3D
 ## How strongly the water pushes up. (3.0 is a great value!)
 @export var float_force: float = 3.0
 ## Friction. (May need to increase this to 2.0 or 4.0 to stop bouncing!)
 @export var water_drag: float = 0.5
+## Water angular drag.
 @export var water_angular_drag: float = 0.5
 
 # --- HOLDING CONFIG ---
@@ -45,11 +53,15 @@ extends RigidBody3D
 ## Tracks the velocity from the previous physics frame to accurately gauge impact speed.
 var _last_velocity: Vector3 = Vector3.ZERO
 
+## Is held.
 var is_held: bool = false
+## Hold target.
 var hold_target: Marker3D = null
+## Holder.
 var holder: Node3D = null
 
 # --- GLOBAL STATE TRACKING ---
+## Is locked.
 var is_locked: bool = false:
 	set(value):
 		is_locked = value
@@ -59,17 +71,22 @@ var is_locked: bool = false:
 			if label:
 				label.hide()
 
+## Is in water.
 var is_in_water: bool = false:
 	set(value):
 		if is_in_water != value:
 			is_in_water = value
 			_update_process_state()
 
+## Is player flying.
 var _is_player_flying: bool = false
 
 # --- WATER TRACKING ---
+## Submerged.
 var submerged: bool = false
+## Current water node.
 var current_water_node: Node3D = null
+## Grab time.
 var _grab_time: int = 0
 
 ## Cached Camera3D reference to avoid expensive get_viewport().get_camera_3d() calls every frame.

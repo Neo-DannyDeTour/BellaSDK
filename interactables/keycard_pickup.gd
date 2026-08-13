@@ -2,10 +2,13 @@
 class_name KeycardPickup
 extends Node3D
 
+## Interact component.
 @export var interact_component: Node
+## Top face sprite.
 @export var top_face_sprite: Sprite3D
 
 # Drag and drop your saved KeycardData resource here
+## Card data.
 @export var card_data: KeycardData:
 	set(value):
 		card_data = value

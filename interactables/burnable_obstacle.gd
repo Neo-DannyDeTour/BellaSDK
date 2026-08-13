@@ -2,12 +2,15 @@
 class_name BurnableObstacle
 extends StaticBody3D
 
+## Burn duration.
 @export var burn_duration: float = 2.0
+## Mesh size.
 @export var mesh_size: Vector2 = Vector2(2.0, 2.0):
 	set(value):
 		mesh_size = value
 		_update_obstacle_size()
 
+## Is burning.
 var _is_burning: bool = false
 
 

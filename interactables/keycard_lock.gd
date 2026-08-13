@@ -9,7 +9,9 @@ signal access_granted
 @export var required_card_id: StringName = &"R"
 ## Set the visual glow color for this lock manually
 @export var lock_color: Color = Color.RED
+## Reader mesh.
 @export var reader_mesh: GeometryInstance3D
+## Status label.
 @export var status_label: Label3D
 ## Type this directly to your component class for better autocomplete
 @export var interact_component: InteractComponent
@@ -27,8 +29,11 @@ signal access_granted
 		transmitter_targets = value
 		_update_editor_targets()
 
+## Is unlocked.
 var _is_unlocked: bool = false
+## Reader material.
 var _reader_material: StandardMaterial3D
+## Cached requirement text.
 var _cached_requirement_text: String = ""
 
 

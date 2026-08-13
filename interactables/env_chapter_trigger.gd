@@ -16,15 +16,20 @@ extends Area3D
 		_update_bounds()
 
 @export_category("Chapter Settings")
+## Chapter name.
 @export var chapter_name: String = "Chapter 1"
+## Text color.
 @export var text_color: Color = Color.WHITE
+## Animation style.
 @export var animation_style: Events.ChapterAnimStyle = Events.ChapterAnimStyle.SIMPLE
+## Display duration.
 @export var display_duration: float = 5.0
 
 @export_category("Randomization")
 ## If true, overrides the settings above with random effects when the player enters.
 @export var play_random_effects: bool = false
 
+## Has triggered.
 var _has_triggered: bool = false
 
 

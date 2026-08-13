@@ -2,11 +2,13 @@
 extends Area3D
 
 # Updated the default Vector3 to have 0.01 on the Z-axis
+## Ladder size.
 @export var ladder_size: Vector3 = Vector3(2.2, 5.0, 0.5):
 	set(value):
 		ladder_size = value
 		_update_visuals()
 
+## Arrow.
 @onready var arrow: MeshInstance3D = $Arrow
 
 

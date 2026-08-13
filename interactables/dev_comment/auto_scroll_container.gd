@@ -1,13 +1,20 @@
 extends ScrollContainer
 class_name AutoScrollContainer
 
+## Animate.
 @export var animate: bool = true
+## Transition time.
 @export var transition_time: float = 0.2
+## Gamepad scroll speed.
 @export var gamepad_scroll_speed: int = 5
+## Gamepad scroll deadzone.
 @export var gamepad_scroll_deadzone: float = 0.1
 
+## Scrollable.
 var scrollable: Control = null
+## Last input event.
 var _last_input_event: InputEvent = null
+## Gamepad scroll.
 var gamepad_scroll: float = 0.0
 
 

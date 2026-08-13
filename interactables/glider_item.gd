@@ -1,8 +1,10 @@
 class_name GliderItem
 extends RigidBody3D
 
+## Player anchor.
 @onready var player_anchor: Marker3D = $PlayerAnchor
 
+## Current holder.
 var current_holder: CharacterBody3D = null
 
 

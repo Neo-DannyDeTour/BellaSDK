@@ -2,16 +2,25 @@ class_name ExplosiveBarrel
 extends PickableObject
 
 @export_category("Explosive Settings")
+## Max health.
 @export var max_health: int = 10
+## Explosion scene.
 @export var explosion_scene: PackedScene
+## Max distance.
 @export var max_distance: float = 3.0
+## Max force.
 @export var max_force: float = 50.0
+## Chain reaction threshold.
 @export var chain_reaction_threshold: float = 1.5
+## Shockwave radius.
 @export var shockwave_radius: float = 5.0
 
+## Current health.
 var current_health: int
+## Has exploded.
 var has_exploded: bool = false
 
+## Area 3d.
 @onready var area_3d: Area3D = $Area3D
 
 

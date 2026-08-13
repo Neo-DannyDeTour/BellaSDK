@@ -1,11 +1,17 @@
 extends Node3D
 #
+## Is moving.
 var is_moving: bool = false
+## Is open.
 var is_open: bool = false
+## Player detected.
 var player_detected: bool = false
+## Pending open.
 var pending_open: bool = false
 #
+## Anim player.
 @onready var anim_player: AnimationPlayer = $Anim
+## Close timer.
 @onready var close_timer: Timer = $CloseTimer
 
 

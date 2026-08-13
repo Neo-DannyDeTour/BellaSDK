@@ -3,37 +3,61 @@ extends StaticBody3D
 
 const MAX_TRAIL_DECALS: int = 60
 
+## Max distance.
 @export var max_distance: float = 50.0
+## Max bounces.
 @export var max_bounces: int = 5
+## Rotation speed.
 @export var rotation_speed: float = 2.0
 
+## Is controlled.
 var is_controlled: bool = false
+## Controlling player.
 var controlling_player: CharacterBody3D = null
+## Just attached.
 var _just_attached: bool = false
 
+## Last target.
 var _last_target: Node3D = null
+## Beam pool.
 var _beam_pool: Array[MeshInstance3D] = []
+## Beam particles pool.
 var _beam_particles_pool: Array[GPUParticles3D] = []
+## Impact particles pool.
 var _impact_particles_pool: Array[GPUParticles3D] = []
+## Smoke particles pool.
 var _smoke_particles_pool: Array[GPUParticles3D] = []
+## Decal pool.
 var _decal_pool: Array[Decal] = []
+## Last point count.
 var _last_point_count: int = 0
+## Trail pool.
 var _trail_pool: Array[Decal] = []
+## Trail index.
 var _trail_index: int = 0
+## Scorch texture.
 var _scorch_texture: GradientTexture2D
+## Trail texture.
 var _trail_texture: GradientTexture2D
 
 @onready
+## Base beam particles.
 var base_beam_particles: GPUParticles3D = get_node_or_null("Turret/BeamParticles") as GPUParticles3D
+## Base impact particles.
 @onready var base_impact_particles: GPUParticles3D = (
 	get_node_or_null("Turret/ImpactParticles") as GPUParticles3D
 )
+## Base smoke particles.
 @onready var base_smoke_particles: GPUParticles3D = (
 	get_node_or_null("Turret/SmokeParticles") as GPUParticles3D
 )
+## Turret.
 @onready var turret: Node3D = $Turret
+## Laser origin.
 @onready var laser_origin: Marker3D = $Turret/LaserOrigin
+## Base beam mesh.
 @onready var base_beam_mesh: MeshInstance3D = $Turret/BeamMesh
+## Interact comp.
 @onready var interact_comp: InteractComponent = $InteractComponent
 
 

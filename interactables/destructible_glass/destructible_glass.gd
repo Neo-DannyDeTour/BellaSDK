@@ -5,54 +5,73 @@ extends RigidBody3D
 signal glass_broken
 
 @export_group("Dimensions & Shards")
+## Glass size.
 @export var glass_size: Vector2 = Vector2(2.0, 2.0):
 	set(value):
 		glass_size = value
 		_apply_dimensions()
 		_update_material()
 
+## Glass thickness.
 @export var glass_thickness: float = 0.1:
 	set(value):
 		glass_thickness = value
 		_apply_dimensions()
 
+## Shard rows.
 @export var shard_rows: int = 3
+## Shard cols.
 @export var shard_cols: int = 3
 
 @export_group("Damage Properties")
+## Can break.
 @export var can_break: bool = true:
 	set(value):
 		can_break = value
 		_update_material()
 
+## Shatter radius.
 @export var shatter_radius: float = 0.8
+## Damage threshold.
 @export var damage_threshold: float = 10.0
+## Impact velocity threshold.
 @export var impact_velocity_threshold: float = 5.0
+## Shard cleanup time.
 @export var shard_cleanup_time: float = 5.0
+## Break sound.
 @export var break_sound: AudioStream
 
 @export_group("Shader Parameters")
+## Glass color.
 @export var glass_color: Color = Color(0.8, 0.9, 1.0, 0.4):
 	set(value):
 		glass_color = value
 		_update_material()
 
+## Net color.
 @export var net_color: Color = Color(0.1, 0.1, 0.1, 1.0):
 	set(value):
 		net_color = value
 		_update_material()
 
+## Net scale.
 @export var net_scale: float = 20.0:
 	set(value):
 		net_scale = value
 		_update_material()
 
+## Is broken.
 var _is_broken: bool = false
+## Shard grid.
 var _shard_grid: Array = []
 
+## Intact mesh.
 @onready var intact_mesh: MeshInstance3D = $IntactMesh
+## Intact collision.
 @onready var intact_collision: CollisionShape3D = $IntactCollision
+## Break sound player.
 @onready var break_sound_player: AudioStreamPlayer3D = $BreakSound
+## Shards container.
 @onready var shards_container: Node3D = $ShardsContainer
 
 

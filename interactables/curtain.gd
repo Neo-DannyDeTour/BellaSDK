@@ -1,7 +1,9 @@
 class_name PhysicsCurtain
 extends SoftBody3D
 
+## Default stiffness.
 @export var default_stiffness: float = 0.5
+## Is interactable.
 @export var is_interactable: bool = true
 
 

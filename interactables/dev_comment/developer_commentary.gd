@@ -2,29 +2,47 @@ extends StaticBody3D
 class_name DeveloperCommentary
 
 @export_group("Commentary Settings")
+## Interact sound.
 @export var interact_sound: AudioStream = null
+## Commentary title.
 @export var commentary_title: String = "Developer Note"
+## Commentary content.
 @export_multiline var commentary_content: String = ""
+## Use rich text.
 @export var use_rich_text: bool = true
+## Spin speed.
 @export var spin_speed: float = 3.0
 
+## Interact comp.
 @onready var interact_comp: InteractComponent = $InteractComponent
+## Audio player.
 @onready var audio_player: AudioStreamPlayer3D = $AudioStreamPlayer3D
+## Commentary ui.
 @onready var commentary_ui: CanvasLayer = $CommentaryUI
+## Label title.
 @onready var label_title: Label = $CommentaryUI/Panel/VBoxContainer/TitleLabel
+## Label content.
 @onready var label_content: RichTextLabel = get_node(
 	"CommentaryUI/Panel/VBoxContainer/AutoScrollContainer/MarginContainer/ContentLabel"
 )
+## Sprite.
 @onready var sprite: Sprite3D = $Sprite3D
+## Equalizer mesh.
 @onready var equalizer_mesh: MeshInstance3D = $EqualizerMesh
 
+## Is open.
 var is_open: bool = false
+## Active player.
 var active_player: CharacterBody3D = null
+## Initial billboard mode.
 var _initial_billboard_mode: BaseMaterial3D.BillboardMode = BaseMaterial3D.BILLBOARD_DISABLED
 
+## Spectrum analyzer.
 var _spectrum_analyzer: AudioEffectSpectrumAnalyzerInstance
+## Bus idx.
 var _bus_idx: int = -1
 # Use PackedFloat32Array for Godot 4 shader uniform compatibility and performance
+## Audio data.
 var _audio_data: PackedFloat32Array = PackedFloat32Array()
 const VU_COUNT: int = 32
 

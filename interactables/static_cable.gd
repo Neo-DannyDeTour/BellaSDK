@@ -9,17 +9,22 @@ class_name SeamlessCable3D
 @export_category("Default Shape")
 ## Used if the anchor in the array is NOT a custom CablePoint3D
 @export var default_droop: float = 2.0
+## Default segments.
 @export var default_segments: int = 10
 
 @export_category("Appearance")
+## Cable material.
 @export var cable_material: ShaderMaterial
+## Thickness.
 @export var thickness: float = 0.04
+## Radial segments.
 @export var radial_segments: int = 6
 
 # Cached statically so 100 cables still only use 1 fallback material in memory
 static var _fallback_material: StandardMaterial3D
 
 # Stores the snapshot of the cable's last known state to prevent editor freezing
+## Last state hash.
 var _last_state_hash: int = 0
 
 

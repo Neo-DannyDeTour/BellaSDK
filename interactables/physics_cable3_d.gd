@@ -3,19 +3,27 @@ class_name PhysicsCable3D
 extends Node3D
 
 @export_category("Cable Connections")
+## Start anchor.
 @export var start_anchor: Node3D
+## End plug.
 @export var end_plug: RigidBody3D
 
 @export_category("Physics Properties")
+## Link scene.
 @export var link_scene: PackedScene = preload("res://interactables/cable_link.tscn")
+## Cable length meters.
 @export var cable_length_meters: float = 3.0
+## Link spacing.
 @export var link_spacing: float = 0.2
 
 @export_category("Appearance")
+## Cable color.
 @export var cable_color: Color = Color(0.1, 0.1, 0.1)
+## Thickness.
 @export var thickness: float = 0.04
 
 @export_category("Debug")
+## Show debug sphere.
 @export var show_debug_sphere: bool = true:
 	set(value):
 		show_debug_sphere = value
@@ -24,16 +32,23 @@ extends Node3D
 			print("PhysicsCable3D: show_debug_sphere toggled to ", show_debug_sphere)
 
 # Grab the internal node directly. Ensure the name exactly matches your node!
+## Editor icon.
 @onready var _editor_icon: Node3D = get_node_or_null("%EditorIcon") as Node3D
 
 static var _material_cache: Dictionary = {}
 
+## Links.
 var _links: Array[RigidBody3D] = []
+## Visual segments.
 var _visual_segments: Array[MeshInstance3D] = []
+## Base mesh.
 var _base_mesh: CylinderMesh
+## Debug sphere.
 var _debug_sphere: MeshInstance3D
 
+## Last start pos.
 var _last_start_pos: Vector3 = Vector3.ZERO
+## Last end pos.
 var _last_end_pos: Vector3 = Vector3.ZERO
 
 
