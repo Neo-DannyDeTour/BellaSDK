@@ -57,3 +57,5 @@ tab-characters: 1
 trailing-whitespace: null
 unnecessary-pass: null
 unused-argument: null
+disable:
+- class-definitions-order

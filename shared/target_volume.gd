@@ -47,8 +47,7 @@ enum SpawnMode { TIME_BASED, WAIT_FOR_KILL }
 
 ## The shape drawn in the editor to represent the spawn volume.
 ## Property: Visualizer Shape Type.
-@export
-var visualizer_shape_type: EditorTriggerVisualizer.ShapeType = EditorTriggerVisualizer.ShapeType.BOX:
+@export var visualizer_shape_type := EditorTriggerVisualizer.ShapeType.BOX:
 	set(value):
 		visualizer_shape_type = value
 		_update_visualizer()

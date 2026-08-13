@@ -108,9 +108,8 @@ func physics_update(delta: float) -> void:
 			print("StateGround: Valid vault detected. Transitioning.")
 			state_machine.transition_to("Vault")
 			return
-		else:
-			_perform_jump()
-			return
+		_perform_jump()
+		return
 
 	# 4. Determine Speed State
 	_calculate_target_speed(delta, input_dir)

@@ -86,7 +86,7 @@ func _input(event: InputEvent) -> void:
 			_adjust_3d_glass(1.0)
 			get_viewport().set_input_as_handled()
 			return
-		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+		if event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			_adjust_3d_glass(-1.0)
 			get_viewport().set_input_as_handled()
 			return

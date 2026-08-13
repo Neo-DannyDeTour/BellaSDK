@@ -41,7 +41,8 @@ func equip_to_player(p_node: CharacterBody3D) -> void:
 	# 1. FIND THE PHYSICS BODY (StaticBody3D or RigidBody3D)
 	# If your InteractComponent is a child of the StaticBody,
 	# we grab the parent of the component.
-	var physics_body: StaticBody3D = get_node("StaticBody3D") as StaticBody3D  # Update path if named differently
+	# Update path if named differently
+	var physics_body: StaticBody3D = get_node("StaticBody3D") as StaticBody3D
 
 	# 2. DISABLE IT COMPLETELY
 	if physics_body:

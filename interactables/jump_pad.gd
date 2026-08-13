@@ -45,7 +45,8 @@ var _custom_gravity_up: float = 9.8
 ## The custom gravity applied while the player is descending.
 var _custom_gravity_down: float = 9.8
 
-## Cached reference to the fallback child 'Target' node, used to determine the final destination's Y-position during flight simulation.
+## Cached reference to the fallback child 'Target' node, used to determine
+## the final destination's Y-position during flight simulation.
 var _target_node: Node3D
 
 ## The last recorded position of the jump pad to detect movement.
@@ -115,7 +116,8 @@ func _process(delta: float) -> void:
 				_ball_visual.visible = false
 
 
-## Suppresses the editor warning regarding the missing collision shape, as it is generated internally.
+## Suppresses the editor warning regarding the missing collision shape,
+## as it is generated internally.
 func _get_configuration_warnings() -> PackedStringArray:
 	return PackedStringArray()
 
