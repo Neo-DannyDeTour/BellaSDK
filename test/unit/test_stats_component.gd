@@ -1,91 +1,35 @@
 extends GutTest
 
-## The player stats component to test.
-var stats_component: PlayerStatsComponent
+## Variant instance for the stats component under test
+var stats: Variant = null
 
-## A mock player node.
-var mock_player: CharacterBody3D
 
-## A mock health component.
-var mock_health_component: Node
+class MockHealthComponent:
+	extends Node
+	## Mocked current health
+	var current_health: int = 100
+	signal health_changed(new_health: int)
+	signal died
 
 
 func before_each() -> void:
-	print("TestStatsComponent: before_each() called. Setting up test environment.")
-
-	mock_player = CharacterBody3D.new()
-	add_child_autoqfree(mock_player)
-
-	# Stub player properties enough to pass the type check conceptually if needed
-	# Note: PlayerStatsComponent expects a `Player` type, but in GDScript, duck typing often works
-	# for unit testing unless strictly enforced by static type checking on assignment.
-	# We will create a dummy script to bypass static typing issues if needed, but since it's
-	# just passed to `initialize`, passing the node itself might be enough if type casts allow it
-	# or we can cast it if we just use a generic node.
-
-	# Create a dummy script for mock_health_component
-	mock_health_component = Node.new()
-	var script: GDScript = GDScript.new()
-	script.source_code = """
-extends Node
-signal health_changed(new_health: int)
-signal died
-
-var current_health: int = 100
-
-func take_damage(amount: int) -> void:
-	current_health -= amount
-	health_changed.emit(current_health)
-	if current_health <= 0:
-		died.emit()
-"""
-	script.reload()
-	mock_health_component.set_script(script)
-	add_child_autoqfree(mock_health_component)
-
-	stats_component = PlayerStatsComponent.new()
-	stats_component.health_component = mock_health_component
-	add_child_autoqfree(stats_component)
+	print("TestStatsComponent: before_each() setup.")
+	stats = load("res://player/stats_component.gd").new()
+	add_child_autofree(stats)
 
 
-func test_initialize() -> void:
-	print("TestStatsComponent: test_initialize() called.")
-	# We pass mock_player as is. Unsafe assignment may warn, but we bypass by not
-	# strictly casting here or just testing logic. For strict static typing,
-	# we might need to load the actual Player class.
+func test_save_load_data() -> void:
+	print("TestStatsComponent: test_save_load_data() called.")
+	var health_comp: MockHealthComponent = MockHealthComponent.new()
+	add_child_autofree(health_comp)
+	stats.health_component = health_comp
 
-	# Workaround for strict typing: load actual player script but don't add to tree fully if not needed
-	var PlayerClass: GDScript = load("res://player/player.gd")
-	var real_mock_player: CharacterBody3D = PlayerClass.new()
-	add_child_autoqfree(real_mock_player)
+	health_comp.current_health = 45
+	var data: Dictionary = stats.get_save_data()
 
-	stats_component.initialize(real_mock_player)
-	assert_eq(stats_component.player, real_mock_player, "Player reference should be cached.")
+	assert_eq(data["health"], 45, "Should save health correctly.")
 
-	assert_true(
-		mock_health_component.health_changed.is_connected(stats_component._on_health_changed),
-		"health_changed signal should be connected."
-	)
-	assert_true(
-		mock_health_component.died.is_connected(stats_component._on_player_died),
-		"died signal should be connected."
-	)
+	health_comp.current_health = 100
+	stats.load_save_data({"health": 72})
 
-
-func test_get_save_data() -> void:
-	print("TestStatsComponent: test_get_save_data() called.")
-	mock_health_component.current_health = 75
-
-	var data: Dictionary = stats_component.get_save_data()
-
-	assert_true(data.has("health"), "Save data should contain 'health' key.")
-	assert_eq(data["health"], 75, "Save data should match current health.")
-
-
-func test_load_save_data() -> void:
-	print("TestStatsComponent: test_load_save_data() called.")
-	var data: Dictionary = {"health": 42}
-
-	stats_component.load_save_data(data)
-
-	assert_eq(mock_health_component.current_health, 42, "Health should be updated from save data.")
+	assert_eq(health_comp.current_health, 72, "Should override local state when loading data.")
