@@ -21,15 +21,17 @@ func _ready() -> void:
 ## Called by the InteractionScanner when the player's crosshair hits the object's physics body.
 func hover_cursor(_player: Node3D, _hit_point: Vector3) -> void:
 	var current_frame: int = Engine.get_process_frames()
-	
+
 	if not _has_spoken:
 		_has_spoken = true
-		var text_to_speak: String = alt_text_override if alt_text_override != "" else _get_label_text()
+		var text_to_speak: String = (
+			alt_text_override if alt_text_override != "" else _get_label_text()
+		)
 		print("TTSInteractComponent: Focus gained. Routing text to TTS: ", text_to_speak)
-		
+
 		if text_to_speak != "":
 			Events.object_focused.emit(text_to_speak)
-			
+
 	_last_hover_frame = current_frame
 
 

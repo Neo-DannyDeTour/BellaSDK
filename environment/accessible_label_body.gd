@@ -25,11 +25,11 @@ extends StaticBody3D
 
 
 func _ready() -> void:
-	# Ensures the child nodes sync up with the exported variables 
+	# Ensures the child nodes sync up with the exported variables
 	# when the scene loads in-game or is first instanced in the editor.
 	$Label3D.text = display_text
 	$Label3D.billboard = billboard_mode
-	
+
 	# Safely assign the alt text to your interact component
 	if has_node("InteractComponent"):
 		$InteractComponent.alt_text_override = tts_alt_text

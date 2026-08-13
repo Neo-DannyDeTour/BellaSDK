@@ -54,19 +54,13 @@ func _setup_viewport_measurement() -> void:
 ## Collects frame metrics for CPU, GPU, and draw calls.
 func _record_frame_metrics() -> void:
 	print("BenchmarkRunner: Recording active frame metrics...")
-	var cpu_ms: float = (
-		Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0
-	)
+	var cpu_ms: float = Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0
 	_cpu_times.append(cpu_ms)
 
-	var gpu_ms: float = RenderingServer.viewport_get_measured_render_time_gpu(
-		_viewport_rid
-	)
+	var gpu_ms: float = RenderingServer.viewport_get_measured_render_time_gpu(_viewport_rid)
 	_gpu_times.append(gpu_ms)
 
-	var draw_calls: int = int(
-		Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)
-	)
+	var draw_calls: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
 	_draw_call_counts.append(draw_calls)
 
 
@@ -86,9 +80,7 @@ func _evaluate_metrics_and_exit() -> void:
 	var avg_draws: float = _calculate_average_int(_draw_call_counts)
 	var max_draws: int = _find_max_int(_draw_call_counts)
 
-	var passed: bool = (p99_cpu <= _target_frame_time_ms) and (
-		p99_gpu <= _target_frame_time_ms
-	)
+	var passed: bool = (p99_cpu <= _target_frame_time_ms) and (p99_gpu <= _target_frame_time_ms)
 
 	var report: Dictionary = {
 		"samples": samples,
@@ -98,9 +90,7 @@ func _evaluate_metrics_and_exit() -> void:
 		"passed": passed
 	}
 
-	_print_report_summary(
-		avg_cpu, p99_cpu, avg_gpu, p99_gpu, avg_draws, max_draws
-	)
+	_print_report_summary(avg_cpu, p99_cpu, avg_gpu, p99_gpu, avg_draws, max_draws)
 	_save_report_file(report)
 
 	if not passed:
@@ -130,10 +120,7 @@ func _calculate_average_int(values: Array[int]) -> float:
 
 
 ## Calculates percentile value of a float array.
-func _calculate_percentile_float(
-	values: Array[float],
-	percentile: float
-) -> float:
+func _calculate_percentile_float(values: Array[float], percentile: float) -> float:
 	print("BenchmarkRunner: Calculating array percentile...")
 	var sorted: Array[float] = values.duplicate()
 	sorted.sort()
@@ -154,12 +141,7 @@ func _find_max_int(values: Array[int]) -> int:
 
 ## Prints structured benchmark results to standard output.
 func _print_report_summary(
-	avg_cpu: float,
-	p99_cpu: float,
-	avg_gpu: float,
-	p99_gpu: float,
-	avg_draws: float,
-	max_draws: int
+	avg_cpu: float, p99_cpu: float, avg_gpu: float, p99_gpu: float, avg_draws: float, max_draws: int
 ) -> void:
 	print("BenchmarkRunner: Printing benchmark summary to console...")
 	print("\n=== PERFORMANCE REPORT ===")
@@ -172,10 +154,7 @@ func _print_report_summary(
 ## Writes benchmark data dictionary to user JSON file.
 func _save_report_file(report: Dictionary) -> void:
 	print("BenchmarkRunner: Saving report to benchmark_report.json...")
-	var file: FileAccess = FileAccess.open(
-		"user://benchmark_report.json",
-		FileAccess.WRITE
-	)
+	var file: FileAccess = FileAccess.open("user://benchmark_report.json", FileAccess.WRITE)
 	if file:
 		file.store_string(JSON.stringify(report, "  "))
 		file.close()

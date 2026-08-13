@@ -99,6 +99,7 @@ var _probes: Array[Node] = []
 ## Tracks if the object was recently dropped to prevent immediate TTS spam.
 var _is_tts_cooldown: bool = false
 
+
 func _ready() -> void:
 	# Fallback assignments in case export vars were left empty in the inspector
 	if not interact_comp:
@@ -360,12 +361,12 @@ func _on_interact_component_focused() -> void:
 	if is_instance_valid(label):
 		_update_label_text()
 		label.show()
-		
+
 		# Broadcast the custom TTS text to the Event Bus (visual label remains untouched)
 		if Events.has_signal("object_focused") and not _is_tts_cooldown:
 			var mesh_name: String = _get_clean_mesh_name()
 			var tts_prompt: String = label.text + " " + mesh_name
-			
+
 			print("PickableObject: Emitting TTS prompt -> ", tts_prompt)
 			Events.object_focused.emit(tts_prompt)
 
@@ -629,21 +630,21 @@ func _get_clean_mesh_name() -> String:
 	print("PickableObject: _get_clean_mesh_name() called. Parsing mesh string.")
 	if not is_instance_valid(mesh):
 		return "object"
-		
+
 	var raw_name: String = mesh.name
 	var clean_name: String = raw_name.replace("_", " ")
 	var final_name: String = ""
-	
+
 	# Strip out trailing digits and internal Godot symbols (e.g. "chair_small2" -> "chair small")
 	for i: int in range(clean_name.length()):
 		var char_str: String = clean_name.substr(i, 1)
 		if not char_str.is_valid_int() and char_str != "@":
 			final_name += char_str
-			
+
 	final_name = final_name.strip_edges().to_lower()
-	
+
 	# Fallbacks in case the node is just named "MeshInstance3D" or was entirely numbers
 	if final_name.is_empty() or final_name.begins_with("meshinstance"):
 		return "object"
-		
+
 	return final_name

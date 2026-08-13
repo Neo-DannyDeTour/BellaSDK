@@ -110,22 +110,22 @@ func _update_visuals() -> void:
 		if shape_type == ShapeType.BOX:
 			if not col.shape or not col.shape is BoxShape3D:
 				col.shape = BoxShape3D.new()
-				
+
 			if not col.shape.resource_local_to_scene:
 				col.shape = col.shape.duplicate()
 				col.shape.resource_local_to_scene = true
-				
+
 			var box: BoxShape3D = col.shape as BoxShape3D
 			box.size = trigger_size
-			
+
 		elif shape_type == ShapeType.SPHERE:
 			if not col.shape or not col.shape is SphereShape3D:
 				col.shape = SphereShape3D.new()
-				
+
 			if not col.shape.resource_local_to_scene:
 				col.shape = col.shape.duplicate()
 				col.shape.resource_local_to_scene = true
-				
+
 			var sphere: SphereShape3D = col.shape as SphereShape3D
 			sphere.radius = trigger_size.x / 2.0
 
@@ -178,18 +178,18 @@ func _start_effect_sequence() -> void:
 	# --- Phase 1: FADE IN ---
 	(
 		_active_tween
-		.tween_method(_set_fade.bind(mat), 0.0, 1.0, fade_in_duration)
-		.set_trans(Tween.TRANS_SINE)
-		.set_ease(Tween.EASE_IN_OUT)
+		. tween_method(_set_fade.bind(mat), 0.0, 1.0, fade_in_duration)
+		. set_trans(Tween.TRANS_SINE)
+		. set_ease(Tween.EASE_IN_OUT)
 	)
 
 	if use_blur:
 		(
 			_active_tween
-			.parallel()
-			.tween_method(_set_blur.bind(mat), 0.0, max_blur, fade_in_duration)
-			.set_trans(Tween.TRANS_SINE)
-			.set_ease(Tween.EASE_IN_OUT)
+			. parallel()
+			. tween_method(_set_blur.bind(mat), 0.0, max_blur, fade_in_duration)
+			. set_trans(Tween.TRANS_SINE)
+			. set_ease(Tween.EASE_IN_OUT)
 		)
 
 	if use_blink:
@@ -203,31 +203,31 @@ func _start_effect_sequence() -> void:
 				# Close eyes
 				(
 					_active_tween
-					.parallel()
-					.tween_method(_set_blink.bind(mat), 1.0, 0.0, single_blink_time * 0.5)
-					.set_delay(delay)
-					.set_trans(Tween.TRANS_SINE)
-					.set_ease(Tween.EASE_IN_OUT)
+					. parallel()
+					. tween_method(_set_blink.bind(mat), 1.0, 0.0, single_blink_time * 0.5)
+					. set_delay(delay)
+					. set_trans(Tween.TRANS_SINE)
+					. set_ease(Tween.EASE_IN_OUT)
 				)
 
 				# Open eyes
 				(
 					_active_tween
-					.parallel()
-					.tween_method(_set_blink.bind(mat), 0.0, 1.0, single_blink_time * 0.5)
-					.set_delay(delay + single_blink_time * 0.5)
-					.set_trans(Tween.TRANS_SINE)
-					.set_ease(Tween.EASE_IN_OUT)
+					. parallel()
+					. tween_method(_set_blink.bind(mat), 0.0, 1.0, single_blink_time * 0.5)
+					. set_delay(delay + single_blink_time * 0.5)
+					. set_trans(Tween.TRANS_SINE)
+					. set_ease(Tween.EASE_IN_OUT)
 				)
 			else:
 				# Final blink stays closed for the hold phase
 				(
 					_active_tween
-					.parallel()
-					.tween_method(_set_blink.bind(mat), 1.0, 0.0, single_blink_time)
-					.set_delay(delay)
-					.set_trans(Tween.TRANS_SINE)
-					.set_ease(Tween.EASE_IN_OUT)
+					. parallel()
+					. tween_method(_set_blink.bind(mat), 1.0, 0.0, single_blink_time)
+					. set_delay(delay)
+					. set_trans(Tween.TRANS_SINE)
+					. set_ease(Tween.EASE_IN_OUT)
 				)
 
 	# --- Phase 2: HOLD ---
@@ -236,27 +236,27 @@ func _start_effect_sequence() -> void:
 	# --- Phase 3: FADE OUT ---
 	(
 		_active_tween
-		.tween_method(_set_fade.bind(mat), 1.0, 0.0, fade_out_duration)
-		.set_trans(Tween.TRANS_SINE)
-		.set_ease(Tween.EASE_IN_OUT)
+		. tween_method(_set_fade.bind(mat), 1.0, 0.0, fade_out_duration)
+		. set_trans(Tween.TRANS_SINE)
+		. set_ease(Tween.EASE_IN_OUT)
 	)
 
 	if use_blur:
 		(
 			_active_tween
-			.parallel()
-			.tween_method(_set_blur.bind(mat), max_blur, 0.0, fade_out_duration)
-			.set_trans(Tween.TRANS_SINE)
-			.set_ease(Tween.EASE_IN_OUT)
+			. parallel()
+			. tween_method(_set_blur.bind(mat), max_blur, 0.0, fade_out_duration)
+			. set_trans(Tween.TRANS_SINE)
+			. set_ease(Tween.EASE_IN_OUT)
 		)
 
 	if use_blink:
 		(
 			_active_tween
-			.parallel()
-			.tween_method(_set_blink.bind(mat), 0.0, 1.0, fade_out_duration)
-			.set_trans(Tween.TRANS_SINE)
-			.set_ease(Tween.EASE_IN_OUT)
+			. parallel()
+			. tween_method(_set_blink.bind(mat), 0.0, 1.0, fade_out_duration)
+			. set_trans(Tween.TRANS_SINE)
+			. set_ease(Tween.EASE_IN_OUT)
 		)
 
 	# --- Phase 4: CLEANUP ---

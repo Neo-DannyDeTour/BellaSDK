@@ -188,10 +188,10 @@ func _ready() -> void:
 			for child: Node in get_children():
 				if child.get_class() == "EditorTriggerVisualizer":
 					child.queue_free()
-		
+
 		body_entered.connect(_on_body_entered)
 		body_exited.connect(_on_body_exited)
-		
+
 		if target_environment and target_environment.environment:
 			_original_glow_intensity = target_environment.environment.glow_intensity
 			# Force glow enabled to ensure the bloom tween has a visible impact
@@ -207,22 +207,22 @@ func _update_visuals() -> void:
 		if shape_type == ShapeType.BOX:
 			if not col.shape is BoxShape3D:
 				col.shape = BoxShape3D.new()
-			
+
 			if not col.shape.resource_local_to_scene:
 				col.shape = col.shape.duplicate()
 				col.shape.resource_local_to_scene = true
-				
+
 			var box: BoxShape3D = col.shape as BoxShape3D
 			box.size = volume_size
-			
+
 		elif shape_type == ShapeType.SPHERE:
 			if not col.shape is SphereShape3D:
 				col.shape = SphereShape3D.new()
-				
+
 			if not col.shape.resource_local_to_scene:
 				col.shape = col.shape.duplicate()
 				col.shape.resource_local_to_scene = true
-				
+
 			var sphere: SphereShape3D = col.shape as SphereShape3D
 			sphere.radius = volume_size.x / 2.0
 
@@ -287,19 +287,15 @@ func _update_shader_params() -> void:
 	_material.set_shader_parameter("brightness", brightness)
 	_material.set_shader_parameter("contrast", contrast)
 	_material.set_shader_parameter("saturation", saturation)
-	
+
 	_material.set_shader_parameter("temperature", temperature)
 	_material.set_shader_parameter("tint", tint)
 
-	_material.set_shader_parameter(
-		"lift_color", Vector3(lift_color.r, lift_color.g, lift_color.b)
-	)
+	_material.set_shader_parameter("lift_color", Vector3(lift_color.r, lift_color.g, lift_color.b))
 	_material.set_shader_parameter(
 		"gamma_color", Vector3(gamma_color.r, gamma_color.g, gamma_color.b)
 	)
-	_material.set_shader_parameter(
-		"gain_color", Vector3(gain_color.r, gain_color.g, gain_color.b)
-	)
+	_material.set_shader_parameter("gain_color", Vector3(gain_color.r, gain_color.g, gain_color.b))
 
 	if lut_texture:
 		_material.set_shader_parameter("lut_texture", lut_texture)
@@ -377,9 +373,9 @@ func _fade_effect(target_alpha: float) -> void:
 		_blend_tween.kill()
 
 	_blend_tween = create_tween()
-	_blend_tween.tween_property(
-		_color_rect, "modulate:a", target_alpha, blend_time
-	).set_trans(Tween.TRANS_SINE)
+	_blend_tween.tween_property(_color_rect, "modulate:a", target_alpha, blend_time).set_trans(
+		Tween.TRANS_SINE
+	)
 
 	if target_alpha <= 0.0:
 		_blend_tween.tween_callback(_color_rect.hide)
@@ -388,13 +384,17 @@ func _fade_effect(target_alpha: float) -> void:
 func _fade_bloom(target_intensity: float) -> void:
 	if not target_environment or not target_environment.environment:
 		return
-		
+
 	print("ColorGradingVolume3D: Executing environment bloom fade to ", target_intensity)
-	
+
 	if _bloom_tween and _bloom_tween.is_valid():
 		_bloom_tween.kill()
-		
+
 	_bloom_tween = create_tween()
-	_bloom_tween.tween_property(
-		target_environment.environment, "glow_intensity", target_intensity, blend_time
-	).set_trans(Tween.TRANS_SINE)
+	(
+		_bloom_tween
+		. tween_property(
+			target_environment.environment, "glow_intensity", target_intensity, blend_time
+		)
+		. set_trans(Tween.TRANS_SINE)
+	)
