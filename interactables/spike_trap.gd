@@ -3,18 +3,24 @@ extends Node3D
 class_name SpikeTrap
 
 @export_group("Trigger Settings")
+## Use proximity trigger.
 @export var use_proximity_trigger: bool = true
+## Stay active while inside.
 @export var stay_active_while_inside: bool = true
+## Proximity area.
 @export var proximity_area: Area3D
+## Proximity shape node.
 @export var proximity_shape_node: CollisionShape3D
 
 @export_group("Trigger Dimensions")
+## Trigger size.
 @export var trigger_size: Vector3 = Vector3(2.0, 2.0, 2.0):
 	set(value):
 		trigger_size = value
 		if is_node_ready():
 			_update_trigger_shape()
 
+## Trigger offset.
 @export var trigger_offset: Vector3 = Vector3.ZERO:
 	set(value):
 		trigger_offset = value
@@ -22,14 +28,22 @@ class_name SpikeTrap
 			_update_trigger_shape()
 
 @export_group("Movement Settings")
+## Move distance.
 @export var move_distance: float = 2.0
+## Move duration.
 @export var move_duration: float = 0.15
+## Return delay.
 @export var return_delay: float = 1.5
+## Spike body.
 @export var spike_body: AnimatableBody3D
 
+## Is triggered.
 var _is_triggered: bool = false
+## Is retracting.
 var _is_retracting: bool = false
+## Players in zone.
 var _players_in_zone: int = 0
+## Original position.
 var _original_position: Vector3
 
 

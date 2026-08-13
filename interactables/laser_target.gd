@@ -5,11 +5,13 @@ extends StaticBody3D
 signal activated
 signal deactivated
 
+## Targets.
 @export var targets: Array[Node3D]:
 	set(value):
 		targets = value
 		_update_transmitter_targets()
 
+## Transmitter.
 @export var transmitter: OutputTransmitter3D:
 	set(value):
 		transmitter = value

@@ -1,14 +1,21 @@
 class_name ReflectorMirror
 extends AnimatableBody3D
 
+## Rotation speed.
 @export var rotation_speed: float = 2.0
+## Reflect marker.
 @export var reflect_marker: Marker3D
 
+## Is controlled.
 var is_controlled: bool = false
+## Controlling player.
 var controlling_player: CharacterBody3D = null
+## Just attached.
 var _just_attached: bool = false
 
+## Mirror head.
 @onready var mirror_head: Node3D = $MirrorHead
+## Interact comp.
 @onready var interact_comp: InteractComponent = $InteractComponent
 
 

@@ -2,20 +2,31 @@ class_name CombinationLock
 extends Node3D
 
 @export_category("Lock Settings")
+## Secret code.
 @export var secret_code: String = "123"
+## Use letters.
 @export var use_letters: bool = false
 
 @export_category("Visuals & Lighting")
+## Camera view point.
 @export var camera_view_point: Marker3D
+## Lock ui scene.
 @export var lock_ui_scene: PackedScene
+## Enable auto light.
 @export var enable_auto_light: bool = false
 
+## Interact comp.
 @onready var interact_comp: InteractComponent = $InteractComponent
+## Puzzle light.
 @onready var puzzle_light: SpotLight3D = $SpotLight3D
 
+## Active ui.
 var active_ui: MachineLockUI
+## Interacting player.
 var interacting_player: CharacterBody3D
+## Original cam transform.
 var original_cam_transform: Transform3D
+## Camera tween.
 var camera_tween: Tween
 
 

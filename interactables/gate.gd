@@ -5,7 +5,9 @@ extends Node3D
 ## Duration of the opening/closing animation in seconds
 @export var move_duration: float = 2.0
 
+## Closed position.
 var closed_position: Vector3
+## Move tween.
 var _move_tween: Tween
 
 

@@ -6,9 +6,13 @@ signal interacted(character: CharacterBody3D)
 signal focused
 signal unfocused
 
+## Characters hovering.
 var characters_hovering: Dictionary = {}
+## Is currently focused.
 var is_currently_focused: bool = false
+## Last hit position.
 var last_hit_position: Vector3 = Vector3.ZERO
+## Last hover time msec.
 var _last_hover_time_msec: int = 0
 
 

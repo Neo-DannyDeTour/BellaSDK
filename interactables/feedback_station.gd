@@ -2,14 +2,20 @@ extends StaticBody3D
 class_name FeedbackStation
 
 @export_category("Configuration")
+## Form url.
 @export var form_url: String = "https://forms.gle/JnrmTWLiLv5Mhzfg8"
 
 @export_category("Node References")
+## Interact comp.
 @export var interact_comp: InteractComponent
+## Label.
 @export var label: Label3D
+## Sprite.
 @export var sprite: Sprite3D
 
+## Sprite initial y.
 var _sprite_initial_y: float = 0.0
+## Hover tween.
 var _hover_tween: Tween = null
 
 

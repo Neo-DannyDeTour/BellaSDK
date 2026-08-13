@@ -5,6 +5,7 @@ extends Node3D
 @export_category("Connections")
 ## The fixed point above the cart (e.g., the pulley wheel)
 @export var overhead_anchor: Node3D
+## Cart.
 @export var cart: Node3D
 
 @export_category("Visuals")

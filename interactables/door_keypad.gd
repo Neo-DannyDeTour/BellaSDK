@@ -3,14 +3,21 @@ class_name DoorKeypad
 
 signal code_accepted
 
+## Valid code.
 @export var valid_code: String = "1234"
+## Targets.
 @export var targets: Array[Node3D]
 
+## Debug line.
 var debug_line: MeshInstance3D
 
+## Mesh instance 3d.
 @onready var mesh_instance_3d: MeshInstance3D = $MeshInstance3D
+## Sub viewport.
 @onready var sub_viewport: SubViewport = $SubViewport
+## Interact component.
 @onready var interact_component: InteractComponent = $InteractComponent
+## Keypad audio.
 @onready var keypad_audio: AudioStreamPlayer3D = $KeypadAudio
 
 

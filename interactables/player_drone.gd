@@ -1,21 +1,35 @@
 extends CharacterBody3D
 class_name PlayerDrone
 
+## Move speed.
 @export var move_speed: float = 8.0
+## Vertical speed.
 @export var vertical_speed: float = 5.0
+## Mouse sensitivity.
 @export var mouse_sensitivity: float = 0.002
+## Tilt angle.
 @export var tilt_angle: float = 15.0
+## Tilt speed.
 @export var tilt_speed: float = 5.0
 
+## Is possessed.
 var is_possessed: bool = false
+## Last interact time.
 var last_interact_time: float = 0.0
+## Double tap window.
 var double_tap_window: float = 0.4
+## Camera pitch.
 var camera_pitch: float = 0.0
+## Original player.
 var original_player: CharacterBody3D = null
 
+## Tilt pivot.
 @onready var tilt_pivot: Node3D = $TiltPivot
+## Camera.
 @onready var camera: Camera3D = $TiltPivot/DroneCamera
+## Interact comp.
 @onready var interact_comp: InteractComponent = $InteractComponent
+## Drone hud.
 @onready var drone_hud: CanvasLayer = $DroneHUD
 
 

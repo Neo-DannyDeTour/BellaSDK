@@ -2,8 +2,11 @@
 extends Node
 class_name CableBuilderComponent
 
+## Path node.
 @export var path_node: Path3D
+## Mesh node.
 @export var mesh_node: MeshInstance3D
+## Collision node.
 @export var collision_node: CollisionShape3D
 
 

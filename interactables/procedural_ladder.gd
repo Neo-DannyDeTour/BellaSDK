@@ -5,32 +5,38 @@ extends CSGCombiner3D
 enum LadderType { METAL, WOOD, CONCRETE }
 
 @export_category("Ladder Style")
+## Type.
 @export var type: LadderType = LadderType.METAL:
 	set(value):
 		type = value
 		_request_rebuild()
 
 @export_category("Ladder Dimensions")
+## Ladder height.
 @export var ladder_height: float = 5.0:
 	set(value):
 		ladder_height = max(1.0, value)
 		_request_rebuild()
 
+## Ladder width.
 @export var ladder_width: float = 1.0:
 	set(value):
 		ladder_width = max(0.5, value)
 		_request_rebuild()
 
+## Rung spacing.
 @export var rung_spacing: float = 0.4:
 	set(value):
 		rung_spacing = max(0.15, value)
 		_request_rebuild()
 
+## Rung thickness.
 @export var rung_thickness: float = 0.03:
 	set(value):
 		rung_thickness = max(0.01, value)
 		_request_rebuild()
 
+## Is dirty.
 var _is_dirty: bool = false
 
 

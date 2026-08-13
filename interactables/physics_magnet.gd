@@ -5,29 +5,38 @@ extends Area3D
 enum MagnetMode { THROWN_ONLY, ALL, REPEL }
 
 @export_category("Magnet Settings")
+## Mode.
 @export var mode: MagnetMode = MagnetMode.ALL
+## Force multiplier.
 @export var force_multiplier: float = 25.0
+## Throw velocity threshold.
 @export var throw_velocity_threshold: float = 3.0
 ## Only objects assigned to this group will react to the magnet.
 @export var allowed_group: StringName = &"magnetizable"
 
 @export_category("Visuals & Range")
+## Magnet radius.
 @export var magnet_radius: float = 5.0:
 	set(value):
 		magnet_radius = value
 		_update_size()
 
+## Show visuals.
 @export var show_visuals: bool = true:
 	set(value):
 		show_visuals = value
 		_update_visibility()
 
+## Collision shape.
 @export var collision_shape: CollisionShape3D
+## Visual mesh.
 @export var visual_mesh: MeshInstance3D
 
+## Editor icon.
 @onready var _editor_icon: Sprite3D = get_node_or_null("%EditorIcon") as Sprite3D
 
 # OPTIMIZATION: Track bodies via signals instead of polling get_overlapping_bodies()
+## Active bodies.
 var _active_bodies: Dictionary = {}
 
 

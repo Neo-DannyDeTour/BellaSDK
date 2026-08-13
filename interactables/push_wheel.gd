@@ -26,55 +26,85 @@ const DOUBLE_TAP_DELAY: float = 0.3
 @export var pickable_stick_scene: PackedScene
 
 @export_category("Node References")
+## Wheel.
 @export var wheel: AnimatableBody3D
+## Intact sticks.
 @export var intact_sticks: Node3D
+## Broken stubs.
 @export var broken_stubs: Node3D
+## Restored handle.
 @export var restored_handle: Node3D
 
 @export_category("Wheel Settings")
+## Turn duration.
 @export var turn_duration: float = 5.0
+## Visual rotations.
 @export var visual_rotations: float = 1.0
+## Turn clockwise.
 @export var turn_clockwise: bool = true
+## Allow reverse.
 @export var allow_reverse: bool = true
 
 @export_category("Wheel Alignment")
+## Stick count.
 @export var stick_count: int = 4
+## Stick radius.
 @export var stick_radius: float = 1.5  # The length of the stick (1.5m in your screenshot)
+## Stick thickness.
 @export var stick_thickness: float = 0.1  # The thickness of the stick (0.1m in your screenshot)
+## Stick center distance.
 @export var stick_center_distance: float = 1.0  # The outward offset (from Z = -1.0 transform)
+## Stick y offset.
 @export var stick_y_offset: float = 0.5  # The vertical offset (0.5m in your screenshot)
+## Push stand offset.
 @export var push_stand_offset: float = 0.8
+## Restored stick index.
 @export var restored_stick_index: int = 0
 
+## Can be detached.
 @export var can_be_detached: bool = false:
 	set(value):
 		can_be_detached = value
 		if can_be_detached:
 			lock_when_finished = false
 
+## Lock when finished.
 @export var lock_when_finished: bool = false:
 	set(value):
 		lock_when_finished = value
 		if lock_when_finished:
 			can_be_detached = false
 
+## Spin axis.
 @export var spin_axis: Vector3 = Vector3(0, 1, 0)
+## Outline material.
 @export var outline_material: ShaderMaterial
 
 @export_category("Debug")
+## Show debug colliders.
 @export var show_debug_colliders: bool = true
 
+## Progress.
 var progress: float = 0.0
+## Is focused.
 var is_focused: bool = false
+## Is locked.
 var is_locked: bool = false
+## Is installed.
 var is_installed: bool = true
 
+## Install cooldown.
 var install_cooldown: float = 0.0
+## Last interact time.
 var last_interact_time: float = 0.0
+## Initial rotation.
 var initial_rotation: Vector3
 
+## Current active anchor.
 var current_active_anchor: Marker3D = null
+## Was powered on.
 var _was_powered_on: bool = false
+## Stick collisions.
 var _stick_collisions: Array[CollisionShape3D] = []
 
 

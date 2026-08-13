@@ -2,32 +2,52 @@ class_name HealthDispenser
 extends StaticBody3D
 
 @export_category("Health Settings")
+## Tex low health.
 @export var tex_low_health: Texture2D
+## Tex mid health.
 @export var tex_mid_health: Texture2D
+## Tex almost health.
 @export var tex_almost_health: Texture2D
+## Tex ready health.
 @export var tex_ready_health: Texture2D
+## Heal amount.
 @export var heal_amount: int = 25
+## Heal cooldown msec.
 @export var heal_cooldown_msec: int = 250
 
 @export_category("Node References")
+## Screen sprite.
 @export var screen_sprite: Sprite3D
+## Tentacle pivot.
 @export var tentacle_pivot: Node3D
+## Detection area.
 @export var detection_area: Area3D
 
 @export_category("Procedural Tentacle")
+## Segment count.
 @export var segment_count: int = 15
+## Tentacle color.
 @export var tentacle_color: Color = Color(0.3, 0.1, 0.4)
+## Thickness.
 @export var thickness: float = 0.1
+## Max reach.
 @export var max_reach: float = 3.0
 
+## Nearby player.
 var _nearby_player: CharacterBody3D = null
+## Player health component.
 var _player_health_component: HealthComponent = null
+## Last heal time.
 var _last_heal_time: int = 0
 
 # Tentacle generation variables
+## Segments.
 var _segments: Array[MeshInstance3D] = []
+## Base mesh.
 var _base_mesh: CylinderMesh
+## Current target pos.
 var _current_target_pos: Vector3
+## Active weight.
 var _active_weight: float = 0.0  # 0.0 = Limp, 1.0 = Fully active
 
 

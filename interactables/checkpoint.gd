@@ -2,63 +2,79 @@
 extends Area3D
 
 @export_group("Trigger Area")
+## Trigger size.
 @export var trigger_size: Vector3 = Vector3(2.0, 2.0, 2.0):
 	set(value):
 		trigger_size = value
 		_update_trigger_shape()
 
+## Trigger offset.
 @export var trigger_offset: Vector3 = Vector3(0.0, 1.0, 0.0):
 	set(value):
 		trigger_offset = value
 		_update_trigger_shape()
 
 @export_group("Hologram Settings")
+## Label text.
 @export var label_text: String = "Checkpoint":
 	set(value):
 		label_text = value
 		_update_visuals()
 
+## Line color.
 @export var line_color: Color = Color.GREEN:
 	set(value):
 		line_color = value
 		_update_visuals()
 
+## Base color.
 @export var base_color: Color = Color(0.0, 0.2, 0.8, 0.1):
 	set(value):
 		base_color = value
 		_update_visuals()
 
+## Speed.
 @export var speed: float = 1.0:
 	set(value):
 		speed = value
 		_update_visuals()
 
+## Line count.
 @export var line_count: float = 2.0:
 	set(value):
 		line_count = value
 		_update_visuals()
 
+## Line thickness.
 @export_range(0.01, 1.0) var line_thickness: float = 0.1:
 	set(value):
 		line_thickness = value
 		_update_visuals()
 
+## Glow multiplier.
 @export var glow_multiplier: float = 2.0:
 	set(value):
 		glow_multiplier = value
 		_update_visuals()
 
 @export_group("Audio Settings")
+## Activation sound.
 @export var activation_sound: AudioStream
 
+## Audio player.
 @onready var audio_player: AudioStreamPlayer3D = $AudioStreamPlayer3D
 
+## Is activated.
 var is_activated: bool = false
 
 # NEW: We need to remember what this checkpoint looked like before it was activated!
+## Original label text.
 var original_label_text: String
+## Original speed.
 var original_speed: float
+## Original line thickness.
 var original_line_thickness: float
+## Original base color.
 var original_base_color: Color
 
 

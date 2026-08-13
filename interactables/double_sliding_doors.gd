@@ -2,22 +2,36 @@ extends Node3D
 
 enum State { CLOSED, RIGHT_OPEN, LEFT_OPEN }
 
+## Slide dist.
 @export var slide_dist: float = 2.0
+## Speed.
 @export var speed: float = 0.4
+## Double click delay.
 @export var double_click_delay: int = 300
 
+## Left origin.
 var left_origin: Vector3
+## Right origin.
 var right_origin: Vector3
+## Last click time.
 var last_click_time: int = 0
+## Current state.
 var current_state: State = State.CLOSED
+## Active tweens.
 var active_tweens: Dictionary = {}
+## Left door.
 @onready var left_door: StaticBody3D = $DoorLeft
+## Right door.
 @onready var right_door: StaticBody3D = $DoorRight
 
+## Left label.
 @onready var left_label: Label3D = $DoorLeft/Label3D
+## Right label.
 @onready var right_label: Label3D = $DoorRight/Label3D2
 
+## Left interact.
 @onready var left_interact: Node = $DoorLeft/InteractComponent
+## Right interact.
 @onready var right_interact: Node = $DoorRight/InteractComponent
 
 

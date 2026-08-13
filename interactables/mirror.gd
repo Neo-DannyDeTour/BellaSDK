@@ -2,30 +2,45 @@
 extends Node3D
 
 @export_group("Mirror Settings")
+## Size.
 @export var size: Vector2 = Vector2(1.0, 1.0):
 	set(v):
 		size = v
 		if is_node_ready():
 			_update_mirror_size()
 
+## Pixels per unit.
 @export var pixels_per_unit: int = 50
+## Max update distance.
 @export var max_update_distance: float = 15.0
+## Max viewport size.
 @export var max_viewport_size: Vector2i = Vector2i(512, 512)
 
 @export_group("Culling Settings")
+## Cull near.
 @export var cull_near: float = 0.05
+## Cull far.
 @export var cull_far: float = 20.0
+## Cull mask.
 @export_flags_3d_render var cull_mask: int = 0xFFFFF
 
 @export_group("Internal References")
+## Mirror viewport.
 @export var mirror_viewport: SubViewport
+## Mirror camera.
 @export var mirror_camera: Camera3D
+## Mirror quad.
 @export var mirror_quad: MeshInstance3D
 
+## Main cam.
 var _main_cam: Camera3D
+## Last cam transform.
 var _last_cam_transform: Transform3D
+## Init frames.
 var _init_frames: int = 0
+## Texture assigned.
 var _texture_assigned: bool = false
+## Skip frame.
 var _skip_frame: bool = false
 
 
