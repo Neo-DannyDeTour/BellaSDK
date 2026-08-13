@@ -35,8 +35,7 @@ enum SpawnMode { TIME_BASED, WAIT_FOR_KILL }
 @export var volume_size: Vector3 = Vector3(2.0, 2.0, 2.0):
 	set(value):
 		volume_size = value
-		_update_volume_size()
-		_update_visualizer()
+		_update_visuals()
 
 @export_category("Behavior")
 
@@ -46,33 +45,28 @@ enum SpawnMode { TIME_BASED, WAIT_FOR_KILL }
 @export_category("Visualizer Controls")
 
 ## The shape drawn in the editor to represent the spawn volume.
-## Property: Visualizer Shape Type.
-@export
-var visualizer_shape_type: EditorTriggerVisualizer.ShapeType = EditorTriggerVisualizer.ShapeType.BOX:
+@export var visualizer_shape_type: EditorTriggerVisualizer.ShapeType = EditorTriggerVisualizer.ShapeType.BOX:
 	set(value):
 		visualizer_shape_type = value
-		_update_visualizer()
+		_update_visuals()
 
 ## The color of the debug visualization in the editor.
 @export var visualizer_color: Color = Color(0.9, 0.5, 0.1, 0.4):
 	set(value):
 		visualizer_color = value
-		_update_visualizer()
+		_update_visuals()
 
 ## The label shown on the visualizer in the editor.
-@export var visualizer_text: String = "TRIGGER":
+@export var visualizer_text: String = "TARGET SPAWNER":
 	set(value):
 		visualizer_text = value
-		_update_visualizer()
+		_update_visuals()
 
 ## If true, the editor visualization will also render during gameplay for debugging.
 @export var show_visualizer_in_game: bool = false:
 	set(value):
 		show_visualizer_in_game = value
-		_update_visualizer()
-
-## The collision shape node defining the physical bounds of the spawn area.
-var spawn_area: CollisionShape3D = null
+		_update_visuals()
 
 ## A list of targets currently spawned and active in the world.
 var active_targets: Array[Node3D] = []
@@ -91,14 +85,17 @@ var targets_spawned_so_far: int = 0
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		_update_visuals()
+		return
+
+	var editor_mesh: EditorTriggerVisualizer = _get_visualizer()
+	if editor_mesh and not show_visualizer_in_game:
+		print("TargetVolume: Removing editor visualizer for gameplay.")
+		editor_mesh.queue_free()
+
 	collision_layer = 0
 	collision_mask = 0
-
-	_update_volume_size()
-	_update_visualizer()
-
-	if Engine.is_editor_hint():
-		return
 
 	spawn_timer = spawn_interval_seconds
 	_initialize_pool()
@@ -110,6 +107,36 @@ func _process(delta: float) -> void:
 
 	_handle_repositioning(delta)
 	_handle_spawning(delta)
+
+
+func _update_visuals() -> void:
+	var col: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if col:
+		if not col.shape:
+			col.shape = BoxShape3D.new()
+
+		if not col.shape.resource_local_to_scene:
+			col.shape = col.shape.duplicate()
+			col.shape.resource_local_to_scene = true
+
+		if col.shape is BoxShape3D:
+			var box: BoxShape3D = col.shape as BoxShape3D
+			box.size = volume_size
+
+	var visual: EditorTriggerVisualizer = _get_visualizer()
+	if visual:
+		visual.shape_type = visualizer_shape_type
+		visual.trigger_size = volume_size
+		visual.trigger_color = visualizer_color
+		visual.trigger_text = visualizer_text
+		visual.show_in_game = show_visualizer_in_game
+
+
+func _get_visualizer() -> EditorTriggerVisualizer:
+	for child: Node in get_children():
+		if child is EditorTriggerVisualizer:
+			return child as EditorTriggerVisualizer
+	return null
 
 
 func _initialize_pool() -> void:
@@ -180,37 +207,6 @@ func _handle_spawning(delta: float) -> void:
 			_spawn_target()
 
 
-func _update_volume_size() -> void:
-	if not is_inside_tree():
-		return
-
-	if spawn_area == null:
-		spawn_area = get_node_or_null("CollisionShape3D") as CollisionShape3D
-
-	if spawn_area != null:
-		if spawn_area.shape == null or not spawn_area.shape is BoxShape3D:
-			spawn_area.shape = BoxShape3D.new()
-		(spawn_area.shape as BoxShape3D).size = volume_size
-
-
-func _update_visualizer() -> void:
-	if not is_inside_tree():
-		return
-
-	var visualizer: EditorTriggerVisualizer = null
-	for child: Node in get_children():
-		if child is EditorTriggerVisualizer:
-			visualizer = child
-			break
-
-	if visualizer != null:
-		visualizer.shape_type = visualizer_shape_type
-		visualizer.trigger_size = volume_size
-		visualizer.trigger_color = visualizer_color
-		visualizer.trigger_text = visualizer_text
-		visualizer.show_in_game = show_visualizer_in_game
-
-
 func _get_random_position() -> Vector3:
 	var extents: Vector3 = volume_size / 2.0
 	var rand_x: float = randf_range(-extents.x, extents.x)
@@ -235,7 +231,6 @@ func _spawn_target() -> void:
 
 	if target.has_method("reset"):
 		target.reset()
-	# OPTIMIZATION: Replaced recursive find_child with direct property check
 	elif "health_component" in target:
 		var health_comp: Node = target.get("health_component") as Node
 		if is_instance_valid(health_comp) and health_comp.has_method("reset"):

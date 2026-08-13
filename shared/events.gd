@@ -102,6 +102,10 @@ signal tts_state_changed(enabled: bool)
 # --- REPLACED FONT SIGNAL ---
 signal font_changed(font_name: String)
 
+@warning_ignore("unused_signal")
+## Emitted when a player focuses on a 3D interactable object, sending its label text.
+signal object_focused(text: String)
+
 # --- FONT SWAPPING LOGIC ---
 ## Property: Fonts.
 var fonts: Dictionary[String, Font] = {}

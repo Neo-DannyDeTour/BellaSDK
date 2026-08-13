@@ -613,7 +613,7 @@ func _on_noclip_toggled(is_flying: bool) -> void:
 
 
 func _on_noclip_speed_changed(speed: float) -> void:
-	print("UIController: _on_noclip_speed_changed() called. Speed: ", speed)
+	#print("UIController: _on_noclip_speed_changed() called. Speed: ", speed)
 	noclip_label_message.text = "Noclip ON: %.1fx speed" % speed
 
 

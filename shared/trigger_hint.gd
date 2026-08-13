@@ -1,4 +1,3 @@
-@tool
 class_name HintTrigger
 extends Area3D
 
@@ -30,13 +29,16 @@ enum HintType { CUSTOM, INTERACT, JUMP, CROUCH, SPRINT, FLASHLIGHT, ZOOM }
 @export var hint_type: HintType = HintType.INTERACT
 
 ## The text to display only if hint_type is set to CUSTOM. Use brackets like [interact].
-@export var custom_message: String = ""
+@export_multiline var custom_message: String = ""
 
 ## If true, the hint will only trigger once and then permanently ignore future overlaps.
 @export var trigger_once: bool = true
 
 ## Determines how long the hint message remains visible on the screen in seconds.
 @export var duration: float = 3.0
+
+## Toggles whether the formatted hint message is broadcast to the screen UI via the Events singleton.
+@export var show_on_screen: bool = true
 
 ## Internal flag indicating if the hint has already been shown.
 var _triggered: bool = false
@@ -90,13 +92,18 @@ func _on_body_entered(body: Node3D) -> void:
 	print(
 		"HintTrigger: Activated by ",
 		body.name,
-		" | Duration: ",
-		duration,
-		"s | Emitting: '",
+		" | Emitting: '",
 		formatted_message,
-		"'"
+		"' | Screen: ",
+		show_on_screen
 	)
-	Events.hint_requested.emit(formatted_message, duration)
+
+	if show_on_screen:
+		Events.hint_requested.emit(formatted_message, duration)
+
+	print("HintTrigger: Sending text to custom TTSManager...")
+	# Replace .speak() with whatever method name your custom TTSManager uses
+	TTSManager.speak(formatted_message)
 
 
 func _get_raw_message() -> String:

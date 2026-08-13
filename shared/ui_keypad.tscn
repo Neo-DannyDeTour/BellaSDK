@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://c3kkyqotkri5v"]
 
-[ext_resource type="Script" uid="uid://cfffeqvfb16d" path="res://shared/ui_keypad.gd" id="1_o2pmc"]
+[ext_resource type="Script" uid="uid://beamomlv7ufht" path="res://shared/ui_keypad.gd" id="1_o2pmc"]
 
 [node name="Keypad" type="Control" unique_id=1879186767]
 layout_mode = 3

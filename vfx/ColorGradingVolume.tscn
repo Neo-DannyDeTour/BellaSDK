@@ -1,0 +1,35 @@
+[gd_scene format=3 uid="uid://cpcqqr5g0oqpp"]
+
+[ext_resource type="Script" uid="uid://bwhrcojn3qenr" path="res://vfx/ColorGradingVolume.gd" id="1_unfur"]
+[ext_resource type="Shader" uid="uid://bjicqcq1qvtfx" path="res://vfx/color_grading.gdshader" id="2_dp88k"]
+[ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://shared/editor_trigger_visualizer.gd" id="2_tjwj5"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_cgm81"]
+resource_local_to_scene = true
+size = Vector3(4, 4, 4)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dp88k"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.2, 0.6, 1, 0.4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_llhn2"]
+resource_local_to_scene = true
+material = SubResource("StandardMaterial3D_dp88k")
+size = Vector3(4, 4, 4)
+
+[node name="ColorGradingVolume" type="Area3D" unique_id=726107414]
+collision_mask = 2
+script = ExtResource("1_unfur")
+grading_shader = ExtResource("2_dp88k")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=2086641942]
+shape = SubResource("BoxShape3D_cgm81")
+
+[node name="EditorTriggerVisualizer" type="MeshInstance3D" parent="." unique_id=1258584494]
+mesh = SubResource("BoxMesh_llhn2")
+script = ExtResource("2_tjwj5")
+trigger_size = Vector3(4, 4, 4)
+trigger_color = Color(0.2, 0.6, 1, 0.4)
+trigger_text = "COLOR GRADING"
+metadata/_custom_type_script = "uid://q4v42nidwdr2"

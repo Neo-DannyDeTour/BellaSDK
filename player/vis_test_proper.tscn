@@ -54,6 +54,8 @@
 [ext_resource type="PackedScene" uid="uid://bqmsu8rh0h335" path="res://interactables/env_chapter_trigger.tscn" id="52_wkfn1"]
 [ext_resource type="VoxelGIData" uid="uid://n7qpbweipxh3" path="res://bakes/vis_test_proper.VoxelGI_data.res" id="53_yuk8b"]
 [ext_resource type="PackedScene" uid="uid://4m1edbr3oqv5" path="res://shared/trigger_hint.tscn" id="54_43coy"]
+[ext_resource type="PackedScene" uid="uid://36tm5fsdgnad" path="res://environment/accessible_label_body.tscn" id="55_yxipt"]
+[ext_resource type="PackedScene" uid="uid://ckx2iw4xdsaqd" path="res://interactables/pickable_barrel_green.tscn" id="56_k566i"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_kja8q"]
 panorama = ExtResource("1_mhg1j")
@@ -102,7 +104,7 @@ metadata/_custom_type_script = "uid://cl68g6jurgp0h"
 [node name="VisTEST" type="Node3D" unique_id=240456945]
 
 [node name="Player" parent="." unique_id=1502339238 instance=ExtResource("6_ns8v3")]
-transform = Transform3D(0.49999997, 0, -0.86602545, 0, 1, 0, 0.86602545, 0, 0.49999997, -0.111877084, 3, 5.5580807)
+transform = Transform3D(0.49999997, 0, -0.86602545, 0, 1, 0, 0.86602545, 0, 0.49999997, -0.28365207, 3, 6.3923755)
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1907814161 groups=["level_environment"]]
 environment = SubResource("Environment_46sxa")
@@ -1881,17 +1883,6 @@ transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -0.2
 [node name="Sheet_Metal8" parent="Shack" unique_id=1440794727 groups=["not_climbable"] instance=ExtResource("41_nv65l")]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -0.20223999, 1.1, 7.16)
 
-[node name="Label3D" type="Label3D" parent="." unique_id=1058892914]
-transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -1.6844381, 4.4444304, 3.936422)
-double_sided = false
-text = "Assets and the initial layout
- are created by Lucas Andres Manzoni  
-https://www.behance.net/lucasandresmanzoni
-***
-The Idea Guy - DannyDeTour
-***
-Q to noclip; ~ to debug menu"
-
 [node name="Loker_Door" parent="." unique_id=1902780263 instance=ExtResource("42_nv65l")]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -1.4995908, 0.13022149, 2.4038088)
 
@@ -1945,9 +1936,6 @@ transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 2.48
 
 [node name="Scaffolding_Structure3" parent="." unique_id=1264227722 groups=["not_climbable"] instance=ExtResource("45_52h53")]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 18.350954, 2.0152442, -1.2556756)
-
-[node name="PickableBarrel" parent="." unique_id=594279821 instance=ExtResource("46_ubk4r")]
-transform = Transform3D(1, 0, 0, 0, 0.99999994, 0, 0, 0, 0.99999994, 2.2025905, 2.5041263, 2.3383794)
 
 [node name="PickableBarrel3" parent="." unique_id=2010947971 instance=ExtResource("46_ubk4r")]
 transform = Transform3D(0.1474469, 0, 0.98906976, 0, 0.99999976, 0, -0.98906976, 0, 0.14744681, 1.6127716, 2.5041263, 3.5243726)
@@ -2017,3 +2005,30 @@ data = ExtResource("53_yuk8b")
 [node name="TriggerHint" parent="." unique_id=1784504971 instance=ExtResource("54_43coy")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.34226102, 3.5, 2.7305722)
 trigger_text = "HINT jump"
+
+[node name="TriggerHint2" parent="." unique_id=1323132102 instance=ExtResource("54_43coy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5829079, 3.5, 5.6184735)
+trigger_size = Vector3(0.75, 2, 2)
+trigger_text = "HINT blind00"
+hint_type = 0
+custom_message = "HI! You've just activated the custom hint message. You're located in a dark, moody room on the second floor. There is a room with 3 broken ventilators up ahead, an old shack to your right and a couple of tables. This room has no gameplay goal. Just a visual test of my future game. "
+trigger_once = false
+show_on_screen = false
+
+[node name="AccessibleLabelBody" parent="." unique_id=513336368 instance=ExtResource("55_yxipt")]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -1.7210659, 4.541558, 4.0062213)
+display_text = "Assets and the initial layout
+ are created by Lucas Andres Manzoni  
+https://www.behance.net/lucasandresmanzoni
+***
+The Idea Guy - DannyDeTour"
+tts_alt_text = "\"Assets and the initial layout are created by Lucas Andres Manzoni. The idea guy, Danny De Tour."
+
+[node name="AccessibleLabelBody2" parent="." unique_id=1617479103 instance=ExtResource("55_yxipt")]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -1.7210659, 3.7932253, 4.0062213)
+display_text = "Q to noclip; ~ to debug menu"
+tts_alt_text = "Press the Q key, to no clip.
+Press tilde to open dee-bug menu."
+
+[node name="PickableBarrelGreen" parent="." unique_id=594279821 instance=ExtResource("56_k566i")]
+transform = Transform3D(0.5424285, 0, -0.84010196, 0, 1, 0, 0.84010196, 0, 0.5424285, 2.2152977, 2.5072021, 2.374266)

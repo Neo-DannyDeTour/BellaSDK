@@ -2,16 +2,10 @@
 
 [ext_resource type="Script" uid="uid://cqbx5rbyi6txj" path="res://shared/fade_trigger.gd" id="1_vvyos"]
 [ext_resource type="Shader" uid="uid://pucch4y5dby7" path="res://vfx/fadeeffects.gdshader" id="2_kdgoq"]
+[ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://shared/editor_trigger_visualizer.gd" id="3_w56wj"]
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_uenon"]
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_oksb5"]
-transparency = 1
-albedo_color = Color(1, 0.43137255, 0.43137255, 0.45882353)
-
-[sub_resource type="BoxMesh" id="BoxMesh_kdgoq"]
-material = SubResource("StandardMaterial3D_oksb5")
-size = Vector3(6, 4, 0.2)
+[sub_resource type="BoxShape3D" id="BoxShape3D_w56wj"]
+resource_local_to_scene = true
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_w56wj"]
 shader = ExtResource("2_kdgoq")
@@ -20,16 +14,23 @@ shader_parameter/fade_amount = 0.0
 shader_parameter/blur_amount = 0.0
 shader_parameter/blink_openness = 1.0
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_773bo"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.9, 0.5, 0.1, 0.4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_cik3c"]
+material = SubResource("StandardMaterial3D_773bo")
+size = Vector3(5, 2, 3)
+
 [node name="FadeTrigger" type="Area3D" unique_id=656862380]
 script = ExtResource("1_vvyos")
 trigger_size = Vector3(1, 1, 1)
+trigger_text = ""
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1017987748]
-shape = SubResource("BoxShape3D_uenon")
+shape = SubResource("BoxShape3D_w56wj")
 debug_color = Color(0, 0.59607846, 0.7019608, 1)
-
-[node name="EditorVisual" type="MeshInstance3D" parent="." unique_id=340233116]
-mesh = SubResource("BoxMesh_kdgoq")
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=218615947]
 layer = 100
@@ -43,5 +44,12 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 color = Color(0, 0, 0, 0)
+
+[node name="EditorTriggerVisualizer" type="MeshInstance3D" parent="." unique_id=1551370328]
+mesh = SubResource("BoxMesh_cik3c")
+script = ExtResource("3_w56wj")
+trigger_size = Vector3(1, 1, 1)
+trigger_text = ""
+metadata/_custom_type_script = "uid://q4v42nidwdr2"
 
 [connection signal="body_entered" from="." to="." method="_on_body_entered"]

@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://36tm5fsdgnad"]
+
+[ext_resource type="Script" uid="uid://ddra66rhfq0d8" path="res://core/tts_interact_component.gd" id="1_836qs"]
+[ext_resource type="Script" uid="uid://oef4ai1tr027" path="res://environment/accessible_label_body.gd" id="1_exq52"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_534t5"]
+
+[node name="AccessibleLabelBody" type="StaticBody3D" unique_id=513336368]
+collision_mask = 2
+script = ExtResource("1_exq52")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1142515053]
+shape = SubResource("BoxShape3D_534t5")
+
+[node name="Label3D" type="Label3D" parent="." unique_id=455259046]
+
+[node name="InteractComponent" type="Node" parent="." unique_id=679081418 node_paths=PackedStringArray("target_label")]
+script = ExtResource("1_836qs")
+target_label = NodePath("../Label3D")
+metadata/_custom_type_script = "uid://ddra66rhfq0d8"

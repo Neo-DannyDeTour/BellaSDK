@@ -96,6 +96,8 @@ var _cached_camera: Camera3D = null
 ## tree lookups.
 var _probes: Array[Node] = []
 
+## Tracks if the object was recently dropped to prevent immediate TTS spam.
+var _is_tts_cooldown: bool = false
 
 func _ready() -> void:
 	# Fallback assignments in case export vars were left empty in the inspector
@@ -215,6 +217,10 @@ func drop() -> void:
 	if interact_comp:
 		interact_comp.process_mode = Node.PROCESS_MODE_INHERIT
 
+	# Start a short cooldown to prevent the TTS from instantly repeating the grab prompt
+	_is_tts_cooldown = true
+	get_tree().create_timer(1.5, false).timeout.connect(_reset_tts_cooldown)
+
 	if is_locked:
 		holder = null
 		if interact_comp:
@@ -312,6 +318,12 @@ func drop() -> void:
 	_update_process_state()
 
 
+## Resets the cooldown timer, allowing the text-to-speech engine to speak the grab prompt again.
+func _reset_tts_cooldown() -> void:
+	print("PickableObject: _reset_tts_cooldown() called. TTS focus prompts re-enabled.")
+	_is_tts_cooldown = false
+
+
 func _attempt_enable_collision(player_node: Node3D) -> void:
 	print("PickableObject: _attempt_enable_collision() executing collision check.")
 	if not is_instance_valid(self) or not is_instance_valid(player_node):
@@ -348,12 +360,21 @@ func _on_interact_component_focused() -> void:
 	if is_instance_valid(label):
 		_update_label_text()
 		label.show()
+		
+		# Broadcast the custom TTS text to the Event Bus (visual label remains untouched)
+		if Events.has_signal("object_focused") and not _is_tts_cooldown:
+			var mesh_name: String = _get_clean_mesh_name()
+			var tts_prompt: String = label.text + " " + mesh_name
+			
+			print("PickableObject: Emitting TTS prompt -> ", tts_prompt)
+			Events.object_focused.emit(tts_prompt)
 
 
 func _update_label_text() -> void:
 	if not label:
 		return
 
+	print("PickableObject: _update_label_text() called. Formatting interact prompt.")
 	var events: Array[InputEvent] = InputMap.action_get_events("interact")
 	var key_name: String = "???"
 
@@ -371,7 +392,8 @@ func _update_label_text() -> void:
 			. strip_edges()
 		)
 
-	label.text = "[%s]" % [key_name]
+	# Format the label to be highly descriptive for the player
+	label.text = "Press [%s] to grab" % [key_name]
 
 
 func _on_interact_component_unfocused() -> void:
@@ -600,3 +622,28 @@ func _set_model_overlay(parent_node: Node, mat: ShaderMaterial) -> void:
 
 	for child: Node in parent_node.get_children():
 		_set_model_overlay(child, mat)
+
+
+## Parses the mesh node name, removing numbers and Godot symbols, for natural voice synthesis.
+func _get_clean_mesh_name() -> String:
+	print("PickableObject: _get_clean_mesh_name() called. Parsing mesh string.")
+	if not is_instance_valid(mesh):
+		return "object"
+		
+	var raw_name: String = mesh.name
+	var clean_name: String = raw_name.replace("_", " ")
+	var final_name: String = ""
+	
+	# Strip out trailing digits and internal Godot symbols (e.g. "chair_small2" -> "chair small")
+	for i: int in range(clean_name.length()):
+		var char_str: String = clean_name.substr(i, 1)
+		if not char_str.is_valid_int() and char_str != "@":
+			final_name += char_str
+			
+	final_name = final_name.strip_edges().to_lower()
+	
+	# Fallbacks in case the node is just named "MeshInstance3D" or was entirely numbers
+	if final_name.is_empty() or final_name.begins_with("meshinstance"):
+		return "object"
+		
+	return final_name

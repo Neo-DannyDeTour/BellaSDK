@@ -1,54 +1,95 @@
-@tool
 extends Area3D
 
-## Changes the size of the trigger box directly from the inspector.
+## Defines the geometric shape of the trigger and its visualizer.
+enum ShapeType { BOX, SPHERE }
+
 @export_category("Level Design")
+
+## Changes the size of the trigger box or radius of the sphere directly from the inspector.
 @export var trigger_size: Vector3 = Vector3(2.0, 2.0, 2.0):
 	set(value):
 		trigger_size = value
-		_update_bounds()
+		_update_visuals()
 
-## Property: Trigger Once.
+@export_category("Visualizer Settings")
+
+## The physical and visual shape of the trigger area.
+@export var shape_type: ShapeType = ShapeType.BOX:
+	set(value):
+		shape_type = value
+		_update_visuals()
+
+## Determines if the trigger visualizer remains visible during active gameplay.
+@export var show_in_game: bool = false:
+	set(value):
+		show_in_game = value
+		_update_visuals()
+
+## The color of the trigger's debug visual mesh.
+@export var trigger_color: Color = Color(0.9, 0.5, 0.1, 0.4):
+	set(value):
+		trigger_color = value
+		_update_visuals()
+
+## The text displayed on the trigger's label inside the editor.
+@export var trigger_text: String = "TRIGGER":
+	set(value):
+		trigger_text = value
+		_update_visuals()
+
 @export_category("Trigger Settings")
+
+## Determines if the effect should only happen the first time a player enters.
 @export var trigger_once: bool = true
 
-## Property: Fade In Duration.
 @export_category("Fade Timings")
+
+## Duration in seconds for the screen to fade to the target color.
 @export var fade_in_duration: float = 1.0
-## Property: Hold Duration.
+
+## Duration in seconds the screen remains fully faded before returning.
 @export var hold_duration: float = 0.5
-## Property: Fade Out Duration.
+
+## Duration in seconds for the screen to return to normal.
 @export var fade_out_duration: float = 1.0
 
-## Property: Fade Color.
 @export_category("Visual Effects")
+
+## The target color the screen will fade towards.
 @export var fade_color: Color = Color.BLACK
-## Property: Use Blur.
+
+## Enables a blur effect during the fade transition.
 @export var use_blur: bool = true
-## Property: Max Blur.
+
+## The maximum intensity of the blur effect.
 @export var max_blur: float = 2.5
-## Property: Use Blink.
+
+## Enables a blinking effect during the transition.
 @export var use_blink: bool = false
-## Property: Blink Count.
+
+## The number of times the screen blinks during the fade sequence.
 @export_range(1, 10) var blink_count: int = 1
 
-## Property: Triggered.
+## Tracks whether this trigger has already been activated by a player.
 var _triggered: bool = false
-## Property: Active Tween.
+
+## Stores the currently running animation tween so it can be interrupted if needed.
 var _active_tween: Tween
 
-## Property: Overlay.
+## Reference to the screen overlay node used for visual effects.
 @onready var overlay: ColorRect = $CanvasLayer/ColorRect
 
 
 func _ready() -> void:
 	if Engine.is_editor_hint():
+		_update_visuals()
 		return
 
 	# Optimization: Delete the visual mesh so it costs zero performance in the compiled game
-	var editor_mesh: MeshInstance3D = get_node_or_null("EditorVisual") as MeshInstance3D
+	var editor_mesh: EditorTriggerVisualizer = _get_visualizer()
 	if editor_mesh:
-		editor_mesh.queue_free()
+		if not show_in_game:
+			editor_mesh.queue_free()
 
 	# Optimization: Disable visibility to save GPU fill rate when inactive
 	overlay.visible = false
@@ -63,31 +104,49 @@ func _ready() -> void:
 		body_entered.connect(_on_body_entered)
 
 
-func _update_bounds() -> void:
-	# 1. Update the invisible physics collision shape
+func _update_visuals() -> void:
 	var col: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
 	if col:
-		if not col.shape:
-			col.shape = BoxShape3D.new()
-
-		# Duplicate the shape so resizing one trigger doesn't resize all of them!
-		if not col.shape.resource_local_to_scene:
-			col.shape = col.shape.duplicate()
-			col.shape.resource_local_to_scene = true
-
-		if col.shape is BoxShape3D:
+		if shape_type == ShapeType.BOX:
+			if not col.shape or not col.shape is BoxShape3D:
+				col.shape = BoxShape3D.new()
+				
+			if not col.shape.resource_local_to_scene:
+				col.shape = col.shape.duplicate()
+				col.shape.resource_local_to_scene = true
+				
 			var box: BoxShape3D = col.shape as BoxShape3D
 			box.size = trigger_size
+			
+		elif shape_type == ShapeType.SPHERE:
+			if not col.shape or not col.shape is SphereShape3D:
+				col.shape = SphereShape3D.new()
+				
+			if not col.shape.resource_local_to_scene:
+				col.shape = col.shape.duplicate()
+				col.shape.resource_local_to_scene = true
+				
+			var sphere: SphereShape3D = col.shape as SphereShape3D
+			sphere.radius = trigger_size.x / 2.0
 
-	# 2. Update the visible editor mesh (if it exists)
-	var mesh: MeshInstance3D = get_node_or_null("EditorVisual") as MeshInstance3D
-	if mesh and mesh.mesh is BoxMesh:
-		var box_mesh: BoxMesh = mesh.mesh as BoxMesh
-		box_mesh.size = trigger_size
+	var visual: EditorTriggerVisualizer = _get_visualizer()
+	if visual:
+		# Cast explicitly to the expected enum type to resolve INT_AS_ENUM_WITHOUT_CAST
+		visual.shape_type = shape_type as EditorTriggerVisualizer.ShapeType
+		visual.show_in_game = show_in_game
+		visual.trigger_size = trigger_size
+		visual.trigger_color = trigger_color
+		visual.trigger_text = trigger_text
+
+
+func _get_visualizer() -> EditorTriggerVisualizer:
+	for child: Node in get_children():
+		if child is EditorTriggerVisualizer:
+			return child as EditorTriggerVisualizer
+	return null
 
 
 func _on_body_entered(body: Node3D) -> void:
-	# Prevent the editor from executing gameplay code if the player is somehow simulated
 	if Engine.is_editor_hint():
 		return
 
@@ -103,6 +162,7 @@ func _on_body_entered(body: Node3D) -> void:
 
 
 func _start_effect_sequence() -> void:
+	print("FadeTrigger: Executing visual effect sequence overlays.")
 	var mat: ShaderMaterial = overlay.material as ShaderMaterial
 	if not mat:
 		push_error("ColorRect is missing a ShaderMaterial.")
@@ -113,25 +173,23 @@ func _start_effect_sequence() -> void:
 	if _active_tween and _active_tween.is_valid():
 		_active_tween.kill()
 
-	print("FadeTrigger: Executing sequence. Blinks calculated: ", blink_count if use_blink else 0)
-
 	_active_tween = create_tween()
 
 	# --- Phase 1: FADE IN ---
 	(
 		_active_tween
-		. tween_method(_set_fade.bind(mat), 0.0, 1.0, fade_in_duration)
-		. set_trans(Tween.TRANS_SINE)
-		. set_ease(Tween.EASE_IN_OUT)
+		.tween_method(_set_fade.bind(mat), 0.0, 1.0, fade_in_duration)
+		.set_trans(Tween.TRANS_SINE)
+		.set_ease(Tween.EASE_IN_OUT)
 	)
 
 	if use_blur:
 		(
 			_active_tween
-			. parallel()
-			. tween_method(_set_blur.bind(mat), 0.0, max_blur, fade_in_duration)
-			. set_trans(Tween.TRANS_SINE)
-			. set_ease(Tween.EASE_IN_OUT)
+			.parallel()
+			.tween_method(_set_blur.bind(mat), 0.0, max_blur, fade_in_duration)
+			.set_trans(Tween.TRANS_SINE)
+			.set_ease(Tween.EASE_IN_OUT)
 		)
 
 	if use_blink:
@@ -145,31 +203,31 @@ func _start_effect_sequence() -> void:
 				# Close eyes
 				(
 					_active_tween
-					. parallel()
-					. tween_method(_set_blink.bind(mat), 1.0, 0.0, single_blink_time * 0.5)
-					. set_delay(delay)
-					. set_trans(Tween.TRANS_SINE)
-					. set_ease(Tween.EASE_IN_OUT)
+					.parallel()
+					.tween_method(_set_blink.bind(mat), 1.0, 0.0, single_blink_time * 0.5)
+					.set_delay(delay)
+					.set_trans(Tween.TRANS_SINE)
+					.set_ease(Tween.EASE_IN_OUT)
 				)
 
 				# Open eyes
 				(
 					_active_tween
-					. parallel()
-					. tween_method(_set_blink.bind(mat), 0.0, 1.0, single_blink_time * 0.5)
-					. set_delay(delay + single_blink_time * 0.5)
-					. set_trans(Tween.TRANS_SINE)
-					. set_ease(Tween.EASE_IN_OUT)
+					.parallel()
+					.tween_method(_set_blink.bind(mat), 0.0, 1.0, single_blink_time * 0.5)
+					.set_delay(delay + single_blink_time * 0.5)
+					.set_trans(Tween.TRANS_SINE)
+					.set_ease(Tween.EASE_IN_OUT)
 				)
 			else:
 				# Final blink stays closed for the hold phase
 				(
 					_active_tween
-					. parallel()
-					. tween_method(_set_blink.bind(mat), 1.0, 0.0, single_blink_time)
-					. set_delay(delay)
-					. set_trans(Tween.TRANS_SINE)
-					. set_ease(Tween.EASE_IN_OUT)
+					.parallel()
+					.tween_method(_set_blink.bind(mat), 1.0, 0.0, single_blink_time)
+					.set_delay(delay)
+					.set_trans(Tween.TRANS_SINE)
+					.set_ease(Tween.EASE_IN_OUT)
 				)
 
 	# --- Phase 2: HOLD ---
@@ -178,34 +236,33 @@ func _start_effect_sequence() -> void:
 	# --- Phase 3: FADE OUT ---
 	(
 		_active_tween
-		. tween_method(_set_fade.bind(mat), 1.0, 0.0, fade_out_duration)
-		. set_trans(Tween.TRANS_SINE)
-		. set_ease(Tween.EASE_IN_OUT)
+		.tween_method(_set_fade.bind(mat), 1.0, 0.0, fade_out_duration)
+		.set_trans(Tween.TRANS_SINE)
+		.set_ease(Tween.EASE_IN_OUT)
 	)
 
 	if use_blur:
 		(
 			_active_tween
-			. parallel()
-			. tween_method(_set_blur.bind(mat), max_blur, 0.0, fade_out_duration)
-			. set_trans(Tween.TRANS_SINE)
-			. set_ease(Tween.EASE_IN_OUT)
+			.parallel()
+			.tween_method(_set_blur.bind(mat), max_blur, 0.0, fade_out_duration)
+			.set_trans(Tween.TRANS_SINE)
+			.set_ease(Tween.EASE_IN_OUT)
 		)
 
 	if use_blink:
 		(
 			_active_tween
-			. parallel()
-			. tween_method(_set_blink.bind(mat), 0.0, 1.0, fade_out_duration)
-			. set_trans(Tween.TRANS_SINE)
-			. set_ease(Tween.EASE_IN_OUT)
+			.parallel()
+			.tween_method(_set_blink.bind(mat), 0.0, 1.0, fade_out_duration)
+			.set_trans(Tween.TRANS_SINE)
+			.set_ease(Tween.EASE_IN_OUT)
 		)
 
 	# --- Phase 4: CLEANUP ---
 	_active_tween.tween_callback(_on_sequence_finished)
 
 
-# Helper methods required by tween_method to update shader uniforms
 func _set_fade(value: float, mat: ShaderMaterial) -> void:
 	mat.set_shader_parameter("fade_amount", value)
 
