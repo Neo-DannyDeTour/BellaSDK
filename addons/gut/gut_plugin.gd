@@ -128,7 +128,7 @@ func _exit_tree():
 	remove_tool_menu_item("GUT")
 	_menu_mgr = null
 	GutEditorGlobals.user_prefs.save_it()
-	
+
 	if(_bottom_panel != null):
 		_bottom_panel.menu_manager = null
 

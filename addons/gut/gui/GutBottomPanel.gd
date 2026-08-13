@@ -361,7 +361,7 @@ func _on_resized() -> void:
 	# This wouldn't work in ready or defrred after ready.  the split's y position
 	# was alwasy 0.  This also adapts to Editor font size changes.
 	custom_minimum_size.y = _ctrls.sub_panels_split.position.y
-	
+
 
 # ---------------
 # Public

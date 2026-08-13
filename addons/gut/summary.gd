@@ -199,7 +199,7 @@ func log_version_update(gut):
 	if(recommended != GutUtils.version_numbers.gut_version):
 		gut.get_logger().log(ud.get_update_string())
 	ud.free()
-	
+
 
 func log_end_run(gut=_gut):
 	var totals = get_totals(gut)
