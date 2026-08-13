@@ -140,20 +140,19 @@ func _get_color_name_from_shader() -> String:
 			# Map hue to general color names
 			if h < 0.05 or h > 0.95:
 				return "red"
-			elif h < 0.15:
+			if h < 0.15:
 				return "orange"
-			elif h < 0.25:
+			if h < 0.25:
 				return "yellow"
-			elif h < 0.45:
+			if h < 0.45:
 				return "green"
-			elif h < 0.55:
+			if h < 0.55:
 				return "cyan"
-			elif h < 0.75:
+			if h < 0.75:
 				return "blue"
-			elif h < 0.85:
+			if h < 0.85:
 				return "purple"
-			else:
-				return "pink"
+			return "pink"
 
 	return "default"
 
