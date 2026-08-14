@@ -97,14 +97,28 @@ jobs:
                   f.write("\n".join(md))
           '
 
-      - name: Generate HTML
+      - name: Generate HTML Site via MkDocs
         run: |
-          mkdir -p site
-          cp -R docs_md/* site/ || true
+          pip install mkdocs mkdocs-material --break-system-packages
 
-          if [ ! -f "site/index.html" ]; then
-            echo "<html><body><h1>BellaSDK API Documentation</h1><p>See markdown files for class docs.</p></body></html>" > site/index.html
-          fi
+          # Create an MkDocs configuration file on the fly
+          cat <<EOF > mkdocs.yml
+          site_name: BellaSDK API Documentation
+          theme:
+            name: material
+            features:
+              - search.suggest
+              - search.highlight
+          docs_dir: docs_md
+          site_dir: site
+          EOF
+
+          # Create a proper homepage so the site isn't empty
+          echo "# BellaSDK API Reference" > docs_md/index.md
+          echo "Welcome to the BellaSDK documentation. Select a class from the search bar or sidebar to view its details." >> docs_md/index.md
+
+          # Build the static HTML site into the 'site' directory
+          python -m mkdocs build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
