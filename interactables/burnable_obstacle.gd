@@ -1,19 +1,25 @@
 @tool
+## A physical obstacle that can be destroyed over time using a torch or fire source.
+##
+## Animates a procedural burn shader radially from the point of ignition and disables
+## collisions halfway through the burn duration.
 class_name BurnableObstacle
 extends StaticBody3D
 
-## Burn duration.
+## The total time in seconds it takes for the obstacle to completely burn away.
 @export var burn_duration: float = 2.0
-## Mesh size.
+## The physical X and Y dimensions of the obstacle's mesh and collision shapes.
 @export var mesh_size: Vector2 = Vector2(2.0, 2.0):
 	set(value):
 		mesh_size = value
-		_update_obstacle_size()
+		if is_inside_tree() and Engine.is_editor_hint():
+			_update_obstacle_size()
 
-## Is burning.
+## Tracks if the obstacle has already been ignited to prevent multiple trigger events.
 var _is_burning: bool = false
 
 
+## Binds trigger areas for collisions and isolates materials.
 func _ready() -> void:
 	_update_obstacle_size()
 
@@ -26,6 +32,7 @@ func _ready() -> void:
 		_initialize_material_state()
 
 
+## Duplicates the shader material so multiple obstacles can burn independently.
 func _initialize_material_state() -> void:
 	var mesh_node: MeshInstance3D = get_node_or_null("MeshInstance3D") as MeshInstance3D
 	if not mesh_node:
@@ -39,6 +46,7 @@ func _initialize_material_state() -> void:
 		print("BurnableObstacle: Initialized unique clean material state.")
 
 
+## Synchronizes the mesh dimensions and collision box sizes to match the exported size.
 func _update_obstacle_size() -> void:
 	var mesh_node: MeshInstance3D = get_node_or_null("MeshInstance3D") as MeshInstance3D
 	var coll_node: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
@@ -63,6 +71,8 @@ func _update_obstacle_size() -> void:
 		print("BurnableObstacle: _update_obstacle_size() executed. Sizes matched to ", mesh_size)
 
 
+## Handles overlap events from the interaction area to detect torch flames.
+## [param area]: The physics area intersecting with this obstacle's trigger zone.
 func _on_trigger_area_entered(area: Area3D) -> void:
 	if _is_burning:
 		return
@@ -74,6 +84,9 @@ func _on_trigger_area_entered(area: Area3D) -> void:
 			_start_burn(torch_node, area.global_position)
 
 
+## Initiates the burning sequence, calculates the shader burn origin, and manages torch destruction.
+## [param torch]: The node representing the torch or fire source.
+## [param hit_global_pos]: The 3D world coordinate where the ignition occurred.
 func _start_burn(torch: Node3D, hit_global_pos: Vector3) -> void:
 	print("BurnableObstacle: _start_burn() called. Igniting at ", hit_global_pos)
 	_is_burning = true
@@ -110,10 +123,14 @@ func _start_burn(torch: Node3D, hit_global_pos: Vector3) -> void:
 		tween.finished.connect(_on_burn_finished)
 
 
+## Tween callback that continuously updates the burn shader's expansion radius.
+## [param value]: The current radius of the burn effect.
+## [param mat]: The specific [ShaderMaterial] instance being manipulated.
 func _update_radius(value: float, mat: ShaderMaterial) -> void:
 	mat.set_shader_parameter("radius", value)
 
 
+## Disables collision, allowing players to pass through before destruction completes.
 func _disable_solid_collision() -> void:
 	print("BurnableObstacle: _disable_solid_collision() called. Half burn duration reached.")
 	var coll_node: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
@@ -121,6 +138,7 @@ func _disable_solid_collision() -> void:
 		coll_node.set_deferred("disabled", true)
 
 
+## Callback that removes the obstacle from the scene tree once the burn shader finishes.
 func _on_burn_finished() -> void:
 	print("BurnableObstacle: _on_burn_finished() called. Destroying obstacle.")
 	queue_free()
