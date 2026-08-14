@@ -86,18 +86,20 @@ jobs:
               nav_classes.append((c_name, filename))
 
           with open("mkdocs.yml", "w", encoding="utf-8") as mk:
-              mk.write("""site_name: BellaSDK API Documentation
-theme:
-  name: material
-  features:
-    - search.suggest
-    - search.highlight
-docs_dir: docs_md
-site_dir: site
-nav:
-  - Home: index.md
-  - Classes:
-""")
+              mk_content = (
+                  "site_name: BellaSDK API Documentation\n"
+                  "theme:\n"
+                  "  name: material\n"
+                  "  features:\n"
+                  "    - search.suggest\n"
+                  "    - search.highlight\n"
+                  "docs_dir: docs_md\n"
+                  "site_dir: site\n"
+                  "nav:\n"
+                  "  - Home: index.md\n"
+                  "  - Classes:\n"
+              )
+              mk.write(mk_content)
               for c_name, filename in sorted(nav_classes):
                   mk.write(f"    - \x27{c_name}\x27: {filename}\n")
           '
