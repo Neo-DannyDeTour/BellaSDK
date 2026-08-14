@@ -263,7 +263,7 @@ func _generate_tone(
 	var data: PackedByteArray = PackedByteArray()
 	data.resize(frames * 2)
 
-	for i: int in range(frames):
+	for i: int in range(frames) -> void:
 		var time: float = float(i) / float(stream.mix_rate)
 		var sample: float = sin(time * freq * TAU)
 

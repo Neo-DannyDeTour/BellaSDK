@@ -210,7 +210,7 @@ func _connect_adjustment_signals(
 
 func _on_adjustment_changed(value: float, input_node: LineEdit, setting_name: String) -> void:
 	print("UI: Adjustment changed for ", setting_name, " to ", value)
-	if input_node and not input_node.has_focus():
+	if input_node and not input_node.has_focus() -> void:
 		input_node.text = "%.2f" % value
 
 	if setting_name == "ui_scale":
@@ -258,7 +258,7 @@ func _apply_visual_settings() -> void:
 	print("Engine: Applying visual adjustments to WorldEnvironment.")
 	var env_nodes: Array[Node] = get_tree().get_nodes_in_group("world_environment")
 
-	if not env_nodes.is_empty():
+	if not env_nodes.is_empty() -> void:
 		var env_node: WorldEnvironment = env_nodes[0] as WorldEnvironment
 		if env_node and env_node.environment:
 			env_node.environment.adjustment_enabled = true

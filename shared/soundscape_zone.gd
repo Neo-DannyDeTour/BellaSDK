@@ -193,7 +193,7 @@ func _fade_volume(
 ) -> void:
 	print("Fading volume for ", player.name, " to ", target_vol, " dB over ", fade_duration, "s.")
 
-	if current_tween and current_tween.is_running():
+	if current_tween and current_tween.is_running() -> void:
 		current_tween.kill()
 
 	current_tween = create_tween()

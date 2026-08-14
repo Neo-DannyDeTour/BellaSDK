@@ -447,7 +447,7 @@ func _add_faces_to_surfacetool(
 
 
 func _break_initial(hit_position: Vector3, hit_dir: Vector3) -> void:
-	print("DestructibleGlass (", name, "): Initial shatter triggered.")
+	print("DestructibleGlass (", name, ") -> void: Initial shatter triggered.")
 	glass_broken.emit()
 
 	intact_mesh.hide()
