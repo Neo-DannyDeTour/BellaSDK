@@ -23,102 +23,87 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Godot Engine
-        uses: chickensoft-games/setup-godot@v2
-        with:
-          version: "4.7.1"
-          use-dotnet: false
-
-      - name: Generate XML Documentation
-        run: |
-          mkdir -p docs_xml
-          godot --headless --doctool docs_xml || true
-
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Generate Markdown Documentation
+      - name: Install MkDocs Dependencies
+        run: pip install mkdocs mkdocs-material --break-system-packages
+
+      - name: Generate BellaSDK Documentation
         run: |
           mkdir -p docs_md
           python -c '
-          import xml.etree.ElementTree as ET
-          import glob, os
+          import os, re
 
-          xml_files = glob.glob("docs_xml/classes/*.xml") or glob.glob("docs_xml/*.xml")
+          with open("docs_md/index.md", "w", encoding="utf-8") as f:
+              f.write("# BellaSDK API Reference\n\nWelcome to the official BellaSDK documentation. Select a class from the sidebar to view its reference.\n")
 
-          for file in xml_files:
-              tree = ET.parse(file)
-              root = tree.getroot()
-              class_name = root.attrib.get("name", "Unknown")
+          class_files = []
+          nav_classes = []
 
-              md = [f"# {class_name}\n"]
+          for root, dirs, files in os.walk("."):
+              if any(p in root for p in [".git", ".github", "site", "docs_md", "docs_xml", "addons"]):
+                  continue
+              for file in files:
+                  if file.endswith(".gd"):
+                      class_files.append(os.path.join(root, file))
 
-              inherits = root.attrib.get("inherits")
-              if inherits:
-                  md.append(f"**Inherits:** {inherits}\n")
+          for path in class_files:
+              with open(path, "r", encoding="utf-8") as f:
+                  content = f.read()
 
-              brief = root.find("brief_description")
-              if brief is not None and brief.text and brief.text.strip():
-                  md.append(f"> {brief.text.strip()}\n")
+              cn_match = re.search(r"class_name\s+(\w+)", content)
+              if not cn_match:
+                  continue
+              c_name = cn_match.group(1)
 
-              desc = root.find("description")
-              if desc is not None and desc.text and desc.text.strip():
-                  md.append(f"## Description\n{desc.text.strip()}\n")
+              ext_match = re.search(r"extends\s+([\w\.]+)", content)
+              extends_str = ext_match.group(1) if ext_match else "RefCounted"
 
-              members = root.find("members")
-              if members is not None and len(members) > 0:
-                  md.append("## Properties\n")
-                  for member in members.findall("member"):
-                      prop = member.attrib.get("name", "")
-                      ptype = member.attrib.get("type", "")
-                      md.append(f"- **{prop}**: {ptype}")
+              md_lines = [f"# {c_name}\n", f"**Inherits:** `{extends_str}`\n"]
 
-              methods = root.find("methods")
-              if methods is not None and len(methods) > 0:
-                  md.append("\n## Methods\n")
-                  for method in methods.findall("method"):
-                      m_name = method.attrib.get("name", "")
-                      args = []
-                      for p in method.findall("param"):
-                          pname = p.attrib.get("name", "")
-                          ptype = p.attrib.get("type", "")
-                          args.append(f"{pname}: {ptype}")
+              doc_match = re.findall(r"##\s*(.*)", content)
+              if doc_match:
+                  md_lines.append("## Description\n")
+                  md_lines.append("\n".join([f"> {d}" for d in doc_match[:4]]) + "\n")
 
-                      sig = ", ".join(args)
-                      md.append(f"- **{m_name}({sig})**")
+              methods = re.findall(r"(?:##\s*(.*?)\n)?\s*func\s+(\w+)\s*\((.*?)\)(?:\s*->\s*([\w\b\[\]]+))?", content)
+              if methods:
+                  md_lines.append("## Methods\n")
+                  for comment, m_name, args, r_type in methods:
+                      sig = f"**{m_name}({args})**"
+                      if r_type:
+                          sig += f" -> `{r_type}`"
+                      md_lines.append(f"- {sig}")
+                      if comment:
+                          md_lines.append(f"  - {comment.strip()}")
 
-                      m_desc = method.find("description")
-                      if m_desc is not None and m_desc.text and m_desc.text.strip():
-                          md.append(f"  - {m_desc.text.strip()}")
+              filename = f"{c_name}.md"
+              with open(os.path.join("docs_md", filename), "w", encoding="utf-8") as out:
+                  out.write("\n".join(md_lines))
+              nav_classes.append((c_name, filename))
 
-              with open(f"docs_md/{class_name}.md", "w") as f:
-                  f.write("\n".join(md))
+          with open("mkdocs.yml", "w", encoding="utf-8") as mk:
+              mk.write("""site_name: BellaSDK API Documentation
+theme:
+  name: material
+  features:
+    - search.suggest
+    - search.highlight
+docs_dir: docs_md
+site_dir: site
+nav:
+  - Home: index.md
+  - Classes:
+""")
+              for c_name, filename in sorted(nav_classes):
+                  mk.write(f"    - \x27{c_name}\x27: {filename}\n")
           '
 
-      - name: Generate HTML Site via MkDocs
-        run: |
-          pip install mkdocs mkdocs-material --break-system-packages
-
-          # Create an MkDocs configuration file on the fly
-          cat <<EOF > mkdocs.yml
-          site_name: BellaSDK API Documentation
-          theme:
-            name: material
-            features:
-              - search.suggest
-              - search.highlight
-          docs_dir: docs_md
-          site_dir: site
-          EOF
-
-          # Create a proper homepage so the site isn't empty
-          echo "# BellaSDK API Reference" > docs_md/index.md
-          echo "Welcome to the BellaSDK documentation. Select a class from the search bar or sidebar to view its details." >> docs_md/index.md
-
-          # Build the static HTML site into the 'site' directory
-          python -m mkdocs build
+      - name: Build Static Site
+        run: python -m mkdocs build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
