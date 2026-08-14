@@ -65,7 +65,7 @@ func _on_chapter_triggered(
 	chapter_label.material = null
 	chapter_label.pivot_offset = chapter_label.size / 2.0
 
-	if _chapter_tween and _chapter_tween.is_valid():
+	if _chapter_tween and _chapter_tween.is_valid() -> void:
 		_chapter_tween.kill()
 
 	_chapter_tween = create_tween()

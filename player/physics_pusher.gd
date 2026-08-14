@@ -21,7 +21,7 @@ func process_pushes(
 		return
 
 	# Loop through all collisions that happened during move_and_slide()
-	for i: int in player_body.get_slide_collision_count():
+	for i: int in player_body.get_slide_collision_count() -> void:
 		var collision: KinematicCollision3D = player_body.get_slide_collision(i)
 		var collider: Object = collision.get_collider()
 

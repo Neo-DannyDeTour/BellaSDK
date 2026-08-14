@@ -128,7 +128,7 @@ func _scan_surface_material() -> void:
 	if result:
 		var collider: Object = result.get("collider")
 
-		if is_instance_valid(collider):
+		if is_instance_valid(collider) -> void:
 			# Check Ice (Also updates physics state)
 			if collider.is_in_group(SURFACE_ICE):
 				is_on_ice = true

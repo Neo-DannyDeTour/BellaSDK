@@ -37,7 +37,8 @@ enum HintType { CUSTOM, INTERACT, JUMP, CROUCH, SPRINT, FLASHLIGHT, ZOOM }
 ## Determines how long the hint message remains visible on the screen in seconds.
 @export var duration: float = 3.0
 
-## Toggles whether the formatted hint message is broadcast to the screen UI via the Events singleton.
+## Toggles whether the formatted hint message is broadcast to the screen UI
+## via the Events singleton.
 @export var show_on_screen: bool = true
 
 ## Internal flag indicating if the hint has already been shown.

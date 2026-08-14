@@ -109,7 +109,7 @@ func update_camera(
 	player_velocity: float
 ) -> void:
 	# Trace wrapped in a state-change check to prevent console flooding on every frame
-	if Input.is_action_just_pressed("zoom") or Input.is_action_just_pressed("sprint"):
+	if Input.is_action_just_pressed("zoom") or Input.is_action_just_pressed("sprint") -> void:
 		print("CameraController: update_camera() processing state change.")
 
 	_update_fov(delta, is_sprinting, is_grounded, input_dir)
@@ -212,7 +212,7 @@ func _update_stair_smoothing(delta: float, player_velocity: float) -> void:
 
 # CAMERA VECTOR HELPERS
 func get_camera_look_dir() -> Vector3:
-	if is_instance_valid(camera):
+	if is_instance_valid(camera) -> void:
 		return -camera.global_transform.basis.z
 	return Vector3.FORWARD
 

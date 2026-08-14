@@ -179,7 +179,7 @@ func attach_item_to_weapon_holder(
 	)
 
 	var current_parent: Node = item.get_parent()
-	if is_instance_valid(current_parent):
+	if is_instance_valid(current_parent) -> void:
 		current_parent.remove_child(item)
 
 	weapon_holder.add_child(item)

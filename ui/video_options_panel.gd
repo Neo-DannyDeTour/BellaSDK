@@ -262,7 +262,7 @@ func _sync_dropdown_to_setting(
 ) -> void:
 	print("UI: Syncing dropdown dictionary index to saved file selection.")
 	var saved_val: Variant = GlobalSettings.get_setting("Settings", setting_key, default_val)
-	for i: int in range(dropdown.get_item_count()):
+	for i: int in range(dropdown.get_item_count()) -> void:
 		var item_text: String = dropdown.get_item_text(i)
 		if typeof(saved_val) == TYPE_STRING:
 			if item_text == str(saved_val):
