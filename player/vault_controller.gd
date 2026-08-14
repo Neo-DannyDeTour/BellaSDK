@@ -314,7 +314,7 @@ func _is_collider_or_parent_in_group(collider: Object, group_name: String) -> bo
 	var current_node: Node = collider as Node
 
 	# Climb up the tree up to 4 levels to check for the group tag
-	for i: int in range(4) -> void:
+	for i: int in range(4):
 		if current_node == null:
 			return false
 		if current_node.is_in_group(group_name):

@@ -137,7 +137,7 @@ func _apply_overlay_to_meshes(
 				needs_billboard = (target_node.billboard != BaseMaterial3D.BILLBOARD_DISABLED)
 			elif target_node is MeshInstance3D and target_node.mesh:
 				var active_mat: Material = target_node.get_active_material(0)
-				if is_instance_valid(active_mat) -> void:
+				if is_instance_valid(active_mat):
 					if "albedo_texture" in active_mat:
 						base_tex = active_mat.get("albedo_texture") as Texture2D
 					if "billboard_mode" in active_mat:

@@ -293,7 +293,7 @@ func _transition_out_of_rope(
 	player.velocity = (flat_jump_dir * forward_push) + Vector3(0.0, vertical_hop, 0.0)
 
 	if flat_jump_dir.length_squared() > 0.01:
-		if is_instance_valid(player.locomotion_component) -> void:
+		if is_instance_valid(player.locomotion_component):
 			player.locomotion_component.set_direction(flat_jump_dir)
 
 	player.global_position += release_dir * 0.5

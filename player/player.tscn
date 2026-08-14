@@ -487,13 +487,6 @@ player_body = NodePath("../..")
 head = NodePath("..")
 eyes = NodePath("../Eyes")
 camera = NodePath("../Eyes/Camera3D")
-mouse_sensitivity_base = null
-base_fov = null
-sprint_fov = null
-zoom_fov = null
-fov_change_speed = null
-lerp_speed = null
-camera_tilt_amount = null
 
 [node name="StandingCollisionShape" type="CollisionShape3D" parent="." unique_id=74353325]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)

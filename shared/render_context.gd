@@ -147,7 +147,7 @@ func create_descriptor_set(
 	descriptors: Array[Descriptor], shader: RID, descriptor_set_index: int = 0
 ) -> RID:
 	var uniforms: Array[RDUniform] = []
-	for i: int in range(descriptors.size()) -> void:
+	for i: int in range(descriptors.size()):
 		var uniform: RDUniform = RDUniform.new()
 		uniform.uniform_type = descriptors[i].type
 		uniform.binding = i

@@ -152,7 +152,7 @@ static func _generate_angled_bars(
 	var origin_dir_x: float = cos(angle_rad)
 	var origin_dir_y: float = sin(angle_rad)
 
-	for i: int in range(count) -> void:
+	for i: int in range(count):
 		var local_x: float = -grid_w / 2.0 + spacing * float(i + 1)
 		var origin_x: float = local_x * origin_dir_x
 		var origin_y: float = local_x * origin_dir_y

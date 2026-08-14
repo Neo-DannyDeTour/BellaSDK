@@ -264,7 +264,7 @@ func update(delta: float, parameters: Array[WaveCascadeParameters]) -> void:
 	#print("WaveGenerator: update() called. Updating cascade parameters.")
 	assert(parameters.size() != 0)
 
-	if not context or pipelines.is_empty() -> void:
+	if not context or pipelines.is_empty():
 		init_gpu(maxi(2, parameters.size()))
 
 	# STRICT SAFETY SHIELD

@@ -302,7 +302,7 @@ func _process_posture_and_walls(
 	var ceil_hit: Dictionary = _raycast(ceil_start, ceil_end)
 
 	# Change: Base at final_pos, pivot bottom for all postural mannequins.
-	if not ceil_hit.is_empty() -> void:
+	if not ceil_hit.is_empty():
 		crouching_xforms.append(Transform3D().translated(local_floor))
 	else:
 		standing_xforms.append(Transform3D().translated(local_floor))
@@ -384,7 +384,7 @@ func _raycast(global_start: Vector3, global_end: Vector3) -> Dictionary:
 func _build_sprite_multimesh(
 	xforms: Array[Transform3D], tex: Texture2D, sprite_height: float
 ) -> void:
-	if not tex or xforms.is_empty() -> void:
+	if not tex or xforms.is_empty():
 		return
 
 	print(
