@@ -397,8 +397,6 @@ func _fade_bloom(target_intensity: float) -> void:
 	_bloom_tween = create_tween()
 	(
 		_bloom_tween
-		. tween_property(
-			target_environment.environment, "glow_bloom", target_intensity, blend_time
-		)
+		. tween_property(target_environment.environment, "glow_bloom", target_intensity, blend_time)
 		. set_trans(Tween.TRANS_SINE)
 	)

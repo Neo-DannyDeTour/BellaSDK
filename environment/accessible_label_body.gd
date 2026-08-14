@@ -33,7 +33,7 @@ func _ready() -> void:
 
 	if has_node("InteractComponent"):
 		$InteractComponent.alt_text_override = tts_alt_text
-		
+
 	_update_collision_shape()
 
 
@@ -41,27 +41,23 @@ func _ready() -> void:
 func _update_collision_shape() -> void:
 	if not is_inside_tree():
 		return
-		
+
 	var col_shape: CollisionShape3D = $CollisionShape3D
 	var label_node: Label3D = $Label3D
-	
+
 	if not is_instance_valid(col_shape) or not is_instance_valid(label_node):
 		return
-		
+
 	await get_tree().process_frame
-		
+
 	# Create a completely new BoxShape3D so instances do not share the same resource
 	var box: BoxShape3D = BoxShape3D.new()
 	col_shape.shape = box
-		
+
 	var aabb: AABB = label_node.get_aabb()
-	
-	var new_size: Vector3 = Vector3(
-		maxf(aabb.size.x, 0.1), 
-		maxf(aabb.size.y, 0.1), 
-		0.25
-	)
+
+	var new_size: Vector3 = Vector3(maxf(aabb.size.x, 0.1), maxf(aabb.size.y, 0.1), 0.25)
 	box.size = new_size
 	col_shape.position = aabb.position + (aabb.size / 2.0)
-	
+
 	print("AccessibleLabel: Created unique collision shape resized to: ", box.size)

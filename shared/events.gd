@@ -112,7 +112,7 @@ signal subtitle_requested(speaker: String, text: String, duration: float)
 
 @warning_ignore("unused_signal")
 ## Emitted when a currently playing subtitle should be stopped and hidden early.
-signal subtitle_canceled()
+signal subtitle_canceled
 
 # --- FONT SWAPPING LOGIC ---
 ## Property: Fonts.

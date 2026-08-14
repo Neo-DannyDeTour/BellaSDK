@@ -23,7 +23,7 @@ class_name DeveloperCommentary
 @onready var label_title: Label = $CommentaryUI/Panel/VBoxContainer/TitleLabel
 ## Label content.
 @onready var label_content: RichTextLabel = get_node(
-    "CommentaryUI/Panel/VBoxContainer/AutoScrollContainer/MarginContainer/ContentLabel"
+	"CommentaryUI/Panel/VBoxContainer/AutoScrollContainer/MarginContainer/ContentLabel"
 )
 ## Sprite.
 @onready var sprite: Sprite3D = $Sprite3D
@@ -61,7 +61,7 @@ func _ready() -> void:
 	equalizer_mesh.hide()
 	label_title.text = commentary_title
 	_initial_billboard_mode = sprite.billboard as BaseMaterial3D.BillboardMode
-	
+
 	# Lock in the global world height
 	_original_sprite_y = sprite.global_position.y
 
@@ -148,10 +148,10 @@ func _on_interacted(player: CharacterBody3D) -> void:
 func open_commentary() -> void:
 	print("DeveloperCommentary: Opening UI, showing equalizer, playing audio, and spinning sprite.")
 	is_open = true
-	
+
 	# Stop jumping and reset to baseline instantly when activated
 	_stop_and_reset_jump()
-	
+
 	commentary_ui.show()
 	equalizer_mesh.show()
 
@@ -166,7 +166,7 @@ func open_commentary() -> void:
 	if interact_sound and audio_player:
 		audio_player.stream = interact_sound
 		audio_player.play()
-		
+
 		var audio_duration: float = interact_sound.get_length()
 		print("DeveloperCommentary: Emitting subtitle for length: ", audio_duration)
 		Events.subtitle_requested.emit(commentary_title, commentary_content, audio_duration)
@@ -177,7 +177,7 @@ func open_commentary() -> void:
 
 func close_commentary() -> void:
 	print(
-        "DeveloperCommentary: Closing UI, hiding equalizer, stopping audio, and resetting sprite."
+		"DeveloperCommentary: Closing UI, hiding equalizer, stopping audio, and resetting sprite."
 	)
 	is_open = false
 	commentary_ui.hide()
@@ -188,7 +188,7 @@ func close_commentary() -> void:
 
 	if audio_player and audio_player.playing:
 		audio_player.stop()
-		
+
 	print("DeveloperCommentary: Emitting subtitle_canceled signal.")
 	Events.subtitle_canceled.emit()
 
@@ -196,7 +196,7 @@ func close_commentary() -> void:
 		active_player.emit_signal("toggled_interface", false)
 
 	active_player = null
-	
+
 	# If the player is still staring at the object when it finishes, resume the jump loop
 	if _is_focused:
 		_start_jump_loop()
@@ -224,7 +224,7 @@ func _on_audio_finished() -> void:
 func _on_focused() -> void:
 	print("DeveloperCommentary: Sprite focused.")
 	_is_focused = true
-	
+
 	# Only start jumping if the commentary isn't currently playing
 	if not is_open:
 		_start_jump_loop()
@@ -243,17 +243,24 @@ func _start_jump_loop() -> void:
 	_focus_tween = create_tween()
 	# Tell the tween to loop infinitely
 	_focus_tween.set_loops()
-	
+
 	# Jump up and turn gray smoothly
-	_focus_tween.tween_property(
-		sprite, "global_position:y", _original_sprite_y + 0.15, 0.4
-	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	(
+		_focus_tween
+		. tween_property(sprite, "global_position:y", _original_sprite_y + 0.15, 0.4)
+		. set_trans(Tween.TRANS_SINE)
+		. set_ease(Tween.EASE_OUT)
+	)
 	_focus_tween.parallel().tween_property(sprite, "modulate", Color.GRAY, 0.4)
-	
+
 	# Fall down and turn white smoothly
-	_focus_tween.chain().tween_property(
-		sprite, "global_position:y", _original_sprite_y, 0.4
-	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	(
+		_focus_tween
+		. chain()
+		. tween_property(sprite, "global_position:y", _original_sprite_y, 0.4)
+		. set_trans(Tween.TRANS_SINE)
+		. set_ease(Tween.EASE_IN)
+	)
 	_focus_tween.parallel().tween_property(sprite, "modulate", Color.WHITE, 0.4)
 
 
@@ -264,9 +271,12 @@ func _stop_and_reset_jump() -> void:
 	# Create a fresh tween just to smooth out the return to default
 	_focus_tween = create_tween()
 	_focus_tween.set_parallel(true)
-	
-	_focus_tween.tween_property(
-		sprite, "global_position:y", _original_sprite_y, 0.2
-	).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	
+
+	(
+		_focus_tween
+		. tween_property(sprite, "global_position:y", _original_sprite_y, 0.2)
+		. set_trans(Tween.TRANS_SINE)
+		. set_ease(Tween.EASE_IN_OUT)
+	)
+
 	_focus_tween.tween_property(sprite, "modulate", Color.WHITE, 0.2)
