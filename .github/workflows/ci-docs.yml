@@ -29,7 +29,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install MkDocs Dependencies
-        run: pip install mkdocs mkdocs-material --break-system-packages
+        run: pip install mkdocs mkdocs-material
 
       - name: Generate BellaSDK Documentation
         run: |
@@ -58,15 +58,18 @@ jobs:
               extends_str = "RefCounted"
 
               for line in lines:
-                  cn_match = re.search(r"class_name\s+(\w+)", line)
-                  if cn_match: c_name = cn_match.group(1)
-                  ext_match = re.search(r"extends\s+([\w\.]+)", line)
-                  if ext_match: extends_str = ext_match.group(1)
+                  cn_match = re.search(r"^class_name\s+(\w+)", line.strip())
+                  if cn_match:
+                      c_name = cn_match.group(1)
+                  ext_match = re.search(r"^extends\s+([\w\.]+)", line.strip())
+                  if ext_match:
+                      extends_str = ext_match.group(1)
 
               if c_name == "Unknown":
                   continue
 
               class_doc = []
+              signals = []
               properties = []
               methods = []
               current_doc = []
@@ -74,53 +77,89 @@ jobs:
               for line in lines:
                   stripped = line.strip()
 
+                  # Collect Doc Comments
                   if stripped.startswith("##"):
-                      current_doc.append(stripped[2:].strip())
-                  elif stripped.startswith("class_name") or stripped.startswith("extends"):
+                      doc_text = stripped[2:].strip()
+                      current_doc.append(doc_text)
+                      continue
+
+                  # Skip regular comments and empty lines
+                  if not stripped or stripped.startswith("#"):
+                      continue
+
+                  # Class Doc handling
+                  if stripped.startswith("@tool") or stripped.startswith("class_name") or stripped.startswith("extends"):
                       if current_doc and not class_doc:
-                          class_doc = current_doc
+                          class_doc = list(current_doc)
                       current_doc = []
-                  elif stripped.startswith("var ") or stripped.startswith("@export"):
-                      if current_doc:
-                          var_match = re.search(r"var\s+(\w+)", stripped)
-                          if var_match:
-                              properties.append((var_match.group(1), current_doc))
+                      continue
+
+                  # Signals
+                  if stripped.startswith("signal "):
+                      sig_match = re.search(r"^signal\s+([a-zA-Z0-9_]+(?:\(.*\))?)", stripped)
+                      if sig_match:
+                          signals.append((sig_match.group(1), list(current_doc)))
                       current_doc = []
-                  elif stripped.startswith("func "):
-                      func_match = re.search(r"func\s+(.*)", stripped)
+                      continue
+
+                  # Exported / Member Variables
+                  if stripped.startswith("var ") or stripped.startswith("@export"):
+                      var_match = re.search(r"var\s+([a-zA-Z0-9_]+)(?:\s*:\s*([^=\n]+))?", stripped)
+                      if var_match:
+                          prop_name = var_match.group(1)
+                          prop_type = var_match.group(2).strip() if var_match.group(2) else "Variant"
+                          properties.append((prop_name, prop_type, list(current_doc)))
+                      current_doc = []
+                      continue
+
+                  # Functions / Methods
+                  if stripped.startswith("func "):
+                      func_match = re.search(r"^func\s+(.*)", stripped)
                       if func_match:
-                          sig = func_match.group(1).strip(":")
-                          fname_match = re.match(r"(\w+)", sig)
+                          sig = func_match.group(1).rstrip(":")
+                          fname_match = re.match(r"^(_?[a-zA-Z0-9_]+)", sig)
                           if fname_match:
                               fname = fname_match.group(1)
                               if not fname.startswith("_") or current_doc:
-                                  methods.append((sig, current_doc))
+                                  methods.append((sig, list(current_doc)))
                       current_doc = []
-                  elif not stripped or stripped.startswith("#"):
-                      pass
-                  else:
+                      continue
+
+                  # Reset doc collector if unrelated statement reached
+                  if not stripped.startswith("@"):
                       current_doc = []
 
               md_lines = [f"# {c_name}\n", f"**Inherits:** `{extends_str}`\n"]
 
               if class_doc:
                   md_lines.append("## Description\n")
-                  md_lines.append("\n".join([f"> {d}" for d in class_doc]) + "\n")
+                  md_lines.append("\n".join(class_doc) + "\n")
+
+              if signals:
+                  md_lines.append("## Signals\n")
+                  md_lines.append("| Signal | Description |")
+                  md_lines.append("|---|---|")
+                  for s_name, s_doc in signals:
+                      desc = " ".join(s_doc) if s_doc else ""
+                      md_lines.append(f"| **`signal {s_name}`** | {desc} |")
+                  md_lines.append("\n")
 
               if properties:
                   md_lines.append("## Properties\n")
-                  md_lines.append("| Property | Description |")
-                  md_lines.append("|---|---|")
-                  for p_name, p_doc in properties:
+                  md_lines.append("| Property | Type | Description |")
+                  md_lines.append("|---|---|---|")
+                  for p_name, p_type, p_doc in properties:
                       desc = " ".join(p_doc) if p_doc else ""
-                      md_lines.append(f"| **`{p_name}`** | {desc} |")
+                      md_lines.append(f"| **`{p_name}`** | `{p_type}` | {desc} |")
+                  md_lines.append("\n")
 
               if methods:
-                  md_lines.append("\n## Methods\n")
+                  md_lines.append("## Methods\n")
                   for sig, m_doc in methods:
-                      md_lines.append(f"- **`{sig}`**")
+                      md_lines.append(f"- **`func {sig}`**")
                       if m_doc:
                           md_lines.append(f"  - {' '.join(m_doc)}")
+                  md_lines.append("\n")
 
               filename = f"{c_name}.md"
               with open(os.path.join("docs_md", filename), "w", encoding="utf-8") as out:

@@ -1,4 +1,8 @@
 @tool
+## A static 3D target that detects continuous laser beams and relays power signals.
+##
+## Acts as a sensor node in puzzle and interaction mechanics. When hit by a laser,
+## it triggers its own signals and delegates state changes to a bound [OutputTransmitter3D].
 class_name LaserTarget
 extends StaticBody3D
 
@@ -20,6 +24,7 @@ signal deactivated
 		_update_transmitter_targets()
 
 
+## Initializes the transmitter target list on node entry.
 func _ready() -> void:
 	_update_transmitter_targets()
 
@@ -40,6 +45,7 @@ func power_off() -> void:
 		transmitter.power_off()
 
 
+## Synchronizes the assigned targets array with the linked transmitter instance.
 func _update_transmitter_targets() -> void:
 	if is_instance_valid(transmitter):
 		transmitter.targets = targets
