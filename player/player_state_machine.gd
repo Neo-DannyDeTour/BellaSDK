@@ -4,33 +4,36 @@ extends Node
 # --------------------------------------
 # SIGNALS
 # --------------------------------------
+## Emitted when the state machine successfully transitions to a new state.
 signal transitioned(state_name: String)
 
 # --------------------------------------
 # EXPORTS & VARIABLES
 # --------------------------------------
-# Set this in the inspector (e.g., assign the "Walk" or "Idle" node)
+@export_category("State Machine Configuration")
+## Set this in the inspector (e.g., assign the "Walk" or "Idle" node) to dictate the starting state.
 @export var initial_state: NodePath
 
+## The currently active player state handling engine ticks and physics processing.
 @onready var state: PlayerState = get_node(initial_state) as PlayerState
 
-## Cache for O(1) state transitions
+## Cache for O(1) state transitions, mapping string state names directly to their node references.
 var _states: Dictionary = {}
 
 
 func _ready() -> void:
-	# Wait for the player body (owner) to be fully ready
+	print("PlayerStateMachine: _ready() called. Awaiting owner readiness.")
 	await owner.ready
 
-	# Automatically inject dependencies into every child state
+	print("PlayerStateMachine: Owner ready. Injecting dependencies into child states.")
 	for child: Node in get_children():
 		if child is PlayerState:
 			child.state_machine = self
 			child.player = owner as CharacterBody3D
 			_states[child.name] = child
 
-	# Boot up the first state
-	state.enter()
+	print("PlayerStateMachine: Booting initial state: ", state.name)
+	state.enter({})
 
 
 # --------------------------------------
@@ -54,21 +57,14 @@ func _physics_process(delta: float) -> void:
 func transition_to(target_state_name: String, msg: Dictionary = {}) -> void:
 	print("PlayerStateMachine: transition_to() called. Transitioning to state: ", target_state_name)
 
-	# Safety check: Does the state exist?
 	if not _states.has(target_state_name):
 		push_error(
 			"StateMachine: Cannot transition to state '%s' (Node not found)." % target_state_name
 		)
 		return
 
-	# 1. Clean up the current state
 	state.exit()
-
-	# 2. Swap the active state reference
 	state = _states[target_state_name]
-
-	# 3. Initialize the new state
 	state.enter(msg)
-
-	# 4. Notify external systems (like UI or animation controllers)
+	
 	transitioned.emit(state.name)

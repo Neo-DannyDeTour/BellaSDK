@@ -4,7 +4,7 @@ extends GutTest
 var state_ground: StateGround
 
 ## A mock player node.
-var mock_player: CharacterBody3D
+var mock_player: Player
 
 ## A mock state machine.
 var mock_state_machine: Node
@@ -13,11 +13,13 @@ var mock_state_machine: Node
 func before_each() -> void:
 	print("TestStateGround: before_each() called. Setting up test environment.")
 
-	var PlayerClass: GDScript = load("res://player/player.gd")
-	mock_player = PlayerClass.new()
-	add_child_autoqfree(mock_player)
+	# 1. Instantiate a mock script that strictly extends Player
+	var mock_player_script: GDScript = GDScript.new()
+	mock_player_script.source_code = "extends Player\n"
+	mock_player_script.reload()
+	mock_player = mock_player_script.new()
 
-	# Mock dependencies inside player
+	# 2. Mock dependencies inside player (adding dummy initialize() methods)
 	var loco_component: Node = Node.new()
 	loco_component.name = "LocomotionComponent"
 	var loco_script: GDScript = GDScript.new()
@@ -41,6 +43,8 @@ var crouching_collision: Node = Node.new()
 var crouch_cast_check: Node = Node.new()
 var stair_controller: Node = Node.new()
 
+func initialize(_p: Node) -> void: pass
+
 func _ready() -> void:
 	add_child(standing_collision)
 	add_child(crouching_collision)
@@ -51,8 +55,11 @@ func _ready() -> void:
 	stair_script.source_code = \"\"\"
 extends Node
 var time_since_step_up: float = 1.0
+
+@warning_ignore("unused_private_class_variable")
 var _snapped_to_stairs_last_frame: bool = false
-func snap_up_stairs_check(d: Vector3, s: float) -> void: pass
+
+func snap_up_stairs_check(_d: Vector3, _s: float) -> void: pass
 func snap_down_to_stairs_check() -> void: pass
 func track_floor_state() -> void: pass
 \"\"\"
@@ -60,7 +67,7 @@ func track_floor_state() -> void: pass
 	stair_controller.set_script(stair_script)
 
 	var cast_script: GDScript = GDScript.new()
-	cast_script.source_code = "extends Node\nfunc is_colliding() -> bool: return false"
+	cast_script.source_code = "extends Node\\nfunc is_colliding() -> bool: return false"
 	cast_script.reload()
 	crouch_cast_check.set_script(cast_script)
 
@@ -81,11 +88,13 @@ extends Node
 var current_water_node: Node = null
 var vault_controller: Node = Node.new()
 
+func initialize(_p: Node) -> void: pass
+
 func _ready() -> void:
 	add_child(vault_controller)
 	var vault_script: GDScript = GDScript.new()
 	vault_script.source_code = (
-		"extends Node\nvar is_vaulting: bool = false\nfunc try_vault(c: bool) -> bool: return false"
+		"extends Node\\nvar is_vaulting: bool = false\\nfunc try_vault(_c: bool) -> bool: return false"
 	)
 	vault_script.reload()
 	vault_controller.set_script(vault_script)
@@ -103,16 +112,38 @@ extends Node
 var is_heavy_lifting: bool = false
 var held_item: Node = null
 var interaction_scanner: Node = Node.new()
+
+func initialize(_p: Node) -> void: pass
 """
 	interact_script.reload()
 	interact_component.set_script(interact_script)
 	mock_player.interaction_component = interact_component
 	mock_player.add_child(interact_component)
 
+	# 3. Create missing StatsComponent to prevent 'initialize in base Nil' crash
+	var stats_component: Node = Node.new()
+	stats_component.name = "StatsComponent"
+	var stats_script: GDScript = GDScript.new()
+	stats_script.source_code = "extends Node\nfunc initialize(_p: Node) -> void: pass"
+	stats_script.reload()
+	stats_component.set_script(stats_script)
+	mock_player.stats_component = stats_component
+	mock_player.add_child(stats_component)
+
+	# 4. Construct dummy hierarchy to prevent @onready 'Node not found' log errors.
+	var components_node: Node = Node.new()
+	components_node.name = "Components"
+	mock_player.add_child(components_node)
+
+	var health_node: HealthComponent = HealthComponent.new()
+	health_node.name = "HealthComponent"
+	components_node.add_child(health_node)
+
+	# 5. Safely add to tree AFTER all dependencies are attached
+	add_child_autoqfree(mock_player)
+
 	# Stub GlobalSettings if not present
 	if not Engine.has_singleton("GlobalSettings"):
-		# In a real run, this might be present. For this test, we can inject a mock if needed,
-		# but state_ground.gd calls GlobalSettings.get_setting directly.
 		pass
 
 	mock_state_machine = Node.new()

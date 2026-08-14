@@ -4,7 +4,7 @@ extends GutTest
 var bear_trap: BearTrap
 
 ## A mock player node.
-var mock_player: CharacterBody3D
+var mock_player: Player
 
 
 func before_each() -> void:
@@ -18,42 +18,61 @@ func before_each() -> void:
 	# Allow node to be ready
 	await get_tree().process_frame
 
-	var PlayerClass: GDScript = load("res://player/player.gd")
-	mock_player = PlayerClass.new()
-	add_child_autoqfree(mock_player)
-
-	var loco_component: Node = Node.new()
-	var loco_script: GDScript = GDScript.new()
-	loco_script.source_code = "extends Node\nvar can_sprint: bool = true"
-	loco_script.reload()
-	loco_component.set_script(loco_script)
-	mock_player.locomotion_component = loco_component
-	mock_player.add_child(loco_component)
-
-	var system_menu: Node = Node.new()
-	var sys_script: GDScript = GDScript.new()
-	sys_script.source_code = "extends Node\nvar is_stunned: bool = false"
-	sys_script.reload()
-	system_menu.set_script(sys_script)
-	mock_player.system_menu = system_menu
-	mock_player.add_child(system_menu)
-
-	# Mock take_damage method dynamically
-	var player_script: Script = mock_player.get_script()
+	# 1. Mock script MUST extend Player to pass BearTrap type checks
 	var mock_player_script: GDScript = GDScript.new()
 	mock_player_script.source_code = """
-extends CharacterBody3D
-var locomotion_component
-var system_menu
+extends Player
+
+## Tracks the last damage value applied to the mock player.
 var last_damage: int = 0
+
 func take_damage(amount: int) -> void:
+	print("MockPlayer: take_damage() called. Applying ", amount, " damage.")
 	last_damage = amount
 """
 	mock_player_script.reload()
-	mock_player.set_script(mock_player_script)
-	# Re-assign variables
-	mock_player.locomotion_component = loco_component
-	mock_player.system_menu = system_menu
+	mock_player = mock_player_script.new()
+
+	# 2. Use real classes for dependencies where strict typing prevents generic mock assignment
+	mock_player.locomotion_component = PlayerLocomotionComponent.new()
+	mock_player.system_menu = SystemMenuController.new()
+
+	# 3. Create dummy components for Node-typed dependencies so Player._ready() succeeds
+	var dummy_script: GDScript = GDScript.new()
+	dummy_script.source_code = "extends Node\nfunc initialize(_p: Node) -> void:\n\tpass"
+	dummy_script.reload()
+
+	var interact_comp: Node = Node.new()
+	interact_comp.set_script(dummy_script)
+	mock_player.interaction_component = interact_comp
+
+	var env_comp: Node = Node.new()
+	env_comp.set_script(dummy_script)
+	mock_player.environment_component = env_comp
+
+	var stat_comp: Node = Node.new()
+	stat_comp.set_script(dummy_script)
+	mock_player.stats_component = stat_comp
+
+	# Add instantiated dependencies to the mock player hierarchy
+	mock_player.add_child(mock_player.locomotion_component)
+	mock_player.add_child(mock_player.system_menu)
+	mock_player.add_child(interact_comp)
+	mock_player.add_child(env_comp)
+	mock_player.add_child(stat_comp)
+
+	# 4. Construct dummy hierarchy to prevent @onready 'Node not found' log errors.
+	# We must instantiate HealthComponent directly to satisfy strict typing rules.
+	var components_node: Node = Node.new()
+	components_node.name = "Components"
+	mock_player.add_child(components_node)
+
+	var health_node: HealthComponent = HealthComponent.new()
+	health_node.name = "HealthComponent"
+	components_node.add_child(health_node)
+
+	# 5. Safely add to tree; Player._ready() runs fully without crashing
+	add_child_autoqfree(mock_player)
 
 
 func test_initial_state() -> void:

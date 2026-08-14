@@ -17,12 +17,17 @@ extends CharacterBody3D
 @export var state_machine: Node
 
 @export_category("System References")
+## Controls the camera's rotation, positioning, and visual effects (FOV, shake).
 @export var camera_controller: CameraController
+## Manages all system-level menus, pause state, and noclip functionality.
 @export var system_menu: SystemMenuController
 
+## Reference to the global UI console overlay for entering debug commands.
 var in_game_console: CanvasLayer
+## Handles toggling the player's flashlight and managing its battery consumption.
 var flashlight_controller: FlashlightController
 
+## Local node reference for receiving and managing the player's health points.
 @onready var health_component: HealthComponent = $Components/HealthComponent
 
 ## Indicates if the player character has died, used to globally block input and physics.
@@ -83,7 +88,6 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _is_input_blocked() -> bool:
-	#print("Player: _is_input_blocked() called. Evaluating input state.")
 	var is_console_open: bool = is_instance_valid(in_game_console) and in_game_console.visible
 	var is_blocked: bool = (
 		system_menu.is_paused
@@ -106,7 +110,6 @@ func _on_player_died() -> void:
 	if is_instance_valid(locomotion_component):
 		locomotion_component.set_physics_active(false)
 
-		# Properly evaluate the state to send the correct enum to the death screen
 		if locomotion_component.crouching:
 			current_death_state = DeathScreen.DeathState.CROUCHING
 			print("Player: Death state evaluated as CROUCHING.")
@@ -127,10 +130,8 @@ func _on_player_died() -> void:
 # MASTER PHYSICS ROUTING
 # --------------------------------------
 func _physics_process(delta: float) -> void:
-	# 1. Determine if the StateMachine should be completely frozen
 	var disable_states: bool = _is_input_blocked() or system_menu.flying
 
-	# 2. Safely toggle the StateMachine's process mode
 	if disable_states:
 		if (
 			is_instance_valid(state_machine)
@@ -144,19 +145,16 @@ func _physics_process(delta: float) -> void:
 		):
 			state_machine.process_mode = Node.PROCESS_MODE_INHERIT
 
-	# 3. Handle Menu / Console Blocking
 	if _is_input_blocked():
 		locomotion_component.set_physics_active(false)
 		velocity = Vector3.ZERO
 		return
 
-	# 4. Handle Noclip Bypassing
 	if system_menu.flying:
 		locomotion_component.set_physics_active(false)
 		system_menu.process_noclip(delta)
 		return
 
-	# 5. Standard Game Loop
 	locomotion_component.set_physics_active(true)
 	locomotion_component.process_movement(delta)
 	environment_component.process_environment_physics(delta)
