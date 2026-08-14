@@ -66,5 +66,5 @@ func transition_to(target_state_name: String, msg: Dictionary = {}) -> void:
 	state.exit()
 	state = _states[target_state_name]
 	state.enter(msg)
-	
+
 	transitioned.emit(state.name)

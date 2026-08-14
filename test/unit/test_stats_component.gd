@@ -8,10 +8,10 @@ class MockHealthComponent:
 	extends Node
 	## Mocked current health
 	var current_health: int = 100
-	
+
 	@warning_ignore("unused_signal")
 	signal health_changed(new_health: int)
-	
+
 	@warning_ignore("unused_signal")
 	signal died
 
