@@ -1,0 +1,52 @@
+name: Code Quality & CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  lint-and-validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python Environment
+        run: |
+          python3 -m venv .venv
+          source .venv/bin/activate
+          pip install --upgrade pip gdtoolkit
+
+      - name: Run Static Code Quality Checks
+        id: run_checks
+        run: |
+          source .venv/bin/activate
+
+          # Run linter and capture the exit code
+          echo "Running GDLint..."
+          gdlint .
+          LINT_EXIT_CODE=$?
+
+          if [ $LINT_EXIT_CODE -ne 0 ]; then
+            echo "Linting failed with exit code $LINT_EXIT_CODE"
+            exit $LINT_EXIT_CODE
+          fi
+
+      # Artifacts upload only if checks pass (default behavior)
+      - name: Upload Build Artifacts (On Success)
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-build
+          path: build/
+
+      # Diagnostic logs or failure reports upload even if the check fails
+      - name: Upload Linting Reports (On Failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lint-error-report
+          path: reports/

@@ -52,33 +52,75 @@ jobs:
 
           for path in class_files:
               with open(path, "r", encoding="utf-8") as f:
-                  content = f.read()
+                  lines = f.readlines()
 
-              cn_match = re.search(r"class_name\s+(\w+)", content)
-              if not cn_match:
+              c_name = "Unknown"
+              extends_str = "RefCounted"
+
+              for line in lines:
+                  cn_match = re.search(r"class_name\s+(\w+)", line)
+                  if cn_match: c_name = cn_match.group(1)
+                  ext_match = re.search(r"extends\s+([\w\.]+)", line)
+                  if ext_match: extends_str = ext_match.group(1)
+
+              if c_name == "Unknown":
                   continue
-              c_name = cn_match.group(1)
 
-              ext_match = re.search(r"extends\s+([\w\.]+)", content)
-              extends_str = ext_match.group(1) if ext_match else "RefCounted"
+              class_doc = []
+              properties = []
+              methods = []
+              current_doc = []
+
+              for line in lines:
+                  stripped = line.strip()
+
+                  if stripped.startswith("##"):
+                      current_doc.append(stripped[2:].strip())
+                  elif stripped.startswith("class_name") or stripped.startswith("extends"):
+                      if current_doc and not class_doc:
+                          class_doc = current_doc
+                      current_doc = []
+                  elif stripped.startswith("var ") or stripped.startswith("@export"):
+                      if current_doc:
+                          var_match = re.search(r"var\s+(\w+)", stripped)
+                          if var_match:
+                              properties.append((var_match.group(1), current_doc))
+                      current_doc = []
+                  elif stripped.startswith("func "):
+                      func_match = re.search(r"func\s+(.*)", stripped)
+                      if func_match:
+                          sig = func_match.group(1).strip(":")
+                          fname_match = re.match(r"(\w+)", sig)
+                          if fname_match:
+                              fname = fname_match.group(1)
+                              if not fname.startswith("_") or current_doc:
+                                  methods.append((sig, current_doc))
+                      current_doc = []
+                  elif not stripped or stripped.startswith("#"):
+                      pass
+                  else:
+                      current_doc = []
 
               md_lines = [f"# {c_name}\n", f"**Inherits:** `{extends_str}`\n"]
 
-              doc_match = re.findall(r"##\s*(.*)", content)
-              if doc_match:
+              if class_doc:
                   md_lines.append("## Description\n")
-                  md_lines.append("\n".join([f"> {d}" for d in doc_match[:4]]) + "\n")
+                  md_lines.append("\n".join([f"> {d}" for d in class_doc]) + "\n")
 
-              methods = re.findall(r"(?:##\s*(.*?)\n)?\s*func\s+(\w+)\s*\((.*?)\)(?:\s*->\s*([\w\b\[\]]+))?", content)
+              if properties:
+                  md_lines.append("## Properties\n")
+                  md_lines.append("| Property | Description |")
+                  md_lines.append("|---|---|")
+                  for p_name, p_doc in properties:
+                      desc = " ".join(p_doc) if p_doc else ""
+                      md_lines.append(f"| **`{p_name}`** | {desc} |")
+
               if methods:
-                  md_lines.append("## Methods\n")
-                  for comment, m_name, args, r_type in methods:
-                      sig = f"**{m_name}({args})**"
-                      if r_type:
-                          sig += f" -> `{r_type}`"
-                      md_lines.append(f"- {sig}")
-                      if comment:
-                          md_lines.append(f"  - {comment.strip()}")
+                  md_lines.append("\n## Methods\n")
+                  for sig, m_doc in methods:
+                      md_lines.append(f"- **`{sig}`**")
+                      if m_doc:
+                          md_lines.append(f"  - {' '.join(m_doc)}")
 
               filename = f"{c_name}.md"
               with open(os.path.join("docs_md", filename), "w", encoding="utf-8") as out:

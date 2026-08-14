@@ -2,40 +2,44 @@
 class_name LaserTarget
 extends StaticBody3D
 
+## Emitted when the target is struck by an active laser.
 signal activated
+## Emitted when the laser stops hitting the target.
 signal deactivated
 
-## Targets.
+## Array of nodes that this target will pass to its associated transmitter.
 @export var targets: Array[Node3D]:
-	set(value):
-		targets = value
-		_update_transmitter_targets()
+    set(value):
+        targets = value
+        _update_transmitter_targets()
 
-## Transmitter.
+## The transmitter node responsible for forwarding the power signal.
 @export var transmitter: OutputTransmitter3D:
-	set(value):
-		transmitter = value
-		_update_transmitter_targets()
+    set(value):
+        transmitter = value
+        _update_transmitter_targets()
 
 
 func _ready() -> void:
-	_update_transmitter_targets()
+    _update_transmitter_targets()
 
 
+## Receives the laser hit and forwards the activation state to the transmitter.
 func power_on() -> void:
-	print("LaserTarget: Hit by laser! Forwarding power_on to transmitter.")
-	activated.emit()
-	if is_instance_valid(transmitter):
-		transmitter.power_on()
+    print("LaserTarget: Hit by laser! Forwarding power_on to transmitter.")
+    activated.emit()
+    if is_instance_valid(transmitter):
+        transmitter.power_on()
 
 
+## Handles the laser removal and forwards the deactivation state to the transmitter.
 func power_off() -> void:
-	print("LaserTarget: Laser removed! Forwarding power_off to transmitter.")
-	deactivated.emit()
-	if is_instance_valid(transmitter):
-		transmitter.power_off()
+    print("LaserTarget: Laser removed! Forwarding power_off to transmitter.")
+    deactivated.emit()
+    if is_instance_valid(transmitter):
+        transmitter.power_off()
 
 
 func _update_transmitter_targets() -> void:
-	if is_instance_valid(transmitter):
-		transmitter.targets = targets
+    if is_instance_valid(transmitter):
+        transmitter.targets = targets
