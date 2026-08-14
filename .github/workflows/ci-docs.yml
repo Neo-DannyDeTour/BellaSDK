@@ -34,7 +34,7 @@ jobs:
       - name: Generate BellaSDK Documentation
         run: |
           mkdir -p docs_md
-          python -c '
+          python - << 'EOF'
           import os, re
 
           with open("docs_md/index.md", "w", encoding="utf-8") as f:
@@ -143,8 +143,8 @@ jobs:
               )
               mk.write(mk_content)
               for c_name, filename in sorted(nav_classes):
-                  mk.write(f"    - \x27{c_name}\x27: {filename}\n")
-          '
+                  mk.write(f"    - '{c_name}': {filename}\n")
+          EOF
 
       - name: Build Static Site
         run: python -m mkdocs build
