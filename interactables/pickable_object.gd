@@ -348,6 +348,7 @@ func throw(impulse_vector: Vector3) -> void:
 		apply_central_impulse(impulse_vector)
 
 
+## Called when the player focuses on this pickable object. Highlights the mesh and triggers TTS.
 func _on_interact_component_focused() -> void:
 	print("PickableObject: _on_interact_component_focused() called. Highlighting object.")
 	if is_locked:
@@ -368,7 +369,8 @@ func _on_interact_component_focused() -> void:
 			var tts_prompt: String = label.text + " " + mesh_name
 
 			print("PickableObject: Emitting TTS prompt -> ", tts_prompt)
-			Events.object_focused.emit(tts_prompt)
+			# Pass 'self' as the caller so the TTSManager knows exactly which object triggered this
+			Events.object_focused.emit(tts_prompt, self)
 
 
 func _update_label_text() -> void:

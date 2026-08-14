@@ -19,8 +19,14 @@ size = Vector3(2, 2, 2)
 [node name="TriggerHint" type="Area3D" unique_id=1784504971]
 collision_mask = 2
 script = ExtResource("1_vmfsq")
+trigger_size = null
+trigger_color = null
+trigger_text = null
 hint_type = 2
+custom_message = null
+trigger_once = null
 duration = 5.0
+show_on_screen = null
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1008902751]
 shape = SubResource("BoxShape3D_bqsr1")

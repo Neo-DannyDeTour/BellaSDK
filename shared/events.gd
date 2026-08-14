@@ -103,8 +103,16 @@ signal tts_state_changed(enabled: bool)
 signal font_changed(font_name: String)
 
 @warning_ignore("unused_signal")
-## Emitted when a player focuses on a 3D interactable object, sending its label text.
-signal object_focused(text: String)
+## Emitted when a player focuses on a 3D interactable object, sending its label text and the node reference.
+signal object_focused(text: String, caller: Node)
+
+@warning_ignore("unused_signal")
+## Emitted to request a subtitle on screen.
+signal subtitle_requested(speaker: String, text: String, duration: float)
+
+@warning_ignore("unused_signal")
+## Emitted when a currently playing subtitle should be stopped and hidden early.
+signal subtitle_canceled()
 
 # --- FONT SWAPPING LOGIC ---
 ## Property: Fonts.

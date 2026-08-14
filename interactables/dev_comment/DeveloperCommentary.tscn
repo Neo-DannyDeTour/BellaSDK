@@ -99,3 +99,8 @@ fit_content = true
 gi_mode = 0
 mesh = SubResource("QuadMesh_q3mh6")
 surface_material_override/0 = SubResource("ShaderMaterial_8ajrr")
+
+[node name="InteractPromptLabel" type="Label3D" parent="." unique_id=1076509952]
+billboard = 1
+double_sided = false
+no_depth_test = true

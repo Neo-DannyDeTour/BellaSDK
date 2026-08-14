@@ -30,7 +30,8 @@ func hover_cursor(_player: Node3D, _hit_point: Vector3) -> void:
 		print("TTSInteractComponent: Focus gained. Routing text to TTS: ", text_to_speak)
 
 		if text_to_speak != "":
-			Events.object_focused.emit(text_to_speak)
+			# Pass 'self' as the caller reference
+			Events.object_focused.emit(text_to_speak, self)
 
 	_last_hover_frame = current_frame
 

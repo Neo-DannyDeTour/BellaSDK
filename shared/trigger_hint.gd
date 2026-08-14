@@ -103,8 +103,8 @@ func _on_body_entered(body: Node3D) -> void:
 		Events.hint_requested.emit(formatted_message, duration)
 
 	print("HintTrigger: Sending text to custom TTSManager...")
-	# Replace .speak() with whatever method name your custom TTSManager uses
-	TTSManager.speak(formatted_message)
+	# Pass 'self' so the TTSManager knows this specific trigger called it
+	TTSManager.speak(formatted_message, self)
 
 
 func _get_raw_message() -> String:

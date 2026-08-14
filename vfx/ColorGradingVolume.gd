@@ -179,6 +179,9 @@ var _material: ShaderMaterial
 ## Stores the original glow intensity of the target environment to restore upon exiting.
 var _original_glow_intensity: float = 0.0
 
+## Stores the original bloom spread value of the target environment to restore upon exiting.
+var _original_glow_bloom: float = 0.0
+
 
 func _ready() -> void:
 	if Engine.is_editor_hint():
@@ -194,6 +197,7 @@ func _ready() -> void:
 
 		if target_environment and target_environment.environment:
 			_original_glow_intensity = target_environment.environment.glow_intensity
+			_original_glow_bloom = target_environment.environment.glow_bloom
 			# Force glow enabled to ensure the bloom tween has a visible impact
 			target_environment.environment.glow_enabled = true
 
@@ -361,7 +365,7 @@ func _on_body_exited(body: Node3D) -> void:
 	if body.is_in_group("player") or body.name == "Player":
 		print("ColorGradingVolume3D: Player exited volume. Fading out color and bloom VFX.")
 		_fade_effect(0.0)
-		_fade_bloom(_original_glow_intensity)
+		_fade_bloom(_original_glow_bloom)
 
 
 func _fade_effect(target_alpha: float) -> void:
@@ -394,7 +398,7 @@ func _fade_bloom(target_intensity: float) -> void:
 	(
 		_bloom_tween
 		. tween_property(
-			target_environment.environment, "glow_intensity", target_intensity, blend_time
+			target_environment.environment, "glow_bloom", target_intensity, blend_time
 		)
 		. set_trans(Tween.TRANS_SINE)
 	)

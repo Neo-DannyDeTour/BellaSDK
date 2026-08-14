@@ -199,6 +199,25 @@ var glitch_tween: Tween
 ## Controls the electricity vignette animation when shocked.
 var electro_tween: Tween
 
+# --- SUBTITLE UI VARS ---
+## Container managing the screen margins and layout bounds of the subtitle UI block.
+@onready var subtitle_margin: MarginContainer = $SubtitleMargin
+
+## Rich text element that types out the subtitle text and automatically scrolls it.
+@onready var subtitle_label: RichTextLabel = $SubtitleMargin/SubtitlePanel/SubtitleLabel
+
+## Animates the subtitle visibility and the typewriter character reveal effect.
+var subtitle_tween: Tween
+
+## Audio player for the text-scrolling blip sound.
+var blip_player: AudioStreamPlayer = AudioStreamPlayer.new()
+
+## The audio stream for TTSandy's UI blip (Assign this in the inspector).
+@export var ttsandy_blip: AudioStreamMP3
+
+## Tracks the last character count to prevent overlapping audio spam on the same frame.
+var last_visible_char: int = 0
+
 
 func _ready() -> void:
 	print("UIController: _ready() called. Initializing UI elements.")
@@ -306,7 +325,21 @@ func _ready() -> void:
 	if Events.has_signal("note_closed"):
 		if not Events.note_closed.is_connected(_on_note_closed):
 			Events.note_closed.connect(_on_note_closed)
-
+	
+	# Add the audio player to the scene tree so it can process sound
+	add_child(blip_player)
+	
+	if Events.has_signal("subtitle_requested"):
+		if not Events.subtitle_requested.is_connected(_on_subtitle_requested):
+			Events.subtitle_requested.connect(_on_subtitle_requested)
+			
+	if Events.has_signal("subtitle_canceled"):
+		if not Events.subtitle_canceled.is_connected(_on_subtitle_canceled):
+			Events.subtitle_canceled.connect(_on_subtitle_canceled)
+			
+	if subtitle_margin:
+		subtitle_margin.hide()
+		subtitle_margin.modulate.a = 0.0
 
 func _recenter_warning_ui() -> void:
 	print("UIController: _recenter_warning_ui() called to position hint text.")
@@ -922,3 +955,71 @@ func _on_note_closed() -> void:
 	print("UIController: _on_note_closed() received. Hiding UI.")
 	if note_overlay_ui != null:
 		note_overlay_ui.hide()
+
+
+## Displays the subtitle text, typing it out to match audio length, and fades out after.
+func _on_subtitle_requested(speaker: String, text: String, duration: float) -> void:
+	print("UIController: _on_subtitle_requested() called. Displaying scrolling subtitle for ", speaker)
+	
+	if not subtitle_label or not subtitle_margin:
+		return
+		
+	var formatted_speaker: String = speaker
+	
+	if speaker == "TTSandy":
+		formatted_speaker = "[color=#00ffff][b]" + speaker + ":[/b][/color]"
+		
+		# Play the blip exactly ONCE right as the UI appears
+		if ttsandy_blip != null:
+			blip_player.stream = ttsandy_blip
+			# FIX: Locked the pitch to 1.0 for a consistent accessibility audio cue.
+			blip_player.pitch_scale = 1.0
+			blip_player.play()
+	else:
+		formatted_speaker = "[b]" + speaker + ":[/b]"
+		
+	subtitle_label.text = formatted_speaker + " " + text
+	
+	subtitle_label.visible_characters = 0
+	subtitle_margin.show()
+	
+	if subtitle_tween and subtitle_tween.is_valid():
+		subtitle_tween.kill()
+		
+	subtitle_tween = create_tween()
+	
+	subtitle_tween.parallel().tween_property(subtitle_margin, "modulate:a", 1.0, 0.15)
+	
+	var total_chars: int = subtitle_label.get_total_character_count()
+	var type_duration: float = max(0.1, duration - 0.5)
+	
+	# We removed .bind(speaker) since the update function no longer needs to know who is talking
+	subtitle_tween.parallel().tween_method(
+		_update_visible_characters,
+		0,
+		total_chars,
+		type_duration
+	)
+	
+	subtitle_tween.chain().tween_interval(0.5)
+	subtitle_tween.chain().tween_property(subtitle_margin, "modulate:a", 0.0, 0.5)
+	subtitle_tween.finished.connect(subtitle_margin.hide)
+
+
+## Updates the visible characters for the typewriter effect.
+func _update_visible_characters(current_chars: int) -> void:
+	subtitle_label.visible_characters = current_chars
+
+
+func _on_subtitle_canceled() -> void:
+	print("UIController: _on_subtitle_canceled() called. Stopping subtitle animations.")
+	
+	if subtitle_tween and subtitle_tween.is_valid():
+		subtitle_tween.kill()
+		
+	if blip_player and blip_player.playing:
+		blip_player.stop()
+		
+	if subtitle_margin:
+		subtitle_margin.hide()
+		subtitle_margin.modulate.a = 0.0
