@@ -228,14 +228,17 @@ func _process(delta: float) -> void:
 		return
 
 	if is_instance_valid(player_target):
-		if global_position.distance_to(player_target.global_position) > max_sim_distance:
+		if (
+			global_position.distance_squared_to(player_target.global_position)
+			> max_sim_distance * max_sim_distance
+		):
 			return
 
 	var cam: Camera3D = _get_camera()
 	if cam:
-		var distance_moved: float = _last_cam_pos.distance_to(cam.global_position)
+		var distance_moved_sq: float = _last_cam_pos.distance_squared_to(cam.global_position)
 		_last_cam_pos = cam.global_position
-		if distance_moved > 5.0:
+		if distance_moved_sq > 25.0:
 			if update_textures:
 				update_textures = false
 		else:

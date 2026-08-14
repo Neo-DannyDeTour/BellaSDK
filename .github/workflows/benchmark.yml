@@ -24,7 +24,7 @@ jobs:
         run: godot --headless --editor --quit
 
       - name: Run Headless Performance Benchmark
-        run: godot --headless --script benchmark.gd
+        run: godot --headless --script tools/benchmark.gd
 
       - name: Upload Benchmark Artifact
         if: always()

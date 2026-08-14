@@ -103,7 +103,8 @@ signal tts_state_changed(enabled: bool)
 signal font_changed(font_name: String)
 
 @warning_ignore("unused_signal")
-## Emitted when a player focuses on a 3D interactable object, sending its label text and the node reference.
+## Emitted when a player focuses on a 3D interactable object, sending its label
+## text and the node reference.
 signal object_focused(text: String, caller: Node)
 
 @warning_ignore("unused_signal")

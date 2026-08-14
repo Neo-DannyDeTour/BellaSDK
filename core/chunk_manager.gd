@@ -67,7 +67,7 @@ func _on_check_chunks() -> void:
 	var player_pos: Vector3 = player.global_position
 	for chunk_id: String in chunk_positions:
 		var chunk_pos: Vector3 = chunk_positions[chunk_id]
-		if player_pos.distance_to(chunk_pos) <= load_distance:
+		if player_pos.distance_squared_to(chunk_pos) <= load_distance * load_distance:
 			if not desired_chunks.has(chunk_id):
 				desired_chunks.append(chunk_id)
 
