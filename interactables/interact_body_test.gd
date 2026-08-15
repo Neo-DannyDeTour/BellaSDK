@@ -1,11 +1,16 @@
+## A basic static testing script used to verify that interactable raycasting systems are working.
+##
+## Acts as a dummy door node for debugging purposes.
+class_name InteractBodyTest
 extends StaticBody3D
 
-## Is open.
+## Toggles the dummy structural state when clicked.
 var is_open: bool = false
-## Label.
+## Reference to a 2D label used for on-screen debug printing.
 @onready var label: Label = $Label
 
 
+## Flips the internal boolean and logs the state change.
 func interact() -> void:
 	if is_open:
 		print("Closing Door")

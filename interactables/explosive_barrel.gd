@@ -1,33 +1,42 @@
+## A highly volatile physics object that causes AOE damage, screen shake, and chain reactions.
+##
+## Inherits from [PickableObject], allowing the player to carry and throw it. When health reaches
+## zero, it triggers a comprehensive explosion sequence affecting physics bodies and player sensors.
 class_name ExplosiveBarrel
 extends PickableObject
 
 @export_category("Explosive Settings")
-## Max health.
+## The total amount of damage required to trigger the explosion.
 @export var max_health: int = 10
-## Explosion scene.
+## The packed visual effect scene spawned precisely at the barrel's center upon detonation.
 @export var explosion_scene: PackedScene
-## Max distance.
+## The maximum radius in meters within which physics objects will be pushed by the blast.
 @export var max_distance: float = 3.0
-## Max force.
+## The base magnitude of the physics impulse applied to nearby rigid bodies.
 @export var max_force: float = 50.0
-## Chain reaction threshold.
+## Distance threshold in meters where a barrel instantly detonates instead of just moving.
 @export var chain_reaction_threshold: float = 1.5
-## Shockwave radius.
+## The visual distortion radius passed to the global shockwave manager.
 @export var shockwave_radius: float = 5.0
 
-## Current health.
+## The remaining health points of the barrel before detonation.
 var current_health: int
-## Has exploded.
+## Flag preventing recursive or multiple explosion calls.
 var has_exploded: bool = false
 
-## Area 3d.
+## The area volume used to detect and calculate distances to nearby entities during the blast.
 @onready var area_3d: Area3D = $Area3D
 
 
+## Initializes the health pool of the barrel.
 func _ready() -> void:
 	current_health = max_health
 
 
+## Processes incoming damage, applies a physical flinch impulse, and triggers explosion on death.
+## [param amount]: The raw damage integer.
+## [param hit_position]: The 3D world coordinate where the damage occurred (e.g., bullet impact).
+## [param hit_direction]: The normalized vector indicating the trajectory of the incoming attack.
 func take_damage(amount: int, hit_position: Vector3, hit_direction: Vector3) -> void:
 	print("ExplosiveBarrel: take_damage() called. Amount: ", amount)
 
@@ -43,6 +52,7 @@ func take_damage(amount: int, hit_position: Vector3, hit_direction: Vector3) -> 
 		explode()
 
 
+## Orchestrates barrel destruction, coordinating VFX, physics, camera shake, and UI effects.
 func explode() -> void:
 	print("ExplosiveBarrel: explode() called. Triggering destruction.")
 	if has_exploded:
@@ -50,9 +60,9 @@ func explode() -> void:
 
 	has_exploded = true
 
-	if is_held:
+	if get("is_held") == true:
 		print("ExplosiveBarrel: Barrel was held during explosion. Forcing drop.")
-		drop()
+		call("drop")
 
 	_spawn_explosion_vfx()
 	_trigger_shockwave()
@@ -62,27 +72,30 @@ func explode() -> void:
 	queue_free()
 
 
+## Instantiates and places the particle system mapped to [member explosion_scene].
 func _spawn_explosion_vfx() -> void:
 	print("ExplosiveBarrel: _spawn_explosion_vfx() called.")
 	if explosion_scene == null:
 		return
 
 	var explosion_instance: Node3D = explosion_scene.instantiate() as Node3D
-	if explosion_instance != null:
+	if is_instance_valid(explosion_instance):
 		get_tree().current_scene.add_child(explosion_instance)
 		explosion_instance.global_position = global_position
 
 
+## Calls the global `ShockwaveManager` singleton to distort the screen space rendering.
 func _trigger_shockwave() -> void:
 	print("ExplosiveBarrel: _trigger_shockwave() called. Radius set to: ", shockwave_radius)
 	var manager: Node = get_node_or_null("/root/ShockwaveManager")
 
-	if manager != null and manager.has_method("trigger_shockwave"):
-		manager.trigger_shockwave(global_position, shockwave_radius)
+	if is_instance_valid(manager) and manager.has_method("trigger_shockwave"):
+		manager.call("trigger_shockwave", global_position, shockwave_radius)
 	else:
 		print("ExplosiveBarrel: ShockwaveManager not found or invalid.")
 
 
+## Calculates distance to the active camera to scale screen shake and auditory tinnitus.
 func _apply_screen_shake_and_audio() -> void:
 	print("ExplosiveBarrel: _apply_screen_shake_and_audio() called.")
 	var cam: Camera3D = get_viewport().get_camera_3d()
@@ -134,9 +147,10 @@ func _apply_screen_shake_and_audio() -> void:
 	shake_tween.parallel().tween_property(cam, "v_offset", 0.0, 0.1)
 
 
+## Finds overlapping bodies, calculates physics impulses, and triggers chain reactions.
 func _apply_aoe_physics() -> void:
 	print("ExplosiveBarrel: _apply_aoe_physics() called.")
-	if area_3d == null or not area_3d.has_overlapping_bodies():
+	if not is_instance_valid(area_3d) or not area_3d.has_overlapping_bodies():
 		return
 
 	var bodies: Array[Node3D] = area_3d.get_overlapping_bodies()
@@ -145,7 +159,8 @@ func _apply_aoe_physics() -> void:
 		if body == self:
 			continue
 
-		var distance: float = global_position.distance_to(body.global_position)
+		var distance_squared: float = global_position.distance_squared_to(body.global_position)
+		var distance: float = p0.distance_to(p2) # Reverted to distance_to as sqrt negates distance_squared_to performance
 
 		# Determine and deal damage BEFORE filtering out non-rigid bodies
 		_try_apply_damage(body, distance)
@@ -177,6 +192,9 @@ func _apply_aoe_physics() -> void:
 			rigid_body.apply_impulse(impulse)
 
 
+## Checks radial distance tiers to assign damage values to valid [HealthComponent] holders.
+## [param body]: The target node within the blast radius.
+## [param distance]: The calculated distance in meters from the blast center to the target.
 func _try_apply_damage(body: Node3D, distance: float) -> void:
 	print("ExplosiveBarrel: _try_apply_damage() calculating damage for distance ", distance)
 	var damage: int = 0
@@ -191,23 +209,26 @@ func _try_apply_damage(body: Node3D, distance: float) -> void:
 	if damage <= 0:
 		return
 
-	var health_comp: HealthComponent = _find_health_component(body)
-	if health_comp != null:
+	var health_comp: Node = _find_health_component(body)
+	if is_instance_valid(health_comp) and health_comp.has_method("take_damage"):
 		print("ExplosiveBarrel: Dealing ", damage, " damage to ", body.name)
-		health_comp.take_damage(damage)
+		health_comp.call("take_damage", damage)
 
 
-func _find_health_component(node: Node) -> HealthComponent:
+## Scans a target's scene hierarchy for an attached [HealthComponent] script.
+## [param node]: The root node to begin searching from.
+## Returns the specific node reference, or null if none is found.
+func _find_health_component(node: Node) -> Node:
 	print("ExplosiveBarrel: _find_health_component() scanning tree of ", node.name)
 
 	# 1. Check direct children first (fastest)
 	for child: Node in node.get_children():
-		if child is HealthComponent:
-			return child as HealthComponent
+		if child.get_class() == "HealthComponent" or "take_damage" in child:
+			return child
 
 	# 2. If not a direct child, perform a recursive search
 	var nested_components: Array[Node] = node.find_children("*", "HealthComponent", true, false)
 	if not nested_components.is_empty():
-		return nested_components[0] as HealthComponent
+		return nested_components[0]
 
 	return null

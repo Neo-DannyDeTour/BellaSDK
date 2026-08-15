@@ -1,24 +1,29 @@
-extends StaticBody3D
+## A standalone terminal that allows playtesters to submit feedback via an external web browser.
+##
+## Animates floating icons when looked at by the player and uses [OS.shell_open] to securely
+## redirect to a provided survey URL.
 class_name FeedbackStation
+extends StaticBody3D
 
 @export_category("Configuration")
-## Form url.
+## The secure web address opened when the player interacts with the station.
 @export var form_url: String = "https://forms.gle/JnrmTWLiLv5Mhzfg8"
 
 @export_category("Node References")
-## Interact comp.
+## Interaction component bound to the station's collision mesh.
 @export var interact_comp: InteractComponent
-## Label.
+## Floating 3D text describing the terminal.
 @export var label: Label3D
-## Sprite.
+## Floating 2D icon providing visual focus feedback.
 @export var sprite: Sprite3D
 
-## Sprite initial y.
+## Caches the starting height of the sprite to allow smooth looping bounce animations.
 var _sprite_initial_y: float = 0.0
-## Hover tween.
+## Active tween controller for managing hover animations.
 var _hover_tween: Tween = null
 
 
+## Stores initial coordinates and binds interaction signals.
 func _ready() -> void:
 	print("FeedbackStation: Initializing scene.")
 
@@ -34,6 +39,8 @@ func _ready() -> void:
 		print("FeedbackStation: ERROR - InteractComponent is missing or not assigned!")
 
 
+## Validates the configured URL scheme and boots the default web browser.
+## [param _character]: The player character initiating the interaction.
 func _on_interacted(_character: CharacterBody3D) -> void:
 	print("FeedbackStation: Player interacted. Attempting to open browser to: ", form_url)
 
@@ -43,7 +50,7 @@ func _on_interacted(_character: CharacterBody3D) -> void:
 		)
 		print(error_msg)
 		if Console:
-			Console.log_error(error_msg)
+			Console.call("log_error", error_msg)
 		return
 
 	# OS.shell_open safely boots the user's default web browser
@@ -52,6 +59,7 @@ func _on_interacted(_character: CharacterBody3D) -> void:
 		print("FeedbackStation: ERROR opening URL. Code: ", err)
 
 
+## Activates highlight colors and begins the looping bobbing animation when looked at.
 func _on_focused() -> void:
 	print("FeedbackStation: Player focused on the station. Starting animation.")
 
@@ -63,7 +71,7 @@ func _on_focused() -> void:
 		sprite.modulate = Color(0.2, 1.0, 0.2)
 
 		# Kill the previous tween if it's currently running
-		if _hover_tween and _hover_tween.is_valid():
+		if is_instance_valid(_hover_tween):
 			_hover_tween.kill()
 
 		# Create a looping animation
@@ -87,6 +95,7 @@ func _on_focused() -> void:
 		)
 
 
+## Reverts colors and smooths the floating icon back to its original resting height.
 func _on_unfocused() -> void:
 	print("FeedbackStation: Player unfocused from the station. Stopping animation.")
 
@@ -98,7 +107,7 @@ func _on_unfocused() -> void:
 		sprite.modulate = Color.WHITE
 
 		# Kill the bouncing loop
-		if _hover_tween and _hover_tween.is_valid():
+		if is_instance_valid(_hover_tween):
 			_hover_tween.kill()
 
 		# Smoothly return the sprite back to its exact starting height
