@@ -1,9 +1,0 @@
-[gd_scene format=3 uid="uid://bl086ryrk7oni"]
-
-[ext_resource type="Script" uid="uid://j7u3rdq6sjbc" path="res://tools/benchmark.gd" id="1_3q80e"]
-[ext_resource type="PackedScene" uid="uid://omwvkueo82i7" path="res://levels/testbed.scn" id="2_vi1oj"]
-
-[node name="BenchmarkRunner" type="Node" unique_id=1041122179]
-script = ExtResource("1_3q80e")
-
-[node name="Testbed" parent="." unique_id=589896155 instance=ExtResource("2_vi1oj")]
