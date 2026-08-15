@@ -356,6 +356,11 @@ func clear_compute() -> void:
 			rd.free_rid(uniform_set)
 		uniform_set = RID()
 
+		## Frees the compute pipeline from VRAM to prevent memory leaks during deletion.
+		if pipeline.is_valid():
+			rd.free_rid(pipeline)
+		pipeline = RID()
+
 		if shader.is_valid():
 			rd.free_rid(shader)
 		shader = RID()
@@ -363,11 +368,6 @@ func clear_compute() -> void:
 		if current_drawing_mask.is_valid():
 			rd.free_rid(current_drawing_mask)
 		current_drawing_mask = RID()
-
-		## Frees the compute pipeline from VRAM to prevent memory leaks during deletion.
-		if pipeline.is_valid():
-			rd.free_rid(pipeline)
-		pipeline = RID()
 
 		## Frees the bound uniform set from VRAM to prevent orphan allocations.
 		if uniform_set.is_valid():
