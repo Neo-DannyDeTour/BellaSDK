@@ -1,8 +1,14 @@
 @tool
+## A generic signal router used to bridge interactable mechanisms with their target nodes.
+##
+## Used as a child component of puzzle nodes. It securely handles
+## calling power methods on target arrays and draws helpful connection lines in the editor.
 class_name OutputTransmitter3D
 extends Node3D
 
+## Emitted when the transmitter begins sending power to its targets.
 signal activated
+## Emitted when the transmitter stops sending power to its targets.
 signal deactivated
 
 ## The list of nodes that this transmitter sends its signals or progress updates to.
@@ -14,14 +20,18 @@ var is_active: bool = false
 var debug_line: MeshInstance3D
 
 
+## Configures the processing loop to only run when previewing inside the Godot editor.
 func _ready() -> void:
 	set_process(Engine.is_editor_hint())
 
 
+## Constantly redraws the red debug connection lines as long as the editor is running.
+## [param _delta]: Frame delta time.
 func _process(_delta: float) -> void:
 	_draw_connection_line()
 
 
+## Flags the transmitter as active, emits signals, and commands target nodes to add power.
 func power_on() -> void:
 	if not is_active:
 		print("OutputTransmitter3D: State changed to ON. Energizing targets.")
@@ -30,6 +40,7 @@ func power_on() -> void:
 		_energize_targets()
 
 
+## Flags the transmitter as inactive, emits signals, and commands target nodes to remove power.
 func power_off() -> void:
 	if is_active:
 		print("OutputTransmitter3D: State changed to OFF. De-energizing targets.")
@@ -38,28 +49,31 @@ func power_off() -> void:
 		_deenergize_targets()
 
 
+## Iterates over the assigned [member targets] and securely invokes their activation logic.
 func _energize_targets() -> void:
 	for target: Node3D in targets:
 		if is_instance_valid(target):
 			var comp: Node = target.get_node_or_null("PowerComponent")
 			if is_instance_valid(comp) and comp.has_method("add_power"):
-				comp.add_power()
+				comp.call("add_power")
 			elif target.has_method("power_on"):
-				target.power_on()
+				target.call("power_on")
 
 
+## Iterates over the assigned [member targets] and securely invokes their deactivation logic.
 func _deenergize_targets() -> void:
 	for target: Node3D in targets:
 		if is_instance_valid(target):
 			var comp: Node = target.get_node_or_null("PowerComponent")
 			if is_instance_valid(comp) and comp.has_method("remove_power"):
-				comp.remove_power()
+				comp.call("remove_power")
 			elif target.has_method("power_off"):
-				target.power_off()
+				target.call("power_off")
 
 
+## Computes line segments between this node's origin and the origins of its targets.
 func _draw_connection_line() -> void:
-	if not targets or targets.is_empty():
+	if targets.is_empty():
 		if is_instance_valid(debug_line):
 			debug_line.queue_free()
 			debug_line = null
@@ -89,7 +103,9 @@ func _draw_connection_line() -> void:
 	mesh.surface_end()
 
 
+## Sends analog progress states (0.0 to 1.0) to targets that support linear manipulation.
+## [param value]: The current progress weight to distribute.
 func transmit_progress(value: float) -> void:
 	for target: Node3D in targets:
 		if is_instance_valid(target) and target.has_method("set_progress"):
-			target.set_progress(value)
+			target.call("set_progress", value)

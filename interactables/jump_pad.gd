@@ -1,36 +1,45 @@
 @tool
+## A physics trigger that launches the player to a destination along a parabolic arc.
+##
+## Features trajectory visualization. Dynamically modifies gravity during the arc
+## to ensure precise landing on the designated target.
 class_name JumpPad
 extends Area3D
 
-## Drag and drop your target node here in the Inspector
+## The specific 3D node the player will land on. If left null, a default child marker is used.
 @export var assigned_target: Node3D:
 	set(value):
 		assigned_target = value
-		_update_trajectory()
+		if is_inside_tree() and Engine.is_editor_hint():
+			_update_trajectory()
 
 ## The peak height the player reaches during the jump trajectory.
 @export var apex_height: float = 3.0:
 	set(value):
 		apex_height = maxf(0.1, value)
-		_update_trajectory()
+		if is_inside_tree() and Engine.is_editor_hint():
+			_update_trajectory()
 
 ## Multiplier to increase or decrease the overall flight speed.
 @export_range(0.1, 5.0, 0.1) var flight_speed_multiplier: float = 1.0:
 	set(value):
 		flight_speed_multiplier = maxf(0.1, value)
-		_update_trajectory()
+		if is_inside_tree() and Engine.is_editor_hint():
+			_update_trajectory()
 
 ## The base upward gravity applied to the player while ascending.
 @export var player_gravity: float = 9.8:
 	set(value):
 		player_gravity = maxf(0.1, value)
-		_update_trajectory()
+		if is_inside_tree() and Engine.is_editor_hint():
+			_update_trajectory()
 
 ## Multiplier applied to the gravity while the player is falling.
 @export var fall_gravity_multiplier: float = 1.0:
 	set(value):
 		fall_gravity_multiplier = maxf(0.1, value)
-		_update_trajectory()
+		if is_inside_tree() and Engine.is_editor_hint():
+			_update_trajectory()
 
 ## The total calculated time for the player to reach the target.
 var _flight_time: float = 0.0
@@ -62,10 +71,12 @@ var _line_visual: MeshInstance3D
 var _apex_visual: MeshInstance3D
 
 
+## Editor-only callback that generates the hidden visualizer nodes and default target.
 func _enter_tree() -> void:
 	_create_default_nodes()
 
 
+## Connects trigger signals and deletes editor-only visualization meshes upon entering play mode.
 func _ready() -> void:
 	collision_layer = 0
 	collision_mask = 2  # Only detect Layer 2 (Player)
@@ -88,6 +99,8 @@ func _ready() -> void:
 	_update_trajectory()
 
 
+## Continuously verifies the positions of the jump pad and target to rebuild the parabolic arc.
+## [param delta]: Frame delta time.
 func _process(delta: float) -> void:
 	var active_target: Node3D = assigned_target
 	if not is_instance_valid(active_target):
@@ -122,6 +135,7 @@ func _get_configuration_warnings() -> PackedStringArray:
 	return PackedStringArray()
 
 
+## Recalculates launch velocity and gravity based on height, distance, and falloff.
 func _update_trajectory() -> void:
 	if not is_inside_tree():
 		return
@@ -167,6 +181,7 @@ func _update_trajectory() -> void:
 	_update_visuals()
 
 
+## Redraws the arc path lines and apex indicator for the editor viewport.
 func _update_visuals() -> void:
 	if not Engine.is_editor_hint():
 		return
@@ -223,6 +238,9 @@ func _update_visuals() -> void:
 		_apex_visual.global_position = _get_position_at_time(_t_up)
 
 
+## Solves kinematic equations to find a 3D coordinate at a specific flight time.
+## [param t]: The time in seconds elapsed since launch.
+## Returns the predicted world coordinate.
 func _get_position_at_time(t: float) -> Vector3:
 	var p0: Vector3 = global_position
 	if not is_instance_valid(_target_node):
@@ -249,6 +267,8 @@ func _get_position_at_time(t: float) -> Vector3:
 	return Vector3(p0.x + xz.x, y, p0.z + xz.z)
 
 
+## Detects player entry, applies the calculated initial velocity, and transitions the state machine.
+## [param body]: The 3D physics body that triggered the jump pad.
 func _on_body_entered(body: Node3D) -> void:
 	if body.is_in_group("player") or body.get_class() == "CharacterBody3D":
 		print(
@@ -275,6 +295,10 @@ func _on_body_entered(body: Node3D) -> void:
 			)
 
 
+## Spawns or retrieves nodes safely without cluttering the scene tree.
+## [param node_name]: The string name of the node.
+## [param node_class]: The [Object] class type to instantiate if missing.
+## Returns the newly created or existing node reference.
 func _get_or_create_internal_node(node_name: String, node_class: Variant) -> Node:
 	var n: Node = get_node_or_null(node_name)
 	if not is_instance_valid(n):
@@ -285,6 +309,7 @@ func _get_or_create_internal_node(node_name: String, node_class: Variant) -> Nod
 	return n
 
 
+## Instantiates the target, mesh, and collision required for the jump pad to operate.
 func _create_default_nodes() -> void:
 	# 1. Generate Hidden / Internal Nodes (Visible in viewport, hidden in Scene Tree)
 	var col: CollisionShape3D = (

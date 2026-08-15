@@ -1,83 +1,77 @@
-## A pair of sliding doors that track separate interaction states and manage floating UI prompts.
-##
-## Supports double-clicking to close both doors and cross-referencing input actions to automatically
-## update prompt labels.
-class_name DoubleSlidingDoors
 extends Node3D
 
-## Defines the three possible states for the dual door system.
 enum State { CLOSED, RIGHT_OPEN, LEFT_OPEN }
 
-## The physical distance in meters that a single door will translate along its local X-axis.
+## Slide dist.
 @export var slide_dist: float = 2.0
-## The duration in seconds for the sliding animation to complete.
+## Speed.
 @export var speed: float = 0.4
-## The maximum time window in milliseconds between clicks to register a 'close all' command.
+## Double click delay.
 @export var double_click_delay: int = 300
 
-## Cached local starting position for the left door mesh.
+## Left origin.
 var left_origin: Vector3
-## Cached local starting position for the right door mesh.
+## Right origin.
 var right_origin: Vector3
-## Timestamp of the previous interaction, used to calculate double-clicks.
+## Last click time.
 var last_click_time: int = 0
-## The currently active positional state of the door system.
+## Current state.
 var current_state: State = State.CLOSED
-## Tracks active [Tween] instances per door to allow graceful interruptions.
+## Active tweens.
 var active_tweens: Dictionary = {}
-
-## Reference to the left door physics body.
+## Left door.
 @onready var left_door: StaticBody3D = $DoorLeft
-## Reference to the right door physics body.
+## Right door.
 @onready var right_door: StaticBody3D = $DoorRight
 
-## Floating interaction prompt label for the left door.
+## Left label.
 @onready var left_label: Label3D = $DoorLeft/Label3D
-## Floating interaction prompt label for the right door.
+## Right label.
 @onready var right_label: Label3D = $DoorRight/Label3D2
 
-## Interaction component bound to the left door's surface.
+## Left interact.
 @onready var left_interact: Node = $DoorLeft/InteractComponent
-## Interaction component bound to the right door's surface.
+## Right interact.
 @onready var right_interact: Node = $DoorRight/InteractComponent
 
 
-## Caches initial door positions, hides default labels, and maps interaction signals.
 func _ready() -> void:
+	# Use .position instead of .transform.origin
 	left_origin = left_door.position
 	right_origin = right_door.position
 
 	right_label.hide()
 	left_label.hide()
 
-	left_interact.interacted.connect(_on_interact.bind("left"))
-	right_interact.interacted.connect(_on_interact.bind("right"))
+	# --- THE FIX: SWAP THE BINDS ---
+	# If clicking the left door moves the right door, we just tell the left
+	# component that it is actually controlling the right door!
+	left_interact.connect("interacted", _on_interact.bind("left"))
+	right_interact.connect("interacted", _on_interact.bind("right"))
 
-	left_interact.focused.connect(_on_focus.bind("left"))
-	left_interact.unfocused.connect(_on_unfocus.bind("left"))
+	# Do the same for the focus labels so the text pops up on the correct side
+	left_interact.connect("focused", _on_focus.bind("left"))
+	left_interact.connect("unfocused", _on_unfocus.bind("left"))
 
-	right_interact.focused.connect(_on_focus.bind("right"))
-	right_interact.unfocused.connect(_on_unfocus.bind("right"))
+	right_interact.connect("focused", _on_focus.bind("right"))
+	right_interact.connect("unfocused", _on_unfocus.bind("right"))
 
 
-## Snaps visible labels to the exact 3D raycast hit coordinate on the door surface.
-## [param _delta]: Frame delta time.
 func _process(_delta: float) -> void:
 	var label_offset: Vector3 = Vector3(0, -0.15, 0)
+	# Keep the label stuck to the exact hit point on the screen
 	if left_label.visible:
-		left_label.global_position = left_interact.get("last_hit_position") + label_offset
+		# Add the offset to the hit position
+		left_label.global_position = left_interact.last_hit_position + label_offset
 
 	if right_label.visible:
-		right_label.global_position = right_interact.get("last_hit_position") + label_offset
+		# Add the offset to the hit position
+		right_label.global_position = right_interact.last_hit_position + label_offset
 
 
 # ==========================================
 # LABEL LOGIC
 # ==========================================
-
-
-## Formats and displays the interact label with the bound input key.
-## [param side]: The string identifier ("left" or "right") indicating which door was focused.
 func _on_focus(side: String) -> void:
 	var target_label: Label3D = left_label if side == "left" else right_label
 
@@ -97,8 +91,6 @@ func _on_focus(side: String) -> void:
 	target_label.show()
 
 
-## Hides the interaction label when the player looks away.
-## [param side]: The string identifier ("left" or "right") indicating which door was unfocused.
 func _on_unfocus(side: String) -> void:
 	var target_label: Label3D = left_label if side == "left" else right_label
 	target_label.hide()
@@ -107,11 +99,6 @@ func _on_unfocus(side: String) -> void:
 # ==========================================
 # MOVEMENT LOGIC
 # ==========================================
-
-
-## Evaluates timestamps to distinguish single clicks from double clicks.
-## [param _character]: The player character executing the interaction.
-## [param side]: The side being operated ("left" or "right").
 func _on_interact(_character: CharacterBody3D, side: String) -> void:
 	print("DoubleSlidingDoors: _on_interact() called. Operating doors.")
 	var now: int = Time.get_ticks_msec()
@@ -135,8 +122,6 @@ func _on_interact(_character: CharacterBody3D, side: String) -> void:
 			transition_to(State.RIGHT_OPEN)
 
 
-## Updates the logic state and computes the target vectors for the tweening function.
-## [param new_state]: The requested positional configuration from the [enum State] definitions.
 func transition_to(new_state: State) -> void:
 	current_state = new_state
 
@@ -149,16 +134,12 @@ func transition_to(new_state: State) -> void:
 			animate_door(right_door, right_origin)
 
 
-## Resets both door meshes back to their cached origins.
 func reset_doors() -> void:
 	animate_door(left_door, left_origin)
 	animate_door(right_door, right_origin)
 	current_state = State.CLOSED
 
 
-## Creates or overrides a [Tween] to slide the specified door node to a given local coordinate.
-## [param door]: The specific [StaticBody3D] to move.
-## [param target]: The final local 3D position vector.
 func animate_door(door: Node3D, target: Vector3) -> void:
 	if active_tweens.has(door) and active_tweens[door] and active_tweens[door].is_valid():
 		active_tweens[door].kill()
@@ -166,6 +147,7 @@ func animate_door(door: Node3D, target: Vector3) -> void:
 	var tween: Tween = create_tween()
 	active_tweens[door] = tween
 
+	# CHANGED: "transform:origin" is now "position"
 	tween.tween_property(door, "position", target, speed).set_trans(Tween.TRANS_SINE).set_ease(
 		Tween.EASE_OUT
 	)

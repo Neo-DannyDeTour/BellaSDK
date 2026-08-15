@@ -160,7 +160,7 @@ func _apply_aoe_physics() -> void:
 			continue
 
 		var distance_squared: float = global_position.distance_squared_to(body.global_position)
-		var distance: float = p0.distance_to(p2)  # Reverted to distance_to as sqrt negates distance_squared_to performance
+		var distance: float = global_position.distance_to(body.global_position)
 
 		# Determine and deal damage BEFORE filtering out non-rigid bodies
 		_try_apply_damage(body, distance)

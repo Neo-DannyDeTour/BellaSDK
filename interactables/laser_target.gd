@@ -15,13 +15,15 @@ signal deactivated
 @export var targets: Array[Node3D]:
 	set(value):
 		targets = value
-		_update_transmitter_targets()
+		if is_inside_tree() and Engine.is_editor_hint():
+			_update_transmitter_targets()
 
 ## The transmitter node responsible for forwarding the power signal.
 @export var transmitter: OutputTransmitter3D:
 	set(value):
 		transmitter = value
-		_update_transmitter_targets()
+		if is_inside_tree() and Engine.is_editor_hint():
+			_update_transmitter_targets()
 
 
 ## Initializes the transmitter target list on node entry.

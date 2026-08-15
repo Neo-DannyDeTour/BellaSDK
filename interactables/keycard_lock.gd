@@ -1,42 +1,50 @@
 @tool
+## A security terminal that validates global keycard states against a required clearance ID.
+##
+## On success, delegates power delivery to a bound [OutputTransmitter3D]. Manages 3D textual
+## prompts and custom material glows to indicate denied or granted access states.
 class_name KeycardLock
 extends Node3D
 
+## Emitted immediately when the player successfully presents the required keycard.
 signal access_granted
 
 @export_category("Lock Settings")
-## Type the exact ID of the required card here (e.g., "A1", "Admin")
+## The exact ID of the required card (e.g., "A1", "Admin"). Must match [KeycardData].
 @export var required_card_id: StringName = &"R"
-## Set the visual glow color for this lock manually
+## Sets the visual glow color for this lock manually before it is solved.
 @export var lock_color: Color = Color.RED
-## Reader mesh.
+## The 3D geometry piece that receives the colored glow override material.
 @export var reader_mesh: GeometryInstance3D
-## Status label.
+## The floating text label that displays lock status and prompts.
 @export var status_label: Label3D
-## Type this directly to your component class for better autocomplete
+## The interaction script that casts raycasts and routes player inputs.
 @export var interact_component: InteractComponent
 
 @export_category("Transmitter Settings")
-## Drag the child OutputTransmitter3D here.
+## The specific transmitter component used to send signals to connected devices.
 @export var output_transmitter: OutputTransmitter3D:
 	set(value):
 		output_transmitter = value
-		_update_editor_targets()
+		if is_inside_tree() and Engine.is_editor_hint():
+			_update_editor_targets()
 
-## Assign your targets here in the parent inspector.
+## Array of external nodes triggered when this lock is successfully solved.
 @export var transmitter_targets: Array[Node3D] = []:
 	set(value):
 		transmitter_targets = value
-		_update_editor_targets()
+		if is_inside_tree() and Engine.is_editor_hint():
+			_update_editor_targets()
 
-## Is unlocked.
+## Prevents checking the global inventory array again if the lock is already solved.
 var _is_unlocked: bool = false
-## Reader material.
+## Generated material instance to allow per-lock glow animations.
 var _reader_material: StandardMaterial3D
-## Cached requirement text.
+## Formatted text string generated on ready to avoid string concatenation during loops.
 var _cached_requirement_text: String = ""
 
 
+## Initializes visual states, caches strings, and connects to the interaction system.
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
@@ -57,17 +65,20 @@ func _ready() -> void:
 			interact_component.unfocused.connect(_on_unfocused)
 
 
+## Passes the exported target array down to the transmitter script within the editor.
 func _update_editor_targets() -> void:
 	if Engine.is_editor_hint() and is_instance_valid(output_transmitter):
 		output_transmitter.targets = transmitter_targets
 
 
+## Synchronizes the target array upon level load to ensure the puzzle logic triggers correctly.
 func _setup_transmitter() -> void:
 	print("KeycardLock: Setting up transmitter targets.")
 	if is_instance_valid(output_transmitter):
 		output_transmitter.targets = transmitter_targets
 
 
+## Duplicates material to apply runtime glow properties based on [member lock_color].
 func _setup_reader_visuals() -> void:
 	print("KeycardLock: Setting up reader glow materials.")
 	if is_instance_valid(reader_mesh):
@@ -83,6 +94,8 @@ func _setup_reader_visuals() -> void:
 		status_label.modulate = lock_color
 
 
+## Verifies the global inventory singleton for the required ID upon player interaction.
+## [param _interactor]: The player character.
 func _on_interacted(_interactor: CharacterBody3D) -> void:
 	print("KeycardLock: Interacted by player.")
 	if _is_unlocked:
@@ -98,6 +111,7 @@ func _on_interacted(_interactor: CharacterBody3D) -> void:
 		_deny_access()
 
 
+## Displays the required ID text when the player aims at the lock.
 func _on_focused() -> void:
 	print("KeycardLock: Player focused lock. Displaying requirement.")
 	if _is_unlocked:
@@ -107,6 +121,7 @@ func _on_focused() -> void:
 		status_label.text = _cached_requirement_text
 
 
+## Clears the required ID text when the player looks away.
 func _on_unfocused() -> void:
 	print("KeycardLock: Player unfocused lock. Hiding text.")
 	if _is_unlocked:
@@ -116,6 +131,7 @@ func _on_unfocused() -> void:
 		status_label.text = ""
 
 
+## Triggers connected output nodes and visually shifts the lock state to permanent green.
 func _unlock() -> void:
 	_is_unlocked = true
 	print("KeycardLock: Access granted. Firing signals.")
@@ -133,6 +149,7 @@ func _unlock() -> void:
 		status_label.modulate = Color.GREEN
 
 
+## Initiates a temporary red flashing text sequence if the player lacks clearance.
 func _deny_access() -> void:
 	print("KeycardLock: Playing access denied animation.")
 	if is_instance_valid(status_label):
@@ -148,7 +165,7 @@ func _deny_access() -> void:
 				if not _is_unlocked and is_instance_valid(status_label):
 					if (
 						is_instance_valid(interact_component)
-						and interact_component.is_currently_focused
+						and interact_component.get("is_currently_focused") == true
 					):
 						status_label.text = _cached_requirement_text
 					else:

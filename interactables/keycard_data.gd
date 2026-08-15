@@ -1,3 +1,7 @@
+## A custom [Resource] defining the logic identifiers and visual traits of a keycard.
+##
+## Assigned to both [KeycardPickup] and [KeycardLock] objects to synchronize clearance levels
+## across the game world.
 class_name KeycardData
 extends Resource
 
@@ -6,11 +10,11 @@ extends Resource
 @export var card_id: StringName = &""
 
 @export_category("Card Visuals")
-## Display letter.
+## The primary bold text drawn on the 3D model of the card.
 @export var display_letter: String = ""
-## Optional: Use a String so you can leave it blank, or put "1", "2", etc.
+## Optional secondary text or numbering drawn on the 3D model of the card.
 @export var display_number: String = ""
-## Card color.
+## The base emission color and UI color of the keycard model.
 @export var card_color: Color = Color.WHITE
-## Card texture.
+## An optional 2D texture applied to the face of the card mesh.
 @export var card_texture: Texture2D
