@@ -30,8 +30,8 @@ jobs:
 
       - name: Generate Import Cache & UIDs
         run: |
-          # Use the dedicated Godot 4 CI import command to fully build the .godot cache
-          godot --headless --import
+          # Launch the editor headlessly to force a complete asset import and UID cache generation
+          godot --headless --editor --quit
 
       - name: Run Headless Performance Gate
         run: |
