@@ -1,18 +1,22 @@
 @tool
+## A visual representation of a straight cable connecting an overhead anchor to a moving cart.
+##
+## This script stretches and rotates a [MeshInstance3D] cylinder to continuously link two nodes.
 class_name PulleyCableVisual3D
 extends Node3D
 
 @export_category("Connections")
 ## The fixed point above the cart (e.g., the pulley wheel)
 @export var overhead_anchor: Node3D
-## Cart.
+## The moving cart node that the cable connects to.
 @export var cart: Node3D
 
 @export_category("Visuals")
-## A MeshInstance3D containing a standard CylinderMesh
+## A [MeshInstance3D] containing a standard [CylinderMesh] to represent the cable.
 @export var cable_mesh: MeshInstance3D
 
 
+## Verifies the presence of the required [member cable_mesh] instance upon initialization.
 func _ready() -> void:
 	if not Engine.is_editor_hint():
 		print("PulleyCableVisual3D: Initializing optimized straight cable.")
@@ -21,6 +25,7 @@ func _ready() -> void:
 		printerr("PulleyCableVisual3D: Error - Missing cable_mesh instance!")
 
 
+## Continuously updates the cable's position and scale to bridge the anchor and the cart.
 func _process(_delta: float) -> void:
 	if (
 		is_instance_valid(overhead_anchor)
@@ -30,6 +35,7 @@ func _process(_delta: float) -> void:
 		_stretch_cable_to_fit()
 
 
+## Stretches and rotates the [member cable_mesh] to fit exactly between the anchor and the cart.
 func _stretch_cable_to_fit() -> void:
 	var top_pos: Vector3 = overhead_anchor.global_position
 	var bottom_pos: Vector3 = cart.global_position

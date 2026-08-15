@@ -1,83 +1,96 @@
 @tool
+## A trigger volume that saves the player's progress and updates a global save state.
+##
+## Visually represents its state through a hologram shader. When the player enters the area,
+## this checkpoint activates, saves the position, and deactivates all other checkpoints.
+class_name Checkpoint
 extends Area3D
 
 @export_group("Trigger Area")
-## Trigger size.
+## The 3D size of the collision box and editor debug mesh for the trigger.
 @export var trigger_size: Vector3 = Vector3(2.0, 2.0, 2.0):
 	set(value):
 		trigger_size = value
-		_update_trigger_shape()
+		if is_inside_tree() and Engine.is_editor_hint():
+			_update_trigger_shape()
 
-## Trigger offset.
+## The offset of the trigger shape relative to the node's origin.
 @export var trigger_offset: Vector3 = Vector3(0.0, 1.0, 0.0):
 	set(value):
 		trigger_offset = value
-		_update_trigger_shape()
+		if is_inside_tree() and Engine.is_editor_hint():
+			_update_trigger_shape()
 
 @export_group("Hologram Settings")
-## Label text.
+## The text displayed on the floating [Label3D] above the checkpoint.
 @export var label_text: String = "Checkpoint":
 	set(value):
 		label_text = value
-		_update_visuals()
+		if is_inside_tree() and Engine.is_editor_hint():
+			_update_visuals()
 
-## Line color.
+## The emission color of the scrolling hologram lines.
 @export var line_color: Color = Color.GREEN:
 	set(value):
 		line_color = value
-		_update_visuals()
+		if is_inside_tree() and Engine.is_editor_hint():
+			_update_visuals()
 
-## Base color.
+## The translucent base color of the hologram cylinder.
 @export var base_color: Color = Color(0.0, 0.2, 0.8, 0.1):
 	set(value):
 		base_color = value
-		_update_visuals()
+		if is_inside_tree() and Engine.is_editor_hint():
+			_update_visuals()
 
-## Speed.
+## The speed at which the hologram lines scroll up or down.
 @export var speed: float = 1.0:
 	set(value):
 		speed = value
-		_update_visuals()
+		if is_inside_tree() and Engine.is_editor_hint():
+			_update_visuals()
 
-## Line count.
+## The number of horizontal lines rendered by the hologram shader.
 @export var line_count: float = 2.0:
 	set(value):
 		line_count = value
-		_update_visuals()
+		if is_inside_tree() and Engine.is_editor_hint():
+			_update_visuals()
 
-## Line thickness.
+## The thickness of the scrolling hologram lines.
 @export_range(0.01, 1.0) var line_thickness: float = 0.1:
 	set(value):
 		line_thickness = value
-		_update_visuals()
+		if is_inside_tree() and Engine.is_editor_hint():
+			_update_visuals()
 
-## Glow multiplier.
+## A multiplier to boost the glow intensity of the hologram lines.
 @export var glow_multiplier: float = 2.0:
 	set(value):
 		glow_multiplier = value
-		_update_visuals()
+		if is_inside_tree() and Engine.is_editor_hint():
+			_update_visuals()
 
 @export_group("Audio Settings")
-## Activation sound.
+## The [AudioStream] played when the checkpoint is first activated by the player.
 @export var activation_sound: AudioStream
 
-## Audio player.
+## Reference to the audio player used for the activation sound.
 @onready var audio_player: AudioStreamPlayer3D = $AudioStreamPlayer3D
 
-## Is activated.
+## Indicates whether this checkpoint is currently the active spawn point.
 var is_activated: bool = false
-
-# NEW: We need to remember what this checkpoint looked like before it was activated!
-## Original label text.
+## The original label text, cached to restore state if deactivated.
 var original_label_text: String
-## Original speed.
+## The original hologram speed, cached to restore state if deactivated.
 var original_speed: float
-## Original line thickness.
+## The original hologram line thickness, cached to restore state if deactivated.
 var original_line_thickness: float
-## Original base color.
+## The original hologram base color, cached to restore state if deactivated.
 var original_base_color: Color
 
 
+## Caches initial visual states, updates shapes, and connects collision signals during gameplay.
 func _ready() -> void:
 	_update_visuals()
 	_update_trigger_shape()
@@ -99,6 +112,7 @@ func _ready() -> void:
 		body_entered.connect(_on_body_entered)
 
 
+## Rebuilds the collision and debug mesh boxes based on the exported dimensions.
 func _update_trigger_shape() -> void:
 	if not is_node_ready():
 		return
@@ -120,6 +134,7 @@ func _update_trigger_shape() -> void:
 		mesh_node.position = trigger_offset
 
 
+## Passes the current color and line configuration to the shader material instance.
 func _update_visuals() -> void:
 	var mesh: MeshInstance3D = get_node_or_null("HologramMesh") as MeshInstance3D
 	if not mesh:
@@ -137,18 +152,21 @@ func _update_visuals() -> void:
 		label.text = label_text
 
 
+## Detects valid player entry to trigger the checkpoint activation process.
+## [param body]: The 3D physics body that entered the trigger volume.
 func _on_body_entered(body: Node3D) -> void:
 	if Engine.is_editor_hint():
 		return
 
 	if body.name == "Player" or body.is_in_group("Player"):
-		if "noclip" in body and body.noclip == true:
+		if "noclip" in body and body.get("noclip") == true:
 			return
 
 		if not is_activated:
 			activate_checkpoint()
 
 
+## Marks this node as the active checkpoint, updates the global save, and changes visuals to active.
 func activate_checkpoint() -> void:
 	# 1. SHUT DOWN EVERY OTHER CHECKPOINT!
 	# This calls deactivate_checkpoint() on every node in the group
@@ -163,6 +181,7 @@ func activate_checkpoint() -> void:
 	speed = -1.0
 	line_thickness = 0.8
 	base_color = Color(0.0, 0.906, 0.471, 0.102)
+	_update_visuals()
 
 	# 3. PLAY ACTIVATION SOUND
 	if is_instance_valid(audio_player) and activation_sound:
@@ -173,7 +192,7 @@ func activate_checkpoint() -> void:
 		print("Checkpoint executing: Warning - No audio_player or activation_sound assigned.")
 
 
-# --- NEW: THE RESET FUNCTION ---
+## Resets visuals back to its original cache when another checkpoint is triggered.
 func deactivate_checkpoint() -> void:
 	# If we are already off, ignore this
 	if not is_activated:
@@ -186,3 +205,4 @@ func deactivate_checkpoint() -> void:
 	speed = original_speed
 	line_thickness = original_line_thickness
 	base_color = original_base_color
+	_update_visuals()
