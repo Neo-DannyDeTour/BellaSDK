@@ -1,39 +1,38 @@
-extends Node3D
+## Monitors a soft body physics cube and autonomously resets it if structural collapse is detected.
+##
+## Tracks the global axis-aligned bounding box (AABB) of the assigned visual mesh. If the vertical
+## height falls below the defined threshold, the script assumes the cube was crushed and replaces
+## it with a freshly instantiated packed scene.
 class_name MeatCubeInteractor
+extends Node3D
 
 ## The visual node (like a SoftBody3D or MeshInstance3D) whose geometry we are monitoring.
-## We check the bounding box of this node to see if it has squished or collapsed.
 @export var meat_visual: VisualInstance3D
 
-## The string path to the meat cube scene file.
-## Using a string path instead of a PackedScene prevents the circular reference error.
+## The string path to the scene. Bypassing a [PackedScene] prevents circular reference errors.
 @export_file("*.tscn") var meat_cube_scene_path: String
 
 ## The percentage of the original height the cube must reach to be considered "collapsed".
-## Keeps the physics check lightweight and simple for 60 FPS.
 @export var collapse_threshold: float = 0.7
 
 ## Tracks if the cube is currently in a collapsed and resetting state.
-## Prevents multiple reset timers from spawning simultaneously.
 var _is_resetting: bool = false
-
 ## Stores the original global height of the bounding box at spawn.
-## Used as the baseline to compare against the current height every physics frame.
 var _initial_height: float = 0.0
-
-## Accumulates delta time to print debug information periodically.
-## Prevents the console from being flooded with print statements every single frame.
+## Accumulates delta time to print debug information periodically instead of every frame.
 var _debug_timer: float = 0.0
 
 
+## Defers the initialization of the baseline geometry height until physics are settled.
 func _ready() -> void:
 	print("Meat cube interactor initialized. Waiting to record initial geometry...")
 	call_deferred("_record_initial_height")
 
 
+## Calculates the true global height of the [member meat_visual] bounds.
 func _record_initial_height() -> void:
 	print("Attempting to record initial meat cube height...")
-	if meat_visual:
+	if is_instance_valid(meat_visual):
 		# In Godot 4, multiply global transform by the local AABB to get the global bounds
 		var global_aabb: AABB = meat_visual.global_transform * meat_visual.get_aabb()
 		_initial_height = global_aabb.size.y
@@ -42,8 +41,10 @@ func _record_initial_height() -> void:
 		print("WARNING: No meat_visual assigned! Autonomous collapse detection will not work.")
 
 
+## Calculates the global AABB as the soft body deforms to check for collapse conditions.
+## [param delta]: Frame delta time.
 func _physics_process(delta: float) -> void:
-	if _is_resetting or meat_visual == null or _initial_height <= 0.0:
+	if _is_resetting or not is_instance_valid(meat_visual) or _initial_height <= 0.0:
 		return
 
 	# Continuously calculate the global AABB as the soft body deforms
@@ -65,7 +66,7 @@ func _physics_process(delta: float) -> void:
 		trigger_1_second_reset()
 
 
-## Call this function when the cube takes heavy physics impacts or collapses under its own weight.
+## Locks the logic loop and queues a fresh respawn after a short delay.
 func trigger_1_second_reset() -> void:
 	print("Meat cube structural integrity compromised. Initiating 1-second reset timer.")
 	if _is_resetting:
@@ -77,6 +78,7 @@ func trigger_1_second_reset() -> void:
 	timer.timeout.connect(_respawn_cube)
 
 
+## Instantiates the [member meat_cube_scene_path] and deletes this instance.
 func _respawn_cube() -> void:
 	print("Respawning a fresh meat cube to restore initial form.")
 
