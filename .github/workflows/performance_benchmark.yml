@@ -28,6 +28,11 @@ jobs:
           mv Godot_v${{ env.GODOT_VERSION }}-${{ env.GODOT_STATUS }}_linux.x86_64 /usr/local/bin/godot
           chmod +x /usr/local/bin/godot
 
+      - name: Generate Import Cache & UIDs
+        run: |
+          # Booting the editor headlessly forces the generation of the .godot folder
+          godot --headless --editor --quit
+
       - name: Run Headless Performance Gate
         run: |
           godot --headless --rendering-driver opengl3 res://benchmarks/benchmark_main.tscn
