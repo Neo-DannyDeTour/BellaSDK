@@ -58,10 +58,12 @@ func _process(delta: float) -> void:
 
 	if _current_frame <= WARMUP_FRAMES:
 		if _current_frame == WARMUP_FRAMES:
-			_initial_static_memory = int(
-				Performance.get_monitor(Performance.MEMORY_STATIC)
+			_initial_static_memory = int(Performance.get_monitor(Performance.MEMORY_STATIC))
+			print(
+				"[Benchmark] Warm-up complete. Capturing baseline memory: ",
+				_initial_static_memory,
+				" bytes."
 			)
-			print("[Benchmark] Warm-up complete. Capturing baseline memory: ", _initial_static_memory, " bytes.")
 		return
 
 	var frame_time_ms: float = delta * 1000.0
@@ -85,11 +87,23 @@ func _finish_benchmark() -> void:
 	var has_failed: bool = false
 
 	if float(metrics["p99_ms"]) > MAX_ALLOWED_P99_FRAME_MS:
-		printerr("[FAIL] 99th Percentile frame time exceeded! Got: ", metrics["p99_ms"], " ms, Max allowed: ", MAX_ALLOWED_P99_FRAME_MS, " ms")
+		printerr(
+			"[FAIL] 99th Percentile frame time exceeded! Got: ",
+			metrics["p99_ms"],
+			" ms, Max allowed: ",
+			MAX_ALLOWED_P99_FRAME_MS,
+			" ms"
+		)
 		has_failed = true
 
 	if float(metrics["max_spike_ms"]) > MAX_ALLOWED_FRAME_SPIKE_MS:
-		printerr("[FAIL] Frame spike exceeded limit! Got: ", metrics["max_spike_ms"], " ms, Max allowed: ", MAX_ALLOWED_FRAME_SPIKE_MS, " ms")
+		printerr(
+			"[FAIL] Frame spike exceeded limit! Got: ",
+			metrics["max_spike_ms"],
+			" ms, Max allowed: ",
+			MAX_ALLOWED_FRAME_SPIKE_MS,
+			" ms"
+		)
 		has_failed = true
 
 	if int(metrics["orphan_nodes"]) > 0:
@@ -125,12 +139,8 @@ func _calculate_metrics() -> Dictionary:
 	var p95_ms: float = _frame_times_ms[mini(p95_index, sample_count - 1)]
 	var p99_ms: float = _frame_times_ms[mini(p99_index, sample_count - 1)]
 
-	var final_static_memory: int = int(
-		Performance.get_monitor(Performance.MEMORY_STATIC)
-	)
-	var orphan_count: int = int(
-		Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT)
-	)
+	var final_static_memory: int = int(Performance.get_monitor(Performance.MEMORY_STATIC))
+	var orphan_count: int = int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT))
 
 	return {
 		"average_frame_ms": snappedf(avg_ms, 0.01),
