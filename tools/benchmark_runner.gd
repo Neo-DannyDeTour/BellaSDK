@@ -32,7 +32,7 @@ var _current_frame: int = 0
 var _initial_static_memory: int = 0
 
 ## Holds the path to the stress-test scene to instantiate.
-var _stress_scene_path: String = "res://benchmarks/stress_test.tscn"
+var _stress_scene_path: String = "res://tools/stress_test.tscn"
 
 ## Active instance of the stress test scene.
 var _stress_scene_instance: Node = null

@@ -1,7 +1,8 @@
 ## An interactive mirror object that can be rotated by the player to reflect light/lasers.
 ##
 ## Inherits from [AnimatableBody3D]. The player can take control of it to adjust its rotation
-## dynamically. It recursively marks its physical components into a "mirror" group for raycast detection.
+## dynamically. It recursively marks its physical
+## components into a "mirror" group for raycast detection.
 class_name ReflectorMirror
 extends AnimatableBody3D
 

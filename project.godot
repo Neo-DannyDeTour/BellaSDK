@@ -30,14 +30,13 @@ Events="*uid://duejfvfifyd20"
 DebugManager="*uid://psgaa5vua8a3"
 SmokeManager="*uid://b1t38dkohipue"
 SaveManager="*uid://bdthpju22khmx"
-CsgToolkitAutoload="*uid://w8ad8q4lneis"
 KeycardSystem="*uid://0q0pxgqqqrbh"
 GraphicsManager="*uid://c165uw26ca5hj"
 ShockwaveManager3d="*uid://l8cg0oru71au"
 GlobalSettings="*uid://c1qd5kgpbvddv"
 HighContrastManager="*uid://dsoaonf445p5r"
 VisionAssistManager="*uid://clh0dnaj1r33x"
-TTSManager="*uid://bf561ohvtousk"
+TTSManager="*res://addons/piper_tts_extension/tts_manager.gd"
 
 [debug]
 
