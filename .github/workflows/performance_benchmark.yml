@@ -30,12 +30,13 @@ jobs:
 
       - name: Generate Import Cache & UIDs
         run: |
-          # Booting the editor headlessly forces the generation of the .godot folder
-          godot --headless --editor --quit
+          # Using --quit-after gives background import threads time to finish writing the cache
+          godot --headless --editor --quit-after 20
 
       - name: Run Headless Performance Gate
         run: |
-          godot --headless --rendering-driver opengl3 res://benchmarks/benchmark_main.tscn
+          # Ensure this targets the actual committed benchmark scene
+          godot --headless --rendering-driver opengl3 res://benchmarks/stress_test.tscn
 
       - name: Upload Performance Report
         if: always()
