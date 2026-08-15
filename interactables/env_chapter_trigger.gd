@@ -1,4 +1,8 @@
 @tool
+## A physics trigger volume that initiates a cinematic chapter title card when the player enters.
+##
+## Hooks into the global [Events] singleton to pass styling, timing, and text data to the UI.
+## Also manages an editor-only visual representation for level designers.
 class_name EnvChapterTrigger
 extends Area3D
 
@@ -7,32 +11,35 @@ extends Area3D
 @export var trigger_size: Vector3 = Vector3(2.0, 2.0, 2.0):
 	set(value):
 		trigger_size = value
-		_update_bounds()
+		if is_inside_tree() and Engine.is_editor_hint():
+			_update_bounds()
 
 ## Sets the color of the visual box in the editor to make it highly visible.
 @export var editor_color: Color = Color(1.0, 0.0, 0.0, 0.4):
 	set(value):
 		editor_color = value
-		_update_bounds()
+		if is_inside_tree() and Engine.is_editor_hint():
+			_update_bounds()
 
 @export_category("Chapter Settings")
-## Chapter name.
+## The exact string to display on the screen when the title card animates in.
 @export var chapter_name: String = "Chapter 1"
-## Text color.
+## The base color of the chapter text.
 @export var text_color: Color = Color.WHITE
-## Animation style.
+## The preset animation style passed to the UI handler (e.g., fade in, slide, typing effect).
 @export var animation_style: Events.ChapterAnimStyle = Events.ChapterAnimStyle.SIMPLE
-## Display duration.
+## How long in seconds the chapter title remains fully visible on screen before fading out.
 @export var display_duration: float = 5.0
 
 @export_category("Randomization")
-## If true, overrides the settings above with random effects when the player enters.
+## If true, overrides the inspector settings with random effects when the player enters.
 @export var play_random_effects: bool = false
 
-## Has triggered.
+## Ensures the chapter event only fires once per playthrough.
 var _has_triggered: bool = false
 
 
+## Removes editor debugging meshes and binds collision events for runtime operation.
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
@@ -45,6 +52,7 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 
 
+## Refreshes the collision dimensions and debug box material based on inspector changes.
 func _update_bounds() -> void:
 	var col: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
 	if col:
@@ -74,6 +82,8 @@ func _update_bounds() -> void:
 		mat.albedo_color = editor_color
 
 
+## Validates player presence and fires the global chapter event signal.
+## [param body]: The 3D physics body that triggered the area.
 func _on_body_entered(body: Node3D) -> void:
 	if Engine.is_editor_hint() or _has_triggered:
 		return
@@ -94,6 +104,7 @@ func _on_body_entered(body: Node3D) -> void:
 		)
 
 
+## Generates randomized styling parameters for demonstration or chaotic scenarios.
 func _apply_random_effects_if_enabled() -> void:
 	if not play_random_effects:
 		return

@@ -1,22 +1,27 @@
-extends StaticBody3D
+## A collectible item that permanently expands the player's maximum health pool.
+##
+## Animates a visual heartbeat effect when looked at and dynamically binds to the global
+## interact keymapping to display a contextual prompt label.
 class_name HealthUpgrade
+extends StaticBody3D
 
 ## The total amount of maximum health capacity granted to the player upon collection.
 @export var health_bonus: int = 25
 
-## The MeshInstance3D node representing the visual heart item in the world.
+## The [MeshInstance3D] node representing the visual heart item in the world.
 @export var heart_visual: MeshInstance3D
 
-## The Node responsible for detecting player interaction and focus events.
+## The [InteractComponent] responsible for detecting player interaction and focus events.
 @export var interact_component: Node
 
 ## The 3D text label that displays the interaction prompt to the player.
 @export var prompt_label: Label3D
 
-## The active tween responsible for managing the heartbeat scaling animation.
+## The active [Tween] responsible for managing the heartbeat scaling animation.
 var _beat_tween: Tween
 
 
+## Disables the prompt label and connects all required signals from the [member interact_component].
 func _ready() -> void:
 	print("HealthUpgrade: _ready() - Initializing upgrade.")
 
@@ -25,27 +30,30 @@ func _ready() -> void:
 
 	if is_instance_valid(interact_component):
 		if interact_component.has_signal("hover_cursor"):
-			interact_component.hover_cursor.connect(_on_focused)
+			interact_component.connect("hover_cursor", _on_focused)
 		elif interact_component.has_signal("focused"):
-			interact_component.focused.connect(_on_focused)
+			interact_component.connect("focused", _on_focused)
 
 		if interact_component.has_signal("unhover_cursor"):
-			interact_component.unhover_cursor.connect(_on_unfocused)
+			interact_component.connect("unhover_cursor", _on_unfocused)
 		elif interact_component.has_signal("unfocused"):
-			interact_component.unfocused.connect(_on_unfocused)
+			interact_component.connect("unfocused", _on_unfocused)
 
 		if interact_component.has_signal("interacted"):
-			interact_component.interacted.connect(_on_interacted)
+			interact_component.connect("interacted", _on_interacted)
 	else:
 		print("HealthUpgrade: _ready() - Missing InteractComponent reference!")
 
 
+## Redirects parent-level interaction calls directly to the assigned [member interact_component].
+## [param character]: The player character initiating the interaction.
 func interact_with(character: CharacterBody3D) -> void:
 	print("HealthUpgrade: interact_with() - Called on root. Passing to component...")
 	if is_instance_valid(interact_component) and interact_component.has_method("interact_with"):
-		interact_component.interact_with(character)
+		interact_component.call("interact_with", character)
 
 
+## Parses the global input map to display the exact key bound to the "interact" action.
 func _update_label_text() -> void:
 	print("HealthUpgrade: _update_label_text() - Fetching dynamic interact key.")
 	if not is_instance_valid(prompt_label):
@@ -71,6 +79,7 @@ func _update_label_text() -> void:
 	prompt_label.text = "Press [%s] to Interact" % [key_name]
 
 
+## Initiates the looping heartbeat scaling animation when the player's crosshair hovers the mesh.
 func _on_focused() -> void:
 	print(
 		"HealthUpgrade: _on_focused() - Player focused. ",
@@ -81,7 +90,7 @@ func _on_focused() -> void:
 		_update_label_text()
 		prompt_label.show()
 
-	if _beat_tween and _beat_tween.is_valid():
+	if is_instance_valid(_beat_tween):
 		_beat_tween.kill()
 
 	_beat_tween = create_tween().set_loops()
@@ -97,6 +106,7 @@ func _on_focused() -> void:
 	_beat_tween.tween_interval(0.5)
 
 
+## Cancels the heartbeat animation and restores the base mesh scale when the player looks away.
 func _on_unfocused() -> void:
 	print(
 		"HealthUpgrade: _on_unfocused() - Player unfocused. ",
@@ -107,7 +117,7 @@ func _on_unfocused() -> void:
 		prompt_label.hide()
 
 	# Safely kill the tween to prevent errors
-	if _beat_tween and _beat_tween.is_valid():
+	if is_instance_valid(_beat_tween):
 		_beat_tween.kill()
 		_beat_tween = null
 
@@ -116,6 +126,8 @@ func _on_unfocused() -> void:
 		heart_visual.scale = Vector3(1.0, 1.0, 1.0)
 
 
+## Verifies the interacting player has a valid health component and applies the upgrade.
+## [param character]: The player character node.
 func _on_interacted(character: CharacterBody3D) -> void:
 	print("HealthUpgrade: _on_interacted() - Signal received. Searching for HealthComp...")
 
@@ -123,7 +135,7 @@ func _on_interacted(character: CharacterBody3D) -> void:
 
 	if is_instance_valid(health_comp) and health_comp.has_method("increase_max_health"):
 		print("HealthUpgrade: _on_interacted() - Success! Granting ", health_bonus, " max hp.")
-		health_comp.increase_max_health(health_bonus)
+		health_comp.call("increase_max_health", health_bonus)
 		queue_free()
 	else:
 		print(

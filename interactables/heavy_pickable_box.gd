@@ -1,3 +1,8 @@
+## A cumbersome physics object that restricts player movement when held.
+##
+## Inherits from [PickableObject] but overrides standard pickup logic. Instead of floating
+## in front of the camera, heavy boxes lock the player's rotation and disable sprinting,
+## forcing them to push the box along the ground using custom kinematic processing.
 class_name HeavyPickableBox
 extends PickableObject
 
@@ -8,29 +13,32 @@ extends PickableObject
 @export var snap_duration: float = 0.3
 
 @export_group("Box Dimensions")
-## Box half width.
+## The half-width of the box used to calculate safe standoff distances from the player.
 @export var box_half_width: float = 1.0
 
 @export_group("Player Settings")
-## Player radius.
+## The collision radius of the player character, used to prevent intersection.
 @export var player_radius: float = 0.5
-## Player height.
+## The height of the player character for raycast calculations.
 @export var player_height: float = 1.8
-## Hold padding.
+## Additional padding space added between the player and the box while pushing.
 @export var hold_padding: float = 0.75
-## Environment collision mask.
+## The collision mask determining what surfaces the box can rest upon.
 @export_flags_3d_physics var environment_collision_mask: int = 1
 
-## Is heavy held.
+## True if the box is currently being pushed by a player.
 var is_heavy_held: bool = false
-## Is animating.
+## True if the player is currently tweening into the pushing stance.
 var _is_animating: bool = false
-## Locked player fwd.
+## Caches the locked forward vector of the player to restrict rotation while pushing.
 var _locked_player_fwd: Vector3 = Vector3.ZERO
-## Fall velocity.
+## Tracks gravity accumulation while pushing the box over edges.
 var _fall_velocity: float = 0.0
 
 
+## Overrides standard pickup to initiate the heavy lifting sequence.
+## [param _target]: (Unused) The target hold position from the player component.
+## [param player]: The player initiating the interaction.
 func pick_up(_target: Marker3D, player: Node3D) -> void:
 	print("HeavyPickableBox: pick_up() executed. Attempting to lift the box.")
 	if is_locked or _is_animating:
@@ -88,7 +96,7 @@ func pick_up(_target: Marker3D, player: Node3D) -> void:
 	add_collision_exception_with(holder)
 
 	if "is_stunned" in holder:
-		holder.is_stunned = true
+		holder.set("is_stunned", true)
 
 	if interact_comp:
 		if "monitorable" in interact_comp:
@@ -99,11 +107,13 @@ func pick_up(_target: Marker3D, player: Node3D) -> void:
 	var look_basis: Basis = Basis.looking_at(-snap_normal, Vector3.UP)
 	var tween: Tween = get_tree().create_tween().set_parallel(true)
 	tween.tween_property(holder, "global_position", target_stand_pos, snap_duration)
-	tween.tween_property(holder, "quaternion", look_basis.get_rotation_quaternion(), snap_duration)
+	var rot_quat: Quaternion = look_basis.get_rotation_quaternion()
+	tween.tween_property(holder, "quaternion", rot_quat, snap_duration)
 
 	tween.chain().tween_callback(_finish_pickup)
 
 
+## Completes the pickup tween, locks physics axes, and notifies player movement systems.
 func _finish_pickup() -> void:
 	print("HeavyPickableBox: _finish_pickup() executed. Box is now actively held.")
 	_is_animating = false
@@ -130,7 +140,7 @@ func _finish_pickup() -> void:
 	_locked_player_fwd = fwd.normalized()
 
 	if "is_stunned" in holder:
-		holder.is_stunned = false
+		holder.set("is_stunned", false)
 
 	# --- ROUTE THROUGH COMPONENTS ---
 	var int_comp: Node = (
@@ -138,27 +148,29 @@ func _finish_pickup() -> void:
 	)
 	if is_instance_valid(int_comp):
 		if "is_heavy_lifting" in int_comp:
-			int_comp.is_heavy_lifting = true
+			int_comp.set("is_heavy_lifting", true)
 
 		var scanner: Node = (
 			int_comp.get("interaction_scanner") if "interaction_scanner" in int_comp else null
 		)
 		if is_instance_valid(scanner):
 			if "heavy_lift_yaw_base" in scanner:
-				scanner.heavy_lift_yaw_base = holder.global_rotation.y
+				scanner.set("heavy_lift_yaw_base", holder.global_rotation.y)
 			if scanner.has_method("set_heavy_lifting"):
-				scanner.set_heavy_lifting(true)
+				scanner.call("set_heavy_lifting", true)
 
 	var loco_comp: Node = (
 		holder.get("locomotion_component") if "locomotion_component" in holder else holder
 	)
 	if is_instance_valid(loco_comp):
 		if "can_sprint" in loco_comp:
-			loco_comp.can_sprint = false
+			loco_comp.set("can_sprint", false)
 		if "sprint_active" in loco_comp:
-			loco_comp.sprint_active = false
+			loco_comp.set("sprint_active", false)
 
 
+## Kinematically pushes the box in front of the player, managing drops if support is lost.
+## [param delta]: Frame delta time.
 func _physics_process(delta: float) -> void:
 	if is_heavy_held and holder:
 		if _is_animating:
@@ -229,7 +241,7 @@ func _physics_process(delta: float) -> void:
 			var push_vec: Vector3 = Vector3(push_dir.x * overlap, 0.0, push_dir.y * overlap)
 
 			if holder.has_method("move_and_collide"):
-				holder.move_and_collide(push_vec)
+				holder.call("move_and_collide", push_vec)
 			else:
 				holder.global_position += push_vec
 
@@ -241,6 +253,7 @@ func _physics_process(delta: float) -> void:
 				return
 
 
+## Releases the box from the player, restoring physics behaviors and sprint ability.
 func drop() -> void:
 	print("HeavyPickableBox: drop() executed. Detaching box from the player.")
 	if _is_animating:
@@ -263,22 +276,24 @@ func drop() -> void:
 		holder = null
 
 		if "is_stunned" in previous_holder:
-			previous_holder.is_stunned = true
+			previous_holder.set("is_stunned", true)
 		if "velocity" in previous_holder:
-			previous_holder.velocity = Vector3.ZERO
+			previous_holder.set("velocity", Vector3.ZERO)
 
 		_finish_drop(previous_holder)
 	else:
 		_finish_drop(null)
 
 
+## Finalizes the drop state and safely reconnects systems without causing stutter.
+## [param previous_holder]: The player node that was holding the box.
 func _finish_drop(previous_holder: Node3D) -> void:
 	print("HeavyPickableBox: _finish_drop() cleaning up drop state and restoring interaction.")
 	_is_animating = false
 
 	if previous_holder:
 		if "is_stunned" in previous_holder:
-			previous_holder.is_stunned = false
+			previous_holder.set("is_stunned", false)
 
 		# --- ROUTE THROUGH COMPONENTS ---
 		var int_comp: Node = (
@@ -288,11 +303,11 @@ func _finish_drop(previous_holder: Node3D) -> void:
 		)
 		if is_instance_valid(int_comp):
 			if "is_heavy_lifting" in int_comp:
-				int_comp.is_heavy_lifting = false
+				int_comp.set("is_heavy_lifting", false)
 
 			# THIS IS THE FIX: Tell the Master Component to drop it!
 			if int_comp.has_method("force_clear_hands"):
-				int_comp.force_clear_hands()
+				int_comp.call("force_clear_hands")
 				print("HeavyPickableBox: Confirmed detachment via Master Component.")
 
 			var scanner: Node = (
@@ -300,7 +315,7 @@ func _finish_drop(previous_holder: Node3D) -> void:
 			)
 			if is_instance_valid(scanner):
 				if scanner.has_method("set_heavy_lifting"):
-					scanner.set_heavy_lifting(false)
+					scanner.call("set_heavy_lifting", false)
 
 		var loco_comp: Node = (
 			previous_holder.get("locomotion_component")
@@ -309,10 +324,10 @@ func _finish_drop(previous_holder: Node3D) -> void:
 		)
 		if is_instance_valid(loco_comp):
 			if "can_sprint" in loco_comp:
-				loco_comp.can_sprint = true
+				loco_comp.set("can_sprint", true)
 
 		if has_method("_wait_to_enable_collision"):
-			_wait_to_enable_collision(previous_holder)
+			call("_wait_to_enable_collision", previous_holder)
 
 	if interact_comp:
 		if "monitorable" in interact_comp:
@@ -321,11 +336,16 @@ func _finish_drop(previous_holder: Node3D) -> void:
 			interact_comp.process_mode = Node.PROCESS_MODE_INHERIT
 
 
+## Prevents throwing heavy boxes by redirecting throw commands to a simple [method drop].
+## [param _impulse]: (Unused) The desired throw force vector.
 func throw(_impulse: Vector3) -> void:
 	print("HeavyPickableBox: throw() executed. Redirecting to drop().")
 	drop()
 
 
+## Analyzes the height disparity to ensure the player isn't standing on the box while lifting.
+## [param player]: The player initiating the interaction.
+## Returns true if the pickup geometry is valid.
 func is_valid_pickup_position(player: Node3D) -> bool:
 	var p_pos: Vector3 = player.global_position
 	var b_pos: Vector3 = global_position
