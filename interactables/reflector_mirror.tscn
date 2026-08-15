@@ -24,6 +24,7 @@ shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
 shader_parameter/blink_speed = 8.00000038
 shader_parameter/min_intensity = 0.01
 shader_parameter/max_intensity = 0.050000002375
+shader_parameter/alpha_scissor_threshold = 0.5
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_0jhp4"]
 size = Vector3(0.4, 2.3, 0.4)

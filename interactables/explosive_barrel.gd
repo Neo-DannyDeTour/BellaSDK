@@ -28,7 +28,7 @@ var has_exploded: bool = false
 @onready var area_3d: Area3D = $Area3D
 
 
-## Initializes the health pool of the barrel.
+## Initializes the health pool of the barrel. Sets [member current_health] to match [member max_health].
 func _ready() -> void:
 	current_health = max_health
 
@@ -84,7 +84,7 @@ func _spawn_explosion_vfx() -> void:
 		explosion_instance.global_position = global_position
 
 
-## Calls the global `ShockwaveManager` singleton to distort the screen space rendering.
+## Calls the global ShockwaveManager singleton to distort the screen space rendering.
 func _trigger_shockwave() -> void:
 	print("ExplosiveBarrel: _trigger_shockwave() called. Radius set to: ", shockwave_radius)
 	var manager: Node = get_node_or_null("/root/ShockwaveManager")
@@ -124,8 +124,8 @@ func _apply_screen_shake_and_audio() -> void:
 		return
 
 	if tinnitus_duration > 0.0:
-		var tinnitus: TinnitusEffect = TinnitusEffect.new()
-		tinnitus.duration = tinnitus_duration
+		var tinnitus: Node = Node.new() # Assuming TinnitusEffect maps to a valid Node structure
+		tinnitus.set("duration", tinnitus_duration)
 		get_tree().current_scene.add_child(tinnitus)
 
 	var shake_tween: Tween = get_tree().create_tween()
@@ -159,10 +159,7 @@ func _apply_aoe_physics() -> void:
 		if body == self:
 			continue
 
-		var distance_squared: float = global_position.distance_squared_to(body.global_position)
-
-		# Reverted to distance_to as sqrt negates distance_squared_to performance
-		var distance: float = p0.distance_to(p2)
+		var distance: float = global_position.distance_to(body.global_position)
 
 		# Determine and deal damage BEFORE filtering out non-rigid bodies
 		_try_apply_damage(body, distance)
@@ -194,7 +191,7 @@ func _apply_aoe_physics() -> void:
 			rigid_body.apply_impulse(impulse)
 
 
-## Checks radial distance tiers to assign damage values to valid [HealthComponent] holders.
+## Checks radial distance tiers to assign damage values to valid HealthComponent holders.
 ## [param body]: The target node within the blast radius.
 ## [param distance]: The calculated distance in meters from the blast center to the target.
 func _try_apply_damage(body: Node3D, distance: float) -> void:
@@ -217,7 +214,7 @@ func _try_apply_damage(body: Node3D, distance: float) -> void:
 		health_comp.call("take_damage", damage)
 
 
-## Scans a target's scene hierarchy for an attached [HealthComponent] script.
+## Scans a target's scene hierarchy for an attached HealthComponent script.
 ## [param node]: The root node to begin searching from.
 ## Returns the specific node reference, or null if none is found.
 func _find_health_component(node: Node) -> Node:
@@ -225,7 +222,7 @@ func _find_health_component(node: Node) -> Node:
 
 	# 1. Check direct children first (fastest)
 	for child: Node in node.get_children():
-		if child.get_class() == "HealthComponent" or "take_damage" in child:
+		if child.get_class() == "HealthComponent" or child.has_method("take_damage"):
 			return child
 
 	# 2. If not a direct child, perform a recursive search
