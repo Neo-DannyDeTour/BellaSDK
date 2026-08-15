@@ -149,23 +149,23 @@ func _apply_screen_shake_and_audio() -> void:
 
 ## Finds overlapping bodies, calculates physics impulses, and triggers chain reactions.
 func _apply_aoe_physics() -> void:
-    print("ExplosiveBarrel: _apply_aoe_physics() called.")
-    if not is_instance_valid(area_3d) or not area_3d.has_overlapping_bodies():
-        return
+	print("ExplosiveBarrel: _apply_aoe_physics() called.")
+	if not is_instance_valid(area_3d) or not area_3d.has_overlapping_bodies():
+		return
 
-    var bodies: Array[Node3D] = area_3d.get_overlapping_bodies()
+	var bodies: Array[Node3D] = area_3d.get_overlapping_bodies()
 
-    for body: Node3D in bodies:
-        if body == self:
-            continue
+	for body: Node3D in bodies:
+		if body == self:
+			continue
 
-        var distance_squared: float = global_position.distance_squared_to(body.global_position)
+		var distance_squared: float = global_position.distance_squared_to(body.global_position)
 
-        # Reverted to distance_to as sqrt negates distance_squared_to performance
-        var distance: float = p0.distance_to(p2)
+		# Reverted to distance_to as sqrt negates distance_squared_to performance
+		var distance: float = p0.distance_to(p2)
 
-        # Determine and deal damage BEFORE filtering out non-rigid bodies
-        _try_apply_damage(body, distance)
+		# Determine and deal damage BEFORE filtering out non-rigid bodies
+		_try_apply_damage(body, distance)
 
 		if not body is RigidBody3D:
 			continue

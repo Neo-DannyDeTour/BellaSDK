@@ -54,7 +54,7 @@ func _ready() -> void:
 ## Records per-frame metrics on every process tick and triggers evaluation when finished.
 ## [param delta]: The elapsed time in seconds since the previous frame.
 func _process(delta: float) -> void:
-    _current_frame += 1
+	_current_frame += 1
 
 	if _current_frame <= WARMUP_FRAMES:
 		if _current_frame == WARMUP_FRAMES:
@@ -66,25 +66,25 @@ func _process(delta: float) -> void:
 			)
 		return
 
-    var frame_time_ms: float = delta * 1000.0
-    _frame_times_ms.append(frame_time_ms)
+	var frame_time_ms: float = delta * 1000.0
+	_frame_times_ms.append(frame_time_ms)
 
-    if _current_frame >= (WARMUP_FRAMES + TOTAL_FRAMES_TO_RUN):
-        _finish_benchmark()
+	if _current_frame >= (WARMUP_FRAMES + TOTAL_FRAMES_TO_RUN):
+		_finish_benchmark()
 
 
 ## Evaluates collected metrics, writes the JSON artifact, and terminates the engine.
 func _finish_benchmark() -> void:
-    print("[Benchmark] Finished recording frames. Evaluating results...")
-    if is_instance_valid(_stress_scene_instance):
-        _stress_scene_instance.queue_free()
-        _stress_scene_instance = null
+	print("[Benchmark] Finished recording frames. Evaluating results...")
+	if is_instance_valid(_stress_scene_instance):
+		_stress_scene_instance.queue_free()
+		_stress_scene_instance = null
 
-    var metrics: Dictionary = _calculate_metrics()
-    _export_report_to_disk(metrics)
-    benchmark_completed.emit(metrics)
+	var metrics: Dictionary = _calculate_metrics()
+	_export_report_to_disk(metrics)
+	benchmark_completed.emit(metrics)
 
-    var has_failed: bool = false
+	var has_failed: bool = false
 
 	if float(metrics["p99_ms"]) > MAX_ALLOWED_P99_FRAME_MS:
 		printerr(
@@ -106,17 +106,17 @@ func _finish_benchmark() -> void:
 		)
 		has_failed = true
 
-    if int(metrics["orphan_nodes"]) > 0:
-        printerr("[FAIL] Orphan nodes detected in scene tree! Count: ", metrics["orphan_nodes"])
-        Node.print_orphan_nodes()
-        has_failed = true
+	if int(metrics["orphan_nodes"]) > 0:
+		printerr("[FAIL] Orphan nodes detected in scene tree! Count: ", metrics["orphan_nodes"])
+		Node.print_orphan_nodes()
+		has_failed = true
 
-    if has_failed:
-        print("[Benchmark] Performance gate FAILED.")
-        get_tree().quit(1)
-    else:
-        print("[Benchmark] Performance gate PASSED. 60 FPS budget maintained.")
-        get_tree().quit(0)
+	if has_failed:
+		print("[Benchmark] Performance gate FAILED.")
+		get_tree().quit(1)
+	else:
+		print("[Benchmark] Performance gate PASSED. 60 FPS budget maintained.")
+		get_tree().quit(0)
 
 
 ## Computes statistical percentiles, averages, spikes, and engine performance metrics.
