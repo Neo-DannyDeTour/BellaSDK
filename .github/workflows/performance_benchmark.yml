@@ -30,13 +30,13 @@ jobs:
 
       - name: Generate Import Cache & UIDs
         run: |
-          # Using --quit-after gives background import threads time to finish writing the cache
-          godot --headless --editor --quit-after 20
+          # Use the dedicated Godot 4 CI import command to fully build the .godot cache
+          godot --headless --import
 
       - name: Run Headless Performance Gate
         run: |
-          # Ensure this targets the actual committed benchmark scene
-          godot --headless --rendering-driver opengl3 res://benchmarks/stress_test.tscn
+          # Revert to the wrapper scene so the BenchmarkRunner script executes
+          godot --headless --rendering-driver opengl3 res://benchmarks/benchmark_main.tscn
 
       - name: Upload Performance Report
         if: always()
