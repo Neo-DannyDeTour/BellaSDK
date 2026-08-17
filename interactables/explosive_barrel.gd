@@ -129,7 +129,7 @@ func _apply_screen_shake_and_audio() -> void:
 		return
 
 	if tinnitus_duration > 0.0:
-		var tinnitus: Node = Node.new() # Assuming TinnitusEffect maps to a valid Node structure
+		var tinnitus: Node = Node.new()  # Assuming TinnitusEffect maps to a valid Node structure
 		tinnitus.set("duration", tinnitus_duration)
 		get_tree().current_scene.add_child(tinnitus)
 

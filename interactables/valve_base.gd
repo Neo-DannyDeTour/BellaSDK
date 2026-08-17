@@ -75,9 +75,7 @@ const DOUBLE_TAP_DELAY: float = 0.3
 @export var outline_material: ShaderMaterial
 
 ## The audio stream player responsible for playing turning sounds.
-@onready var valve_audio: AudioStreamPlayer3D = (
-	get_node_or_null("ValveAudio") as AudioStreamPlayer3D
-)
+@onready var valve_audio: AudioStreamPlayer3D = get_node_or_null("ValveAudio") as AudioStreamPlayer3D
 
 ## The current normalized turning progress (0.0 to 1.0).
 var progress: float = 0.0
@@ -108,6 +106,7 @@ var _cached_player: Node3D = null
 ## Cached reference to the child transmitter component to prevent per-frame node lookups.
 var _transmitter: OutputTransmitter3D = null
 
+
 ## Initializes valve installation states, cached references, and binds interaction listeners.
 func _ready() -> void:
 	print("Valve: Initializing _ready() lifecycle.")
@@ -134,18 +133,10 @@ func _ready() -> void:
 
 	var interact_comp: Node = get_node_or_null("InteractComponent")
 	if is_instance_valid(interact_comp):
-		if not interact_comp.focused.is_connected(
-			_on_interact_component_focused
-		):
-			interact_comp.focused.connect(
-				_on_interact_component_focused
-			)
-		if not interact_comp.unfocused.is_connected(
-			_on_interact_component_unfocused
-		):
-			interact_comp.unfocused.connect(
-				_on_interact_component_unfocused
-			)
+		if not interact_comp.focused.is_connected(_on_interact_component_focused):
+			interact_comp.focused.connect(_on_interact_component_focused)
+		if not interact_comp.unfocused.is_connected(_on_interact_component_unfocused):
+			interact_comp.unfocused.connect(_on_interact_component_unfocused)
 
 
 ## Manages per-frame installation detection, player interaction inputs, rotation, and audio state.
@@ -160,27 +151,19 @@ func _process(delta: float) -> void:
 
 	if not is_installed and install_cooldown <= 0.0:
 		if not is_instance_valid(_cached_player):
-			_cached_player = (
-				get_tree().get_first_node_in_group("player") as Node3D
-			)
+			_cached_player = (get_tree().get_first_node_in_group("player") as Node3D)
 
 		if is_instance_valid(_cached_player):
 			var held: Node3D = _get_player_held_object(_cached_player)
 
 			if is_instance_valid(held):
-				var dist_sq: float = (
-					global_position.distance_squared_to(held.global_position)
-				)
+				var dist_sq: float = global_position.distance_squared_to(held.global_position)
 				if dist_sq < 0.36:
 					_install_valve(_cached_player, held)
 
-	var is_interacting: bool = (
-		is_focused and Input.is_action_pressed("interact") and is_installed
-	)
+	var is_interacting: bool = is_focused and Input.is_action_pressed("interact") and is_installed
 	var just_pressed: bool = (
-		is_focused
-		and Input.is_action_just_pressed("interact")
-		and is_installed
+		is_focused and Input.is_action_just_pressed("interact") and is_installed
 	)
 
 	if can_be_detached and just_pressed:
@@ -195,47 +178,31 @@ func _process(delta: float) -> void:
 		_manage_audio(false)
 		return
 
-	if (
-		is_instance_valid(highlight_comp)
-		and highlight_comp.has_method("suppress")
-	):
+	if is_instance_valid(highlight_comp) and highlight_comp.has_method("suppress"):
 		highlight_comp.suppress(is_interacting)
 
 	if is_interacting and not was_interacting:
 		if is_back_and_forth and progress > 0.0 and progress < 1.0:
-			current_target_progress = (
-				0.0 if current_target_progress == 1.0 else 1.0
-			)
+			current_target_progress = (0.0 if current_target_progress == 1.0 else 1.0)
 
 	var old_progress: float = progress
 
 	if is_interacting:
-		progress = move_toward(
-			progress, current_target_progress, delta / turn_duration
-		)
+		progress = move_toward(progress, current_target_progress, delta / turn_duration)
 		if lock_when_finished and progress >= 1.0:
 			is_locked = true
 			progress = 1.0
 	else:
 		if reverts_on_release:
-			var revert_target: float = (
-				0.0 if current_target_progress == 1.0 else 1.0
-			)
+			var revert_target: float = 0.0 if current_target_progress == 1.0 else 1.0
 			var current_turn_duration: float = turn_duration
 
 			if fast_revert_on_release:
-				current_turn_duration = (
-					turn_duration / fast_revert_multiplier
-				)
+				current_turn_duration = (turn_duration / fast_revert_multiplier)
 				if was_interacting:
-					print(
-						"Valve: Released, initiating fast revert towards ",
-						revert_target
-					)
+					print("Valve: Released, initiating fast revert towards ", revert_target)
 
-			progress = move_toward(
-				progress, revert_target, delta / current_turn_duration
-			)
+			progress = move_toward(progress, revert_target, delta / current_turn_duration)
 
 	if is_back_and_forth and not is_interacting:
 		if progress >= 1.0:
@@ -248,12 +215,8 @@ func _process(delta: float) -> void:
 	if is_moving:
 		if is_instance_valid(wheel):
 			var dir_multiplier: float = -1.0 if turn_clockwise else 1.0
-			var total_angle: float = (
-				360.0 * visual_rotations * dir_multiplier * progress
-			)
-			wheel.rotation_degrees = (
-				initial_rotation + (spin_axis * total_angle)
-			)
+			var total_angle: float = 360.0 * visual_rotations * dir_multiplier * progress
+			wheel.rotation_degrees = (initial_rotation + (spin_axis * total_angle))
 
 		var transmitter: OutputTransmitter3D = _get_transmitter()
 		if is_instance_valid(transmitter):
@@ -309,18 +272,14 @@ func _get_player_held_object(player: Node3D) -> Node3D:
 		return player.get("held_object") as Node3D
 
 	var int_comp: Node = (
-		player.get("interaction_component")
-		if "interaction_component" in player
-		else null
+		player.get("interaction_component") if "interaction_component" in player else null
 	)
 	if is_instance_valid(int_comp):
 		if "held_item" in int_comp and int_comp.get("held_item") != null:
 			return int_comp.get("held_item") as Node3D
 
 		var scanner: Node = (
-			int_comp.get("interaction_scanner")
-			if "interaction_scanner" in int_comp
-			else null
+			int_comp.get("interaction_scanner") if "interaction_scanner" in int_comp else null
 		)
 		if (
 			is_instance_valid(scanner)
@@ -343,9 +302,7 @@ func _clear_player_held_object(player: Node3D) -> void:
 		player.set("held_object", null)
 
 	var int_comp: Node = (
-		player.get("interaction_component")
-		if "interaction_component" in player
-		else null
+		player.get("interaction_component") if "interaction_component" in player else null
 	)
 	if is_instance_valid(int_comp):
 		if int_comp.has_method("force_clear_hands"):
@@ -372,9 +329,7 @@ func _install_valve(player: Node3D, held_valve: Node3D) -> void:
 	if is_instance_valid(wheel):
 		wheel.show()
 
-	var weapon_holder: Node3D = (
-		player.get_node_or_null("%WeaponHolder") as Node3D
-	)
+	var weapon_holder: Node3D = player.get_node_or_null("%WeaponHolder") as Node3D
 	if is_instance_valid(weapon_holder):
 		weapon_holder.show()
 	print("Valve: Valve Auto-Installed!")
@@ -387,18 +342,13 @@ func _detach_valve() -> void:
 		push_warning("Cannot detach: No Pickable Valve Scene assigned!")
 		return
 
-	var player: Node3D = (
-		get_tree().get_first_node_in_group("player") as Node3D
-	)
+	var player: Node3D = get_tree().get_first_node_in_group("player") as Node3D
 	if not is_instance_valid(player):
 		return
 
 	var spawned_valve: Node3D = pickable_valve_scene.instantiate() as Node3D
 
-	if (
-		is_instance_valid(outline_material)
-		and "outline_material" in spawned_valve
-	):
+	if is_instance_valid(outline_material) and "outline_material" in spawned_valve:
 		spawned_valve.set("outline_material", outline_material)
 
 	get_tree().current_scene.add_child(spawned_valve)
@@ -414,9 +364,7 @@ func _detach_valve() -> void:
 
 	var grabbed_successfully: bool = false
 	var int_comp: Node = (
-		player.get("interaction_component")
-		if "interaction_component" in player
-		else null
+		player.get("interaction_component") if "interaction_component" in player else null
 	)
 
 	if is_instance_valid(int_comp) and int_comp.has_method("force_grab_item"):
@@ -432,9 +380,7 @@ func _detach_valve() -> void:
 	):
 		spawned_valve.pick_up(player.get("hold_position"), player)
 
-	var weapon_holder: Node3D = (
-		player.get_node_or_null("%WeaponHolder") as Node3D
-	)
+	var weapon_holder: Node3D = player.get_node_or_null("%WeaponHolder") as Node3D
 	if is_instance_valid(weapon_holder) and not grabbed_successfully:
 		weapon_holder.hide()
 

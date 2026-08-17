@@ -647,7 +647,7 @@ func _set_model_overlay(parent_node: Node, mat: ShaderMaterial) -> void:
 ## Returns a human-readable [String] describing the focused object.
 func _get_clean_mesh_name() -> String:
 	print("PickableObject: _get_clean_mesh_name() called. Parsing mesh string.")
-	
+
 	# Check nulls and safeguard against assigning the root rigid body to the mesh export var.
 	if not is_instance_valid(mesh) or mesh == self:
 		return "object"
@@ -655,12 +655,7 @@ func _get_clean_mesh_name() -> String:
 	var raw_name: String = mesh.name
 
 	# Only search child meshes if the assigned node has a generic engine name
-	var generic_names: Array[String] = [
-		"mesh",
-		"meshinstance3d",
-		"node3d",
-        "model"
-	]
+	var generic_names: Array[String] = ["mesh", "meshinstance3d", "node3d", "model"]
 	if raw_name.to_lower() in generic_names:
 		for child: Node in mesh.get_children():
 			var child_lower: String = child.name.to_lower()
@@ -677,13 +672,7 @@ func _get_clean_mesh_name() -> String:
 	formatted_name = formatted_name.replace("_", " ").replace("-", " ")
 
 	# Remove unwanted prefix tags
-	var unwanted_prefixes: Array[String] = [
-		"pickable ",
-		"item ",
-		"prop ",
-		"meshinstance ",
-        "mesh "
-	]
+	var unwanted_prefixes: Array[String] = ["pickable ", "item ", "prop ", "meshinstance ", "mesh "]
 	var lower_name: String = formatted_name.to_lower().strip_edges()
 	for prefix: String in unwanted_prefixes:
 		if lower_name.begins_with(prefix):

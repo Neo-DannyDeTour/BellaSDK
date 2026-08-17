@@ -59,9 +59,7 @@ var default_crosshair_size: Vector2
 @onready var ui_circle_zoom: TextureRect = $CrosshairContainer/UICircleZoom
 
 ## The inner circular texture shown when zooming.
-@onready var ui_circle_zoom_inner: TextureRect = (
-	$CrosshairContainer/UICircleZoomInner
-)
+@onready var ui_circle_zoom_inner: TextureRect = $CrosshairContainer/UICircleZoomInner
 
 ## ColorRect applying a vignette effect to the screen edges.
 @onready var vignette: ColorRect = $Vignette
@@ -80,52 +78,36 @@ var default_crosshair_size: Vector2
 @onready var noclip_alert_container: MarginContainer = $NoclipAlertContainer
 
 ## Panel background for the noclip alert message.
-@onready var noclip_message_container: PanelContainer = (
-	$NoclipAlertContainer/NoclipMessageContainer
-)
+@onready var noclip_message_container: PanelContainer = $NoclipAlertContainer/NoclipMessageContainer
 
 ## Label displaying the current noclip speed or status.
-@onready var noclip_label_message: Label = (
-	$NoclipAlertContainer/NoclipMessageContainer/NoclipLabelMessage
-)
+@onready
+var noclip_label_message: Label = $NoclipAlertContainer/NoclipMessageContainer/NoclipLabelMessage
 
 ## CanvasLayer providing the debug overlay menu.
 @onready var debug_panel: CanvasLayer = $DebugPanel
 
 ## Button to toggle noclip mode in the debug panel.
-@onready var noclip_button: Button = (
-	$DebugPanel/PanelContainer/VBoxContainer/NoclipButton
-)
+@onready var noclip_button: Button = $DebugPanel/PanelContainer/VBoxContainer/NoclipButton
 
 ## Button to toggle the performance metrics window.
-@onready var metrics_button: Button = (
-	$DebugPanel/PanelContainer/VBoxContainer/MetricsButton
-)
+@onready var metrics_button: Button = $DebugPanel/PanelContainer/VBoxContainer/MetricsButton
 
 ## Button to toggle visibility of collision shapes.
-@onready var collision_button: Button = (
-	$DebugPanel/PanelContainer/VBoxContainer/CollisionButton
-)
+@onready var collision_button: Button = $DebugPanel/PanelContainer/VBoxContainer/CollisionButton
 
 ## Button to toggle fullbright rendering mode.
-@onready var fullbright_button: Button = (
-	$DebugPanel/PanelContainer/VBoxContainer/FullbrightButton
-)
+@onready var fullbright_button: Button = $DebugPanel/PanelContainer/VBoxContainer/FullbrightButton
 
 ## Button to toggle wireframe rendering mode.
-@onready var wireframe_button: Button = (
-	$DebugPanel/PanelContainer/VBoxContainer/WireframeButton
-)
+@onready var wireframe_button: Button = $DebugPanel/PanelContainer/VBoxContainer/WireframeButton
 
 ## Button to toggle the green wireframe material overlay.
-@onready var wireframe_overlay_button: Button = (
-	$DebugPanel/PanelContainer/VBoxContainer/WireframeOverlayButton
-)
+@onready
+var wireframe_overlay_button: Button = $DebugPanel/PanelContainer/VBoxContainer/WireframeOverlayButton
 
 ## Button to hide the main user interface.
-@onready var hide_ui_button: Button = (
-	$DebugPanel/PanelContainer/VBoxContainer/HideUIButton
-)
+@onready var hide_ui_button: Button = $DebugPanel/PanelContainer/VBoxContainer/HideUIButton
 
 ## Panel displaying performance metrics like FPS and frame times.
 @onready var metrics_panel: PanelContainer = $MetricsPanel
@@ -144,14 +126,10 @@ var default_crosshair_size: Vector2
 @onready var health_margin: MarginContainer = $HealthMargin
 
 ## Container arranging the health heart icons horizontally.
-@onready var hearts_container: HBoxContainer = (
-	$HealthMargin/VBoxContainer/HeartsContainer
-)
+@onready var hearts_container: HBoxContainer = $HealthMargin/VBoxContainer/HeartsContainer
 
 ## Container arranging collected keycard icons horizontally.
-@onready var keycards_container: HBoxContainer = (
-	$HealthMargin/VBoxContainer/KeycardsContainer
-)
+@onready var keycards_container: HBoxContainer = $HealthMargin/VBoxContainer/KeycardsContainer
 
 ## Container for the note reading screen dimming and text.
 @onready var note_overlay_ui: CanvasLayer = $NoteOverlayUI
@@ -160,34 +138,26 @@ var default_crosshair_size: Vector2
 @onready var note_text_label: RichTextLabel = $NoteOverlayUI/NoteText
 
 ## Container managing the layout of the sprint debuff UI.
-@onready var debuff_container: HBoxContainer = (
-	$HealthMargin/VBoxContainer/DebuffContainer
-)
+@onready var debuff_container: HBoxContainer = $HealthMargin/VBoxContainer/DebuffContainer
 
 ## Icon indicating the sprint blocked debuff is active.
-@onready var sprint_debuff_icon: TextureRect = (
-	$HealthMargin/VBoxContainer/DebuffContainer/SprintDebuffIcon
-)
+@onready
+var sprint_debuff_icon: TextureRect = $HealthMargin/VBoxContainer/DebuffContainer/SprintDebuffIcon
 
 ## Progress bar showing the remaining duration of the sprint debuff.
-@onready var sprint_debuff_bar: ProgressBar = (
-	$HealthMargin/VBoxContainer/DebuffContainer/SprintDebuffBar
-)
+@onready
+var sprint_debuff_bar: ProgressBar = $HealthMargin/VBoxContainer/DebuffContainer/SprintDebuffBar
 
 ## Container managing the layout of the immobilize debuff UI.
-@onready var immobilize_container: HBoxContainer = (
-	$HealthMargin/VBoxContainer/ImmobilizeContainer
-)
+@onready var immobilize_container: HBoxContainer = $HealthMargin/VBoxContainer/ImmobilizeContainer
 
 ## Icon indicating the immobilize debuff is active.
-@onready var immobilize_icon: TextureRect = (
-	$HealthMargin/VBoxContainer/ImmobilizeContainer/ImmobilizeIcon
-)
+@onready
+var immobilize_icon: TextureRect = $HealthMargin/VBoxContainer/ImmobilizeContainer/ImmobilizeIcon
 
 ## Progress bar showing the remaining duration of the immobilize debuff.
-@onready var immobilize_bar: ProgressBar = (
-	$HealthMargin/VBoxContainer/ImmobilizeContainer/ImmobilizeBar
-)
+@onready
+var immobilize_bar: ProgressBar = $HealthMargin/VBoxContainer/ImmobilizeContainer/ImmobilizeBar
 
 ## CanvasGroup for grouping the warning/hint text UI.
 @onready var warning_canvas_group: CanvasGroup = $WarningCanvasGroup
@@ -234,9 +204,7 @@ var electro_tween: Tween
 @onready var subtitle_margin: MarginContainer = $SubtitleMargin
 
 ## Rich text element that types out the subtitle text and automatically scrolls it.
-@onready var subtitle_label: RichTextLabel = (
-	$SubtitleMargin/SubtitlePanel/SubtitleLabel
-)
+@onready var subtitle_label: RichTextLabel = $SubtitleMargin/SubtitlePanel/SubtitleLabel
 
 ## Animates the subtitle visibility and the typewriter character reveal effect.
 var subtitle_tween: Tween
@@ -274,9 +242,7 @@ func _ready() -> void:
 	ui_circle_zoom.modulate.a = 0.0
 	ui_circle_zoom.hide()
 
-	ui_circle_zoom_inner.pivot_offset = (
-		ui_circle_zoom_inner.custom_minimum_size / 2.0
-	)
+	ui_circle_zoom_inner.pivot_offset = (ui_circle_zoom_inner.custom_minimum_size / 2.0)
 	ui_circle_zoom_inner.scale = Vector2.ZERO
 	ui_circle_zoom_inner.modulate.a = 0.0
 	ui_circle_zoom_inner.hide()
@@ -308,9 +274,7 @@ func _ready() -> void:
 
 	if warning_label:
 		warning_label.modulate.a = 0.0
-		warning_label.add_theme_color_override(
-			"font_outline_color", Color.BLACK
-		)
+		warning_label.add_theme_color_override("font_outline_color", Color.BLACK)
 		warning_label.add_theme_constant_override("outline_size", 12)
 
 	if warning_canvas_group:
@@ -324,9 +288,7 @@ func _ready() -> void:
 			Events.sprint_debuff_applied.connect(_on_sprint_debuff_applied)
 
 	if Events.has_signal("immobilize_debuff_applied"):
-		if not Events.immobilize_debuff_applied.is_connected(
-			_on_immobilize_debuff_applied
-		):
+		if not Events.immobilize_debuff_applied.is_connected(_on_immobilize_debuff_applied):
 			Events.immobilize_debuff_applied.connect(_on_immobilize_debuff_applied)
 
 	if not Events.player_electrocuted.is_connected(_on_player_electrocuted):
@@ -375,22 +337,16 @@ func _recenter_warning_ui() -> void:
 		return
 
 	var screen_size: Vector2 = get_viewport().get_visible_rect().size
-	warning_canvas_group.position = Vector2(
-		screen_size.x / 2.0, (screen_size.y / 2.0) + 70.0
-	)
+	warning_canvas_group.position = Vector2(screen_size.x / 2.0, (screen_size.y / 2.0) + 70.0)
 	warning_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 
 
 ## Updates screen-space shaders and vignette transitions every render frame.
 func _process(delta: float) -> void:
 	var target_vignette_opacity: float = 0.8 if is_player_crouching else 0.0
-	var current_opacity: float = (
-		vignette.material.get_shader_parameter("vignette_opacity") as float
-	)
+	var current_opacity: float = vignette.material.get_shader_parameter("vignette_opacity") as float
 
-	var new_opacity: float = lerp(
-		current_opacity, target_vignette_opacity, delta * ui_lerp_speed
-	)
+	var new_opacity: float = lerp(current_opacity, target_vignette_opacity, delta * ui_lerp_speed)
 	vignette.material.set_shader_parameter("vignette_opacity", new_opacity)
 
 
@@ -501,9 +457,7 @@ func _trigger_pain_effect() -> void:
 
 	pain_overlay.color = Color(1.0, 0.0, 0.0, 0.4)
 	pain_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	pain_tween.tween_property(
-		pain_overlay, "color", Color(1.0, 0.0, 0.0, 0.0), 0.3
-	)
+	pain_tween.tween_property(pain_overlay, "color", Color(1.0, 0.0, 0.0, 0.0), 0.3)
 	pain_tween.finished.connect(pain_overlay.hide)
 
 
@@ -519,9 +473,7 @@ func _animate_heart_damage(index: int) -> void:
 		heart_tweens[index].kill()
 
 	heart.position.y = 0.0
-	var tween: Tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(
-		Tween.EASE_IN_OUT
-	)
+	var tween: Tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	heart_tweens[index] = tween
 
 	var jump_height: float = -15.0
@@ -553,9 +505,9 @@ func _animate_heart_heal(index: int, frame_index: int) -> void:
 
 	heart.add_child(ghost)
 
-	var tween: Tween = create_tween().set_parallel(true).set_trans(
-		Tween.TRANS_CUBIC
-	).set_ease(Tween.EASE_OUT)
+	var tween: Tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(
+		Tween.EASE_OUT
+	)
 
 	var anim_duration: float = 0.5
 	tween.tween_property(ghost, "scale", Vector2(3.0, 3.0), anim_duration)
@@ -570,9 +522,9 @@ func _on_player_zoomed(is_zooming: bool) -> void:
 	if zoom_tween and zoom_tween.is_valid():
 		zoom_tween.kill()
 
-	zoom_tween = create_tween().set_parallel(true).set_trans(
-		Tween.TRANS_CUBIC
-	).set_ease(Tween.EASE_OUT)
+	zoom_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(
+		Tween.EASE_OUT
+	)
 
 	if is_zooming:
 		center_dot.hide()
@@ -584,50 +536,32 @@ func _on_player_zoomed(is_zooming: bool) -> void:
 		ui_circle_zoom_inner.scale = Vector2.ZERO
 		ui_circle_zoom_inner.modulate.a = 0.0
 
-		zoom_tween.tween_property(
-			ui_circle_zoom, "scale", Vector2(1.0, 1.0), 0.5
-		).from(Vector2.ZERO)
-		zoom_tween.tween_property(
-			ui_circle_zoom, "modulate:a", 1.0, 0.3
-		).from(0.0)
-		zoom_tween.tween_property(
-			ui_circle_zoom, "rotation", deg_to_rad(15), 1.0
-		).from(0.0)
+		zoom_tween.tween_property(ui_circle_zoom, "scale", Vector2(1.0, 1.0), 0.5).from(
+			Vector2.ZERO
+		)
+		zoom_tween.tween_property(ui_circle_zoom, "modulate:a", 1.0, 0.3).from(0.0)
+		zoom_tween.tween_property(ui_circle_zoom, "rotation", deg_to_rad(15), 1.0).from(0.0)
 
-		zoom_tween.tween_property(
-			ui_circle_zoom_inner, "scale", Vector2(1.0, 1.0), 0.5
-		).from(Vector2.ZERO)
-		zoom_tween.tween_property(
-			ui_circle_zoom_inner, "modulate:a", 0.1, 0.3
-		).from(0.0)
-		zoom_tween.tween_property(
-			ui_circle_zoom_inner, "rotation", deg_to_rad(-45), 1.0
-		).from(0.0)
+		zoom_tween.tween_property(ui_circle_zoom_inner, "scale", Vector2(1.0, 1.0), 0.5).from(
+			Vector2.ZERO
+		)
+		zoom_tween.tween_property(ui_circle_zoom_inner, "modulate:a", 0.1, 0.3).from(0.0)
+		zoom_tween.tween_property(ui_circle_zoom_inner, "rotation", deg_to_rad(-45), 1.0).from(0.0)
 
-		zoom_tween.tween_property(
-			fisheye_zoom, "material:shader_parameter/effect_strength", 0.4, 0.2
-		).from(0.0)
+		(
+			zoom_tween
+			. tween_property(fisheye_zoom, "material:shader_parameter/effect_strength", 0.4, 0.2)
+			. from(0.0)
+		)
 	else:
 		center_dot.show()
-		zoom_tween.tween_property(
-			ui_circle_zoom, "scale", Vector2.ZERO, 0.5
-		)
-		zoom_tween.tween_property(
-			ui_circle_zoom, "modulate:a", 0.0, 0.3
-		)
-		zoom_tween.tween_property(
-			ui_circle_zoom, "rotation", deg_to_rad(0), 0.25
-		)
+		zoom_tween.tween_property(ui_circle_zoom, "scale", Vector2.ZERO, 0.5)
+		zoom_tween.tween_property(ui_circle_zoom, "modulate:a", 0.0, 0.3)
+		zoom_tween.tween_property(ui_circle_zoom, "rotation", deg_to_rad(0), 0.25)
 
-		zoom_tween.tween_property(
-			ui_circle_zoom_inner, "scale", Vector2.ZERO, 0.5
-		)
-		zoom_tween.tween_property(
-			ui_circle_zoom_inner, "modulate:a", 0.0, 0.3
-		)
-		zoom_tween.tween_property(
-			ui_circle_zoom_inner, "rotation", deg_to_rad(0), 0.25
-		)
+		zoom_tween.tween_property(ui_circle_zoom_inner, "scale", Vector2.ZERO, 0.5)
+		zoom_tween.tween_property(ui_circle_zoom_inner, "modulate:a", 0.0, 0.3)
+		zoom_tween.tween_property(ui_circle_zoom_inner, "rotation", deg_to_rad(0), 0.25)
 
 		zoom_tween.tween_property(
 			fisheye_zoom, "material:shader_parameter/effect_strength", 0.0, 0.2
@@ -654,9 +588,7 @@ func _input(event: InputEvent) -> void:
 			_toggle_debug_panel()
 
 		if is_immobilized:
-			if event.keycode in [
-				KEY_W, KEY_A, KEY_S, KEY_D, KEY_SPACE, KEY_SHIFT
-			]:
+			if event.keycode in [KEY_W, KEY_A, KEY_S, KEY_D, KEY_SPACE, KEY_SHIFT]:
 				print("UIController: Movement blocked - immobilized.")
 				_show_warning_message("Can't move!", 2.0)
 		elif is_sprint_blocked:
@@ -770,23 +702,19 @@ func _on_terminal_mode_toggled(is_active: bool) -> void:
 	if crosshair_tween and crosshair_tween.is_valid():
 		crosshair_tween.kill()
 
-	crosshair_tween = create_tween().set_parallel(true).set_trans(
-		Tween.TRANS_CUBIC
-	).set_ease(Tween.EASE_OUT)
+	crosshair_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(
+		Tween.EASE_OUT
+	)
 
 	if is_active:
 		var target_size: Vector2 = Vector2(16.0, 16.0)
-		crosshair_tween.tween_property(
-			center_dot, "custom_minimum_size", target_size, 0.3
-		)
+		crosshair_tween.tween_property(center_dot, "custom_minimum_size", target_size, 0.3)
 		crosshair_tween.tween_property(center_dot, "size", target_size, 0.3)
 	else:
 		crosshair_tween.tween_property(
 			center_dot, "custom_minimum_size", default_crosshair_size, 0.3
 		)
-		crosshair_tween.tween_property(
-			center_dot, "size", default_crosshair_size, 0.3
-		)
+		crosshair_tween.tween_property(center_dot, "size", default_crosshair_size, 0.3)
 
 
 ## Toggles runtime physics collision shape rendering.
@@ -795,9 +723,7 @@ func _on_collision_button_pressed() -> void:
 	print("UIController: Collision visibility toggled. State: ", is_collision_visible)
 
 	get_tree().debug_collisions_hint = is_collision_visible
-	collision_button.text = (
-		"Collisions ON" if is_collision_visible else "Collisions OFF"
-	)
+	collision_button.text = ("Collisions ON" if is_collision_visible else "Collisions OFF")
 
 	var root_node: Node = get_tree().current_scene
 	if root_node:
@@ -886,9 +812,7 @@ func _on_card_picked_up(card_id: StringName) -> void:
 
 	card_rect.scale = Vector2.ZERO
 	card_rect.pivot_offset = card_rect.custom_minimum_size / 2.0
-	var tween: Tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(
-		Tween.EASE_OUT
-	)
+	var tween: Tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tween.tween_property(card_rect, "scale", Vector2.ONE, 0.4)
 
 
@@ -897,9 +821,7 @@ func _on_card_used(card_id: StringName) -> void:
 	print("UIController: Removing used card ID ", card_id)
 	if active_card_icons.has(card_id):
 		var card_rect: TextureRect = active_card_icons[card_id]
-		var tween: Tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(
-			Tween.EASE_IN
-		)
+		var tween: Tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
 		tween.tween_property(card_rect, "scale", Vector2.ZERO, 0.2)
 		tween.finished.connect(card_rect.queue_free)
 		active_card_icons.erase(card_id)
@@ -922,9 +844,7 @@ func _show_warning_message(message: String, duration: float = 2.0) -> void:
 ## Starts and animates the sprint debuff progress bar cooldown.
 func _on_sprint_debuff_applied(duration: float) -> void:
 	print(
-		"UIController: _on_sprint_debuff_applied() - Starting debuff UI for ",
-		duration,
-		" seconds."
+		"UIController: _on_sprint_debuff_applied() - Starting debuff UI for ", duration, " seconds."
 	)
 	debuff_container.show()
 	is_sprint_blocked = true
@@ -946,11 +866,7 @@ func _on_sprint_debuff_applied(duration: float) -> void:
 
 ## Starts and animates the immobilize debuff progress bar cooldown.
 func _on_immobilize_debuff_applied(duration: float) -> void:
-	print(
-		"UIController: _on_immobilize_debuff_applied() - Starting UI for ",
-		duration,
-		" seconds."
-	)
+	print("UIController: _on_immobilize_debuff_applied() - Starting UI for ", duration, " seconds.")
 	immobilize_container.show()
 	is_immobilized = true
 
@@ -983,9 +899,7 @@ func _on_player_electrocuted() -> void:
 		if glitch_tween and glitch_tween.is_valid():
 			glitch_tween.kill()
 
-		glitch_tween = create_tween().set_trans(Tween.TRANS_BOUNCE).set_ease(
-			Tween.EASE_OUT
-		)
+		glitch_tween = create_tween().set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 		glitch_tween.tween_method(
 			func(val: float) -> void:
 				glitch_overlay.material.set_shader_parameter("intensity", val)
@@ -1001,9 +915,7 @@ func _on_player_electrocuted() -> void:
 		if electro_tween and electro_tween.is_valid():
 			electro_tween.kill()
 
-		electro_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(
-			Tween.EASE_OUT
-		)
+		electro_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 		electro_tween.tween_method(
 			func(val: float) -> void:
 				electricity_vignette.material.set_shader_parameter("intensity", val)
@@ -1032,9 +944,7 @@ func _on_note_closed() -> void:
 
 
 ## Displays the subtitle text and animates the typewriter effect concurrently with speech.
-func _on_subtitle_requested(
-	speaker: String, text: String, duration: float
-) -> void:
+func _on_subtitle_requested(speaker: String, text: String, duration: float) -> void:
 	print("UIController: _on_subtitle_requested() for speaker: ", speaker)
 
 	if not subtitle_label or not subtitle_margin:
@@ -1054,9 +964,7 @@ func _on_subtitle_requested(
 		subtitle_tween.kill()
 
 	subtitle_tween = create_tween()
-	subtitle_tween.parallel().tween_property(
-		subtitle_margin, "modulate:a", 1.0, 0.15
-	)
+	subtitle_tween.parallel().tween_property(subtitle_margin, "modulate:a", 1.0, 0.15)
 
 	var total_chars: int = subtitle_label.get_total_character_count()
 	var type_duration: float = max(0.1, duration)
@@ -1066,9 +974,7 @@ func _on_subtitle_requested(
 	)
 
 	subtitle_tween.chain().tween_interval(0.6)
-	subtitle_tween.chain().tween_property(
-		subtitle_margin, "modulate:a", 0.0, 0.4
-	)
+	subtitle_tween.chain().tween_property(subtitle_margin, "modulate:a", 0.0, 0.4)
 	subtitle_tween.finished.connect(subtitle_margin.hide)
 
 

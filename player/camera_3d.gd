@@ -31,6 +31,7 @@ var _spatial_listener: AudioListener3D = AudioListener3D.new()
 ## Cached shader material to update background colors efficiently.
 var _vision_shader_material: ShaderMaterial
 
+
 ## Lifecycle method initializing the camera, spatial listener, and signal connections.
 func _ready() -> void:
 	make_current()
@@ -58,11 +59,13 @@ func _ready() -> void:
 		if not Events.vision_assist_mode_changed.is_connected(set_vision_assist_mode):
 			Events.vision_assist_mode_changed.connect(set_vision_assist_mode)
 
+
 ## Creates and activates the AudioListener3D directly attached to the camera head.
 func _setup_audio_listener() -> void:
 	add_child(_spatial_listener)
 	_spatial_listener.make_current()
 	print("Camera3D: AudioListener3D initialized and set as current listener.")
+
 
 ## Process loop driving procedural trauma reduction and camera offset decay.
 ## [param delta] Elapsed frame time in seconds.
@@ -76,6 +79,7 @@ func _process(delta: float) -> void:
 		rotation_degrees.z = 0.0
 		_amplitude = 0.0
 
+
 ## Evaluates noise coordinates and offsets camera position and roll.
 ## [param delta] Elapsed frame time in seconds.
 func _apply_shake(delta: float) -> void:
@@ -85,6 +89,7 @@ func _apply_shake(delta: float) -> void:
 	h_offset = max_offset_x * shake_power * _noise.get_noise_2d(_time_passed, 0.0)
 	v_offset = max_offset_y * shake_power * _noise.get_noise_2d(_time_passed, 100.0)
 	rotation_degrees.z = max_roll_z * shake_power * _noise.get_noise_2d(_time_passed, 200.0)
+
 
 ## Triggers an impulse of screenshake trauma.
 ## [param intensity] The peak magnitude of the screenshake displacement.
@@ -105,12 +110,14 @@ func _on_screenshake_requested(intensity: float, duration: float) -> void:
 	else:
 		_decay_rate = 1.0
 
+
 ## Updates visibility of the accessibility high-contrast shader quad.
 ## [param is_active] True if vision assist should be rendered.
 func _on_vision_assist_toggled(is_active: bool) -> void:
 	print("Camera3D: Vision assist overlay visibility changed to: ", is_active)
 	if is_instance_valid(vision_assist_mesh):
 		vision_assist_mesh.visible = is_active
+
 
 ## Changes the shader's base color to swap between Black/White, AAA Blue, and Pure Black modes.
 ## [param mode_name] Key identifier matching the preset color configuration.

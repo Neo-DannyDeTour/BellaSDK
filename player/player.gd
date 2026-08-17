@@ -120,9 +120,7 @@ func _unhandled_input(event: InputEvent) -> void:
 ## Evaluates if UI overlays, menus, terminals, or death states should block gameplay input.
 ## Returns true if player inputs should be ignored.
 func _is_input_blocked() -> bool:
-	var is_console_open: bool = (
-		is_instance_valid(in_game_console) and in_game_console.visible
-	)
+	var is_console_open: bool = is_instance_valid(in_game_console) and in_game_console.visible
 	var is_blocked: bool = (
 		system_menu.is_paused
 		or system_menu.is_menu_open

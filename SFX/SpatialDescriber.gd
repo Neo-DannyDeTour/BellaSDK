@@ -101,12 +101,14 @@ func describe_surroundings(origin_node: Node3D) -> void:
 		var display_name: String = _resolve_display_name(target_3d)
 		print("SpatialDescriber: Valid target detected: '%s' at %.1fm" % [display_name, dist])
 
-		valid_targets.append({
-			"node": target_3d,
-			"name": display_name,
-			"position": target_3d.global_position,
-			"distance": dist
-		})
+		valid_targets.append(
+			{
+				"node": target_3d,
+				"name": display_name,
+				"position": target_3d.global_position,
+				"distance": dist
+			}
+		)
 
 	if valid_targets.is_empty():
 		var empty_msg: String = "No interactables nearby."
@@ -171,9 +173,7 @@ func _get_ground_position(origin_node: Node3D) -> Vector3:
 ## [param view_pos] The eye-level origin position.
 ## [param clusters] Array of clustered entity dictionaries.
 func _sort_clusters_by_field_of_view(
-	origin_node: Node3D,
-	view_pos: Vector3,
-	clusters: Array[Dictionary]
+	origin_node: Node3D, view_pos: Vector3, clusters: Array[Dictionary]
 ) -> void:
 	var forward: Vector3 = -origin_node.global_transform.basis.z.normalized()
 
@@ -218,11 +218,7 @@ func _cluster_targets(targets: Array[Dictionary]) -> Array[Dictionary]:
 					break
 
 		if not found_cluster:
-			clusters.append({
-				"name": target_name,
-				"count": 1,
-				"avg_pos": target_pos
-			})
+			clusters.append({"name": target_name, "count": 1, "avg_pos": target_pos})
 
 	return clusters
 
@@ -232,11 +228,7 @@ func _cluster_targets(targets: Array[Dictionary]) -> Array[Dictionary]:
 ## [param view_pos] The eye-level origin position.
 ## [param target_pos] Global coordinates of the target entity.
 ## Returns an intuitive spatial direction string.
-func _get_relative_direction(
-	origin_node: Node3D,
-	view_pos: Vector3,
-	target_pos: Vector3
-) -> String:
+func _get_relative_direction(origin_node: Node3D, view_pos: Vector3, target_pos: Vector3) -> String:
 	var forward: Vector3 = -origin_node.global_transform.basis.z
 	var right: Vector3 = origin_node.global_transform.basis.x
 

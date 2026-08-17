@@ -231,9 +231,7 @@ func _update_cylinder_visuals() -> void:
 		return
 
 	var ratio: float = clampf(
-		float(_current_dispenser_health) / float(max_dispenser_health),
-		0.0,
-		1.0
+		float(_current_dispenser_health) / float(max_dispenser_health), 0.0, 1.0
 	)
 
 	# Scale Y while keeping the bottom anchored:

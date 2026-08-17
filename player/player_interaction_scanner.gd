@@ -78,10 +78,7 @@ func process_interaction(_delta: float) -> void:
 
 		if Input.is_action_pressed("interact"):
 			var is_hands_empty: bool = true
-			if (
-				is_instance_valid(master_component)
-				and master_component.get("held_item") != null
-			):
+			if is_instance_valid(master_component) and master_component.get("held_item") != null:
 				is_hands_empty = false
 
 			if is_hands_empty and current_interactable.has_method("interact_held"):

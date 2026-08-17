@@ -19,6 +19,7 @@ var is_active: bool = false
 ## The immediate mesh instance used to draw editor debug lines to all target nodes.
 var debug_line: MeshInstance3D
 
+
 ## Configures the processing loop to only run when previewing inside the Godot editor.
 func _ready() -> void:
 	set_process(Engine.is_editor_hint())
@@ -28,6 +29,7 @@ func _ready() -> void:
 ## [param _delta]: Frame delta time.
 func _process(_delta: float) -> void:
 	_draw_connection_line()
+
 
 ## Flags the transmitter as active, emits signals, and commands target nodes to add power.
 func power_on() -> void:

@@ -62,6 +62,7 @@ func _ready() -> void:
 	for i: int in range(AudioServer.bus_count):
 		print("Debug: Bus [", i, "] = ", AudioServer.get_bus_name(i))
 
+
 ## Connects UI input events and value changes to their corresponding audio handlers.
 func _connect_signals() -> void:
 	print("UI: Connecting Audio Panel signals.")
@@ -185,9 +186,7 @@ func _on_volume_focus_entered(input_node: LineEdit) -> void:
 
 
 ## Callback fired when a [LineEdit] loses focus to validate and save changes.
-func _on_volume_focus_exited(
-	input_node: LineEdit, slider_node: HSlider, bus_name: String
-) -> void:
+func _on_volume_focus_exited(input_node: LineEdit, slider_node: HSlider, bus_name: String) -> void:
 	var current_text: String = input_node.text.strip_edges()
 	if current_text == "":
 		input_node.text = str(int(slider_node.value))

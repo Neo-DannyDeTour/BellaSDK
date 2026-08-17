@@ -88,9 +88,7 @@ func _setup_audio_nodes() -> void:
 		var player_3d: AudioStreamPlayer3D = AudioStreamPlayer3D.new()
 		player_3d.bus = resolved_bus
 		player_3d.max_distance = scan_radius
-		player_3d.attenuation_model = (
-			AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
-		)
+		player_3d.attenuation_model = (AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE)
 		player_3d.unit_size = 3.0
 		add_child(player_3d)
 		_player_pool.append(player_3d)
@@ -136,12 +134,14 @@ func trigger_sonar(origin_node: Node3D) -> void:
 		if dist <= scan_radius:
 			var priority: int = _get_target_priority(target_3d)
 			var is_occluded: bool = _check_occlusion(space_state, origin_pos, target_3d)
-			targets_to_ping.append({
-				"node": target_3d,
-				"distance": dist,
-				"priority": priority,
-				"is_occluded": is_occluded
-			})
+			targets_to_ping.append(
+				{
+					"node": target_3d,
+					"distance": dist,
+					"priority": priority,
+					"is_occluded": is_occluded
+				}
+			)
 
 	# Sort by Priority ascending (0 = highest), then Distance ascending
 	targets_to_ping.sort_custom(
@@ -225,11 +225,7 @@ func _resolve_target_stream(target_node: Node3D) -> AudioStream:
 ## [param target_node] The [Node3D] destination receiving the acoustic bounce.
 ## [param is_occluded] Whether the line of sight is obstructed.
 func _play_target_echo(
-	sweep_id: int,
-	player_pos: Vector3,
-	forward_dir: Vector3,
-	target_node: Node3D,
-	is_occluded: bool
+	sweep_id: int, player_pos: Vector3, forward_dir: Vector3, target_node: Node3D, is_occluded: bool
 ) -> void:
 	if sweep_id != _current_sweep_id:
 		return
@@ -261,8 +257,8 @@ func _play_target_echo(
 	var dot: float = forward_dir.dot(to_target)
 	if dot < 0.0:
 		# Behind the listener: lower pitch and reduce volume
-		final_pitch *= lerpf(0.85, 1.0, (dot + 1.0))
-		final_volume_db -= lerpf(4.0, 0.0, (dot + 1.0))
+		final_pitch *= lerpf(0.85, 1.0, dot + 1.0)
+		final_volume_db -= lerpf(4.0, 0.0, dot + 1.0)
 
 	# Occlusion dampening
 	if is_occluded:
