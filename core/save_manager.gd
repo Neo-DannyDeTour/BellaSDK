@@ -1,14 +1,28 @@
+## Global autoload managing the serialization and deserialization of the game state.
+##
+## [SaveManager] handles capturing viewport thumbnails, writing JSON metadata,
+## and saving/loading nodes grouped in the 'saveable' group using binary `.dat` files.
+class_name SaveManager
 extends Node
 
+## Emitted when a save sequence completely finishes writing to disk.
 signal save_completed
 
+## The internal OS path where all save files are kept.
 const SAVES_DIR: String = "user://saves/"
+
+## Target width in pixels for generated save file thumbnails.
 const THUMB_WIDTH: int = 320
+
+## Target height in pixels for generated save file thumbnails.
 const THUMB_HEIGHT: int = 180
 
+## Cache for the last checkpoint [Vector3] position the player crossed.
 var last_checkpoint_pos: Vector3 = Vector3.ZERO
 
 
+## Called when the node enters the scene tree.
+## Ensures the save directory exists and sets the process mode.
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	print("[SaveManager] Initializing...")
@@ -26,6 +40,8 @@ func _ready() -> void:
 		push_error("[SaveManager] CRITICAL: Failed to open user:// directory!")
 
 
+## Iterates through the saves directory to check if any valid save `.dat` files exist.
+## Returns [code]true[/code] if at least one save file is found.
 func has_saves() -> bool:
 	var dir: DirAccess = DirAccess.open(SAVES_DIR)
 	if not dir:
@@ -40,6 +56,10 @@ func has_saves() -> bool:
 	return false
 
 
+## Initiates a save sequence. Captures a thumbnail, gathers node data, and writes to disk.
+## [param custom_name] Optional user-defined name for the save slot.
+## [param is_fav] Marks the save file as a favorite so it sorts to the top.
+## [param existing_id] The file ID to overwrite, or empty to create a new save.
 func create_save(custom_name: String = "", is_fav: bool = false, existing_id: String = "") -> void:
 	print("\n--- [SaveManager] STARTING SAVE PROCESS ---")
 	get_tree().call_group("hide_on_save", "hide")
@@ -70,7 +90,9 @@ func create_save(custom_name: String = "", is_fav: bool = false, existing_id: St
 	save_completed.emit()
 
 
-# The threaded function to prevent main-thread stutter
+## A background thread function that resizes and encodes the viewport image.
+## [param img] The raw captured screen image.
+## [param base_path] The file path (without extension) to save the `.webp` to.
 func _process_and_save_thumbnail(img: Image, base_path: String) -> void:
 	img.resize(THUMB_WIDTH, THUMB_HEIGHT, Image.INTERPOLATE_BILINEAR)
 	var img_err: Error = img.save_webp(base_path + ".webp")
@@ -78,6 +100,11 @@ func _process_and_save_thumbnail(img: Image, base_path: String) -> void:
 		push_warning("[SaveManager] Threaded thumbnail save failed: " + str(img_err))
 
 
+## Constructs and saves the lightweight JSON file used by the load menu.
+## [param path] The full path to the `.meta` file.
+## [param display_name] The visible name of the save.
+## [param time_str] The formatted date and time string.
+## [param fav] Whether this is a favorited save.
 func _write_metadata(path: String, display_name: String, time_str: String, fav: bool) -> void:
 	print("[SaveManager] Writing metadata to: ", path)
 
@@ -105,6 +132,8 @@ func _write_metadata(path: String, display_name: String, time_str: String, fav: 
 		)
 
 
+## Gathers all nodes in the 'saveable' group and calls [code]get_save_data()[/code] on them.
+## [param path] The full path to the `.dat` file.
 func _write_game_state(path: String) -> void:
 	print("[SaveManager] Preparing game state for: ", path)
 	var total_state: Dictionary = {}
@@ -131,7 +160,10 @@ func _write_game_state(path: String) -> void:
 	WorkerThreadPool.add_task(_threaded_write_data.bind(path, thread_safe_state, saved_nodes_count))
 
 
-# --- NEW: Offloaded writing to prevent 60 FPS drops ---
+## Background thread function that writes the large binary dictionary to disk.
+## [param path] The full path to the `.dat` file.
+## [param data] The dictionary state to write.
+## [param count] The number of nodes saved, for logging purposes.
 func _threaded_write_data(path: String, data: Dictionary, count: int) -> void:
 	var file: FileAccess = FileAccess.open(path, FileAccess.WRITE)
 	if file:
@@ -143,6 +175,8 @@ func _threaded_write_data(path: String, data: Dictionary, count: int) -> void:
 		push_error("[SaveManager] Failed to write game state. Error: " + str(err))
 
 
+## Reads the binary dictionary from disk and pushes data back into the active scene nodes.
+## [param path] The full path to the `.dat` file.
 func _load_game_state(path: String) -> void:
 	print("\n--- [SaveManager] STARTING LOAD PROCESS ---")
 	print("[SaveManager] Attempting to load from: ", path)
@@ -187,6 +221,8 @@ func _load_game_state(path: String) -> void:
 	print("--- [SaveManager] LOAD PROCESS COMPLETE. Nodes updated: ", loaded_nodes_count, " ---\n")
 
 
+## Scans the saves directory and returns a parsed list of all save file metadata.
+## Returns an array of dictionaries representing each save slot.
 func get_all_saves() -> Array[Dictionary]:
 	var saves: Array[Dictionary] = []
 	var dir: DirAccess = DirAccess.open(SAVES_DIR)
@@ -211,6 +247,7 @@ func get_all_saves() -> Array[Dictionary]:
 	return saves
 
 
+## Custom sorting function for save slots. Places favorites at the top, then sorts by newest ID.
 func _sort_saves(a: Dictionary, b: Dictionary) -> bool:
 	var a_fav: bool = a.get("is_favorite", false)
 	var b_fav: bool = b.get("is_favorite", false)
@@ -223,6 +260,10 @@ func _sort_saves(a: Dictionary, b: Dictionary) -> bool:
 	return a.get("id", "0").to_int() > b.get("id", "0").to_int()
 
 
+## Overwrites an existing save's metadata file without touching the binary `.dat` file.
+## [param save_id] The unique identifier of the save.
+## [param new_name] The updated custom name.
+## [param is_favorite] The updated favorite status.
 func update_save_meta(save_id: String, new_name: String, is_favorite: bool) -> void:
 	var path: String = SAVES_DIR + "save_" + save_id + ".meta"
 	if not FileAccess.file_exists(path):
@@ -235,6 +276,8 @@ func update_save_meta(save_id: String, new_name: String, is_favorite: bool) -> v
 	_write_metadata(path, new_name, data.get("timestamp", ""), is_favorite)
 
 
+## Orchestrates a full load sequence: reads metadata, swaps scenes, and loads state.
+## [param base_path] The file path to the save without the file extension.
 func load_save_game(base_path: String) -> void:
 	print("\n--- [SaveManager] INITIATING FULL LOAD ---")
 	var meta_path: String = base_path + ".meta"

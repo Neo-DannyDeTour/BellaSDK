@@ -1,3 +1,8 @@
+## Global autoload managing the persistent save state of user preferences.
+##
+## [GlobalSettings] reads and writes values to a `.cfg` file on disk. It handles
+## applying startup configurations like window scales, inputs, and colorblind modes.
+class_name GlobalSettings
 extends Node
 
 ## The file path where user preferences are saved locally on the player's disk.
@@ -10,12 +15,16 @@ var config: ConfigFile = ConfigFile.new()
 const FONT_MAP: Array[String] = ["default", "dyslexic", "papyrus", "comic"]
 
 
+## Called automatically upon instantiation.
+## Populates the internal [ConfigFile] before other autoloads can read from it.
 func _init() -> void:
 	# LOAD FIRST: We load data the moment this class is instanced, guaranteeing
 	# the config is populated before other Autoloads attempt to save to it.
 	_load_all_settings()
 
 
+## Called when the node enters the scene tree.
+## Sets process mode and applies boot configurations.
 func _ready() -> void:
 	print("System: GlobalSettings Autoload initialized.")
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -23,6 +32,7 @@ func _ready() -> void:
 	call_deferred("_apply_boot_settings")
 
 
+## Attempts to load the `.cfg` settings file from disk into the internal [ConfigFile].
 func _load_all_settings() -> void:
 	print("System: Loading global settings from disk.")
 	var err: Error = config.load(SAVE_PATH)
@@ -30,6 +40,7 @@ func _load_all_settings() -> void:
 		print("System: No save file found or error loading. Code: ", err)
 
 
+## Broadcasts signals and sets global variables for visual options like UI scaling and fonts.
 func _apply_boot_settings() -> void:
 	print("System: Applying boot settings (UI scale, fonts, colorblind).")
 	var ui_scale: float = get_setting("Settings", "ui_scale", 1.0) as float
@@ -44,6 +55,7 @@ func _apply_boot_settings() -> void:
 		Events.colorblind_mode_changed.emit(saved_cb)
 
 
+## Overwrites the default Godot [InputMap] with any saved keybind overrides.
 func _apply_input_mappings() -> void:
 	print("System: Applying saved input mappings to Godot InputMap.")
 	if config.has_section("Controls"):
@@ -55,12 +67,21 @@ func _apply_input_mappings() -> void:
 				InputMap.action_add_event(action, event)
 
 
+## Writes a specific setting to the config and immediately saves the file to disk.
+## [param category] The section name within the config file.
+## [param key] The identifier for the setting.
+## [param value] The generic value to save.
 func save_setting(category: String, key: String, value: Variant) -> void:
 	print("System: Player saved setting -> [", category, "] ", key, ": ", value)
 	config.set_value(category, key, value)
 	config.save(SAVE_PATH)
 
 
+## Retrieves a specific setting from the cached config file.
+## [param category] The section name within the config file.
+## [param key] The identifier for the setting.
+## [param default_value] The fallback value returned if the key does not exist.
+## Returns the stored [Variant] or the [param default_value].
 func get_setting(category: String, key: String, default_value: Variant) -> Variant:
 	if config.has_section_key(category, key):
 		return config.get_value(category, key)

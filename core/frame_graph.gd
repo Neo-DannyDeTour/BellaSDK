@@ -1,11 +1,25 @@
+## An on-screen graph visualizing recent frame delta times.
+##
+## [FrameGraph] draws a line graph over time representing frame duration in milliseconds.
+## It helps developers quickly identify stutters or drops below the target framerate.
+class_name FrameGraph
 extends ColorRect
 
+## An array tracking recent frame times in milliseconds.
 var history: Array[float] = []
+
+## The maximum number of points to draw on the graph before dropping old frames.
 var max_points: int = 100
+
+## The target frame time in milliseconds (16.67ms = 60 FPS).
 var target_ms: float = 16.67
+
+## The maximum visible frame time on the Y-axis of the graph (33.33ms = 30 FPS).
 var ceiling_ms: float = 33.33
 
 
+## Called every frame. Samples the frame time and forces a redraw if visible.
+## [param delta] The time elapsed since the previous frame in seconds.
 func _process(delta: float) -> void:
 	if not is_visible_in_tree():
 		return
@@ -18,6 +32,7 @@ func _process(delta: float) -> void:
 	queue_redraw()
 
 
+## Called when the node is forced to redraw. Paints the graph lines and threshold indicators.
 func _draw() -> void:
 	if history.size() < 2:
 		return
