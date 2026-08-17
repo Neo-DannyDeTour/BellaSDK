@@ -1,3 +1,7 @@
+## The primary character controller script representing the player.
+##
+## Acts as the root node that initializes and orchestrates its various sub-components
+## (locomotion, interaction, environment, stats, and states) to handle core gameplay mechanics.
 class_name Player
 extends CharacterBody3D
 
@@ -37,6 +41,7 @@ var is_dead: bool = false
 # --------------------------------------
 # INITIALIZATION
 # --------------------------------------
+## Initializes the player, capturing the mouse and injecting self-references into child components.
 func _ready() -> void:
 	add_to_group("saveable")
 	add_to_group("player")
@@ -57,6 +62,7 @@ func _ready() -> void:
 			health_component.died.connect(_on_player_died)
 
 
+## Confines the mouse cursor to the game window and hides it for FPS controls.
 func _capture_mouse() -> void:
 	print("Player: _capture_mouse() called. Capturing mouse cursor.")
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -65,6 +71,7 @@ func _capture_mouse() -> void:
 # --------------------------------------
 # INPUT ROUTING
 # --------------------------------------
+## Global input listener routing events down to child components when unpaused.
 func _input(event: InputEvent) -> void:
 	print("Player: _input() called. Routing hardware input.")
 	if _is_input_blocked():
@@ -129,6 +136,7 @@ func _on_player_died() -> void:
 # --------------------------------------
 # MASTER PHYSICS ROUTING
 # --------------------------------------
+## Core physics loop handling external knockback, environment updates, and locomotion.
 func _physics_process(delta: float) -> void:
 	var disable_states: bool = _is_input_blocked() or system_menu.flying
 
@@ -378,6 +386,7 @@ func _on_local_health_changed(new_health: int) -> void:
 # --------------------------------------
 # HEALTH & DAMAGE ROUTING
 # --------------------------------------
+## Triggered by the [HealthComponent] when health is reduced, handling visual feedback.
 func take_damage(amount: int) -> void:
 	print("Player: take_damage() called. Routing ", amount, " damage to HealthComponent.")
 	if is_instance_valid(health_component) and health_component.has_method("take_damage"):

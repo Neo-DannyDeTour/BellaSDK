@@ -1,4 +1,8 @@
 @tool
+## A 3D interactive object representing a fast rope.
+##
+## Provides mechanics for a player to grab on, rapidly slide up/down, and vault off.
+## Manages its own dynamic sizing and audio playback.
 class_name FastRope
 extends StaticBody3D
 
@@ -13,7 +17,7 @@ static var all_fast_ropes: Array[FastRope] = []
 @export var rope_length: float = 10.0:
 	set(value):
 		rope_length = value
-		if is_node_ready():
+		if is_inside_tree():
 			_update_rope_size()
 
 ## How fast the player moves up or down the rope in meters per second.
@@ -93,10 +97,12 @@ func _enter_tree() -> void:
 		all_fast_ropes.append(self)
 
 
+## Removes this rope from the global registry upon destruction.
 func _exit_tree() -> void:
 	all_fast_ropes.erase(self)
 
 
+## Initializes the fast rope, adds it to the global registry, and updates its visual size.
 func _ready() -> void:
 	_update_rope_size()
 
@@ -121,6 +127,7 @@ func _ready() -> void:
 			interact_comp.unfocused.connect(_on_unfocused)
 
 
+## Dynamically adjusts the collision shape and visual mesh based on [member rope_length].
 func _update_rope_size() -> void:
 	if collision_shape and collision_shape.shape:
 		if collision_shape.shape is BoxShape3D:
@@ -157,6 +164,7 @@ func _on_unfocused() -> void:
 		interact_label.hide()
 
 
+## Moves the attached player along the rope or processes their detachment.
 func _physics_process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		return

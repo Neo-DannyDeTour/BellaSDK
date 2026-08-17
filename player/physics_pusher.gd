@@ -1,3 +1,7 @@
+## A modular component that allows a [CharacterBody3D] to push [RigidBody3D] nodes.
+##
+## Automatically extracts collision data from the parent body's `move_and_slide()`
+## and applies horizontal central impulses to overlapping rigidbodies based on player speed.
 class_name PhysicsPusher
 extends Node
 
@@ -5,15 +9,23 @@ extends Node
 # EXPORTS
 # --------------------------------------
 @export_category("Node References")
+
+## The parent character body whose slide collisions will be analyzed.
 @export var player_body: CharacterBody3D
 
 @export_category("Physics Settings")
-@export var push_force: float = 2.0
 
+## The base force scalar applied when pushing rigidbodies.
+@export var push_force: float = 2.0
 
 # --------------------------------------
 # CORE PROCESS LOGIC
 # --------------------------------------
+
+
+## Analyzes the active collisions from the last physics frame and pushes [RigidBody3D] targets.
+## Ignores the actively [param held_object], scales force by [param last_velocity],
+## and normalizes against [param reference_max_speed].
 func process_pushes(
 	held_object: Node3D, last_velocity: Vector3, reference_max_speed: float
 ) -> void:

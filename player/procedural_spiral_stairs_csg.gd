@@ -1,52 +1,85 @@
 @tool
+## Generates a procedural 3D spiral staircase mesh using CSG.
+##
+## This node utilizes [SurfaceTool] to dynamically create a [CSGMesh3D] representing
+## either blocky spiral stairs or a smooth spiral ramp based on inspector properties.
 class_name ProceduralSpiralStairsCSG
 extends CSGMesh3D
 
 @export_category("Staircase Dimensions")
+
+## The outer radius of the staircase cylinder.
 @export var outer_radius: float = 2.5:
 	set(v):
 		outer_radius = v
-		_update_mesh()
+		if is_inside_tree():
+			_update_mesh()
+
+## The inner radius of the staircase cylinder (the hollow center).
 @export var inner_radius: float = 0.5:
 	set(v):
 		inner_radius = v
-		_update_mesh()
+		if is_inside_tree():
+			_update_mesh()
+
+## The total vertical height the staircase reaches.
 @export var total_height: float = 4.0:
 	set(v):
 		total_height = v
-		_update_mesh()
+		if is_inside_tree():
+			_update_mesh()
+
+## How many full 360-degree rotations the staircase completes.
 @export var rotations: float = 1.0:
 	set(v):
 		rotations = v
-		_update_mesh()
+		if is_inside_tree():
+			_update_mesh()
 
 @export_category("Steps & Ramps")
+
+## The number of individual steps (or segments for a ramp) in the mesh.
 @export var step_count: int = 30:
 	set(v):
 		step_count = v
-		_update_mesh()
+		if is_inside_tree():
+			_update_mesh()
+
+## The vertical thickness of each individual step.
 @export var step_thickness: float = 0.2:
 	set(v):
 		step_thickness = v
-		_update_mesh()
+		if is_inside_tree():
+			_update_mesh()
+
+## If true, the top surface slopes continuously instead of forming flat stairs.
 @export var smooth_ramp: bool = false:
 	set(v):
 		smooth_ramp = v
-		_update_mesh()
+		if is_inside_tree():
+			_update_mesh()
+
+## If true, the underside of the stairs forms a smooth slope rather than jagged blocky steps.
 @export var smooth_underside: bool = true:
 	set(v):
 		smooth_underside = v
-		_update_mesh()
+		if is_inside_tree():
+			_update_mesh()
+
+## If true, the mesh geometry drops straight down to a local Y=0 floor level .
 @export var fill_to_floor: bool = false:
 	set(v):
 		fill_to_floor = v
-		_update_mesh()
+		if is_inside_tree():
+			_update_mesh()
 
 
+## Called when the node enters the scene tree to initialize the procedural mesh.
 func _ready() -> void:
 	_update_mesh()
 
 
+## Regenerates the stair or ramp geometry based on current export properties.
 func _update_mesh() -> void:
 	if step_count <= 0:
 		return
@@ -124,7 +157,7 @@ func _update_mesh() -> void:
 	self.mesh = st.commit()
 
 
-# Helper function to generate two triangles per quad face
+## Helper function to generate two triangles forming a quad face on the [SurfaceTool].
 func _add_quad(st: SurfaceTool, p1: Vector3, p2: Vector3, p3: Vector3, p4: Vector3) -> void:
 	st.add_vertex(p1)
 	st.add_vertex(p2)
