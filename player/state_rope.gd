@@ -1,19 +1,28 @@
+## A player state handling hanging, climbing, and swinging on interactive ropes.
+##
+## This state locks the player's typical locomotion to follow a [RigidBody3D] rope segment,
+## applying physical forces to the rope based on input to create swinging mechanics.
 class_name StateRope
 extends PlayerState
 
 # --------------------------------------
 # CONSTANTS
 # --------------------------------------
+## Base speed scalar for climbing up and down the rope.
 const ROPE_CLIMB_SPEED: float = 1.0
 
 # --------------------------------------
 # VARIABLES
 # --------------------------------------
+## The specific physics body segment of the rope the player is currently grabbing.
 var current_rope: RigidBody3D = null
+## The local vertical Y-axis offset on the rope segment where the player's hands are located.
 var rope_offset: float = 0.0
+## A blending weight used to smoothly pull the player to the exact rope grab point .
 var rope_lerp_weight: float = 0.0
 
 
+## Initializes the rope state, calculates grab offsets, and transfers player momentum.
 func enter(msg: Dictionary = {}) -> void:
 	if not msg.has("rope_node"):
 		state_machine.transition_to("Air")
@@ -69,6 +78,7 @@ func enter(msg: Dictionary = {}) -> void:
 		)
 
 
+## Cleans up physics exceptions and smooths the camera rotation back to upright on exit.
 func exit() -> void:
 	if current_rope:
 		player.remove_collision_exception_with(current_rope)
@@ -105,6 +115,7 @@ func exit() -> void:
 	)
 
 
+## Corresponds to the `_physics_process()` callback. Routes input to climb or swing logic.
 func physics_update(delta: float) -> void:
 	if not current_rope:
 		return
@@ -122,6 +133,7 @@ func physics_update(delta: float) -> void:
 # --------------------------------------
 # PRIVATE METHODS
 # --------------------------------------
+## Evaluates player camera angles and WASD input to determine climb, slide, or swing intent.
 func _handle_climbing_and_swinging(delta: float, input_dir: Vector2) -> void:
 	var rope_root: Node3D = current_rope.get_parent() as Node3D
 	var rope_up: Vector3 = current_rope.global_transform.basis.y.normalized()
@@ -213,6 +225,7 @@ func _handle_climbing_and_swinging(delta: float, input_dir: Vector2) -> void:
 		player.camera_controller.update_camera(delta, Vector2.ZERO, false, false, false, 0.0)
 
 
+## Forcibly updates the player's global position and rotation to track the moving rope physics body.
 func _apply_rope_position(delta: float) -> void:
 	var rope_root: Node3D = current_rope.get_parent() as Node3D
 	var rope_up: Vector3 = current_rope.global_transform.basis.y.normalized()
@@ -246,6 +259,7 @@ func _apply_rope_position(delta: float) -> void:
 	player.velocity = Vector3.ZERO
 
 
+## Listens for jump or interact actions to release the player from the current rope.
 func _check_dismount(input_dir: Vector2) -> void:
 	if Input.is_action_just_pressed("jump"):
 		_perform_jump_dismount(input_dir)
@@ -255,6 +269,7 @@ func _check_dismount(input_dir: Vector2) -> void:
 			_transition_out_of_rope(release_dir, 0.0, 0.0)
 
 
+## Calculates directional momentum and boosts to apply when jumping off an actively swinging rope.
 func _perform_jump_dismount(input_dir: Vector2) -> void:
 	var rope_root: Node3D = current_rope.get_parent() as Node3D
 	var can_swing: bool = (
@@ -285,6 +300,7 @@ func _perform_jump_dismount(input_dir: Vector2) -> void:
 	_transition_out_of_rope(jump_dir, forward_push, vertical_hop)
 
 
+## Applies final exit velocity and forces the state machine back into the "Air" state.
 func _transition_out_of_rope(
 	release_dir: Vector3, forward_push: float, vertical_hop: float
 ) -> void:

@@ -1,15 +1,13 @@
+## A state machine that manages the active state for the player character.
+##
+## This node routes input, process, and physics_process callbacks to the active [PlayerState],
+## while providing methods to transition between different states smoothly.
 class_name PlayerStateMachine
 extends Node
 
-# --------------------------------------
-# SIGNALS
-# --------------------------------------
 ## Emitted when the state machine successfully transitions to a new state.
 signal transitioned(state_name: String)
 
-# --------------------------------------
-# EXPORTS & VARIABLES
-# --------------------------------------
 @export_category("State Machine Configuration")
 ## Set this in the inspector (e.g., assign the "Walk" or "Idle" node) to dictate the starting state.
 @export var initial_state: NodePath
@@ -21,6 +19,8 @@ signal transitioned(state_name: String)
 var _states: Dictionary = {}
 
 
+## Initializes the state machine by injecting dependencies into child [PlayerState] nodes
+## and booting the initial state.
 func _ready() -> void:
 	print("PlayerStateMachine: _ready() called. Awaiting owner readiness.")
 	await owner.ready
@@ -36,24 +36,23 @@ func _ready() -> void:
 	state.enter({})
 
 
-# --------------------------------------
-# ENGINE TICK ROUTING
-# --------------------------------------
+## Routes unhandled input events to the currently active state.
 func _unhandled_input(event: InputEvent) -> void:
 	state.handle_input(event)
 
 
+## Routes process ticks to the currently active state.
 func _process(delta: float) -> void:
 	state.update(delta)
 
 
+## Routes physics process ticks to the currently active state.
 func _physics_process(delta: float) -> void:
 	state.physics_update(delta)
 
 
-# --------------------------------------
-# TRANSITION LOGIC
-# --------------------------------------
+## Transitions the state machine to a new state specified by [param target_state_name].
+## An optional dictionary [param msg] can be passed to the new state's `enter` method.
 func transition_to(target_state_name: String, msg: Dictionary = {}) -> void:
 	print("PlayerStateMachine: transition_to() called. Transitioning to state: ", target_state_name)
 

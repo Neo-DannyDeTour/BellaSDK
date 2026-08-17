@@ -1,12 +1,22 @@
+## A player state that locks the player into an animation pushing a turnable wheel object.
+##
+## This state disables standard locomotion and locks the player's transform to an anchor point
+## on the wheel, routing forward/backward inputs into the wheel's rotation system.
 class_name PushWheelState
 extends PlayerState
 
+## The currently bound [PushWheel] interactive node.
 var active_wheel: PushWheel
+## A cached reference to the player's [PlayerLocomotionComponent] to toggle its physics processing.
 var loco_component: PlayerLocomotionComponent
+## A short cooldown timer preventing immediate accidental state exit.
 var _exit_cooldown: float = 0.0
+## A flag indicating if the player is currently tweening onto the wheel anchor.
 var _is_mounting: bool = false
 
 
+## Enters the push wheel state. Receives the `target_transform` to tween to,
+## and the `wheel` node to interact with.
 func enter(msg: Dictionary = {}) -> void:
 	_is_mounting = false
 
@@ -24,7 +34,7 @@ func enter(msg: Dictionary = {}) -> void:
 
 		_exit_cooldown = 0.2
 
-		loco_component = player.get_node_or_null("LocomotionComponent")
+		loco_component = player.get_node_or_null("LocomotionComponent") as PlayerLocomotionComponent
 		if is_instance_valid(loco_component):
 			loco_component.set_physics_active(false)
 			loco_component.reset_momentum()
@@ -34,6 +44,7 @@ func enter(msg: Dictionary = {}) -> void:
 		state_machine.transition_to("Ground")
 
 
+## Corresponds to `_physics_process()`. Routes movement input into the wheel mechanism.
 func physics_update(delta: float) -> void:
 	if not is_instance_valid(active_wheel) or not active_wheel.is_installed:
 		state_machine.transition_to("Ground")
@@ -61,6 +72,18 @@ func physics_update(delta: float) -> void:
 		head.rotation.x = lerp_angle(head.rotation.x, 0.0, 10.0 * delta)
 
 
+## Cleans up state properties and restores the player's locomotion on exit.
+func exit() -> void:
+	print("PushWheelState: Exiting state.")
+	if is_instance_valid(loco_component):
+		loco_component.set_physics_active(true)
+		print("PushWheelState: Re-enabled LocomotionComponent.")
+
+	active_wheel = null
+
+
+## Calculates a multiplier (1.0 or -1.0) based on the player's physical orientation relative
+## to the wheel's rotation axis to ensure "forward" always pushes the wheel correctly.
 func _calculate_input_sync_multiplier() -> float:
 	var dir_multi: float = -1.0 if active_wheel.turn_clockwise else 1.0
 	var angular_velocity_dir: Vector3 = (active_wheel.spin_axis * dir_multi).normalized()
@@ -78,12 +101,3 @@ func _calculate_input_sync_multiplier() -> float:
 	# If pressing forward naturally aligns with positive progress, multiply by 1.0.
 	# If on the opposite side, it results in a negative alignment, so we invert the input.
 	return 1.0 if alignment >= 0.0 else -1.0
-
-
-func exit() -> void:
-	print("PushWheelState: Exiting state.")
-	if is_instance_valid(loco_component):
-		loco_component.set_physics_active(true)
-		print("PushWheelState: Re-enabled LocomotionComponent.")
-
-	active_wheel = null

@@ -1,3 +1,7 @@
+## A player state handling mid-air movement, jumping, and falling.
+##
+## This state manages gravity application, coyote time, jump buffering,
+## jump pads, and transitions related to landing or grabbing ledges.
 class_name StateAir
 extends PlayerState
 
@@ -32,6 +36,8 @@ var launch_gravity: float = 9.8
 var launch_fall_gravity: float = 9.8
 
 
+## Enters the air state. Reads the `msg` dictionary to handle specific entry conditions
+## like external knockbacks, jump pads, or exiting a rope.
 func enter(msg: Dictionary = {}) -> void:
 	print("StateAir: Entered air state.")
 	has_jumped = msg.has("jump") and msg["jump"] == true
@@ -66,6 +72,7 @@ func enter(msg: Dictionary = {}) -> void:
 	jump_buffer_timer = 0.0
 
 
+## Corresponds to `_physics_process()`. Applies gravity, mid-air steering, and landing.
 func physics_update(delta: float) -> void:
 	_handle_gravity(delta)
 	_handle_timers(delta)
@@ -109,6 +116,7 @@ func physics_update(delta: float) -> void:
 # --------------------------------------
 # PRIVATE METHODS
 # --------------------------------------
+## Calculates and applies vertical gravity to the player, handling jump pad overrides.
 func _handle_gravity(delta: float) -> void:
 	var loco: Node = player.locomotion_component
 	var env: Node = player.environment_component
@@ -208,6 +216,7 @@ func _apply_air_movement(delta: float, input_dir: Vector2) -> void:
 	player.velocity.z = loco.get_direction().z * current_speed
 
 
+## Polls the environment to determine if the player has landed, hit water, or grabbed a ledge.
 func _check_transitions() -> void:
 	var loco: Node = player.locomotion_component
 	var env: Node = player.environment_component
