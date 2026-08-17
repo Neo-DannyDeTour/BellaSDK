@@ -1,0 +1,3 @@
+gdtoolkit
+mkdocs
+mkdocs-material
