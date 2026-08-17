@@ -12,6 +12,9 @@ extends Panel
 ## Toggles the invincible state where player health cannot drop below zero.
 @onready var godmode_toggle: CheckButton = %GodmodeToggle
 
+## Security variable: Indicates if debug commands (godmode) are allowed.
+var is_debug_allowed: bool = OS.has_feature("debug")
+
 ## Toggles the display of introductory hints and tooltips.
 @onready var tutorials_toggle: CheckButton = %TutorialsToggle
 
@@ -23,6 +26,9 @@ extends Panel
 
 
 func _ready() -> void:
+	if not is_debug_allowed:
+		godmode_toggle.hide()
+
 	_connect_signals()
 
 
@@ -40,6 +46,10 @@ func _on_difficulty_selected(index: int) -> void:
 
 func _on_godmode_toggled(button_pressed: bool) -> void:
 	print("GameplayPanel: _on_godmode_toggled() - Godmode toggled. State: ", button_pressed)
+
+	if not is_debug_allowed:
+		return
+
 	Events.is_godmode = button_pressed
 
 
