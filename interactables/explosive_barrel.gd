@@ -28,15 +28,15 @@ var has_exploded: bool = false
 @onready var area_3d: Area3D = $Area3D
 
 
-## Initializes the health pool of the barrel. Sets [member current_health] to match [member max_health].
+## Initializes health pool. Sets current_health to max_health.
 func _ready() -> void:
 	current_health = max_health
 
 
 ## Processes incoming damage, applies a physical flinch impulse, and triggers explosion on death.
 ## [param amount]: The raw damage integer.
-## [param hit_position]: The 3D world coordinate where the damage occurred (e.g., bullet impact).
-## [param hit_direction]: The normalized vector indicating the trajectory of the incoming attack.
+## [param hit_position]: The 3D world coordinate where the damage occurred.
+## [param hit_direction]: The normalized vector indicating the trajectory.
 func take_damage(amount: int, hit_position: Vector3, hit_direction: Vector3) -> void:
 	print("ExplosiveBarrel: take_damage() called. Amount: ", amount)
 
@@ -52,7 +52,7 @@ func take_damage(amount: int, hit_position: Vector3, hit_direction: Vector3) -> 
 		explode()
 
 
-## Orchestrates barrel destruction, coordinating VFX, physics, camera shake, and UI effects.
+## Orchestrates barrel destruction, coordinating VFX, physics, camera shake.
 func explode() -> void:
 	print("ExplosiveBarrel: explode() called. Triggering destruction.")
 	if has_exploded:
@@ -72,7 +72,7 @@ func explode() -> void:
 	queue_free()
 
 
-## Instantiates and places the particle system mapped to [member explosion_scene].
+## Instantiates and places the particle system mapped to explosion_scene.
 func _spawn_explosion_vfx() -> void:
 	print("ExplosiveBarrel: _spawn_explosion_vfx() called.")
 	if explosion_scene == null:
@@ -84,7 +84,7 @@ func _spawn_explosion_vfx() -> void:
 		explosion_instance.global_position = global_position
 
 
-## Calls the global ShockwaveManager singleton to distort the screen space rendering.
+## Calls the global ShockwaveManager singleton to distort the screen space.
 func _trigger_shockwave() -> void:
 	print("ExplosiveBarrel: _trigger_shockwave() called. Radius set to: ", shockwave_radius)
 	var manager: Node = get_node_or_null("/root/ShockwaveManager")
@@ -95,7 +95,7 @@ func _trigger_shockwave() -> void:
 		print("ExplosiveBarrel: ShockwaveManager not found or invalid.")
 
 
-## Calculates distance to the active camera to scale screen shake and auditory tinnitus.
+## Calculates distance to the active camera to scale screen shake and auditory.
 func _apply_screen_shake_and_audio() -> void:
 	print("ExplosiveBarrel: _apply_screen_shake_and_audio() called.")
 	var cam: Camera3D = get_viewport().get_camera_3d()
