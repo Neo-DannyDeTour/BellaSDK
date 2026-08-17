@@ -1,11 +1,14 @@
+## Interactive physical or static valve mechanism that transmits turning progress to receivers.
+## Manages installation states, player interactions, rotation animations, and accessibility prompts.
 @tool
+class_name Valve
 extends StaticBody3D
 
 ## The time window in seconds to register two consecutive presses as a double tap.
 const DOUBLE_TAP_DELAY: float = 0.3
 
 @export_category("Connections")
-## The list of target nodes. These are automatically forwarded to a child OutputTransmitter3D.
+## The list of target nodes. These are automatically forwarded to a child [OutputTransmitter3D].
 @export var targets: Array[Node3D]:
 	set(value):
 		targets = value
@@ -14,7 +17,7 @@ const DOUBLE_TAP_DELAY: float = 0.3
 @export_category("Installation Settings")
 ## Determines if the valve is missing by default and needs to be attached by the player.
 @export var requires_installation: bool = false
-## The PackedScene used to spawn the physics-based valve when detached.
+## The [PackedScene] used to spawn the physics-based valve when detached.
 @export var pickable_valve_scene: PackedScene
 
 ## Allows the player to double-tap to remove the valve, dropping it into the world.
@@ -72,7 +75,9 @@ const DOUBLE_TAP_DELAY: float = 0.3
 @export var outline_material: ShaderMaterial
 
 ## The audio stream player responsible for playing turning sounds.
-@onready var valve_audio := get_node_or_null("ValveAudio") as AudioStreamPlayer3D
+@onready var valve_audio: AudioStreamPlayer3D = (
+	get_node_or_null("ValveAudio") as AudioStreamPlayer3D
+)
 
 ## The current normalized turning progress (0.0 to 1.0).
 var progress: float = 0.0
@@ -100,9 +105,14 @@ var install_cooldown: float = 0.0
 var has_been_installed: bool = false
 ## A cached reference to the player node to avoid redundant scene tree queries.
 var _cached_player: Node3D = null
+## Cached reference to the child transmitter component to prevent per-frame node lookups.
+var _transmitter: OutputTransmitter3D = null
 
-
+## Initializes valve installation states, cached references, and binds interaction listeners.
 func _ready() -> void:
+	print("Valve: Initializing _ready() lifecycle.")
+	_update_transmitter_targets()
+
 	if requires_installation:
 		is_installed = false
 		has_been_installed = false
@@ -112,24 +122,34 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 
-	wheel = get_node_or_null("Wheel")
+	wheel = get_node_or_null("Valve")
 	if is_instance_valid(wheel):
 		initial_rotation = wheel.rotation_degrees
 		if requires_installation:
 			wheel.hide()
 	else:
-		push_warning("Valve: Please group meshes under Node3D named 'Wheel'!")
+		push_warning("Valve: Please group meshes under Node3D named 'Valve'!")
 
 	highlight_comp = get_node_or_null("HighlightComponent")
 
 	var interact_comp: Node = get_node_or_null("InteractComponent")
 	if is_instance_valid(interact_comp):
-		if not interact_comp.focused.is_connected(_on_interact_component_focused):
-			interact_comp.focused.connect(_on_interact_component_focused)
-		if not interact_comp.unfocused.is_connected(_on_interact_component_unfocused):
-			interact_comp.unfocused.connect(_on_interact_component_unfocused)
+		if not interact_comp.focused.is_connected(
+			_on_interact_component_focused
+		):
+			interact_comp.focused.connect(
+				_on_interact_component_focused
+			)
+		if not interact_comp.unfocused.is_connected(
+			_on_interact_component_unfocused
+		):
+			interact_comp.unfocused.connect(
+				_on_interact_component_unfocused
+			)
 
 
+## Manages per-frame installation detection, player interaction inputs, rotation, and audio state.
+## [param delta] The elapsed time since the previous frame.
 func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		_update_transmitter_targets()
@@ -140,19 +160,27 @@ func _process(delta: float) -> void:
 
 	if not is_installed and install_cooldown <= 0.0:
 		if not is_instance_valid(_cached_player):
-			_cached_player = get_tree().get_first_node_in_group("player") as Node3D
+			_cached_player = (
+				get_tree().get_first_node_in_group("player") as Node3D
+			)
 
 		if is_instance_valid(_cached_player):
 			var held: Node3D = _get_player_held_object(_cached_player)
 
 			if is_instance_valid(held):
-				var dist_sq: float = global_position.distance_squared_to(held.global_position)
+				var dist_sq: float = (
+					global_position.distance_squared_to(held.global_position)
+				)
 				if dist_sq < 0.36:
 					_install_valve(_cached_player, held)
 
-	var is_interacting: bool = is_focused and Input.is_action_pressed("interact") and is_installed
+	var is_interacting: bool = (
+		is_focused and Input.is_action_pressed("interact") and is_installed
+	)
 	var just_pressed: bool = (
-		is_focused and Input.is_action_just_pressed("interact") and is_installed
+		is_focused
+		and Input.is_action_just_pressed("interact")
+		and is_installed
 	)
 
 	if can_be_detached and just_pressed:
@@ -167,31 +195,47 @@ func _process(delta: float) -> void:
 		_manage_audio(false)
 		return
 
-	if is_instance_valid(highlight_comp) and highlight_comp.has_method("suppress"):
+	if (
+		is_instance_valid(highlight_comp)
+		and highlight_comp.has_method("suppress")
+	):
 		highlight_comp.suppress(is_interacting)
 
 	if is_interacting and not was_interacting:
 		if is_back_and_forth and progress > 0.0 and progress < 1.0:
-			current_target_progress = 0.0 if current_target_progress == 1.0 else 1.0
+			current_target_progress = (
+				0.0 if current_target_progress == 1.0 else 1.0
+			)
 
 	var old_progress: float = progress
 
 	if is_interacting:
-		progress = move_toward(progress, current_target_progress, delta / turn_duration)
+		progress = move_toward(
+			progress, current_target_progress, delta / turn_duration
+		)
 		if lock_when_finished and progress >= 1.0:
 			is_locked = true
 			progress = 1.0
 	else:
 		if reverts_on_release:
-			var revert_target: float = 0.0 if current_target_progress == 1.0 else 1.0
+			var revert_target: float = (
+				0.0 if current_target_progress == 1.0 else 1.0
+			)
 			var current_turn_duration: float = turn_duration
 
 			if fast_revert_on_release:
-				current_turn_duration = turn_duration / fast_revert_multiplier
+				current_turn_duration = (
+					turn_duration / fast_revert_multiplier
+				)
 				if was_interacting:
-					print("Valve: Released, initiating fast revert towards ", revert_target)
+					print(
+						"Valve: Released, initiating fast revert towards ",
+						revert_target
+					)
 
-			progress = move_toward(progress, revert_target, delta / current_turn_duration)
+			progress = move_toward(
+				progress, revert_target, delta / current_turn_duration
+			)
 
 	if is_back_and_forth and not is_interacting:
 		if progress >= 1.0:
@@ -204,8 +248,12 @@ func _process(delta: float) -> void:
 	if is_moving:
 		if is_instance_valid(wheel):
 			var dir_multiplier: float = -1.0 if turn_clockwise else 1.0
-			var total_angle: float = 360.0 * visual_rotations * dir_multiplier * progress
-			wheel.rotation_degrees = initial_rotation + (spin_axis * total_angle)
+			var total_angle: float = (
+				360.0 * visual_rotations * dir_multiplier * progress
+			)
+			wheel.rotation_degrees = (
+				initial_rotation + (spin_axis * total_angle)
+			)
 
 		var transmitter: OutputTransmitter3D = _get_transmitter()
 		if is_instance_valid(transmitter):
@@ -215,19 +263,29 @@ func _process(delta: float) -> void:
 	was_interacting = is_interacting
 
 
+## Retrieves and caches the first child node that inherits from [OutputTransmitter3D].
+## Returns the child transmitter if found, otherwise returns `null`.
 func _get_transmitter() -> OutputTransmitter3D:
+	if is_instance_valid(_transmitter):
+		return _transmitter
 	for child: Node in get_children():
 		if child is OutputTransmitter3D:
-			return child as OutputTransmitter3D
+			_transmitter = child as OutputTransmitter3D
+			return _transmitter
 	return null
 
 
+## Safely propagates target scene nodes to the child [OutputTransmitter3D].
 func _update_transmitter_targets() -> void:
+	if not is_inside_tree():
+		return
 	var transmitter: OutputTransmitter3D = _get_transmitter()
 	if is_instance_valid(transmitter):
 		transmitter.targets = targets
 
 
+## Starts or stops the valve rotation sound effect according to movement state.
+## [param is_moving] Indicates whether the valve progress is currently moving.
 func _manage_audio(is_moving: bool) -> void:
 	if not is_instance_valid(valve_audio):
 		return
@@ -240,6 +298,9 @@ func _manage_audio(is_moving: bool) -> void:
 		valve_audio.stop()
 
 
+## Resolves the object currently held by the player character.
+## [param player] The player node reference to inspect.
+## Returns the held [Node3D] instance if found, or `null`.
 func _get_player_held_object(player: Node3D) -> Node3D:
 	if not is_instance_valid(player):
 		return null
@@ -248,14 +309,18 @@ func _get_player_held_object(player: Node3D) -> Node3D:
 		return player.get("held_object") as Node3D
 
 	var int_comp: Node = (
-		player.get("interaction_component") if "interaction_component" in player else null
+		player.get("interaction_component")
+		if "interaction_component" in player
+		else null
 	)
 	if is_instance_valid(int_comp):
 		if "held_item" in int_comp and int_comp.get("held_item") != null:
 			return int_comp.get("held_item") as Node3D
 
 		var scanner: Node = (
-			int_comp.get("interaction_scanner") if "interaction_scanner" in int_comp else null
+			int_comp.get("interaction_scanner")
+			if "interaction_scanner" in int_comp
+			else null
 		)
 		if (
 			is_instance_valid(scanner)
@@ -267,13 +332,20 @@ func _get_player_held_object(player: Node3D) -> Node3D:
 	return null
 
 
+## Resets all held item slots on the player character.
+## [param player] The player node reference whose held object will be cleared.
 func _clear_player_held_object(player: Node3D) -> void:
 	print("Valve: Clearing player held object references.")
+	if not is_instance_valid(player):
+		return
+
 	if "held_object" in player:
 		player.set("held_object", null)
 
 	var int_comp: Node = (
-		player.get("interaction_component") if "interaction_component" in player else null
+		player.get("interaction_component")
+		if "interaction_component" in player
+		else null
 	)
 	if is_instance_valid(int_comp):
 		if int_comp.has_method("force_clear_hands"):
@@ -282,6 +354,9 @@ func _clear_player_held_object(player: Node3D) -> void:
 			int_comp.set("held_item", null)
 
 
+## Attaches the held valve wheel onto this base unit and removes the item from the player.
+## [param player] The player node performing the installation.
+## [param held_valve] The item instance to destroy upon attachment.
 func _install_valve(player: Node3D, held_valve: Node3D) -> void:
 	print("Valve: _install_valve() called. Destroying pickable valve.")
 	if is_instance_valid(held_valve):
@@ -297,25 +372,33 @@ func _install_valve(player: Node3D, held_valve: Node3D) -> void:
 	if is_instance_valid(wheel):
 		wheel.show()
 
-	var weapon_holder: Node3D = player.get_node_or_null("%WeaponHolder") as Node3D
+	var weapon_holder: Node3D = (
+		player.get_node_or_null("%WeaponHolder") as Node3D
+	)
 	if is_instance_valid(weapon_holder):
 		weapon_holder.show()
 	print("Valve: Valve Auto-Installed!")
 
 
+## Spawns a physical pickable valve scene into the world and clears the base fixture.
 func _detach_valve() -> void:
 	print("Valve: _detach_valve() called.")
 	if not pickable_valve_scene:
 		push_warning("Cannot detach: No Pickable Valve Scene assigned!")
 		return
 
-	var player: Node3D = get_tree().get_first_node_in_group("player") as Node3D
+	var player: Node3D = (
+		get_tree().get_first_node_in_group("player") as Node3D
+	)
 	if not is_instance_valid(player):
 		return
 
 	var spawned_valve: Node3D = pickable_valve_scene.instantiate() as Node3D
 
-	if is_instance_valid(outline_material) and "outline_material" in spawned_valve:
+	if (
+		is_instance_valid(outline_material)
+		and "outline_material" in spawned_valve
+	):
 		spawned_valve.set("outline_material", outline_material)
 
 	get_tree().current_scene.add_child(spawned_valve)
@@ -331,7 +414,9 @@ func _detach_valve() -> void:
 
 	var grabbed_successfully: bool = false
 	var int_comp: Node = (
-		player.get("interaction_component") if "interaction_component" in player else null
+		player.get("interaction_component")
+		if "interaction_component" in player
+		else null
 	)
 
 	if is_instance_valid(int_comp) and int_comp.has_method("force_grab_item"):
@@ -347,7 +432,9 @@ func _detach_valve() -> void:
 	):
 		spawned_valve.pick_up(player.get("hold_position"), player)
 
-	var weapon_holder: Node3D = player.get_node_or_null("%WeaponHolder") as Node3D
+	var weapon_holder: Node3D = (
+		player.get_node_or_null("%WeaponHolder") as Node3D
+	)
 	if is_instance_valid(weapon_holder) and not grabbed_successfully:
 		weapon_holder.hide()
 
@@ -359,16 +446,18 @@ func _detach_valve() -> void:
 		wheel.hide()
 
 
+## Handles the interaction component focus event to display and vocalize prompt labels.
 func _on_interact_component_focused() -> void:
 	print("Valve: _on_interact_component_focused() called.")
 	if is_locked:
 		return
 	is_focused = true
+	_update_valve_label()
 	if is_instance_valid(label):
-		_update_valve_label()
 		label.show()
 
 
+## Handles the interaction component unfocus event to hide the prompt label.
 func _on_interact_component_unfocused() -> void:
 	print("Valve: _on_interact_component_unfocused() called.")
 	is_focused = false
@@ -376,10 +465,11 @@ func _on_interact_component_unfocused() -> void:
 		label.hide()
 
 
+## Updates the visual prompt text on [member label] and dispatches custom spoken text to TTSandy.
 func _update_valve_label() -> void:
 	print("Valve: _update_valve_label() called.")
-	if not is_instance_valid(label):
-		return
+	var prompt_text: String = ""
+	var speech_text: String = ""
 
 	if is_installed:
 		var events: Array = InputMap.action_get_events("interact")
@@ -399,13 +489,24 @@ func _update_valve_label() -> void:
 				. strip_edges()
 			)
 
-		var text: String = "Hold [%s]" % key_name
+		prompt_text = "Hold [%s]" % key_name
+		speech_text = "Hold [%s] to turn the valve." % key_name
+
 		if can_be_detached:
-			text += "\nDouble tap [%s] to detach" % key_name
-
-		label.text = text
-
+			prompt_text += "\nDouble tap [%s] to detach" % key_name
+			speech_text += " Double tap [%s] to detach." % key_name
 	elif has_been_installed:
-		label.text = "Attach the valve"
+		prompt_text = "Attach the valve"
+		speech_text = prompt_text
 	else:
-		label.text = "Find the valve"
+		prompt_text = "Find the valve"
+		speech_text = prompt_text
+
+	if is_instance_valid(label):
+		label.text = prompt_text
+
+	if has_node("/root/Events"):
+		var events_node: Node = get_node("/root/Events")
+		if events_node.has_signal("object_focused") and not speech_text.is_empty():
+			print("Valve: Broadcasting object_focused prompt to TTSandy.")
+			events_node.object_focused.emit(speech_text, self)

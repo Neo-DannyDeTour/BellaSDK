@@ -3,7 +3,7 @@
 ##
 ## Manages its own rendering optimizations by limiting updates based on distance, interleaving
 ## camera frames, and aligning custom frustum culling.
-class_name ReflectorMirror
+class_name Mirror
 extends Node3D
 
 @export_group("Mirror Settings")

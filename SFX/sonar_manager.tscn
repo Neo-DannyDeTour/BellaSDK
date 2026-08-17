@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://byxvdd1kf32wk"]
+
+[ext_resource type="Script" uid="uid://bt4vn4s4ee6ww" path="res://SFX/SonarManager.gd" id="1_px6df"]
+[ext_resource type="AudioStream" uid="uid://c3m0xmx41phik" path="res://assets/sounds/ping_emitter_sound.mp3" id="2_sfsqy"]
+[ext_resource type="AudioStream" uid="uid://b48d8kktq1vih" path="res://assets/sounds/echo_sound.mp3" id="3_3k8w1"]
+[ext_resource type="AudioStream" uid="uid://dl5jtxo0rqboe" path="res://assets/sounds/waypoint_sound.mp3" id="4_m2xea"]
+[ext_resource type="AudioStream" uid="uid://dj5d1qq5l8hbx" path="res://assets/sounds/watch_out_hazard_sound.mp3" id="5_oi6ty"]
+
+[node name="SonarManager" type="Node" unique_id=1261487664]
+script = ExtResource("1_px6df")
+ping_emitter_sound = ExtResource("2_sfsqy")
+interactable_echo_sound = ExtResource("3_3k8w1")
+waypoint_echo_sound = ExtResource("4_m2xea")
+hazard_echo_sound = ExtResource("5_oi6ty")

@@ -7,10 +7,10 @@
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_wxffa"]
 render_priority = 0
 shader = ExtResource("3_bdkj8")
-shader_parameter/highlight_color = Color(0.6669603, 0.7696019, 0.98834497, 1)
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
 shader_parameter/blink_speed = 8.00000038
-shader_parameter/min_intensity = 0.01
-shader_parameter/max_intensity = 0.02000000095
+shader_parameter/min_intensity = 0.2
+shader_parameter/max_intensity = 1.0
 shader_parameter/alpha_scissor_threshold = 0.5
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fj5oh"]
@@ -23,7 +23,6 @@ material = SubResource("StandardMaterial3D_fj5oh")
 [sub_resource type="BoxShape3D" id="BoxShape3D_74l1t"]
 
 [node name="PickableBox" unique_id=594279821 instance=ExtResource("1_cfr4d")]
-collision_mask = 7
 mass = 5.0
 float_force = 1.5
 

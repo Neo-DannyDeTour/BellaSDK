@@ -1,0 +1,6 @@
+[gd_scene format=3 uid="uid://bhdfhlh5ba34i"]
+
+[ext_resource type="Script" uid="uid://d1brbkbhimcnk" path="res://SFX/SpatialDescriber.gd" id="1_3u4gn"]
+
+[node name="SpatialDescriber" type="Node" unique_id=1388231640]
+script = ExtResource("1_3u4gn")

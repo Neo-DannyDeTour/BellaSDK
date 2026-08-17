@@ -115,6 +115,15 @@ signal subtitle_requested(speaker: String, text: String, duration: float)
 ## Emitted when a currently playing subtitle should be stopped and hidden early.
 signal subtitle_canceled
 
+@warning_ignore("unused_signal")
+## Emitted when the player triggers a spatial sonar scan.
+## [param origin_node] The [Node3D] actor performing the ping.
+signal sonar_ping_requested(origin_node: Node3D)
+
+@warning_ignore("unused_signal")
+## Emitted to request verbal narration of nearby interactables.
+signal describe_surroundings_requested(origin_node: Node3D)
+
 # --- FONT SWAPPING LOGIC ---
 ## Property: Fonts.
 var fonts: Dictionary[String, Font] = {}

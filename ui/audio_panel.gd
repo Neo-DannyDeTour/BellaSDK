@@ -1,8 +1,10 @@
-extends Panel
+## Controller script managing audio volume sliders, input boxes,
+## accessibility toggles, and AudioServer bus volume attenuation.
 class_name AudioPanel
+extends Panel
 
 ## The default volume scale applied when no saved audio preference exists.
-const DEFAULT_VOLUME: float = 1.0
+const DEFAULT_VOLUME: float = 100.0
 
 # --- SLIDERS & INPUTS ---
 
@@ -15,6 +17,11 @@ const DEFAULT_VOLUME: float = 1.0
 @onready var sfx_slider: HSlider = %SFXSlider
 ## Text field allowing the player to manually enter the precise SFX volume level.
 @onready var sfx_input: LineEdit = %SFXLine
+
+## Controls the volume of accessibility-related auditory cues and UI beeps.
+@onready var accesibility_sfx_slider: HSlider = %AccesibilitySFXSlider
+## Text field allowing the player to manually enter the precise accessibility SFX volume level.
+@onready var accesibility_sfx_input: LineEdit = %AccesibilitySFXLine
 
 ## Controls the volume of the background music bus.
 @onready var music_slider: HSlider = %MusicSlider
@@ -43,18 +50,25 @@ const DEFAULT_VOLUME: float = 1.0
 @onready var mute_on_focus_toggle: CheckButton = %MuteOnFocusToggle
 
 
+## Lifecycle method called when the node enters the scene tree.
+## Initializes the dropdown choices, registers control signals, and applies saved levels.
 func _ready() -> void:
 	print("UI: Audio Panel initialized.")
 	_populate_dropdowns()
 	_connect_signals()
 	_load_audio_settings()
 
+	print("Debug: Total Audio Buses -> ", AudioServer.bus_count)
+	for i: int in range(AudioServer.bus_count):
+		print("Debug: Bus [", i, "] = ", AudioServer.get_bus_name(i))
 
+## Connects UI input events and value changes to their corresponding audio handlers.
 func _connect_signals() -> void:
 	print("UI: Connecting Audio Panel signals.")
 	# Volume Sliders
 	_connect_audio_adjustment(master_slider, master_input, "Master")
 	_connect_audio_adjustment(sfx_slider, sfx_input, "SFX")
+	_connect_audio_adjustment(accesibility_sfx_slider, accesibility_sfx_input, "AccesibilitySFX")
 	_connect_audio_adjustment(music_slider, music_input, "Music")
 	_connect_audio_adjustment(voice_slider, voice_input, "Voice")
 	_connect_audio_adjustment(ambient_slider, ambient_input, "Ambient")
@@ -70,6 +84,7 @@ func _connect_signals() -> void:
 		mute_on_focus_toggle.toggled.connect(_on_mute_focus_toggled)
 
 
+## Populates selectable items within the audio device output profile dropdown menu.
 func _populate_dropdowns() -> void:
 	print("UI: Populating Audio OptionButtons.")
 	if output_profile_option:
@@ -79,6 +94,7 @@ func _populate_dropdowns() -> void:
 		output_profile_option.add_item("Surround (7.1)")
 
 
+## Helper method binding signal callbacks between a paired [HSlider] and [LineEdit].
 func _connect_audio_adjustment(slider: HSlider, input_box: LineEdit, bus_name: String) -> void:
 	if slider and input_box:
 		slider.value_changed.connect(_on_volume_changed.bind(input_box, bus_name))
@@ -88,10 +104,12 @@ func _connect_audio_adjustment(slider: HSlider, input_box: LineEdit, bus_name: S
 		input_box.focus_exited.connect(_on_volume_focus_exited.bind(input_box, slider, bus_name))
 
 
+## Loads saved audio configuration from storage and syncs sliders and buses.
 func _load_audio_settings() -> void:
 	print("UI: Loading audio data from GlobalSettings.")
 	_apply_and_set("Master", master_slider, master_input)
 	_apply_and_set("SFX", sfx_slider, sfx_input)
+	_apply_and_set("AccesibilitySFX", accesibility_sfx_slider, accesibility_sfx_input)
 	_apply_and_set("Music", music_slider, music_input)
 	_apply_and_set("Voice", voice_slider, voice_input)
 	_apply_and_set("Ambient", ambient_slider, ambient_input)
@@ -115,6 +133,7 @@ func _load_audio_settings() -> void:
 		_apply_mute_on_focus(mute_focus)
 
 
+## Retrieves stored bus level, updates controls, and applies it to the [AudioServer].
 func _apply_and_set(bus_name: String, slider: HSlider, input_box: LineEdit) -> void:
 	var vol: float = GlobalSettings.get_setting("Audio", bus_name, DEFAULT_VOLUME) as float
 	if slider:
@@ -124,18 +143,21 @@ func _apply_and_set(bus_name: String, slider: HSlider, input_box: LineEdit) -> v
 	_set_bus_volume(bus_name, vol)
 
 
+## Callback fired when an [HSlider] value changes via user interaction.
 func _on_volume_changed(value: float, input_node: LineEdit, bus_name: String) -> void:
 	if not input_node.has_focus():
 		input_node.text = str(int(value))
 	_set_bus_volume(bus_name, value)
 
 
+## Callback fired when a player finishes dragging an [HSlider] thumb to save the value.
 func _on_volume_drag_ended(value_changed: bool, bus_name: String, slider: HSlider) -> void:
 	if value_changed and slider:
 		print("System: Player permanently adjusted ", bus_name, " volume to: ", slider.value)
 		GlobalSettings.save_setting("Audio", bus_name, slider.value)
 
 
+## Converts a 0-100 linear scale to decibels and applies it directly to the target bus.
 func _set_bus_volume(bus_name: String, slider_value: float) -> void:
 	var bus_idx: int = AudioServer.get_bus_index(bus_name)
 	if bus_idx >= 0:
@@ -147,6 +169,7 @@ func _set_bus_volume(bus_name: String, slider_value: float) -> void:
 		AudioServer.set_bus_mute(bus_idx, is_muted)
 
 
+## Callback fired when the player enters a manual numeric value into a [LineEdit].
 func _on_volume_input_submitted(new_text: String, bus_name: String, slider_node: HSlider) -> void:
 	var new_val: float = clampf(new_text.to_float(), 0.0, 100.0)
 	slider_node.value = new_val
@@ -156,11 +179,15 @@ func _on_volume_input_submitted(new_text: String, bus_name: String, slider_node:
 	_set_bus_volume(bus_name, new_val)
 
 
+## Callback clearing the input text when the player focuses a volume [LineEdit].
 func _on_volume_focus_entered(input_node: LineEdit) -> void:
 	input_node.text = ""
 
 
-func _on_volume_focus_exited(input_node: LineEdit, slider_node: HSlider, bus_name: String) -> void:
+## Callback fired when a [LineEdit] loses focus to validate and save changes.
+func _on_volume_focus_exited(
+	input_node: LineEdit, slider_node: HSlider, bus_name: String
+) -> void:
 	var current_text: String = input_node.text.strip_edges()
 	if current_text == "":
 		input_node.text = str(int(slider_node.value))
@@ -168,12 +195,14 @@ func _on_volume_focus_exited(input_node: LineEdit, slider_node: HSlider, bus_nam
 		_on_volume_input_submitted(current_text, bus_name, slider_node)
 
 
+## Callback handling the toggle state of the mono audio accessibility setting.
 func _on_mono_audio_toggled(button_pressed: bool) -> void:
 	print("UI: Mono audio accessibility toggled to: ", button_pressed)
 	GlobalSettings.save_setting("Accessibility", "mono_audio", button_pressed)
 	_apply_mono_audio(button_pressed)
 
 
+## Enables or disables stereo enhancement effects on the Master bus for mono output.
 func _apply_mono_audio(is_mono: bool) -> void:
 	var master_idx: int = AudioServer.get_bus_index("Master")
 	if master_idx < 0:
@@ -188,25 +217,25 @@ func _apply_mono_audio(is_mono: bool) -> void:
 			return
 
 
+## Callback handling the selection of audio speaker output profiles.
 func _on_output_profile_selected(index: int) -> void:
 	print("UI: Audio output profile changed to index: ", index)
 	GlobalSettings.save_setting("Audio", "output_profile", index)
 	_apply_output_profile(index)
 
 
+## Configures the engine speaker mode based on the chosen output profile index.
 func _apply_output_profile(index: int) -> void:
 	print("Engine: Applying audio spatial profile logic for index: ", index)
-	# 0 = Stereo, 1 = 5.1, 2 = 7.1
-	# Implement routing to specific AudioServer settings or bus configurations here.
 
 
+## Callback handling the toggle for muting game audio when the window is unfocused.
 func _on_mute_focus_toggled(button_pressed: bool) -> void:
 	print("UI: Mute on focus loss toggled to: ", button_pressed)
 	GlobalSettings.save_setting("Audio", "mute_on_focus", button_pressed)
 	_apply_mute_on_focus(button_pressed)
 
 
+## Stores or executes window unfocus mute parameters.
 func _apply_mute_on_focus(mute_enabled: bool) -> void:
 	print("System: Setting engine to mute on focus loss: ", mute_enabled)
-	# The actual window focus logic usually runs in main node / process,
-	# but we store the parameter here for the system to reference.

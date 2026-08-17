@@ -1,3 +1,4 @@
+## Manages primary user interface layers, HUD indicators, overlays, and subtitle rendering.
 class_name UIController
 extends CanvasLayer
 
@@ -58,7 +59,9 @@ var default_crosshair_size: Vector2
 @onready var ui_circle_zoom: TextureRect = $CrosshairContainer/UICircleZoom
 
 ## The inner circular texture shown when zooming.
-@onready var ui_circle_zoom_inner: TextureRect = $CrosshairContainer/UICircleZoomInner
+@onready var ui_circle_zoom_inner: TextureRect = (
+	$CrosshairContainer/UICircleZoomInner
+)
 
 ## ColorRect applying a vignette effect to the screen edges.
 @onready var vignette: ColorRect = $Vignette
@@ -77,37 +80,52 @@ var default_crosshair_size: Vector2
 @onready var noclip_alert_container: MarginContainer = $NoclipAlertContainer
 
 ## Panel background for the noclip alert message.
-@onready var noclip_message_container: PanelContainer = $NoclipAlertContainer/NoclipMessageContainer
+@onready var noclip_message_container: PanelContainer = (
+	$NoclipAlertContainer/NoclipMessageContainer
+)
 
 ## Label displaying the current noclip speed or status.
-@onready
-var noclip_label_message: Label = $NoclipAlertContainer/NoclipMessageContainer/NoclipLabelMessage
+@onready var noclip_label_message: Label = (
+	$NoclipAlertContainer/NoclipMessageContainer/NoclipLabelMessage
+)
 
 ## CanvasLayer providing the debug overlay menu.
 @onready var debug_panel: CanvasLayer = $DebugPanel
 
 ## Button to toggle noclip mode in the debug panel.
-@onready var noclip_button: Button = $DebugPanel/PanelContainer/VBoxContainer/NoclipButton
+@onready var noclip_button: Button = (
+	$DebugPanel/PanelContainer/VBoxContainer/NoclipButton
+)
 
 ## Button to toggle the performance metrics window.
-@onready var metrics_button: Button = $DebugPanel/PanelContainer/VBoxContainer/MetricsButton
+@onready var metrics_button: Button = (
+	$DebugPanel/PanelContainer/VBoxContainer/MetricsButton
+)
 
 ## Button to toggle visibility of collision shapes.
-@onready var collision_button: Button = $DebugPanel/PanelContainer/VBoxContainer/CollisionButton
+@onready var collision_button: Button = (
+	$DebugPanel/PanelContainer/VBoxContainer/CollisionButton
+)
 
 ## Button to toggle fullbright rendering mode.
-@onready var fullbright_button: Button = $DebugPanel/PanelContainer/VBoxContainer/FullbrightButton
+@onready var fullbright_button: Button = (
+	$DebugPanel/PanelContainer/VBoxContainer/FullbrightButton
+)
 
 ## Button to toggle wireframe rendering mode.
-@onready var wireframe_button: Button = $DebugPanel/PanelContainer/VBoxContainer/WireframeButton
+@onready var wireframe_button: Button = (
+	$DebugPanel/PanelContainer/VBoxContainer/WireframeButton
+)
 
 ## Button to toggle the green wireframe material overlay.
-@onready var wireframe_overlay_button := (
-	$"DebugPanel/PanelContainer/VBoxContainer/WireframeOverlayButton" as Button
+@onready var wireframe_overlay_button: Button = (
+	$DebugPanel/PanelContainer/VBoxContainer/WireframeOverlayButton
 )
 
 ## Button to hide the main user interface.
-@onready var hide_ui_button: Button = $DebugPanel/PanelContainer/VBoxContainer/HideUIButton
+@onready var hide_ui_button: Button = (
+	$DebugPanel/PanelContainer/VBoxContainer/HideUIButton
+)
 
 ## Panel displaying performance metrics like FPS and frame times.
 @onready var metrics_panel: PanelContainer = $MetricsPanel
@@ -126,10 +144,14 @@ var noclip_label_message: Label = $NoclipAlertContainer/NoclipMessageContainer/N
 @onready var health_margin: MarginContainer = $HealthMargin
 
 ## Container arranging the health heart icons horizontally.
-@onready var hearts_container: HBoxContainer = $HealthMargin/VBoxContainer/HeartsContainer
+@onready var hearts_container: HBoxContainer = (
+	$HealthMargin/VBoxContainer/HeartsContainer
+)
 
 ## Container arranging collected keycard icons horizontally.
-@onready var keycards_container: HBoxContainer = $HealthMargin/VBoxContainer/KeycardsContainer
+@onready var keycards_container: HBoxContainer = (
+	$HealthMargin/VBoxContainer/KeycardsContainer
+)
 
 ## Container for the note reading screen dimming and text.
 @onready var note_overlay_ui: CanvasLayer = $NoteOverlayUI
@@ -138,26 +160,34 @@ var noclip_label_message: Label = $NoclipAlertContainer/NoclipMessageContainer/N
 @onready var note_text_label: RichTextLabel = $NoteOverlayUI/NoteText
 
 ## Container managing the layout of the sprint debuff UI.
-@onready var debuff_container: HBoxContainer = $HealthMargin/VBoxContainer/DebuffContainer
+@onready var debuff_container: HBoxContainer = (
+	$HealthMargin/VBoxContainer/DebuffContainer
+)
 
 ## Icon indicating the sprint blocked debuff is active.
-@onready
-var sprint_debuff_icon: TextureRect = $HealthMargin/VBoxContainer/DebuffContainer/SprintDebuffIcon
+@onready var sprint_debuff_icon: TextureRect = (
+	$HealthMargin/VBoxContainer/DebuffContainer/SprintDebuffIcon
+)
 
 ## Progress bar showing the remaining duration of the sprint debuff.
-@onready
-var sprint_debuff_bar: ProgressBar = $HealthMargin/VBoxContainer/DebuffContainer/SprintDebuffBar
+@onready var sprint_debuff_bar: ProgressBar = (
+	$HealthMargin/VBoxContainer/DebuffContainer/SprintDebuffBar
+)
 
 ## Container managing the layout of the immobilize debuff UI.
-@onready var immobilize_container: HBoxContainer = $HealthMargin/VBoxContainer/ImmobilizeContainer
+@onready var immobilize_container: HBoxContainer = (
+	$HealthMargin/VBoxContainer/ImmobilizeContainer
+)
 
 ## Icon indicating the immobilize debuff is active.
-@onready
-var immobilize_icon: TextureRect = $HealthMargin/VBoxContainer/ImmobilizeContainer/ImmobilizeIcon
+@onready var immobilize_icon: TextureRect = (
+	$HealthMargin/VBoxContainer/ImmobilizeContainer/ImmobilizeIcon
+)
 
 ## Progress bar showing the remaining duration of the immobilize debuff.
-@onready
-var immobilize_bar: ProgressBar = $HealthMargin/VBoxContainer/ImmobilizeContainer/ImmobilizeBar
+@onready var immobilize_bar: ProgressBar = (
+	$HealthMargin/VBoxContainer/ImmobilizeContainer/ImmobilizeBar
+)
 
 ## CanvasGroup for grouping the warning/hint text UI.
 @onready var warning_canvas_group: CanvasGroup = $WarningCanvasGroup
@@ -204,21 +234,16 @@ var electro_tween: Tween
 @onready var subtitle_margin: MarginContainer = $SubtitleMargin
 
 ## Rich text element that types out the subtitle text and automatically scrolls it.
-@onready var subtitle_label: RichTextLabel = $SubtitleMargin/SubtitlePanel/SubtitleLabel
+@onready var subtitle_label: RichTextLabel = (
+	$SubtitleMargin/SubtitlePanel/SubtitleLabel
+)
 
 ## Animates the subtitle visibility and the typewriter character reveal effect.
 var subtitle_tween: Tween
 
-## Audio player for the text-scrolling blip sound.
-var blip_player: AudioStreamPlayer = AudioStreamPlayer.new()
 
-## The audio stream for TTSandy's UI blip (Assign this in the inspector).
-@export var ttsandy_blip: AudioStreamMP3
-
-## Tracks the last character count to prevent overlapping audio spam on the same frame.
-var last_visible_char: int = 0
-
-
+## Lifecycle method called when the node enters the scene tree.
+## Initializes UI states, binds event bus signals, and creates dynamic materials.
 func _ready() -> void:
 	print("UIController: _ready() called. Initializing UI elements.")
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -249,7 +274,9 @@ func _ready() -> void:
 	ui_circle_zoom.modulate.a = 0.0
 	ui_circle_zoom.hide()
 
-	ui_circle_zoom_inner.pivot_offset = ui_circle_zoom_inner.custom_minimum_size / 2.0
+	ui_circle_zoom_inner.pivot_offset = (
+		ui_circle_zoom_inner.custom_minimum_size / 2.0
+	)
 	ui_circle_zoom_inner.scale = Vector2.ZERO
 	ui_circle_zoom_inner.modulate.a = 0.0
 	ui_circle_zoom_inner.hide()
@@ -281,14 +308,14 @@ func _ready() -> void:
 
 	if warning_label:
 		warning_label.modulate.a = 0.0
-		# Apply simple outline theme override to solve the white box background bug
-		warning_label.add_theme_color_override("font_outline_color", Color.BLACK)
+		warning_label.add_theme_color_override(
+			"font_outline_color", Color.BLACK
+		)
 		warning_label.add_theme_constant_override("outline_size", 12)
 
 	if warning_canvas_group:
 		warning_canvas_group.material = null
 
-	# Fix placement of the CanvasGroup Node2D relative to the screen
 	_recenter_warning_ui()
 	get_viewport().size_changed.connect(_recenter_warning_ui)
 
@@ -297,7 +324,9 @@ func _ready() -> void:
 			Events.sprint_debuff_applied.connect(_on_sprint_debuff_applied)
 
 	if Events.has_signal("immobilize_debuff_applied"):
-		if not Events.immobilize_debuff_applied.is_connected(_on_immobilize_debuff_applied):
+		if not Events.immobilize_debuff_applied.is_connected(
+			_on_immobilize_debuff_applied
+		):
 			Events.immobilize_debuff_applied.connect(_on_immobilize_debuff_applied)
 
 	if not Events.player_electrocuted.is_connected(_on_player_electrocuted):
@@ -326,9 +355,6 @@ func _ready() -> void:
 		if not Events.note_closed.is_connected(_on_note_closed):
 			Events.note_closed.connect(_on_note_closed)
 
-	# Add the audio player to the scene tree so it can process sound
-	add_child(blip_player)
-
 	if Events.has_signal("subtitle_requested"):
 		if not Events.subtitle_requested.is_connected(_on_subtitle_requested):
 			Events.subtitle_requested.connect(_on_subtitle_requested)
@@ -342,34 +368,34 @@ func _ready() -> void:
 		subtitle_margin.modulate.a = 0.0
 
 
+## Repositions hint and warning notifications relative to the screen center.
 func _recenter_warning_ui() -> void:
 	print("UIController: _recenter_warning_ui() called to position hint text.")
 	if not warning_canvas_group or not warning_label:
 		return
 
 	var screen_size: Vector2 = get_viewport().get_visible_rect().size
-
-	# Place the Node2D (CanvasGroup) exactly in the X center and 80px below the Y center
-	warning_canvas_group.position = Vector2(screen_size.x / 2.0, (screen_size.y / 2.0) + 70.0)
-
-	# Setting this preset relative to a 0x0 Node2D origin causes the label
-	# to perfectly center its own text bounds directly underneath that anchor point.
+	warning_canvas_group.position = Vector2(
+		screen_size.x / 2.0, (screen_size.y / 2.0) + 70.0
+	)
 	warning_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 
 
+## Updates screen-space shaders and vignette transitions every render frame.
 func _process(delta: float) -> void:
 	var target_vignette_opacity: float = 0.8 if is_player_crouching else 0.0
+	var current_opacity: float = (
+		vignette.material.get_shader_parameter("vignette_opacity") as float
+	)
 
-	var current_opacity: float = vignette.material.get_shader_parameter("vignette_opacity") as float
-
-	if current_opacity == null:
-		current_opacity = 0.0
-
-	var new_opacity: float = lerp(current_opacity, target_vignette_opacity, delta * ui_lerp_speed)
+	var new_opacity: float = lerp(
+		current_opacity, target_vignette_opacity, delta * ui_lerp_speed
+	)
 	vignette.material.set_shader_parameter("vignette_opacity", new_opacity)
 
 
 # --- HEALTH LOGIC ---
+## Slices the heart atlas and builds initial health container representations.
 func _initialize_hearts() -> void:
 	print("UIController: _initialize_hearts() called. Setting up health display.")
 	if not hearts_atlas:
@@ -380,21 +406,19 @@ func _initialize_hearts() -> void:
 	var atlas_height: float = hearts_atlas.get_height()
 	var frame_width: float = atlas_width / 5.0
 
-	# Cache textures
 	for i: int in range(5):
 		var tex: AtlasTexture = AtlasTexture.new()
 		tex.atlas = hearts_atlas
 		tex.region = Rect2(i * frame_width, 0.0, frame_width, atlas_height)
 		heart_textures.append(tex)
 
-	# Populate initial required hearts
 	while heart_nodes.size() * 100 < current_health:
 		_add_heart_node()
 
 	update_health(current_health)
 
 
-## Helper function to dynamically add a single heart UI node.
+## Dynamically adds a single heart UI node container to the screen layout.
 func _add_heart_node() -> void:
 	print("UIController: _add_heart_node() - Expanding maximum heart UI count.")
 	var atlas_height: float = hearts_atlas.get_height()
@@ -419,10 +443,10 @@ func _add_heart_node() -> void:
 	heart_tweens.append(null)
 
 
+## Re-renders all heart frames and plays health change damage or heal tweens.
 func update_health(new_health: int) -> void:
 	print("UIController: update_health() called with new value: ", new_health)
 
-	# Expand UI dynamically if health exceeds current node count
 	while new_health > heart_nodes.size() * 100:
 		_add_heart_node()
 
@@ -464,6 +488,7 @@ func update_health(new_health: int) -> void:
 		heart_nodes[i].get_parent().visible = true
 
 
+## Plays a red screen flash animation when the player sustains damage.
 func _trigger_pain_effect() -> void:
 	print("UIController: _trigger_pain_effect() called. Flashing screen red.")
 	if pain_overlay == null:
@@ -471,21 +496,20 @@ func _trigger_pain_effect() -> void:
 
 	pain_overlay.show()
 
-	# 1. Kill any existing pain tween so rapid hits don't break the animation
 	if pain_tween and pain_tween.is_valid():
 		pain_tween.kill()
 
-	# 2. FORCE pure red (RGB 1,0,0) with 0.4 alpha, bypassing any inspector settings
 	pain_overlay.color = Color(1.0, 0.0, 0.0, 0.4)
-
-	# 3. Tween the entire color property down to 0.0 alpha
 	pain_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	pain_tween.tween_property(pain_overlay, "color", Color(1.0, 0.0, 0.0, 0.0), 0.3)
+	pain_tween.tween_property(
+		pain_overlay, "color", Color(1.0, 0.0, 0.0, 0.0), 0.3
+	)
 	pain_tween.finished.connect(pain_overlay.hide)
 
 
+## Runs a vertical bounce tween on the target heart node when damaged.
 func _animate_heart_damage(index: int) -> void:
-	print("UIController: _animate_heart_damage() called for heart index: ", index)
+	print("UIController: _animate_heart_damage() called for index: ", index)
 	if index < 0 or index >= heart_nodes.size():
 		return
 
@@ -495,8 +519,9 @@ func _animate_heart_damage(index: int) -> void:
 		heart_tweens[index].kill()
 
 	heart.position.y = 0.0
-
-	var tween: Tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	var tween: Tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(
+		Tween.EASE_IN_OUT
+	)
 	heart_tweens[index] = tween
 
 	var jump_height: float = -15.0
@@ -507,8 +532,9 @@ func _animate_heart_damage(index: int) -> void:
 	tween.tween_property(heart, "position:y", 0.0, duration)
 
 
+## Spawns a scaling green ghost texture to visually represent health recovery.
 func _animate_heart_heal(index: int, frame_index: int) -> void:
-	print("UIController: _animate_heart_heal() called for heart index: ", index)
+	print("UIController: _animate_heart_heal() called for index: ", index)
 	if index < 0 or index >= heart_nodes.size():
 		return
 
@@ -527,26 +553,26 @@ func _animate_heart_heal(index: int, frame_index: int) -> void:
 
 	heart.add_child(ghost)
 
-	var tween: Tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(
-		Tween.EASE_OUT
-	)
+	var tween: Tween = create_tween().set_parallel(true).set_trans(
+		Tween.TRANS_CUBIC
+	).set_ease(Tween.EASE_OUT)
 
 	var anim_duration: float = 0.5
 	tween.tween_property(ghost, "scale", Vector2(3.0, 3.0), anim_duration)
 	tween.tween_property(ghost, "modulate:a", 0.0, anim_duration)
-
 	tween.chain().tween_callback(ghost.queue_free)
 
 
 # --- ZOOM ANIMATION LOGIC ---
+## Tweens reticle rings and fisheye parameters when entering or exiting aim zoom.
 func _on_player_zoomed(is_zooming: bool) -> void:
 	print("UIController: _on_player_zoomed() called. State: ", is_zooming)
 	if zoom_tween and zoom_tween.is_valid():
 		zoom_tween.kill()
 
-	zoom_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(
-		Tween.EASE_OUT
-	)
+	zoom_tween = create_tween().set_parallel(true).set_trans(
+		Tween.TRANS_CUBIC
+	).set_ease(Tween.EASE_OUT)
 
 	if is_zooming:
 		center_dot.hide()
@@ -558,34 +584,50 @@ func _on_player_zoomed(is_zooming: bool) -> void:
 		ui_circle_zoom_inner.scale = Vector2.ZERO
 		ui_circle_zoom_inner.modulate.a = 0.0
 
-		zoom_tween.tween_property(ui_circle_zoom, "scale", Vector2(1.0, 1.0), 0.5).from(
-			Vector2.ZERO
-		)
-		zoom_tween.tween_property(ui_circle_zoom, "modulate:a", 1.0, 0.3).from(0.0)
-		zoom_tween.tween_property(ui_circle_zoom, "rotation", deg_to_rad(15), 1.0).from(0.0)
+		zoom_tween.tween_property(
+			ui_circle_zoom, "scale", Vector2(1.0, 1.0), 0.5
+		).from(Vector2.ZERO)
+		zoom_tween.tween_property(
+			ui_circle_zoom, "modulate:a", 1.0, 0.3
+		).from(0.0)
+		zoom_tween.tween_property(
+			ui_circle_zoom, "rotation", deg_to_rad(15), 1.0
+		).from(0.0)
 
-		zoom_tween.tween_property(ui_circle_zoom_inner, "scale", Vector2(1.0, 1.0), 0.5).from(
-			Vector2.ZERO
-		)
-		zoom_tween.tween_property(ui_circle_zoom_inner, "modulate:a", 0.1, 0.3).from(0.0)
-		zoom_tween.tween_property(ui_circle_zoom_inner, "rotation", deg_to_rad(-45), 1.0).from(0.0)
+		zoom_tween.tween_property(
+			ui_circle_zoom_inner, "scale", Vector2(1.0, 1.0), 0.5
+		).from(Vector2.ZERO)
+		zoom_tween.tween_property(
+			ui_circle_zoom_inner, "modulate:a", 0.1, 0.3
+		).from(0.0)
+		zoom_tween.tween_property(
+			ui_circle_zoom_inner, "rotation", deg_to_rad(-45), 1.0
+		).from(0.0)
 
-		(
-			zoom_tween
-			. tween_property(fisheye_zoom, "material:shader_parameter/effect_strength", 0.4, 0.2)
-			. from(0.0)
-		)
-
+		zoom_tween.tween_property(
+			fisheye_zoom, "material:shader_parameter/effect_strength", 0.4, 0.2
+		).from(0.0)
 	else:
 		center_dot.show()
+		zoom_tween.tween_property(
+			ui_circle_zoom, "scale", Vector2.ZERO, 0.5
+		)
+		zoom_tween.tween_property(
+			ui_circle_zoom, "modulate:a", 0.0, 0.3
+		)
+		zoom_tween.tween_property(
+			ui_circle_zoom, "rotation", deg_to_rad(0), 0.25
+		)
 
-		zoom_tween.tween_property(ui_circle_zoom, "scale", Vector2(0.0, 0.0), 0.5)
-		zoom_tween.tween_property(ui_circle_zoom, "modulate:a", 0.0, 0.3)
-		zoom_tween.tween_property(ui_circle_zoom, "rotation", deg_to_rad(0), 0.25)
-
-		zoom_tween.tween_property(ui_circle_zoom_inner, "scale", Vector2(0.0, 0.0), 0.5)
-		zoom_tween.tween_property(ui_circle_zoom_inner, "modulate:a", 0.0, 0.3)
-		zoom_tween.tween_property(ui_circle_zoom_inner, "rotation", deg_to_rad(0), 0.25)
+		zoom_tween.tween_property(
+			ui_circle_zoom_inner, "scale", Vector2.ZERO, 0.5
+		)
+		zoom_tween.tween_property(
+			ui_circle_zoom_inner, "modulate:a", 0.0, 0.3
+		)
+		zoom_tween.tween_property(
+			ui_circle_zoom_inner, "rotation", deg_to_rad(0), 0.25
+		)
 
 		zoom_tween.tween_property(
 			fisheye_zoom, "material:shader_parameter/effect_strength", 0.0, 0.2
@@ -598,30 +640,32 @@ func _on_player_zoomed(is_zooming: bool) -> void:
 		)
 
 
-# --- CROUCH LISTENER ---
+## Updates crouch state tracking to drive camera vignette lerping.
 func _on_player_crouched(crouching: bool) -> void:
 	is_player_crouching = crouching
 	print("UIController: received crouch signal! Crouching: ", crouching)
 
 
+## Intercepts global debug hotkeys and debuff warning triggers on keypress.
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.is_pressed() and not event.is_echo():
-		# Check for the tilde key to open the debug panel
 		if event.keycode == KEY_QUOTELEFT and is_debug_allowed:
 			print("UIController: Tilde key pressed. Opening debug panel.")
 			_toggle_debug_panel()
 
-		# Catch physical movement inputs to display warnings while debuffed
 		if is_immobilized:
-			if event.keycode in [KEY_W, KEY_A, KEY_S, KEY_D, KEY_SPACE, KEY_SHIFT]:
-				print("UIController: Movement blocked - player is immobilized.")
+			if event.keycode in [
+				KEY_W, KEY_A, KEY_S, KEY_D, KEY_SPACE, KEY_SHIFT
+			]:
+				print("UIController: Movement blocked - immobilized.")
 				_show_warning_message("Can't move!", 2.0)
 		elif is_sprint_blocked:
 			if event.keycode == KEY_SHIFT:
-				print("UIController: Movement blocked - sprint is on cooldown.")
+				print("UIController: Movement blocked - sprint cooldown.")
 				_show_warning_message("Can't sprint", 2.0)
 
 
+## Shows or hides the developer debug drawer and captures or frees the mouse.
 func _toggle_debug_panel() -> void:
 	debug_panel.visible = not debug_panel.visible
 	print("UIController: Debug panel visibility toggled -> ", debug_panel.visible)
@@ -632,11 +676,13 @@ func _toggle_debug_panel() -> void:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
+## Handles pressing the debug noclip button by emitting a global trigger event.
 func _on_noclip_button_pressed() -> void:
 	print("UIController: Noclip button pressed.")
 	Events.noclip_ui_button_pressed.emit()
 
 
+## Toggles on-screen noclip badge text when the player toggles fly mode.
 func _on_noclip_toggled(is_flying: bool) -> void:
 	print("UIController: Noclip toggled. State: ", is_flying)
 	if is_flying:
@@ -647,11 +693,12 @@ func _on_noclip_toggled(is_flying: bool) -> void:
 		noclip_button.text = "Noclip OFF"
 
 
+## Updates the noclip indicator badge label to show the current speed multiplier.
 func _on_noclip_speed_changed(speed: float) -> void:
-	#print("UIController: _on_noclip_speed_changed() called. Speed: ", speed)
 	noclip_label_message.text = "Noclip ON: %.1fx speed" % speed
 
 
+## Toggles fullbright unshaded rendering mode across the scene.
 func _on_fullbright_button_pressed() -> void:
 	is_fullbright = !is_fullbright
 	print("UIController: Fullbright toggled. State: ", is_fullbright)
@@ -664,6 +711,7 @@ func _on_fullbright_button_pressed() -> void:
 	Events.fullbright_toggled.emit(is_fullbright)
 
 
+## Toggles world wireframe debug view mode.
 func _on_wireframe_button_pressed() -> void:
 	is_wireframe = !is_wireframe
 	print("UIController: Wireframe toggled. State: ", is_wireframe)
@@ -676,6 +724,7 @@ func _on_wireframe_button_pressed() -> void:
 	Events.wireframe_toggled.emit(is_wireframe)
 
 
+## Toggles the green wireframe material overlay across all scene geometry.
 func _on_wireframe_overlay_button_pressed() -> void:
 	is_wireframe_overlay = !is_wireframe_overlay
 	print("UIController: Wireframe overlay toggled. State: ", is_wireframe_overlay)
@@ -692,6 +741,7 @@ func _on_wireframe_overlay_button_pressed() -> void:
 		_apply_wireframe_to_node(root_node, is_wireframe_overlay)
 
 
+## Recursively applies or removes the green wireframe shader overlay on mesh nodes.
 func _apply_wireframe_to_node(node: Node, is_overlay: bool) -> void:
 	if node is MeshInstance3D or node is CSGShape3D:
 		if is_overlay:
@@ -703,6 +753,7 @@ func _apply_wireframe_to_node(node: Node, is_overlay: bool) -> void:
 		_apply_wireframe_to_node(child, is_overlay)
 
 
+## Toggles the frame statistics and frame graph debug window.
 func _on_metrics_button_pressed() -> void:
 	print("UIController: Metrics button pressed.")
 	if metrics_panel:
@@ -712,41 +763,48 @@ func _on_metrics_button_pressed() -> void:
 			frame_graph.visible = metrics_panel.visible
 
 
-# --- NEW CROSSHAIR ANIMATION ---
+## Expands the crosshair dot into terminal interaction bounds.
 func _on_terminal_mode_toggled(is_active: bool) -> void:
-	print("UIController: Terminal mode toggled to ", is_active, ". Animating crosshair.")
+	print("UIController: Terminal mode toggled: ", is_active)
 
 	if crosshair_tween and crosshair_tween.is_valid():
 		crosshair_tween.kill()
 
-	crosshair_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(
-		Tween.EASE_OUT
-	)
+	crosshair_tween = create_tween().set_parallel(true).set_trans(
+		Tween.TRANS_CUBIC
+	).set_ease(Tween.EASE_OUT)
 
 	if is_active:
 		var target_size: Vector2 = Vector2(16.0, 16.0)
-		crosshair_tween.tween_property(center_dot, "custom_minimum_size", target_size, 0.3)
+		crosshair_tween.tween_property(
+			center_dot, "custom_minimum_size", target_size, 0.3
+		)
 		crosshair_tween.tween_property(center_dot, "size", target_size, 0.3)
 	else:
 		crosshair_tween.tween_property(
 			center_dot, "custom_minimum_size", default_crosshair_size, 0.3
 		)
-		crosshair_tween.tween_property(center_dot, "size", default_crosshair_size, 0.3)
+		crosshair_tween.tween_property(
+			center_dot, "size", default_crosshair_size, 0.3
+		)
 
 
-# --- COLLISION DEBUG LOGIC ---
+## Toggles runtime physics collision shape rendering.
 func _on_collision_button_pressed() -> void:
 	is_collision_visible = !is_collision_visible
 	print("UIController: Collision visibility toggled. State: ", is_collision_visible)
 
 	get_tree().debug_collisions_hint = is_collision_visible
-	collision_button.text = "Collisions ON" if is_collision_visible else "Collisions OFF"
+	collision_button.text = (
+		"Collisions ON" if is_collision_visible else "Collisions OFF"
+	)
 
 	var root_node: Node = get_tree().current_scene
 	if root_node:
 		_force_collision_redraw(root_node, is_collision_visible)
 
 
+## Forces collision visualizers to refresh their mesh representations.
 func _force_collision_redraw(node: Node, show_collisions: bool) -> void:
 	if node is CollisionShape3D and node.shape:
 		var temp_shape: Shape3D = node.shape
@@ -768,12 +826,14 @@ func _force_collision_redraw(node: Node, show_collisions: bool) -> void:
 		_force_collision_redraw(child, show_collisions)
 
 
+## Handles hide UI button press.
 func _on_hide_ui_button_pressed() -> void:
 	print("UIController: Hide UI button pressed.")
 	hide_ui_button.release_focus()
 	_toggle_ui_elements(not is_ui_hidden)
 
 
+## Toggles gameplay HUD visibility for clean screenshots or immersion.
 func _toggle_ui_elements(should_hide: bool) -> void:
 	is_ui_hidden = should_hide
 	var visibility: bool = !is_ui_hidden
@@ -788,6 +848,7 @@ func _toggle_ui_elements(should_hide: bool) -> void:
 	print("UIController: UI Visibility set to: ", visibility)
 
 
+## Checks if the current scene is a testbed level to automatically show metrics.
 func _check_if_testbed() -> void:
 	print("UIController: Checking if current scene is TestbedMap...")
 	var current_scene: Node = get_tree().current_scene
@@ -796,9 +857,9 @@ func _check_if_testbed() -> void:
 		_open_metrics_panel()
 
 
+## Opens the metrics and performance profiling panel.
 func _open_metrics_panel() -> void:
-	print("UIController: TestbedMap detected. Opening metrics panel automatically.")
-
+	print("UIController: TestbedMap detected. Opening metrics panel.")
 	if metrics_panel and not metrics_panel.visible:
 		metrics_panel.toggle_window()
 
@@ -806,6 +867,7 @@ func _open_metrics_panel() -> void:
 			frame_graph.visible = metrics_panel.visible
 
 
+## Adds a keycard texture rectangle to the HUD inventory display.
 func _on_card_picked_up(card_id: StringName) -> void:
 	print("UIController: Displaying new card ID ", card_id)
 	var card_rect: TextureRect = TextureRect.new()
@@ -822,24 +884,29 @@ func _on_card_picked_up(card_id: StringName) -> void:
 	keycards_container.add_child(card_rect)
 	active_card_icons[card_id] = card_rect
 
-	# Bounce animation
 	card_rect.scale = Vector2.ZERO
 	card_rect.pivot_offset = card_rect.custom_minimum_size / 2.0
-	var tween: Tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	var tween: Tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(
+		Tween.EASE_OUT
+	)
 	tween.tween_property(card_rect, "scale", Vector2.ONE, 0.4)
 
 
+## Animates and removes a used keycard icon from the HUD inventory display.
 func _on_card_used(card_id: StringName) -> void:
 	print("UIController: Removing used card ID ", card_id)
 	if active_card_icons.has(card_id):
 		var card_rect: TextureRect = active_card_icons[card_id]
-		var tween: Tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+		var tween: Tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(
+			Tween.EASE_IN
+		)
 		tween.tween_property(card_rect, "scale", Vector2.ZERO, 0.2)
 		tween.finished.connect(card_rect.queue_free)
 		active_card_icons.erase(card_id)
 
 
-func _show_warning_message(message: String, duration: float) -> void:
+## Fades in a centered notification banner with the provided text.
+func _show_warning_message(message: String, duration: float = 2.0) -> void:
 	print("UIController: Displaying warning '", message, "' for ", duration, "s.")
 	warning_label.text = message
 
@@ -852,9 +919,12 @@ func _show_warning_message(message: String, duration: float) -> void:
 	warning_tween.tween_property(warning_label, "modulate:a", 0.0, 0.5)
 
 
+## Starts and animates the sprint debuff progress bar cooldown.
 func _on_sprint_debuff_applied(duration: float) -> void:
 	print(
-		"UIController: _on_sprint_debuff_applied() - Starting debuff UI for ", duration, " seconds."
+		"UIController: _on_sprint_debuff_applied() - Starting debuff UI for ",
+		duration,
+		" seconds."
 	)
 	debuff_container.show()
 	is_sprint_blocked = true
@@ -867,7 +937,6 @@ func _on_sprint_debuff_applied(duration: float) -> void:
 
 	debuff_tween = create_tween()
 	debuff_tween.tween_property(sprint_debuff_bar, "value", 0.0, duration)
-
 	debuff_tween.finished.connect(
 		func() -> void:
 			debuff_container.hide()
@@ -875,9 +944,10 @@ func _on_sprint_debuff_applied(duration: float) -> void:
 	)
 
 
+## Starts and animates the immobilize debuff progress bar cooldown.
 func _on_immobilize_debuff_applied(duration: float) -> void:
 	print(
-		"UIController: _on_immobilize_debuff_applied() - Starting immobilize UI for ",
+		"UIController: _on_immobilize_debuff_applied() - Starting UI for ",
 		duration,
 		" seconds."
 	)
@@ -892,7 +962,6 @@ func _on_immobilize_debuff_applied(duration: float) -> void:
 
 	immobilize_tween = create_tween()
 	immobilize_tween.tween_property(immobilize_bar, "value", 0.0, duration)
-
 	immobilize_tween.finished.connect(
 		func() -> void:
 			immobilize_container.hide()
@@ -900,10 +969,10 @@ func _on_immobilize_debuff_applied(duration: float) -> void:
 	)
 
 
+## Triggers glitch and electrical vignette shader pulses upon shock damage.
 func _on_player_electrocuted() -> void:
-	print("UIController: _on_player_electrocuted() - Triggering electric shock UI effects.")
+	print("UIController: _on_player_electrocuted() - Triggering electric FX.")
 
-	# 1. Instantly kill the pain overlay if it was triggered by the damage tick
 	if pain_tween and pain_tween.is_valid():
 		pain_tween.kill()
 	if pain_overlay:
@@ -914,8 +983,9 @@ func _on_player_electrocuted() -> void:
 		if glitch_tween and glitch_tween.is_valid():
 			glitch_tween.kill()
 
-		glitch_tween = create_tween().set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
-
+		glitch_tween = create_tween().set_trans(Tween.TRANS_BOUNCE).set_ease(
+			Tween.EASE_OUT
+		)
 		glitch_tween.tween_method(
 			func(val: float) -> void:
 				glitch_overlay.material.set_shader_parameter("intensity", val)
@@ -931,8 +1001,9 @@ func _on_player_electrocuted() -> void:
 		if electro_tween and electro_tween.is_valid():
 			electro_tween.kill()
 
-		electro_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-
+		electro_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(
+			Tween.EASE_OUT
+		)
 		electro_tween.tween_method(
 			func(val: float) -> void:
 				electricity_vignette.material.set_shader_parameter("intensity", val)
@@ -944,45 +1015,38 @@ func _on_player_electrocuted() -> void:
 		electro_tween.finished.connect(electricity_vignette.hide)
 
 
+## Shows the note reading interface populated with formatted note text.
 func _on_note_opened(note_text: String) -> void:
-	print("UIController: _on_note_opened() received. Displaying text.")
+	print("UIController: _on_note_opened() received. Displaying note.")
 	if note_overlay_ui != null and note_text_label != null:
 		var formatted_text: String = note_text.replace("\\n", "\n")
 		note_text_label.text = formatted_text
 		note_overlay_ui.show()
 
 
+## Hides the note reading canvas layer.
 func _on_note_closed() -> void:
 	print("UIController: _on_note_closed() received. Hiding UI.")
 	if note_overlay_ui != null:
 		note_overlay_ui.hide()
 
 
-## Displays the subtitle text, typing it out to match audio length, and fades out after.
-func _on_subtitle_requested(speaker: String, text: String, duration: float) -> void:
-	print(
-		"UIController: _on_subtitle_requested() called. Displaying scrolling subtitle for ", speaker
-	)
+## Displays the subtitle text and animates the typewriter effect concurrently with speech.
+func _on_subtitle_requested(
+	speaker: String, text: String, duration: float
+) -> void:
+	print("UIController: _on_subtitle_requested() for speaker: ", speaker)
 
 	if not subtitle_label or not subtitle_margin:
 		return
 
-	var formatted_speaker: String = speaker
-
-	if speaker == "TTSandy":
-		formatted_speaker = "[color=#00ffff][b]" + speaker + ":[/b][/color]"
-
-		# Play the blip exactly ONCE right as the UI appears
-		if ttsandy_blip != null:
-			blip_player.stream = ttsandy_blip
-			# FIX: Locked the pitch to 1.0 for a consistent accessibility audio cue.
-			blip_player.pitch_scale = 1.0
-			blip_player.play()
-	else:
-		formatted_speaker = "[b]" + speaker + ":[/b]"
+	var formatted_speaker: String = (
+		"[color=#00ffff][b]" + speaker + ":[/b][/color]"
+		if speaker == "TTSandy"
+		else "[b]" + speaker + ":[/b]"
+	)
 
 	subtitle_label.text = formatted_speaker + " " + text
-
 	subtitle_label.visible_characters = 0
 	subtitle_margin.show()
 
@@ -990,35 +1054,35 @@ func _on_subtitle_requested(speaker: String, text: String, duration: float) -> v
 		subtitle_tween.kill()
 
 	subtitle_tween = create_tween()
-
-	subtitle_tween.parallel().tween_property(subtitle_margin, "modulate:a", 1.0, 0.15)
+	subtitle_tween.parallel().tween_property(
+		subtitle_margin, "modulate:a", 1.0, 0.15
+	)
 
 	var total_chars: int = subtitle_label.get_total_character_count()
-	var type_duration: float = max(0.1, duration - 0.5)
+	var type_duration: float = max(0.1, duration)
 
-	# We removed .bind(speaker) since the update function no longer needs to know who is talking
 	subtitle_tween.parallel().tween_method(
 		_update_visible_characters, 0, total_chars, type_duration
 	)
 
-	subtitle_tween.chain().tween_interval(0.5)
-	subtitle_tween.chain().tween_property(subtitle_margin, "modulate:a", 0.0, 0.5)
+	subtitle_tween.chain().tween_interval(0.6)
+	subtitle_tween.chain().tween_property(
+		subtitle_margin, "modulate:a", 0.0, 0.4
+	)
 	subtitle_tween.finished.connect(subtitle_margin.hide)
 
 
-## Updates the visible characters for the typewriter effect.
+## Updates visible typewriter characters without playing audio.
 func _update_visible_characters(current_chars: int) -> void:
 	subtitle_label.visible_characters = current_chars
 
 
+## Cancels any active subtitle typewriter animations and hides the container.
 func _on_subtitle_canceled() -> void:
-	print("UIController: _on_subtitle_canceled() called. Stopping subtitle animations.")
+	print("UIController: _on_subtitle_canceled() called. Resetting subtitle UI.")
 
 	if subtitle_tween and subtitle_tween.is_valid():
 		subtitle_tween.kill()
-
-	if blip_player and blip_player.playing:
-		blip_player.stop()
 
 	if subtitle_margin:
 		subtitle_margin.hide()

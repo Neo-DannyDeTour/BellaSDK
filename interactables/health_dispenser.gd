@@ -1,7 +1,7 @@
 ## A wall-mounted machine that provides healing to the player over time when held.
 ##
-## Includes a procedural tentacle animation that tracks the player's position when they approach
-## and updates a digital screen to reflect their current health percentage.
+## Includes a procedural tentacle animation that tracks the player's position when they approach,
+## updates a digital screen to reflect health percentage, and depletes a physical health cylinder.
 class_name HealthDispenser
 extends StaticBody3D
 
@@ -18,6 +18,8 @@ extends StaticBody3D
 @export var heal_amount: int = 25
 ## The minimum time in milliseconds required between healing ticks.
 @export var heal_cooldown_msec: int = 250
+## The maximum amount of healing points stored in this dispenser unit.
+@export var max_dispenser_health: int = 200
 
 @export_category("Node References")
 ## The [Sprite3D] node used to project the health status texture on the machine face.
@@ -26,6 +28,8 @@ extends StaticBody3D
 @export var tentacle_pivot: Node3D
 ## The collision zone that detects player presence to animate the tentacle.
 @export var detection_area: Area3D
+## The cylinder mesh that visually drains and shifts color as dispenser health depletes.
+@export var health_cylinder: MeshInstance3D
 
 @export_category("Procedural Tentacle")
 ## The number of cylindrical segments making up the flexible tentacle.
@@ -43,6 +47,14 @@ var _nearby_player: CharacterBody3D = null
 var _player_health_component: Node = null
 ## Time tracker for regulating the continuous heal loop.
 var _last_heal_time: int = 0
+## The current remaining healing points stored in the dispenser.
+var _current_dispenser_health: int = 200
+## The initial local Y position of the cylinder mesh before scaling offsets.
+var _cylinder_initial_pos_y: float = 0.0
+## The initial full height of the cylinder mesh.
+var _cylinder_initial_height: float = 1.0
+## Dedicated unique material for dynamic color adjustments on the health cylinder.
+var _cylinder_material: StandardMaterial3D = null
 
 # Tentacle generation variables
 ## Object pool for the instantiated cylindrical mesh segments.
@@ -55,10 +67,12 @@ var _current_target_pos: Vector3
 var _active_weight: float = 0.0
 
 
-## Builds the procedural mesh segments, sets default resting positions, and connects signals.
+## Builds the procedural mesh segments, sets resting positions, and prepares the health cylinder.
 func _ready() -> void:
 	print("HealthDispenser: _ready() - Initializing dispenser and procedural tentacle.")
 
+	_current_dispenser_health = max_dispenser_health
+	_setup_health_cylinder()
 	_create_base_mesh()
 	_spawn_visual_segments()
 
@@ -188,26 +202,86 @@ func _update_visual_segment(segment: MeshInstance3D, p1: Vector3, p2: Vector3) -
 	segment.scale = Vector3(1.0, dist, 1.0)
 
 
+# --- HEALTH CYLINDER LOGIC ---
+
+
+## Initializes parameters and materials for the fluid charge cylinder.
+func _setup_health_cylinder() -> void:
+	if not is_instance_valid(health_cylinder):
+		return
+
+	_cylinder_initial_pos_y = health_cylinder.position.y
+
+	if health_cylinder.mesh is CylinderMesh:
+		_cylinder_initial_height = (health_cylinder.mesh as CylinderMesh).height
+	else:
+		_cylinder_initial_height = 1.0
+
+	_cylinder_material = StandardMaterial3D.new()
+	_cylinder_material.roughness = 0.3
+	_cylinder_material.albedo_color = Color.GREEN
+	health_cylinder.material_override = _cylinder_material
+
+	_update_cylinder_visuals()
+
+
+## Scales the cylinder along the Y-axis and offsets position to keep the base locked in place.
+func _update_cylinder_visuals() -> void:
+	if not is_instance_valid(health_cylinder):
+		return
+
+	var ratio: float = clampf(
+		float(_current_dispenser_health) / float(max_dispenser_health),
+		0.0,
+		1.0
+	)
+
+	# Scale Y while keeping the bottom anchored:
+	# Mesh origin is at its center, so offset down by half of the lost height.
+	health_cylinder.scale.y = ratio
+	var height_lost: float = _cylinder_initial_height * (1.0 - ratio)
+	health_cylinder.position.y = _cylinder_initial_pos_y - (height_lost * 0.5)
+
+	# Color shift: 100-50% = Green, 50-25% = Yellow, 25-0% = Red
+	if is_instance_valid(_cylinder_material):
+		if ratio > 0.50:
+			_cylinder_material.albedo_color = Color.GREEN
+		elif ratio > 0.25:
+			_cylinder_material.albedo_color = Color.YELLOW
+		else:
+			_cylinder_material.albedo_color = Color.RED
+
+
 # --- INTERACTION & HEALTH LOGIC ---
 
 
 ## Triggered continuously while the player holds the interact button on the machine.
-## Applies healing based on the internal cooldown timer.
+## Applies healing based on the internal cooldown timer and deducts from the dispenser reservoir.
 ## [param _character]: The player applying the interaction.
 func interact_held(_character: CharacterBody3D) -> void:
+	if _current_dispenser_health <= 0:
+		print("HealthDispenser: interact_held() - Dispenser depleted.")
+		return
+
 	var current_time: int = Time.get_ticks_msec()
 
 	if current_time - _last_heal_time >= heal_cooldown_msec:
 		_last_heal_time = current_time
 
+		var to_heal: int = mini(heal_amount, _current_dispenser_health)
+
 		if is_instance_valid(_player_health_component):
-			_player_health_component.call("heal", heal_amount)
+			print("HealthDispenser: interact_held() - Dispensing ", to_heal, " HP to player.")
+			_player_health_component.call("heal", to_heal)
+			_current_dispenser_health -= to_heal
+			_update_cylinder_visuals()
 
 
 ## Triggers the tentacle animation block to begin processing if a player approaches.
 ## [param body]: The 3D physics body entering the detection area.
 func _on_body_entered(body: Node3D) -> void:
 	if body is CharacterBody3D and body.is_in_group("player"):
+		print("HealthDispenser: _on_body_entered() - Player detected.")
 		_nearby_player = body
 		_connect_player_health(_nearby_player)
 		set_physics_process(true)
@@ -217,9 +291,9 @@ func _on_body_entered(body: Node3D) -> void:
 ## [param body]: The 3D physics body leaving the detection area.
 func _on_body_exited(body: Node3D) -> void:
 	if body == _nearby_player:
+		print("HealthDispenser: _on_body_exited() - Player departed.")
 		_disconnect_player_health()
 		_nearby_player = null
-		# Process stays true until the tentacle fully settles
 
 
 ## Maps to the player's internal components to listen for health changes and update the UI screen.

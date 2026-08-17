@@ -9,7 +9,6 @@
 [ext_resource type="Texture2D" uid="uid://bwk3r3s3o1j1t" path="res://assets/images/icon_keycard_g.png" id="4_ju45i"]
 [ext_resource type="Texture2D" uid="uid://d11qvtoiajmle" path="res://assets/images/UI/UI_Circle_Zoom_Inner.png" id="4_wm3ai"]
 [ext_resource type="Shader" uid="uid://b7hv0lpr3sylm" path="res://ui/ui_vignette.gdshader" id="5_8dubc"]
-[ext_resource type="AudioStream" uid="uid://c6eryilkm7b4r" path="res://assets/sounds/TTSandy_beep.mp3" id="6_c3fg2"]
 [ext_resource type="Shader" uid="uid://bly82k8d04nmt" path="res://ui/ui_zoom_fisheye_blur.gdshader" id="6_p7vwb"]
 [ext_resource type="Script" uid="uid://yhhwmqo4b0yi" path="res://core/dev_metrics.gd" id="7_p7vwb"]
 [ext_resource type="Shader" uid="uid://bcpssk465dbif" path="res://vfx/glitch.gdshader" id="7_x7nxp"]
@@ -81,7 +80,6 @@ card_textures = Dictionary[StringName, Texture2D]({
 &"R": ExtResource("2_diyc5")
 })
 hearts_atlas = ExtResource("2_bi8hs")
-ttsandy_blip = ExtResource("6_c3fg2")
 
 [node name="Vignette" type="ColorRect" parent="." unique_id=123181987]
 material = SubResource("ShaderMaterial_p7vwb")

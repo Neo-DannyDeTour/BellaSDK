@@ -13,9 +13,10 @@
 render_priority = 0
 shader = ExtResource("2_bxo18")
 shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
-shader_parameter/blink_speed = 7.0000003325
-shader_parameter/min_intensity = 0.0
-shader_parameter/max_intensity = 0.02000000095
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.2
+shader_parameter/max_intensity = 1.0
+shader_parameter/alpha_scissor_threshold = 0.5
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_epeg1"]
 size = Vector3(0.6, 0.1, 0.6)
@@ -44,7 +45,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.39249182, 0.2, 0.07568967)
 billboard = 1
 no_depth_test = true
 
-[node name="Wheel" parent="." unique_id=1857946508 instance=ExtResource("5_iygui")]
+[node name="Valve" parent="." unique_id=1857946508 instance=ExtResource("5_iygui")]
 transform = Transform3D(1.5, 0, 0, 0, 1.5, 0, 0, 0, 1.5, 0, 0.27, 0)
 
 [node name="valve_base" parent="." unique_id=743200746 instance=ExtResource("6_mhmik")]

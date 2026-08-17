@@ -10,7 +10,7 @@
 [ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="8_1d2q4"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_mtknx"]
-size = Vector3(1.5, 1.5, 0.2)
+size = Vector3(1.5, 1.5, 0.5)
 
 [sub_resource type="BoxMesh" id="BoxMesh_1pc3e"]
 size = Vector3(1.5, 1.5, 0.2)
@@ -27,7 +27,14 @@ shader_parameter/min_intensity = 0.2
 shader_parameter/max_intensity = 1.0
 shader_parameter/alpha_scissor_threshold = 0.5
 
-[node name="HealthDispenser" type="StaticBody3D" unique_id=1629233460 node_paths=PackedStringArray("screen_sprite", "tentacle_pivot", "detection_area") groups=["interactables"]]
+[sub_resource type="CylinderMesh" id="CylinderMesh_534t5"]
+top_radius = 0.1
+bottom_radius = 0.1
+height = 1.0
+radial_segments = 8
+rings = 0
+
+[node name="HealthDispenser" type="StaticBody3D" unique_id=1629233460 node_paths=PackedStringArray("screen_sprite", "tentacle_pivot", "detection_area", "health_cylinder") groups=["interactables"]]
 script = ExtResource("1_hf1jj")
 tex_low_health = ExtResource("2_1d2q4")
 tex_mid_health = ExtResource("3_5tgvb")
@@ -36,17 +43,19 @@ tex_ready_health = ExtResource("5_dwsg7")
 screen_sprite = NodePath("ScreenSprite")
 tentacle_pivot = NodePath("TentaclePivot")
 detection_area = NodePath("DetectionArea")
+health_cylinder = NodePath("HealthCylinder")
 thickness = 0.05
 max_reach = 1.5
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=792176276]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.19707033)
 shape = SubResource("BoxShape3D_mtknx")
 
 [node name="BlockMesh" type="MeshInstance3D" parent="." unique_id=1148041408]
 mesh = SubResource("BoxMesh_1pc3e")
 
 [node name="ScreenSprite" type="Sprite3D" parent="." unique_id=1645974949]
-transform = Transform3D(0.15, 0, 0, 0, 0.15, 0, 0, 0, 0.15, 0.2, 0.175, 0.11)
+transform = Transform3D(0.1, 0, 0, 0, 0.1, 0, 0, 0, 0.1, 0.2, 0.175, 0.11)
 double_sided = false
 alpha_cut = 1
 texture = ExtResource("5_dwsg7")
@@ -71,3 +80,7 @@ outline_material = SubResource("ShaderMaterial_hf1jj")
 target_meshes = [NodePath("../BlockMesh")]
 interact_component = NodePath("../InteractComponent")
 metadata/_custom_type_script = "uid://dgig0tamvkdxx"
+
+[node name="HealthCylinder" type="MeshInstance3D" parent="." unique_id=1993709096]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.59915245, 0.13124895, 0.15518296)
+mesh = SubResource("CylinderMesh_534t5")

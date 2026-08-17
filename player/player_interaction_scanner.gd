@@ -4,6 +4,14 @@ extends Node
 signal terminal_mode_toggled(is_active: bool)
 signal heavy_lift_state_changed(is_lifting: bool, yaw_base: float)
 
+## Emitted when an interactable object enters the center of the player's crosshair.
+## [param object_name] Semantic name of the focused object.
+## [param caller] Node instance sending the trigger.
+signal object_hover_focused(object_name: String, caller: Node)
+
+## Stores the previous interactable to avoid re-announcing on every frame.
+var _last_focused_interactable: Node = null
+
 @export_category("Node References")
 @export var player_body: CharacterBody3D
 @export var camera: Camera3D
@@ -32,6 +40,8 @@ func setup_master_link(master: Node) -> void:
 	master_component = master
 
 
+## Evaluates the active Shapecast to detect interactables and trigger audio cues.
+## [param _delta] Elapsed physics frame time in seconds.
 func process_interaction(_delta: float) -> void:
 	if is_in_terminal_mode:
 		if _should_exit_terminal_mode():
@@ -45,16 +55,33 @@ func process_interaction(_delta: float) -> void:
 	_update_dynamic_reach()
 	current_interactable = _get_interactable_component_at_shapecast()
 
+	if current_interactable != _last_focused_interactable:
+		_last_focused_interactable = current_interactable
+		if is_instance_valid(current_interactable):
+			var target_node: Node = current_interactable.get_parent()
+			var speakable_name: String = target_node.name
+			if "display_name" in target_node:
+				speakable_name = target_node.display_name as String
+
+			print("InteractionScanner: Focused interactable -> ", speakable_name)
+			object_hover_focused.emit(speakable_name, target_node)
+
+			if has_node("/root/Events"):
+				var events_node: Node = get_node("/root/Events")
+				if events_node.has_signal("object_focused"):
+					events_node.object_focused.emit(speakable_name, target_node)
+
 	if current_interactable:
 		var hit_point: Vector3 = interact_shapecast.get_collision_point(0)
 		if current_interactable.has_method("hover_cursor"):
 			current_interactable.hover_cursor(player_body, hit_point)
 
-		# --- NEW: Continuous Hold Logic ---
-		# Poll the input every frame to support holding the button.
 		if Input.is_action_pressed("interact"):
 			var is_hands_empty: bool = true
-			if is_instance_valid(master_component) and master_component.get("held_item") != null:
+			if (
+				is_instance_valid(master_component)
+				and master_component.get("held_item") != null
+			):
 				is_hands_empty = false
 
 			if is_hands_empty and current_interactable.has_method("interact_held"):

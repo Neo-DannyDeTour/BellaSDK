@@ -1,127 +1,129 @@
 class_name PickableObject
 extends RigidBody3D
 
+## Represents a physical object that the player can pick up, throw, and interact with in the game world.
+## Manages buoyancy, physics interpolation, custom TTS accessibility prompts, and player holding logic.
+
 @export_category("Pickable Nodes")
-## Interact comp.
+## The [InteractComponent] responsible for handling raycast focus and interaction signals.
 @export var interact_comp: InteractComponent
-## Mesh.
+## The primary visual [Node3D] (usually a MeshInstance3D) representing the object.
 @export var mesh: Node3D
-## Label.
+## The floating [Label3D] used to display interaction prompts.
 @export var label: Label3D
 
-## Highlight comp.
+## Visual component used to apply outlines or highlights when focused.
 @onready var highlight_comp: HighlightComponent = $HighlightComponent
-## Collision.
+## The physical bounds of the object.
 @onready var collision: CollisionShape3D = $CollisionShape3D
-## Gravity.
+## The default world gravity derived from project settings.
 @onready var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
 
 @export_category("Buoyancy")
-## Probe container.
+## Node containing [Marker3D] children representing volumetric probe points for water physics.
 @export var probe_container: Node3D
-## How strongly the water pushes up. (3.0 is a great value!)
+## How strongly the water pushes up against the object. (3.0 is a great value!)
 @export var float_force: float = 3.0
-## Friction. (May need to increase this to 2.0 or 4.0 to stop bouncing!)
+## Friction applied when moving through water.
 @export var water_drag: float = 0.5
-## Water angular drag.
+## Angular friction applied to rotation when submerged.
 @export var water_angular_drag: float = 0.5
 
 # --- HOLDING CONFIG ---
-## How much closer to the player this object should be held.
+## How much closer to the player this object should be positioned when held.
 @export var hold_distance_offset: float = 0.0
 
-## How transparent the object gets when held (0.0 = solid, 1.0 = completely invisible)
+## How transparent the object gets when held (0.0 = solid, 1.0 = completely invisible).
 @export_range(0.0, 1.0) var held_transparency: float = 0.25
 
-## NEW: The mass at which an object is forced to be held low (e.g., barrels).
+## The mass at which an object is forced to be held lower on the screen (e.g., heavy barrels).
 @export var heavy_mass_threshold: float = 10.0
-## NEW: How far down heavy objects are held (0.5 was your old default).
+## How far down on the Y-axis heavy objects are held to avoid blocking the camera.
 @export var heavy_y_drop: float = 0.5
 
 # --- COMBAT / IMPACT CONFIG ---
-## The minimum speed the object must be traveling to register as a damaging impact.
+## The minimum velocity required for the object to register as a damaging projectile.
 @export var damage_velocity_threshold: float = 8.0
 
-## The base amount of damage applied to the struck target upon a high-speed collision.
+## The base damage applied to a struck target upon a high-speed collision.
 @export var projectile_damage: int = 20
 
 @export_category("Accessibility")
-## The dedicated shader material applied as an overlay to highlight this object
-## through walls during vision assist.
+## The dedicated [ShaderMaterial] applied as an overlay to highlight this object through walls.
 @export var vision_assist_material: ShaderMaterial
 
 ## Tracks the velocity from the previous physics frame to accurately gauge impact speed.
 var _last_velocity: Vector3 = Vector3.ZERO
 
-## Is held.
+## Indicates if the object is currently grasped by a player or entity.
 var is_held: bool = false
-## Hold target.
+## The [Marker3D] target the object visually tracks towards when held.
 var hold_target: Marker3D = null
-## Holder.
+## The [Node3D] entity currently holding the object.
 var holder: Node3D = null
 
 # --- GLOBAL STATE TRACKING ---
-## Is locked.
+## Indicates if the [PickableObject] is currently locked and cannot be interacted with.
 var is_locked: bool = false:
 	set(value):
 		is_locked = value
+		print("PickableObject: is_locked state changed to ", is_locked)
 		if is_locked:
-			if mesh:
+			if is_instance_valid(mesh):
 				mesh.material_overlay = null
-			if label:
+			if is_instance_valid(label):
 				label.hide()
 
-## Is in water.
+## Indicates if the object is currently inside a water volume.
 var is_in_water: bool = false:
 	set(value):
 		if is_in_water != value:
 			is_in_water = value
+			print("PickableObject: is_in_water state changed to ", is_in_water)
 			_update_process_state()
 
-## Is player flying.
+## Indicates if the player is currently in noclip or flying mode.
 var _is_player_flying: bool = false
 
 # --- WATER TRACKING ---
-## Submerged.
+## Indicates if the object is fully submerged beneath the water plane.
 var submerged: bool = false
-## Current water node.
+## Reference to the current water [Node3D] applying buoyancy forces.
 var current_water_node: Node3D = null
-## Grab time.
+## The system time in milliseconds when the object was last grabbed.
 var _grab_time: int = 0
 
-## Cached Camera3D reference to avoid expensive get_viewport().get_camera_3d() calls every frame.
+## Cached [Camera3D] reference to avoid expensive viewport lookups every frame.
 var _cached_camera: Camera3D = null
 
-## Cached array of child probe nodes used to calculate buoyancy in water without recursive scene
-## tree lookups.
+## Cached array of child probe nodes used to calculate buoyancy without recursive lookups.
 var _probes: Array[Node] = []
 
-## Tracks if the object was recently dropped to prevent immediate TTS spam.
+## Tracks if the object was recently dropped to prevent immediate TTS spam on refocus.
 var _is_tts_cooldown: bool = false
 
 
+## Initializes the [PickableObject], setting up references, event listeners, and physics state.
 func _ready() -> void:
+	print("PickableObject: _ready() called. Initializing ", name)
 	# Fallback assignments in case export vars were left empty in the inspector
-	if not interact_comp:
+	if not is_instance_valid(interact_comp):
 		interact_comp = $InteractComponent
-	if not mesh:
+	if not is_instance_valid(mesh):
 		mesh = $Mesh
-	if not label:
+	if not is_instance_valid(label):
 		label = $Label3D
-	if not probe_container:
+	if not is_instance_valid(probe_container):
 		probe_container = $ProbeContainer
 
 	# Cache the probe children once at startup to avoid runtime lookup spikes
 	if is_instance_valid(probe_container):
 		_probes = probe_container.get_children()
 
-	#collision_layer = 1
-	#collision_mask = 1
-
-	if label:
+	if is_instance_valid(label):
 		label.hide()
 
-	if interact_comp:
+	if is_instance_valid(interact_comp):
 		if not interact_comp.focused.is_connected(_on_interact_component_focused):
 			interact_comp.focused.connect(_on_interact_component_focused)
 		if not interact_comp.unfocused.is_connected(_on_interact_component_unfocused):
@@ -146,26 +148,29 @@ func _ready() -> void:
 	_update_process_state()
 
 	# --- SHADER WARM-UP (Fixes the first-pickup frame drop) ---
-	if mesh:
+	if is_instance_valid(mesh):
 		_set_model_transparency(mesh, held_transparency)
 		_revert_warmup_deferred()
 
 
+## Triggers when the player toggles noclip mode. Updates internal flight state.
 func _on_noclip_toggled(is_flying: bool) -> void:
 	print("PickableObject: Noclip state updated via Event Bus -> ", is_flying)
 	_is_player_flying = is_flying
 
 
+## Triggers when the physics sleeping state changes to optimize processing loops.
 func _on_sleeping_state_changed() -> void:
 	_update_process_state()
 
 
+## Enables or disables physics processing based on whether the object needs active updates.
 func _update_process_state() -> void:
-	# OPTIMIZATION: Only run _physics_process if we are held, in water, or actively falling/moving
 	var should_process: bool = is_held or is_in_water or not sleeping
 	set_physics_process(should_process)
 
 
+## Defers the reversion of the object's transparency to prevent frame drops during compilation.
 func _revert_warmup_deferred() -> void:
 	print("PickableObject: _revert_warmup_deferred() executing shader compilation.")
 	await get_tree().process_frame
@@ -175,6 +180,7 @@ func _revert_warmup_deferred() -> void:
 		_set_model_transparency(mesh, 0.0)
 
 
+## Attaches the object to the player's hold target and disables standard gravity.
 func pick_up(target: Marker3D, player_node: Node3D) -> void:
 	if is_locked:
 		return
@@ -185,7 +191,7 @@ func pick_up(target: Marker3D, player_node: Node3D) -> void:
 	hold_target = target
 	holder = player_node
 
-	if label:
+	if is_instance_valid(label):
 		label.hide()
 
 	linear_velocity = Vector3.ZERO
@@ -194,10 +200,10 @@ func pick_up(target: Marker3D, player_node: Node3D) -> void:
 	sleeping = false
 	gravity_scale = 0.0
 
-	if mesh:
+	if is_instance_valid(mesh):
 		_set_model_transparency(mesh, held_transparency)
 
-	if interact_comp:
+	if is_instance_valid(interact_comp):
 		interact_comp.is_currently_focused = false
 		interact_comp.unfocused.emit()
 		interact_comp.process_mode = Node.PROCESS_MODE_DISABLED
@@ -207,6 +213,7 @@ func pick_up(target: Marker3D, player_node: Node3D) -> void:
 	Events.item_picked_up.emit(self, holder)
 
 
+## Releases the object from the player's grasp, restoring physics and applying an impulse.
 func drop() -> void:
 	print("PickableObject: drop() called. Action: Dropping object.")
 	if Time.get_ticks_msec() - _grab_time < 100:
@@ -215,7 +222,7 @@ func drop() -> void:
 	print("PickableObject: drop() called. Releasing: ", name)
 	is_held = false
 
-	if interact_comp:
+	if is_instance_valid(interact_comp):
 		interact_comp.process_mode = Node.PROCESS_MODE_INHERIT
 
 	# Start a short cooldown to prevent the TTS from instantly repeating the grab prompt
@@ -224,7 +231,7 @@ func drop() -> void:
 
 	if is_locked:
 		holder = null
-		if interact_comp:
+		if is_instance_valid(interact_comp):
 			interact_comp.is_currently_focused = false
 		_update_process_state()
 		return
@@ -233,10 +240,10 @@ func drop() -> void:
 	sleeping = false
 	gravity_scale = 1.0
 
-	if mesh:
+	if is_instance_valid(mesh):
 		_set_model_transparency(mesh, 0.0)
 
-	if holder:
+	if is_instance_valid(holder):
 		if "velocity" in holder:
 			linear_velocity = holder.velocity
 
@@ -313,7 +320,7 @@ func drop() -> void:
 		_wait_to_enable_collision(previous_holder)
 
 	holder = null
-	if interact_comp:
+	if is_instance_valid(interact_comp):
 		interact_comp.is_currently_focused = false
 
 	_update_process_state()
@@ -325,6 +332,7 @@ func _reset_tts_cooldown() -> void:
 	_is_tts_cooldown = false
 
 
+## Periodically checks distance to the player to safely re-enable collision.
 func _attempt_enable_collision(player_node: Node3D) -> void:
 	print("PickableObject: _attempt_enable_collision() executing collision check.")
 	if not is_instance_valid(self) or not is_instance_valid(player_node):
@@ -338,8 +346,8 @@ func _attempt_enable_collision(player_node: Node3D) -> void:
 		get_tree().create_timer(0.1).timeout.connect(_attempt_enable_collision.bind(player_node))
 
 
+## Drops the object and applies a significant central impulse to throw it.
 func throw(impulse_vector: Vector3) -> void:
-	print("PickableObject: throw() called. Action: Throwing object.")
 	print(
 		"PickableObject: throw() called. Throwing: ", name, " with force: ", impulse_vector.length()
 	)
@@ -369,12 +377,14 @@ func _on_interact_component_focused() -> void:
 			var tts_prompt: String = label.text + " " + mesh_name
 
 			print("PickableObject: Emitting TTS prompt -> ", tts_prompt)
-			# Pass 'self' as the caller so the TTSManager knows exactly which object triggered this
-			Events.object_focused.emit(tts_prompt, self)
+			# Pass 'mesh' as the caller so it generates a distinct ID from the parent body,
+			# avoiding duplicate ID rejections if InteractComponent also emits blindly.
+			Events.object_focused.emit(tts_prompt, mesh)
 
 
+## Formats the floating [Label3D] to display the correct interaction key prompt.
 func _update_label_text() -> void:
-	if not label:
+	if not is_instance_valid(label):
 		return
 
 	print("PickableObject: _update_label_text() called. Formatting interact prompt.")
@@ -399,12 +409,14 @@ func _update_label_text() -> void:
 	label.text = "Press [%s] to grab" % [key_name]
 
 
+## Called when the player looks away. Removes the highlight and hides the label.
 func _on_interact_component_unfocused() -> void:
 	print("PickableObject: _on_interact_component_unfocused() called. Removing highlight.")
-	if label:
+	if is_instance_valid(label):
 		label.hide()
 
 
+## Processes object movement towards the hold target or applies buoyancy forces when in water.
 func _physics_process(_delta: float) -> void:
 	if is_held and is_instance_valid(hold_target) and is_instance_valid(holder):
 		var target_pos: Vector3 = hold_target.global_position
@@ -520,6 +532,7 @@ func _on_body_entered(body: Node) -> void:
 			body.take_damage(projectile_damage)
 
 
+## Waits until the object is safely away from the player before restoring collision to avoid clipping.
 func _wait_to_enable_collision(player_node: Node3D) -> void:
 	print("PickableObject: _wait_to_enable_collision() waiting for clearance.")
 	var max_wait_frames: int = 30
@@ -586,6 +599,7 @@ func _wait_to_enable_collision(player_node: Node3D) -> void:
 		remove_collision_exception_with(player_node)
 
 
+## Recursively applies transparency to the mesh hierarchy when the object is held.
 func _set_model_transparency(parent_node: Node, alpha: float) -> void:
 	if not is_instance_valid(parent_node):
 		return
@@ -597,13 +611,14 @@ func _set_model_transparency(parent_node: Node, alpha: float) -> void:
 		_set_model_transparency(child, alpha)
 
 
+## Retrieves and caches the active [Camera3D] for calculating hold offsets and nudges.
 func _get_camera() -> Camera3D:
 	if not is_instance_valid(_cached_camera):
 		_cached_camera = get_viewport().get_camera_3d() if get_viewport() else null
 	return _cached_camera
 
 
-# NEW: Signal callback for toggling the accessibility highlight
+## Signal callback for toggling the accessibility highlight.
 func _on_vision_assist_toggled(is_active: bool) -> void:
 	print(
 		"PickableObject: _on_vision_assist_toggled() triggered. Applying material overlay: ",
@@ -615,7 +630,7 @@ func _on_vision_assist_toggled(is_active: bool) -> void:
 		_set_model_overlay(mesh, target_material)
 
 
-# NEW: Recursive helper to apply the overlay material to the root mesh and all child meshes
+## Recursive helper to apply the overlay material to the root mesh and all child meshes.
 func _set_model_overlay(parent_node: Node, mat: ShaderMaterial) -> void:
 	if not is_instance_valid(parent_node):
 		return
@@ -627,26 +642,63 @@ func _set_model_overlay(parent_node: Node, mat: ShaderMaterial) -> void:
 		_set_model_overlay(child, mat)
 
 
-## Parses the mesh node name, removing numbers and Godot symbols, for natural voice synthesis.
+## Parses the name of [member mesh] to generate a clean, natural voice
+## string for [PiperTTS] synthesis (e.g., converting "Barrel_red" to "barrel red").
+## Returns a human-readable [String] describing the focused object.
 func _get_clean_mesh_name() -> String:
 	print("PickableObject: _get_clean_mesh_name() called. Parsing mesh string.")
-	if not is_instance_valid(mesh):
+	
+	# Check nulls and safeguard against assigning the root rigid body to the mesh export var.
+	if not is_instance_valid(mesh) or mesh == self:
 		return "object"
 
 	var raw_name: String = mesh.name
-	var clean_name: String = raw_name.replace("_", " ")
-	var final_name: String = ""
 
-	# Strip out trailing digits and internal Godot symbols (e.g. "chair_small2" -> "chair small")
-	for i: int in range(clean_name.length()):
-		var char_str: String = clean_name.substr(i, 1)
+	# Only search child meshes if the assigned node has a generic engine name
+	var generic_names: Array[String] = [
+		"mesh",
+		"meshinstance3d",
+		"node3d",
+        "model"
+	]
+	if raw_name.to_lower() in generic_names:
+		for child: Node in mesh.get_children():
+			var child_lower: String = child.name.to_lower()
+			if not child_lower in generic_names and not child_lower.begins_with("pickable"):
+				raw_name = child.name
+				break
+
+	# Split camelCase / PascalCase into spaced words (e.g., "BarrelRed" -> "Barrel Red")
+	var regex: RegEx = RegEx.new()
+	regex.compile("([a-z0-9])([A-Z])")
+	var formatted_name: String = regex.sub(raw_name, "$1 $2", true)
+
+	# Replace underscores and hyphens with spaces
+	formatted_name = formatted_name.replace("_", " ").replace("-", " ")
+
+	# Remove unwanted prefix tags
+	var unwanted_prefixes: Array[String] = [
+		"pickable ",
+		"item ",
+		"prop ",
+		"meshinstance ",
+        "mesh "
+	]
+	var lower_name: String = formatted_name.to_lower().strip_edges()
+	for prefix: String in unwanted_prefixes:
+		if lower_name.begins_with(prefix):
+			lower_name = lower_name.trim_prefix(prefix).strip_edges()
+
+	# Remove trailing digits and special symbols
+	var clean_chars: String = ""
+	for i: int in range(lower_name.length()):
+		var char_str: String = lower_name.substr(i, 1)
 		if not char_str.is_valid_int() and char_str != "@":
-			final_name += char_str
+			clean_chars += char_str
 
-	final_name = final_name.strip_edges().to_lower()
+	var final_name: String = clean_chars.strip_edges()
 
-	# Fallbacks in case the node is just named "MeshInstance3D" or was entirely numbers
-	if final_name.is_empty() or final_name.begins_with("meshinstance"):
+	if final_name.is_empty() or final_name in generic_names:
 		return "object"
 
 	return final_name

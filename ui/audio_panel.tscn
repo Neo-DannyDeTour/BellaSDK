@@ -92,6 +92,22 @@ layout_mode = 2
 size_flags_horizontal = 3
 value = 100.0
 
+[node name="AccesibilitySFXLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=1100154090]
+layout_mode = 2
+text = "AccesibilitySFX Volume"
+
+[node name="AccesibilitySFXLine" type="LineEdit" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=1068325894]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+
+[node name="AccesibilitySFXSlider" type="HSlider" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=213352781]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+value = 100.0
+
 [node name="VoiceLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=957578827]
 layout_mode = 2
 text = "Voice Volume"

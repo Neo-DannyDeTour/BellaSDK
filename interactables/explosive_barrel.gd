@@ -24,19 +24,24 @@ var current_health: int
 ## Flag preventing recursive or multiple explosion calls.
 var has_exploded: bool = false
 
-## The area volume used to detect and calculate distances to nearby entities during the blast.
+## The area volume used to detect and
+## calculate distances to nearby entities during the blast.
 @onready var area_3d: Area3D = $Area3D
 
 
-## Initializes health pool. Sets current_health to max_health.
+## Initializes the health pool of the barrel.
+## Sets [member current_health] to match [member max_health].
 func _ready() -> void:
 	current_health = max_health
 
 
-## Processes incoming damage, applies a physical flinch impulse, and triggers explosion on death.
+## Processes incoming damage, applies
+## a physical flinch impulse, and triggers explosion on death.
 ## [param amount]: The raw damage integer.
-## [param hit_position]: The 3D world coordinate where the damage occurred.
-## [param hit_direction]: The normalized vector indicating the trajectory.
+## [param hit_position]:
+## The 3D world coordinate where the damage occurred (e.g., bullet impact).
+## [param hit_direction]:
+## The normalized vector indicating the trajectory of the incoming attack.
 func take_damage(amount: int, hit_position: Vector3, hit_direction: Vector3) -> void:
 	print("ExplosiveBarrel: take_damage() called. Amount: ", amount)
 
@@ -124,7 +129,7 @@ func _apply_screen_shake_and_audio() -> void:
 		return
 
 	if tinnitus_duration > 0.0:
-		var tinnitus: Node = Node.new()  # Assuming TinnitusEffect maps to a valid Node structure
+		var tinnitus: Node = Node.new() # Assuming TinnitusEffect maps to a valid Node structure
 		tinnitus.set("duration", tinnitus_duration)
 		get_tree().current_scene.add_child(tinnitus)
 
