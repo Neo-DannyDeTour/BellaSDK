@@ -1,28 +1,46 @@
+## An on-screen developer metrics overlay used for diagnosing performance bottlenecks.
+##
+## [DevMetricsPanel] captures hardware specifications, tracks CPU/GPU frame times,
+## and pulls player state data into a real-time HUD.
+class_name DevMetricsPanel
 extends PanelContainer
+
+## The number of frames to store for rolling average calculations.
 const HISTORY_NUM_FRAMES: int = 150
 
 @export_category("Dev Metrics")
+## Toggles whether the metrics system actively calculates values.
 @export var is_enabled: bool = true
 
+## Reference to the main [CharacterBody3D] player for state tracking.
 var player: CharacterBody3D
 
-# Performance arrays and rolling sums
+## Timestamp of the previous frame in microseconds.
 var _last_tick: int = 0
+## Rolling history array of total frame delta times.
 var _total_history: Array[float] = []
+## Rolling history array of CPU frame times.
 var _cpu_history: Array[float] = []
+## Rolling history array of GPU frame times.
 var _gpu_history: Array[float] = []
 
+## Rolling sum of total frame delta times.
 var _total_sum: float = 0.0
+## Rolling sum of CPU frame times.
 var _cpu_sum: float = 0.0
+## Rolling sum of GPU frame times.
 var _gpu_sum: float = 0.0
 
-# Cached strings for things that rarely/never change
+## Cached hardware strings to prevent recreating strings every frame.
 var _hardware_info_str: String = ""
+## Cached static graphics settings strings.
 var _settings_info_static_str: String = ""
 
 @onready var metrics_label: RichTextLabel = $MetricsLabel
 
 
+## Called when the node enters the scene tree for the first time.
+## Caches hardware info and enables rendering measurement overrides.
 func _ready() -> void:
 	print("DebugPanel: Initializing and caching hardware info.")
 	visible = false
@@ -41,6 +59,8 @@ func _ready() -> void:
 	_cache_static_settings_info()
 
 
+## Called every frame to sample performance data and update the label UI.
+## [param _delta] The time elapsed since the previous frame in seconds.
 func _process(_delta: float) -> void:
 	if not visible or not player:
 		return
@@ -137,11 +157,13 @@ func _process(_delta: float) -> void:
 	metrics_label.text = text
 
 
+## Toggles the visual state of the metrics panel on and off.
 func toggle_window() -> void:
 	visible = not visible
 	print("DebugPanel: Visibility toggled to ", visible)
 
 
+## Samples the current frametime from the [RenderingServer] and pushes it into the history arrays.
 func _update_frametime_history() -> void:
 	var current_tick: int = Time.get_ticks_usec()
 	var frametime_total: float = (current_tick - _last_tick) * 0.001
@@ -170,6 +192,10 @@ func _update_frametime_history() -> void:
 		_gpu_sum -= _gpu_history.pop_front()
 
 
+## Formats a metric category into a clean BBCode table row string.
+## [param title] The name of the metric (e.g. "CPU:").
+## [param sum_val] The current rolling sum of the metric.
+## [param history] The array containing the history of the metric.
 func _format_metric_row(title: String, sum_val: float, history: Array[float]) -> String:
 	if history.is_empty():
 		return ""
@@ -202,6 +228,8 @@ func _format_metric_row(title: String, sum_val: float, history: Array[float]) ->
 	)
 
 
+## Returns a hex color string based on how fast a millisecond timing is.
+## [param ms] The time in milliseconds.
 func _get_ms_color(ms: float) -> String:
 	if ms < 8.34:
 		return "#38bdf8"
@@ -212,6 +240,7 @@ func _get_ms_color(ms: float) -> String:
 	return "#ef4444"
 
 
+## Queries the [OS] and [RenderingServer] once on load to build hardware information strings.
 func _cache_hardware_info() -> void:
 	var cpu_name: String = OS.get_processor_name().replace("(R)", "").replace("(TM)", "")
 	var threads: int = OS.get_processor_count()
@@ -230,6 +259,7 @@ func _cache_hardware_info() -> void:
 	)
 
 
+## Queries [ProjectSettings] to build strings for non-dynamic graphics settings.
 func _cache_static_settings_info() -> void:
 	_settings_info_static_str = ""
 	var method: String = str(ProjectSettings.get_setting("rendering/renderer/rendering_method"))
@@ -237,6 +267,7 @@ func _cache_static_settings_info() -> void:
 	_settings_info_static_str += "Rendering Method: %s\n" % method_str
 
 
+## Checks the current active viewport to build strings for dynamic graphics settings.
 func _get_dynamic_settings_string() -> String:
 	var dyn_str: String = ""
 	var vp: Viewport = get_viewport()

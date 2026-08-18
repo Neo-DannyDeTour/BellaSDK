@@ -1,3 +1,8 @@
+## A performance monitoring node that detects and logs frame drops.
+##
+## [FrameSpikeDetector] hooks into the process loop to measure frame delta times.
+## If a frame takes longer than the [constant SPIKE_THRESHOLD_MS], it triggers an
+## immediate console report containing memory and rendering performance metrics.
 class_name FrameSpikeDetector
 extends Node
 
@@ -6,11 +11,15 @@ extends Node
 const SPIKE_THRESHOLD_MS: float = 16.6
 
 
+## Called when the node enters the scene tree for the first time.
+## Initializes the detector and prints the monitoring threshold.
 func _ready() -> void:
 	print("FrameSpikeDetector initialized.")
 	print("Monitoring for frames over ", SPIKE_THRESHOLD_MS, " ms.")
 
 
+## Called every frame. Checks if the [param delta] exceeds the threshold.
+## [param delta] The time elapsed since the previous frame in seconds.
 func _process(delta: float) -> void:
 	var frame_time_ms: float = delta * 1000.0
 
@@ -18,6 +27,8 @@ func _process(delta: float) -> void:
 		_report_spike_data(frame_time_ms)
 
 
+## Prints a detailed performance snapshot when a frame spike occurs.
+## [param frame_time_ms] The duration of the slow frame in milliseconds.
 func _report_spike_data(frame_time_ms: float) -> void:
 	print("!!! FRAME SPIKE DETECTED !!!")
 	print("Frame Time: ", frame_time_ms, " ms")

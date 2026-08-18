@@ -1,8 +1,8 @@
 class_name PickableObject
 extends RigidBody3D
 
-## Represents a physical object that the player can pick up, throw, and interact with in the game world.
-## Manages buoyancy, physics interpolation, custom TTS accessibility prompts, and player holding logic.
+## Represents a physical object that the player can pick up, throw, and interact with in the world.
+## Manages buoyancy, physics interpolation, custom TTS prompts, and player holding logic.
 
 @export_category("Pickable Nodes")
 ## The [InteractComponent] responsible for handling raycast focus and interaction signals.
@@ -532,7 +532,7 @@ func _on_body_entered(body: Node) -> void:
 			body.take_damage(projectile_damage)
 
 
-## Waits until the object is safely away from the player before restoring collision to avoid clipping.
+## Waits until the object is away from the player before restoring collision to avoid clipping.
 func _wait_to_enable_collision(player_node: Node3D) -> void:
 	print("PickableObject: _wait_to_enable_collision() waiting for clearance.")
 	var max_wait_frames: int = 30

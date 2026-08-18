@@ -25,7 +25,8 @@ signal on_description_generated(description_text: String)
 ## Default eye-level vertical offset added when origin_node is not a Camera3D.
 @export var eye_height_offset: float = 1.5
 
-## Vertical elevation threshold in meters between floor levels before adding 'above' or 'below' qualifiers.
+## Vertical elevation threshold in meters between floor levels before adding
+## 'above' or 'below' qualifiers.
 @export var vertical_threshold: float = 1.2
 
 ## Regular expression used for splitting camelCase identifiers into spaced words.
@@ -259,7 +260,7 @@ func _get_relative_direction(origin_node: Node3D, view_pos: Vector3, target_pos:
 
 	if floor_height_diff > vertical_threshold:
 		return "above you " + horiz_phrase
-	elif floor_height_diff < -vertical_threshold:
+	if floor_height_diff < -vertical_threshold:
 		return "below you " + horiz_phrase
 
 	return horiz_phrase
@@ -341,7 +342,8 @@ func _is_generic_name(node_name: String) -> bool:
 	)
 
 
-## Performs multi-point raycasts between observer eye level and target to avoid railing/ledge clipping.
+## Performs multi-point raycasts between observer eye level and target to avoid
+## railing/ledge clipping.
 ## [param space_state] Direct 3D physics space state.
 ## [param view_pos] Eye-level coordinates of the observer.
 ## [param target_node] Target [Node3D] to verify visibility towards.
