@@ -103,8 +103,8 @@ var noclip_label_message: Label = $NoclipAlertContainer/NoclipMessageContainer/N
 @onready var wireframe_button: Button = $DebugPanel/PanelContainer/VBoxContainer/WireframeButton
 
 ## Button to toggle the green wireframe material overlay.
-@onready var wireframe_overlay_button: Button = get_node(
-	"DebugPanel/PanelContainer/VBoxContainer/WireframeOverlayButton"
+@onready var wireframe_overlay_button: Button = (
+	$DebugPanel/PanelContainer/VBoxContainer/WireframeOverlayButton
 )
 
 ## Button to hide the main user interface.
