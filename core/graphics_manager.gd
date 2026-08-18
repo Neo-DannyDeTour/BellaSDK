@@ -1,12 +1,17 @@
+## Global autoload managing automatic graphics scaling and performance optimizations.
+##
+## [GraphicsManager] continuously monitors the application's framerate. If it dips below
+## the [constant TARGET_FPS_MINIMUM], it progressively disables heavy rendering features
+## (like SDFGI or MSAA) to maintain a playable framerate.
+class_name GraphicsManager
 extends Node
 
-## Manages automated graphics scaling to maintain performance targets.
-## Checks FPS periodically and dials back rendering features if below 60.
-
 ## Emitted when the performance profile drops a level to regain FPS.
+## [param downgrade_level] The new step index of reduced graphics.
 signal performance_profile_adjusted(downgrade_level: int)
 
 ## Emitted when switching between User and Auto-Optimized modes.
+## [param is_optimized] [code]true[/code] if auto-optimization is running.
 signal profile_mode_changed(is_optimized: bool)
 
 ## Time in seconds between checking the framerate.
@@ -19,11 +24,16 @@ const TARGET_FPS_MINIMUM: float = 59.0
 var is_auto_optimizing: bool = false
 
 var _is_low_end: bool = false
+## Cached reference to the currently active [Environment].
 var _active_environment: Environment = null
+## Timer used for periodic FPS checking.
 var _fps_timer: Timer = null
+## The current integer step representing how degraded the visual quality is.
 var _sdfgi_downgrade_level: int = 0
 
 
+## Called when the node enters the scene tree for the first time.
+## Detects low-end hardware on boot and configures the start state of the optimizer.
 func _ready() -> void:
 	print("GraphicsManager: Initializing and detecting hardware.")
 	_is_low_end = _detect_low_end_hardware()
@@ -45,6 +55,7 @@ func _ready() -> void:
 	call_deferred("_emit_profile_state")
 
 
+## Disables the auto-optimizer and restores graphics control to user-defined settings.
 func enable_user_mode() -> void:
 	print("GraphicsManager: Switching to User Defined Settings.")
 	is_auto_optimizing = false
@@ -57,6 +68,7 @@ func enable_user_mode() -> void:
 	profile_mode_changed.emit(is_auto_optimizing)
 
 
+## Enables the auto-optimizer to continuously scale graphics in response to framerate.
 func enable_auto_mode() -> void:
 	if is_auto_optimizing:
 		return
@@ -90,11 +102,13 @@ func enable_auto_mode() -> void:
 			_fast_forward_downgrades(7)
 
 
+## Emits the current profile mode to any listeners safely after initialization.
 func _emit_profile_state() -> void:
 	print("GraphicsManager: Emitting initial profile state.")
 	profile_mode_changed.emit(is_auto_optimizing)
 
 
+## Instantiates and starts the internal timer used for FPS evaluation intervals.
 func _setup_fps_timer() -> void:
 	print("GraphicsManager: Setting up periodic FPS check timer.")
 	_fps_timer = Timer.new()
@@ -107,6 +121,7 @@ func _setup_fps_timer() -> void:
 	add_child(_fps_timer)
 
 
+## Called by the FPS timer to trigger performance checks.
 func _on_fps_timer_timeout() -> void:
 	if not is_auto_optimizing:
 		return
@@ -114,6 +129,8 @@ func _on_fps_timer_timeout() -> void:
 	_evaluate_runtime_performance()
 
 
+## Analyzes the [RenderingServer] video adapter string to determine if it is an integrated GPU.
+## Returns [code]true[/code] if low-end hardware is suspected.
 func _detect_low_end_hardware() -> bool:
 	print("GraphicsManager: Evaluating current video adapter.")
 	var adapter_type: RenderingDevice.DeviceType = (
@@ -129,6 +146,7 @@ func _detect_low_end_hardware() -> bool:
 	return false
 
 
+## Forces initial global settings like MSAA limits for the root [Viewport].
 func _apply_global_viewport_settings() -> void:
 	print("GraphicsManager: Applying global viewport limits for optimized mode.")
 	var root_viewport: Window = get_tree().root
@@ -136,6 +154,8 @@ func _apply_global_viewport_settings() -> void:
 	RenderingServer.environment_set_volumetric_fog_volume_size(32, 32)
 
 
+## Scene tree signal callback checking for new [WorldEnvironment] nodes.
+## [param node] The newly added node in the tree.
 func _on_node_added(node: Node) -> void:
 	if node is WorldEnvironment:
 		print("GraphicsManager: WorldEnvironment added. Registering environment.")
@@ -152,6 +172,8 @@ func _on_node_added(node: Node) -> void:
 				_fast_forward_downgrades(7)
 
 
+## Looks up the current [Environment] resource connected to the active 3D world.
+## Returns the environment or the fallback environment if it exists.
 func _get_current_environment() -> Environment:
 	var vp: Viewport = get_viewport()
 	if vp and vp.find_world_3d():
@@ -164,6 +186,8 @@ func _get_current_environment() -> Environment:
 	return _active_environment
 
 
+## Applies immediate performance settings directly to the given [Environment] resource.
+## [param env] The environment to alter.
 func _tweak_environment(env: Environment) -> void:
 	print("GraphicsManager: Disabling heavy effects for optimization mode without saving to disk.")
 	if env:
@@ -171,6 +195,7 @@ func _tweak_environment(env: Environment) -> void:
 		env.ssr_enabled = false
 
 
+## Measures the current engine framerate and applies downgrades if it drops below the threshold.
 func _evaluate_runtime_performance() -> void:
 	var current_fps: float = Engine.get_frames_per_second()
 
@@ -181,6 +206,8 @@ func _evaluate_runtime_performance() -> void:
 		print("GraphicsManager: Performance is stable at ", current_fps, " FPS.")
 
 
+## Applies multiple downgrades instantly up to the requested step index.
+## [param target_level] The specific step level index to apply up to.
 func _fast_forward_downgrades(target_level: int) -> void:
 	print("GraphicsManager: Bypassing timer, fast-forwarding to step ", target_level)
 	while _sdfgi_downgrade_level <= target_level:
@@ -190,6 +217,7 @@ func _fast_forward_downgrades(target_level: int) -> void:
 		_fps_timer.stop()
 
 
+## Disables or reduces the quality of one major rendering setting to free up frametime.
 func _apply_stepwise_downgrade() -> void:
 	print("GraphicsManager: Applying downgrade level: ", _sdfgi_downgrade_level)
 	var vp: Viewport = get_tree().root

@@ -25,8 +25,8 @@ signal on_description_generated(description_text: String)
 ## Default eye-level vertical offset added when origin_node is not a Camera3D.
 @export var eye_height_offset: float = 1.5
 
-## Vertical elevation threshold in meters between floor levels before adding 'above' or
-## 'below' qualifiers.
+## Vertical elevation threshold in meters between floor levels before adding
+## 'above' or 'below' qualifiers.
 @export var vertical_threshold: float = 1.2
 
 ## Regular expression used for splitting camelCase identifiers into spaced words.

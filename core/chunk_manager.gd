@@ -1,5 +1,10 @@
-extends Node3D
+## A manager that handles background streaming and unloading of world chunks.
+##
+## [ChunkManager] uses distance-based proximity and explicit area triggers to dynamically
+## load and unload [PackedScene] chunks asynchronously. This keeps memory usage low and
+## performance high by only processing visible or active segments of the world.
 class_name ChunkManager
+extends Node3D
 
 ## Reference to the player node used to calculate spatial distances for proximity-based chunk
 ## loading.
@@ -9,15 +14,15 @@ class_name ChunkManager
 ## unloading.
 @export var load_distance: float = 150.0
 
-## A dictionary mapping a unique chunk ID (String) to its corresponding scene file path (String)
+## A dictionary mapping a unique chunk ID [String] to its corresponding scene file path [String]
 ## on disk.
 @export var chunk_registry: Dictionary = {}
 
-## A dictionary mapping a unique chunk ID (String) to its central Vector3 world position for
+## A dictionary mapping a unique chunk ID [String] to its central [Vector3] world position for
 ## distance checks.
 @export var chunk_positions: Dictionary = {}
 
-## A dictionary storing the active chunk IDs as keys and their instantiated Node3D references as
+## A dictionary storing the active chunk IDs as keys and their instantiated [Node3D] references as
 ## values.
 var loaded_chunks: Dictionary = {}
 
@@ -30,6 +35,8 @@ var loading_chunks: Dictionary = {}
 var trigger_active_chunks: Array[String] = []
 
 
+## Called when the node enters the scene tree for the first time.
+## Sets up a repeating timer to periodically check chunk distances and loading states.
 func _ready() -> void:
 	var check_timer: Timer = Timer.new()
 	check_timer.wait_time = 0.5
@@ -39,6 +46,7 @@ func _ready() -> void:
 
 
 ## Called when a player enters an Area3D trigger to forcefully load a specific chunk.
+## [param chunk_id] The string identifier of the chunk to load.
 func trigger_load_chunk(chunk_id: String) -> void:
 	print("ChunkManager: trigger_load_chunk() called for chunk ID: ", chunk_id)
 	if not trigger_active_chunks.has(chunk_id):
@@ -46,12 +54,15 @@ func trigger_load_chunk(chunk_id: String) -> void:
 
 
 ## Called when a player exits an Area3D trigger to release the forced load state of a chunk.
+## [param chunk_id] The string identifier of the chunk to unload.
 func trigger_unload_chunk(chunk_id: String) -> void:
 	print("ChunkManager: trigger_unload_chunk() called for chunk ID: ", chunk_id)
 	if trigger_active_chunks.has(chunk_id):
 		trigger_active_chunks.erase(chunk_id)
 
 
+## Called periodically by the internal timer.
+## Calculates which chunks should be active based on explicit triggers and player proximity.
 func _on_check_chunks() -> void:
 	print("ChunkManager: _on_check_chunks() executed. Evaluating chunk distances and triggers.")
 	if not is_instance_valid(player):
@@ -74,6 +85,8 @@ func _on_check_chunks() -> void:
 	_process_chunk_queues(desired_chunks)
 
 
+## Unloads stale chunks, requests new loads, and processes background loading threads.
+## [param desired_chunks] An array of chunk IDs that are requested to be active this cycle.
 func _process_chunk_queues(desired_chunks: Array[String]) -> void:
 	print("ChunkManager: _process_chunk_queues() executed. Managing memory and threads.")
 
@@ -112,6 +125,8 @@ func _process_chunk_queues(desired_chunks: Array[String]) -> void:
 		loading_chunks.erase(id)
 
 
+## Requests the [ResourceLoader] to load a chunk scene asynchronously in the background.
+## [param chunk_id] The string identifier of the chunk to begin loading.
 func _request_async_load(chunk_id: String) -> void:
 	print("ChunkManager: _request_async_load() called. Pushing to background thread: ", chunk_id)
 	if chunk_registry.has(chunk_id):
@@ -119,6 +134,8 @@ func _request_async_load(chunk_id: String) -> void:
 		ResourceLoader.load_threaded_request(chunk_registry[chunk_id])
 
 
+## Safely grabs a fully loaded [PackedScene] from the background thread and spawns it.
+## [param chunk_id] The string identifier of the successfully loaded chunk.
 func _instantiate_chunk(chunk_id: String) -> void:
 	print("ChunkManager: _instantiate_chunk() called. Spawning into world: ", chunk_id)
 	var chunk_resource: PackedScene = ResourceLoader.load_threaded_get(chunk_registry[chunk_id])
@@ -128,6 +145,8 @@ func _instantiate_chunk(chunk_id: String) -> void:
 		call_deferred("add_child", instance)
 
 
+## Removes and frees an active chunk instance from the scene tree.
+## [param chunk_id] The string identifier of the chunk to destroy.
 func _unload_chunk(chunk_id: String) -> void:
 	print("ChunkManager: _unload_chunk() called. Freeing memory for: ", chunk_id)
 	var chunk_instance: Node3D = loaded_chunks[chunk_id]
