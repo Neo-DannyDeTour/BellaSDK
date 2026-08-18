@@ -13,7 +13,7 @@ const HISTORY_NUM_FRAMES: int = 150
 @export var is_enabled: bool = true
 
 ## Reference to the main [CharacterBody3D] player for state tracking.
-var player: CharacterBody3D
+var player: CharacterBody3D = null
 
 ## Timestamp of the previous frame in microseconds.
 var _last_tick: int = 0
