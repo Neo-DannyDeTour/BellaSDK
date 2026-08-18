@@ -2,7 +2,6 @@
 ##
 ## [GlobalSettings] reads and writes values to a `.cfg` file on disk. It handles
 ## applying startup configurations like window scales, inputs, and colorblind modes.
-class_name GlobalSettings
 extends Node
 
 ## The file path where user preferences are saved locally on the player's disk.
@@ -18,8 +17,6 @@ const FONT_MAP: Array[String] = ["default", "dyslexic", "papyrus", "comic"]
 ## Called automatically upon instantiation.
 ## Populates the internal [ConfigFile] before other autoloads can read from it.
 func _init() -> void:
-	# LOAD FIRST: We load data the moment this class is instanced, guaranteeing
-	# the config is populated before other Autoloads attempt to save to it.
 	_load_all_settings()
 
 
@@ -58,13 +55,24 @@ func _apply_boot_settings() -> void:
 ## Overwrites the default Godot [InputMap] with any saved keybind overrides.
 func _apply_input_mappings() -> void:
 	print("System: Applying saved input mappings to Godot InputMap.")
-	if config.has_section("Controls"):
-		var saved_actions: PackedStringArray = config.get_section_keys("Controls")
-		for action: String in saved_actions:
-			var event: Variant = config.get_value("Controls", action)
-			if event is InputEvent:
-				InputMap.action_erase_events(action)
-				InputMap.action_add_event(action, event)
+	if not config.has_section("Controls"):
+		return
+
+	var saved_actions: PackedStringArray = config.get_section_keys("Controls")
+	for action: String in saved_actions:
+		if not InputMap.has_action(action):
+			InputMap.add_action(action)
+
+		var saved_data: Variant = config.get_value("Controls", action)
+
+		if saved_data is Array:
+			InputMap.action_erase_events(action)
+			for event: Variant in saved_data:
+				if event is InputEvent:
+					InputMap.action_add_event(action, event)
+		elif saved_data is InputEvent:
+			InputMap.action_erase_events(action)
+			InputMap.action_add_event(action, saved_data)
 
 
 ## Writes a specific setting to the config and immediately saves the file to disk.

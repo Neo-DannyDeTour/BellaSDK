@@ -52,11 +52,22 @@ func _ready() -> void:
 	Events.fullbright_toggled.connect(_on_fullbright_toggled)
 
 
+## Instantiates the menu scene and attaches it to the viewport root safely.
 func _setup_menu() -> void:
-	if menu_scene:
-		menu_instance = menu_scene.instantiate() as CanvasLayer
+	if not menu_scene:
+		push_warning("SystemMenuController: menu_scene is null or not assigned.")
+		return
+
+	var scene_node: Node = menu_scene.instantiate()
+	if not is_instance_valid(scene_node):
+		push_error("SystemMenuController: Failed to instantiate menu_scene.")
+		return
+
+	menu_instance = scene_node as CanvasLayer
+	if is_instance_valid(menu_instance):
 		add_child(menu_instance)
 		menu_instance.hide()
+		print("SystemMenuController: Menu instance initialized successfully.")
 
 
 func _setup_fullbright_environment() -> void:

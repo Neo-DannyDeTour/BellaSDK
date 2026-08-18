@@ -102,10 +102,8 @@ var noclip_label_message: Label = $NoclipAlertContainer/NoclipMessageContainer/N
 ## Button to toggle wireframe rendering mode.
 @onready var wireframe_button: Button = $DebugPanel/PanelContainer/VBoxContainer/WireframeButton
 
-## Button to toggle the green wireframe material overlay.
-@onready var wireframe_overlay_button: Button = (
-	$DebugPanel/PanelContainer/VBoxContainer/WireframeOverlayButton
-)
+## Reference to the [Button] used to toggle the green wireframe material overlay.
+@onready var wireframe_overlay_button: Button = %WireframeOverlayButton
 
 ## Button to hide the main user interface.
 @onready var hide_ui_button: Button = $DebugPanel/PanelContainer/VBoxContainer/HideUIButton
@@ -219,24 +217,14 @@ func _ready() -> void:
 	get_tree().paused = false
 	debug_panel.hide()
 
+	if metrics_panel:
+		metrics_panel.hide()
+
 	if frame_graph:
 		frame_graph.hide()
 
-	metrics_button.pressed.connect(_on_metrics_button_pressed)
-
-	Events.noclip_toggled.connect(_on_noclip_toggled)
-	Events.noclip_speed_changed.connect(_on_noclip_speed_changed)
-	Events.player_zoomed.connect(_on_player_zoomed)
-	Events.player_crouch_changed.connect(_on_player_crouched)
-
-	if Events.has_signal("player_health_changed"):
-		if not Events.player_health_changed.is_connected(update_health):
-			Events.player_health_changed.connect(update_health)
-
-	fullbright_button.pressed.connect(_on_fullbright_button_pressed)
-	collision_button.pressed.connect(_on_collision_button_pressed)
-	hide_ui_button.pressed.connect(_on_hide_ui_button_pressed)
-	Events.terminal_mode_toggled.connect(_on_terminal_mode_toggled)
+	_connect_ui_signals()
+	_initialize_debug_button_states()
 
 	ui_circle_zoom.pivot_offset = ui_circle_zoom.custom_minimum_size / 2.0
 	ui_circle_zoom.scale = Vector2.ZERO
@@ -267,8 +255,10 @@ func _ready() -> void:
 	_initialize_hearts()
 	call_deferred("_check_if_testbed")
 
-	KeycardSystem.card_picked_up.connect(_on_card_picked_up)
-	KeycardSystem.card_used.connect(_on_card_used)
+	if not KeycardSystem.card_picked_up.is_connected(_on_card_picked_up):
+		KeycardSystem.card_picked_up.connect(_on_card_picked_up)
+	if not KeycardSystem.card_used.is_connected(_on_card_used):
+		KeycardSystem.card_used.connect(_on_card_used)
 
 	debuff_container.hide()
 	immobilize_container.hide()
@@ -284,17 +274,6 @@ func _ready() -> void:
 	_recenter_warning_ui()
 	get_viewport().size_changed.connect(_recenter_warning_ui)
 
-	if Events.has_signal("sprint_debuff_applied"):
-		if not Events.sprint_debuff_applied.is_connected(_on_sprint_debuff_applied):
-			Events.sprint_debuff_applied.connect(_on_sprint_debuff_applied)
-
-	if Events.has_signal("immobilize_debuff_applied"):
-		if not Events.immobilize_debuff_applied.is_connected(_on_immobilize_debuff_applied):
-			Events.immobilize_debuff_applied.connect(_on_immobilize_debuff_applied)
-
-	if not Events.player_electrocuted.is_connected(_on_player_electrocuted):
-		Events.player_electrocuted.connect(_on_player_electrocuted)
-
 	if glitch_overlay != null and glitch_overlay.material is ShaderMaterial:
 		glitch_overlay.material.set_shader_parameter("intensity", 0.0)
 		glitch_overlay.hide()
@@ -303,32 +282,85 @@ func _ready() -> void:
 		electricity_vignette.material.set_shader_parameter("intensity", 0.0)
 		electricity_vignette.hide()
 
-	if Events.has_signal("hint_requested"):
-		if not Events.hint_requested.is_connected(_show_warning_message):
-			Events.hint_requested.connect(_show_warning_message)
-
 	if note_overlay_ui != null:
 		note_overlay_ui.hide()
-
-	if Events.has_signal("note_opened"):
-		if not Events.note_opened.is_connected(_on_note_opened):
-			Events.note_opened.connect(_on_note_opened)
-
-	if Events.has_signal("note_closed"):
-		if not Events.note_closed.is_connected(_on_note_closed):
-			Events.note_closed.connect(_on_note_closed)
-
-	if Events.has_signal("subtitle_requested"):
-		if not Events.subtitle_requested.is_connected(_on_subtitle_requested):
-			Events.subtitle_requested.connect(_on_subtitle_requested)
-
-	if Events.has_signal("subtitle_canceled"):
-		if not Events.subtitle_canceled.is_connected(_on_subtitle_canceled):
-			Events.subtitle_canceled.connect(_on_subtitle_canceled)
 
 	if subtitle_margin:
 		subtitle_margin.hide()
 		subtitle_margin.modulate.a = 0.0
+
+
+## Initializes the default label text for all debug panel toggle buttons.
+func _initialize_debug_button_states() -> void:
+	print("UIController: Synchronizing initial debug button text states.")
+	if noclip_button:
+		noclip_button.text = "Noclip OFF"
+	if metrics_button:
+		var is_open: bool = metrics_panel != null and metrics_panel.visible
+		metrics_button.text = "Metrics ON" if is_open else "Metrics OFF"
+	if fullbright_button:
+		fullbright_button.text = "Fullbright OFF"
+	if wireframe_button:
+		wireframe_button.text = "Wireframe OFF"
+	if wireframe_overlay_button:
+		wireframe_overlay_button.text = "Wireframe Overlay OFF"
+	if collision_button:
+		collision_button.text = "Collisions OFF"
+	if hide_ui_button:
+		hide_ui_button.text = "Hide UI"
+
+
+## Safe signal connection helper to prevent duplicate connection warnings.
+func _connect_ui_signals() -> void:
+	print("UIController: Safely connecting buttons and event bus signals.")
+
+	if not noclip_button.pressed.is_connected(_on_noclip_button_pressed):
+		noclip_button.pressed.connect(_on_noclip_button_pressed)
+	if not metrics_button.pressed.is_connected(_on_metrics_button_pressed):
+		metrics_button.pressed.connect(_on_metrics_button_pressed)
+	if not fullbright_button.pressed.is_connected(_on_fullbright_button_pressed):
+		fullbright_button.pressed.connect(_on_fullbright_button_pressed)
+	if not wireframe_button.pressed.is_connected(_on_wireframe_button_pressed):
+		wireframe_button.pressed.connect(_on_wireframe_button_pressed)
+	if not wireframe_overlay_button.pressed.is_connected(_on_wireframe_overlay_button_pressed):
+		wireframe_overlay_button.pressed.connect(_on_wireframe_overlay_button_pressed)
+	if not collision_button.pressed.is_connected(_on_collision_button_pressed):
+		collision_button.pressed.connect(_on_collision_button_pressed)
+	if not hide_ui_button.pressed.is_connected(_on_hide_ui_button_pressed):
+		hide_ui_button.pressed.connect(_on_hide_ui_button_pressed)
+
+	if not Events.noclip_toggled.is_connected(_on_noclip_toggled):
+		Events.noclip_toggled.connect(_on_noclip_toggled)
+	if not Events.noclip_speed_changed.is_connected(_on_noclip_speed_changed):
+		Events.noclip_speed_changed.connect(_on_noclip_speed_changed)
+	if not Events.player_zoomed.is_connected(_on_player_zoomed):
+		Events.player_zoomed.connect(_on_player_zoomed)
+	if not Events.player_crouch_changed.is_connected(_on_player_crouched):
+		Events.player_crouch_changed.connect(_on_player_crouched)
+	if not Events.debug_menu_toggled.is_connected(_on_debug_menu_toggled):
+		Events.debug_menu_toggled.connect(_on_debug_menu_toggled)
+	if not Events.console_toggled.is_connected(_on_console_toggled):
+		Events.console_toggled.connect(_on_console_toggled)
+	if not Events.player_health_changed.is_connected(update_health):
+		Events.player_health_changed.connect(update_health)
+	if not Events.terminal_mode_toggled.is_connected(_on_terminal_mode_toggled):
+		Events.terminal_mode_toggled.connect(_on_terminal_mode_toggled)
+	if not Events.sprint_debuff_applied.is_connected(_on_sprint_debuff_applied):
+		Events.sprint_debuff_applied.connect(_on_sprint_debuff_applied)
+	if not Events.immobilize_debuff_applied.is_connected(_on_immobilize_debuff_applied):
+		Events.immobilize_debuff_applied.connect(_on_immobilize_debuff_applied)
+	if not Events.player_electrocuted.is_connected(_on_player_electrocuted):
+		Events.player_electrocuted.connect(_on_player_electrocuted)
+	if not Events.hint_requested.is_connected(_show_warning_message):
+		Events.hint_requested.connect(_show_warning_message)
+	if not Events.note_opened.is_connected(_on_note_opened):
+		Events.note_opened.connect(_on_note_opened)
+	if not Events.note_closed.is_connected(_on_note_closed):
+		Events.note_closed.connect(_on_note_closed)
+	if not Events.subtitle_requested.is_connected(_on_subtitle_requested):
+		Events.subtitle_requested.connect(_on_subtitle_requested)
+	if not Events.subtitle_canceled.is_connected(_on_subtitle_canceled):
+		Events.subtitle_canceled.connect(_on_subtitle_canceled)
 
 
 ## Repositions hint and warning notifications relative to the screen center.
@@ -343,6 +375,7 @@ func _recenter_warning_ui() -> void:
 
 
 ## Updates screen-space shaders and vignette transitions every render frame.
+## [param delta] The elapsed time since the previous frame.
 func _process(delta: float) -> void:
 	var target_vignette_opacity: float = 0.8 if is_player_crouching else 0.0
 	var current_opacity: float = vignette.material.get_shader_parameter("vignette_opacity") as float
@@ -351,7 +384,6 @@ func _process(delta: float) -> void:
 	vignette.material.set_shader_parameter("vignette_opacity", new_opacity)
 
 
-# --- HEALTH LOGIC ---
 ## Slices the heart atlas and builds initial health container representations.
 func _initialize_hearts() -> void:
 	print("UIController: _initialize_hearts() called. Setting up health display.")
@@ -401,6 +433,7 @@ func _add_heart_node() -> void:
 
 
 ## Re-renders all heart frames and plays health change damage or heal tweens.
+## [param new_health] The current integer health total.
 func update_health(new_health: int) -> void:
 	print("UIController: update_health() called with new value: ", new_health)
 
@@ -457,12 +490,13 @@ func _trigger_pain_effect() -> void:
 		pain_tween.kill()
 
 	pain_overlay.color = Color(1.0, 0.0, 0.0, 0.4)
-	pain_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	pain_tween = (create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT))
 	pain_tween.tween_property(pain_overlay, "color", Color(1.0, 0.0, 0.0, 0.0), 0.3)
 	pain_tween.finished.connect(pain_overlay.hide)
 
 
 ## Runs a vertical bounce tween on the target heart node when damaged.
+## [param index] The heart slot index to animate.
 func _animate_heart_damage(index: int) -> void:
 	print("UIController: _animate_heart_damage() called for index: ", index)
 	if index < 0 or index >= heart_nodes.size():
@@ -486,6 +520,8 @@ func _animate_heart_damage(index: int) -> void:
 
 
 ## Spawns a scaling green ghost texture to visually represent health recovery.
+## [param index] The heart slot index to animate.
+## [param frame_index] Sliced texture frame index to duplicate on the ghost.
 func _animate_heart_heal(index: int, frame_index: int) -> void:
 	print("UIController: _animate_heart_heal() called for index: ", index)
 	if index < 0 or index >= heart_nodes.size():
@@ -516,16 +552,16 @@ func _animate_heart_heal(index: int, frame_index: int) -> void:
 	tween.chain().tween_callback(ghost.queue_free)
 
 
-# --- ZOOM ANIMATION LOGIC ---
 ## Tweens reticle rings and fisheye parameters when entering or exiting aim zoom.
+## [param is_zooming] True if the player is actively zoomed in.
 func _on_player_zoomed(is_zooming: bool) -> void:
 	print("UIController: _on_player_zoomed() called. State: ", is_zooming)
 	if zoom_tween and zoom_tween.is_valid():
 		zoom_tween.kill()
 
-	zoom_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(
+	zoom_tween = (create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(
 		Tween.EASE_OUT
-	)
+	))
 
 	if is_zooming:
 		center_dot.hide()
@@ -576,29 +612,54 @@ func _on_player_zoomed(is_zooming: bool) -> void:
 
 
 ## Updates crouch state tracking to drive camera vignette lerping.
+## [param crouching] True if the player is currently crouching.
 func _on_player_crouched(crouching: bool) -> void:
 	is_player_crouching = crouching
 	print("UIController: received crouch signal! Crouching: ", crouching)
 
 
 ## Intercepts global debug hotkeys and debuff warning triggers on keypress.
+## [param event] The [InputEvent] received from the engine.
 func _input(event: InputEvent) -> void:
-	if event is InputEventKey and event.is_pressed() and not event.is_echo():
-		if event.keycode == KEY_QUOTELEFT and is_debug_allowed:
-			print("UIController: Tilde key pressed. Opening debug panel.")
-			_toggle_debug_panel()
+	if not is_debug_allowed:
+		return
 
+	if (
+		(
+			(InputMap.has_action(&"console") and event.is_action_pressed(&"console"))
+			or (InputMap.has_action(&"debug_menu") and event.is_action_pressed(&"debug_menu"))
+			or (
+				event is InputEventKey
+				and event.pressed
+				and event.keycode in [KEY_QUOTELEFT, KEY_ASCIITILDE, KEY_F3]
+			)
+		)
+		and not event.is_echo()
+	):
+		print("UIController: Toggle requested. Emitting console_toggle_requested.")
+		Events.console_toggle_requested.emit()
+		get_viewport().set_input_as_handled()
+		return
+
+	if event is InputEventKey and event.is_pressed() and not event.is_echo():
 		if is_immobilized:
-			if event.keycode in [KEY_W, KEY_A, KEY_S, KEY_D, KEY_SPACE, KEY_SHIFT]:
+			if (
+				event.is_action_pressed(&"forward")
+				or event.is_action_pressed(&"backward")
+				or event.is_action_pressed(&"left")
+				or event.is_action_pressed(&"right")
+				or event.is_action_pressed(&"jump")
+				or event.is_action_pressed(&"sprint")
+			):
 				print("UIController: Movement blocked - immobilized.")
 				_show_warning_message("Can't move!", 2.0)
 		elif is_sprint_blocked:
-			if event.keycode == KEY_SHIFT:
+			if event.is_action_pressed(&"sprint"):
 				print("UIController: Movement blocked - sprint cooldown.")
 				_show_warning_message("Can't sprint", 2.0)
 
 
-## Shows or hides the developer debug drawer and captures or frees the mouse.
+## Shows or hides the developer debug drawer, capturing or freeing the mouse.
 func _toggle_debug_panel() -> void:
 	debug_panel.visible = not debug_panel.visible
 	print("UIController: Debug panel visibility toggled -> ", debug_panel.visible)
@@ -608,6 +669,23 @@ func _toggle_debug_panel() -> void:
 	else:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
+	Events.debug_menu_toggled.emit(debug_panel.visible)
+
+
+## Handles external requests to set the debug menu visibility.
+## [param is_open] Target visibility state for the debug menu.
+func _on_debug_menu_toggled(is_open: bool) -> void:
+	if debug_panel.visible != is_open:
+		print("UIController: Syncing debug panel state from Events bus -> ", is_open)
+		debug_panel.visible = is_open
+
+
+## Synchronizes debug drawer panel visibility when console visibility changes.
+## [param is_open] Target visibility state of the developer console.
+func _on_console_toggled(is_open: bool) -> void:
+	print("UIController: Syncing debug panel with console state -> ", is_open)
+	debug_panel.visible = is_open
+
 
 ## Handles pressing the debug noclip button by emitting a global trigger event.
 func _on_noclip_button_pressed() -> void:
@@ -616,6 +694,7 @@ func _on_noclip_button_pressed() -> void:
 
 
 ## Toggles on-screen noclip badge text when the player toggles fly mode.
+## [param is_flying] True if noclip is actively engaged.
 func _on_noclip_toggled(is_flying: bool) -> void:
 	print("UIController: Noclip toggled. State: ", is_flying)
 	if is_flying:
@@ -627,6 +706,7 @@ func _on_noclip_toggled(is_flying: bool) -> void:
 
 
 ## Updates the noclip indicator badge label to show the current speed multiplier.
+## [param speed] The updated noclip flight velocity scalar.
 func _on_noclip_speed_changed(speed: float) -> void:
 	noclip_label_message.text = "Noclip ON: %.1fx speed" % speed
 
@@ -675,6 +755,8 @@ func _on_wireframe_overlay_button_pressed() -> void:
 
 
 ## Recursively applies or removes the green wireframe shader overlay on mesh nodes.
+## [param node] The current branch root node to process.
+## [param is_overlay] True to assign wireframe overlay, false to clear.
 func _apply_wireframe_to_node(node: Node, is_overlay: bool) -> void:
 	if node is MeshInstance3D or node is CSGShape3D:
 		if is_overlay:
@@ -686,7 +768,7 @@ func _apply_wireframe_to_node(node: Node, is_overlay: bool) -> void:
 		_apply_wireframe_to_node(child, is_overlay)
 
 
-## Toggles the frame statistics and frame graph debug window.
+## Toggles the frame statistics and frame graph debug window and updates button label.
 func _on_metrics_button_pressed() -> void:
 	print("UIController: Metrics button pressed.")
 	if metrics_panel:
@@ -695,17 +777,20 @@ func _on_metrics_button_pressed() -> void:
 		if frame_graph:
 			frame_graph.visible = metrics_panel.visible
 
+		metrics_button.text = ("Metrics ON" if metrics_panel.visible else "Metrics OFF")
+
 
 ## Expands the crosshair dot into terminal interaction bounds.
+## [param is_active] True if the player is currently focused on an active terminal.
 func _on_terminal_mode_toggled(is_active: bool) -> void:
 	print("UIController: Terminal mode toggled: ", is_active)
 
 	if crosshair_tween and crosshair_tween.is_valid():
 		crosshair_tween.kill()
 
-	crosshair_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(
+	crosshair_tween = (create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(
 		Tween.EASE_OUT
-	)
+	))
 
 	if is_active:
 		var target_size: Vector2 = Vector2(16.0, 16.0)
@@ -732,6 +817,8 @@ func _on_collision_button_pressed() -> void:
 
 
 ## Forces collision visualizers to refresh their mesh representations.
+## [param node] The branch root node to process.
+## [param show_collisions] Target visibility state for debug collisions.
 func _force_collision_redraw(node: Node, show_collisions: bool) -> void:
 	if node is CollisionShape3D and node.shape:
 		var temp_shape: Shape3D = node.shape
@@ -761,6 +848,7 @@ func _on_hide_ui_button_pressed() -> void:
 
 
 ## Toggles gameplay HUD visibility for clean screenshots or immersion.
+## [param should_hide] True to suppress HUD presentation.
 func _toggle_ui_elements(should_hide: bool) -> void:
 	is_ui_hidden = should_hide
 	var visibility: bool = !is_ui_hidden
@@ -784,7 +872,7 @@ func _check_if_testbed() -> void:
 		_open_metrics_panel()
 
 
-## Opens the metrics and performance profiling panel.
+## Opens the metrics and performance profiling panel and updates button label.
 func _open_metrics_panel() -> void:
 	print("UIController: TestbedMap detected. Opening metrics panel.")
 	if metrics_panel and not metrics_panel.visible:
@@ -793,8 +881,12 @@ func _open_metrics_panel() -> void:
 		if frame_graph:
 			frame_graph.visible = metrics_panel.visible
 
+		if metrics_button:
+			metrics_button.text = "Metrics ON"
+
 
 ## Adds a keycard texture rectangle to the HUD inventory display.
+## [param card_id] Unique identifier key of the collected card.
 func _on_card_picked_up(card_id: StringName) -> void:
 	print("UIController: Displaying new card ID ", card_id)
 	var card_rect: TextureRect = TextureRect.new()
@@ -818,6 +910,7 @@ func _on_card_picked_up(card_id: StringName) -> void:
 
 
 ## Animates and removes a used keycard icon from the HUD inventory display.
+## [param card_id] Unique identifier key of the consumed card.
 func _on_card_used(card_id: StringName) -> void:
 	print("UIController: Removing used card ID ", card_id)
 	if active_card_icons.has(card_id):
@@ -829,6 +922,8 @@ func _on_card_used(card_id: StringName) -> void:
 
 
 ## Fades in a centered notification banner with the provided text.
+## [param message] String content to present to the user.
+## [param duration] Visible display duration before fading out.
 func _show_warning_message(message: String, duration: float = 2.0) -> void:
 	print("UIController: Displaying warning '", message, "' for ", duration, "s.")
 	warning_label.text = message
@@ -843,9 +938,14 @@ func _show_warning_message(message: String, duration: float = 2.0) -> void:
 
 
 ## Starts and animates the sprint debuff progress bar cooldown.
+## [param duration] Length of the debuff in seconds.
 func _on_sprint_debuff_applied(duration: float) -> void:
 	print(
-		"UIController: _on_sprint_debuff_applied() - Starting debuff UI for ", duration, " seconds."
+		(
+			"UIController: _on_sprint_debuff_applied() - Starting debuff UI for "
+			+ str(duration)
+			+ " seconds."
+		)
 	)
 	debuff_container.show()
 	is_sprint_blocked = true
@@ -866,8 +966,15 @@ func _on_sprint_debuff_applied(duration: float) -> void:
 
 
 ## Starts and animates the immobilize debuff progress bar cooldown.
+## [param duration] Length of the debuff in seconds.
 func _on_immobilize_debuff_applied(duration: float) -> void:
-	print("UIController: _on_immobilize_debuff_applied() - Starting UI for ", duration, " seconds.")
+	print(
+		(
+			"UIController: _on_immobilize_debuff_applied() - Starting UI for "
+			+ str(duration)
+			+ " seconds."
+		)
+	)
 	immobilize_container.show()
 	is_immobilized = true
 
@@ -900,7 +1007,7 @@ func _on_player_electrocuted() -> void:
 		if glitch_tween and glitch_tween.is_valid():
 			glitch_tween.kill()
 
-		glitch_tween = create_tween().set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
+		glitch_tween = (create_tween().set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT))
 		glitch_tween.tween_method(
 			func(val: float) -> void:
 				glitch_overlay.material.set_shader_parameter("intensity", val)
@@ -916,7 +1023,7 @@ func _on_player_electrocuted() -> void:
 		if electro_tween and electro_tween.is_valid():
 			electro_tween.kill()
 
-		electro_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+		electro_tween = (create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT))
 		electro_tween.tween_method(
 			func(val: float) -> void:
 				electricity_vignette.material.set_shader_parameter("intensity", val)
@@ -929,6 +1036,7 @@ func _on_player_electrocuted() -> void:
 
 
 ## Shows the note reading interface populated with formatted note text.
+## [param note_text] The unformatted raw text string loaded from the note entity.
 func _on_note_opened(note_text: String) -> void:
 	print("UIController: _on_note_opened() received. Displaying note.")
 	if note_overlay_ui != null and note_text_label != null:
@@ -945,6 +1053,9 @@ func _on_note_closed() -> void:
 
 
 ## Displays the subtitle text and animates the typewriter effect concurrently with speech.
+## [param speaker] Display name for the character or announcer speaking.
+## [param text] Dialogue content string.
+## [param duration] Time allotted for speech playback.
 func _on_subtitle_requested(speaker: String, text: String, duration: float) -> void:
 	print("UIController: _on_subtitle_requested() for speaker: ", speaker)
 
@@ -980,6 +1091,7 @@ func _on_subtitle_requested(speaker: String, text: String, duration: float) -> v
 
 
 ## Updates visible typewriter characters without playing audio.
+## [param current_chars] The number of characters to show in the subtitle label.
 func _update_visible_characters(current_chars: int) -> void:
 	subtitle_label.visible_characters = current_chars
 

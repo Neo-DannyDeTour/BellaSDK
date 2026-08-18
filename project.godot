@@ -40,6 +40,7 @@ CsgToolkitAutoload="*uid://w8ad8q4lneis"
 SonarManager="*uid://byxvdd1kf32wk"
 TTSManager="*uid://crey6jf4gwjv6"
 SpatialDescriber="*uid://bhdfhlh5ba34i"
+GestureInputManager="*uid://ot3nttr18nqd"
 
 [debug]
 

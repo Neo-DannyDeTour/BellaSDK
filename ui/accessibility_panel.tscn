@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://b5o5hk3behhk"]
 
 [ext_resource type="Script" uid="uid://y4udm76gj87c" path="res://ui/accessibility_panel.gd" id="1_cw2tg"]
+[ext_resource type="PackedScene" uid="uid://dhh7c5j6i8bkk" path="res://player/settings_level.tscn" id="2_cw2tg"]
 
 [node name="AccessibilityPanel" type="Panel" unique_id=1445857146]
 anchors_preset = 15
@@ -9,6 +10,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_cw2tg")
+diorama_scene = ExtResource("2_cw2tg")
 
 [node name="MarginContainer" type="MarginContainer" parent="." unique_id=1686322239]
 layout_mode = 1
@@ -36,38 +38,44 @@ vertical_alignment = 1
 [node name="HSeparator" type="HSeparator" parent="MarginContainer/VBoxContainer" unique_id=2130343895]
 layout_mode = 2
 
-[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/VBoxContainer" unique_id=693938259]
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=1482136782]
 layout_mode = 2
+
+[node name="SettingsScroll" type="ScrollContainer" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=693938259]
+layout_mode = 2
+size_flags_horizontal = 3
 size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
-[node name="GridContainer" type="GridContainer" parent="MarginContainer/VBoxContainer/ScrollContainer" unique_id=1425124961]
+[node name="GridContainer" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll" unique_id=1425124961]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 columns = 3
 
-[node name="MouseSensitivityLabel" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1488079946]
+[node name="MouseSensitivityLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1488079946]
 layout_mode = 2
 text = "Mouse Sensitivity"
 
-[node name="MouseSensitivityLine" type="LineEdit" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1474107718]
+[node name="MouseSensitivityLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1474107718]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="MouseSensitivitySlider" type="HSlider" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1816352778]
+[node name="MouseSensitivitySlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1816352778]
 unique_name_in_owner = true
 layout_mode = 2
+max_value = 2.0
+step = 0.1
 
-[node name="BrightnessLabel" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=686284605]
+[node name="BrightnessLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=686284605]
 layout_mode = 2
 text = "Brightness"
 
-[node name="BrightnessLine" type="LineEdit" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=976196478]
+[node name="BrightnessLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=976196478]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="BrightnessSlider" type="HSlider" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1042379306]
+[node name="BrightnessSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1042379306]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -75,15 +83,15 @@ max_value = 3.0
 step = 0.01
 value = 1.0
 
-[node name="ContrastLabel" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1266853019]
+[node name="ContrastLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1266853019]
 layout_mode = 2
 text = "Contrast"
 
-[node name="ContrastLine" type="LineEdit" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1430935328]
+[node name="ContrastLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1430935328]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="ContrastSlider" type="HSlider" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1909607972]
+[node name="ContrastSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1909607972]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -91,15 +99,15 @@ max_value = 3.0
 step = 0.01
 value = 1.0
 
-[node name="SaturationLabel" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=749161311]
+[node name="SaturationLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=749161311]
 layout_mode = 2
 text = "Saturation"
 
-[node name="SaturationLine" type="LineEdit" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=2022102502]
+[node name="SaturationLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=2022102502]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="SaturationSlider" type="HSlider" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=2049954714]
+[node name="SaturationSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=2049954714]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -107,15 +115,15 @@ max_value = 3.0
 step = 0.01
 value = 1.0
 
-[node name="UI_ScaleLabel" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=785792894]
+[node name="UI_ScaleLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=785792894]
 layout_mode = 2
 text = "UI Scale"
 
-[node name="UIScaleLine" type="LineEdit" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=375535810]
+[node name="UIScaleLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=375535810]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="UIScaleSlider" type="HSlider" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1780903147]
+[node name="UIScaleSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1780903147]
 unique_name_in_owner = true
 layout_mode = 2
 min_value = 1.0
@@ -123,15 +131,15 @@ max_value = 2.0
 step = 0.01
 value = 1.0
 
-[node name="FOV_Label" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=359266187]
+[node name="FOV_Label" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=359266187]
 layout_mode = 2
 text = "Field of View"
 
-[node name="FOVLine" type="LineEdit" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=199507414]
+[node name="FOVLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=199507414]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="FOVSlider" type="HSlider" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=723988044]
+[node name="FOVSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=723988044]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -139,171 +147,233 @@ min_value = 10.0
 max_value = 150.0
 value = 75.0
 
-[node name="Label4" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1718145896]
+[node name="AimAssistAmountLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1718145896]
 layout_mode = 2
 text = "Aim Assist Amount"
 
-[node name="AimAssistLine" type="LineEdit" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=78355937]
+[node name="AimAssistLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=78355937]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="AimAssistSlider" type="HSlider" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1470963975]
+[node name="AimAssistSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1470963975]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Label5" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1895783728]
+[node name="VibrationLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1895783728]
 layout_mode = 2
 text = "Vibration"
 
-[node name="VibrationLine" type="LineEdit" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1595979355]
+[node name="VibrationLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1595979355]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="VibrationSlider" type="HSlider" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1962313817]
+[node name="VibrationSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1962313817]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="ColorblindLabel" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1777782324]
-layout_mode = 2
-text = "Colorblind Mode"
-
-[node name="ColorblindOption" type="OptionButton" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1701607343]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="Spacer3" type="Control" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=2071410110]
-layout_mode = 2
-
-[node name="FontLabel" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=7494968]
-layout_mode = 2
-text = "Font"
-
-[node name="FontOption" type="OptionButton" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=376569803]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="Spacer1" type="Control" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=840057921]
-layout_mode = 2
-
-[node name="Label2" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=617495531]
-layout_mode = 2
-text = "Invert Y"
-
-[node name="InvertYToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1809832729]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="Control" type="Control" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=2116035820]
-layout_mode = 2
-
-[node name="Label3" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1463029628]
-layout_mode = 2
-text = "Aim Assist"
-
-[node name="AimAssistToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=328161055]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="Control2" type="Control" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1349499590]
-layout_mode = 2
-
-[node name="ToggleCrouchLabel" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=435623735]
-layout_mode = 2
-text = "Toggle Crouch"
-
-[node name="ToggleCrouchButton" type="CheckButton" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1850374872]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 4
-
-[node name="Control3" type="Control" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=342586733]
-layout_mode = 2
-
-[node name="Label6" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1108741892]
-layout_mode = 2
-text = "Toggle Sprint"
-
-[node name="ToggleSprintButton" type="CheckButton" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=912549993]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 4
-
-[node name="Control5" type="Control" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1552795297]
-layout_mode = 2
-
-[node name="HighContrastLabel" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=939637041]
-layout_mode = 2
-text = "High Contrast"
-
-[node name="HighContrastToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1285910016]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="Control7" type="Control" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=657171548]
-layout_mode = 2
-
-[node name="ReduceMotionLabel" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=15875538]
-layout_mode = 2
-text = "Reduce Motion"
-
-[node name="ReduceMotionToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1318992016]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="Control8" type="Control" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=208504663]
-layout_mode = 2
-
-[node name="Label10" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=415713423]
-layout_mode = 2
-text = "Sub Colors"
-
-[node name="SubColorsToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1472814680]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="TTSToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=636854834]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="Control9" type="Control" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=876018615]
-layout_mode = 2
-
-[node name="CancelCrouchOnJumpLabel" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1650805570]
-layout_mode = 2
-text = "Cancel Crouch on Jump"
-
-[node name="CancelCrouchOnJumpButton" type="CheckButton" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1095323626]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 4
-
-[node name="Control6" type="Control" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1174655951]
-layout_mode = 2
-
-[node name="FilmGrainLabel" type="Label" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1191401400]
+[node name="FilmGrainLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1191401400]
 layout_mode = 2
 text = "Film Grain"
 
-[node name="FilmGrainEdit" type="LineEdit" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1292214577]
+[node name="FilmGrainEdit" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1292214577]
 layout_mode = 2
 
-[node name="FilmGrainSlider" type="HSlider" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=2045712158]
+[node name="FilmGrainSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=2045712158]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Control10" type="Control" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1434479592]
+[node name="SubBgOpacityLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=2140324137]
+layout_mode = 2
+text = "Subtitle BG Opacity"
+
+[node name="SubBgOpacityLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=510626932]
 layout_mode = 2
 
-[node name="SprintFovCheckbox" type="CheckBox" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1933881178]
+[node name="SubBgOpacitySlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=160369827]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ColorblindLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1777782324]
+layout_mode = 2
+text = "Colorblind Mode"
+
+[node name="Spacer_CB" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=2071410110]
+layout_mode = 2
+
+[node name="ColorblindOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1701607343]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="FontLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=7494968]
+layout_mode = 2
+text = "Font"
+
+[node name="Spacer_Font" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=830585316]
+layout_mode = 2
+
+[node name="FontOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=376569803]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SubSizeLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1889518136]
+layout_mode = 2
+text = "Subtitle Size"
+
+[node name="Spacer_SubSize" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=27675502]
+layout_mode = 2
+
+[node name="SubSizeOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1656283454]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="InvertYLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=617495531]
+layout_mode = 2
+text = "Invert Y"
+
+[node name="Spacer_InvertY" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=2116035820]
+layout_mode = 2
+
+[node name="InvertYToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1809832729]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="AimAssistToggleLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1463029628]
+layout_mode = 2
+text = "Aim Assist"
+
+[node name="Spacer_AimAssist" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1349499590]
+layout_mode = 2
+
+[node name="AimAssistToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=328161055]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ToggleCrouchLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=435623735]
+layout_mode = 2
+text = "Toggle Crouch"
+
+[node name="Spacer_ToggleCrouch" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=342586733]
+layout_mode = 2
+
+[node name="ToggleCrouchButton" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1850374872]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 7
+
+[node name="ToggleSprintLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1108741892]
+layout_mode = 2
+text = "Toggle Sprint"
+
+[node name="Spacer_ToggleSprint" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1552795297]
+layout_mode = 2
+
+[node name="ToggleSprintButton" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=912549993]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 7
+
+[node name="CancelCrouchOnJumpLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1650805570]
+layout_mode = 2
+text = "Cancel Crouch on Jump"
+
+[node name="Spacer_CancelCrouch" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1174655951]
+layout_mode = 2
+
+[node name="CancelCrouchOnJumpButton" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1095323626]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="SprintFovLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1415163888]
+layout_mode = 2
 text = "Disable Sprint FOV"
 
-[node name="SubBgOpacitySlider" type="HSlider" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=160369827]
+[node name="Spacer_SprintFov" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1480541691]
+layout_mode = 2
+
+[node name="SprintFovCheckbox" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=174581541]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HighContrastLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=939637041]
+layout_mode = 2
+text = "High Contrast"
+
+[node name="Spacer_HighContrast" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1953678287]
+layout_mode = 2
+
+[node name="HighContrastToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1285910016]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="SubSizeOption" type="OptionButton" parent="MarginContainer/VBoxContainer/ScrollContainer/GridContainer" unique_id=1656283454]
+[node name="ReduceMotionLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=15875538]
+layout_mode = 2
+text = "Reduce Motion"
+
+[node name="Spacer_ReduceMotion" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=657171548]
+layout_mode = 2
+
+[node name="ReduceMotionToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1318992016]
 unique_name_in_owner = true
 layout_mode = 2
+
+[node name="SubColorsLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=415713423]
+layout_mode = 2
+text = "Sub Colors"
+
+[node name="Spacer_SubColors" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=208504663]
+layout_mode = 2
+
+[node name="SubColorsToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1472814680]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TTSLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=630876211]
+layout_mode = 2
+
+[node name="Spacer_TTS" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=259540570]
+layout_mode = 2
+
+[node name="TTSToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=636854834]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="PhotosensitivityLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1884347696]
+layout_mode = 2
+text = "Photosensitivity Mode"
+
+[node name="Spacer_Photosensitivity" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=876018615]
+layout_mode = 2
+
+[node name="PhotosensitivityToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=399741898]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=1561748320]
+layout_mode = 2
+
+[node name="DioramaContainer" type="SubViewportContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/HBoxContainer" unique_id=1507254210]
+custom_minimum_size = Vector2(512, 512)
+layout_mode = 2
+size_flags_horizontal = 3
+stretch = true
+
+[node name="DioramaViewport" type="SubViewport" parent="MarginContainer/VBoxContainer/HBoxContainer/HBoxContainer/DioramaContainer" unique_id=992634071]
+unique_name_in_owner = true
+own_world_3d = true
+handle_input_locally = false
+render_target_update_mode = 4
+
+[node name="FastDioramaMap" type="Node3D" parent="MarginContainer/VBoxContainer/HBoxContainer/HBoxContainer/DioramaContainer/DioramaViewport" unique_id=1532031656]
+
+[node name="DioramaCamera" type="Camera3D" parent="MarginContainer/VBoxContainer/HBoxContainer/HBoxContainer/DioramaContainer/DioramaViewport" unique_id=796322370]
+
+[node name="PreviewShaderLayer" type="CanvasLayer" parent="MarginContainer/VBoxContainer/HBoxContainer/HBoxContainer/DioramaContainer/DioramaViewport" unique_id=1962902997]
+
+[node name="SettingsScroll" type="ScrollContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/HBoxContainer/DioramaContainer" unique_id=913637195]
+layout_mode = 2
+
+[node name="GridContainer" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/HBoxContainer/DioramaContainer/SettingsScroll" unique_id=483459289]
+layout_mode = 2
+columns = 3

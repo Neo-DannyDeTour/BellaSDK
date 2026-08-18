@@ -1,3 +1,5 @@
+## Handles player ground locomotion, slope handling, friction, crouching, sprinting,
+## and jump/vault transitions.
 class_name StateGround
 extends PlayerState
 
@@ -29,6 +31,8 @@ var _toggle_sprint_enabled: bool = false
 var _cancel_crouch_on_jump: bool = false
 
 
+## State entry lifecycle callback configuring speeds, gravity states, and checking buffered inputs.
+## [param msg] Initialization data dictionary passed from the previous state.
 func enter(msg: Dictionary = {}) -> void:
 	print("StateGround: enter() called. Resetting Y velocity and current speed.")
 	player.velocity.y = 0.0
@@ -49,11 +53,14 @@ func enter(msg: Dictionary = {}) -> void:
 		return
 
 
+## Physics update lifecycle processing surfaces, step-ups, gesture jump requests,
+## and movement momentum.
+## [param delta] The physics frame delta in seconds.
 func physics_update(delta: float) -> void:
-	var loco: Node = player.locomotion_component
+	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
 	var env: Node = player.environment_component
 
-	if is_instance_valid(env.vault_controller) and env.vault_controller.get("is_vaulting"):
+	if is_instance_valid(env.get("vault_controller")) and env.vault_controller.get("is_vaulting"):
 		return
 
 	# 0. Slide Surface, Sand & Safe Landing Detection
@@ -66,13 +73,13 @@ func physics_update(delta: float) -> void:
 		var collider: Object = collision.get_collider()
 
 		if collider is Node:
-			if collider.is_in_group("slide_surface"):
-				print("StateGround: Slide surface detected via collision. Transitioning to Slide.")
+			if (collider as Node).is_in_group("slide_surface"):
+				print("StateGround: Slide surface detected. Transitioning to Slide.")
 				state_machine.transition_to("Slide")
 				return
-			if collider.is_in_group("sand"):
+			if (collider as Node).is_in_group("sand"):
 				loco.on_sand = true
-			if collider.is_in_group("safe_landing"):
+			if (collider as Node).is_in_group("safe_landing"):
 				loco.on_safe_landing = true
 				print("StateGround: Safe landing material detected. Fall damage neutralized.")
 
@@ -81,7 +88,7 @@ func physics_update(delta: float) -> void:
 	var snapped_last_frame: bool = loco.stair_controller.get("_snapped_to_stairs_last_frame")
 
 	if not player.is_on_floor() and not snapped_last_frame and not is_recently_stepped:
-		if env.current_water_node != null:
+		if env.get("current_water_node") != null:
 			print("StateGround: Transitioning to Swim.")
 			state_machine.transition_to("Swim")
 			return
@@ -95,14 +102,14 @@ func physics_update(delta: float) -> void:
 	if Input.is_action_pressed("zoom"):
 		input_dir = Vector2.ZERO
 
-	# 3. Handle Jump / Vault Logic
-	if Input.is_action_just_pressed("jump"):
-		var is_pressing_forward: bool = Input.is_action_pressed("forward")
+	# 3. Handle Jump / Vault Logic via GestureInputManager
+	if GestureInputManager.is_action_just_triggered("jump"):
+		var is_pressing_forward: bool = GestureInputManager.is_action_active("forward")
 
 		if (
 			is_pressing_forward
 			and not snapped_last_frame
-			and is_instance_valid(env.vault_controller)
+			and is_instance_valid(env.get("vault_controller"))
 			and env.vault_controller.try_vault(loco.crouching)
 		):
 			print("StateGround: Valid vault detected. Transitioning.")
@@ -133,20 +140,16 @@ func physics_update(delta: float) -> void:
 	_update_components(delta, input_dir)
 
 
+## Applies upward vertical jump impulse according to stance and transitions to the Air state.
 func _perform_jump() -> void:
-	var loco: Node = player.locomotion_component
+	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
 
 	if loco.sprint_active:
 		player.velocity.y = SPRINT_JUMP_VELOCITY
 	elif loco.crouching:
 		player.velocity.y = CROUCH_JUMP_VELOCITY
 		if _cancel_crouch_on_jump and not loco.crouch_cast_check.is_colliding():
-			print(
-				(
-					"StateGround: Jumping while crouched. Canceling crouch state"
-					+ " (Interpolation handled externally)."
-				)
-			)
+			print("StateGround: Jumping while crouched. Canceling crouch state.")
 			loco.crouching = false
 			loco.standing_collision.disabled = false
 			loco.crouching_collision.disabled = true
@@ -158,9 +161,14 @@ func _perform_jump() -> void:
 	state_machine.transition_to("Air", {"jump": true})
 
 
+## Calculates desired travel speed based on crouch, sprint, and terrain modifiers.
+## [param delta] The frame delta time in seconds.
+## [param input_dir] Current normalized 2D movement vector.
 func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
-	var loco: Node = player.locomotion_component
-	var interact: Node = player.interaction_component
+	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	var interact: PlayerInteractionComponent = (
+		player.interaction_component as PlayerInteractionComponent
+	)
 
 	var previous_crouch: bool = loco.crouching
 	var is_moving: bool = input_dir.length() > 0.1
@@ -168,24 +176,24 @@ func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
 	# --- 1. GATHER INTENTIONS ---
 	var wants_to_crouch: bool = loco.crouching
 	if _toggle_crouch_enabled:
-		if Input.is_action_just_pressed("crouch"):
+		if GestureInputManager.is_action_just_triggered("crouch"):
 			wants_to_crouch = not loco.crouching
 	else:
-		wants_to_crouch = Input.is_action_pressed("crouch")
+		wants_to_crouch = GestureInputManager.is_action_active("crouch")
 
 	var wants_to_sprint: bool = loco.sprint_active
 	if _toggle_sprint_enabled:
-		if Input.is_action_just_pressed("sprint"):
+		if GestureInputManager.is_action_just_triggered("sprint"):
 			wants_to_sprint = not loco.sprint_active
 	else:
-		wants_to_sprint = Input.is_action_pressed("sprint")
+		wants_to_sprint = GestureInputManager.is_action_active("sprint")
 
 	# --- 2. PRIORITY OVERRIDES ---
 	if wants_to_sprint and wants_to_crouch:
-		if Input.is_action_just_pressed("crouch"):
+		if GestureInputManager.is_action_just_triggered("crouch"):
 			print("StateGround: Crouch requested. Prioritizing crouch state.")
 			wants_to_sprint = false
-		elif Input.is_action_just_pressed("sprint") or loco.sprint_active:
+		elif GestureInputManager.is_action_just_triggered("sprint") or loco.sprint_active:
 			if not loco.crouch_cast_check.is_colliding():
 				print("StateGround: Sprint requested. Prioritizing sprint state.")
 				wants_to_crouch = false
@@ -227,8 +235,11 @@ func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
 	current_speed = lerpf(current_speed, target_speed, delta * 15.0)
 
 
+## Interpolates player velocity vectors and applies ground friction.
+## [param delta] The physics frame delta time in seconds.
+## [param input_dir] Current normalized 2D movement vector.
 func _apply_movement(delta: float, input_dir: Vector2) -> void:
-	var loco: Node = player.locomotion_component
+	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
 	var active_lerp: float = loco.ice_lerp_speed if loco.on_ice else loco.default_lerp_speed
 	var target_dir: Vector3 = (
 		(player.transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
@@ -253,9 +264,14 @@ func _apply_movement(delta: float, input_dir: Vector2) -> void:
 			loco.set_direction(Vector3.ZERO)
 
 
+## Updates camera positioning, footstep manager surface polling, and physics push forces.
+## [param delta] The physics frame delta time in seconds.
+## [param input_dir] Current normalized 2D movement vector.
 func _update_components(delta: float, input_dir: Vector2) -> void:
-	var loco: Node = player.locomotion_component
-	var interact: Node = player.interaction_component
+	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	var interact: PlayerInteractionComponent = (
+		player.interaction_component as PlayerInteractionComponent
+	)
 
 	if is_instance_valid(player.camera_controller):
 		player.camera_controller.update_camera(

@@ -1,3 +1,5 @@
+## Provides an in-game developer terminal and cheat prompt with autocomplete and command execution.
+class_name InGameConsole
 extends CanvasLayer
 
 ## The rich text label used to display the console's output log.
@@ -118,6 +120,7 @@ var screen_filter_rect: ColorRect
 var cached_shaders: Dictionary = {}
 
 
+## Lifecycle constructor initializing dynamic debug commands depending on export mode.
 func _init() -> void:
 	print("InGameConsole: _init() called. Initializing command list.")
 	if is_debug_allowed:
@@ -128,6 +131,7 @@ func _init() -> void:
 		valid_commands.append("sethealth")
 
 
+## Lifecycle initialization method constructing console control layouts and shader buffers.
 func _ready() -> void:
 	print("InGameConsole: _ready() called. Building UI elements.")
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -205,30 +209,23 @@ func _ready() -> void:
 
 	if has_node("/root/Events"):
 		var events: Node = get_node("/root/Events")
+		if events.has_signal("console_toggle_requested"):
+			events.console_toggle_requested.connect(_on_console_toggle_requested)
 		if events.has_signal("colorblind_mode_changed"):
 			events.colorblind_mode_changed.connect(_on_ui_colorblind_changed)
 
 
+## Intercepts Escape and UI cancellation inputs to dismiss the terminal interface.
+## [param event] The [InputEvent] from the viewport.
 func _input(event: InputEvent) -> void:
-	if event.is_action_pressed("console") or (event.is_action_pressed("ui_cancel") and visible):
-		visible = !visible
-
-		if visible:
-			get_tree().paused = true
-			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-			command_input.clear()
-			_reset_suggestions()
-			history_index = typed_history.size()
-			command_input.call_deferred("grab_focus")
-			print("Console UI toggled: OPENED.")
-		else:
-			get_tree().paused = false
-			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-			print("Console UI toggled: CLOSED.")
-
+	if event.is_action_pressed(&"ui_cancel") and visible:
+		print("InGameConsole: ui_cancel pressed while open. Closing console.")
+		_on_console_toggle_requested()
 		get_viewport().set_input_as_handled()
 
 
+## Handles keyboard navigation for command history and autocomplete lists.
+## [param event] The [InputEvent] targeted at the text input line.
 func _on_line_edit_gui_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed:
 		if event.keycode == KEY_UP:
@@ -263,6 +260,8 @@ func _on_line_edit_gui_input(event: InputEvent) -> void:
 			_on_command_submitted(command_input.text)
 
 
+## Refreshes autocomplete list suggestions when typed input changes.
+## [param new_text] The latest content of the LineEdit.
 func _on_text_changed(new_text: String) -> void:
 	if is_navigating_matches:
 		return
@@ -289,6 +288,9 @@ func _on_text_changed(new_text: String) -> void:
 		)
 
 
+## Evaluates partial command arguments to find valid autocomplete candidates.
+## [param current_text] The current raw search text.
+## [return] Array of matched command strings.
 func _get_autocomplete_matches(current_text: String) -> Array[String]:
 	print("Console calculating autocomplete matches for: '", current_text, "'")
 	var parts: PackedStringArray = current_text.split(" ")
@@ -337,6 +339,8 @@ func _get_autocomplete_matches(current_text: String) -> Array[String]:
 	return matches
 
 
+## Cycles through autocomplete suggestion candidates.
+## [param direction] Direction step (+1 or -1).
 func _navigate_suggestions(direction: int) -> void:
 	print("Navigating console suggestions. Direction: ", direction)
 
@@ -354,6 +358,7 @@ func _navigate_suggestions(direction: int) -> void:
 	_update_suggestion_ui()
 
 
+## Updates the BBCode formatting of the autocomplete suggestions panel.
 func _update_suggestion_ui() -> void:
 	print("InGameConsole: Updating suggestion UI graphics.")
 	var bbcode: String = ""
@@ -366,6 +371,7 @@ func _update_suggestion_ui() -> void:
 	suggestion_label.text = bbcode.strip_edges()
 
 
+## Resets and clears autocomplete match arrays and labels.
 func _reset_suggestions() -> void:
 	print("InGameConsole: _reset_suggestions() called. Clearing match data.")
 	current_matches.clear()
@@ -374,6 +380,8 @@ func _reset_suggestions() -> void:
 	suggestion_label.text = ""
 
 
+## Moves backward or forward through past submitted command history.
+## [param direction] History index direction offset (+1 or -1).
 func _navigate_history(direction: int) -> void:
 	if typed_history.is_empty():
 		return
@@ -389,6 +397,9 @@ func _navigate_history(direction: int) -> void:
 		command_input.caret_column = command_input.text.length()
 
 
+## Appends a formatted message to the console output log.
+## [param message] Message string to write.
+## [param color] Color name or hex code for text styling.
 func write(message: String, color: String = "white") -> void:
 	print("Console Output: ", message)
 
@@ -402,21 +413,29 @@ func write(message: String, color: String = "white") -> void:
 	output_log.newline()
 
 
+## Appends an informational log message to the terminal.
+## [param msg] Information string to record.
 func log_info(msg: String) -> void:
 	print("InGameConsole logging info: ", msg)
 	write(msg, "lightgray")
 
 
+## Appends a warning message to the terminal.
+## [param msg] Warning string to record.
 func log_warn(msg: String) -> void:
 	print("InGameConsole logging warning: ", msg)
 	write("[WARNING] " + msg, "yellow")
 
 
+## Appends an error message to the terminal.
+## [param msg] Error string to record.
 func log_error(msg: String) -> void:
 	print("InGameConsole logging error: ", msg)
 	write("[ERROR] " + msg, "red")
 
 
+## Parses and dispatches user text input upon submission.
+## [param text] The command input string.
 func _on_command_submitted(text: String) -> void:
 	print("InGameConsole: _on_command_submitted() processing command.")
 	command_input.clear()
@@ -442,6 +461,9 @@ func _on_command_submitted(text: String) -> void:
 		command_input.grab_focus()
 
 
+## Executes matches for recognized console commands.
+## [param cmd] The root command string.
+## [param args] Array of split argument strings.
 func _process_command(cmd: String, args: PackedStringArray) -> void:
 	print("InGameConsole: Processing core command switch: ", cmd)
 	match cmd:
@@ -460,7 +482,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 				if has_node("/root/Events"):
 					var events: Node = get_node("/root/Events")
 					if events.has_signal("noclip_ui_button_pressed"):
-						events.emit_signal("noclip_ui_button_pressed")
+						events.noclip_ui_button_pressed.emit()
 				write("Toggled Noclip.", "yellow")
 			else:
 				write("Unknown command: '" + cmd + "'. Type 'help' for a list.", "red")
@@ -551,7 +573,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 			if has_node("/root/Events"):
 				var events: Node = get_node("/root/Events")
 				if events.has_signal("high_contrast_toggled"):
-					events.emit_signal("high_contrast_toggled", active)
+					events.high_contrast_toggled.emit(active)
 			write("High contrast mode: " + ("Enabled" if active else "Disabled"), "green")
 		"screenshake":
 			if args.size() > 0:
@@ -564,7 +586,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 				if has_node("/root/Events"):
 					var events: Node = get_node("/root/Events")
 					if events.has_signal("screenshake_requested"):
-						events.emit_signal("screenshake_requested", amount, duration)
+						events.screenshake_requested.emit(amount, duration)
 
 				var msg: String = (
 					"Screenshake: Intensity "
@@ -583,7 +605,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 			if has_node("/root/Events"):
 				var events: Node = get_node("/root/Events")
 				if events.has_signal("subtitles_toggled"):
-					events.emit_signal("subtitles_toggled", active)
+					events.subtitles_toggled.emit(active)
 			write("Subtitles: " + ("ON" if active else "OFF"), "green")
 		"mono_audio":
 			toggle_states["mono_audio"] = !toggle_states["mono_audio"]
@@ -597,13 +619,13 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 			else:
 				write("Usage: uiscale <float> (Default is usually 1.0)", "yellow")
 		"photosensitivity":
-			toggle_states["photosensitivity"] = !toggle_states["photosensitivity"]
+			toggle_states["photosensitivity"] = (!toggle_states["photosensitivity"])
 			var active: bool = toggle_states["photosensitivity"]
 			print("InGameConsole: Toggled photosensitivity to ", active)
 			if has_node("/root/Events"):
 				var events: Node = get_node("/root/Events")
 				if events.has_signal("photosensitivity_mode_toggled"):
-					events.emit_signal("photosensitivity_mode_toggled", active)
+					events.photosensitivity_mode_toggled.emit(active)
 			write("Photosensitivity safe mode: " + ("ON" if active else "OFF"), "green")
 		"setfont":
 			if args.size() > 0:
@@ -612,7 +634,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 					if has_node("/root/Events"):
 						var events: Node = get_node("/root/Events")
 						if events.has_signal("font_changed"):
-							events.emit_signal("font_changed", font_choice)
+							events.font_changed.emit(font_choice)
 					write("Global font set to: " + font_choice, "green")
 				else:
 					write("Unknown font. Available: default, dyslexic, papyrus, comic", "red")
@@ -661,7 +683,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 				if has_node("/root/Events"):
 					var events: Node = get_node("/root/Events")
 					if events.has_signal("vision_assist_toggled"):
-						events.emit_signal("vision_assist_toggled", active)
+						events.vision_assist_toggled.emit(active)
 				write("Vision Assist: " + ("ON" if active else "OFF"), "green")
 
 			elif args.size() > 0:
@@ -673,7 +695,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 						if has_node("/root/Events"):
 							var events: Node = get_node("/root/Events")
 							if events.has_signal("vision_assist_mode_changed"):
-								events.emit_signal("vision_assist_mode_changed", mode_name)
+								events.vision_assist_mode_changed.emit(mode_name)
 						write("Vision Assist mode set to: " + mode_name, "green")
 						print("Console: Vision assist mode changed to ", mode_name)
 					else:
@@ -688,9 +710,7 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 					if has_node("/root/Events"):
 						var events: Node = get_node("/root/Events")
 						if events.has_signal("vision_assist_color_changed"):
-							events.emit_signal(
-								"vision_assist_color_changed", target_group, color_name
-							)
+							events.vision_assist_color_changed.emit(target_group, color_name)
 					write("Vision Assist: Changed " + target_group + " to " + color_name, "green")
 					print("Console: Vision assist color changed for ", target_group)
 				else:
@@ -754,19 +774,14 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 						if health_comp and health_comp is HealthComponent:
 							print("InGameConsole: Found HealthComponent, updating values.")
 							health_comp.current_health = health_val
-
-							# Force the component to broadcast the new health so the UI updates
 							health_comp.health_changed.emit(health_comp.current_health)
 
 							if health_comp.is_player_health and has_node("/root/Events"):
 								var events: Node = get_node("/root/Events")
 								if events.has_signal("player_health_changed"):
-									events.emit_signal(
-										"player_health_changed", health_comp.current_health
-									)
+									events.player_health_changed.emit(health_comp.current_health)
 									print("InGameConsole: Relayed health to global Events bus.")
 
-							# Handle instant death if set to 0
 							if health_comp.current_health == 0:
 								print("InGameConsole: Health set to 0, triggering die().")
 								health_comp.die()
@@ -785,8 +800,31 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 			write("Unknown command: '" + cmd + "'. Type 'help' for a list.", "red")
 
 
+## Synchronizes colorblind shader settings when triggered by external UI.
+## [param mode] The colorblind mode integer index.
 func _on_ui_colorblind_changed(mode: int) -> void:
 	print("InGameConsole: Intercepted colorblind UI change to mode index: ", mode)
 	if colorblind_rect and colorblind_rect.material:
 		var material: ShaderMaterial = colorblind_rect.material as ShaderMaterial
 		material.set_shader_parameter("mode", mode)
+
+
+## Toggles console visibility, manages pause state, and handles mouse mode.
+func _on_console_toggle_requested() -> void:
+	print("InGameConsole: _on_console_toggle_requested() received.")
+	visible = not visible
+
+	if visible:
+		get_tree().paused = true
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+		command_input.clear()
+		_reset_suggestions()
+		history_index = typed_history.size()
+		command_input.call_deferred("grab_focus")
+		print("InGameConsole: Console UI toggled -> OPENED.")
+	else:
+		get_tree().paused = false
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		print("InGameConsole: Console UI toggled -> CLOSED.")
+
+	Events.console_toggled.emit(visible)
