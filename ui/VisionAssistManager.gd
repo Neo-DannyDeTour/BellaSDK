@@ -1,24 +1,40 @@
+## Manages real-time AAA high-contrast silhouette overlays across target scene groups.
 extends Node
 
-## Dictionary mapping scene group names to their required high-contrast colors.
-var _group_colors: Dictionary = {
-	#"player": Color(0.0, 0.0, 1.0, 1.0),
-	"enemies": Color(1.0, 0.0, 0.0, 1.0),
-	"interactables": Color(1.0, 1.0, 0.0, 1.0),
-	"traversal": Color(0.0, 1.0, 0.0, 1.0)
-}
-
-## Caches the instantiated unshaded materials so they are only created once at startup.
-var _group_materials: Dictionary = {}
-
-## Tracks the current active state so dynamically spawned objects can be highlighted instantly.
+## Tracks whether vision assist high-contrast silhouettes are currently rendered.
 var is_active: bool = false
 
-## Base shader used to enforce solid silhouettes while respecting alpha cutouts and billboarding.
+## Current background shading mode applied behind overlays.
+var current_mode: String = "aaa_blue"
+
+## Dictionary mapping scene group names to their target outline and fill colors.
+var group_colors: Dictionary[String, Color] = {
+	"friends": Color(0.0, 0.5, 1.0, 1.0),
+	"enemies": Color(1.0, 0.1, 0.1, 1.0),
+	"interactables": Color(1.0, 0.9, 0.0, 1.0),
+	"traversal": Color(0.0, 1.0, 0.2, 1.0),
+	"clues": Color(1.0, 0.0, 1.0, 1.0),
+	"cover": Color(1.0, 1.0, 1.0, 1.0)
+}
+
+## Named color lookups for console and UI palette selections.
+const COLOR_PALETTE: Dictionary[String, Color] = {
+	"cyan": Color(0.0, 0.8, 1.0, 1.0),
+	"blue": Color(0.0, 0.4, 1.0, 1.0),
+	"yellow": Color(1.0, 0.9, 0.0, 1.0),
+	"green": Color(0.0, 1.0, 0.2, 1.0),
+	"red": Color(1.0, 0.1, 0.1, 1.0),
+	"magenta": Color(1.0, 0.0, 1.0, 1.0),
+	"white": Color(1.0, 1.0, 1.0, 1.0)
+}
+
+## Caches instantiated unshaded ShaderMaterial instances per group.
+var _group_materials: Dictionary[String, ShaderMaterial] = {}
+
+## Base shader resource enforcing solid silhouettes with billboarding support.
 var _silhouette_shader: Shader = Shader.new()
 
-## The upgraded shader logic now includes a toggle for vertex instructions
-## to conditionally billboard the overlay.
+## Spatial shader source code for high-contrast stencil overlays.
 const OVERLAY_SHADER_CODE: String = """
 shader_type spatial;
 render_mode unshaded, depth_test_disabled, cull_disabled;
@@ -29,82 +45,114 @@ uniform float alpha_scissor = 0.5;
 uniform bool enable_billboard = false;
 
 void vertex() {
-    if (enable_billboard) {
-        // --- MANUAL BILLBOARD LOGIC (XY-Lock) ---
-        vec3 scale = vec3(
-            length(MODEL_MATRIX[0].xyz),
-            length(MODEL_MATRIX[1].xyz),
-            length(MODEL_MATRIX[2].xyz)
-        );
+	if (enable_billboard) {
+		vec3 scale = vec3(
+			length(MODEL_MATRIX[0].xyz),
+			length(MODEL_MATRIX[1].xyz),
+			length(MODEL_MATRIX[2].xyz)
+		);
 
-        // Reconstruct the MODELVIEW_MATRIX so its rotation is aligned with the view matrix.
-        mat4 billboard_matrix = mat4(
-            normalize(VIEW_MATRIX[0]),
-            normalize(VIEW_MATRIX[1]),
-            normalize(VIEW_MATRIX[2]),
-            MODELVIEW_MATRIX[3]
-        );
+		mat4 billboard_matrix = mat4(
+			normalize(VIEW_MATRIX[0]),
+			normalize(VIEW_MATRIX[1]),
+			normalize(VIEW_MATRIX[2]),
+			MODELVIEW_MATRIX[3]
+		);
 
-        // Apply the extracted scale to the reconstructed matrix
-        billboard_matrix = billboard_matrix * mat4(
-            vec4(scale.x, 0.0, 0.0, 0.0),
-            vec4(0.0, scale.y, 0.0, 0.0),
-            vec4(0.0, 0.0, scale.z, 0.0),
-            vec4(0.0, 0.0, 0.0, 1.0)
-        );
+		billboard_matrix = billboard_matrix * mat4(
+			vec4(scale.x, 0.0, 0.0, 0.0),
+			vec4(0.0, scale.y, 0.0, 0.0),
+			vec4(0.0, 0.0, scale.z, 0.0),
+			vec4(0.0, 0.0, 0.0, 1.0)
+		);
 
-        // Apply the final billboarding matrix to the vertex data
-        MODELVIEW_MATRIX = billboard_matrix;
-    }
+		MODELVIEW_MATRIX = billboard_matrix;
+	}
 }
 
 void fragment() {
-    // Calculate the base alpha from the provided texture
-    float alpha = texture(base_texture, UV).a;
-
-    // Discard transparent pixels to create the perfect silhouette
-    if (alpha < alpha_scissor) {
-        discard;
-    }
-    // Set the solid high-contrast color
-    ALBEDO = highlight_color.rgb;
+	float alpha = texture(base_texture, UV).a;
+	if (alpha < alpha_scissor) {
+		discard;
+	}
+	ALBEDO = highlight_color.rgb;
 }
 """
 
 
+## Lifecycle initialization method pre-building materials and connecting event listeners.
 func _ready() -> void:
-	print("VisionAssistManager: Initializing AAA high contrast materials.")
+	print("VisionAssistManager: Initializing high contrast systems.")
 	_silhouette_shader.code = OVERLAY_SHADER_CODE
 
-	# Pre-generate ShaderMaterials for 60 FPS performance
-	for group_name: String in _group_colors.keys():
-		var mat: ShaderMaterial = ShaderMaterial.new()
-		mat.shader = _silhouette_shader
-		mat.set_shader_parameter("highlight_color", _group_colors[group_name])
-		mat.render_priority = 100
-		_group_materials[group_name] = mat
+	for group_name: String in group_colors.keys():
+		_rebuild_material_for_group(group_name)
 
 	if has_node("/root/Events"):
 		var events: Node = get_node("/root/Events")
 		if events.has_signal("vision_assist_toggled"):
 			events.vision_assist_toggled.connect(_on_vision_assist_toggled)
+		if events.has_signal("vision_assist_mode_changed"):
+			events.vision_assist_mode_changed.connect(_on_vision_assist_mode_changed)
+		if events.has_signal("vision_assist_color_changed"):
+			events.vision_assist_color_changed.connect(_on_vision_assist_color_changed)
 
-	# Listen for newly instantiated scenes
 	get_tree().node_added.connect(_on_scene_node_added)
 
 
+## Reconstructs and caches the ShaderMaterial associated with a specific group key.
+## [param group_name] The target scene group identifier.
+func _rebuild_material_for_group(group_name: String) -> void:
+	var mat: ShaderMaterial = ShaderMaterial.new()
+	mat.shader = _silhouette_shader
+	mat.set_shader_parameter("highlight_color", group_colors[group_name])
+	mat.render_priority = 100
+	_group_materials[group_name] = mat
+
+
+## Handles global vision assist toggle events across all registered groups.
+## [param toggled_on] Whether high-contrast overlays should be displayed.
 func _on_vision_assist_toggled(toggled_on: bool) -> void:
-	print("VisionAssistManager: Applying AAA overlays across all groups. Active: ", toggled_on)
+	print("VisionAssistManager: Toggled vision assist state to: ", toggled_on)
 	is_active = toggled_on
 
 	for group_name: String in _group_materials.keys():
-		var target_material: ShaderMaterial = _group_materials[group_name] as ShaderMaterial
+		var target_material: ShaderMaterial = _group_materials[group_name]
 		var nodes: Array[Node] = get_tree().get_nodes_in_group(group_name)
-
 		for node: Node in nodes:
 			_apply_overlay_to_meshes(node, is_active, target_material)
 
 
+## Updates background desaturation and tint rendering styles.
+## [param mode_name] Key identifier matching the preset style.
+func _on_vision_assist_mode_changed(mode_name: String) -> void:
+	print("VisionAssistManager: Changing background mode style to: ", mode_name)
+	current_mode = mode_name
+
+
+## Updates the highlight color assigned to a specific group in real-time.
+## [param target_group] The group key identifier.
+## [param color_name] Named color string from the palette.
+func _on_vision_assist_color_changed(target_group: String, color_name: String) -> void:
+	var clean_group: String = target_group.to_lower()
+	var clean_color: String = color_name.to_lower()
+
+	if not group_colors.has(clean_group) or not COLOR_PALETTE.has(clean_color):
+		push_warning("VisionAssistManager: Invalid group or color passed.")
+		return
+
+	print("VisionAssistManager: Updating color for [", clean_group, "] -> ", clean_color)
+	group_colors[clean_group] = COLOR_PALETTE[clean_color]
+	_rebuild_material_for_group(clean_group)
+
+	if is_active:
+		var target_material: ShaderMaterial = _group_materials[clean_group]
+		for node: Node in get_tree().get_nodes_in_group(clean_group):
+			_apply_overlay_to_meshes(node, true, target_material)
+
+
+## Applies overlays immediately to newly spawned nodes belonging to configured groups.
+## [param node] The newly added [Node] instance.
 func _on_scene_node_added(node: Node) -> void:
 	if not is_active:
 		return
@@ -117,11 +165,15 @@ func _on_scene_node_added(node: Node) -> void:
 
 	for group_name: String in _group_materials.keys():
 		if node.is_in_group(group_name):
-			print("VisionAssistManager: Applying overlay to dynamically spawned node: ", node.name)
-			_apply_overlay_to_meshes(node, true, _group_materials[group_name] as ShaderMaterial)
+			print("VisionAssistManager: Applying overlay to spawned node: ", node.name)
+			_apply_overlay_to_meshes(node, true, _group_materials[group_name])
 			break
 
 
+## Recursively sets or removes stencil materials on geometry and sprite instances.
+## [param target_node] Target [Node] to process.
+## [param active_state] Flag indicating if overlay should be applied or cleared.
+## [param target_material] [ShaderMaterial] instance configured for the group.
 func _apply_overlay_to_meshes(
 	target_node: Node, active_state: bool, target_material: ShaderMaterial
 ) -> void:
@@ -131,7 +183,6 @@ func _apply_overlay_to_meshes(
 			var base_tex: Texture2D = null
 			var needs_billboard: bool = false
 
-			# Detect textures and billboard settings on Sprite3D or standard meshes
 			if target_node is Sprite3D:
 				base_tex = target_node.texture
 				needs_billboard = (target_node.billboard != BaseMaterial3D.BILLBOARD_DISABLED)
@@ -145,26 +196,15 @@ func _apply_overlay_to_meshes(
 							active_mat.get("billboard_mode") != BaseMaterial3D.BILLBOARD_DISABLED
 						)
 
-			# Inject texture for alpha testing and set billboarding state
 			if is_instance_valid(base_tex) or needs_billboard:
 				final_mat = target_material.duplicate() as ShaderMaterial
-
 				if is_instance_valid(base_tex):
 					final_mat.set_shader_parameter("base_texture", base_tex)
-
 				final_mat.set_shader_parameter("enable_billboard", needs_billboard)
 
 			target_node.material_overlay = final_mat
-			print(
-				"VisionAssistManager: Applied overlay to ",
-				target_node.name,
-				" | Billboard: ",
-				needs_billboard
-			)
 		else:
 			target_node.material_overlay = null
-			print("VisionAssistManager: Removed overlay from ", target_node.name)
 
-	# Recurse through ALL children, including internal nodes
 	for child: Node in target_node.get_children(true):
 		_apply_overlay_to_meshes(child, active_state, target_material)

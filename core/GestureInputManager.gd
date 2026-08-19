@@ -16,8 +16,8 @@ const DOUBLE_TAP_WINDOW: float = 0.30
 ## Internal tracking state for an active physical input.
 var _active_inputs: Dictionary = {}
 
-## Queue of actions successfully triggered during the current frame.
-var _triggered_actions_this_frame: Dictionary = {}
+## Maps action names to the physics frame tick when they were triggered.
+var _triggered_actions_frame: Dictionary = {}
 
 
 ## Lifecycle method called when the node enters the scene tree.
@@ -28,27 +28,26 @@ func _ready() -> void:
 ## Frame lifecycle method updating hold timers and resolving single-tap timeouts.
 ## [param delta] Frame execution delta in seconds.
 func _process(delta: float) -> void:
-	_triggered_actions_this_frame.clear()
-
 	var keys_to_remove: Array = []
 
 	for input_key: Variant in _active_inputs.keys():
 		var data: Dictionary = _active_inputs[input_key] as Dictionary
 		var is_pressed: bool = data["is_pressed"] as bool
 		var gesture_type: String = data["gesture_type"] as String
+		var action: String = data["action"] as String
 
 		if is_pressed:
 			data["hold_timer"] = (data["hold_timer"] as float) + delta
 			if gesture_type == "hold" and not (data["hold_fired"] as bool):
 				if (data["hold_timer"] as float) >= HOLD_THRESHOLD:
 					data["hold_fired"] = true
-					_dispatch_action(data["action"] as String, "hold")
+					_dispatch_action(action, "hold")
 		else:
 			if (data["tap_window"] as float) > 0.0:
 				data["tap_window"] = (data["tap_window"] as float) - delta
 				if (data["tap_window"] as float) <= 0.0:
 					if gesture_type == "single_tap" and (data["tap_count"] as int) == 1:
-						_dispatch_action(data["action"] as String, "single_tap")
+						_dispatch_action(action, "single_tap")
 					keys_to_remove.append(input_key)
 
 	for key: Variant in keys_to_remove:
@@ -56,7 +55,6 @@ func _process(delta: float) -> void:
 
 
 ## Intercepts global input events to evaluate Single Tap, Hold, or Double Tap gestures.
-## Consumes events tied to gesture-tracked actions to prevent raw input leakage.
 ## [param event] The [InputEvent] received from the engine.
 func _input(event: InputEvent) -> void:
 	if not (event is InputEventKey or event is InputEventMouseButton):
@@ -74,6 +72,10 @@ func _input(event: InputEvent) -> void:
 	var is_pressed: bool = event.is_pressed()
 
 	if is_pressed:
+		# If bound without a custom hold/double_tap gesture, fire instantly on tap
+		if gesture_type == "single_tap" or gesture_type == "":
+			_dispatch_action(action, "single_tap")
+
 		if not _active_inputs.has(input_id):
 			_active_inputs[input_id] = {
 				"action": action,
@@ -98,40 +100,51 @@ func _input(event: InputEvent) -> void:
 		if _active_inputs.has(input_id):
 			var data: Dictionary = _active_inputs[input_id] as Dictionary
 			data["is_pressed"] = false
-			if gesture_type == "double_tap" or gesture_type == "single_tap":
+			if gesture_type == "double_tap":
 				data["tap_window"] = DOUBLE_TAP_WINDOW
-			elif gesture_type == "hold":
+			elif gesture_type == "hold" or gesture_type == "single_tap":
 				_active_inputs.erase(input_id)
 
 
-## Checks if an action was triggered by its configured gesture during the current frame.
+## Checks if an action was triggered by
+## its configured gesture during the current physics frame window.
 ## [param action] The input action key string.
-## [return] True if the action's gesture conditions were satisfied this frame.
+## [return] True if the action's gesture conditions were satisfied.
 func is_action_just_triggered(action: String) -> bool:
-	return _triggered_actions_this_frame.has(action)
+	var current_frame: int = Engine.get_physics_frames()
+	if _triggered_actions_frame.has(action):
+		var target_frame: int = _triggered_actions_frame[action] as int
+		if current_frame == target_frame or current_frame == target_frame + 1:
+			_triggered_actions_frame.erase(action)
+			return true
+	return false
 
 
-## Checks if a continuous action (like Movement) is currently held down.
+## Checks if a continuous action is currently held down.
 ## [param action] The input action key string.
 ## [return] True if the action is currently active.
 func is_action_active(action: String) -> bool:
 	return Input.is_action_pressed(action)
 
 
-## Emits action signals and caches single-frame trigger statuses.
+## Emits action signals and timestamps single-frame trigger statuses.
 ## [param action] The input action key string.
 ## [param gesture] The detected gesture mode.
 func _dispatch_action(action: String, gesture: String) -> void:
 	print("Input Dispatch: [", action, "] triggered via [", gesture, "]")
-	_triggered_actions_this_frame[action] = true
+	_triggered_actions_frame[action] = Engine.get_physics_frames()
 	action_triggered.emit(action, gesture)
 
 
-## Matches an incoming physical input event against registered [InputMap] bindings.
+## Matches an incoming physical input event against
+## registered [InputMap] bindings, ignoring built-in UI actions.
 ## [param event] The [InputEvent] to test.
 ## [return] A [Dictionary] with action name and gesture type metadata.
 func _get_action_for_event(event: InputEvent) -> Dictionary:
 	for action: String in InputMap.get_actions():
+		if action.begins_with("ui_"):
+			continue
+
 		for bound_event: InputEvent in InputMap.action_get_events(action):
 			if _is_matching_event(event, bound_event):
 				var gesture: String = "single_tap"

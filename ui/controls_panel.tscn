@@ -53,6 +53,7 @@ layout_mode = 2
 columns = 2
 
 [node name="CrouchModeLabel" type="Label" parent="MarginContainer/ScrollContainer/MainVBox/BehaviorSection/BehaviorGrid" unique_id=701025219]
+unique_name_in_owner = true
 layout_mode = 2
 
 [node name="CrouchModeOption" type="OptionButton" parent="MarginContainer/ScrollContainer/MainVBox/BehaviorSection/BehaviorGrid" unique_id=1530147621]
@@ -60,6 +61,7 @@ unique_name_in_owner = true
 layout_mode = 2
 
 [node name="SprintModeLabel" type="Label" parent="MarginContainer/ScrollContainer/MainVBox/BehaviorSection/BehaviorGrid" unique_id=101607101]
+unique_name_in_owner = true
 layout_mode = 2
 
 [node name="SprintModeOption" type="OptionButton" parent="MarginContainer/ScrollContainer/MainVBox/BehaviorSection/BehaviorGrid" unique_id=2062903118]

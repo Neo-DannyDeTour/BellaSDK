@@ -1,5 +1,10 @@
 ## Extends the base Camera3D to manage active audio listening and visual assist shaders.
+class_name ExtendedCamera3D
 extends Camera3D
+
+@export_category("Camera Role")
+## If enabled, registers and activates spatial audio listeners and makes current on startup.
+@export var is_player_camera: bool = true
 
 @export_category("Screenshake Settings")
 ## Speed of the noise generator driving screenshake calculations.
@@ -23,53 +28,74 @@ var _time_passed: float = 0.0
 var _noise: FastNoiseLite = FastNoiseLite.new()
 
 ## Reference to the full-screen quad mesh used for accessibility rendering.
-@onready var vision_assist_mesh: MeshInstance3D = $VisionAssistMesh
+var vision_assist_mesh: MeshInstance3D = null
 
 ## Dedicated spatial listener node to calculate 3D audio panning and attenuation.
 var _spatial_listener: AudioListener3D = AudioListener3D.new()
 
-## Cached shader material to update background colors efficiently.
+## Cached unique shader material to update background colors efficiently.
 var _vision_shader_material: ShaderMaterial
 
 
 ## Lifecycle method initializing the camera, spatial listener, and signal connections.
 func _ready() -> void:
-	make_current()
-	print("Camera3D: Player camera has been set as the current active camera.")
+	_resolve_vision_mesh()
+	_cache_vision_material()
 
-	_setup_audio_listener()
+	if is_player_camera:
+		make_current()
+		print("Camera3D: Player camera set as active listener.")
+		_setup_audio_listener()
 
 	_noise.seed = randi()
 	_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
-	Events.screenshake_requested.connect(_on_screenshake_requested)
 
-	if Events.has_signal("vision_assist_toggled"):
-		if not Events.vision_assist_toggled.is_connected(_on_vision_assist_toggled):
-			Events.vision_assist_toggled.connect(_on_vision_assist_toggled)
+	if has_node("/root/Events"):
+		var events: Node = get_node("/root/Events")
+		if events.has_signal("screenshake_requested") and is_player_camera:
+			events.screenshake_requested.connect(_on_screenshake_requested)
+		if events.has_signal("vision_assist_toggled"):
+			events.vision_assist_toggled.connect(_on_vision_assist_toggled)
+		if events.has_signal("vision_assist_mode_changed"):
+			events.vision_assist_mode_changed.connect(set_vision_assist_mode)
 
+
+## Locates the vision assist MeshInstance3D child node regardless of name suffix.
+func _resolve_vision_mesh() -> void:
+	if is_instance_valid(vision_assist_mesh):
+		return
+	vision_assist_mesh = get_node_or_null("VisionAssistMesh")
+	if not is_instance_valid(vision_assist_mesh):
+		for child: Node in get_children():
+			if child is MeshInstance3D and child.name.begins_with("VisionAssistMesh"):
+				vision_assist_mesh = child as MeshInstance3D
+				break
+
+
+## Duplicates and isolates the ShaderMaterial for this camera instance.
+func _cache_vision_material() -> void:
+	_resolve_vision_mesh()
 	if is_instance_valid(vision_assist_mesh):
 		var active_mat: Material = vision_assist_mesh.get_active_material(0)
 		if active_mat is ShaderMaterial:
-			_vision_shader_material = active_mat as ShaderMaterial
-			print("Camera3D: Vision assist shader cached successfully.")
-		else:
-			push_error("Camera3D: VisionAssistMesh lacks a valid ShaderMaterial on surface 0.")
-
-	if Events.has_signal("vision_assist_mode_changed"):
-		if not Events.vision_assist_mode_changed.is_connected(set_vision_assist_mode):
-			Events.vision_assist_mode_changed.connect(set_vision_assist_mode)
+			_vision_shader_material = active_mat.duplicate() as ShaderMaterial
+			_vision_shader_material.render_priority = 10
+			vision_assist_mesh.set_surface_override_material(0, _vision_shader_material)
+			print("Camera3D: [", name, "] Material duplicated and cached.")
 
 
 ## Creates and activates the AudioListener3D directly attached to the camera head.
 func _setup_audio_listener() -> void:
 	add_child(_spatial_listener)
 	_spatial_listener.make_current()
-	print("Camera3D: AudioListener3D initialized and set as current listener.")
 
 
 ## Process loop driving procedural trauma reduction and camera offset decay.
 ## [param delta] Elapsed frame time in seconds.
 func _process(delta: float) -> void:
+	if not is_player_camera:
+		return
+
 	if _trauma > 0.0:
 		_trauma = maxf(_trauma - (_decay_rate * delta), 0.0)
 		_apply_shake(delta)
@@ -95,44 +121,44 @@ func _apply_shake(delta: float) -> void:
 ## [param intensity] The peak magnitude of the screenshake displacement.
 ## [param duration] How long in seconds the shake takes to settle back to zero.
 func _on_screenshake_requested(intensity: float, duration: float) -> void:
-	print(
-		"Camera3D triggered: Applying screenshake (Intensity: ",
-		intensity,
-		", Duration: ",
-		duration,
-		"s)"
-	)
 	_amplitude = maxf(_amplitude, clampf(intensity, 0.0, 16.0))
 	_trauma = 1.0
-
-	if duration > 0.0:
-		_decay_rate = 1.0 / duration
-	else:
-		_decay_rate = 1.0
+	_decay_rate = 1.0 / duration if duration > 0.0 else 1.0
 
 
 ## Updates visibility of the accessibility high-contrast shader quad.
 ## [param is_active] True if vision assist should be rendered.
 func _on_vision_assist_toggled(is_active: bool) -> void:
-	print("Camera3D: Vision assist overlay visibility changed to: ", is_active)
+	_resolve_vision_mesh()
+	print("Camera3D: [", name, "] Setting vision mesh visibility: ", is_active)
 	if is_instance_valid(vision_assist_mesh):
 		vision_assist_mesh.visible = is_active
 
 
-## Changes the shader's base color to swap between Black/White, AAA Blue, and Pure Black modes.
-## [param mode_name] Key identifier matching the preset color configuration.
+## Changes the shader mode integer parameter.
+## [param mode_name] Key identifier matching preset.
 func set_vision_assist_mode(mode_name: String) -> void:
-	print("Camera3D: Changing vision assist mode to: ", mode_name)
+	if not is_instance_valid(_vision_shader_material):
+		_cache_vision_material()
+
 	if not is_instance_valid(_vision_shader_material):
 		return
 
+	print("Camera3D: [", name, "] Applying vision mode: ", mode_name)
 	match mode_name:
 		"black_and_white":
-			_vision_shader_material.set_shader_parameter("base_color", Color.WHITE)
-			_vision_shader_material.set_shader_parameter("outline_color", Color.BLACK)
-		"aaa_blue":
-			_vision_shader_material.set_shader_parameter("base_color", Color(0.1, 0.1, 0.4, 1.0))
-			_vision_shader_material.set_shader_parameter("outline_color", Color.BLACK)
+			_vision_shader_material.set_shader_parameter("mode", 0)
+		"blue":
+			_vision_shader_material.set_shader_parameter("mode", 1)
+			_vision_shader_material.set_shader_parameter("blue_base", Color(0.05, 0.1, 0.45, 1.0))
+			_vision_shader_material.set_shader_parameter("blue_outline", Color(0.3, 0.5, 0.9, 1.0))
 		"pure_black":
-			_vision_shader_material.set_shader_parameter("base_color", Color.BLACK)
-			_vision_shader_material.set_shader_parameter("outline_color", Color.WHITE)
+			_vision_shader_material.set_shader_parameter("mode", 2)
+		"grey":
+			_vision_shader_material.set_shader_parameter("mode", 3)
+			_vision_shader_material.set_shader_parameter("grey_base", Color(0.25, 0.25, 0.25, 1.0))
+			_vision_shader_material.set_shader_parameter(
+				"grey_outline", Color(0.85, 0.85, 0.85, 1.0)
+			)
+		"desaturated":
+			_vision_shader_material.set_shader_parameter("mode", 4)

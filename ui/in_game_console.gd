@@ -205,14 +205,18 @@ func _ready() -> void:
 	screen_filter_rect.visible = false
 	filter_layer.add_child(screen_filter_rect)
 
-	write("Developer console initialized. Press ~ to toggle.", "cyan")
-
 	if has_node("/root/Events"):
 		var events: Node = get_node("/root/Events")
 		if events.has_signal("console_toggle_requested"):
 			events.console_toggle_requested.connect(_on_console_toggle_requested)
 		if events.has_signal("colorblind_mode_changed"):
 			events.colorblind_mode_changed.connect(_on_ui_colorblind_changed)
+		if events.has_signal("high_contrast_toggled"):
+			events.high_contrast_toggled.connect(_on_ui_high_contrast_toggled)
+		if events.has_signal("screen_filter_changed"):
+			events.screen_filter_changed.connect(_on_ui_screen_filter_changed)
+		if events.has_signal("film_grain_changed"):
+			events.film_grain_changed.connect(_on_ui_film_grain_changed)
 
 
 ## Intercepts Escape and UI cancellation inputs to dismiss the terminal interface.
@@ -828,3 +832,51 @@ func _on_console_toggle_requested() -> void:
 		print("InGameConsole: Console UI toggled -> CLOSED.")
 
 	Events.console_toggled.emit(visible)
+
+
+## Synchronizes high contrast overlay when triggered by the UI.
+## [param is_active] True if high contrast mode is enabled.
+func _on_ui_high_contrast_toggled(is_active: bool) -> void:
+	print("InGameConsole: Applying high contrast overlay: ", is_active)
+	toggle_states["highcontrast"] = is_active
+	if is_instance_valid(high_contrast_rect):
+		high_contrast_rect.visible = is_active
+
+
+## Synchronizes screen filter overlays triggered by the UI.
+## [param filter_name] Name of the selected filter.
+func _on_ui_screen_filter_changed(filter_name: String) -> void:
+	print("InGameConsole: Applying screen filter from UI: ", filter_name)
+	var clean_filter: String = filter_name.to_lower()
+	if clean_filter == "off":
+		screen_filter_rect.material = null
+		screen_filter_rect.visible = false
+		return
+
+	var shader_path: String = (
+		"res://environment/grain.gdshader"
+		if clean_filter == "grain"
+		else "res://vfx/" + clean_filter + ".gdshader"
+	)
+
+	if not cached_shaders.has(clean_filter):
+		if ResourceLoader.exists(shader_path):
+			cached_shaders[clean_filter] = load(shader_path)
+		else:
+			push_warning("InGameConsole: Shader not found at: " + shader_path)
+			return
+
+	var mat: ShaderMaterial = ShaderMaterial.new()
+	mat.shader = cached_shaders[clean_filter] as Shader
+	screen_filter_rect.material = mat
+	screen_filter_rect.visible = true
+
+
+## Updates live film grain intensity parameter.
+## [param intensity] Film grain strength between 0.0 and 1.0.
+func _on_ui_film_grain_changed(intensity: float) -> void:
+	print("InGameConsole: Updating film grain intensity: ", intensity)
+	if is_instance_valid(screen_filter_rect) and screen_filter_rect.visible:
+		var mat: ShaderMaterial = screen_filter_rect.material as ShaderMaterial
+		if is_instance_valid(mat):
+			mat.set_shader_parameter("grain_amount", intensity)

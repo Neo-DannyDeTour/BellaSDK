@@ -11,7 +11,7 @@
 [sub_resource type="Resource" id="Resource_53ons"]
 script = ExtResource("2_sl2hs")
 chapter_name = "TESTBed"
-description = "Уровень, на котором есть все геймплейные механики и эффекты. 
+description = "Уровень, на котором есть все геймплейные механики и эффекты.
 
 This is where you can find all the gameplay mechanics and effects"
 image = ExtResource("3_ef8iv")
@@ -25,7 +25,7 @@ description = "Простой уровень с первым визуалом.
 
 A simple level with first visuals. "
 image = ExtResource("4_1symm")
-scene_path = "uid://dhh7c5j6i8bkk"
+scene_path = "uid://b285s5kmnxvmg"
 metadata/_custom_type_script = "uid://45jvq8yps1jm"
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_1symm"]

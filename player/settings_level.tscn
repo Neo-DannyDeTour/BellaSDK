@@ -52,7 +52,11 @@
 [ext_resource type="Script" uid="uid://cl68g6jurgp0h" path="res://shared/soundscape_data.gd" id="51_yuk8b"]
 [ext_resource type="PackedScene" uid="uid://bqmsu8rh0h335" path="res://interactables/env_chapter_trigger.tscn" id="52_wkfn1"]
 [ext_resource type="VoxelGIData" uid="uid://n7qpbweipxh3" path="res://bakes/vis_test_proper.VoxelGI_data.res" id="53_yuk8b"]
+[ext_resource type="PackedScene" uid="uid://8ppxay3ijlcv" path="res://shared/godiva.glb" id="54_334ql"]
+[ext_resource type="PackedScene" uid="uid://bn5ay1rfbr545" path="res://enemies/turret.tscn" id="55_b307c"]
+[ext_resource type="Script" uid="uid://dlrddmx144blj" path="res://player/camera_3d.gd" id="56_b307c"]
 [ext_resource type="PackedScene" uid="uid://ckx2iw4xdsaqd" path="res://interactables/pickable_barrel_green.tscn" id="56_k566i"]
+[ext_resource type="Shader" uid="uid://cp26motkbojta" path="res://ui/VisionAssist.gdshader" id="57_fbi2v"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_kja8q"]
 panorama = ExtResource("1_mhg1j")
@@ -97,6 +101,20 @@ size = Vector2(20, 5)
 script = ExtResource("51_yuk8b")
 ambient_track = ExtResource("50_wkfn1")
 metadata/_custom_type_script = "uid://cl68g6jurgp0h"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_fbi2v"]
+render_priority = 100
+shader = ExtResource("57_fbi2v")
+shader_parameter/mode = 1
+shader_parameter/aaa_blue_base = Color(0.05, 0.1, 0.45, 1)
+shader_parameter/aaa_blue_outline = Color(0.3, 0.5, 0.9, 1)
+shader_parameter/outline_thickness = 1.0
+shader_parameter/depth_threshold = 0.025
+shader_parameter/normal_threshold = 0.5
+
+[sub_resource type="QuadMesh" id="QuadMesh_534t5"]
+material = SubResource("ShaderMaterial_fbi2v")
+size = Vector2(2, 2)
 
 [node name="VisTEST" type="Node3D" unique_id=240456945]
 
@@ -2005,7 +2023,60 @@ data = ExtResource("53_yuk8b")
 [node name="PickableBarrelGreen" parent="." unique_id=594279821 instance=ExtResource("56_k566i")]
 transform = Transform3D(0.5424285, 0, -0.84010196, 0, 1, 0, 0.84010196, 0, 0.5424285, 2.2152977, 2.5072021, 2.374266)
 
-[node name="Camera3D" type="Camera3D" parent="." unique_id=1486585238]
-transform = Transform3D(-0.25720593, -0.37599525, 0.8902094, 0, 0.9212017, 0.3890854, -0.96635675, 0.10007509, -0.23693857, 6.6659365, 5.51173, 1.2105148)
+[node name="godiva" parent="." unique_id=1337161665 groups=["friends"] instance=ExtResource("54_334ql")]
+transform = Transform3D(5.7620454e-08, 0, 1, 0, 1, 0, -1, 0, 5.7620454e-08, -0.6258802, 1.2046778, -7.755484)
+
+[node name="Turret" parent="." unique_id=1468587336 instance=ExtResource("55_b307c")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.15385, 1.6999998, -7.7725606)
+
+[node name="Cameras" type="Node3D" parent="." unique_id=1850587553]
+
+[node name="Camera_interactables" type="Camera3D" parent="Cameras" unique_id=1486585238]
+transform = Transform3D(-0.2572059, -0.37599525, 0.8902094, 0, 0.9212017, 0.3890854, -0.96635664, 0.100075066, -0.2369385, 6.6659365, 5.51173, 1.2105148)
 current = true
 fov = 50.935745
+script = ExtResource("56_b307c")
+is_player_camera = false
+
+[node name="VisionAssistMesh" type="MeshInstance3D" parent="Cameras/Camera_interactables" unique_id=1553510083]
+transform = Transform3D(1, 0, 0, 0, 1.0000001, 0, 0, 0, 1, 0, 0, -0.5)
+visible = false
+cast_shadow = 0
+extra_cull_margin = 16384.0
+mesh = SubResource("QuadMesh_534t5")
+
+[node name="Camera_friends" type="Camera3D" parent="Cameras" unique_id=1383175001]
+transform = Transform3D(-4.073253e-08, -0.25881907, 0.9659258, -2.2626676e-08, 0.9659259, 0.25881907, -1, -1.1313335e-08, -4.5200817e-08, 0.96683985, 2.9471734, -7.7050676)
+script = ExtResource("56_b307c")
+is_player_camera = false
+
+[node name="VisionAssistMesh" type="MeshInstance3D" parent="Cameras/Camera_friends" unique_id=484296219]
+transform = Transform3D(1, 0, 0, 0, 1, 5.11372e-16, 0, 5.1137205e-16, 1, 0, 0.112, -0.5)
+visible = false
+cast_shadow = 0
+extra_cull_margin = 16384.0
+mesh = SubResource("QuadMesh_534t5")
+
+[node name="Camera_default" type="Camera3D" parent="Cameras" unique_id=348962621]
+transform = Transform3D(-0.71856016, 0.15644555, -0.67764014, 0, 0.9743701, 0.22495104, 0.69546485, 0.16164087, -0.70014346, -1.4505682, 4.93593, -8.007081)
+script = ExtResource("56_b307c")
+is_player_camera = false
+
+[node name="VisionAssistMesh" type="MeshInstance3D" parent="Cameras/Camera_default" unique_id=1628167229]
+transform = Transform3D(1, 0, 0, 0, 0.99999994, 0, 0, 0, 1, 0, 0, -0.5)
+visible = false
+cast_shadow = 0
+extra_cull_margin = 16384.0
+mesh = SubResource("QuadMesh_534t5")
+
+[node name="Camera_enemies" type="Camera3D" parent="Cameras" unique_id=1217663442]
+transform = Transform3D(1, 0, 0, 0, 0.9659258, 0.25881904, 0, -0.25881904, 0.9659258, 17, 3.695727, -3.4484444)
+script = ExtResource("56_b307c")
+is_player_camera = false
+
+[node name="VisionAssistMesh" type="MeshInstance3D" parent="Cameras/Camera_enemies" unique_id=1483469657]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.5)
+visible = false
+cast_shadow = 0
+extra_cull_margin = 16384.0
+mesh = SubResource("QuadMesh_534t5")

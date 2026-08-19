@@ -82,6 +82,10 @@ var _press_count: int = 0
 ## Builds the complete remapping interface and registers behavior toggles.
 func _ready() -> void:
 	print("UI: Controls Panel initialized.")
+	reset_all_button.focus_mode = Control.FOCUS_NONE
+	crouch_mode_option.focus_mode = Control.FOCUS_NONE
+	sprint_mode_option.focus_mode = Control.FOCUS_NONE
+
 	_format_header_grid()
 	_ensure_all_actions_registered()
 	_setup_behavior_controls()
@@ -223,6 +227,7 @@ func _create_action_row(parent_grid: GridContainer, action: String) -> void:
 	parent_grid.add_child(action_label)
 
 	var primary_btn: Button = Button.new()
+	primary_btn.focus_mode = Control.FOCUS_NONE  # <--- Add here
 	primary_btn.toggle_mode = true
 	primary_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	primary_btn.size_flags_stretch_ratio = 2.0
@@ -232,6 +237,7 @@ func _create_action_row(parent_grid: GridContainer, action: String) -> void:
 	parent_grid.add_child(primary_btn)
 
 	var secondary_btn: Button = Button.new()
+	secondary_btn.focus_mode = Control.FOCUS_NONE  # <--- Add here
 	secondary_btn.toggle_mode = true
 	secondary_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	secondary_btn.size_flags_stretch_ratio = 2.0
@@ -241,6 +247,7 @@ func _create_action_row(parent_grid: GridContainer, action: String) -> void:
 	parent_grid.add_child(secondary_btn)
 
 	var clear_btn: Button = Button.new()
+	clear_btn.focus_mode = Control.FOCUS_NONE  # <--- Add here
 	clear_btn.text = "✕"
 	clear_btn.custom_minimum_size = Vector2(40.0, 0.0)
 	clear_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER

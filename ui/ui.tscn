@@ -333,6 +333,7 @@ text = "Wireframe Off"
 alignment = 0
 
 [node name="WireframeOverlayButton" type="Button" parent="DebugPanel/PanelContainer/VBoxContainer" unique_id=496048571]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_vertical = 3
 text = "Wireframe Overlay Off"

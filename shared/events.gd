@@ -172,6 +172,14 @@ signal describe_surroundings_requested(origin_node: Node3D)
 @warning_ignore("unused_signal")
 signal chapter_triggered(chapter_name: String, style: int, duration: float, color: Color)
 
+## Emitted when post-process screen filters are selected.
+@warning_ignore("unused_signal")
+signal screen_filter_changed(filter_name: String)
+
+## Emitted when film grain effect intensity is adjusted.
+@warning_ignore("unused_signal")
+signal film_grain_changed(intensity: float)
+
 ## Visual presentation styles for chapter title sequences.
 enum ChapterAnimStyle {
 	SIMPLE,
