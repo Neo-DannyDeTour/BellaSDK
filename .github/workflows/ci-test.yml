@@ -22,10 +22,10 @@ jobs:
         uses: ./.github/actions/setup-godot-env
 
       - name: Verify GDScript Formatting
-        run: gdformat --check -l 100 .
+        run: gdformat --check .
 
       - name: Run GDLint
-        run: gdlint --max-line-length 100 .
+        run: gdlint .
 
   unit-tests:
     name: GUT Headless Unit Tests

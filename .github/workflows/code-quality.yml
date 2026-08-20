@@ -28,8 +28,8 @@ jobs:
 
       - name: Enforce Formatting & Linting
         run: |
-          gdformat --check -l 100 .
-          gdlint --max-line-length 100 .
+          gdformat --check .
+          gdlint .
 
       - name: Setup Godot Engine
         uses: chickensoft-games/setup-godot@v2
