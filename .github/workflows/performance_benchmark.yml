@@ -6,10 +6,6 @@ on:
   pull_request:
     branches: [main]
 
-env:
-  GODOT_VERSION: "4.7.1"
-  GODOT_STATUS: "stable"
-
 jobs:
   performance-gate:
     name: 60 FPS Regression & Spike Gate
@@ -21,21 +17,18 @@ jobs:
         with:
           lfs: true
 
-      - name: Setup Godot Linux Binary
-        run: |
-          wget -q https://github.com/godotengine/godot/releases/download/${{ env.GODOT_VERSION }}-${{ env.GODOT_STATUS }}/Godot_v${{ env.GODOT_VERSION }}-${{ env.GODOT_STATUS }}_linux.x86_64.zip
-          unzip -q Godot_v${{ env.GODOT_VERSION }}-${{ env.GODOT_STATUS }}_linux.x86_64.zip
-          mv Godot_v${{ env.GODOT_VERSION }}-${{ env.GODOT_STATUS }}_linux.x86_64 /usr/local/bin/godot
-          chmod +x /usr/local/bin/godot
+      - name: Setup Godot Engine
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: "4.7.1" # Set to your pinned project version
+          use-dotnet: false
 
       - name: Generate Import Cache & UIDs
         run: |
-          # Launch the editor headlessly to force a complete asset import and UID cache generation
-          godot --headless --editor --quit
+          godot --headless --editor --quit-after 200
 
       - name: Run Headless Performance Gate
         run: |
-          # Point to benchmark_main.tscn in the project root
           godot --headless --rendering-driver opengl3 res://benchmark_main.tscn
 
       - name: Upload Performance Report

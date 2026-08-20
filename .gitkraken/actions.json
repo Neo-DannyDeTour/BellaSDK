@@ -1,0 +1,16 @@
+{
+  "actions": [
+    {
+      "name": "Format & Lint (Pre-Commit)",
+      "description": "Runs local pre-commit hooks against staged changes",
+      "command": "pre-commit run",
+      "context": "repo"
+    },
+    {
+      "name": "Run GUT Unit Tests (Headless)",
+      "description": "Executes GUT test suite headlessly via Godot 4",
+      "command": "godot --headless -s res://addons/gut/gut_cmdln.gd -gconfig=res://.gutconfig.json -gexit",
+      "context": "repo"
+    }
+  ]
+}

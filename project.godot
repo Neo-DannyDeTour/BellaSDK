@@ -16,7 +16,7 @@ run/main_scene="uid://omwvkueo82i7"
 config/features=PackedStringArray("4.7", "Forward Plus")
 run/max_fps=60
 boot_splash/bg_color=Color(0, 0, 0, 1)
-boot_splash/image="uid://bjct27ta2nogv"
+boot_splash/image="res://assets/splash.png"
 config/icon="uid://cijw0jse7sfs8"
 
 [audio]
@@ -67,7 +67,7 @@ import/blender/enabled=false
 
 [gui]
 
-theme/custom="uid://c2y5wbxwkb3fp"
+theme/custom="res://assets/main_theme.tres"
 
 [importer_defaults]
 

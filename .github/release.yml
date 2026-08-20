@@ -1,0 +1,34 @@
+# .github/release.yml
+changelog:
+  categories:
+    - title: "🛡️ Warden Updates"
+      labels:
+        - "warden"
+        - "security"
+        - "gating"
+    - title: "📦 Quartermaster Changes"
+      labels:
+        - "quartermaster"
+        - "assets"
+        - "dependencies"
+    - title: "🚀 Features & Gameplay"
+      labels:
+        - "feature"
+        - "enhancement"
+    - title: "🐛 Bug Fixes & Stability"
+      labels:
+        - "bug"
+        - "fix"
+    - title: "🧹 Refactoring & Maintenance"
+      labels:
+        - "refactor"
+        - "chore"
+        - "documentation"
+    - title: "Other Changes"
+      labels:
+        - "*"
+  exclude:
+    labels:
+      - "ignore-for-release"
+      - "skip-changelog"
+      - "automated-pr"

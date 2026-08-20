@@ -39,7 +39,7 @@ jobs:
         uses: chickensoft-games/setup-godot@v2
         with:
           # Verify this matches your local Godot version (e.g., 4.3, 4.2.2)
-          version: "4.3.0"
+          version: "4.7.1"
           use-dotnet: false
           include-templates: true
 

@@ -1,0 +1,58 @@
+name: Code Quality & CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  lint-and-validate:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install GDToolkit
+        run: |
+          python -m pip install --upgrade pip
+          pip install "gdtoolkit==4.*"
+
+      - name: Enforce Formatting & Linting
+        run: |
+          gdformat --check -l 100 .
+          gdlint --max-line-length 100 .
+
+      - name: Setup Godot Engine
+        uses: chickensoft-games/setup-godot@v2
+        with:
+          version: 4.7.1
+          use-dotnet: false
+
+      - name: Headless Asset Import
+        run: |
+          godot --headless --editor --quit-after 200
+
+      - name: Validate UID Integrity
+        run: |
+          godot --headless -s res://addons/ci_tools/fix_uids.gd
+
+      - name: Run GUT Unit Tests
+        run: |
+          godot --headless -s res://addons/gut/gut_cmdln.gd -gdir=res://test/ -ginclude_subdirs -gexit
+
+      - name: Run Asset Integrity Validation
+        run: |
+          godot --headless -s res://addons/ci_tools/validate_assets.gd
+
+      - name: Run Memory Leak & Orphan Node Validation
+        run: |
+          godot --headless -s res://addons/ci_tools/validate_leaks.gd

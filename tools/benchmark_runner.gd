@@ -60,9 +60,7 @@ func _process(delta: float) -> void:
 		if _current_frame == WARMUP_FRAMES:
 			_initial_static_memory = int(Performance.get_monitor(Performance.MEMORY_STATIC))
 			print(
-				"[Benchmark] Warm-up complete. Capturing baseline memory: ",
-				_initial_static_memory,
-				" bytes."
+				"[Benchmark] Warm-up complete. Baseline memory: ", _initial_static_memory, " bytes."
 			)
 		return
 
@@ -70,6 +68,7 @@ func _process(delta: float) -> void:
 	_frame_times_ms.append(frame_time_ms)
 
 	if _current_frame >= (WARMUP_FRAMES + TOTAL_FRAMES_TO_RUN):
+		set_process(false)
 		_finish_benchmark()
 
 
@@ -77,7 +76,7 @@ func _process(delta: float) -> void:
 func _finish_benchmark() -> void:
 	print("[Benchmark] Finished recording frames. Evaluating results...")
 	if is_instance_valid(_stress_scene_instance):
-		_stress_scene_instance.queue_free()
+		_stress_scene_instance.free()
 		_stress_scene_instance = null
 
 	var metrics: Dictionary = _calculate_metrics()
@@ -107,7 +106,7 @@ func _finish_benchmark() -> void:
 		has_failed = true
 
 	if int(metrics["orphan_nodes"]) > 0:
-		printerr("[FAIL] Orphan nodes detected in scene tree! Count: ", metrics["orphan_nodes"])
+		printerr("[FAIL] Orphan nodes detected! Count: ", metrics["orphan_nodes"])
 		Node.print_orphan_nodes()
 		has_failed = true
 
@@ -158,7 +157,7 @@ func _calculate_metrics() -> Dictionary:
 func _export_report_to_disk(report_data: Dictionary) -> void:
 	var report_path: String = "user://benchmark_report.json"
 	var file: FileAccess = FileAccess.open(report_path, FileAccess.WRITE)
-	if is_instance_valid(file):
+	if file != null:
 		var json_string: String = JSON.stringify(report_data, "\t")
 		file.store_string(json_string)
 		file.close()
