@@ -4,7 +4,6 @@
 ## It uses [StringName] identifiers to dynamically support any number of keycards
 ## without requiring hardcoded enums. It emits signals when cards are acquired
 ## or consumed.
-class_name KeycardSystem
 extends Node
 
 ## Emitted when a new keycard is added to the inventory.

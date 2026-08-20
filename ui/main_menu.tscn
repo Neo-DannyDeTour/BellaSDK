@@ -26,13 +26,10 @@ expand_margin_top = 8.0
 expand_margin_right = 8.0
 expand_margin_bottom = 8.0
 
-[node name="MainMenu" type="CanvasLayer" unique_id=1244757478 node_paths=PackedStringArray("back_buttons", "tab_buttons", "option_panels", "main_theme_player") groups=["hide_on_save"]]
+[node name="MainMenu" type="CanvasLayer" unique_id=1244757478 node_paths=PackedStringArray("main_theme_player") groups=["hide_on_save"]]
 process_mode = 3
 layer = 10
 script = ExtResource("1_2o76q")
-back_buttons = [NodePath("CenterContainer/OptionsMenu/MasterBackButton")]
-tab_buttons = [NodePath("CenterContainer/OptionsMenu/BoxContainer/TabButtons/VideoButton"), NodePath("CenterContainer/OptionsMenu/BoxContainer/TabButtons/AudioButton"), NodePath("CenterContainer/OptionsMenu/BoxContainer/TabButtons/GameplayButton"), NodePath("CenterContainer/OptionsMenu/BoxContainer/TabButtons/ControlsButton"), NodePath("CenterContainer/OptionsMenu/BoxContainer/TabButtons/AccessibilityButton")]
-option_panels = [null]
 main_theme_player = NodePath("MainThemePlayer")
 
 [node name="Background" type="Panel" parent="." unique_id=267339091]

@@ -6,7 +6,6 @@
 ## It gathers interactable objects in the player's vicinity, verifies line-of-sight with
 ## multi-point raycasts, factors in vertical elevation (above/below), groups identical items
 ## into clusters, and prioritizes items directly in the player's line of sight.
-class_name SpatialDescriber
 extends Node
 
 ## Emitted when an environment description string has been generated.

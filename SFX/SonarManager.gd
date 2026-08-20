@@ -7,7 +7,6 @@
 ##
 ## The [SonarManager] handles the playback of localized pings and the subsequent
 ## delayed 3D audio echoes originating from valid targets within the scanning radius.
-class_name SonarManager
 extends Node
 
 ## Emitted when a sonar scan finishes scanning the surroundings.
