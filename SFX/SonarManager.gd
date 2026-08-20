@@ -3,6 +3,11 @@
 ## Scans the surrounding 3D environment for categorized objects, sorting them by
 ## priority and distance while applying raycast occlusion, rear-cone spectral filtering,
 ## and staggered playback delays.
+## Global autoload managing the 3D sonar audio system.
+##
+## The [SonarManager] handles the playback of localized pings and the subsequent
+## delayed 3D audio echoes originating from valid targets within the scanning radius.
+class_name SonarManager
 extends Node
 
 ## Emitted when a sonar scan finishes scanning the surroundings.

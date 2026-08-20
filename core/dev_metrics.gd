@@ -36,6 +36,7 @@ var _hardware_info_str: String = ""
 ## Cached static graphics settings strings.
 var _settings_info_static_str: String = ""
 
+## The UI text label used to display metrics.
 @onready var metrics_label: RichTextLabel = $MetricsLabel
 
 
