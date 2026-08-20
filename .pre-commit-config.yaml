@@ -3,10 +3,14 @@ repos:
     rev: v4.6.0
     hooks:
       - id: trailing-whitespace
+        exclude: ^addons/
       - id: end-of-file-fixer
+        exclude: ^addons/
       - id: check-yaml
+        exclude: ^addons/
       - id: check-added-large-files
         args: ["--maxkb=1024"]
+        exclude: ^addons/
 
   - repo: local
     hooks:
@@ -15,6 +19,7 @@ repos:
         entry: gdformat
         language: system
         files: \.gd$
+        exclude: ^addons/
         pass_filenames: true
 
       - id: gdlint
@@ -22,4 +27,5 @@ repos:
         entry: gdlint
         language: system
         files: \.gd$
+        exclude: ^addons/
         pass_filenames: true
