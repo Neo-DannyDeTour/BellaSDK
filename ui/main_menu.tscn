@@ -18,12 +18,20 @@
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_6bivr"]
 texture = ExtResource("1_ovrgc")
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jiymt"]
+bg_color = Color(0, 0, 0, 1)
+border_color = Color(0, 0, 0, 1)
+expand_margin_left = 8.0
+expand_margin_top = 8.0
+expand_margin_right = 8.0
+expand_margin_bottom = 8.0
+
 [node name="MainMenu" type="CanvasLayer" unique_id=1244757478 node_paths=PackedStringArray("back_buttons", "tab_buttons", "option_panels", "main_theme_player") groups=["hide_on_save"]]
 process_mode = 3
 layer = 10
 script = ExtResource("1_2o76q")
 back_buttons = [NodePath("CenterContainer/OptionsMenu/MasterBackButton")]
-tab_buttons = [NodePath("CenterContainer/OptionsMenu/TabButtons/VideoButton"), NodePath("CenterContainer/OptionsMenu/TabButtons/AudioButton"), NodePath("CenterContainer/OptionsMenu/TabButtons/GameplayButton"), NodePath("CenterContainer/OptionsMenu/TabButtons/ControlsButton"), NodePath("CenterContainer/OptionsMenu/TabButtons/AccessibilityButton")]
+tab_buttons = [NodePath("CenterContainer/OptionsMenu/BoxContainer/TabButtons/VideoButton"), NodePath("CenterContainer/OptionsMenu/BoxContainer/TabButtons/AudioButton"), NodePath("CenterContainer/OptionsMenu/BoxContainer/TabButtons/GameplayButton"), NodePath("CenterContainer/OptionsMenu/BoxContainer/TabButtons/ControlsButton"), NodePath("CenterContainer/OptionsMenu/BoxContainer/TabButtons/AccessibilityButton")]
 option_panels = [null]
 main_theme_player = NodePath("MainThemePlayer")
 
@@ -133,50 +141,87 @@ custom_minimum_size = Vector2(1280, 720)
 layout_mode = 2
 script = ExtResource("5_lsdqh")
 
-[node name="TabButtons" type="HBoxContainer" parent="CenterContainer/OptionsMenu" unique_id=712872147]
+[node name="BoxContainer" type="HBoxContainer" parent="CenterContainer/OptionsMenu" unique_id=598433056]
 layout_mode = 2
 
-[node name="VideoButton" type="Button" parent="CenterContainer/OptionsMenu/TabButtons" unique_id=603167491]
+[node name="TabButtons" type="HBoxContainer" parent="CenterContainer/OptionsMenu/BoxContainer" unique_id=712872147]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VideoButton" type="Button" parent="CenterContainer/OptionsMenu/BoxContainer/TabButtons" unique_id=603167491]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Graphics"
 
-[node name="AudioButton" type="Button" parent="CenterContainer/OptionsMenu/TabButtons" unique_id=2106604539]
+[node name="AudioButton" type="Button" parent="CenterContainer/OptionsMenu/BoxContainer/TabButtons" unique_id=2106604539]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Audio"
 
-[node name="GameplayButton" type="Button" parent="CenterContainer/OptionsMenu/TabButtons" unique_id=1138285378]
+[node name="GameplayButton" type="Button" parent="CenterContainer/OptionsMenu/BoxContainer/TabButtons" unique_id=1138285378]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Gameplay"
 
-[node name="ControlsButton" type="Button" parent="CenterContainer/OptionsMenu/TabButtons" unique_id=177390856]
+[node name="ControlsButton" type="Button" parent="CenterContainer/OptionsMenu/BoxContainer/TabButtons" unique_id=177390856]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Controls"
 
-[node name="AccessibilityButton" type="Button" parent="CenterContainer/OptionsMenu/TabButtons" unique_id=250063746]
+[node name="AccessibilityButton" type="Button" parent="CenterContainer/OptionsMenu/BoxContainer/TabButtons" unique_id=250063746]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Accessibility"
 
+[node name="SearchBarContainer" type="HBoxContainer" parent="CenterContainer/OptionsMenu/BoxContainer/TabButtons" unique_id=1844282404]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SearchIcon" type="TextureRect" parent="CenterContainer/OptionsMenu/BoxContainer/TabButtons/SearchBarContainer" unique_id=122693968]
+layout_mode = 2
+
+[node name="SettingsSearchEdit" type="LineEdit" parent="CenterContainer/OptionsMenu/BoxContainer/TabButtons/SearchBarContainer" unique_id=1259062049]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SearchDropdownAnchor" type="Control" parent="CenterContainer/OptionsMenu/BoxContainer/TabButtons/SearchBarContainer" unique_id=680397762]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="SearchResultsPanel" type="Panel" parent="CenterContainer/OptionsMenu/BoxContainer/TabButtons/SearchBarContainer/SearchDropdownAnchor" unique_id=664458601]
+unique_name_in_owner = true
+visible = false
+z_index = 1
+custom_minimum_size = Vector2(800, 400)
+layout_mode = 1
+offset_top = 35.0
+offset_right = 1280.0
+offset_bottom = 35.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_jiymt")
+
+[node name="ScrollContainer" type="ScrollContainer" parent="CenterContainer/OptionsMenu/BoxContainer/TabButtons/SearchBarContainer/SearchDropdownAnchor/SearchResultsPanel" unique_id=290380255]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+
+[node name="SearchResultsList" type="VBoxContainer" parent="CenterContainer/OptionsMenu/BoxContainer/TabButtons/SearchBarContainer/SearchDropdownAnchor/SearchResultsPanel/ScrollContainer" unique_id=1525082093]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
 [node name="SettingsArea" type="MarginContainer" parent="CenterContainer/OptionsMenu" unique_id=170907656]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(1280, 720)
 layout_mode = 2
 size_flags_vertical = 3
 
 [node name="VideoOptionsPanel" parent="CenterContainer/OptionsMenu/SettingsArea" unique_id=1944788422 instance=ExtResource("5_ubpvv")]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(800, 500)
-layout_mode = 2
-
-[node name="AccessibilityPanel" parent="CenterContainer/OptionsMenu/SettingsArea" unique_id=1445857146 instance=ExtResource("7_5klac")]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(800, 500)
-layout_mode = 2
-
-[node name="ControlsPanel" parent="CenterContainer/OptionsMenu/SettingsArea" unique_id=1661150765 instance=ExtResource("6_arv2f")]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(800, 500)
 layout_mode = 2
@@ -187,6 +232,16 @@ custom_minimum_size = Vector2(800, 500)
 layout_mode = 2
 
 [node name="GameplayPanel" parent="CenterContainer/OptionsMenu/SettingsArea" unique_id=1532565924 instance=ExtResource("10_bgtsx")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(800, 500)
+layout_mode = 2
+
+[node name="ControlsPanel" parent="CenterContainer/OptionsMenu/SettingsArea" unique_id=1661150765 instance=ExtResource("6_arv2f")]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(800, 500)
+layout_mode = 2
+
+[node name="AccessibilityPanel" parent="CenterContainer/OptionsMenu/SettingsArea" unique_id=1445857146 instance=ExtResource("7_5klac")]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(800, 500)
 layout_mode = 2

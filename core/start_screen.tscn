@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://bguj8664n6duq"]
+
+[ext_resource type="Script" uid="uid://b2jy2mo0vxcmk" path="res://core/start_screen.gd" id="1_krvri"]
+
+[node name="StartScreen" type="Control" unique_id=1560971005]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_krvri")
+main_game_scene_path = "uid://c261acv3ex6c0"
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=1216761303]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="StartButton" type="Button" parent="CenterContainer" unique_id=1363805630]
+layout_mode = 2
+text = "Click or Press Enter / Space to Start"

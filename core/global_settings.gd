@@ -11,8 +11,31 @@ const SAVE_PATH: String = "user://settings.cfg"
 ## The configuration object used to read, cache, and write save file data.
 var config: ConfigFile = ConfigFile.new()
 
-## List of available font types to cycle through for accessibility options.
-const FONT_MAP: Array[String] = ["default", "dyslexic", "papyrus", "comic"]
+## Single source of truth for all typography font assets and metadata.
+const FONT_REGISTRY: Array[Dictionary] = [
+	{"id": "default", "name": "Default", "path": ""},
+	{
+		"id": "dyslexic",
+		"name": "Dyslexic",
+		"path": "res://assets/fonts/opendyslexic-0.92/OpenDyslexic-Regular.otf"
+	},
+	{"id": "papyrus", "name": "Papyrus", "path": "res://assets/fonts/papyrus-font/papyrus.ttf"},
+	{"id": "comic", "name": "Comic Sans", "path": "res://assets/fonts/Comic Sans MS.ttf"},
+	{"id": "kramola", "name": "Kramola", "path": "res://assets/fonts/kramola/Kramola.otf"},
+	{
+		"id": "futura",
+		"name": "Futura Handwritten",
+		"path": "res://assets/fonts/FuturaHandwritten.ttf"
+	},
+	{"id": "help_me", "name": "Help Me", "path": "res://assets/fonts/HelpMe.ttf"},
+	{"id": "olde_english", "name": "Olde English", "path": "res://assets/fonts/OldeEnglish.ttf"},
+	{
+		"id": "stalinist",
+		"name": "Stalinist One",
+		"path": "res://assets/fonts/StalinistOne-Regular.ttf"
+	},
+	{"id": "super_funky", "name": "Super Funky", "path": "res://assets/fonts/Super Funky.ttf"}
+]
 
 
 ## Called automatically upon instantiation.
@@ -45,9 +68,10 @@ func _apply_boot_settings() -> void:
 	get_window().content_scale_factor = ui_scale
 
 	if Events:
-		var saved_font: int = get_setting("Settings", "font_mode", 0) as int
-		if saved_font >= 0 and saved_font < FONT_MAP.size():
-			Events.font_changed.emit(FONT_MAP[saved_font])
+		var saved_font_idx: int = get_setting("Settings", "font_mode", 0) as int
+		if saved_font_idx >= 0 and saved_font_idx < FONT_REGISTRY.size():
+			var font_id: String = FONT_REGISTRY[saved_font_idx]["id"] as String
+			Events.font_changed.emit(font_id)
 
 		var saved_cb: int = get_setting("Settings", "colorblind_mode", 0) as int
 		Events.colorblind_mode_changed.emit(saved_cb)
@@ -95,3 +119,31 @@ func get_setting(category: String, key: String, default_value: Variant) -> Varia
 	if config.has_section_key(category, key):
 		return config.get_value(category, key)
 	return default_value
+
+
+## Returns an array of all font internal ID keys.
+## [return] Array of lowercase font identifier strings.
+func get_font_ids() -> Array[String]:
+	var ids: Array[String] = []
+	for entry: Dictionary in FONT_REGISTRY:
+		ids.append(entry["id"] as String)
+	return ids
+
+
+## Returns an array of all UI display names for fonts.
+## [return] Array of formatted font names.
+func get_font_display_names() -> Array[String]:
+	var names: Array[String] = []
+	for entry: Dictionary in FONT_REGISTRY:
+		names.append(entry["name"] as String)
+	return names
+
+
+## Resolves a font index by its internal key.
+## [param font_id] Target font key string.
+## [return] Array index matching the ID, or `0` if not found.
+func get_font_index(font_id: String) -> int:
+	for i: int in range(FONT_REGISTRY.size()):
+		if FONT_REGISTRY[i]["id"] == font_id:
+			return i
+	return 0

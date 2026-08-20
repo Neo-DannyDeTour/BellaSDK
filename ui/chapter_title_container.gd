@@ -55,8 +55,16 @@ func _on_resized() -> void:
 		chapter_label.set_deferred("size", target_size)
 
 
+## Handles incoming chapter sequence triggers by delegating to the appropriate animation effect.
+## [param chapter_name] The text heading to render.
+## [param anim_style] The [enum Events.ChapterAnimStyle] transition identifier.
+## [param display_duration] Active screen display time in seconds.
+## [param text_color] Font modulation [Color].
 func _on_chapter_triggered(
-	chapter_name: String, anim_style: int, display_duration: float, text_color: Color
+	chapter_name: String,
+	anim_style: Events.ChapterAnimStyle,
+	display_duration: float,
+	text_color: Color
 ) -> void:
 	print("ChapterDisplay: Triggered sequence for '", chapter_name, "' with style ID ", anim_style)
 
@@ -70,7 +78,7 @@ func _on_chapter_triggered(
 
 	_chapter_tween = create_tween()
 
-	match anim_style as Events.ChapterAnimStyle:
+	match anim_style:
 		Events.ChapterAnimStyle.SIMPLE:
 			_play_simple(chapter_name, display_duration)
 		Events.ChapterAnimStyle.WAVE:

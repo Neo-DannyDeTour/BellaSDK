@@ -1,6 +1,21 @@
-## Global event bus singleton for routing cross-system game events, UI toggles, and cheat hooks.
-class_name EventsManager
+## Global event bus singleton for routing cross-system game events, UI toggles, and font overrides.
 extends Node
+
+## Standard Control type names that render typography in Godot UI.
+const UI_FONT_TYPES: Array[StringName] = [
+	&"Label",
+	&"Button",
+	&"CheckButton",
+	&"CheckBox",
+	&"OptionButton",
+	&"LineEdit",
+	&"TextEdit",
+	&"RichTextLabel",
+	&"TabBar",
+	&"Tree",
+	&"PopupMenu",
+	&"MenuButton"
+]
 
 ## Tracks whether the player is currently invincible.
 var is_godmode: bool = false
@@ -169,8 +184,14 @@ signal sonar_ping_requested(origin_node: Node3D)
 signal describe_surroundings_requested(origin_node: Node3D)
 
 ## Emitted when a chapter title card sequence is triggered.
+## [param chapter_name] The localized title or text to display.
+## [param style] The [enum ChapterAnimStyle] preset determining the animation effect.
+## [param duration] The display duration in seconds.
+## [param color] The base font tint [Color].
 @warning_ignore("unused_signal")
-signal chapter_triggered(chapter_name: String, style: int, duration: float, color: Color)
+signal chapter_triggered(
+	chapter_name: String, style: ChapterAnimStyle, duration: float, color: Color
+)
 
 ## Emitted when post-process screen filters are selected.
 @warning_ignore("unused_signal")
@@ -180,7 +201,13 @@ signal screen_filter_changed(filter_name: String)
 @warning_ignore("unused_signal")
 signal film_grain_changed(intensity: float)
 
-## Visual presentation styles for chapter title sequences.
+## Dictionary mapping available font identifier keys to their loaded [Font] resources.
+var fonts: Dictionary[String, Font] = {}
+
+## Fallback font resource captured on initial boot.
+var default_engine_font: Font = null
+
+## Visual animation style presets for chapter title card sequences.
 enum ChapterAnimStyle {
 	SIMPLE,
 	WAVE,
@@ -201,40 +228,109 @@ enum ChapterAnimStyle {
 	DOOM_MELT,
 	HEARTBEAT,
 	VHS,
-	LIGHT_SWEEP
+	LIGHT_SWEEP,
 }
 
-## Dictionary mapping available font identifier keys to their loaded [Font] resources.
-var fonts: Dictionary[String, Font] = {}
+
+## Lifecycle constructor initializing baseline font mappings.
+func _init() -> void:
+	print("Events: _init() called.")
 
 
-## Lifecycle method initializing font mappings and connecting signal listeners.
+## Lifecycle method connecting signal listeners and caching registry fonts.
 func _ready() -> void:
-	print("Events: _ready() called. Initializing font assets.")
+	print("Events: _ready() called. Loading font registry and binding events.")
 	font_changed.connect(_on_font_changed)
-
-	fonts["dyslexic"] = preload("res://assets/fonts/opendyslexic-0.92/OpenDyslexic-Regular.otf")
-	fonts["papyrus"] = preload("res://assets/fonts/papyrus-font/papyrus.ttf")
-	fonts["comic"] = preload("res://assets/fonts/Comic Sans MS.ttf")
-	fonts["default"] = ThemeDB.fallback_font
+	call_deferred("_load_registered_fonts")
 
 
-## Replaces the project's root theme default font and updates 3D text nodes.
+## Replaces the project's root theme default font and forces an immediate UI redraw.
 ## [param font_name] The identifier key of the font to apply.
 func _on_font_changed(font_name: String) -> void:
 	print("Events: Changing global font to '", font_name, "'.")
 
-	if fonts.has(font_name):
-		var target_font: Font = fonts[font_name] as Font
+	if not fonts.has(font_name):
+		_load_registered_fonts()
 
-		if ThemeDB.get_project_theme():
-			ThemeDB.get_project_theme().default_font = target_font
-		else:
-			var root_window: Window = get_tree().root
-			if not root_window.theme:
-				root_window.theme = Theme.new()
-			root_window.theme.default_font = target_font
+	if not fonts.has(font_name):
+		push_warning("Events: Unknown font key '" + font_name + "'. Falling back to default.")
+		font_name = "default"
 
-		get_tree().call_group("3d_text", "set", "font", target_font)
+	var target_font: Font = fonts.get(font_name, default_engine_font)
+	if not is_instance_valid(target_font):
+		push_error("Events: Failed to resolve valid Font instance for: " + font_name)
+		return
+
+	var root_window: Window = get_tree().root
+	if not is_instance_valid(root_window):
+		return
+
+	if not root_window.theme:
+		root_window.theme = Theme.new()
+
+	var active_theme: Theme = root_window.theme
+	active_theme.default_font = target_font
+
+	for type_name: StringName in UI_FONT_TYPES:
+		active_theme.set_font("font", type_name, target_font)
+
+	_apply_font_override_recursive(root_window, target_font)
+	get_tree().call_group("3d_text", "set", "font", target_font)
+	print("Events: Global font '", font_name, "' applied successfully.")
+
+
+## Dynamically iterates the GlobalSettings font registry and caches loaded resources.
+func _load_registered_fonts() -> void:
+	var root_window: Window = get_tree().root
+	if root_window and root_window.theme and root_window.theme.default_font:
+		default_engine_font = root_window.theme.default_font
 	else:
-		push_warning("Events: Attempted to set unknown font - " + font_name)
+		default_engine_font = ThemeDB.fallback_font
+
+	fonts["default"] = default_engine_font
+
+	var global_settings_node: Node = get_node_or_null("/root/GlobalSettings")
+	if not is_instance_valid(global_settings_node):
+		return
+
+	var registry: Array = global_settings_node.get("FONT_REGISTRY") as Array
+	if registry == null:
+		return
+
+	for entry_variant: Variant in registry:
+		if not entry_variant is Dictionary:
+			continue
+		var entry: Dictionary = entry_variant as Dictionary
+		var id: String = entry.get("id", "") as String
+		var path: String = entry.get("path", "") as String
+
+		if id == "" or id == "default":
+			continue
+
+		if path != "" and ResourceLoader.exists(path):
+			var loaded_res: Resource = load(path)
+			if loaded_res is Font:
+				fonts[id] = loaded_res as Font
+				print("Events: Successfully cached font '", id, "' from ", path)
+			else:
+				push_warning("Events: Resource at " + path + " is not a valid Font.")
+		else:
+			push_warning("Events: Font file path does not exist on disk: " + path)
+
+
+## Recursively propagates font theme overrides down all active Control nodes.
+## [param parent] Root parent [Node] to traverse.
+## [param new_font] The [Font] instance to assign.
+func _apply_font_override_recursive(parent: Node, new_font: Font) -> void:
+	if not is_instance_valid(parent):
+		return
+
+	if parent is Control:
+		var ctrl: Control = parent as Control
+		ctrl.add_theme_font_override("font", new_font)
+		ctrl.add_theme_font_override("normal_font", new_font)
+		ctrl.notification(Control.NOTIFICATION_THEME_CHANGED)
+		ctrl.queue_redraw()
+
+	for child: Node in parent.get_children():
+		_apply_font_override_recursive(child, new_font)

@@ -377,11 +377,7 @@ func _populate_dropdowns() -> void:
 		for mode: String in colorblind_modes:
 			colorblind_option.add_item(mode)
 
-	if font_option:
-		font_option.clear()
-		var font_modes: Array[String] = ["Default", "Dyslexic", "Papyrus", "Comic"]
-		for font: String in font_modes:
-			font_option.add_item(font)
+	_populate_font_dropdown()
 
 	if sub_size_option:
 		sub_size_option.clear()
@@ -1028,26 +1024,41 @@ func _on_external_vision_assist_changed(active: bool) -> void:
 		vision_assist_toggle.set_pressed_no_signal(active)
 
 
-## Handles font override selection changes.
+## Handles font override selection changes from the dropdown menu.
 ## [param index] Font selection index.
 func _on_font_selected(index: int) -> void:
-	print("Player changed font mode to index: ", index)
+	print("UI: Player selected font dropdown index: ", index)
 	GlobalSettings.save_setting("Settings", "font_mode", index)
 	_apply_font_settings()
 
 
-## Broadcasts font override mode changes across the EventBus.
-func _apply_font_settings() -> void:
+## Populates OptionButton items for typography fonts.
+func _populate_font_dropdown() -> void:
 	if not font_option:
 		return
+	font_option.clear()
+	for font_name: String in GlobalSettings.get_font_display_names():
+		font_option.add_item(font_name)
+
+
+## Broadcasts font override mode changes across the EventBus.
+func _apply_font_settings() -> void:
+	if not is_instance_valid(font_option):
+		return
+
 	var mode: int = font_option.selected
-	print("Engine: Applying Font Override mode: ", mode)
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("font_changed"):
-			var font_strings: Array[String] = ["default", "dyslexic", "papyrus", "comic"]
-			if mode >= 0 and mode < font_strings.size():
-				events.emit_signal("font_changed", font_strings[mode])
+	var font_ids: Array[String] = GlobalSettings.get_font_ids()
+
+	if mode < 0 or mode >= font_ids.size():
+		push_warning("UI: Selected font index out of range: " + str(mode))
+		return
+
+	var target_font_id: String = font_ids[mode]
+	print("UI: Broadcasting font change to: '", target_font_id, "'.")
+
+	var events_node: Node = get_node_or_null("/root/Events")
+	if is_instance_valid(events_node) and events_node.has_signal("font_changed"):
+		events_node.font_changed.emit(target_font_id)
 
 
 ## Handles slider FOV value changes.

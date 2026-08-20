@@ -122,7 +122,7 @@ var cached_shaders: Dictionary = {}
 
 ## Lifecycle constructor initializing dynamic debug commands depending on export mode.
 func _init() -> void:
-	print("InGameConsole: _init() called. Initializing command list.")
+	print("InGameConsole: _init() called. Initializing base command list.")
 	if is_debug_allowed:
 		valid_commands.append("noclip")
 		valid_commands.append("gamespeed")
@@ -137,6 +137,10 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 128
 	visible = false
+
+	# Populate dynamic autocomplete arguments after Autoload singletons are ready.
+	if is_instance_valid(GlobalSettings):
+		valid_font_args = GlobalSettings.get_font_ids()
 
 	panel = PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
@@ -632,21 +636,19 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 					events.photosensitivity_mode_toggled.emit(active)
 			write("Photosensitivity safe mode: " + ("ON" if active else "OFF"), "green")
 		"setfont":
+			var valid_fonts: Array[String] = GlobalSettings.get_font_ids()
 			if args.size() > 0:
 				var font_choice: String = args[0].to_lower()
-				if font_choice in valid_font_args:
+				if font_choice in valid_fonts:
 					if has_node("/root/Events"):
 						var events: Node = get_node("/root/Events")
 						if events.has_signal("font_changed"):
 							events.font_changed.emit(font_choice)
 					write("Global font set to: " + font_choice, "green")
 				else:
-					write("Unknown font. Available: default, dyslexic, papyrus, comic", "red")
+					write("Unknown font. Available: " + ", ".join(valid_fonts), "red")
 			else:
-				write(
-					"Usage: setfont <font_name>\nAvailable: default, dyslexic, papyrus, comic",
-					"yellow"
-				)
+				write("Usage: setfont <font_name>\nAvailable: " + ", ".join(valid_fonts), "yellow")
 		"screenfilter":
 			if args.size() > 0:
 				var filter_type: String = args[0].to_lower()

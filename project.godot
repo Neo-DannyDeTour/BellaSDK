@@ -12,7 +12,7 @@ config_version=5
 
 config/name="BellaSDK"
 config/description="A replacement for Source. Something to help you start building your next super-duper next-gen FPS masterpiece. "
-run/main_scene="uid://dn6pth4ryiv4s"
+run/main_scene="uid://omwvkueo82i7"
 config/features=PackedStringArray("4.7", "Forward Plus")
 run/max_fps=60
 boot_splash/bg_color=Color(0, 0, 0, 1)

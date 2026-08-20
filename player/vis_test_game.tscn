@@ -2000,8 +2000,6 @@ activate_once = true
 
 [node name="ChapterTrigger2" parent="." unique_id=986591175 instance=ExtResource("51_52lpc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.6088676, 3.6163845, 2.8420885)
-chapter_name = "VisTEST"
-animation_style = 15
 
 [node name="VoxelGI" type="VoxelGI" parent="." unique_id=1442148886]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.4175415, 4.881592, 0.008972168)

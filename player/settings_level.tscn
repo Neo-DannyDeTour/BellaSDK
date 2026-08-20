@@ -47,9 +47,6 @@
 [ext_resource type="PackedScene" uid="uid://bpn41lsyperm8" path="res://assets/VisTEST/2. Modular_Models/Props/pickable_computer_old.tscn" id="47_mhg1j"]
 [ext_resource type="PackedScene" uid="uid://c4jdpcnpsoerv" path="res://interactables/mirror.tscn" id="48_k4uoe"]
 [ext_resource type="PackedScene" uid="uid://b85u3svdjg12c" path="res://assets/VisTEST/2. Modular_Models/Props/pickable_chair_small.tscn" id="48_mhg1j"]
-[ext_resource type="PackedScene" uid="uid://jvgnyc7a68n6" path="res://shared/soundscape_zone.tscn" id="49_5jhqv"]
-[ext_resource type="AudioStream" uid="uid://1w1y07mxmm0h" path="res://assets/sounds/SoundscapeHorror.wav" id="50_wkfn1"]
-[ext_resource type="Script" uid="uid://cl68g6jurgp0h" path="res://shared/soundscape_data.gd" id="51_yuk8b"]
 [ext_resource type="PackedScene" uid="uid://bqmsu8rh0h335" path="res://interactables/env_chapter_trigger.tscn" id="52_wkfn1"]
 [ext_resource type="VoxelGIData" uid="uid://n7qpbweipxh3" path="res://bakes/vis_test_proper.VoxelGI_data.res" id="53_yuk8b"]
 [ext_resource type="PackedScene" uid="uid://8ppxay3ijlcv" path="res://shared/godiva.glb" id="54_334ql"]
@@ -97,17 +94,14 @@ albedo_texture = ExtResource("47_6vg87")
 material = SubResource("StandardMaterial3D_mhg1j")
 size = Vector2(20, 5)
 
-[sub_resource type="Resource" id="Resource_43coy"]
-script = ExtResource("51_yuk8b")
-ambient_track = ExtResource("50_wkfn1")
-metadata/_custom_type_script = "uid://cl68g6jurgp0h"
-
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_fbi2v"]
 render_priority = 100
 shader = ExtResource("57_fbi2v")
 shader_parameter/mode = 1
-shader_parameter/aaa_blue_base = Color(0.05, 0.1, 0.45, 1)
-shader_parameter/aaa_blue_outline = Color(0.3, 0.5, 0.9, 1)
+shader_parameter/blue_base = Color(0.05, 0.1, 0.45, 1)
+shader_parameter/blue_outline = Color(0.3, 0.5, 0.9, 1)
+shader_parameter/grey_base = Color(0.25, 0.25, 0.25, 1)
+shader_parameter/grey_outline = Color(0.85, 0.85, 0.85, 1)
 shader_parameter/outline_thickness = 1.0
 shader_parameter/depth_threshold = 0.025
 shader_parameter/normal_threshold = 0.5
@@ -2000,15 +1994,6 @@ size = Vector2(3, 2)
 pixels_per_unit = 250
 max_update_distance = 50.0
 cull_far = 25.0
-
-[node name="SoundscapeZone" parent="." unique_id=297960288 instance=ExtResource("49_5jhqv")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.3823644, 3.5, 3.427269)
-zone_size = Vector3(2, 2, 2)
-soundscape = SubResource("Resource_43coy")
-fade_duration = 2.0
-persist_after_exit = true
-is_default_soundscape = true
-activate_once = true
 
 [node name="ChapterTrigger2" parent="." unique_id=986591175 instance=ExtResource("52_wkfn1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.6088676, 3.6163845, 2.8420885)

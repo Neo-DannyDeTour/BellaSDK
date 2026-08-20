@@ -1,26 +1,33 @@
-name: Build and Export Godot Project
+name: Build, Export, and Release
 
 on:
-  pull_request:
-    branches: ["main"]
   push:
-    branches: ["main"]
+    tags:
+      - "v*.*.*"
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
 
 jobs:
   export-game:
+    name: Export (${{ matrix.platform }})
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: true
       matrix:
-        # These names must match the presets in your export_presets.cfg
         include:
           - target: "Linux/X11"
             platform: "linux"
             binary_name: "BellaSDK.x86_64"
-            artifact_name: "linux-build"
+            artifact_name: "BellaSDK_Linux"
           - target: "Windows Desktop"
             platform: "windows"
             binary_name: "BellaSDK.exe"
-            artifact_name: "windows-build"
+            artifact_name: "BellaSDK_Windows"
 
     steps:
       - name: Checkout Code
@@ -31,21 +38,59 @@ jobs:
       - name: Setup Godot Engine
         uses: chickensoft-games/setup-godot@v2
         with:
-          # Ensure this matches the Godot version your project uses (e.g. 4.3 or 4.2.2)
-          version: "4.7.1"
+          # Verify this matches your local Godot version (e.g., 4.3, 4.2.2)
+          version: "4.3.0"
           use-dotnet: false
           include-templates: true
 
-      - name: Create export directory
-        run: mkdir -p build/${{ matrix.platform }}
+      - name: Create Export Directory
+        run: mkdir -p "build/${{ matrix.artifact_name }}"
 
       - name: Export Project
         run: |
-          godot --headless --export-release "${{ matrix.target }}" "build/${{ matrix.platform }}/${{ matrix.binary_name }}"
+          godot --headless --export-release "${{ matrix.target }}" "build/${{ matrix.artifact_name }}/${{ matrix.binary_name }}"
 
-      - name: Upload Artifact
+      - name: Upload Build Artifact
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact_name }}
-          path: build/${{ matrix.platform }}
-          retention-days: 7
+          path: build/${{ matrix.artifact_name }}
+          retention-days: 1
+
+  create-release:
+    name: Publish GitHub Release
+    needs: export-game
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Download All Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Package Archives
+        run: |
+          TAG_NAME="${{ github.ref_name }}"
+
+          # Zip Linux build
+          cd artifacts/BellaSDK_Linux
+          zip -r "../../BellaSDK_Linux_${TAG_NAME}.zip" .
+          cd ../..
+
+          # Zip Windows build
+          cd artifacts/BellaSDK_Windows
+          zip -r "../../BellaSDK_Windows_${TAG_NAME}.zip" .
+          cd ../..
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            BellaSDK_Linux_${{ github.ref_name }}.zip
+            BellaSDK_Windows_${{ github.ref_name }}.zip
+          name: Release ${{ github.ref_name }}
+          generate_release_notes: true
+          draft: false
+          prerelease: false
