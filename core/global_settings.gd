@@ -2,6 +2,7 @@
 ##
 ## [GlobalSettings] reads and writes values to a `.cfg` file on disk. It handles
 ## applying startup configurations like window scales, inputs, and colorblind modes.
+class_name GlobalSettings
 extends Node
 
 ## The file path where user preferences are saved locally on the player's disk.

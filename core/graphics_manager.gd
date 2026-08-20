@@ -3,6 +3,7 @@
 ## [GraphicsManager] continuously monitors the application's framerate. If it dips below
 ## the [constant TARGET_FPS_MINIMUM], it progressively disables heavy rendering features
 ## (like SDFGI or MSAA) to maintain a playable framerate.
+class_name GraphicsManager
 extends Node
 
 ## Emitted when the performance profile drops a level to regain FPS.
@@ -22,6 +23,7 @@ const TARGET_FPS_MINIMUM: float = 59.0
 ## Tracks if the game is currently auto-optimizing settings.
 var is_auto_optimizing: bool = false
 
+## Tracks if the user is running on an integrated GPU or low-end hardware.
 var _is_low_end: bool = false
 ## Cached reference to the currently active [Environment].
 var _active_environment: Environment = null

@@ -1,8 +1,12 @@
-## Analyzes nearby 3D scene objects to generate concise spoken spatial descriptions for TTSandy.
+## Global autoload responsible for generating Text-to-Speech spatial descriptions.
 ##
-## Gathers interactable objects in the player's vicinity, verifies line-of-sight with
+## [SpatialDescriber] acts as an accessibility layer that translates the 3D positions
+## of surrounding objects into conversational, directional language and routes it
+## to the [TTSManager].
+## It gathers interactable objects in the player's vicinity, verifies line-of-sight with
 ## multi-point raycasts, factors in vertical elevation (above/below), groups identical items
 ## into clusters, and prioritizes items directly in the player's line of sight.
+class_name SpatialDescriber
 extends Node
 
 ## Emitted when an environment description string has been generated.
