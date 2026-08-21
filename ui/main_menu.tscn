@@ -11,7 +11,10 @@
 [ext_resource type="PackedScene" uid="uid://yy0ptjchxmtl" path="res://ui/save_load_panel.tscn" id="8_lsdqh"]
 [ext_resource type="PackedScene" uid="uid://c2lwvhw1w368r" path="res://ui/audio_panel.tscn" id="9_jiymt"]
 [ext_resource type="PackedScene" uid="uid://da3q2bu5xkp72" path="res://ui/GameplayPanel.tscn" id="10_bgtsx"]
+[ext_resource type="Shader" uid="uid://w674ybxmnkoi" path="res://vfx/diorama_post_process.gdshader" id="11_kaxbk"]
+[ext_resource type="Script" uid="uid://7t34h1kqmrcr" path="res://ui/diorama_post_process.gd" id="12_0nobx"]
 [ext_resource type="AudioStream" uid="uid://c1l53sh8s0och" path="res://assets/music/Concrete_and_Moss.mp3" id="12_jiymt"]
+[ext_resource type="PackedScene" uid="uid://dhh7c5j6i8bkk" path="res://player/settings_level.tscn" id="13_0nobx"]
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_50h1w"]
 
@@ -25,6 +28,11 @@ expand_margin_left = 8.0
 expand_margin_top = 8.0
 expand_margin_right = 8.0
 expand_margin_bottom = 8.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_iyrh0"]
+shader = ExtResource("11_kaxbk")
+shader_parameter/filter_mode = 0
+shader_parameter/grain_amount = 0.0
 
 [node name="MainMenu" type="CanvasLayer" unique_id=1244757478 node_paths=PackedStringArray("main_theme_player") groups=["hide_on_save"]]
 process_mode = 3
@@ -57,7 +65,7 @@ theme_override_constants/margin_bottom = 50
 
 [node name="MainButtons" type="VBoxContainer" parent="MarginContainer" unique_id=988684812]
 process_mode = 3
-custom_minimum_size = Vector2(300, 350)
+custom_minimum_size = Vector2(500, 350)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
@@ -68,42 +76,49 @@ theme_override_constants/separation = 8
 unique_name_in_owner = true
 layout_mode = 2
 custom_text = "Continue"
+text_padding = Vector2(32, 16)
 glitch_text = "Suffering"
 
 [node name="NewGame" parent="MarginContainer/MainButtons" unique_id=1685051035 instance=ExtResource("3_kaxbk")]
 unique_name_in_owner = true
 layout_mode = 2
 custom_text = "New Game"
+text_padding = Vector2(32, 16)
 glitch_text = "No Game"
 
 [node name="RestartGame" parent="MarginContainer/MainButtons" unique_id=2058699631 instance=ExtResource("3_kaxbk")]
 unique_name_in_owner = true
 layout_mode = 2
 custom_text = "Restart"
+text_padding = Vector2(32, 16)
 glitch_text = "Stop Trying"
 
 [node name="SaveGame" parent="MarginContainer/MainButtons" unique_id=1011578983 instance=ExtResource("3_kaxbk")]
 unique_name_in_owner = true
 layout_mode = 2
 custom_text = "Save Game"
+text_padding = Vector2(32, 16)
 glitch_text = "Nowhere is Safe"
 
 [node name="LoadGame" parent="MarginContainer/MainButtons" unique_id=1565020865 instance=ExtResource("3_kaxbk")]
 unique_name_in_owner = true
 layout_mode = 2
 custom_text = "Load Game"
+text_padding = Vector2(32, 16)
 glitch_text = "Load Pain"
 
 [node name="Options" parent="MarginContainer/MainButtons" unique_id=457392862 instance=ExtResource("3_kaxbk")]
 unique_name_in_owner = true
 layout_mode = 2
 custom_text = "Options"
+text_padding = Vector2(32, 16)
 glitch_text = "No Options"
 
 [node name="Exit" parent="MarginContainer/MainButtons" unique_id=105712239 instance=ExtResource("3_kaxbk")]
 unique_name_in_owner = true
 layout_mode = 2
 custom_text = "Exit"
+text_padding = Vector2(32, 16)
 glitch_text = "No Escape"
 
 [node name="Name" type="Label" parent="." unique_id=1725804782]
@@ -127,6 +142,7 @@ vertical_alignment = 1
 
 [node name="CenterContainer" type="CenterContainer" parent="." unique_id=8224348]
 unique_name_in_owner = true
+visible = false
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -138,56 +154,59 @@ custom_minimum_size = Vector2(1280, 720)
 layout_mode = 2
 script = ExtResource("5_lsdqh")
 
-[node name="BoxContainer" type="HBoxContainer" parent="CenterContainer/OptionsMenu" unique_id=598433056]
+[node name="ContentVBox" type="VBoxContainer" parent="CenterContainer/OptionsMenu" unique_id=803681239]
 layout_mode = 2
 
-[node name="TabButtons" type="HBoxContainer" parent="CenterContainer/OptionsMenu/BoxContainer" unique_id=712872147]
+[node name="TopHeaderBar" type="HBoxContainer" parent="CenterContainer/OptionsMenu/ContentVBox" unique_id=1942061576]
+layout_mode = 2
+
+[node name="TabButtons" type="HBoxContainer" parent="CenterContainer/OptionsMenu/ContentVBox/TopHeaderBar" unique_id=712872147]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="VideoButton" type="Button" parent="CenterContainer/OptionsMenu/BoxContainer/TabButtons" unique_id=603167491]
+[node name="VideoButton" type="Button" parent="CenterContainer/OptionsMenu/ContentVBox/TopHeaderBar/TabButtons" unique_id=603167491]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Graphics"
 
-[node name="AudioButton" type="Button" parent="CenterContainer/OptionsMenu/BoxContainer/TabButtons" unique_id=2106604539]
+[node name="AudioButton" type="Button" parent="CenterContainer/OptionsMenu/ContentVBox/TopHeaderBar/TabButtons" unique_id=2106604539]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Audio"
 
-[node name="GameplayButton" type="Button" parent="CenterContainer/OptionsMenu/BoxContainer/TabButtons" unique_id=1138285378]
+[node name="GameplayButton" type="Button" parent="CenterContainer/OptionsMenu/ContentVBox/TopHeaderBar/TabButtons" unique_id=1138285378]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Gameplay"
 
-[node name="ControlsButton" type="Button" parent="CenterContainer/OptionsMenu/BoxContainer/TabButtons" unique_id=177390856]
+[node name="ControlsButton" type="Button" parent="CenterContainer/OptionsMenu/ContentVBox/TopHeaderBar/TabButtons" unique_id=177390856]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Controls"
 
-[node name="AccessibilityButton" type="Button" parent="CenterContainer/OptionsMenu/BoxContainer/TabButtons" unique_id=250063746]
+[node name="AccessibilityButton" type="Button" parent="CenterContainer/OptionsMenu/ContentVBox/TopHeaderBar/TabButtons" unique_id=250063746]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Accessibility"
 
-[node name="SearchBarContainer" type="HBoxContainer" parent="CenterContainer/OptionsMenu/BoxContainer/TabButtons" unique_id=1844282404]
+[node name="SearchBarContainer" type="HBoxContainer" parent="CenterContainer/OptionsMenu/ContentVBox/TopHeaderBar" unique_id=1844282404]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="SearchIcon" type="TextureRect" parent="CenterContainer/OptionsMenu/BoxContainer/TabButtons/SearchBarContainer" unique_id=122693968]
+[node name="SearchIcon" type="TextureRect" parent="CenterContainer/OptionsMenu/ContentVBox/TopHeaderBar/SearchBarContainer" unique_id=122693968]
 layout_mode = 2
 
-[node name="SettingsSearchEdit" type="LineEdit" parent="CenterContainer/OptionsMenu/BoxContainer/TabButtons/SearchBarContainer" unique_id=1259062049]
+[node name="SettingsSearchEdit" type="LineEdit" parent="CenterContainer/OptionsMenu/ContentVBox/TopHeaderBar/SearchBarContainer" unique_id=1259062049]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="SearchDropdownAnchor" type="Control" parent="CenterContainer/OptionsMenu/BoxContainer/TabButtons/SearchBarContainer" unique_id=680397762]
+[node name="SearchDropdownAnchor" type="Control" parent="CenterContainer/OptionsMenu/ContentVBox/TopHeaderBar/SearchBarContainer" unique_id=680397762]
 layout_mode = 2
 mouse_filter = 2
 
-[node name="SearchResultsPanel" type="Panel" parent="CenterContainer/OptionsMenu/BoxContainer/TabButtons/SearchBarContainer/SearchDropdownAnchor" unique_id=664458601]
+[node name="SearchResultsPanel" type="Panel" parent="CenterContainer/OptionsMenu/ContentVBox/TopHeaderBar/SearchBarContainer/SearchDropdownAnchor" unique_id=664458601]
 unique_name_in_owner = true
 visible = false
 z_index = 1
@@ -198,7 +217,7 @@ offset_right = 1280.0
 offset_bottom = 35.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_jiymt")
 
-[node name="ScrollContainer" type="ScrollContainer" parent="CenterContainer/OptionsMenu/BoxContainer/TabButtons/SearchBarContainer/SearchDropdownAnchor/SearchResultsPanel" unique_id=290380255]
+[node name="ScrollContainer" type="ScrollContainer" parent="CenterContainer/OptionsMenu/ContentVBox/TopHeaderBar/SearchBarContainer/SearchDropdownAnchor/SearchResultsPanel" unique_id=290380255]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -207,48 +226,111 @@ grow_horizontal = 2
 grow_vertical = 2
 horizontal_scroll_mode = 0
 
-[node name="SearchResultsList" type="VBoxContainer" parent="CenterContainer/OptionsMenu/BoxContainer/TabButtons/SearchBarContainer/SearchDropdownAnchor/SearchResultsPanel/ScrollContainer" unique_id=1525082093]
+[node name="SearchResultsList" type="VBoxContainer" parent="CenterContainer/OptionsMenu/ContentVBox/TopHeaderBar/SearchBarContainer/SearchDropdownAnchor/SearchResultsPanel/ScrollContainer" unique_id=1525082093]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="SettingsArea" type="MarginContainer" parent="CenterContainer/OptionsMenu" unique_id=170907656]
+[node name="SettingsArea" type="MarginContainer" parent="CenterContainer/OptionsMenu/ContentVBox" unique_id=170907656]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(1280, 720)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="VideoOptionsPanel" parent="CenterContainer/OptionsMenu/SettingsArea" unique_id=1944788422 instance=ExtResource("5_ubpvv")]
+[node name="VideoOptionsPanel" parent="CenterContainer/OptionsMenu/ContentVBox/SettingsArea" unique_id=1944788422 instance=ExtResource("5_ubpvv")]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(800, 500)
 layout_mode = 2
 
-[node name="AudioPanel" parent="CenterContainer/OptionsMenu/SettingsArea" unique_id=755109423 instance=ExtResource("9_jiymt")]
+[node name="AudioPanel" parent="CenterContainer/OptionsMenu/ContentVBox/SettingsArea" unique_id=755109423 instance=ExtResource("9_jiymt")]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(800, 500)
 layout_mode = 2
 
-[node name="GameplayPanel" parent="CenterContainer/OptionsMenu/SettingsArea" unique_id=1532565924 instance=ExtResource("10_bgtsx")]
+[node name="GameplayPanel" parent="CenterContainer/OptionsMenu/ContentVBox/SettingsArea" unique_id=1532565924 instance=ExtResource("10_bgtsx")]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(800, 500)
 layout_mode = 2
 
-[node name="ControlsPanel" parent="CenterContainer/OptionsMenu/SettingsArea" unique_id=1661150765 instance=ExtResource("6_arv2f")]
+[node name="ControlsPanel" parent="CenterContainer/OptionsMenu/ContentVBox/SettingsArea" unique_id=1661150765 instance=ExtResource("6_arv2f")]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(800, 500)
 layout_mode = 2
 
-[node name="AccessibilityPanel" parent="CenterContainer/OptionsMenu/SettingsArea" unique_id=1445857146 instance=ExtResource("7_5klac")]
+[node name="AccessibilityPanel" parent="CenterContainer/OptionsMenu/ContentVBox/SettingsArea" unique_id=1445857146 instance=ExtResource("7_5klac")]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(800, 500)
 layout_mode = 2
 
-[node name="MasterBackButton" parent="CenterContainer/OptionsMenu" unique_id=910947946 instance=ExtResource("3_kaxbk")]
+[node name="SharedDioramaHolder" type="PanelContainer" parent="CenterContainer/OptionsMenu/ContentVBox" unique_id=231050902]
+visible = false
+custom_minimum_size = Vector2(400, 400)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="DioramaContainer" type="SubViewportContainer" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder" unique_id=1879747383]
+custom_minimum_size = Vector2(400, 400)
+layout_mode = 2
+stretch = true
+
+[node name="DioramaViewport" type="SubViewport" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer" unique_id=1196020141]
+unique_name_in_owner = true
+own_world_3d = true
+handle_input_locally = false
+use_debanding = true
+size = Vector2i(400, 400)
+render_target_update_mode = 0
+
+[node name="DioramaPostProcess" type="ColorRect" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer/DioramaViewport" unique_id=1101744956]
+material = SubResource("ShaderMaterial_iyrh0")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("12_0nobx")
+
+[node name="FastDioramaMap" type="Node3D" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer/DioramaViewport" unique_id=1472222682]
+
+[node name="SettingsLevel" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer/DioramaViewport/FastDioramaMap" unique_id=240456945 instance=ExtResource("13_0nobx")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5427445, 0.44948673, -0.57631207)
+
+[node name="PreviewShaderLayer" type="CanvasLayer" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer/DioramaViewport" unique_id=2026771909]
+
+[node name="BottomBar" type="GridContainer" parent="CenterContainer/OptionsMenu/ContentVBox" unique_id=1856427543]
+layout_mode = 2
+columns = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="CenterContainer/OptionsMenu/ContentVBox/BottomBar" unique_id=1354653549]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ResetDefaultsButton" parent="CenterContainer/OptionsMenu/ContentVBox/BottomBar/MarginContainer" unique_id=941489246 instance=ExtResource("3_kaxbk")]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(400, 80)
+layout_mode = 2
+size_flags_horizontal = 0
+custom_text = "Reset to Defaults"
+text_padding = Vector2(32, 16)
+glitch_text = "Cut to pieces"
+
+[node name="MarginContainer2" type="MarginContainer" parent="CenterContainer/OptionsMenu/ContentVBox/BottomBar" unique_id=643964401]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MasterBackButton" parent="CenterContainer/OptionsMenu/ContentVBox/BottomBar/MarginContainer2" unique_id=910947946 instance=ExtResource("3_kaxbk")]
+custom_minimum_size = Vector2(400, 80)
 layout_mode = 2
 size_flags_horizontal = 4
-size_flags_vertical = 6
+size_flags_vertical = 1
 custom_text = "Back"
+text_padding = Vector2(32, 16)
 glitch_text = "No Going Back"
+
+[node name="MarginContainer3" type="MarginContainer" parent="CenterContainer/OptionsMenu/ContentVBox/BottomBar" unique_id=1890577678]
+layout_mode = 2
+size_flags_horizontal = 3
 
 [node name="SaveLoadPanel" parent="." unique_id=1719296314 instance=ExtResource("8_lsdqh")]
 

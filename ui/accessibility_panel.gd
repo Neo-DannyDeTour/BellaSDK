@@ -217,22 +217,19 @@ func _ready() -> void:
 	visible = true
 
 
-## Instantiates and attaches the configured diorama scene into the preview SubViewport.
+## Connects and configures existing cameras inside the shared diorama viewport.
 func _setup_diorama() -> void:
-	if not diorama_viewport:
-		return
-	if not diorama_scene:
-		print("UI: No diorama scene configured in AccessibilityPanel inspector.")
+	diorama_viewport = get_tree().root.find_child("DioramaViewport", true, false) as SubViewport
+	if not is_instance_valid(diorama_viewport):
+		print("UI: DioramaViewport not found in tree.")
 		return
 
-	var existing_map: Node = diorama_viewport.get_node_or_null("FastDioramaMap")
-	if existing_map:
-		existing_map.queue_free()
-
-	_diorama_instance = diorama_scene.instantiate()
-	_diorama_instance.name = "FastDioramaMap"
-	diorama_viewport.add_child(_diorama_instance)
-	print("UI: Loaded diorama scene into preview viewport: ", _diorama_instance.name)
+	_diorama_instance = diorama_viewport.get_node_or_null("FastDioramaMap")
+	if not is_instance_valid(_diorama_instance) and diorama_scene:
+		_diorama_instance = diorama_scene.instantiate()
+		_diorama_instance.name = "FastDioramaMap"
+		diorama_viewport.add_child(_diorama_instance)
+		print("UI: Loaded diorama scene into preview viewport: ", _diorama_instance.name)
 
 	_setup_diorama_cameras()
 
@@ -265,6 +262,11 @@ func _setup_diorama_cameras() -> void:
 		var key: String = cam.name.trim_prefix("Camera_").to_lower()
 		_diorama_cameras[key] = cam
 		print("UI: Found and registered diorama camera: ", key)
+
+		# Sync child vision mesh visibility to settings toggle
+		var mesh: MeshInstance3D = cam.get_node_or_null("VisionAssistMesh") as MeshInstance3D
+		if is_instance_valid(mesh):
+			mesh.visible = is_vision_active
 
 		if cam.has_method("set_vision_assist_mode"):
 			cam.call("set_vision_assist_mode", mode_key)

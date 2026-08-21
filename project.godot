@@ -16,7 +16,7 @@ run/main_scene="uid://omwvkueo82i7"
 config/features=PackedStringArray("4.7", "Forward Plus")
 run/max_fps=60
 boot_splash/bg_color=Color(0, 0, 0, 1)
-boot_splash/image="res://assets/splash.png"
+boot_splash/image="uid://bjct27ta2nogv"
 config/icon="uid://cijw0jse7sfs8"
 
 [audio]
@@ -51,6 +51,7 @@ gdscript/warnings/untyped_declaration=2
 window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
 window/vsync/vsync_mode=0
 
 [dotnet]
@@ -67,7 +68,7 @@ import/blender/enabled=false
 
 [gui]
 
-theme/custom="res://assets/main_theme.tres"
+theme/custom="uid://c2y5wbxwkb3fp"
 
 [importer_defaults]
 

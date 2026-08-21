@@ -2,13 +2,6 @@
 
 [ext_resource type="Script" uid="uid://y4udm76gj87c" path="res://ui/accessibility_panel.gd" id="1_cw2tg"]
 [ext_resource type="PackedScene" uid="uid://dhh7c5j6i8bkk" path="res://player/settings_level.tscn" id="2_cw2tg"]
-[ext_resource type="Script" uid="uid://7t34h1kqmrcr" path="res://ui/diorama_post_process.gd" id="3_jicom"]
-[ext_resource type="Shader" uid="uid://w674ybxmnkoi" path="res://vfx/diorama_post_process.gdshader" id="3_sr7p7"]
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_jicom"]
-shader = ExtResource("3_sr7p7")
-shader_parameter/filter_mode = 0
-shader_parameter/grain_amount = 0.0
 
 [node name="AccessibilityPanel" type="Panel" unique_id=1445857146]
 anchors_preset = 15
@@ -47,11 +40,11 @@ layout_mode = 2
 
 [node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer" unique_id=1482136782]
 layout_mode = 2
+size_flags_vertical = 3
 
 [node name="SettingsScroll" type="ScrollContainer" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=693938259]
 layout_mode = 2
 size_flags_horizontal = 3
-size_flags_vertical = 3
 horizontal_scroll_mode = 0
 
 [node name="GridContainer" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll" unique_id=1425124961]
@@ -630,37 +623,7 @@ layout_mode = 2
 [node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=1561748320]
 layout_mode = 2
 
-[node name="DioramaContainer" type="SubViewportContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/HBoxContainer" unique_id=1507254210]
-custom_minimum_size = Vector2(512, 512)
+[node name="AccessibilityDioramaSocket" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=1906264251]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-stretch = true
-
-[node name="DioramaViewport" type="SubViewport" parent="MarginContainer/VBoxContainer/HBoxContainer/HBoxContainer/DioramaContainer" unique_id=992634071]
-unique_name_in_owner = true
-own_world_3d = true
-handle_input_locally = false
-use_debanding = true
-render_target_update_mode = 4
-
-[node name="DioramaPostProcess" type="ColorRect" parent="MarginContainer/VBoxContainer/HBoxContainer/HBoxContainer/DioramaContainer/DioramaViewport" unique_id=2050508326]
-material = SubResource("ShaderMaterial_jicom")
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-script = ExtResource("3_jicom")
-
-[node name="FastDioramaMap" type="Node3D" parent="MarginContainer/VBoxContainer/HBoxContainer/HBoxContainer/DioramaContainer/DioramaViewport" unique_id=1532031656]
-
-[node name="DioramaCamera" type="Camera3D" parent="MarginContainer/VBoxContainer/HBoxContainer/HBoxContainer/DioramaContainer/DioramaViewport" unique_id=796322370]
-
-[node name="PreviewShaderLayer" type="CanvasLayer" parent="MarginContainer/VBoxContainer/HBoxContainer/HBoxContainer/DioramaContainer/DioramaViewport" unique_id=1962902997]
-
-[node name="SettingsScroll" type="ScrollContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/HBoxContainer/DioramaContainer" unique_id=913637195]
-layout_mode = 2
-
-[node name="GridContainer" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/HBoxContainer/DioramaContainer/SettingsScroll" unique_id=483459289]
-layout_mode = 2
-columns = 3

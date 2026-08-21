@@ -64,6 +64,9 @@ const SEARCH_PANEL_MIN_WIDTH: float = 620.0
 ## Button to completely terminate the game application.
 @onready var exit_button: Button = %Exit
 
+## Button to reset active panel settings back to default.
+@onready var reset_defaults_button: Button = %ResetDefaultsButton
+
 # Search Nodes
 
 ## Input field for typing setting search terms across all option panels.
@@ -107,6 +110,9 @@ func _ready() -> void:
 		load_button.pressed.connect(_on_load_pressed)
 	if exit_button:
 		exit_button.pressed.connect(_on_exit_pressed)
+	if reset_defaults_button:
+		reset_defaults_button.visible = false
+		reset_defaults_button.pressed.connect(_on_reset_defaults_pressed)
 
 	for btn: Button in back_buttons:
 		if btn:
@@ -122,7 +128,7 @@ func _ready() -> void:
 	_return_to_main_buttons()
 
 
-## Automatically resolves tab buttons and panel references if unassigned or incomplete.
+## Automatically resolves tab buttons, panel references, and back buttons if unassigned.
 func _auto_discover_panels_and_tabs() -> void:
 	if tab_buttons.size() != 5 and tab_buttons_container:
 		tab_buttons.clear()
@@ -140,6 +146,13 @@ func _auto_discover_panels_and_tabs() -> void:
 			)
 			if is_valid_panel:
 				option_panels.append(child as Control)
+
+	# Locate and connect MasterBackButton automatically if not wired in back_buttons
+	if options_menu:
+		var master_back: Button = options_menu.find_child("MasterBackButton", true, false) as Button
+		if master_back and not master_back.pressed.is_connected(_return_to_main_buttons):
+			master_back.pressed.connect(_return_to_main_buttons)
+			print("UI: Connected MasterBackButton to main menu router.")
 
 	print("UI: Resolved ", tab_buttons.size(), " tabs and ", option_panels.size(), " panels.")
 
@@ -649,7 +662,12 @@ func _on_tab_pressed(tab_index: int) -> void:
 	print("UI: Switched to options tab index: ", tab_index)
 	for i: int in range(option_panels.size()):
 		if option_panels[i]:
-			option_panels[i].visible = (i == tab_index)
+			var is_active: bool = i == tab_index
+			option_panels[i].visible = is_active
+
+			# Show Reset button only when ControlsPanel is active
+			if is_active and reset_defaults_button:
+				reset_defaults_button.visible = (option_panels[i] is ControlsPanel)
 
 
 ## Analyzes peak mouse velocity to assign baseline sensitivity preset.
@@ -728,3 +746,12 @@ func _input(event: InputEvent) -> void:
 			print("UI: User canceled out of pause menu completely.")
 			_on_resume_pressed()
 			get_viewport().set_input_as_handled()
+
+
+## Relays reset event to the active ControlsPanel instance.
+func _on_reset_defaults_pressed() -> void:
+	print("UI: MainMenu -> Reset to Defaults clicked.")
+	for panel: Control in option_panels:
+		if panel is ControlsPanel and panel.visible:
+			panel.reset_to_defaults()
+			break

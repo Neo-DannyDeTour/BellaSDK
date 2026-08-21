@@ -50,6 +50,7 @@
 [ext_resource type="PackedScene" uid="uid://bqmsu8rh0h335" path="res://interactables/env_chapter_trigger.tscn" id="52_wkfn1"]
 [ext_resource type="VoxelGIData" uid="uid://n7qpbweipxh3" path="res://bakes/vis_test_proper.VoxelGI_data.res" id="53_yuk8b"]
 [ext_resource type="PackedScene" uid="uid://8ppxay3ijlcv" path="res://shared/godiva.glb" id="54_334ql"]
+[ext_resource type="Script" uid="uid://6ldpudwj5c25" path="res://environment/graphics_cctv_camera.gd" id="55_334ql"]
 [ext_resource type="PackedScene" uid="uid://bn5ay1rfbr545" path="res://enemies/turret.tscn" id="55_b307c"]
 [ext_resource type="Script" uid="uid://dlrddmx144blj" path="res://player/camera_3d.gd" id="56_b307c"]
 [ext_resource type="PackedScene" uid="uid://ckx2iw4xdsaqd" path="res://interactables/pickable_barrel_green.tscn" id="56_k566i"]
@@ -110,7 +111,7 @@ shader_parameter/normal_threshold = 0.5
 material = SubResource("ShaderMaterial_fbi2v")
 size = Vector2(2, 2)
 
-[node name="VisTEST" type="Node3D" unique_id=240456945]
+[node name="SettingsLevel" type="Node3D" unique_id=240456945]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1907814161 groups=["level_environment"]]
 environment = SubResource("Environment_46sxa")
@@ -1997,8 +1998,6 @@ cull_far = 25.0
 
 [node name="ChapterTrigger2" parent="." unique_id=986591175 instance=ExtResource("52_wkfn1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.6088676, 3.6163845, 2.8420885)
-chapter_name = "VisTEST"
-animation_style = 15
 
 [node name="VoxelGI" type="VoxelGI" parent="." unique_id=1442148886]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.4175415, 4.881592, 0.008972168)
@@ -2065,3 +2064,8 @@ visible = false
 cast_shadow = 0
 extra_cull_margin = 16384.0
 mesh = SubResource("QuadMesh_534t5")
+
+[node name="Camera_graphics" type="Camera3D" parent="Cameras" unique_id=1415452166]
+transform = Transform3D(-4.371139e-08, 0.258819, -0.9659258, 0, 0.96592575, 0.25881904, 1, 1.1313339e-08, -4.222196e-08, 6.4347787, 2.9699602, 0)
+script = ExtResource("55_334ql")
+sweep_speed = 0.4

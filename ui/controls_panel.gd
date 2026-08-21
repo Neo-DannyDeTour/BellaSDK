@@ -60,10 +60,7 @@ var _press_count: int = 0
 @onready var action_list_container: VBoxContainer = %ActionListContainer
 
 ## GridContainer displaying column headers (Action, Primary, Secondary, Reset).
-@onready var header_grid: GridContainer = $MarginContainer/ScrollContainer/MainVBox/HeaderGrid
-
-## Reset button to revert all actions back to project defaults.
-@onready var reset_all_button: Button = %ResetAllButton
+@onready var header_grid: GridContainer = %HeaderGrid
 
 ## Reference to the [Label] indicating the crouch behavior setting.
 @onready var crouch_mode_label: Label = %CrouchModeLabel
@@ -82,15 +79,17 @@ var _press_count: int = 0
 ## Builds the complete remapping interface and registers behavior toggles.
 func _ready() -> void:
 	print("UI: Controls Panel initialized.")
-	reset_all_button.focus_mode = Control.FOCUS_NONE
-	crouch_mode_option.focus_mode = Control.FOCUS_NONE
-	sprint_mode_option.focus_mode = Control.FOCUS_NONE
+
+	if crouch_mode_option:
+		crouch_mode_option.focus_mode = Control.FOCUS_NONE
+
+	if sprint_mode_option:
+		sprint_mode_option.focus_mode = Control.FOCUS_NONE
 
 	_format_header_grid()
 	_ensure_all_actions_registered()
 	_setup_behavior_controls()
 	_create_control_list()
-	reset_all_button.pressed.connect(_on_reset_all_pressed)
 
 
 ## Frame lifecycle method monitoring gesture recognition timers while remapping.
@@ -353,7 +352,7 @@ func _is_same_input(ev1: InputEvent, ev2: InputEvent) -> bool:
 ## Intercepts global input events to evaluate Single Tap, Hold, or Double Tap gestures.
 ## [param event] The [InputEvent] received from the engine.
 func _input(event: InputEvent) -> void:
-	if not self.visible or not is_remapping:
+	if not visible or not is_remapping:
 		return
 
 	if event is InputEventKey:
@@ -492,9 +491,9 @@ func _on_clear_action_pressed(action: String, primary_btn: Button, secondary_btn
 	_refresh_all_buttons()
 
 
-## Restores default input bindings by reloading ProjectSettings default mappings.
+## Restores all keybindings to factory default configurations.
 func _on_reset_all_pressed() -> void:
-	print("UI: Player reset all input bindings to default.")
+	print("UI: Resetting all keybindings to default.")
 	InputMap.load_from_project_settings()
 	_save_controls()
 	_refresh_all_buttons()
@@ -518,3 +517,9 @@ func _save_controls() -> void:
 			if InputMap.has_action(action):
 				var events: Array[InputEvent] = InputMap.action_get_events(action)
 				GlobalSettings.save_setting("Controls", action, events)
+
+
+## Resets all keybindings to factory default configurations and refreshes UI.
+func reset_to_defaults() -> void:
+	print("UI: ControlsPanel -> Executing reset to default.")
+	_on_reset_all_pressed()

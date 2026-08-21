@@ -14,14 +14,24 @@ signal performance_profile_adjusted(downgrade_level: int)
 ## [param is_optimized] [code]true[/code] if auto-optimization is running.
 signal profile_mode_changed(is_optimized: bool)
 
+## Emitted when the 60 FPS auto-tune benchmark finishes.
+## [param optimal_level] The determined graphics downgrade tier.
+signal benchmark_completed(optimal_level: int)
+
 ## Time in seconds between checking the framerate.
 const FPS_CHECK_INTERVAL: float = 1.5
 
 ## Minimum acceptable frames per second before triggering a downgrade.
 const TARGET_FPS_MINIMUM: float = 59.0
 
+## Maximum number of downgrade levels available.
+const MAX_DOWNGRADE_LEVEL: int = 7
+
 ## Tracks if the game is currently auto-optimizing settings.
 var is_auto_optimizing: bool = false
+
+## Tracks if the benchmark routine is currently running.
+var is_benchmarking: bool = false
 
 ## Tracks if the user is running on an integrated GPU or low-end hardware.
 var _is_low_end: bool = false
@@ -95,12 +105,44 @@ func enable_auto_mode() -> void:
 		print("GraphicsManager: Restoring previous optimization level: ", saved_level)
 		_fast_forward_downgrades(saved_level - 1)
 
-		if _sdfgi_downgrade_level <= 7 and _fps_timer:
+		if _sdfgi_downgrade_level <= MAX_DOWNGRADE_LEVEL and _fps_timer:
 			_fps_timer.start()
 	elif _is_low_end:
 		var env: Environment = _get_current_environment()
 		if is_instance_valid(env):
-			_fast_forward_downgrades(7)
+			_fast_forward_downgrades(MAX_DOWNGRADE_LEVEL)
+
+
+## Runs an active benchmark stepping through quality profiles until 60 FPS is sustained.
+func run_benchmark_for_60fps() -> void:
+	if is_benchmarking:
+		return
+
+	print("GraphicsManager: Starting automatic benchmark for 60 FPS target.")
+	is_benchmarking = true
+	if _fps_timer:
+		_fps_timer.stop()
+
+	_sdfgi_downgrade_level = 0
+	var current_step: int = 0
+
+	while current_step <= MAX_DOWNGRADE_LEVEL:
+		_apply_stepwise_downgrade()
+		await get_tree().create_timer(1.0).timeout
+
+		var sample_fps: float = Engine.get_frames_per_second()
+		print("GraphicsManager: Benchmark step ", current_step, " recorded ", sample_fps, " FPS.")
+
+		if sample_fps >= TARGET_FPS_MINIMUM:
+			print("GraphicsManager: Target 60 FPS achieved at level: ", current_step)
+			break
+
+		current_step += 1
+
+	is_benchmarking = false
+	GlobalSettings.save_setting("Settings", "optimized_downgrade_level", _sdfgi_downgrade_level)
+	GlobalSettings.save_setting("Settings", "use_auto_optimizer", true)
+	benchmark_completed.emit(_sdfgi_downgrade_level)
 
 
 ## Emits the current profile mode to any listeners safely after initialization.
@@ -124,7 +166,7 @@ func _setup_fps_timer() -> void:
 
 ## Called by the FPS timer to trigger performance checks.
 func _on_fps_timer_timeout() -> void:
-	if not is_auto_optimizing:
+	if not is_auto_optimizing or is_benchmarking:
 		return
 
 	_evaluate_runtime_performance()
@@ -170,7 +212,7 @@ func _on_node_added(node: Node) -> void:
 				_fast_forward_downgrades(saved_level - 1)
 			elif _is_low_end:
 				_tweak_environment(_active_environment)
-				_fast_forward_downgrades(7)
+				_fast_forward_downgrades(MAX_DOWNGRADE_LEVEL)
 
 
 ## Looks up the current [Environment] resource connected to the active 3D world.
@@ -211,7 +253,7 @@ func _evaluate_runtime_performance() -> void:
 ## [param target_level] The specific step level index to apply up to.
 func _fast_forward_downgrades(target_level: int) -> void:
 	print("GraphicsManager: Bypassing timer, fast-forwarding to step ", target_level)
-	while _sdfgi_downgrade_level <= target_level:
+	while _sdfgi_downgrade_level <= target_level and _sdfgi_downgrade_level <= MAX_DOWNGRADE_LEVEL:
 		_apply_stepwise_downgrade()
 
 	if _fps_timer:
@@ -220,6 +262,9 @@ func _fast_forward_downgrades(target_level: int) -> void:
 
 ## Disables or reduces the quality of one major rendering setting to free up frametime.
 func _apply_stepwise_downgrade() -> void:
+	if _sdfgi_downgrade_level > MAX_DOWNGRADE_LEVEL:
+		return
+
 	print("GraphicsManager: Applying downgrade level: ", _sdfgi_downgrade_level)
 	var vp: Viewport = get_tree().root
 	var env: Environment = _get_current_environment()

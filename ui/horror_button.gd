@@ -1,4 +1,9 @@
+## A dynamic horror-styled button control featuring parallax tilts, drop shadows, and glitch text.
+##
+## [HorrorButton] manages internal backgrounds, borders, and text labels with shader effects
+## while ensuring responsive UI container sizing across font and content changes.
 @tool
+class_name HorrorButton
 extends Button
 
 # --- GLOBAL AI CONFIGURATION ---
@@ -6,20 +11,23 @@ extends Button
 ## Tracks the global count of active horror buttons currently instantiated in the scene.
 static var active_horror_buttons: int = 0
 
-## The text string displayed by the button, editable from the inspector and updated live in the
-## editor.
+## The text string displayed by the button, editable from the inspector and updated live.
 @export var custom_text: String = "":
 	set(value):
 		custom_text = value
-		if Engine.is_editor_hint():
-			for child: Node in get_children():
-				if child is Label:
-					child.text = value
+		if is_instance_valid(text_label):
+			text_label.text = value
+		update_minimum_size()
+
+## Additional horizontal and vertical padding added around text for container sizing.
+@export var text_padding: Vector2 = Vector2(32.0, 16.0):
+	set(value):
+		text_padding = value
+		update_minimum_size()
 
 # --- BUTTON CONFIGURATION ---
 
-## The target visual scale multiplier applied via offset transform when the player hovers over the
-## button.
+## The target visual scale multiplier applied via offset transform when hovered.
 @export var hover_scale: Vector2 = Vector2(1.08, 1.08)
 
 ## The interpolation speed used when transitioning to hover animations.
@@ -30,8 +38,7 @@ static var active_horror_buttons: int = 0
 ## The target visual scale multiplier applied when the button is actively pressed.
 @export var press_scale: Vector2 = Vector2(0.94, 0.94)
 
-## The downward pixel offset added to the text position to simulate physical button depth when
-## clicked.
+## Downward pixel offset added to text position to simulate button depth when clicked.
 @export var press_depth: float = 8.0
 
 ## The interpolation speed used for button click and release animations.
@@ -39,21 +46,25 @@ static var active_horror_buttons: int = 0
 
 # --- BACKGROUND CONFIGURATION ---
 
-## An array of optional background textures used to randomly select unique blood/horror motifs.
+## An array of optional background textures used to randomly select blood/horror motifs.
 @export var background_images: Array[Texture2D] = []
 
 # --- SHADOW AI CONFIGURATION ---
 
-## The baseline tracking movement speed for ambient text shadow drifting when idle.
+## Baseline tracking movement speed for ambient text shadow drifting when idle.
 @export var walk_speed: float = 0.2
 
-## The rapid tracking movement speed for text shadows chasing the user's cursor on hover.
+## Rapid tracking movement speed for text shadows chasing the cursor on hover.
 @export var hunt_speed: float = 6.0
 
 # --- GLITCH CONFIGURATION ---
 
-## Alternative frightening or corrupted text displayed temporarily during an active glitch event.
-@export var glitch_text: String = ""
+## Alternative frightening or corrupted text displayed temporarily during an active glitch.
+@export var glitch_text: String = "":
+	set(value):
+		glitch_text = value
+		can_glitch = (value != "")
+		update_minimum_size()
 
 ## The duration in seconds that a specific text corruption/glitch event lasts.
 @export var glitch_duration: float = 0.666
@@ -77,28 +88,27 @@ static var active_horror_buttons: int = 0
 ## The maximum visual angular rotation in degrees allowed during mouse parallax tilting.
 @export var max_rotation_degrees: float = 8.0
 
-## The scaling factor applied to the translation offset of text layers during parallax tilting.
+## Scaling factor applied to the translation offset of text layers during parallax tilting.
 @export var parallax_intensity: float = 3.0
 
-## The custom texture overlay utilized to render a simulated flashlight illumination mask.
+## Custom texture overlay utilized to render a simulated flashlight illumination mask.
 @export var flashlight_texture: Texture2D
 
 # --- INTERNAL REFERENCES ---
 
-## Reference to the internal Label child node displaying the button text.
+## Reference to the internal [Label] child node displaying the button text.
 var text_label: Label
 
 ## Cached duplicate shader material instance handling spatial ghosting on the text label.
 var label_material: ShaderMaterial
 
-## Reference to the internal background ColorRect element.
+## Reference to the internal background [ColorRect] element.
 var bg_rect: ColorRect
 
-## Cached duplicate shader material instance handling blood sweep and light mapping on the
-## background.
+## Cached duplicate shader material handling blood sweep and light mapping on the background.
 var bg_material: ShaderMaterial
 
-## Reference to the internal frame/border ColorRect node.
+## Reference to the internal frame/border [ColorRect] node.
 var border_rect: ColorRect
 
 ## Cached duplicate shader material instance handling outline hover glows.
@@ -107,7 +117,7 @@ var border_material: ShaderMaterial
 ## Current blending state weight (0.0 to 1.0) governing active shader hover profiles.
 var current_hover_intensity: float = 0.0
 
-## Flag monitoring whether the player's pointer is currently inside the button layout bounds.
+## Flag monitoring whether the player pointer is currently inside the button bounds.
 var is_mouse_over: bool = false
 
 ## Flag monitoring whether the player is currently clicking and holding the button down.
@@ -130,7 +140,7 @@ var pace_timers: Array[float] = [0.0, 0.0]
 ## Dynamically randomized drift speeds assigned to individual text shadow instances.
 var walk_speeds: Array[float] = [0.0, 0.0]
 
-## Dynamic Tween instance controlling the glowing light sweep progress across the button.
+## Dynamic [Tween] instance controlling the glowing light sweep progress across the button.
 var shine_tween: Tween
 
 ## Tracked 2D vector mapping the current mouse-driven structural tilt deformation.
@@ -138,33 +148,87 @@ var current_tilt: Vector2 = Vector2.ZERO
 
 # --- GLITCH VARIABLES ---
 
-## Preserved original textual configuration string restored automatically following a corruption
-## glitch.
+## Preserved original textual configuration string restored automatically following a glitch.
 var original_button_text: String = ""
 
-## Ongoing count-down timer tracking the remaining duration until the next glitch cycle phase.
+## Ongoing countdown timer tracking the remaining duration until the next glitch phase.
 var glitch_timer: float = 0.0
 
 ## Flag status checking whether a terrifying text corruption sequence is actively running.
 var is_glitching: bool = false
 
-## Prerequisite safety check ensuring the component contains valid corruption text parameters to
-## run.
+## Prerequisite safety check ensuring the component contains valid corruption text parameters.
 var can_glitch: bool = false
 
-## Memory tracker of the component layout boundaries to catch layout container resizing safely.
+## Memory tracker of the component layout boundaries to catch layout container resizing.
 var _last_known_size: Vector2 = Vector2.ZERO
 
 
+## Intercepts engine notifications to handle responsive theme changes and resizing.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_THEME_CHANGED:
+		update_minimum_size()
+		_sync_child_rects()
+	elif what == NOTIFICATION_RESIZED:
+		_sync_child_rects()
+
+
+## Computes the minimum layout bounds required by comparing primary and glitch font dimensions.
+## [return] The calculated minimum [Vector2] size including padding.
+func _get_minimum_size() -> Vector2:
+	if not is_instance_valid(text_label):
+		_find_internal_nodes()
+
+	var required_size: Vector2 = Vector2.ZERO
+
+	var font: Font = null
+	var font_size: int = 16
+
+	if is_instance_valid(text_label):
+		font = text_label.get_theme_font(&"font", &"Label")
+		font_size = text_label.get_theme_font_size(&"font_size", &"Label")
+	else:
+		font = get_theme_font(&"font", &"Button")
+		font_size = get_theme_font_size(&"font_size", &"Button")
+
+	if font == null:
+		font = ThemeDB.fallback_font
+	if font_size <= 0:
+		font_size = ThemeDB.fallback_font_size
+
+	var primary_str: String = custom_text
+	if primary_str.is_empty() and is_instance_valid(text_label):
+		primary_str = text_label.text
+	if primary_str.is_empty():
+		primary_str = text
+
+	if font != null and not primary_str.is_empty():
+		var size_primary: Vector2 = font.get_string_size(
+			primary_str, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size
+		)
+		var size_glitch: Vector2 = Vector2.ZERO
+		if not glitch_text.is_empty():
+			size_glitch = font.get_string_size(
+				glitch_text, HORIZONTAL_ALIGNMENT_CENTER, -1.0, font_size
+			)
+		required_size.x = maxf(size_primary.x, size_glitch.x)
+		required_size.y = maxf(size_primary.y, size_glitch.y)
+
+	return required_size + text_padding
+
+
+## Initializes node references, button signal callbacks, shader materials, and anchor layouts.
 func _ready() -> void:
+	mouse_filter = Control.MOUSE_FILTER_STOP
+	_find_internal_nodes()
+	_configure_child_anchors()
+
 	if Engine.is_editor_hint():
 		return
 
 	print("HorrorButton: Initializing ready sequence.")
 	active_horror_buttons += 1
 	flat = true
-
-	# Enable Godot 4.7 visual-only offset transforms to keep container layouts safe
 	offset_transform_enabled = true
 
 	var empty_style: StyleBoxEmpty = StyleBoxEmpty.new()
@@ -190,17 +254,6 @@ func _ready() -> void:
 
 	glitch_timer = randf_range(min_glitch_time, max_glitch_time)
 
-	for child: Node in get_children():
-		if child is Control:
-			child.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-		if child is Label:
-			text_label = child
-		elif child is ColorRect and child.name == "Border":
-			border_rect = child
-		elif child is ColorRect and child.name == "Background":
-			bg_rect = child
-
 	if is_instance_valid(bg_rect) and bg_rect.material is ShaderMaterial:
 		bg_material = bg_rect.material.duplicate() as ShaderMaterial
 		bg_rect.material = bg_material
@@ -213,10 +266,6 @@ func _ready() -> void:
 		if background_images.size() > 0:
 			var random_index: int = randi() % background_images.size()
 			bg_material.set_shader_parameter("blood_texture", background_images[random_index])
-	else:
-		printerr(
-			"Button script could not find a ColorRect named 'Background' with a ShaderMaterial."
-		)
 
 	if is_instance_valid(border_rect) and border_rect.material is ShaderMaterial:
 		border_material = border_rect.material.duplicate() as ShaderMaterial
@@ -224,22 +273,12 @@ func _ready() -> void:
 		border_material.set_shader_parameter("hover_intensity", 0.0)
 
 	if is_instance_valid(text_label):
-		text_label.set_anchors_preset(Control.PRESET_TOP_LEFT)
-		text_label.position = Vector2.ZERO
-		text_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		text_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-
 		if custom_text != "":
 			text_label.text = custom_text
 			original_button_text = custom_text
-			if custom_minimum_size == Vector2.ZERO:
-				custom_minimum_size = text_label.get_minimum_size()
 		else:
 			original_button_text = text_label.text
-			if custom_minimum_size == Vector2.ZERO:
-				custom_minimum_size = text_label.get_minimum_size()
 
-	text = ""
 	can_glitch = (glitch_text != "")
 
 	if is_instance_valid(text_label) and text_label.material is ShaderMaterial:
@@ -254,38 +293,62 @@ func _ready() -> void:
 
 	mouse_entered.connect(_on_mouse_entered)
 	mouse_exited.connect(_on_mouse_exited)
-	resized.connect(_update_layout_sizes)
 
-	await get_tree().process_frame
-	_update_layout_sizes()
+	update_minimum_size()
+	_sync_child_rects()
 	print("HorrorButton: Initialized configuration profile complete.")
 
 
-func _update_layout_sizes() -> void:
+## Identifies and stores internal child node references while enforcing input passthrough.
+func _find_internal_nodes() -> void:
+	for child: Node in get_children():
+		if child is Control:
+			child.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+		if child is Label:
+			text_label = child as Label
+		elif child is ColorRect and child.name == "Border":
+			border_rect = child as ColorRect
+		elif child is ColorRect and child.name == "Background":
+			bg_rect = child as ColorRect
+
+
+## Configures full rectangle anchoring on internal visual elements for centered layouts.
+func _configure_child_anchors() -> void:
+	for node: Control in [bg_rect, border_rect, text_label]:
+		if is_instance_valid(node):
+			node.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			node.set_anchors_preset(Control.PRESET_FULL_RECT)
+			node.offset_left = 0.0
+			node.offset_top = 0.0
+			node.offset_right = 0.0
+			node.offset_bottom = 0.0
+
+	if is_instance_valid(text_label):
+		text_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		text_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+
+
+## Synchronizes layout dimensions, pivot offsets, and shader parameters across children safely.
+func _sync_child_rects() -> void:
 	if size == _last_known_size:
 		return
 
-	print("HorrorButton: Layout size boundary shift captured: ", size)
 	_last_known_size = size
 	pivot_offset = size / 2.0
 
-	if is_instance_valid(bg_rect):
-		bg_rect.set_deferred("size", size)
+	if is_instance_valid(text_label):
+		text_label.pivot_offset = size / 2.0
+
 	if is_instance_valid(bg_material):
 		bg_material.set_shader_parameter("rect_size", size)
-
-	if is_instance_valid(border_rect):
-		border_rect.set_deferred("size", size)
 	if is_instance_valid(border_material):
 		border_material.set_shader_parameter("rect_size", size)
-
-	if is_instance_valid(text_label):
-		text_label.set_deferred("size", size)
-		text_label.set_deferred("pivot_offset", size / 2.0)
 	if is_instance_valid(label_material):
 		label_material.set_shader_parameter("rect_size", size)
 
 
+## Handles mouse enter signals to trigger hover sweeps and intensity blends.
 func _on_mouse_entered() -> void:
 	print("HorrorButton: Hover status entered.")
 	is_mouse_over = true
@@ -300,7 +363,9 @@ func _on_mouse_entered() -> void:
 		(
 			shine_tween
 			. tween_method(
-				func(val: float) -> void: bg_material.set_shader_parameter("sweep_progress", val),
+				func(val: float) -> void:
+					if is_instance_valid(bg_material):
+						bg_material.set_shader_parameter("sweep_progress", val),
 				-0.3,
 				1.8,
 				0.6
@@ -310,6 +375,7 @@ func _on_mouse_entered() -> void:
 		)
 
 
+## Handles mouse exit signals to reset hover and click state trackers.
 func _on_mouse_exited() -> void:
 	print("HorrorButton: Hover status terminated.")
 	is_mouse_over = false
@@ -319,6 +385,7 @@ func _on_mouse_exited() -> void:
 		pace_timers[i] = 0.0
 
 
+## Executes real-time per-frame transforms, shadow wandering, parallax, and glitch cycles.
 func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
@@ -326,10 +393,6 @@ func _process(delta: float) -> void:
 	if size.x <= 0.1 or size.y <= 0.1:
 		return
 
-	if size != _last_known_size:
-		_update_layout_sizes()
-
-	# Godot 4.7 visual-only state checks mapping safely to offset transforms
 	var is_settled: bool = (
 		not is_mouse_over
 		and current_hover_intensity < 0.001
@@ -370,10 +433,10 @@ func _process(delta: float) -> void:
 					)
 					text_label.scale = text_label.scale.lerp(Vector2(1.0, 1.0), press_speed * delta)
 			else:
-				var pitch_scale_modifier: float = 1.0 - (absf(normalized_y) * 0.04)
-				var final_target_scale: Vector2 = hover_scale * Vector2(1.0, pitch_scale_modifier)
+				var pitch_modifier: float = 1.0 - (absf(normalized_y) * 0.04)
+				var target_scale: Vector2 = hover_scale * Vector2(1.0, pitch_modifier)
 				offset_transform_scale = offset_transform_scale.lerp(
-					final_target_scale, response_speed * delta
+					target_scale, response_speed * delta
 				)
 
 				if is_instance_valid(text_label):
@@ -386,9 +449,8 @@ func _process(delta: float) -> void:
 
 					var time_sec: float = Time.get_ticks_msec() / 1000.0
 					var pulse: float = pow(sin(time_sec * pulse_speed), 4.0)
-					var current_text_scale: float = 1.0 + (pulse * pulse_intensity)
-					text_label.scale = Vector2(current_text_scale, current_text_scale)
-
+					var text_scale: float = 1.0 + (pulse * pulse_intensity)
+					text_label.scale = Vector2(text_scale, text_scale)
 		else:
 			current_hover_intensity = move_toward(current_hover_intensity, 0.0, 3.0 * delta)
 			offset_transform_scale = offset_transform_scale.lerp(
@@ -460,9 +522,7 @@ func _process(delta: float) -> void:
 		glitch_timer -= delta
 		if glitch_timer <= 0.0:
 			if is_glitching:
-				print(
-					"HorrorButton: Glitch execution window complete. Restoring text string profiles."
-				)
+				print("HorrorButton: Glitch window complete. Restoring text.")
 				is_glitching = false
 				text_label.text = original_button_text
 				glitch_timer = randf_range(min_glitch_time, max_glitch_time)

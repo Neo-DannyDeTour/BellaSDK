@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://b60lfsypp4cwo"]
 
 [ext_resource type="Script" uid="uid://cmo4glk0cv6wb" path="res://ui/controls_panel.gd" id="1_q5nxy"]
-[ext_resource type="PackedScene" uid="uid://8m8l0uplgvm" path="res://ui/HorrorButton.tscn" id="2_q5nxy"]
 
 [node name="ControlsPanel" type="Panel" unique_id=763294505]
 anchors_preset = 15
@@ -23,95 +22,84 @@ theme_override_constants/margin_top = 32
 theme_override_constants/margin_right = 32
 theme_override_constants/margin_bottom = 32
 
-[node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer" unique_id=1406048210]
+[node name="ContentVBox" type="VBoxContainer" parent="MarginContainer" unique_id=1501613889]
 layout_mode = 2
 
-[node name="MainVBox" type="VBoxContainer" parent="MarginContainer/ScrollContainer" unique_id=492548289]
-layout_mode = 2
-size_flags_horizontal = 3
-size_flags_vertical = 3
-alignment = 1
-
-[node name="HeaderLabel" type="Label" parent="MarginContainer/ScrollContainer/MainVBox" unique_id=1238118003]
+[node name="HeaderLabel" type="Label" parent="MarginContainer/ContentVBox" unique_id=1238118003]
 layout_mode = 2
 theme_override_font_sizes/font_size = 32
 text = "Controls / Input"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="HSeparator" type="HSeparator" parent="MarginContainer/ScrollContainer/MainVBox" unique_id=1699420982]
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/ContentVBox" unique_id=1699420982]
 layout_mode = 2
 
-[node name="BehaviorSection" type="VBoxContainer" parent="MarginContainer/ScrollContainer/MainVBox" unique_id=459000156]
+[node name="BehaviorSection" type="HBoxContainer" parent="MarginContainer/ContentVBox" unique_id=189408522]
 layout_mode = 2
 
-[node name="BehaviorTitleLabel" type="Label" parent="MarginContainer/ScrollContainer/MainVBox/BehaviorSection" unique_id=80083603]
+[node name="CrouchModeLabel" type="Label" parent="MarginContainer/ContentVBox/BehaviorSection" unique_id=701025219]
+unique_name_in_owner = true
 layout_mode = 2
 
-[node name="BehaviorGrid" type="GridContainer" parent="MarginContainer/ScrollContainer/MainVBox/BehaviorSection" unique_id=327060306]
+[node name="CrouchModeOption" type="OptionButton" parent="MarginContainer/ContentVBox/BehaviorSection" unique_id=1530147621]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SprintModeLabel" type="Label" parent="MarginContainer/ContentVBox/BehaviorSection" unique_id=101607101]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SprintModeOption" type="OptionButton" parent="MarginContainer/ContentVBox/BehaviorSection" unique_id=2062903118]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="BehaviorGrid" type="GridContainer" parent="MarginContainer/ContentVBox/BehaviorSection" unique_id=327060306]
 layout_mode = 2
 columns = 2
 
-[node name="CrouchModeLabel" type="Label" parent="MarginContainer/ScrollContainer/MainVBox/BehaviorSection/BehaviorGrid" unique_id=701025219]
+[node name="HSeparator2" type="HSeparator" parent="MarginContainer/ContentVBox" unique_id=1423602958]
+layout_mode = 2
+
+[node name="HeaderGrid" type="GridContainer" parent="MarginContainer/ContentVBox" unique_id=1581947926]
 unique_name_in_owner = true
-layout_mode = 2
-
-[node name="CrouchModeOption" type="OptionButton" parent="MarginContainer/ScrollContainer/MainVBox/BehaviorSection/BehaviorGrid" unique_id=1530147621]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="SprintModeLabel" type="Label" parent="MarginContainer/ScrollContainer/MainVBox/BehaviorSection/BehaviorGrid" unique_id=101607101]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="SprintModeOption" type="OptionButton" parent="MarginContainer/ScrollContainer/MainVBox/BehaviorSection/BehaviorGrid" unique_id=2062903118]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="HSeparator2" type="HSeparator" parent="MarginContainer/ScrollContainer/MainVBox" unique_id=1423602958]
-layout_mode = 2
-
-[node name="HeaderGrid" type="GridContainer" parent="MarginContainer/ScrollContainer/MainVBox" unique_id=1581947926]
 layout_mode = 2
 columns = 4
 
-[node name="ColAction" type="Label" parent="MarginContainer/ScrollContainer/MainVBox/HeaderGrid" unique_id=765790512]
+[node name="ColAction" type="Label" parent="MarginContainer/ContentVBox/HeaderGrid" unique_id=765790512]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 2.0
 text = "Action"
 horizontal_alignment = 1
 
-[node name="ColPrimary" type="Label" parent="MarginContainer/ScrollContainer/MainVBox/HeaderGrid" unique_id=1710433890]
+[node name="ColPrimary" type="Label" parent="MarginContainer/ContentVBox/HeaderGrid" unique_id=1710433890]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 3.0
 text = "Primary"
 horizontal_alignment = 1
 
-[node name="ColSecondary" type="Label" parent="MarginContainer/ScrollContainer/MainVBox/HeaderGrid" unique_id=474023453]
+[node name="ColSecondary" type="Label" parent="MarginContainer/ContentVBox/HeaderGrid" unique_id=474023453]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_stretch_ratio = 3.0
 text = "Secondary"
 horizontal_alignment = 1
 
-[node name="ColClear" type="Label" parent="MarginContainer/ScrollContainer/MainVBox/HeaderGrid" unique_id=1942470923]
+[node name="ColClear" type="Label" parent="MarginContainer/ContentVBox/HeaderGrid" unique_id=1942470923]
 layout_mode = 2
 text = "Reset"
 horizontal_alignment = 1
 
-[node name="ActionListContainer" type="VBoxContainer" parent="MarginContainer/ScrollContainer/MainVBox" unique_id=1322296008]
+[node name="ActionScrollContainer" type="ScrollContainer" parent="MarginContainer/ContentVBox" unique_id=1406048210]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ActionListContainer" type="VBoxContainer" parent="MarginContainer/ContentVBox/ActionScrollContainer" unique_id=1322296008]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
 
-[node name="HSeparator3" type="HSeparator" parent="MarginContainer/ScrollContainer/MainVBox" unique_id=93275491]
+[node name="HSeparator3" type="HSeparator" parent="MarginContainer/ContentVBox" unique_id=93275491]
 layout_mode = 2
-
-[node name="FooterBar" type="HBoxContainer" parent="MarginContainer/ScrollContainer/MainVBox" unique_id=1617587047]
-layout_mode = 2
-
-[node name="ResetAllButton" parent="MarginContainer/ScrollContainer/MainVBox/FooterBar" unique_id=929896540 instance=ExtResource("2_q5nxy")]
-unique_name_in_owner = true
-layout_mode = 2
-custom_text = "Reset to Defaults"

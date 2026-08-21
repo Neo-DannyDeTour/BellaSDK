@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://8m8l0uplgvm"]
 
 [ext_resource type="Script" uid="uid://g1iralse1net" path="res://ui/horror_button.gd" id="1_osw47"]
-[ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="1_rmxln"]
 [ext_resource type="Texture2D" uid="uid://c3lwv0r8i4xr8" path="res://assets/images/Menu/blood_splatter_ui.png" id="2_h44qo"]
 [ext_resource type="Shader" uid="uid://gqm2yghwiqry" path="res://ui/black_glass.gdshader" id="2_rvf1l"]
 [ext_resource type="Texture2D" uid="uid://c46j3p1tq225j" path="res://assets/images/Menu/evil_eyes_ui.png" id="3_gwe66"]
@@ -46,11 +45,6 @@ shader_parameter/rect_size = Vector2(0, 0)
 shader_parameter/ui_tilt = Vector2(0, 0)
 shader_parameter/perspective_strength = 0.15
 
-[sub_resource type="LabelSettings" id="LabelSettings_f66sc"]
-font = ExtResource("1_rmxln")
-font_size = 42
-outline_size = 3
-
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_fec17"]
 shader = ExtResource("10_fjsb0")
 shader_parameter/ui_tilt = Vector2(0, 0)
@@ -68,10 +62,11 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+pivot_offset = Vector2(640, 360)
 size_flags_vertical = 3
-theme_override_fonts/font = ExtResource("1_rmxln")
 theme_override_font_sizes/font_size = 42
 script = ExtResource("1_osw47")
+text_padding = null
 background_images = Array[Texture2D]([ExtResource("2_h44qo"), ExtResource("3_gwe66"), ExtResource("4_rmxln"), ExtResource("5_l5wl7")])
 flashlight_texture = ExtResource("6_gwe66")
 
@@ -93,10 +88,8 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_fonts/font = ExtResource("1_rmxln")
 theme_override_font_sizes/font_size = 42
 text = "text"
-label_settings = SubResource("LabelSettings_f66sc")
 horizontal_alignment = 1
 vertical_alignment = 1
 
