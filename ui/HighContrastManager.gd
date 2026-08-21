@@ -1,3 +1,8 @@
+## Global autoload that manages high-contrast UI elements for accessibility.
+##
+## This manager recursively applies a solid black stylebox background to all
+## Text and RichText labels in the game when high-contrast mode is enabled.
+class_name HighContrastManager
 extends Node
 
 ## A reusable flat stylebox that creates a solid black background.
@@ -7,6 +12,8 @@ var high_contrast_style: StyleBoxFlat = StyleBoxFlat.new()
 var is_active: bool = false
 
 
+## Called when the node enters the scene tree.
+## Initializes the stylebox, loads settings, and connects to events.
 func _ready() -> void:
 	print("System: High Contrast Manager initialized.")
 	_setup_stylebox()
@@ -17,6 +24,7 @@ func _ready() -> void:
 	get_tree().node_added.connect(_on_scene_node_added)
 
 
+## Configures the dimensions and color of the global high contrast background.
 func _setup_stylebox() -> void:
 	print("System: Configuring high contrast stylebox properties.")
 	high_contrast_style.bg_color = Color(0.0, 0.0, 0.0, 1.0)
@@ -26,29 +34,38 @@ func _setup_stylebox() -> void:
 	high_contrast_style.content_margin_bottom = 4.0
 
 
+## Hooks into the global Events autoload to listen for setting toggles.
 func _connect_to_events() -> void:
 	var root_events: Node = get_node_or_null("/root/Events")
 	if root_events and root_events.has_signal("high_contrast_changed"):
 		root_events.connect("high_contrast_changed", _on_high_contrast_toggled)
 
 
+## Triggered when the player changes the high contrast setting in the menu.
+## [param toggled_on] The new boolean state of the setting.
 func _on_high_contrast_toggled(toggled_on: bool) -> void:
 	print("System: High Contrast toggled globally to: ", toggled_on)
 	is_active = toggled_on
 	_process_all_nodes(get_tree().root)
 
 
+## Signal callback when any new node enters the scene tree.
+## [param node] The newly spawned [Node].
 func _on_scene_node_added(node: Node) -> void:
 	if is_active:
 		_apply_contrast_to_node(node)
 
 
+## Recursively iterates through the entire scene tree to apply or remove contrast styles.
+## [param parent] The root [Node] to begin searching from.
 func _process_all_nodes(parent: Node) -> void:
 	_apply_contrast_to_node(parent)
 	for child: Node in parent.get_children():
 		_process_all_nodes(child)
 
 
+## Checks if a node is a text element and applies the contrast style if active.
+## [param node] The target [Node] to evaluate.
 func _apply_contrast_to_node(node: Node) -> void:
 	if node is Label:
 		if is_active:
