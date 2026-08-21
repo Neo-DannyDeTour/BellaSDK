@@ -1,10 +1,11 @@
+## Unit tests verifying SaveManager operations, save lists, sorting, and state loading.
 extends GutTest
 
 ## Preloaded SaveManager class reference to guarantee inheritance resolution.
 const SAVE_MANAGER_SCRIPT: GDScript = preload("res://core/save_manager.gd")
 
-## The save manager being tested.
-var save_manager: Variant = null
+## The save manager instance being tested.
+var save_manager: MockSaveManager = null
 
 
 ## Mocked partial class intercepting disk operations and threading.
@@ -59,9 +60,9 @@ class MockSaveManager:
 		return a_id > b_id
 
 
-## Sets up the mock save manager instance.
+## Sets up the mock save manager instance before each test.
 func before_each() -> void:
-	print("TestSaveManager: before_each() called. Setting up test environment.")
+	print("TestSaveManager: before_each() setup started.")
 	save_manager = MockSaveManager.new()
 	if save_manager is Node:
 		add_child_autoqfree(save_manager)
@@ -81,7 +82,7 @@ func test_get_all_saves() -> void:
 ## Verifies has_saves correctly returns false when no saves exist.
 func test_has_saves_with_no_dir() -> void:
 	print("TestSaveManager: test_has_saves_with_no_dir() called.")
-	save_manager.mock_saves = []
+	save_manager.mock_saves.clear()
 	var result: bool = save_manager.has_saves()
 	assert_false(result, "Should return false for saves when mock saves list is empty.")
 
@@ -97,8 +98,8 @@ func test_sort_saves() -> void:
 		save_manager._sort_saves(a, b), "B is favorite, A is not. A should not come first."
 	)
 	assert_true(save_manager._sort_saves(b, a), "B is favorite, B should come first.")
-	assert_false(save_manager._sort_saves(a, c), "C's ID is higher, A should not come first.")
-	assert_true(save_manager._sort_saves(c, a), "C's ID is higher, C should come first.")
+	assert_false(save_manager._sort_saves(a, c), "C ID is higher, A should not come first.")
+	assert_true(save_manager._sort_saves(c, a), "C ID is higher, C should come first.")
 
 
 ## Verifies loading game state calls internal interceptor.
