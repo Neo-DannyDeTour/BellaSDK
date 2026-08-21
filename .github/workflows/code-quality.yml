@@ -14,7 +14,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          lfs: true
+          lfs: false # Do not pull large LFS objects
 
       - name: Sanitize Autoload Class Names
         run: |
@@ -35,6 +35,53 @@ jobs:
         run: |
           gdformat --check .
           gdlint .
+
+      - name: Replace LFS Pointers With Valid Binary Stubs
+        run: |
+          python3 - << 'EOF'
+          import os
+
+          # 1x1 Transparent PNG (67 bytes)
+          DUMMY_PNG = bytes.fromhex(
+              "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4"
+              "890000000a49444154789c63000100000500010d0a2db40000000049454e44ae"
+              "426082"
+          )
+          # Minimal 44-byte silent WAV header (PCM, 1 channel, 44100 Hz, 16-bit)
+          DUMMY_WAV = bytes.fromhex(
+              "524946462400000057415645666d7420100000000100010044ac000088580100"
+              "020010006461746100000000"
+          )
+          # Minimal 1-byte fallback for other binary formats (models, audio)
+          DUMMY_GENERIC = b"\x00"
+
+          EXT_MAP = {
+              ".png": DUMMY_PNG,
+              ".jpg": DUMMY_PNG,
+              ".jpeg": DUMMY_PNG,
+              ".wav": DUMMY_WAV,
+              ".ogg": DUMMY_WAV,
+              ".mp3": DUMMY_WAV,
+          }
+
+          for root, _, files in os.walk("."):
+              if ".git" in root:
+                  continue
+              for file in files:
+                  ext = os.path.splitext(file)[1].lower()
+                  if ext in [".png", ".jpg", ".jpeg", ".wav", ".ogg", ".mp3", ".glb", ".gltf", ".fbx"]:
+                      path = os.path.join(root, file)
+                      try:
+                          with open(path, "rb") as f:
+                              header = f.read(50)
+                          # Check if file is a raw Git LFS text pointer
+                          if header.startswith(b"version https://git-lfs"):
+                              stub = EXT_MAP.get(ext, DUMMY_GENERIC)
+                              with open(path, "wb") as f:
+                                  f.write(stub)
+                      except Exception as e:
+                          print(f"Skipping {path}: {e}")
+          EOF
 
       - name: Setup Godot Engine
         uses: chickensoft-games/setup-godot@v2
