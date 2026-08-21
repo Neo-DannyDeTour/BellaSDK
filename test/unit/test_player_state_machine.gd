@@ -1,23 +1,24 @@
+## Unit tests verifying state machine transitions, initialization, and error guards.
 extends GutTest
 
-## The state machine being tested.
+## The state machine under test.
 var sm: PlayerStateMachine = null
 
-## The mock player injected into states.
+## Mock CharacterBody3D player reference.
 var mock_player: CharacterBody3D = null
 
 
-## Mock state implementation for transition verification.
+## Mock state implementation tracking lifecycle calls.
 class MockState:
 	extends PlayerState
 
 	## Tracks if the state is active.
 	var is_active: bool = false
 
-	## Tracks if enter was called.
+	## Tracks if enter was executed.
 	var enter_called: bool = false
 
-	## Tracks if exit was called.
+	## Tracks if exit was executed.
 	var exit_called: bool = false
 
 	## Enters the mock state.
@@ -33,9 +34,9 @@ class MockState:
 		exit_called = true
 
 
-## Sets up the state machine hierarchy before each test.
+## Sets up mock hierarchy before each test run.
 func before_each() -> void:
-	print("TestPlayerStateMachine: before_each() called. Setting up mock state machine.")
+	print("TestPlayerStateMachine: before_each() setup started.")
 	sm = load("res://player/player_state_machine.gd").new()
 	mock_player = CharacterBody3D.new()
 
@@ -92,7 +93,7 @@ func test_transition_to_valid_state() -> void:
 	assert_signal_emitted_with_parameters(sm, "transitioned", ["State2"])
 
 
-## Verifies invalid state transitions abort cleanly and log an engine error.
+## Verifies invalid state transitions abort cleanly and log a push_error.
 func test_transition_to_invalid_state() -> void:
 	print("TestPlayerStateMachine: test_transition_to_invalid_state() called.")
 	watch_signals(sm)
@@ -100,9 +101,8 @@ func test_transition_to_invalid_state() -> void:
 	var state1: MockState = sm._states["State1"] as MockState
 	state1.enter()
 
-	# State3 does not exist; assert the expected push_error to prevent CI failure
 	sm.transition_to("State3")
-	assert_engine_error("Cannot transition to state 'State3'")
+	assert_push_error("StateMachine: Cannot transition to state 'State3' (Node not found).")
 
 	assert_false(state1.exit_called, "State1 exit() should not be called if transition fails.")
 	assert_eq(sm.state, state1, "Current state should remain State1.")

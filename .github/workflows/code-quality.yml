@@ -1,32 +1,69 @@
-name: Code Quality & CI
+name: GDScript Quality & Unit Tests
 
 on:
   push:
-    branches: ["main"]
+    branches: [main]
   pull_request:
-    branches: ["main"]
+    branches: [main]
+
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  lint-and-validate:
+  lint-and-format:
+    name: GDFormat & GDLint Checks
     runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
+      - name: Setup Environment
+        uses: ./.github/actions/setup-godot-env
+
+      - name: Verify GDScript Formatting
+        run: gdformat --check .
+
+      - name: Run GDLint
+        run: gdlint .
+
+  unit-tests:
+    name: GUT Headless Unit Tests
+    runs-on: ubuntu-latest
+    needs: lint-and-format
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
           lfs: false
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Setup Environment
+        uses: ./.github/actions/setup-godot-env
         with:
-          python-version: "3.11"
+          godot-version: "4.7.1"
 
-      - name: Install GDToolkit
+      - name: Create Stub Files for Excluded Assets
         run: |
-          python -m pip install --upgrade pip
-          pip install "gdtoolkit==4.*"
+          mkdir -p res://assets/sounds \
+                   "res://assets/VisTEST/2. Modular_Models/Walls" \
+                   res://interactables
 
-      - name: GDScript Linting & Formatting Check
+          touch res://assets/sounds/ping_emitter_sound.mp3
+          touch res://assets/sounds/echo_sound.mp3
+          touch res://assets/sounds/waypoint_sound.mp3
+          touch res://assets/sounds/watch_out_hazard_sound.mp3
+          touch "res://assets/VisTEST/2. Modular_Models/Walls/Wall_Fan_T_Concrete_BaseColor-T_Concrete_Alpha.png"
+
+          if [ ! -f res://interactables/barrel_red.tscn ]; then
+            echo '[gd_scene format=3 type="PackedScene"]' > res://interactables/barrel_red.tscn
+            echo '[node name="barrel_red" type="Node3D"]' >> res://interactables/barrel_red.tscn
+          fi
+
+      - name: Import Godot Assets
+        run: godot --headless --editor --quit-after 200
+
+      - name: Run GUT Test Suite
         run: |
-          gdformat --check .
-          gdlint .
+          godot --headless -s res://addons/gut/gut_cmdln.gd \
+            -gconfig=res://.gutconfig.json \
+            -gexit
