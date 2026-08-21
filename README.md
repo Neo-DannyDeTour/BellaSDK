@@ -1,4 +1,4 @@
-<img src="https://github.com/UnrealDanny/BellaSDK/blob/main/Bella_SDK_Logo.svg">
+<img src="https://github.com/UnrealDanny/BellaSDK/blob/main/assets/Bella_SDK_Logo.svg">
 
 ![Godot 4.7.1](https://img.shields.io/badge/Godot-4.7.1-478CBF?logo=godotengine&logoColor=white)
 ![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
