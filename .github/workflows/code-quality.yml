@@ -16,6 +16,11 @@ jobs:
         with:
           lfs: true
 
+      - name: Sanitize Autoload Class Names
+        run: |
+          sed -i '/^class_name GlobalSettings\b/d' core/global_settings.gd
+          sed -i '/^class_name GestureInputManager\b/d' core/GestureInputManager.gd
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:

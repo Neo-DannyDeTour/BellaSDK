@@ -1,6 +1,6 @@
 extends GutTest
 
-## The ground state to test.
+## The ground state under test.
 var state_ground: StateGround
 
 ## A mock player node.
@@ -10,127 +10,84 @@ var mock_player: Player
 var mock_state_machine: Node
 
 
+## Sets up player dependencies and state machine wiring.
 func before_each() -> void:
 	print("TestStateGround: before_each() called. Setting up test environment.")
 
-	# 1. Instantiate a mock script that strictly extends Player
 	var mock_player_script: GDScript = GDScript.new()
-	mock_player_script.source_code = "extends Player\n"
+	mock_player_script.source_code = """
+extends Player
+
+## Velocity storage for physics calculations.
+var simulated_velocity: Vector3 = Vector3.ZERO
+"""
 	mock_player_script.reload()
 	mock_player = mock_player_script.new()
 
-	# 2. Mock dependencies inside player (adding dummy initialize() methods)
-	var loco_component: Node = Node.new()
-	loco_component.name = "LocomotionComponent"
 	var loco_script: GDScript = GDScript.new()
 	loco_script.source_code = """
-extends Node
-var sprint_active: bool = false
-var crouching: bool = false
-var can_sprint: bool = true
-var walking_speed: float = 5.0
-var sprinting_speed: float = 8.0
-var crouching_speed: float = 3.0
-var ice_lerp_speed: float = 1.0
-var default_lerp_speed: float = 10.0
-var on_ice: bool = false
-var on_sand: bool = false
-var on_safe_landing: bool = false
-var gravity: float = 9.8
+extends PlayerLocomotionComponent
 
-var standing_collision: Node = Node.new()
-var crouching_collision: Node = Node.new()
-var crouch_cast_check: Node = Node.new()
-var stair_controller: Node = Node.new()
+## Movement direction vector.
+var _direction: Vector3 = Vector3.ZERO
 
-func initialize(_p: Node) -> void: pass
 
-func _ready() -> void:
-	add_child(standing_collision)
-	add_child(crouching_collision)
-	add_child(crouch_cast_check)
-	add_child(stair_controller)
+## Returns current movement direction vector.
+func get_direction() -> Vector3:
+	return _direction
 
-	var stair_script: GDScript = GDScript.new()
-	stair_script.source_code = \"\"\"
-extends Node
-var time_since_step_up: float = 1.0
 
-@warning_ignore("unused_private_class_variable")
-var _snapped_to_stairs_last_frame: bool = false
-
-func snap_up_stairs_check(_d: Vector3, _s: float) -> void: pass
-func snap_down_to_stairs_check() -> void: pass
-func track_floor_state() -> void: pass
-\"\"\"
-	stair_script.reload()
-	stair_controller.set_script(stair_script)
-
-	var cast_script: GDScript = GDScript.new()
-	cast_script.source_code = "extends Node\\nfunc is_colliding() -> bool: return false"
-	cast_script.reload()
-	crouch_cast_check.set_script(cast_script)
-
-var _dir: Vector3 = Vector3.ZERO
-func get_direction() -> Vector3: return _dir
-func set_direction(d: Vector3) -> void: _dir = d
+## Sets current movement direction vector.
+func set_direction(d: Vector3) -> void:
+	_direction = d
 """
 	loco_script.reload()
-	loco_component.set_script(loco_script)
-	mock_player.locomotion_component = loco_component
-	mock_player.add_child(loco_component)
+	var loco_comp: PlayerLocomotionComponent = loco_script.new()
+	loco_comp.name = "LocomotionComponent"
+	loco_comp.sprint_active = false
+	loco_comp.crouching = false
+	loco_comp.can_sprint = true
+	loco_comp.walking_speed = 5.0
+	loco_comp.sprinting_speed = 8.0
+	loco_comp.crouching_speed = 3.0
+	loco_comp.ice_lerp_speed = 1.0
+	loco_comp.default_lerp_speed = 10.0
+	loco_comp.on_ice = false
+	loco_comp.on_sand = false
+	loco_comp.on_safe_landing = false
+	loco_comp.gravity = 9.8
 
-	var env_component: Node = Node.new()
-	env_component.name = "EnvironmentComponent"
-	var env_script: GDScript = GDScript.new()
-	env_script.source_code = """
+	mock_player.locomotion_component = loco_comp
+	mock_player.add_child(loco_comp)
+
+	var dummy_script: GDScript = GDScript.new()
+	dummy_script.source_code = """
 extends Node
-var current_water_node: Node = null
-var vault_controller: Node = Node.new()
 
-func initialize(_p: Node) -> void: pass
-
-func _ready() -> void:
-	add_child(vault_controller)
-	var vault_script: GDScript = GDScript.new()
-	vault_script.source_code = (
-		"extends Node\\nvar is_vaulting: bool = false\\nfunc try_vault(_c: bool) -> bool: return false"
-	)
-	vault_script.reload()
-	vault_controller.set_script(vault_script)
+## Stub initialization method.
+func initialize(_p: Node) -> void:
+	pass
 """
-	env_script.reload()
-	env_component.set_script(env_script)
-	mock_player.environment_component = env_component
-	mock_player.add_child(env_component)
+	dummy_script.reload()
 
-	var interact_component: Node = Node.new()
-	interact_component.name = "InteractionComponent"
-	var interact_script: GDScript = GDScript.new()
-	interact_script.source_code = """
-extends Node
-var is_heavy_lifting: bool = false
-var held_item: Node = null
-var interaction_scanner: Node = Node.new()
+	var env_comp: Node = Node.new()
+	env_comp.name = "EnvironmentComponent"
+	env_comp.set_script(dummy_script)
+	mock_player.environment_component = env_comp
+	mock_player.add_child(env_comp)
 
-func initialize(_p: Node) -> void: pass
-"""
-	interact_script.reload()
-	interact_component.set_script(interact_script)
-	mock_player.interaction_component = interact_component
-	mock_player.add_child(interact_component)
+	var interact_comp: Node = Node.new()
+	interact_comp.name = "InteractionComponent"
+	interact_comp.set_script(dummy_script)
+	mock_player.interaction_component = interact_comp
+	mock_player.add_child(interact_comp)
 
-	# 3. Create missing StatsComponent to prevent 'initialize in base Nil' crash
-	var stats_component: Node = Node.new()
-	stats_component.name = "StatsComponent"
-	var stats_script: GDScript = GDScript.new()
-	stats_script.source_code = "extends Node\nfunc initialize(_p: Node) -> void: pass"
-	stats_script.reload()
-	stats_component.set_script(stats_script)
-	mock_player.stats_component = stats_component
-	mock_player.add_child(stats_component)
+	var stat_comp: Node = Node.new()
+	stat_comp.name = "StatsComponent"
+	stat_comp.set_script(dummy_script)
+	mock_player.stats_component = stat_comp
+	mock_player.add_child(stat_comp)
 
-	# 4. Construct dummy hierarchy to prevent @onready 'Node not found' log errors.
 	var components_node: Node = Node.new()
 	components_node.name = "Components"
 	mock_player.add_child(components_node)
@@ -139,20 +96,23 @@ func initialize(_p: Node) -> void: pass
 	health_node.name = "HealthComponent"
 	components_node.add_child(health_node)
 
-	# 5. Safely add to tree AFTER all dependencies are attached
 	add_child_autoqfree(mock_player)
-
-	# Stub GlobalSettings if not present
-	if not Engine.has_singleton("GlobalSettings"):
-		pass
 
 	mock_state_machine = Node.new()
 	var sm_script: GDScript = GDScript.new()
 	sm_script.source_code = """
 extends Node
+
+## Tracks the last target state transition.
 var last_transition: String = ""
+
+## Tracks the last transition message payload.
 var last_msg: Dictionary = {}
+
+
+## Simulates state transition call.
 func transition_to(target_state_name: String, msg: Dictionary = {}) -> void:
+	print("MockStateMachine: Transitioning to ", target_state_name)
 	last_transition = target_state_name
 	last_msg = msg
 """
@@ -166,6 +126,7 @@ func transition_to(target_state_name: String, msg: Dictionary = {}) -> void:
 	add_child_autoqfree(state_ground)
 
 
+## Verifies enter resets velocities and movement speed.
 func test_enter() -> void:
 	print("TestStateGround: test_enter() called.")
 	mock_player.velocity.y = -10.0
@@ -177,6 +138,7 @@ func test_enter() -> void:
 	assert_eq(state_ground.current_speed, 0.0, "Current speed should be reset on enter.")
 
 
+## Verifies buffered jump input executes immediate transition to Air.
 func test_jump_buffered() -> void:
 	print("TestStateGround: test_jump_buffered() called.")
 	state_ground.enter({"jump_buffered": true})

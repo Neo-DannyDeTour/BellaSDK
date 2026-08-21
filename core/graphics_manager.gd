@@ -3,7 +3,7 @@
 ## [GraphicsManager] continuously monitors the application's framerate. If it dips below
 ## the [constant TARGET_FPS_MINIMUM], it progressively disables heavy rendering features
 ## (like SDFGI or MSAA) to maintain a playable framerate.
-class_name GraphicsManager
+# class_name GraphicsManager
 extends Node
 
 ## Emitted when the performance profile drops a level to regain FPS.
