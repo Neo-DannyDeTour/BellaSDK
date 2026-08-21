@@ -2,6 +2,7 @@
 ##
 ## [SaveManager] handles capturing viewport thumbnails, writing JSON metadata,
 ## and saving/loading nodes grouped in the 'saveable' group using binary `.dat` files.
+class_name SaveManager
 extends Node
 
 ## Emitted when a save sequence completely finishes writing to disk.
