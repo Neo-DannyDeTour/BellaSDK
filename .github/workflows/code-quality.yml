@@ -37,47 +37,55 @@ jobs:
           gdformat --check .
           gdlint .
 
+      - name: Install Pillow for Asset Stub Generation
+        run: pip install Pillow
+
       - name: Replace LFS Pointers With Valid Binary Stubs
         run: |
           python3 - << 'EOF'
           import os
+          from PIL import Image
 
-          # 1x1 Transparent PNG (67 bytes)
-          DUMMY_PNG = bytes.fromhex(
-              "89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c4"
-              "890000000a49444154789c63000100000500010d0a2db40000000049454e44ae"
-              "426082"
-          )
-          # 2x2 Uncompressed Truecolor TGA (22 bytes) - Prevents layered texture crash
-          DUMMY_TGA = bytes.fromhex(
-              "000002000000000000000000020002001800"
-              "ffffff000000ffffff000000"
-          )
-          # Minimal 44-byte silent WAV
-          DUMMY_WAV = bytes.fromhex(
+          # 1. Generate clean base template files using Pillow
+          img_2d = Image.new("RGBA", (4, 4), (255, 255, 255, 255))
+          img_2d.save("template.png", "PNG")
+          img_2d.save("template.tga", "TGA")
+          img_2d.save("template.jpg", "JPEG")
+
+          with open("template.png", "rb") as f:
+              STUB_PNG = f.read()
+          with open("template.tga", "rb") as f:
+              STUB_TGA = f.read()
+          with open("template.jpg", "rb") as f:
+              STUB_JPG = f.read()
+
+          os.remove("template.png")
+          os.remove("template.tga")
+          os.remove("template.jpg")
+
+          # 2. Minimal valid headers for Audio
+          STUB_WAV = bytes.fromhex(
               "524946462400000057415645666d7420100000000100010044ac000088580100"
               "020010006461746100000000"
           )
-          # Minimal 4-frame silent MP3
-          DUMMY_MP3 = bytes.fromhex(
+          STUB_MP3 = bytes.fromhex(
               "fffb906400000000000000000000000000000000000000000000000000000000"
               "00000000000000000000000000000000000000000000"
           )
-          # Minimal silent OGG container
-          DUMMY_OGG = bytes.fromhex(
+          STUB_OGG = bytes.fromhex(
               "4f676753000200000000000000000000000000000000011e0112"
               "01766f72626973000000000144ac0000000000000000e8030000"
               "00000000b801"
           )
 
           EXT_MAP = {
-              ".png": DUMMY_PNG,
-              ".jpg": DUMMY_PNG,
-              ".jpeg": DUMMY_PNG,
-              ".tga": DUMMY_TGA,
-              ".wav": DUMMY_WAV,
-              ".mp3": DUMMY_MP3,
-              ".ogg": DUMMY_OGG,
+              ".png": STUB_PNG,
+              ".jpg": STUB_JPG,
+              ".jpeg": STUB_JPG,
+              ".tga": STUB_TGA,
+              ".wav": STUB_WAV,
+              ".mp3": STUB_MP3,
+              ".ogg": STUB_OGG,
           }
 
           for root, _, files in os.walk("."):
@@ -91,10 +99,35 @@ jobs:
                           with open(path, "rb") as f:
                               header = f.read(40)
                           if header.startswith(b"version https://git-lfs"):
-                              with open(path, "wb") as f:
-                                  f.write(EXT_MAP[ext])
+                              # Check if this asset has a layered texture import config
+                              import_file = path + ".import"
+                              is_layered = False
+                              slices_x = 1
+                              slices_y = 1
+
+                              if os.path.exists(import_file):
+                                  with open(import_file, "r") as inf:
+                                      content = inf.read()
+                                      if "resource_importer_layered_texture" in content:
+                                          is_layered = True
+                                          for line in content.splitlines():
+                                              if line.startswith("slices/horizontal="):
+                                                  slices_x = max(1, int(line.split("=")[1]))
+                                              elif line.startswith("slices/vertical="):
+                                                  slices_y = max(1, int(line.split("=")[1]))
+
+                              if is_layered:
+                                  # Create a texture with the exact slice grid Godot's importer expects
+                                  w = max(4, slices_x * 2)
+                                  h = max(4, slices_y * 2)
+                                  fmt = "TGA" if ext == ".tga" else "PNG"
+                                  layered_img = Image.new("RGBA", (w, h), (128, 128, 128, 255))
+                                  layered_img.save(path, fmt)
+                              else:
+                                  with open(path, "wb") as f:
+                                      f.write(EXT_MAP[ext])
                       except Exception as e:
-                          print(f"Skipping {path}: {e}")
+                          print(f"Error processing {path}: {e}")
           EOF
 
       - name: Setup Godot Engine
