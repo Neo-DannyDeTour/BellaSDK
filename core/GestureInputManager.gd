@@ -1,6 +1,5 @@
 ## Centralized input manager responsible for dispatching single-tap, hold,
 ## and double-tap gestures during gameplay.
-class_name GestureInputManager
 extends Node
 
 ## Emitted when an action binding is successfully resolved and triggered.

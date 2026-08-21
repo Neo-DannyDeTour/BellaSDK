@@ -56,6 +56,11 @@ func _ready() -> void:
 	while not precomputed_noise.get_rid().is_valid():
 		await precomputed_noise.changed
 
+	print("SmokeManager: Initializing smoke manager node.")
+	if DisplayServer.get_name() == "headless":
+		print("SmokeManager: Headless mode detected, skipping GPU initialization.")
+		return
+
 	_initialize_gpu()
 
 
