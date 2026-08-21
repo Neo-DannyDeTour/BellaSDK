@@ -47,10 +47,12 @@ jobs:
           from PIL import Image
 
           # 1. Generate clean base template files using Pillow
-          img_2d = Image.new("RGBA", (4, 4), (255, 255, 255, 255))
-          img_2d.save("template.png", "PNG")
-          img_2d.save("template.tga", "TGA")
-          img_2d.save("template.jpg", "JPEG")
+          img_rgba = Image.new("RGBA", (4, 4), (255, 255, 255, 255))
+          img_rgb = Image.new("RGB", (4, 4), (255, 255, 255))
+
+          img_rgba.save("template.png", "PNG")
+          img_rgba.save("template.tga", "TGA")
+          img_rgb.save("template.jpg", "JPEG")
 
           with open("template.png", "rb") as f:
               STUB_PNG = f.read()
@@ -99,7 +101,6 @@ jobs:
                           with open(path, "rb") as f:
                               header = f.read(40)
                           if header.startswith(b"version https://git-lfs"):
-                              # Check if this asset has a layered texture import config
                               import_file = path + ".import"
                               is_layered = False
                               slices_x = 1
@@ -117,7 +118,6 @@ jobs:
                                                   slices_y = max(1, int(line.split("=")[1]))
 
                               if is_layered:
-                                  # Create a texture with the exact slice grid Godot's importer expects
                                   w = max(4, slices_x * 2)
                                   h = max(4, slices_y * 2)
                                   fmt = "TGA" if ext == ".tga" else "PNG"
