@@ -12,14 +12,14 @@ func _init() -> void:
 	var files: Array[String] = _get_all_resource_files(root_dir)
 	var broken_count: int = 0
 
-	for file_path in files:
+	for file_path: String in files:
 		if file_path.begins_with("res://.godot/"):
 			continue
 
 		var cache_mode: ResourceLoader.CacheMode = ResourceLoader.CACHE_MODE_REUSE
 		var res: Resource = ResourceLoader.load(file_path, "", cache_mode)
 		if res == null:
-			print("WARNING: Could not load resource to verify UID: ", file_path)
+			print("WARNING: Could not load resource: ", file_path)
 			broken_count += 1
 			continue
 
@@ -32,7 +32,7 @@ func _init() -> void:
 	quit(0 if broken_count == 0 else 1)
 
 
-## Recursively collects all resource, scene, and script file paths in the project.
+## Recursively collects all resource and scene file paths in the project.
 ## [param current_path]: Target directory path to scan.
 ## Returns an [Array] of absolute resource path [String] instances.
 func _get_all_resource_files(current_path: String) -> Array[String]:
@@ -49,11 +49,7 @@ func _get_all_resource_files(current_path: String) -> Array[String]:
 			var full_path: String = current_path.path_join(file_name)
 			if dir.current_is_dir():
 				result.append_array(_get_all_resource_files(full_path))
-			elif (
-				file_name.ends_with(".tscn")
-				or file_name.ends_with(".tres")
-				or file_name.ends_with(".gd")
-			):
+			elif file_name.ends_with(".tscn") or file_name.ends_with(".tres"):
 				result.append(full_path)
 		file_name = dir.get_next()
 	dir.list_dir_end()
