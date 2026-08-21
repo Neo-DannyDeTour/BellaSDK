@@ -407,7 +407,7 @@ vec4 sampleAllAtmospherics(
 	// pMie *= (1.0 - lightingWeight);
 
 	float AtmosphericsDistancePower = length(vec3(RayleighScatteringCoef * totalRlh + MieScatteringCoef * totalMie));
-	vec3 atmospherics = 22.0 * (ambientLight * RayleighScatteringCoef * totalRlh + pMie * MieScatteringCoef * sunlightColor * totalMie) / sampleCount;
+	vec3 atmospherics = 22.0 * (ambientLight * RayleighScatteringCoef * totalRlh + pMie * MieScatteringCoef * sunlightColor * totalMie) / max(sampleCount, 1.0);
 	return vec4(atmospherics, AtmosphericsDistancePower);
 }
 
@@ -591,7 +591,7 @@ void main() {
 				// 		float actualDepth = abs(reprojectedClipPos.z);
 
 				// 		if (usingaccumA > 0.0){
-				// 			currentDataAccumilation = imageLoad(accum_2A_image, adjustedUV).rgba;
+				// 			currentDataAccumilation = imageLoad(accum_2A_image, clampedUV).rgba;
 				// 			bool lastDepthBreak = currentDataAccumilation.a < 0.0;
 				// 			float sampledDepth = currentDataAccumilation.r;
 				// 			depthBreak = actualDepth > sampledDepth;
@@ -606,7 +606,7 @@ void main() {
 
 				// 		}
 				// 		else{
-				// 			currentDataAccumilation = imageLoad(accum_2B_image, adjustedUV).rgba;
+				// 			currentDataAccumilation = imageLoad(accum_2B_image, clampedUV).rgba;
 				// 			bool lastDepthBreak = currentDataAccumilation.a < 0.0;
 				// 			float sampledDepth = abs(currentDataAccumilation.r);
 				// 			depthBreak = actualDepth > sampledDepth;
@@ -830,8 +830,8 @@ void main() {
 
 	density *= clamp(smoothstep(maxstep * stepCount, minstep * stepCount, traveledDistance), 0.0, 1.0);
 
-	ambient = clamp(ambient / lightingSamples, 0.0, 1.0);
-	paintedColor = clamp(paintedColor / lightingSamples, 0.0, 1.0);
+	ambient = clamp(ambient / max(lightingSamples, 1.0), 0.0, 1.0);
+	paintedColor = clamp(paintedColor / max(lightingSamples, 1.0), 0.0, 1.0);
 
 
 	vec3 ambientLight = genericData.data.ambientLightColor.rgb * totalLightPower;
@@ -907,16 +907,17 @@ void main() {
 	float travelspeed = length(delta) + maxstep;
 	//bool debugCollisions = false;
 	if (usingaccumA > 0.0){
-		currentColorAccumilation = imageLoad(accum_1A_image, adjustedUV).rgba;
-		currentDataAccumilation = imageLoad(accum_2A_image, adjustedUV).rgba;
+		currentColorAccumilation = imageLoad(accum_1A_image, clampedUV).rgba;
+		currentDataAccumilation = imageLoad(accum_2A_image, clampedUV).rgba;
 
 		float currentDepthBreak = float(depthBreak);
 
 		// bool lastDepthBreak = currentDataAccumilation.a < 0.0;
-		float if_break = max(float(override), abs(length(clampedUV - adjustedUV)));
-		// if_break = max(if_break, lightColor.a - 0.8 - currentColorAccumilation.a); //Lets super high accumilation still look passable, but at the cost of less soft edges.
+		float if_break = max(float(override), abs(length(vec2(clampedUV - adjustedUV))));
+		bool is_corrupt = any(isnan(currentColorAccumilation)) || any(isinf(currentColorAccumilation));
+		float dist_threshold = min(travelspeed * 0.5, maxstep * 4.0);
 
-		if (if_break > 0.0 || (currentDepthBreak != currentDataAccumilation.a && abs(initialdistanceSample - currentDataAccumilation.r) > travelspeed * 0.5)){
+		if (if_break > 0.0 || is_corrupt || (currentDepthBreak != currentDataAccumilation.a && abs(initialdistanceSample - currentDataAccumilation.r) > dist_threshold)){
 			currentColorAccumilation = lightColor;
 			//debugCollisions = true;
 			currentDataAccumilation.r = initialdistanceSample;
@@ -937,16 +938,17 @@ void main() {
 		imageStore(accum_2B_image, uv, currentDataAccumilation);
 	}
 	else{
-		currentColorAccumilation = imageLoad(accum_1B_image, adjustedUV).rgba;
-		currentDataAccumilation = imageLoad(accum_2B_image, adjustedUV).rgba;
+		currentColorAccumilation = imageLoad(accum_1B_image, clampedUV).rgba;
+		currentDataAccumilation = imageLoad(accum_2B_image, clampedUV).rgba;
 
 		float currentDepthBreak = float(depthBreak);
 
 		// bool lastDepthBreak = currentDataAccumilation.a < 0.0;
-		float if_break = max(float(override), abs(length(clampedUV - adjustedUV)));
-		// if_break = max(if_break, lightColor.a - 0.8 - currentColorAccumilation.a); //Lets super high accumilation still look passable, but at the cost of less soft edges.
+		float if_break = max(float(override), abs(length(vec2(clampedUV - adjustedUV))));
+		bool is_corrupt = any(isnan(currentColorAccumilation)) || any(isinf(currentColorAccumilation));
+		float dist_threshold = min(travelspeed * 0.5, maxstep * 4.0);
 
-		if (if_break > 0.0 || (currentDepthBreak != currentDataAccumilation.a && abs(initialdistanceSample - currentDataAccumilation.r) > travelspeed * 0.5)){
+		if (if_break > 0.0 || is_corrupt || (currentDepthBreak != currentDataAccumilation.a && abs(initialdistanceSample - currentDataAccumilation.r) > dist_threshold)){
 			currentColorAccumilation = lightColor;
 			//debugCollisions = true;
 			currentDataAccumilation.r = initialdistanceSample;

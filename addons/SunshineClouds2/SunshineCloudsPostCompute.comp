@@ -255,7 +255,7 @@ vec4 sampleAllAtmospherics(
 	// pMie *= (1.0 - lightingWeight);
 
 	float AtmosphericsDistancePower = length(vec3(RayleighScatteringCoef * totalRlh + MieScatteringCoef * totalMie));
-	vec3 atmospherics = 22.0 * (ambientLight * RayleighScatteringCoef * totalRlh + pMie * MieScatteringCoef * sunlightColor * totalMie) / sampleCount;
+	vec3 atmospherics = 22.0 * (ambientLight * RayleighScatteringCoef * totalRlh + pMie * MieScatteringCoef * sunlightColor * totalMie) / max(sampleCount, 1.0);
 	return vec4(atmospherics, AtmosphericsDistancePower);
 }
 
