@@ -675,90 +675,123 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 			## Array holding uniform data for render scene data.
 			var render_scene_data: RenderSceneData = render_data.get_render_scene_data()
 
-			if (
+			var needs_full_rebuild: bool = (
 				size != last_size
+				or msaa_mode != last_msaa_mode
+				or blit_screen_images.size() == 0
+				or accumulation_textures.size() == 0
+			)
+
+			var needs_uniform_update: bool = (
+				needs_full_rebuild
 				or uniform_sets == null
 				or uniform_sets.size() != view_count * 4
 				or color_images.size() == 0
 				or color_images[0] != buffers.get_color_layer(0)
-				or blit_screen_images.size() == 0
-				or msaa_mode != last_msaa_mode
-			):
-				# We removed the manual 'for uset: RID in uniform_sets' loop here.
-				# initialize_compute() now safely handles it at the top of clear_compute().
+			)
 
-				initialize_compute()
-				initialize_raster_pipelines(
-					buffers.get_color_layer(0, is_msaa_on), buffers.get_depth_layer(0, is_msaa_on)
-				)
+			if needs_uniform_update:
+				if needs_full_rebuild:
+					initialize_compute()
+					initialize_raster_pipelines(
+						buffers.get_color_layer(0, is_msaa_on),
+						buffers.get_depth_layer(0, is_msaa_on)
+					)
+					accumulation_textures.clear()
+				else:
+					for uset: RID in uniform_sets:
+						if uset.is_valid():
+							rd.free_rid(uset)
 
-				accumulation_textures.clear()
 				uniform_sets.clear()
 				color_images.clear()
 
-				#print(
-				#"SunshineCloudsGD: Successfully freed prior rendering pass "
-				#+ "arrays to prevent VRAM accumulation."
-				#)
-
-				for item: RID in blit_screen_images:
-					if item.is_valid():
-						rd.free_rid(item)
-				blit_screen_images.clear()
+				if needs_full_rebuild:
+					for item: RID in blit_screen_images:
+						if item.is_valid():
+							rd.free_rid(item)
+					blit_screen_images.clear()
 
 				for view: int in range(view_count):
 					color_images.append(buffers.get_color_layer(view, false))
 					## Rendering device handle for the depth image.
 					var depth_image: RID = buffers.get_depth_layer(view, false)
 
-					## Array holding uniform data for blank image data.
-					var blank_image_data: PackedByteArray = PackedByteArray()
-					# OPTIMIZATION: 8 bytes per pixel instead of 16 for half-float textures
-					blank_image_data.resize(new_size.x * new_size.y * 8)
+					if needs_full_rebuild:
+						## Array holding uniform data for blank image data.
+						var blank_image_data: PackedByteArray = PackedByteArray()
+						# OPTIMIZATION: 8 bytes per pixel instead of 16 for half-float textures
+						blank_image_data.resize(new_size.x * new_size.y * 8)
 
-					## The base colorformat used for cloud rendering.
-					var base_colorformat: RDTextureFormat = rd.texture_get_format(
-						color_images[view]
-					)
-
-					## Controls the blit screen format behavior.
-					var blit_screen_format: RDTextureFormat = rd.texture_get_format(
-						buffers.get_color_layer(view, is_msaa_on)
-					)
-					blit_screen_format.usage_bits |= (
-						RenderingDevice.TEXTURE_USAGE_STORAGE_BIT
-						| RenderingDevice.TEXTURE_USAGE_SAMPLING_BIT
-					)
-
-					blit_screen_images.append(
-						rd.texture_create(blit_screen_format, RDTextureView.new())
-					)
-
-					# OPTIMIZATION: Halved memory bandwidth by switching to 16-bit floats.
-					base_colorformat.format = RenderingDevice.DATA_FORMAT_R16G16B16A16_SFLOAT
-					base_colorformat.width = new_size.x
-					base_colorformat.height = new_size.y
-
-					for _i: int in range(7):
-						accumulation_textures.append(
-							rd.texture_create(
-								base_colorformat, RDTextureView.new(), [blank_image_data]
-							)
+						## The base colorformat used for cloud rendering.
+						var base_colorformat: RDTextureFormat = rd.texture_get_format(
+							color_images[view]
 						)
 
-					general_data_buffer = rd.uniform_buffer_create(1024)
+						## Controls the blit screen format behavior.
+						var blit_screen_format: RDTextureFormat = rd.texture_get_format(
+							buffers.get_color_layer(view, is_msaa_on)
+						)
+						blit_screen_format.usage_bits |= (
+							RenderingDevice.TEXTURE_USAGE_STORAGE_BIT
+							| RenderingDevice.TEXTURE_USAGE_SAMPLING_BIT
+						)
 
-					## Controls the depthformat behavior.
-					var depthformat: RDTextureFormat = rd.texture_get_format(depth_image)
-					depthformat.width = new_size.x
-					depthformat.height = new_size.y
-					depthformat.format = RenderingDevice.DATA_FORMAT_R32_SFLOAT
-					depthformat.usage_bits = (
-						RenderingDevice.TEXTURE_USAGE_STORAGE_BIT
-						| RenderingDevice.TEXTURE_USAGE_SAMPLING_BIT
-					)
+						blit_screen_images.append(
+							rd.texture_create(blit_screen_format, RDTextureView.new())
+						)
 
-					resized_depth = rd.texture_create(depthformat, RDTextureView.new(), [])
+						# OPTIMIZATION: Halved memory bandwidth by switching to 16-bit floats.
+						base_colorformat.format = RenderingDevice.DATA_FORMAT_R16G16B16A16_SFLOAT
+						base_colorformat.width = new_size.x
+						base_colorformat.height = new_size.y
+
+						for _i: int in range(7):
+							accumulation_textures.append(
+								rd.texture_create(
+									base_colorformat, RDTextureView.new(), [blank_image_data]
+								)
+							)
+
+						## Controls the depthformat behavior.
+						var depthformat: RDTextureFormat = rd.texture_get_format(depth_image)
+						depthformat.width = new_size.x
+						depthformat.height = new_size.y
+						depthformat.format = RenderingDevice.DATA_FORMAT_R32_SFLOAT
+						depthformat.usage_bits = (
+							RenderingDevice.TEXTURE_USAGE_STORAGE_BIT
+							| RenderingDevice.TEXTURE_USAGE_SAMPLING_BIT
+						)
+
+						if resized_depth.is_valid():
+							rd.free_rid(resized_depth)
+						resized_depth = rd.texture_create(depthformat, RDTextureView.new(), [])
+					else:
+						# If not full rebuild, we just update the blit screen images if needed
+						if (
+							blit_screen_images.size() <= view
+							or not blit_screen_images[view].is_valid()
+						):
+							var blit_screen_format: RDTextureFormat = rd.texture_get_format(
+								buffers.get_color_layer(view, is_msaa_on)
+							)
+							blit_screen_format.usage_bits |= (
+								RenderingDevice.TEXTURE_USAGE_STORAGE_BIT
+								| RenderingDevice.TEXTURE_USAGE_SAMPLING_BIT
+							)
+							if blit_screen_images.size() > view:
+								if blit_screen_images[view].is_valid():
+									rd.free_rid(blit_screen_images[view])
+								blit_screen_images[view] = rd.texture_create(
+									blit_screen_format, RDTextureView.new()
+								)
+							else:
+								blit_screen_images.append(
+									rd.texture_create(blit_screen_format, RDTextureView.new())
+								)
+
+					if needs_full_rebuild or not general_data_buffer.is_valid():
+						general_data_buffer = rd.uniform_buffer_create(1024)
 
 					# Prepass Uniforms
 					## Controls the prepass uniforms array behavior.
@@ -878,7 +911,8 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 					camera_uniform.add_id(general_data_buffer)
 					uniforms_array.append(camera_uniform)
 
-					light_data_buffer = rd.uniform_buffer_create(6272)
+					if needs_full_rebuild or not light_data_buffer.is_valid():
+						light_data_buffer = rd.uniform_buffer_create(6272)
 					## Array holding uniform data for light data uniform.
 					var light_data_uniform: RDUniform = RDUniform.new()
 					light_data_uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_UNIFORM_BUFFER
@@ -886,10 +920,11 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 					light_data_uniform.add_id(light_data_buffer)
 					uniforms_array.append(light_data_uniform)
 
-					## Array holding uniform data for sample data.
-					var sample_data: PackedByteArray = PackedByteArray()
-					sample_data.resize(512)
-					point_sample_data_buffer = rd.storage_buffer_create(512, sample_data)
+					if needs_full_rebuild or not point_sample_data_buffer.is_valid():
+						## Array holding uniform data for sample data.
+						var sample_data: PackedByteArray = PackedByteArray()
+						sample_data.resize(512)
+						point_sample_data_buffer = rd.storage_buffer_create(512, sample_data)
 					## Array holding uniform data for point sample data uniform.
 					var point_sample_data_uniform: RDUniform = RDUniform.new()
 					point_sample_data_uniform.uniform_type = (
@@ -1043,11 +1078,9 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 			## Controls the rendertarget behavior.
 			var rendertarget: RID = buffers.get_render_target()
 
-			if rendertarget != last_render_target:
-				last_render_target = rendertarget
+			ignore_accumilation = false
+			if size != last_size:
 				ignore_accumilation = true
-			else:
-				ignore_accumilation = false
 
 			last_size = size
 
@@ -1101,6 +1134,7 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 
 			if not position_resetting and position_querying:
 				position_resetting = true
+				rd.barrier(RenderingDevice.BARRIER_MASK_COMPUTE)
 				rd.buffer_get_data_async(point_sample_data_buffer, retrieve_position_queries.bind())
 
 
