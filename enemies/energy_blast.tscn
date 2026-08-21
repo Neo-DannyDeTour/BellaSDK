@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bapys8vo4s75w"]
 
-[ext_resource type="Script" uid="uid://24y54c0s8k0j" path="res://guardian_projectile.gd" id="1_sqpuj"]
+[ext_resource type="Script" uid="uid://24y54c0s8k0j" path="res://enemies/guardian_projectile.gd" id="1_sqpuj"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_sqpuj"]
 

@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cwopkjkkwl7rx"]
 
-[ext_resource type="Script" uid="uid://qh1hnwea2fu8" path="res://crab_shell_trigger.gd" id="1_5jt65"]
+[ext_resource type="Script" uid="uid://qh1hnwea2fu8" path="res://shared/crab_shell_trigger.gd" id="1_5jt65"]
 [ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://shared/editor_trigger_visualizer.gd" id="2_tfdxq"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_534t5"]
