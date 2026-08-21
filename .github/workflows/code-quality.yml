@@ -14,12 +14,13 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
         with:
-          lfs: false # Do not pull large LFS objects
+          lfs: false
 
       - name: Sanitize Autoload Class Names
         run: |
-          sed -i '/^class_name GlobalSettings\b/d' core/global_settings.gd
-          sed -i '/^class_name GestureInputManager\b/d' core/GestureInputManager.gd
+          sed -i '/^class_name GlobalSettings\b/d' core/global_settings.gd || true
+          sed -i '/^class_name GestureInputManager\b/d' core/GestureInputManager.gd || true
+          sed -i '/^class_name KeycardSystem\b/d' core/KeycardSystem.gd || true
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -47,38 +48,51 @@ jobs:
               "890000000a49444154789c63000100000500010d0a2db40000000049454e44ae"
               "426082"
           )
-          # Minimal 44-byte silent WAV header (PCM, 1 channel, 44100 Hz, 16-bit)
+          # 2x2 Uncompressed Truecolor TGA (22 bytes) - Prevents layered texture crash
+          DUMMY_TGA = bytes.fromhex(
+              "000002000000000000000000020002001800"
+              "ffffff000000ffffff000000"
+          )
+          # Minimal 44-byte silent WAV
           DUMMY_WAV = bytes.fromhex(
               "524946462400000057415645666d7420100000000100010044ac000088580100"
               "020010006461746100000000"
           )
-          # Minimal 1-byte fallback for other binary formats (models, audio)
-          DUMMY_GENERIC = b"\x00"
+          # Minimal 4-frame silent MP3
+          DUMMY_MP3 = bytes.fromhex(
+              "fffb906400000000000000000000000000000000000000000000000000000000"
+              "00000000000000000000000000000000000000000000"
+          )
+          # Minimal silent OGG container
+          DUMMY_OGG = bytes.fromhex(
+              "4f676753000200000000000000000000000000000000011e0112"
+              "01766f72626973000000000144ac0000000000000000e8030000"
+              "00000000b801"
+          )
 
           EXT_MAP = {
               ".png": DUMMY_PNG,
               ".jpg": DUMMY_PNG,
               ".jpeg": DUMMY_PNG,
+              ".tga": DUMMY_TGA,
               ".wav": DUMMY_WAV,
-              ".ogg": DUMMY_WAV,
-              ".mp3": DUMMY_WAV,
+              ".mp3": DUMMY_MP3,
+              ".ogg": DUMMY_OGG,
           }
 
           for root, _, files in os.walk("."):
-              if ".git" in root:
+              if ".git" in root or ".godot" in root:
                   continue
               for file in files:
                   ext = os.path.splitext(file)[1].lower()
-                  if ext in [".png", ".jpg", ".jpeg", ".wav", ".ogg", ".mp3", ".glb", ".gltf", ".fbx"]:
+                  if ext in EXT_MAP:
                       path = os.path.join(root, file)
                       try:
                           with open(path, "rb") as f:
-                              header = f.read(50)
-                          # Check if file is a raw Git LFS text pointer
+                              header = f.read(40)
                           if header.startswith(b"version https://git-lfs"):
-                              stub = EXT_MAP.get(ext, DUMMY_GENERIC)
                               with open(path, "wb") as f:
-                                  f.write(stub)
+                                  f.write(EXT_MAP[ext])
                       except Exception as e:
                           print(f"Skipping {path}: {e}")
           EOF
