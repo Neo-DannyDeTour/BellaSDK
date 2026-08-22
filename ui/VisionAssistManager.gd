@@ -1,21 +1,10 @@
-## Manages real-time AAA high-contrast silhouette overlays across target scene groups.
+## Global autoload managing real-time AAA high-contrast silhouette overlays
+## across target scene groups.
+##
+## Hooks into scene loading to recursively apply unshaded flat color materials
+## as overlays to all geometry and sprites within designated accessibility groups.
+class_name VisionAssistManager
 extends Node
-
-## Tracks whether vision assist high-contrast silhouettes are currently rendered.
-var is_active: bool = false
-
-## Current background shading mode applied behind overlays.
-var current_mode: String = "aaa_blue"
-
-## Dictionary mapping scene group names to their target outline and fill colors.
-var group_colors: Dictionary[String, Color] = {
-	"friends": Color(0.0, 0.5, 1.0, 1.0),
-	"enemies": Color(1.0, 0.1, 0.1, 1.0),
-	"interactables": Color(1.0, 0.9, 0.0, 1.0),
-	"traversal": Color(0.0, 1.0, 0.2, 1.0),
-	"clues": Color(1.0, 0.0, 1.0, 1.0),
-	"cover": Color(1.0, 1.0, 1.0, 1.0)
-}
 
 ## Named color lookups for console and UI palette selections.
 const COLOR_PALETTE: Dictionary[String, Color] = {
@@ -27,12 +16,6 @@ const COLOR_PALETTE: Dictionary[String, Color] = {
 	"magenta": Color(1.0, 0.0, 1.0, 1.0),
 	"white": Color(1.0, 1.0, 1.0, 1.0)
 }
-
-## Caches instantiated unshaded ShaderMaterial instances per group.
-var _group_materials: Dictionary[String, ShaderMaterial] = {}
-
-## Base shader resource enforcing solid silhouettes with billboarding support.
-var _silhouette_shader: Shader = Shader.new()
 
 ## Spatial shader source code for high-contrast stencil overlays.
 const OVERLAY_SHADER_CODE: String = """
@@ -78,6 +61,28 @@ void fragment() {
 	ALBEDO = highlight_color.rgb;
 }
 """
+
+## Tracks whether vision assist high-contrast silhouettes are currently rendered.
+var is_active: bool = false
+
+## Current background shading mode applied behind overlays.
+var current_mode: String = "aaa_blue"
+
+## Dictionary mapping scene group names to their target outline and fill colors.
+var group_colors: Dictionary[String, Color] = {
+	"friends": Color(0.0, 0.5, 1.0, 1.0),
+	"enemies": Color(1.0, 0.1, 0.1, 1.0),
+	"interactables": Color(1.0, 0.9, 0.0, 1.0),
+	"traversal": Color(0.0, 1.0, 0.2, 1.0),
+	"clues": Color(1.0, 0.0, 1.0, 1.0),
+	"cover": Color(1.0, 1.0, 1.0, 1.0)
+}
+
+## Caches instantiated unshaded ShaderMaterial instances per group.
+var _group_materials: Dictionary[String, ShaderMaterial] = {}
+
+## Base shader resource enforcing solid silhouettes with billboarding support.
+var _silhouette_shader: Shader = Shader.new()
 
 
 ## Lifecycle initialization method pre-building materials and connecting event listeners.

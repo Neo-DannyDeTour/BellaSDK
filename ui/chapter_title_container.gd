@@ -1,12 +1,21 @@
+## Visual manager for rendering full-screen cinematic chapter titles.
+##
+## Spawns dynamic, animated text overlays using various shaders and tween effects
+## triggered by the [signal chapter_triggered] global event signal.
 class_name ChapterDisplay
 extends MarginContainer
 
+## The viewport container that holds and applies post-processing shaders to the text.
 @onready var effect_container: SubViewportContainer = $EffectContainer
+
+## The RichTextLabel responsible for rendering the actual chapter text and BBCode.
 @onready var chapter_label: RichTextLabel = $EffectContainer/SubViewport/ChapterLabel
 
+## The internal active Tween instance orchestrating the text animation sequence.
 var _chapter_tween: Tween
 
 
+## Called when the node enters the scene tree. Sets up container constraints and events.
 func _ready() -> void:
 	# --- PROGRAMMATIC INSPECTOR OVERRIDES ---
 	# Disabling fit_content forces the label to respect the full screen width we give it,
@@ -25,6 +34,7 @@ func _ready() -> void:
 	_on_resized()
 
 
+## Recomputes structural layout constraints whenever the screen or window is resized.
 func _on_resized() -> void:
 	print("ChapterDisplay: Container resized. Updating layout constraints.")
 	if is_instance_valid(effect_container) and is_instance_valid(chapter_label):
@@ -163,6 +173,9 @@ func _on_chapter_triggered(
 			_play_simple(chapter_name, display_duration)
 
 
+## Displays text statically with a smooth fade in and fade out.
+## [param chapter_name] Display text string.
+## [param duration] Visible display duration.
 func _play_simple(chapter_name: String, duration: float) -> void:
 	print("ChapterDisplay: Playing SIMPLE animation.")
 	chapter_label.text = "[center]" + chapter_name + "[/center]"
@@ -175,6 +188,9 @@ func _play_simple(chapter_name: String, duration: float) -> void:
 	_chapter_tween.tween_callback(chapter_label.hide)
 
 
+## Applies a continuous sine wave undulation effect to the text characters.
+## [param chapter_name] Display text string.
+## [param duration] Visible display duration.
 func _play_wave(chapter_name: String, duration: float) -> void:
 	print("ChapterDisplay: Playing WAVE animation.")
 	var wave_tag: String = "[wave amp=50.0 freq=5.0 connected=1]"
@@ -188,6 +204,9 @@ func _play_wave(chapter_name: String, duration: float) -> void:
 	_chapter_tween.tween_callback(chapter_label.hide)
 
 
+## Iteratively reveals characters simulating terminal typing.
+## [param chapter_name] Display text string.
+## [param duration] Visible display duration.
 func _play_typewriter(chapter_name: String, duration: float) -> void:
 	print("ChapterDisplay: Playing TYPEWRITER animation.")
 	chapter_label.modulate.a = 1.0
@@ -203,6 +222,9 @@ func _play_typewriter(chapter_name: String, duration: float) -> void:
 	_chapter_tween.tween_callback(chapter_label.hide)
 
 
+## Drives a physical slam animation with anticipation and bounce.
+## [param chapter_name] Display text string.
+## [param duration] Visible display duration.
 func _play_slam(chapter_name: String, duration: float) -> void:
 	print("ChapterDisplay: Playing SLAM (falling) animation with anticipation jump.")
 
@@ -276,6 +298,9 @@ func _play_slam(chapter_name: String, duration: float) -> void:
 	_chapter_tween.tween_callback(func() -> void: chapter_label.position = base_pos)
 
 
+## Expands text scale aggressively outward using a spring easing algorithm.
+## [param chapter_name] Display text string.
+## [param duration] Visible display duration.
 func _play_spring(chapter_name: String, duration: float) -> void:
 	print("ChapterDisplay: Playing SPRING animation.")
 	chapter_label.text = "[center]" + chapter_name + "[/center]"
@@ -307,6 +332,9 @@ func _play_spring(chapter_name: String, duration: float) -> void:
 	_chapter_tween.tween_callback(func() -> void: chapter_label.scale = Vector2.ONE)
 
 
+## Drifts text smoothly across the screen diagonally.
+## [param chapter_name] Display text string.
+## [param duration] Visible display duration.
 func _play_drift(chapter_name: String, duration: float) -> void:
 	print("ChapterDisplay: Playing DRIFT animation.")
 	chapter_label.text = "[center]" + chapter_name + "[/center]"
@@ -338,6 +366,10 @@ func _play_drift(chapter_name: String, duration: float) -> void:
 	_chapter_tween.chain().tween_callback(func() -> void: chapter_label.position = base_pos)
 
 
+## Applies and automates custom uniform values on a specified target shader.
+## [param chapter_name] Display text string.
+## [param duration] Visible display duration.
+## [param shader_res] The external shader resource to load and manipulate.
 func _play_shader_effect(chapter_name: String, duration: float, shader_res: Shader) -> void:
 	print(
 		"ChapterDisplay: Playing SHADER effect on SubViewportContainer -> ",
@@ -368,6 +400,10 @@ func _play_shader_effect(chapter_name: String, duration: float, shader_res: Shad
 	_chapter_tween.tween_callback(func() -> void: effect_container.material = null)
 
 
+## Fades out and blurs the text using a gaussian depth-of-field technique.
+## [param chapter_name] Display text string.
+## [param duration] Visible display duration.
+## [param shader_res] The blur shader resource applied to the label.
 func _play_blur(chapter_name: String, duration: float, shader_res: Shader) -> void:
 	print("ChapterDisplay: Playing BLUR/BOKEH animation.")
 	chapter_label.text = "[center]" + chapter_name + "[/center]"
@@ -418,6 +454,9 @@ func _play_blur(chapter_name: String, duration: float, shader_res: Shader) -> vo
 	_chapter_tween.chain().tween_callback(chapter_label.hide)
 
 
+## Manipulates text stroke borders to create a pulsating neon light halo.
+## [param chapter_name] Display text string.
+## [param duration] Visible display duration.
 func _play_glow(chapter_name: String, duration: float) -> void:
 	print("ChapterDisplay: Playing GLOW animation via native outline tween.")
 	chapter_label.text = "[center]" + chapter_name + "[/center]"
@@ -472,6 +511,9 @@ func _play_glow(chapter_name: String, duration: float) -> void:
 	)
 
 
+## Animates the text scaling up and down repetitively mimicking a heartbeat.
+## [param chapter_name] Display text string.
+## [param duration] Visible display duration.
 func _play_heartbeat(chapter_name: String, duration: float) -> void:
 	print("ChapterDisplay: Playing HEARTBEAT animation.")
 	chapter_label.text = "[center]" + chapter_name + "[/center]"

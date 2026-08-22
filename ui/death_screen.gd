@@ -1,5 +1,9 @@
-extends CanvasLayer
+## Displays a post-death sequence with visual effects and audio feedback.
+##
+## Listens for the `player_died` global event and takes over the screen to play
+## an animated sequence (e.g., ECG monitor flatlining or a lava burn effect).
 class_name DeathScreen
+extends CanvasLayer
 
 ## Defines the player's movement state at the exact moment of death.
 enum DeathState { CROUCHING, WALKING, SPRINTING }
@@ -95,6 +99,7 @@ var _flatline_started: bool = false
 var _active_effect: EffectType = EffectType.ECG
 
 
+## Configures UI visibility, synthesizes audio tones, and connects the death signal.
 func _ready() -> void:
 	print("DeathScreen: _ready() - Initializing UI and shader overlays.")
 	hide()
@@ -125,46 +130,16 @@ func _ready() -> void:
 		Events.player_died.connect(play_death_sequence)
 
 
+## Evaluates input for skipping the death sequence if the timer has passed.
+## [param event] The system input event.
 func _input(event: InputEvent) -> void:
 	if _skip_allowed and event is InputEventMouseButton and event.pressed:
 		print("DeathScreen: _input() - Mouse clicked, skipping death screen.")
 		_return_to_main_menu()
 
 
-func play_death_sequence(death_state: int = DeathState.WALKING) -> void:
-	print("DeathScreen: play_death_sequence() - Triggering sequence. State: ", death_state)
-
-	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	show()
-
-	_skip_allowed = false
-	_is_dead = true
-	death_label.text = DEATH_MESSAGES.pick_random()
-
-	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
-	_aspect = viewport_size.x / viewport_size.y
-
-	# Randomly pick an effect mode
-	_active_effect = EffectType.values().pick_random() as EffectType
-	print("DeathScreen: play_death_sequence() - Selected effect: ", _active_effect)
-
-	var ui_tween: Tween = create_tween().set_parallel(true)
-	ui_tween.tween_property(background, "modulate:a", 1.0, 3.0)
-
-	if pain_overlay:
-		pain_overlay.show()
-		ui_tween.tween_property(pain_overlay, "color:a", 0.4, 3.0)
-
-	match _active_effect:
-		EffectType.ECG:
-			_start_ecg_effect(death_state, ui_tween)
-		EffectType.LAVA:
-			_start_lava_effect()
-
-	get_tree().create_timer(3.0).timeout.connect(_allow_skipping)
-	get_tree().create_timer(10.0).timeout.connect(_return_to_main_menu)
-
-
+## Advances the active shader time and triggers auditory effects based on time intervals.
+## [param delta] Engine frame delta.
 func _process(delta: float) -> void:
 	if not _is_dead or _active_effect != EffectType.ECG:
 		return
@@ -187,6 +162,46 @@ func _process(delta: float) -> void:
 		_cycle_count += 1
 
 
+## Initiates the entire death screen takeover flow.
+## [param death_state] Player state index configuring sequence pacing.
+func play_death_sequence(death_state: int = DeathState.WALKING) -> void:
+	print("DeathScreen: play_death_sequence() - Triggering sequence. State: ", death_state)
+
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	show()
+
+	_skip_allowed = false
+	_is_dead = true
+	death_label.text = DEATH_MESSAGES.pick_random()
+
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	_aspect = viewport_size.x / viewport_size.y
+
+	# Randomly pick an effect mode
+	var picked: int = EffectType.values().pick_random() as int
+	_active_effect = picked as EffectType
+	print("DeathScreen: play_death_sequence() - Selected effect: ", _active_effect)
+
+	var ui_tween: Tween = create_tween().set_parallel(true)
+	ui_tween.tween_property(background, "modulate:a", 1.0, 3.0)
+
+	if pain_overlay:
+		pain_overlay.show()
+		ui_tween.tween_property(pain_overlay, "color:a", 0.4, 3.0)
+
+	match _active_effect:
+		EffectType.ECG:
+			_start_ecg_effect(death_state, ui_tween)
+		EffectType.LAVA:
+			_start_lava_effect()
+
+	get_tree().create_timer(3.0).timeout.connect(_allow_skipping)
+	get_tree().create_timer(10.0).timeout.connect(_return_to_main_menu)
+
+
+## Prepares and begins the hospital ECG monitor shader visual effect.
+## [param death_state] Impacts pacing modifiers.
+## [param ui_tween] Target parallel tween for overlay alphas.
 func _start_ecg_effect(death_state: int, ui_tween: Tween) -> void:
 	print("DeathScreen: _start_ecg_effect() - Starting ECG monitor effect.")
 	ecg_monitor.show()
@@ -214,6 +229,7 @@ func _start_ecg_effect(death_state: int, ui_tween: Tween) -> void:
 	ui_tween.tween_property(ecg_monitor, "modulate:a", 1.0, 3.0)
 
 
+## Prepares and begins the rising lava shader visual effect.
 func _start_lava_effect() -> void:
 	print("DeathScreen: _start_lava_effect() - Dynamically filling lava.")
 	lava_overlay.show()
@@ -235,6 +251,7 @@ func _start_lava_effect() -> void:
 	text_tween.tween_property(death_label, "modulate:a", 1.0, 3.0)
 
 
+## Initiates the transition from beating heart waveform to flatline waveform.
 func _trigger_flatline() -> void:
 	if _flatline_started:
 		return
@@ -251,6 +268,12 @@ func _trigger_flatline() -> void:
 	text_tween.tween_property(death_label, "modulate:a", 1.0, 3.0)
 
 
+## Procedurally synthesizes basic audio waves to avoid relying on external files.
+## [param freq] Desired wave frequency.
+## [param duration] Desired length in seconds.
+## [param loop] Should the tone loop continuously.
+## [param volume] Playback scaling multiplier.
+## [return] A generated [AudioStreamWAV] buffer.
 func _generate_tone(
 	freq: float, duration: float, loop: bool, volume: float = 1.0
 ) -> AudioStreamWAV:
@@ -288,6 +311,8 @@ func _generate_tone(
 	return stream
 
 
+## Tween callback interpolating the raw points fed to the ECG shader.
+## [param weight] Normal interpolation value from 0.0 to 1.0.
 func _lerp_heartbeat_to_flatline(weight: float) -> void:
 	var current_points: Array[Vector2] = []
 	for i: int in range(HEALTHY_POINTS.size()):
@@ -299,23 +324,27 @@ func _lerp_heartbeat_to_flatline(weight: float) -> void:
 		mat.set_shader_parameter("points", current_points)
 
 
+## Triggers a single playback instance of the short pulse beep audio.
 func _play_beep() -> void:
 	print("DeathScreen: _play_beep() - Playing heartbeat beep.")
 	_heart_audio.stream = _beep_stream
 	_heart_audio.play()
 
 
+## Triggers the looping playback instance of the flatline audio.
 func _play_flatline() -> void:
 	print("DeathScreen: _play_flatline() - Playing flatline audio.")
 	_heart_audio.stream = _flatline_stream
 	_heart_audio.play()
 
 
+## Unlocks the ability for the player to input a skip command after a timer duration.
 func _allow_skipping() -> void:
 	print("DeathScreen: _allow_skipping() - Input skip unlocked.")
 	_skip_allowed = true
 
 
+## Clears out sequence state and triggers an engine scene change back to the main menu.
 func _return_to_main_menu() -> void:
 	if not is_inside_tree():
 		return
