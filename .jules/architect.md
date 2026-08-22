@@ -4,3 +4,4 @@
 - Ensure Action Logging exactly matches the 'ClassName: function_name() called. Action description.' format and is placed at the top of all functions in player action scripts.
 - Remember to install gdtoolkit via pip before running gdlint or gdformat.
 - When using regex or partial diff replacements for minor feedback (like moving a single constant), always double-check the surrounding context to ensure strict class ordering (enums -> constants -> @export vars) is not accidentally disrupted.
+- Autoload scripts that are globally configured in project.godot (like KeycardSystem) should generally avoid defining a global class_name unless explicitly required, as defining it can cause name collisions or script loading errors during test suite instantiation (e.g., GUT 'Invalid call. Nonexistent function new in base GDScript' and 'Nonexistent function get_signal_list in base Nil' errors).
