@@ -1,14 +1,27 @@
 @tool
+## An [EditorScript] utility to automatically gather and cache all materials in the project.
+##
+## This script recursively scans the project directory for [Material] resources and
+## compiles them into a single [ShaderCache] resource. This cache can then be loaded
+## at runtime to preemptively compile shaders and prevent frame drops.
+class_name ShaderCacheBuilder
 extends EditorScript
 
+## The path where the generated [ShaderCache] resource will be saved.
 const CACHE_PATH: String = "res://shared/shader_cache.tres"
+
+## The root directory to start scanning for materials.
 const MATERIALS_DIR: String = "res://"
 
 
+## Executed when the script is run from the editor's Script tab.
+## Initializes the scan and saves the resulting [ShaderCache].
 func _run() -> void:
 	print("EditorScript: Starting automated shader cache generation...")
 
-	var cache: ShaderCache = load(CACHE_PATH) as ShaderCache
+	var cache: ShaderCache
+	if ResourceLoader.exists(CACHE_PATH):
+		cache = load(CACHE_PATH) as ShaderCache
 	if not cache:
 		cache = ShaderCache.new()
 		print("EditorScript: Created new ShaderCache instance.")
@@ -34,6 +47,10 @@ func _run() -> void:
 		push_error("EditorScript: Failed to save cache. Error code: %d" % error)
 
 
+## Recursively scans a directory for files ending in `.tres` or `.material`
+## and appends them to the provided array if they are [Material] resources.
+## [param path] The current directory path being scanned.
+## [param array_ref] The array where discovered [Material] resources will be appended.
 func _scan_directory(path: String, array_ref: Array[Material]) -> void:
 	var dir: DirAccess = DirAccess.open(path)
 

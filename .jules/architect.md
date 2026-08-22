@@ -3,3 +3,4 @@
 - When condensing multi-line parameters to fix trailing whitespace (e.g. in addons/KGB_Agent/kgb_dock.gd), ensure you prefer placing one parameter per line for long method signatures to adhere to project styling conventions.
 - Ensure Action Logging exactly matches the 'ClassName: function_name() called. Action description.' format and is placed at the top of all functions in player action scripts.
 - Remember to install gdtoolkit via pip before running gdlint or gdformat.
+- When using regex or partial diff replacements for minor feedback (like moving a single constant), always double-check the surrounding context to ensure strict class ordering (enums -> constants -> @export vars) is not accidentally disrupted.
