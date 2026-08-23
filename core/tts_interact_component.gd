@@ -1,7 +1,12 @@
+## A component that enables Text-to-Speech (TTS) functionality for in-game objects.
+##
+## Attach this node as a child of a physics body. When the player's interaction scanner
+## hovers over the parent body, this component will trigger the global TTS event.
+## It can read text directly from a linked [Label3D] or use an explicit phonetic string.
 class_name TTSInteractComponent
 extends Node
 
-## Reference to the Label3D node containing the visual text in the level.
+## Reference to the [Label3D] node containing the visual text in the level.
 @export var target_label: Label3D = null
 
 ## Phonetic text override. If provided, the TTS engine reads this instead of the raw label text.
@@ -14,11 +19,25 @@ var _has_spoken: bool = false
 var _last_hover_frame: int = 0
 
 
+## Lifecycle method called when the node enters the scene tree.
 func _ready() -> void:
 	print("TTSInteractComponent: Initialized and waiting for scanner.")
 
 
-## Called by the InteractionScanner when the player's crosshair hits the object's physics body.
+## Called every frame to evaluate if the player's crosshair has left the object.
+## [param _delta] The frame execution time.
+func _process(_delta: float) -> void:
+	# If the scanner stops calling hover_cursor, the frame count will slip behind.
+	# We use this to cheaply detect focus loss without using heavy Area3D overlap checks.
+	if _has_spoken and Engine.get_process_frames() > _last_hover_frame + 1:
+		_has_spoken = false
+		print("TTSInteractComponent: Focus lost. Resetting TTS trigger.")
+
+
+## Triggered by the InteractionScanner when the player looks at the host object.
+## Evaluates what text to send and emits the TTS global signal if not already spoken.
+## [param _player] The player node emitting the raycast.
+## [param _hit_point] The physical intersection point.
 func hover_cursor(_player: Node3D, _hit_point: Vector3) -> void:
 	var current_frame: int = Engine.get_process_frames()
 
@@ -36,15 +55,8 @@ func hover_cursor(_player: Node3D, _hit_point: Vector3) -> void:
 	_last_hover_frame = current_frame
 
 
-func _process(_delta: float) -> void:
-	# If the scanner stops calling hover_cursor, the frame count will slip behind.
-	# We use this to cheaply detect focus loss without using heavy Area3D overlap checks.
-	if _has_spoken and Engine.get_process_frames() > _last_hover_frame + 1:
-		_has_spoken = false
-		print("TTSInteractComponent: Focus lost. Resetting TTS trigger.")
-
-
-## Safely attempts to retrieve the text from the target Label3D.
+## Safely attempts to retrieve the text from the target [Label3D].
+## [return] The string text or an empty string if invalid.
 func _get_label_text() -> String:
 	if is_instance_valid(target_label):
 		return target_label.text
