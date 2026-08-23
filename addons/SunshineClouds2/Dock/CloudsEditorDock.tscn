@@ -100,7 +100,7 @@ text = "Mask Path:"
 [node name="LineEdit" type="LineEdit" parent="ScrollContainer/VBoxContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "res://assets/CloudsMask.exr"
+text = "res://CloudsMask.exr"
 
 [node name="MaskBuildButton" type="Button" parent="ScrollContainer/VBoxContainer"]
 layout_mode = 2

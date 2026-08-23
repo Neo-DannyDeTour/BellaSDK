@@ -190,6 +190,8 @@ func _load_game_state(path: String) -> void:
 		else:
 			push_warning("SaveManager: Node not in tree: " + node_path_str)
 
+	print("SaveManager: Game state loaded. Total nodes restored: ", loaded_nodes_count)
+
 
 ## Scans the saves directory and returns a parsed list of all save file metadata.
 func get_all_saves() -> Array[Dictionary]:

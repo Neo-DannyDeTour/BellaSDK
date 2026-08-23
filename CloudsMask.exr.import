@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b404vxesyde33"
-path="res://.godot/imported/CloudsDriverIcon.svg-faa29143230a8cbda673ccfc6652c810.ctex"
+uid="uid://btpy34r58hkhb"
+path="res://.godot/imported/CloudsMask.exr-a4dc82dfc63f5190d03b4cb0c51c469e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://addons/SunshineClouds2/CloudsDriverIcon.svg"
-dest_files=["res://.godot/imported/CloudsDriverIcon.svg-faa29143230a8cbda673ccfc6652c810.ctex"]
+source_file="res://CloudsMask.exr"
+dest_files=["res://.godot/imported/CloudsMask.exr-a4dc82dfc63f5190d03b4cb0c51c469e.ctex"]
 
 [params]
 
@@ -23,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""
@@ -36,8 +36,5 @@ process/premult_alpha=false
 process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
-process/size_limit=128
-detect_3d/compress_to=0
-svg/scale=1.0
-editor/scale_with_editor_scale=false
-editor/convert_colors_with_editor_theme=false
+process/size_limit=0
+detect_3d/compress_to=1

@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://b1mqjhfxiy6bc"]
 
 [ext_resource type="Script" uid="uid://bdq5cyrq7ofas" path="res://interactables/meat_cube.gd" id="1_bxs5d"]
-[ext_resource type="ArrayMesh" uid="uid://c3b6adx33trvb" path="res://assets/dev_meshes/dev_box.tres" id="1_ucve1"]
+[ext_resource type="ArrayMesh" uid="uid://bypxmmibnp46f" path="res://assets/dev_meshes/dev_box.tres" id="1_ucve1"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_ucve1"]
 size = Vector3(1.8, 1.8, 1.8)

@@ -7,13 +7,14 @@ on:
     branches: [main]
 
 concurrency:
-  group: test-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 jobs:
   lint-and-format:
     name: GDFormat & GDLint Checks
     runs-on: ubuntu-latest
+    timeout-minutes: 3
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -31,6 +32,7 @@ jobs:
     name: GUT Headless Unit Tests
     runs-on: ubuntu-latest
     needs: lint-and-format
+    timeout-minutes: 5
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -44,25 +46,32 @@ jobs:
 
       - name: Create Stub Files for Excluded Assets
         run: |
-          # 1. Create all missing resource directories
+          # 1. Base directories
           mkdir -p assets/sounds \
                    "assets/VisTEST/2. Modular_Models/Walls" \
                    "assets/VisTEST/2. Modular_Models/Props/Barrels" \
                    interactables
 
-          # 2. Generate silent MP3 stubs
+          # 2. Generate valid silent MP3 stubs
           printf '\xff\xfb\x90\x64%s' "$(printf '%0.s\x00' {1..413})" > assets/sounds/ping_emitter_sound.mp3
           cp assets/sounds/ping_emitter_sound.mp3 assets/sounds/echo_sound.mp3
           cp assets/sounds/ping_emitter_sound.mp3 assets/sounds/waypoint_sound.mp3
           cp assets/sounds/ping_emitter_sound.mp3 assets/sounds/watch_out_hazard_sound.mp3
 
-          # 3. Generate 1x1 valid PNG stub
+          # 3. Dynamic scan: generate dummy mp3 for any other sound referenced in .tscn files
+          find . -type f -name "*.tscn" -exec grep -o 'res://assets/sounds/[^"]*\.mp3' {} + 2>/dev/null | sort -u | while read -r sound_path; do
+            fs_path="${sound_path#res://}"
+            mkdir -p "$(dirname "$fs_path")"
+            [ ! -f "$fs_path" ] && cp assets/sounds/ping_emitter_sound.mp3 "$fs_path"
+          done
+
+          # 4. Generate valid 1x1 PNG stubs for known missing textures
           PNG_DATA='\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15c4\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
           printf "$PNG_DATA" > "assets/VisTEST/2. Modular_Models/Walls/Wall_Fan_T_Concrete_BaseColor-T_Concrete_Alpha.png"
           printf "$PNG_DATA" > "assets/VisTEST/2. Modular_Models/Props/Barrels/Barrels_T_Barrel_01_Red_Emissive.png"
           printf "$PNG_DATA" > "assets/VisTEST/2. Modular_Models/Props/Barrels/Barrels_T_Barrel_01_Red_Metallic-T_Barrel_01_Red_Roughness.png"
 
-          # 4. Create dummy sub-scene if missing
+          # 5. Create dummy sub-scene if missing
           if [ ! -f interactables/barrel_red.tscn ]; then
             echo '[gd_scene format=3 type="PackedScene"]' > interactables/barrel_red.tscn
             echo '[node name="barrel_red" type="Node3D"]' >> interactables/barrel_red.tscn
@@ -75,4 +84,5 @@ jobs:
         run: |
           godot --headless -s res://addons/gut/gut_cmdln.gd \
             -gconfig=res://.gutconfig.json \
+            -gjunit_xml_file=res://gut_test_results.xml \
             -gexit

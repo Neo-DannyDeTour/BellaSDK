@@ -1,0 +1,62 @@
+name: "GUT Unit & Integration Tests"
+
+on:
+  push:
+    branches: ["main", "master", "develop"]
+  pull_request:
+    branches: ["main", "master"]
+  workflow_dispatch:
+
+env:
+  GODOT_VERSION: "4.7.1"
+  GODOT_STATUS: "stable"
+
+jobs:
+  run-gut-tests:
+    name: "🧪 Run Headless GUT Test Suite"
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: "📥 Checkout Repository"
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          submodules: "recursive"
+
+      - name: "📦 Cache Godot Binary"
+        id: cache-godot
+        uses: actions/cache@v4
+        with:
+          path: /opt/godot
+          key: godot-${{ env.GODOT_VERSION }}-${{ env.GODOT_STATUS }}-linux
+
+      - name: "⚙️ Download & Install Godot Linux Binary"
+        if: steps.cache-godot.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p /opt/godot
+          DOWNLOAD_URL="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-${GODOT_STATUS}/Godot_v${GODOT_VERSION}-${GODOT_STATUS}_linux.x86_64.zip"
+          echo "Downloading from: ${DOWNLOAD_URL}"
+          curl -L "${DOWNLOAD_URL}" -o /opt/godot/godot.zip
+          unzip -q /opt/godot/godot.zip -d /opt/godot/
+          mv /opt/godot/Godot_v${GODOT_VERSION}-${GODOT_STATUS}_linux.x86_64 /opt/godot/godot
+          chmod +x /opt/godot/godot
+          rm -f /opt/godot/godot.zip
+
+      - name: "🔗 Link Godot to PATH"
+        run: |
+          sudo ln -sf /opt/godot/godot /usr/local/bin/godot
+          godot --version
+
+      - name: "🔄 Pre-heat Godot Resource Import Cache"
+        run: |
+          echo "Generating .godot/ cache headlessly to prevent shader/texture compilation timeouts..."
+          godot --headless --editor --quit || true
+
+      - name: "🚀 Execute Headless GUT Suite"
+        run: |
+          godot --headless \
+            -d \
+            -s "res://addons/gut/gut_cmdln.gd" \
+            -gconfig="res://.gutconfig.json" \
+            -gignore_pause=true
