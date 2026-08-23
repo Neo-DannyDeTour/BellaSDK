@@ -3,3 +3,4 @@
 - When condensing multi-line parameters to fix trailing whitespace (e.g. in addons/KGB_Agent/kgb_dock.gd), ensure you prefer placing one parameter per line for long method signatures to adhere to project styling conventions.
 - Ensure Action Logging exactly matches the 'ClassName: function_name() called. Action description.' format and is placed at the top of all functions in player action scripts.
 - Remember to install gdtoolkit via pip before running gdlint or gdformat.
+- Variables like 'var current_health' must also receive '##' doc comments to fulfill complete coverage requirements, missing these is an incomplete standardization rollout.

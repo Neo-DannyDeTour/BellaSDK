@@ -1,4 +1,8 @@
 extends Node
+## Manages health values, damage mitigation, and death pooling logic for game entities.
+##
+## Attach this to any node that needs to be damageable. Works directly with the player
+## to broadcast global signals via [Events] and coordinates pooling via moving the parent [Node3D].
 class_name HealthComponent
 
 ## Emitted when the current health changes.
@@ -24,11 +28,14 @@ signal died
 var current_health: int = 100
 
 
+## Initializes internal state and sets current health to the maximum capacity on node load.
 func _ready() -> void:
 	print("HealthComponent: _ready() - Initializing health component.")
 	current_health = max_health
 
 
+## Subtracts the given amount from current health and manages player death scenarios.
+## [param amount] The damage value to apply.
 func take_damage(amount: int) -> void:
 	print("HealthComponent: take_damage() - Took ", amount, " damage.")
 
@@ -53,6 +60,8 @@ func take_damage(amount: int) -> void:
 		die()
 
 
+## Adds the given amount to current health without exceeding the maximum capacity.
+## [param amount] The healing value to apply.
 func heal(amount: int) -> void:
 	print("HealthComponent: heal() - Healing for ", amount, ".")
 
@@ -66,6 +75,8 @@ func heal(amount: int) -> void:
 	print("HealthComponent: heal() - Current health is now ", current_health, ".")
 
 
+## Permanently increases the maximum health capacity and scales current health proportionally.
+## [param amount] The health capacity value to add.
 func increase_max_health(amount: int) -> void:
 	print(
 		"HealthComponent: increase_max_health() - Increasing max health capacity by ", amount, "."
@@ -91,6 +102,7 @@ func increase_max_health(amount: int) -> void:
 		Events.player_health_changed.emit(current_health)
 
 
+## Broadcasts death signals and hides/pools the parent node based on [member use_pooling].
 func die() -> void:
 	print("HealthComponent: die() - Entity died.")
 	died.emit()
@@ -117,6 +129,7 @@ func die() -> void:
 			target_node.queue_free()
 
 
+## Resets current health back to maximum and re-enables the parent [Node3D] for pooling reuse.
 func reset() -> void:
 	print("HealthComponent: reset() - Restoring health for next spawn.")
 	current_health = max_health
