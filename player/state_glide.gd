@@ -8,6 +8,8 @@ extends PlayerState
 # --------------------------------------
 # EXPORTS
 # --------------------------------------
+## Security variable: Indicates if debug commands (updraft) are allowed.
+var is_debug_allowed: bool = OS.has_feature("debug")
 ## Base forward speed when gliding.
 @export var forward_speed: float = 12.0
 ## Maximum downward velocity permitted while the glider is active.
@@ -131,6 +133,9 @@ func _bank_glider(input_x: float, delta: float) -> void:
 
 ## Listens for the jump input to manually apply upward velocity.
 func _handle_debug_updraft() -> void:
+	if not is_debug_allowed:
+		return
+
 	if Input.is_action_just_pressed("jump"):
 		print("StateGlide: _handle_debug_updraft() triggered. Applying vertical force.")
 		player.velocity.y = debug_updraft_force
