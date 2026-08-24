@@ -24,12 +24,20 @@ const DEFAULT_FONT_MODE: int = 0
 const DEFAULT_HIGH_CONTRAST: bool = false
 ## Default constant value for motion sickness reduction.
 const DEFAULT_REDUCE_MOTION: bool = false
-## Default constant index for subtitle text scale.
-const DEFAULT_SUB_SIZE: int = 1
-## Default constant value for subtitle panel background opacity.
-const DEFAULT_SUB_BG_OPACITY: float = 0.5
+## Default constant value for subtitle text font size in pixels.
+const DEFAULT_SUB_SIZE: float = 24.0
+## Default constant value for subtitle panel background opacity percentage (0 - 100).
+const DEFAULT_SUB_BG_OPACITY: float = 50.0
+## Default constant index for subtitle text color.
+const DEFAULT_SUB_COLOR_INDEX: int = 6
+## Default constant index for subtitle background color (Black).
+const DEFAULT_SUB_BG_COLOR_INDEX: int = 7
+## Default constant index for speaker name color (Cyan).
+const DEFAULT_SUB_SPEAKER_COLOR_INDEX: int = 0
 ## Default constant value for distinct character subtitle colors.
 const DEFAULT_SUB_COLORS: bool = true
+## Default constant value for displaying speaker names.
+const DEFAULT_SUB_SHOW_NAMES: bool = true
 ## Default constant value for post-process film grain effect intensity.
 const DEFAULT_FILM_GRAIN: float = 0.0
 ## Default constant value for Text-to-Speech narration system.
@@ -58,6 +66,42 @@ const DEFAULT_VISION_ASSIST: bool = false
 const DEFAULT_VISION_ASSIST_MODE: int = 1
 ## Default constant index for screen filters.
 const DEFAULT_SCREEN_FILTER: int = 0
+## Default constant value for world environment gamma.
+const DEFAULT_GAMMA: float = 1.0
+
+## Available palette color options for high contrast silhouette groups and subtitles.
+const COLOR_NAMES: Array[String] = [
+	"Cyan", "Blue", "Yellow", "Green", "Red", "Magenta", "White", "Black"
+]
+## Available background mode tags for vision assist.
+const VISION_MODES: Array[String] = ["Black & White", "Blue", "Pure Black", "Grey", "Desaturated"]
+## Identifier keys mapping directly to background mode shader parameters.
+const VISION_MODE_KEYS: Array[String] = [
+	"black_and_white", "blue", "pure_black", "grey", "desaturated"
+]
+## Available post-process screen filter mode names.
+const SCREEN_FILTERS: Array[String] = [
+	"Off",
+	"CRT",
+	"VHS",
+	"Pixelate",
+	"Toon",
+	"Gameboy",
+	"Glitch",
+	"Grain",
+	"Halftone",
+	"Nightvision",
+	"Kuwahara",
+	"ASCII",
+	"90Anime",
+	"Manga",
+	"Handdrawn",
+	"Moebius",
+	"Obra",
+	"Psychedelic",
+	"BotW",
+	"Ghibli"
+]
 
 ## Diorama packed scene to instantiate into the preview viewport.
 @export var diorama_scene: PackedScene
@@ -106,6 +150,10 @@ const DEFAULT_SCREEN_FILTER: int = 0
 @onready var film_grain_input: LineEdit = get_node_or_null("%FilmGrainEdit")
 ## Toggle switch for photosensitivity safety mode.
 @onready var photosensitivity_toggle: CheckButton = get_node_or_null("%PhotosensitivityToggle")
+## Slider for adjusting world gamma.
+@onready var gamma_slider: HSlider = get_node_or_null("%GammaSlider")
+## Text input for manual gamma entry.
+@onready var gamma_input: LineEdit = get_node_or_null("%GammaLine")
 
 # --- DISPLAY & UI CONTROLS ---
 ## Slider for adjusting camera field of view.
@@ -124,12 +172,22 @@ const DEFAULT_SCREEN_FILTER: int = 0
 @onready var high_contrast_toggle: CheckButton = get_node_or_null("%HighContrastToggle")
 
 # --- SUBTITLES & AUDIO CONTROLS ---
-## Dropdown menu for subtitle text size.
-@onready var sub_size_option: OptionButton = get_node_or_null("%SubSizeOption")
-## Slider for subtitle background opacity.
+## Slider for subtitle text font size.
+@onready var sub_size_slider: HSlider = get_node_or_null("%SubSizeSlider")
+## Text input for manual subtitle text font size entry.
+@onready var sub_size_input: LineEdit = get_node_or_null("%SubSizeLine")
+## Slider for subtitle background opacity percentage.
 @onready var sub_bg_opacity_slider: HSlider = get_node_or_null("%SubBgOpacitySlider")
-## Text input for manual subtitle background opacity entry.
+## Text input for manual subtitle background opacity percentage entry.
 @onready var sub_bg_opacity_input: LineEdit = get_node_or_null("%SubBgOpacityLine")
+## Dropdown menu for default subtitle body text color.
+@onready var sub_text_color_option: OptionButton = get_node_or_null("%SubTextColorOption")
+## Dropdown menu for subtitle background box color.
+@onready var sub_bg_color_option: OptionButton = get_node_or_null("%SubBgColorOption")
+## Dropdown menu for primary speaker label color.
+@onready var sub_speaker_color_option: OptionButton = get_node_or_null("%SubSpeakerColorOption")
+## Toggle switch for showing or hiding speaker names in subtitles.
+@onready var sub_show_names_toggle: CheckButton = get_node_or_null("%SubShowNamesToggle")
 ## Toggle switch for colored character names in subtitles.
 @onready var sub_colors_toggle: CheckButton = get_node_or_null("%SubColorsToggle")
 ## Toggle switch for text-to-speech audio narration.
@@ -163,37 +221,6 @@ const DEFAULT_SCREEN_FILTER: int = 0
 ## Toggle switch for camera motion and screenshake reduction.
 @onready var reduce_motion_toggle: CheckButton = get_node_or_null("%ReduceMotionToggle")
 
-## Available palette color options for high contrast silhouette groups.
-const COLOR_NAMES: Array[String] = ["Cyan", "Blue", "Yellow", "Green", "Red", "Magenta", "White"]
-## Available background mode tags for vision assist.
-const VISION_MODES: Array[String] = ["Black & White", "Blue", "Pure Black", "Grey", "Desaturated"]
-## Identifier keys mapping directly to background mode shader parameters.
-const VISION_MODE_KEYS: Array[String] = [
-	"black_and_white", "blue", "pure_black", "grey", "desaturated"
-]
-const SCREEN_FILTERS: Array[String] = [
-	"Off",
-	"CRT",
-	"VHS",
-	"Pixelate",
-	"Toon",
-	"Gameboy",
-	"Glitch",
-	"Grain",
-	"Halftone",
-	"Nightvision",
-	"Kuwahara",
-	"ASCII",
-	"90Anime",
-	"Manga",
-	"Handdrawn",
-	"Moebius",
-	"Obra",
-	"Psychedelic",
-	"BotW",
-	"Ghibli"
-]
-
 ## Active preview camera instance inside the diorama viewport.
 var _diorama_camera: Camera3D
 ## Active tween interpolating preview camera movements.
@@ -219,7 +246,7 @@ func _ready() -> void:
 
 ## Connects and configures existing cameras inside the shared diorama viewport.
 func _setup_diorama() -> void:
-	diorama_viewport = get_tree().root.find_child("DioramaViewport", true, false) as SubViewport
+	diorama_viewport = (get_tree().root.find_child("DioramaViewport", true, false) as SubViewport)
 	if not is_instance_valid(diorama_viewport):
 		print("UI: DioramaViewport not found in tree.")
 		return
@@ -263,7 +290,6 @@ func _setup_diorama_cameras() -> void:
 		_diorama_cameras[key] = cam
 		print("UI: Found and registered diorama camera: ", key)
 
-		# Sync child vision mesh visibility to settings toggle
 		var mesh: MeshInstance3D = cam.get_node_or_null("VisionAssistMesh") as MeshInstance3D
 		if is_instance_valid(mesh):
 			mesh.visible = is_vision_active
@@ -331,9 +357,9 @@ func _focus_diorama_on_group(group_name: String) -> void:
 	if _camera_tween and _camera_tween.is_valid():
 		_camera_tween.kill()
 
-	_camera_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(
+	_camera_tween = (create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(
 		Tween.EASE_OUT
-	)
+	))
 	_camera_tween.tween_property(_diorama_camera, "global_position", target_pos, 0.6)
 
 	var look_transform: Transform3D = _diorama_camera.global_transform.looking_at(
@@ -344,7 +370,7 @@ func _focus_diorama_on_group(group_name: String) -> void:
 	)
 
 
-## Populates OptionButton items for palettes, modes, filters, fonts, and sizes.
+## Populates OptionButton items for palettes, modes, filters, fonts, and subtitle colors.
 func _populate_dropdowns() -> void:
 	print("UI: Populating OptionButton dropdown menus.")
 	if vision_mode_option:
@@ -358,7 +384,10 @@ func _populate_dropdowns() -> void:
 		color_interact_option,
 		color_traversal_option,
 		color_clues_option,
-		color_cover_option
+		color_cover_option,
+		sub_text_color_option,
+		sub_bg_color_option,
+		sub_speaker_color_option
 	]
 	for dropdown: OptionButton in group_dropdowns:
 		if dropdown:
@@ -380,12 +409,6 @@ func _populate_dropdowns() -> void:
 			colorblind_option.add_item(mode)
 
 	_populate_font_dropdown()
-
-	if sub_size_option:
-		sub_size_option.clear()
-		var size_modes: Array[String] = ["Small", "Medium", "Large"]
-		for size_mode: String in size_modes:
-			sub_size_option.add_item(size_mode)
 
 
 ## Connects all internal UI element input and adjustment signals safely.
@@ -413,6 +436,7 @@ func _connect_signals() -> void:
 	_connect_adjustment_signals(
 		saturation_slider, saturation_input, "saturation", 0.0, 3.0, "Settings"
 	)
+	_connect_adjustment_signals(gamma_slider, gamma_input, "gamma", 0.0, 3.0, "Settings")
 	_connect_adjustment_signals(
 		film_grain_slider, film_grain_input, "film_grain_intensity", 0.0, 20.0, "Settings"
 	)
@@ -433,16 +457,26 @@ func _connect_signals() -> void:
 	if high_contrast_toggle:
 		high_contrast_toggle.toggled.connect(_on_high_contrast_toggled)
 
-	if sub_size_option:
-		sub_size_option.item_selected.connect(_on_sub_size_selected)
+	_connect_adjustment_signals(
+		sub_size_slider, sub_size_input, "subtitle_size", 12.0, 48.0, "Accessibility", true
+	)
 	_connect_adjustment_signals(
 		sub_bg_opacity_slider,
 		sub_bg_opacity_input,
 		"subtitle_bg_opacity",
 		0.0,
-		1.0,
-		"Accessibility"
+		100.0,
+		"Accessibility",
+		true
 	)
+	if sub_text_color_option:
+		sub_text_color_option.item_selected.connect(_on_sub_text_color_selected)
+	if sub_bg_color_option:
+		sub_bg_color_option.item_selected.connect(_on_sub_bg_color_selected)
+	if sub_speaker_color_option:
+		sub_speaker_color_option.item_selected.connect(_on_sub_speaker_color_selected)
+	if sub_show_names_toggle:
+		sub_show_names_toggle.toggled.connect(_on_sub_show_names_toggled)
 	if sub_colors_toggle:
 		sub_colors_toggle.toggled.connect(_on_sub_colors_toggled)
 	if tts_toggle:
@@ -555,6 +589,7 @@ func _load_accessibility_settings() -> void:
 	_load_slider_setting(
 		saturation_slider, saturation_input, "saturation", DEFAULT_SATURATION, "Settings"
 	)
+	_load_slider_setting(gamma_slider, gamma_input, "gamma", DEFAULT_GAMMA, "Settings")
 	_load_slider_setting(
 		film_grain_slider, film_grain_input, "film_grain_intensity", DEFAULT_FILM_GRAIN, "Settings"
 	)
@@ -596,17 +631,70 @@ func _load_accessibility_settings() -> void:
 			)
 		)
 
-	if sub_size_option:
-		sub_size_option.selected = (
-			GlobalSettings.get_setting("Accessibility", "subtitle_size", DEFAULT_SUB_SIZE) as int
-		)
+	_load_slider_setting(
+		sub_size_slider, sub_size_input, "subtitle_size", DEFAULT_SUB_SIZE, "Accessibility", true
+	)
+	_apply_subtitle_size(
+		GlobalSettings.get_setting("Accessibility", "subtitle_size", DEFAULT_SUB_SIZE) as float
+	)
+
 	_load_slider_setting(
 		sub_bg_opacity_slider,
 		sub_bg_opacity_input,
 		"subtitle_bg_opacity",
 		DEFAULT_SUB_BG_OPACITY,
-		"Accessibility"
+		"Accessibility",
+		true
 	)
+	_apply_subtitle_bg_opacity(
+		(
+			GlobalSettings.get_setting(
+				"Accessibility", "subtitle_bg_opacity", DEFAULT_SUB_BG_OPACITY
+			)
+			as float
+		)
+	)
+
+	if sub_text_color_option:
+		var color_idx: int = (
+			GlobalSettings.get_setting(
+				"Accessibility", "subtitle_text_color", DEFAULT_SUB_COLOR_INDEX
+			)
+			as int
+		)
+		sub_text_color_option.selected = color_idx
+		_apply_subtitle_text_color(color_idx)
+
+	if sub_bg_color_option:
+		var bg_color_idx: int = (
+			GlobalSettings.get_setting(
+				"Accessibility", "subtitle_bg_color", DEFAULT_SUB_BG_COLOR_INDEX
+			)
+			as int
+		)
+		sub_bg_color_option.selected = bg_color_idx
+		_apply_subtitle_bg_color(bg_color_idx)
+
+	if sub_speaker_color_option:
+		var spk_color_idx: int = (
+			GlobalSettings.get_setting(
+				"Accessibility", "subtitle_speaker_color", DEFAULT_SUB_SPEAKER_COLOR_INDEX
+			)
+			as int
+		)
+		sub_speaker_color_option.selected = spk_color_idx
+		_apply_subtitle_speaker_color(spk_color_idx)
+
+	if sub_show_names_toggle:
+		var show_names: bool = (
+			GlobalSettings.get_setting(
+				"Accessibility", "subtitle_show_names", DEFAULT_SUB_SHOW_NAMES
+			)
+			as bool
+		)
+		sub_show_names_toggle.set_pressed_no_signal(show_names)
+		_apply_subtitle_show_names(show_names)
+
 	if sub_colors_toggle:
 		sub_colors_toggle.set_pressed_no_signal(
 			(
@@ -772,18 +860,20 @@ func _load_slider_setting(
 ## [param min_val] Minimum clamp limit.
 ## [param max_val] Maximum clamp limit.
 ## [param section] GlobalSettings category section.
+## [param is_int] Whether to format display text as integer.
 func _connect_adjustment_signals(
 	slider: HSlider,
 	input_box: LineEdit,
 	setting_name: String,
 	min_val: float = 0.0,
 	max_val: float = 3.0,
-	section: String = "Settings"
+	section: String = "Settings",
+	is_int: bool = false
 ) -> void:
 	if slider:
 		slider.min_value = min_val
 		slider.max_value = max_val
-		slider.value_changed.connect(_on_adjustment_changed.bind(input_box, setting_name))
+		slider.value_changed.connect(_on_adjustment_changed.bind(input_box, setting_name, is_int))
 		slider.drag_ended.connect(_on_adjustment_drag_ended.bind(setting_name, slider, section))
 	if input_box:
 		input_box.text_submitted.connect(
@@ -792,7 +882,7 @@ func _connect_adjustment_signals(
 		input_box.focus_entered.connect(_on_adjustment_focus_entered.bind(input_box))
 		input_box.focus_exited.connect(
 			_on_adjustment_focus_exited.bind(
-				input_node_ref(input_box), slider, setting_name, section, min_val, max_val
+				input_node_ref(input_box), slider, setting_name, section, min_val, max_val, is_int
 			)
 		)
 
@@ -808,21 +898,28 @@ func input_node_ref(node: LineEdit) -> LineEdit:
 ## [param value] Current numeric slider value.
 ## [param input_node] Companion text input field.
 ## [param setting_name] Target setting name.
-func _on_adjustment_changed(value: float, input_node: LineEdit, setting_name: String) -> void:
+## [param is_int] Format as integer text if true.
+func _on_adjustment_changed(
+	value: float, input_node: LineEdit, setting_name: String, is_int: bool = false
+) -> void:
 	print("UI: Adjustment changed for ", setting_name, " to ", value)
 	if input_node and not input_node.has_focus():
-		input_node.text = "%.2f" % value
+		input_node.text = str(int(value)) if is_int else ("%.2f" % value)
 
 	if setting_name == "ui_scale":
 		_apply_ui_scale_settings()
 	elif setting_name == "mouse_sensitivity":
 		_apply_mouse_sensitivity()
+	elif setting_name == "subtitle_size":
+		_apply_subtitle_size(value)
+	elif setting_name == "subtitle_bg_opacity":
+		_apply_subtitle_bg_opacity(value)
 	elif setting_name == "film_grain_intensity":
 		if has_node("/root/Events"):
 			var events: Node = get_node("/root/Events")
 			if events.has_signal("film_grain_changed"):
 				events.film_grain_changed.emit(value)
-	elif setting_name in ["brightness", "contrast", "saturation"]:
+	elif setting_name in ["brightness", "contrast", "saturation", "gamma"]:
 		_apply_visual_settings()
 
 
@@ -839,6 +936,10 @@ func _on_adjustment_drag_ended(
 		GlobalSettings.save_setting(section, setting_name, slider_node.value)
 		if setting_name == "mouse_sensitivity":
 			_apply_mouse_sensitivity()
+		elif setting_name == "subtitle_size":
+			_apply_subtitle_size(slider_node.value)
+		elif setting_name == "subtitle_bg_opacity":
+			_apply_subtitle_bg_opacity(slider_node.value)
 		elif setting_name == "film_grain_intensity":
 			if has_node("/root/Events"):
 				var events: Node = get_node("/root/Events")
@@ -869,12 +970,16 @@ func _on_adjustment_input_submitted(
 	GlobalSettings.save_setting(section, setting_name, new_val)
 	if setting_name == "mouse_sensitivity":
 		_apply_mouse_sensitivity()
+	elif setting_name == "subtitle_size":
+		_apply_subtitle_size(new_val)
+	elif setting_name == "subtitle_bg_opacity":
+		_apply_subtitle_bg_opacity(new_val)
 	elif setting_name == "film_grain_intensity":
 		if has_node("/root/Events"):
 			var events: Node = get_node("/root/Events")
 			if events.has_signal("film_grain_changed"):
 				events.film_grain_changed.emit(new_val)
-	elif setting_name in ["brightness", "contrast", "saturation"]:
+	elif setting_name in ["brightness", "contrast", "saturation", "gamma"]:
 		_apply_visual_settings()
 
 
@@ -893,23 +998,133 @@ func _on_adjustment_focus_entered(input_node: LineEdit) -> void:
 ## [param section] GlobalSettings category section.
 ## [param min_val] Minimum clamp limit.
 ## [param max_val] Maximum clamp limit.
+## [param is_int] Format as integer text if true.
 func _on_adjustment_focus_exited(
 	input_node: LineEdit,
 	slider_node: HSlider,
 	setting_name: String,
 	section: String,
 	min_val: float,
-	max_val: float
+	max_val: float,
+	is_int: bool = false
 ) -> void:
 	if not input_node:
 		return
 	var current_text: String = input_node.text.strip_edges()
 	if current_text == "" and slider_node:
-		input_node.text = "%.2f" % slider_node.value
+		input_node.text = (str(int(slider_node.value)) if is_int else ("%.2f" % slider_node.value))
 	else:
 		_on_adjustment_input_submitted(
 			current_text, setting_name, slider_node, section, min_val, max_val
 		)
+
+
+## Handles subtitle text color dropdown changes.
+## [param index] Palette index selected by player.
+func _on_sub_text_color_selected(index: int) -> void:
+	print("Player selected Subtitle Text Color: ", COLOR_NAMES[index])
+	GlobalSettings.save_setting("Accessibility", "subtitle_text_color", index)
+	_apply_subtitle_text_color(index)
+
+
+## Handles subtitle background color dropdown changes.
+## [param index] Palette index selected by player.
+func _on_sub_bg_color_selected(index: int) -> void:
+	print("Player selected Subtitle Background Color: ", COLOR_NAMES[index])
+	GlobalSettings.save_setting("Accessibility", "subtitle_bg_color", index)
+	_apply_subtitle_bg_color(index)
+
+
+## Handles speaker name color dropdown changes.
+## [param index] Palette index selected by player.
+func _on_sub_speaker_color_selected(index: int) -> void:
+	print("Player selected Speaker Name Color: ", COLOR_NAMES[index])
+	GlobalSettings.save_setting("Accessibility", "subtitle_speaker_color", index)
+	_apply_subtitle_speaker_color(index)
+
+
+## Handles toggling speaker names visibility in subtitles.
+## [param toggled_on] Whether speaker names should be shown.
+func _on_sub_show_names_toggled(toggled_on: bool) -> void:
+	print("Player toggled Show Speaker Names to: ", toggled_on)
+	GlobalSettings.save_setting("Accessibility", "subtitle_show_names", toggled_on)
+	_apply_subtitle_show_names(toggled_on)
+
+
+## Broadcasts subtitle font size adjustments across the EventBus.
+## [param size_val] Subtitle font size in pixels.
+func _apply_subtitle_size(size_val: float) -> void:
+	print("Engine: Applying Subtitle Size: ", size_val)
+	if has_node("/root/Events"):
+		var events: Node = get_node("/root/Events")
+		if events.has_signal("subtitle_size_changed"):
+			events.emit_signal("subtitle_size_changed", size_val)
+
+
+## Broadcasts subtitle background opacity percentage adjustments across the EventBus.
+## [param opacity_val] Subtitle background alpha percentage (0.0 to 100.0).
+func _apply_subtitle_bg_opacity(opacity_val: float) -> void:
+	var normalized_alpha: float = clampf(opacity_val / 100.0, 0.0, 1.0)
+	print(
+		"Engine: Applying Subtitle Background Opacity: ",
+		opacity_val,
+		"% (alpha: ",
+		normalized_alpha,
+		")"
+	)
+	if has_node("/root/Events"):
+		var events: Node = get_node("/root/Events")
+		if events.has_signal("subtitle_bg_opacity_changed"):
+			events.emit_signal("subtitle_bg_opacity_changed", normalized_alpha)
+
+
+## Broadcasts subtitle text color choice across the EventBus.
+## [param index] Target palette color index.
+func _apply_subtitle_text_color(index: int) -> void:
+	if index < 0 or index >= COLOR_NAMES.size():
+		return
+	var col_name: String = COLOR_NAMES[index].to_lower()
+	print("Engine: Applying Subtitle Text Color: ", col_name)
+	if has_node("/root/Events"):
+		var events: Node = get_node("/root/Events")
+		if events.has_signal("subtitle_text_color_changed"):
+			events.emit_signal("subtitle_text_color_changed", col_name)
+
+
+## Broadcasts subtitle background box color choice across the EventBus.
+## [param index] Target palette color index.
+func _apply_subtitle_bg_color(index: int) -> void:
+	if index < 0 or index >= COLOR_NAMES.size():
+		return
+	var col_name: String = COLOR_NAMES[index].to_lower()
+	print("Engine: Applying Subtitle Background Color: ", col_name)
+	if has_node("/root/Events"):
+		var events: Node = get_node("/root/Events")
+		if events.has_signal("subtitle_bg_color_changed"):
+			events.emit_signal("subtitle_bg_color_changed", col_name)
+
+
+## Broadcasts speaker name color choice across the EventBus.
+## [param index] Target palette color index.
+func _apply_subtitle_speaker_color(index: int) -> void:
+	if index < 0 or index >= COLOR_NAMES.size():
+		return
+	var col_name: String = COLOR_NAMES[index].to_lower()
+	print("Engine: Applying Speaker Name Color: ", col_name)
+	if has_node("/root/Events"):
+		var events: Node = get_node("/root/Events")
+		if events.has_signal("subtitle_speaker_color_changed"):
+			events.emit_signal("subtitle_speaker_color_changed", col_name)
+
+
+## Broadcasts show/hide speaker names toggle across the EventBus.
+## [param enabled] Enabled state.
+func _apply_subtitle_show_names(enabled: bool) -> void:
+	print("Engine: Applying Show Speaker Names: ", enabled)
+	if has_node("/root/Events"):
+		var events: Node = get_node("/root/Events")
+		if events.has_signal("subtitle_show_names_toggled"):
+			events.emit_signal("subtitle_show_names_toggled", enabled)
 
 
 ## Applies mouse sensitivity settings to the player's camera controller.
@@ -956,9 +1171,9 @@ func _find_first_child_of_type(parent: Node, type_str: String) -> Node:
 	return null
 
 
-## Applies brightness, contrast, and saturation adjustments to the active WorldEnvironment.
+## Applies brightness, contrast, saturation, and gamma adjustments to the active [WorldEnvironment].
 func _apply_visual_settings() -> void:
-	if not brightness_slider or not contrast_slider or not saturation_slider:
+	if not brightness_slider or not contrast_slider or not saturation_slider or not gamma_slider:
 		return
 	print("Engine: Applying visual adjustments to WorldEnvironment.")
 	var env_node: WorldEnvironment = _find_world_environment()
@@ -967,6 +1182,7 @@ func _apply_visual_settings() -> void:
 		env_node.environment.adjustment_brightness = brightness_slider.value
 		env_node.environment.adjustment_contrast = contrast_slider.value
 		env_node.environment.adjustment_saturation = saturation_slider.value
+		_apply_gamma_to_environment(gamma_slider.value, env_node.environment)
 
 
 ## Adjusts window content scaling factor for user interface elements.
@@ -1132,7 +1348,7 @@ func _apply_fov_settings() -> void:
 	if player and "camera_controller" in player and player.camera_controller:
 		player.camera_controller.base_fov = current_fov
 		if sprint_fov_checkbox:
-			player.camera_controller.disable_sprint_fov = sprint_fov_checkbox.button_pressed
+			player.camera_controller.disable_sprint_fov = (sprint_fov_checkbox.button_pressed)
 
 
 ## Handles vertical axis inversion toggling.
@@ -1194,17 +1410,6 @@ func _on_reduce_motion_toggled(toggled_on: bool) -> void:
 		player.camera_controller.reduce_motion = toggled_on
 
 
-## Handles subtitle size dropdown changes.
-## [param index] Selected subtitle size index.
-func _on_sub_size_selected(index: int) -> void:
-	print("Player selected Subtitle Size index: ", index)
-	GlobalSettings.save_setting("Accessibility", "subtitle_size", index)
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("subtitle_size_changed"):
-			events.emit_signal("subtitle_size_changed", index)
-
-
 ## Handles subtitle speaker color distinction toggling.
 ## [param toggled_on] Enabled state.
 func _on_sub_colors_toggled(toggled_on: bool) -> void:
@@ -1242,3 +1447,23 @@ func _on_photosensitivity_toggled(toggled_on: bool) -> void:
 ## [return] The player [Node] if present, otherwise `null`.
 func _get_player() -> Node:
 	return get_tree().get_first_node_in_group("player")
+
+
+## Updates the [Environment] adjustment color correction gradient using a gamma power curve.
+## [param gamma_val] The target gamma exponent value.
+## [param env] The target [Environment] resource to update.
+func _apply_gamma_to_environment(gamma_val: float, env: Environment) -> void:
+	if not is_instance_valid(env):
+		return
+
+	print("Engine: Updating Environment color correction gamma curve to: ", gamma_val)
+	var curve: Curve = Curve.new()
+	var sample_points: int = 16
+	for i: int in range(sample_points + 1):
+		var t: float = float(i) / float(sample_points)
+		var val: float = pow(t, 1.0 / maxf(gamma_val, 0.001))
+		curve.add_point(Vector2(t, val))
+
+	var curve_tex: CurveTexture = CurveTexture.new()
+	curve_tex.curve = curve
+	env.adjustment_color_correction = curve_tex

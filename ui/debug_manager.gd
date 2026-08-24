@@ -2,7 +2,7 @@
 ##
 ## Hooks into global Event bus signals to enforce debug draw modes directly
 ## on the main viewport, allowing the player to toggle features like wireframe rendering.
-class_name DebugManager
+#class_name DebugManager
 extends Node
 
 

@@ -86,12 +86,14 @@ const SHADOW_QUALITIES: Dictionary = {
 	"High (Smooth)": {"atlas_size": 4096, "filter": 2}
 }
 
-## Map of Tonemapper option labels to [enum Environment.ToneMapper] values.
+## Map of Tonemapper option labels to configuration identifiers.
 const TONEMAP_MODES: Dictionary = {
-	"Linear": Environment.TONE_MAPPER_LINEAR,
-	"Reinhard": Environment.TONE_MAPPER_REINHARDT,
-	"Filmic": Environment.TONE_MAPPER_FILMIC,
-	"ACES": Environment.TONE_MAPPER_ACES
+	"Linear": "linear",
+	"Reinhard": "reinhard",
+	"Filmic": "filmic",
+	"ACES": "aces",
+	"AgX": "agx",
+	"AgX (Punchy)": "agx_punchy"
 }
 
 ## Map of texture Anisotropic filtering levels to integer settings.
@@ -224,18 +226,21 @@ func _populate_gpu_adapters() -> void:
 	gpu_options.clear()
 	_available_gpus.clear()
 
-	var local_device: RenderingDevice = RenderingServer.create_local_rendering_device()
+	var rd: RenderingDevice = RenderingServer.get_rendering_device()
+	var adapter_name: String = ""
 
-	if is_instance_valid(local_device):
-		var device_name: String = local_device.get_device_name()
-		var display_text: String = device_name + " (Default Device)"
-		_available_gpus[display_text] = 0
-		gpu_options.add_item(display_text)
-		local_device.free()
+	if is_instance_valid(rd):
+		adapter_name = rd.get_device_name()
 	else:
-		var current_name: String = RenderingServer.get_video_adapter_name()
-		_available_gpus[current_name] = 0
-		gpu_options.add_item(current_name)
+		adapter_name = RenderingServer.get_video_adapter_name()
+
+	if adapter_name.is_empty():
+		adapter_name = "Default Graphics Adapter"
+
+	var display_text: String = adapter_name + " (Active Device)"
+	_available_gpus[display_text] = 0
+	gpu_options.add_item(display_text)
+	gpu_options.select(0)
 
 
 ## Populates connected physical monitors into [member monitor_options].
@@ -323,6 +328,7 @@ func _load_video_settings() -> void:
 
 
 ## Matches a saved value to an item in [param dropdown] using [param dict].
+## Safely compares numeric and string types to prevent type mismatch crashes.
 ## [param dropdown] The option button to update.
 ## [param dict] Key-value dictionary associated with the option button.
 ## [param setting_key] The config setting key identifier.
@@ -332,14 +338,20 @@ func _sync_dropdown_to_setting(
 ) -> void:
 	print("UI: Syncing dropdown dictionary index to saved file selection.")
 	var saved_val: Variant = GlobalSettings.get_setting("Settings", setting_key, default_val)
+	var saved_str: String = str(saved_val)
+
 	for i: int in range(dropdown.get_item_count()):
 		var item_text: String = dropdown.get_item_text(i)
-		if typeof(saved_val) == TYPE_STRING:
-			if item_text == str(saved_val):
-				dropdown.select(i)
-				return
-		else:
-			if dict.has(item_text) and dict[item_text] == saved_val:
+
+		# 1. Match if the dropdown item label directly equals the saved value
+		if item_text == saved_str:
+			dropdown.select(i)
+			return
+
+		# 2. Match if the dictionary value corresponds to the saved value
+		if dict.has(item_text):
+			var dict_val: Variant = dict[item_text]
+			if str(dict_val) == saved_str:
 				dropdown.select(i)
 				return
 
@@ -401,7 +413,7 @@ func _apply_all_current_settings() -> void:
 		_apply_environment_settings(vp)
 
 
-## Fetches and modifies the active [Environment] on a given [Viewport].
+## Fetches and modifies the active [Environment] and synchronizes AgX shader state.
 ## [param vp] The target viewport to extract and modify the environment from.
 func _apply_environment_settings(vp: Viewport) -> void:
 	print("Engine: Updating environment settings for viewport.")
@@ -413,15 +425,58 @@ func _apply_environment_settings(vp: Viewport) -> void:
 		elif world.fallback_environment:
 			env = world.fallback_environment
 
+	var tonemap_key: String = tonemap_options.get_item_text(tonemap_options.selected)
+	var is_agx: bool = tonemap_key == "AgX"
+	var is_agx_punchy: bool = tonemap_key == "AgX (Punchy)"
+
 	if env:
-		var tonemap_key: String = tonemap_options.get_item_text(tonemap_options.selected)
-		env.tonemap_mode = TONEMAP_MODES[tonemap_key] as Environment.ToneMapper
+		if is_agx or is_agx_punchy:
+			# AgX requires linear raw HDR input from the engine pipeline
+			env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
+		else:
+			match tonemap_key:
+				"Linear":
+					env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
+				"Reinhard":
+					env.tonemap_mode = Environment.TONE_MAPPER_REINHARDT
+				"Filmic":
+					env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+				"ACES":
+					env.tonemap_mode = Environment.TONE_MAPPER_ACES
+
 		env.ssao_enabled = ssao_checkbox.button_pressed
 		env.ssil_enabled = ssi_checkbox.button_pressed
 		env.ssr_enabled = ssr_checkbox.button_pressed
 		env.sdfgi_enabled = sdfgi_checkbox.button_pressed
 		env.volumetric_fog_enabled = fog_checkbox.button_pressed
 		env.glow_enabled = glow_checkbox.button_pressed
+
+	# Synchronize target camera VisionAssistMesh
+	var vision_mesh: MeshInstance3D = (
+		vp.find_child("VisionAssistMesh", true, false) as MeshInstance3D
+	)
+	if is_instance_valid(vision_mesh):
+		var mat: ShaderMaterial = vision_mesh.get_surface_override_material(0) as ShaderMaterial
+		if not is_instance_valid(mat):
+			mat = vision_mesh.material_override as ShaderMaterial
+
+		if is_instance_valid(mat):
+			var is_va_enabled: bool = (
+				GlobalSettings.get_setting("VisionAssist", "enabled", false) as bool
+			)
+			if is_va_enabled:
+				var va_mode: int = GlobalSettings.get_setting("VisionAssist", "mode", 1) as int
+				mat.set_shader_parameter("mode", va_mode)
+				vision_mesh.visible = true
+			elif is_agx:
+				mat.set_shader_parameter("mode", 5)
+				vision_mesh.visible = true
+			elif is_agx_punchy:
+				mat.set_shader_parameter("mode", 6)
+				vision_mesh.visible = true
+			else:
+				mat.set_shader_parameter("mode", 7)
+				vision_mesh.visible = false
 
 
 ## Prompts the user to restart the game when switching GPU adapters.
@@ -547,9 +602,8 @@ func _update_ui_and_save(dropdown: OptionButton, target_key: String, setting_nam
 ## [param index] Item index selected.
 func _on_tonemap_selected(index: int) -> void:
 	var key: String = tonemap_options.get_item_text(index)
-	var mode: Environment.ToneMapper = TONEMAP_MODES[key] as Environment.ToneMapper
 	print("UI: Tonemapping algorithm selected: ", key)
-	GlobalSettings.save_setting("Settings", "tonemap_mode", mode as int)
+	GlobalSettings.save_setting("Settings", "tonemap_mode", key)
 	_apply_all_current_settings()
 
 

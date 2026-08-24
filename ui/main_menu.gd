@@ -755,3 +755,30 @@ func _on_reset_defaults_pressed() -> void:
 		if panel is ControlsPanel and panel.visible:
 			panel.reset_to_defaults()
 			break
+
+
+## Automatically connects focus and hover signals to narrate buttons via SubtitleLayer.
+func _connect_menu_tts_narration() -> void:
+	var buttons: Array[Button] = [
+		continue_button,
+		new_game_button,
+		restart_button,
+		save_button,
+		load_button,
+		options_button,
+		exit_button
+	]
+	for btn: Button in buttons:
+		if is_instance_valid(btn):
+			btn.focus_entered.connect(_narrate_button.bind(btn.text))
+			btn.mouse_entered.connect(_narrate_button.bind(btn.text))
+
+
+## Emits a subtitle request event for menu element narration.
+## [param button_text] Text of the focused button.
+func _narrate_button(button_text: String) -> void:
+	var is_tts: bool = GlobalSettings.get_setting("Accessibility", "tts_enabled", false) as bool
+	if is_tts and has_node("/root/Events"):
+		var events: Node = get_node("/root/Events")
+		if events.has_signal("subtitle_requested"):
+			events.subtitle_requested.emit("TTSandy", button_text, 1.5)

@@ -35,10 +35,13 @@ var is_benchmarking: bool = false
 
 ## Tracks if the user is running on an integrated GPU or low-end hardware.
 var _is_low_end: bool = false
+
 ## Cached reference to the currently active [Environment].
 var _active_environment: Environment = null
+
 ## Timer used for periodic FPS checking.
 var _fps_timer: Timer = null
+
 ## The current integer step representing how degraded the visual quality is.
 var _sdfgi_downgrade_level: int = 0
 
@@ -202,13 +205,13 @@ func _apply_global_viewport_settings() -> void:
 func _on_node_added(node: Node) -> void:
 	if node is WorldEnvironment:
 		print("GraphicsManager: WorldEnvironment added. Registering environment.")
-		_active_environment = node.environment
+		_active_environment = (node as WorldEnvironment).environment
 
 		if is_auto_optimizing:
 			var saved_level: int = (
 				GlobalSettings.get_setting("Settings", "optimized_downgrade_level", 0) as int
 			)
-			if saved_level > 0:
+			if saved_level > 0 and _sdfgi_downgrade_level < saved_level:
 				_fast_forward_downgrades(saved_level - 1)
 			elif _is_low_end:
 				_tweak_environment(_active_environment)

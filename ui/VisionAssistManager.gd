@@ -3,7 +3,7 @@
 ##
 ## Hooks into scene loading to recursively apply unshaded flat color materials
 ## as overlays to all geometry and sprites within designated accessibility groups.
-class_name VisionAssistManager
+#class_name VisionAssistManager
 extends Node
 
 ## Named color lookups for console and UI palette selections.

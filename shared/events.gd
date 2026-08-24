@@ -20,6 +20,15 @@ const UI_FONT_TYPES: Array[StringName] = [
 ## Tracks whether the player is currently invincible.
 var is_godmode: bool = false
 
+## Dictionary mapping available font identifier keys to their loaded [Font] resources.
+var fonts: Dictionary[String, Font] = {}
+
+## Fallback font resource captured on initial boot.
+var default_engine_font: Font = null
+
+## Guard to ensure disk fonts are only loaded and parsed once.
+var _is_cached: bool = false
+
 # --- PLAYER STATE SIGNALS ---
 ## Emitted when the player's health reaches zero.
 @warning_ignore("unused_signal")
@@ -100,6 +109,7 @@ signal subtitles_toggled(is_active: bool)
 signal dyslexic_font_toggled(is_active: bool)
 
 ## Emitted when the active global UI and 3D text font is changed.
+@warning_ignore("unused_signal")
 signal font_changed(font_name: String)
 
 ## Emitted when vision assist high-visibility highlighting is toggled.
@@ -184,10 +194,6 @@ signal sonar_ping_requested(origin_node: Node3D)
 signal describe_surroundings_requested(origin_node: Node3D)
 
 ## Emitted when a chapter title card sequence is triggered.
-## [param chapter_name] The localized title or text to display.
-## [param style] The [enum ChapterAnimStyle] preset determining the animation effect.
-## [param duration] The display duration in seconds.
-## [param color] The base font tint [Color].
 @warning_ignore("unused_signal")
 signal chapter_triggered(
 	chapter_name: String, style: ChapterAnimStyle, duration: float, color: Color
@@ -201,11 +207,29 @@ signal screen_filter_changed(filter_name: String)
 @warning_ignore("unused_signal")
 signal film_grain_changed(intensity: float)
 
-## Dictionary mapping available font identifier keys to their loaded [Font] resources.
-var fonts: Dictionary[String, Font] = {}
+## Emitted when the subtitle font size is adjusted. Passes font size in pixels.
+@warning_ignore("unused_signal")
+signal subtitle_size_changed(font_size: float)
 
-## Fallback font resource captured on initial boot.
-var default_engine_font: Font = null
+## Emitted when the subtitle background opacity is adjusted. Passes opacity (0.0 - 1.0).
+@warning_ignore("unused_signal")
+signal subtitle_bg_opacity_changed(opacity: float)
+
+## Emitted when the default subtitle dialogue body text color is changed.
+@warning_ignore("unused_signal")
+signal subtitle_text_color_changed(color_key: String)
+
+## Emitted when the subtitle background color is changed.
+@warning_ignore("unused_signal")
+signal subtitle_bg_color_changed(color_key: String)
+
+## Emitted when showing speaker names is toggled.
+@warning_ignore("unused_signal")
+signal subtitle_show_names_toggled(enabled: bool)
+
+## Emitted when the primary speaker label color is changed.
+@warning_ignore("unused_signal")
+signal subtitle_speaker_color_changed(color_key: String)
 
 ## Visual animation style presets for chapter title card sequences.
 enum ChapterAnimStyle {
@@ -237,11 +261,10 @@ func _init() -> void:
 	print("Events: _init() called.")
 
 
-## Lifecycle method connecting signal listeners and caching registry fonts.
+## Lifecycle method connecting signal listeners.
 func _ready() -> void:
-	print("Events: _ready() called. Loading font registry and binding events.")
+	print("Events: _ready() called. Binding event listeners.")
 	font_changed.connect(_on_font_changed)
-	call_deferred("_load_registered_fonts")
 
 
 ## Replaces the project's root theme default font and forces an immediate UI redraw.
@@ -249,7 +272,7 @@ func _ready() -> void:
 func _on_font_changed(font_name: String) -> void:
 	print("Events: Changing global font to '", font_name, "'.")
 
-	if not fonts.has(font_name):
+	if not _is_cached:
 		_load_registered_fonts()
 
 	if not fonts.has(font_name):
@@ -279,8 +302,11 @@ func _on_font_changed(font_name: String) -> void:
 	print("Events: Global font '", font_name, "' applied successfully.")
 
 
-## Dynamically iterates the GlobalSettings font registry and caches loaded resources.
+## Dynamically iterates the GlobalSettings font registry and caches loaded resources once.
 func _load_registered_fonts() -> void:
+	if _is_cached:
+		return
+
 	var root_window: Window = get_tree().root
 	if root_window and root_window.theme and root_window.theme.default_font:
 		default_engine_font = root_window.theme.default_font
@@ -316,6 +342,8 @@ func _load_registered_fonts() -> void:
 				push_warning("Events: Resource at " + path + " is not a valid Font.")
 		else:
 			push_warning("Events: Font file path does not exist on disk: " + path)
+
+	_is_cached = true
 
 
 ## Recursively propagates font theme overrides down all active Control nodes.

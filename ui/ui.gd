@@ -198,16 +198,6 @@ var glitch_tween: Tween
 ## Controls the electricity vignette animation when shocked.
 var electro_tween: Tween
 
-# --- SUBTITLE UI VARS ---
-## Container managing the screen margins and layout bounds of the subtitle UI block.
-@onready var subtitle_margin: MarginContainer = $SubtitleMargin
-
-## Rich text element that types out the subtitle text and automatically scrolls it.
-@onready var subtitle_label: RichTextLabel = $SubtitleMargin/SubtitlePanel/SubtitleLabel
-
-## Animates the subtitle visibility and the typewriter character reveal effect.
-var subtitle_tween: Tween
-
 
 ## Lifecycle method called when the node enters the scene tree.
 ## Initializes UI states, binds event bus signals, and creates dynamic materials.
@@ -285,10 +275,6 @@ func _ready() -> void:
 	if note_overlay_ui != null:
 		note_overlay_ui.hide()
 
-	if subtitle_margin:
-		subtitle_margin.hide()
-		subtitle_margin.modulate.a = 0.0
-
 
 ## Initializes the default label text for all debug panel toggle buttons.
 func _initialize_debug_button_states() -> void:
@@ -357,10 +343,6 @@ func _connect_ui_signals() -> void:
 		Events.note_opened.connect(_on_note_opened)
 	if not Events.note_closed.is_connected(_on_note_closed):
 		Events.note_closed.connect(_on_note_closed)
-	if not Events.subtitle_requested.is_connected(_on_subtitle_requested):
-		Events.subtitle_requested.connect(_on_subtitle_requested)
-	if not Events.subtitle_canceled.is_connected(_on_subtitle_canceled):
-		Events.subtitle_canceled.connect(_on_subtitle_canceled)
 
 
 ## Repositions hint and warning notifications relative to the screen center.
@@ -1050,59 +1032,3 @@ func _on_note_closed() -> void:
 	print("UIController: _on_note_closed() received. Hiding UI.")
 	if note_overlay_ui != null:
 		note_overlay_ui.hide()
-
-
-## Displays the subtitle text and animates the typewriter effect concurrently with speech.
-## [param speaker] Display name for the character or announcer speaking.
-## [param text] Dialogue content string.
-## [param duration] Time allotted for speech playback.
-func _on_subtitle_requested(speaker: String, text: String, duration: float) -> void:
-	print("UIController: _on_subtitle_requested() for speaker: ", speaker)
-
-	if not subtitle_label or not subtitle_margin:
-		return
-
-	var formatted_speaker: String = (
-		"[color=#00ffff][b]" + speaker + ":[/b][/color]"
-		if speaker == "TTSandy"
-		else "[b]" + speaker + ":[/b]"
-	)
-
-	subtitle_label.text = formatted_speaker + " " + text
-	subtitle_label.visible_characters = 0
-	subtitle_margin.show()
-
-	if subtitle_tween and subtitle_tween.is_valid():
-		subtitle_tween.kill()
-
-	subtitle_tween = create_tween()
-	subtitle_tween.parallel().tween_property(subtitle_margin, "modulate:a", 1.0, 0.15)
-
-	var total_chars: int = subtitle_label.get_total_character_count()
-	var type_duration: float = max(0.1, duration)
-
-	subtitle_tween.parallel().tween_method(
-		_update_visible_characters, 0, total_chars, type_duration
-	)
-
-	subtitle_tween.chain().tween_interval(0.6)
-	subtitle_tween.chain().tween_property(subtitle_margin, "modulate:a", 0.0, 0.4)
-	subtitle_tween.finished.connect(subtitle_margin.hide)
-
-
-## Updates visible typewriter characters without playing audio.
-## [param current_chars] The number of characters to show in the subtitle label.
-func _update_visible_characters(current_chars: int) -> void:
-	subtitle_label.visible_characters = current_chars
-
-
-## Cancels any active subtitle typewriter animations and hides the container.
-func _on_subtitle_canceled() -> void:
-	print("UIController: _on_subtitle_canceled() called. Resetting subtitle UI.")
-
-	if subtitle_tween and subtitle_tween.is_valid():
-		subtitle_tween.kill()
-
-	if subtitle_margin:
-		subtitle_margin.hide()
-		subtitle_margin.modulate.a = 0.0

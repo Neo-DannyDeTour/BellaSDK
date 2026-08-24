@@ -29,12 +29,12 @@ shader_parameter/multiplier = 0.4
 shader_parameter/softness = 0.7
 shader_parameter/vignette_opacity = 0.0
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_tx8to"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_kwflg"]
 shader = ExtResource("8_3lbto")
 shader_parameter/lightning_color = Color(0, 0.8, 1, 1)
 shader_parameter/intensity = 0.286000013585
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_534t5"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_gdmj0"]
 shader = ExtResource("7_x7nxp")
 shader_parameter/intensity = 0.400000019
 
@@ -100,7 +100,7 @@ mouse_filter = 2
 color = Color(1, 0, 0, 0)
 
 [node name="ElectricityVignette" type="ColorRect" parent="." unique_id=370217648]
-material = SubResource("ShaderMaterial_tx8to")
+material = SubResource("ShaderMaterial_kwflg")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -108,7 +108,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="GlitchOverlay" type="ColorRect" parent="." unique_id=93627812]
-material = SubResource("ShaderMaterial_534t5")
+material = SubResource("ShaderMaterial_gdmj0")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -394,27 +394,6 @@ offset_right = 40.0
 grow_vertical = 0
 
 [node name="MagnifyingGlassUI" parent="." unique_id=1398682804 instance=ExtResource("21_3lbto")]
-
-[node name="SubtitleMargin" type="MarginContainer" parent="." unique_id=1127793116]
-anchors_preset = -1
-anchor_left = 0.15
-anchor_top = 1.0
-anchor_right = 0.85
-anchor_bottom = 1.0
-offset_top = -40.0
-grow_horizontal = 2
-grow_vertical = 0
-theme_override_constants/margin_bottom = 75
-
-[node name="SubtitlePanel" type="PanelContainer" parent="SubtitleMargin" unique_id=1558236329]
-layout_mode = 2
-
-[node name="SubtitleLabel" type="RichTextLabel" parent="SubtitleMargin/SubtitlePanel" unique_id=10181650]
-custom_minimum_size = Vector2(0, 75)
-layout_mode = 2
-bbcode_enabled = true
-scroll_active = false
-scroll_following = true
 
 [connection signal="pressed" from="DebugPanel/PanelContainer/VBoxContainer/WireframeButton" to="." method="_on_wireframe_button_pressed"]
 [connection signal="pressed" from="DebugPanel/PanelContainer/VBoxContainer/WireframeOverlayButton" to="." method="_on_wireframe_overlay_button_pressed"]

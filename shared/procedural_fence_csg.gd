@@ -1,35 +1,46 @@
+## A procedural fence generator using CSG operations
+## to construct borders and customizable infill bars.
+##
+## Attach this node to generate configurable vertical, horizontal, or cross-diagonal fences
+## with real-time editor preview and collision support.
+@tool
 class_name ProceduralFence
 extends CSGCombiner3D
 
-enum Orientation { VERTICAL, HORIZONTAL, DIAGONAL }
+## Directional patterns available for the internal fence infill bars.
+enum Orientation {
+	VERTICAL,
+	HORIZONTAL,
+	DIAGONAL,
+}
 
-## Property: Fence Width.
+## Total horizontal width of the entire fence structure.
 @export_category("Fence Dimensions")
 @export var fence_width: float = 4.0:
 	set(value):
 		fence_width = value
 		_request_rebuild()
 
-## Property: Fence Height.
+## Total vertical height of the entire fence structure.
 @export var fence_height: float = 2.0:
 	set(value):
 		fence_height = value
 		_request_rebuild()
 
-## Property: Fence Depth.
+## Total depth (thickness along the Z-axis) of the fence perimeter and bars.
 @export var fence_depth: float = 0.1:
 	set(value):
 		fence_depth = value
 		_request_rebuild()
 
-## Property: Has Border.
+## Toggles the outer frame border around the fence perimeter.
 @export_category("Border")
 @export var has_border: bool = true:
 	set(value):
 		has_border = value
 		_request_rebuild()
 
-## Property: Border Thickness.
+## Thickness of the outer border framing.
 @export var border_thickness: float = 0.2:
 	set(value):
 		border_thickness = value
@@ -42,44 +53,53 @@ enum Orientation { VERTICAL, HORIZONTAL, DIAGONAL }
 		bar_orientation = value
 		_request_rebuild()
 
-## Property: Bar Count.
+## Total number of infill bars placed across the fence interior.
 @export var bar_count: int = 12:
 	set(value):
 		bar_count = value
 		_request_rebuild()
 
-## Property: Bar Thickness.
+## Thickness of individual infill bars.
 @export var bar_thickness: float = 0.05:
 	set(value):
 		bar_thickness = value
 		_request_rebuild()
 
-## Property: Diagonal Angle.
+## Angle in degrees applied to diagonal bar infills.
 @export_range(10.0, 80.0) var diagonal_angle: float = 45.0:
 	set(value):
 		diagonal_angle = value
 		_request_rebuild()
 
-## Property: Is Dirty.
+## Tracks whether a deferred mesh rebuild is currently scheduled.
 var _is_dirty: bool = false
 
 
+## Initializes collision settings upon instance creation.
 func _init() -> void:
 	print("ProceduralFence: _init() called, initializing collision.")
 	use_collision = true
 
 
+## Lifecycle ready callback ensuring geometry is only generated in the editor.
 func _ready() -> void:
-	_request_rebuild()
+	print("ProceduralFence: _ready() called.")
+	if Engine.is_editor_hint():
+		_request_rebuild()
 
 
+## Defers the CSG geometry rebuild to avoid redundant operations during batched property edits.
 func _request_rebuild() -> void:
+	if not is_inside_tree():
+		return
+
 	if not _is_dirty:
 		print("ProceduralFence: Rebuild requested and deferred.")
 		_is_dirty = true
 		call_deferred(&"_rebuild")
 
 
+## Clears existing geometry and reconstructs the combiner child nodes based on current properties.
 func _rebuild() -> void:
 	print("ProceduralFence: Rebuilding geometry.")
 	_is_dirty = false
@@ -118,7 +138,6 @@ func _rebuild() -> void:
 				bars_combiner, inner_width, inner_height, count_left, bar_thickness, -diagonal_angle
 			)
 
-	# Intersection box to cleanly slice rotated corners
 	var clipper: CSGBox3D = CSGBox3D.new()
 	clipper.operation = CSGShape3D.OPERATION_INTERSECTION
 	clipper.size = Vector3(inner_width, inner_height, fence_depth * 2.0)
@@ -130,9 +149,7 @@ func _rebuild() -> void:
 		)
 
 
-# --- STATIC FUNCTIONS ---
-
-
+## Generates spaced infill bars clipped at the fence boundaries at a given rotation angle.
 static func _generate_angled_bars(
 	parent: Node3D, w: float, h: float, count: int, thickness: float, angle_deg: float
 ) -> void:
@@ -207,6 +224,7 @@ static func _generate_angled_bars(
 			parent.add_child(bar)
 
 
+## Constructs the four enclosing boundary boxes for the fence frame.
 static func _generate_border(
 	parent: Node3D, f_width: float, f_height: float, f_depth: float, b_thickness: float
 ) -> void:
@@ -230,6 +248,7 @@ static func _generate_border(
 	)
 
 
+## Helper that instantiates, sizes, positions, and attaches a [CSGBox3D] node.
 static func _add_csg_box(parent: Node3D, size: Vector3, pos: Vector3) -> void:
 	var box: CSGBox3D = CSGBox3D.new()
 	box.size = size

@@ -65,11 +65,8 @@ func process_interaction(_delta: float) -> void:
 
 			print("InteractionScanner: Focused interactable -> ", speakable_name)
 			object_hover_focused.emit(speakable_name, target_node)
-
-			if has_node("/root/Events"):
-				var events_node: Node = get_node("/root/Events")
-				if events_node.has_signal("object_focused"):
-					events_node.object_focused.emit(speakable_name, target_node)
+			# NOTE: Do NOT emit Events.object_focused here.
+			# Hovering below triggers hover_cursor(), which manages TTS prompt emission.
 
 	if current_interactable:
 		var hit_point: Vector3 = interact_shapecast.get_collision_point(0)

@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://dekw7gvxuh5fq" path="res://environment/ocean.gd" id="3_6nay4"]
 [ext_resource type="Script" uid="uid://bxtxyvoqbohar" path="res://environment/wave_cascade_parameters.gd" id="4_yo2dh"]
 [ext_resource type="Shader" uid="uid://bmrd2qadcetx6" path="res://environment/ocean_spray.gdshader" id="5_ko302"]
+[ext_resource type="Texture2D" uid="uid://dtm5tyuh2slqt" path="res://environment/ocean_spray.png" id="7_hfc23"]
 [ext_resource type="Material" uid="uid://5xqyddws6rt5" path="res://environment/mat_spray.tres" id="7_vu4gk"]
 
 [sub_resource type="Resource" id="Resource_adqv5"]
@@ -40,9 +41,14 @@ shader = ExtResource("5_ko302")
 shader_parameter/max_alpha = 0.666
 shader_parameter/brightness_multiplier = 1.7
 
-[sub_resource type="QuadMesh" id="QuadMesh_50wyh"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mv12o"]
+transparency = 1
+albedo_texture = ExtResource("7_hfc23")
 
-[node name="Water" type="MeshInstance3D" unique_id=2118242669 node_paths=PackedStringArray("spray_particles")]
+[sub_resource type="QuadMesh" id="QuadMesh_50wyh"]
+material = SubResource("StandardMaterial3D_mv12o")
+
+[node name="Ocean" type="MeshInstance3D" unique_id=2118242669 node_paths=PackedStringArray("spray_particles")]
 sorting_offset = 999.0
 material_override = ExtResource("1_l0dr3")
 cast_shadow = 0
@@ -57,7 +63,7 @@ parameters = Array[ExtResource("4_yo2dh")]([SubResource("Resource_adqv5"), SubRe
 material_override = SubResource("ShaderMaterial_ds3o1")
 cast_shadow = 0
 custom_aabb = AABB(-150, -20, -150, 300, 40, 300)
-amount = 32000
+amount = 800
 lifetime = 6.0
 process_material = ExtResource("7_vu4gk")
 draw_pass_1 = SubResource("QuadMesh_50wyh")

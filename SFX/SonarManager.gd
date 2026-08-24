@@ -3,10 +3,6 @@
 ## Scans the surrounding 3D environment for categorized objects, sorting them by
 ## priority and distance while applying raycast occlusion, rear-cone spectral filtering,
 ## and staggered playback delays.
-## Global autoload managing the 3D sonar audio system.
-##
-## The [SonarManager] handles the playback of localized pings and the subsequent
-## delayed 3D audio echoes originating from valid targets within the scanning radius.
 extends Node
 
 ## Emitted when a sonar scan finishes scanning the surroundings.
@@ -47,6 +43,9 @@ const MAX_AUDIO_PLAYERS: int = 16
 
 ## Dedicated audio bus name for accessibility sound effects.
 const SFX_BUS_NAME: StringName = &"AccesibilitySFX"
+
+## Minimum spatial distance squared (1.0m) to filter duplicate level instances.
+const SPATIAL_DEDUPLICATION_THRESHOLD_SQ: float = 1.0
 
 ## Dedicated 2D audio player for the outgoing local ping chime.
 var _local_ping_player: AudioStreamPlayer = AudioStreamPlayer.new()
@@ -112,28 +111,82 @@ func trigger_sonar(origin_node: Node3D) -> void:
 	if _local_ping_player.stream != null:
 		_local_ping_player.play()
 
+	var target_viewport: Viewport = origin_node.get_viewport()
 	var origin_pos: Vector3 = origin_node.global_position
 	var forward_dir: Vector3 = -origin_node.global_transform.basis.z.normalized()
 	var space_state: PhysicsDirectSpaceState3D = origin_node.get_world_3d().direct_space_state
 
-	var candidate_nodes: Array[Node] = []
-	candidate_nodes.append_array(get_tree().get_nodes_in_group(&"hazard"))
-	candidate_nodes.append_array(get_tree().get_nodes_in_group(&"waypoint"))
-	candidate_nodes.append_array(get_tree().get_nodes_in_group(&"interactables"))
+	var query_groups: Array[StringName] = [
+		&"hazard", &"waypoint", &"interactables", &"interactable", &"props"
+	]
 
+	# Step 1: Collect canonical roots keyed by unique instance ID
+	var unique_targets: Dictionary = {}
+	for group_name: StringName in query_groups:
+		for item: Node in get_tree().get_nodes_in_group(group_name):
+			if not is_instance_valid(item):
+				continue
+
+			# Exclude items belonging to the Options Menu Diorama SubViewport
+			if item.get_viewport() != target_viewport:
+				continue
+
+			var node_3d: Node3D = null
+			if item is Node3D:
+				node_3d = item as Node3D
+			elif item.get_parent() is Node3D:
+				node_3d = item.get_parent() as Node3D
+
+			if not is_instance_valid(node_3d) or node_3d == origin_node:
+				continue
+
+			var root_target: Node3D = _resolve_interactable_root(node_3d)
+			if is_instance_valid(root_target) and root_target != origin_node:
+				var root_id: int = root_target.get_instance_id()
+				if not unique_targets.has(root_id):
+					unique_targets[root_id] = root_target
+
+	# Step 2: Strip child nodes, hidden objects, and co-located duplicate instances
+	var candidate_nodes: Array[Node3D] = []
+	var seen_positions: Array[Vector3] = []
+
+	for root_id: int in unique_targets:
+		var node: Node3D = unique_targets[root_id] as Node3D
+
+		if not node.is_visible_in_tree():
+			continue
+		if "is_held" in node and node.get("is_held") == true:
+			continue
+		if "holder" in node and is_instance_valid(node.get("holder")):
+			continue
+
+		var is_child_of_another: bool = false
+		for other_id: int in unique_targets:
+			if root_id != other_id:
+				var other: Node3D = unique_targets[other_id] as Node3D
+				if is_instance_valid(other) and other.is_ancestor_of(node):
+					is_child_of_another = true
+					break
+
+		if is_child_of_another:
+			continue
+
+		var is_spatial_duplicate: bool = false
+		for seen_pos: Vector3 in seen_positions:
+			if (
+				seen_pos.distance_squared_to(node.global_position)
+				< SPATIAL_DEDUPLICATION_THRESHOLD_SQ
+			):
+				is_spatial_duplicate = true
+				break
+
+		if not is_spatial_duplicate:
+			seen_positions.append(node.global_position)
+			candidate_nodes.append(node)
+
+	# Step 3: Occlusion and priority ranking
 	var targets_to_ping: Array[Dictionary] = []
-	var visited_ids: Dictionary = {}
-
-	for item: Node in candidate_nodes:
-		if not is_instance_valid(item) or not (item is Node3D):
-			continue
-
-		var item_id: int = item.get_instance_id()
-		if visited_ids.has(item_id):
-			continue
-		visited_ids[item_id] = true
-
-		var target_3d: Node3D = item as Node3D
+	for target_3d: Node3D in candidate_nodes:
 		var dist: float = origin_pos.distance_to(target_3d.global_position)
 		if dist <= scan_radius:
 			var priority: int = _get_target_priority(target_3d)
@@ -180,6 +233,34 @@ func trigger_sonar(origin_node: Node3D) -> void:
 		)
 
 	on_scan_completed.emit(targets_to_ping.size())
+
+
+## Ascends node hierarchy to find the canonical root [Node3D] representing the interactable entity.
+## [param node] The target [Node3D] detected via group queries.
+## [return] The highest root [Node3D] representing the interactable asset.
+func _resolve_interactable_root(node: Node3D) -> Node3D:
+	if not is_instance_valid(node):
+		return null
+
+	var candidate: Node3D = node
+	var current: Node = node
+
+	while is_instance_valid(current) and current != get_tree().root:
+		if current == get_tree().current_scene:
+			break
+
+		if current is Node3D:
+			var curr_3d: Node3D = current as Node3D
+			if curr_3d is PickableObject:
+				return curr_3d
+			if curr_3d.has_node("InteractComponent") or curr_3d.has_node("TTSInteractComponent"):
+				candidate = curr_3d
+			elif curr_3d is CollisionObject3D:
+				candidate = curr_3d
+
+		current = current.get_parent()
+
+	return candidate
 
 
 ## Calculates integer priority rank for audio filtering (lower is higher priority).
@@ -260,7 +341,6 @@ func _play_target_echo(
 	var to_target: Vector3 = (target_node.global_position - player_pos).normalized()
 	var dot: float = forward_dir.dot(to_target)
 	if dot < 0.0:
-		# Behind the listener: lower pitch and reduce volume
 		final_pitch *= lerpf(0.85, 1.0, dot + 1.0)
 		final_volume_db -= lerpf(4.0, 0.0, dot + 1.0)
 

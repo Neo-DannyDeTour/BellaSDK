@@ -13,6 +13,7 @@ const ACTION_CATEGORIES: Dictionary = {
 		"flashlight",
 		"zoom",
 		"sonar_ping",
+		"ttsandy",
 		"describe_surroundings",
 		"grenade_throw"
 	],
@@ -21,7 +22,7 @@ const ACTION_CATEGORIES: Dictionary = {
 }
 
 ## List of actions that are inherently hold-activated by design.
-const HOLD_ACTIONS: Array[String] = ["describe_surroundings"]
+const HOLD_ACTIONS: Array[String] = ["ttsandy", "describe_surroundings"]
 
 ## Duration in seconds a button must be held down to be registered as a Hold binding.
 const HOLD_TIME_THRESHOLD: float = 0.45
@@ -148,6 +149,11 @@ func _ensure_all_actions_registered() -> void:
 			if not InputMap.has_action(action):
 				print("System: Registering missing InputMap action: ", action)
 				InputMap.add_action(action)
+				if action == "ttsandy":
+					var default_key: InputEventKey = InputEventKey.new()
+					default_key.physical_keycode = KEY_T
+					default_key.set_meta("gesture", "hold")
+					InputMap.action_add_event(action, default_key)
 
 
 ## Sets up options and loads persisted behavior preferences (Toggle vs Hold).
@@ -226,7 +232,7 @@ func _create_action_row(parent_grid: GridContainer, action: String) -> void:
 	parent_grid.add_child(action_label)
 
 	var primary_btn: Button = Button.new()
-	primary_btn.focus_mode = Control.FOCUS_NONE  # <--- Add here
+	primary_btn.focus_mode = Control.FOCUS_NONE
 	primary_btn.toggle_mode = true
 	primary_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	primary_btn.size_flags_stretch_ratio = 2.0
@@ -236,7 +242,7 @@ func _create_action_row(parent_grid: GridContainer, action: String) -> void:
 	parent_grid.add_child(primary_btn)
 
 	var secondary_btn: Button = Button.new()
-	secondary_btn.focus_mode = Control.FOCUS_NONE  # <--- Add here
+	secondary_btn.focus_mode = Control.FOCUS_NONE
 	secondary_btn.toggle_mode = true
 	secondary_btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	secondary_btn.size_flags_stretch_ratio = 2.0
@@ -246,7 +252,7 @@ func _create_action_row(parent_grid: GridContainer, action: String) -> void:
 	parent_grid.add_child(secondary_btn)
 
 	var clear_btn: Button = Button.new()
-	clear_btn.focus_mode = Control.FOCUS_NONE  # <--- Add here
+	clear_btn.focus_mode = Control.FOCUS_NONE
 	clear_btn.text = "✕"
 	clear_btn.custom_minimum_size = Vector2(40.0, 0.0)
 	clear_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER

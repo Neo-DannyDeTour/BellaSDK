@@ -287,7 +287,7 @@ func _enable_fullscreen_mode() -> void:
 	_fullscreen_canvas.add_child(_fullscreen_rect)
 
 	var window_size: Vector2 = get_viewport().get_visible_rect().size
-	camera_vp.size = Vector2i(window_size.x, window_size.y)
+	camera_vp.size = Vector2i(window_size)
 
 	if is_instance_valid(current_player) and current_player.get("camera_controller"):
 		var cam_controller: Node = current_player.get("camera_controller")

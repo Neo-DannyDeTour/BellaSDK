@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://dn6pth4ryiv4s"]
 
 [ext_resource type="Script" uid="uid://mlc5e56gmbf1" path="res://ui/loading_screen_anim.gd" id="1_jp8si"]
+[ext_resource type="Resource" uid="uid://ckk5joev7dak8" path="res://shared/shader_cache.tres" id="2_7kl3d"]
 [ext_resource type="Texture2D" uid="uid://b4ygi4s0hyes7" path="res://assets/images/loading_screens/bella_wrench_loading_frames/loading_frame_0001.png" id="2_473av"]
 [ext_resource type="Texture2D" uid="uid://bqjj86chnbi62" path="res://assets/images/loading_screens/bella_wrench_loading_frames/loading_frame_0002.png" id="3_i2epk"]
 [ext_resource type="Texture2D" uid="uid://ct2irl84iaxkr" path="res://assets/images/loading_screens/bella_wrench_loading_frames/loading_frame_0003.png" id="4_0e0j8"]
@@ -486,7 +487,7 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("121_ficay")
 }],
-"loop": true,
+"loop": 1,
 "name": &"default",
 "speed": 12.0
 }]
@@ -501,6 +502,8 @@ anchor_bottom = 0.5
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_jp8si")
+level_scene_path = "uid://omwvkueo82i7"
+baked_shader_cache = ExtResource("2_7kl3d")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." unique_id=626525078]
 sprite_frames = SubResource("SpriteFrames_nnsx1")

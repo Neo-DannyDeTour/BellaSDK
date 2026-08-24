@@ -15,6 +15,7 @@
 [ext_resource type="Script" uid="uid://7t34h1kqmrcr" path="res://ui/diorama_post_process.gd" id="12_0nobx"]
 [ext_resource type="AudioStream" uid="uid://c1l53sh8s0och" path="res://assets/music/Concrete_and_Moss.mp3" id="12_jiymt"]
 [ext_resource type="PackedScene" uid="uid://dhh7c5j6i8bkk" path="res://player/settings_level.tscn" id="13_0nobx"]
+[ext_resource type="Script" uid="uid://bbavliaaoouke" path="res://ui/perf_overlay.gd" id="14_iyrh0"]
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_50h1w"]
 
@@ -296,6 +297,17 @@ script = ExtResource("12_0nobx")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5427445, 0.44948673, -0.57631207)
 
 [node name="PreviewShaderLayer" type="CanvasLayer" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer/DioramaViewport" unique_id=2026771909]
+
+[node name="PerfOverlay" type="MarginContainer" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer" unique_id=676796810]
+layout_mode = 2
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+script = ExtResource("14_iyrh0")
+
+[node name="StatsLabel" type="Label" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer/PerfOverlay" unique_id=680130125]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 2
 
 [node name="BottomBar" type="GridContainer" parent="CenterContainer/OptionsMenu/ContentVBox" unique_id=1856427543]
 layout_mode = 2

@@ -12,7 +12,7 @@ config_version=5
 
 config/name="BellaSDK"
 config/description="A replacement for Source. Something to help you start building your next super-duper next-gen FPS masterpiece. "
-run/main_scene="uid://omwvkueo82i7"
+run/main_scene="uid://dn6pth4ryiv4s"
 config/features=PackedStringArray("4.7", "Forward Plus")
 run/max_fps=60
 boot_splash/bg_color=Color(0, 0, 0, 1)
@@ -21,7 +21,7 @@ config/icon="res://assets/icon.svg"
 
 [audio]
 
-buses/default_bus_layout="res://SFX/default_bus_layout.tres"
+buses/default_bus_layout="uid://blb10t72ak8ru"
 
 [autoload]
 
@@ -41,6 +41,7 @@ SonarManager="*uid://byxvdd1kf32wk"
 TTSManager="*uid://crey6jf4gwjv6"
 SpatialDescriber="*uid://bhdfhlh5ba34i"
 GestureInputManager="*uid://ot3nttr18nqd"
+SubtitleLayer="*uid://45v6q0javct"
 
 [debug]
 

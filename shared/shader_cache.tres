@@ -1,16 +1,2756 @@
-[gd_resource type="Resource" script_class="ShaderCache" format=3 uid="uid://ckk5joev7dak8"]
+[gd_resource type="Resource" script_class="ShaderCache" format=4 uid="uid://ckk5joev7dak8"]
 
 [ext_resource type="Material" uid="uid://c2niiwlud067p" path="res://vfx/smart_outline_material.tres" id="1_63tbl"]
 [ext_resource type="Script" uid="uid://7lscyxblla3t" path="res://core/shader_cache.gd" id="2_akgxa"]
+[ext_resource type="Shader" uid="uid://spngok2sru6f" path="res://environment/water_wipe_overlay.gdshader" id="2_tsfm6"]
 [ext_resource type="Material" uid="uid://coniyskrwahs4" path="res://assets/textures/dev_material_area.tres" id="2_y6egi"]
-[ext_resource type="Material" uid="uid://drmq7gpguytcl" path="res://addons/csg_toolkit/demo/red.material" id="3_ot8cs"]
-[ext_resource type="Material" uid="uid://bvlrolerfilhd" path="res://addons/csg_toolkit/demo/new_shader_material.tres" id="4_ibucx"]
-[ext_resource type="Material" uid="uid://b3fgicfsq7yvh" path="res://addons/SunshineClouds2/Dock/Materials/DrawBrushToolsMaterial.tres" id="5_xqk0g"]
+[ext_resource type="Shader" uid="uid://onn1sa83xj6n" path="res://environment/water_ripple_overlay.gdshader" id="3_nj80l"]
+[ext_resource type="Shader" uid="uid://blvci46gmtq30" path="res://environment/waterfall_wipe_overlay.gdshader" id="4_4vusw"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="4_bjti4"]
+[ext_resource type="Shader" uid="uid://b7hv0lpr3sylm" path="res://ui/ui_vignette.gdshader" id="5_3g38v"]
 [ext_resource type="Material" uid="uid://df0bpn85ml870" path="res://environment/rain_effects.tres" id="6_eoyls"]
+[ext_resource type="Shader" uid="uid://c2f1f2all860e" path="res://ui/electricityvignette.gdshader" id="6_ne3lw"]
 [ext_resource type="Material" uid="uid://byumtcccq4ew3" path="res://environment/mat_ocean.tres" id="7_aai07"]
+[ext_resource type="Shader" uid="uid://bcpssk465dbif" path="res://vfx/glitch.gdshader" id="7_jjunr"]
+[ext_resource type="Shader" uid="uid://bly82k8d04nmt" path="res://ui/ui_zoom_fisheye_blur.gdshader" id="8_ch8oj"]
 [ext_resource type="Material" uid="uid://cb4w5bg7xjju1" path="res://environment/rainy_window.material" id="8_m1nfi"]
+[ext_resource type="Shader" uid="uid://bqd5soqdscvly" path="res://vfx/outline_shader_adaptable.gdshader" id="9_0srxu"]
+[ext_resource type="Shader" uid="uid://bbqjn2h2iwrxi" path="res://assets/weapons/Smoke_Grenade/smoke.gdshader" id="9_3nmbu"]
 [ext_resource type="Material" uid="uid://5xqyddws6rt5" path="res://environment/mat_spray.tres" id="9_wtntw"]
+[ext_resource type="Shader" uid="uid://dqjxwnsg8c5f0" path="res://vfx/outline_hearts_adaptable.gdshader" id="10_totq7"]
+[ext_resource type="Shader" uid="uid://b63gib5h5ed3p" path="res://ui/death_screen.gdshader" id="11_5enqp"]
+[ext_resource type="Shader" uid="uid://bjmce8wrb84ff" path="res://vfx/lava.gdshader" id="12_vbovi"]
+[ext_resource type="Texture2D" uid="uid://e61paiyqpdq7" path="res://assets/images/dev_textures/dev_texture_black_1024.png" id="13_mjfph"]
+[ext_resource type="Shader" uid="uid://b0hfpkkdhy5bc" path="res://vfx/magnifying_glass.gdshader" id="13_yttvs"]
+[ext_resource type="Shader" uid="uid://b7nch3qglcrbn" path="res://interactables/pickable_highlight.gdshader" id="15_lno16"]
+[ext_resource type="Shader" uid="uid://c04intj7sf4jy" path="res://environment/ocean_spray_particle.gdshader" id="23_hra72"]
+[ext_resource type="Shader" uid="uid://l8i58rytxw70" path="res://vfx/box_clouds.gdshader" id="24_clin3"]
+[ext_resource type="Shader" uid="uid://2pyqpr2qew6o" path="res://environment/fog_fade.gdshader" id="36_dfq6a"]
+[ext_resource type="Shader" uid="uid://w8t5itlleyj2" path="res://environment/lightning_manager.gdshader" id="38_c8thk"]
+[ext_resource type="Shader" uid="uid://osbd746w7ix2" path="res://interactables/mirror.gdshader" id="167_et1h1"]
+[ext_resource type="Texture2D" uid="uid://civnfn7yss1n" path="res://assets/images/dev_textures/dev_texture_green_1024.png" id="180_i7bvm"]
+[ext_resource type="Texture2D" uid="uid://bvicax8m3kdh5" path="res://assets/textures/LeLu_Smoke/T_smoke_flipbook.png" id="181_kyisf"]
+[ext_resource type="Shader" uid="uid://brx3oc4xuo2vs" path="res://vfx/arcane_burst.gdshader" id="184_x328v"]
+[ext_resource type="Shader" uid="uid://cbd36otelko80" path="res://vfx/plasma_spark.gdshader" id="185_vbgln"]
+[ext_resource type="Shader" uid="uid://n5i6lxxhv2jh" path="res://vfx/vhs.gdshader" id="198_uvejx"]
+[ext_resource type="Shader" uid="uid://g5aps1jw4kxy" path="res://player/holographic_scanner.gdshader" id="202_h3kw4"]
+[ext_resource type="Texture2D" uid="uid://sylwf664lrho" path="res://assets/images/heart_icon.png" id="209_dj8e3"]
+[ext_resource type="Shader" uid="uid://dyjl3wmb46lpt" path="res://interactables/conveyor_belt.gdshader" id="210_508pe"]
+[ext_resource type="Texture2D" uid="uid://bk34dpfhypro0" path="res://assets/images/Moving_Floor.png" id="211_3uy8v"]
+[ext_resource type="Shader" uid="uid://bhwyt6vq58tbd" path="res://vfx/circle_equalizer.gdshader" id="212_bm01u"]
+[ext_resource type="Shader" uid="uid://pucch4y5dby7" path="res://vfx/fadeeffects.gdshader" id="215_hqf6n"]
+[ext_resource type="Shader" uid="uid://e5j85108j8s0" path="res://environment/deprecated_camera_water_overlay2.gdshader" id="217_4vnw4"]
+[ext_resource type="Shader" uid="uid://siji3tdb8dwn" path="res://environment/projector_rain.gdshader" id="221_ljv33"]
+[ext_resource type="Texture2D" uid="uid://clm6pjduixmuj" path="res://assets/images/dev_textures/dev_texture_yellow_1024.png" id="226_r682b"]
+[ext_resource type="Shader" uid="uid://bmrd2qadcetx6" path="res://environment/ocean_spray.gdshader" id="228_x6sje"]
+[ext_resource type="Texture2D" uid="uid://buw1sk40owd4a" path="res://assets/textures/LeLu_Blood/T_Decal_Blood651aas.png" id="235_5jnlc"]
+[ext_resource type="Texture2D" uid="uid://ildi34bydosb" path="res://assets/textures/LeLu_Blood/T_Decal_Blood651aas_N.png" id="236_51f0v"]
+[ext_resource type="Shader" uid="uid://b1mric4o2j64s" path="res://interactables/wind_cable.gdshader" id="238_sb64h"]
+[ext_resource type="Shader" uid="uid://ckhwv7iiq0vs" path="res://environment/electrified_floor.gdshader" id="256_yk6hv"]
+[ext_resource type="Texture2D" uid="uid://p8cs4aem3kyx" path="res://assets/textures/LeLu_Smoke/T_smoke_b7.png" id="257_6afgb"]
+[ext_resource type="Shader" uid="uid://f2f6cao5ccqd" path="res://vfx/dev_texture.gdshader" id="263_slma3"]
+[ext_resource type="Shader" uid="uid://gqm2yghwiqry" path="res://ui/black_glass.gdshader" id="328_vlc13"]
+[ext_resource type="Shader" uid="uid://6lomg4ekdndh" path="res://vfx/horror_text_shader.gdshader" id="329_v3u4j"]
+[ext_resource type="Shader" uid="uid://coifevcbmk5s2" path="res://ui/border_glow.gdshader" id="330_qqj3j"]
+[ext_resource type="Shader" uid="uid://w674ybxmnkoi" path="res://vfx/diorama_post_process.gdshader" id="331_sxy83"]
+[ext_resource type="Shader" uid="uid://d3hb763n705g4" path="res://ui/menu_chapter_screen.gdshader" id="332_f6wx3"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_60227"]
+direction = Vector3(0, 0, 1)
+spread = 2.0
+initial_velocity_min = 20.0
+initial_velocity_max = 20.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_61ith"]
+shader = ExtResource("2_tsfm6")
+shader_parameter/drop_intensity = 0.0
+shader_parameter/wash_intensity = 0.0
+shader_parameter/clear_progress = 1.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_jfpux"]
+shader = ExtResource("3_nj80l")
+shader_parameter/drop_intensity = 0.0
+shader_parameter/wash_intensity = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_sfy4j"]
+shader = ExtResource("4_4vusw")
+shader_parameter/clear_progress = 0.0
+shader_parameter/drop_intensity = 0.0
+shader_parameter/wash_intensity = 0.0
+shader_parameter/distortion_strength = 0.04
+shader_parameter/time_scale = 3.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_pi0m5"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 4.0
+shader_parameter/min_intensity = 0.0
+shader_parameter/max_intensity = 0.5
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_acy5l"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.050000002375
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_6k1gw"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 4.0
+shader_parameter/min_intensity = 0.0
+shader_parameter/max_intensity = 0.5
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="Gradient" id="Gradient_u5j46"]
+colors = PackedColorArray(0, 0, 0, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_aolua"]
+gradient = SubResource("Gradient_u5j46")
+
+[sub_resource type="Curve" id="Curve_amqop"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_u5j46"]
+curve = SubResource("Curve_amqop")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_uua0r"]
+direction = Vector3(0, 0, 0)
+gravity = Vector3(0, 0, 0)
+scale_min = 5.0
+scale_max = 5.0
+scale_curve = SubResource("CurveTexture_u5j46")
+color_ramp = SubResource("GradientTexture1D_aolua")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_a2idi"]
+transparency = 1
+vertex_color_use_as_albedo = true
+vertex_color_is_srgb = true
+albedo_texture = ExtResource("181_kyisf")
+billboard_mode = 3
+billboard_keep_scale = true
+particles_anim_h_frames = 8
+particles_anim_v_frames = 8
+particles_anim_loop = false
+proximity_fade_enabled = true
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_ul3b4"]
+particle_flag_rotate_y = true
+emission_shape = 1
+emission_sphere_radius = 0.1
+angle_min = -179.99998
+angle_max = 180.00002
+direction = Vector3(0, 1, 0)
+spread = 0.0
+initial_velocity_min = 1.8
+initial_velocity_max = 2.3
+angular_velocity_min = -50.000015
+angular_velocity_max = 49.99998
+gravity = Vector3(0, 0, 0)
+scale_min = 0.9
+scale_max = 2.2
+anim_speed_min = 1.0
+anim_speed_max = 1.0
+
+[sub_resource type="Gradient" id="Gradient_p1x1t"]
+offsets = PackedFloat32Array(0, 0.39771414, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_ugtkr"]
+gradient = SubResource("Gradient_p1x1t")
+
+[sub_resource type="Curve" id="Curve_1xoxf"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_u0qp0"]
+curve = SubResource("Curve_1xoxf")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_ryda5"]
+initial_velocity_min = 2.0
+initial_velocity_max = 4.0
+gravity = Vector3(0, 1, 0)
+scale_curve = SubResource("CurveTexture_u0qp0")
+color_ramp = SubResource("GradientTexture1D_ugtkr")
+
+[sub_resource type="Curve" id="Curve_uepgp"]
+_data = [Vector2(0, 0.212), 0.0, 0.0, 0, 0, Vector2(1, 0.632), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_n8oyj"]
+curve = SubResource("Curve_uepgp")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_hqxry"]
+lifetime_randomness = 0.68
+angle_min = -511.8
+angle_max = 390.4
+inherit_velocity_ratio = 0.319
+direction = Vector3(2.08165e-12, 1, 2.08165e-12)
+spread = 28.735
+flatness = 0.06
+initial_velocity_min = 1.0
+initial_velocity_max = 6.0
+scale_min = 0.0
+scale_curve = SubResource("CurveTexture_n8oyj")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_x5kqp"]
+render_priority = 0
+shader = ExtResource("184_x328v")
+shader_parameter/burst_color = Color(0.611765, 0.152941, 0.960784, 1)
+shader_parameter/edge_softness = 0.5
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_j8fxx"]
+lifetime_randomness = 0.5
+emission_shape = 1
+emission_sphere_radius = 0.5
+direction = Vector3(0, 1, 0)
+spread = 180.0
+initial_velocity_min = 2.0
+initial_velocity_max = 8.0
+gravity = Vector3(0, -1, 0)
+damping_min = 1.0
+damping_max = 2.0
+scale_min = 0.1
+scale_max = 0.5
+
+[sub_resource type="Gradient" id="Gradient_fywa5"]
+offsets = PackedFloat32Array(0, 0.48078805, 1)
+colors = PackedColorArray(0.9993774, 0.8972909, 0.59308845, 1, 0.9995603, 0.6342527, 0, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_xtp0q"]
+gradient = SubResource("Gradient_fywa5")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_pe3vo"]
+direction = Vector3(0, 1, 0)
+spread = 180.0
+initial_velocity_min = 3.0
+initial_velocity_max = 5.0
+damping_min = 5.0
+damping_max = 5.0
+scale_min = 0.5
+color_ramp = SubResource("GradientTexture1D_xtp0q")
+
+[sub_resource type="Gradient" id="Gradient_d34ih"]
+colors = PackedColorArray(0.52, 0.52, 0.52, 1, 0.52, 0.52, 0.52, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_krcva"]
+gradient = SubResource("Gradient_d34ih")
+
+[sub_resource type="Curve" id="Curve_7vjcu"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_n3ftd"]
+curve = SubResource("Curve_7vjcu")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_m0ind"]
+direction = Vector3(0, 0, 1)
+initial_velocity_min = 3.0
+initial_velocity_max = 3.0
+gravity = Vector3(0, -1, 0)
+scale_min = 0.5
+scale_curve = SubResource("CurveTexture_n3ftd")
+color_ramp = SubResource("GradientTexture1D_krcva")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_spark"]
+render_priority = 0
+shader = ExtResource("185_vbgln")
+shader_parameter/spark_color = Color(0.2, 0.8, 1, 1)
+shader_parameter/core_intensity = 2.0
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_spark"]
+lifetime_randomness = 0.5
+emission_shape = 1
+emission_sphere_radius = 0.2
+direction = Vector3(0, 1, 0)
+spread = 180.0
+initial_velocity_min = 5.0
+initial_velocity_max = 15.0
+gravity = Vector3(0, -5, 0)
+damping_min = 2.0
+damping_max = 5.0
+scale_min = 0.05
+scale_max = 0.2
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_lta0k"]
+shader = ExtResource("9_3nmbu")
+shader_parameter/density = 8.0
+shader_parameter/albedo = Color(1, 1, 1, 1)
+shader_parameter/emission = Color(0, 0, 0, 1)
+shader_parameter/height_falloff = 0.0
+shader_parameter/edge_fade = 0.329
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_a0xi4"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.050000002375
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_j7lam"]
+albedo_color = Color(0.8394554, 0.7224841, 0.3072155, 1)
+emission_enabled = true
+emission = Color(0.75556225, 1, 0.73243827, 1)
+emission_energy_multiplier = 5.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_7rave"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.05
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_7rave"]
+albedo_texture = ExtResource("180_i7bvm")
+uv1_triplanar = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cvnb8"]
+albedo_texture = ExtResource("13_mjfph")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_jyx7n"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.050000002375
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_f1hol"]
+viewport_path = NodePath("SubViewport")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jyx7n"]
+resource_local_to_scene = true
+shading_mode = 0
+albedo_texture = SubResource("ViewportTexture_f1hol")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_mx6xk"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.05
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_u0s6k"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0.6666667, 0.76862746, 0.9882353, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.050000002375
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_g8x0s"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.05
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ysqd2"]
+shader = ExtResource("198_uvejx")
+shader_parameter/wave_speed = 0.20000000298024
+shader_parameter/wave_frequency = 1.90000002831228
+shader_parameter/wave_width = 0.12999999709423998
+shader_parameter/refraction_strength = 0.01200000057
+shader_parameter/aberration_amount = 0.00400000019
+shader_parameter/dither_intensity = 0.10999999754128
+shader_parameter/desaturation = 0.4
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_clqj2"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.05
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_uedhb"]
+render_priority = 1
+shader = ExtResource("15_lno16")
+shader_parameter/highlight_color = Color(1, 0, 0, 1)
+shader_parameter/highlight_opacity = 1.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_tkhgv"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.050000002375
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_m7kiq"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.2
+shader_parameter/max_intensity = 1.0
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ayun4"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0.6666667, 0.76862746, 0.9882353, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.050000002375
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_f50cn"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0.6666667, 0.76862746, 0.9882353, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.050000002375
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_c45tw"]
+render_priority = 0
+shader = ExtResource("202_h3kw4")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_0jhp4"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.050000002375
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hf1jj"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.2
+shader_parameter/max_intensity = 1.0
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_j8qkd"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.050000002375
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_sid1s"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.2
+shader_parameter/max_intensity = 1.0
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_p48nu"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.2000000095
+shader_parameter/base_texture = ExtResource("209_dj8e3")
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_bwnwt"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.05
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_tx8to"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.2
+shader_parameter/max_intensity = 1.0
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_8mm88"]
+viewport_path = NodePath("SubViewport")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ngsht"]
+resource_local_to_scene = true
+render_priority = 0
+shader = ExtResource("167_et1h1")
+shader_parameter/tex = SubResource("ViewportTexture_8mm88")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_key31"]
+resource_local_to_scene = true
+render_priority = 0
+shader = ExtResource("210_508pe")
+shader_parameter/albedo_texture = ExtResource("211_3uy8v")
+shader_parameter/texture_scale = 1.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_7uxg4"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.05
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8ajrr"]
+render_priority = 0
+shader = ExtResource("212_bm01u")
+shader_parameter/audio_data = PackedFloat32Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+shader_parameter/is_playing = false
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ppa8g"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.2
+shader_parameter/max_intensity = 1.0
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_a0kgb"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.2
+shader_parameter/max_intensity = 1.0
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_wxffa"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.2
+shader_parameter/max_intensity = 1.0
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tctc8"]
+albedo_texture = ExtResource("180_i7bvm")
+uv1_triplanar = true
+
+[sub_resource type="Gradient" id="Gradient_ogymw"]
+offsets = PackedFloat32Array(0.0031086819, 0.36062163, 0.48497397, 0.5678755, 0.6870465, 1)
+colors = PackedColorArray(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.3137255, 1, 0, 0, 0.3137255, 1, 0, 0, 0, 1, 0, 0, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_ey25j"]
+gradient = SubResource("Gradient_ogymw")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_1cv0y"]
+emission_shape_scale = Vector3(1, 0.5, 1)
+emission_shape = 3
+emission_box_extents = Vector3(0.1, 0.1, 1)
+gravity = Vector3(0, -0.1, 0)
+color_ramp = SubResource("GradientTexture1D_ey25j")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_2c5bn"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.050000002375
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_8wjit"]
+resource_local_to_scene = true
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_c2wla"]
+resource_local_to_scene = true
+noise = SubResource("FastNoiseLite_8wjit")
+seamless = true
+as_normal_map = true
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_isy8u"]
+resource_local_to_scene = true
+noise = SubResource("FastNoiseLite_8wjit")
+seamless = true
+as_normal_map = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sithr"]
+resource_local_to_scene = true
+transparency = 1
+cull_mode = 2
+depth_draw_mode = 1
+albedo_color = Color(0.30980393, 0.5411765, 0.8666667, 0.3882353)
+roughness = 0.0
+normal_enabled = true
+normal_texture = SubResource("NoiseTexture2D_c2wla")
+refraction_enabled = true
+refraction_texture = SubResource("NoiseTexture2D_isy8u")
+uv1_scale = Vector3(0.04, 0.04, 0.04)
+uv1_triplanar = true
+uv1_world_triplanar = true
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_jhx03"]
+viewport_path = NodePath("InteractiveObjects/Mirror/SubViewport")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_o8fc1"]
+resource_local_to_scene = true
+albedo_texture = SubResource("ViewportTexture_jhx03")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_62djl"]
+uv1_triplanar = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_7t5mc"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lakw3"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cthk8"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3twlb"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_74mbo"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_amtal"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_756ok"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_7lk70"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bvl7l"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gu4cf"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8wusb"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0nwtw"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_edhmo"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3u8lu"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gjd1y"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wutcc"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vjlgj"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8wjit"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5qfrm"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rqqvq"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_o6plx"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3to51"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_iq3bb"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ow8v3"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_n3i82"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_j8t1y"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dl80l"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fxael"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0uh1a"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_snkfy"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_v8ueo"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dnb8c"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_uyebc"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_i5si1"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_b05sa"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fwt55"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vquxg"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_e3827"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_7g03d"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1wxbd"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8jpi0"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_r257v"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ldhpk"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_s0elv"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_atn6y"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1ss2w"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_d1yg5"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nnqmx"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8htxv"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5m32s"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_w6tvx"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mss46"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_usm5x"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_v42yw"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4a8s4"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5a6cf"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8uni5"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_aif7q"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_m5fo8"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tetl0"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0dmsj"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qawva"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_e5oau"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_i4don"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ilcpp"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ierr6"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_p646l"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6ngkn"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rymnq"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_7rar7"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_m5pl3"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_7vwk3"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lwpa4"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pe6pr"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jyvql"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jb01q"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vs7n8"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yrpd0"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_inogn"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sc3bn"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4acm3"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_y7i8u"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ih24j"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_euco0"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_muvo8"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lsch2"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_l7wxv"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_drjbe"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jy85l"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_h63b0"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vcpwk"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mq30l"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_feiax"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hw8wq"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tf6o7"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_popdj"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1bgwk"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rx6si"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_aae6a"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_c0jvb"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dre16"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6fesy"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fnyoe"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_iu28t"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_s0dkl"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_u7y7n"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_drahe"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4prf2"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_op172"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_go4po"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_t56hy"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_s87gw"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_uvyac"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pkc6u"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_afoeb"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lkkae"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wky0l"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2nfup"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8e0a1"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_evsuq"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_quw0e"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_n61p1"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_j5wka"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nv7iw"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ga0qf"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rjbrb"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ynr6x"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tidjp"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_p08hw"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_je8lx"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ow4if"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ahrn3"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hkc12"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_neb7p"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ako6t"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_okoco"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jhbao"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bs7f2"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8hd22"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5oxta"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rc72p"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_m803p"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ui2jy"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5saio"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_q8x55"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sj8lx"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_r5npb"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ax7o5"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yeofu"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_n37dj"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kkgum"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_okbfp"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hsb55"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cqx5w"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kajfp"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4020y"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3dgac"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_d150e"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8lx50"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wwd30"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_u3f0j"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_avvx6"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ob0ru"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jhdm8"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vehhr"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_uu2e4"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2glyo"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fanae"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ivulv"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_e71pv"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_de08w"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dygwa"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5spnk"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dj8w3"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ggprd"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jwnw0"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8j2nf"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_f2okq"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_r8ne2"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_de5jd"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4lt4y"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_y6l7p"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wucic"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_of1xe"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_xgotg"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hfsvb"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gthnr"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ug0bf"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_81457"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_k0mer"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ghq2i"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kylch"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ydljg"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_63a17"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_w0bif"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lhvua"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hbve2"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_t7bwq"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_oadxv"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_87fws"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ge50i"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3dfue"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ul3t1"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bhf4i"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_d6aad"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4xhw0"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2ybqt"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_54dmf"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_c7opp"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fnod5"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ddng4"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_o8t80"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ry7bi"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ugmd0"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_m8apt"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_b0v8l"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dnbwv"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_g7bf4"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5hne3"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1swjw"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kgand"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kj2yf"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_og3px"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hsdno"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_xpyjm"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jm00c"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5esim"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_644cb"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_njnsr"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_itqel"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ahhq3"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_abh1n"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kus7w"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sxsr5"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_m3nit"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_c3wcx"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8gys8"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_d0l2v"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pvrin"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_28yao"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jcyki"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5m01t"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tvlks"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vnbte"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_d3j0d"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pyoml"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wdjgo"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ldnly"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_oqxnm"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_a5pku"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ya742"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_02k4d"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pa7um"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lvnp7"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_n27rg"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_t1sxw"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pto8d"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_62d3v"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_djr2r"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_djge7"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_t7g27"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_s5pd5"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jex2x"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wdgtt"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_200td"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_p2vtu"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_or4qp"]
+shading_mode = 2
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_5qfrm"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.0
+shader_parameter/max_intensity = 0.5
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0wf3h"]
+transparency = 1
+albedo_color = Color(1, 0, 0, 0.6)
+
+[sub_resource type="CompressedTexture2D" id="CompressedTexture2D_q8dtw"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_f2hym"]
+albedo_texture = SubResource("CompressedTexture2D_q8dtw")
+uv1_triplanar = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_430fg"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3sffw"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_from5"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mv8xk"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0vkt2"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dq3p3"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5ylhr"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_q1muc"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_25xxu"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jyvkv"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_g2hy2"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gpsel"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_o3f7s"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_656bt"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_xsl5u"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sis3m"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jdvtn"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ednuq"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4i00r"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6akc5"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2o7a3"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_7pxw5"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_svt4y"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qtmn8"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yl8rv"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hy5wv"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bf1ml"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_imn8v"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_76n6d"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_x73sc"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1wedj"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_xtre5"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sgpxu"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ukm4h"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ygij2"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bgu27"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tdbgq"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_neqbk"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2o3jp"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gk66a"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yc52w"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fp1gl"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pt5uu"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kikjm"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tju2n"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3e1lh"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nxxyg"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_phlbe"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ylg4m"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jqti5"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_v53iv"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tjn3u"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ltlkl"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jsxvl"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_v2h23"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_benqe"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gb12u"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_y4vqa"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_r57ie"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_52rs2"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_71ntv"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_l2iy1"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0gpmr"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6bpbc"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tkp13"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fbdyu"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fi3xt"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5s0s1"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_r55yk"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_seihq"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cooeb"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_iog8y"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ss7li"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_21kc4"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wv1oe"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_s5ebx"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bokd0"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ooym6"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_oh0fb"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_w43yc"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jgi3l"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_q1ua6"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_k8yuu"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vngx6"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_d1rw0"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3u6w8"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gskxm"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_e6s1g"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fcqd4"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qs1aq"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8rr7a"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_74e8q"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tc35k"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ok6ml"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2cur0"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_50q1f"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_up4yg"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lfucv"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gexx8"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1ijbe"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1cd77"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rruce"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_owfxj"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ppx7p"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ad4af"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_d3ga3"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_07rg2"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8t7vd"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_65e54"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vb4a3"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nsjb2"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gfovj"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yfkuh"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mmivg"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ogins"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_q34tx"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_whcys"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_o3w7x"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cwfo3"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2okfc"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0x387"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6tbf7"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gkkvg"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_btrdy"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_v7btw"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_t7166"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0qtdw"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wqdry"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gy1l5"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_uc2jd"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4c1p4"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_clu4o"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2055l"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1gag4"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_0sgqk"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3clf5"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_e78hg"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dsfju"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4dfjs"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ywvhn"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_7auwo"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_obgcd"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tk2yu"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dtokt"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1amsh"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vt2or"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_memrr"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1fb2w"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_y6xjk"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_s5mja"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_er6jd"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5mh5m"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ei35c"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_iyy8l"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3k77c"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_m827d"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_50dvn"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_srqik"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gv863"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jl0ll"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dixy7"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_7i5t1"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_j1d6x"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ios8v"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_w7ij0"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qo5uk"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_at817"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_w6tn2"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jf1rt"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_diq0b"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jc4q1"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vr8kn"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_78ort"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_khbwc"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fj8cq"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pif7w"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jhyiu"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_r3a2o"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dkxfc"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wm3mr"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_olfds"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gngel"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hgbol"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_v3pil"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vssy4"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_s7ns1"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ciu2w"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hxvpb"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ahfi6"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ktu1g"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qrg7e"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_e2a0r"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_06uen"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2trm4"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_k4j62"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8ugii"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_34ceh"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4dntr"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ova3n"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_r6fb1"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5t4mw"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_i6k1w"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_00ogu"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hgg2x"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nw6lt"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gc8jd"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yvbes"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_juogk"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yl47b"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_b0ca8"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vfw62"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_61c23"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_j7aei"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hylrp"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3vuxm"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_aqn7c"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8bl64"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_u1ltj"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kofti"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ytbcx"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fsibm"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ob3uy"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_woi14"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_b01ae"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_euli0"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vrdp4"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_eo66n"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_okcpw"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2niwx"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_m2yoa"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_s4cy2"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_uea3c"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jknqi"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_edbbm"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gp082"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5d1bm"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_crnwf"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_28aiu"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kf22x"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_7gk5a"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6hvsj"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_irnfj"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gt3gr"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ile6s"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bw35w"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3l1sy"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1t8id"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_q61ar"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gcoxu"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_iqqrh"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_amd4b"]
+albedo_texture = ExtResource("226_r682b")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_udsq6"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_upfie"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.0
+shader_parameter/max_intensity = 0.5
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_55hoj"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 4.0
+shader_parameter/min_intensity = 0.0
+shader_parameter/max_intensity = 0.5
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_i31qk"]
+albedo_color = Color(0.23529412, 1, 0, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5pyl1"]
+transparency = 1
+albedo_color = Color(1, 0, 0, 0.6)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rq74f"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_f83co"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ax46p"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hduqc"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_wsjqi"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qncwv"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_2qjuf"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_446m4"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5famf"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_o6x7j"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_uhoer"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_xrbp8"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tmxd4"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_honi4"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_prjbq"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8v3pk"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_js3m3"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kwxfd"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qaee5"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yvb4j"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3qjuu"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6k1an"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_b8kab"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vgwuc"]
+shading_mode = 2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fsek2"]
+shading_mode = 2
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_amd4b"]
+shader = ExtResource("23_hra72")
+shader_parameter/num_particles = 50000
+shader_parameter/particle_scale = Vector3(1, 1, 1)
+shader_parameter/lifetime = 3.0
+shader_parameter/lifetime_randomness = 0.25
+shader_parameter/spawn_radius = 40.0
+shader_parameter/map_scales = PackedVector4Array(0.011363637, 0.011363637, 1.33, 1.226, 0.1, 0.02, 0.548, 1.017, 0.02, 0.02, 1, 1)
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_n24io"]
+
+[sub_resource type="NoiseTexture3D" id="NoiseTexture3D_rq74f"]
+noise = SubResource("FastNoiseLite_n24io")
+
+[sub_resource type="FogMaterial" id="FogMaterial_n24io"]
+density_texture = SubResource("NoiseTexture3D_rq74f")
+
+[sub_resource type="NoiseTexture3D" id="NoiseTexture3D_n24io"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_rq74f"]
+shader = ExtResource("24_clin3")
+shader_parameter/noise_texture = SubResource("NoiseTexture3D_n24io")
+shader_parameter/noise_scale = 0.05
+shader_parameter/cloud_coverage = 0.45
+shader_parameter/density_multiplier = 10.000000475
+shader_parameter/cloud_color = Color(0.9, 0.95, 1, 1)
+shader_parameter/shadow_color = Color(0.3, 0.35, 0.4, 1)
+shader_parameter/wind_direction = Vector3(-1, 0, 0.5)
+shader_parameter/wind_speed = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_udsq6"]
+render_priority = 0
+shader = ExtResource("238_sb64h")
+shader_parameter/albedo = Color(0.1, 0.1, 0.1, 1)
+shader_parameter/roughness = 0.8
+shader_parameter/wind_direction = Vector3(-1, 0, 0.5)
+shader_parameter/wind_strength = 0.15
+shader_parameter/wind_speed = 2.0
+shader_parameter/push_radius = 1.5
+shader_parameter/push_strength = 0.6
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_n24io"]
+emission_shape = 3
+emission_box_extents = Vector3(5, 2, 5)
+gravity = Vector3(0, 0.1, 0)
+turbulence_enabled = true
+turbulence_noise_strength = 4.22
+turbulence_noise_scale = 4.047
+collision_mode = 1
+collision_friction = 0.0
+collision_bounce = 0.2
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_w56wj"]
+shader = ExtResource("215_hqf6n")
+shader_parameter/fade_color = Color(0, 0, 0, 1)
+shader_parameter/fade_amount = 0.0
+shader_parameter/blur_amount = 0.0
+shader_parameter/blink_openness = 1.0
+
+[sub_resource type="Gradient" id="Gradient_2vvrv"]
+offsets = PackedFloat32Array(0, 0.5203881, 1)
+colors = PackedColorArray(0, 0, 0, 0, 0.5203881, 0.5203881, 0.5203881, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_qt4jf"]
+gradient = SubResource("Gradient_2vvrv")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_314x0"]
+emission_shape = 3
+emission_box_extents = Vector3(1, 1, 1)
+direction = Vector3(0, 1, 0)
+spread = 5.0
+initial_velocity_min = 4.0
+initial_velocity_max = 8.0
+gravity = Vector3(0, 0, 0)
+color_ramp = SubResource("GradientTexture1D_qt4jf")
+collision_mode = 2
+
+[sub_resource type="Gradient" id="Gradient_qt4jf"]
+offsets = PackedFloat32Array(0, 0.50097066, 1)
+colors = PackedColorArray(0, 0, 0, 0, 0.50097066, 0.50097066, 0.50097066, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_314x0"]
+gradient = SubResource("Gradient_qt4jf")
+
+[sub_resource type="Curve" id="Curve_y1e2o"]
+_data = [Vector2(0, 0.25802338), 0.0, 0.0, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_wev2t"]
+curve = SubResource("Curve_y1e2o")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_ikx87"]
+direction = Vector3(0, 1, 0)
+spread = 15.0
+initial_velocity_min = 2.0
+initial_velocity_max = 4.0
+gravity = Vector3(0, 0, 0)
+scale_curve = SubResource("CurveTexture_wev2t")
+color_ramp = SubResource("GradientTexture1D_314x0")
+collision_mode = 2
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_p8bl0"]
+render_priority = 0
+shader = ExtResource("202_h3kw4")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_1bdt2"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.0
+shader_parameter/max_intensity = 0.5
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8m7bo"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.5
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_prdxl"]
+transparency = 2
+alpha_scissor_threshold = 0.15
+alpha_antialiasing_mode = 0
+vertex_color_use_as_albedo = true
+vertex_color_is_srgb = true
+albedo_texture = ExtResource("235_5jnlc")
+roughness = 0.15
+normal_enabled = true
+normal_scale = 0.5
+normal_texture = ExtResource("236_51f0v")
+billboard_mode = 3
+billboard_keep_scale = true
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="Curve" id="Curve_tlpab"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.10215547, 1), -2.5449977, -2.5449977, 0, 0, Vector2(1, 0.06546891), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_3i60n"]
+texture_mode = 1
+curve = SubResource("Curve_tlpab")
+
+[sub_resource type="Gradient" id="Gradient_gq3jd"]
+interpolation_color_space = 1
+offsets = PackedFloat32Array(0.15336774, 0.4435232)
+colors = PackedColorArray(0.432765, 0, 0, 1, 1, 0.32, 0.32, 1)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_k4nrn"]
+gradient = SubResource("Gradient_gq3jd")
+
+[sub_resource type="Curve" id="Curve_0g34f"]
+_data = [Vector2(0, 0.06546891), 0.0, 2.6473308, 0, 0, Vector2(1, 1), 0.0, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_ry4qa"]
+curve = SubResource("Curve_0g34f")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_x11r4"]
+lifetime_randomness = 0.5
+particle_flag_rotate_y = true
+emission_shape = 1
+emission_sphere_radius = 0.3
+angle_min = -179.99998
+angle_max = 180.00002
+direction = Vector3(0, 1, 0)
+spread = 10.0
+initial_velocity_min = -0.5
+initial_velocity_max = 3.0
+radial_velocity_min = -2.2351742e-05
+radial_velocity_max = 0.39997762
+scale_min = 0.5
+scale_max = 1.1999999
+scale_curve = SubResource("CurveTexture_ry4qa")
+color_ramp = SubResource("GradientTexture1D_k4nrn")
+alpha_curve = SubResource("CurveTexture_3i60n")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_xvil0"]
+render_priority = 0
+shader = ExtResource("263_slma3")
+shader_parameter/bg_color_a = Color(0, 0, 0, 1)
+shader_parameter/bg_color_b = Color(0.1, 0.1, 0.1, 1)
+shader_parameter/major_line_color = Color(0.8, 0.8, 0.8, 1)
+shader_parameter/minor_line_color = Color(0.4, 0.4, 0.4, 0.5)
+shader_parameter/bg_alpha = 1.0
+shader_parameter/unit_scale = 2.0
+shader_parameter/major_subdivisions = 4.0
+shader_parameter/minor_subdivisions = 8.0
+shader_parameter/line_thickness = 0.05
+shader_parameter/architecture_type = 0
+
+[sub_resource type="Curve" id="Curve_jviwg"]
+_data = [Vector2(0, 0.5), 0.0, 0.0, 0, 0, Vector2(0.5209825, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_0p1cd"]
+curve = SubResource("Curve_jviwg")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_jviwg"]
+gravity = Vector3(0, 1, 0)
+scale_curve = SubResource("CurveTexture_0p1cd")
+anim_speed_min = 1.0
+anim_speed_max = 1.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3tx63"]
+transparency = 1
+shading_mode = 0
+albedo_texture = ExtResource("257_6afgb")
+billboard_mode = 3
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="Gradient" id="Gradient_jviwg"]
+colors = PackedColorArray(0, 0, 0, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_0p1cd"]
+gradient = SubResource("Gradient_jviwg")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_0p1cd"]
+angle_min = 1.0728835e-05
+angle_max = 360.00003
+gravity = Vector3(0, 0, 0)
+scale_min = 0.5
+scale_max = 2.0
+color_ramp = SubResource("GradientTexture1D_0p1cd")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ds3o1"]
+render_priority = -1
+shader = ExtResource("228_x6sje")
+shader_parameter/max_alpha = 0.666
+shader_parameter/brightness_multiplier = 1.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_wbu1w"]
+render_priority = 0
+shader = ExtResource("256_yk6hv")
+shader_parameter/lightning_color = Color(0.288, 0.60480005, 0.72, 1)
+shader_parameter/emission_color = Color(0, 0, 0, 1)
+shader_parameter/emission_energy = 3.0
+shader_parameter/lightning_scale = 1.0
+shader_parameter/lightning_thickness = 0.02
+shader_parameter/speed = 8.0
+shader_parameter/jaggedness = 1.0
+shader_parameter/strike_frequency = 0.4770000226575
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_wrt5a"]
+resource_local_to_scene = true
+shader = ExtResource("36_dfq6a")
+shader_parameter/density = 1.0
+shader_parameter/albedo = Color(0, 0.04, 0.16, 1)
+shader_parameter/emission = Color(0, 0.04, 0.16, 1)
+shader_parameter/height_falloff = 0.0
+shader_parameter/edge_fade = 0.1
+shader_parameter/fade_plane = Vector4(0, 1, 0, -999)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ccyp1"]
+shader = ExtResource("217_4vnw4")
+shader_parameter/clear_progress = 1.5
+shader_parameter/ripple_magnitude = 0.3
+shader_parameter/ripple_speed = 2.0
+shader_parameter/chromatic_aberration = 0.005
+shader_parameter/water_tint = Color(0.1, 0.4, 0.7, 0.2)
+shader_parameter/highlight_punch = 0.02
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_yvxai"]
+render_priority = 0
+shader = ExtResource("38_c8thk")
+shader_parameter/lightning_color = Color(0.5, 0.8, 1, 1)
+shader_parameter/glow_color = Color(0.2, 0.5, 1, 1)
+shader_parameter/emission_strength = 5.0
+shader_parameter/end_fade_sharpness = 2.0
+
+[sub_resource type="Gradient" id="Gradient_s1444"]
+colors = PackedColorArray(1, 1, 0, 1, 1, 0, 0, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_w3qnr"]
+gradient = SubResource("Gradient_s1444")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_kx7w4"]
+emission_shape = 1
+emission_sphere_radius = 0.1
+direction = Vector3(0, 1, 0)
+spread = 15.0
+initial_velocity_min = 1.0
+initial_velocity_max = 2.0
+gravity = Vector3(0, 0, 0)
+color_ramp = SubResource("GradientTexture1D_w3qnr")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vkaj5"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.05
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_kt415"]
+render_priority = 0
+shader = ExtResource("221_ljv33")
+shader_parameter/scroll_speed = Vector2(0, -0.5)
+shader_parameter/size_multiplier = 1.0
+shader_parameter/blackness = 1.0
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_swvpt"]
+emission_shape = 3
+emission_box_extents = Vector3(3, 2, 3)
+direction = Vector3(0, -1, 0)
+spread = 2.0
+initial_velocity_min = 36.0
+initial_velocity_max = 44.0
+color = Color(0.82, 0.9, 1, 0.38)
+turbulence_initial_displacement_min = 1.490116e-06
+turbulence_initial_displacement_max = 1.490116e-06
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_gwfwo"]
+shader = ExtResource("328_vlc13")
+shader_parameter/rect_size = Vector2(0, 0)
+shader_parameter/ui_tilt = Vector2(0, 0)
+shader_parameter/perspective_strength = 0.15
+shader_parameter/sweep_progress = -0.5
+shader_parameter/hover_intensity = 0.0
+shader_parameter/angle = 25.0
+shader_parameter/base_color = Color(0, 0, 0, 1)
+shader_parameter/shine_color = Color(1, 0.34117648, 0.34117648, 0.6)
+shader_parameter/shine_width = 0.15
+shader_parameter/slab_opacity = 0.95
+shader_parameter/mouse_pos_uv = Vector2(0, 0)
+shader_parameter/reveal_radius = 0.15
+shader_parameter/reveal_softness = 0.1
+shader_parameter/blood_offset = Vector2(0, 0)
+shader_parameter/blood_scale = 1.0
+shader_parameter/flashlight_color = Color(1, 1, 1, 1)
+shader_parameter/flashlight_energy = 0.8
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8ojwr"]
+shader = ExtResource("329_v3u4j")
+shader_parameter/shadow_color = Color(0.12, 0.12, 0.12, 1)
+shader_parameter/shadow_1_x = -0.5
+shader_parameter/shadow_2_x = 1.5
+shader_parameter/speed = 0.5
+shader_parameter/shadow_width = 0.150000007125
+shader_parameter/softness = 0.1
+shader_parameter/shadow_slant = 0.3
+shader_parameter/hover_intensity = 0.0
+shader_parameter/glow_color = Color(1, 0.85, 0.4, 1)
+shader_parameter/rect_size = Vector2(0, 0)
+shader_parameter/ui_tilt = Vector2(0, 0)
+shader_parameter/perspective_strength = 0.15
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_fec17"]
+shader = ExtResource("330_qqj3j")
+shader_parameter/ui_tilt = Vector2(0, 0)
+shader_parameter/perspective_strength = 0.15
+shader_parameter/line_color = Color(1, 1, 1, 1)
+shader_parameter/line_thickness = 2.0
+shader_parameter/rect_size = Vector2(0, 0)
+shader_parameter/speed = 1.5
+shader_parameter/trail_length = 0.3
+shader_parameter/hover_intensity = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_534t5"]
+shader = ExtResource("13_yttvs")
+shader_parameter/mouse_uv = Vector2(0.5, 0.5)
+shader_parameter/glass_radius_uv = 0.15
+shader_parameter/zoom = 2.0
+shader_parameter/aspect_ratio = 1.777
+shader_parameter/border_thickness = 0.005
+shader_parameter/edge_softness = 0.002
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_g3utg"]
+shader = ExtResource("11_5enqp")
+shader_parameter/u_time = 0.0
+shader_parameter/resolution = Vector2(1920, 1080)
+shader_parameter/line_color = Color(0.1, 1, 0.1, 1)
+shader_parameter/grid_color = Color(0.01, 0.05, 0.01, 1)
+shader_parameter/line_thickness = 0.01
+shader_parameter/line_blur = 0.00999999977648
+shader_parameter/points = PackedVector2Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_52ppk"]
+shader = ExtResource("12_vbovi")
+shader_parameter/resolution = Vector2(1920, 1080)
+shader_parameter/zoom = 4.0
+shader_parameter/speed = 0.6
+shader_parameter/warp_primary = 0.2
+shader_parameter/warp_secondary = 0.3
+shader_parameter/brightness = 0.5
+shader_parameter/sharpness = 2.0
+shader_parameter/contrast = 1.3
+shader_parameter/emission = 1.5
+shader_parameter/color_core = Color(1.2, 0, 0, 1)
+shader_parameter/color_edge = Color(0.9, 0.7, 0.3, 1)
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_50h1w"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_iyrh0"]
+shader = ExtResource("331_sxy83")
+shader_parameter/filter_mode = 0
+shader_parameter/grain_amount = 0.0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5wexd"]
+resource_local_to_scene = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_y4bl1"]
+render_priority = 0
+shader = ExtResource("4_bjti4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.050000002375
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_1symm"]
+shader = ExtResource("332_f6wx3")
+shader_parameter/blur_amount = 2.0
+shader_parameter/pan_amount = 0.10000000149012
+shader_parameter/pan_speed = 0.10000000475
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_tiplq"]
+render_priority = 0
+shader = ExtResource("202_h3kw4")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_p7vwb"]
+shader = ExtResource("5_3g38v")
+shader_parameter/color = Color(0, 0, 0, 1)
+shader_parameter/multiplier = 0.4
+shader_parameter/softness = 0.7
+shader_parameter/vignette_opacity = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_kwflg"]
+shader = ExtResource("6_ne3lw")
+shader_parameter/lightning_color = Color(0, 0.8, 1, 1)
+shader_parameter/intensity = 0.286000013585
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_gdmj0"]
+shader = ExtResource("7_jjunr")
+shader_parameter/intensity = 0.400000019
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_cgfq5"]
+shader = ExtResource("8_ch8oj")
+shader_parameter/distortion_amount = 1.0
+shader_parameter/blur_amount = 2.5
+shader_parameter/effect_strength = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_yev5y"]
+shader = ExtResource("9_0srxu")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_gdt2y"]
+shader = ExtResource("9_0srxu")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8dubc"]
+shader = ExtResource("9_0srxu")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_7dvkv"]
+shader = ExtResource("10_totq7")
+shader_parameter/fill_threshold = 0.5
 
 [resource]
 script = ExtResource("2_akgxa")
-materials = Array[Material]([ExtResource("1_63tbl"), ExtResource("2_y6egi"), ExtResource("3_ot8cs"), ExtResource("4_ibucx"), ExtResource("5_xqk0g"), ExtResource("6_eoyls"), ExtResource("7_aai07"), ExtResource("8_m1nfi"), ExtResource("9_wtntw")])
+materials = Array[Material]([SubResource("ParticleProcessMaterial_60227"), SubResource("ShaderMaterial_61ith"), SubResource("ShaderMaterial_jfpux"), SubResource("ShaderMaterial_sfy4j"), SubResource("ShaderMaterial_pi0m5"), SubResource("ShaderMaterial_acy5l"), SubResource("ShaderMaterial_6k1gw"), SubResource("ParticleProcessMaterial_uua0r"), SubResource("StandardMaterial3D_a2idi"), SubResource("ParticleProcessMaterial_ul3b4"), SubResource("ParticleProcessMaterial_ryda5"), ExtResource("1_63tbl"), SubResource("ParticleProcessMaterial_hqxry"), SubResource("ShaderMaterial_x5kqp"), SubResource("ParticleProcessMaterial_j8fxx"), SubResource("ParticleProcessMaterial_pe3vo"), SubResource("ParticleProcessMaterial_m0ind"), SubResource("ShaderMaterial_spark"), SubResource("ParticleProcessMaterial_spark"), SubResource("ShaderMaterial_lta0k"), SubResource("ShaderMaterial_a0xi4"), SubResource("StandardMaterial3D_j7lam"), ExtResource("8_m1nfi"), ExtResource("2_y6egi"), SubResource("ShaderMaterial_7rave"), SubResource("StandardMaterial3D_7rave"), SubResource("StandardMaterial3D_cvnb8"), SubResource("ShaderMaterial_jyx7n"), SubResource("StandardMaterial3D_jyx7n"), SubResource("ShaderMaterial_mx6xk"), SubResource("ShaderMaterial_u0s6k"), SubResource("ShaderMaterial_g8x0s"), SubResource("ShaderMaterial_ysqd2"), SubResource("ShaderMaterial_clqj2"), SubResource("ShaderMaterial_uedhb"), SubResource("ShaderMaterial_tkhgv"), SubResource("ShaderMaterial_m7kiq"), SubResource("ShaderMaterial_ayun4"), SubResource("ShaderMaterial_f50cn"), SubResource("ShaderMaterial_c45tw"), SubResource("ShaderMaterial_0jhp4"), SubResource("ShaderMaterial_hf1jj"), SubResource("ShaderMaterial_j8qkd"), SubResource("ShaderMaterial_sid1s"), SubResource("ShaderMaterial_p48nu"), SubResource("ShaderMaterial_bwnwt"), SubResource("ShaderMaterial_tx8to"), SubResource("ShaderMaterial_ngsht"), SubResource("ShaderMaterial_key31"), SubResource("ShaderMaterial_7uxg4"), SubResource("ShaderMaterial_8ajrr"), SubResource("ShaderMaterial_ppa8g"), SubResource("ShaderMaterial_a0kgb"), SubResource("ShaderMaterial_wxffa"), SubResource("StandardMaterial3D_tctc8"), SubResource("ParticleProcessMaterial_1cv0y"), SubResource("ShaderMaterial_2c5bn"), SubResource("StandardMaterial3D_sithr"), SubResource("StandardMaterial3D_o8fc1"), SubResource("StandardMaterial3D_62djl"), SubResource("StandardMaterial3D_7t5mc"), SubResource("StandardMaterial3D_lakw3"), SubResource("StandardMaterial3D_cthk8"), SubResource("StandardMaterial3D_3twlb"), SubResource("StandardMaterial3D_74mbo"), SubResource("StandardMaterial3D_amtal"), SubResource("StandardMaterial3D_756ok"), SubResource("StandardMaterial3D_7lk70"), SubResource("StandardMaterial3D_bvl7l"), SubResource("StandardMaterial3D_gu4cf"), SubResource("StandardMaterial3D_8wusb"), SubResource("StandardMaterial3D_0nwtw"), SubResource("StandardMaterial3D_edhmo"), SubResource("StandardMaterial3D_3u8lu"), SubResource("StandardMaterial3D_gjd1y"), SubResource("StandardMaterial3D_wutcc"), SubResource("StandardMaterial3D_vjlgj"), SubResource("StandardMaterial3D_8wjit"), SubResource("StandardMaterial3D_5qfrm"), SubResource("StandardMaterial3D_rqqvq"), SubResource("StandardMaterial3D_o6plx"), SubResource("StandardMaterial3D_3to51"), SubResource("StandardMaterial3D_iq3bb"), SubResource("StandardMaterial3D_ow8v3"), SubResource("StandardMaterial3D_n3i82"), SubResource("StandardMaterial3D_j8t1y"), SubResource("StandardMaterial3D_dl80l"), SubResource("StandardMaterial3D_fxael"), SubResource("StandardMaterial3D_0uh1a"), SubResource("StandardMaterial3D_snkfy"), SubResource("StandardMaterial3D_v8ueo"), SubResource("StandardMaterial3D_dnb8c"), SubResource("StandardMaterial3D_uyebc"), SubResource("StandardMaterial3D_i5si1"), SubResource("StandardMaterial3D_b05sa"), SubResource("StandardMaterial3D_fwt55"), SubResource("StandardMaterial3D_vquxg"), SubResource("StandardMaterial3D_e3827"), SubResource("StandardMaterial3D_7g03d"), SubResource("StandardMaterial3D_1wxbd"), SubResource("StandardMaterial3D_8jpi0"), SubResource("StandardMaterial3D_r257v"), SubResource("StandardMaterial3D_ldhpk"), SubResource("StandardMaterial3D_s0elv"), SubResource("StandardMaterial3D_atn6y"), SubResource("StandardMaterial3D_1ss2w"), SubResource("StandardMaterial3D_d1yg5"), SubResource("StandardMaterial3D_nnqmx"), SubResource("StandardMaterial3D_8htxv"), SubResource("StandardMaterial3D_5m32s"), SubResource("StandardMaterial3D_w6tvx"), SubResource("StandardMaterial3D_mss46"), SubResource("StandardMaterial3D_usm5x"), SubResource("StandardMaterial3D_v42yw"), SubResource("StandardMaterial3D_4a8s4"), SubResource("StandardMaterial3D_5a6cf"), SubResource("StandardMaterial3D_8uni5"), SubResource("StandardMaterial3D_aif7q"), SubResource("StandardMaterial3D_m5fo8"), SubResource("StandardMaterial3D_tetl0"), SubResource("StandardMaterial3D_0dmsj"), SubResource("StandardMaterial3D_qawva"), SubResource("StandardMaterial3D_e5oau"), SubResource("StandardMaterial3D_i4don"), SubResource("StandardMaterial3D_ilcpp"), SubResource("StandardMaterial3D_ierr6"), SubResource("StandardMaterial3D_p646l"), SubResource("StandardMaterial3D_6ngkn"), SubResource("StandardMaterial3D_rymnq"), SubResource("StandardMaterial3D_7rar7"), SubResource("StandardMaterial3D_m5pl3"), SubResource("StandardMaterial3D_7vwk3"), SubResource("StandardMaterial3D_lwpa4"), SubResource("StandardMaterial3D_pe6pr"), SubResource("StandardMaterial3D_jyvql"), SubResource("StandardMaterial3D_jb01q"), SubResource("StandardMaterial3D_vs7n8"), SubResource("StandardMaterial3D_yrpd0"), SubResource("StandardMaterial3D_inogn"), SubResource("StandardMaterial3D_sc3bn"), SubResource("StandardMaterial3D_4acm3"), SubResource("StandardMaterial3D_y7i8u"), SubResource("StandardMaterial3D_ih24j"), SubResource("StandardMaterial3D_euco0"), SubResource("StandardMaterial3D_muvo8"), SubResource("StandardMaterial3D_lsch2"), SubResource("StandardMaterial3D_l7wxv"), SubResource("StandardMaterial3D_drjbe"), SubResource("StandardMaterial3D_jy85l"), SubResource("StandardMaterial3D_h63b0"), SubResource("StandardMaterial3D_vcpwk"), SubResource("StandardMaterial3D_mq30l"), SubResource("StandardMaterial3D_feiax"), SubResource("StandardMaterial3D_hw8wq"), SubResource("StandardMaterial3D_tf6o7"), SubResource("StandardMaterial3D_popdj"), SubResource("StandardMaterial3D_1bgwk"), SubResource("StandardMaterial3D_rx6si"), SubResource("StandardMaterial3D_aae6a"), SubResource("StandardMaterial3D_c0jvb"), SubResource("StandardMaterial3D_dre16"), SubResource("StandardMaterial3D_6fesy"), SubResource("StandardMaterial3D_fnyoe"), SubResource("StandardMaterial3D_iu28t"), SubResource("StandardMaterial3D_s0dkl"), SubResource("StandardMaterial3D_u7y7n"), SubResource("StandardMaterial3D_drahe"), SubResource("StandardMaterial3D_4prf2"), SubResource("StandardMaterial3D_op172"), SubResource("StandardMaterial3D_go4po"), SubResource("StandardMaterial3D_t56hy"), SubResource("StandardMaterial3D_s87gw"), SubResource("StandardMaterial3D_uvyac"), SubResource("StandardMaterial3D_pkc6u"), SubResource("StandardMaterial3D_afoeb"), SubResource("StandardMaterial3D_lkkae"), SubResource("StandardMaterial3D_wky0l"), SubResource("StandardMaterial3D_2nfup"), SubResource("StandardMaterial3D_8e0a1"), SubResource("StandardMaterial3D_evsuq"), SubResource("StandardMaterial3D_quw0e"), SubResource("StandardMaterial3D_n61p1"), SubResource("StandardMaterial3D_j5wka"), SubResource("StandardMaterial3D_nv7iw"), SubResource("StandardMaterial3D_ga0qf"), SubResource("StandardMaterial3D_rjbrb"), SubResource("StandardMaterial3D_ynr6x"), SubResource("StandardMaterial3D_tidjp"), SubResource("StandardMaterial3D_p08hw"), SubResource("StandardMaterial3D_je8lx"), SubResource("StandardMaterial3D_ow4if"), SubResource("StandardMaterial3D_ahrn3"), SubResource("StandardMaterial3D_hkc12"), SubResource("StandardMaterial3D_neb7p"), SubResource("StandardMaterial3D_ako6t"), SubResource("StandardMaterial3D_okoco"), SubResource("StandardMaterial3D_jhbao"), SubResource("StandardMaterial3D_bs7f2"), SubResource("StandardMaterial3D_8hd22"), SubResource("StandardMaterial3D_5oxta"), SubResource("StandardMaterial3D_rc72p"), SubResource("StandardMaterial3D_m803p"), SubResource("StandardMaterial3D_ui2jy"), SubResource("StandardMaterial3D_5saio"), SubResource("StandardMaterial3D_q8x55"), SubResource("StandardMaterial3D_sj8lx"), SubResource("StandardMaterial3D_r5npb"), SubResource("StandardMaterial3D_ax7o5"), SubResource("StandardMaterial3D_yeofu"), SubResource("StandardMaterial3D_n37dj"), SubResource("StandardMaterial3D_kkgum"), SubResource("StandardMaterial3D_okbfp"), SubResource("StandardMaterial3D_hsb55"), SubResource("StandardMaterial3D_cqx5w"), SubResource("StandardMaterial3D_kajfp"), SubResource("StandardMaterial3D_4020y"), SubResource("StandardMaterial3D_3dgac"), SubResource("StandardMaterial3D_d150e"), SubResource("StandardMaterial3D_8lx50"), SubResource("StandardMaterial3D_wwd30"), SubResource("StandardMaterial3D_u3f0j"), SubResource("StandardMaterial3D_avvx6"), SubResource("StandardMaterial3D_ob0ru"), SubResource("StandardMaterial3D_jhdm8"), SubResource("StandardMaterial3D_vehhr"), SubResource("StandardMaterial3D_uu2e4"), SubResource("StandardMaterial3D_2glyo"), SubResource("StandardMaterial3D_fanae"), SubResource("StandardMaterial3D_ivulv"), SubResource("StandardMaterial3D_e71pv"), SubResource("StandardMaterial3D_de08w"), SubResource("StandardMaterial3D_dygwa"), SubResource("StandardMaterial3D_5spnk"), SubResource("StandardMaterial3D_dj8w3"), SubResource("StandardMaterial3D_ggprd"), SubResource("StandardMaterial3D_jwnw0"), SubResource("StandardMaterial3D_8j2nf"), SubResource("StandardMaterial3D_f2okq"), SubResource("StandardMaterial3D_r8ne2"), SubResource("StandardMaterial3D_de5jd"), SubResource("StandardMaterial3D_4lt4y"), SubResource("StandardMaterial3D_y6l7p"), SubResource("StandardMaterial3D_wucic"), SubResource("StandardMaterial3D_of1xe"), SubResource("StandardMaterial3D_xgotg"), SubResource("StandardMaterial3D_hfsvb"), SubResource("StandardMaterial3D_gthnr"), SubResource("StandardMaterial3D_ug0bf"), SubResource("StandardMaterial3D_81457"), SubResource("StandardMaterial3D_k0mer"), SubResource("StandardMaterial3D_ghq2i"), SubResource("StandardMaterial3D_kylch"), SubResource("StandardMaterial3D_ydljg"), SubResource("StandardMaterial3D_63a17"), SubResource("StandardMaterial3D_w0bif"), SubResource("StandardMaterial3D_lhvua"), SubResource("StandardMaterial3D_hbve2"), SubResource("StandardMaterial3D_t7bwq"), SubResource("StandardMaterial3D_oadxv"), SubResource("StandardMaterial3D_87fws"), SubResource("StandardMaterial3D_ge50i"), SubResource("StandardMaterial3D_3dfue"), SubResource("StandardMaterial3D_ul3t1"), SubResource("StandardMaterial3D_bhf4i"), SubResource("StandardMaterial3D_d6aad"), SubResource("StandardMaterial3D_4xhw0"), SubResource("StandardMaterial3D_2ybqt"), SubResource("StandardMaterial3D_54dmf"), SubResource("StandardMaterial3D_c7opp"), SubResource("StandardMaterial3D_fnod5"), SubResource("StandardMaterial3D_ddng4"), SubResource("StandardMaterial3D_o8t80"), SubResource("StandardMaterial3D_ry7bi"), SubResource("StandardMaterial3D_ugmd0"), SubResource("StandardMaterial3D_m8apt"), SubResource("StandardMaterial3D_b0v8l"), SubResource("StandardMaterial3D_dnbwv"), SubResource("StandardMaterial3D_g7bf4"), SubResource("StandardMaterial3D_5hne3"), SubResource("StandardMaterial3D_1swjw"), SubResource("StandardMaterial3D_kgand"), SubResource("StandardMaterial3D_kj2yf"), SubResource("StandardMaterial3D_og3px"), SubResource("StandardMaterial3D_hsdno"), SubResource("StandardMaterial3D_xpyjm"), SubResource("StandardMaterial3D_jm00c"), SubResource("StandardMaterial3D_5esim"), SubResource("StandardMaterial3D_644cb"), SubResource("StandardMaterial3D_njnsr"), SubResource("StandardMaterial3D_itqel"), SubResource("StandardMaterial3D_ahhq3"), SubResource("StandardMaterial3D_abh1n"), SubResource("StandardMaterial3D_kus7w"), SubResource("StandardMaterial3D_sxsr5"), SubResource("StandardMaterial3D_m3nit"), SubResource("StandardMaterial3D_c3wcx"), SubResource("StandardMaterial3D_8gys8"), SubResource("StandardMaterial3D_d0l2v"), SubResource("StandardMaterial3D_pvrin"), SubResource("StandardMaterial3D_28yao"), SubResource("StandardMaterial3D_jcyki"), SubResource("StandardMaterial3D_5m01t"), SubResource("StandardMaterial3D_tvlks"), SubResource("StandardMaterial3D_vnbte"), SubResource("StandardMaterial3D_d3j0d"), SubResource("StandardMaterial3D_pyoml"), SubResource("StandardMaterial3D_wdjgo"), SubResource("StandardMaterial3D_ldnly"), SubResource("StandardMaterial3D_oqxnm"), SubResource("StandardMaterial3D_a5pku"), SubResource("StandardMaterial3D_ya742"), SubResource("StandardMaterial3D_02k4d"), SubResource("StandardMaterial3D_pa7um"), SubResource("StandardMaterial3D_lvnp7"), SubResource("StandardMaterial3D_n27rg"), SubResource("StandardMaterial3D_t1sxw"), SubResource("StandardMaterial3D_pto8d"), SubResource("StandardMaterial3D_62d3v"), SubResource("StandardMaterial3D_djr2r"), SubResource("StandardMaterial3D_djge7"), SubResource("StandardMaterial3D_t7g27"), SubResource("StandardMaterial3D_s5pd5"), SubResource("StandardMaterial3D_jex2x"), SubResource("StandardMaterial3D_wdgtt"), SubResource("StandardMaterial3D_200td"), SubResource("StandardMaterial3D_p2vtu"), SubResource("StandardMaterial3D_or4qp"), SubResource("ShaderMaterial_5qfrm"), SubResource("StandardMaterial3D_0wf3h"), SubResource("StandardMaterial3D_f2hym"), SubResource("StandardMaterial3D_430fg"), SubResource("StandardMaterial3D_3sffw"), SubResource("StandardMaterial3D_from5"), SubResource("StandardMaterial3D_mv8xk"), SubResource("StandardMaterial3D_0vkt2"), SubResource("StandardMaterial3D_dq3p3"), SubResource("StandardMaterial3D_5ylhr"), SubResource("StandardMaterial3D_q1muc"), SubResource("StandardMaterial3D_25xxu"), SubResource("StandardMaterial3D_jyvkv"), SubResource("StandardMaterial3D_g2hy2"), SubResource("StandardMaterial3D_gpsel"), SubResource("StandardMaterial3D_o3f7s"), SubResource("StandardMaterial3D_656bt"), SubResource("StandardMaterial3D_xsl5u"), SubResource("StandardMaterial3D_sis3m"), SubResource("StandardMaterial3D_jdvtn"), SubResource("StandardMaterial3D_ednuq"), SubResource("StandardMaterial3D_4i00r"), SubResource("StandardMaterial3D_6akc5"), SubResource("StandardMaterial3D_2o7a3"), SubResource("StandardMaterial3D_7pxw5"), SubResource("StandardMaterial3D_svt4y"), SubResource("StandardMaterial3D_qtmn8"), SubResource("StandardMaterial3D_yl8rv"), SubResource("StandardMaterial3D_hy5wv"), SubResource("StandardMaterial3D_bf1ml"), SubResource("StandardMaterial3D_imn8v"), SubResource("StandardMaterial3D_76n6d"), SubResource("StandardMaterial3D_x73sc"), SubResource("StandardMaterial3D_1wedj"), SubResource("StandardMaterial3D_xtre5"), SubResource("StandardMaterial3D_sgpxu"), SubResource("StandardMaterial3D_ukm4h"), SubResource("StandardMaterial3D_ygij2"), SubResource("StandardMaterial3D_bgu27"), SubResource("StandardMaterial3D_tdbgq"), SubResource("StandardMaterial3D_neqbk"), SubResource("StandardMaterial3D_2o3jp"), SubResource("StandardMaterial3D_gk66a"), SubResource("StandardMaterial3D_yc52w"), SubResource("StandardMaterial3D_fp1gl"), SubResource("StandardMaterial3D_pt5uu"), SubResource("StandardMaterial3D_kikjm"), SubResource("StandardMaterial3D_tju2n"), SubResource("StandardMaterial3D_3e1lh"), SubResource("StandardMaterial3D_nxxyg"), SubResource("StandardMaterial3D_phlbe"), SubResource("StandardMaterial3D_ylg4m"), SubResource("StandardMaterial3D_jqti5"), SubResource("StandardMaterial3D_v53iv"), SubResource("StandardMaterial3D_tjn3u"), SubResource("StandardMaterial3D_ltlkl"), SubResource("StandardMaterial3D_jsxvl"), SubResource("StandardMaterial3D_v2h23"), SubResource("StandardMaterial3D_benqe"), SubResource("StandardMaterial3D_gb12u"), SubResource("StandardMaterial3D_y4vqa"), SubResource("StandardMaterial3D_r57ie"), SubResource("StandardMaterial3D_52rs2"), SubResource("StandardMaterial3D_71ntv"), SubResource("StandardMaterial3D_l2iy1"), SubResource("StandardMaterial3D_0gpmr"), SubResource("StandardMaterial3D_6bpbc"), SubResource("StandardMaterial3D_tkp13"), SubResource("StandardMaterial3D_fbdyu"), SubResource("StandardMaterial3D_fi3xt"), SubResource("StandardMaterial3D_5s0s1"), SubResource("StandardMaterial3D_r55yk"), SubResource("StandardMaterial3D_seihq"), SubResource("StandardMaterial3D_cooeb"), SubResource("StandardMaterial3D_iog8y"), SubResource("StandardMaterial3D_ss7li"), SubResource("StandardMaterial3D_21kc4"), SubResource("StandardMaterial3D_wv1oe"), SubResource("StandardMaterial3D_s5ebx"), SubResource("StandardMaterial3D_bokd0"), SubResource("StandardMaterial3D_ooym6"), SubResource("StandardMaterial3D_oh0fb"), SubResource("StandardMaterial3D_w43yc"), SubResource("StandardMaterial3D_jgi3l"), SubResource("StandardMaterial3D_q1ua6"), SubResource("StandardMaterial3D_k8yuu"), SubResource("StandardMaterial3D_vngx6"), SubResource("StandardMaterial3D_d1rw0"), SubResource("StandardMaterial3D_3u6w8"), SubResource("StandardMaterial3D_gskxm"), SubResource("StandardMaterial3D_e6s1g"), SubResource("StandardMaterial3D_fcqd4"), SubResource("StandardMaterial3D_qs1aq"), SubResource("StandardMaterial3D_8rr7a"), SubResource("StandardMaterial3D_74e8q"), SubResource("StandardMaterial3D_tc35k"), SubResource("StandardMaterial3D_ok6ml"), SubResource("StandardMaterial3D_2cur0"), SubResource("StandardMaterial3D_50q1f"), SubResource("StandardMaterial3D_up4yg"), SubResource("StandardMaterial3D_lfucv"), SubResource("StandardMaterial3D_gexx8"), SubResource("StandardMaterial3D_1ijbe"), SubResource("StandardMaterial3D_1cd77"), SubResource("StandardMaterial3D_rruce"), SubResource("StandardMaterial3D_owfxj"), SubResource("StandardMaterial3D_ppx7p"), SubResource("StandardMaterial3D_ad4af"), SubResource("StandardMaterial3D_d3ga3"), SubResource("StandardMaterial3D_07rg2"), SubResource("StandardMaterial3D_8t7vd"), SubResource("StandardMaterial3D_65e54"), SubResource("StandardMaterial3D_vb4a3"), SubResource("StandardMaterial3D_nsjb2"), SubResource("StandardMaterial3D_gfovj"), SubResource("StandardMaterial3D_yfkuh"), SubResource("StandardMaterial3D_mmivg"), SubResource("StandardMaterial3D_ogins"), SubResource("StandardMaterial3D_q34tx"), SubResource("StandardMaterial3D_whcys"), SubResource("StandardMaterial3D_o3w7x"), SubResource("StandardMaterial3D_cwfo3"), SubResource("StandardMaterial3D_2okfc"), SubResource("StandardMaterial3D_0x387"), SubResource("StandardMaterial3D_6tbf7"), SubResource("StandardMaterial3D_gkkvg"), SubResource("StandardMaterial3D_btrdy"), SubResource("StandardMaterial3D_v7btw"), SubResource("StandardMaterial3D_t7166"), SubResource("StandardMaterial3D_0qtdw"), SubResource("StandardMaterial3D_wqdry"), SubResource("StandardMaterial3D_gy1l5"), SubResource("StandardMaterial3D_uc2jd"), SubResource("StandardMaterial3D_4c1p4"), SubResource("StandardMaterial3D_clu4o"), SubResource("StandardMaterial3D_2055l"), SubResource("StandardMaterial3D_1gag4"), SubResource("StandardMaterial3D_0sgqk"), SubResource("StandardMaterial3D_3clf5"), SubResource("StandardMaterial3D_e78hg"), SubResource("StandardMaterial3D_dsfju"), SubResource("StandardMaterial3D_4dfjs"), SubResource("StandardMaterial3D_ywvhn"), SubResource("StandardMaterial3D_7auwo"), SubResource("StandardMaterial3D_obgcd"), SubResource("StandardMaterial3D_tk2yu"), SubResource("StandardMaterial3D_dtokt"), SubResource("StandardMaterial3D_1amsh"), SubResource("StandardMaterial3D_vt2or"), SubResource("StandardMaterial3D_memrr"), SubResource("StandardMaterial3D_1fb2w"), SubResource("StandardMaterial3D_y6xjk"), SubResource("StandardMaterial3D_s5mja"), SubResource("StandardMaterial3D_er6jd"), SubResource("StandardMaterial3D_5mh5m"), SubResource("StandardMaterial3D_ei35c"), SubResource("StandardMaterial3D_iyy8l"), SubResource("StandardMaterial3D_3k77c"), SubResource("StandardMaterial3D_m827d"), SubResource("StandardMaterial3D_50dvn"), SubResource("StandardMaterial3D_srqik"), SubResource("StandardMaterial3D_gv863"), SubResource("StandardMaterial3D_jl0ll"), SubResource("StandardMaterial3D_dixy7"), SubResource("StandardMaterial3D_7i5t1"), SubResource("StandardMaterial3D_j1d6x"), SubResource("StandardMaterial3D_ios8v"), SubResource("StandardMaterial3D_w7ij0"), SubResource("StandardMaterial3D_qo5uk"), SubResource("StandardMaterial3D_at817"), SubResource("StandardMaterial3D_w6tn2"), SubResource("StandardMaterial3D_jf1rt"), SubResource("StandardMaterial3D_diq0b"), SubResource("StandardMaterial3D_jc4q1"), SubResource("StandardMaterial3D_vr8kn"), SubResource("StandardMaterial3D_78ort"), SubResource("StandardMaterial3D_khbwc"), SubResource("StandardMaterial3D_fj8cq"), SubResource("StandardMaterial3D_pif7w"), SubResource("StandardMaterial3D_jhyiu"), SubResource("StandardMaterial3D_r3a2o"), SubResource("StandardMaterial3D_dkxfc"), SubResource("StandardMaterial3D_wm3mr"), SubResource("StandardMaterial3D_olfds"), SubResource("StandardMaterial3D_gngel"), SubResource("StandardMaterial3D_hgbol"), SubResource("StandardMaterial3D_v3pil"), SubResource("StandardMaterial3D_vssy4"), SubResource("StandardMaterial3D_s7ns1"), SubResource("StandardMaterial3D_ciu2w"), SubResource("StandardMaterial3D_hxvpb"), SubResource("StandardMaterial3D_ahfi6"), SubResource("StandardMaterial3D_ktu1g"), SubResource("StandardMaterial3D_qrg7e"), SubResource("StandardMaterial3D_e2a0r"), SubResource("StandardMaterial3D_06uen"), SubResource("StandardMaterial3D_2trm4"), SubResource("StandardMaterial3D_k4j62"), SubResource("StandardMaterial3D_8ugii"), SubResource("StandardMaterial3D_34ceh"), SubResource("StandardMaterial3D_4dntr"), SubResource("StandardMaterial3D_ova3n"), SubResource("StandardMaterial3D_r6fb1"), SubResource("StandardMaterial3D_5t4mw"), SubResource("StandardMaterial3D_i6k1w"), SubResource("StandardMaterial3D_00ogu"), SubResource("StandardMaterial3D_hgg2x"), SubResource("StandardMaterial3D_nw6lt"), SubResource("StandardMaterial3D_gc8jd"), SubResource("StandardMaterial3D_yvbes"), SubResource("StandardMaterial3D_juogk"), SubResource("StandardMaterial3D_yl47b"), SubResource("StandardMaterial3D_b0ca8"), SubResource("StandardMaterial3D_vfw62"), SubResource("StandardMaterial3D_61c23"), SubResource("StandardMaterial3D_j7aei"), SubResource("StandardMaterial3D_hylrp"), SubResource("StandardMaterial3D_3vuxm"), SubResource("StandardMaterial3D_aqn7c"), SubResource("StandardMaterial3D_8bl64"), SubResource("StandardMaterial3D_u1ltj"), SubResource("StandardMaterial3D_kofti"), SubResource("StandardMaterial3D_ytbcx"), SubResource("StandardMaterial3D_fsibm"), SubResource("StandardMaterial3D_ob3uy"), SubResource("StandardMaterial3D_woi14"), SubResource("StandardMaterial3D_b01ae"), SubResource("StandardMaterial3D_euli0"), SubResource("StandardMaterial3D_vrdp4"), SubResource("StandardMaterial3D_eo66n"), SubResource("StandardMaterial3D_okcpw"), SubResource("StandardMaterial3D_2niwx"), SubResource("StandardMaterial3D_m2yoa"), SubResource("StandardMaterial3D_s4cy2"), SubResource("StandardMaterial3D_uea3c"), SubResource("StandardMaterial3D_jknqi"), SubResource("StandardMaterial3D_edbbm"), SubResource("StandardMaterial3D_gp082"), SubResource("StandardMaterial3D_5d1bm"), SubResource("StandardMaterial3D_crnwf"), SubResource("StandardMaterial3D_28aiu"), SubResource("StandardMaterial3D_kf22x"), SubResource("StandardMaterial3D_7gk5a"), SubResource("StandardMaterial3D_6hvsj"), SubResource("StandardMaterial3D_irnfj"), SubResource("StandardMaterial3D_gt3gr"), SubResource("StandardMaterial3D_ile6s"), SubResource("StandardMaterial3D_bw35w"), SubResource("StandardMaterial3D_3l1sy"), SubResource("StandardMaterial3D_1t8id"), SubResource("StandardMaterial3D_q61ar"), SubResource("StandardMaterial3D_gcoxu"), SubResource("StandardMaterial3D_iqqrh"), SubResource("StandardMaterial3D_amd4b"), SubResource("StandardMaterial3D_udsq6"), SubResource("ShaderMaterial_upfie"), SubResource("ShaderMaterial_55hoj"), SubResource("StandardMaterial3D_i31qk"), SubResource("StandardMaterial3D_5pyl1"), SubResource("StandardMaterial3D_rq74f"), SubResource("StandardMaterial3D_f83co"), SubResource("StandardMaterial3D_ax46p"), SubResource("StandardMaterial3D_hduqc"), SubResource("StandardMaterial3D_wsjqi"), SubResource("StandardMaterial3D_qncwv"), SubResource("StandardMaterial3D_2qjuf"), SubResource("StandardMaterial3D_446m4"), SubResource("StandardMaterial3D_5famf"), SubResource("StandardMaterial3D_o6x7j"), SubResource("StandardMaterial3D_uhoer"), SubResource("StandardMaterial3D_xrbp8"), SubResource("StandardMaterial3D_tmxd4"), SubResource("StandardMaterial3D_honi4"), SubResource("StandardMaterial3D_prjbq"), SubResource("StandardMaterial3D_8v3pk"), SubResource("StandardMaterial3D_js3m3"), SubResource("StandardMaterial3D_kwxfd"), SubResource("StandardMaterial3D_qaee5"), SubResource("StandardMaterial3D_yvb4j"), SubResource("StandardMaterial3D_3qjuu"), SubResource("StandardMaterial3D_6k1an"), SubResource("StandardMaterial3D_b8kab"), SubResource("StandardMaterial3D_vgwuc"), SubResource("StandardMaterial3D_fsek2"), SubResource("ShaderMaterial_amd4b"), SubResource("FogMaterial_n24io"), SubResource("ShaderMaterial_rq74f"), SubResource("ShaderMaterial_udsq6"), SubResource("ParticleProcessMaterial_n24io"), SubResource("ShaderMaterial_w56wj"), SubResource("ParticleProcessMaterial_314x0"), SubResource("ParticleProcessMaterial_ikx87"), SubResource("ShaderMaterial_p8bl0"), SubResource("ShaderMaterial_1bdt2"), SubResource("ShaderMaterial_8m7bo"), SubResource("StandardMaterial3D_prdxl"), SubResource("ParticleProcessMaterial_x11r4"), SubResource("ShaderMaterial_xvil0"), SubResource("ParticleProcessMaterial_jviwg"), SubResource("StandardMaterial3D_3tx63"), SubResource("ParticleProcessMaterial_0p1cd"), ExtResource("6_eoyls"), ExtResource("7_aai07"), SubResource("ShaderMaterial_ds3o1"), ExtResource("9_wtntw"), SubResource("ShaderMaterial_wbu1w"), SubResource("ShaderMaterial_wrt5a"), SubResource("ShaderMaterial_ccyp1"), SubResource("ShaderMaterial_yvxai"), SubResource("ParticleProcessMaterial_kx7w4"), SubResource("ShaderMaterial_vkaj5"), SubResource("ShaderMaterial_kt415"), SubResource("ParticleProcessMaterial_swvpt"), SubResource("ShaderMaterial_gwfwo"), SubResource("ShaderMaterial_8ojwr"), SubResource("ShaderMaterial_fec17"), SubResource("ShaderMaterial_534t5"), SubResource("ShaderMaterial_g3utg"), SubResource("ShaderMaterial_52ppk"), SubResource("CanvasItemMaterial_50h1w"), SubResource("ShaderMaterial_iyrh0"), SubResource("StandardMaterial3D_5wexd"), SubResource("ShaderMaterial_y4bl1"), SubResource("ShaderMaterial_1symm"), SubResource("ShaderMaterial_tiplq"), SubResource("ShaderMaterial_p7vwb"), SubResource("ShaderMaterial_kwflg"), SubResource("ShaderMaterial_gdmj0"), SubResource("ShaderMaterial_cgfq5"), SubResource("ShaderMaterial_yev5y"), SubResource("ShaderMaterial_gdt2y"), SubResource("ShaderMaterial_8dubc"), SubResource("ShaderMaterial_7dvkv")])

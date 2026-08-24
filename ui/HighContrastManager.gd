@@ -2,7 +2,7 @@
 ##
 ## This manager recursively applies a solid black stylebox background to all
 ## Text and RichText labels in the game when high-contrast mode is enabled.
-class_name HighContrastManager
+#class_name HighContrastManager
 extends Node
 
 ## A reusable flat stylebox that creates a solid black background.
