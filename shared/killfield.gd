@@ -1,3 +1,7 @@
+## A hazard volume that instantly teleports the player back to their last valid checkpoint.
+##
+## Typically placed at the bottom of death pits or environmental hazards to prevent the
+## player from falling infinitely.
 class_name Killfield
 extends Area3D
 
@@ -5,10 +9,12 @@ extends Area3D
 @export var spawn_height_offset: float = 1.0
 
 
+## Connects the entry signal on node readiness.
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 
 
+## Triggers a teleport back to the last saved checkpoint if the colliding body is the player.
 func _on_body_entered(body: Node3D) -> void:
 	if body.name == "Player" or body.is_in_group("Player"):
 		if "noclip" in body and body.noclip == true:

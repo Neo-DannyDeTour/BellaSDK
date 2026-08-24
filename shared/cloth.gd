@@ -1,3 +1,7 @@
+## A specialized [SoftBody3D] utility that bakes its current simulation state into a static mesh.
+##
+## Captures the deformed vertices from the physics server and generates a new [ArrayMesh]
+## saved to the specified file path, useful for creating static draped cloth props.
 class_name ClothBaker
 extends SoftBody3D
 
@@ -7,12 +11,14 @@ extends SoftBody3D
 @export var save_path: String = "res://baked_red_cloth.res"
 
 
+## Listens for the assigned bake action key to trigger the mesh baking process.
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == bake_action_key:
 			_bake_cloth()
 
 
+## Extracts deformed vertices from the physics server and generates a new [ArrayMesh].
 func _bake_cloth() -> void:
 	print("Baking cloth simulation...")
 	var base_mesh: ArrayMesh = mesh as ArrayMesh
