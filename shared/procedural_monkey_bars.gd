@@ -1,13 +1,18 @@
 @tool
+## A procedural CSG volume that automatically generates a monkey bar interaction zone.
+##
+## Automatically sizes a catch-net [Area3D] based on the box's dimensions to detect
+## when the player can grab onto the bars.
 class_name MonkeyBarVolume
 extends CSGBox3D
 
-## The Area3D node used to detect player entry for monkey bars.
+## The [Area3D] node used to detect player entry for monkey bars.
 var interact_area: Area3D
-## The CollisionShape3D representing the interaction volume.
+## The [CollisionShape3D] representing the interaction volume.
 var col_shape: CollisionShape3D
 
 
+## Initializes the interaction area and configures its collision properties.
 func _ready() -> void:
 	add_to_group("monkey_bars")
 
@@ -35,13 +40,15 @@ func _ready() -> void:
 	_update_trigger_box()
 
 
+## Updates the trigger box size dynamically in the editor when resized.
 func _process(_delta: float) -> void:
 	if Engine.is_editor_hint():
 		_update_trigger_box()
 
 
+## Resizes the internal [CollisionShape3D] to extend slightly below the CSG geometry.
 func _update_trigger_box() -> void:
-	if col_shape and col_shape.shape:
+	if is_instance_valid(col_shape) and is_instance_valid(col_shape.shape):
 		var box: BoxShape3D = col_shape.shape as BoxShape3D
 		# The trigger box is identical to your CSG box,
 		#but extends 1.5m downward to catch the player's head
@@ -49,16 +56,18 @@ func _update_trigger_box() -> void:
 		col_shape.position.y = -0.75
 
 
+## Notifies the player that a monkey bar volume is available for grabbing.
 func _on_body_entered(body: Node3D) -> void:
 	if Engine.is_editor_hint():
 		return
 
-	print("Monkey Bar Trigger touched by: ", body.name)  # Add this!
+	print("Monkey Bar Trigger touched by: ", body.name)
 
 	if body.has_method("set_available_monkey_bar"):
 		body.set_available_monkey_bar(self)
 
 
+## Clears the player's available monkey bar reference upon exiting the volume.
 func _on_body_exited(body: Node3D) -> void:
 	if Engine.is_editor_hint():
 		return

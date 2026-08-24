@@ -1,8 +1,13 @@
+## A 3D weapon component that fires a spread of raycast pellets.
+##
+## Manages its own equip logic, rate-of-fire, environmental impact effects,
+## and damage distribution across hit targets.
 class_name Shotgun
 extends Node3D
 
-# Preload the dot so it's ready in memory the moment we shoot
+## Preloaded debug pellet scene for visual hit confirmation.
 const DEBUG_PELLET: PackedScene = preload("res://ui/debug_pellet.tscn")
+## Preloaded dust puff scene for surface impacts.
 const DUST_PUFF: PackedScene = preload("res://vfx/dust_puff.tscn")
 
 ## The number of pellets fired per shot.
@@ -29,11 +34,13 @@ var is_equipped: bool = false
 @onready var muzzle_point: Marker3D = $MuzzlePoint
 
 
+## Initializes the shotgun.
 func _ready() -> void:
 	pass
 
 
 # --- EQUIP LOGIC ---
+## Equips the shotgun to the player by disabling its physics and reparenting it.
 func equip_to_player(p_node: CharacterBody3D) -> void:
 	print("Shotgun: equip_to_player() called. Equipping shotgun to player.")
 	is_equipped = true
@@ -59,6 +66,7 @@ func equip_to_player(p_node: CharacterBody3D) -> void:
 
 
 # --- SHOOT LOGIC (The Pro Way) ---
+## Fires the shotgun, casting rays from the [param player_camera] and applying damage.
 func shoot(player_camera: Camera3D) -> void:
 	print("Shotgun: shoot() called by player.")
 
@@ -144,6 +152,7 @@ func shoot(player_camera: Camera3D) -> void:
 			dot.global_position = result.position
 
 
+## Triggered when the player interacts with the shotgun in the world, equipping it.
 func _on_interact_component_interacted(_player: CharacterBody3D = null) -> void:
 	print("Shotgun: _on_interact_component_interacted() called. Picking up shotgun.")
 

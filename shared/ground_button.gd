@@ -1,8 +1,12 @@
 @tool
+## A physical button that detects bodies standing on it to transmit power signals.
+##
+## Animates downwards when pressed and energizes its assigned [OutputTransmitter3D].
+## Supports drawing editor-only debug lines to its connected targets.
 class_name GroundButton
 extends StaticBody3D
 
-## The transmitter node used to relay power signals to connected targets.
+## The [OutputTransmitter3D] node used to relay power signals to connected targets.
 @export var transmitter: OutputTransmitter3D:
 	set(value):
 		transmitter = value
@@ -24,11 +28,12 @@ var is_pressed: bool = false
 ## The visual mesh utilized strictly in the editor to draw connection lines.
 var debug_line: MeshInstance3D
 
-## The AnimationPlayer responsible for playing the physical button depression and release
+## The [AnimationPlayer] responsible for playing the physical button depression and release
 ## animations.
 @onready var anim: AnimationPlayer = $AnimationPlayer
 
 
+## Configures editor processing and connects interaction area signals if in-game.
 func _ready() -> void:
 	set_process(Engine.is_editor_hint())
 
@@ -42,15 +47,18 @@ func _ready() -> void:
 	_sync_targets()
 
 
+## Continuously updates the visual debug connection line in the editor.
 func _process(_delta: float) -> void:
 	_draw_connection_line()
 
 
+## Pushes the assigned targets list to the connected transmitter.
 func _sync_targets() -> void:
 	if is_instance_valid(transmitter):
 		transmitter.targets = targets
 
 
+## Increments the body count and presses the button if this is the first body to enter.
 func _on_area_3d_body_entered(body: Node3D) -> void:
 	if body == self:
 		return
@@ -66,6 +74,7 @@ func _on_area_3d_body_entered(body: Node3D) -> void:
 			transmitter.power_on()
 
 
+## Decrements the body count and releases the button if no bodies remain.
 func _on_area_3d_body_exited(body: Node3D) -> void:
 	if body == self:
 		return
@@ -82,6 +91,7 @@ func _on_area_3d_body_exited(body: Node3D) -> void:
 			transmitter.power_off()
 
 
+## Renders an editor-only debug line connecting the button to its assigned transmitter.
 func _draw_connection_line() -> void:
 	if not is_instance_valid(transmitter):
 		if is_instance_valid(debug_line):
