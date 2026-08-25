@@ -121,7 +121,7 @@ func get_setting(category: String, key: String, default_value: Variant) -> Varia
 
 
 ## Returns an array of all font internal ID keys.
-## [return] Array of lowercase font identifier strings.
+## [return] [Array] of lowercase font identifier strings.
 func get_font_ids() -> Array[String]:
 	var ids: Array[String] = []
 	for entry: Dictionary in FONT_REGISTRY:
@@ -130,7 +130,7 @@ func get_font_ids() -> Array[String]:
 
 
 ## Returns an array of all UI display names for fonts.
-## [return] Array of formatted font names.
+## [return] [Array] of formatted font names.
 func get_font_display_names() -> Array[String]:
 	var names: Array[String] = []
 	for entry: Dictionary in FONT_REGISTRY:
@@ -140,7 +140,7 @@ func get_font_display_names() -> Array[String]:
 
 ## Resolves a font index by its internal key.
 ## [param font_id] Target font key string.
-## [return] Array index matching the ID, or `0` if not found.
+## [return] [Array] index matching the ID, or `0` if not found.
 func get_font_index(font_id: String) -> int:
 	for i: int in range(FONT_REGISTRY.size()):
 		if FONT_REGISTRY[i]["id"] == font_id:

@@ -1,9 +1,7 @@
-- Godot 4 linting edge-case: gdtoolkit (gdlint/gdformat) fails to parse standard line continuations (backslash `\`) within control flow conditions, resulting in 'No terminal matches' errors. Split complex boolean expressions across lines by nesting them inside parentheses instead.
-- For , when condensing multi-line parameters to fix trailing whitespace, ensure you prefer placing one parameter per line for long method signatures to adhere to project styling conventions.
-- When condensing multi-line parameters to fix trailing whitespace (e.g. in addons/KGB_Agent/kgb_dock.gd), ensure you prefer placing one parameter per line for long method signatures to adhere to project styling conventions.
-- Ensure Action Logging exactly matches the 'ClassName: function_name() called. Action description.' format and is placed at the top of all functions in player action scripts.
-- Remember to install gdtoolkit via pip before running gdlint or gdformat.
-- When using regex or partial diff replacements for minor feedback (like moving a single constant), always double-check the surrounding context to ensure strict class ordering (enums -> constants -> @export vars) is not accidentally disrupted.
-- Autoload scripts that are globally configured in project.godot (like KeycardSystem) should generally avoid defining a global class_name unless explicitly required, as defining it can cause name collisions or script loading errors during test suite instantiation (e.g., GUT 'Invalid call. Nonexistent function new in base GDScript' and 'Nonexistent function get_signal_list in base Nil' errors).
-- When documenting variables, verify that grep correctly captures existing docstrings before attempting to re-document. Reviewers might occasionally mistake existing # comments (now upgraded to ##) as undocumented if they compare against older patches or hallucinate the state.
-- Variables like 'var current_health' must also receive '##' doc comments to fulfill complete coverage requirements; missing these indicates an incomplete standardization rollout.
+# Architecture Journal
+
+- Always verify docstrings explicitly encapsulate internal class references with `[ClassName]` when formatting BBCode comments for Godot APIs.
+- Some Python regex replacements using `\bClass\b` could miss if previously styled improperly. Better to write robust parsers to check for GDScript variable boundaries rather than brute force.
+- The `##` class description must always immediately precede `class_name`. If `class_name` is on line 1, it must be the first line of the file after any `@tool` annotations.
+- `gdformat` enforces correct line lengths and indentations but will not automatically fix incorrectly ordered structures (`class_name` below `extends` if `extends` has no docs).
+- **CRITICAL:** Do not add `class_name` to files that act as Godot Autoload Singletons. Adding a `class_name` to a singleton will cause parser conflicts where Godot treats the singleton as a static class type, breaking scripts that call its non-static methods directly using the singleton name (e.g., `GestureInputManager.is_action_just_triggered()`).

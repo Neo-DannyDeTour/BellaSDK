@@ -15,7 +15,7 @@ enum State { SCANNING, TARGETING, FROZEN, COOLDOWN }
 ## The duration in seconds the pillar remains locked in position before firing its projectile.
 @export var freeze_time: float = 1.0
 
-## The packed scene (EnergyBlast) to be instantiated and fired at the target.
+## The packed scene ([EnergyBlast]) to be instantiated and fired at the target.
 @export var projectile_scene: PackedScene
 
 ## The maximum distance in meters the pillar can detect targets within its line of sight.

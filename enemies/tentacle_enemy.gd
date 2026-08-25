@@ -1,5 +1,6 @@
-extends StaticBody3D
+## An organic enemy that manipulates physics objects and attacks the player.
 class_name TentacleEnemy
+extends StaticBody3D
 
 ## Defines the current operational behavior of the enemy.
 enum State { IDLE, PLAYING, HOLDING, SPOTTED, ATTACKING }
@@ -31,10 +32,12 @@ var current_state: State = State.IDLE
 ## How long (in seconds) the tentacle will hold the object before placing it down.
 @export var hold_duration: float = 1.5
 
+## The volume detecting players and pickable objects.
 @onready var detection_area: Area3D = $DetectionArea
+## The component processing incoming damage.
 @onready var health_component: HealthComponent = $HealthComponent
 
-## The Marker3D representing the "head" of the snake/tentacle.
+## The [Marker3D] representing the "head" of the snake/tentacle.
 @onready var tentacle_target: Marker3D = $TentacleTarget
 
 ## The player node currently inside the detection area.
@@ -65,6 +68,7 @@ var _place_target: Vector3 = Vector3.ZERO
 var _is_striking: bool = false
 
 
+## Initializes the enemy's logic state and component signals.
 func _ready() -> void:
 	print("TentacleEnemy: _ready() - Initializing snake-like enemy.")
 	detection_area.body_entered.connect(_on_detection_area_body_entered)
@@ -75,6 +79,8 @@ func _ready() -> void:
 	_switch_state(State.IDLE)
 
 
+## Distributes frame logic to state-specific handler functions.
+## [param delta] Physics frame delta in seconds.
 func _physics_process(delta: float) -> void:
 	match current_state:
 		State.IDLE:
@@ -89,6 +95,8 @@ func _physics_process(delta: float) -> void:
 			_process_attacking(delta)
 
 
+## Animates the tentacle in a random sway pattern while looking for targets.
+## [param delta] Frame delta in seconds.
 func _process_idle(delta: float) -> void:
 	_idle_time += delta
 
@@ -100,6 +108,8 @@ func _process_idle(delta: float) -> void:
 	tentacle_target.position = tentacle_target.position.lerp(desired_pos, delta * track_speed)
 
 
+## Hovers near physics objects and periodically interacts with them.
+## [param delta] Frame delta in seconds.
 func _process_playing(delta: float) -> void:
 	_idle_time += delta
 	_interact_timer += delta
@@ -124,6 +134,8 @@ func _process_playing(delta: float) -> void:
 			poke_object(target_toy)
 
 
+## Carries a physics object through the air to a random local destination.
+## [param delta] Frame delta in seconds.
 func _process_holding(delta: float) -> void:
 	if not is_instance_valid(held_object):
 		_switch_state(State.IDLE)
@@ -139,6 +151,8 @@ func _process_holding(delta: float) -> void:
 		_switch_state(State.PLAYING)
 
 
+## Tracks the player visually and accumulates charge time before executing an attack.
+## [param delta] Frame delta in seconds.
 func _process_spotted(delta: float) -> void:
 	if not is_instance_valid(target_player):
 		_switch_state(State.IDLE)
@@ -157,12 +171,16 @@ func _process_spotted(delta: float) -> void:
 		_decide_attack()
 
 
+## Locks the position of held rigidbodies directly to the tentacle tip during physics tweens.
+## [param _delta] Frame delta in seconds.
 func _process_attacking(_delta: float) -> void:
 	# Ensure the held object perfectly follows the tentacle head during attack/throw animations
 	if is_instance_valid(held_object):
 		held_object.global_position = tentacle_target.global_position
 
 
+## Safely handles transitions between behavior states and resets timers.
+## [param new_state] The target state to enter.
 func _switch_state(new_state: State) -> void:
 	if current_state == new_state:
 		return
@@ -181,6 +199,7 @@ func _switch_state(new_state: State) -> void:
 			_charge_timer = 0.0
 
 
+## Evaluates held state and dice rolls to pick between throwing or striking.
 func _decide_attack() -> void:
 	print("TentacleEnemy: _decide_attack() - Choosing attack pattern.")
 
@@ -205,6 +224,7 @@ func _decide_attack() -> void:
 	strike_player()
 
 
+## Scans the detection volume specifically for untethered toys to play with.
 func _check_for_pickables() -> void:
 	for body: Node3D in detection_area.get_overlapping_bodies():
 		if body is PickableObject and not body.is_held:
@@ -214,6 +234,8 @@ func _check_for_pickables() -> void:
 			return
 
 
+## Applies a small randomized impulse to a toy without picking it up.
+## [param body] The [RigidBody3D] to poke.
 func poke_object(body: RigidBody3D) -> void:
 	print("TentacleEnemy: poke_object() - Lightly tapping the toy.")
 	var poke_dir: Vector3 = (
@@ -222,6 +244,8 @@ func poke_object(body: RigidBody3D) -> void:
 	body.apply_impulse(poke_dir * 2.0)
 
 
+## Freezes and claims a rigidbody, preparing it to be moved.
+## [param body] The [RigidBody3D] to grab.
 func grab_object(body: RigidBody3D) -> void:
 	print("TentacleEnemy: grab_object() - Picking up the toy to move it.")
 	held_object = body
@@ -234,6 +258,8 @@ func grab_object(body: RigidBody3D) -> void:
 	_switch_state(State.HOLDING)
 
 
+## Orchestrates a multi-step sequence using physics tweens to lift an object before throwing.
+## [param weapon] The [RigidBody3D] to snatch.
 func _perform_grab_and_throw(weapon: RigidBody3D) -> void:
 	print("TentacleEnemy: _perform_grab_and_throw() - Snatching weapon to throw!")
 	_is_striking = true
@@ -280,6 +306,7 @@ func _perform_grab_and_throw(weapon: RigidBody3D) -> void:
 	)
 
 
+## Applies massive linear velocity to the currently held object towards the player.
 func throw_object_at_player() -> void:
 	print("TentacleEnemy: throw_object_at_player() - Throwing object!")
 	_is_striking = true
@@ -319,6 +346,7 @@ func throw_object_at_player() -> void:
 	)
 
 
+## Unfreezes the held object and lets it fall to the ground naturally.
 func drop_object() -> void:
 	if is_instance_valid(held_object):
 		print("TentacleEnemy: drop_object() - Placing the object down.")
@@ -326,6 +354,7 @@ func drop_object() -> void:
 		held_object = null
 
 
+## Physically rockets the tentacle head towards the player to inflict direct damage.
 func strike_player() -> void:
 	print("TentacleEnemy: strike_player() - Executing attack!")
 	_is_striking = true
@@ -368,6 +397,8 @@ func strike_player() -> void:
 	)
 
 
+## Evaluates objects entering the territory to determine threat response.
+## [param body] The [Node3D] that entered.
 func _on_detection_area_body_entered(body: Node3D) -> void:
 	if body.is_in_group("player"):
 		print("TentacleEnemy: Player entered territory. Initiating hostility.")
@@ -385,6 +416,8 @@ func _on_detection_area_body_entered(body: Node3D) -> void:
 		_switch_state(State.PLAYING)
 
 
+## Cleans up target references when entities leave the volume.
+## [param body] The [Node3D] that exited.
 func _on_detection_area_body_exited(body: Node3D) -> void:
 	if body == target_player:
 		print("TentacleEnemy: Player left detection radius.")
@@ -398,6 +431,7 @@ func _on_detection_area_body_exited(body: Node3D) -> void:
 			_switch_state(State.IDLE)
 
 
+## Frees held objects and animates the tentacle drooping to the floor upon death.
 func _on_died() -> void:
 	print("TentacleEnemy: _on_died() - Enemy defeated.")
 

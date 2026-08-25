@@ -116,7 +116,7 @@ func _on_delete_button_pressed() -> void:
 
 
 ## Intercepts raw GUI input to detect double-click events on the panel.
-## [param event] The generic InputEvent entering the control node.
+## [param event] The generic [InputEvent] entering the control node.
 func _gui_input(event: InputEvent) -> void:
 	var mouse_event: InputEventMouseButton = event as InputEventMouseButton
 	if mouse_event and mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.double_click:

@@ -39,7 +39,7 @@ var _is_low_end: bool = false
 ## Cached reference to the currently active [Environment].
 var _active_environment: Environment = null
 
-## Timer used for periodic FPS checking.
+## [Timer] used for periodic FPS checking.
 var _fps_timer: Timer = null
 
 ## The current integer step representing how degraded the visual quality is.
