@@ -15,10 +15,10 @@ var trapped_player: Player = null
 ## The right jaw visual node used for the snapping animation pivot.
 @onready var right_jaw: Node3D = $RightJawPivot
 
-## Timer to control the 2-second duration where the player cannot move.
+## [Timer] to control the 2-second duration where the player cannot move.
 @onready var immobilize_timer: Timer = $ImmobilizeTimer
 
-## Timer to control the 5-second duration where the player cannot sprint.
+## [Timer] to control the 5-second duration where the player cannot sprint.
 @onready var sprint_block_timer: Timer = $SprintBlockTimer
 
 

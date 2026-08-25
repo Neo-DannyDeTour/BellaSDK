@@ -1,5 +1,6 @@
-extends Node3D
+## An automated defense mechanism that targets specific groups.
 class_name Turret
+extends Node3D
 
 enum TurretState { SCANNING, ENGAGING }
 
@@ -20,10 +21,15 @@ enum TurretState { SCANNING, ENGAGING }
 ## The groups that this turret considers hostile and will actively attempt to shoot.
 @export var hostile_groups: Array[StringName] = [&"player", &"target"]
 
+## The rotating pivot mechanism of the turret.
 @onready var head: Node3D = $Head
+## The physics area used for early overlap detection.
 @onready var detection_area: Area3D = $DetectionArea
+## The collision shape matching the detection radius.
 @onready var detection_shape: CollisionShape3D = $DetectionArea/CollisionShape3D
+## Visual tracer effect fired from the barrel.
 @onready var bullet_particles: GPUParticles3D = $Head/Muzzle/GPUParticles3D
+## Internal raycast to confirm precise line of sight before shooting.
 @onready var hitscan_ray: RayCast3D = $Head/Muzzle/HitscanRay
 
 ## The current operational mode of the turret, determining if it is scanning or engaging.
@@ -37,6 +43,7 @@ var fire_cooldown: float = 0.0
 var _exclude_rids: Array[RID] = []
 
 
+## Pre-calculates physics data and hooks into detection signals.
 func _ready() -> void:
 	print("Turret: _ready() - Initializing turret systems.")
 	var visualizer: EditorTriggerVisualizer = (
@@ -59,6 +66,8 @@ func _ready() -> void:
 	_build_exclude_rids(self)
 
 
+## Recursively builds an array of local physics RIDs to ignore.
+## [param node] The [Node] to search recursively.
 func _build_exclude_rids(node: Node) -> void:
 	if node is CollisionObject3D:
 		_exclude_rids.append(node.get_rid())
@@ -66,6 +75,8 @@ func _build_exclude_rids(node: Node) -> void:
 		_build_exclude_rids(node.get_child(i))
 
 
+## Steps the active logic state of the turret per frame.
+## [param delta] Engine frame delta in seconds.
 func _process(delta: float) -> void:
 	if is_friendly:
 		_process_scanning(delta)
@@ -78,6 +89,8 @@ func _process(delta: float) -> void:
 			_process_engaging(delta)
 
 
+## Safely forces a transition to a new turret state.
+## [param new_state] The target enum TurretState.
 func _change_state(new_state: TurretState) -> void:
 	print("Turret: _change_state() - Transitioning to ", new_state)
 	current_state = new_state
@@ -86,10 +99,14 @@ func _change_state(new_state: TurretState) -> void:
 		bullet_particles.emitting = false
 
 
+## Panning logic while waiting for a target.
+## [param delta] Engine frame delta in seconds.
 func _process_scanning(delta: float) -> void:
 	head.rotate_y(scan_speed * delta)
 
 
+## Aiming and shooting logic while actively tracking a target.
+## [param delta] Engine frame delta in seconds.
 func _process_engaging(delta: float) -> void:
 	# Safely verifies if the target is physically in play, stopping the pooling bug.
 	if not _is_active_target(target):
@@ -104,6 +121,9 @@ func _process_engaging(delta: float) -> void:
 		bullet_particles.emitting = false
 
 
+## Verifies a target is physically present and capable of receiving damage.
+## [param node] The [Node3D] to evaluate.
+## [return] True if valid and active.
 func _is_active_target(node: Node3D) -> bool:
 	if node == null or not is_instance_valid(node):
 		return false
@@ -113,6 +133,9 @@ func _is_active_target(node: Node3D) -> bool:
 	return true
 
 
+## Checks if an incoming node exists in the hostility list.
+## [param node] The generic [Node] to check.
+## [return] True if hostile.
 func _is_hostile(node: Node) -> bool:
 	for group: StringName in hostile_groups:
 		if node.is_in_group(group):
@@ -120,12 +143,16 @@ func _is_hostile(node: Node) -> bool:
 	return false
 
 
+## Retrieves the precise aiming offset, zeroing out for specific target types.
+## [return] The calculated [Vector3] offset.
 func _get_actual_aim_offset() -> Vector3:
 	if target is ShootingTarget:
 		return Vector3.ZERO
 	return aim_offset
 
 
+## Uses quaternion slerp to smoothly track the active target.
+## [param delta] Engine frame delta in seconds.
 func _aim_at_target(delta: float) -> void:
 	var target_pos: Vector3 = target.global_position + _get_actual_aim_offset()
 	var current_transform: Transform3D = head.global_transform
@@ -137,6 +164,8 @@ func _aim_at_target(delta: float) -> void:
 	head.global_transform.basis = Basis(current_quat.slerp(target_quat, turn_speed * delta))
 
 
+## Performs a direct space state raycast to confirm the target isn't behind a wall.
+## [return] True if nothing blocks the target.
 func _has_line_of_sight() -> bool:
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 
@@ -155,6 +184,8 @@ func _has_line_of_sight() -> bool:
 	return false
 
 
+## Uses dot product math to determine if the muzzle is pointed directly at the target.
+## [return] True if perfectly aimed.
 func _is_aimed_at_target() -> bool:
 	var target_pos: Vector3 = target.global_position + _get_actual_aim_offset()
 	var dir_to_target: Vector3 = hitscan_ray.global_position.direction_to(target_pos)
@@ -165,6 +196,8 @@ func _is_aimed_at_target() -> bool:
 	return forward_dir.dot(dir_to_target) > 0.98
 
 
+## Steps the cooldown timer and fires the weapon if ready.
+## [param delta] Engine frame delta in seconds.
 func _handle_shooting(delta: float) -> void:
 	fire_cooldown -= delta
 
@@ -173,6 +206,7 @@ func _handle_shooting(delta: float) -> void:
 		fire_cooldown = fire_rate
 
 
+## Triggers the visual tracer and attempts to deal direct damage to the target.
 func shoot() -> void:
 	print("Turret: shoot() - Firing at target: ", target.name)
 	bullet_particles.emitting = true
@@ -181,6 +215,8 @@ func shoot() -> void:
 		_damage_player(target)
 
 
+## Deeply searches the target hierarchy for a health component to deduct health.
+## [param player_node] The root object hit by the turret.
 func _damage_player(player_node: Object) -> void:
 	print("Turret: _damage_player() - Attempting to deal damage.")
 
@@ -199,6 +235,8 @@ func _damage_player(player_node: Object) -> void:
 		health_comp.take_damage(damage)
 
 
+## Detects new physics bodies entering the detection range.
+## [param body] The [Node3D] that entered.
 func _on_body_entered(body: Node3D) -> void:
 	if is_friendly:
 		return
@@ -209,18 +247,24 @@ func _on_body_entered(body: Node3D) -> void:
 		_change_state(TurretState.ENGAGING)
 
 
+## Forgets targets that escape the detection range.
+## [param body] The [Node3D] that left.
 func _on_body_exited(body: Node3D) -> void:
 	if body == target:
 		print("Turret: _on_body_exited() - Current target left radius: ", body.name)
 		_acquire_new_target()
 
 
+## Forgets area targets that escape the detection range.
+## [param area] The [Area3D] that left.
 func _on_area_exited(area: Area3D) -> void:
 	if area == target:
 		print("Turret: _on_area_exited() - Current target left radius: ", area.name)
 		_acquire_new_target()
 
 
+## Detects new area bodies entering the detection range.
+## [param area] The [Area3D] that entered.
 func _on_area_entered(area: Area3D) -> void:
 	if is_friendly:
 		return
@@ -231,6 +275,7 @@ func _on_area_entered(area: Area3D) -> void:
 		_change_state(TurretState.ENGAGING)
 
 
+## Scans overlapping geometry to find a replacement target if the current one is lost.
 func _acquire_new_target() -> void:
 	print("Turret: _acquire_new_target() - Scanning for remaining targets in zone.")
 	target = null

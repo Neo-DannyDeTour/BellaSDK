@@ -45,7 +45,7 @@ func _ready() -> void:
 	check_timer.start()
 
 
-## Called when a player enters an Area3D trigger to forcefully load a specific chunk.
+## Called when a player enters an [Area3D] trigger to forcefully load a specific chunk.
 ## [param chunk_id] The string identifier of the chunk to load.
 func trigger_load_chunk(chunk_id: String) -> void:
 	print("ChunkManager: trigger_load_chunk() called for chunk ID: ", chunk_id)
@@ -53,7 +53,7 @@ func trigger_load_chunk(chunk_id: String) -> void:
 		trigger_active_chunks.append(chunk_id)
 
 
-## Called when a player exits an Area3D trigger to release the forced load state of a chunk.
+## Called when a player exits an [Area3D] trigger to release the forced load state of a chunk.
 ## [param chunk_id] The string identifier of the chunk to unload.
 func trigger_unload_chunk(chunk_id: String) -> void:
 	print("ChunkManager: trigger_unload_chunk() called for chunk ID: ", chunk_id)
