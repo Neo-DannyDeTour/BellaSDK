@@ -81,8 +81,11 @@ func _extract_scene_materials(scene: PackedScene, array_ref: Array[Material]) ->
 						_append_unique_material(surf_mat, array_ref)
 
 
-## Stores unique valid materials in the cache array.
+## Filters out non-visual/particle materials that cannot be warmed on quads.
 func _append_unique_material(mat: Material, array_ref: Array[Material]) -> void:
-	if is_instance_valid(mat) and not array_ref.has(mat):
-		array_ref.append(mat)
-		print("ShaderCacheBuilder: Cached unique material -> ", mat.resource_path)
+	if not is_instance_valid(mat) or array_ref.has(mat):
+		return
+	# ParticleProcessMaterial runs on compute/particles, not surface/canvas pipelines
+	if mat is ParticleProcessMaterial:
+		return
+	array_ref.append(mat)

@@ -50,23 +50,24 @@ void fragment() {
     vec2 uv = UV - 0.5;
     float aspect = resolution.x / resolution.y;
     uv.x *= aspect;
-    
+
     // Time is completely controlled by the GDScript
     float t = u_time;
     vec3 color_val = draw_grid(uv, 10.0) * grid_color;
-    
+
     color_val = pow(color_val, vec3(1.0 / 2.2));
-    
+
     float min_dist = closest_segment(uv);
     float pixel_size = 2.0 / resolution.y;
-    
+
     float line = s(line_thickness, line_thickness + line_blur + pixel_size, min_dist);
     float pulse = mod(aspect + uv.x - t, aspect * 2.0) - aspect;
-    
+
     float grid_pulse = s(-0.1, 0.0, pulse);
     line *= grid_pulse * falloff(pulse * 2.0);
-    
+
     color_val = mix(color_val, line_color, line);
-    
-    COLOR = vec4(color_val, 1.0);
+
+    // Multiply by COLOR so CanvasItem modulate (alpha tweens) works properly
+    COLOR = vec4(color_val, 1.0) * COLOR;
 }

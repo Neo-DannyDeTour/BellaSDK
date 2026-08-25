@@ -71,17 +71,17 @@ vec4 hash43(vec3 p) {
 vec4 noise(vec3 x) {
 	vec3 p = floor(x);
 	vec3 fr = smoothstep(0.0, 1.0, fract(x));
-	
+
 	// Level 1: Blend pairs of corners along the x-axis
 	vec4 l1c1 = mix(hash43(p + CUBE[0]), hash43(p + CUBE[2]), fr.x);
 	vec4 l1c2 = mix(hash43(p + CUBE[1]), hash43(p + CUBE[3]), fr.x);
 	vec4 l1c3 = mix(hash43(p + CUBE[4]), hash43(p + CUBE[6]), fr.x);
 	vec4 l1c4 = mix(hash43(p + CUBE[5]), hash43(p + CUBE[7]), fr.x);
-	
+
 	// Level 2: Blend along the y-axis
 	vec4 l2c1 = mix(l1c1, l1c2, fr.y);
 	vec4 l2c2 = mix(l1c3, l1c4, fr.y);
-	
+
 	// Level 3: Blend along the z-axis
 	return mix(l2c1, l2c2, fr.z);
 }
@@ -95,7 +95,7 @@ vec4 fbm(vec3 p) {
 	vec4 swizzle = vec4(0.0);
 	float amplitude = 1.0;
 	float warp = 0.0;
-	
+
 	for (int i = 0; i < OCTAVES; i++) {
 		vec4 n = decorrelated_noise(p);
 		fractal += abs(n) * amplitude;
@@ -107,7 +107,7 @@ vec4 fbm(vec3 p) {
 		p += swizzle.xyz * warp_secondary;
 		p.z += (fractal.w * 0.5 + 0.5) * 0.015;
 	}
-	
+
 	return fractal;
 }
 
@@ -116,14 +116,14 @@ void fragment() {
 	uv.x *= resolution.x / resolution.y;
 	uv *= zoom;
 	float time = TIME * speed;
-	
+
 	vec4 result = fbm(vec3(uv, time));
-	
+
 	// Generate heat mask based on swizzled dot product
 	float heat = dot(result.xyzw, result.yxwx) * 0.5;
 	heat = pow(max(heat, 0.0), contrast);
 	heat = smoothstep(0.0, 1.0, heat);
-	
+
 	vec3 color = heat * mix(color_core, color_edge, heat) * emission;
 	COLOR = vec4(color, 1.0);
 }

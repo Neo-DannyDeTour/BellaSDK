@@ -35,7 +35,7 @@ var match_index: int = -1
 ## Prevents text change events from triggering while navigating autocomplete matches.
 var is_navigating_matches: bool = false
 
-## Security variable: Indicates if debug commands (noclip, gamespeed, sethealth) are allowed.
+## Security variable: Indicates if debug commands are allowed.
 var is_debug_allowed: bool = OS.has_feature("debug")
 
 ## Tracks the active state of toggleable boolean commands to allow single-word toggling.
@@ -52,6 +52,8 @@ var valid_commands: Array[String] = [
 	"help",
 	"clear",
 	"quit",
+	"exit",
+	"restart",
 	"iddqd",
 	"idkfa",
 	"kirov",
@@ -113,6 +115,8 @@ var valid_screenfilter_args: Array[String] = [
 	"swirl",
 	"mandelbrot"
 ]
+## A list of valid death screen effect names for the deathscreen command.
+var valid_deathscreen_args: Array[String] = ["ecg", "cave", "lava", "static"]
 
 ## The full-screen color rectangle used to apply generalized screen filter shaders.
 var screen_filter_rect: ColorRect
@@ -127,6 +131,7 @@ func _init() -> void:
 		valid_commands.append("noclip")
 		valid_commands.append("gamespeed")
 		valid_commands.append("die")
+		valid_commands.append("deathscreen")
 		valid_commands.append("normals")
 		valid_commands.append("sethealth")
 
@@ -138,7 +143,6 @@ func _ready() -> void:
 	layer = 128
 	visible = false
 
-	# Populate dynamic autocomplete arguments after Autoload singletons are ready.
 	if is_instance_valid(GlobalSettings):
 		valid_font_args = GlobalSettings.get_font_ids()
 
@@ -329,6 +333,8 @@ func _get_autocomplete_matches(current_text: String) -> Array[String]:
 			arg_matches = valid_font_args
 		elif main_cmd == "screenfilter":
 			arg_matches = valid_screenfilter_args
+		elif main_cmd == "deathscreen":
+			arg_matches = valid_deathscreen_args
 		elif main_cmd == "visionassist":
 			arg_matches = ["mode", "color"]
 
@@ -481,9 +487,83 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 			output_log.clear()
 			message_history.clear()
 			write("Console cleared.", "cyan")
-		"quit":
+		"quit", "exit":
 			write("Exiting game...", "red")
+			print("InGameConsole: Action Quitting Game")
 			get_tree().quit()
+		"restart":
+			write("Restarting scene...", "yellow")
+			print("InGameConsole: Action Reloading Current Scene")
+			get_tree().paused = false
+			_on_console_toggle_requested()
+			get_tree().reload_current_scene()
+		"die":
+			if is_debug_allowed:
+				print("InGameConsole: Action Executing 'die' command.")
+				var players: Array[Node] = get_tree().get_nodes_in_group("player")
+				if players.size() > 0:
+					var player: Node = players[0]
+					var health_comp: Node = player.get_node_or_null("Components/HealthComponent")
+
+					if not health_comp:
+						health_comp = player.find_child("HealthComponent", true, false)
+
+					if health_comp and health_comp is HealthComponent:
+						health_comp.current_health = 0
+						health_comp.health_changed.emit(0)
+						if health_comp.is_player_health and has_node("/root/Events"):
+							var events: Node = get_node("/root/Events")
+							if events.has_signal("player_health_changed"):
+								events.player_health_changed.emit(0)
+						health_comp.die()
+						write("Player health drained to 0. You died.", "red")
+					else:
+						write(
+							"HealthComponent not found in the player's 'Components' node.", "yellow"
+						)
+				else:
+					write("Player node not found in the 'player' group.", "yellow")
+			else:
+				write("Unknown command: '" + cmd + "'. Type 'help' for a list.", "red")
+		"deathscreen":
+			if is_debug_allowed:
+				print("InGameConsole: Action Executing 'deathscreen' preview.")
+				if args.size() > 0:
+					var screen_name: String = args[0].to_lower()
+					var death_screens: Array[Node] = get_tree().get_nodes_in_group("death_screen")
+					var ds: DeathScreen = (
+						(
+							death_screens[0] as DeathScreen
+							if death_screens.size() > 0
+							else get_tree().root.find_child("DeathScreen", true, false)
+						)
+						as DeathScreen
+					)
+
+					if is_instance_valid(ds):
+						var chosen_effect: DeathScreen.EffectType = DeathScreen.EffectType.ECG
+						match screen_name:
+							"ecg":
+								chosen_effect = DeathScreen.EffectType.ECG
+							"lava":
+								chosen_effect = DeathScreen.EffectType.LAVA
+							"cave":
+								chosen_effect = DeathScreen.EffectType.CAVE_TUNNEL
+							"static":
+								chosen_effect = DeathScreen.EffectType.TV_STATIC
+							_:
+								write("Unknown screen. Available: ecg, cave, lava, static", "red")
+								return
+
+						_on_console_toggle_requested()
+						ds.play_death_preview(chosen_effect)
+						write("Previewing death screen: " + screen_name.to_upper(), "green")
+					else:
+						write("DeathScreen node not found in scene tree.", "red")
+				else:
+					write("Usage: deathscreen <ecg|cave|lava|static>", "yellow")
+			else:
+				write("Unknown command: '" + cmd + "'. Type 'help' for a list.", "red")
 		"noclip":
 			if is_debug_allowed:
 				print("InGameConsole: Action toggled Noclip")
@@ -724,30 +804,6 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 						"Usage: visionassist OR visionassist mode <mode> OR color <group> <color>",
 						"yellow"
 					)
-		"die":
-			if is_debug_allowed:
-				print("InGameConsole: Action Executing 'die' command.")
-
-				var players: Array[Node] = get_tree().get_nodes_in_group("player")
-				if players.size() > 0:
-					var player: Node = players[0]
-
-					var health_comp: Node = player.get_node_or_null("Components/HealthComponent")
-
-					if not health_comp:
-						health_comp = player.find_child("HealthComponent", true, false)
-
-					if health_comp and health_comp is HealthComponent:
-						health_comp.take_damage(health_comp.current_health)
-						write("You dropped dead.", "red")
-					else:
-						write(
-							"HealthComponent not found in the player's 'Components' node.", "yellow"
-						)
-				else:
-					write("Player node not found in the 'player' group.", "yellow")
-			else:
-				write("Unknown command: '" + cmd + "'. Type 'help' for a list.", "red")
 		"normals":
 			if is_debug_allowed:
 				print("InGameConsole: Action Toggled Normal View")

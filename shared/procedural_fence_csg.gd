@@ -46,7 +46,7 @@ enum Orientation {
 		border_thickness = value
 		_request_rebuild()
 
-## Defines the directional alignment of the inner fence bars (Vertical, Horizontal, or Diagonal).
+## Defines the directional alignment of the inner fence bars.
 @export_category("Bars")
 @export var bar_orientation: ProceduralFence.Orientation = ProceduralFence.Orientation.DIAGONAL:
 	set(value):
@@ -81,14 +81,13 @@ func _init() -> void:
 	use_collision = true
 
 
-## Lifecycle ready callback ensuring geometry is only generated in the editor.
+## Lifecycle ready callback ensuring geometry is constructed across editor and runtime.
 func _ready() -> void:
 	print("ProceduralFence: _ready() called.")
-	if Engine.is_editor_hint():
-		_request_rebuild()
+	_request_rebuild()
 
 
-## Defers the CSG geometry rebuild to avoid redundant operations during batched property edits.
+## Defers the CSG geometry rebuild to avoid redundant operations during property edits.
 func _request_rebuild() -> void:
 	if not is_inside_tree():
 		return
@@ -99,7 +98,7 @@ func _request_rebuild() -> void:
 		call_deferred(&"_rebuild")
 
 
-## Clears existing geometry and reconstructs the combiner child nodes based on current properties.
+## Clears existing geometry and reconstructs the combiner child nodes.
 func _rebuild() -> void:
 	print("ProceduralFence: Rebuilding geometry.")
 	_is_dirty = false
@@ -206,7 +205,7 @@ static func _generate_angled_bars(
 			var p2_x: float = origin_x + t2 * dir_x
 			var p2_y: float = origin_y + t2 * dir_y
 
-			var length: float = sqrt(pow(p2_x - p1_x, 2) + pow(p2_y - p1_y, 2))
+			var length: float = sqrt(pow(p2_x - p1_x, 2.0) + pow(p2_y - p1_y, 2.0))
 
 			if length < 0.01:
 				continue

@@ -3,7 +3,7 @@
 extends Control
 
 ## The file path to the level scene that needs to be loaded in the background.
-@export_file("*.tscn", "*.scn") var level_scene_path: String = "res://levels/testbed2.tscn"
+@export_file("*.tscn", "*.scn") var level_scene_path: String = "res://levels/testbed.scn"
 
 ## A custom resource containing a list of materials to precompile.
 @export var baked_shader_cache: ShaderCache
@@ -54,7 +54,7 @@ func _ready() -> void:
 	animation.play("default")
 	audio_player.play()
 
-	# Set use_sub_threads to false to avoid worker thread deadlocks
+	# Keep use_sub_threads set to false to avoid WorkerThreadPool resource deadlocks
 	var error: Error = ResourceLoader.load_threaded_request(level_scene_path, "", false)
 	if error != OK:
 		push_error("LoadingScreen: Request failed: " + error_string(error))
@@ -73,6 +73,8 @@ func _process(_delta: float) -> void:
 			ResourceLoader.THREAD_LOAD_IN_PROGRESS:
 				# 0% - 60%: Background file loading
 				progress_bar.value = _progress_array[0] * 60.0
+				# Prints progress percentage to verify whether disk I/O is advancing
+				print("LoadingScreen: In progress -> %.2f%%" % (_progress_array[0] * 100.0))
 
 			ResourceLoader.THREAD_LOAD_LOADED:
 				_is_resource_loaded = true
@@ -133,19 +135,22 @@ func _start_shader_warmup() -> void:
 	_compile_materials_budgeted()
 
 
-## Processes materials across multiple frames while honoring the frame time budget.
+## Processes materials across multiple frames reusing a single mesh/rect instance.
 func _compile_materials_budgeted() -> void:
 	var total_mats: int = baked_shader_cache.materials.size()
+	var quad_3d: MeshInstance3D = MeshInstance3D.new()
+	quad_3d.mesh = QuadMesh.new()
+	_warmup_container.add_child(quad_3d)
 
 	while _compile_index < total_mats:
 		var start_time: int = Time.get_ticks_msec()
 
 		while _compile_index < total_mats:
 			var mat: Material = baked_shader_cache.materials[_compile_index]
-			_create_warmup_node(mat)
+			if mat:
+				quad_3d.material_override = mat
 			_compile_index += 1
 
-			# 60% - 95%: Shader warmup
 			var warmup_percent: float = float(_compile_index) / float(total_mats)
 			progress_bar.value = 60.0 + (warmup_percent * 35.0)
 
@@ -153,7 +158,6 @@ func _compile_materials_budgeted() -> void:
 				await get_tree().process_frame
 				break
 
-	print("LoadingScreen: Shader warmup completed. Cleaning up viewport.")
 	_warmup_viewport.queue_free()
 	_is_warmup_complete = true
 

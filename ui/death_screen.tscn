@@ -1,8 +1,11 @@
 [gd_scene format=3 uid="uid://r7e1pqddjcjx"]
 
 [ext_resource type="Script" uid="uid://bk52bpfkaco1t" path="res://ui/death_screen.gd" id="1_36x74"]
-[ext_resource type="Shader" uid="uid://b63gib5h5ed3p" path="res://ui/death_screen.gdshader" id="2_g3utg"]
-[ext_resource type="Shader" uid="uid://bjmce8wrb84ff" path="res://vfx/lava.gdshader" id="3_3qirs"]
+[ext_resource type="Shader" uid="uid://b63gib5h5ed3p" path="res://ui/death_screen_ecg.gdshader" id="2_g3utg"]
+[ext_resource type="Shader" uid="uid://bjmce8wrb84ff" path="res://vfx/death_screen_lava.gdshader" id="3_3qirs"]
+[ext_resource type="Shader" uid="uid://bpkvj2ago2gkv" path="res://vfx/death_screen_cave_tunnel.gdshader" id="4_4vofl"]
+[ext_resource type="Shader" uid="uid://b02wdmnk5w5s" path="res://vfx/death_screen_tv_static.gdshader" id="5_h4ie6"]
+[ext_resource type="Texture2D" uid="uid://bpputyrxx77ye" path="res://assets/images/Death_Screen_Mannequin.jpeg" id="6_ynprq"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_g3utg"]
 shader = ExtResource("2_g3utg")
@@ -27,6 +30,31 @@ shader_parameter/contrast = 1.3
 shader_parameter/emission = 1.5
 shader_parameter/color_core = Color(1.2, 0, 0, 1)
 shader_parameter/color_edge = Color(0.9, 0.7, 0.3, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_tx8to"]
+shader = ExtResource("4_4vofl")
+shader_parameter/resolution = Vector2(1920, 1080)
+shader_parameter/zoom = 0.56999999098468
+shader_parameter/speed = 5.999999865888
+shader_parameter/contrast = 10.0
+shader_parameter/fade = 0.25
+shader_parameter/bumpiness = 1.40999997965968
+shader_parameter/color_rock = Color(0.02, 0.01, 0.015, 1)
+shader_parameter/color_ember = Color(0.35, 0.05, 0.02, 1)
+shader_parameter/color_flame = Color(0.9, 0.25, 0.03, 1)
+shader_parameter/color_hot = Color(1, 0.75, 0.35, 1)
+shader_parameter/color_core = Color(1, 0.97, 0.85, 1)
+shader_parameter/edge_ember = 0.3
+shader_parameter/edge_flame = 0.6
+shader_parameter/edge_hot = 0.8
+shader_parameter/edge_core = 1.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_7lgc2"]
+shader = ExtResource("5_h4ie6")
+shader_parameter/image_texture = ExtResource("6_ynprq")
+shader_parameter/static_intensity = 1.0
+shader_parameter/scanline_count = 240.0
+shader_parameter/vignette_strength = 0.5
 
 [node name="DeathScreen" type="CanvasLayer" unique_id=1910211973]
 script = ExtResource("1_36x74")
@@ -55,6 +83,32 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
+[node name="CaveTunnelOverlay" type="ColorRect" parent="." unique_id=511991392]
+material = SubResource("ShaderMaterial_tx8to")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+color = Color(0.003921569, 0.003921569, 0.003921569, 1)
+
+[node name="TVStaticOverlay" type="ColorRect" parent="." unique_id=1486399559]
+material = SubResource("ShaderMaterial_7lgc2")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PainOverlay" type="ColorRect" parent="." unique_id=1681156949]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
 [node name="DeathLabel" type="Label" parent="." unique_id=1090943906]
 anchors_preset = 8
 anchor_left = 0.5
@@ -73,10 +127,3 @@ vertical_alignment = 1
 
 [node name="HeartAudio" type="AudioStreamPlayer" parent="." unique_id=168240611]
 bus = &"SFX"
-
-[node name="PainOverlay" type="ColorRect" parent="." unique_id=1681156949]
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2

@@ -48,6 +48,12 @@ var crosshair_tween: Tween
 ## Stores the default dimensions of the center crosshair dot.
 var default_crosshair_size: Vector2
 
+## ColorRect providing a green vignette pulse overlay when health is restored.
+@onready var heal_vignette: ColorRect = $HealVignette
+
+## Animates the green vignette effect when the player heals.
+var heal_tween: Tween
+
 # --- UI ELEMENT PATHS ---
 ## Container that centers the crosshair elements on the screen.
 @onready var crosshair_container: CenterContainer = $CrosshairContainer
@@ -272,6 +278,11 @@ func _ready() -> void:
 		electricity_vignette.material.set_shader_parameter("intensity", 0.0)
 		electricity_vignette.hide()
 
+	if heal_vignette != null:
+		if heal_vignette.material is ShaderMaterial:
+			heal_vignette.material.set_shader_parameter("intensity", 0.0)
+		heal_vignette.hide()
+
 	if note_overlay_ui != null:
 		note_overlay_ui.hide()
 
@@ -429,6 +440,8 @@ func update_health(new_health: int) -> void:
 
 	if health_decreased:
 		_trigger_pain_effect()
+	elif health_increased:
+		_trigger_heal_effect()
 
 	if heart_nodes.is_empty() or heart_textures.is_empty():
 		return
@@ -1032,3 +1045,32 @@ func _on_note_closed() -> void:
 	print("UIController: _on_note_closed() received. Hiding UI.")
 	if note_overlay_ui != null:
 		note_overlay_ui.hide()
+
+
+## Plays a green vignette pulse animation when the player restores health.
+func _trigger_heal_effect() -> void:
+	print("UIController: _trigger_heal_effect() called. Pulsing green heal vignette.")
+	if heal_vignette == null:
+		return
+
+	heal_vignette.show()
+
+	if heal_tween and heal_tween.is_valid():
+		heal_tween.kill()
+
+	heal_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+
+	if heal_vignette.material is ShaderMaterial:
+		heal_tween.tween_method(
+			func(val: float) -> void:
+				heal_vignette.material.set_shader_parameter("intensity", val)
+				heal_vignette.queue_redraw(),
+			0.8,
+			0.0,
+			0.4
+		)
+	else:
+		heal_vignette.modulate = Color(0.0, 1.0, 0.2, 0.4)
+		heal_tween.tween_property(heal_vignette, "modulate:a", 0.0, 0.4)
+
+	heal_tween.finished.connect(heal_vignette.hide)

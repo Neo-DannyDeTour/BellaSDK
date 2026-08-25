@@ -10,6 +10,7 @@
 [ext_resource type="Texture2D" uid="uid://d11qvtoiajmle" path="res://assets/images/UI/UI_Circle_Zoom_Inner.png" id="4_wm3ai"]
 [ext_resource type="Shader" uid="uid://b7hv0lpr3sylm" path="res://ui/ui_vignette.gdshader" id="5_8dubc"]
 [ext_resource type="Shader" uid="uid://bly82k8d04nmt" path="res://ui/ui_zoom_fisheye_blur.gdshader" id="6_p7vwb"]
+[ext_resource type="Shader" uid="uid://cyxf51y1bvmjn" path="res://vfx/heal_vignette.gdshader" id="7_c3fg2"]
 [ext_resource type="Script" uid="uid://yhhwmqo4b0yi" path="res://core/dev_metrics.gd" id="7_p7vwb"]
 [ext_resource type="Shader" uid="uid://bcpssk465dbif" path="res://vfx/glitch.gdshader" id="7_x7nxp"]
 [ext_resource type="Shader" uid="uid://c2f1f2all860e" path="res://ui/electricityvignette.gdshader" id="8_3lbto"]
@@ -28,6 +29,13 @@ shader_parameter/color = Color(0, 0, 0, 1)
 shader_parameter/multiplier = 0.4
 shader_parameter/softness = 0.7
 shader_parameter/vignette_opacity = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_3lbto"]
+shader = ExtResource("7_c3fg2")
+shader_parameter/vignette_color = Color(0, 1, 0.2, 1)
+shader_parameter/intensity = 0.0
+shader_parameter/inner_radius = 0.400000019
+shader_parameter/outer_radius = 0.75
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_kwflg"]
 shader = ExtResource("8_3lbto")
@@ -98,6 +106,14 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 color = Color(1, 0, 0, 0)
+
+[node name="HealVignette" type="ColorRect" parent="." unique_id=2118438508]
+material = SubResource("ShaderMaterial_3lbto")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="ElectricityVignette" type="ColorRect" parent="." unique_id=370217648]
 material = SubResource("ShaderMaterial_kwflg")
