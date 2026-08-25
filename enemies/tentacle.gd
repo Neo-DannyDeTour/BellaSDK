@@ -1,5 +1,10 @@
-extends Node3D
+## A visual manager that generates a procedural, arcing tentacle mesh between two points.
+##
+## [ProceduralTentacle3D] dynamically constructs a series of cylinder segments arranged
+## along a quadratic Bezier curve to visually connect a base node and a target node.
+## It handles creating and pooling the meshes efficiently to maintain a high framerate.
 class_name ProceduralTentacle3D
+extends Node3D
 
 ## The starting point of the tentacle, usually the base of the enemy.
 @export var base_node: Node3D
@@ -23,18 +28,44 @@ var _segments: Array[MeshInstance3D] = []
 var _base_mesh: CylinderMesh
 
 
+## Initializes the shared mesh and spawns the required number of visual segments.
 func _ready() -> void:
 	print("ProceduralTentacle3D: _ready() - Generating optimized procedural tentacle.")
 	_create_base_mesh()
 	_spawn_visual_segments()
 
 
+## Frame execution lifecycle method that recalculates and positions the Bezier curve segments.
+## [param _delta] The time elapsed since the previous physics tick in seconds.
+func _process(_delta: float) -> void:
+	if not is_instance_valid(base_node) or not is_instance_valid(target_node):
+		return
+
+	var p0: Vector3 = base_node.global_position
+	var p2: Vector3 = target_node.global_position
+
+	var distance_sq: float = p0.distance_squared_to(p2)
+	var distance: float = sqrt(distance_sq)
+	var p1: Vector3 = p0.lerp(p2, 0.5)
+	p1.y += (distance * 0.6)
+
+	var prev_pos: Vector3 = p0
+
+	for i: int in range(segment_count):
+		var t: float = float(i + 1) / float(segment_count)
+		var current_pos: Vector3 = _get_quadratic_bezier(p0, p1, p2, t)
+
+		_update_visual_segment(_segments[i], prev_pos, current_pos)
+		prev_pos = current_pos
+
+
+## Creates the highly optimized cylinder mesh instance shared across all segments.
 func _create_base_mesh() -> void:
 	print("ProceduralTentacle3D: _create_base_mesh() - Creating shared cylinder mesh.")
 	_base_mesh = CylinderMesh.new()
 	_base_mesh.top_radius = thickness
 	_base_mesh.bottom_radius = thickness
-	_base_mesh.height = 1.0  # Height is scaled dynamically per frame
+	_base_mesh.height = 1.0
 	_base_mesh.radial_segments = 8
 	_base_mesh.rings = 1
 
@@ -44,6 +75,7 @@ func _create_base_mesh() -> void:
 	_base_mesh.material = mat
 
 
+## Instantiates the requested number of mesh segments and stores them in the internal array.
 func _spawn_visual_segments() -> void:
 	print("ProceduralTentacle3D: _spawn_visual_segments() - Instantiating segments.")
 	for i: int in range(segment_count):
@@ -55,36 +87,22 @@ func _spawn_visual_segments() -> void:
 		_segments.append(segment)
 
 
-func _process(_delta: float) -> void:
-	if not is_instance_valid(base_node) or not is_instance_valid(target_node):
-		return
-
-	var p0: Vector3 = base_node.global_position
-	var p2: Vector3 = target_node.global_position
-
-	# Calculate a central control point to force the tentacle to arc upwards like a snake
-	var distance_sq: float = p0.distance_squared_to(p2)
-	var distance: float = sqrt(distance_sq)
-	var p1: Vector3 = p0.lerp(p2, 0.5)
-	p1.y += (distance * 0.6)
-
-	var prev_pos: Vector3 = p0
-
-	for i: int in range(segment_count):
-		# Calculate exactly where along the Bezier curve this segment belongs
-		var t: float = float(i + 1) / float(segment_count)
-		var current_pos: Vector3 = _get_quadratic_bezier(p0, p1, p2, t)
-
-		_update_visual_segment(_segments[i], prev_pos, current_pos)
-		prev_pos = current_pos
-
-
+## Mathematical helper calculating a point along a quadratic Bezier curve.
+## [param p0] The starting point vector.
+## [param p1] The control point vector dictating the arc.
+## [param p2] The ending point vector.
+## [param t] The interpolation step from 0.0 to 1.0.
+## Returns the calculated point as a [Vector3].
 func _get_quadratic_bezier(p0: Vector3, p1: Vector3, p2: Vector3, t: float) -> Vector3:
 	var q0: Vector3 = p0.lerp(p1, t)
 	var q1: Vector3 = p1.lerp(p2, t)
 	return q0.lerp(q1, t)
 
 
+## Transforms, rotates, and stretches an individual segment to connect two points flawlessly.
+## [param segment] The visual [MeshInstance3D] to update.
+## [param p1] The starting position for the segment.
+## [param p2] The ending position for the segment.
 func _update_visual_segment(segment: MeshInstance3D, p1: Vector3, p2: Vector3) -> void:
 	var dist_sq: float = p1.distance_squared_to(p2)
 	var dist: float = sqrt(dist_sq)
@@ -96,5 +114,4 @@ func _update_visual_segment(segment: MeshInstance3D, p1: Vector3, p2: Vector3) -
 		segment.look_at(p2, up)
 		segment.rotate_object_local(Vector3.RIGHT, PI / 2.0)
 
-	# Scale the segment exclusively on the Y axis to bridge the exact gap length
 	segment.scale = Vector3(1.0, dist, 1.0)
