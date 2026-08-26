@@ -1,12 +1,13 @@
 ## An organic enemy that manipulates physics objects and attacks the player.
+##
+## [TentacleEnemy] controls a procedural visual tentacle mesh and uses an invisible
+## target node to puppet its movements. It idly plays with surrounding [RigidBody3D] objects,
+## but becomes hostile when the player approaches, utilizing physical strikes or throwing mechanics.
 class_name TentacleEnemy
 extends StaticBody3D
 
 ## Defines the current operational behavior of the enemy.
 enum State { IDLE, PLAYING, HOLDING, SPOTTED, ATTACKING }
-
-## The current behavior state of the tentacle.
-var current_state: State = State.IDLE
 
 ## The delay in seconds before the enemy strikes after spotting the player.
 @export var charge_delay: float = 2.0
@@ -20,68 +21,79 @@ var current_state: State = State.IDLE
 ## The amount of damage dealt by a direct tentacle strike.
 @export var strike_damage: int = 15
 
-## The speed at which the tentacle's head tracks its targets.
+## How quickly the tentacle head smoothly interpolates to track targets.
 @export var track_speed: float = 5.0
 
-## The maximum reach of the tentacle for idle wandering and striking.
+## The maximum vertical height the tentacle can reach in meters.
 @export var max_reach: float = 8.0
 
-## How often (in seconds) the tentacle taps or decides to grab the toy while playing.
-@export var interact_interval: float = 1.5
-
-## How long (in seconds) the tentacle will hold the object before placing it down.
+## How long in seconds the enemy will hold a physics object in the air while playing.
 @export var hold_duration: float = 1.5
 
-## The volume detecting players and pickable objects.
-@onready var detection_area: Area3D = $DetectionArea
-## The component processing incoming damage.
-@onready var health_component: HealthComponent = $HealthComponent
+## How long in seconds between light interactions with objects on the floor.
+@export var interact_interval: float = 1.5
 
-## The [Marker3D] representing the "head" of the snake/tentacle.
-@onready var tentacle_target: Marker3D = $TentacleTarget
+## The current behavior state of the tentacle.
+var current_state: State = State.IDLE
 
-## The player node currently inside the detection area.
-var target_player: Node3D = null
-
-## The toy the tentacle is currently tapping or watching.
-var target_toy: RigidBody3D = null
-
-## The pickable object currently physically held by the tentacle.
+## The currently held physics object, if any.
 var held_object: RigidBody3D = null
 
-## The accumulated time spent in the idle state, used for sway animation math.
-var _idle_time: float = 0.0
+## The actively tracked player target.
+var target_player: Node3D = null
 
-## The accumulated time tracking the delay before launching an attack.
+## An actively tracked idle object to play with.
+var target_toy: Node3D = null
+
+## Timer accumulating the time spent observing the player before attacking.
 var _charge_timer: float = 0.0
 
-## The accumulated time tracking when the next play interaction should occur.
-var _interact_timer: float = 0.0
-
-## The accumulated time tracking how long an object has been held.
+## Timer determining how long an object has been held in the air.
 var _hold_timer: float = 0.0
 
-## The calculated 3D world coordinate where the tentacle intends to drop the toy.
-var _place_target: Vector3 = Vector3.ZERO
+## Timer regulating idle physics interactions.
+var _interact_timer: float = 0.0
 
-## A boolean flag indicating whether an attack or throw animation is actively playing.
+## Timer regulating idle swaying animations.
+var _idle_time: float = 0.0
+
+## Indicates if an attack animation (handled via Tween) is actively blocking other actions.
 var _is_striking: bool = false
 
+## Coordinates where the tentacle wants to randomly place a held object.
+var _place_target: Vector3 = Vector3.ZERO
 
-## Initializes the enemy's logic state and component signals.
+## The invisible spatial node that drives the actual procedural mesh generation target.
+@onready var tentacle_target: Node3D = $TentacleTarget
+
+## The sphere volume that detects incoming players and objects.
+@onready var detection_area: Area3D = $DetectionArea
+
+## The core health tracking component for this enemy.
+@onready var health_component: HealthComponent = $HealthComponent
+
+
+## Initializes signal connections and starts the tentacle in an upright idle posture.
 func _ready() -> void:
 	print("TentacleEnemy: _ready() - Initializing snake-like enemy.")
+	tentacle_target.position = Vector3(0.0, max_reach * 0.5, 0.0)
+
 	detection_area.body_entered.connect(_on_detection_area_body_entered)
 	detection_area.body_exited.connect(_on_detection_area_body_exited)
-	health_component.died.connect(_on_died)
 
-	tentacle_target.position = Vector3(0.0, max_reach * 0.5, 0.0)
+	if is_instance_valid(health_component):
+		health_component.died.connect(_on_died)
+
 	_switch_state(State.IDLE)
 
 
-## Distributes frame logic to state-specific handler functions.
-## [param delta] Physics frame delta in seconds.
+## Central state machine delegating physics updates for smooth movement.
+## [param delta] The physics step duration in seconds.
 func _physics_process(delta: float) -> void:
+	if _is_striking:
+		_process_attacking(delta)
+		return
+
 	match current_state:
 		State.IDLE:
 			_process_idle(delta)
@@ -91,12 +103,10 @@ func _physics_process(delta: float) -> void:
 			_process_holding(delta)
 		State.SPOTTED:
 			_process_spotted(delta)
-		State.ATTACKING:
-			_process_attacking(delta)
 
 
-## Animates the tentacle in a random sway pattern while looking for targets.
-## [param delta] Frame delta in seconds.
+## Smoothly returns the tentacle to its neutral swaying position.
+## [param delta] The physics step duration in seconds.
 func _process_idle(delta: float) -> void:
 	_idle_time += delta
 
@@ -108,8 +118,8 @@ func _process_idle(delta: float) -> void:
 	tentacle_target.position = tentacle_target.position.lerp(desired_pos, delta * track_speed)
 
 
-## Hovers near physics objects and periodically interacts with them.
-## [param delta] Frame delta in seconds.
+## Hovers menacingly over a toy object and periodically decides to poke or grab it.
+## [param delta] The physics step duration in seconds.
 func _process_playing(delta: float) -> void:
 	_idle_time += delta
 	_interact_timer += delta
@@ -129,13 +139,13 @@ func _process_playing(delta: float) -> void:
 	if _interact_timer >= interact_interval:
 		_interact_timer = 0.0
 		if randf() < 0.25:
-			grab_object(target_toy)
+			grab_object(target_toy as RigidBody3D)
 		else:
-			poke_object(target_toy)
+			poke_object(target_toy as RigidBody3D)
 
 
 ## Carries a physics object through the air to a random local destination.
-## [param delta] Frame delta in seconds.
+## [param delta] The physics step duration in seconds.
 func _process_holding(delta: float) -> void:
 	if not is_instance_valid(held_object):
 		_switch_state(State.IDLE)
@@ -152,7 +162,7 @@ func _process_holding(delta: float) -> void:
 
 
 ## Tracks the player visually and accumulates charge time before executing an attack.
-## [param delta] Frame delta in seconds.
+## [param delta] The physics step duration in seconds.
 func _process_spotted(delta: float) -> void:
 	if not is_instance_valid(target_player):
 		_switch_state(State.IDLE)
@@ -172,7 +182,7 @@ func _process_spotted(delta: float) -> void:
 
 
 ## Locks the position of held rigidbodies directly to the tentacle tip during physics tweens.
-## [param _delta] Frame delta in seconds.
+## [param _delta] The physics step duration in seconds.
 func _process_attacking(_delta: float) -> void:
 	# Ensure the held object perfectly follows the tentacle head during attack/throw animations
 	if is_instance_valid(held_object):
@@ -180,7 +190,7 @@ func _process_attacking(_delta: float) -> void:
 
 
 ## Safely handles transitions between behavior states and resets timers.
-## [param new_state] The target state to enter.
+## [param new_state] The target [enum State] to enter.
 func _switch_state(new_state: State) -> void:
 	if current_state == new_state:
 		return
@@ -212,7 +222,7 @@ func _decide_attack() -> void:
 	if randf() <= throw_attack_chance:
 		var potential_weapons: Array[RigidBody3D] = []
 		for body: Node3D in detection_area.get_overlapping_bodies():
-			if body is PickableObject and not body.is_held:
+			if body is PickableObject and not body.get("is_held"):
 				potential_weapons.append(body as RigidBody3D)
 
 		if not potential_weapons.is_empty():
@@ -227,7 +237,7 @@ func _decide_attack() -> void:
 ## Scans the detection volume specifically for untethered toys to play with.
 func _check_for_pickables() -> void:
 	for body: Node3D in detection_area.get_overlapping_bodies():
-		if body is PickableObject and not body.is_held:
+		if body is PickableObject and not body.get("is_held"):
 			print("TentacleEnemy: _check_for_pickables() - Found a toy to play with.")
 			target_toy = body
 			_switch_state(State.PLAYING)
@@ -378,7 +388,7 @@ func strike_player() -> void:
 		func() -> void:
 			if is_instance_valid(target_player) and target_player.has_method("take_damage"):
 				print("TentacleEnemy: strike_player() - Hit landed.")
-				target_player.take_damage(strike_damage)
+				target_player.call("take_damage", strike_damage)
 	)
 
 	(
@@ -398,7 +408,7 @@ func strike_player() -> void:
 
 
 ## Evaluates objects entering the territory to determine threat response.
-## [param body] The [Node3D] that entered.
+## [param body] The [Node3D] that entered the detection area.
 func _on_detection_area_body_entered(body: Node3D) -> void:
 	if body.is_in_group("player"):
 		print("TentacleEnemy: Player entered territory. Initiating hostility.")
@@ -410,14 +420,14 @@ func _on_detection_area_body_entered(body: Node3D) -> void:
 			_switch_state(State.SPOTTED)
 
 	elif body is PickableObject and current_state == State.IDLE:
-		if body.is_held:
+		if body.get("is_held"):
 			return
 		target_toy = body
 		_switch_state(State.PLAYING)
 
 
 ## Cleans up target references when entities leave the volume.
-## [param body] The [Node3D] that exited.
+## [param body] The [Node3D] that exited the detection area.
 func _on_detection_area_body_exited(body: Node3D) -> void:
 	if body == target_player:
 		print("TentacleEnemy: Player left detection radius.")
