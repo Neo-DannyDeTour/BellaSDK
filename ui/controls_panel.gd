@@ -399,16 +399,17 @@ func _update_slot_button_text(button: Button, action: String, slot_index: int) -
 	# 2. Render Chord combination icons or single event icon
 	if target_ev.has_meta("chord_keys"):
 		var keys_array: Array = target_ev.get_meta("chord_keys") as Array
+		var is_ordered: bool = gesture == "ordered_chord"
 		for i: int in range(keys_array.size()):
 			var key_id: int = keys_array[i] as int
 			var ev: InputEvent = _create_event_from_id(key_id)
 			container.add_child(_create_event_display_node(ev))
 
 			if i < keys_array.size() - 1:
-				var plus_label: Label = Label.new()
-				plus_label.text = "+"
-				plus_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-				container.add_child(plus_label)
+				var separator_label: Label = Label.new()
+				separator_label.text = " → " if is_ordered else " + "
+				separator_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				container.add_child(separator_label)
 	else:
 		container.add_child(_create_event_display_node(target_ev))
 
@@ -562,14 +563,16 @@ func _process_gesture_event(clean_event: InputEvent, is_pressed: bool) -> void:
 					remapping_button.text = "Waiting next tap..."
 
 
-## Finalizes chord assignment using the base anchor event and chord metadata.
+## Finalizes chord assignment maintaining exact sequential press order.
+## The earlier elements represent held modifiers, and the last element is the trigger key.
 func _finalize_chord_remap() -> void:
-	var base_event: InputEvent = _chord_events[0]
+	var base_event: InputEvent = _chord_events[_chord_events.size() - 1]
 	var key_ids: Array[int] = []
 	for ev: InputEvent in _chord_events:
 		key_ids.append(_get_unique_event_id(ev))
 
-	base_event.set_meta("gesture", "chord")
+	print("System: Finalizing ordered chord with sequence IDs: ", key_ids)
+	base_event.set_meta("gesture", "ordered_chord")
 	base_event.set_meta("chord_keys", key_ids)
 	_finalize_gesture_remap(base_event)
 

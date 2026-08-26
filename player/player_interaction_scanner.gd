@@ -73,7 +73,7 @@ func process_interaction(_delta: float) -> void:
 		if current_interactable.has_method("hover_cursor"):
 			current_interactable.hover_cursor(player_body, hit_point)
 
-		if Input.is_action_pressed("interact"):
+		if GestureInputManager.is_action_pressed("interact"):
 			var is_hands_empty: bool = true
 			if is_instance_valid(master_component) and master_component.get("held_item") != null:
 				is_hands_empty = false
@@ -221,10 +221,10 @@ func exit_terminal_mode() -> void:
 
 func _should_exit_terminal_mode() -> bool:
 	if (
-		Input.is_action_pressed("forward")
-		or Input.is_action_pressed("backward")
-		or Input.is_action_pressed("left")
-		or Input.is_action_pressed("right")
+		GestureInputManager.is_action_pressed("forward")
+		or GestureInputManager.is_action_pressed("backward")
+		or GestureInputManager.is_action_pressed("left")
+		or GestureInputManager.is_action_pressed("right")
 	):
 		return true
 

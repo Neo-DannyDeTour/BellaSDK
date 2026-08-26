@@ -142,27 +142,24 @@ var noclip_label_message: Label = $NoclipAlertContainer/NoclipMessageContainer/N
 ## Label displaying the actual contents of the read note.
 @onready var note_text_label: RichTextLabel = $NoteOverlayUI/NoteText
 
+# --- DEBUFF & SURFACE INDICATOR UI PATHS ---
 ## Container managing the layout of the sprint debuff UI.
-@onready var debuff_container: HBoxContainer = $HealthMargin/VBoxContainer/DebuffContainer
+@onready var sprint_debuff_container: Control = $HealthMargin/VBoxContainer/SprintDebuff
 
-## Icon indicating the sprint blocked debuff is active.
-@onready
-var sprint_debuff_icon: TextureRect = $HealthMargin/VBoxContainer/DebuffContainer/SprintDebuffIcon
-
-## Progress bar showing the remaining duration of the sprint debuff.
-@onready
-var sprint_debuff_bar: ProgressBar = $HealthMargin/VBoxContainer/DebuffContainer/SprintDebuffBar
+## Texture progress bar layered over the sprint debuff icon.
+@onready var sprint_icon: TextureProgressBar = $HealthMargin/VBoxContainer/SprintDebuff/DebuffBar
 
 ## Container managing the layout of the immobilize debuff UI.
-@onready var immobilize_container: HBoxContainer = $HealthMargin/VBoxContainer/ImmobilizeContainer
+@onready var immobilize_container: Control = $HealthMargin/VBoxContainer/ImmobilizeDebuff
 
-## Icon indicating the immobilize debuff is active.
-@onready
-var immobilize_icon: TextureRect = $HealthMargin/VBoxContainer/ImmobilizeContainer/ImmobilizeIcon
+## Texture progress bar layered over the immobilize debuff icon.
+@onready var move_icon: TextureProgressBar = $HealthMargin/VBoxContainer/ImmobilizeDebuff/DebuffBar
 
-## Progress bar showing the remaining duration of the immobilize debuff.
-@onready
-var immobilize_bar: ProgressBar = $HealthMargin/VBoxContainer/ImmobilizeContainer/ImmobilizeBar
+## Container managing the layout of the sand sprint-restriction indicator.
+@onready var sand_indicator: Control = $HealthMargin/VBoxContainer/SandIndicator
+
+## Container managing the layout of the ice skating indicator.
+@onready var ice_indicator: Control = $HealthMargin/VBoxContainer/IceIndicator
 
 ## CanvasGroup for grouping the warning/hint text UI.
 @onready var warning_canvas_group: CanvasGroup = $WarningCanvasGroup
@@ -256,7 +253,7 @@ func _ready() -> void:
 	if not KeycardSystem.card_used.is_connected(_on_card_used):
 		KeycardSystem.card_used.connect(_on_card_used)
 
-	debuff_container.hide()
+	sprint_debuff_container.hide()
 	immobilize_container.hide()
 
 	if warning_label:
@@ -285,6 +282,11 @@ func _ready() -> void:
 
 	if note_overlay_ui != null:
 		note_overlay_ui.hide()
+
+	if sand_indicator:
+		sand_indicator.hide()
+	if ice_indicator:
+		ice_indicator.hide()
 
 
 ## Initializes the default label text for all debug panel toggle buttons.
@@ -354,6 +356,10 @@ func _connect_ui_signals() -> void:
 		Events.note_opened.connect(_on_note_opened)
 	if not Events.note_closed.is_connected(_on_note_closed):
 		Events.note_closed.connect(_on_note_closed)
+	if not Events.sand_surface_toggled.is_connected(_on_sand_surface_toggled):
+		Events.sand_surface_toggled.connect(_on_sand_surface_toggled)
+	if not Events.ice_surface_toggled.is_connected(_on_ice_surface_toggled):
+		Events.ice_surface_toggled.connect(_on_ice_surface_toggled)
 
 
 ## Repositions hint and warning notifications relative to the screen center.
@@ -942,20 +948,21 @@ func _on_sprint_debuff_applied(duration: float) -> void:
 			+ " seconds."
 		)
 	)
-	debuff_container.show()
+	sprint_debuff_container.show()
 	is_sprint_blocked = true
 
-	sprint_debuff_bar.max_value = duration
-	sprint_debuff_bar.value = duration
+	sprint_icon.max_value = duration
+	sprint_icon.value = duration
 
 	if debuff_tween and debuff_tween.is_valid():
 		debuff_tween.kill()
 
 	debuff_tween = create_tween()
-	debuff_tween.tween_property(sprint_debuff_bar, "value", 0.0, duration)
+	debuff_tween.tween_property(sprint_icon, "value", 0.0, duration)
 	debuff_tween.finished.connect(
 		func() -> void:
-			debuff_container.hide()
+			print("UIController: Sprint debuff expired. Hiding UI.")
+			sprint_debuff_container.hide()
 			is_sprint_blocked = false
 	)
 
@@ -973,16 +980,17 @@ func _on_immobilize_debuff_applied(duration: float) -> void:
 	immobilize_container.show()
 	is_immobilized = true
 
-	immobilize_bar.max_value = duration
-	immobilize_bar.value = duration
+	move_icon.max_value = duration
+	move_icon.value = duration
 
 	if immobilize_tween and immobilize_tween.is_valid():
 		immobilize_tween.kill()
 
 	immobilize_tween = create_tween()
-	immobilize_tween.tween_property(immobilize_bar, "value", 0.0, duration)
+	immobilize_tween.tween_property(move_icon, "value", 0.0, duration)
 	immobilize_tween.finished.connect(
 		func() -> void:
+			print("UIController: Immobilize debuff expired. Hiding UI.")
 			immobilize_container.hide()
 			is_immobilized = false
 	)
@@ -1074,3 +1082,19 @@ func _trigger_heal_effect() -> void:
 		heal_tween.tween_property(heal_vignette, "modulate:a", 0.0, 0.4)
 
 	heal_tween.finished.connect(heal_vignette.hide)
+
+
+## Toggles visibility of the sand sprint-restriction icon.
+## [param is_active] True if the player is currently on sand.
+func _on_sand_surface_toggled(is_active: bool) -> void:
+	print("UIController: Sand surface state toggled -> ", is_active)
+	if sand_indicator:
+		sand_indicator.visible = is_active
+
+
+## Toggles visibility of the ice skating icon.
+## [param is_active] True if the player is currently on ice.
+func _on_ice_surface_toggled(is_active: bool) -> void:
+	print("UIController: Ice surface state toggled -> ", is_active)
+	if ice_indicator:
+		ice_indicator.visible = is_active

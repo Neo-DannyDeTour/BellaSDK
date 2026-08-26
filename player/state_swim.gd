@@ -108,7 +108,7 @@ func _apply_swim_velocity(delta: float, input_dir: Vector2) -> void:
 	just_water_jumped = false
 
 	# 1. Handle Vaulting or Jumping Out
-	if Input.is_action_just_pressed("jump") and not head_in_water:
+	if GestureInputManager.is_action_just_pressed("jump") and not head_in_water:
 		var vault_ctrl: Node = player.environment_component.vault_controller
 		vault_ctrl.process_vault_scan()
 
@@ -129,10 +129,10 @@ func _apply_swim_velocity(delta: float, input_dir: Vector2) -> void:
 			return
 
 	# 2. Handle Vertical Swimming (Up / Down)
-	if Input.is_action_pressed("jump") and head_in_water:
+	if GestureInputManager.is_action_pressed("jump") and head_in_water:
 		target_velocity.y = loco.swim_up_speed
 		actively_swimming_vertical = true
-	elif Input.is_action_pressed("crouch") and (head_in_water or chest_in_water):
+	elif GestureInputManager.is_action_pressed("crouch") and (head_in_water or chest_in_water):
 		target_velocity.y = -loco.swim_up_speed
 		actively_swimming_vertical = true
 

@@ -159,7 +159,7 @@ func _handle_climbing_and_swinging(delta: float, input_dir: Vector2) -> void:
 
 	var is_pressing_w: bool = input_dir.y < -0.1
 	var is_pressing_s: bool = input_dir.y > 0.1
-	var is_sliding: bool = Input.is_action_pressed("crouch") and is_looking_down
+	var is_sliding: bool = GestureInputManager.is_action_pressed("crouch") and is_looking_down
 
 	var intent_is_climbing: bool = false
 	var climb_direction: float = 0.0

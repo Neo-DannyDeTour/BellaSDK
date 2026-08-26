@@ -231,6 +231,14 @@ signal subtitle_show_names_toggled(enabled: bool)
 @warning_ignore("unused_signal")
 signal subtitle_speaker_color_changed(color_key: String)
 
+## Emitted when the player enters or exits a surface that blocks sprinting (e.g., sand).
+@warning_ignore("unused_signal")
+signal sand_surface_toggled(is_active: bool)
+
+## Emitted when the player enters or exits a low-friction surface (e.g., ice).
+@warning_ignore("unused_signal")
+signal ice_surface_toggled(is_active: bool)
+
 ## Visual animation style presets for chapter title card sequences.
 enum ChapterAnimStyle {
 	SIMPLE,

@@ -181,7 +181,7 @@ func _physics_process(delta: float) -> void:
 		if is_instance_valid(loop_audio) and loop_audio.playing:
 			loop_audio.global_position = attached_player.global_position
 
-		if attach_timer > 0.15 and Input.is_action_just_pressed("interact"):
+		if attach_timer > 0.15 and GestureInputManager.is_action_just_pressed("interact"):
 			detach(false)
 			return
 

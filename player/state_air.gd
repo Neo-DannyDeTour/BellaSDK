@@ -232,7 +232,7 @@ func _check_transitions() -> void:
 		return
 
 	var is_holding_item: bool = is_instance_valid(interact.held_item)
-	var is_pressing_forward: bool = Input.is_action_pressed("forward")
+	var is_pressing_forward: bool = GestureInputManager.is_action_pressed("forward")
 
 	# Enforce forward input requirement to prevent backwards mid-air vaulting
 	if (

@@ -1,7 +1,7 @@
 ## Global autoload managing the persistent save state of user preferences.
 ##
 ## [GlobalSettings] reads and writes values to a `.cfg` file on disk. It handles
-## applying startup configurations like window scales, inputs, and colorblind modes.
+## applying startup configurations like window scales, inputs, screen filters, and colorblind modes.
 extends Node
 
 ## The file path where user preferences are saved locally on the player's disk.
@@ -36,6 +36,50 @@ const FONT_REGISTRY: Array[Dictionary] = [
 	{"id": "super_funky", "name": "Super Funky", "path": "res://assets/fonts/Super Funky.ttf"}
 ]
 
+## Single source of truth for all post-process screen filters and metadata.
+const SCREEN_FILTER_REGISTRY: Array[Dictionary] = [
+	{"id": "off", "name": "Off", "index": 0, "path": ""},
+	{"id": "crt", "name": "CRT", "index": 1, "path": "res://vfx/crt.gdshader"},
+	{"id": "vhs", "name": "VHS", "index": 2, "path": "res://vfx/vhs.gdshader"},
+	{"id": "pixelate", "name": "Pixelate", "index": 3, "path": "res://vfx/pixelate.gdshader"},
+	{"id": "toon", "name": "Toon", "index": 4, "path": "res://vfx/toon.gdshader"},
+	{"id": "gameboy", "name": "Gameboy", "index": 5, "path": "res://vfx/gameboy.gdshader"},
+	{"id": "glitch", "name": "Glitch", "index": 6, "path": "res://vfx/glitch.gdshader"},
+	{"id": "grain", "name": "Grain", "index": 7, "path": "res://environment/grain.gdshader"},
+	{"id": "halftone", "name": "Halftone", "index": 8, "path": "res://vfx/halftone.gdshader"},
+	{
+		"id": "nightvision",
+		"name": "Nightvision",
+		"index": 9,
+		"path": "res://vfx/nightvision.gdshader"
+	},
+	{"id": "kuwahara", "name": "Kuwahara", "index": 10, "path": "res://vfx/kuwahara.gdshader"},
+	{"id": "ascii", "name": "ASCII", "index": 11, "path": "res://vfx/ascii.gdshader"},
+	{"id": "90anime", "name": "90Anime", "index": 12, "path": "res://vfx/90anime.gdshader"},
+	{"id": "manga", "name": "Manga", "index": 13, "path": "res://vfx/manga.gdshader"},
+	{"id": "handdrawn", "name": "Handdrawn", "index": 14, "path": "res://vfx/handdrawn.gdshader"},
+	{"id": "moebius", "name": "Moebius", "index": 15, "path": "res://vfx/moebius.gdshader"},
+	{"id": "obra", "name": "Obra", "index": 16, "path": "res://vfx/obra.gdshader"},
+	{
+		"id": "psychedelic",
+		"name": "Psychedelic",
+		"index": 17,
+		"path": "res://vfx/psychedelic.gdshader"
+	},
+	{"id": "botw", "name": "BotW", "index": 18, "path": "res://vfx/botw.gdshader"},
+	{"id": "ghibli", "name": "Ghibli", "index": 19, "path": "res://vfx/ghibli.gdshader"},
+	{"id": "reaction", "name": "Reaction", "index": 20, "path": "res://vfx/reaction.gdshader"},
+	{"id": "software", "name": "Software", "index": 21, "path": "res://vfx/software.gdshader"},
+	{"id": "swirl", "name": "Swirl", "index": 22, "path": "res://vfx/swirl.gdshader"},
+	{
+		"id": "mandelbrot",
+		"name": "Mandelbrot",
+		"index": 23,
+		"path": "res://vfx/mandelbrot.gdshader"
+	},
+	{"id": "80sfantasy", "name": "80sFantasy", "index": 24, "path": "res://vfx/80sfantasy.gdshader"}
+]
+
 
 ## Called automatically upon instantiation.
 ## Populates the internal [ConfigFile] before other autoloads can read from it.
@@ -62,7 +106,7 @@ func _load_all_settings() -> void:
 
 ## Broadcasts signals and sets global variables for visual options like UI scaling and fonts.
 func _apply_boot_settings() -> void:
-	print("System: Applying boot settings (UI scale, fonts, colorblind).")
+	print("System: Applying boot settings (UI scale, fonts, colorblind, screen filters).")
 	var ui_scale: float = get_setting("Settings", "ui_scale", 1.0) as float
 	get_window().content_scale_factor = ui_scale
 
@@ -74,6 +118,11 @@ func _apply_boot_settings() -> void:
 
 		var saved_cb: int = get_setting("Settings", "colorblind_mode", 0) as int
 		Events.colorblind_mode_changed.emit(saved_cb)
+
+		var saved_filter_idx: int = get_setting("Settings", "screen_filter", 0) as int
+		var filter_ids: Array[String] = get_screen_filter_ids()
+		if saved_filter_idx >= 0 and saved_filter_idx < filter_ids.size():
+			Events.screen_filter_changed.emit(filter_ids[saved_filter_idx])
 
 
 ## Overwrites the default Godot [InputMap] with any saved keybind overrides.
@@ -146,3 +195,45 @@ func get_font_index(font_id: String) -> int:
 		if FONT_REGISTRY[i]["id"] == font_id:
 			return i
 	return 0
+
+
+## Returns the list of UI display names for screen filters.
+## [return] [Array] of formatted filter strings.
+func get_screen_filter_display_names() -> Array[String]:
+	print("GlobalSettings: Fetching screen filter display names.")
+	var names: Array[String] = []
+	for item: Dictionary in SCREEN_FILTER_REGISTRY:
+		names.append(item.get("name", "") as String)
+	return names
+
+
+## Returns the list of string IDs for console and bus arguments.
+## [return] [Array] of lowercase ID strings.
+func get_screen_filter_ids() -> Array[String]:
+	print("GlobalSettings: Fetching screen filter IDs.")
+	var ids: Array[String] = []
+	for item: Dictionary in SCREEN_FILTER_REGISTRY:
+		ids.append(item.get("id", "") as String)
+	return ids
+
+
+## Resolves the diorama shader mode integer from a filter ID.
+## [param filter_id] Target filter identifier string.
+## [return] Corresponding integer index for the shader.
+func get_screen_filter_index(filter_id: String) -> int:
+	var clean_id: String = filter_id.to_lower()
+	for item: Dictionary in SCREEN_FILTER_REGISTRY:
+		if (item.get("id", "") as String) == clean_id:
+			return item.get("index", 0) as int
+	return 0
+
+
+## Resolves the shader file resource path from a filter ID.
+## [param filter_id] Target filter identifier string.
+## [return] Resource file path string.
+func get_screen_filter_path(filter_id: String) -> String:
+	var clean_id: String = filter_id.to_lower()
+	for item: Dictionary in SCREEN_FILTER_REGISTRY:
+		if (item.get("id", "") as String) == clean_id:
+			return item.get("path", "") as String
+	return ""

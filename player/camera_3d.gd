@@ -1,4 +1,5 @@
-## Extends the base Camera3D to manage active audio listening and visual assist shaders.
+## Extends the base Camera3D to manage active audio listening,
+## screenshake, and visual assist shaders.
 class_name ExtendedCamera3D
 extends Camera3D
 
@@ -54,7 +55,7 @@ func _ready() -> void:
 		var events: Node = get_node("/root/Events")
 		if events.has_signal("screenshake_requested") and is_player_camera:
 			events.screenshake_requested.connect(_on_screenshake_requested)
-		if events.has_signal("vision_assist_toggled"):
+		if events.has_signal("vision_assist_toggled") and is_player_camera:
 			events.vision_assist_toggled.connect(_on_vision_assist_toggled)
 		if events.has_signal("vision_assist_mode_changed"):
 			events.vision_assist_mode_changed.connect(set_vision_assist_mode)
@@ -117,10 +118,11 @@ func _apply_shake(delta: float) -> void:
 	rotation_degrees.z = max_roll_z * shake_power * _noise.get_noise_2d(_time_passed, 200.0)
 
 
-## Triggers an impulse of screenshake trauma.
+## Triggers an impulse of screenshake trauma from global event bus requests.
 ## [param intensity] The peak magnitude of the screenshake displacement.
 ## [param duration] How long in seconds the shake takes to settle back to zero.
 func _on_screenshake_requested(intensity: float, duration: float) -> void:
+	print("Camera3D: [", name, "] Received screenshake request. Intensity: ", intensity)
 	_amplitude = maxf(_amplitude, clampf(intensity, 0.0, 16.0))
 	_trauma = 1.0
 	_decay_rate = 1.0 / duration if duration > 0.0 else 1.0

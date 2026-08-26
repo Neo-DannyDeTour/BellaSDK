@@ -51,6 +51,12 @@ metadata/_custom_type_script = "uid://dgig0tamvkdxx"
 billboard = 1
 no_depth_test = true
 
+[node name="PromptIcon" type="Sprite3D" parent="." unique_id=931149645]
+pixel_size = 0.002
+billboard = 1
+double_sided = false
+no_depth_test = true
+
 [node name="ProbeContainer" type="Node3D" parent="." unique_id=719013281]
 
 [node name="Marker3D" type="Marker3D" parent="ProbeContainer" unique_id=1977258969]

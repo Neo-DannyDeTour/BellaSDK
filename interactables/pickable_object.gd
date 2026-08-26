@@ -11,6 +11,8 @@ extends RigidBody3D
 @export var mesh: Node3D
 ## The floating [Label3D] used to display interaction prompts.
 @export var label: Label3D
+## The [Sprite3D] used to render prompt icon textures beside the label.
+@export var prompt_icon: Sprite3D
 
 ## Visual component used to apply outlines or highlights when focused.
 @onready var highlight_comp: HighlightComponent = $HighlightComponent
@@ -61,6 +63,12 @@ var is_held: bool = false
 var hold_target: Marker3D = null
 ## The [Node3D] entity currently holding the object.
 var holder: Node3D = null
+
+## Base directory path where Kenney input prompt icons are stored.
+const ICON_BASE_PATH: String = "res://assets/kenney_input-prompts_1.5/Keyboard & Mouse/Default/"
+
+## Cached resolved icon paths mapped to avoid disk checks during gameplay.
+var _icon_path_cache: Dictionary = {}
 
 # --- GLOBAL STATE TRACKING ---
 ## Indicates if the [PickableObject] is currently locked and cannot be interacted with.
@@ -113,6 +121,8 @@ func _ready() -> void:
 		mesh = $Mesh
 	if not is_instance_valid(label):
 		label = $Label3D
+	if not is_instance_valid(prompt_icon):
+		prompt_icon = get_node_or_null("PromptIcon") as Sprite3D
 	if not is_instance_valid(probe_container):
 		probe_container = $ProbeContainer
 
@@ -193,6 +203,8 @@ func pick_up(target: Marker3D, player_node: Node3D) -> void:
 
 	if is_instance_valid(label):
 		label.hide()
+	if is_instance_valid(prompt_icon):
+		prompt_icon.hide()
 
 	linear_velocity = Vector3.ZERO
 	angular_velocity = Vector3.ZERO
@@ -367,53 +379,64 @@ func _on_interact_component_focused() -> void:
 			mesh.material_overlay = null
 		return
 
+	_update_label_text()
 	if is_instance_valid(label):
-		_update_label_text()
 		label.show()
+	if is_instance_valid(prompt_icon) and prompt_icon.texture != null:
+		prompt_icon.show()
 
-		# Broadcast the custom TTS text to the Event Bus (visual label remains untouched)
-		if Events.has_signal("object_focused") and not _is_tts_cooldown:
-			var mesh_name: String = _get_clean_mesh_name()
-			var tts_prompt: String = label.text + " " + mesh_name
+	if Events.has_signal("object_focused") and not _is_tts_cooldown:
+		var events: Array[InputEvent] = InputMap.action_get_events("interact")
+		var key_name: String = ""
+		if not events.is_empty():
+			key_name = InputHelper.sanitize_key_name(events[0].as_text())
 
-			print("PickableObject: Emitting TTS prompt -> ", tts_prompt)
-			# Pass 'mesh' as the caller so it generates a distinct ID from the parent body,
-			# avoiding duplicate ID rejections if InteractComponent also emits blindly.
-			Events.object_focused.emit(tts_prompt, mesh)
+		var mesh_name: String = _get_clean_mesh_name()
+		var tts_prompt: String = (
+			"Press %s to grab %s" % [key_name, mesh_name]
+			if not key_name.is_empty()
+			else "Grab %s" % mesh_name
+		)
+		Events.object_focused.emit(tts_prompt, mesh)
 
 
-## Formats the floating [Label3D] to display the correct interaction key prompt.
+## Formats the floating [Label3D] and [Sprite3D] icon using the [InputHelper] autoload.
 func _update_label_text() -> void:
-	if not is_instance_valid(label):
-		return
-
-	print("PickableObject: _update_label_text() called. Formatting interact prompt.")
+	print("PickableObject: _update_label_text() called. Updating visual prompts.")
 	var events: Array[InputEvent] = InputMap.action_get_events("interact")
 	var key_name: String = "???"
+	var icon_tex: Texture2D = null
 
-	if events.size() > 0:
-		var raw_text: String = events[0].as_text()
-		key_name = (
-			raw_text
-			. replace(" (Physical)", "")
-			. replace(" - Physical", "")
-			. replace(" (Physics)", "")
-			. replace(" - Physics", "")
-			. replace("Left Mouse Button", "LMB")
-			. replace("Right Mouse Button", "RMB")
-			. replace("Middle Mouse Button", "MMB")
-			. strip_edges()
-		)
+	if not events.is_empty():
+		var primary_event: InputEvent = events[0]
+		key_name = InputHelper.sanitize_key_name(primary_event.as_text())
+		icon_tex = InputHelper.get_event_icon(primary_event)
 
-	# Format the label to be highly descriptive for the player
-	label.text = "Press [%s] to grab" % [key_name]
+	if is_instance_valid(prompt_icon):
+		prompt_icon.texture = icon_tex
+		prompt_icon.visible = (icon_tex != null)
+
+	if is_instance_valid(label):
+		if icon_tex != null:
+			label.text = "Press    to grab"
+			label.position.x = 0.0
+
+			if is_instance_valid(prompt_icon):
+				# Centered at 0.0 to match the centered Label3D text gap
+				prompt_icon.position.x = 0.0
+				prompt_icon.position.y = label.position.y
+		else:
+			label.text = "Press [%s] to grab" % key_name
+			label.position.x = 0.0
 
 
-## Called when the player looks away. Removes the highlight and hides the label.
+## Called when the player looks away. Removes the highlight and hides the label and icon.
 func _on_interact_component_unfocused() -> void:
 	print("PickableObject: _on_interact_component_unfocused() called. Removing highlight.")
 	if is_instance_valid(label):
 		label.hide()
+	if is_instance_valid(prompt_icon):
+		prompt_icon.hide()
 
 
 ## Processes object movement towards the hold target or applies buoyancy forces when in water.
@@ -692,3 +715,96 @@ func _get_clean_mesh_name() -> String:
 		return "object"
 
 	return final_name
+
+
+## Resolves an [InputEvent] to a valid file path of a matching Kenney icon texture.
+## Returns an empty [String] if no matching icon is found on disk.
+func _get_event_icon_path(event: InputEvent) -> String:
+	print("PickableObject: _get_event_icon_path() resolving icon for ", event.as_text())
+	var possible_filenames: Array[String] = []
+
+	if event is InputEventKey:
+		var key_event: InputEventKey = event as InputEventKey
+		var code: Key = (
+			key_event.physical_keycode
+			if key_event.physical_keycode != KEY_NONE
+			else key_event.keycode
+		)
+		var key_str: String = OS.get_keycode_string(code).to_lower()
+
+		match code:
+			KEY_SPACE:
+				possible_filenames.append("keyboard_space.png")
+				possible_filenames.append("keyboard_space_icon.png")
+			KEY_ENTER:
+				possible_filenames.append("keyboard_return.png")
+				possible_filenames.append("keyboard_enter.png")
+			KEY_SHIFT:
+				possible_filenames.append("keyboard_shift.png")
+			KEY_CTRL:
+				possible_filenames.append("keyboard_ctrl.png")
+			KEY_ALT:
+				possible_filenames.append("keyboard_alt.png")
+			KEY_TAB:
+				possible_filenames.append("keyboard_tab.png")
+			KEY_ESCAPE:
+				possible_filenames.append("keyboard_escape.png")
+			KEY_BACKSPACE:
+				possible_filenames.append("keyboard_backspace.png")
+			KEY_CAPSLOCK:
+				possible_filenames.append("keyboard_capslock.png")
+			KEY_SLASH:
+				possible_filenames.append("keyboard_slash_forward.png")
+			KEY_BACKSLASH:
+				possible_filenames.append("keyboard_slash_back.png")
+			KEY_SEMICOLON:
+				possible_filenames.append("keyboard_semicolon.png")
+			KEY_PERIOD:
+				possible_filenames.append("keyboard_period.png")
+			KEY_COMMA:
+				possible_filenames.append("keyboard_comma.png")
+			KEY_MINUS:
+				possible_filenames.append("keyboard_minus.png")
+			KEY_EQUAL:
+				possible_filenames.append("keyboard_equals.png")
+			_:
+				if key_str.length() == 1:
+					possible_filenames.append("keyboard_%s.png" % key_str)
+					possible_filenames.append("keyboard_%s_outline.png" % key_str)
+
+	elif event is InputEventMouseButton:
+		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
+		match mouse_event.button_index:
+			MOUSE_BUTTON_LEFT:
+				possible_filenames.append("mouse_left.png")
+				possible_filenames.append("mouse_left_click.png")
+			MOUSE_BUTTON_RIGHT:
+				possible_filenames.append("mouse_right.png")
+				possible_filenames.append("mouse_right_click.png")
+			MOUSE_BUTTON_MIDDLE:
+				possible_filenames.append("mouse_middle.png")
+				possible_filenames.append("mouse_scroll.png")
+			MOUSE_BUTTON_WHEEL_UP:
+				possible_filenames.append("mouse_scroll_up.png")
+			MOUSE_BUTTON_WHEEL_DOWN:
+				possible_filenames.append("mouse_scroll_down.png")
+
+	if possible_filenames.is_empty():
+		return ""
+
+	for file_name: String in possible_filenames:
+		var candidate_paths: Array[String] = [
+			ICON_BASE_PATH + file_name,
+			ICON_BASE_PATH + "Keyboard/" + file_name,
+			ICON_BASE_PATH + "Mouse/" + file_name
+		]
+
+		for full_path: String in candidate_paths:
+			if _icon_path_cache.has(full_path):
+				return _icon_path_cache[full_path] as String
+
+			if ResourceLoader.exists(full_path):
+				_icon_path_cache[full_path] = full_path
+				return full_path
+
+	return ""

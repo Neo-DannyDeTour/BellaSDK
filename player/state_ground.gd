@@ -99,7 +99,7 @@ func physics_update(delta: float) -> void:
 
 	# 2. Read Inputs FIRST
 	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
-	if Input.is_action_pressed("zoom"):
+	if GestureInputManager.is_action_pressed("zoom"):
 		input_dir = Vector2.ZERO
 
 	# 3. Handle Jump / Vault Logic via GestureInputManager

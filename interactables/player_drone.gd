@@ -117,14 +117,14 @@ func _physics_process(delta: float) -> void:
 
 
 func _process_movement(delta: float) -> void:
-	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
+	var input_dir: Vector2 = GestureInputManager.get_vector("left", "right", "forward", "backward")
 
 	var direction: Vector3 = (transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
 
 	var vert_input: float = 0.0
-	if Input.is_action_pressed("jump"):
+	if GestureInputManager.is_action_pressed("jump"):
 		vert_input += 1.0
-	if Input.is_action_pressed("crouch"):
+	if GestureInputManager.is_action_pressed("crouch"):
 		vert_input -= 1.0
 
 	if direction:

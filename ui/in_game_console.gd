@@ -84,37 +84,12 @@ var valid_commands: Array[String] = [
 
 ## A list of valid arguments specifically for the colorblind command.
 var valid_colorblind_args: Array[String] = [
-	"normal", "protanopia", "deuteranopia", "tritanopia", "mono", "achromatopsia"
+	"normal", "protanopia", "deuteranopia", "tritanopia", "mono", "achromatopsia", "split"
 ]
 ## A list of valid font choices for the setfont command.
 var valid_font_args: Array[String] = ["default", "dyslexic", "papyrus", "comic"]
 ## A list of valid screen filter shaders for the screenfilter command.
-var valid_screenfilter_args: Array[String] = [
-	"off",
-	"crt",
-	"vhs",
-	"pixelate",
-	"toon",
-	"gameboy",
-	"glitch",
-	"grain",
-	"halftone",
-	"nightvision",
-	"kuwahara",
-	"ascii",
-	"90anime",
-	"manga",
-	"handdrawn",
-	"moebius",
-	"obra",
-	"psychedelic",
-	"botw",
-	"ghibli",
-	"reaction",
-	"software",
-	"swirl",
-	"mandelbrot"
-]
+var valid_screenfilter_args: Array[String] = []
 ## A list of valid death screen effect names for the deathscreen command.
 var valid_deathscreen_args: Array[String] = ["ecg", "cave", "lava", "static"]
 
@@ -145,6 +120,7 @@ func _ready() -> void:
 
 	if is_instance_valid(GlobalSettings):
 		valid_font_args = GlobalSettings.get_font_ids()
+		valid_screenfilter_args = GlobalSettings.get_screen_filter_ids()
 
 	panel = PanelContainer.new()
 	panel.set_anchors_preset(Control.PRESET_RIGHT_WIDE)
@@ -617,9 +593,9 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 			write("do not care")
 		"colorblind":
 			if args.size() > 0:
-				var mode: String = args[0].to_lower()
+				var mode_arg: String = args[0].to_lower()
 				var material: ShaderMaterial = colorblind_rect.material as ShaderMaterial
-				match mode:
+				match mode_arg:
 					"off", "normal":
 						material.set_shader_parameter("mode", 0)
 						write("Colorblind filter disabled.", "green")
@@ -635,13 +611,25 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 					"achromatopsia", "mono":
 						material.set_shader_parameter("mode", 4)
 						write("Achromatopsia (Monochrome) filter enabled.", "green")
+					"split", "all", "debug":
+						material.set_shader_parameter("mode", 5)
+						write("4-Way Colorblind comparison mode enabled.", "green")
 					_:
 						write(
-							"Unknown type. Try: normal, protanopia, deuteranopia, tritanopia", "red"
+							(
+								"Unknown type. Try: normal, protanopia, "
+								+ "deuteranopia, tritanopia, mono, split"
+							),
+							"red"
 						)
 			else:
 				write(
-					"Usage: colorblind <type>\nTypes: normal, protanopia, deuteranopia...", "yellow"
+					(
+						"Usage: colorblind <type>\n"
+						+ "Types: normal, protanopia, deuteranopia, "
+						+ "tritanopia, mono, split"
+					),
+					"yellow"
 				)
 		"gamespeed":
 			if is_debug_allowed:
@@ -737,12 +725,11 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 					screen_filter_rect.visible = false
 					write("Screen filter disabled.", "green")
 				elif filter_type in valid_screenfilter_args:
-					var shader_path: String = ""
+					var shader_path: String = GlobalSettings.get_screen_filter_path(filter_type)
 
-					if filter_type == "grain":
-						shader_path = "res://environment/grain.gdshader"
-					else:
-						shader_path = "res://vfx/" + filter_type + ".gdshader"
+					if shader_path == "":
+						write("No shader path mapped for: " + filter_type, "red")
+						return
 
 					if not cached_shaders.has(filter_type):
 						if ResourceLoader.exists(shader_path):
@@ -758,9 +745,12 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 					screen_filter_rect.visible = true
 					write(filter_type.to_upper() + " filter enabled.", "green")
 				else:
-					write("Unknown filter. Available: off, crt, vhs, pixelate, toon...", "red")
+					write("Unknown filter. Available: " + ", ".join(valid_screenfilter_args), "red")
 			else:
-				write("Usage: screenfilter <type>\nAvailable: off, crt, vhs, pixelate...", "yellow")
+				write(
+					"Usage: screenfilter <type>\nAvailable: " + ", ".join(valid_screenfilter_args),
+					"yellow"
+				)
 		"visionassist":
 			if args.size() == 0:
 				toggle_states["visionassist"] = !toggle_states["visionassist"]
@@ -911,11 +901,10 @@ func _on_ui_screen_filter_changed(filter_name: String) -> void:
 		screen_filter_rect.visible = false
 		return
 
-	var shader_path: String = (
-		"res://environment/grain.gdshader"
-		if clean_filter == "grain"
-		else "res://vfx/" + clean_filter + ".gdshader"
-	)
+	var shader_path: String = GlobalSettings.get_screen_filter_path(clean_filter)
+	if shader_path == "":
+		push_warning("InGameConsole: No shader path mapped for: " + clean_filter)
+		return
 
 	if not cached_shaders.has(clean_filter):
 		if ResourceLoader.exists(shader_path):

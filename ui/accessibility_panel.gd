@@ -79,29 +79,6 @@ const VISION_MODES: Array[String] = ["Black & White", "Blue", "Pure Black", "Gre
 const VISION_MODE_KEYS: Array[String] = [
 	"black_and_white", "blue", "pure_black", "grey", "desaturated"
 ]
-## Available post-process screen filter mode names.
-const SCREEN_FILTERS: Array[String] = [
-	"Off",
-	"CRT",
-	"VHS",
-	"Pixelate",
-	"Toon",
-	"Gameboy",
-	"Glitch",
-	"Grain",
-	"Halftone",
-	"Nightvision",
-	"Kuwahara",
-	"ASCII",
-	"90Anime",
-	"Manga",
-	"Handdrawn",
-	"Moebius",
-	"Obra",
-	"Psychedelic",
-	"BotW",
-	"Ghibli"
-]
 
 ## Diorama packed scene to instantiate into the preview viewport.
 @export var diorama_scene: PackedScene
@@ -258,6 +235,10 @@ func _setup_diorama() -> void:
 		diorama_viewport.add_child(_diorama_instance)
 		print("UI: Loaded diorama scene into preview viewport: ", _diorama_instance.name)
 
+	var vision_mgr: Node = get_node_or_null("/root/VisionAssistManager")
+	if is_instance_valid(vision_mgr) and vision_mgr.has_method("apply_diorama_overlays"):
+		vision_mgr.call("apply_diorama_overlays", _diorama_instance)
+
 	_setup_diorama_cameras()
 
 
@@ -269,9 +250,6 @@ func _setup_diorama_cameras() -> void:
 	if not is_instance_valid(_diorama_instance):
 		return
 
-	var is_vision_active: bool = (
-		GlobalSettings.get_setting("VisionAssist", "enabled", DEFAULT_VISION_ASSIST) as bool
-	)
 	var mode_idx: int = (
 		GlobalSettings.get_setting("VisionAssist", "mode", DEFAULT_VISION_ASSIST_MODE) as int
 	)
@@ -290,20 +268,30 @@ func _setup_diorama_cameras() -> void:
 		_diorama_cameras[key] = cam
 		print("UI: Found and registered diorama camera: ", key)
 
-		var mesh: MeshInstance3D = cam.get_node_or_null("VisionAssistMesh") as MeshInstance3D
-		if is_instance_valid(mesh):
-			mesh.visible = is_vision_active
-
-		if cam.has_method("set_vision_assist_mode"):
-			cam.call("set_vision_assist_mode", mode_key)
-		if cam.has_method("_on_vision_assist_toggled"):
-			cam.call("_on_vision_assist_toggled", is_vision_active)
+		_force_diorama_camera_vision_assist(cam, mode_key)
 
 	if _diorama_cameras.has("default"):
 		_switch_diorama_camera("default")
 	elif not _diorama_cameras.is_empty():
 		var first_key: String = _diorama_cameras.keys()[0]
 		_switch_diorama_camera(first_key)
+
+
+## Forces a diorama camera and its post-process mesh to permanently render vision assist.
+## [param cam] Target diorama [Camera3D] node.
+## [param mode_key] Shader mode string identifier.
+func _force_diorama_camera_vision_assist(cam: Camera3D, mode_key: String) -> void:
+	if not is_instance_valid(cam):
+		return
+
+	var mesh: MeshInstance3D = cam.get_node_or_null("VisionAssistMesh") as MeshInstance3D
+	if is_instance_valid(mesh):
+		mesh.visible = true
+
+	if cam.has_method("set_vision_assist_mode"):
+		cam.call("set_vision_assist_mode", mode_key)
+	if cam.has_method("_on_vision_assist_toggled"):
+		cam.call("_on_vision_assist_toggled", true)
 
 
 ## Switches active diorama viewport rendering to the specified group's camera.
@@ -326,6 +314,16 @@ func _switch_diorama_camera(group_name: String) -> void:
 	target_cam.make_current()
 	_active_diorama_camera = target_cam
 	_diorama_camera = target_cam
+
+	var mode_idx: int = (
+		GlobalSettings.get_setting("VisionAssist", "mode", DEFAULT_VISION_ASSIST_MODE) as int
+	)
+	var mode_key: String = (
+		VISION_MODE_KEYS[mode_idx]
+		if mode_idx >= 0 and mode_idx < VISION_MODE_KEYS.size()
+		else "aaa_blue"
+	)
+	_force_diorama_camera_vision_assist(target_cam, mode_key)
 
 	if is_instance_valid(fov_slider):
 		target_cam.fov = fov_slider.value
@@ -397,7 +395,7 @@ func _populate_dropdowns() -> void:
 
 	if screen_filter_option:
 		screen_filter_option.clear()
-		for filter_name: String in SCREEN_FILTERS:
+		for filter_name: String in GlobalSettings.get_screen_filter_display_names():
 			screen_filter_option.add_item(filter_name)
 
 	if colorblind_option:
@@ -552,8 +550,7 @@ func _load_accessibility_settings() -> void:
 		GlobalSettings.get_setting("VisionAssist", "enabled", DEFAULT_VISION_ASSIST) as bool
 	)
 	if vision_assist_toggle:
-		vision_assist_toggle.button_pressed = vision_enabled
-	_on_vision_assist_toggled(vision_enabled)
+		vision_assist_toggle.set_pressed_no_signal(vision_enabled)
 
 	if vision_mode_option:
 		var mode_idx: int = (
@@ -782,11 +779,22 @@ func _load_group_color_setting(
 			events.vision_assist_color_changed.emit(group_name, COLOR_NAMES[idx].to_lower())
 
 
-## Handles toggling of the vision assist rendering system.
+## Handles toggling of the vision assist rendering system for the player.
 ## [param toggled_on] Enabled state.
 func _on_vision_assist_toggled(toggled_on: bool) -> void:
 	print("Player toggled Vision Assist to: ", toggled_on)
 	GlobalSettings.save_setting("VisionAssist", "enabled", toggled_on)
+	var player: Node = _get_player()
+	if is_instance_valid(player) and "camera_controller" in player and player.camera_controller:
+		var p_cam: Camera3D = player.camera_controller.get_node_or_null("Camera3D") as Camera3D
+		if is_instance_valid(p_cam) and p_cam.has_method("_on_vision_assist_toggled"):
+			p_cam.call("_on_vision_assist_toggled", toggled_on)
+		var p_mesh: MeshInstance3D = (
+			player.camera_controller.get_node_or_null("Camera3D/VisionAssistMesh") as MeshInstance3D
+		)
+		if is_instance_valid(p_mesh):
+			p_mesh.visible = toggled_on
+
 	if has_node("/root/Events"):
 		var events: Node = get_node("/root/Events")
 		if events.has_signal("vision_assist_toggled"):
@@ -806,6 +814,9 @@ func _on_vision_mode_selected(index: int) -> void:
 func _apply_vision_assist_mode(index: int) -> void:
 	if index >= 0 and index < VISION_MODE_KEYS.size():
 		var mode_key: String = VISION_MODE_KEYS[index]
+		for cam: Camera3D in _diorama_cameras.values():
+			if is_instance_valid(cam) and cam.has_method("set_vision_assist_mode"):
+				cam.call("set_vision_assist_mode", mode_key)
 		if has_node("/root/Events"):
 			var events: Node = get_node("/root/Events")
 			if events.has_signal("vision_assist_mode_changed"):
@@ -815,7 +826,10 @@ func _apply_vision_assist_mode(index: int) -> void:
 ## Handles screen filter dropdown selections.
 ## [param index] Selected screen filter index.
 func _on_screen_filter_selected(index: int) -> void:
-	var filter_name: String = SCREEN_FILTERS[index].to_lower()
+	var filter_ids: Array[String] = GlobalSettings.get_screen_filter_ids()
+	if index < 0 or index >= filter_ids.size():
+		return
+	var filter_name: String = filter_ids[index]
 	print("Player selected Screen Filter: ", filter_name)
 	GlobalSettings.save_setting("Settings", "screen_filter", index)
 	if has_node("/root/Events"):

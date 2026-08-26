@@ -26,6 +26,9 @@ const SEARCH_PANEL_MIN_WIDTH: float = 620.0
 ## The audio player responsible for playing the main theme music on the title screen.
 @export var main_theme_player: AudioStreamPlayer
 
+## The title or game name label displayed in the primary menu view.
+@onready var game_name_label: Label = %GameNameLabel
+
 ## The main vertical container holding the primary menu navigation buttons.
 @onready var main_buttons: VBoxContainer = $MarginContainer/MainButtons
 
@@ -93,9 +96,11 @@ var _search_index: Array[Dictionary] = []
 
 ## Lifecycle method initializing menu state, signals, and search index caching.
 func _ready() -> void:
+	layer = 100
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	print("UI: MainMenu initialized.")
 
+	_disable_active_grading_volumes()
 	_auto_discover_panels_and_tabs()
 
 	if continue_button:
@@ -126,6 +131,14 @@ func _ready() -> void:
 	_setup_search_bar()
 	_check_game_context()
 	_return_to_main_buttons()
+
+
+## Searches the active scene tree and resets all ColorGradingVolume3D nodes.
+func _disable_active_grading_volumes() -> void:
+	print("UI: Finding and disabling active ColorGradingVolume3D nodes.")
+	get_tree().call_group_flags(
+		SceneTree.GROUP_CALL_DEFERRED, "color_grading_volumes", "reset_to_default"
+	)
 
 
 ## Automatically resolves tab buttons, panel references, and back buttons if unassigned.
@@ -173,8 +186,8 @@ func _setup_search_bar() -> void:
 		search_results_panel.custom_minimum_size.x = SEARCH_PANEL_MIN_WIDTH
 
 	if search_scroll_container:
-		search_scroll_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		search_scroll_container.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+		search_scroll_container.size_flags_horizontal = (Control.SIZE_EXPAND_FILL)
+		search_scroll_container.horizontal_scroll_mode = (ScrollContainer.SCROLL_MODE_DISABLED)
 
 
 ## Callback triggered when the search bar gains input focus.
@@ -579,6 +592,8 @@ func _stop_main_theme() -> void:
 ## Restores the primary menu navigation screen.
 func _return_to_main_buttons() -> void:
 	print("UI: Player routed to Main Buttons.")
+	if game_name_label:
+		game_name_label.visible = true
 	if main_buttons:
 		main_buttons.visible = true
 	if options_menu:
@@ -605,6 +620,8 @@ func _on_new_game_pressed() -> void:
 	if not has_calibrated:
 		_apply_bucket_calibration()
 
+	if game_name_label:
+		game_name_label.hide()
 	if main_buttons:
 		main_buttons.hide()
 	var chapter_window: Node = CHAPTER_SCREEN.instantiate()
@@ -626,6 +643,8 @@ func _on_start_game_pressed() -> void:
 ## Callback triggered when the player navigates to options.
 func _on_options_pressed() -> void:
 	print("UI: Player clicked Options.")
+	if game_name_label:
+		game_name_label.visible = false
 	if main_buttons:
 		main_buttons.visible = false
 	if save_load_panel:
@@ -642,6 +661,8 @@ func _on_options_pressed() -> void:
 ## Callback triggered when the player opens the load menu.
 func _on_load_pressed() -> void:
 	print("UI: Player clicked Load Game.")
+	if game_name_label:
+		game_name_label.visible = false
 	if main_buttons:
 		main_buttons.visible = false
 	if options_menu:

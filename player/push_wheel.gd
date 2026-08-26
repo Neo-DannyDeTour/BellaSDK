@@ -53,7 +53,10 @@ func physics_update(delta: float) -> void:
 	if _exit_cooldown > 0.0:
 		_exit_cooldown -= delta
 	else:
-		if Input.is_action_just_pressed("interact") or Input.is_action_just_pressed("jump"):
+		if (
+			GestureInputManager.is_action_just_pressed("interact")
+			or GestureInputManager.is_action_just_pressed("jump")
+		):
 			print("PushWheelState: Player manually released wheel.")
 			state_machine.transition_to("Ground")
 			return

@@ -70,6 +70,9 @@ sky_rotation = Vector3(0, 2.3841197, 0)
 sdfgi_enabled = true
 sdfgi_use_occlusion = true
 sdfgi_cascades = 2
+volumetric_fog_enabled = true
+volumetric_fog_temporal_reprojection_enabled = false
+volumetric_fog_temporal_reprojection_amount = 0.5
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6sdu6"]
 albedo_texture = ExtResource("27_lnjo6")

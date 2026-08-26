@@ -3,7 +3,7 @@
 ##
 ## Hooks into scene loading to recursively apply unshaded flat color materials
 ## as overlays to all geometry and sprites within designated accessibility groups.
-#class_name VisionAssistManager
+# class_name VisionAssistManager
 extends Node
 
 ## Named color lookups for console and UI palette selections.
@@ -14,7 +14,8 @@ const COLOR_PALETTE: Dictionary[String, Color] = {
 	"green": Color(0.0, 1.0, 0.2, 1.0),
 	"red": Color(1.0, 0.1, 0.1, 1.0),
 	"magenta": Color(1.0, 0.0, 1.0, 1.0),
-	"white": Color(1.0, 1.0, 1.0, 1.0)
+	"white": Color(1.0, 1.0, 1.0, 1.0),
+	"black": Color(0.0, 0.0, 0.0, 1.0)
 }
 
 ## Spatial shader source code for high-contrast stencil overlays.
@@ -62,7 +63,7 @@ void fragment() {
 }
 """
 
-## Tracks whether vision assist high-contrast silhouettes are currently rendered.
+## Tracks whether vision assist high-contrast silhouettes are currently rendered globally.
 var is_active: bool = false
 
 ## Current background shading mode applied behind overlays.
@@ -115,6 +116,22 @@ func _rebuild_material_for_group(group_name: String) -> void:
 	_group_materials[group_name] = mat
 
 
+## Recursively applies high-contrast silhouette overlays to an isolated diorama hierarchy.
+## [param diorama_root] Root [Node] of the diorama scene.
+func apply_diorama_overlays(diorama_root: Node) -> void:
+	if not is_instance_valid(diorama_root):
+		return
+	print("VisionAssistManager: Forcing diorama overlays on ", diorama_root.name)
+	for group_name: String in _group_materials.keys():
+		var mat: ShaderMaterial = _group_materials[group_name]
+		var group_nodes: Array[Node] = diorama_root.find_children("*", "", true, false)
+		if diorama_root.is_in_group(group_name):
+			group_nodes.append(diorama_root)
+		for node: Node in group_nodes:
+			if node.is_in_group(group_name):
+				_apply_overlay_to_meshes(node, true, mat)
+
+
 ## Handles global vision assist toggle events across all registered groups.
 ## [param toggled_on] Whether high-contrast overlays should be displayed.
 func _on_vision_assist_toggled(toggled_on: bool) -> void:
@@ -125,7 +142,10 @@ func _on_vision_assist_toggled(toggled_on: bool) -> void:
 		var target_material: ShaderMaterial = _group_materials[group_name]
 		var nodes: Array[Node] = get_tree().get_nodes_in_group(group_name)
 		for node: Node in nodes:
-			_apply_overlay_to_meshes(node, is_active, target_material)
+			if _is_node_in_diorama(node):
+				_apply_overlay_to_meshes(node, true, target_material)
+			else:
+				_apply_overlay_to_meshes(node, is_active, target_material)
 
 
 ## Updates background desaturation and tint rendering styles.
@@ -143,29 +163,27 @@ func _on_vision_assist_color_changed(target_group: String, color_name: String) -
 	var clean_color: String = color_name.to_lower()
 
 	if not group_colors.has(clean_group) or not COLOR_PALETTE.has(clean_color):
-		push_warning("VisionAssistManager: Invalid group or color passed.")
+		push_warning("VisionAssistManager: Invalid group or color passed: " + clean_color)
 		return
 
 	print("VisionAssistManager: Updating color for [", clean_group, "] -> ", clean_color)
 	group_colors[clean_group] = COLOR_PALETTE[clean_color]
 	_rebuild_material_for_group(clean_group)
 
-	if is_active:
-		var target_material: ShaderMaterial = _group_materials[clean_group]
-		for node: Node in get_tree().get_nodes_in_group(clean_group):
+	var target_material: ShaderMaterial = _group_materials[clean_group]
+	for node: Node in get_tree().get_nodes_in_group(clean_group):
+		if is_active or _is_node_in_diorama(node):
 			_apply_overlay_to_meshes(node, true, target_material)
 
 
 ## Applies overlays immediately to newly spawned nodes belonging to configured groups.
 ## [param node] The newly added [Node] instance.
 func _on_scene_node_added(node: Node) -> void:
-	if not is_active:
-		return
-
 	if not node.is_node_ready():
 		await node.ready
 
-	if not is_active:
+	var in_diorama: bool = _is_node_in_diorama(node)
+	if not is_active and not in_diorama:
 		return
 
 	for group_name: String in _group_materials.keys():
@@ -173,6 +191,18 @@ func _on_scene_node_added(node: Node) -> void:
 			print("VisionAssistManager: Applying overlay to spawned node: ", node.name)
 			_apply_overlay_to_meshes(node, true, _group_materials[group_name])
 			break
+
+
+## Evaluates whether a given node is situated within the diorama preview viewport.
+## [param node] Target [Node] to evaluate.
+## [return] `true` if the node resides within a SubViewport or Diorama tree.
+func _is_node_in_diorama(node: Node) -> bool:
+	var current: Node = node
+	while is_instance_valid(current):
+		if current is SubViewport or current.name == "FastDioramaMap":
+			return true
+		current = current.get_parent()
+	return false
 
 
 ## Recursively sets or removes stencil materials on geometry and sprite instances.
@@ -189,17 +219,21 @@ func _apply_overlay_to_meshes(
 			var needs_billboard: bool = false
 
 			if target_node is Sprite3D:
-				base_tex = target_node.texture
-				needs_billboard = (target_node.billboard != BaseMaterial3D.BILLBOARD_DISABLED)
-			elif target_node is MeshInstance3D and target_node.mesh:
-				var active_mat: Material = target_node.get_active_material(0)
-				if is_instance_valid(active_mat):
-					if "albedo_texture" in active_mat:
-						base_tex = active_mat.get("albedo_texture") as Texture2D
-					if "billboard_mode" in active_mat:
-						needs_billboard = (
-							active_mat.get("billboard_mode") != BaseMaterial3D.BILLBOARD_DISABLED
-						)
+				var sprite: Sprite3D = target_node as Sprite3D
+				base_tex = sprite.texture
+				needs_billboard = (sprite.billboard != BaseMaterial3D.BILLBOARD_DISABLED)
+			elif target_node is MeshInstance3D:
+				var mesh_inst: MeshInstance3D = target_node as MeshInstance3D
+				if mesh_inst.mesh:
+					var active_mat: Material = mesh_inst.get_active_material(0)
+					if is_instance_valid(active_mat):
+						if "albedo_texture" in active_mat:
+							base_tex = active_mat.get("albedo_texture") as Texture2D
+						if "billboard_mode" in active_mat:
+							needs_billboard = (
+								active_mat.get("billboard_mode")
+								!= BaseMaterial3D.BILLBOARD_DISABLED
+							)
 
 			if is_instance_valid(base_tex) or needs_billboard:
 				final_mat = target_material.duplicate() as ShaderMaterial

@@ -442,13 +442,13 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.8, 0)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.4, -0.25)
 light_color = Color(1, 1, 0.8356356, 1)
 light_energy = 10.0
-light_volumetric_fog_energy = 8.0
+light_volumetric_fog_energy = 0.0
 light_projector = ExtResource("3_di6f5")
 shadow_enabled = true
 shadow_blur = 2.0
 spot_range = 10.0
 spot_angle = 20.0
-spot_angle_attenuation = 0.5
+spot_angle_attenuation = 20.0
 
 [node name="WeaponHolder" type="Node3D" parent="Head/Eyes/Camera3D" unique_id=22330715]
 unique_name_in_owner = true

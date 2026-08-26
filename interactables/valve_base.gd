@@ -161,7 +161,9 @@ func _process(delta: float) -> void:
 				if dist_sq < 0.36:
 					_install_valve(_cached_player, held)
 
-	var is_interacting: bool = is_focused and Input.is_action_pressed("interact") and is_installed
+	var is_interacting: bool = (
+		is_focused and GestureInputManager.is_action_pressed("interact") and is_installed
+	)
 	var just_pressed: bool = (
 		is_focused and Input.is_action_just_pressed("interact") and is_installed
 	)

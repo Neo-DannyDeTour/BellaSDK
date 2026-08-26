@@ -77,7 +77,7 @@ func _handle_crouch_state() -> void:
 
 	var loco: Node = player.locomotion_component
 	var previous_crouch: bool = loco.crouching
-	loco.crouching = Input.is_action_pressed("crouch")
+	loco.crouching = GestureInputManager.is_action_pressed("crouch")
 
 	if loco.crouching != previous_crouch:
 		Events.player_crouch_changed.emit(loco.crouching)

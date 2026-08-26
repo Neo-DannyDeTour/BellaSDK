@@ -2021,6 +2021,10 @@ current = true
 fov = 50.935745
 script = ExtResource("56_b307c")
 is_player_camera = false
+noise_speed = null
+max_offset_x = null
+max_offset_y = null
+max_roll_z = null
 
 [node name="VisionAssistMesh" type="MeshInstance3D" parent="Cameras/Camera_interactables" unique_id=1553510083]
 transform = Transform3D(1, 0, 0, 0, 1.0000001, 0, 0, 0, 1, 0, 0, -0.5)
@@ -2033,6 +2037,10 @@ mesh = SubResource("QuadMesh_534t5")
 transform = Transform3D(-4.073253e-08, -0.25881907, 0.9659258, -2.2626676e-08, 0.9659259, 0.25881907, -1, -1.1313335e-08, -4.5200817e-08, 0.96683985, 2.9471734, -7.7050676)
 script = ExtResource("56_b307c")
 is_player_camera = false
+noise_speed = null
+max_offset_x = null
+max_offset_y = null
+max_roll_z = null
 
 [node name="VisionAssistMesh" type="MeshInstance3D" parent="Cameras/Camera_friends" unique_id=484296219]
 transform = Transform3D(1, 0, 0, 0, 1, 5.11372e-16, 0, 5.1137205e-16, 1, 0, 0.112, -0.5)
@@ -2045,6 +2053,10 @@ mesh = SubResource("QuadMesh_534t5")
 transform = Transform3D(-0.71856016, 0.15644555, -0.67764014, 0, 0.9743701, 0.22495104, 0.69546485, 0.16164087, -0.70014346, -1.4505682, 4.93593, -8.007081)
 script = ExtResource("56_b307c")
 is_player_camera = false
+noise_speed = null
+max_offset_x = null
+max_offset_y = null
+max_roll_z = null
 
 [node name="VisionAssistMesh" type="MeshInstance3D" parent="Cameras/Camera_default" unique_id=1628167229]
 transform = Transform3D(1, 0, 0, 0, 0.99999994, 0, 0, 0, 1, 0, 0, -0.5)
@@ -2057,6 +2069,10 @@ mesh = SubResource("QuadMesh_534t5")
 transform = Transform3D(1, 0, 0, 0, 0.9659258, 0.25881904, 0, -0.25881904, 0.9659258, 17, 3.695727, -3.4484444)
 script = ExtResource("56_b307c")
 is_player_camera = false
+noise_speed = null
+max_offset_x = null
+max_offset_y = null
+max_roll_z = null
 
 [node name="VisionAssistMesh" type="MeshInstance3D" parent="Cameras/Camera_enemies" unique_id=1483469657]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.5)

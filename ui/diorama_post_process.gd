@@ -5,30 +5,6 @@ extends ColorRect
 ## Reference to the active shader material.
 var _post_mat: ShaderMaterial
 
-## Mapping from screen filter string identifiers to shader integer modes.
-const FILTER_NAME_TO_INDEX: Dictionary[String, int] = {
-	"off": 0,
-	"crt": 1,
-	"vhs": 2,
-	"pixelate": 3,
-	"toon": 4,
-	"gameboy": 5,
-	"glitch": 6,
-	"grain": 7,
-	"halftone": 8,
-	"nightvision": 9,
-	"kuwahara": 10,
-	"ascii": 11,
-	"90anime": 12,
-	"manga": 13,
-	"handdrawn": 14,
-	"moebius": 15,
-	"obra": 16,
-	"psychedelic": 17,
-	"botw": 18,
-	"ghibli": 19
-}
-
 
 ## Lifecycle method registering viewport listeners for visual effects.
 func _ready() -> void:
@@ -52,7 +28,7 @@ func _ready() -> void:
 ## [param filter_name] String key of the selected filter.
 func _on_screen_filter_changed(filter_name: String) -> void:
 	var clean_filter: String = filter_name.to_lower()
-	var mode_index: int = FILTER_NAME_TO_INDEX.get(clean_filter, 0)
+	var mode_index: int = GlobalSettings.get_screen_filter_index(clean_filter)
 	print(
 		"Diorama: Applying screen filter '",
 		clean_filter,

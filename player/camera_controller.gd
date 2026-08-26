@@ -167,7 +167,7 @@ func _update_fov(delta: float, is_sprinting: bool, is_grounded: bool, input_dir:
 		or (not is_grounded and target_fov == sprint_fov)
 	)
 
-	if Input.is_action_pressed("zoom"):
+	if GestureInputManager.is_action_pressed("zoom"):
 		target_fov = zoom_fov
 		mouse_sensitivity = mouse_sensitivity_base / 10.0
 		if not is_using_zoom:

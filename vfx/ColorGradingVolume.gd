@@ -183,10 +183,13 @@ var _original_glow_intensity: float = 0.0
 var _original_glow_bloom: float = 0.0
 
 
+## Lifecycle method handling editor visualization setup or runtime signal connections.
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		_update_visuals()
 	else:
+		add_to_group("color_grading_volumes")
+
 		if not show_in_game:
 			for child: Node in get_children():
 				if child.get_class() == "EditorTriggerVisualizer":
@@ -400,3 +403,19 @@ func _fade_bloom(target_intensity: float) -> void:
 		. tween_property(target_environment.environment, "glow_bloom", target_intensity, blend_time)
 		. set_trans(Tween.TRANS_SINE)
 	)
+
+
+## Instantly resets all color grading shader overlays and restores bloom settings.
+func reset_to_default() -> void:
+	print("ColorGradingVolume3D: Resetting volume overlay to defaults.")
+	if _blend_tween and _blend_tween.is_valid():
+		_blend_tween.kill()
+	if _bloom_tween and _bloom_tween.is_valid():
+		_bloom_tween.kill()
+
+	if _color_rect:
+		_color_rect.modulate.a = 0.0
+		_color_rect.hide()
+
+	if target_environment and target_environment.environment:
+		target_environment.environment.glow_bloom = _original_glow_bloom

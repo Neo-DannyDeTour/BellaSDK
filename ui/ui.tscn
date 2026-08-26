@@ -19,8 +19,10 @@
 [ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="11_bi8hs"]
 [ext_resource type="Script" uid="uid://bq62qlt337705" path="res://ui/chapter_title_container.gd" id="11_hrmpd"]
 [ext_resource type="Texture2D" uid="uid://buyk2btocs7de" path="res://assets/images/UI_icon_boot_sprint.png" id="13_ju45i"]
-[ext_resource type="Texture2D" uid="uid://4exusdjgfeuy" path="res://assets/images/UI_Icon_Boot.png" id="14_74toj"]
 [ext_resource type="PackedScene" uid="uid://r7e1pqddjcjx" path="res://ui/death_screen.tscn" id="16_mf2ns"]
+[ext_resource type="Shader" uid="uid://cnul3imnv48gv" path="res://vfx/pulsing_border.gdshader" id="17_0avjw"]
+[ext_resource type="Texture2D" uid="uid://4exusdjgfeuy" path="res://assets/images/UI_Icon_Boot_Move.png" id="17_bw7v0"]
+[ext_resource type="Texture2D" uid="uid://bxdqmfj8erajr" path="res://assets/images/UI_Icon_Boot_Ice.png" id="18_bw7v0"]
 [ext_resource type="PackedScene" uid="uid://sf0r2kupvakg" path="res://ui/magnifying_glass_ui.tscn" id="21_3lbto"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_p7vwb"]
@@ -66,6 +68,14 @@ shader = ExtResource("2_x4jx1")
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nt7q6"]
 bg_color = Color(0.040375, 0.041947637, 0.037145004, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_3tx63"]
+shader = ExtResource("17_0avjw")
+shader_parameter/border_color = Color(1, 0.1, 0.1, 1)
+shader_parameter/border_width = 0.08
+shader_parameter/pulse_speed = 6.0
+shader_parameter/min_alpha = 0.2
+shader_parameter/max_alpha = 0.9
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_7dvkv"]
 shader = ExtResource("10_7dvkv")
@@ -250,35 +260,104 @@ theme_override_constants/margin_bottom = 20
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="DebuffContainer" type="HBoxContainer" parent="HealthMargin/VBoxContainer" unique_id=965267816]
+[node name="SprintDebuff" type="Control" parent="HealthMargin/VBoxContainer" unique_id=874306912]
+custom_minimum_size = Vector2(128, 128)
 layout_mode = 2
 
-[node name="SprintDebuffIcon" type="TextureRect" parent="HealthMargin/VBoxContainer/DebuffContainer" unique_id=2140736571]
-custom_minimum_size = Vector2(48, 48)
+[node name="SprintIcon" type="TextureRect" parent="HealthMargin/VBoxContainer/SprintDebuff" unique_id=1986468836]
+custom_minimum_size = Vector2(128, 128)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("13_ju45i")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="DebuffBar" type="TextureProgressBar" parent="HealthMargin/VBoxContainer/SprintDebuff" unique_id=1981143149]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+step = 0.01
+fill_mode = 5
+nine_patch_stretch = true
+texture_progress = ExtResource("13_ju45i")
+tint_progress = Color(0, 0, 0, 0.78431374)
+
+[node name="BorderOverlay" type="NinePatchRect" parent="HealthMargin/VBoxContainer/SprintDebuff" unique_id=1836570237]
+material = SubResource("ShaderMaterial_3tx63")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("13_ju45i")
+
+[node name="ImmobilizeDebuff" type="Control" parent="HealthMargin/VBoxContainer" unique_id=1900370166]
+custom_minimum_size = Vector2(128, 128)
+layout_mode = 2
+
+[node name="MoveIcon" type="TextureRect" parent="HealthMargin/VBoxContainer/ImmobilizeDebuff" unique_id=1452863373]
+custom_minimum_size = Vector2(128, 128)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("17_bw7v0")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="DebuffBar" type="TextureProgressBar" parent="HealthMargin/VBoxContainer/ImmobilizeDebuff" unique_id=1075602369]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+step = 0.01
+fill_mode = 5
+nine_patch_stretch = true
+texture_progress = ExtResource("17_bw7v0")
+tint_progress = Color(0, 0, 0, 0.78431374)
+
+[node name="BorderOverlay" type="NinePatchRect" parent="HealthMargin/VBoxContainer/ImmobilizeDebuff" unique_id=1875192536]
+material = SubResource("ShaderMaterial_3tx63")
+custom_minimum_size = Vector2(128, 128)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("17_bw7v0")
+
+[node name="SandIndicator" type="HBoxContainer" parent="HealthMargin/VBoxContainer" unique_id=158805436]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="HealthMargin/VBoxContainer/SandIndicator" unique_id=1143626874]
+custom_minimum_size = Vector2(128, 128)
 layout_mode = 2
 texture = ExtResource("13_ju45i")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="SprintDebuffBar" type="ProgressBar" parent="HealthMargin/VBoxContainer/DebuffContainer" unique_id=835956002]
-custom_minimum_size = Vector2(150, 48)
-layout_mode = 2
-show_percentage = false
-
-[node name="ImmobilizeContainer" type="HBoxContainer" parent="HealthMargin/VBoxContainer" unique_id=1164473659]
+[node name="IceIndicator" type="HBoxContainer" parent="HealthMargin/VBoxContainer" unique_id=1120879638]
 layout_mode = 2
 
-[node name="ImmobilizeIcon" type="TextureRect" parent="HealthMargin/VBoxContainer/ImmobilizeContainer" unique_id=1642914678]
-custom_minimum_size = Vector2(48, 48)
+[node name="TextureRect" type="TextureRect" parent="HealthMargin/VBoxContainer/IceIndicator" unique_id=1848050965]
+custom_minimum_size = Vector2(128, 128)
 layout_mode = 2
-texture = ExtResource("14_74toj")
+texture = ExtResource("18_bw7v0")
 expand_mode = 1
 stretch_mode = 5
-
-[node name="ImmobilizeBar" type="ProgressBar" parent="HealthMargin/VBoxContainer/ImmobilizeContainer" unique_id=665072689]
-custom_minimum_size = Vector2(150, 48)
-layout_mode = 2
-show_percentage = false
 
 [node name="KeycardsContainer" type="HBoxContainer" parent="HealthMargin/VBoxContainer" unique_id=843247494]
 layout_mode = 2

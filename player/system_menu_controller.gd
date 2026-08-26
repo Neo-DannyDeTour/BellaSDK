@@ -209,10 +209,10 @@ func process_noclip(delta: float) -> void:
 		player_body.velocity = Vector3.ZERO
 
 	# Camera Tilt
-	if Input.is_action_pressed("left"):
+	if GestureInputManager.is_action_pressed("left"):
 		var target_tilt: float = deg_to_rad(camera_tilt_amount)
 		eyes.rotation.z = lerpf(eyes.rotation.z, target_tilt, delta * lerp_speed)
-	elif Input.is_action_pressed("right"):
+	elif GestureInputManager.is_action_pressed("right"):
 		var target_tilt: float = deg_to_rad(-camera_tilt_amount)
 		eyes.rotation.z = lerpf(eyes.rotation.z, target_tilt, delta * lerp_speed)
 	else:

@@ -42,6 +42,7 @@ TTSManager="*uid://crey6jf4gwjv6"
 SpatialDescriber="*uid://bhdfhlh5ba34i"
 GestureInputManager="*uid://ot3nttr18nqd"
 SubtitleLayer="*uid://45v6q0javct"
+InputHelper="*uid://5wsuikeojvgu"
 
 [debug]
 

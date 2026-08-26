@@ -122,7 +122,8 @@ custom_text = "Exit"
 text_padding = Vector2(32, 16)
 glitch_text = "No Escape"
 
-[node name="Name" type="Label" parent="." unique_id=1725804782]
+[node name="GameNameLabel" type="Label" parent="." unique_id=1725804782]
+unique_name_in_owner = true
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -157,6 +158,7 @@ script = ExtResource("5_lsdqh")
 
 [node name="ContentVBox" type="VBoxContainer" parent="CenterContainer/OptionsMenu" unique_id=803681239]
 layout_mode = 2
+size_flags_vertical = 3
 
 [node name="TopHeaderBar" type="HBoxContainer" parent="CenterContainer/OptionsMenu/ContentVBox" unique_id=1942061576]
 layout_mode = 2
@@ -164,33 +166,45 @@ layout_mode = 2
 [node name="TabButtons" type="HBoxContainer" parent="CenterContainer/OptionsMenu/ContentVBox/TopHeaderBar" unique_id=712872147]
 unique_name_in_owner = true
 layout_mode = 2
+theme_override_constants/separation = 12
 
 [node name="VideoButton" type="Button" parent="CenterContainer/OptionsMenu/ContentVBox/TopHeaderBar/TabButtons" unique_id=603167491]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
+theme_override_font_sizes/font_size = 32
 text = "Graphics"
 
 [node name="AudioButton" type="Button" parent="CenterContainer/OptionsMenu/ContentVBox/TopHeaderBar/TabButtons" unique_id=2106604539]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
+theme_override_font_sizes/font_size = 32
 text = "Audio"
 
 [node name="GameplayButton" type="Button" parent="CenterContainer/OptionsMenu/ContentVBox/TopHeaderBar/TabButtons" unique_id=1138285378]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
+theme_override_font_sizes/font_size = 32
 text = "Gameplay"
 
 [node name="ControlsButton" type="Button" parent="CenterContainer/OptionsMenu/ContentVBox/TopHeaderBar/TabButtons" unique_id=177390856]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
+theme_override_font_sizes/font_size = 32
 text = "Controls"
 
 [node name="AccessibilityButton" type="Button" parent="CenterContainer/OptionsMenu/ContentVBox/TopHeaderBar/TabButtons" unique_id=250063746]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
+theme_override_font_sizes/font_size = 32
 text = "Accessibility"
 
 [node name="SearchBarContainer" type="HBoxContainer" parent="CenterContainer/OptionsMenu/ContentVBox/TopHeaderBar" unique_id=1844282404]
+custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -199,9 +213,10 @@ layout_mode = 2
 
 [node name="SettingsSearchEdit" type="LineEdit" parent="CenterContainer/OptionsMenu/ContentVBox/TopHeaderBar/SearchBarContainer" unique_id=1259062049]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(200, 0)
+custom_minimum_size = Vector2(200, 48)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 32
 
 [node name="SearchDropdownAnchor" type="Control" parent="CenterContainer/OptionsMenu/ContentVBox/TopHeaderBar/SearchBarContainer" unique_id=680397762]
 layout_mode = 2

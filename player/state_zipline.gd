@@ -193,8 +193,8 @@ func _check_dismount_conditions() -> void:
 	var hit_end: bool = (
 		zipline_grace_timer > 0.5 and (zipline_progress >= 0.999 or zipline_progress <= 0.001)
 	)
-	var pressed_jump: bool = Input.is_action_just_pressed("jump")
-	var pressed_crouch: bool = Input.is_action_just_pressed("crouch")
+	var pressed_jump: bool = GestureInputManager.is_action_just_pressed("jump")
+	var pressed_crouch: bool = GestureInputManager.is_action_just_pressed("crouch")
 
 	if hit_end or pressed_jump or pressed_crouch:
 		_perform_dismount()
@@ -226,7 +226,7 @@ func _perform_dismount() -> void:
 	if flat_vel.length() > 0.0:
 		release_dir = flat_vel.normalized()
 
-	if Input.is_action_just_pressed("jump"):
+	if GestureInputManager.is_action_just_pressed("jump"):
 		player.velocity.y += 5.0
 
 	if current_zipline and current_zipline.has_method("on_player_released"):

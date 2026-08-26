@@ -40,6 +40,12 @@ var flashlight_controller: FlashlightController
 ## Indicates if the player character has died, used to globally block input and physics.
 var is_dead: bool = false
 
+## Tracks whether the player is actively standing on a sand collider.
+var is_on_sand_surface: bool = false
+
+## Tracks whether the player is actively standing on an ice collider.
+var is_on_ice_surface: bool = false
+
 
 # --------------------------------------
 # INITIALIZATION
@@ -190,6 +196,7 @@ func _physics_process(delta: float) -> void:
 
 	locomotion_component.set_physics_active(true)
 	locomotion_component.process_movement(delta)
+	_update_floor_surface_detection()
 	environment_component.process_environment_physics(delta)
 
 	if is_instance_valid(interaction_component):
@@ -484,3 +491,34 @@ func apply_knockback(force: Vector3) -> void:
 	if is_instance_valid(state_machine):
 		if state_machine.has_method("transition_to"):
 			state_machine.transition_to("Air", {"knockback_force": force})
+
+
+## Evaluates the current floor collider and notifies UI of surface changes.
+func _update_floor_surface_detection() -> void:
+	var on_sand: bool = false
+	var on_ice: bool = false
+
+	if is_on_floor():
+		var collision_count: int = get_slide_collision_count()
+		for i: int in range(collision_count):
+			var collision: KinematicCollision3D = get_slide_collision(i)
+			if collision.get_normal().dot(up_direction) > 0.5:
+				var collider: Object = collision.get_collider()
+				if is_instance_valid(collider) and collider is Node:
+					var floor_node: Node = collider as Node
+					if floor_node.is_in_group(&"sand"):
+						on_sand = true
+					if floor_node.is_in_group(&"ice"):
+						on_ice = true
+
+	if on_sand != is_on_sand_surface:
+		is_on_sand_surface = on_sand
+		print("Player: Sand surface changed -> ", is_on_sand_surface)
+		Events.sand_surface_toggled.emit(is_on_sand_surface)
+		if is_instance_valid(locomotion_component):
+			locomotion_component.can_sprint = not is_on_sand_surface
+
+	if on_ice != is_on_ice_surface:
+		is_on_ice_surface = on_ice
+		print("Player: Ice surface changed -> ", is_on_ice_surface)
+		Events.ice_surface_toggled.emit(is_on_ice_surface)
