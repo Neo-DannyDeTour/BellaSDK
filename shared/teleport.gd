@@ -9,18 +9,20 @@ extends Area3D
 @export var connect_portal: Area3D
 
 # Highly recommended: Change this node to an AudioStreamPlayer (non-3D) in your scene
-# if you want the sound to be heard clearly regardless of player position.
+# to ensure the sound is heard clearly regardless of player position.
 ## The audio player for the teleportation sound effect.
 @onready var portal_sound: AudioStreamPlayer = $AudioStreamPlayer
 
 
-## Connects the entry signal.
+## Connects the entry signal. Called when the node enters the scene tree.
 func _ready() -> void:
 	if not body_entered.is_connected(_on_body_entered):
 		body_entered.connect(_on_body_entered)
 
 
 ## Triggers the teleport action if the player enters the volume.
+##
+## @param body The physics body that entered the [Area3D].
 func _on_body_entered(body: Node3D) -> void:
 	if body.name != "Player":
 		return

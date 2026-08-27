@@ -1,7 +1,12 @@
+## A logic component that tracks power state and emits signals upon state change.
+##
+## Attach to interactable objects that require a minimum power threshold to activate.
 class_name PowerComponent
 extends Node3D
 
+## Emitted when the required power threshold is met.
 signal powered_on
+## Emitted when the power falls below the required threshold.
 signal powered_off
 
 ## The minimum amount of power required to turn on the object.
@@ -12,16 +17,19 @@ var current_power: int = 0
 var is_powered: bool = false
 
 
+## Increments the current power count and evaluates state changes.
 func add_power() -> void:
 	current_power += 1
 	_evaluate_power_state()
 
 
+## Decrements the current power count and evaluates state changes.
 func remove_power() -> void:
 	current_power = max(0, current_power - 1)
 	_evaluate_power_state()
 
 
+## Checks the power requirement against current supply and triggers signals if changed.
 func _evaluate_power_state() -> void:
 	# Remember what we were before this check
 	var was_powered: bool = is_powered
