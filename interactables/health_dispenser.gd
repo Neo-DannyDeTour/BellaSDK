@@ -255,24 +255,35 @@ func _update_cylinder_visuals() -> void:
 
 ## Triggered continuously while the player holds the interact button on the machine.
 ## Applies healing based on the internal cooldown timer and deducts from the dispenser reservoir.
+## Stops dispensing if the dispenser is empty or the player's health is full.
 ## [param _character]: The player applying the interaction.
 func interact_held(_character: CharacterBody3D) -> void:
 	if _current_dispenser_health <= 0:
 		print("HealthDispenser: interact_held() - Dispenser depleted.")
 		return
 
-	var current_time: int = Time.get_ticks_msec()
+	if not is_instance_valid(_player_health_component):
+		return
 
+	var current_hp: int = int(_player_health_component.get("current_health"))
+	var max_hp: int = int(_player_health_component.get("max_health"))
+	var needed_hp: int = max_hp - current_hp
+
+	if needed_hp <= 0:
+		print("HealthDispenser: interact_held() - Player already at full health.")
+		return
+
+	var current_time: int = Time.get_ticks_msec()
 	if current_time - _last_heal_time >= heal_cooldown_msec:
 		_last_heal_time = current_time
 
-		var to_heal: int = mini(heal_amount, _current_dispenser_health)
+		# Only deduct and heal what the player actually needs or what remains in stock
+		var to_heal: int = mini(heal_amount, mini(_current_dispenser_health, needed_hp))
 
-		if is_instance_valid(_player_health_component):
-			print("HealthDispenser: interact_held() - Dispensing ", to_heal, " HP to player.")
-			_player_health_component.call("heal", to_heal)
-			_current_dispenser_health -= to_heal
-			_update_cylinder_visuals()
+		print("HealthDispenser: interact_held() - Dispensing ", to_heal, " HP to player.")
+		_player_health_component.call("heal", to_heal)
+		_current_dispenser_health -= to_heal
+		_update_cylinder_visuals()
 
 
 ## Triggers the tentacle animation block to begin processing if a player approaches.

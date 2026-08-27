@@ -16,7 +16,7 @@ const DEFAULT_VSYNC: DisplayServer.VSyncMode = DisplayServer.VSYNC_ENABLED
 ## The default preset configuration string.
 const DEFAULT_PRESET: String = "High"
 ## The default Tonemapping algorithm mode.
-const DEFAULT_TONEMAP: Environment.ToneMapper = Environment.TONE_MAPPER_FILMIC
+const DEFAULT_TONEMAP: String = "Filmic"
 ## The default Anisotropic filtering setting string.
 const DEFAULT_ANISOTROPY: String = "4x"
 
@@ -125,6 +125,8 @@ const ANISOTROPY_LEVELS: Dictionary = {"Disabled": 0, "2x": 1, "4x": 2, "8x": 3,
 @onready var tonemap_options: OptionButton = %TonemapOptionButton
 ## Reference to the anisotropic filtering level [OptionButton].
 @onready var anisotropy_options: OptionButton = %AnisotropyOptionButton
+## Reference to the Mesh LOD direct numerical input [LineEdit].
+@onready var mesh_lod_line: LineEdit = %MeshLODLine
 ## Reference to the Mesh LOD threshold [HSlider].
 @onready var mesh_lod_slider: HSlider = %MeshLODSlider
 ## Reference to the color debanding toggle [CheckBox].
@@ -185,6 +187,9 @@ func _connect_signals() -> void:
 	anisotropy_options.item_selected.connect(_on_anisotropy_selected)
 
 	mesh_lod_slider.value_changed.connect(_on_mesh_lod_changed)
+	mesh_lod_line.text_submitted.connect(_on_mesh_lod_text_submitted)
+	mesh_lod_line.focus_exited.connect(_on_mesh_lod_focus_exited)
+
 	debanding_checkbox.toggled.connect(_on_debanding_toggled)
 	ssi_checkbox.toggled.connect(_on_ssi_toggled)
 	ssao_checkbox.toggled.connect(_on_ssao_toggled)
@@ -300,6 +305,11 @@ func _load_video_settings() -> void:
 		anisotropy_options, ANISOTROPY_LEVELS, "anisotropy", DEFAULT_ANISOTROPY
 	)
 
+	var saved_preset: String = (
+		GlobalSettings.get_setting("Settings", "preset", DEFAULT_PRESET) as String
+	)
+	_select_dropdown_by_text(preset_options, saved_preset)
+
 	var saved_screen: int = GlobalSettings.get_setting("Settings", "screen_index", 0) as int
 	if saved_screen < monitor_options.get_item_count():
 		monitor_options.select(saved_screen)
@@ -309,9 +319,12 @@ func _load_video_settings() -> void:
 	var res_string: String = str(res_x) + " x " + str(res_y)
 	_select_dropdown_by_text(resolution_options, res_string)
 
-	mesh_lod_slider.value = (
+	var saved_lod: float = (
 		GlobalSettings.get_setting("Settings", "mesh_lod_threshold", 1.0) as float
 	)
+	mesh_lod_slider.value = saved_lod
+	mesh_lod_line.text = str(snappedf(saved_lod, 0.01))
+
 	debanding_checkbox.button_pressed = (
 		GlobalSettings.get_setting("Settings", "debanding", true) as bool
 	)
@@ -343,12 +356,10 @@ func _sync_dropdown_to_setting(
 	for i: int in range(dropdown.get_item_count()):
 		var item_text: String = dropdown.get_item_text(i)
 
-		# 1. Match if the dropdown item label directly equals the saved value
 		if item_text == saved_str:
 			dropdown.select(i)
 			return
 
-		# 2. Match if the dictionary value corresponds to the saved value
 		if dict.has(item_text):
 			var dict_val: Variant = dict[item_text]
 			if str(dict_val) == saved_str:
@@ -385,6 +396,12 @@ func _apply_all_current_settings() -> void:
 	var shadow_atlas: int = shadow_data["atlas_size"] as int
 	var mesh_lod_val: float = mesh_lod_slider.value as float
 	var debanding_val: bool = debanding_checkbox.button_pressed
+
+	var aniso_key: String = anisotropy_options.get_item_text(anisotropy_options.selected)
+	var aniso_val: int = ANISOTROPY_LEVELS.get(aniso_key, 2) as int
+	ProjectSettings.set_setting(
+		"rendering/textures/default_filters/anisotropic_filtering_level", aniso_val
+	)
 
 	var target_viewports: Array[Viewport] = [get_viewport()]
 	var diorama_vp: SubViewport = (
@@ -431,7 +448,6 @@ func _apply_environment_settings(vp: Viewport) -> void:
 
 	if env:
 		if is_agx or is_agx_punchy:
-			# AgX requires linear raw HDR input from the engine pipeline
 			env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
 		else:
 			match tonemap_key:
@@ -451,7 +467,6 @@ func _apply_environment_settings(vp: Viewport) -> void:
 		env.volumetric_fog_enabled = fog_checkbox.button_pressed
 		env.glow_enabled = glow_checkbox.button_pressed
 
-	# Synchronize target camera VisionAssistMesh
 	var vision_mesh: MeshInstance3D = (
 		vp.find_child("VisionAssistMesh", true, false) as MeshInstance3D
 	)
@@ -547,40 +562,78 @@ func _on_benchmark_completed(_optimal_level: int) -> void:
 	_load_video_settings()
 
 
-## Applies preset graphics levels.
+## Applies preset graphics levels across all individual toggle settings.
 ## [param index] Index of the selected preset.
 func _on_preset_selected(index: int) -> void:
 	var preset: String = preset_options.get_item_text(index)
 	print("UI: Player selected Graphics Preset: ", preset)
+	GlobalSettings.save_setting("Settings", "preset", preset)
+
 	match preset:
 		"Low":
 			_update_ui_and_save(shadow_options, "Low (Fast)", "shadow_quality")
 			ssao_checkbox.button_pressed = false
 			ssi_checkbox.button_pressed = false
+			ssr_checkbox.button_pressed = false
 			sdfgi_checkbox.button_pressed = false
 			fog_checkbox.button_pressed = false
 			glow_checkbox.button_pressed = false
 			mesh_lod_slider.value = 2.0
 			GlobalSettings.save_setting("Settings", "ssao", false)
 			GlobalSettings.save_setting("Settings", "ssi", false)
+			GlobalSettings.save_setting("Settings", "ssr", false)
 			GlobalSettings.save_setting("Settings", "sdfgi", false)
 			GlobalSettings.save_setting("Settings", "volumetric_fog", false)
 			GlobalSettings.save_setting("Settings", "glow", false)
 			GlobalSettings.save_setting("Settings", "mesh_lod_threshold", 2.0)
+		"Medium":
+			_update_ui_and_save(shadow_options, "Medium", "shadow_quality")
+			ssao_checkbox.button_pressed = true
+			ssi_checkbox.button_pressed = false
+			ssr_checkbox.button_pressed = false
+			sdfgi_checkbox.button_pressed = false
+			fog_checkbox.button_pressed = false
+			glow_checkbox.button_pressed = true
+			mesh_lod_slider.value = 1.5
+			GlobalSettings.save_setting("Settings", "ssao", true)
+			GlobalSettings.save_setting("Settings", "ssi", false)
+			GlobalSettings.save_setting("Settings", "ssr", false)
+			GlobalSettings.save_setting("Settings", "sdfgi", false)
+			GlobalSettings.save_setting("Settings", "volumetric_fog", false)
+			GlobalSettings.save_setting("Settings", "glow", true)
+			GlobalSettings.save_setting("Settings", "mesh_lod_threshold", 1.5)
 		"High":
 			_update_ui_and_save(shadow_options, "High (Smooth)", "shadow_quality")
 			ssao_checkbox.button_pressed = true
 			ssi_checkbox.button_pressed = true
+			ssr_checkbox.button_pressed = true
 			sdfgi_checkbox.button_pressed = true
-			fog_checkbox.button_pressed = true
+			fog_checkbox.button_pressed = false
 			glow_checkbox.button_pressed = true
 			mesh_lod_slider.value = 1.0
 			GlobalSettings.save_setting("Settings", "ssao", true)
 			GlobalSettings.save_setting("Settings", "ssi", true)
+			GlobalSettings.save_setting("Settings", "ssr", true)
+			GlobalSettings.save_setting("Settings", "sdfgi", true)
+			GlobalSettings.save_setting("Settings", "volumetric_fog", false)
+			GlobalSettings.save_setting("Settings", "glow", true)
+			GlobalSettings.save_setting("Settings", "mesh_lod_threshold", 1.0)
+		"Ultra":
+			_update_ui_and_save(shadow_options, "High (Smooth)", "shadow_quality")
+			ssao_checkbox.button_pressed = true
+			ssi_checkbox.button_pressed = true
+			ssr_checkbox.button_pressed = true
+			sdfgi_checkbox.button_pressed = true
+			fog_checkbox.button_pressed = true
+			glow_checkbox.button_pressed = true
+			mesh_lod_slider.value = 0.5
+			GlobalSettings.save_setting("Settings", "ssao", true)
+			GlobalSettings.save_setting("Settings", "ssi", true)
+			GlobalSettings.save_setting("Settings", "ssr", true)
 			GlobalSettings.save_setting("Settings", "sdfgi", true)
 			GlobalSettings.save_setting("Settings", "volumetric_fog", true)
 			GlobalSettings.save_setting("Settings", "glow", true)
-			GlobalSettings.save_setting("Settings", "mesh_lod_threshold", 1.0)
+			GlobalSettings.save_setting("Settings", "mesh_lod_threshold", 0.5)
 
 	_apply_all_current_settings()
 
@@ -617,14 +670,41 @@ func _on_anisotropy_selected(index: int) -> void:
 		"rendering/textures/default_filters/anisotropic_filtering_level", level
 	)
 	GlobalSettings.save_setting("Settings", "anisotropy", key)
+	_apply_all_current_settings()
 
 
-## Handles mesh Level of Detail (LOD) threshold changes.
+## Handles mesh Level of Detail (LOD) threshold changes from [member mesh_lod_slider].
 ## [param value] The new LOD threshold floating-point scale.
 func _on_mesh_lod_changed(value: float) -> void:
-	print("UI: Mesh LOD threshold changed: ", value)
-	GlobalSettings.save_setting("Settings", "mesh_lod_threshold", value)
+	print("UI: Mesh LOD slider value changed: ", value)
+	var rounded_val: float = snappedf(value, 0.01)
+	if mesh_lod_line.text != str(rounded_val):
+		mesh_lod_line.text = str(rounded_val)
+	GlobalSettings.save_setting("Settings", "mesh_lod_threshold", rounded_val)
 	_apply_all_current_settings()
+
+
+## Handles direct numerical input committed in [member mesh_lod_line].
+## [param new_text] The text submitted in the input field.
+func _on_mesh_lod_text_submitted(new_text: String) -> void:
+	print("UI: Mesh LOD text input submitted: ", new_text)
+	_parse_and_apply_lod_text(new_text)
+
+
+## Sanitizes and synchronizes [member mesh_lod_line] input when user leaves the field.
+func _on_mesh_lod_focus_exited() -> void:
+	print("UI: Mesh LOD line edit focus exited.")
+	_parse_and_apply_lod_text(mesh_lod_line.text)
+
+
+## Validates, clamps, and synchronizes numerical LOD input with [member mesh_lod_slider].
+## [param input_text] The raw string value to validate and apply.
+func _parse_and_apply_lod_text(input_text: String) -> void:
+	print("UI: Parsing Mesh LOD input: ", input_text)
+	var val: float = input_text.to_float()
+	val = clampf(val, mesh_lod_slider.min_value, mesh_lod_slider.max_value)
+	mesh_lod_slider.value = val
+	mesh_lod_line.text = str(snappedf(val, 0.01))
 
 
 ## Handles debanding toggle changes.

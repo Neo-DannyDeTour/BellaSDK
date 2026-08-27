@@ -1,8 +1,7 @@
-class_name PickableObject
-extends RigidBody3D
-
 ## Represents a physical object that the player can pick up, throw, and interact with.
 ## Manages buoyancy, physics interpolation, custom TTS accessibility prompts, and holding logic.
+class_name PickableObject
+extends RigidBody3D
 
 @export_category("Pickable Nodes")
 ## The [InteractComponent] responsible for handling raycast focus and interaction signals.
@@ -70,6 +69,9 @@ const ICON_BASE_PATH: String = "res://assets/kenney_input-prompts_1.5/Keyboard &
 ## Cached resolved icon paths mapped to avoid disk checks during gameplay.
 var _icon_path_cache: Dictionary = {}
 
+## Indicates whether text prompt labels are displayed over focused objects.
+var _show_text_prompts: bool = true
+
 # --- GLOBAL STATE TRACKING ---
 ## Indicates if the [PickableObject] is currently locked and cannot be interacted with.
 var is_locked: bool = false:
@@ -114,7 +116,6 @@ var _is_tts_cooldown: bool = false
 ## Initializes the [PickableObject], setting up references, event listeners, and physics state.
 func _ready() -> void:
 	print("PickableObject: _ready() called. Initializing ", name)
-	# Fallback assignments in case export vars were left empty in the inspector
 	if not is_instance_valid(interact_comp):
 		interact_comp = $InteractComponent
 	if not is_instance_valid(mesh):
@@ -126,9 +127,10 @@ func _ready() -> void:
 	if not is_instance_valid(probe_container):
 		probe_container = $ProbeContainer
 
-	# Cache the probe children once at startup to avoid runtime lookup spikes
 	if is_instance_valid(probe_container):
 		_probes = probe_container.get_children()
+
+	_show_text_prompts = (GlobalSettings.get_setting("Gameplay", "show_item_prompts", true) as bool)
 
 	if is_instance_valid(label):
 		label.hide()
@@ -139,28 +141,37 @@ func _ready() -> void:
 		if not interact_comp.unfocused.is_connected(_on_interact_component_unfocused):
 			interact_comp.unfocused.connect(_on_interact_component_unfocused)
 
-	# Allow Rigidbody to sleep when sitting still for 60 FPS optimization
 	sleeping_state_changed.connect(_on_sleeping_state_changed)
 
-	# Listen to the global Event Bus for state changes
 	if (
 		Events.has_signal("noclip_toggled")
 		and not Events.noclip_toggled.is_connected(_on_noclip_toggled)
 	):
 		Events.noclip_toggled.connect(_on_noclip_toggled)
 
-	# Enable collision monitoring so the physics server reports what this object hits
+	if (
+		Events.has_signal("item_prompts_toggled")
+		and not Events.item_prompts_toggled.is_connected(_on_item_prompts_toggled)
+	):
+		Events.item_prompts_toggled.connect(_on_item_prompts_toggled)
+
 	contact_monitor = true
 	max_contacts_reported = 2
 	body_entered.connect(_on_body_entered)
 
-	# Initialize process state
 	_update_process_state()
 
-	# --- SHADER WARM-UP (Fixes the first-pickup frame drop) ---
 	if is_instance_valid(mesh):
 		_set_model_transparency(mesh, held_transparency)
 		_revert_warmup_deferred()
+
+
+## Updates prompt visibility setting when changed in the settings menu.
+func _on_item_prompts_toggled(enabled: bool) -> void:
+	print("PickableObject: Item prompt visibility updated -> ", enabled)
+	_show_text_prompts = enabled
+	if not _show_text_prompts and is_instance_valid(label):
+		label.hide()
 
 
 ## Triggers when the player toggles noclip mode. Updates internal flight state.
@@ -237,7 +248,6 @@ func drop() -> void:
 	if is_instance_valid(interact_comp):
 		interact_comp.process_mode = Node.PROCESS_MODE_INHERIT
 
-	# Start a short cooldown to prevent the TTS from instantly repeating the grab prompt
 	_is_tts_cooldown = true
 	get_tree().create_timer(1.5, false).timeout.connect(_reset_tts_cooldown)
 
@@ -352,7 +362,7 @@ func _attempt_enable_collision(player_node: Node3D) -> void:
 
 	var dist_sq: float = global_position.distance_squared_to(player_node.global_position)
 
-	if dist_sq > 2.25:  # 1.5 squared
+	if dist_sq > 2.25:
 		remove_collision_exception_with(player_node)
 	else:
 		get_tree().create_timer(0.1).timeout.connect(_attempt_enable_collision.bind(player_node))
@@ -380,7 +390,7 @@ func _on_interact_component_focused() -> void:
 		return
 
 	_update_label_text()
-	if is_instance_valid(label):
+	if is_instance_valid(label) and _show_text_prompts:
 		label.show()
 	if is_instance_valid(prompt_icon) and prompt_icon.texture != null:
 		prompt_icon.show()
@@ -422,7 +432,6 @@ func _update_label_text() -> void:
 			label.position.x = 0.0
 
 			if is_instance_valid(prompt_icon):
-				# Centered at 0.0 to match the centered Label3D text gap
 				prompt_icon.position.x = 0.0
 				prompt_icon.position.y = label.position.y
 		else:
@@ -501,7 +510,6 @@ func _physics_process(_delta: float) -> void:
 
 	submerged = false
 
-	# REPLACED get_children() WITH CACHED _probes ARRAY
 	if is_in_water and is_instance_valid(current_water_node):
 		var probe_count: int = _probes.size()
 		if probe_count > 0:
@@ -530,20 +538,16 @@ func _physics_process(_delta: float) -> void:
 		apply_central_force(-linear_velocity * water_drag * mass)
 		apply_torque(-angular_velocity * water_angular_drag * mass)
 
-	# Store the velocity at the very end of the physics frame.
-	# We must do this because Godot's body_entered signal fires AFTER collision resolution.
 	_last_velocity = linear_velocity
 
 
 ## Triggered by the physics engine whenever this rigid body collides with another physics body.
 func _on_body_entered(body: Node) -> void:
-	# If the object is currently physically held by a tentacle or player, don't deal impact damage
 	if is_held:
 		return
 
 	var impact_speed: float = _last_velocity.length()
 
-	# Check if the collision was forceful enough to warrant damage
 	if impact_speed >= damage_velocity_threshold:
 		if body.has_method("take_damage"):
 			print(
@@ -572,7 +576,7 @@ func _wait_to_enable_collision(player_node: Node3D) -> void:
 			player_node.global_position.x, player_node.global_position.z
 		)
 
-		if flat_my_pos.distance_squared_to(flat_player_pos) >= 1.0:  # 1.0 squared
+		if flat_my_pos.distance_squared_to(flat_player_pos) >= 1.0:
 			break
 
 		current_frame += 1
@@ -584,7 +588,7 @@ func _wait_to_enable_collision(player_node: Node3D) -> void:
 			player_node.global_position.x, player_node.global_position.z
 		)
 
-		if flat_my_pos.distance_squared_to(flat_player_pos) < 1.0:  # 1.0 squared
+		if flat_my_pos.distance_squared_to(flat_player_pos) < 1.0:
 			var player_forward: Vector3 = -player_node.global_transform.basis.z
 			var flat_backward: Vector3 = (
 				Vector3(-player_forward.x, 0.0, -player_forward.z).normalized()
@@ -638,7 +642,7 @@ func _set_model_transparency(parent_node: Node, alpha: float) -> void:
 ## Retrieves and caches the active [Camera3D] for calculating hold offsets and nudges.
 func _get_camera() -> Camera3D:
 	if not is_instance_valid(_cached_camera):
-		_cached_camera = get_viewport().get_camera_3d() if get_viewport() else null
+		_cached_camera = (get_viewport().get_camera_3d() if get_viewport() else null)
 	return _cached_camera
 
 
@@ -667,18 +671,16 @@ func _set_model_overlay(parent_node: Node, mat: ShaderMaterial) -> void:
 
 
 ## Parses the name of [member mesh] to generate a clean, natural voice
-## string for [PiperTTS] synthesis (e.g., converting "Barrel_red" to "barrel red").
+## string for text-to-speech synthesis (e.g., converting "Barrel_red" to "barrel red").
 ## Returns a human-readable [String] describing the focused object.
 func _get_clean_mesh_name() -> String:
 	print("PickableObject: _get_clean_mesh_name() called. Parsing mesh string.")
 
-	# Check nulls and safeguard against assigning the root rigid body to the mesh export var.
 	if not is_instance_valid(mesh) or mesh == self:
 		return "object"
 
 	var raw_name: String = mesh.name
 
-	# Only search child meshes if the assigned node has a generic engine name
 	var generic_names: Array[String] = ["mesh", "meshinstance3d", "node3d", "model"]
 	if raw_name.to_lower() in generic_names:
 		for child: Node in mesh.get_children():
@@ -687,22 +689,18 @@ func _get_clean_mesh_name() -> String:
 				raw_name = child.name
 				break
 
-	# Split camelCase / PascalCase into spaced words (e.g., "BarrelRed" -> "Barrel Red")
 	var regex: RegEx = RegEx.new()
 	regex.compile("([a-z0-9])([A-Z])")
 	var formatted_name: String = regex.sub(raw_name, "$1 $2", true)
 
-	# Replace underscores and hyphens with spaces
 	formatted_name = formatted_name.replace("_", " ").replace("-", " ")
 
-	# Remove unwanted prefix tags
 	var unwanted_prefixes: Array[String] = ["pickable ", "item ", "prop ", "meshinstance ", "mesh "]
 	var lower_name: String = formatted_name.to_lower().strip_edges()
 	for prefix: String in unwanted_prefixes:
 		if lower_name.begins_with(prefix):
 			lower_name = lower_name.trim_prefix(prefix).strip_edges()
 
-	# Remove trailing digits and special symbols
 	var clean_chars: String = ""
 	for i: int in range(lower_name.length()):
 		var char_str: String = lower_name.substr(i, 1)

@@ -17,14 +17,19 @@ const UI_FONT_TYPES: Array[StringName] = [
 	&"MenuButton"
 ]
 
+## Standard font theme property keys to override on UI controls.
+const UI_FONT_KEYS: Array[StringName] = [
+	&"font", &"normal_font", &"bold_font", &"italics_font", &"bold_italics_font", &"mono_font"
+]
+
 ## Tracks whether the player is currently invincible.
 var is_godmode: bool = false
 
 ## Dictionary mapping available font identifier keys to their loaded [Font] resources.
 var fonts: Dictionary[String, Font] = {}
 
-## Fallback font resource captured on initial boot.
-var default_engine_font: Font = null
+## Fallback built-in engine font captured directly from ThemeDB.
+var engine_fallback_font: Font = null
 
 ## Guard to ensure disk fonts are only loaded and parsed once.
 var _is_cached: bool = false
@@ -239,6 +244,15 @@ signal sand_surface_toggled(is_active: bool)
 @warning_ignore("unused_signal")
 signal ice_surface_toggled(is_active: bool)
 
+## Emitted when the player toggles item interaction text prompts in settings.
+@warning_ignore("unused_signal")
+signal item_prompts_toggled(enabled: bool)
+
+@warning_ignore("unused_signal")
+## Emitted when the global font scale multiplier is modified by the player.
+## [param scale_factor] Multiplier applied to base UI font sizes.
+signal font_scale_changed(scale_factor: float)
+
 ## Visual animation style presets for chapter title card sequences.
 enum ChapterAnimStyle {
 	SIMPLE,
@@ -283,14 +297,9 @@ func _on_font_changed(font_name: String) -> void:
 	if not _is_cached:
 		_load_registered_fonts()
 
-	if not fonts.has(font_name):
-		push_warning("Events: Unknown font key '" + font_name + "'. Falling back to default.")
-		font_name = "default"
-
-	var target_font: Font = fonts.get(font_name, default_engine_font)
+	var target_font: Font = fonts.get(font_name, engine_fallback_font)
 	if not is_instance_valid(target_font):
-		push_error("Events: Failed to resolve valid Font instance for: " + font_name)
-		return
+		target_font = engine_fallback_font
 
 	var root_window: Window = get_tree().root
 	if not is_instance_valid(root_window):
@@ -315,13 +324,8 @@ func _load_registered_fonts() -> void:
 	if _is_cached:
 		return
 
-	var root_window: Window = get_tree().root
-	if root_window and root_window.theme and root_window.theme.default_font:
-		default_engine_font = root_window.theme.default_font
-	else:
-		default_engine_font = ThemeDB.fallback_font
-
-	fonts["default"] = default_engine_font
+	engine_fallback_font = ThemeDB.fallback_font
+	fonts["default"] = engine_fallback_font
 
 	var global_settings_node: Node = get_node_or_null("/root/GlobalSettings")
 	if not is_instance_valid(global_settings_node):
@@ -354,7 +358,7 @@ func _load_registered_fonts() -> void:
 	_is_cached = true
 
 
-## Recursively propagates font theme overrides down all active Control nodes.
+## Recursively propagates explicit font overrides down all active Control nodes.
 ## [param parent] Root parent [Node] to traverse.
 ## [param new_font] The [Font] instance to assign.
 func _apply_font_override_recursive(parent: Node, new_font: Font) -> void:
@@ -363,8 +367,8 @@ func _apply_font_override_recursive(parent: Node, new_font: Font) -> void:
 
 	if parent is Control:
 		var ctrl: Control = parent as Control
-		ctrl.add_theme_font_override("font", new_font)
-		ctrl.add_theme_font_override("normal_font", new_font)
+		for font_key: StringName in UI_FONT_KEYS:
+			ctrl.add_theme_font_override(font_key, new_font)
 		ctrl.notification(Control.NOTIFICATION_THEME_CHANGED)
 		ctrl.queue_redraw()
 

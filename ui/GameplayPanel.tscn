@@ -90,6 +90,11 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Enable Tutorials"
 
+[node name="ItemPromptsCheckbox" type="CheckButton" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=2017212521]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Enable Item Prompts"
+
 [node name="HeadbobCheckbox" type="CheckButton" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=2008947024]
 unique_name_in_owner = true
 layout_mode = 2

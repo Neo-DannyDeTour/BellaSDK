@@ -106,7 +106,7 @@ func _load_all_settings() -> void:
 
 ## Broadcasts signals and sets global variables for visual options like UI scaling and fonts.
 func _apply_boot_settings() -> void:
-	print("System: Applying boot settings (UI scale, fonts, colorblind, screen filters).")
+	print("System: Applying boot settings (UI scale, fonts, colorblind, screen filters, prompts).")
 	var ui_scale: float = get_setting("Settings", "ui_scale", 1.0) as float
 	get_window().content_scale_factor = ui_scale
 
@@ -123,6 +123,10 @@ func _apply_boot_settings() -> void:
 		var filter_ids: Array[String] = get_screen_filter_ids()
 		if saved_filter_idx >= 0 and saved_filter_idx < filter_ids.size():
 			Events.screen_filter_changed.emit(filter_ids[saved_filter_idx])
+
+		if Events.has_signal("item_prompts_toggled"):
+			var show_prompts: bool = get_setting("Gameplay", "show_item_prompts", true) as bool
+			Events.item_prompts_toggled.emit(show_prompts)
 
 
 ## Overwrites the default Godot [InputMap] with any saved keybind overrides.
