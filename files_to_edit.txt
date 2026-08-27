@@ -1,0 +1,10 @@
+./test/unit/test_global_settings.gd
+./test/unit/test_keycard_system.gd
+./test/unit/test_sunshine_clouds_driver.gd
+./test/unit/test_example.gd
+./test/unit/test_save_manager.gd
+./test/unit/test_chunk_manager.gd
+./test/unit/test_bear_trap.gd
+./test/unit/test_clouds_editor_controller.gd
+./test/unit/test_player_state_machine.gd
+./test/unit/test_interaction_scanner.gd

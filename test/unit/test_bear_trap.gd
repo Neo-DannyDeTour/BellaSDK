@@ -1,14 +1,15 @@
 ## Unit tests verifying bear trap trigger interactions, damage, and immobilization timers.
+class_name TestBearTrap
 extends GutTest
 
-## The bear trap instance under test.
+## The [BearTrap] instance under test.
 var bear_trap: BearTrap = null
 
-## The mock player instance.
+## The mock [Player] instance.
 var mock_player: MockPlayer = null
 
 
-## Mock implementation of Player tracking damage and holding mock components.
+## Mock implementation of [Player] tracking damage and holding mock components.
 class MockPlayer:
 	extends Player
 
@@ -37,7 +38,7 @@ class MockMenu:
 	var is_stunned: bool = false
 
 
-## Stub component to satisfy missing Player dependencies.
+## Stub component to satisfy missing [Player] dependencies.
 class DummyComponent:
 	extends Node
 
@@ -85,7 +86,7 @@ func before_each() -> void:
 	await get_tree().process_frame
 
 
-## Validates initial trap state.
+## Validates initial trap state is set to OPEN.
 func test_initial_state() -> void:
 	print("TestBearTrap: test_initial_state() called.")
 	assert_eq(
@@ -93,7 +94,7 @@ func test_initial_state() -> void:
 	)
 
 
-## Validates snapping logic, damage application, and state flags.
+## Validates snapping logic, damage application, and state flags are correctly applied to player.
 func test_snap_shut() -> void:
 	print("TestBearTrap: test_snap_shut() called.")
 	bear_trap.snap_shut(mock_player)
@@ -107,11 +108,13 @@ func test_snap_shut() -> void:
 	assert_not_null(mock_player.system_menu, "System menu must not be null.")
 	assert_true(mock_player.system_menu.is_stunned, "Player should be stunned.")
 	assert_false(mock_player.locomotion_component.can_sprint, "Player sprint should be disabled.")
-	assert_true(bear_trap.immobilize_timer.time_left > 0, "Immobilize timer should be started.")
-	assert_true(bear_trap.sprint_block_timer.time_left > 0, "Sprint block timer should be started.")
+	assert_true(bear_trap.immobilize_timer.time_left > 0.0, "Immobilize timer should be started.")
+	assert_true(
+		bear_trap.sprint_block_timer.time_left > 0.0, "Sprint block timer should be started."
+	)
 
 
-## Validates timeouts resetting player state correctly.
+## Validates timeouts resetting player state correctly after trap duration expires.
 func test_timer_timeouts() -> void:
 	print("TestBearTrap: test_timer_timeouts() called.")
 	bear_trap.snap_shut(mock_player)
