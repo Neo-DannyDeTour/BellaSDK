@@ -55,7 +55,7 @@ func get_reflect_marker() -> Marker3D:
 ## Reads player input axes and applies horizontal rotation to [member mirror_head].
 ## [param delta]: The physics frame delta used for framerate-independent rotation.
 func _handle_rotation_input(delta: float) -> void:
-	var turn_input: float = Input.get_axis("left", "right")
+	var turn_input: float = GestureInputManager.get_axis("left", "right")
 
 	if turn_input != 0.0:
 		print("ReflectorMirror: Player rotating mirror head.")
@@ -118,9 +118,9 @@ func _mark_children_as_mirrors(node: Node) -> void:
 ## Listens for exit actions (interact, jump, crouch) to trigger a control release.
 func _handle_detachment_input() -> void:
 	if (
-		Input.is_action_just_pressed("interact")
-		or Input.is_action_just_pressed("jump")
-		or Input.is_action_just_pressed("crouch")
+		GestureInputManager.is_action_just_pressed("interact")
+		or GestureInputManager.is_action_just_pressed("jump")
+		or GestureInputManager.is_action_just_pressed("crouch")
 	):
 		print("ReflectorMirror: Player requested detachment.")
 		_release_control()

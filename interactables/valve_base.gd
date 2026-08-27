@@ -165,7 +165,7 @@ func _process(delta: float) -> void:
 		is_focused and GestureInputManager.is_action_pressed("interact") and is_installed
 	)
 	var just_pressed: bool = (
-		is_focused and Input.is_action_just_pressed("interact") and is_installed
+		is_focused and GestureInputManager.is_action_just_pressed("interact") and is_installed
 	)
 
 	if can_be_detached and just_pressed:

@@ -191,11 +191,11 @@ func process_noclip(delta: float) -> void:
 	if not flying or not is_instance_valid(player_body):
 		return
 
-	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
+	var input_dir: Vector2 = GestureInputManager.get_vector("left", "right", "forward", "backward")
 	var basis: Basis = camera.global_transform.basis
 
 	var fly_dir: Vector3 = basis * Vector3(input_dir.x, 0.0, input_dir.y)
-	var vertical_input: float = Input.get_axis("crouch", "jump")
+	var vertical_input: float = GestureInputManager.get_axis("crouch", "jump")
 
 	fly_dir += Vector3.UP * vertical_input
 	fly_dir = fly_dir.normalized()

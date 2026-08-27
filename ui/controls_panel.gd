@@ -34,7 +34,7 @@ const HOLD_TIME_THRESHOLD: float = 0.45
 ## Maximum time gap in seconds between consecutive presses to register multi-tap gestures.
 const MULTI_TAP_TIME_WINDOW: float = 0.30
 
-## Number of rapid taps required within the multi-tap window to register a mash gesture.
+## Number of rapid taps required within the multi-tap window to register a mash GestureInputManager.
 const MASH_THRESHOLD_COUNT: int = 3
 
 ## Time gap in seconds allowed between chord member key presses.

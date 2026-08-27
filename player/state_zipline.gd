@@ -72,7 +72,7 @@ func physics_update(delta: float) -> void:
 
 	zipline_grace_timer += delta
 
-	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
+	var input_dir: Vector2 = GestureInputManager.get_vector("left", "right", "forward", "backward")
 
 	_calculate_movement(delta, input_dir)
 	_apply_position()

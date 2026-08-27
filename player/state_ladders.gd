@@ -29,7 +29,7 @@ func exit() -> void:
 func physics_update(delta: float) -> void:
 	_handle_crouch_state()
 
-	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
+	var input_dir: Vector2 = GestureInputManager.get_vector("left", "right", "forward", "backward")
 
 	# Calculate movement and apply it
 	_calculate_ladder_velocity(input_dir)
@@ -155,7 +155,7 @@ func _calculate_ladder_velocity(input_dir: Vector2) -> void:
 
 
 func _handle_jump_input(input_dir: Vector2) -> void:
-	if not Input.is_action_just_pressed("jump") or not current_ladder:
+	if not GestureInputManager.is_action_just_pressed("jump") or not current_ladder:
 		return
 
 	# FIXED: Target the camera_controller

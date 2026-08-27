@@ -159,7 +159,7 @@ func _physics_process(delta: float) -> void:
 
 
 func _handle_rotation_input(delta: float) -> void:
-	var turn_input: float = Input.get_axis("left", "right")
+	var turn_input: float = GestureInputManager.get_axis("left", "right")
 
 	if turn_input != 0.0:
 		turret.rotate_y(-turn_input * rotation_speed * delta)
@@ -518,9 +518,9 @@ func _leave_trail_mark(pos: Vector3, xform: Transform3D) -> void:
 func _handle_detachment_input() -> void:
 	# Ensure these string names match your Project Settings -> Input Map exactly!
 	if (
-		Input.is_action_just_pressed("interact")
-		or Input.is_action_just_pressed("jump")
-		or Input.is_action_just_pressed("crouch")
+		GestureInputManager.is_action_just_pressed("interact")
+		or GestureInputManager.is_action_just_pressed("jump")
+		or GestureInputManager.is_action_just_pressed("crouch")
 	):
 		print("StationaryLaserStand: Player requested detachment.")
 		_release_control()

@@ -46,7 +46,7 @@ func physics_update(delta: float) -> void:
 	_calculate_water_depth()
 
 	# 2. Read Input
-	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
+	var input_dir: Vector2 = GestureInputManager.get_vector("left", "right", "forward", "backward")
 
 	# 3. Process Physics
 	_apply_swim_velocity(delta, input_dir)

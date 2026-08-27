@@ -228,7 +228,10 @@ func _should_exit_terminal_mode() -> bool:
 	):
 		return true
 
-	if Input.is_action_just_pressed("jump") or Input.is_action_just_pressed("crouch"):
+	if (
+		GestureInputManager.is_action_just_pressed("jump")
+		or GestureInputManager.is_action_just_pressed("crouch")
+	):
 		return true
 
 	if (

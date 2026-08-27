@@ -145,7 +145,7 @@ func _process(delta: float) -> void:
 	if not is_installed:
 		_check_for_installation()
 
-	var just_pressed: bool = is_focused and Input.is_action_just_pressed("interact")
+	var just_pressed: bool = is_focused and GestureInputManager.is_action_just_pressed("interact")
 	if is_installed and can_be_detached and just_pressed:
 		var current_time: float = Time.get_ticks_msec() / 1000.0
 		if current_time - last_interact_time <= DOUBLE_TAP_DELAY:

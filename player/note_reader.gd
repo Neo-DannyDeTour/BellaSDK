@@ -140,7 +140,7 @@ func _process(delta: float) -> void:
 		return
 
 	# 1. Handle WASD Input for Rotation with Inversion logic
-	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
+	var input_dir: Vector2 = GestureInputManager.get_vector("left", "right", "forward", "backward")
 	if input_dir.length_squared() > 0.01:
 		var invert_mult: float = -1.0 if _is_inverted else 1.0
 		_target_rot.y -= input_dir.x * key_rotation_speed * delta * invert_mult

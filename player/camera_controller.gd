@@ -147,7 +147,10 @@ func update_camera(
 	is_grounded: bool,
 	player_velocity: float
 ) -> void:
-	if Input.is_action_just_pressed("zoom") or Input.is_action_just_pressed("sprint"):
+	if (
+		GestureInputManager.is_action_just_pressed("zoom")
+		or GestureInputManager.is_action_just_pressed("sprint")
+	):
 		print("CameraController: update_camera() processing state change.")
 
 	_update_fov(delta, is_sprinting, is_grounded, input_dir)

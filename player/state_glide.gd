@@ -89,7 +89,7 @@ func _apply_glide_physics(delta: float) -> void:
 	var gravity: float = loco.get("gravity") if loco.get("gravity") != null else 9.8
 	player.velocity.y = move_toward(player.velocity.y, -max_fall_speed, gravity * delta)
 
-	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
+	var input_dir: Vector2 = GestureInputManager.get_vector("left", "right", "forward", "backward")
 
 	# 1. Visually bank the glider
 	_bank_glider(input_dir.x, delta)
@@ -136,7 +136,7 @@ func _handle_debug_updraft() -> void:
 	if not is_debug_allowed:
 		return
 
-	if Input.is_action_just_pressed("jump"):
+	if GestureInputManager.is_action_just_pressed("jump"):
 		print("StateGlide: _handle_debug_updraft() triggered. Applying vertical force.")
 		player.velocity.y = debug_updraft_force
 
@@ -149,14 +149,14 @@ func _check_transitions() -> void:
 		return
 
 	# Allow the player to cancel the glide and drop normally
-	if Input.is_action_just_pressed("crouch"):
+	if GestureInputManager.is_action_just_pressed("crouch"):
 		print("StateGlide: _check_transitions() detected crouch input. Cancelling glide.")
 		state_machine.transition_to("Air")
 
 
 ## Ticks peripheral components like camera shaking and interaction scanning while gliding.
 func _update_components(delta: float) -> void:
-	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
+	var input_dir: Vector2 = GestureInputManager.get_vector("left", "right", "forward", "backward")
 
 	player.camera_controller.update_camera(
 		delta, input_dir, false, false, false, player.velocity.length()

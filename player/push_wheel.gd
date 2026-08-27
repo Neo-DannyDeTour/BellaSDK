@@ -61,7 +61,7 @@ func physics_update(delta: float) -> void:
 			state_machine.transition_to("Ground")
 			return
 
-	var push_input: float = Input.get_axis("backward", "forward")
+	var push_input: float = GestureInputManager.get_axis("backward", "forward")
 	if push_input != 0.0:
 		var sync_multiplier: float = _calculate_input_sync_multiplier()
 		active_wheel.push(push_input * sync_multiplier * delta)
