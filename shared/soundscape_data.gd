@@ -1,3 +1,7 @@
+## A resource containing ambient tracks and one-shot sound configurations.
+##
+## Defines an ambient soundscape, including a looping background track and intermittent random
+## sounds.
 class_name SoundscapeData
 extends Resource
 

@@ -9,15 +9,17 @@ extends Area3D
 @export var spawn_height_offset: float = 1.0
 
 
-## Connects the entry signal on node readiness.
+## Connects the entry signal on node readiness. Called when the node enters the scene tree.
 func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 
 
 ## Triggers a teleport back to the last saved checkpoint if the colliding body is the player.
+##
+## @param body The physics body that entered the [Area3D].
 func _on_body_entered(body: Node3D) -> void:
 	if body.name == "Player" or body.is_in_group("Player"):
-		if "noclip" in body and body.noclip == true:
+		if "noclip" in body and bool(body.get("noclip")) == true:
 			return
 
 		if SaveManager.last_checkpoint_pos != Vector3.ZERO:
