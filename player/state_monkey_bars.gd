@@ -81,7 +81,7 @@ func physics_update(delta: float) -> void:
 		_perform_dismount()
 		return
 
-	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
+	var input_dir: Vector2 = GestureInputManager.get_vector("left", "right", "forward", "backward")
 
 	_apply_horizontal_movement(input_dir)
 	_apply_vertical_magnetism()
@@ -167,7 +167,10 @@ func _handle_animations(_input_dir: Vector2) -> void:
 
 
 func _check_dismount_conditions() -> void:
-	if Input.is_action_just_pressed("jump") or Input.is_action_just_pressed("crouch"):
+	if (
+		GestureInputManager.is_action_just_pressed("jump")
+		or GestureInputManager.is_action_just_pressed("crouch")
+	):
 		_perform_dismount()
 
 

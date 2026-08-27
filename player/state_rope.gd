@@ -120,7 +120,7 @@ func physics_update(delta: float) -> void:
 	if not current_rope:
 		return
 
-	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
+	var input_dir: Vector2 = GestureInputManager.get_vector("left", "right", "forward", "backward")
 
 	_handle_climbing_and_swinging(delta, input_dir)
 	_apply_rope_position(delta)
@@ -261,9 +261,9 @@ func _apply_rope_position(delta: float) -> void:
 
 ## Listens for jump or interact actions to release the player from the current rope.
 func _check_dismount(input_dir: Vector2) -> void:
-	if Input.is_action_just_pressed("jump"):
+	if GestureInputManager.is_action_just_pressed("jump"):
 		_perform_jump_dismount(input_dir)
-	elif Input.is_action_just_pressed("interact"):
+	elif GestureInputManager.is_action_just_pressed("interact"):
 		if rope_lerp_weight > 10.0:
 			var release_dir: Vector3 = -player.camera_controller.camera.global_transform.basis.z
 			_transition_out_of_rope(release_dir, 0.0, 0.0)

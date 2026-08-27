@@ -63,7 +63,7 @@ func physics_update(delta: float) -> void:
 	player.velocity += downhill_dir * slide_acceleration * delta
 
 	# 5. Handle Steering (Left/Right)
-	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
+	var input_dir: Vector2 = GestureInputManager.get_vector("left", "right", "forward", "backward")
 
 	# Safely fetch the camera right-vector through the component architecture
 	var camera_right: Vector3 = Vector3.RIGHT

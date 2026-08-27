@@ -25,6 +25,9 @@ var _active_inputs: Dictionary = {}
 ## Maps action names to the physics frame tick when they were triggered.
 var _triggered_actions_frame: Dictionary = {}
 
+## Dictionary tracking the physics frame when an action was released.
+var _released_actions_frame: Dictionary = {}
+
 ## Set of currently held physical key/button unique IDs.
 var _held_keys: Dictionary = {}
 
@@ -81,6 +84,24 @@ func _process(delta: float) -> void:
 
 	for key: Variant in keys_to_remove:
 		_active_inputs.erase(key)
+
+	# Clean up frame-specific actions tracking
+	var current_frame: int = Engine.get_physics_frames()
+	var triggered_keys_to_remove: Array = []
+	for action: Variant in _triggered_actions_frame.keys():
+		var target_frame: int = _triggered_actions_frame[action] as int
+		if current_frame > target_frame + 1:
+			triggered_keys_to_remove.append(action)
+	for key: Variant in triggered_keys_to_remove:
+		_triggered_actions_frame.erase(key)
+
+	var released_keys_to_remove: Array = []
+	for action: Variant in _released_actions_frame.keys():
+		var target_frame: int = _released_actions_frame[action] as int
+		if current_frame > target_frame + 1:
+			released_keys_to_remove.append(action)
+	for key: Variant in released_keys_to_remove:
+		_released_actions_frame.erase(key)
 
 
 ## Intercepts global input events to evaluate gestures, chords, and buffering.
@@ -165,6 +186,8 @@ func _input(event: InputEvent) -> void:
 			var action: String = binding_info["action"] as String
 			var gesture_type: String = binding_info["gesture"] as String
 			var tracking_key: String = str(input_id) + "_" + action
+
+			_released_actions_frame[action] = Engine.get_physics_frames()
 
 			if _active_inputs.has(tracking_key):
 				var data: Dictionary = _active_inputs[tracking_key] as Dictionary
@@ -285,7 +308,6 @@ func is_action_just_triggered(action: String) -> bool:
 	if _triggered_actions_frame.has(action):
 		var target_frame: int = _triggered_actions_frame[action] as int
 		if current_frame == target_frame or current_frame == target_frame + 1:
-			_triggered_actions_frame.erase(action)
 			return true
 	return false
 
@@ -366,7 +388,6 @@ func is_action_just_pressed(action: String) -> bool:
 	if _triggered_actions_frame.has(action):
 		var target_frame: int = _triggered_actions_frame[action] as int
 		if current_frame == target_frame or current_frame == target_frame + 1:
-			_triggered_actions_frame.erase(action)
 			return true
 	return false
 
@@ -376,4 +397,29 @@ func is_action_just_pressed(action: String) -> bool:
 ## [return] True if the action was released this frame.
 func is_action_just_released(action: String) -> bool:
 	print("Input: Polling is_action_just_released for action: ", action)
-	return Input.is_action_just_released(action)
+	var current_frame: int = Engine.get_physics_frames()
+	if _released_actions_frame.has(action):
+		var target_frame: int = _released_actions_frame[action] as int
+		if current_frame == target_frame or current_frame == target_frame + 1:
+			return true
+	return false
+
+
+## Gets an input vector by reading four actions.
+## [param negative_x] The negative X action.
+## [param positive_x] The positive X action.
+## [param negative_y] The negative Y action.
+## [param positive_y] The positive Y action.
+## [return] The resulting Vector2.
+func get_vector(
+	negative_x: String, positive_x: String, negative_y: String, positive_y: String
+) -> Vector2:
+	return Input.get_vector(negative_x, positive_x, negative_y, positive_y)
+
+
+## Gets an input axis by reading two actions.
+## [param negative_action] The negative action.
+## [param positive_action] The positive action.
+## [return] The resulting float.
+func get_axis(negative_action: String, positive_action: String) -> float:
+	return Input.get_axis(negative_action, positive_action)

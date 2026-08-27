@@ -82,7 +82,7 @@ func physics_update(delta: float) -> void:
 
 	var loco: Node = player.locomotion_component
 	var env: Node = player.environment_component
-	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
+	var input_dir: Vector2 = GestureInputManager.get_vector("left", "right", "forward", "backward")
 
 	if env.in_updraft:
 		loco.sprint_active = false
@@ -150,7 +150,7 @@ func _handle_timers(delta: float) -> void:
 func _handle_jump_input() -> void:
 	var loco: Node = player.locomotion_component
 
-	if Input.is_action_just_pressed("jump"):
+	if GestureInputManager.is_action_just_pressed("jump"):
 		print("StateAir: Jump input detected.")
 		if coyote_timer > 0.0 and not has_jumped:
 			_perform_coyote_jump()
