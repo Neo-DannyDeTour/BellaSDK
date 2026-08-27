@@ -45,6 +45,7 @@ size_flags_vertical = 3
 [node name="SettingsScroll" type="ScrollContainer" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=693938259]
 layout_mode = 2
 size_flags_horizontal = 3
+scroll_vertical = 100
 horizontal_scroll_mode = 0
 
 [node name="GridContainer" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll" unique_id=1425124961]
@@ -376,6 +377,22 @@ unique_name_in_owner = true
 layout_mode = 2
 
 [node name="UIScaleSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1780903147]
+unique_name_in_owner = true
+layout_mode = 2
+min_value = 1.0
+max_value = 2.0
+step = 0.01
+value = 1.0
+
+[node name="Font_ScaleLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=355223109]
+layout_mode = 2
+text = "Font Scale"
+
+[node name="Font_ScaleLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=822140595]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="Font_ScaleSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1230384517]
 unique_name_in_owner = true
 layout_mode = 2
 min_value = 1.0

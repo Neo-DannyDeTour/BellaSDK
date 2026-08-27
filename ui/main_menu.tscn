@@ -142,7 +142,7 @@ text = "Bella Bittersweet: Tunnel Vision"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="CenterContainer" type="CenterContainer" parent="." unique_id=8224348]
+[node name="CenterContainer" type="MarginContainer" parent="." unique_id=722417156]
 unique_name_in_owner = true
 visible = false
 anchors_preset = 15
@@ -150,9 +150,14 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 32
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 32
 
 [node name="OptionsMenu" type="VBoxContainer" parent="CenterContainer" unique_id=909708633]
-custom_minimum_size = Vector2(1280, 720)
 layout_mode = 2
 script = ExtResource("5_lsdqh")
 
@@ -249,33 +254,27 @@ size_flags_horizontal = 3
 
 [node name="SettingsArea" type="MarginContainer" parent="CenterContainer/OptionsMenu/ContentVBox" unique_id=170907656]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(1280, 720)
 layout_mode = 2
 size_flags_vertical = 3
 
 [node name="VideoOptionsPanel" parent="CenterContainer/OptionsMenu/ContentVBox/SettingsArea" unique_id=1944788422 instance=ExtResource("5_ubpvv")]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(800, 500)
 layout_mode = 2
 
 [node name="AudioPanel" parent="CenterContainer/OptionsMenu/ContentVBox/SettingsArea" unique_id=755109423 instance=ExtResource("9_jiymt")]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(800, 500)
 layout_mode = 2
 
 [node name="GameplayPanel" parent="CenterContainer/OptionsMenu/ContentVBox/SettingsArea" unique_id=1532565924 instance=ExtResource("10_bgtsx")]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(800, 500)
 layout_mode = 2
 
 [node name="ControlsPanel" parent="CenterContainer/OptionsMenu/ContentVBox/SettingsArea" unique_id=1661150765 instance=ExtResource("6_arv2f")]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(800, 500)
 layout_mode = 2
 
 [node name="AccessibilityPanel" parent="CenterContainer/OptionsMenu/ContentVBox/SettingsArea" unique_id=1445857146 instance=ExtResource("7_5klac")]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(800, 500)
 layout_mode = 2
 
 [node name="SharedDioramaHolder" type="PanelContainer" parent="CenterContainer/OptionsMenu/ContentVBox" unique_id=231050902]

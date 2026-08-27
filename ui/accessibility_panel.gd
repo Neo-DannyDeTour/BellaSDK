@@ -68,6 +68,8 @@ const DEFAULT_VISION_ASSIST_MODE: int = 1
 const DEFAULT_SCREEN_FILTER: int = 0
 ## Default constant value for world environment gamma.
 const DEFAULT_GAMMA: float = 1.0
+## Default constant value for typography font scaling multiplier.
+const DEFAULT_FONT_SCALE: float = 1.0
 
 ## Available palette color options for high contrast silhouette groups and subtitles.
 const COLOR_NAMES: Array[String] = [
@@ -79,6 +81,11 @@ const VISION_MODES: Array[String] = ["Black & White", "Blue", "Pure Black", "Gre
 const VISION_MODE_KEYS: Array[String] = [
 	"black_and_white", "blue", "pure_black", "grey", "desaturated"
 ]
+
+## Base sizes cached to prevent exponential multiplication on repeated changes.
+const BASE_FONT_SIZES: Dictionary[String, int] = {
+	"default": 16, "Label": 16, "Button": 16, "OptionButton": 14, "LineEdit": 14, "CheckButton": 14
+}
 
 ## Diorama packed scene to instantiate into the preview viewport.
 @export var diorama_scene: PackedScene
@@ -147,6 +154,10 @@ const VISION_MODE_KEYS: Array[String] = [
 @onready var font_option: OptionButton = get_node_or_null("%FontOption")
 ## Toggle switch for high-contrast UI mode.
 @onready var high_contrast_toggle: CheckButton = get_node_or_null("%HighContrastToggle")
+## Slider for adjusting typography font scaling factor.
+@onready var font_scale_slider: HSlider = get_node_or_null("%Font_ScaleSlider")
+## Text input for manual typography font scaling factor entry.
+@onready var font_scale_input: LineEdit = get_node_or_null("%Font_ScaleLine")
 
 # --- SUBTITLES & AUDIO CONTROLS ---
 ## Slider for subtitle text font size.
@@ -235,11 +246,8 @@ func _setup_diorama() -> void:
 		diorama_viewport.add_child(_diorama_instance)
 		print("UI: Loaded diorama scene into preview viewport: ", _diorama_instance.name)
 
-	var vision_mgr: Node = get_node_or_null("/root/VisionAssistManager")
-	if is_instance_valid(vision_mgr) and vision_mgr.has_method("apply_diorama_overlays"):
-		vision_mgr.call("apply_diorama_overlays", _diorama_instance)
-
 	_setup_diorama_cameras()
+	set_diorama_effects_enabled(false)
 
 
 ## Discovers and caches all Camera3D instances present in the diorama scene.
@@ -501,6 +509,9 @@ func _connect_signals() -> void:
 	_connect_adjustment_signals(
 		vibration_slider, vibration_input, "vibration_strength", 0.0, 2.0, "Gameplay"
 	)
+	_connect_adjustment_signals(
+		font_scale_slider, font_scale_input, "font_scale", 0.75, 2.0, "Settings"
+	)
 	if reduce_motion_toggle:
 		reduce_motion_toggle.toggled.connect(_on_reduce_motion_toggled)
 
@@ -541,6 +552,8 @@ func _connect_event_bus() -> void:
 		events.photosensitivity_mode_toggled.connect(_on_external_photosensitivity_changed)
 	if events.has_signal("vision_assist_toggled"):
 		events.vision_assist_toggled.connect(_on_external_vision_assist_changed)
+	if events.has_signal("font_scale_changed"):
+		events.font_scale_changed.connect(_on_font_scale_changed)
 
 
 ## Loads stored user preferences from GlobalSettings into UI components.
@@ -590,6 +603,10 @@ func _load_accessibility_settings() -> void:
 	_load_slider_setting(
 		film_grain_slider, film_grain_input, "film_grain_intensity", DEFAULT_FILM_GRAIN, "Settings"
 	)
+	_load_slider_setting(
+		font_scale_slider, font_scale_input, "font_scale", DEFAULT_FONT_SCALE, "Settings"
+	)
+	_apply_font_scale_settings()
 	_apply_visual_settings()
 
 	if photosensitivity_toggle:
@@ -928,6 +945,8 @@ func _on_adjustment_changed(
 		_apply_subtitle_size(value)
 	elif setting_name == "subtitle_bg_opacity":
 		_apply_subtitle_bg_opacity(value)
+	elif setting_name == "font_scale":
+		_apply_font_scale_settings()
 	elif setting_name == "film_grain_intensity":
 		if has_node("/root/Events"):
 			var events: Node = get_node("/root/Events")
@@ -959,6 +978,8 @@ func _on_adjustment_drag_ended(
 				var events: Node = get_node("/root/Events")
 				if events.has_signal("film_grain_changed"):
 					events.film_grain_changed.emit(slider_node.value)
+		elif setting_name == "font_scale":
+			_apply_font_scale_settings()
 
 
 ## Validates and submits manual numeric text inputs into companion sliders.
@@ -995,6 +1016,8 @@ func _on_adjustment_input_submitted(
 				events.film_grain_changed.emit(new_val)
 	elif setting_name in ["brightness", "contrast", "saturation", "gamma"]:
 		_apply_visual_settings()
+	elif setting_name == "font_scale":
+		_apply_font_scale_settings()
 
 
 ## Clears LineEdit text box when editing focus begins.
@@ -1481,3 +1504,87 @@ func _apply_gamma_to_environment(gamma_val: float, env: Environment) -> void:
 	var curve_tex: CurveTexture = CurveTexture.new()
 	curve_tex.curve = curve
 	env.adjustment_color_correction = curve_tex
+
+
+## Toggles all visual accessibility effects on diorama preview cameras, meshes, and models.
+## [param active] Whether accessibility effects should be active in the diorama.
+func set_diorama_effects_enabled(active: bool) -> void:
+	print("UI: Setting diorama accessibility effects active: ", active)
+	var mode_idx: int = (
+		GlobalSettings.get_setting("VisionAssist", "mode", DEFAULT_VISION_ASSIST_MODE) as int
+	)
+	var mode_key: String = (
+		VISION_MODE_KEYS[mode_idx]
+		if mode_idx >= 0 and mode_idx < VISION_MODE_KEYS.size()
+		else "aaa_blue"
+	)
+
+	for cam: Camera3D in _diorama_cameras.values():
+		if not is_instance_valid(cam):
+			continue
+
+		var mesh: MeshInstance3D = cam.get_node_or_null("VisionAssistMesh") as MeshInstance3D
+		if is_instance_valid(mesh):
+			mesh.visible = active
+
+		if cam.has_method("_on_vision_assist_toggled"):
+			cam.call("_on_vision_assist_toggled", active)
+
+		if active and cam.has_method("set_vision_assist_mode"):
+			cam.call("set_vision_assist_mode", mode_key)
+
+	var vision_mgr: Node = get_node_or_null("/root/VisionAssistManager")
+	if is_instance_valid(vision_mgr) and vision_mgr.has_method("set_diorama_overlays_active"):
+		vision_mgr.call("set_diorama_overlays_active", _diorama_instance, active)
+
+
+## Broadcasts typography font scale factor changes across the EventBus.
+func _apply_font_scale_settings() -> void:
+	if not is_instance_valid(font_scale_slider):
+		return
+
+	var current_scale: float = font_scale_slider.value
+	print("Engine: Applying Font Scale adjustments: ", current_scale)
+
+	var events_node: Node = get_node_or_null("/root/Events")
+	if is_instance_valid(events_node) and events_node.has_signal("font_scale_changed"):
+		events_node.font_scale_changed.emit(current_scale)
+
+
+## Updates the font sizes across common Control types using the active theme.
+## [param scale_factor] The active font scale multiplier.
+func _on_font_scale_changed(scale_factor: float) -> void:
+	print("UI: Rescaling base theme font sizes with factor: ", scale_factor)
+
+	var target_theme: Theme = theme
+	if not is_instance_valid(target_theme):
+		target_theme = ThemeDB.get_project_theme()
+
+	if not is_instance_valid(target_theme):
+		target_theme = ThemeDB.get_default_theme()
+
+	if not is_instance_valid(target_theme):
+		push_warning("UI: No valid Theme found to scale.")
+		return
+
+	var def_size: int = int(round(float(BASE_FONT_SIZES["default"]) * scale_factor))
+	target_theme.default_font_size = def_size
+
+	for type_name: String in BASE_FONT_SIZES:
+		if type_name == "default":
+			continue
+		var new_size: int = int(round(float(BASE_FONT_SIZES[type_name]) * scale_factor))
+		target_theme.set_font_size("font_size", type_name, new_size)
+
+	_propagate_theme_refresh(self)
+
+
+## Notifies control nodes down the subtree to invalidate their theme caches.
+## [param node] The parent [Node] starting point.
+func _propagate_theme_refresh(node: Node) -> void:
+	if not is_instance_valid(node):
+		return
+	if node is Control:
+		(node as Control).notification(Control.NOTIFICATION_THEME_CHANGED)
+	for child: Node in node.get_children():
+		_propagate_theme_refresh(child)

@@ -255,31 +255,157 @@ func _scan_node_for_search(root_node: Node, tab_idx: int, tab_name: String) -> v
 	if root_node is Label:
 		var label: Label = root_node as Label
 		var label_text: String = label.text.strip_edges()
-		if not label_text.is_empty() and label.name != "HeaderLabel":
+		var is_header: bool = (
+			label.name == "HeaderLabel"
+			or label.name.begins_with("SectionHeader")
+			or label.theme_type_variation == "HeaderMedium"
+		)
+		if not label_text.is_empty() and not is_header:
 			var parent: Node = label.get_parent()
 			if parent:
-				var interactive: Control = _find_interactive_sibling(parent, label)
-				if interactive:
-					_register_search_item(label.text, tab_idx, tab_name, interactive)
-
-	elif _is_interactive_control(root_node) and root_node is Button:
-		var btn: Button = root_node as Button
-		var is_searchable_btn: bool = (
-			not btn.text.strip_edges().is_empty()
-			and not btn.has_meta("slot")
-			and btn.name != "MasterBackButton"
-		)
-		if is_searchable_btn:
-			_register_search_item(btn.text, tab_idx, tab_name, btn)
+				_inspect_and_register_row(parent, label, tab_idx, tab_name)
 
 	for child: Node in root_node.get_children():
-		var should_skip: bool = (
-			child.name == "HeaderLabel"
-			or child.name.begins_with("SectionHeader")
-			or child.name.begins_with("Spacer")
-		)
-		if not should_skip:
+		if child != search_results_panel and child.name != "HeaderLabel":
 			_scan_node_for_search(child, tab_idx, tab_name)
+
+
+## Inspects siblings following a label to register complete slider, line edit, or keybind rows.
+## [param parent] The parent container [Node] holding elements.
+## [param label_node] The [Label] being paired.
+## [param tab_idx] Index of the parent tab category.
+## [param tab_name] Name of the parent tab category.
+func _inspect_and_register_row(
+	parent: Node, label_node: Label, tab_idx: int, tab_name: String
+) -> void:
+	var label_idx: int = label_node.get_index()
+	var child_count: int = parent.get_child_count()
+	var max_step: int = 6
+
+	if parent is GridContainer:
+		var grid: GridContainer = parent as GridContainer
+		max_step = max(grid.columns, 4)
+
+	var found_slider: HSlider = null
+	var found_readout_lbl: Label = null
+	var found_line_edit: LineEdit = null
+	var found_primary_btn: Button = null
+	var found_secondary_btn: Button = null
+	var found_clear_btn: Button = null
+	var generic_interactive: Control = null
+
+	for step_offset: int in range(1, max_step + 1):
+		var target_idx: int = label_idx + step_offset
+		if target_idx >= child_count:
+			break
+		var sibling: Node = parent.get_child(target_idx)
+
+		if sibling is HSeparator or sibling is VSeparator:
+			continue
+
+		if sibling is Button and (sibling as Button).has_meta("action"):
+			var btn: Button = sibling as Button
+			var slot: int = btn.get_meta("slot", 0) as int
+			if slot == 0:
+				found_primary_btn = btn
+			elif slot == 1:
+				found_secondary_btn = btn
+			continue
+
+		if found_primary_btn != null and sibling is Button and (sibling as Button).text == "✕":
+			found_clear_btn = sibling as Button
+			continue
+
+		if sibling is LineEdit:
+			found_line_edit = sibling as LineEdit
+			continue
+
+		if sibling is HSlider:
+			found_slider = sibling as HSlider
+			continue
+
+		if sibling is Label:
+			var lbl: Label = sibling as Label
+			var txt: String = lbl.text.strip_edges()
+			var is_numeric_value: bool = (
+				txt.is_valid_float()
+				or txt.is_valid_int()
+				or txt.ends_with("%")
+				or txt.ends_with("px")
+				or txt.length() <= 8
+			)
+			if is_numeric_value:
+				found_readout_lbl = lbl
+				continue
+			else:
+				break
+
+		if _is_interactive_control(sibling) and generic_interactive == null:
+			generic_interactive = sibling as Control
+
+	if found_primary_btn != null:
+		_register_search_item_custom(
+			{
+				"title": label_node.text.strip_edges().replace(":", ""),
+				"tab_index": tab_idx,
+				"tab_name": tab_name,
+				"type": "control_action",
+				"target": found_primary_btn,
+				"action": found_primary_btn.get_meta("action", "") as String,
+				"primary_btn": found_primary_btn,
+				"secondary_btn": found_secondary_btn,
+				"clear_btn": found_clear_btn
+			}
+		)
+	elif found_slider != null:
+		_register_search_item_custom(
+			{
+				"title": label_node.text.strip_edges().replace(":", ""),
+				"tab_index": tab_idx,
+				"tab_name": tab_name,
+				"type": "slider",
+				"target":
+				found_line_edit as Control if found_line_edit != null else found_slider as Control,
+				"slider": found_slider,
+				"readout_lbl": found_readout_lbl,
+				"line_edit": found_line_edit
+			}
+		)
+	elif found_line_edit != null:
+		_register_search_item_custom(
+			{
+				"title": label_node.text.strip_edges().replace(":", ""),
+				"tab_index": tab_idx,
+				"tab_name": tab_name,
+				"type": "line_edit",
+				"target": found_line_edit,
+				"line_edit": found_line_edit
+			}
+		)
+	elif generic_interactive != null:
+		_register_search_item_custom(
+			{
+				"title": label_node.text.strip_edges().replace(":", ""),
+				"tab_index": tab_idx,
+				"tab_name": tab_name,
+				"type": "generic",
+				"target": generic_interactive
+			}
+		)
+
+
+## Registers a customized setting dictionary into the search index cache.
+## [param data] Dictionary holding indexed metadata for the setting row.
+func _register_search_item_custom(data: Dictionary) -> void:
+	var clean_title: String = (data["title"] as String).strip_edges()
+	if clean_title.is_empty():
+		return
+
+	for item: Dictionary in _search_index:
+		if item["title"] == clean_title and item["tab_index"] == data["tab_index"]:
+			return
+
+	_search_index.append(data)
 
 
 ## Locates the exact interactive sibling [Control] mapped to a specific [Label].
@@ -289,28 +415,61 @@ func _scan_node_for_search(root_node: Node, tab_idx: int, tab_name: String) -> v
 func _find_interactive_sibling(parent: Node, label_node: Label) -> Control:
 	var label_idx: int = label_node.get_index()
 	var child_count: int = parent.get_child_count()
-	var max_step: int = 4
+	var max_step: int = 6
 
 	if parent is GridContainer:
 		var grid: GridContainer = parent as GridContainer
-		max_step = max(grid.columns, 2)
+		max_step = max(grid.columns, 4)
 
 	for step_offset: int in range(1, max_step + 1):
 		var target_idx: int = label_idx + step_offset
 		if target_idx >= child_count:
 			break
 		var sibling: Node = parent.get_child(target_idx)
-		if sibling is Label:
-			break
+
+		if sibling is Line2D or sibling is HSeparator or sibling is VSeparator:
+			continue
+
 		if _is_interactive_control(sibling):
 			return sibling as Control
-		for sub: Node in sibling.get_children():
-			if _is_interactive_control(sub):
-				return sub as Control
+
+		if sibling is Container or sibling is Control:
+			var nested_interactive: Control = _find_first_interactive_child(sibling)
+			if nested_interactive:
+				return nested_interactive
+
+		if sibling is Label:
+			var lbl: Label = sibling as Label
+			var txt: String = lbl.text.strip_edges()
+			var is_numeric_value: bool = (
+				txt.is_valid_float()
+				or txt.is_valid_int()
+				or txt.ends_with("%")
+				or txt.ends_with("px")
+				or txt.ends_with("x")
+				or txt.length() <= 8
+			)
+			if not is_numeric_value:
+				break
 
 	return null
 
 
+## Recursively scans container children to find the first interactive control.
+## [param root] The parent [Node] to inspect.
+## [return] The first interactive [Control] found, or null.
+func _find_first_interactive_child(root: Node) -> Control:
+	for child: Node in root.get_children():
+		if _is_interactive_control(child):
+			return child as Control
+		var deeper: Control = _find_first_interactive_child(child)
+		if deeper:
+			return deeper
+	return null
+
+
+## Central user interface manager coordinating navigation, game context,
+## audio themes, and unified setting search routing.
 ## Evaluates whether a node represents a focusable/interactive settings widget.
 ## [param node] The [Node] to evaluate.
 ## [return] True if the control accepts player interaction.
@@ -322,7 +481,9 @@ func _is_interactive_control(node: Node) -> bool:
 		or node is HSlider
 		or node is LineEdit
 		or (
-			node is Button and not (node is CheckButton or node is CheckBox or node is OptionButton)
+			node is Button
+			and not (node is CheckButton or node is CheckBox or node is OptionButton)
+			and node.name != "MasterBackButton"
 		)
 	)
 
@@ -372,14 +533,10 @@ func _on_search_text_changed(query: String) -> void:
 	for item: Dictionary in _search_index:
 		var item_title: String = item["title"] as String
 		var category: String = item["tab_name"] as String
-		var tab_idx: int = item["tab_index"] as int
-		var target: Control = item["target"] as Control
 
 		if clean_query in item_title.to_lower() or clean_query in category.to_lower():
 			matches += 1
-			var row: HBoxContainer = _create_search_result_row(
-				item_title, category, tab_idx, target
-			)
+			var row: HBoxContainer = _create_search_result_row(item)
 			search_results_list.add_child(row)
 
 	_update_search_panel_position()
@@ -402,148 +559,281 @@ func _navigate_to_setting(tab_idx: int, target: Control) -> void:
 		search_bar.text = ""
 
 	if is_instance_valid(target):
+		if target.focus_mode == Control.FOCUS_NONE:
+			target.focus_mode = Control.FOCUS_ALL
 		target.grab_focus()
 
 
-## Creates an interactive horizontal row for the
-## search results dropdown containing an embedded control.
-## [param title] Setting label name.
-## [param category] Settings category tab name.
-## [param tab_idx] Tab index owning the setting.
-## [param original] The original [Control] instance to clone and sync.
+## Creates an interactive horizontal row for search results containing synced controls.
+## [param item] Dictionary containing cached control metadata.
 ## [return] The constructed [HBoxContainer] row.
-func _create_search_result_row(
-	title: String, category: String, tab_idx: int, original: Control
-) -> HBoxContainer:
+func _create_search_result_row(item: Dictionary) -> HBoxContainer:
 	var row: HBoxContainer = HBoxContainer.new()
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	row.custom_minimum_size.y = 32.0
+	row.custom_minimum_size.y = 34.0
+	row.add_theme_constant_override("separation", 10)
+
+	var title: String = item["title"] as String
+	var category: String = item["tab_name"] as String
+	var tab_idx: int = item["tab_index"] as int
+	var target: Control = item["target"] as Control
+	var item_type: String = item.get("type", "generic") as String
 
 	var label_button: Button = Button.new()
 	label_button.text = "%s  [%s]" % [title, category]
 	label_button.flat = true
 	label_button.alignment = HORIZONTAL_ALIGNMENT_LEFT
 	label_button.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	label_button.pressed.connect(func() -> void: _navigate_to_setting(tab_idx, original))
+	label_button.pressed.connect(func() -> void: _navigate_to_setting(tab_idx, target))
 	row.add_child(label_button)
 
-	if not is_instance_valid(original):
-		return row
+	if item_type == "slider":
+		var orig_sl: HSlider = item["slider"] as HSlider
+		var orig_readout_lbl: Label = item.get("readout_lbl", null) as Label
+		var orig_le: LineEdit = item.get("line_edit", null) as LineEdit
 
-	if original is OptionButton:
-		var orig_ob: OptionButton = original as OptionButton
-		var cloned_ob: OptionButton = OptionButton.new()
-		for i: int in range(orig_ob.item_count):
-			cloned_ob.add_item(orig_ob.get_item_text(i), orig_ob.get_item_id(i))
-		cloned_ob.selected = orig_ob.selected
-		cloned_ob.custom_minimum_size.x = 200.0
+		var cloned_le: LineEdit = null
+		var readout_lbl: Label = null
 
-		var sync_orig: Callable = func(idx: int) -> void:
-			if is_instance_valid(cloned_ob):
-				cloned_ob.selected = idx
+		if is_instance_valid(orig_le):
+			cloned_le = LineEdit.new()
+			cloned_le.text = orig_le.text
+			cloned_le.placeholder_text = orig_le.placeholder_text
+			cloned_le.alignment = orig_le.alignment
+			cloned_le.custom_minimum_size.x = maxf(orig_le.custom_minimum_size.x, 56.0)
+			cloned_le.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
-		cloned_ob.item_selected.connect(
-			func(idx: int) -> void:
-				print("UI: Search Quick-Change OptionButton -> ", idx)
-				if orig_ob.selected != idx:
-					orig_ob.selected = idx
-					orig_ob.item_selected.emit(idx)
-		)
-		orig_ob.item_selected.connect(sync_orig)
-		cloned_ob.tree_exited.connect(
-			func() -> void:
-				if is_instance_valid(orig_ob) and orig_ob.item_selected.is_connected(sync_orig):
-					orig_ob.item_selected.disconnect(sync_orig)
-		)
-		row.add_child(cloned_ob)
+			var sync_orig_le: Callable = func(new_text: String) -> void:
+				if is_instance_valid(cloned_le) and cloned_le.text != new_text:
+					cloned_le.text = new_text
 
-	elif original is CheckButton:
-		var orig_cb: CheckButton = original as CheckButton
-		var cloned_cb: CheckButton = CheckButton.new()
-		cloned_cb.button_pressed = orig_cb.button_pressed
+			cloned_le.text_submitted.connect(
+				func(submitted_text: String) -> void:
+					print("UI: Search Quick-Submit LineEdit -> ", submitted_text)
+					if orig_le.text != submitted_text:
+						orig_le.text = submitted_text
+						orig_le.text_submitted.emit(submitted_text)
+					if submitted_text.is_valid_float() and is_instance_valid(orig_sl):
+						var num_val: float = submitted_text.to_float()
+						orig_sl.value = num_val
+						orig_sl.value_changed.emit(num_val)
+			)
+			cloned_le.text_changed.connect(
+				func(changed_text: String) -> void:
+					if orig_le.text != changed_text:
+						orig_le.text = changed_text
+						orig_le.text_changed.emit(changed_text)
+			)
+			orig_le.text_changed.connect(sync_orig_le)
+			cloned_le.tree_exited.connect(
+				func() -> void:
+					if (
+						is_instance_valid(orig_le)
+						and orig_le.text_changed.is_connected(sync_orig_le)
+					):
+						orig_le.text_changed.disconnect(sync_orig_le)
+			)
+			row.add_child(cloned_le)
 
-		var sync_orig: Callable = func(pressed: bool) -> void:
-			if is_instance_valid(cloned_cb):
-				cloned_cb.button_pressed = pressed
+		elif is_instance_valid(orig_readout_lbl):
+			readout_lbl = Label.new()
+			readout_lbl.custom_minimum_size.x = 48.0
+			readout_lbl.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
+			readout_lbl.text = orig_readout_lbl.text
+			row.add_child(readout_lbl)
 
-		cloned_cb.toggled.connect(
-			func(pressed: bool) -> void:
-				print("UI: Search Quick-Change CheckButton -> ", pressed)
-				if orig_cb.button_pressed != pressed:
-					orig_cb.button_pressed = pressed
-					orig_cb.toggled.emit(pressed)
-		)
-		orig_cb.toggled.connect(sync_orig)
-		cloned_cb.tree_exited.connect(
-			func() -> void:
-				if is_instance_valid(orig_cb) and orig_cb.toggled.is_connected(sync_orig):
-					orig_cb.toggled.disconnect(sync_orig)
-		)
-		row.add_child(cloned_cb)
+		if is_instance_valid(orig_sl):
+			var cloned_sl: HSlider = HSlider.new()
+			cloned_sl.min_value = orig_sl.min_value
+			cloned_sl.max_value = orig_sl.max_value
+			cloned_sl.step = orig_sl.step
+			cloned_sl.value = orig_sl.value
+			cloned_sl.custom_minimum_size.x = 180.0
+			cloned_sl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
-	elif original is CheckBox:
-		var orig_chk: CheckBox = original as CheckBox
-		var cloned_chk: CheckBox = CheckBox.new()
-		cloned_chk.button_pressed = orig_chk.button_pressed
+			var sync_orig_sl: Callable = func(val: float) -> void:
+				if is_instance_valid(cloned_sl):
+					cloned_sl.value = val
+				if is_instance_valid(readout_lbl):
+					readout_lbl.text = (
+						orig_readout_lbl.text
+						if is_instance_valid(orig_readout_lbl)
+						else ("%.2f" % val)
+					)
+				if is_instance_valid(cloned_le):
+					cloned_le.text = (
+						orig_le.text if is_instance_valid(orig_le) else ("%.2f" % val)
+					)
 
-		var sync_orig: Callable = func(pressed: bool) -> void:
-			if is_instance_valid(cloned_chk):
-				cloned_chk.button_pressed = pressed
+			cloned_sl.value_changed.connect(
+				func(val: float) -> void:
+					print("UI: Search Quick-Change Slider -> ", val)
+					if not is_equal_approx(orig_sl.value, val):
+						orig_sl.value = val
+						orig_sl.value_changed.emit(val)
+					if is_instance_valid(readout_lbl):
+						readout_lbl.text = (
+							orig_readout_lbl.text
+							if is_instance_valid(orig_readout_lbl)
+							else ("%.2f" % val)
+						)
+					if is_instance_valid(cloned_le):
+						cloned_le.text = (
+							orig_le.text if is_instance_valid(orig_le) else ("%.2f" % val)
+						)
+			)
+			orig_sl.value_changed.connect(sync_orig_sl)
+			cloned_sl.tree_exited.connect(
+				func() -> void:
+					if (
+						is_instance_valid(orig_sl)
+						and orig_sl.value_changed.is_connected(sync_orig_sl)
+					):
+						orig_sl.value_changed.disconnect(sync_orig_sl)
+			)
+			row.add_child(cloned_sl)
 
-		cloned_chk.toggled.connect(
-			func(pressed: bool) -> void:
-				print("UI: Search Quick-Change CheckBox -> ", pressed)
-				if orig_chk.button_pressed != pressed:
-					orig_chk.button_pressed = pressed
-					orig_chk.toggled.emit(pressed)
-		)
-		orig_chk.toggled.connect(sync_orig)
-		cloned_chk.tree_exited.connect(
-			func() -> void:
-				if is_instance_valid(orig_chk) and orig_chk.toggled.is_connected(sync_orig):
-					orig_chk.toggled.disconnect(sync_orig)
-		)
-		row.add_child(cloned_chk)
+	elif item_type == "line_edit":
+		var orig_le_only: LineEdit = item["line_edit"] as LineEdit
+		if is_instance_valid(orig_le_only):
+			var cloned_le_only: LineEdit = LineEdit.new()
+			cloned_le_only.text = orig_le_only.text
+			cloned_le_only.placeholder_text = orig_le_only.placeholder_text
+			cloned_le_only.alignment = orig_le_only.alignment
+			cloned_le_only.custom_minimum_size.x = 180.0
+			cloned_le_only.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
-	elif original is HSlider:
-		var orig_sl: HSlider = original as HSlider
-		var cloned_sl: HSlider = HSlider.new()
-		cloned_sl.min_value = orig_sl.min_value
-		cloned_sl.max_value = orig_sl.max_value
-		cloned_sl.step = orig_sl.step
-		cloned_sl.value = orig_sl.value
-		cloned_sl.custom_minimum_size.x = 180.0
-		cloned_sl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+			var sync_orig_single_le: Callable = func(new_text: String) -> void:
+				if is_instance_valid(cloned_le_only) and cloned_le_only.text != new_text:
+					cloned_le_only.text = new_text
 
-		var sync_orig: Callable = func(val: float) -> void:
-			if is_instance_valid(cloned_sl):
-				cloned_sl.value = val
+			cloned_le_only.text_submitted.connect(
+				func(submitted_text: String) -> void:
+					print("UI: Search Quick-Submit LineEdit -> ", submitted_text)
+					if orig_le_only.text != submitted_text:
+						orig_le_only.text = submitted_text
+						orig_le_only.text_submitted.emit(submitted_text)
+			)
+			cloned_le_only.text_changed.connect(
+				func(changed_text: String) -> void:
+					if orig_le_only.text != changed_text:
+						orig_le_only.text = changed_text
+						orig_le_only.text_changed.emit(changed_text)
+			)
+			orig_le_only.text_changed.connect(sync_orig_single_le)
+			cloned_le_only.tree_exited.connect(
+				func() -> void:
+					var valid: bool = is_instance_valid(orig_le_only)
+					if valid and orig_le_only.text_changed.is_connected(sync_orig_single_le):
+						orig_le_only.text_changed.disconnect(sync_orig_single_le)
+			)
+			row.add_child(cloned_le_only)
 
-		cloned_sl.value_changed.connect(
-			func(val: float) -> void:
-				print("UI: Search Quick-Change HSlider -> ", val)
-				if not is_equal_approx(orig_sl.value, val):
-					orig_sl.value = val
-					orig_sl.value_changed.emit(val)
-		)
-		orig_sl.value_changed.connect(sync_orig)
-		cloned_sl.tree_exited.connect(
-			func() -> void:
-				if is_instance_valid(orig_sl) and orig_sl.value_changed.is_connected(sync_orig):
-					orig_sl.value_changed.disconnect(sync_orig)
-		)
-		row.add_child(cloned_sl)
+	elif item_type == "control_action":
+		var orig_p: Button = item["primary_btn"] as Button
+		var orig_s: Button = item["secondary_btn"] as Button
+		var orig_c: Button = item["clear_btn"] as Button
 
-	elif original is Button:
-		var orig_b: Button = original as Button
-		var cloned_b: Button = Button.new()
-		cloned_b.text = orig_b.text
-		cloned_b.pressed.connect(
-			func() -> void:
-				print("UI: Search Quick-Click Button -> ", orig_b.text)
-				orig_b.pressed.emit()
-		)
-		row.add_child(cloned_b)
+		if is_instance_valid(orig_p):
+			var cloned_p: Button = Button.new()
+			cloned_p.text = orig_p.text if not orig_p.text.is_empty() else "Primary"
+			cloned_p.custom_minimum_size.x = 90.0
+			cloned_p.pressed.connect(func() -> void: _navigate_to_setting(tab_idx, orig_p))
+			row.add_child(cloned_p)
+
+		if is_instance_valid(orig_s):
+			var cloned_s: Button = Button.new()
+			cloned_s.text = orig_s.text if not orig_s.text.is_empty() else "Secondary"
+			cloned_s.custom_minimum_size.x = 90.0
+			cloned_s.pressed.connect(func() -> void: _navigate_to_setting(tab_idx, orig_s))
+			row.add_child(cloned_s)
+
+		if is_instance_valid(orig_c):
+			var cloned_c: Button = Button.new()
+			cloned_c.text = "✕"
+			cloned_c.custom_minimum_size.x = 32.0
+			cloned_c.pressed.connect(
+				func() -> void:
+					print("UI: Search Quick-Clear binding -> ", item["action"])
+					orig_c.pressed.emit()
+			)
+			row.add_child(cloned_c)
+
+	elif is_instance_valid(target):
+		if target is OptionButton:
+			var orig_ob: OptionButton = target as OptionButton
+			var cloned_ob: OptionButton = OptionButton.new()
+			for i: int in range(orig_ob.item_count):
+				cloned_ob.add_item(orig_ob.get_item_text(i), orig_ob.get_item_id(i))
+			cloned_ob.selected = orig_ob.selected
+			cloned_ob.custom_minimum_size.x = 180.0
+
+			var sync_orig: Callable = func(idx: int) -> void:
+				if is_instance_valid(cloned_ob):
+					cloned_ob.selected = idx
+
+			cloned_ob.item_selected.connect(
+				func(idx: int) -> void:
+					print("UI: Search Quick-Change OptionButton -> ", idx)
+					if orig_ob.selected != idx:
+						orig_ob.selected = idx
+						orig_ob.item_selected.emit(idx)
+			)
+			orig_ob.item_selected.connect(sync_orig)
+			cloned_ob.tree_exited.connect(
+				func() -> void:
+					if is_instance_valid(orig_ob) and orig_ob.item_selected.is_connected(sync_orig):
+						orig_ob.item_selected.disconnect(sync_orig)
+			)
+			row.add_child(cloned_ob)
+
+		elif target is CheckButton:
+			var orig_cb: CheckButton = target as CheckButton
+			var cloned_cb: CheckButton = CheckButton.new()
+			cloned_cb.button_pressed = orig_cb.button_pressed
+
+			var sync_orig: Callable = func(pressed: bool) -> void:
+				if is_instance_valid(cloned_cb):
+					cloned_cb.button_pressed = pressed
+
+			cloned_cb.toggled.connect(
+				func(pressed: bool) -> void:
+					print("UI: Search Quick-Change CheckButton -> ", pressed)
+					if orig_cb.button_pressed != pressed:
+						orig_cb.button_pressed = pressed
+						orig_cb.toggled.emit(pressed)
+			)
+			orig_cb.toggled.connect(sync_orig)
+			cloned_cb.tree_exited.connect(
+				func() -> void:
+					if is_instance_valid(orig_cb) and orig_cb.toggled.is_connected(sync_orig):
+						orig_cb.toggled.disconnect(sync_orig)
+			)
+			row.add_child(cloned_cb)
+
+		elif target is CheckBox:
+			var orig_chk: CheckBox = target as CheckBox
+			var cloned_chk: CheckBox = CheckBox.new()
+			cloned_chk.button_pressed = orig_chk.button_pressed
+
+			var sync_orig: Callable = func(pressed: bool) -> void:
+				if is_instance_valid(cloned_chk):
+					cloned_chk.button_pressed = pressed
+
+			cloned_chk.toggled.connect(
+				func(pressed: bool) -> void:
+					print("UI: Search Quick-Change CheckBox -> ", pressed)
+					if orig_chk.button_pressed != pressed:
+						orig_chk.button_pressed = pressed
+						orig_chk.toggled.emit(pressed)
+			)
+			orig_chk.toggled.connect(sync_orig)
+			cloned_chk.tree_exited.connect(
+				func() -> void:
+					if is_instance_valid(orig_chk) and orig_chk.toggled.is_connected(sync_orig):
+						orig_chk.toggled.disconnect(sync_orig)
+			)
+			row.add_child(cloned_chk)
 
 	return row
 
@@ -589,7 +879,7 @@ func _stop_main_theme() -> void:
 		main_theme_player.stop()
 
 
-## Restores the primary menu navigation screen.
+## Restores the primary menu navigation screen and shuts down preview effects.
 func _return_to_main_buttons() -> void:
 	print("UI: Player routed to Main Buttons.")
 	if game_name_label:
@@ -602,6 +892,10 @@ func _return_to_main_buttons() -> void:
 		save_load_panel.visible = false
 	if search_results_panel:
 		search_results_panel.visible = false
+
+	for panel: Control in option_panels:
+		if panel is AccessibilityPanel:
+			panel.set_diorama_effects_enabled(false)
 
 
 ## Callback triggered when the player resumes gameplay.
@@ -677,18 +971,23 @@ func _on_exit_pressed() -> void:
 	get_tree().quit()
 
 
-## Switches active visibility across options sub-panels.
+## Switches active visibility across options sub-panels and activates preview effects.
 ## [param tab_index] Index of panel to display.
 func _on_tab_pressed(tab_index: int) -> void:
 	print("UI: Switched to options tab index: ", tab_index)
 	for i: int in range(option_panels.size()):
-		if option_panels[i]:
-			var is_active: bool = i == tab_index
-			option_panels[i].visible = is_active
+		var panel: Control = option_panels[i]
+		if not is_instance_valid(panel):
+			continue
 
-			# Show Reset button only when ControlsPanel is active
-			if is_active and reset_defaults_button:
-				reset_defaults_button.visible = (option_panels[i] is ControlsPanel)
+		var is_active: bool = i == tab_index
+		panel.visible = is_active
+
+		if panel is AccessibilityPanel:
+			panel.set_diorama_effects_enabled(is_active)
+
+		if is_active and reset_defaults_button:
+			reset_defaults_button.visible = (panel is ControlsPanel)
 
 
 ## Analyzes peak mouse velocity to assign baseline sensitivity preset.

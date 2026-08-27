@@ -205,6 +205,19 @@ size_flags_horizontal = 3
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="MeshLODLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1866016364]
+layout_mode = 2
+text = "Mesh LOD"
+
+[node name="MeshLODLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=705759171]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MeshLODSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=264400079]
+unique_name_in_owner = true
+layout_mode = 2
+
 [node name="SSAOLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1814729318]
 layout_mode = 2
 text = "Ambient Occlusion (SSAO)"
@@ -214,18 +227,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="SSAOCheckBox" type="CheckBox" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=948775001]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="MeshLODLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1866016364]
-layout_mode = 2
-text = "Mesh LOD"
-
-[node name="Control18" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1354060776]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="MeshLODSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=264400079]
 unique_name_in_owner = true
 layout_mode = 2
 
