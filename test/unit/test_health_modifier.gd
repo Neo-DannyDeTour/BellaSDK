@@ -1,5 +1,7 @@
 extends GutTest
 
+const ModifierScript = preload("res://shared/health_modifier.gd")
+
 ## Variant instance for the health modifier under test.
 var modifier: Variant = null
 ## Dummy physics body to represent a character.
@@ -11,7 +13,7 @@ var health_comp: Variant = null
 func before_each() -> void:
 	print("TestHealthModifier: before_each() setup.")
 
-	modifier = load("res://shared/health_modifier.gd").new()
+	modifier = ModifierScript.new()
 	add_child_autofree(modifier)
 	modifier.tick_interval = 0.1  # Faster ticks for testing
 
@@ -32,16 +34,8 @@ func before_each() -> void:
 
 func test_modifier_applies_damage() -> void:
 	print("TestHealthModifier: test_modifier_applies_damage() called.")
-	modifier.modify_amount = -10
 
-	# Manually push the dummy body into the modifier's overlapping array
-	# since we are bypassing physics engine overlap detection.
-	# Wait, Area3D.get_overlapping_bodies() relies on the physics server.
-	# We can instead test the internal tick function by replacing the array if possible,
-	# or manually calling the internal logic if it's coupled.
-
-	# Let's mock get_overlapping_bodies on the modifier.
-	var mocked_modifier: Variant = partial_double("res://shared/health_modifier.gd")
+	var mocked_modifier: Variant = partial_double(ModifierScript).new()
 	add_child_autofree(mocked_modifier)
 	stub(mocked_modifier, "get_overlapping_bodies").to_return([dummy_body])
 
@@ -57,7 +51,7 @@ func test_modifier_applies_healing() -> void:
 	print("TestHealthModifier: test_modifier_applies_healing() called.")
 	health_comp.take_damage(50)  # Set health to 50
 
-	var mocked_modifier: Variant = partial_double("res://shared/health_modifier.gd")
+	var mocked_modifier: Variant = partial_double(ModifierScript).new()
 	add_child_autofree(mocked_modifier)
 	stub(mocked_modifier, "get_overlapping_bodies").to_return([dummy_body])
 
