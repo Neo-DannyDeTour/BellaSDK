@@ -41,8 +41,7 @@ func test_modifier_applies_damage() -> void:
 	# or manually calling the internal logic if it's coupled.
 
 	# Let's mock get_overlapping_bodies on the modifier.
-	var modifier_double: Variant = double("res://shared/health_modifier.gd")
-	var mocked_modifier: Variant = modifier_double.new()
+	var mocked_modifier: Variant = partial_double("res://shared/health_modifier.gd")
 	add_child_autofree(mocked_modifier)
 	stub(mocked_modifier, "get_overlapping_bodies").to_return([dummy_body])
 
@@ -58,8 +57,7 @@ func test_modifier_applies_healing() -> void:
 	print("TestHealthModifier: test_modifier_applies_healing() called.")
 	health_comp.take_damage(50)  # Set health to 50
 
-	var modifier_double: Variant = double("res://shared/health_modifier.gd")
-	var mocked_modifier: Variant = modifier_double.new()
+	var mocked_modifier: Variant = partial_double("res://shared/health_modifier.gd")
 	add_child_autofree(mocked_modifier)
 	stub(mocked_modifier, "get_overlapping_bodies").to_return([dummy_body])
 

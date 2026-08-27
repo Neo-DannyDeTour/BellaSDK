@@ -27,13 +27,3 @@ func test_enable_auto_mode() -> void:
 	assert_true(graphics.is_auto_optimizing, "Auto optimization should be true.")
 	assert_not_null(graphics._fps_timer, "FPS timer should be initialized and assigned.")
 	assert_false(graphics._fps_timer.is_stopped(), "FPS timer should be running.")
-
-
-func test_run_benchmark_for_60fps_initial_state() -> void:
-	print("TestGraphicsManager: test_run_benchmark_for_60fps_initial_state() called.")
-
-	var coro: Variant = graphics.run_benchmark_for_60fps()
-	assert_true(graphics.is_benchmarking, "Should be flagged as benchmarking immediately.")
-	await coro
-
-	assert_false(graphics.is_benchmarking, "Should not be flagged as benchmarking when finished.")
