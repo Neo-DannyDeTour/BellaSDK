@@ -80,7 +80,9 @@ func _process(_delta: float) -> void:
 	else:
 		fps_color = "red"
 
-	var current_input: Vector2 = GestureInputManager.get_vector("left", "right", "forward", "backward")
+	var current_input: Vector2 = GestureInputManager.get_vector(
+		"left", "right", "forward", "backward"
+	)
 	var is_pressing_keys: bool = current_input.length() > 0.1
 
 	var state: String = "UNKNOWN"

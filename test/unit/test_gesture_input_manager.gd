@@ -41,7 +41,8 @@ func test_consume_expired_buffered_action() -> void:
 
 	# Verify it was still removed
 	assert_false(
-		input_manager._input_buffer.has("test_action"), "Expired action should be removed from buffer."
+		input_manager._input_buffer.has("test_action"),
+		"Expired action should be removed from buffer."
 	)
 
 

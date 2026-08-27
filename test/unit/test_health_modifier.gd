@@ -33,7 +33,6 @@ func before_each() -> void:
 func test_modifier_applies_damage() -> void:
 	print("TestHealthModifier: test_modifier_applies_damage() called.")
 	modifier.modify_amount = -10
-	modifier._ready()
 
 	# Manually push the dummy body into the modifier's overlapping array
 	# since we are bypassing physics engine overlap detection.
@@ -48,7 +47,6 @@ func test_modifier_applies_damage() -> void:
 	stub(mocked_modifier, "get_overlapping_bodies").to_return([dummy_body])
 
 	mocked_modifier.modify_amount = -20
-	mocked_modifier._ready()
 
 	# Trigger timeout manually
 	mocked_modifier._on_tick_timer_timeout()
@@ -66,7 +64,6 @@ func test_modifier_applies_healing() -> void:
 	stub(mocked_modifier, "get_overlapping_bodies").to_return([dummy_body])
 
 	mocked_modifier.modify_amount = 30
-	mocked_modifier._ready()
 
 	mocked_modifier._on_tick_timer_timeout()
 

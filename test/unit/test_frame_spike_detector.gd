@@ -8,7 +8,6 @@ func before_each() -> void:
 	print("TestFrameSpikeDetector: before_each() setup.")
 	detector = load("res://core/FrameSpikeDetector.gd").new()
 	add_child_autofree(detector)
-	detector._ready()
 
 
 func test_process_normal_frame() -> void:
