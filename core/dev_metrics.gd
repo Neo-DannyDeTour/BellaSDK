@@ -15,6 +15,9 @@ const HISTORY_NUM_FRAMES: int = 150
 ## Reference to the main [CharacterBody3D] player for state tracking.
 var player: CharacterBody3D
 
+## Cached reference to the player's weapon holder node.
+var _cached_weapon_holder: Node
+
 ## Timestamp of the previous frame in microseconds.
 var _last_tick: int = 0
 ## Rolling history array of total frame delta times.
@@ -47,6 +50,8 @@ func _ready() -> void:
 	visible = false
 
 	player = get_tree().get_first_node_in_group("player") as CharacterBody3D
+	if is_instance_valid(player):
+		_cached_weapon_holder = player.get_node_or_null("%WeaponHolder")
 
 	metrics_label.bbcode_enabled = true
 	metrics_label.add_theme_color_override("font_outline_color", Color.BLACK)
@@ -119,9 +124,8 @@ func _process(_delta: float) -> void:
 				flashlight_str = "ON" if f_ctrl.flashlight.visible else "OFF"
 
 	var weapon_str: String = "NONE"
-	var weapon_holder: Node = player.get_node_or_null("%WeaponHolder")
-	if weapon_holder and weapon_holder.get_child_count() > 0:
-		weapon_str = weapon_holder.get_child(0).name
+	if is_instance_valid(_cached_weapon_holder) and _cached_weapon_holder.get_child_count() > 0:
+		weapon_str = _cached_weapon_holder.get_child(0).name
 
 	# --- TEXT ASSEMBLY ---
 	var text: String = ""
