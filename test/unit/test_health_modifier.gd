@@ -1,6 +1,7 @@
 extends GutTest
 
 const ModifierScript = preload("res://shared/health_modifier.gd")
+const MockModifierScript = preload("res://test/mocks/mock_health_modifier.gd")
 
 ## Variant instance for the health modifier under test.
 var modifier: Variant = null
@@ -39,9 +40,8 @@ func test_modifier_applies_damage() -> void:
 	var mocked_modifier: Variant = ModifierScript.new()
 	add_child_autofree(mocked_modifier)
 	# Inject dummy_body by exploiting duck typing or by overriding the script temporarily
-	mocked_modifier.set_script(preload("res://test/mocks/mock_health_modifier.gd"))
+	mocked_modifier.set_script(MockModifierScript)
 	mocked_modifier._dummy_bodies = [dummy_body]
-
 
 	mocked_modifier.modify_amount = -20
 
@@ -59,9 +59,8 @@ func test_modifier_applies_healing() -> void:
 	var mocked_modifier: Variant = ModifierScript.new()
 	add_child_autofree(mocked_modifier)
 	# Inject dummy_body by exploiting duck typing or by overriding the script temporarily
-	mocked_modifier.set_script(preload("res://test/mocks/mock_health_modifier.gd"))
+	mocked_modifier.set_script(MockModifierScript)
 	mocked_modifier._dummy_bodies = [dummy_body]
-
 
 	mocked_modifier.modify_amount = 30
 
