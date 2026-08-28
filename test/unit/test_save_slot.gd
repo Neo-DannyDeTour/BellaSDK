@@ -6,23 +6,33 @@ var save_slot: SaveSlot = null
 
 func before_each() -> void:
 	print("TestSaveSlot: before_each() setup.")
-	save_slot = load("res://core/save_slot.gd").new()
-
-	# Mock UI elements needed for setup() and signal emissions
-	save_slot.name_input = LineEdit.new()
-	save_slot.date_label = Label.new()
-	save_slot.fav_button = Button.new()
-	save_slot.action_button = Button.new()
-	save_slot.thumbnail = TextureRect.new()
-
-	# Add mock elements as children (so they get freed with the slot)
-	save_slot.add_child(save_slot.name_input)
-	save_slot.add_child(save_slot.date_label)
-	save_slot.add_child(save_slot.fav_button)
-	save_slot.add_child(save_slot.action_button)
-	save_slot.add_child(save_slot.thumbnail)
-
+	var scene: PackedScene = load("res://core/save_slot.tscn")
+	save_slot = scene.instantiate() as SaveSlot
+	# Need to trigger ready before test since we instantiate but are headless.
 	add_child_autofree(save_slot)
+
+	# Mock UI elements needed for setup() and signal emissions in headless test.
+	if not is_instance_valid(save_slot.name_input):
+		save_slot.name_input = LineEdit.new()
+		save_slot.add_child(save_slot.name_input)
+	if not is_instance_valid(save_slot.date_label):
+		save_slot.date_label = Label.new()
+		save_slot.add_child(save_slot.date_label)
+	if not is_instance_valid(save_slot.fav_button):
+		save_slot.fav_button = Button.new()
+		save_slot.add_child(save_slot.fav_button)
+	if not is_instance_valid(save_slot.action_button):
+		save_slot.action_button = Button.new()
+		save_slot.add_child(save_slot.action_button)
+	if not is_instance_valid(save_slot.thumbnail):
+		save_slot.thumbnail = TextureRect.new()
+		save_slot.add_child(save_slot.thumbnail)
+	if not is_instance_valid(save_slot.highlight_border):
+		save_slot.highlight_border = Control.new()
+		save_slot.add_child(save_slot.highlight_border)
+
+	if save_slot.has_method("_ready"):
+		save_slot._ready()
 
 
 func test_setup_load() -> void:
