@@ -16,14 +16,15 @@
 [ext_resource type="Shader" uid="uid://c2f1f2all860e" path="res://ui/electricityvignette.gdshader" id="8_3lbto"]
 [ext_resource type="Script" uid="uid://cnewwxia7j3ay" path="res://core/frame_graph.gd" id="8_ktti3"]
 [ext_resource type="Shader" uid="uid://dqjxwnsg8c5f0" path="res://vfx/outline_hearts_adaptable.gdshader" id="10_7dvkv"]
+[ext_resource type="Shader" uid="uid://wmp7kwratrjt" path="res://vfx/water_effects_overlay.gdshader" id="10_fgtw6"]
 [ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="11_bi8hs"]
 [ext_resource type="Script" uid="uid://bq62qlt337705" path="res://ui/chapter_title_container.gd" id="11_hrmpd"]
 [ext_resource type="Texture2D" uid="uid://buyk2btocs7de" path="res://assets/images/UI_icon_boot_sprint.png" id="13_ju45i"]
+[ext_resource type="Script" uid="uid://1mw0s646lik2" path="res://ui/diagnostics_panel.gd" id="15_rkf1o"]
 [ext_resource type="PackedScene" uid="uid://r7e1pqddjcjx" path="res://ui/death_screen.tscn" id="16_mf2ns"]
 [ext_resource type="Shader" uid="uid://cnul3imnv48gv" path="res://vfx/pulsing_border.gdshader" id="17_0avjw"]
 [ext_resource type="Texture2D" uid="uid://4exusdjgfeuy" path="res://assets/images/UI_Icon_Boot_Move.png" id="17_bw7v0"]
 [ext_resource type="Texture2D" uid="uid://bxdqmfj8erajr" path="res://assets/images/UI_Icon_Boot_Ice.png" id="18_bw7v0"]
-[ext_resource type="PackedScene" uid="uid://sf0r2kupvakg" path="res://ui/magnifying_glass_ui.tscn" id="21_3lbto"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_p7vwb"]
 shader = ExtResource("5_8dubc")
@@ -53,6 +54,13 @@ shader = ExtResource("6_p7vwb")
 shader_parameter/distortion_amount = 1.0
 shader_parameter/blur_amount = 2.5
 shader_parameter/effect_strength = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_6cxyx"]
+shader = ExtResource("10_fgtw6")
+shader_parameter/effect_mode = 0
+shader_parameter/drop_intensity = 0.0
+shader_parameter/wash_intensity = 0.0
+shader_parameter/clear_progress = 0.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_yev5y"]
 shader = ExtResource("2_x4jx1")
@@ -141,9 +149,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="BackBufferCopy" type="BackBufferCopy" parent="." unique_id=178311884]
-copy_mode = 2
-
 [node name="FisheyeZoom" type="ColorRect" parent="." unique_id=1926985645]
 material = SubResource("ShaderMaterial_cgfq5")
 anchors_preset = 15
@@ -152,6 +157,16 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+
+[node name="WaterVFXOverlay" type="ColorRect" parent="." unique_id=2142477501]
+material = SubResource("ShaderMaterial_6cxyx")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+metadata/_edit_use_anchors_ = true
 
 [node name="CrosshairContainer" type="CenterContainer" parent="." unique_id=1733915005]
 anchors_preset = 15
@@ -228,6 +243,38 @@ script = ExtResource("7_p7vwb")
 layout_mode = 2
 bbcode_enabled = true
 fit_content = true
+
+[node name="DiagnosticsPanel" type="PanelContainer" parent="." unique_id=2090465156]
+unique_name_in_owner = true
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -174.5
+offset_right = 174.5
+offset_bottom = 720.0
+grow_horizontal = 2
+script = ExtResource("15_rkf1o")
+
+[node name="MarginContainer" type="MarginContainer" parent="DiagnosticsPanel" unique_id=385820388]
+layout_mode = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="VBoxContainer" type="VBoxContainer" parent="DiagnosticsPanel/MarginContainer" unique_id=1225699971]
+layout_mode = 2
+
+[node name="ScrollContainer" type="ScrollContainer" parent="DiagnosticsPanel/MarginContainer/VBoxContainer" unique_id=1063004264]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="DiagnosticsLabel" type="RichTextLabel" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/ScrollContainer" unique_id=1348893505]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+bbcode_enabled = true
 
 [node name="FrameGraph" type="ColorRect" parent="." unique_id=389888062]
 custom_minimum_size = Vector2(250, 250)
@@ -378,24 +425,24 @@ theme_override_constants/margin_top = 100
 script = ExtResource("11_hrmpd")
 
 [node name="EffectContainer" type="SubViewportContainer" parent="ChapterTitleContainer" unique_id=1394021885]
-custom_minimum_size = Vector2(0, 640)
+visible = false
 layout_mode = 2
 mouse_filter = 2
 stretch = true
 
 [node name="SubViewport" type="SubViewport" parent="ChapterTitleContainer/EffectContainer" unique_id=178570349]
+disable_3d = true
 transparent_bg = true
 handle_input_locally = false
-size = Vector2i(1280, 640)
-render_target_update_mode = 4
+size = Vector2i(2, 2)
+size_2d_override_stretch = true
+render_target_update_mode = 0
 
 [node name="ChapterLabel" type="RichTextLabel" parent="ChapterTitleContainer/EffectContainer/SubViewport" unique_id=839489251]
-custom_minimum_size = Vector2(640, 250)
 clip_contents = false
-anchors_preset = 14
-anchor_top = 0.5
+anchors_preset = 15
 anchor_right = 1.0
-anchor_bottom = 0.5
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -456,6 +503,12 @@ layout_mode = 2
 text = "Hide UI"
 alignment = 0
 
+[node name="RenderDiagnosticButton" type="Button" parent="DebugPanel/PanelContainer/VBoxContainer" unique_id=1977478197]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Render Diagnostics Off"
+alignment = 0
+
 [node name="DeathScreen" parent="." unique_id=1910211973 instance=ExtResource("16_mf2ns")]
 visible = false
 
@@ -487,8 +540,6 @@ anchor_bottom = 1.0
 offset_top = -40.0
 offset_right = 40.0
 grow_vertical = 0
-
-[node name="MagnifyingGlassUI" parent="." unique_id=1398682804 instance=ExtResource("21_3lbto")]
 
 [connection signal="pressed" from="DebugPanel/PanelContainer/VBoxContainer/WireframeButton" to="." method="_on_wireframe_button_pressed"]
 [connection signal="pressed" from="DebugPanel/PanelContainer/VBoxContainer/WireframeOverlayButton" to="." method="_on_wireframe_overlay_button_pressed"]

@@ -1,8 +1,18 @@
 [gd_scene format=3 uid="uid://bqmsu8rh0h335"]
 
 [ext_resource type="Script" uid="uid://cxno1j2i4qwas" path="res://interactables/env_chapter_trigger.gd" id="1_n7sen"]
+[ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://shared/editor_trigger_visualizer.gd" id="2_n4a5r"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_ehemb"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yjd84"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.9, 0.5, 0.1, 0.4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_unr0a"]
+material = SubResource("StandardMaterial3D_yjd84")
+size = Vector3(2, 2, 2)
 
 [node name="ChapterTrigger" type="Area3D" unique_id=1955767946]
 collision_mask = 2
@@ -27,3 +37,8 @@ layout_mode = 0
 offset_right = 40.0
 offset_bottom = 40.0
 bbcode_enabled = true
+
+[node name="EditorTriggerVisualizer" type="MeshInstance3D" parent="." unique_id=2112693420]
+mesh = SubResource("BoxMesh_unr0a")
+script = ExtResource("2_n4a5r")
+metadata/_custom_type_script = "uid://q4v42nidwdr2"

@@ -56,32 +56,6 @@ func before_each() -> void:
 	add_child_autoqfree(bear_trap)
 
 	mock_player = MockPlayer.new()
-	var loco: MockLocomotion = MockLocomotion.new()
-	var menu: MockMenu = MockMenu.new()
-	var dummy_interact: DummyComponent = DummyComponent.new()
-	var dummy_env: DummyComponent = DummyComponent.new()
-	var dummy_stat: DummyComponent = DummyComponent.new()
-
-	mock_player.locomotion_component = loco
-	mock_player.system_menu = menu
-	mock_player.interaction_component = dummy_interact
-	mock_player.environment_component = dummy_env
-	mock_player.stats_component = dummy_stat
-
-	mock_player.add_child(loco)
-	mock_player.add_child(menu)
-	mock_player.add_child(dummy_interact)
-	mock_player.add_child(dummy_env)
-	mock_player.add_child(dummy_stat)
-
-	var components_node: Node = Node.new()
-	components_node.name = "Components"
-	mock_player.add_child(components_node)
-
-	var health_node: HealthComponent = HealthComponent.new()
-	health_node.name = "HealthComponent"
-	components_node.add_child(health_node)
-
 	add_child_autoqfree(mock_player)
 	await get_tree().process_frame
 

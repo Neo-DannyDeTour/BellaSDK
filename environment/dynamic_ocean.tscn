@@ -62,8 +62,8 @@ parameters = Array[ExtResource("4_yo2dh")]([SubResource("Resource_adqv5"), SubRe
 [node name="WaterSprayEmitter" type="GPUParticles3D" parent="." unique_id=1366948172]
 material_override = SubResource("ShaderMaterial_ds3o1")
 cast_shadow = 0
-custom_aabb = AABB(-150, -20, -150, 300, 40, 300)
-amount = 800
+custom_aabb = AABB(-250, -20, -250, 500, 40, 500)
+amount = 1600
 lifetime = 6.0
 process_material = ExtResource("7_vu4gk")
 draw_pass_1 = SubResource("QuadMesh_50wyh")

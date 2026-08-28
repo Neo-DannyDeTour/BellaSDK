@@ -101,12 +101,12 @@ func _unhandled_input(event: InputEvent) -> void:
 	if flying and event is InputEventMouseButton and event.is_pressed():
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			noclip_speed_multiplier = minf(100.0, noclip_speed_multiplier * 1.1)
-			print("SystemMenuController: Noclip speed increased to ", noclip_speed_multiplier)
+			Events.noclip_speed_changed.emit(noclip_speed_multiplier)
 			get_viewport().set_input_as_handled()
 			return
 		if event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			noclip_speed_multiplier = maxf(0.1, noclip_speed_multiplier * 0.9)
-			print("SystemMenuController: Noclip speed decreased to ", noclip_speed_multiplier)
+			Events.noclip_speed_changed.emit(noclip_speed_multiplier)
 			get_viewport().set_input_as_handled()
 			return
 

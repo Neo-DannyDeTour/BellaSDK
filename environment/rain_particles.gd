@@ -1,9 +1,12 @@
 @tool
+## Particle manager driving spatial rain simulation,
+## unshaded billboarding, and player volume detection.
+class_name RainParticles
 extends GPUParticles3D
 
+## Shader code for rendering unshaded faux-refractive rain droplets.
 const RAIN_SHADER_CODE: String = """
 shader_type spatial;
-// Removed depth_draw_never so it sorts properly, changed to unshaded for speed
 render_mode blend_mix, cull_disabled, unshaded;
 
 uniform sampler2D albedo_tex : hint_default_black, filter_linear_mipmap_anisotropic;
@@ -13,114 +16,106 @@ uniform vec4 tint_color : source_color = vec4(0.9, 0.95, 1.0, 0.5);
 uniform float shine_strength = 0.6;
 
 void vertex() {
-    // Keep your billboard logic exactly as it was
-    mat4 modified_model_view = VIEW_MATRIX * mat4(
-        INV_VIEW_MATRIX[0], INV_VIEW_MATRIX[1], INV_VIEW_MATRIX[2], MODEL_MATRIX[3]
-    );
-    modified_model_view = modified_model_view * mat4(
-        vec4(length(MODEL_MATRIX[0].xyz), 0.0, 0.0, 0.0),
-        vec4(0.0, length(MODEL_MATRIX[1].xyz), 0.0, 0.0),
-        vec4(0.0, 0.0, length(MODEL_MATRIX[2].xyz), 0.0),
-        vec4(0.0, 0.0, 0.0, 1.0)
-    );
-    MODELVIEW_MATRIX = modified_model_view;
-    MODELVIEW_NORMAL_MATRIX = mat3(MODELVIEW_MATRIX);
+	mat4 modified_model_view = VIEW_MATRIX * mat4(
+		INV_VIEW_MATRIX[0], INV_VIEW_MATRIX[1], INV_VIEW_MATRIX[2], MODEL_MATRIX[3]
+	);
+	modified_model_view = modified_model_view * mat4(
+		vec4(length(MODEL_MATRIX[0].xyz), 0.0, 0.0, 0.0),
+		vec4(0.0, length(MODEL_MATRIX[1].xyz), 0.0, 0.0),
+		vec4(0.0, 0.0, length(MODEL_MATRIX[2].xyz), 0.0),
+		vec4(0.0, 0.0, 0.0, 1.0)
+	);
+	MODELVIEW_MATRIX = modified_model_view;
+	MODELVIEW_NORMAL_MATRIX = mat3(MODELVIEW_MATRIX);
 }
 
 void fragment() {
-    vec4 base = texture(albedo_tex, UV);
-    vec3 n_tex = texture(normal_tex, UV).rgb * 2.0 - 1.0;
+	vec4 base = texture(albedo_tex, UV);
+	vec3 n_tex = texture(normal_tex, UV).rgb * 2.0 - 1.0;
 
-    vec4 pColor = COLOR;
-    float final_mask = base.r * tint_color.a * pColor.a;
+	vec4 pColor = COLOR;
+	float final_mask = base.r * tint_color.a * pColor.a;
 
-    if (final_mask < 0.05) {
-        discard;
-    }
+	if (final_mask < 0.05) {
+		discard;
+	}
 
-    // --- FAKED REFRACTION (No Screen Reading) ---
-    // Instead of reading the screen, we just tint the drop slightly based on the normal
-    // This gives the illusion of volume without the massive cost.
-    vec3 base_color = tint_color.rgb * (1.0 - abs(n_tex.z) * 0.3);
+	vec3 base_color = tint_color.rgb * (1.0 - abs(n_tex.z) * 0.3);
+	vec3 light_dir = normalize(vec3(0.1, 0.8, 0.4));
+	float spec = max(dot(n_tex, light_dir), 0.0);
+	vec3 shine = pow(spec, 12.0) * shine_strength * vec3(1.0);
 
-    // --- ENHANCED SHINE ---
-    // We use a fixed light direction (representing moonlight or ambient sky light)
-    vec3 light_dir = normalize(vec3(0.1, 0.8, 0.4));
-    float spec = max(dot(n_tex, light_dir), 0.0);
-    // Tighten the specular highlight
-    vec3 shine = pow(spec, 12.0) * shine_strength * vec3(1.0);
-
-    ALBEDO = base_color + shine;
-    ALPHA = final_mask;
+	ALBEDO = base_color + shine;
+	ALPHA = final_mask;
 }
 """
 
-# --- INSTRUCTIONS ---
-# 1. Assign this script to a GPUParticles3D node.
-# 2. Assign textures for 'droplet_shape_tex' and 'droplet_normal_tex'.
-#    (If left empty, procedural approximations will be generated, but are less detailed).
-# 3. Adjust particle physics (Amount, Lifetime, Velocity, Emission Shape) natively in the Inspector!
-
-# --- EXPORTS ---
-# Godot 4 static variable: 2 = Layer 2. (Use 4 for Layer 3, 8 for Layer 4, etc.)
+## Collision mask layer integer assigned to the player character detection volume.
 static var player_collision_mask: int = 2
 
 @export_group("Rain Textures")
-# The alpha mask of the droplet (capsule or stretched drop shape)
+## Texture providing the alpha droplet silhouette mask.
 @export var droplet_shape_tex: Texture2D:
 	set(value):
 		droplet_shape_tex = value
 		_apply_textures()
 
-# The normal map of the droplet (curved surface data)
+## Texture providing surface normal data for specular lighting sheen.
 @export var droplet_normal_tex: Texture2D:
 	set(value):
 		droplet_normal_tex = value
 		_apply_textures()
 
 @export_group("Rain Material")
+## Base albedo color applied to the falling rain droplets.
 @export_color_no_alpha var rain_tint: Color = Color(0.9, 0.95, 1.0):
 	set(value):
 		rain_tint = value
 		_update_shader_params()
 
+## Base opacity scalar for the particle material.
 @export_range(0.0, 1.0, 0.01) var base_alpha: float = 0.5:
 	set(value):
 		base_alpha = value
 		_update_shader_params()
 
-# Determines how heavily the background bends.
-# NOTE: Use NEGATIVE values to pull from the "opposite" direction
-# (inverting the image like a real water drop).
+## Intensity scalar of the pseudo-refraction color shift.
 @export_range(-2.0, 2.0, 0.01) var refraction_strength: float = 0.35:
 	set(value):
 		refraction_strength = value
 		_update_shader_params()
 
-# Adds simple specular reflections for liquid sheen.
+## Multiplier for specular highlight reflection sheen.
 @export_range(0.0, 1.0, 0.01) var surface_shine: float = 0.6:
 	set(value):
 		surface_shine = value
 		_update_shader_params()
 
-# Controls how muddy/distorted the background inside the drop gets.
+## Background blur factor uniform passed into the droplet shader.
 @export_range(0.0, 5.0, 0.1) var background_blur: float = 1.5:
 	set(value):
 		background_blur = value
 		_update_shader_params()
 
+## Dimensions of the individual QuadMesh particle draw instance.
 @export var droplet_size: Vector2 = Vector2(0.5, 0.5):
 	set(value):
 		droplet_size = value
 		_update_draw_mesh()
 
-# --- INTERNAL RESOURCES ---
+## Cached internal process material driving particle physics.
 var _proc_mat: ParticleProcessMaterial
+
+## Cached QuadMesh instance used for particle rasterization.
 var _draw_mesh: QuadMesh
+
+## Material instance executing the unshaded rain shader.
 var _shader_mat: ShaderMaterial
 
 
+## Lifecycle method configuring mesh references, materials, and auto volume detectors.
 func _ready() -> void:
+	print("RainParticles: Initializing rain emitter system.")
 	_init_system()
 	_apply_settings()
 
@@ -128,15 +123,14 @@ func _ready() -> void:
 		call_deferred("_setup_auto_volume")
 
 
+## Constructs QuadMesh and initializes fallback particle materials.
 func _init_system() -> void:
-	# 1. Mesh setup
 	if draw_pass_1 == null or not (draw_pass_1 is QuadMesh):
 		_draw_mesh = QuadMesh.new()
 		draw_pass_1 = _draw_mesh
 	else:
-		_draw_mesh = draw_pass_1
+		_draw_mesh = draw_pass_1 as QuadMesh
 
-	# 2. Material setup
 	if _shader_mat == null:
 		_shader_mat = ShaderMaterial.new()
 		var shader: Shader = Shader.new()
@@ -144,34 +138,30 @@ func _init_system() -> void:
 		_shader_mat.shader = shader
 		_draw_mesh.material = _shader_mat
 
-	# 3. Process setup - Only overwrite if it doesn't exist so we don't ruin user tweaks
 	if process_material == null or not (process_material is ParticleProcessMaterial):
 		_proc_mat = ParticleProcessMaterial.new()
 		process_material = _proc_mat
 
-		# Inject sensible default physics so it works out of the box
 		_proc_mat.emission_shape = ParticleProcessMaterial.EMISSION_SHAPE_BOX
 		_proc_mat.emission_box_extents = Vector3(10.0, 5.0, 10.0)
 		_proc_mat.direction = Vector3.DOWN
 		_proc_mat.spread = 2.0
-		_proc_mat.gravity = Vector3(0, -9.8, 0)
+		_proc_mat.gravity = Vector3(0.0, -9.8, 0.0)
 		_proc_mat.initial_velocity_min = 35.0
 		_proc_mat.initial_velocity_max = 45.0
 		_proc_mat.particle_flag_align_y = false
 	else:
-		_proc_mat = process_material
+		_proc_mat = process_material as ParticleProcessMaterial
 
 
+## Configures default particle flags, preprocess states, and updates uniforms.
 func _apply_settings() -> void:
-	# Basic GPU particle flags that optimize rendering
 	explosiveness = 0.0
 	interpolate = true
 	draw_passes = 1
 	collision_base_size = 0.0
 	cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	trail_enabled = false
 
-	# Pre-simulate the rain based on user's native lifetime setting
 	preprocess = lifetime
 
 	_update_draw_mesh()
@@ -179,43 +169,43 @@ func _apply_settings() -> void:
 	_update_shader_params()
 
 
+## Sets size dimensions on the quad mesh draw pass.
 func _update_draw_mesh() -> void:
 	if _draw_mesh:
 		_draw_mesh.size = droplet_size
 
 
+## Assigns active droplet textures or builds procedural fallbacks.
 func _apply_textures() -> void:
 	if _shader_mat == null:
 		return
 
 	if droplet_shape_tex:
-		_shader_mat.set_shader_parameter("albedo_tex", droplet_shape_tex)
+		_shader_mat.set_shader_parameter(&"albedo_tex", droplet_shape_tex)
 	else:
-		# Fallback placeholder shape
-		_shader_mat.set_shader_parameter("albedo_tex", _generate_fallback_albedo())
+		_shader_mat.set_shader_parameter(&"albedo_tex", _generate_fallback_albedo())
 
 	if droplet_normal_tex:
-		_shader_mat.set_shader_parameter("normal_tex", droplet_normal_tex)
+		_shader_mat.set_shader_parameter(&"normal_tex", droplet_normal_tex)
 	else:
-		# Fallback placeholder normal
-		_shader_mat.set_shader_parameter("normal_tex", _generate_fallback_normal())
+		_shader_mat.set_shader_parameter(&"normal_tex", _generate_fallback_normal())
 
 
+## Propagates material export values to shader parameters.
 func _update_shader_params() -> void:
 	if _shader_mat == null:
 		return
 
 	var final_tint: Color = rain_tint
 	final_tint.a = base_alpha
-	_shader_mat.set_shader_parameter("tint_color", final_tint)
-	_shader_mat.set_shader_parameter("refraction_strength", refraction_strength)
-	_shader_mat.set_shader_parameter("shine_strength", surface_shine)
-	_shader_mat.set_shader_parameter("blur_amount", background_blur)
+	_shader_mat.set_shader_parameter(&"tint_color", final_tint)
+	_shader_mat.set_shader_parameter(&"refraction_strength", refraction_strength)
+	_shader_mat.set_shader_parameter(&"shine_strength", surface_shine)
+	_shader_mat.set_shader_parameter(&"blur_amount", background_blur)
 
 
-# --- Fallback Texture Generation (for testing without external assets) ---
-
-
+## Creates a fallback placeholder monochrome droplet shape.
+## [return] The generated placeholder [Texture2D].
 func _generate_fallback_albedo() -> Texture2D:
 	var image: Image = Image.create(32, 128, false, Image.FORMAT_RGBA8)
 	for y: int in range(image.get_height()):
@@ -228,6 +218,8 @@ func _generate_fallback_albedo() -> Texture2D:
 	return ImageTexture.create_from_image(image)
 
 
+## Creates a fallback placeholder normal map with rounded curvature.
+## [return] The generated normal map [Texture2D].
 func _generate_fallback_normal() -> Texture2D:
 	var image: Image = Image.create(32, 128, false, Image.FORMAT_RGBA8)
 	for y: int in range(image.get_height()):
@@ -241,12 +233,10 @@ func _generate_fallback_normal() -> Texture2D:
 	return ImageTexture.create_from_image(image)
 
 
-# --- AUTOMATIC PLAYER DETECTION ---
-
-
+## Builds an Area3D trigger matching emission bounds to detect player entrance.
 func _setup_auto_volume() -> void:
+	print("RainParticles: Generating automatic trigger volume.")
 	var rain_area: Area3D = Area3D.new()
-	# Collision Layer 0 (detects nothing by default), Mask 1 (detects Player)
 	rain_area.collision_layer = 0
 	rain_area.collision_mask = player_collision_mask
 	add_child(rain_area)
@@ -258,36 +248,39 @@ func _setup_auto_volume() -> void:
 	var depth: float = 20.0
 	var height: float = 30.0
 
-	# Calculate the size of the rainstorm based on your Particle Physics settings!
 	if process_material is ParticleProcessMaterial:
-		if process_material.emission_shape == ParticleProcessMaterial.EMISSION_SHAPE_BOX:
-			width = process_material.emission_box_extents.x * 2.0
-			depth = process_material.emission_box_extents.z * 2.0
+		var pm: ParticleProcessMaterial = process_material as ParticleProcessMaterial
+		if pm.emission_shape == ParticleProcessMaterial.EMISSION_SHAPE_BOX:
+			width = pm.emission_box_extents.x * 2.0
+			depth = pm.emission_box_extents.z * 2.0
 
-		# Estimate how far the particles fall: (Velocity * Lifetime)
-		var fall_speed: float = (
-			(process_material.initial_velocity_min + process_material.initial_velocity_max) / 2.0
-		)
+		var fall_speed: float = (pm.initial_velocity_min + pm.initial_velocity_max) / 2.0
 		height = fall_speed * lifetime
 
 	box_shape.size = Vector3(width, height, depth)
 	shape_node.shape = box_shape
-
-	# Shift the box down so it covers the space *beneath* the emitter
 	shape_node.position.y = -(height / 2.0)
 
 	rain_area.add_child(shape_node)
-
-	# Wire up the detection internally
 	rain_area.body_entered.connect(_on_body_entered)
 	rain_area.body_exited.connect(_on_body_exited)
 
 
+## Notifies the player controller and triggers screen rain droplets on enter.
+## [param body] The [Node3D] entering the rain trigger.
 func _on_body_entered(body: Node3D) -> void:
-	if body.has_method("enter_rain_volume"):
-		body.enter_rain_volume()
+	print("RainParticles: Body entered rain zone -> ", body.name)
+	if body is Player or body.is_in_group(&"player"):
+		Events.rain_vfx_toggled.emit(0.75)
+		if body.has_method("enter_rain_volume"):
+			body.enter_rain_volume()
 
 
+## Notifies the player controller and clears screen rain droplets on exit.
+## [param body] The [Node3D] leaving the rain trigger.
 func _on_body_exited(body: Node3D) -> void:
-	if body.has_method("exit_rain_volume"):
-		body.exit_rain_volume()
+	print("RainParticles: Body exited rain zone -> ", body.name)
+	if body is Player or body.is_in_group(&"player"):
+		Events.rain_vfx_toggled.emit(0.0)
+		if body.has_method("exit_rain_volume"):
+			body.exit_rain_volume()

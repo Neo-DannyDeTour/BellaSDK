@@ -897,6 +897,8 @@ func _return_to_main_buttons() -> void:
 		if panel is AccessibilityPanel:
 			panel.set_diorama_effects_enabled(false)
 
+	_set_preview_shader_active(false)
+
 
 ## Callback triggered when the player resumes gameplay.
 func _on_resume_pressed() -> void:
@@ -905,6 +907,8 @@ func _on_resume_pressed() -> void:
 	var parent: Node = get_parent()
 	if parent and parent.has_method("toggle_pause"):
 		parent.call("toggle_pause")
+
+	_set_preview_shader_active(false)
 
 
 ## Callback triggered when the player initiates a new game.
@@ -921,6 +925,8 @@ func _on_new_game_pressed() -> void:
 	var chapter_window: Node = CHAPTER_SCREEN.instantiate()
 	add_child(chapter_window)
 
+	_set_preview_shader_active(false)
+
 
 ## Callback triggered when the player initiates a game restart.
 func _on_start_game_pressed() -> void:
@@ -932,6 +938,8 @@ func _on_start_game_pressed() -> void:
 	get_tree().paused = false
 	if get_parent().has_method("toggle_pause"):
 		get_tree().reload_current_scene()
+
+	_set_preview_shader_active(false)
 
 
 ## Callback triggered when the player navigates to options.
@@ -950,6 +958,7 @@ func _on_options_pressed() -> void:
 		_on_tab_pressed(0)
 
 	_build_search_index()
+	_set_preview_shader_active(true)
 
 
 ## Callback triggered when the player opens the load menu.
@@ -1102,3 +1111,18 @@ func _narrate_button(button_text: String) -> void:
 		var events: Node = get_node("/root/Events")
 		if events.has_signal("subtitle_requested"):
 			events.subtitle_requested.emit("TTSandy", button_text, 1.5)
+
+
+## Toggles the preview shader pass on or off to prevent GPU stalls during gameplay.
+## [param is_active] Whether the shader overlay should be visible and processing.
+func _set_preview_shader_active(is_active: bool) -> void:
+	var preview_layer: CanvasLayer = get_node_or_null("PreviewShaderLayer") as CanvasLayer
+	if not is_instance_valid(preview_layer):
+		preview_layer = get_tree().root.find_child("PreviewShaderLayer", true, false) as CanvasLayer
+
+	if is_instance_valid(preview_layer):
+		print("UI: Toggling PreviewShaderLayer active state -> ", is_active)
+		preview_layer.visible = is_active
+		preview_layer.process_mode = (
+			Node.PROCESS_MODE_INHERIT if is_active else Node.PROCESS_MODE_DISABLED
+		)

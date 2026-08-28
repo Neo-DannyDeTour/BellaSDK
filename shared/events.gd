@@ -55,6 +55,28 @@ signal player_zoomed(is_zooming: bool)
 @warning_ignore("unused_signal")
 signal player_electrocuted
 
+@warning_ignore("unused_signal")
+## Emitted when the underwater visual effect state changes.
+## [param is_underwater] Whether the camera is submerged.
+## [param wash_intensity] Ripple distortion strength (0.0 to 1.0).
+## [param drop_intensity] Droplet lens effect strength (0.0 to 1.0).
+## [param clear_progress] Resurface screen wipe transition progress (0.0 to 1.5).
+signal underwater_vfx_toggled(
+	is_underwater: bool, wash_intensity: float, drop_intensity: float, clear_progress: float
+)
+
+@warning_ignore("unused_signal")
+## Emitted when the screen rain droplet VFX changes.
+## [param intensity] Rain droplet effect intensity (0.0 to 1.0).
+signal rain_vfx_toggled(intensity: float)
+
+@warning_ignore("unused_signal")
+## Emitted when the waterfall screen wash effect changes.
+## [param is_active] Whether the player is inside the waterfall stream.
+## [param wash_intensity] Waterfall distortion strength (0.0 to 1.0).
+## [param clear_progress] Wipe mask transition progress (0.0 to 1.5).
+signal waterfall_vfx_toggled(is_active: bool, wash_intensity: float, clear_progress: float)
+
 # --- CHEAT & DEBUG SIGNALS ---
 ## Emitted when noclip fly mode is enabled or disabled.
 @warning_ignore("unused_signal")

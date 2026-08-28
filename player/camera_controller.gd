@@ -175,7 +175,7 @@ func _update_fov(delta: float, is_sprinting: bool, is_grounded: bool, input_dir:
 		mouse_sensitivity = mouse_sensitivity_base / 10.0
 		if not is_using_zoom:
 			is_using_zoom = true
-			print("CameraController: Zoom activated. Emitting player_zoomed(true).")
+			print("CameraController: Camera FOV zoom activated.")
 			Events.player_zoomed.emit(true)
 
 	elif is_valid_sprint and not disable_sprint_fov:
@@ -183,7 +183,7 @@ func _update_fov(delta: float, is_sprinting: bool, is_grounded: bool, input_dir:
 		mouse_sensitivity = mouse_sensitivity_base
 		if is_using_zoom:
 			is_using_zoom = false
-			print("CameraController: Sprint overriding zoom. Emitting player_zoomed(false).")
+			print("CameraController: Sprint overriding zoom.")
 			Events.player_zoomed.emit(false)
 
 	else:
@@ -191,7 +191,7 @@ func _update_fov(delta: float, is_sprinting: bool, is_grounded: bool, input_dir:
 		mouse_sensitivity = mouse_sensitivity_base
 		if is_using_zoom:
 			is_using_zoom = false
-			print("CameraController: Zoom deactivated. Emitting player_zoomed(false).")
+			print("CameraController: Camera FOV zoom deactivated.")
 			Events.player_zoomed.emit(false)
 
 	camera.fov = lerpf(camera.fov, target_fov, delta * fov_change_speed)

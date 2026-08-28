@@ -226,7 +226,7 @@ func _format_metric_row(title: String, sum_val: float, history: Array[float]) ->
 			_get_ms_color(max_val),
 			max_val,
 			_get_ms_color(last_val),
-			last_val
+			last_val,
 		]
 	)
 
@@ -291,7 +291,7 @@ func _get_dynamic_settings_string() -> String:
 	if vp.use_taa:
 		aa_str += " + TAA"
 	if vp.screen_space_aa == Viewport.SCREEN_SPACE_AA_FXAA:
-		aa_str = "FXAA"
+		aa_str += "FXAA"
 	dyn_str += "Anti-Aliasing: %s\n" % aa_str
 
 	var cam: Camera3D = vp.get_camera_3d()

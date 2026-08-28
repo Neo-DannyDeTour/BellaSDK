@@ -1,8 +1,12 @@
 @tool
+## 3D spatial trigger volume that dynamically applies color grading, LUTs, and bloom overrides.
 class_name ColorGradingVolume3D
 extends Area3D
 
+## Visual preset options for common color profiles.
 enum Preset { CUSTOM, BLACK_AND_WHITE, SEPIA, COLD, WARM }
+
+## Geometry options for the 3D trigger visualizer and collision hull.
 enum ShapeType { BOX, SPHERE }
 
 @export_category("Editor Visualization")
@@ -39,7 +43,7 @@ enum ShapeType { BOX, SPHERE }
 
 @export_category("Color Grading Volume")
 
-## The custom color grading shader file (.gdshader) containing the AAA features.
+## The custom color grading shader file (.gdshader) containing the grading logic.
 @export var grading_shader: Shader:
 	set(value):
 		grading_shader = value
@@ -121,7 +125,7 @@ enum ShapeType { BOX, SPHERE }
 
 @export_group("Cinematic Lens")
 
-## Applies red and blue color separation at the edges of the screen to simulate lens distortion.
+## Applies red and blue color separation at the edges of the screen.
 @export_range(0.0, 0.05) var aberration_amount: float = 0.0:
 	set(value):
 		aberration_amount = value
@@ -133,7 +137,7 @@ enum ShapeType { BOX, SPHERE }
 		vignette_intensity = value
 		_update_shader_params()
 
-## Adds subtle, animated noise overlay to simulate film texture and prevent color banding.
+## Adds subtle, animated noise overlay to simulate film texture.
 @export_range(0.0, 1.0) var grain_amount: float = 0.0:
 	set(value):
 		grain_amount = value
@@ -149,7 +153,7 @@ enum ShapeType { BOX, SPHERE }
 
 @export_group("Volume Control")
 
-## The duration in seconds it takes for the color grading and bloom effects to fade in or out.
+## The duration in seconds it takes for the color grading and bloom effects to fade.
 @export var blend_time: float = 1.0
 
 ## Toggles the color grading overlay in the editor for previewing changes.
@@ -167,7 +171,7 @@ var _back_buffer: BackBufferCopy
 ## The UI element that holds the shader material and applies it across the screen.
 var _color_rect: ColorRect
 
-## Handles the smooth interpolation of the effect's opacity when a player enters or exits.
+## Handles the smooth interpolation of the effect opacity when a player enters or exits.
 var _blend_tween: Tween
 
 ## Handles the smooth interpolation of the WorldEnvironment glow intensity.
@@ -198,16 +202,16 @@ func _ready() -> void:
 		body_entered.connect(_on_body_entered)
 		body_exited.connect(_on_body_exited)
 
-		if target_environment and target_environment.environment:
+		if is_instance_valid(target_environment) and target_environment.environment != null:
 			_original_glow_intensity = target_environment.environment.glow_intensity
 			_original_glow_bloom = target_environment.environment.glow_bloom
-			# Force glow enabled to ensure the bloom tween has a visible impact
 			target_environment.environment.glow_enabled = true
 
-	print("ColorGradingVolume3D: Initializing node setup for screen overlay.")
+	print("ColorGradingVolume3D: Initializing node setup for screen overlay on ", name)
 	_setup_screen_ui()
 
 
+## Rebuilds collision shapes and visual debug meshes in the editor viewport.
 func _update_visuals() -> void:
 	var col: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
 	if col:
@@ -247,6 +251,8 @@ func _update_visuals() -> void:
 		visual.trigger_text = volume_text
 
 
+## Retrieves the visualizer child node responsible for in-editor wireframe display.
+## [return] The matched [EditorTriggerVisualizer] or null if absent.
 func _get_visualizer() -> EditorTriggerVisualizer:
 	for child: Node in get_children():
 		if child is EditorTriggerVisualizer:
@@ -254,28 +260,37 @@ func _get_visualizer() -> EditorTriggerVisualizer:
 	return null
 
 
+## Creates named CanvasLayer, BackBufferCopy, and ColorRect components in a disabled default state.
 func _setup_screen_ui() -> void:
-	print("ColorGradingVolume3D: Spawning CanvasLayer, BackBufferCopy, and ColorRect.")
+	if not is_inside_tree():
+		return
+
+	print("ColorGradingVolume3D: Spawning gated CanvasLayer for ", name)
 	_canvas_layer = CanvasLayer.new()
+	_canvas_layer.name = "ColorGradingCanvasLayer"
 	_canvas_layer.layer = 10
+	_canvas_layer.visible = false
 	add_child(_canvas_layer)
 
 	_back_buffer = BackBufferCopy.new()
+	_back_buffer.name = "VolumeBackBuffer"
 	_back_buffer.copy_mode = BackBufferCopy.COPY_MODE_VIEWPORT
 	_canvas_layer.add_child(_back_buffer)
 
 	_color_rect = ColorRect.new()
+	_color_rect.name = "GradingColorRect"
 	_color_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_color_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_color_rect.modulate.a = 0.0
 	_color_rect.hide()
-
 	_canvas_layer.add_child(_color_rect)
+
 	_initialize_material()
 
 
+## Instantiates the ShaderMaterial instance and loads the target shader.
 func _initialize_material() -> void:
-	if not is_inside_tree() or not _color_rect or not grading_shader:
+	if not is_inside_tree() or not is_instance_valid(_color_rect) or grading_shader == null:
 		return
 
 	if not _material:
@@ -287,8 +302,9 @@ func _initialize_material() -> void:
 	_update_editor_preview()
 
 
+## Syncs all inspector grading uniforms to the active [ShaderMaterial].
 func _update_shader_params() -> void:
-	if not _material:
+	if not is_instance_valid(_material):
 		return
 
 	_material.set_shader_parameter("brightness", brightness)
@@ -313,6 +329,7 @@ func _update_shader_params() -> void:
 	_material.set_shader_parameter("grain_amount", grain_amount)
 
 
+## Applies calibrated numeric presets to all primary color parameters.
 func _apply_preset() -> void:
 	if preset == Preset.CUSTOM:
 		return
@@ -342,38 +359,56 @@ func _apply_preset() -> void:
 			temperature = 0.6
 
 
+## Toggles canvas layer and material rendering inside the editor viewport.
 func _update_editor_preview() -> void:
-	if not is_inside_tree() or not _color_rect:
+	if (
+		not is_inside_tree()
+		or not is_instance_valid(_color_rect)
+		or not is_instance_valid(_canvas_layer)
+	):
 		return
 
 	if Engine.is_editor_hint():
-		if preview_in_editor and grading_shader:
-			print("ColorGradingVolume3D: Enabling editor preview visibility.")
+		if preview_in_editor and grading_shader != null:
+			print("ColorGradingVolume3D: Enabling editor preview on ", name)
+			_canvas_layer.show()
 			_color_rect.show()
 			_color_rect.modulate.a = 1.0
 		else:
-			print("ColorGradingVolume3D: Disabling editor preview visibility.")
-			_color_rect.hide()
+			print("ColorGradingVolume3D: Disabling editor preview on ", name)
 			_color_rect.modulate.a = 0.0
+			_color_rect.hide()
+			_canvas_layer.hide()
 
 
+## Handles trigger entry and initiates smooth effect transitions.
+## [param body] The [Node3D] entering the volume.
 func _on_body_entered(body: Node3D) -> void:
 	if body.is_in_group("player") or body.name == "Player":
-		print("ColorGradingVolume3D: Player entered volume. Fading in color and bloom VFX.")
+		print("ColorGradingVolume3D: Player entered volume -> ", name)
 		_fade_effect(1.0)
 		_fade_bloom(volume_bloom_intensity)
 
 
+## Handles trigger exit and fades the screen overlays back to baseline.
+## [param body] The [Node3D] exiting the volume.
 func _on_body_exited(body: Node3D) -> void:
 	if body.is_in_group("player") or body.name == "Player":
-		print("ColorGradingVolume3D: Player exited volume. Fading out color and bloom VFX.")
+		print("ColorGradingVolume3D: Player exited volume -> ", name)
 		_fade_effect(0.0)
 		_fade_bloom(_original_glow_bloom)
 
 
+## Tweens the opacity of the screen grading quad and toggles layer visibility.
+## [param target_alpha] Desired target alpha value (0.0 to 1.0).
 func _fade_effect(target_alpha: float) -> void:
-	print("ColorGradingVolume3D: Executing shader alpha fade to ", target_alpha)
+	if not is_instance_valid(_color_rect) or not is_instance_valid(_canvas_layer):
+		return
+
+	print("ColorGradingVolume3D: Executing shader alpha fade to ", target_alpha, " on ", name)
+
 	if target_alpha > 0.0:
+		_canvas_layer.show()
 		_color_rect.show()
 
 	if _blend_tween and _blend_tween.is_valid():
@@ -385,14 +420,22 @@ func _fade_effect(target_alpha: float) -> void:
 	)
 
 	if target_alpha <= 0.0:
-		_blend_tween.tween_callback(_color_rect.hide)
+		_blend_tween.tween_callback(
+			func() -> void:
+				if is_instance_valid(_color_rect):
+					_color_rect.hide()
+				if is_instance_valid(_canvas_layer):
+					_canvas_layer.hide()
+		)
 
 
+## Tweens target WorldEnvironment bloom intensity.
+## [param target_intensity] Desired glow bloom intensity.
 func _fade_bloom(target_intensity: float) -> void:
-	if not target_environment or not target_environment.environment:
+	if not is_instance_valid(target_environment) or target_environment.environment == null:
 		return
 
-	print("ColorGradingVolume3D: Executing environment bloom fade to ", target_intensity)
+	print("ColorGradingVolume3D: Fading environment bloom to ", target_intensity)
 
 	if _bloom_tween and _bloom_tween.is_valid():
 		_bloom_tween.kill()
@@ -405,17 +448,20 @@ func _fade_bloom(target_intensity: float) -> void:
 	)
 
 
-## Instantly resets all color grading shader overlays and restores bloom settings.
+## Instantly resets all color grading overlays and disables the canvas layer.
 func reset_to_default() -> void:
-	print("ColorGradingVolume3D: Resetting volume overlay to defaults.")
+	print("ColorGradingVolume3D: Resetting volume overlay to defaults on ", name)
 	if _blend_tween and _blend_tween.is_valid():
 		_blend_tween.kill()
 	if _bloom_tween and _bloom_tween.is_valid():
 		_bloom_tween.kill()
 
-	if _color_rect:
+	if is_instance_valid(_color_rect):
 		_color_rect.modulate.a = 0.0
 		_color_rect.hide()
 
-	if target_environment and target_environment.environment:
+	if is_instance_valid(_canvas_layer):
+		_canvas_layer.hide()
+
+	if is_instance_valid(target_environment) and target_environment.environment != null:
 		target_environment.environment.glow_bloom = _original_glow_bloom

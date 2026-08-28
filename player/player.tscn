@@ -6,11 +6,8 @@
 [ext_resource type="Script" uid="uid://f70me5087r7i" path="res://player/flashlight_controller.gd" id="3_b8lor"]
 [ext_resource type="Texture2D" uid="uid://dnv1e6gebl5gj" path="res://assets/images/UI/flashlight_pattern.png" id="3_di6f5"]
 [ext_resource type="Script" uid="uid://c0epxmhenit7" path="res://player/camera_controller.gd" id="4_6e537"]
-[ext_resource type="Shader" uid="uid://spngok2sru6f" path="res://environment/water_wipe_overlay.gdshader" id="4_61ith"]
 [ext_resource type="Shader" uid="uid://cp26motkbojta" path="res://ui/VisionAssist.gdshader" id="5_b2j0d"]
 [ext_resource type="Script" uid="uid://dootou1joopw7" path="res://player/note_reader.gd" id="6_7l6ig"]
-[ext_resource type="Shader" uid="uid://onn1sa83xj6n" path="res://environment/water_ripple_overlay.gdshader" id="6_61ith"]
-[ext_resource type="Shader" uid="uid://blvci46gmtq30" path="res://environment/waterfall_wipe_overlay.gdshader" id="6_ebwui"]
 [ext_resource type="AudioStream" uid="uid://bp7lht4opa4rr" path="res://assets/sounds/ConcreteFS_1.wav" id="6_khinc"]
 [ext_resource type="AudioStream" uid="uid://oot00opauoyd" path="res://assets/sounds/ConcreteFS_2.wav" id="7_bruh7"]
 [ext_resource type="Texture2D" uid="uid://c7cbvlpeqy6d5" path="res://assets/images/Concept/BellaInGameReflection.png" id="7_cw2d6"]
@@ -35,7 +32,6 @@
 [ext_resource type="AudioStream" uid="uid://cj2n6q5onaxhj" path="res://assets/sounds/FootstepStone2.wav" id="21_jfgyi"]
 [ext_resource type="AudioStream" uid="uid://bvnw8qksa0le4" path="res://assets/sounds/FootstepStone3.wav" id="22_237xx"]
 [ext_resource type="Script" uid="uid://byrbifw8m750a" path="res://player/player_interaction_scanner.gd" id="24_p07f3"]
-[ext_resource type="Script" uid="uid://cgaeaskksqytc" path="res://player/screen_vfx_manager.gd" id="26_fgkxt"]
 [ext_resource type="Script" uid="uid://b2b2ewoakmxoj" path="res://player/vault_controller.gd" id="27_xsi7p"]
 [ext_resource type="Script" uid="uid://rdk3qrjsr6sf" path="res://player/physics_pusher.gd" id="28_1jpwa"]
 [ext_resource type="Script" uid="uid://c1xnt2yo0oo2g" path="res://player/system_menu_controller.gd" id="29_pfeki"]
@@ -334,25 +330,6 @@ _data = {
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_34orh"]
 height = 1.2
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_61ith"]
-shader = ExtResource("4_61ith")
-shader_parameter/drop_intensity = 0.0
-shader_parameter/wash_intensity = 0.0
-shader_parameter/clear_progress = 1.5
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_jfpux"]
-shader = ExtResource("6_61ith")
-shader_parameter/drop_intensity = 0.0
-shader_parameter/wash_intensity = 0.0
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_sfy4j"]
-shader = ExtResource("6_ebwui")
-shader_parameter/clear_progress = 0.0
-shader_parameter/drop_intensity = 0.0
-shader_parameter/wash_intensity = 0.0
-shader_parameter/distortion_strength = 0.04
-shader_parameter/time_scale = 3.0
-
 [sub_resource type="SphereShape3D" id="SphereShape3D_mdl7e"]
 
 [sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_d3wef"]
@@ -514,42 +491,6 @@ transparent = false
 double_sided = false
 texture = ExtResource("7_cw2d6")
 
-[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=336625951]
-
-[node name="WaterRippleOverlay" type="ColorRect" parent="CanvasLayer" unique_id=1942721923]
-material = SubResource("ShaderMaterial_61ith")
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-
-[node name="BackBufferCopy1" type="BackBufferCopy" parent="CanvasLayer" unique_id=64470784]
-copy_mode = 2
-
-[node name="RainDropsOverlay" type="ColorRect" parent="CanvasLayer" unique_id=1203447522]
-material = SubResource("ShaderMaterial_jfpux")
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-
-[node name="BackBufferCopy2" type="BackBufferCopy" parent="CanvasLayer" unique_id=1946410601]
-copy_mode = 2
-
-[node name="WaterfallOverlay" type="ColorRect" parent="CanvasLayer" unique_id=498107626]
-material = SubResource("ShaderMaterial_sfy4j")
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-metadata/_edit_use_anchors_ = true
-
 [node name="UI" parent="." unique_id=1944889716 groups=["player"] instance=ExtResource("2_k2mo6")]
 
 [node name="WaterDetector" type="Area3D" parent="." unique_id=1554540487]
@@ -609,12 +550,6 @@ stream = ExtResource("42_hggc2")
 pitch_scale = 2.0
 bus = &"SFX"
 
-[node name="ScreenVFXManager" type="Node" parent="." unique_id=1920257755 node_paths=PackedStringArray("screen_water_ui", "rain_drops_overlay", "waterfall_overlay")]
-script = ExtResource("26_fgkxt")
-screen_water_ui = NodePath("../CanvasLayer/WaterRippleOverlay")
-rain_drops_overlay = NodePath("../CanvasLayer/RainDropsOverlay")
-waterfall_overlay = NodePath("../CanvasLayer/WaterfallOverlay")
-
 [node name="VaultController" type="Node" parent="." unique_id=1112136417 node_paths=PackedStringArray("player_body", "camera", "head", "eyes", "standing_collision", "crouching_collision")]
 script = ExtResource("27_xsi7p")
 player_body = NodePath("..")
@@ -662,7 +597,7 @@ interaction_scanner = NodePath("../../InteractionScanner")
 
 [node name="EnvironmentComponent" type="Node" parent="Components" unique_id=821995305 node_paths=PackedStringArray("vfx_manager", "state_machine", "vault_controller")]
 script = ExtResource("33_hjies")
-vfx_manager = NodePath("../../ScreenVFXManager")
+vfx_manager = NodePath("")
 state_machine = NodePath("../../StateMachine")
 vault_controller = NodePath("../../VaultController")
 

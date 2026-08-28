@@ -17,6 +17,12 @@ var is_collision_visible: bool = false
 ## Tracks whether the user interface is currently hidden.
 var is_ui_hidden: bool = false
 
+## Reference to the [Button] used to toggle render diagnostics.
+@onready var render_diagnostic_button: Button = %RenderDiagnosticButton
+
+## Reference to the [RenderDiagnosticsPanel] node.
+@onready var diagnostics_panel: RenderDiagnosticsPanel = %DiagnosticsPanel
+
 ## Material used to draw the green wireframe debug overlay.
 var green_wireframe_material: ShaderMaterial
 
@@ -53,6 +59,10 @@ var default_crosshair_size: Vector2
 
 ## Animates the green vignette effect when the player heals.
 var heal_tween: Tween
+
+# --- SCREEN OVERLAYS ---
+## ColorRect applying full-screen water distortion, wipe, and raindrops.
+@onready var water_vfx_overlay: ColorRect = $WaterVFXOverlay
 
 # --- UI ELEMENT PATHS ---
 ## Container that centers the crosshair elements on the screen.
@@ -201,6 +211,21 @@ var glitch_tween: Tween
 ## Controls the electricity vignette animation when shocked.
 var electro_tween: Tween
 
+## Target rain base intensity set by rain particle volumes.
+var _target_rain_intensity: float = 0.0
+
+## Current interpolated rain intensity factoring camera pitch and drying fade.
+var _current_rain_intensity: float = 0.0
+
+## Active tween handling smooth evaporation of raindrops on exiting rain.
+var _rain_fade_tween: Tween
+
+## Tracks whether the player is currently inside a waterfall stream.
+var _is_waterfall_active: bool = false
+
+## Tracks whether the player's camera is submerged underwater.
+var _is_underwater_active: bool = false
+
 
 ## Lifecycle method called when the node enters the scene tree.
 ## Initializes UI states, binds event bus signals, and creates dynamic materials.
@@ -288,6 +313,9 @@ func _ready() -> void:
 	if ice_indicator:
 		ice_indicator.hide()
 
+	if water_vfx_overlay != null:
+		water_vfx_overlay.hide()
+
 
 ## Initializes the default label text for all debug panel toggle buttons.
 func _initialize_debug_button_states() -> void:
@@ -305,6 +333,8 @@ func _initialize_debug_button_states() -> void:
 		wireframe_overlay_button.text = "Wireframe Overlay OFF"
 	if collision_button:
 		collision_button.text = "Collisions OFF"
+	if render_diagnostic_button:
+		render_diagnostic_button.text = "Render Diagnostics"
 	if hide_ui_button:
 		hide_ui_button.text = "Hide UI"
 
@@ -325,6 +355,11 @@ func _connect_ui_signals() -> void:
 		wireframe_overlay_button.pressed.connect(_on_wireframe_overlay_button_pressed)
 	if not collision_button.pressed.is_connected(_on_collision_button_pressed):
 		collision_button.pressed.connect(_on_collision_button_pressed)
+	if (
+		render_diagnostic_button
+		and not render_diagnostic_button.pressed.is_connected(_on_render_diagnostic_button_pressed)
+	):
+		render_diagnostic_button.pressed.connect(_on_render_diagnostic_button_pressed)
 	if not hide_ui_button.pressed.is_connected(_on_hide_ui_button_pressed):
 		hide_ui_button.pressed.connect(_on_hide_ui_button_pressed)
 
@@ -360,6 +395,12 @@ func _connect_ui_signals() -> void:
 		Events.sand_surface_toggled.connect(_on_sand_surface_toggled)
 	if not Events.ice_surface_toggled.is_connected(_on_ice_surface_toggled):
 		Events.ice_surface_toggled.connect(_on_ice_surface_toggled)
+	if not Events.underwater_vfx_toggled.is_connected(_on_underwater_vfx_toggled):
+		Events.underwater_vfx_toggled.connect(_on_underwater_vfx_toggled)
+	if not Events.waterfall_vfx_toggled.is_connected(_on_waterfall_vfx_toggled):
+		Events.waterfall_vfx_toggled.connect(_on_waterfall_vfx_toggled)
+	if not Events.rain_vfx_toggled.is_connected(_on_rain_vfx_toggled):
+		Events.rain_vfx_toggled.connect(_on_rain_vfx_toggled)
 
 
 ## Repositions hint and warning notifications relative to the screen center.
@@ -373,14 +414,56 @@ func _recenter_warning_ui() -> void:
 	warning_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
 
 
-## Updates screen-space shaders and vignette transitions every render frame.
+## Updates screen-space shaders, vignette transitions, and rain pitch scaling every frame.
 ## [param delta] The elapsed time since the previous frame.
 func _process(delta: float) -> void:
-	var target_vignette_opacity: float = 0.8 if is_player_crouching else 0.0
-	var current_opacity: float = vignette.material.get_shader_parameter("vignette_opacity") as float
+	if is_instance_valid(vignette) and vignette.material is ShaderMaterial:
+		var target_vignette_opacity: float = 0.8 if is_player_crouching else 0.0
+		var current_opacity: float = (
+			(vignette.material as ShaderMaterial).get_shader_parameter("vignette_opacity") as float
+		)
+		var new_opacity: float = lerp(
+			current_opacity, target_vignette_opacity, delta * ui_lerp_speed
+		)
+		(vignette.material as ShaderMaterial).set_shader_parameter("vignette_opacity", new_opacity)
 
-	var new_opacity: float = lerp(current_opacity, target_vignette_opacity, delta * ui_lerp_speed)
-	vignette.material.set_shader_parameter("vignette_opacity", new_opacity)
+	_process_rain_pitch_and_vfx(delta)
+
+
+## Updates unified water overlay parameters and handles automatic node visibility.
+## [param mode] 0 = Basic Ripples/Droplets, 1 = Diagonal Wipe, 2 = Waterfall Flow.
+## [param drops] Intensity for pop-in droplets (0.0 to 1.0).
+## [param wash] Intensity for center rings/flowing water (0.0 to 1.0).
+## [param clear_prog] Wipe progress across screen (0.0 to 1.5).
+func set_water_vfx_state(mode: int, drops: float, wash: float, clear_prog: float = 0.0) -> void:
+	print(
+		"UIController: Setting Water VFX mode -> ",
+		mode,
+		" drops -> ",
+		drops,
+		" wash -> ",
+		wash,
+		" wipe -> ",
+		clear_prog
+	)
+	if not is_instance_valid(water_vfx_overlay):
+		return
+
+	var is_active: bool = false
+	if mode == 2:
+		is_active = (drops > 0.001 or wash > 0.001 or clear_prog < 1.49)
+	else:
+		is_active = (drops > 0.001 or wash > 0.001)
+
+	water_vfx_overlay.visible = is_active
+
+	if is_active and water_vfx_overlay.material is ShaderMaterial:
+		var mat: ShaderMaterial = water_vfx_overlay.material as ShaderMaterial
+		mat.set_shader_parameter(&"effect_mode", mode)
+		mat.set_shader_parameter(&"drop_intensity", drops)
+		mat.set_shader_parameter(&"wash_intensity", wash)
+		mat.set_shader_parameter(&"clear_progress", clear_prog)
+		water_vfx_overlay.queue_redraw()
 
 
 ## Slices the heart atlas and builds initial health container representations.
@@ -586,11 +669,14 @@ func _on_player_zoomed(is_zooming: bool) -> void:
 		zoom_tween.tween_property(ui_circle_zoom_inner, "modulate:a", 0.1, 0.3).from(0.0)
 		zoom_tween.tween_property(ui_circle_zoom_inner, "rotation", deg_to_rad(-45), 1.0).from(0.0)
 
-		(
-			zoom_tween
-			. tween_property(fisheye_zoom, "material:shader_parameter/effect_strength", 0.4, 0.2)
-			. from(0.0)
-		)
+		if is_instance_valid(fisheye_zoom):
+			(
+				zoom_tween
+				. tween_property(
+					fisheye_zoom, "material:shader_parameter/effect_strength", 0.4, 0.2
+				)
+				. from(0.0)
+			)
 	else:
 		center_dot.show()
 		zoom_tween.tween_property(ui_circle_zoom, "scale", Vector2.ZERO, 0.5)
@@ -601,9 +687,10 @@ func _on_player_zoomed(is_zooming: bool) -> void:
 		zoom_tween.tween_property(ui_circle_zoom_inner, "modulate:a", 0.0, 0.3)
 		zoom_tween.tween_property(ui_circle_zoom_inner, "rotation", deg_to_rad(0), 0.25)
 
-		zoom_tween.tween_property(
-			fisheye_zoom, "material:shader_parameter/effect_strength", 0.0, 0.2
-		)
+		if is_instance_valid(fisheye_zoom):
+			zoom_tween.tween_property(
+				fisheye_zoom, "material:shader_parameter/effect_strength", 0.0, 0.2
+			)
 
 		zoom_tween.finished.connect(
 			func() -> void:
@@ -1013,7 +1100,7 @@ func _on_player_electrocuted() -> void:
 		glitch_tween = (create_tween().set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT))
 		glitch_tween.tween_method(
 			func(val: float) -> void:
-				glitch_overlay.material.set_shader_parameter("intensity", val)
+				(glitch_overlay.material as ShaderMaterial).set_shader_parameter("intensity", val)
 				glitch_overlay.queue_redraw(),
 			0.6,
 			0.0,
@@ -1029,7 +1116,9 @@ func _on_player_electrocuted() -> void:
 		electro_tween = (create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT))
 		electro_tween.tween_method(
 			func(val: float) -> void:
-				electricity_vignette.material.set_shader_parameter("intensity", val)
+				(electricity_vignette.material as ShaderMaterial).set_shader_parameter(
+					"intensity", val
+				)
 				electricity_vignette.queue_redraw(),
 			1.0,
 			0.0,
@@ -1066,12 +1155,12 @@ func _trigger_heal_effect() -> void:
 	if heal_tween and heal_tween.is_valid():
 		heal_tween.kill()
 
-	heal_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	heal_tween = (create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT))
 
 	if heal_vignette.material is ShaderMaterial:
 		heal_tween.tween_method(
 			func(val: float) -> void:
-				heal_vignette.material.set_shader_parameter("intensity", val)
+				(heal_vignette.material as ShaderMaterial).set_shader_parameter("intensity", val)
 				heal_vignette.queue_redraw(),
 			0.8,
 			0.0,
@@ -1098,3 +1187,90 @@ func _on_ice_surface_toggled(is_active: bool) -> void:
 	print("UIController: Ice surface state toggled -> ", is_active)
 	if ice_indicator:
 		ice_indicator.visible = is_active
+
+
+## Toggles visibility for the deep render hierarchy diagnostic panel via button press.
+func _on_render_diagnostic_button_pressed() -> void:
+	print("UIController: Render Diagnostics button pressed.")
+	if diagnostics_panel:
+		var is_open: bool = diagnostics_panel.toggle_window()
+		if render_diagnostic_button:
+			render_diagnostic_button.text = ("Diagnostics ON" if is_open else "Render Diagnostics")
+
+
+## Modulates rain droplet intensity based on camera pitch angle and manages drying transitions.
+## [param delta] The elapsed frame delta time in seconds.
+func _process_rain_pitch_and_vfx(delta: float) -> void:
+	if _is_underwater_active or _is_waterfall_active:
+		return
+
+	var pitch_factor: float = 1.0
+	var viewport: Viewport = get_viewport()
+	var camera: Camera3D = viewport.get_camera_3d() if viewport else null
+
+	if is_instance_valid(camera):
+		var cam_forward: Vector3 = -camera.global_transform.basis.z
+		var up_dot: float = cam_forward.dot(Vector3.UP)
+		# up_dot: -1.0 (looking down), 0.0 (horizon), 1.0 (looking up)
+		pitch_factor = clampf(remap(up_dot, -0.35, 0.75, 0.0, 1.8), 0.0, 2.0)
+
+	var target_val: float = _target_rain_intensity * pitch_factor
+	_current_rain_intensity = lerpf(_current_rain_intensity, target_val, delta * 6.0)
+
+	if _current_rain_intensity > 0.001 or _target_rain_intensity > 0.001:
+		set_water_vfx_state(0, _current_rain_intensity, 0.0, 1.5)
+	elif is_instance_valid(water_vfx_overlay) and water_vfx_overlay.visible:
+		set_water_vfx_state(0, 0.0, 0.0, 1.5)
+
+
+## Handles underwater VFX state transitions emitted by [WaterBody].
+## [param is_submerged] Whether the camera is submerged.
+## [param wash_intensity] Distortion strength for underwater refraction.
+## [param drop_intensity] Droplet lens effect intensity.
+## [param clear_prog] Wipe mask progress across the screen (0.0 to 1.5).
+func _on_underwater_vfx_toggled(
+	is_submerged: bool, wash_intensity: float, drop_intensity: float, clear_prog: float
+) -> void:
+	_is_underwater_active = is_submerged
+	print(
+		"UIController: Underwater VFX -> Active: ",
+		is_submerged,
+		" Wash: ",
+		wash_intensity,
+		" Drops: ",
+		drop_intensity,
+		" Wipe: ",
+		clear_prog
+	)
+	if is_submerged:
+		set_water_vfx_state(0, drop_intensity, wash_intensity, clear_prog)
+	else:
+		set_water_vfx_state(0, 0.0, 0.0, 1.5)
+
+
+## Handles waterfall screen wash and wipe transitions emitted by [WaterfallStream].
+## [param is_active] Whether the player is contacting or exiting the waterfall.
+## [param wash_intensity] Flowing stream distortion strength.
+## [param clear_prog] Wipe mask progress across the screen (0.0 to 1.5).
+func _on_waterfall_vfx_toggled(is_active: bool, wash_intensity: float, clear_prog: float) -> void:
+	_is_waterfall_active = is_active
+	print("UIController: Waterfall VFX -> Active: ", is_active, " Wipe: ", clear_prog)
+	if is_active:
+		set_water_vfx_state(2, 0.5, wash_intensity, clear_prog)
+	else:
+		set_water_vfx_state(2, 0.0, 0.0, 1.5)
+
+
+## Handles screen rain droplet volume transitions and starts drying timer on exit.
+## [param intensity] Rain droplet effect strength (0.0 to 1.0).
+func _on_rain_vfx_toggled(intensity: float) -> void:
+	print("UIController: Rain VFX toggled -> Target intensity: ", intensity)
+	if _rain_fade_tween and _rain_fade_tween.is_valid():
+		_rain_fade_tween.kill()
+
+	if intensity > 0.0:
+		_target_rain_intensity = intensity
+	else:
+		# Smoothly evaporate droplets over 2.8 seconds on leaving rain
+		_rain_fade_tween = (create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT))
+		_rain_fade_tween.tween_property(self, "_target_rain_intensity", 0.0, 2.8)
