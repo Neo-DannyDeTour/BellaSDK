@@ -35,9 +35,13 @@ func before_each() -> void:
 func test_modifier_applies_damage() -> void:
 	print("TestHealthModifier: test_modifier_applies_damage() called.")
 
-	var mocked_modifier: Variant = partial_double(ModifierScript).new()
+	# Create a true collision scenario or use a custom extended script
+	var mocked_modifier: Variant = ModifierScript.new()
 	add_child_autofree(mocked_modifier)
-	stub(mocked_modifier, "get_overlapping_bodies").to_return([dummy_body])
+	# Inject dummy_body by exploiting duck typing or by overriding the script temporarily
+	mocked_modifier.set_script(preload("res://test/mocks/mock_health_modifier.gd"))
+	mocked_modifier._dummy_bodies = [dummy_body]
+
 
 	mocked_modifier.modify_amount = -20
 
@@ -51,9 +55,13 @@ func test_modifier_applies_healing() -> void:
 	print("TestHealthModifier: test_modifier_applies_healing() called.")
 	health_comp.take_damage(50)  # Set health to 50
 
-	var mocked_modifier: Variant = partial_double(ModifierScript).new()
+	# Create a true collision scenario or use a custom extended script
+	var mocked_modifier: Variant = ModifierScript.new()
 	add_child_autofree(mocked_modifier)
-	stub(mocked_modifier, "get_overlapping_bodies").to_return([dummy_body])
+	# Inject dummy_body by exploiting duck typing or by overriding the script temporarily
+	mocked_modifier.set_script(preload("res://test/mocks/mock_health_modifier.gd"))
+	mocked_modifier._dummy_bodies = [dummy_body]
+
 
 	mocked_modifier.modify_amount = 30
 

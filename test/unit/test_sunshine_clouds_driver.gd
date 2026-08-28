@@ -17,7 +17,8 @@ var _clouds_res: SunshineCloudsGD
 func before_each() -> void:
 	print("TestSunshineCloudsDriver: Initializing test harness before test case.")
 	_driver = SunshineCloudsDriverGD.new()
-	_clouds_res = SunshineCloudsGD.new()
+		# Use the example resource instead of instantiating a new CompositorEffect which fails in some headless environments
+	_clouds_res = preload("res://addons/SunshineClouds2/ExampleCloudsResource.tres")
 	_driver.clouds_resource = _clouds_res
 	add_child_autofree(_driver)
 
