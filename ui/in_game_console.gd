@@ -476,9 +476,8 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 		"die":
 			if is_debug_allowed:
 				print("InGameConsole: Action Executing 'die' command.")
-				var players: Array[Node] = get_tree().get_nodes_in_group("player")
-				if players.size() > 0:
-					var player: Node = players[0]
+				var player: Node = get_tree().get_first_node_in_group("player")
+				if is_instance_valid(player):
 					var health_comp: Node = player.get_node_or_null("Components/HealthComponent")
 
 					if not health_comp:
@@ -813,9 +812,8 @@ func _process_command(cmd: String, args: PackedStringArray) -> void:
 					var health_val: int = args[0].to_int()
 					health_val = clampi(health_val, 0, 300)
 
-					var players: Array[Node] = get_tree().get_nodes_in_group("player")
-					if players.size() > 0:
-						var player: Node = players[0]
+					var player: Node = get_tree().get_first_node_in_group("player")
+					if is_instance_valid(player):
 						var health_comp: Node = player.get_node_or_null(
 							"Components/HealthComponent"
 						)

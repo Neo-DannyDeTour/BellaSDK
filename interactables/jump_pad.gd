@@ -56,7 +56,7 @@ var _custom_gravity_down: float = 9.8
 
 ## Cached reference to the fallback child 'Target' node, used to determine
 ## the final destination's Y-position during flight simulation.
-var _target_node: Node3D
+@onready var _target_node: Node3D = get_node_or_null("Target")
 
 ## The last recorded position of the jump pad to detect movement.
 var _last_start_pos: Vector3 = Vector3.ZERO
@@ -104,7 +104,9 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	var active_target: Node3D = assigned_target
 	if not is_instance_valid(active_target):
-		active_target = get_node_or_null("Target") as Node3D
+		if Engine.is_editor_hint() and not is_instance_valid(_target_node):
+			_target_node = get_node_or_null("Target") as Node3D
+		active_target = _target_node
 
 	if is_instance_valid(active_target):
 		if global_position != _last_start_pos or active_target.global_position != _last_target_pos:
@@ -143,7 +145,9 @@ func _update_trajectory() -> void:
 	# Fallback to the auto-generated target if the user hasn't assigned one manually
 	var active_target: Node3D = assigned_target
 	if not is_instance_valid(active_target):
-		active_target = get_node_or_null("Target") as Node3D
+		if Engine.is_editor_hint() and not is_instance_valid(_target_node):
+			_target_node = get_node_or_null("Target") as Node3D
+		active_target = _target_node
 
 	if not is_instance_valid(active_target):
 		_flight_time = 0.0
@@ -244,7 +248,8 @@ func _update_visuals() -> void:
 func _get_position_at_time(t: float) -> Vector3:
 	var p0: Vector3 = global_position
 	if not is_instance_valid(_target_node):
-		_target_node = get_node_or_null("Target") as Node3D
+		if Engine.is_editor_hint():
+			_target_node = get_node_or_null("Target") as Node3D
 
 	var y: float = 0.0
 
@@ -375,3 +380,6 @@ func _create_default_nodes() -> void:
 		# Setting owner makes it save properly so your edits to the target stick
 		if Engine.is_editor_hint() and is_inside_tree():
 			target.owner = get_tree().edited_scene_root
+
+	if not is_instance_valid(_target_node):
+		_target_node = target

@@ -483,9 +483,9 @@ func _physics_process(_delta: float) -> void:
 		if target_pos.y < min_height:
 			target_pos.y = min_height
 
-		var distance_to_target: float = global_position.distance_to(target_pos)
+		var distance_sq_to_target: float = global_position.distance_squared_to(target_pos)
 
-		if distance_to_target > 1.5 and not _is_player_flying:
+		if distance_sq_to_target > 2.25 and not _is_player_flying:
 			drop()
 			return
 
