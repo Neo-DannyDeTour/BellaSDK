@@ -1,14 +1,15 @@
-## Unit tests verifying SaveManager operations, save lists, sorting, and state loading.
+## Unit tests verifying [SaveManager] operations, save lists, sorting, and state loading.
+class_name TestSaveManager
 extends GutTest
 
-## Preloaded SaveManager class reference to guarantee inheritance resolution.
+## Preloaded [SaveManager] class reference to guarantee inheritance resolution.
 const SAVE_MANAGER_SCRIPT: GDScript = preload("res://core/save_manager.gd")
 
 ## The save manager instance being tested.
 var save_manager: MockSaveManager = null
 
 
-## Mocked partial class intercepting disk operations and threading.
+## Mocked partial class intercepting disk operations and threading for [SaveManager].
 class MockSaveManager:
 	extends "res://core/save_manager.gd"
 
@@ -51,8 +52,8 @@ class MockSaveManager:
 
 	## Sorts save entries by favorite flag and ID descending.
 	func _sort_saves(a: Dictionary, b: Dictionary) -> bool:
-		var a_fav: bool = a.get("is_favorite", false)
-		var b_fav: bool = b.get("is_favorite", false)
+		var a_fav: bool = bool(a.get("is_favorite", false))
+		var b_fav: bool = bool(b.get("is_favorite", false))
 		if a_fav != b_fav:
 			return a_fav
 		var a_id: int = int(a.get("id", 0))
@@ -76,10 +77,10 @@ func test_get_all_saves() -> void:
 
 	var saves: Array[Dictionary] = save_manager.get_all_saves()
 	assert_eq(saves.size(), 1, "Should return 1 save from mock.")
-	assert_eq(saves[0]["name"], "Test Save", "Save name should match.")
+	assert_eq(String(saves[0]["name"]), "Test Save", "Save name should match.")
 
 
-## Verifies has_saves correctly returns false when no saves exist.
+## Verifies [method SaveManager.has_saves] correctly returns false when no saves exist.
 func test_has_saves_with_no_dir() -> void:
 	print("TestSaveManager: test_has_saves_with_no_dir() called.")
 	save_manager.mock_saves.clear()
