@@ -37,10 +37,9 @@ func test_modifier_applies_damage() -> void:
 	print("TestHealthModifier: test_modifier_applies_damage() called.")
 
 	# Create a true collision scenario or use a custom extended script
-	var mocked_modifier: Variant = ModifierScript.new()
+	# Use the custom extended mock script
+	var mocked_modifier: Variant = MockModifierScript.new()
 	add_child_autofree(mocked_modifier)
-	# Inject dummy_body by exploiting duck typing or by overriding the script temporarily
-	mocked_modifier.set_script(MockModifierScript)
 	mocked_modifier._dummy_bodies = [dummy_body]
 
 	mocked_modifier.modify_amount = -20
@@ -56,10 +55,9 @@ func test_modifier_applies_healing() -> void:
 	health_comp.take_damage(50)  # Set health to 50
 
 	# Create a true collision scenario or use a custom extended script
-	var mocked_modifier: Variant = ModifierScript.new()
+	# Use the custom extended mock script
+	var mocked_modifier: Variant = MockModifierScript.new()
 	add_child_autofree(mocked_modifier)
-	# Inject dummy_body by exploiting duck typing or by overriding the script temporarily
-	mocked_modifier.set_script(MockModifierScript)
 	mocked_modifier._dummy_bodies = [dummy_body]
 
 	mocked_modifier.modify_amount = 30
