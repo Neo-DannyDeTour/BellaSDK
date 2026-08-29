@@ -33,6 +33,28 @@ func before_each() -> void:
 	health_comp._ready()
 
 
+class MockModifier:
+	extends Area3D
+	var modify_amount: int = -25
+	var mock_bodies: Array[Node3D] = []
+
+	func get_overlapping_bodies() -> Array[Node3D]:
+		return mock_bodies
+
+	func _on_tick_timer_timeout() -> void:
+		var bodies: Array[Node3D] = get_overlapping_bodies()
+
+		for body: Node3D in bodies:
+			# Added "Components/" to the relative path
+			var health_node: Node = body.get_node_or_null("Components/HealthComponent")
+
+			if health_node:
+				if modify_amount < 0:
+					health_node.take_damage(abs(modify_amount))
+				elif modify_amount > 0:
+					health_node.heal(modify_amount)
+
+
 func test_modifier_applies_damage() -> void:
 	print("TestHealthModifier: test_modifier_applies_damage() called.")
 
@@ -45,7 +67,7 @@ func test_modifier_applies_damage() -> void:
 	mocked_modifier.modify_amount = -20
 
 	# Trigger timeout manually
-	mocked_modifier._on_tick_timer_timeout()
+	mock_mod._on_tick_timer_timeout()
 
 	assert_eq(health_comp.current_health, 80, "Health should decrease by 20 from modifier.")
 
@@ -62,6 +84,6 @@ func test_modifier_applies_healing() -> void:
 
 	mocked_modifier.modify_amount = 30
 
-	mocked_modifier._on_tick_timer_timeout()
+	mock_mod._on_tick_timer_timeout()
 
 	assert_eq(health_comp.current_health, 80, "Health should increase by 30 from modifier.")
