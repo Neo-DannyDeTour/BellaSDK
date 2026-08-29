@@ -1,54 +1,72 @@
+## Manages footstep audio synthesis based on physics material and player velocity.
+##
+## [FootstepManager] casts a ray downwards to determine the floor material and plays
+## the corresponding sound effects. It also adjusts pacing based on locomotion states.
 class_name FootstepManager
 extends Node3D
 
-# --------------------------------------
-# EXPORTS
-# --------------------------------------
 @export_category("Node References")
+## Reference to the main [CharacterBody3D] to cast rays from.
 @export var player_body: CharacterBody3D
 
 @export_category("Audio Players")
+## Generic footstep audio fallback.
 @export var audio_default: AudioStreamPlayer
+## Metallic surface footstep audio.
 @export var audio_metal: AudioStreamPlayer
+## Stone surface footstep audio.
 @export var audio_stone: AudioStreamPlayer
+## Wet dirt or mud footstep audio.
 @export var audio_wet_dirt: AudioStreamPlayer
+## Ice or snow footstep audio.
 @export var audio_ice: AudioStreamPlayer
+## Metallic ladder climbing audio.
 @export var audio_ladder: AudioStreamPlayer
+## Overhead bar grabbing and swinging audio.
 @export var audio_monkey_bar: AudioStreamPlayer
 
 @export_category("Timing Intervals")
+## Time between steps when walking.
 @export var walk_step_interval: float = 0.45
-@export var sprint_step_interval: float = 0.28  # Faster steps
-@export var crouch_step_interval: float = 0.65  # Slower steps
+## Time between steps when sprinting.
+@export var sprint_step_interval: float = 0.28
+## Time between steps when crouch walking.
+@export var crouch_step_interval: float = 0.65
+## Time between movements when climbing a ladder.
 @export var ladder_step_interval: float = 0.55
+## Time between movements on monkey bars.
 @export var monkey_bar_step_interval: float = 0.65
 
-# --------------------------------------
-# CONSTANTS & GROUPS
-# --------------------------------------
-# StringNames (&"") are faster for comparisons than standard Strings
+## Group identifier for ice physics surfaces.
 const SURFACE_ICE: StringName = &"ice"
+## Group identifier for metal physics surfaces.
 const SURFACE_METAL: StringName = &"metal"
+## Group identifier for stone physics surfaces.
 const SURFACE_STONE: StringName = &"stone"
+## Group identifier for wet physics surfaces.
 const SURFACE_WET: StringName = &"wet_dirt"
 
-# --------------------------------------
-# VARIABLES
-# --------------------------------------
+## Tracks time remaining until the next footstep sound should play.
 var step_timer: float = 0.0
-
-# Cached surface data for the physics engine to read
+## Evaluated dynamically; true if the player is standing on the [constant SURFACE_ICE] group.
 var is_on_ice: bool = false
+## The currently selected audio stream based on traversal state and floor material.
 var active_audio_player: AudioStreamPlayer = null
 
 
+## Preloads the default audio player when the node enters the scene.
 func _ready() -> void:
 	active_audio_player = audio_default
 
 
-# --------------------------------------
-# CORE PROCESS LOGIC
-# --------------------------------------
+## Drives footstep logic based on the player's active state and downward raycast hits.
+## [param delta] Engine frame physics delta.
+## [param is_grounded] True if the player is currently touching the floor.
+## [param velocity_length] Current speed of the player in meters per second.
+## [param is_sprinting] True if the player is running.
+## [param is_crouching] True if the player is crouch-walking.
+## [param is_on_ladder] True if the player is attached to a ladder.
+## [param is_on_monkey_bar] True if the player is traversing monkey bars.
 func process_surface_and_footsteps(
 	delta: float,
 	is_grounded: bool,
@@ -108,9 +126,7 @@ func process_surface_and_footsteps(
 		step_timer = 0.0
 
 
-# --------------------------------------
-# PRIVATE METHODS
-# --------------------------------------
+## Casts a short raycast downward from the player to detect the floor surface group.
 func _scan_surface_material() -> void:
 	var space_state: PhysicsDirectSpaceState3D = player_body.get_world_3d().direct_space_state
 	var ray_start: Vector3 = player_body.global_position + Vector3(0.0, 0.5, 0.0)
@@ -145,6 +161,9 @@ func _scan_surface_material() -> void:
 				active_audio_player = audio_wet_dirt
 
 
+## Configures the delay until the next footstep audio based on locomotion mode.
+## [param is_sprinting] True if the sprint threshold is reached.
+## [param is_crouching] True if the player is sneaking.
 func _reset_timer(is_sprinting: bool, is_crouching: bool) -> void:
 	if is_sprinting:
 		step_timer = sprint_step_interval
@@ -154,9 +173,7 @@ func _reset_timer(is_sprinting: bool, is_crouching: bool) -> void:
 		step_timer = walk_step_interval
 
 
-# --------------------------------------
-# PUBLIC METHODS
-# --------------------------------------
+## Immediately ceases playback of all continuous or looping traversal audio (e.g., monkey bars).
 func stop_looping_sounds() -> void:
 	if audio_monkey_bar and audio_monkey_bar.playing:
 		print("FootstepManager: Force stopping looping sounds on state exit.")

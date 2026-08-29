@@ -1,30 +1,54 @@
+## Smooths out player physics movement when ascending or descending staircases.
+##
+## [StairController] casts collision bodies ahead of and below the player to detect
+## sharp geometric steps, teleporting the player upwards and offsetting the camera
+## downwards to create the illusion of smooth sliding over jagged geometry.
 class_name StairController
 extends Node
 
+## The maximum vertical height the physics engine is allowed to snap up instantly.
 const MAX_STEP_HEIGHT: float = 0.55
+## Minimum distance the forward test motion casts to clear the step.
 const MIN_STEP_REACH: float = 0.3
 
+## Timer tracking how long it has been since the last upward snap.
 var time_since_step_up: float = 100.0
+## Internal flag marking if a stair correction was applied the previous physics frame.
 var _snapped_to_stairs_last_frame: bool = false
+## Records the engine frame index when the player last registered as touching the ground.
 var _last_frame_was_on_floor: int = 0
+## Global toggle to disable stair smoothing (e.g., when jumping or flying).
 var is_enabled: bool = true
 
+## Cached reference object to store upwards physics shape query results.
 var _up_test: PhysicsTestMotionResult3D = PhysicsTestMotionResult3D.new()
+## Cached reference object to store forward physics shape query results.
 var _forward_test: PhysicsTestMotionResult3D = PhysicsTestMotionResult3D.new()
+## Cached reference object to store downwards physics shape query results.
 var _down_test: PhysicsTestMotionResult3D = PhysicsTestMotionResult3D.new()
+## Cached reference object to store general collision physics query results.
 var _body_test: PhysicsTestMotionResult3D = PhysicsTestMotionResult3D.new()
+## Reusable parameter object to execute the `body_test_motion` calls.
 var _test_params: PhysicsTestMotionParameters3D = PhysicsTestMotionParameters3D.new()
+## Timer tracking when the last audio/visual feedback was triggered.
 var time_since_step_feedback: float = 100.0
 
+## Downward pointing raycast used to verify a floor exists below a ledge.
 @onready var stairs_below_cast: RayCast3D = %StairsBelowCast
+## Reference to the root player physics body driving the controller.
 @onready var player: CharacterBody3D = owner as CharacterBody3D
 
 
+## Preconfigures the test parameters to ignore the player's own collision body.
 func _ready() -> void:
 	_test_params.from = player.global_transform
 	_test_params.exclude_bodies = [player.get_rid()]
 
 
+## Casts a physics profile forward to detect stairs and teleports the player up if matched.
+## [param delta] The engine physics delta duration.
+## [param is_sprinting] True if moving quickly, adjusting visual feedback thresholds.
+## [return] True if an upward correction was applied this frame.
 func snap_up_stairs_check(delta: float, is_sprinting: bool = false) -> bool:
 	var env: Node = player.get("environment_component")
 	var is_vaulting: bool = (
@@ -111,6 +135,7 @@ func snap_up_stairs_check(delta: float, is_sprinting: bool = false) -> bool:
 	return false
 
 
+## Detects drops in the floor profile directly beneath the player and snaps downwards.
 func snap_down_to_stairs_check() -> void:
 	var env: Node = player.get("environment_component")
 	var is_vaulting: bool = (
@@ -164,11 +189,17 @@ func snap_down_to_stairs_check() -> void:
 		_snapped_to_stairs_last_frame = true
 
 
+## Caches the current physics frame index if the player is safely grounded.
 func track_floor_state() -> void:
 	if player.is_on_floor() or _snapped_to_stairs_last_frame:
 		_last_frame_was_on_floor = Engine.get_physics_frames()
 
 
+## Executes an isolated physics cast of the player's collision shape.
+## [param from] Starting global transform.
+## [param motion] Displacement vector.
+## [param result] The cached object to store intersection data in.
+## [return] True if a collision occurred.
 func _run_body_test_motion(
 	from: Transform3D, motion: Vector3, result: PhysicsTestMotionResult3D
 ) -> bool:
@@ -177,5 +208,8 @@ func _run_body_test_motion(
 	return PhysicsServer3D.body_test_motion(player.get_rid(), _test_params, result)
 
 
+## Evaluates if a given surface normal exceeds the player's climbable floor angle.
+## [param normal] The normalized vector returned from a raycast hit.
+## [return] True if the incline is impassable.
 func _is_surface_too_steep(normal: Vector3) -> bool:
 	return normal.angle_to(Vector3.UP) > player.floor_max_angle

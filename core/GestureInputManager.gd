@@ -1,5 +1,6 @@
 ## Centralized input manager responsible for dispatching single-tap, hold,
 ## double-tap, double-tap & hold, rapid mashing, chords, and ordered sequence combinations.
+class_name GestureInputManager
 extends Node
 
 ## Emitted when an action binding is successfully resolved and triggered.

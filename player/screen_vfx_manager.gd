@@ -1,32 +1,42 @@
+## Manages full-screen post-processing overlays related to environmental hazards.
+##
+## [ScreenVFXManager] orchestrates shaders applied to [ColorRect] UI nodes
+## (e.g., raindrops, waterfall splashes, and underwater transitions) and modulates
+## their intensity based on player state and camera pitch.
 class_name ScreenVFXManager
 extends Node
 
-# --------------------------------------
-# EXPORTS
-# --------------------------------------
 @export_category("VFX Overlays")
+## The overlay used to render underwater distortion and surface wiping.
 @export var screen_water_ui: ColorRect
+## The overlay used for screen-space raindrops when looking up in rain volumes.
 @export var rain_drops_overlay: ColorRect
+## The overlay used for heavy distortion when standing inside a waterfall.
 @export var waterfall_overlay: ColorRect
 
-# --------------------------------------
-# VARIABLES
-# --------------------------------------
+## True if the player is currently inside a registered rain volume.
 var in_rain_volume: bool = false
+## The interpolated intensity of individual screen raindrops.
 var current_drop_intensity: float = 0.0
+## The interpolated intensity of the heavy sheet-water wash effect.
 var current_wash_intensity: float = 0.0
-
+## True if the player's head is directly inside a waterfall area.
 var in_waterfall: bool = false
 
+## Tween reference for the underwater surface wipe animation.
 var water_clear_tween: Tween
+## Tween reference for the waterfall exit clearing animation.
 var waterfall_clear_tween: Tween
 
-# Cached Materials for performance
+## Cached reference to the cloned raindrop material.
 var rain_mat: ShaderMaterial
+## Cached reference to the cloned underwater material.
 var water_mat: ShaderMaterial
+## Cached reference to the cloned waterfall material.
 var waterfall_mat: ShaderMaterial
 
 
+## Clones the materials to ensure unique shader instances and hides overlays.
 func _ready() -> void:
 	# 1. Added missing print() for initialization
 
@@ -45,21 +55,23 @@ func _ready() -> void:
 		screen_water_ui.material = water_mat
 
 
-# --------------------------------------
-# CORE PROCESS LOGIC
-# --------------------------------------
+## Called every frame by the player controller to process dynamic VFX values.
+## [param delta] Time elapsed since the previous physics frame.
+## [param camera_pitch] The current vertical rotation (pitch) of the player's camera.
 func process_vfx(delta: float, camera_pitch: float) -> void:
 	_handle_rain_drops(delta, camera_pitch)
 
 
-# --------------------------------------
-# RAIN LOGIC
-# --------------------------------------
+## Flags the player as being inside or outside a rain volume.
+## [param is_inside] True if entering, false if exiting.
 func set_rain_volume(is_inside: bool) -> void:
 	print("ScreenVFXManager: set_rain_volume() called. Player inside rain volume: ", is_inside)
 	in_rain_volume = is_inside
 
 
+## Modulates raindrop density based on how steeply the player is looking up into the rain.
+## [param delta] Engine frame physics delta.
+## [param camera_pitch] Vertical rotation of the camera in radians.
 func _handle_rain_drops(delta: float, camera_pitch: float) -> void:
 	if not rain_drops_overlay or not rain_mat:
 		return
@@ -101,9 +113,8 @@ func _handle_rain_drops(delta: float, camera_pitch: float) -> void:
 		rain_mat.set_shader_parameter("wash_intensity", current_wash_intensity)
 
 
-# --------------------------------------
-# UNDERWATER WIPE LOGIC
-# --------------------------------------
+## Enables or disables the underwater post-processing filter.
+## [param is_underwater] True if the player's camera is submerged.
 func set_underwater_state(is_underwater: bool) -> void:
 	print("ScreenVFXManager: set_underwater_state() called. Player submerged: ", is_underwater)
 	if not screen_water_ui or not water_mat:
@@ -116,6 +127,7 @@ func set_underwater_state(is_underwater: bool) -> void:
 		water_mat.set_shader_parameter("clear_progress", 0.0)
 
 
+## Initiates the screen-wiper animation used when emerging from water.
 func trigger_surface_wipe() -> void:
 	print("ScreenVFXManager: trigger_surface_wipe() executing screen clearing tween.")
 	if not screen_water_ui or not water_mat:
@@ -169,9 +181,7 @@ func trigger_surface_wipe() -> void:
 	)
 
 
-# --------------------------------------
-# WATERFALL LOGIC
-# --------------------------------------
+## Instantly applies maximum distortion and wash when entering a waterfall.
 func enter_waterfall() -> void:
 	print("ScreenVFXManager: enter_waterfall() executed, triggering overlay tweens.")
 	in_waterfall = true
@@ -188,6 +198,7 @@ func enter_waterfall() -> void:
 	waterfall_mat.set_shader_parameter("drop_intensity", 0.0)
 
 
+## Begins the clearing and fading animation upon exiting a waterfall.
 func exit_waterfall() -> void:
 	print("ScreenVFXManager: exit_waterfall() executed, fading overlay out.")
 	in_waterfall = false

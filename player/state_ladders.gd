@@ -1,19 +1,23 @@
+## Controls player movement when attached to and climbing a ladder volume.
+##
+## [StateLadder] overrides gravity, snapping the player to the surface of the ladder
+## and translating WASD/Camera inputs into 2D plane movement across the ladder face.
 class_name StateLadder
 extends PlayerState
 
-# --------------------------------------
-# CONSTANTS
-# --------------------------------------
+## Maximum vertical climbing speed in meters per second.
 const LADDER_SPEED: float = 5.0
-const MAX_LADDER_SIDE_DIST: float = 0.6  # How far left/right you can go before stopping
-const LADDER_CENTER_SNAP_SPEED: float = 8.0  # How fast you slide back to the middle
+## Maximum lateral distance the player can move from the center of the ladder.
+const MAX_LADDER_SIDE_DIST: float = 0.6
+## Velocity multiplier for snapping the player back to the center column when not strafing.
+const LADDER_CENTER_SNAP_SPEED: float = 8.0
 
-# --------------------------------------
-# VARIABLES
-# --------------------------------------
+## Reference to the specific ladder node the player is currently attached to.
 var current_ladder: Node3D = null
 
 
+## Attaches the player to the ladder and initiates the snapping tween.
+## [param msg] Dictionary containing the target [code]ladder_node[/code].
 func enter(msg: Dictionary = {}) -> void:
 	print("StateLadder: Initializing ladder state.")
 	if msg.has("ladder_node"):
@@ -21,11 +25,14 @@ func enter(msg: Dictionary = {}) -> void:
 		_snap_to_ladder()
 
 
+## Clears the cached ladder reference when exiting the climbing state.
 func exit() -> void:
 	print("StateLadder: Exiting ladder state.")
 	current_ladder = null
 
 
+## Calculates climbing vectors and drives physics-based movement.
+## [param delta] Engine physics timestep delta.
 func physics_update(delta: float) -> void:
 	_handle_crouch_state()
 
@@ -50,9 +57,7 @@ func physics_update(delta: float) -> void:
 	_check_transitions()
 
 
-# --------------------------------------
-# PRIVATE METHODS
-# --------------------------------------
+## Smoothly pulls the player onto the face of the ladder geometry.
 func _snap_to_ladder() -> void:
 	if not current_ladder:
 		return
@@ -71,6 +76,7 @@ func _snap_to_ladder() -> void:
 	)
 
 
+## Checks for crouch input and broadcasts state changes to lower the camera.
 func _handle_crouch_state() -> void:
 	if not is_instance_valid(player.locomotion_component):
 		return
@@ -83,6 +89,8 @@ func _handle_crouch_state() -> void:
 		Events.player_crouch_changed.emit(loco.crouching)
 
 
+## Translates raw 2D input into 3D climbing velocity based on the camera angle.
+## [param input_dir] Normalized 2D vector from the input manager.
 func _calculate_ladder_velocity(input_dir: Vector2) -> void:
 	if not current_ladder:
 		return
@@ -154,6 +162,8 @@ func _calculate_ladder_velocity(input_dir: Vector2) -> void:
 	player.velocity = (Vector3.UP * up_down_movement * LADDER_SPEED) + lateral_movement + depth_pull
 
 
+## Processes jump inputs to detect intended side-ejects or back-leaps.
+## [param input_dir] Normalized 2D vector from the input manager to determine intent.
 func _handle_jump_input(input_dir: Vector2) -> void:
 	if not GestureInputManager.is_action_just_pressed("jump") or not current_ladder:
 		return
@@ -213,6 +223,7 @@ func _handle_jump_input(input_dir: Vector2) -> void:
 	print("StateLadder: Jump blocked. Player is facing the ladder.")
 
 
+## Verifies if the player has reached the bottom of the ladder to return to Ground state.
 func _check_transitions() -> void:
 	if player.is_on_floor() and player.velocity.y < 0.0:
 		# Dismount on the ground
