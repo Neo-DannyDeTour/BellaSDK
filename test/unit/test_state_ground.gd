@@ -20,7 +20,7 @@ func before_each() -> void:
 	mock_player_script.source_code = """
 extends CharacterBody3D
 
-var velocity: Vector3 = Vector3.ZERO
+
 var locomotion_component: Node
 var environment_component: Node
 var interaction_component: Node
@@ -125,12 +125,12 @@ func transition_to(target_state_name: String, msg: Dictionary = {}) -> void:
 ## Verifies enter resets velocities and movement speed.
 func test_enter() -> void:
 	print("TestStateGround: test_enter() called.")
-	mock_player.velocity.y = -10.0
+	mock_player.set("velocity", Vector3(0, -10.0, 0))
 	state_ground.current_speed = 5.0
 
 	state_ground.enter()
 
-	assert_eq(mock_player.velocity.y, 0.0, "Y velocity should be reset on enter.")
+	assert_eq(mock_player.get("velocity").y, 0.0, "Y velocity should be reset on enter.")
 	assert_eq(state_ground.current_speed, 0.0, "Current speed should be reset on enter.")
 
 
@@ -141,7 +141,7 @@ func test_jump_buffered() -> void:
 
 	assert_eq(mock_state_machine.last_transition, "Air", "Should transition to Air state.")
 	assert_eq(
-		mock_player.velocity.y,
+		mock_player.get("velocity").y,
 		state_ground.JUMP_VELOCITY,
 		"Y velocity should be set to JUMP_VELOCITY."
 	)
