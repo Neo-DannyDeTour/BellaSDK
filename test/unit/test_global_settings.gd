@@ -13,7 +13,7 @@ var settings: Node = null
 ## Replaces the file-backed [ConfigFile] with an empty memory one.
 func before_each() -> void:
 	print("TestGlobalSettings: Executing before_each() setup for isolated settings.")
-	settings = load("res://core/global_settings.gd").new() as Node
+	settings = GlobalSettings.new() as Node
 	settings.set("config", ConfigFile.new())
 	add_child_autofree(settings)
 

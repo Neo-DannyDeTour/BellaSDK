@@ -6,7 +6,7 @@ var input_manager: Variant = null
 
 func before_each() -> void:
 	print("TestGestureInputManager: before_each() setup.")
-	input_manager = load("res://core/GestureInputManager.gd").new()
+	input_manager = GestureInputManager.new()
 	add_child_autofree(input_manager)
 
 	# Clean up input map before tests

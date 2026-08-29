@@ -10,14 +10,14 @@ extends GutTest
 var _driver: SunshineCloudsDriverGD
 
 ## The mock [SunshineCloudsGD] compositor resource under test.
-var _clouds_res: SunshineCloudsGD
+var _clouds_res
 
 
 ## Initial setup executed before each individual test method.
 func before_each() -> void:
 	print("TestSunshineCloudsDriver: Initializing test harness before test case.")
 	_driver = SunshineCloudsDriverGD.new()
-	_clouds_res = SunshineCloudsGD.new()
+	_clouds_res = load("res://addons/SunshineClouds2/SunshineClouds.gd").new()
 	_driver.clouds_resource = _clouds_res
 	add_child_autofree(_driver)
 

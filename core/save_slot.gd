@@ -44,11 +44,16 @@ var _save_id: String = ""
 
 ## Called when the node enters the scene tree. Connects UI signals.
 func _ready() -> void:
-	action_button.pressed.connect(_on_action_button_pressed)
-	name_input.text_submitted.connect(_on_name_submitted)
-	name_input.focus_exited.connect(_on_name_focus_exited)
-	fav_button.toggled.connect(_on_fav_toggled)
-	delete_button.pressed.connect(_on_delete_button_pressed)
+	if not action_button.pressed.is_connected(_on_action_button_pressed):
+		action_button.pressed.connect(_on_action_button_pressed)
+	if not name_input.text_submitted.is_connected(_on_name_submitted):
+		name_input.text_submitted.connect(_on_name_submitted)
+	if not name_input.focus_exited.is_connected(_on_name_focus_exited):
+		name_input.focus_exited.connect(_on_name_focus_exited)
+	if not fav_button.toggled.is_connected(_on_fav_toggled):
+		fav_button.toggled.connect(_on_fav_toggled)
+	if not delete_button.pressed.is_connected(_on_delete_button_pressed):
+		delete_button.pressed.connect(_on_delete_button_pressed)
 
 
 ## Initializes the slot with metadata dictionary from the [SaveManager].

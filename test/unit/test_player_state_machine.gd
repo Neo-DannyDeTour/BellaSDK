@@ -11,7 +11,7 @@ var mock_player: CharacterBody3D = null
 
 ## Mock state implementation tracking lifecycle calls for testing.
 class MockState:
-	extends PlayerState
+	extends "res://player/player_state.gd"
 
 	## Tracks if the state is active.
 	var is_active: bool = false

@@ -15,7 +15,7 @@ var system: Node = null
 ## Instantiates [KeycardSystem] and registers autofree cleanup.
 func before_each() -> void:
 	print("TestKeycardSystem: before_each() called. Setting up test environment.")
-	system = autofree(KEYCARD_SYSTEM_SCRIPT.new()) as Node
+	system = autofree(KeycardSystem.new()) as Node
 	if system is Node:
 		add_child_autoqfree(system)
 

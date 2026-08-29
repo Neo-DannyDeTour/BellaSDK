@@ -6,7 +6,7 @@ var graphics: Variant = null
 
 func before_each() -> void:
 	print("TestGraphicsManager: before_each() setup.")
-	graphics = load("res://core/graphics_manager.gd").new()
+	graphics = GraphicsManager.new()
 	add_child_autofree(graphics)
 
 

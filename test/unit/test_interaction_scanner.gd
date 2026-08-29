@@ -12,7 +12,7 @@ var scanner: Node = null
 ## Instantiates [PlayerInteractionScanner] and registers autofree cleanup before each test.
 func before_each() -> void:
 	print("TestInteractionScanner: Executing before_each() setup.")
-	scanner = load("res://player/player_interaction_scanner.gd").new() as Node
+	scanner = InteractionScanner.new() as Node
 	add_child_autofree(scanner)
 
 

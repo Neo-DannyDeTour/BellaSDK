@@ -11,7 +11,7 @@ var save_manager: MockSaveManager = null
 
 ## Mocked partial class intercepting disk operations and threading for [SaveManager].
 class MockSaveManager:
-	extends "res://core/save_manager.gd"
+	extends SaveManager
 
 	## Array to hold mocked save metadata.
 	var mock_saves: Array[Dictionary] = []

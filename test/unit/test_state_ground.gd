@@ -16,7 +16,7 @@ func before_each() -> void:
 
 	var mock_player_script: GDScript = GDScript.new()
 	mock_player_script.source_code = """
-extends Player
+extends "res://player/player.gd"
 
 ## Velocity storage for physics calculations.
 var simulated_velocity: Vector3 = Vector3.ZERO
@@ -26,7 +26,7 @@ var simulated_velocity: Vector3 = Vector3.ZERO
 
 	var loco_script: GDScript = GDScript.new()
 	loco_script.source_code = """
-extends PlayerLocomotionComponent
+extends "res://player/locomotion_component.gd"
 
 ## Movement direction vector.
 var _direction: Vector3 = Vector3.ZERO
