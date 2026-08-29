@@ -1,10 +1,12 @@
 extends GutTest
 
+const StateGroundScript = preload("res://player/state_ground.gd")
+
 ## The ground state under test.
-var state_ground: StateGround
+var state_ground: Variant
 
 ## A mock player node.
-var mock_player: Player
+var mock_player: CharacterBody3D
 
 ## A mock state machine.
 var mock_state_machine: Node
@@ -16,46 +18,46 @@ func before_each() -> void:
 
 	var mock_player_script: GDScript = GDScript.new()
 	mock_player_script.source_code = """
-extends Player
+extends CharacterBody3D
 
-## Velocity storage for physics calculations.
-var simulated_velocity: Vector3 = Vector3.ZERO
+var velocity: Vector3 = Vector3.ZERO
+var locomotion_component: Node
+var environment_component: Node
+var interaction_component: Node
+var stats_component: Node
+var is_on_floor: bool = true
+var is_on_wall: bool = false
 """
 	mock_player_script.reload()
 	mock_player = mock_player_script.new()
 
 	var loco_script: GDScript = GDScript.new()
 	loco_script.source_code = """
-extends PlayerLocomotionComponent
+extends Node
 
-## Movement direction vector.
 var _direction: Vector3 = Vector3.ZERO
+var sprint_active: bool = false
+var crouching: bool = false
+var can_sprint: bool = true
+var walking_speed: float = 5.0
+var sprinting_speed: float = 8.0
+var crouching_speed: float = 3.0
+var ice_lerp_speed: float = 1.0
+var default_lerp_speed: float = 10.0
+var on_ice: bool = false
+var on_sand: bool = false
+var on_safe_landing: bool = false
+var gravity: float = 9.8
 
-
-## Returns current movement direction vector.
 func get_direction() -> Vector3:
 	return _direction
 
-
-## Sets current movement direction vector.
 func set_direction(d: Vector3) -> void:
 	_direction = d
 """
 	loco_script.reload()
-	var loco_comp: PlayerLocomotionComponent = loco_script.new()
+	var loco_comp: Node = loco_script.new()
 	loco_comp.name = "LocomotionComponent"
-	loco_comp.sprint_active = false
-	loco_comp.crouching = false
-	loco_comp.can_sprint = true
-	loco_comp.walking_speed = 5.0
-	loco_comp.sprinting_speed = 8.0
-	loco_comp.crouching_speed = 3.0
-	loco_comp.ice_lerp_speed = 1.0
-	loco_comp.default_lerp_speed = 10.0
-	loco_comp.on_ice = false
-	loco_comp.on_sand = false
-	loco_comp.on_safe_landing = false
-	loco_comp.gravity = 9.8
 
 	mock_player.locomotion_component = loco_comp
 	mock_player.add_child(loco_comp)
@@ -64,7 +66,6 @@ func set_direction(d: Vector3) -> void:
 	dummy_script.source_code = """
 extends Node
 
-## Stub initialization method.
 func initialize(_p: Node) -> void:
 	pass
 """
@@ -92,7 +93,7 @@ func initialize(_p: Node) -> void:
 	components_node.name = "Components"
 	mock_player.add_child(components_node)
 
-	var health_node: HealthComponent = HealthComponent.new()
+	var health_node: Node = load("res://shared/health_component.gd").new()
 	health_node.name = "HealthComponent"
 	components_node.add_child(health_node)
 
@@ -103,14 +104,9 @@ func initialize(_p: Node) -> void:
 	sm_script.source_code = """
 extends Node
 
-## Tracks the last target state transition.
 var last_transition: String = ""
-
-## Tracks the last transition message payload.
 var last_msg: Dictionary = {}
 
-
-## Simulates state transition call.
 func transition_to(target_state_name: String, msg: Dictionary = {}) -> void:
 	print("MockStateMachine: Transitioning to ", target_state_name)
 	last_transition = target_state_name
@@ -120,7 +116,7 @@ func transition_to(target_state_name: String, msg: Dictionary = {}) -> void:
 	mock_state_machine.set_script(sm_script)
 	add_child_autoqfree(mock_state_machine)
 
-	state_ground = StateGround.new()
+	state_ground = StateGroundScript.new()
 	state_ground.player = mock_player
 	state_ground.state_machine = mock_state_machine
 	add_child_autoqfree(state_ground)

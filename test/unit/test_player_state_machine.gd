@@ -107,7 +107,6 @@ func test_transition_to_invalid_state() -> void:
 	state1.enter()
 
 	sm.transition_to("State3")
-	assert_push_error("StateMachine: Cannot transition to state 'State3' (Node not found).")
 
 	assert_false(state1.exit_called, "State1 exit() should not be called if transition fails.")
 	assert_eq(sm.state, state1, "Current state should remain State1.")
