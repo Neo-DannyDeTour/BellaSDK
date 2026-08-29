@@ -1,6 +1,7 @@
 extends GutTest
 
 const ModifierScript = preload("res://shared/health_modifier.gd")
+const MockModifierScript = preload("res://test/mocks/mock_health_modifier.gd")
 
 ## Variant instance for the health modifier under test.
 var modifier: Variant = null
@@ -57,10 +58,13 @@ class MockModifier:
 func test_modifier_applies_damage() -> void:
 	print("TestHealthModifier: test_modifier_applies_damage() called.")
 
-	var mock_mod: MockModifier = MockModifier.new()
-	add_child_autofree(mock_mod)
-	mock_mod.mock_bodies = [dummy_body]
-	mock_mod.modify_amount = -20
+	# Create a true collision scenario or use a custom extended script
+	# Use the custom extended mock script
+	var mocked_modifier: Variant = MockModifierScript.new()
+	add_child_autofree(mocked_modifier)
+	mocked_modifier._dummy_bodies = [dummy_body]
+
+	mocked_modifier.modify_amount = -20
 
 	# Trigger timeout manually
 	mock_mod._on_tick_timer_timeout()
@@ -72,10 +76,13 @@ func test_modifier_applies_healing() -> void:
 	print("TestHealthModifier: test_modifier_applies_healing() called.")
 	health_comp.take_damage(50)  # Set health to 50
 
-	var mock_mod: MockModifier = MockModifier.new()
-	add_child_autofree(mock_mod)
-	mock_mod.mock_bodies = [dummy_body]
-	mock_mod.modify_amount = 30
+	# Create a true collision scenario or use a custom extended script
+	# Use the custom extended mock script
+	var mocked_modifier: Variant = MockModifierScript.new()
+	add_child_autofree(mocked_modifier)
+	mocked_modifier._dummy_bodies = [dummy_body]
+
+	mocked_modifier.modify_amount = 30
 
 	mock_mod._on_tick_timer_timeout()
 
