@@ -30,7 +30,7 @@ func test_rotate_x_axis() -> void:
 	# Simulate process tick
 	rotator_comp._process(0.1)
 
-	var rotation: Vector3 = parent_node.rotation
+	var rotation: Vector3 = rotator_comp.rotation
 	assert_almost_eq(rotation.x, 1.0, 0.01, "Rotation should occur around X axis.")
 	assert_eq(rotation.y, 0.0, "Rotation should not occur around Y axis.")
 	assert_eq(rotation.z, 0.0, "Rotation should not occur around Z axis.")
@@ -44,7 +44,7 @@ func test_rotate_y_axis() -> void:
 	# Simulate process tick
 	rotator_comp._process(0.1)
 
-	var rotation: Vector3 = parent_node.rotation
+	var rotation: Vector3 = rotator_comp.rotation
 	assert_eq(rotation.x, 0.0, "Rotation should not occur around X axis.")
 	assert_almost_eq(rotation.y, 1.0, 0.01, "Rotation should occur around Y axis.")
 	assert_eq(rotation.z, 0.0, "Rotation should not occur around Z axis.")
@@ -58,7 +58,7 @@ func test_rotate_z_axis() -> void:
 	# Simulate process tick
 	rotator_comp._process(0.1)
 
-	var rotation: Vector3 = parent_node.rotation
+	var rotation: Vector3 = rotator_comp.rotation
 	assert_eq(rotation.x, 0.0, "Rotation should not occur around X axis.")
 	assert_eq(rotation.y, 0.0, "Rotation should not occur around Y axis.")
 	assert_almost_eq(rotation.z, 1.0, 0.01, "Rotation should occur around Z axis.")

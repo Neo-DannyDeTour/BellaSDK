@@ -57,6 +57,29 @@ func set_direction(d: Vector3) -> void:
 	loco_comp.on_safe_landing = false
 	loco_comp.gravity = 9.8
 
+	# Setup missing dependencies used by state_ground.gd
+	var stair_ctrl_script: GDScript = GDScript.new()
+	stair_ctrl_script.source_code = """
+extends Node
+var time_since_step_up: float = 1.0
+var _snapped_to_stairs_last_frame: bool = false
+func snap_up_stairs_check(delta: float, sprinting: bool) -> void: pass
+func snap_down_to_stairs_check() -> void: pass
+func track_floor_state() -> void: pass
+"""
+	stair_ctrl_script.reload()
+	loco_comp.stair_controller = stair_ctrl_script.new()
+	loco_comp.add_child(loco_comp.stair_controller)
+
+	loco_comp.crouch_cast_check = RayCast3D.new()
+	loco_comp.add_child(loco_comp.crouch_cast_check)
+
+	loco_comp.standing_collision = CollisionShape3D.new()
+	loco_comp.add_child(loco_comp.standing_collision)
+
+	loco_comp.crouching_collision = CollisionShape3D.new()
+	loco_comp.add_child(loco_comp.crouching_collision)
+
 	mock_player.locomotion_component = loco_comp
 	mock_player.add_child(loco_comp)
 

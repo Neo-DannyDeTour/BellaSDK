@@ -10,10 +10,22 @@ var dummy_body: Node3D = null
 var health_comp: Variant = null
 
 
+## Inner class for mocking health modifier methods strictly.
+class MockModifier:
+	extends "res://shared/health_modifier.gd"
+
+	## Tracks overlapping bodies for test injection.
+	var _mock_bodies: Array[Node3D] = []
+
+	## Overrides native method to return mock data.
+	func get_overlapping_bodies() -> Array[Node3D]:
+		return _mock_bodies
+
+
 func before_each() -> void:
 	print("TestHealthModifier: before_each() setup.")
 
-	modifier = ModifierScript.new()
+	modifier = MockModifier.new()
 	add_child_autofree(modifier)
 	modifier.tick_interval = 0.1  # Faster ticks for testing
 
@@ -35,10 +47,9 @@ func before_each() -> void:
 func test_modifier_applies_damage() -> void:
 	print("TestHealthModifier: test_modifier_applies_damage() called.")
 
-	var mocked_modifier: Variant = partial_double(ModifierScript).new()
+	var mocked_modifier: MockModifier = MockModifier.new()
 	add_child_autofree(mocked_modifier)
-	stub(mocked_modifier, "get_overlapping_bodies").to_return([dummy_body])
-
+	mocked_modifier._mock_bodies = [dummy_body]
 	mocked_modifier.modify_amount = -20
 
 	# Trigger timeout manually
@@ -51,10 +62,9 @@ func test_modifier_applies_healing() -> void:
 	print("TestHealthModifier: test_modifier_applies_healing() called.")
 	health_comp.take_damage(50)  # Set health to 50
 
-	var mocked_modifier: Variant = partial_double(ModifierScript).new()
+	var mocked_modifier: MockModifier = MockModifier.new()
 	add_child_autofree(mocked_modifier)
-	stub(mocked_modifier, "get_overlapping_bodies").to_return([dummy_body])
-
+	mocked_modifier._mock_bodies = [dummy_body]
 	mocked_modifier.modify_amount = 30
 
 	mocked_modifier._on_tick_timer_timeout()
