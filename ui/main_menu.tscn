@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://c261acv3ex6c0"]
 
 [ext_resource type="Script" uid="uid://4nkt0134wccl" path="res://ui/main_menu.gd" id="1_2o76q"]
-[ext_resource type="Texture2D" uid="uid://dutrfuowe3e1q" path="res://assets/images/Concept/Key_art.PNG" id="1_ovrgc"]
 [ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="2_2o76q"]
 [ext_resource type="PackedScene" uid="uid://8m8l0uplgvm" path="res://ui/HorrorButton.tscn" id="3_kaxbk"]
 [ext_resource type="Script" uid="uid://dbuos71yhftq2" path="res://ui/options_menu.gd" id="5_lsdqh"]
@@ -20,7 +19,6 @@
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_50h1w"]
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_6bivr"]
-texture = ExtResource("1_ovrgc")
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jiymt"]
 bg_color = Color(0, 0, 0, 1)

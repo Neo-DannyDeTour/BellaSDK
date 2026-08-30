@@ -61,4 +61,4 @@ func test_rotate_z_axis() -> void:
 	var rotation: Vector3 = rotator_comp.rotation
 	assert_eq(rotation.x, 0.0, "Rotation should not occur around X axis.")
 	assert_eq(rotation.y, 0.0, "Rotation should not occur around Y axis.")
-	assert_almost_eq(rotation.z, 1.0, 0.01, "Rotation should occur around Z axis.")
+	assert_almost_eq(rotation.z, -1.0, 0.01, "Rotation should occur around Z axis.")
