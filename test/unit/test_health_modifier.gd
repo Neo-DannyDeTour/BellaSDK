@@ -10,6 +10,14 @@ var dummy_body: Node3D = null
 var health_comp: Variant = null
 
 
+class MockModifier:
+	extends "res://shared/health_modifier.gd"
+	var dummy_bodies: Array[Node3D] = []
+
+	func get_overlapping_bodies() -> Array[Node3D]:
+		return dummy_bodies
+
+
 func before_each() -> void:
 	print("TestHealthModifier: before_each() setup.")
 
@@ -35,9 +43,9 @@ func before_each() -> void:
 func test_modifier_applies_damage() -> void:
 	print("TestHealthModifier: test_modifier_applies_damage() called.")
 
-	var mocked_modifier: Variant = partial_double(ModifierScript).new()
+	var mocked_modifier = MockModifier.new()
 	add_child_autofree(mocked_modifier)
-	stub(mocked_modifier, "get_overlapping_bodies").to_return([dummy_body])
+	mocked_modifier.dummy_bodies = [dummy_body]
 
 	mocked_modifier.modify_amount = -20
 
@@ -51,9 +59,9 @@ func test_modifier_applies_healing() -> void:
 	print("TestHealthModifier: test_modifier_applies_healing() called.")
 	health_comp.take_damage(50)  # Set health to 50
 
-	var mocked_modifier: Variant = partial_double(ModifierScript).new()
+	var mocked_modifier = MockModifier.new()
 	add_child_autofree(mocked_modifier)
-	stub(mocked_modifier, "get_overlapping_bodies").to_return([dummy_body])
+	mocked_modifier.dummy_bodies = [dummy_body]
 
 	mocked_modifier.modify_amount = 30
 
