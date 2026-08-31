@@ -1,0 +1,12 @@
+--- test_player_state_machine.gd
++++ test_player_state_machine.gd
+@@ -3,8 +3,8 @@
+ extends GutTest
+
+ ## The [PlayerStateMachine] under test.
+ var sm: PlayerStateMachine = null
+
+-## Mock [CharacterBody3D] player reference.
+-var mock_player: CharacterBody3D = null
++## Mock [Player] player reference.
++var mock_player: Node = null

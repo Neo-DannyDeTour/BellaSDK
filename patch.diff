@@ -1,0 +1,11 @@
+--- test/unit/test_stats_component.gd
++++ test/unit/test_stats_component.gd
+@@ -6,8 +6,7 @@
+ var stats: Variant = null
+
+
+-class MockHealthComponent:
+-	extends Node
++class MockHealthComponent extends "res://shared/health_component.gd":
+	## Mocked current health
+-	var current_health: int = 100

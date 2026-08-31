@@ -34,8 +34,7 @@ func test_initialization() -> void:
 
 func test_frametime_history() -> void:
 	print("TestDevMetricsPanel: Testing frametime history limits.")
-	# Do not add to tree here as it requires a valid rendering viewport for
-	# get_viewport().get_viewport_rid()
+	# Do not add to tree here as it requires a valid rendering viewport for get_viewport().get_viewport_rid()
 
 	# Manually push items into the history array to test limits
 	# It shouldn't exceed HISTORY_NUM_FRAMES
@@ -48,15 +47,15 @@ func test_frametime_history() -> void:
 		_dev_metrics._gpu_history.push_back(0.008)
 
 	# this is the method that's supposed to trim the arrays
-	# We cannot call _update_frametime_history directly as it relies on get_viewport().
-	# Instead we will simulate the trimming logic directly to ensure variables are accessible.
+	# We cannot call _update_frametime_history directly as it relies on get_viewport() which is null.
+	# Instead we will simulate the trimming logic directly to ensure the variables are accessible and logic works
 	var current_tick: int = Time.get_ticks_usec()
 	var frametime_total: float = (current_tick - _dev_metrics._last_tick) * 0.001
 	_dev_metrics._total_history.push_back(frametime_total)
 	if _dev_metrics._total_history.size() > num_frames:
 		_dev_metrics._total_history.pop_front()
 
-	# We will just verify total history trimming
+	# We will just verify total history trimming for brevity
 	# Since we added 1 over the limit, it should have been popped back down to the limit
 	# + the 1 we just added during the update
 	var total_size: int = _dev_metrics._total_history.size()

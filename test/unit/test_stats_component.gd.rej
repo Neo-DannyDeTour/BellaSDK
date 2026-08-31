@@ -1,0 +1,11 @@
+--- test_stats_component.gd
++++ test_stats_component.gd
+@@ -10,7 +10,7 @@
+ var player: CharacterBody3D = null
+
+
+-class MockHealthComponent:
++class MockHealthComponent extends Node:
+	extends "res://shared/health_component.gd"
+
+	## Mocked current health
