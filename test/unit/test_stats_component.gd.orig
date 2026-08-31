@@ -22,12 +22,12 @@ func test_save_load_data() -> void:
 	add_child_autofree(health_comp)
 	stats.health_component = health_comp
 
-	health_comp.current_health = 72
+	health_comp.current_health = 45
+	var data: Dictionary = stats.get_save_data()
 
-	var saved_data: Dictionary = stats.get_save_data()
-	assert_eq(saved_data["health"], 72, "Should save health amount")
+	assert_eq(data["health"], 45, "Should save health correctly.")
 
 	health_comp.current_health = 100
-	stats.load_save_data(saved_data)
+	stats.load_save_data({"health": 72})
 
-	assert_eq(health_comp.current_health, 72, "Should load saved health amount")
+	assert_eq(health_comp.current_health, 72, "Should override local state when loading data.")

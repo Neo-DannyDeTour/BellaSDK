@@ -9,9 +9,6 @@ var mock_player: Player
 ## A mock state machine.
 var mock_state_machine: Node
 
-## A mock system menu.
-var mock_sys_menu: Node
-
 
 ## Sets up player dependencies and state machine wiring.
 func before_each() -> void:
@@ -23,11 +20,6 @@ extends Player
 
 ## Velocity storage for physics calculations.
 var simulated_velocity: Vector3 = Vector3.ZERO
-
-## Whether the player is on floor.
-func is_on_floor() -> bool:
-	return true
-
 """
 	mock_player_script.reload()
 	mock_player = mock_player_script.new()
@@ -105,30 +97,6 @@ func initialize(_p: Node) -> void:
 	components_node.add_child(health_node)
 
 	add_child_autoqfree(mock_player)
-
-	var mock_cam = Node3D.new()
-	var cam_script: GDScript = GDScript.new()
-	cam_script.source_code = """
-extends Node3D
-func handle_mouse_input(event: InputEventMouseMotion, dt: float) -> void:
-	pass
-"""
-	cam_script.reload()
-	mock_cam.set_script(cam_script)
-	mock_player.camera_controller = mock_cam
-
-	mock_sys_menu = Node.new()
-	var menu_script: GDScript = GDScript.new()
-	menu_script.source_code = """
-extends Node
-var is_paused: bool = false
-var is_menu_open: bool = false
-var is_stunned: bool = false
-var flying: bool = false
-"""
-	menu_script.reload()
-	mock_sys_menu.set_script(menu_script)
-	mock_player.system_menu = mock_sys_menu
 
 	mock_state_machine = Node.new()
 	var sm_script: GDScript = GDScript.new()

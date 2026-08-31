@@ -1,11 +1,11 @@
---- test_stats_component.gd
-+++ test_stats_component.gd
-@@ -10,7 +10,7 @@
- var player: CharacterBody3D = null
+--- test/unit/test_stats_component.gd
++++ test/unit/test_stats_component.gd
+@@ -5,8 +5,7 @@
+ var stats: Variant = null
 
 
 -class MockHealthComponent:
-+class MockHealthComponent extends Node:
-	extends "res://shared/health_component.gd"
-
-	## Mocked current health
+-	extends "res://shared/health_component.gd"
++class MockHealthComponent extends "res://shared/health_component.gd":
+	@warning_ignore("unused_signal")
+	signal died_mock

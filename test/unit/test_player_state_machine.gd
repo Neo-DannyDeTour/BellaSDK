@@ -6,7 +6,7 @@ extends GutTest
 var sm: PlayerStateMachine = null
 
 ## Mock [CharacterBody3D] player reference.
-var mock_player: Node = null
+var mock_player: CharacterBody3D = null
 
 
 ## Mock state implementation tracking lifecycle calls for testing.
@@ -40,37 +40,7 @@ class MockState:
 func before_each() -> void:
 	print("TestPlayerStateMachine: before_each() setup started.")
 	sm = load("res://player/player_state_machine.gd").new() as PlayerStateMachine
-	var mock_player_script = GDScript.new()
-	mock_player_script.source_code = """
-extends Player
-var simulated_velocity: Vector3 = Vector3.ZERO
-func is_on_floor() -> bool: return true
-"""
-	mock_player_script.reload()
-	mock_player = mock_player_script.new()
-
-	var sys_menu_script = GDScript.new()
-	sys_menu_script.source_code = """
-extends Node
-var is_paused: bool = false
-var is_menu_open: bool = false
-var is_stunned: bool = false
-var flying: bool = false
-"""
-	sys_menu_script.reload()
-	var sys_menu = Node.new()
-	sys_menu.set_script(sys_menu_script)
-	mock_player.system_menu = sys_menu
-
-	var cam_script = GDScript.new()
-	cam_script.source_code = """
-extends Node3D
-func handle_mouse_input(e, dt): pass
-"""
-	cam_script.reload()
-	var cam = Node3D.new()
-	cam.set_script(cam_script)
-	mock_player.camera_controller = cam
+	mock_player = CharacterBody3D.new()
 
 	var state1: MockState = MockState.new()
 	state1.name = "State1"
