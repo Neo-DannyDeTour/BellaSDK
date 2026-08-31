@@ -9,7 +9,7 @@ var modifier: Variant = null
 ## Dummy physics body to represent a character.
 var dummy_body: Node3D = null
 ## Child health component attached to the dummy body.
-var health_comp: Node = null
+var health_comp: HealthComponent = null
 
 
 ## Mock implementation of the health modifier to simulate overlapping bodies.
@@ -45,7 +45,7 @@ func before_each() -> void:
 	health_comp.name = "HealthComponent"
 	health_comp.max_health = 100
 	components_node.add_child(health_comp)
-	health_comp.call("_ready")
+	health_comp._ready()
 
 
 ## Verifies that negative modifier values reduce the target's current health.
@@ -59,15 +59,13 @@ func test_modifier_applies_damage() -> void:
 
 	mocked_modifier._on_tick_timer_timeout()
 
-	assert_eq(
-		int(health_comp.get("current_health")), 80, "Health should decrease by 20 from modifier."
-	)
+	assert_eq(health_comp.current_health, 80, "Health should decrease by 20 from modifier.")
 
 
 ## Verifies that positive modifier values restore the target's current health.
 func test_modifier_applies_healing() -> void:
 	print("TestHealthModifier: test_modifier_applies_healing() called.")
-	health_comp.call("take_damage", 50)
+	health_comp.take_damage(50)
 
 	var mocked_modifier: MockModifier = MockModifier.new()
 	add_child_autofree(mocked_modifier)
@@ -76,6 +74,4 @@ func test_modifier_applies_healing() -> void:
 
 	mocked_modifier._on_tick_timer_timeout()
 
-	assert_eq(
-		int(health_comp.get("current_health")), 80, "Health should increase by 30 from modifier."
-	)
+	assert_eq(health_comp.current_health, 80, "Health should increase by 30 from modifier.")

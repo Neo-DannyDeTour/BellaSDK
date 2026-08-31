@@ -92,7 +92,7 @@ func initialize(_p: Node) -> void:
 	components_node.name = "Components"
 	mock_player.add_child(components_node)
 
-	var health_node: Node = load("res://shared/health_component.gd").new()
+	var health_node: Variant = load("res://shared/health_component.gd").new()
 	health_node.name = "HealthComponent"
 	components_node.add_child(health_node)
 
