@@ -12,8 +12,6 @@
 [ext_resource type="PackedScene" uid="uid://da3q2bu5xkp72" path="res://ui/GameplayPanel.tscn" id="10_bgtsx"]
 [ext_resource type="Shader" uid="uid://w674ybxmnkoi" path="res://vfx/diorama_post_process.gdshader" id="11_kaxbk"]
 [ext_resource type="Script" uid="uid://7t34h1kqmrcr" path="res://ui/diorama_post_process.gd" id="12_0nobx"]
-[ext_resource type="AudioStream" uid="uid://c1l53sh8s0och" path="res://assets/music/Concrete_and_Moss.mp3" id="12_jiymt"]
-[ext_resource type="PackedScene" uid="uid://dhh7c5j6i8bkk" path="res://player/settings_level.tscn" id="13_0nobx"]
 [ext_resource type="Script" uid="uid://bbavliaaoouke" path="res://ui/perf_overlay.gd" id="14_iyrh0"]
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_50h1w"]
@@ -306,7 +304,7 @@ script = ExtResource("12_0nobx")
 
 [node name="FastDioramaMap" type="Node3D" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer/DioramaViewport" unique_id=1472222682]
 
-[node name="SettingsLevel" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer/DioramaViewport/FastDioramaMap" unique_id=240456945 instance=ExtResource("13_0nobx")]
+[node name="SettingsLevel" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer/DioramaViewport/FastDioramaMap" unique_id=240456945 ]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5427445, 0.44948673, -0.57631207)
 
 [node name="PreviewShaderLayer" type="CanvasLayer" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer/DioramaViewport" unique_id=2026771909]
@@ -360,5 +358,5 @@ size_flags_horizontal = 3
 [node name="SaveLoadPanel" parent="." unique_id=1719296314 instance=ExtResource("8_lsdqh")]
 
 [node name="MainThemePlayer" type="AudioStreamPlayer" parent="." unique_id=122940660]
-stream = ExtResource("12_jiymt")
+
 bus = &"Music"

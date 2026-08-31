@@ -26,7 +26,6 @@
 [ext_resource type="PackedScene" uid="uid://dpjfvh3ireax5" path="res://assets/VisTEST/2. Modular_Models/Props/ladder_left_1m.tscn" id="26_wd0o1"]
 [ext_resource type="PackedScene" uid="uid://b4pr7b4xgvkr7" path="res://assets/VisTEST/2. Modular_Models/Props/ladder_right_1m.tscn" id="27_l0g8g"]
 [ext_resource type="PackedScene" uid="uid://ep02e3j752sd" path="res://shared/ventilator.tscn" id="28_lnrub"]
-[ext_resource type="Texture2D" uid="uid://dtkbunwcfmqfc" path="res://assets/VisTEST/2. Modular_Models/Walls/Walls_Concrete_Holes/Walls_Concrete_Holes_T_Concrete_Holes_BaseColor-T_Concrete_Holes_Alpha.png" id="29_6hbgt"]
 [ext_resource type="Texture2D" uid="uid://8u68cwmy0fbf" path="res://assets/VisTEST/2. Modular_Models/Walls/Walls_Concrete_Holes/Walls_Concrete_Holes_T_Concrete_Holes_Emission.png" id="30_r02c6"]
 [ext_resource type="Texture2D" uid="uid://hjtae12r5r6v" path="res://assets/VisTEST/2. Modular_Models/Walls/Walls_Concrete_Holes/Walls_Concrete_Holes_T_Concrete_Holes_Normal.png" id="31_5ywpj"]
 [ext_resource type="Texture2D" uid="uid://dgkssstugiddt" path="res://assets/VisTEST/2. Modular_Models/Walls/Walls_Concrete_Holes/Walls_Concrete_Holes_T_Concrete_Holes_Metallic-T_Concrete_Holes_Roughness.png" id="32_gh7m2"]
@@ -70,7 +69,7 @@ sdfgi_use_occlusion = true
 sdfgi_cascades = 2
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6sdu6"]
-albedo_texture = ExtResource("29_6hbgt")
+
 roughness_texture = ExtResource("32_gh7m2")
 emission_enabled = true
 emission_texture = ExtResource("30_r02c6")
