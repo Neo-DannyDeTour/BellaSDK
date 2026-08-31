@@ -275,6 +275,18 @@ signal item_prompts_toggled(enabled: bool)
 ## [param scale_factor] Multiplier applied to base UI font sizes.
 signal font_scale_changed(scale_factor: float)
 
+## Emitted when user interface elements should be toggled visible or hidden.
+@warning_ignore("unused_signal")
+signal ui_visibility_toggle_requested
+
+## Emitted to toggle the metrics and frame statistics profiling panel.
+@warning_ignore("unused_signal")
+signal metrics_panel_toggle_requested
+
+## Emitted to toggle the deep render hierarchy diagnostics panel.
+@warning_ignore("unused_signal")
+signal render_diagnostics_toggle_requested
+
 ## Visual animation style presets for chapter title card sequences.
 enum ChapterAnimStyle {
 	SIMPLE,

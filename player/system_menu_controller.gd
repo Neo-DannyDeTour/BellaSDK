@@ -4,25 +4,48 @@ extends Node
 # --------------------------------------
 # SIGNALS
 # --------------------------------------
+## Emitted when the game's pause status changes.
+## [param is_paused] True if the game entered pause state.
 signal pause_toggled(is_paused: bool)
+
+## Emitted when noclip flight mode is toggled.
+## [param is_flying] True if the player has entered noclip flight.
 signal noclip_toggled(is_flying: bool)
 
 # --------------------------------------
 # EXPORTS
 # --------------------------------------
 @export_category("Node References")
+
+## The player character physics body.
 @export var player_body: CharacterBody3D
+
+## The primary gameplay camera.
 @export var camera: Camera3D
+
+## The head/eye node used for camera tilting effects.
 @export var eyes: Node3D
+
+## Collision shape representing standing height.
 @export var standing_collision: CollisionShape3D
+
+## Collision shape representing crouching height.
 @export var crouching_collision: CollisionShape3D
 
 @export_category("Menu Settings")
+
+## Packed scene resource representing the main pause and system menu.
 @export var menu_scene: PackedScene = preload("res://ui/main_menu.tscn")
 
 @export_category("Noclip Settings")
+
+## Base movement speed while sprinting in noclip mode.
 @export var base_sprinting_speed: float = 6.5
+
+## Degrees of roll applied to the camera when strafing in noclip mode.
 @export var camera_tilt_amount: float = 3.0
+
+## Smoothing speed multiplier for camera rotations and tilts.
 @export var lerp_speed: float = 15.0
 
 # --------------------------------------
@@ -31,22 +54,34 @@ signal noclip_toggled(is_flying: bool)
 ## Security variable: Indicates if debug commands (noclip) are allowed via input or events.
 var is_debug_allowed: bool = OS.has_feature("debug")
 
+## Indicates if the game is currently paused.
 var is_paused: bool = false
+
+## Indicates if a debug menu or overlay is open.
 var is_menu_open: bool = false
+
+## Instance of the main menu CanvasLayer.
 var menu_instance: CanvasLayer
 
+## Indicates if noclip flying is active.
 var flying: bool = false
+
+## Multiplier scaling noclip flight movement speed.
 var noclip_speed_multiplier: float = 8.0
 
+## Fallback fullbright environment applied during debug mode.
 var fullbright_env: Environment
+
+## Tracks whether the player character is currently stunned.
 var is_stunned: bool = false
 
 
+## Lifecycle initialization connecting debug events and instantiating menus.
 func _ready() -> void:
+	print("SystemMenuController: Initializing system menu and debug handlers.")
 	_setup_menu()
 	_setup_fullbright_environment()
 
-	# Connect to global event buses directly
 	Events.debug_menu_toggled.connect(_on_debug_menu_toggled)
 	Events.noclip_ui_button_pressed.connect(toggle_noclip)
 	Events.fullbright_toggled.connect(_on_fullbright_toggled)
@@ -70,7 +105,9 @@ func _setup_menu() -> void:
 		print("SystemMenuController: Menu instance initialized successfully.")
 
 
+## Builds the environment configuration used for fullbright debug viewing.
 func _setup_fullbright_environment() -> void:
+	print("SystemMenuController: Building fullbright Environment resource.")
 	fullbright_env = Environment.new()
 	fullbright_env.background_mode = Environment.BG_COLOR
 	fullbright_env.background_color = Color(0.5, 0.5, 0.5)
@@ -87,6 +124,8 @@ func _setup_fullbright_environment() -> void:
 # --------------------------------------
 # INPUT HANDLING
 # --------------------------------------
+## Intercepts global unhandled actions such as pause and noclip hotkeys.
+## [param event] The unhandled input event.
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		print("SystemMenuController: ui_cancel intercepted. Toggling pause.")
@@ -120,6 +159,7 @@ func _unhandled_input(event: InputEvent) -> void:
 # --------------------------------------
 # META LOGIC
 # --------------------------------------
+## Toggles the global pause state and shows or hides the system menu instance.
 func toggle_pause() -> void:
 	is_paused = not is_paused
 	get_tree().paused = is_paused
@@ -131,17 +171,23 @@ func toggle_pause() -> void:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	else:
 		if is_instance_valid(menu_instance):
+			if menu_instance.has_method("_return_to_main_buttons"):
+				menu_instance.call("_return_to_main_buttons")
 			menu_instance.hide()
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 	pause_toggled.emit(is_paused)
 
 
+## Tracks whether an external debug menu is opened.
+## [param is_open] True if the debug menu was opened.
 func _on_debug_menu_toggled(is_open: bool) -> void:
 	is_menu_open = is_open
 	print("SystemMenuController: _on_debug_menu_toggled() called. Open state: ", is_open)
 
 
+## Handles fullbright debug rendering toggling.
+## [param is_fullbright] True to enable fullbright lighting override.
 func _on_fullbright_toggled(is_fullbright: bool) -> void:
 	print("SystemMenuController: _on_fullbright_toggled() called. Active: ", is_fullbright)
 	if is_fullbright:
@@ -158,6 +204,7 @@ func _on_fullbright_toggled(is_fullbright: bool) -> void:
 # --------------------------------------
 # NOCLIP LOGIC
 # --------------------------------------
+## Toggles the noclip state, disabling player physics collisions and gravities.
 func toggle_noclip() -> void:
 	if not is_debug_allowed:
 		return
@@ -187,6 +234,8 @@ func toggle_noclip() -> void:
 	noclip_toggled.emit(flying)
 
 
+## Calculates frame velocity and applies direct transform translations during noclip flight.
+## [param delta] The frame delta time in seconds.
 func process_noclip(delta: float) -> void:
 	if not flying or not is_instance_valid(player_body):
 		return
@@ -208,7 +257,6 @@ func process_noclip(delta: float) -> void:
 	else:
 		player_body.velocity = Vector3.ZERO
 
-	# Camera Tilt
 	if GestureInputManager.is_action_pressed("left"):
 		var target_tilt: float = deg_to_rad(camera_tilt_amount)
 		eyes.rotation.z = lerpf(eyes.rotation.z, target_tilt, delta * lerp_speed)
@@ -218,5 +266,4 @@ func process_noclip(delta: float) -> void:
 	else:
 		eyes.rotation.z = lerpf(eyes.rotation.z, 0.0, delta * lerp_speed)
 
-	# Bypass physics calculations to prevent internal CharacterBody3D floor_snap drift
 	player_body.global_position += player_body.velocity * delta

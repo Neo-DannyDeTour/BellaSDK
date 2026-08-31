@@ -6,23 +6,22 @@
 layer = 100
 script = ExtResource("1_g50cl")
 
-[node name="SubtitleMargin" type="MarginContainer" parent="." unique_id=442882314]
+[node name="MarginContainer" type="MarginContainer" parent="." unique_id=442882314]
 anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -150.0
+offset_top = -107.0
 grow_horizontal = 2
 grow_vertical = 0
 theme_override_constants/margin_left = 32
 theme_override_constants/margin_right = 32
-theme_override_constants/margin_bottom = 75
+theme_override_constants/margin_bottom = 32
 
-[node name="SubtitlePanel" type="PanelContainer" parent="SubtitleMargin" unique_id=1724151750]
+[node name="BackgroundPanel" type="PanelContainer" parent="MarginContainer" unique_id=1724151750]
 layout_mode = 2
-size_flags_vertical = 4
 
-[node name="SubtitleLabel" type="RichTextLabel" parent="SubtitleMargin/SubtitlePanel" unique_id=1638741768]
+[node name="SubtitleLabel" type="RichTextLabel" parent="MarginContainer/BackgroundPanel" unique_id=1638741768]
 custom_minimum_size = Vector2(0, 75)
 layout_mode = 2
 size_flags_vertical = 4

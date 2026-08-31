@@ -66,7 +66,7 @@ theme_override_constants/margin_bottom = 50
 
 [node name="MainButtons" type="VBoxContainer" parent="MarginContainer" unique_id=988684812]
 process_mode = 3
-custom_minimum_size = Vector2(500, 350)
+custom_minimum_size = Vector2(500, 500)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4

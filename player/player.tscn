@@ -595,9 +595,8 @@ weapon_holder = NodePath("../../Head/Eyes/Camera3D/WeaponHolder")
 camera = NodePath("../../Head/Eyes/Camera3D")
 interaction_scanner = NodePath("../../InteractionScanner")
 
-[node name="EnvironmentComponent" type="Node" parent="Components" unique_id=821995305 node_paths=PackedStringArray("vfx_manager", "state_machine", "vault_controller")]
+[node name="EnvironmentComponent" type="Node" parent="Components" unique_id=821995305 node_paths=PackedStringArray("state_machine", "vault_controller")]
 script = ExtResource("33_hjies")
-vfx_manager = NodePath("")
 state_machine = NodePath("../../StateMachine")
 vault_controller = NodePath("../../VaultController")
 

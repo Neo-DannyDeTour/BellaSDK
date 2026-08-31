@@ -84,6 +84,9 @@ const SEARCH_PANEL_MIN_WIDTH: float = 620.0
 ## Vertical box hosting dynamically generated search result buttons.
 @onready var search_results_list: VBoxContainer = %SearchResultsList
 
+## Cached reference to the preview SubViewport node.
+var _diorama_viewport: SubViewport = null
+
 ## Tracks whether the player's mouse sensitivity has been analyzed and set.
 var has_calibrated: bool = false
 
@@ -102,6 +105,7 @@ func _ready() -> void:
 
 	_disable_active_grading_volumes()
 	_auto_discover_panels_and_tabs()
+	_setup_diorama_viewport()
 
 	if continue_button:
 		continue_button.pressed.connect(_on_resume_pressed)
@@ -133,6 +137,31 @@ func _ready() -> void:
 	_return_to_main_buttons()
 
 
+## Searches the tree for the preview SubViewport and ensures an isolated World3D.
+func _setup_diorama_viewport() -> void:
+	_diorama_viewport = find_child("DioramaViewport", true, false) as SubViewport
+	if is_instance_valid(_diorama_viewport):
+		print("UI: Configuring DioramaViewport isolation.")
+		_diorama_viewport.own_world_3d = true
+		_set_diorama_viewport_active(false)
+
+
+## Toggles rendering and processing for the preview diorama SubViewport.
+## [param is_active] True if the diorama should be rendered and processed.
+func _set_diorama_viewport_active(is_active: bool) -> void:
+	if not is_instance_valid(_diorama_viewport):
+		_diorama_viewport = find_child("DioramaViewport", true, false) as SubViewport
+
+	if is_instance_valid(_diorama_viewport):
+		print("UI: Setting DioramaViewport active state -> ", is_active)
+		_diorama_viewport.render_target_update_mode = (
+			SubViewport.UPDATE_ALWAYS if is_active else SubViewport.UPDATE_DISABLED
+		)
+		_diorama_viewport.process_mode = (
+			Node.PROCESS_MODE_INHERIT if is_active else Node.PROCESS_MODE_DISABLED
+		)
+
+
 ## Searches the active scene tree and resets all ColorGradingVolume3D nodes.
 func _disable_active_grading_volumes() -> void:
 	print("UI: Finding and disabling active ColorGradingVolume3D nodes.")
@@ -160,7 +189,6 @@ func _auto_discover_panels_and_tabs() -> void:
 			if is_valid_panel:
 				option_panels.append(child as Control)
 
-	# Locate and connect MasterBackButton automatically if not wired in back_buttons
 	if options_menu:
 		var master_back: Button = options_menu.find_child("MasterBackButton", true, false) as Button
 		if master_back and not master_back.pressed.is_connected(_return_to_main_buttons):
@@ -186,8 +214,8 @@ func _setup_search_bar() -> void:
 		search_results_panel.custom_minimum_size.x = SEARCH_PANEL_MIN_WIDTH
 
 	if search_scroll_container:
-		search_scroll_container.size_flags_horizontal = (Control.SIZE_EXPAND_FILL)
-		search_scroll_container.horizontal_scroll_mode = (ScrollContainer.SCROLL_MODE_DISABLED)
+		search_scroll_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		search_scroll_container.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 
 
 ## Callback triggered when the search bar gains input focus.
@@ -197,8 +225,7 @@ func _on_search_bar_focused() -> void:
 		_on_search_text_changed(search_bar.text)
 
 
-## Positions the floating search panel directly
-## beneath the search bar and enforces minimum dimensions.
+## Positions the floating search panel directly beneath the search bar.
 func _update_search_panel_position() -> void:
 	if not search_bar or not search_results_panel:
 		return
@@ -278,8 +305,11 @@ func _scan_node_for_search(root_node: Node, tab_idx: int, tab_name: String) -> v
 func _inspect_and_register_row(
 	parent: Node, label_node: Label, tab_idx: int, tab_name: String
 ) -> void:
-	var label_idx: int = label_node.get_index()
-	var child_count: int = parent.get_child_count()
+	var label_idx: int = label_node.get_index(true)
+	if label_idx < 0:
+		return
+
+	var child_count: int = parent.get_child_count(true)
 	var max_step: int = 6
 
 	if parent is GridContainer:
@@ -298,7 +328,9 @@ func _inspect_and_register_row(
 		var target_idx: int = label_idx + step_offset
 		if target_idx >= child_count:
 			break
-		var sibling: Node = parent.get_child(target_idx)
+		var sibling: Node = parent.get_child(target_idx, true)
+		if not is_instance_valid(sibling):
+			continue
 
 		if sibling is HSeparator or sibling is VSeparator:
 			continue
@@ -406,66 +438,6 @@ func _register_search_item_custom(data: Dictionary) -> void:
 			return
 
 	_search_index.append(data)
-
-
-## Locates the exact interactive sibling [Control] mapped to a specific [Label].
-## [param parent] The parent container [Node] holding elements.
-## [param label_node] The [Label] being paired.
-## [return] The matched interactive [Control], or null if none found.
-func _find_interactive_sibling(parent: Node, label_node: Label) -> Control:
-	var label_idx: int = label_node.get_index()
-	var child_count: int = parent.get_child_count()
-	var max_step: int = 6
-
-	if parent is GridContainer:
-		var grid: GridContainer = parent as GridContainer
-		max_step = max(grid.columns, 4)
-
-	for step_offset: int in range(1, max_step + 1):
-		var target_idx: int = label_idx + step_offset
-		if target_idx >= child_count:
-			break
-		var sibling: Node = parent.get_child(target_idx)
-
-		if sibling is Line2D or sibling is HSeparator or sibling is VSeparator:
-			continue
-
-		if _is_interactive_control(sibling):
-			return sibling as Control
-
-		if sibling is Container or sibling is Control:
-			var nested_interactive: Control = _find_first_interactive_child(sibling)
-			if nested_interactive:
-				return nested_interactive
-
-		if sibling is Label:
-			var lbl: Label = sibling as Label
-			var txt: String = lbl.text.strip_edges()
-			var is_numeric_value: bool = (
-				txt.is_valid_float()
-				or txt.is_valid_int()
-				or txt.ends_with("%")
-				or txt.ends_with("px")
-				or txt.ends_with("x")
-				or txt.length() <= 8
-			)
-			if not is_numeric_value:
-				break
-
-	return null
-
-
-## Recursively scans container children to find the first interactive control.
-## [param root] The parent [Node] to inspect.
-## [return] The first interactive [Control] found, or null.
-func _find_first_interactive_child(root: Node) -> Control:
-	for child: Node in root.get_children():
-		if _is_interactive_control(child):
-			return child as Control
-		var deeper: Control = _find_first_interactive_child(child)
-		if deeper:
-			return deeper
-	return null
 
 
 ## Central user interface manager coordinating navigation, game context,
@@ -897,6 +869,7 @@ func _return_to_main_buttons() -> void:
 		if panel is AccessibilityPanel:
 			panel.set_diorama_effects_enabled(false)
 
+	_set_diorama_viewport_active(false)
 	_set_preview_shader_active(false)
 
 
@@ -908,6 +881,7 @@ func _on_resume_pressed() -> void:
 	if parent and parent.has_method("toggle_pause"):
 		parent.call("toggle_pause")
 
+	_set_diorama_viewport_active(false)
 	_set_preview_shader_active(false)
 
 
@@ -925,6 +899,7 @@ func _on_new_game_pressed() -> void:
 	var chapter_window: Node = CHAPTER_SCREEN.instantiate()
 	add_child(chapter_window)
 
+	_set_diorama_viewport_active(false)
 	_set_preview_shader_active(false)
 
 
@@ -939,6 +914,7 @@ func _on_start_game_pressed() -> void:
 	if get_parent().has_method("toggle_pause"):
 		get_tree().reload_current_scene()
 
+	_set_diorama_viewport_active(false)
 	_set_preview_shader_active(false)
 
 
@@ -958,6 +934,7 @@ func _on_options_pressed() -> void:
 		_on_tab_pressed(0)
 
 	_build_search_index()
+	_set_diorama_viewport_active(true)
 	_set_preview_shader_active(true)
 
 
@@ -972,6 +949,9 @@ func _on_load_pressed() -> void:
 		options_menu.visible = false
 	if save_load_panel:
 		save_load_panel.visible = true
+
+	_set_diorama_viewport_active(false)
+	_set_preview_shader_active(false)
 
 
 ## Callback triggered when the player quits the game.

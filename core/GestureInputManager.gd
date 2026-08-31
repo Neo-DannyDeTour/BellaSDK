@@ -360,7 +360,7 @@ func _dispatch_action(action: String, gesture: String) -> void:
 ## [param action] The input action key string to evaluate.
 ## [return] True if all key requirements and active gestures are met.
 func is_action_pressed(action: String) -> bool:
-	print("Input: Polling is_action_pressed for action: ", action)
+	#print("Input: Polling is_action_pressed for action: ", action)
 	if not InputMap.has_action(action):
 		return false
 
@@ -383,7 +383,7 @@ func is_action_pressed(action: String) -> bool:
 ## [param action] The input action key string to evaluate.
 ## [return] True if the action triggered this frame.
 func is_action_just_pressed(action: String) -> bool:
-	print("Input: Polling is_action_just_pressed for action: ", action)
+	#print("Input: Polling is_action_just_pressed for action: ", action)
 	var current_frame: int = Engine.get_physics_frames()
 	if _triggered_actions_frame.has(action):
 		var target_frame: int = _triggered_actions_frame[action] as int

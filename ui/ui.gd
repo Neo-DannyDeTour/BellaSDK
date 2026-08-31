@@ -1,712 +1,68 @@
-## Manages primary user interface layers, HUD indicators, overlays, and subtitle rendering.
+## Root coordinator managing high-level UI visibility,
+## inputs, and routing to specialized sub-components.
 class_name UIController
 extends CanvasLayer
 
-## Indicates if the environment is rendering without lighting.
-var is_fullbright: bool = false
+## Reference to the screen post-processing effect manager.
+@onready var screen_effects: ScreenEffectsManager = $ScreenEffectsManager
 
-## Indicates if the game world is rendering as a wireframe.
-var is_wireframe: bool = false
+## Reference to the center reticle HUD.
+@onready var crosshair_hud: CrosshairHUD = $CrosshairHUD
 
-## Indicates if a wireframe overlay is applied to all meshes.
-var is_wireframe_overlay: bool = false
+## Reference to the player health and debuff status indicators.
+@onready var player_status_hud: PlayerStatusHUD = $PlayerStatusHUD
 
-## Indicates if physics collision shapes are drawn on screen.
-var is_collision_visible: bool = false
+## Reference to the notification and note reading overlay manager.
+@onready var notification_hud: NotificationHUD = $NotificationHUD
 
-## Tracks whether the user interface is currently hidden.
-var is_ui_hidden: bool = false
+## Reference to the developer debug tools overlay.
+@onready var debug_overlay: DebugOverlay = $DebugOverlay
 
-## Reference to the [Button] used to toggle render diagnostics.
-@onready var render_diagnostic_button: Button = %RenderDiagnosticButton
-
-## Reference to the [RenderDiagnosticsPanel] node.
-@onready var diagnostics_panel: RenderDiagnosticsPanel = %DiagnosticsPanel
-
-## Material used to draw the green wireframe debug overlay.
-var green_wireframe_material: ShaderMaterial
-
-## Animates the red flash effect when the player takes damage.
-var pain_tween: Tween
-
-## Security variable: Indicates if debug commands (noclip) are allowed via input or events.
-var is_debug_allowed: bool = OS.has_feature("debug")
-
-# --- KEYCARD UI VARS ---
-## Maps keycard IDs to their respective UI textures.
-@export var card_textures: Dictionary[StringName, Texture2D] = {}
-
-## Stores the currently instantiated keycard texture rectangles.
-var active_card_icons: Dictionary = {}
-
-## Animates the UI elements when the player enters or exits zoom mode.
-var zoom_tween: Tween
-
-## Tracks if the player is crouching to adjust UI elements like vignette.
-var is_player_crouching: bool = false
-
-## The speed multiplier for UI interpolation animations.
-var ui_lerp_speed: float = 15.0
-
-## Animates the crosshair scaling and transformations.
-var crosshair_tween: Tween
-
-## Stores the default dimensions of the center crosshair dot.
-var default_crosshair_size: Vector2
-
-## ColorRect providing a green vignette pulse overlay when health is restored.
-@onready var heal_vignette: ColorRect = $HealVignette
-
-## Animates the green vignette effect when the player heals.
-var heal_tween: Tween
-
-# --- SCREEN OVERLAYS ---
-## ColorRect applying full-screen water distortion, wipe, and raindrops.
-@onready var water_vfx_overlay: ColorRect = $WaterVFXOverlay
-
-# --- UI ELEMENT PATHS ---
-## Container that centers the crosshair elements on the screen.
-@onready var crosshair_container: CenterContainer = $CrosshairContainer
-
-## The central dot texture of the crosshair.
-@onready var center_dot: TextureRect = $CrosshairContainer/CenterDot
-
-## The outer circular texture shown when zooming.
-@onready var ui_circle_zoom: TextureRect = $CrosshairContainer/UICircleZoom
-
-## The inner circular texture shown when zooming.
-@onready var ui_circle_zoom_inner: TextureRect = $CrosshairContainer/UICircleZoomInner
-
-## ColorRect applying a vignette effect to the screen edges.
-@onready var vignette: ColorRect = $Vignette
-
-## ColorRect applying a fisheye distortion effect when zooming.
-@onready var fisheye_zoom: ColorRect = $FisheyeZoom
-
-## ColorRect applying a visual glitch shader effect.
-@onready var glitch_overlay: ColorRect = $GlitchOverlay
-
-## ColorRect applying an electrical shock vignette effect.
-@onready var electricity_vignette: ColorRect = $ElectricityVignette
-
-# --- DEBUG & ALERT UI PATHS ---
-## Container managing the layout of the noclip warning alert.
-@onready var noclip_alert_container: MarginContainer = $NoclipAlertContainer
-
-## Panel background for the noclip alert message.
-@onready var noclip_message_container: PanelContainer = $NoclipAlertContainer/NoclipMessageContainer
-
-## Label displaying the current noclip speed or status.
-@onready
-var noclip_label_message: Label = $NoclipAlertContainer/NoclipMessageContainer/NoclipLabelMessage
-
-## CanvasLayer providing the debug overlay menu.
-@onready var debug_panel: CanvasLayer = $DebugPanel
-
-## Button to toggle noclip mode in the debug panel.
-@onready var noclip_button: Button = $DebugPanel/PanelContainer/VBoxContainer/NoclipButton
-
-## Button to toggle the performance metrics window.
-@onready var metrics_button: Button = $DebugPanel/PanelContainer/VBoxContainer/MetricsButton
-
-## Button to toggle visibility of collision shapes.
-@onready var collision_button: Button = $DebugPanel/PanelContainer/VBoxContainer/CollisionButton
-
-## Button to toggle fullbright rendering mode.
-@onready var fullbright_button: Button = $DebugPanel/PanelContainer/VBoxContainer/FullbrightButton
-
-## Button to toggle wireframe rendering mode.
-@onready var wireframe_button: Button = $DebugPanel/PanelContainer/VBoxContainer/WireframeButton
-
-## Reference to the [Button] used to toggle the green wireframe material overlay.
-@onready var wireframe_overlay_button: Button = %WireframeOverlayButton
-
-## Button to hide the main user interface.
-@onready var hide_ui_button: Button = $DebugPanel/PanelContainer/VBoxContainer/HideUIButton
-
-## Panel displaying performance metrics like FPS and frame times.
+## Reference to the performance metrics panel.
 @onready var metrics_panel: PanelContainer = $MetricsPanel
 
-## ColorRect rendering a visual graph of frame times.
+## Reference to the frame time graph visualizer.
 @onready var frame_graph: ColorRect = $FrameGraph
 
-## ColorRect providing a red flash overlay when damage is taken.
-@onready var pain_overlay: ColorRect = $PainOverlay
+## Reference to the render diagnostics panel.
+@onready var diagnostics_panel: RenderDiagnosticsPanel = %DiagnosticsPanel
 
-# --- HEALTH UI VARS ---
-## The atlas texture containing the different heart states.
-@export var hearts_atlas: Texture2D
+## Tracks whether the user interface is currently hidden for clean screenshots.
+var is_ui_hidden: bool = false
 
-## MarginContainer constraining the health UI to the screen edge.
-@onready var health_margin: MarginContainer = $HealthMargin
-
-## Container arranging the health heart icons horizontally.
-@onready var hearts_container: HBoxContainer = $HealthMargin/VBoxContainer/HeartsContainer
-
-## Container arranging collected keycard icons horizontally.
-@onready var keycards_container: HBoxContainer = $HealthMargin/VBoxContainer/KeycardsContainer
-
-## Container for the note reading screen dimming and text.
-@onready var note_overlay_ui: CanvasLayer = $NoteOverlayUI
-
-## Label displaying the actual contents of the read note.
-@onready var note_text_label: RichTextLabel = $NoteOverlayUI/NoteText
-
-# --- DEBUFF & SURFACE INDICATOR UI PATHS ---
-## Container managing the layout of the sprint debuff UI.
-@onready var sprint_debuff_container: Control = $HealthMargin/VBoxContainer/SprintDebuff
-
-## Texture progress bar layered over the sprint debuff icon.
-@onready var sprint_icon: TextureProgressBar = $HealthMargin/VBoxContainer/SprintDebuff/DebuffBar
-
-## Container managing the layout of the immobilize debuff UI.
-@onready var immobilize_container: Control = $HealthMargin/VBoxContainer/ImmobilizeDebuff
-
-## Texture progress bar layered over the immobilize debuff icon.
-@onready var move_icon: TextureProgressBar = $HealthMargin/VBoxContainer/ImmobilizeDebuff/DebuffBar
-
-## Container managing the layout of the sand sprint-restriction indicator.
-@onready var sand_indicator: Control = $HealthMargin/VBoxContainer/SandIndicator
-
-## Container managing the layout of the ice skating indicator.
-@onready var ice_indicator: Control = $HealthMargin/VBoxContainer/IceIndicator
-
-## CanvasGroup for grouping the warning/hint text UI.
-@onready var warning_canvas_group: CanvasGroup = $WarningCanvasGroup
-
-## Label displaying temporary hint or warning text to the player.
-@onready var warning_label: Label = $WarningCanvasGroup/WarningLabel
-
-# --- DEBUFF UI VARS ---
-## Tracks if the player is currently under the effects of an immobilize debuff.
-var is_immobilized: bool = false
-
-## Tracks if the player is currently under the effects of a sprint block debuff.
-var is_sprint_blocked: bool = false
-
-## Animates the sprint debuff progress bar.
-var debuff_tween: Tween
-
-## Animates the immobilize debuff progress bar.
-var immobilize_tween: Tween
-
-## Animates the visibility of on-screen warning messages.
-var warning_tween: Tween
-
-## Stores the sliced textures for each state of a health heart.
-var heart_textures: Array[AtlasTexture] = []
-
-## Stores the UI nodes representing the player's health hearts.
-var heart_nodes: Array[TextureRect] = []
-
-## Stores active tweens for individual heart damage animations.
-var heart_tweens: Array[Tween] = []
-
-## Tracks the player's current health to determine when to update the UI.
-var current_health: int = 300
-
-## Controls the glitch effect animation when shocked.
-var glitch_tween: Tween
-
-## Controls the electricity vignette animation when shocked.
-var electro_tween: Tween
-
-## Target rain base intensity set by rain particle volumes.
-var _target_rain_intensity: float = 0.0
-
-## Current interpolated rain intensity factoring camera pitch and drying fade.
-var _current_rain_intensity: float = 0.0
-
-## Active tween handling smooth evaporation of raindrops on exiting rain.
-var _rain_fade_tween: Tween
-
-## Tracks whether the player is currently inside a waterfall stream.
-var _is_waterfall_active: bool = false
-
-## Tracks whether the player's camera is submerged underwater.
-var _is_underwater_active: bool = false
+## Security variable: Indicates if debug commands are allowed via input or events.
+var is_debug_allowed: bool = OS.has_feature("debug")
 
 
-## Lifecycle method called when the node enters the scene tree.
-## Initializes UI states, binds event bus signals, and creates dynamic materials.
+## Initializes UI processing modes, connects top-level UI signals, and checks testbed status.
 func _ready() -> void:
-	print("UIController: _ready() called. Initializing UI elements.")
+	print("UIController: _ready() called. Initializing UI coordinator.")
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	get_tree().paused = false
-	debug_panel.hide()
 
-	if metrics_panel:
+	if is_instance_valid(metrics_panel):
 		metrics_panel.hide()
-
-	if frame_graph:
+	if is_instance_valid(frame_graph):
 		frame_graph.hide()
 
-	_connect_ui_signals()
-	_initialize_debug_button_states()
-
-	ui_circle_zoom.pivot_offset = ui_circle_zoom.custom_minimum_size / 2.0
-	ui_circle_zoom.scale = Vector2.ZERO
-	ui_circle_zoom.modulate.a = 0.0
-	ui_circle_zoom.hide()
-
-	ui_circle_zoom_inner.pivot_offset = (ui_circle_zoom_inner.custom_minimum_size / 2.0)
-	ui_circle_zoom_inner.scale = Vector2.ZERO
-	ui_circle_zoom_inner.modulate.a = 0.0
-	ui_circle_zoom_inner.hide()
-
-	default_crosshair_size = center_dot.custom_minimum_size
-	if default_crosshair_size == Vector2.ZERO:
-		default_crosshair_size = center_dot.size
-
-	green_wireframe_material = ShaderMaterial.new()
-	var shader: Shader = Shader.new()
-	shader.code = """
-	shader_type spatial;
-	render_mode wireframe, unshaded, cull_disabled;
-
-	void fragment() {
-		ALBEDO = vec3(0.0, 1.0, 0.0);
-	}
-	"""
-	green_wireframe_material.shader = shader
-
-	_initialize_hearts()
+	_connect_signals()
 	call_deferred("_check_if_testbed")
 
-	if not KeycardSystem.card_picked_up.is_connected(_on_card_picked_up):
-		KeycardSystem.card_picked_up.connect(_on_card_picked_up)
-	if not KeycardSystem.card_used.is_connected(_on_card_used):
-		KeycardSystem.card_used.connect(_on_card_used)
 
-	sprint_debuff_container.hide()
-	immobilize_container.hide()
-
-	if warning_label:
-		warning_label.modulate.a = 0.0
-		warning_label.add_theme_color_override("font_outline_color", Color.BLACK)
-		warning_label.add_theme_constant_override("outline_size", 12)
-
-	if warning_canvas_group:
-		warning_canvas_group.material = null
-
-	_recenter_warning_ui()
-	get_viewport().size_changed.connect(_recenter_warning_ui)
-
-	if glitch_overlay != null and glitch_overlay.material is ShaderMaterial:
-		glitch_overlay.material.set_shader_parameter("intensity", 0.0)
-		glitch_overlay.hide()
-
-	if electricity_vignette != null and electricity_vignette.material is ShaderMaterial:
-		electricity_vignette.material.set_shader_parameter("intensity", 0.0)
-		electricity_vignette.hide()
-
-	if heal_vignette != null:
-		if heal_vignette.material is ShaderMaterial:
-			heal_vignette.material.set_shader_parameter("intensity", 0.0)
-		heal_vignette.hide()
-
-	if note_overlay_ui != null:
-		note_overlay_ui.hide()
-
-	if sand_indicator:
-		sand_indicator.hide()
-	if ice_indicator:
-		ice_indicator.hide()
-
-	if water_vfx_overlay != null:
-		water_vfx_overlay.hide()
-
-
-## Initializes the default label text for all debug panel toggle buttons.
-func _initialize_debug_button_states() -> void:
-	print("UIController: Synchronizing initial debug button text states.")
-	if noclip_button:
-		noclip_button.text = "Noclip OFF"
-	if metrics_button:
-		var is_open: bool = metrics_panel != null and metrics_panel.visible
-		metrics_button.text = "Metrics ON" if is_open else "Metrics OFF"
-	if fullbright_button:
-		fullbright_button.text = "Fullbright OFF"
-	if wireframe_button:
-		wireframe_button.text = "Wireframe OFF"
-	if wireframe_overlay_button:
-		wireframe_overlay_button.text = "Wireframe Overlay OFF"
-	if collision_button:
-		collision_button.text = "Collisions OFF"
-	if render_diagnostic_button:
-		render_diagnostic_button.text = "Render Diagnostics"
-	if hide_ui_button:
-		hide_ui_button.text = "Hide UI"
-
-
-## Safe signal connection helper to prevent duplicate connection warnings.
-func _connect_ui_signals() -> void:
-	print("UIController: Safely connecting buttons and event bus signals.")
-
-	if not noclip_button.pressed.is_connected(_on_noclip_button_pressed):
-		noclip_button.pressed.connect(_on_noclip_button_pressed)
-	if not metrics_button.pressed.is_connected(_on_metrics_button_pressed):
-		metrics_button.pressed.connect(_on_metrics_button_pressed)
-	if not fullbright_button.pressed.is_connected(_on_fullbright_button_pressed):
-		fullbright_button.pressed.connect(_on_fullbright_button_pressed)
-	if not wireframe_button.pressed.is_connected(_on_wireframe_button_pressed):
-		wireframe_button.pressed.connect(_on_wireframe_button_pressed)
-	if not wireframe_overlay_button.pressed.is_connected(_on_wireframe_overlay_button_pressed):
-		wireframe_overlay_button.pressed.connect(_on_wireframe_overlay_button_pressed)
-	if not collision_button.pressed.is_connected(_on_collision_button_pressed):
-		collision_button.pressed.connect(_on_collision_button_pressed)
-	if (
-		render_diagnostic_button
-		and not render_diagnostic_button.pressed.is_connected(_on_render_diagnostic_button_pressed)
-	):
-		render_diagnostic_button.pressed.connect(_on_render_diagnostic_button_pressed)
-	if not hide_ui_button.pressed.is_connected(_on_hide_ui_button_pressed):
-		hide_ui_button.pressed.connect(_on_hide_ui_button_pressed)
-
-	if not Events.noclip_toggled.is_connected(_on_noclip_toggled):
-		Events.noclip_toggled.connect(_on_noclip_toggled)
-	if not Events.noclip_speed_changed.is_connected(_on_noclip_speed_changed):
-		Events.noclip_speed_changed.connect(_on_noclip_speed_changed)
-	if not Events.player_zoomed.is_connected(_on_player_zoomed):
-		Events.player_zoomed.connect(_on_player_zoomed)
-	if not Events.player_crouch_changed.is_connected(_on_player_crouched):
-		Events.player_crouch_changed.connect(_on_player_crouched)
-	if not Events.debug_menu_toggled.is_connected(_on_debug_menu_toggled):
-		Events.debug_menu_toggled.connect(_on_debug_menu_toggled)
-	if not Events.console_toggled.is_connected(_on_console_toggled):
-		Events.console_toggled.connect(_on_console_toggled)
-	if not Events.player_health_changed.is_connected(update_health):
-		Events.player_health_changed.connect(update_health)
-	if not Events.terminal_mode_toggled.is_connected(_on_terminal_mode_toggled):
-		Events.terminal_mode_toggled.connect(_on_terminal_mode_toggled)
-	if not Events.sprint_debuff_applied.is_connected(_on_sprint_debuff_applied):
-		Events.sprint_debuff_applied.connect(_on_sprint_debuff_applied)
-	if not Events.immobilize_debuff_applied.is_connected(_on_immobilize_debuff_applied):
-		Events.immobilize_debuff_applied.connect(_on_immobilize_debuff_applied)
-	if not Events.player_electrocuted.is_connected(_on_player_electrocuted):
-		Events.player_electrocuted.connect(_on_player_electrocuted)
-	if not Events.hint_requested.is_connected(_show_warning_message):
-		Events.hint_requested.connect(_show_warning_message)
-	if not Events.note_opened.is_connected(_on_note_opened):
-		Events.note_opened.connect(_on_note_opened)
-	if not Events.note_closed.is_connected(_on_note_closed):
-		Events.note_closed.connect(_on_note_closed)
-	if not Events.sand_surface_toggled.is_connected(_on_sand_surface_toggled):
-		Events.sand_surface_toggled.connect(_on_sand_surface_toggled)
-	if not Events.ice_surface_toggled.is_connected(_on_ice_surface_toggled):
-		Events.ice_surface_toggled.connect(_on_ice_surface_toggled)
-	if not Events.underwater_vfx_toggled.is_connected(_on_underwater_vfx_toggled):
-		Events.underwater_vfx_toggled.connect(_on_underwater_vfx_toggled)
-	if not Events.waterfall_vfx_toggled.is_connected(_on_waterfall_vfx_toggled):
-		Events.waterfall_vfx_toggled.connect(_on_waterfall_vfx_toggled)
-	if not Events.rain_vfx_toggled.is_connected(_on_rain_vfx_toggled):
-		Events.rain_vfx_toggled.connect(_on_rain_vfx_toggled)
-
-
-## Repositions hint and warning notifications relative to the screen center.
-func _recenter_warning_ui() -> void:
-	print("UIController: _recenter_warning_ui() called to position hint text.")
-	if not warning_canvas_group or not warning_label:
-		return
-
-	var screen_size: Vector2 = get_viewport().get_visible_rect().size
-	warning_canvas_group.position = Vector2(screen_size.x / 2.0, (screen_size.y / 2.0) + 70.0)
-	warning_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-
-
-## Updates screen-space shaders, vignette transitions, and rain pitch scaling every frame.
-## [param delta] The elapsed time since the previous frame.
-func _process(delta: float) -> void:
-	if is_instance_valid(vignette) and vignette.material is ShaderMaterial:
-		var target_vignette_opacity: float = 0.8 if is_player_crouching else 0.0
-		var current_opacity: float = (
-			(vignette.material as ShaderMaterial).get_shader_parameter("vignette_opacity") as float
-		)
-		var new_opacity: float = lerp(
-			current_opacity, target_vignette_opacity, delta * ui_lerp_speed
-		)
-		(vignette.material as ShaderMaterial).set_shader_parameter("vignette_opacity", new_opacity)
-
-	_process_rain_pitch_and_vfx(delta)
-
-
-## Updates unified water overlay parameters and handles automatic node visibility.
-## [param mode] 0 = Basic Ripples/Droplets, 1 = Diagonal Wipe, 2 = Waterfall Flow.
-## [param drops] Intensity for pop-in droplets (0.0 to 1.0).
-## [param wash] Intensity for center rings/flowing water (0.0 to 1.0).
-## [param clear_prog] Wipe progress across screen (0.0 to 1.5).
-func set_water_vfx_state(mode: int, drops: float, wash: float, clear_prog: float = 0.0) -> void:
-	print(
-		"UIController: Setting Water VFX mode -> ",
-		mode,
-		" drops -> ",
-		drops,
-		" wash -> ",
-		wash,
-		" wipe -> ",
-		clear_prog
-	)
-	if not is_instance_valid(water_vfx_overlay):
-		return
-
-	var is_active: bool = false
-	if mode == 2:
-		is_active = (drops > 0.001 or wash > 0.001 or clear_prog < 1.49)
-	else:
-		is_active = (drops > 0.001 or wash > 0.001)
-
-	water_vfx_overlay.visible = is_active
-
-	if is_active and water_vfx_overlay.material is ShaderMaterial:
-		var mat: ShaderMaterial = water_vfx_overlay.material as ShaderMaterial
-		mat.set_shader_parameter(&"effect_mode", mode)
-		mat.set_shader_parameter(&"drop_intensity", drops)
-		mat.set_shader_parameter(&"wash_intensity", wash)
-		mat.set_shader_parameter(&"clear_progress", clear_prog)
-		water_vfx_overlay.queue_redraw()
-
-
-## Slices the heart atlas and builds initial health container representations.
-func _initialize_hearts() -> void:
-	print("UIController: _initialize_hearts() called. Setting up health display.")
-	if not hearts_atlas:
-		push_warning("Hearts atlas not assigned in UI inspector!")
-		return
-
-	var atlas_width: float = hearts_atlas.get_width()
-	var atlas_height: float = hearts_atlas.get_height()
-	var frame_width: float = atlas_width / 5.0
-
-	for i: int in range(5):
-		var tex: AtlasTexture = AtlasTexture.new()
-		tex.atlas = hearts_atlas
-		tex.region = Rect2(i * frame_width, 0.0, frame_width, atlas_height)
-		heart_textures.append(tex)
-
-	while heart_nodes.size() * 100 < current_health:
-		_add_heart_node()
-
-	update_health(current_health)
-
-
-## Dynamically adds a single heart UI node container to the screen layout.
-func _add_heart_node() -> void:
-	print("UIController: _add_heart_node() - Expanding maximum heart UI count.")
-	var atlas_height: float = hearts_atlas.get_height()
-	var frame_width: float = hearts_atlas.get_width() / 5.0
-	var target_size: Vector2 = Vector2(frame_width * 2.0, atlas_height * 2.0)
-
-	var wrapper: Control = Control.new()
-	wrapper.custom_minimum_size = target_size
-	wrapper.use_parent_material = true
-	hearts_container.add_child(wrapper)
-
-	var rect: TextureRect = TextureRect.new()
-	rect.texture = heart_textures[0]
-	rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	rect.custom_minimum_size = target_size
-	rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	rect.use_parent_material = true
-
-	wrapper.add_child(rect)
-	heart_nodes.append(rect)
-	heart_tweens.append(null)
-
-
-## Re-renders all heart frames and plays health change damage or heal tweens.
-## [param new_health] The current integer health total.
-func update_health(new_health: int) -> void:
-	print("UIController: update_health() called with new value: ", new_health)
-
-	while new_health > heart_nodes.size() * 100:
-		_add_heart_node()
-
-	var health_decreased: bool = new_health < current_health
-	var health_increased: bool = new_health > current_health
-	var previous_health: int = current_health
-	current_health = new_health
-
-	if health_decreased:
-		_trigger_pain_effect()
-	elif health_increased:
-		_trigger_heal_effect()
-
-	if heart_nodes.is_empty() or heart_textures.is_empty():
-		return
-
-	for i: int in range(heart_nodes.size()):
-		var heart_min: int = i * 100
-		var heart_val: int = clampi(current_health - heart_min, 0, 100)
-		var prev_heart_val: int = clampi(previous_health - heart_min, 0, 100)
-
-		var frame_index: int = 0
-		if heart_val >= 100:
-			frame_index = 0
-		elif heart_val >= 75:
-			frame_index = 1
-		elif heart_val >= 50:
-			frame_index = 2
-		elif heart_val >= 25:
-			frame_index = 3
-		else:
-			frame_index = 4
-
-		heart_nodes[i].texture = heart_textures[frame_index]
-
-		if health_decreased and heart_val < prev_heart_val:
-			_animate_heart_damage(i)
-		elif health_increased and heart_val > prev_heart_val:
-			_animate_heart_heal(i, frame_index)
-
-		heart_nodes[i].get_parent().visible = true
-
-
-## Plays a red screen flash animation when the player sustains damage.
-func _trigger_pain_effect() -> void:
-	print("UIController: _trigger_pain_effect() called. Flashing screen red.")
-	if pain_overlay == null:
-		return
-
-	pain_overlay.show()
-
-	if pain_tween and pain_tween.is_valid():
-		pain_tween.kill()
-
-	pain_overlay.color = Color(1.0, 0.0, 0.0, 0.4)
-	pain_tween = (create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT))
-	pain_tween.tween_property(pain_overlay, "color", Color(1.0, 0.0, 0.0, 0.0), 0.3)
-	pain_tween.finished.connect(pain_overlay.hide)
-
-
-## Runs a vertical bounce tween on the target heart node when damaged.
-## [param index] The heart slot index to animate.
-func _animate_heart_damage(index: int) -> void:
-	print("UIController: _animate_heart_damage() called for index: ", index)
-	if index < 0 or index >= heart_nodes.size():
-		return
-
-	var heart: TextureRect = heart_nodes[index]
-
-	if heart_tweens[index] and heart_tweens[index].is_valid():
-		heart_tweens[index].kill()
-
-	heart.position.y = 0.0
-	var tween: Tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	heart_tweens[index] = tween
-
-	var jump_height: float = -15.0
-	var duration: float = 0.08
-
-	tween.tween_property(heart, "position:y", jump_height, duration)
-	tween.tween_property(heart, "position:y", jump_height * -0.3, duration)
-	tween.tween_property(heart, "position:y", 0.0, duration)
-
-
-## Spawns a scaling green ghost texture to visually represent health recovery.
-## [param index] The heart slot index to animate.
-## [param frame_index] Sliced texture frame index to duplicate on the ghost.
-func _animate_heart_heal(index: int, frame_index: int) -> void:
-	print("UIController: _animate_heart_heal() called for index: ", index)
-	if index < 0 or index >= heart_nodes.size():
-		return
-
-	var heart: TextureRect = heart_nodes[index]
-	var ghost: TextureRect = TextureRect.new()
-
-	ghost.texture = heart_textures[frame_index]
-	ghost.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	ghost.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	ghost.custom_minimum_size = heart.custom_minimum_size
-	ghost.size = heart.size
-	ghost.position = Vector2.ZERO
-	ghost.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	ghost.pivot_offset = ghost.size / 2.0
-	ghost.modulate = Color(0.0, 1.0, 0.0, 0.5)
-
-	heart.add_child(ghost)
-
-	var tween: Tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(
-		Tween.EASE_OUT
-	)
-
-	var anim_duration: float = 0.5
-	tween.tween_property(ghost, "scale", Vector2(3.0, 3.0), anim_duration)
-	tween.tween_property(ghost, "modulate:a", 0.0, anim_duration)
-	tween.chain().tween_callback(ghost.queue_free)
-
-
-## Tweens reticle rings and fisheye parameters when entering or exiting aim zoom.
-## [param is_zooming] True if the player is actively zoomed in.
-func _on_player_zoomed(is_zooming: bool) -> void:
-	print("UIController: _on_player_zoomed() called. State: ", is_zooming)
-	if zoom_tween and zoom_tween.is_valid():
-		zoom_tween.kill()
-
-	zoom_tween = (create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(
-		Tween.EASE_OUT
-	))
-
-	if is_zooming:
-		center_dot.hide()
-		ui_circle_zoom.show()
-		ui_circle_zoom_inner.show()
-
-		ui_circle_zoom.scale = Vector2.ZERO
-		ui_circle_zoom.modulate.a = 0.0
-		ui_circle_zoom_inner.scale = Vector2.ZERO
-		ui_circle_zoom_inner.modulate.a = 0.0
-
-		zoom_tween.tween_property(ui_circle_zoom, "scale", Vector2(1.0, 1.0), 0.5).from(
-			Vector2.ZERO
-		)
-		zoom_tween.tween_property(ui_circle_zoom, "modulate:a", 1.0, 0.3).from(0.0)
-		zoom_tween.tween_property(ui_circle_zoom, "rotation", deg_to_rad(15), 1.0).from(0.0)
-
-		zoom_tween.tween_property(ui_circle_zoom_inner, "scale", Vector2(1.0, 1.0), 0.5).from(
-			Vector2.ZERO
-		)
-		zoom_tween.tween_property(ui_circle_zoom_inner, "modulate:a", 0.1, 0.3).from(0.0)
-		zoom_tween.tween_property(ui_circle_zoom_inner, "rotation", deg_to_rad(-45), 1.0).from(0.0)
-
-		if is_instance_valid(fisheye_zoom):
-			(
-				zoom_tween
-				. tween_property(
-					fisheye_zoom, "material:shader_parameter/effect_strength", 0.4, 0.2
-				)
-				. from(0.0)
-			)
-	else:
-		center_dot.show()
-		zoom_tween.tween_property(ui_circle_zoom, "scale", Vector2.ZERO, 0.5)
-		zoom_tween.tween_property(ui_circle_zoom, "modulate:a", 0.0, 0.3)
-		zoom_tween.tween_property(ui_circle_zoom, "rotation", deg_to_rad(0), 0.25)
-
-		zoom_tween.tween_property(ui_circle_zoom_inner, "scale", Vector2.ZERO, 0.5)
-		zoom_tween.tween_property(ui_circle_zoom_inner, "modulate:a", 0.0, 0.3)
-		zoom_tween.tween_property(ui_circle_zoom_inner, "rotation", deg_to_rad(0), 0.25)
-
-		if is_instance_valid(fisheye_zoom):
-			zoom_tween.tween_property(
-				fisheye_zoom, "material:shader_parameter/effect_strength", 0.0, 0.2
-			)
-
-		zoom_tween.finished.connect(
-			func() -> void:
-				ui_circle_zoom.hide()
-				ui_circle_zoom_inner.hide()
-		)
-
-
-## Updates crouch state tracking to drive camera vignette lerping.
-## [param crouching] True if the player is currently crouching.
-func _on_player_crouched(crouching: bool) -> void:
-	is_player_crouching = crouching
-	print("UIController: received crouch signal! Crouching: ", crouching)
-
-
-## Intercepts global debug hotkeys and debuff warning triggers on keypress.
+## Binds top-level event bus listeners.
+func _connect_signals() -> void:
+	print("UIController: Connecting top-level event bus signals.")
+	if not Events.player_health_changed.is_connected(_on_player_health_changed):
+		Events.player_health_changed.connect(_on_player_health_changed)
+	if not Events.ui_visibility_toggle_requested.is_connected(_toggle_ui_elements):
+		Events.ui_visibility_toggle_requested.connect(_toggle_ui_elements)
+	if not Events.metrics_panel_toggle_requested.is_connected(_toggle_metrics_panel):
+		Events.metrics_panel_toggle_requested.connect(_toggle_metrics_panel)
+	if not Events.render_diagnostics_toggle_requested.is_connected(_toggle_diagnostics_panel):
+		Events.render_diagnostics_toggle_requested.connect(_toggle_diagnostics_panel)
+
+
+## Intercepts global debug hotkeys and blocked movement inputs.
 ## [param event] The [InputEvent] received from the engine.
 func _input(event: InputEvent) -> void:
 	if not is_debug_allowed:
@@ -724,13 +80,13 @@ func _input(event: InputEvent) -> void:
 		)
 		and not event.is_echo()
 	):
-		print("UIController: Toggle requested. Emitting console_toggle_requested.")
+		print("UIController: Console toggle requested. Emitting console_toggle_requested.")
 		Events.console_toggle_requested.emit()
 		get_viewport().set_input_as_handled()
 		return
 
 	if event is InputEventKey and event.is_pressed() and not event.is_echo():
-		if is_immobilized:
+		if player_status_hud.is_immobilized:
 			if (
 				event.is_action_pressed(&"forward")
 				or event.is_action_pressed(&"backward")
@@ -740,537 +96,69 @@ func _input(event: InputEvent) -> void:
 				or event.is_action_pressed(&"sprint")
 			):
 				print("UIController: Movement blocked - immobilized.")
-				_show_warning_message("Can't move!", 2.0)
-		elif is_sprint_blocked:
+				notification_hud.show_warning_message("Can't move!", 2.0)
+		elif player_status_hud.is_sprint_blocked:
 			if event.is_action_pressed(&"sprint"):
 				print("UIController: Movement blocked - sprint cooldown.")
-				_show_warning_message("Can't sprint", 2.0)
+				notification_hud.show_warning_message("Can't sprint", 2.0)
 
 
-## Shows or hides the developer debug drawer, capturing or freeing the mouse.
-func _toggle_debug_panel() -> void:
-	debug_panel.visible = not debug_panel.visible
-	print("UIController: Debug panel visibility toggled -> ", debug_panel.visible)
-
-	if debug_panel.visible:
-		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	else:
-		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-
-	Events.debug_menu_toggled.emit(debug_panel.visible)
-
-
-## Handles external requests to set the debug menu visibility.
-## [param is_open] Target visibility state for the debug menu.
-func _on_debug_menu_toggled(is_open: bool) -> void:
-	if debug_panel.visible != is_open:
-		print("UIController: Syncing debug panel state from Events bus -> ", is_open)
-		debug_panel.visible = is_open
-
-
-## Synchronizes debug drawer panel visibility when console visibility changes.
-## [param is_open] Target visibility state of the developer console.
-func _on_console_toggled(is_open: bool) -> void:
-	print("UIController: Syncing debug panel with console state -> ", is_open)
-	debug_panel.visible = is_open
-
-
-## Handles pressing the debug noclip button by emitting a global trigger event.
-func _on_noclip_button_pressed() -> void:
-	print("UIController: Noclip button pressed.")
-	Events.noclip_ui_button_pressed.emit()
-
-
-## Toggles on-screen noclip badge text when the player toggles fly mode.
-## [param is_flying] True if noclip is actively engaged.
-func _on_noclip_toggled(is_flying: bool) -> void:
-	print("UIController: Noclip toggled. State: ", is_flying)
-	if is_flying:
-		noclip_message_container.show()
-		noclip_button.text = "Noclip ON"
-	else:
-		noclip_message_container.hide()
-		noclip_button.text = "Noclip OFF"
-
-
-## Updates the noclip indicator badge label to show the current speed multiplier.
-## [param speed] The updated noclip flight velocity scalar.
-func _on_noclip_speed_changed(speed: float) -> void:
-	noclip_label_message.text = "Noclip ON: %.1fx speed" % speed
-
-
-## Toggles fullbright unshaded rendering mode across the scene.
-func _on_fullbright_button_pressed() -> void:
-	is_fullbright = !is_fullbright
-	print("UIController: Fullbright toggled. State: ", is_fullbright)
-
-	if is_fullbright:
-		fullbright_button.text = "Fullbright ON"
-	else:
-		fullbright_button.text = "Fullbright OFF"
-
-	Events.fullbright_toggled.emit(is_fullbright)
-
-
-## Toggles world wireframe debug view mode.
-func _on_wireframe_button_pressed() -> void:
-	is_wireframe = !is_wireframe
-	print("UIController: Wireframe toggled. State: ", is_wireframe)
-
-	if is_wireframe:
-		wireframe_button.text = "Wireframe ON"
-	else:
-		wireframe_button.text = "Wireframe OFF"
-
-	Events.wireframe_toggled.emit(is_wireframe)
-
-
-## Toggles the green wireframe material overlay across all scene geometry.
-func _on_wireframe_overlay_button_pressed() -> void:
-	is_wireframe_overlay = !is_wireframe_overlay
-	print("UIController: Wireframe overlay toggled. State: ", is_wireframe_overlay)
-
-	if is_wireframe_overlay:
-		wireframe_overlay_button.text = "Wireframe Overlay ON"
-	else:
-		wireframe_overlay_button.text = "Wireframe Overlay OFF"
-
-	Events.wireframe_overlay_toggled.emit(is_wireframe_overlay)
-
-	var root_node: Node = get_tree().current_scene
-	if root_node:
-		_apply_wireframe_to_node(root_node, is_wireframe_overlay)
-
-
-## Recursively applies or removes the green wireframe shader overlay on mesh nodes.
-## [param node] The current branch root node to process.
-## [param is_overlay] True to assign wireframe overlay, false to clear.
-func _apply_wireframe_to_node(node: Node, is_overlay: bool) -> void:
-	if node is MeshInstance3D or node is CSGShape3D:
-		if is_overlay:
-			node.material_overlay = green_wireframe_material
-		else:
-			node.material_overlay = null
-
-	for child: Node in node.get_children():
-		_apply_wireframe_to_node(child, is_overlay)
-
-
-## Toggles the frame statistics and frame graph debug window and updates button label.
-func _on_metrics_button_pressed() -> void:
-	print("UIController: Metrics button pressed.")
-	if metrics_panel:
-		metrics_panel.toggle_window()
-
-		if frame_graph:
-			frame_graph.visible = metrics_panel.visible
-
-		metrics_button.text = ("Metrics ON" if metrics_panel.visible else "Metrics OFF")
-
-
-## Expands the crosshair dot into terminal interaction bounds.
-## [param is_active] True if the player is currently focused on an active terminal.
-func _on_terminal_mode_toggled(is_active: bool) -> void:
-	print("UIController: Terminal mode toggled: ", is_active)
-
-	if crosshair_tween and crosshair_tween.is_valid():
-		crosshair_tween.kill()
-
-	crosshair_tween = (create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(
-		Tween.EASE_OUT
-	))
-
-	if is_active:
-		var target_size: Vector2 = Vector2(16.0, 16.0)
-		crosshair_tween.tween_property(center_dot, "custom_minimum_size", target_size, 0.3)
-		crosshair_tween.tween_property(center_dot, "size", target_size, 0.3)
-	else:
-		crosshair_tween.tween_property(
-			center_dot, "custom_minimum_size", default_crosshair_size, 0.3
-		)
-		crosshair_tween.tween_property(center_dot, "size", default_crosshair_size, 0.3)
-
-
-## Toggles runtime physics collision shape rendering.
-func _on_collision_button_pressed() -> void:
-	is_collision_visible = !is_collision_visible
-	print("UIController: Collision visibility toggled. State: ", is_collision_visible)
-
-	get_tree().debug_collisions_hint = is_collision_visible
-	collision_button.text = ("Collisions ON" if is_collision_visible else "Collisions OFF")
-
-	var root_node: Node = get_tree().current_scene
-	if root_node:
-		_force_collision_redraw(root_node, is_collision_visible)
-
-
-## Forces collision visualizers to refresh their mesh representations.
-## [param node] The branch root node to process.
-## [param show_collisions] Target visibility state for debug collisions.
-func _force_collision_redraw(node: Node, show_collisions: bool) -> void:
-	if node is CollisionShape3D and node.shape:
-		var temp_shape: Shape3D = node.shape
-		node.shape = null
-		node.shape = temp_shape
-	elif node is ShapeCast3D and node.shape:
-		var temp_shape: Shape3D = node.shape
-		node.shape = null
-		node.shape = temp_shape
-	elif node is RayCast3D:
-		var temp_target: Vector3 = node.target_position
-		node.target_position = Vector3.ZERO
-		node.target_position = temp_target
-
-	if node is CollisionShape3D or node is RayCast3D or node is ShapeCast3D:
-		node.visible = show_collisions
-
-	for child: Node in node.get_children():
-		_force_collision_redraw(child, show_collisions)
-
-
-## Handles hide UI button press.
-func _on_hide_ui_button_pressed() -> void:
-	print("UIController: Hide UI button pressed.")
-	hide_ui_button.release_focus()
-	_toggle_ui_elements(not is_ui_hidden)
+## Routes health changes to the screen effects manager for pain or heal flashes.
+## [param new_health] The new total health value.
+func _on_player_health_changed(new_health: int) -> void:
+	if new_health < player_status_hud.current_health:
+		screen_effects.trigger_pain_effect()
+	elif new_health > player_status_hud.current_health:
+		screen_effects.trigger_heal_effect()
 
 
 ## Toggles gameplay HUD visibility for clean screenshots or immersion.
-## [param should_hide] True to suppress HUD presentation.
-func _toggle_ui_elements(should_hide: bool) -> void:
-	is_ui_hidden = should_hide
+func _toggle_ui_elements() -> void:
+	is_ui_hidden = !is_ui_hidden
 	var visibility: bool = !is_ui_hidden
+	print("UIController: UI visibility toggled -> ", visibility)
 
-	crosshair_container.visible = visibility
-	noclip_alert_container.visible = visibility
-	health_margin.visible = visibility
-	vignette.visible = visibility
-	fisheye_zoom.visible = visibility
+	if is_instance_valid(crosshair_hud):
+		crosshair_hud.visible = visibility
+	if is_instance_valid(player_status_hud):
+		player_status_hud.visible = visibility
+	if is_instance_valid(screen_effects):
+		screen_effects.visible = visibility
 
-	hide_ui_button.text = "Show UI" if is_ui_hidden else "Hide UI"
-	print("UIController: UI Visibility set to: ", visibility)
+	if is_instance_valid(debug_overlay) and is_instance_valid(debug_overlay.hide_ui_button):
+		debug_overlay.hide_ui_button.text = "Show UI" if is_ui_hidden else "Hide UI"
+
+
+## Toggles metrics panel and frame graph visibility.
+func _toggle_metrics_panel() -> void:
+	print("UIController: Toggling metrics panel.")
+	if is_instance_valid(metrics_panel) and metrics_panel.has_method("toggle_window"):
+		metrics_panel.toggle_window()
+
+		if is_instance_valid(frame_graph):
+			frame_graph.visible = metrics_panel.visible
+
+		if is_instance_valid(debug_overlay.metrics_button):
+			debug_overlay.metrics_button.text = (
+				"Metrics ON" if metrics_panel.visible else "Metrics OFF"
+			)
+
+
+## Toggles the render diagnostics panel visibility.
+func _toggle_diagnostics_panel() -> void:
+	print("UIController: Toggling diagnostics panel.")
+	if is_instance_valid(diagnostics_panel) and diagnostics_panel.has_method("toggle_window"):
+		var is_open: bool = diagnostics_panel.toggle_window()
+		if is_instance_valid(debug_overlay.render_diagnostic_button):
+			debug_overlay.render_diagnostic_button.text = (
+				"Diagnostics ON" if is_open else "Render Diagnostics"
+			)
 
 
 ## Checks if the current scene is a testbed level to automatically show metrics.
 func _check_if_testbed() -> void:
-	print("UIController: Checking if current scene is TestbedMap...")
+	print("UIController: Checking if current scene is TestbedMap.")
 	var current_scene: Node = get_tree().current_scene
 
 	if current_scene and "testbed.scn" in current_scene.scene_file_path.to_lower():
-		_open_metrics_panel()
-
-
-## Opens the metrics and performance profiling panel and updates button label.
-func _open_metrics_panel() -> void:
-	print("UIController: TestbedMap detected. Opening metrics panel.")
-	if metrics_panel and not metrics_panel.visible:
-		metrics_panel.toggle_window()
-
-		if frame_graph:
-			frame_graph.visible = metrics_panel.visible
-
-		if metrics_button:
-			metrics_button.text = "Metrics ON"
-
-
-## Adds a keycard texture rectangle to the HUD inventory display.
-## [param card_id] Unique identifier key of the collected card.
-func _on_card_picked_up(card_id: StringName) -> void:
-	print("UIController: Displaying new card ID ", card_id)
-	var card_rect: TextureRect = TextureRect.new()
-	card_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	card_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	card_rect.custom_minimum_size = Vector2(80.0, 130.0)
-	card_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-
-	if card_textures.has(card_id):
-		card_rect.texture = card_textures[card_id]
-	else:
-		print("UI Warning: No texture mapped in UIController for card ID: ", card_id)
-
-	keycards_container.add_child(card_rect)
-	active_card_icons[card_id] = card_rect
-
-	card_rect.scale = Vector2.ZERO
-	card_rect.pivot_offset = card_rect.custom_minimum_size / 2.0
-	var tween: Tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
-	tween.tween_property(card_rect, "scale", Vector2.ONE, 0.4)
-
-
-## Animates and removes a used keycard icon from the HUD inventory display.
-## [param card_id] Unique identifier key of the consumed card.
-func _on_card_used(card_id: StringName) -> void:
-	print("UIController: Removing used card ID ", card_id)
-	if active_card_icons.has(card_id):
-		var card_rect: TextureRect = active_card_icons[card_id]
-		var tween: Tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
-		tween.tween_property(card_rect, "scale", Vector2.ZERO, 0.2)
-		tween.finished.connect(card_rect.queue_free)
-		active_card_icons.erase(card_id)
-
-
-## Fades in a centered notification banner with the provided text.
-## [param message] String content to present to the user.
-## [param duration] Visible display duration before fading out.
-func _show_warning_message(message: String, duration: float = 2.0) -> void:
-	print("UIController: Displaying warning '", message, "' for ", duration, "s.")
-	warning_label.text = message
-
-	if warning_tween and warning_tween.is_valid():
-		warning_tween.kill()
-
-	warning_tween = create_tween().set_trans(Tween.TRANS_SINE)
-	warning_tween.tween_property(warning_label, "modulate:a", 1.0, 0.1)
-	warning_tween.tween_interval(duration)
-	warning_tween.tween_property(warning_label, "modulate:a", 0.0, 0.5)
-
-
-## Starts and animates the sprint debuff progress bar cooldown.
-## [param duration] Length of the debuff in seconds.
-func _on_sprint_debuff_applied(duration: float) -> void:
-	print(
-		(
-			"UIController: _on_sprint_debuff_applied() - Starting debuff UI for "
-			+ str(duration)
-			+ " seconds."
-		)
-	)
-	sprint_debuff_container.show()
-	is_sprint_blocked = true
-
-	sprint_icon.max_value = duration
-	sprint_icon.value = duration
-
-	if debuff_tween and debuff_tween.is_valid():
-		debuff_tween.kill()
-
-	debuff_tween = create_tween()
-	debuff_tween.tween_property(sprint_icon, "value", 0.0, duration)
-	debuff_tween.finished.connect(
-		func() -> void:
-			print("UIController: Sprint debuff expired. Hiding UI.")
-			sprint_debuff_container.hide()
-			is_sprint_blocked = false
-	)
-
-
-## Starts and animates the immobilize debuff progress bar cooldown.
-## [param duration] Length of the debuff in seconds.
-func _on_immobilize_debuff_applied(duration: float) -> void:
-	print(
-		(
-			"UIController: _on_immobilize_debuff_applied() - Starting UI for "
-			+ str(duration)
-			+ " seconds."
-		)
-	)
-	immobilize_container.show()
-	is_immobilized = true
-
-	move_icon.max_value = duration
-	move_icon.value = duration
-
-	if immobilize_tween and immobilize_tween.is_valid():
-		immobilize_tween.kill()
-
-	immobilize_tween = create_tween()
-	immobilize_tween.tween_property(move_icon, "value", 0.0, duration)
-	immobilize_tween.finished.connect(
-		func() -> void:
-			print("UIController: Immobilize debuff expired. Hiding UI.")
-			immobilize_container.hide()
-			is_immobilized = false
-	)
-
-
-## Triggers glitch and electrical vignette shader pulses upon shock damage.
-func _on_player_electrocuted() -> void:
-	print("UIController: _on_player_electrocuted() - Triggering electric FX.")
-
-	if pain_tween and pain_tween.is_valid():
-		pain_tween.kill()
-	if pain_overlay:
-		pain_overlay.hide()
-
-	if glitch_overlay != null and glitch_overlay.material is ShaderMaterial:
-		glitch_overlay.show()
-		if glitch_tween and glitch_tween.is_valid():
-			glitch_tween.kill()
-
-		glitch_tween = (create_tween().set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT))
-		glitch_tween.tween_method(
-			func(val: float) -> void:
-				(glitch_overlay.material as ShaderMaterial).set_shader_parameter("intensity", val)
-				glitch_overlay.queue_redraw(),
-			0.6,
-			0.0,
-			0.4
-		)
-		glitch_tween.finished.connect(glitch_overlay.hide)
-
-	if electricity_vignette != null and electricity_vignette.material is ShaderMaterial:
-		electricity_vignette.show()
-		if electro_tween and electro_tween.is_valid():
-			electro_tween.kill()
-
-		electro_tween = (create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT))
-		electro_tween.tween_method(
-			func(val: float) -> void:
-				(electricity_vignette.material as ShaderMaterial).set_shader_parameter(
-					"intensity", val
-				)
-				electricity_vignette.queue_redraw(),
-			1.0,
-			0.0,
-			0.5
-		)
-		electro_tween.finished.connect(electricity_vignette.hide)
-
-
-## Shows the note reading interface populated with formatted note text.
-## [param note_text] The unformatted raw text string loaded from the note entity.
-func _on_note_opened(note_text: String) -> void:
-	print("UIController: _on_note_opened() received. Displaying note.")
-	if note_overlay_ui != null and note_text_label != null:
-		var formatted_text: String = note_text.replace("\\n", "\n")
-		note_text_label.text = formatted_text
-		note_overlay_ui.show()
-
-
-## Hides the note reading canvas layer.
-func _on_note_closed() -> void:
-	print("UIController: _on_note_closed() received. Hiding UI.")
-	if note_overlay_ui != null:
-		note_overlay_ui.hide()
-
-
-## Plays a green vignette pulse animation when the player restores health.
-func _trigger_heal_effect() -> void:
-	print("UIController: _trigger_heal_effect() called. Pulsing green heal vignette.")
-	if heal_vignette == null:
-		return
-
-	heal_vignette.show()
-
-	if heal_tween and heal_tween.is_valid():
-		heal_tween.kill()
-
-	heal_tween = (create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT))
-
-	if heal_vignette.material is ShaderMaterial:
-		heal_tween.tween_method(
-			func(val: float) -> void:
-				(heal_vignette.material as ShaderMaterial).set_shader_parameter("intensity", val)
-				heal_vignette.queue_redraw(),
-			0.8,
-			0.0,
-			0.4
-		)
-	else:
-		heal_vignette.modulate = Color(0.0, 1.0, 0.2, 0.4)
-		heal_tween.tween_property(heal_vignette, "modulate:a", 0.0, 0.4)
-
-	heal_tween.finished.connect(heal_vignette.hide)
-
-
-## Toggles visibility of the sand sprint-restriction icon.
-## [param is_active] True if the player is currently on sand.
-func _on_sand_surface_toggled(is_active: bool) -> void:
-	print("UIController: Sand surface state toggled -> ", is_active)
-	if sand_indicator:
-		sand_indicator.visible = is_active
-
-
-## Toggles visibility of the ice skating icon.
-## [param is_active] True if the player is currently on ice.
-func _on_ice_surface_toggled(is_active: bool) -> void:
-	print("UIController: Ice surface state toggled -> ", is_active)
-	if ice_indicator:
-		ice_indicator.visible = is_active
-
-
-## Toggles visibility for the deep render hierarchy diagnostic panel via button press.
-func _on_render_diagnostic_button_pressed() -> void:
-	print("UIController: Render Diagnostics button pressed.")
-	if diagnostics_panel:
-		var is_open: bool = diagnostics_panel.toggle_window()
-		if render_diagnostic_button:
-			render_diagnostic_button.text = ("Diagnostics ON" if is_open else "Render Diagnostics")
-
-
-## Modulates rain droplet intensity based on camera pitch angle and manages drying transitions.
-## [param delta] The elapsed frame delta time in seconds.
-func _process_rain_pitch_and_vfx(delta: float) -> void:
-	if _is_underwater_active or _is_waterfall_active:
-		return
-
-	var pitch_factor: float = 1.0
-	var viewport: Viewport = get_viewport()
-	var camera: Camera3D = viewport.get_camera_3d() if viewport else null
-
-	if is_instance_valid(camera):
-		var cam_forward: Vector3 = -camera.global_transform.basis.z
-		var up_dot: float = cam_forward.dot(Vector3.UP)
-		# up_dot: -1.0 (looking down), 0.0 (horizon), 1.0 (looking up)
-		pitch_factor = clampf(remap(up_dot, -0.35, 0.75, 0.0, 1.8), 0.0, 2.0)
-
-	var target_val: float = _target_rain_intensity * pitch_factor
-	_current_rain_intensity = lerpf(_current_rain_intensity, target_val, delta * 6.0)
-
-	if _current_rain_intensity > 0.001 or _target_rain_intensity > 0.001:
-		set_water_vfx_state(0, _current_rain_intensity, 0.0, 1.5)
-	elif is_instance_valid(water_vfx_overlay) and water_vfx_overlay.visible:
-		set_water_vfx_state(0, 0.0, 0.0, 1.5)
-
-
-## Handles underwater VFX state transitions emitted by [WaterBody].
-## [param is_submerged] Whether the camera is submerged.
-## [param wash_intensity] Distortion strength for underwater refraction.
-## [param drop_intensity] Droplet lens effect intensity.
-## [param clear_prog] Wipe mask progress across the screen (0.0 to 1.5).
-func _on_underwater_vfx_toggled(
-	is_submerged: bool, wash_intensity: float, drop_intensity: float, clear_prog: float
-) -> void:
-	_is_underwater_active = is_submerged
-	print(
-		"UIController: Underwater VFX -> Active: ",
-		is_submerged,
-		" Wash: ",
-		wash_intensity,
-		" Drops: ",
-		drop_intensity,
-		" Wipe: ",
-		clear_prog
-	)
-	if is_submerged:
-		set_water_vfx_state(0, drop_intensity, wash_intensity, clear_prog)
-	else:
-		set_water_vfx_state(0, 0.0, 0.0, 1.5)
-
-
-## Handles waterfall screen wash and wipe transitions emitted by [WaterfallStream].
-## [param is_active] Whether the player is contacting or exiting the waterfall.
-## [param wash_intensity] Flowing stream distortion strength.
-## [param clear_prog] Wipe mask progress across the screen (0.0 to 1.5).
-func _on_waterfall_vfx_toggled(is_active: bool, wash_intensity: float, clear_prog: float) -> void:
-	_is_waterfall_active = is_active
-	print("UIController: Waterfall VFX -> Active: ", is_active, " Wipe: ", clear_prog)
-	if is_active:
-		set_water_vfx_state(2, 0.5, wash_intensity, clear_prog)
-	else:
-		set_water_vfx_state(2, 0.0, 0.0, 1.5)
-
-
-## Handles screen rain droplet volume transitions and starts drying timer on exit.
-## [param intensity] Rain droplet effect strength (0.0 to 1.0).
-func _on_rain_vfx_toggled(intensity: float) -> void:
-	print("UIController: Rain VFX toggled -> Target intensity: ", intensity)
-	if _rain_fade_tween and _rain_fade_tween.is_valid():
-		_rain_fade_tween.kill()
-
-	if intensity > 0.0:
-		_target_rain_intensity = intensity
-	else:
-		# Smoothly evaporate droplets over 2.8 seconds on leaving rain
-		_rain_fade_tween = (create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT))
-		_rain_fade_tween.tween_property(self, "_target_rain_intensity", 0.0, 2.8)
+		_toggle_metrics_panel()

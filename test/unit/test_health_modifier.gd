@@ -1,6 +1,8 @@
+## Unit test suite for verifying the behavior of the health modifier system.
 extends GutTest
 
-const ModifierScript = preload("res://shared/health_modifier.gd")
+## Preloaded script reference for the health modifier under test.
+const MODIFIER_SCRIPT: GDScript = preload("res://shared/health_modifier.gd")
 
 ## Variant instance for the health modifier under test.
 var modifier: Variant = null
@@ -10,25 +12,31 @@ var dummy_body: Node3D = null
 var health_comp: Variant = null
 
 
+## Mock implementation of the health modifier to simulate overlapping bodies.
 class MockModifier:
 	extends "res://shared/health_modifier.gd"
-	var dummy_bodies: Array[Node3D] = []
 
+	## Simulated collection of bodies inside the modifier area.
+	var mock_bodies: Array[Node3D] = []
+
+	## Returns the simulated list of overlapping physics bodies.
+	@warning_ignore("native_method_override")
 	func get_overlapping_bodies() -> Array[Node3D]:
-		return dummy_bodies
+		print("MockModifier: get_overlapping_bodies() returning mocked bodies.")
+		return mock_bodies
 
 
+## Initializes test fixtures and setup node hierarchy before each test run.
 func before_each() -> void:
 	print("TestHealthModifier: before_each() setup.")
 
-	modifier = ModifierScript.new()
+	modifier = MODIFIER_SCRIPT.new()
 	add_child_autofree(modifier)
-	modifier.tick_interval = 0.1  # Faster ticks for testing
+	modifier.tick_interval = 0.1
 
 	dummy_body = Node3D.new()
 	add_child_autofree(dummy_body)
 
-	# Add a structural node to match the get_node_or_null("Components/HealthComponent") path
 	var components_node: Node = Node.new()
 	components_node.name = "Components"
 	dummy_body.add_child(components_node)
@@ -40,37 +48,28 @@ func before_each() -> void:
 	health_comp._ready()
 
 
-class MockModifier:
-	extends "res://shared/health_modifier.gd"
-	var mock_bodies: Array[Node3D] = []
-
-	func get_overlapping_bodies() -> Array[Node3D]:
-		return mock_bodies
-
-
+## Verifies that negative modifier values reduce the target's current health.
 func test_modifier_applies_damage() -> void:
 	print("TestHealthModifier: test_modifier_applies_damage() called.")
 
 	var mocked_modifier: MockModifier = MockModifier.new()
 	add_child_autofree(mocked_modifier)
 	mocked_modifier.mock_bodies = [dummy_body]
-
 	mocked_modifier.modify_amount = -20
 
-	# Trigger timeout manually
 	mocked_modifier._on_tick_timer_timeout()
 
 	assert_eq(health_comp.current_health, 80, "Health should decrease by 20 from modifier.")
 
 
+## Verifies that positive modifier values restore the target's current health.
 func test_modifier_applies_healing() -> void:
 	print("TestHealthModifier: test_modifier_applies_healing() called.")
-	health_comp.take_damage(50)  # Set health to 50
+	health_comp.take_damage(50)
 
 	var mocked_modifier: MockModifier = MockModifier.new()
 	add_child_autofree(mocked_modifier)
 	mocked_modifier.mock_bodies = [dummy_body]
-
 	mocked_modifier.modify_amount = 30
 
 	mocked_modifier._on_tick_timer_timeout()

@@ -9,6 +9,7 @@
 [ext_resource type="Texture2D" uid="uid://bwk3r3s3o1j1t" path="res://assets/images/icon_keycard_g.png" id="4_ju45i"]
 [ext_resource type="Texture2D" uid="uid://d11qvtoiajmle" path="res://assets/images/UI/UI_Circle_Zoom_Inner.png" id="4_wm3ai"]
 [ext_resource type="Shader" uid="uid://b7hv0lpr3sylm" path="res://ui/ui_vignette.gdshader" id="5_8dubc"]
+[ext_resource type="Script" uid="uid://b7hmhcs661l4w" path="res://ui/screen_effects_manager.gd" id="6_fgtw6"]
 [ext_resource type="Shader" uid="uid://bly82k8d04nmt" path="res://ui/ui_zoom_fisheye_blur.gdshader" id="6_p7vwb"]
 [ext_resource type="Shader" uid="uid://cyxf51y1bvmjn" path="res://vfx/heal_vignette.gdshader" id="7_c3fg2"]
 [ext_resource type="Script" uid="uid://yhhwmqo4b0yi" path="res://core/dev_metrics.gd" id="7_p7vwb"]
@@ -19,12 +20,16 @@
 [ext_resource type="Shader" uid="uid://wmp7kwratrjt" path="res://vfx/water_effects_overlay.gdshader" id="10_fgtw6"]
 [ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="11_bi8hs"]
 [ext_resource type="Script" uid="uid://bq62qlt337705" path="res://ui/chapter_title_container.gd" id="11_hrmpd"]
+[ext_resource type="Script" uid="uid://cn8iga4b8ipp7" path="res://ui/crosshair_hud.gd" id="13_br2v7"]
 [ext_resource type="Texture2D" uid="uid://buyk2btocs7de" path="res://assets/images/UI_icon_boot_sprint.png" id="13_ju45i"]
 [ext_resource type="Script" uid="uid://1mw0s646lik2" path="res://ui/diagnostics_panel.gd" id="15_rkf1o"]
 [ext_resource type="PackedScene" uid="uid://r7e1pqddjcjx" path="res://ui/death_screen.tscn" id="16_mf2ns"]
 [ext_resource type="Shader" uid="uid://cnul3imnv48gv" path="res://vfx/pulsing_border.gdshader" id="17_0avjw"]
 [ext_resource type="Texture2D" uid="uid://4exusdjgfeuy" path="res://assets/images/UI_Icon_Boot_Move.png" id="17_bw7v0"]
+[ext_resource type="Script" uid="uid://68godg1f7m7p" path="res://ui/player_status_hud.gd" id="17_c44sx"]
 [ext_resource type="Texture2D" uid="uid://bxdqmfj8erajr" path="res://assets/images/UI_Icon_Boot_Ice.png" id="18_bw7v0"]
+[ext_resource type="Script" uid="uid://c5ucjjha1efk8" path="res://ui/notification_hud.gd" id="23_k48q6"]
+[ext_resource type="Script" uid="uid://dvlg5io1bfsi1" path="res://ui/debug_overlay.gd" id="24_c74r5"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_p7vwb"]
 shader = ExtResource("5_8dubc")
@@ -74,9 +79,6 @@ shader = ExtResource("2_x4jx1")
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_8dubc"]
 shader = ExtResource("2_x4jx1")
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nt7q6"]
-bg_color = Color(0.040375, 0.041947637, 0.037145004, 1)
-
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_3tx63"]
 shader = ExtResource("17_0avjw")
 shader_parameter/border_color = Color(1, 0.1, 0.1, 1)
@@ -89,6 +91,9 @@ shader_parameter/max_alpha = 0.9
 shader = ExtResource("10_7dvkv")
 shader_parameter/fill_threshold = 0.5
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_nt7q6"]
+bg_color = Color(0.040375, 0.041947637, 0.037145004, 1)
+
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bi8hs"]
 bg_color = Color(0, 0, 0, 1)
 border_width_left = 10
@@ -100,15 +105,19 @@ border_color = Color(0.21960784, 0.21960784, 0.21960784, 0)
 [node name="UI" type="CanvasLayer" unique_id=1944889716]
 process_mode = 3
 script = ExtResource("1_nt7q6")
-card_textures = Dictionary[StringName, Texture2D]({
-&"G": ExtResource("4_ju45i"),
-&"L": ExtResource("3_mf2ns"),
-&"R": ExtResource("2_diyc5")
-})
-hearts_atlas = ExtResource("2_bi8hs")
 
-[node name="Vignette" type="ColorRect" parent="." unique_id=123181987]
+[node name="ScreenEffectsManager" type="Control" parent="." unique_id=966326993]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("6_fgtw6")
+
+[node name="Vignette" type="ColorRect" parent="ScreenEffectsManager" unique_id=123181987]
 material = SubResource("ShaderMaterial_p7vwb")
+layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -116,7 +125,8 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="PainOverlay" type="ColorRect" parent="." unique_id=897942492]
+[node name="PainOverlay" type="ColorRect" parent="ScreenEffectsManager" unique_id=897942492]
+layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -125,32 +135,36 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(1, 0, 0, 0)
 
-[node name="HealVignette" type="ColorRect" parent="." unique_id=2118438508]
+[node name="HealVignette" type="ColorRect" parent="ScreenEffectsManager" unique_id=2118438508]
 material = SubResource("ShaderMaterial_3lbto")
+layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="ElectricityVignette" type="ColorRect" parent="." unique_id=370217648]
+[node name="ElectricityVignette" type="ColorRect" parent="ScreenEffectsManager" unique_id=370217648]
 material = SubResource("ShaderMaterial_kwflg")
+layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="GlitchOverlay" type="ColorRect" parent="." unique_id=93627812]
+[node name="GlitchOverlay" type="ColorRect" parent="ScreenEffectsManager" unique_id=93627812]
 material = SubResource("ShaderMaterial_gdmj0")
+layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="FisheyeZoom" type="ColorRect" parent="." unique_id=1926985645]
+[node name="FisheyeZoom" type="ColorRect" parent="ScreenEffectsManager" unique_id=1926985645]
 material = SubResource("ShaderMaterial_cgfq5")
+layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -158,17 +172,17 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="WaterVFXOverlay" type="ColorRect" parent="." unique_id=2142477501]
+[node name="WaterVFXOverlay" type="ColorRect" parent="ScreenEffectsManager" unique_id=2142477501]
 material = SubResource("ShaderMaterial_6cxyx")
+layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-metadata/_edit_use_anchors_ = true
 
-[node name="CrosshairContainer" type="CenterContainer" parent="." unique_id=1733915005]
+[node name="CrosshairHUD" type="CenterContainer" parent="." unique_id=1733915005]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -177,8 +191,9 @@ grow_vertical = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 mouse_filter = 2
+script = ExtResource("13_br2v7")
 
-[node name="CenterDot" type="TextureRect" parent="CrosshairContainer" unique_id=1855431409]
+[node name="CenterDot" type="TextureRect" parent="CrosshairHUD" unique_id=1855431409]
 material = SubResource("ShaderMaterial_yev5y")
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
@@ -189,7 +204,7 @@ texture = SubResource("CompressedTexture2D_xlq6p")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="UICircleZoom" type="TextureRect" parent="CrosshairContainer" unique_id=752600801]
+[node name="UICircleZoom" type="TextureRect" parent="CrosshairHUD" unique_id=752600801]
 material = SubResource("ShaderMaterial_gdt2y")
 custom_minimum_size = Vector2(512, 512)
 layout_mode = 2
@@ -198,7 +213,7 @@ texture = ExtResource("3_gdt2y")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="UICircleZoomInner" type="TextureRect" parent="CrosshairContainer" unique_id=486480165]
+[node name="UICircleZoomInner" type="TextureRect" parent="CrosshairHUD" unique_id=486480165]
 material = SubResource("ShaderMaterial_8dubc")
 custom_minimum_size = Vector2(512, 512)
 layout_mode = 2
@@ -207,7 +222,183 @@ texture = ExtResource("4_wm3ai")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="NoclipAlertContainer" type="MarginContainer" parent="." unique_id=116442504]
+[node name="PlayerStatusHUD" type="MarginContainer" parent="." unique_id=2046781798]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -592.0
+offset_right = 148.0
+grow_vertical = 0
+size_flags_vertical = 3
+mouse_filter = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_bottom = 20
+script = ExtResource("17_c44sx")
+hearts_atlas = ExtResource("2_bi8hs")
+card_textures = Dictionary[StringName, Texture2D]({
+&"G": ExtResource("4_ju45i"),
+&"L": ExtResource("3_mf2ns"),
+&"R": ExtResource("2_diyc5")
+})
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PlayerStatusHUD" unique_id=2080919768]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 2
+
+[node name="SprintDebuff" type="Control" parent="PlayerStatusHUD/VBoxContainer" unique_id=874306912]
+custom_minimum_size = Vector2(128, 128)
+layout_mode = 2
+
+[node name="SprintIcon" type="TextureRect" parent="PlayerStatusHUD/VBoxContainer/SprintDebuff" unique_id=1986468836]
+custom_minimum_size = Vector2(128, 128)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("13_ju45i")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="DebuffBar" type="TextureProgressBar" parent="PlayerStatusHUD/VBoxContainer/SprintDebuff" unique_id=1981143149]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+step = 0.01
+fill_mode = 5
+nine_patch_stretch = true
+texture_progress = ExtResource("13_ju45i")
+tint_progress = Color(0, 0, 0, 0.78431374)
+
+[node name="BorderOverlay" type="NinePatchRect" parent="PlayerStatusHUD/VBoxContainer/SprintDebuff" unique_id=1836570237]
+material = SubResource("ShaderMaterial_3tx63")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("13_ju45i")
+
+[node name="ImmobilizeDebuff" type="Control" parent="PlayerStatusHUD/VBoxContainer" unique_id=1900370166]
+custom_minimum_size = Vector2(128, 128)
+layout_mode = 2
+
+[node name="MoveIcon" type="TextureRect" parent="PlayerStatusHUD/VBoxContainer/ImmobilizeDebuff" unique_id=1452863373]
+custom_minimum_size = Vector2(128, 128)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("17_bw7v0")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="DebuffBar" type="TextureProgressBar" parent="PlayerStatusHUD/VBoxContainer/ImmobilizeDebuff" unique_id=1075602369]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+step = 0.01
+fill_mode = 5
+nine_patch_stretch = true
+texture_progress = ExtResource("17_bw7v0")
+tint_progress = Color(0, 0, 0, 0.78431374)
+
+[node name="BorderOverlay" type="NinePatchRect" parent="PlayerStatusHUD/VBoxContainer/ImmobilizeDebuff" unique_id=1875192536]
+material = SubResource("ShaderMaterial_3tx63")
+custom_minimum_size = Vector2(128, 128)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("17_bw7v0")
+
+[node name="SandIndicator" type="HBoxContainer" parent="PlayerStatusHUD/VBoxContainer" unique_id=158805436]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="PlayerStatusHUD/VBoxContainer/SandIndicator" unique_id=1143626874]
+custom_minimum_size = Vector2(128, 128)
+layout_mode = 2
+texture = ExtResource("13_ju45i")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="IceIndicator" type="HBoxContainer" parent="PlayerStatusHUD/VBoxContainer" unique_id=1120879638]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="PlayerStatusHUD/VBoxContainer/IceIndicator" unique_id=1848050965]
+custom_minimum_size = Vector2(128, 128)
+layout_mode = 2
+texture = ExtResource("18_bw7v0")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="KeycardsContainer" type="HBoxContainer" parent="PlayerStatusHUD/VBoxContainer" unique_id=843247494]
+layout_mode = 2
+
+[node name="HeartsContainer" type="HBoxContainer" parent="PlayerStatusHUD/VBoxContainer" unique_id=887507209]
+material = SubResource("ShaderMaterial_7dvkv")
+layout_mode = 2
+
+[node name="NotificationHUD" type="Control" parent="." unique_id=1462214156]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_top = 40.0
+offset_bottom = 40.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("23_k48q6")
+
+[node name="WarningCanvasGroup" type="CanvasGroup" parent="NotificationHUD" unique_id=741384814]
+
+[node name="WarningLabel" type="Label" parent="NotificationHUD/WarningCanvasGroup" unique_id=562618420]
+modulate = Color(1, 1, 1, 0)
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -0.5
+offset_top = -16.5
+offset_right = 0.5
+offset_bottom = 16.5
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 32
+horizontal_alignment = 1
+
+[node name="NoteOverlayUI" type="CanvasLayer" parent="NotificationHUD" unique_id=825799846]
+visible = false
+
+[node name="NoteText" type="RichTextLabel" parent="NotificationHUD/NoteOverlayUI" unique_id=1426030487 groups=["note_instruction_label"]]
+visible = false
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -40.0
+offset_right = 40.0
+grow_vertical = 0
+
+[node name="DebugOverlay" type="CanvasLayer" parent="." unique_id=847592789]
+script = ExtResource("24_c74r5")
+
+[node name="NoclipAlertContainer" type="MarginContainer" parent="DebugOverlay" unique_id=116442504]
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
@@ -218,15 +409,73 @@ grow_horizontal = 2
 mouse_filter = 2
 theme_override_constants/margin_top = 30
 
-[node name="NoclipMessageContainer" type="PanelContainer" parent="NoclipAlertContainer" unique_id=842353472]
+[node name="NoclipMessageContainer" type="PanelContainer" parent="DebugOverlay/NoclipAlertContainer" unique_id=842353472]
 visible = false
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_nt7q6")
 
-[node name="NoclipLabelMessage" type="Label" parent="NoclipAlertContainer/NoclipMessageContainer" unique_id=1471769217]
+[node name="NoclipLabelMessage" type="Label" parent="DebugOverlay/NoclipAlertContainer/NoclipMessageContainer" unique_id=1471769217]
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 16
+
+[node name="DebugPanel" type="CanvasLayer" parent="DebugOverlay" unique_id=1244748191]
+
+[node name="PanelContainer" type="PanelContainer" parent="DebugOverlay/DebugPanel" unique_id=223301833]
+offset_right = 40.0
+offset_bottom = 40.0
+theme_override_styles/panel = SubResource("StyleBoxFlat_bi8hs")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="DebugOverlay/DebugPanel/PanelContainer" unique_id=785923227]
+layout_mode = 2
+
+[node name="FullbrightButton" type="Button" parent="DebugOverlay/DebugPanel/PanelContainer/VBoxContainer" unique_id=331063187]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_font_sizes/font_size = 16
+text = "Fullbright Off"
+alignment = 0
+
+[node name="WireframeButton" type="Button" parent="DebugOverlay/DebugPanel/PanelContainer/VBoxContainer" unique_id=821633458]
+layout_mode = 2
+size_flags_vertical = 3
+text = "Wireframe Off"
+alignment = 0
+
+[node name="WireframeOverlayButton" type="Button" parent="DebugOverlay/DebugPanel/PanelContainer/VBoxContainer" unique_id=496048571]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+text = "Wireframe Overlay Off"
+alignment = 0
+
+[node name="NoclipButton" type="Button" parent="DebugOverlay/DebugPanel/PanelContainer/VBoxContainer" unique_id=720158026]
+layout_mode = 2
+size_flags_vertical = 3
+text = "Noclip Off"
+alignment = 0
+
+[node name="MetricsButton" type="Button" parent="DebugOverlay/DebugPanel/PanelContainer/VBoxContainer" unique_id=2062671107]
+layout_mode = 2
+size_flags_vertical = 3
+text = "Metrics Off"
+alignment = 0
+
+[node name="CollisionButton" type="Button" parent="DebugOverlay/DebugPanel/PanelContainer/VBoxContainer" unique_id=1630206710]
+layout_mode = 2
+text = "Collisions Off"
+alignment = 0
+
+[node name="HideUIButton" type="Button" parent="DebugOverlay/DebugPanel/PanelContainer/VBoxContainer" unique_id=1558548453]
+layout_mode = 2
+text = "Hide UI"
+alignment = 0
+
+[node name="RenderDiagnosticButton" type="Button" parent="DebugOverlay/DebugPanel/PanelContainer/VBoxContainer" unique_id=1977478197]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Render Diagnostics Off"
+alignment = 0
 
 [node name="MetricsPanel" type="PanelContainer" parent="." unique_id=1400618986]
 anchors_preset = 11
@@ -292,127 +541,6 @@ mouse_filter = 2
 color = Color(0, 0, 0, 0.53333336)
 script = ExtResource("8_ktti3")
 
-[node name="HealthMargin" type="MarginContainer" parent="." unique_id=2046781798]
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_top = -40.0
-offset_right = 40.0
-grow_vertical = 0
-mouse_filter = 2
-theme_override_constants/margin_left = 20
-theme_override_constants/margin_bottom = 20
-
-[node name="VBoxContainer" type="VBoxContainer" parent="HealthMargin" unique_id=2080919768]
-layout_mode = 2
-theme_override_constants/separation = 12
-
-[node name="SprintDebuff" type="Control" parent="HealthMargin/VBoxContainer" unique_id=874306912]
-custom_minimum_size = Vector2(128, 128)
-layout_mode = 2
-
-[node name="SprintIcon" type="TextureRect" parent="HealthMargin/VBoxContainer/SprintDebuff" unique_id=1986468836]
-custom_minimum_size = Vector2(128, 128)
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-texture = ExtResource("13_ju45i")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="DebuffBar" type="TextureProgressBar" parent="HealthMargin/VBoxContainer/SprintDebuff" unique_id=1981143149]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-step = 0.01
-fill_mode = 5
-nine_patch_stretch = true
-texture_progress = ExtResource("13_ju45i")
-tint_progress = Color(0, 0, 0, 0.78431374)
-
-[node name="BorderOverlay" type="NinePatchRect" parent="HealthMargin/VBoxContainer/SprintDebuff" unique_id=1836570237]
-material = SubResource("ShaderMaterial_3tx63")
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-texture = ExtResource("13_ju45i")
-
-[node name="ImmobilizeDebuff" type="Control" parent="HealthMargin/VBoxContainer" unique_id=1900370166]
-custom_minimum_size = Vector2(128, 128)
-layout_mode = 2
-
-[node name="MoveIcon" type="TextureRect" parent="HealthMargin/VBoxContainer/ImmobilizeDebuff" unique_id=1452863373]
-custom_minimum_size = Vector2(128, 128)
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-texture = ExtResource("17_bw7v0")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="DebuffBar" type="TextureProgressBar" parent="HealthMargin/VBoxContainer/ImmobilizeDebuff" unique_id=1075602369]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-step = 0.01
-fill_mode = 5
-nine_patch_stretch = true
-texture_progress = ExtResource("17_bw7v0")
-tint_progress = Color(0, 0, 0, 0.78431374)
-
-[node name="BorderOverlay" type="NinePatchRect" parent="HealthMargin/VBoxContainer/ImmobilizeDebuff" unique_id=1875192536]
-material = SubResource("ShaderMaterial_3tx63")
-custom_minimum_size = Vector2(128, 128)
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-texture = ExtResource("17_bw7v0")
-
-[node name="SandIndicator" type="HBoxContainer" parent="HealthMargin/VBoxContainer" unique_id=158805436]
-layout_mode = 2
-
-[node name="TextureRect" type="TextureRect" parent="HealthMargin/VBoxContainer/SandIndicator" unique_id=1143626874]
-custom_minimum_size = Vector2(128, 128)
-layout_mode = 2
-texture = ExtResource("13_ju45i")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="IceIndicator" type="HBoxContainer" parent="HealthMargin/VBoxContainer" unique_id=1120879638]
-layout_mode = 2
-
-[node name="TextureRect" type="TextureRect" parent="HealthMargin/VBoxContainer/IceIndicator" unique_id=1848050965]
-custom_minimum_size = Vector2(128, 128)
-layout_mode = 2
-texture = ExtResource("18_bw7v0")
-expand_mode = 1
-stretch_mode = 5
-
-[node name="KeycardsContainer" type="HBoxContainer" parent="HealthMargin/VBoxContainer" unique_id=843247494]
-layout_mode = 2
-
-[node name="HeartsContainer" type="HBoxContainer" parent="HealthMargin/VBoxContainer" unique_id=887507209]
-material = SubResource("ShaderMaterial_7dvkv")
-layout_mode = 2
-
 [node name="ChapterTitleContainer" type="MarginContainer" parent="." unique_id=464429887]
 anchors_preset = 15
 anchor_right = 1.0
@@ -451,96 +579,9 @@ theme_override_font_sizes/normal_font_size = 64
 bbcode_enabled = true
 scroll_active = false
 
-[node name="DebugPanel" type="CanvasLayer" parent="." unique_id=1244748191]
-
-[node name="PanelContainer" type="PanelContainer" parent="DebugPanel" unique_id=223301833]
-offset_right = 40.0
-offset_bottom = 40.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_bi8hs")
-
-[node name="VBoxContainer" type="VBoxContainer" parent="DebugPanel/PanelContainer" unique_id=785923227]
-layout_mode = 2
-
-[node name="FullbrightButton" type="Button" parent="DebugPanel/PanelContainer/VBoxContainer" unique_id=331063187]
-layout_mode = 2
-size_flags_vertical = 3
-theme_override_font_sizes/font_size = 16
-text = "Fullbright Off"
-alignment = 0
-
-[node name="WireframeButton" type="Button" parent="DebugPanel/PanelContainer/VBoxContainer" unique_id=821633458]
-layout_mode = 2
-size_flags_vertical = 3
-text = "Wireframe Off"
-alignment = 0
-
-[node name="WireframeOverlayButton" type="Button" parent="DebugPanel/PanelContainer/VBoxContainer" unique_id=496048571]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_vertical = 3
-text = "Wireframe Overlay Off"
-alignment = 0
-
-[node name="NoclipButton" type="Button" parent="DebugPanel/PanelContainer/VBoxContainer" unique_id=720158026]
-layout_mode = 2
-size_flags_vertical = 3
-text = "Noclip Off"
-alignment = 0
-
-[node name="MetricsButton" type="Button" parent="DebugPanel/PanelContainer/VBoxContainer" unique_id=2062671107]
-layout_mode = 2
-size_flags_vertical = 3
-text = "Metrics Off"
-alignment = 0
-
-[node name="CollisionButton" type="Button" parent="DebugPanel/PanelContainer/VBoxContainer" unique_id=1630206710]
-layout_mode = 2
-text = "Collisions Off"
-alignment = 0
-
-[node name="HideUIButton" type="Button" parent="DebugPanel/PanelContainer/VBoxContainer" unique_id=1558548453]
-layout_mode = 2
-text = "Hide UI"
-alignment = 0
-
-[node name="RenderDiagnosticButton" type="Button" parent="DebugPanel/PanelContainer/VBoxContainer" unique_id=1977478197]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Render Diagnostics Off"
-alignment = 0
-
 [node name="DeathScreen" parent="." unique_id=1910211973 instance=ExtResource("16_mf2ns")]
 visible = false
 
-[node name="WarningCanvasGroup" type="CanvasGroup" parent="." unique_id=741384814]
-
-[node name="WarningLabel" type="Label" parent="WarningCanvasGroup" unique_id=562618420]
-modulate = Color(1, 1, 1, 0)
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -0.5
-offset_top = -16.5
-offset_right = 0.5
-offset_bottom = 16.5
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_font_sizes/font_size = 32
-horizontal_alignment = 1
-
-[node name="NoteOverlayUI" type="CanvasLayer" parent="." unique_id=825799846]
-
-[node name="NoteText" type="RichTextLabel" parent="NoteOverlayUI" unique_id=1426030487 groups=["note_instruction_label"]]
-visible = false
-anchors_preset = 2
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_top = -40.0
-offset_right = 40.0
-grow_vertical = 0
-
-[connection signal="pressed" from="DebugPanel/PanelContainer/VBoxContainer/WireframeButton" to="." method="_on_wireframe_button_pressed"]
-[connection signal="pressed" from="DebugPanel/PanelContainer/VBoxContainer/WireframeOverlayButton" to="." method="_on_wireframe_overlay_button_pressed"]
-[connection signal="pressed" from="DebugPanel/PanelContainer/VBoxContainer/NoclipButton" to="." method="_on_noclip_button_pressed"]
+[connection signal="pressed" from="DebugOverlay/DebugPanel/PanelContainer/VBoxContainer/WireframeButton" to="." method="_on_wireframe_button_pressed"]
+[connection signal="pressed" from="DebugOverlay/DebugPanel/PanelContainer/VBoxContainer/WireframeOverlayButton" to="." method="_on_wireframe_overlay_button_pressed"]
+[connection signal="pressed" from="DebugOverlay/DebugPanel/PanelContainer/VBoxContainer/NoclipButton" to="." method="_on_noclip_button_pressed"]

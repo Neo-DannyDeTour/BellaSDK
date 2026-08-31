@@ -2012,11 +2012,17 @@ data = ExtResource("52_r3sdo")
 
 [node name="TriggerHint" parent="." unique_id=1784504971 instance=ExtResource("53_ol82b")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.34226102, 3.5, 2.7305722)
+trigger_size = Vector3(2, 2, 2)
+trigger_color = Color(0.2, 0.6, 1, 0.8)
 trigger_text = "HINT jump"
+custom_message = ""
+trigger_once = true
+show_on_screen = true
 
 [node name="TriggerHint2" parent="." unique_id=1323132102 instance=ExtResource("53_ol82b")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5829079, 3.5, 5.6184735)
 trigger_size = Vector3(0.75, 2, 2)
+trigger_color = Color(0.2, 0.6, 1, 0.8)
 trigger_text = "HINT blind00"
 hint_type = 0
 custom_message = "HI! You've just activated the custom hint message. You're located in a dark, moody room on the second floor. There is a room with 3 broken ventilators up ahead, an old shack to your right and a couple of tables. This room has no gameplay goal. Just a visual test of my future game. "

@@ -5,46 +5,44 @@ extends GutTest
 ## The [BearTrap] instance under test.
 var bear_trap: BearTrap = null
 
-## The mock [Player] instance.
-var mock_player: MockPlayer = null
+## The mock player instance.
+var mock_player: InnerMockPlayer = null
 
 
 ## Mock implementation of [Player] tracking damage and holding mock components.
-class MockPlayer:
+class InnerMockPlayer:
 	extends Player
 
 	## Tracks the last damage value applied.
 	var last_damage: int = 0
 
+	## Initializes mock components for testing.
+	func _init() -> void:
+		locomotion_component = InnerMockLocomotion.new()
+		system_menu = InnerMockMenu.new()
+
 	## Simulates player damage.
 	func take_damage(amount: int) -> void:
-		print("TestBearTrap: MockPlayer take_damage() called with: ", amount)
+		print("TestBearTrap: InnerMockPlayer take_damage() called with: ", amount)
 		last_damage = amount
 
 
 ## Mock locomotion component tracking sprint flags.
-class MockLocomotion:
+class InnerMockLocomotion:
 	extends PlayerLocomotionComponent
 
-	## Tracks sprint capability flag.
-	var can_sprint: bool = true
+	## Initializes default locomotion sprint state.
+	func _init() -> void:
+		can_sprint = true
 
 
 ## Mock system menu controller tracking stun status.
-class MockMenu:
+class InnerMockMenu:
 	extends SystemMenuController
 
-	## Tracks stun status flag.
-	var is_stunned: bool = false
-
-
-## Stub component to satisfy missing [Player] dependencies.
-class DummyComponent:
-	extends Node
-
-	## Empty initialization stub.
-	func initialize(_p: Node) -> void:
-		pass
+	## Initializes default menu stun state.
+	func _init() -> void:
+		is_stunned = false
 
 
 ## Sets up the bear trap and typed mock dependencies before each test.
@@ -55,7 +53,7 @@ func before_each() -> void:
 	bear_trap = bear_trap_scene.instantiate() as BearTrap
 	add_child_autoqfree(bear_trap)
 
-	mock_player = MockPlayer.new()
+	mock_player = InnerMockPlayer.new()
 	add_child_autoqfree(mock_player)
 	await get_tree().process_frame
 
