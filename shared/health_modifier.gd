@@ -31,6 +31,8 @@ func _on_tick_timer_timeout() -> void:
 	for body: Node3D in bodies:
 		# Added "Components/" to the relative path
 		var health_node: Node = body.get_node_or_null("Components/HealthComponent")
+		if health_node == null:
+			health_node = body.find_child("HealthComponent", true, false)
 
 		if health_node is HealthComponent:
 			if modify_amount < 0:
