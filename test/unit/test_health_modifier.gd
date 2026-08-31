@@ -10,6 +10,14 @@ var dummy_body: Node3D = null
 var health_comp: Variant = null
 
 
+class MockModifier:
+	extends "res://shared/health_modifier.gd"
+	var dummy_bodies: Array[Node3D] = []
+
+	func get_overlapping_bodies() -> Array[Node3D]:
+		return dummy_bodies
+
+
 func before_each() -> void:
 	print("TestHealthModifier: before_each() setup.")
 
