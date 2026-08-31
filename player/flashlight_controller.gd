@@ -1,28 +1,50 @@
+## Controls the player's flashlight, managing dynamic shadows, flickering,
+## and volumetric fog rendering logic.
+##
+## Tracks wall proximity to adjust position, adds procedural jitter, and
+## synchronizes sway with mouse motion.
 class_name FlashlightController
 extends Node3D
 
 @export_category("Node References")
+## Reference to the main player view camera for calculating raycasts.
 @export var camera: Camera3D
+## Reference to the main forward-facing spotlight.
 @export var flashlight: SpotLight3D
+## Optional ambient light to illuminate the area immediately surrounding the player.
 @export var omni_light: OmniLight3D
 
 @export_category("Flashlight Settings")
+## The distance in meters the raycast checks to detect walls and retract the flashlight.
 @export var flashlight_maintain_distance: float = 1.5
+## The default target light energy during stable operation.
 @export var base_energy: float = 10.0
-@export var volumetric_energy: float = 8.0  # High value to make the beam visible
+## Intensity scalar specifically for rendering the beam inside volumetric fog.
+@export var volumetric_energy: float = 8.0
+## The maximum magnitude of procedural sway offset based on mouse movement.
 @export var sway_amount: float = 5.0
+## The interpolation speed for returning the sway offset to center.
 @export var smooth_speed: float = 10.0
+## The interpolation speed for the flashlight retracting backwards.
 @export var flashlight_pos_smoothness: float = 10.0
+## The interpolation speed for the flashlight sway rotation.
 @export var flashlight_rot_smoothness: float = 10.0
 
+## Cached local resting position of the flashlight setup.
 var default_pos: Vector3 = Vector3.ZERO
+## Calculated 2D coordinate for procedural sway offset targeting.
 var sway_target: Vector2 = Vector2.ZERO
+## Remaining duration in seconds for an active flicker event.
 var flicker_timer: float = 0.0
+## Tracks if the flashlight is currently executing a flicker event.
 var is_flickering: bool = false
+## Accumulated time index used for the procedural noise generator.
 var noise_time: float = 0.0
+## Dedicated noise instance used to create subtle positional jitter.
 var jitter_noise: FastNoiseLite = FastNoiseLite.new()
 
 
+## Caches initial positions and injects self into the parent player node.
 func _ready() -> void:
 	print("FlashlightController executing: Initializing setup.")
 	default_pos = position
@@ -42,6 +64,8 @@ func _ready() -> void:
 		player_node.set("flashlight_controller", self)
 
 
+## Catches unhandled input for the flashlight toggle action.
+## [param event] The incoming input event.
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("flashlight"):
 		var new_state: bool = not flashlight.visible
@@ -53,6 +77,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		print("Player executing: Toggled flashlight visibility to ", new_state)
 
 
+## Executes per-frame logic when the flashlight is powered on.
+## [param delta] Frame time delta in seconds.
 func _process(delta: float) -> void:
 	if not flashlight.visible:
 		return
@@ -62,6 +88,8 @@ func _process(delta: float) -> void:
 	_apply_instability(delta)
 
 
+## Smoothly rotates the flashlight rig in response to accumulated sway targeting.
+## [param delta] Frame time delta in seconds.
 func _apply_sway(delta: float) -> void:
 	var max_sway: float = 150.0
 	sway_target.x = clampf(sway_target.x, -max_sway, max_sway)
@@ -75,6 +103,9 @@ func _apply_sway(delta: float) -> void:
 	sway_target = sway_target.lerp(Vector2.ZERO, delta * (smooth_speed * 0.5))
 
 
+## Raycasts forward and smoothly pulls the flashlight body backward
+## to prevent clipping through walls.
+## [param delta] Frame time delta in seconds.
 func _apply_pushback(delta: float) -> void:
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var forward_dir: Vector3 = -camera.global_transform.basis.z
@@ -97,6 +128,8 @@ func _apply_pushback(delta: float) -> void:
 		flashlight.position.z = lerpf(flashlight.position.z, 0.0, delta * 15.0)
 
 
+## Introduces random energy flickering and subtle rotational noise to mimic aging hardware.
+## [param delta] Frame time delta in seconds.
 func _apply_instability(delta: float) -> void:
 	if not is_flickering and randf() < 0.003:
 		is_flickering = true

@@ -1,3 +1,7 @@
+## A modular player component managing movement, gravity, crouching, and interaction physics.
+##
+## Separates raw physics calculations, collision toggling, and input interpretation
+## out of the main player script, exposing properties for state machines to configure.
 class_name PlayerLocomotionComponent
 extends Node
 
@@ -81,7 +85,7 @@ const CROUCHING_HEIGHT: float = 1.0
 # VARIABLES
 # --------------------------------------
 ## The cached reference to the parent player entity controlling this component.
-var player: Player
+var player: CharacterBody3D
 
 ## Determines if this component is actively processing physical movement and updates.
 var is_active: bool = true
@@ -120,22 +124,27 @@ var on_safe_landing: bool = false
 var _last_sprint_time: int = 0
 
 
-func initialize(p_player: Player) -> void:
+## Caches the parent player character body for future transform updates.
+## [param p_player] The parent CharacterBody3D node.
+func initialize(p_player: CharacterBody3D) -> void:
 	print("LocomotionComponent: initialize() called. Caching player reference.")
 	player = p_player
 
 
+## Toggles the processing phase of the locomotion calculations.
+## [param active] The target state boolean flag.
 func set_physics_active(active: bool) -> void:
 	if is_active != active:
 		print("LocomotionComponent: set_physics_active() called. Setting active state to: ", active)
 		is_active = active
 
 
+## Frame execution managing continuous force applications and procedural animations.
+## [param delta] The physics frame delta time in seconds.
 func process_movement(delta: float) -> void:
 	if not is_active or not is_instance_valid(player):
 		return
 
-	# Continuously update the timestamp while the player is actively sprinting
 	if sprint_active:
 		_last_sprint_time = Time.get_ticks_msec()
 
@@ -143,20 +152,27 @@ func process_movement(delta: float) -> void:
 	_interpolate_head_height(delta)
 
 
-## Evaluates whether the player was sprinting within the specified time window (in milliseconds).
+## Evaluates whether the player was sprinting within the specified time window.
+## [param time_window_ms] Millisecond duration looking backwards in time.
+## [return] True if the player was sprinting during the window.
 func did_run_recently(time_window_ms: int = 10000) -> bool:
 	print("LocomotionComponent: did_run_recently() evaluated.")
 	return (Time.get_ticks_msec() - _last_sprint_time) <= time_window_ms
 
 
+## Caches the normalized movement input direction intended by the player.
+## [param new_dir] The incoming local input vector.
 func set_direction(new_dir: Vector3) -> void:
 	direction = new_dir
 
 
+## Retrieves the previously cached movement input direction.
+## [return] The player's normalized intended movement vector.
 func get_direction() -> Vector3:
 	return direction
 
 
+## Zeroes out both the intended movement vectors and actual physics velocity.
 func reset_momentum() -> void:
 	print("LocomotionComponent: reset_momentum() called. Clearing velocity arrays.")
 	if is_instance_valid(player):
@@ -165,6 +181,7 @@ func reset_momentum() -> void:
 	direction = Vector3.ZERO
 
 
+## Iterates floor collisions and injects persistent downward force into physics bodies.
 func _apply_weight_to_floor() -> void:
 	if not player.is_on_floor():
 		if is_instance_valid(_last_weighed_body):
@@ -205,6 +222,8 @@ func _apply_weight_to_floor() -> void:
 			return
 
 
+## Moves the head/camera node based on crouch or standing target values.
+## [param delta] The physics frame delta time in seconds.
 func _interpolate_head_height(delta: float) -> void:
 	if not is_instance_valid(head):
 		return
