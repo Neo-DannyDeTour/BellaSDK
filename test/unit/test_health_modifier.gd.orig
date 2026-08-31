@@ -35,6 +35,7 @@ func before_each() -> void:
 	modifier.tick_interval = 0.1
 
 	dummy_body = Node3D.new()
+	# Dummy body needs to be inside tree for get_node_or_null using relative paths to work
 	add_child_autofree(dummy_body)
 
 	var components_node: Node = Node.new()

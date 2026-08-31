@@ -1,11 +1,23 @@
+--- test/unit/test_health_modifier.gd
++++ test/unit/test_health_modifier.gd
+@@ -14,8 +14,7 @@
+
+
+ ## Mock implementation of the health modifier to simulate overlapping bodies.
+-class MockModifier:
+-	extends "res://shared/health_modifier.gd"
++class MockModifier extends "res://shared/health_modifier.gd":
+
+	## Simulated collection of bodies inside the modifier area.
+	var mock_bodies: Array[Node3D] = []
 --- test/unit/test_stats_component.gd
 +++ test/unit/test_stats_component.gd
-@@ -6,8 +6,7 @@
+@@ -5,8 +5,7 @@
  var stats: Variant = null
 
 
 -class MockHealthComponent:
--	extends Node
+-	extends "res://shared/health_component.gd"
 +class MockHealthComponent extends "res://shared/health_component.gd":
-	## Mocked current health
--	var current_health: int = 100
+	@warning_ignore("unused_signal")
+	signal died_mock
