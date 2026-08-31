@@ -28,7 +28,6 @@
 [ext_resource type="PackedScene" uid="uid://ep02e3j752sd" path="res://shared/ventilator.tscn" id="28_lnrub"]
 [ext_resource type="Texture2D" uid="uid://8u68cwmy0fbf" path="res://assets/VisTEST/2. Modular_Models/Walls/Walls_Concrete_Holes/Walls_Concrete_Holes_T_Concrete_Holes_Emission.png" id="30_r02c6"]
 [ext_resource type="Texture2D" uid="uid://hjtae12r5r6v" path="res://assets/VisTEST/2. Modular_Models/Walls/Walls_Concrete_Holes/Walls_Concrete_Holes_T_Concrete_Holes_Normal.png" id="31_5ywpj"]
-[ext_resource type="Texture2D" uid="uid://dgkssstugiddt" path="res://assets/VisTEST/2. Modular_Models/Walls/Walls_Concrete_Holes/Walls_Concrete_Holes_T_Concrete_Holes_Metallic-T_Concrete_Holes_Roughness.png" id="32_gh7m2"]
 [ext_resource type="PackedScene" uid="uid://c0cvl8ftmnbgv" path="res://assets/VisTEST/2. Modular_Models/Walkway/walkway_right.tscn" id="33_r02c6"]
 [ext_resource type="PackedScene" uid="uid://dr5pltmyu223j" path="res://assets/VisTEST/2. Modular_Models/Props/apply_light.tscn" id="35_gh7m2"]
 [ext_resource type="PackedScene" uid="uid://c4ns10vnlk1hx" path="res://assets/VisTEST/2. Modular_Models/Props/boxs_cables_wall_big.tscn" id="37_kja8q"]
@@ -70,7 +69,7 @@ sdfgi_cascades = 2
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6sdu6"]
 
-roughness_texture = ExtResource("32_gh7m2")
+
 emission_enabled = true
 emission_texture = ExtResource("30_r02c6")
 normal_enabled = true
