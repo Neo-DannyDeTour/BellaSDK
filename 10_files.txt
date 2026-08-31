@@ -1,0 +1,2047 @@
+========== core/FrameSpikeDetector.gd ==========
+## A performance monitoring node that detects and logs frame drops.
+##
+## [FrameSpikeDetector] hooks into the process loop to measure frame delta times.
+## If a frame takes longer than the [constant SPIKE_THRESHOLD_MS], it triggers an
+## immediate console report containing memory and rendering performance metrics.
+class_name FrameSpikeDetector
+extends Node
+
+## The maximum acceptable frame time in milliseconds before triggering a warning.
+## Target: 60 FPS -> ~16.66 ms frame time.
+const SPIKE_THRESHOLD_MS: float = 16.6
+
+
+## Called when the node enters the scene tree for the first time.
+## Initializes the detector and prints the monitoring threshold.
+func _ready() -> void:
+	print("FrameSpikeDetector initialized.")
+	print("Monitoring for frames over ", SPIKE_THRESHOLD_MS, " ms.")
+
+
+## Called every frame. Checks if the [param delta] exceeds the threshold.
+## [param delta] The time elapsed since the previous frame in seconds.
+func _process(delta: float) -> void:
+	var frame_time_ms: float = delta * 1000.0
+
+	if frame_time_ms > SPIKE_THRESHOLD_MS:
+		_report_spike_data(frame_time_ms)
+
+
+## Prints a detailed performance snapshot when a frame spike occurs.
+## [param frame_time_ms] The duration of the slow frame in milliseconds.
+func _report_spike_data(frame_time_ms: float) -> void:
+	print("!!! FRAME SPIKE DETECTED !!!")
+	print("Frame Time: ", frame_time_ms, " ms")
+	print("Gathering performance metrics...")
+
+	# Calculate Memory and VRAM in Megabytes
+	var mem_used: float = Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0
+	var vram_used: float = Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0
+
+	# Gather Rendering metrics (Draw calls, poly count, objects)
+	var draw_calls: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
+	var primitives: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))
+	var objects: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME))
+
+	print("--- Performance Snapshot ---")
+	print("RAM Used: ", snapped(mem_used, 0.01), " MB")
+	print("VRAM Used: ", snapped(vram_used, 0.01), " MB (Check textures if this spikes)")
+	print("Draw Calls: ", draw_calls, " (High calls = CPU bottleneck submitting to GPU)")
+	print("Primitives (Polygons): ", primitives, " (High count = Too many high-poly meshes)")
+	print("Objects Drawn: ", objects)
+	print("----------------------------")
+
+	# breakpoint
+========== core/GestureInputManager.gd ==========
+## Centralized input manager responsible for dispatching single-tap, hold,
+## double-tap, double-tap & hold, rapid mashing, chords, and ordered sequence combinations.
+extends Node
+
+## Emitted when an action binding is successfully resolved and triggered.
+## [param action] The name of the input action that was executed.
+## [param gesture] The gesture type detected.
+signal action_triggered(action: String, gesture: String)
+
+## Duration in seconds a button must be held down to trigger a hold gesture.
+const HOLD_THRESHOLD: float = 0.45
+
+## Maximum time window in seconds between taps to register multi-tap gestures.
+const MULTI_TAP_WINDOW: float = 0.30
+
+## Number of taps required to trigger a rapid mashing action.
+const MASH_TAP_COUNT: int = 3
+
+## Duration in seconds an input trigger is preserved in the buffer queue.
+const BUFFER_DURATION: float = 0.20
+
+## Internal tracking state for active physical inputs.
+var _active_inputs: Dictionary = {}
+
+## Maps action names to the physics frame tick when they were triggered.
+var _triggered_actions_frame: Dictionary = {}
+
+## Dictionary tracking the physics frame when an action was released.
+var _released_actions_frame: Dictionary = {}
+
+## Set of currently held physical key/button unique IDs.
+var _held_keys: Dictionary = {}
+
+## Circular buffer tracking recent action timestamps for input buffering.
+var _input_buffer: Dictionary = {}
+
+
+## Lifecycle method called when the node enters the scene tree.
+func _ready() -> void:
+	print("System: GestureInputManager initialized.")
+
+
+## Frame lifecycle method updating gesture timers and expiring buffered inputs.
+## [param delta] Frame execution delta in seconds.
+func _process(delta: float) -> void:
+	var keys_to_remove: Array = []
+	var now: float = Time.get_ticks_msec() / 1000.0
+
+	for action: Variant in _input_buffer.keys():
+		var timestamp: float = _input_buffer[action] as float
+		if now - timestamp > BUFFER_DURATION:
+			keys_to_remove.append(action)
+
+	for action: Variant in keys_to_remove:
+		_input_buffer.erase(action)
+	keys_to_remove.clear()
+
+	for input_key: Variant in _active_inputs.keys():
+		var data: Dictionary = _active_inputs[input_key] as Dictionary
+		var is_pressed: bool = data["is_pressed"] as bool
+		var gesture_type: String = data["gesture_type"] as String
+		var action: String = data["action"] as String
+
+		if is_pressed:
+			data["hold_timer"] = (data["hold_timer"] as float) + delta
+			if gesture_type == "hold" and not (data["hold_fired"] as bool):
+				if (data["hold_timer"] as float) >= HOLD_THRESHOLD:
+					data["hold_fired"] = true
+					_dispatch_action(action, "hold")
+			elif gesture_type == "double_tap_hold" and not (data["hold_fired"] as bool):
+				if (
+					(data["tap_count"] as int) >= 2
+					and (data["hold_timer"] as float) >= HOLD_THRESHOLD
+				):
+					data["hold_fired"] = true
+					_dispatch_action(action, "double_tap_hold")
+		else:
+			if (data["tap_window"] as float) > 0.0:
+				data["tap_window"] = (data["tap_window"] as float) - delta
+				if (data["tap_window"] as float) <= 0.0:
+					if gesture_type == "single_tap" and (data["tap_count"] as int) == 1:
+						_dispatch_action(action, "single_tap")
+					keys_to_remove.append(input_key)
+
+	for key: Variant in keys_to_remove:
+		_active_inputs.erase(key)
+
+	# Clean up frame-specific actions tracking
+	var current_frame: int = Engine.get_physics_frames()
+	var triggered_keys_to_remove: Array = []
+	for action: Variant in _triggered_actions_frame.keys():
+		var target_frame: int = _triggered_actions_frame[action] as int
+		if current_frame > target_frame + 1:
+			triggered_keys_to_remove.append(action)
+	for key: Variant in triggered_keys_to_remove:
+		_triggered_actions_frame.erase(key)
+
+	var released_keys_to_remove: Array = []
+	for action: Variant in _released_actions_frame.keys():
+		var target_frame: int = _released_actions_frame[action] as int
+		if current_frame > target_frame + 1:
+			released_keys_to_remove.append(action)
+	for key: Variant in released_keys_to_remove:
+		_released_actions_frame.erase(key)
+
+
+## Intercepts global input events to evaluate gestures, chords, and buffering.
+## [param event] The [InputEvent] received from the engine.
+func _input(event: InputEvent) -> void:
+	if not (event is InputEventKey or event is InputEventMouseButton):
+		return
+	if event is InputEventKey and (event as InputEventKey).is_echo():
+		return
+
+	var input_id: int = _get_unique_event_id(event)
+	var is_pressed: bool = event.is_pressed()
+
+	var matching_bindings: Array[Dictionary] = _get_actions_for_event(event)
+
+	if is_pressed:
+		var consumed_by_chord: bool = false
+
+		# 1. Check ordered chords before registering the new key into _held_keys
+		for binding_info: Dictionary in matching_bindings:
+			var gesture_type: String = binding_info["gesture"] as String
+			var chord_keys: Array = binding_info["chord_keys"] as Array
+			var action: String = binding_info["action"] as String
+
+			if gesture_type == "ordered_chord" and not chord_keys.is_empty():
+				var trigger_key: int = chord_keys[chord_keys.size() - 1] as int
+				# Trigger only if current key is the final key AND all preceding modifiers were already down
+				if input_id == trigger_key and _are_modifier_keys_held(chord_keys):
+					print("System: Ordered chord validated: ", action)
+					_dispatch_action(action, "ordered_chord")
+					consumed_by_chord = true
+
+			elif gesture_type == "chord" and not chord_keys.is_empty():
+				if _are_chord_keys_pressed(chord_keys):
+					print("System: Standard chord triggered for action: ", action)
+					_dispatch_action(action, "chord")
+					consumed_by_chord = true
+
+		_held_keys[input_id] = true
+
+		if consumed_by_chord:
+			return
+
+		for binding_info: Dictionary in matching_bindings:
+			var action: String = binding_info["action"] as String
+			var gesture_type: String = binding_info["gesture"] as String
+			var tracking_key: String = str(input_id) + "_" + action
+
+			if gesture_type in ["chord", "ordered_chord"]:
+				continue
+
+			if gesture_type == "single_tap" or gesture_type == "":
+				_dispatch_action(action, "single_tap")
+
+			if not _active_inputs.has(tracking_key):
+				_active_inputs[tracking_key] = {
+					"action": action,
+					"gesture_type": gesture_type,
+					"is_pressed": true,
+					"hold_timer": 0.0,
+					"hold_fired": false,
+					"tap_window": 0.0,
+					"tap_count": 1
+				}
+			else:
+				var data: Dictionary = _active_inputs[tracking_key] as Dictionary
+				data["is_pressed"] = true
+				data["hold_timer"] = 0.0
+				data["hold_fired"] = false
+				data["tap_count"] = (data["tap_count"] as int) + 1
+
+				if gesture_type == "double_tap" and (data["tap_count"] as int) == 2:
+					_dispatch_action(action, "double_tap")
+					_active_inputs.erase(tracking_key)
+				elif gesture_type == "mash" and (data["tap_count"] as int) >= MASH_TAP_COUNT:
+					_dispatch_action(action, "mash")
+					data["tap_count"] = 0
+	else:
+		_held_keys.erase(input_id)
+
+		for binding_info: Dictionary in matching_bindings:
+			var action: String = binding_info["action"] as String
+			var gesture_type: String = binding_info["gesture"] as String
+			var tracking_key: String = str(input_id) + "_" + action
+
+			_released_actions_frame[action] = Engine.get_physics_frames()
+
+			if _active_inputs.has(tracking_key):
+				var data: Dictionary = _active_inputs[tracking_key] as Dictionary
+				data["is_pressed"] = false
+				if gesture_type in ["double_tap", "double_tap_hold", "mash"]:
+					data["tap_window"] = MULTI_TAP_WINDOW
+				elif gesture_type in ["hold", "single_tap"]:
+					_active_inputs.erase(tracking_key)
+
+
+## Checks if all modifier keys preceding the final trigger key are held down.
+## [param chord_keys] List of integer unique key IDs in chronological order.
+## [return] True if all prefix keys are currently in [_held_keys].
+func _are_modifier_keys_held(chord_keys: Array) -> bool:
+	if chord_keys.size() < 2:
+		return false
+	for i: int in range(chord_keys.size() - 1):
+		var k: int = chord_keys[i] as int
+		if not _held_keys.has(k):
+			return false
+	return true
+
+
+## Checks if all required keys/buttons in a chord list are currently held down.
+## [param chord_keys] List of integer unique key IDs.
+## [return] True if all keys are active in the held keys dictionary.
+func _are_chord_keys_pressed(chord_keys: Array) -> bool:
+	if chord_keys.is_empty():
+		return false
+	for k: Variant in chord_keys:
+		if not _held_keys.has(k as int):
+			return false
+	return true
+
+
+## Matches an incoming physical input event against all registered [InputMap] bindings.
+## [param event] The [InputEvent] to test.
+## [return] An [Array] of [Dictionary] objects containing matched actions and gesture metadata.
+func _get_actions_for_event(event: InputEvent) -> Array[Dictionary]:
+	var matches: Array[Dictionary] = []
+	var event_id: int = _get_unique_event_id(event)
+
+	for action: String in InputMap.get_actions():
+		if action.begins_with("ui_"):
+			continue
+
+		for bound_event: InputEvent in InputMap.action_get_events(action):
+			var gesture: String = "single_tap"
+			var chord_keys: Array = []
+			if bound_event.has_meta("gesture"):
+				gesture = bound_event.get_meta("gesture") as String
+			if bound_event.has_meta("chord_keys"):
+				chord_keys = bound_event.get_meta("chord_keys") as Array
+
+			var is_match: bool = false
+			if gesture in ["chord", "ordered_chord"] and not chord_keys.is_empty():
+				if chord_keys.has(event_id):
+					is_match = true
+			else:
+				is_match = _is_matching_event(event, bound_event)
+
+			if is_match:
+				matches.append({"action": action, "gesture": gesture, "chord_keys": chord_keys})
+	return matches
+
+
+## Generates a unique integer identifier for hardware inputs.
+## [param event] The [InputEvent] to identify.
+## [return] A unique integer ID.
+func _get_unique_event_id(event: InputEvent) -> int:
+	if event is InputEventKey:
+		var k: InputEventKey = event as InputEventKey
+		return k.physical_keycode if k.physical_keycode != KEY_NONE else k.keycode
+	if event is InputEventMouseButton:
+		return 100000 + (event as InputEventMouseButton).button_index
+	return -1
+
+
+## Verifies if two physical input events correspond to identical hardware buttons.
+## [param ev1] First [InputEvent].
+## [param ev2] Second [InputEvent].
+## [return] True if matching hardware inputs.
+func _is_matching_event(ev1: InputEvent, ev2: InputEvent) -> bool:
+	if ev1 is InputEventKey and ev2 is InputEventKey:
+		var k1: InputEventKey = ev1 as InputEventKey
+		var k2: InputEventKey = ev2 as InputEventKey
+		var key1: int = k1.physical_keycode if k1.physical_keycode != KEY_NONE else k1.keycode
+		var key2: int = k2.physical_keycode if k2.physical_keycode != KEY_NONE else k2.keycode
+		return key1 == key2
+	if ev1 is InputEventMouseButton and ev2 is InputEventMouseButton:
+		return (
+			(ev1 as InputEventMouseButton).button_index
+			== (ev2 as InputEventMouseButton).button_index
+		)
+	return false
+
+
+## Consumes a buffered action if it was executed within the allowed duration buffer window.
+## [param action] The action to poll and consume.
+## [return] True if the action was successfully consumed from buffer.
+func consume_buffered_action(action: String) -> bool:
+	var now: float = Time.get_ticks_msec() / 1000.0
+	if _input_buffer.has(action):
+		var timestamp: float = _input_buffer[action] as float
+		if now - timestamp <= BUFFER_DURATION:
+			print("Buffer: Consumed buffered action: ", action)
+			_input_buffer.erase(action)
+			return true
+		_input_buffer.erase(action)
+	return false
+
+
+## Checks if an action was triggered during the current physics frame window.
+## [param action] The input action key string.
+## [return] True if the action's gesture conditions were satisfied.
+func is_action_just_triggered(action: String) -> bool:
+	var current_frame: int = Engine.get_physics_frames()
+	if _triggered_actions_frame.has(action):
+		var target_frame: int = _triggered_actions_frame[action] as int
+		if current_frame == target_frame or current_frame == target_frame + 1:
+			return true
+	return false
+
+
+## Checks if an action is currently active, taking into account chords and gestures.
+## [param action] The input action key string.
+## [return] True if the action's gesture and key requirements are currently met.
+func is_action_active(action: String) -> bool:
+	if not InputMap.has_action(action):
+		return false
+
+	var events: Array[InputEvent] = InputMap.action_get_events(action)
+	for bound_event: InputEvent in events:
+		var gesture: String = bound_event.get_meta("gesture", "single_tap") as String
+		var chord_keys: Array = bound_event.get_meta("chord_keys", []) as Array
+
+		if gesture == "ordered_chord" and not chord_keys.is_empty():
+			if _are_chord_keys_pressed(chord_keys):
+				return true
+		elif gesture == "chord" and not chord_keys.is_empty():
+			if _are_chord_keys_pressed(chord_keys):
+				return true
+		elif gesture == "single_tap" or gesture == "":
+			if _is_event_currently_held(bound_event):
+				return true
+
+	return false
+
+
+## Checks if the physical key or mouse button for an event is currently held.
+## [param event] The [InputEvent] to inspect.
+## [return] True if the event ID exists in [_held_keys].
+func _is_event_currently_held(event: InputEvent) -> bool:
+	var event_id: int = _get_unique_event_id(event)
+	return _held_keys.has(event_id)
+
+
+## Emits action signals, updates buffered queue, and timestamps single-frame triggers.
+## [param action] The input action key string.
+## [param gesture] The detected gesture mode.
+func _dispatch_action(action: String, gesture: String) -> void:
+	print("Input Dispatch: [", action, "] triggered via [", gesture, "]")
+	var now: float = Time.get_ticks_msec() / 1000.0
+	_input_buffer[action] = now
+	_triggered_actions_frame[action] = Engine.get_physics_frames()
+	action_triggered.emit(action, gesture)
+
+
+## Checks if an action is currently pressed down, validating chords and gestures.
+## [param action] The input action key string to evaluate.
+## [return] True if all key requirements and active gestures are met.
+func is_action_pressed(action: String) -> bool:
+	print("Input: Polling is_action_pressed for action: ", action)
+	if not InputMap.has_action(action):
+		return false
+
+	var events: Array[InputEvent] = InputMap.action_get_events(action)
+	for bound_event: InputEvent in events:
+		var gesture: String = bound_event.get_meta("gesture", "single_tap") as String
+		var chord_keys: Array = bound_event.get_meta("chord_keys", []) as Array
+
+		if gesture in ["chord", "ordered_chord"] and not chord_keys.is_empty():
+			if _are_chord_keys_pressed(chord_keys):
+				return true
+		elif gesture == "single_tap" or gesture == "":
+			if _is_event_currently_held(bound_event):
+				return true
+
+	return false
+
+
+## Checks if an action met its trigger condition during the current physics frame.
+## [param action] The input action key string to evaluate.
+## [return] True if the action triggered this frame.
+func is_action_just_pressed(action: String) -> bool:
+	print("Input: Polling is_action_just_pressed for action: ", action)
+	var current_frame: int = Engine.get_physics_frames()
+	if _triggered_actions_frame.has(action):
+		var target_frame: int = _triggered_actions_frame[action] as int
+		if current_frame == target_frame or current_frame == target_frame + 1:
+			return true
+	return false
+
+
+## Checks if an action was released during the active frame window.
+## [param action] The input action key string to evaluate.
+## [return] True if the action was released this frame.
+func is_action_just_released(action: String) -> bool:
+	print("Input: Polling is_action_just_released for action: ", action)
+	var current_frame: int = Engine.get_physics_frames()
+	if _released_actions_frame.has(action):
+		var target_frame: int = _released_actions_frame[action] as int
+		if current_frame == target_frame or current_frame == target_frame + 1:
+			return true
+	return false
+
+
+## Gets an input vector by reading four actions.
+## [param negative_x] The negative X action.
+## [param positive_x] The positive X action.
+## [param negative_y] The negative Y action.
+## [param positive_y] The positive Y action.
+## [return] The resulting Vector2.
+func get_vector(
+	negative_x: String, positive_x: String, negative_y: String, positive_y: String
+) -> Vector2:
+	return Input.get_vector(negative_x, positive_x, negative_y, positive_y)
+
+
+## Gets an input axis by reading two actions.
+## [param negative_action] The negative action.
+## [param positive_action] The positive action.
+## [return] The resulting float.
+func get_axis(negative_action: String, positive_action: String) -> float:
+	return Input.get_axis(negative_action, positive_action)
+========== core/KeycardSystem.gd ==========
+## Global autoload that tracks and manages collected keycards.
+##
+## The [KeycardSystem] is responsible for storing the player's keycard inventory.
+## It uses [StringName] identifiers to dynamically support any number of keycards
+## without requiring hardcoded enums. It emits signals when cards are acquired
+## or consumed.
+extends Node
+
+## Emitted when a new keycard is added to the inventory.
+## [param card_id] The unique [StringName] identifier of the collected card.
+signal card_picked_up(card_id: StringName)
+
+## Emitted when a keycard is successfully consumed from the inventory.
+## [param card_id] The unique [StringName] identifier of the used card.
+signal card_used(card_id: StringName)
+
+## The inventory now dynamically tracks [StringName] IDs instead of Enums.
+## Stores all currently held keycard IDs.
+var _inventory: Array[StringName] = []
+
+
+## Adds a keycard to the inventory if it doesn't already exist.
+## [param card_id] The unique [StringName] identifier of the card to add.
+func add_card(card_id: StringName) -> void:
+	print("KeycardSystem: Added card ID ", card_id, " to inventory.")
+	if not _inventory.has(card_id):
+		_inventory.append(card_id)
+		card_picked_up.emit(card_id)
+
+
+## Checks if a specific keycard is currently in the inventory.
+## [param card_id] The unique [StringName] identifier of the card to check.
+## Returns [code]true[/code] if the card is held, [code]false[/code] otherwise.
+func has_card(card_id: StringName) -> bool:
+	return _inventory.has(card_id)
+
+
+## Removes a keycard from the inventory if it exists.
+## [param card_id] The unique [StringName] identifier of the card to consume.
+func consume_card(card_id: StringName) -> void:
+	print("KeycardSystem: Consumed card ID ", card_id, ".")
+	if _inventory.has(card_id):
+		_inventory.erase(card_id)
+		card_used.emit(card_id)
+========== core/chunk_manager.gd ==========
+## A manager that handles background streaming and unloading of world chunks.
+##
+## [ChunkManager] uses distance-based proximity and explicit area triggers to dynamically
+## load and unload [PackedScene] chunks asynchronously. This keeps memory usage low and
+## performance high by only processing visible or active segments of the world.
+class_name ChunkManager
+extends Node3D
+
+## Reference to the player node used to calculate spatial distances for proximity-based chunk
+## loading.
+@export var player: Node3D
+
+## The maximum distance in meters before a chunk is considered out of range and gets queued for
+## unloading.
+@export var load_distance: float = 150.0
+
+## A dictionary mapping a unique chunk ID [String] to its corresponding scene file path [String]
+## on disk.
+@export var chunk_registry: Dictionary = {}
+
+## A dictionary mapping a unique chunk ID [String] to its central [Vector3] world position for
+## distance checks.
+@export var chunk_positions: Dictionary = {}
+
+## A dictionary storing the active chunk IDs as keys and their instantiated [Node3D] references as
+## values.
+var loaded_chunks: Dictionary = {}
+
+## A dictionary tracking chunks that are currently in the background loading queue to prevent
+## duplicate requests.
+var loading_chunks: Dictionary = {}
+
+## An array of chunk IDs that have been explicitly requested by trigger areas, bypassing distance
+## checks.
+var trigger_active_chunks: Array[String] = []
+
+
+## Called when the node enters the scene tree for the first time.
+## Sets up a repeating timer to periodically check chunk distances and loading states.
+func _ready() -> void:
+	var check_timer: Timer = Timer.new()
+	check_timer.wait_time = 0.5
+	check_timer.timeout.connect(_on_check_chunks)
+	add_child(check_timer)
+	check_timer.start()
+
+
+## Called when a player enters an [Area3D] trigger to forcefully load a specific chunk.
+## [param chunk_id] The string identifier of the chunk to load.
+func trigger_load_chunk(chunk_id: String) -> void:
+	print("ChunkManager: trigger_load_chunk() called for chunk ID: ", chunk_id)
+	if not trigger_active_chunks.has(chunk_id):
+		trigger_active_chunks.append(chunk_id)
+
+
+## Called when a player exits an [Area3D] trigger to release the forced load state of a chunk.
+## [param chunk_id] The string identifier of the chunk to unload.
+func trigger_unload_chunk(chunk_id: String) -> void:
+	print("ChunkManager: trigger_unload_chunk() called for chunk ID: ", chunk_id)
+	if trigger_active_chunks.has(chunk_id):
+		trigger_active_chunks.erase(chunk_id)
+
+
+## Called periodically by the internal timer.
+## Calculates which chunks should be active based on explicit triggers and player proximity.
+func _on_check_chunks() -> void:
+	print("ChunkManager: _on_check_chunks() executed. Evaluating chunk distances and triggers.")
+	if not is_instance_valid(player):
+		return
+
+	var desired_chunks: Array[String] = []
+
+	# 1. Add chunks requested by triggers
+	for chunk_id: String in trigger_active_chunks:
+		desired_chunks.append(chunk_id)
+
+	# 2. Add chunks based on distance
+	var player_pos: Vector3 = player.global_position
+	for chunk_id: String in chunk_positions:
+		var chunk_pos: Vector3 = chunk_positions[chunk_id]
+		if player_pos.distance_squared_to(chunk_pos) <= load_distance * load_distance:
+			if not desired_chunks.has(chunk_id):
+				desired_chunks.append(chunk_id)
+
+	_process_chunk_queues(desired_chunks)
+
+
+## Unloads stale chunks, requests new loads, and processes background loading threads.
+## [param desired_chunks] An array of chunk IDs that are requested to be active this cycle.
+func _process_chunk_queues(desired_chunks: Array[String]) -> void:
+	print("ChunkManager: _process_chunk_queues() executed. Managing memory and threads.")
+
+	# Unload chunks that are no longer desired
+	var chunks_to_remove: Array[String] = []
+	for loaded_id: String in loaded_chunks:
+		if not desired_chunks.has(loaded_id):
+			_unload_chunk(loaded_id)
+			chunks_to_remove.append(loaded_id)
+
+	for id: String in chunks_to_remove:
+		loaded_chunks.erase(id)
+
+	# Request loads for desired chunks that aren't loaded or loading
+	for desired_id: String in desired_chunks:
+		if not loaded_chunks.has(desired_id) and not loading_chunks.has(desired_id):
+			_request_async_load(desired_id)
+
+	# Check progress of currently loading chunks
+	var finished_loads: Array[String] = []
+	for loading_id: String in loading_chunks:
+		var status: ResourceLoader.ThreadLoadStatus = ResourceLoader.load_threaded_get_status(
+			chunk_registry[loading_id]
+		)
+		if status == ResourceLoader.THREAD_LOAD_LOADED:
+			_instantiate_chunk(loading_id)
+			finished_loads.append(loading_id)
+		elif (
+			status == ResourceLoader.THREAD_LOAD_FAILED
+			or status == ResourceLoader.THREAD_LOAD_INVALID_RESOURCE
+		):
+			print("ChunkManager: Error loading chunk ID: ", loading_id)
+			finished_loads.append(loading_id)
+
+	for id: String in finished_loads:
+		loading_chunks.erase(id)
+
+
+## Requests the [ResourceLoader] to load a chunk scene asynchronously in the background.
+## [param chunk_id] The string identifier of the chunk to begin loading.
+func _request_async_load(chunk_id: String) -> void:
+	print("ChunkManager: _request_async_load() called. Pushing to background thread: ", chunk_id)
+	if chunk_registry.has(chunk_id):
+		loading_chunks[chunk_id] = true
+		ResourceLoader.load_threaded_request(chunk_registry[chunk_id])
+
+
+## Safely grabs a fully loaded [PackedScene] from the background thread and spawns it.
+## [param chunk_id] The string identifier of the successfully loaded chunk.
+func _instantiate_chunk(chunk_id: String) -> void:
+	print("ChunkManager: _instantiate_chunk() called. Spawning into world: ", chunk_id)
+	var chunk_resource: PackedScene = ResourceLoader.load_threaded_get(chunk_registry[chunk_id])
+	if chunk_resource:
+		var instance: Node3D = chunk_resource.instantiate()
+		loaded_chunks[chunk_id] = instance
+		call_deferred("add_child", instance)
+
+
+## Removes and frees an active chunk instance from the scene tree.
+## [param chunk_id] The string identifier of the chunk to destroy.
+func _unload_chunk(chunk_id: String) -> void:
+	print("ChunkManager: _unload_chunk() called. Freeing memory for: ", chunk_id)
+	var chunk_instance: Node3D = loaded_chunks[chunk_id]
+	if is_instance_valid(chunk_instance):
+		chunk_instance.queue_free()
+========== core/dev_metrics.gd ==========
+## An on-screen developer metrics overlay used for diagnosing performance bottlenecks.
+##
+## [DevMetricsPanel] captures hardware specifications, tracks CPU/GPU frame times,
+## and pulls player state data into a real-time HUD.
+class_name DevMetricsPanel
+extends PanelContainer
+
+## The number of frames to store for rolling average calculations.
+const HISTORY_NUM_FRAMES: int = 150
+
+@export_category("Dev Metrics")
+## Toggles whether the metrics system actively calculates values.
+@export var is_enabled: bool = true
+
+## Reference to the main [CharacterBody3D] player for state tracking.
+var player: CharacterBody3D
+
+## Timestamp of the previous frame in microseconds.
+var _last_tick: int = 0
+## Rolling history array of total frame delta times.
+var _total_history: Array[float] = []
+## Rolling history array of CPU frame times.
+var _cpu_history: Array[float] = []
+## Rolling history array of GPU frame times.
+var _gpu_history: Array[float] = []
+
+## Rolling sum of total frame delta times.
+var _total_sum: float = 0.0
+## Rolling sum of CPU frame times.
+var _cpu_sum: float = 0.0
+## Rolling sum of GPU frame times.
+var _gpu_sum: float = 0.0
+
+## Cached hardware strings to prevent recreating strings every frame.
+var _hardware_info_str: String = ""
+## Cached static graphics settings strings.
+var _settings_info_static_str: String = ""
+
+## The UI text label used to display metrics.
+@onready var metrics_label: RichTextLabel = $MetricsLabel
+
+
+## Called when the node enters the scene tree for the first time.
+## Caches hardware info and enables rendering measurement overrides.
+func _ready() -> void:
+	print("DebugPanel: Initializing and caching hardware info.")
+	visible = false
+
+	player = get_tree().get_first_node_in_group("player") as CharacterBody3D
+
+	metrics_label.bbcode_enabled = true
+	metrics_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	metrics_label.add_theme_constant_override("outline_size", 4)
+
+	# Enable hardware rendering time measurements
+	var vp_rid: RID = get_viewport().get_viewport_rid()
+	RenderingServer.viewport_set_measure_render_time(vp_rid, true)
+
+	_cache_hardware_info()
+	_cache_static_settings_info()
+
+
+## Called every frame to sample performance data and update the label UI.
+## [param _delta] The time elapsed since the previous frame in seconds.
+func _process(_delta: float) -> void:
+	if not visible or not player:
+		return
+
+	_update_frametime_history()
+
+	var fps: float = Engine.get_frames_per_second()
+	var vel: Vector3 = player.velocity
+	var speed: float = vel.length()
+
+	var fps_color: String = "green"
+	if fps >= 60.0:
+		fps_color = "green"
+	elif fps >= 30.0:
+		fps_color = "yellow"
+	else:
+		fps_color = "red"
+
+	var current_input: Vector2 = GestureInputManager.get_vector(
+		"left", "right", "forward", "backward"
+	)
+	var is_pressing_keys: bool = current_input.length() > 0.1
+
+	var state: String = "UNKNOWN"
+	var sys_menu: Variant = player.get("system_menu")
+	var fsm: Variant = player.get("state_machine")
+
+	if sys_menu and sys_menu.get("flying"):
+		state = "NOCLIP"
+	elif fsm and fsm.get("state"):
+		state = String(fsm.state.name).to_upper()
+		if state == "GROUND":
+			var loco: Variant = player.get("locomotion_component")
+			if is_instance_valid(loco):
+				if loco.get("crouching"):
+					state = "CROUCH WALKING" if is_pressing_keys else "CROUCH IDLE"
+				elif loco.get("sprint_active"):
+					state = "SPRINTING"
+				elif is_pressing_keys:
+					state = "WALKING"
+				else:
+					state = "IDLE"
+
+	var static_mem: int = OS.get_static_memory_usage()
+	var vram_usage: int = int(Performance.get_monitor(Performance.RENDER_TEXTURE_MEM_USED))
+	var draw_calls: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
+	var objects: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME))
+	var primitives: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))
+
+	var flashlight_str: String = "OFF"
+	if is_instance_valid(player):
+		var f_ctrl: Variant = player.get("flashlight_controller")
+		if is_instance_valid(f_ctrl):
+			if is_instance_valid(f_ctrl.flashlight):
+				flashlight_str = "ON" if f_ctrl.flashlight.visible else "OFF"
+
+	var weapon_str: String = "NONE"
+	var weapon_holder: Node = player.get_node_or_null("%WeaponHolder")
+	if weapon_holder and weapon_holder.get_child_count() > 0:
+		weapon_str = weapon_holder.get_child(0).name
+
+	# --- TEXT ASSEMBLY ---
+	var text: String = ""
+	text += "[color=%s][b]%d FPS[/b][/color]\n\n" % [fps_color, int(fps)]
+
+	# Use a BBCode table to align the frametime data perfectly
+	text += "[table=5]\n"
+	text += "[cell][/cell][cell] [color=gray]Average[/color] [/cell]"
+	text += "[cell] [color=gray]Best[/color] [/cell]"
+	text += "[cell] [color=gray]Worst[/color] [/cell][cell] [color=gray]Last[/color] [/cell]\n"
+
+	text += _format_metric_row("Total:", _total_sum, _total_history)
+	text += _format_metric_row("CPU:", _cpu_sum, _cpu_history)
+	text += _format_metric_row("GPU:", _gpu_sum, _gpu_history)
+	text += "[/table]\n"
+
+	# Append the cached hardware + dynamic settings
+	text += "[color=gray]" + _hardware_info_str + _settings_info_static_str
+	text += _get_dynamic_settings_string() + "[/color]\n"
+
+	text += "\n[color=gray]--- MEMORY & RENDERING ---[/color]\n"
+	text += "RAM: %s\n" % String.humanize_size(static_mem)
+	text += "VRAM: %s\n" % String.humanize_size(vram_usage)
+	text += "Draw Calls: %d\n" % draw_calls
+	text += "Objects: %d\n" % objects
+	text += "Primitives: %d\n" % primitives
+
+	text += "\n[color=gray]--- PLAYER STATE ---[/color]\n"
+	text += "STATE: %s\n" % state
+	text += "WEAPON: %s\n" % weapon_str
+	text += "SPEED: %.2f m/s\n" % speed
+	text += "POS: %s\n" % var_to_str(player.global_position).replace("Vector3", "")
+	text += "GROUNDED: %s\n" % ("YES" if player.is_on_floor() else "NO")
+	text += "FLASHLIGHT: %s\n" % flashlight_str
+
+	metrics_label.text = text
+
+
+## Toggles the visual state of the metrics panel on and off.
+func toggle_window() -> void:
+	visible = not visible
+	print("DebugPanel: Visibility toggled to ", visible)
+
+
+## Samples the current frametime from the [RenderingServer] and pushes it into the history arrays.
+func _update_frametime_history() -> void:
+	var current_tick: int = Time.get_ticks_usec()
+	var frametime_total: float = (current_tick - _last_tick) * 0.001
+	_last_tick = current_tick
+
+	var vp_rid: RID = get_viewport().get_viewport_rid()
+	var frame_setup: float = RenderingServer.get_frame_setup_time_cpu()
+	var frametime_cpu: float = (
+		RenderingServer.viewport_get_measured_render_time_cpu(vp_rid) + frame_setup
+	)
+	var frametime_gpu: float = RenderingServer.viewport_get_measured_render_time_gpu(vp_rid)
+
+	_total_sum += frametime_total
+	_total_history.push_back(frametime_total)
+	if _total_history.size() > HISTORY_NUM_FRAMES:
+		_total_sum -= _total_history.pop_front()
+
+	_cpu_sum += frametime_cpu
+	_cpu_history.push_back(frametime_cpu)
+	if _cpu_history.size() > HISTORY_NUM_FRAMES:
+		_cpu_sum -= _cpu_history.pop_front()
+
+	_gpu_sum += frametime_gpu
+	_gpu_history.push_back(frametime_gpu)
+	if _gpu_history.size() > HISTORY_NUM_FRAMES:
+		_gpu_sum -= _gpu_history.pop_front()
+
+
+## Formats a metric category into a clean BBCode table row string.
+## [param title] The name of the metric (e.g. "CPU:").
+## [param sum_val] The current rolling sum of the metric.
+## [param history] The array containing the history of the metric.
+func _format_metric_row(title: String, sum_val: float, history: Array[float]) -> String:
+	if history.is_empty():
+		return ""
+
+	# Explicitly cast to float to prevent Godot string formatting errors with Variants
+	var avg_val: float = float(sum_val) / float(history.size())
+	var min_val: float = float(history.min())
+	var max_val: float = float(history.max())
+	var last_val: float = float(history.back())
+
+	var row_format: String = (
+		"[cell]%s [/cell][cell][color=%s]%.2f[/color][/cell]"
+		+ "[cell][color=%s]%.2f[/color][/cell][cell][color=%s]%.2f[/color][/cell]"
+		+ "[cell][color=%s]%.2f[/color][/cell]\n"
+	)
+
+	return (
+		row_format
+		% [
+			title,
+			_get_ms_color(avg_val),
+			avg_val,
+			_get_ms_color(min_val),
+			min_val,
+			_get_ms_color(max_val),
+			max_val,
+			_get_ms_color(last_val),
+			last_val,
+		]
+	)
+
+
+## Returns a hex color string based on how fast a millisecond timing is.
+## [param ms] The time in milliseconds.
+func _get_ms_color(ms: float) -> String:
+	if ms < 8.34:
+		return "#38bdf8"
+	if ms < 16.67:
+		return "#80e25f"
+	if ms < 33.34:
+		return "#facc15"
+	return "#ef4444"
+
+
+## Queries the [OS] and [RenderingServer] once on load to build hardware information strings.
+func _cache_hardware_info() -> void:
+	var cpu_name: String = OS.get_processor_name().replace("(R)", "").replace("(TM)", "")
+	var threads: int = OS.get_processor_count()
+	var os_name: String = OS.get_name()
+	var bitness: String = "64-bit" if OS.has_feature("64") else "32-bit"
+
+	var gpu_name: String = RenderingServer.get_video_adapter_name().trim_suffix("/PCIe/SSE2")
+	var api_ver: String = RenderingServer.get_video_adapter_api_version()
+
+	var driver: String = str(ProjectSettings.get_setting("rendering/rendering_device/driver"))
+	var api_str: String = "Vulkan" if driver == "vulkan" else driver.capitalize()
+
+	_hardware_info_str = (
+		"%s, %d threads\n%s %s, %s %s\n%s\n"
+		% [cpu_name, threads, os_name, bitness, api_str, api_ver, gpu_name]
+	)
+
+
+## Queries [ProjectSettings] to build strings for non-dynamic graphics settings.
+func _cache_static_settings_info() -> void:
+	_settings_info_static_str = ""
+	var method: String = str(ProjectSettings.get_setting("rendering/renderer/rendering_method"))
+	var method_str: String = "Forward+" if method == "forward_plus" else method.capitalize()
+	_settings_info_static_str += "Rendering Method: %s\n" % method_str
+
+
+## Checks the current active viewport to build strings for dynamic graphics settings.
+func _get_dynamic_settings_string() -> String:
+	var dyn_str: String = ""
+	var vp: Viewport = get_viewport()
+	var win: Window = get_window()
+
+	dyn_str += "Viewport: %dx%d\n" % [win.size.x, win.size.y]
+
+	var fsr_str: String = "Disabled"
+	if vp.scaling_3d_mode == Viewport.SCALING_3D_MODE_FSR2:
+		fsr_str = "FSR2 (Scale: %.2f)" % vp.scaling_3d_scale
+	elif vp.scaling_3d_scale < 1.0:
+		fsr_str = "Bilinear (Scale: %.2f)" % vp.scaling_3d_scale
+	dyn_str += "FSR/Scaling: %s\n" % fsr_str
+
+	var aa_str: String = "Disabled"
+	if vp.msaa_3d != Viewport.MSAA_DISABLED:
+		aa_str = "MSAA"
+	if vp.use_taa:
+		aa_str += " + TAA"
+	if vp.screen_space_aa == Viewport.SCREEN_SPACE_AA_FXAA:
+		aa_str += "FXAA"
+	dyn_str += "Anti-Aliasing: %s\n" % aa_str
+
+	var cam: Camera3D = vp.get_camera_3d()
+	if cam and cam.get_world_3d() and cam.get_world_3d().environment:
+		var env: Environment = cam.get_world_3d().environment
+		dyn_str += "SSR: %s\n" % ("On" if env.ssr_enabled else "Off")
+		dyn_str += "SSAO: %s\n" % ("On" if env.ssao_enabled else "Off")
+		dyn_str += "SSIL: %s\n" % ("On" if env.ssil_enabled else "Off")
+		var sdfgi_str: String = "On (%d Cascades)" % env.sdfgi_cascades
+		dyn_str += "SDFGI: %s\n" % (sdfgi_str if env.sdfgi_enabled else "Off")
+		dyn_str += "Glow: %s\n" % ("On" if env.glow_enabled else "Off")
+		dyn_str += "Volumetric Fog: %s\n" % ("On" if env.volumetric_fog_enabled else "Off")
+
+	dyn_str += "Shadow Atlas Size: %d\n" % vp.positional_shadow_atlas_size
+	dyn_str += "Mesh LOD Threshold: %.2f\n" % vp.mesh_lod_threshold
+
+	return dyn_str
+========== core/frame_graph.gd ==========
+## An on-screen graph visualizing recent frame delta times.
+##
+## [FrameGraph] draws a line graph over time representing frame duration in milliseconds.
+## It helps developers quickly identify stutters or drops below the target framerate.
+class_name FrameGraph
+extends ColorRect
+
+## An array tracking recent frame times in milliseconds.
+var history: Array[float] = []
+
+## The maximum number of points to draw on the graph before dropping old frames.
+var max_points: int = 100
+
+## The target frame time in milliseconds (16.67ms = 60 FPS).
+var target_ms: float = 16.67
+
+## The maximum visible frame time on the Y-axis of the graph (33.33ms = 30 FPS).
+var ceiling_ms: float = 33.33
+
+
+## Called every frame. Samples the frame time and forces a redraw if visible.
+## [param delta] The time elapsed since the previous frame in seconds.
+func _process(delta: float) -> void:
+	if not is_visible_in_tree():
+		return
+
+	history.append(delta * 1000.0)
+
+	if history.size() > max_points:
+		history.pop_front()
+
+	queue_redraw()
+
+
+## Called when the node is forced to redraw. Paints the graph lines and threshold indicators.
+func _draw() -> void:
+	if history.size() < 2:
+		return
+
+	var w: float = size.x
+	var h: float = size.y
+	var step: float = w / max_points
+
+	# 1. DRAW THE GRAPH LINE
+	for i: int in range(history.size() - 1):
+		var x1: float = i * step
+		var x2: float = (i + 1) * step
+
+		var ms1: float = min(history[i], ceiling_ms)
+		var ms2: float = min(history[i + 1], ceiling_ms)
+
+		# Calculate Y starting from the bottom (h) and going up
+		var y1: float = h - (ms1 / ceiling_ms) * h
+		var y2: float = h - (ms2 / ceiling_ms) * h
+
+		var p1: Vector2 = Vector2(x1, y1)
+		var p2: Vector2 = Vector2(x2, y2)
+
+		var line_color: Color = Color(0.2, 0.8, 0.2, 0.8)
+		if ms2 > target_ms or ms1 > target_ms:
+			line_color = Color(0.9, 0.2, 0.2, 0.8)
+
+		draw_line(p1, p2, line_color, 2.0, true)
+
+	# 2. DRAW THE YELLOW 60 FPS TARGET LINE
+	var target_y: float = h - (target_ms / ceiling_ms) * h
+	draw_line(Vector2(0, target_y), Vector2(w, target_y), Color(1, 1, 0, 0.6), 2.0)
+
+	# 3. DRAW THE TEXT STATUS
+	var latest_ms: float = history.back() if not history.is_empty() else 0.0
+	var font: Font = ThemeDB.fallback_font
+	var text_color: Color = Color.GREEN
+	var status_text: String = "16.66ms - Good"
+
+	if latest_ms > target_ms:
+		text_color = Color.RED
+		status_text = "16.66ms - Problem!"
+
+	var text_pos: Vector2 = Vector2(5, target_y - 5)
+	draw_string(font, text_pos, status_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, text_color)
+========== core/global_settings.gd ==========
+## Global autoload managing the persistent save state of user preferences.
+##
+## [GlobalSettings] reads and writes values to a `.cfg` file on disk. It handles
+## applying startup configurations like window scales, inputs, screen filters, and colorblind modes.
+extends Node
+
+## The file path where user preferences are saved locally on the player's disk.
+const SAVE_PATH: String = "user://settings.cfg"
+
+## The configuration object used to read, cache, and write save file data.
+var config: ConfigFile = ConfigFile.new()
+
+## Single source of truth for all typography font assets and metadata.
+const FONT_REGISTRY: Array[Dictionary] = [
+	{"id": "default", "name": "Default", "path": ""},
+	{
+		"id": "dyslexic",
+		"name": "Dyslexic",
+		"path": "res://assets/fonts/opendyslexic-0.92/OpenDyslexic-Regular.otf"
+	},
+	{"id": "papyrus", "name": "Papyrus", "path": "res://assets/fonts/papyrus-font/papyrus.ttf"},
+	{"id": "comic", "name": "Comic Sans", "path": "res://assets/fonts/Comic Sans MS.ttf"},
+	{"id": "kramola", "name": "Kramola", "path": "res://assets/fonts/kramola/Kramola.otf"},
+	{
+		"id": "futura",
+		"name": "Futura Handwritten",
+		"path": "res://assets/fonts/FuturaHandwritten.ttf"
+	},
+	{"id": "help_me", "name": "Help Me", "path": "res://assets/fonts/HelpMe.ttf"},
+	{"id": "olde_english", "name": "Olde English", "path": "res://assets/fonts/OldeEnglish.ttf"},
+	{
+		"id": "stalinist",
+		"name": "Stalinist One",
+		"path": "res://assets/fonts/StalinistOne-Regular.ttf"
+	},
+	{"id": "super_funky", "name": "Super Funky", "path": "res://assets/fonts/Super Funky.ttf"}
+]
+
+## Single source of truth for all post-process screen filters and metadata.
+const SCREEN_FILTER_REGISTRY: Array[Dictionary] = [
+	{"id": "off", "name": "Off", "index": 0, "path": ""},
+	{"id": "crt", "name": "CRT", "index": 1, "path": "res://vfx/crt.gdshader"},
+	{"id": "vhs", "name": "VHS", "index": 2, "path": "res://vfx/vhs.gdshader"},
+	{"id": "pixelate", "name": "Pixelate", "index": 3, "path": "res://vfx/pixelate.gdshader"},
+	{"id": "toon", "name": "Toon", "index": 4, "path": "res://vfx/toon.gdshader"},
+	{"id": "gameboy", "name": "Gameboy", "index": 5, "path": "res://vfx/gameboy.gdshader"},
+	{"id": "glitch", "name": "Glitch", "index": 6, "path": "res://vfx/glitch.gdshader"},
+	{"id": "grain", "name": "Grain", "index": 7, "path": "res://environment/grain.gdshader"},
+	{"id": "halftone", "name": "Halftone", "index": 8, "path": "res://vfx/halftone.gdshader"},
+	{
+		"id": "nightvision",
+		"name": "Nightvision",
+		"index": 9,
+		"path": "res://vfx/nightvision.gdshader"
+	},
+	{"id": "kuwahara", "name": "Kuwahara", "index": 10, "path": "res://vfx/kuwahara.gdshader"},
+	{"id": "ascii", "name": "ASCII", "index": 11, "path": "res://vfx/ascii.gdshader"},
+	{"id": "90anime", "name": "90Anime", "index": 12, "path": "res://vfx/90anime.gdshader"},
+	{"id": "manga", "name": "Manga", "index": 13, "path": "res://vfx/manga.gdshader"},
+	{"id": "handdrawn", "name": "Handdrawn", "index": 14, "path": "res://vfx/handdrawn.gdshader"},
+	{"id": "moebius", "name": "Moebius", "index": 15, "path": "res://vfx/moebius.gdshader"},
+	{"id": "obra", "name": "Obra", "index": 16, "path": "res://vfx/obra.gdshader"},
+	{
+		"id": "psychedelic",
+		"name": "Psychedelic",
+		"index": 17,
+		"path": "res://vfx/psychedelic.gdshader"
+	},
+	{"id": "botw", "name": "BotW", "index": 18, "path": "res://vfx/botw.gdshader"},
+	{"id": "ghibli", "name": "Ghibli", "index": 19, "path": "res://vfx/ghibli.gdshader"},
+	{"id": "reaction", "name": "Reaction", "index": 20, "path": "res://vfx/reaction.gdshader"},
+	{"id": "software", "name": "Software", "index": 21, "path": "res://vfx/software.gdshader"},
+	{"id": "swirl", "name": "Swirl", "index": 22, "path": "res://vfx/swirl.gdshader"},
+	{
+		"id": "mandelbrot",
+		"name": "Mandelbrot",
+		"index": 23,
+		"path": "res://vfx/mandelbrot.gdshader"
+	},
+	{"id": "80sfantasy", "name": "80sFantasy", "index": 24, "path": "res://vfx/80sfantasy.gdshader"}
+]
+
+
+## Called automatically upon instantiation.
+## Populates the internal [ConfigFile] before other autoloads can read from it.
+func _init() -> void:
+	_load_all_settings()
+
+
+## Called when the node enters the scene tree.
+## Sets process mode and applies boot configurations.
+func _ready() -> void:
+	print("System: GlobalSettings Autoload initialized.")
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	_apply_input_mappings()
+	call_deferred("_apply_boot_settings")
+
+
+## Attempts to load the `.cfg` settings file from disk into the internal [ConfigFile].
+func _load_all_settings() -> void:
+	print("System: Loading global settings from disk.")
+	var err: Error = config.load(SAVE_PATH)
+	if err != OK:
+		print("System: No save file found or error loading. Code: ", err)
+
+
+## Broadcasts signals and sets global variables for visual options like UI scaling and fonts.
+func _apply_boot_settings() -> void:
+	print("System: Applying boot settings (UI scale, fonts, colorblind, screen filters, prompts).")
+	var ui_scale: float = get_setting("Settings", "ui_scale", 1.0) as float
+	get_window().content_scale_factor = ui_scale
+
+	if Events:
+		var saved_font_idx: int = get_setting("Settings", "font_mode", 0) as int
+		if saved_font_idx >= 0 and saved_font_idx < FONT_REGISTRY.size():
+			var font_id: String = FONT_REGISTRY[saved_font_idx]["id"] as String
+			Events.font_changed.emit(font_id)
+
+		var saved_cb: int = get_setting("Settings", "colorblind_mode", 0) as int
+		Events.colorblind_mode_changed.emit(saved_cb)
+
+		var saved_filter_idx: int = get_setting("Settings", "screen_filter", 0) as int
+		var filter_ids: Array[String] = get_screen_filter_ids()
+		if saved_filter_idx >= 0 and saved_filter_idx < filter_ids.size():
+			Events.screen_filter_changed.emit(filter_ids[saved_filter_idx])
+
+		if Events.has_signal("item_prompts_toggled"):
+			var show_prompts: bool = get_setting("Gameplay", "show_item_prompts", true) as bool
+			Events.item_prompts_toggled.emit(show_prompts)
+
+
+## Overwrites the default Godot [InputMap] with any saved keybind overrides.
+func _apply_input_mappings() -> void:
+	print("System: Applying saved input mappings to Godot InputMap.")
+	if not config.has_section("Controls"):
+		return
+
+	var saved_actions: PackedStringArray = config.get_section_keys("Controls")
+	for action: String in saved_actions:
+		if not InputMap.has_action(action):
+			InputMap.add_action(action)
+
+		var saved_data: Variant = config.get_value("Controls", action)
+
+		if saved_data is Array:
+			InputMap.action_erase_events(action)
+			for event: Variant in saved_data:
+				if event is InputEvent:
+					InputMap.action_add_event(action, event)
+		elif saved_data is InputEvent:
+			InputMap.action_erase_events(action)
+			InputMap.action_add_event(action, saved_data)
+
+
+## Writes a specific setting to the config and immediately saves the file to disk.
+## [param category] The section name within the config file.
+## [param key] The identifier for the setting.
+## [param value] The generic value to save.
+func save_setting(category: String, key: String, value: Variant) -> void:
+	print("System: Player saved setting -> [", category, "] ", key, ": ", value)
+	config.set_value(category, key, value)
+	config.save(SAVE_PATH)
+
+
+## Retrieves a specific setting from the cached config file.
+## [param category] The section name within the config file.
+## [param key] The identifier for the setting.
+## [param default_value] The fallback value returned if the key does not exist.
+## Returns the stored [Variant] or the [param default_value].
+func get_setting(category: String, key: String, default_value: Variant) -> Variant:
+	if config.has_section_key(category, key):
+		return config.get_value(category, key)
+	return default_value
+
+
+## Returns an array of all font internal ID keys.
+## [return] [Array] of lowercase font identifier strings.
+func get_font_ids() -> Array[String]:
+	var ids: Array[String] = []
+	for entry: Dictionary in FONT_REGISTRY:
+		ids.append(entry["id"] as String)
+	return ids
+
+
+## Returns an array of all UI display names for fonts.
+## [return] [Array] of formatted font names.
+func get_font_display_names() -> Array[String]:
+	var names: Array[String] = []
+	for entry: Dictionary in FONT_REGISTRY:
+		names.append(entry["name"] as String)
+	return names
+
+
+## Resolves a font index by its internal key.
+## [param font_id] Target font key string.
+## [return] [Array] index matching the ID, or `0` if not found.
+func get_font_index(font_id: String) -> int:
+	for i: int in range(FONT_REGISTRY.size()):
+		if FONT_REGISTRY[i]["id"] == font_id:
+			return i
+	return 0
+
+
+## Returns the list of UI display names for screen filters.
+## [return] [Array] of formatted filter strings.
+func get_screen_filter_display_names() -> Array[String]:
+	print("GlobalSettings: Fetching screen filter display names.")
+	var names: Array[String] = []
+	for item: Dictionary in SCREEN_FILTER_REGISTRY:
+		names.append(item.get("name", "") as String)
+	return names
+
+
+## Returns the list of string IDs for console and bus arguments.
+## [return] [Array] of lowercase ID strings.
+func get_screen_filter_ids() -> Array[String]:
+	print("GlobalSettings: Fetching screen filter IDs.")
+	var ids: Array[String] = []
+	for item: Dictionary in SCREEN_FILTER_REGISTRY:
+		ids.append(item.get("id", "") as String)
+	return ids
+
+
+## Resolves the diorama shader mode integer from a filter ID.
+## [param filter_id] Target filter identifier string.
+## [return] Corresponding integer index for the shader.
+func get_screen_filter_index(filter_id: String) -> int:
+	var clean_id: String = filter_id.to_lower()
+	for item: Dictionary in SCREEN_FILTER_REGISTRY:
+		if (item.get("id", "") as String) == clean_id:
+			return item.get("index", 0) as int
+	return 0
+
+
+## Resolves the shader file resource path from a filter ID.
+## [param filter_id] Target filter identifier string.
+## [return] Resource file path string.
+func get_screen_filter_path(filter_id: String) -> String:
+	var clean_id: String = filter_id.to_lower()
+	for item: Dictionary in SCREEN_FILTER_REGISTRY:
+		if (item.get("id", "") as String) == clean_id:
+			return item.get("path", "") as String
+	return ""
+========== core/graphics_manager.gd ==========
+## Global autoload managing automatic graphics scaling and performance optimizations.
+##
+## [GraphicsManager] continuously monitors the application's framerate. If it dips below
+## the [constant TARGET_FPS_MINIMUM], it progressively disables heavy rendering features
+## (like SDFGI or MSAA) to maintain a playable framerate.
+# class_name GraphicsManager
+extends Node
+
+## Emitted when the performance profile drops a level to regain FPS.
+## [param downgrade_level] The new step index of reduced graphics.
+signal performance_profile_adjusted(downgrade_level: int)
+
+## Emitted when switching between User and Auto-Optimized modes.
+## [param is_optimized] [code]true[/code] if auto-optimization is running.
+signal profile_mode_changed(is_optimized: bool)
+
+## Emitted when the 60 FPS auto-tune benchmark finishes.
+## [param optimal_level] The determined graphics downgrade tier.
+signal benchmark_completed(optimal_level: int)
+
+## Time in seconds between checking the framerate.
+const FPS_CHECK_INTERVAL: float = 1.5
+
+## Minimum acceptable frames per second before triggering a downgrade.
+const TARGET_FPS_MINIMUM: float = 59.0
+
+## Maximum number of downgrade levels available.
+const MAX_DOWNGRADE_LEVEL: int = 7
+
+## Tracks if the game is currently auto-optimizing settings.
+var is_auto_optimizing: bool = false
+
+## Tracks if the benchmark routine is currently running.
+var is_benchmarking: bool = false
+
+## Tracks if the user is running on an integrated GPU or low-end hardware.
+var _is_low_end: bool = false
+
+## Cached reference to the currently active [Environment].
+var _active_environment: Environment = null
+
+## [Timer] used for periodic FPS checking.
+var _fps_timer: Timer = null
+
+## The current integer step representing how degraded the visual quality is.
+var _sdfgi_downgrade_level: int = 0
+
+
+## Called when the node enters the scene tree for the first time.
+## Detects low-end hardware on boot and configures the start state of the optimizer.
+func _ready() -> void:
+	print("GraphicsManager: Initializing and detecting hardware.")
+	_is_low_end = _detect_low_end_hardware()
+
+	get_tree().node_added.connect(_on_node_added)
+
+	var default_auto: bool = _is_low_end
+	var use_auto: bool = (
+		GlobalSettings.get_setting("Settings", "use_auto_optimizer", default_auto) as bool
+	)
+
+	if use_auto:
+		print("GraphicsManager: Booting directly into Auto-Optimization mode.")
+		enable_auto_mode()
+	else:
+		print("GraphicsManager: Booting into User Settings mode.")
+		enable_user_mode()
+
+	call_deferred("_emit_profile_state")
+
+
+## Disables the auto-optimizer and restores graphics control to user-defined settings.
+func enable_user_mode() -> void:
+	print("GraphicsManager: Switching to User Defined Settings.")
+	is_auto_optimizing = false
+	_sdfgi_downgrade_level = 0
+	GlobalSettings.save_setting("Settings", "use_auto_optimizer", false)
+
+	if _fps_timer:
+		_fps_timer.stop()
+
+	profile_mode_changed.emit(is_auto_optimizing)
+
+
+## Enables the auto-optimizer to continuously scale graphics in response to framerate.
+func enable_auto_mode() -> void:
+	if is_auto_optimizing:
+		return
+
+	print("GraphicsManager: Switching to 60 FPS Target Auto-Optimization.")
+	is_auto_optimizing = true
+	GlobalSettings.save_setting("Settings", "use_auto_optimizer", true)
+
+	if _fps_timer == null:
+		_setup_fps_timer()
+	else:
+		_fps_timer.start()
+
+	profile_mode_changed.emit(is_auto_optimizing)
+
+	if _is_low_end:
+		call_deferred("_apply_global_viewport_settings")
+
+	var saved_level: int = (
+		GlobalSettings.get_setting("Settings", "optimized_downgrade_level", 0) as int
+	)
+	if saved_level > 0:
+		print("GraphicsManager: Restoring previous optimization level: ", saved_level)
+		_fast_forward_downgrades(saved_level - 1)
+
+		if _sdfgi_downgrade_level <= MAX_DOWNGRADE_LEVEL and _fps_timer:
+			_fps_timer.start()
+	elif _is_low_end:
+		var env: Environment = _get_current_environment()
+		if is_instance_valid(env):
+			_fast_forward_downgrades(MAX_DOWNGRADE_LEVEL)
+
+
+## Runs an active benchmark stepping through quality profiles until 60 FPS is sustained.
+func run_benchmark_for_60fps() -> void:
+	if is_benchmarking:
+		return
+
+	print("GraphicsManager: Starting automatic benchmark for 60 FPS target.")
+	is_benchmarking = true
+	if _fps_timer:
+		_fps_timer.stop()
+
+	_sdfgi_downgrade_level = 0
+	var current_step: int = 0
+
+	while current_step <= MAX_DOWNGRADE_LEVEL:
+		_apply_stepwise_downgrade()
+		await get_tree().create_timer(1.0).timeout
+
+		var sample_fps: float = Engine.get_frames_per_second()
+		print("GraphicsManager: Benchmark step ", current_step, " recorded ", sample_fps, " FPS.")
+
+		if sample_fps >= TARGET_FPS_MINIMUM:
+			print("GraphicsManager: Target 60 FPS achieved at level: ", current_step)
+			break
+
+		current_step += 1
+
+	is_benchmarking = false
+	GlobalSettings.save_setting("Settings", "optimized_downgrade_level", _sdfgi_downgrade_level)
+	GlobalSettings.save_setting("Settings", "use_auto_optimizer", true)
+	benchmark_completed.emit(_sdfgi_downgrade_level)
+
+
+## Emits the current profile mode to any listeners safely after initialization.
+func _emit_profile_state() -> void:
+	print("GraphicsManager: Emitting initial profile state.")
+	profile_mode_changed.emit(is_auto_optimizing)
+
+
+## Instantiates and starts the internal timer used for FPS evaluation intervals.
+func _setup_fps_timer() -> void:
+	print("GraphicsManager: Setting up periodic FPS check timer.")
+	_fps_timer = Timer.new()
+	_fps_timer.wait_time = FPS_CHECK_INTERVAL
+	_fps_timer.one_shot = false
+	_fps_timer.autostart = true
+
+	_fps_timer.timeout.connect(_on_fps_timer_timeout)
+
+	add_child(_fps_timer)
+
+
+## Called by the FPS timer to trigger performance checks.
+func _on_fps_timer_timeout() -> void:
+	if not is_auto_optimizing or is_benchmarking:
+		return
+
+	_evaluate_runtime_performance()
+
+
+## Analyzes the [RenderingServer] video adapter string to determine if it is an integrated GPU.
+## Returns [code]true[/code] if low-end hardware is suspected.
+func _detect_low_end_hardware() -> bool:
+	print("GraphicsManager: Evaluating current video adapter.")
+	var adapter_type: RenderingDevice.DeviceType = (
+		RenderingServer.get_video_adapter_type() as RenderingDevice.DeviceType
+	)
+	var adapter_name: String = RenderingServer.get_video_adapter_name().to_lower()
+
+	if adapter_type == RenderingDevice.DEVICE_TYPE_INTEGRATED_GPU or "intel" in adapter_name:
+		print("GraphicsManager: Integrated GPU detected.")
+		return true
+
+	print("GraphicsManager: Discrete GPU detected.")
+	return false
+
+
+## Forces initial global settings like MSAA limits for the root [Viewport].
+func _apply_global_viewport_settings() -> void:
+	print("GraphicsManager: Applying global viewport limits for optimized mode.")
+	var root_viewport: Window = get_tree().root
+	root_viewport.msaa_3d = Viewport.MSAA_DISABLED
+	RenderingServer.environment_set_volumetric_fog_volume_size(32, 32)
+
+
+## Scene tree signal callback checking for new [WorldEnvironment] nodes.
+## [param node] The newly added node in the tree.
+func _on_node_added(node: Node) -> void:
+	if node is WorldEnvironment:
+		print("GraphicsManager: WorldEnvironment added. Registering environment.")
+		_active_environment = (node as WorldEnvironment).environment
+
+		if is_auto_optimizing:
+			var saved_level: int = (
+				GlobalSettings.get_setting("Settings", "optimized_downgrade_level", 0) as int
+			)
+			if saved_level > 0 and _sdfgi_downgrade_level < saved_level:
+				_fast_forward_downgrades(saved_level - 1)
+			elif _is_low_end:
+				_tweak_environment(_active_environment)
+				_fast_forward_downgrades(MAX_DOWNGRADE_LEVEL)
+
+
+## Looks up the current [Environment] resource connected to the active 3D world.
+## Returns the environment or the fallback environment if it exists.
+func _get_current_environment() -> Environment:
+	var vp: Viewport = get_viewport()
+	if vp and vp.find_world_3d():
+		var world: World3D = vp.find_world_3d()
+		if world.environment:
+			return world.environment
+		if world.fallback_environment:
+			return world.fallback_environment
+
+	return _active_environment
+
+
+## Applies immediate performance settings directly to the given [Environment] resource.
+## [param env] The environment to alter.
+func _tweak_environment(env: Environment) -> void:
+	print("GraphicsManager: Disabling heavy effects for optimization mode without saving to disk.")
+	if env:
+		env.ssao_enabled = false
+		env.ssr_enabled = false
+
+
+## Measures the current engine framerate and applies downgrades if it drops below the threshold.
+func _evaluate_runtime_performance() -> void:
+	var current_fps: float = Engine.get_frames_per_second()
+
+	if current_fps > 0.0 and current_fps < TARGET_FPS_MINIMUM:
+		print("GraphicsManager: FPS (", current_fps, ") below target. Applying step down.")
+		_apply_stepwise_downgrade()
+	else:
+		print("GraphicsManager: Performance is stable at ", current_fps, " FPS.")
+
+
+## Applies multiple downgrades instantly up to the requested step index.
+## [param target_level] The specific step level index to apply up to.
+func _fast_forward_downgrades(target_level: int) -> void:
+	print("GraphicsManager: Bypassing timer, fast-forwarding to step ", target_level)
+	while _sdfgi_downgrade_level <= target_level and _sdfgi_downgrade_level <= MAX_DOWNGRADE_LEVEL:
+		_apply_stepwise_downgrade()
+
+	if _fps_timer:
+		_fps_timer.stop()
+
+
+## Disables or reduces the quality of one major rendering setting to free up frametime.
+func _apply_stepwise_downgrade() -> void:
+	if _sdfgi_downgrade_level > MAX_DOWNGRADE_LEVEL:
+		return
+
+	print("GraphicsManager: Applying downgrade level: ", _sdfgi_downgrade_level)
+	var vp: Viewport = get_tree().root
+	var env: Environment = _get_current_environment()
+
+	match _sdfgi_downgrade_level:
+		0:
+			vp.msaa_3d = Viewport.MSAA_DISABLED
+			vp.use_taa = false
+			vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_FXAA
+		1:
+			vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR2
+			vp.scaling_3d_scale = 0.50
+			vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED
+		2:
+			var win: Window = vp as Window
+			if win and not win.is_embedded():
+				win.size = Vector2i(1024, 768)
+		3:
+			if is_instance_valid(env):
+				env.sdfgi_cascades = 2
+				env.sdfgi_y_scale = Environment.SDFGI_Y_SCALE_50_PERCENT
+			RenderingServer.gi_set_use_half_resolution(true)
+		4:
+			if is_instance_valid(env):
+				env.volumetric_fog_enabled = false
+				env.ssil_enabled = false
+		5:
+			if is_instance_valid(env):
+				env.ssao_enabled = false
+				env.ssr_enabled = false
+		6:
+			if is_instance_valid(env):
+				env.sdfgi_enabled = false
+		7:
+			vp.positional_shadow_atlas_size = 0
+			vp.mesh_lod_threshold = 2.0
+
+			if _fps_timer and not _fps_timer.is_stopped():
+				_fps_timer.stop()
+
+	_sdfgi_downgrade_level += 1
+	GlobalSettings.save_setting("Settings", "optimized_downgrade_level", _sdfgi_downgrade_level)
+	performance_profile_adjusted.emit(_sdfgi_downgrade_level)
+========== core/save_manager.gd ==========
+## Global autoload managing the serialization and deserialization of the game state.
+##
+## Handles capturing viewport thumbnails, writing JSON metadata, and saving/loading
+## nodes grouped in the 'saveable' group using binary .dat files.
+extends Node
+
+## Emitted when a save sequence completely finishes writing to disk.
+signal save_completed
+
+## The internal OS path where all save files are kept.
+const SAVES_DIR: String = "user://saves/"
+
+## Target width in pixels for generated save file thumbnails.
+const THUMB_WIDTH: int = 320
+
+## Target height in pixels for generated save file thumbnails.
+const THUMB_HEIGHT: int = 180
+
+## Cache for the last checkpoint [Vector3] position the player crossed.
+var last_checkpoint_pos: Vector3 = Vector3.ZERO
+
+
+## Called when the node enters the scene tree.
+## Ensures the save directory exists and sets the process mode.
+func _ready() -> void:
+	print("SaveManager: _ready() called. Initializing save directory...")
+	process_mode = Node.PROCESS_MODE_ALWAYS
+
+	var dir: DirAccess = DirAccess.open("user://")
+	if dir:
+		if not dir.dir_exists("saves"):
+			print("SaveManager: 'saves' directory not found. Creating it...")
+			var err: Error = dir.make_dir("saves")
+			if err != OK:
+				push_error("SaveManager: Failed to create 'saves' dir. Error: " + str(err))
+		else:
+			print("SaveManager: 'saves' directory verified.")
+	else:
+		push_error("SaveManager: CRITICAL: Failed to open user:// directory!")
+
+
+## Iterates through the saves directory to check if any valid save .dat files exist.
+func has_saves() -> bool:
+	print("SaveManager: has_saves() called.")
+	var dir: DirAccess = DirAccess.open(SAVES_DIR)
+	if not dir:
+		return false
+
+	dir.list_dir_begin()
+	var file_name: String = dir.get_next()
+	while file_name != "":
+		if not dir.current_is_dir() and file_name.ends_with(".dat"):
+			return true
+		file_name = dir.get_next()
+	return false
+
+
+## Initiates a save sequence. Captures a thumbnail, gathers node data, and writes to disk.
+func create_save(custom_name: String = "", is_fav: bool = false, existing_id: String = "") -> void:
+	print("SaveManager: create_save() called.")
+	get_tree().call_group("hide_on_save", "hide")
+
+	await RenderingServer.frame_post_draw
+
+	var viewport_texture: Texture2D = get_viewport().get_texture()
+	var viewport_img: Image = viewport_texture.get_image()
+
+	get_tree().call_group("hide_on_save", "show")
+
+	var timestamp: String = Time.get_datetime_string_from_system()
+	var save_id: String = existing_id if existing_id != "" else str(Time.get_ticks_usec())
+	var display_name: String = custom_name if custom_name != "" else timestamp
+	var base_path: String = SAVES_DIR + "save_" + save_id
+
+	if viewport_img != null and not viewport_img.is_empty():
+		WorkerThreadPool.add_task(_process_and_save_thumbnail.bind(viewport_img, base_path))
+	else:
+		push_warning("SaveManager: Failed to capture viewport image.")
+
+	_write_metadata(base_path + ".meta", display_name, timestamp, is_fav)
+	_write_game_state(base_path + ".dat")
+
+	print("SaveManager: Save sequence finalized. Emitting save_completed.")
+	save_completed.emit()
+
+
+## A background thread function that resizes and encodes the viewport image.
+func _process_and_save_thumbnail(img: Image, base_path: String) -> void:
+	print("SaveManager: _process_and_save_thumbnail() background task started.")
+	img.resize(THUMB_WIDTH, THUMB_HEIGHT, Image.INTERPOLATE_BILINEAR)
+	var img_err: Error = img.save_webp(base_path + ".webp")
+	if img_err != OK:
+		push_warning("SaveManager: Threaded thumbnail save failed: " + str(img_err))
+
+
+## Constructs and saves the lightweight JSON file used by the load menu.
+func _write_metadata(path: String, display_name: String, time_str: String, fav: bool) -> void:
+	print("SaveManager: _write_metadata() called for: ", path)
+	var current_scene_path: String = ""
+	var current_scene: Node = get_tree().current_scene
+	if current_scene:
+		current_scene_path = current_scene.scene_file_path
+
+	var meta_dict: Dictionary = {
+		"name": display_name,
+		"timestamp": time_str,
+		"is_favorite": fav,
+		"level_path": current_scene_path
+	}
+
+	var file: FileAccess = FileAccess.open(path, FileAccess.WRITE)
+	if file:
+		file.store_string(JSON.stringify(meta_dict))
+		file.close()
+	else:
+		push_error(
+			"SaveManager: Failed to write metadata. Error: " + str(FileAccess.get_open_error())
+		)
+
+
+## Gathers all nodes in the 'saveable' group and calls get_save_data() on them.
+func _write_game_state(path: String) -> void:
+	print("SaveManager: _write_game_state() called for: ", path)
+	var total_state: Dictionary = {}
+	var saveables: Array[Node] = get_tree().get_nodes_in_group("saveable")
+
+	if saveables.is_empty():
+		push_warning("SaveManager: No saveable nodes found.")
+
+	var saved_nodes_count: int = 0
+	for node: Node in saveables:
+		if node.has_method("get_save_data"):
+			var node_data: Dictionary = node.call("get_save_data")
+			var node_key: String = str(node.get_path())
+			total_state[node_key] = node_data
+			saved_nodes_count += 1
+		else:
+			push_warning("SaveManager: Node missing 'get_save_data': " + node.name)
+
+	var thread_safe_state: Dictionary = total_state.duplicate(true)
+	WorkerThreadPool.add_task(_threaded_write_data.bind(path, thread_safe_state, saved_nodes_count))
+
+
+## Background thread function that writes the large binary dictionary to disk.
+func _threaded_write_data(path: String, data: Dictionary, count: int) -> void:
+	print("SaveManager: _threaded_write_data() background task started.")
+	var file: FileAccess = FileAccess.open(path, FileAccess.WRITE)
+	if file:
+		file.store_var(data)
+		file.close()
+		print("SaveManager: Game state written. Total nodes saved: ", count)
+	else:
+		var err: Error = FileAccess.get_open_error()
+		push_error("SaveManager: Failed to write game state. Error: " + str(err))
+
+
+## Reads the binary dictionary from disk and pushes data back into active scene nodes.
+func _load_game_state(path: String) -> void:
+	print("SaveManager: _load_game_state() called for: ", path)
+	if not FileAccess.file_exists(path):
+		push_error("SaveManager: Load failed: File does not exist at path.")
+		return
+
+	var file: FileAccess = FileAccess.open(path, FileAccess.READ)
+	if not file:
+		var err: Error = FileAccess.get_open_error()
+		push_error("SaveManager: Load failed: Cannot open file. Error: " + str(err))
+		return
+
+	var loaded_data: Variant = file.get_var()
+	file.close()
+
+	if not loaded_data is Dictionary:
+		push_error("SaveManager: Corrupted data file.")
+		return
+
+	var total_state: Dictionary = loaded_data as Dictionary
+	var keys: Array = total_state.keys()
+	var loaded_nodes_count: int = 0
+
+	for node_path_str: String in keys:
+		var node: Node = get_node_or_null(node_path_str)
+		if node:
+			if node.has_method("load_save_data"):
+				var node_data: Dictionary = total_state[node_path_str]
+				node.call("load_save_data", node_data)
+				loaded_nodes_count += 1
+			else:
+				push_warning("SaveManager: Missing 'load_save_data': " + node.name)
+		else:
+			push_warning("SaveManager: Node not in tree: " + node_path_str)
+
+	print("SaveManager: Game state loaded. Total nodes restored: ", loaded_nodes_count)
+
+
+## Scans the saves directory and returns a parsed list of all save file metadata.
+func get_all_saves() -> Array[Dictionary]:
+	print("SaveManager: get_all_saves() called.")
+	var saves: Array[Dictionary] = []
+	var dir: DirAccess = DirAccess.open(SAVES_DIR)
+	if not dir:
+		return saves
+
+	dir.list_dir_begin()
+	var file_name: String = dir.get_next()
+
+	while file_name != "":
+		if not dir.current_is_dir() and file_name.ends_with(".meta"):
+			var base_path: String = SAVES_DIR + file_name.replace(".meta", "")
+			var meta_file: FileAccess = FileAccess.open(SAVES_DIR + file_name, FileAccess.READ)
+			if meta_file:
+				var data: Dictionary = JSON.parse_string(meta_file.get_as_text())
+				data["base_path"] = base_path
+				data["id"] = file_name.replace("save_", "").replace(".meta", "")
+				saves.append(data)
+		file_name = dir.get_next()
+
+	saves.sort_custom(_sort_saves)
+	return saves
+
+
+## Custom sorting function for save slots by favorite status and ID.
+func _sort_saves(a: Dictionary, b: Dictionary) -> bool:
+	var a_fav: bool = a.get("is_favorite", false)
+	var b_fav: bool = b.get("is_favorite", false)
+
+	if a_fav != b_fav:
+		return a_fav
+
+	return a.get("id", "0").to_int() > b.get("id", "0").to_int()
+
+
+## Overwrites an existing save's metadata file without touching the binary .dat file.
+func update_save_meta(save_id: String, new_name: String, is_favorite: bool) -> void:
+	print("SaveManager: update_save_meta() called for ID: ", save_id)
+	var path: String = SAVES_DIR + "save_" + save_id + ".meta"
+	if not FileAccess.file_exists(path):
+		return
+
+	var file: FileAccess = FileAccess.open(path, FileAccess.READ)
+	var data: Dictionary = JSON.parse_string(file.get_as_text())
+	file.close()
+
+	_write_metadata(path, new_name, data.get("timestamp", ""), is_favorite)
+
+
+## Orchestrates a full load sequence: reads metadata, swaps scenes, and loads state.
+func load_save_game(base_path: String) -> void:
+	print("SaveManager: load_save_game() called for: ", base_path)
+	var meta_path: String = base_path + ".meta"
+	var dat_path: String = base_path + ".dat"
+
+	if not FileAccess.file_exists(meta_path) or not FileAccess.file_exists(dat_path):
+		push_error("SaveManager: Missing save files at: " + base_path)
+		return
+
+	var file: FileAccess = FileAccess.open(meta_path, FileAccess.READ)
+	var meta_data: Dictionary = JSON.parse_string(file.get_as_text())
+	file.close()
+
+	var level_path: String = meta_data.get("level_path", "")
+	var current_scene: Node = get_tree().current_scene
+	var current_path: String = current_scene.scene_file_path if current_scene else ""
+
+	if level_path != "" and current_path != level_path:
+		var err: Error = get_tree().change_scene_to_file(level_path)
+		if err != OK:
+			push_error("SaveManager: Failed to load level: " + level_path)
+			return
+
+		await get_tree().process_frame
+		await get_tree().process_frame
+
+	_load_game_state(dat_path)
+	get_tree().paused = false
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+========== core/save_slot.gd ==========
+## A UI component representing a single save file slot.
+##
+## [SaveSlot] handles loading the WebP thumbnail, displaying metadata,
+## and emitting signals when the user interacts with its load, save, or delete buttons.
+class_name SaveSlot
+extends Control
+
+## Emitted when the primary action (Load or Overwrite) is pressed.
+## [param base_path] The absolute file path to the save without the extension.
+signal action_pressed(base_path: String)
+
+## Emitted when the user changes the custom name or toggles the favorite status.
+## [param save_id] The unique string ID of the save file.
+## [param new_name] The updated string name input by the user.
+## [param is_favorite] The updated favorite boolean status.
+signal meta_updated(save_id: String, new_name: String, is_favorite: bool)
+
+## Emitted when the delete button is pressed.
+## [param save_id] The unique string ID of the save file.
+## [param base_path] The absolute file path to the save without the extension.
+signal delete_pressed(save_id: String, base_path: String)
+
+## Displays the captured `.webp` screenshot of the save.
+@onready var thumbnail: TextureRect = %Thumbnail
+## Allows the user to rename the save file inline.
+@onready var name_input: LineEdit = %NameInput
+## Displays the system time when the save was created.
+@onready var date_label: Label = %DateLabel
+## Toggles the favorite status of the save file.
+@onready var fav_button: Button = %FavButton
+## The main context-sensitive button (reads "Load" or "Overwrite").
+@onready var action_button: Button = %ActionButton
+## Triggers the deletion prompt for the save file.
+@onready var delete_button: Button = %DeleteButton
+
+## A visual border shown when the save is marked as a favorite.
+@onready var highlight_border: Control = %HighlightBorder
+
+## The raw system file path to the `.dat` file, without the extension.
+var _base_path: String = ""
+## The extracted unique identifier for this save.
+var _save_id: String = ""
+
+
+## Called when the node enters the scene tree. Connects UI signals.
+func _ready() -> void:
+	action_button.pressed.connect(_on_action_button_pressed)
+	name_input.text_submitted.connect(_on_name_submitted)
+	name_input.focus_exited.connect(_on_name_focus_exited)
+	fav_button.toggled.connect(_on_fav_toggled)
+	delete_button.pressed.connect(_on_delete_button_pressed)
+
+
+## Initializes the slot with metadata dictionary from the [SaveManager].
+## [param data] The parsed metadata JSON.
+## [param is_saving] Determines if the action button says 'Load' or 'Overwrite'.
+func setup(data: Dictionary, is_saving: bool) -> void:
+	_base_path = data.get("base_path", "")
+	_save_id = data.get("id", "")
+
+	name_input.text = data.get("name", "Unknown Save")
+	date_label.text = data.get("timestamp", "Unknown Date")
+
+	var is_fav: bool = data.get("is_favorite", false)
+	fav_button.set_pressed_no_signal(is_fav)
+
+	# Apply the visual state immediately on load
+	_update_visuals(is_fav)
+
+	if is_saving:
+		action_button.text = "Overwrite"
+	else:
+		action_button.text = "Load"
+
+	var img_path: String = _base_path + ".webp"
+	if FileAccess.file_exists(img_path):
+		var image: Image = Image.load_from_file(img_path)
+		if image:
+			thumbnail.texture = ImageTexture.create_from_image(image)
+
+
+## Emits the primary action signal.
+func _on_action_button_pressed() -> void:
+	action_pressed.emit(_base_path)
+
+
+## Triggers a metadata update when the user hits 'Enter' in the line edit.
+## [param _new_text] The new string, though we pull from the UI directly anyway.
+func _on_name_submitted(_new_text: String) -> void:
+	name_input.release_focus()
+	_emit_meta_update()
+
+
+## Triggers a metadata update when the user clicks away from the line edit.
+func _on_name_focus_exited() -> void:
+	_emit_meta_update()
+
+
+## Triggers a metadata update and visual refresh when the favorite button is clicked.
+## [param toggled_on] The new boolean state of the toggle button.
+func _on_fav_toggled(toggled_on: bool) -> void:
+	_update_visuals(toggled_on)
+	_emit_meta_update()
+
+
+## Internal helper to extract the current text/toggle states and emit the update signal.
+func _emit_meta_update() -> void:
+	var current_name: String = name_input.text.strip_edges()
+	var is_fav: bool = fav_button.button_pressed
+	meta_updated.emit(_save_id, current_name, is_fav)
+
+
+## Emits the deletion signal containing the ID and file path.
+func _on_delete_button_pressed() -> void:
+	delete_pressed.emit(_save_id, _base_path)
+
+
+## Intercepts raw GUI input to detect double-click events on the panel.
+## [param event] The generic [InputEvent] entering the control node.
+func _gui_input(event: InputEvent) -> void:
+	var mouse_event: InputEventMouseButton = event as InputEventMouseButton
+	if mouse_event and mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.double_click:
+		accept_event()
+		action_pressed.emit(_base_path)
+
+
+## Toggles the favorite outline and updates the favorite button text.
+## [param is_fav] The state determining if the visuals should be highlighted.
+func _update_visuals(is_fav: bool) -> void:
+	if highlight_border:
+		highlight_border.visible = is_fav
+
+	if fav_button:
+		if is_fav:
+			fav_button.text = "un-FAV"
+		else:
+			fav_button.text = "FAV"
