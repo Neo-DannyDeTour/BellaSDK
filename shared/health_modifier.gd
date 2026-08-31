@@ -32,8 +32,12 @@ func _on_tick_timer_timeout() -> void:
 		# Added "Components/" to the relative path
 		var health_node: Node = body.get_node_or_null("Components/HealthComponent")
 
-		if health_node is HealthComponent:
+		if (
+			health_node != null
+			and health_node.has_method("take_damage")
+			and health_node.has_method("heal")
+		):
 			if modify_amount < 0:
-				health_node.take_damage(abs(modify_amount))
+				health_node.call("take_damage", abs(modify_amount))
 			elif modify_amount > 0:
-				health_node.heal(modify_amount)
+				health_node.call("heal", modify_amount)
