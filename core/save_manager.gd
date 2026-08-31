@@ -7,6 +7,9 @@ extends Node
 ## Emitted when a save sequence completely finishes writing to disk.
 signal save_completed
 
+## Security variable: The encryption key used to protect binary game state data files.
+const ENCRYPTION_KEY: String = "bella_sec_v1_99238"
+
 ## The internal OS path where all save files are kept.
 const SAVES_DIR: String = "user://saves/"
 
@@ -141,34 +144,53 @@ func _write_game_state(path: String) -> void:
 	WorkerThreadPool.add_task(_threaded_write_data.bind(path, thread_safe_state, saved_nodes_count))
 
 
-## Background thread function that writes the large binary dictionary to disk.
+## Background thread function that writes the large binary dictionary to disk encrypted.
+## [param path] The file path to write to.
+## [param data] The dictionary data to serialize.
+## [param count] The number of nodes being saved.
 func _threaded_write_data(path: String, data: Dictionary, count: int) -> void:
 	print("SaveManager: _threaded_write_data() background task started.")
-	var file: FileAccess = FileAccess.open(path, FileAccess.WRITE)
+	var file: FileAccess = FileAccess.open_encrypted_with_pass(
+		path, FileAccess.WRITE, ENCRYPTION_KEY
+	)
 	if file:
 		file.store_var(data)
 		file.close()
-		print("SaveManager: Game state written. Total nodes saved: ", count)
+		print("SaveManager: Game state securely written. Total nodes saved: ", count)
 	else:
 		var err: Error = FileAccess.get_open_error()
-		push_error("SaveManager: Failed to write game state. Error: " + str(err))
+		push_error("SaveManager: Failed to securely write game state. Error: " + str(err))
 
 
 ## Reads the binary dictionary from disk and pushes data back into active scene nodes.
+## Includes a fallback to read unencrypted legacy saves.
+## [param path] The file path to load from.
 func _load_game_state(path: String) -> void:
 	print("SaveManager: _load_game_state() called for: ", path)
 	if not FileAccess.file_exists(path):
 		push_error("SaveManager: Load failed: File does not exist at path.")
 		return
 
-	var file: FileAccess = FileAccess.open(path, FileAccess.READ)
+	var file: FileAccess = FileAccess.open_encrypted_with_pass(
+		path, FileAccess.READ, ENCRYPTION_KEY
+	)
 	if not file:
 		var err: Error = FileAccess.get_open_error()
-		push_error("SaveManager: Load failed: Cannot open file. Error: " + str(err))
-		return
+		print(
+			"SaveManager: Failed to decrypt file. Attempting unencrypted fallback. Error: ",
+			str(err)
+		)
+		file = FileAccess.open(path, FileAccess.READ)
+		if not file:
+			var fb_err: Error = FileAccess.get_open_error()
+			push_error(
+				"SaveManager: Load failed: Cannot open unencrypted file. Error: " + str(fb_err)
+			)
+			return
 
 	var loaded_data: Variant = file.get_var()
 	file.close()
+	print("SaveManager: Game state loaded successfully.")
 
 	if not loaded_data is Dictionary:
 		push_error("SaveManager: Corrupted data file.")
