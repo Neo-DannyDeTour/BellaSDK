@@ -1,4 +1,5 @@
-## Unit test suite for verifying the behavior of the health modifier system.
+with open("test/unit/test_health_modifier.gd", "w") as f:
+    f.write("""## Unit test suite for verifying the behavior of the health modifier system.
 extends GutTest
 
 ## Preloaded script reference for the health modifier under test.
@@ -77,3 +78,4 @@ func test_modifier_applies_healing() -> void:
 	mocked_modifier._on_tick_timer_timeout()
 
 	assert_eq(health_comp.current_health, 80, "Health should increase by 30 from modifier.")
+""")

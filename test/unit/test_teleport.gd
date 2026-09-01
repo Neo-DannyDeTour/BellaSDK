@@ -15,20 +15,22 @@ func before_each() -> void:
 	_teleport = Teleport.new()
 	var portal_sound: AudioStreamPlayer = AudioStreamPlayer.new()
 	portal_sound.name = "AudioStreamPlayer"
+	var dummy_stream: AudioStreamWAV = AudioStreamWAV.new()
+	portal_sound.stream = dummy_stream
 	_teleport.add_child(portal_sound)
 	_teleport.portal_sound = portal_sound
 	add_child(_teleport)
 
 	_target_portal = Area3D.new()
-	_target_portal.global_transform.origin = Vector3(10, 20, 30)
 	add_child(_target_portal)
+	_target_portal.global_transform.origin = Vector3(10, 20, 30)
 
 	_teleport.connect_portal = _target_portal
 
 	_player = Node3D.new()
 	_player.name = "Player"
-	_player.global_transform.origin = Vector3.ZERO
 	add_child(_player)
+	_player.global_transform.origin = Vector3.ZERO
 
 
 func after_each() -> void:
@@ -63,8 +65,8 @@ func test_non_player_enters_teleport() -> void:
 
 	var other_body: Node3D = Node3D.new()
 	other_body.name = "Enemy"
-	other_body.global_transform.origin = Vector3.ZERO
 	add_child(other_body)
+	other_body.global_transform.origin = Vector3.ZERO
 
 	_teleport._on_body_entered(other_body)
 
