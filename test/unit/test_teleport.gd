@@ -1,4 +1,4 @@
-extends "res://addons/gut/test.gd"
+extends GutTest
 ## Unit tests for the Teleport class.
 class_name TestTeleport
 
