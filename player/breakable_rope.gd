@@ -1,12 +1,25 @@
+## A destructible physics rope that breaks after sustaining sufficient damage.
+##
+## Acts as a structural weak point in puzzle mechanics. Once the rope's health drops
+## to zero, it broadcasts a signal (useful for dropping drawbridges or heavy objects)
+## and then frees its root hierarchy.
+class_name BreakableRope
 extends StaticBody3D
 
+## Emitted when the rope's health reaches zero and it snaps.
 signal rope_broken
 
-var health: int = 10
+## The total amount of damage this rope can sustain before breaking.
+@export var health: int = 10
+
+## Tracks if the rope has already been destroyed to prevent duplicate breaking logic.
 var is_broken: bool = false
 
 
-# We add the parameters here so it catches what the shotgun throws!
+## Handles incoming damage, such as from shotgun blasts or physics impacts.
+## [param amount] The damage value to subtract from health.
+## [param hit_position] The global coordinate where the impact occurred.
+## [param direction] The trajectory vector of the incoming attack.
 func take_damage(amount: int, hit_position: Vector3, direction: Vector3) -> void:
 	print(
 		"BreakableRope: take_damage() called. Amount: ",
@@ -29,6 +42,7 @@ func take_damage(amount: int, hit_position: Vector3, direction: Vector3) -> void
 		snap_rope()
 
 
+## Executes the destruction sequence, broadcasting the signal and cleaning up nodes.
 func snap_rope() -> void:
 	print("BreakableRope: snap_rope() called. Rope snapped!")
 

@@ -9,7 +9,7 @@ var modifier: Variant = null
 ## Dummy physics body to represent a character.
 var dummy_body: Node3D = null
 ## Child health component attached to the dummy body.
-var health_comp: Variant = null
+var health_comp: HealthComponent = null
 
 
 ## Mock implementation of the health modifier to simulate overlapping bodies.

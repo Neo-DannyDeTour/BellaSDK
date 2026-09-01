@@ -34,7 +34,11 @@ func _on_tick_timer_timeout() -> void:
 		if health_node == null:
 			health_node = body.find_child("HealthComponent", true, false)
 
-		if health_node is HealthComponent:
+		if (
+			health_node != null
+			and health_node.has_method("take_damage")
+			and health_node.has_method("heal")
+		):
 			if modify_amount < 0:
 				health_node.take_damage(abs(modify_amount))
 			elif modify_amount > 0:
