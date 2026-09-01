@@ -40,6 +40,7 @@ script = ExtResource("1_harnn")
 shape = SubResource("BoxShape3D_harnn")
 
 [node name="PortalMesh" type="MeshInstance3D" parent="." unique_id=1997887805]
+layers = 8
 mesh = SubResource("QuadMesh_gh40b")
 
 [node name="SubViewport" type="SubViewport" parent="." unique_id=150245908]

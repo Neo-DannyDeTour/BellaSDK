@@ -275,6 +275,11 @@ signal item_prompts_toggled(enabled: bool)
 ## [param scale_factor] Multiplier applied to base UI font sizes.
 signal font_scale_changed(scale_factor: float)
 
+## Emitted when the primary player camera initializes and becomes active.
+## Passes [param camera] reference to listening systems like portals and UI viewports.
+@warning_ignore("unused_signal")
+signal player_camera_registered(camera: Camera3D)
+
 ## Emitted when user interface elements should be toggled visible or hidden.
 @warning_ignore("unused_signal")
 signal ui_visibility_toggle_requested

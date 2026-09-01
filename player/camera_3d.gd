@@ -47,6 +47,11 @@ func _ready() -> void:
 		make_current()
 		print("Camera3D: Player camera set as active listener.")
 		_setup_audio_listener()
+		if has_node("/root/Events"):
+			var events: Node = get_node("/root/Events")
+			if events.has_signal("player_camera_registered"):
+				print("Camera3D: Registering active camera to Events bus.")
+				events.emit_signal("player_camera_registered", self)
 
 	_noise.seed = randi()
 	_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX

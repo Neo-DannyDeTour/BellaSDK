@@ -1,5 +1,5 @@
 shader_type spatial;
-render_mode unshaded, cull_disabled, depth_draw_opaque;
+render_mode unshaded, cull_back, depth_draw_opaque;
 
 uniform sampler2D viewport_texture : source_color, filter_linear;
 
