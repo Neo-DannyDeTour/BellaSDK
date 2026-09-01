@@ -21,7 +21,6 @@ var is_controlled: bool = false
 var controlling_player: CharacterBody3D = null
 ## Tracks if the player has just begun controlling the stand, to avoid immediate detachment.
 var _just_attached: bool = false
-
 ## The last node that was validly struck by the laser and received a power signal.
 var _last_target: Node3D = null
 ## A pool of [MeshInstance3D] used to visually represent straight segments of the laser beam.
@@ -45,24 +44,25 @@ var _scorch_texture: GradientTexture2D
 ## Generated [GradientTexture2D] used for the fading trail scorch decals.
 var _trail_texture: GradientTexture2D
 
-@onready
-## Base beam particles.
-var base_beam_particles: GPUParticles3D = get_node_or_null("Turret/BeamParticles") as GPUParticles3D
-## Base impact particles.
+## The original, pre-configured particle system used as a template for beam effects.
+@onready var base_beam_particles: GPUParticles3D = (
+	get_node_or_null("Turret/BeamParticles") as GPUParticles3D
+)
+## The template particle system used when the laser impacts a surface.
 @onready var base_impact_particles: GPUParticles3D = (
 	get_node_or_null("Turret/ImpactParticles") as GPUParticles3D
 )
-## Base smoke particles.
+## The template particle system used to spawn drifting smoke along the laser beam.
 @onready var base_smoke_particles: GPUParticles3D = (
 	get_node_or_null("Turret/SmokeParticles") as GPUParticles3D
 )
-## Turret.
+## The rotating mechanism portion of the laser stand.
 @onready var turret: Node3D = $Turret
-## Laser origin.
+## The starting 3D coordinate and rotation from which the laser beam is cast.
 @onready var laser_origin: Marker3D = $Turret/LaserOrigin
-## Base beam mesh.
+## The template 3D mesh used to build segmented laser lines.
 @onready var base_beam_mesh: MeshInstance3D = $Turret/BeamMesh
-## Interact comp.
+## The interaction volume allowing players to assume manual control.
 @onready var interact_comp: InteractComponent = $InteractComponent
 
 
@@ -86,6 +86,7 @@ func _ready() -> void:
 	_initialize_trail_pool()
 
 
+## Initializes the trail pool of decals.
 func _initialize_trail_pool() -> void:
 	print("StationaryLaserStand: Initializing 60 FPS trail pool.")
 	for i: int in range(MAX_TRAIL_DECALS):
@@ -98,6 +99,7 @@ func _initialize_trail_pool() -> void:
 		_trail_pool.append(d)
 
 
+## Creates the active scorch texture.
 func _create_scorch_texture() -> GradientTexture2D:
 	print("StationaryLaserStand: Generating active hit scorch texture.")
 	var grad: Gradient = Gradient.new()
@@ -123,6 +125,7 @@ func _create_scorch_texture() -> GradientTexture2D:
 	return tex
 
 
+## Creates the black trail texture.
 func _create_trail_texture() -> GradientTexture2D:
 	print("StationaryLaserStand: Generating black scorch trail texture.")
 	var grad: Gradient = Gradient.new()
@@ -143,7 +146,8 @@ func _create_trail_texture() -> GradientTexture2D:
 	return tex
 
 
-## Updates player control input rotations and calculates the laser raycast bounces.
+## Continuously evaluates player input for rotation if controlled, and processes raycasts.
+## [param delta]: Frame delta time.
 func _physics_process(delta: float) -> void:
 	if is_controlled:
 		_handle_rotation_input(delta)
@@ -158,6 +162,7 @@ func _physics_process(delta: float) -> void:
 	_process_laser()
 
 
+## Handles user rotation input.
 func _handle_rotation_input(delta: float) -> void:
 	var turn_input: float = GestureInputManager.get_axis("left", "right")
 
@@ -165,6 +170,7 @@ func _handle_rotation_input(delta: float) -> void:
 		turret.rotate_y(-turn_input * rotation_speed * delta)
 
 
+## Checks if the player is out of range to auto release control.
 func _check_auto_release() -> void:
 	if controlling_player:
 		var distance: float = global_position.distance_to(controlling_player.global_position)
@@ -173,6 +179,7 @@ func _check_auto_release() -> void:
 			_release_control()
 
 
+## Casts a raycast to evaluate bouncing laser segments.
 func _process_laser() -> void:
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var current_origin: Vector3 = laser_origin.global_position
