@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://c261acv3ex6c0"]
 
 [ext_resource type="Script" uid="uid://4nkt0134wccl" path="res://ui/main_menu.gd" id="1_2o76q"]
-[ext_resource type="Texture2D" uid="uid://dutrfuowe3e1q" path="res://assets/images/Concept/Key_art.PNG" id="1_ovrgc"]
 [ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="2_2o76q"]
 [ext_resource type="PackedScene" uid="uid://8m8l0uplgvm" path="res://ui/HorrorButton.tscn" id="3_kaxbk"]
 [ext_resource type="Script" uid="uid://dbuos71yhftq2" path="res://ui/options_menu.gd" id="5_lsdqh"]
@@ -13,14 +12,12 @@
 [ext_resource type="PackedScene" uid="uid://da3q2bu5xkp72" path="res://ui/GameplayPanel.tscn" id="10_bgtsx"]
 [ext_resource type="Shader" uid="uid://w674ybxmnkoi" path="res://vfx/diorama_post_process.gdshader" id="11_kaxbk"]
 [ext_resource type="Script" uid="uid://7t34h1kqmrcr" path="res://ui/diorama_post_process.gd" id="12_0nobx"]
-[ext_resource type="AudioStream" uid="uid://c1l53sh8s0och" path="res://assets/music/Concrete_and_Moss.mp3" id="12_jiymt"]
-[ext_resource type="PackedScene" uid="uid://dhh7c5j6i8bkk" path="res://player/settings_level.tscn" id="13_0nobx"]
 [ext_resource type="Script" uid="uid://bbavliaaoouke" path="res://ui/perf_overlay.gd" id="14_iyrh0"]
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_50h1w"]
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_6bivr"]
-texture = ExtResource("1_ovrgc")
+
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jiymt"]
 bg_color = Color(0, 0, 0, 1)
@@ -307,7 +304,7 @@ script = ExtResource("12_0nobx")
 
 [node name="FastDioramaMap" type="Node3D" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer/DioramaViewport" unique_id=1472222682]
 
-[node name="SettingsLevel" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer/DioramaViewport/FastDioramaMap" unique_id=240456945 instance=ExtResource("13_0nobx")]
+[node name="SettingsLevel" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer/DioramaViewport/FastDioramaMap" unique_id=240456945 ]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5427445, 0.44948673, -0.57631207)
 
 [node name="PreviewShaderLayer" type="CanvasLayer" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer/DioramaViewport" unique_id=2026771909]
@@ -361,5 +358,5 @@ size_flags_horizontal = 3
 [node name="SaveLoadPanel" parent="." unique_id=1719296314 instance=ExtResource("8_lsdqh")]
 
 [node name="MainThemePlayer" type="AudioStreamPlayer" parent="." unique_id=122940660]
-stream = ExtResource("12_jiymt")
+
 bus = &"Music"

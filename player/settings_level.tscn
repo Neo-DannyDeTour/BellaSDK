@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://dhh7c5j6i8bkk"]
 
 [ext_resource type="PackedScene" uid="uid://k40mfreic8ql" path="res://assets/VisTEST/2. Modular_Models/Floors/floor_tiles_2x2.tscn" id="1_d4pdq"]
-[ext_resource type="Texture2D" uid="uid://bqru753kemdt6" path="res://assets/HDR/moon_night_2k.hdr" id="1_mhg1j"]
 [ext_resource type="PackedScene" uid="uid://duhfa76y4aubr" path="res://assets/VisTEST/2. Modular_Models/Columns/column.tscn" id="3_egx04"]
 [ext_resource type="PackedScene" uid="uid://b7cj6grg5fqy3" path="res://assets/VisTEST/2. Modular_Models/Floors/floor_grille_1x1.tscn" id="4_swa3n"]
 [ext_resource type="PackedScene" uid="uid://bhvyfa8oulq7m" path="res://assets/VisTEST/2. Modular_Models/Floors/floor_metal_1x1.tscn" id="5_387by"]
@@ -27,10 +26,8 @@
 [ext_resource type="PackedScene" uid="uid://dpjfvh3ireax5" path="res://assets/VisTEST/2. Modular_Models/Props/ladder_left_1m.tscn" id="26_wd0o1"]
 [ext_resource type="PackedScene" uid="uid://b4pr7b4xgvkr7" path="res://assets/VisTEST/2. Modular_Models/Props/ladder_right_1m.tscn" id="27_l0g8g"]
 [ext_resource type="PackedScene" uid="uid://ep02e3j752sd" path="res://shared/ventilator.tscn" id="28_lnrub"]
-[ext_resource type="Texture2D" uid="uid://dtkbunwcfmqfc" path="res://assets/VisTEST/2. Modular_Models/Walls/Walls_Concrete_Holes/Walls_Concrete_Holes_T_Concrete_Holes_BaseColor-T_Concrete_Holes_Alpha.png" id="29_6hbgt"]
 [ext_resource type="Texture2D" uid="uid://8u68cwmy0fbf" path="res://assets/VisTEST/2. Modular_Models/Walls/Walls_Concrete_Holes/Walls_Concrete_Holes_T_Concrete_Holes_Emission.png" id="30_r02c6"]
 [ext_resource type="Texture2D" uid="uid://hjtae12r5r6v" path="res://assets/VisTEST/2. Modular_Models/Walls/Walls_Concrete_Holes/Walls_Concrete_Holes_T_Concrete_Holes_Normal.png" id="31_5ywpj"]
-[ext_resource type="Texture2D" uid="uid://dgkssstugiddt" path="res://assets/VisTEST/2. Modular_Models/Walls/Walls_Concrete_Holes/Walls_Concrete_Holes_T_Concrete_Holes_Metallic-T_Concrete_Holes_Roughness.png" id="32_gh7m2"]
 [ext_resource type="PackedScene" uid="uid://c0cvl8ftmnbgv" path="res://assets/VisTEST/2. Modular_Models/Walkway/walkway_right.tscn" id="33_r02c6"]
 [ext_resource type="PackedScene" uid="uid://dr5pltmyu223j" path="res://assets/VisTEST/2. Modular_Models/Props/apply_light.tscn" id="35_gh7m2"]
 [ext_resource type="PackedScene" uid="uid://c4ns10vnlk1hx" path="res://assets/VisTEST/2. Modular_Models/Props/boxs_cables_wall_big.tscn" id="37_kja8q"]
@@ -57,7 +54,7 @@
 [ext_resource type="Shader" uid="uid://cp26motkbojta" path="res://ui/VisionAssist.gdshader" id="57_fbi2v"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_kja8q"]
-panorama = ExtResource("1_mhg1j")
+
 
 [sub_resource type="Sky" id="Sky_lwyc6"]
 sky_material = SubResource("PanoramaSkyMaterial_kja8q")
@@ -71,8 +68,8 @@ sdfgi_use_occlusion = true
 sdfgi_cascades = 2
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6sdu6"]
-albedo_texture = ExtResource("29_6hbgt")
-roughness_texture = ExtResource("32_gh7m2")
+
+
 emission_enabled = true
 emission_texture = ExtResource("30_r02c6")
 normal_enabled = true
