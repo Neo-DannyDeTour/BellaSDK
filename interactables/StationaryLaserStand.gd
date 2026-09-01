@@ -45,9 +45,8 @@ var _scorch_texture: GradientTexture2D
 var _trail_texture: GradientTexture2D
 
 ## The original, pre-configured particle system used as a template for beam effects.
-@onready var base_beam_particles: GPUParticles3D = (
-	get_node_or_null("Turret/BeamParticles") as GPUParticles3D
-)
+@onready
+var base_beam_particles: GPUParticles3D = get_node_or_null("Turret/BeamParticles") as GPUParticles3D
 ## The template particle system used when the laser impacts a surface.
 @onready var base_impact_particles: GPUParticles3D = (
 	get_node_or_null("Turret/ImpactParticles") as GPUParticles3D
