@@ -20,9 +20,8 @@ class MockModifier:
 	var mock_bodies: Array[Node3D] = []
 
 	## Returns the simulated list of overlapping physics bodies.
-	@warning_ignore("native_method_override")
-	func get_overlapping_bodies() -> Array[Node3D]:
-		print("MockModifier: get_overlapping_bodies() returning mocked bodies.")
+	func _get_target_bodies() -> Array[Node3D]:
+		print("MockModifier: _get_target_bodies() returning mocked bodies.")
 		return mock_bodies
 
 

@@ -24,9 +24,14 @@ func _ready() -> void:
 	_tick_timer.timeout.connect(_on_tick_timer_timeout)
 
 
+## Retrieves overlapping bodies within the area. Can be overridden for testing.
+func _get_target_bodies() -> Array[Node3D]:
+	return get_overlapping_bodies()
+
+
 ## Called periodically by the internal timer. Iterates over overlapping bodies and modifies health.
 func _on_tick_timer_timeout() -> void:
-	var bodies: Array[Node3D] = get_overlapping_bodies()
+	var bodies: Array[Node3D] = _get_target_bodies()
 
 	for body: Node3D in bodies:
 		var health_node: Node = body.get_node_or_null("Components/HealthComponent")
