@@ -1,10 +1,17 @@
+## A transient 3D particle effect representing an arcane magic burst.
+##
+## Acts as a generic magic burst visual effect that manages its own lifecycle.
+## Extends [GPUParticles3D].
 class_name ArcaneBurst
 extends GPUParticles3D
 
-## Optional parameter to configure how long the particles should emit.
+## The duration in seconds that the particles will emit before stopping.
+## Used to control the length of the visual effect. Defaults to 1.0.
 @export var burst_duration: float = 1.0
 
 
+## Automatically called when the node enters the scene tree.
+## Starts emitting and connects the [signal finished] signal.
 func _ready() -> void:
 	print("ArcaneBurst: _ready() called. Spawning an arcane burst VFX.")
 	finished.connect(_on_finished)
@@ -12,5 +19,6 @@ func _ready() -> void:
 	one_shot = true
 
 
+## Deletes the node when the particle effect finishes playing to prevent memory leaks.
 func _on_finished() -> void:
 	queue_free()
