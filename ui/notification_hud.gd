@@ -2,11 +2,11 @@
 class_name NotificationHUD
 extends Control
 
-## Grouping canvas item used to control warning label opacity and positioning.
-@onready var warning_canvas_group: CanvasGroup = $WarningCanvasGroup
+## Container used to control warning label opacity and layout position.
+@onready var warning_container: Control = $WarningContainer
 
 ## Label displaying temporary hint or warning text to the player.
-@onready var warning_label: Label = $WarningCanvasGroup/WarningLabel
+@onready var warning_label: Label = $WarningContainer/WarningLabel
 
 ## Container for the note reading screen dimming and text presentation.
 @onready var note_overlay_ui: CanvasLayer = $NoteOverlayUI
@@ -30,11 +30,6 @@ func _ready() -> void:
 		warning_label.add_theme_color_override("font_outline_color", Color.BLACK)
 		warning_label.add_theme_constant_override("outline_size", 12)
 
-	if is_instance_valid(warning_canvas_group):
-		warning_canvas_group.material = null
-
-	_recenter_warning_ui()
-	get_viewport().size_changed.connect(_recenter_warning_ui)
 	_connect_signals()
 
 
@@ -49,17 +44,6 @@ func _connect_signals() -> void:
 		Events.note_closed.connect(_on_note_closed)
 
 
-## Repositions hint and warning notifications relative to the screen center.
-func _recenter_warning_ui() -> void:
-	print("NotificationHUD: _recenter_warning_ui() positioning warning banner.")
-	if not is_instance_valid(warning_canvas_group) or not is_instance_valid(warning_label):
-		return
-
-	var screen_size: Vector2 = get_viewport().get_visible_rect().size
-	warning_canvas_group.position = Vector2(screen_size.x / 2.0, (screen_size.y / 2.0) + 70.0)
-	warning_label.set_anchors_and_offsets_preset(Control.PRESET_CENTER_TOP)
-
-
 ## Fades in a centered notification banner with the provided text.
 ## [param message] String content to present to the user.
 ## [param duration] Visible display duration before fading out.
@@ -70,7 +54,7 @@ func show_warning_message(message: String, duration: float = 2.0) -> void:
 
 	warning_label.text = message
 
-	if warning_tween and warning_tween.is_valid():
+	if is_instance_valid(warning_tween) and warning_tween.is_valid():
 		warning_tween.kill()
 
 	warning_tween = create_tween().set_trans(Tween.TRANS_SINE)

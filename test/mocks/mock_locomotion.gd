@@ -22,10 +22,10 @@ func _init() -> void:
 
 
 ## Stub initialization method caching the owner player reference.
-## [param p_player] The root [Player] controller entity.
-func initialize(p_player: Player) -> void:
-	print("MockLocomotion: initialize() called with player: ", p_player.name)
-	player = p_player
+## [param p_player] The root [CharacterBody3D] entity (expected [Player]).
+func initialize(p_player: CharacterBody3D) -> void:
+	print("MockLocomotion: initialize() called with: ", p_player.name)
+	player = p_player as Player
 
 
 ## Enables or disables movement physics execution.
@@ -53,7 +53,8 @@ func process_movement(delta: float) -> void:
 ## [param time_window_ms] Time threshold in milliseconds.
 ## [return] True if sprinting occurred recently.
 func did_run_recently(time_window_ms: int = 10000) -> bool:
-	var ran_recently: bool = (Time.get_ticks_msec() - last_sprint_timestamp) <= time_window_ms
+	var elapsed_ms: int = Time.get_ticks_msec() - last_sprint_timestamp
+	var ran_recently: bool = elapsed_ms <= time_window_ms
 	print("MockLocomotion: did_run_recently() evaluated -> ", ran_recently)
 	return ran_recently
 

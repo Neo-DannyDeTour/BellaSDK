@@ -7,14 +7,10 @@
 [sub_resource type="BoxShape3D" id="BoxShape3D_harnn"]
 size = Vector3(2, 3, 0.2)
 
-[sub_resource type="ViewportTexture" id="ViewportTexture_m77tu"]
-viewport_path = NodePath("SubViewport")
-
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_g6j5g"]
 resource_local_to_scene = true
 render_priority = 0
 shader = ExtResource("1_m77tu")
-shader_parameter/viewport_texture = SubResource("ViewportTexture_m77tu")
 
 [sub_resource type="QuadMesh" id="QuadMesh_gh40b"]
 material = SubResource("ShaderMaterial_g6j5g")
@@ -27,9 +23,13 @@ panorama = ExtResource("3_g6j5g")
 sky_material = SubResource("PanoramaSkyMaterial_gh40b")
 
 [sub_resource type="Environment" id="Environment_0b0md"]
+background_mode = 2
 sky = SubResource("Sky_0b0md")
-ambient_light_source = 1
+ambient_light_source = 3
 reflected_light_source = 1
+tonemap_mode = 2
+
+[sub_resource type="Compositor" id="Compositor_g6j5g"]
 
 [node name="Portal" type="Area3D" unique_id=1893124656]
 collision_layer = 4
@@ -49,6 +49,8 @@ render_target_update_mode = 4
 [node name="PortalCamera" type="Camera3D" parent="SubViewport" unique_id=917421883]
 cull_mask = 1047559
 environment = SubResource("Environment_0b0md")
+compositor = SubResource("Compositor_g6j5g")
+far = 1500.0
 
 [node name="CSGBox3D" type="CSGBox3D" parent="." unique_id=242446752]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.0034179688, 0)

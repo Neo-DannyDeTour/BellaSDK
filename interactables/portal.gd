@@ -1,38 +1,42 @@
-## Handles 3D portal perspective projection, dynamic viewport culling, and seamless teleportation.
+## Handles 3D portal perspective projection, dynamic viewport culling,
+## and seamless teleportation between linked [Portal] instances.
 class_name Portal
 extends Area3D
 
-## The destination portal this portal connects to.
-## Used as the anchor point to calculate relative positions for rendering and teleportation.
+## The destination portal this [Portal] connects to.
+## Used as the anchor point to calculate relative transforms.
 @export var linked_portal: Portal
 
 ## Maximum distance from the player camera to update the portal viewport.
 @export var max_render_distance: float = 30.0
 
-## The active player camera tracked for calculating perspective offsets.
+## The active player [Camera3D] tracked for calculating perspective offsets.
 var player_camera: Camera3D
 
-## The viewport that renders the scene from this portal's perspective.
-## This acts as the texture source for the linked portal mesh shader.
+## The [SubViewport] that renders the scene from this portal's perspective.
+## Acts as the texture source for the linked portal mesh shader.
 @onready var sub_viewport: SubViewport = $SubViewport
 
-## The camera capturing the view for the portal.
-## Positioned relative to this portal when looked through from the linked portal.
+## The [Camera3D] capturing the view for the portal.
+## Positioned relative to this portal when looked through from linked portal.
 @onready var portal_camera: Camera3D = $SubViewport/PortalCamera
 
-## The mesh instance displaying the portal shader.
+## The [MeshInstance3D] displaying the portal shader.
 ## Used to dynamically inject the viewport texture at runtime.
 @onready var portal_mesh: MeshInstance3D = $PortalMesh
 
-## Dictionary storing tracked bodies and their last known side relative to the portal.
-## Prevents false triggers and calculates exact crossing moments using dot products.
+## Dictionary storing tracked bodies and their last known side.
+## Key is [Node3D], value is a [float] dot product side indicator.
 var _tracked_bodies: Dictionary = {}
 
 ## On-screen visibility notifier used to cull off-screen portal render passes.
 var _screen_notifier: VisibleOnScreenNotifier3D = null
 
-## Tracks if this portal's mesh is currently inside the player's camera frustum.
+## Tracks if this portal's mesh is currently inside the player camera frustum.
 var _is_on_screen: bool = true
+
+## Cached empty [Compositor] applied to isolate from global compute effects.
+var _empty_compositor: Compositor = null
 
 
 ## Initializes portal listeners, duplicates shaders, and wires culling hooks.
@@ -42,6 +46,9 @@ func _ready() -> void:
 	body_exited.connect(_on_body_exited)
 
 	portal_camera.current = true
+
+	_isolate_portal_camera_compositor()
+	_configure_portal_environment()
 
 	if Events and Events.has_signal("player_camera_registered"):
 		Events.player_camera_registered.connect(_on_player_camera_registered)
@@ -66,7 +73,29 @@ func _ready() -> void:
 		_find_and_assign_player_camera()
 
 
-## Safely attaches the parent 3D world to the portal viewport once the scene tree is ready.
+## Overrides [member portal_camera] compositor to disable global cloud shaders.
+func _isolate_portal_camera_compositor() -> void:
+	print("Portal: Isolating compositor for ", portal_camera.name)
+	if not is_instance_valid(portal_camera.compositor):
+		_empty_compositor = Compositor.new()
+		portal_camera.compositor = _empty_compositor
+
+
+## Validates ambient lighting on [member portal_camera] to avoid black shadows.
+func _configure_portal_environment() -> void:
+	print("Portal: Validating environment lighting for ", portal_camera.name)
+	if not is_instance_valid(portal_camera.environment):
+		portal_camera.environment = Environment.new()
+
+	var env: Environment = portal_camera.environment
+	if env.ambient_light_source == Environment.AMBIENT_SOURCE_DISABLED:
+		print("Portal: Ambient light disabled on ", name, ", setting color fill.")
+		env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+		env.ambient_light_color = Color(0.2, 0.22, 0.28, 1.0)
+		env.ambient_light_energy = 1.0
+
+
+## Safely attaches parent 3D world to [member sub_viewport] once tree is ready.
 func _assign_world_3d() -> void:
 	print("Portal: Binding World3D to SubViewport for ", name)
 	var parent_world: World3D = get_viewport().find_world_3d()
@@ -76,7 +105,7 @@ func _assign_world_3d() -> void:
 		push_warning("Portal: Main World3D not found for SubViewport!")
 
 
-## Sets up and attaches a [VisibleOnScreenNotifier3D] to cull updates when out of view.
+## Sets up a [VisibleOnScreenNotifier3D] to cull updates when out of view.
 func _setup_screen_notifier() -> void:
 	print("Portal: Setting up screen visibility notifier for ", name)
 	_screen_notifier = VisibleOnScreenNotifier3D.new()
@@ -91,7 +120,7 @@ func _setup_screen_notifier() -> void:
 	_screen_notifier.screen_exited.connect(_on_screen_exited)
 
 
-## Assigns the linked portal's viewport texture to this portal's shader.
+## Assigns the linked portal's viewport texture to this portal's mesh shader.
 func _update_mesh_texture() -> void:
 	print("Portal: Updating mesh texture binding for ", name)
 	if not is_instance_valid(linked_portal) or not is_instance_valid(portal_mesh):
@@ -99,16 +128,16 @@ func _update_mesh_texture() -> void:
 
 	var target_vp: SubViewport = linked_portal.sub_viewport
 	if not is_instance_valid(target_vp):
-		target_vp = linked_portal.get_node_or_null("SubViewport") as SubViewport
+		target_vp = (linked_portal.get_node_or_null("SubViewport") as SubViewport)
 		if not is_instance_valid(target_vp):
-			print("Portal: Linked SubViewport not ready yet on ", linked_portal.name)
+			print("Portal: Linked SubViewport not ready on ", linked_portal.name)
 			return
 
 	var mat: Material = portal_mesh.get_surface_override_material(0)
 	if mat and mat is ShaderMaterial:
 		var target_texture: ViewportTexture = target_vp.get_texture()
 		mat.set_shader_parameter("viewport_texture", target_texture)
-		print("Portal: Bound linked ViewportTexture from ", linked_portal.name, " to ", name)
+		print("Portal: Bound ViewportTexture from ", linked_portal.name, " to ", name)
 
 
 ## Automatically connects to the primary player camera if unassigned.
@@ -128,21 +157,21 @@ func _find_and_assign_player_camera() -> void:
 			print("Portal: Bound Camera3D in player group: ", player_camera.name)
 
 
-## Callback receiving the registered player camera from the global event bus.
-## [param cam] The active [Camera3D] instance.
+## Callback receiving registered player camera from the global event bus.
+## [param cam] The registered active [Camera3D] instance.
 func _on_player_camera_registered(cam: Camera3D) -> void:
-	print("Portal: [", name, "] Received player camera reference: ", cam.name)
+	print("Portal: [", name, "] Received player camera: ", cam.name)
 	player_camera = cam
 
 
-## Resizes the SubViewport texture when window resolution changes.
+## Resizes the [SubViewport] texture when window resolution changes.
 func _on_viewport_size_changed() -> void:
 	print("Portal: Updating SubViewport size to match main viewport.")
 	sub_viewport.size = get_viewport().size
 
 
-## Synchronizes the destination portal camera with the player camera perspective.
-## [param _delta] Frame elapsed time.
+## Synchronizes the linked portal camera with the player perspective.
+## [param _delta] Frame elapsed time in seconds.
 func _process(_delta: float) -> void:
 	if not is_instance_valid(player_camera):
 		var active_cam: Camera3D = get_viewport().get_camera_3d()
@@ -179,7 +208,7 @@ func _process(_delta: float) -> void:
 
 
 ## Checks crossed bodies and performs portal teleportation.
-## [param _delta] Physics step elapsed time.
+## [param _delta] Physics step elapsed time in seconds.
 func _physics_process(_delta: float) -> void:
 	var keys: Array = _tracked_bodies.keys()
 	for body: Node3D in keys:
@@ -200,14 +229,14 @@ func _physics_process(_delta: float) -> void:
 
 ## Calculates which side of the portal plane a point resides on.
 ## [param pos] Target position vector.
-## [return] Dot product against the portal front vector.
+## [return] Dot product scalar against the portal facing vector.
 func _get_side(pos: Vector3) -> float:
 	var dir_to_body: Vector3 = pos - global_position
 	return global_transform.basis.z.dot(dir_to_body)
 
 
 ## Teleports a body through to the linked portal with inverted momentum.
-## [param body] The [Node3D] being translated.
+## [param body] The [Node3D] being translated through the portal.
 func _teleport_body(body: Node3D) -> void:
 	if not is_instance_valid(linked_portal):
 		return
@@ -223,7 +252,7 @@ func _teleport_body(body: Node3D) -> void:
 		)
 
 
-## Registers entering bodies for plane crossing detection.
+## Registers entering physics bodies for plane crossing detection.
 ## [param body] Entering body instance.
 func _on_body_entered(body: Node3D) -> void:
 	if body is CharacterBody3D or body is RigidBody3D:
@@ -231,7 +260,7 @@ func _on_body_entered(body: Node3D) -> void:
 		_tracked_bodies[body] = _get_side(body.global_position)
 
 
-## Deregisters exiting bodies from tracking.
+## Deregisters exiting physics bodies from tracking.
 ## [param body] Exiting body instance.
 func _on_body_exited(body: Node3D) -> void:
 	if _tracked_bodies.has(body):
@@ -239,14 +268,14 @@ func _on_body_exited(body: Node3D) -> void:
 		_tracked_bodies.erase(body)
 
 
-## Enables processing when portal bounds enter view.
+## Enables processing when portal bounds enter the camera frustum.
 func _on_screen_entered() -> void:
 	print("Portal: Screen entered for ", name)
 	_is_on_screen = true
 	_update_mesh_texture()
 
 
-## Disables viewport updates when portal bounds leave view.
+## Disables viewport updates when portal bounds leave the camera frustum.
 func _on_screen_exited() -> void:
 	print("Portal: Screen exited for ", name)
 	_is_on_screen = false
@@ -254,7 +283,7 @@ func _on_screen_exited() -> void:
 		linked_portal._set_viewport_mode(SubViewport.UPDATE_DISABLED)
 
 
-## Helper method to safely toggle SubViewport update modes.
+## Helper method to safely toggle [member SubViewport.render_target_update_mode].
 ## [param mode] New target [enum SubViewport.UpdateMode].
 func _set_viewport_mode(mode: SubViewport.UpdateMode) -> void:
 	if sub_viewport.render_target_update_mode != mode:

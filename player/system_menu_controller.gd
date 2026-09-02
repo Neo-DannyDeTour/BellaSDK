@@ -75,9 +75,13 @@ var fullbright_env: Environment
 ## Tracks whether the player character is currently stunned.
 var is_stunned: bool = false
 
+## Cached original environment applied to camera before fullbright toggle.
+var _cached_camera_env: Environment = null
+
 
 ## Lifecycle initialization connecting debug events and instantiating menus.
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	print("SystemMenuController: Initializing system menu and debug handlers.")
 	_setup_menu()
 	_setup_fullbright_environment()
@@ -103,6 +107,9 @@ func _setup_menu() -> void:
 		add_child(menu_instance)
 		menu_instance.hide()
 		print("SystemMenuController: Menu instance initialized successfully.")
+	else:
+		push_error("SystemMenuController: menu_scene root is not a CanvasLayer.")
+		scene_node.queue_free()
 
 
 ## Builds the environment configuration used for fullbright debug viewing.
@@ -190,10 +197,15 @@ func _on_debug_menu_toggled(is_open: bool) -> void:
 ## [param is_fullbright] True to enable fullbright lighting override.
 func _on_fullbright_toggled(is_fullbright: bool) -> void:
 	print("SystemMenuController: _on_fullbright_toggled() called. Active: ", is_fullbright)
+	if not is_instance_valid(camera):
+		return
+
 	if is_fullbright:
+		_cached_camera_env = camera.environment
 		camera.environment = fullbright_env
 	else:
-		camera.environment = null
+		camera.environment = _cached_camera_env
+		_cached_camera_env = null
 
 	var sun: DirectionalLight3D = get_tree().get_first_node_in_group("sun") as DirectionalLight3D
 	if is_instance_valid(sun):

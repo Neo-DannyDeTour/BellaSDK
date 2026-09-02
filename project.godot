@@ -46,6 +46,7 @@ InputHelper="*uid://5wsuikeojvgu"
 
 [debug]
 
+settings/profiler/max_timestamp_query_elements=2048
 gdscript/warnings/untyped_declaration=2
 
 [display]

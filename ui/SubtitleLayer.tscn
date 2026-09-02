@@ -14,18 +14,16 @@ anchor_bottom = 1.0
 offset_top = -107.0
 grow_horizontal = 2
 grow_vertical = 0
-theme_override_constants/margin_left = 32
-theme_override_constants/margin_right = 32
+theme_override_constants/margin_left = 256
+theme_override_constants/margin_right = 256
 theme_override_constants/margin_bottom = 32
 
 [node name="BackgroundPanel" type="PanelContainer" parent="MarginContainer" unique_id=1724151750]
+custom_minimum_size = Vector2(0, 164)
 layout_mode = 2
 
 [node name="SubtitleLabel" type="RichTextLabel" parent="MarginContainer/BackgroundPanel" unique_id=1638741768]
 custom_minimum_size = Vector2(0, 75)
 layout_mode = 2
-size_flags_vertical = 4
+theme_override_constants/line_separation = 4
 bbcode_enabled = true
-fit_content = true
-scroll_active = false
-scroll_following = true

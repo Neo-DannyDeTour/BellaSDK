@@ -83,7 +83,7 @@ layout_mode = 2
 [node name="GodmodeToggle" type="CheckButton" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=259794659]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Godmode (Debug)"
+text = "Debug Mode"
 
 [node name="TutorialsToggle" type="CheckButton" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBoxContainer" unique_id=212467166]
 unique_name_in_owner = true

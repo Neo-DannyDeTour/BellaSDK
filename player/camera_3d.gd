@@ -5,7 +5,7 @@ extends Camera3D
 
 @export_category("Camera Role")
 ## If enabled, registers and activates spatial audio listeners and makes current on startup.
-@export var is_player_camera: bool = true
+@export var is_player_camera: bool = false
 
 @export_category("Screenshake Settings")
 ## Speed of the noise generator driving screenshake calculations.
@@ -32,7 +32,7 @@ var _noise: FastNoiseLite = FastNoiseLite.new()
 var vision_assist_mesh: MeshInstance3D = null
 
 ## Dedicated spatial listener node to calculate 3D audio panning and attenuation.
-var _spatial_listener: AudioListener3D = AudioListener3D.new()
+var _spatial_listener: AudioListener3D = null
 
 ## Cached unique shader material to update background colors efficiently.
 var _vision_shader_material: ShaderMaterial
@@ -43,24 +43,27 @@ func _ready() -> void:
 	_resolve_vision_mesh()
 	_cache_vision_material()
 
-	if is_player_camera:
-		make_current()
-		print("Camera3D: Player camera set as active listener.")
-		_setup_audio_listener()
-		if has_node("/root/Events"):
-			var events: Node = get_node("/root/Events")
-			if events.has_signal("player_camera_registered"):
-				print("Camera3D: Registering active camera to Events bus.")
-				events.emit_signal("player_camera_registered", self)
+	if not is_player_camera:
+		# Diorama preview cameras do not process shake or audio
+		set_process(false)
+		if is_instance_valid(vision_assist_mesh):
+			vision_assist_mesh.visible = current
+		return
+
+	make_current()
+	print("Camera3D: Player camera set as active listener.")
+	_setup_audio_listener()
 
 	_noise.seed = randi()
 	_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
 
 	if has_node("/root/Events"):
 		var events: Node = get_node("/root/Events")
-		if events.has_signal("screenshake_requested") and is_player_camera:
+		if events.has_signal("player_camera_registered"):
+			events.emit_signal("player_camera_registered", self)
+		if events.has_signal("screenshake_requested"):
 			events.screenshake_requested.connect(_on_screenshake_requested)
-		if events.has_signal("vision_assist_toggled") and is_player_camera:
+		if events.has_signal("vision_assist_toggled"):
 			events.vision_assist_toggled.connect(_on_vision_assist_toggled)
 		if events.has_signal("vision_assist_mode_changed"):
 			events.vision_assist_mode_changed.connect(set_vision_assist_mode)
@@ -82,17 +85,20 @@ func _resolve_vision_mesh() -> void:
 func _cache_vision_material() -> void:
 	_resolve_vision_mesh()
 	if is_instance_valid(vision_assist_mesh):
-		var active_mat: Material = vision_assist_mesh.get_active_material(0)
+		var active_mat: Material = vision_assist_mesh.get_surface_override_material(0)
+		if not is_instance_valid(active_mat):
+			active_mat = vision_assist_mesh.get_active_material(0)
 		if active_mat is ShaderMaterial:
 			_vision_shader_material = active_mat.duplicate() as ShaderMaterial
 			_vision_shader_material.render_priority = 10
 			vision_assist_mesh.set_surface_override_material(0, _vision_shader_material)
-			print("Camera3D: [", name, "] Material duplicated and cached.")
 
 
 ## Creates and activates the AudioListener3D directly attached to the camera head.
 func _setup_audio_listener() -> void:
-	add_child(_spatial_listener)
+	if not is_instance_valid(_spatial_listener):
+		_spatial_listener = AudioListener3D.new()
+		add_child(_spatial_listener)
 	_spatial_listener.make_current()
 
 
@@ -137,9 +143,8 @@ func _on_screenshake_requested(intensity: float, duration: float) -> void:
 ## [param is_active] True if vision assist should be rendered.
 func _on_vision_assist_toggled(is_active: bool) -> void:
 	_resolve_vision_mesh()
-	print("Camera3D: [", name, "] Setting vision mesh visibility: ", is_active)
 	if is_instance_valid(vision_assist_mesh):
-		vision_assist_mesh.visible = is_active
+		vision_assist_mesh.visible = is_active and current
 
 
 ## Changes the shader mode integer parameter.
@@ -151,7 +156,6 @@ func set_vision_assist_mode(mode_name: String) -> void:
 	if not is_instance_valid(_vision_shader_material):
 		return
 
-	print("Camera3D: [", name, "] Applying vision mode: ", mode_name)
 	match mode_name:
 		"black_and_white":
 			_vision_shader_material.set_shader_parameter("mode", 0)

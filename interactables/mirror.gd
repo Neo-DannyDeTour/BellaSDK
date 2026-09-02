@@ -1,13 +1,13 @@
 @tool
-## A flat reflective surface that generates real-time reflections using a dedicated [SubViewport].
+## A flat reflective surface generating real-time reflections via a dedicated [SubViewport].
 ##
-## Manages its own rendering optimizations by limiting updates based on distance, interleaving
-## camera frames, and aligning custom frustum culling.
+## Limits rendering overhead by dynamically toggling update modes, skipping alternating
+## frames, and restricting camera projection frustums to the visible bounds.
 class_name Mirror
 extends Node3D
 
 @export_group("Mirror Settings")
-## The 2D dimensions of the mirror's physical mesh surface.
+## The 2D dimensions of the mirror physical mesh surface.
 @export var size: Vector2 = Vector2(1.0, 1.0):
 	set(v):
 		size = v
@@ -32,9 +32,9 @@ extends Node3D
 @export_group("Internal References")
 ## Viewport responsible for storing the reflection texture data.
 @export var mirror_viewport: SubViewport
-## Proxy camera moved and rotated to mimic the player's perspective reversed.
+## Proxy camera moved and rotated to mimic the player perspective reversed.
 @export var mirror_camera: Camera3D
-## The [MeshInstance3D] mapping the generated texture onto the world geometry.
+## The [MeshInstance3D] mapping the generated texture onto world geometry.
 @export var mirror_quad: MeshInstance3D
 
 ## The active player or editor camera driving the viewpoint.
@@ -59,7 +59,6 @@ func _ready() -> void:
 		printerr("Mirror Error: Missing exported node references in base scene!")
 		return
 
-	# Scale Absorber: Converts accidental standard node scaling into proper viewport size
 	if not scale.is_equal_approx(Vector3.ONE):
 		size = Vector2(size.x * scale.x, size.y * scale.y)
 		scale = Vector3.ONE
@@ -74,7 +73,7 @@ func _ready() -> void:
 	_setup_mirror()
 
 
-## Sets up culling masks, viewport modes, and duplicate materials required for the effect.
+## Sets up culling masks, initial dormant viewport state, and duplicated materials.
 func _setup_mirror() -> void:
 	print("Mirror system: Initializing viewport and assigning target camera.")
 
@@ -82,7 +81,7 @@ func _setup_mirror() -> void:
 		mirror_camera.cull_mask = cull_mask
 
 	if is_instance_valid(mirror_viewport):
-		mirror_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+		mirror_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 
 	_update_mirror_size()
 
@@ -97,7 +96,7 @@ func _setup_mirror() -> void:
 		_sync_camera_settings()
 
 
-## Copies fundamental optical settings (like FOV) from the main camera to the proxy.
+## Copies optical settings such as FOV from the active camera to the proxy camera.
 func _sync_camera_settings() -> void:
 	if not is_instance_valid(_main_cam) or not is_instance_valid(mirror_camera):
 		return
@@ -105,7 +104,7 @@ func _sync_camera_settings() -> void:
 	mirror_camera.fov = _main_cam.fov
 
 
-## Injects the viewport render target texture directly into the shader or standard material.
+## Injects the viewport render target texture directly into the target material.
 func _assign_texture() -> void:
 	if not is_instance_valid(mirror_viewport) or not is_instance_valid(mirror_quad):
 		return
@@ -122,11 +121,9 @@ func _assign_texture() -> void:
 		mat.albedo_texture = tex
 
 
-## Safely detects the active viewing camera for both editor previews and live runtime execution.
-## Returns the resolved [Camera3D] node or null.
+## Detects the active viewing camera for editor previews or runtime execution.
 func _find_camera() -> Camera3D:
 	if Engine.is_editor_hint():
-		# Call the singleton dynamically to prevent export build parse errors
 		var editor_interface: Object = Engine.get_singleton(&"EditorInterface")
 		if is_instance_valid(editor_interface):
 			var ed_vp: SubViewport = editor_interface.get_editor_viewport_3d()
@@ -167,10 +164,10 @@ func _update_mirror_size() -> void:
 	mirror_viewport.size = Vector2i(target_x, target_y)
 
 
-## Calculates the inverted reflection matrix across the mirror's specific plane.
-## [param normal]: The normal vector of the mirror surface.
-## [param pos]: The global coordinate of the mirror node.
-## Returns the mirrored coordinate transform.
+## Calculates the inverted reflection matrix across the mirror surface plane.
+##
+## [param normal] The surface normal vector of the mirror.
+## [param pos] The global coordinate position of the mirror node.
 func _get_mirror_transform(normal: Vector3, pos: Vector3) -> Transform3D:
 	var d: float = normal.dot(pos)
 	var px: float = -2.0 * normal.x
@@ -185,7 +182,7 @@ func _get_mirror_transform(normal: Vector3, pos: Vector3) -> Transform3D:
 	return Transform3D(m, normal * (2.0 * d))
 
 
-## Repositions the proxy camera, constructs the reflected view frustum, and sets culling ranges.
+## Repositions proxy camera, sets oblique frustum, and updates culling depths.
 func _update_cam() -> void:
 	if (
 		not is_instance_valid(_main_cam)
@@ -200,11 +197,10 @@ func _update_cam() -> void:
 
 	var target: Vector3 = (mirror_camera.global_position / 2.0) + (_last_cam_transform.origin / 2.0)
 
-	# Fix: Prevent looking_at() math explosion if origin and target are identical
 	if not mirror_camera.global_position.is_equal_approx(target):
-		mirror_camera.global_transform = mirror_camera.global_transform.looking_at(
+		mirror_camera.global_transform = (mirror_camera.global_transform.looking_at(
 			target, mirror_quad.global_basis.y
-		)
+		))
 
 	var offset: Vector3 = mirror_quad.global_position - mirror_camera.global_position
 
@@ -217,8 +213,9 @@ func _update_cam() -> void:
 	mirror_camera.set_frustum(size.x, frustum_offset, near, far)
 
 
-## Manages the rendering loop, including interlaced frames and suspending logic by distance.
-## [param _delta]: Frame delta time.
+## Manages the reflection update loop, interleave cadence, and distance checks.
+##
+## [param _delta] Frame delta time in seconds.
 func _process(_delta: float) -> void:
 	if not is_visible_in_tree():
 		return
@@ -227,26 +224,23 @@ func _process(_delta: float) -> void:
 		_main_cam = _find_camera()
 		if not is_instance_valid(_main_cam):
 			return
-		# Sync the FOV and initial transform the moment the game camera initializes
 		_sync_camera_settings()
 
 	var cur_trans: Transform3D = _main_cam.global_transform
 
-	# Shield Phase: Force rendering for the first 5 frames to guarantee buffer allocation
-	if _init_frames < 5:
+	# Prime Phase: Use UPDATE_ONCE across 2 cycles to allocate and draw buffers safely
+	if _init_frames < 2:
 		if is_instance_valid(mirror_viewport):
-			mirror_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+			mirror_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 		_init_frames += 1
 		_last_cam_transform = cur_trans
 		_update_cam()
 		return
 
-	# Lock the generated texture proxy into the material only AFTER buffers exist
 	if not _texture_assigned:
 		_assign_texture()
 		_texture_assigned = true
 
-	# Optimization Phase: Resume standard culling and transform checks
 	if _last_cam_transform.is_equal_approx(cur_trans):
 		return
 
@@ -257,16 +251,14 @@ func _process(_delta: float) -> void:
 
 		if dist_sq > max_dist_sq:
 			mirror_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
-			return  # OPTIMIZATION: Skip camera math entirely when too far away
+			return
 
-		# Interleave updates: Only render the mirror on alternating frames
 		_skip_frame = not _skip_frame
 		if _skip_frame:
 			mirror_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 		else:
-			# Keep disabled on the off-frame to save compute budget
 			mirror_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
-			return  # OPTIMIZATION: Skip camera math entirely on off-frames
+			return
 
 	_last_cam_transform = cur_trans
 	_update_cam()

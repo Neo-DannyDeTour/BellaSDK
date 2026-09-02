@@ -2,7 +2,9 @@
 
 [ext_resource type="Script" uid="uid://4nkt0134wccl" path="res://ui/main_menu.gd" id="1_2o76q"]
 [ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="2_2o76q"]
+[ext_resource type="Texture2D" uid="uid://dutrfuowe3e1q" path="res://assets/images/Concept/Key_art.PNG" id="2_iyrh0"]
 [ext_resource type="PackedScene" uid="uid://8m8l0uplgvm" path="res://ui/HorrorButton.tscn" id="3_kaxbk"]
+[ext_resource type="Script" uid="uid://b53ak0y1rcvq4" path="res://ui/settings_search.gd" id="5_kaxbk"]
 [ext_resource type="Script" uid="uid://dbuos71yhftq2" path="res://ui/options_menu.gd" id="5_lsdqh"]
 [ext_resource type="PackedScene" uid="uid://c15j43t1ffjw7" path="res://ui/video_options_panel.tscn" id="5_ubpvv"]
 [ext_resource type="PackedScene" uid="uid://b60lfsypp4cwo" path="res://ui/controls_panel.tscn" id="6_arv2f"]
@@ -12,12 +14,13 @@
 [ext_resource type="PackedScene" uid="uid://da3q2bu5xkp72" path="res://ui/GameplayPanel.tscn" id="10_bgtsx"]
 [ext_resource type="Shader" uid="uid://w674ybxmnkoi" path="res://vfx/diorama_post_process.gdshader" id="11_kaxbk"]
 [ext_resource type="Script" uid="uid://7t34h1kqmrcr" path="res://ui/diorama_post_process.gd" id="12_0nobx"]
+[ext_resource type="PackedScene" uid="uid://dhh7c5j6i8bkk" path="res://player/settings_level.tscn" id="13_0nobx"]
 [ext_resource type="Script" uid="uid://bbavliaaoouke" path="res://ui/perf_overlay.gd" id="14_iyrh0"]
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_50h1w"]
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_6bivr"]
-
+texture = ExtResource("2_iyrh0")
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jiymt"]
 bg_color = Color(0, 0, 0, 1)
@@ -155,6 +158,7 @@ theme_override_constants/margin_right = 32
 theme_override_constants/margin_bottom = 32
 
 [node name="OptionsMenu" type="VBoxContainer" parent="CenterContainer" unique_id=909708633]
+unique_name_in_owner = true
 layout_mode = 2
 script = ExtResource("5_lsdqh")
 
@@ -206,9 +210,11 @@ theme_override_font_sizes/font_size = 32
 text = "Accessibility"
 
 [node name="SearchBarContainer" type="HBoxContainer" parent="CenterContainer/OptionsMenu/ContentVBox/TopHeaderBar" unique_id=1844282404]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 48)
 layout_mode = 2
 size_flags_horizontal = 3
+script = ExtResource("5_kaxbk")
 
 [node name="SearchIcon" type="TextureRect" parent="CenterContainer/OptionsMenu/ContentVBox/TopHeaderBar/SearchBarContainer" unique_id=122693968]
 layout_mode = 2
@@ -258,6 +264,11 @@ size_flags_vertical = 3
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="VideoDioramaSocket" type="Control" parent="CenterContainer/OptionsMenu/ContentVBox/SettingsArea/VideoOptionsPanel" unique_id=2136846040]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+
 [node name="AudioPanel" parent="CenterContainer/OptionsMenu/ContentVBox/SettingsArea" unique_id=755109423 instance=ExtResource("9_jiymt")]
 unique_name_in_owner = true
 layout_mode = 2
@@ -273,6 +284,11 @@ layout_mode = 2
 [node name="AccessibilityPanel" parent="CenterContainer/OptionsMenu/ContentVBox/SettingsArea" unique_id=1445857146 instance=ExtResource("7_5klac")]
 unique_name_in_owner = true
 layout_mode = 2
+
+[node name="AccessibilityDioramaSocket" type="Control" parent="CenterContainer/OptionsMenu/ContentVBox/SettingsArea/AccessibilityPanel" unique_id=1153557684]
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
 
 [node name="SharedDioramaHolder" type="PanelContainer" parent="CenterContainer/OptionsMenu/ContentVBox" unique_id=231050902]
 visible = false
@@ -302,10 +318,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("12_0nobx")
 
-[node name="FastDioramaMap" type="Node3D" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer/DioramaViewport" unique_id=1472222682]
-
-[node name="SettingsLevel" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer/DioramaViewport/FastDioramaMap" unique_id=240456945 ]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5427445, 0.44948673, -0.57631207)
+[node name="SettingsLevel" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer/DioramaViewport" unique_id=240456945 instance=ExtResource("13_0nobx")]
 
 [node name="PreviewShaderLayer" type="CanvasLayer" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer/DioramaViewport" unique_id=2026771909]
 
@@ -343,6 +356,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="MasterBackButton" parent="CenterContainer/OptionsMenu/ContentVBox/BottomBar/MarginContainer2" unique_id=910947946 instance=ExtResource("3_kaxbk")]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(400, 80)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -358,5 +372,4 @@ size_flags_horizontal = 3
 [node name="SaveLoadPanel" parent="." unique_id=1719296314 instance=ExtResource("8_lsdqh")]
 
 [node name="MainThemePlayer" type="AudioStreamPlayer" parent="." unique_id=122940660]
-
 bus = &"Music"

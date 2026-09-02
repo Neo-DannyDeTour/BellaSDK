@@ -354,6 +354,16 @@ layout_mode = 2
 
 [node name="NotificationHUD" type="Control" parent="." unique_id=1462214156]
 layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_horizontal = 3
+script = ExtResource("23_k48q6")
+
+[node name="WarningContainer" type="Control" parent="NotificationHUD" unique_id=301911709]
+layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -363,25 +373,24 @@ offset_top = 40.0
 offset_bottom = 40.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("23_k48q6")
 
-[node name="WarningCanvasGroup" type="CanvasGroup" parent="NotificationHUD" unique_id=741384814]
-
-[node name="WarningLabel" type="Label" parent="NotificationHUD/WarningCanvasGroup" unique_id=562618420]
+[node name="WarningLabel" type="Label" parent="NotificationHUD/WarningContainer" unique_id=562618420]
 modulate = Color(1, 1, 1, 0)
+layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -0.5
-offset_top = -16.5
-offset_right = 0.5
-offset_bottom = 16.5
+offset_right = 1.0
+offset_bottom = 33.0
 grow_horizontal = 2
 grow_vertical = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
 theme_override_font_sizes/font_size = 32
 horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="NoteOverlayUI" type="CanvasLayer" parent="NotificationHUD" unique_id=825799846]
 visible = false
@@ -514,16 +523,46 @@ theme_override_constants/margin_bottom = 16
 [node name="VBoxContainer" type="VBoxContainer" parent="DiagnosticsPanel/MarginContainer" unique_id=1225699971]
 layout_mode = 2
 
+[node name="HBoxContainer" type="HBoxContainer" parent="DiagnosticsPanel/MarginContainer/VBoxContainer" unique_id=1702614077]
+layout_mode = 2
+alignment = 1
+
+[node name="SubViewportsTabButton" type="Button" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=2041878220]
+unique_name_in_owner = true
+layout_mode = 2
+text = "SubViewports"
+
+[node name="PerfTabButton" type="Button" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1046534352]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Performance"
+
+[node name="ScanGeometryButton" type="Button" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=2081431460]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Scan Scene Geometry"
+
 [node name="ScrollContainer" type="ScrollContainer" parent="DiagnosticsPanel/MarginContainer/VBoxContainer" unique_id=1063004264]
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="DiagnosticsLabel" type="RichTextLabel" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/ScrollContainer" unique_id=1348893505]
+[node name="VBoxContainer" type="VBoxContainer" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/ScrollContainer" unique_id=1940750159]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="DiagnosticsLabel" type="RichTextLabel" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer" unique_id=1348893505]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 bbcode_enabled = true
+fit_content = true
+
+[node name="SurveyLabel" type="RichTextLabel" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/ScrollContainer/VBoxContainer" unique_id=2058988293]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Press [Scan Scene Geometry] to inspect hierarchy."
+fit_content = true
 
 [node name="FrameGraph" type="ColorRect" parent="." unique_id=389888062]
 custom_minimum_size = Vector2(250, 250)

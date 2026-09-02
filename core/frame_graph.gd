@@ -17,6 +17,12 @@ var target_ms: float = 16.67
 ## The maximum visible frame time on the Y-axis of the graph (33.33ms = 30 FPS).
 var ceiling_ms: float = 33.33
 
+## Pre-allocated line segment point buffer.
+var _segment_points: PackedVector2Array = PackedVector2Array()
+
+## Pre-allocated line segment color buffer.
+var _segment_colors: PackedColorArray = PackedColorArray()
+
 
 ## Called every frame. Samples the frame time and forces a redraw if visible.
 ## [param delta] The time elapsed since the previous frame in seconds.
@@ -25,7 +31,6 @@ func _process(delta: float) -> void:
 		return
 
 	history.append(delta * 1000.0)
-
 	if history.size() > max_points:
 		history.pop_front()
 
@@ -39,28 +44,36 @@ func _draw() -> void:
 
 	var w: float = size.x
 	var h: float = size.y
-	var step: float = w / max_points
+	var step: float = w / float(max_points)
 
-	# 1. DRAW THE GRAPH LINE
+	_segment_points.clear()
+	_segment_colors.clear()
+
+	var green_color: Color = Color(0.2, 0.8, 0.2, 0.8)
+	var red_color: Color = Color(0.9, 0.2, 0.2, 0.8)
+
 	for i: int in range(history.size() - 1):
-		var x1: float = i * step
-		var x2: float = (i + 1) * step
+		var x1: float = float(i) * step
+		var x2: float = float(i + 1) * step
 
 		var ms1: float = min(history[i], ceiling_ms)
 		var ms2: float = min(history[i + 1], ceiling_ms)
 
-		# Calculate Y starting from the bottom (h) and going up
 		var y1: float = h - (ms1 / ceiling_ms) * h
 		var y2: float = h - (ms2 / ceiling_ms) * h
 
-		var p1: Vector2 = Vector2(x1, y1)
-		var p2: Vector2 = Vector2(x2, y2)
+		# Each line segment consists of 2 points...
+		_segment_points.append(Vector2(x1, y1))
+		_segment_points.append(Vector2(x2, y2))
 
-		var line_color: Color = Color(0.2, 0.8, 0.2, 0.8)
-		if ms2 > target_ms or ms1 > target_ms:
-			line_color = Color(0.9, 0.2, 0.2, 0.8)
+		# ...and exactly 1 color for that segment
+		var segment_color: Color = (
+			red_color if (ms2 > target_ms or ms1 > target_ms) else green_color
+		)
+		_segment_colors.append(segment_color)
 
-		draw_line(p1, p2, line_color, 2.0, true)
+	# 1. DRAW ALL GRAPH SEGMENTS IN A SINGLE BATCHED CALL
+	draw_multiline_colors(_segment_points, _segment_colors, 2.0)
 
 	# 2. DRAW THE YELLOW 60 FPS TARGET LINE
 	var target_y: float = h - (target_ms / ceiling_ms) * h
@@ -69,12 +82,8 @@ func _draw() -> void:
 	# 3. DRAW THE TEXT STATUS
 	var latest_ms: float = history.back() if not history.is_empty() else 0.0
 	var font: Font = ThemeDB.fallback_font
-	var text_color: Color = Color.GREEN
-	var status_text: String = "16.66ms - Good"
+	var text_color: Color = Color.GREEN if latest_ms <= target_ms else Color.RED
+	var status_text: String = "16.66ms - Good" if latest_ms <= target_ms else "16.66ms - Problem!"
 
-	if latest_ms > target_ms:
-		text_color = Color.RED
-		status_text = "16.66ms - Problem!"
-
-	var text_pos: Vector2 = Vector2(5, target_y - 5)
+	var text_pos: Vector2 = Vector2(5.0, target_y - 5.0)
 	draw_string(font, text_pos, status_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 14, text_color)

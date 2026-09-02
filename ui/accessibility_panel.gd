@@ -1,88 +1,124 @@
 ## Controls accessibility, visual, and gameplay ergonomics options.
+## Manages preview diorama cameras, palette configurations, and UI font scaling.
 class_name AccessibilityPanel
 extends Panel
 
 ## Default constant value for mouse sensitivity.
 const DEFAULT_MOUSE_SENSITIVITY: float = 1.0
+
 ## Default constant value for world environment brightness.
 const DEFAULT_BRIGHTNESS: float = 1.0
+
 ## Default constant value for world environment contrast.
 const DEFAULT_CONTRAST: float = 1.0
+
 ## Default constant value for world environment saturation.
 const DEFAULT_SATURATION: float = 1.0
+
 ## Default constant value for camera base field of view.
 const DEFAULT_FOV: float = 75.0
+
 ## Default constant value for dynamic sprint FOV expansion toggle.
 const DEFAULT_DISABLE_SPRINT_FOV: bool = false
+
 ## Default constant value for user interface scale factor.
 const DEFAULT_UI_SCALE: float = 1.0
+
 ## Default constant index for active colorblind shader correction filter.
 const DEFAULT_COLORBLIND_MODE: int = 0
+
 ## Default constant index for typography font mode.
 const DEFAULT_FONT_MODE: int = 0
+
 ## Default constant value for high contrast UI mode.
 const DEFAULT_HIGH_CONTRAST: bool = false
+
 ## Default constant value for motion sickness reduction.
 const DEFAULT_REDUCE_MOTION: bool = false
+
 ## Default constant value for subtitle text font size in pixels.
 const DEFAULT_SUB_SIZE: float = 24.0
-## Default constant value for subtitle panel background opacity percentage (0 - 100).
+
+## Default constant value for subtitle panel background opacity percentage.
 const DEFAULT_SUB_BG_OPACITY: float = 50.0
+
 ## Default constant index for subtitle text color.
 const DEFAULT_SUB_COLOR_INDEX: int = 6
+
 ## Default constant index for subtitle background color (Black).
 const DEFAULT_SUB_BG_COLOR_INDEX: int = 7
+
 ## Default constant index for speaker name color (Cyan).
 const DEFAULT_SUB_SPEAKER_COLOR_INDEX: int = 0
+
 ## Default constant value for distinct character subtitle colors.
 const DEFAULT_SUB_COLORS: bool = true
+
 ## Default constant value for displaying speaker names.
 const DEFAULT_SUB_SHOW_NAMES: bool = true
+
 ## Default constant value for post-process film grain effect intensity.
 const DEFAULT_FILM_GRAIN: float = 0.0
+
 ## Default constant value for Text-to-Speech narration system.
 const DEFAULT_TTS_ENABLED: bool = false
+
 ## Default constant value for photosensitivity safe mode.
 const DEFAULT_PHOTOSENSITIVITY: bool = false
+
 ## Default constant value for gamepad vibration strength.
 const DEFAULT_VIBRATION: float = 1.0
+
 ## Default constant value for aim assistance strength.
 const DEFAULT_AIM_ASSIST_AMOUNT: float = 0.5
+
 ## Default constant value for aim assistance toggle.
 const DEFAULT_AIM_ASSIST: bool = true
+
 ## Default constant value for vertical camera look inversion.
 const DEFAULT_INVERT_Y: bool = false
+
 ## Default constant value for crouch toggle mode.
 const DEFAULT_TOGGLE_CROUCH: bool = false
+
 ## Default constant value for sprint toggle mode.
 const DEFAULT_TOGGLE_SPRINT: bool = false
+
 ## Default constant value for canceling crouch on jump.
 const DEFAULT_CANCEL_CROUCH_ON_JUMP: bool = true
+
 ## Default constant value for mono audio channel mixing.
 const DEFAULT_MONO_AUDIO: bool = false
+
 ## Default constant value for vision assist high-contrast rendering.
 const DEFAULT_VISION_ASSIST: bool = false
+
 ## Default constant index for vision assist background modes.
 const DEFAULT_VISION_ASSIST_MODE: int = 1
+
 ## Default constant index for screen filters.
 const DEFAULT_SCREEN_FILTER: int = 0
+
 ## Default constant value for world environment gamma.
 const DEFAULT_GAMMA: float = 1.0
+
 ## Default constant value for typography font scaling multiplier.
 const DEFAULT_FONT_SCALE: float = 1.0
 
-## Available palette color options for high contrast silhouette groups and subtitles.
+## Available palette color options for high contrast silhouette groups.
 const COLOR_NAMES: Array[String] = [
 	"Cyan", "Blue", "Yellow", "Green", "Red", "Magenta", "White", "Black"
 ]
+
 ## Available background mode tags for vision assist.
 const VISION_MODES: Array[String] = ["Black & White", "Blue", "Pure Black", "Grey", "Desaturated"]
+
 ## Identifier keys mapping directly to background mode shader parameters.
 const VISION_MODE_KEYS: Array[String] = [
 	"black_and_white", "blue", "pure_black", "grey", "desaturated"
 ]
 
-## Base sizes cached to prevent exponential multiplication on repeated changes.
+## Base font sizes cached to prevent exponential multiplication on repeated scaling.
 const BASE_FONT_SIZES: Dictionary[String, int] = {
 	"default": 16, "Label": 16, "Button": 16, "OptionButton": 14, "LineEdit": 14, "CheckButton": 14
 }
@@ -94,129 +130,186 @@ const BASE_FONT_SIZES: Dictionary[String, int] = {
 @onready var diorama_viewport: SubViewport = get_node_or_null("%DioramaViewport")
 
 # --- VISION ASSIST & HIGH CONTRAST CONTROLS ---
+
 ## Toggle switch for vision assist high-contrast silhouette rendering.
 @onready var vision_assist_toggle: CheckButton = get_node_or_null("%VisionAssistToggle")
+
 ## Dropdown menu for selecting vision assist background desaturation mode.
 @onready var vision_mode_option: OptionButton = get_node_or_null("%VisionModeOption")
+
 ## Color selection dropdown for the friendly allies highlight group.
 @onready var color_friends_option: OptionButton = get_node_or_null("%ColorFriendsOption")
+
 ## Color selection dropdown for the enemy threat highlight group.
 @onready var color_enemies_option: OptionButton = get_node_or_null("%ColorEnemiesOption")
+
 ## Color selection dropdown for the interactable items highlight group.
 @onready var color_interact_option: OptionButton = get_node_or_null("%ColorInteractOption")
+
 ## Color selection dropdown for the traversal navigation highlight group.
 @onready var color_traversal_option: OptionButton = get_node_or_null("%ColorTraversalOption")
+
 ## Color selection dropdown for narrative clues and notes highlight group.
 @onready var color_clues_option: OptionButton = get_node_or_null("%ColorCluesOption")
+
 ## Color selection dropdown for defensive cover highlight group.
 @onready var color_cover_option: OptionButton = get_node_or_null("%ColorCoverOption")
 
 # --- VISUALS & SHADERS CONTROLS ---
+
 ## Dropdown menu for selecting colorblind shader correction filters.
 @onready var colorblind_option: OptionButton = get_node_or_null("%ColorblindOption")
+
 ## Dropdown menu for selecting post-process screen filters.
 @onready var screen_filter_option: OptionButton = get_node_or_null("%ScreenFilterOption")
+
 ## Slider for adjusting world brightness.
 @onready var brightness_slider: HSlider = get_node_or_null("%BrightnessSlider")
+
 ## Text input for manual brightness entry.
 @onready var brightness_input: LineEdit = get_node_or_null("%BrightnessLine")
+
 ## Slider for adjusting world contrast.
 @onready var contrast_slider: HSlider = get_node_or_null("%ContrastSlider")
+
 ## Text input for manual contrast entry.
 @onready var contrast_input: LineEdit = get_node_or_null("%ContrastLine")
+
 ## Slider for adjusting world color saturation.
 @onready var saturation_slider: HSlider = get_node_or_null("%SaturationSlider")
+
 ## Text input for manual saturation entry.
 @onready var saturation_input: LineEdit = get_node_or_null("%SaturationLine")
+
 ## Slider for adjusting film grain intensity.
 @onready var film_grain_slider: HSlider = get_node_or_null("%FilmGrainSlider")
+
 ## Text input for manual film grain intensity entry.
 @onready var film_grain_input: LineEdit = get_node_or_null("%FilmGrainEdit")
+
 ## Toggle switch for photosensitivity safety mode.
 @onready var photosensitivity_toggle: CheckButton = get_node_or_null("%PhotosensitivityToggle")
+
 ## Slider for adjusting world gamma.
 @onready var gamma_slider: HSlider = get_node_or_null("%GammaSlider")
+
 ## Text input for manual gamma entry.
 @onready var gamma_input: LineEdit = get_node_or_null("%GammaLine")
 
 # --- DISPLAY & UI CONTROLS ---
+
 ## Slider for adjusting camera field of view.
 @onready var fov_slider: HSlider = get_node_or_null("%FOVSlider")
+
 ## Text input for manual FOV entry.
 @onready var fov_input: LineEdit = get_node_or_null("%FOVLine")
+
 ## Checkbox toggle for disabling sprint camera FOV adjustments.
 @onready var sprint_fov_checkbox: CheckButton = get_node_or_null("%SprintFovCheckbox")
+
 ## Slider for adjusting UI scaling factor.
 @onready var ui_scale_slider: HSlider = get_node_or_null("%UIScaleSlider")
+
 ## Text input for manual UI scaling factor entry.
 @onready var ui_scale_input: LineEdit = get_node_or_null("%UIScaleLine")
+
 ## Dropdown menu for typography font mode override.
 @onready var font_option: OptionButton = get_node_or_null("%FontOption")
+
 ## Toggle switch for high-contrast UI mode.
 @onready var high_contrast_toggle: CheckButton = get_node_or_null("%HighContrastToggle")
+
 ## Slider for adjusting typography font scaling factor.
 @onready var font_scale_slider: HSlider = get_node_or_null("%Font_ScaleSlider")
+
 ## Text input for manual typography font scaling factor entry.
 @onready var font_scale_input: LineEdit = get_node_or_null("%Font_ScaleLine")
 
 # --- SUBTITLES & AUDIO CONTROLS ---
+
 ## Slider for subtitle text font size.
 @onready var sub_size_slider: HSlider = get_node_or_null("%SubSizeSlider")
+
 ## Text input for manual subtitle text font size entry.
 @onready var sub_size_input: LineEdit = get_node_or_null("%SubSizeLine")
+
 ## Slider for subtitle background opacity percentage.
 @onready var sub_bg_opacity_slider: HSlider = get_node_or_null("%SubBgOpacitySlider")
+
 ## Text input for manual subtitle background opacity percentage entry.
 @onready var sub_bg_opacity_input: LineEdit = get_node_or_null("%SubBgOpacityLine")
+
 ## Dropdown menu for default subtitle body text color.
 @onready var sub_text_color_option: OptionButton = get_node_or_null("%SubTextColorOption")
+
 ## Dropdown menu for subtitle background box color.
 @onready var sub_bg_color_option: OptionButton = get_node_or_null("%SubBgColorOption")
+
 ## Dropdown menu for primary speaker label color.
 @onready var sub_speaker_color_option: OptionButton = get_node_or_null("%SubSpeakerColorOption")
+
 ## Toggle switch for showing or hiding speaker names in subtitles.
 @onready var sub_show_names_toggle: CheckButton = get_node_or_null("%SubShowNamesToggle")
+
 ## Toggle switch for colored character names in subtitles.
 @onready var sub_colors_toggle: CheckButton = get_node_or_null("%SubColorsToggle")
+
 ## Toggle switch for text-to-speech audio narration.
 @onready var tts_toggle: CheckButton = get_node_or_null("%TTSToggle")
+
 ## Toggle switch for mono audio mixing.
 @onready var mono_audio_toggle: CheckButton = get_node_or_null("%MonoAudioToggle")
 
 # --- CONTROLS & GAMEPLAY CONTROLS ---
+
 ## Slider for adjusting mouse sensitivity.
 @onready var mouse_sens_slider: HSlider = get_node_or_null("%MouseSensitivitySlider")
+
 ## Text input for manual mouse sensitivity entry.
 @onready var mouse_sens_input: LineEdit = get_node_or_null("%MouseSensitivityLine")
+
 ## Toggle switch for vertical camera axis inversion.
 @onready var invert_y_toggle: CheckButton = get_node_or_null("%InvertYToggle")
+
 ## Toggle switch for crouch key toggle behavior.
 @onready var toggle_crouch_button: CheckButton = get_node_or_null("%ToggleCrouchButton")
+
 ## Toggle switch for sprint key toggle behavior.
 @onready var toggle_sprint_button: CheckButton = get_node_or_null("%ToggleSprintButton")
+
 ## Toggle switch for canceling crouch when jumping.
 @onready var cancel_crouch_jump_button: CheckButton = get_node_or_null("%CancelCrouchOnJumpButton")
+
 ## Toggle switch for aim assistance enabling.
 @onready var aim_assist_toggle: CheckButton = get_node_or_null("%AimAssistToggle")
+
 ## Slider for adjusting aim assistance strength.
 @onready var aim_assist_slider: HSlider = get_node_or_null("%AimAssistSlider")
+
 ## Text input for manual aim assistance strength entry.
 @onready var aim_assist_input: LineEdit = get_node_or_null("%AimAssistLine")
+
 ## Slider for adjusting vibration strength.
 @onready var vibration_slider: HSlider = get_node_or_null("%VibrationSlider")
+
 ## Text input for manual vibration strength entry.
 @onready var vibration_input: LineEdit = get_node_or_null("%VibrationLine")
+
 ## Toggle switch for camera motion and screenshake reduction.
 @onready var reduce_motion_toggle: CheckButton = get_node_or_null("%ReduceMotionToggle")
 
 ## Active preview camera instance inside the diorama viewport.
 var _diorama_camera: Camera3D
+
 ## Active tween interpolating preview camera movements.
 var _camera_tween: Tween
+
 ## Cached reference to the instantiated preview diorama root node.
 var _diorama_instance: Node = null
+
 ## Dictionary caching camera nodes in the diorama keyed by group name.
 var _diorama_cameras: Dictionary[String, Camera3D] = {}
+
 ## Active camera instance currently rendering the preview.
 var _active_diorama_camera: Camera3D
 
@@ -239,12 +332,15 @@ func _setup_diorama() -> void:
 		print("UI: DioramaViewport not found in tree.")
 		return
 
-	_diorama_instance = diorama_viewport.get_node_or_null("FastDioramaMap")
+	_diorama_instance = diorama_viewport.get_node_or_null("SettingsLevel")
+	if not is_instance_valid(_diorama_instance):
+		_diorama_instance = diorama_viewport.get_node_or_null("FastDioramaMap")
+
 	if not is_instance_valid(_diorama_instance) and diorama_scene:
 		_diorama_instance = diorama_scene.instantiate()
-		_diorama_instance.name = "FastDioramaMap"
+		_diorama_instance.name = "SettingsLevel"
 		diorama_viewport.add_child(_diorama_instance)
-		print("UI: Loaded diorama scene into preview viewport: ", _diorama_instance.name)
+		print("UI: Loaded diorama scene into preview: ", _diorama_instance.name)
 
 	_setup_diorama_cameras()
 	set_diorama_effects_enabled(false)
@@ -276,30 +372,23 @@ func _setup_diorama_cameras() -> void:
 		_diorama_cameras[key] = cam
 		print("UI: Found and registered diorama camera: ", key)
 
-		_force_diorama_camera_vision_assist(cam, mode_key)
+		# Ensure preview cameras do not act like the active player camera
+		if "is_player_camera" in cam:
+			cam.is_player_camera = false
+		cam.set_process(false)
+
+		var mesh: MeshInstance3D = cam.get_node_or_null("VisionAssistMesh") as MeshInstance3D
+		if is_instance_valid(mesh):
+			mesh.visible = false
+
+		if cam.has_method("set_vision_assist_mode"):
+			cam.call("set_vision_assist_mode", mode_key)
 
 	if _diorama_cameras.has("default"):
 		_switch_diorama_camera("default")
 	elif not _diorama_cameras.is_empty():
 		var first_key: String = _diorama_cameras.keys()[0]
 		_switch_diorama_camera(first_key)
-
-
-## Forces a diorama camera and its post-process mesh to permanently render vision assist.
-## [param cam] Target diorama [Camera3D] node.
-## [param mode_key] Shader mode string identifier.
-func _force_diorama_camera_vision_assist(cam: Camera3D, mode_key: String) -> void:
-	if not is_instance_valid(cam):
-		return
-
-	var mesh: MeshInstance3D = cam.get_node_or_null("VisionAssistMesh") as MeshInstance3D
-	if is_instance_valid(mesh):
-		mesh.visible = true
-
-	if cam.has_method("set_vision_assist_mode"):
-		cam.call("set_vision_assist_mode", mode_key)
-	if cam.has_method("_on_vision_assist_toggled"):
-		cam.call("_on_vision_assist_toggled", true)
 
 
 ## Switches active diorama viewport rendering to the specified group's camera.
@@ -319,6 +408,14 @@ func _switch_diorama_camera(group_name: String) -> void:
 		return
 
 	print("UI: Switching diorama active camera to: ", target_cam.name)
+
+	# Ensure ONLY the active camera's post-process quad is visible
+	for cam: Camera3D in _diorama_cameras.values():
+		if is_instance_valid(cam):
+			var mesh: MeshInstance3D = cam.get_node_or_null("VisionAssistMesh") as MeshInstance3D
+			if is_instance_valid(mesh):
+				mesh.visible = (cam == target_cam)
+
 	target_cam.make_current()
 	_active_diorama_camera = target_cam
 	_diorama_camera = target_cam
@@ -331,7 +428,17 @@ func _switch_diorama_camera(group_name: String) -> void:
 		if mode_idx >= 0 and mode_idx < VISION_MODE_KEYS.size()
 		else "aaa_blue"
 	)
-	_force_diorama_camera_vision_assist(target_cam, mode_key)
+
+	if target_cam.has_method("set_vision_assist_mode"):
+		target_cam.call("set_vision_assist_mode", mode_key)
+
+	# Apply the entity silhouette highlight colors to the diorama models
+	var vision_mgr: Node = get_node_or_null("/root/VisionAssistManager")
+	if is_instance_valid(vision_mgr):
+		if vision_mgr.has_method("apply_diorama_colors"):
+			vision_mgr.call("apply_diorama_colors", _diorama_instance)
+		elif vision_mgr.has_method("set_diorama_overlays_active"):
+			vision_mgr.call("set_diorama_overlays_active", _diorama_instance, true)
 
 	if is_instance_valid(fov_slider):
 		target_cam.fov = fov_slider.value
@@ -363,9 +470,9 @@ func _focus_diorama_on_group(group_name: String) -> void:
 	if _camera_tween and _camera_tween.is_valid():
 		_camera_tween.kill()
 
-	_camera_tween = (create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(
+	_camera_tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(
 		Tween.EASE_OUT
-	))
+	)
 	_camera_tween.tween_property(_diorama_camera, "global_position", target_pos, 0.6)
 
 	var look_transform: Transform3D = _diorama_camera.global_transform.looking_at(
@@ -424,6 +531,7 @@ func _connect_signals() -> void:
 		vision_assist_toggle.toggled.connect(_on_vision_assist_toggled)
 	if vision_mode_option:
 		vision_mode_option.item_selected.connect(_on_vision_mode_selected)
+
 	_connect_color_dropdown(color_friends_option, "friends")
 	_connect_color_dropdown(color_enemies_option, "enemies")
 	_connect_color_dropdown(color_interact_option, "interactables")
@@ -435,6 +543,7 @@ func _connect_signals() -> void:
 		colorblind_option.item_selected.connect(_on_colorblind_selected)
 	if screen_filter_option:
 		screen_filter_option.item_selected.connect(_on_screen_filter_selected)
+
 	_connect_adjustment_signals(
 		brightness_slider, brightness_input, "brightness", 0.0, 3.0, "Settings"
 	)
@@ -446,6 +555,7 @@ func _connect_signals() -> void:
 	_connect_adjustment_signals(
 		film_grain_slider, film_grain_input, "film_grain_intensity", 0.0, 20.0, "Settings"
 	)
+
 	if photosensitivity_toggle:
 		photosensitivity_toggle.toggled.connect(_on_photosensitivity_toggled)
 
@@ -455,9 +565,12 @@ func _connect_signals() -> void:
 		fov_input.text_submitted.connect(_on_fov_input_submitted)
 		fov_input.focus_entered.connect(_on_fov_focus_entered)
 		fov_input.focus_exited.connect(_on_fov_focus_exited)
+
 	if sprint_fov_checkbox:
 		sprint_fov_checkbox.toggled.connect(_on_sprint_fov_toggled)
+
 	_connect_adjustment_signals(ui_scale_slider, ui_scale_input, "ui_scale", 0.5, 2.5, "Settings")
+
 	if font_option:
 		font_option.item_selected.connect(_on_font_selected)
 	if high_contrast_toggle:
@@ -475,6 +588,7 @@ func _connect_signals() -> void:
 		"Accessibility",
 		true
 	)
+
 	if sub_text_color_option:
 		sub_text_color_option.item_selected.connect(_on_sub_text_color_selected)
 	if sub_bg_color_option:
@@ -503,6 +617,7 @@ func _connect_signals() -> void:
 		cancel_crouch_jump_button.toggled.connect(_on_cancel_crouch_jump_toggled)
 	if aim_assist_toggle:
 		aim_assist_toggle.toggled.connect(_on_aim_assist_toggled)
+
 	_connect_adjustment_signals(
 		aim_assist_slider, aim_assist_input, "aim_assist_amount", 0.0, 1.0, "Gameplay"
 	)
@@ -516,15 +631,16 @@ func _connect_signals() -> void:
 		reduce_motion_toggle.toggled.connect(_on_reduce_motion_toggled)
 
 
-## Connects palette selection OptionButton instances to the Vision Assist bus and camera switching.
+## Connects palette dropdown instances to the Vision Assist bus and camera switching.
 ## [param dropdown] The [OptionButton] instance.
 ## [param group_name] Target scene group identifier.
 func _connect_color_dropdown(dropdown: OptionButton, group_name: String) -> void:
 	if not dropdown:
 		return
 
+	# Only switch camera on explicit player interaction (mouse_entered or item_selected).
+	# Removing focus_entered stops cascading camera switches during ready() setup.
 	dropdown.mouse_entered.connect(_switch_diorama_camera.bind(group_name))
-	dropdown.focus_entered.connect(_switch_diorama_camera.bind(group_name))
 
 	dropdown.item_selected.connect(
 		func(index: int) -> void:
@@ -585,6 +701,7 @@ func _load_accessibility_settings() -> void:
 			as int
 		)
 		_apply_colorblind_settings()
+
 	if screen_filter_option:
 		var initial_filter: int = (
 			GlobalSettings.get_setting("Settings", "screen_filter", DEFAULT_SCREEN_FILTER) as int
@@ -606,6 +723,7 @@ func _load_accessibility_settings() -> void:
 	_load_slider_setting(
 		font_scale_slider, font_scale_input, "font_scale", DEFAULT_FONT_SCALE, "Settings"
 	)
+
 	_apply_font_scale_settings()
 	_apply_visual_settings()
 
@@ -635,6 +753,7 @@ func _load_accessibility_settings() -> void:
 			GlobalSettings.get_setting("Settings", "font_mode", DEFAULT_FONT_MODE) as int
 		)
 		_apply_font_settings()
+
 	if high_contrast_toggle:
 		high_contrast_toggle.set_pressed_no_signal(
 			(
@@ -716,10 +835,12 @@ func _load_accessibility_settings() -> void:
 				as bool
 			)
 		)
+
 	if tts_toggle:
 		tts_toggle.set_pressed_no_signal(
 			GlobalSettings.get_setting("Accessibility", "tts_enabled", DEFAULT_TTS_ENABLED) as bool
 		)
+
 	if mono_audio_toggle:
 		mono_audio_toggle.set_pressed_no_signal(
 			GlobalSettings.get_setting("Audio", "mono_audio", DEFAULT_MONO_AUDIO) as bool
@@ -733,6 +854,7 @@ func _load_accessibility_settings() -> void:
 		"Controls"
 	)
 	_apply_mouse_sensitivity()
+
 	if invert_y_toggle:
 		invert_y_toggle.set_pressed_no_signal(
 			GlobalSettings.get_setting("Controls", "invert_y", DEFAULT_INVERT_Y) as bool
@@ -758,6 +880,7 @@ func _load_accessibility_settings() -> void:
 		aim_assist_toggle.set_pressed_no_signal(
 			GlobalSettings.get_setting("Gameplay", "aim_assist", DEFAULT_AIM_ASSIST) as bool
 		)
+
 	_load_slider_setting(
 		aim_assist_slider,
 		aim_assist_input,
@@ -768,6 +891,7 @@ func _load_accessibility_settings() -> void:
 	_load_slider_setting(
 		vibration_slider, vibration_input, "vibration_strength", DEFAULT_VIBRATION, "Gameplay"
 	)
+
 	if reduce_motion_toggle:
 		reduce_motion_toggle.set_pressed_no_signal(
 			(
@@ -913,16 +1037,9 @@ func _connect_adjustment_signals(
 		input_box.focus_entered.connect(_on_adjustment_focus_entered.bind(input_box))
 		input_box.focus_exited.connect(
 			_on_adjustment_focus_exited.bind(
-				input_node_ref(input_box), slider, setting_name, section, min_val, max_val, is_int
+				input_box, slider, setting_name, section, min_val, max_val, is_int
 			)
 		)
-
-
-## Helper getter resolving LineEdit node for bind callbacks.
-## [param node] The target [LineEdit].
-## [return] The [LineEdit] instance.
-func input_node_ref(node: LineEdit) -> LineEdit:
-	return node
 
 
 ## Responds to live slider changes and updates companion textboxes.
@@ -1102,13 +1219,7 @@ func _apply_subtitle_size(size_val: float) -> void:
 ## [param opacity_val] Subtitle background alpha percentage (0.0 to 100.0).
 func _apply_subtitle_bg_opacity(opacity_val: float) -> void:
 	var normalized_alpha: float = clampf(opacity_val / 100.0, 0.0, 1.0)
-	print(
-		"Engine: Applying Subtitle Background Opacity: ",
-		opacity_val,
-		"% (alpha: ",
-		normalized_alpha,
-		")"
-	)
+	print("Engine: Applying Subtitle Background Opacity: ", opacity_val, "%")
 	if has_node("/root/Events"):
 		var events: Node = get_node("/root/Events")
 		if events.has_signal("subtitle_bg_opacity_changed"):
@@ -1208,7 +1319,7 @@ func _find_first_child_of_type(parent: Node, type_str: String) -> Node:
 	return null
 
 
-## Applies brightness, contrast, saturation, and gamma adjustments to the active [WorldEnvironment].
+## Applies adjustments to the active [WorldEnvironment].
 func _apply_visual_settings() -> void:
 	if not brightness_slider or not contrast_slider or not saturation_slider or not gamma_slider:
 		return
@@ -1493,7 +1604,7 @@ func _apply_gamma_to_environment(gamma_val: float, env: Environment) -> void:
 	if not is_instance_valid(env):
 		return
 
-	print("Engine: Updating Environment color correction gamma curve to: ", gamma_val)
+	print("Engine: Updating Environment gamma curve to: ", gamma_val)
 	var curve: Curve = Curve.new()
 	var sample_points: int = 16
 	for i: int in range(sample_points + 1):
@@ -1525,7 +1636,7 @@ func set_diorama_effects_enabled(active: bool) -> void:
 
 		var mesh: MeshInstance3D = cam.get_node_or_null("VisionAssistMesh") as MeshInstance3D
 		if is_instance_valid(mesh):
-			mesh.visible = active
+			mesh.visible = active and (cam == _active_diorama_camera)
 
 		if cam.has_method("_on_vision_assist_toggled"):
 			cam.call("_on_vision_assist_toggled", active)

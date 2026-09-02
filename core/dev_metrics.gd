@@ -1,12 +1,15 @@
 ## An on-screen developer metrics overlay used for diagnosing performance bottlenecks.
 ##
 ## [DevMetricsPanel] captures hardware specifications, tracks CPU/GPU frame times,
-## and pulls player state data into a real-time HUD.
+## inspects memory/buffers, monitors node counts, and pulls player state data into a real-time HUD.
 class_name DevMetricsPanel
 extends PanelContainer
 
 ## The number of frames to store for rolling average calculations.
 const HISTORY_NUM_FRAMES: int = 150
+
+## Throttle interval in seconds (5 Hz) to prevent per-frame BBCode table parsing.
+const METRICS_UPDATE_INTERVAL: float = 0.2
 
 @export_category("Dev Metrics")
 ## Toggles whether the metrics system actively calculates values.
@@ -17,22 +20,31 @@ var player: CharacterBody3D
 
 ## Timestamp of the previous frame in microseconds.
 var _last_tick: int = 0
+
+## Accumulation timer throttling RichTextLabel table updates.
+var _update_timer: float = 0.0
+
 ## Rolling history array of total frame delta times.
 var _total_history: Array[float] = []
+
 ## Rolling history array of CPU frame times.
 var _cpu_history: Array[float] = []
+
 ## Rolling history array of GPU frame times.
 var _gpu_history: Array[float] = []
 
 ## Rolling sum of total frame delta times.
 var _total_sum: float = 0.0
+
 ## Rolling sum of CPU frame times.
 var _cpu_sum: float = 0.0
+
 ## Rolling sum of GPU frame times.
 var _gpu_sum: float = 0.0
 
 ## Cached hardware strings to prevent recreating strings every frame.
 var _hardware_info_str: String = ""
+
 ## Cached static graphics settings strings.
 var _settings_info_static_str: String = ""
 
@@ -43,7 +55,7 @@ var _settings_info_static_str: String = ""
 ## Called when the node enters the scene tree for the first time.
 ## Caches hardware info and enables rendering measurement overrides.
 func _ready() -> void:
-	print("DebugPanel: Initializing and caching hardware info.")
+	print("DevMetricsPanel: Initializing and caching hardware info.")
 	visible = false
 
 	player = get_tree().get_first_node_in_group("player") as CharacterBody3D
@@ -52,7 +64,6 @@ func _ready() -> void:
 	metrics_label.add_theme_color_override("font_outline_color", Color.BLACK)
 	metrics_label.add_theme_constant_override("outline_size", 4)
 
-	# Enable hardware rendering time measurements
 	var vp_rid: RID = get_viewport().get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(vp_rid, true)
 
@@ -60,25 +71,31 @@ func _ready() -> void:
 	_cache_static_settings_info()
 
 
-## Called every frame to sample performance data and update the label UI.
-## [param _delta] The time elapsed since the previous frame in seconds.
-func _process(_delta: float) -> void:
+## Called every frame to sample frametime history and periodically refresh the UI.
+## [param delta] The time elapsed since the previous frame in seconds.
+func _process(delta: float) -> void:
 	if not visible or not player:
 		return
 
 	_update_frametime_history()
 
+	_update_timer += delta
+	if _update_timer >= METRICS_UPDATE_INTERVAL:
+		_update_timer = 0.0
+		_render_metrics_text()
+
+
+## Assembles BBCode table strings and updates the HUD label.
+func _render_metrics_text() -> void:
 	var fps: float = Engine.get_frames_per_second()
 	var vel: Vector3 = player.velocity
 	var speed: float = vel.length()
 
 	var fps_color: String = "green"
-	if fps >= 60.0:
-		fps_color = "green"
-	elif fps >= 30.0:
-		fps_color = "yellow"
-	else:
+	if fps < 30.0:
 		fps_color = "red"
+	elif fps < 60.0:
+		fps_color = "yellow"
 
 	var current_input: Vector2 = GestureInputManager.get_vector(
 		"left", "right", "forward", "backward"
@@ -105,29 +122,37 @@ func _process(_delta: float) -> void:
 				else:
 					state = "IDLE"
 
+	var cpu_process_ms: float = Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0
+	var physics_process_ms: float = (
+		Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0
+	)
+	var nav_process_ms: float = (
+		Performance.get_monitor(Performance.TIME_NAVIGATION_PROCESS) * 1000.0
+	)
+
 	var static_mem: int = OS.get_static_memory_usage()
-	var vram_usage: int = int(Performance.get_monitor(Performance.RENDER_TEXTURE_MEM_USED))
+	var vram_total: int = int(Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED))
+	var texture_mem: int = int(Performance.get_monitor(Performance.RENDER_TEXTURE_MEM_USED))
+	var buffer_mem: int = int(Performance.get_monitor(Performance.RENDER_BUFFER_MEM_USED))
 	var draw_calls: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
 	var objects: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME))
 	var primitives: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))
+	var node_count: int = int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
+	var orphan_count: int = int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT))
 
 	var flashlight_str: String = "OFF"
-	if is_instance_valid(player):
-		var f_ctrl: Variant = player.get("flashlight_controller")
-		if is_instance_valid(f_ctrl):
-			if is_instance_valid(f_ctrl.flashlight):
-				flashlight_str = "ON" if f_ctrl.flashlight.visible else "OFF"
+	var f_ctrl: Variant = player.get("flashlight_controller")
+	if is_instance_valid(f_ctrl) and is_instance_valid(f_ctrl.flashlight):
+		flashlight_str = "ON" if f_ctrl.flashlight.visible else "OFF"
 
 	var weapon_str: String = "NONE"
 	var weapon_holder: Node = player.get_node_or_null("%WeaponHolder")
 	if weapon_holder and weapon_holder.get_child_count() > 0:
 		weapon_str = weapon_holder.get_child(0).name
 
-	# --- TEXT ASSEMBLY ---
 	var text: String = ""
 	text += "[color=%s][b]%d FPS[/b][/color]\n\n" % [fps_color, int(fps)]
 
-	# Use a BBCode table to align the frametime data perfectly
 	text += "[table=5]\n"
 	text += "[cell][/cell][cell] [color=gray]Average[/color] [/cell]"
 	text += "[cell] [color=gray]Best[/color] [/cell]"
@@ -138,22 +163,38 @@ func _process(_delta: float) -> void:
 	text += _format_metric_row("GPU:", _gpu_sum, _gpu_history)
 	text += "[/table]\n"
 
-	# Append the cached hardware + dynamic settings
 	text += "[color=gray]" + _hardware_info_str + _settings_info_static_str
 	text += _get_dynamic_settings_string() + "[/color]\n"
 
+	text += "[color=gray]--- CPU PROCESS TIMING ---[/color]\n"
+	text += "Process (Idle): %.2f ms\n" % cpu_process_ms
+	text += "Physics Process: %.2f ms\n" % physics_process_ms
+	text += "Navigation Process: %.2f ms\n" % nav_process_ms
+
 	text += "\n[color=gray]--- MEMORY & RENDERING ---[/color]\n"
 	text += "RAM: %s\n" % String.humanize_size(static_mem)
-	text += "VRAM: %s\n" % String.humanize_size(vram_usage)
+	text += "VRAM (Total): %s\n" % String.humanize_size(vram_total)
+	text += "  ├ Texture: %s\n" % String.humanize_size(texture_mem)
+	text += "  └ Buffers: %s\n" % String.humanize_size(buffer_mem)
 	text += "Draw Calls: %d\n" % draw_calls
 	text += "Objects: %d\n" % objects
 	text += "Primitives: %d\n" % primitives
+
+	var orphan_color: String = "white" if orphan_count == 0 else "red"
+	text += "\n[color=gray]--- NODES & ORPHANS ---[/color]\n"
+	text += (
+		"Active Nodes: %d | Orphans: [color=%s]%d[/color]\n"
+		% [node_count, orphan_color, orphan_count]
+	)
 
 	text += "\n[color=gray]--- PLAYER STATE ---[/color]\n"
 	text += "STATE: %s\n" % state
 	text += "WEAPON: %s\n" % weapon_str
 	text += "SPEED: %.2f m/s\n" % speed
-	text += "POS: %s\n" % var_to_str(player.global_position).replace("Vector3", "")
+	text += (
+		"POS: (%.2f, %.2f, %.2f)\n"
+		% [player.global_position.x, player.global_position.y, player.global_position.z]
+	)
 	text += "GROUNDED: %s\n" % ("YES" if player.is_on_floor() else "NO")
 	text += "FLASHLIGHT: %s\n" % flashlight_str
 
@@ -163,7 +204,7 @@ func _process(_delta: float) -> void:
 ## Toggles the visual state of the metrics panel on and off.
 func toggle_window() -> void:
 	visible = not visible
-	print("DebugPanel: Visibility toggled to ", visible)
+	print("DevMetricsPanel: Visibility toggled to ", visible)
 
 
 ## Samples the current frametime from the [RenderingServer] and pushes it into the history arrays.
@@ -199,11 +240,11 @@ func _update_frametime_history() -> void:
 ## [param title] The name of the metric (e.g. "CPU:").
 ## [param sum_val] The current rolling sum of the metric.
 ## [param history] The array containing the history of the metric.
+## [return] Formatted BBCode table row string.
 func _format_metric_row(title: String, sum_val: float, history: Array[float]) -> String:
 	if history.is_empty():
 		return ""
 
-	# Explicitly cast to float to prevent Godot string formatting errors with Variants
 	var avg_val: float = float(sum_val) / float(history.size())
 	var min_val: float = float(history.min())
 	var max_val: float = float(history.max())
@@ -233,6 +274,7 @@ func _format_metric_row(title: String, sum_val: float, history: Array[float]) ->
 
 ## Returns a hex color string based on how fast a millisecond timing is.
 ## [param ms] The time in milliseconds.
+## [return] Hex color code string.
 func _get_ms_color(ms: float) -> String:
 	if ms < 8.34:
 		return "#38bdf8"
@@ -271,6 +313,7 @@ func _cache_static_settings_info() -> void:
 
 
 ## Checks the current active viewport to build strings for dynamic graphics settings.
+## [return] Formatted string listing dynamic graphics options.
 func _get_dynamic_settings_string() -> String:
 	var dyn_str: String = ""
 	var vp: Viewport = get_viewport()
@@ -301,9 +344,9 @@ func _get_dynamic_settings_string() -> String:
 		dyn_str += "SSAO: %s\n" % ("On" if env.ssao_enabled else "Off")
 		dyn_str += "SSIL: %s\n" % ("On" if env.ssil_enabled else "Off")
 		var sdfgi_str: String = "On (%d Cascades)" % env.sdfgi_cascades
-		dyn_str += "SDFGI: %s\n" % (sdfgi_str if env.sdfgi_enabled else "Off")
+		dyn_str += ("SDFGI: %s\n" % (sdfgi_str if env.sdfgi_enabled else "Off"))
 		dyn_str += "Glow: %s\n" % ("On" if env.glow_enabled else "Off")
-		dyn_str += "Volumetric Fog: %s\n" % ("On" if env.volumetric_fog_enabled else "Off")
+		dyn_str += ("Volumetric Fog: %s\n" % ("On" if env.volumetric_fog_enabled else "Off"))
 
 	dyn_str += "Shadow Atlas Size: %d\n" % vp.positional_shadow_atlas_size
 	dyn_str += "Mesh LOD Threshold: %.2f\n" % vp.mesh_lod_threshold

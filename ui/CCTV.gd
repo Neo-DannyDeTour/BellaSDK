@@ -1,16 +1,16 @@
 ## A physical in-world security camera monitor that the player can interact with.
 ##
-## When the player interacts with the screen, their camera is replaced by the CCTV feed.
-## It disables global volumetrics for performance while viewing, allows the player to cycle
-## through camera nodes, pan, and zoom, and then restores the previous state when they exit.
+## Manages camera switching, orientation controls, and throttled rendering to maintain 60 FPS.
+## When interacted with, [method _enable_fullscreen_mode] projects the feed onto a [CanvasLayer]
+## without reallocating viewport buffers at runtime.
 class_name CCTV
 extends StaticBody3D
 
 @export_category("CCTV Settings")
-## The viewport that renders the CCTV camera feed to the screen material.
+## The [SubViewport] that renders the CCTV camera feed to the screen material.
 @export var camera_vp: SubViewport
 
-## An array of nodes representing the positions the CCTV camera can snap to.
+## An array of [Node3D] markers representing locations the CCTV camera can snap to.
 @export var camera_locations: Array[Node3D] = []
 
 ## Speed in degrees per second at which the camera pans when receiving input.
@@ -19,47 +19,53 @@ extends StaticBody3D
 ## Speed at which the FOV changes during a scroll wheel zoom input.
 @export var zoom_speed: float = 5.0
 
-## Minimum field of view allowed when zooming in.
+## Minimum field of view in degrees allowed when zooming in.
 @export var min_fov: float = 30.0
 
-## Maximum field of view allowed when zooming out.
+## Maximum field of view in degrees allowed when zooming out.
 @export var max_fov: float = 75.0
 
-## If true, interacting creates a canvas overlay that fully replaces the player view.
+## If true, interacting creates a canvas overlay that replaces the player view.
 @export var replace_player_camera: bool = true
 
 @export_category("Performance Optimization")
-## The main environment to disable heavy effects on while looking through the CCTV.
+## The main [WorldEnvironment] to disable heavy effects on while looking through the CCTV.
 @export var world_env: WorldEnvironment
 
 ## If true, temporarily disables global fog and clouds to keep framerates high.
 @export var disable_global_volumetrics: bool = true
 
-## The target frame rate the CCTV viewport updates at (lower is better for performance).
+## The target frame rate the CCTV viewport updates at when actively controlled.
 @export var cctv_fps: float = 15.0
 
-## The mesh instance displaying the screen texture.
+## The fixed render resolution used by [member camera_vp] to prevent GPU reallocations.
+@export var internal_resolution: Vector2i = Vector2i(640, 360)
+
+## Maximum visible distance in meters for [member cctv_camera] to preserve frustum culling.
+@export var camera_far_distance: float = 100.0
+
+## The [MeshInstance3D] displaying the screen texture.
 @onready var screen_mesh: MeshInstance3D = $ScreenMesh
 
 ## The interaction component the player targets to trigger the CCTV.
 @onready var interact_comp: Node = $InteractComponent
 
-## The actual camera node inside the viewport that moves around.
+## The actual [Camera3D] node inside the viewport that moves around.
 @onready var cctv_camera: Camera3D = $CameraViewport/CCTVCamera
 
-## The UI text that displays controls while the player is interacting.
+## The UI [Label] that displays controls while the player is interacting.
 @onready var tutorial_label: Label = $CameraViewport/CanvasLayer/MarginContainer/TutorialLabel
 
-## Reference to the dynamically created material on the screen mesh.
-var screen_mat_override: StandardMaterial3D
+## Reference to the dynamically created or existing [StandardMaterial3D] on the screen mesh.
+var screen_mat_override: StandardMaterial3D = null
 
-## The index of the currently active camera location in the array.
+## The index of the currently active camera location in [member camera_locations].
 var active_cam_idx: int = 0
 
 ## True if the player is currently bound to the screen controls.
 var is_controlling: bool = false
 
-## Reference to the player character currently using the CCTV.
+## Reference to the [CharacterBody3D] currently using the CCTV.
 var current_player: CharacterBody3D = null
 
 ## The target field of view being interpolated towards during a zoom.
@@ -77,25 +83,25 @@ var _interaction_cooldown: float = 0.0
 ## Stores the player's camera cull mask to restore it after fullscreen mode ends.
 var _stored_player_cull_mask: int = 0
 
-## The CanvasLayer used to draw the full-screen CCTV effect.
+## The [CanvasLayer] used to draw the full-screen CCTV effect.
 var _fullscreen_canvas: CanvasLayer = null
 
-## The TextureRect displaying the viewport output on the CanvasLayer.
+## The [TextureRect] displaying the viewport output on [_fullscreen_canvas].
 var _fullscreen_rect: TextureRect = null
 
-## Accumulator used to limit the viewport update rate to the target cctv_fps.
+## Accumulator used to limit the viewport update rate to the target [member cctv_fps].
 var _update_timer: float = 0.0
 
-## Stores the compositor resource before removing it to disable clouds.
+## Stores the [Compositor] resource before removing it to disable clouds.
 var _stored_compositor: Compositor = null
 
 ## Stores the previous volumetric fog enabled state.
 var _stored_volumetric_state: bool = false
 
 
-## Sets up materials, viewport overrides, and initial camera positions.
+## Sets up materials, viewport overrides, camera clipping, and initial positions.
 func _ready() -> void:
-	print("[CCTV] Initializing TV screen and building tutorial UI.")
+	print("[CCTV] Initializing TV screen, camera cull limits, and UI.")
 	if (
 		is_instance_valid(interact_comp)
 		and not interact_comp.interacted.is_connected(_on_interacted)
@@ -110,12 +116,15 @@ func _ready() -> void:
 		screen_mat_override = StandardMaterial3D.new()
 		screen_mesh.material_override = screen_mat_override
 
-	if is_instance_valid(screen_mat_override) and is_instance_valid(camera_vp):
-		screen_mat_override.albedo_texture = camera_vp.get_texture()
-		camera_vp.size = Vector2i(512, 512)
+	if is_instance_valid(camera_vp):
+		camera_vp.size = internal_resolution
 		camera_vp.render_target_update_mode = SubViewport.UPDATE_ONCE
+		camera_vp.positional_shadow_atlas_size = 0
+		if is_instance_valid(screen_mat_override):
+			screen_mat_override.albedo_texture = camera_vp.get_texture()
 
 	if is_instance_valid(cctv_camera):
+		cctv_camera.far = camera_far_distance
 		target_fov = cctv_camera.fov
 		cctv_camera.make_current()
 		_force_clear_environment()
@@ -150,7 +159,7 @@ func _process(delta: float) -> void:
 			camera_vp.render_target_update_mode = SubViewport.UPDATE_ONCE
 
 
-## Handles raw player input events while they are bound to the CCTV controls.
+## Handles raw player input events while bound to the CCTV controls.
 ## [param event] The input event to process.
 func _input(event: InputEvent) -> void:
 	if not is_controlling:
@@ -177,7 +186,7 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 
-## Overrides the CCTV camera's environment to remove local fog and sky.
+## Overrides the CCTV camera's environment to remove local fog and sky passes.
 func _force_clear_environment() -> void:
 	print("[CCTV] Overriding camera environment to block localized fog/sky.")
 	var cctv_env: Environment = cctv_camera.environment
@@ -191,7 +200,7 @@ func _force_clear_environment() -> void:
 	cctv_env.fog_enabled = false
 
 
-## Updates the UI text displaying camera count and controls.
+## Updates the UI text displaying connected camera count and instructions.
 func _update_tutorial_text() -> void:
 	print("[CCTV] Refreshing tutorial text on screen.")
 	if not is_instance_valid(tutorial_label):
@@ -208,7 +217,7 @@ func _update_tutorial_text() -> void:
 
 
 ## Triggered when the player interacts with the screen, entering control mode.
-## [param player] The player character interacting.
+## [param player] The player character interacting with the monitor.
 func _on_interacted(player: CharacterBody3D) -> void:
 	if is_controlling or _interaction_cooldown > 0.0:
 		return
@@ -217,12 +226,12 @@ func _on_interacted(player: CharacterBody3D) -> void:
 	is_controlling = true
 	current_player = player
 	_interaction_cooldown = 0.3
+	_update_timer = 0.0
 
 	if is_instance_valid(tutorial_label):
 		tutorial_label.visible = true
 
 	if disable_global_volumetrics and is_instance_valid(world_env):
-		# Rip the Compositor out of the environment to kill Sunshine Clouds entirely
 		if is_instance_valid(world_env.compositor):
 			print("[CCTV] Unhooking Compositor from WorldEnvironment.")
 			_stored_compositor = world_env.compositor
@@ -250,7 +259,6 @@ func _stop_controlling() -> void:
 		tutorial_label.visible = false
 
 	if disable_global_volumetrics and is_instance_valid(world_env):
-		# Plug the Compositor back in to restore the main sky
 		if is_instance_valid(_stored_compositor):
 			print("[CCTV] Restoring Compositor to WorldEnvironment.")
 			world_env.compositor = _stored_compositor
@@ -272,7 +280,7 @@ func _stop_controlling() -> void:
 	current_player = null
 
 
-## Creates a CanvasLayer overlay and disables the player's 3D rendering.
+## Creates a [CanvasLayer] overlay and disables player 3D rendering without resizing viewport.
 func _enable_fullscreen_mode() -> void:
 	print("[CCTV] Generating fullscreen overlay and culling player camera.")
 
@@ -283,11 +291,9 @@ func _enable_fullscreen_mode() -> void:
 	_fullscreen_rect = TextureRect.new()
 	_fullscreen_rect.texture = camera_vp.get_texture()
 	_fullscreen_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_fullscreen_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 	_fullscreen_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_fullscreen_canvas.add_child(_fullscreen_rect)
-
-	var window_size: Vector2 = get_viewport().get_visible_rect().size
-	camera_vp.size = Vector2i(window_size)
 
 	if is_instance_valid(current_player) and current_player.get("camera_controller"):
 		var cam_controller: Node = current_player.get("camera_controller")
@@ -298,14 +304,14 @@ func _enable_fullscreen_mode() -> void:
 			p_cam.cull_mask = 0
 
 
-## Removes the CanvasLayer overlay and restores the player's 3D rendering.
+## Removes the fullscreen overlay and restores the player's camera cull mask.
 func _disable_fullscreen_mode() -> void:
 	print("[CCTV] Destroying fullscreen overlay and restoring player camera.")
 
 	if is_instance_valid(_fullscreen_canvas):
 		_fullscreen_canvas.queue_free()
-
-	camera_vp.size = Vector2i(512, 512)
+		_fullscreen_canvas = null
+		_fullscreen_rect = null
 
 	if is_instance_valid(current_player) and current_player.get("camera_controller"):
 		var cam_controller: Node = current_player.get("camera_controller")
@@ -315,7 +321,7 @@ func _disable_fullscreen_mode() -> void:
 			p_cam.cull_mask = _stored_player_cull_mask
 
 
-## Snaps the CCTV camera to the specified index in the locations array.
+## Snaps [member cctv_camera] to the specified index in [member camera_locations].
 ## [param index] The target camera location index.
 func _set_camera(index: int) -> void:
 	if index < 0 or index >= camera_locations.size():
@@ -337,8 +343,11 @@ func _set_camera(index: int) -> void:
 	cctv_camera.rotation.x = current_pitch
 	cctv_camera.rotation.z = 0.0
 
+	if is_instance_valid(camera_vp):
+		camera_vp.render_target_update_mode = SubViewport.UPDATE_ONCE
 
-## Cycles to the next available camera location.
+
+## Cycles to the next available camera location index.
 func _cycle_camera() -> void:
 	if camera_locations.is_empty():
 		return
@@ -348,7 +357,7 @@ func _cycle_camera() -> void:
 	_set_camera(next_idx)
 
 
-## Translates input actions into camera rotation changes.
+## Translates input actions into camera yaw and pitch rotations.
 ## [param delta] Frame time in seconds.
 func _pan_camera(delta: float) -> void:
 	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
@@ -367,7 +376,7 @@ func _pan_camera(delta: float) -> void:
 	cctv_camera.rotation.z = 0.0
 
 
-## Interpolates the current field of view toward the target field of view.
+## Smoothly interpolates the current field of view toward [member target_fov].
 ## [param delta] Frame time in seconds.
 func _handle_zoom(delta: float) -> void:
 	target_fov = clampf(target_fov, min_fov, max_fov)

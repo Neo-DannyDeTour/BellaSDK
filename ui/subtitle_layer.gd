@@ -2,6 +2,12 @@
 # class_name SubtitleLayer
 extends CanvasLayer
 
+## Additional time in seconds to keep the text visible after typing finishes.
+const READING_GRACE_PERIOD: float = 3.0
+
+## Speed threshold fallback in characters per second if duration is zero.
+const DEFAULT_CPS: float = 25.0
+
 ## Main background panel providing contrast backing behind subtitle text.
 @onready var background_panel: PanelContainer = $MarginContainer/BackgroundPanel
 
@@ -11,7 +17,7 @@ extends CanvasLayer
 ## Label displaying speaker names and dialogue text.
 @onready var subtitle_label: RichTextLabel = $MarginContainer/BackgroundPanel/SubtitleLabel
 
-## Active tween handling subtitle fade-in and fade-out transitions.
+## Active tween handling subtitle fade-in, text typing, and fade-out transitions.
 var fade_tween: Tween
 
 ## Internal timer managing automatic dismissal of timed dialogue entries.
@@ -38,6 +44,9 @@ var is_speaker_name_shown: bool = true
 func _ready() -> void:
 	print("SubtitleLayer: _ready() called. Initializing subtitle display.")
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	if is_instance_valid(subtitle_label):
+		subtitle_label.scroll_following = false
+		subtitle_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_hide_subtitles_immediate()
 	_connect_signals()
 
@@ -63,16 +72,19 @@ func _connect_signals() -> void:
 		Events.subtitle_show_names_toggled.connect(_on_subtitle_show_names_toggled)
 
 
-## Instantly resets subtitle visibility and alpha modulation to zero.
+## Instantly resets subtitle visibility, scrolls, and alpha modulation to zero.
 func _hide_subtitles_immediate() -> void:
 	print("SubtitleLayer: Resetting subtitle layer to hidden state.")
 	visible = false
+	if is_instance_valid(subtitle_label):
+		subtitle_label.visible_characters = 0
+		subtitle_label.get_v_scroll_bar().value = 0.0
 	if is_instance_valid(background_panel):
 		background_panel.hide()
 		background_panel.modulate.a = 0.0
 
 
-## Renders formatted subtitle dialogue and sets up a timed dismissal callback.
+## Renders typewriter subtitle dialogue synced to duration with grace reading time.
 ## [param speaker] Name identifier of the entity speaking.
 ## [param text] Dialogue body string to display.
 ## [param duration] Visible display duration in seconds.
@@ -82,23 +94,64 @@ func show_subtitle(speaker: String, text: String, duration: float) -> void:
 		push_warning("SubtitleLayer: Subtitle UI nodes are invalid or not configured.")
 		return
 
+	if fade_tween and fade_tween.is_valid():
+		fade_tween.kill()
+
 	var formatted_body: String = ""
 	if is_speaker_name_shown and not speaker.is_empty():
 		formatted_body = "[color=" + active_speaker_color + "]" + speaker + ":[/color] "
 
 	formatted_body += "[color=" + active_text_color + "]" + text + "[/color]"
-	subtitle_label.text = "[center]" + formatted_body + "[/center]"
+	subtitle_label.text = formatted_body
+	subtitle_label.visible_characters = 0
+	subtitle_label.get_v_scroll_bar().value = 0.0
 
 	visible = true
 	background_panel.show()
 
-	if fade_tween and fade_tween.is_valid():
-		fade_tween.kill()
-
 	fade_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	fade_tween.tween_property(background_panel, "modulate:a", 1.0, 0.2)
 
-	display_timer = get_tree().create_timer(duration)
+	var total_chars: int = subtitle_label.get_total_character_count()
+	var type_duration: float = duration if duration > 0.0 else (total_chars / DEFAULT_CPS)
+
+	fade_tween.tween_method(_animate_characters_and_scroll, 0, total_chars, type_duration)
+	fade_tween.finished.connect(_on_typing_finished)
+
+
+## Updates character count and only scrolls down when the typing cursor passes visible lines.
+## [param char_count] Count of visible characters to reveal.
+func _animate_characters_and_scroll(char_count: int) -> void:
+	if not is_instance_valid(subtitle_label):
+		return
+
+	subtitle_label.visible_characters = char_count
+
+	var scroll_bar: VScrollBar = subtitle_label.get_v_scroll_bar()
+	var max_scroll: float = scroll_bar.max_value - scroll_bar.page
+
+	if max_scroll <= 0.0 or char_count <= 0:
+		scroll_bar.value = 0.0
+		return
+
+	var current_line: int = subtitle_label.get_character_line(maxi(0, char_count - 1))
+	var visible_lines: int = subtitle_label.get_visible_line_count()
+	var total_lines: int = subtitle_label.get_line_count()
+
+	if current_line < visible_lines:
+		scroll_bar.value = 0.0
+	else:
+		var overflow_lines: int = total_lines - visible_lines
+		if overflow_lines > 0:
+			var current_overflow: int = current_line - visible_lines + 1
+			var step: float = max_scroll / float(overflow_lines)
+			scroll_bar.value = clampf(float(current_overflow) * step, 0.0, max_scroll)
+
+
+## Initiates grace period display timer after typewriter finishes.
+func _on_typing_finished() -> void:
+	print("SubtitleLayer: Typing completed. Starting ", READING_GRACE_PERIOD, "s grace timer.")
+	display_timer = get_tree().create_timer(READING_GRACE_PERIOD)
 	display_timer.timeout.connect(
 		func() -> void:
 			if visible:
@@ -122,6 +175,9 @@ func hide_subtitle() -> void:
 			visible = false
 			if is_instance_valid(background_panel):
 				background_panel.hide()
+			if is_instance_valid(subtitle_label):
+				subtitle_label.visible_characters = 0
+				subtitle_label.get_v_scroll_bar().value = 0.0
 	)
 
 
