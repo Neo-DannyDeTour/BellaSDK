@@ -35,7 +35,7 @@ func before_each() -> void:
 	modifier.tick_interval = 0.1
 
 	dummy_body = Node3D.new()
-	add_child_autofree(dummy_body)
+	dummy_body.name = "DummyBody"
 
 	var components_node: Node = Node.new()
 	components_node.name = "Components"
@@ -45,6 +45,8 @@ func before_each() -> void:
 	health_comp.name = "HealthComponent"
 	health_comp.max_health = 100
 	components_node.add_child(health_comp)
+
+	add_child_autofree(dummy_body)
 	health_comp._ready()
 
 
