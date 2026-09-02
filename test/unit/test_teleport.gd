@@ -19,17 +19,17 @@ func before_each() -> void:
 	portal_sound.stream = dummy_stream
 	_teleport.add_child(portal_sound)
 	_teleport.portal_sound = portal_sound
-	add_child(_teleport)
+	add_child_autofree(_teleport)
 
 	_target_portal = Area3D.new()
-	add_child(_target_portal)
+	add_child_autofree(_target_portal)
 	_target_portal.global_transform.origin = Vector3(10, 20, 30)
 
 	_teleport.connect_portal = _target_portal
 
 	_player = Node3D.new()
 	_player.name = "Player"
-	add_child(_player)
+	add_child_autofree(_player)
 	_player.global_transform.origin = Vector3.ZERO
 
 
@@ -65,7 +65,7 @@ func test_non_player_enters_teleport() -> void:
 
 	var other_body: Node3D = Node3D.new()
 	other_body.name = "Enemy"
-	add_child(other_body)
+	add_child_autofree(other_body)
 	other_body.global_transform.origin = Vector3.ZERO
 
 	_teleport._on_body_entered(other_body)
@@ -101,7 +101,7 @@ func test_no_connect_portal_assigned() -> void:
 func test_no_portal_sound_assigned() -> void:
 	print("TestTeleport: test_no_portal_sound_assigned")
 
-	_teleport.portal_sound.queue_free()
+	_teleport.portal_sound.free()
 	_teleport.portal_sound = null
 
 	_teleport._on_body_entered(_player)

