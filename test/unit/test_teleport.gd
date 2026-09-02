@@ -36,11 +36,11 @@ func before_each() -> void:
 func after_each() -> void:
 	print("TestTeleport: Tearing down test environment.")
 	if is_instance_valid(_teleport):
-		_teleport.queue_free()
+		_teleport.free()
 	if is_instance_valid(_target_portal):
-		_target_portal.queue_free()
+		_target_portal.free()
 	if is_instance_valid(_player):
-		_player.queue_free()
+		_player.free()
 
 	_teleport = null
 	_target_portal = null

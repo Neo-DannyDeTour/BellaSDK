@@ -24,7 +24,10 @@ func _ready() -> void:
 ## Triggers the teleport action if the player enters the volume.
 ## [param body] The physics body that entered the [Area3D].
 func _on_body_entered(body: Node3D) -> void:
-	if not is_instance_valid(body) or body.name != "Player":
+	if not is_instance_valid(body):
+		return
+
+	if not body.name.begins_with("Player") and not body.is_in_group("player"):
 		return
 
 	print("Portal triggered: Player detected, starting teleport sequence.")
