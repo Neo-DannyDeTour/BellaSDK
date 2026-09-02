@@ -1,51 +1,55 @@
-extends StaticBody3D
+## An interactable object that plays audio developer commentary and displays localized text.
+##
+## Animates a 3D sprite and projects audio frequency data onto an equalizer shader while active.
 class_name DeveloperCommentary
+extends StaticBody3D
 
 @export_group("Commentary Settings")
-## Interact sound.
+## The audio stream played while the player is listening to the commentary.
 @export var interact_sound: AudioStream = null
-## Commentary title.
+## The localized title text displayed in the UI header.
 @export var commentary_title: String = "Developer Note"
-## Commentary content.
+## The full text content of the developer commentary displayed in the scrolling UI.
 @export_multiline var commentary_content: String = ""
-## Use rich text.
+## Enables BBCode rendering for the content label to support styling and images.
 @export var use_rich_text: bool = true
-## Spin speed.
+## How fast the 3D sprite rotates on its Y axis while the commentary is playing.
 @export var spin_speed: float = 3.0
 
-## Interact comp.
+## The component responsible for capturing player interaction raycasts.
 @onready var interact_comp: InteractComponent = $InteractComponent
-## Audio player.
+## 3D audio emitter for the commentary voice lines.
 @onready var audio_player: AudioStreamPlayer3D = $AudioStreamPlayer3D
-## Commentary ui.
+## The 2D CanvasLayer overlay that draws the UI panels.
 @onready var commentary_ui: CanvasLayer = $CommentaryUI
-## Label title.
+## UI label dedicated to the header text.
 @onready var label_title: Label = $CommentaryUI/Panel/VBoxContainer/TitleLabel
-## Label content.
+## Scrolling rich text label dedicated to the main content.
 @onready var label_content: RichTextLabel = get_node(
 	"CommentaryUI/Panel/VBoxContainer/AutoScrollContainer/MarginContainer/ContentLabel"
 )
-## Sprite.
+## The 3D icon visually representing the commentary in the world.
 @onready var sprite: Sprite3D = $Sprite3D
-## Equalizer mesh.
+## Procedurally animated 3D mesh that responds to live audio frequency data.
 @onready var equalizer_mesh: MeshInstance3D = $EqualizerMesh
 ## Label3D used to display the visual interaction prompt to the player in world space.
 @onready var interact_prompt_label: Label3D = $InteractPromptLabel
 
-## Is open.
+## Tracks if the UI is currently open and audio is playing.
 var is_open: bool = false
-## Active player.
+## Reference to the character currently interacting with the commentary.
 var active_player: CharacterBody3D = null
-## Initial billboard mode.
+## Caches the original billboard property to restore it after interactions finish.
 var _initial_billboard_mode: BaseMaterial3D.BillboardMode = BaseMaterial3D.BILLBOARD_DISABLED
 
-## Spectrum analyzer.
+## Native Godot effect instance used to extract frequency magnitude bands.
 var _spectrum_analyzer: AudioEffectSpectrumAnalyzerInstance
-## Bus idx.
+## The index of the audio bus used for commentary processing.
 var _bus_idx: int = -1
 # Use PackedFloat32Array for Godot 4 shader uniform compatibility and performance
-## Audio data.
+## The packed uniform array passed to the GPU shader representing equalizer levels.
 var _audio_data: PackedFloat32Array = PackedFloat32Array()
+## The total number of discrete frequency bands measured for the equalizer.
 const VU_COUNT: int = 32
 
 ## Tween used to animate the sprite jump and color inversion.
@@ -56,6 +60,7 @@ var _original_sprite_y: float
 var _is_focused: bool = false
 
 
+## Initializes internal state, hooks into interaction signals, and prepares the spectrum analyzer.
 func _ready() -> void:
 	commentary_ui.hide()
 	equalizer_mesh.hide()
@@ -85,6 +90,8 @@ func _ready() -> void:
 	_initialize_audio_spectrum()
 
 
+## Updates the sprite rotation and delegates shader equalizer updates per frame.
+## [param delta]: Frame delta time.
 func _process(delta: float) -> void:
 	if is_open:
 		# Rotate Y so it spins horizontally instead of tumbling vertically
@@ -93,6 +100,7 @@ func _process(delta: float) -> void:
 	_update_equalizer(delta)
 
 
+## Connects to the designated audio bus to sample live frequency data.
 func _initialize_audio_spectrum() -> void:
 	print("DeveloperCommentary: Initializing audio spectrum analyzer for bus 'Commentary'.")
 	_audio_data.resize(VU_COUNT)
@@ -105,6 +113,8 @@ func _initialize_audio_spectrum() -> void:
 		)
 
 
+## Samples frequency ranges and updates the visual equalizer shader parameters.
+## [param delta]: Frame delta time.
 func _update_equalizer(delta: float) -> void:
 	var mat: ShaderMaterial = equalizer_mesh.material_override as ShaderMaterial
 	if not mat:
@@ -136,6 +146,8 @@ func _update_equalizer(delta: float) -> void:
 	mat.set_shader_parameter("is_playing", audio_player.playing)
 
 
+## Toggles the commentary state when the player interacts with the object.
+## [param player]: The [CharacterBody3D] that triggered the interaction.
 func _on_interacted(player: CharacterBody3D) -> void:
 	print("DeveloperCommentary: Player interacted with node: ", name)
 	if is_open:
@@ -145,6 +157,7 @@ func _on_interacted(player: CharacterBody3D) -> void:
 		open_commentary()
 
 
+## Activates the commentary, playing audio, showing subtitles, and locking the UI focus.
 func open_commentary() -> void:
 	print("DeveloperCommentary: Opening UI, showing equalizer, playing audio, and spinning sprite.")
 	is_open = true
@@ -175,6 +188,7 @@ func open_commentary() -> void:
 		active_player.emit_signal("toggled_interface", true)
 
 
+## Stops audio, hides the UI, and resets visual states to idle.
 func close_commentary() -> void:
 	print(
 		"DeveloperCommentary: Closing UI, hiding equalizer, stopping audio, and resetting sprite."
@@ -202,6 +216,8 @@ func close_commentary() -> void:
 		_start_jump_loop()
 
 
+## Intercepts UI cancel events to allow the player to exit commentary mode early.
+## [param event]: The unhandled [InputEvent] to parse.
 func _unhandled_input(event: InputEvent) -> void:
 	if is_open and event.is_action_pressed("ui_cancel"):
 		print("DeveloperCommentary: Player pressed cancel/menu. Closing.")
@@ -209,6 +225,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
+## Callback triggered when the audio stream ends naturally.
 func _on_audio_finished() -> void:
 	print("DeveloperCommentary: Audio track finished. Returning to idle state.")
 
@@ -221,6 +238,7 @@ func _on_audio_finished() -> void:
 	_audio_data.fill(0.0)
 
 
+## Initiates a subtle jumping animation to indicate the object is currently highlighted.
 func _on_focused() -> void:
 	print("DeveloperCommentary: Sprite focused.")
 	_is_focused = true
@@ -230,12 +248,14 @@ func _on_focused() -> void:
 		_start_jump_loop()
 
 
+## Stops the jumping animation when the player looks away.
 func _on_unfocused() -> void:
 	print("DeveloperCommentary: Sprite unfocused.")
 	_is_focused = false
 	_stop_and_reset_jump()
 
 
+## Begins the looping tween animation for hovering.
 func _start_jump_loop() -> void:
 	if _focus_tween and _focus_tween.is_valid():
 		_focus_tween.kill()
@@ -264,6 +284,7 @@ func _start_jump_loop() -> void:
 	_focus_tween.parallel().tween_property(sprite, "modulate", Color.WHITE, 0.4)
 
 
+## Cancels active tweens and gracefully returns the sprite to its baseline position.
 func _stop_and_reset_jump() -> void:
 	if _focus_tween and _focus_tween.is_valid():
 		_focus_tween.kill()

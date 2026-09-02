@@ -14,6 +14,9 @@ extends Node3D
 
 ## Initializes the magnet and hides visual meshes during live gameplay.
 func _ready() -> void:
+	if not is_inside_tree():
+		return
+
 	# If the game is actually running (not in the editor), hide the node and its mesh child
 	if not Engine.is_editor_hint():
 		hide()
