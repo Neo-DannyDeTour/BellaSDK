@@ -8,10 +8,8 @@ extends Area3D
 @export_category("Portal References")
 @export var connect_portal: Area3D
 
-# Highly recommended: Change this node to an AudioStreamPlayer (non-3D) in your scene
-# to ensure the sound is heard clearly regardless of player position.
 ## The audio player for the teleportation sound effect.
-@onready var portal_sound: AudioStreamPlayer = $AudioStreamPlayer
+@export var portal_sound: AudioStreamPlayer
 
 
 ## Connects the entry signal. Called when the node enters the scene tree.
@@ -19,19 +17,21 @@ func _ready() -> void:
 	if not body_entered.is_connected(_on_body_entered):
 		body_entered.connect(_on_body_entered)
 
+	if portal_sound == null:
+		portal_sound = get_node_or_null("AudioStreamPlayer") as AudioStreamPlayer
+
 
 ## Triggers the teleport action if the player enters the volume.
-##
-## @param body The physics body that entered the [Area3D].
+## [param body] The physics body that entered the [Area3D].
 func _on_body_entered(body: Node3D) -> void:
-	if body.name != "Player":
+	if not is_instance_valid(body) or body.name != "Player":
 		return
 
 	print("Portal triggered: Player detected, starting teleport sequence.")
 
 	if is_instance_valid(connect_portal):
-		var destination: Vector3 = connect_portal.global_transform.origin
-		body.global_transform.origin = destination
+		var destination: Vector3 = connect_portal.global_position
+		body.global_position = destination
 		print("Portal executing: Player transformed to destination.")
 
 		_play_portal_sounds()

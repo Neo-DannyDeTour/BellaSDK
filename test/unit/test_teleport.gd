@@ -53,27 +53,26 @@ func test_player_enters_teleport() -> void:
 	_teleport._on_body_entered(_player)
 
 	assert_eq(
-		_player.global_transform.origin,
+		_player.global_position,
 		Vector3(10, 20, 30),
 		"Player should be teleported to the target portal's location."
 	)
 	assert_true(_teleport.portal_sound.playing, "Portal sound should be playing.")
 
 
+## Verifies that non-player entities are not teleported.
 func test_non_player_enters_teleport() -> void:
 	print("TestTeleport: test_non_player_enters_teleport")
 
 	var other_body: Node3D = Node3D.new()
 	other_body.name = "Enemy"
 	add_child(other_body)
-	other_body.global_transform.origin = Vector3.ZERO
+	other_body.global_position = Vector3.ZERO
 
 	_teleport._on_body_entered(other_body)
 
 	assert_eq(
-		other_body.global_transform.origin,
-		Vector3.ZERO,
-		"Non-player entity should not be teleported."
+		other_body.global_position, Vector3.ZERO, "Non-player entity should not be teleported."
 	)
 	assert_false(_teleport.portal_sound.playing, "Portal sound should not be playing.")
 
@@ -88,7 +87,7 @@ func test_no_connect_portal_assigned() -> void:
 	_teleport._on_body_entered(_player)
 
 	assert_eq(
-		_player.global_transform.origin,
+		_player.global_position,
 		Vector3.ZERO,
 		"Player should not be teleported if no connect_portal is assigned."
 	)
@@ -98,16 +97,18 @@ func test_no_connect_portal_assigned() -> void:
 	)
 
 
+## Verifies that the player is still teleported even when no sound player is assigned.
 func test_no_portal_sound_assigned() -> void:
 	print("TestTeleport: test_no_portal_sound_assigned")
 
-	_teleport.portal_sound.queue_free()
+	if is_instance_valid(_teleport.portal_sound):
+		_teleport.portal_sound.queue_free()
 	_teleport.portal_sound = null
 
 	_teleport._on_body_entered(_player)
 
 	assert_eq(
-		_player.global_transform.origin,
-		Vector3(10, 20, 30),
+		_player.global_position,
+		Vector3(10.0, 20.0, 30.0),
 		"Player should still be teleported even if portal_sound is missing."
 	)
