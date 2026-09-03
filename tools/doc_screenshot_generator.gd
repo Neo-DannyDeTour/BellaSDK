@@ -64,7 +64,7 @@ func _find_scenes(base_path: String) -> Array[String]:
 
 	dir.list_dir_begin()
 	var file_name: String = dir.get_next()
-	while file_name != "":
+	while not file_name.is_empty():
 		if dir.current_is_dir():
 			if not file_name in [".git", ".github", "addons", "docs_md", "site"]:
 				result.append_array(_find_scenes(base_path.path_join(file_name)))
@@ -102,12 +102,13 @@ func _calculate_aabb(node: Node) -> AABB:
 ## Instantiates target scene, frames the camera, forces frames, and writes PNG.
 func _capture_scene(viewport: SubViewport, path: String) -> void:
 	var packed: PackedScene = load(path) as PackedScene
-	if not packed:
+	if not packed or not packed.can_instantiate():
 		return
 
 	var instance: Node = packed.instantiate()
-	if not (instance is Node3D):
-		instance.free()
+	if not is_instance_valid(instance) or not (instance is Node3D):
+		if is_instance_valid(instance):
+			instance.free()
 		return
 
 	viewport.add_child(instance)
@@ -120,13 +121,23 @@ func _capture_scene(viewport: SubViewport, path: String) -> void:
 
 	var center: Vector3 = aabb.get_center()
 	var cam_offset: Vector3 = Vector3(1.0, 0.8, 1.0).normalized() * distance
-	camera.global_position = center + cam_offset
-	camera.look_at(center, Vector3.UP)
 
-	for i: int in range(2):
+	if is_instance_valid(camera) and camera.is_inside_tree():
+		camera.global_position = center + cam_offset
+		camera.look_at(center, Vector3.UP)
+
+	for i: int in range(3):
 		RenderingServer.force_draw(true)
 
-	var img: Image = viewport.get_texture().get_image()
+	var tex: ViewportTexture = viewport.get_texture()
+	if not is_instance_valid(tex):
+		instance.free()
+		return
+
+	var img: Image = tex.get_image()
+	if not is_instance_valid(img) or img.is_empty():
+		instance.free()
+		return
 
 	var base_stem: String = path.get_file().get_basename()
 	var script: Script = instance.get_script() as Script
