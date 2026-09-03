@@ -31,20 +31,50 @@ jobs:
       - name: Install MkDocs Dependencies
         run: pip install mkdocs mkdocs-material
 
+      - name: Install Godot Engine
+        run: |
+          GODOT_VERSION="4.3-stable"
+          wget -q https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}/Godot_v${GODOT_VERSION}_linux.x86_64.zip
+          unzip -q Godot_v${GODOT_VERSION}_linux.x86_64.zip
+          mv Godot_v${GODOT_VERSION}_linux.x86_64 /usr/local/bin/godot
+          chmod +x /usr/local/bin/godot
+
+      - name: Generate 3D Previews
+        run: |
+          mkdir -p docs_md/images/previews
+          godot --headless -s res://tools/doc_screenshot_generator.gd
+
       - name: Generate BellaSDK Documentation
         run: |
-          mkdir -p docs_md
           python - << 'EOF'
           import os, re
 
+          def parse_bbcode(text: str) -> str:
+              text = re.sub(r'\[(method|signal|member)\s+([a-zA-Z0-9_]+)\]', r'`\2`', text)
+              text = re.sub(r'\[param\s+([a-zA-Z0-9_]+)\]', r'`\1`', text)
+              text = re.sub(r'\[b\](.*?)\[/b\]', r'**\1**', text)
+              text = re.sub(r'\[i\](.*?)\[/i\]', r'*\1*', text)
+              text = re.sub(r'\[code\](.*?)\[/code\]', r'`\1`', text)
+
+              def replace_class(m):
+                  target = m.group(1)
+                  if " " in target or target.startswith("_"):
+                      return f"`{target}`"
+                  return f"[{target}](https://docs.godotengine.org/en/stable/classes/class_{target.lower()}.html)"
+
+              return re.sub(r'\[([A-Z][a-zA-Z0-9_]+)\]', replace_class, text)
+
+          def sanitize_table_cell(text: str) -> str:
+              return parse_bbcode(text).replace("|", "\\|").replace("\n", " ").strip()
+
           with open("docs_md/index.md", "w", encoding="utf-8") as f:
-              f.write("# BellaSDK API Reference\n\nWelcome to the official BellaSDK documentation. Select a class from the sidebar to view its reference.\n")
+              f.write("# BellaSDK API Reference\n\nSelect a class from the sidebar to view its reference.\n")
 
           class_files = []
           nav_classes = []
 
           for root, dirs, files in os.walk("."):
-              if any(p in root for p in [".git", ".github", "site", "docs_md", "docs_xml", "addons"]):
+              if any(p in root for p in [".git", ".github", "site", "docs_md", "addons"]):
                   continue
               for file in files:
                   if file.endswith(".gd"):
@@ -54,18 +84,18 @@ jobs:
               with open(path, "r", encoding="utf-8") as f:
                   lines = f.readlines()
 
-              c_name = "Unknown"
+              c_name = None
               extends_str = "RefCounted"
 
               for line in lines:
-                  cn_match = re.search(r"^class_name\s+(\w+)", line.strip())
+                  cn_match = re.search(r"^class_name\s+([a-zA-Z0-9_]+)", line.strip())
                   if cn_match:
                       c_name = cn_match.group(1)
                   ext_match = re.search(r"^extends\s+([\w\.]+)", line.strip())
                   if ext_match:
                       extends_str = ext_match.group(1)
 
-              if c_name == "Unknown":
+              if not c_name:
                   continue
 
               class_doc = []
@@ -76,43 +106,30 @@ jobs:
 
               for line in lines:
                   stripped = line.strip()
-
-                  # Collect Doc Comments
                   if stripped.startswith("##"):
-                      doc_text = stripped[2:].strip()
-                      current_doc.append(doc_text)
+                      current_doc.append(stripped[2:].strip())
                       continue
-
-                  # Skip regular comments and empty lines
                   if not stripped or stripped.startswith("#"):
                       continue
-
-                  # Class Doc handling
                   if stripped.startswith("@tool") or stripped.startswith("class_name") or stripped.startswith("extends"):
                       if current_doc and not class_doc:
                           class_doc = list(current_doc)
                       current_doc = []
                       continue
-
-                  # Signals
                   if stripped.startswith("signal "):
-                      sig_match = re.search(r"^signal\s+([a-zA-Z0-9_]+(?:\(.*\))?)", stripped)
+                      sig_match = re.search(r"^signal\s+([a-zA-Z0-9_]+(?:\([^\)]*\))?)", stripped)
                       if sig_match:
                           signals.append((sig_match.group(1), list(current_doc)))
                       current_doc = []
                       continue
-
-                  # Exported / Member Variables
-                  if stripped.startswith("var ") or stripped.startswith("@export"):
-                      var_match = re.search(r"var\s+([a-zA-Z0-9_]+)(?:\s*:\s*([^=\n]+))?", stripped)
+                  if "var " in stripped:
+                      var_match = re.search(r"\bvar\s+([a-zA-Z0-9_]+)(?:\s*:\s*([^=\n\s]+))?", stripped)
                       if var_match:
                           prop_name = var_match.group(1)
                           prop_type = var_match.group(2).strip() if var_match.group(2) else "Variant"
                           properties.append((prop_name, prop_type, list(current_doc)))
-                      current_doc = []
-                      continue
-
-                  # Functions / Methods
+                          current_doc = []
+                          continue
                   if stripped.startswith("func "):
                       func_match = re.search(r"^func\s+(.*)", stripped)
                       if func_match:
@@ -124,23 +141,27 @@ jobs:
                                   methods.append((sig, list(current_doc)))
                       current_doc = []
                       continue
-
-                  # Reset doc collector if unrelated statement reached
                   if not stripped.startswith("@"):
                       current_doc = []
 
-              md_lines = [f"# {c_name}\n", f"**Inherits:** `{extends_str}`\n"]
+              ext_link = f"[{extends_str}](https://docs.godotengine.org/en/stable/classes/class_{extends_str.lower()}.html)" if extends_str != "RefCounted" else "`RefCounted`"
+              md_lines = [f"# {c_name}\n", f"**Inherits:** {ext_link}\n"]
+
+              # Embed matching screenshot if available
+              preview_file = f"{c_name}.png"
+              if os.path.exists(os.path.join("docs_md/images/previews", preview_file)):
+                  md_lines.append(f"![{c_name} Preview](images/previews/{preview_file})\n")
 
               if class_doc:
                   md_lines.append("## Description\n")
-                  md_lines.append("\n".join(class_doc) + "\n")
+                  md_lines.append(parse_bbcode("\n\n".join(class_doc)) + "\n")
 
               if signals:
                   md_lines.append("## Signals\n")
                   md_lines.append("| Signal | Description |")
                   md_lines.append("|---|---|")
                   for s_name, s_doc in signals:
-                      desc = " ".join(s_doc) if s_doc else ""
+                      desc = sanitize_table_cell(" ".join(s_doc))
                       md_lines.append(f"| **`signal {s_name}`** | {desc} |")
                   md_lines.append("\n")
 
@@ -149,17 +170,19 @@ jobs:
                   md_lines.append("| Property | Type | Description |")
                   md_lines.append("|---|---|---|")
                   for p_name, p_type, p_doc in properties:
-                      desc = " ".join(p_doc) if p_doc else ""
-                      md_lines.append(f"| **`{p_name}`** | `{p_type}` | {desc} |")
+                      desc = sanitize_table_cell(" ".join(p_doc))
+                      p_type_link = parse_bbcode(f"[{p_type}]") if p_type != "Variant" else "`Variant`"
+                      md_lines.append(f"| **`{p_name}`** | {p_type_link} | {desc} |")
                   md_lines.append("\n")
 
               if methods:
                   md_lines.append("## Methods\n")
                   for sig, m_doc in methods:
-                      md_lines.append(f"- **`func {sig}`**")
+                      md_lines.append(f"### `func {sig}`\n")
                       if m_doc:
-                          md_lines.append(f"  - {' '.join(m_doc)}")
-                  md_lines.append("\n")
+                          md_lines.append(parse_bbcode("\n\n".join(m_doc)) + "\n")
+                      else:
+                          md_lines.append("*No description provided.*\n")
 
               filename = f"{c_name}.md"
               with open(os.path.join("docs_md", filename), "w", encoding="utf-8") as out:
@@ -167,7 +190,7 @@ jobs:
               nav_classes.append((c_name, filename))
 
           with open("mkdocs.yml", "w", encoding="utf-8") as mk:
-              mk_content = (
+              mk.write(
                   "site_name: BellaSDK API Documentation\n"
                   "theme:\n"
                   "  name: material\n"
@@ -180,7 +203,6 @@ jobs:
                   "  - Home: index.md\n"
                   "  - Classes:\n"
               )
-              mk.write(mk_content)
               for c_name, filename in sorted(nav_classes):
                   mk.write(f"    - '{c_name}': {filename}\n")
           EOF
