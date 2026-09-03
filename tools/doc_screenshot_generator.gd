@@ -145,14 +145,5 @@ func _capture_scene(viewport: SubViewport, path: String) -> void:
 	if fallback_path != save_path:
 		img.save_png(fallback_path)
 
-	# Save primary identifier (e.g. BearTrap.png)
-	var save_path: String = OUTPUT_DIR.path_join(class_ident + ".png")
-	img.save_png(save_path)
-
-	# Also save lowercase fallback
-	var fallback_path: String = OUTPUT_DIR.path_join(base_stem.to_lower().replace("_", "") + ".png")
-	if fallback_path != save_path:
-		img.save_png(fallback_path)
-
 	print("Captured preview: ", save_path)
 	instance.free()

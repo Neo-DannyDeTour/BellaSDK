@@ -22,6 +22,8 @@ jobs:
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -52,8 +54,9 @@ jobs:
       - name: Generate 3D Previews
         run: |
           mkdir -p docs_md/images/previews
-          # Import project assets first, then run capture
-          godot --headless --editor --quit || true
+          # Import all project assets in headless mode first
+          godot --headless --import || true
+          # Run the preview generator
           xvfb-run godot --headless --rendering-driver opengl3 -s res://tools/doc_screenshot_generator.gd
 
       - name: Generate BellaSDK Documentation
