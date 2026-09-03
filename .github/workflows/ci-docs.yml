@@ -42,7 +42,12 @@ jobs:
       - name: Install System Graphics Libraries
         run: |
           sudo apt-get update -qq
-          sudo apt-get install -y --no-install-recommends libgl1-mesa-dri libgl1-mesa-glx xvfb libasound2
+          sudo apt-get install -y --no-install-recommends \
+            libgl1 \
+            libglx-mesa0 \
+            libgl1-mesa-dri \
+            xvfb \
+            libasound2t64
 
       - name: Generate 3D Previews
         run: |
