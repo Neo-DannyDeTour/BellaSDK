@@ -39,10 +39,17 @@ jobs:
           mv Godot_v${GODOT_VERSION}_linux.x86_64 /usr/local/bin/godot
           chmod +x /usr/local/bin/godot
 
+      - name: Install System Graphics Libraries
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends libgl1-mesa-dri libgl1-mesa-glx xvfb libasound2
+
       - name: Generate 3D Previews
         run: |
           mkdir -p docs_md/images/previews
-          godot --headless -s res://tools/doc_screenshot_generator.gd
+          # Import project assets first, then run capture
+          godot --headless --editor --quit || true
+          xvfb-run godot --headless --rendering-driver opengl3 -s res://tools/doc_screenshot_generator.gd
 
       - name: Generate BellaSDK Documentation
         run: |
@@ -147,10 +154,14 @@ jobs:
               ext_link = f"[{extends_str}](https://docs.godotengine.org/en/stable/classes/class_{extends_str.lower()}.html)" if extends_str != "RefCounted" else "`RefCounted`"
               md_lines = [f"# {c_name}\n", f"**Inherits:** {ext_link}\n"]
 
-              # Embed matching screenshot if available
+              # Use ../images/previews/ to correctly resolve from subfolder /ClassName/
               preview_file = f"{c_name}.png"
+              norm_file = f"{c_name.lower().replace('_', '')}.png"
+
               if os.path.exists(os.path.join("docs_md/images/previews", preview_file)):
-                  md_lines.append(f"![{c_name} Preview](images/previews/{preview_file})\n")
+                  md_lines.append(f"![{c_name} Preview](../images/previews/{preview_file})\n")
+              elif os.path.exists(os.path.join("docs_md/images/previews", norm_file)):
+                  md_lines.append(f"![{c_name} Preview](../images/previews/{norm_file})\n")
 
               if class_doc:
                   md_lines.append("## Description\n")

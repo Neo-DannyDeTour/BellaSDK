@@ -45,7 +45,7 @@ func _setup_viewport() -> SubViewport:
 
 	var fill_light: DirectionalLight3D = DirectionalLight3D.new()
 	fill_light.rotation_degrees = Vector3(45.0, -135.0, 0.0)
-	fill_light.light_energy = 0.3
+	fill_light.light_energy = 0.4
 	vp.add_child(fill_light)
 
 	var camera: Camera3D = Camera3D.new()
@@ -55,7 +55,7 @@ func _setup_viewport() -> SubViewport:
 	return vp
 
 
-## Recursively discovers all .tscn files, excluding addons and git folders.
+## Recursively discovers all .tscn files, excluding addons and build folders.
 func _find_scenes(base_path: String) -> Array[String]:
 	var result: Array[String] = []
 	var dir: DirAccess = DirAccess.open(base_path)
@@ -123,15 +123,36 @@ func _capture_scene(viewport: SubViewport, path: String) -> void:
 	camera.global_position = center + cam_offset
 	camera.look_at(center, Vector3.UP)
 
-	# Process 2 frames to flush the render buffer
-	RenderingServer.frame_post_draw.connect(func() -> void: pass, CONNECT_ONE_SHOT)
 	for i: int in range(2):
 		RenderingServer.force_draw(true)
 
 	var img: Image = viewport.get_texture().get_image()
-	var file_name: String = path.get_file().get_basename() + ".png"
-	var save_path: String = OUTPUT_DIR.path_join(file_name)
-	img.save_png(save_path)
-	print("Captured preview: ", save_path)
 
+	var base_stem: String = path.get_file().get_basename()
+	var script: Script = instance.get_script() as Script
+	var class_ident: String = base_stem
+
+	if is_instance_valid(script):
+		var global_name: String = script.get_global_name()
+		if not global_name.is_empty():
+			class_ident = global_name
+
+	var save_path: String = OUTPUT_DIR.path_join(class_ident + ".png")
+	img.save_png(save_path)
+
+	var sanitized_stem: String = base_stem.to_lower().replace("_", "")
+	var fallback_path: String = OUTPUT_DIR.path_join(sanitized_stem + ".png")
+	if fallback_path != save_path:
+		img.save_png(fallback_path)
+
+	# Save primary identifier (e.g. BearTrap.png)
+	var save_path: String = OUTPUT_DIR.path_join(class_ident + ".png")
+	img.save_png(save_path)
+
+	# Also save lowercase fallback
+	var fallback_path: String = OUTPUT_DIR.path_join(base_stem.to_lower().replace("_", "") + ".png")
+	if fallback_path != save_path:
+		img.save_png(fallback_path)
+
+	print("Captured preview: ", save_path)
 	instance.free()
