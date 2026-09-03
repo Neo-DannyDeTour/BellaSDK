@@ -383,7 +383,7 @@ func _apply_all_current_settings() -> void:
 	if not get_window().is_embedded() and get_window().mode == Window.MODE_WINDOWED:
 		get_window().size = new_size
 
-	Engine.max_fps = FPS_LIMITS[fps_options.get_item_text(fps_options.selected)] as int
+	Engine.max_fps = (FPS_LIMITS[fps_options.get_item_text(fps_options.selected)] as int)
 
 	var vsync_text: String = vsync_options.get_item_text(vsync_options.selected)
 	var vsync_val: DisplayServer.VSyncMode = VSYNC_MODES[vsync_text] as DisplayServer.VSyncMode
@@ -410,6 +410,8 @@ func _apply_all_current_settings() -> void:
 	if is_instance_valid(diorama_vp) and diorama_vp not in target_viewports:
 		target_viewports.append(diorama_vp)
 
+	var primary_msaa: Viewport.MSAA = aa_settings["msaa"] as Viewport.MSAA
+
 	for vp: Viewport in target_viewports:
 		if fsr_scale >= 1.0:
 			vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
@@ -418,7 +420,12 @@ func _apply_all_current_settings() -> void:
 			vp.use_taa = false
 
 		vp.scaling_3d_scale = fsr_scale
-		vp.msaa_3d = aa_settings["msaa"] as Viewport.MSAA
+
+		if vp is SubViewport:
+			vp.msaa_3d = _clamp_preview_msaa(primary_msaa)
+		else:
+			vp.msaa_3d = primary_msaa
+
 		vp.screen_space_aa = aa_settings["fxaa"] as Viewport.ScreenSpaceAA
 		vp.use_debanding = debanding_val
 		vp.mesh_lod_threshold = mesh_lod_val
@@ -428,6 +435,17 @@ func _apply_all_current_settings() -> void:
 
 		vp.positional_shadow_atlas_size = shadow_atlas
 		_apply_environment_settings(vp)
+
+
+## Clamps high MSAA modes for preview and secondary [SubViewport] instances to
+## protect render throughput and maintain the 60 FPS target.
+## [param requested_msaa] The target [enum Viewport.MSAA] configured by the player.
+## Returns a bounded [enum Viewport.MSAA] value no higher than [constant Viewport.MSAA_2X].
+func _clamp_preview_msaa(requested_msaa: Viewport.MSAA) -> Viewport.MSAA:
+	print("Engine: Clamping preview viewport MSAA to ensure 60 FPS headroom.")
+	if requested_msaa > Viewport.MSAA_2X:
+		return Viewport.MSAA_2X
+	return requested_msaa
 
 
 ## Fetches and modifies the active [Environment] and synchronizes AgX shader state.

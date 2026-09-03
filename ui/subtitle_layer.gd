@@ -8,6 +8,9 @@ const READING_GRACE_PERIOD: float = 3.0
 ## Speed threshold fallback in characters per second if duration is zero.
 const DEFAULT_CPS: float = 25.0
 
+## Transition animation speed in seconds for alpha fade transitions.
+const FADE_DURATION: float = 0.2
+
 ## Main background panel providing contrast backing behind subtitle text.
 @onready var background_panel: PanelContainer = $MarginContainer/BackgroundPanel
 
@@ -15,13 +18,11 @@ const DEFAULT_CPS: float = 25.0
 @onready var margin_container: MarginContainer = $MarginContainer
 
 ## Label displaying speaker names and dialogue text.
-@onready var subtitle_label: RichTextLabel = $MarginContainer/BackgroundPanel/SubtitleLabel
+@onready
+var subtitle_label: RichTextLabel = $MarginContainer/BackgroundPanel/MarginContainer/SubtitleLabel
 
-## Active tween handling subtitle fade-in, text typing, and fade-out transitions.
+## Active tween handling subtitle fade-in, text typing, delay, and fade-out.
 var fade_tween: Tween
-
-## Internal timer managing automatic dismissal of timed dialogue entries.
-var display_timer: SceneTreeTimer
 
 ## Current configured font size for subtitle rendering.
 var active_font_size: float = 24.0
@@ -30,25 +31,71 @@ var active_font_size: float = 24.0
 var active_bg_opacity: float = 0.7
 
 ## Base text color code or name applied to dialogue body text.
-var active_text_color: String = "#FFFFFF"
+var active_text_color: String = "white"
 
 ## Color code or name applied to the speaker identifier tag.
-var active_speaker_color: String = "#FFFF00"
+var active_speaker_color: String = "cyan"
+
+## Color code or name applied to the background panel backing.
+var active_bg_color: String = "black"
 
 ## Controls whether speaker names are rendered before dialogue text.
 var is_speaker_name_shown: bool = true
 
+## Master toggle determining if subtitles are permitted to render on screen.
+var is_subtitles_enabled: bool = true
+
 
 ## Lifecycle method called when the node enters the scene tree.
-## Hides initial subtitle nodes and connects subtitle event bus listeners.
+## Sets process mode, loads saved settings, and connects signal listeners.
 func _ready() -> void:
 	print("SubtitleLayer: _ready() called. Initializing subtitle display.")
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	visible = true
+
 	if is_instance_valid(subtitle_label):
-		subtitle_label.scroll_following = false
 		subtitle_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		subtitle_label.visible_characters_behavior = (TextServer.VC_CHARS_AFTER_SHAPING)
+		subtitle_label.scroll_following = false
+		subtitle_label.add_theme_constant_override("line_separation", 4)
+
+	_load_saved_settings()
 	_hide_subtitles_immediate()
 	_connect_signals()
+
+
+## Pulls active settings directly from GlobalSettings at launch.
+func _load_saved_settings() -> void:
+	print("SubtitleLayer: Loading settings from GlobalSettings.")
+	var gs: Node = get_node_or_null("/root/GlobalSettings")
+	if not is_instance_valid(gs):
+		return
+
+	is_subtitles_enabled = bool(gs.get_setting("Accessibility", "subtitles_enabled", true))
+	active_font_size = float(gs.get_setting("Accessibility", "subtitle_size", 24.0))
+	_on_subtitle_size_changed(active_font_size)
+
+	var bg_pct: float = float(gs.get_setting("Accessibility", "subtitle_bg_opacity", 50.0))
+	active_bg_opacity = clampf(bg_pct / 100.0, 0.0, 1.0)
+
+	var color_names: Array[String] = [
+		"Cyan", "Blue", "Yellow", "Green", "Red", "Magenta", "White", "Black"
+	]
+	var text_idx: int = int(gs.get_setting("Accessibility", "subtitle_text_color", 6))
+	if text_idx >= 0 and text_idx < color_names.size():
+		active_text_color = color_names[text_idx].to_lower()
+
+	var spk_idx: int = int(gs.get_setting("Accessibility", "subtitle_speaker_color", 0))
+	if spk_idx >= 0 and spk_idx < color_names.size():
+		active_speaker_color = color_names[spk_idx].to_lower()
+
+	var bg_idx: int = int(gs.get_setting("Accessibility", "subtitle_bg_color", 7))
+	if bg_idx >= 0 and bg_idx < color_names.size():
+		active_bg_color = color_names[bg_idx].to_lower()
+
+	_update_panel_stylebox()
+
+	is_speaker_name_shown = bool(gs.get_setting("Accessibility", "subtitle_show_names", true))
 
 
 ## Binds subtitle and dialogue customization signals from the global [Events] bus.
@@ -66,97 +113,120 @@ func _connect_signals() -> void:
 		Events.subtitle_bg_opacity_changed.connect(_on_subtitle_bg_opacity_changed)
 	if not Events.subtitle_text_color_changed.is_connected(_on_subtitle_text_color_changed):
 		Events.subtitle_text_color_changed.connect(_on_subtitle_text_color_changed)
+	if not Events.subtitle_bg_color_changed.is_connected(_on_subtitle_bg_color_changed):
+		Events.subtitle_bg_color_changed.connect(_on_subtitle_bg_color_changed)
 	if not Events.subtitle_speaker_color_changed.is_connected(_on_subtitle_speaker_color_changed):
 		Events.subtitle_speaker_color_changed.connect(_on_subtitle_speaker_color_changed)
 	if not Events.subtitle_show_names_toggled.is_connected(_on_subtitle_show_names_toggled):
 		Events.subtitle_show_names_toggled.connect(_on_subtitle_show_names_toggled)
+	if Events.has_signal("font_changed") and not Events.font_changed.is_connected(_on_font_changed):
+		Events.font_changed.connect(_on_font_changed)
 
 
 ## Instantly resets subtitle visibility, scrolls, and alpha modulation to zero.
 func _hide_subtitles_immediate() -> void:
 	print("SubtitleLayer: Resetting subtitle layer to hidden state.")
-	visible = false
 	if is_instance_valid(subtitle_label):
+		subtitle_label.scroll_following = false
 		subtitle_label.visible_characters = 0
-		subtitle_label.get_v_scroll_bar().value = 0.0
+		var scroll_bar: VScrollBar = subtitle_label.get_v_scroll_bar()
+		if is_instance_valid(scroll_bar):
+			scroll_bar.value = 0.0
 	if is_instance_valid(background_panel):
-		background_panel.hide()
+		background_panel.visible = false
 		background_panel.modulate.a = 0.0
 
 
-## Renders typewriter subtitle dialogue synced to duration with grace reading time.
+## Renders typewriter subtitle dialogue synced to duration with reading grace time.
 ## [param speaker] Name identifier of the entity speaking.
 ## [param text] Dialogue body string to display.
 ## [param duration] Visible display duration in seconds.
 func show_subtitle(speaker: String, text: String, duration: float) -> void:
-	print("SubtitleLayer: Displaying dialogue from '", speaker, "' for ", duration, "s.")
-	if not is_instance_valid(subtitle_label) or not is_instance_valid(background_panel):
-		push_warning("SubtitleLayer: Subtitle UI nodes are invalid or not configured.")
+	if not is_subtitles_enabled:
+		print("SubtitleLayer: Subtitles disabled; dropping request.")
 		return
+
+	if not is_instance_valid(subtitle_label) or not is_instance_valid(background_panel):
+		push_warning("SubtitleLayer: Subtitle UI nodes are invalid.")
+		return
+
+	print("SubtitleLayer: Displaying dialogue from '", speaker, "'.")
 
 	if fade_tween and fade_tween.is_valid():
 		fade_tween.kill()
 
 	var formatted_body: String = ""
 	if is_speaker_name_shown and not speaker.is_empty():
-		formatted_body = "[color=" + active_speaker_color + "]" + speaker + ":[/color] "
+		formatted_body = ("[color=" + active_speaker_color + "]" + speaker + ":[/color] ")
+	formatted_body += ("[color=" + active_text_color + "]" + text + "[/color]")
 
-	formatted_body += "[color=" + active_text_color + "]" + text + "[/color]"
+	subtitle_label.scroll_following = false
 	subtitle_label.text = formatted_body
 	subtitle_label.visible_characters = 0
-	subtitle_label.get_v_scroll_bar().value = 0.0
 
-	visible = true
-	background_panel.show()
+	var scroll_bar: VScrollBar = subtitle_label.get_v_scroll_bar()
+	if is_instance_valid(scroll_bar):
+		scroll_bar.value = 0.0
 
-	fade_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-	fade_tween.tween_property(background_panel, "modulate:a", 1.0, 0.2)
+	background_panel.visible = true
 
 	var total_chars: int = subtitle_label.get_total_character_count()
-	var type_duration: float = duration if duration > 0.0 else (total_chars / DEFAULT_CPS)
+	var type_dur: float = duration if duration > 0.0 else (float(total_chars) / DEFAULT_CPS)
 
-	fade_tween.tween_method(_animate_characters_and_scroll, 0, total_chars, type_duration)
-	fade_tween.finished.connect(_on_typing_finished)
+	fade_tween = create_tween()
+	(
+		fade_tween
+		. tween_property(background_panel, "modulate:a", 1.0, FADE_DURATION)
+		. set_trans(Tween.TRANS_SINE)
+		. set_ease(Tween.EASE_OUT)
+	)
+
+	fade_tween.tween_callback(
+		func() -> void:
+			if is_instance_valid(subtitle_label):
+				subtitle_label.scroll_following = true
+	)
+
+	(
+		fade_tween
+		. tween_method(_animate_typing_and_scroll, 0, total_chars, type_dur)
+		. set_trans(Tween.TRANS_LINEAR)
+		. set_ease(Tween.EASE_IN_OUT)
+	)
+
+	fade_tween.tween_interval(READING_GRACE_PERIOD)
+	(
+		fade_tween
+		. tween_property(background_panel, "modulate:a", 0.0, FADE_DURATION)
+		. set_trans(Tween.TRANS_SINE)
+		. set_ease(Tween.EASE_IN)
+	)
+	fade_tween.tween_callback(_hide_subtitles_immediate)
 
 
-## Updates character count and only scrolls down when the typing cursor passes visible lines.
+## Updates visible character count and forces the active line fully into frame.
 ## [param char_count] Count of visible characters to reveal.
-func _animate_characters_and_scroll(char_count: int) -> void:
+func _animate_typing_and_scroll(char_count: int) -> void:
 	if not is_instance_valid(subtitle_label):
 		return
 
 	subtitle_label.visible_characters = char_count
 
 	var scroll_bar: VScrollBar = subtitle_label.get_v_scroll_bar()
-	var max_scroll: float = scroll_bar.max_value - scroll_bar.page
+	if not is_instance_valid(scroll_bar):
+		return
 
-	if max_scroll <= 0.0 or char_count <= 0:
+	if char_count <= 0:
 		scroll_bar.value = 0.0
 		return
 
 	var current_line: int = subtitle_label.get_character_line(maxi(0, char_count - 1))
-	var visible_lines: int = subtitle_label.get_visible_line_count()
 	var total_lines: int = subtitle_label.get_line_count()
 
-	if current_line < visible_lines:
-		scroll_bar.value = 0.0
+	if current_line >= total_lines - 1 and char_count >= subtitle_label.get_total_character_count():
+		scroll_bar.value = scroll_bar.max_value - scroll_bar.page
 	else:
-		var overflow_lines: int = total_lines - visible_lines
-		if overflow_lines > 0:
-			var current_overflow: int = current_line - visible_lines + 1
-			var step: float = max_scroll / float(overflow_lines)
-			scroll_bar.value = clampf(float(current_overflow) * step, 0.0, max_scroll)
-
-
-## Initiates grace period display timer after typewriter finishes.
-func _on_typing_finished() -> void:
-	print("SubtitleLayer: Typing completed. Starting ", READING_GRACE_PERIOD, "s grace timer.")
-	display_timer = get_tree().create_timer(READING_GRACE_PERIOD)
-	display_timer.timeout.connect(
-		func() -> void:
-			if visible:
-				hide_subtitle()
-	)
+		subtitle_label.scroll_to_line(current_line)
 
 
 ## Fades out and hides active subtitle dialogs.
@@ -169,22 +239,33 @@ func hide_subtitle() -> void:
 		fade_tween.kill()
 
 	fade_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
-	fade_tween.tween_property(background_panel, "modulate:a", 0.0, 0.2)
-	fade_tween.finished.connect(
-		func() -> void:
-			visible = false
-			if is_instance_valid(background_panel):
-				background_panel.hide()
-			if is_instance_valid(subtitle_label):
-				subtitle_label.visible_characters = 0
-				subtitle_label.get_v_scroll_bar().value = 0.0
-	)
+	fade_tween.tween_property(background_panel, "modulate:a", 0.0, FADE_DURATION)
+	fade_tween.tween_callback(_hide_subtitles_immediate)
+
+
+## Updates the subtitle font resource dynamically when selected.
+## [param font_id] Identifier or path of the chosen font.
+func _on_font_changed(font_id: String) -> void:
+	print("SubtitleLayer: Updating subtitle label font -> ", font_id)
+	if not is_instance_valid(subtitle_label):
+		return
+
+	var gs: Node = get_node_or_null("/root/GlobalSettings")
+	var font_res: Font = null
+	if is_instance_valid(gs) and gs.has_method("get_font_resource"):
+		font_res = gs.get_font_resource(font_id)
+
+	if is_instance_valid(font_res):
+		subtitle_label.add_theme_font_override("normal_font", font_res)
+	else:
+		subtitle_label.remove_theme_font_override("normal_font")
 
 
 ## Toggles global master visibility for the subtitle layer.
 ## [param is_active] True if subtitles should be rendered.
 func _on_subtitles_toggled(is_active: bool) -> void:
 	print("SubtitleLayer: Master subtitle visibility toggled -> ", is_active)
+	is_subtitles_enabled = is_active
 	if not is_active:
 		_hide_subtitles_immediate()
 
@@ -198,24 +279,50 @@ func _on_subtitle_size_changed(font_size: float) -> void:
 		subtitle_label.add_theme_font_size_override("normal_font_size", int(font_size))
 
 
+## Rebuilds the background panel StyleBoxFlat with current color and opacity.
+func _update_panel_stylebox() -> void:
+	if not is_instance_valid(background_panel):
+		return
+
+	var base_col: Color = Color.from_string(active_bg_color, Color.BLACK)
+	base_col.a = active_bg_opacity
+
+	var style: StyleBoxFlat
+	var existing_style: StyleBox = background_panel.get_theme_stylebox("panel")
+	if existing_style is StyleBoxFlat:
+		style = existing_style.duplicate() as StyleBoxFlat
+	else:
+		style = StyleBoxFlat.new()
+
+	style.bg_color = base_col
+	background_panel.add_theme_stylebox_override("panel", style)
+
+
 ## Updates background panel opacity.
 ## [param opacity] Normalized opacity value from 0.0 to 1.0.
 func _on_subtitle_bg_opacity_changed(opacity: float) -> void:
 	print("SubtitleLayer: Background opacity adjusted -> ", opacity)
 	active_bg_opacity = clampf(opacity, 0.0, 1.0)
-	if is_instance_valid(background_panel):
-		background_panel.self_modulate.a = active_bg_opacity
+	_update_panel_stylebox()
 
 
-## Updates default body text color string.
-## [param color_key] Hex or name representation of the font color.
+## Updates dialogue body text color string.
+## [param color_key] Color name representation.
 func _on_subtitle_text_color_changed(color_key: String) -> void:
 	print("SubtitleLayer: Dialogue text color updated -> ", color_key)
 	active_text_color = color_key
 
 
+## Updates background panel tint color.
+## [param color_key] Color name representation.
+func _on_subtitle_bg_color_changed(color_key: String) -> void:
+	print("SubtitleLayer: Subtitle background color updated -> ", color_key)
+	active_bg_color = color_key
+	_update_panel_stylebox()
+
+
 ## Updates speaker tag highlight color string.
-## [param color_key] Hex or name representation of the speaker color.
+## [param color_key] Color name representation.
 func _on_subtitle_speaker_color_changed(color_key: String) -> void:
 	print("SubtitleLayer: Speaker tag color updated -> ", color_key)
 	active_speaker_color = color_key

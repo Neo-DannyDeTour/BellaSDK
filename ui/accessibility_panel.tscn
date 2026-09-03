@@ -1,7 +1,11 @@
 [gd_scene format=3 uid="uid://b5o5hk3behhk"]
 
 [ext_resource type="Script" uid="uid://y4udm76gj87c" path="res://ui/accessibility_panel.gd" id="1_cw2tg"]
-[ext_resource type="PackedScene" uid="uid://dhh7c5j6i8bkk" path="res://player/settings_level.tscn" id="2_cw2tg"]
+[ext_resource type="Script" uid="uid://djlkr4wxf2quu" path="res://ui/vision_section.gd" id="3_jicom"]
+[ext_resource type="Script" uid="uid://rjndpsntbbgi" path="res://ui/visuals_section.gd" id="4_sr7p7"]
+[ext_resource type="Script" uid="uid://d88ro6f76g8d" path="res://ui/display_ui_section.gd" id="5_6v5k4"]
+[ext_resource type="Script" uid="uid://cimts23xaam73" path="res://ui/subs_audio_section.gd" id="5_8kniv"]
+[ext_resource type="Script" uid="uid://drlu1h64ly2v" path="res://ui/controls_section.gd" id="5_58lo4"]
 
 [node name="AccessibilityPanel" type="Panel" unique_id=1445857146]
 anchors_preset = 15
@@ -10,7 +14,6 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_cw2tg")
-diorama_scene = ExtResource("2_cw2tg")
 
 [node name="MarginContainer" type="MarginContainer" parent="." unique_id=1686322239]
 layout_mode = 1
@@ -45,190 +48,199 @@ size_flags_vertical = 3
 [node name="SettingsScroll" type="ScrollContainer" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=693938259]
 layout_mode = 2
 size_flags_horizontal = 3
-scroll_vertical = 100
+scroll_vertical = 671
 horizontal_scroll_mode = 0
 
-[node name="GridContainer" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll" unique_id=1425124961]
+[node name="SettingsVBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll" unique_id=1857639409]
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="VisionSection" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox" unique_id=1425124961]
+layout_mode = 2
 size_flags_vertical = 3
 columns = 3
+script = ExtResource("3_jicom")
 
-[node name="SectionHeader_Vision" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=860967795]
+[node name="SectionHeader_Vision" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=860967795]
 layout_mode = 2
 text = "VISION ASSIST & HIGH CONTRAST"
 
-[node name="Spacer_Header1" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=324906112]
+[node name="Spacer_Header1" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=324906112]
 layout_mode = 2
 
-[node name="Spacer_Header2" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=672940134]
+[node name="Spacer_Header2" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=672940134]
 layout_mode = 2
 
-[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=782036438]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="HSeparator2" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1366497752]
+[node name="HSeparator" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=782036438]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HSeparator3" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1734944174]
+[node name="HSeparator2" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=1366497752]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="VisionAssistLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1153627334]
+[node name="HSeparator3" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=1734944174]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="VisionAssistLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=1153627334]
 layout_mode = 2
 text = "Vision Assist"
 
-[node name="Spacer_VisionAssist" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=181161060]
+[node name="Spacer_VisionAssist" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=181161060]
 layout_mode = 2
 
-[node name="VisionAssistToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1038495835]
+[node name="VisionAssistToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=1038495835]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="VisionModeLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1276865311]
+[node name="VisionModeLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=1276865311]
 layout_mode = 2
 text = "Background Mode"
 
-[node name="Spacer_VisionMode" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1585331012]
+[node name="Spacer_VisionMode" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=1585331012]
 layout_mode = 2
 
-[node name="VisionModeOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1505239394]
+[node name="VisionModeOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=1505239394]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="ColorFriendsLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1790810921]
+[node name="ColorFriendsLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=1790810921]
 layout_mode = 2
 text = "Friends Color"
 
-[node name="Spacer_ColorFriends" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=462411001]
+[node name="Spacer_ColorFriends" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=462411001]
 layout_mode = 2
 
-[node name="ColorFriendsOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=607216320]
+[node name="ColorFriendsOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=607216320]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="ColorEnemiesLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=333036359]
+[node name="ColorEnemiesLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=333036359]
 layout_mode = 2
 text = "Enemies Color"
 
-[node name="Spacer_ColorEnemies" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1128354816]
+[node name="Spacer_ColorEnemies" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=1128354816]
 layout_mode = 2
 
-[node name="ColorEnemiesOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=207797748]
+[node name="ColorEnemiesOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=207797748]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="ColorInteractLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1557388695]
+[node name="ColorInteractLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=1557388695]
 layout_mode = 2
 text = "Interactables Color"
 
-[node name="Spacer_ColorInteract" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=126493817]
+[node name="Spacer_ColorInteract" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=126493817]
 layout_mode = 2
 
-[node name="ColorInteractOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=315285372]
+[node name="ColorInteractOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=315285372]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="ColorTraversalLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1531219763]
+[node name="ColorTraversalLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=1531219763]
 layout_mode = 2
 text = "Traversal Color"
 
-[node name="Spacer_ColorTraversal" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1603743315]
+[node name="Spacer_ColorTraversal" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=1603743315]
 layout_mode = 2
 
-[node name="ColorTraversalOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=904647929]
+[node name="ColorTraversalOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=904647929]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="ColorCluesLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=290805981]
+[node name="ColorCluesLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=290805981]
 layout_mode = 2
 text = "Clues Color"
 
-[node name="Spacer_ColorClues" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=92357921]
+[node name="Spacer_ColorClues" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=92357921]
 layout_mode = 2
 
-[node name="ColorCluesOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1804058956]
+[node name="ColorCluesOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=1804058956]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="ColorCoverLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=731755752]
+[node name="ColorCoverLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=731755752]
 layout_mode = 2
 text = "Cover Color"
 
-[node name="Spacer_ColorCover" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1898572840]
+[node name="Spacer_ColorCover" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=1898572840]
 layout_mode = 2
 
-[node name="ColorCoverOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=718544091]
+[node name="ColorCoverOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection" unique_id=718544091]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="HSeparator22" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=780255600]
+[node name="VisualsSection" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox" unique_id=1655322122]
+layout_mode = 2
+columns = 3
+script = ExtResource("4_sr7p7")
+
+[node name="HSeparator22" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=780255600]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HSeparator23" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1203153026]
+[node name="HSeparator23" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=1203153026]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HSeparator24" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=606245867]
+[node name="HSeparator24" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=606245867]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="SectionHeader_Visuals" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=923562842]
+[node name="SectionHeader_Visuals" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=923562842]
 layout_mode = 2
 text = "VISUALS & SHADERS"
 
-[node name="Spacer_Header3" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=2044613715]
+[node name="Spacer_Header3" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=2044613715]
 layout_mode = 2
 
-[node name="Spacer_Header4" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=673273747]
+[node name="Spacer_Header4" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=673273747]
 layout_mode = 2
 
-[node name="HSeparator4" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=911458517]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="HSeparator5" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1682758254]
+[node name="HSeparator4" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=911458517]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HSeparator6" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1771141142]
+[node name="HSeparator5" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=1682758254]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="ColorblindLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1777782324]
+[node name="HSeparator6" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=1771141142]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ColorblindLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=1777782324]
 layout_mode = 2
 text = "Colorblind Mode"
 
-[node name="Spacer_CB" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=2071410110]
+[node name="Spacer_CB" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=2071410110]
 layout_mode = 2
 
-[node name="ColorblindOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1701607343]
+[node name="ColorblindOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=1701607343]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="ScreenFilterLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1470095200]
+[node name="ScreenFilterLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=1470095200]
 layout_mode = 2
 text = "Screenfilter"
 
-[node name="Spacer_ScreenFilter" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=254633818]
+[node name="Spacer_ScreenFilter" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=254633818]
 layout_mode = 2
 
-[node name="ScreenFilterOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1102982787]
+[node name="ScreenFilterOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=1102982787]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="BrightnessLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=686284605]
+[node name="BrightnessLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=686284605]
 layout_mode = 2
 text = "Brightness"
 
-[node name="BrightnessLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=976196478]
+[node name="BrightnessLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=976196478]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="BrightnessSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1042379306]
+[node name="BrightnessSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=1042379306]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -236,15 +248,15 @@ max_value = 3.0
 step = 0.01
 value = 1.0
 
-[node name="ContrastLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1266853019]
+[node name="ContrastLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=1266853019]
 layout_mode = 2
 text = "Contrast"
 
-[node name="ContrastLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1430935328]
+[node name="ContrastLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=1430935328]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="ContrastSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1909607972]
+[node name="ContrastSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=1909607972]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -252,15 +264,15 @@ max_value = 3.0
 step = 0.01
 value = 1.0
 
-[node name="SaturationLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=749161311]
+[node name="SaturationLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=749161311]
 layout_mode = 2
 text = "Saturation"
 
-[node name="SaturationLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=2022102502]
+[node name="SaturationLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=2022102502]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="SaturationSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=2049954714]
+[node name="SaturationSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=2049954714]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -268,15 +280,15 @@ max_value = 3.0
 step = 0.01
 value = 1.0
 
-[node name="GammaLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=660194453]
+[node name="GammaLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=660194453]
 layout_mode = 2
 text = "Gamma"
 
-[node name="GammaLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1535609543]
+[node name="GammaLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=1535609543]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="GammaSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=168776207]
+[node name="GammaSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=168776207]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -284,83 +296,88 @@ max_value = 3.0
 step = 0.01
 value = 1.0
 
-[node name="FilmGrainLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1191401400]
+[node name="FilmGrainLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=1191401400]
 layout_mode = 2
 text = "Film Grain"
 
-[node name="FilmGrainEdit" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1292214577]
+[node name="FilmGrainEdit" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=1292214577]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="FilmGrainSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=2045712158]
+[node name="FilmGrainSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=2045712158]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="PhotosensitivityLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1884347696]
+[node name="PhotosensitivityLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=1884347696]
 layout_mode = 2
 text = "Photosensitivity Mode"
 
-[node name="Spacer_Photosensitivity" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=876018615]
+[node name="Spacer_Photosensitivity" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=876018615]
 layout_mode = 2
 
-[node name="PhotosensitivityToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=399741898]
+[node name="PhotosensitivityToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=399741898]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="HighContrastLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=939637041]
+[node name="HighContrastLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=939637041]
 layout_mode = 2
 text = "High Contrast"
 
-[node name="Spacer_HighContrast" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1953678287]
+[node name="Spacer_HighContrast" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=1953678287]
 layout_mode = 2
 
-[node name="HighContrastToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1285910016]
+[node name="HighContrastToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection" unique_id=1285910016]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="HSeparator25" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1787020640]
+[node name="DisplayUISection" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox" unique_id=1840145301]
+layout_mode = 2
+columns = 3
+script = ExtResource("5_6v5k4")
+
+[node name="HSeparator25" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/DisplayUISection" unique_id=1787020640]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HSeparator26" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=407651563]
+[node name="HSeparator26" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/DisplayUISection" unique_id=407651563]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HSeparator27" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=444305031]
+[node name="HSeparator27" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/DisplayUISection" unique_id=444305031]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="SectionHeader_Display" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1491002047]
+[node name="SectionHeader_Display" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/DisplayUISection" unique_id=1491002047]
 layout_mode = 2
 text = "DISPLAY & UI"
 
-[node name="Spacer_Head_Display1" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1552780079]
+[node name="Spacer_Head_Display1" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/DisplayUISection" unique_id=1552780079]
 layout_mode = 2
 
-[node name="Spacer_Head_Display2" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=952551712]
+[node name="Spacer_Head_Display2" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/DisplayUISection" unique_id=952551712]
 layout_mode = 2
 
-[node name="HSeparator7" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1133165283]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="HSeparator8" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=554985148]
+[node name="HSeparator7" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/DisplayUISection" unique_id=1133165283]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HSeparator9" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1579551398]
+[node name="HSeparator8" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/DisplayUISection" unique_id=554985148]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="FOV_Label" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=359266187]
+[node name="HSeparator9" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/DisplayUISection" unique_id=1579551398]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="FOV_Label" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/DisplayUISection" unique_id=359266187]
 layout_mode = 2
 text = "Field of View"
 
-[node name="FOVLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=199507414]
+[node name="FOVLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/DisplayUISection" unique_id=199507414]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="FOVSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=723988044]
+[node name="FOVSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/DisplayUISection" unique_id=723988044]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -368,15 +385,15 @@ min_value = 10.0
 max_value = 150.0
 value = 75.0
 
-[node name="UI_ScaleLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=785792894]
+[node name="UI_ScaleLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/DisplayUISection" unique_id=785792894]
 layout_mode = 2
 text = "UI Scale"
 
-[node name="UIScaleLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=375535810]
+[node name="UIScaleLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/DisplayUISection" unique_id=375535810]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="UIScaleSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1780903147]
+[node name="UIScaleSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/DisplayUISection" unique_id=1780903147]
 unique_name_in_owner = true
 layout_mode = 2
 min_value = 1.0
@@ -384,15 +401,15 @@ max_value = 2.0
 step = 0.01
 value = 1.0
 
-[node name="Font_ScaleLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=355223109]
+[node name="Font_ScaleLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/DisplayUISection" unique_id=355223109]
 layout_mode = 2
 text = "Font Scale"
 
-[node name="Font_ScaleLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=822140595]
+[node name="Font_ScaleLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/DisplayUISection" unique_id=822140595]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Font_ScaleSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1230384517]
+[node name="Font_ScaleSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/DisplayUISection" unique_id=1230384517]
 unique_name_in_owner = true
 layout_mode = 2
 min_value = 1.0
@@ -400,302 +417,323 @@ max_value = 2.0
 step = 0.01
 value = 1.0
 
-[node name="SprintFovLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1415163888]
+[node name="SprintFovLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/DisplayUISection" unique_id=1415163888]
 layout_mode = 2
 text = "Disable Sprint FOV"
 
-[node name="Spacer_SprintFov" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1480541691]
+[node name="Spacer_SprintFov" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/DisplayUISection" unique_id=1480541691]
 layout_mode = 2
 
-[node name="SprintFovCheckbox" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=174581541]
+[node name="SprintFovCheckbox" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/DisplayUISection" unique_id=174581541]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HSeparator19" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1787288325]
+[node name="ControlsSection" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox" unique_id=1268707635]
+layout_mode = 2
+columns = 3
+script = ExtResource("5_58lo4")
+
+[node name="HSeparator16" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=1050458693]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HSeparator20" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=222661450]
+[node name="HSeparator17" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=243558508]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HSeparator21" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=870653135]
+[node name="HSeparator18" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=455315237]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="SectionHeader_Audio" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=702004047]
-layout_mode = 2
-text = "SUBTITLES & AUDIO"
-
-[node name="Spacer_Head_Audio1" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1065492835]
-layout_mode = 2
-
-[node name="Spacer_Head_Audio2" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=227336671]
-layout_mode = 2
-
-[node name="HSeparator10" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=341040067]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="HSeparator11" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=131690989]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="HSeparator12" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1166808275]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="FontLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=7494968]
-layout_mode = 2
-text = "Font"
-
-[node name="Spacer_Font" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=830585316]
-layout_mode = 2
-
-[node name="FontOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=376569803]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="SubTextColorLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1446453967]
-layout_mode = 2
-text = "Subtitle Text Color"
-
-[node name="Spacer_FontColor" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1363486570]
-layout_mode = 2
-
-[node name="SubTextColorOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1944124009]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="SubBgColorLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=54202131]
-layout_mode = 2
-text = "Subtitle BG Color"
-
-[node name="Spacer_BgColor" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=753223984]
-layout_mode = 2
-
-[node name="SubBgColorOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=199777583]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="SpeakerNameLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1171355317]
-layout_mode = 2
-text = "Speaker Name Color"
-
-[node name="Spacer_Speaker" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=703319054]
-layout_mode = 2
-
-[node name="SubSpeakerColorOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=157493357]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="SubSizeLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1889518136]
-layout_mode = 2
-text = "Subtitle Size"
-
-[node name="SubSizeLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=2064499793]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="SubSizeSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=149361381]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="SubBgOpacityLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=2140324137]
-layout_mode = 2
-text = "Subtitle BG Opacity"
-
-[node name="SubBgOpacityLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=510626932]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="SubBgOpacitySlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=160369827]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="SpeakernamesLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1472781247]
-layout_mode = 2
-text = "Show Speaker Names"
-
-[node name="Spacer_SubColors2" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1563636050]
-layout_mode = 2
-
-[node name="SubShowNamesToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=473002268]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="SubColorsLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=415713423]
-layout_mode = 2
-text = "Distinct Speaker Colors"
-
-[node name="Spacer_SubColors" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=208504663]
-layout_mode = 2
-
-[node name="SubColorsToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1472814680]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="TTSLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=630876211]
-layout_mode = 2
-text = "Text-to-Speech"
-
-[node name="Spacer_TTS" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=259540570]
-layout_mode = 2
-
-[node name="TTSToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=636854834]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="MonoAudioLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=2142900488]
-layout_mode = 2
-text = "Mono Audio"
-
-[node name="Spacer_MonoAudio" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=650773324]
-layout_mode = 2
-
-[node name="MonoAudioToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=2146221315]
-unique_name_in_owner = true
-layout_mode = 2
-
-[node name="HSeparator16" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1050458693]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="HSeparator17" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=243558508]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="HSeparator18" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=455315237]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="SectionHeader_Controls" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1470571409]
+[node name="SectionHeader_Controls" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=1470571409]
 layout_mode = 2
 text = "CONTROLS & GAMEPLAY"
 
-[node name="Spacer_Head_Controls1" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1224607956]
+[node name="Spacer_Head_Controls1" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=1224607956]
 layout_mode = 2
 
-[node name="Spacer_Head_Controls2" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=547034763]
+[node name="Spacer_Head_Controls2" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=547034763]
 layout_mode = 2
 
-[node name="HSeparator13" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=848639243]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="HSeparator14" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=697113316]
+[node name="HSeparator13" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=848639243]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HSeparator15" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1289655208]
+[node name="HSeparator14" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=697113316]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="MouseSensitivityLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1488079946]
+[node name="HSeparator15" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=1289655208]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MouseSensitivityLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=1488079946]
 layout_mode = 2
 text = "Mouse Sensitivity"
 
-[node name="MouseSensitivityLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1474107718]
+[node name="MouseSensitivityLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=1474107718]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="MouseSensitivitySlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1816352778]
+[node name="MouseSensitivitySlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=1816352778]
 unique_name_in_owner = true
 layout_mode = 2
 max_value = 2.0
 step = 0.1
 
-[node name="AimAssistAmountLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1718145896]
+[node name="AimAssistAmountLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=1718145896]
 layout_mode = 2
 text = "Aim Assist Amount"
 
-[node name="AimAssistLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=78355937]
+[node name="AimAssistLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=78355937]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="AimAssistSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1470963975]
+[node name="AimAssistSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=1470963975]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="VibrationLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1895783728]
+[node name="VibrationLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=1895783728]
 layout_mode = 2
 text = "Vibration"
 
-[node name="VibrationLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1595979355]
+[node name="VibrationLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=1595979355]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="VibrationSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1962313817]
+[node name="VibrationSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=1962313817]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="InvertYLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=617495531]
+[node name="InvertYLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=617495531]
 layout_mode = 2
 text = "Invert Y"
 
-[node name="Spacer_InvertY" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=2116035820]
+[node name="Spacer_InvertY" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=2116035820]
 layout_mode = 2
 
-[node name="InvertYToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1809832729]
+[node name="InvertYToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=1809832729]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="ToggleCrouchLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=435623735]
+[node name="ToggleCrouchLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=435623735]
 layout_mode = 2
 text = "Toggle Crouch"
 
-[node name="Spacer_ToggleCrouch" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=342586733]
+[node name="Spacer_ToggleCrouch" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=342586733]
 layout_mode = 2
 
-[node name="ToggleCrouchButton" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1850374872]
+[node name="ToggleCrouchButton" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=1850374872]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 7
 
-[node name="ToggleSprintLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1108741892]
+[node name="ToggleSprintLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=1108741892]
 layout_mode = 2
 text = "Toggle Sprint"
 
-[node name="Spacer_ToggleSprint" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1552795297]
+[node name="Spacer_ToggleSprint" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=1552795297]
 layout_mode = 2
 
-[node name="ToggleSprintButton" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=912549993]
+[node name="ToggleSprintButton" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=912549993]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 7
 
-[node name="CancelCrouchOnJumpLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1650805570]
+[node name="CancelCrouchOnJumpLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=1650805570]
 layout_mode = 2
 text = "Cancel Crouch on Jump"
 
-[node name="Spacer_CancelCrouch" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1174655951]
+[node name="Spacer_CancelCrouch" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=1174655951]
 layout_mode = 2
 
-[node name="CancelCrouchOnJumpButton" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1095323626]
+[node name="CancelCrouchOnJumpButton" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=1095323626]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="AimAssistToggleLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1463029628]
+[node name="AimAssistToggleLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=1463029628]
 layout_mode = 2
 text = "Aim Assist"
 
-[node name="Spacer_AimAssist" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1349499590]
+[node name="Spacer_AimAssist" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=1349499590]
 layout_mode = 2
 
-[node name="AimAssistToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=328161055]
+[node name="AimAssistToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=328161055]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="ReduceMotionLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=15875538]
+[node name="ReduceMotionLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=15875538]
 layout_mode = 2
 text = "Reduce Motion"
 
-[node name="Spacer_ReduceMotion" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=657171548]
+[node name="Spacer_ReduceMotion" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=657171548]
 layout_mode = 2
 
-[node name="ReduceMotionToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/GridContainer" unique_id=1318992016]
+[node name="ReduceMotionToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection" unique_id=1318992016]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SubsAudioSection" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox" unique_id=1964517084]
+layout_mode = 2
+columns = 3
+script = ExtResource("5_8kniv")
+
+[node name="HSeparator19" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=1787288325]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HSeparator20" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=222661450]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HSeparator21" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=870653135]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SectionHeader_Audio" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=702004047]
+layout_mode = 2
+text = "SUBTITLES & AUDIO"
+
+[node name="Spacer_Head_Audio1" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=1065492835]
+layout_mode = 2
+
+[node name="Spacer_Head_Audio2" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=227336671]
+layout_mode = 2
+
+[node name="HSeparator10" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=341040067]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HSeparator11" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=131690989]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="HSeparator12" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=1166808275]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="EnableSubsLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=7494968]
+layout_mode = 2
+text = "Enable Subtitles"
+
+[node name="Spacer_Font" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=830585316]
+layout_mode = 2
+
+[node name="EnableSubsToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=558480533]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="FontLabel2" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=1716466539]
+layout_mode = 2
+text = "Font"
+
+[node name="Spacer_Font2" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=1480119789]
+layout_mode = 2
+
+[node name="FontOption2" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=215993801]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SubTextColorLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=1446453967]
+layout_mode = 2
+text = "Subtitle Text Color"
+
+[node name="Spacer_FontColor" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=1363486570]
+layout_mode = 2
+
+[node name="SubTextColorOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=1944124009]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SubBgColorLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=54202131]
+layout_mode = 2
+text = "Subtitle BG Color"
+
+[node name="Spacer_BgColor" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=753223984]
+layout_mode = 2
+
+[node name="SubBgColorOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=199777583]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SpeakerNameLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=1171355317]
+layout_mode = 2
+text = "Speaker Name Color"
+
+[node name="Spacer_Speaker" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=703319054]
+layout_mode = 2
+
+[node name="SubSpeakerColorOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=157493357]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SubSizeLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=1889518136]
+layout_mode = 2
+text = "Subtitle Size"
+
+[node name="SubSizeLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=2064499793]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SubSizeSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=149361381]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SubBgOpacityLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=2140324137]
+layout_mode = 2
+text = "Subtitle BG Opacity"
+
+[node name="SubBgOpacityLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=510626932]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SubBgOpacitySlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=160369827]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SpeakernamesLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=1472781247]
+layout_mode = 2
+text = "Show Speaker Names"
+
+[node name="Spacer_SubColors2" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=1563636050]
+layout_mode = 2
+
+[node name="SubShowNamesToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=473002268]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SubColorsLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=415713423]
+layout_mode = 2
+text = "Distinct Speaker Colors"
+
+[node name="Spacer_SubColors" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=208504663]
+layout_mode = 2
+
+[node name="SubColorsToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=1472814680]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TTSLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=630876211]
+layout_mode = 2
+text = "Text-to-Speech"
+
+[node name="Spacer_TTS" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=259540570]
+layout_mode = 2
+
+[node name="TTSToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=636854834]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="MonoAudioLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=2142900488]
+layout_mode = 2
+text = "Mono Audio"
+
+[node name="Spacer_MonoAudio" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=650773324]
+layout_mode = 2
+
+[node name="MonoAudioToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection" unique_id=2146221315]
 unique_name_in_owner = true
 layout_mode = 2
 
