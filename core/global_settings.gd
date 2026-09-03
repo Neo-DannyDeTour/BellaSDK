@@ -241,3 +241,27 @@ func get_screen_filter_path(filter_id: String) -> String:
 		if (item.get("id", "") as String) == clean_id:
 			return item.get("path", "") as String
 	return ""
+
+
+## Resolves the font asset file path matching a specified font identifier.
+## [param font_id] Target font key string.
+## [return] File path string, or an empty string if not found or default.
+func get_font_path(font_id: String) -> String:
+	for entry: Dictionary in FONT_REGISTRY:
+		if (entry.get("id", "") as String) == font_id:
+			return entry.get("path", "") as String
+	return ""
+
+
+## Loads and returns the [Font] resource associated with the given font identifier.
+## [param font_id] Target font key string.
+## [return] The loaded [Font] resource, or null if using default or path is invalid.
+func get_font_resource(font_id: String) -> Font:
+	print("GlobalSettings: Loading font resource for -> ", font_id)
+	var path: String = get_font_path(font_id)
+	if path.is_empty():
+		return null
+	if ResourceLoader.exists(path):
+		return load(path) as Font
+	push_warning("GlobalSettings: Font resource path not found: " + path)
+	return null
