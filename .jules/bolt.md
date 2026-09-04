@@ -3,3 +3,4 @@
 - Ensure any `has_node()` or `get_node()` calls inside frequently checked conditions (like state transition scripts `enter()` or `exit()`) are replaced with `@onready` cached variables for dynamic properties if they run constantly.
 - Remember to `import gdtoolkit` or run `pip install gdtoolkit` when utilizing `gdlint` and `gdformat` since it might not be natively found on some runner machines out of the box.
 - For GDScript performance optimization, cache frequently accessed child nodes (such as StateMachine states) in a Dictionary during `_ready()` to replace expensive string-based `get_node()` or `has_node()` lookups inside hot functions with O(1) dictionary lookups.
+- For better performance in hot loops, use `distance_squared_to()` instead of `distance_to()` when comparing against a specific threshold, ensuring the threshold is also mathematically squared.
