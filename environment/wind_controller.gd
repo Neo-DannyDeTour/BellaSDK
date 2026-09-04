@@ -1,4 +1,9 @@
 @tool
+## Controls global wind parameters for shaders across the game world.
+##
+## [WindController] updates global shader parameters for wind intensity, speed, and direction
+## based on its exported properties and its 3D rotation in the scene.
+class_name WindController
 extends Node3D
 
 ## Controls the overall strength of the wind effect across the game world.
@@ -21,6 +26,8 @@ extends Node3D
 var previous_rotation: Basis = Basis()
 
 
+## Called when the node enters the scene tree for the first time.
+## Initializes the global shader parameters with the current exported values.
 func _ready() -> void:
 	# Force initialize the global shader parameters on load/startup.
 	RenderingServer.global_shader_parameter_set("wind_intensity", wind_intensity)
@@ -31,6 +38,8 @@ func _ready() -> void:
 		print("WindController initialized. Intensity: ", wind_intensity, ", Speed: ", wind_speed)
 
 
+## Called every frame. Updates the wind direction global shader parameter if rotation changes.
+## [param _delta] The time elapsed since the previous frame in seconds.
 func _process(_delta: float) -> void:
 	if basis.is_equal_approx(previous_rotation):
 		return

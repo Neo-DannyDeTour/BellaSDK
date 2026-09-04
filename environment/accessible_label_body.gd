@@ -1,4 +1,9 @@
 @tool
+## A physical label that can be interacted with to support TTS and screen readers.
+##
+## [AccessibleLabel] creates a dynamic collision box that matches the visual size of the text.
+## When a player looks at it using the [InteractionScanner], it can read the text aloud
+## via the [TTSInteractComponent], or use an alternative phonetic text.
 class_name AccessibleLabel
 extends StaticBody3D
 
@@ -6,26 +11,33 @@ extends StaticBody3D
 @export_multiline var display_text: String = "Accessible Label":
 	set(value):
 		display_text = value
-		if is_node_ready():
-			$Label3D.text = display_text
+		if is_inside_tree() and has_node("Label3D"):
+			var label: Node = get_node("Label3D")
+			if is_instance_valid(label):
+				label.set("text", display_text)
 			_update_collision_shape()
 
 ## The phonetic text read by the TTS engine. If empty, the system reads display_text.
 @export_multiline var tts_alt_text: String = "":
 	set(value):
 		tts_alt_text = value
-		if is_node_ready():
-			if has_node("InteractComponent"):
-				$InteractComponent.alt_text_override = tts_alt_text
+		if is_inside_tree() and has_node("InteractComponent"):
+			var interact_comp: Node = get_node("InteractComponent")
+			if is_instance_valid(interact_comp):
+				interact_comp.set("alt_text_override", tts_alt_text)
 
 ## Controls whether the label automatically faces the camera.
 @export var billboard_mode: BaseMaterial3D.BillboardMode = BaseMaterial3D.BILLBOARD_DISABLED:
 	set(value):
 		billboard_mode = value
-		if is_node_ready():
-			$Label3D.billboard = billboard_mode
+		if is_inside_tree() and has_node("Label3D"):
+			var label: Node = get_node("Label3D")
+			if is_instance_valid(label):
+				label.set("billboard", billboard_mode)
 
 
+## Called when the node enters the scene tree for the first time.
+## Sets initial properties and resizes the collision shape.
 func _ready() -> void:
 	print("AccessibleLabel: Initializing...")
 	$Label3D.text = display_text
