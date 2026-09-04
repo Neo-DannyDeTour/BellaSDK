@@ -292,6 +292,11 @@ signal metrics_panel_toggle_requested
 @warning_ignore("unused_signal")
 signal render_diagnostics_toggle_requested
 
+## Emitted when heavy carrying state changes.
+## [param is_active] True if the player is currently carrying a heavy object.
+@warning_ignore("unused_signal")
+signal heavy_carry_toggled(is_active: bool)
+
 ## Visual animation style presets for chapter title card sequences.
 enum ChapterAnimStyle {
 	SIMPLE,

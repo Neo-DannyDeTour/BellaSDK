@@ -33,6 +33,9 @@ extends MarginContainer
 ## Container managing the layout of the ice skating indicator.
 @onready var ice_indicator: Control = $VBoxContainer/IceIndicator
 
+## Texture progress bar layered over the sprint debuff icon.
+@onready var sprint_bar: TextureProgressBar = $VBoxContainer/SprintDebuff/DebuffBar
+
 ## Stores the sliced textures for each state of a health heart.
 var heart_textures: Array[AtlasTexture] = []
 
@@ -59,6 +62,9 @@ var is_immobilized: bool = false
 
 ## Tracks if the player is currently under the effects of a sprint block debuff.
 var is_sprint_blocked: bool = false
+
+## Tracks if the player is currently carrying a heavy object.
+var is_heavy_carrying: bool = false
 
 
 ## Lifecycle method called when the node enters the scene tree.
@@ -99,6 +105,8 @@ func _connect_signals() -> void:
 		KeycardSystem.card_picked_up.connect(_on_card_picked_up)
 	if not KeycardSystem.card_used.is_connected(_on_card_used):
 		KeycardSystem.card_used.connect(_on_card_used)
+	if not Events.heavy_carry_toggled.is_connected(_on_heavy_carry_toggled):
+		Events.heavy_carry_toggled.connect(_on_heavy_carry_toggled)
 
 
 ## Slices the heart atlas and builds initial health container representations.
@@ -295,22 +303,25 @@ func _on_sprint_debuff_applied(duration: float) -> void:
 			+ " seconds."
 		)
 	)
+	sprint_bar.show()
 	sprint_debuff_container.show()
 	is_sprint_blocked = true
 
-	sprint_icon.max_value = duration
-	sprint_icon.value = duration
+	sprint_bar.max_value = duration
+	sprint_bar.value = duration
 
 	if debuff_tween and debuff_tween.is_valid():
 		debuff_tween.kill()
 
 	debuff_tween = create_tween()
-	debuff_tween.tween_property(sprint_icon, "value", 0.0, duration)
+	debuff_tween.tween_property(sprint_bar, "value", 0.0, duration)
 	debuff_tween.finished.connect(
 		func() -> void:
 			print("PlayerStatusHUD: Sprint debuff expired. Hiding UI.")
-			sprint_debuff_container.hide()
-			is_sprint_blocked = false
+			sprint_bar.hide()
+			if not is_heavy_carrying:
+				sprint_debuff_container.hide()
+				is_sprint_blocked = false
 	)
 
 
@@ -357,3 +368,23 @@ func _on_ice_surface_toggled(is_active: bool) -> void:
 	print("PlayerStatusHUD: Ice surface state toggled -> ", is_active)
 	if ice_indicator:
 		ice_indicator.visible = is_active
+
+
+## Toggles sprint debuff icon visibility based on heavy carry status.
+## [param is_active] True if the player is holding a heavy object.
+func _on_heavy_carry_toggled(is_active: bool) -> void:
+	print("PlayerStatusHUD: Heavy carry toggled -> ", is_active)
+	is_heavy_carrying = is_active
+
+	if is_heavy_carrying:
+		if debuff_tween and debuff_tween.is_valid():
+			debuff_tween.kill()
+
+		# Hide the dimming radial overlay bar so only the crisp icon remains visible
+		sprint_bar.hide()
+		sprint_debuff_container.show()
+		is_sprint_blocked = true
+	else:
+		if debuff_tween == null or not debuff_tween.is_valid():
+			sprint_debuff_container.hide()
+			is_sprint_blocked = false

@@ -248,9 +248,9 @@
 [ext_resource type="Shader" uid="uid://ckhwv7iiq0vs" path="res://environment/electrified_floor.gdshader" id="256_yk6hv"]
 [ext_resource type="Texture2D" uid="uid://p8cs4aem3kyx" path="res://assets/textures/LeLu_Smoke/T_smoke_b7.png" id="257_6afgb"]
 [ext_resource type="Shader" uid="uid://f2f6cao5ccqd" path="res://vfx/dev_texture.gdshader" id="263_slma3"]
-[ext_resource type="Shader" uid="uid://gqm2yghwiqry" path="res://ui/black_glass.gdshader" id="328_vlc13"]
+[ext_resource type="Shader" uid="uid://gqm2yghwiqry" path="res://ui/horror_black_glass.gdshader" id="328_vlc13"]
 [ext_resource type="Shader" uid="uid://6lomg4ekdndh" path="res://vfx/horror_text_shader.gdshader" id="329_v3u4j"]
-[ext_resource type="Shader" uid="uid://coifevcbmk5s2" path="res://ui/border_glow.gdshader" id="330_qqj3j"]
+[ext_resource type="Shader" uid="uid://coifevcbmk5s2" path="res://ui/horror_glow_border.gdshader" id="330_qqj3j"]
 [ext_resource type="Shader" uid="uid://w674ybxmnkoi" path="res://vfx/diorama_post_process.gdshader" id="331_sxy83"]
 [ext_resource type="Shader" uid="uid://d3hb763n705g4" path="res://ui/menu_chapter_screen.gdshader" id="332_f6wx3"]
 
