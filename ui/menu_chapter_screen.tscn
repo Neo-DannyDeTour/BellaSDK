@@ -176,15 +176,9 @@ unique_name_in_owner = true
 layout_mode = 2
 custom_text = "Play"
 glitch_text = "DIE!"
-card_size = null
-card_base_brightness = null
-card_hover_brightness = null
 
 [node name="BackButton" parent="MarginContainer/VBoxContainer/MainLayout/DetailsPanel/MarginContainer/BottomSplit/ButtonSection" unique_id=583418114 instance=ExtResource("7_8qdoq")]
 unique_name_in_owner = true
 layout_mode = 2
 custom_text = "Back to Main Menu"
 glitch_text = "Back to Hell"
-card_size = null
-card_base_brightness = null
-card_hover_brightness = null

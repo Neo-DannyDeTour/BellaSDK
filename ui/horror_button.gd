@@ -1,170 +1,209 @@
-## A dynamic horror-styled button control featuring parallax tilts, drop shadows, and glitch text.
-##
-## [HorrorButton] manages internal backgrounds, borders, and text labels with shader effects
-## while ensuring responsive UI container sizing across font and content changes.
+## Horror UI button featuring wide octagon slabs, spring physics, and tilts.
 @tool
 class_name HorrorButton
 extends Button
 
-# --- GLOBAL AI CONFIGURATION ---
+# --- GLOBAL CONFIGURATION ---
 
-## Tracks the global count of active horror buttons currently instantiated in the scene.
+## Total active [HorrorButton] instances currently tracked in scene.
 static var active_horror_buttons: int = 0
 
-## The text string displayed by the button, editable from the inspector and updated live.
+# --- INSPECTOR PROPERTIES ---
+
+## Toggles complete background slab visibility for external placement flexibility.
+@export var invisible_background: bool = false:
+	set(value):
+		invisible_background = value
+		if is_instance_valid(bg_rect) and is_inside_tree():
+			bg_rect.visible = not value
+
+## Corner chamfer cut distance in pixels forming an octagon silhouette.
+@export var corner_cut: float = 14.0:
+	set(value):
+		corner_cut = value
+		if is_inside_tree():
+			_update_corner_cuts()
+
+## Button text displayed in inspector and updated live in the scene.
 @export var custom_text: String = "":
 	set(value):
 		custom_text = value
-		if is_instance_valid(text_label):
+		if is_instance_valid(text_label) and is_inside_tree():
 			text_label.text = value
-		update_minimum_size()
+		if is_inside_tree():
+			update_minimum_size()
 
-## Additional horizontal and vertical padding added around text for container sizing.
+## Horizontal and vertical padding for container layout calculations.
 @export var text_padding: Vector2 = Vector2(32.0, 16.0):
 	set(value):
 		text_padding = value
-		update_minimum_size()
+		if is_inside_tree():
+			update_minimum_size()
 
-# --- BUTTON CONFIGURATION ---
+# --- ANIMATION CONFIGURATION ---
 
-## The target visual scale multiplier applied via offset transform when hovered.
+## Visual scale multiplier applied to offset transform when hovered.
 @export var hover_scale: Vector2 = Vector2(1.08, 1.08)
 
-## The interpolation speed used when transitioning to hover animations.
+## Spring stiffness determining bounce responsiveness for hover animations.
+@export var spring_stiffness: float = 240.0
+
+## Spring damping factor controlling bounce settling and oscillation.
+@export var spring_damping: float = 14.0
+
+## Interpolation speed for smooth hover transitions and parallax.
 @export var response_speed: float = 12.0
 
-# --- PRESS CONFIGURATION ---
-
-## The target visual scale multiplier applied when the button is actively pressed.
+## Visual scale multiplier applied to button while pressed down.
 @export var press_scale: Vector2 = Vector2(0.94, 0.94)
 
-## Downward pixel offset added to text position to simulate button depth when clicked.
+## Vertical pixel translation simulating physical press depth.
 @export var press_depth: float = 8.0
 
-## The interpolation speed used for button click and release animations.
+## Interpolation speed for button press and release animations.
 @export var press_speed: float = 20.0
 
-# --- BACKGROUND CONFIGURATION ---
-
-## An array of optional background textures used to randomly select blood/horror motifs.
+## Optional background textures randomly selected on ready.
 @export var background_images: Array[Texture2D] = []
 
-# --- SHADOW AI CONFIGURATION ---
+## Scratch and pit texture to break up specular shine sweep.
+@export var scratch_texture: Texture2D
 
-## Baseline tracking movement speed for ambient text shadow drifting when idle.
+## Ambient horizontal drift speed for idle text shadows.
 @export var walk_speed: float = 0.2
 
-## Rapid tracking movement speed for text shadows chasing the cursor on hover.
+## Fast tracking speed for shadows chasing cursor on hover.
 @export var hunt_speed: float = 6.0
 
-# --- GLITCH CONFIGURATION ---
-
-## Alternative frightening or corrupted text displayed temporarily during an active glitch.
+## Corrupted glitch text shown during terror animation cycles.
 @export var glitch_text: String = "":
 	set(value):
 		glitch_text = value
-		can_glitch = (value != "")
-		update_minimum_size()
+		can_glitch = not value.is_empty()
+		if is_inside_tree():
+			update_minimum_size()
 
-## The duration in seconds that a specific text corruption/glitch event lasts.
+## Duration in seconds that text corruption glitch remains active.
 @export var glitch_duration: float = 0.666
 
-## The minimum random threshold boundary in seconds before another text glitch triggers.
+## Minimum wait duration in seconds before next glitch sequence.
 @export var min_glitch_time: float = 15.0
 
-## The maximum random threshold boundary in seconds before another text glitch triggers.
+## Maximum wait duration in seconds before next glitch sequence.
 @export var max_glitch_time: float = 20.0
 
-# --- PULSE CONFIGURATION ---
-
-## The speed/frequency of the pulsing text animation loop when hovered.
+## Frequency speed of text pulsing animation during hover.
 @export var pulse_speed: float = 6.0
 
-## The intensity variance added to the text label scale during a hover pulse.
-@export var pulse_intensity: float = 0.1
+## Scale intensity multiplier for text hover pulse oscillation.
+@export var pulse_intensity: float = 0.08
 
-# --- 3D PARALLAX CONFIGURATION ---
-
-## The maximum visual angular rotation in degrees allowed during mouse parallax tilting.
+## Maximum rotational degrees applied during mouse parallax tilt.
 @export var max_rotation_degrees: float = 8.0
 
-## Scaling factor applied to the translation offset of text layers during parallax tilting.
+## Movement scale factor applied to text parallax displacement.
 @export var parallax_intensity: float = 3.0
 
-## Custom texture overlay utilized to render a simulated flashlight illumination mask.
+## Mask texture used for flashlight illumination highlights.
 @export var flashlight_texture: Texture2D
 
-# --- INTERNAL REFERENCES ---
+## Texture displayed on the button face for chapter previews and card graphics.
+@export var button_image: Texture2D = null:
+	set(value):
+		button_image = value
+		if is_inside_tree():
+			_update_button_image()
 
-## Reference to the internal [Label] child node displaying the button text.
+## Dedicated minimum size override for card thumbnail mode.
+@export var card_size: Vector2 = Vector2(240.0, 135.0)
+
+## Default idle brightness intensity maintained for chapter card previews.
+@export var card_base_brightness: float = 0.85
+
+## Hovered brightness intensity applied when cursor enters chapter card.
+@export var card_hover_brightness: float = 1.0
+
+## Icon texture used for chapter play overlay button.
+@export var play_icon: Texture2D
+
+# --- INTERNAL STATE ---
+## Internal or child texture rect representing the play icon overlay.
+var play_overlay: TextureRect
+
+## Dedicated child node rendering projected contact drop shadow.
+var shadow_rect: Control
+
+## Cached internal [Label] node presenting button text.
 var text_label: Label
 
-## Cached duplicate shader material instance handling spatial ghosting on the text label.
+## Shader material handling ghosting and text drop-shadows.
 var label_material: ShaderMaterial
 
-## Reference to the internal background [ColorRect] element.
+## Internal [ColorRect] node serving as background slab.
 var bg_rect: ColorRect
 
-## Cached duplicate shader material handling blood sweep and light mapping on the background.
+## Shader material controlling metal slab shine and lighting.
 var bg_material: ShaderMaterial
 
-## Reference to the internal frame/border [ColorRect] node.
+## Internal [ColorRect] node providing the border contour.
 var border_rect: ColorRect
 
-## Cached duplicate shader material instance handling outline hover glows.
+## Shader material generating border outline hover glow.
 var border_material: ShaderMaterial
 
-## Current blending state weight (0.0 to 1.0) governing active shader hover profiles.
+## Current interpolation weight for active hover shaders.
 var current_hover_intensity: float = 0.0
 
-## Flag monitoring whether the player pointer is currently inside the button bounds.
+## Tracks whether mouse cursor is inside button bounds.
 var is_mouse_over: bool = false
 
-## Flag monitoring whether the player is currently clicking and holding the button down.
+## Tracks whether mouse button is currently held pressed.
 var is_clicking: bool = false
 
-## Cached initial visual transform scale recorded at initialization for accurate rest states.
+## Initial visual scale recorded at start for reset transitions.
 var original_scale: Vector2
 
-# --- MULTIPLE AI VARIABLES ---
+## Velocity vector governing damped spring scale oscillations.
+var scale_velocity: Vector2 = Vector2.ZERO
 
-## Current horizontal positions of the dual haunting text drop-shadow layers.
+## Current horizontal offsets of dual haunting text shadows.
 var shadows_x: Array[float] = [0.0, 0.0]
 
-## Target destination horizontal coordinates for wandering ambient text shadow effects.
+## Target horizontal destination positions for roaming shadows.
 var target_shadows_x: Array[float] = [0.0, 0.0]
 
-## Cooldown timers determining when individual shadow layers select a new roaming target.
+## Cooldown timers governing when roaming shadows pick targets.
 var pace_timers: Array[float] = [0.0, 0.0]
 
-## Dynamically randomized drift speeds assigned to individual text shadow instances.
+## Randomized movement drift velocities for text shadows.
 var walk_speeds: Array[float] = [0.0, 0.0]
 
-## Dynamic [Tween] instance controlling the glowing light sweep progress across the button.
+## Active tween animating light sweep across button face.
 var shine_tween: Tween
 
-## Tracked 2D vector mapping the current mouse-driven structural tilt deformation.
+## Current 2D tilt deformation applied from cursor offset.
 var current_tilt: Vector2 = Vector2.ZERO
 
-# --- GLITCH VARIABLES ---
-
-## Preserved original textual configuration string restored automatically following a glitch.
+## Backed up text string restored after glitch event concludes.
 var original_button_text: String = ""
 
-## Ongoing countdown timer tracking the remaining duration until the next glitch phase.
+## Countdown timer tracking time until next glitch trigger.
 var glitch_timer: float = 0.0
 
-## Flag status checking whether a terrifying text corruption sequence is actively running.
+## Indicates whether text glitch corruption is actively running.
 var is_glitching: bool = false
 
-## Prerequisite safety check ensuring the component contains valid corruption text parameters.
+## Safety status confirming glitch text parameter is defined.
 var can_glitch: bool = false
 
-## Memory tracker of the component layout boundaries to catch layout container resizing.
+## Previous control dimensions cached to detect resize changes.
 var _last_known_size: Vector2 = Vector2.ZERO
 
+## Tracks if button acts as a chapter card to skip random backgrounds.
+var is_chapter_card: bool = false
 
-## Intercepts engine notifications to handle responsive theme changes and resizing.
+
+## Handles engine notifications for layout resizing and theme updates.
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_THEME_CHANGED:
 		update_minimum_size()
@@ -173,14 +212,15 @@ func _notification(what: int) -> void:
 		_sync_child_rects()
 
 
-## Computes the minimum layout bounds required by comparing primary and glitch font dimensions.
-## [return] The calculated minimum [Vector2] size including padding.
+## Calculates required minimum [Vector2] bounds including text padding.
 func _get_minimum_size() -> Vector2:
+	if is_chapter_card:
+		return card_size
+
 	if not is_instance_valid(text_label):
 		_find_internal_nodes()
 
 	var required_size: Vector2 = Vector2.ZERO
-
 	var font: Font = null
 	var font_size: int = 16
 
@@ -217,19 +257,29 @@ func _get_minimum_size() -> Vector2:
 	return required_size + text_padding
 
 
-## Initializes node references, button signal callbacks, shader materials, and anchor layouts.
+## Updates background shader or rect texture when a preview image is assigned.
+func _update_button_image() -> void:
+	if is_instance_valid(bg_material) and button_image != null:
+		bg_material.set_shader_parameter("blood_texture", button_image)
+
+
+## Initializes node components, materials, styling, and signal hooks.
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_find_internal_nodes()
 	_configure_child_anchors()
 
+	if is_instance_valid(bg_rect):
+		bg_rect.visible = not invisible_background
+
 	if Engine.is_editor_hint():
 		return
 
-	print("HorrorButton: Initializing ready sequence.")
+	print("HorrorButton: [", name, "] initializing runtime state.")
 	active_horror_buttons += 1
 	flat = true
 	offset_transform_enabled = true
+	z_as_relative = true
 
 	var empty_style: StyleBoxEmpty = StyleBoxEmpty.new()
 	add_theme_stylebox_override("normal", empty_style)
@@ -243,12 +293,12 @@ func _ready() -> void:
 
 	button_down.connect(
 		func() -> void:
-			print("HorrorButton: button_down triggered.")
+			print("HorrorButton: [", name, "] pressed.")
 			is_clicking = true
 	)
 	button_up.connect(
 		func() -> void:
-			print("HorrorButton: button_up triggered.")
+			print("HorrorButton: [", name, "] released.")
 			is_clicking = false
 	)
 
@@ -262,24 +312,30 @@ func _ready() -> void:
 			"blood_offset", Vector2(randf_range(0.0, 100.0), randf_range(0.0, 100.0))
 		)
 		bg_material.set_shader_parameter("custom_light_texture", flashlight_texture)
+		if scratch_texture != null:
+			bg_material.set_shader_parameter("scratch_texture", scratch_texture)
 
-		if background_images.size() > 0:
+		if not is_chapter_card and not background_images.is_empty():
 			var random_index: int = randi() % background_images.size()
 			bg_material.set_shader_parameter("blood_texture", background_images[random_index])
+	else:
+		bg_material = null
 
 	if is_instance_valid(border_rect) and border_rect.material is ShaderMaterial:
 		border_material = border_rect.material.duplicate() as ShaderMaterial
 		border_rect.material = border_material
 		border_material.set_shader_parameter("hover_intensity", 0.0)
+	else:
+		border_material = null
 
 	if is_instance_valid(text_label):
-		if custom_text != "":
+		if not custom_text.is_empty():
 			text_label.text = custom_text
 			original_button_text = custom_text
 		else:
 			original_button_text = text_label.text
 
-	can_glitch = (glitch_text != "")
+	can_glitch = not glitch_text.is_empty()
 
 	if is_instance_valid(text_label) and text_label.material is ShaderMaterial:
 		label_material = text_label.material.duplicate() as ShaderMaterial
@@ -290,16 +346,18 @@ func _ready() -> void:
 			target_shadows_x[i] = shadows_x[i]
 			pace_timers[i] = randf_range(0.0, 2.0)
 			walk_speeds[i] = randf_range(walk_speed * 0.6, walk_speed * 1.4)
+	else:
+		label_material = null
 
 	mouse_entered.connect(_on_mouse_entered)
 	mouse_exited.connect(_on_mouse_exited)
 
 	update_minimum_size()
 	_sync_child_rects()
-	print("HorrorButton: Initialized configuration profile complete.")
+	_update_corner_cuts()
 
 
-## Identifies and stores internal child node references while enforcing input passthrough.
+## Locates internal child nodes and enforces input passthrough filters.
 func _find_internal_nodes() -> void:
 	for child: Node in get_children():
 		if child is Control:
@@ -311,11 +369,15 @@ func _find_internal_nodes() -> void:
 			border_rect = child as ColorRect
 		elif child is ColorRect and child.name == "Background":
 			bg_rect = child as ColorRect
+		elif child is TextureRect and child.name == "PlayOverlay":
+			play_overlay = child as TextureRect
+		elif child is TextureRect or child.name == "Shadow":
+			shadow_rect = child as Control
 
 
-## Configures full rectangle anchoring on internal visual elements for centered layouts.
+## Sets full rect anchoring and centering presets for internal children.
 func _configure_child_anchors() -> void:
-	for node: Control in [bg_rect, border_rect, text_label]:
+	for node: Control in [bg_rect, border_rect, text_label, shadow_rect]:
 		if is_instance_valid(node):
 			node.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			node.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -324,12 +386,16 @@ func _configure_child_anchors() -> void:
 			node.offset_right = 0.0
 			node.offset_bottom = 0.0
 
+	if is_instance_valid(shadow_rect):
+		shadow_rect.show_behind_parent = true
+		shadow_rect.modulate.a = 0.0
+
 	if is_instance_valid(text_label):
 		text_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		text_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 
 
-## Synchronizes layout dimensions, pivot offsets, and shader parameters across children safely.
+## Synchronizes dimensions and pivots to child shaders and nodes.
 func _sync_child_rects() -> void:
 	if size == _last_known_size:
 		return
@@ -337,6 +403,8 @@ func _sync_child_rects() -> void:
 	_last_known_size = size
 	pivot_offset = size / 2.0
 
+	if is_instance_valid(shadow_rect):
+		shadow_rect.pivot_offset = size / 2.0
 	if is_instance_valid(text_label):
 		text_label.pivot_offset = size / 2.0
 
@@ -348,13 +416,23 @@ func _sync_child_rects() -> void:
 		label_material.set_shader_parameter("rect_size", size)
 
 
-## Handles mouse enter signals to trigger hover sweeps and intensity blends.
+## Updates corner cut parameters across internal shader materials.
+func _update_corner_cuts() -> void:
+	if is_instance_valid(bg_material):
+		bg_material.set_shader_parameter("corner_cut", corner_cut)
+	if is_instance_valid(border_material):
+		border_material.set_shader_parameter("corner_cut", corner_cut)
+
+
+## Triggers hover transitions, elevates z-index, and starts sweep tween.
 func _on_mouse_entered() -> void:
-	print("HorrorButton: Hover status entered.")
+	print("HorrorButton: [", name, "] mouse hover entered.")
 	is_mouse_over = true
+	z_index = 2
+	if is_instance_valid(play_overlay):
+		play_overlay.visible = true
 
 	if is_instance_valid(bg_material):
-		current_hover_intensity = 1.0
 		if is_instance_valid(shine_tween) and shine_tween.is_valid():
 			shine_tween.kill()
 
@@ -368,24 +446,51 @@ func _on_mouse_entered() -> void:
 						bg_material.set_shader_parameter("sweep_progress", val),
 				-0.3,
 				1.8,
-				0.6
+				0.55
 			)
-			. set_trans(Tween.TRANS_SINE)
-			. set_ease(Tween.EASE_IN_OUT)
+			. set_trans(Tween.TRANS_QUAD)
+			. set_ease(Tween.EASE_OUT)
 		)
 
 
-## Handles mouse exit signals to reset hover and click state trackers.
+## Resets hover state, lowers z-index, and clears click tracker.
 func _on_mouse_exited() -> void:
-	print("HorrorButton: Hover status terminated.")
+	print("HorrorButton: [", name, "] mouse hover exited.")
 	is_mouse_over = false
 	is_clicking = false
+	z_index = 0
+	if is_instance_valid(play_overlay):
+		play_overlay.visible = false
 
 	for i: int in 2:
 		pace_timers[i] = 0.0
 
 
-## Executes real-time per-frame transforms, shadow wandering, parallax, and glitch cycles.
+## Drives damped spring physics toward target scale vectors.
+func _update_spring_scale(delta: float, target_scale: Vector2) -> void:
+	var delta_pos: Vector2 = offset_transform_scale - target_scale
+	var spring_force: Vector2 = (-spring_stiffness * delta_pos) - (spring_damping * scale_velocity)
+	scale_velocity += spring_force * delta
+	offset_transform_scale += scale_velocity * delta
+
+
+## Updates contact shadow position and alpha based on tilt and lift.
+func _update_shadow_projection() -> void:
+	if not is_instance_valid(shadow_rect):
+		return
+
+	var lift: float = current_hover_intensity
+	var drop: float = press_depth if is_clicking else 0.0
+	var offset: Vector2 = Vector2(
+		current_tilt.x * 10.0, (14.0 * lift) + (current_tilt.y * 6.0) - (drop * 0.4)
+	)
+	shadow_rect.position = offset
+	shadow_rect.modulate.a = lift * 0.8
+	var shadow_scale: float = 1.0 + (0.04 * lift)
+	shadow_rect.scale = Vector2(shadow_scale, shadow_scale)
+
+
+## Processes 3D parallax tilting, spring scales, and glitch timers.
 func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
@@ -393,141 +498,88 @@ func _process(delta: float) -> void:
 	if size.x <= 0.1 or size.y <= 0.1:
 		return
 
-	var is_settled: bool = (
-		not is_mouse_over
-		and current_hover_intensity < 0.001
-		and offset_transform_scale.is_equal_approx(original_scale)
-		and current_tilt.length_squared() < 0.0001
-		and absf(offset_transform_rotation) < 0.001
-	)
-
 	var mouse_pos: Vector2 = get_local_mouse_position()
 	var center_x: float = size.x / 2.0
 	var center_y: float = size.y / 2.0
 
-	if not is_settled:
-		var target_rotation: float = 0.0
-		var tilt_target: Vector2 = Vector2.ZERO
+	var target_rotation: float = 0.0
+	var tilt_target: Vector2 = Vector2.ZERO
+	var target_scale: Vector2 = original_scale
 
-		if is_mouse_over:
-			current_hover_intensity = move_toward(current_hover_intensity, 1.0, 3.0 * delta)
+	if is_mouse_over:
+		current_hover_intensity = move_toward(current_hover_intensity, 1.0, 3.5 * delta)
+		var norm_x: float = clampf((mouse_pos.x - center_x) / center_x, -1.0, 1.0)
+		var norm_y: float = clampf((mouse_pos.y - center_y) / center_y, -1.0, 1.0)
+		target_rotation = deg_to_rad(max_rotation_degrees * norm_x)
+		tilt_target = Vector2(norm_x, norm_y)
 
-			var normalized_x: float = clampf((mouse_pos.x - center_x) / center_x, -1.0, 1.0)
-			var normalized_y: float = clampf((mouse_pos.y - center_y) / center_y, -1.0, 1.0)
-
-			target_rotation = deg_to_rad(max_rotation_degrees * normalized_x)
-			tilt_target = Vector2(normalized_x, normalized_y)
-
-			if is_clicking:
-				offset_transform_scale = offset_transform_scale.lerp(
-					press_scale, press_speed * delta
-				)
-
-				if is_instance_valid(text_label):
-					var target_text_pos: Vector2 = (
-						Vector2(-normalized_x, -normalized_y) * parallax_intensity
-					)
-					target_text_pos.y += press_depth
-					text_label.position = text_label.position.lerp(
-						target_text_pos, press_speed * delta
-					)
-					text_label.scale = text_label.scale.lerp(Vector2(1.0, 1.0), press_speed * delta)
-			else:
-				var pitch_modifier: float = 1.0 - (absf(normalized_y) * 0.04)
-				var target_scale: Vector2 = hover_scale * Vector2(1.0, pitch_modifier)
-				offset_transform_scale = offset_transform_scale.lerp(
-					target_scale, response_speed * delta
-				)
-
-				if is_instance_valid(text_label):
-					var target_text_pos: Vector2 = (
-						Vector2(-normalized_x, -normalized_y) * parallax_intensity
-					)
-					text_label.position = text_label.position.lerp(
-						target_text_pos, response_speed * delta
-					)
-
-					var time_sec: float = Time.get_ticks_msec() / 1000.0
-					var pulse: float = pow(sin(time_sec * pulse_speed), 4.0)
-					var text_scale: float = 1.0 + (pulse * pulse_intensity)
-					text_label.scale = Vector2(text_scale, text_scale)
+		if is_clicking:
+			target_scale = press_scale
 		else:
-			current_hover_intensity = move_toward(current_hover_intensity, 0.0, 3.0 * delta)
-			offset_transform_scale = offset_transform_scale.lerp(
-				original_scale, response_speed * delta
+			var pitch: float = 1.0 - (absf(norm_y) * 0.04)
+			target_scale = hover_scale * Vector2(1.0, pitch)
+	else:
+		current_hover_intensity = move_toward(current_hover_intensity, 0.0, 3.0 * delta)
+		target_scale = original_scale
+
+	_update_spring_scale(delta, target_scale)
+	offset_transform_rotation = lerpf(
+		offset_transform_rotation, target_rotation, response_speed * delta
+	)
+	current_tilt = current_tilt.lerp(tilt_target, response_speed * delta)
+	_update_shadow_projection()
+
+	if is_instance_valid(bg_material):
+		bg_material.set_shader_parameter("hover_intensity", current_hover_intensity)
+		bg_material.set_shader_parameter("ui_tilt", current_tilt * current_hover_intensity)
+		if is_mouse_over and is_instance_valid(bg_rect):
+			var local_mouse_pos: Vector2 = bg_rect.get_local_mouse_position()
+			var mouse_uv: Vector2 = Vector2(
+				local_mouse_pos.x / bg_rect.size.x, local_mouse_pos.y / bg_rect.size.y
 			)
+			bg_material.set_shader_parameter("mouse_pos_uv", mouse_uv)
 
-			if is_instance_valid(text_label):
-				text_label.position = text_label.position.lerp(Vector2.ZERO, response_speed * delta)
-				text_label.scale = text_label.scale.lerp(Vector2(1.0, 1.0), response_speed * delta)
+	if is_instance_valid(border_material):
+		border_material.set_shader_parameter("hover_intensity", current_hover_intensity)
+		border_material.set_shader_parameter("ui_tilt", current_tilt * current_hover_intensity)
 
-		offset_transform_rotation = lerpf(
-			offset_transform_rotation, target_rotation, response_speed * delta
-		)
-		current_tilt = current_tilt.lerp(tilt_target, response_speed * delta)
 
-		if not is_mouse_over and current_hover_intensity < 0.001:
-			current_hover_intensity = 0.0
-			offset_transform_rotation = 0.0
-			offset_transform_scale = original_scale
-			current_tilt = Vector2.ZERO
-			if is_instance_valid(text_label):
-				text_label.position = Vector2.ZERO
-				text_label.scale = Vector2(1.0, 1.0)
+## Configures button as a chapter card using [ChapterData] properties.
+func setup_chapter_card(chapter: ChapterData) -> void:
+	print("HorrorButton: [", name, "] setup chapter card executed.")
+	is_chapter_card = true
+	corner_cut = 0.0
+	custom_text = ""
+	text = ""
+	glitch_text = ""
+	can_glitch = false
+	custom_minimum_size = card_size
 
-		if is_instance_valid(bg_material):
-			bg_material.set_shader_parameter("hover_intensity", current_hover_intensity)
-			bg_material.set_shader_parameter("ui_tilt", current_tilt * current_hover_intensity)
-			if is_mouse_over and is_instance_valid(bg_rect):
-				var local_mouse_pos: Vector2 = bg_rect.get_local_mouse_position()
-				var mouse_uv: Vector2 = Vector2(
-					local_mouse_pos.x / bg_rect.size.x, local_mouse_pos.y / bg_rect.size.y
-				)
-				bg_material.set_shader_parameter("mouse_pos_uv", mouse_uv)
+	if not is_inside_tree():
+		await ready
 
-		if is_instance_valid(border_material):
-			border_material.set_shader_parameter("hover_intensity", current_hover_intensity)
-			border_material.set_shader_parameter("ui_tilt", current_tilt * current_hover_intensity)
+	_find_internal_nodes()
 
-		if is_instance_valid(label_material):
-			label_material.set_shader_parameter("hover_intensity", current_hover_intensity)
-			label_material.set_shader_parameter("ui_tilt", current_tilt * current_hover_intensity)
+	if is_instance_valid(text_label):
+		text_label.visible = false
 
-	if is_instance_valid(label_material):
-		var shadows_moved: bool = false
-		for i: int in 2:
-			if is_mouse_over:
-				var uv_target: float = clampf(mouse_pos.x / size.x, -0.2, 1.2)
-				if not is_equal_approx(shadows_x[i], uv_target):
-					shadows_x[i] = move_toward(shadows_x[i], uv_target, hunt_speed * delta)
-					shadows_moved = true
-			else:
-				pace_timers[i] -= delta
-				if pace_timers[i] <= 0.0:
-					pace_timers[i] = randf_range(1.0, 3.0)
-					target_shadows_x[i] = randf_range(-0.2, 1.2)
-					walk_speeds[i] = randf_range(walk_speed * 0.5, walk_speed * 1.5)
+	if is_instance_valid(bg_material):
+		bg_material.set_shader_parameter("is_card_mode", true)
+		bg_material.set_shader_parameter("corner_cut", 0.0)
+		bg_material.set_shader_parameter("hover_intensity", 0.0)
+		if chapter != null and chapter.image != null:
+			bg_material.set_shader_parameter("blood_texture", chapter.image)
 
-				if not is_equal_approx(shadows_x[i], target_shadows_x[i]):
-					shadows_x[i] = move_toward(
-						shadows_x[i], target_shadows_x[i], walk_speeds[i] * delta
-					)
-					shadows_moved = true
+	if is_instance_valid(border_material):
+		border_material.set_shader_parameter("hover_intensity", 0.0)
+		border_material.set_shader_parameter("corner_cut", 0.0)
 
-		if shadows_moved:
-			label_material.set_shader_parameter("shadow_1_x", shadows_x[0])
-			label_material.set_shader_parameter("shadow_2_x", shadows_x[1])
+	if is_instance_valid(play_overlay):
+		play_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		play_overlay.z_index = 1
+		play_overlay.visible = false
+		if play_icon != null:
+			play_overlay.texture = play_icon
 
-	if can_glitch and is_instance_valid(text_label):
-		glitch_timer -= delta
-		if glitch_timer <= 0.0:
-			if is_glitching:
-				print("HorrorButton: Glitch window complete. Restoring text.")
-				is_glitching = false
-				text_label.text = original_button_text
-				glitch_timer = randf_range(min_glitch_time, max_glitch_time)
-			else:
-				print("HorrorButton: Glitch activation state achieved.")
-				is_glitching = true
-				text_label.text = glitch_text
-				glitch_timer = glitch_duration
+	_update_corner_cuts()
+	_sync_child_rects()
