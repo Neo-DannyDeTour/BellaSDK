@@ -3,6 +3,12 @@ class_name PlayerInteractionComponent
 extends Node
 
 # --------------------------------------
+# CONSTANTS & VARIABLES
+# --------------------------------------
+## Minimum mass in kilograms required for an object to be considered heavy.
+const HEAVY_OBJECT_MASS_THRESHOLD: float = 10.0
+
+# --------------------------------------
 # EXPORTS
 # --------------------------------------
 @export_category("Item Handling")
@@ -37,8 +43,14 @@ var held_item: RigidBody3D = null
 ## Flag indicating whether the player is currently operating fixed machinery.
 var is_operating_machine: bool = false
 
+## Tracks if a carried object or lifting state restricts sprint and jump.
+var is_heavy_carrying: bool = false
+
 ## Flag indicating whether the player is carrying a heavy two-handed object.
-var is_heavy_lifting: bool = false
+var is_heavy_lifting: bool = false:
+	set(value):
+		is_heavy_lifting = value
+		update_heavy_carry_state()
 
 ## Yaw heading baseline used for heavy lifting rotation clamping.
 var heavy_lift_yaw_base: float = 0.0
@@ -147,6 +159,8 @@ func throw_held_item() -> void:
 		return
 
 	var item_to_throw: RigidBody3D = held_item
+	held_item = null
+	update_heavy_carry_state()
 
 	var throw_dir: Vector3 = -camera.global_transform.basis.z.normalized()
 	throw_dir.y += 0.2
@@ -165,6 +179,8 @@ func drop_held_item() -> void:
 		return
 
 	var item_to_drop: RigidBody3D = held_item
+	held_item = null
+	update_heavy_carry_state()
 
 	if item_to_drop.has_method("drop"):
 		item_to_drop.drop()
@@ -179,8 +195,17 @@ func _on_global_item_dropped(item: Node3D, actor: Node3D) -> void:
 	if actor == player:
 		print("InteractionComponent: Global drop received. Restoring hands/weapons.")
 		held_item = null
+		update_heavy_carry_state()
 		_check_glider_restore(item)
 		_set_weapon_active(true)
+
+
+## Clears tracking state for carried items and unhides weapons.
+func force_clear_hands() -> void:
+	print("InteractionComponent: force_clear_hands() called. Clearing tracking variables.")
+	held_item = null
+	update_heavy_carry_state()
+	_set_weapon_active(true)
 
 
 ## Restores player sprint capabilities if the dropped item is a glider.
@@ -206,6 +231,18 @@ func _set_weapon_active(active: bool) -> void:
 		weapon_holder.set_physics_process(active)
 
 
+## Synchronizes heavy carry state and notifies the event bus.
+func update_heavy_carry_state() -> void:
+	var is_heavy: bool = (
+		is_heavy_lifting
+		or (is_instance_valid(held_item) and held_item.mass >= HEAVY_OBJECT_MASS_THRESHOLD)
+	)
+	if is_heavy_carrying != is_heavy:
+		is_heavy_carrying = is_heavy
+		print("InteractionComponent: Heavy carry toggled -> ", is_heavy_carrying)
+		Events.heavy_carry_toggled.emit(is_heavy_carrying)
+
+
 ## Directly forces the player to grab and hold a designated physics object.
 ## [param item] The [RigidBody3D] to grab.
 func force_grab_item(item: RigidBody3D) -> void:
@@ -215,18 +252,12 @@ func force_grab_item(item: RigidBody3D) -> void:
 
 	held_item = item
 	_last_grab_time = Time.get_ticks_msec()
+	update_heavy_carry_state()
 
 	if held_item.has_method("pick_up"):
 		held_item.pick_up(hold_position, player)
 
 	_set_weapon_active(false)
-
-
-## Clears tracking state for carried items and unhides weapons.
-func force_clear_hands() -> void:
-	print("InteractionComponent: force_clear_hands() called." + " Clearing tracking variables.")
-	held_item = null
-	_set_weapon_active(true)
 
 
 ## Reparents and positions an item onto the weapon holder socket.
@@ -259,3 +290,21 @@ func attach_item_to_weapon_holder(
 			target_player.locomotion_component as PlayerLocomotionComponent
 		)
 		loco.can_sprint = false
+
+
+## Sets heavy lifting state, restricts player sprint, and dispatches global event.
+## [param active] Whether the player is currently carrying a heavy object.
+func _set_heavy_lifting(active: bool) -> void:
+	if is_heavy_lifting == active:
+		return
+
+	print("InteractionComponent: Setting heavy lifting state to: ", active)
+	is_heavy_lifting = active
+
+	if "locomotion_component" in player and is_instance_valid(player.locomotion_component):
+		var loco: PlayerLocomotionComponent = (
+			player.locomotion_component as PlayerLocomotionComponent
+		)
+		loco.can_sprint = not active
+
+	Events.heavy_carry_toggled.emit(active)

@@ -216,8 +216,9 @@ func _apply_air_movement(delta: float, input_dir: Vector2) -> void:
 	player.velocity.z = loco.get_direction().z * current_speed
 
 
-## Polls the environment to determine if the player has landed, hit water, or grabbed a ledge.
+## Polls environment transitions, landing impacts, and input-gated ledge vaults.
 func _check_transitions() -> void:
+	print("StateAir: _check_transitions() called.")
 	var loco: Node = player.locomotion_component
 	var env: Node = player.environment_component
 	var interact: Node = player.interaction_component
@@ -244,9 +245,13 @@ func _check_transitions() -> void:
 	):
 		if not is_holding_item:
 			env.vault_controller.process_vault_scan()
-			if env.vault_controller.get("can_vault_current_ledge"):
+			var jump_requested: bool = (
+				GestureInputManager.is_action_just_pressed("jump") or jump_buffer_timer > 0.0
+			)
+			if jump_requested and env.vault_controller.get("can_vault_current_ledge"):
 				if env.vault_controller.try_vault(loco.crouching):
-					print("StateAir: Vaulting ledge mid-air.")
+					jump_buffer_timer = 0.0
+					print("StateAir: Vaulting ledge on jump input.")
 					state_machine.transition_to("Vault")
 					return
 

@@ -492,9 +492,12 @@ func _physics_process(_delta: float) -> void:
 		var distance_vector: Vector3 = target_pos - global_position
 		linear_velocity = distance_vector * 15.0
 
-		var target_basis: Basis = holder.global_basis
+		# Preserve current yaw facing, but upright pitch and roll to point up
+		var current_yaw: float = global_transform.basis.get_euler().y
+		var upright_basis: Basis = Basis.from_euler(Vector3(0.0, current_yaw, 0.0))
+
 		var current_quat: Quaternion = global_basis.get_rotation_quaternion()
-		var diff_quat: Quaternion = target_basis.get_rotation_quaternion() * current_quat.inverse()
+		var diff_quat: Quaternion = upright_basis.get_rotation_quaternion() * current_quat.inverse()
 
 		var axis: Vector3 = Vector3(diff_quat.x, diff_quat.y, diff_quat.z)
 		var angle: float = 2.0 * acos(clampf(diff_quat.w, -1.0, 1.0))
@@ -506,7 +509,6 @@ func _physics_process(_delta: float) -> void:
 			angular_velocity = axis.normalized() * (angle * 20.0)
 		else:
 			angular_velocity = Vector3.ZERO
-		return
 
 	submerged = false
 

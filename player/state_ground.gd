@@ -104,8 +104,17 @@ func physics_update(delta: float) -> void:
 
 	# 3. Handle Jump / Vault Logic via GestureInputManager
 	if GestureInputManager.is_action_just_triggered("jump"):
-		var is_pressing_forward: bool = GestureInputManager.is_action_active("forward")
+		var interact: PlayerInteractionComponent = (
+			player.interaction_component as PlayerInteractionComponent
+		)
+		var is_holding_heavy: bool = is_instance_valid(interact) and interact.is_heavy_carrying
 
+		if is_holding_heavy:
+			print("StateGround: Object is too heavy to jump (>= 10kg).")
+			Events.hint_requested.emit("Cannot jump while carrying a heavy object.", 2.0)
+			return
+
+		var is_pressing_forward: bool = GestureInputManager.is_action_active("forward")
 		if (
 			is_pressing_forward
 			and not snapped_last_frame
@@ -161,10 +170,9 @@ func _perform_jump() -> void:
 	state_machine.transition_to("Air", {"jump": true})
 
 
-## Calculates desired travel speed based on crouch, sprint, and terrain modifiers.
-## [param delta] The frame delta time in seconds.
-## [param input_dir] Current normalized 2D movement vector.
+## Updates [member PlayerLocomotionComponent.crouching] based on input and ceiling checks.
 func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
+	print("StateGround: _calculate_target_speed() called.")
 	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
 	var interact: PlayerInteractionComponent = (
 		player.interaction_component as PlayerInteractionComponent
@@ -203,7 +211,13 @@ func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
 			wants_to_sprint = false
 
 	# --- 3. SPRINT RESTRICTIONS ---
-	if not is_moving or wants_to_crouch or loco.on_sand or not loco.can_sprint:
+	var is_holding_heavy: bool = is_instance_valid(interact) and interact.is_heavy_carrying
+
+	if GestureInputManager.is_action_just_triggered("sprint") and is_holding_heavy:
+		print("StateGround: Sprint rejected. Object is too heavy.")
+		Events.hint_requested.emit("Cannot sprint while carrying a heavy object.", 2.0)
+
+	if not is_moving or wants_to_crouch or loco.on_sand or not loco.can_sprint or is_holding_heavy:
 		wants_to_sprint = false
 
 	loco.sprint_active = wants_to_sprint
@@ -211,16 +225,13 @@ func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
 	# --- 4. CROUCH LOGIC & COLLISION ---
 	if wants_to_crouch:
 		loco.crouching = true
-		loco.standing_collision.disabled = true
-		loco.crouching_collision.disabled = false
-	elif not loco.crouch_cast_check.is_colliding():
-		loco.crouching = false
-		loco.standing_collision.disabled = false
-		loco.crouching_collision.disabled = true
-	else:
+	elif loco.crouching and loco.crouch_cast_check.is_colliding():
 		loco.crouching = true
-		loco.standing_collision.disabled = true
-		loco.crouching_collision.disabled = false
+	else:
+		loco.crouching = false
+
+	loco.standing_collision.disabled = loco.crouching
+	loco.crouching_collision.disabled = not loco.crouching
 
 	if previous_crouch != loco.crouching:
 		Events.player_crouch_changed.emit(loco.crouching)
