@@ -1,3 +1,4 @@
+## Screen controller for selecting and launching game chapters.
 extends Control
 
 ## Stores the currently active instance of this screen to manage global state.
@@ -31,6 +32,7 @@ var selected_chapter: ChapterData = null
 @onready var background: TextureRect = %Background
 
 
+## Initializes UI signals, populates the chapter selection list, and hides template.
 func _ready() -> void:
 	active_instance = self
 	chapter_button_template.hide()
@@ -38,20 +40,20 @@ func _ready() -> void:
 	back_button.pressed.connect(_on_back_pressed)
 
 	for i: int in chapters.size():
-		# Fixed static type: Changed Dictionary to ChapterData
 		var chapter: ChapterData = chapters[i]
 		var item: Control = chapter_button_template.duplicate() as Control
 		item.show()
 
-		var btn: Button = item.get_node("Btn") as Button
+		var btn: HorrorButton = item.get_node("HorrorButton") as HorrorButton
 		var label: Label = item.get_node("ChapterTitle") as Label
 
-		btn.icon = chapter.image
 		label.text = str(i + 1) + ". " + chapter.chapter_name
+		btn.setup_chapter_card(chapter)
 
-		btn.pressed.connect(_on_chapter_selected.bind(chapter))
+		btn.mouse_entered.connect(_on_chapter_hovered.bind(chapter))
+		btn.mouse_exited.connect(_on_chapter_unhovered)
+		btn.pressed.connect(_on_chapter_clicked.bind(chapter))
 		btn.gui_input.connect(_on_image_gui_input.bind(chapter))
-		btn.mouse_entered.connect(_on_chapter_selected.bind(chapter))
 
 		chapter_list.add_child(item)
 
@@ -59,19 +61,20 @@ func _ready() -> void:
 		_on_chapter_selected(chapters[0])
 
 
+## Cleans up static active instance reference upon scene exit.
 func _exit_tree() -> void:
 	if active_instance == self:
 		active_instance = null
 
 
-# --- Catch ESC specifically for this screen ---
+## Intercepts UI cancel (ESC) actions to handle back navigation safely.
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed("ui_cancel"):
 		_on_back_pressed()
-		# This prevents the Main Menu from also receiving the ESC press
 		get_viewport().set_input_as_handled()
 
 
+## Handles selection updates when a chapter is permanently chosen or clicked.
 func _on_chapter_selected(chapter: ChapterData) -> void:
 	print("Player selected chapter: ", chapter.chapter_name)
 	selected_chapter = chapter
@@ -80,6 +83,14 @@ func _on_chapter_selected(chapter: ChapterData) -> void:
 	background.texture = chapter.image
 
 
+## Immediately selects and launches the chapter when its button is clicked.
+func _on_chapter_clicked(chapter: ChapterData) -> void:
+	print("Player clicked chapter button: ", chapter.chapter_name)
+	_on_chapter_selected(chapter)
+	_on_play_pressed()
+
+
+## Executes game scene launch logic for the currently selected chapter.
 func _on_play_pressed() -> void:
 	if selected_chapter:
 		print("Player pressed play for chapter: ", selected_chapter.chapter_name)
@@ -93,6 +104,7 @@ func _on_play_pressed() -> void:
 		push_warning("No scene path assigned to this chapter!")
 
 
+## Handles returning to previous menu or restoring parent navigation buttons.
 func _on_back_pressed() -> void:
 	print("Player triggered back/cancel action.")
 	var parent: Node = get_parent()
@@ -103,6 +115,7 @@ func _on_back_pressed() -> void:
 		get_tree().change_scene_to_file("res://ui/main_menu.tscn")
 
 
+## Handles double-click navigation triggers directly on the chapter image.
 func _on_image_gui_input(event: InputEvent, chapter: ChapterData) -> void:
 	if event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_LEFT and event.double_click:
@@ -111,12 +124,15 @@ func _on_image_gui_input(event: InputEvent, chapter: ChapterData) -> void:
 			_on_play_pressed()
 
 
+## Updates background and labels preview on mouse hover.
 func _on_chapter_hovered(chapter: ChapterData) -> void:
+	print("Player hovered over chapter: ", chapter.chapter_name)
 	background.texture = chapter.image
 	desc_title.text = chapter.chapter_name
 	desc_text.text = chapter.description
 
 
+## Restores background and preview details back to selected chapter on mouse exit.
 func _on_chapter_unhovered() -> void:
 	if selected_chapter:
 		background.texture = selected_chapter.image

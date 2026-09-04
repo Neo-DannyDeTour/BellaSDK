@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://c261acv3ex6c0"]
 
 [ext_resource type="Script" uid="uid://4nkt0134wccl" path="res://ui/main_menu.gd" id="1_2o76q"]
-[ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="2_2o76q"]
 [ext_resource type="Texture2D" uid="uid://dutrfuowe3e1q" path="res://assets/images/Concept/Key_art.PNG" id="2_iyrh0"]
+[ext_resource type="Texture2D" uid="uid://2txo48fixqan" path="res://assets/images/MainMenuPlate.png" id="3_8jgmr"]
 [ext_resource type="PackedScene" uid="uid://8m8l0uplgvm" path="res://ui/HorrorButton.tscn" id="3_kaxbk"]
 [ext_resource type="Script" uid="uid://b53ak0y1rcvq4" path="res://ui/settings_search.gd" id="5_kaxbk"]
 [ext_resource type="Script" uid="uid://dbuos71yhftq2" path="res://ui/options_menu.gd" id="5_lsdqh"]
@@ -50,78 +50,6 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxTexture_6bivr")
 
-[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1680358888]
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -125.0
-offset_top = -425.0
-offset_right = 125.0
-grow_horizontal = 2
-grow_vertical = 0
-mouse_filter = 2
-theme_override_constants/margin_bottom = 50
-
-[node name="MainButtons" type="VBoxContainer" parent="MarginContainer" unique_id=988684812]
-process_mode = 3
-custom_minimum_size = Vector2(500, 500)
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
-mouse_filter = 2
-theme_override_constants/separation = 8
-
-[node name="Continue" parent="MarginContainer/MainButtons" unique_id=929896540 instance=ExtResource("3_kaxbk")]
-unique_name_in_owner = true
-layout_mode = 2
-custom_text = "Continue"
-text_padding = Vector2(32, 16)
-glitch_text = "Suffering"
-
-[node name="NewGame" parent="MarginContainer/MainButtons" unique_id=1685051035 instance=ExtResource("3_kaxbk")]
-unique_name_in_owner = true
-layout_mode = 2
-custom_text = "New Game"
-text_padding = Vector2(32, 16)
-glitch_text = "No Game"
-
-[node name="RestartGame" parent="MarginContainer/MainButtons" unique_id=2058699631 instance=ExtResource("3_kaxbk")]
-unique_name_in_owner = true
-layout_mode = 2
-custom_text = "Restart"
-text_padding = Vector2(32, 16)
-glitch_text = "Stop Trying"
-
-[node name="SaveGame" parent="MarginContainer/MainButtons" unique_id=1011578983 instance=ExtResource("3_kaxbk")]
-unique_name_in_owner = true
-layout_mode = 2
-custom_text = "Save Game"
-text_padding = Vector2(32, 16)
-glitch_text = "Nowhere is Safe"
-
-[node name="LoadGame" parent="MarginContainer/MainButtons" unique_id=1565020865 instance=ExtResource("3_kaxbk")]
-unique_name_in_owner = true
-layout_mode = 2
-custom_text = "Load Game"
-text_padding = Vector2(32, 16)
-glitch_text = "Load Pain"
-
-[node name="Options" parent="MarginContainer/MainButtons" unique_id=457392862 instance=ExtResource("3_kaxbk")]
-unique_name_in_owner = true
-layout_mode = 2
-custom_text = "Options"
-text_padding = Vector2(32, 16)
-glitch_text = "No Options"
-
-[node name="Exit" parent="MarginContainer/MainButtons" unique_id=105712239 instance=ExtResource("3_kaxbk")]
-unique_name_in_owner = true
-layout_mode = 2
-custom_text = "Exit"
-text_padding = Vector2(32, 16)
-glitch_text = "No Escape"
-
 [node name="GameNameLabel" type="Label" parent="." unique_id=1725804782]
 unique_name_in_owner = true
 anchors_preset = 8
@@ -130,17 +58,106 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -491.0
-offset_top = -226.0
+offset_top = -310.0
 offset_right = 491.0
-offset_bottom = -102.0
+offset_bottom = -234.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
-theme_override_fonts/font = ExtResource("2_2o76q")
 theme_override_font_sizes/font_size = 75
 text = "Bella Bittersweet: Tunnel Vision"
 horizontal_alignment = 1
 vertical_alignment = 1
+
+[node name="PlateCenterContainer" type="CenterContainer" parent="." unique_id=940863943]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="PlateCenterContainer" unique_id=287636838]
+layout_mode = 2
+theme_override_constants/margin_top = 350
+
+[node name="PlateContainer" type="Control" parent="PlateCenterContainer/MarginContainer" unique_id=2102469252]
+custom_minimum_size = Vector2(800, 800)
+layout_mode = 2
+
+[node name="MetalPlate" type="TextureRect" parent="PlateCenterContainer/MarginContainer/PlateContainer" unique_id=705311146]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("3_8jgmr")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="MenuMargin" type="MarginContainer" parent="PlateCenterContainer/MarginContainer/PlateContainer" unique_id=2084975143]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -250.0
+offset_top = -250.0
+offset_right = 250.0
+offset_bottom = 250.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MainButtons" type="VBoxContainer" parent="PlateCenterContainer/MarginContainer/PlateContainer/MenuMargin" unique_id=988684812]
+unique_name_in_owner = true
+process_mode = 3
+custom_minimum_size = Vector2(250, 500)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="Continue" parent="PlateCenterContainer/MarginContainer/PlateContainer/MenuMargin/MainButtons" unique_id=929896540 instance=ExtResource("3_kaxbk")]
+unique_name_in_owner = true
+layout_mode = 2
+custom_text = "Continue"
+glitch_text = "Suffering"
+
+[node name="NewGame" parent="PlateCenterContainer/MarginContainer/PlateContainer/MenuMargin/MainButtons" unique_id=1685051035 instance=ExtResource("3_kaxbk")]
+unique_name_in_owner = true
+layout_mode = 2
+custom_text = "New Game"
+glitch_text = "No Game"
+
+[node name="RestartGame" parent="PlateCenterContainer/MarginContainer/PlateContainer/MenuMargin/MainButtons" unique_id=2058699631 instance=ExtResource("3_kaxbk")]
+unique_name_in_owner = true
+layout_mode = 2
+custom_text = "Restart"
+glitch_text = "Stop Trying"
+
+[node name="SaveGame" parent="PlateCenterContainer/MarginContainer/PlateContainer/MenuMargin/MainButtons" unique_id=1011578983 instance=ExtResource("3_kaxbk")]
+unique_name_in_owner = true
+layout_mode = 2
+custom_text = "Save Game"
+glitch_text = "Nowhere is Safe"
+
+[node name="LoadGame" parent="PlateCenterContainer/MarginContainer/PlateContainer/MenuMargin/MainButtons" unique_id=1565020865 instance=ExtResource("3_kaxbk")]
+unique_name_in_owner = true
+layout_mode = 2
+custom_text = "Load Game"
+glitch_text = "Load Pain"
+
+[node name="Options" parent="PlateCenterContainer/MarginContainer/PlateContainer/MenuMargin/MainButtons" unique_id=457392862 instance=ExtResource("3_kaxbk")]
+unique_name_in_owner = true
+layout_mode = 2
+custom_text = "Options"
+glitch_text = "No Options"
+
+[node name="Exit" parent="PlateCenterContainer/MarginContainer/PlateContainer/MenuMargin/MainButtons" unique_id=105712239 instance=ExtResource("3_kaxbk")]
+unique_name_in_owner = true
+layout_mode = 2
+custom_text = "Exit"
+glitch_text = "No Escape"
 
 [node name="CenterContainer" type="MarginContainer" parent="." unique_id=722417156]
 unique_name_in_owner = true
@@ -348,7 +365,6 @@ custom_minimum_size = Vector2(400, 80)
 layout_mode = 2
 size_flags_horizontal = 0
 custom_text = "Reset to Defaults"
-text_padding = Vector2(32, 16)
 glitch_text = "Cut to pieces"
 
 [node name="MarginContainer2" type="MarginContainer" parent="CenterContainer/OptionsMenu/ContentVBox/BottomBar" unique_id=643964401]
@@ -362,7 +378,6 @@ layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 1
 custom_text = "Back"
-text_padding = Vector2(32, 16)
 glitch_text = "No Going Back"
 
 [node name="MarginContainer3" type="MarginContainer" parent="CenterContainer/OptionsMenu/ContentVBox/BottomBar" unique_id=1890577678]

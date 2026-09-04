@@ -22,7 +22,7 @@ const CHAPTER_SCREEN: PackedScene = preload("res://ui/menu_chapter_screen.tscn")
 @onready var game_name_label: Label = %GameNameLabel
 
 ## Vertical container grouping root buttons.
-@onready var main_buttons: VBoxContainer = $MarginContainer/MainButtons
+@onready var main_buttons: VBoxContainer = %MainButtons
 
 ## Center container wrapping the options menu overlay.
 @onready var options_menu_container: Control = %CenterContainer
@@ -144,7 +144,7 @@ func _check_game_context() -> void:
 		if is_instance_valid(save_button):
 			save_button.show()
 		if is_instance_valid(new_game_button):
-			new_game_button.text = "End Run"
+			new_game_button.text = ""
 	else:
 		if is_instance_valid(continue_button):
 			continue_button.hide()

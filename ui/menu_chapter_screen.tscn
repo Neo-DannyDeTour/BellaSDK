@@ -7,6 +7,8 @@
 [ext_resource type="Shader" uid="uid://d3hb763n705g4" path="res://ui/menu_chapter_screen.gdshader" id="5_ef8iv"]
 [ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="5_sl2hs"]
 [ext_resource type="PackedScene" uid="uid://8m8l0uplgvm" path="res://ui/HorrorButton.tscn" id="7_8qdoq"]
+[ext_resource type="Texture2D" uid="uid://bam022gmwifjq" path="res://assets/kenney_input-prompts_1.5/Steam Controller/Vector/steam_button_start_icon.svg" id="7_51c2a"]
+[ext_resource type="Texture2D" uid="uid://bwthckl8hedp1" path="res://assets/kenney_input-prompts_1.5/Steam Controller/Default/steam_button_start_icon.png" id="8_bbtrv"]
 
 [sub_resource type="Resource" id="Resource_53ons"]
 script = ExtResource("2_sl2hs")
@@ -88,6 +90,7 @@ size_flags_vertical = 3
 
 [node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/VBoxContainer/MainLayout" unique_id=1253466354]
 custom_minimum_size = Vector2(600, 300)
+clip_contents = false
 layout_mode = 2
 size_flags_vertical = 3
 
@@ -100,12 +103,30 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(250, 200)
 layout_mode = 2
 
-[node name="Btn" type="Button" parent="MarginContainer/VBoxContainer/MainLayout/ScrollContainer/ChapterList/ChapterButtonTemplate" unique_id=98251096]
-custom_minimum_size = Vector2(400, 225)
+[node name="HorrorButton" parent="MarginContainer/VBoxContainer/MainLayout/ScrollContainer/ChapterList/ChapterButtonTemplate" unique_id=929896540 instance=ExtResource("7_8qdoq")]
+custom_minimum_size = Vector2(240, 135)
 layout_mode = 2
-size_flags_vertical = 3
-icon_alignment = 1
-expand_icon = true
+parallax_intensity = 1.5
+card_size = Vector2(350, 200)
+play_icon = ExtResource("8_bbtrv")
+
+[node name="PlayOverlay" type="TextureRect" parent="MarginContainer/VBoxContainer/MainLayout/ScrollContainer/ChapterList/ChapterButtonTemplate/HorrorButton" unique_id=1151847897]
+visible = false
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -36.0
+offset_top = -36.0
+offset_right = 36.0
+offset_bottom = 36.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("7_51c2a")
+stretch_mode = 3
 
 [node name="ChapterTitle" type="Label" parent="MarginContainer/VBoxContainer/MainLayout/ScrollContainer/ChapterList/ChapterButtonTemplate" unique_id=748323791]
 layout_mode = 2
@@ -150,14 +171,20 @@ layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 10
 
-[node name="PlayButton" parent="MarginContainer/VBoxContainer/MainLayout/DetailsPanel/MarginContainer/BottomSplit/ButtonSection" unique_id=929896540 instance=ExtResource("7_8qdoq")]
+[node name="PlayButton" parent="MarginContainer/VBoxContainer/MainLayout/DetailsPanel/MarginContainer/BottomSplit/ButtonSection" unique_id=1925590167 instance=ExtResource("7_8qdoq")]
 unique_name_in_owner = true
 layout_mode = 2
 custom_text = "Play"
 glitch_text = "DIE!"
+card_size = null
+card_base_brightness = null
+card_hover_brightness = null
 
 [node name="BackButton" parent="MarginContainer/VBoxContainer/MainLayout/DetailsPanel/MarginContainer/BottomSplit/ButtonSection" unique_id=583418114 instance=ExtResource("7_8qdoq")]
 unique_name_in_owner = true
 layout_mode = 2
 custom_text = "Back to Main Menu"
 glitch_text = "Back to Hell"
+card_size = null
+card_base_brightness = null
+card_hover_brightness = null
