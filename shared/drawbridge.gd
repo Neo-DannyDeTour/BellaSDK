@@ -1,45 +1,54 @@
 @tool
+## A physical drawbridge that falls when its supporting ropes are broken.
+##
+## [Drawbridge] uses a [RigidBody3D] and a series of dynamic ropes. When the player
+## breaks all connected ropes, the bridge unlocks its physics constraints, falls,
+## and then locks into place upon hitting the ground.
+class_name Drawbridge
 extends Node3D
 
-## Property: Bridge Size.
 @export_category("Bridge Setup")
+## The 3D dimensions of the bridge platform.
 @export var bridge_size: Vector3 = Vector3(2.0, 0.2, 5.0):
 	set(value):
 		bridge_size = value
 		_update_bridge_shape()
 
-## Property: Hinge Offset.
+## The offset position of the rotational hinge relative to the bridge's length.
 @export_range(-1.0, 1.0) var hinge_offset: float = -1.0:
 	set(value):
 		hinge_offset = value
 		_update_bridge_shape()
 
-## Property: Show Debug Pin.
 @export_category("Debug Visuals")
+## Toggles the visibility of a red cylinder indicating the bridge's hinge axis in the editor.
 @export var show_debug_pin: bool = true:
 	set(value):
 		show_debug_pin = value
 		_update_bridge_shape()
 
-## Property: Pin Extension.
+## How far the debug pin extends beyond the sides of the bridge mesh.
 @export var pin_extension: float = 0.5:
 	set(value):
 		pin_extension = value
 		_update_bridge_shape()
 
-## Property: Ropes.
 @export_category("Puzzle Logic")
-@export var ropes: Array[NodePath]
+## A list of [NodePath] references to the rope nodes holding the bridge up.
+@export var ropes: Array[NodePath] = []
 
-## Property: Intact Ropes.
+## Tracks how many ropes are currently unbroken.
 var intact_ropes: int = 0
-## Property: Bridge Fallen.
+
+## Tracks if the bridge has already been released and fallen to the ground.
 var bridge_fallen: bool = false
 
-## Property: Bridge.
+## Reference to the main physical bridge body.
 @onready var bridge: RigidBody3D = $TheBridge
 
 
+## Called when the node enters the scene tree for the first time.
+## Connects rope signals and initializes physics states.
 func _ready() -> void:
 	_update_bridge_shape()
 
@@ -67,6 +76,10 @@ func _ready() -> void:
 	print("Bridge initialized. Holding on by ", intact_ropes, " ropes.")
 
 
+## Recursively searches a node's children to find a specific signal.
+## [param parent] The starting node to search from.
+## [param sig_name] The string name of the signal to find.
+## [return] The first [Node] found that has the signal, or [code]null[/code].
 func _find_signal_source(parent: Node, sig_name: String) -> Node:
 	if parent.has_signal(sig_name):
 		return parent
@@ -79,6 +92,7 @@ func _find_signal_source(parent: Node, sig_name: String) -> Node:
 	return null
 
 
+## Dynamically scales the bridge's mesh and collision based on exported properties.
 func _update_bridge_shape() -> void:
 	if not is_node_ready():
 		return
@@ -111,6 +125,7 @@ func _update_bridge_shape() -> void:
 	_draw_debug_pin()
 
 
+## Instantiates or updates the red hinge debug pin in the editor.
 func _draw_debug_pin() -> void:
 	if not is_node_ready():
 		return
@@ -142,6 +157,7 @@ func _draw_debug_pin() -> void:
 	debug_pin.rotation_degrees = Vector3(0, 0, 90)
 
 
+## Triggered when a connected rope is destroyed. Drops the bridge if no ropes remain.
 func _on_rope_broken() -> void:
 	if Engine.is_editor_hint():
 		return
@@ -151,6 +167,7 @@ func _on_rope_broken() -> void:
 		drop_bridge()
 
 
+## Unfreezes the bridge physics body, allowing it to swing down.
 func drop_bridge() -> void:
 	print("Drawbridge: drop_bridge() called. Dropping the bridge.")
 	if Engine.is_editor_hint():
@@ -162,6 +179,8 @@ func drop_bridge() -> void:
 	bridge.apply_central_impulse(Vector3.DOWN * 0.1)
 
 
+## Triggered when the bridge body hits the floor trigger. Freezes the bridge in place.
+## [param body] The [Node3D] that entered the trigger area.
 func _on_ground_lock_trigger_body_entered(body: Node3D) -> void:
 	if Engine.is_editor_hint():
 		return

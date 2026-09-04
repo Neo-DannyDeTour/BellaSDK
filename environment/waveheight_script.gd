@@ -1,6 +1,13 @@
 @tool
+## A script that simulates buoyancy by adjusting the height and rotation of a mesh
+## to match the surface of a dynamic water plane.
+##
+## [WaveHeightController] calculates the height of the water at multiple points to determine
+## the draft and tilt of the mesh, causing it to bob and sway with the waves.
+class_name WaveHeightController
 extends MeshInstance3D
 
+## The water node providing height calculations via a [method get_height] method.
 @export var water: Node3D
 
 @export_group("Buoyancy Settings")
@@ -11,12 +18,18 @@ extends MeshInstance3D
 ## How smoothly the ship reacts to waves. Higher = stiffer.
 @export var responsiveness: float = 6.0
 
-# Cached variables to save processing time
+## Tracks if the water node is valid and has the required methods.
 var _is_water_valid: bool = false
+
+## Cached Z-axis offset vector for probe calculations.
 var _z_offset: Vector3 = Vector3.ZERO
+
+## Cached X-axis offset vector for probe calculations.
 var _x_offset: Vector3 = Vector3.ZERO
 
 
+## Called when the node enters the scene tree for the first time.
+## Validates the water node and caches offset vectors.
 func _ready() -> void:
 	print("Initializing buoyancy script on: ", name)
 
@@ -32,6 +45,8 @@ func _ready() -> void:
 	_x_offset = Vector3(probe_spacing, 0.0, 0.0)
 
 
+## Called every frame. Calculates buoyancy and updates the mesh's position and rotation.
+## [param delta] The time elapsed since the previous frame in seconds.
 func _process(delta: float) -> void:
 	if not _is_water_valid:
 		return

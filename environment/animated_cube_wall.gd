@@ -1,9 +1,16 @@
 @tool
+## Generates a grid of cubes animated via a custom spatial shader.
+##
+## [AnimatedCubeWall] creates a [MultiMeshInstance3D] to efficiently render thousands
+## of glowing cubes. The cubes undulate in various sine-wave patterns defined by the
+## [enum AnimationMode].
 class_name AnimatedCubeWall
 extends Node3D
 
+## Defines the mathematical pattern used to animate the cubes in the vertex shader.
 enum AnimationMode {RANDOM, WAVE, FROM_CENTER, TOWARDS_CENTER, CHECKERBOARD, ROW_WAVE, COLUMN_WAVE}
 
+## The internal GLSL-like shader code injected into the [ShaderMaterial].
 const SHADER_CODE: String = """
 shader_type spatial;
 render_mode blend_mix, depth_draw_opaque, cull_back, diffuse_burley, specular_schlick_ggx;
@@ -123,12 +130,15 @@ var _multi_mesh_instance: MultiMeshInstance3D = null
 var _shader_material: ShaderMaterial = null
 
 
+## Called when the node enters the scene tree for the first time.
+## Sets up the child [MultiMeshInstance3D] and generates the grid.
 func _ready() -> void:
 	print("AnimatedCubeWall: _ready() called. Initializing grid.")
 	_setup_child_node()
 	_generate_wall()
 
 
+## Locates or creates the required [MultiMeshInstance3D] child node.
 func _setup_child_node() -> void:
 	print("AnimatedCubeWall: Setting up MultiMeshInstance3D child.")
 	for child: Node in get_children():
@@ -144,11 +154,13 @@ func _setup_child_node() -> void:
 			_multi_mesh_instance.owner = get_tree().edited_scene_root
 
 
+## Triggers a regeneration of the wall if the node is fully initialized in the tree.
 func _request_update() -> void:
 	if is_node_ready():
 		_generate_wall()
 
 
+## Clears and rebuilds the [MultiMesh] data buffers, positioning all cubes in a grid.
 func _generate_wall() -> void:
 	var total_cubes: int = grid_width * grid_height
 	print("AnimatedCubeWall: _generate_wall() called. Spawning ", total_cubes)
@@ -207,6 +219,7 @@ func _generate_wall() -> void:
 			instance_id += 1
 
 
+## Pushes the current exported properties to the active [ShaderMaterial] uniforms.
 func _update_shader_uniforms() -> void:
 	if _shader_material == null:
 		return
