@@ -1,0 +1,11 @@
+1. Update `ui/debug_manager.gd`. Add strict typing, doc comments, correct formatting and line length.
+2. Update `vfx/smoke_simulation.gd`. Add strict typing, doc comments, correct formatting and line length.
+3. Update `environment/spotlight_seq_trigger.gd`. Add strict typing, doc comments, correct formatting and line length.
+4. Update `vfx/3DShockwaveTester.gd`. Add strict typing, doc comments, correct formatting and line length.
+5. Update `vfx/plasma_spark.gd`. Add strict typing, doc comments, correct formatting and line length.
+6. Update `vfx/gas_leak_emitter.gd`. Add strict typing, doc comments, correct formatting and line length.
+7. Update `vfx/arcane_burst.gd`. Add strict typing, doc comments, correct formatting and line length.
+8. Update `shared/rotator_component.gd`. Add strict typing, doc comments, correct formatting and line length.
+9. Update `environment/light_logic.gd`. Add strict typing, doc comments, correct formatting and line length.
+10. Update `vfx/smoke_wake_collider.gd`. Add strict typing, doc comments, correct formatting and line length.
+11. Run format, lint, and tests (pre-commit steps) to verify changes.

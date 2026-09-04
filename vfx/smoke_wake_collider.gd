@@ -1,3 +1,7 @@
+## A dynamic particle collision sphere that scales based on player movement.
+##
+## Attached to the player, this [GPUParticlesCollisionSphere3D] pushes GPU smoke
+## and fog out of the way, expanding its radius smoothly as the player's speed increases.
 class_name SmokeWakeCollider
 extends GPUParticlesCollisionSphere3D
 
@@ -10,9 +14,12 @@ extends GPUParticlesCollisionSphere3D
 ## How fast the collider expands and shrinks.
 @export var lerp_speed: float = 5.0
 
+## Reference to the parent [CharacterBody3D] to track velocity.
 @onready var _player: CharacterBody3D = $".."
 
 
+## Called every frame to adjust the collision radius based on parent velocity.
+## [param delta] The time elapsed since the previous frame.
 func _process(delta: float) -> void:
 	if not is_instance_valid(_player):
 		return
