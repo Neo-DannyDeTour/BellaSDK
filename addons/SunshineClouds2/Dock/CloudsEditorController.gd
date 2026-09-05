@@ -79,12 +79,10 @@ const DRAWINGMODE = DrawingMode
 @export var inverted_drawing_color: Color = Color(1.0, 0.3, 0.2, 0.8)
 
 ## Default brush radius in world units.
-@export_range(100.0, 50000.0, 50.0, "suffix:m")
-var default_brush_size: float = 1000.0
+@export_range(100.0, 50000.0, 50.0, "suffix:m") var default_brush_size: float = 1000.0
 
 ## Default altitude in world units where the brush gizmo projects.
-@export_range(100.0, 50000.0, 50.0, "suffix:m")
-var default_clouds_height: float = 2000.0
+@export_range(100.0, 50000.0, 50.0, "suffix:m") var default_clouds_height: float = 2000.0
 
 ## Active [SunshineCloudsDriverGD] instance found in the edited scene tree.
 var driver: SunshineCloudsDriverGD
@@ -129,13 +127,13 @@ var compute_enabled: bool = false
 ## Rendering device handle for compute shader dispatch.
 var rd: RenderingDevice
 
-## Shader resource handle for the mask drawing compute shader.
+## Shader resource handle for the mask drawing compute shader. Needs manual cleanup.
 var shader: RID = RID()
 
-## Compute pipeline handle for mask stamp rasterization.
+## Compute pipeline handle for mask stamp rasterization. Needs manual cleanup.
 var pipeline: RID = RID()
 
-## Uniform set binding the mask storage image to the compute pipeline.
+## Uniform set binding the mask storage image to the compute pipeline. Needs manual cleanup.
 var uniform_set: RID = RID()
 
 ## Encoded push constant byte array passing brush stroke parameters.
@@ -146,7 +144,6 @@ var last_image_data: PackedByteArray = PackedByteArray()
 
 ## Mutex flag preventing recursive UI updates during scene initialization.
 var pause_updates: bool = false
-
 
 # --- Lifecycle Callbacks ---
 
@@ -173,9 +170,7 @@ func _process(delta: float) -> void:
 			draw_brush_tool_material.albedo_color = draw_color_picker.color
 
 		if drawing_currently:
-			RenderingServer.call_on_render_thread(
-				execute_compute.bind(delta, false, Color.WHITE)
-			)
+			RenderingServer.call_on_render_thread(execute_compute.bind(delta, false, Color.WHITE))
 
 
 # --- Scene Scanning & Initialization ---
@@ -273,9 +268,7 @@ func scene_changed(scene_root: Node) -> void:
 			mask_width.value = driver.clouds_resource.mask_width_km
 
 		if is_instance_valid(use_mask_toggle):
-			use_mask_toggle.button_pressed = (
-				driver.clouds_resource.extra_large_used_as_mask
-			)
+			use_mask_toggle.button_pressed = (driver.clouds_resource.extra_large_used_as_mask)
 
 	if is_instance_valid(mask_file_path) and ResourceLoader.exists(mask_file_path.text):
 		var image: Image = ResourceLoader.load(mask_file_path.text) as Image
@@ -286,7 +279,7 @@ func scene_changed(scene_root: Node) -> void:
 	update_status_display()
 
 
-## Recursively searches down scene tree node [param scene_root] to locate a [SunshineCloudsDriverGD].
+## Recursively searches down scene tree node [param scene_root] to locate a Driver.
 func retrieve_clouds_driver(scene_root: Node) -> SunshineCloudsDriverGD:
 	if scene_root == null:
 		return null
@@ -360,20 +353,16 @@ func update_mask_settings() -> void:
 			driver.clouds_resource.mask_width_km = float(mask_width.value)
 
 		if is_instance_valid(use_mask_toggle):
-			driver.clouds_resource.extra_large_used_as_mask = (
-				use_mask_toggle.button_pressed
-			)
+			driver.clouds_resource.extra_large_used_as_mask = (use_mask_toggle.button_pressed)
 
 			if not use_mask_toggle.button_pressed:
-				driver.clouds_resource.extra_large_noise_patterns = (
-					ResourceLoader.load(
-						"res://addons/SunshineClouds2/NoiseTextures/ExtraLargeScaleNoise.tres"
-					)
-				)
+				driver.clouds_resource.extra_large_noise_patterns = (ResourceLoader.load(
+					"res://addons/SunshineClouds2/NoiseTextures/ExtraLargeScaleNoise.tres"
+				))
 			elif is_instance_valid(mask_file_path) and ResourceLoader.exists(mask_file_path.text):
-				driver.clouds_resource.extra_large_noise_patterns = (
-					ResourceLoader.load(mask_file_path.text)
-				)
+				driver.clouds_resource.extra_large_noise_patterns = (ResourceLoader.load(
+					mask_file_path.text
+				))
 
 	initialize_mask_texture()
 
@@ -452,9 +441,7 @@ func initialize_compute() -> void:
 	if image == null:
 		image = Image.create(res, res, false, Image.FORMAT_RGBAF)
 
-	current_drawing_mask = rd.texture_create(
-		new_format, RDTextureView.new(), [image.get_data()]
-	)
+	current_drawing_mask = rd.texture_create(new_format, RDTextureView.new(), [image.get_data()])
 
 	if is_instance_valid(driver) and is_instance_valid(driver.clouds_resource):
 		driver.clouds_resource.update_mask(current_drawing_mask)
@@ -470,19 +457,24 @@ func initialize_compute() -> void:
 
 ## Frees rendering device pipeline, shader, and drawing mask allocations.
 func clear_compute() -> void:
+	print("CloudsEditorController: Freeing GPU resources to prevent VRAM leak.")
 	if rd:
+		if pipeline.is_valid():
+			rd.free_rid(pipeline)
+		pipeline = RID()
 		if shader.is_valid():
 			rd.free_rid(shader)
 		shader = RID()
+		if uniform_set.is_valid():
+			rd.free_rid(uniform_set)
+		uniform_set = RID()
 		if current_drawing_mask.is_valid():
 			rd.free_rid(current_drawing_mask)
 		current_drawing_mask = RID()
 
 
 ## Dispatches the compute shader to stamp brush strokes or flood-fill into the mask texture.
-func execute_compute(
-	delta: float, set_value: bool, set_value_color: Color
-) -> void:
+func execute_compute(delta: float, set_value: bool, set_value_color: Color) -> void:
 	if not compute_enabled or not pipeline.is_valid():
 		return
 
@@ -495,23 +487,20 @@ func execute_compute(
 
 	if not set_value and is_instance_valid(draw_brush_tool):
 		draw_position = Vector2(
-			draw_brush_tool.global_position.x,
-			draw_brush_tool.global_position.z
+			draw_brush_tool.global_position.x, draw_brush_tool.global_position.z
 		)
 		draw_position = (draw_position / width_meters) * res
 		draw_position += Vector2(res * 0.5, res * 0.5)
 		draw_radius = (draw_brush_tool.scale.x / width_meters) * res
 
 	var groups: int = int(ceilf(res / 32.0)) + 1
-	var sharpness_val: float = (
-		draw_sharpness.value if is_instance_valid(draw_sharpness) else 1.0
-	)
+	var sharpness_val: float = draw_sharpness.value if is_instance_valid(draw_sharpness) else 1.0
 	var strength_val: float = (
 		draw_strength.value * delta if is_instance_valid(draw_strength) else delta
 	)
 
 	if draw_inverted:
-		strength_val = - strength_val
+		strength_val = -strength_val
 
 	var editing_type: float = 0.0
 	if set_value:
@@ -550,17 +539,13 @@ func execute_compute(
 	var compute_list: int = rd.compute_list_begin()
 	rd.compute_list_bind_compute_pipeline(compute_list, pipeline)
 	rd.compute_list_bind_uniform_set(compute_list, uniform_set, 0)
-	rd.compute_list_set_push_constant(
-		compute_list, push_constants, push_constants.size()
-	)
+	rd.compute_list_set_push_constant(compute_list, push_constants, push_constants.size())
 	rd.compute_list_dispatch(compute_list, groups, groups, 1)
 	rd.compute_list_end()
 
 	await RenderingServer.frame_post_draw
 	if current_drawing_mask.is_valid():
-		rd.texture_get_data_async(
-			current_drawing_mask, 0, complete_retrieval
-		)
+		rd.texture_get_data_async(current_drawing_mask, 0, complete_retrieval)
 
 
 ## Async callback receiving readback byte [param data] from the drawing mask texture.
@@ -572,17 +557,14 @@ func complete_retrieval(data: PackedByteArray) -> void:
 
 
 ## Projects a ray from [param viewport_camera] at [param event] position to place the brush gizmo.
-func iterate_cursor_location(
-	viewport_camera: Camera3D, event: InputEventMouse
-) -> void:
+func iterate_cursor_location(viewport_camera: Camera3D, event: InputEventMouse) -> void:
 	if not is_instance_valid(viewport_camera) or not is_instance_valid(draw_brush_tool):
 		return
 
 	if is_instance_valid(driver) and is_instance_valid(driver.clouds_resource):
 		current_clouds_height = (
-			driver.clouds_resource.cloud_floor
-			+ driver.clouds_resource.cloud_ceiling
-		) * 0.5
+			(driver.clouds_resource.cloud_floor + driver.clouds_resource.cloud_ceiling) * 0.5
+		)
 	else:
 		current_clouds_height = default_clouds_height
 
@@ -640,10 +622,7 @@ func set_draw_scale() -> void:
 
 	var height: float = 1000.0
 	if is_instance_valid(driver) and is_instance_valid(driver.clouds_resource):
-		height = (
-			driver.clouds_resource.cloud_ceiling
-			- driver.clouds_resource.cloud_floor
-		)
+		height = (driver.clouds_resource.cloud_ceiling - driver.clouds_resource.cloud_floor)
 
 	draw_brush_tool.scale = Vector3(draw_scale, maxf(height, 10.0), draw_scale)
 
@@ -657,9 +636,7 @@ func flood_fill() -> void:
 	if is_instance_valid(draw_strength):
 		fill_color.a = draw_strength.value / draw_strength.max_value
 
-	RenderingServer.call_on_render_thread(
-		execute_compute.bind(0.0, true, fill_color)
-	)
+	RenderingServer.call_on_render_thread(execute_compute.bind(0.0, true, fill_color))
 	await get_tree().create_timer(0.2).timeout
 	call_deferred(&"disable_draw_mode")
 
@@ -732,28 +709,20 @@ func disable_draw_mode() -> void:
 
 	if last_image_data.size() > 0:
 		print("CloudsEditorController: Saving modified mask texture to disk.")
-		var res: int = (
-			int(mask_resolution.value) if is_instance_valid(mask_resolution) else 1024
-		)
-		var path: String = (
-			mask_file_path.text if is_instance_valid(mask_file_path) else ""
-		)
+		var res: int = int(mask_resolution.value) if is_instance_valid(mask_resolution) else 1024
+		var path: String = mask_file_path.text if is_instance_valid(mask_file_path) else ""
 
 		if path != "":
 			var image: Image = Image.create_from_data(
 				res, res, false, Image.FORMAT_RGBAF, last_image_data
 			)
 			image.save_exr(path)
-			var editor_fs: EditorFileSystem = (
-				EditorInterface.get_resource_filesystem()
-			)
+			var editor_fs: EditorFileSystem = EditorInterface.get_resource_filesystem()
 			editor_fs.scan()
 			last_image_data = PackedByteArray()
 
 			if is_instance_valid(driver) and is_instance_valid(driver.clouds_resource):
-				driver.clouds_resource.extra_large_noise_patterns = (
-					ResourceLoader.load(path)
-				)
+				driver.clouds_resource.extra_large_noise_patterns = (ResourceLoader.load(path))
 
 
 ## Sets brush inversion mode [param mode] and updates the gizmo color tint.
