@@ -1,18 +1,35 @@
+## A player state handling aquatic locomotion, buoyancy, and visual effects when submerged.
+##
+## This state overrides default ground/air movement to apply buoyancy physics, calculate
+## water depth based on camera position, and trigger camera-related VFX (like surface wipes
+## and splash sounds) when breaking the water surface.
 class_name StateSwim
 extends PlayerState
 
 # --------------------------------------
 # CONSTANTS & VARIABLES
 # --------------------------------------
+## Constant vertical velocity applied when the player's head is submerged and no input is given.
 const SINK_SPEED: float = -1.8
+
+## Constant vertical velocity applied when plunging into water before buoyancy normalizes.
 const PLUNGE_SPEED: float = -5.0
 
+## Tracks if the player's camera viewpoint is currently below the water surface.
 var head_in_water: bool = false
+
+## Tracks if the player's chest (1 meter below camera) is currently below the water surface.
 var chest_in_water: bool = false
+
+## Stores the previous frame's [member head_in_water] state to detect surface break events.
 var was_head_in_water: bool = false
+
+## Flag indicating if the player has just initiated a jump from the water, suppressing buoyancy.
 var just_water_jumped: bool = false
 
 
+## Called by the state machine when entering the swim state. Sets up collision shapes.
+## [param _msg] Dictionary containing transition parameters (unused in this state).
 func enter(_msg: Dictionary = {}) -> void:
 	print("StateSwim: enter() called. Setting up water physics.")
 
@@ -26,6 +43,8 @@ func enter(_msg: Dictionary = {}) -> void:
 	just_water_jumped = false
 
 
+## Called by the state machine when exiting the swim state. Cleans up screen VFX
+## and restores camera roll.
 func exit() -> void:
 	print("StateSwim: exit() called. Cleaning up water state.")
 
@@ -41,6 +60,8 @@ func exit() -> void:
 	player.camera_controller.eyes.rotation.z = 0.0
 
 
+## Master physics update loop for swimming. Processes depth, buoyancy, and input velocity.
+## [param delta] The physics frame delta time in seconds.
 func physics_update(delta: float) -> void:
 	# 1. Query Water Depth
 	_calculate_water_depth()
@@ -60,6 +81,7 @@ func physics_update(delta: float) -> void:
 # --------------------------------------
 # PRIVATE METHODS
 # --------------------------------------
+## Performs spatial raycasts to determine if the player's head or chest are currently submerged.
 func _calculate_water_depth() -> void:
 	was_head_in_water = head_in_water
 	head_in_water = false
@@ -92,6 +114,9 @@ func _calculate_water_depth() -> void:
 			break
 
 
+## Calculates and applies horizontal movement, vertical buoyancy, and jump logic.
+## [param delta] The physics frame delta time in seconds.
+## [param input_dir] The 2D movement input vector from the player.
 func _apply_swim_velocity(delta: float, input_dir: Vector2) -> void:
 	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
 
@@ -161,6 +186,9 @@ func _apply_swim_velocity(delta: float, input_dir: Vector2) -> void:
 		player.velocity.y = lerpf(player.velocity.y, target_velocity.y, 4.0 * delta)
 
 
+## Manages procedural camera tilting during strafing and triggers splash/surface VFX.
+## [param delta] The physics frame delta time in seconds.
+## [param input_dir] The 2D movement input vector from the player.
 func _handle_camera_and_vfx(delta: float, input_dir: Vector2) -> void:
 	var target_tilt: float = 0.0
 	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
@@ -196,6 +224,9 @@ func _handle_camera_and_vfx(delta: float, input_dir: Vector2) -> void:
 				water_node.play_splash_sound(player.global_position, exit_speed)
 
 
+## Increases flashlight energy multiplier when the player is submerged to combat light attenuation.
+## [param is_submerged] True if the player's head is underwater.
+## [param delta] The physics frame delta time in seconds.
 func _update_flashlight_underwater(is_submerged: bool, delta: float) -> void:
 	# Safely checks the interaction component or main player for the flashlight
 	var flash_ctrl: Node = player.get("flashlight_controller")
@@ -211,6 +242,7 @@ func _update_flashlight_underwater(is_submerged: bool, delta: float) -> void:
 		)
 
 
+## Evaluates conditions to transition out of the swim state.
 func _check_transitions() -> void:
 	if player.environment_component.current_water_node == null:
 		print("StateSwim: No active water node. Transitioning to Air.")
