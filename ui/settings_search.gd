@@ -708,8 +708,8 @@ func _build_mirrored_generic_row(row: HBoxContainer, target: Control) -> void:
 
 ## Clears current search results rows immediately to avoid signal ghosts.
 func _clear_result_rows() -> void:
+	print("UI: Cleaning up search result rows.")
 	if not is_instance_valid(search_results_list):
 		return
 	for child: Node in search_results_list.get_children():
-		search_results_list.remove_child(child)
 		child.queue_free()
