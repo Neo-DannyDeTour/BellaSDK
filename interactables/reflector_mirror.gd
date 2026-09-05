@@ -67,7 +67,9 @@ func _check_auto_release() -> void:
 	if controlling_player == null:
 		return
 
-	var dist_squared: float = global_position.distance_squared_to(controlling_player.global_position)
+	var dist_squared: float = global_position.distance_squared_to(
+		controlling_player.global_position
+	)
 	if dist_squared > 9.0:
 		print("ReflectorMirror: Player walked too far away. Auto-releasing.")
 		_release_control()
