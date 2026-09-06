@@ -52,41 +52,45 @@ var bridge_fallen: bool = false
 func _ready() -> void:
 	_update_bridge_shape()
 
-	if has_node("HingeAnchor"):
-		var anchor: Node = get_node("HingeAnchor")
-		if anchor is CollisionObject3D:
-			anchor.collision_layer = 0
-			anchor.collision_mask = 0
+	var anchor: CollisionObject3D = get_node_or_null("HingeAnchor") as CollisionObject3D
+	if is_instance_valid(anchor):
+		anchor.collision_layer = 0
+		anchor.collision_mask = 0
 
-	if not Engine.is_editor_hint() and has_node("DebugPin"):
-		get_node("DebugPin").hide()
+	var debug_pin: Node = get_node_or_null("DebugPin")
+	if is_instance_valid(debug_pin) and not Engine.is_editor_hint():
+		debug_pin.hide()
 
 	if Engine.is_editor_hint():
 		return
 
-	for rope_path: Variant in ropes:
+	for rope_path: NodePath in ropes:
 		var rope_root: Node = get_node_or_null(rope_path)
-		if rope_root:
-			# Tell the script to hunt for the signal inside the rope!
+		if is_instance_valid(rope_root):
 			var signal_node: Node = _find_signal_source(rope_root, "rope_broken")
-			if signal_node:
+			if is_instance_valid(signal_node):
 				intact_ropes += 1
-				signal_node.rope_broken.connect(_on_rope_broken)
+				if not signal_node.rope_broken.is_connected(_on_rope_broken):
+					signal_node.rope_broken.connect(_on_rope_broken)
 
 	print("Bridge initialized. Holding on by ", intact_ropes, " ropes.")
 
 
 ## Recursively searches a node's children to find a specific signal.
+##
 ## [param parent] The starting node to search from.
 ## [param sig_name] The string name of the signal to find.
-## [return] The first [Node] found that has the signal, or [code]null[/code].
+## [return] The first [Node] found that has the signal, or null.
 func _find_signal_source(parent: Node, sig_name: String) -> Node:
+	if not is_instance_valid(parent):
+		return null
+
 	if parent.has_signal(sig_name):
 		return parent
 
 	for child: Node in parent.get_children():
 		var found: Node = _find_signal_source(child, sig_name)
-		if found:
+		if is_instance_valid(found):
 			return found
 
 	return null
@@ -97,30 +101,32 @@ func _update_bridge_shape() -> void:
 	if not is_node_ready():
 		return
 
-	if bridge:
+	if is_instance_valid(bridge):
 		bridge.position = Vector3.ZERO
 		bridge.rotation_degrees = Vector3.ZERO
 
 	var z_shift: float = (bridge_size.z / 2.0) * -hinge_offset
 	var visual_offset: Vector3 = Vector3(0, 0, z_shift)
 
-	var mesh_instance: MeshInstance3D = $TheBridge/MeshInstance3D
-	if mesh_instance:
+	var mesh_instance: MeshInstance3D = (
+		get_node_or_null("TheBridge/MeshInstance3D") as MeshInstance3D
+	)
+	if is_instance_valid(mesh_instance):
 		if not mesh_instance.mesh is BoxMesh:
 			mesh_instance.mesh = BoxMesh.new()
-		mesh_instance.mesh = mesh_instance.mesh.duplicate()
-		mesh_instance.mesh.size = bridge_size
+		mesh_instance.mesh = mesh_instance.mesh.duplicate() as BoxMesh
+		(mesh_instance.mesh as BoxMesh).size = bridge_size
 		mesh_instance.position = visual_offset
 
-	var collision: CollisionShape3D = $TheBridge/CollisionShape3D
-	if collision:
+	var collision: CollisionShape3D = (
+		get_node_or_null("TheBridge/CollisionShape3D") as CollisionShape3D
+	)
+	if is_instance_valid(collision):
 		if not collision.shape is BoxShape3D:
 			collision.shape = BoxShape3D.new()
-		collision.shape = collision.shape.duplicate()
-		collision.shape.size = bridge_size
+		collision.shape = collision.shape.duplicate() as BoxShape3D
+		(collision.shape as BoxShape3D).size = bridge_size
 		collision.position = visual_offset
-
-	# NOTE: Joint code is gone! It relies purely on the saved .tscn file now.
 
 	_draw_debug_pin()
 
@@ -129,32 +135,36 @@ func _update_bridge_shape() -> void:
 func _draw_debug_pin() -> void:
 	if not is_node_ready():
 		return
+
+	var existing_pin: Node = get_node_or_null("DebugPin")
+
 	if not show_debug_pin:
-		if has_node("DebugPin"):
-			get_node("DebugPin").queue_free()
+		if is_instance_valid(existing_pin):
+			existing_pin.queue_free()
 		return
 
 	var debug_pin: MeshInstance3D
-	if not has_node("DebugPin"):
+	if not is_instance_valid(existing_pin):
 		debug_pin = MeshInstance3D.new()
 		debug_pin.name = "DebugPin"
 		add_child(debug_pin)
 	else:
-		debug_pin = get_node("DebugPin")
+		debug_pin = existing_pin as MeshInstance3D
 
-	var cyl: CylinderMesh = CylinderMesh.new()
-	cyl.top_radius = 0.04
-	cyl.bottom_radius = 0.04
-	cyl.height = bridge_size.x + pin_extension
+	if is_instance_valid(debug_pin):
+		var cyl: CylinderMesh = CylinderMesh.new()
+		cyl.top_radius = 0.04
+		cyl.bottom_radius = 0.04
+		cyl.height = bridge_size.x + pin_extension
 
-	var mat: StandardMaterial3D = StandardMaterial3D.new()
-	mat.albedo_color = Color.RED
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	cyl.material = mat
+		var mat: StandardMaterial3D = StandardMaterial3D.new()
+		mat.albedo_color = Color.RED
+		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		cyl.material = mat
 
-	debug_pin.mesh = cyl
-	debug_pin.position = Vector3.ZERO
-	debug_pin.rotation_degrees = Vector3(0, 0, 90)
+		debug_pin.mesh = cyl
+		debug_pin.position = Vector3.ZERO
+		debug_pin.rotation_degrees = Vector3(0, 0, 90)
 
 
 ## Triggered when a connected rope is destroyed. Drops the bridge if no ropes remain.
@@ -174,17 +184,20 @@ func drop_bridge() -> void:
 		return
 
 	bridge_fallen = true
-	bridge.set_deferred("freeze", false)
-	bridge.set_deferred("sleeping", false)
-	bridge.apply_central_impulse(Vector3.DOWN * 0.1)
+	if is_instance_valid(bridge):
+		bridge.set_deferred("freeze", false)
+		bridge.set_deferred("sleeping", false)
+		bridge.apply_central_impulse(Vector3.DOWN * 0.1)
 
 
 ## Triggered when the bridge body hits the floor trigger. Freezes the bridge in place.
+##
 ## [param body] The [Node3D] that entered the trigger area.
 func _on_ground_lock_trigger_body_entered(body: Node3D) -> void:
 	if Engine.is_editor_hint():
 		return
 
 	if body == bridge and bridge_fallen:
-		bridge.set_deferred("freeze", true)
-		print("Bridge Locked!")
+		if is_instance_valid(bridge):
+			bridge.set_deferred("freeze", true)
+			print("Bridge Locked!")
