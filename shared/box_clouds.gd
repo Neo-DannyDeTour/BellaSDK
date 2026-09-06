@@ -1,8 +1,12 @@
 @tool
+## Controls local low-altitude weather effects, specifically volumetric clouds.
+##
+## This script manages wind direction, wind speed, and cloud coverage parameters,
+## applying them directly to a linked [FogVolume] via shader parameters. It exposes
+## editor proxies for static weather variables used throughout the level.
 class_name LowAltitudeWeather
 extends Node
 
-# 2. Proxy variables exposed to the Inspector
 ## The direction vector of the wind affecting the clouds.
 @export_group("Weather Settings")
 @export var editor_wind_dir: Vector3 = Vector3(1.0, 0.0, 0.5):
@@ -22,29 +26,31 @@ extends Node
 		editor_coverage = value
 		LowAltitudeWeather.coverage = value
 
-## The FogVolume node used to render the local clouds.
+## The [FogVolume] node used to render the local clouds.
 @export_group("Nodes")
 @export var local_cloud_volume: FogVolume
 
-# 1. The static variables remain exactly as they were
-## Static variable for wind direction.
+## Static variable for global wind direction.
 static var wind_dir: Vector3 = Vector3(1.0, 0.0, 0.5)
-## Static variable for wind speed.
+## Static variable for global wind speed.
 static var wind_spd: float = 2.5
-## Static variable for cloud coverage.
+## Static variable for global cloud coverage.
 static var coverage: float = 0.45
 
 
+## Validates node assignments on entry.
 func _ready() -> void:
-	if not local_cloud_volume:
+	if not is_instance_valid(local_cloud_volume):
 		push_error("WeatherController: FogVolume is missing or unassigned!")
-	elif not local_cloud_volume.material:
+	elif not is_instance_valid(local_cloud_volume.material):
 		push_error("WeatherController: Assigned FogVolume has no material!")
 
 
+## Continuously applies the weather parameters to the fog volume's shader material.
 func _process(_delta: float) -> void:
-	if local_cloud_volume and local_cloud_volume.material:
+	if is_instance_valid(local_cloud_volume) and is_instance_valid(local_cloud_volume.material):
 		var mat: ShaderMaterial = local_cloud_volume.material as ShaderMaterial
-		mat.set_shader_parameter("wind_direction", LowAltitudeWeather.wind_dir)
-		mat.set_shader_parameter("wind_speed", LowAltitudeWeather.wind_spd)
-		mat.set_shader_parameter("cloud_coverage", LowAltitudeWeather.coverage)
+		if is_instance_valid(mat):
+			mat.set_shader_parameter("wind_direction", LowAltitudeWeather.wind_dir)
+			mat.set_shader_parameter("wind_speed", LowAltitudeWeather.wind_spd)
+			mat.set_shader_parameter("cloud_coverage", LowAltitudeWeather.coverage)
