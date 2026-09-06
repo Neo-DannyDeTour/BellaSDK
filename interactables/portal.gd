@@ -45,7 +45,7 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
 
-	portal_camera.current = true
+	portal_camera.current = false
 
 	_isolate_portal_camera_compositor()
 	_configure_portal_environment()
@@ -65,7 +65,7 @@ func _ready() -> void:
 
 	sub_viewport.size = get_viewport().size
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
-	sub_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	sub_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 
 	_assign_world_3d.call_deferred()
 
@@ -185,8 +185,14 @@ func _process(_delta: float) -> void:
 			linked_portal._set_viewport_mode(SubViewport.UPDATE_DISABLED)
 		return
 
+	# Cull if player is behind the portal face
+	var to_player: Vector3 = player_camera.global_position - global_position
+	var is_in_front: bool = global_transform.basis.z.dot(to_player) > 0.0
+
 	var dist_sq: float = global_position.distance_squared_to(player_camera.global_position)
-	if dist_sq > (max_render_distance * max_render_distance):
+	var in_range: bool = dist_sq <= (max_render_distance * max_render_distance)
+
+	if not is_in_front or not in_range:
 		linked_portal._set_viewport_mode(SubViewport.UPDATE_DISABLED)
 		return
 

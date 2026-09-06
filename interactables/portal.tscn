@@ -44,7 +44,7 @@ layers = 8
 mesh = SubResource("QuadMesh_gh40b")
 
 [node name="SubViewport" type="SubViewport" parent="." unique_id=150245908]
-render_target_update_mode = 4
+render_target_update_mode = 0
 
 [node name="PortalCamera" type="Camera3D" parent="SubViewport" unique_id=917421883]
 cull_mask = 1047559
