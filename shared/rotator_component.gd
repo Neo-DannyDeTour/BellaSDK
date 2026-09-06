@@ -13,8 +13,9 @@ extends Node3D
 
 
 ## Called every frame to rotate the [Node3D] around its local axis.
-##
-## @param delta The time elapsed since the previous frame.
+## Lifecycle trigger: _process.
+## [param delta] The time elapsed since the previous frame.
+## Returns void.
 func _process(delta: float) -> void:
 	# We use rotate_object_local so if you tilt the fan on a wall,
 	# it still spins correctly around its own center, not the world's center.

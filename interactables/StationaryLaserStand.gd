@@ -172,8 +172,10 @@ func _handle_rotation_input(delta: float) -> void:
 ## Checks if the player is out of range to auto release control.
 func _check_auto_release() -> void:
 	if controlling_player:
-		var distance: float = global_position.distance_to(controlling_player.global_position)
-		if distance > 3.0:
+		var distance_squared: float = global_position.distance_squared_to(
+			controlling_player.global_position
+		)
+		if distance_squared > 9.0:
 			print("StationaryLaserStand: Player out of range. Auto-releasing.")
 			_release_control()
 

@@ -11,7 +11,9 @@ extends GPUParticles3D
 
 
 ## Automatically called when the node enters the scene tree.
+## Lifecycle trigger: _ready.
 ## Starts emitting and connects the [signal finished] signal.
+## Returns void.
 func _ready() -> void:
 	print("PlasmaSpark: _ready() called. Spawning a plasma spark VFX.")
 	finished.connect(_on_finished)
@@ -20,5 +22,6 @@ func _ready() -> void:
 
 
 ## Deletes the node when the particle effect finishes playing to prevent memory leaks.
+## Returns void.
 func _on_finished() -> void:
 	queue_free()
