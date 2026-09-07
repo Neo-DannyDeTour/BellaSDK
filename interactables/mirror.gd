@@ -47,10 +47,13 @@ var _init_frames: int = 0
 var _texture_assigned: bool = false
 ## Toggles boolean state to perform interlaced frame-skipping optimizations.
 var _skip_frame: bool = false
+## Cached empty [Compositor] applied to isolate from global compute effects.
+var _empty_compositor: Compositor = null
 
 
 ## Converts accidental node scaling into structural dimensions and clones materials.
 func _ready() -> void:
+	print("Mirror: Initializing ", name)
 	if (
 		not is_instance_valid(mirror_quad)
 		or not is_instance_valid(mirror_viewport)
@@ -75,10 +78,13 @@ func _ready() -> void:
 
 ## Sets up culling masks, initial dormant viewport state, and duplicated materials.
 func _setup_mirror() -> void:
-	print("Mirror system: Initializing viewport and assigning target camera.")
+	print("Mirror: Setting up camera overrides and viewport for ", name)
 
 	if is_instance_valid(mirror_camera):
+		mirror_camera.current = true
 		mirror_camera.cull_mask = cull_mask
+		_isolate_mirror_camera_compositor()
+		_configure_mirror_environment()
 
 	if is_instance_valid(mirror_viewport):
 		mirror_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
@@ -214,7 +220,6 @@ func _update_cam() -> void:
 
 
 ## Manages the reflection update loop, interleave cadence, and distance checks.
-##
 ## [param _delta] Frame delta time in seconds.
 func _process(_delta: float) -> void:
 	if not is_visible_in_tree():
@@ -228,7 +233,6 @@ func _process(_delta: float) -> void:
 
 	var cur_trans: Transform3D = _main_cam.global_transform
 
-	# Prime Phase: Use UPDATE_ONCE across 2 cycles to allocate and draw buffers safely
 	if _init_frames < 2:
 		if is_instance_valid(mirror_viewport):
 			mirror_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
@@ -241,24 +245,54 @@ func _process(_delta: float) -> void:
 		_assign_texture()
 		_texture_assigned = true
 
+	# Cull update if player is behind the mirror quad
+	var mirror_norm: Vector3 = mirror_quad.global_basis.z
+	var to_cam: Vector3 = cur_trans.origin - mirror_quad.global_position
+	var is_in_front: bool = mirror_norm.dot(to_cam) > 0.0
+
+	var diff: Vector3 = global_position - cur_trans.origin
+	var dist_sq: float = diff.length_squared()
+	var in_range: bool = dist_sq <= (max_update_distance * max_update_distance)
+
+	if not is_in_front or not in_range:
+		if is_instance_valid(mirror_viewport):
+			mirror_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+		return
+
 	if _last_cam_transform.is_equal_approx(cur_trans):
 		return
 
 	if is_instance_valid(mirror_viewport):
-		var diff: Vector3 = global_position - cur_trans.origin
-		var dist_sq: float = diff.length_squared()
-		var max_dist_sq: float = max_update_distance * max_update_distance
-
-		if dist_sq > max_dist_sq:
-			mirror_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
-			return
-
 		_skip_frame = not _skip_frame
 		if _skip_frame:
 			mirror_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+			_last_cam_transform = cur_trans
+			_update_cam()
 		else:
 			mirror_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
-			return
 
-	_last_cam_transform = cur_trans
-	_update_cam()
+
+## Overrides [member mirror_camera] compositor to disable global cloud shaders.
+func _isolate_mirror_camera_compositor() -> void:
+	print("Mirror: Isolating compositor for ", mirror_camera.name)
+	_empty_compositor = Compositor.new()
+	_empty_compositor.compositor_effects = []
+	mirror_camera.compositor = _empty_compositor
+
+
+## Strips volumetric fog, SDFGI, and screen-space passes from the mirror camera.
+func _configure_mirror_environment() -> void:
+	print("Mirror: Configuring isolated environment for ", mirror_camera.name)
+	if not is_instance_valid(mirror_camera.environment):
+		mirror_camera.environment = Environment.new()
+
+	var env: Environment = mirror_camera.environment
+	env.volumetric_fog_enabled = false
+	env.sdfgi_enabled = false
+	env.ssao_enabled = false
+	env.ssil_enabled = false
+	env.glow_enabled = false
+
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	env.ambient_light_color = Color(0.2, 0.22, 0.28, 1.0)
+	env.ambient_light_energy = 1.0

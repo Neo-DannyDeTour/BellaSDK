@@ -45,7 +45,8 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
 
-	portal_camera.current = false
+	# Must be true for SubViewport to apply this camera's environment overrides
+	portal_camera.current = true
 
 	_isolate_portal_camera_compositor()
 	_configure_portal_environment()
@@ -63,7 +64,8 @@ func _ready() -> void:
 	else:
 		push_warning("Portal: No ShaderMaterial found on PortalMesh!")
 
-	sub_viewport.size = get_viewport().size
+	# Halving portal resolution drops raymarch pixels by 75%
+	sub_viewport.size = (get_viewport().size / 2).max(Vector2i(256, 256))
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
 	sub_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 
@@ -76,31 +78,38 @@ func _ready() -> void:
 ## Overrides [member portal_camera] compositor to disable global cloud shaders.
 func _isolate_portal_camera_compositor() -> void:
 	print("Portal: Isolating compositor for ", portal_camera.name)
-	if not is_instance_valid(portal_camera.compositor):
-		_empty_compositor = Compositor.new()
-		portal_camera.compositor = _empty_compositor
+	_empty_compositor = Compositor.new()
+	# Empty array ensures no inherited or lingering custom effects
+	_empty_compositor.compositor_effects = []
+	portal_camera.compositor = _empty_compositor
 
 
-## Validates ambient lighting on [member portal_camera] to avoid black shadows.
+## Configures an isolated environment disabling heavy fog and GI passes.
 func _configure_portal_environment() -> void:
-	print("Portal: Validating environment lighting for ", portal_camera.name)
-	if not is_instance_valid(portal_camera.environment):
-		portal_camera.environment = Environment.new()
+	print("Portal: Configuring isolated environment for ", portal_camera.name)
+	var env: Environment = Environment.new()
+	env.sdfgi_enabled = false
+	env.ssao_enabled = false
+	env.ssil_enabled = false
+	env.ssr_enabled = false
+	env.glow_enabled = false
+	env.volumetric_fog_enabled = false
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	env.ambient_light_color = Color(0.2, 0.22, 0.28, 1.0)
+	env.ambient_light_energy = 1.0
+	portal_camera.environment = env
 
-	var env: Environment = portal_camera.environment
-	if env.ambient_light_source == Environment.AMBIENT_SOURCE_DISABLED:
-		print("Portal: Ambient light disabled on ", name, ", setting color fill.")
-		env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-		env.ambient_light_color = Color(0.2, 0.22, 0.28, 1.0)
-		env.ambient_light_energy = 1.0
 
-
-## Safely attaches parent 3D world to [member sub_viewport] once tree is ready.
+## Safely attaches parent 3D world to [member sub_viewport] if unassigned.
 func _assign_world_3d() -> void:
 	print("Portal: Binding World3D to SubViewport for ", name)
+	if not is_instance_valid(sub_viewport):
+		return
+	sub_viewport.own_world_3d = false
 	var parent_world: World3D = get_viewport().find_world_3d()
 	if is_instance_valid(parent_world):
-		sub_viewport.world_3d = parent_world
+		if sub_viewport.world_3d != parent_world:
+			sub_viewport.world_3d = parent_world
 	else:
 		push_warning("Portal: Main World3D not found for SubViewport!")
 
@@ -166,8 +175,9 @@ func _on_player_camera_registered(cam: Camera3D) -> void:
 
 ## Resizes the [SubViewport] texture when window resolution changes.
 func _on_viewport_size_changed() -> void:
-	print("Portal: Updating SubViewport size to match main viewport.")
-	sub_viewport.size = get_viewport().size
+	print("Portal: Updating SubViewport size to match scaled viewport.")
+	# Half resolution cuts pixel processing passes by 75%
+	sub_viewport.size = (get_viewport().size * 0.5).max(Vector2i(256, 256))
 
 
 ## Synchronizes the linked portal camera with the player perspective.
@@ -185,10 +195,8 @@ func _process(_delta: float) -> void:
 			linked_portal._set_viewport_mode(SubViewport.UPDATE_DISABLED)
 		return
 
-	# Cull if player is behind the portal face
 	var to_player: Vector3 = player_camera.global_position - global_position
 	var is_in_front: bool = global_transform.basis.z.dot(to_player) > 0.0
-
 	var dist_sq: float = global_position.distance_squared_to(player_camera.global_position)
 	var in_range: bool = dist_sq <= (max_render_distance * max_render_distance)
 
@@ -198,19 +206,18 @@ func _process(_delta: float) -> void:
 
 	linked_portal._set_viewport_mode(SubViewport.UPDATE_ALWAYS)
 
-	var relative_transform: Transform3D = (
-		global_transform.affine_inverse() * player_camera.global_transform
-	)
+	var rel_trans: Transform3D = global_transform.affine_inverse() * player_camera.global_transform
 	var half_turn: Transform3D = Transform3D(Basis.from_euler(Vector3(0.0, PI, 0.0)), Vector3.ZERO)
 
-	linked_portal.portal_camera.global_transform = (
-		linked_portal.global_transform * half_turn * relative_transform
-	)
-	linked_portal.portal_camera.fov = player_camera.fov
-	linked_portal.portal_camera.near = player_camera.near
-	linked_portal.portal_camera.far = player_camera.far
-	linked_portal.portal_camera.keep_aspect = player_camera.keep_aspect
-	linked_portal.portal_camera.projection = player_camera.projection
+	var target_cam: Camera3D = linked_portal.portal_camera
+	target_cam.global_transform = (linked_portal.global_transform * half_turn * rel_trans)
+	target_cam.fov = player_camera.fov
+	target_cam.near = player_camera.near
+	target_cam.far = player_camera.far
+	target_cam.keep_aspect = player_camera.keep_aspect
+	target_cam.projection = player_camera.projection
+	# Offset triggers cloud compositor culling (absf(cam_proj.z.x) > 0.0001)
+	target_cam.h_offset = 0.0005
 
 
 ## Checks crossed bodies and performs portal teleportation.

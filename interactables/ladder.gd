@@ -1,54 +1,51 @@
 @tool
-## A physics volume that triggers the player's climbing locomotion state.
-##
-## Features an editor-only debug mesh and directional arrow to help level designers visually
-## align the climbing surface correctly against walls.
+## Physics trigger volume that attaches the player character to climbing locomotion.
 class_name Ladder
 extends Area3D
 
-## The physical dimensions of the climbing trigger volume.
+## Physical dimensions of the ladder interaction box and visual bounds.
 @export var ladder_size: Vector3 = Vector3(2.2, 5.0, 0.5):
 	set(value):
 		ladder_size = value
-		if is_inside_tree() and Engine.is_editor_hint():
+		if is_inside_tree():
 			_update_visuals()
 
 ## An editor-only mesh indicating the "front" or mountable face of the ladder.
-@onready var arrow: MeshInstance3D = $Arrow
+@onready var arrow: MeshInstance3D = get_node_or_null("Arrow") as MeshInstance3D
 
 
-## Hides editor helpers and meshes when entering play mode.
+## Initializes runtime visibility or applies inspector dimensions to editor gizmos.
 func _ready() -> void:
-	if Engine.is_editor_hint():
-		# We are in the editor. Apply the sizes.
-		_update_visuals()
-	else:
+	_update_visuals()
+
+	if not Engine.is_editor_hint():
 		if is_instance_valid(arrow):
 			arrow.hide()
-		# We are actually playing the game. Hide the mesh as usual.
 		if has_node("MeshInstance3D"):
 			get_node("MeshInstance3D").hide()
 
 
-## Synchronizes the collision box and editor debug mesh sizes to match the inspector settings.
+## Resizes the collision box and editor debug mesh to match inspector bounds.
 func _update_visuals() -> void:
-	# Update the collision box size safely
 	if has_node("CollisionShape3D"):
-		var col_shape: Shape3D = get_node("CollisionShape3D").get("shape") as Shape3D
-		if col_shape is BoxShape3D:
-			col_shape.size = ladder_size
+		var col_node: CollisionShape3D = get_node("CollisionShape3D") as CollisionShape3D
+		if is_instance_valid(col_node) and col_node.shape is BoxShape3D:
+			# Ensure the shape is unique per instance so ladders do not overwrite each other
+			if Engine.is_editor_hint() and not col_node.shape.resource_local_to_scene:
+				col_node.shape = col_node.shape.duplicate()
+			(col_node.shape as BoxShape3D).size = ladder_size
 
-	# Update the mesh block size safely
 	if has_node("MeshInstance3D"):
-		var mesh_shape: Mesh = get_node("MeshInstance3D").get("mesh") as Mesh
-		if mesh_shape is BoxMesh:
-			mesh_shape.size = ladder_size
+		var mesh_node: MeshInstance3D = get_node("MeshInstance3D") as MeshInstance3D
+		if is_instance_valid(mesh_node) and mesh_node.mesh is BoxMesh:
+			if Engine.is_editor_hint() and not mesh_node.mesh.resource_local_to_scene:
+				mesh_node.mesh = mesh_node.mesh.duplicate()
+			(mesh_node.mesh as BoxMesh).size = ladder_size
 
 
-## Checks if the entering body supports ladder climbing and triggers its mount logic.
-## [param body]: The 3D physics body entering the trigger.
+## Triggers climbing entry routine on bodies exposing the ladder interaction API.
+## [param body] The physics body entering the trigger bounds.
 func _on_body_entered(body: Node3D) -> void:
-	# Ignore collisions while we are just editing the level
 	if Engine.is_editor_hint():
 		return
 
@@ -57,8 +54,8 @@ func _on_body_entered(body: Node3D) -> void:
 		body.call("enter_ladder", self)
 
 
-## Notifies the climbing body to detach and return to normal locomotion.
-## [param body]: The 3D physics body exiting the trigger.
+## Disengages climbing routine when a body steps outside trigger bounds.
+## [param body] The physics body exiting the trigger bounds.
 func _on_body_exited(body: Node3D) -> void:
 	if Engine.is_editor_hint():
 		return
