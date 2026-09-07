@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://c7h356wkdb6sn"]
+
+[ext_resource type="Script" uid="uid://bq27leh0gx7x0" path="res://interactables/lever_stick_item.gd" id="1_g1vls"]
+[ext_resource type="PackedScene" uid="uid://mqae3mth7tfx" path="res://interactables/pickable_object.tscn" id="1_k3kqc"]
+[ext_resource type="Texture2D" uid="uid://civnfn7yss1n" path="res://assets/images/dev_textures/dev_texture_green_1024.png" id="3_0wbse"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_t4g2u"]
+albedo_texture = ExtResource("3_0wbse")
+uv1_triplanar = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_t4g2u"]
+material = SubResource("StandardMaterial3D_t4g2u")
+size = Vector3(0.1, 1, 0.1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_t4g2u"]
+size = Vector3(0.1, 1, 0.1)
+
+[node name="LeverStick" unique_id=594279821 instance=ExtResource("1_k3kqc")]
+script = ExtResource("1_g1vls")
+item_id = "lever_stick"
+item_name = "Iron Lever Handle"
+
+[node name="MeshInstance3D" parent="." index="2" unique_id=1239371319]
+mesh = SubResource("BoxMesh_t4g2u")
+
+[node name="CollisionShape3D" parent="." index="3" unique_id=1677444331]
+shape = SubResource("BoxShape3D_t4g2u")
