@@ -62,7 +62,6 @@ sky_material = SubResource("PanoramaSkyMaterial_kja8q")
 background_mode = 2
 sky = SubResource("Sky_lwyc6")
 sky_rotation = Vector3(0, 2.3841197, 0)
-sdfgi_enabled = true
 sdfgi_use_occlusion = true
 sdfgi_cascades = 2
 

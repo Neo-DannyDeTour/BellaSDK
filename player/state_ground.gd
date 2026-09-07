@@ -172,7 +172,7 @@ func _perform_jump() -> void:
 
 ## Updates [member PlayerLocomotionComponent.crouching] based on input and ceiling checks.
 func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
-	print("StateGround: _calculate_target_speed() called.")
+	# print("StateGround: _calculate_target_speed() called.")
 	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
 	var interact: PlayerInteractionComponent = (
 		player.interaction_component as PlayerInteractionComponent

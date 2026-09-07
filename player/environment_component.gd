@@ -83,14 +83,14 @@ func enter_ladder(ladder_node: Node3D) -> void:
 		return
 
 	if is_instance_valid(state_machine):
-		state_machine.call("transition_to", "Ladders", {"ladder_node": ladder_node})
+		state_machine.call("transition_to", "Ladder", {"ladder_node": ladder_node})
 
 
 ## Releases the player from the ladder and returns them to an air state.
 ## [param _ladder_node] The ladder object being released.
 func exit_ladder(_ladder_node: Node3D) -> void:
 	print("EnvironmentComponent: exit_ladder() called.")
-	if is_instance_valid(state_machine) and state_machine.get("state").name == "Ladders":
+	if is_instance_valid(state_machine) and state_machine.get("state").name == "Ladder":
 		state_machine.call("transition_to", "Air")
 
 

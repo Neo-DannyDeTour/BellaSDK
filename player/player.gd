@@ -38,7 +38,7 @@ var in_game_console: CanvasLayer
 var flashlight_controller: FlashlightController
 
 ## Local node reference for receiving and managing the player's health points.
-@onready var health_component: HealthComponent = $Components/HealthComponent
+var health_component: HealthComponent
 
 ## Indicates if the player character has died, used to globally block input and physics.
 var is_dead: bool = false
@@ -59,6 +59,10 @@ func _ready() -> void:
 	print("Player: Initializing character controller.")
 	add_to_group("saveable")
 	add_to_group("player")
+
+	# Resolve HealthComponent if a test mock hasn't pre-assigned it
+	if not is_instance_valid(health_component):
+		health_component = get_node_or_null("Components/HealthComponent") as HealthComponent
 
 	call_deferred("_capture_mouse")
 
