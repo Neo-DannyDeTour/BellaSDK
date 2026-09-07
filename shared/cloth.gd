@@ -6,12 +6,14 @@ class_name ClothBaker
 extends SoftBody3D
 
 ## The physical keyboard key used to trigger the cloth bake.
-@export var bake_action_key: int = KEY_SPACE
+@export var bake_action_key: Key = KEY_SPACE
 ## The file path where the baked cloth mesh will be saved.
 @export var save_path: String = "res://baked_red_cloth.res"
 
 
 ## Listens for the assigned bake action key to trigger the mesh baking process.
+##
+## [param event] The input event to check against the mapped bake key.
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == bake_action_key:
@@ -22,7 +24,7 @@ func _input(event: InputEvent) -> void:
 func _bake_cloth() -> void:
 	print("Baking cloth simulation...")
 	var base_mesh: ArrayMesh = mesh as ArrayMesh
-	if not base_mesh:
+	if not is_instance_valid(base_mesh):
 		printerr("No mesh assigned to SoftBody3D or not ArrayMesh!")
 		return
 

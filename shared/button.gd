@@ -7,12 +7,13 @@ class_name LogicButton
 extends StaticBody3D
 
 @export_category("Button References")
-# Drag the node you want to physically move down here (e.g., the 'button' Node3D)
+
 ## The visual part of the button that moves down when pressed.
 @export var pressable_part: Node3D
-# Drag the actual mesh you want to glow here (e.g., 'Circle_017')
+
 ## The specific mesh instance that receives the highlight effect.
 @export var mesh_to_highlight: MeshInstance3D
+
 ## The shader material applied to outline the button.
 @export var outline_material: ShaderMaterial
 
@@ -27,10 +28,8 @@ extends StaticBody3D
 		transmitter = value
 		_sync_transmitter()
 
-# The targets are back on the parent for easy level design access.
-# Whenever this changes in the Inspector, it updates the child.
 ## List of target nodes to activate when the button is pressed.
-@export var targets: Array[Node3D]:
+@export var targets: Array[Node3D] = []:
 	set(value):
 		targets = value
 		_sync_transmitter()
@@ -51,7 +50,7 @@ var can_press: bool = true
 @onready var label_interact: Label3D = $LabelInteract
 
 
-## Connects the interact component signals and synchronizes the target list.
+## Initializes the button, synchronizes local targets, and connects interaction signals.
 func _ready() -> void:
 	_sync_transmitter()
 
@@ -68,7 +67,6 @@ func _ready() -> void:
 
 ## Pushes the assigned targets list to the connected transmitter.
 func _sync_transmitter() -> void:
-	# Automatically pass the targets to the transmitter so it can handle the local logic
 	if is_instance_valid(transmitter):
 		transmitter.targets = targets
 
@@ -90,6 +88,8 @@ func _on_unfocus() -> void:
 
 
 ## Receives the interaction signal from the player and toggles the button state.
+##
+## [param _player] The player character that interacted with the button.
 func _on_interact(_player: CharacterBody3D) -> void:
 	if not is_instance_valid(pressable_part) or not can_press:
 		return

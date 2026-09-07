@@ -1,5 +1,10 @@
-extends AnimatableBody3D
+## An animatable falling shell object used for set pieces.
+##
+## This object remains hidden at its editor position until triggered. Upon triggering,
+## it calculates a spawn position above its target and falls along a Bezier arc,
+## emitting smoke before landing gracefully at its initial transform.
 class_name CrabShell
+extends AnimatableBody3D
 
 ## Distance in meters to move backward along the shell's local Y (Up) axis to find the spawn point.
 @export var drop_distance: float = 100.0
@@ -38,18 +43,20 @@ var _start_pos: Vector3
 var _control_pos: Vector3
 
 
+## Disables physics processing and caches the initial landing transform.
 func _ready() -> void:
 	print("CrabShell initializing: Caching target transform and awaiting trigger.")
 	set_physics_process(false)
 	visible = false
 	_target_transform = global_transform
 
-	if smoke_trail:
+	if is_instance_valid(smoke_trail):
 		smoke_trail.emitting = false
 		smoke_trail.local_coords = false
 		smoke_trail.top_level = true
 
 
+## Initiates the drop sequence, applying any configured drop delay.
 func trigger_drop() -> void:
 	if _has_triggered:
 		return
@@ -62,6 +69,7 @@ func trigger_drop() -> void:
 	_start_falling()
 
 
+## Calculates the spawn point and curve control position, and begins physics processing.
 func _start_falling() -> void:
 	print("CrabShell falling: Spawning and starting trajectory.")
 	_current_time = 0.0
@@ -78,7 +86,7 @@ func _start_falling() -> void:
 	global_transform = Transform3D(clean_basis, _start_pos)
 	visible = true
 
-	if smoke_trail:
+	if is_instance_valid(smoke_trail):
 		smoke_trail.global_position = _start_pos
 		smoke_trail.visible = true
 		smoke_trail.emitting = false
@@ -87,6 +95,7 @@ func _start_falling() -> void:
 	set_physics_process(true)
 
 
+## Interpolates the shell's position along the calculated Bezier arc.
 func _physics_process(delta: float) -> void:
 	if not _is_falling:
 		return
@@ -102,7 +111,7 @@ func _physics_process(delta: float) -> void:
 		set_physics_process(false)
 		global_transform = _target_transform
 
-		if smoke_trail:
+		if is_instance_valid(smoke_trail):
 			smoke_trail.global_position = global_transform.origin
 		_on_impact()
 		return
@@ -112,12 +121,12 @@ func _physics_process(delta: float) -> void:
 	# Atomic transform assignment prevents physics snapping during flight
 	global_transform = Transform3D(_target_transform.basis, new_pos)
 
-	if smoke_trail:
+	if is_instance_valid(smoke_trail):
 		smoke_trail.global_position = new_pos
 
 		if not smoke_trail.emitting:
-			var dist: float = new_pos.distance_to(_target_transform.origin)
-			if dist <= smoke_distance_threshold:
+			var dist_sq: float = new_pos.distance_squared_to(_target_transform.origin)
+			if dist_sq <= (smoke_distance_threshold * smoke_distance_threshold):
 				print(
 					"CrabShell falling: Reached ",
 					smoke_distance_threshold,
@@ -126,6 +135,7 @@ func _physics_process(delta: float) -> void:
 				smoke_trail.emitting = true
 
 
+## Computes a position along a quadratic Bezier curve given a time percentage.
 func _calculate_bezier(t: float) -> Vector3:
 	var target_pos: Vector3 = _target_transform.origin
 	var q0: Vector3 = _start_pos.lerp(_control_pos, t)
@@ -133,7 +143,8 @@ func _calculate_bezier(t: float) -> Vector3:
 	return q0.lerp(q1, t)
 
 
+## Handles the landing event, such as disabling the particle emitter.
 func _on_impact() -> void:
 	print("CrabShell impact: Sequence finished, deactivating smoke trail.")
-	if smoke_trail:
+	if is_instance_valid(smoke_trail):
 		smoke_trail.emitting = false
