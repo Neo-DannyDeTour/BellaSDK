@@ -91,7 +91,9 @@ func _ready() -> void:
 		reset_defaults_button.pressed.connect(_on_reset_defaults_pressed)
 
 	visibility_changed.connect(_on_visibility_changed)
-	_on_tab_pressed(video_panel)
+
+	# Defer initial tab selection so reparenting runs after scenario registration
+	_on_tab_pressed.call_deferred(video_panel)
 
 
 ## Connects all tab navigation buttons to their respective handlers.
@@ -296,8 +298,6 @@ func _discover_diorama_nodes() -> void:
 	diorama_container = (find_child("DioramaContainer", true, false) as SubViewportContainer)
 
 	if is_instance_valid(diorama_container):
-		# Setting stretch_shrink to 2 or 3 divides internal viewport pixel dimensions
-		# by 2 or 3 while keeping UI socket bounding intact.
 		diorama_container.stretch = true
 		diorama_container.stretch_shrink = 2
 		_diorama_viewport = (
@@ -307,8 +307,10 @@ func _discover_diorama_nodes() -> void:
 		_diorama_viewport = find_child("DioramaViewport", true, false) as SubViewport
 
 	if is_instance_valid(_diorama_viewport):
-		_diorama_viewport.own_world_3d = true
-		# Do NOT set _diorama_viewport.size manually here; stretch_shrink handles it.
+		# DELETE OR COMMENT OUT THESE LINES:
+		# _diorama_viewport.own_world_3d = true
+		# _diorama_viewport.world_3d = World3D.new()
+
 		_diorama_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 		_diorama_viewport.process_mode = Node.PROCESS_MODE_DISABLED
 		_diorama_viewport.positional_shadow_atlas_size = 512

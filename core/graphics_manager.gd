@@ -74,6 +74,7 @@ func enable_user_mode() -> void:
 	is_auto_optimizing = false
 	_sdfgi_downgrade_level = 0
 	GlobalSettings.save_setting("Settings", "use_auto_optimizer", false)
+	GlobalSettings.save_setting("Settings", "optimized_downgrade_level", 0)
 
 	if is_instance_valid(_fps_timer):
 		_fps_timer.stop()

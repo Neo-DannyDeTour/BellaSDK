@@ -79,7 +79,7 @@ var _is_performing_manual_scan: bool = false
 ## Lifecycle method called when the node enters the scene tree.
 ## Connects tab signals, layout constraints, and initializes rendering measurement.
 func _ready() -> void:
-	print("RenderDiagnosticsPanel: _ready() called.")
+	print("RenderDiagnosticsPanel: Initializing diagnostic hooks and viewport counters.")
 	visible = false
 	_apply_layout_constraints()
 	get_viewport().size_changed.connect(_apply_layout_constraints)
@@ -99,7 +99,7 @@ func _ready() -> void:
 
 ## Closes persistent file handles and flushes remaining records on node exit.
 func _exit_tree() -> void:
-	print("RenderDiagnosticsPanel: _exit_tree() cleaning up file handles.")
+	print("RenderDiagnosticsPanel: Flushing hitch data and releasing handles.")
 	_flush_csv_to_disk()
 	if _csv_file:
 		_csv_file.close()
@@ -108,7 +108,7 @@ func _exit_tree() -> void:
 
 ## Initializes the desktop CSV file handle only in debug builds.
 func _init_csv_logging() -> void:
-	print("RenderDiagnosticsPanel: Initializing hitch CSV log handle.")
+	print("RenderDiagnosticsPanel: Creating debug hitch logger on desktop.")
 	var desktop_dir: String = OS.get_system_dir(OS.SYSTEM_DIR_DESKTOP)
 	_csv_path = desktop_dir.path_join("godot_hitches.csv")
 	var file_exists: bool = FileAccess.file_exists(_csv_path)
@@ -124,7 +124,7 @@ func _init_csv_logging() -> void:
 
 ## Switches active tab to Viewports & Layers pipeline.
 func _on_pipeline_tab_pressed() -> void:
-	print("RenderDiagnosticsPanel: Switching to Pipeline tab.")
+	print("RenderDiagnosticsPanel: Displaying Viewports pipeline breakdown.")
 	_current_tab = DiagnosticTab.PIPELINE
 	_update_tab_button_visuals()
 	_refresh_diagnostics_display()
@@ -132,7 +132,7 @@ func _on_pipeline_tab_pressed() -> void:
 
 ## Switches active tab to CPU/GPU and Rendering performance monitors.
 func _on_perf_tab_pressed() -> void:
-	print("RenderDiagnosticsPanel: Switching to Performance tab.")
+	print("RenderDiagnosticsPanel: Displaying CPU/GPU performance metrics.")
 	_current_tab = DiagnosticTab.PERFORMANCE
 	_update_tab_button_visuals()
 	_refresh_diagnostics_display()
@@ -146,7 +146,6 @@ func _update_tab_button_visuals() -> void:
 
 ## Sets horizontal centering and full vertical screen spanning anchors.
 func _apply_layout_constraints() -> void:
-	print("RenderDiagnosticsPanel: Updating panel layout anchors.")
 	var panel_width: float = 640.0
 	var half_width: float = panel_width / 2.0
 
@@ -192,7 +191,7 @@ func _process(delta: float) -> void:
 ## [return] The new visibility state after toggling.
 func toggle_window() -> bool:
 	visible = not visible
-	print("RenderDiagnosticsPanel: Visibility toggled -> ", visible)
+	print("RenderDiagnosticsPanel: Toggled visibility to ", visible)
 	if visible:
 		_apply_layout_constraints()
 		_refresh_diagnostics_display()
@@ -259,7 +258,7 @@ func _refresh_diagnostics_display() -> void:
 
 ## Performs a single, one-off scan of scene branches on demand.
 func scan_scene_geometry() -> void:
-	print("RenderDiagnosticsPanel: Executing manual geometry scan.")
+	print("RenderDiagnosticsPanel: Initiating manual scene tree geometry audit.")
 	_is_performing_manual_scan = true
 
 	var current_scene: Node = get_tree().current_scene
@@ -391,7 +390,14 @@ func _build_pipeline_report() -> String:
 				SubViewport.UPDATE_ALWAYS:
 					mode_str = "[color=red]ALWAYS[/color]"
 
-			text += "* %s (%dx%d) -> Mode: %s\n" % [str(vp.name), vp.size.x, vp.size.y, mode_str]
+			var vp_rid: RID = vp.get_viewport_rid()
+			RenderingServer.viewport_set_measure_render_time(vp_rid, true)
+			var sub_gpu_ms: float = RenderingServer.viewport_get_measured_render_time_gpu(vp_rid)
+
+			text += (
+				"* %s (%dx%d) -> Mode: %s | GPU: %.2f ms\n"
+				% [str(vp.name), vp.size.x, vp.size.y, mode_str, sub_gpu_ms]
+			)
 
 	return text
 
@@ -409,5 +415,5 @@ func _collect_subviewports(current_node: Node, out_viewports: Array[SubViewport]
 
 ## Handles the scan button press to trigger an on-demand geometry audit.
 func _on_scan_geometry_pressed() -> void:
-	print("RenderDiagnosticsPanel: Scan Geometry button clicked.")
+	print("RenderDiagnosticsPanel: Triggering scene hierarchy scan.")
 	scan_scene_geometry()
