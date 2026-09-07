@@ -48,7 +48,7 @@ size_flags_vertical = 3
 [node name="SettingsScroll" type="ScrollContainer" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=693938259]
 layout_mode = 2
 size_flags_horizontal = 3
-scroll_vertical = 671
+scroll_vertical = 100
 horizontal_scroll_mode = 0
 
 [node name="SettingsVBox" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll" unique_id=1857639409]

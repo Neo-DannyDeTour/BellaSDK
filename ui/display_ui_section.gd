@@ -1,5 +1,5 @@
 ## Controls typography fonts, font scaling, UI scale factor, and field of view.
-## Attached to the DisplayUISection GridContainer.
+## Attached to the DisplayUISection [GridContainer].
 class_name AccessibilityDisplayUISection
 extends GridContainer
 
@@ -55,7 +55,7 @@ func _ready() -> void:
 	_connect_signals()
 
 
-## Populates OptionButton items for typography fonts.
+## Populates [OptionButton] items for typography fonts.
 func _populate_dropdowns() -> void:
 	if is_instance_valid(font_option):
 		font_option.clear()
@@ -90,14 +90,15 @@ func _connect_signals() -> void:
 		font_option.item_selected.connect(_on_font_selected)
 
 
-## Reads display, UI, and FOV preferences from GlobalSettings.
+## Reads display, UI, and FOV preferences from [GlobalSettings].
 func load_settings() -> void:
 	print("UI: Loading Display and UI settings.")
 	_load_slider(fov_slider, fov_input, "base_fov", DEFAULT_FOV, "Settings", true)
 	if is_instance_valid(sprint_fov_checkbox):
-		sprint_fov_checkbox.button_pressed = bool(
+		var disable_sprint: bool = bool(
 			GlobalSettings.get_setting("Settings", "disable_sprint_fov", DEFAULT_DISABLE_SPRINT_FOV)
 		)
+		sprint_fov_checkbox.set_pressed_no_signal(disable_sprint)
 	_apply_fov_settings()
 
 	_load_slider(ui_scale_slider, ui_scale_input, "ui_scale", DEFAULT_UI_SCALE, "Settings")
@@ -123,9 +124,9 @@ func load_settings() -> void:
 ## [param key] Setting key identifier.
 ## [param min_val] Minimum clamp limit.
 ## [param max_val] Maximum clamp limit.
-## [param section] GlobalSettings section category.
+## [param section] [GlobalSettings] section category.
 ## [param is_int] Whether to format display text as integer.
-## [param apply_cb] The Callable invoked when numeric value modifies.
+## [param apply_cb] The [Callable] invoked when numeric value modifies.
 func _connect_slider(
 	slider: HSlider,
 	input_box: LineEdit,
@@ -167,11 +168,10 @@ func _connect_slider(
 				else:
 					var clamped_val: float = clampf(trimmed.to_float(), min_val, max_val)
 					input_box.text = str(int(clamped_val)) if is_int else ("%.2f" % clamped_val)
-					if is_instance_valid(slider):
-						slider.value = clamped_val
 					print("Player manually typed ", key, " input: ", clamped_val)
 					GlobalSettings.save_setting(section, key, clamped_val)
-					apply_cb.call(clamped_val)
+					if is_instance_valid(slider):
+						slider.value = clamped_val
 				input_box.release_focus()
 		)
 		input_box.focus_exited.connect(
@@ -183,11 +183,10 @@ func _connect_slider(
 				else:
 					var clamped_val: float = clampf(trimmed.to_float(), min_val, max_val)
 					input_box.text = str(int(clamped_val)) if is_int else ("%.2f" % clamped_val)
-					if is_instance_valid(slider):
+					if is_instance_valid(slider) and not is_equal_approx(slider.value, clamped_val):
+						print("Player committed ", key, " input on defocus: ", clamped_val)
+						GlobalSettings.save_setting(section, key, clamped_val)
 						slider.value = clamped_val
-					print("Player committed ", key, " input on defocus: ", clamped_val)
-					GlobalSettings.save_setting(section, key, clamped_val)
-					apply_cb.call(clamped_val)
 		)
 
 
@@ -196,7 +195,7 @@ func _connect_slider(
 ## [param input_box] The target [LineEdit] node.
 ## [param key] Setting key identifier.
 ## [param default_val] Fallback float value.
-## [param section] GlobalSettings category section.
+## [param section] [GlobalSettings] category section.
 ## [param is_int] Format as integer if true.
 func _load_slider(
 	slider: HSlider,
@@ -208,7 +207,7 @@ func _load_slider(
 ) -> void:
 	if is_instance_valid(slider):
 		var val: float = float(GlobalSettings.get_setting(section, key, default_val))
-		slider.value = val
+		slider.set_value_no_signal(val)
 		if is_instance_valid(input_box):
 			input_box.text = str(int(val)) if is_int else ("%.2f" % val)
 
@@ -271,7 +270,7 @@ func _on_font_selected(index: int) -> void:
 	_apply_font_settings()
 
 
-## Broadcasts font override mode changes across the EventBus.
+## Broadcasts font override mode changes across the [Events] bus.
 func _apply_font_settings() -> void:
 	if not is_instance_valid(font_option):
 		return
@@ -287,7 +286,7 @@ func _apply_font_settings() -> void:
 		events_node.font_changed.emit(target_font_id)
 
 
-## Broadcasts typography font scale factor changes across the EventBus.
+## Broadcasts typography font scale factor changes across the [Events] bus.
 ## [param scale_val] Font scaling multiplier.
 func _apply_font_scale_settings(scale_val: float) -> void:
 	print("Engine: Applying Font Scale adjustments: ", scale_val)
@@ -296,7 +295,7 @@ func _apply_font_scale_settings(scale_val: float) -> void:
 		events_node.font_scale_changed.emit(scale_val)
 
 
-## Updates the font sizes across common Control types using the active theme.
+## Updates the font sizes across common [Control] types using the active theme.
 ## [param scale_factor] The active font scale multiplier.
 func apply_font_scale_to_theme(scale_factor: float) -> void:
 	print("UI: Rescaling base theme font sizes with factor: ", scale_factor)

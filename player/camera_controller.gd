@@ -1,4 +1,4 @@
-## Controls first-person camera transforms, view bobbing, FOV adjustments, and input sensitivity.
+## Controls first-person camera transforms, bobbing, FOV, and input sensitivity.
 class_name CameraController
 extends Node3D
 
@@ -71,33 +71,31 @@ var stair_offset: float = 0.0
 var invert_y: bool = false
 
 
-## Lifecycle initialization method loading saved preferences and preparing camera state.
+## Lifecycle initialization method loading saved preferences and camera state.
 func _ready() -> void:
 	print("CameraController: Initializing settings.")
 
-	mouse_sensitivity_base = (
-		GlobalSettings.get_setting("Controls", "mouse_sensitivity", 1.0) as float
+	mouse_sensitivity_base = float(
+		GlobalSettings.get_setting("Controls", "mouse_sensitivity", 0.05)
 	)
-	base_fov = GlobalSettings.get_setting("Settings", "base_fov", 75.0) as float
-	disable_sprint_fov = (
-		GlobalSettings.get_setting("Settings", "disable_sprint_fov", false) as bool
-	)
-	invert_y = GlobalSettings.get_setting("Controls", "invert_y", false) as bool
+	base_fov = float(GlobalSettings.get_setting("Settings", "base_fov", 75.0))
+	disable_sprint_fov = bool(GlobalSettings.get_setting("Settings", "disable_sprint_fov", false))
+	invert_y = bool(GlobalSettings.get_setting("Controls", "invert_y", false))
 
 	mouse_sensitivity = mouse_sensitivity_base
 	target_fov = base_fov
 
 
-## Sets the base mouse sensitivity multiplier and syncs the live sensitivity.
-## [param new_sens] The target mouse sensitivity value.
+## Sets base mouse sensitivity multiplier and syncs live sensitivity.
+## [param new_sens] Target mouse sensitivity value.
 func set_mouse_sensitivity(new_sens: float) -> void:
 	print("CameraController: Setting base sensitivity to: ", new_sens)
 	mouse_sensitivity_base = new_sens
 	mouse_sensitivity = new_sens
 
 
-## Evaluates incoming mouse motion to rotate the player body and camera head.
-## [param event] The mouse motion input event.
+## Evaluates incoming mouse motion to rotate player body and camera head.
+## [param event] Mouse motion input event.
 ## [param is_terminal_mode] Whether terminal focus restricts mouse movement.
 ## [param is_heavy_lifting] Whether heavy lifting restricts camera yaw/pitch.
 ## [param _heavy_lift_yaw_base] Yaw constraint baseline angle.
@@ -250,7 +248,7 @@ func _update_headbob(
 	eyes.position.x = headbob_offset.x
 
 
-## Injects a step displacement offset when navigating step height changes.
+## Injects step displacement offset when navigating step height changes.
 ## [param snap_amount] Step displacement distance in meters.
 func add_stair_offset(snap_amount: float) -> void:
 	print("CameraController: Applying stair snap offset: ", snap_amount)
@@ -269,7 +267,7 @@ func _update_stair_smoothing(delta: float, player_velocity: float) -> void:
 	stair_offset = move_toward(stair_offset, 0.0, move_amount)
 
 
-## Calculates the normalized forward look vector from the active camera.
+## Calculates normalized forward look vector from active camera.
 ## [return] The unit forward [Vector3].
 func get_camera_look_dir() -> Vector3:
 	if is_instance_valid(camera):
@@ -277,7 +275,7 @@ func get_camera_look_dir() -> Vector3:
 	return Vector3.FORWARD
 
 
-## Calculates the normalized right view vector from the active camera.
+## Calculates normalized right view vector from active camera.
 ## [return] The unit right [Vector3].
 func get_camera_right_dir() -> Vector3:
 	if is_instance_valid(camera):
@@ -285,11 +283,11 @@ func get_camera_right_dir() -> Vector3:
 	return Vector3.RIGHT
 
 
-## Forces pitch and yaw rotation values directly to camera transform components.
+## Forces pitch and yaw rotation values directly to camera components.
 ## [param pitch] Camera vertical pitch in radians.
 ## [param yaw] Body horizontal yaw in radians.
 func apply_saved_rotation(pitch: float, yaw: float) -> void:
-	print("CameraController: apply_saved_rotation() called. Forcing camera vectors.")
+	print("CameraController: apply_saved_rotation() called.")
 	global_rotation = Vector3(pitch, yaw, 0.0)
 
 	if is_instance_valid(head):

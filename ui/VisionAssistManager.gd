@@ -146,6 +146,9 @@ func apply_diorama_overlays(diorama_root: Node) -> void:
 ## Handles global vision assist toggle events across all registered groups.
 ## [param toggled_on] Whether high-contrast overlays should be displayed.
 func _on_vision_assist_toggled(toggled_on: bool) -> void:
+	if is_active == toggled_on:
+		return
+
 	print("VisionAssistManager: Toggled vision assist state to: ", toggled_on)
 	is_active = toggled_on
 
@@ -190,8 +193,14 @@ func _on_vision_assist_color_changed(target_group: String, color_name: String) -
 ## Applies overlays immediately to newly spawned nodes belonging to configured groups.
 ## [param node] The newly added [Node] instance.
 func _on_scene_node_added(node: Node) -> void:
+	if not is_active and not diorama_preview_active:
+		return
+
 	if not node.is_node_ready():
 		await node.ready
+
+	if not is_instance_valid(node):
+		return
 
 	var in_diorama: bool = _is_node_in_diorama(node)
 	var active_state: bool = diorama_preview_active if in_diorama else is_active
@@ -224,6 +233,9 @@ func _is_node_in_diorama(node: Node) -> bool:
 func _apply_overlay_to_meshes(
 	target_node: Node, active_state: bool, target_material: ShaderMaterial
 ) -> void:
+	if not is_instance_valid(target_node):
+		return
+
 	if target_node is GeometryInstance3D:
 		if active_state:
 			var final_mat: ShaderMaterial = target_material

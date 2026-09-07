@@ -4,6 +4,7 @@ extends VBoxContainer
 
 ## Emitted when switching GPU or renderer backend to request confirmation dialog.
 signal restart_required(message: String, renderer_key: String, gpu_idx: int)
+
 ## Emitted when the user starts the automated 60 FPS tuning benchmark pass.
 signal auto_tune_requested
 
@@ -68,7 +69,10 @@ func load_settings() -> void:
 	)
 	for i: int in range(renderer_options.get_item_count()):
 		var label: String = renderer_options.get_item_text(i)
-		if VideoConfig.RENDERER_MODES[label] == cur_renderer:
+		if (
+			VideoConfig.RENDERER_MODES.has(label)
+			and VideoConfig.RENDERER_MODES[label] == cur_renderer
+		):
 			renderer_options.select(i)
 			break
 
@@ -82,7 +86,7 @@ func load_settings() -> void:
 func set_benchmark_state(is_running: bool) -> void:
 	print("HardwareSection: Updating auto-tune button state: ", is_running)
 	auto_tune_button.disabled = is_running
-	auto_tune_button.text = "Benchmarking..." if is_running else "Auto-Tune for 60 FPS"
+	auto_tune_button.text = ("Benchmarking..." if is_running else "Auto-Tune for 60 FPS")
 
 
 ## Handles GPU adapter selection and dispatches restart confirmation signal.
@@ -90,6 +94,10 @@ func set_benchmark_state(is_running: bool) -> void:
 func _on_gpu_selected(index: int) -> void:
 	var label: String = gpu_options.get_item_text(index)
 	var gpu_idx: int = _available_gpus.get(label, 0) as int
+	var current_gpu: int = GlobalSettings.get_setting("Settings", "gpu_adapter_index", 0) as int
+	if current_gpu == gpu_idx:
+		return
+
 	print("HardwareSection: Selected GPU adapter index: ", gpu_idx)
 	var msg: String = (
 		"Switching GPU adapter to '"
@@ -103,7 +111,16 @@ func _on_gpu_selected(index: int) -> void:
 ## [param index] Item index selected.
 func _on_renderer_selected(index: int) -> void:
 	var label: String = renderer_options.get_item_text(index)
+	if not VideoConfig.RENDERER_MODES.has(label):
+		return
+
 	var rend_key: String = VideoConfig.RENDERER_MODES[label] as String
+	var current_rend: String = (
+		GlobalSettings.get_setting("Settings", "renderer", "forward_plus") as String
+	)
+	if current_rend == rend_key:
+		return
+
 	print("HardwareSection: Selected rendering engine: ", rend_key)
 	var msg: String = (
 		"Changing the rendering engine to '"

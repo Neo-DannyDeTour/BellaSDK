@@ -100,10 +100,10 @@ var _icon_cache: Dictionary = {}
 func _ready() -> void:
 	print("UI: Controls Panel initialized.")
 
-	if crouch_mode_option:
+	if is_instance_valid(crouch_mode_option):
 		crouch_mode_option.focus_mode = Control.FOCUS_NONE
 
-	if sprint_mode_option:
+	if is_instance_valid(sprint_mode_option):
 		sprint_mode_option.focus_mode = Control.FOCUS_NONE
 
 	_format_header_grid()
@@ -152,6 +152,9 @@ func _process(delta: float) -> void:
 
 ## Applies proper stretch flags and centered text alignment to the static header grid.
 func _format_header_grid() -> void:
+	if not is_instance_valid(header_grid):
+		return
+
 	header_grid.columns = 4
 	header_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
@@ -196,28 +199,32 @@ func _ensure_all_actions_registered() -> void:
 ## Sets up options and loads persisted behavior preferences (Toggle vs Hold).
 func _setup_behavior_controls() -> void:
 	print("UI: Configuring Input Behavior dropdowns.")
-	crouch_mode_label.text = "Crouch Mode"
-	sprint_mode_label.text = "Sprint Mode"
+	if is_instance_valid(crouch_mode_label):
+		crouch_mode_label.text = "Crouch Mode"
+	if is_instance_valid(sprint_mode_label):
+		sprint_mode_label.text = "Sprint Mode"
 
-	crouch_mode_option.clear()
-	crouch_mode_option.add_item("Hold", 0)
-	crouch_mode_option.add_item("Toggle", 1)
+	if is_instance_valid(crouch_mode_option):
+		crouch_mode_option.clear()
+		crouch_mode_option.add_item("Hold", 0)
+		crouch_mode_option.add_item("Toggle", 1)
 
-	var saved_crouch: String = (
-		GlobalSettings.get_setting("Gameplay", "crouch_mode", "Hold") as String
-	)
-	crouch_mode_option.select(1 if saved_crouch == "Toggle" else 0)
-	crouch_mode_option.item_selected.connect(_on_crouch_mode_selected)
+		var saved_crouch: String = (
+			GlobalSettings.get_setting("Gameplay", "crouch_mode", "Hold") as String
+		)
+		crouch_mode_option.selected = 1 if saved_crouch == "Toggle" else 0
+		crouch_mode_option.item_selected.connect(_on_crouch_mode_selected)
 
-	sprint_mode_option.clear()
-	sprint_mode_option.add_item("Hold", 0)
-	sprint_mode_option.add_item("Toggle", 1)
+	if is_instance_valid(sprint_mode_option):
+		sprint_mode_option.clear()
+		sprint_mode_option.add_item("Hold", 0)
+		sprint_mode_option.add_item("Toggle", 1)
 
-	var saved_sprint: String = (
-		GlobalSettings.get_setting("Gameplay", "sprint_mode", "Hold") as String
-	)
-	sprint_mode_option.select(1 if saved_sprint == "Toggle" else 0)
-	sprint_mode_option.item_selected.connect(_on_sprint_mode_selected)
+		var saved_sprint: String = (
+			GlobalSettings.get_setting("Gameplay", "sprint_mode", "Hold") as String
+		)
+		sprint_mode_option.selected = 1 if saved_sprint == "Toggle" else 0
+		sprint_mode_option.item_selected.connect(_on_sprint_mode_selected)
 
 
 ## Handles crouch mode selection changes.
@@ -238,6 +245,9 @@ func _on_sprint_mode_selected(index: int) -> void:
 
 ## Generates the UI elements grouped by categories with primary, secondary, and clear slots.
 func _create_control_list() -> void:
+	if not is_instance_valid(action_list_container):
+		return
+
 	print("UI: Building categorized controls list.")
 	for child: Node in action_list_container.get_children():
 		child.queue_free()
@@ -351,10 +361,12 @@ func _create_event_display_node(event: InputEvent) -> Control:
 ## [param action] The input action key string.
 ## [param slot_index] The target slot index (0 for Primary, 1 for Secondary).
 func _update_slot_button_text(button: Button, action: String, slot_index: int) -> void:
+	if not is_instance_valid(button):
+		return
+
 	print("UI: Updating slot button for action: ", action, " [Slot ", slot_index, "]")
 	var events: Array[InputEvent] = InputMap.action_get_events(action)
 
-	# Clean up any existing dynamic preview containers inside the button
 	var existing_container: Node = button.get_node_or_null("PreviewContainer")
 	if existing_container != null:
 		existing_container.queue_free()
@@ -379,7 +391,6 @@ func _update_slot_button_text(button: Button, action: String, slot_index: int) -
 	container.add_theme_constant_override("separation", 6)
 	button.add_child(container)
 
-	# 1. Determine and add gesture prefix label
 	var prefix: String = ""
 	if gesture == "hold" or action in HOLD_ACTIONS:
 		prefix = "Hold"
@@ -396,7 +407,6 @@ func _update_slot_button_text(button: Button, action: String, slot_index: int) -
 		prefix_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		container.add_child(prefix_label)
 
-	# 2. Render Chord combination icons or single event icon
 	if target_ev.has_meta("chord_keys"):
 		var keys_array: Array = target_ev.get_meta("chord_keys") as Array
 		var is_ordered: bool = gesture == "ordered_chord"
@@ -422,13 +432,16 @@ func _update_slot_button_text(button: Button, action: String, slot_index: int) -
 func _on_remap_button_toggled(
 	toggled_on: bool, button: Button, action: String, slot_index: int
 ) -> void:
+	if not is_instance_valid(button):
+		return
+
 	var existing_container: Node = button.get_node_or_null("PreviewContainer")
 	if existing_container != null:
 		existing_container.queue_free()
 
 	if toggled_on:
 		print("UI: Remap started for: ", action, " [Slot ", slot_index, "]")
-		if remapping_button and remapping_button != button:
+		if is_instance_valid(remapping_button) and remapping_button != button:
 			remapping_button.button_pressed = false
 
 		is_remapping = true
@@ -444,7 +457,7 @@ func _on_remap_button_toggled(
 			is_remapping = false
 			remapping_button = null
 			_reset_gesture_state()
-			_update_slot_button_text(button, action, slot_index)
+		_update_slot_button_text(button, action, slot_index)
 
 
 ## Resets all temporary gesture recognition parameters and timers.
@@ -528,7 +541,7 @@ func _process_gesture_event(clean_event: InputEvent, is_pressed: bool) -> void:
 
 		if _chord_events.size() > 1:
 			_chord_timer = CHORD_COMPLETION_WINDOW
-			if remapping_button:
+			if is_instance_valid(remapping_button):
 				remapping_button.text = "Chord detecting..."
 			return
 
@@ -538,7 +551,7 @@ func _process_gesture_event(clean_event: InputEvent, is_pressed: bool) -> void:
 			_is_candidate_pressed = true
 			_hold_timer = 0.0
 			_multi_tap_timer = 0.0
-			if remapping_button:
+			if is_instance_valid(remapping_button):
 				remapping_button.text = "Holding..."
 		else:
 			_press_count += 1
@@ -546,10 +559,10 @@ func _process_gesture_event(clean_event: InputEvent, is_pressed: bool) -> void:
 			_hold_timer = 0.0
 			if _press_count >= MASH_THRESHOLD_COUNT:
 				_multi_tap_timer = MULTI_TAP_TIME_WINDOW
-				if remapping_button:
-					remapping_button.text = "Mashing (" + str(_press_count) + ")..."
+				if is_instance_valid(remapping_button):
+					remapping_button.text = ("Mashing (" + str(_press_count) + ")...")
 			elif _press_count == 2:
-				if remapping_button:
+				if is_instance_valid(remapping_button):
 					remapping_button.text = "Holding 2x..."
 	else:
 		if _chord_events.size() > 1:
@@ -559,12 +572,11 @@ func _process_gesture_event(clean_event: InputEvent, is_pressed: bool) -> void:
 			_is_candidate_pressed = false
 			if _hold_timer < HOLD_TIME_THRESHOLD:
 				_multi_tap_timer = MULTI_TAP_TIME_WINDOW
-				if remapping_button:
+				if is_instance_valid(remapping_button):
 					remapping_button.text = "Waiting next tap..."
 
 
 ## Finalizes chord assignment maintaining exact sequential press order.
-## The earlier elements represent held modifiers, and the last element is the trigger key.
 func _finalize_chord_remap() -> void:
 	var base_event: InputEvent = _chord_events[_chord_events.size() - 1]
 	var key_ids: Array[int] = []
@@ -599,19 +611,14 @@ func _finalize_gesture_remap(new_event: InputEvent) -> void:
 	_assign_event_to_action_slot(action_to_remap, target_slot_index, new_event)
 
 	var active_btn: Button = remapping_button
-	var mapped_action: String = action_to_remap
-	var mapped_slot: int = target_slot_index
-
 	is_remapping = false
-	if active_btn:
-		active_btn.button_pressed = false
 	remapping_button = null
 	_reset_gesture_state()
 
-	_save_controls()
-	if active_btn:
-		_update_slot_button_text(active_btn, mapped_action, mapped_slot)
-	_refresh_all_buttons()
+	_save_action_mapping(action_to_remap)
+
+	if is_instance_valid(active_btn):
+		active_btn.button_pressed = false
 
 
 ## Assigns an event specifically to either the primary or secondary slot index of an action.
@@ -658,10 +665,9 @@ func _on_clear_action_pressed(action: String, primary_btn: Button, secondary_btn
 		else:
 			InputMap.action_erase_events(action)
 
-	_save_controls()
+	_save_action_mapping(action)
 	_update_slot_button_text(primary_btn, action, 0)
 	_update_slot_button_text(secondary_btn, action, 1)
-	_refresh_all_buttons()
 
 
 ## Restores all keybindings to factory default configurations.
@@ -674,6 +680,9 @@ func _on_reset_all_pressed() -> void:
 
 ## Refreshes button texts across all category grids.
 func _refresh_all_buttons() -> void:
+	if not is_instance_valid(action_list_container):
+		return
+
 	for grid: Node in action_list_container.find_children("", "GridContainer", true, false):
 		for child: Node in grid.get_children():
 			if child is Button and child.has_meta("slot"):
@@ -682,14 +691,20 @@ func _refresh_all_buttons() -> void:
 				_update_slot_button_text(child, action, slot)
 
 
+## Persists a single modified action mapping into [GlobalSettings].
+## [param action] Action name key to save.
+func _save_action_mapping(action: String) -> void:
+	if InputMap.has_action(action):
+		var events: Array[InputEvent] = InputMap.action_get_events(action)
+		GlobalSettings.save_setting("Controls", action, events)
+
+
 ## Persists all active action mappings into [GlobalSettings].
 func _save_controls() -> void:
 	print("System: Saving all action mappings to GlobalSettings.")
 	for category: String in ACTION_CATEGORIES.keys():
 		for action: String in ACTION_CATEGORIES[category]:
-			if InputMap.has_action(action):
-				var events: Array[InputEvent] = InputMap.action_get_events(action)
-				GlobalSettings.save_setting("Controls", action, events)
+			_save_action_mapping(action)
 
 
 ## Resets all keybindings to factory default configurations and refreshes UI.
@@ -699,7 +714,6 @@ func reset_to_defaults() -> void:
 
 
 ## Resolves an [InputEvent] to a matching default Kenney prompt icon texture.
-## Checks root default directory and subfolders with in-memory caching.
 ## [param event] The [InputEvent] to find an icon for.
 ## [return] The loaded [Texture2D], or null if no matching asset exists.
 func _get_event_icon(event: InputEvent) -> Texture2D:
@@ -802,5 +816,5 @@ func _get_event_icon(event: InputEvent) -> Texture2D:
 				_icon_cache[full_path] = tex
 				return tex
 
-	print("UI: Icon not found for event across tested search paths: ", event.as_text())
+	print("UI: Icon not found for event across search paths: ", event.as_text())
 	return null

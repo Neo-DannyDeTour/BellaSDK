@@ -74,7 +74,7 @@ func load_settings() -> void:
 	)
 
 	var lod: float = GlobalSettings.get_setting("Settings", "mesh_lod_threshold", 1.0) as float
-	mesh_lod_slider.value = lod
+	mesh_lod_slider.set_value_no_signal(lod)
 	mesh_lod_line.text = str(snappedf(lod, 0.01))
 
 
@@ -84,7 +84,7 @@ func load_settings() -> void:
 func apply_preset_values(shadow_quality: String, mesh_lod: float) -> void:
 	print("QualitySection: Applying preset values: ", shadow_quality)
 	_select_dropdown_text(shadow_options, shadow_quality)
-	mesh_lod_slider.value = mesh_lod
+	mesh_lod_slider.set_value_no_signal(mesh_lod)
 	mesh_lod_line.text = str(snappedf(mesh_lod, 0.01))
 
 
@@ -135,16 +135,25 @@ func _sync_dropdown(
 ## [param index] Item index selected.
 func _on_preset_selected(index: int) -> void:
 	var preset: String = preset_options.get_item_text(index)
-	print("QualitySection: Preset selected: ", preset)
-	GlobalSettings.save_setting("Settings", "preset", preset)
+	var current_preset: String = (
+		GlobalSettings.get_setting("Settings", "preset", VideoConfig.DEFAULT_PRESET) as String
+	)
+	if current_preset == preset:
+		return
 
+	print("QualitySection: Preset selected: ", preset)
 	if VideoConfig.PRESETS.has(preset):
 		var data: Dictionary = VideoConfig.PRESETS[preset] as Dictionary
 		var shadow_key: String = data["shadow_quality"] as String
 		var lod_val: float = data["mesh_lod_threshold"] as float
 		apply_preset_values(shadow_key, lod_val)
-		GlobalSettings.save_setting("Settings", "shadow_quality", shadow_key)
-		GlobalSettings.save_setting("Settings", "mesh_lod_threshold", lod_val)
+
+		var bulk_data: Dictionary = {
+			"preset": preset, "shadow_quality": shadow_key, "mesh_lod_threshold": lod_val
+		}
+		GlobalSettings.save_settings_bulk("Settings", bulk_data)
+	else:
+		GlobalSettings.save_setting("Settings", "preset", preset)
 
 	quality_settings_changed.emit()
 
@@ -153,6 +162,12 @@ func _on_preset_selected(index: int) -> void:
 ## [param index] Item index selected.
 func _on_shadow_selected(index: int) -> void:
 	var text: String = shadow_options.get_item_text(index)
+	var current: String = (
+		GlobalSettings.get_setting("Settings", "shadow_quality", "High (Smooth)") as String
+	)
+	if current == text:
+		return
+
 	print("QualitySection: Shadow quality changed: ", text)
 	GlobalSettings.save_setting("Settings", "shadow_quality", text)
 	quality_settings_changed.emit()
@@ -162,6 +177,12 @@ func _on_shadow_selected(index: int) -> void:
 ## [param index] Item index selected.
 func _on_aa_selected(index: int) -> void:
 	var text: String = aa_options.get_item_text(index)
+	var current: String = (
+		GlobalSettings.get_setting("Settings", "aa_mode", VideoConfig.DEFAULT_AA_MODE) as String
+	)
+	if current == text:
+		return
+
 	print("QualitySection: Anti-aliasing mode changed: ", text)
 	GlobalSettings.save_setting("Settings", "aa_mode", text)
 	quality_settings_changed.emit()
@@ -171,6 +192,12 @@ func _on_aa_selected(index: int) -> void:
 ## [param index] Item index selected.
 func _on_fsr_selected(index: int) -> void:
 	var text: String = fsr_options.get_item_text(index)
+	var current: String = (
+		GlobalSettings.get_setting("Settings", "fsr_mode", VideoConfig.DEFAULT_FSR_MODE) as String
+	)
+	if current == text:
+		return
+
 	print("QualitySection: FSR mode changed: ", text)
 	GlobalSettings.save_setting("Settings", "fsr_mode", text)
 	quality_settings_changed.emit()
@@ -180,6 +207,13 @@ func _on_fsr_selected(index: int) -> void:
 ## [param index] Item index selected.
 func _on_anisotropy_selected(index: int) -> void:
 	var text: String = anisotropy_options.get_item_text(index)
+	var current: String = (
+		GlobalSettings.get_setting("Settings", "anisotropy", VideoConfig.DEFAULT_ANISOTROPY)
+		as String
+	)
+	if current == text:
+		return
+
 	print("QualitySection: Anisotropic filtering changed: ", text)
 	GlobalSettings.save_setting("Settings", "anisotropy", text)
 	quality_settings_changed.emit()
@@ -188,8 +222,14 @@ func _on_anisotropy_selected(index: int) -> void:
 ## Handles mesh LOD slider drag events.
 ## [param value] Current floating-point slider position.
 func _on_mesh_lod_slider_changed(value: float) -> void:
-	print("QualitySection: Mesh LOD slider changed: ", value)
 	var snapped_val: float = snappedf(value, 0.01)
+	var current_lod: float = (
+		GlobalSettings.get_setting("Settings", "mesh_lod_threshold", 1.0) as float
+	)
+	if is_equal_approx(current_lod, snapped_val):
+		return
+
+	print("QualitySection: Mesh LOD slider changed: ", snapped_val)
 	if mesh_lod_line.text != str(snapped_val):
 		mesh_lod_line.text = str(snapped_val)
 	GlobalSettings.save_setting("Settings", "mesh_lod_threshold", snapped_val)
@@ -216,5 +256,7 @@ func _parse_and_apply_lod(input_text: String) -> void:
 	var val: float = clampf(
 		input_text.to_float(), mesh_lod_slider.min_value, mesh_lod_slider.max_value
 	)
-	mesh_lod_slider.value = val
-	mesh_lod_line.text = str(snappedf(val, 0.01))
+	var snapped_val: float = snappedf(val, 0.01)
+	if not is_equal_approx(mesh_lod_slider.value, snapped_val):
+		mesh_lod_slider.value = snapped_val
+	mesh_lod_line.text = str(snapped_val)

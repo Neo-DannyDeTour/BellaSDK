@@ -1,5 +1,5 @@
 ## Controls post-processing, screen filters, brightness, contrast, and colorblind modes.
-## Attached to the VisualsSection GridContainer.
+## Attached to the VisualsSection [GridContainer].
 class_name AccessibilityVisualsSection
 extends GridContainer
 
@@ -80,7 +80,7 @@ func _ready() -> void:
 	_connect_signals()
 
 
-## Populates OptionButton items for screen filters and colorblind presets.
+## Populates [OptionButton] items for screen filters and colorblind presets.
 func _populate_dropdowns() -> void:
 	if is_instance_valid(screen_filter_option):
 		screen_filter_option.clear()
@@ -124,7 +124,7 @@ func _connect_signals() -> void:
 		high_contrast_toggle.toggled.connect(_on_high_contrast_toggled)
 
 
-## Reads stored visual options from GlobalSettings into UI components.
+## Reads stored visual options from [GlobalSettings] into UI components.
 func load_settings() -> void:
 	print("UI: Loading Visuals settings.")
 	if is_instance_valid(colorblind_option):
@@ -138,7 +138,7 @@ func load_settings() -> void:
 			GlobalSettings.get_setting("Settings", "screen_filter", DEFAULT_SCREEN_FILTER)
 		)
 		screen_filter_option.selected = initial_filter
-		_on_screen_filter_selected(initial_filter)
+		_apply_screen_filter(initial_filter)
 
 	_load_slider(brightness_slider, brightness_input, "brightness", DEFAULT_BRIGHTNESS)
 	_load_slider(contrast_slider, contrast_input, "contrast", DEFAULT_CONTRAST)
@@ -220,14 +220,10 @@ func _connect_slider(
 				else:
 					var new_val: float = clampf(trimmed.to_float(), min_val, max_val)
 					input_box.text = str(int(new_val)) if is_int else ("%.2f" % new_val)
-					if is_instance_valid(slider):
-						slider.value = new_val
 					print("Player manually typed ", key, " input: ", new_val)
 					GlobalSettings.save_setting(section, key, new_val)
-					if custom_cb.is_valid():
-						custom_cb.call(new_val)
-					else:
-						_apply_visual_settings()
+					if is_instance_valid(slider):
+						slider.value = new_val
 				input_box.release_focus()
 		)
 		input_box.focus_exited.connect(
@@ -239,14 +235,10 @@ func _connect_slider(
 				else:
 					var new_val: float = clampf(trimmed.to_float(), min_val, max_val)
 					input_box.text = str(int(new_val)) if is_int else ("%.2f" % new_val)
-					if is_instance_valid(slider):
+					if is_instance_valid(slider) and not is_equal_approx(slider.value, new_val):
+						print("Player committed ", key, " input on defocus: ", new_val)
+						GlobalSettings.save_setting(section, key, new_val)
 						slider.value = new_val
-					print("Player committed ", key, " input on defocus: ", new_val)
-					GlobalSettings.save_setting(section, key, new_val)
-					if custom_cb.is_valid():
-						custom_cb.call(new_val)
-					else:
-						_apply_visual_settings()
 		)
 
 
@@ -258,7 +250,7 @@ func _connect_slider(
 func _load_slider(slider: HSlider, input_box: LineEdit, key: String, default_val: float) -> void:
 	if is_instance_valid(slider):
 		var val: float = float(GlobalSettings.get_setting("Settings", key, default_val))
-		slider.value = val
+		slider.set_value_no_signal(val)
 		if is_instance_valid(input_box):
 			input_box.text = "%.2f" % val
 
@@ -280,18 +272,24 @@ func _apply_colorblind_settings() -> void:
 	if has_node("/root/Events"):
 		var events: Node = get_node("/root/Events")
 		if events.has_signal("colorblind_mode_changed"):
-			events.emit_signal("colorblind_mode_changed", mode)
+			events.colorblind_mode_changed.emit(mode)
 
 
 ## Handles screen filter dropdown selections.
 ## [param index] Selected screen filter index.
 func _on_screen_filter_selected(index: int) -> void:
+	GlobalSettings.save_setting("Settings", "screen_filter", index)
+	_apply_screen_filter(index)
+
+
+## Applies selected screen filter without persisting it again.
+## [param index] Screen filter index.
+func _apply_screen_filter(index: int) -> void:
 	var filter_ids: Array[String] = GlobalSettings.get_screen_filter_ids()
 	if index < 0 or index >= filter_ids.size():
 		return
 	var filter_name: String = filter_ids[index]
 	print("Player selected Screen Filter: ", filter_name)
-	GlobalSettings.save_setting("Settings", "screen_filter", index)
 	if has_node("/root/Events"):
 		var events: Node = get_node("/root/Events")
 		if events.has_signal("screen_filter_changed"):
@@ -363,7 +361,7 @@ func _apply_gamma_to_environment(gamma_val: float, env: Environment) -> void:
 	env.adjustment_color_correction = curve_tex
 
 
-## Finds the active WorldEnvironment node in the tree with fallbacks.
+## Finds the active [WorldEnvironment] node in the tree with fallbacks.
 ## [return] The [WorldEnvironment] node if located, otherwise `null`.
 func _find_world_environment() -> WorldEnvironment:
 	var env_nodes: Array[Node] = get_tree().get_nodes_in_group("world_environment")

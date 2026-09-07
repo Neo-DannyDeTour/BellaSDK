@@ -4,37 +4,48 @@ extends RefCounted
 
 
 ## Updates the application display mode, screen assignment, and dimensions.
-## [param window] Window reference to mutate.
-## [param mode] Target window mode enum.
+## [param window] Target [Window] to mutate.
+## [param mode] Target [enum DisplayServer.WindowMode] enum.
 ## [param screen_idx] Target monitor display index.
 ## [param resolution] Target resolution pixel dimensions.
 static func apply_window_settings(
 	window: Window, mode: DisplayServer.WindowMode, screen_idx: int, resolution: Vector2i
 ) -> void:
 	print("VideoApplier: Applying window and display settings.")
-	window.current_screen = screen_idx
-	DisplayServer.window_set_mode(mode)
-	window.content_scale_size = resolution
+	if window.current_screen != screen_idx:
+		window.current_screen = screen_idx
+
+	if DisplayServer.window_get_mode() != mode:
+		DisplayServer.window_set_mode(mode)
+
+	if window.content_scale_size != resolution:
+		window.content_scale_size = resolution
+
 	if not window.is_embedded() and window.mode == Window.MODE_WINDOWED:
-		window.size = resolution
+		if window.size != resolution:
+			window.size = resolution
 
 
 ## Configures global engine limits including VSync and maximum framerate cap.
-## [param vsync_mode] VSync mode to assign.
+## [param vsync_mode] [enum DisplayServer.VSyncMode] mode to assign.
 ## [param fps_limit] Maximum FPS integer limit.
 static func apply_engine_limits(vsync_mode: DisplayServer.VSyncMode, fps_limit: int) -> void:
 	print("VideoApplier: Applying engine limits. FPS: ", fps_limit)
-	Engine.max_fps = fps_limit
-	DisplayServer.window_set_vsync_mode(vsync_mode)
+	if Engine.max_fps != fps_limit:
+		Engine.max_fps = fps_limit
+
+	if DisplayServer.window_get_vsync_mode() != vsync_mode:
+		DisplayServer.window_set_vsync_mode(vsync_mode)
 
 
-## Sets texture anisotropic filtering level in ProjectSettings.
+## Sets texture anisotropic filtering level in [ProjectSettings].
 ## [param level] Anisotropic filtering level integer.
 static func apply_anisotropy(level: int) -> void:
 	print("VideoApplier: Setting anisotropic filtering level: ", level)
-	ProjectSettings.set_setting(
-		"rendering/textures/default_filters/anisotropic_filtering_level", level
-	)
+	var setting_key: String = "rendering/textures/default_filters/anisotropic_filtering_level"
+	var current: Variant = ProjectSettings.get_setting(setting_key)
+	if current == null or int(current) != level:
+		ProjectSettings.set_setting(setting_key, level)
 
 
 ## Applies rendering parameters across the main viewport and preview subviewports.
@@ -84,6 +95,7 @@ static func apply_viewport_pipeline(
 
 ## Clamps high MSAA modes for subviewports to ensure 60 FPS performance headroom.
 ## [param requested_msaa] Requested [enum Viewport.MSAA].
+## [return] Clamped [enum Viewport.MSAA] value.
 static func _clamp_preview_msaa(requested_msaa: Viewport.MSAA) -> Viewport.MSAA:
 	print("VideoApplier: Clamping preview viewport MSAA.")
 	if requested_msaa > Viewport.MSAA_2X:

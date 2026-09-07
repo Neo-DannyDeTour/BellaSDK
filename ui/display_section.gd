@@ -1,8 +1,8 @@
-## Controls window mode, resolution, monitors, and framerate synchronization.
+## Controls window mode, resolution, monitors, and framerate limits.
 class_name DisplaySection
 extends VBoxContainer
 
-## Emitted when a display setting changes to trigger renderer pipeline updates.
+## Emitted when display settings change to trigger renderer pipeline updates.
 signal display_settings_changed
 
 ## Reference to the display mode [OptionButton].
@@ -17,7 +17,7 @@ signal display_settings_changed
 @onready var vsync_options: OptionButton = %VSyncOptionButton
 
 
-## Connects UI signals and loads current display settings.
+## Lifecycle method initializing dropdown options and connecting signals.
 func _ready() -> void:
 	print("DisplaySection: Initializing display settings UI.")
 	_populate_dropdowns()
@@ -39,7 +39,7 @@ func _populate_dropdowns() -> void:
 		monitor_options.add_item("Monitor " + str(i + 1))
 
 
-## Connects all widget selection signals to their corresponding handler methods.
+## Connects UI input signals to corresponding handler methods.
 func _connect_signals() -> void:
 	print("DisplaySection: Connecting UI signals.")
 	display_options.item_selected.connect(_on_display_selected)
@@ -49,7 +49,7 @@ func _connect_signals() -> void:
 	vsync_options.item_selected.connect(_on_vsync_selected)
 
 
-## Loads display configuration from disk and synchronizes widget states.
+## Loads display settings from storage and updates dropdown selections.
 func load_settings() -> void:
 	print("DisplaySection: Loading display settings from disk.")
 	_sync_dropdown(
@@ -67,7 +67,7 @@ func load_settings() -> void:
 	_select_dropdown_text(resolution_options, str(res_x) + " x " + str(res_y))
 
 
-## Populates a single dropdown menu with keys from a dictionary.
+## Populates a single [OptionButton] with keys from a dictionary.
 ## [param dropdown] The target [OptionButton] to fill.
 ## [param data_dict] Source dictionary holding option keys.
 func _fill_dropdown(dropdown: OptionButton, data_dict: Dictionary) -> void:
@@ -77,7 +77,7 @@ func _fill_dropdown(dropdown: OptionButton, data_dict: Dictionary) -> void:
 		dropdown.add_item(key)
 
 
-## Selects a dropdown item matching target label text.
+## Selects an [OptionButton] item matching target label text.
 ## [param dropdown] The target [OptionButton].
 ## [param target_text] String label to find and select.
 func _select_dropdown_text(dropdown: OptionButton, target_text: String) -> void:
@@ -88,7 +88,7 @@ func _select_dropdown_text(dropdown: OptionButton, target_text: String) -> void:
 			return
 
 
-## Matches a saved value to an item in [param dropdown] using [param dict].
+## Matches a saved setting value to an item in an [OptionButton].
 ## [param dropdown] The option button to update.
 ## [param dict] Key-value dictionary associated with the option button.
 ## [param key] The config setting key identifier.
@@ -110,49 +110,73 @@ func _sync_dropdown(
 			return
 
 
-## Handles display window mode changes.
+## Handles window mode changes and notifies listeners if modified.
 ## [param index] Item index selected.
 func _on_display_selected(index: int) -> void:
-	print("DisplaySection: Display mode changed: ", index)
+	print("DisplaySection: Display mode selected: ", index)
 	var text: String = display_options.get_item_text(index)
 	var mode: int = VideoConfig.DISPLAY_MODES[text] as int
-	GlobalSettings.save_setting("Settings", "display_mode", mode)
-	display_settings_changed.emit()
+	var current_mode: int = (
+		GlobalSettings.get_setting("Settings", "display_mode", VideoConfig.DEFAULT_DISPLAY) as int
+	)
+
+	if current_mode != mode:
+		GlobalSettings.save_setting("Settings", "display_mode", mode)
+		display_settings_changed.emit()
 
 
-## Handles target monitor screen changes.
+## Handles target monitor changes and notifies listeners if modified.
 ## [param index] Item index selected.
 func _on_monitor_selected(index: int) -> void:
-	print("DisplaySection: Monitor changed: ", index)
-	GlobalSettings.save_setting("Settings", "screen_index", index)
-	display_settings_changed.emit()
+	print("DisplaySection: Monitor selected: ", index)
+	var current_screen: int = GlobalSettings.get_setting("Settings", "screen_index", 0) as int
+
+	if current_screen != index:
+		GlobalSettings.save_setting("Settings", "screen_index", index)
+		display_settings_changed.emit()
 
 
-## Handles window resolution changes.
+## Handles resolution changes and bulk-saves coordinates if modified.
 ## [param index] Item index selected.
 func _on_resolution_selected(index: int) -> void:
-	print("DisplaySection: Resolution changed: ", index)
+	print("DisplaySection: Resolution selected: ", index)
 	var text: String = resolution_options.get_item_text(index)
 	var res: Vector2i = VideoConfig.RESOLUTIONS[text] as Vector2i
-	GlobalSettings.save_setting("Settings", "resolution_x", res.x)
-	GlobalSettings.save_setting("Settings", "resolution_y", res.y)
-	display_settings_changed.emit()
+	var cur_x: int = GlobalSettings.get_setting("Settings", "resolution_x", 1920) as int
+	var cur_y: int = GlobalSettings.get_setting("Settings", "resolution_y", 1080) as int
+
+	if cur_x != res.x or cur_y != res.y:
+		GlobalSettings.save_settings_bulk(
+			"Settings", {"resolution_x": res.x, "resolution_y": res.y}
+		)
+		display_settings_changed.emit()
 
 
 ## Handles engine framerate cap limit changes.
 ## [param index] Item index selected.
 func _on_fps_selected(index: int) -> void:
-	print("DisplaySection: FPS limit changed: ", index)
-	var limit: int = VideoConfig.FPS_LIMITS[fps_options.get_item_text(index)] as int
-	GlobalSettings.save_setting("Settings", "fps_limit", limit)
-	display_settings_changed.emit()
+	print("DisplaySection: FPS limit selected: ", index)
+	var text: String = fps_options.get_item_text(index)
+	var limit: int = VideoConfig.FPS_LIMITS[text] as int
+	var current_limit: int = (
+		GlobalSettings.get_setting("Settings", "fps_limit", VideoConfig.DEFAULT_FPS) as int
+	)
+
+	if current_limit != limit:
+		GlobalSettings.save_setting("Settings", "fps_limit", limit)
+		display_settings_changed.emit()
 
 
-## Handles VSync mode selection.
+## Handles VSync mode selection changes.
 ## [param index] Item index selected.
 func _on_vsync_selected(index: int) -> void:
-	print("DisplaySection: VSync mode changed: ", index)
+	print("DisplaySection: VSync mode selected: ", index)
 	var text: String = vsync_options.get_item_text(index)
 	var mode: int = VideoConfig.VSYNC_MODES[text] as int
-	GlobalSettings.save_setting("Settings", "vsync_mode", mode)
-	display_settings_changed.emit()
+	var current_mode: int = (
+		GlobalSettings.get_setting("Settings", "vsync_mode", VideoConfig.DEFAULT_VSYNC) as int
+	)
+
+	if current_mode != mode:
+		GlobalSettings.save_setting("Settings", "vsync_mode", mode)
+		display_settings_changed.emit()

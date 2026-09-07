@@ -4,30 +4,43 @@ extends RefCounted
 
 ## The default application display mode.
 const DEFAULT_DISPLAY: int = DisplayServer.WINDOW_MODE_FULLSCREEN
+
 ## The default framerate target.
 const DEFAULT_FPS: int = 60
+
 ## The default FSR configuration string.
 const DEFAULT_FSR_MODE: String = "Disabled (Native)"
+
 ## The default Anti-Aliasing configuration string.
 const DEFAULT_AA_MODE: String = "Disabled"
+
 ## The default VSync state.
 const DEFAULT_VSYNC: DisplayServer.VSyncMode = DisplayServer.VSYNC_ENABLED
+
 ## The default preset configuration string.
 const DEFAULT_PRESET: String = "High"
+
 ## The default Tonemapping algorithm mode.
 const DEFAULT_TONEMAP: String = "Filmic"
+
 ## The default Anisotropic filtering setting string.
 const DEFAULT_ANISOTROPY: String = "4x"
+
 ## The default SSAO quality mode string.
 const DEFAULT_SSAO: String = "Medium"
+
 ## The default SSIL quality mode string.
 const DEFAULT_SSI: String = "Off"
+
 ## The default SSR quality mode string.
 const DEFAULT_SSR: String = "Off"
+
 ## The default SDFGI quality mode string.
 const DEFAULT_SDFGI: String = "Off"
+
 ## The default volumetric fog quality mode string.
 const DEFAULT_FOG: String = "Off"
+
 ## The default glow quality mode string.
 const DEFAULT_GLOW: String = "High"
 

@@ -1,10 +1,9 @@
-## Extends the base Camera3D to manage active audio listening,
-## screenshake, and visual assist shaders.
+## Extends Camera3D to manage active audio listening, screenshake, and visual shaders.
 class_name ExtendedCamera3D
 extends Camera3D
 
 @export_category("Camera Role")
-## If enabled, registers and activates spatial audio listeners and makes current on startup.
+## If enabled, registers audio listener and activates camera on boot.
 @export var is_player_camera: bool = false
 
 @export_category("Screenshake Settings")
@@ -38,13 +37,12 @@ var _spatial_listener: AudioListener3D = null
 var _vision_shader_material: ShaderMaterial
 
 
-## Lifecycle method initializing the camera, spatial listener, and signal connections.
+## Lifecycle method initializing camera, listener, and signal hooks.
 func _ready() -> void:
 	_resolve_vision_mesh()
 	_cache_vision_material()
 
 	if not is_player_camera:
-		# Diorama preview cameras do not process shake or audio
 		set_process(false)
 		if is_instance_valid(vision_assist_mesh):
 			vision_assist_mesh.visible = current
@@ -69,7 +67,7 @@ func _ready() -> void:
 			events.vision_assist_mode_changed.connect(set_vision_assist_mode)
 
 
-## Locates the vision assist MeshInstance3D child node regardless of name suffix.
+## Locates the vision assist MeshInstance3D child node safely.
 func _resolve_vision_mesh() -> void:
 	if is_instance_valid(vision_assist_mesh):
 		return
@@ -94,7 +92,7 @@ func _cache_vision_material() -> void:
 			vision_assist_mesh.set_surface_override_material(0, _vision_shader_material)
 
 
-## Creates and activates the AudioListener3D directly attached to the camera head.
+## Creates and activates the AudioListener3D directly attached to camera.
 func _setup_audio_listener() -> void:
 	if not is_instance_valid(_spatial_listener):
 		_spatial_listener = AudioListener3D.new()
@@ -111,7 +109,7 @@ func _process(delta: float) -> void:
 	if _trauma > 0.0:
 		_trauma = maxf(_trauma - (_decay_rate * delta), 0.0)
 		_apply_shake(delta)
-	elif h_offset != 0.0 or v_offset != 0.0:
+	elif h_offset != 0.0 or v_offset != 0.0 or rotation_degrees.z != 0.0:
 		h_offset = 0.0
 		v_offset = 0.0
 		rotation_degrees.z = 0.0
@@ -126,20 +124,20 @@ func _apply_shake(delta: float) -> void:
 
 	h_offset = max_offset_x * shake_power * _noise.get_noise_2d(_time_passed, 0.0)
 	v_offset = max_offset_y * shake_power * _noise.get_noise_2d(_time_passed, 100.0)
-	rotation_degrees.z = max_roll_z * shake_power * _noise.get_noise_2d(_time_passed, 200.0)
+	rotation_degrees.z = (max_roll_z * shake_power * _noise.get_noise_2d(_time_passed, 200.0))
 
 
-## Triggers an impulse of screenshake trauma from global event bus requests.
-## [param intensity] The peak magnitude of the screenshake displacement.
-## [param duration] How long in seconds the shake takes to settle back to zero.
+## Triggers an impulse of screenshake trauma from event bus requests.
+## [param intensity] Peak magnitude of displacement.
+## [param duration] Settling duration in seconds.
 func _on_screenshake_requested(intensity: float, duration: float) -> void:
-	print("Camera3D: [", name, "] Received screenshake request. Intensity: ", intensity)
+	print("Camera3D: [", name, "] Received shake request. Intensity: ", intensity)
 	_amplitude = maxf(_amplitude, clampf(intensity, 0.0, 16.0))
 	_trauma = 1.0
 	_decay_rate = 1.0 / duration if duration > 0.0 else 1.0
 
 
-## Updates visibility of the accessibility high-contrast shader quad.
+## Updates visibility of accessibility high-contrast shader quad.
 ## [param is_active] True if vision assist should be rendered.
 func _on_vision_assist_toggled(is_active: bool) -> void:
 	_resolve_vision_mesh()

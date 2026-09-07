@@ -1,21 +1,21 @@
 ## Global autoload managing automatic graphics scaling and performance optimizations.
 ##
-## [GraphicsManager] continuously monitors the application's framerate. If it dips below
-## the [constant TARGET_FPS_MINIMUM], it progressively disables heavy rendering features
-## (like SDFGI or MSAA) to maintain a playable framerate.
+## [GraphicsManager] continuously monitors the application's framerate.
+## If it dips below [constant TARGET_FPS_MINIMUM], it progressively disables heavy features
+## to maintain a playable 60 FPS target.
 # class_name GraphicsManager
 extends Node
 
 ## Emitted when the performance profile drops a level to regain FPS.
-## [param downgrade_level] The new step index of reduced graphics.
+## Passes [param downgrade_level] step index.
 signal performance_profile_adjusted(downgrade_level: int)
 
 ## Emitted when switching between User and Auto-Optimized modes.
-## [param is_optimized] [code]true[/code] if auto-optimization is running.
+## Passes [param is_optimized] running state.
 signal profile_mode_changed(is_optimized: bool)
 
 ## Emitted when the 60 FPS auto-tune benchmark finishes.
-## [param optimal_level] The determined graphics downgrade tier.
+## Passes [param optimal_level] downgrade tier.
 signal benchmark_completed(optimal_level: int)
 
 ## Time in seconds between checking the framerate.
@@ -39,15 +39,14 @@ var _is_low_end: bool = false
 ## Cached reference to the currently active [Environment].
 var _active_environment: Environment = null
 
-## [Timer] used for periodic FPS checking.
+## Timer used for periodic FPS checking.
 var _fps_timer: Timer = null
 
-## The current integer step representing how degraded the visual quality is.
+## The current integer step representing visual quality downgrade.
 var _sdfgi_downgrade_level: int = 0
 
 
-## Called when the node enters the scene tree for the first time.
-## Detects low-end hardware on boot and configures the start state of the optimizer.
+## Lifecycle method configuring low-end hardware checks and startup mode.
 func _ready() -> void:
 	print("GraphicsManager: Initializing and detecting hardware.")
 	_is_low_end = _detect_low_end_hardware()
@@ -55,8 +54,8 @@ func _ready() -> void:
 	get_tree().node_added.connect(_on_node_added)
 
 	var default_auto: bool = _is_low_end
-	var use_auto: bool = (
-		GlobalSettings.get_setting("Settings", "use_auto_optimizer", default_auto) as bool
+	var use_auto: bool = bool(
+		GlobalSettings.get_setting("Settings", "use_auto_optimizer", default_auto)
 	)
 
 	if use_auto:
@@ -76,7 +75,7 @@ func enable_user_mode() -> void:
 	_sdfgi_downgrade_level = 0
 	GlobalSettings.save_setting("Settings", "use_auto_optimizer", false)
 
-	if _fps_timer:
+	if is_instance_valid(_fps_timer):
 		_fps_timer.stop()
 
 	profile_mode_changed.emit(is_auto_optimizing)
@@ -93,7 +92,7 @@ func enable_auto_mode() -> void:
 
 	if _fps_timer == null:
 		_setup_fps_timer()
-	else:
+	elif is_instance_valid(_fps_timer):
 		_fps_timer.start()
 
 	profile_mode_changed.emit(is_auto_optimizing)
@@ -101,15 +100,12 @@ func enable_auto_mode() -> void:
 	if _is_low_end:
 		call_deferred("_apply_global_viewport_settings")
 
-	var saved_level: int = (
-		GlobalSettings.get_setting("Settings", "optimized_downgrade_level", 0) as int
+	var saved_level: int = int(
+		GlobalSettings.get_setting("Settings", "optimized_downgrade_level", 0)
 	)
 	if saved_level > 0:
 		print("GraphicsManager: Restoring previous optimization level: ", saved_level)
-		_fast_forward_downgrades(saved_level - 1)
-
-		if _sdfgi_downgrade_level <= MAX_DOWNGRADE_LEVEL and _fps_timer:
-			_fps_timer.start()
+		_fast_forward_downgrades(saved_level)
 	elif _is_low_end:
 		var env: Environment = _get_current_environment()
 		if is_instance_valid(env):
@@ -123,14 +119,15 @@ func run_benchmark_for_60fps() -> void:
 
 	print("GraphicsManager: Starting automatic benchmark for 60 FPS target.")
 	is_benchmarking = true
-	if _fps_timer:
+	if is_instance_valid(_fps_timer):
 		_fps_timer.stop()
 
 	_sdfgi_downgrade_level = 0
 	var current_step: int = 0
 
 	while current_step <= MAX_DOWNGRADE_LEVEL:
-		_apply_stepwise_downgrade()
+		_apply_downgrade_step(current_step)
+		_sdfgi_downgrade_level = current_step
 		await get_tree().create_timer(1.0).timeout
 
 		var sample_fps: float = Engine.get_frames_per_second()
@@ -143,8 +140,10 @@ func run_benchmark_for_60fps() -> void:
 		current_step += 1
 
 	is_benchmarking = false
-	GlobalSettings.save_setting("Settings", "optimized_downgrade_level", _sdfgi_downgrade_level)
-	GlobalSettings.save_setting("Settings", "use_auto_optimizer", true)
+	var bulk_save: Dictionary = {
+		"optimized_downgrade_level": _sdfgi_downgrade_level, "use_auto_optimizer": true
+	}
+	GlobalSettings.save_settings_bulk("Settings", bulk_save)
 	benchmark_completed.emit(_sdfgi_downgrade_level)
 
 
@@ -161,9 +160,8 @@ func _setup_fps_timer() -> void:
 	_fps_timer.wait_time = FPS_CHECK_INTERVAL
 	_fps_timer.one_shot = false
 	_fps_timer.autostart = true
-
+	_fps_timer.process_mode = Node.PROCESS_MODE_ALWAYS
 	_fps_timer.timeout.connect(_on_fps_timer_timeout)
-
 	add_child(_fps_timer)
 
 
@@ -176,13 +174,11 @@ func _on_fps_timer_timeout() -> void:
 
 
 ## Analyzes the [RenderingServer] video adapter string to determine if it is an integrated GPU.
-## Returns [code]true[/code] if low-end hardware is suspected.
+## [return] True if low-end hardware is suspected.
 func _detect_low_end_hardware() -> bool:
 	print("GraphicsManager: Evaluating current video adapter.")
-	var adapter_type: RenderingDevice.DeviceType = (
-		RenderingServer.get_video_adapter_type() as RenderingDevice.DeviceType
-	)
 	var adapter_name: String = RenderingServer.get_video_adapter_name().to_lower()
+	var adapter_type: int = RenderingServer.get_video_adapter_type()
 
 	if adapter_type == RenderingDevice.DEVICE_TYPE_INTEGRATED_GPU or "intel" in adapter_name:
 		print("GraphicsManager: Integrated GPU detected.")
@@ -196,7 +192,8 @@ func _detect_low_end_hardware() -> bool:
 func _apply_global_viewport_settings() -> void:
 	print("GraphicsManager: Applying global viewport limits for optimized mode.")
 	var root_viewport: Window = get_tree().root
-	root_viewport.msaa_3d = Viewport.MSAA_DISABLED
+	if is_instance_valid(root_viewport):
+		root_viewport.msaa_3d = Viewport.MSAA_DISABLED
 	RenderingServer.environment_set_volumetric_fog_volume_size(32, 32)
 
 
@@ -208,25 +205,25 @@ func _on_node_added(node: Node) -> void:
 		_active_environment = (node as WorldEnvironment).environment
 
 		if is_auto_optimizing:
-			var saved_level: int = (
-				GlobalSettings.get_setting("Settings", "optimized_downgrade_level", 0) as int
+			var saved_level: int = int(
+				GlobalSettings.get_setting("Settings", "optimized_downgrade_level", 0)
 			)
 			if saved_level > 0 and _sdfgi_downgrade_level < saved_level:
-				_fast_forward_downgrades(saved_level - 1)
+				_fast_forward_downgrades(saved_level)
 			elif _is_low_end:
 				_tweak_environment(_active_environment)
 				_fast_forward_downgrades(MAX_DOWNGRADE_LEVEL)
 
 
 ## Looks up the current [Environment] resource connected to the active 3D world.
-## Returns the environment or the fallback environment if it exists.
+## [return] The active [Environment] resource or fallback.
 func _get_current_environment() -> Environment:
 	var vp: Viewport = get_viewport()
-	if vp and vp.find_world_3d():
+	if is_instance_valid(vp) and vp.find_world_3d():
 		var world: World3D = vp.find_world_3d()
-		if world.environment:
+		if is_instance_valid(world.environment):
 			return world.environment
-		if world.fallback_environment:
+		if is_instance_valid(world.fallback_environment):
 			return world.fallback_environment
 
 	return _active_environment
@@ -236,7 +233,7 @@ func _get_current_environment() -> Environment:
 ## [param env] The environment to alter.
 func _tweak_environment(env: Environment) -> void:
 	print("GraphicsManager: Disabling heavy effects for optimization mode without saving to disk.")
-	if env:
+	if is_instance_valid(env):
 		env.ssao_enabled = false
 		env.ssr_enabled = false
 
@@ -255,11 +252,17 @@ func _evaluate_runtime_performance() -> void:
 ## Applies multiple downgrades instantly up to the requested step index.
 ## [param target_level] The specific step level index to apply up to.
 func _fast_forward_downgrades(target_level: int) -> void:
-	print("GraphicsManager: Bypassing timer, fast-forwarding to step ", target_level)
-	while _sdfgi_downgrade_level <= target_level and _sdfgi_downgrade_level <= MAX_DOWNGRADE_LEVEL:
-		_apply_stepwise_downgrade()
+	var clamped_target: int = mini(target_level, MAX_DOWNGRADE_LEVEL)
+	print("GraphicsManager: Bypassing timer, fast-forwarding to step ", clamped_target)
 
-	if _fps_timer:
+	while _sdfgi_downgrade_level <= clamped_target:
+		_apply_downgrade_step(_sdfgi_downgrade_level)
+		_sdfgi_downgrade_level += 1
+
+	GlobalSettings.save_setting("Settings", "optimized_downgrade_level", _sdfgi_downgrade_level)
+	performance_profile_adjusted.emit(_sdfgi_downgrade_level)
+
+	if _sdfgi_downgrade_level > MAX_DOWNGRADE_LEVEL and is_instance_valid(_fps_timer):
 		_fps_timer.stop()
 
 
@@ -268,11 +271,24 @@ func _apply_stepwise_downgrade() -> void:
 	if _sdfgi_downgrade_level > MAX_DOWNGRADE_LEVEL:
 		return
 
-	print("GraphicsManager: Applying downgrade level: ", _sdfgi_downgrade_level)
+	_apply_downgrade_step(_sdfgi_downgrade_level)
+	_sdfgi_downgrade_level += 1
+
+	GlobalSettings.save_setting("Settings", "optimized_downgrade_level", _sdfgi_downgrade_level)
+	performance_profile_adjusted.emit(_sdfgi_downgrade_level)
+
+	if _sdfgi_downgrade_level > MAX_DOWNGRADE_LEVEL and is_instance_valid(_fps_timer):
+		_fps_timer.stop()
+
+
+## Executes specific rendering quality reduction operations for a given step index.
+## [param step] The downgrade tier index to apply.
+func _apply_downgrade_step(step: int) -> void:
+	print("GraphicsManager: Applying downgrade level: ", step)
 	var vp: Viewport = get_tree().root
 	var env: Environment = _get_current_environment()
 
-	match _sdfgi_downgrade_level:
+	match step:
 		0:
 			vp.msaa_3d = Viewport.MSAA_DISABLED
 			vp.use_taa = false
@@ -283,7 +299,11 @@ func _apply_stepwise_downgrade() -> void:
 			vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED
 		2:
 			var win: Window = vp as Window
-			if win and not win.is_embedded():
+			if (
+				is_instance_valid(win)
+				and not win.is_embedded()
+				and win.mode == Window.MODE_WINDOWED
+			):
 				win.size = Vector2i(1024, 768)
 		3:
 			if is_instance_valid(env):
@@ -304,10 +324,3 @@ func _apply_stepwise_downgrade() -> void:
 		7:
 			vp.positional_shadow_atlas_size = 0
 			vp.mesh_lod_threshold = 2.0
-
-			if _fps_timer and not _fps_timer.is_stopped():
-				_fps_timer.stop()
-
-	_sdfgi_downgrade_level += 1
-	GlobalSettings.save_setting("Settings", "optimized_downgrade_level", _sdfgi_downgrade_level)
-	performance_profile_adjusted.emit(_sdfgi_downgrade_level)

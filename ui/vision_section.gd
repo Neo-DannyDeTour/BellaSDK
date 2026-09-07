@@ -1,5 +1,5 @@
 ## Controls vision assist, background desaturation shaders, and color highlights.
-## Attached to the VisionSection GridContainer.
+## Attached to the VisionSection [GridContainer].
 class_name AccessibilityVisionSection
 extends GridContainer
 
@@ -122,15 +122,13 @@ func _connect_color_dropdown(dropdown: OptionButton, group_name: String) -> void
 			var events: Node = get_node_or_null("/root/Events")
 			if is_instance_valid(events) and events.has_signal("vision_assist_color_changed"):
 				events.vision_assist_color_changed.emit(group_name, col_name)
-				events.vision_assist_color_changed.emit(group_name.capitalize(), col_name)
 
 			set_preview_effects_active(true)
-			_apply_diorama_colors()
 			_switch_diorama_camera(group_name)
 	)
 
 
-## Loads stored vision settings from GlobalSettings.
+## Loads stored vision settings from [GlobalSettings].
 func load_settings() -> void:
 	print("UI: Loading Vision Assist settings.")
 	var vision_enabled: bool = bool(
@@ -154,7 +152,7 @@ func load_settings() -> void:
 	_load_group_color_setting(color_cover_option, "cover", 5)
 
 
-## Loads and configures an OptionButton dropdown for group colors.
+## Loads and configures an [OptionButton] dropdown for group colors.
 ## [param dropdown] Target [OptionButton].
 ## [param group_name] Setting group key.
 ## [param default_index] Fallback color index.
@@ -170,14 +168,17 @@ func _load_group_color_setting(
 	var events: Node = get_node_or_null("/root/Events")
 	if is_instance_valid(events) and events.has_signal("vision_assist_color_changed"):
 		events.vision_assist_color_changed.emit(group_name, COLOR_NAMES[idx].to_lower())
-		events.vision_assist_color_changed.emit(
-			group_name.capitalize(), COLOR_NAMES[idx].to_lower()
-		)
 
 
 ## Handles toggling of the vision assist rendering system for the player.
 ## [param toggled_on] Enabled state.
 func _on_vision_assist_toggled(toggled_on: bool) -> void:
+	var current: bool = bool(
+		GlobalSettings.get_setting("VisionAssist", "enabled", DEFAULT_VISION_ASSIST)
+	)
+	if current == toggled_on:
+		return
+
 	print("Player toggled Vision Assist to: ", toggled_on)
 	GlobalSettings.save_setting("VisionAssist", "enabled", toggled_on)
 	var player: Node = get_tree().get_first_node_in_group("player")
@@ -199,12 +200,18 @@ func _on_vision_assist_toggled(toggled_on: bool) -> void:
 ## Handles vision assist background desaturation mode dropdown selection.
 ## [param index] Selected mode index.
 func _on_vision_mode_selected(index: int) -> void:
+	var current: int = int(
+		GlobalSettings.get_setting("VisionAssist", "mode", DEFAULT_VISION_ASSIST_MODE)
+	)
+	if current == index:
+		return
+
 	print("Player selected Vision Assist mode index: ", index)
 	GlobalSettings.save_setting("VisionAssist", "mode", index)
 	_apply_vision_assist_mode(index)
 
 
-## Broadcasts vision assist background style changes across the EventBus.
+## Broadcasts vision assist background style changes across the [Events] bus.
 ## [param index] Selected mode index.
 func _apply_vision_assist_mode(index: int) -> void:
 	if index >= 0 and index < VISION_MODE_KEYS.size():
@@ -215,14 +222,14 @@ func _apply_vision_assist_mode(index: int) -> void:
 			events.vision_assist_mode_changed.emit(mode_key)
 
 
-## Synchronizes UI toggle state from external EventBus broadcasts.
+## Synchronizes UI toggle state from external [Events] broadcasts.
 ## [param active] Enabled state.
 func sync_external_vision_assist(active: bool) -> void:
 	if is_instance_valid(vision_assist_toggle) and vision_assist_toggle.button_pressed != active:
 		vision_assist_toggle.set_pressed_no_signal(active)
 
 
-## Finds the root Node3D instance inside the docked diorama viewport safely.
+## Finds the root [Node3D] instance inside the docked diorama viewport safely.
 ## [return] The diorama root [Node] or `null`.
 func _get_diorama_instance() -> Node:
 	var socket: Control = get_node_or_null("%AccessibilityDioramaSocket")
@@ -233,6 +240,9 @@ func _get_diorama_instance() -> Node:
 		viewport = get_tree().root.find_child("DioramaViewport", true, false) as SubViewport
 	if not is_instance_valid(viewport):
 		return null
+
+	if viewport.render_target_update_mode != SubViewport.UPDATE_WHEN_VISIBLE:
+		viewport.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
 
 	var inst: Node = viewport.get_node_or_null("SettingsLevel")
 	if not is_instance_valid(inst):
@@ -245,7 +255,7 @@ func _get_diorama_instance() -> Node:
 	return inst
 
 
-## Discovers and caches all Camera3D instances present in the docked diorama.
+## Discovers and caches all [Camera3D] instances present in the docked diorama.
 func cache_diorama_cameras() -> void:
 	print("UI: Caching diorama camera nodes.")
 	_diorama_cameras.clear()

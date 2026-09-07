@@ -1,5 +1,5 @@
 ## Controls subtitles formatting, palette colors, TTS narration, and audio mixing.
-## Attached to the SubsAudioSection GridContainer.
+## Attached to the SubsAudioSection [GridContainer].
 class_name AccessibilitySubsAudioSection
 extends GridContainer
 
@@ -85,7 +85,7 @@ func _ready() -> void:
 	_connect_signals()
 
 
-## Populates OptionButton items for subtitle colors and typography.
+## Populates [OptionButton] items for subtitle colors and typography.
 func _populate_dropdowns() -> void:
 	if is_instance_valid(font_option_2):
 		font_option_2.clear()
@@ -161,7 +161,7 @@ func _connect_signals() -> void:
 		mono_audio_toggle.toggled.connect(_on_mono_audio_toggled)
 
 
-## Reads subtitle and audio preferences from GlobalSettings.
+## Reads subtitle and audio preferences from [GlobalSettings].
 func load_settings() -> void:
 	print("UI: Loading Subtitles and Audio settings.")
 	var subs_enabled: bool = bool(
@@ -234,7 +234,6 @@ func load_settings() -> void:
 		sub_colors_toggle.set_pressed_no_signal(
 			bool(GlobalSettings.get_setting("Accessibility", "subtitle_colors", DEFAULT_SUB_COLORS))
 		)
-
 	if is_instance_valid(tts_toggle):
 		tts_toggle.set_pressed_no_signal(
 			bool(GlobalSettings.get_setting("Accessibility", "tts_enabled", DEFAULT_TTS_ENABLED))
@@ -252,9 +251,9 @@ func load_settings() -> void:
 ## [param key] Setting key identifier.
 ## [param min_val] Minimum clamp limit.
 ## [param max_val] Maximum clamp limit.
-## [param section] GlobalSettings section category.
+## [param section] [GlobalSettings] section category.
 ## [param is_int] Whether to format display text as integer.
-## [param apply_cb] The Callable invoked when numeric value modifies.
+## [param apply_cb] The [Callable] invoked when numeric value modifies.
 func _connect_slider(
 	slider: HSlider,
 	input_box: LineEdit,
@@ -296,11 +295,10 @@ func _connect_slider(
 				else:
 					var clamped_val: float = clampf(trimmed.to_float(), min_val, max_val)
 					input_box.text = (str(int(clamped_val)) if is_int else ("%.2f" % clamped_val))
-					if is_instance_valid(slider):
-						slider.value = clamped_val
 					print("Player manually typed ", key, " input: ", clamped_val)
 					GlobalSettings.save_setting(section, key, clamped_val)
-					apply_cb.call(clamped_val)
+					if is_instance_valid(slider):
+						slider.value = clamped_val
 				input_box.release_focus()
 		)
 		input_box.focus_exited.connect(
@@ -312,11 +310,10 @@ func _connect_slider(
 				else:
 					var clamped_val: float = clampf(trimmed.to_float(), min_val, max_val)
 					input_box.text = (str(int(clamped_val)) if is_int else ("%.2f" % clamped_val))
-					if is_instance_valid(slider):
+					if is_instance_valid(slider) and not is_equal_approx(slider.value, clamped_val):
+						print("Player committed ", key, " input on defocus: ", clamped_val)
+						GlobalSettings.save_setting(section, key, clamped_val)
 						slider.value = clamped_val
-					print("Player committed ", key, " input on defocus: ", clamped_val)
-					GlobalSettings.save_setting(section, key, clamped_val)
-					apply_cb.call(clamped_val)
 		)
 
 
@@ -325,7 +322,7 @@ func _connect_slider(
 ## [param input_box] The target [LineEdit] node.
 ## [param key] Setting key identifier.
 ## [param default_val] Fallback float value.
-## [param section] GlobalSettings category section.
+## [param section] [GlobalSettings] category section.
 ## [param is_int] Format as integer if true.
 func _load_slider(
 	slider: HSlider,
@@ -365,7 +362,7 @@ func _on_enable_subs_toggled(toggled_on: bool) -> void:
 		_request_preview_subtitle()
 
 
-## Broadcasts master subtitle visibility across EventBus and synchronizes node layers.
+## Broadcasts master subtitle visibility across [Events] bus and synchronizes node layers.
 ## [param enabled] Subtitles active state.
 func _apply_subtitles_enabled(enabled: bool) -> void:
 	print("Engine: Applying Enable Subtitles: ", enabled)
@@ -374,7 +371,7 @@ func _apply_subtitles_enabled(enabled: bool) -> void:
 		events.subtitles_toggled.emit(enabled)
 
 
-## Broadcasts subtitle font size adjustments across the EventBus.
+## Broadcasts subtitle font size adjustments across the [Events] bus.
 ## [param size_val] Subtitle font size in pixels.
 func _apply_subtitle_size(size_val: float) -> void:
 	print("Engine: Applying Subtitle Size: ", size_val)
@@ -383,7 +380,7 @@ func _apply_subtitle_size(size_val: float) -> void:
 		events.subtitle_size_changed.emit(size_val)
 
 
-## Broadcasts subtitle background opacity percentage adjustments across the EventBus.
+## Broadcasts subtitle background opacity percentage adjustments across the [Events] bus.
 ## [param opacity_val] Subtitle background alpha percentage (0.0 to 100.0).
 func _apply_subtitle_bg_opacity(opacity_val: float) -> void:
 	var normalized_alpha: float = clampf(opacity_val / 100.0, 0.0, 1.0)
@@ -402,7 +399,7 @@ func _on_sub_text_color_selected(index: int) -> void:
 	_request_preview_subtitle()
 
 
-## Broadcasts subtitle text color choice across the EventBus.
+## Broadcasts subtitle text color choice across the [Events] bus.
 ## [param index] Target palette color index.
 func _apply_subtitle_text_color(index: int) -> void:
 	if index < 0 or index >= COLOR_NAMES.size():
@@ -423,7 +420,7 @@ func _on_sub_bg_color_selected(index: int) -> void:
 	_request_preview_subtitle()
 
 
-## Broadcasts subtitle background box color choice across the EventBus.
+## Broadcasts subtitle background box color choice across the [Events] bus.
 ## [param index] Target palette color index.
 func _apply_subtitle_bg_color(index: int) -> void:
 	if index < 0 or index >= COLOR_NAMES.size():
@@ -444,7 +441,7 @@ func _on_sub_speaker_color_selected(index: int) -> void:
 	_request_preview_subtitle()
 
 
-## Broadcasts speaker name color choice across the EventBus.
+## Broadcasts speaker name color choice across the [Events] bus.
 ## [param index] Target palette color index.
 func _apply_subtitle_speaker_color(index: int) -> void:
 	if index < 0 or index >= COLOR_NAMES.size():
@@ -465,7 +462,7 @@ func _on_sub_show_names_toggled(toggled_on: bool) -> void:
 	_request_preview_subtitle()
 
 
-## Broadcasts show/hide speaker names toggle across the EventBus.
+## Broadcasts show/hide speaker names toggle across the [Events] bus.
 ## [param enabled] Enabled state.
 func _apply_subtitle_show_names(enabled: bool) -> void:
 	print("Engine: Applying Show Speaker Names: ", enabled)

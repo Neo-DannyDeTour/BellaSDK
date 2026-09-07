@@ -251,16 +251,17 @@ func _on_load_pressed() -> void:
 		save_load_panel.visible = true
 
 
-## Quits application execution cleanly.
+## Flushes pending preferences to disk and cleanly terminates the application.
 func _on_exit_pressed() -> void:
-	print("UI: Player clicked Exit. Terminating.")
+	print("UI: Player clicked Exit. Flushing settings and terminating.")
+	GlobalSettings.flush_to_disk()
 	get_tree().quit()
 
 
 ## Applies heuristic sensitivity calibration preset based on peak velocity.
 func _apply_bucket_calibration() -> void:
 	print("System: Running mouse sensitivity calibration.")
-	var saved_sens: Variant = GlobalSettings.get_setting("Settings", "mouse_sensitivity", null)
+	var saved_sens: Variant = GlobalSettings.get_setting("Controls", "mouse_sensitivity", null)
 	if saved_sens != null:
 		has_calibrated = true
 		return
@@ -284,7 +285,7 @@ func _apply_bucket_calibration() -> void:
 		auto_sens = 0.05
 
 	print("System: Calibrated mouse sensitivity preset -> ", auto_sens)
-	GlobalSettings.save_setting("Settings", "mouse_sensitivity", auto_sens)
+	GlobalSettings.save_setting("Controls", "mouse_sensitivity", auto_sens)
 
 
 ## Handles peak mouse velocity sampling and UI cancel input delegation.

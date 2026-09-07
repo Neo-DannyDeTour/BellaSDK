@@ -1,14 +1,23 @@
 ## Global autoload managing the persistent save state of user preferences.
 ##
-## [GlobalSettings] reads and writes values to a `.cfg` file on disk. It handles
-## applying startup configurations like window scales, inputs, screen filters, and colorblind modes.
+## [GlobalSettings] reads and writes values to a config file on disk. It handles
+## applying startup configurations like window scales, inputs, and shaders.
 extends Node
 
 ## The file path where user preferences are saved locally on the player's disk.
 const SAVE_PATH: String = "user://settings.cfg"
 
+## Debounce duration in seconds before flushing dirty config changes to disk.
+const SAVE_DEBOUNCE_DELAY: float = 0.35
+
 ## The configuration object used to read, cache, and write save file data.
 var config: ConfigFile = ConfigFile.new()
+
+## Internal timer managing debounced disk flushes to avoid main-thread lag.
+var _save_debounce_timer: Timer
+
+## Tracks whether in-memory settings diverge from the saved file on disk.
+var _is_dirty: bool = false
 
 ## Single source of truth for all typography font assets and metadata.
 const FONT_REGISTRY: Array[Dictionary] = [
@@ -92,11 +101,30 @@ func _init() -> void:
 func _ready() -> void:
 	print("System: GlobalSettings Autoload initialized.")
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_setup_debounce_timer()
 	_apply_input_mappings()
 	call_deferred("_apply_boot_settings")
 
 
-## Attempts to load the `.cfg` settings file from disk into the internal [ConfigFile].
+## Intercepts engine termination requests to guarantee dirty settings are saved.
+## [param what] The notification code received from the engine.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_PREDELETE:
+		flush_to_disk()
+
+
+## Initializes the internal debounce timer node for lazy disk persistence.
+func _setup_debounce_timer() -> void:
+	_save_debounce_timer = Timer.new()
+	_save_debounce_timer.name = "SaveDebounceTimer"
+	_save_debounce_timer.one_shot = true
+	_save_debounce_timer.wait_time = SAVE_DEBOUNCE_DELAY
+	_save_debounce_timer.process_mode = Node.PROCESS_MODE_ALWAYS
+	_save_debounce_timer.timeout.connect(flush_to_disk)
+	add_child(_save_debounce_timer)
+
+
+## Attempts to load the config settings file from disk into [member config].
 func _load_all_settings() -> void:
 	print("System: Loading global settings from disk.")
 	var err: Error = config.load(SAVE_PATH)
@@ -104,29 +132,33 @@ func _load_all_settings() -> void:
 		print("System: No save file found or error loading. Code: ", err)
 
 
-## Broadcasts signals and sets global variables for visual options like UI scaling and fonts.
+## Broadcasts signals and sets global variables for visual boot configurations.
 func _apply_boot_settings() -> void:
-	print("System: Applying boot settings (UI scale, fonts, colorblind, screen filters, prompts).")
+	print("System: Applying boot settings (UI scale, fonts, filters).")
 	var ui_scale: float = get_setting("Settings", "ui_scale", 1.0) as float
 	get_window().content_scale_factor = ui_scale
 
-	if Events:
+	var events: Node = get_node_or_null("/root/Events")
+	if is_instance_valid(events):
 		var saved_font_idx: int = get_setting("Settings", "font_mode", 0) as int
 		if saved_font_idx >= 0 and saved_font_idx < FONT_REGISTRY.size():
 			var font_id: String = FONT_REGISTRY[saved_font_idx]["id"] as String
-			Events.font_changed.emit(font_id)
+			if events.has_signal("font_changed"):
+				events.font_changed.emit(font_id)
 
 		var saved_cb: int = get_setting("Settings", "colorblind_mode", 0) as int
-		Events.colorblind_mode_changed.emit(saved_cb)
+		if events.has_signal("colorblind_mode_changed"):
+			events.colorblind_mode_changed.emit(saved_cb)
 
 		var saved_filter_idx: int = get_setting("Settings", "screen_filter", 0) as int
 		var filter_ids: Array[String] = get_screen_filter_ids()
 		if saved_filter_idx >= 0 and saved_filter_idx < filter_ids.size():
-			Events.screen_filter_changed.emit(filter_ids[saved_filter_idx])
+			if events.has_signal("screen_filter_changed"):
+				events.screen_filter_changed.emit(filter_ids[saved_filter_idx])
 
-		if Events.has_signal("item_prompts_toggled"):
+		if events.has_signal("item_prompts_toggled"):
 			var show_prompts: bool = get_setting("Gameplay", "show_item_prompts", true) as bool
-			Events.item_prompts_toggled.emit(show_prompts)
+			events.item_prompts_toggled.emit(show_prompts)
 
 
 ## Overwrites the default Godot [InputMap] with any saved keybind overrides.
@@ -141,7 +173,6 @@ func _apply_input_mappings() -> void:
 			InputMap.add_action(action)
 
 		var saved_data: Variant = config.get_value("Controls", action)
-
 		if saved_data is Array:
 			InputMap.action_erase_events(action)
 			for event: Variant in saved_data:
@@ -152,21 +183,66 @@ func _apply_input_mappings() -> void:
 			InputMap.action_add_event(action, saved_data)
 
 
-## Writes a specific setting to the config and immediately saves the file to disk.
+## Writes a specific setting to memory and queues a debounced disk flush.
 ## [param category] The section name within the config file.
 ## [param key] The identifier for the setting.
 ## [param value] The generic value to save.
-func save_setting(category: String, key: String, value: Variant) -> void:
+## [param immediate] When true, forces an immediate synchronous write to disk.
+func save_setting(category: String, key: String, value: Variant, immediate: bool = false) -> void:
 	print("System: Player saved setting -> [", category, "] ", key, ": ", value)
 	config.set_value(category, key, value)
-	config.save(SAVE_PATH)
+	_is_dirty = true
+
+	if immediate:
+		flush_to_disk()
+	else:
+		_queue_debounced_save()
+
+
+## Saves an entire dictionary of settings under a category and queues a disk flush.
+## [param category] The section name within the config file.
+## [param data] Dictionary of key-value pairs to store.
+## [param immediate] When true, forces an immediate synchronous write to disk.
+func save_settings_bulk(category: String, data: Dictionary, immediate: bool = false) -> void:
+	print("System: Bulk saving ", data.size(), " settings under [", category, "].")
+	for key: Variant in data.keys():
+		var key_str: String = str(key)
+		config.set_value(category, key_str, data[key])
+	_is_dirty = true
+
+	if immediate:
+		flush_to_disk()
+	else:
+		_queue_debounced_save()
+
+
+## Restarts the save debounce countdown to bundle closely timed writes together.
+func _queue_debounced_save() -> void:
+	if is_instance_valid(_save_debounce_timer):
+		_save_debounce_timer.start(SAVE_DEBOUNCE_DELAY)
+
+
+## Flushes all pending in-memory configuration modifications directly to disk.
+func flush_to_disk() -> void:
+	if not _is_dirty:
+		return
+
+	if is_instance_valid(_save_debounce_timer) and not _save_debounce_timer.is_stopped():
+		_save_debounce_timer.stop()
+
+	print("System: Flushing dirty preferences cache to disk -> ", SAVE_PATH)
+	var err: Error = config.save(SAVE_PATH)
+	if err == OK:
+		_is_dirty = false
+	else:
+		push_error("GlobalSettings: Failed to flush preferences to disk. Error: " + str(err))
 
 
 ## Retrieves a specific setting from the cached config file.
 ## [param category] The section name within the config file.
 ## [param key] The identifier for the setting.
 ## [param default_value] The fallback value returned if the key does not exist.
-## Returns the stored [Variant] or the [param default_value].
+## [return] The stored [Variant] or the [param default_value].
 func get_setting(category: String, key: String, default_value: Variant) -> Variant:
 	if config.has_section_key(category, key):
 		return config.get_value(category, key)

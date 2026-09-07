@@ -72,8 +72,8 @@ func load_settings() -> void:
 	var saved_tonemap: String = _load_effect_setting("tonemap_mode", VideoConfig.DEFAULT_TONEMAP)
 	_select_dropdown_text(tonemap_options, saved_tonemap)
 
-	var deband_val: Variant = GlobalSettings.get_setting("Settings", "debanding", true)
-	debanding_checkbox.button_pressed = bool(deband_val)
+	var deband_val: bool = bool(GlobalSettings.get_setting("Settings", "debanding", true))
+	debanding_checkbox.set_pressed_no_signal(deband_val)
 
 	var saved_ssao: String = _load_effect_setting("ssao", VideoConfig.DEFAULT_SSAO)
 	_select_dropdown_text(ssao_options, saved_ssao)
@@ -140,6 +140,13 @@ func _select_dropdown_text(dropdown: OptionButton, target_text: String) -> void:
 ## [param index] Item index selected.
 func _on_tonemap_selected(index: int) -> void:
 	var text: String = tonemap_options.get_item_text(index)
+	var current: String = (
+		GlobalSettings.get_setting("Settings", "tonemap_mode", VideoConfig.DEFAULT_TONEMAP)
+		as String
+	)
+	if current == text:
+		return
+
 	print("EffectsSection: Tonemap algorithm selected: ", text)
 	GlobalSettings.save_setting("Settings", "tonemap_mode", text)
 	effects_settings_changed.emit()
@@ -148,6 +155,10 @@ func _on_tonemap_selected(index: int) -> void:
 ## Handles color debanding toggles.
 ## [param toggled_on] Whether debanding is enabled.
 func _on_debanding_toggled(toggled_on: bool) -> void:
+	var current: bool = bool(GlobalSettings.get_setting("Settings", "debanding", true))
+	if current == toggled_on:
+		return
+
 	print("EffectsSection: Debanding toggled: ", toggled_on)
 	GlobalSettings.save_setting("Settings", "debanding", toggled_on)
 	effects_settings_changed.emit()
@@ -157,6 +168,12 @@ func _on_debanding_toggled(toggled_on: bool) -> void:
 ## [param index] Item index selected.
 func _on_ssao_selected(index: int) -> void:
 	var text: String = ssao_options.get_item_text(index)
+	var current: String = (
+		GlobalSettings.get_setting("Settings", "ssao", VideoConfig.DEFAULT_SSAO) as String
+	)
+	if current == text:
+		return
+
 	print("EffectsSection: SSAO quality selected: ", text)
 	GlobalSettings.save_setting("Settings", "ssao", text)
 	effects_settings_changed.emit()
@@ -166,6 +183,12 @@ func _on_ssao_selected(index: int) -> void:
 ## [param index] Item index selected.
 func _on_ssi_selected(index: int) -> void:
 	var text: String = ssi_options.get_item_text(index)
+	var current: String = (
+		GlobalSettings.get_setting("Settings", "ssi", VideoConfig.DEFAULT_SSI) as String
+	)
+	if current == text:
+		return
+
 	print("EffectsSection: SSIL quality selected: ", text)
 	GlobalSettings.save_setting("Settings", "ssi", text)
 	effects_settings_changed.emit()
@@ -175,6 +198,12 @@ func _on_ssi_selected(index: int) -> void:
 ## [param index] Item index selected.
 func _on_ssr_selected(index: int) -> void:
 	var text: String = ssr_options.get_item_text(index)
+	var current: String = (
+		GlobalSettings.get_setting("Settings", "ssr", VideoConfig.DEFAULT_SSR) as String
+	)
+	if current == text:
+		return
+
 	print("EffectsSection: SSR quality selected: ", text)
 	GlobalSettings.save_setting("Settings", "ssr", text)
 	effects_settings_changed.emit()
@@ -184,6 +213,12 @@ func _on_ssr_selected(index: int) -> void:
 ## [param index] Item index selected.
 func _on_sdfgi_selected(index: int) -> void:
 	var text: String = sdfgi_options.get_item_text(index)
+	var current: String = (
+		GlobalSettings.get_setting("Settings", "sdfgi", VideoConfig.DEFAULT_SDFGI) as String
+	)
+	if current == text:
+		return
+
 	print("EffectsSection: SDFGI quality selected: ", text)
 	GlobalSettings.save_setting("Settings", "sdfgi", text)
 	effects_settings_changed.emit()
@@ -193,6 +228,12 @@ func _on_sdfgi_selected(index: int) -> void:
 ## [param index] Item index selected.
 func _on_fog_selected(index: int) -> void:
 	var text: String = fog_options.get_item_text(index)
+	var current: String = (
+		GlobalSettings.get_setting("Settings", "volumetric_fog", VideoConfig.DEFAULT_FOG) as String
+	)
+	if current == text:
+		return
+
 	print("EffectsSection: Volumetric fog quality selected: ", text)
 	GlobalSettings.save_setting("Settings", "volumetric_fog", text)
 	effects_settings_changed.emit()
@@ -202,6 +243,12 @@ func _on_fog_selected(index: int) -> void:
 ## [param index] Item index selected.
 func _on_glow_selected(index: int) -> void:
 	var text: String = glow_options.get_item_text(index)
+	var current: String = (
+		GlobalSettings.get_setting("Settings", "glow", VideoConfig.DEFAULT_GLOW) as String
+	)
+	if current == text:
+		return
+
 	print("EffectsSection: Glow quality selected: ", text)
 	GlobalSettings.save_setting("Settings", "glow", text)
 	effects_settings_changed.emit()

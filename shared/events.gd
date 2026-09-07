@@ -39,15 +39,15 @@ var _is_cached: bool = false
 @warning_ignore("unused_signal")
 signal player_died
 
-## Emitted when the player's health points change.
+## Emitted when player health points change. Passes [param new_health].
 @warning_ignore("unused_signal")
 signal player_health_changed(new_health: int)
 
-## Emitted when the player enters or leaves the crouch state.
+## Emitted when the player enters or leaves crouch. Passes [param is_crouching].
 @warning_ignore("unused_signal")
 signal player_crouch_changed(is_crouching: bool)
 
-## Emitted when the player zooms their view in or out.
+## Emitted when the player zooms their view in or out. Passes [param is_zooming].
 @warning_ignore("unused_signal")
 signal player_zoomed(is_zooming: bool)
 
@@ -55,30 +55,22 @@ signal player_zoomed(is_zooming: bool)
 @warning_ignore("unused_signal")
 signal player_electrocuted
 
+## Emitted when underwater visual effects toggle with state and intensity params.
 @warning_ignore("unused_signal")
-## Emitted when the underwater visual effect state changes.
-## [param is_underwater] Whether the camera is submerged.
-## [param wash_intensity] Ripple distortion strength (0.0 to 1.0).
-## [param drop_intensity] Droplet lens effect strength (0.0 to 1.0).
-## [param clear_progress] Resurface screen wipe transition progress (0.0 to 1.5).
 signal underwater_vfx_toggled(
 	is_underwater: bool, wash_intensity: float, drop_intensity: float, clear_progress: float
 )
 
+## Emitted when screen rain droplet VFX changes. Passes [param intensity].
 @warning_ignore("unused_signal")
-## Emitted when the screen rain droplet VFX changes.
-## [param intensity] Rain droplet effect intensity (0.0 to 1.0).
 signal rain_vfx_toggled(intensity: float)
 
+## Emitted when waterfall screen wash effect changes with active state and alpha.
 @warning_ignore("unused_signal")
-## Emitted when the waterfall screen wash effect changes.
-## [param is_active] Whether the player is inside the waterfall stream.
-## [param wash_intensity] Waterfall distortion strength (0.0 to 1.0).
-## [param clear_progress] Wipe mask transition progress (0.0 to 1.5).
 signal waterfall_vfx_toggled(is_active: bool, wash_intensity: float, clear_progress: float)
 
 # --- CHEAT & DEBUG SIGNALS ---
-## Emitted when noclip fly mode is enabled or disabled.
+## Emitted when noclip fly mode is toggled. Passes [param is_flying].
 @warning_ignore("unused_signal")
 signal noclip_toggled(is_flying: bool)
 
@@ -90,101 +82,101 @@ signal noclip_ui_button_pressed
 @warning_ignore("unused_signal")
 signal noclip_speed_changed(speed: float)
 
-## Emitted when fullbright rendering mode is toggled.
+## Emitted when fullbright rendering mode is toggled. Passes [param is_fullbright].
 @warning_ignore("unused_signal")
 signal fullbright_toggled(is_fullbright: bool)
 
-## Emitted when wireframe rendering mode is toggled.
+## Emitted when wireframe rendering mode is toggled. Passes [param is_on].
 @warning_ignore("unused_signal")
 signal wireframe_toggled(is_on: bool)
 
-## Emitted when the wireframe shader overlay is toggled on scene geometry.
+## Emitted when wireframe shader overlay is toggled on scene geometry.
 @warning_ignore("unused_signal")
 signal wireframe_overlay_toggled(is_overlay: bool)
 
-## Emitted when the debug drawer interface is toggled open or closed.
+## Emitted when the debug drawer interface is toggled. Passes [param is_open].
 @warning_ignore("unused_signal")
 signal debug_menu_toggled(is_open: bool)
 
-## Emitted when the developer console UI is opened or closed.
+## Emitted when the developer console UI is toggled. Passes [param is_open].
 @warning_ignore("unused_signal")
 signal console_toggled(is_open: bool)
 
-## Emitted when a toggle request for the developer console is triggered by user input.
+## Emitted when a toggle request for the developer console is triggered.
 @warning_ignore("unused_signal")
 signal console_toggle_requested
 
 # --- ACCESSIBILITY & VISUAL SETTINGS ---
-## Emitted when high contrast shader mode is toggled on or off.
+## Emitted when high contrast shader mode is toggled. Passes [param is_active].
 @warning_ignore("unused_signal")
 signal high_contrast_toggled(is_active: bool)
 
-## Emitted when the active colorblind correction mode index is changed.
+## Emitted when active colorblind correction mode changes. Passes [param mode].
 @warning_ignore("unused_signal")
 signal colorblind_mode_changed(mode: int)
 
-## Emitted when photosensitivity filter protections are toggled on or off.
+## Emitted when photosensitivity filter protections toggle. Passes [param is_active].
 @warning_ignore("unused_signal")
 signal photosensitivity_mode_toggled(is_active: bool)
 
-## Emitted when subtitle displays are toggled globally.
+## Emitted when subtitle displays are toggled globally. Passes [param is_active].
 @warning_ignore("unused_signal")
 signal subtitles_toggled(is_active: bool)
 
-## Emitted when dyslexic-friendly text font is toggled.
+## Emitted when dyslexic-friendly text font is toggled. Passes [param is_active].
 @warning_ignore("unused_signal")
 signal dyslexic_font_toggled(is_active: bool)
 
-## Emitted when the active global UI and 3D text font is changed.
+## Emitted when the active global UI font changes. Passes [param font_name].
 @warning_ignore("unused_signal")
 signal font_changed(font_name: String)
 
-## Emitted when vision assist high-visibility highlighting is toggled.
+## Emitted when vision assist highlighting is toggled. Passes [param is_active].
 @warning_ignore("unused_signal")
 signal vision_assist_toggled(is_active: bool)
 
-## Emitted to change the background style of the vision assist shader.
+## Emitted to change vision assist background style. Passes [param mode_name].
 @warning_ignore("unused_signal")
 signal vision_assist_mode_changed(mode_name: String)
 
-## Emitted to modify the highlight tint of target group elements in vision assist.
+## Emitted to modify highlight tint in vision assist for [param target_group].
 @warning_ignore("unused_signal")
 signal vision_assist_color_changed(target_group: String, color_name: String)
 
-## Emitted when text-to-speech engine state is changed.
+## Emitted when text-to-speech engine state is changed. Passes [param enabled].
 @warning_ignore("unused_signal")
 signal tts_state_changed(enabled: bool)
 
 # --- GAMEPLAY FEEDBACK & UI SIGNALS ---
-## Emitted when terminal interaction mode is entered or exited.
+## Emitted when terminal interaction mode is toggled. Passes [param is_active].
 @warning_ignore("unused_signal")
 signal terminal_mode_toggled(is_active: bool)
 
-## Emitted to trigger a camera trauma screenshake effect.
+## Emitted to trigger a camera screenshake effect with intensity and duration.
 @warning_ignore("unused_signal")
 signal screenshake_requested(intensity: float, duration: float)
 
-## Emitted when an interactable item is collected by an actor.
+## Emitted when an interactable item is picked up by [param actor].
 @warning_ignore("unused_signal")
 signal item_picked_up(item: Node3D, actor: Node3D)
 
-## Emitted when an item is dropped by an actor.
+## Emitted when an item is dropped by [param actor]. Passes [param item].
 @warning_ignore("unused_signal")
 signal item_dropped(item: Node3D, actor: Node3D)
 
-## Emitted when a keycard is picked up.
+## Emitted when a keycard is picked up. Passes [param card_id].
 @warning_ignore("unused_signal")
 signal keycard_collected(card_id: String)
 
-## Emitted when a named narrative or scripted map event is triggered.
+## Emitted when a scripted map event is triggered. Passes [param event_name].
 @warning_ignore("unused_signal")
 signal level_event_triggered(event_name: String, is_active: bool)
 
-## Emitted when a sprint-blocking debuff is applied to the player.
+## Emitted when a sprint-blocking debuff is applied. Passes [param duration].
 @warning_ignore("unused_signal")
 signal sprint_debuff_applied(duration: float)
 
-## Emitted when a movement-blocking debuff is applied to the player.
+## Emitted when a movement-blocking debuff is applied. Passes [param duration].
 @warning_ignore("unused_signal")
 signal immobilize_debuff_applied(duration: float)
 
@@ -192,7 +184,7 @@ signal immobilize_debuff_applied(duration: float)
 @warning_ignore("unused_signal")
 signal hint_requested(message: String, duration: float)
 
-## Emitted when a note item is opened for reading.
+## Emitted when a note item is opened for reading. Passes [param note_text].
 @warning_ignore("unused_signal")
 signal note_opened(note_text: String)
 
@@ -204,7 +196,7 @@ signal note_closed
 @warning_ignore("unused_signal")
 signal object_focused(text: String, caller: Node)
 
-## Emitted to request a timed subtitle on screen.
+## Emitted to request a timed subtitle with speaker, text, and duration.
 @warning_ignore("unused_signal")
 signal subtitle_requested(speaker: String, text: String, duration: float)
 
@@ -212,7 +204,7 @@ signal subtitle_requested(speaker: String, text: String, duration: float)
 @warning_ignore("unused_signal")
 signal subtitle_canceled
 
-## Emitted when the player triggers a spatial sonar scan.
+## Emitted when the player triggers a spatial sonar scan from [param origin_node].
 @warning_ignore("unused_signal")
 signal sonar_ping_requested(origin_node: Node3D)
 
@@ -220,63 +212,61 @@ signal sonar_ping_requested(origin_node: Node3D)
 @warning_ignore("unused_signal")
 signal describe_surroundings_requested(origin_node: Node3D)
 
-## Emitted when a chapter title card sequence is triggered.
+## Emitted when a chapter title card sequence is triggered with visual style.
 @warning_ignore("unused_signal")
 signal chapter_triggered(
 	chapter_name: String, style: ChapterAnimStyle, duration: float, color: Color
 )
 
-## Emitted when post-process screen filters are selected.
+## Emitted when post-process screen filters are selected. Passes [param filter_name].
 @warning_ignore("unused_signal")
 signal screen_filter_changed(filter_name: String)
 
-## Emitted when film grain effect intensity is adjusted.
+## Emitted when film grain intensity is adjusted. Passes [param intensity].
 @warning_ignore("unused_signal")
 signal film_grain_changed(intensity: float)
 
-## Emitted when the subtitle font size is adjusted. Passes font size in pixels.
+## Emitted when subtitle font size is adjusted. Passes [param font_size] in px.
 @warning_ignore("unused_signal")
 signal subtitle_size_changed(font_size: float)
 
-## Emitted when the subtitle background opacity is adjusted. Passes opacity (0.0 - 1.0).
+## Emitted when subtitle background opacity is adjusted. Passes [param opacity].
 @warning_ignore("unused_signal")
 signal subtitle_bg_opacity_changed(opacity: float)
 
-## Emitted when the default subtitle dialogue body text color is changed.
+## Emitted when default subtitle dialogue body text color is changed.
 @warning_ignore("unused_signal")
 signal subtitle_text_color_changed(color_key: String)
 
-## Emitted when the subtitle background color is changed.
+## Emitted when subtitle background color is changed. Passes [param color_key].
 @warning_ignore("unused_signal")
 signal subtitle_bg_color_changed(color_key: String)
 
-## Emitted when showing speaker names is toggled.
+## Emitted when showing speaker names is toggled. Passes [param enabled].
 @warning_ignore("unused_signal")
 signal subtitle_show_names_toggled(enabled: bool)
 
-## Emitted when the primary speaker label color is changed.
+## Emitted when primary speaker label color is changed. Passes [param color_key].
 @warning_ignore("unused_signal")
 signal subtitle_speaker_color_changed(color_key: String)
 
-## Emitted when the player enters or exits a surface that blocks sprinting (e.g., sand).
+## Emitted when player enters or exits a sprint-blocking sand surface.
 @warning_ignore("unused_signal")
 signal sand_surface_toggled(is_active: bool)
 
-## Emitted when the player enters or exits a low-friction surface (e.g., ice).
+## Emitted when player enters or exits a low-friction ice surface.
 @warning_ignore("unused_signal")
 signal ice_surface_toggled(is_active: bool)
 
-## Emitted when the player toggles item interaction text prompts in settings.
+## Emitted when player toggles item interaction text prompts in settings.
 @warning_ignore("unused_signal")
 signal item_prompts_toggled(enabled: bool)
 
-@warning_ignore("unused_signal")
 ## Emitted when the global font scale multiplier is modified by the player.
-## [param scale_factor] Multiplier applied to base UI font sizes.
+@warning_ignore("unused_signal")
 signal font_scale_changed(scale_factor: float)
 
 ## Emitted when the primary player camera initializes and becomes active.
-## Passes [param camera] reference to listening systems like portals and UI viewports.
 @warning_ignore("unused_signal")
 signal player_camera_registered(camera: Camera3D)
 
@@ -292,8 +282,7 @@ signal metrics_panel_toggle_requested
 @warning_ignore("unused_signal")
 signal render_diagnostics_toggle_requested
 
-## Emitted when heavy carrying state changes.
-## [param is_active] True if the player is currently carrying a heavy object.
+## Emitted when heavy carrying state changes. Passes [param is_active].
 @warning_ignore("unused_signal")
 signal heavy_carry_toggled(is_active: bool)
 
@@ -386,18 +375,18 @@ func _load_registered_fonts() -> void:
 		var id: String = entry.get("id", "") as String
 		var path: String = entry.get("path", "") as String
 
-		if id == "" or id == "default":
+		if id.is_empty() or id == "default":
 			continue
 
-		if path != "" and ResourceLoader.exists(path):
+		if not path.is_empty() and ResourceLoader.exists(path):
 			var loaded_res: Resource = load(path)
 			if loaded_res is Font:
 				fonts[id] = loaded_res as Font
-				print("Events: Successfully cached font '", id, "' from ", path)
+				print("Events: Cached font '", id, "' from ", path)
 			else:
-				push_warning("Events: Resource at " + path + " is not a valid Font.")
+				push_warning("Events: Resource at " + path + " is not Font.")
 		else:
-			push_warning("Events: Font file path does not exist on disk: " + path)
+			push_warning("Events: Font file path does not exist: " + path)
 
 	_is_cached = true
 

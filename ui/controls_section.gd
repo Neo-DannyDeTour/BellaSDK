@@ -1,9 +1,9 @@
-## Controls mouse look, key toggle behaviors, gamepad vibration, and aim assistance.
-## Attached to the ControlsSection GridContainer.
+## Controls mouse look, key toggles, vibration, and aim assistance.
+## Attached to the ControlsSection [GridContainer].
 class_name AccessibilityControlsSection
 extends GridContainer
 
-## Default constant value for mouse sensitivity.
+## Default constant value for mouse look sensitivity.
 const DEFAULT_MOUSE_SENSITIVITY: float = 1.0
 
 ## Default constant value for motion sickness reduction.
@@ -21,16 +21,16 @@ const DEFAULT_AIM_ASSIST: bool = true
 ## Default constant value for vertical camera look inversion.
 const DEFAULT_INVERT_Y: bool = false
 
-## Default constant value for crouch toggle mode.
+## Default constant value for crouch toggle behavior.
 const DEFAULT_TOGGLE_CROUCH: bool = false
 
-## Default constant value for sprint toggle mode.
+## Default constant value for sprint toggle behavior.
 const DEFAULT_TOGGLE_SPRINT: bool = false
 
 ## Default constant value for canceling crouch on jump.
 const DEFAULT_CANCEL_CROUCH_ON_JUMP: bool = true
 
-## Slider for adjusting mouse sensitivity.
+## Slider for adjusting mouse look sensitivity.
 @onready var mouse_sens_slider: HSlider = get_node_or_null("%MouseSensitivitySlider")
 
 ## Text input for manual mouse sensitivity entry.
@@ -63,7 +63,7 @@ const DEFAULT_CANCEL_CROUCH_ON_JUMP: bool = true
 ## Text input for manual vibration strength entry.
 @onready var vibration_input: LineEdit = get_node_or_null("%VibrationLine")
 
-## Toggle switch for camera motion and screenshake reduction.
+## Toggle switch for screen motion and shake reduction.
 @onready var reduce_motion_toggle: CheckButton = get_node_or_null("%ReduceMotionToggle")
 
 
@@ -73,7 +73,7 @@ func _ready() -> void:
 	_connect_signals()
 
 
-## Connects interactive controls inputs and sliders.
+## Connects interactive controls inputs and slider listeners.
 func _connect_signals() -> void:
 	_connect_slider(
 		mouse_sens_slider,
@@ -105,7 +105,7 @@ func _connect_signals() -> void:
 		reduce_motion_toggle.toggled.connect(_on_reduce_motion_toggled)
 
 
-## Loads stored control preferences from GlobalSettings.
+## Loads stored control preferences from [GlobalSettings].
 func load_settings() -> void:
 	print("UI: Loading Controls settings.")
 	_load_slider(
@@ -124,29 +124,36 @@ func load_settings() -> void:
 	)
 
 	if is_instance_valid(invert_y_toggle):
-		invert_y_toggle.set_pressed_no_signal(
-			bool(GlobalSettings.get_setting("Controls", "invert_y", DEFAULT_INVERT_Y))
+		var invert: bool = bool(
+			GlobalSettings.get_setting("Controls", "invert_y", DEFAULT_INVERT_Y)
 		)
+		invert_y_toggle.set_pressed_no_signal(invert)
+
 	if is_instance_valid(toggle_crouch_button):
-		toggle_crouch_button.set_pressed_no_signal(
-			bool(GlobalSettings.get_setting("Controls", "toggle_crouch", DEFAULT_TOGGLE_CROUCH))
+		var crouch: bool = bool(
+			GlobalSettings.get_setting("Controls", "toggle_crouch", DEFAULT_TOGGLE_CROUCH)
 		)
+		toggle_crouch_button.set_pressed_no_signal(crouch)
+
 	if is_instance_valid(toggle_sprint_button):
-		toggle_sprint_button.set_pressed_no_signal(
-			bool(GlobalSettings.get_setting("Controls", "toggle_sprint", DEFAULT_TOGGLE_SPRINT))
+		var sprint: bool = bool(
+			GlobalSettings.get_setting("Controls", "toggle_sprint", DEFAULT_TOGGLE_SPRINT)
 		)
+		toggle_sprint_button.set_pressed_no_signal(sprint)
+
 	if is_instance_valid(cancel_crouch_jump_button):
-		cancel_crouch_jump_button.set_pressed_no_signal(
-			bool(
-				GlobalSettings.get_setting(
-					"Gameplay", "cancel_crouch_on_jump", DEFAULT_CANCEL_CROUCH_ON_JUMP
-				)
+		var cancel_jump: bool = bool(
+			GlobalSettings.get_setting(
+				"Gameplay", "cancel_crouch_on_jump", DEFAULT_CANCEL_CROUCH_ON_JUMP
 			)
 		)
+		cancel_crouch_jump_button.set_pressed_no_signal(cancel_jump)
+
 	if is_instance_valid(aim_assist_toggle):
-		aim_assist_toggle.set_pressed_no_signal(
-			bool(GlobalSettings.get_setting("Gameplay", "aim_assist", DEFAULT_AIM_ASSIST))
+		var aim: bool = bool(
+			GlobalSettings.get_setting("Gameplay", "aim_assist", DEFAULT_AIM_ASSIST)
 		)
+		aim_assist_toggle.set_pressed_no_signal(aim)
 
 	_load_slider(
 		aim_assist_slider,
@@ -160,14 +167,13 @@ func load_settings() -> void:
 	)
 
 	if is_instance_valid(reduce_motion_toggle):
-		reduce_motion_toggle.set_pressed_no_signal(
-			bool(
-				GlobalSettings.get_setting("Accessibility", "reduce_motion", DEFAULT_REDUCE_MOTION)
-			)
+		var reduce: bool = bool(
+			GlobalSettings.get_setting("Accessibility", "reduce_motion", DEFAULT_REDUCE_MOTION)
 		)
+		reduce_motion_toggle.set_pressed_no_signal(reduce)
 
 
-## Connects companion slider and LineEdit pairs with instant clear and revert on defocus.
+## Connects slider and [LineEdit] pairs with synchronization.
 ## [param slider] The [HSlider] instance.
 ## [param input_box] The [LineEdit] instance.
 ## [param key] Setting key identifier.
@@ -211,38 +217,35 @@ func _connect_slider(
 			func(txt: String) -> void:
 				var trimmed: String = txt.strip_edges()
 				var fallback: String = str(input_box.get_meta("pre_focus_text", ""))
-				if trimmed == "" or not trimmed.is_valid_float():
+				if trimmed.is_empty() or not trimmed.is_valid_float():
 					input_box.text = fallback
 				else:
 					var clamped_val: float = clampf(trimmed.to_float(), min_val, max_val)
 					input_box.text = "%.2f" % clamped_val
-					if is_instance_valid(slider):
-						slider.value = clamped_val
 					print("Player manually typed ", key, " input: ", clamped_val)
 					GlobalSettings.save_setting(section, key, clamped_val)
-					if apply_cb.is_valid():
-						apply_cb.call(clamped_val)
+					if is_instance_valid(slider):
+						slider.value = clamped_val
 				input_box.release_focus()
 		)
 		input_box.focus_exited.connect(
 			func() -> void:
 				var trimmed: String = input_box.text.strip_edges()
 				var fallback: String = str(input_box.get_meta("pre_focus_text", ""))
-				if trimmed == "" or not trimmed.is_valid_float():
+				if trimmed.is_empty() or not trimmed.is_valid_float():
 					input_box.text = fallback
 				else:
 					var clamped_val: float = clampf(trimmed.to_float(), min_val, max_val)
 					input_box.text = "%.2f" % clamped_val
 					if is_instance_valid(slider):
-						slider.value = clamped_val
-					print("Player committed ", key, " input on defocus: ", clamped_val)
-					GlobalSettings.save_setting(section, key, clamped_val)
-					if apply_cb.is_valid():
-						apply_cb.call(clamped_val)
+						if not is_equal_approx(slider.value, clamped_val):
+							print("Player committed ", key, " input on defocus: ", clamped_val)
+							GlobalSettings.save_setting(section, key, clamped_val)
+							slider.value = clamped_val
 		)
 
 
-## Reads a float setting and synchronizes slider and LineEdit representations.
+## Reads a float setting and synchronizes slider without signals.
 ## [param slider] The target [HSlider] node.
 ## [param input_box] The target [LineEdit] node.
 ## [param key] Setting key identifier.
@@ -253,17 +256,21 @@ func _load_slider(
 ) -> void:
 	if is_instance_valid(slider):
 		var val: float = float(GlobalSettings.get_setting(section, key, default_val))
-		slider.value = val
+		slider.set_value_no_signal(val)
 		if is_instance_valid(input_box):
 			input_box.text = "%.2f" % val
 
 
-## Applies mouse sensitivity settings to the player's camera controller.
+## Applies mouse sensitivity settings to player camera controller.
 ## [param sens] Mouse sensitivity value.
 func _apply_mouse_sensitivity(sens: float) -> void:
 	print("Engine: Applying Mouse Sensitivity: ", sens)
 	var player: Node = get_tree().get_first_node_in_group("player")
-	if player and "camera_controller" in player and is_instance_valid(player.camera_controller):
+	if (
+		is_instance_valid(player)
+		and "camera_controller" in player
+		and is_instance_valid(player.camera_controller)
+	):
 		if player.camera_controller.has_method("set_mouse_sensitivity"):
 			player.camera_controller.set_mouse_sensitivity(sens)
 		else:
@@ -277,7 +284,11 @@ func _on_invert_y_toggled(toggled_on: bool) -> void:
 	print("Player toggled Invert Y to: ", toggled_on)
 	GlobalSettings.save_setting("Controls", "invert_y", toggled_on)
 	var player: Node = get_tree().get_first_node_in_group("player")
-	if player and "camera_controller" in player and player.camera_controller:
+	if (
+		is_instance_valid(player)
+		and "camera_controller" in player
+		and is_instance_valid(player.camera_controller)
+	):
 		player.camera_controller.invert_y = toggled_on
 
 
@@ -315,5 +326,9 @@ func _on_reduce_motion_toggled(toggled_on: bool) -> void:
 	print("Player toggled Reduce Motion to: ", toggled_on)
 	GlobalSettings.save_setting("Accessibility", "reduce_motion", toggled_on)
 	var player: Node = get_tree().get_first_node_in_group("player")
-	if player and "camera_controller" in player and player.camera_controller:
+	if (
+		is_instance_valid(player)
+		and "camera_controller" in player
+		and is_instance_valid(player.camera_controller)
+	):
 		player.camera_controller.reduce_motion = toggled_on

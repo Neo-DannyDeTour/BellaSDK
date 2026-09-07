@@ -3,15 +3,17 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cqajw533pe8n6"
-path="res://.godot/imported/Godiva_Clothing_Emissive.png-bd0d9635372fade5dd1b79eaf24f7f7d.ctex"
+path.s3tc="res://.godot/imported/Godiva_Clothing_Emissive.png-bd0d9635372fade5dd1b79eaf24f7f7d.s3tc.ctex"
+path.etc2="res://.godot/imported/Godiva_Clothing_Emissive.png-bd0d9635372fade5dd1b79eaf24f7f7d.etc2.ctex"
 metadata={
-"vram_texture": false
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"vram_texture": true
 }
 
 [deps]
 
 source_file="res://shared/Godiva_Clothing_Emissive.png"
-dest_files=["res://.godot/imported/Godiva_Clothing_Emissive.png-bd0d9635372fade5dd1b79eaf24f7f7d.ctex"]
+dest_files=["res://.godot/imported/Godiva_Clothing_Emissive.png-bd0d9635372fade5dd1b79eaf24f7f7d.s3tc.ctex", "res://.godot/imported/Godiva_Clothing_Emissive.png-bd0d9635372fade5dd1b79eaf24f7f7d.etc2.ctex"]
 
 [params]
 

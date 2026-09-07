@@ -32,7 +32,7 @@ func _ready() -> void:
 	if has_node("/root/GraphicsManager"):
 		var manager: Node = get_node("/root/GraphicsManager")
 		if manager.has_signal("benchmark_completed"):
-			manager.connect("benchmark_completed", _on_benchmark_completed)
+			manager.benchmark_completed.connect(_on_benchmark_completed)
 
 	_apply_all_settings()
 
@@ -46,9 +46,13 @@ func _on_quality_settings_changed() -> void:
 	if VideoConfig.PRESETS.has(preset):
 		var p_data: Dictionary = VideoConfig.PRESETS[preset] as Dictionary
 		effects_section.apply_preset_dict(p_data)
+
+		var bulk_save_dict: Dictionary = {}
 		for key: String in p_data.keys():
 			if key != "shadow_quality" and key != "mesh_lod_threshold":
-				GlobalSettings.save_setting("Settings", key, p_data[key])
+				bulk_save_dict[key] = p_data[key]
+
+		GlobalSettings.save_settings_bulk("Settings", bulk_save_dict)
 
 	_apply_all_settings()
 
