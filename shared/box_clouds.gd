@@ -39,6 +39,10 @@ static var coverage: float = 0.45
 
 
 ## Validates node assignments on entry.
+##
+## Lifecycle triggers: Called on `_ready` by engine.
+## No parameters.
+## Returns: void.
 func _ready() -> void:
 	if not is_instance_valid(local_cloud_volume):
 		push_error("WeatherController: FogVolume is missing or unassigned!")
@@ -47,6 +51,10 @@ func _ready() -> void:
 
 
 ## Continuously applies the weather parameters to the fog volume's shader material.
+##
+## Lifecycle triggers: Called on `_process` by engine.
+## [param _delta] Time elapsed since the last frame.
+## Returns: void.
 func _process(_delta: float) -> void:
 	if is_instance_valid(local_cloud_volume) and is_instance_valid(local_cloud_volume.material):
 		var mat: ShaderMaterial = local_cloud_volume.material as ShaderMaterial

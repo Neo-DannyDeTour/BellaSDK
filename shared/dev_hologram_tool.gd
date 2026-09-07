@@ -66,11 +66,19 @@ extends Node3D
 
 
 ## Validates and applies initial parameters to linked nodes on spawn.
+##
+## Lifecycle triggers: Called on `_ready` by engine.
+## No parameters.
+## Returns: void.
 func _ready() -> void:
 	_update_visuals()
 
 
 ## Pushes the current exported properties into the linked mesh's shader and label.
+##
+## Lifecycle triggers: Called privately when exported properties change.
+## No parameters.
+## Returns: void.
 func _update_visuals() -> void:
 	if is_instance_valid(target_mesh):
 		target_mesh.set_instance_shader_parameter("line_color", line_color)

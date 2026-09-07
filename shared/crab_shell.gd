@@ -44,6 +44,10 @@ var _control_pos: Vector3
 
 
 ## Disables physics processing and caches the initial landing transform.
+##
+## Lifecycle triggers: Called on `_ready` by engine.
+## No parameters.
+## Returns: void.
 func _ready() -> void:
 	print("CrabShell initializing: Caching target transform and awaiting trigger.")
 	set_physics_process(false)
@@ -57,6 +61,10 @@ func _ready() -> void:
 
 
 ## Initiates the drop sequence, applying any configured drop delay.
+##
+## Lifecycle triggers: Called publicly when triggered.
+## No parameters.
+## Returns: void.
 func trigger_drop() -> void:
 	if _has_triggered:
 		return
@@ -70,6 +78,10 @@ func trigger_drop() -> void:
 
 
 ## Calculates the spawn point and curve control position, and begins physics processing.
+##
+## Lifecycle triggers: Called privately by [method trigger_drop].
+## No parameters.
+## Returns: void.
 func _start_falling() -> void:
 	print("CrabShell falling: Spawning and starting trajectory.")
 	_current_time = 0.0
@@ -96,6 +108,10 @@ func _start_falling() -> void:
 
 
 ## Interpolates the shell's position along the calculated Bezier arc.
+##
+## Lifecycle triggers: Called on `_physics_process` by engine.
+## [param delta] Time elapsed since the last physics frame.
+## Returns: void.
 func _physics_process(delta: float) -> void:
 	if not _is_falling:
 		return
@@ -136,6 +152,10 @@ func _physics_process(delta: float) -> void:
 
 
 ## Computes a position along a quadratic Bezier curve given a time percentage.
+##
+## Lifecycle triggers: Called privately by [method _physics_process].
+## [param t] The interpolation weight between 0.0 and 1.0.
+## [return] The interpolated [Vector3] position along the curve.
 func _calculate_bezier(t: float) -> Vector3:
 	var target_pos: Vector3 = _target_transform.origin
 	var q0: Vector3 = _start_pos.lerp(_control_pos, t)
@@ -144,6 +164,10 @@ func _calculate_bezier(t: float) -> Vector3:
 
 
 ## Handles the landing event, such as disabling the particle emitter.
+##
+## Lifecycle triggers: Called privately by [method _physics_process].
+## No parameters.
+## Returns: void.
 func _on_impact() -> void:
 	print("CrabShell impact: Sequence finished, deactivating smoke trail.")
 	if is_instance_valid(smoke_trail):

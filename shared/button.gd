@@ -51,6 +51,10 @@ var can_press: bool = true
 
 
 ## Initializes the button, synchronizes local targets, and connects interaction signals.
+##
+## Lifecycle triggers: Called on `_ready` by engine.
+## No parameters.
+## Returns: void.
 func _ready() -> void:
 	_sync_transmitter()
 
@@ -66,12 +70,20 @@ func _ready() -> void:
 
 
 ## Pushes the assigned targets list to the connected transmitter.
+##
+## Lifecycle triggers: Called privately when exported properties change.
+## No parameters.
+## Returns: void.
 func _sync_transmitter() -> void:
 	if is_instance_valid(transmitter):
 		transmitter.targets = targets
 
 
 ## Displays interact label and highlighting material when focused.
+##
+## Lifecycle triggers: Connected to [InteractComponent] focused signal.
+## No parameters.
+## Returns: void.
 func _on_focus() -> void:
 	if is_instance_valid(label_interact):
 		label_interact.show()
@@ -80,6 +92,10 @@ func _on_focus() -> void:
 
 
 ## Hides interact label and removes highlighting material when unfocused.
+##
+## Lifecycle triggers: Connected to [InteractComponent] unfocused signal.
+## No parameters.
+## Returns: void.
 func _on_unfocus() -> void:
 	if is_instance_valid(label_interact):
 		label_interact.hide()
@@ -89,7 +105,9 @@ func _on_unfocus() -> void:
 
 ## Receives the interaction signal from the player and toggles the button state.
 ##
+## Lifecycle triggers: Connected to [InteractComponent] interacted signal.
 ## [param _player] The player character that interacted with the button.
+## Returns: void.
 func _on_interact(_player: CharacterBody3D) -> void:
 	if not is_instance_valid(pressable_part) or not can_press:
 		return

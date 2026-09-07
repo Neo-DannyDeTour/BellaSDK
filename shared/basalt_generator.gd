@@ -90,6 +90,10 @@ var _debounce_delay_ms: int = 1000  # 1 second
 
 
 ## Process loop that handles debounced generation in the editor.
+##
+## Engine lifecycle trigger: called every frame during `_process`.
+## [param _delta] Time elapsed since the last frame.
+## Returns: void.
 func _process(_delta: float) -> void:
 	if Engine.is_editor_hint() and _needs_generation:
 		if Time.get_ticks_msec() - _last_edit_time > _debounce_delay_ms:
@@ -98,6 +102,10 @@ func _process(_delta: float) -> void:
 
 
 ## Queues a generation pass, resetting the debounce timer.
+##
+## Lifecycle triggers: Called privately when properties change.
+## No parameters.
+## Returns: void.
 func _queue_generation() -> void:
 	if Engine.is_editor_hint() and is_inside_tree() and is_node_ready():
 		_needs_generation = true
@@ -105,6 +113,10 @@ func _queue_generation() -> void:
 
 
 ## Generates the field of basalt columns, clearing any previous ones.
+##
+## Lifecycle triggers: Called privately by [method _process].
+## No parameters.
+## Returns: void.
 func _generate() -> void:
 	if not is_inside_tree():
 		return

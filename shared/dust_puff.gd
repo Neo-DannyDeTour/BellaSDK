@@ -7,7 +7,10 @@ extends GPUParticles3D
 
 
 ## Wires up the finished signal to auto-delete the node from the scene tree.
-## Called when the node enters the scene tree.
+##
+## Lifecycle triggers: Called on `_ready` by engine.
+## No parameters.
+## Returns: void.
 func _ready() -> void:
 	# Tell Godot to delete this node the moment the particles finish playing
 	if not finished.is_connected(queue_free):
