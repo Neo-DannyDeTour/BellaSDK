@@ -11,16 +11,33 @@ uniform float softness : hint_range(0.0, 1.0) = 0.1;
 uniform float shadow_slant : hint_range(-1.0, 1.0) = 0.3;
 
 uniform float hover_intensity : hint_range(0.0, 1.0) = 0.0;
-uniform vec4 glow_color : source_color = vec4(1.0, 0.85, 0.4, 1.0);
+uniform vec4 glow_color : source_color = vec4(1.0, 0.88, 0.15, 1.0);
 
 uniform vec2 rect_size;
 uniform vec2 ui_tilt;
 uniform float perspective_strength : hint_range(0.0, 0.5) = 0.15;
 
+// Heartbeat settings
+uniform float heartbeat_speed = 4.2;
+uniform float heartbeat_strength = 0.06;
+
+// Lower grime settings
+uniform vec4 grime_color : source_color = vec4(0.06, 0.04, 0.02, 1.0);
+uniform float grime_height : hint_range(0.0, 1.0) = 0.65;
+uniform float grime_intensity : hint_range(0.0, 1.0) = 0.85;
+
 void vertex() {
 	vec2 safe_rect = max(rect_size, vec2(1.0));
 	vec2 pivot = safe_rect / 2.0;
 	vec2 offset = VERTEX - pivot;
+
+	// Dual-chamber heartbeat pulse (lub-dub)
+	float phase = mod(TIME * heartbeat_speed, 3.14159);
+	float beat1 = pow(clamp(sin(phase * 2.0), 0.0, 1.0), 10.0);
+	float beat2 = pow(clamp(sin((phase - 0.28) * 2.0), 0.0, 1.0), 8.0) * 0.7;
+	float pulse = (beat1 + beat2) * heartbeat_strength * hover_intensity;
+
+	offset *= (1.0 + pulse);
 
 	float depth = (offset.x / pivot.x) * ui_tilt.x + (offset.y / pivot.y) * ui_tilt.y;
 	float perspective = 1.0 - (depth * perspective_strength);
@@ -41,6 +58,7 @@ void fragment() {
 	float luma = dot(text_col.rgb, vec3(0.299, 0.587, 0.114));
 	float fill_mask = smoothstep(0.6, 0.9, luma);
 
+	// Sweeping shadow slits
 	float slanted_x = UV.x + (UV.y - 0.5) * shadow_slant;
 	float animated_x = mod(slanted_x - (TIME * speed) + 0.5, 2.0) - 0.5;
 
@@ -51,8 +69,18 @@ void fragment() {
 	float shadow_mask = smoothstep(shadow_width, shadow_width - softness, dist);
 	shadow_mask *= (1.0 - hover_intensity);
 
-	vec3 base_rgb = mix(text_col.rgb, glow_color.rgb, hover_intensity);
+	// Heartbeat brightness spike during pulse
+	float phase = mod(TIME * heartbeat_speed, 3.14159);
+	float beat_flash = pow(clamp(sin(phase * 2.0), 0.0, 1.0), 6.0) * 0.35 * hover_intensity;
+
+	// Hover yellow glow tint
+	vec3 active_glow = glow_color.rgb + vec3(beat_flash);
+	vec3 base_rgb = mix(text_col.rgb, active_glow, hover_intensity);
 	base_rgb = clamp(base_rgb + vec3(chisel), 0.0, 1.0);
+
+	// Lower vertical grime accumulation
+	float grime_factor = smoothstep(1.0 - grime_height, 1.0, UV.y) * grime_intensity;
+	base_rgb = mix(base_rgb, grime_color.rgb, grime_factor * fill_mask);
 
 	vec3 final_rgb = mix(base_rgb, shadow_color.rgb, shadow_mask * fill_mask);
 	COLOR = vec4(final_rgb, text_alpha);

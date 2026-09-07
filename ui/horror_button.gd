@@ -529,6 +529,9 @@ func _process(delta: float) -> void:
 	current_tilt = current_tilt.lerp(tilt_target, response_speed * delta)
 	_update_shadow_projection()
 
+	# Process text heartbeat scaling per frame
+	_process_text_heartbeat()
+
 	if is_instance_valid(bg_material):
 		bg_material.set_shader_parameter("hover_intensity", current_hover_intensity)
 		bg_material.set_shader_parameter("ui_tilt", current_tilt * current_hover_intensity)
@@ -542,6 +545,10 @@ func _process(delta: float) -> void:
 	if is_instance_valid(border_material):
 		border_material.set_shader_parameter("hover_intensity", current_hover_intensity)
 		border_material.set_shader_parameter("ui_tilt", current_tilt * current_hover_intensity)
+
+	if is_instance_valid(label_material):
+		label_material.set_shader_parameter("hover_intensity", current_hover_intensity)
+		label_material.set_shader_parameter("ui_tilt", current_tilt * current_hover_intensity)
 
 
 ## Configures button as a chapter card using [ChapterData] properties.
@@ -583,3 +590,20 @@ func setup_chapter_card(chapter: ChapterData) -> void:
 
 	_update_corner_cuts()
 	_sync_child_rects()
+
+
+## Applies physical lub-dub heartbeat scaling directly to the text label.
+func _process_text_heartbeat() -> void:
+	if not is_instance_valid(text_label):
+		return
+
+	if current_hover_intensity <= 0.001:
+		text_label.scale = Vector2.ONE
+		return
+
+	var phase: float = fmod(Time.get_ticks_msec() * 0.0045, PI)
+	var beat1: float = pow(clampf(sin(phase * 2.0), 0.0, 1.0), 12.0)
+	var beat2: float = pow(clampf(sin((phase - 0.35) * 2.0), 0.0, 1.0), 10.0) * 0.65
+	var total_pulse: float = (beat1 + beat2) * pulse_intensity * current_hover_intensity
+
+	text_label.scale = Vector2.ONE + Vector2(total_pulse, total_pulse)
