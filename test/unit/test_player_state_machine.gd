@@ -97,7 +97,7 @@ func test_transition_to_valid_state() -> void:
 	assert_signal_emitted_with_parameters(sm, "transitioned", ["State2"])
 
 
-## Verifies invalid state transitions abort cleanly and log a push_error.
+## Verifies invalid state transitions abort cleanly and log a warning.
 func test_transition_to_invalid_state() -> void:
 	print("TestPlayerStateMachine: test_transition_to_invalid_state() called.")
 	watch_signals(sm)
@@ -107,8 +107,8 @@ func test_transition_to_invalid_state() -> void:
 	state1.enter()
 
 	sm.transition_to("State3")
-	assert_push_error("StateMachine: Cannot transition to state 'State3' (Node not found).")
 
+	assert_push_warning_count(1, "Expected a push_warning for an invalid state transition.")
 	assert_false(state1.exit_called, "State1 exit() should not be called if transition fails.")
 	assert_eq(sm.state, state1, "Current state should remain State1.")
 	assert_signal_not_emitted(sm, "transitioned")

@@ -6,43 +6,7 @@ extends GutTest
 var bear_trap: BearTrap = null
 
 ## The mock player instance.
-var mock_player: InnerMockPlayer = null
-
-
-## Mock implementation of [Player] tracking damage and holding mock components.
-class InnerMockPlayer:
-	extends Player
-
-	## Tracks the last damage value applied.
-	var last_damage: int = 0
-
-	## Initializes mock components for testing.
-	func _init() -> void:
-		locomotion_component = InnerMockLocomotion.new()
-		system_menu = InnerMockMenu.new()
-
-	## Simulates player damage.
-	func take_damage(amount: int) -> void:
-		print("TestBearTrap: InnerMockPlayer take_damage() called with: ", amount)
-		last_damage = amount
-
-
-## Mock locomotion component tracking sprint flags.
-class InnerMockLocomotion:
-	extends PlayerLocomotionComponent
-
-	## Initializes default locomotion sprint state.
-	func _init() -> void:
-		can_sprint = true
-
-
-## Mock system menu controller tracking stun status.
-class InnerMockMenu:
-	extends SystemMenuController
-
-	## Initializes default menu stun state.
-	func _init() -> void:
-		is_stunned = false
+var mock_player: MockPlayer = null
 
 
 ## Sets up the bear trap and typed mock dependencies before each test.
@@ -53,7 +17,7 @@ func before_each() -> void:
 	bear_trap = bear_trap_scene.instantiate() as BearTrap
 	add_child_autoqfree(bear_trap)
 
-	mock_player = InnerMockPlayer.new()
+	mock_player = MockPlayer.new()
 	add_child_autoqfree(mock_player)
 	await get_tree().process_frame
 

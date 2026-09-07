@@ -1,10 +1,5 @@
-## Inner mock class simulating playerThe errors occur because Godot
-## registers inner classes with `class_name` or matching global
-## names into the global symbol table. If another script in your
-## project already defines a global `class_name MockPlayer`,
-## your inner class shadows it, creating a type conflict between the global
-## `MockPlayer` and the local inner class `MockPlayer`.
-## Unit tests for the [Killfield] class using GUT.class_name TestKillfield
+## Unit tests for the [Killfield] class using GUT.
+class_name TestKillfield
 extends GutTest
 
 
@@ -21,7 +16,7 @@ class MockKillfieldPlayer:
 
 	## Simulates teleporting the player to [param pos] with [param delay].
 	func teleport_to(pos: Vector3, delay: float) -> void:
-		print("MockKillfieldPlayer: teleport_to called with pos: ", pos, " delay: ", delay)
+		print("MockKillfieldPlayer: teleport_to pos: ", pos, " delay: ", delay)
 		teleported_to = pos
 		teleport_delay = delay
 
@@ -58,14 +53,15 @@ func after_each() -> void:
 	SaveManager.last_checkpoint_pos = Vector3.ZERO
 
 
-## Verifies that a valid player entering the killfield teleports to the checkpoint plus offset.
+## Verifies that a valid player entering the killfield teleports to checkpoint.
 func test_player_enters_killfield() -> void:
-	print("TestKillfield: test_player_enters_killfield")
+	print("TestKillfield: test_player_enters_killfield() called.")
 	SaveManager.last_checkpoint_pos = Vector3(10.0, 0.0, 10.0)
 
 	_killfield._on_body_entered(_player)
 
-	var expected_pos: Vector3 = SaveManager.last_checkpoint_pos + Vector3(0.0, 1.0, 0.0)
+	var offset: Vector3 = Vector3(0.0, 1.0, 0.0)
+	var expected_pos: Vector3 = SaveManager.last_checkpoint_pos + offset
 	assert_eq(
 		_player.teleported_to,
 		expected_pos,
@@ -76,7 +72,7 @@ func test_player_enters_killfield() -> void:
 
 ## Verifies that a player with noclip active is ignored by the killfield.
 func test_noclip_player_ignores_killfield() -> void:
-	print("TestKillfield: test_noclip_player_ignores_killfield")
+	print("TestKillfield: test_noclip_player_ignores_killfield() called.")
 	SaveManager.last_checkpoint_pos = Vector3(10.0, 0.0, 10.0)
 	_player.noclip = true
 
@@ -85,23 +81,29 @@ func test_noclip_player_ignores_killfield() -> void:
 	assert_eq(_player.teleported_to, Vector3.ZERO, "Noclip player should not be teleported.")
 
 
-## Verifies that non-player bodies entering the killfield do not cause crashes.
+## Verifies that non-player bodies entering killfield do not trigger respawns.
 func test_non_player_enters_killfield() -> void:
-	print("TestKillfield: test_non_player_enters_killfield")
-	SaveManager.last_checkpoint_pos = Vector3(10.0, 0.0, 10.0)
+	print("TestKillfield: test_non_player_enters_killfield() called.")
+	var default_pos: Vector3 = Vector3(10.0, 0.0, 10.0)
+	SaveManager.last_checkpoint_pos = default_pos
 
 	var other_body: Node3D = Node3D.new()
 	other_body.name = "Enemy"
-	add_child(other_body)
+	add_child_autoqfree(other_body)
 
 	_killfield._on_body_entered(other_body)
 
-	other_body.queue_free()
+	assert_eq(
+		SaveManager.last_checkpoint_pos,
+		default_pos,
+		"Non-player bodies should not modify checkpoint or trigger respawns."
+	)
+	assert_null(other_body.get("is_dead"), "Non-player bodies should not have their state altered.")
 
 
-## Verifies that the player is not teleported if no valid checkpoint is recorded.
+## Verifies that the player is not teleported if no checkpoint is recorded.
 func test_no_checkpoint_set() -> void:
-	print("TestKillfield: test_no_checkpoint_set")
+	print("TestKillfield: test_no_checkpoint_set() called.")
 	SaveManager.last_checkpoint_pos = Vector3.ZERO
 
 	_killfield._on_body_entered(_player)
