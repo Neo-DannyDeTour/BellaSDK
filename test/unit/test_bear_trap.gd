@@ -42,7 +42,7 @@ func test_snap_shut() -> void:
 	)
 	assert_eq(mock_player.last_damage, 150, "Player should take 150 damage.")
 	assert_not_null(mock_player.system_menu, "System menu must not be null.")
-	assert_true(mock_player.system_menu.is_stunned, "Player should be stunned.")
+	assert_true(mock_player.system_menu.get("is_stunned"), "Player should be stunned.")
 	assert_false(mock_player.locomotion_component.can_sprint, "Player sprint should be disabled.")
 	assert_true(bear_trap.immobilize_timer.time_left > 0.0, "Immobilize timer should be started.")
 	assert_true(
@@ -58,7 +58,8 @@ func test_timer_timeouts() -> void:
 	bear_trap._on_immobilize_timeout()
 	assert_not_null(mock_player.system_menu, "System menu must not be null.")
 	assert_false(
-		mock_player.system_menu.is_stunned, "Player should not be stunned after immobilize timeout."
+		mock_player.system_menu.get("is_stunned"),
+		"Player should not be stunned after immobilize timeout."
 	)
 
 	bear_trap._on_sprint_block_timeout()
