@@ -1,0 +1,75 @@
+[gd_scene format=3 uid="uid://dxl3sg0aratwv"]
+
+[ext_resource type="Script" uid="uid://c3mb8rl54wefk" path="res://interactables/wall_generator.gd" id="1_4myyk"]
+[ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="1_b1j7y"]
+[ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="2_4myyk"]
+[ext_resource type="Script" uid="uid://cnmn3hgnt0afn" path="res://interactables/output_transmitter_3d.gd" id="3_7n1kx"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="4_7n1kx"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_b1j7y"]
+size = Vector3(1, 1.5, 0.5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_4myyk"]
+size = Vector3(1, 1.5, 0.05)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_4myyk"]
+render_priority = 0
+shader = ExtResource("4_7n1kx")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.2
+shader_parameter/max_intensity = 1.0
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[node name="WallGenerator" type="StaticBody3D" unique_id=1081908824 node_paths=PackedStringArray("socket_marker", "socket_area", "status_label", "transmitter", "interact_comp", "highlight_comp")]
+collision_mask = 0
+script = ExtResource("1_4myyk")
+eject_tilt_degrees = null
+cell_half_height = null
+reinsertion_cooldown = null
+socket_marker = NodePath("SocketMarker")
+socket_area = NodePath("SocketArea")
+status_label = NodePath("StatusLabel")
+transmitter = NodePath("OutputTransmitter3D")
+interact_comp = NodePath("InteractComponent")
+highlight_comp = NodePath("HighlightComponent")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=466194530]
+shape = SubResource("BoxShape3D_b1j7y")
+
+[node name="SocketMarker" type="Marker3D" parent="." unique_id=1451232022]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.25)
+
+[node name="SocketArea" type="Area3D" parent="." unique_id=464452576]
+collision_mask = 4
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SocketArea" unique_id=1085049656]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.25)
+shape = SubResource("BoxShape3D_4myyk")
+
+[node name="InteractComponent" type="Node" parent="." unique_id=1205197608]
+script = ExtResource("1_b1j7y")
+metadata/_custom_type_script = "uid://cqawbvidns1th"
+
+[node name="HighlightComponent" type="Node" parent="." unique_id=1581706902 groups=["interactables"]]
+script = ExtResource("2_4myyk")
+outline_material = SubResource("ShaderMaterial_4myyk")
+metadata/_custom_type_script = "uid://dgig0tamvkdxx"
+
+[node name="OutputTransmitter3D" type="Node3D" parent="." unique_id=465579586]
+script = ExtResource("3_7n1kx")
+metadata/_custom_type_script = "uid://cnmn3hgnt0afn"
+
+[node name="CSGBox3D" type="CSGBox3D" parent="." unique_id=263128864]
+size = Vector3(1, 1.5, 0.5)
+
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="CSGBox3D" unique_id=1793690361]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.25)
+operation = 2
+radius = 0.25
+height = 1.0
+
+[node name="StatusLabel" type="Label3D" parent="." unique_id=1128405937]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0.3)
+double_sided = false
+no_depth_test = true
