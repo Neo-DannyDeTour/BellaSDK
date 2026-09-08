@@ -17,7 +17,7 @@ shader_parameter/alpha_scissor_threshold = 0.5
 height = 1.25
 radius = 0.45
 
-[node name="PickableBarrel" unique_id=594279821 node_paths=PackedStringArray("mesh") groups=["not_climbable"] instance=ExtResource("1_aapj8")]
+[node name="PickableBarrel" unique_id=259863869 groups=["not_climbable"] instance=ExtResource("1_aapj8")]
 mass = 10.0
 mesh = NodePath("Barrel_red")
 held_transparency = 0.75
@@ -35,4 +35,4 @@ shape = SubResource("CylinderShape3D_ryygw")
 [node name="Label3D" parent="." index="4" unique_id=1035008069]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2, 0)
 
-[node name="Barrel_red" parent="." index="5" unique_id=1477624360 instance=ExtResource("3_wkfba")]
+[node name="Barrel_red" parent="." index="7" unique_id=1878136192 instance=ExtResource("3_wkfba")]

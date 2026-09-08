@@ -1,50 +1,39 @@
-## Global autoload managing the serialization and deserialization of the game state.
-##
-## Handles capturing viewport thumbnails, writing JSON metadata, and saving/loading
-## nodes grouped in the 'saveable' group using binary .dat files.
+## Global autoload managing binary game state serialization and disk save files.
 extends Node
 
-## Emitted when a save sequence completely finishes writing to disk.
+## Emitted when save sequence finishes writing to disk.
 signal save_completed
 
-## Security variable: The encryption key used to protect binary game state data files.
+## Encryption password string for binary save payloads.
 const ENCRYPTION_KEY: String = "bella_sec_v1_99238"
-
-## The internal OS path where all save files are kept.
+## Directory storing serialized save files.
 const SAVES_DIR: String = "user://saves/"
-
-## Target width in pixels for generated save file thumbnails.
+## Thumbnail pixel width for save slots.
 const THUMB_WIDTH: int = 320
-
-## Target height in pixels for generated save file thumbnails.
+## Thumbnail pixel height for save slots.
 const THUMB_HEIGHT: int = 180
 
-## Cache for the last checkpoint [Vector3] position the player crossed.
+## Cached checkpoint position marker in 3D space.
 var last_checkpoint_pos: Vector3 = Vector3.ZERO
 
 
-## Called when the node enters the scene tree.
-## Ensures the save directory exists and sets the process mode.
+## Verifies user save directory exists and sets always process mode.
 func _ready() -> void:
-	print("SaveManager: _ready() called. Initializing save directory...")
+	print("SaveManager: Initializing save system directory.")
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
 	var dir: DirAccess = DirAccess.open("user://")
 	if dir:
 		if not dir.dir_exists("saves"):
-			print("SaveManager: 'saves' directory not found. Creating it...")
 			var err: Error = dir.make_dir("saves")
 			if err != OK:
-				push_error("SaveManager: Failed to create 'saves' dir. Error: " + str(err))
-		else:
-			print("SaveManager: 'saves' directory verified.")
+				push_error("SaveManager: Failed creating saves folder: " + str(err))
 	else:
-		push_error("SaveManager: CRITICAL: Failed to open user:// directory!")
+		push_error("SaveManager: Failed accessing user directory.")
 
 
-## Iterates through the saves directory to check if any valid save .dat files exist.
+## Returns true if at least one valid dat save file exists on disk.
 func has_saves() -> bool:
-	print("SaveManager: has_saves() called.")
 	var dir: DirAccess = DirAccess.open(SAVES_DIR)
 	if not dir:
 		return false
@@ -58,9 +47,9 @@ func has_saves() -> bool:
 	return false
 
 
-## Initiates a save sequence. Captures a thumbnail, gathers node data, and writes to disk.
+## Captures viewport snapshot and triggers background file writing.
 func create_save(custom_name: String = "", is_fav: bool = false, existing_id: String = "") -> void:
-	print("SaveManager: create_save() called.")
+	print("SaveManager: Initiating save sequence.")
 	get_tree().call_group("hide_on_save", "hide")
 
 	await RenderingServer.frame_post_draw
@@ -78,27 +67,25 @@ func create_save(custom_name: String = "", is_fav: bool = false, existing_id: St
 	if viewport_img != null and not viewport_img.is_empty():
 		WorkerThreadPool.add_task(_process_and_save_thumbnail.bind(viewport_img, base_path))
 	else:
-		push_warning("SaveManager: Failed to capture viewport image.")
+		push_warning("SaveManager: Viewport capture failed.")
 
 	_write_metadata(base_path + ".meta", display_name, timestamp, is_fav)
 	_write_game_state(base_path + ".dat")
 
-	print("SaveManager: Save sequence finalized. Emitting save_completed.")
+	print("SaveManager: Save complete. Emitting signal.")
 	save_completed.emit()
 
 
-## A background thread function that resizes and encodes the viewport image.
+## Resizes captured image and writes webp thumbnail on background thread.
 func _process_and_save_thumbnail(img: Image, base_path: String) -> void:
-	print("SaveManager: _process_and_save_thumbnail() background task started.")
 	img.resize(THUMB_WIDTH, THUMB_HEIGHT, Image.INTERPOLATE_BILINEAR)
 	var img_err: Error = img.save_webp(base_path + ".webp")
 	if img_err != OK:
-		push_warning("SaveManager: Threaded thumbnail save failed: " + str(img_err))
+		push_warning("SaveManager: Thumbnail save failed: " + str(img_err))
 
 
-## Constructs and saves the lightweight JSON file used by the load menu.
+## Encodes slot metadata dictionary into JSON file on disk.
 func _write_metadata(path: String, display_name: String, time_str: String, fav: bool) -> void:
-	print("SaveManager: _write_metadata() called for: ", path)
 	var current_scene_path: String = ""
 	var current_scene: Node = get_tree().current_scene
 	if current_scene:
@@ -116,108 +103,83 @@ func _write_metadata(path: String, display_name: String, time_str: String, fav: 
 		file.store_string(JSON.stringify(meta_dict))
 		file.close()
 	else:
-		push_error(
-			"SaveManager: Failed to write metadata. Error: " + str(FileAccess.get_open_error())
-		)
+		push_error("SaveManager: Failed metadata write: " + path)
 
 
-## Gathers all nodes in the 'saveable' group and calls get_save_data() on them.
+## Collects data from saveable group and dispatches encrypted disk write.
 func _write_game_state(path: String) -> void:
-	print("SaveManager: _write_game_state() called for: ", path)
 	var total_state: Dictionary = {}
 	var saveables: Array[Node] = get_tree().get_nodes_in_group("saveable")
-
-	if saveables.is_empty():
-		push_warning("SaveManager: No saveable nodes found.")
 
 	var saved_nodes_count: int = 0
 	for node: Node in saveables:
 		if node.has_method("get_save_data"):
-			var node_data: Dictionary = node.call("get_save_data")
+			var node_data: Dictionary = node.call("get_save_data") as Dictionary
 			var node_key: String = str(node.get_path())
 			total_state[node_key] = node_data
 			saved_nodes_count += 1
 		else:
-			push_warning("SaveManager: Node missing 'get_save_data': " + node.name)
+			push_warning("SaveManager: Missing get_save_data: " + node.name)
 
 	var thread_safe_state: Dictionary = total_state.duplicate(true)
 	WorkerThreadPool.add_task(_threaded_write_data.bind(path, thread_safe_state, saved_nodes_count))
 
 
-## Background thread function that writes the large binary dictionary to disk encrypted.
-## [param path] The file path to write to.
-## [param data] The dictionary data to serialize.
-## [param count] The number of nodes being saved.
+## Writes encrypted binary game state dictionary on background thread.
 func _threaded_write_data(path: String, data: Dictionary, count: int) -> void:
-	print("SaveManager: _threaded_write_data() background task started.")
 	var file: FileAccess = FileAccess.open_encrypted_with_pass(
 		path, FileAccess.WRITE, ENCRYPTION_KEY
 	)
 	if file:
 		file.store_var(data)
 		file.close()
-		print("SaveManager: Game state securely written. Total nodes saved: ", count)
+		print("SaveManager: Game state saved. Count: ", count)
 	else:
-		var err: Error = FileAccess.get_open_error()
-		push_error("SaveManager: Failed to securely write game state. Error: " + str(err))
+		push_error("SaveManager: Encrypted write failed: " + path)
 
 
-## Reads the binary dictionary from disk and pushes data back into active scene nodes.
-## Includes a fallback to read unencrypted legacy saves.
-## [param path] The file path to load from.
+## Reads encrypted or unencrypted file and applies state back to nodes.
 func _load_game_state(path: String) -> void:
-	print("SaveManager: _load_game_state() called for: ", path)
 	if not FileAccess.file_exists(path):
-		push_error("SaveManager: Load failed: File does not exist at path.")
+		push_error("SaveManager: Target save missing: " + path)
 		return
 
 	var file: FileAccess = FileAccess.open_encrypted_with_pass(
 		path, FileAccess.READ, ENCRYPTION_KEY
 	)
 	if not file:
-		var err: Error = FileAccess.get_open_error()
-		print(
-			"SaveManager: Failed to decrypt file. Attempting unencrypted fallback. Error: ",
-			str(err)
-		)
 		file = FileAccess.open(path, FileAccess.READ)
 		if not file:
-			var fb_err: Error = FileAccess.get_open_error()
-			push_error(
-				"SaveManager: Load failed: Cannot open unencrypted file. Error: " + str(fb_err)
-			)
+			push_error("SaveManager: Cannot open save file: " + path)
 			return
 
 	var loaded_data: Variant = file.get_var()
 	file.close()
-	print("SaveManager: Game state loaded successfully.")
 
-	if not loaded_data is Dictionary:
-		push_error("SaveManager: Corrupted data file.")
+	if not (loaded_data is Dictionary):
+		push_error("SaveManager: Corrupted data in: " + path)
 		return
 
 	var total_state: Dictionary = loaded_data as Dictionary
-	var keys: Array = total_state.keys()
 	var loaded_nodes_count: int = 0
 
-	for node_path_str: String in keys:
+	for node_path_str: String in total_state.keys():
 		var node: Node = get_node_or_null(node_path_str)
 		if node:
 			if node.has_method("load_save_data"):
-				var node_data: Dictionary = total_state[node_path_str]
+				var node_data: Dictionary = total_state[node_path_str] as Dictionary
 				node.call("load_save_data", node_data)
 				loaded_nodes_count += 1
 			else:
-				push_warning("SaveManager: Missing 'load_save_data': " + node.name)
+				push_warning("SaveManager: Missing load_save_data: " + node.name)
 		else:
-			push_warning("SaveManager: Node not in tree: " + node_path_str)
+			push_warning("SaveManager: Node missing from tree: " + node_path_str)
 
-	print("SaveManager: Game state loaded. Total nodes restored: ", loaded_nodes_count)
+	print("SaveManager: Restored nodes count: ", loaded_nodes_count)
 
 
-## Scans the saves directory and returns a parsed list of all save file metadata.
+## Returns parsed and sorted metadata list for all discovered save files.
 func get_all_saves() -> Array[Dictionary]:
-	print("SaveManager: get_all_saves() called.")
 	var saves: Array[Dictionary] = []
 	var dir: DirAccess = DirAccess.open(SAVES_DIR)
 	if not dir:
@@ -231,63 +193,84 @@ func get_all_saves() -> Array[Dictionary]:
 			var base_path: String = SAVES_DIR + file_name.replace(".meta", "")
 			var meta_file: FileAccess = FileAccess.open(SAVES_DIR + file_name, FileAccess.READ)
 			if meta_file:
-				var data: Dictionary = JSON.parse_string(meta_file.get_as_text())
-				data["base_path"] = base_path
-				data["id"] = file_name.replace("save_", "").replace(".meta", "")
-				saves.append(data)
+				var raw_text: String = meta_file.get_as_text()
+				meta_file.close()
+				var parsed: Variant = JSON.parse_string(raw_text)
+				if parsed is Dictionary:
+					var data: Dictionary = parsed as Dictionary
+					data["base_path"] = base_path
+					data["id"] = file_name.replace("save_", "").replace(".meta", "")
+					saves.append(data)
 		file_name = dir.get_next()
 
 	saves.sort_custom(_sort_saves)
 	return saves
 
 
-## Custom sorting function for save slots by favorite status and ID.
+## Compares two save records by favorite flag and ID timestamp order.
 func _sort_saves(a: Dictionary, b: Dictionary) -> bool:
-	var a_fav: bool = a.get("is_favorite", false)
-	var b_fav: bool = b.get("is_favorite", false)
+	var a_fav: bool = a.get("is_favorite", false) as bool
+	var b_fav: bool = b.get("is_favorite", false) as bool
 
 	if a_fav != b_fav:
 		return a_fav
 
-	return a.get("id", "0").to_int() > b.get("id", "0").to_int()
+	return (a.get("id", "0") as String).to_int() > (b.get("id", "0") as String).to_int()
 
 
-## Overwrites an existing save's metadata file without touching the binary .dat file.
+## Reads existing metadata, updates display fields, and rewrites file.
 func update_save_meta(save_id: String, new_name: String, is_favorite: bool) -> void:
-	print("SaveManager: update_save_meta() called for ID: ", save_id)
 	var path: String = SAVES_DIR + "save_" + save_id + ".meta"
 	if not FileAccess.file_exists(path):
 		return
 
 	var file: FileAccess = FileAccess.open(path, FileAccess.READ)
-	var data: Dictionary = JSON.parse_string(file.get_as_text())
+	if not file:
+		return
+	var raw_text: String = file.get_as_text()
 	file.close()
 
-	_write_metadata(path, new_name, data.get("timestamp", ""), is_favorite)
+	var parsed: Variant = JSON.parse_string(raw_text)
+	if parsed is Dictionary:
+		var data: Dictionary = parsed as Dictionary
+		_write_metadata(path, new_name, data.get("timestamp", "") as String, is_favorite)
 
 
-## Orchestrates a full load sequence: reads metadata, swaps scenes, and loads state.
+## Loads metadata, switches active scene if required, and applies game state.
 func load_save_game(base_path: String) -> void:
-	print("SaveManager: load_save_game() called for: ", base_path)
-	var meta_path: String = base_path + ".meta"
-	var dat_path: String = base_path + ".dat"
+	print("SaveManager: Loading game from base path: ", base_path)
+	var clean_base: String = base_path
+	for ext: String in [".meta", ".dat", ".webp", ".save"]:
+		if clean_base.ends_with(ext):
+			clean_base = clean_base.left(-ext.length())
+			break
+
+	var meta_path: String = clean_base + ".meta"
+	var dat_path: String = clean_base + ".dat"
 
 	if not FileAccess.file_exists(meta_path) or not FileAccess.file_exists(dat_path):
-		push_error("SaveManager: Missing save files at: " + base_path)
+		push_error("SaveManager: Missing save file set for: " + clean_base)
 		return
 
 	var file: FileAccess = FileAccess.open(meta_path, FileAccess.READ)
-	var meta_data: Dictionary = JSON.parse_string(file.get_as_text())
+	if not file:
+		return
+	var raw_text: String = file.get_as_text()
 	file.close()
 
-	var level_path: String = meta_data.get("level_path", "")
+	var parsed: Variant = JSON.parse_string(raw_text)
+	if not (parsed is Dictionary):
+		return
+	var meta_data: Dictionary = parsed as Dictionary
+
+	var level_path: String = meta_data.get("level_path", "") as String
 	var current_scene: Node = get_tree().current_scene
 	var current_path: String = current_scene.scene_file_path if current_scene else ""
 
 	if level_path != "" and current_path != level_path:
 		var err: Error = get_tree().change_scene_to_file(level_path)
 		if err != OK:
-			push_error("SaveManager: Failed to load level: " + level_path)
+			push_error("SaveManager: Failed changing scene to: " + level_path)
 			return
 
 		await get_tree().process_frame
@@ -296,3 +279,8 @@ func load_save_game(base_path: String) -> void:
 	_load_game_state(dat_path)
 	get_tree().paused = false
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+
+## Compatibility alias routing load_game calls to [method load_save_game].
+func load_game(target_path: String) -> void:
+	load_save_game(target_path)

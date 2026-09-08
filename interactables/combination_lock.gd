@@ -1,42 +1,38 @@
-## A 3D interactive padlock that requires a 3-character code to unlock.
-##
-## Traps the player in a cinematic lock state, smoothly animates the camera to focus on the object,
-## and spawns a dedicated UI overlay to input numbers or letters.
+## Interactive 3D padlock puzzle requiring a 3-character code to unlock.
 class_name CombinationLock
 extends Node3D
 
 @export_category("Lock Settings")
-## The 3-character correct string required to solve the lock.
+## The 3-character string required to unlock this puzzle.
 @export var secret_code: String = "123"
-## If true, the lock UI dial will scroll through letters A-Z instead of numbers 0-9.
+## If true, the dial uses letters A-Z instead of digits 0-9.
 @export var use_letters: bool = false
 
 @export_category("Visuals & Lighting")
-## The target 3D transform that the player's camera will tween to upon interaction.
+## Target transform that the camera tweens toward on interaction.
 @export var camera_view_point: Marker3D
-## The packed scene representing the UI overlay spawned during lock interaction.
+## Packed scene for the UI overlay instantiated during interaction.
 @export var lock_ui_scene: PackedScene
-## Automatically turns on an attached spotlight to illuminate the lock while interacting.
+## Automatically turns on spotlight during interaction.
 @export var enable_auto_light: bool = false
 
-## Handles raycast detection and interaction prompts.
+## Component handling raycast detection and interaction prompts.
 @onready var interact_comp: InteractComponent = $InteractComponent
-## Optional spotlight that toggles on during interaction for visibility.
+## Optional spotlight illuminating the lock during interaction.
 @onready var puzzle_light: SpotLight3D = $SpotLight3D
 
-## A reference to the instantiated UI overlay.
+## Active instance of the spawned [MachineLockUI] overlay.
 var active_ui: MachineLockUI
-## Caches the character currently engaged with the lock.
+## Caches player character currently interacting with the lock.
 var interacting_player: CharacterBody3D
-## Saves the player's camera position before moving it, allowing for a smooth return.
+## Stores initial camera transform before focus tween starts.
 var original_cam_transform: Transform3D
-## Tween responsible for animating the camera and lighting interpolations.
+## Tween animating camera and puzzle light transitions.
 var camera_tween: Tween
 
 
-## Clamps the code and binds the interaction component.
+## Clamps secret code, resets light energy, and connects interaction.
 func _ready() -> void:
-	# Enforce the 3 character limit AND force uppercase to prevent mismatch errors
 	secret_code = secret_code.left(3).to_upper()
 
 	if is_instance_valid(puzzle_light):
@@ -46,12 +42,11 @@ func _ready() -> void:
 		interact_comp.interacted.connect(_on_interacted)
 
 
-## Begins the cinematic sequence locking the player into the puzzle.
-## [param character]: The player character initiating the interaction.
+## Begins puzzle interaction sequence and locks player movement.
 func _on_interacted(character: CharacterBody3D) -> void:
-	print("CombinationLock: _on_interacted() called. Processing lock interaction.")
+	print("CombinationLock: Player interacted with lock.")
 	if interacting_player != null:
-		return  # Already in use
+		return
 
 	interacting_player = character
 	var state_machine: PlayerStateMachine = (
@@ -59,13 +54,13 @@ func _on_interacted(character: CharacterBody3D) -> void:
 	)
 
 	if state_machine:
-		# Reuse your existing lock state!
 		state_machine.transition_to("MachineLock")
 		_focus_camera_and_ui()
 
 
-## Tweens the camera towards the lock and instantiates the code entry UI.
+## Tweens camera to target marker and safely instantiates lock UI.
 func _focus_camera_and_ui() -> void:
+	print("CombinationLock: Focusing camera and displaying lock UI.")
 	var camera: Camera3D = get_viewport().get_camera_3d()
 	if camera and camera_view_point:
 		original_cam_transform = camera.global_transform
@@ -86,49 +81,47 @@ func _focus_camera_and_ui() -> void:
 		if enable_auto_light and is_instance_valid(puzzle_light):
 			camera_tween.tween_property(puzzle_light, "light_energy", 1.5, 0.4)
 
-	# Spawn the updated UI
 	if lock_ui_scene:
-		active_ui = lock_ui_scene.instantiate() as MachineLockUI
+		var raw_ui: Node = lock_ui_scene.instantiate()
+		if not (raw_ui is MachineLockUI):
+			print("CombinationLock: Instantiated UI is not MachineLockUI. Freeing.")
+			raw_ui.queue_free()
+			return
+
+		active_ui = raw_ui as MachineLockUI
 		get_tree().root.add_child(active_ui)
 
-		# Pass the inspector settings to the UI
 		active_ui.setup(use_letters)
-
 		active_ui.code_submitted.connect(_on_code_submitted)
 		active_ui.aborted.connect(_release_player)
 
 
-## Validates the submitted sequence against the expected [member secret_code].
-## [param code]: The 3-character string passed from the UI.
+## Validates submitted code against [member secret_code].
 func _on_code_submitted(code: String) -> void:
+	print("CombinationLock: Submitted code evaluated: ", code)
 	if code == secret_code:
-		print("Lock Solved!")
+		print("CombinationLock: Lock Solved!")
 
-		# 1. Trigger the normal release sequence (handles UI and camera tween)
 		_release_player()
 
-		# 2. Make the lock visually disappear instantly
 		for child: Node in get_children():
 			if child is MeshInstance3D or child is SpotLight3D:
 				child.hide()
 
-		# Disable interactions so the player can't click the invisible lock
 		if is_instance_valid(interact_comp):
 			interact_comp.process_mode = Node.PROCESS_MODE_DISABLED
 
-		# 3. Wait safely for the camera tween to finish moving the player's view
 		if camera_tween and camera_tween.is_valid():
 			await camera_tween.finished
 
-		# 4. Finally, destroy the node from memory
 		queue_free()
-
 	else:
-		print("Incorrect Code.")
+		print("CombinationLock: Incorrect Code.")
 
 
-## Restores the camera's original transform, deletes the UI overlay, and frees player movement.
+## Restores camera transform, frees UI overlay, and releases player.
 func _release_player() -> void:
+	print("CombinationLock: Releasing player and resetting camera.")
 	var camera: Camera3D = get_viewport().get_camera_3d()
 	if camera:
 		if camera_tween and camera_tween.is_valid():
