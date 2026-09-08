@@ -16,7 +16,7 @@ func _init() -> void:
 	locomotion_component = mock_loco
 	add_child(mock_loco)
 
-	var mock_menu: SystemMenuController = SystemMenuController.new()
+	var mock_menu: MockSystemMenu = MockSystemMenu.new()
 	mock_menu.name = "MockSystemMenu"
 	system_menu = mock_menu
 	add_child(mock_menu)
