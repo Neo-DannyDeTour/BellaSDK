@@ -72,3 +72,18 @@ func heal(amount: int) -> void:
 	last_heal = amount
 	if is_instance_valid(health_component) and health_component.has_method("heal"):
 		health_component.heal(amount)
+
+
+class MockSystemMenu extends SystemMenuController:
+
+	func _init() -> void:
+		pass
+
+	func toggle_pause() -> void:
+		pass
+
+	func toggle_noclip() -> void:
+		pass
+
+	func process_noclip(_delta: float) -> void:
+		pass
