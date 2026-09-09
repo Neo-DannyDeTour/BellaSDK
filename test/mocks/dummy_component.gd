@@ -20,7 +20,7 @@ var zipline_cooldown: float = 0.0
 ## Active monkey bar handle node within grab distance.
 var available_monkey_bar: Node3D = null
 
-## The RigidBody3D currently being carried by the player stub.
+## The [RigidBody3D] currently being carried by the player stub.
 var held_item: RigidBody3D = null
 
 

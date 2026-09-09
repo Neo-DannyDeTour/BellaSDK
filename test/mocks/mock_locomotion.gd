@@ -1,4 +1,4 @@
-## Test mock for PlayerLocomotionComponent tracking
+## Test mock for [PlayerLocomotionComponent] tracking
 ## movement parameters, stance states, and physics flags.
 class_name MockLocomotion
 extends PlayerLocomotionComponent

@@ -1,4 +1,5 @@
-## Test mock for Player assembling default stubs, bypassing hardware captures, and tracking damage.
+## Test mock for [Player] assembling default stubs, bypassing hardware captures,
+## and tracking damage.
 class_name MockPlayer
 extends Player
 

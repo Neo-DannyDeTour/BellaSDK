@@ -1,4 +1,4 @@
-## Test mock for PlayerEnvironmentComponent tracking interaction triggers and cooldowns.
+## Test mock for [PlayerEnvironmentComponent] tracking interaction triggers and cooldowns.
 class_name MockEnvironmentComponent
 extends DummyComponent
 
