@@ -1,12 +1,12 @@
-## Spawns, scales, and manages cleanup lifecycles for dynamic 3D shockwave particles.
+## Manages spawning, scaling, and safe cleanup lifecycles for 3D shockwaves.
 class_name ShockwaveManager
 extends Node3D
 
-## Particle scene instantiated for shockwave visual effects.
+## [PackedScene] instantiated for 3D shockwave visual effects.
 @export var shockwave_scene: PackedScene
 
 
-## Instantiates, scales, triggers, and schedules cleanup for a shockwave particle.
+## Spawns, configures, and cleans up a [GPUParticles3D] shockwave instance.
 func trigger_shockwave(spawn_position: Vector3, radius: float = 5.0) -> void:
 	print("ShockwaveManager: Spawning shockwave at: ", spawn_position, " | Radius: ", radius)
 
@@ -19,8 +19,14 @@ func trigger_shockwave(spawn_position: Vector3, radius: float = 5.0) -> void:
 		raw_instance.queue_free()
 		return
 
+	var current_scene: Node = get_tree().current_scene
+	if current_scene == null:
+		print("ShockwaveManager: current_scene is null. Aborting spawn.")
+		raw_instance.queue_free()
+		return
+
 	var effect_instance: GPUParticles3D = raw_instance as GPUParticles3D
-	get_tree().current_scene.add_child(effect_instance)
+	current_scene.add_child(effect_instance)
 
 	effect_instance.global_position = spawn_position
 	effect_instance.scale = Vector3(radius, radius, radius)
@@ -28,7 +34,13 @@ func trigger_shockwave(spawn_position: Vector3, radius: float = 5.0) -> void:
 	effect_instance.explosiveness = 1.0
 	effect_instance.restart()
 
-	var actual_lifetime: float = effect_instance.lifetime / maxf(0.01, effect_instance.speed_scale)
+	var speed_factor: float = maxf(0.01, effect_instance.speed_scale)
+	var actual_lifetime: float = (effect_instance.lifetime / speed_factor) + 0.1
 
-	var timer: SceneTreeTimer = get_tree().create_timer(actual_lifetime + 0.1)
-	timer.timeout.connect(effect_instance.queue_free)
+	var timer: SceneTreeTimer = get_tree().create_timer(actual_lifetime)
+	timer.timeout.connect(
+		func() -> void:
+			if is_instance_valid(effect_instance):
+				effect_instance.queue_free(),
+		CONNECT_ONE_SHOT
+	)

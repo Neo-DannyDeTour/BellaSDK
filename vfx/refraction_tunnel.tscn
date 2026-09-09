@@ -1,0 +1,39 @@
+[gd_scene format=3 uid="uid://8aiibhbsy6lu"]
+
+[ext_resource type="Shader" uid="uid://b53orqbc15fox" path="res://vfx/refraction_tunnel.gdshader" id="1_n4u5e"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_1rs0w"]
+shader = ExtResource("1_n4u5e")
+shader_parameter/resolution = Vector2(1920, 1080)
+shader_parameter/zoom = 2.0
+shader_parameter/speed = 6.46999985538256
+shader_parameter/ir = 2.1999999731776
+shader_parameter/field_divisor = 15.479999657716359
+shader_parameter/step_scale = 0.1499999966472
+shader_parameter/freq_l1 = 1.0
+shader_parameter/freq_l2 = 2.34999995119812
+shader_parameter/freq_l3 = 5.33999988436564
+shader_parameter/weight_l1 = 0.53999998792992
+shader_parameter/weight_l2 = 0.62999998591824
+shader_parameter/weight_l3 = 0.25
+shader_parameter/color_tint = Color(0.15, 0.054449998, 0.013499997, 1)
+shader_parameter/contrast = 5.38999988324804
+shader_parameter/brightness = 1.17999997362464
+shader_parameter/fade = 0.62999998591824
+
+[node name="RefractionTunnel" type="Control" unique_id=1125482105]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="ColorRect" type="ColorRect" parent="." unique_id=565455506]
+material = SubResource("ShaderMaterial_1rs0w")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2

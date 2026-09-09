@@ -1,69 +1,93 @@
+## Gel emitter node managing dynamic particle pooling,
+## shader textures, and splats in the scene tree.
 @tool
 extends Node3D
 
+## Maximum number of simultaneous particles supported in the object pool.
 const MAX_PARTICLES: int = 50
 
 @export_group("Shader & Particle Parameters")
+## Albedo tint color passed to [Particle] shader materials.
 @export var p_color: Color = Color(0.0, 0.5, 1.0, 1.0):
 	set(value):
 		p_color = value
 		if is_inside_tree():
 			_update_all_particles()
 
+## Opacity multiplier applied to active [Particle] nodes.
 @export_range(0.0, 1.0) var p_opacity: float = 1.0:
 	set(value):
 		p_opacity = value
 		if is_inside_tree():
 			_update_all_particles()
 
+## Base collision and render radius for spawned gel particles.
 @export var p_size: float = 0.2:
 	set(value):
 		p_size = value
 		if is_inside_tree():
 			_update_all_particles()
 
+## Downward linear velocity applied to falling particles.
 @export var p_fall_speed: float = 5.0:
 	set(value):
 		p_fall_speed = value
 		if is_inside_tree():
 			_update_all_particles()
 
+## Surface roughness applied to the gel particle shader material.
 @export_range(0.0, 1.0) var p_roughness: float = 0.1:
 	set(value):
 		p_roughness = value
 		if is_inside_tree():
 			_update_all_particles()
 
+## Metallic reflection parameter applied to the gel particle shader material.
 @export_range(0.0, 1.0) var p_metallic: float = 0.6:
 	set(value):
 		p_metallic = value
 		if is_inside_tree():
 			_update_all_particles()
 
+## Smooth minimum blend factor [code]k[/code] for particle metaball merging.
 @export var p_blend_k: float = 0.3:
 	set(value):
 		p_blend_k = value
 		if is_inside_tree():
 			_update_all_particles()
 
+## Preloaded scene template used to instantiate pooled [Particle] nodes.
 var subscene_instance: PackedScene = preload("res://vfx/particle.tscn")
+## Fixed-size collection of pooled [Particle] instances.
 var particle_pool: Array[Particle] = []
+## Optional target [Node3D] decal receiving splat texture and count data.
 var first_decal: Node3D = null
 
+## Raw image buffer storing active particle position and radius vectors.
 var data_texture: Image = Image.create(1024, 1, false, Image.FORMAT_RGBAF)
+## Hardware texture resource displaying [member data_texture].
 var tc: ImageTexture
+## Packed float buffer containing serialized particle transforms.
 var particle_data: PackedFloat32Array = PackedFloat32Array()
 
+## Raw image buffer storing decal hit positions and emission timestamps.
 var splat_pos: Image = Image.create(1024, 1, false, Image.FORMAT_RGBAF)
+## Hardware texture resource displaying [member splat_pos].
 var splat_tex: ImageTexture
+## Total number of registered decal splats written to the texture.
 var splat_count: int = 0
 
+## Running elapsed scene time passed to shader uniforms.
 var time: float = 0.0
+## Delta accumulation tracker metering spawn intervals.
 var spawn_accumulator: float = 0.0
+## Target randomized duration before triggering the next particle spawn.
 var current_spawn_wait: float = 0.0
+## Particle emitter node triggered when a gel splat impacts surfaces.
 var emitter: GPUParticles3D
 
 
+## Cleans up editor duplicates, initializes GPU textures, and defers pool setup.
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		for child: Node in get_children():
@@ -79,30 +103,36 @@ func _ready() -> void:
 	if emitter_node is GPUParticles3D:
 		emitter = emitter_node as GPUParticles3D
 
-	# Defer initialization to ensure the Inspector and Scene Tree
-	# are completely synced before injecting 50 child nodes.
 	call_deferred("_initialize_pool")
 	current_spawn_wait = randf_range(0.0, 0.1)
 
 
+## Instantiates, configures, and pools [member MAX_PARTICLES] instances safely.
 func _initialize_pool() -> void:
 	particle_pool.clear()
 	for i: int in range(MAX_PARTICLES):
-		var p: Particle = subscene_instance.instantiate() as Particle
-		if p != null:
-			p.visible = false
-			p.is_active = false
-			add_child(p)
-			particle_pool.append(p)
-			_apply_params_to_particle(p)
+		var raw_instance: Node = subscene_instance.instantiate()
+		var p: Particle = raw_instance as Particle
+		if p == null:
+			if raw_instance != null:
+				raw_instance.free()
+			continue
+
+		p.visible = false
+		p.is_active = false
+		add_child(p)
+		particle_pool.append(p)
+		_apply_params_to_particle(p)
 
 
+## Propagates exported parameter updates across all valid pooled instances.
 func _update_all_particles() -> void:
 	for p: Particle in particle_pool:
-		if p != null:
+		if is_instance_valid(p):
 			_apply_params_to_particle(p)
 
 
+## Configures material and movement parameters on an individual [Particle].
 func _apply_params_to_particle(particle: Particle) -> void:
 	particle.initial_radius = p_size
 	particle.fall_speed = p_fall_speed
@@ -113,8 +143,8 @@ func _apply_params_to_particle(particle: Particle) -> void:
 	particle.update_shader_params(p_color, p_opacity, p_roughness, p_metallic, p_blend_k)
 
 
+## Advances simulation timers, spawns particles, and syncs GPU data textures.
 func _process(delta: float) -> void:
-	# 60 FPS Safety Net: Instantly recovers the pool array if the Editor hot-reloads the script
 	if Engine.is_editor_hint() and particle_pool.is_empty():
 		_recover_pool_state()
 
@@ -129,12 +159,14 @@ func _process(delta: float) -> void:
 	update_data_texture()
 
 
+## Rebuilds [member particle_pool] from child nodes following an editor reload.
 func _recover_pool_state() -> void:
 	for child: Node in get_children():
 		if child is Particle:
 			particle_pool.append(child as Particle)
 
 
+## Activates and positions the next available inactive particle in the pool.
 func _spawn_particle_from_pool() -> void:
 	for p: Particle in particle_pool:
 		if not p.is_active:
@@ -145,6 +177,7 @@ func _spawn_particle_from_pool() -> void:
 			break
 
 
+## Positions and triggers the splat [GPUParticles3D] system at [param pos].
 func spawn_splat(pos: Vector3) -> void:
 	print("GelEmitter: spawn_splat() called. Spawning gel splat.")
 	if first_decal != null and emitter != null:
@@ -152,6 +185,7 @@ func spawn_splat(pos: Vector3) -> void:
 		emitter.emitting = true
 
 
+## Writes a new decal hit position [param pos] to the splat position texture.
 func spawn_decal(pos: Vector3) -> void:
 	print("GelEmitter: spawn_decal() called. Spawning gel decal.")
 	var dec_color: Color = Color(pos.x, pos.y, pos.z, time)
@@ -159,6 +193,7 @@ func spawn_decal(pos: Vector3) -> void:
 	splat_count += 1
 
 
+## Serializes active particle positions to [member tc] and updates decals.
 func update_data_texture() -> void:
 	if particle_pool.is_empty():
 		return
