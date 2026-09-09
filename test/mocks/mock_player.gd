@@ -11,6 +11,7 @@ var last_heal: int = 0
 
 ## Lifecycle initialization assembling mock components into the hierarchy.
 func _init() -> void:
+	print("MockPlayer: _init() called.")
 	var mock_loco: MockLocomotion = MockLocomotion.new()
 	mock_loco.name = "MockLocomotion"
 	locomotion_component = mock_loco
@@ -74,16 +75,23 @@ func heal(amount: int) -> void:
 		health_component.heal(amount)
 
 
-class MockSystemMenu extends SystemMenuController:
+## Mock system menu controller providing inert stubs for testing.
+class MockSystemMenu:
+	extends SystemMenuController
 
+	## Stub constructor for the mock menu controller.
 	func _init() -> void:
-		pass
+		print("MockSystemMenu: _init() called.")
 
+	## Inert stub simulating system menu pause toggle.
 	func toggle_pause() -> void:
-		pass
+		print("MockSystemMenu: toggle_pause() called.")
 
+	## Inert stub simulating noclip mode toggle.
 	func toggle_noclip() -> void:
-		pass
+		print("MockSystemMenu: toggle_noclip() called.")
 
+	## Inert stub simulating noclip movement processing.
+	## [param _delta] Elapsed frame time in seconds.
 	func process_noclip(_delta: float) -> void:
 		pass
