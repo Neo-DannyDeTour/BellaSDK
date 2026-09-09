@@ -12,7 +12,7 @@
 ![Performance](https://img.shields.io/badge/Target-60_FPS-brightgreen.svg)
 ![GitHub Repo stars](https://img.shields.io/github/stars/Neo-DannyDeTour/BellaSDK?style=flat-square&label=STARS&labelColor=444444&color=223b47)
 ![GitHub forks](https://img.shields.io/github/forks/Neo-DannyDeTour/BellaSDK?style=flat-square&label=FORKS&labelColor=444444&color=223b47)
-![GitHub Downloads (TOTAL)](https://img.shields.io/github/downloads/Neo-DannyDeTour/BellaSDK/latest/total?style=flat-square&label=DOWNLOADS%20%28LATEST%20RELEASE%29&labelColor=444444&color=223b47&logo=github&logoColor=white)
+![GitHub Downloads (TOTAL)](https://img.shields.io/github/downloads/Neo-DannyDeTour/BellaSDK/total?style=flat-square&label=DOWNLOADS%20%28ALL%20TIME%29&labelColor=444444&color=223b47)
 ![GitHub Downloads (latest release)](https://img.shields.io/github/downloads/Neo-DannyDeTour/BellaSDK/latest/total?style=flat-square&label=DOWNLOADS%20%28LATEST%20RELEASE%29&labelColor=444444&color=223b47)
 [![Build Status](https://github.com/Neo-DannyDeTour/BellaSDK/actions/workflows/ci-build.yml/badge.svg)](https://github.com/Neo-DannyDeTour/BellaSDK/actions)
 [![Tests Status](https://github.com/Neo-DannyDeTour/BellaSDK/actions/workflows/code-quality.yml/badge.svg)](https://github.com/Neo-DannyDeTour/BellaSDK/actions)
