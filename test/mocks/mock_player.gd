@@ -16,7 +16,7 @@ func _init() -> void:
 	locomotion_component = mock_loco
 	add_child(mock_loco)
 
-	var mock_menu: SystemMenuController = SystemMenuController.new()
+	var mock_menu: MockSystemMenu = MockSystemMenu.new()
 	mock_menu.name = "MockSystemMenu"
 	system_menu = mock_menu
 	add_child(mock_menu)
@@ -72,3 +72,18 @@ func heal(amount: int) -> void:
 	last_heal = amount
 	if is_instance_valid(health_component) and health_component.has_method("heal"):
 		health_component.heal(amount)
+
+
+class MockSystemMenu extends SystemMenuController:
+
+	func _init() -> void:
+		pass
+
+	func toggle_pause() -> void:
+		pass
+
+	func toggle_noclip() -> void:
+		pass
+
+	func process_noclip(_delta: float) -> void:
+		pass

@@ -49,6 +49,10 @@ var bridge_fallen: bool = false
 
 ## Called when the node enters the scene tree for the first time.
 ## Connects rope signals and initializes physics states.
+##
+## Lifecycle triggers: Called on `_ready` by engine.
+## No parameters.
+## Returns: void.
 func _ready() -> void:
 	_update_bridge_shape()
 
@@ -78,6 +82,7 @@ func _ready() -> void:
 
 ## Recursively searches a node's children to find a specific signal.
 ##
+## Lifecycle triggers: Called privately by [method _ready].
 ## [param parent] The starting node to search from.
 ## [param sig_name] The string name of the signal to find.
 ## [return] The first [Node] found that has the signal, or null.
@@ -97,6 +102,10 @@ func _find_signal_source(parent: Node, sig_name: String) -> Node:
 
 
 ## Dynamically scales the bridge's mesh and collision based on exported properties.
+##
+## Lifecycle triggers: Called privately when exported shape properties change.
+## No parameters.
+## Returns: void.
 func _update_bridge_shape() -> void:
 	if not is_node_ready():
 		return
@@ -132,6 +141,10 @@ func _update_bridge_shape() -> void:
 
 
 ## Instantiates or updates the red hinge debug pin in the editor.
+##
+## Lifecycle triggers: Called privately by [method _update_bridge_shape].
+## No parameters.
+## Returns: void.
 func _draw_debug_pin() -> void:
 	if not is_node_ready():
 		return
@@ -168,6 +181,10 @@ func _draw_debug_pin() -> void:
 
 
 ## Triggered when a connected rope is destroyed. Drops the bridge if no ropes remain.
+##
+## Lifecycle triggers: Connected to rope signals dynamically in `_ready`.
+## No parameters.
+## Returns: void.
 func _on_rope_broken() -> void:
 	if Engine.is_editor_hint():
 		return
@@ -178,6 +195,10 @@ func _on_rope_broken() -> void:
 
 
 ## Unfreezes the bridge physics body, allowing it to swing down.
+##
+## Lifecycle triggers: Called publicly or privately when all ropes break.
+## No parameters.
+## Returns: void.
 func drop_bridge() -> void:
 	print("Drawbridge: drop_bridge() called. Dropping the bridge.")
 	if Engine.is_editor_hint():
@@ -192,7 +213,9 @@ func drop_bridge() -> void:
 
 ## Triggered when the bridge body hits the floor trigger. Freezes the bridge in place.
 ##
+## Lifecycle triggers: Connected to a floor Area3D body_entered signal.
 ## [param body] The [Node3D] that entered the trigger area.
+## Returns: void.
 func _on_ground_lock_trigger_body_entered(body: Node3D) -> void:
 	if Engine.is_editor_hint():
 		return

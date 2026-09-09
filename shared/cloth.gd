@@ -13,7 +13,9 @@ extends SoftBody3D
 
 ## Listens for the assigned bake action key to trigger the mesh baking process.
 ##
+## Lifecycle triggers: Called on `_input` by engine.
 ## [param event] The input event to check against the mapped bake key.
+## Returns: void.
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and not event.echo:
 		if event.keycode == bake_action_key:
@@ -21,6 +23,10 @@ func _input(event: InputEvent) -> void:
 
 
 ## Extracts deformed vertices from the physics server and generates a new [ArrayMesh].
+##
+## Lifecycle triggers: Called privately by [method _input].
+## No parameters.
+## Returns: void.
 func _bake_cloth() -> void:
 	print("Baking cloth simulation...")
 	var base_mesh: ArrayMesh = mesh as ArrayMesh

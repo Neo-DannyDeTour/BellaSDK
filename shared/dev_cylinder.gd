@@ -57,11 +57,19 @@ extends Node3D
 
 
 ## Connects properties on ready.
+##
+## Lifecycle triggers: Called on `_ready` by engine.
+## No parameters.
+## Returns: void.
 func _ready() -> void:
 	_update_visuals()
 
 
 ## Updates the mesh shader instance parameters and 3D label string based on export properties.
+##
+## Lifecycle triggers: Called privately when exported properties change.
+## No parameters.
+## Returns: void.
 func _update_visuals() -> void:
 	# Handle tool script initialization before ready
 	var mesh: MeshInstance3D = (

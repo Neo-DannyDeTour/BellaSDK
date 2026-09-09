@@ -35,7 +35,7 @@ signal noclip_toggled(is_flying: bool)
 @export_category("Menu Settings")
 
 ## Packed scene resource representing the main pause and system menu.
-@export var menu_scene: PackedScene = preload("res://ui/main_menu.tscn")
+@export var menu_scene: PackedScene = load("res://ui/main_menu.tscn")
 
 @export_category("Noclip Settings")
 
