@@ -30,17 +30,17 @@ var last_shot_time: float = -1000.0
 var is_equipped: bool = false
 
 #@onready var anim: AnimationPlayer = $ShotgunAnim
-## Property: Muzzle Point.
+## Reference to the muzzle marker for trajectory origins.
 @onready var muzzle_point: Marker3D = $MuzzlePoint
 
 
-## Initializes the shotgun.
+## Initializes the weapon node lifecycle.
 func _ready() -> void:
 	pass
 
 
 # --- EQUIP LOGIC ---
-## Equips the shotgun to the player by disabling its physics and reparenting it.
+## Equips the weapon to [param p_node], reparenting and disabling physics.
 func equip_to_player(p_node: CharacterBody3D) -> void:
 	print("Shotgun: equip_to_player() called. Equipping shotgun to player.")
 	is_equipped = true
@@ -66,7 +66,7 @@ func equip_to_player(p_node: CharacterBody3D) -> void:
 
 
 # --- SHOOT LOGIC (The Pro Way) ---
-## Fires the shotgun, casting rays from the [param player_camera] and applying damage.
+## Fires pellets from [param player_camera], evaluating hits and damage.
 func shoot(player_camera: Camera3D) -> void:
 	print("Shotgun: shoot() called by player.")
 
@@ -136,7 +136,7 @@ func shoot(player_camera: Camera3D) -> void:
 				(collider as RigidBody3D).apply_impulse(pellet_dir * 2.0, hit_offset)
 
 			# --- MEAT CUBE INTEGRATION ---
-			# Check the collider, its parent, and its owner for the deformation logic
+			# Check collider, its parent, and owner for deformation logic
 			if collider.has_method("_spawn_poker_at"):
 				collider._spawn_poker_at(result.position, pellet_dir)
 			elif collider.get_parent() and collider.get_parent().has_method("_spawn_poker_at"):
@@ -147,12 +147,17 @@ func shoot(player_camera: Camera3D) -> void:
 			if collider.has_method("leak_at"):
 				collider.leak_at(result.position)
 
-			var dot: Node3D = DEBUG_PELLET.instantiate() as Node3D
-			get_tree().current_scene.add_child(dot)
-			dot.global_position = result.position
+			var pellet_instance: Node = DEBUG_PELLET.instantiate()
+			var dot: Node3D = pellet_instance as Node3D
+			if dot:
+				get_tree().current_scene.add_child(dot)
+				dot.global_position = result.position
+			else:
+				if pellet_instance:
+					pellet_instance.queue_free()
 
 
-## Triggered when the player interacts with the shotgun in the world, equipping it.
+## Handles the interaction event to pick up and equip the weapon.
 func _on_interact_component_interacted(_player: CharacterBody3D = null) -> void:
 	print("Shotgun: _on_interact_component_interacted() called. Picking up shotgun.")
 

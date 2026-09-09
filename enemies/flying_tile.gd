@@ -125,9 +125,7 @@ func _on_body_entered(body: Node3D) -> void:
 	if _current_state != State.ATTACKING:
 		return
 
-	var health_comp: HealthComponent = (
-		body.find_child("HealthComponent", true, false) as HealthComponent
-	)
+	var health_comp: HealthComponent = body.get_node_or_null("HealthComponent") as HealthComponent
 
 	if health_comp:
 		print("FlyingTile: Direct hit! Calling HealthComponent.take_damage(100)")

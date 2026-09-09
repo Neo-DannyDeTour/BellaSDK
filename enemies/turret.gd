@@ -54,6 +54,9 @@ var current_state: TurretState = TurretState.SCANNING
 ## The current entity that the turret is actively tracking and attempting to shoot.
 var target: Node3D = null
 
+## Cached [HealthComponent] reference to prevent per-shot lookups and dynamic calls.
+var target_health_comp: HealthComponent = null
+
 ## The remaining time in seconds before the turret is allowed to fire again.
 var fire_cooldown: float = 0.0
 
@@ -128,6 +131,7 @@ func _process_scanning(delta: float) -> void:
 ## [param delta] Engine frame delta in seconds.
 func _process_engaging(delta: float) -> void:
 	if not _is_active_target(target):
+		_set_target(null)
 		_change_state(TurretState.SCANNING)
 		return
 
@@ -137,6 +141,26 @@ func _process_engaging(delta: float) -> void:
 		_handle_shooting(delta)
 	else:
 		bullet_particles.emitting = false
+
+
+## Assigns an active target and caches its [HealthComponent] statically.
+## [param new_target] The hostile [Node3D] to track.
+func _set_target(new_target: Node3D) -> void:
+	print("Turret: _set_target() - Setting target: ", new_target)
+	target = new_target
+	target_health_comp = null
+
+	if target == null:
+		return
+
+	var comp: Node = target.get_node_or_null("Components/HealthComponent")
+	if comp is HealthComponent:
+		target_health_comp = comp
+		return
+
+	var fallback_comp: Node = target.find_child("HealthComponent", true, false)
+	if fallback_comp is HealthComponent:
+		target_health_comp = fallback_comp
 
 
 ## Verifies a target is physically present and capable of receiving damage.
@@ -230,27 +254,16 @@ func shoot() -> void:
 	bullet_particles.emitting = true
 
 	if is_instance_valid(target):
-		_damage_player(target)
+		_damage_player()
 
 
-## Deeply searches the target hierarchy for a health component to deduct health.
-## [param player_node] The root object hit by the turret.
-func _damage_player(player_node: Object) -> void:
+## Deals damage directly using static method invocation on the cached component.
+func _damage_player() -> void:
 	print("Turret: _damage_player() - Attempting to deal damage.")
 
-	if player_node.has_method("take_damage"):
-		print("Turret: _damage_player() - Hit target directly.")
-		player_node.call("take_damage", damage)
-		return
-
-	var health_comp: Node = player_node.get_node_or_null("Components/HealthComponent")
-
-	if health_comp == null:
-		health_comp = player_node.call("find_child", "HealthComponent", true, false)
-
-	if health_comp != null and health_comp.has_method("take_damage"):
+	if target_health_comp != null and is_instance_valid(target_health_comp):
 		print("Turret: _damage_player() - Hit confirmed. Dealing ", damage, " damage.")
-		health_comp.call("take_damage", damage)
+		target_health_comp.take_damage(damage)
 
 
 ## Detects new physics bodies entering the detection range.
@@ -261,7 +274,7 @@ func _on_body_entered(body: Node3D) -> void:
 
 	if _is_hostile(body) and _is_active_target(body):
 		print("Turret: _on_body_entered() - Detected hostile body: ", body.name)
-		target = body
+		_set_target(body)
 		_change_state(TurretState.ENGAGING)
 
 
@@ -281,7 +294,7 @@ func _on_area_entered(area: Area3D) -> void:
 
 	if _is_hostile(area) and _is_active_target(area):
 		print("Turret: _on_area_entered() - Detected hostile area: ", area.name)
-		target = area
+		_set_target(area)
 		_change_state(TurretState.ENGAGING)
 
 
@@ -296,13 +309,13 @@ func _on_area_exited(area: Area3D) -> void:
 ## Scans overlapping geometry to find a replacement target if the current one is lost.
 func _acquire_new_target() -> void:
 	print("Turret: _acquire_new_target() - Scanning for remaining targets in zone.")
-	target = null
+	_set_target(null)
 
 	var bodies: Array[Node3D] = detection_area.get_overlapping_bodies()
 	for b: Node3D in bodies:
 		if _is_hostile(b) and _is_active_target(b) and b != self:
 			print("Turret: _acquire_new_target() - Found new body target: ", b.name)
-			target = b
+			_set_target(b)
 			_change_state(TurretState.ENGAGING)
 			return
 
@@ -310,7 +323,7 @@ func _acquire_new_target() -> void:
 	for a: Area3D in areas:
 		if _is_hostile(a) and _is_active_target(a):
 			print("Turret: _acquire_new_target() - Found new area target: ", a.name)
-			target = a
+			_set_target(a)
 			_change_state(TurretState.ENGAGING)
 			return
 

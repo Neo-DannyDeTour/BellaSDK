@@ -40,20 +40,20 @@ enum MagnetMode { THROWN_ONLY, ALL, REPEL }
 var _active_bodies: Dictionary = {}
 
 
+## Initializes the magnet area, signal connections, collision settings, and visual bounds.
 func _ready() -> void:
 	if not Engine.is_editor_hint():
 		if is_instance_valid(_editor_icon):
 			_editor_icon.queue_free()
 
-		# Connect signals for event-driven tracking
 		body_entered.connect(_on_body_entered)
 		body_exited.connect(_on_body_exited)
-
-		# Disable process by default until something enters the field
 		set_physics_process(false)
 
 	collision_layer = 0
-	collision_mask = 1
+	# Mask bits: Layer 1 (value 1) + Layer 3 (value 4) = 5
+	# Or use bitwise syntax: (1 << 0) | (1 << 2)
+	collision_mask = 5
 	_update_size()
 	_update_visibility()
 

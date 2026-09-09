@@ -84,7 +84,7 @@ func _focus_camera_and_ui() -> void:
 	if lock_ui_scene:
 		var raw_ui: Node = lock_ui_scene.instantiate()
 		if not (raw_ui is MachineLockUI):
-			print("CombinationLock: Instantiated UI is not MachineLockUI. Freeing.")
+			print("CombinationLock: UI is not MachineLockUI. Freeing.")
 			raw_ui.queue_free()
 			return
 
@@ -140,6 +140,7 @@ func _release_player() -> void:
 
 	if is_instance_valid(active_ui):
 		active_ui.queue_free()
+		active_ui = null
 
 	if is_instance_valid(interacting_player):
 		var state_machine: PlayerStateMachine = (

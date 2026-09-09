@@ -286,6 +286,10 @@ signal render_diagnostics_toggle_requested
 @warning_ignore("unused_signal")
 signal heavy_carry_toggled(is_active: bool)
 
+## Emitted when vault availability or screen position updates.
+@warning_ignore("unused_signal")
+signal vault_prompt_updated(is_available: bool, screen_pos: Vector2, is_on_screen: bool)
+
 ## Visual animation style presets for chapter title card sequences.
 enum ChapterAnimStyle {
 	SIMPLE,

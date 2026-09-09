@@ -1,17 +1,14 @@
-extends Node
 ## Manages health values, damage mitigation, and death pooling logic for game entities.
-##
-## Attach this to any node that needs to be damageable. Works directly with the player
-## to broadcast global signals via [Events] and coordinates pooling via moving the parent [Node3D].
 class_name HealthComponent
+extends Node
 
-## Emitted when the current health changes.
+## Emitted when [member current_health] changes, passing the new value.
 signal health_changed(current_health: int)
 
-## Emitted when the maximum health capacity changes.
+## Emitted when [member max_health] changes, passing the new maximum capacity.
 signal max_health_changed(new_max: int)
 
-## Emitted when current health reaches zero.
+## Emitted when [member current_health] drops to zero. Passes no arguments.
 signal died
 
 ## The maximum health capacity of this entity.
@@ -20,21 +17,20 @@ signal died
 ## Determines if the entity is hidden and teleported for pooling instead of being freed on death.
 @export var use_pooling: bool = true
 
-## Flag to determine if this component belongs to the player,
-## allowing broadcasting to the global Events bus.
+## Enables broadcasting updates directly to the global [Events] bus for the player.
 @export var is_player_health: bool = false
 
-## The current internal health amount of this entity.
+## The current internal health points of this entity.
 var current_health: int = 100
 
 
-## Initializes internal state and sets current health to the maximum capacity on node load.
+## Initializes internal state and sets health to maximum capacity.
 func _ready() -> void:
 	print("HealthComponent: _ready() - Initializing health component.")
 	current_health = max_health
 
 
-## Subtracts the given amount from current health and manages player death scenarios.
+## Subtracts damage from current health and handles death triggers.
 ## [param amount] The damage value to apply.
 func take_damage(amount: int) -> void:
 	print("HealthComponent: take_damage() - Took ", amount, " damage.")
@@ -60,7 +56,7 @@ func take_damage(amount: int) -> void:
 		die()
 
 
-## Adds the given amount to current health without exceeding the maximum capacity.
+## Restores health up to maximum capacity and emits updates.
 ## [param amount] The healing value to apply.
 func heal(amount: int) -> void:
 	print("HealthComponent: heal() - Healing for ", amount, ".")
@@ -75,7 +71,7 @@ func heal(amount: int) -> void:
 	print("HealthComponent: heal() - Current health is now ", current_health, ".")
 
 
-## Permanently increases the maximum health capacity and scales current health proportionally.
+## Increases maximum capacity and raises current health proportionally.
 ## [param amount] The health capacity value to add.
 func increase_max_health(amount: int) -> void:
 	print(
@@ -102,7 +98,7 @@ func increase_max_health(amount: int) -> void:
 		Events.player_health_changed.emit(current_health)
 
 
-## Broadcasts death signals and hides/pools the parent node based on [member use_pooling].
+## Broadcasts death signals and hides/pools the parent actor.
 func die() -> void:
 	print("HealthComponent: die() - Entity died.")
 	died.emit()
@@ -119,17 +115,17 @@ func die() -> void:
 		if target_node is Node3D:
 			target_node.global_position = Vector3(0.0, -10000.0, 0.0)
 
-		if target_node.has_method("hide"):
+		if target_node.has_method(&"hide"):
 			target_node.hide()
 
 		target_node.process_mode = Node.PROCESS_MODE_DISABLED
 	else:
 		print("HealthComponent: die() - Freeing actor (or handling player death).")
-		if not target_node.is_in_group("player"):
+		if not target_node.is_in_group(&"player"):
 			target_node.queue_free()
 
 
-## Resets current health back to maximum and re-enables the parent [Node3D] for pooling reuse.
+## Resets health to maximum and reactivates parent [Node3D] for pool reuse.
 func reset() -> void:
 	print("HealthComponent: reset() - Restoring health for next spawn.")
 	current_health = max_health

@@ -204,7 +204,7 @@ func _process(_delta: float) -> void:
 		linked_portal._set_viewport_mode(SubViewport.UPDATE_DISABLED)
 		return
 
-	linked_portal._set_viewport_mode(SubViewport.UPDATE_ALWAYS)
+	linked_portal._set_viewport_mode(SubViewport.UPDATE_WHEN_VISIBLE)
 
 	var rel_trans: Transform3D = global_transform.affine_inverse() * player_camera.global_transform
 	var half_turn: Transform3D = Transform3D(Basis.from_euler(Vector3(0.0, PI, 0.0)), Vector3.ZERO)
