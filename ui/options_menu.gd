@@ -1,18 +1,11 @@
-## Coordinates options tabs, socket reparenting, and diorama rendering state.
-## Enforces UPDATE_DISABLED on [SubViewport] whenever preview tabs are inactive
-## to protect frame rate budget.
+## Coordinates options tabs, socket reparenting, and diorama preview rendering.
+## Enforces UPDATE_DISABLED on [SubViewport] when inactive to preserve 60 FPS.
 class_name OptionsRouter
 extends Control
 
 @warning_ignore("unused_signal")
 ## Emitted when the player clicks the master back button.
 signal back_requested
-
-## Target resolution width for the preview viewport when rendering.
-const PREVIEW_WIDTH: int = 640
-
-## Target resolution height for the preview viewport when rendering.
-const PREVIEW_HEIGHT: int = 360
 
 ## Reference to the video settings panel.
 @onready var video_panel: Panel = %VideoOptionsPanel
@@ -91,13 +84,12 @@ func _ready() -> void:
 		reset_defaults_button.pressed.connect(_on_reset_defaults_pressed)
 
 	visibility_changed.connect(_on_visibility_changed)
-
-	# Defer initial tab selection so reparenting runs after scenario registration
 	_on_tab_pressed.call_deferred(video_panel)
 
 
 ## Connects all tab navigation buttons to their respective handlers.
 func _connect_tab_buttons() -> void:
+	print("UI: Connecting tab navigation buttons.")
 	if is_instance_valid(video_button):
 		video_button.pressed.connect(_on_tab_pressed.bind(video_panel))
 	if is_instance_valid(audio_button):
@@ -111,20 +103,20 @@ func _connect_tab_buttons() -> void:
 
 
 ## Returns all options sub-panels as a typed array.
-## [return] Array of panel control instances.
 func get_all_panels() -> Array[Control]:
+	print("UI: Querying all options sub-panels.")
 	return [video_panel, audio_panel, gameplay_panel, controls_panel, accessibility_panel]
 
 
 ## Returns all category tab buttons as a typed array.
-## [return] Array of button instances.
 func get_all_tab_buttons() -> Array[Button]:
+	print("UI: Querying all category tab buttons.")
 	return [video_button, audio_button, gameplay_button, controls_button, accessibility_button]
 
 
 ## Opens a specific tab by integer index and enforces diorama evaluation.
-## [param index] Index corresponding to the options panel.
 func select_tab_by_index(index: int) -> void:
+	print("UI: Selecting tab by index: ", index)
 	var panels: Array[Control] = get_all_panels()
 	if index >= 0 and index < panels.size():
 		_on_tab_pressed(panels[index] as Panel)
@@ -137,7 +129,6 @@ func _on_visibility_changed() -> void:
 
 
 ## Switches active settings tab visibility and re-routes preview widgets.
-## [param active_panel] Target panel selected by player.
 func _on_tab_pressed(active_panel: Panel) -> void:
 	print("UI: Swapped options category tab -> ", active_panel.name)
 	_current_panel = active_panel
@@ -156,7 +147,6 @@ func _on_tab_pressed(active_panel: Panel) -> void:
 
 
 ## Reparents the diorama container into the active panel preview socket.
-## [param active_panel] Active settings panel.
 func _dock_diorama(active_panel: Panel) -> void:
 	if not is_instance_valid(diorama_container):
 		return
@@ -239,7 +229,6 @@ func _activate_graphics_camera() -> void:
 		return
 
 	if not is_instance_valid(_graphics_camera):
-		# Find ANY Camera3D inside the diorama viewport if the specific name is missing
 		_graphics_camera = (
 			diorama_container.find_child("Camera_graphics", true, false) as Camera3D
 		)
@@ -260,7 +249,6 @@ func _activate_graphics_camera() -> void:
 
 
 ## Toggles vision assist quad meshes inside the preview scene.
-## [param enable_assist] True if accessibility overlays should show.
 func _set_diorama_vision_assist_active(enable_assist: bool) -> void:
 	if not is_instance_valid(diorama_container):
 		return
@@ -275,7 +263,6 @@ func _set_diorama_vision_assist_active(enable_assist: bool) -> void:
 
 
 ## Controls the preview shader pass canvas layer.
-## [param is_active] True if shader pass is active.
 func _set_preview_shader_active(is_active: bool) -> void:
 	var preview_layer: CanvasLayer = get_node_or_null("PreviewShaderLayer") as CanvasLayer
 	if not is_instance_valid(preview_layer):
@@ -304,12 +291,11 @@ func _discover_diorama_nodes() -> void:
 			diorama_container.find_child("DioramaViewport", true, false) as SubViewport
 		)
 	else:
-		_diorama_viewport = find_child("DioramaViewport", true, false) as SubViewport
+		_diorama_viewport = (find_child("DioramaViewport", true, false) as SubViewport)
 
 	if is_instance_valid(_diorama_viewport):
-		# DELETE OR COMMENT OUT THESE LINES:
-		# _diorama_viewport.own_world_3d = true
-		# _diorama_viewport.world_3d = World3D.new()
+		_diorama_viewport.own_world_3d = true
+		print("UI: OptionsRouter -> Enabled own_world_3d on DioramaViewport.")
 
 		_diorama_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 		_diorama_viewport.process_mode = Node.PROCESS_MODE_DISABLED

@@ -209,9 +209,9 @@ func _on_new_game_pressed() -> void:
 	add_child(chapter_window)
 
 
-## Restarts the current gameplay level.
+## Restarts the current gameplay level with safe teardown of GI buffers.
 func _on_start_game_pressed() -> void:
-	print("UI: Player clicked Restart Game.")
+	print("UI: Player clicked Restart Game. Initiating safe reload.")
 	_stop_main_theme()
 	if not has_calibrated:
 		_apply_bucket_calibration()
@@ -219,7 +219,19 @@ func _on_start_game_pressed() -> void:
 	get_tree().paused = false
 	var parent: Node = get_parent()
 	if is_instance_valid(parent) and parent.has_method("toggle_pause"):
-		get_tree().reload_current_scene()
+		_safe_reload_current_scene()
+
+
+## Disables SDFGI before reloading to prevent GPU buffer allocation collisions.
+func _safe_reload_current_scene() -> void:
+	print("UI: Disabling SDFGI before level reload to release RIDs.")
+	var world_env: WorldEnvironment = (
+		get_tree().root.find_child("WorldEnvironment", true, false) as WorldEnvironment
+	)
+	if is_instance_valid(world_env) and is_instance_valid(world_env.environment):
+		world_env.environment.sdfgi_enabled = false
+		await get_tree().process_frame
+	get_tree().reload_current_scene()
 
 
 ## Opens the options menu overlay.

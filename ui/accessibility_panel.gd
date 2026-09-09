@@ -4,38 +4,61 @@ class_name AccessibilityPanel
 extends Panel
 
 ## Child section managing vision assist and high contrast silhouettes.
-@onready var vision_section: AccessibilityVisionSection = get_node_or_null(
-	"MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisionSection"
+@onready var vision_section: AccessibilityVisionSection = (
+	find_child("VisionSection", true, false) as AccessibilityVisionSection
 )
 
 ## Child section managing environment adjustments and screen filters.
-@onready var visuals_section: AccessibilityVisualsSection = get_node_or_null(
-	"MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/VisualsSection"
+@onready var visuals_section: AccessibilityVisualsSection = (
+	find_child("VisualsSection", true, false) as AccessibilityVisualsSection
 )
 
 ## Child section managing display scale, typography, and FOV.
-@onready var display_ui_section: AccessibilityDisplayUISection = get_node_or_null(
-	"MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/DisplayUISection"
+@onready var display_ui_section: AccessibilityDisplayUISection = (
+	find_child("DisplayUISection", true, false) as AccessibilityDisplayUISection
 )
 
 ## Child section managing gameplay controls, vibration, and sensitivity.
-@onready var controls_section: AccessibilityControlsSection = get_node_or_null(
-	"MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/ControlsSection"
+@onready var controls_section: AccessibilityControlsSection = (
+	find_child("ControlsSection", true, false) as AccessibilityControlsSection
 )
 
 ## Child section managing subtitles, TTS, and mono audio mixing.
-@onready var subs_audio_section: AccessibilitySubsAudioSection = get_node_or_null(
-	"MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsVBox/SubsAudioSection"
+@onready var subs_audio_section: AccessibilitySubsAudioSection = (
+	find_child("SubsAudioSection", true, false) as AccessibilitySubsAudioSection
 )
+
+## TabContainer organizing settings sections into distinct tabs.
+@onready var settings_tabs: TabContainer = find_child("SettingsTabs", true, false) as TabContainer
 
 
 ## Lifecycle initialization method orchestrating child components and event subscriptions.
 func _ready() -> void:
 	print("UI: Accessibility Panel orchestrator initialized.")
 	_connect_event_bus()
+	_connect_tab_routing()
 	_connect_section_hover_routing()
 	_load_all_sections()
 	visible = true
+
+
+## Connects tab selection events to toggle preview shaders based on the active tab.
+func _connect_tab_routing() -> void:
+	if is_instance_valid(settings_tabs):
+		settings_tabs.tab_changed.connect(_on_tab_changed)
+
+
+## Handles tab switching in [TabContainer] to disable preview shaders when unfocused.
+## [param tab_index] The zero-based index of the newly active tab.
+func _on_tab_changed(tab_index: int) -> void:
+	print("UI: Accessibility tab switched to index: ", tab_index)
+	if not is_instance_valid(settings_tabs) or not is_instance_valid(vision_section):
+		return
+	var active_tab: Node = settings_tabs.get_child(tab_index)
+	var is_vision_active: bool = (
+		active_tab == vision_section or active_tab.is_ancestor_of(vision_section)
+	)
+	vision_section.set_preview_effects_active(is_vision_active)
 
 
 ## Connects mouse hover events so preview shaders only activate in the Vision section.

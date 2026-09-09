@@ -98,6 +98,12 @@ var _stored_compositor: Compositor = null
 ## Stores the previous volumetric fog enabled state.
 var _stored_volumetric_state: bool = false
 
+## Cached original [Sky] resource to restore visual assets if needed.
+var _stored_cctv_sky: Sky = null
+
+## Cached original background mode of the CCTV camera environment.
+var _stored_bg_mode: Environment.BGMode = Environment.BG_KEEP
+
 
 ## Sets up materials, viewport overrides, camera clipping, and initial positions.
 func _ready() -> void:
@@ -186,18 +192,28 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 
-## Overrides the CCTV camera's environment to remove local fog and sky passes.
+## Overrides the CCTV camera's environment to block localized fog, sky, and SDFGI.
 func _force_clear_environment() -> void:
-	print("[CCTV] Overriding camera environment to block localized fog/sky.")
+	print("[CCTV] Overriding camera environment to block localized fog/sky/SDFGI.")
 	var cctv_env: Environment = cctv_camera.environment
 	if not is_instance_valid(cctv_env):
 		cctv_env = Environment.new()
 		cctv_camera.environment = cctv_env
+	else:
+		cctv_env = cctv_env.duplicate() as Environment
+		cctv_camera.environment = cctv_env
+
+	_stored_cctv_sky = cctv_env.sky
+	_stored_bg_mode = cctv_env.background_mode
 
 	cctv_env.background_mode = Environment.BG_CLEAR_COLOR
 	cctv_env.sky = null
+	cctv_env.sdfgi_enabled = false
 	cctv_env.volumetric_fog_enabled = false
 	cctv_env.fog_enabled = false
+	cctv_env.ssao_enabled = false
+	cctv_env.ssil_enabled = false
+	cctv_env.glow_enabled = false
 
 
 ## Updates the UI text displaying connected camera count and instructions.

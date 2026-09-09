@@ -4,13 +4,13 @@ extends Control
 ## Stores the currently active instance of this screen to manage global state.
 static var active_instance: Control = null
 
-## An array of ChapterData resources used to populate the chapter list.
+## An array of [ChapterData] resources used to populate the chapter list.
 @export var chapters: Array[ChapterData] = []
 
-## Holds the currently selected chapter data to pass to the game scene.
+## Holds the currently selected [ChapterData] to pass to the game scene.
 var selected_chapter: ChapterData = null
 
-## The HBoxContainer that organizes the spawned chapter buttons horizontally.
+## The [HBoxContainer] that organizes the spawned chapter buttons horizontally.
 @onready var chapter_list: HBoxContainer = %ChapterList
 
 ## The template container used to clone new chapter buttons.
@@ -32,8 +32,9 @@ var selected_chapter: ChapterData = null
 @onready var background: TextureRect = %Background
 
 
-## Initializes UI signals, populates the chapter selection list, and hides template.
+## Initializes pause processing, signals, and populates the chapter selection list.
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	active_instance = self
 	chapter_button_template.hide()
 	play_button.pressed.connect(_on_play_pressed)

@@ -1,5 +1,4 @@
-## Manages asynchronous scene loading, background resource streaming,
-## and shader precompilation to maintain smooth 60 FPS transitions.
+## Manages async scene loading, shader warmup, and staged SDFGI activation.
 class_name LoadingScreen
 extends Control
 
@@ -21,6 +20,9 @@ extends Control
 ## Maximum milliseconds budgeted per frame for material warmup.
 const MAX_WARMUP_TIME_MS: int = 12
 
+## Number of idle frames to wait for camera transform settling before SDFGI.
+const SETTLING_FRAMES: int = 2
+
 ## Array receiving percentage progress from [ResourceLoader].
 var _progress_array: Array[float] = [0.0]
 
@@ -37,22 +39,21 @@ var _is_warmup_complete: bool = false
 var _compile_index: int = 0
 
 ## Temporary off-screen viewport container used to force pipeline compilation.
-var _warmup_viewport: SubViewport
+var _warmup_viewport: SubViewport = null
 
 ## Node container holding temporary 3D meshes inside the warmup viewport.
-var _warmup_container_3d: Node3D
+var _warmup_container_3d: Node3D = null
 
 ## Node container holding temporary 2D elements inside the warmup viewport.
-var _warmup_container_2d: Control
+var _warmup_container_2d: Control = null
 
 
 ## Initializes background scene loading, animations, and sound playback.
 func _ready() -> void:
-	print("LoadingScreen: Starting background load for: %s" % level_scene_path)
+	print("LoadingScreen: Starting background load for: ", level_scene_path)
 	animation.play("default")
 	audio_player.play()
 
-	# Enable sub-threads for multi-threaded asset streaming
 	var error: Error = ResourceLoader.load_threaded_request(level_scene_path, "", true)
 	if error != OK:
 		push_error("LoadingScreen: Request failed: " + error_string(error))
@@ -65,19 +66,17 @@ func _ready() -> void:
 
 ## Cleans up allocated warmup resources when the node is removed from the tree.
 func _exit_tree() -> void:
+	print("LoadingScreen: Cleaning up resources on tree exit.")
 	_cleanup_warmup_viewport()
 
 
 ## Monitors loading progress and coordinates the transition pipeline.
-##
-## [param _delta] Frame delta time in seconds.
 func _process(_delta: float) -> void:
 	if not _is_resource_loaded:
 		_status = ResourceLoader.load_threaded_get_status(level_scene_path, _progress_array)
 
 		match _status:
 			ResourceLoader.THREAD_LOAD_IN_PROGRESS:
-				# 0% - 70%: Background disk streaming
 				progress_bar.value = _progress_array[0] * 70.0
 
 			ResourceLoader.THREAD_LOAD_LOADED:
@@ -95,26 +94,33 @@ func _process(_delta: float) -> void:
 				set_process(false)
 				audio_player.stop()
 				_cleanup_warmup_viewport()
-				push_error("LoadingScreen: Invalid scene path.")
+				push_error("LoadingScreen: Invalid scene path provided.")
 
 	elif _is_warmup_complete:
 		_finalize_scene_transition()
 
 
-## Sets up the hidden 16x16 warmup viewport and begins pipeline compilation.
+## Sets up the isolated warmup viewport and begins pipeline compilation.
 func _start_shader_warmup() -> void:
 	if not baked_shader_cache or baked_shader_cache.materials.is_empty():
 		print("LoadingScreen: No shader cache found. Skipping warmup phase.")
 		_is_warmup_complete = true
 		return
 
+	print("LoadingScreen: Allocating isolated warmup SubViewport.")
 	_warmup_viewport = SubViewport.new()
+	_warmup_viewport.own_world_3d = true
+	_warmup_viewport.world_3d = World3D.new()
 	_warmup_viewport.size = Vector2i(16, 16)
 	_warmup_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	_warmup_viewport.transparent_bg = true
 
 	var camera: Camera3D = Camera3D.new()
 	camera.position = Vector3(0.0, 0.0, 2.0)
+	var warmup_env: Environment = Environment.new()
+	warmup_env.sdfgi_enabled = false
+	warmup_env.volumetric_fog_enabled = false
+	camera.environment = warmup_env
 	_warmup_viewport.add_child(camera)
 
 	_warmup_container_3d = Node3D.new()
@@ -129,6 +135,7 @@ func _start_shader_warmup() -> void:
 
 ## Processes materials across frames within [constant MAX_WARMUP_TIME_MS].
 func _compile_materials_budgeted() -> void:
+	print("LoadingScreen: Compiling cached shader pipelines...")
 	var total_mats: int = baked_shader_cache.materials.size()
 
 	while _compile_index < total_mats:
@@ -147,7 +154,6 @@ func _compile_materials_budgeted() -> void:
 				await get_tree().process_frame
 				break
 
-	# Await an extra frame so the GPU processes all added draw commands
 	await get_tree().process_frame
 
 	print("LoadingScreen: Shader warmup completed. Freeing warmup viewport.")
@@ -155,10 +161,9 @@ func _compile_materials_budgeted() -> void:
 	_is_warmup_complete = true
 
 
-## Instantiates the appropriate 2D or 3D dummy node to force pipeline building.
-##
-## [param mat] The target material to compile.
+## Instantiates a dummy node with [param mat] to force pipeline building.
 func _create_warmup_node(mat: Material) -> void:
+	print("LoadingScreen: Creating warmup node for material compilation.")
 	var is_2d: bool = mat is CanvasItemMaterial
 
 	if mat is ShaderMaterial:
@@ -182,8 +187,9 @@ func _create_warmup_node(mat: Material) -> void:
 		_warmup_container_3d.add_child(mesh_instance)
 
 
-## Explicitly frees the warmup [SubViewport] and nullifies its references.
+## Explicitly frees the warmup [SubViewport] and nullifies references.
 func _cleanup_warmup_viewport() -> void:
+	print("LoadingScreen: Cleaning up warmup viewport instances.")
 	if is_instance_valid(_warmup_viewport):
 		_warmup_viewport.queue_free()
 		_warmup_viewport = null
@@ -191,9 +197,9 @@ func _cleanup_warmup_viewport() -> void:
 		_warmup_container_2d = null
 
 
-## Transitions the active scene tree to the loaded packed scene.
+## Transitions tree to loaded scene and defers SDFGI activation until settled.
 func _finalize_scene_transition() -> void:
-	print("LoadingScreen: Switching to loaded scene.")
+	print("LoadingScreen: Instantiating loaded scene with staged SDFGI.")
 	set_process(false)
 	progress_bar.value = 100.0
 	audio_player.stop()
@@ -201,7 +207,47 @@ func _finalize_scene_transition() -> void:
 	var loaded_scene: PackedScene = (
 		ResourceLoader.load_threaded_get(level_scene_path) as PackedScene
 	)
-	if is_instance_valid(loaded_scene):
-		get_tree().change_scene_to_packed(loaded_scene)
-	else:
+	if not is_instance_valid(loaded_scene):
 		push_error("LoadingScreen: Failed to retrieve valid PackedScene.")
+		return
+
+	var new_scene: Node = loaded_scene.instantiate()
+	if not is_instance_valid(new_scene):
+		push_error("LoadingScreen: Failed to instantiate PackedScene.")
+		return
+
+	var world_env: WorldEnvironment = _find_world_environment(new_scene)
+	var should_enable_sdfgi: bool = false
+	var target_env: Environment = null
+
+	if is_instance_valid(world_env) and is_instance_valid(world_env.environment):
+		target_env = world_env.environment
+		should_enable_sdfgi = target_env.sdfgi_enabled
+		target_env.sdfgi_enabled = false
+		print("LoadingScreen: Staging SDFGI off during camera position settling.")
+
+	var root: Window = get_tree().root
+	root.add_child(new_scene)
+	get_tree().current_scene = new_scene
+
+	# Keep loading screen covering the screen while camera transforms settle
+	for frame_idx: int in range(SETTLING_FRAMES):
+		await get_tree().process_frame
+
+	if is_instance_valid(target_env) and should_enable_sdfgi:
+		target_env.sdfgi_enabled = true
+		print("LoadingScreen: Camera settled. SDFGI enabled smoothly.")
+
+	print("LoadingScreen: Transition complete. Freeing loading screen.")
+	queue_free()
+
+
+## Locates the active [WorldEnvironment] inside [param target] branch.
+func _find_world_environment(target: Node) -> WorldEnvironment:
+	print("LoadingScreen: Locating WorldEnvironment in scene hierarchy.")
+	if target is WorldEnvironment:
+		return target as WorldEnvironment
+	var env_nodes: Array[Node] = target.find_children("", "WorldEnvironment", true, false)
+	if not env_nodes.is_empty():
+		return env_nodes[0] as WorldEnvironment
+	return null

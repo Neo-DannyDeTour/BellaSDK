@@ -1,6 +1,4 @@
 ## Manages player key remapping UI, multi-slot bindings, categories, and behavior settings.
-## Supports single-tap, hold, double-tap, double-tap & hold,
-##  rapid mashing, and multi-key chord binding detection.
 class_name ControlsPanel
 extends Panel
 
@@ -34,11 +32,14 @@ const HOLD_TIME_THRESHOLD: float = 0.45
 ## Maximum time gap in seconds between consecutive presses to register multi-tap gestures.
 const MULTI_TAP_TIME_WINDOW: float = 0.30
 
-## Number of rapid taps required within the multi-tap window to register a mash GestureInputManager.
+## Number of rapid taps required within the multi-tap window to register a mash gesture.
 const MASH_THRESHOLD_COUNT: int = 3
 
 ## Time gap in seconds allowed between chord member key presses.
 const CHORD_COMPLETION_WINDOW: float = 0.25
+
+## Display size for input prompt icon textures inside remapping buttons.
+@export var prompt_icon_size: Vector2 = Vector2(36.0, 36.0)
 
 ## Indicates if the player is currently pressing keys to remap an action.
 var is_remapping: bool = false
@@ -150,36 +151,71 @@ func _process(delta: float) -> void:
 			_finalize_gesture_remap(_pending_event)
 
 
-## Applies proper stretch flags and centered text alignment to the static header grid.
+## Formats the 5-column header grid and creates missing reset headers.
 func _format_header_grid() -> void:
+	print("UI: Formatting controls header grid.")
 	if not is_instance_valid(header_grid):
 		return
 
-	header_grid.columns = 4
+	header_grid.columns = 5
 	header_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	var labels: Array[Node] = header_grid.get_children()
-	if labels.size() >= 4:
-		var action_header: Label = labels[0] as Label
-		var primary_header: Label = labels[1] as Label
-		var secondary_header: Label = labels[2] as Label
-		var reset_header: Label = labels[3] as Label
+	if labels.is_empty():
+		return
 
+	var reset_primary_header: Label = header_grid.get_node_or_null("ColClearPrimary") as Label
+	if reset_primary_header == null:
+		reset_primary_header = Label.new()
+		reset_primary_header.name = "ColClearPrimary"
+		header_grid.add_child(reset_primary_header)
+
+	var action_header: Label = header_grid.get_node_or_null("ColAction") as Label
+	var primary_header: Label = header_grid.get_node_or_null("ColPrimary") as Label
+	var secondary_header: Label = header_grid.get_node_or_null("ColSecondary") as Label
+	var reset_secondary_header: Label = header_grid.get_node_or_null("ColClear") as Label
+
+	if action_header == null and labels.size() > 0:
+		action_header = labels[0] as Label
+	if primary_header == null and labels.size() > 1:
+		primary_header = labels[1] as Label
+	if secondary_header == null and labels.size() > 2:
+		secondary_header = labels[2] as Label
+	if reset_secondary_header == null and labels.size() > 3:
+		reset_secondary_header = labels[3] as Label
+
+	if is_instance_valid(action_header):
+		header_grid.move_child(action_header, 0)
 		action_header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		action_header.size_flags_stretch_ratio = 2.0
 		action_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 
+	if is_instance_valid(primary_header):
+		header_grid.move_child(primary_header, 1)
 		primary_header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		primary_header.size_flags_stretch_ratio = 2.0
 		primary_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
+	if is_instance_valid(reset_primary_header):
+		header_grid.move_child(reset_primary_header, 2)
+		reset_primary_header.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		reset_primary_header.custom_minimum_size = Vector2(40.0, 0.0)
+		reset_primary_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		if is_instance_valid(reset_secondary_header):
+			reset_primary_header.theme_type_variation = reset_secondary_header.theme_type_variation
+			reset_primary_header.text = reset_secondary_header.text
+
+	if is_instance_valid(secondary_header):
+		header_grid.move_child(secondary_header, 3)
 		secondary_header.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		secondary_header.size_flags_stretch_ratio = 2.0
 		secondary_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
-		reset_header.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		reset_header.custom_minimum_size = Vector2(40.0, 0.0)
-		reset_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	if is_instance_valid(reset_secondary_header):
+		header_grid.move_child(reset_secondary_header, 4)
+		reset_secondary_header.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		reset_secondary_header.custom_minimum_size = Vector2(40.0, 0.0)
+		reset_secondary_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 
 ## Ensures all defined actions exist inside [InputMap] to prevent lookup failures.
@@ -243,7 +279,7 @@ func _on_sprint_mode_selected(index: int) -> void:
 	GlobalSettings.save_setting("Gameplay", "sprint_mode", mode)
 
 
-## Generates the UI elements grouped by categories with primary, secondary, and clear slots.
+## Generates the UI elements grouped by categories with primary and secondary slots.
 func _create_control_list() -> void:
 	if not is_instance_valid(action_list_container):
 		return
@@ -259,7 +295,7 @@ func _create_control_list() -> void:
 		action_list_container.add_child(category_title)
 
 		var grid: GridContainer = GridContainer.new()
-		grid.columns = 4
+		grid.columns = 5
 		grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		action_list_container.add_child(grid)
 
@@ -268,10 +304,11 @@ func _create_control_list() -> void:
 			_create_action_row(grid, action)
 
 
-## Creates an individual row with primary/secondary remap buttons and an inline clear button.
+## Creates a row with primary/secondary remap buttons and separate clear buttons.
 ## [param parent_grid] The [GridContainer] hosting the row.
 ## [param action] The input action key string.
 func _create_action_row(parent_grid: GridContainer, action: String) -> void:
+	print("UI: Creating control row for action: ", action)
 	var action_label: Label = Label.new()
 	action_label.text = action.replace("_", " ").capitalize()
 	action_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -288,6 +325,14 @@ func _create_action_row(parent_grid: GridContainer, action: String) -> void:
 	primary_btn.toggled.connect(_on_remap_button_toggled.bind(primary_btn, action, 0))
 	parent_grid.add_child(primary_btn)
 
+	var clear_primary_btn: Button = Button.new()
+	clear_primary_btn.focus_mode = Control.FOCUS_NONE
+	clear_primary_btn.text = "✕"
+	clear_primary_btn.custom_minimum_size = Vector2(40.0, 0.0)
+	clear_primary_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	clear_primary_btn.tooltip_text = "Clear primary binding"
+	parent_grid.add_child(clear_primary_btn)
+
 	var secondary_btn: Button = Button.new()
 	secondary_btn.focus_mode = Control.FOCUS_NONE
 	secondary_btn.toggle_mode = true
@@ -298,15 +343,51 @@ func _create_action_row(parent_grid: GridContainer, action: String) -> void:
 	secondary_btn.toggled.connect(_on_remap_button_toggled.bind(secondary_btn, action, 1))
 	parent_grid.add_child(secondary_btn)
 
-	var clear_btn: Button = Button.new()
-	clear_btn.focus_mode = Control.FOCUS_NONE
-	clear_btn.text = "✕"
-	clear_btn.custom_minimum_size = Vector2(40.0, 0.0)
-	clear_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	clear_btn.tooltip_text = "Clear secondary binding or reset action"
-	clear_btn.pressed.connect(_on_clear_action_pressed.bind(action, primary_btn, secondary_btn))
-	parent_grid.add_child(clear_btn)
+	var clear_secondary_btn: Button = Button.new()
+	clear_secondary_btn.focus_mode = Control.FOCUS_NONE
+	clear_secondary_btn.text = "✕"
+	clear_secondary_btn.custom_minimum_size = Vector2(40.0, 0.0)
+	clear_secondary_btn.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	clear_secondary_btn.tooltip_text = "Clear secondary binding"
+	parent_grid.add_child(clear_secondary_btn)
 
+	clear_primary_btn.pressed.connect(
+		_on_clear_slot_pressed.bind(action, 0, primary_btn, secondary_btn)
+	)
+	clear_secondary_btn.pressed.connect(
+		_on_clear_slot_pressed.bind(action, 1, primary_btn, secondary_btn)
+	)
+
+	_update_slot_button_text(primary_btn, action, 0)
+	_update_slot_button_text(secondary_btn, action, 1)
+
+
+## Clears the binding in a specific slot and updates the row buttons.
+## [param action] The input action key string to clear.
+## [param slot_index] The target slot index (0 for Primary, 1 for Secondary).
+## [param primary_btn] Direct reference to primary slot [Button].
+## [param secondary_btn] Direct reference to secondary slot [Button].
+func _on_clear_slot_pressed(
+	action: String, slot_index: int, primary_btn: Button, secondary_btn: Button
+) -> void:
+	print("UI: Player cleared slot ", slot_index, " for action: ", action)
+	if is_remapping and (remapping_button == primary_btn or remapping_button == secondary_btn):
+		remapping_button.button_pressed = false
+
+	if InputMap.has_action(action):
+		var events: Array[InputEvent] = InputMap.action_get_events(action)
+		if slot_index == 0:
+			if events.size() > 0:
+				events.remove_at(0)
+		elif slot_index == 1:
+			if events.size() > 1:
+				events.remove_at(1)
+
+		InputMap.action_erase_events(action)
+		for ev: InputEvent in events:
+			InputMap.action_add_event(action, ev)
+
+	_save_action_mapping(action)
 	_update_slot_button_text(primary_btn, action, 0)
 	_update_slot_button_text(secondary_btn, action, 1)
 
@@ -346,7 +427,7 @@ func _create_event_display_node(event: InputEvent) -> Control:
 		tex_rect.texture = icon_tex
 		tex_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		tex_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		tex_rect.custom_minimum_size = Vector2(24.0, 24.0)
+		tex_rect.custom_minimum_size = prompt_icon_size
 		tex_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		return tex_rect
 
@@ -356,10 +437,10 @@ func _create_event_display_node(event: InputEvent) -> Control:
 	return lbl
 
 
-## Updates the display layout, text, and icons on a remap button for a specific action slot.
+## Updates display layout, text, and icons on a button for an action slot.
 ## [param button] The [Button] to update.
 ## [param action] The input action key string.
-## [param slot_index] The target slot index (0 for Primary, 1 for Secondary).
+## [param slot_index] Target slot index (0 for Primary, 1 for Secondary).
 func _update_slot_button_text(button: Button, action: String, slot_index: int) -> void:
 	if not is_instance_valid(button):
 		return
@@ -424,8 +505,8 @@ func _update_slot_button_text(button: Button, action: String, slot_index: int) -
 		container.add_child(_create_event_display_node(target_ev))
 
 
-## Handles toggle state changes on remapping buttons to begin or cancel listening for inputs.
-## [param toggled_on] Whether the remapping mode is active.
+## Handles toggle state changes on remapping buttons to begin listening for inputs.
+## [param toggled_on] Whether remapping mode is active.
 ## [param button] The button that triggered the event.
 ## [param action] The input action key string.
 ## [param slot_index] The target slot index.
@@ -462,6 +543,7 @@ func _on_remap_button_toggled(
 
 ## Resets all temporary gesture recognition parameters and timers.
 func _reset_gesture_state() -> void:
+	print("System: Resetting gesture detection state.")
 	_pending_event = null
 	_chord_events.clear()
 	_is_candidate_pressed = false
@@ -471,7 +553,7 @@ func _reset_gesture_state() -> void:
 	_press_count = 0
 
 
-## Compares two input events to verify if they correspond to the exact same physical input.
+## Compares two input events to verify if they represent the same hardware input.
 ## [param ev1] First [InputEvent].
 ## [param ev2] Second [InputEvent].
 ## [return] True if both events represent identical hardware inputs.
@@ -526,9 +608,9 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
-## Feeds a normalized key/button press or release into the gesture recognition pipeline.
+## Feeds a normalized key/button press or release into the gesture pipeline.
 ## [param clean_event] Normalized [InputEvent].
-## [param is_pressed] Whether the physical button is currently pressed down.
+## [param is_pressed] Whether the physical button is pressed down.
 func _process_gesture_event(clean_event: InputEvent, is_pressed: bool) -> void:
 	if is_pressed:
 		var exists_in_chord: bool = false
@@ -589,7 +671,7 @@ func _finalize_chord_remap() -> void:
 	_finalize_gesture_remap(base_event)
 
 
-## Finalizes the captured input assignment, updates UI, and persists config.
+## Finalizes captured input assignment, updates UI, and persists config.
 ## [param new_event] The finalized [InputEvent] to assign.
 func _finalize_gesture_remap(new_event: InputEvent) -> void:
 	var gesture_name: String = "single_tap"
@@ -621,11 +703,12 @@ func _finalize_gesture_remap(new_event: InputEvent) -> void:
 		active_btn.button_pressed = false
 
 
-## Assigns an event specifically to either the primary or secondary slot index of an action.
-## [param action] The action to assign the event to.
+## Assigns an event specifically to either the primary or secondary slot.
+## [param action] Action to assign the event to.
 ## [param slot_index] Target index (0 or 1).
-## [param new_event] The new [InputEvent] to store.
+## [param new_event] New [InputEvent] to store.
 func _assign_event_to_action_slot(action: String, slot_index: int, new_event: InputEvent) -> void:
+	print("System: Assigning event to slot ", slot_index, " for ", action)
 	if not InputMap.has_action(action):
 		InputMap.add_action(action)
 
@@ -649,27 +732,6 @@ func _assign_event_to_action_slot(action: String, slot_index: int, new_event: In
 				InputMap.action_add_event(action, ev)
 
 
-## Clears secondary binding or erases all bindings for a given action.
-## [param action] The input action key string to clear.
-## [param primary_btn] Direct reference to primary slot [Button].
-## [param secondary_btn] Direct reference to secondary slot [Button].
-func _on_clear_action_pressed(action: String, primary_btn: Button, secondary_btn: Button) -> void:
-	print("UI: Player cleared bindings for action: ", action)
-	if InputMap.has_action(action):
-		var events: Array[InputEvent] = InputMap.action_get_events(action)
-		if events.size() > 1:
-			events.remove_at(1)
-			InputMap.action_erase_events(action)
-			for ev: InputEvent in events:
-				InputMap.action_add_event(action, ev)
-		else:
-			InputMap.action_erase_events(action)
-
-	_save_action_mapping(action)
-	_update_slot_button_text(primary_btn, action, 0)
-	_update_slot_button_text(secondary_btn, action, 1)
-
-
 ## Restores all keybindings to factory default configurations.
 func _on_reset_all_pressed() -> void:
 	print("UI: Resetting all keybindings to default.")
@@ -680,6 +742,7 @@ func _on_reset_all_pressed() -> void:
 
 ## Refreshes button texts across all category grids.
 func _refresh_all_buttons() -> void:
+	print("UI: Refreshing all control buttons.")
 	if not is_instance_valid(action_list_container):
 		return
 
@@ -694,6 +757,7 @@ func _refresh_all_buttons() -> void:
 ## Persists a single modified action mapping into [GlobalSettings].
 ## [param action] Action name key to save.
 func _save_action_mapping(action: String) -> void:
+	print("System: Saving action mapping for: ", action)
 	if InputMap.has_action(action):
 		var events: Array[InputEvent] = InputMap.action_get_events(action)
 		GlobalSettings.save_setting("Controls", action, events)

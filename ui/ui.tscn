@@ -404,6 +404,33 @@ offset_top = -40.0
 offset_right = 40.0
 grow_vertical = 0
 
+[node name="VaultPromptContainer" type="Control" parent="NotificationHUD" unique_id=953846639]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -32.0
+offset_top = 40.0
+offset_right = 32.0
+offset_bottom = 104.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(32, 32)
+mouse_filter = 2
+
+[node name="VaultKeyIcon" type="TextureRect" parent="NotificationHUD/VaultPromptContainer" unique_id=1498573411]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
 [node name="DebugOverlay" type="CanvasLayer" parent="." unique_id=847592789]
 script = ExtResource("24_c74r5")
 
@@ -596,6 +623,7 @@ visible = false
 layout_mode = 2
 mouse_filter = 2
 stretch = true
+stretch_shrink = 2
 
 [node name="SubViewport" type="SubViewport" parent="ChapterTitleContainer/EffectContainer" unique_id=178570349]
 disable_3d = true

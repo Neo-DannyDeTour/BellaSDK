@@ -1,11 +1,8 @@
-## Dedicated settings search coordinator.
-## Scans panel structures, generates live synced mirrors for search matches,
-## and routes navigation callbacks to the active menu container.
+## Search coordinator scanning panels, generating mirrors, and routing navigation callbacks.
 class_name SettingsSearch
 extends HBoxContainer
 
-## Emitted when the player selects an indexed search entry.
-## Passes the target category tab index and the [Control] node to focus.
+## Emitted when selecting a search entry. Passes tab index and target [Control] node.
 signal setting_navigated(tab_index: int, target: Control)
 
 ## Maximum column step inspected when pairing labels to interactive inputs.
@@ -20,7 +17,7 @@ const DROPDOWN_OFFSET_Y: float = 6.0
 ## Padding offset used when clamping dropdown bounds inside the viewport.
 const DROPDOWN_VIEWPORT_PADDING: float = 16.0
 
-## Target input field where player queries are entered.
+## Target [LineEdit] field where player queries are entered.
 @onready var search_bar: LineEdit = %SettingsSearchEdit
 
 ## Detached popup window holding dynamically generated query matches.
@@ -43,7 +40,6 @@ func _ready() -> void:
 
 
 ## Evaluates clicks outside dropdown boundaries to collapse popup window.
-## [param event] Input event captured by the viewport.
 func _input(event: InputEvent) -> void:
 	if not (event is InputEventMouseButton and event.is_pressed()):
 		return
@@ -84,7 +80,7 @@ func _configure_search_nodes() -> void:
 		search_scroll.horizontal_scroll_mode = (ScrollContainer.SCROLL_MODE_DISABLED)
 
 
-## Closes the floating search popup and clears any pending query text.
+## Closes floating search popup and clears any pending query text.
 func hide_search_results() -> void:
 	print("UI: Dismissing settings search dropdown.")
 	_clear_result_rows()
@@ -95,8 +91,6 @@ func hide_search_results() -> void:
 
 
 ## Parses registered panel trees to populate the cached search catalog.
-## [param option_panels] Array of option panels to parse.
-## [param tab_buttons] Array of buttons providing category names.
 func build_index(option_panels: Array[Control], tab_buttons: Array[Button]) -> void:
 	print("UI: SettingsSearch -> Rebuilding index catalog.")
 	_search_index.clear()
@@ -117,10 +111,7 @@ func build_index(option_panels: Array[Control], tab_buttons: Array[Button]) -> v
 	print("UI: SettingsSearch -> Indexed ", _search_index.size(), " entries.")
 
 
-## Scans container nodes to extract interactive controls and paired labels.
-## [param root_node] Root container node to parse.
-## [param tab_idx] Tab category index.
-## [param tab_name] Tab category string name.
+## Recursively scans container nodes to extract interactive controls and paired labels.
 func _scan_node_recursively(root_node: Node, tab_idx: int, tab_name: String) -> void:
 	if not is_instance_valid(root_node):
 		return
@@ -144,10 +135,6 @@ func _scan_node_recursively(root_node: Node, tab_idx: int, tab_name: String) -> 
 
 
 ## Identifies control inputs grouped together beside a [Label].
-## [param parent] Common parent node holding the row.
-## [param label_node] Reference row title label.
-## [param tab_idx] Target tab index.
-## [param tab_name] Target tab name.
 func _inspect_row_siblings(parent: Node, label_node: Label, tab_idx: int, tab_name: String) -> void:
 	var label_idx: int = label_node.get_index(true)
 	if label_idx < 0:
@@ -234,16 +221,6 @@ func _inspect_row_siblings(parent: Node, label_node: Label, tab_idx: int, tab_na
 
 
 ## Stores an inspected control item dictionary into the catalog.
-## [param title] Cleaned setting label string.
-## [param tab_idx] Tab category index.
-## [param tab_name] Tab category string name.
-## [param p_btn] Primary binding button if paired.
-## [param s_btn] Secondary binding button if paired.
-## [param c_btn] Clear binding button if paired.
-## [param slider] Slider control if paired.
-## [param readout] Readout numerical label if paired.
-## [param line_edit] LineEdit control if paired.
-## [param generic] Generic focusable control if paired.
 func _register_inspected_row(
 	title: String,
 	tab_idx: int,
@@ -310,8 +287,7 @@ func _register_inspected_row(
 		)
 
 
-## Adds an item dictionary to [member _search_index] avoiding redundant keys.
-## [param data] Item data dictionary to register.
+## Adds an item dictionary to [member _search_index] avoiding duplicates.
 func _append_search_entry(data: Dictionary) -> void:
 	var clean_title: String = data["title"] as String
 	for item: Dictionary in _search_index:
@@ -320,9 +296,7 @@ func _append_search_entry(data: Dictionary) -> void:
 	_search_index.append(data)
 
 
-## Checks whether a given node accepts interactive user manipulation.
-## [param node] Node to inspect.
-## [return] True if input events are accepted.
+## Checks whether a given [Node] accepts interactive user manipulation.
 func _is_interactive(node: Node) -> bool:
 	return (
 		node is OptionButton
@@ -338,8 +312,7 @@ func _is_interactive(node: Node) -> bool:
 	)
 
 
-## Updates dropdown list items based on active text input.
-## [param query] Search string query provided by the user.
+## Updates dropdown list items based on active text input query.
 func _on_search_text_changed(query: String) -> void:
 	var clean_query: String = query.strip_edges().to_lower()
 	print("UI: Processing search query -> '", clean_query, "'")
@@ -354,9 +327,6 @@ func _on_search_text_changed(query: String) -> void:
 		return
 
 	_clear_result_rows()
-
-	for child: Node in search_results_list.get_children():
-		child.queue_free()
 
 	var matched_count: int = 0
 	for item: Dictionary in _search_index:
@@ -410,8 +380,6 @@ func _align_dropdown_panel() -> void:
 
 
 ## Constructs a synchronized horizontal control row for an indexed item.
-## [param item] Metadata dictionary holding references to the real control.
-## [return] The constructed [HBoxContainer] widget.
 func _create_result_row(item: Dictionary) -> HBoxContainer:
 	var row: HBoxContainer = HBoxContainer.new()
 	row.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -452,8 +420,6 @@ func _create_result_row(item: Dictionary) -> HBoxContainer:
 
 
 ## Generates and attaches a mirrored synchronized slider control.
-## [param row] Container to append cloned elements into.
-## [param item] Metadata item holding original slider references.
 func _build_mirrored_slider_row(row: HBoxContainer, item: Dictionary) -> void:
 	var orig_sl: HSlider = item["slider"] as HSlider
 	var orig_readout: Label = item.get("readout_lbl", null) as Label
@@ -494,7 +460,8 @@ func _build_mirrored_slider_row(row: HBoxContainer, item: Dictionary) -> void:
 		cloned_le.tree_exited.connect(
 			func() -> void:
 				if is_instance_valid(orig_le) and orig_le.text_changed.is_connected(sync_le):
-					orig_le.text_changed.disconnect(sync_le)
+					orig_le.text_changed.disconnect(sync_le),
+			CONNECT_ONE_SHOT
 		)
 		row.add_child(cloned_le)
 	elif is_instance_valid(orig_readout):
@@ -509,13 +476,13 @@ func _build_mirrored_slider_row(row: HBoxContainer, item: Dictionary) -> void:
 		cloned_sl.min_value = orig_sl.min_value
 		cloned_sl.max_value = orig_sl.max_value
 		cloned_sl.step = orig_sl.step
-		cloned_sl.value = orig_sl.value
+		cloned_sl.set_value_no_signal(orig_sl.value)
 		cloned_sl.custom_minimum_size.x = 180.0
 		cloned_sl.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 
 		var sync_sl: Callable = func(val: float) -> void:
-			if is_instance_valid(cloned_sl):
-				cloned_sl.value = val
+			if is_instance_valid(cloned_sl) and not is_equal_approx(cloned_sl.value, val):
+				cloned_sl.set_value_no_signal(val)
 			if is_instance_valid(readout_lbl):
 				readout_lbl.text = (
 					orig_readout.text if is_instance_valid(orig_readout) else ("%.2f" % val)
@@ -542,14 +509,13 @@ func _build_mirrored_slider_row(row: HBoxContainer, item: Dictionary) -> void:
 		cloned_sl.tree_exited.connect(
 			func() -> void:
 				if is_instance_valid(orig_sl) and orig_sl.value_changed.is_connected(sync_sl):
-					orig_sl.value_changed.disconnect(sync_sl)
+					orig_sl.value_changed.disconnect(sync_sl),
+			CONNECT_ONE_SHOT
 		)
 		row.add_child(cloned_sl)
 
 
 ## Generates and attaches a mirrored standalone [LineEdit] control.
-## [param row] Container to append cloned elements into.
-## [param item] Metadata item holding original LineEdit references.
 func _build_mirrored_line_edit_row(row: HBoxContainer, item: Dictionary) -> void:
 	var orig_le: LineEdit = item["line_edit"] as LineEdit
 	if not is_instance_valid(orig_le):
@@ -583,15 +549,13 @@ func _build_mirrored_line_edit_row(row: HBoxContainer, item: Dictionary) -> void
 	cloned_le.tree_exited.connect(
 		func() -> void:
 			if is_instance_valid(orig_le) and orig_le.text_changed.is_connected(sync_le):
-				orig_le.text_changed.disconnect(sync_le)
+				orig_le.text_changed.disconnect(sync_le),
+		CONNECT_ONE_SHOT
 	)
 	row.add_child(cloned_le)
 
 
 ## Generates mirrored action trigger and clear buttons for keybinding rows.
-## [param row] Container to append cloned elements into.
-## [param item] Metadata item holding button references.
-## [param tab_idx] Tab category index.
 func _build_mirrored_action_row(row: HBoxContainer, item: Dictionary, tab_idx: int) -> void:
 	var orig_p: Button = item["primary_btn"] as Button
 	var orig_s: Button = item["secondary_btn"] as Button
@@ -626,14 +590,18 @@ func _build_mirrored_action_row(row: HBoxContainer, item: Dictionary, tab_idx: i
 		cloned_c.pressed.connect(
 			func() -> void:
 				print("UI: Mirrored action clear button pressed -> ", item["action"])
-				orig_c.pressed.emit()
+				if orig_c.toggle_mode:
+					orig_c.set_pressed_no_signal(true)
+				else:
+					for connection: Dictionary in orig_c.pressed.get_connections():
+						var callable: Callable = connection.get("callable", Callable())
+						if callable.is_valid():
+							callable.call()
 		)
 		row.add_child(cloned_c)
 
 
-## Generates mirrored generic checkbox or option buttons.
-## [param row] Container to append cloned elements into.
-## [param target] Target interactive control to clone.
+## Generates mirrored generic checkbox, check button, or option buttons.
 func _build_mirrored_generic_row(row: HBoxContainer, target: Control) -> void:
 	if target is OptionButton:
 		var orig_ob: OptionButton = target as OptionButton
@@ -644,7 +612,7 @@ func _build_mirrored_generic_row(row: HBoxContainer, target: Control) -> void:
 		cloned_ob.custom_minimum_size.x = 180.0
 
 		var sync_ob: Callable = func(idx: int) -> void:
-			if is_instance_valid(cloned_ob):
+			if is_instance_valid(cloned_ob) and cloned_ob.selected != idx:
 				cloned_ob.selected = idx
 
 		cloned_ob.item_selected.connect(
@@ -652,56 +620,62 @@ func _build_mirrored_generic_row(row: HBoxContainer, target: Control) -> void:
 				print("UI: Mirrored OptionButton changed -> ", idx)
 				if orig_ob.selected != idx:
 					orig_ob.selected = idx
+					orig_ob.item_selected.emit(idx)
 		)
 		orig_ob.item_selected.connect(sync_ob)
 		cloned_ob.tree_exited.connect(
 			func() -> void:
 				if is_instance_valid(orig_ob) and orig_ob.item_selected.is_connected(sync_ob):
-					orig_ob.item_selected.disconnect(sync_ob)
+					orig_ob.item_selected.disconnect(sync_ob),
+			CONNECT_ONE_SHOT
 		)
 		row.add_child(cloned_ob)
 	elif target is CheckButton:
 		var orig_cb: CheckButton = target as CheckButton
 		var cloned_cb: CheckButton = CheckButton.new()
-		cloned_cb.button_pressed = orig_cb.button_pressed
+		cloned_cb.set_pressed_no_signal(orig_cb.button_pressed)
 
 		var sync_cb: Callable = func(pressed: bool) -> void:
-			if is_instance_valid(cloned_cb):
-				cloned_cb.button_pressed = pressed
+			if is_instance_valid(cloned_cb) and cloned_cb.button_pressed != pressed:
+				cloned_cb.set_pressed_no_signal(pressed)
 
 		cloned_cb.toggled.connect(
 			func(pressed: bool) -> void:
 				print("UI: Mirrored CheckButton toggled -> ", pressed)
 				if orig_cb.button_pressed != pressed:
-					orig_cb.button_pressed = pressed
+					orig_cb.set_pressed_no_signal(pressed)
+					orig_cb.toggled.emit(pressed)
 		)
 		orig_cb.toggled.connect(sync_cb)
 		cloned_cb.tree_exited.connect(
 			func() -> void:
 				if is_instance_valid(orig_cb) and orig_cb.toggled.is_connected(sync_cb):
-					orig_cb.toggled.disconnect(sync_cb)
+					orig_cb.toggled.disconnect(sync_cb),
+			CONNECT_ONE_SHOT
 		)
 		row.add_child(cloned_cb)
 	elif target is CheckBox:
 		var orig_chk: CheckBox = target as CheckBox
 		var cloned_chk: CheckBox = CheckBox.new()
-		cloned_chk.button_pressed = orig_chk.button_pressed
+		cloned_chk.set_pressed_no_signal(orig_chk.button_pressed)
 
 		var sync_chk: Callable = func(pressed: bool) -> void:
-			if is_instance_valid(cloned_chk):
-				cloned_chk.button_pressed = pressed
+			if is_instance_valid(cloned_chk) and cloned_chk.button_pressed != pressed:
+				cloned_chk.set_pressed_no_signal(pressed)
 
 		cloned_chk.toggled.connect(
 			func(pressed: bool) -> void:
 				print("UI: Mirrored CheckBox toggled -> ", pressed)
 				if orig_chk.button_pressed != pressed:
-					orig_chk.button_pressed = pressed
+					orig_chk.set_pressed_no_signal(pressed)
+					orig_chk.toggled.emit(pressed)
 		)
 		orig_chk.toggled.connect(sync_chk)
 		cloned_chk.tree_exited.connect(
 			func() -> void:
 				if is_instance_valid(orig_chk) and orig_chk.toggled.is_connected(sync_chk):
-					orig_chk.toggled.disconnect(sync_chk)
+					orig_chk.toggled.disconnect(sync_chk),
+			CONNECT_ONE_SHOT
 		)
 		row.add_child(cloned_chk)
 
