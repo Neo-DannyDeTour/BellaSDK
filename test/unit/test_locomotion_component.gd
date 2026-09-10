@@ -1,3 +1,5 @@
+## Unit test suite for validating [PlayerLocomotionComponent] logic and state updates.
+class_name TestLocomotionComponent
 extends GutTest
 
 ## The component being tested.
@@ -7,22 +9,25 @@ var component: PlayerLocomotionComponent
 var player: CharacterBody3D
 
 
+## Instantiates [PlayerLocomotionComponent] and a dummy [CharacterBody3D] before each test.
 func before_each() -> void:
-	print("test_locomotion_component: before_each() - Setting up test environment.")
+	print("TestLocomotionComponent: before_each() - Setting up test environment.")
 	component = PlayerLocomotionComponent.new()
 	player = CharacterBody3D.new()
 	add_child_autofree(component)
 	add_child_autofree(player)
 
 
+## Verifies that [method PlayerLocomotionComponent.initialize] successfully caches the player node.
 func test_initialize() -> void:
-	print("test_locomotion_component: test_initialize() - Verifying caching.")
+	print("TestLocomotionComponent: test_initialize() - Verifying caching.")
 	component.initialize(player)
 	assert_eq(component.player, player, "Player reference should be cached.")
 
 
+## Verifies that [method PlayerLocomotionComponent.set_physics_active] toggles processing state.
 func test_set_physics_active() -> void:
-	print("test_locomotion_component: test_set_physics_active() - Verifying state toggle.")
+	print("TestLocomotionComponent: test_set_physics_active() - Verifying state toggle.")
 	component.set_physics_active(false)
 	assert_false(component.is_active, "is_active should update to false.")
 
@@ -30,15 +35,17 @@ func test_set_physics_active() -> void:
 	assert_true(component.is_active, "is_active should update to true.")
 
 
+## Verifies that directional vectors are stored and retrieved accurately.
 func test_set_and_get_direction() -> void:
-	print("test_locomotion_component: test_set_and_get_direction() - Checking inputs.")
+	print("TestLocomotionComponent: test_set_and_get_direction() - Checking inputs.")
 	var dir: Vector3 = Vector3(1.0, 0.0, 0.0)
 	component.set_direction(dir)
 	assert_eq(component.get_direction(), dir, "Should return the assigned direction.")
 
 
+## Verifies that [method PlayerLocomotionComponent.reset_momentum] clears all movement vectors.
 func test_reset_momentum() -> void:
-	print("test_locomotion_component: test_reset_momentum() - Verifying state clear.")
+	print("TestLocomotionComponent: test_reset_momentum() - Verifying state clear.")
 	component.initialize(player)
 
 	var dir: Vector3 = Vector3(1.0, 0.0, 0.0)
