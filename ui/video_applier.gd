@@ -90,7 +90,9 @@ static func apply_viewport_pipeline(
 			vp.use_taa = aa_settings.get("taa", false) as bool
 
 		vp.positional_shadow_atlas_size = (config.get("shadow_atlas", 2048) as int)
-		_apply_environment_and_materials(vp, config)
+
+	# Synchronize all active WorldEnvironments and screen shaders in the scene tree
+	_apply_environment_and_materials(tree, config)
 
 
 ## Clamps high MSAA modes for subviewports to ensure 60 FPS performance headroom.
@@ -126,27 +128,43 @@ static func _apply_rendering_server_qualities(config: Dictionary) -> void:
 	var fog_dict: Dictionary = config.get("fog", {}) as Dictionary
 	if not fog_dict.is_empty():
 		var depth: int = fog_dict.get("depth", 64) as int
-		RenderingServer.environment_set_volumetric_fog_volume_size(depth, depth)
+		var grid_size: int = 64
+		RenderingServer.environment_set_volumetric_fog_volume_size(grid_size, depth)
 
 
 ## Synchronizes environment tonemapping, lighting features, and debug overlays.
-## [param vp] Target [Viewport] to inspect.
+## [param tree] The active [SceneTree] to query.
 ## [param config] Dictionary holding environment flags and tonemapper key.
-static func _apply_environment_and_materials(vp: Viewport, config: Dictionary) -> void:
-	print("VideoApplier: Applying environment features to viewport.")
-	var env: Environment = null
-	if vp.find_world_3d():
-		var world: World3D = vp.find_world_3d()
-		if is_instance_valid(world.environment):
-			env = world.environment
-		elif is_instance_valid(world.fallback_environment):
-			env = world.fallback_environment
+static func _apply_environment_and_materials(tree: SceneTree, config: Dictionary) -> void:
+	print("VideoApplier: Applying environment features across scene tree.")
+	var environments: Array[Environment] = []
+
+	# Gather environments from all active WorldEnvironment nodes in the tree
+	var we_nodes: Array[Node] = tree.root.find_children("*", "WorldEnvironment", true, false)
+	for node: Node in we_nodes:
+		var we: WorldEnvironment = node as WorldEnvironment
+		if we.is_in_group("ignore_global_video_settings"):
+			continue
+		if is_instance_valid(we) and is_instance_valid(we.environment):
+			if we.environment not in environments:
+				environments.append(we.environment)
+
+	# Fallback to World3D environments from the root and current scene
+	if tree.root.find_world_3d():
+		var root_w: World3D = tree.root.find_world_3d()
+		if is_instance_valid(root_w.environment) and root_w.environment not in environments:
+			environments.append(root_w.environment)
+		elif (
+			is_instance_valid(root_w.fallback_environment)
+			and root_w.fallback_environment not in environments
+		):
+			environments.append(root_w.fallback_environment)
 
 	var tonemap_key: String = config.get("tonemap_key", "Filmic") as String
 	var is_agx: bool = tonemap_key == "AgX"
 	var is_agx_punchy: bool = tonemap_key == "AgX (Punchy)"
 
-	if is_instance_valid(env):
+	for env: Environment in environments:
 		if is_agx or is_agx_punchy:
 			env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
 		else:
@@ -192,28 +210,31 @@ static func _apply_environment_and_materials(vp: Viewport, config: Dictionary) -
 				else Environment.GLOW_BLEND_MODE_ADDITIVE
 			)
 
-	var vision_mesh: MeshInstance3D = (
-		vp.find_child("VisionAssistMesh", true, false) as MeshInstance3D
+	# Apply VisionAssist overrides to all matching meshes
+	var vision_nodes: Array[Node] = tree.root.find_children(
+		"VisionAssistMesh", "MeshInstance3D", true, false
 	)
-	if is_instance_valid(vision_mesh):
-		var mat: ShaderMaterial = vision_mesh.get_surface_override_material(0) as ShaderMaterial
-		if not is_instance_valid(mat):
-			mat = vision_mesh.material_override as ShaderMaterial
+	for v_node: Node in vision_nodes:
+		var vision_mesh: MeshInstance3D = v_node as MeshInstance3D
+		if is_instance_valid(vision_mesh):
+			var mat: ShaderMaterial = vision_mesh.get_surface_override_material(0) as ShaderMaterial
+			if not is_instance_valid(mat):
+				mat = vision_mesh.material_override as ShaderMaterial
 
-		if is_instance_valid(mat):
-			var is_va_enabled: bool = (
-				GlobalSettings.get_setting("VisionAssist", "enabled", false) as bool
-			)
-			if is_va_enabled:
-				var va_mode: int = GlobalSettings.get_setting("VisionAssist", "mode", 1) as int
-				mat.set_shader_parameter("mode", va_mode)
-				vision_mesh.visible = true
-			elif is_agx:
-				mat.set_shader_parameter("mode", 5)
-				vision_mesh.visible = true
-			elif is_agx_punchy:
-				mat.set_shader_parameter("mode", 6)
-				vision_mesh.visible = true
-			else:
-				mat.set_shader_parameter("mode", 7)
-				vision_mesh.visible = false
+			if is_instance_valid(mat):
+				var is_va_enabled: bool = (
+					GlobalSettings.get_setting("VisionAssist", "enabled", false) as bool
+				)
+				if is_va_enabled:
+					var va_mode: int = GlobalSettings.get_setting("VisionAssist", "mode", 1) as int
+					mat.set_shader_parameter("mode", va_mode)
+					vision_mesh.visible = true
+				elif is_agx:
+					mat.set_shader_parameter("mode", 5)
+					vision_mesh.visible = true
+				elif is_agx_punchy:
+					mat.set_shader_parameter("mode", 6)
+					vision_mesh.visible = true
+				else:
+					mat.set_shader_parameter("mode", 7)
+					vision_mesh.visible = false

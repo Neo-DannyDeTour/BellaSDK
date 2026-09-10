@@ -33,6 +33,9 @@ var is_ui_hidden: bool = false
 ## Security variable: Indicates if debug commands are allowed via input or events.
 var is_debug_allowed: bool = OS.has_feature("debug")
 
+## Tracks previous health locally to distinguish damage from healing.
+var _last_known_health: int = 100
+
 
 ## Initializes UI processing modes, connects top-level UI signals, and checks testbed status.
 func _ready() -> void:
@@ -106,10 +109,13 @@ func _input(event: InputEvent) -> void:
 ## Routes health changes to the screen effects manager for pain or heal flashes.
 ## [param new_health] The new total health value.
 func _on_player_health_changed(new_health: int) -> void:
-	if new_health < player_status_hud.current_health:
+	print("UIController: Health updated -> new: ", new_health, " old: ", _last_known_health)
+	if new_health < _last_known_health:
 		screen_effects.trigger_pain_effect()
-	elif new_health > player_status_hud.current_health:
+	elif new_health > _last_known_health:
 		screen_effects.trigger_heal_effect()
+
+	_last_known_health = new_health
 
 
 ## Toggles gameplay HUD visibility for clean screenshots or immersion.

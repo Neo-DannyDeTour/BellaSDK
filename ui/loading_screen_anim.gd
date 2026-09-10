@@ -163,7 +163,7 @@ func _compile_materials_budgeted() -> void:
 
 ## Instantiates a dummy node with [param mat] to force pipeline building.
 func _create_warmup_node(mat: Material) -> void:
-	print("LoadingScreen: Creating warmup node for material compilation.")
+	# print("LoadingScreen: Creating warmup node for material compilation.")
 	var is_2d: bool = mat is CanvasItemMaterial
 
 	if mat is ShaderMaterial:
