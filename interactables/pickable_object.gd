@@ -112,6 +112,12 @@ var _probes: Array[Node] = []
 ## Tracks if the object was recently dropped to prevent immediate TTS spam on refocus.
 var _is_tts_cooldown: bool = false
 
+## Timestamp in milliseconds tracking the last continuous wake ripple spawned.
+var _last_wake_time: int = 0
+
+## Tracks preceding physics tick submerged state for impact VFX.
+var _was_submerged: bool = false
+
 
 ## Initializes the [PickableObject], setting up references, event listeners, and physics state.
 func _ready() -> void:
@@ -537,9 +543,26 @@ func _physics_process(_delta: float) -> void:
 					var offset: Vector3 = p.global_position - global_position
 					apply_force(force, offset)
 
+	# Detect exact transition when falling object strikes the wave surface
+	if not _was_submerged and submerged and not is_held:
+		var impact_speed: float = linear_velocity.length()
+		print("PickableObject: Water impact registered -> speed: ", impact_speed)
+		if is_instance_valid(current_water_node):
+			var ripple_power: float = maxf(impact_speed * 0.3, 1.2)
+			current_water_node.spawn_ripple(global_position, ripple_power)
+			current_water_node.play_splash_sound(global_position, impact_speed)
+
+	_was_submerged = submerged
+
 	if submerged and not is_held:
 		apply_central_force(-linear_velocity * water_drag * mass)
 		apply_torque(-angular_velocity * water_angular_drag * mass)
+
+		var cur_time: int = Time.get_ticks_msec()
+		if linear_velocity.length() > 0.8 and cur_time - _last_wake_time > 400:
+			_last_wake_time = cur_time
+			if current_water_node.has_method("spawn_ripple"):
+				current_water_node.spawn_ripple(global_position, 0.4)
 
 	_last_velocity = linear_velocity
 

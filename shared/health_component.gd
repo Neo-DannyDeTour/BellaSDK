@@ -70,6 +70,10 @@ func heal(amount: int) -> void:
 	health_changed.emit(current_health)
 	print("HealthComponent: heal() - Current health is now ", current_health, ".")
 
+	if is_player_health and Events.has_signal("player_health_changed"):
+		print("HealthComponent: heal() - Relaying heal to global Events bus.")
+		Events.player_health_changed.emit(current_health)
+
 
 ## Increases maximum capacity and raises current health proportionally.
 ## [param amount] The health capacity value to add.

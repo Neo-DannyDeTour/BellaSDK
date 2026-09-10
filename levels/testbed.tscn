@@ -24,7 +24,7 @@
 [ext_resource type="Texture2D" uid="uid://c3alx7afc0pag" path="res://assets/decals/Valve_Turn_Decal.png" id="18_k74e2"]
 [ext_resource type="PackedScene" uid="uid://wmyjhovjnea4" path="res://interactables/ladder.tscn" id="19_s52xd"]
 [ext_resource type="PackedScene" uid="uid://2db87kewe2f2" path="res://player/player.tscn" id="20_v6x3g"]
-[ext_resource type="PackedScene" uid="uid://ca0wevg1lb4rx" path="res://environment/water_maker3_d.tscn" id="21_2dnug"]
+[ext_resource type="PackedScene" uid="uid://ca0wevg1lb4rx" path="res://environment/water_body.tscn" id="21_2dnug"]
 [ext_resource type="PackedScene" uid="uid://ep02e3j752sd" path="res://shared/ventilator.tscn" id="24_ue7dh"]
 [ext_resource type="PackedScene" uid="uid://uwhga6c4q51o" path="res://player/zipline.tscn" id="24_xj7km"]
 [ext_resource type="PackedScene" uid="uid://dg62o2u1p8i7i" path="res://shared/updraft_volume.tscn" id="25_jgmty"]
@@ -68,10 +68,10 @@ script/source = "extends StaticBody3D
 func interact() -> void:
 	print(\"picked up the item!\")
 	queue_free()
-	
+
 func show_prompt() -> void:
 	prompt_label.visible = true
-	
+
 func hide_prompt() -> void:
 	prompt_label.visible = false
 "
@@ -3506,7 +3506,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.2547104, 0)
 billboard = 1
 text = "You can... or can you?
 (I don't remember what I wanted to do with this box)
-Can you move? Interact? Punch? 
+Can you move? Interact? Punch?
 Anyway, just leave it be.
 It's a bad box. We don't like him."
 
@@ -3546,7 +3546,7 @@ line_count = 1.0
 
 [node name="Label3D" type="Label3D" parent="InteractiveObjects/DevArrow" unique_id=67634551]
 billboard = 1
-text = "Just a simple dev arrow that points nowhere. 
+text = "Just a simple dev arrow that points nowhere.
 DO NOT GO THERE!"
 
 [node name="Zipline" parent="InteractiveObjects" unique_id=112234981 instance=ExtResource("24_xj7km")]
@@ -7624,15 +7624,15 @@ shape = SubResource("ConvexPolygonShape3D_kecw4")
 
 [node name="WelcomeMessage" type="Label3D" parent="Texts" unique_id=1991550283]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -19.094444, 2.28909, 23.42018)
-text = "WELCOME! Welcome to BellaSDK hub! 
-You have chosen or been chosen to try this 
+text = "WELCOME! Welcome to BellaSDK hub!
+You have chosen or been chosen to try this
 AI generated slop.
 
-The goal is to democratize game development 
+The goal is to democratize game development
 and help noobs quickly learn the basics of GD and LD.
 ***
-True HL3 can only be made by US 
-- 
+True HL3 can only be made by US
+-
 THE PEOPLE!"
 font_size = 64
 
@@ -7649,13 +7649,13 @@ font_size = 64
 
 [node name="Crouch2" type="Label3D" parent="Texts" unique_id=1464636407]
 transform = Transform3D(-1.4702742e-07, 0, 0.9999999, 0, 1, 0, -0.9999999, 0, -1.4702742e-07, -18.93923, 5.189332, 23.43942)
-text = "Если гора не идет к Магомету, 
+text = "Если гора не идет к Магомету,
 то Магомет идет к горе."
 font_size = 64
 
 [node name="flashlight" type="Label3D" parent="Texts" unique_id=1467689610]
 transform = Transform3D(-5.9604645e-08, 0, 0.9999998, 0, 1, 0, -0.9999998, 0, -5.9604645e-08, -8.9740505, 1.1433668, 14.013814)
-text = "Press F 
+text = "Press F
 to turn on flashlight
 "
 font_size = 64
@@ -7686,9 +7686,9 @@ font_size = 64
 [node name="NoclipMessage" type="Label3D" parent="Texts" unique_id=844734458]
 transform = Transform3D(-0.22006746, 0, -0.9754845, 0, 1, 0, 0.9754845, 0, -0.22006746, -12.381027, 10.487091, 9.385421)
 billboard = 1
-text = "You're now free to explore. 
-But I still recommend you to go to 
-the left first so I can show you all 
+text = "You're now free to explore.
+But I still recommend you to go to
+the left first so I can show you all
 the movement mechanics.
 *
 Press Z to zoom"
@@ -7697,20 +7697,20 @@ font_size = 64
 [node name="NoclipMessage2" type="Label3D" parent="Texts" unique_id=1228957047]
 transform = Transform3D(-0.9992033, 0, -0.039905056, 0, 1, 0, 0.039905056, 0, -0.9992033, 21.857693, 2.687654, 15.874239)
 text = "The Concept Gallery.
-Right now All of the images are either 
-AI generated or first generated and then 
-redrawn from hand 
+Right now All of the images are either
+AI generated or first generated and then
+redrawn from hand
 as part of my 55th attempt to learn how to draw.
 ***
-I'm aware of your attitude toward AI and I agree. 
+I'm aware of your attitude toward AI and I agree.
 Clankers won't replace us!"
 font_size = 64
 
 [node name="Label3D" type="Label3D" parent="Texts" unique_id=2120074948]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 32.811676, 2.9307303, 5.1491756)
-text = "Button test to ensure that 
-it's not frustrating when 
-several objects are located 
+text = "Button test to ensure that
+it's not frustrating when
+several objects are located
 close to each other."
 
 [node name="Label3D34" type="Label3D" parent="Texts" unique_id=113519479]
@@ -7722,7 +7722,7 @@ text = "No, you can't squeeze in here.
 [node name="Label3D35" type="Label3D" parent="Texts" unique_id=597754096]
 transform = Transform3D(1, 0, -1.7484555e-07, 0, 1, 0, 1.7484555e-07, 0, 1, 33.37382, 1.4410331, 35.109783)
 double_sided = false
-text = "What did I tell you?! 
+text = "What did I tell you?!
 Ya silly goose"
 
 [node name="Label3D2" type="Label3D" parent="Texts" unique_id=1955241809]
@@ -7735,18 +7735,18 @@ text = "Doors won't stuck!"
 
 [node name="Label3D4" type="Label3D" parent="Texts" unique_id=203954150]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -10.423342, 1.8570591, -6.009865)
-text = "This gate has an incredible 
-amount of glitches. 
-Programming is harder 
+text = "This gate has an incredible
+amount of glitches.
+Programming is harder
 than I anticipated.
 *
 No pain - no gain
- and unfortunately for pain - I like pain. Let's see who 
+ and unfortunately for pain - I like pain. Let's see who
 gives up first this time, ya silly bitch!"
 
 [node name="Label3D14" type="Label3D" parent="Texts" unique_id=1432352638]
 transform = Transform3D(1.3113416e-07, 0, 1, 0, 1, 0, -1, 0, 1.3113416e-07, -16.396633, 2.2904575, -7.182635)
-text = "Another little LD spiral. 
+text = "Another little LD spiral.
 There can be spirals
  within spirals or loops, etc."
 
@@ -7762,27 +7762,27 @@ text = "Still nothing."
 
 [node name="Label3D32" type="Label3D" parent="Texts" unique_id=731050787]
 transform = Transform3D(3.059797e-07, 0, 1, 0, 1, 0, -1, 0, 3.059797e-07, -19.10282, 2.132581, 32.86971)
-text = "What are you looking for? 
-Some meaning of life? 
-Movement is life/fundamental property 
-of all matter. 
+text = "What are you looking for?
+Some meaning of life?
+Movement is life/fundamental property
+of all matter.
 There is no end to our work.
-We will always be unsatisfied 
+We will always be unsatisfied
 with the current state of things.
-Keep grinding while you breathe. 
+Keep grinding while you breathe.
 Fake it till you make it
-and when you make it - 
-\"The black belt represents not 
-the end, but the beginning, the 
-start of a never-ending journey 
-of discipline, work and the pursuit of an ever-higher 
+and when you make it -
+\"The black belt represents not
+the end, but the beginning, the
+start of a never-ending journey
+of discipline, work and the pursuit of an ever-higher
 standard.”"
 
 [node name="Label3D37" type="Label3D" parent="Texts" unique_id=2130388905]
 transform = Transform3D(1.0000001, 0, -2.682209e-07, 0, 1, 0, 2.682209e-07, 0, 1.0000001, -16.427555, 5.687292, 30.683605)
 double_sided = false
-text = "This is a loop - the sequence 
-starts and ends in the same 
+text = "This is a loop - the sequence
+starts and ends in the same
 place"
 
 [node name="Label3D38" type="Label3D" parent="Texts" unique_id=599777666]
@@ -7796,14 +7796,14 @@ font_size = 64
 [node name="Label3D39" type="Label3D" parent="Texts" unique_id=1470332412]
 transform = Transform3D(-2.077667e-07, 0.70710677, -0.7071068, 2.514781e-07, 0.70710677, 0.7071068, 1.0000001, -3.090862e-08, -3.247351e-07, -6.315098, 6.054832, 14.505156)
 double_sided = false
-text = "This too is 
+text = "This too is
 a spiral"
 font_size = 64
 
 [node name="Label3D40" type="Label3D" parent="Texts" unique_id=2042183951]
 transform = Transform3D(-1.0000001, 3.090862e-08, 3.684465e-07, 3.0908623e-08, 0.99999994, 0, -3.6844648e-07, 1.3510619e-15, -1, -10.577523, 7.6822224, 15.722861)
 double_sided = false
-text = "Always block the most 
+text = "Always block the most
 obvious path.
 Don't use the same direction twice.
 Move forward, backward,
@@ -7815,21 +7815,21 @@ font_size = 64
 [node name="Label3D33" type="Label3D" parent="Texts" unique_id=425752499]
 transform = Transform3D(-2.1855693e-07, 0, -1, 0, 1, 0, 1, 0, -2.1855693e-07, -3.8804333, -21.782942, -21.912325)
 text = "Alright, FINE! Here is some text
-flying in the air in the middle of nothing. 
-Are you happy now? You made me go all this way to write it 
+flying in the air in the middle of nothing.
+Are you happy now? You made me go all this way to write it
 instead of adding cool new weapons and shit.
 SHAME ON YOU! SHAME!a"
 
 [node name="Label3D15" type="Label3D" parent="Texts" unique_id=1188867572]
 transform = Transform3D(-2.1855693e-07, 0, -1, 0, 1, 0, 1, 0, -2.1855693e-07, -16.748266, 11.812738, -7.116182)
 billboard = 1
-text = "Little Spiral. 
+text = "Little Spiral.
 Small distance but long travel"
 
 [node name="Label3D5" type="Label3D" parent="Texts" unique_id=805573685]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.226962, 3.4508157, -6.350483)
 billboard = 1
-text = "CTRL to crouch. 
+text = "CTRL to crouch.
 These stairs are as smooth as a smooth jazz.
 tu-tu-tu-too-too-bam-bam-PARA-PARA-PARA-PARA-BOOOM!
 SMOOTH JAZZ!!!"
@@ -7846,8 +7846,8 @@ font_size = 50
 
 [node name="Label3D7" type="Label3D" parent="Texts" unique_id=1000809262]
 transform = Transform3D(0.8660253, 0, -0.5, 0, 1, 0, 0.5, 0, 0.8660253, -8.644327, 10.445787, -4.409487)
-text = "I almost roped myself 
-while trying to make it work. 
+text = "I almost roped myself
+while trying to make it work.
 It still doesn't work well enough"
 
 [node name="Label3D8" type="Label3D" parent="Texts" unique_id=1925156301]
@@ -7858,19 +7858,19 @@ text = "This button is useless.
 [node name="Label3D9" type="Label3D" parent="Texts" unique_id=621342443]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -4.0374384, 2.752856, -6.918507)
 text = "Sorce-liek ladder. All the
- good stuff is retained and you can actually dismount 
-it without first playing 
+ good stuff is retained and you can actually dismount
+it without first playing
 Bethoven on your keyboard.
 *
-That fucking ladder in Route Canal in a room 
-full of explosives and manhacks! Where you 
+That fucking ladder in Route Canal in a room
+full of explosives and manhacks! Where you
 have to jump on tubes. BAD LADDER! Spank!
 But this one is good. Pats and hugs."
 
 [node name="Label3D10" type="Label3D" parent="Texts" unique_id=391962913]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -8.996211, -10.31056, -23.876505)
-text = "Jesus tap dancing Christ! The honeymoon period is over. 
-This is where the pain begins. 
+text = "Jesus tap dancing Christ! The honeymoon period is over.
+This is where the pain begins.
 Nothing works no more!
 Who called it \"Vibe Coding\"? There are no vibes here. Only misery."
 
@@ -7882,11 +7882,11 @@ text = "Wanna swim?"
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -5.0520873, 3.804318, 21.48072)
 text = "LD trick SPIRAL
 START and FINISH are located
- nearby but you have to 
-travel a lot in order to get 
+ nearby but you have to
+travel a lot in order to get
 from point A to B.
-Without using noclip, find out how much time it takes to 
-overcome these 2cm 
+Without using noclip, find out how much time it takes to
+overcome these 2cm
 (or whatever it is in your kangaroo imperial system ya filthy animals!!!)
  of wall.
 *
@@ -7894,7 +7894,7 @@ One of the coolest LD tricks I found. Hopefully you'll like it, too."
 
 [node name="Label3D41" type="Label3D" parent="Texts" unique_id=1792717569]
 transform = Transform3D(1.0629229e-07, 0, 0.9999999, 0, 1, 0, -0.9999999, 0, 1.0629229e-07, -18.528086, -10.922607, 19.08473)
-text = "3D assets are created by Lucas Andres Manzoni  
+text = "3D assets are created by Lucas Andres Manzoni
 https://www.behance.net/lucasandresmanzoni"
 font_size = 100
 
@@ -7981,13 +7981,13 @@ horizontal_alignment = 0
 
 [node name="Label3D13" type="Label3D" parent="Texts" unique_id=1908273057]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 3.024611, 1.4537933, 1.1883035)
-text = "A small physics puzzle - 
+text = "A small physics puzzle -
 wanna go up? find the box! (or just activate noclip.
  It's a testbed, not a monastery)"
 
 [node name="Label3D16" type="Label3D" parent="Texts" unique_id=2033174515]
 transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, -6.9824877, 11.8539095, -49.066044)
-text = "U MONKE NOW! U-U-UU-U-U-!!! 
+text = "U MONKE NOW! U-U-UU-U-U-!!!
 AAAAAAAAAAAAAAAAAAA!!!!!"
 
 [node name="Label3D17" type="Label3D" parent="Texts" unique_id=2113720852]
@@ -8010,8 +8010,8 @@ Fine, tank u."
 
 [node name="Label3D20" type="Label3D" parent="Texts" unique_id=1892160949]
 transform = Transform3D(-0.57741606, 0, 0.8164501, 0, 1, 0, -0.8164501, 0, -0.57741606, 18.065504, 17.218273, -33.99815)
-text = "A midway stop. 
-Imagine that I have collectibles here. 
+text = "A midway stop.
+Imagine that I have collectibles here.
 Prenty of cookies. "
 
 [node name="Label3D22" type="Label3D" parent="Texts" unique_id=1229815531]
@@ -8021,7 +8021,7 @@ text = "You can climb up and slide down."
 [node name="Label3D23" type="Label3D" parent="Texts" unique_id=2135326594]
 transform = Transform3D(-0.98561215, 0, 0.16902277, 0, 1, 0, -0.16902277, 0, -0.98561215, 32.29548, 12.9478445, -8.473917)
 billboard = 1
-text = "A shotgun?! 
+text = "A shotgun?!
 Yes. It. Is
 "
 
@@ -8037,19 +8037,19 @@ text = "Evil goons"
 
 [node name="Label3D25" type="Label3D" parent="Texts" unique_id=1934436565]
 transform = Transform3D(-4.3711385e-08, 0, -0.99999994, 0, 1, 0, 0.99999994, 0, -4.3711385e-08, 36.168186, 1.8234899, -8.11839)
-text = "The kind of valve I always wanted in HL2. The company is 
-LITERALLY called Valve but the 
-valves in HL2 are shit. I DON'T KNOW WHAT KIND OF AXIS 
+text = "The kind of valve I always wanted in HL2. The company is
+LITERALLY called Valve but the
+valves in HL2 are shit. I DON'T KNOW WHAT KIND OF AXIS
 IS THE RIGHT ONE!!!"
 
 [node name="Label3D26" type="Label3D" parent="Texts" unique_id=914855613]
 transform = Transform3D(-4.3711385e-08, 0, -0.99999994, 0, 1, 0, 0.99999994, 0, -4.3711385e-08, 44.559418, 1.8234899, -7.726539)
-text = "I'm thinking of adding an upgrade system for my Bella. 
+text = "I'm thinking of adding an upgrade system for my Bella.
 One of them will be here. Maybe.
-What kind of upgrades? 
-Health, John Wick reloading animations, Doom Guy punches. 
-Your ideas are welcomed. 
-You'd be able to refuse all those upgrades if you want. 
+What kind of upgrades?
+Health, John Wick reloading animations, Doom Guy punches.
+Your ideas are welcomed.
+You'd be able to refuse all those upgrades if you want.
 More optional exploration is needed anyway."
 
 [node name="Label3D24" type="Label3D" parent="Texts" unique_id=1762905192]
@@ -8065,14 +8065,14 @@ font_size = 50
 [node name="Label3D42" type="Label3D" parent="Texts" unique_id=2024698392]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 67.92126, 12.082165, -17.70582)
 billboard = 1
-text = "Don't teleport just yet! 
-Check out my BASALT! 
+text = "Don't teleport just yet!
+Check out my BASALT!
 And HEAVY BOX!!"
 font_size = 64
 
 [node name="Label3D43" type="Label3D" parent="Texts" unique_id=1226590181]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 80.44245, 12.082165, -17.043625)
-text = "Use NOCLIP (Q) if you get stuck. 
+text = "Use NOCLIP (Q) if you get stuck.
 It's a testbed of my gameplay mechanics, not an actual level.
 I will be building everything properly next time"
 font_size = 64
@@ -8143,8 +8143,8 @@ texture = ExtResource("13_2r5js")
 
 [node name="Label3D" type="Label3D" parent="Paintings/Sprite3D5" unique_id=1163240378]
 transform = Transform3D(0.9999999, 0, 0, 0, 0.9999999, 0, 0, 0, 0.9999999, 0, -6.970693, 1.9142075)
-text = "(Discard) I don't like the image but it will suffice for now. 
-She had been a military chaplain during the war but then was \"demoted\" 
+text = "(Discard) I don't like the image but it will suffice for now.
+She had been a military chaplain during the war but then was \"demoted\"
 during one of the incidents involving human trafficking.
 Former lover of the Masked Man and one of the members of the Board of Directors."
 font_size = 96
@@ -8159,8 +8159,8 @@ texture = ExtResource("14_x3nsp")
 
 [node name="Label3D" type="Label3D" parent="Paintings/Sprite3D3" unique_id=800050425]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -11.104727, 0.31290436)
-text = "Cross-Universal Mail Service's (the company Bella worked for) mascot named 
-Hugh G. Pecker III. 
+text = "Cross-Universal Mail Service's (the company Bella worked for) mascot named
+Hugh G. Pecker III.
 Their motto: We Always Come Fast!"
 font_size = 96
 
@@ -8175,8 +8175,8 @@ texture = ExtResource("15_cmbf5")
 [node name="Label3D" type="Label3D" parent="Paintings/Sprite3D6" unique_id=1716274319]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.276726, -8.646693, 0.31289673)
 text = "I really like this place from Anti-Citizen One.
- It captivates me. 
-That's why the roof of this museum is done similarly. 
+ It captivates me.
+That's why the roof of this museum is done similarly.
 This place is going to be in the beginning of the game"
 font_size = 120
 
@@ -8195,7 +8195,7 @@ texture = ExtResource("15_ovkd5")
 [node name="Label3D" type="Label3D" parent="Paintings/Sprite3D4" unique_id=2057379799]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3.0771122, 0.31290436)
 text = "The new CEO wanted to rebrand the company for
- modern times and modern audiences. Now it looks something like that. 
+ modern times and modern audiences. Now it looks something like that.
 Peckers are not welcomed!"
 font_size = 96
 
