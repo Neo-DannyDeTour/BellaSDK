@@ -53,6 +53,7 @@ sorting_offset = 999.0
 material_override = ExtResource("1_l0dr3")
 cast_shadow = 0
 extra_cull_margin = 150.0
+gi_mode = 0
 mesh = ExtResource("2_wv76p")
 script = ExtResource("3_6nay4")
 spray_spawn_radius = 40.0

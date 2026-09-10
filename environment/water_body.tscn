@@ -1,0 +1,97 @@
+[gd_scene format=3 uid="uid://ca0wevg1lb4rx"]
+
+[ext_resource type="Shader" uid="uid://cwqt2rruv7eum" path="res://environment/water_body.gdshader" id="1_70utq"]
+[ext_resource type="Shader" uid="uid://2pyqpr2qew6o" path="res://environment/fog_fade.gdshader" id="2_5f01f"]
+[ext_resource type="Script" uid="uid://dtm30dwmcgd8n" path="res://environment/water_body.gd" id="2_ejx8y"]
+[ext_resource type="Script" uid="uid://grkqw00wxiwn" path="res://environment/UnderwaterFogVolume.gd" id="3_b5ytn"]
+[ext_resource type="AudioStream" uid="uid://c3gfubvks8j8o" path="res://assets/sounds/WaterSplash.mp3" id="6_266v4"]
+[ext_resource type="AudioStream" uid="uid://dtv3gp57rb7kd" path="res://assets/sounds/Underwater.wav" id="7_d7iy8"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ugvly"]
+render_priority = 0
+shader = ExtResource("1_70utq")
+shader_parameter/water_time = 2071.71
+shader_parameter/water_size = Vector3(1, 1, 1)
+shader_parameter/show_side_walls = false
+shader_parameter/shallow_color = Color(0.28, 0.58, 0.85, 0.45)
+shader_parameter/deep_color = Color(0.01, 0.06, 0.18, 0.95)
+shader_parameter/depth_distance = 4.5
+shader_parameter/beers_law = 2.2
+shader_parameter/wave_amplitude = 0.1
+shader_parameter/wave_length = 4.5
+shader_parameter/wave_speed = 1.4
+shader_parameter/wave_steepness = 0.35
+shader_parameter/ripples = Array[Vector4]([Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0), Vector4(0, 0, 0, 0)])
+shader_parameter/ripple_mesh_height = 0.22
+shader_parameter/uv_scale = Vector2(2, 2)
+shader_parameter/normal_bump_strength = 2.00000009174012
+shader_parameter/pan_speed_1 = Vector2(0.1, 0.01)
+shader_parameter/pan_speed_2 = Vector2(-0.015, 0.025)
+shader_parameter/foam_color = Color(0.92, 0.96, 1, 1)
+shader_parameter/foam_distance = 0.35
+shader_parameter/refraction_strength = 0.02
+shader_parameter/underwater_ceiling_color = Color(0, 0.1, 0.2, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_aaijj"]
+resource_local_to_scene = true
+subdivide_width = 8
+subdivide_depth = 8
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_om5f8"]
+resource_local_to_scene = true
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_ugvly"]
+radius = 0.05
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_wrt5a"]
+resource_local_to_scene = true
+shader = ExtResource("2_5f01f")
+shader_parameter/density = 1.0
+shader_parameter/albedo = Color(0, 0.04, 0.16, 1)
+shader_parameter/emission = Color(0, 0.04, 0.16, 1)
+shader_parameter/height_falloff = 0.0
+shader_parameter/edge_fade = 0.1
+shader_parameter/fade_plane = Vector4(0, 1, 0, -999)
+
+[node name="WaterBody" type="MeshInstance3D" unique_id=1898604217]
+process_priority = 999
+material_override = SubResource("ShaderMaterial_ugvly")
+gi_mode = 0
+mesh = SubResource("BoxMesh_aaijj")
+script = ExtResource("2_ejx8y")
+water_size = Vector3(1, 1, 1)
+splash_sound = ExtResource("6_266v4")
+
+[node name="SwimmableArea3D" type="Area3D" parent="." unique_id=1515298068 groups=["water_area"]]
+unique_name_in_owner = true
+collision_mask = 6
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SwimmableArea3D" unique_id=1110896874]
+unique_name_in_owner = true
+shape = SubResource("BoxShape3D_om5f8")
+
+[node name="CameraPosShapeCast3D" type="ShapeCast3D" parent="." unique_id=1821103826]
+unique_name_in_owner = true
+shape = SubResource("SphereShape3D_ugvly")
+target_position = Vector3(0, 0, 0)
+collision_mask = 6
+collide_with_areas = true
+collide_with_bodies = false
+
+[node name="FogVolume" type="FogVolume" parent="." unique_id=485758246]
+unique_name_in_owner = true
+layers = 512
+size = Vector3(1, 1, 1)
+material = SubResource("ShaderMaterial_wrt5a")
+script = ExtResource("3_b5ytn")
+base_fade_dist = 5.0
+
+[node name="SurfaceAudio" type="AudioStreamPlayer3D" parent="." unique_id=590476800]
+unique_name_in_owner = true
+autoplay = true
+max_distance = 10.0
+
+[node name="UnderwaterAudio" type="AudioStreamPlayer3D" parent="." unique_id=88705801]
+unique_name_in_owner = true
+stream = ExtResource("7_d7iy8")
+pitch_scale = 0.5
