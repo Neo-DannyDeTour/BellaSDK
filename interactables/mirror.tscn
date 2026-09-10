@@ -21,9 +21,11 @@ render_priority = 0
 shader = ExtResource("1_5o7h0")
 shader_parameter/tex = SubResource("ViewportTexture_8mm88")
 
-[sub_resource type="Environment" id="Environment_652kc"]
+[sub_resource type="Environment" id="Environment_i25o7"]
+ambient_light_source = 2
+ambient_light_color = Color(0.2, 0.22, 0.28, 1)
 
-[sub_resource type="Compositor" id="Compositor_0dm0a"]
+[sub_resource type="Compositor" id="Compositor_akidf"]
 
 [node name="Mirror" type="Node3D" unique_id=2122574524 node_paths=PackedStringArray("mirror_viewport", "mirror_camera", "mirror_quad")]
 script = ExtResource("1_652kc")
@@ -37,16 +39,20 @@ mesh = SubResource("QuadMesh_652kc")
 surface_material_override/0 = SubResource("ShaderMaterial_ngsht")
 
 [node name="SubViewport" type="SubViewport" parent="." unique_id=1790894113]
+mesh_lod_threshold = 2.0
+positional_shadow_atlas_size = 0
+canvas_cull_mask = 4294966783
 size = Vector2i(50, 50)
 render_target_update_mode = 0
 
 [node name="Camera3D" type="Camera3D" parent="SubViewport" unique_id=1441297324]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 1.682942, 1.9177022, -3.0806046)
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.10242236, 2.1675658, -3.4429083)
 cull_mask = 1047559
-environment = SubResource("Environment_652kc")
-compositor = SubResource("Compositor_0dm0a")
+environment = SubResource("Environment_i25o7")
+compositor = SubResource("Compositor_akidf")
 projection = 2
+current = true
 fov = 70.01
-frustum_offset = Vector2(1.682942, -1.9177022)
-near = 3.1306045
-far = 24.0
+frustum_offset = Vector2(0.10242236, -2.1675658)
+near = 3.4929082
+far = 24.069698

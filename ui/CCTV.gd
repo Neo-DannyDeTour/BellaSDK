@@ -1,113 +1,110 @@
-## A physical in-world security camera monitor that the player can interact with.
-##
-## Manages camera switching, orientation controls, and throttled rendering to maintain 60 FPS.
-## When interacted with, [method _enable_fullscreen_mode] projects the feed onto a [CanvasLayer]
-## without reallocating viewport buffers at runtime.
+## Interactive in-world security terminal displaying live camera feeds.
+## Throttles update rates and isolates internal camera passes to sustain 60 FPS.
 class_name CCTV
 extends StaticBody3D
 
 @export_category("CCTV Settings")
-## The [SubViewport] that renders the CCTV camera feed to the screen material.
+## Target [SubViewport] rendering the camera feed to the terminal monitor screen.
 @export var camera_vp: SubViewport
 
-## An array of [Node3D] markers representing locations the CCTV camera can snap to.
+## Marker points defining locations the CCTV camera perspective can cycle through.
 @export var camera_locations: Array[Node3D] = []
 
-## Speed in degrees per second at which the camera pans when receiving input.
+## Panning rotational speed in degrees per second when handling input.
 @export var pan_speed: float = 60.0
 
-## Speed at which the FOV changes during a scroll wheel zoom input.
+## FOV modification step applied during mouse wheel zoom inputs.
 @export var zoom_speed: float = 5.0
 
-## Minimum field of view in degrees allowed when zooming in.
+## Minimum permitted field of view angle in degrees.
 @export var min_fov: float = 30.0
 
-## Maximum field of view in degrees allowed when zooming out.
+## Maximum permitted field of view angle in degrees.
 @export var max_fov: float = 75.0
 
-## If true, interacting creates a canvas overlay that replaces the player view.
+## Replaces the main player view with a fullscreen HUD canvas overlay when active.
 @export var replace_player_camera: bool = true
 
 @export_category("Performance Optimization")
-## The main [WorldEnvironment] to disable heavy effects on while looking through the CCTV.
+## The primary level [WorldEnvironment] to toggle heavy effects on during usage.
 @export var world_env: WorldEnvironment
 
-## If true, temporarily disables global fog and clouds to keep framerates high.
+## Disables global volumetric fog while looking through security terminals.
 @export var disable_global_volumetrics: bool = true
 
-## The target frame rate the CCTV viewport updates at when actively controlled.
+## Refresh frame rate cap of the CCTV viewport when actively operated.
 @export var cctv_fps: float = 15.0
 
-## The fixed render resolution used by [member camera_vp] to prevent GPU reallocations.
+## Fixed buffer resolution applied to [member camera_vp] to prevent reallocations.
 @export var internal_resolution: Vector2i = Vector2i(640, 360)
 
-## Maximum visible distance in meters for [member cctv_camera] to preserve frustum culling.
+## Far clipping distance in meters applied to [member cctv_camera].
 @export var camera_far_distance: float = 100.0
 
-## The [MeshInstance3D] displaying the screen texture.
+## Screen mesh display instance mapping the CCTV render target.
 @onready var screen_mesh: MeshInstance3D = $ScreenMesh
 
-## The interaction component the player targets to trigger the CCTV.
+## Interaction component receiving activation trigger events.
 @onready var interact_comp: Node = $InteractComponent
 
-## The actual [Camera3D] node inside the viewport that moves around.
+## Perspective camera rendering the security feed inside [member camera_vp].
 @onready var cctv_camera: Camera3D = $CameraViewport/CCTVCamera
 
-## The UI [Label] that displays controls while the player is interacting.
+## UI label presenting terminal controls and active camera indices.
 @onready var tutorial_label: Label = $CameraViewport/CanvasLayer/MarginContainer/TutorialLabel
 
-## Reference to the dynamically created or existing [StandardMaterial3D] on the screen mesh.
+## Surface material override bound to [member screen_mesh].
 var screen_mat_override: StandardMaterial3D = null
 
-## The index of the currently active camera location in [member camera_locations].
+## Array index pointing to the active location inside [member camera_locations].
 var active_cam_idx: int = 0
 
-## True if the player is currently bound to the screen controls.
+## Tracks whether the player character is currently operating the CCTV monitor.
 var is_controlling: bool = false
 
-## Reference to the [CharacterBody3D] currently using the CCTV.
+## Reference to the player body currently controlling the security feed.
 var current_player: CharacterBody3D = null
 
-## The target field of view being interpolated towards during a zoom.
+## Interpolation target field of view angle in degrees.
 var target_fov: float = 75.0
 
-## The current horizontal rotation of the camera in radians.
+## Current horizontal yaw angle of the camera in radians.
 var current_yaw: float = 0.0
 
-## The current vertical rotation of the camera in radians.
+## Current vertical pitch angle of the camera in radians.
 var current_pitch: float = 0.0
 
-## Timer that prevents the player from accidentally exiting immediately after entering.
+## Input debounce timer preventing instant exit upon terminal activation.
 var _interaction_cooldown: float = 0.0
 
-## Stores the player's camera cull mask to restore it after fullscreen mode ends.
+## Stored visual render mask of the player camera before fullscreen override.
 var _stored_player_cull_mask: int = 0
 
-## The [CanvasLayer] used to draw the full-screen CCTV effect.
+## Dedicated [CanvasLayer] presenting the fullscreen camera overlay feed.
 var _fullscreen_canvas: CanvasLayer = null
 
-## The [TextureRect] displaying the viewport output on [_fullscreen_canvas].
+## Screen texture rect projecting the CCTV feed onto the fullscreen canvas.
 var _fullscreen_rect: TextureRect = null
 
-## Accumulator used to limit the viewport update rate to the target [member cctv_fps].
+## Accumulator measuring elapsed frame time against target [member cctv_fps].
 var _update_timer: float = 0.0
 
-## Stores the [Compositor] resource before removing it to disable clouds.
+## Stored compositor resource removed to disable volumetrics during operation.
 var _stored_compositor: Compositor = null
 
-## Stores the previous volumetric fog enabled state.
+## Stored volumetric fog activation state restored when detaching from terminal.
 var _stored_volumetric_state: bool = false
 
-## Cached original [Sky] resource to restore visual assets if needed.
+## Original sky resource cached to ensure visual state parity.
 var _stored_cctv_sky: Sky = null
 
-## Cached original background mode of the CCTV camera environment.
+## Original background mode cached from the CCTV camera environment.
 var _stored_bg_mode: Environment.BGMode = Environment.BG_KEEP
 
 
-## Sets up materials, viewport overrides, camera clipping, and initial positions.
+## Connects interactable components, initializes screen materials, and limits pipeline.
 func _ready() -> void:
-	print("[CCTV] Initializing TV screen, camera cull limits, and UI.")
+	print("[CCTV] Initializing security terminal instance: ", name)
 	if (
 		is_instance_valid(interact_comp)
 		and not interact_comp.interacted.is_connected(_on_interacted)
@@ -122,17 +119,12 @@ func _ready() -> void:
 		screen_mat_override = StandardMaterial3D.new()
 		screen_mesh.material_override = screen_mat_override
 
-	if is_instance_valid(camera_vp):
-		camera_vp.size = internal_resolution
-		camera_vp.render_target_update_mode = SubViewport.UPDATE_ONCE
-		camera_vp.positional_shadow_atlas_size = 0
-		if is_instance_valid(screen_mat_override):
-			screen_mat_override.albedo_texture = camera_vp.get_texture()
+	_configure_cctv_viewport()
 
 	if is_instance_valid(cctv_camera):
 		cctv_camera.far = camera_far_distance
 		target_fov = cctv_camera.fov
-		cctv_camera.make_current()
+		cctv_camera.current = true
 		_force_clear_environment()
 
 	_update_tutorial_text()
@@ -144,8 +136,27 @@ func _ready() -> void:
 		_set_camera(0)
 
 
-## Processes cooldowns, input panning, and throttles the viewport render rate.
-## [param delta] The frame time in seconds.
+## Strips shadow maps and anti-aliasing features from the CCTV viewport.
+func _configure_cctv_viewport() -> void:
+	print("[CCTV] Applying stripped graphics pipeline limits to viewport.")
+	if not is_instance_valid(camera_vp):
+		return
+
+	camera_vp.size = internal_resolution
+	camera_vp.render_target_update_mode = SubViewport.UPDATE_ONCE
+	camera_vp.positional_shadow_atlas_size = 0
+	camera_vp.msaa_3d = Viewport.MSAA_DISABLED
+	camera_vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED
+	camera_vp.use_taa = false
+	camera_vp.use_debanding = false
+	camera_vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
+
+	if is_instance_valid(screen_mat_override):
+		screen_mat_override.albedo_texture = camera_vp.get_texture()
+
+
+## Manages camera rotation, FOV interpolation, and throttles viewport redraw rate.
+## [param delta] Frame duration in seconds.
 func _process(delta: float) -> void:
 	if _interaction_cooldown > 0.0:
 		_interaction_cooldown -= delta
@@ -165,36 +176,38 @@ func _process(delta: float) -> void:
 			camera_vp.render_target_update_mode = SubViewport.UPDATE_ONCE
 
 
-## Handles raw player input events while bound to the CCTV controls.
-## [param event] The input event to process.
+## Intercepts camera navigation inputs and detaches player upon exit command.
+## [param event] Input event to process.
 func _input(event: InputEvent) -> void:
 	if not is_controlling:
 		return
 
 	if event.is_action_pressed("interact") and _interaction_cooldown <= 0.0:
+		print("[CCTV] Player pressed interact to disconnect.")
 		_stop_controlling()
 		get_viewport().set_input_as_handled()
 		return
 
 	if event.is_action_pressed("shoot"):
+		print("[CCTV] Player requested camera cycle.")
 		_cycle_camera()
 		get_viewport().set_input_as_handled()
 		return
 
 	if event is InputEventMouseButton and event.is_pressed():
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			print("[CCTV] Zooming IN.")
+			print("[CCTV] Zooming camera IN.")
 			target_fov -= zoom_speed
 			get_viewport().set_input_as_handled()
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			print("[CCTV] Zooming OUT.")
+			print("[CCTV] Zooming camera OUT.")
 			target_fov += zoom_speed
 			get_viewport().set_input_as_handled()
 
 
-## Overrides the CCTV camera's environment to block localized fog, sky, and SDFGI.
+## Overrides camera environment to permanently disable SDFGI, fog, and SSR passes.
 func _force_clear_environment() -> void:
-	print("[CCTV] Overriding camera environment to block localized fog/sky/SDFGI.")
+	print("[CCTV] Stripping camera environment of fog, sky, and SDFGI.")
 	var cctv_env: Environment = cctv_camera.environment
 	if not is_instance_valid(cctv_env):
 		cctv_env = Environment.new()
@@ -214,11 +227,12 @@ func _force_clear_environment() -> void:
 	cctv_env.ssao_enabled = false
 	cctv_env.ssil_enabled = false
 	cctv_env.glow_enabled = false
+	cctv_env.ssr_enabled = false
 
 
-## Updates the UI text displaying connected camera count and instructions.
+## Refreshes onscreen control keybind hints and total camera numbers.
 func _update_tutorial_text() -> void:
-	print("[CCTV] Refreshing tutorial text on screen.")
+	print("[CCTV] Refreshing onscreen terminal tutorial text.")
 	if not is_instance_valid(tutorial_label):
 		return
 
@@ -232,13 +246,13 @@ func _update_tutorial_text() -> void:
 	tutorial_label.text = display_text
 
 
-## Triggered when the player interacts with the screen, entering control mode.
-## [param player] The player character interacting with the monitor.
+## Binds the player to CCTV controls and disables external volumetric systems.
+## [param player] Character body claiming control of the terminal.
 func _on_interacted(player: CharacterBody3D) -> void:
 	if is_controlling or _interaction_cooldown > 0.0:
 		return
 
-	print("[CCTV] Player attached to TV Screen! Disabling global weather systems.")
+	print("[CCTV] Player attached to terminal screen. Freezing outside systems.")
 	is_controlling = true
 	current_player = player
 	_interaction_cooldown = 0.3
@@ -254,7 +268,7 @@ func _on_interacted(player: CharacterBody3D) -> void:
 			world_env.compositor = null
 
 		if is_instance_valid(world_env.environment):
-			print("[CCTV] Disabling standard volumetric fog.")
+			print("[CCTV] Temporarily disabling volumetric fog.")
 			_stored_volumetric_state = world_env.environment.volumetric_fog_enabled
 			world_env.environment.volumetric_fog_enabled = false
 
@@ -265,9 +279,9 @@ func _on_interacted(player: CharacterBody3D) -> void:
 		_enable_fullscreen_mode()
 
 
-## Detaches the player from the screen and restores previous visual states.
+## Detaches the player from terminal controls and restores previous visual states.
 func _stop_controlling() -> void:
-	print("[CCTV] Player detaching from screen. Restoring weather systems and freezing frame.")
+	print("[CCTV] Player detaching from monitor. Restoring world states.")
 	is_controlling = false
 	_interaction_cooldown = 0.3
 
@@ -281,7 +295,7 @@ func _stop_controlling() -> void:
 			_stored_compositor = null
 
 		if is_instance_valid(world_env.environment):
-			print("[CCTV] Restoring standard volumetric fog.")
+			print("[CCTV] Restoring volumetric fog state.")
 			world_env.environment.volumetric_fog_enabled = _stored_volumetric_state
 
 	if is_instance_valid(camera_vp):
@@ -296,10 +310,9 @@ func _stop_controlling() -> void:
 	current_player = null
 
 
-## Creates a [CanvasLayer] overlay and disables player 3D rendering without resizing viewport.
+## Spawns a fullscreen HUD overlay and hides the main 3D player camera.
 func _enable_fullscreen_mode() -> void:
-	print("[CCTV] Generating fullscreen overlay and culling player camera.")
-
+	print("[CCTV] Constructing fullscreen HUD overlay.")
 	_fullscreen_canvas = CanvasLayer.new()
 	_fullscreen_canvas.layer = 100
 	add_child(_fullscreen_canvas)
@@ -314,16 +327,15 @@ func _enable_fullscreen_mode() -> void:
 	if is_instance_valid(current_player) and current_player.get("camera_controller"):
 		var cam_controller: Node = current_player.get("camera_controller")
 		if is_instance_valid(cam_controller) and is_instance_valid(cam_controller.get("camera")):
-			print("[CCTV] Disabling player camera rendering.")
+			print("[CCTV] Disabling player camera cull mask.")
 			var p_cam: Camera3D = cam_controller.get("camera") as Camera3D
 			_stored_player_cull_mask = p_cam.cull_mask
 			p_cam.cull_mask = 0
 
 
-## Removes the fullscreen overlay and restores the player's camera cull mask.
+## Frees the fullscreen HUD overlay and restores the main player camera cull mask.
 func _disable_fullscreen_mode() -> void:
-	print("[CCTV] Destroying fullscreen overlay and restoring player camera.")
-
+	print("[CCTV] Freeing fullscreen HUD overlay and restoring player camera.")
 	if is_instance_valid(_fullscreen_canvas):
 		_fullscreen_canvas.queue_free()
 		_fullscreen_canvas = null
@@ -332,13 +344,13 @@ func _disable_fullscreen_mode() -> void:
 	if is_instance_valid(current_player) and current_player.get("camera_controller"):
 		var cam_controller: Node = current_player.get("camera_controller")
 		if is_instance_valid(cam_controller) and is_instance_valid(cam_controller.get("camera")):
-			print("[CCTV] Restoring player camera rendering.")
+			print("[CCTV] Restoring player camera cull mask.")
 			var p_cam: Camera3D = cam_controller.get("camera") as Camera3D
 			p_cam.cull_mask = _stored_player_cull_mask
 
 
-## Snaps [member cctv_camera] to the specified index in [member camera_locations].
-## [param index] The target camera location index.
+## Snaps the security camera to the target index in [member camera_locations].
+## [param index] Location marker index to align to.
 func _set_camera(index: int) -> void:
 	if index < 0 or index >= camera_locations.size():
 		return
@@ -347,7 +359,7 @@ func _set_camera(index: int) -> void:
 	if not is_instance_valid(target_loc):
 		return
 
-	print("[CCTV] Setting active camera to index: ", index)
+	print("[CCTV] Setting active camera location to index: ", index)
 	active_cam_idx = index
 	cctv_camera.global_position = target_loc.global_position
 
@@ -363,28 +375,26 @@ func _set_camera(index: int) -> void:
 		camera_vp.render_target_update_mode = SubViewport.UPDATE_ONCE
 
 
-## Cycles to the next available camera location index.
+## Increments through connected camera markers in sequential order.
 func _cycle_camera() -> void:
 	if camera_locations.is_empty():
 		return
 
+	print("[CCTV] Cycling camera feed index.")
 	var next_idx: int = (active_cam_idx + 1) % camera_locations.size()
-	print("[CCTV] Cycling to next camera...")
 	_set_camera(next_idx)
 
 
-## Translates input actions into camera yaw and pitch rotations.
-## [param delta] Frame time in seconds.
+## Rotates camera yaw and pitch axes based on directional axis inputs.
+## [param delta] Frame duration in seconds.
 func _pan_camera(delta: float) -> void:
 	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
-
 	if input_dir.length_squared() < 0.01:
 		return
 
 	var pan_rad: float = deg_to_rad(pan_speed)
 	current_yaw += -input_dir.x * pan_rad * delta
 	current_pitch += -input_dir.y * pan_rad * delta
-
 	current_pitch = clampf(current_pitch, deg_to_rad(-80.0), deg_to_rad(80.0))
 
 	cctv_camera.rotation.y = current_yaw
@@ -392,8 +402,8 @@ func _pan_camera(delta: float) -> void:
 	cctv_camera.rotation.z = 0.0
 
 
-## Smoothly interpolates the current field of view toward [member target_fov].
-## [param delta] Frame time in seconds.
+## Interpolates camera field of view toward [member target_fov].
+## [param delta] Frame duration in seconds.
 func _handle_zoom(delta: float) -> void:
 	target_fov = clampf(target_fov, min_fov, max_fov)
 	cctv_camera.fov = lerpf(cctv_camera.fov, target_fov, 10.0 * delta)
