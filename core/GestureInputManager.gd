@@ -90,7 +90,7 @@ func _process(delta: float) -> void:
 	var triggered_keys_to_remove: Array = []
 	for action: Variant in _triggered_actions_frame.keys():
 		var target_frame: int = _triggered_actions_frame[action] as int
-		if current_frame > target_frame + 1:
+		if current_frame > target_frame + 2:
 			triggered_keys_to_remove.append(action)
 	for key: Variant in triggered_keys_to_remove:
 		_triggered_actions_frame.erase(key)
@@ -98,7 +98,7 @@ func _process(delta: float) -> void:
 	var released_keys_to_remove: Array = []
 	for action: Variant in _released_actions_frame.keys():
 		var target_frame: int = _released_actions_frame[action] as int
-		if current_frame > target_frame + 1:
+		if current_frame > target_frame + 2:
 			released_keys_to_remove.append(action)
 	for key: Variant in released_keys_to_remove:
 		_released_actions_frame.erase(key)
@@ -128,7 +128,6 @@ func _input(event: InputEvent) -> void:
 
 			if gesture_type == "ordered_chord" and not chord_keys.is_empty():
 				var trigger_key: int = chord_keys[chord_keys.size() - 1] as int
-				# Trigger only if current key is the final key AND all preceding modifiers were already down
 				if input_id == trigger_key and _are_modifier_keys_held(chord_keys):
 					print("System: Ordered chord validated: ", action)
 					_dispatch_action(action, "ordered_chord")
@@ -307,7 +306,7 @@ func is_action_just_triggered(action: String) -> bool:
 	var current_frame: int = Engine.get_physics_frames()
 	if _triggered_actions_frame.has(action):
 		var target_frame: int = _triggered_actions_frame[action] as int
-		if current_frame == target_frame or current_frame == target_frame + 1:
+		if abs(current_frame - target_frame) <= 2:
 			return true
 	return false
 
@@ -360,7 +359,6 @@ func _dispatch_action(action: String, gesture: String) -> void:
 ## [param action] The input action key string to evaluate.
 ## [return] True if all key requirements and active gestures are met.
 func is_action_pressed(action: String) -> bool:
-	#print("Input: Polling is_action_pressed for action: ", action)
 	if not InputMap.has_action(action):
 		return false
 
@@ -383,11 +381,10 @@ func is_action_pressed(action: String) -> bool:
 ## [param action] The input action key string to evaluate.
 ## [return] True if the action triggered this frame.
 func is_action_just_pressed(action: String) -> bool:
-	#print("Input: Polling is_action_just_pressed for action: ", action)
 	var current_frame: int = Engine.get_physics_frames()
 	if _triggered_actions_frame.has(action):
 		var target_frame: int = _triggered_actions_frame[action] as int
-		if current_frame == target_frame or current_frame == target_frame + 1:
+		if abs(current_frame - target_frame) <= 2:
 			return true
 	return false
 
@@ -400,7 +397,7 @@ func is_action_just_released(action: String) -> bool:
 	var current_frame: int = Engine.get_physics_frames()
 	if _released_actions_frame.has(action):
 		var target_frame: int = _released_actions_frame[action] as int
-		if current_frame == target_frame or current_frame == target_frame + 1:
+		if abs(current_frame - target_frame) <= 2:
 			return true
 	return false
 

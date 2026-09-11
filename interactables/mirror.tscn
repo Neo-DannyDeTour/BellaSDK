@@ -13,7 +13,7 @@ resource_local_to_scene = true
 material = SubResource("ShaderMaterial_nha6m")
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_8mm88"]
-viewport_path = NodePath("SubViewport")
+viewport_path = NodePath("MirrorSubViewport")
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ngsht"]
 resource_local_to_scene = true
@@ -30,22 +30,22 @@ ambient_light_color = Color(0.2, 0.22, 0.28, 1)
 [node name="Mirror" type="Node3D" unique_id=2122574524 node_paths=PackedStringArray("mirror_viewport", "mirror_camera", "mirror_quad")]
 script = ExtResource("1_652kc")
 cull_mask = 1047559
-mirror_viewport = NodePath("SubViewport")
-mirror_camera = NodePath("SubViewport/Camera3D")
+mirror_viewport = NodePath("MirrorSubViewport")
+mirror_camera = NodePath("MirrorSubViewport/Camera3D")
 mirror_quad = NodePath("Quad")
 
 [node name="Quad" type="MeshInstance3D" parent="." unique_id=644621512]
 mesh = SubResource("QuadMesh_652kc")
 surface_material_override/0 = SubResource("ShaderMaterial_ngsht")
 
-[node name="SubViewport" type="SubViewport" parent="." unique_id=1790894113]
+[node name="MirrorSubViewport" type="SubViewport" parent="." unique_id=1790894113]
 mesh_lod_threshold = 2.0
 positional_shadow_atlas_size = 0
 canvas_cull_mask = 4294966783
 size = Vector2i(50, 50)
 render_target_update_mode = 0
 
-[node name="Camera3D" type="Camera3D" parent="SubViewport" unique_id=1441297324]
+[node name="Camera3D" type="Camera3D" parent="MirrorSubViewport" unique_id=1441297324]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0.10242236, 2.1675658, -3.4429083)
 cull_mask = 1047559
 environment = SubResource("Environment_i25o7")

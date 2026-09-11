@@ -31,6 +31,9 @@ extends RigidBody3D
 @export var water_angular_drag: float = 0.5
 
 # --- HOLDING CONFIG ---
+## Minimum distance maintained between the camera and the object while held.
+const MIN_HOLD_DISTANCE: float = 1.2
+
 ## How much closer to the player this object should be positioned when held.
 @export var hold_distance_offset: float = 0.0
 
@@ -52,6 +55,9 @@ extends RigidBody3D
 @export_category("Accessibility")
 ## The dedicated [ShaderMaterial] applied as an overlay to highlight this object through walls.
 @export var vision_assist_material: ShaderMaterial
+
+## Relative yaw offset between camera and object preserved during hold.
+var _held_relative_yaw: float = 0.0
 
 ## Tracks the velocity from the previous physics frame to accurately gauge impact speed.
 var _last_velocity: Vector3 = Vector3.ZERO
@@ -218,6 +224,15 @@ func pick_up(target: Marker3D, player_node: Node3D) -> void:
 	hold_target = target
 	holder = player_node
 
+	var cam: Camera3D = _get_camera()
+	var cam_yaw: float = (
+		cam.global_transform.basis.get_euler().y
+		if is_instance_valid(cam)
+		else holder.global_transform.basis.get_euler().y
+	)
+	var obj_yaw: float = global_transform.basis.get_euler().y
+	_held_relative_yaw = wrapf(obj_yaw - cam_yaw, -PI, PI)
+
 	if is_instance_valid(label):
 		label.hide()
 	if is_instance_valid(prompt_icon):
@@ -251,8 +266,11 @@ func drop() -> void:
 	print("PickableObject: drop() called. Releasing: ", name)
 	is_held = false
 
-	if is_instance_valid(interact_comp):
-		interact_comp.process_mode = Node.PROCESS_MODE_INHERIT
+	# Keep prompt hidden while the object is settling down to the ground
+	if is_instance_valid(label):
+		label.hide()
+	if is_instance_valid(prompt_icon):
+		prompt_icon.hide()
 
 	_is_tts_cooldown = true
 	get_tree().create_timer(1.5, false).timeout.connect(_reset_tts_cooldown)
@@ -348,10 +366,45 @@ func drop() -> void:
 		_wait_to_enable_collision(previous_holder)
 
 	holder = null
+	_wait_for_rest_to_enable_interact()
+	_update_process_state()
+
+
+## Drops the object and applies a significant central impulse to throw it.
+func throw(impulse_vector: Vector3) -> void:
+	print(
+		"PickableObject: throw() called. Throwing: ", name, " with force: ", impulse_vector.length()
+	)
+	drop()
+	if not is_locked:
+		apply_central_impulse(impulse_vector)
+
+
+## Defers enabling the interact component until the object has safely landed.
+func _wait_for_rest_to_enable_interact() -> void:
 	if is_instance_valid(interact_comp):
 		interact_comp.is_currently_focused = false
+		interact_comp.process_mode = Node.PROCESS_MODE_DISABLED
 
-	_update_process_state()
+	while is_instance_valid(self) and not is_held:
+		await get_tree().physics_frame
+		if linear_velocity.length() < 0.35 and (sleeping or is_on_floor_approx()):
+			break
+
+	if is_instance_valid(self) and not is_held and is_instance_valid(interact_comp):
+		interact_comp.process_mode = Node.PROCESS_MODE_INHERIT
+
+
+## Checks if the object has settled near or on a physical collision surface.
+## [return] True if contact or floor collision is detected.
+func is_on_floor_approx() -> bool:
+	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
+		global_position, global_position + Vector3(0.0, -0.6, 0.0)
+	)
+	query.exclude = [self.get_rid()]
+	var res: Dictionary = space_state.intersect_ray(query)
+	return not res.is_empty()
 
 
 ## Resets the cooldown timer, allowing the text-to-speech engine to speak the grab prompt again.
@@ -374,25 +427,18 @@ func _attempt_enable_collision(player_node: Node3D) -> void:
 		get_tree().create_timer(0.1).timeout.connect(_attempt_enable_collision.bind(player_node))
 
 
-## Drops the object and applies a significant central impulse to throw it.
-func throw(impulse_vector: Vector3) -> void:
-	print(
-		"PickableObject: throw() called. Throwing: ", name, " with force: ", impulse_vector.length()
-	)
-	drop()
-	if not is_locked:
-		apply_central_impulse(impulse_vector)
-
-
 ## Called when the player focuses on this pickable object. Highlights the mesh and triggers TTS.
 func _on_interact_component_focused() -> void:
 	print("PickableObject: _on_interact_component_focused() called. Highlighting object.")
-	if is_locked:
+	if is_locked or is_held:
 		return
 
-	if is_held:
-		if is_instance_valid(mesh) and mesh is GeometryInstance3D:
-			mesh.material_overlay = null
+	# Suppress HUD focus prompt while the item is sailing through the air
+	if linear_velocity.length() > 0.8:
+		if is_instance_valid(label):
+			label.hide()
+		if is_instance_valid(prompt_icon):
+			prompt_icon.hide()
 		return
 
 	_update_label_text()
@@ -434,7 +480,7 @@ func _update_label_text() -> void:
 
 	if is_instance_valid(label):
 		if icon_tex != null:
-			label.text = "Press    to grab"
+			label.text = "Press   to grab"
 			label.position.x = 0.0
 
 			if is_instance_valid(prompt_icon):
@@ -458,53 +504,56 @@ func _on_interact_component_unfocused() -> void:
 func _physics_process(_delta: float) -> void:
 	if is_held and is_instance_valid(hold_target) and is_instance_valid(holder):
 		var target_pos: Vector3 = hold_target.global_position
-		var player_pos: Vector3 = holder.global_position
-
-		var cam_forward: Vector3 = Vector3.FORWARD
 		var cam: Camera3D = _get_camera()
-		if is_instance_valid(cam):
-			cam_forward = -cam.global_transform.basis.z
-
-		target_pos -= cam_forward * hold_distance_offset
+		var cam_origin: Vector3 = (
+			cam.global_position if is_instance_valid(cam) else holder.global_position
+		)
+		var cam_forward: Vector3 = (
+			-cam.global_transform.basis.z if is_instance_valid(cam) else Vector3.FORWARD
+		)
 
 		var weight_ratio: float = clampf((mass - 5.0) / 5.0, 0.0, 1.0)
-		var current_y_drop: float = lerpf(0.0, 0.5, weight_ratio)
+		var current_y_drop: float = lerpf(0.0, heavy_y_drop, weight_ratio)
 		target_pos.y -= current_y_drop
 
 		if cam_forward.y < 0.0:
-			var dip_strength: float = absf(cam_forward.y) * 6.0
+			var dip_strength: float = absf(cam_forward.y) * 4.0
 			target_pos.y -= (dip_strength * weight_ratio)
 
-		var max_allowed_height: float = lerpf(player_pos.y + 3.0, player_pos.y + 1.0, weight_ratio)
-		if target_pos.y > max_allowed_height:
-			target_pos.y = max_allowed_height
+		# Guarantee minimum clearance distance from the camera to avoid face-clipping
+		var to_target: Vector3 = target_pos - cam_origin
+		var forward_projection: float = to_target.dot(cam_forward)
+		var required_dist: float = maxf(MIN_HOLD_DISTANCE - hold_distance_offset, 0.8)
 
-		var flat_offset: Vector2 = Vector2(target_pos.x - player_pos.x, target_pos.z - player_pos.z)
-		if flat_offset.length() < 0.8:
-			flat_offset = flat_offset.normalized() * 0.8
-			target_pos.x = player_pos.x + flat_offset.x
-			target_pos.z = player_pos.z + flat_offset.y
+		if forward_projection < required_dist:
+			target_pos += cam_forward * (required_dist - forward_projection)
 
-		var min_height: float = player_pos.y + 0.2
-		if target_pos.y < min_height:
-			target_pos.y = min_height
-
-		## Squared distance to the target position, avoiding a square root calculation.
+		# Drop item if obstructed and lagging too far behind the anchor
+		# Give a small grace period (300ms) after grab before distance drop is enforced
 		var dist_sq: float = global_position.distance_squared_to(target_pos)
-
-		if dist_sq > 2.25 and not _is_player_flying:
+		var has_grab_settled: bool = (Time.get_ticks_msec() - _grab_time) > 300
+		if dist_sq > 9.0 and has_grab_settled and not _is_player_flying:
 			drop()
 			return
 
+		# Feed-forward player's velocity to remove spring lag during sprinting
+		var holder_velocity: Vector3 = (
+			holder.get("velocity") if "velocity" in holder else Vector3.ZERO
+		)
 		var distance_vector: Vector3 = target_pos - global_position
-		linear_velocity = distance_vector * 15.0
+		linear_velocity = holder_velocity + (distance_vector * 20.0)
 
-		# Preserve current yaw facing, but upright pitch and roll to point up
-		var current_yaw: float = global_transform.basis.get_euler().y
-		var upright_basis: Basis = Basis.from_euler(Vector3(0.0, current_yaw, 0.0))
+		# Rotate object smoothly around player yaw while dampening pitch/roll collisions
+		var cam_yaw: float = (
+			cam.global_transform.basis.get_euler().y
+			if is_instance_valid(cam)
+			else holder.global_transform.basis.get_euler().y
+		)
+		var target_yaw: float = cam_yaw + _held_relative_yaw
+		var target_basis: Basis = Basis.from_euler(Vector3(0.0, target_yaw, 0.0))
 
 		var current_quat: Quaternion = global_basis.get_rotation_quaternion()
-		var diff_quat: Quaternion = upright_basis.get_rotation_quaternion() * current_quat.inverse()
+		var diff_quat: Quaternion = target_basis.get_rotation_quaternion() * current_quat.inverse()
 
 		var axis: Vector3 = Vector3(diff_quat.x, diff_quat.y, diff_quat.z)
 		var angle: float = 2.0 * acos(clampf(diff_quat.w, -1.0, 1.0))
@@ -513,7 +562,7 @@ func _physics_process(_delta: float) -> void:
 			angle -= TAU
 
 		if axis.length_squared() > 0.0001:
-			angular_velocity = axis.normalized() * (angle * 20.0)
+			angular_velocity = axis.normalized() * (angle * 25.0)
 		else:
 			angular_velocity = Vector3.ZERO
 
@@ -585,8 +634,8 @@ func _on_body_entered(body: Node) -> void:
 			body.take_damage(projectile_damage)
 
 
-## Waits until the object is safely away from the player before restoring collision to
-## avoid clipping.
+## Waits until the object is safely away
+## from the player before restoring collision to avoid clipping.
 func _wait_to_enable_collision(player_node: Node3D) -> void:
 	print("PickableObject: _wait_to_enable_collision() waiting for clearance.")
 	var max_wait_frames: int = 30
@@ -696,9 +745,7 @@ func _set_model_overlay(parent_node: Node, mat: ShaderMaterial) -> void:
 		_set_model_overlay(child, mat)
 
 
-## Parses the name of [member mesh] to generate a clean, natural voice
-## string for text-to-speech synthesis (e.g., converting "Barrel_red" to "barrel red").
-## Returns a human-readable [String] describing the focused object.
+## Parses the name of [member mesh] to generate a clean, natural voice string.
 func _get_clean_mesh_name() -> String:
 	print("PickableObject: _get_clean_mesh_name() called. Parsing mesh string.")
 
@@ -742,7 +789,6 @@ func _get_clean_mesh_name() -> String:
 
 
 ## Resolves an [InputEvent] to a valid file path of a matching Kenney icon texture.
-## Returns an empty [String] if no matching icon is found on disk.
 func _get_event_icon_path(event: InputEvent) -> String:
 	print("PickableObject: _get_event_icon_path() resolving icon for ", event.as_text())
 	var possible_filenames: Array[String] = []
