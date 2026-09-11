@@ -1,5 +1,5 @@
 ## Manages player status indicators including health hearts,
-## debuffs, surface states, and collected keycards.
+## unified debuff slots, and collected keycards.
 class_name PlayerStatusHUD
 extends MarginContainer
 
@@ -19,22 +19,28 @@ extends MarginContainer
 @onready var sprint_debuff_container: Control = $VBoxContainer/SprintDebuff
 
 ## Texture progress bar layered over the sprint debuff icon.
-@onready var sprint_icon: TextureProgressBar = $VBoxContainer/SprintDebuff/DebuffBar
+@onready var sprint_bar: TextureProgressBar = $VBoxContainer/SprintDebuff/DebuffBar
+
+## Frame border overlay node for sprint status.
+@onready var sprint_border: NinePatchRect = $VBoxContainer/SprintDebuff/BorderOverlay
 
 ## Container managing the layout of the immobilize debuff UI.
 @onready var immobilize_container: Control = $VBoxContainer/ImmobilizeDebuff
 
 ## Texture progress bar layered over the immobilize debuff icon.
-@onready var move_icon: TextureProgressBar = $VBoxContainer/ImmobilizeDebuff/DebuffBar
+@onready var move_bar: TextureProgressBar = $VBoxContainer/ImmobilizeDebuff/DebuffBar
 
-## Container managing the layout of the sand sprint-restriction indicator.
-@onready var sand_indicator: Control = $VBoxContainer/SandIndicator
+## Frame border overlay node for immobilize status.
+@onready var immobilize_border: NinePatchRect = $VBoxContainer/ImmobilizeDebuff/BorderOverlay
 
-## Container managing the layout of the ice skating indicator.
-@onready var ice_indicator: Control = $VBoxContainer/IceIndicator
+## Container managing the layout of the ice debuff UI.
+@onready var ice_debuff_container: Control = $VBoxContainer/IceDebuff
 
-## Texture progress bar layered over the sprint debuff icon.
-@onready var sprint_bar: TextureProgressBar = $VBoxContainer/SprintDebuff/DebuffBar
+## Texture progress bar layered over the ice debuff icon.
+@onready var ice_bar: TextureProgressBar = $VBoxContainer/IceDebuff/DebuffBar
+
+## Frame border overlay node for ice status.
+@onready var ice_border: NinePatchRect = $VBoxContainer/IceDebuff/BorderOverlay
 
 ## Stores the sliced textures for each state of a health heart.
 var heart_textures: Array[AtlasTexture] = []
@@ -57,14 +63,23 @@ var debuff_tween: Tween
 ## Animates the immobilize debuff progress bar.
 var immobilize_tween: Tween
 
+## Tracks if the player is currently under an active timed sprint cooldown.
+var is_sprint_timer_active: bool = false
+
+## Tracks if the player is currently standing on sand.
+var is_on_sand: bool = false
+
+## Tracks if the player is currently carrying a heavy object.
+var is_heavy_carrying: bool = false
+
+## Tracks if the player is currently standing on ice.
+var is_on_ice: bool = false
+
 ## Tracks if the player is currently under the effects of an immobilize debuff.
 var is_immobilized: bool = false
 
 ## Tracks if the player is currently under the effects of a sprint block debuff.
 var is_sprint_blocked: bool = false
-
-## Tracks if the player is currently carrying a heavy object.
-var is_heavy_carrying: bool = false
 
 
 ## Lifecycle method called when the node enters the scene tree.
@@ -80,11 +95,11 @@ func _ready() -> void:
 func _initialize_indicators() -> void:
 	print("PlayerStatusHUD: Setting initial indicator visibility states.")
 	sprint_debuff_container.hide()
+	sprint_bar.hide()
 	immobilize_container.hide()
-	if is_instance_valid(sand_indicator):
-		sand_indicator.hide()
-	if is_instance_valid(ice_indicator):
-		ice_indicator.hide()
+	move_bar.hide()
+	ice_debuff_container.hide()
+	ice_bar.hide()
 
 
 ## Binds status and keycard events from the global [Events] bus and [KeycardSystem].
@@ -100,13 +115,13 @@ func _connect_signals() -> void:
 		Events.sand_surface_toggled.connect(_on_sand_surface_toggled)
 	if not Events.ice_surface_toggled.is_connected(_on_ice_surface_toggled):
 		Events.ice_surface_toggled.connect(_on_ice_surface_toggled)
+	if not Events.heavy_carry_toggled.is_connected(_on_heavy_carry_toggled):
+		Events.heavy_carry_toggled.connect(_on_heavy_carry_toggled)
 
 	if not KeycardSystem.card_picked_up.is_connected(_on_card_picked_up):
 		KeycardSystem.card_picked_up.connect(_on_card_picked_up)
 	if not KeycardSystem.card_used.is_connected(_on_card_used):
 		KeycardSystem.card_used.connect(_on_card_used)
-	if not Events.heavy_carry_toggled.is_connected(_on_heavy_carry_toggled):
-		Events.heavy_carry_toggled.connect(_on_heavy_carry_toggled)
 
 
 ## Slices the heart atlas and builds initial health container representations.
@@ -296,19 +311,13 @@ func _on_card_used(card_id: StringName) -> void:
 ## Starts and animates the sprint debuff progress bar cooldown.
 ## [param duration] Length of the debuff in seconds.
 func _on_sprint_debuff_applied(duration: float) -> void:
-	print(
-		(
-			"PlayerStatusHUD: _on_sprint_debuff_applied() - Starting debuff UI for "
-			+ str(duration)
-			+ " seconds."
-		)
-	)
+	print("PlayerStatusHUD: _on_sprint_debuff_applied() - Starting UI for ", duration, "s.")
+	is_sprint_timer_active = true
 	sprint_bar.show()
-	sprint_debuff_container.show()
-	is_sprint_blocked = true
-
 	sprint_bar.max_value = duration
 	sprint_bar.value = duration
+
+	_sync_sprint_display()
 
 	if debuff_tween and debuff_tween.is_valid():
 		debuff_tween.kill()
@@ -317,57 +326,55 @@ func _on_sprint_debuff_applied(duration: float) -> void:
 	debuff_tween.tween_property(sprint_bar, "value", 0.0, duration)
 	debuff_tween.finished.connect(
 		func() -> void:
-			print("PlayerStatusHUD: Sprint debuff expired. Hiding UI.")
+			print("PlayerStatusHUD: Timed sprint debuff completed.")
+			is_sprint_timer_active = false
 			sprint_bar.hide()
-			if not is_heavy_carrying:
-				sprint_debuff_container.hide()
-				is_sprint_blocked = false
+			_sync_sprint_display()
 	)
 
 
 ## Starts and animates the immobilize debuff progress bar cooldown.
 ## [param duration] Length of the debuff in seconds.
 func _on_immobilize_debuff_applied(duration: float) -> void:
-	print(
-		(
-			"PlayerStatusHUD: _on_immobilize_debuff_applied() - Starting UI for "
-			+ str(duration)
-			+ " seconds."
-		)
-	)
-	immobilize_container.show()
+	print("PlayerStatusHUD: _on_immobilize_debuff_applied() - Starting UI for ", duration, "s.")
 	is_immobilized = true
+	immobilize_container.show()
+	move_bar.show()
+	immobilize_border.show()
 
-	move_icon.max_value = duration
-	move_icon.value = duration
+	move_bar.max_value = duration
+	move_bar.value = duration
 
 	if immobilize_tween and immobilize_tween.is_valid():
 		immobilize_tween.kill()
 
 	immobilize_tween = create_tween()
-	immobilize_tween.tween_property(move_icon, "value", 0.0, duration)
+	immobilize_tween.tween_property(move_bar, "value", 0.0, duration)
 	immobilize_tween.finished.connect(
 		func() -> void:
 			print("PlayerStatusHUD: Immobilize debuff expired. Hiding UI.")
-			immobilize_container.hide()
 			is_immobilized = false
+			move_bar.hide()
+			immobilize_container.hide()
 	)
 
 
-## Toggles visibility of the sand sprint-restriction icon.
+## Updates persistent sand sprint-restriction status.
 ## [param is_active] True if the player is currently on sand.
 func _on_sand_surface_toggled(is_active: bool) -> void:
-	print("PlayerStatusHUD: Sand surface state toggled -> ", is_active)
-	if sand_indicator:
-		sand_indicator.visible = is_active
+	print("PlayerStatusHUD: Sand surface toggled -> ", is_active)
+	is_on_sand = is_active
+	_sync_sprint_display()
 
 
-## Toggles visibility of the ice skating icon.
+## Updates ice surface status indicator and border overlay.
 ## [param is_active] True if the player is currently on ice.
 func _on_ice_surface_toggled(is_active: bool) -> void:
-	print("PlayerStatusHUD: Ice surface state toggled -> ", is_active)
-	if ice_indicator:
-		ice_indicator.visible = is_active
+	print("PlayerStatusHUD: Ice surface toggled -> ", is_active)
+	is_on_ice = is_active
+	ice_debuff_container.visible = is_on_ice
+	ice_border.visible = is_on_ice
+	ice_bar.hide()
 
 
 ## Toggles sprint debuff icon visibility based on heavy carry status.
@@ -375,16 +382,15 @@ func _on_ice_surface_toggled(is_active: bool) -> void:
 func _on_heavy_carry_toggled(is_active: bool) -> void:
 	print("PlayerStatusHUD: Heavy carry toggled -> ", is_active)
 	is_heavy_carrying = is_active
+	_sync_sprint_display()
 
-	if is_heavy_carrying:
-		if debuff_tween and debuff_tween.is_valid():
-			debuff_tween.kill()
 
-		# Hide the dimming radial overlay bar so only the crisp icon remains visible
+## Resolves visibility of the sprint slot and border across active sources.
+func _sync_sprint_display() -> void:
+	print("PlayerStatusHUD: Synchronizing sprint debuff slot visibility.")
+	is_sprint_blocked = is_sprint_timer_active or is_on_sand or is_heavy_carrying
+	sprint_debuff_container.visible = is_sprint_blocked
+	sprint_border.visible = is_sprint_blocked
+
+	if not is_sprint_timer_active:
 		sprint_bar.hide()
-		sprint_debuff_container.show()
-		is_sprint_blocked = true
-	else:
-		if debuff_tween == null or not debuff_tween.is_valid():
-			sprint_debuff_container.hide()
-			is_sprint_blocked = false

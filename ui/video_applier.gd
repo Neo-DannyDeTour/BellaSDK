@@ -2,6 +2,9 @@
 class_name VideoApplier
 extends RefCounted
 
+## Cached density texture instance shared across all viewports.
+static var _cached_vrs_texture: ImageTexture = null
+
 
 ## Updates the application display mode, screen assignment, and dimensions.
 ## [param window] Target [Window] to mutate.
@@ -48,6 +51,20 @@ static func apply_anisotropy(level: int) -> void:
 		ProjectSettings.set_setting(setting_key, level)
 
 
+## Checks if the current GPU backend supports VRS.
+## [return] True if the GPU can execute VRS pipelines.
+static func is_vrs_supported() -> bool:
+	var rd: RenderingDevice = RenderingServer.get_rendering_device()
+	if not is_instance_valid(rd):
+		return false
+	var driver: String = ProjectSettings.get_setting_with_override(
+		"rendering/renderer/rendering_method"
+	)
+	if driver == "gl_compatibility":
+		return false
+	return true
+
+
 ## Applies rendering parameters across the main viewport and preview subviewports.
 ## [param tree] The active [SceneTree].
 ## [param main_viewport] The primary root [Viewport].
@@ -64,35 +81,104 @@ static func apply_viewport_pipeline(
 		target_viewports.append(diorama_vp)
 
 	_apply_rendering_server_qualities(config)
+	_apply_light_shadows(tree, config)
+
+	var filter_mode: int = config.get("texture_filter", 2) as int
+	var f_key: String = "rendering/textures/default_filters/texture_filter_mode"
+	if ProjectSettings.get_setting(f_key) != filter_mode:
+		ProjectSettings.set_setting(f_key, filter_mode)
+
+	for vp: Viewport in target_viewports:
+		vp.canvas_item_default_texture_filter = (
+			filter_mode as Viewport.DefaultCanvasItemTextureFilter
+		)
 
 	var fsr_scale: float = config.get("fsr_scale", 1.0) as float
+	var raw_scale: float = config.get("resolution_scale", 1.0) as float
 	var aa_settings: Dictionary = config.get("aa_settings", {}) as Dictionary
 	var primary_msaa: Viewport.MSAA = (
 		aa_settings.get("msaa", Viewport.MSAA_DISABLED) as Viewport.MSAA
 	)
 
-	for vp: Viewport in target_viewports:
-		if fsr_scale >= 1.0:
-			vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
-		else:
-			vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR2
-			vp.use_taa = false
+	var raw_vrs: Viewport.VRSMode = (
+		config.get("vrs_mode", Viewport.VRS_DISABLED) as Viewport.VRSMode
+	)
+	var occ_cull: bool = config.get("occlusion_culling", true) as bool
 
-		vp.scaling_3d_scale = fsr_scale
+	var can_vrs: bool = is_vrs_supported()
+	if not can_vrs:
+		raw_vrs = Viewport.VRS_DISABLED
+
+	if raw_vrs == Viewport.VRS_TEXTURE and not is_instance_valid(_cached_vrs_texture):
+		_cached_vrs_texture = VrsTextureGenerator.create_radial_density_map()
+
+	for vp: Viewport in target_viewports:
+		vp.use_occlusion_culling = occ_cull
+
+		if raw_vrs == Viewport.VRS_TEXTURE and is_instance_valid(_cached_vrs_texture):
+			vp.vrs_texture = _cached_vrs_texture
+			vp.vrs_mode = Viewport.VRS_TEXTURE
+		else:
+			vp.vrs_mode = Viewport.VRS_DISABLED
+			vp.vrs_texture = null
+
+		if fsr_scale < 1.0:
+			vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR2
+			vp.scaling_3d_scale = fsr_scale
+			vp.use_taa = false
+		else:
+			vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
+			vp.scaling_3d_scale = raw_scale
+			vp.use_taa = aa_settings.get("taa", false) as bool
+
 		vp.msaa_3d = (_clamp_preview_msaa(primary_msaa) if vp is SubViewport else primary_msaa)
 		vp.screen_space_aa = (
 			aa_settings.get("fxaa", Viewport.SCREEN_SPACE_AA_DISABLED) as Viewport.ScreenSpaceAA
 		)
 		vp.use_debanding = config.get("debanding", true) as bool
 		vp.mesh_lod_threshold = config.get("mesh_lod", 1.0) as float
-
-		if vp.scaling_3d_mode != Viewport.SCALING_3D_MODE_FSR2:
-			vp.use_taa = aa_settings.get("taa", false) as bool
-
 		vp.positional_shadow_atlas_size = (config.get("shadow_atlas", 2048) as int)
 
-	# Synchronize all active WorldEnvironments and screen shaders in the scene tree
 	_apply_environment_and_materials(tree, config)
+
+
+## Controls dynamic spotlights, omni lights, and positional shadow filters.
+## [param tree] The active [SceneTree] to query lights from.
+## [param config] Dictionary holding dynamic shadow preferences.
+static func _apply_light_shadows(tree: SceneTree, config: Dictionary) -> void:
+	print("VideoApplier: Synchronizing positional light shadows and filter.")
+	var enable_dynamic_shadows: bool = config.get("dynamic_light_shadows", true) as bool
+	var filter_key: String = config.get("shadow_filter", "Soft Medium") as String
+	var filter_mode: RenderingServer.ShadowQuality = (
+		VideoConfig.SHADOW_FILTER_MODES.get(filter_key, RenderingServer.SHADOW_QUALITY_SOFT_MEDIUM)
+		as RenderingServer.ShadowQuality
+	)
+	var d_dist: float = config.get("directional_shadow_distance", 64.0) as float
+
+	RenderingServer.positional_soft_shadow_filter_set_quality(filter_mode)
+
+	var dir_lights: Array[Node] = tree.root.find_children("*", "DirectionalLight3D", true, false)
+	for d_node: Node in dir_lights:
+		var d_light: DirectionalLight3D = d_node as DirectionalLight3D
+		if is_instance_valid(d_light):
+			d_light.directional_shadow_max_distance = d_dist
+
+	var dynamic_nodes: Array[Node] = tree.get_nodes_in_group("dynamic_shadow_casters")
+	if not dynamic_nodes.is_empty():
+		for node: Node in dynamic_nodes:
+			var light: Light3D = node as Light3D
+			if is_instance_valid(light):
+				light.shadow_enabled = enable_dynamic_shadows
+				light.distance_fade_enabled = false
+	else:
+		var lights: Array[Node] = tree.root.find_children("*", "Light3D", true, false)
+		for node: Node in lights:
+			if node is DirectionalLight3D:
+				continue
+			var light: Light3D = node as Light3D
+			if is_instance_valid(light):
+				light.shadow_enabled = enable_dynamic_shadows
+				light.distance_fade_enabled = false
 
 
 ## Clamps high MSAA modes for subviewports to ensure 60 FPS performance headroom.
@@ -139,7 +225,6 @@ static func _apply_environment_and_materials(tree: SceneTree, config: Dictionary
 	print("VideoApplier: Applying environment features across scene tree.")
 	var environments: Array[Environment] = []
 
-	# Gather environments from all active WorldEnvironment nodes in the tree
 	var we_nodes: Array[Node] = tree.root.find_children("*", "WorldEnvironment", true, false)
 	for node: Node in we_nodes:
 		var we: WorldEnvironment = node as WorldEnvironment
@@ -149,7 +234,6 @@ static func _apply_environment_and_materials(tree: SceneTree, config: Dictionary
 			if we.environment not in environments:
 				environments.append(we.environment)
 
-	# Fallback to World3D environments from the root and current scene
 	if tree.root.find_world_3d():
 		var root_w: World3D = tree.root.find_world_3d()
 		if is_instance_valid(root_w.environment) and root_w.environment not in environments:
@@ -160,23 +244,25 @@ static func _apply_environment_and_materials(tree: SceneTree, config: Dictionary
 		):
 			environments.append(root_w.fallback_environment)
 
-	var tonemap_key: String = config.get("tonemap_key", "Filmic") as String
-	var is_agx: bool = tonemap_key == "AgX"
-	var is_agx_punchy: bool = tonemap_key == "AgX (Punchy)"
+	var diorama_vp: SubViewport = (
+		tree.root.find_child("DioramaViewport", true, false) as SubViewport
+	)
+	if is_instance_valid(diorama_vp) and diorama_vp.find_world_3d():
+		var dio_w: World3D = diorama_vp.find_world_3d()
+		if is_instance_valid(dio_w.environment) and dio_w.environment not in environments:
+			environments.append(dio_w.environment)
+		elif (
+			is_instance_valid(dio_w.fallback_environment)
+			and dio_w.fallback_environment not in environments
+		):
+			environments.append(dio_w.fallback_environment)
+
+	var exp_val: float = config.get("exposure", 1.0) as float
+	var dof_amount: float = config.get("dof_amount", 0.0) as float
+	var is_dof_active: bool = dof_amount > 0.005
 
 	for env: Environment in environments:
-		if is_agx or is_agx_punchy:
-			env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
-		else:
-			match tonemap_key:
-				"Linear":
-					env.tonemap_mode = Environment.TONE_MAPPER_LINEAR
-				"Reinhard":
-					env.tonemap_mode = Environment.TONE_MAPPER_REINHARDT
-				"Filmic":
-					env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
-				"ACES":
-					env.tonemap_mode = Environment.TONE_MAPPER_ACES
+		env.tonemap_exposure = exp_val
 
 		var ssao_dict: Dictionary = config.get("ssao", {}) as Dictionary
 		env.ssao_enabled = ssao_dict.get("enabled", false) as bool
@@ -210,31 +296,42 @@ static func _apply_environment_and_materials(tree: SceneTree, config: Dictionary
 				else Environment.GLOW_BLEND_MODE_ADDITIVE
 			)
 
-	# Apply VisionAssist overrides to all matching meshes
-	var vision_nodes: Array[Node] = tree.root.find_children(
-		"VisionAssistMesh", "MeshInstance3D", true, false
-	)
-	for v_node: Node in vision_nodes:
-		var vision_mesh: MeshInstance3D = v_node as MeshInstance3D
-		if is_instance_valid(vision_mesh):
-			var mat: ShaderMaterial = vision_mesh.get_surface_override_material(0) as ShaderMaterial
-			if not is_instance_valid(mat):
-				mat = vision_mesh.material_override as ShaderMaterial
-
-			if is_instance_valid(mat):
-				var is_va_enabled: bool = (
-					GlobalSettings.get_setting("VisionAssist", "enabled", false) as bool
+	for node: Node in we_nodes:
+		var we: WorldEnvironment = node as WorldEnvironment
+		if is_instance_valid(we) and is_instance_valid(we.camera_attributes):
+			if we.camera_attributes is CameraAttributesPractical:
+				var attr: CameraAttributesPractical = (
+					we.camera_attributes as CameraAttributesPractical
 				)
-				if is_va_enabled:
-					var va_mode: int = GlobalSettings.get_setting("VisionAssist", "mode", 1) as int
-					mat.set_shader_parameter("mode", va_mode)
-					vision_mesh.visible = true
-				elif is_agx:
-					mat.set_shader_parameter("mode", 5)
-					vision_mesh.visible = true
-				elif is_agx_punchy:
-					mat.set_shader_parameter("mode", 6)
-					vision_mesh.visible = true
-				else:
-					mat.set_shader_parameter("mode", 7)
-					vision_mesh.visible = false
+				attr.dof_blur_far_enabled = is_dof_active
+				attr.dof_blur_near_enabled = is_dof_active
+				attr.dof_blur_amount = dof_amount
+
+	var active_cams: Array[Node] = tree.root.find_children("*", "Camera3D", true, false)
+	for c_node: Node in active_cams:
+		var cam: Camera3D = c_node as Camera3D
+		if is_instance_valid(cam) and is_instance_valid(cam.attributes):
+			if cam.attributes is CameraAttributesPractical:
+				var cam_attr: CameraAttributesPractical = (
+					cam.attributes as CameraAttributesPractical
+				)
+				cam_attr.dof_blur_far_enabled = is_dof_active
+				cam_attr.dof_blur_near_enabled = is_dof_active
+				cam_attr.dof_blur_amount = dof_amount
+
+	var motion_blur_factor: float = config.get("motion_blur", 0.0) as float
+	for c_node: Node in active_cams:
+		if c_node is ExtendedCamera3D:
+			var ext_cam: ExtendedCamera3D = c_node as ExtendedCamera3D
+			if is_instance_valid(ext_cam._motion_blur_material):
+				ext_cam._motion_blur_material.set_shader_parameter(
+					"motion_blur_strength", motion_blur_factor
+				)
+			if is_instance_valid(ext_cam.motion_blur_layer):
+				ext_cam.motion_blur_layer.visible = motion_blur_factor > 0.005
+
+	var post_nodes: Array[Node] = tree.root.find_children("*", "ColorRect", true, false)
+	for p_node: Node in post_nodes:
+		if p_node.material is ShaderMaterial:
+			var smat: ShaderMaterial = p_node.material as ShaderMaterial
+			smat.set_shader_parameter("motion_blur_strength", motion_blur_factor)

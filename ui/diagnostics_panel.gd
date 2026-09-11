@@ -256,52 +256,88 @@ func _refresh_diagnostics_display() -> void:
 			diagnostics_label.text = _build_performance_report()
 
 
-## Performs a single, one-off scan of scene branches on demand.
-func scan_scene_geometry() -> void:
-	print("RenderDiagnosticsPanel: Initiating manual scene tree geometry audit.")
-	_is_performing_manual_scan = true
-
-	var current_scene: Node = get_tree().current_scene
-	if not is_instance_valid(current_scene):
-		_cached_branch_survey = "  No active scene available to inspect.\n"
-		_apply_survey_to_ui()
-		_is_performing_manual_scan = false
-		_last_tick_usec = Time.get_ticks_usec()
-		return
-
+## Audits 3D geometry and shadow sources across a given root node.
+## [param root_node] Node tree to traverse for geometry.
+## [return] Array of formatted text lines summarizing dense branches.
+func _audit_branch_geometry(root_node: Node) -> PackedStringArray:
+	print("RenderDiagnosticsPanel: Auditing branch geometry for ", root_node.name)
 	var lines: PackedStringArray = PackedStringArray()
+	var total_meshes: int = 0
+	var total_multimeshes: int = 0
+	var total_shadow_lights: int = 0
 
-	for child: Node in current_scene.get_children():
-		if child is CanvasLayer or child is Control:
+	for child: Node in root_node.get_children():
+		if child is CanvasLayer or child is Control or child is SubViewport:
 			continue
 
-		var mesh_count: int = 0
-		var shadow_light_count: int = 0
+		var branch_meshes: int = 0
+		var branch_multis: int = 0
+		var branch_shadows: int = 0
 		var stack: Array[Node] = [child]
 
 		while not stack.is_empty():
 			var curr: Node = stack.pop_back()
 			if curr is MeshInstance3D:
 				if curr.visible and curr.is_inside_tree():
-					mesh_count += 1
+					branch_meshes += 1
+			elif curr is MultiMeshInstance3D:
+				if curr.visible and curr.is_inside_tree() and curr.multimesh:
+					branch_multis += curr.multimesh.instance_count
 			elif curr is Light3D:
 				if curr.visible and curr.shadow_enabled:
-					shadow_light_count += 1
+					branch_shadows += 1
 
 			for grandchild: Node in curr.get_children():
-				stack.append(grandchild)
+				if not (grandchild is SubViewport):
+					stack.append(grandchild)
 
-		if mesh_count > 5 or shadow_light_count > 0:
-			var light_warn: String = (
-				" | %d Shadows" % shadow_light_count if shadow_light_count > 0 else ""
-			)
+		total_meshes += branch_meshes
+		total_multimeshes += branch_multis
+		total_shadow_lights += branch_shadows
+
+		if branch_meshes > 0 or branch_multis > 0 or branch_shadows > 0:
+			var multi_info: String = " (+%d instanced)" % branch_multis if branch_multis > 0 else ""
+			var light_info: String = " | %d Shadows" % branch_shadows if branch_shadows > 0 else ""
 			lines.append(
-				"  |- %-20s: %d meshes%s" % [str(child.name).left(20), mesh_count, light_warn]
+				(
+					"  |- %-20s: %d meshes%s%s"
+					% [str(child.name).left(20), branch_meshes, multi_info, light_info]
+				)
 			)
 
-	_cached_branch_survey = (
-		"  No dense branches found.\n" if lines.is_empty() else "\n".join(lines) + "\n"
+	var header: String = (
+		"  Total: %d meshes, %d multi-instances, %d shadow lights\n"
+		% [total_meshes, total_multimeshes, total_shadow_lights]
 	)
+	lines.insert(0, header)
+	return lines
+
+
+## Performs a comprehensive scan across the root window and all SubViewports.
+func scan_scene_geometry() -> void:
+	print("RenderDiagnosticsPanel: Initiating full-tree geometry audit.")
+	_is_performing_manual_scan = true
+
+	var output_lines: PackedStringArray = PackedStringArray()
+	var root_vp: Window = get_tree().root
+
+	output_lines.append("[b][color=yellow]=== ROOT WINDOW GEOMETRY ===[/color][/b]")
+	var current_scene: Node = get_tree().current_scene
+	if is_instance_valid(current_scene):
+		output_lines.append_array(_audit_branch_geometry(current_scene))
+	else:
+		output_lines.append("  No current scene found.")
+
+	var sub_viewports: Array[SubViewport] = []
+	_collect_subviewports(root_vp, sub_viewports)
+
+	if not sub_viewports.is_empty():
+		output_lines.append("\n[b][color=yellow]=== SUBVIEWPORT GEOMETRY ===[/color][/b]")
+		for vp: SubViewport in sub_viewports:
+			output_lines.append("* SubViewport: %s" % str(vp.name))
+			output_lines.append_array(_audit_branch_geometry(vp))
+
+	_cached_branch_survey = "\n".join(output_lines) + "\n"
 	_apply_survey_to_ui()
 
 	_is_performing_manual_scan = false
@@ -362,12 +398,92 @@ Status: [%s] (%.2f ms | %.1f%% budget)
 	)
 
 
+## Audits post-processing features on a given [Environment] resource.
+## [param env] Target environment resource to test.
+## [return] Array of active heavy post-processing feature names.
+func _get_active_environment_effects(env: Environment) -> PackedStringArray:
+	print("RenderDiagnosticsPanel: Auditing Environment resource settings.")
+	var active_effects: PackedStringArray = PackedStringArray()
+	if not env:
+		return active_effects
+
+	if env.glow_enabled:
+		active_effects.append("Glow")
+	if env.sdfgi_enabled:
+		active_effects.append("SDFGI")
+	if env.ssao_enabled:
+		active_effects.append("SSAO")
+	if env.ssil_enabled:
+		active_effects.append("SSIL")
+	if env.ssr_enabled:
+		active_effects.append("SSR")
+	if env.volumetric_fog_enabled:
+		active_effects.append("VolumetricFog")
+	if env.fog_enabled:
+		active_effects.append("Fog")
+	if env.adjustment_enabled:
+		active_effects.append("Adjustments")
+
+	return active_effects
+
+
+## Resolves active post-processing environment for a specific viewport.
+## [param vp] Viewport to query for active 3D camera or world environment.
+## [return] Array of detected active effect flag names.
+func _detect_viewport_environment_effects(vp: Viewport) -> PackedStringArray:
+	print("RenderDiagnosticsPanel: Scanning viewport environment overrides.")
+	if vp is SubViewport and (vp as SubViewport).disable_3d:
+		return PackedStringArray()
+
+	var camera: Camera3D = vp.get_camera_3d()
+	if is_instance_valid(camera) and camera.environment:
+		return _get_active_environment_effects(camera.environment)
+
+	if vp is SubViewport and not (vp as SubViewport).own_world_3d:
+		return PackedStringArray()
+
+	var world_3d: World3D = vp.find_world_3d()
+	if is_instance_valid(world_3d) and world_3d.environment:
+		return _get_active_environment_effects(world_3d.environment)
+
+	var stack: Array[Node] = [vp]
+	while not stack.is_empty():
+		var curr: Node = stack.pop_back()
+		if curr is WorldEnvironment and curr.environment:
+			return _get_active_environment_effects(curr.environment)
+		for child: Node in curr.get_children():
+			if not (child is SubViewport):
+				stack.append(child)
+
+	return PackedStringArray()
+
+
+## Formats active post-processing tags into BBCode with warning colors.
+## [param effects] Array of active post-processing effect names.
+## [return] Formatted BBCode string representing active effects.
+func _format_effects_bbcode(effects: PackedStringArray) -> String:
+	print("RenderDiagnosticsPanel: Formatting environment flags into BBCode.")
+	if effects.is_empty():
+		return "[color=gray]None (Clean)[/color]"
+
+	var colored_tokens: PackedStringArray = PackedStringArray()
+	for eff: String in effects:
+		colored_tokens.append("[color=red]%s[/color]" % eff)
+	return ", ".join(colored_tokens)
+
+
 ## Constructs the BBCode string report for SubViewports.
-## [return] Formatted BBCode viewport breakdown.
+## [return] Formatted BBCode viewport breakdown with full node paths.
 func _build_pipeline_report() -> String:
+	print("RenderDiagnosticsPanel: Generating viewport pipeline report.")
 	var text: String = "[b][color=yellow]=== VIEWPORT & RENDER PIPELINE ===[/color][/b]\n"
 	var root_vp: Window = get_tree().root
-	text += "* %s (Root Window: %dx%d)\n\n" % [str(root_vp.name), root_vp.size.x, root_vp.size.y]
+	var root_effects: PackedStringArray = _detect_viewport_environment_effects(root_vp)
+	var root_effects_str: String = _format_effects_bbcode(root_effects)
+	text += (
+		"* %s (Root Window: %dx%d)\n  └─ Effects: %s\n\n"
+		% [str(root_vp.name), root_vp.size.x, root_vp.size.y, root_effects_str]
+	)
 
 	text += "[b][color=yellow]=== ACTIVE SUBVIEWPORTS ===[/color][/b]\n"
 	var sub_viewports: Array[SubViewport] = []
@@ -393,10 +509,20 @@ func _build_pipeline_report() -> String:
 			var vp_rid: RID = vp.get_viewport_rid()
 			RenderingServer.viewport_set_measure_render_time(vp_rid, true)
 			var sub_gpu_ms: float = RenderingServer.viewport_get_measured_render_time_gpu(vp_rid)
+			var vp_effects: PackedStringArray = _detect_viewport_environment_effects(vp)
+			var vp_effects_str: String = _format_effects_bbcode(vp_effects)
 
 			text += (
-				"* %s (%dx%d) -> Mode: %s | GPU: %.2f ms\n"
-				% [str(vp.name), vp.size.x, vp.size.y, mode_str, sub_gpu_ms]
+				"* %s (%dx%d) -> Mode: %s | GPU: %.2f ms\n  ├─ Path: [color=cyan]%s[/color]\n  └─ Effects: %s\n"
+				% [
+					str(vp.name),
+					vp.size.x,
+					vp.size.y,
+					mode_str,
+					sub_gpu_ms,
+					str(vp.get_path()),
+					vp_effects_str,
+				]
 			)
 
 	return text

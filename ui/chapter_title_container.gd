@@ -59,10 +59,10 @@ const SHADER_ANIM_STYLES: Array[Events.ChapterAnimStyle] = [
 @onready var effect_container: SubViewportContainer = $EffectContainer
 
 ## Internal [SubViewport] rendering the text overlay texture.
-@onready var _sub_viewport: SubViewport = $EffectContainer/SubViewport
+@onready var _sub_viewport: SubViewport = $EffectContainer/ChapterLabelSubViewport
 
 ## [RichTextLabel] responsible for rendering chapter text and BBCode.
-@onready var chapter_label: RichTextLabel = $EffectContainer/SubViewport/ChapterLabel
+@onready var chapter_label: RichTextLabel = %ChapterLabelSubViewport/ChapterLabel
 
 ## Active [Tween] orchestrating chapter title text animation sequences.
 var _chapter_tween: Tween
@@ -85,6 +85,7 @@ func _ready() -> void:
 	_init_material_cache()
 
 	if is_instance_valid(_sub_viewport):
+		_sub_viewport.disable_3d = true
 		_sub_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 
 	if is_instance_valid(effect_container):

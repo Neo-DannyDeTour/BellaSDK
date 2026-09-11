@@ -152,6 +152,39 @@ size_flags_horizontal = 3
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="ShadowFilterLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=71974996]
+layout_mode = 2
+text = "Shadow Softness"
+
+[node name="Control19" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=1702677994]
+layout_mode = 2
+
+[node name="ShadowFilterOptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=1755260193]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="VRSLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=179240691]
+layout_mode = 2
+text = "VSR"
+
+[node name="Control3" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=1331640161]
+layout_mode = 2
+
+[node name="VRSOptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=1391433613]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="TextureFilterLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=1554393431]
+layout_mode = 2
+text = "Texture Filtering"
+
+[node name="Control4" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=856873588]
+layout_mode = 2
+
+[node name="TextureFilterOptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=151009394]
+unique_name_in_owner = true
+layout_mode = 2
+
 [node name="AntiAliasingLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=860707510]
 layout_mode = 2
 text = "Anti-Aliasing"
@@ -188,6 +221,42 @@ size_flags_horizontal = 3
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="PositionalShadowDistanceLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=1484192352]
+layout_mode = 2
+text = "Positional Shadow Distance"
+
+[node name="PositionalShadowDistanceLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=1411743517]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="PositionalShadowDistanceSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=1781612998]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="DirectionalShadowDistanceLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=278514928]
+layout_mode = 2
+text = "Directional Shadow Distance"
+
+[node name="DirectionalShadowDistanceLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=1061351841]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="DirectionalShadowDistanceSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=2082032383]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ResolutionScaleLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=530762364]
+layout_mode = 2
+text = "Resolution Scale"
+
+[node name="ResolutionScaleLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=448042651]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ResolutionScaleSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=1582536229]
+unique_name_in_owner = true
+layout_mode = 2
+
 [node name="MeshLODLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=1866016364]
 layout_mode = 2
 text = "Mesh LOD"
@@ -201,6 +270,28 @@ size_flags_horizontal = 3
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="OcclusionCullingLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=851433635]
+layout_mode = 2
+text = "Occlusion Culling"
+
+[node name="Control2" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=622239498]
+layout_mode = 2
+
+[node name="OcclusionCullingCheckBox" type="CheckBox" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=571027748]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="DynamicShadowsLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=793247794]
+layout_mode = 2
+text = "Dynamic Light Shadows"
+
+[node name="Control18" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=1765775886]
+layout_mode = 2
+
+[node name="DynamicShadowsCheckBox" type="CheckBox" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=1101990894]
+unique_name_in_owner = true
+layout_mode = 2
+
 [node name="EffectsSection" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs" unique_id=412135657]
 unique_name_in_owner = true
 layout_mode = 2
@@ -209,12 +300,27 @@ metadata/_tab_index = 2
 
 [node name="GridContainer" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection" unique_id=1479589100]
 layout_mode = 2
-columns = 2
+columns = 3
+
+[node name="ExposureLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=756712975]
+layout_mode = 2
+text = "Exposure"
+
+[node name="ExposureLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1136919533]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ExposureSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1505731038]
+unique_name_in_owner = true
+layout_mode = 2
 
 [node name="TonemapLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=757072619]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Tonemap"
+
+[node name="Control3" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1097017697]
+layout_mode = 2
 
 [node name="TonemapOptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1185432659]
 unique_name_in_owner = true
@@ -226,15 +332,45 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Debanding"
 
+[node name="Control4" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1538592876]
+layout_mode = 2
+
 [node name="DebandingCheckBox" type="CheckBox" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1229091010]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
+[node name="DoFLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1730690319]
+layout_mode = 2
+text = "Depth of Field"
+
+[node name="DoFLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1654277112]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="DoFSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1372548942]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="MotionBlurLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1986424154]
+layout_mode = 2
+text = "Motion Blur"
+
+[node name="MotionBlurLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1613794956]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="MotionBlurSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=304082645]
+unique_name_in_owner = true
+layout_mode = 2
+
 [node name="SSAOLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1814729318]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Ambient Occlusion (SSAO)"
+
+[node name="Control5" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=699393098]
+layout_mode = 2
 
 [node name="SSAOOptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1376402346]
 unique_name_in_owner = true
@@ -246,6 +382,9 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "SSI"
 
+[node name="Control6" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1317389459]
+layout_mode = 2
+
 [node name="SSIOptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=739962485]
 unique_name_in_owner = true
 layout_mode = 2
@@ -255,6 +394,9 @@ size_flags_horizontal = 3
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Screen Space Reflections"
+
+[node name="Control7" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1164794429]
+layout_mode = 2
 
 [node name="SSROptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1698568236]
 unique_name_in_owner = true
@@ -266,6 +408,9 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Global Illumination"
 
+[node name="Control8" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=2034201923]
+layout_mode = 2
+
 [node name="SDFGIOptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=634287788]
 unique_name_in_owner = true
 layout_mode = 2
@@ -276,6 +421,9 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Fog"
 
+[node name="Control9" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=216763173]
+layout_mode = 2
+
 [node name="FogOptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=598623393]
 unique_name_in_owner = true
 layout_mode = 2
@@ -284,6 +432,9 @@ size_flags_horizontal = 3
 [node name="GlowLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1535427844]
 layout_mode = 2
 text = "Glow"
+
+[node name="Control10" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=161550917]
+layout_mode = 2
 
 [node name="GlowOptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=2087257755]
 unique_name_in_owner = true

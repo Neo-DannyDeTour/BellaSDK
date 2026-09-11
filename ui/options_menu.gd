@@ -173,6 +173,8 @@ func _dock_diorama(active_panel: Panel) -> void:
 
 		if active_panel == video_panel:
 			_activate_graphics_camera()
+			if video_panel.has_method("_apply_all_settings"):
+				video_panel.call_deferred("_apply_all_settings")
 		elif active_panel == accessibility_panel:
 			if (
 				is_instance_valid(accessibility_panel)
@@ -202,7 +204,9 @@ func _evaluate_diorama_state() -> void:
 
 	print("UI: OptionsRouter -> Diorama update mode evaluated. Active: ", is_rendered)
 
-	_diorama_viewport.render_target_clear_mode = SubViewport.CLEAR_MODE_ONCE
+	_diorama_viewport.render_target_clear_mode = (
+		SubViewport.CLEAR_MODE_ALWAYS if is_rendered else SubViewport.CLEAR_MODE_NEVER
+	)
 	_diorama_viewport.render_target_update_mode = (
 		SubViewport.UPDATE_ALWAYS if is_rendered else SubViewport.UPDATE_DISABLED
 	)
@@ -223,7 +227,7 @@ func _evaluate_diorama_state() -> void:
 	_set_preview_shader_active(is_rendered)
 
 
-## Activates the CCTV preview camera node.
+## Activates the CCTV preview camera node and calibrates practical DoF.
 func _activate_graphics_camera() -> void:
 	if not is_instance_valid(diorama_container):
 		return
@@ -244,6 +248,22 @@ func _activate_graphics_camera() -> void:
 	if is_instance_valid(_graphics_camera):
 		print("UI: Activating Graphics preview Camera3D: ", _graphics_camera.get_path())
 		_graphics_camera.current = true
+
+		# Configure close-range Depth of Field for the diorama inspection stage
+		if (
+			not is_instance_valid(_graphics_camera.attributes)
+			or not (_graphics_camera.attributes is CameraAttributesPractical)
+		):
+			_graphics_camera.attributes = CameraAttributesPractical.new()
+
+		var attr: CameraAttributesPractical = (
+			_graphics_camera.attributes as CameraAttributesPractical
+		)
+		attr.dof_blur_far_distance = 2.5
+		attr.dof_blur_far_transition = 1.0
+		attr.dof_blur_near_distance = 0.5
+		attr.dof_blur_near_transition = 0.5
+		attr.dof_blur_amount = 0.2
 	else:
 		push_error("UI ERROR: No Camera3D found inside DioramaViewport!")
 
@@ -254,10 +274,10 @@ func _set_diorama_vision_assist_active(enable_assist: bool) -> void:
 		return
 
 	print("UI: Toggling VisionAssistMesh instances: ", enable_assist)
-	var vision_meshes: Array[Node] = diorama_container.find_children(
+	var meshes: Array[Node] = diorama_container.find_children(
 		"VisionAssistMesh", "MeshInstance3D", true, false
 	)
-	for mesh_node: Node in vision_meshes:
+	for mesh_node: Node in meshes:
 		var mesh_instance: MeshInstance3D = mesh_node as MeshInstance3D
 		mesh_instance.visible = enable_assist
 
@@ -296,13 +316,8 @@ func _discover_diorama_nodes() -> void:
 	if is_instance_valid(_diorama_viewport):
 		_diorama_viewport.own_world_3d = true
 		print("UI: OptionsRouter -> Enabled own_world_3d on DioramaViewport.")
-
 		_diorama_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 		_diorama_viewport.process_mode = Node.PROCESS_MODE_DISABLED
-		_diorama_viewport.positional_shadow_atlas_size = 512
-		_diorama_viewport.msaa_3d = Viewport.MSAA_DISABLED
-		_diorama_viewport.screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED
-		_diorama_viewport.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
 
 	if is_instance_valid(diorama_container):
 		_vision_meshes.clear()

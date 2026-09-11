@@ -33,6 +33,8 @@ var _target_world_pos: Vector3 = Vector3.ZERO
 var _is_vault_available: bool = false
 ## Tracks whether the prompt widget is currently faded in.
 var _is_prompt_showing: bool = false
+## Tracks whether the player is currently holding an object.
+var _is_holding_item: bool = false
 
 
 ## Initializes UI components and binds global bus listeners.
@@ -102,6 +104,8 @@ func _connect_signals() -> void:
 		Events.note_closed.connect(_on_note_closed)
 	if not Events.vault_prompt_updated.is_connected(_on_vault_prompt_updated):
 		Events.vault_prompt_updated.connect(_on_vault_prompt_updated)
+	if not Events.held_item_changed.is_connected(_on_held_item_changed):
+		Events.held_item_changed.connect(_on_held_item_changed)
 
 
 ## Refreshes the vault icon texture matching the jump action.
@@ -134,7 +138,7 @@ func _on_vault_prompt_updated(is_available: bool, world_pos: Vector3) -> void:
 	if not is_instance_valid(vault_prompt_container):
 		return
 
-	_is_vault_available = is_available
+	_is_vault_available = is_available and not _is_holding_item
 	_target_world_pos = world_pos
 
 	if _is_vault_available:
@@ -152,6 +156,16 @@ func _on_vault_prompt_updated(is_available: bool, world_pos: Vector3) -> void:
 		if _is_prompt_showing:
 			_is_prompt_showing = false
 			_fade_vault_prompt(0.0)
+
+
+## Handles held item status changes, immediately hiding prompt when carrying.
+## [param is_holding] True if an object is actively carried.
+func _on_held_item_changed(is_holding: bool) -> void:
+	print("NotificationHUD: _on_held_item_changed() called -> ", is_holding)
+	_is_holding_item = is_holding
+	if _is_holding_item and _is_prompt_showing:
+		_is_prompt_showing = false
+		_fade_vault_prompt(0.0)
 
 
 ## Smoothly animates the alpha opacity of the vault prompt widget.

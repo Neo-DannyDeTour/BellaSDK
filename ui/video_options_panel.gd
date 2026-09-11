@@ -23,7 +23,8 @@ var _pending_gpu_index: int = -1
 func _ready() -> void:
 	print("VideoOptions: Main panel coordinator initialized.")
 	display_section.display_settings_changed.connect(_apply_all_settings)
-	quality_section.quality_settings_changed.connect(_on_quality_settings_changed)
+	quality_section.preset_changed.connect(_on_preset_changed)
+	quality_section.quality_settings_changed.connect(_apply_all_settings)
 	effects_section.effects_settings_changed.connect(_apply_all_settings)
 	hardware_section.restart_required.connect(_on_restart_required)
 	hardware_section.auto_tune_requested.connect(_on_auto_tune_requested)
@@ -37,22 +38,15 @@ func _ready() -> void:
 	_apply_all_settings()
 
 
-## Synchronizes preset effects settings when the quality section modifies presets.
-func _on_quality_settings_changed() -> void:
-	print("VideoOptions: Quality preset changed, synchronizing effects flags.")
-	var preset: String = (
-		GlobalSettings.get_setting("Settings", "preset", VideoConfig.DEFAULT_PRESET) as String
-	)
+## Synchronizes preset effects settings when the master preset changes.
+## [param preset] The newly selected preset identifier.
+func _on_preset_changed(preset: String) -> void:
+	print("VideoOptions: Quality preset changed to: ", preset)
 	if VideoConfig.PRESETS.has(preset):
 		var p_data: Dictionary = VideoConfig.PRESETS[preset] as Dictionary
 		effects_section.apply_preset_dict(p_data)
-
-		var bulk_save_dict: Dictionary = {}
-		for key: String in p_data.keys():
-			if key != "shadow_quality" and key != "mesh_lod_threshold":
-				bulk_save_dict[key] = p_data[key]
-
-		GlobalSettings.save_settings_bulk("Settings", bulk_save_dict)
+		quality_section.apply_preset_dict(p_data)
+		GlobalSettings.save_settings_bulk("Settings", p_data)
 
 	_apply_all_settings()
 
@@ -98,6 +92,54 @@ func _apply_all_settings() -> void:
 		GlobalSettings.get_setting("Settings", "aa_mode", VideoConfig.DEFAULT_AA_MODE) as String
 	)
 
+	var dyn_shadows: bool = bool(
+		GlobalSettings.get_setting(
+			"Settings", "dynamic_light_shadows", VideoConfig.DEFAULT_DYNAMIC_LIGHT_SHADOWS
+		)
+	)
+	var shadow_filter: String = (
+		GlobalSettings.get_setting("Settings", "shadow_filter", VideoConfig.DEFAULT_SHADOW_FILTER)
+		as String
+	)
+	var p_shadow_dist: float = float(
+		GlobalSettings.get_setting(
+			"Settings", "positional_shadow_distance", VideoConfig.DEFAULT_POSITIONAL_SHADOW_DISTANCE
+		)
+	)
+	var d_shadow_dist: float = float(
+		GlobalSettings.get_setting(
+			"Settings",
+			"directional_shadow_distance",
+			VideoConfig.DEFAULT_DIRECTIONAL_SHADOW_DISTANCE
+		)
+	)
+	var occ_cull: bool = bool(
+		GlobalSettings.get_setting(
+			"Settings", "occlusion_culling", VideoConfig.DEFAULT_OCCLUSION_CULLING
+		)
+	)
+	var vrs_key: String = (
+		GlobalSettings.get_setting("Settings", "vrs_mode", VideoConfig.DEFAULT_VRS_MODE) as String
+	)
+	var tex_filter: String = (
+		GlobalSettings.get_setting("Settings", "texture_filter", VideoConfig.DEFAULT_TEXTURE_FILTER)
+		as String
+	)
+	var res_scale: float = float(
+		GlobalSettings.get_setting(
+			"Settings", "resolution_scale", VideoConfig.DEFAULT_RESOLUTION_SCALE
+		)
+	)
+	var exp_val: float = float(
+		GlobalSettings.get_setting("Settings", "exposure", VideoConfig.DEFAULT_EXPOSURE)
+	)
+	var dof_val: bool = bool(
+		GlobalSettings.get_setting("Settings", "dof_enabled", VideoConfig.DEFAULT_DOF)
+	)
+	var mb_strength: float = float(
+		GlobalSettings.get_setting("Settings", "motion_blur", VideoConfig.DEFAULT_MOTION_BLUR)
+	)
+
 	var ssao_key: String = (
 		GlobalSettings.get_setting("Settings", "ssao", VideoConfig.DEFAULT_SSAO) as String
 	)
@@ -121,6 +163,17 @@ func _apply_all_settings() -> void:
 		"fsr_scale": VideoConfig.FSR_MODES.get(fsr_key, 1.0) as float,
 		"aa_settings": VideoConfig.AA_MODES.get(aa_key, {}) as Dictionary,
 		"shadow_atlas": shadow_data.get("atlas_size", 2048) as int,
+		"dynamic_light_shadows": dyn_shadows,
+		"shadow_filter": shadow_filter,
+		"positional_shadow_distance": p_shadow_dist,
+		"directional_shadow_distance": d_shadow_dist,
+		"occlusion_culling": occ_cull,
+		"vrs_mode": VideoConfig.VRS_MODES.get(vrs_key, Viewport.VRS_DISABLED),
+		"texture_filter": VideoConfig.TEXTURE_FILTER_MODES.get(tex_filter, 2),
+		"resolution_scale": res_scale,
+		"exposure": exp_val,
+		"dof_enabled": dof_val,
+		"motion_blur": mb_strength,
 		"mesh_lod": GlobalSettings.get_setting("Settings", "mesh_lod_threshold", 1.0) as float,
 		"debanding": GlobalSettings.get_setting("Settings", "debanding", true) as bool,
 		"tonemap_key": GlobalSettings.get_setting("Settings", "tonemap_mode", "Filmic") as String,
@@ -130,12 +183,7 @@ func _apply_all_settings() -> void:
 		"sdfgi": VideoConfig.SDFGI_MODES.get(sdfgi_key, {}) as Dictionary,
 		"fog": VideoConfig.FOG_MODES.get(fog_key, {}) as Dictionary,
 		"glow": VideoConfig.GLOW_MODES.get(glow_key, {}) as Dictionary,
-		"ssao_key": ssao_key,
-		"ssi_key": ssi_key,
-		"ssr_key": ssr_key,
-		"sdfgi_key": sdfgi_key,
-		"fog_key": fog_key,
-		"glow_key": glow_key
+		"dof_amount": float(GlobalSettings.get_setting("Settings", "dof_amount", 0.15)),
 	}
 	VideoApplier.apply_viewport_pipeline(get_tree(), get_viewport(), config)
 

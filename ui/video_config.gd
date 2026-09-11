@@ -44,6 +44,57 @@ const DEFAULT_FOG: String = "Off"
 ## The default glow quality mode string.
 const DEFAULT_GLOW: String = "High"
 
+## The default state for local spotlight and omnilight shadow casting.
+const DEFAULT_DYNAMIC_LIGHT_SHADOWS: bool = true
+
+## The default positional shadow filter quality string.
+const DEFAULT_SHADOW_FILTER: String = "Soft Medium"
+
+## The default max fade distance for local spot/omni shadows.
+const DEFAULT_POSITIONAL_SHADOW_DISTANCE: float = 24.0
+
+## The default max shadow distance for directional lights.
+const DEFAULT_DIRECTIONAL_SHADOW_DISTANCE: float = 64.0
+
+## The default occlusion culling state.
+const DEFAULT_OCCLUSION_CULLING: bool = true
+
+## The default VRS mode configuration string.
+const DEFAULT_VRS_MODE: String = "Disabled"
+
+## The default base texture filtering mode string.
+const DEFAULT_TEXTURE_FILTER: String = "Linear Mipmap"
+
+## The default 3D render scale factor without FSR.
+const DEFAULT_RESOLUTION_SCALE: float = 1.0
+
+## The default tonemap exposure factor.
+const DEFAULT_EXPOSURE: float = 1.0
+
+## The default Depth of Field state.
+const DEFAULT_DOF: bool = false
+
+## The default Camera Motion Blur strength factor.
+const DEFAULT_MOTION_BLUR: float = 0.0
+
+## Map of positional shadow filter modes to [enum RenderingServer.ShadowQuality] values.
+const SHADOW_FILTER_MODES: Dictionary[String, RenderingServer.ShadowQuality] = {
+	"Hard (Fast)": RenderingServer.SHADOW_QUALITY_HARD,
+	"Soft Low": RenderingServer.SHADOW_QUALITY_SOFT_VERY_LOW,
+	"Soft Medium": RenderingServer.SHADOW_QUALITY_SOFT_MEDIUM,
+	"Soft High": RenderingServer.SHADOW_QUALITY_SOFT_ULTRA
+}
+
+## Map of VRS modes to [enum Viewport.VRSMode] values.
+const VRS_MODES: Dictionary[String, Viewport.VRSMode] = {
+	"Disabled": Viewport.VRS_DISABLED, "Texture": Viewport.VRS_TEXTURE
+}
+
+## Map of texture filter options to Godot ProjectSettings integers.
+const TEXTURE_FILTER_MODES: Dictionary[String, int] = {
+	"Nearest": 0, "Linear": 1, "Linear Mipmap": 2, "Nearest Mipmap": 3
+}
+
 ## Map of window mode titles to their respective [enum DisplayServer.WindowMode] values.
 const DISPLAY_MODES: Dictionary = {
 	"Fullscreen": DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN,
@@ -181,6 +232,16 @@ const PRESETS: Dictionary = {
 	"Low":
 	{
 		"shadow_quality": "Low (Fast)",
+		"dynamic_light_shadows": false,
+		"shadow_filter": "Hard (Fast)",
+		"positional_shadow_distance": 16.0,
+		"directional_shadow_distance": 32.0,
+		"occlusion_culling": true,
+		"vrs_mode": "Disabled",
+		"texture_filter": "Linear",
+		"resolution_scale": 0.7,
+		"dof_enabled": false,
+		"motion_blur": 0.0,
 		"ssao": "Off",
 		"ssi": "Off",
 		"ssr": "Off",
@@ -192,6 +253,16 @@ const PRESETS: Dictionary = {
 	"Medium":
 	{
 		"shadow_quality": "Medium",
+		"dynamic_light_shadows": true,
+		"shadow_filter": "Soft Low",
+		"positional_shadow_distance": 24.0,
+		"directional_shadow_distance": 48.0,
+		"occlusion_culling": true,
+		"vrs_mode": "Disabled",
+		"texture_filter": "Linear Mipmap",
+		"resolution_scale": 1.0,
+		"dof_enabled": false,
+		"motion_blur": 0.25,
 		"ssao": "Low",
 		"ssi": "Off",
 		"ssr": "Off",
@@ -203,6 +274,16 @@ const PRESETS: Dictionary = {
 	"High":
 	{
 		"shadow_quality": "High (Smooth)",
+		"dynamic_light_shadows": true,
+		"shadow_filter": "Soft Medium",
+		"positional_shadow_distance": 32.0,
+		"directional_shadow_distance": 64.0,
+		"occlusion_culling": true,
+		"vrs_mode": "Disabled",
+		"texture_filter": "Linear Mipmap",
+		"resolution_scale": 1.0,
+		"dof_enabled": true,
+		"motion_blur": 0.5,
 		"ssao": "Medium",
 		"ssi": "Low",
 		"ssr": "Low",
@@ -214,6 +295,16 @@ const PRESETS: Dictionary = {
 	"Ultra":
 	{
 		"shadow_quality": "High (Smooth)",
+		"dynamic_light_shadows": true,
+		"shadow_filter": "Soft High",
+		"positional_shadow_distance": 48.0,
+		"directional_shadow_distance": 96.0,
+		"occlusion_culling": true,
+		"vrs_mode": "Disabled",
+		"texture_filter": "Linear Mipmap",
+		"resolution_scale": 1.0,
+		"dof_enabled": true,
+		"motion_blur": 1.0,
 		"ssao": "High",
 		"ssi": "High",
 		"ssr": "High",

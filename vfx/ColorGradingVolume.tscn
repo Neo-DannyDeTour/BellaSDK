@@ -8,14 +8,7 @@
 resource_local_to_scene = true
 size = Vector3(4, 4, 4)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dp88k"]
-transparency = 1
-shading_mode = 0
-albedo_color = Color(0.2, 0.6, 1, 0.4)
-
-[sub_resource type="BoxMesh" id="BoxMesh_llhn2"]
-resource_local_to_scene = true
-material = SubResource("StandardMaterial3D_dp88k")
+[sub_resource type="BoxMesh" id="BoxMesh_dp88k"]
 size = Vector3(4, 4, 4)
 
 [node name="ColorGradingVolume" type="Area3D" unique_id=726107414]
@@ -27,7 +20,7 @@ grading_shader = ExtResource("2_dp88k")
 shape = SubResource("BoxShape3D_cgm81")
 
 [node name="EditorTriggerVisualizer" type="MeshInstance3D" parent="." unique_id=1258584494]
-mesh = SubResource("BoxMesh_llhn2")
+mesh = SubResource("BoxMesh_dp88k")
 script = ExtResource("2_tjwj5")
 trigger_size = Vector3(4, 4, 4)
 trigger_color = Color(0.2, 0.6, 1, 0.4)

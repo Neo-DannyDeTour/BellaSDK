@@ -7,13 +7,25 @@ signal effects_settings_changed
 
 ## Reference to the tonemapper algorithm [OptionButton].
 @onready var tonemap_options: OptionButton = %TonemapOptionButton
+## Reference to the exposure direct numerical input [LineEdit].
+@onready var exposure_line: LineEdit = %ExposureLine
+## Reference to the exposure slider [HSlider].
+@onready var exposure_slider: HSlider = %ExposureSlider
 ## Reference to the color debanding toggle [CheckBox].
 @onready var debanding_checkbox: CheckBox = %DebandingCheckBox
-## Reference to the Screen Space Ambient Occlusion quality [OptionButton].
+## Reference to the depth of field amount input [LineEdit].
+@onready var dof_line: LineEdit = %DoFLine
+## Reference to the depth of field amount slider [HSlider].
+@onready var dof_slider: HSlider = %DoFSlider
+## Reference to the motion blur slider [HSlider].
+@onready var motion_blur_slider: HSlider = %MotionBlurSlider
+## Reference to the motion blur input [LineEdit].
+@onready var motion_blur_line: LineEdit = %MotionBlurLine
+## Reference to the SSAO quality [OptionButton].
 @onready var ssao_options: OptionButton = %SSAOOptionButton
-## Reference to the Screen Space Indirect Lighting quality [OptionButton].
+## Reference to SSIL quality [OptionButton].
 @onready var ssi_options: OptionButton = %SSIOptionButton
-## Reference to the Screen Space Reflections quality [OptionButton].
+## Reference to Screen Space Reflections quality [OptionButton].
 @onready var ssr_options: OptionButton = %SSROptionButton
 ## Reference to the SDFGI quality [OptionButton].
 @onready var sdfgi_options: OptionButton = %SDFGIOptionButton
@@ -47,7 +59,7 @@ func _populate_dropdowns() -> void:
 ## [param button] Target dropdown widget.
 ## [param source] Source dictionary containing option labels.
 func _populate_button(button: OptionButton, source: Dictionary) -> void:
-	print("EffectsSection: Populating options for ", button.name)
+	print("EffectsSection: Populating options for: ", button.name)
 	button.clear()
 	for key: Variant in source.keys():
 		button.add_item(str(key))
@@ -57,6 +69,11 @@ func _populate_button(button: OptionButton, source: Dictionary) -> void:
 func _connect_signals() -> void:
 	print("EffectsSection: Connecting effect UI signals.")
 	tonemap_options.item_selected.connect(_on_tonemap_selected)
+
+	_connect_slider(exposure_slider, exposure_line, "exposure", 0.5, 2.0, 0.05)
+	_connect_slider(dof_slider, dof_line, "dof_amount", 0.0, 0.5, 0.01)
+	_connect_slider(motion_blur_slider, motion_blur_line, "motion_blur", 0.0, 1.5, 0.05)
+
 	debanding_checkbox.toggled.connect(_on_debanding_toggled)
 	ssao_options.item_selected.connect(_on_ssao_selected)
 	ssi_options.item_selected.connect(_on_ssi_selected)
@@ -66,14 +83,92 @@ func _connect_signals() -> void:
 	glow_options.item_selected.connect(_on_glow_selected)
 
 
+## Connects slider and LineEdit pairs with auto-clear and fallback handling.
+## [param slider] Target [HSlider] node.
+## [param line] Target [LineEdit] node.
+## [param key] Setting key identifier.
+## [param min_v] Minimum clamp limit.
+## [param max_v] Maximum clamp limit.
+## [param step_val] Step interval for the slider.
+func _connect_slider(
+	slider: HSlider, line: LineEdit, key: String, min_v: float, max_v: float, step_val: float
+) -> void:
+	slider.min_value = min_v
+	slider.max_value = max_v
+	slider.step = step_val
+
+	slider.value_changed.connect(
+		func(val: float) -> void:
+			if not line.has_focus():
+				line.text = "%.2f" % val
+			GlobalSettings.save_setting("Settings", key, val)
+			effects_settings_changed.emit()
+	)
+
+	line.focus_entered.connect(
+		func() -> void:
+			line.set_meta("pre_focus_text", line.text)
+			line.text = ""
+	)
+
+	line.text_submitted.connect(
+		func(text: String) -> void:
+			var trimmed: String = text.strip_edges()
+			var fallback: String = str(line.get_meta("pre_focus_text", ""))
+			if trimmed.is_empty() or not trimmed.is_valid_float():
+				line.text = fallback
+			else:
+				var c_val: float = clampf(trimmed.to_float(), min_v, max_v)
+				var s_val: float = snappedf(c_val, step_val)
+				line.text = "%.2f" % s_val
+				slider.value = s_val
+				print("EffectsSection: Committed ", key, " input: ", s_val)
+				GlobalSettings.save_setting("Settings", key, s_val)
+				effects_settings_changed.emit()
+			line.release_focus()
+	)
+
+	line.focus_exited.connect(
+		func() -> void:
+			var trimmed: String = line.text.strip_edges()
+			var fallback: String = str(line.get_meta("pre_focus_text", ""))
+			if trimmed.is_empty() or not trimmed.is_valid_float():
+				line.text = fallback
+			else:
+				var c_val: float = clampf(trimmed.to_float(), min_v, max_v)
+				var s_val: float = snappedf(c_val, step_val)
+				line.text = "%.2f" % s_val
+				slider.value = s_val
+				print("EffectsSection: Saved ", key, " on defocus: ", s_val)
+				GlobalSettings.save_setting("Settings", key, s_val)
+				effects_settings_changed.emit()
+	)
+
+
 ## Synchronizes widgets with values persisted in [GlobalSettings].
 func load_settings() -> void:
 	print("EffectsSection: Loading effects settings from disk.")
 	var saved_tonemap: String = _load_effect_setting("tonemap_mode", VideoConfig.DEFAULT_TONEMAP)
 	_select_dropdown_text(tonemap_options, saved_tonemap)
 
+	var exp_val: float = float(
+		GlobalSettings.get_setting("Settings", "exposure", VideoConfig.DEFAULT_EXPOSURE)
+	)
+	exposure_slider.set_value_no_signal(exp_val)
+	exposure_line.text = "%.2f" % exp_val
+
 	var deband_val: bool = bool(GlobalSettings.get_setting("Settings", "debanding", true))
 	debanding_checkbox.set_pressed_no_signal(deband_val)
+
+	var dof_amt: float = float(GlobalSettings.get_setting("Settings", "dof_amount", 0.15))
+	dof_slider.set_value_no_signal(dof_amt)
+	dof_line.text = "%.2f" % dof_amt
+
+	var mb_val: float = float(
+		GlobalSettings.get_setting("Settings", "motion_blur", VideoConfig.DEFAULT_MOTION_BLUR)
+	)
+	motion_blur_slider.set_value_no_signal(mb_val)
+	motion_blur_line.text = "%.2f" % mb_val
 
 	var saved_ssao: String = _load_effect_setting("ssao", VideoConfig.DEFAULT_SSAO)
 	_select_dropdown_text(ssao_options, saved_ssao)
@@ -111,6 +206,20 @@ func _load_effect_setting(key: String, default_val: String) -> String:
 ## [param data] Dictionary of environment flag configurations.
 func apply_preset_dict(data: Dictionary) -> void:
 	print("EffectsSection: Applying environment preset flags.")
+	if data.has("dof_amount"):
+		var dof_a: float = float(data["dof_amount"])
+		dof_slider.set_value_no_signal(dof_a)
+		dof_line.text = "%.2f" % dof_a
+	elif data.has("dof_enabled"):
+		var fallback_amt: float = 0.15 if bool(data["dof_enabled"]) else 0.0
+		dof_slider.set_value_no_signal(fallback_amt)
+		dof_line.text = "%.2f" % fallback_amt
+
+	if data.has("motion_blur"):
+		var mb_v: float = float(data["motion_blur"])
+		motion_blur_slider.set_value_no_signal(mb_v)
+		motion_blur_line.text = "%.2f" % mb_v
+
 	if data.has("ssao"):
 		_select_dropdown_text(ssao_options, data["ssao"] as String)
 	if data.has("ssi"):
@@ -140,13 +249,6 @@ func _select_dropdown_text(dropdown: OptionButton, target_text: String) -> void:
 ## [param index] Item index selected.
 func _on_tonemap_selected(index: int) -> void:
 	var text: String = tonemap_options.get_item_text(index)
-	var current: String = (
-		GlobalSettings.get_setting("Settings", "tonemap_mode", VideoConfig.DEFAULT_TONEMAP)
-		as String
-	)
-	if current == text:
-		return
-
 	print("EffectsSection: Tonemap algorithm selected: ", text)
 	GlobalSettings.save_setting("Settings", "tonemap_mode", text)
 	effects_settings_changed.emit()
@@ -155,10 +257,6 @@ func _on_tonemap_selected(index: int) -> void:
 ## Handles color debanding toggles.
 ## [param toggled_on] Whether debanding is enabled.
 func _on_debanding_toggled(toggled_on: bool) -> void:
-	var current: bool = bool(GlobalSettings.get_setting("Settings", "debanding", true))
-	if current == toggled_on:
-		return
-
 	print("EffectsSection: Debanding toggled: ", toggled_on)
 	GlobalSettings.save_setting("Settings", "debanding", toggled_on)
 	effects_settings_changed.emit()
@@ -168,12 +266,6 @@ func _on_debanding_toggled(toggled_on: bool) -> void:
 ## [param index] Item index selected.
 func _on_ssao_selected(index: int) -> void:
 	var text: String = ssao_options.get_item_text(index)
-	var current: String = (
-		GlobalSettings.get_setting("Settings", "ssao", VideoConfig.DEFAULT_SSAO) as String
-	)
-	if current == text:
-		return
-
 	print("EffectsSection: SSAO quality selected: ", text)
 	GlobalSettings.save_setting("Settings", "ssao", text)
 	effects_settings_changed.emit()
@@ -183,12 +275,6 @@ func _on_ssao_selected(index: int) -> void:
 ## [param index] Item index selected.
 func _on_ssi_selected(index: int) -> void:
 	var text: String = ssi_options.get_item_text(index)
-	var current: String = (
-		GlobalSettings.get_setting("Settings", "ssi", VideoConfig.DEFAULT_SSI) as String
-	)
-	if current == text:
-		return
-
 	print("EffectsSection: SSIL quality selected: ", text)
 	GlobalSettings.save_setting("Settings", "ssi", text)
 	effects_settings_changed.emit()
@@ -198,12 +284,6 @@ func _on_ssi_selected(index: int) -> void:
 ## [param index] Item index selected.
 func _on_ssr_selected(index: int) -> void:
 	var text: String = ssr_options.get_item_text(index)
-	var current: String = (
-		GlobalSettings.get_setting("Settings", "ssr", VideoConfig.DEFAULT_SSR) as String
-	)
-	if current == text:
-		return
-
 	print("EffectsSection: SSR quality selected: ", text)
 	GlobalSettings.save_setting("Settings", "ssr", text)
 	effects_settings_changed.emit()
@@ -213,12 +293,6 @@ func _on_ssr_selected(index: int) -> void:
 ## [param index] Item index selected.
 func _on_sdfgi_selected(index: int) -> void:
 	var text: String = sdfgi_options.get_item_text(index)
-	var current: String = (
-		GlobalSettings.get_setting("Settings", "sdfgi", VideoConfig.DEFAULT_SDFGI) as String
-	)
-	if current == text:
-		return
-
 	print("EffectsSection: SDFGI quality selected: ", text)
 	GlobalSettings.save_setting("Settings", "sdfgi", text)
 	effects_settings_changed.emit()
@@ -228,12 +302,6 @@ func _on_sdfgi_selected(index: int) -> void:
 ## [param index] Item index selected.
 func _on_fog_selected(index: int) -> void:
 	var text: String = fog_options.get_item_text(index)
-	var current: String = (
-		GlobalSettings.get_setting("Settings", "volumetric_fog", VideoConfig.DEFAULT_FOG) as String
-	)
-	if current == text:
-		return
-
 	print("EffectsSection: Volumetric fog quality selected: ", text)
 	GlobalSettings.save_setting("Settings", "volumetric_fog", text)
 	effects_settings_changed.emit()
@@ -243,12 +311,6 @@ func _on_fog_selected(index: int) -> void:
 ## [param index] Item index selected.
 func _on_glow_selected(index: int) -> void:
 	var text: String = glow_options.get_item_text(index)
-	var current: String = (
-		GlobalSettings.get_setting("Settings", "glow", VideoConfig.DEFAULT_GLOW) as String
-	)
-	if current == text:
-		return
-
 	print("EffectsSection: Glow quality selected: ", text)
 	GlobalSettings.save_setting("Settings", "glow", text)
 	effects_settings_changed.emit()
