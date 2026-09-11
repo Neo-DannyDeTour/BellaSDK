@@ -165,6 +165,9 @@ func _on_unfocused() -> void:
 
 
 ## Moves the attached player along the rope or processes their detachment.
+## Handles the player sliding up or down the rope and manages cooldowns.
+##
+## [param delta] The physics frame delta time.
 func _physics_process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		return

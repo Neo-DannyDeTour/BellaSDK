@@ -15,8 +15,11 @@ var _exit_cooldown: float = 0.0
 var _is_mounting: bool = false
 
 
-## Enters the push wheel state. Receives the `target_transform` to tween to,
-## and the `wheel` node to interact with.
+## Enters the push wheel state. Receives the `target_transform` to tween to, and the `wheel`
+## node to interact with.
+##
+## [param msg] Initialization data passed from the state machine containing target transforms
+## and the wheel object.
 func enter(msg: Dictionary = {}) -> void:
 	_is_mounting = false
 
@@ -44,7 +47,9 @@ func enter(msg: Dictionary = {}) -> void:
 		state_machine.transition_to("Ground")
 
 
-## Corresponds to `_physics_process()`. Routes movement input into the wheel mechanism.
+## Corresponds to [method _physics_process]. Routes movement input into the wheel mechanism.
+##
+## [param delta] The physics frame delta time.
 func physics_update(delta: float) -> void:
 	if not is_instance_valid(active_wheel) or not active_wheel.is_installed:
 		state_machine.transition_to("Ground")
@@ -87,6 +92,8 @@ func exit() -> void:
 
 ## Calculates a multiplier (1.0 or -1.0) based on the player's physical orientation relative
 ## to the wheel's rotation axis to ensure "forward" always pushes the wheel correctly.
+##
+## Returns a float of 1.0 or -1.0 depending on the calculated dot product alignment.
 func _calculate_input_sync_multiplier() -> float:
 	var dir_multi: float = -1.0 if active_wheel.turn_clockwise else 1.0
 	var angular_velocity_dir: Vector3 = (active_wheel.spin_axis * dir_multi).normalized()

@@ -43,10 +43,10 @@ var health_component: HealthComponent
 ## Indicates if the player character has died, used to globally block input and physics.
 var is_dead: bool = false
 
-## Tracks whether the player is actively standing on a sand collider.
+## Flag indicating if the player is actively standing on a surface grouped as "sand".
 var is_on_sand_surface: bool = false
 
-## Tracks whether the player is actively standing on an ice collider.
+## Flag indicating if the player is actively standing on a surface grouped as "ice".
 var is_on_ice_surface: bool = false
 
 

@@ -23,6 +23,8 @@ var rope_lerp_weight: float = 0.0
 
 
 ## Initializes the rope state, calculates grab offsets, and transfers player momentum.
+##
+## [param msg] Initialization data passed from the state machine containing "rope_node".
 func enter(msg: Dictionary = {}) -> void:
 	if not msg.has("rope_node"):
 		state_machine.transition_to("Air")
@@ -115,7 +117,9 @@ func exit() -> void:
 	)
 
 
-## Corresponds to the `_physics_process()` callback. Routes input to climb or swing logic.
+## Corresponds to the [method _physics_process] callback. Routes input to climb or swing logic.
+##
+## [param delta] The physics frame delta time.
 func physics_update(delta: float) -> void:
 	if not current_rope:
 		return
@@ -134,6 +138,9 @@ func physics_update(delta: float) -> void:
 # PRIVATE METHODS
 # --------------------------------------
 ## Evaluates player camera angles and WASD input to determine climb, slide, or swing intent.
+##
+## [param delta] The physics frame delta time.
+## [param input_dir] The directional input vector from WASD.
 func _handle_climbing_and_swinging(delta: float, input_dir: Vector2) -> void:
 	var rope_root: Node3D = current_rope.get_parent() as Node3D
 	var rope_up: Vector3 = current_rope.global_transform.basis.y.normalized()
@@ -226,6 +233,8 @@ func _handle_climbing_and_swinging(delta: float, input_dir: Vector2) -> void:
 
 
 ## Forcibly updates the player's global position and rotation to track the moving rope physics body.
+##
+## [param delta] The physics frame delta time.
 func _apply_rope_position(delta: float) -> void:
 	var rope_root: Node3D = current_rope.get_parent() as Node3D
 	var rope_up: Vector3 = current_rope.global_transform.basis.y.normalized()
@@ -260,6 +269,8 @@ func _apply_rope_position(delta: float) -> void:
 
 
 ## Listens for jump or interact actions to release the player from the current rope.
+##
+## [param input_dir] The directional input vector from WASD used to calculate dismount momentum.
 func _check_dismount(input_dir: Vector2) -> void:
 	if GestureInputManager.is_action_just_pressed("jump"):
 		_perform_jump_dismount(input_dir)
@@ -270,6 +281,8 @@ func _check_dismount(input_dir: Vector2) -> void:
 
 
 ## Calculates directional momentum and boosts to apply when jumping off an actively swinging rope.
+##
+## [param input_dir] The directional input vector from WASD.
 func _perform_jump_dismount(input_dir: Vector2) -> void:
 	var rope_root: Node3D = current_rope.get_parent() as Node3D
 	var can_swing: bool = (
@@ -301,6 +314,10 @@ func _perform_jump_dismount(input_dir: Vector2) -> void:
 
 
 ## Applies final exit velocity and forces the state machine back into the "Air" state.
+##
+## [param release_dir] The directional vector to push the player towards.
+## [param forward_push] The magnitude of forward force applied.
+## [param vertical_hop] The magnitude of upward force applied.
 func _transition_out_of_rope(
 	release_dir: Vector3, forward_push: float, vertical_hop: float
 ) -> void:

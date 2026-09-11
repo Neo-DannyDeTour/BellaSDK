@@ -24,6 +24,7 @@ extends Node
 # CORE PROCESS LOGIC
 # --------------------------------------
 ## Analyzes active collisions and pushes [RigidBody3D] targets with mass resistance.
+##
 ## [param held_object] The item currently held by the player (ignored).
 ## [param last_velocity] Player velocity vector prior to sliding.
 ## [param reference_max_speed] Maximum expected movement speed for scalar normalization.

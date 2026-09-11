@@ -66,7 +66,7 @@ extends CSGMesh3D
 		if is_inside_tree():
 			_update_mesh()
 
-## If true, the mesh geometry drops straight down to a local Y=0 floor level .
+## If true, the mesh geometry drops straight down to a local Y=0 floor level.
 @export var fill_to_floor: bool = false:
 	set(v):
 		fill_to_floor = v
@@ -158,6 +158,12 @@ func _update_mesh() -> void:
 
 
 ## Helper function to generate two triangles forming a quad face on the [SurfaceTool].
+##
+## [param st] The [SurfaceTool] used for generating the mesh.
+## [param p1] The first vertex of the quad.
+## [param p2] The second vertex of the quad.
+## [param p3] The third vertex of the quad.
+## [param p4] The fourth vertex of the quad.
 func _add_quad(st: SurfaceTool, p1: Vector3, p2: Vector3, p3: Vector3, p4: Vector3) -> void:
 	st.add_vertex(p1)
 	st.add_vertex(p2)
