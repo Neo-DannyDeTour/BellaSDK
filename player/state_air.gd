@@ -38,6 +38,8 @@ var launch_fall_gravity: float = 9.8
 
 ## Enters the air state. Reads the `msg` dictionary to handle specific entry conditions
 ## like external knockbacks, jump pads, or exiting a rope.
+##
+## [param msg] Initialization data passed from the state machine.
 func enter(msg: Dictionary = {}) -> void:
 	print("StateAir: Entered air state.")
 	has_jumped = msg.has("jump") and msg["jump"] == true

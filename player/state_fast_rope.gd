@@ -6,8 +6,11 @@ class_name StateFastRope
 extends PlayerState
 
 
-## Called by the state machine upon changing the active state. The `_msg` parameter
-## is a dictionary with arbitrary data the state can use to initialize itself.
+## Called by the [PlayerStateMachine] upon changing the active state.
+##
+## [param _msg] is a dictionary with arbitrary data the state can use to initialize itself.
+## Kills momentum, disables the stair controller to prevent ground snapping, and forces
+## dropping of heavy items.
 func enter(_msg: Dictionary = {}) -> void:
 	print("StateFastRope: enter() called. Entered fast rope state. Disabling StairController.")
 	# 1. Kill all momentum instantly
@@ -26,8 +29,10 @@ func enter(_msg: Dictionary = {}) -> void:
 		player.interaction_scanner.drop_heavy_object_safely()
 
 
-## Called by the state machine before changing the active state. Use this function
+## Called by the [PlayerStateMachine] before changing the active state. Use this function
 ## to clean up the state.
+##
+## Restores the stair controller.
 func exit() -> void:
 	print("StateFastRope: exit() called. Exited fast rope state. Enabling StairController.")
 	if (
@@ -37,11 +42,12 @@ func exit() -> void:
 		player.locomotion_component.stair_controller.is_enabled = true
 
 
-## Corresponds to the `_physics_process()` callback.
+## Corresponds to the [method _physics_process] callback.
+##
+## [param delta] The physics frame delta time.
+## Notice we do NOT apply gravity, accept WASD input, or call [method move_and_slide].
+## The [FastRope] Node in the world is taking complete control of [member global_position].
 func physics_update(delta: float) -> void:
-	# Notice we do NOT apply gravity, accept WASD input, or call move_and_slide().
-	# The FastRope Node in the world is taking complete control of player.global_position.
-
 	# We fake a "sprinting forward" input specifically for the CameraController
 	# to trigger the aggressive, high-speed headbobbing effect while sliding!
 	var fake_input: Vector2 = Vector2(0.0, 1.0)

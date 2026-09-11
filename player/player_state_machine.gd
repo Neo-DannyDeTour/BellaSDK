@@ -2,10 +2,13 @@
 class_name PlayerStateMachine
 extends Node
 
-## Emitted when the state machine transitions to [param state_name].
+## Emitted when the state machine transitions to the given state.
+##
+## [param state_name] The name of the new state.
 signal transitioned(state_name: String)
 
 @export_category("State Machine Configuration")
+
 ## Inspector path pointing to the initial [PlayerState] node.
 @export var initial_state: NodePath
 
@@ -33,21 +36,30 @@ func _ready() -> void:
 
 
 ## Routes unhandled input events to the active state.
+##
+## [param event] The [InputEvent] to be handled.
 func _unhandled_input(event: InputEvent) -> void:
 	state.handle_input(event)
 
 
 ## Routes process ticks to the active state.
+##
+## [param delta] The process frame delta time.
 func _process(delta: float) -> void:
 	state.update(delta)
 
 
 ## Routes physics process ticks to the active state.
+##
+## [param delta] The physics frame delta time.
 func _physics_process(delta: float) -> void:
 	state.physics_update(delta)
 
 
-## Transitions to [param target_state_name] passing optional [param msg].
+## Transitions to a new state passing optional data.
+##
+## [param target_state_name] The string name of the target [PlayerState] node.
+## [param msg] Optional dictionary payload for state initialization.
 func transition_to(target_state_name: String, msg: Dictionary = {}) -> void:
 	print("PlayerStateMachine: transition_to() to: ", target_state_name)
 
@@ -58,7 +70,7 @@ func transition_to(target_state_name: String, msg: Dictionary = {}) -> void:
 		return
 
 	state.exit()
-	state = _states[target_state_name]
+	state = _states[target_state_name] as PlayerState
 	state.enter(msg)
 
 	transitioned.emit(state.name)

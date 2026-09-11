@@ -1,13 +1,13 @@
-# Architecture Journal
+# Architect Journal - GDScript Standardization Learnings
 
-- Always verify docstrings explicitly encapsulate internal class references with `[ClassName]` when formatting BBCode comments for Godot APIs.
-- Some Python regex replacements using `\bClass\b` could miss if previously styled improperly. Better to write robust parsers to check for GDScript variable boundaries rather than brute force.
-- The `##` class description must always immediately precede `class_name`. If `class_name` is on line 1, it must be the first line of the file after any `@tool` annotations.
-- `gdformat` enforces correct line lengths and indentations but will not automatically fix incorrectly ordered structures (`class_name` below `extends` if `extends` has no docs).
-- **CRITICAL:** Do not add `class_name` to files that act as Godot Autoload Singletons. Adding a `class_name` to a singleton will cause parser conflicts where Godot treats the singleton as a static class type, breaking scripts that call its non-static methods directly using the singleton name (e.g., `GestureInputManager.is_action_just_triggered()`).
-- When implementing or modifying global input polling methods in singletons (such as is_action_just_pressed or is_action_just_released in GestureInputManager), never erase the state flag or tracking key upon the first check in a physics frame. Doing so prevents multiple scripts from correctly reading the same input event within the same frame.
-- When documenting GDScript methods with `##`, describe the method's behavior, referencing arguments inline using `[param param_name]` tags (avoiding `@param` Javadoc tags, which Godot 4 does not parse).
-- To resolve Godot 4 compilation errors when accessing custom properties on generic base types like `Node3D` (due to strict static typing), use dynamic access via `.get("property", default_value)` or `"property" in body` instead of direct member calls.- **Documentation standards:** Ensure that `##` doc comments using Godot BBCode are applied consistently across all properties and methods, especially inherited lifecycle methods, to satisfy strict project requirements.
-- **Linting constraints:** `gdlint` enforces a strict 100-character line limit. When adding documentation, ensure that comments do not exceed this limit to avoid linting failures.
-- For GDScript documentation passes, be exceptionally thorough. Reviewers will check if *every* class declaration, variable, and method contains a `##` descriptive comment, especially when a prompt requests a complete, repository-wide standardization.
-- In tool scripts with `@export` variable setter methods, wrapping updates with `is_inside_tree()` and `is_instance_valid(target_node)` significantly prevents editor crashes when nodes are unassigned or during scene initialization.
+## Godot 4 Typing Edge Cases
+- **Inline Setters**: When using inline setters with typed exported variables (e.g., `@export var prop: float = 1.0: set(v):`), do not add explicit type hints to the setter parameter (e.g., `set(v: float):`) as it causes parser errors in `gdtoolkit`. The type is inherited automatically.
+- **Headless Environment**: The `godot` executable may be missing from the CI/sandbox environment, meaning headless unit tests via GUT cannot be executed. Fall back to strict static linting via `gdlint`.
+
+## Documentation (Godot 4 BBCode)
+- Function parameters require the `[param name]` tag.
+- Function references require the `[method name]` tag.
+- Godot 4's internal documentation generator doesn't natively support a `[return]` BBCode tag; standard practice is to simply write `Returns ...`.
+
+## Refactoring Process
+- Be extremely careful when using automated `sed` or `python` replace scripts to add documentation, as it can easily lead to duplicated docstrings. Always verify the output.

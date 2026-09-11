@@ -119,6 +119,9 @@ func _apply_glide_physics(delta: float) -> void:
 
 
 ## Updates the visual Z-axis tilt of the weapon holder to simulate aerodynamic banking.
+##
+## [param input_x] The horizontal axis input for banking.
+## [param delta] The physics frame delta time.
 func _bank_glider(input_x: float, delta: float) -> void:
 	var interact: Node = player.interaction_component
 
@@ -155,6 +158,8 @@ func _check_transitions() -> void:
 
 
 ## Ticks peripheral components like camera shaking and interaction scanning while gliding.
+##
+## [param delta] The physics frame delta time.
 func _update_components(delta: float) -> void:
 	var input_dir: Vector2 = GestureInputManager.get_vector("left", "right", "forward", "backward")
 
