@@ -1,13 +1,12 @@
 ## Global autoload responsible for generating Text-to-Speech spatial descriptions.
 ##
-## [SpatialDescriber] acts as an accessibility layer that translates the 3D positions
+## SpatialDescriber acts as an accessibility layer that translates the 3D positions
 ## of surrounding objects into conversational, directional language and routes it
 ## to the [TTSManager].
 ## It gathers interactable objects within the active player [Camera3D] frustum,
 ## eliminates duplicate node representations, verifies line-of-sight with raycasts,
 ## groups identical items into clusters, and prioritizes items from nearest
 ## in front to peripheral to far away.
-class_name SpatialDescriber
 extends Node
 
 ## Emitted when an environment description string has been generated.

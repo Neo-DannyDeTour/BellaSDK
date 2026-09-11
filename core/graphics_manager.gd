@@ -1,9 +1,8 @@
 ## Global autoload managing automatic graphics scaling and performance optimizations.
 ##
-## [GraphicsManager] continuously monitors the application's framerate.
+## GraphicsManager continuously monitors the application's framerate.
 ## If it dips below [constant TARGET_FPS_MINIMUM], it progressively disables heavy features
 ## to maintain a playable 60 FPS target.
-class_name GraphicsManager
 extends Node
 
 ## Emitted when the performance profile drops a level to regain FPS.

@@ -3,7 +3,6 @@
 ## Scans the surrounding 3D environment for categorized objects, sorting them by
 ## priority and distance while applying raycast occlusion, rear-cone spectral filtering,
 ## and staggered playback delays.
-class_name SonarManager
 extends Node
 
 ## Emitted when a sonar scan finishes scanning the surroundings.

@@ -1,8 +1,7 @@
 ## Global autoload managing the persistent save state of user preferences.
 ##
-## [GlobalSettings] reads and writes values to a config file on disk. It handles
+## GlobalSettings reads and writes values to a config file on disk. It handles
 ## applying startup configurations like window scales, inputs, and shaders.
-class_name GlobalSettings
 extends Node
 
 ## The file path where user preferences are saved locally on the player's disk.

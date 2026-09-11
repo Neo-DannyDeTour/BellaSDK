@@ -1,10 +1,9 @@
 ## Global autoload that tracks and manages collected keycards.
 ##
-## The [KeycardSystem] is responsible for storing the player's keycard inventory.
+## The KeycardSystem is responsible for storing the player's keycard inventory.
 ## It uses [StringName] identifiers to dynamically support any number of keycards
 ## without requiring hardcoded enums. It emits signals when cards are acquired
 ## or consumed.
-class_name KeycardSystem
 extends Node
 
 ## Emitted when a new keycard is added to the inventory.
