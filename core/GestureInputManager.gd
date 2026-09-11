@@ -1,5 +1,6 @@
 ## Centralized input manager responsible for dispatching single-tap, hold,
 ## double-tap, double-tap & hold, rapid mashing, chords, and ordered sequence combinations.
+class_name GestureInputManager
 extends Node
 
 ## Emitted when an action binding is successfully resolved and triggered.
@@ -197,9 +198,128 @@ func _input(event: InputEvent) -> void:
 					_active_inputs.erase(tracking_key)
 
 
+## Consumes a buffered action if it was executed within the allowed duration buffer window.
+## [param action] The action to poll and consume.
+## Returns true if the action was successfully consumed from buffer.
+func consume_buffered_action(action: String) -> bool:
+	var now: float = Time.get_ticks_msec() / 1000.0
+	if _input_buffer.has(action):
+		var timestamp: float = _input_buffer[action] as float
+		if now - timestamp <= BUFFER_DURATION:
+			print("Buffer: Consumed buffered action: ", action)
+			_input_buffer.erase(action)
+			return true
+		_input_buffer.erase(action)
+	return false
+
+
+## Checks if an action was triggered during the current physics frame window.
+## [param action] The input action key string.
+## Returns true if the action's gesture conditions were satisfied.
+func is_action_just_triggered(action: String) -> bool:
+	var current_frame: int = Engine.get_physics_frames()
+	if _triggered_actions_frame.has(action):
+		var target_frame: int = _triggered_actions_frame[action] as int
+		if abs(current_frame - target_frame) <= 2:
+			return true
+	return false
+
+
+## Checks if an action is currently active, taking into account chords and gestures.
+## [param action] The input action key string.
+## Returns true if the action's gesture and key requirements are currently met.
+func is_action_active(action: String) -> bool:
+	if not InputMap.has_action(action):
+		return false
+
+	var events: Array[InputEvent] = InputMap.action_get_events(action)
+	for bound_event: InputEvent in events:
+		var gesture: String = bound_event.get_meta("gesture", "single_tap") as String
+		var chord_keys: Array = bound_event.get_meta("chord_keys", []) as Array
+
+		if gesture == "ordered_chord" and not chord_keys.is_empty():
+			if _are_chord_keys_pressed(chord_keys):
+				return true
+		elif gesture == "chord" and not chord_keys.is_empty():
+			if _are_chord_keys_pressed(chord_keys):
+				return true
+		elif gesture == "single_tap" or gesture == "":
+			if _is_event_currently_held(bound_event):
+				return true
+
+	return false
+
+
+## Checks if an action is currently pressed down, validating chords and gestures.
+## [param action] The input action key string to evaluate.
+## Returns true if all key requirements and active gestures are met.
+func is_action_pressed(action: String) -> bool:
+	if not InputMap.has_action(action):
+		return false
+
+	var events: Array[InputEvent] = InputMap.action_get_events(action)
+	for bound_event: InputEvent in events:
+		var gesture: String = bound_event.get_meta("gesture", "single_tap") as String
+		var chord_keys: Array = bound_event.get_meta("chord_keys", []) as Array
+
+		if gesture in ["chord", "ordered_chord"] and not chord_keys.is_empty():
+			if _are_chord_keys_pressed(chord_keys):
+				return true
+		elif gesture == "single_tap" or gesture == "":
+			if _is_event_currently_held(bound_event):
+				return true
+
+	return false
+
+
+## Checks if an action met its trigger condition during the current physics frame.
+## [param action] The input action key string to evaluate.
+## Returns true if the action triggered this frame.
+func is_action_just_pressed(action: String) -> bool:
+	var current_frame: int = Engine.get_physics_frames()
+	if _triggered_actions_frame.has(action):
+		var target_frame: int = _triggered_actions_frame[action] as int
+		if abs(current_frame - target_frame) <= 2:
+			return true
+	return false
+
+
+## Checks if an action was released during the active frame window.
+## [param action] The input action key string to evaluate.
+## Returns true if the action was released this frame.
+func is_action_just_released(action: String) -> bool:
+	print("Input: Polling is_action_just_released for action: ", action)
+	var current_frame: int = Engine.get_physics_frames()
+	if _released_actions_frame.has(action):
+		var target_frame: int = _released_actions_frame[action] as int
+		if abs(current_frame - target_frame) <= 2:
+			return true
+	return false
+
+
+## Gets an input vector by reading four actions.
+## [param negative_x] The negative X action.
+## [param positive_x] The positive X action.
+## [param negative_y] The negative Y action.
+## [param positive_y] The positive Y action.
+## Returns the resulting [Vector2].
+func get_vector(
+	negative_x: String, positive_x: String, negative_y: String, positive_y: String
+) -> Vector2:
+	return Input.get_vector(negative_x, positive_x, negative_y, positive_y)
+
+
+## Gets an input axis by reading two actions.
+## [param negative_action] The negative action.
+## [param positive_action] The positive action.
+## Returns the resulting float value.
+func get_axis(negative_action: String, positive_action: String) -> float:
+	return Input.get_axis(negative_action, positive_action)
+
+
 ## Checks if all modifier keys preceding the final trigger key are held down.
 ## [param chord_keys] List of integer unique key IDs in chronological order.
-## [return] True if all prefix keys are currently in [_held_keys].
+## Returns true if all prefix keys are currently in [_held_keys].
 func _are_modifier_keys_held(chord_keys: Array) -> bool:
 	if chord_keys.size() < 2:
 		return false
@@ -212,7 +332,7 @@ func _are_modifier_keys_held(chord_keys: Array) -> bool:
 
 ## Checks if all required keys/buttons in a chord list are currently held down.
 ## [param chord_keys] List of integer unique key IDs.
-## [return] True if all keys are active in the held keys dictionary.
+## Returns true if all keys are active in the held keys dictionary.
 func _are_chord_keys_pressed(chord_keys: Array) -> bool:
 	if chord_keys.is_empty():
 		return false
@@ -224,7 +344,7 @@ func _are_chord_keys_pressed(chord_keys: Array) -> bool:
 
 ## Matches an incoming physical input event against all registered [InputMap] bindings.
 ## [param event] The [InputEvent] to test.
-## [return] An [Array] of [Dictionary] objects containing matched actions and gesture metadata.
+## Returns an [Array] of [Dictionary] objects containing matched actions and gesture metadata.
 func _get_actions_for_event(event: InputEvent) -> Array[Dictionary]:
 	var matches: Array[Dictionary] = []
 	var event_id: int = _get_unique_event_id(event)
@@ -255,7 +375,7 @@ func _get_actions_for_event(event: InputEvent) -> Array[Dictionary]:
 
 ## Generates a unique integer identifier for hardware inputs.
 ## [param event] The [InputEvent] to identify.
-## [return] A unique integer ID.
+## Returns a unique integer ID.
 func _get_unique_event_id(event: InputEvent) -> int:
 	if event is InputEventKey:
 		var k: InputEventKey = event as InputEventKey
@@ -268,7 +388,7 @@ func _get_unique_event_id(event: InputEvent) -> int:
 ## Verifies if two physical input events correspond to identical hardware buttons.
 ## [param ev1] First [InputEvent].
 ## [param ev2] Second [InputEvent].
-## [return] True if matching hardware inputs.
+## Returns true if matching hardware inputs.
 func _is_matching_event(ev1: InputEvent, ev2: InputEvent) -> bool:
 	if ev1 is InputEventKey and ev2 is InputEventKey:
 		var k1: InputEventKey = ev1 as InputEventKey
@@ -284,61 +404,9 @@ func _is_matching_event(ev1: InputEvent, ev2: InputEvent) -> bool:
 	return false
 
 
-## Consumes a buffered action if it was executed within the allowed duration buffer window.
-## [param action] The action to poll and consume.
-## [return] True if the action was successfully consumed from buffer.
-func consume_buffered_action(action: String) -> bool:
-	var now: float = Time.get_ticks_msec() / 1000.0
-	if _input_buffer.has(action):
-		var timestamp: float = _input_buffer[action] as float
-		if now - timestamp <= BUFFER_DURATION:
-			print("Buffer: Consumed buffered action: ", action)
-			_input_buffer.erase(action)
-			return true
-		_input_buffer.erase(action)
-	return false
-
-
-## Checks if an action was triggered during the current physics frame window.
-## [param action] The input action key string.
-## [return] True if the action's gesture conditions were satisfied.
-func is_action_just_triggered(action: String) -> bool:
-	var current_frame: int = Engine.get_physics_frames()
-	if _triggered_actions_frame.has(action):
-		var target_frame: int = _triggered_actions_frame[action] as int
-		if abs(current_frame - target_frame) <= 2:
-			return true
-	return false
-
-
-## Checks if an action is currently active, taking into account chords and gestures.
-## [param action] The input action key string.
-## [return] True if the action's gesture and key requirements are currently met.
-func is_action_active(action: String) -> bool:
-	if not InputMap.has_action(action):
-		return false
-
-	var events: Array[InputEvent] = InputMap.action_get_events(action)
-	for bound_event: InputEvent in events:
-		var gesture: String = bound_event.get_meta("gesture", "single_tap") as String
-		var chord_keys: Array = bound_event.get_meta("chord_keys", []) as Array
-
-		if gesture == "ordered_chord" and not chord_keys.is_empty():
-			if _are_chord_keys_pressed(chord_keys):
-				return true
-		elif gesture == "chord" and not chord_keys.is_empty():
-			if _are_chord_keys_pressed(chord_keys):
-				return true
-		elif gesture == "single_tap" or gesture == "":
-			if _is_event_currently_held(bound_event):
-				return true
-
-	return false
-
-
 ## Checks if the physical key or mouse button for an event is currently held.
 ## [param event] The [InputEvent] to inspect.
-## [return] True if the event ID exists in [_held_keys].
+## Returns true if the event ID exists in [_held_keys].
 func _is_event_currently_held(event: InputEvent) -> bool:
 	var event_id: int = _get_unique_event_id(event)
 	return _held_keys.has(event_id)
@@ -353,70 +421,3 @@ func _dispatch_action(action: String, gesture: String) -> void:
 	_input_buffer[action] = now
 	_triggered_actions_frame[action] = Engine.get_physics_frames()
 	action_triggered.emit(action, gesture)
-
-
-## Checks if an action is currently pressed down, validating chords and gestures.
-## [param action] The input action key string to evaluate.
-## [return] True if all key requirements and active gestures are met.
-func is_action_pressed(action: String) -> bool:
-	if not InputMap.has_action(action):
-		return false
-
-	var events: Array[InputEvent] = InputMap.action_get_events(action)
-	for bound_event: InputEvent in events:
-		var gesture: String = bound_event.get_meta("gesture", "single_tap") as String
-		var chord_keys: Array = bound_event.get_meta("chord_keys", []) as Array
-
-		if gesture in ["chord", "ordered_chord"] and not chord_keys.is_empty():
-			if _are_chord_keys_pressed(chord_keys):
-				return true
-		elif gesture == "single_tap" or gesture == "":
-			if _is_event_currently_held(bound_event):
-				return true
-
-	return false
-
-
-## Checks if an action met its trigger condition during the current physics frame.
-## [param action] The input action key string to evaluate.
-## [return] True if the action triggered this frame.
-func is_action_just_pressed(action: String) -> bool:
-	var current_frame: int = Engine.get_physics_frames()
-	if _triggered_actions_frame.has(action):
-		var target_frame: int = _triggered_actions_frame[action] as int
-		if abs(current_frame - target_frame) <= 2:
-			return true
-	return false
-
-
-## Checks if an action was released during the active frame window.
-## [param action] The input action key string to evaluate.
-## [return] True if the action was released this frame.
-func is_action_just_released(action: String) -> bool:
-	print("Input: Polling is_action_just_released for action: ", action)
-	var current_frame: int = Engine.get_physics_frames()
-	if _released_actions_frame.has(action):
-		var target_frame: int = _released_actions_frame[action] as int
-		if abs(current_frame - target_frame) <= 2:
-			return true
-	return false
-
-
-## Gets an input vector by reading four actions.
-## [param negative_x] The negative X action.
-## [param positive_x] The positive X action.
-## [param negative_y] The negative Y action.
-## [param positive_y] The positive Y action.
-## [return] The resulting Vector2.
-func get_vector(
-	negative_x: String, positive_x: String, negative_y: String, positive_y: String
-) -> Vector2:
-	return Input.get_vector(negative_x, positive_x, negative_y, positive_y)
-
-
-## Gets an input axis by reading two actions.
-## [param negative_action] The negative action.
-## [param positive_action] The positive action.
-## [return] The resulting float.
-func get_axis(negative_action: String, positive_action: String) -> float:
-	return Input.get_axis(negative_action, positive_action)

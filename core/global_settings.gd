@@ -2,6 +2,7 @@
 ##
 ## [GlobalSettings] reads and writes values to a config file on disk. It handles
 ## applying startup configurations like window scales, inputs, and shaders.
+class_name GlobalSettings
 extends Node
 
 ## The file path where user preferences are saved locally on the player's disk.
@@ -9,15 +10,6 @@ const SAVE_PATH: String = "user://settings.cfg"
 
 ## Debounce duration in seconds before flushing dirty config changes to disk.
 const SAVE_DEBOUNCE_DELAY: float = 0.35
-
-## The configuration object used to read, cache, and write save file data.
-var config: ConfigFile = ConfigFile.new()
-
-## Internal timer managing debounced disk flushes to avoid main-thread lag.
-var _save_debounce_timer: Timer
-
-## Tracks whether in-memory settings diverge from the saved file on disk.
-var _is_dirty: bool = false
 
 ## Single source of truth for all typography font assets and metadata.
 const FONT_REGISTRY: Array[Dictionary] = [
@@ -89,6 +81,15 @@ const SCREEN_FILTER_REGISTRY: Array[Dictionary] = [
 	{"id": "80sfantasy", "name": "80sFantasy", "index": 24, "path": "res://vfx/80sfantasy.gdshader"}
 ]
 
+## The configuration object used to read, cache, and write save file data.
+var config: ConfigFile = ConfigFile.new()
+
+## Internal timer managing debounced disk flushes to avoid main-thread lag.
+var _save_debounce_timer: Timer
+
+## Tracks whether in-memory settings diverge from the saved file on disk.
+var _is_dirty: bool = false
+
 
 ## Called automatically upon instantiation.
 ## Populates the internal [ConfigFile] before other autoloads can read from it.
@@ -111,6 +112,160 @@ func _ready() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_PREDELETE:
 		flush_to_disk()
+
+
+## Writes a specific setting to memory and queues a debounced disk flush.
+## [param category] The section name within the config file.
+## [param key] The identifier for the setting.
+## [param value] The generic value to save.
+## [param immediate] When true, forces an immediate synchronous write to disk.
+func save_setting(category: String, key: String, value: Variant, immediate: bool = false) -> void:
+	print("System: Player saved setting -> [", category, "] ", key, ": ", value)
+	config.set_value(category, key, value)
+	_is_dirty = true
+
+	if immediate:
+		flush_to_disk()
+	else:
+		_queue_debounced_save()
+
+
+## Saves an entire dictionary of settings under a category and queues a disk flush.
+## [param category] The section name within the config file.
+## [param data] Dictionary of key-value pairs to store.
+## [param immediate] When true, forces an immediate synchronous write to disk.
+func save_settings_bulk(category: String, data: Dictionary, immediate: bool = false) -> void:
+	print("System: Bulk saving ", data.size(), " settings under [", category, "].")
+	for key: Variant in data.keys():
+		var key_str: String = str(key)
+		config.set_value(category, key_str, data[key])
+	_is_dirty = true
+
+	if immediate:
+		flush_to_disk()
+	else:
+		_queue_debounced_save()
+
+
+## Flushes all pending in-memory configuration modifications directly to disk.
+func flush_to_disk() -> void:
+	if not _is_dirty:
+		return
+
+	if is_instance_valid(_save_debounce_timer) and not _save_debounce_timer.is_stopped():
+		_save_debounce_timer.stop()
+
+	print("System: Flushing dirty preferences cache to disk -> ", SAVE_PATH)
+	var err: Error = config.save(SAVE_PATH)
+	if err == OK:
+		_is_dirty = false
+	else:
+		push_error("GlobalSettings: Failed to flush preferences to disk. Error: " + str(err))
+
+
+## Retrieves a specific setting from the cached config file.
+## [param category] The section name within the config file.
+## [param key] The identifier for the setting.
+## [param default_value] The fallback value returned if the key does not exist.
+## Returns the stored [Variant] or the [param default_value].
+func get_setting(category: String, key: String, default_value: Variant) -> Variant:
+	if config.has_section_key(category, key):
+		return config.get_value(category, key)
+	return default_value
+
+
+## Returns an array of all font internal ID keys.
+## Returns [Array] of lowercase font identifier strings.
+func get_font_ids() -> Array[String]:
+	var ids: Array[String] = []
+	for entry: Dictionary in FONT_REGISTRY:
+		ids.append(entry["id"] as String)
+	return ids
+
+
+## Returns an array of all UI display names for fonts.
+## Returns [Array] of formatted font names.
+func get_font_display_names() -> Array[String]:
+	var names: Array[String] = []
+	for entry: Dictionary in FONT_REGISTRY:
+		names.append(entry["name"] as String)
+	return names
+
+
+## Resolves a font index by its internal key.
+## [param font_id] Target font key string.
+## Returns index matching the ID, or 0 if not found.
+func get_font_index(font_id: String) -> int:
+	for i: int in range(FONT_REGISTRY.size()):
+		if FONT_REGISTRY[i]["id"] == font_id:
+			return i
+	return 0
+
+
+## Returns the list of UI display names for screen filters.
+## Returns [Array] of formatted filter strings.
+func get_screen_filter_display_names() -> Array[String]:
+	print("GlobalSettings: Fetching screen filter display names.")
+	var names: Array[String] = []
+	for item: Dictionary in SCREEN_FILTER_REGISTRY:
+		names.append(item.get("name", "") as String)
+	return names
+
+
+## Returns the list of string IDs for console and bus arguments.
+## Returns [Array] of lowercase ID strings.
+func get_screen_filter_ids() -> Array[String]:
+	print("GlobalSettings: Fetching screen filter IDs.")
+	var ids: Array[String] = []
+	for item: Dictionary in SCREEN_FILTER_REGISTRY:
+		ids.append(item.get("id", "") as String)
+	return ids
+
+
+## Resolves the diorama shader mode integer from a filter ID.
+## [param filter_id] Target filter identifier string.
+## Returns corresponding integer index for the shader.
+func get_screen_filter_index(filter_id: String) -> int:
+	var clean_id: String = filter_id.to_lower()
+	for item: Dictionary in SCREEN_FILTER_REGISTRY:
+		if (item.get("id", "") as String) == clean_id:
+			return item.get("index", 0) as int
+	return 0
+
+
+## Resolves the shader file resource path from a filter ID.
+## [param filter_id] Target filter identifier string.
+## Returns resource file path string.
+func get_screen_filter_path(filter_id: String) -> String:
+	var clean_id: String = filter_id.to_lower()
+	for item: Dictionary in SCREEN_FILTER_REGISTRY:
+		if (item.get("id", "") as String) == clean_id:
+			return item.get("path", "") as String
+	return ""
+
+
+## Resolves the font asset file path matching a specified font identifier.
+## [param font_id] Target font key string.
+## Returns file path string, or an empty string if not found or default.
+func get_font_path(font_id: String) -> String:
+	for entry: Dictionary in FONT_REGISTRY:
+		if (entry.get("id", "") as String) == font_id:
+			return entry.get("path", "") as String
+	return ""
+
+
+## Loads and returns the [Font] resource associated with the given font identifier.
+## [param font_id] Target font key string.
+## Returns the loaded [Font] resource, or null if using default or path is invalid.
+func get_font_resource(font_id: String) -> Font:
+	print("GlobalSettings: Loading font resource for -> ", font_id)
+	var path: String = get_font_path(font_id)
+	if path.is_empty():
+		return null
+	if ResourceLoader.exists(path):
+		return load(path) as Font
+	push_warning("GlobalSettings: Font resource path not found: " + path)
+	return null
 
 
 ## Initializes the internal debounce timer node for lazy disk persistence.
@@ -183,161 +338,7 @@ func _apply_input_mappings() -> void:
 			InputMap.action_add_event(action, saved_data)
 
 
-## Writes a specific setting to memory and queues a debounced disk flush.
-## [param category] The section name within the config file.
-## [param key] The identifier for the setting.
-## [param value] The generic value to save.
-## [param immediate] When true, forces an immediate synchronous write to disk.
-func save_setting(category: String, key: String, value: Variant, immediate: bool = false) -> void:
-	print("System: Player saved setting -> [", category, "] ", key, ": ", value)
-	config.set_value(category, key, value)
-	_is_dirty = true
-
-	if immediate:
-		flush_to_disk()
-	else:
-		_queue_debounced_save()
-
-
-## Saves an entire dictionary of settings under a category and queues a disk flush.
-## [param category] The section name within the config file.
-## [param data] Dictionary of key-value pairs to store.
-## [param immediate] When true, forces an immediate synchronous write to disk.
-func save_settings_bulk(category: String, data: Dictionary, immediate: bool = false) -> void:
-	print("System: Bulk saving ", data.size(), " settings under [", category, "].")
-	for key: Variant in data.keys():
-		var key_str: String = str(key)
-		config.set_value(category, key_str, data[key])
-	_is_dirty = true
-
-	if immediate:
-		flush_to_disk()
-	else:
-		_queue_debounced_save()
-
-
 ## Restarts the save debounce countdown to bundle closely timed writes together.
 func _queue_debounced_save() -> void:
 	if is_instance_valid(_save_debounce_timer):
 		_save_debounce_timer.start(SAVE_DEBOUNCE_DELAY)
-
-
-## Flushes all pending in-memory configuration modifications directly to disk.
-func flush_to_disk() -> void:
-	if not _is_dirty:
-		return
-
-	if is_instance_valid(_save_debounce_timer) and not _save_debounce_timer.is_stopped():
-		_save_debounce_timer.stop()
-
-	print("System: Flushing dirty preferences cache to disk -> ", SAVE_PATH)
-	var err: Error = config.save(SAVE_PATH)
-	if err == OK:
-		_is_dirty = false
-	else:
-		push_error("GlobalSettings: Failed to flush preferences to disk. Error: " + str(err))
-
-
-## Retrieves a specific setting from the cached config file.
-## [param category] The section name within the config file.
-## [param key] The identifier for the setting.
-## [param default_value] The fallback value returned if the key does not exist.
-## [return] The stored [Variant] or the [param default_value].
-func get_setting(category: String, key: String, default_value: Variant) -> Variant:
-	if config.has_section_key(category, key):
-		return config.get_value(category, key)
-	return default_value
-
-
-## Returns an array of all font internal ID keys.
-## [return] [Array] of lowercase font identifier strings.
-func get_font_ids() -> Array[String]:
-	var ids: Array[String] = []
-	for entry: Dictionary in FONT_REGISTRY:
-		ids.append(entry["id"] as String)
-	return ids
-
-
-## Returns an array of all UI display names for fonts.
-## [return] [Array] of formatted font names.
-func get_font_display_names() -> Array[String]:
-	var names: Array[String] = []
-	for entry: Dictionary in FONT_REGISTRY:
-		names.append(entry["name"] as String)
-	return names
-
-
-## Resolves a font index by its internal key.
-## [param font_id] Target font key string.
-## [return] [Array] index matching the ID, or `0` if not found.
-func get_font_index(font_id: String) -> int:
-	for i: int in range(FONT_REGISTRY.size()):
-		if FONT_REGISTRY[i]["id"] == font_id:
-			return i
-	return 0
-
-
-## Returns the list of UI display names for screen filters.
-## [return] [Array] of formatted filter strings.
-func get_screen_filter_display_names() -> Array[String]:
-	print("GlobalSettings: Fetching screen filter display names.")
-	var names: Array[String] = []
-	for item: Dictionary in SCREEN_FILTER_REGISTRY:
-		names.append(item.get("name", "") as String)
-	return names
-
-
-## Returns the list of string IDs for console and bus arguments.
-## [return] [Array] of lowercase ID strings.
-func get_screen_filter_ids() -> Array[String]:
-	print("GlobalSettings: Fetching screen filter IDs.")
-	var ids: Array[String] = []
-	for item: Dictionary in SCREEN_FILTER_REGISTRY:
-		ids.append(item.get("id", "") as String)
-	return ids
-
-
-## Resolves the diorama shader mode integer from a filter ID.
-## [param filter_id] Target filter identifier string.
-## [return] Corresponding integer index for the shader.
-func get_screen_filter_index(filter_id: String) -> int:
-	var clean_id: String = filter_id.to_lower()
-	for item: Dictionary in SCREEN_FILTER_REGISTRY:
-		if (item.get("id", "") as String) == clean_id:
-			return item.get("index", 0) as int
-	return 0
-
-
-## Resolves the shader file resource path from a filter ID.
-## [param filter_id] Target filter identifier string.
-## [return] Resource file path string.
-func get_screen_filter_path(filter_id: String) -> String:
-	var clean_id: String = filter_id.to_lower()
-	for item: Dictionary in SCREEN_FILTER_REGISTRY:
-		if (item.get("id", "") as String) == clean_id:
-			return item.get("path", "") as String
-	return ""
-
-
-## Resolves the font asset file path matching a specified font identifier.
-## [param font_id] Target font key string.
-## [return] File path string, or an empty string if not found or default.
-func get_font_path(font_id: String) -> String:
-	for entry: Dictionary in FONT_REGISTRY:
-		if (entry.get("id", "") as String) == font_id:
-			return entry.get("path", "") as String
-	return ""
-
-
-## Loads and returns the [Font] resource associated with the given font identifier.
-## [param font_id] Target font key string.
-## [return] The loaded [Font] resource, or null if using default or path is invalid.
-func get_font_resource(font_id: String) -> Font:
-	print("GlobalSettings: Loading font resource for -> ", font_id)
-	var path: String = get_font_path(font_id)
-	if path.is_empty():
-		return null
-	if ResourceLoader.exists(path):
-		return load(path) as Font
-	push_warning("GlobalSettings: Font resource path not found: " + path)
-	return null

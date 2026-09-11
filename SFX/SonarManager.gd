@@ -3,11 +3,21 @@
 ## Scans the surrounding 3D environment for categorized objects, sorting them by
 ## priority and distance while applying raycast occlusion, rear-cone spectral filtering,
 ## and staggered playback delays.
+class_name SonarManager
 extends Node
 
 ## Emitted when a sonar scan finishes scanning the surroundings.
 ## [param targets_found] The number of audible targets detected during the scan.
 signal on_scan_completed(targets_found: int)
+
+## Maximum concurrent 3D audio players pooled for echo playback.
+const MAX_AUDIO_PLAYERS: int = 16
+
+## Dedicated audio bus name for accessibility sound effects.
+const SFX_BUS_NAME: StringName = &"AccesibilitySFX"
+
+## Minimum spatial distance squared (1.0m) to filter duplicate level instances.
+const SPATIAL_DEDUPLICATION_THRESHOLD_SQ: float = 1.0
 
 @export_category("Sonar Audio Streams")
 ## The sound played centered on the player when triggering a ping scan.
@@ -38,15 +48,6 @@ signal on_scan_completed(targets_found: int)
 ## Collision mask used for physics raycast occlusion detection.
 @export_flags_3d_physics var occlusion_collision_mask: int = 1
 
-## Maximum concurrent 3D audio players pooled for echo playback.
-const MAX_AUDIO_PLAYERS: int = 16
-
-## Dedicated audio bus name for accessibility sound effects.
-const SFX_BUS_NAME: StringName = &"AccesibilitySFX"
-
-## Minimum spatial distance squared (1.0m) to filter duplicate level instances.
-const SPATIAL_DEDUPLICATION_THRESHOLD_SQ: float = 1.0
-
 ## Dedicated 2D audio player for the outgoing local ping chime.
 var _local_ping_player: AudioStreamPlayer = AudioStreamPlayer.new()
 
@@ -72,29 +73,6 @@ func _ready() -> void:
 		if events_node.has_signal("sonar_ping_requested"):
 			events_node.sonar_ping_requested.connect(trigger_sonar)
 			print("SonarManager: Successfully hooked to Events.sonar_ping_requested.")
-
-
-## Configures the local ping player and pre-allocates the 3D player pool.
-func _setup_audio_nodes() -> void:
-	var resolved_bus: StringName = SFX_BUS_NAME
-	if AudioServer.get_bus_index(resolved_bus) == -1:
-		resolved_bus = &"AccessibilitySFX"
-		if AudioServer.get_bus_index(resolved_bus) == -1:
-			resolved_bus = &"Master"
-
-	_local_ping_player.bus = resolved_bus
-	if ping_emitter_sound != null:
-		_local_ping_player.stream = ping_emitter_sound
-	add_child(_local_ping_player)
-
-	for i: int in range(MAX_AUDIO_PLAYERS):
-		var player_3d: AudioStreamPlayer3D = AudioStreamPlayer3D.new()
-		player_3d.bus = resolved_bus
-		player_3d.max_distance = scan_radius
-		player_3d.attenuation_model = (AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE)
-		player_3d.unit_size = 3.0
-		add_child(player_3d)
-		_player_pool.append(player_3d)
 
 
 ## Executes an active sonar sweep centered on the provided origin node or camera.
@@ -235,9 +213,32 @@ func trigger_sonar(origin_node: Node3D) -> void:
 	on_scan_completed.emit(targets_to_ping.size())
 
 
+## Configures the local ping player and pre-allocates the 3D player pool.
+func _setup_audio_nodes() -> void:
+	var resolved_bus: StringName = SFX_BUS_NAME
+	if AudioServer.get_bus_index(resolved_bus) == -1:
+		resolved_bus = &"AccessibilitySFX"
+		if AudioServer.get_bus_index(resolved_bus) == -1:
+			resolved_bus = &"Master"
+
+	_local_ping_player.bus = resolved_bus
+	if ping_emitter_sound != null:
+		_local_ping_player.stream = ping_emitter_sound
+	add_child(_local_ping_player)
+
+	for i: int in range(MAX_AUDIO_PLAYERS):
+		var player_3d: AudioStreamPlayer3D = AudioStreamPlayer3D.new()
+		player_3d.bus = resolved_bus
+		player_3d.max_distance = scan_radius
+		player_3d.attenuation_model = (AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE)
+		player_3d.unit_size = 3.0
+		add_child(player_3d)
+		_player_pool.append(player_3d)
+
+
 ## Ascends node hierarchy to find the canonical root [Node3D] representing the interactable entity.
 ## [param node] The target [Node3D] detected via group queries.
-## [return] The highest root [Node3D] representing the interactable asset.
+## Returns the highest root [Node3D] representing the interactable asset.
 func _resolve_interactable_root(node: Node3D) -> Node3D:
 	if not is_instance_valid(node):
 		return null

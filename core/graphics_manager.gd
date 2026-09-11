@@ -3,19 +3,19 @@
 ## [GraphicsManager] continuously monitors the application's framerate.
 ## If it dips below [constant TARGET_FPS_MINIMUM], it progressively disables heavy features
 ## to maintain a playable 60 FPS target.
-# class_name GraphicsManager
+class_name GraphicsManager
 extends Node
 
 ## Emitted when the performance profile drops a level to regain FPS.
-## Passes [param downgrade_level] step index.
+## [param downgrade_level] The step index of the downgrade tier applied.
 signal performance_profile_adjusted(downgrade_level: int)
 
 ## Emitted when switching between User and Auto-Optimized modes.
-## Passes [param is_optimized] running state.
+## [param is_optimized] The running auto-optimization state.
 signal profile_mode_changed(is_optimized: bool)
 
 ## Emitted when the 60 FPS auto-tune benchmark finishes.
-## Passes [param optimal_level] downgrade tier.
+## [param optimal_level] The final downgrade tier index reached.
 signal benchmark_completed(optimal_level: int)
 
 ## Time in seconds between checking the framerate.
@@ -175,7 +175,7 @@ func _on_fps_timer_timeout() -> void:
 
 
 ## Analyzes the [RenderingServer] video adapter string to determine if it is an integrated GPU.
-## [return] True if low-end hardware is suspected.
+## Returns true if low-end hardware is suspected.
 func _detect_low_end_hardware() -> bool:
 	print("GraphicsManager: Evaluating current video adapter.")
 	var adapter_name: String = RenderingServer.get_video_adapter_name().to_lower()
@@ -217,7 +217,7 @@ func _on_node_added(node: Node) -> void:
 
 
 ## Looks up the current [Environment] resource connected to the active 3D world.
-## [return] The active [Environment] resource or fallback.
+## Returns the active [Environment] resource or fallback.
 func _get_current_environment() -> Environment:
 	var vp: Viewport = get_viewport()
 	if is_instance_valid(vp) and vp.find_world_3d():
