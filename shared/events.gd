@@ -290,6 +290,10 @@ signal heavy_carry_toggled(is_active: bool)
 @warning_ignore("unused_signal")
 signal vault_prompt_updated(is_available: bool, screen_pos: Vector2, is_on_screen: bool)
 
+## Emitted when player grabs or drops any carried item. Passes [param is_holding].
+@warning_ignore("unused_signal")
+signal held_item_changed(is_holding: bool)
+
 ## Visual animation style presets for chapter title card sequences.
 enum ChapterAnimStyle {
 	SIMPLE,

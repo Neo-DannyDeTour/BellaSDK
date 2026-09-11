@@ -59,6 +59,7 @@
 sky_material = SubResource("PanoramaSkyMaterial_kja8q")
 
 [sub_resource type="Environment" id="Environment_46sxa"]
+resource_local_to_scene = true
 background_mode = 2
 sky = SubResource("Sky_lwyc6")
 sky_rotation = Vector3(0, 2.3841197, 0)
@@ -1712,7 +1713,7 @@ transform = Transform3D(-1, 0, 8.742278e-08, 4.371139e-08, 0.8660254, 0.5, -7.57
 light_color = Color(0.8039216, 1, 1, 1)
 light_energy = 16.0
 shadow_enabled = true
-spot_range = 4096.0
+spot_range = 50.0
 
 [node name="Shack" type="Node3D" parent="." unique_id=465905829]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.194672, 2.3841858e-07, 0.13223338)

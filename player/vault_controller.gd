@@ -54,19 +54,38 @@ var current_ledge_edge: Vector3 = Vector3.ZERO
 var current_vault_height: float = 0.0
 ## Flags whether landing clearance mandates ending in a crouch.
 var current_vault_requires_crouch: bool = false
+## Flags whether the player is currently holding an object.
+var is_holding_item: bool = false
 
 
-## Lifecycle callback initializing controller properties.
+## Lifecycle callback initializing controller properties and listeners.
 func _ready() -> void:
 	print("VaultController: _ready() called. Initialized.")
+	if not Events.held_item_changed.is_connected(_on_held_item_changed):
+		Events.held_item_changed.connect(_on_held_item_changed)
 
 
 ## Physics frame update managing continuous obstacle and ledge scanning.
 ## [param _delta] Elapsed physics frame delta in seconds.
 func _physics_process(_delta: float) -> void:
-	if auto_scan and is_instance_valid(player_body) and is_instance_valid(camera):
+	if (
+		auto_scan
+		and not is_holding_item
+		and is_instance_valid(player_body)
+		and is_instance_valid(camera)
+	):
 		if not is_vaulting:
 			process_vault_scan()
+
+
+## Handles held item status changes, resetting and silencing prompt if held.
+## [param is_holding] True if an object is actively carried.
+func _on_held_item_changed(is_holding: bool) -> void:
+	print("VaultController: _on_held_item_changed() called -> ", is_holding)
+	is_holding_item = is_holding
+	if is_holding:
+		can_vault_current_ledge = false
+		Events.vault_prompt_updated.emit(false, Vector3.ZERO)
 
 
 # --------------------------------------
@@ -77,7 +96,7 @@ func _physics_process(_delta: float) -> void:
 func process_vault_scan(max_reach: float = 2.1) -> void:
 	can_vault_current_ledge = false
 
-	if is_vaulting:
+	if is_vaulting or is_holding_item:
 		Events.vault_prompt_updated.emit(false, Vector3.ZERO)
 		return
 
@@ -104,10 +123,12 @@ func process_vault_scan(max_reach: float = 2.1) -> void:
 
 		var hit: Dictionary = space_state.intersect_ray(ray_query)
 		if not hit.is_empty():
+			var hit_collider: Object = hit["collider"]
+			if _is_airborne_or_invalid_target(hit_collider):
+				Events.vault_prompt_updated.emit(false, Vector3.ZERO)
+				return
+
 			if absf(hit["normal"].y) <= 0.2:
-				if _is_collider_or_parent_in_group(hit["collider"], "not_climbable"):
-					Events.vault_prompt_updated.emit(false, Vector3.ZERO)
-					return
 				forward_result = hit
 				break
 
@@ -130,12 +151,8 @@ func process_vault_scan(max_reach: float = 2.1) -> void:
 		Events.vault_prompt_updated.emit(false, Vector3.ZERO)
 		return
 
-	if _is_collider_or_parent_in_group(down_result["collider"], "not_climbable"):
-		Events.vault_prompt_updated.emit(false, Vector3.ZERO)
-		return
-
 	var down_collider: Object = down_result["collider"]
-	if down_collider is Node and down_collider.is_in_group("not_climbable"):
+	if _is_airborne_or_invalid_target(down_collider):
 		Events.vault_prompt_updated.emit(false, Vector3.ZERO)
 		return
 
@@ -177,6 +194,29 @@ func process_vault_scan(max_reach: float = 2.1) -> void:
 	Events.vault_prompt_updated.emit(true, exact_edge)
 
 
+## Verifies if a body is non-climbable or actively tumbling through the air.
+## [param collider] The hit physics body or area.
+## [return] True if the target should be ignored.
+func _is_airborne_or_invalid_target(collider: Object) -> bool:
+	if not collider is Node:
+		return true
+
+	var node: Node = collider as Node
+
+	if _is_collider_or_parent_in_group(node, "not_climbable"):
+		return true
+
+	# If it's a dynamic physics item, only ignore if it's currently moving in the air
+	if node is RigidBody3D:
+		var rb: RigidBody3D = node as RigidBody3D
+		if "is_held" in rb and rb.get("is_held"):
+			return true
+		if rb.linear_velocity.length() > 0.25:
+			return true
+
+	return false
+
+
 # --------------------------------------
 # VAULT EXECUTION
 # --------------------------------------
@@ -185,7 +225,7 @@ func process_vault_scan(max_reach: float = 2.1) -> void:
 ## [return] True if vault execution began successfully.
 func try_vault(is_currently_crouching: bool) -> bool:
 	print("VaultController: try_vault() called.")
-	if not can_vault_current_ledge:
+	if not can_vault_current_ledge or is_holding_item:
 		return false
 
 	can_vault_current_ledge = false

@@ -8,6 +8,9 @@ extends Node
 ## Minimum mass in kilograms required for an object to be considered heavy.
 const HEAVY_OBJECT_MASS_THRESHOLD: float = 10.0
 
+## Cooldown duration in milliseconds after dropping before re-grab is allowed.
+const DROP_REPICK_COOLDOWN_MSEC: int = 400
+
 # --------------------------------------
 # EXPORTS
 # --------------------------------------
@@ -38,7 +41,14 @@ const HEAVY_OBJECT_MASS_THRESHOLD: float = 10.0
 var player: CharacterBody3D
 
 ## The RigidBody3D currently being carried by the player.
-var held_item: RigidBody3D = null
+var held_item: RigidBody3D = null:
+	set(value):
+		var changed: bool = held_item != value
+		held_item = value
+		if changed:
+			var is_holding: bool = is_instance_valid(held_item)
+			print("InteractionComponent: Held item state changed -> ", is_holding)
+			Events.held_item_changed.emit(is_holding)
 
 ## Flag indicating whether the player is currently operating fixed machinery.
 var is_operating_machine: bool = false
@@ -58,8 +68,11 @@ var heavy_lift_yaw_base: float = 0.0
 ## Flag indicating whether terminal focus mode is active.
 var is_in_terminal_mode: bool = false
 
-## Timestamp in milliseconds of the last grab execution to debounce rapid drops.
+## Timestamp in milliseconds of the last grab execution.
 var _last_grab_time: int = 0
+
+## Timestamp in milliseconds of the last drop execution to debounce re-grabs.
+var _last_drop_time: int = 0
 
 
 ## Initializes the interaction component and registers event bus listeners.
@@ -78,23 +91,39 @@ func initialize(p_player: Node3D) -> void:
 		Events.item_dropped.connect(_on_global_item_dropped)
 
 
-## Evaluates gesture-resolved inputs polled each frame from the master player loop.
-## [param _event] The [InputEvent] dispatched from the engine (kept for API compatibility).
-func process_unhandled_input(_event: InputEvent = null) -> void:
-	# 1. Throwing Held Items
+## Evaluates physics frame tick updates and polls action inputs consistently.
+## [param delta] Elapsed physics frame delta time in seconds.
+func process_interaction(delta: float) -> void:
 	if (
-		(
-			GestureInputManager.is_action_just_triggered("grenade_throw")
-			or GestureInputManager.is_action_just_triggered("shoot")
-		)
-		and is_instance_valid(held_item)
+		is_instance_valid(interaction_scanner)
+		and interaction_scanner.has_method("process_interaction")
 	):
-		print("InteractionComponent: Throw action triggered. Throwing item.")
-		throw_held_item()
-		return
+		interaction_scanner.process_interaction(delta)
+
+	# 1. Throwing Held Items
+	if is_instance_valid(held_item):
+		var is_throw_triggered: bool = (
+			GestureInputManager.consume_buffered_action("shoot")
+			or GestureInputManager.consume_buffered_action("grenade_throw")
+			or GestureInputManager.is_action_just_triggered("shoot")
+			or GestureInputManager.is_action_just_triggered("grenade_throw")
+			or Input.is_action_just_pressed("shoot")
+			or Input.is_action_just_pressed("grenade_throw")
+		)
+
+		if is_throw_triggered:
+			print("InteractionComponent: Throw input validated. Throwing item.")
+			throw_held_item()
+			return
 
 	# 2. Dropping or Picking Up Items via Interact Action
-	if GestureInputManager.is_action_just_triggered("interact"):
+	var is_interact_triggered: bool = (
+		GestureInputManager.consume_buffered_action("interact")
+		or GestureInputManager.is_action_just_triggered("interact")
+		or Input.is_action_just_pressed("interact")
+	)
+
+	if is_interact_triggered:
 		if is_instance_valid(held_item):
 			if (
 				held_item.has_method("is_class")
@@ -103,13 +132,16 @@ func process_unhandled_input(_event: InputEvent = null) -> void:
 			):
 				return
 
-			if Time.get_ticks_msec() - _last_grab_time < 100:
+			if Time.get_ticks_msec() - _last_grab_time < 200:
 				return
 
-			print(
-				"InteractionComponent: Interact triggered while holding item." + " Requesting drop."
-			)
+			print("InteractionComponent: Interact pressed while holding. Dropping item.")
 			drop_held_item()
+			return
+
+		# Enforce cool-down so freshly dropped objects cannot instantly be re-grabbed
+		var time_since_drop: int = Time.get_ticks_msec() - _last_drop_time
+		if time_since_drop < DROP_REPICK_COOLDOWN_MSEC:
 			return
 
 		if _try_pick_up():
@@ -121,19 +153,32 @@ func process_unhandled_input(_event: InputEvent = null) -> void:
 				interaction_scanner.handle_interact_input()
 			return
 
-	# 3. Scanner Shoot Inputs
-	if (
-		GestureInputManager.is_action_just_triggered("shoot")
-		and is_instance_valid(interaction_scanner)
-	):
-		if interaction_scanner.has_method("handle_shoot_input"):
-			print("InteractionComponent: Forwarding shoot to scanner.")
-			interaction_scanner.handle_shoot_input()
+	# 3. Forward Shoot Input to Scanner when Hands are Empty
+	if not is_instance_valid(held_item):
+		var is_shoot_triggered: bool = (
+			GestureInputManager.consume_buffered_action("shoot")
+			or GestureInputManager.is_action_just_triggered("shoot")
+			or Input.is_action_just_pressed("shoot")
+		)
+		if is_shoot_triggered and is_instance_valid(interaction_scanner):
+			if interaction_scanner.has_method("handle_shoot_input"):
+				print("InteractionComponent: Forwarding shoot to scanner.")
+				interaction_scanner.handle_shoot_input()
+
+
+## Evaluates gesture-resolved inputs polled from the engine event stream.
+## [param _event] The [InputEvent] dispatched from the engine.
+func process_unhandled_input(_event: InputEvent = null) -> void:
+	pass
 
 
 ## Attempts to detect and grab a physics item within the grab shape cast volume.
 ## [return] True if an item was successfully grabbed.
 func _try_pick_up() -> bool:
+	var time_since_drop: int = Time.get_ticks_msec() - _last_drop_time
+	if time_since_drop < DROP_REPICK_COOLDOWN_MSEC:
+		return false
+
 	interact_cast.force_shapecast_update()
 	if interact_cast.is_colliding():
 		for i: int in range(interact_cast.get_collision_count()):
@@ -158,6 +203,7 @@ func throw_held_item() -> void:
 	if not is_instance_valid(held_item):
 		return
 
+	_last_drop_time = Time.get_ticks_msec()
 	var item_to_throw: RigidBody3D = held_item
 	held_item = null
 	update_heavy_carry_state()
@@ -178,6 +224,7 @@ func drop_held_item() -> void:
 	if not is_instance_valid(held_item):
 		return
 
+	_last_drop_time = Time.get_ticks_msec()
 	var item_to_drop: RigidBody3D = held_item
 	held_item = null
 	update_heavy_carry_state()
@@ -194,6 +241,7 @@ func drop_held_item() -> void:
 func _on_global_item_dropped(item: Node3D, actor: Node3D) -> void:
 	if actor == player:
 		print("InteractionComponent: Global drop received. Restoring hands/weapons.")
+		_last_drop_time = Time.get_ticks_msec()
 		held_item = null
 		update_heavy_carry_state()
 		_check_glider_restore(item)
@@ -203,6 +251,7 @@ func _on_global_item_dropped(item: Node3D, actor: Node3D) -> void:
 ## Clears tracking state for carried items and unhides weapons.
 func force_clear_hands() -> void:
 	print("InteractionComponent: force_clear_hands() called. Clearing tracking variables.")
+	_last_drop_time = Time.get_ticks_msec()
 	held_item = null
 	update_heavy_carry_state()
 	_set_weapon_active(true)
@@ -267,7 +316,7 @@ func force_grab_item(item: RigidBody3D) -> void:
 func attach_item_to_weapon_holder(
 	item: Node3D, item_anchor: Marker3D, p_player: Node3D = null
 ) -> void:
-	print("InteractionComponent: attach_item_to_weapon_holder() called." + " Reparenting item.")
+	print("InteractionComponent: attach_item_to_weapon_holder() called. Reparenting item.")
 
 	var current_parent: Node = item.get_parent()
 	if is_instance_valid(current_parent):
