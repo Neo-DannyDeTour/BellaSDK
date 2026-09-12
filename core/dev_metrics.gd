@@ -85,6 +85,12 @@ func _process(delta: float) -> void:
 		_render_metrics_text()
 
 
+## Toggles the visual state of the metrics panel on and off.
+func toggle_window() -> void:
+	visible = not visible
+	print("DevMetricsPanel: Visibility toggled to ", visible)
+
+
 ## Assembles BBCode table strings and updates the HUD label.
 func _render_metrics_text() -> void:
 	var fps: float = Engine.get_frames_per_second()
@@ -201,12 +207,6 @@ func _render_metrics_text() -> void:
 	metrics_label.text = text
 
 
-## Toggles the visual state of the metrics panel on and off.
-func toggle_window() -> void:
-	visible = not visible
-	print("DevMetricsPanel: Visibility toggled to ", visible)
-
-
 ## Samples the current frametime from the [RenderingServer] and pushes it into the history arrays.
 func _update_frametime_history() -> void:
 	var current_tick: int = Time.get_ticks_usec()
@@ -240,7 +240,7 @@ func _update_frametime_history() -> void:
 ## [param title] The name of the metric (e.g. "CPU:").
 ## [param sum_val] The current rolling sum of the metric.
 ## [param history] The array containing the history of the metric.
-## [return] Formatted BBCode table row string.
+## Returns formatted BBCode table row string.
 func _format_metric_row(title: String, sum_val: float, history: Array[float]) -> String:
 	if history.is_empty():
 		return ""
@@ -274,7 +274,7 @@ func _format_metric_row(title: String, sum_val: float, history: Array[float]) ->
 
 ## Returns a hex color string based on how fast a millisecond timing is.
 ## [param ms] The time in milliseconds.
-## [return] Hex color code string.
+## Returns hex color code string.
 func _get_ms_color(ms: float) -> String:
 	if ms < 8.34:
 		return "#38bdf8"
@@ -313,7 +313,7 @@ func _cache_static_settings_info() -> void:
 
 
 ## Checks the current active viewport to build strings for dynamic graphics settings.
-## [return] Formatted string listing dynamic graphics options.
+## Returns formatted string listing dynamic graphics options.
 func _get_dynamic_settings_string() -> String:
 	var dyn_str: String = ""
 	var vp: Viewport = get_viewport()

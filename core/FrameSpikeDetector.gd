@@ -50,5 +50,3 @@ func _report_spike_data(frame_time_ms: float) -> void:
 	print("Primitives (Polygons): ", primitives, " (High count = Too many high-poly meshes)")
 	print("Objects Drawn: ", objects)
 	print("----------------------------")
-
-	# breakpoint

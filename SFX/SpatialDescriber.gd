@@ -1,6 +1,6 @@
 ## Global autoload responsible for generating Text-to-Speech spatial descriptions.
 ##
-## [SpatialDescriber] acts as an accessibility layer that translates the 3D positions
+## SpatialDescriber acts as an accessibility layer that translates the 3D positions
 ## of surrounding objects into conversational, directional language and routes it
 ## to the [TTSManager].
 ## It gathers interactable objects within the active player [Camera3D] frustum,
@@ -216,7 +216,7 @@ func describe_surroundings(origin_node: Node3D) -> void:
 
 ## Resolves the active [Camera3D] for the viewpoint sweep.
 ## [param origin_node] The root player or observer node.
-## [return] The active [Camera3D] or null.
+## Returns the active [Camera3D] or null.
 func _resolve_active_camera(origin_node: Node3D) -> Camera3D:
 	print("SpatialDescriber: Resolving active camera.")
 	if origin_node is Camera3D:
@@ -231,7 +231,7 @@ func _resolve_active_camera(origin_node: Node3D) -> Camera3D:
 
 ## Ascends node hierarchy to find the canonical root [Node3D] representing the interactable entity.
 ## [param node] The target [Node3D] detected via group queries.
-## [return] The highest root [Node3D] representing the interactable asset.
+## Returns the highest root [Node3D] representing the interactable asset.
 func _resolve_interactable_root(node: Node3D) -> Node3D:
 	if not is_instance_valid(node):
 		return null
@@ -259,7 +259,7 @@ func _resolve_interactable_root(node: Node3D) -> Node3D:
 
 ## Ascertains if a node belongs to a menu, settings preview, or UI diorama branch.
 ## [param node] The target node being evaluated.
-## [return] True if the node is within any menu or preview hierarchy.
+## Returns true if the node is within any menu or preview hierarchy.
 func _is_menu_or_diorama_node(node: Node) -> bool:
 	var current: Node = node
 	while is_instance_valid(current) and current != get_tree().root:
@@ -320,7 +320,7 @@ func _sort_clusters_prioritized(
 ## Assigns an integer priority rank based on distance and forward alignment.
 ## [param dist] Euclidean distance to target in meters.
 ## [param dot_fwd] Horizontal dot product with camera forward.
-## [return] Numerical priority (0 = Front near, 1 = Sides near, 2 = Far).
+## Returns numerical priority (0 = Front near, 1 = Sides near, 2 = Far).
 func _get_cluster_priority(dist: float, dot_fwd: float) -> int:
 	if dist <= nearby_distance_threshold:
 		if dot_fwd >= 0.4:
@@ -331,7 +331,7 @@ func _get_cluster_priority(dist: float, dot_fwd: float) -> int:
 
 ## Groups nearby identical objects into single counted clusters.
 ## [param targets] List of individual validated target dictionaries.
-## [return] An array of clustered items with average positions.
+## Returns an array of clustered items with average positions.
 func _cluster_targets(targets: Array[Dictionary]) -> Array[Dictionary]:
 	print("SpatialDescriber: Clustering %d detected targets." % targets.size())
 	var clusters: Array[Dictionary] = []
@@ -365,7 +365,7 @@ func _cluster_targets(targets: Array[Dictionary]) -> Array[Dictionary]:
 ## [param view_pos] The eye-level camera position.
 ## [param target_pos] Global coordinates of the target entity.
 ## [param ground_y] Ground-level Y elevation representing the player's walking plane.
-## [return] An intuitive spatial direction string.
+## Returns an intuitive spatial direction string.
 func _get_relative_direction(
 	camera: Camera3D, view_pos: Vector3, target_pos: Vector3, ground_y: float
 ) -> String:
@@ -409,7 +409,7 @@ func _get_relative_direction(
 
 ## Resolves an accessible English display name from properties, mesh references, or node hierarchy.
 ## [param target_node] Target [Node3D] being examined.
-## [return] A human-friendly string name.
+## Returns a human-friendly string name.
 func _resolve_display_name(target_node: Node3D) -> String:
 	if target_node is PickableObject:
 		var pickable: PickableObject = target_node as PickableObject
@@ -446,7 +446,7 @@ func _resolve_display_name(target_node: Node3D) -> String:
 
 ## Recursively searches for instantiated sub-scenes or descriptive mesh instances.
 ## [param current_node] The [Node] to inspect.
-## [return] The resolved mesh name string, or an empty string if none found.
+## Returns the resolved mesh name string, or an empty string if none found.
 func _find_mesh_name(current_node: Node) -> String:
 	for child: Node in current_node.get_children():
 		var raw_name: String = child.name
@@ -475,7 +475,7 @@ func _find_mesh_name(current_node: Node) -> String:
 
 ## Evaluates whether a node name is an engine default placeholder or structural component.
 ## [param node_name] The raw node name to evaluate.
-## [return] True if the name matches generic structural patterns.
+## Returns true if the name matches generic structural patterns.
 func _is_generic_name(node_name: String) -> bool:
 	var lower_name: String = node_name.to_lower()
 	return (
@@ -497,7 +497,7 @@ func _is_generic_name(node_name: String) -> bool:
 ## [param view_pos] Eye-level coordinates of the camera.
 ## [param target_node] Target [Node3D] to verify visibility towards.
 ## [param origin_node] The observer node to exclude from ray hits.
-## [return] True if all test points on the target are occluded.
+## Returns true if all test points on the target are occluded.
 func _is_occluded(
 	space_state: PhysicsDirectSpaceState3D,
 	view_pos: Vector3,
@@ -542,7 +542,7 @@ func _collect_collision_rids(node: Node, rids: Array[RID]) -> void:
 
 ## Cleans digits, symbols, camelCase, and separators from an identifier to make it human-readable.
 ## [param raw_name] The raw identifier string to sanitize.
-## [return] A formatted string with spaces.
+## Returns a formatted string with spaces.
 func _clean_name(raw_name: String) -> String:
 	var separated_name: String = _regex_camel.sub(raw_name, "$1 $2", true)
 	return _regex_symbols.sub(separated_name.to_lower(), " ", true).strip_edges()
@@ -551,7 +551,7 @@ func _clean_name(raw_name: String) -> String:
 ## Pluralizes a noun phrase if the count is greater than one.
 ## [param item_name] The singular noun description.
 ## [param count] Number of items in the cluster.
-## [return] Formatted count and noun string.
+## Returns formatted count and noun string.
 func _format_plural(item_name: String, count: int) -> String:
 	if count == 1:
 		return "1 " + item_name

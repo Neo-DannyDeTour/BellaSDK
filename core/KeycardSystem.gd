@@ -1,6 +1,6 @@
 ## Global autoload that tracks and manages collected keycards.
 ##
-## The [KeycardSystem] is responsible for storing the player's keycard inventory.
+## The KeycardSystem is responsible for storing the player's keycard inventory.
 ## It uses [StringName] identifiers to dynamically support any number of keycards
 ## without requiring hardcoded enums. It emits signals when cards are acquired
 ## or consumed.
@@ -30,7 +30,7 @@ func add_card(card_id: StringName) -> void:
 
 ## Checks if a specific keycard is currently in the inventory.
 ## [param card_id] The unique [StringName] identifier of the card to check.
-## Returns [code]true[/code] if the card is held, [code]false[/code] otherwise.
+## Returns true if the card is held, false otherwise.
 func has_card(card_id: StringName) -> bool:
 	return _inventory.has(card_id)
 
