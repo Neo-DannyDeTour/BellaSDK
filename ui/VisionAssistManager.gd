@@ -152,9 +152,13 @@ func _on_vision_assist_toggled(toggled_on: bool) -> void:
 	print("VisionAssistManager: Toggled vision assist state to: ", toggled_on)
 	is_active = toggled_on
 
+	var tree: SceneTree = get_tree()
+	if not tree:
+		return
+
 	for group_name: String in _group_materials.keys():
 		var target_material: ShaderMaterial = _group_materials[group_name]
-		var nodes: Array[Node] = get_tree().get_nodes_in_group(group_name)
+		var nodes: Array[Node] = tree.get_nodes_in_group(group_name)
 		for node: Node in nodes:
 			var active_state: bool = (
 				diorama_preview_active if _is_node_in_diorama(node) else is_active
