@@ -351,14 +351,15 @@ func _navigate_suggestions(direction: int) -> void:
 ## Updates the BBCode formatting of the autocomplete suggestions panel.
 func _update_suggestion_ui() -> void:
 	print("InGameConsole: Updating suggestion UI graphics.")
-	var bbcode: String = ""
+	var lines: PackedStringArray = []
+	lines.resize(current_matches.size())
 	for i: int in range(current_matches.size()):
 		if i == match_index:
-			bbcode += "[color=yellow]> " + current_matches[i] + "[/color]\n"
+			lines[i] = "[color=yellow]> " + current_matches[i] + "[/color]"
 		else:
-			bbcode += "[color=gray]  " + current_matches[i] + "[/color]\n"
+			lines[i] = "[color=gray]  " + current_matches[i] + "[/color]"
 
-	suggestion_label.text = bbcode.strip_edges()
+	suggestion_label.text = "\n".join(lines).strip_edges()
 
 
 ## Resets and clears autocomplete match arrays and labels.
