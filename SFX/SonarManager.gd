@@ -97,10 +97,14 @@ func trigger_sonar(origin_node: Node3D) -> void:
 		&"hazard", &"waypoint", &"interactables", &"interactable", &"props"
 	]
 
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return
+
 	# Step 1: Collect canonical roots keyed by unique instance ID
 	var unique_targets: Dictionary = {}
 	for group_name: StringName in query_groups:
-		for item: Node in get_tree().get_nodes_in_group(group_name):
+		for item: Node in tree.get_nodes_in_group(group_name):
 			if not is_instance_valid(item):
 				continue
 
@@ -203,7 +207,7 @@ func trigger_sonar(origin_node: Node3D) -> void:
 		var scheduled_delay: float = maxf(natural_delay, last_scheduled_time + min_cue_separation)
 		last_scheduled_time = scheduled_delay
 
-		get_tree().create_timer(scheduled_delay).timeout.connect(
+		tree.create_timer(scheduled_delay).timeout.connect(
 			_play_target_echo.bind(
 				active_sweep_id, origin_pos, forward_dir, target_node, is_occluded
 			)
@@ -244,9 +248,12 @@ func _resolve_interactable_root(node: Node3D) -> Node3D:
 
 	var candidate: Node3D = node
 	var current: Node = node
+	var tree: SceneTree = get_tree()
+	var scene_root: Node = tree.root if tree != null else null
+	var curr_scene: Node = tree.current_scene if tree != null else null
 
-	while is_instance_valid(current) and current != get_tree().root:
-		if current == get_tree().current_scene:
+	while is_instance_valid(current) and current != scene_root:
+		if current == curr_scene:
 			break
 
 		if current is Node3D:
