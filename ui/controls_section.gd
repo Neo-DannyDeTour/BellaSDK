@@ -1,5 +1,4 @@
 ## Controls mouse look, key toggles, vibration, and aim assistance.
-## Attached to the ControlsSection [GridContainer].
 class_name AccessibilityControlsSection
 extends GridContainer
 
@@ -29,6 +28,9 @@ const DEFAULT_TOGGLE_SPRINT: bool = false
 
 ## Default constant value for canceling crouch on jump.
 const DEFAULT_CANCEL_CROUCH_ON_JUMP: bool = true
+
+## Default constant value for infinite swim accessibility toggle.
+const DEFAULT_INFINITE_SWIM: bool = false
 
 ## Slider for adjusting mouse look sensitivity.
 @onready var mouse_sens_slider: HSlider = get_node_or_null("%MouseSensitivitySlider")
@@ -66,11 +68,26 @@ const DEFAULT_CANCEL_CROUCH_ON_JUMP: bool = true
 ## Toggle switch for screen motion and shake reduction.
 @onready var reduce_motion_toggle: CheckButton = get_node_or_null("%ReduceMotionToggle")
 
+## Toggle switch for unlimited underwater oxygen.
+@onready var infinite_swim_toggle: CheckButton = _resolve_swim_toggle()
 
-## Lifecycle initialization method connecting controls inputs.
+
+## Lifecycle initialization method connecting controls inputs and loading preferences.
 func _ready() -> void:
 	print("UI: Initializing Controls Section.")
 	_connect_signals()
+	load_settings()
+
+
+## Resolves the infinite swim CheckButton with fallback searching if unique name is missing.
+## Returns the resolved [CheckButton] or null.
+func _resolve_swim_toggle() -> CheckButton:
+	var btn: CheckButton = get_node_or_null("%InfiniteSwimToggle") as CheckButton
+	if not is_instance_valid(btn):
+		btn = find_child("InfiniteSwimToggle", true, false) as CheckButton
+	if not is_instance_valid(btn):
+		push_error("AccessibilityControlsSection: Could not find InfiniteSwimToggle node!")
+	return btn
 
 
 ## Connects interactive controls inputs and slider listeners.
@@ -103,6 +120,10 @@ func _connect_signals() -> void:
 		aim_assist_toggle.toggled.connect(_on_aim_assist_toggled)
 	if is_instance_valid(reduce_motion_toggle):
 		reduce_motion_toggle.toggled.connect(_on_reduce_motion_toggled)
+	if is_instance_valid(infinite_swim_toggle):
+		if not infinite_swim_toggle.toggled.is_connected(_on_infinite_swim_toggled):
+			infinite_swim_toggle.toggled.connect(_on_infinite_swim_toggled)
+			print("AccessibilityControlsSection: Bound InfiniteSwimToggle signal.")
 
 
 ## Loads stored control preferences from [GlobalSettings].
@@ -171,6 +192,14 @@ func load_settings() -> void:
 			GlobalSettings.get_setting("Accessibility", "reduce_motion", DEFAULT_REDUCE_MOTION)
 		)
 		reduce_motion_toggle.set_pressed_no_signal(reduce)
+
+	if is_instance_valid(infinite_swim_toggle):
+		var inf_swim: bool = bool(
+			GlobalSettings.get_setting("Accessibility", "infinite_swim", DEFAULT_INFINITE_SWIM)
+		)
+		infinite_swim_toggle.set_pressed_no_signal(inf_swim)
+		Events.infinite_swim_toggled.emit(inf_swim)
+		print("UI: Loaded infinite_swim setting: ", inf_swim)
 
 
 ## Connects slider and [LineEdit] pairs with synchronization.
@@ -332,3 +361,11 @@ func _on_reduce_motion_toggled(toggled_on: bool) -> void:
 		and is_instance_valid(player.camera_controller)
 	):
 		player.camera_controller.reduce_motion = toggled_on
+
+
+## Handles infinite swim toggle updates and broadcasts state changes.
+## [param toggled_on] Enabled state.
+func _on_infinite_swim_toggled(toggled_on: bool) -> void:
+	print("Player toggled Infinite Swim to: ", toggled_on)
+	GlobalSettings.save_setting("Accessibility", "infinite_swim", toggled_on, true)
+	Events.infinite_swim_toggled.emit(toggled_on)

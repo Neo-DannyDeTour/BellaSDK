@@ -24,6 +24,9 @@ extends MarginContainer
 ## Frame border overlay node for sprint status.
 @onready var sprint_border: NinePatchRect = $VBoxContainer/SprintDebuff/BorderOverlay
 
+## Numeric timer label displaying remaining sprint debuff duration.
+@onready var sprint_timer_label: Label = $VBoxContainer/SprintDebuff/TimerLabel
+
 ## Container managing the layout of the immobilize debuff UI.
 @onready var immobilize_container: Control = $VBoxContainer/ImmobilizeDebuff
 
@@ -33,6 +36,9 @@ extends MarginContainer
 ## Frame border overlay node for immobilize status.
 @onready var immobilize_border: NinePatchRect = $VBoxContainer/ImmobilizeDebuff/BorderOverlay
 
+## Numeric timer label displaying remaining immobilize duration.
+@onready var immobilize_timer_label: Label = $VBoxContainer/ImmobilizeDebuff/TimerLabel
+
 ## Container managing the layout of the ice debuff UI.
 @onready var ice_debuff_container: Control = $VBoxContainer/IceDebuff
 
@@ -41,6 +47,21 @@ extends MarginContainer
 
 ## Frame border overlay node for ice status.
 @onready var ice_border: NinePatchRect = $VBoxContainer/IceDebuff/BorderOverlay
+
+## Numeric timer label displaying remaining ice debuff duration.
+@onready var ice_timer_label: Label = $VBoxContainer/IceDebuff/TimerLabel
+
+## Container managing the layout of the swim debuff UI.
+@onready var swim_debuff_container: Control = $VBoxContainer/SwimDebuff
+
+## Texture progress bar layered over the swim debuff icon.
+@onready var swim_bar: TextureProgressBar = $VBoxContainer/SwimDebuff/DebuffBar
+
+## Frame border overlay node for swim status.
+@onready var swim_border: NinePatchRect = $VBoxContainer/SwimDebuff/BorderOverlay
+
+## Numeric timer label displaying remaining swim duration.
+@onready var swim_timer_label: Label = $VBoxContainer/SwimDebuff/TimerLabel
 
 ## Stores the sliced textures for each state of a health heart.
 var heart_textures: Array[AtlasTexture] = []
@@ -57,11 +78,14 @@ var active_card_icons: Dictionary = {}
 ## Tracks the player's current health to determine when to update the UI.
 var current_health: int = 300
 
-## Animates the sprint debuff progress bar.
+## Animates the sprint debuff progress bar and timer label.
 var debuff_tween: Tween
 
-## Animates the immobilize debuff progress bar.
+## Animates the immobilize debuff progress bar and timer label.
 var immobilize_tween: Tween
+
+## Animates the swim progress bar and timer label.
+var swim_tween: Tween
 
 ## Tracks if the player is currently under an active timed sprint cooldown.
 var is_sprint_timer_active: bool = false
@@ -81,11 +105,18 @@ var is_immobilized: bool = false
 ## Tracks if the player is currently under the effects of a sprint block debuff.
 var is_sprint_blocked: bool = false
 
+## Tracks if infinite swim accessibility mode is currently enabled.
+var is_infinite_swim: bool = false
+
+## Tracks whether the player's head is currently submerged underwater.
+var is_submerged: bool = false
+
 
 ## Lifecycle method called when the node enters the scene tree.
 ## Initializes containers, heart textures, and binds event bus listeners.
 func _ready() -> void:
 	print("PlayerStatusHUD: _ready() called. Initializing status HUD.")
+	is_infinite_swim = bool(GlobalSettings.get_setting("Accessibility", "infinite_swim", false))
 	_initialize_indicators()
 	_initialize_hearts()
 	_connect_signals()
@@ -96,10 +127,16 @@ func _initialize_indicators() -> void:
 	print("PlayerStatusHUD: Setting initial indicator visibility states.")
 	sprint_debuff_container.hide()
 	sprint_bar.hide()
+	sprint_timer_label.hide()
 	immobilize_container.hide()
 	move_bar.hide()
+	immobilize_timer_label.hide()
 	ice_debuff_container.hide()
 	ice_bar.hide()
+	ice_timer_label.hide()
+	swim_debuff_container.hide()
+	swim_bar.hide()
+	swim_timer_label.hide()
 
 
 ## Binds status and keycard events from the global [Events] bus and [KeycardSystem].
@@ -117,11 +154,18 @@ func _connect_signals() -> void:
 		Events.ice_surface_toggled.connect(_on_ice_surface_toggled)
 	if not Events.heavy_carry_toggled.is_connected(_on_heavy_carry_toggled):
 		Events.heavy_carry_toggled.connect(_on_heavy_carry_toggled)
+	if not Events.oxygen_timer_started.is_connected(_on_oxygen_timer_started):
+		Events.oxygen_timer_started.connect(_on_oxygen_timer_started)
+	if not Events.oxygen_timer_stopped.is_connected(_on_oxygen_timer_stopped):
+		Events.oxygen_timer_stopped.connect(_on_oxygen_timer_stopped)
 
 	if not KeycardSystem.card_picked_up.is_connected(_on_card_picked_up):
 		KeycardSystem.card_picked_up.connect(_on_card_picked_up)
 	if not KeycardSystem.card_used.is_connected(_on_card_used):
 		KeycardSystem.card_used.connect(_on_card_used)
+
+	if not Events.infinite_swim_toggled.is_connected(_on_infinite_swim_toggled):
+		Events.infinite_swim_toggled.connect(_on_infinite_swim_toggled)
 
 
 ## Slices the heart atlas and builds initial health container representations.
@@ -314,8 +358,10 @@ func _on_sprint_debuff_applied(duration: float) -> void:
 	print("PlayerStatusHUD: _on_sprint_debuff_applied() - Starting UI for ", duration, "s.")
 	is_sprint_timer_active = true
 	sprint_bar.show()
+	sprint_timer_label.show()
 	sprint_bar.max_value = duration
 	sprint_bar.value = duration
+	sprint_timer_label.text = "%.1fs" % duration
 
 	_sync_sprint_display()
 
@@ -323,12 +369,20 @@ func _on_sprint_debuff_applied(duration: float) -> void:
 		debuff_tween.kill()
 
 	debuff_tween = create_tween()
-	debuff_tween.tween_property(sprint_bar, "value", 0.0, duration)
+	debuff_tween.tween_method(
+		func(val: float) -> void:
+			sprint_bar.value = val
+			sprint_timer_label.text = "%.1fs" % val,
+		duration,
+		0.0,
+		duration
+	)
 	debuff_tween.finished.connect(
 		func() -> void:
 			print("PlayerStatusHUD: Timed sprint debuff completed.")
 			is_sprint_timer_active = false
 			sprint_bar.hide()
+			sprint_timer_label.hide()
 			_sync_sprint_display()
 	)
 
@@ -340,23 +394,110 @@ func _on_immobilize_debuff_applied(duration: float) -> void:
 	is_immobilized = true
 	immobilize_container.show()
 	move_bar.show()
+	immobilize_timer_label.show()
 	immobilize_border.show()
 
 	move_bar.max_value = duration
 	move_bar.value = duration
+	immobilize_timer_label.text = "%.1fs" % duration
 
 	if immobilize_tween and immobilize_tween.is_valid():
 		immobilize_tween.kill()
 
 	immobilize_tween = create_tween()
-	immobilize_tween.tween_property(move_bar, "value", 0.0, duration)
+	immobilize_tween.tween_method(
+		func(val: float) -> void:
+			move_bar.value = val
+			immobilize_timer_label.text = "%.1fs" % val,
+		duration,
+		0.0,
+		duration
+	)
 	immobilize_tween.finished.connect(
 		func() -> void:
 			print("PlayerStatusHUD: Immobilize debuff expired. Hiding UI.")
 			is_immobilized = false
 			move_bar.hide()
+			immobilize_timer_label.hide()
 			immobilize_container.hide()
 	)
+
+
+## Handles updates to the infinite swim mode setting.
+## [param enabled] True if infinite swim mode is turned on.
+func _on_infinite_swim_toggled(enabled: bool) -> void:
+	print("PlayerStatusHUD: Infinite swim toggled -> ", enabled)
+	is_infinite_swim = enabled
+
+	if not is_submerged:
+		return
+
+	if is_infinite_swim:
+		if swim_tween and swim_tween.is_valid():
+			swim_tween.kill()
+		swim_debuff_container.show()
+		swim_border.show()
+		swim_bar.hide()
+		swim_timer_label.hide()
+	else:
+		# If turned off underwater, StateSwim re-emits oxygen_timer_started,
+		# but if not received yet, make sure the slot stays ready.
+		swim_debuff_container.show()
+		swim_border.show()
+
+
+## Starts and animates the submerged swim progress bar and timer label.
+## [param duration] Length of the swim breath timer in seconds.
+func _on_oxygen_timer_started(duration: float) -> void:
+	print("PlayerStatusHUD: _on_oxygen_timer_started() called. Duration: ", duration)
+	is_submerged = true
+	swim_debuff_container.show()
+	swim_border.show()
+
+	if is_infinite_swim:
+		if swim_tween and swim_tween.is_valid():
+			swim_tween.kill()
+		swim_bar.hide()
+		swim_timer_label.hide()
+		return
+
+	if swim_tween and swim_tween.is_valid():
+		swim_tween.kill()
+
+	swim_bar.show()
+	swim_timer_label.show()
+	swim_bar.max_value = duration
+	swim_bar.value = duration
+	swim_timer_label.text = "%.1fs" % duration
+
+	swim_tween = create_tween()
+	swim_tween.tween_method(
+		func(val: float) -> void:
+			swim_bar.value = val
+			swim_timer_label.text = "%.1fs" % val,
+		duration,
+		0.0,
+		duration
+	)
+	swim_tween.finished.connect(
+		func() -> void:
+			print("PlayerStatusHUD: Swim oxygen timer expired. Drowning begins.")
+			swim_bar.value = 0.0
+			swim_timer_label.text = "0.0s"
+	)
+
+
+## Stops the swim countdown and completely hides the swimming HUD slot.
+func _on_oxygen_timer_stopped() -> void:
+	print("PlayerStatusHUD: _on_oxygen_timer_stopped() - Player surfaced.")
+	is_submerged = false
+	if swim_tween and swim_tween.is_valid():
+		swim_tween.kill()
+
+	swim_bar.hide()
+	swim_timer_label.hide()
+	swim_border.hide()
+	swim_debuff_container.hide()
 
 
 ## Updates persistent sand sprint-restriction status.
@@ -375,6 +516,7 @@ func _on_ice_surface_toggled(is_active: bool) -> void:
 	ice_debuff_container.visible = is_on_ice
 	ice_border.visible = is_on_ice
 	ice_bar.hide()
+	ice_timer_label.hide()
 
 
 ## Toggles sprint debuff icon visibility based on heavy carry status.
@@ -394,3 +536,4 @@ func _sync_sprint_display() -> void:
 
 	if not is_sprint_timer_active:
 		sprint_bar.hide()
+		sprint_timer_label.hide()

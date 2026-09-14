@@ -28,6 +28,7 @@
 [ext_resource type="Texture2D" uid="uid://4exusdjgfeuy" path="res://assets/images/UI_Icon_Boot_Move.png" id="17_bw7v0"]
 [ext_resource type="Script" uid="uid://68godg1f7m7p" path="res://ui/player_status_hud.gd" id="17_c44sx"]
 [ext_resource type="Texture2D" uid="uid://bxdqmfj8erajr" path="res://assets/images/UI_Icon_Boot_Ice.png" id="18_bw7v0"]
+[ext_resource type="Texture2D" uid="uid://drekpdqmtmxfi" path="res://assets/images/UI_Icon_Swimming.jpeg" id="22_hhu8p"]
 [ext_resource type="Script" uid="uid://c5ucjjha1efk8" path="res://ui/notification_hud.gd" id="23_k48q6"]
 [ext_resource type="Script" uid="uid://dvlg5io1bfsi1" path="res://ui/debug_overlay.gd" id="24_c74r5"]
 
@@ -285,6 +286,19 @@ grow_horizontal = 2
 grow_vertical = 2
 texture = ExtResource("13_ju45i")
 
+[node name="TimerLabel" type="Label" parent="PlayerStatusHUD/VBoxContainer/SprintDebuff" unique_id=359487356]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0, 0, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 36
+horizontal_alignment = 1
+vertical_alignment = 2
+
 [node name="ImmobilizeDebuff" type="Control" parent="PlayerStatusHUD/VBoxContainer" unique_id=1900370166]
 custom_minimum_size = Vector2(128, 128)
 layout_mode = 2
@@ -325,6 +339,19 @@ grow_horizontal = 2
 grow_vertical = 2
 texture = ExtResource("17_bw7v0")
 
+[node name="TimerLabel" type="Label" parent="PlayerStatusHUD/VBoxContainer/ImmobilizeDebuff" unique_id=1552821895]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0, 0, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 36
+horizontal_alignment = 1
+vertical_alignment = 2
+
 [node name="IceDebuff" type="Control" parent="PlayerStatusHUD/VBoxContainer" unique_id=452049836]
 custom_minimum_size = Vector2(128, 128)
 layout_mode = 2
@@ -364,6 +391,72 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 texture = ExtResource("18_bw7v0")
+
+[node name="TimerLabel" type="Label" parent="PlayerStatusHUD/VBoxContainer/IceDebuff" unique_id=619501242]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0, 0, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 36
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="SwimDebuff" type="Control" parent="PlayerStatusHUD/VBoxContainer" unique_id=266888377]
+custom_minimum_size = Vector2(128, 128)
+layout_mode = 2
+
+[node name="SwimIcon" type="TextureRect" parent="PlayerStatusHUD/VBoxContainer/SwimDebuff" unique_id=1825334409]
+custom_minimum_size = Vector2(128, 128)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("22_hhu8p")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="DebuffBar" type="TextureProgressBar" parent="PlayerStatusHUD/VBoxContainer/SwimDebuff" unique_id=2079036880]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+step = 0.01
+fill_mode = 5
+nine_patch_stretch = true
+texture_progress = ExtResource("22_hhu8p")
+tint_progress = Color(0, 0, 0, 0.78431374)
+
+[node name="BorderOverlay" type="NinePatchRect" parent="PlayerStatusHUD/VBoxContainer/SwimDebuff" unique_id=278730991]
+material = SubResource("ShaderMaterial_3tx63")
+custom_minimum_size = Vector2(128, 128)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("22_hhu8p")
+
+[node name="TimerLabel" type="Label" parent="PlayerStatusHUD/VBoxContainer/SwimDebuff" unique_id=1983127330]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0, 0, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 36
+horizontal_alignment = 1
+vertical_alignment = 2
 
 [node name="KeycardsContainer" type="HBoxContainer" parent="PlayerStatusHUD/VBoxContainer" unique_id=843247494]
 layout_mode = 2

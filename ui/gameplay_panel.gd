@@ -2,6 +2,9 @@
 class_name GameplayPanel
 extends Panel
 
+## Array of ISO language codes aligned with option button item indices.
+const SUPPORTED_LOCALES: Array[String] = ["en", "es"]
+
 ## Dropdown menu for selecting the active game difficulty.
 @onready var difficulty_option: OptionButton = %DifficultyOption
 
@@ -36,8 +39,19 @@ func _ready() -> void:
 	if not is_debug_allowed and is_instance_valid(godmode_toggle):
 		godmode_toggle.hide()
 
+	_setup_language_options()
 	_load_preferences()
 	_connect_signals()
+
+
+## Populates language dropdown entries dynamically to prevent index mismatches.
+func _setup_language_options() -> void:
+	print("GameplayPanel: Populating language options.")
+	if not is_instance_valid(language_option):
+		return
+	language_option.clear()
+	language_option.add_item("English", 0)
+	language_option.add_item("Español", 1)
 
 
 ## Loads persisted settings into controls without triggering change callbacks.
@@ -70,6 +84,7 @@ func _load_preferences() -> void:
 	if is_instance_valid(language_option):
 		var lang_idx: int = GlobalSettings.get_setting("Gameplay", "language", 0) as int
 		language_option.selected = lang_idx
+		_apply_language(lang_idx)
 
 	if is_instance_valid(region_option):
 		var reg_idx: int = GlobalSettings.get_setting("Gameplay", "region", 0) as int
@@ -95,6 +110,14 @@ func _connect_signals() -> void:
 		language_option.item_selected.connect(_on_language_selected)
 	if is_instance_valid(region_option):
 		region_option.item_selected.connect(_on_region_selected)
+
+
+## Applies chosen locale via [TranslationServer] matching index in array.
+func _apply_language(index: int) -> void:
+	print("GameplayPanel: Applying language index ", index)
+	if index >= 0 and index < SUPPORTED_LOCALES.size():
+		var target_locale: String = SUPPORTED_LOCALES[index]
+		TranslationServer.set_locale(target_locale)
 
 
 ## Handles difficulty option selection.
@@ -142,11 +165,12 @@ func _on_crosshair_toggled(button_pressed: bool) -> void:
 	GlobalSettings.save_setting("Gameplay", "crosshair_enabled", button_pressed)
 
 
-## Handles localization language selection.
+## Handles localization language selection, updates server, and saves preference.
 ## [param index] Chosen language index.
 func _on_language_selected(index: int) -> void:
 	print("GameplayPanel: Language changed to index ", index)
 	GlobalSettings.save_setting("Gameplay", "language", index)
+	_apply_language(index)
 
 
 ## Handles matchmaking region selection.

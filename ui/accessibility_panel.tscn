@@ -54,7 +54,7 @@ horizontal_scroll_mode = 0
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-current_tab = 4
+current_tab = 3
 
 [node name="Vision & Contrast" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs" unique_id=984845854]
 visible = false
@@ -372,7 +372,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="Controls" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs" unique_id=72797506]
-visible = false
 layout_mode = 2
 metadata/_tab_index = 3
 
@@ -488,7 +487,19 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="InfiniteSwimLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Controls/ControlsSection" unique_id=95046439]
+layout_mode = 2
+text = "Infinite Swim"
+
+[node name="Control" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Controls/ControlsSection" unique_id=1729228834]
+layout_mode = 2
+
+[node name="InfiniteSwimToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Controls/ControlsSection" unique_id=131169950]
+unique_name_in_owner = true
+layout_mode = 2
+
 [node name="Audio & Subs" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs" unique_id=1331059279]
+visible = false
 layout_mode = 2
 metadata/_tab_index = 4
 
