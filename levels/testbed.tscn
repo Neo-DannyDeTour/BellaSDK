@@ -7649,8 +7649,8 @@ font_size = 64
 
 [node name="Crouch2" type="Label3D" parent="Texts" unique_id=1464636407]
 transform = Transform3D(-1.4702742e-07, 0, 0.9999999, 0, 1, 0, -0.9999999, 0, -1.4702742e-07, -18.93923, 5.189332, 23.43942)
-text = "Если гора не идет к Магомету,
-то Магомет идет к горе."
+text = "If the mountain will not come to Mohammed,
+then Mohammed must go to the mountain."
 font_size = 64
 
 [node name="flashlight" type="Label3D" parent="Texts" unique_id=1467689610]
@@ -7907,7 +7907,7 @@ font_size = 100
 transform = Transform3D(-0.9999999, 0, 6.2580895e-08, 0, 1, 0, -6.2580895e-08, 0, -0.9999999, -9.44713, -8.589185, 39.529137)
 text = "THANKS
 ---
-Игорь Демчук (Новая Игра+) - moral support
+Igor Demchuk (New Game+) - moral support
 AntikranStudio - useful advice and links
 Sergei Grach - improved NOCLIP
 "
