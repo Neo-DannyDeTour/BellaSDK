@@ -8293,8 +8293,8 @@ font_size = 64
 
 [node name="Crouch2" type="Label3D" parent="Texts" unique_id=1464636407 groups=["3d_text"]]
 transform = Transform3D(-1.4702742e-07, 0, 0.9999999, 0, 1, 0, -0.9999999, 0, -1.4702742e-07, -18.93923, 5.189332, 23.43942)
-text = "Если гора не идет к Магомету,
-то Магомет идет к горе."
+text = "If the mountain will not come to Mohammed,
+then Mohammed must go to the mountain."
 font_size = 64
 
 [node name="flashlight4" type="Label3D" parent="Texts" unique_id=147133736 groups=["3d_text"]]
@@ -8563,9 +8563,9 @@ font_size = 100
 
 [node name="Besties" type="Label3D" parent="Texts" unique_id=1751597505 groups=["3d_text"]]
 transform = Transform3D(-0.9999999, 0, 6.2580895e-08, 0, 1, 0, -6.2580895e-08, 0, -0.9999999, -9.44713, -8.589185, 39.529137)
-text = "ДОСКА ПОЧЕТА
+text = "HALL OF FAME
 ---
-Игорь Демчук (Новая Игра+) - moral support, playtesting and ideas
+Igor Demchuk (New Game+) - moral support, playtesting and ideas
 -
 AntikranStudio - useful advice and links
 Sergei Grach - improved NOCLIP
@@ -8574,7 +8574,7 @@ Crux The Clown - psychological help
 The Blair Witch - she's just funny
 Sam Hyde - asked for Balatro UI
 -
-Михаил Кадиков - useful advice"
+Mikhail Kadikov - useful advice"
 font_size = 100
 
 [node name="Label3D49" type="Label3D" parent="Texts" unique_id=1855693561 groups=["3d_text"]]
