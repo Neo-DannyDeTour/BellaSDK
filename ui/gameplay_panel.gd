@@ -3,7 +3,7 @@ class_name GameplayPanel
 extends Panel
 
 ## Array of ISO language codes aligned with option button item indices.
-const SUPPORTED_LOCALES: Array[String] = ["en", "es"]
+const SUPPORTED_LOCALES: Array[String] = ["en", "es", "ru"]
 
 ## Dropdown menu for selecting the active game difficulty.
 @onready var difficulty_option: OptionButton = %DifficultyOption
@@ -52,6 +52,7 @@ func _setup_language_options() -> void:
 	language_option.clear()
 	language_option.add_item("English", 0)
 	language_option.add_item("Español", 1)
+	language_option.add_item("Русский", 2)
 
 
 ## Loads persisted settings into controls without triggering change callbacks.

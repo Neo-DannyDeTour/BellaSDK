@@ -169,7 +169,7 @@ describe_surroundings={
 
 [internationalization]
 
-locale/translations=PackedStringArray("res://translations/translations.en.translation", "res://translations/translations.es.translation")
+locale/translations=PackedStringArray("res://translations/translations.en.translation", "res://translations/translations.es.translation", "res://translations/translations.ru.translation")
 
 [layer_names]
 

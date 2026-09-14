@@ -375,7 +375,7 @@ stream_3/stream = ExtResource("38_b2j0d")
 stream_4/stream = ExtResource("39_7l6ig")
 stream_5/stream = ExtResource("40_j3r50")
 
-[node name="Player" type="CharacterBody3D" unique_id=1502339238 node_paths=PackedStringArray("locomotion_component", "interaction_component", "environment_component", "stats_component", "state_machine", "camera_controller", "system_menu") groups=["player"]]
+[node name="Player" type="CharacterBody3D" unique_id=1502339238 node_paths=PackedStringArray("locomotion_component", "interaction_component", "environment_component", "stats_component", "state_machine", "camera_controller", "system_menu", "ui_controller") groups=["player"]]
 process_mode = 3
 collision_layer = 2
 collision_mask = 21
@@ -387,6 +387,7 @@ stats_component = NodePath("Components/StatsComponent")
 state_machine = NodePath("StateMachine")
 camera_controller = NodePath("Head/CameraController")
 system_menu = NodePath("SystemMenuController")
+ui_controller = NodePath("UI")
 
 [node name="Head" type="Node3D" parent="." unique_id=1584872370]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
