@@ -31,10 +31,10 @@ const RIPPLE_LIFETIME: float = 2.5
 		_update_bounds()
 
 ## Primary tint albedo color for surface water rendering.
-@export var shallow_color: Color = Color(0.28, 0.58, 0.85, 0.45)
+@export var shallow_color: Color = Color(0.22, 0.65, 0.78, 1.0)
 
 ## Deep water absorption color for deep volumetric optical shading.
-@export var deep_color: Color = Color(0.01, 0.06, 0.18, 0.95)
+@export var deep_color: Color = Color(0.01, 0.05, 0.16, 1.0)
 
 ## Light absorption coefficient controlling underwater murkiness via Beer's Law.
 @export_range(0.1, 10.0, 0.1) var beers_law: float = 2.2
@@ -46,7 +46,10 @@ const RIPPLE_LIFETIME: float = 2.5
 @export_range(0.0, 1.0, 0.05) var wave_steepness: float = 0.35
 
 ## Primary Gerstner wave amplitude peak in meters.
-@export var wave_amplitude: float = 0.1
+@export var wave_amplitude: float = 0.1:
+	set(value):
+		wave_amplitude = value
+		_update_reflection_probe()
 
 ## Primary Gerstner wave length in meters.
 @export var wave_length: float = 4.5
@@ -89,6 +92,32 @@ const RIPPLE_LIFETIME: float = 2.5
 
 ## Distance in meters before underwater volumetric fog reaches full density.
 @export_range(0.0, 250.0) var fog_fade_dist: float = 5.0
+
+@export_group("Automatic Reflection Probe")
+
+## Toggles automatic instantiation and sizing of the child [ReflectionProbe].
+@export var auto_manage_probe: bool = true:
+	set(value):
+		auto_manage_probe = value
+		_update_reflection_probe()
+
+## Vertical height in meters of the reflection probe box above the water surface.
+@export_range(2.0, 50.0, 1.0) var probe_box_height: float = 16.0:
+	set(value):
+		probe_box_height = value
+		_update_reflection_probe()
+
+## Horizontal margin in meters extending the probe boundary beyond water edges.
+@export_range(0.0, 10.0, 0.5) var probe_padding: float = 2.0:
+	set(value):
+		probe_padding = value
+		_update_reflection_probe()
+
+## Update frequency mode for the child [ReflectionProbe] cubemap generation.
+@export var probe_update_mode: ReflectionProbe.UpdateMode = ReflectionProbe.UPDATE_ALWAYS:
+	set(value):
+		probe_update_mode = value
+		_update_reflection_probe()
 
 ## Active rigid bodies currently submerged and simulated inside this water volume.
 var floating_bodies: Array[RigidBody3D] = []
@@ -135,6 +164,42 @@ func _get_water_material() -> ShaderMaterial:
 	return null
 
 
+## Synchronizes reflection probe extents and offsets capture origin above waves.
+func _update_reflection_probe() -> void:
+	if not auto_manage_probe or not is_inside_tree():
+		return
+
+	print("WaterBody: Synchronizing automatic reflection probe bounds and origin.")
+	var probe: ReflectionProbe = get_node_or_null("%ReflectionProbe") as ReflectionProbe
+	if not is_instance_valid(probe):
+		probe = get_node_or_null("ReflectionProbe") as ReflectionProbe
+
+	if not is_instance_valid(probe):
+		probe = ReflectionProbe.new()
+		probe.name = "ReflectionProbe"
+		probe.unique_name_in_owner = true
+		add_child(probe)
+		if Engine.is_editor_hint() and owner:
+			probe.owner = owner
+
+	# Center the box around the water volume
+	probe.position = Vector3(0.0, 0.0, 0.0)
+	var total_box_height: float = maxf(water_size.y + probe_box_height, 12.0)
+	probe.size = Vector3(
+		water_size.x + probe_padding * 2.0, total_box_height, water_size.z + probe_padding * 2.0
+	)
+
+	# Elevate capture origin 1.8m above max wave crest to avoid near-plane clipping
+	var capture_y: float = (water_size.y * 0.5) + (wave_amplitude * 1.5) + 1.8
+	probe.origin_offset = Vector3(0.0, capture_y, 0.0)
+	probe.box_projection = true
+	probe.interior = false
+	probe.enable_shadows = false
+	probe.cull_mask = (1 << 0) | (1 << 1)  # Layers 1 and 2 only (excludes Layer 3 Water)
+	probe.update_mode = probe_update_mode
+	probe.blend_distance = 0.5
+
+
 ## Rebuilds [BoxMesh] subdivisions and updates child [CollisionShape3D] sizes.
 func _update_bounds() -> void:
 	if not is_inside_tree():
@@ -167,6 +232,8 @@ func _update_bounds() -> void:
 	if is_instance_valid(fog_vol):
 		fog_vol.size = water_size
 
+	_update_reflection_probe()
+
 
 ## Lifecycle method configuring collision masks, timer delays, and bounds.
 func _ready() -> void:
@@ -180,7 +247,6 @@ func _ready() -> void:
 
 	var swimmable_area: Area3D = get_node_or_null("%SwimmableArea3D") as Area3D
 	if is_instance_valid(swimmable_area):
-		# Layer 2 (Player = 2) and Layer 3 (Interactables = 4)
 		swimmable_area.collision_mask |= (1 << 1) | (1 << 2)
 		if not swimmable_area.body_entered.is_connected(_on_swimmable_area_body_entered):
 			swimmable_area.body_entered.connect(_on_swimmable_area_body_entered)
@@ -198,7 +264,6 @@ func _physics_process(delta: float) -> void:
 
 	var cur_time: float = float(Time.get_ticks_msec()) / 1000.0
 
-	# Physics simulation for floating RigidBody3D objects
 	for i: int in range(floating_bodies.size() - 1, -1, -1):
 		var body: RigidBody3D = floating_bodies[i]
 		if not is_instance_valid(body):
@@ -219,7 +284,6 @@ func _physics_process(delta: float) -> void:
 			body.apply_central_force((upward_force + linear_damping + vert_damping) * body.mass)
 			body.angular_velocity *= (1.0 - clampf(angular_drag * delta, 0.0, 0.9))
 
-		# Continuous movement ripples when dragging or propelling across water
 		var speed_h: float = Vector2(body.linear_velocity.x, body.linear_velocity.z).length()
 		var body_id: int = body.get_instance_id()
 		var last_time: float = _last_body_ripple_times.get(body_id, 0.0)
@@ -231,7 +295,6 @@ func _physics_process(delta: float) -> void:
 				_last_body_ripple_times[body_id] = cur_time
 				_last_body_positions[body_id] = body.global_position
 
-	# Movement ripples for swimming characters (Player / NPCs)
 	for i: int in range(character_bodies.size() - 1, -1, -1):
 		var character: CharacterBody3D = character_bodies[i]
 		if not is_instance_valid(character):
@@ -330,14 +393,12 @@ func _process(delta: float) -> void:
 
 				_resurface_tween = create_tween().set_parallel(false)
 
-				# Phase 1: Waterfall sheet wipe cascades down the lens
 				(
 					_resurface_tween
 					. tween_method(
 						func(prog: float) -> void:
 							var wipe_pct: float = clampf(prog / 1.5, 0.0, 1.0)
 							var wash: float = (1.0 - wipe_pct) * 0.95
-							# Mode 2 (Waterfall), wash streams down, wipe curtain descends
 							Events.waterfall_vfx_toggled.emit(true, wash, prog),
 						0.0,
 						1.5,
@@ -347,14 +408,12 @@ func _process(delta: float) -> void:
 					. set_ease(Tween.EASE_OUT)
 				)
 
-				# Transition into Phase 2: Water sheet clears, droplets cling to lens
 				_resurface_tween.tween_callback(
 					func() -> void:
 						Events.waterfall_vfx_toggled.emit(false, 0.0, 1.5)
 						Events.underwater_vfx_toggled.emit(false, 0.0, 1.0, 1.5)
 				)
 
-				# Phase 2: Droplets linger on the lens and smoothly dry up
 				(
 					_resurface_tween
 					. tween_method(
@@ -368,7 +427,6 @@ func _process(delta: float) -> void:
 					. set_ease(Tween.EASE_OUT)
 				)
 
-				# Cleanup once fully dry
 				_resurface_tween.tween_callback(
 					func() -> void: Events.underwater_vfx_toggled.emit(false, 0.0, 0.0, 1.5)
 				)
@@ -398,24 +456,20 @@ func get_wave_height_at_pos(global_pos: Vector3) -> float:
 	var cur_time: float = (float(Time.get_ticks_msec()) / 1000.0) * wave_speed
 	var k: float = TAU / maxf(wave_length, 0.1)
 
-	# Gerstner Wave 1 (Dominant)
 	var dir1: Vector2 = Vector2(1.0, 0.2).normalized()
 	var phase1: float = (dir1.x * global_pos.x + dir1.y * global_pos.z) * k + cur_time
 	var h1: float = sin(phase1) * wave_amplitude
 
-	# Gerstner Wave 2 (Secondary Cross Wave)
 	var dir2: Vector2 = Vector2(-0.6, 0.8).normalized()
 	var k2: float = k * 1.6
 	var phase2: float = (dir2.x * global_pos.x + dir2.y * global_pos.z) * k2 - (cur_time * 1.15)
 	var h2: float = sin(phase2) * (wave_amplitude * 0.45)
 
-	# Gerstner Wave 3 (Detail Wave)
 	var dir3: Vector2 = Vector2(0.3, -0.95).normalized()
 	var k3: float = k * 2.8
 	var phase3: float = (dir3.x * global_pos.x + dir3.y * global_pos.z) * k3 + (cur_time * 0.8)
 	var h3: float = sin(phase3) * (wave_amplitude * 0.2)
 
-	# Concentric Dynamic Ripples
 	var now: float = float(Time.get_ticks_msec()) / 1000.0
 	var total_rip_h: float = 0.0
 
@@ -459,13 +513,11 @@ func should_draw_camera_underwater_effect() -> bool:
 	if last_frame_drew_underwater_effect == Engine.get_process_frames():
 		return false
 
-	# Transform camera position to local water volume space
 	var local_cam_pos: Vector3 = to_local(camera.global_position)
 	var half_x: float = water_size.x * 0.5
 	var half_z: float = water_size.z * 0.5
 	var bottom_y: float = -water_size.y * 0.5
 
-	# Bounding box test inside horizontal and vertical boundaries
 	var is_inside_box: bool = (
 		absf(local_cam_pos.x) <= half_x
 		and absf(local_cam_pos.z) <= half_z

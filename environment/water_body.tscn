@@ -7,14 +7,23 @@
 [ext_resource type="AudioStream" uid="uid://c3gfubvks8j8o" path="res://assets/sounds/WaterSplash.mp3" id="6_266v4"]
 [ext_resource type="AudioStream" uid="uid://dtv3gp57rb7kd" path="res://assets/sounds/Underwater.wav" id="7_d7iy8"]
 
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_or4qq"]
+noise_type = 3
+frequency = 0.05
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_pjwc4"]
+noise = SubResource("FastNoiseLite_or4qq")
+seamless = true
+
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ugvly"]
 render_priority = 0
 shader = ExtResource("1_70utq")
-shader_parameter/water_time = 2071.71
+shader_parameter/water_time = 6727.067
 shader_parameter/water_size = Vector3(1, 1, 1)
 shader_parameter/show_side_walls = false
-shader_parameter/shallow_color = Color(0.28, 0.58, 0.85, 0.45)
-shader_parameter/deep_color = Color(0.01, 0.06, 0.18, 0.95)
+shader_parameter/shallow_color = Color(0.22, 0.65, 0.78, 1)
+shader_parameter/deep_color = Color(0.01, 0.05, 0.16, 1)
+shader_parameter/absorption_coefficients = Vector3(1.4, 0.42, 0.08)
 shader_parameter/depth_distance = 4.5
 shader_parameter/beers_law = 2.2
 shader_parameter/wave_amplitude = 0.1
@@ -27,9 +36,19 @@ shader_parameter/uv_scale = Vector2(2, 2)
 shader_parameter/normal_bump_strength = 2.00000009174012
 shader_parameter/pan_speed_1 = Vector2(0.1, 0.01)
 shader_parameter/pan_speed_2 = Vector2(-0.015, 0.025)
+shader_parameter/enable_ssr = true
+shader_parameter/ssr_max_distance = 4.5
+shader_parameter/refraction_strength = 0.02
+shader_parameter/sky_reflection_tint = Color(0.65, 0.82, 1, 1)
+shader_parameter/fresnel_base = 0.12
+shader_parameter/fresnel_power = 3.5
+shader_parameter/roughness = 0.03
+shader_parameter/specular_strength = 0.5
+shader_parameter/metallic = 0.12
+shader_parameter/foam_noise = SubResource("NoiseTexture2D_pjwc4")
 shader_parameter/foam_color = Color(0.92, 0.96, 1, 1)
 shader_parameter/foam_distance = 0.35
-shader_parameter/refraction_strength = 0.02
+shader_parameter/crest_foam_threshold = 0.65
 shader_parameter/underwater_ceiling_color = Color(0, 0.1, 0.2, 1)
 
 [sub_resource type="BoxMesh" id="BoxMesh_aaijj"]
@@ -55,12 +74,17 @@ shader_parameter/fade_plane = Vector4(0, 1, 0, -999)
 
 [node name="WaterBody" type="MeshInstance3D" unique_id=1898604217]
 process_priority = 999
+layers = 4
 material_override = SubResource("ShaderMaterial_ugvly")
 gi_mode = 0
 mesh = SubResource("BoxMesh_aaijj")
 script = ExtResource("2_ejx8y")
 water_size = Vector3(1, 1, 1)
 splash_sound = ExtResource("6_266v4")
+auto_manage_probe = null
+probe_box_height = null
+probe_padding = null
+probe_update_mode = null
 
 [node name="SwimmableArea3D" type="Area3D" parent="." unique_id=1515298068 groups=["water_area"]]
 unique_name_in_owner = true
