@@ -167,6 +167,10 @@ describe_surroundings={
 ]
 }
 
+[internationalization]
+
+locale/translations=PackedStringArray("res://translations/translations.en.translation", "res://translations/translations.es.translation")
+
 [layer_names]
 
 3d_render/layer_1="Environment"

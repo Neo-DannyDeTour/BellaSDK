@@ -99,6 +99,7 @@ func exit_ladder(_ladder_node: Node3D) -> void:
 func enter_water(water_volume: Node3D) -> void:
 	print("EnvironmentComponent: enter_water() called.")
 	current_water_node = water_volume
+	Events.swim_surface_toggled.emit(true)
 
 	if is_instance_valid(vault_controller) and vault_controller.get("is_vaulting"):
 		return
@@ -116,6 +117,7 @@ func exit_water(water_volume: Node3D) -> void:
 	print("EnvironmentComponent: exit_water() called.")
 	if current_water_node == water_volume:
 		current_water_node = null
+		Events.swim_surface_toggled.emit(false)
 
 		if is_instance_valid(vault_controller) and vault_controller.get("is_vaulting"):
 			return

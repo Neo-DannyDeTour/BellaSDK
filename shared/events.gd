@@ -294,6 +294,22 @@ signal vault_prompt_updated(is_available: bool, screen_pos: Vector2, is_on_scree
 @warning_ignore("unused_signal")
 signal held_item_changed(is_holding: bool)
 
+## Emitted when the player enters or exits a water volume. Passes [param is_active].
+@warning_ignore("unused_signal")
+signal swim_surface_toggled(is_active: bool)
+
+## Emitted when the player submerges their head. Passes [param duration].
+@warning_ignore("unused_signal")
+signal oxygen_timer_started(duration: float)
+
+## Emitted when the player surfaces their head from water.
+@warning_ignore("unused_signal")
+signal oxygen_timer_stopped
+
+## Emitted when infinite swim mode is toggled in accessibility settings.
+@warning_ignore("unused_signal")
+signal infinite_swim_toggled(is_enabled: bool)
+
 ## Visual animation style presets for chapter title card sequences.
 enum ChapterAnimStyle {
 	SIMPLE,

@@ -288,7 +288,7 @@ func _load_all_settings() -> void:
 
 ## Broadcasts signals and sets global variables for visual boot configurations.
 func _apply_boot_settings() -> void:
-	print("System: Applying boot settings (UI scale, fonts, filters).")
+	print("System: Applying boot settings (UI scale, fonts, filters, accessibility).")
 	var ui_scale: float = get_setting("Settings", "ui_scale", 1.0) as float
 	get_window().content_scale_factor = ui_scale
 
@@ -313,6 +313,10 @@ func _apply_boot_settings() -> void:
 		if events.has_signal("item_prompts_toggled"):
 			var show_prompts: bool = get_setting("Gameplay", "show_item_prompts", true) as bool
 			events.item_prompts_toggled.emit(show_prompts)
+
+		if events.has_signal("infinite_swim_toggled"):
+			var inf_swim: bool = bool(get_setting("Accessibility", "infinite_swim", false))
+			events.infinite_swim_toggled.emit(inf_swim)
 
 
 ## Overwrites the default Godot [InputMap] with any saved keybind overrides.

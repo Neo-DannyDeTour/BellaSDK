@@ -80,7 +80,7 @@ func _ready() -> void:
 	if is_instance_valid(stats_component):
 		stats_component.initialize(self)
 
-	_bridge_health_signals()
+	#_bridge_health_signals()
 
 	if is_instance_valid(health_component):
 		if not health_component.died.is_connected(_on_player_died):
@@ -513,27 +513,26 @@ func launch_from_path(throw_vel: Vector3) -> void:
 		state_machine.transition_to("Air", {"release_dir": throw_vel})
 
 
-## Connects local health component signals to the event bus.
-func _bridge_health_signals() -> void:
-	print("Player: Bridging health component signals to Events bus.")
+### Connects local health component signals to the event bus.
+#func _bridge_health_signals() -> void:
+#print("Player: Bridging health component signals to Events bus.")
+#
+#if is_instance_valid(health_component):
+#if not health_component.health_changed.is_connected(_on_local_health_changed):
+#health_component.health_changed.connect(_on_local_health_changed)
+#print("Player: Successfully bridged HealthComponent to global Events.")
+#else:
+#push_warning("Player: HealthComponent node not found at $Components/HealthComponent!")
 
-	if is_instance_valid(health_component):
-		if not health_component.health_changed.is_connected(_on_local_health_changed):
-			health_component.health_changed.connect(_on_local_health_changed)
-			print("Player: Successfully bridged HealthComponent to global Events.")
-	else:
-		push_warning("Player: HealthComponent node not found at $Components/HealthComponent!")
-
-
-## Forwards health change events from the local component to the global event bus.
-## [param new_health] Current health value.
-func _on_local_health_changed(new_health: int) -> void:
-	if (
-		Events.has_user_signal("player_health_changed")
-		or Events.has_signal("player_health_changed")
-	):
-		print("Player: Emitting player_health_changed: ", new_health)
-		Events.player_health_changed.emit(new_health)
+### Forwards health change events from the local component to the global event bus.
+### [param new_health] Current health value.
+#func _on_local_health_changed(new_health: int) -> void:
+#if (
+#Events.has_user_signal("player_health_changed")
+#or Events.has_signal("player_health_changed")
+#):
+#print("Player: Emitting player_health_changed: ", new_health)
+#Events.player_health_changed.emit(new_health)
 
 
 # --------------------------------------
