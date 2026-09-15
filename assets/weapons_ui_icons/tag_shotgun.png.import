@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c2yv1gred063i"
-path="res://.godot/imported/wrench_weapon_ui.jpeg-70859c33f5457691c6355c1be3de9c7a.ctex"
+uid="uid://djuxi7t7ltowl"
+path="res://.godot/imported/tag_shotgun.png-5e598f9ca4e04f2c4a2920858e1de632.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/weapons_ui_icons/wrench_weapon_ui.jpeg"
-dest_files=["res://.godot/imported/wrench_weapon_ui.jpeg-70859c33f5457691c6355c1be3de9c7a.ctex"]
+source_file="res://assets/weapons_ui_icons/tag_shotgun.png"
+dest_files=["res://.godot/imported/tag_shotgun.png-5e598f9ca4e04f2c4a2920858e1de632.ctex"]
 
 [params]
 
