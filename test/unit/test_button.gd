@@ -16,24 +16,27 @@ func before_each() -> void:
 	print("TestButton: before_each() setup.")
 
 	button = load("res://shared/button.gd").new()
-	add_child_autofree(button)
 
 	mock_mesh = MeshInstance3D.new()
 	button.add_child(mock_mesh)
 	button.mesh_to_highlight = mock_mesh
 
 	mock_label = Label3D.new()
+	mock_label.name = "LabelInteract"
 	button.add_child(mock_label)
-	button.label_interact = mock_label
 
 	mock_interact_comp = load("res://interactables/interact_component.gd").new()
+	mock_interact_comp.name = "InteractComponent"
 	button.add_child(mock_interact_comp)
-	button.interact_component = mock_interact_comp
+
+	var mock_highlight: Node = Node.new()
+	mock_highlight.name = "HighlightComponent"
+	button.add_child(mock_highlight)
+
+	add_child_autofree(button)
 
 	mock_player = CharacterBody3D.new()
 	add_child_autofree(mock_player)
-
-	button._ready()
 
 
 func test_on_focus() -> void:

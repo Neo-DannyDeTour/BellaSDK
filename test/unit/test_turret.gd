@@ -87,7 +87,8 @@ func test_damage_player() -> void:
 
 func test_is_hostile() -> void:
 	print("TestTurret: test_is_hostile() called.")
-	turret.hostile_groups = ["player"]
+	var groups: Array[StringName] = [&"player"]
+	turret.hostile_groups = groups
 
 	var mock_enemy: Node = Node.new()
 	mock_enemy.add_to_group("enemy")
