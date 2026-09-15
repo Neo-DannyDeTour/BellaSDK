@@ -310,6 +310,10 @@ signal oxygen_timer_stopped
 @warning_ignore("unused_signal")
 signal infinite_swim_toggled(is_enabled: bool)
 
+## Emitted when a weapon tag popup is triggered for [param weapon_id].
+@warning_ignore("unused_signal")
+signal weapon_tag_displayed(weapon_id: String)
+
 ## Visual animation style presets for chapter title card sequences.
 enum ChapterAnimStyle {
 	SIMPLE,
