@@ -20,8 +20,10 @@
 [ext_resource type="Shader" uid="uid://wmp7kwratrjt" path="res://vfx/water_effects_overlay.gdshader" id="10_fgtw6"]
 [ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="11_bi8hs"]
 [ext_resource type="Script" uid="uid://bq62qlt337705" path="res://ui/chapter_title_container.gd" id="11_hrmpd"]
+[ext_resource type="Script" uid="uid://j10fv4ukprin" path="res://ui/tag_notification.gd" id="13_2lccl"]
 [ext_resource type="Script" uid="uid://cn8iga4b8ipp7" path="res://ui/crosshair_hud.gd" id="13_br2v7"]
 [ext_resource type="Texture2D" uid="uid://buyk2btocs7de" path="res://assets/images/UI_icon_boot_sprint.png" id="13_ju45i"]
+[ext_resource type="Texture2D" uid="uid://djuxi7t7ltowl" path="res://assets/weapons_ui_icons/tag_shotgun.png" id="14_6cxyx"]
 [ext_resource type="Script" uid="uid://1mw0s646lik2" path="res://ui/diagnostics_panel.gd" id="15_rkf1o"]
 [ext_resource type="PackedScene" uid="uid://r7e1pqddjcjx" path="res://ui/death_screen.tscn" id="16_mf2ns"]
 [ext_resource type="Shader" uid="uid://cnul3imnv48gv" path="res://vfx/pulsing_border.gdshader" id="17_0avjw"]
@@ -221,6 +223,27 @@ layout_mode = 2
 mouse_filter = 2
 texture = ExtResource("4_wm3ai")
 expand_mode = 1
+stretch_mode = 5
+
+[node name="TagNotification" type="Control" parent="." unique_id=696949734]
+layout_mode = 3
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -20.0
+offset_right = 20.0
+offset_bottom = 40.0
+grow_horizontal = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+script = ExtResource("13_2lccl")
+
+[node name="TagRect" type="TextureRect" parent="TagNotification" unique_id=485735102]
+custom_maximum_size = Vector2(100, 164)
+layout_mode = 0
+offset_right = 264.0
+offset_bottom = 420.0
+texture = ExtResource("14_6cxyx")
 stretch_mode = 5
 
 [node name="PlayerStatusHUD" type="MarginContainer" parent="." unique_id=2046781798]
@@ -677,10 +700,47 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Performance"
 
-[node name="ScanGeometryButton" type="Button" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=2081431460]
+[node name="LiveIsolatorTabButton" type="Button" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/HBoxContainer" unique_id=374366222]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Live Isolator"
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="DiagnosticsPanel/MarginContainer/VBoxContainer" unique_id=961712230]
+layout_mode = 2
+
+[node name="ScanGeometryButton" type="Button" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/HBoxContainer2" unique_id=2081431460]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Scan Scene Geometry"
+
+[node name="DumpAuditButton" type="Button" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/HBoxContainer2" unique_id=1078534750]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Dump Audit"
+
+[node name="GridContainer" type="GridContainer" parent="DiagnosticsPanel/MarginContainer/VBoxContainer" unique_id=55781237]
+layout_mode = 2
+columns = 2
+
+[node name="ToggleShadowsButton" type="Button" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/GridContainer" unique_id=1812698233]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Shadows"
+
+[node name="ToggleSdfgiButton" type="Button" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/GridContainer" unique_id=255044364]
+unique_name_in_owner = true
+layout_mode = 2
+text = "SDFGI"
+
+[node name="ToggleFogButton" type="Button" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/GridContainer" unique_id=477872202]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Fog"
+
+[node name="ToggleDioramaButton" type="Button" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/GridContainer" unique_id=1269942055]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Diorama"
 
 [node name="ScrollContainer" type="ScrollContainer" parent="DiagnosticsPanel/MarginContainer/VBoxContainer" unique_id=1063004264]
 layout_mode = 2
