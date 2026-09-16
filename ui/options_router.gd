@@ -86,10 +86,10 @@ func _ready() -> void:
 	_route_diorama_view(video_panel)
 	_evaluate_diorama_state()
 
-	var settings_level: Node = diorama_viewport.find_child("SettingsLevel", true, false)
-	if is_instance_valid(settings_level):
+	var settings_lvl: Node = diorama_viewport.find_child("SettingsLevel", true, false)
+	if is_instance_valid(settings_lvl):
 		print("UI: Isolating SettingsLevel nodes to visual layer 11.")
-		_assign_visual_layer_recursive(settings_level, 11)
+		_assign_visual_layer_recursive(settings_lvl, 11)
 
 
 ## Binds the shared diorama ViewportTexture to preview displays.
@@ -183,6 +183,7 @@ func _on_tab_pressed(active_panel: Panel) -> void:
 ## Routes camera and shaders to match the active tab without reparenting.
 ## [param active_panel] Active settings subpanel.
 func _route_diorama_view(active_panel: Panel) -> void:
+	print("UI: Routing diorama view for panel -> ", active_panel.name)
 	var is_video: bool = active_panel == video_panel
 	var is_access: bool = active_panel == accessibility_panel
 
@@ -192,8 +193,6 @@ func _route_diorama_view(active_panel: Panel) -> void:
 
 	if is_video:
 		_activate_graphics_camera()
-		if video_panel.has_method("_apply_all_settings"):
-			video_panel.call_deferred("_apply_all_settings")
 	elif is_access:
 		if (
 			is_instance_valid(accessibility_panel)
@@ -207,10 +206,8 @@ func _evaluate_diorama_state() -> void:
 	if not is_instance_valid(diorama_viewport):
 		return
 
-	var is_preview_tab: bool = (
-		_current_panel == video_panel or _current_panel == accessibility_panel
-	)
-	var should_render: bool = is_visible_in_tree() and is_preview_tab
+	var is_preview: bool = _current_panel == video_panel or _current_panel == accessibility_panel
+	var should_render: bool = is_visible_in_tree() and is_preview
 	print("UI: Diorama rendering state updated -> ", should_render)
 
 	diorama_viewport.render_target_clear_mode = (
@@ -293,7 +290,6 @@ func _on_reset_defaults_pressed() -> void:
 ## [param root] Target branch node.
 ## [param layer_idx] 1-based visual layer index.
 func _assign_visual_layer_recursive(root: Node, layer_idx: int) -> void:
-	# print("UI: Isolating node layers recursively -> ", root.name)
 	var mask: int = 1 << (layer_idx - 1)
 	for child: Node in root.get_children():
 		if child is VisualInstance3D:

@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://c38gq45j0b76l" path="res://ui/quality_section.gd" id="3_jvqaf"]
 [ext_resource type="Script" uid="uid://clp3p0dkiws52" path="res://ui/effects_section.gd" id="4_r5otb"]
 [ext_resource type="Script" uid="uid://dk6exag0m3us5" path="res://ui/hardware_section.gd" id="5_uuhel"]
+[ext_resource type="Script" uid="uid://bbavliaaoouke" path="res://ui/perf_overlay.gd" id="6_jvqaf"]
 
 [node name="VideoOptions" type="Panel" unique_id=1944788422]
 anchors_preset = 15
@@ -52,7 +53,7 @@ size_flags_horizontal = 3
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-current_tab = 2
+current_tab = 1
 
 [node name="DisplaySection" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs" unique_id=1916241005]
 unique_name_in_owner = true
@@ -118,7 +119,6 @@ size_flags_horizontal = 3
 
 [node name="QualitySection" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs" unique_id=705787455]
 unique_name_in_owner = true
-visible = false
 layout_mode = 2
 script = ExtResource("3_jvqaf")
 metadata/_tab_index = 1
@@ -294,6 +294,7 @@ layout_mode = 2
 
 [node name="EffectsSection" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs" unique_id=412135657]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 script = ExtResource("4_r5otb")
 metadata/_tab_index = 2
@@ -480,6 +481,7 @@ layout_mode = 2
 
 [node name="VideoDioramaSocket" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=624873472]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(640, 480)
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -492,6 +494,24 @@ grow_horizontal = 2
 grow_vertical = 2
 expand_mode = 1
 stretch_mode = 6
+
+[node name="PerfOverlay" type="MarginContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/VideoDioramaSocket/VideoDioramaDisplay" unique_id=305981879]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -40.0
+offset_right = -23.0
+offset_bottom = 33.0
+grow_horizontal = 0
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+script = ExtResource("6_jvqaf")
+
+[node name="StatsLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/VideoDioramaSocket/VideoDioramaDisplay/PerfOverlay" unique_id=784142734]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 2
 
 [node name="RestartDialog" type="ConfirmationDialog" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=747216340]
 unique_name_in_owner = true

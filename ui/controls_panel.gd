@@ -95,6 +95,12 @@ var _icon_cache: Dictionary = {}
 ## Option dropdown for Sprint input behavior mode.
 @onready var sprint_mode_option: OptionButton = %SprintModeOption
 
+## Reference to the [Label] indicating the valve turning behavior setting.
+@onready var valve_mode_label: Label = %ValveModeLabel
+
+## Option dropdown for Valve turning behavior mode.
+@onready var valve_mode_option: OptionButton = %ValveModeOption
+
 
 ## Lifecycle method called when the node enters the scene tree.
 ## Builds the complete remapping interface and registers behavior toggles.
@@ -106,6 +112,9 @@ func _ready() -> void:
 
 	if is_instance_valid(sprint_mode_option):
 		sprint_mode_option.focus_mode = Control.FOCUS_NONE
+
+	if is_instance_valid(valve_mode_option):
+		valve_mode_option.focus_mode = Control.FOCUS_NONE
 
 	_format_header_grid()
 	_ensure_all_actions_registered()
@@ -232,13 +241,15 @@ func _ensure_all_actions_registered() -> void:
 					InputMap.action_add_event(action, default_key)
 
 
-## Sets up options and loads persisted behavior preferences (Toggle vs Hold).
+## Sets up options and loads persisted behavior preferences (Toggle vs Hold vs Mash).
 func _setup_behavior_controls() -> void:
 	print("UI: Configuring Input Behavior dropdowns.")
 	if is_instance_valid(crouch_mode_label):
 		crouch_mode_label.text = "Crouch Mode"
 	if is_instance_valid(sprint_mode_label):
 		sprint_mode_label.text = "Sprint Mode"
+	if is_instance_valid(valve_mode_label):
+		valve_mode_label.text = "Valve Turn Mode"
 
 	if is_instance_valid(crouch_mode_option):
 		crouch_mode_option.clear()
@@ -262,6 +273,24 @@ func _setup_behavior_controls() -> void:
 		sprint_mode_option.selected = 1 if saved_sprint == "Toggle" else 0
 		sprint_mode_option.item_selected.connect(_on_sprint_mode_selected)
 
+	if is_instance_valid(valve_mode_option):
+		valve_mode_option.clear()
+		valve_mode_option.add_item("Hold", 0)
+		valve_mode_option.add_item("One-Time Press", 1)
+		valve_mode_option.add_item("Rapid Mash", 2)
+
+		var saved_valve: String = (
+			GlobalSettings.get_setting("Gameplay", "valve_turn_mode", "Hold") as String
+		)
+		match saved_valve:
+			"One-Time Press":
+				valve_mode_option.selected = 1
+			"Rapid Mash":
+				valve_mode_option.selected = 2
+			_:
+				valve_mode_option.selected = 0
+		valve_mode_option.item_selected.connect(_on_valve_mode_selected)
+
 
 ## Handles crouch mode selection changes.
 ## [param index] The selected dropdown index.
@@ -277,6 +306,14 @@ func _on_sprint_mode_selected(index: int) -> void:
 	var mode: String = sprint_mode_option.get_item_text(index)
 	print("Settings: Player changed Sprint Mode to: ", mode)
 	GlobalSettings.save_setting("Gameplay", "sprint_mode", mode)
+
+
+## Handles valve interaction mode changes and updates GlobalSettings.
+## [param index] The selected dropdown index.
+func _on_valve_mode_selected(index: int) -> void:
+	var mode: String = valve_mode_option.get_item_text(index)
+	print("Settings: Player changed Valve Turn Mode to: ", mode)
+	GlobalSettings.save_setting("Gameplay", "valve_turn_mode", mode)
 
 
 ## Generates the UI elements grouped by categories with primary and secondary slots.

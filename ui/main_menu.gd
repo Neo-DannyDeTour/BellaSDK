@@ -72,6 +72,10 @@ func _ready() -> void:
 	_check_game_context()
 	_return_to_main_buttons()
 
+	# Pre-allocate diorama GPU froxels and compile shaders asynchronously at boot
+	if is_instance_valid(options_router):
+		options_router.warmup_diorama()
+
 
 ## Connects all root navigation buttons to their respective callbacks.
 func _connect_primary_buttons() -> void:

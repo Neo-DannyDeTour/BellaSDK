@@ -1,9 +1,12 @@
-## Applies visual settings to display windows, viewports, materials, and environments.
+## Centralizes visual pipeline, window configuration, and environment passes.
 class_name VideoApplier
 extends RefCounted
 
 ## Cached density texture instance shared across all viewports.
 static var _cached_vrs_texture: ImageTexture = null
+
+## Cached dictionary of the active pipeline configuration to avoid redundant work.
+static var _last_applied_config: Dictionary = {}
 
 
 ## Updates the application display mode, screen assignment, and dimensions.
@@ -45,10 +48,10 @@ static func apply_engine_limits(vsync_mode: DisplayServer.VSyncMode, fps_limit: 
 ## [param level] Anisotropic filtering level integer.
 static func apply_anisotropy(level: int) -> void:
 	print("VideoApplier: Setting anisotropic filtering level: ", level)
-	var setting_key: String = "rendering/textures/default_filters/anisotropic_filtering_level"
-	var current: Variant = ProjectSettings.get_setting(setting_key)
-	if current == null or int(current) != level:
-		ProjectSettings.set_setting(setting_key, level)
+	var key: String = "rendering/textures/default_filters/anisotropic_filtering_level"
+	var cur: Variant = ProjectSettings.get_setting(key)
+	if cur == null or int(cur) != level:
+		ProjectSettings.set_setting(key, level)
 
 
 ## Checks if the current GPU backend supports VRS.
@@ -72,6 +75,11 @@ static func is_vrs_supported() -> bool:
 static func apply_viewport_pipeline(
 	tree: SceneTree, main_viewport: Viewport, config: Dictionary
 ) -> void:
+	if _last_applied_config.hash() == config.hash():
+		print("VideoApplier: Pipeline config identical. Skipping redundant update.")
+		return
+	_last_applied_config = config.duplicate(true)
+
 	print("VideoApplier: Synchronizing rendering pipeline across viewports.")
 	var target_viewports: Array[Viewport] = [main_viewport]
 	var diorama_vp: SubViewport = (
@@ -87,11 +95,6 @@ static func apply_viewport_pipeline(
 	var f_key: String = "rendering/textures/default_filters/texture_filter_mode"
 	if ProjectSettings.get_setting(f_key) != filter_mode:
 		ProjectSettings.set_setting(f_key, filter_mode)
-
-	for vp: Viewport in target_viewports:
-		vp.canvas_item_default_texture_filter = (
-			filter_mode as Viewport.DefaultCanvasItemTextureFilter
-		)
 
 	var fsr_scale: float = config.get("fsr_scale", 1.0) as float
 	var raw_scale: float = config.get("resolution_scale", 1.0) as float
@@ -113,6 +116,9 @@ static func apply_viewport_pipeline(
 		_cached_vrs_texture = VrsTextureGenerator.create_radial_density_map()
 
 	for vp: Viewport in target_viewports:
+		vp.canvas_item_default_texture_filter = (
+			filter_mode as Viewport.DefaultCanvasItemTextureFilter
+		)
 		vp.use_occlusion_culling = occ_cull
 
 		if raw_vrs == Viewport.VRS_TEXTURE and is_instance_valid(_cached_vrs_texture):
@@ -137,6 +143,7 @@ static func apply_viewport_pipeline(
 		)
 		vp.use_debanding = config.get("debanding", true) as bool
 		vp.mesh_lod_threshold = config.get("mesh_lod", 1.0) as float
+
 		if vp is SubViewport:
 			vp.positional_shadow_atlas_size = mini(config.get("shadow_atlas", 2048) as int, 1024)
 		else:
@@ -145,45 +152,52 @@ static func apply_viewport_pipeline(
 	_apply_environment_and_materials(tree, config)
 
 
-## Controls dynamic spotlights, omni lights, and positional shadow filters.
+## Synchronizes directional and positional light shadow filter settings.
 ## [param tree] The active [SceneTree] to query lights from.
 ## [param config] Dictionary holding dynamic shadow preferences.
 static func _apply_light_shadows(tree: SceneTree, config: Dictionary) -> void:
-	print("VideoApplier: Synchronizing positional light shadows and filter.")
-	var enable_dynamic_shadows: bool = config.get("dynamic_light_shadows", true) as bool
-	var filter_key: String = config.get("shadow_filter", "Soft Medium") as String
+	print("VideoApplier: Synchronizing light shadows and filter qualities.")
+	var enable_dyn: bool = config.get("dynamic_light_shadows", true) as bool
+	var f_key: String = config.get("shadow_filter", "Soft Medium") as String
 	var filter_mode: RenderingServer.ShadowQuality = (
-		VideoConfig.SHADOW_FILTER_MODES.get(filter_key, RenderingServer.SHADOW_QUALITY_SOFT_MEDIUM)
+		VideoConfig.SHADOW_FILTER_MODES.get(f_key, RenderingServer.SHADOW_QUALITY_SOFT_MEDIUM)
 		as RenderingServer.ShadowQuality
 	)
 	var d_dist: float = config.get("directional_shadow_distance", 64.0) as float
 
 	RenderingServer.positional_soft_shadow_filter_set_quality(filter_mode)
+	RenderingServer.directional_soft_shadow_filter_set_quality(filter_mode)
 
 	var dir_lights: Array[Node] = tree.root.find_children("*", "DirectionalLight3D", true, false)
 	for d_node: Node in dir_lights:
 		var d_light: DirectionalLight3D = d_node as DirectionalLight3D
 		if is_instance_valid(d_light):
-			# Keep diorama preview directional shadow distance tight
+			d_light.shadow_enabled = enable_dyn
 			if d_light.find_parent("DioramaViewport") != null:
 				d_light.directional_shadow_max_distance = minf(d_dist, 32.0)
 			else:
 				d_light.directional_shadow_max_distance = d_dist
 
 	var dynamic_nodes: Array[Node] = tree.get_nodes_in_group("dynamic_shadow_casters")
-	if dynamic_nodes.is_empty():
-		print(
-			"VideoApplier: No lights in group 'dynamic_shadow_casters'. Skipping positional shadow toggle."
-		)
-		return
-
 	for node: Node in dynamic_nodes:
 		var light: Light3D = node as Light3D
 		if is_instance_valid(light):
-			light.shadow_enabled = enable_dynamic_shadows
+			light.shadow_enabled = enable_dyn
+
+	var diorama_vp: SubViewport = (
+		tree.root.find_child("DioramaViewport", true, false) as SubViewport
+	)
+	if is_instance_valid(diorama_vp):
+		var dio_lights: Array[Node] = diorama_vp.find_children("*", "Light3D", true, false)
+		for l_node: Node in dio_lights:
+			if l_node is DirectionalLight3D:
+				continue
+			var l3d: Light3D = l_node as Light3D
+			if is_instance_valid(l3d):
+				l3d.shadow_enabled = enable_dyn
 
 
-## Clamps high MSAA modes for subviewports to ensure 60 FPS performance headroom.
+## Clamps preview viewport MSAA strictly to 2X to maintain 60 FPS headroom.
 ## [param requested_msaa] Requested [enum Viewport.MSAA].
 ## [return] Clamped [enum Viewport.MSAA] value.
 static func _clamp_preview_msaa(requested_msaa: Viewport.MSAA) -> Viewport.MSAA:
@@ -216,8 +230,7 @@ static func _apply_rendering_server_qualities(config: Dictionary) -> void:
 	var fog_dict: Dictionary = config.get("fog", {}) as Dictionary
 	if not fog_dict.is_empty():
 		var depth: int = fog_dict.get("depth", 64) as int
-		var grid_size: int = 64
-		RenderingServer.environment_set_volumetric_fog_volume_size(grid_size, depth)
+		RenderingServer.environment_set_volumetric_fog_volume_size(64, depth)
 
 
 ## Synchronizes environment tonemapping, lighting features, and debug overlays.
@@ -261,7 +274,7 @@ static func _apply_environment_and_materials(tree: SceneTree, config: Dictionary
 
 	var exp_val: float = config.get("exposure", 1.0) as float
 	var dof_amount: float = config.get("dof_amount", 0.0) as float
-	var is_dof_active: bool = dof_amount > 0.005
+	var is_dof_active: bool = dof_amount > 0.01
 
 	for env: Environment in environments:
 		env.tonemap_exposure = exp_val
@@ -307,7 +320,7 @@ static func _apply_environment_and_materials(tree: SceneTree, config: Dictionary
 				)
 				attr.dof_blur_far_enabled = is_dof_active
 				attr.dof_blur_near_enabled = is_dof_active
-				attr.dof_blur_amount = dof_amount
+				attr.dof_blur_amount = dof_amount if is_dof_active else 0.0
 
 	var active_cams: Array[Node] = tree.root.find_children("*", "Camera3D", true, false)
 	for c_node: Node in active_cams:
@@ -319,21 +332,23 @@ static func _apply_environment_and_materials(tree: SceneTree, config: Dictionary
 				)
 				cam_attr.dof_blur_far_enabled = is_dof_active
 				cam_attr.dof_blur_near_enabled = is_dof_active
-				cam_attr.dof_blur_amount = dof_amount
+				cam_attr.dof_blur_amount = dof_amount if is_dof_active else 0.0
 
-	var motion_blur_factor: float = config.get("motion_blur", 0.0) as float
+	var mb_factor: float = config.get("motion_blur", 0.0) as float
+	var is_mb_active: bool = mb_factor > 0.01
+
 	for c_node: Node in active_cams:
 		if c_node is ExtendedCamera3D:
 			var ext_cam: ExtendedCamera3D = c_node as ExtendedCamera3D
 			if is_instance_valid(ext_cam._motion_blur_material):
 				ext_cam._motion_blur_material.set_shader_parameter(
-					"motion_blur_strength", motion_blur_factor
+					"motion_blur_strength", mb_factor if is_mb_active else 0.0
 				)
 			if is_instance_valid(ext_cam.motion_blur_layer):
-				ext_cam.motion_blur_layer.visible = motion_blur_factor > 0.005
+				ext_cam.motion_blur_layer.visible = is_mb_active
 
 	var post_nodes: Array[Node] = tree.root.find_children("*", "ColorRect", true, false)
 	for p_node: Node in post_nodes:
 		if p_node.material is ShaderMaterial:
 			var smat: ShaderMaterial = p_node.material as ShaderMaterial
-			smat.set_shader_parameter("motion_blur_strength", motion_blur_factor)
+			smat.set_shader_parameter("motion_blur_strength", mb_factor if is_mb_active else 0.0)

@@ -15,7 +15,6 @@
 [ext_resource type="Shader" uid="uid://w674ybxmnkoi" path="res://vfx/diorama_post_process.gdshader" id="11_kaxbk"]
 [ext_resource type="Script" uid="uid://7t34h1kqmrcr" path="res://ui/diorama_post_process.gd" id="12_0nobx"]
 [ext_resource type="PackedScene" uid="uid://dhh7c5j6i8bkk" path="res://player/settings_level.tscn" id="13_0nobx"]
-[ext_resource type="Script" uid="uid://bbavliaaoouke" path="res://ui/perf_overlay.gd" id="14_iyrh0"]
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_50h1w"]
 
@@ -31,6 +30,7 @@ expand_margin_right = 8.0
 expand_margin_bottom = 8.0
 
 [sub_resource type="Environment" id="Environment_iyrh0"]
+resource_local_to_scene = true
 
 [sub_resource type="World3D" id="World3D_iyrh0"]
 environment = SubResource("Environment_iyrh0")
@@ -291,24 +291,6 @@ anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 
-[node name="PerfOverlay" type="MarginContainer" parent="CenterContainer/OptionsMenu/ContentVBox/SettingsArea/VideoOptionsPanel/VideoDioramaSocket" unique_id=676796810]
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = 1160.0
-offset_right = 1177.0
-offset_bottom = 33.0
-grow_horizontal = 0
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 16
-script = ExtResource("14_iyrh0")
-
-[node name="StatsLabel" type="Label" parent="CenterContainer/OptionsMenu/ContentVBox/SettingsArea/VideoOptionsPanel/VideoDioramaSocket/PerfOverlay" unique_id=680130125]
-unique_name_in_owner = true
-layout_mode = 2
-horizontal_alignment = 2
-
 [node name="AudioPanel" parent="CenterContainer/OptionsMenu/ContentVBox/SettingsArea" unique_id=755109423 instance=ExtResource("9_jiymt")]
 unique_name_in_owner = true
 layout_mode = 2
@@ -332,14 +314,13 @@ offset_bottom = 40.0
 
 [node name="SharedDioramaHolder" type="PanelContainer" parent="CenterContainer/OptionsMenu/ContentVBox" unique_id=231050902]
 visible = false
-custom_minimum_size = Vector2(400, 400)
+custom_minimum_size = Vector2(640, 480)
 layout_mode = 2
 size_flags_vertical = 3
 
 [node name="DioramaContainer" type="SubViewportContainer" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder" unique_id=1879747383]
-custom_minimum_size = Vector2(400, 400)
+custom_minimum_size = Vector2(640, 480)
 layout_mode = 2
-stretch = true
 
 [node name="DioramaViewport" type="SubViewport" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer" unique_id=1196020141]
 unique_name_in_owner = true
@@ -347,7 +328,7 @@ own_world_3d = true
 world_3d = SubResource("World3D_iyrh0")
 handle_input_locally = false
 use_debanding = true
-size = Vector2i(400, 400)
+size = Vector2i(640, 480)
 render_target_update_mode = 0
 
 [node name="DioramaPostProcess" type="ColorRect" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer/DioramaViewport" unique_id=1101744956]

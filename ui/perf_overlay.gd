@@ -15,10 +15,20 @@ var _time_accumulator: float = 0.0
 ## Lifecycle initialization configuring anchors and starting diagnostics.
 func _ready() -> void:
 	print("UI: Initializing Diorama Performance Overlay.")
-	set_anchors_preset(Control.PRESET_TOP_RIGHT)
+	anchor_left = 0.0
+	anchor_right = 1.0
+	anchor_top = 0.0
+	anchor_bottom = 0.0
+	offset_left = 0.0
+	offset_right = 0.0
+	offset_top = 10.0
+	offset_bottom = 30.0
+	grow_horizontal = Control.GROW_DIRECTION_BOTH
+	grow_vertical = Control.GROW_DIRECTION_END
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	if is_instance_valid(stats_label):
 		stats_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		stats_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_update_metrics()
 
 

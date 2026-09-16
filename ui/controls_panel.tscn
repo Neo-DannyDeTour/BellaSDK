@@ -54,6 +54,14 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="ValveModeLabel" type="Label" parent="MarginContainer/ContentVBox/BehaviorSection" unique_id=2125492728]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="ValveModeOption" type="OptionButton" parent="MarginContainer/ContentVBox/BehaviorSection" unique_id=1769821281]
+unique_name_in_owner = true
+layout_mode = 2
+
 [node name="BehaviorGrid" type="GridContainer" parent="MarginContainer/ContentVBox/BehaviorSection" unique_id=327060306]
 layout_mode = 2
 columns = 2
