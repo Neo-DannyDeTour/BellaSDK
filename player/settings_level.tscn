@@ -53,19 +53,6 @@
 [ext_resource type="PackedScene" uid="uid://ckx2iw4xdsaqd" path="res://interactables/pickable_barrel_green.tscn" id="56_k566i"]
 [ext_resource type="Shader" uid="uid://cp26motkbojta" path="res://ui/VisionAssist.gdshader" id="57_fbi2v"]
 
-[sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_kja8q"]
-
-[sub_resource type="Sky" id="Sky_lwyc6"]
-sky_material = SubResource("PanoramaSkyMaterial_kja8q")
-
-[sub_resource type="Environment" id="Environment_46sxa"]
-resource_local_to_scene = true
-background_mode = 2
-sky = SubResource("Sky_lwyc6")
-sky_rotation = Vector3(0, 2.3841197, 0)
-sdfgi_use_occlusion = true
-sdfgi_cascades = 2
-
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6sdu6"]
 emission_enabled = true
 emission_texture = ExtResource("30_r02c6")
@@ -107,12 +94,11 @@ size = Vector2(2, 2)
 
 [node name="SettingsLevel" type="Node3D" unique_id=240456945]
 
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1907814161 groups=["level_environment"]]
-environment = SubResource("Environment_46sxa")
-
-[node name="DirectionalLight3D" type="DirectionalLight3D" parent="WorldEnvironment" unique_id=798207688]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." unique_id=798207688]
 transform = Transform3D(1, 0, 0, 0, -0.92831075, 0.37180543, 0, -0.37180543, -0.92831075, 9.384303, 7.540174, -17.82357)
+light_cull_mask = 1024
 shadow_enabled = true
+shadow_blur = 1.5
 
 [node name="Columns" type="Node3D" parent="." unique_id=834293260]
 
