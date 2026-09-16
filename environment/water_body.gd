@@ -604,11 +604,11 @@ func play_splash_sound(impact_pos: Vector3, speed: float) -> void:
 	audio_player.max_distance = 15.0
 	audio_player.unit_size = 1.2
 
-	add_child(audio_player)
 	var surface_y: float = get_wave_height_at_pos(impact_pos)
-	audio_player.global_position = Vector3(impact_pos.x, surface_y, impact_pos.z)
+	audio_player.position = Vector3(impact_pos.x, surface_y, impact_pos.z)
 	audio_player.finished.connect(audio_player.queue_free)
-	audio_player.play()
+	add_child.call_deferred(audio_player)
+	audio_player.call_deferred(&"play")
 
 
 ## Allocates a dynamic ripple at [param global_pos] into the uniform ring buffer.

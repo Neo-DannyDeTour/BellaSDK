@@ -69,6 +69,18 @@ enum SpawnMode { TIME_BASED, WAIT_FOR_KILL }
 		show_visualizer_in_game = value
 		_update_visuals()
 
+## Distance in meters beyond which this volume halts target spawning.
+@export var active_distance: float = 40.0
+
+## Cached player instance for proximity checks.
+var _player_ref: Node3D = null
+
+## Proximity countdown timer.
+var _dist_timer: float = 0.0
+
+## Tracks if the spawner is dormant due to player distance.
+var _is_dormant: bool = false
+
 ## A list of targets currently spawned and active in the world.
 var active_targets: Array[Node3D] = []
 
@@ -106,8 +118,25 @@ func _ready() -> void:
 	_initialize_pool()
 
 
+## Frame lifecycle method monitoring player proximity and managing spawns.
+## [param delta] Frame execution delta in seconds.
 func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
+		return
+
+	_dist_timer += delta
+	if _dist_timer >= 0.5:
+		_dist_timer = 0.0
+		if not is_instance_valid(_player_ref):
+			var players: Array[Node] = get_tree().get_nodes_in_group(&"player")
+			if not players.is_empty() and players[0] is Node3D:
+				_player_ref = players[0] as Node3D
+
+		if is_instance_valid(_player_ref):
+			var dist_sq: float = global_position.distance_squared_to(_player_ref.global_position)
+			_is_dormant = dist_sq > (active_distance * active_distance)
+
+	if _is_dormant:
 		return
 
 	_handle_repositioning(delta)
