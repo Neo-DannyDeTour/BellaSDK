@@ -21,10 +21,13 @@ shader_parameter/alpha_scissor_threshold = 0.5
 [sub_resource type="BoxShape3D" id="BoxShape3D_epeg1"]
 size = Vector3(0.6, 0.1, 0.6)
 
-[node name="ValveBase" type="StaticBody3D" unique_id=86858914 node_paths=PackedStringArray("label")]
+[node name="ValveBase" type="StaticBody3D" unique_id=86858914 node_paths=PackedStringArray("label", "prompt_icon")]
 script = ExtResource("1_epeg1")
+turn_mode = null
 is_back_and_forth = false
+auto_return_delay = null
 label = NodePath("Label3D")
+prompt_icon = NodePath("PromptIcon")
 
 [node name="OutputTransmitter3D" type="Node3D" parent="." unique_id=1631216948]
 script = ExtResource("2_84u8d")
@@ -57,3 +60,10 @@ shape = SubResource("BoxShape3D_epeg1")
 
 [node name="ValveAudio" type="AudioStreamPlayer3D" parent="." unique_id=783260385]
 stream = ExtResource("7_0ogc3")
+
+[node name="PromptIcon" type="Sprite3D" parent="." unique_id=871037923]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, 0)
+pixel_size = 0.002
+billboard = 1
+double_sided = false
+no_depth_test = true

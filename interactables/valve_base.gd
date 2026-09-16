@@ -4,8 +4,14 @@
 class_name Valve
 extends StaticBody3D
 
+## Defines interaction behavior modes for turning the valve.
+enum TurnMode { SETTINGS_DEFAULT, HOLD, ONE_TIME_PRESS, RAPID_MASH }
+
 ## The time window in seconds to register two consecutive presses as a double tap.
 const DOUBLE_TAP_DELAY: float = 0.3
+
+## Amount of progress added per tap in Rapid Mash mode.
+const MASH_IMPULSE_STEP: float = 0.15
 
 @export_category("Connections")
 ## The list of target nodes. These are automatically forwarded to a child [OutputTransmitter3D].
@@ -28,6 +34,12 @@ const DOUBLE_TAP_DELAY: float = 0.3
 			lock_when_finished = false
 
 @export_category("Valve Settings")
+## The interaction mode for turning. SETTINGS_DEFAULT reads gameplay preference from settings.
+@export var turn_mode: TurnMode = TurnMode.SETTINGS_DEFAULT:
+	set(value):
+		turn_mode = value
+		_update_valve_label()
+
 ## The total time in seconds it takes to fully turn the valve.
 @export var turn_duration: float = 3.0
 ## How many full 360-degree visual spins the wheel makes during a full turn.
@@ -67,10 +79,16 @@ const DOUBLE_TAP_DELAY: float = 0.3
 
 ## The speed multiplier applied when the valve is quickly reverting to its resting state.
 @export var fast_revert_multiplier: float = 4.0
+## Delay in seconds before auto-reversing back to 0.0 in toggle mode.
+@export var auto_return_delay: float = 0.5
 ## The local axis around which the valve wheel mesh will spin.
 @export var spin_axis: Vector3 = Vector3(0, 1, 0)
+
+@export_category("Interaction Prompt")
 ## The 3D label used to display interaction prompts to the player.
 @export var label: Label3D
+## The 3D sprite rendering the active input button icon.
+@export var prompt_icon: Sprite3D
 ## The shader material applied to highlight the detached valve item.
 @export var outline_material: ShaderMaterial
 
@@ -87,10 +105,20 @@ var current_target_progress: float = 1.0
 var is_locked: bool = false
 ## Stores the interaction state of the previous frame to detect initial presses and releases.
 var was_interacting: bool = false
+## Tracks raw physical press state from previous frame to avoid duplicate trigger frames.
+var _was_key_pressed: bool = false
 ## Tracks whether the physical valve is currently attached to the base.
 var is_installed: bool = true
-## A timestamp tracking the last time the player pressed the interact button.
-var last_interact_time: float = 0.0
+## Countdown timer for multi-tap detachment window.
+var _detach_tap_timer: float = 0.0
+## Counter for consecutive taps detected within the detachment window.
+var _detach_tap_count: int = 0
+## Flag tracking active autonomous turning in one-time press mode.
+var _is_auto_turning: bool = false
+## Timer handling return delay once auto-turn reaches full completion.
+var _auto_return_timer: float = 0.0
+## Indicates whether text prompt labels are displayed over focused objects.
+var _show_text_prompts: bool = true
 ## The visual wheel node that rotates when the valve is turned.
 var wheel: Node3D
 ## The original rotational state of the wheel used to calculate relative spin angles.
@@ -111,6 +139,22 @@ var _transmitter: OutputTransmitter3D = null
 func _ready() -> void:
 	print("Valve: Initializing _ready() lifecycle.")
 	_update_transmitter_targets()
+
+	if not is_instance_valid(label):
+		label = get_node_or_null("Label3D") as Label3D
+	if not is_instance_valid(prompt_icon):
+		prompt_icon = get_node_or_null("PromptIcon") as Sprite3D
+
+	if is_instance_valid(label):
+		label.hide()
+	if is_instance_valid(prompt_icon):
+		prompt_icon.hide()
+
+	_show_text_prompts = (GlobalSettings.get_setting("Gameplay", "show_item_prompts", true) as bool)
+
+	if Events.has_signal("item_prompts_toggled"):
+		if not Events.item_prompts_toggled.is_connected(_on_item_prompts_toggled):
+			Events.item_prompts_toggled.connect(_on_item_prompts_toggled)
 
 	if requires_installation:
 		is_installed = false
@@ -150,44 +194,93 @@ func _process(delta: float) -> void:
 		install_cooldown -= delta
 
 	if not is_installed and install_cooldown <= 0.0:
-		if not is_instance_valid(_cached_player):
-			_cached_player = (get_tree().get_first_node_in_group("player") as Node3D)
+		_check_installation_proximity()
 
-		if is_instance_valid(_cached_player):
-			var held: Node3D = _get_player_held_object(_cached_player)
+	if _detach_tap_timer > 0.0:
+		_detach_tap_timer -= delta
+		if _detach_tap_timer <= 0.0:
+			_detach_tap_count = 0
 
-			if is_instance_valid(held):
-				var dist_sq: float = global_position.distance_squared_to(held.global_position)
-				if dist_sq < 0.36:
-					_install_valve(_cached_player, held)
-
-	var is_interacting: bool = (
-		is_focused and GestureInputManager.is_action_pressed("interact") and is_installed
+	var key_is_down: bool = (
+		is_focused and is_installed and GestureInputManager.is_action_pressed("interact")
 	)
-	var just_pressed: bool = (
-		is_focused and GestureInputManager.is_action_just_pressed("interact") and is_installed
-	)
+	var true_just_pressed: bool = key_is_down and not _was_key_pressed
+	_was_key_pressed = key_is_down
 
-	if can_be_detached and just_pressed:
-		var current_time: float = Time.get_ticks_msec() / 1000.0
-		if current_time - last_interact_time <= DOUBLE_TAP_DELAY:
+	if can_be_detached and true_just_pressed:
+		_detach_tap_count += 1
+		if _detach_tap_count == 1:
+			_detach_tap_timer = DOUBLE_TAP_DELAY
+		elif _detach_tap_count >= 2:
+			print("Valve: Detach double-tap validated.")
+			_detach_tap_count = 0
+			_detach_tap_timer = 0.0
 			_detach_valve()
-			last_interact_time = 0.0
 			return
-		last_interact_time = current_time
 
-	if is_locked:
+	if is_locked or not is_installed:
 		_manage_audio(false)
 		return
 
-	if is_instance_valid(highlight_comp) and highlight_comp.has_method("suppress"):
-		highlight_comp.suppress(is_interacting)
+	var is_moving: bool = _process_valve_progress(delta, key_is_down, true_just_pressed)
+	_manage_audio(is_moving)
 
+
+## Resolves active turn behavior mode based on override or GlobalSettings.
+## [return] Effective [enum Valve.TurnMode] enum value.
+func _get_effective_turn_mode() -> int:
+	if turn_mode != TurnMode.SETTINGS_DEFAULT:
+		return turn_mode
+
+	var saved_setting: String = (
+		GlobalSettings.get_setting("Gameplay", "valve_turn_mode", "Hold") as String
+	)
+	match saved_setting:
+		"One-Time Press":
+			return TurnMode.ONE_TIME_PRESS
+		"Rapid Mash":
+			return TurnMode.RAPID_MASH
+		_:
+			return TurnMode.HOLD
+
+
+## Updates valve progression based on active interaction mode and calculates mesh spin.
+## [param delta] Frame delta in seconds.
+## [param key_is_down] Whether the interaction key is held.
+## [param true_just_pressed] Whether the key transitioned from unpressed to pressed this frame.
+## [return] True if progress changed this frame.
+func _process_valve_progress(delta: float, key_is_down: bool, true_just_pressed: bool) -> bool:
+	var old_progress: float = progress
+	var effective_mode: int = _get_effective_turn_mode()
+
+	if is_instance_valid(highlight_comp) and highlight_comp.has_method("suppress"):
+		highlight_comp.suppress(key_is_down or _is_auto_turning)
+
+	match effective_mode:
+		TurnMode.HOLD:
+			_process_hold_mode(delta, key_is_down)
+		TurnMode.ONE_TIME_PRESS:
+			_process_press_mode(delta, true_just_pressed)
+		TurnMode.RAPID_MASH:
+			_process_mash_mode(delta, true_just_pressed)
+
+	var is_moving: bool = not is_equal_approx(progress, old_progress)
+	if is_moving:
+		_apply_visual_rotation()
+		var transmitter: OutputTransmitter3D = _get_transmitter()
+		if is_instance_valid(transmitter):
+			transmitter.transmit_progress(progress)
+
+	return is_moving
+
+
+## Processes turn calculation when valve is configured in continuous hold mode.
+## [param delta] Frame delta in seconds.
+## [param is_interacting] Whether the interact key is held down.
+func _process_hold_mode(delta: float, is_interacting: bool) -> void:
 	if is_interacting and not was_interacting:
 		if is_back_and_forth and progress > 0.0 and progress < 1.0:
-			current_target_progress = (0.0 if current_target_progress == 1.0 else 1.0)
-
-	var old_progress: float = progress
+			current_target_progress = 0.0 if current_target_progress == 1.0 else 1.0
 
 	if is_interacting:
 		progress = move_toward(progress, current_target_progress, delta / turn_duration)
@@ -197,14 +290,10 @@ func _process(delta: float) -> void:
 	else:
 		if reverts_on_release:
 			var revert_target: float = 0.0 if current_target_progress == 1.0 else 1.0
-			var current_turn_duration: float = turn_duration
-
+			var current_duration: float = turn_duration
 			if fast_revert_on_release:
-				current_turn_duration = (turn_duration / fast_revert_multiplier)
-				if was_interacting:
-					print("Valve: Released, initiating fast revert towards ", revert_target)
-
-			progress = move_toward(progress, revert_target, delta / current_turn_duration)
+				current_duration = (turn_duration / fast_revert_multiplier)
+			progress = move_toward(progress, revert_target, delta / current_duration)
 
 	if is_back_and_forth and not is_interacting:
 		if progress >= 1.0:
@@ -212,24 +301,90 @@ func _process(delta: float) -> void:
 		elif progress <= 0.0:
 			current_target_progress = 1.0
 
-	var is_moving: bool = not is_equal_approx(progress, old_progress)
-
-	if is_moving:
-		if is_instance_valid(wheel):
-			var dir_multiplier: float = -1.0 if turn_clockwise else 1.0
-			var total_angle: float = 360.0 * visual_rotations * dir_multiplier * progress
-			wheel.rotation_degrees = (initial_rotation + (spin_axis * total_angle))
-
-		var transmitter: OutputTransmitter3D = _get_transmitter()
-		if is_instance_valid(transmitter):
-			transmitter.transmit_progress(progress)
-
-	_manage_audio(is_moving)
 	was_interacting = is_interacting
 
 
+## Processes turn calculation when valve is configured in one-time toggle press mode.
+## [param delta] Frame delta in seconds.
+## [param just_pressed] Whether the interact key was pressed down this frame.
+func _process_press_mode(delta: float, just_pressed: bool) -> void:
+	if just_pressed:
+		print("Valve: One-time press toggled turning state.")
+		_is_auto_turning = true
+		_auto_return_timer = 0.0
+		if is_back_and_forth and not reverts_on_release:
+			current_target_progress = 0.0 if current_target_progress == 1.0 else 1.0
+		else:
+			current_target_progress = 1.0
+
+	if _is_auto_turning:
+		var current_speed_duration: float = turn_duration
+		if reverts_on_release and current_target_progress == 0.0 and fast_revert_on_release:
+			current_speed_duration = (turn_duration / fast_revert_multiplier)
+
+		progress = move_toward(progress, current_target_progress, delta / current_speed_duration)
+
+		if is_equal_approx(progress, current_target_progress):
+			if reverts_on_release and progress >= 1.0:
+				_auto_return_timer += delta
+				if _auto_return_timer >= auto_return_delay:
+					print(
+						"Valve: Finished opening with reverts_on_release enabled. Auto-returning to 0.0."
+					)
+					current_target_progress = 0.0
+					_auto_return_timer = 0.0
+			elif lock_when_finished and progress >= 1.0:
+				is_locked = true
+				_is_auto_turning = false
+				print("Valve: Reached completion and locked permanently.")
+			else:
+				_is_auto_turning = false
+				print("Valve: Autonomous turning finished at target: ", current_target_progress)
+
+
+## Processes turn calculation when valve is configured in rapid mash mode.
+## [param delta] Frame delta in seconds.
+## [param just_pressed] Whether the interact key was pressed down this frame.
+func _process_mash_mode(delta: float, just_pressed: bool) -> void:
+	if just_pressed:
+		print("Valve: Mash impulse added.")
+		progress = clampf(progress + MASH_IMPULSE_STEP, 0.0, 1.0)
+		if lock_when_finished and progress >= 1.0:
+			is_locked = true
+			progress = 1.0
+			print("Valve: Reached completion via mashing and locked.")
+	else:
+		if reverts_on_release and progress > 0.0 and progress < 1.0:
+			var decay_duration: float = turn_duration * 1.5
+			if fast_revert_on_release:
+				decay_duration = (turn_duration / fast_revert_multiplier)
+			progress = move_toward(progress, 0.0, delta / decay_duration)
+
+
+## Applies calculated angle rotation to the visual wheel node.
+func _apply_visual_rotation() -> void:
+	if not is_instance_valid(wheel):
+		return
+	var dir_multiplier: float = -1.0 if turn_clockwise else 1.0
+	var total_angle: float = 360.0 * visual_rotations * dir_multiplier * progress
+	wheel.rotation_degrees = (initial_rotation + (spin_axis * total_angle))
+
+
+## Checks if the player is holding a pickable valve in proximity to auto-install.
+func _check_installation_proximity() -> void:
+	if not is_instance_valid(_cached_player):
+		_cached_player = (get_tree().get_first_node_in_group("player") as Node3D)
+
+	if is_instance_valid(_cached_player):
+		var held: Node3D = _get_player_held_object(_cached_player)
+		if is_instance_valid(held):
+			var dist_sq: float = global_position.distance_squared_to(held.global_position)
+			if dist_sq < 0.36:
+				_install_valve(_cached_player, held)
+
+
 ## Retrieves and caches the first child node that inherits from [OutputTransmitter3D].
-## Returns the child transmitter if found, otherwise returns `null`.
+## [return] The child transmitter if found, otherwise `null`.
 func _get_transmitter() -> OutputTransmitter3D:
 	if is_instance_valid(_transmitter):
 		return _transmitter
@@ -263,9 +418,18 @@ func _manage_audio(is_moving: bool) -> void:
 		valve_audio.stop()
 
 
+## Updates prompt visibility setting when changed in the settings menu.
+## [param enabled] New visibility boolean from [signal Events.item_prompts_toggled].
+func _on_item_prompts_toggled(enabled: bool) -> void:
+	print("Valve: Item prompt visibility updated -> ", enabled)
+	_show_text_prompts = enabled
+	if not _show_text_prompts and is_instance_valid(label):
+		label.hide()
+
+
 ## Resolves the object currently held by the player character.
 ## [param player] The player node reference to inspect.
-## Returns the held [Node3D] instance if found, or `null`.
+## [return] The held [Node3D] instance if found, or `null`.
 func _get_player_held_object(player: Node3D) -> Node3D:
 	if not is_instance_valid(player):
 		return null
@@ -326,6 +490,7 @@ func _install_valve(player: Node3D, held_valve: Node3D) -> void:
 	is_installed = true
 	has_been_installed = true
 	is_locked = false
+	_is_auto_turning = false
 	current_target_progress = 1.0
 
 	if is_instance_valid(wheel):
@@ -388,6 +553,7 @@ func _detach_valve() -> void:
 
 	is_installed = false
 	is_locked = false
+	_is_auto_turning = false
 	install_cooldown = 1.0
 
 	if is_instance_valid(wheel):
@@ -401,8 +567,10 @@ func _on_interact_component_focused() -> void:
 		return
 	is_focused = true
 	_update_valve_label()
-	if is_instance_valid(label):
+	if is_instance_valid(label) and _show_text_prompts:
 		label.show()
+	if is_instance_valid(prompt_icon) and prompt_icon.texture != null:
+		prompt_icon.show()
 
 
 ## Handles the interaction component unfocus event to hide the prompt label.
@@ -411,37 +579,50 @@ func _on_interact_component_unfocused() -> void:
 	is_focused = false
 	if is_instance_valid(label):
 		label.hide()
+	if is_instance_valid(prompt_icon):
+		prompt_icon.hide()
 
 
-## Updates the visual prompt text on [member label] and dispatches custom spoken text to TTSandy.
+## Updates prompt [Label3D], [Sprite3D] icon, and dispatches verbal cues to TTSandy.
 func _update_valve_label() -> void:
 	print("Valve: _update_valve_label() called.")
 	var prompt_text: String = ""
 	var speech_text: String = ""
+	var icon_tex: Texture2D = null
 
 	if is_installed:
 		var events: Array = InputMap.action_get_events("interact")
 		var key_name: String = "???"
 
-		if events.size() > 0:
-			var raw_text: String = events[0].as_text()
-			key_name = (
-				raw_text
-				. replace(" (Physical)", "")
-				. replace(" - Physical", "")
-				. replace(" (Physics)", "")
-				. replace(" - Physics", "")
-				. replace("Left Mouse Button", "LMB")
-				. replace("Right Mouse Button", "RMB")
-				. replace("Middle Mouse Button", "MMB")
-				. strip_edges()
-			)
+		if not events.is_empty():
+			var primary_ev: InputEvent = events[0]
+			key_name = InputHelper.sanitize_key_name(primary_ev.as_text())
+			icon_tex = InputHelper.get_event_icon(primary_ev)
 
-		prompt_text = "Hold [%s]" % key_name
-		speech_text = "Hold [%s] to turn the valve." % key_name
+		var effective_mode: int = _get_effective_turn_mode()
+		var action_verb: String = "Hold"
+		var speech_verb: String = "Hold"
+
+		match effective_mode:
+			TurnMode.ONE_TIME_PRESS:
+				action_verb = "Press"
+				speech_verb = "Press"
+			TurnMode.RAPID_MASH:
+				action_verb = "Mash"
+				speech_verb = "Mash repeatedly"
+			_:
+				action_verb = "Hold"
+				speech_verb = "Hold"
+
+		if icon_tex != null:
+			prompt_text = "%s     to turn" % action_verb
+		else:
+			prompt_text = "%s [%s] to turn" % [action_verb, key_name]
+
+		speech_text = "%s [%s] to turn the valve." % [speech_verb, key_name]
 
 		if can_be_detached:
-			prompt_text += "\nDouble tap [%s] to detach" % key_name
+			prompt_text += "\n2x tap to detach"
 			speech_text += " Double tap [%s] to detach." % key_name
 	elif has_been_installed:
 		prompt_text = "Attach the valve"
@@ -450,8 +631,16 @@ func _update_valve_label() -> void:
 		prompt_text = "Find the valve"
 		speech_text = prompt_text
 
+	if is_instance_valid(prompt_icon):
+		prompt_icon.texture = icon_tex
+		prompt_icon.visible = is_focused and (icon_tex != null)
+		if is_instance_valid(label):
+			prompt_icon.position.x = 0.5
+			prompt_icon.position.y = label.position.y
+
 	if is_instance_valid(label):
 		label.text = prompt_text
+		label.position.x = 0.0
 
 	if has_node("/root/Events"):
 		var events_node: Node = get_node("/root/Events")
