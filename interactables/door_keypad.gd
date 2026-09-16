@@ -22,7 +22,7 @@ var debug_line: MeshInstance3D
 @onready var mesh_instance_3d: MeshInstance3D = $MeshInstance3D
 
 ## The viewport that renders and manages the 2D UI elements.
-@onready var sub_viewport: SubViewport = $SubViewport
+@onready var sub_viewport: SubViewport = $DoorKeypadSubViewport
 
 ## Handles player raycast detection and interaction prompts.
 @onready var interact_component: InteractComponent = $InteractComponent

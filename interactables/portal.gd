@@ -15,11 +15,11 @@ var player_camera: Camera3D
 
 ## The [SubViewport] that renders the scene from this portal's perspective.
 ## Acts as the texture source for the linked portal mesh shader.
-@onready var sub_viewport: SubViewport = $SubViewport
+@onready var sub_viewport: SubViewport = $PortalSubViewport
 
 ## The [Camera3D] capturing the view for the portal.
 ## Positioned relative to this portal when looked through from linked portal.
-@onready var portal_camera: Camera3D = $SubViewport/PortalCamera
+@onready var portal_camera: Camera3D = $PortalSubViewport/PortalCamera
 
 ## The [MeshInstance3D] displaying the portal shader.
 ## Used to dynamically inject the viewport texture at runtime.

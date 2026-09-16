@@ -43,10 +43,10 @@ shape = SubResource("BoxShape3D_harnn")
 layers = 8
 mesh = SubResource("QuadMesh_gh40b")
 
-[node name="SubViewport" type="SubViewport" parent="." unique_id=150245908]
+[node name="PortalSubViewport" type="SubViewport" parent="." unique_id=150245908]
 render_target_update_mode = 0
 
-[node name="PortalCamera" type="Camera3D" parent="SubViewport" unique_id=917421883]
+[node name="PortalCamera" type="Camera3D" parent="PortalSubViewport" unique_id=917421883]
 cull_mask = 1047559
 environment = SubResource("Environment_0b0md")
 compositor = SubResource("Compositor_g6j5g")

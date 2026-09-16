@@ -17,7 +17,7 @@ shader_parameter/max_intensity = 0.050000002375
 shader_parameter/alpha_scissor_threshold = 0.5
 
 [sub_resource type="ViewportTexture" id="ViewportTexture_f1hol"]
-viewport_path = NodePath("SubViewport")
+viewport_path = NodePath("DoorKeypadSubViewport")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jyx7n"]
 resource_local_to_scene = true
@@ -52,11 +52,11 @@ mesh = SubResource("QuadMesh_f1hol")
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0, 0, 0)
 shape = SubResource("BoxShape3D_koi6h")
 
-[node name="SubViewport" type="SubViewport" parent="." unique_id=1935440404]
+[node name="DoorKeypadSubViewport" type="SubViewport" parent="." unique_id=1935440404]
 
-[node name="Keypad" parent="SubViewport" unique_id=1879186767 instance=ExtResource("1_koi6h")]
+[node name="Keypad" parent="DoorKeypadSubViewport" unique_id=1879186767 instance=ExtResource("1_koi6h")]
 
 [node name="KeypadAudio" type="AudioStreamPlayer3D" parent="." unique_id=1237021702]
 stream = ExtResource("6_jyx7n")
 
-[connection signal="code_entered" from="SubViewport/Keypad" to="." method="_on_keypad_code_entered"]
+[connection signal="code_entered" from="DoorKeypadSubViewport/Keypad" to="." method="_on_keypad_code_entered"]
