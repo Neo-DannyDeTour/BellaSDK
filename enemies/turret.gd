@@ -1,73 +1,89 @@
-## An automated defense mechanism that targets specific groups.
-##
-## [Turret] scans its environment looking for entities in specific hostile groups.
-## Once a valid target is identified within its trigger radius, it locks on,
-## evaluates a direct line-of-sight raycast, and deals rapid hitscan damage.
+## Automated defense turret that sleeps when offscreen and beyond proximity.
 class_name Turret
 extends Node3D
 
-## Defines the sequential operational modes of the turret.
+## Operational mode enum representing scanning or engaging states.
 enum TurretState { SCANNING, ENGAGING }
 
-## Defines whether the turret is friendly to the player, disabling its hostile tracking.
+## Whether the turret ignores player and hostile targeting entirely.
 @export var is_friendly: bool = false
 
-## The rotational speed at which the turret scans when no target is present.
+## Rotational speed in radians per second while panning for targets.
 @export var scan_speed: float = 1.5
 
-## The speed at which the turret head interpolates to aim at a tracked target.
+## Interpolation turn speed factor when aiming head at targets.
 @export var turn_speed: float = 8.0
 
-## The time interval in seconds between consecutive shots.
+## Cooldown duration in seconds between consecutive weapon discharges.
 @export var fire_rate: float = 0.15
 
-## The maximum distance in meters at which the turret can detect targets.
+## Maximum spherical detection radius in meters for target acquisition.
 @export var detection_radius: float = 15.0
 
-## The amount of health subtracted from a target upon a successful hit.
+## Distance to [Player] beyond which the turret sleeps if offscreen.
+@export var sleep_distance: float = 35.0
+
+## Interval in seconds between player proximity distance evaluations.
+@export var proximity_interval: float = 0.5
+
+## Base damage points inflicted per hit on the target's [HealthComponent].
 @export var damage: int = 10
 
-## The 3D positional offset applied to the target's center to adjust the aiming reticle.
+## Vertical and horizontal spatial offset vector applied to the target center.
 @export var aim_offset: Vector3 = Vector3(0.0, 1.2, 0.0)
 
-## The groups that this turret considers hostile and will actively attempt to shoot.
+## String names of groups flagged as hostile targets.
 @export var hostile_groups: Array[StringName] = [&"player", &"target"]
 
-## The rotating pivot mechanism of the turret.
+## Bounding volume notifier checking if the turret is within view frustum.
+@onready var screen_notifier: VisibleOnScreenNotifier3D = $VisibleOnScreenNotifier3D
+
+## The rotating head pivot [Node3D] containing weapon barrel and muzzle.
 @onready var head: Node3D = $Head
 
-## The physics area used for early overlap detection.
+## The [Area3D] volume used to detect overlapping hostile bodies and areas.
 @onready var detection_area: Area3D = $DetectionArea
 
-## The collision shape matching the detection radius.
+## The spherical collision shape dictating early detection boundaries.
 @onready var detection_shape: CollisionShape3D = $DetectionArea/CollisionShape3D
 
-## Visual tracer effect fired from the barrel.
+## Visual tracer particle system spawned during active shooting.
 @onready var bullet_particles: GPUParticles3D = $Head/Muzzle/GPUParticles3D
 
-## Internal raycast to confirm precise line of sight before shooting.
+## Directional [RayCast3D] reference used for muzzle forward vector math.
 @onready var hitscan_ray: RayCast3D = $Head/Muzzle/HitscanRay
 
-## The current operational mode of the turret, determining if it is scanning or engaging.
+## Current active state determining if turret pans or tracks targets.
 var current_state: TurretState = TurretState.SCANNING
 
-## The current entity that the turret is actively tracking and attempting to shoot.
+## The hostile [Node3D] entity currently acquired and tracked.
 var target: Node3D = null
 
-## Cached [HealthComponent] reference to prevent per-shot lookups and dynamic calls.
+## Cached [HealthComponent] on current target to avoid repeat lookups.
 var target_health_comp: HealthComponent = null
 
-## The remaining time in seconds before the turret is allowed to fire again.
+## Remaining cooldown time in seconds before the next shot can occur.
 var fire_cooldown: float = 0.0
 
-## A cached list of Physics RIDs representing the turret's own collision shapes.
-## Used to avoid self-intersection when raycasting.
+## Cached collision [RID] array of this turret to prevent self-hits.
 var _exclude_rids: Array[RID] = []
 
+## Cached reference to the active [Player] node in the scene tree.
+var _cached_player: Node3D = null
 
-## Pre-calculates physics data and hooks into detection signals.
+## Timer counting elapsed seconds toward the next proximity check.
+var _proximity_timer: float = 0.0
+
+## Flag indicating whether this turret is currently dormant to save CPU.
+var _is_sleeping: bool = false
+
+## Flag indicating whether the turret's bounding box is inside camera view.
+var _is_on_screen: bool = false
+
+
+## Initializes collision shapes, caches references, and binds screen visibility.
 func _ready() -> void:
-	print("Turret: _ready() - Initializing turret systems.")
+	print("Turret: Initializing turret instance: ", name)
 	var visualizer: EditorTriggerVisualizer = (
 		get_node_or_null("EditorTriggerVisualizer") as EditorTriggerVisualizer
 	)
@@ -84,12 +100,76 @@ func _ready() -> void:
 	detection_area.area_entered.connect(_on_area_entered)
 	detection_area.area_exited.connect(_on_area_exited)
 
+	screen_notifier.screen_entered.connect(_on_screen_entered)
+	screen_notifier.screen_exited.connect(_on_screen_exited)
+	_is_on_screen = screen_notifier.is_on_screen()
+
+	hitscan_ray.enabled = false
 	hitscan_ray.collide_with_areas = true
 	_build_exclude_rids(self)
+	_evaluate_sleep_state()
 
 
-## Recursively builds an array of local physics RIDs to ignore.
-## [param node] The [Node] to search recursively.
+## Signal callback when the turret enters the camera view frustum.
+func _on_screen_entered() -> void:
+	print("Turret: Entered camera frustum: ", name)
+	_is_on_screen = true
+	_evaluate_sleep_state()
+
+
+## Signal callback when the turret leaves the camera view frustum.
+func _on_screen_exited() -> void:
+	print("Turret: Left camera frustum: ", name)
+	_is_on_screen = false
+	_evaluate_sleep_state()
+
+
+## Evaluates sleep state based on screen visibility OR proximity.
+func _evaluate_sleep_state() -> void:
+	if not is_instance_valid(_cached_player):
+		_find_player()
+
+	var is_nearby: bool = false
+	if is_instance_valid(_cached_player):
+		var dist_sq: float = global_position.distance_squared_to(_cached_player.global_position)
+		is_nearby = dist_sq <= (sleep_distance * sleep_distance)
+
+	# Active if directly looked at OR within proximity distance
+	var should_sleep: bool = not (_is_on_screen or is_nearby)
+
+	if should_sleep != _is_sleeping:
+		_is_sleeping = should_sleep
+		if _is_sleeping:
+			_enter_sleep()
+		else:
+			_wake_up()
+
+
+## Puts the turret to sleep, disabling area monitoring and particle systems.
+func _enter_sleep() -> void:
+	print("Turret: Entering sleep mode: ", name)
+	detection_area.monitoring = false
+	bullet_particles.emitting = false
+	if target != null:
+		_set_target(null)
+		_change_state(TurretState.SCANNING)
+
+
+## Wakes the turret from sleep, reenabling area monitoring and scanning.
+func _wake_up() -> void:
+	print("Turret: Waking up from sleep mode: ", name)
+	detection_area.monitoring = true
+	_acquire_new_target()
+
+
+## Finds and caches the player instance from the player node group.
+func _find_player() -> void:
+	var players: Array[Node] = get_tree().get_nodes_in_group(&"player")
+	if not players.is_empty() and players[0] is Node3D:
+		_cached_player = players[0] as Node3D
+
+
+## Recursively aggregates collision [RID] instances across child nodes.
 func _build_exclude_rids(node: Node) -> void:
 	if node is CollisionObject3D:
 		_exclude_rids.append(node.get_rid())
@@ -97,11 +177,16 @@ func _build_exclude_rids(node: Node) -> void:
 		_build_exclude_rids(node.get_child(i))
 
 
-## Steps the active logic state of the turret per frame.
-## [param delta] Engine frame delta in seconds.
+## Steps sleep checks, panning rotations, and active target engagements.
 func _process(delta: float) -> void:
-	if is_friendly:
-		_process_scanning(delta)
+	_proximity_timer += delta
+	if _proximity_timer >= proximity_interval:
+		_proximity_timer = 0.0
+		_evaluate_sleep_state()
+
+	if _is_sleeping or is_friendly:
+		if not _is_sleeping and is_friendly:
+			_process_scanning(delta)
 		return
 
 	match current_state:
@@ -111,24 +196,21 @@ func _process(delta: float) -> void:
 			_process_engaging(delta)
 
 
-## Safely forces a transition to a new turret state.
-## [param new_state] The target [enum TurretState].
+## Changes state and handles particle deactivation on scan transition.
 func _change_state(new_state: TurretState) -> void:
-	print("Turret: _change_state() - Transitioning to ", new_state)
+	print("Turret: Transitioning operational state to: ", new_state)
 	current_state = new_state
 
 	if current_state == TurretState.SCANNING:
 		bullet_particles.emitting = false
 
 
-## Panning logic while waiting for a target.
-## [param delta] Engine frame delta in seconds.
+## Pans the turret head continuously around its Y axis while searching.
 func _process_scanning(delta: float) -> void:
 	head.rotate_y(scan_speed * delta)
 
 
-## Aiming and shooting logic while actively tracking a target.
-## [param delta] Engine frame delta in seconds.
+## Tracks the active target, validates line of sight, and triggers shots.
 func _process_engaging(delta: float) -> void:
 	if not _is_active_target(target):
 		_set_target(null)
@@ -143,10 +225,9 @@ func _process_engaging(delta: float) -> void:
 		bullet_particles.emitting = false
 
 
-## Assigns an active target and caches its [HealthComponent] statically.
-## [param new_target] The hostile [Node3D] to track.
+## Assigns a target and retrieves its [HealthComponent] instance.
 func _set_target(new_target: Node3D) -> void:
-	print("Turret: _set_target() - Setting target: ", new_target)
+	print("Turret: Assigning target entity: ", new_target)
 	target = new_target
 	target_health_comp = null
 
@@ -158,26 +239,21 @@ func _set_target(new_target: Node3D) -> void:
 		target_health_comp = comp
 		return
 
-	var fallback_comp: Node = target.find_child("HealthComponent", true, false)
-	if fallback_comp is HealthComponent:
-		target_health_comp = fallback_comp
+	var fallback: Node = target.find_child("HealthComponent", true, false)
+	if fallback is HealthComponent:
+		target_health_comp = fallback as HealthComponent
 
 
-## Verifies a target is physically present and capable of receiving damage.
-## [param node] The [Node3D] to evaluate.
-## Returns [code]true[/code] if valid and active, [code]false[/code] otherwise.
+## Validates that the target is still alive, visible, and processing.
 func _is_active_target(node: Node3D) -> bool:
 	if node == null or not is_instance_valid(node):
 		return false
-
 	if not node.visible or node.process_mode == Node.PROCESS_MODE_DISABLED:
 		return false
 	return true
 
 
-## Checks if an incoming node exists in the hostility list.
-## [param node] The generic [Node] to check.
-## Returns [code]true[/code] if hostile, [code]false[/code] otherwise.
+## Checks if a node belongs to any defined hostile group.
 func _is_hostile(node: Node) -> bool:
 	for group: StringName in hostile_groups:
 		if node.is_in_group(group):
@@ -185,147 +261,126 @@ func _is_hostile(node: Node) -> bool:
 	return false
 
 
-## Retrieves the precise aiming offset, zeroing out for specific target types.
-## Returns the calculated [Vector3] offset.
+## Computes the target offset, clearing offset for [ShootingTarget].
 func _get_actual_aim_offset() -> Vector3:
 	if target is ShootingTarget:
 		return Vector3.ZERO
 	return aim_offset
 
 
-## Uses quaternion slerp to smoothly track the active target.
-## [param delta] Engine frame delta in seconds.
+## Interpolates head rotation toward the target using quaternion slerp.
 func _aim_at_target(delta: float) -> void:
 	var target_pos: Vector3 = target.global_position + _get_actual_aim_offset()
-	var current_transform: Transform3D = head.global_transform
-	var target_transform: Transform3D = current_transform.looking_at(target_pos, Vector3.UP, true)
+	var cur_tr: Transform3D = head.global_transform
+	var target_tr: Transform3D = cur_tr.looking_at(target_pos, Vector3.UP, true)
 
-	var current_quat: Quaternion = current_transform.basis.get_rotation_quaternion()
-	var target_quat: Quaternion = target_transform.basis.get_rotation_quaternion()
+	var cur_q: Quaternion = cur_tr.basis.get_rotation_quaternion()
+	var tgt_q: Quaternion = target_tr.basis.get_rotation_quaternion()
 
-	head.global_transform.basis = Basis(current_quat.slerp(target_quat, turn_speed * delta))
+	head.global_transform.basis = Basis(cur_q.slerp(tgt_q, turn_speed * delta))
 
 
-## Performs a direct space state raycast to confirm the target isn't behind a wall.
-## Returns [code]true[/code] if nothing blocks the target, [code]false[/code] otherwise.
+## Performs a space state raycast to confirm clear line of sight.
 func _has_line_of_sight() -> bool:
-	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
-
+	var space: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var start_pos: Vector3 = hitscan_ray.global_position
 	var end_pos: Vector3 = target.global_position + _get_actual_aim_offset()
 
 	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(start_pos, end_pos)
+	# Physics Layer 1 (Environment), Layer 2 (Player), Layer 5 (Enemies)
+	query.collision_mask = (1 << 0) | (1 << 1) | (1 << 4)
 	query.collide_with_areas = true
 	query.exclude = _exclude_rids
 
-	var result: Dictionary = space_state.intersect_ray(query)
-
-	if result and result.collider == target:
-		return true
-
-	return false
+	var result: Dictionary = space.intersect_ray(query)
+	return bool(result and result.collider == target)
 
 
-## Uses dot product math to determine if the muzzle is pointed directly at the target.
-## Returns [code]true[/code] if perfectly aimed, [code]false[/code] otherwise.
+## Evaluates dot product between muzzle forward vector and target vector.
 func _is_aimed_at_target() -> bool:
 	var target_pos: Vector3 = target.global_position + _get_actual_aim_offset()
 	var dir_to_target: Vector3 = hitscan_ray.global_position.direction_to(target_pos)
-
-	var ray_global_target: Vector3 = hitscan_ray.to_global(hitscan_ray.target_position)
-	var forward_dir: Vector3 = hitscan_ray.global_position.direction_to(ray_global_target)
+	var ray_target: Vector3 = hitscan_ray.to_global(hitscan_ray.target_position)
+	var forward_dir: Vector3 = hitscan_ray.global_position.direction_to(ray_target)
 
 	return forward_dir.dot(dir_to_target) > 0.98
 
 
-## Steps the cooldown timer and fires the weapon if ready.
-## [param delta] Engine frame delta in seconds.
+## Decrements weapon cooldown and fires when ready.
 func _handle_shooting(delta: float) -> void:
 	fire_cooldown -= delta
-
 	if fire_cooldown <= 0.0:
 		shoot()
 		fire_cooldown = fire_rate
 
 
-## Triggers the visual tracer and attempts to deal direct damage to the target.
+## Emits muzzle particles and inflicts damage on the active target.
 func shoot() -> void:
-	print("Turret: shoot() - Firing at target: ", target.name)
+	print("Turret: Discharging hitscan weapon at target: ", target.name)
 	bullet_particles.emitting = true
-
 	if is_instance_valid(target):
-		_damage_player()
+		_damage_target()
 
 
-## Deals damage directly using static method invocation on the cached component.
-func _damage_player() -> void:
-	print("Turret: _damage_player() - Attempting to deal damage.")
-
-	if target_health_comp != null and is_instance_valid(target_health_comp):
-		print("Turret: _damage_player() - Hit confirmed. Dealing ", damage, " damage.")
+## Applies damage to the cached [HealthComponent] on the target.
+func _damage_target() -> void:
+	if is_instance_valid(target_health_comp):
+		print("Turret: Dealing hitscan damage: ", damage)
 		target_health_comp.take_damage(damage)
 
 
-## Detects new physics bodies entering the detection range.
-## [param body] The [Node3D] that entered.
+## Handles new bodies entering the spherical detection boundary.
 func _on_body_entered(body: Node3D) -> void:
-	if is_friendly:
+	if _is_sleeping or is_friendly:
 		return
-
 	if _is_hostile(body) and _is_active_target(body):
-		print("Turret: _on_body_entered() - Detected hostile body: ", body.name)
+		print("Turret: Hostile body entered perimeter: ", body.name)
 		_set_target(body)
 		_change_state(TurretState.ENGAGING)
 
 
-## Forgets targets that escape the detection range.
-## [param body] The [Node3D] that left.
+## Handles bodies exiting the detection boundary and re-acquires.
 func _on_body_exited(body: Node3D) -> void:
 	if body == target:
-		print("Turret: _on_body_exited() - Current target left radius: ", body.name)
+		print("Turret: Target body left perimeter: ", body.name)
 		_acquire_new_target()
 
 
-## Detects new area bodies entering the detection range.
-## [param area] The [Area3D] that entered.
+## Handles new areas entering the spherical detection boundary.
 func _on_area_entered(area: Area3D) -> void:
-	if is_friendly:
+	if _is_sleeping or is_friendly:
 		return
-
 	if _is_hostile(area) and _is_active_target(area):
-		print("Turret: _on_area_entered() - Detected hostile area: ", area.name)
+		print("Turret: Hostile area entered perimeter: ", area.name)
 		_set_target(area)
 		_change_state(TurretState.ENGAGING)
 
 
-## Forgets area targets that escape the detection range.
-## [param area] The [Area3D] that left.
+## Handles areas exiting the detection boundary and re-acquires.
 func _on_area_exited(area: Area3D) -> void:
 	if area == target:
-		print("Turret: _on_area_exited() - Current target left radius: ", area.name)
+		print("Turret: Target area left perimeter: ", area.name)
 		_acquire_new_target()
 
 
-## Scans overlapping geometry to find a replacement target if the current one is lost.
+## Scans overlapping colliders in the detection area for a target.
 func _acquire_new_target() -> void:
-	print("Turret: _acquire_new_target() - Scanning for remaining targets in zone.")
+	if _is_sleeping:
+		return
+
+	print("Turret: Scanning overlapping geometry for hostile targets.")
 	_set_target(null)
 
-	var bodies: Array[Node3D] = detection_area.get_overlapping_bodies()
-	for b: Node3D in bodies:
+	for b: Node3D in detection_area.get_overlapping_bodies():
 		if _is_hostile(b) and _is_active_target(b) and b != self:
-			print("Turret: _acquire_new_target() - Found new body target: ", b.name)
 			_set_target(b)
 			_change_state(TurretState.ENGAGING)
 			return
 
-	var areas: Array[Area3D] = detection_area.get_overlapping_areas()
-	for a: Area3D in areas:
+	for a: Area3D in detection_area.get_overlapping_areas():
 		if _is_hostile(a) and _is_active_target(a):
-			print("Turret: _acquire_new_target() - Found new area target: ", a.name)
 			_set_target(a)
 			_change_state(TurretState.ENGAGING)
 			return
 
-	print("Turret: _acquire_new_target() - No active targets remaining. Resuming scan.")
 	_change_state(TurretState.SCANNING)

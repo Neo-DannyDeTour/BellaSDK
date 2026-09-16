@@ -30,6 +30,9 @@ size = Vector3(0.1, 0.1, 0.3)
 script = ExtResource("1_svvud")
 fire_rate = 0.01
 
+[node name="VisibleOnScreenNotifier3D" type="VisibleOnScreenNotifier3D" parent="." unique_id=1740378959]
+layers = 16
+
 [node name="BaseMesh" type="MeshInstance3D" parent="." unique_id=631327319]
 mesh = SubResource("CylinderMesh_wkqx2")
 
@@ -57,7 +60,7 @@ hit_from_inside = true
 
 [node name="DetectionArea" type="Area3D" parent="." unique_id=490816664]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 0)
-collision_layer = 16
+collision_layer = 0
 collision_mask = 18
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="DetectionArea" unique_id=346760763]
