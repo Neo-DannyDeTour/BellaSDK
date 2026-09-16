@@ -148,6 +148,9 @@ func _is_input_blocked() -> bool:
 
 ## Queries the gesture manager for the spatial description action.
 func _handle_describe_input() -> void:
+	if not is_instance_valid(GestureInputManager):
+		return
+
 	if GestureInputManager.is_action_just_triggered("describe_surroundings"):
 		print("Player: Describe surroundings triggered via gesture manager.")
 		if Events.has_signal("describe_surroundings_requested"):
@@ -212,7 +215,10 @@ func _physics_process(delta: float) -> void:
 
 	_handle_describe_input()
 
-	if GestureInputManager.is_action_just_triggered("sonar_ping"):
+	if (
+		is_instance_valid(GestureInputManager)
+		and GestureInputManager.is_action_just_triggered("sonar_ping")
+	):
 		print("Player: Sonar ping triggered via gesture manager.")
 		if Events.has_signal("sonar_ping_requested"):
 			Events.sonar_ping_requested.emit(self)

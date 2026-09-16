@@ -167,6 +167,7 @@ func _unhandled_input(event: InputEvent) -> void:
 # META LOGIC
 # --------------------------------------
 ## Toggles the global pause state and shows or hides the system menu instance.
+## Toggles the global pause state and shows or hides the system menu instance.
 func toggle_pause() -> void:
 	is_paused = not is_paused
 	get_tree().paused = is_paused
@@ -182,6 +183,9 @@ func toggle_pause() -> void:
 				menu_instance.call("_return_to_main_buttons")
 			menu_instance.hide()
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		# Reclaim main camera focus from diorama
+		if is_instance_valid(camera):
+			camera.current = true
 
 	pause_toggled.emit(is_paused)
 

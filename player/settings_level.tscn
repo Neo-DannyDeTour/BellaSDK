@@ -2057,5 +2057,6 @@ mesh = SubResource("QuadMesh_534t5")
 
 [node name="Camera_graphics" type="Camera3D" parent="Cameras" unique_id=1415452166]
 transform = Transform3D(-4.371139e-08, 0.258819, -0.9659258, 0, 0.96592575, 0.25881904, 1, 1.1313339e-08, -4.222196e-08, 6.4347787, 2.9699602, 0)
+cull_mask = 1024
 script = ExtResource("55_334ql")
 sweep_speed = 0.4
