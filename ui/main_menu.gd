@@ -188,6 +188,8 @@ func _return_to_main_buttons() -> void:
 func _on_resume_pressed() -> void:
 	print("UI: Player clicked Resume.")
 	_stop_main_theme()
+	if is_instance_valid(options_router):
+		options_router.teardown_diorama()
 	var parent: Node = get_parent()
 	if is_instance_valid(parent) and parent.has_method("toggle_pause"):
 		parent.call("toggle_pause")
@@ -197,6 +199,8 @@ func _on_resume_pressed() -> void:
 func _on_new_game_pressed() -> void:
 	print("UI: Player clicked New Game.")
 	_stop_main_theme()
+	if is_instance_valid(options_router):
+		options_router.teardown_diorama()
 	if not has_calibrated:
 		_apply_bucket_calibration()
 
@@ -209,29 +213,34 @@ func _on_new_game_pressed() -> void:
 	add_child(chapter_window)
 
 
+## Prepares the scene tree and GPU state before switching to a level.
+func prepare_for_level_transition() -> void:
+	print("UI: Preparing main menu for level transition.")
+	_stop_main_theme()
+
+	if is_instance_valid(options_router):
+		options_router.teardown_diorama()
+
+	var world_env: WorldEnvironment = (
+		get_tree().root.find_child("WorldEnvironment", true, false) as WorldEnvironment
+	)
+	if is_instance_valid(world_env) and is_instance_valid(world_env.environment):
+		world_env.environment.sdfgi_enabled = false
+
+	await get_tree().process_frame
+
+
 ## Restarts the current gameplay level with safe teardown of GI buffers.
 func _on_start_game_pressed() -> void:
 	print("UI: Player clicked Restart Game. Initiating safe reload.")
-	_stop_main_theme()
 	if not has_calibrated:
 		_apply_bucket_calibration()
 
 	get_tree().paused = false
 	var parent: Node = get_parent()
 	if is_instance_valid(parent) and parent.has_method("toggle_pause"):
-		_safe_reload_current_scene()
-
-
-## Disables SDFGI before reloading to prevent GPU buffer allocation collisions.
-func _safe_reload_current_scene() -> void:
-	print("UI: Disabling SDFGI before level reload to release RIDs.")
-	var world_env: WorldEnvironment = (
-		get_tree().root.find_child("WorldEnvironment", true, false) as WorldEnvironment
-	)
-	if is_instance_valid(world_env) and is_instance_valid(world_env.environment):
-		world_env.environment.sdfgi_enabled = false
-		await get_tree().process_frame
-	get_tree().reload_current_scene()
+		await prepare_for_level_transition()
+		get_tree().reload_current_scene()
 
 
 ## Opens the options menu overlay.

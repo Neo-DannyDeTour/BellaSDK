@@ -48,10 +48,10 @@ extends StaticBody3D
 @onready var interact_comp: Node = $InteractComponent
 
 ## Perspective camera rendering the security feed inside [member camera_vp].
-@onready var cctv_camera: Camera3D = $CameraViewport/CCTVCamera
+@onready var cctv_camera: Camera3D = $CCTVViewport/CCTVCamera
 
 ## UI label presenting terminal controls and active camera indices.
-@onready var tutorial_label: Label = $CameraViewport/CanvasLayer/MarginContainer/TutorialLabel
+@onready var tutorial_label: Label = $CCTVViewport/CanvasLayer/MarginContainer/TutorialLabel
 
 ## Surface material override bound to [member screen_mesh].
 var screen_mat_override: StandardMaterial3D = null

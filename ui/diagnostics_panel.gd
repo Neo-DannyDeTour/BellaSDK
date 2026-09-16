@@ -124,7 +124,6 @@ func _init_csv_logging() -> void:
 
 ## Switches active tab to Viewports & Layers pipeline.
 func _on_pipeline_tab_pressed() -> void:
-	print("RenderDiagnosticsPanel: Displaying Viewports pipeline breakdown.")
 	_current_tab = DiagnosticTab.PIPELINE
 	_update_tab_button_visuals()
 	_refresh_diagnostics_display()
@@ -132,7 +131,6 @@ func _on_pipeline_tab_pressed() -> void:
 
 ## Switches active tab to CPU/GPU and Rendering performance monitors.
 func _on_perf_tab_pressed() -> void:
-	print("RenderDiagnosticsPanel: Displaying CPU/GPU performance metrics.")
 	_current_tab = DiagnosticTab.PERFORMANCE
 	_update_tab_button_visuals()
 	_refresh_diagnostics_display()
@@ -402,7 +400,7 @@ Status: [%s] (%.2f ms | %.1f%% budget)
 ## [param env] Target environment resource to test.
 ## [return] Array of active heavy post-processing feature names.
 func _get_active_environment_effects(env: Environment) -> PackedStringArray:
-	print("RenderDiagnosticsPanel: Auditing Environment resource settings.")
+	# print("RenderDiagnosticsPanel: Auditing Environment resource settings.")
 	var active_effects: PackedStringArray = PackedStringArray()
 	if not env:
 		return active_effects
@@ -431,7 +429,6 @@ func _get_active_environment_effects(env: Environment) -> PackedStringArray:
 ## [param vp] Viewport to query for active 3D camera or world environment.
 ## [return] Array of detected active effect flag names.
 func _detect_viewport_environment_effects(vp: Viewport) -> PackedStringArray:
-	print("RenderDiagnosticsPanel: Scanning viewport environment overrides.")
 	if vp is SubViewport and (vp as SubViewport).disable_3d:
 		return PackedStringArray()
 
@@ -446,15 +443,6 @@ func _detect_viewport_environment_effects(vp: Viewport) -> PackedStringArray:
 	if is_instance_valid(world_3d) and world_3d.environment:
 		return _get_active_environment_effects(world_3d.environment)
 
-	var stack: Array[Node] = [vp]
-	while not stack.is_empty():
-		var curr: Node = stack.pop_back()
-		if curr is WorldEnvironment and curr.environment:
-			return _get_active_environment_effects(curr.environment)
-		for child: Node in curr.get_children():
-			if not (child is SubViewport):
-				stack.append(child)
-
 	return PackedStringArray()
 
 
@@ -462,7 +450,7 @@ func _detect_viewport_environment_effects(vp: Viewport) -> PackedStringArray:
 ## [param effects] Array of active post-processing effect names.
 ## [return] Formatted BBCode string representing active effects.
 func _format_effects_bbcode(effects: PackedStringArray) -> String:
-	print("RenderDiagnosticsPanel: Formatting environment flags into BBCode.")
+	# print("RenderDiagnosticsPanel: Formatting environment flags into BBCode.")
 	if effects.is_empty():
 		return "[color=gray]None (Clean)[/color]"
 
@@ -475,7 +463,6 @@ func _format_effects_bbcode(effects: PackedStringArray) -> String:
 ## Constructs the BBCode string report for SubViewports.
 ## [return] Formatted BBCode viewport breakdown with full node paths.
 func _build_pipeline_report() -> String:
-	print("RenderDiagnosticsPanel: Generating viewport pipeline report.")
 	var text: String = "[b][color=yellow]=== VIEWPORT & RENDER PIPELINE ===[/color][/b]\n"
 	var root_vp: Window = get_tree().root
 	var root_effects: PackedStringArray = _detect_viewport_environment_effects(root_vp)
@@ -507,7 +494,6 @@ func _build_pipeline_report() -> String:
 					mode_str = "[color=red]ALWAYS[/color]"
 
 			var vp_rid: RID = vp.get_viewport_rid()
-			RenderingServer.viewport_set_measure_render_time(vp_rid, true)
 			var sub_gpu_ms: float = RenderingServer.viewport_get_measured_render_time_gpu(vp_rid)
 			var vp_effects: PackedStringArray = _detect_viewport_environment_effects(vp)
 			var vp_effects_str: String = _format_effects_bbcode(vp_effects)

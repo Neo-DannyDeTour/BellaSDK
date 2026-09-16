@@ -5,7 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://2txo48fixqan" path="res://assets/images/MainMenuPlate.png" id="3_8jgmr"]
 [ext_resource type="PackedScene" uid="uid://8m8l0uplgvm" path="res://ui/HorrorButton.tscn" id="3_kaxbk"]
 [ext_resource type="Script" uid="uid://b53ak0y1rcvq4" path="res://ui/settings_search.gd" id="5_kaxbk"]
-[ext_resource type="Script" uid="uid://dbuos71yhftq2" path="res://ui/options_menu.gd" id="5_lsdqh"]
+[ext_resource type="Script" uid="uid://dbuos71yhftq2" path="res://ui/options_router.gd" id="5_lsdqh"]
 [ext_resource type="PackedScene" uid="uid://c15j43t1ffjw7" path="res://ui/video_options_panel.tscn" id="5_ubpvv"]
 [ext_resource type="PackedScene" uid="uid://b60lfsypp4cwo" path="res://ui/controls_panel.tscn" id="6_arv2f"]
 [ext_resource type="PackedScene" uid="uid://b5o5hk3behhk" path="res://ui/accessibility_panel.tscn" id="7_5klac"]
@@ -29,6 +29,11 @@ expand_margin_left = 8.0
 expand_margin_top = 8.0
 expand_margin_right = 8.0
 expand_margin_bottom = 8.0
+
+[sub_resource type="Environment" id="Environment_iyrh0"]
+
+[sub_resource type="World3D" id="World3D_iyrh0"]
+environment = SubResource("Environment_iyrh0")
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_iyrh0"]
 shader = ExtResource("11_kaxbk")
@@ -286,6 +291,24 @@ anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
 
+[node name="PerfOverlay" type="MarginContainer" parent="CenterContainer/OptionsMenu/ContentVBox/SettingsArea/VideoOptionsPanel/VideoDioramaSocket" unique_id=676796810]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = 1160.0
+offset_right = 1177.0
+offset_bottom = 33.0
+grow_horizontal = 0
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+script = ExtResource("14_iyrh0")
+
+[node name="StatsLabel" type="Label" parent="CenterContainer/OptionsMenu/ContentVBox/SettingsArea/VideoOptionsPanel/VideoDioramaSocket/PerfOverlay" unique_id=680130125]
+unique_name_in_owner = true
+layout_mode = 2
+horizontal_alignment = 2
+
 [node name="AudioPanel" parent="CenterContainer/OptionsMenu/ContentVBox/SettingsArea" unique_id=755109423 instance=ExtResource("9_jiymt")]
 unique_name_in_owner = true
 layout_mode = 2
@@ -321,6 +344,7 @@ stretch = true
 [node name="DioramaViewport" type="SubViewport" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer" unique_id=1196020141]
 unique_name_in_owner = true
 own_world_3d = true
+world_3d = SubResource("World3D_iyrh0")
 handle_input_locally = false
 use_debanding = true
 size = Vector2i(400, 400)
@@ -338,17 +362,6 @@ script = ExtResource("12_0nobx")
 [node name="SettingsLevel" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer/DioramaViewport" unique_id=240456945 instance=ExtResource("13_0nobx")]
 
 [node name="PreviewShaderLayer" type="CanvasLayer" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer/DioramaViewport" unique_id=2026771909]
-
-[node name="PerfOverlay" type="MarginContainer" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer" unique_id=676796810]
-layout_mode = 2
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 16
-script = ExtResource("14_iyrh0")
-
-[node name="StatsLabel" type="Label" parent="CenterContainer/OptionsMenu/ContentVBox/SharedDioramaHolder/DioramaContainer/PerfOverlay" unique_id=680130125]
-unique_name_in_owner = true
-layout_mode = 2
-horizontal_alignment = 2
 
 [node name="BottomBar" type="GridContainer" parent="CenterContainer/OptionsMenu/ContentVBox" unique_id=1856427543]
 layout_mode = 2

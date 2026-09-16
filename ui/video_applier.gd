@@ -137,7 +137,10 @@ static func apply_viewport_pipeline(
 		)
 		vp.use_debanding = config.get("debanding", true) as bool
 		vp.mesh_lod_threshold = config.get("mesh_lod", 1.0) as float
-		vp.positional_shadow_atlas_size = (config.get("shadow_atlas", 2048) as int)
+		if vp is SubViewport:
+			vp.positional_shadow_atlas_size = mini(config.get("shadow_atlas", 2048) as int, 1024)
+		else:
+			vp.positional_shadow_atlas_size = (config.get("shadow_atlas", 2048) as int)
 
 	_apply_environment_and_materials(tree, config)
 
@@ -161,24 +164,23 @@ static func _apply_light_shadows(tree: SceneTree, config: Dictionary) -> void:
 	for d_node: Node in dir_lights:
 		var d_light: DirectionalLight3D = d_node as DirectionalLight3D
 		if is_instance_valid(d_light):
-			d_light.directional_shadow_max_distance = d_dist
+			# Keep diorama preview directional shadow distance tight
+			if d_light.find_parent("DioramaViewport") != null:
+				d_light.directional_shadow_max_distance = minf(d_dist, 32.0)
+			else:
+				d_light.directional_shadow_max_distance = d_dist
 
 	var dynamic_nodes: Array[Node] = tree.get_nodes_in_group("dynamic_shadow_casters")
-	if not dynamic_nodes.is_empty():
-		for node: Node in dynamic_nodes:
-			var light: Light3D = node as Light3D
-			if is_instance_valid(light):
-				light.shadow_enabled = enable_dynamic_shadows
-				light.distance_fade_enabled = false
-	else:
-		var lights: Array[Node] = tree.root.find_children("*", "Light3D", true, false)
-		for node: Node in lights:
-			if node is DirectionalLight3D:
-				continue
-			var light: Light3D = node as Light3D
-			if is_instance_valid(light):
-				light.shadow_enabled = enable_dynamic_shadows
-				light.distance_fade_enabled = false
+	if dynamic_nodes.is_empty():
+		print(
+			"VideoApplier: No lights in group 'dynamic_shadow_casters'. Skipping positional shadow toggle."
+		)
+		return
+
+	for node: Node in dynamic_nodes:
+		var light: Light3D = node as Light3D
+		if is_instance_valid(light):
+			light.shadow_enabled = enable_dynamic_shadows
 
 
 ## Clamps high MSAA modes for subviewports to ensure 60 FPS performance headroom.

@@ -208,8 +208,8 @@ const SSR_MODES: Dictionary = {
 const SDFGI_MODES: Dictionary = {
 	"Off": {"enabled": false, "cascades": 4},
 	"Low": {"enabled": true, "cascades": 4},
-	"Medium": {"enabled": true, "cascades": 6},
-	"High": {"enabled": true, "cascades": 8}
+	"Medium": {"enabled": true, "cascades": 4},
+	"High": {"enabled": true, "cascades": 4}
 }
 
 ## Map of volumetric fog quality tiers to volume depth configurations.

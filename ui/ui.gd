@@ -161,10 +161,14 @@ func _toggle_diagnostics_panel() -> void:
 			)
 
 
-## Checks if the current scene is a testbed level to automatically show metrics.
+## Checks if current scene is a testbed or visual test level to automatically show metrics.
 func _check_if_testbed() -> void:
-	print("UIController: Checking if current scene is TestbedMap.")
+	print("UIController: Checking if current scene is TestbedMap or VisTest.")
 	var current_scene: Node = get_tree().current_scene
 
-	if current_scene and "testbed.scn" in current_scene.scene_file_path.to_lower():
+	if not is_instance_valid(current_scene):
+		return
+
+	var scene_path: String = current_scene.scene_file_path.to_lower()
+	if "testbed" in scene_path or "vistest_game" in scene_path:
 		_toggle_metrics_panel()

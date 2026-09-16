@@ -30,7 +30,7 @@ reflected_light_source = 1
 [node name="TVScreen" type="StaticBody3D" unique_id=2083472752 node_paths=PackedStringArray("camera_vp")]
 collision_layer = 4
 script = ExtResource("1_6scty")
-camera_vp = NodePath("CameraViewport")
+camera_vp = NodePath("CCTVViewport")
 
 [node name="ScreenMesh" type="MeshInstance3D" parent="." unique_id=186381411]
 material_override = SubResource("StandardMaterial3D_5wexd")
@@ -48,19 +48,19 @@ script = ExtResource("3_qkb5d")
 outline_material = SubResource("ShaderMaterial_y4bl1")
 metadata/_custom_type_script = "uid://dgig0tamvkdxx"
 
-[node name="CameraViewport" type="SubViewport" parent="." unique_id=849164279]
+[node name="CCTVViewport" type="SubViewport" parent="." unique_id=849164279]
 positional_shadow_atlas_size = 0
 canvas_cull_mask = 4294966783
 
-[node name="CCTVCamera" type="Camera3D" parent="CameraViewport" unique_id=445713227]
+[node name="CCTVCamera" type="Camera3D" parent="CCTVViewport" unique_id=445713227]
 cull_mask = 1047559
 environment = SubResource("Environment_dcbol")
 current = true
 far = 1000.0
 
-[node name="CanvasLayer" type="CanvasLayer" parent="CameraViewport" unique_id=751183537]
+[node name="CanvasLayer" type="CanvasLayer" parent="CCTVViewport" unique_id=751183537]
 
-[node name="MarginContainer" type="MarginContainer" parent="CameraViewport/CanvasLayer" unique_id=513532609]
+[node name="MarginContainer" type="MarginContainer" parent="CCTVViewport/CanvasLayer" unique_id=513532609]
 anchors_preset = 3
 anchor_left = 1.0
 anchor_top = 1.0
@@ -75,6 +75,6 @@ theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
-[node name="TutorialLabel" type="Label" parent="CameraViewport/CanvasLayer/MarginContainer" unique_id=790318665]
+[node name="TutorialLabel" type="Label" parent="CCTVViewport/CanvasLayer/MarginContainer" unique_id=790318665]
 layout_mode = 2
 theme_override_font_sizes/font_size = 64
