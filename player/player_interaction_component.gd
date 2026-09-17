@@ -105,10 +105,11 @@ func process_interaction(delta: float) -> void:
 		var is_throw_triggered: bool = (
 			GestureInputManager.consume_buffered_action("shoot")
 			or GestureInputManager.consume_buffered_action("grenade_throw")
-			or GestureInputManager.is_action_just_triggered("shoot")
-			or GestureInputManager.is_action_just_triggered("grenade_throw")
-			or Input.is_action_just_pressed("shoot")
-			or Input.is_action_just_pressed("grenade_throw")
+			or (InputMap.has_action("shoot") and Input.is_action_just_pressed("shoot"))
+			or (
+				InputMap.has_action("grenade_throw")
+				and Input.is_action_just_pressed("grenade_throw")
+			)
 		)
 
 		if is_throw_triggered:
@@ -119,8 +120,7 @@ func process_interaction(delta: float) -> void:
 	# 2. Dropping or Picking Up Items via Interact Action
 	var is_interact_triggered: bool = (
 		GestureInputManager.consume_buffered_action("interact")
-		or GestureInputManager.is_action_just_triggered("interact")
-		or Input.is_action_just_pressed("interact")
+		or (InputMap.has_action("interact") and Input.is_action_just_pressed("interact"))
 	)
 
 	if is_interact_triggered:
@@ -139,7 +139,6 @@ func process_interaction(delta: float) -> void:
 			drop_held_item()
 			return
 
-		# Enforce cool-down so freshly dropped objects cannot instantly be re-grabbed
 		var time_since_drop: int = Time.get_ticks_msec() - _last_drop_time
 		if time_since_drop < DROP_REPICK_COOLDOWN_MSEC:
 			return
@@ -153,17 +152,25 @@ func process_interaction(delta: float) -> void:
 				interaction_scanner.handle_interact_input()
 			return
 
-	# 3. Forward Shoot Input to Scanner when Hands are Empty
+	# 3. Forward Shoot and Reload Inputs when Hands are Empty
 	if not is_instance_valid(held_item):
 		var is_shoot_triggered: bool = (
 			GestureInputManager.consume_buffered_action("shoot")
-			or GestureInputManager.is_action_just_triggered("shoot")
-			or Input.is_action_just_pressed("shoot")
+			or (InputMap.has_action("shoot") and Input.is_action_just_pressed("shoot"))
 		)
 		if is_shoot_triggered and is_instance_valid(interaction_scanner):
 			if interaction_scanner.has_method("handle_shoot_input"):
 				print("InteractionComponent: Forwarding shoot to scanner.")
 				interaction_scanner.handle_shoot_input()
+
+		var is_reload_triggered: bool = (
+			GestureInputManager.consume_buffered_action("reload")
+			or (InputMap.has_action("reload") and Input.is_action_just_pressed("reload"))
+		)
+		if is_reload_triggered and is_instance_valid(interaction_scanner):
+			if interaction_scanner.has_method("handle_reload_input"):
+				print("InteractionComponent: Forwarding reload to scanner.")
+				interaction_scanner.handle_reload_input()
 
 
 ## Evaluates gesture-resolved inputs polled from the engine event stream.

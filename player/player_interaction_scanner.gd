@@ -107,22 +107,45 @@ func handle_interact_input() -> void:
 
 
 func handle_shoot_input() -> void:
-	# 1. We ONLY reach this function if the Master Component confirmed hands are empty!
 	if is_in_terminal_mode and is_instance_valid(active_terminal):
 		print("InteractionScanner: Shooting terminal raycast.")
 		shoot_terminal_raycast(true)
 		get_viewport().set_input_as_handled()
 		return
 
-	# Weapon shooting logic handled here since it's an "empty hand" action
-	# (Assuming weapon logic is separate from picked-up physics objects)
 	var weapon_holder: Node = (
 		master_component.get("weapon_holder") if is_instance_valid(master_component) else null
 	)
-	if is_instance_valid(weapon_holder) and weapon_holder.get_child_count() > 0:
-		var active_weapon: Node3D = weapon_holder.get_child(0) as Node3D
-		if is_instance_valid(active_weapon) and active_weapon.has_method("shoot"):
-			active_weapon.shoot(camera)
+	if is_instance_valid(weapon_holder):
+		var inv: WeaponInventoryComponent = (
+			weapon_holder.get_node_or_null("WeaponInventoryComponent") as WeaponInventoryComponent
+		)
+		if is_instance_valid(inv):
+			inv.shoot_active_weapon()
+		else:
+			for child: Node in weapon_holder.get_children():
+				if child is HitscanWeapon and (child as HitscanWeapon).visible:
+					(child as HitscanWeapon).shoot(camera)
+					break
+
+
+## Routes reload inputs to the equipped inventory weapon or weapon holder child.
+func handle_reload_input() -> void:
+	print("InteractionScanner: handle_reload_input() called.")
+	var weapon_holder: Node = (
+		master_component.get("weapon_holder") if is_instance_valid(master_component) else null
+	)
+	if is_instance_valid(weapon_holder):
+		var inv: WeaponInventoryComponent = (
+			weapon_holder.get_node_or_null("WeaponInventoryComponent") as WeaponInventoryComponent
+		)
+		if is_instance_valid(inv):
+			inv.reload_active_weapon()
+		else:
+			for child: Node in weapon_holder.get_children():
+				if child is HitscanWeapon and (child as HitscanWeapon).visible:
+					(child as HitscanWeapon).reload()
+					break
 
 
 func set_heavy_lifting(value: bool) -> void:

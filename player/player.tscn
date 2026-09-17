@@ -64,6 +64,7 @@
 [ext_resource type="Script" uid="uid://eabartkybdls" path="res://player/state_glide.gd" id="43_fjxoa"]
 [ext_resource type="Script" uid="uid://7lmc8o36ewqw" path="res://player/StateMachineLock.gd" id="48_mmwog"]
 [ext_resource type="Script" uid="uid://be6128jq53jja" path="res://player/push_wheel.gd" id="49_8pxes"]
+[ext_resource type="Script" uid="uid://c7rka8po7jog8" path="res://player/weapon_inventory_component.gd" id="51_or4qq"]
 [ext_resource type="Script" uid="uid://b71yx1y4kvv2e" path="res://player/state_path_slide.gd" id="59_3dxkp"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_cw2d6"]
@@ -611,6 +612,11 @@ script = ExtResource("21_gv3ic")
 max_health = 300
 use_pooling = false
 is_player_health = true
+
+[node name="WeaponInventoryComponent" type="Node" parent="Components" unique_id=810249379 node_paths=PackedStringArray("weapon_holder", "camera")]
+script = ExtResource("51_or4qq")
+weapon_holder = NodePath("../../Head/Eyes/Camera3D/WeaponHolder")
+camera = NodePath("../../Head/Eyes/Camera3D")
 
 [node name="StateMachine" type="Node" parent="." unique_id=2011174862]
 script = ExtResource("30_axnmu")

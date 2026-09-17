@@ -102,6 +102,7 @@ func _ready() -> void:
 	print("System: GlobalSettings Autoload initialized.")
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_setup_debounce_timer()
+	_ensure_default_weapon_actions()
 	_apply_input_mappings()
 	call_deferred("_apply_boot_settings")
 
@@ -345,3 +346,25 @@ func _apply_input_mappings() -> void:
 func _queue_debounced_save() -> void:
 	if is_instance_valid(_save_debounce_timer):
 		_save_debounce_timer.start(SAVE_DEBOUNCE_DELAY)
+
+
+## Ensures weapon slot bindings exist in [InputMap] on boot.
+func _ensure_default_weapon_actions() -> void:
+	print("System: Registering default weapon slot actions.")
+	var defaults: Dictionary = {
+		"weapon_slot_1": KEY_1,
+		"weapon_slot_2": KEY_2,
+		"weapon_slot_3": KEY_3,
+		"weapon_slot_4": KEY_4,
+		"weapon_slot_5": KEY_5,
+		"last_weapon": KEY_X,
+	}
+
+	for action: String in defaults.keys():
+		if not InputMap.has_action(action):
+			InputMap.add_action(action)
+			var key_ev: InputEventKey = InputEventKey.new()
+			var key_val: Key = defaults[action] as Key
+			key_ev.keycode = key_val
+			key_ev.physical_keycode = key_val
+			InputMap.action_add_event(action, key_ev)
