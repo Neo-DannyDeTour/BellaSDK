@@ -76,7 +76,7 @@ func test_damage_player() -> void:
 	turret._set_target(dummy_target)
 	turret.damage = 15
 
-	turret._damage_player()
+	turret._damage_target()
 
 	assert_eq(
 		health_comp.current_health,

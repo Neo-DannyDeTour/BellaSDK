@@ -96,7 +96,9 @@ func _setup_camera_attributes() -> void:
 	attr.dof_blur_far_transition = 4.0
 	attr.dof_blur_near_distance = 0.5
 	attr.dof_blur_near_transition = 0.5
-	attr.dof_blur_amount = 0.15
+	attr.dof_blur_amount = 0.0
+	attr.dof_blur_far_enabled = false
+	attr.dof_blur_near_enabled = false
 
 
 ## Spawns the [CanvasLayer] post-process overlay for motion blur.
@@ -128,19 +130,21 @@ shader_type canvas_item;
 
 uniform sampler2D screen_texture : hint_screen_texture, repeat_disable, filter_linear;
 uniform vec2 camera_angular_velocity = vec2(0.0);
-uniform float motion_blur_strength = 0.5;
-uniform int blur_samples = 8;
+uniform float motion_blur_strength = 0.0;
+uniform int blur_samples = 4;
 
 void fragment() {
-	vec2 vel = camera_angular_velocity * motion_blur_strength * 0.08;
-	vel = clamp(vel, vec2(-0.05), vec2(0.05));
+	vec2 vel = camera_angular_velocity * motion_blur_strength * 0.04;
+	vel = clamp(vel, vec2(-0.025), vec2(0.025));
 
-	if (length(vel) < 0.00005 || motion_blur_strength <= 0.005) {
+	float vel_len = length(vel);
+	if (vel_len < 0.0001 || motion_blur_strength <= 0.005) {
 		COLOR = texture(screen_texture, SCREEN_UV);
 	} else {
+		int samples = clamp(int(float(blur_samples) * clamp(motion_blur_strength, 0.5, 1.0)), 2, 6);
 		vec4 color = vec4(0.0);
-		for (int i = 0; i < blur_samples; i++) {
-			float offset_scale = (float(i) / float(blur_samples - 1)) - 0.5;
+		for (int i = 0; i < samples; i++) {
+			float offset_scale = (float(i) / float(samples - 1)) - 0.5;
 			vec2 sample_uv = clamp(
 				SCREEN_UV + (vel * offset_scale),
 				vec2(0.001),
@@ -148,7 +152,7 @@ void fragment() {
 			);
 			color += texture(screen_texture, sample_uv);
 		}
-		COLOR = color / float(blur_samples);
+		COLOR = color / float(samples);
 	}
 }
 """
