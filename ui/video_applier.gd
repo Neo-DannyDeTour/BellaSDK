@@ -88,8 +88,11 @@ static func apply_viewport_pipeline(
 	var diorama_vp: SubViewport = (
 		tree.root.find_child("DioramaViewport", true, false) as SubViewport
 	)
-	if is_instance_valid(diorama_vp) and diorama_vp not in target_viewports:
-		target_viewports.append(diorama_vp)
+	if is_instance_valid(diorama_vp):
+		if not diorama_vp.own_world_3d:
+			diorama_vp.own_world_3d = true
+		if diorama_vp not in target_viewports:
+			target_viewports.append(diorama_vp)
 
 	_apply_rendering_server_qualities(config)
 	_apply_light_shadows(tree, config)
@@ -182,11 +185,15 @@ static func _apply_light_shadows(tree: SceneTree, config: Dictionary) -> void:
 			else:
 				d_light.directional_shadow_max_distance = d_dist
 
+	var p_dist: float = config.get("positional_shadow_distance", 32.0) as float
+
 	var dynamic_nodes: Array[Node] = tree.get_nodes_in_group("dynamic_shadow_casters")
 	for node: Node in dynamic_nodes:
 		var light: Light3D = node as Light3D
 		if is_instance_valid(light):
 			light.shadow_enabled = enable_dyn
+			light.distance_fade_enabled = true
+			light.distance_fade_length = p_dist
 
 	var diorama_vp: SubViewport = (
 		tree.root.find_child("DioramaViewport", true, false) as SubViewport
@@ -234,7 +241,11 @@ static func _apply_rendering_server_qualities(config: Dictionary) -> void:
 	var fog_dict: Dictionary = config.get("fog", {}) as Dictionary
 	if not fog_dict.is_empty():
 		var depth: int = fog_dict.get("depth", 64) as int
-		RenderingServer.environment_set_volumetric_fog_volume_size(64, depth)
+		var fog_size_key: String = "rendering/environment/volumetric_fog/volume_depth"
+		var cur_depth: Variant = ProjectSettings.get_setting(fog_size_key)
+		if cur_depth == null or int(cur_depth) != depth:
+			ProjectSettings.set_setting(fog_size_key, depth)
+			RenderingServer.environment_set_volumetric_fog_volume_size(64, depth)
 
 
 ## Synchronizes environment tonemapping, lighting features, and debug overlays.

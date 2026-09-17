@@ -96,7 +96,9 @@ func _setup_camera_attributes() -> void:
 	attr.dof_blur_far_transition = 4.0
 	attr.dof_blur_near_distance = 0.5
 	attr.dof_blur_near_transition = 0.5
-	attr.dof_blur_amount = 0.15
+	attr.dof_blur_amount = 0.0
+	attr.dof_blur_far_enabled = false
+	attr.dof_blur_near_enabled = false
 
 
 ## Spawns the [CanvasLayer] post-process overlay for motion blur.
@@ -128,7 +130,7 @@ shader_type canvas_item;
 
 uniform sampler2D screen_texture : hint_screen_texture, repeat_disable, filter_linear;
 uniform vec2 camera_angular_velocity = vec2(0.0);
-uniform float motion_blur_strength = 0.5;
+uniform float motion_blur_strength = 0.0;
 uniform int blur_samples = 8;
 
 void fragment() {
