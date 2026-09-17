@@ -585,6 +585,9 @@ func _on_interact_component_unfocused() -> void:
 
 ## Updates prompt [Label3D], [Sprite3D] icon, and dispatches verbal cues to TTSandy.
 func _update_valve_label() -> void:
+	if Engine.is_editor_hint() or not is_inside_tree():
+		return
+
 	print("Valve: _update_valve_label() called.")
 	var prompt_text: String = ""
 	var speech_text: String = ""
@@ -642,8 +645,6 @@ func _update_valve_label() -> void:
 		label.text = prompt_text
 		label.position.x = 0.0
 
-	if has_node("/root/Events"):
-		var events_node: Node = get_node("/root/Events")
-		if events_node.has_signal("object_focused") and not speech_text.is_empty():
-			print("Valve: Broadcasting object_focused prompt to TTSandy.")
-			events_node.object_focused.emit(speech_text, self)
+	if Events.has_signal("object_focused") and not speech_text.is_empty():
+		print("Valve: Broadcasting object_focused prompt to TTSandy.")
+		Events.object_focused.emit(speech_text, self)

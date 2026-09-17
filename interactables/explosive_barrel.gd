@@ -87,7 +87,7 @@ func _trigger_shockwave() -> void:
 	var manager: Node = get_node_or_null("/root/ShockwaveManager")
 
 	if is_instance_valid(manager) and manager.has_method(&"trigger_shockwave"):
-		manager.call(&"trigger_shockwave", global_position, shockwave_radius)
+		manager.call(&"trigger_shockwave", global_position, shockwave_radius, 2.0)
 	else:
 		print("ExplosiveBarrel: ShockwaveManager not found or invalid.")
 
