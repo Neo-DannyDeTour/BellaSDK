@@ -26,9 +26,7 @@ func test_enter_terminal_mode() -> void:
 	scanner.enter_terminal_mode(terminal)
 
 	assert_true(scanner.is_in_terminal_mode, "Scanner should be in terminal mode.")
-	assert_eq(
-		scanner.active_terminal, terminal, "Active terminal reference should be stored."
-	)
+	assert_eq(scanner.active_terminal, terminal, "Active terminal reference should be stored.")
 	assert_signal_emitted_with_parameters(scanner, "terminal_mode_toggled", [true])
 
 
@@ -42,9 +40,7 @@ func test_exit_terminal_mode() -> void:
 	watch_signals(scanner)
 	scanner.exit_terminal_mode()
 
-	assert_false(
-		scanner.is_in_terminal_mode, "Scanner should have exited terminal mode."
-	)
+	assert_false(scanner.is_in_terminal_mode, "Scanner should have exited terminal mode.")
 	assert_null(scanner.active_terminal, "Terminal reference should be cleared.")
 	assert_signal_emitted_with_parameters(scanner, "terminal_mode_toggled", [false])
 
@@ -57,7 +53,5 @@ func test_setup_master_link() -> void:
 
 	scanner.setup_master_link(master)
 	assert_eq(
-		scanner.master_component,
-		master,
-		"Scanner should properly link its Master reference."
+		scanner.master_component, master, "Scanner should properly link its Master reference."
 	)
