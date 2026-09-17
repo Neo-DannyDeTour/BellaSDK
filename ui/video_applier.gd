@@ -192,8 +192,11 @@ static func _apply_light_shadows(tree: SceneTree, config: Dictionary) -> void:
 		var light: Light3D = node as Light3D
 		if is_instance_valid(light):
 			light.shadow_enabled = enable_dyn
+			light.shadow_bias = 0.04
+			light.shadow_normal_bias = 1.0
 			light.distance_fade_enabled = true
-			light.distance_fade_length = p_dist
+			light.distance_fade_begin = maxf(0.0, p_dist - 10.0)
+			light.distance_fade_length = 10.0
 
 	var diorama_vp: SubViewport = (
 		tree.root.find_child("DioramaViewport", true, false) as SubViewport
