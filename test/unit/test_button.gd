@@ -41,6 +41,7 @@ func before_each() -> void:
 
 func test_on_focus() -> void:
 	print("TestButton: test_on_focus() called.")
+	button.label_interact = mock_label
 	button.outline_material = ShaderMaterial.new()
 	button._on_focus()
 
@@ -50,6 +51,7 @@ func test_on_focus() -> void:
 
 func test_on_unfocus() -> void:
 	print("TestButton: test_on_unfocus() called.")
+	button.label_interact = mock_label
 	mock_label.show()
 	mock_mesh.material_overlay = ShaderMaterial.new()
 

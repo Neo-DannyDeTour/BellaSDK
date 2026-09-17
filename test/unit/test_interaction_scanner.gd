@@ -5,14 +5,14 @@
 class_name TestInteractionScanner
 extends GutTest
 
-## The [PlayerInteractionScanner] instance under test.
-var scanner: Node = null
+## The InteractionScanner instance under test.
+var scanner: InteractionScanner = null
 
 
-## Instantiates [PlayerInteractionScanner] and registers autofree cleanup before each test.
+## Instantiates InteractionScanner and registers autofree cleanup before each test.
 func before_each() -> void:
 	print("TestInteractionScanner: Executing before_each() setup.")
-	scanner = load("res://player/player_interaction_scanner.gd").new() as Node
+	scanner = InteractionScanner.new()
 	add_child_autofree(scanner)
 
 
@@ -23,11 +23,11 @@ func test_enter_terminal_mode() -> void:
 	add_child_autofree(terminal)
 
 	watch_signals(scanner)
-	scanner.call("enter_terminal_mode", terminal)
+	scanner.enter_terminal_mode(terminal)
 
-	assert_true(bool(scanner.get("is_in_terminal_mode")), "Scanner should be in terminal mode.")
+	assert_true(scanner.is_in_terminal_mode, "Scanner should be in terminal mode.")
 	assert_eq(
-		scanner.get("active_terminal"), terminal, "Active terminal reference should be stored."
+		scanner.active_terminal, terminal, "Active terminal reference should be stored."
 	)
 	assert_signal_emitted_with_parameters(scanner, "terminal_mode_toggled", [true])
 
@@ -38,14 +38,14 @@ func test_exit_terminal_mode() -> void:
 	var terminal: Node3D = Node3D.new()
 	add_child_autofree(terminal)
 
-	scanner.call("enter_terminal_mode", terminal)
+	scanner.enter_terminal_mode(terminal)
 	watch_signals(scanner)
-	scanner.call("exit_terminal_mode")
+	scanner.exit_terminal_mode()
 
 	assert_false(
-		bool(scanner.get("is_in_terminal_mode")), "Scanner should have exited terminal mode."
+		scanner.is_in_terminal_mode, "Scanner should have exited terminal mode."
 	)
-	assert_null(scanner.get("active_terminal"), "Terminal reference should be cleared.")
+	assert_null(scanner.active_terminal, "Terminal reference should be cleared.")
 	assert_signal_emitted_with_parameters(scanner, "terminal_mode_toggled", [false])
 
 
@@ -55,9 +55,9 @@ func test_setup_master_link() -> void:
 	var master: Node = Node.new()
 	add_child_autofree(master)
 
-	scanner.call("setup_master_link", master)
+	scanner.setup_master_link(master)
 	assert_eq(
-		scanner.get("master_component"),
+		scanner.master_component,
 		master,
 		"Scanner should properly link its Master reference."
 	)
