@@ -38,6 +38,8 @@ radial_segments = 32
 rings = 16
 
 [node name="3DShockwave" type="GPUParticles3D" unique_id=1451759977]
+emitting = false
 amount = 1
+one_shot = true
 process_material = SubResource("ParticleProcessMaterial_uua0r")
 draw_pass_1 = SubResource("SphereMesh_lu0na")

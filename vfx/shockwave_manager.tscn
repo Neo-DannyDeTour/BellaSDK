@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://cxv4l5k6gkqyi"]
+
+[ext_resource type="Script" uid="uid://l8cg0oru71au" path="res://vfx/ShockwaveManager3D.gd" id="1_f3ld6"]
+[ext_resource type="PackedScene" uid="uid://bnenavtkhbxvh" path="res://vfx/3d_shockwave.tscn" id="2_qqexf"]
+
+[node name="ShockwaveManager" type="Node3D" unique_id=1161423643]
+script = ExtResource("1_f3ld6")
+shockwave_scene = ExtResource("2_qqexf")

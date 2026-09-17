@@ -1,16 +1,24 @@
 ## Manages spawning, scaling, and safe cleanup lifecycles for 3D shockwaves.
-class_name ShockwaveManager
+#class_name ShockwaveManager
 extends Node3D
 
-## [PackedScene] instantiated for 3D shockwave visual effects.
+## The [PackedScene] instantiated for 3D shockwave visual effects.
 @export var shockwave_scene: PackedScene
 
 
-## Spawns, configures, and cleans up a [GPUParticles3D] shockwave instance.
-func trigger_shockwave(spawn_position: Vector3, radius: float = 5.0) -> void:
-	print("ShockwaveManager: Spawning shockwave at: ", spawn_position, " | Radius: ", radius)
+## Spawns, scales, and cleans up a one-shot [GPUParticles3D] shockwave instance.
+func trigger_shockwave(spawn_position: Vector3, radius: float = 5.0, speed: float = 2.0) -> void:
+	print(
+		"ShockwaveManager: trigger_shockwave() at: ",
+		spawn_position,
+		" | Radius: ",
+		radius,
+		" | Speed: ",
+		speed
+	)
 
 	if shockwave_scene == null:
+		print("ShockwaveManager: shockwave_scene is not assigned.")
 		return
 
 	var raw_instance: Node = shockwave_scene.instantiate()
@@ -25,22 +33,24 @@ func trigger_shockwave(spawn_position: Vector3, radius: float = 5.0) -> void:
 		raw_instance.queue_free()
 		return
 
-	var effect_instance: GPUParticles3D = raw_instance as GPUParticles3D
-	current_scene.add_child(effect_instance)
+	var effect: GPUParticles3D = raw_instance as GPUParticles3D
 
-	effect_instance.global_position = spawn_position
-	effect_instance.scale = Vector3(radius, radius, radius)
-	effect_instance.one_shot = true
-	effect_instance.explosiveness = 1.0
-	effect_instance.restart()
+	effect.one_shot = true
+	effect.explosiveness = 1.0
+	effect.speed_scale = maxf(0.01, speed)
 
-	var speed_factor: float = maxf(0.01, effect_instance.speed_scale)
-	var actual_lifetime: float = (effect_instance.lifetime / speed_factor) + 0.1
+	current_scene.add_child(effect)
 
-	var timer: SceneTreeTimer = get_tree().create_timer(actual_lifetime)
-	timer.timeout.connect(
+	effect.global_position = spawn_position
+	effect.scale = Vector3(radius, radius, radius)
+	effect.restart()
+
+	var actual_duration: float = (effect.lifetime / effect.speed_scale) + 0.15
+
+	var cleanup_timer: SceneTreeTimer = get_tree().create_timer(actual_duration)
+	cleanup_timer.timeout.connect(
 		func() -> void:
-			if is_instance_valid(effect_instance):
-				effect_instance.queue_free(),
-		CONNECT_ONE_SHOT
+			if is_instance_valid(effect):
+				print("ShockwaveManager: Freeing completed shockwave instance.")
+				effect.queue_free()
 	)
