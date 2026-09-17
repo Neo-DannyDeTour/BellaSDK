@@ -9,8 +9,15 @@ const ACTION_CATEGORIES: Dictionary = {
 	[
 		"interact",
 		"shoot",
+		"reload",
 		"flashlight",
 		"zoom",
+		"weapon_slot_1",
+		"weapon_slot_2",
+		"weapon_slot_3",
+		"weapon_slot_4",
+		"weapon_slot_5",
+		"last_weapon",
 		"sonar_ping",
 		"ttsandy",
 		"describe_surroundings",
@@ -229,6 +236,7 @@ func _format_header_grid() -> void:
 
 ## Ensures all defined actions exist inside [InputMap] to prevent lookup failures.
 func _ensure_all_actions_registered() -> void:
+	print("ControlsPanel: Verifying all action mappings in InputMap.")
 	for category: String in ACTION_CATEGORIES.keys():
 		for action: String in ACTION_CATEGORIES[category]:
 			if not InputMap.has_action(action):
@@ -239,6 +247,23 @@ func _ensure_all_actions_registered() -> void:
 					default_key.physical_keycode = KEY_T
 					default_key.set_meta("gesture", "hold")
 					InputMap.action_add_event(action, default_key)
+				elif action == "reload":
+					var reload_key: InputEventKey = InputEventKey.new()
+					reload_key.keycode = KEY_R
+					reload_key.physical_keycode = KEY_R
+					InputMap.action_add_event(action, reload_key)
+				elif action.begins_with("weapon_slot_"):
+					var slot_num: int = action.trim_prefix("weapon_slot_").to_int()
+					var key_code_val: Key = (KEY_0 + slot_num) as Key
+					var key_ev: InputEventKey = InputEventKey.new()
+					key_ev.keycode = key_code_val
+					key_ev.physical_keycode = key_code_val
+					InputMap.action_add_event(action, key_ev)
+				elif action == "last_weapon":
+					var x_ev: InputEventKey = InputEventKey.new()
+					x_ev.keycode = KEY_X
+					x_ev.physical_keycode = KEY_X
+					InputMap.action_add_event(action, x_ev)
 
 
 ## Sets up options and loads persisted behavior preferences (Toggle vs Hold vs Mash).

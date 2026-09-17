@@ -2,6 +2,9 @@
 class_name VideoApplier
 extends RefCounted
 
+## Visual Layer bitmask for isolated preview geometry (Layer 11).
+const PREVIEW_LAYER_MASK: int = 1 << 10
+
 ## Cached density texture instance shared across all viewports.
 static var _cached_vrs_texture: ImageTexture = null
 
@@ -116,10 +119,11 @@ static func apply_viewport_pipeline(
 		_cached_vrs_texture = VrsTextureGenerator.create_radial_density_map()
 
 	for vp: Viewport in target_viewports:
+		var is_diorama: bool = vp is SubViewport
 		vp.canvas_item_default_texture_filter = (
 			filter_mode as Viewport.DefaultCanvasItemTextureFilter
 		)
-		vp.use_occlusion_culling = occ_cull
+		vp.use_occlusion_culling = occ_cull if not is_diorama else false
 
 		if raw_vrs == Viewport.VRS_TEXTURE and is_instance_valid(_cached_vrs_texture):
 			vp.vrs_texture = _cached_vrs_texture
@@ -128,24 +132,24 @@ static func apply_viewport_pipeline(
 			vp.vrs_mode = Viewport.VRS_DISABLED
 			vp.vrs_texture = null
 
-		if fsr_scale < 1.0:
+		if fsr_scale < 1.0 and not is_diorama:
 			vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR2
 			vp.scaling_3d_scale = fsr_scale
 			vp.use_taa = false
 		else:
 			vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
-			vp.scaling_3d_scale = raw_scale
-			vp.use_taa = aa_settings.get("taa", false) as bool
+			vp.scaling_3d_scale = raw_scale if not is_diorama else 1.0
+			vp.use_taa = (aa_settings.get("taa", false) as bool) if not is_diorama else false
 
-		vp.msaa_3d = (_clamp_preview_msaa(primary_msaa) if vp is SubViewport else primary_msaa)
+		vp.msaa_3d = (_clamp_preview_msaa(primary_msaa) if is_diorama else primary_msaa)
 		vp.screen_space_aa = (
 			aa_settings.get("fxaa", Viewport.SCREEN_SPACE_AA_DISABLED) as Viewport.ScreenSpaceAA
 		)
 		vp.use_debanding = config.get("debanding", true) as bool
 		vp.mesh_lod_threshold = config.get("mesh_lod", 1.0) as float
 
-		if vp is SubViewport:
-			vp.positional_shadow_atlas_size = mini(config.get("shadow_atlas", 2048) as int, 1024)
+		if is_diorama:
+			vp.positional_shadow_atlas_size = mini(config.get("shadow_atlas", 2048) as int, 512)
 		else:
 			vp.positional_shadow_atlas_size = (config.get("shadow_atlas", 2048) as int)
 
@@ -174,7 +178,7 @@ static func _apply_light_shadows(tree: SceneTree, config: Dictionary) -> void:
 		if is_instance_valid(d_light):
 			d_light.shadow_enabled = enable_dyn
 			if d_light.find_parent("DioramaViewport") != null:
-				d_light.directional_shadow_max_distance = minf(d_dist, 32.0)
+				d_light.directional_shadow_max_distance = minf(d_dist, 16.0)
 			else:
 				d_light.directional_shadow_max_distance = d_dist
 
@@ -238,7 +242,12 @@ static func _apply_rendering_server_qualities(config: Dictionary) -> void:
 ## [param config] Dictionary holding environment flags and tonemapper key.
 static func _apply_environment_and_materials(tree: SceneTree, config: Dictionary) -> void:
 	print("VideoApplier: Applying environment features across scene tree.")
-	var environments: Array[Environment] = []
+	var main_environments: Array[Environment] = []
+	var diorama_environments: Array[Environment] = []
+
+	var diorama_vp: SubViewport = (
+		tree.root.find_child("DioramaViewport", true, false) as SubViewport
+	)
 
 	var we_nodes: Array[Node] = tree.root.find_children("*", "WorldEnvironment", true, false)
 	for node: Node in we_nodes:
@@ -246,70 +255,42 @@ static func _apply_environment_and_materials(tree: SceneTree, config: Dictionary
 		if we.is_in_group("ignore_global_video_settings"):
 			continue
 		if is_instance_valid(we) and is_instance_valid(we.environment):
-			if we.environment not in environments:
-				environments.append(we.environment)
+			if is_instance_valid(diorama_vp) and diorama_vp.is_ancestor_of(we):
+				if we.environment not in diorama_environments:
+					diorama_environments.append(we.environment)
+			else:
+				if we.environment not in main_environments:
+					main_environments.append(we.environment)
 
 	if tree.root.find_world_3d():
 		var root_w: World3D = tree.root.find_world_3d()
-		if is_instance_valid(root_w.environment) and root_w.environment not in environments:
-			environments.append(root_w.environment)
+		if is_instance_valid(root_w.environment) and root_w.environment not in main_environments:
+			main_environments.append(root_w.environment)
 		elif (
 			is_instance_valid(root_w.fallback_environment)
-			and root_w.fallback_environment not in environments
+			and root_w.fallback_environment not in main_environments
 		):
-			environments.append(root_w.fallback_environment)
+			main_environments.append(root_w.fallback_environment)
 
-	var diorama_vp: SubViewport = (
-		tree.root.find_child("DioramaViewport", true, false) as SubViewport
-	)
 	if is_instance_valid(diorama_vp) and diorama_vp.find_world_3d():
 		var dio_w: World3D = diorama_vp.find_world_3d()
-		if is_instance_valid(dio_w.environment) and dio_w.environment not in environments:
-			environments.append(dio_w.environment)
+		if is_instance_valid(dio_w.environment) and dio_w.environment not in diorama_environments:
+			diorama_environments.append(dio_w.environment)
 		elif (
 			is_instance_valid(dio_w.fallback_environment)
-			and dio_w.fallback_environment not in environments
+			and dio_w.fallback_environment not in diorama_environments
 		):
-			environments.append(dio_w.fallback_environment)
+			diorama_environments.append(dio_w.fallback_environment)
 
 	var exp_val: float = config.get("exposure", 1.0) as float
 	var dof_amount: float = config.get("dof_amount", 0.0) as float
 	var is_dof_active: bool = dof_amount > 0.01
 
-	for env: Environment in environments:
-		env.tonemap_exposure = exp_val
+	for env: Environment in main_environments:
+		_populate_environment_values(env, config, exp_val, false)
 
-		var ssao_dict: Dictionary = config.get("ssao", {}) as Dictionary
-		env.ssao_enabled = ssao_dict.get("enabled", false) as bool
-
-		var ssi_dict: Dictionary = config.get("ssi", {}) as Dictionary
-		env.ssil_enabled = ssi_dict.get("enabled", false) as bool
-
-		var ssr_dict: Dictionary = config.get("ssr", {}) as Dictionary
-		env.ssr_enabled = ssr_dict.get("enabled", false) as bool
-		if env.ssr_enabled:
-			env.ssr_max_steps = ssr_dict.get("steps", 64) as int
-
-		var sdfgi_dict: Dictionary = config.get("sdfgi", {}) as Dictionary
-		env.sdfgi_enabled = sdfgi_dict.get("enabled", false) as bool
-		if env.sdfgi_enabled:
-			env.sdfgi_cascades = sdfgi_dict.get("cascades", 4) as int
-
-		var fog_dict: Dictionary = config.get("fog", {}) as Dictionary
-		env.volumetric_fog_enabled = fog_dict.get("enabled", false) as bool
-
-		var glow_dict: Dictionary = config.get("glow", {}) as Dictionary
-		env.glow_enabled = glow_dict.get("enabled", false) as bool
-		if env.glow_enabled:
-			var is_high: bool = (
-				glow_dict.get("high_quality", false) as bool or glow_dict.get("bicubic", false)
-				as bool
-			)
-			env.glow_blend_mode = (
-				Environment.GLOW_BLEND_MODE_SOFTLIGHT
-				if is_high
-				else Environment.GLOW_BLEND_MODE_ADDITIVE
-			)
+	for dio_env: Environment in diorama_environments:
+		_populate_environment_values(dio_env, config, exp_val, true)
 
 	for node: Node in we_nodes:
 		var we: WorldEnvironment = node as WorldEnvironment
@@ -352,3 +333,46 @@ static func _apply_environment_and_materials(tree: SceneTree, config: Dictionary
 		if p_node.material is ShaderMaterial:
 			var smat: ShaderMaterial = p_node.material as ShaderMaterial
 			smat.set_shader_parameter("motion_blur_strength", mb_factor if is_mb_active else 0.0)
+
+
+## Populates target Environment resource properties clamped by preview context.
+## [param env] Target [Environment] instance to mutate.
+## [param config] Source parameters dictionary.
+## [param exposure] Tone mapping exposure scalar.
+## [param is_preview] True if mutations apply to diorama preview pipeline.
+static func _populate_environment_values(
+	env: Environment, config: Dictionary, exposure: float, is_preview: bool
+) -> void:
+	env.tonemap_exposure = exposure
+
+	var ssao_dict: Dictionary = config.get("ssao", {}) as Dictionary
+	env.ssao_enabled = ssao_dict.get("enabled", false) as bool
+
+	var ssi_dict: Dictionary = config.get("ssi", {}) as Dictionary
+	env.ssil_enabled = ssi_dict.get("enabled", false) as bool
+
+	var ssr_dict: Dictionary = config.get("ssr", {}) as Dictionary
+	env.ssr_enabled = ssr_dict.get("enabled", false) as bool
+	if env.ssr_enabled:
+		var max_steps: int = ssr_dict.get("steps", 64) as int
+		env.ssr_max_steps = mini(max_steps, 32) if is_preview else max_steps
+
+	var sdfgi_dict: Dictionary = config.get("sdfgi", {}) as Dictionary
+	env.sdfgi_enabled = sdfgi_dict.get("enabled", false) as bool
+	if env.sdfgi_enabled:
+		env.sdfgi_cascades = 2 if is_preview else (sdfgi_dict.get("cascades", 4) as int)
+
+	var fog_dict: Dictionary = config.get("fog", {}) as Dictionary
+	env.volumetric_fog_enabled = fog_dict.get("enabled", false) as bool
+
+	var glow_dict: Dictionary = config.get("glow", {}) as Dictionary
+	env.glow_enabled = glow_dict.get("enabled", false) as bool
+	if env.glow_enabled:
+		var is_high: bool = (
+			glow_dict.get("high_quality", false) as bool or glow_dict.get("bicubic", false) as bool
+		)
+		env.glow_blend_mode = (
+			Environment.GLOW_BLEND_MODE_SOFTLIGHT
+			if is_high and not is_preview
+			else Environment.GLOW_BLEND_MODE_ADDITIVE
+		)

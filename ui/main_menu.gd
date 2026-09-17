@@ -191,9 +191,7 @@ func _return_to_main_buttons() -> void:
 ## Unpauses game session and closes title interface.
 func _on_resume_pressed() -> void:
 	print("UI: Player clicked Resume.")
-	_stop_main_theme()
-	if is_instance_valid(options_router):
-		options_router.teardown_diorama()
+	await prepare_for_level_transition()
 	var parent: Node = get_parent()
 	if is_instance_valid(parent) and parent.has_method("toggle_pause"):
 		parent.call("toggle_pause")
@@ -217,7 +215,7 @@ func _on_new_game_pressed() -> void:
 	add_child(chapter_window)
 
 
-## Prepares the scene tree and GPU state before switching to a level.
+## Prepares the scene tree and GPU state before switching to a level or resuming.
 func prepare_for_level_transition() -> void:
 	print("UI: Preparing main menu for level transition.")
 	_stop_main_theme()
@@ -225,12 +223,7 @@ func prepare_for_level_transition() -> void:
 	if is_instance_valid(options_router):
 		options_router.teardown_diorama()
 
-	var world_env: WorldEnvironment = (
-		get_tree().root.find_child("WorldEnvironment", true, false) as WorldEnvironment
-	)
-	if is_instance_valid(world_env) and is_instance_valid(world_env.environment):
-		world_env.environment.sdfgi_enabled = false
-
+	# Allow one full frame for Vulkan pipelines to drain and stop referencing diorama buffers
 	await get_tree().process_frame
 
 

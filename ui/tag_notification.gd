@@ -1,119 +1,186 @@
-## Manages animated weapon dogtag drop notifications in the top center HUD.
+## Manages layered 3D-perspective dogtags in the top-center HUD with timed auto-dismissal.
 class_name TagNotification
 extends Control
 
-## Preloaded shotgun dogtag texture resource.
-const SHOTGUN_TAG_TEX: Texture2D = preload("res://assets/weapons_ui_icons/tag_shotgun.png")
+## Textures registry mapping weapon tags to UI assets.
+const TAG_TEXTURES: Dictionary = {
+	"shotgun": preload("res://assets/weapons_ui_icons/tag_shotgun.png"),
+	"revolver": preload("res://assets/weapons_ui_icons/tag_revolver.png")
+}
 
-## Vertical distance in pixels the tag drops into view.
-const DROP_OFFSET_Y: float = 80.0
+## Horizontal spacing between background dogtags in pixels.
+const TAG_SPREAD_X: float = 48.0
+## Vertical drop position for the active foreground dogtag.
+const ACTIVE_Y: float = 65.0
+## Resting Y position for background stacked tags.
+const BACKGROUND_Y: float = 40.0
+## Duration in seconds tags remain displayed before retracting off-screen.
+const DISPLAY_DURATION: float = 2.5
 
-## Target resting tilt angle in degrees for the dogtag.
-const TARGET_ROTATION_DEG: float = 15.0
+## Dictionary holding spawned TextureRect instances by tag key.
+var _spawned_tags: Dictionary = {}
+## Array tracking the display order of collected tags.
+var _collected_order: Array[String] = []
+## String tag of the currently equipped weapon.
+var _active_weapon: String = ""
+## Active tween coordinating entrance and dismissal animations.
+var _stack_tween: Tween = null
+## Timer managing the auto-retract sequence after display duration elapses.
+var _dismiss_timer: SceneTreeTimer = null
 
-## Total seconds the tag remains visible on screen.
-const DISPLAY_DURATION: float = 2.2
 
-## TextureRect rendering the active weapon tag graphic.
-@onready var tag_rect: TextureRect = $TagRect
-
-## Active Tween instance orchestrating fall and sway animations.
-var _active_tween: Tween = null
-
-
-## Initializes node properties and connects event bus signals.
+## Initializes tag overlay and connects bus signals.
 func _ready() -> void:
-	print("TagNotification: Initializing weapon tag overlay.")
+	print("TagNotification: Initializing stacked dogtag HUD.")
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
-	modulate.a = 0.0
 
-	if is_instance_valid(tag_rect):
-		tag_rect.pivot_offset = tag_rect.size * 0.5
-		tag_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for child: Node in get_children():
+		child.queue_free()
 
-	if not Events.weapon_tag_displayed.is_connected(_on_weapon_tag_displayed):
-		Events.weapon_tag_displayed.connect(_on_weapon_tag_displayed)
-
-
-## Routes received weapon pickup events to the drop animation pipeline.
-## [param weapon_id] String identifier of the collected weapon.
-func _on_weapon_tag_displayed(weapon_id: String) -> void:
-	print("TagNotification: Displaying tag for weapon -> ", weapon_id)
-	if weapon_id == "shotgun":
-		show_tag(SHOTGUN_TAG_TEX)
+	if not Events.weapon_tag_displayed.is_connected(_on_weapon_collected):
+		Events.weapon_tag_displayed.connect(_on_weapon_collected)
+	if Events.has_signal("active_weapon_changed"):
+		if not Events.active_weapon_changed.is_connected(_on_weapon_swapped):
+			Events.active_weapon_changed.connect(_on_weapon_swapped)
 
 
-## Triggers falling sequence with rotational tilt and perspective squash.
-## [param tag_texture] The [Texture2D] graphic to assign and animate.
-func show_tag(tag_texture: Texture2D) -> void:
-	if not is_instance_valid(tag_rect) or tag_texture == null:
+## Handles weapon pickup, registering new tags and rearranging the stack.
+func _on_weapon_collected(weapon_id: String) -> void:
+	print("TagNotification: Weapon tag registered -> ", weapon_id)
+	if not _collected_order.has(weapon_id):
+		_collected_order.append(weapon_id)
+		_create_tag_node(weapon_id)
+
+	_active_weapon = weapon_id
+	_rearrange_stack(true)
+	_start_dismiss_timer()
+
+
+## Rearranges tags on hotkey weapon swap without bounce drop animation.
+func _on_weapon_swapped(weapon_id: String) -> void:
+	print("TagNotification: Weapon swapped to -> ", weapon_id)
+	if _active_weapon == weapon_id:
+		return
+	_active_weapon = weapon_id
+	_rearrange_stack(false)
+	_start_dismiss_timer()
+
+
+## Starts or restarts the auto-dismiss timer.
+func _start_dismiss_timer() -> void:
+	print("TagNotification: Starting dismissal timer (", DISPLAY_DURATION, "s).")
+	var current_weapon: String = _active_weapon
+	_dismiss_timer = get_tree().create_timer(DISPLAY_DURATION)
+	_dismiss_timer.timeout.connect(
+		func() -> void:
+			if _active_weapon == current_weapon:
+				_dismiss_stack()
+	)
+
+
+## Retracts all dogtag nodes upwards past the top screen boundary.
+func _dismiss_stack() -> void:
+	print("TagNotification: Dismissing dogtags off-screen.")
+	if is_instance_valid(_stack_tween) and _stack_tween.is_running():
+		_stack_tween.kill()
+
+	_stack_tween = create_tween().set_parallel(true)
+
+	for weapon_id: String in _collected_order:
+		var rect: TextureRect = _spawned_tags.get(weapon_id) as TextureRect
+		if not is_instance_valid(rect):
+			continue
+
+		var offscreen_y: float = -rect.size.y - 60.0
+		(
+			_stack_tween
+			. tween_property(rect, "position:y", offscreen_y, 0.4)
+			. set_trans(Tween.TRANS_QUAD)
+			. set_ease(Tween.EASE_IN)
+		)
+		_stack_tween.tween_property(rect, "modulate:a", 0.0, 0.35)
+
+
+## Spawns and configures a TextureRect node for a weapon tag.
+func _create_tag_node(weapon_id: String) -> void:
+	var tex: Texture2D = TAG_TEXTURES.get(weapon_id, null) as Texture2D
+	if tex == null:
 		return
 
-	print("TagNotification: Starting tag animation sequence.")
-	tag_rect.texture = tag_texture
-	tag_rect.pivot_offset = tag_rect.size * 0.5
+	var rect: TextureRect = TextureRect.new()
+	rect.name = "Tag_" + weapon_id
+	rect.texture = tex
+	rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	rect.custom_minimum_size = Vector2(75.0, 130.0)
+	rect.size = rect.custom_minimum_size
+	rect.pivot_offset = rect.size * 0.5
+	rect.position = Vector2((size.x - rect.size.x) * 0.5, -rect.size.y - 60.0)
+	rect.modulate.a = 0.0
+	add_child(rect)
 
-	if is_instance_valid(_active_tween) and _active_tween.is_valid():
-		_active_tween.kill()
+	_spawned_tags[weapon_id] = rect
 
-	# Start above top screen boundary with neutral rotation and flat projection
-	tag_rect.position.y = -tag_rect.size.y - 20.0
-	tag_rect.rotation_degrees = 0.0
-	tag_rect.scale = Vector2(1.0, 1.0)
-	modulate.a = 1.0
 
-	var target_y: float = DROP_OFFSET_Y
-	var cos_tilt: float = cos(deg_to_rad(TARGET_ROTATION_DEG))
+## Animates the tag hierarchy so active is in front and others are layered behind.
+func _rearrange_stack(is_pickup_drop: bool) -> void:
+	var screen_center_x: float = size.x * 0.5
+	var bg_index: int = 0
 
-	_active_tween = create_tween().set_parallel(true)
+	if is_instance_valid(_stack_tween) and _stack_tween.is_running():
+		_stack_tween.kill()
 
-	# Falling motion with elastic settling bounce
-	(
-		_active_tween
-		. tween_property(tag_rect, "position:y", target_y, 0.65)
-		. set_trans(Tween.TRANS_BACK)
-		. set_ease(Tween.EASE_OUT)
-	)
+	_stack_tween = create_tween().set_parallel(true)
 
-	# 15-degree roll tilt
-	(
-		_active_tween
-		. tween_property(tag_rect, "rotation_degrees", TARGET_ROTATION_DEG, 0.55)
-		. set_trans(Tween.TRANS_CUBIC)
-		. set_ease(Tween.EASE_OUT)
-	)
+	for weapon_id: String in _collected_order:
+		var rect: TextureRect = _spawned_tags.get(weapon_id) as TextureRect
+		if not is_instance_valid(rect):
+			continue
 
-	# Pseudo-3D yaw compression: horizontal scale shrinks proportionally to tilt angle
-	(
-		_active_tween
-		. tween_property(tag_rect, "scale:x", cos_tilt * 0.9, 0.55)
-		. set_trans(Tween.TRANS_CUBIC)
-		. set_ease(Tween.EASE_OUT)
-	)
+		var is_active: bool = weapon_id == _active_weapon
 
-	# Subtle 3D swing recoil
-	(
-		_active_tween
-		. chain()
-		. tween_property(tag_rect, "rotation_degrees", TARGET_ROTATION_DEG - 3.0, 0.4)
-		. set_trans(Tween.TRANS_SINE)
-		. set_ease(Tween.EASE_IN_OUT)
-	)
+		if is_active:
+			move_child(rect, get_child_count() - 1)
+			var target_pos: Vector2 = Vector2(screen_center_x - (rect.size.x * 0.5), ACTIVE_Y)
 
-	(
-		_active_tween
-		. parallel()
-		. tween_property(tag_rect, "scale:x", cos_tilt, 0.4)
-		. set_trans(Tween.TRANS_SINE)
-		. set_ease(Tween.EASE_IN_OUT)
-	)
+			if is_pickup_drop or rect.position.y < 0.0:
+				rect.position.y = -rect.size.y - 20.0
+				rect.rotation_degrees = 0.0
+				(
+					_stack_tween
+					. tween_property(rect, "position", target_pos, 0.6)
+					. set_trans(Tween.TRANS_BACK)
+					. set_ease(Tween.EASE_OUT)
+				)
+			else:
+				(
+					_stack_tween
+					. tween_property(rect, "position", target_pos, 0.25)
+					. set_trans(Tween.TRANS_QUAD)
+					. set_ease(Tween.EASE_OUT)
+				)
 
-	# Settle hold and fade out
-	_active_tween.chain().tween_interval(DISPLAY_DURATION)
-	(
-		_active_tween
-		. chain()
-		. tween_property(self, "modulate:a", 0.0, 0.35)
-		. set_trans(Tween.TRANS_QUAD)
-		. set_ease(Tween.EASE_IN)
-	)
+			_stack_tween.tween_property(rect, "scale", Vector2.ONE, 0.3)
+			_stack_tween.tween_property(rect, "rotation_degrees", 12.0, 0.4)
+			_stack_tween.tween_property(rect, "modulate", Color(1.0, 1.0, 1.0, 1.0), 0.25)
+		else:
+			var offset_multiplier: float = -1.0 if bg_index % 2 == 0 else 1.0
+			var side_dist: float = (floorf(float(bg_index) / 2.0) + 1.0) * TAG_SPREAD_X
+			var bg_x: float = (
+				screen_center_x - (rect.size.x * 0.5) + (side_dist * offset_multiplier)
+			)
+
+			var bg_pos: Vector2 = Vector2(bg_x, BACKGROUND_Y)
+			move_child(rect, 0)
+
+			(
+				_stack_tween
+				. tween_property(rect, "position", bg_pos, 0.35)
+				. set_trans(Tween.TRANS_QUAD)
+				. set_ease(Tween.EASE_OUT)
+			)
+			_stack_tween.tween_property(rect, "scale", Vector2(0.78, 0.78), 0.35)
+			_stack_tween.tween_property(rect, "rotation_degrees", -6.0 * offset_multiplier, 0.35)
+			_stack_tween.tween_property(rect, "modulate", Color(0.4, 0.4, 0.45, 0.55), 0.35)
+			bg_index += 1

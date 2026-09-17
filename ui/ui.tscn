@@ -33,6 +33,7 @@
 [ext_resource type="Texture2D" uid="uid://drekpdqmtmxfi" path="res://assets/images/UI_Icon_Swimming.jpeg" id="22_hhu8p"]
 [ext_resource type="Script" uid="uid://c5ucjjha1efk8" path="res://ui/notification_hud.gd" id="23_k48q6"]
 [ext_resource type="Script" uid="uid://dvlg5io1bfsi1" path="res://ui/debug_overlay.gd" id="24_c74r5"]
+[ext_resource type="Script" uid="uid://th5tgjsebcpu" path="res://ui/ammo_hud.gd" id="34_p762i"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_p7vwb"]
 shader = ExtResource("5_8dubc")
@@ -822,6 +823,47 @@ scroll_active = false
 
 [node name="DeathScreen" parent="." unique_id=1910211973 instance=ExtResource("16_mf2ns")]
 visible = false
+
+[node name="AmmoHUD" type="Control" parent="." unique_id=392918481]
+layout_mode = 3
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -150.0
+offset_top = -150.0
+grow_horizontal = 0
+grow_vertical = 0
+script = ExtResource("34_p762i")
+
+[node name="MarginContainer" type="MarginContainer" parent="AmmoHUD" unique_id=401754987]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_top = 50
+theme_override_constants/margin_right = 50
+theme_override_constants/margin_bottom = 50
+
+[node name="HBoxContainer" type="HBoxContainer" parent="AmmoHUD/MarginContainer" unique_id=1685998749]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="CurrentAmmoLabel" type="Label" parent="AmmoHUD/MarginContainer/HBoxContainer" unique_id=569075923]
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+
+[node name="DividerLabel" type="Label" parent="AmmoHUD/MarginContainer/HBoxContainer" unique_id=1143579694]
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+text = "/"
+
+[node name="ReserveAmmoLabel" type="Label" parent="AmmoHUD/MarginContainer/HBoxContainer" unique_id=1641375697]
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
 
 [connection signal="pressed" from="DebugOverlay/DebugPanel/PanelContainer/VBoxContainer/WireframeButton" to="." method="_on_wireframe_button_pressed"]
 [connection signal="pressed" from="DebugOverlay/DebugPanel/PanelContainer/VBoxContainer/WireframeOverlayButton" to="." method="_on_wireframe_overlay_button_pressed"]

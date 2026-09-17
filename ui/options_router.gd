@@ -6,6 +6,9 @@ extends Control
 ## Emitted when the player clicks the master back button.
 signal back_requested
 
+## Visual layer bitmask assigned to diorama nodes (Layer 11).
+const PREVIEW_LAYER_MASK: int = 1 << 10
+
 ## Reference to the video settings panel.
 @onready var video_panel: Panel = %VideoOptionsPanel
 
@@ -86,10 +89,12 @@ func _ready() -> void:
 	_route_diorama_view(video_panel)
 	_evaluate_diorama_state()
 
-	var settings_lvl: Node = diorama_viewport.find_child("SettingsLevel", true, false)
-	if is_instance_valid(settings_lvl):
-		print("UI: Isolating SettingsLevel nodes to visual layer 11.")
-		_assign_visual_layer_recursive(settings_lvl, 11)
+	if is_instance_valid(diorama_viewport):
+		var settings_lvl: Node = diorama_viewport.find_child("SettingsLevel", true, false)
+		if is_instance_valid(settings_lvl):
+			print("UI: Isolating SettingsLevel nodes to visual layer 11.")
+			_assign_visual_layer_recursive(settings_lvl, 11)
+		_activate_graphics_camera()
 
 
 ## Binds the shared diorama ViewportTexture to preview displays.
@@ -210,9 +215,6 @@ func _evaluate_diorama_state() -> void:
 	var should_render: bool = is_visible_in_tree() and is_preview
 	print("UI: Diorama rendering state updated -> ", should_render)
 
-	diorama_viewport.render_target_clear_mode = (
-		SubViewport.CLEAR_MODE_ALWAYS if should_render else SubViewport.CLEAR_MODE_NEVER
-	)
 	diorama_viewport.render_target_update_mode = (
 		SubViewport.UPDATE_ALWAYS if should_render else SubViewport.UPDATE_DISABLED
 	)
@@ -228,7 +230,6 @@ func teardown_diorama() -> void:
 	print("UI: Tearing down diorama viewport.")
 	if is_instance_valid(diorama_viewport):
 		diorama_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
-		diorama_viewport.render_target_clear_mode = SubViewport.CLEAR_MODE_NEVER
 		diorama_viewport.process_mode = Node.PROCESS_MODE_DISABLED
 	_set_preview_shader_active(false)
 
@@ -246,7 +247,7 @@ func warmup_diorama() -> void:
 	diorama_viewport.process_mode = Node.PROCESS_MODE_DISABLED
 
 
-## Activates the CCTV preview camera node inside [SubViewport].
+## Activates and isolates the CCTV preview camera node inside [SubViewport].
 func _activate_graphics_camera() -> void:
 	if not is_instance_valid(diorama_viewport):
 		return
@@ -259,6 +260,7 @@ func _activate_graphics_camera() -> void:
 			)
 
 	if is_instance_valid(_graphics_camera):
+		_graphics_camera.cull_mask = PREVIEW_LAYER_MASK
 		_graphics_camera.current = true
 
 
@@ -275,6 +277,7 @@ func _set_preview_shader_active(is_active: bool) -> void:
 ## Handles master back button clicks and notifies the main menu coordinator.
 func _on_master_back_pressed() -> void:
 	print("UI: Master back button pressed.")
+	teardown_diorama()
 	back_requested.emit()
 
 

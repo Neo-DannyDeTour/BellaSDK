@@ -83,7 +83,7 @@ func _connect_signals() -> void:
 	glow_options.item_selected.connect(_on_glow_selected)
 
 
-## Connects slider and LineEdit pairs with auto-clear and fallback handling.
+## Connects slider and LineEdit pairs with deferred save and signal dispatch on drag end.
 ## [param slider] Target [HSlider] node.
 ## [param line] Target [LineEdit] node.
 ## [param key] Setting key identifier.
@@ -93,16 +93,26 @@ func _connect_signals() -> void:
 func _connect_slider(
 	slider: HSlider, line: LineEdit, key: String, min_v: float, max_v: float, step_val: float
 ) -> void:
+	if not is_instance_valid(slider) or not is_instance_valid(line):
+		return
 	slider.min_value = min_v
 	slider.max_value = max_v
 	slider.step = step_val
 
+	# Update numeric readout during drag without firing heavy pipeline invalidations
 	slider.value_changed.connect(
 		func(val: float) -> void:
 			if not line.has_focus():
 				line.text = "%.2f" % val
-			GlobalSettings.save_setting("Settings", key, val)
-			effects_settings_changed.emit()
+	)
+
+	# Persist and dispatch only when release occurs
+	slider.drag_ended.connect(
+		func(value_changed: bool) -> void:
+			if value_changed:
+				print("EffectsSection: Drag ended for ", key, " -> ", slider.value)
+				GlobalSettings.save_setting("Settings", key, slider.value)
+				effects_settings_changed.emit()
 	)
 
 	line.focus_entered.connect(

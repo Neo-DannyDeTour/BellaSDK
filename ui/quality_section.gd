@@ -93,7 +93,7 @@ func _connect_signals() -> void:
 	_connect_slider(mesh_lod_slider, mesh_lod_line, "mesh_lod_threshold", 0.0, 4.0, 0.01, false)
 
 
-## Connects slider and LineEdit pairs with auto-clear and fallback handling.
+## Connects slider and LineEdit pairs with deferred save and signal dispatch on drag end.
 ## [param slider] The [HSlider] node.
 ## [param line] The [LineEdit] node.
 ## [param key] Setting key identifier.
@@ -116,14 +116,22 @@ func _connect_slider(
 	slider.max_value = max_v
 	slider.step = step_val
 
+	# Update the UI label in real time without triggering heavy pipeline rebuilds
 	slider.value_changed.connect(
 		func(val: float) -> void:
 			if not line.has_focus():
 				line.text = (
 					str(int(val)) if is_int else ("%.1f" % val if step_val == 0.1 else "%.2f" % val)
 				)
-			GlobalSettings.save_setting("Settings", key, val)
-			quality_settings_changed.emit()
+	)
+
+	# Dispatch expensive pipeline reconfigurations only when the drag action completes
+	slider.drag_ended.connect(
+		func(value_changed: bool) -> void:
+			if value_changed:
+				print("QualitySection: Drag ended for ", key, " -> ", slider.value)
+				GlobalSettings.save_setting("Settings", key, slider.value)
+				quality_settings_changed.emit()
 	)
 
 	line.focus_entered.connect(
@@ -148,6 +156,8 @@ func _connect_slider(
 				)
 				slider.value = s_val
 				print("QualitySection: Committed ", key, " input: ", s_val)
+				GlobalSettings.save_setting("Settings", key, s_val)
+				quality_settings_changed.emit()
 			line.release_focus()
 	)
 
@@ -167,6 +177,8 @@ func _connect_slider(
 				)
 				slider.value = s_val
 				print("QualitySection: Saved ", key, " on defocus: ", s_val)
+				GlobalSettings.save_setting("Settings", key, s_val)
+				quality_settings_changed.emit()
 	)
 
 
