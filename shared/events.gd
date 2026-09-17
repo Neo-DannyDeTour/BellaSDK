@@ -314,6 +314,22 @@ signal infinite_swim_toggled(is_enabled: bool)
 @warning_ignore("unused_signal")
 signal weapon_tag_displayed(weapon_id: String)
 
+## Emitted when the active weapon slot changes. Passes [param weapon_id].
+@warning_ignore("unused_signal")
+signal active_weapon_changed(weapon_id: String)
+
+## Emitted when active weapon ammunition count updates.
+@warning_ignore("unused_signal")
+signal weapon_ammo_changed(current: int, reserve: int, capacity: int)
+
+## Emitted when active weapon completes a reload sequence.
+@warning_ignore("unused_signal")
+signal weapon_reloaded(weapon_tag: String)
+
+## Emitted when an ammo box is gathered. Passes [param ammo_type] and [param amount].
+@warning_ignore("unused_signal")
+signal ammo_collected(ammo_type: StringName, amount: int)
+
 ## Visual animation style presets for chapter title card sequences.
 enum ChapterAnimStyle {
 	SIMPLE,
