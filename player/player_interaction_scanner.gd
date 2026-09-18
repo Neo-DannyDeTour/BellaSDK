@@ -124,8 +124,8 @@ func handle_shoot_input() -> void:
 			inv.shoot_active_weapon()
 		else:
 			for child: Node in weapon_holder.get_children():
-				if child is HitscanWeapon and (child as HitscanWeapon).visible:
-					(child as HitscanWeapon).shoot(camera)
+				if child.has_method("shoot") and bool(child.get("visible")):
+					child.call("shoot", camera)
 					break
 
 
@@ -143,8 +143,8 @@ func handle_reload_input() -> void:
 			inv.reload_active_weapon()
 		else:
 			for child: Node in weapon_holder.get_children():
-				if child is HitscanWeapon and (child as HitscanWeapon).visible:
-					(child as HitscanWeapon).reload()
+				if child.has_method("reload") and bool(child.get("visible")):
+					child.call("reload")
 					break
 
 

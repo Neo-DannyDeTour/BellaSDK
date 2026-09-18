@@ -3,7 +3,7 @@ class_name WeaponInventoryComponent
 extends Node
 
 ## References mapped to inventory slots 0 through 4.
-var slots: Array[HitscanWeapon] = [null, null, null, null, null]
+var slots: Array[Node3D] = [null, null, null, null, null]
 ## Index of currently equipped slot (-1 when empty).
 var current_slot_index: int = -1
 ## Index of previously equipped slot for fast swapping.
@@ -46,16 +46,20 @@ func _scan_existing_weapons() -> void:
 	if not is_instance_valid(weapon_holder):
 		return
 	for child: Node in weapon_holder.get_children():
-		if child is HitscanWeapon:
-			register_weapon(child as HitscanWeapon)
+		if child.has_method("shoot") and child is Node3D:
+			register_weapon(child as Node3D)
 
 
 ## Registers a weapon into its preferred slot or first free slot.
-func register_weapon(weapon: HitscanWeapon) -> void:
-	print("WeaponInventoryComponent: Registering weapon -> ", weapon.weapon_tag)
+func register_weapon(weapon: Node3D) -> void:
+	var tag: String = (
+		str(weapon.get("weapon_tag")) if weapon.get("weapon_tag") != null else weapon.name
+	)
+	print("WeaponInventoryComponent: Registering weapon -> ", tag)
 
 	# Determine target index (0-based) from weapon's default_slot (1-based)
-	var target_idx: int = clampi(weapon.default_slot - 1, 0, slots.size() - 1)
+	var slot_val: int = int(weapon.get("default_slot")) if weapon.get("default_slot") != null else 1
+	var target_idx: int = clampi(slot_val - 1, 0, slots.size() - 1)
 
 	# If preferred slot is occupied by an existing weapon, displace or search free slot
 	if slots[target_idx] != null and slots[target_idx] != weapon:
@@ -69,7 +73,7 @@ func register_weapon(weapon: HitscanWeapon) -> void:
 			print("WeaponInventoryComponent: All slots full. Overriding slot ", target_idx + 1)
 
 	slots[target_idx] = weapon
-	print("WeaponInventoryComponent: Assigned ", weapon.weapon_tag, " to slot ", target_idx + 1)
+	print("WeaponInventoryComponent: Assigned ", tag, " to slot ", target_idx + 1)
 
 	# Immediately switch to newly acquired weapon
 	select_slot(target_idx)
@@ -92,16 +96,23 @@ func select_slot(index: int) -> void:
 	current_slot_index = index
 
 	for i: int in range(slots.size()):
-		var w: HitscanWeapon = slots[i]
+		var w: Node3D = slots[i]
 		if is_instance_valid(w):
 			var is_active: bool = i == current_slot_index
 			w.visible = is_active
 			w.set_process(is_active)
 			w.set_physics_process(is_active)
 
-	var active_gun: HitscanWeapon = slots[current_slot_index]
-	Events.active_weapon_changed.emit(active_gun.weapon_tag)
-	active_gun.sync_ammo_ui()
+	var active_gun: Node3D = slots[current_slot_index]
+	var active_tag: String = (
+		str(active_gun.get("weapon_tag"))
+		if active_gun.get("weapon_tag") != null
+		else active_gun.name
+	)
+	if is_instance_valid(Events) and Events.has_signal("active_weapon_changed"):
+		Events.active_weapon_changed.emit(active_tag)
+	if active_gun.has_method("sync_ammo_ui"):
+		active_gun.call("sync_ammo_ui")
 
 
 ## Swaps directly back to previously equipped weapon.
@@ -114,14 +125,16 @@ func swap_to_previous() -> void:
 ## Fires the active weapon. Called by InteractionScanner.
 func shoot_active_weapon() -> void:
 	if current_slot_index >= 0 and is_instance_valid(slots[current_slot_index]):
-		slots[current_slot_index].shoot(camera)
+		if slots[current_slot_index].has_method("shoot"):
+			slots[current_slot_index].call("shoot", camera)
 
 
 ## Triggers reload on the currently equipped weapon.
 func reload_active_weapon() -> void:
 	print("WeaponInventoryComponent: reload_active_weapon() called.")
 	if current_slot_index >= 0 and is_instance_valid(slots[current_slot_index]):
-		slots[current_slot_index].reload()
+		if slots[current_slot_index].has_method("reload"):
+			slots[current_slot_index].call("reload")
 
 
 ## Adds ammunition to reserve pool for weapons matching [param target_ammo_type].
@@ -132,12 +145,16 @@ func add_ammo(target_ammo_type: StringName, amount: int) -> bool:
 	print("WeaponInventoryComponent: Adding ", amount, " rounds of ", target_ammo_type)
 	var applied: bool = false
 
-	for weapon: HitscanWeapon in slots:
-		if is_instance_valid(weapon) and weapon.ammo_type == target_ammo_type:
-			weapon.reserve_ammo += amount
-			print(weapon.weapon_tag, ": New reserve ammo count -> ", weapon.reserve_ammo)
-			weapon.sync_ammo_ui()
+	for weapon: Node3D in slots:
+		if is_instance_valid(weapon) and weapon.get("ammo_type") == target_ammo_type:
+			var res_ammo: int = int(weapon.get("reserve_ammo")) + amount
+			weapon.set("reserve_ammo", res_ammo)
+			var w_tag: String = str(weapon.get("weapon_tag"))
+			print(w_tag, ": New reserve ammo count -> ", res_ammo)
+			if weapon.has_method("sync_ammo_ui"):
+				weapon.call("sync_ammo_ui")
 			applied = true
 
-	Events.ammo_collected.emit(target_ammo_type, amount)
+	if is_instance_valid(Events) and Events.has_signal("ammo_collected"):
+		Events.ammo_collected.emit(target_ammo_type, amount)
 	return applied
