@@ -223,7 +223,8 @@ func enter_terminal_mode(terminal: Node3D) -> void:
 		terminal_start_pos = player_body.global_position
 
 	# Standardized Event Bus Emission
-	Events.terminal_mode_toggled.emit(true)
+	if is_instance_valid(Events) and Events.has_signal("terminal_mode_toggled"):
+		Events.terminal_mode_toggled.emit(true)
 	terminal_mode_toggled.emit(true)
 
 
@@ -238,7 +239,8 @@ func exit_terminal_mode() -> void:
 	active_terminal = null
 
 	# Standardized Event Bus Emission
-	Events.terminal_mode_toggled.emit(false)
+	if is_instance_valid(Events) and Events.has_signal("terminal_mode_toggled"):
+		Events.terminal_mode_toggled.emit(false)
 	terminal_mode_toggled.emit(false)
 
 
