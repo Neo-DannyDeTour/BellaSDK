@@ -9,7 +9,8 @@ var _post_mat: ShaderMaterial
 ## Lifecycle method registering viewport listeners for visual effects.
 func _ready() -> void:
 	print("UI: DioramaPostProcess initialized inside SubViewport.")
-	color = Color(1.0, 1.0, 1.0, 1.0)
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 
 	if material is ShaderMaterial:
 		_post_mat = material as ShaderMaterial

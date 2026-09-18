@@ -6,8 +6,10 @@ extends Control
 ## Emitted when the player clicks the master back button.
 signal back_requested
 
-## Visual layer bitmask assigned to diorama nodes (Layer 11).
+## Visual layer bitmask assigned to diorama geometry (Layer 11).
 const PREVIEW_LAYER_MASK: int = 1 << 10
+## Visual layer bitmask assigned to volumetric fog volumes (Layer 10).
+const VOLUMETRIC_LAYER_MASK: int = 1 << 9
 
 ## Reference to the video settings panel.
 @onready var video_panel: Panel = %VideoOptionsPanel
@@ -86,15 +88,19 @@ func _ready() -> void:
 
 	visibility_changed.connect(_on_visibility_changed)
 	_current_panel = video_panel
-	_route_diorama_view(video_panel)
-	_evaluate_diorama_state()
 
 	if is_instance_valid(diorama_viewport):
+		if not diorama_viewport.own_world_3d:
+			print("UI: Forcing own_world_3d on diorama initialization.")
+			diorama_viewport.own_world_3d = true
+
 		var settings_lvl: Node = diorama_viewport.find_child("SettingsLevel", true, false)
 		if is_instance_valid(settings_lvl):
 			print("UI: Isolating SettingsLevel nodes to visual layer 11.")
 			_assign_visual_layer_recursive(settings_lvl, 11)
-		_activate_graphics_camera()
+
+	_route_diorama_view(video_panel)
+	_evaluate_diorama_state()
 
 
 ## Binds the shared diorama ViewportTexture to preview displays.
@@ -105,10 +111,16 @@ func _bind_diorama_textures() -> void:
 
 	print("UI: Binding Diorama ViewportTexture to static sockets.")
 	var tex: ViewportTexture = diorama_viewport.get_texture()
+
 	if is_instance_valid(video_display):
 		video_display.texture = tex
+		video_display.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		video_display.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+
 	if is_instance_valid(access_display):
 		access_display.texture = tex
+		access_display.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		access_display.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 
 	_preview_layer = get_node_or_null("PreviewShaderLayer") as CanvasLayer
 	if not is_instance_valid(_preview_layer):
@@ -204,6 +216,8 @@ func _route_diorama_view(active_panel: Panel) -> void:
 			and accessibility_panel.has_method("_setup_diorama_cameras")
 		):
 			accessibility_panel.call("_setup_diorama_cameras")
+	else:
+		_deactivate_graphics_camera()
 
 
 ## Evaluates conditions and sets [SubViewport] update mode.
@@ -215,19 +229,22 @@ func _evaluate_diorama_state() -> void:
 	var should_render: bool = is_visible_in_tree() and is_preview
 	print("UI: Diorama rendering state updated -> ", should_render)
 
-	diorama_viewport.render_target_update_mode = (
-		SubViewport.UPDATE_ALWAYS if should_render else SubViewport.UPDATE_DISABLED
-	)
-	diorama_viewport.process_mode = (
-		Node.PROCESS_MODE_INHERIT if should_render else Node.PROCESS_MODE_DISABLED
-	)
+	if should_render:
+		diorama_viewport.process_mode = Node.PROCESS_MODE_INHERIT
+		diorama_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+		_activate_graphics_camera()
+	else:
+		diorama_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+		diorama_viewport.process_mode = Node.PROCESS_MODE_DISABLED
+		_deactivate_graphics_camera()
 
 	_set_preview_shader_active(should_render)
 
 
-## Forcibly deactivates diorama rendering to release GPU resources.
+## Forcibly deactivates diorama rendering and camera to release GPU resources.
 func teardown_diorama() -> void:
 	print("UI: Tearing down diorama viewport.")
+	_deactivate_graphics_camera()
 	if is_instance_valid(diorama_viewport):
 		diorama_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 		diorama_viewport.process_mode = Node.PROCESS_MODE_DISABLED
@@ -239,29 +256,44 @@ func warmup_diorama() -> void:
 	if not is_instance_valid(diorama_viewport):
 		return
 	print("UI: Pre-allocating diorama pipeline buffers.")
+	if not diorama_viewport.own_world_3d:
+		diorama_viewport.own_world_3d = true
+
+	_activate_graphics_camera()
 	diorama_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	diorama_viewport.process_mode = Node.PROCESS_MODE_INHERIT
 	await get_tree().process_frame
 	await get_tree().process_frame
-	diorama_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
-	diorama_viewport.process_mode = Node.PROCESS_MODE_DISABLED
+
+	# Check active panel state rather than unconditionally killing the viewport
+	_evaluate_diorama_state()
 
 
-## Activates and isolates the CCTV preview camera node inside [SubViewport].
+## Activates and isolates the preview camera node inside [SubViewport].
 func _activate_graphics_camera() -> void:
+	print("UI: Activating diorama graphics camera.")
 	if not is_instance_valid(diorama_viewport):
 		return
 
 	if not is_instance_valid(_graphics_camera):
-		_graphics_camera = (diorama_viewport.find_child("Camera_graphics", true, false) as Camera3D)
+		_graphics_camera = diorama_viewport.find_child("Camera_graphics", true, false) as Camera3D
 		if not is_instance_valid(_graphics_camera):
 			_graphics_camera = (
 				diorama_viewport.find_child("Camera_Graphics", true, false) as Camera3D
 			)
 
 	if is_instance_valid(_graphics_camera):
-		_graphics_camera.cull_mask = PREVIEW_LAYER_MASK
+		# Render Layer 11 (Geometry) and Layer 10 (Volumetrics)
+		_graphics_camera.cull_mask = PREVIEW_LAYER_MASK | VOLUMETRIC_LAYER_MASK
 		_graphics_camera.current = true
+		_graphics_camera.process_mode = Node.PROCESS_MODE_INHERIT
+
+
+## Deactivates the preview camera so it yields priority to gameplay cameras.
+func _deactivate_graphics_camera() -> void:
+	print("UI: Deactivating diorama graphics camera.")
+	if is_instance_valid(_graphics_camera):
+		_graphics_camera.current = false
 
 
 ## Controls the preview shader pass canvas layer.

@@ -19,7 +19,7 @@ var _pending_renderer: String = ""
 var _pending_gpu_index: int = -1
 
 
-## Connects section events and triggers initial engine settings dispatch.
+## Connects section events, activates diorama rendering, and applies settings.
 func _ready() -> void:
 	print("VideoOptions: Main panel coordinator initialized.")
 	display_section.display_settings_changed.connect(_apply_all_settings)
@@ -35,7 +35,14 @@ func _ready() -> void:
 		if manager.has_signal("benchmark_completed"):
 			manager.benchmark_completed.connect(_on_benchmark_completed)
 
+	VideoApplier.set_diorama_active(get_tree(), true)
 	_apply_all_settings()
+
+
+## Lifecycle cleanup ensuring diorama sleeping when the options panel exits tree.
+func _exit_tree() -> void:
+	print("VideoOptions: Exiting tree; putting diorama rendering to sleep.")
+	VideoApplier.set_diorama_active(get_tree(), false)
 
 
 ## Synchronizes preset effects settings when the master preset changes.
@@ -158,11 +165,12 @@ func _apply_all_settings() -> void:
 	var glow_key: String = (
 		GlobalSettings.get_setting("Settings", "glow", VideoConfig.DEFAULT_GLOW) as String
 	)
+	var raw_dof_amount: float = float(GlobalSettings.get_setting("Settings", "dof_amount", 0.15))
 
 	var config: Dictionary = {
 		"fsr_scale": VideoConfig.FSR_MODES.get(fsr_key, 1.0) as float,
 		"aa_settings": VideoConfig.AA_MODES.get(aa_key, {}) as Dictionary,
-		"shadow_atlas": shadow_data.get("atlas_size", 2048) as int,
+		"shadow_atlas": shadow_data.get("atlas_size", 4096) as int,
 		"dynamic_light_shadows": dyn_shadows,
 		"shadow_filter": shadow_filter,
 		"positional_shadow_distance": p_shadow_dist,
@@ -183,7 +191,7 @@ func _apply_all_settings() -> void:
 		"sdfgi": VideoConfig.SDFGI_MODES.get(sdfgi_key, {}) as Dictionary,
 		"fog": VideoConfig.FOG_MODES.get(fog_key, {}) as Dictionary,
 		"glow": VideoConfig.GLOW_MODES.get(glow_key, {}) as Dictionary,
-		"dof_amount": float(GlobalSettings.get_setting("Settings", "dof_amount", 0.15)),
+		"dof_amount": raw_dof_amount if dof_val else 0.0,
 	}
 	VideoApplier.apply_viewport_pipeline(get_tree(), get_viewport(), config)
 

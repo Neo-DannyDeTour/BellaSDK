@@ -6,6 +6,10 @@
 class_name RenderDiagnosticsPanel
 extends PanelContainer
 
+@warning_ignore("unused_signal")
+## Emitted when diagnostic metrics refresh. Passes a snapshot [Dictionary].
+signal metrics_updated(data: Dictionary)
+
 ## Tab mode selection for diagnostic inspection.
 enum DiagnosticTab {
 	PIPELINE,
@@ -45,6 +49,29 @@ const HITCH_STUTTER_THRESHOLD_MS: float = 33.333
 ## Dedicated RichTextLabel for static geometry snapshot to avoid text repainting stalls.
 @onready var survey_label: RichTextLabel = %SurveyLabel if has_node("%SurveyLabel") else null
 
+## Button toggling live layer isolation to identify heavy visual elements.
+@onready
+var live_isolator_button: Button = %LiveIsolatorButton if has_node("%LiveIsolatorButton") else null
+
+## Button dumping current geometry and render profile to console and disk.
+@onready var dump_audit_button: Button = %DumpAuditButton if has_node("%DumpAuditButton") else null
+
+## Toggle button for real-time directional and positional shadow casting.
+@onready var shadows_toggle_button: Button = (
+	%ToggleShadowsButton if has_node("%ToggleShadowsButton") else null
+)
+
+## Toggle button for real-time signed distance field global illumination.
+@onready
+var sdfgi_toggle_button: Button = %ToggleSdfgiButton if has_node("%ToggleSdfgiButton") else null
+
+## Toggle button for real-time depth fog and volumetric fog.
+@onready var fog_toggle_button: Button = %ToggleFogButton if has_node("%ToggleFogButton") else null
+
+## Button toggling a minimal diorama inspection mode for performance isolation.
+@onready
+var diorama_button: Button = %ToggleDioramaButton if has_node("%ToggleDioramaButton") else null
+
 ## Current active diagnostic tab.
 var _current_tab: DiagnosticTab = DiagnosticTab.PERFORMANCE
 
@@ -75,9 +102,14 @@ var _csv_flush_timer: float = 0.0
 ## Flag preventing hitch logger re-entry while executing deliberate manual scans.
 var _is_performing_manual_scan: bool = false
 
+## Tracks active isolation pass state for rendering layers.
+var _is_isolating_layers: bool = false
 
-## Lifecycle method called when the node enters the scene tree.
-## Connects tab signals, layout constraints, and initializes rendering measurement.
+## Tracks active diorama mode state for scene isolation.
+var _is_diorama_active: bool = false
+
+
+## Lifecycle hook connecting buttons, setting constraints, and starting frame timer.
 func _ready() -> void:
 	print("RenderDiagnosticsPanel: Initializing diagnostic hooks and viewport counters.")
 	visible = false
@@ -87,6 +119,20 @@ func _ready() -> void:
 	subviewports_tab_button.pressed.connect(_on_pipeline_tab_pressed)
 	perf_tab_button.pressed.connect(_on_perf_tab_pressed)
 	scan_geometry_button.pressed.connect(_on_scan_geometry_pressed)
+
+	if is_instance_valid(live_isolator_button):
+		live_isolator_button.pressed.connect(_on_live_isolator_pressed)
+	if is_instance_valid(dump_audit_button):
+		dump_audit_button.pressed.connect(_on_dump_audit_pressed)
+	if is_instance_valid(diorama_button):
+		diorama_button.pressed.connect(_on_diorama_pressed)
+	if is_instance_valid(shadows_toggle_button):
+		shadows_toggle_button.pressed.connect(_on_shadows_toggled)
+	if is_instance_valid(sdfgi_toggle_button):
+		sdfgi_toggle_button.pressed.connect(_on_sdfgi_toggled)
+	if is_instance_valid(fog_toggle_button):
+		fog_toggle_button.pressed.connect(_on_fog_toggled)
+
 	_update_tab_button_visuals()
 
 	if OS.has_feature("debug"):
@@ -95,6 +141,8 @@ func _ready() -> void:
 	var vp_rid: RID = get_viewport().get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(vp_rid, true)
 	_last_tick_usec = Time.get_ticks_usec()
+
+	sync_toggle_button_labels()
 
 
 ## Closes persistent file handles and flushes remaining records on node exit.
@@ -161,7 +209,7 @@ func _apply_layout_constraints() -> void:
 
 
 ## Accumulates delta time, buffers hitch events, and periodically updates diagnostics.
-## [param delta] The elapsed time since the previous frame in seconds.
+## [param delta] Elapsed duration since the prior frame in seconds.
 func _process(delta: float) -> void:
 	var now_usec: int = Time.get_ticks_usec()
 	var frame_time_ms: float = (now_usec - _last_tick_usec) * 0.001
@@ -185,19 +233,20 @@ func _process(delta: float) -> void:
 		_refresh_diagnostics_display()
 
 
-## Toggles panel visibility state.
-## [return] The new visibility state after toggling.
+## Toggles panel visibility and resynchronizes state if opened.
+## [return] The new visibility state.
 func toggle_window() -> bool:
 	visible = not visible
 	print("RenderDiagnosticsPanel: Toggled visibility to ", visible)
 	if visible:
 		_apply_layout_constraints()
+		sync_toggle_button_labels()
 		_refresh_diagnostics_display()
 	return visible
 
 
 ## Records hitch data into memory and queues CSV row without synchronous disk writes.
-## [param frame_time_ms] The total elapsed duration of the spiked frame.
+## [param frame_time_ms] Elapsed duration of spiked frame in ms.
 func _record_hitch_event(frame_time_ms: float) -> void:
 	var vp_rid: RID = get_viewport().get_viewport_rid()
 	var gpu_ms: float = RenderingServer.viewport_get_measured_render_time_gpu(vp_rid)
@@ -348,7 +397,7 @@ func _apply_survey_to_ui() -> void:
 		survey_label.text = _cached_branch_survey
 
 
-## Constructs a fixed-size, plain-text performance report using engine counters.
+## Constructs comprehensive performance report tracking bottlenecks.
 ## [return] Pre-aligned diagnostic string with zero dynamic tree recursion.
 func _build_performance_report() -> String:
 	var vp_rid: RID = get_viewport().get_viewport_rid()
@@ -363,6 +412,17 @@ func _build_performance_report() -> String:
 	var total_cpu_ms: float = cpu_script_ms + cpu_phys_ms + cpu_prep_ms
 	var draw_calls: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
 	var objects_drawn: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME))
+	var primitives: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))
+
+	var pipe_mesh: int = RenderingServer.get_rendering_info(
+		RenderingServer.RENDERING_INFO_PIPELINE_COMPILATIONS_MESH
+	)
+	var pipe_canvas: int = RenderingServer.get_rendering_info(
+		RenderingServer.RENDERING_INFO_PIPELINE_COMPILATIONS_CANVAS
+	)
+
+	var phys_pairs: int = int(Performance.get_monitor(Performance.PHYSICS_3D_COLLISION_PAIRS))
+	var phys_islands: int = int(Performance.get_monitor(Performance.PHYSICS_3D_ISLAND_COUNT))
 
 	var is_gpu: bool = gpu_ms > total_cpu_ms
 	var max_time: float = gpu_ms if is_gpu else total_cpu_ms
@@ -372,15 +432,24 @@ func _build_performance_report() -> String:
 		"""=== PRIMARY BOTTLENECK ===
 Status: [%s] (%.2f ms | %.1f%% budget)
 
-=== TOP OFFENDERS ===
+=== TIME BREAKDOWN ===
 * GPU Passes          : %.2f ms
 * CPU Process/Scripts : %.2f ms
 * CPU Render Prep     : %.2f ms
 * CPU Physics         : %.2f ms
 
-=== DRAW METRICS ===
+=== DRAW CALL DISTRIBUTION ===
 * Total Draw Calls    : %d (Target: < 600)
 * Objects Drawn       : %d
+* Primitives          : %d
+
+=== PIPELINES & SHADER SPIKES ===
+* Mesh Pipeline Comp  : %d
+* Canvas Pipeline Comp: %d
+
+=== 3D PHYSICS BROADPHASE ===
+* Active Pairs        : %d
+* Physics Islands     : %d
 """
 		% [
 			"GPU BOUND" if is_gpu else "CPU BOUND",
@@ -391,7 +460,12 @@ Status: [%s] (%.2f ms | %.1f%% budget)
 			cpu_prep_ms,
 			cpu_phys_ms,
 			draw_calls,
-			objects_drawn
+			objects_drawn,
+			primitives,
+			pipe_mesh,
+			pipe_canvas,
+			phys_pairs,
+			phys_islands
 		]
 	)
 
@@ -400,7 +474,6 @@ Status: [%s] (%.2f ms | %.1f%% budget)
 ## [param env] Target environment resource to test.
 ## [return] Array of active heavy post-processing feature names.
 func _get_active_environment_effects(env: Environment) -> PackedStringArray:
-	# print("RenderDiagnosticsPanel: Auditing Environment resource settings.")
 	var active_effects: PackedStringArray = PackedStringArray()
 	if not env:
 		return active_effects
@@ -450,7 +523,6 @@ func _detect_viewport_environment_effects(vp: Viewport) -> PackedStringArray:
 ## [param effects] Array of active post-processing effect names.
 ## [return] Formatted BBCode string representing active effects.
 func _format_effects_bbcode(effects: PackedStringArray) -> String:
-	# print("RenderDiagnosticsPanel: Formatting environment flags into BBCode.")
 	if effects.is_empty():
 		return "[color=gray]None (Clean)[/color]"
 
@@ -515,8 +587,8 @@ func _build_pipeline_report() -> String:
 
 
 ## Recursively collects all SubViewport nodes including internal children.
-## [param current_node] The current node being inspected.
-## [param out_viewports] The destination array to populate with found SubViewports.
+## [param current_node] Current node inspected.
+## [param out_viewports] Destination array for discovered SubViewports.
 func _collect_subviewports(current_node: Node, out_viewports: Array[SubViewport]) -> void:
 	if current_node is SubViewport:
 		out_viewports.append(current_node)
@@ -529,3 +601,173 @@ func _collect_subviewports(current_node: Node, out_viewports: Array[SubViewport]
 func _on_scan_geometry_pressed() -> void:
 	print("RenderDiagnosticsPanel: Triggering scene hierarchy scan.")
 	scan_scene_geometry()
+
+
+## Toggles live rendering layer isolation to inspect visual complexity.
+func _on_live_isolator_pressed() -> void:
+	_is_isolating_layers = not _is_isolating_layers
+	var state_str: String = "on" if _is_isolating_layers else "off"
+	print("live isolator %s" % state_str)
+	var cam: Camera3D = get_viewport().get_camera_3d()
+	if is_instance_valid(cam):
+		if _is_isolating_layers:
+			cam.cull_mask = 1
+		else:
+			cam.cull_mask = 0xFFFFF
+
+
+## Dumps real-time render metrics and scene tree breakdown to output and disk.
+func _on_dump_audit_pressed() -> void:
+	print("dump audit triggered")
+	scan_scene_geometry()
+	var report: String = _build_performance_report()
+	print(report)
+	if is_instance_valid(survey_label):
+		print(_cached_branch_survey)
+
+
+## Toggles simplified scene diorama view to isolate performance bottlenecks.
+func _on_diorama_pressed() -> void:
+	_is_diorama_active = not _is_diorama_active
+	var state_str: String = "on" if _is_diorama_active else "off"
+	print("diorama %s" % state_str)
+	var current_scene: Node = get_tree().current_scene
+	if not is_instance_valid(current_scene):
+		return
+	for child: Node in current_scene.get_children():
+		if child is Node3D and child.name != "Player" and child.name != "Environment":
+			(child as Node3D).visible = not _is_diorama_active
+
+
+## Retrieves the active [Environment] from camera, world, or tree.
+## [return] The active [Environment] or null if missing.
+func _get_active_environment() -> Environment:
+	var vp: Viewport = get_viewport()
+	var cam: Camera3D = vp.get_camera_3d()
+	if is_instance_valid(cam) and cam.environment:
+		return cam.environment
+
+	var world_3d: World3D = vp.find_world_3d()
+	if is_instance_valid(world_3d) and world_3d.environment:
+		return world_3d.environment
+
+	var world_env: WorldEnvironment = (
+		get_tree().root.find_child("WorldEnvironment", true, false) as WorldEnvironment
+	)
+	if is_instance_valid(world_env) and world_env.environment:
+		return world_env.environment
+
+	return null
+
+
+## Deterministically tests if any [Light3D] casts shadows.
+## [param root_node] Root node to traverse.
+## [return] True if at least one light casts shadows.
+func _are_any_shadows_enabled(root_node: Node) -> bool:
+	var stack: Array[Node] = [root_node]
+	while not stack.is_empty():
+		var curr: Node = stack.pop_back()
+		if curr is Light3D and (curr as Light3D).shadow_enabled:
+			return true
+		for child: Node in curr.get_children():
+			stack.append(child)
+	return false
+
+
+## Synchronizes UI toggle button labels with engine state.
+func sync_toggle_button_labels() -> void:
+	print("RenderDiagnosticsPanel: Synchronizing all toggle buttons.")
+	var env: Environment = _get_active_environment()
+
+	if is_instance_valid(sdfgi_toggle_button):
+		var is_sdfgi: bool = env.sdfgi_enabled if is_instance_valid(env) else false
+		sdfgi_toggle_button.text = "SDFGI %s" % ("on" if is_sdfgi else "off")
+
+	if is_instance_valid(fog_toggle_button):
+		var is_fog: bool = false
+		if is_instance_valid(env):
+			is_fog = env.fog_enabled or env.volumetric_fog_enabled
+		fog_toggle_button.text = "Fog %s" % ("on" if is_fog else "off")
+
+	if is_instance_valid(shadows_toggle_button):
+		var curr_scene: Node = get_tree().current_scene
+		var has_shadows: bool = _are_any_shadows_enabled(curr_scene) if curr_scene else false
+		shadows_toggle_button.text = "Shadows %s" % ("on" if has_shadows else "off")
+
+
+## Toggles shadow casting across all scene [Light3D] nodes.
+func _on_shadows_toggled() -> void:
+	var current_scene: Node = get_tree().current_scene
+	if not is_instance_valid(current_scene):
+		return
+
+	var any_shadows_active: bool = _are_any_shadows_enabled(current_scene)
+	var target_state: bool = not any_shadows_active
+	var stack: Array[Node] = [current_scene]
+
+	while not stack.is_empty():
+		var node: Node = stack.pop_back()
+		if node is Light3D:
+			(node as Light3D).shadow_enabled = target_state
+		for child: Node in node.get_children():
+			stack.append(child)
+
+	var state_str: String = "on" if target_state else "off"
+	print("shadows %s" % state_str)
+	if is_instance_valid(shadows_toggle_button):
+		shadows_toggle_button.text = "Shadows %s" % state_str
+	_refresh_diagnostics_display()
+
+
+## Toggles SDFGI global illumination on active [Environment].
+func _on_sdfgi_toggled() -> void:
+	var env: Environment = _get_active_environment()
+	if not env:
+		print("sdfgi off")
+		if is_instance_valid(sdfgi_toggle_button):
+			sdfgi_toggle_button.text = "SDFGI off"
+		return
+
+	env.sdfgi_enabled = not env.sdfgi_enabled
+	var state_str: String = "on" if env.sdfgi_enabled else "off"
+	print("SDFGI %s" % state_str)
+	if is_instance_valid(sdfgi_toggle_button):
+		sdfgi_toggle_button.text = "SDFGI %s" % state_str
+	_refresh_diagnostics_display()
+
+
+## Toggles distance and volumetric fog on active [Environment].
+func _on_fog_toggled() -> void:
+	var env: Environment = _get_active_environment()
+	if not env:
+		print("fog off")
+		if is_instance_valid(fog_toggle_button):
+			fog_toggle_button.text = "Fog off"
+		return
+
+	var new_state: bool = not (env.fog_enabled or env.volumetric_fog_enabled)
+	env.fog_enabled = new_state
+	env.volumetric_fog_enabled = new_state
+	var state_str: String = "on" if new_state else "off"
+	print("fog %s" % state_str)
+	if is_instance_valid(fog_toggle_button):
+		fog_toggle_button.text = "Fog %s" % state_str
+	_refresh_diagnostics_display()
+
+
+## Cycles viewport debug draw mode between normal, overdraw, and unshaded.
+func cycle_debug_draw_mode() -> void:
+	var vp: Viewport = get_viewport()
+	match vp.debug_draw:
+		Viewport.DEBUG_DRAW_DISABLED:
+			vp.debug_draw = Viewport.DEBUG_DRAW_OVERDRAW
+			print("RenderDiagnosticsPanel: Debug draw -> OVERDRAW")
+		Viewport.DEBUG_DRAW_OVERDRAW:
+			vp.debug_draw = Viewport.DEBUG_DRAW_UNSHADED
+			print("RenderDiagnosticsPanel: Debug draw -> UNSHADED")
+		Viewport.DEBUG_DRAW_UNSHADED:
+			vp.debug_draw = Viewport.DEBUG_DRAW_WIREFRAME
+			print("RenderDiagnosticsPanel: Debug draw -> WIREFRAME")
+		_:
+			vp.debug_draw = Viewport.DEBUG_DRAW_DISABLED
+			print("RenderDiagnosticsPanel: Debug draw -> DISABLED")

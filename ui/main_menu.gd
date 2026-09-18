@@ -72,9 +72,8 @@ func _ready() -> void:
 	_check_game_context()
 	_return_to_main_buttons()
 
-	# Pre-allocate diorama GPU froxels and compile shaders asynchronously at boot
-	if is_instance_valid(options_router):
-		options_router.warmup_diorama()
+	# Sleep diorama rendering on boot until options are opened
+	VideoApplier.set_diorama_active(get_tree(), false)
 
 
 ## Connects all root navigation buttons to their respective callbacks.
@@ -176,6 +175,7 @@ func _stop_main_theme() -> void:
 ## Restores the primary navigation view and closes overlays.
 func _return_to_main_buttons() -> void:
 	print("UI: Restoring root menu view.")
+	VideoApplier.set_diorama_active(get_tree(), false)
 	if is_instance_valid(game_name_label):
 		game_name_label.visible = true
 	if is_instance_valid(main_buttons):
@@ -201,6 +201,7 @@ func _on_resume_pressed() -> void:
 func _on_new_game_pressed() -> void:
 	print("UI: Player clicked New Game.")
 	_stop_main_theme()
+	VideoApplier.set_diorama_active(get_tree(), false)
 	if is_instance_valid(options_router):
 		options_router.teardown_diorama()
 	if not has_calibrated:
@@ -219,6 +220,7 @@ func _on_new_game_pressed() -> void:
 func prepare_for_level_transition() -> void:
 	print("UI: Preparing main menu for level transition.")
 	_stop_main_theme()
+	VideoApplier.set_diorama_active(get_tree(), false)
 
 	if is_instance_valid(options_router):
 		options_router.teardown_diorama()
@@ -240,7 +242,7 @@ func _on_start_game_pressed() -> void:
 		get_tree().reload_current_scene()
 
 
-## Opens the options menu overlay.
+## Opens the options menu overlay and awakens diorama rendering.
 func _on_options_pressed() -> void:
 	print("UI: Player clicked Options.")
 	if is_instance_valid(game_name_label):
@@ -254,6 +256,8 @@ func _on_options_pressed() -> void:
 
 	if is_instance_valid(options_router):
 		options_router.select_tab_by_index(0)
+
+	VideoApplier.set_diorama_active(get_tree(), true)
 
 
 ## Opens the save/load menu overlay.

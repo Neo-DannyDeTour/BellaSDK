@@ -708,6 +708,7 @@ text = "Live Isolator"
 
 [node name="HBoxContainer2" type="HBoxContainer" parent="DiagnosticsPanel/MarginContainer/VBoxContainer" unique_id=961712230]
 layout_mode = 2
+alignment = 1
 
 [node name="ScanGeometryButton" type="Button" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/HBoxContainer2" unique_id=2081431460]
 unique_name_in_owner = true
@@ -719,26 +720,26 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Dump Audit"
 
-[node name="GridContainer" type="GridContainer" parent="DiagnosticsPanel/MarginContainer/VBoxContainer" unique_id=55781237]
+[node name="HBoxContainer3" type="HBoxContainer" parent="DiagnosticsPanel/MarginContainer/VBoxContainer" unique_id=139934946]
 layout_mode = 2
-columns = 2
+alignment = 1
 
-[node name="ToggleShadowsButton" type="Button" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/GridContainer" unique_id=1812698233]
+[node name="ToggleShadowsButton" type="Button" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/HBoxContainer3" unique_id=1812698233]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Shadows"
 
-[node name="ToggleSdfgiButton" type="Button" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/GridContainer" unique_id=255044364]
+[node name="ToggleSdfgiButton" type="Button" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/HBoxContainer3" unique_id=255044364]
 unique_name_in_owner = true
 layout_mode = 2
 text = "SDFGI"
 
-[node name="ToggleFogButton" type="Button" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/GridContainer" unique_id=477872202]
+[node name="ToggleFogButton" type="Button" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/HBoxContainer3" unique_id=477872202]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Fog"
 
-[node name="ToggleDioramaButton" type="Button" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/GridContainer" unique_id=1269942055]
+[node name="ToggleDioramaButton" type="Button" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/HBoxContainer3" unique_id=1269942055]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Diorama"
