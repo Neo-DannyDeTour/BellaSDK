@@ -31,9 +31,9 @@ radius = 0.25
 mass = 5.0
 script = ExtResource("2_b3mxu")
 fill_shader = ExtResource("3_dv72c")
-discharged_color = null
-charged_color = null
-glow_energy = null
+discharged_color = Color(1, 0, 0, 1)
+charged_color = Color(0, 1, 0, 1)
+glow_energy = 3.0
 is_charged = null
 vision_assist_material = null
 

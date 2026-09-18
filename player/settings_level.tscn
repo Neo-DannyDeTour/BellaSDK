@@ -25,6 +25,7 @@
 [ext_resource type="PackedScene" uid="uid://dmkmxdv0oc3q7" path="res://assets/VisTEST/2. Modular_Models/Props/walkway_left.tscn" id="25_oyi4l"]
 [ext_resource type="PackedScene" uid="uid://dpjfvh3ireax5" path="res://assets/VisTEST/2. Modular_Models/Props/ladder_left_1m.tscn" id="26_wd0o1"]
 [ext_resource type="PackedScene" uid="uid://b4pr7b4xgvkr7" path="res://assets/VisTEST/2. Modular_Models/Props/ladder_right_1m.tscn" id="27_l0g8g"]
+[ext_resource type="PackedScene" uid="uid://bmkchgyaeq2c8" path="res://interactables/energy_cell.tscn" id="28_8plba"]
 [ext_resource type="PackedScene" uid="uid://ep02e3j752sd" path="res://shared/ventilator.tscn" id="28_lnrub"]
 [ext_resource type="Texture2D" uid="uid://8u68cwmy0fbf" path="res://assets/VisTEST/2. Modular_Models/Walls/Walls_Concrete_Holes/Walls_Concrete_Holes_T_Concrete_Holes_Emission.png" id="30_r02c6"]
 [ext_resource type="Texture2D" uid="uid://hjtae12r5r6v" path="res://assets/VisTEST/2. Modular_Models/Walls/Walls_Concrete_Holes/Walls_Concrete_Holes_T_Concrete_Holes_Normal.png" id="31_5ywpj"]
@@ -1602,6 +1603,12 @@ mesh = SubResource("PlaneMesh_kja8q")
 transform = Transform3D(-4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0, 1, 19.70457, 5.2, 0)
 shape = SubResource("ConcavePolygonShape3D_ubk4r")
 
+[node name="EnergyCell" parent="StaticBody3D" unique_id=594279821 instance=ExtResource("28_8plba")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.27061, 1.7249999, 3.1201766)
+charged_color = Color(0, 0, 0, 1)
+glow_energy = 5.0
+is_charged = true
+
 [node name="Walkway_Right2" parent="." unique_id=136757007 instance=ExtResource("33_r02c6")]
 transform = Transform3D(-1.3113416e-07, 0, 1, 0, 1.2, 0, -3, 0, -4.371139e-08, 16, 0, -5.347)
 
@@ -1984,7 +1991,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.4175415, 4.881592, 0.008972
 size = Vector3(38.835083, 10.236816, 22.344116)
 data = ExtResource("53_yuk8b")
 
-[node name="PickableBarrelGreen" parent="." unique_id=594279821 instance=ExtResource("56_k566i")]
+[node name="PickableBarrelGreen" parent="." unique_id=1275037664 instance=ExtResource("56_k566i")]
 transform = Transform3D(0.5424285, 0, -0.84010196, 0, 1, 0, 0.84010196, 0, 0.5424285, 2.2152977, 2.5072021, 2.374266)
 
 [node name="godiva" parent="." unique_id=1337161665 groups=["friends"] instance=ExtResource("54_334ql")]
@@ -2044,5 +2051,6 @@ mesh = SubResource("QuadMesh_534t5")
 [node name="Camera_graphics" type="Camera3D" parent="Cameras" unique_id=1415452166]
 transform = Transform3D(-4.371139e-08, 0.258819, -0.9659258, 0, 0.96592575, 0.25881904, 1, 1.1313339e-08, -4.222196e-08, 6.4347787, 2.9699602, 0)
 cull_mask = 1024
+far = 250.0
 script = ExtResource("55_334ql")
 sweep_speed = 0.4
