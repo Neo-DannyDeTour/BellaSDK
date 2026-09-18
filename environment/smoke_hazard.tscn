@@ -1,0 +1,88 @@
+[gd_scene format=3 uid="uid://c5cl283k1mkjr"]
+
+[ext_resource type="Script" uid="uid://docl5p05jde1x" path="res://environment/smoke_hazard.gd" id="1_smpq6"]
+[ext_resource type="Shader" uid="uid://oxa4vl15ttjy" path="res://vfx/smoke_lod.gdshader" id="2_phnjv"]
+[ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://shared/editor_trigger_visualizer.gd" id="3_cu1br"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_534t5"]
+size = Vector3(1, 2, 1)
+
+[sub_resource type="Curve" id="Curve_ru5di"]
+_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.22331443, 1), 0.0, 0.0, 0, 0, Vector2(0.91853917, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
+point_count = 4
+
+[sub_resource type="CurveTexture" id="CurveTexture_ey1cf"]
+curve = SubResource("Curve_ru5di")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_cu1br"]
+emission_shape = 1
+emission_sphere_radius = 0.7
+angle_min = -179.99998
+angle_max = 180.00002
+direction = Vector3(0, 1, 0)
+spread = 25.0
+initial_velocity_min = 3.0
+initial_velocity_max = 6.0
+gravity = Vector3(0, 0.5, 0)
+damping_min = 1.5000001
+damping_max = 2.5
+scale_min = 0.8
+scale_max = 2.0
+alpha_curve = SubResource("CurveTexture_ey1cf")
+
+[sub_resource type="Gradient" id="Gradient_phnjv"]
+colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_phnjv"]
+gradient = SubResource("Gradient_phnjv")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.5, 0)
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_vgutb"]
+noise_type = 3
+frequency = 0.0284
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_cu1br"]
+noise = SubResource("FastNoiseLite_vgutb")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_smpq6"]
+render_priority = 0
+shader = ExtResource("2_phnjv")
+shader_parameter/noise_tex = SubResource("NoiseTexture2D_cu1br")
+shader_parameter/circle_mask = SubResource("GradientTexture2D_phnjv")
+shader_parameter/smoke_color = Color(0.9, 0.9, 0.9, 0.85)
+shader_parameter/max_lod = 8.0
+
+[sub_resource type="QuadMesh" id="QuadMesh_smpq6"]
+material = SubResource("ShaderMaterial_smpq6")
+size = Vector2(0.5, 0.5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vgutb"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.9, 0.2, 0.1, 0.3)
+
+[sub_resource type="BoxMesh" id="BoxMesh_ey1cf"]
+material = SubResource("StandardMaterial3D_vgutb")
+size = Vector3(1, 2, 1)
+
+[node name="SmokeHazard" type="Area3D" unique_id=761632134]
+collision_mask = 2
+script = ExtResource("1_smpq6")
+damage_per_tick = 25.0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1050280486]
+shape = SubResource("BoxShape3D_534t5")
+
+[node name="SmokeParticles" type="GPUParticles3D" parent="." unique_id=1134440122]
+amount = 50
+lifetime = 0.25
+fixed_fps = 60
+process_material = SubResource("ParticleProcessMaterial_cu1br")
+draw_pass_1 = SubResource("QuadMesh_smpq6")
+
+[node name="EditorTriggerVisualizer" type="MeshInstance3D" parent="." unique_id=1237472038]
+mesh = SubResource("BoxMesh_ey1cf")
+script = ExtResource("3_cu1br")
+metadata/_custom_type_script = "uid://q4v42nidwdr2"
