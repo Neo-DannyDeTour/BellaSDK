@@ -42,6 +42,7 @@ func before_each() -> void:
 func test_on_focus() -> void:
 	print("TestButton: test_on_focus() called.")
 	button.outline_material = ShaderMaterial.new()
+	button.label_interact = mock_label
 	button._on_focus()
 
 	assert_true(mock_label.visible, "Interact label should be visible on focus.")
@@ -53,6 +54,7 @@ func test_on_unfocus() -> void:
 	mock_label.show()
 	mock_mesh.material_overlay = ShaderMaterial.new()
 
+	button.label_interact = mock_label
 	button._on_unfocus()
 
 	assert_false(mock_label.visible, "Interact label should be hidden on unfocus.")
