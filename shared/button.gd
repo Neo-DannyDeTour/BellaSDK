@@ -85,8 +85,12 @@ func _sync_transmitter() -> void:
 ## No parameters.
 ## Returns: void.
 func _on_focus() -> void:
-	if is_instance_valid(label_interact):
-		label_interact.show()
+	var label: Label3D = (
+		label_interact if is_instance_valid(label_interact) else get_node_or_null("LabelInteract")
+		as Label3D
+	)
+	if is_instance_valid(label):
+		label.show()
 	if is_instance_valid(mesh_to_highlight) and is_instance_valid(outline_material):
 		mesh_to_highlight.material_overlay = outline_material
 
@@ -97,8 +101,12 @@ func _on_focus() -> void:
 ## No parameters.
 ## Returns: void.
 func _on_unfocus() -> void:
-	if is_instance_valid(label_interact):
-		label_interact.hide()
+	var label: Label3D = (
+		label_interact if is_instance_valid(label_interact) else get_node_or_null("LabelInteract")
+		as Label3D
+	)
+	if is_instance_valid(label):
+		label.hide()
 	if is_instance_valid(mesh_to_highlight):
 		mesh_to_highlight.material_overlay = null
 
@@ -158,7 +166,8 @@ func _on_interact(_player: CharacterBody3D) -> void:
 	# 2. Global Event Bus Trigger (Cross-Scene Decoupling)
 	if global_event_name != "":
 		print("Button executing: Broadcasting global event -> ", global_event_name)
-		Events.level_event_triggered.emit(global_event_name, is_turning_on)
+		if is_instance_valid(Events) and Events.has_signal("level_event_triggered"):
+			Events.level_event_triggered.emit(global_event_name, is_turning_on)
 
 	await get_tree().create_timer(1.0).timeout
 	can_press = true

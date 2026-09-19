@@ -124,8 +124,8 @@ func handle_shoot_input() -> void:
 			inv.shoot_active_weapon()
 		else:
 			for child: Node in weapon_holder.get_children():
-				if child is HitscanWeapon and (child as HitscanWeapon).visible:
-					(child as HitscanWeapon).shoot(camera)
+				if child.has_method("shoot") and bool(child.get("visible")):
+					child.call("shoot", camera)
 					break
 
 
@@ -143,8 +143,8 @@ func handle_reload_input() -> void:
 			inv.reload_active_weapon()
 		else:
 			for child: Node in weapon_holder.get_children():
-				if child is HitscanWeapon and (child as HitscanWeapon).visible:
-					(child as HitscanWeapon).reload()
+				if child.has_method("reload") and bool(child.get("visible")):
+					child.call("reload")
 					break
 
 
@@ -223,7 +223,8 @@ func enter_terminal_mode(terminal: Node3D) -> void:
 		terminal_start_pos = player_body.global_position
 
 	# Standardized Event Bus Emission
-	Events.terminal_mode_toggled.emit(true)
+	if is_instance_valid(Events) and Events.has_signal("terminal_mode_toggled"):
+		Events.terminal_mode_toggled.emit(true)
 	terminal_mode_toggled.emit(true)
 
 
@@ -238,7 +239,8 @@ func exit_terminal_mode() -> void:
 	active_terminal = null
 
 	# Standardized Event Bus Emission
-	Events.terminal_mode_toggled.emit(false)
+	if is_instance_valid(Events) and Events.has_signal("terminal_mode_toggled"):
+		Events.terminal_mode_toggled.emit(false)
 	terminal_mode_toggled.emit(false)
 
 
