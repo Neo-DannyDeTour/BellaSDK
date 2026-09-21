@@ -66,7 +66,14 @@ func _ready() -> void:
 
 	call_deferred("_capture_mouse")
 
-	in_game_console = get_node_or_null("/root/Console") as CanvasLayer
+	in_game_console = (
+		(
+			get_node_or_null("/root/InGameConsole") as CanvasLayer
+			if has_node("/root/InGameConsole")
+			else get_node_or_null("/root/Console")
+		)
+		as CanvasLayer
+	)
 
 	if not is_instance_valid(ui_controller):
 		ui_controller = get_node_or_null("UI") as UIController

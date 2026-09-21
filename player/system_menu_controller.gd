@@ -1,3 +1,4 @@
+## Coordinates global pause state, main menu presentation, and noclip debug flight.
 class_name SystemMenuController
 extends Node
 
@@ -5,11 +6,9 @@ extends Node
 # SIGNALS
 # --------------------------------------
 ## Emitted when the game's pause status changes.
-## [param is_paused] True if the game entered pause state.
 signal pause_toggled(is_paused: bool)
 
 ## Emitted when noclip flight mode is toggled.
-## [param is_flying] True if the player has entered noclip flight.
 signal noclip_toggled(is_flying: bool)
 
 # --------------------------------------
@@ -51,13 +50,13 @@ signal noclip_toggled(is_flying: bool)
 # --------------------------------------
 # VARIABLES
 # --------------------------------------
-## Security variable: Indicates if debug commands (noclip) are allowed via input or events.
+## Indicates if debug commands (noclip) are allowed via input or events.
 var is_debug_allowed: bool = OS.has_feature("debug")
 
 ## Indicates if the game is currently paused.
 var is_paused: bool = false
 
-## Indicates if a debug menu or overlay is open.
+## Indicates if an external debug menu or developer console is open.
 var is_menu_open: bool = false
 
 ## Instance of the main menu CanvasLayer.
@@ -78,6 +77,9 @@ var is_stunned: bool = false
 ## Cached original environment applied to camera before fullbright toggle.
 var _cached_camera_env: Environment = null
 
+## Reference to the active developer console instance.
+var _in_game_console: CanvasLayer = null
+
 
 ## Lifecycle initialization connecting debug events and instantiating menus.
 func _ready() -> void:
@@ -85,10 +87,24 @@ func _ready() -> void:
 	print("SystemMenuController: Initializing system menu and debug handlers.")
 	_setup_menu()
 	_setup_fullbright_environment()
+	_find_console_reference()
 
 	Events.debug_menu_toggled.connect(_on_debug_menu_toggled)
+	Events.console_toggled.connect(_on_console_toggled)
 	Events.noclip_ui_button_pressed.connect(toggle_noclip)
 	Events.fullbright_toggled.connect(_on_fullbright_toggled)
+
+
+## Locates and caches the developer console reference in the root tree.
+func _find_console_reference() -> void:
+	_in_game_console = (
+		(
+			get_node_or_null("/root/InGameConsole") as CanvasLayer
+			if has_node("/root/InGameConsole")
+			else get_node_or_null("/root/Console")
+		)
+		as CanvasLayer
+	)
 
 
 ## Instantiates the menu scene and attaches it to the viewport root safely.
@@ -132,9 +148,11 @@ func _setup_fullbright_environment() -> void:
 # INPUT HANDLING
 # --------------------------------------
 ## Intercepts global unhandled actions such as pause and noclip hotkeys.
-## [param event] The unhandled input event.
 func _unhandled_input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_cancel"):
+	if _is_console_active():
+		return
+
+	if event.is_action_pressed(&"ui_cancel"):
 		print("SystemMenuController: ui_cancel intercepted. Toggling pause.")
 		toggle_pause()
 		get_viewport().set_input_as_handled()
@@ -147,26 +165,34 @@ func _unhandled_input(event: InputEvent) -> void:
 	if flying and event is InputEventMouseButton and event.is_pressed():
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			noclip_speed_multiplier = minf(100.0, noclip_speed_multiplier * 1.1)
+			print("SystemMenuController: Noclip speed increased to ", noclip_speed_multiplier)
 			Events.noclip_speed_changed.emit(noclip_speed_multiplier)
 			get_viewport().set_input_as_handled()
 			return
 		if event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			noclip_speed_multiplier = maxf(0.1, noclip_speed_multiplier * 0.9)
+			print("SystemMenuController: Noclip speed decreased to ", noclip_speed_multiplier)
 			Events.noclip_speed_changed.emit(noclip_speed_multiplier)
 			get_viewport().set_input_as_handled()
 			return
 
-	if is_debug_allowed and event.is_action_pressed("noclip", false):
+	if is_debug_allowed and event.is_action_pressed(&"noclip", false):
 		print("SystemMenuController: Noclip hotkey intercepted.")
 		toggle_noclip()
 		get_viewport().set_input_as_handled()
 		return
 
 
+## Checks if the developer console overlay is actively displayed.
+func _is_console_active() -> bool:
+	if not is_instance_valid(_in_game_console):
+		_find_console_reference()
+	return is_instance_valid(_in_game_console) and _in_game_console.visible
+
+
 # --------------------------------------
 # META LOGIC
 # --------------------------------------
-## Toggles the global pause state and shows or hides the system menu instance.
 ## Toggles the global pause state and shows or hides the system menu instance.
 func toggle_pause() -> void:
 	is_paused = not is_paused
@@ -183,7 +209,6 @@ func toggle_pause() -> void:
 				menu_instance.call("_return_to_main_buttons")
 			menu_instance.hide()
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-		# Reclaim main camera focus from diorama
 		if is_instance_valid(camera):
 			camera.current = true
 
@@ -191,14 +216,17 @@ func toggle_pause() -> void:
 
 
 ## Tracks whether an external debug menu is opened.
-## [param is_open] True if the debug menu was opened.
 func _on_debug_menu_toggled(is_open: bool) -> void:
 	is_menu_open = is_open
 	print("SystemMenuController: _on_debug_menu_toggled() called. Open state: ", is_open)
 
 
+## Tracks whether the developer console overlay is opened.
+func _on_console_toggled(is_open: bool) -> void:
+	print("SystemMenuController: _on_console_toggled() called. Open state: ", is_open)
+
+
 ## Handles fullbright debug rendering toggling.
-## [param is_fullbright] True to enable fullbright lighting override.
 func _on_fullbright_toggled(is_fullbright: bool) -> void:
 	print("SystemMenuController: _on_fullbright_toggled() called. Active: ", is_fullbright)
 	if not is_instance_valid(camera):
@@ -251,7 +279,6 @@ func toggle_noclip() -> void:
 
 
 ## Calculates frame velocity and applies direct transform translations during noclip flight.
-## [param delta] The frame delta time in seconds.
 func process_noclip(delta: float) -> void:
 	if not flying or not is_instance_valid(player_body):
 		return
@@ -266,7 +293,6 @@ func process_noclip(delta: float) -> void:
 	fly_dir = fly_dir.normalized()
 
 	var current_speed: float = base_sprinting_speed * noclip_speed_multiplier
-	Events.noclip_speed_changed.emit(noclip_speed_multiplier)
 
 	if fly_dir.length() > 0:
 		player_body.velocity = fly_dir * current_speed

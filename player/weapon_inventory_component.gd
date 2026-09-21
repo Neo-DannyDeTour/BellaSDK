@@ -51,14 +51,15 @@ func _scan_existing_weapons() -> void:
 
 
 ## Registers a weapon into its preferred slot or first free slot.
+## [param weapon] The [Node3D] weapon instance to register.
 func register_weapon(weapon: Node3D) -> void:
-	var tag: String = (
-		str(weapon.get("weapon_tag")) if weapon.get("weapon_tag") != null else weapon.name
-	)
+	var weapon_tag_val: Variant = weapon.get("weapon_tag")
+	var tag: String = str(weapon_tag_val) if weapon_tag_val != null else String(weapon.name)
 	print("WeaponInventoryComponent: Registering weapon -> ", tag)
 
 	# Determine target index (0-based) from weapon's default_slot (1-based)
-	var slot_val: int = int(weapon.get("default_slot")) if weapon.get("default_slot") != null else 1
+	var default_slot_val: Variant = weapon.get("default_slot")
+	var slot_val: int = int(default_slot_val) if default_slot_val != null else 1
 	var target_idx: int = clampi(slot_val - 1, 0, slots.size() - 1)
 
 	# If preferred slot is occupied by an existing weapon, displace or search free slot
@@ -80,6 +81,7 @@ func register_weapon(weapon: Node3D) -> void:
 
 
 ## Selects a specific inventory slot [param index] (0 to 4).
+## [param index] The zero-based slot index to equip.
 func select_slot(index: int) -> void:
 	if index < 0 or index >= slots.size():
 		return
@@ -104,10 +106,9 @@ func select_slot(index: int) -> void:
 			w.set_physics_process(is_active)
 
 	var active_gun: Node3D = slots[current_slot_index]
+	var active_tag_val: Variant = active_gun.get("weapon_tag")
 	var active_tag: String = (
-		str(active_gun.get("weapon_tag"))
-		if active_gun.get("weapon_tag") != null
-		else active_gun.name
+		str(active_tag_val) if active_tag_val != null else String(active_gun.name)
 	)
 	if is_instance_valid(Events) and Events.has_signal("active_weapon_changed"):
 		Events.active_weapon_changed.emit(active_tag)
@@ -124,6 +125,7 @@ func swap_to_previous() -> void:
 
 ## Fires the active weapon. Called by InteractionScanner.
 func shoot_active_weapon() -> void:
+	print("WeaponInventoryComponent: shoot_active_weapon() called.")
 	if current_slot_index >= 0 and is_instance_valid(slots[current_slot_index]):
 		if slots[current_slot_index].has_method("shoot"):
 			slots[current_slot_index].call("shoot", camera)
