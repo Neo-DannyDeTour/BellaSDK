@@ -47,6 +47,8 @@ var _texture_assigned: bool = false
 var _skip_frame: bool = false
 ## Empty compositor resource blocking expensive global custom compute effects.
 var _empty_compositor: Compositor = null
+## Cached copy of the proxy camera's original environment resource.
+var _original_camera_environment: Environment = null
 
 
 ## Validates exported nodes, corrects root scaling, and initiates mirror setup.
@@ -296,23 +298,33 @@ func _isolate_mirror_camera_compositor() -> void:
 	mirror_camera.compositor = _empty_compositor
 
 
+## Restores the original environment resource when node exits tree.
+func _exit_tree() -> void:
+	if is_instance_valid(mirror_camera) and _original_camera_environment != null:
+		mirror_camera.environment = _original_camera_environment
+
+
 ## Overrides camera environment to permanently disable SDFGI, fog, and SSR passes.
 func _configure_mirror_environment() -> void:
 	print("Mirror: Stripping SDFGI, Fog, and screen-space passes on ", mirror_camera.name)
-	if not is_instance_valid(mirror_camera.environment):
-		mirror_camera.environment = Environment.new()
-	else:
-		mirror_camera.environment = mirror_camera.environment.duplicate() as Environment
+	if _original_camera_environment == null and is_instance_valid(mirror_camera.environment):
+		_original_camera_environment = mirror_camera.environment
 
-	var env: Environment = mirror_camera.environment
-	env.volumetric_fog_enabled = false
-	env.sdfgi_enabled = false
-	env.ssao_enabled = false
-	env.ssil_enabled = false
-	env.glow_enabled = false
-	env.ssr_enabled = false
-	env.fog_enabled = false
+	var base_env: Environment = (
+		_original_camera_environment if _original_camera_environment != null else Environment.new()
+	)
+	var stripped_env: Environment = base_env.duplicate() as Environment
 
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.2, 0.22, 0.28, 1.0)
-	env.ambient_light_energy = 1.0
+	stripped_env.volumetric_fog_enabled = false
+	stripped_env.sdfgi_enabled = false
+	stripped_env.ssao_enabled = false
+	stripped_env.ssil_enabled = false
+	stripped_env.glow_enabled = false
+	stripped_env.ssr_enabled = false
+	stripped_env.fog_enabled = false
+
+	stripped_env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	stripped_env.ambient_light_color = Color(0.2, 0.22, 0.28, 1.0)
+	stripped_env.ambient_light_energy = 1.0
+
+	mirror_camera.environment = stripped_env

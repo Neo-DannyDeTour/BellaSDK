@@ -217,10 +217,10 @@ func _generate_visual_segments() -> void:
 
 ## Builds the dynamic physics chain using instantiated link scenes and pin joints.
 func _generate_physics_chain() -> void:
-	print("PhysicsCable3D: _generate_physics_chain() generating bi-directional cable.")
+	print("PhysicsCable3D: _generate_physics_chain() generating cable.")
 
 	if not link_scene:
-		push_error("PhysicsCable3D: link_scene is not assigned in the inspector.")
+		push_error("PhysicsCable3D: link_scene is not assigned in inspector.")
 		return
 
 	if not is_instance_valid(start_anchor) or not is_instance_valid(end_plug):
@@ -252,7 +252,14 @@ func _generate_physics_chain() -> void:
 	var droop_amount: float = maxf(0.0, cable_length_meters - straight_dist) * 0.5
 
 	for i: int in range(total_links):
-		var link: RigidBody3D = link_scene.instantiate() as RigidBody3D
+		var raw_instance: Node = link_scene.instantiate()
+		if not (raw_instance is RigidBody3D):
+			if is_instance_valid(raw_instance):
+				raw_instance.queue_free()
+			push_error("PhysicsCable3D: Instantiated link is not a RigidBody3D!")
+			return
+
+		var link: RigidBody3D = raw_instance as RigidBody3D
 		link.mass = 0.05
 		add_child(link)
 
@@ -263,7 +270,8 @@ func _generate_physics_chain() -> void:
 			link.add_collision_exception_with(start_anchor as PhysicsBody3D)
 
 		var fraction: float = float(i + 1) / float(total_links + 1)
-		var drop_offset: Vector3 = Vector3.DOWN * (4.0 * droop_amount * fraction * (1.0 - fraction))
+		var drop_y: float = 4.0 * droop_amount * fraction * (1.0 - fraction)
+		var drop_offset: Vector3 = Vector3.DOWN * drop_y
 		link.global_position = (start_pos.lerp(end_pos, fraction) + drop_offset)
 
 		if not link.global_position.is_equal_approx(previous_body.global_position):

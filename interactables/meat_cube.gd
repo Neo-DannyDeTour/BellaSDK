@@ -78,16 +78,32 @@ func trigger_1_second_reset() -> void:
 	timer.timeout.connect(_respawn_cube)
 
 
-## Instantiates the [member meat_cube_scene_path] and deletes this instance.
+## Instantiates [member meat_cube_scene_path] and deletes this collapsed instance.
 func _respawn_cube() -> void:
 	print("Respawning a fresh meat cube to restore initial form.")
 
-	if meat_cube_scene_path != "":
-		var meat_cube_scene: PackedScene = load(meat_cube_scene_path) as PackedScene
-		if meat_cube_scene:
-			var fresh_cube: Node3D = meat_cube_scene.instantiate() as Node3D
-			get_parent().add_child(fresh_cube)
-			fresh_cube.global_transform = global_transform
-			queue_free()
+	if meat_cube_scene_path.is_empty():
+		print("Error: meat_cube_scene_path is empty. Assign it in Inspector.")
+		return
+
+	var loaded_res: Resource = load(meat_cube_scene_path)
+	if not (loaded_res is PackedScene):
+		print("Error: Failed to load PackedScene at: ", meat_cube_scene_path)
+		return
+
+	var meat_cube_scene: PackedScene = loaded_res as PackedScene
+	var raw_instance: Node = meat_cube_scene.instantiate()
+	if not (raw_instance is Node3D):
+		if is_instance_valid(raw_instance):
+			raw_instance.queue_free()
+		print("Error: Instantiated meat cube root is not a Node3D!")
+		return
+
+	var fresh_cube: Node3D = raw_instance as Node3D
+	var parent_node: Node = get_parent()
+	if is_instance_valid(parent_node):
+		parent_node.add_child(fresh_cube)
+		fresh_cube.global_transform = global_transform
+		queue_free()
 	else:
-		print("Error: meat_cube_scene_path is empty. Assign it in the Inspector.")
+		fresh_cube.queue_free()

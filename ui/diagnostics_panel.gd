@@ -1,13 +1,9 @@
 ## Manages runtime rendering diagnostics, bottleneck identification, and draw call breakdown.
-##
-## [RenderDiagnosticsPanel] analyzes CPU vs GPU frame budgets, ranks top resource offenders,
-## aggregates draw call/shadow sources via explicit snapshot,
-## and logs hitches safely in debug builds.
 class_name RenderDiagnosticsPanel
 extends PanelContainer
 
 @warning_ignore("unused_signal")
-## Emitted when diagnostic metrics refresh. Passes a snapshot [Dictionary].
+## Emitted when diagnostic metrics refresh. Passes snapshot data [Dictionary].
 signal metrics_updated(data: Dictionary)
 
 ## Tab mode selection for diagnostic inspection.
@@ -16,13 +12,13 @@ enum DiagnosticTab {
 	PERFORMANCE,
 }
 
-## Refresh interval in seconds (4 Hz) for cheap engine scalar updates.
+## Refresh interval in seconds (4 Hz) for engine scalar updates.
 const UPDATE_INTERVAL: float = 0.25
 
 ## Strict 60 FPS frame budget limit in milliseconds (1000.0 / 60.0).
 const TARGET_FRAME_BUDGET_MS: float = 16.666
 
-## Minimum time threshold in ms for a subsystem to be listed under Top Offenders.
+## Minimum time threshold in ms for a subsystem to be listed under offenders.
 const OFFENDER_THRESHOLD_MS: float = 0.5
 
 ## Maximum number of frame hitch records to retain in the display buffer.
@@ -31,29 +27,29 @@ const MAX_HITCH_RECORDS: int = 5
 ## Minimum interval in seconds between consecutive CSV disk flushes.
 const CSV_FLUSH_INTERVAL: float = 2.0
 
-## Hitch trigger threshold in milliseconds (target 33.33ms = 30 FPS drop threshold).
+## Hitch trigger threshold in milliseconds for drop detection.
 const HITCH_STUTTER_THRESHOLD_MS: float = 33.333
 
-## RichTextLabel displaying real-time formatted performance and pipeline diagnostics.
+## RichTextLabel displaying real-time formatted diagnostics.
 @onready var diagnostics_label: RichTextLabel = %DiagnosticsLabel
 
 ## Button switching view to viewport and canvas layer hierarchy.
 @onready var subviewports_tab_button: Button = %SubViewportsTabButton
 
-## Button switching view to CPU, GPU, and rendering performance monitors.
+## Button switching view to performance monitors.
 @onready var perf_tab_button: Button = %PerfTabButton
 
 ## Button triggering an explicit one-off scene geometry scan.
 @onready var scan_geometry_button: Button = %ScanGeometryButton
 
-## Dedicated RichTextLabel for static geometry snapshot to avoid text repainting stalls.
+## Dedicated RichTextLabel for static geometry snapshot.
 @onready var survey_label: RichTextLabel = %SurveyLabel if has_node("%SurveyLabel") else null
 
-## Button toggling live layer isolation to identify heavy visual elements.
+## Button toggling live layer isolation.
 @onready
 var live_isolator_button: Button = %LiveIsolatorButton if has_node("%LiveIsolatorButton") else null
 
-## Button dumping current geometry and render profile to console and disk.
+## Button dumping current geometry and render profile to disk.
 @onready var dump_audit_button: Button = %DumpAuditButton if has_node("%DumpAuditButton") else null
 
 ## Toggle button for real-time directional and positional shadow casting.
@@ -68,7 +64,7 @@ var sdfgi_toggle_button: Button = %ToggleSdfgiButton if has_node("%ToggleSdfgiBu
 ## Toggle button for real-time depth fog and volumetric fog.
 @onready var fog_toggle_button: Button = %ToggleFogButton if has_node("%ToggleFogButton") else null
 
-## Button toggling a minimal diorama inspection mode for performance isolation.
+## Button toggling a minimal diorama inspection mode.
 @onready
 var diorama_button: Button = %ToggleDioramaButton if has_node("%ToggleDioramaButton") else null
 
@@ -81,25 +77,25 @@ var _refresh_timer: float = 0.0
 ## Timestamp of the previous frame in microseconds for hitch detection.
 var _last_tick_usec: int = 0
 
-## Ring buffer storing recent hitch events exceeding 33.33 ms.
+## Ring buffer storing recent hitch events exceeding threshold.
 var _recent_hitches: Array[Dictionary] = []
 
-## Pre-allocated CSV file path targeting the user's desktop.
+## Pre-allocated CSV file path targeting the user desktop.
 var _csv_path: String = ""
 
-## Persistent FileAccess instance to prevent disk open/close stalls.
+## Persistent FileAccess instance preventing disk open/close stalls.
 var _csv_file: FileAccess
 
-## Static snapshot text for scene geometry to eliminate tree recursion lag.
+## Static snapshot text for scene geometry to eliminate tree recursion.
 var _cached_branch_survey: String = "Press [Scan Scene Geometry] to inspect hierarchy.\n"
 
-## In-memory write buffer for hitch lines to prevent blocking file I/O during frames.
+## In-memory write buffer for hitch lines preventing blocking file I/O.
 var _csv_write_buffer: PackedStringArray = PackedStringArray()
 
 ## Accumulated time since the last CSV disk flush.
 var _csv_flush_timer: float = 0.0
 
-## Flag preventing hitch logger re-entry while executing deliberate manual scans.
+## Flag preventing hitch logger re-entry during deliberate scans.
 var _is_performing_manual_scan: bool = false
 
 ## Tracks active isolation pass state for rendering layers.
@@ -109,9 +105,9 @@ var _is_isolating_layers: bool = false
 var _is_diorama_active: bool = false
 
 
-## Lifecycle hook connecting buttons, setting constraints, and starting frame timer.
+## Connects UI signals, sets constraints, and initializes measuring.
 func _ready() -> void:
-	print("RenderDiagnosticsPanel: Initializing diagnostic hooks and viewport counters.")
+	print("RenderDiagnosticsPanel: Initializing diagnostic hooks.")
 	visible = false
 	_apply_layout_constraints()
 	get_viewport().size_changed.connect(_apply_layout_constraints)
@@ -143,20 +139,21 @@ func _ready() -> void:
 	_last_tick_usec = Time.get_ticks_usec()
 
 	sync_toggle_button_labels()
+	_update_processing_state()
 
 
-## Closes persistent file handles and flushes remaining records on node exit.
+## Flushes remaining records and closes file handle on tree exit.
 func _exit_tree() -> void:
-	print("RenderDiagnosticsPanel: Flushing hitch data and releasing handles.")
+	print("RenderDiagnosticsPanel: Releasing handles.")
 	_flush_csv_to_disk()
 	if _csv_file:
 		_csv_file.close()
 		_csv_file = null
 
 
-## Initializes the desktop CSV file handle only in debug builds.
+## Initializes desktop CSV file handle only in debug builds.
 func _init_csv_logging() -> void:
-	print("RenderDiagnosticsPanel: Creating debug hitch logger on desktop.")
+	print("RenderDiagnosticsPanel: Creating debug hitch logger.")
 	var desktop_dir: String = OS.get_system_dir(OS.SYSTEM_DIR_DESKTOP)
 	_csv_path = desktop_dir.path_join("godot_hitches.csv")
 	var file_exists: bool = FileAccess.file_exists(_csv_path)
@@ -177,20 +174,20 @@ func _on_pipeline_tab_pressed() -> void:
 	_refresh_diagnostics_display()
 
 
-## Switches active tab to CPU/GPU and Rendering performance monitors.
+## Switches active tab to performance monitors.
 func _on_perf_tab_pressed() -> void:
 	_current_tab = DiagnosticTab.PERFORMANCE
 	_update_tab_button_visuals()
 	_refresh_diagnostics_display()
 
 
-## Updates visual button toggles to reflect the active tab.
+## Updates visual button states to reflect the active tab.
 func _update_tab_button_visuals() -> void:
 	subviewports_tab_button.disabled = (_current_tab == DiagnosticTab.PIPELINE)
 	perf_tab_button.disabled = (_current_tab == DiagnosticTab.PERFORMANCE)
 
 
-## Sets horizontal centering and full vertical screen spanning anchors.
+## Aligns panel horizontally centered with full vertical height.
 func _apply_layout_constraints() -> void:
 	var panel_width: float = 640.0
 	var half_width: float = panel_width / 2.0
@@ -208,19 +205,26 @@ func _apply_layout_constraints() -> void:
 	custom_minimum_size = Vector2(panel_width, 0.0)
 
 
-## Accumulates delta time, buffers hitch events, and periodically updates diagnostics.
-## [param delta] Elapsed duration since the prior frame in seconds.
+## Gates processing active state based on visibility and debug logging.
+func _update_processing_state() -> void:
+	var needs_process: bool = visible or (_csv_file != null and OS.has_feature("debug"))
+	set_process(needs_process)
+
+
+## Accumulates delta time, logs hitches, and flushes CSV buffer.
 func _process(delta: float) -> void:
-	var now_usec: int = Time.get_ticks_usec()
-	var frame_time_ms: float = (now_usec - _last_tick_usec) * 0.001
-	_last_tick_usec = now_usec
+	var has_logger: bool = _csv_file != null and OS.has_feature("debug")
 
-	if not _is_performing_manual_scan and frame_time_ms > HITCH_STUTTER_THRESHOLD_MS:
-		_record_hitch_event(frame_time_ms)
+	if has_logger:
+		var now_usec: int = Time.get_ticks_usec()
+		var frame_time_ms: float = (now_usec - _last_tick_usec) * 0.001
+		_last_tick_usec = now_usec
 
-	if _csv_file and OS.has_feature("debug"):
+		if not _is_performing_manual_scan and frame_time_ms > HITCH_STUTTER_THRESHOLD_MS:
+			_record_hitch_event(frame_time_ms)
+
 		_csv_flush_timer += delta
-		if _csv_flush_timer >= CSV_FLUSH_INTERVAL:
+		if _csv_flush_timer >= CSV_FLUSH_INTERVAL and not _csv_write_buffer.is_empty():
 			_csv_flush_timer = 0.0
 			_flush_csv_to_disk()
 
@@ -233,11 +237,12 @@ func _process(delta: float) -> void:
 		_refresh_diagnostics_display()
 
 
-## Toggles panel visibility and resynchronizes state if opened.
-## [return] The new visibility state.
+## Toggles panel visibility and manages active process state.
 func toggle_window() -> bool:
 	visible = not visible
 	print("RenderDiagnosticsPanel: Toggled visibility to ", visible)
+	_update_processing_state()
+
 	if visible:
 		_apply_layout_constraints()
 		sync_toggle_button_labels()
@@ -245,8 +250,7 @@ func toggle_window() -> bool:
 	return visible
 
 
-## Records hitch data into memory and queues CSV row without synchronous disk writes.
-## [param frame_time_ms] Elapsed duration of spiked frame in ms.
+## Records hitch telemetry in memory and queues CSV buffer line.
 func _record_hitch_event(frame_time_ms: float) -> void:
 	var vp_rid: RID = get_viewport().get_viewport_rid()
 	var gpu_ms: float = RenderingServer.viewport_get_measured_render_time_gpu(vp_rid)
@@ -275,13 +279,12 @@ func _record_hitch_event(frame_time_ms: float) -> void:
 	if _recent_hitches.size() > MAX_HITCH_RECORDS:
 		_recent_hitches.pop_front()
 
-	if _csv_file and OS.has_feature("debug"):
-		_csv_write_buffer.append(
-			"%s,%.2f,%s,%.2f,%d" % [timestamp, frame_time_ms, culprit, culprit_ms, draw_calls]
-		)
+	_csv_write_buffer.append(
+		"%s,%.2f,%s,%.2f,%d" % [timestamp, frame_time_ms, culprit, culprit_ms, draw_calls]
+	)
 
 
-## Flushes in-memory hitch entries to disk in batch to prevent frame stutter loops.
+## Writes buffered hitch records to disk to avoid frame stutter loops.
 func _flush_csv_to_disk() -> void:
 	if not _csv_file or _csv_write_buffer.is_empty():
 		return
@@ -291,7 +294,7 @@ func _flush_csv_to_disk() -> void:
 	_csv_file.flush()
 
 
-## Dispatches view refresh depending on the currently selected tab.
+## Refreshes panel display matching currently selected diagnostic tab.
 func _refresh_diagnostics_display() -> void:
 	if not diagnostics_label:
 		return
@@ -303,9 +306,7 @@ func _refresh_diagnostics_display() -> void:
 			diagnostics_label.text = _build_performance_report()
 
 
-## Audits 3D geometry and shadow sources across a given root node.
-## [param root_node] Node tree to traverse for geometry.
-## [return] Array of formatted text lines summarizing dense branches.
+## Audits geometry branches and active shadow lights for a root node.
 func _audit_branch_geometry(root_node: Node) -> PackedStringArray:
 	print("RenderDiagnosticsPanel: Auditing branch geometry for ", root_node.name)
 	var lines: PackedStringArray = PackedStringArray()
@@ -360,7 +361,7 @@ func _audit_branch_geometry(root_node: Node) -> PackedStringArray:
 	return lines
 
 
-## Performs a comprehensive scan across the root window and all SubViewports.
+## Traverses window hierarchy and compiles geometry statistics.
 func scan_scene_geometry() -> void:
 	print("RenderDiagnosticsPanel: Initiating full-tree geometry audit.")
 	_is_performing_manual_scan = true
@@ -391,14 +392,13 @@ func scan_scene_geometry() -> void:
 	_last_tick_usec = Time.get_ticks_usec()
 
 
-## Applies the survey text directly to the dedicated UI element.
+## Updates the survey label with cached scene hierarchy text.
 func _apply_survey_to_ui() -> void:
 	if is_instance_valid(survey_label):
 		survey_label.text = _cached_branch_survey
 
 
-## Constructs comprehensive performance report tracking bottlenecks.
-## [return] Pre-aligned diagnostic string with zero dynamic tree recursion.
+## Formats performance monitors into a detailed multi-channel breakdown.
 func _build_performance_report() -> String:
 	var vp_rid: RID = get_viewport().get_viewport_rid()
 	var gpu_ms: float = RenderingServer.viewport_get_measured_render_time_gpu(vp_rid)
@@ -470,9 +470,7 @@ Status: [%s] (%.2f ms | %.1f%% budget)
 	)
 
 
-## Audits post-processing features on a given [Environment] resource.
-## [param env] Target environment resource to test.
-## [return] Array of active heavy post-processing feature names.
+## Extracts active post-processing features on an [Environment] resource.
 func _get_active_environment_effects(env: Environment) -> PackedStringArray:
 	var active_effects: PackedStringArray = PackedStringArray()
 	if not env:
@@ -498,9 +496,7 @@ func _get_active_environment_effects(env: Environment) -> PackedStringArray:
 	return active_effects
 
 
-## Resolves active post-processing environment for a specific viewport.
-## [param vp] Viewport to query for active 3D camera or world environment.
-## [return] Array of detected active effect flag names.
+## Resolves active post-processing environment resource for a viewport.
 func _detect_viewport_environment_effects(vp: Viewport) -> PackedStringArray:
 	if vp is SubViewport and (vp as SubViewport).disable_3d:
 		return PackedStringArray()
@@ -519,9 +515,7 @@ func _detect_viewport_environment_effects(vp: Viewport) -> PackedStringArray:
 	return PackedStringArray()
 
 
-## Formats active post-processing tags into BBCode with warning colors.
-## [param effects] Array of active post-processing effect names.
-## [return] Formatted BBCode string representing active effects.
+## Formats detected environment effects with warning colors for BBCode.
 func _format_effects_bbcode(effects: PackedStringArray) -> String:
 	if effects.is_empty():
 		return "[color=gray]None (Clean)[/color]"
@@ -532,8 +526,7 @@ func _format_effects_bbcode(effects: PackedStringArray) -> String:
 	return ", ".join(colored_tokens)
 
 
-## Constructs the BBCode string report for SubViewports.
-## [return] Formatted BBCode viewport breakdown with full node paths.
+## Generates hierarchical breakdown of active SubViewports.
 func _build_pipeline_report() -> String:
 	var text: String = "[b][color=yellow]=== VIEWPORT & RENDER PIPELINE ===[/color][/b]\n"
 	var root_vp: Window = get_tree().root
@@ -586,9 +579,7 @@ func _build_pipeline_report() -> String:
 	return text
 
 
-## Recursively collects all SubViewport nodes including internal children.
-## [param current_node] Current node inspected.
-## [param out_viewports] Destination array for discovered SubViewports.
+## Recursively collects all SubViewport instances inside a parent node.
 func _collect_subviewports(current_node: Node, out_viewports: Array[SubViewport]) -> void:
 	if current_node is SubViewport:
 		out_viewports.append(current_node)
@@ -597,13 +588,13 @@ func _collect_subviewports(current_node: Node, out_viewports: Array[SubViewport]
 		_collect_subviewports(child, out_viewports)
 
 
-## Handles the scan button press to trigger an on-demand geometry audit.
+## Triggers geometry scan when user clicks the audit button.
 func _on_scan_geometry_pressed() -> void:
 	print("RenderDiagnosticsPanel: Triggering scene hierarchy scan.")
 	scan_scene_geometry()
 
 
-## Toggles live rendering layer isolation to inspect visual complexity.
+## Toggles rendering cull mask to isolate base rendering layer.
 func _on_live_isolator_pressed() -> void:
 	_is_isolating_layers = not _is_isolating_layers
 	var state_str: String = "on" if _is_isolating_layers else "off"
@@ -616,7 +607,7 @@ func _on_live_isolator_pressed() -> void:
 			cam.cull_mask = 0xFFFFF
 
 
-## Dumps real-time render metrics and scene tree breakdown to output and disk.
+## Dumps scene tree and performance metrics to debugger console.
 func _on_dump_audit_pressed() -> void:
 	print("dump audit triggered")
 	scan_scene_geometry()
@@ -626,7 +617,7 @@ func _on_dump_audit_pressed() -> void:
 		print(_cached_branch_survey)
 
 
-## Toggles simplified scene diorama view to isolate performance bottlenecks.
+## Toggles diorama mode hiding background nodes outside player and world.
 func _on_diorama_pressed() -> void:
 	_is_diorama_active = not _is_diorama_active
 	var state_str: String = "on" if _is_diorama_active else "off"
@@ -639,8 +630,7 @@ func _on_diorama_pressed() -> void:
 			(child as Node3D).visible = not _is_diorama_active
 
 
-## Retrieves the active [Environment] from camera, world, or tree.
-## [return] The active [Environment] or null if missing.
+## Finds the active [Environment] on camera, world, or WorldEnvironment node.
 func _get_active_environment() -> Environment:
 	var vp: Viewport = get_viewport()
 	var cam: Camera3D = vp.get_camera_3d()
@@ -651,18 +641,18 @@ func _get_active_environment() -> Environment:
 	if is_instance_valid(world_3d) and world_3d.environment:
 		return world_3d.environment
 
-	var world_env: WorldEnvironment = (
-		get_tree().root.find_child("WorldEnvironment", true, false) as WorldEnvironment
-	)
-	if is_instance_valid(world_env) and world_env.environment:
-		return world_env.environment
+	var current_scene: Node = get_tree().current_scene
+	if is_instance_valid(current_scene):
+		var world_env: WorldEnvironment = (
+			current_scene.find_child("WorldEnvironment", true, false) as WorldEnvironment
+		)
+		if is_instance_valid(world_env) and world_env.environment:
+			return world_env.environment
 
 	return null
 
 
-## Deterministically tests if any [Light3D] casts shadows.
-## [param root_node] Root node to traverse.
-## [return] True if at least one light casts shadows.
+## Checks if any child Light3D node currently casts shadows.
 func _are_any_shadows_enabled(root_node: Node) -> bool:
 	var stack: Array[Node] = [root_node]
 	while not stack.is_empty():
@@ -674,9 +664,9 @@ func _are_any_shadows_enabled(root_node: Node) -> bool:
 	return false
 
 
-## Synchronizes UI toggle button labels with engine state.
+## Synchronizes button text states with active environment settings.
 func sync_toggle_button_labels() -> void:
-	print("RenderDiagnosticsPanel: Synchronizing all toggle buttons.")
+	print("RenderDiagnosticsPanel: Synchronizing toggle buttons.")
 	var env: Environment = _get_active_environment()
 
 	if is_instance_valid(sdfgi_toggle_button):
@@ -692,10 +682,10 @@ func sync_toggle_button_labels() -> void:
 	if is_instance_valid(shadows_toggle_button):
 		var curr_scene: Node = get_tree().current_scene
 		var has_shadows: bool = _are_any_shadows_enabled(curr_scene) if curr_scene else false
-		shadows_toggle_button.text = "Shadows %s" % ("on" if has_shadows else "off")
+		shadows_toggle_button.text = ("Shadows %s" % ("on" if has_shadows else "off"))
 
 
-## Toggles shadow casting across all scene [Light3D] nodes.
+## Toggles shadow casting across all scene lights.
 func _on_shadows_toggled() -> void:
 	var current_scene: Node = get_tree().current_scene
 	if not is_instance_valid(current_scene):
@@ -719,7 +709,7 @@ func _on_shadows_toggled() -> void:
 	_refresh_diagnostics_display()
 
 
-## Toggles SDFGI global illumination on active [Environment].
+## Toggles signed distance field global illumination on the environment.
 func _on_sdfgi_toggled() -> void:
 	var env: Environment = _get_active_environment()
 	if not env:
@@ -736,7 +726,7 @@ func _on_sdfgi_toggled() -> void:
 	_refresh_diagnostics_display()
 
 
-## Toggles distance and volumetric fog on active [Environment].
+## Toggles distance fog and volumetric fog on the active environment.
 func _on_fog_toggled() -> void:
 	var env: Environment = _get_active_environment()
 	if not env:
@@ -755,7 +745,7 @@ func _on_fog_toggled() -> void:
 	_refresh_diagnostics_display()
 
 
-## Cycles viewport debug draw mode between normal, overdraw, and unshaded.
+## Cycles viewport debug modes between wireframe, overdraw, and unshaded.
 func cycle_debug_draw_mode() -> void:
 	var vp: Viewport = get_viewport()
 	match vp.debug_draw:

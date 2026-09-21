@@ -1,7 +1,4 @@
-## A modular component that allows a [CharacterBody3D] to push [RigidBody3D] nodes.
-##
-## Automatically extracts collision data from the parent body's `move_and_slide()`
-## and applies physical impulses while simulating mass resistance against player momentum.
+## Applies physical push impulses to [RigidBody3D] nodes with mass-based resistance.
 class_name PhysicsPusher
 extends Node
 
@@ -9,25 +6,24 @@ extends Node
 # EXPORTS
 # --------------------------------------
 @export_category("Node References")
-## The parent character body whose slide collisions will be analyzed.
+## Parent character body whose collisions are evaluated.
 @export var player_body: CharacterBody3D
 
 @export_category("Physics Settings")
-## The base push force scalar applied when walking into physics bodies.
+## Base impulse magnitude applied to physics objects.
 @export var push_force: float = 12.0
 
-## The mass scale factor (in kg) at which player movement slows down noticeably.
+## Mass threshold in kilograms scaling player resistance.
 @export var resistance_mass_scale: float = 25.0
 
 
 # --------------------------------------
 # CORE PROCESS LOGIC
 # --------------------------------------
-## Analyzes active collisions and pushes [RigidBody3D] targets with mass resistance.
-##
-## [param held_object] The item currently held by the player (ignored).
-## [param last_velocity] Player velocity vector prior to sliding.
-## [param reference_max_speed] Maximum expected movement speed for scalar normalization.
+## Evaluates slide collisions and applies purely horizontal central impulses.
+## [param held_object] Item carried by player to ignore.
+## [param last_velocity] Player velocity before move_and_slide.
+## [param reference_max_speed] Top locomotion speed for ratio clamping.
 func process_pushes(
 	held_object: Node3D, last_velocity: Vector3, reference_max_speed: float
 ) -> void:
@@ -46,7 +42,7 @@ func process_pushes(
 		if rb.freeze or rb.is_in_group(&"ignore_weight"):
 			continue
 
-		if held_object and rb == held_object:
+		if is_instance_valid(held_object) and rb == held_object:
 			continue
 
 		var push_dir: Vector3 = -collision.get_normal()
@@ -62,12 +58,12 @@ func process_pushes(
 
 		# 1. Calculate mass-scaled impulse
 		var speed_ratio: float = clampf(player_speed / reference_max_speed, 0.1, 1.5)
-		var impulse_magnitude: float = (push_force * speed_ratio) / maxf(rb.mass * 0.15, 1.0)
-		var contact_offset: Vector3 = collision.get_position() - rb.global_position
+		var impulse_magnitude: float = (push_force * speed_ratio) / maxf(rb.mass * 0.1, 1.0)
 
-		rb.apply_impulse(push_dir * impulse_magnitude, contact_offset)
+		# Use central impulse to prevent downward rotational levering into floor geometry
+		rb.apply_central_impulse(push_dir * impulse_magnitude)
 
-		# 2. Apply push resistance back onto the player
+		# 2. Apply resistance back onto the player
 		var resistance: float = clampf(rb.mass / resistance_mass_scale, 0.0, 0.8)
 		player_body.velocity.x *= (1.0 - resistance)
 		player_body.velocity.z *= (1.0 - resistance)
@@ -77,7 +73,7 @@ func process_pushes(
 			rb.name,
 			" (mass: ",
 			rb.mass,
-			"kg). Applied impulse: ",
+			"kg). Applied central impulse: ",
 			impulse_magnitude,
 			", resistance: ",
 			resistance

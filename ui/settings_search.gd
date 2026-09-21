@@ -643,8 +643,7 @@ func _build_mirrored_generic_row(row: HBoxContainer, target: Control) -> void:
 			func(pressed: bool) -> void:
 				print("UI: Mirrored CheckButton toggled -> ", pressed)
 				if orig_cb.button_pressed != pressed:
-					orig_cb.set_pressed_no_signal(pressed)
-					orig_cb.toggled.emit(pressed)
+					orig_cb.button_pressed = pressed
 		)
 		orig_cb.toggled.connect(sync_cb)
 		cloned_cb.tree_exited.connect(
@@ -667,8 +666,7 @@ func _build_mirrored_generic_row(row: HBoxContainer, target: Control) -> void:
 			func(pressed: bool) -> void:
 				print("UI: Mirrored CheckBox toggled -> ", pressed)
 				if orig_chk.button_pressed != pressed:
-					orig_chk.set_pressed_no_signal(pressed)
-					orig_chk.toggled.emit(pressed)
+					orig_chk.button_pressed = pressed
 		)
 		orig_chk.toggled.connect(sync_chk)
 		cloned_chk.tree_exited.connect(

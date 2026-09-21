@@ -1,50 +1,44 @@
-## A player state handling mid-air movement, jumping, and falling.
-##
-## This state manages gravity application, coyote time, jump buffering,
-## jump pads, and transitions related to landing or grabbing ledges.
+## Manages mid-air movement, variable gravity, coyote time, and jump buffering.
 class_name StateAir
 extends PlayerState
 
 # --------------------------------------
 # CONSTANTS & VARIABLES
 # --------------------------------------
-## The upward velocity applied when executing a standard jump.
+## Upward velocity applied when executing a standard jump.
 const JUMP_VELOCITY: float = 4.5
 
-## The upward velocity applied when jumping while sprinting.
+## Upward velocity applied when jumping while sprinting.
 const SPRINT_JUMP_VELOCITY: float = 5.0
 
-## The upward velocity applied when jumping from a crouched position.
+## Upward velocity applied when jumping from crouched stance.
 const CROUCH_JUMP_VELOCITY: float = 3.5
 
-## Tracks the remaining time the player is allowed to jump after walking off a ledge.
+## Remaining time in seconds where ledge jump is still allowed.
 var coyote_timer: float = 0.0
 
-## Tracks the remaining time a jump input is cached while falling towards the ground.
+## Remaining time in seconds where jump input is cached for landing.
 var jump_buffer_timer: float = 0.0
 
-## Flags whether a jump has already been executed during this air phase to prevent double jumps.
+## Indicates whether jump impulse has executed in current air phase.
 var has_jumped: bool = false
 
-## Flags whether the airborne trajectory was initiated by a jump pad or external force.
+## Indicates whether airborne trajectory originated from a jump pad.
 var is_launched: bool = false
 
-## The specialized upward gravity force applied while ascending during a jump pad launch.
+## Specialized ascent gravity scalar applied during jump pad launches.
 var launch_gravity: float = 9.8
 
-## The specialized downward gravity force applied while descending during a jump pad launch.
+## Specialized descent gravity scalar applied during jump pad launches.
 var launch_fall_gravity: float = 9.8
 
 
-## Enters the air state. Reads the `msg` dictionary to handle specific entry conditions
-## like external knockbacks, jump pads, or exiting a rope.
-##
-## [param msg] Initialization data passed from the state machine.
+## Initializes airborne state, processes knockback impulses, and sets timers.
+## [param msg] Initialization data dictionary passed from the previous state.
 func enter(msg: Dictionary = {}) -> void:
-	print("StateAir: Entered air state.")
+	print("StateAir: enter() called. Initializing air state.")
 	has_jumped = msg.has("jump") and msg["jump"] == true
 
-	# 1. Catch the knockback force and apply it immediately
 	if msg.has("knockback_force"):
 		player.velocity = msg["knockback_force"] as Vector3
 		coyote_timer = 0.0
@@ -53,19 +47,17 @@ func enter(msg: Dictionary = {}) -> void:
 
 	is_launched = msg.has("jump_pad") and msg["jump_pad"] == true
 	if is_launched:
-		print("StateAir: Player is caught in a jump pad trajectory.")
+		print("StateAir: Player launched via jump pad.")
 		launch_gravity = msg.get("launch_gravity", 9.8) as float
 		launch_fall_gravity = msg.get("launch_fall_gravity", 9.8) as float
 
 	var loco: Node = player.locomotion_component
 
-	# Inherit momentum direction from swinging ropes or fast-movement states
 	if msg.has("release_dir"):
 		var r_dir: Vector3 = msg["release_dir"]
 		loco.set_direction(Vector3(r_dir.x, 0.0, r_dir.z).normalized())
 		print("StateAir: Inherited momentum direction from previous state.")
 
-	# Only grant Coyote Time if the player fell off a ledge AND wasn't knocked back
 	if msg.has("coyote_time") and msg["coyote_time"] == true and not msg.has("knockback_force"):
 		coyote_timer = loco.coyote_time_duration
 	elif not msg.has("knockback_force"):
@@ -74,8 +66,10 @@ func enter(msg: Dictionary = {}) -> void:
 	jump_buffer_timer = 0.0
 
 
-## Corresponds to `_physics_process()`. Applies gravity, mid-air steering, and landing.
+## Applies gravity, mid-air steering, collision checks, and transitions.
+## [param delta] The physics frame delta time in seconds.
 func physics_update(delta: float) -> void:
+	print("StateAir: physics_update() processing mid-air frame.")
 	_handle_gravity(delta)
 	_handle_timers(delta)
 
@@ -93,7 +87,7 @@ func physics_update(delta: float) -> void:
 	# 1. Process standard or high-momentum air movement
 	_apply_air_movement(delta, input_dir)
 
-	# 2. THE STEERING BOOST
+	# 2. Updraft steering boost
 	if env.in_updraft and input_dir != Vector2.ZERO and not is_launched:
 		var walk_dir: Vector3 = (
 			(player.global_transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
@@ -104,7 +98,6 @@ func physics_update(delta: float) -> void:
 	loco.last_velocity = player.velocity
 	player.move_and_slide()
 
-	# If launched and we hit a wall, break the launch lock to restore air control
 	if is_launched and player.get_slide_collision_count() > 0:
 		if not player.is_on_floor():
 			is_launched = false
@@ -115,11 +108,10 @@ func physics_update(delta: float) -> void:
 	_check_monkey_bar_grab()
 
 
-# --------------------------------------
-# PRIVATE METHODS
-# --------------------------------------
-## Calculates and applies vertical gravity to the player, handling jump pad overrides.
+## Applies gravity or updraft forces based on player state.
+## [param delta] The physics frame delta time in seconds.
 func _handle_gravity(delta: float) -> void:
+	print("StateAir: _handle_gravity() applying vertical acceleration.")
 	var loco: Node = player.locomotion_component
 	var env: Node = player.environment_component
 
@@ -135,25 +127,38 @@ func _handle_gravity(delta: float) -> void:
 			player.velocity.y = -0.1
 		else:
 			player.velocity.y = lerpf(player.velocity.y, env.updraft_strength, delta * 4.0)
-
 	elif player.velocity.y < 0.0:
 		player.velocity.y -= loco.gravity * loco.fall_gravity_multiplier * delta
 	else:
 		player.velocity.y -= loco.gravity * delta
 
 
+## Decays coyote time and jump buffer timers.
+## [param delta] The physics frame delta time in seconds.
 func _handle_timers(delta: float) -> void:
+	print("StateAir: _handle_timers() ticking countdowns.")
 	if coyote_timer > 0.0:
 		coyote_timer -= delta
 	if jump_buffer_timer > 0.0:
 		jump_buffer_timer -= delta
 
 
+## Processes mid-air jump inputs, enforcing heavy carry restrictions.
 func _handle_jump_input() -> void:
-	var loco: Node = player.locomotion_component
+	print("StateAir: _handle_jump_input() checking airborne jump requests.")
+	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	var interact: PlayerInteractionComponent = (
+		player.interaction_component as PlayerInteractionComponent
+	)
+	var is_holding_heavy: bool = is_instance_valid(interact) and interact.is_heavy_carrying
 
 	if GestureInputManager.is_action_just_pressed("jump"):
 		print("StateAir: Jump input detected.")
+		if is_holding_heavy:
+			print("StateAir: Jump rejected. Object is too heavy (>= 10kg).")
+			Events.hint_requested.emit("Cannot jump while carrying a heavy object.", 2.0)
+			return
+
 		if coyote_timer > 0.0 and not has_jumped:
 			_perform_coyote_jump()
 		else:
@@ -161,12 +166,13 @@ func _handle_jump_input() -> void:
 			jump_buffer_timer = loco.jump_buffer_duration
 
 
+## Executes upward jump impulse when coyote time is active.
 func _perform_coyote_jump() -> void:
 	print("StateAir: Executing coyote jump.")
 	has_jumped = true
 	coyote_timer = 0.0
 
-	var loco: Node = player.locomotion_component
+	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
 
 	if loco.sprint_active:
 		player.velocity.y = SPRINT_JUMP_VELOCITY
@@ -176,30 +182,40 @@ func _perform_coyote_jump() -> void:
 		player.velocity.y = JUMP_VELOCITY
 
 
+## Computes horizontal air steering and momentum damping.
+## [param delta] The physics frame delta time in seconds.
+## [param input_dir] Normalized 2D movement input vector.
 func _apply_air_movement(delta: float, input_dir: Vector2) -> void:
-	# Skip air drag and steering if we are locked in a jump pad arc
+	print("StateAir: _apply_air_movement() calculating horizontal air steering.")
 	if is_launched:
 		return
 
-	var loco: Node = player.locomotion_component
+	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	var interact: PlayerInteractionComponent = (
+		player.interaction_component as PlayerInteractionComponent
+	)
+	var is_holding_heavy: bool = is_instance_valid(interact) and interact.is_heavy_carrying
+
 	var target_dir: Vector3 = (
 		(player.transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
 	)
 	var horizontal_velocity: Vector2 = Vector2(player.velocity.x, player.velocity.z)
 	var current_speed: float = horizontal_velocity.length()
 
+	var max_air_speed: float = (
+		loco.walking_speed * loco.heavy_carry_speed_mult if is_holding_heavy else loco.walking_speed
+	)
+	var steer_rate: float = loco.air_lerp_speed * 0.5 if is_holding_heavy else loco.air_lerp_speed
+
 	# 1. High Momentum Handling (Rope / Swing Dismount)
-	if current_speed > loco.walking_speed:
+	if current_speed > max_air_speed:
 		var air_drag: float = 1.2
 		horizontal_velocity = horizontal_velocity.lerp(Vector2.ZERO, air_drag * delta)
 
-		# Allow slight air-steering influence while retaining momentum
 		if input_dir != Vector2.ZERO:
-			var steer_vec: Vector2 = (
-				Vector2(target_dir.x, target_dir.z) * (loco.walking_speed * delta)
-			)
+			var steer_vec: Vector2 = Vector2(target_dir.x, target_dir.z) * (max_air_speed * delta)
 			horizontal_velocity += steer_vec
-			loco.set_direction(loco.get_direction().lerp(target_dir, delta * loco.air_lerp_speed))
+			loco.set_direction(loco.get_direction().lerp(target_dir, delta * steer_rate))
 
 		player.velocity.x = horizontal_velocity.x
 		player.velocity.z = horizontal_velocity.y
@@ -207,21 +223,19 @@ func _apply_air_movement(delta: float, input_dir: Vector2) -> void:
 
 	# 2. Standard Air Movement
 	if input_dir != Vector2.ZERO:
-		loco.set_direction(loco.get_direction().lerp(target_dir, delta * loco.air_lerp_speed))
-		if current_speed < loco.walking_speed:
-			current_speed = lerpf(current_speed, loco.walking_speed, delta * loco.air_lerp_speed)
+		loco.set_direction(loco.get_direction().lerp(target_dir, delta * steer_rate))
+		if current_speed < max_air_speed:
+			current_speed = lerpf(current_speed, max_air_speed, delta * steer_rate)
 	else:
-		# Smoothly slow down horizontal drift if inputs are released
-		current_speed = lerpf(current_speed, 0.0, delta * loco.air_lerp_speed)
+		current_speed = lerpf(current_speed, 0.0, delta * steer_rate)
 
 	player.velocity.x = loco.get_direction().x * current_speed
 	player.velocity.z = loco.get_direction().z * current_speed
 
 
-## Polls environment transitions, landing impacts, and input-gated ledge vaults.
+## Polls surface contacts, landing conditions, and ledge vaults.
 func _check_transitions() -> void:
-	print("StateAir: _check_transitions() called.")
-	var loco: Node = player.locomotion_component
+	print("StateAir: _check_transitions() checking state handoffs.")
 	var env: Node = player.environment_component
 	var interact: Node = player.interaction_component
 
@@ -237,7 +251,6 @@ func _check_transitions() -> void:
 	var is_holding_item: bool = is_instance_valid(interact.held_item)
 	var is_pressing_forward: bool = GestureInputManager.is_action_pressed("forward")
 
-	# Enforce forward input requirement to prevent backwards mid-air vaulting
 	if (
 		is_pressing_forward
 		and player.velocity.y < 2.0
@@ -251,6 +264,9 @@ func _check_transitions() -> void:
 				GestureInputManager.is_action_just_pressed("jump") or jump_buffer_timer > 0.0
 			)
 			if jump_requested and env.vault_controller.get("can_vault_current_ledge"):
+				var loco: PlayerLocomotionComponent = (
+					player.locomotion_component as PlayerLocomotionComponent
+				)
 				if env.vault_controller.try_vault(loco.crouching):
 					jump_buffer_timer = 0.0
 					print("StateAir: Vaulting ledge on jump input.")
@@ -263,15 +279,15 @@ func _check_transitions() -> void:
 		return
 
 
+## Processes ground collision, evaluates fall damage, and transitions.
 func _handle_landing() -> void:
 	print("StateAir: _handle_landing() called. Processing ground impact.")
-	var loco: Node = player.locomotion_component
+	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
 	var stats: Node = player.stats_component
 
 	var is_safe_landing: bool = false
 	var is_slide_surface: bool = false
 
-	# 1. Inspect the surface we just landed on
 	var slide_count: int = player.get_slide_collision_count()
 	for i: int in range(slide_count):
 		var collision: KinematicCollision3D = player.get_slide_collision(i)
@@ -293,18 +309,14 @@ func _handle_landing() -> void:
 			if current_is_slide:
 				is_slide_surface = true
 
-	# 2. Process Fall Damage
 	if loco.last_velocity.y <= -20.0 and is_instance_valid(stats.health_component):
 		if is_safe_landing:
-			print(
-				"StateAir: Heavy impact detected, but safe landing material neutralized fall damage."
-			)
+			print("StateAir: Impact neutralized by safe landing material.")
 		else:
 			print("StateAir: Heavy impact detected. Applying fall damage.")
 			var max_hp: int = stats.health_component.get("max_health") as int
 			stats.health_component.take_damage(max_hp)
 
-	# 3. Transition State
 	if is_slide_surface:
 		print("StateAir: Slide surface detected. Transitioning to Slide.")
 		state_machine.transition_to("Slide")
@@ -313,14 +325,25 @@ func _handle_landing() -> void:
 	print("StateAir: Standard ground detected. Transitioning to Ground.")
 	var msg: Dictionary = {}
 	if jump_buffer_timer > 0.0:
-		msg["jump_buffered"] = true
+		var interact: PlayerInteractionComponent = (
+			player.interaction_component as PlayerInteractionComponent
+		)
+		var is_holding_heavy: bool = is_instance_valid(interact) and interact.is_heavy_carrying
+		if not is_holding_heavy:
+			msg["jump_buffered"] = true
 
 	state_machine.transition_to("Ground", msg)
 
 
+## Updates camera transforms and interaction scanner raycasts.
+## [param delta] The physics frame delta time in seconds.
+## [param input_dir] Normalized 2D movement input vector.
 func _update_components(delta: float, input_dir: Vector2) -> void:
-	var loco: Node = player.locomotion_component
-	var interact: Node = player.interaction_component
+	print("StateAir: _update_components() polling camera and scanner.")
+	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	var interact: PlayerInteractionComponent = (
+		player.interaction_component as PlayerInteractionComponent
+	)
 
 	if is_instance_valid(player.camera_controller):
 		player.camera_controller.update_camera(
@@ -331,7 +354,9 @@ func _update_components(delta: float, input_dir: Vector2) -> void:
 		interact.interaction_scanner.process_interaction(delta)
 
 
+## Checks for nearby monkey bar handles and transitions to [StateMonkeyBars].
 func _check_monkey_bar_grab() -> void:
+	print("StateAir: _check_monkey_bar_grab() checking grab targets.")
 	var env: Node = player.environment_component
 
 	if not is_instance_valid(env):

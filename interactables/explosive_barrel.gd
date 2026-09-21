@@ -75,10 +75,20 @@ func _spawn_explosion_vfx() -> void:
 	if explosion_scene == null:
 		return
 
-	var explosion_instance: Node3D = explosion_scene.instantiate() as Node3D
-	if is_instance_valid(explosion_instance):
-		get_tree().current_scene.add_child(explosion_instance)
+	var raw_instance: Node = explosion_scene.instantiate()
+	if not (raw_instance is Node3D):
+		if is_instance_valid(raw_instance):
+			raw_instance.queue_free()
+		print("ExplosiveBarrel: Error - explosion_scene root is not a Node3D!")
+		return
+
+	var explosion_instance: Node3D = raw_instance as Node3D
+	var curr_scene: Node = get_tree().current_scene
+	if is_instance_valid(curr_scene):
+		curr_scene.add_child(explosion_instance)
 		explosion_instance.global_position = global_position
+	else:
+		explosion_instance.queue_free()
 
 
 ## Calls the global ShockwaveManager singleton to distort the screen space.

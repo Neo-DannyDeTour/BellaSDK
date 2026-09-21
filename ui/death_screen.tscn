@@ -56,7 +56,7 @@ shader_parameter/static_intensity = 1.0
 shader_parameter/scanline_count = 240.0
 shader_parameter/vignette_strength = 0.5
 
-[node name="DeathScreen" type="CanvasLayer" unique_id=1910211973]
+[node name="DeathScreen" type="CanvasLayer" unique_id=1910211973 groups=["death_screen"]]
 script = ExtResource("1_36x74")
 
 [node name="Background" type="ColorRect" parent="." unique_id=2114647612]

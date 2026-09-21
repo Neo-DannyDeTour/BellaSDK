@@ -1,5 +1,4 @@
-## Test mock for [Player] assembling default stubs, bypassing hardware captures,
-## and tracking damage.
+## Test mock for [Player] assembling default stubs, bypassing hardware captures.
 class_name MockPlayer
 extends Player
 
@@ -59,7 +58,6 @@ func _capture_mouse() -> void:
 
 
 ## Simulates player damage routing and records applied damage values.
-## [param amount] Damage value to apply.
 func take_damage(amount: int) -> void:
 	print("MockPlayer: take_damage() called with: ", amount)
 	last_damage = amount
@@ -68,7 +66,6 @@ func take_damage(amount: int) -> void:
 
 
 ## Simulates player healing routing and records applied healing values.
-## [param amount] Health value to restore.
 func heal(amount: int) -> void:
 	print("MockPlayer: heal() called with: ", amount)
 	last_heal = amount
@@ -80,9 +77,10 @@ func heal(amount: int) -> void:
 class MockSystemMenu:
 	extends SystemMenuController
 
-	## Stub constructor for the mock menu controller.
+	## Stub constructor setting unpausable process mode for test controllers.
 	func _init() -> void:
 		print("MockSystemMenu: _init() called.")
+		process_mode = Node.PROCESS_MODE_ALWAYS
 
 	## Inert stub simulating system menu pause toggle.
 	func toggle_pause() -> void:
@@ -93,6 +91,5 @@ class MockSystemMenu:
 		print("MockSystemMenu: toggle_noclip() called.")
 
 	## Inert stub simulating noclip movement processing.
-	## [param _delta] Elapsed frame time in seconds.
 	func process_noclip(_delta: float) -> void:
 		pass

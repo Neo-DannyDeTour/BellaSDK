@@ -287,7 +287,7 @@ func _set_weapon_active(active: bool) -> void:
 		weapon_holder.set_physics_process(active)
 
 
-## Synchronizes heavy carry state and notifies the event bus.
+## Synchronizes heavy carry state, restricts player sprint, and notifies event bus.
 func update_heavy_carry_state() -> void:
 	var is_heavy: bool = (
 		is_heavy_lifting
@@ -296,6 +296,10 @@ func update_heavy_carry_state() -> void:
 	if is_heavy_carrying != is_heavy:
 		is_heavy_carrying = is_heavy
 		print("InteractionComponent: Heavy carry toggled -> ", is_heavy_carrying)
+		if is_instance_valid(player) and "locomotion_component" in player:
+			var loco: Node = player.locomotion_component
+			if is_instance_valid(loco) and "can_sprint" in loco:
+				loco.set("can_sprint", not is_heavy_carrying)
 		Events.heavy_carry_toggled.emit(is_heavy_carrying)
 
 

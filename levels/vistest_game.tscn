@@ -1956,24 +1956,38 @@ mesh = SubResource("PlaneMesh_ubk4r")
 
 [node name="PickableObject" parent="." unique_id=998803613 instance=ExtResource("45_xlvoj")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.779611, 0.100000024, 1.2330317)
+continuous_cd = false
+angular_damp = 0.0
 
 [node name="PickableObject3" parent="." unique_id=777159233 instance=ExtResource("45_xlvoj")]
 transform = Transform3D(-0.6343529, 0, 0.7730436, 0, 1, 0, -0.7730436, 0, -0.6343529, 18.828419, 0.099999905, 5.3362646)
+continuous_cd = false
+angular_damp = 0.0
 
 [node name="PickableChairSmall" parent="." unique_id=2036281333 instance=ExtResource("45_xlvoj")]
 transform = Transform3D(0.70710677, 0.70710677, 0, -0.70710677, 0.70710677, 0, 0, 0, 1, 11.373505, 0.53358066, 6.0474205)
+continuous_cd = false
+angular_damp = 0.0
 
 [node name="PickableChairSmall2" parent="." unique_id=1133744404 instance=ExtResource("45_xlvoj")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.209952, 0.100000024, -2.901669)
+continuous_cd = false
+angular_damp = 0.0
 
 [node name="PickableObject2" parent="." unique_id=449858058 instance=ExtResource("46_ujj0l")]
 transform = Transform3D(-0.0015470906, -0.99999875, 0.0002715692, 0.9849396, -0.0015707447, -0.1728918, 0.17289202, 0, 0.9849408, 17.723475, 1.5510979, 7.0966377)
+continuous_cd = false
+angular_damp = 0.0
 
 [node name="PickableObject4" parent="." unique_id=1089681237 instance=ExtResource("46_ujj0l")]
 transform = Transform3D(0.9690589, 0, -0.24682985, 0, 1, 0, 0.24682985, 0, 0.9690589, 11.085868, 1.225, 3.0739083)
+continuous_cd = false
+angular_damp = 0.0
 
 [node name="PickableObject5" parent="." unique_id=733427909 instance=ExtResource("46_ujj0l")]
 transform = Transform3D(-0.81328356, 0, 0.58186746, 0, 1, 0, -0.58186746, 0, -0.81328356, 10.8490095, 1.2249999, 4.543701)
+continuous_cd = false
+angular_damp = 0.0
 
 [node name="Label3D2" type="Label3D" parent="." unique_id=1734334926]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.391062, 9.684599, 1.9035821)
@@ -2045,3 +2059,5 @@ Press tilde to open dee-bug menu."
 
 [node name="PickableBarrelGreen" parent="." unique_id=594279821 instance=ExtResource("55_0j0ri")]
 transform = Transform3D(0.5424285, 0, -0.84010196, 0, 1, 0, 0.84010196, 0, 0.5424285, 2.2152977, 2.5072021, 2.374266)
+continuous_cd = false
+angular_damp = 0.0

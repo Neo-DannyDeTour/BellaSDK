@@ -43,10 +43,8 @@
 [ext_resource type="PackedScene" uid="uid://cf8pnlqxpdri3" path="res://interactables/pickable_barrel_red.tscn" id="46_ubk4r"]
 [ext_resource type="Texture2D" uid="uid://dqbpt2iyril23" path="res://assets/VisTEST/2. Modular_Models/Walls/Wall_Fan/Wall_Fan_T_Concrete_BaseColor-T_Concrete_Alpha.png" id="47_6vg87"]
 [ext_resource type="PackedScene" uid="uid://bpn41lsyperm8" path="res://assets/VisTEST/2. Modular_Models/Props/pickable_computer_old.tscn" id="47_mhg1j"]
-[ext_resource type="PackedScene" uid="uid://c4jdpcnpsoerv" path="res://interactables/mirror.tscn" id="48_k4uoe"]
 [ext_resource type="PackedScene" uid="uid://b85u3svdjg12c" path="res://assets/VisTEST/2. Modular_Models/Props/pickable_chair_small.tscn" id="48_mhg1j"]
 [ext_resource type="PackedScene" uid="uid://bqmsu8rh0h335" path="res://interactables/env_chapter_trigger.tscn" id="52_wkfn1"]
-[ext_resource type="VoxelGIData" uid="uid://n7qpbweipxh3" path="res://bakes/vis_test_proper.VoxelGI_data.res" id="53_yuk8b"]
 [ext_resource type="PackedScene" uid="uid://8ppxay3ijlcv" path="res://shared/godiva.glb" id="54_334ql"]
 [ext_resource type="Script" uid="uid://6ldpudwj5c25" path="res://environment/graphics_cctv_camera.gd" id="55_334ql"]
 [ext_resource type="PackedScene" uid="uid://bn5ay1rfbr545" path="res://enemies/turret.tscn" id="55_b307c"]
@@ -1624,7 +1622,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.0183465, 1.8355883, 0.8748
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35592544, -0.09112573, 0)
 light_color = Color(1, 1, 0.3647059, 1)
 light_energy = 2.0
-shadow_enabled = true
 
 [node name="Apply_Light8" parent="Lights" unique_id=1315958823 instance=ExtResource("35_gh7m2")]
 transform = Transform3D(-4.222196e-08, -1.131334e-08, -1, -0.25881904, 0.9659258, 0, 0.9659258, 0.25881904, -4.371139e-08, 1.5206349, 4.3282604, -8.473009)
@@ -1633,7 +1630,6 @@ transform = Transform3D(-4.222196e-08, -1.131334e-08, -1, -0.25881904, 0.9659258
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35592544, -0.09112573, 0)
 light_color = Color(1, 1, 0.3647059, 1)
 light_energy = 2.0
-shadow_enabled = true
 
 [node name="Apply_Light9" parent="Lights" unique_id=662007761 instance=ExtResource("35_gh7m2")]
 transform = Transform3D(-4.222196e-08, -1.131334e-08, -1, -0.25881904, 0.9659258, 0, 0.9659258, 0.25881904, -4.371139e-08, 7.553853, 4.3282604, -8.473009)
@@ -1642,7 +1638,6 @@ transform = Transform3D(-4.222196e-08, -1.131334e-08, -1, -0.25881904, 0.9659258
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35592544, -0.09112573, 0)
 light_color = Color(1, 1, 0.3647059, 1)
 light_energy = 2.0
-shadow_enabled = true
 
 [node name="Apply_Light10" parent="Lights" unique_id=1460301258 instance=ExtResource("35_gh7m2")]
 transform = Transform3D(-4.222196e-08, -1.131334e-08, -1, -0.25881904, 0.9659258, 0, 0.9659258, 0.25881904, -4.371139e-08, 13.509912, 4.3282604, -8.473009)
@@ -1651,7 +1646,6 @@ transform = Transform3D(-4.222196e-08, -1.131334e-08, -1, -0.25881904, 0.9659258
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35592544, -0.09112573, 0)
 light_color = Color(1, 1, 0.3647059, 1)
 light_energy = 2.0
-shadow_enabled = true
 
 [node name="Apply_Light5" parent="Lights" unique_id=1612911720 instance=ExtResource("35_gh7m2")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.0183465, 1.8355883, 6.250375)
@@ -1660,7 +1654,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.0183465, 1.8355883, 6.2503
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35592544, -0.09112573, 0)
 light_color = Color(1, 1, 0.3647059, 1)
 light_energy = 2.0
-shadow_enabled = true
 
 [node name="Apply_Light6" parent="Lights" unique_id=217191568 instance=ExtResource("35_gh7m2")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.0183465, 5.904278, 4.044298)
@@ -1669,7 +1662,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.0183465, 5.904278, 4.04429
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35592544, -0.09112573, 0)
 light_color = Color(1, 1, 0.3647059, 1)
 light_energy = 2.0
-shadow_enabled = true
 
 [node name="Apply_Light11" parent="Lights" unique_id=1429939692 instance=ExtResource("35_gh7m2")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 19.714788, 2.8968754, 3.462603)
@@ -1678,7 +1670,6 @@ transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 19.7
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35592544, -0.09112573, 0)
 light_color = Color(1, 1, 0.3647059, 1)
 light_energy = 2.0
-shadow_enabled = true
 
 [node name="Apply_Light7" parent="Lights" unique_id=2046935873 instance=ExtResource("35_gh7m2")]
 transform = Transform3D(0, 0, 1.0000001, 0, 1, 0, -1.0000001, 0, 0, 13.26716, 4.4681077, 8.0308)
@@ -1687,7 +1678,6 @@ transform = Transform3D(0, 0, 1.0000001, 0, 1, 0, -1.0000001, 0, 0, 13.26716, 4.
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35592544, -0.09112573, 0)
 light_color = Color(1, 1, 0.3647059, 1)
 light_energy = 2.0
-shadow_enabled = true
 
 [node name="Boxs_Cables" parent="." unique_id=835119832 groups=["not_climbable"] instance=ExtResource("37_kja8q")]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -2.031752, 2.3109965, -7.385595)
@@ -1976,20 +1966,8 @@ text = "Yes, you can break the game here. Congrats.
 Metrics and item placement is a lot harder than I thought.
 Are you happy now?"
 
-[node name="Mirror" parent="." unique_id=2122574524 instance=ExtResource("48_k4uoe")]
-transform = Transform3D(-1, 0, 8.742278e-08, 0, 1, 0, -8.742278e-08, 0, -1, 7.611844, 1.4818217, 7.9552975)
-size = Vector2(3, 2)
-pixels_per_unit = 250
-max_update_distance = 50.0
-cull_far = 25.0
-
 [node name="ChapterTrigger2" parent="." unique_id=986591175 instance=ExtResource("52_wkfn1")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.6088676, 3.6163845, 2.8420885)
-
-[node name="VoxelGI" type="VoxelGI" parent="." unique_id=1442148886]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.4175415, 4.881592, 0.008972168)
-size = Vector3(38.835083, 10.236816, 22.344116)
-data = ExtResource("53_yuk8b")
 
 [node name="PickableBarrelGreen" parent="." unique_id=1275037664 instance=ExtResource("56_k566i")]
 transform = Transform3D(0.5424285, 0, -0.84010196, 0, 1, 0, 0.84010196, 0, 0.5424285, 2.2152977, 2.5072021, 2.374266)
@@ -2004,7 +1982,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.15385, 1.6999998, -7.77256
 
 [node name="Camera_interactables" type="Camera3D" parent="Cameras" unique_id=1486585238]
 transform = Transform3D(-0.2572059, -0.37599525, 0.8902094, 0, 0.9212017, 0.3890854, -0.96635664, 0.100075066, -0.2369385, 6.6659365, 5.51173, 1.2105148)
-current = true
 fov = 50.935745
 script = ExtResource("56_b307c")
 

@@ -513,7 +513,14 @@ func _detach_valve() -> void:
 	if not is_instance_valid(player):
 		return
 
-	var spawned_valve: Node3D = pickable_valve_scene.instantiate() as Node3D
+	var raw_instance: Node = pickable_valve_scene.instantiate()
+	if not (raw_instance is Node3D):
+		if is_instance_valid(raw_instance):
+			raw_instance.queue_free()
+		push_warning("Valve: Instantiated valve scene is not a Node3D!")
+		return
+
+	var spawned_valve: Node3D = raw_instance as Node3D
 
 	if is_instance_valid(outline_material) and "outline_material" in spawned_valve:
 		spawned_valve.set("outline_material", outline_material)

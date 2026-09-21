@@ -1,37 +1,36 @@
-## Handles player ground locomotion, slope handling, friction, crouching, sprinting,
-## and jump/vault transitions.
+## Handles ground locomotion, friction, crouching, sprinting, and jump transitions.
 class_name StateGround
 extends PlayerState
 
 # --------------------------------------
 # CONSTANTS & VARIABLES
 # --------------------------------------
-## The upward velocity applied when executing a standard jump.
+## Upward velocity applied when executing a standard jump.
 const JUMP_VELOCITY: float = 4.5
 
-## The upward velocity applied when jumping from a crouched position.
+## Upward velocity applied when jumping from crouched stance.
 const CROUCH_JUMP_VELOCITY: float = 3.5
 
-## The upward velocity applied when jumping while sprinting.
+## Upward velocity applied when jumping while sprinting.
 const SPRINT_JUMP_VELOCITY: float = 5.0
 
-## The friction applied to smoothly decelerate the player when input ceases.
+## Ground friction applied to decelerate the player without input.
 const GROUND_FRICTION: float = 25.0
 
-## The active velocity magnitude of the player, interpolated frame-by-frame.
+## Current interpolated movement speed of the player.
 var current_speed: float = 0.0
 
-## Cached accessibility preference determining if crouch functions as a toggle.
+## Preference flag indicating if crouching toggles on and off.
 var _toggle_crouch_enabled: bool = false
 
-## Cached accessibility preference determining if sprint functions as a toggle.
+## Preference flag indicating if sprinting toggles on and off.
 var _toggle_sprint_enabled: bool = false
 
-## Cached accessibility preference determining if jumping cancels the crouch state.
+## Preference flag indicating if jumping cancels crouch stance.
 var _cancel_crouch_on_jump: bool = false
 
 
-## State entry lifecycle callback configuring speeds, gravity states, and checking buffered inputs.
+## Configures velocities, reads accessibility settings, and executes buffered jumps.
 ## [param msg] Initialization data dictionary passed from the previous state.
 func enter(msg: Dictionary = {}) -> void:
 	print("StateGround: enter() called. Resetting Y velocity and current speed.")
@@ -49,13 +48,22 @@ func enter(msg: Dictionary = {}) -> void:
 	)
 
 	if msg.has("jump_buffered") and msg["jump_buffered"] == true:
+		var interact: PlayerInteractionComponent = (
+			player.interaction_component as PlayerInteractionComponent
+		)
+		var is_holding_heavy: bool = is_instance_valid(interact) and interact.is_heavy_carrying
+
+		if is_holding_heavy:
+			print("StateGround: Buffered jump rejected due to heavy carry.")
+			Events.hint_requested.emit("Cannot jump while carrying a heavy object.", 2.0)
+			return
+
 		_perform_jump()
 		return
 
 
-## Physics update lifecycle processing surfaces, step-ups, gesture jump requests,
-## and movement momentum.
-## [param delta] The physics frame delta in seconds.
+## Processes surfaces, stair snapping, inputs, and ground movement momentum.
+## [param delta] The physics frame delta time in seconds.
 func physics_update(delta: float) -> void:
 	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
 	var env: Node = player.environment_component
@@ -149,8 +157,9 @@ func physics_update(delta: float) -> void:
 	_update_components(delta, input_dir)
 
 
-## Applies upward vertical jump impulse according to stance and transitions to the Air state.
+## Applies upward vertical jump impulse and transitions to [StateAir].
 func _perform_jump() -> void:
+	print("StateGround: _perform_jump() called.")
 	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
 
 	if loco.sprint_active:
@@ -170,9 +179,11 @@ func _perform_jump() -> void:
 	state_machine.transition_to("Air", {"jump": true})
 
 
-## Updates [member PlayerLocomotionComponent.crouching] based on input and ceiling checks.
+## Calculates target movement speed based on stance, heavy carrying, and terrain.
+## [param delta] The physics frame delta time in seconds.
+## [param input_dir] Normalized 2D movement input vector.
 func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
-	# print("StateGround: _calculate_target_speed() called.")
+	# print("StateGround: _calculate_target_speed() evaluating speeds.")
 	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
 	var interact: PlayerInteractionComponent = (
 		player.interaction_component as PlayerInteractionComponent
@@ -240,18 +251,36 @@ func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
 	var target_speed: float = loco.walking_speed
 	if loco.sprint_active:
 		target_speed = loco.sprinting_speed
-	elif loco.crouching or interact.is_heavy_lifting or loco.on_sand:
+	elif loco.crouching or loco.on_sand:
 		target_speed = loco.crouching_speed
 
-	current_speed = lerpf(current_speed, target_speed, delta * 15.0)
+	if is_holding_heavy:
+		target_speed = (
+			loco.walking_speed * loco.heavy_carry_speed_mult
+			if not loco.crouching
+			else loco.crouching_speed * loco.heavy_carry_speed_mult
+		)
+
+	# Inertia drag: heavy objects take longer to build and bleed momentum
+	var accel_speed: float = 7.5 if is_holding_heavy else 15.0
+	current_speed = lerpf(current_speed, target_speed, delta * accel_speed)
 
 
-## Interpolates player velocity vectors and applies ground friction.
+## Interpolates horizontal velocity and applies surface friction.
 ## [param delta] The physics frame delta time in seconds.
-## [param input_dir] Current normalized 2D movement vector.
+## [param input_dir] Normalized 2D movement input vector.
 func _apply_movement(delta: float, input_dir: Vector2) -> void:
+	# print("StateGround: _apply_movement() applying directional momentum.")
 	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	var interact: PlayerInteractionComponent = (
+		player.interaction_component as PlayerInteractionComponent
+	)
+	var is_holding_heavy: bool = is_instance_valid(interact) and interact.is_heavy_carrying
+
 	var active_lerp: float = loco.ice_lerp_speed if loco.on_ice else loco.default_lerp_speed
+	if is_holding_heavy and not loco.on_ice:
+		active_lerp *= 0.65
+
 	var target_dir: Vector3 = (
 		(player.transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
 	)
@@ -267,7 +296,8 @@ func _apply_movement(delta: float, input_dir: Vector2) -> void:
 		player.velocity.x = loco.get_direction().x * current_speed
 		player.velocity.z = loco.get_direction().z * current_speed
 	else:
-		var friction_step: float = GROUND_FRICTION * delta
+		var friction_val: float = GROUND_FRICTION * 0.7 if is_holding_heavy else GROUND_FRICTION
+		var friction_step: float = friction_val * delta
 		player.velocity.x = move_toward(player.velocity.x, 0.0, friction_step)
 		player.velocity.z = move_toward(player.velocity.z, 0.0, friction_step)
 
@@ -275,10 +305,11 @@ func _apply_movement(delta: float, input_dir: Vector2) -> void:
 			loco.set_direction(Vector3.ZERO)
 
 
-## Updates camera positioning, footstep manager surface polling, and physics push forces.
+## Updates camera position, footsteps, scanners, and physics pushers.
 ## [param delta] The physics frame delta time in seconds.
-## [param input_dir] Current normalized 2D movement vector.
+## [param input_dir] Normalized 2D movement input vector.
 func _update_components(delta: float, input_dir: Vector2) -> void:
+	# print("StateGround: _update_components() polling attached subsystems.")
 	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
 	var interact: PlayerInteractionComponent = (
 		player.interaction_component as PlayerInteractionComponent

@@ -44,6 +44,11 @@ const MIN_HOLD_DISTANCE: float = 1.2
 @export var heavy_mass_threshold: float = 10.0
 ## How far down on the Y-axis heavy objects are held to avoid blocking the camera.
 @export var heavy_y_drop: float = 0.5
+## Height above player feet where heavy objects hover while held.
+@export var heavy_floor_clearance: float = 0.35
+
+## Transparency applied specifically to heavy objects when held.
+@export_range(0.0, 1.0) var heavy_held_transparency: float = 0.55
 
 # --- COMBAT / IMPACT CONFIG ---
 ## The minimum velocity required for the object to register as a damaging projectile.
@@ -125,9 +130,10 @@ var _last_wake_time: int = 0
 var _was_submerged: bool = false
 
 
-## Initializes the [PickableObject], setting up references, event listeners, and physics state.
+## Initializes references, continuous collision detection, and contact monitoring.
 func _ready() -> void:
 	print("PickableObject: _ready() called. Initializing ", name)
+	continuous_cd = true
 	if not is_instance_valid(interact_comp):
 		interact_comp = $InteractComponent
 	if not is_instance_valid(mesh):
@@ -213,7 +219,7 @@ func _revert_warmup_deferred() -> void:
 		_set_model_transparency(mesh, 0.0)
 
 
-## Attaches the object to the player's hold target and disables standard gravity.
+## Attaches the object to the player's hold target and applies transparency.
 func pick_up(target: Marker3D, player_node: Node3D) -> void:
 	if is_locked:
 		return
@@ -244,8 +250,12 @@ func pick_up(target: Marker3D, player_node: Node3D) -> void:
 	sleeping = false
 	gravity_scale = 0.0
 
-	if is_instance_valid(mesh):
-		_set_model_transparency(mesh, held_transparency)
+	var active_mesh: Node3D = _resolve_visual_mesh()
+	if is_instance_valid(active_mesh):
+		var alpha: float = (
+			heavy_held_transparency if mass >= heavy_mass_threshold else held_transparency
+		)
+		_set_model_transparency(active_mesh, alpha)
 
 	if is_instance_valid(interact_comp):
 		interact_comp.is_currently_focused = false
@@ -257,7 +267,7 @@ func pick_up(target: Marker3D, player_node: Node3D) -> void:
 	Events.item_picked_up.emit(self, holder)
 
 
-## Releases the object from the player's grasp, restoring physics and applying an impulse.
+## Releases the object from the player's grasp and restores full opacity.
 func drop() -> void:
 	print("PickableObject: drop() called. Action: Dropping object.")
 	if Time.get_ticks_msec() - _grab_time < 100:
@@ -266,7 +276,6 @@ func drop() -> void:
 	print("PickableObject: drop() called. Releasing: ", name)
 	is_held = false
 
-	# Keep prompt hidden while the object is settling down to the ground
 	if is_instance_valid(label):
 		label.hide()
 	if is_instance_valid(prompt_icon):
@@ -274,6 +283,10 @@ func drop() -> void:
 
 	_is_tts_cooldown = true
 	get_tree().create_timer(1.5, false).timeout.connect(_reset_tts_cooldown)
+
+	var active_mesh: Node3D = _resolve_visual_mesh()
+	if is_instance_valid(active_mesh):
+		_set_model_transparency(active_mesh, 0.0)
 
 	if is_locked:
 		holder = null
@@ -285,9 +298,6 @@ func drop() -> void:
 	freeze = false
 	sleeping = false
 	gravity_scale = 1.0
-
-	if is_instance_valid(mesh):
-		_set_model_transparency(mesh, 0.0)
 
 	if is_instance_valid(holder):
 		if "velocity" in holder:
@@ -301,64 +311,10 @@ func drop() -> void:
 		var flat_cam_forward: Vector3 = Vector3(cam_forward.x, 0.0, cam_forward.z)
 		var push_dir: Vector3 = flat_cam_forward.normalized()
 
-		var player_vel: Vector3 = holder.get("velocity") if "velocity" in holder else Vector3.ZERO
-		var velocity_offset: Vector3 = Vector3(player_vel.x, 0.0, player_vel.z) * 0.15
-
-		var is_nudging: bool = false
-		if cam_forward.y < -0.2:
-			var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
-			var intended_slide: Vector3 = (push_dir * 0.35) + velocity_offset
-
-			var check_dir: Vector3 = intended_slide.normalized()
-			var check_dist: float = intended_slide.length() + 0.1
-			var ray_end: Vector3 = global_position + (check_dir * check_dist)
-
-			var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-				global_position, ray_end
-			)
-			query.exclude = [self.get_rid(), holder.get_rid()]
-
-			var result: Dictionary = space_state.intersect_ray(query)
-			var target_pos: Vector3 = global_position
-
-			if result:
-				var safe_dist: float = (
-					sqrt(global_position.distance_squared_to(result.position)) - 0.1
-				)
-				if safe_dist > 0:
-					target_pos += check_dir * safe_dist
-			else:
-				target_pos += intended_slide
-
-			if target_pos != global_position:
-				is_nudging = true
-				angular_velocity = Vector3.ZERO
-
-				var nudge_tween: Tween = create_tween()
-				(
-					nudge_tween
-					. tween_property(self, "global_position:x", target_pos.x, 0.15)
-					. set_trans(Tween.TRANS_SINE)
-					. set_ease(Tween.EASE_OUT)
-				)
-				(
-					nudge_tween
-					. parallel()
-					. tween_property(self, "global_position:z", target_pos.z, 0.15)
-					. set_trans(Tween.TRANS_SINE)
-					. set_ease(Tween.EASE_OUT)
-				)
-
-				nudge_tween.tween_callback(
-					func() -> void:
-						var toss_dir: Vector3 = push_dir
-						toss_dir.y = 0.5
-						apply_central_impulse(toss_dir * 5.0)
-				)
-
-		if not is_nudging:
-			push_dir.y = 0.5
-			apply_central_impulse(push_dir * 5.0)
+		var clear_impulse_mag: float = maxf(mass * 1.5, 5.0)
+		var toss_dir: Vector3 = push_dir
+		toss_dir.y = 0.2
+		apply_central_impulse(toss_dir.normalized() * clear_impulse_mag)
 
 		Events.item_dropped.emit(self, holder)
 
@@ -500,7 +456,7 @@ func _on_interact_component_unfocused() -> void:
 		prompt_icon.hide()
 
 
-## Processes object movement towards the hold target or applies buoyancy forces when in water.
+## Processes object movement towards the hold target with mass-specific height clamping.
 func _physics_process(_delta: float) -> void:
 	if is_held and is_instance_valid(hold_target) and is_instance_valid(holder):
 		var target_pos: Vector3 = hold_target.global_position
@@ -512,38 +468,52 @@ func _physics_process(_delta: float) -> void:
 			-cam.global_transform.basis.z if is_instance_valid(cam) else Vector3.FORWARD
 		)
 
-		var weight_ratio: float = clampf((mass - 5.0) / 5.0, 0.0, 1.0)
-		var current_y_drop: float = lerpf(0.0, heavy_y_drop, weight_ratio)
-		target_pos.y -= current_y_drop
+		var is_heavy: bool = mass >= heavy_mass_threshold
 
-		if cam_forward.y < 0.0:
-			var dip_strength: float = absf(cam_forward.y) * 4.0
-			target_pos.y -= (dip_strength * weight_ratio)
+		if is_heavy:
+			# Keep heavy barrels anchored just above the floor in front of the player
+			var flat_forward: Vector3 = Vector3(cam_forward.x, 0.0, cam_forward.z).normalized()
+			var carry_dist: float = maxf(MIN_HOLD_DISTANCE - hold_distance_offset, 1.1)
+			target_pos = (
+				holder.global_position
+				+ (flat_forward * carry_dist)
+				+ Vector3(0.0, heavy_floor_clearance, 0.0)
+			)
 
-		# Guarantee minimum clearance distance from the camera to avoid face-clipping
-		var to_target: Vector3 = target_pos - cam_origin
-		var forward_projection: float = to_target.dot(cam_forward)
-		var required_dist: float = maxf(MIN_HOLD_DISTANCE - hold_distance_offset, 0.8)
+			# Verify floor clearance below target
+			var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
+			var floor_query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
+				target_pos + Vector3(0.0, 0.5, 0.0), target_pos + Vector3(0.0, -1.0, 0.0)
+			)
+			floor_query.collision_mask = 1
+			floor_query.exclude = [get_rid(), holder.get_rid()]
+			var floor_hit: Dictionary = space_state.intersect_ray(floor_query)
+			if not floor_hit.is_empty():
+				var ground_y: float = (floor_hit.position as Vector3).y
+				target_pos.y = ground_y + heavy_floor_clearance
+		else:
+			# Standard light object handling
+			var to_target: Vector3 = target_pos - cam_origin
+			var forward_projection: float = to_target.dot(cam_forward)
+			var required_dist: float = maxf(MIN_HOLD_DISTANCE - hold_distance_offset, 0.8)
 
-		if forward_projection < required_dist:
-			target_pos += cam_forward * (required_dist - forward_projection)
+			if forward_projection < required_dist:
+				target_pos += cam_forward * (required_dist - forward_projection)
 
-		# Drop item if obstructed and lagging too far behind the anchor
-		# Give a small grace period (300ms) after grab before distance drop is enforced
 		var dist_sq: float = global_position.distance_squared_to(target_pos)
 		var has_grab_settled: bool = (Time.get_ticks_msec() - _grab_time) > 300
 		if dist_sq > 9.0 and has_grab_settled and not _is_player_flying:
 			drop()
 			return
 
-		# Feed-forward player's velocity to remove spring lag during sprinting
 		var holder_velocity: Vector3 = (
 			holder.get("velocity") if "velocity" in holder else Vector3.ZERO
 		)
 		var distance_vector: Vector3 = target_pos - global_position
-		linear_velocity = holder_velocity + (distance_vector * 20.0)
 
-		# Rotate object smoothly around player yaw while dampening pitch/roll collisions
+		var pos_stiffness: float = 8.0 if is_heavy else 20.0
+		linear_velocity = holder_velocity + (distance_vector * pos_stiffness)
+
 		var cam_yaw: float = (
 			cam.global_transform.basis.get_euler().y
 			if is_instance_valid(cam)
@@ -561,8 +531,9 @@ func _physics_process(_delta: float) -> void:
 		if angle > PI:
 			angle -= TAU
 
+		var rot_stiffness: float = 8.0 if is_heavy else 25.0
 		if axis.length_squared() > 0.0001:
-			angular_velocity = axis.normalized() * (angle * 25.0)
+			angular_velocity = axis.normalized() * (angle * rot_stiffness)
 		else:
 			angular_velocity = Vector3.ZERO
 
@@ -592,7 +563,6 @@ func _physics_process(_delta: float) -> void:
 					var offset: Vector3 = p.global_position - global_position
 					apply_force(force, offset)
 
-	# Detect exact transition when falling object strikes the wave surface
 	if not _was_submerged and submerged and not is_held:
 		var impact_speed: float = linear_velocity.length()
 		print("PickableObject: Water impact registered -> speed: ", impact_speed)
@@ -702,13 +672,14 @@ func _wait_to_enable_collision(player_node: Node3D) -> void:
 		remove_collision_exception_with(player_node)
 
 
-## Recursively applies transparency to the mesh hierarchy when the object is held.
+## Recursively applies transparency across all child GeometryInstance3D nodes.
 func _set_model_transparency(parent_node: Node, alpha: float) -> void:
 	if not is_instance_valid(parent_node):
 		return
 
-	if parent_node is MeshInstance3D:
-		parent_node.transparency = alpha
+	if parent_node is GeometryInstance3D:
+		var geom: GeometryInstance3D = parent_node as GeometryInstance3D
+		geom.transparency = alpha
 
 	for child: Node in parent_node.get_children():
 		_set_model_transparency(child, alpha)
@@ -878,3 +849,20 @@ func _get_event_icon_path(event: InputEvent) -> String:
 				return full_path
 
 	return ""
+
+
+## Resolves visual mesh references from children if export is unassigned.
+func _resolve_visual_mesh() -> Node3D:
+	print("PickableObject: _resolve_visual_mesh() called.")
+	if is_instance_valid(mesh):
+		return mesh
+	if has_node("Mesh"):
+		mesh = get_node("Mesh") as Node3D
+	elif has_node("MeshInstance3D"):
+		mesh = get_node("MeshInstance3D") as Node3D
+	else:
+		for child: Node in get_children():
+			if child is VisualInstance3D or "barrel" in child.name.to_lower():
+				mesh = child as Node3D
+				break
+	return mesh

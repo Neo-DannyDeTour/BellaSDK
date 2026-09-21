@@ -3,11 +3,12 @@ class_name OptionsRouter
 extends Control
 
 @warning_ignore("unused_signal")
-## Emitted when the player clicks the master back button.
+## Emitted when the player activates [member master_back_button] to exit.
 signal back_requested
 
-## Visual layer bitmask assigned to diorama geometry (Layer 11).
+## Visual layer bitmask assigned to diorama preview geometry (Layer 11).
 const PREVIEW_LAYER_MASK: int = 1 << 10
+
 ## Visual layer bitmask assigned to volumetric fog volumes (Layer 10).
 const VOLUMETRIC_LAYER_MASK: int = 1 << 9
 
@@ -73,10 +74,14 @@ var _preview_layer: CanvasLayer = null
 ## Cached list of vision assist mesh nodes inside the diorama.
 var _vision_meshes: Array[MeshInstance3D] = []
 
+## Cached array of all secondary cameras residing in the diorama scene.
+var _all_diorama_cameras: Array[Camera3D] = []
 
-## Lifecycle initialization hooking textures and event signals.
+
+## Lifecycle initialization hooking textures, scenarios, and signals.
 func _ready() -> void:
 	print("UI: OptionsRouter initialized.")
+	_isolate_viewport_scenario()
 	_bind_diorama_textures()
 	_connect_tab_buttons()
 
@@ -89,18 +94,27 @@ func _ready() -> void:
 	visibility_changed.connect(_on_visibility_changed)
 	_current_panel = video_panel
 
-	if is_instance_valid(diorama_viewport):
-		if not diorama_viewport.own_world_3d:
-			print("UI: Forcing own_world_3d on diorama initialization.")
-			diorama_viewport.own_world_3d = true
-
-		var settings_lvl: Node = diorama_viewport.find_child("SettingsLevel", true, false)
-		if is_instance_valid(settings_lvl):
-			print("UI: Isolating SettingsLevel nodes to visual layer 11.")
-			_assign_visual_layer_recursive(settings_lvl, 11)
-
+	_neutralize_diorama_hotspots()
 	_route_diorama_view(video_panel)
 	_evaluate_diorama_state()
+
+
+## Assigns an isolated [World3D] instance safely to prevent scenario cross-talk.
+func _isolate_viewport_scenario() -> void:
+	print("UI: Checking DioramaViewport scenario isolation.")
+	if not is_instance_valid(diorama_viewport):
+		return
+
+	# If the viewport already owns a distinct scenario from the root tree, keep it.
+	var root_world: World3D = get_tree().root.find_world_3d()
+	if diorama_viewport.world_3d != null and diorama_viewport.world_3d != root_world:
+		print("UI: DioramaViewport already has an isolated World3D assigned.")
+		return
+
+	# Assign isolated scenario only if unset or leaking to the root world.
+	diorama_viewport.own_world_3d = true
+	diorama_viewport.world_3d = World3D.new()
+	print("UI: Assigned fresh isolated World3D to DioramaViewport.")
 
 
 ## Binds the shared diorama ViewportTexture to preview displays.
@@ -151,6 +165,36 @@ func _connect_tab_buttons() -> void:
 		accessibility_button.pressed.connect(_on_tab_pressed.bind(accessibility_panel))
 
 
+## Disables runaway shadow casters, mirrors, and active cameras.
+func _neutralize_diorama_hotspots() -> void:
+	print("UI: Neutralizing heavy components inside DioramaViewport.")
+	if not is_instance_valid(diorama_viewport):
+		return
+
+	var settings_lvl: Node = diorama_viewport.find_child("SettingsLevel", true, false)
+	if is_instance_valid(settings_lvl):
+		_assign_visual_layer_recursive(settings_lvl, 11)
+
+	_all_diorama_cameras.clear()
+	var cams: Array[Node] = diorama_viewport.find_children("*", "Camera3D", true, false)
+	for c_node: Node in cams:
+		var cam: Camera3D = c_node as Camera3D
+		if is_instance_valid(cam):
+			cam.current = false
+			_all_diorama_cameras.append(cam)
+
+	var mirrors: Array[Node] = diorama_viewport.find_children("*", "Mirror", true, false)
+	for m_node: Node in mirrors:
+		m_node.process_mode = Node.PROCESS_MODE_DISABLED
+		if m_node is Node3D:
+			(m_node as Node3D).visible = false
+
+	var vgis: Array[Node] = diorama_viewport.find_children("*", "VoxelGI", true, false)
+	for v_node: Node in vgis:
+		if v_node is VisualInstance3D:
+			(v_node as VisualInstance3D).visible = false
+
+
 ## Returns all options sub-panels as a typed array.
 func get_all_panels() -> Array[Control]:
 	print("UI: Querying all options sub-panels.")
@@ -184,14 +228,14 @@ func _on_tab_pressed(active_panel: Panel) -> void:
 	print("UI: Swapped options category tab -> ", active_panel.name)
 	_current_panel = active_panel
 
-	video_panel.visible = active_panel == video_panel
-	audio_panel.visible = active_panel == audio_panel
-	gameplay_panel.visible = active_panel == gameplay_panel
-	controls_panel.visible = active_panel == controls_panel
-	accessibility_panel.visible = active_panel == accessibility_panel
+	video_panel.visible = (active_panel == video_panel)
+	audio_panel.visible = (active_panel == audio_panel)
+	gameplay_panel.visible = (active_panel == gameplay_panel)
+	controls_panel.visible = (active_panel == controls_panel)
+	accessibility_panel.visible = (active_panel == accessibility_panel)
 
 	if is_instance_valid(reset_defaults_button):
-		reset_defaults_button.visible = active_panel == controls_panel
+		reset_defaults_button.visible = (active_panel == controls_panel)
 
 	_route_diorama_view(active_panel)
 	_evaluate_diorama_state()
@@ -217,7 +261,7 @@ func _route_diorama_view(active_panel: Panel) -> void:
 		):
 			accessibility_panel.call("_setup_diorama_cameras")
 	else:
-		_deactivate_graphics_camera()
+		_deactivate_all_diorama_cameras()
 
 
 ## Evaluates conditions and sets [SubViewport] update mode.
@@ -236,7 +280,7 @@ func _evaluate_diorama_state() -> void:
 	else:
 		diorama_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 		diorama_viewport.process_mode = Node.PROCESS_MODE_DISABLED
-		_deactivate_graphics_camera()
+		_deactivate_all_diorama_cameras()
 
 	_set_preview_shader_active(should_render)
 
@@ -244,7 +288,7 @@ func _evaluate_diorama_state() -> void:
 ## Forcibly deactivates diorama rendering and camera to release GPU resources.
 func teardown_diorama() -> void:
 	print("UI: Tearing down diorama viewport.")
-	_deactivate_graphics_camera()
+	_deactivate_all_diorama_cameras()
 	if is_instance_valid(diorama_viewport):
 		diorama_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 		diorama_viewport.process_mode = Node.PROCESS_MODE_DISABLED
@@ -256,16 +300,14 @@ func warmup_diorama() -> void:
 	if not is_instance_valid(diorama_viewport):
 		return
 	print("UI: Pre-allocating diorama pipeline buffers.")
-	if not diorama_viewport.own_world_3d:
-		diorama_viewport.own_world_3d = true
+	if diorama_viewport.world_3d == null:
+		_isolate_viewport_scenario()
 
 	_activate_graphics_camera()
 	diorama_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 	diorama_viewport.process_mode = Node.PROCESS_MODE_INHERIT
 	await get_tree().process_frame
 	await get_tree().process_frame
-
-	# Check active panel state rather than unconditionally killing the viewport
 	_evaluate_diorama_state()
 
 
@@ -275,23 +317,27 @@ func _activate_graphics_camera() -> void:
 	if not is_instance_valid(diorama_viewport):
 		return
 
+	_deactivate_all_diorama_cameras()
+
 	if not is_instance_valid(_graphics_camera):
-		_graphics_camera = diorama_viewport.find_child("Camera_graphics", true, false) as Camera3D
+		_graphics_camera = (diorama_viewport.find_child("Camera_graphics", true, false) as Camera3D)
 		if not is_instance_valid(_graphics_camera):
 			_graphics_camera = (
 				diorama_viewport.find_child("Camera_Graphics", true, false) as Camera3D
 			)
 
 	if is_instance_valid(_graphics_camera):
-		# Render Layer 11 (Geometry) and Layer 10 (Volumetrics)
 		_graphics_camera.cull_mask = PREVIEW_LAYER_MASK | VOLUMETRIC_LAYER_MASK
 		_graphics_camera.current = true
 		_graphics_camera.process_mode = Node.PROCESS_MODE_INHERIT
 
 
-## Deactivates the preview camera so it yields priority to gameplay cameras.
-func _deactivate_graphics_camera() -> void:
-	print("UI: Deactivating diorama graphics camera.")
+## Deactivates all cameras residing inside the preview subviewport.
+func _deactivate_all_diorama_cameras() -> void:
+	print("UI: Deactivating all diorama camera nodes.")
+	for cam: Camera3D in _all_diorama_cameras:
+		if is_instance_valid(cam):
+			cam.current = false
 	if is_instance_valid(_graphics_camera):
 		_graphics_camera.current = false
 

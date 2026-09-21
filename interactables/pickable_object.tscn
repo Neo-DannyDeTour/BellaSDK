@@ -24,6 +24,8 @@ shader_parameter/alpha_scissor_threshold = 0.5
 [node name="PickableObject" type="RigidBody3D" unique_id=594279821 node_paths=PackedStringArray("interact_comp", "mesh", "label", "prompt_icon", "probe_container") groups=["interactables"]]
 collision_layer = 4
 collision_mask = 7
+continuous_cd = true
+angular_damp = 3.0
 script = ExtResource("1_gl7hy")
 interact_comp = NodePath("InteractComponent")
 mesh = NodePath("MeshInstance3D")
