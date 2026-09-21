@@ -330,6 +330,14 @@ signal weapon_reloaded(weapon_tag: String)
 @warning_ignore("unused_signal")
 signal ammo_collected(ammo_type: StringName, amount: int)
 
+## Emitted when wolf vision post-processing is enabled or disabled.
+@warning_ignore("unused_signal")
+signal wolf_vision_toggled(is_active: bool)
+
+## Emitted when god mode invincibility is toggled. Passes [param is_active].
+@warning_ignore("unused_signal")
+signal godmode_toggled(is_active: bool)
+
 ## Visual animation style presets for chapter title card sequences.
 enum ChapterAnimStyle {
 	SIMPLE,

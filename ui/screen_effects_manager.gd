@@ -23,6 +23,12 @@ extends Control
 ## ColorRect applying full-screen water distortion, wipe, and raindrops.
 @onready var water_vfx_overlay: ColorRect = $WaterVFXOverlay
 
+## ColorRect applying full-screen canine dichromatic color and acuity filtering.
+@onready var wolf_vision_overlay: ColorRect = $WolfVisionOverlay
+
+## Animates smooth strength transitions when toggling wolf vision.
+var wolf_vision_tween: Tween
+
 ## The speed multiplier for vignette interpolation animations.
 var ui_lerp_speed: float = 15.0
 
@@ -84,7 +90,8 @@ func _setup_fullscreen_layout() -> void:
 		electricity_vignette,
 		glitch_overlay,
 		fisheye_zoom,
-		water_vfx_overlay
+		water_vfx_overlay,
+		wolf_vision_overlay
 	]
 
 	for overlay: Control in overlays:
@@ -120,6 +127,12 @@ func _initialize_overlays() -> void:
 	if is_instance_valid(water_vfx_overlay):
 		water_vfx_overlay.hide()
 
+	if is_instance_valid(wolf_vision_overlay):
+		if wolf_vision_overlay.material is ShaderMaterial:
+			var mat: ShaderMaterial = wolf_vision_overlay.material as ShaderMaterial
+			mat.set_shader_parameter(&"effect_strength", 0.0)
+		wolf_vision_overlay.hide()
+
 
 ## Safely binds overlay events from the global [Events] bus.
 func _connect_signals() -> void:
@@ -136,6 +149,9 @@ func _connect_signals() -> void:
 		Events.waterfall_vfx_toggled.connect(_on_waterfall_vfx_toggled)
 	if not Events.rain_vfx_toggled.is_connected(_on_rain_vfx_toggled):
 		Events.rain_vfx_toggled.connect(_on_rain_vfx_toggled)
+	if Events.has_signal("wolf_vision_toggled"):
+		if not Events.wolf_vision_toggled.is_connected(_on_wolf_vision_toggled):
+			Events.wolf_vision_toggled.connect(_on_wolf_vision_toggled)
 
 
 ## Updates screen-space vignette transitions and rain pitch scaling every frame.
@@ -387,3 +403,40 @@ func _on_rain_vfx_toggled(intensity: float) -> void:
 	else:
 		_rain_fade_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 		_rain_fade_tween.tween_property(self, "_target_rain_intensity", 0.0, 2.8)
+
+
+## Smoothly blends canine dichromacy post-processing effect in and out.
+## [param is_active] True if the wolf vision filter should be displayed.
+func _on_wolf_vision_toggled(is_active: bool) -> void:
+	print("ScreenEffectsManager: _on_wolf_vision_toggled() -> ", is_active)
+	if not is_instance_valid(wolf_vision_overlay):
+		return
+
+	if not (wolf_vision_overlay.material is ShaderMaterial):
+		wolf_vision_overlay.visible = is_active
+		return
+
+	if wolf_vision_tween and wolf_vision_tween.is_valid():
+		wolf_vision_tween.kill()
+
+	var mat: ShaderMaterial = wolf_vision_overlay.material as ShaderMaterial
+	var current_strength: float = mat.get_shader_parameter(&"effect_strength") as float
+	var target_strength: float = 1.0 if is_active else 0.0
+
+	wolf_vision_overlay.show()
+	wolf_vision_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	wolf_vision_tween.tween_method(
+		func(val: float) -> void:
+			mat.set_shader_parameter(&"effect_strength", val)
+			wolf_vision_overlay.queue_redraw(),
+		current_strength,
+		target_strength,
+		0.4
+	)
+
+	if not is_active:
+		wolf_vision_tween.finished.connect(
+			func() -> void:
+				if not is_active:
+					wolf_vision_overlay.hide()
+		)

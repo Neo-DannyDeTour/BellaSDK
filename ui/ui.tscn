@@ -16,6 +16,7 @@
 [ext_resource type="Shader" uid="uid://bcpssk465dbif" path="res://vfx/glitch.gdshader" id="7_x7nxp"]
 [ext_resource type="Shader" uid="uid://c2f1f2all860e" path="res://ui/electricityvignette.gdshader" id="8_3lbto"]
 [ext_resource type="Script" uid="uid://cnewwxia7j3ay" path="res://core/frame_graph.gd" id="8_ktti3"]
+[ext_resource type="Shader" uid="uid://b78s3ch8xw5c1" path="res://ui/wolf_vision.gdshader" id="9_3hdvn"]
 [ext_resource type="Shader" uid="uid://dqjxwnsg8c5f0" path="res://vfx/outline_hearts_adaptable.gdshader" id="10_7dvkv"]
 [ext_resource type="Shader" uid="uid://wmp7kwratrjt" path="res://vfx/water_effects_overlay.gdshader" id="10_fgtw6"]
 [ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="11_bi8hs"]
@@ -70,6 +71,12 @@ shader_parameter/effect_mode = 0
 shader_parameter/drop_intensity = 0.0
 shader_parameter/wash_intensity = 0.0
 shader_parameter/clear_progress = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_534t5"]
+shader = ExtResource("9_3hdvn")
+shader_parameter/effect_strength = 1.0
+shader_parameter/brightness_boost = 1.25
+shader_parameter/blur_amount = 0.8
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_yev5y"]
 shader = ExtResource("2_x4jx1")
@@ -178,6 +185,17 @@ mouse_filter = 2
 
 [node name="WaterVFXOverlay" type="ColorRect" parent="ScreenEffectsManager" unique_id=2142477501]
 material = SubResource("ShaderMaterial_6cxyx")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="WolfVisionOverlay" type="ColorRect" parent="ScreenEffectsManager" unique_id=1394655530]
+visible = false
+material = SubResource("ShaderMaterial_534t5")
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

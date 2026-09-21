@@ -1,0 +1,30 @@
+[gd_scene format=3 uid="uid://b16t0oiv28pqa"]
+
+[ext_resource type="Script" uid="uid://bwtvwv1xx6x2" path="res://ui/in_game_console.gd" id="1_si6iw"]
+
+[node name="InGameConsole" type="CanvasLayer" unique_id=1910093025]
+process_mode = 3
+script = ExtResource("1_si6iw")
+
+[node name="BackgroundPanel" type="PanelContainer" parent="." unique_id=929902160]
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -380.0
+grow_horizontal = 0
+grow_vertical = 2
+size_flags_vertical = 3
+
+[node name="LayoutContainer" type="VBoxContainer" parent="BackgroundPanel" unique_id=1532657592]
+layout_mode = 2
+
+[node name="OutputLog" type="RichTextLabel" parent="BackgroundPanel/LayoutContainer" unique_id=245019660]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="SuggestionLog" type="RichTextLabel" parent="BackgroundPanel/LayoutContainer" unique_id=1061138206]
+layout_mode = 2
+
+[node name="CommandInput" type="LineEdit" parent="BackgroundPanel/LayoutContainer" unique_id=861806589]
+layout_mode = 2

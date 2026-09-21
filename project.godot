@@ -25,7 +25,6 @@ buses/default_bus_layout="uid://blb10t72ak8ru"
 
 [autoload]
 
-Console="*uid://bwtvwv1xx6x2"
 Events="*uid://duejfvfifyd20"
 DebugManager="*uid://psgaa5vua8a3"
 SmokeManager="*uid://b1t38dkohipue"
@@ -43,6 +42,8 @@ GestureInputManager="*uid://ot3nttr18nqd"
 SubtitleLayer="*uid://45v6q0javct"
 InputHelper="*uid://5wsuikeojvgu"
 ShockwaveManager="*uid://cxv4l5k6gkqyi"
+PostProcessLayer="*uid://dmjj5l722vik8"
+InGameConsole="*uid://b16t0oiv28pqa"
 
 [debug]
 
