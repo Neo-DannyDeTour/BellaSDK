@@ -21,9 +21,32 @@
 
 <b>BellaSDK</b> - a modern replacement for Hammer/Source to help noobs quickly start prototyping their next masterpiece instead of wasting valuable months trying to add fucking crouching mechanic to a 35 year old engine that was specifically made for FPS! Fuck Unreal you fucking sack of shit!!!
 
-[GOOGLE FORM - please leave your thoughts and prayers there. DO YOU WANT BETTER GAMES OR NOT?!! HOW AM I SUPPOSED TO GIVE YOU WHAT YOU WANT IF YOU'RE NOT SHARING YOUR DEEPEST, DARKEST DESIRES WITH ME? CONFESS!!!](https://forms.gle/JnrmTWLiLv5Mhzfg8)
+### 🎮 Project Downloads & Community Feedback
 
-[FULL PROJECT](https://drive.google.com/drive/folders/1EIplMuRXGZBpfP5XdidS_mtlFUrvjh8J?usp=drive_link) - now everything is automated. New versions of the project are going to be automatically uploaded to DRIVE every day at 6pm. FUCKING FINALLY! I've been searching for a solution for months now. Motherfuckers! Why can't it be easier?! There should be buttons on GitHub automatically offering different options: Drive, Box, Yandex, Yo momma's asshole but NOOOO! You're going to waste hours because we want you to pay for LFS. Sluts!
+<p align="left">
+  <a href="https://drive.google.com/drive/folders/1EIplMuRXGZBpfP5XdidS_mtlFUrvjh8J?usp=drive_link">
+    <img src="https://img.shields.io/badge/Google_Drive-Full_Project_(>4GB)-4285F4?style=for-the-badge&logo=googledrive&logoColor=white" alt="Full Project Download" />
+  </a>
+  &nbsp;
+  <a href="https://forms.gle/JnrmTWLiLv5Mhzfg8">
+    <img src="https://img.shields.io/badge/Google_Forms-Leave_Feedback-7248B9?style=for-the-badge&logo=googleforms&logoColor=white" alt="Feedback Form" />
+  </a>
+</p>
+
+> [!TIP]
+> ### 📦 Full Project (>4GB)
+> The repository is synchronized daily at **6:00 PM**. If you need the complete game assets, levels, or working trees that exceed Git LFS limits, grab the latest archive directly from the [Google Drive Folder](https://drive.google.com/drive/folders/1EIplMuRXGZBpfP5XdidS_mtlFUrvjh8J?usp=drive_link).
+> FUCKING FINALLY! I've been searching for a solution for months now. Motherfuckers! Why can't it be easier?! There should be buttons on GitHub automatically offering different options: Drive, Box, Yandex, Yo momma's asshole but NOOOO! You're going to waste hours because we want you to pay for LFS. Sluts!
+
+> [!IMPORTANT]
+> ### 💬 Share Your Thoughts & Prayers
+> **Do you want better games or not?!** How are we supposed to give you what you want if you're not sharing your deepest, darkest desires with us?
+> 
+> 👉 **[Click here to confess via the Feedback Form](YOUR_GOOGLE_FORM_URL_HERE)**
+
+[GOOGLE FORM - please leave your thoughts and prayers there. DO YOU WANT BETTER GAMES OR NOT?!! HOW AM I SUPPOSED TO GIVE YOU WHAT YOU WANT IF YOU'RE NOT SHARING YOUR DEEPEST, DARKEST DESIRES WITH ME? CONFESS!!!]()
+
+[FULL PROJECT](https://drive.google.com/drive/folders/1EIplMuRXGZBpfP5XdidS_mtlFUrvjh8J?usp=drive_link) - now everything is automated. New versions of the project are going to be automatically uploaded to DRIVE every day at 6pm. 
 
 ## <u>BellaSDK - a fun project</u>
 
