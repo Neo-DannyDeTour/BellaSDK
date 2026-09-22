@@ -337,63 +337,83 @@ func _on_console_toggle_requested() -> void:
 			events.console_toggled.emit(visible)
 
 
+## Returns autocomplete candidates for colorblind shader modes.
+func _get_colorblind_options() -> Array[String]:
+	return ["normal", "protanopia", "deuteranopia", "tritanopia", "mono", "achromatopsia", "split"]
+
+
+## Returns available font identifiers from [GlobalSettings].
+func _get_font_options() -> Array[String]:
+	if is_instance_valid(GlobalSettings):
+		return GlobalSettings.get_font_ids()
+	return []
+
+
+## Returns available screen filter identifiers from [GlobalSettings].
+func _get_screen_filter_options() -> Array[String]:
+	if is_instance_valid(GlobalSettings):
+		return GlobalSettings.get_screen_filter_ids()
+	return []
+
+
+## Returns enemy identifier keys for spawnenemy autocomplete.
+func _get_enemy_options() -> Array[String]:
+	var keys: Array[String] = []
+	for k: String in ENEMY_SCENE_PATHS.keys():
+		keys.append(k)
+	return keys
+
+
+## Displays all valid registered console commands.
+func _cmd_help(_args: PackedStringArray) -> void:
+	print("InGameConsole: _cmd_help called.")
+	var valid: String = ", ".join(registry.get_valid_commands())
+	write("Available commands: " + valid, "green")
+
+
+## Clears terminal output log and message history buffer.
+func _cmd_clear(_args: PackedStringArray) -> void:
+	print("InGameConsole: _cmd_clear called.")
+	output_log.clear()
+	message_history.clear()
+	write("Console cleared.", "cyan")
+
+
+## Terminates the game application immediately.
+func _cmd_quit(_args: PackedStringArray) -> void:
+	print("InGameConsole: Action Quitting Game")
+	write("Exiting game...", "red")
+	get_tree().quit()
+
+
+## Reloads the active scene tree.
+func _cmd_restart(_args: PackedStringArray) -> void:
+	print("InGameConsole: Action Reloading Current Scene")
+	write("Restarting scene...", "yellow")
+	get_tree().paused = false
+	_on_console_toggle_requested()
+	get_tree().reload_current_scene()
+
+
 ## Registers core terminal commands and sets up autocompletion providers.
 func _register_default_commands() -> void:
 	print("InGameConsole: Registering default commands.")
 	registry.register_command(
-		ConsoleCommand.new(
-			"help",
-			"Lists all available commands.",
-			func(_a: PackedStringArray) -> void:
-				var valid: String = ", ".join(registry.get_valid_commands())
-				write("Available commands: " + valid, "green")
-		)
+		ConsoleCommand.new("help", "Lists all available commands.", _cmd_help)
+	)
+
+	registry.register_command(ConsoleCommand.new("clear", "Clears the output log.", _cmd_clear))
+
+	registry.register_command(
+		ConsoleCommand.new("quit", "Exits the application immediately.", _cmd_quit)
 	)
 
 	registry.register_command(
-		ConsoleCommand.new(
-			"clear",
-			"Clears the output log.",
-			func(_a: PackedStringArray) -> void:
-				output_log.clear()
-				message_history.clear()
-				write("Console cleared.", "cyan")
-		)
+		ConsoleCommand.new("exit", "Exits the application immediately.", _cmd_quit)
 	)
 
 	registry.register_command(
-		ConsoleCommand.new(
-			"quit",
-			"Exits the application immediately.",
-			func(_a: PackedStringArray) -> void:
-				write("Exiting game...", "red")
-				print("InGameConsole: Action Quitting Game")
-				get_tree().quit()
-		)
-	)
-
-	registry.register_command(
-		ConsoleCommand.new(
-			"exit",
-			"Exits the application immediately.",
-			func(_a: PackedStringArray) -> void:
-				write("Exiting game...", "red")
-				print("InGameConsole: Action Quitting Game")
-				get_tree().quit()
-		)
-	)
-
-	registry.register_command(
-		ConsoleCommand.new(
-			"restart",
-			"Reloads the active scene.",
-			func(_a: PackedStringArray) -> void:
-				write("Restarting scene...", "yellow")
-				print("InGameConsole: Action Reloading Current Scene")
-				get_tree().paused = false
-				_on_console_toggle_requested()
-				get_tree().reload_current_scene()
-		)
+		ConsoleCommand.new("restart", "Reloads the active scene.", _cmd_restart)
 	)
 
 	registry.register_command(
@@ -401,16 +421,7 @@ func _register_default_commands() -> void:
 			"colorblind",
 			"Applies accessibility colorblind shader.",
 			_cmd_colorblind,
-			func() -> Array[String]:
-				return [
-					"normal",
-					"protanopia",
-					"deuteranopia",
-					"tritanopia",
-					"mono",
-					"achromatopsia",
-					"split"
-				]
+			_get_colorblind_options
 		)
 	)
 
@@ -437,15 +448,7 @@ func _register_default_commands() -> void:
 	)
 
 	registry.register_command(
-		ConsoleCommand.new(
-			"setfont",
-			"Changes global font style.",
-			_cmd_setfont,
-			func() -> Array[String]:
-				if is_instance_valid(GlobalSettings):
-					return GlobalSettings.get_font_ids()
-				return []
-		)
+		ConsoleCommand.new("setfont", "Changes global font style.", _cmd_setfont, _get_font_options)
 	)
 
 	registry.register_command(
@@ -453,10 +456,7 @@ func _register_default_commands() -> void:
 			"screenfilter",
 			"Applies fullscreen post-processing filter.",
 			_cmd_screenfilter,
-			func() -> Array[String]:
-				if is_instance_valid(GlobalSettings):
-					return GlobalSettings.get_screen_filter_ids()
-				return []
+			_get_screen_filter_options
 		)
 	)
 
@@ -474,16 +474,7 @@ func _register_default_commands() -> void:
 	)
 
 	registry.register_command(
-		ConsoleCommand.new(
-			"uiscale",
-			"Scales the user interface.",
-			func(args: PackedStringArray) -> void:
-				if args.size() > 0:
-					var sc: float = args[0].to_float()
-					write("UI Scale set to: " + str(sc), "green")
-				else:
-					write("Usage: uiscale <float> (Default: 1.0)", "yellow")
-		)
+		ConsoleCommand.new("uiscale", "Scales the user interface.", _cmd_uiscale)
 	)
 
 	registry.register_command(
@@ -560,6 +551,27 @@ func _register_default_commands() -> void:
 	_register_easter_egg_commands()
 
 
+## Sets the engine time scale factor.
+func _cmd_gamespeed(args: PackedStringArray) -> void:
+	print("InGameConsole: Action Set Gamespeed")
+	if args.size() > 0:
+		var new_speed: float = args[0].to_float()
+		Engine.time_scale = clampf(new_speed, 0.1, 10.0)
+		write("Time scale set to: " + str(Engine.time_scale), "green")
+	else:
+		write("Usage: gamespeed <value>", "yellow")
+
+
+## Sets the UI display scale factor.
+func _cmd_uiscale(args: PackedStringArray) -> void:
+	print("InGameConsole: _cmd_uiscale called with args: ", args)
+	if args.size() > 0:
+		var sc: float = args[0].to_float()
+		write("UI Scale set to: " + str(sc), "green")
+	else:
+		write("Usage: uiscale <float> (Default: 1.0)", "yellow")
+
+
 ## Registers debug-only commands restricted to development builds.
 func _register_debug_commands() -> void:
 	print("InGameConsole: Registering debug commands.")
@@ -572,7 +584,7 @@ func _register_debug_commands() -> void:
 			"deathscreen",
 			"Previews a specific death screen effect.",
 			_cmd_deathscreen,
-			func() -> Array[String]: return ["ecg", "cave", "lava", "static"],
+			func() -> Array[String]: return ["ecg", "cave", "lava", "static", "glass"],
 			true
 		)
 	)
@@ -621,18 +633,7 @@ func _register_debug_commands() -> void:
 
 	registry.register_command(
 		ConsoleCommand.new(
-			"gamespeed",
-			"Sets the engine time scale factor.",
-			func(args: PackedStringArray) -> void:
-				print("InGameConsole: Action Set Gamespeed")
-				if args.size() > 0:
-					var new_speed: float = args[0].to_float()
-					Engine.time_scale = clampf(new_speed, 0.1, 10.0)
-					write("Time scale set to: " + str(Engine.time_scale), "green")
-				else:
-					write("Usage: gamespeed <value>", "yellow"),
-			Callable(),
-			true
+			"gamespeed", "Sets the engine time scale factor.", _cmd_gamespeed, Callable(), true
 		)
 	)
 
@@ -720,15 +721,7 @@ func _register_debug_commands() -> void:
 
 	registry.register_command(
 		ConsoleCommand.new(
-			"spawnenemy",
-			"Instantiates an enemy entity.",
-			_cmd_spawnenemy,
-			func() -> Array[String]:
-				var keys: Array[String] = []
-				for k: String in ENEMY_SCENE_PATHS.keys():
-					keys.append(k)
-				return keys,
-			true
+			"spawnenemy", "Instantiates an enemy entity.", _cmd_spawnenemy, _get_enemy_options, true
 		)
 	)
 
@@ -751,6 +744,26 @@ func _register_debug_commands() -> void:
 			true
 		)
 	)
+
+
+## Easter egg handler for sv_cheats command.
+func _cmd_sv_cheats(args: PackedStringArray) -> void:
+	print("InGameConsole: _cmd_sv_cheats called with args: ", args)
+	if args.size() > 0 and args[0] == "1":
+		var msg: String = "You don't need it. God gave us enough impulse."
+		write(msg, "white")
+	else:
+		write("Usage: sv_cheats 1", "red")
+
+
+## Easter egg handler for impulse command.
+func _cmd_impulse(args: PackedStringArray) -> void:
+	print("InGameConsole: _cmd_impulse called with args: ", args)
+	if args.size() > 0 and args[0] == "101":
+		var msg: String = "Bella is a trained professional."
+		write(msg, "white")
+	else:
+		write("Usage: impulse 101", "red")
 
 
 ## Registers easter egg and cheat console commands.
@@ -779,8 +792,7 @@ func _register_easter_egg_commands() -> void:
 			"motherlode",
 			"",
 			func(_a: PackedStringArray) -> void:
-				var msg: String = "This is a classic get-rich-quick scheme! Arrested!"
-				write(msg)
+				write("This is a classic get-rich-quick scheme! Arrested!")
 		)
 	)
 	registry.register_command(
@@ -840,30 +852,8 @@ func _register_easter_egg_commands() -> void:
 			"thegodfather", "", func(_a: PackedStringArray) -> void: write("do not care")
 		)
 	)
-	registry.register_command(
-		ConsoleCommand.new(
-			"sv_cheats",
-			"",
-			func(args: PackedStringArray) -> void:
-				if args.size() > 0 and args[0] == "1":
-					var msg: String = "You don't need it. God gave us enough impulse."
-					write(msg, "white")
-				else:
-					write("Usage: sv_cheats 1", "red")
-		)
-	)
-	registry.register_command(
-		ConsoleCommand.new(
-			"impulse",
-			"",
-			func(args: PackedStringArray) -> void:
-				if args.size() > 0 and args[0] == "101":
-					var msg: String = "Bella is a trained professional."
-					write(msg, "white")
-				else:
-					write("Usage: impulse 101", "red")
-		)
-	)
+	registry.register_command(ConsoleCommand.new("sv_cheats", "", _cmd_sv_cheats))
+	registry.register_command(ConsoleCommand.new("impulse", "", _cmd_impulse))
 
 
 ## Handles colorblind command execution and dispatches event signals.
@@ -1185,7 +1175,6 @@ func _get_player_health_component(player: Node) -> HealthComponent:
 	return null
 
 
-## Handles die debug command.
 ## Handles die debug command using direct component resolution.
 func _cmd_die(_args: PackedStringArray) -> void:
 	print("InGameConsole: Action Executing 'die' command.")
@@ -1213,7 +1202,7 @@ func _cmd_die(_args: PackedStringArray) -> void:
 func _cmd_deathscreen(args: PackedStringArray) -> void:
 	print("InGameConsole: Action Executing 'deathscreen' preview.")
 	if args.is_empty():
-		write("Usage: deathscreen <ecg|cave|lava|static>", "yellow")
+		write("Usage: deathscreen <ecg|cave|lava|static|glass>", "yellow")
 		return
 
 	var screen_name: String = args[0].to_lower()
@@ -1243,8 +1232,10 @@ func _cmd_deathscreen(args: PackedStringArray) -> void:
 			chosen_effect = DeathScreen.EffectType.CAVE_TUNNEL
 		"static":
 			chosen_effect = DeathScreen.EffectType.TV_STATIC
+		"glass":
+			chosen_effect = DeathScreen.EffectType.GLASS
 		_:
-			var err: String = "Unknown screen. Available: ecg, cave, lava, static"
+			var err: String = "Unknown screen. Available: ecg, cave, lava, static, glass"
 			write(err, "red")
 			return
 

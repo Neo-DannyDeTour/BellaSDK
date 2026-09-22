@@ -6,6 +6,7 @@
 [ext_resource type="Shader" uid="uid://bpkvj2ago2gkv" path="res://vfx/death_screen_cave_tunnel.gdshader" id="4_4vofl"]
 [ext_resource type="Shader" uid="uid://b02wdmnk5w5s" path="res://vfx/death_screen_tv_static.gdshader" id="5_h4ie6"]
 [ext_resource type="Texture2D" uid="uid://bpputyrxx77ye" path="res://assets/images/Death_Screen_Mannequin.jpeg" id="6_ynprq"]
+[ext_resource type="Shader" uid="uid://boxq2fnrk6fle" path="res://ui/death_glass_screen.gdshader" id="7_ynprq"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_g3utg"]
 shader = ExtResource("2_g3utg")
@@ -56,6 +57,19 @@ shader_parameter/static_intensity = 1.0
 shader_parameter/scanline_count = 240.0
 shader_parameter/vignette_strength = 0.5
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_i44y8"]
+shader = ExtResource("7_ynprq")
+shader_parameter/center = Vector2(0, 0)
+shader_parameter/box_size = Vector2(1.05, 1.05)
+shader_parameter/box_radius = 0.25
+shader_parameter/border_weight = 0.0
+shader_parameter/border_color = Color(1, 1, 1, 1)
+shader_parameter/lens_strength = 2.0
+shader_parameter/chromatic_spread = 0.0
+shader_parameter/lens_curve = 0.15
+shader_parameter/distortion_mix = 0.0
+shader_parameter/black_fade = 0.0
+
 [node name="DeathScreen" type="CanvasLayer" unique_id=1910211973 groups=["death_screen"]]
 script = ExtResource("1_36x74")
 
@@ -96,6 +110,14 @@ color = Color(0.003921569, 0.003921569, 0.003921569, 1)
 
 [node name="TVStaticOverlay" type="ColorRect" parent="." unique_id=1486399559]
 material = SubResource("ShaderMaterial_7lgc2")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="GlassOverlay" type="ColorRect" parent="." unique_id=208506919]
+material = SubResource("ShaderMaterial_i44y8")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
