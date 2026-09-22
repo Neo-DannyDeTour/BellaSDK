@@ -16,6 +16,7 @@ func before_each() -> void:
 	var script: Script = load("res://player/system_menu_controller.gd")
 	controller = Node.new()
 	controller.set_script(script)
+	controller.set("menu_scene", null)
 
 	mock_camera = Camera3D.new()
 	var initial_env: Environment = Environment.new()
