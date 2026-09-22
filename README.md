@@ -44,10 +44,6 @@
 > 
 > 👉 **[Click here to confess via the Feedback Form](https://forms.gle/JnrmTWLiLv5Mhzfg8)**
 
-[GOOGLE FORM - please leave your thoughts and prayers there. DO YOU WANT BETTER GAMES OR NOT?!! HOW AM I SUPPOSED TO GIVE YOU WHAT YOU WANT IF YOU'RE NOT SHARING YOUR DEEPEST, DARKEST DESIRES WITH ME? CONFESS!!!]()
-
-[FULL PROJECT](https://drive.google.com/drive/folders/1EIplMuRXGZBpfP5XdidS_mtlFUrvjh8J?usp=drive_link) - now everything is automated. New versions of the project are going to be automatically uploaded to DRIVE every day at 6pm. 
-
 ## <u>BellaSDK - a fun project</u>
 
 I like Neil Druckmann. 
