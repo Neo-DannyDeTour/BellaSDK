@@ -80,8 +80,9 @@ var _all_diorama_cameras: Array[Camera3D] = []
 
 ## Lifecycle initialization hooking textures, scenarios, and signals.
 func _ready() -> void:
-	print("UI: OptionsRouter initialized.")
+	print("OptionsRouter: Initializing UI router and isolating diorama.")
 	_isolate_viewport_scenario()
+	_neutralize_diorama_hotspots()
 	_bind_diorama_textures()
 	_connect_tab_buttons()
 
@@ -94,36 +95,30 @@ func _ready() -> void:
 	visibility_changed.connect(_on_visibility_changed)
 	_current_panel = video_panel
 
-	_neutralize_diorama_hotspots()
 	_route_diorama_view(video_panel)
 	_evaluate_diorama_state()
 
 
 ## Assigns an isolated [World3D] instance safely to prevent scenario cross-talk.
 func _isolate_viewport_scenario() -> void:
-	print("UI: Checking DioramaViewport scenario isolation.")
+	print("OptionsRouter: Verifying DioramaViewport scenario isolation.")
 	if not is_instance_valid(diorama_viewport):
 		return
 
-	# If the viewport already owns a distinct scenario from the root tree, keep it.
-	var root_world: World3D = get_tree().root.find_world_3d()
-	if diorama_viewport.world_3d != null and diorama_viewport.world_3d != root_world:
-		print("UI: DioramaViewport already has an isolated World3D assigned.")
-		return
-
-	# Assign isolated scenario only if unset or leaking to the root world.
 	diorama_viewport.own_world_3d = true
-	diorama_viewport.world_3d = World3D.new()
-	print("UI: Assigned fresh isolated World3D to DioramaViewport.")
+	if diorama_viewport.world_3d == null or diorama_viewport.world_3d == get_tree().root.world_3d:
+		var iso_world: World3D = World3D.new()
+		iso_world.environment = Environment.new()
+		diorama_viewport.world_3d = iso_world
+		print("OptionsRouter: Instantiated distinct World3D and Environment.")
 
 
 ## Binds the shared diorama ViewportTexture to preview displays.
 func _bind_diorama_textures() -> void:
 	if not is_instance_valid(diorama_viewport):
-		push_error("UI ERROR: DioramaViewport not found.")
 		return
 
-	print("UI: Binding Diorama ViewportTexture to static sockets.")
+	print("OptionsRouter: Binding ViewportTexture to preview sockets.")
 	var tex: ViewportTexture = diorama_viewport.get_texture()
 
 	if is_instance_valid(video_display):
@@ -152,7 +147,7 @@ func _bind_diorama_textures() -> void:
 
 ## Connects all tab navigation buttons to their respective handlers.
 func _connect_tab_buttons() -> void:
-	print("UI: Connecting tab navigation buttons.")
+	print("OptionsRouter: Connecting category tab signals.")
 	if is_instance_valid(video_button):
 		video_button.pressed.connect(_on_tab_pressed.bind(video_panel))
 	if is_instance_valid(audio_button):
@@ -165,15 +160,22 @@ func _connect_tab_buttons() -> void:
 		accessibility_button.pressed.connect(_on_tab_pressed.bind(accessibility_panel))
 
 
-## Disables runaway shadow casters, mirrors, and active cameras.
+## Strips physics collisions and isolates render layers inside the preview.
 func _neutralize_diorama_hotspots() -> void:
-	print("UI: Neutralizing heavy components inside DioramaViewport.")
+	print("OptionsRouter: Neutralizing collisions and lights in preview.")
 	if not is_instance_valid(diorama_viewport):
 		return
 
-	var settings_lvl: Node = diorama_viewport.find_child("SettingsLevel", true, false)
-	if is_instance_valid(settings_lvl):
-		_assign_visual_layer_recursive(settings_lvl, 11)
+	# Strip all collisions inside the diorama to prevent physics space contamination
+	var bodies: Array[Node] = diorama_viewport.find_children("*", "CollisionObject3D", true, false)
+	for b_node: Node in bodies:
+		var c_obj: CollisionObject3D = b_node as CollisionObject3D
+		if is_instance_valid(c_obj):
+			c_obj.collision_layer = 0
+			c_obj.collision_mask = 0
+			c_obj.process_mode = Node.PROCESS_MODE_DISABLED
+
+	_assign_visual_layer_recursive(diorama_viewport, 11)
 
 	_all_diorama_cameras.clear()
 	var cams: Array[Node] = diorama_viewport.find_children("*", "Camera3D", true, false)
@@ -189,28 +191,20 @@ func _neutralize_diorama_hotspots() -> void:
 		if m_node is Node3D:
 			(m_node as Node3D).visible = false
 
-	var vgis: Array[Node] = diorama_viewport.find_children("*", "VoxelGI", true, false)
-	for v_node: Node in vgis:
-		if v_node is VisualInstance3D:
-			(v_node as VisualInstance3D).visible = false
-
 
 ## Returns all options sub-panels as a typed array.
 func get_all_panels() -> Array[Control]:
-	print("UI: Querying all options sub-panels.")
 	return [video_panel, audio_panel, gameplay_panel, controls_panel, accessibility_panel]
 
 
 ## Returns all category tab buttons as a typed array.
 func get_all_tab_buttons() -> Array[Button]:
-	print("UI: Querying all category tab buttons.")
 	return [video_button, audio_button, gameplay_button, controls_button, accessibility_button]
 
 
 ## Opens a specific tab by integer index and updates diorama.
-## [param index] Category tab index.
 func select_tab_by_index(index: int) -> void:
-	print("UI: Selecting tab by index: ", index)
+	print("OptionsRouter: Selecting tab index: ", index)
 	var panels: Array[Control] = get_all_panels()
 	if index >= 0 and index < panels.size():
 		_on_tab_pressed(panels[index] as Panel)
@@ -218,14 +212,13 @@ func select_tab_by_index(index: int) -> void:
 
 ## Intercepts visibility changes on the options overlay.
 func _on_visibility_changed() -> void:
-	print("UI: OptionsRouter visibility changed -> ", is_visible_in_tree())
+	print("OptionsRouter: Panel visibility changed: ", is_visible_in_tree())
 	_evaluate_diorama_state()
 
 
 ## Switches active tab and updates diorama camera routing.
-## [param active_panel] Target panel to display.
 func _on_tab_pressed(active_panel: Panel) -> void:
-	print("UI: Swapped options category tab -> ", active_panel.name)
+	print("OptionsRouter: Selected panel: ", active_panel.name)
 	_current_panel = active_panel
 
 	video_panel.visible = (active_panel == video_panel)
@@ -242,9 +235,7 @@ func _on_tab_pressed(active_panel: Panel) -> void:
 
 
 ## Routes camera and shaders to match the active tab without reparenting.
-## [param active_panel] Active settings subpanel.
 func _route_diorama_view(active_panel: Panel) -> void:
-	print("UI: Routing diorama view for panel -> ", active_panel.name)
 	var is_video: bool = active_panel == video_panel
 	var is_access: bool = active_panel == accessibility_panel
 
@@ -271,7 +262,7 @@ func _evaluate_diorama_state() -> void:
 
 	var is_preview: bool = _current_panel == video_panel or _current_panel == accessibility_panel
 	var should_render: bool = is_visible_in_tree() and is_preview
-	print("UI: Diorama rendering state updated -> ", should_render)
+	print("OptionsRouter: Diorama render update mode: ", should_render)
 
 	if should_render:
 		diorama_viewport.process_mode = Node.PROCESS_MODE_INHERIT
@@ -287,7 +278,7 @@ func _evaluate_diorama_state() -> void:
 
 ## Forcibly deactivates diorama rendering and camera to release GPU resources.
 func teardown_diorama() -> void:
-	print("UI: Tearing down diorama viewport.")
+	print("OptionsRouter: Tearing down diorama viewport safely.")
 	_deactivate_all_diorama_cameras()
 	if is_instance_valid(diorama_viewport):
 		diorama_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
@@ -295,32 +286,15 @@ func teardown_diorama() -> void:
 	_set_preview_shader_active(false)
 
 
-## Renders two warmup frames to pre-allocate GPU froxels and pipelines.
-func warmup_diorama() -> void:
-	if not is_instance_valid(diorama_viewport):
-		return
-	print("UI: Pre-allocating diorama pipeline buffers.")
-	if diorama_viewport.world_3d == null:
-		_isolate_viewport_scenario()
-
-	_activate_graphics_camera()
-	diorama_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
-	diorama_viewport.process_mode = Node.PROCESS_MODE_INHERIT
-	await get_tree().process_frame
-	await get_tree().process_frame
-	_evaluate_diorama_state()
-
-
 ## Activates and isolates the preview camera node inside [SubViewport].
 func _activate_graphics_camera() -> void:
-	print("UI: Activating diorama graphics camera.")
 	if not is_instance_valid(diorama_viewport):
 		return
 
 	_deactivate_all_diorama_cameras()
 
 	if not is_instance_valid(_graphics_camera):
-		_graphics_camera = (diorama_viewport.find_child("Camera_graphics", true, false) as Camera3D)
+		_graphics_camera = diorama_viewport.find_child("Camera_graphics", true, false) as Camera3D
 		if not is_instance_valid(_graphics_camera):
 			_graphics_camera = (
 				diorama_viewport.find_child("Camera_Graphics", true, false) as Camera3D
@@ -332,9 +306,9 @@ func _activate_graphics_camera() -> void:
 		_graphics_camera.process_mode = Node.PROCESS_MODE_INHERIT
 
 
-## Deactivates all cameras residing inside the preview subviewport.
+## Deactivates ONLY cameras belonging strictly to the diorama subviewport.
 func _deactivate_all_diorama_cameras() -> void:
-	print("UI: Deactivating all diorama camera nodes.")
+	print("OptionsRouter: Safely disabling diorama-only camera nodes.")
 	for cam: Camera3D in _all_diorama_cameras:
 		if is_instance_valid(cam):
 			cam.current = false
@@ -343,7 +317,6 @@ func _deactivate_all_diorama_cameras() -> void:
 
 
 ## Controls the preview shader pass canvas layer.
-## [param is_active] True if active.
 func _set_preview_shader_active(is_active: bool) -> void:
 	if is_instance_valid(_preview_layer):
 		_preview_layer.visible = is_active
@@ -354,22 +327,19 @@ func _set_preview_shader_active(is_active: bool) -> void:
 
 ## Handles master back button clicks and notifies the main menu coordinator.
 func _on_master_back_pressed() -> void:
-	print("UI: Master back button pressed.")
+	print("OptionsRouter: Master back button clicked.")
 	teardown_diorama()
 	back_requested.emit()
 
 
 ## Relays reset call to [ControlsPanel] if currently active and visible.
 func _on_reset_defaults_pressed() -> void:
-	print("UI: Reset defaults pressed.")
 	if is_instance_valid(controls_panel) and controls_panel.visible:
 		if controls_panel.has_method("reset_to_defaults"):
 			controls_panel.call("reset_to_defaults")
 
 
 ## Traverses node hierarchy and applies 3D visual layer bitmask.
-## [param root] Target branch node.
-## [param layer_idx] 1-based visual layer index.
 func _assign_visual_layer_recursive(root: Node, layer_idx: int) -> void:
 	var mask: int = 1 << (layer_idx - 1)
 	for child: Node in root.get_children():

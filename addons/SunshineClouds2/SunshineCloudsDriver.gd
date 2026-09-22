@@ -1,9 +1,6 @@
-## Driver node orchestrating scene lights, wind motion, and compositor synchronization.
-##
-## Tracks [DirectionalLight3D], [OmniLight3D], and [SunshineCloudsEffector] instances,
-## manages continuous wind coordinate wrapping, and hooks into [WorldEnvironment].
 @tool
 @icon("res://addons/SunshineClouds2/CloudsDriverIcon.svg")
+## Driver node orchestrating scene lights, wind motion, and compositor synchronization.
 class_name SunshineCloudsDriverGD
 extends Node
 
@@ -129,13 +126,23 @@ var _small_clouds_domain: float = 0.0
 var _updating_settings: bool = false
 
 
-## Initializes light tracking and schedules texture data synchronization.
+## Initializes light tracking, rebinds live environment, and schedules texture sync.
 func _ready() -> void:
+	print("SunshineCloudsDriver: Initializing cloud driver components.")
+	_sync_world_environment()
 	if update_continuously:
 		if clouds_resource == null:
 			update_continuously = false
 			return
 		call_deferred(&"retrieve_texture_data")
+
+
+## Locates live [WorldEnvironment] and updates [member ambience_sample_environment].
+func _sync_world_environment() -> void:
+	var env_node: WorldEnvironment = recursively_find_env(get_tree().root)
+	if is_instance_valid(env_node) and is_instance_valid(env_node.environment):
+		ambience_sample_environment = env_node.environment
+		print("SunshineCloudsDriver: Rebound to active runtime Environment.")
 
 
 ## Integrates continuous wind displacement and synchronizes parameters every frame.
@@ -206,9 +213,6 @@ func _process(delta: float) -> void:
 		update_continuously = false
 
 
-# --- Player Interaction & Public Methods ---
-
-
 ## Updates the cloud coordinate system origin offset [param new_offset].
 func update_origin_offset(new_offset: Vector3) -> void:
 	print("SunshineCloudsDriver: Updating origin offset to ", new_offset)
@@ -241,9 +245,6 @@ func sample_clouds() -> void:
 ## Diagnostic callback receiving sampled world [param position] and cloud [param sampledensity].
 func return_data(position: Vector3, sampledensity: float) -> void:
 	print("Cloud Sample Output - Position: ", position, " Density: ", sampledensity)
-
-
-# --- Internal Setup & Compositor Management ---
 
 
 ## Instantiates a new [SunshineCloudsGD] resource and attaches it to the [WorldEnvironment].
@@ -328,7 +329,6 @@ func retrieve_texture_data() -> void:
 	while tracked_directional_light_shadow_steps.size() < dir_count:
 		tracked_directional_light_shadow_steps.append(12)
 
-	# 1. Pack Directional Lights (Pairs of Vector4)
 	for i: int in range(dir_count):
 		var light: DirectionalLight3D = tracked_directional_lights[i]
 		if not is_instance_valid(light):
@@ -354,7 +354,6 @@ func retrieve_texture_data() -> void:
 			snappedf(intensity, 0.1)
 		)
 
-	# 2. Pack Point/Omni Lights (Pairs of Vector4)
 	for i: int in range(pt_count):
 		var light: OmniLight3D = tracked_point_lights[i]
 		if not is_instance_valid(light):
@@ -377,7 +376,6 @@ func retrieve_texture_data() -> void:
 			snappedf(intensity, 0.1)
 		)
 
-	# 3. Pack Point Effectors (Pairs of Vector4: Pos+Radius, Power+Attenuation)
 	for i: int in range(eff_count):
 		var effector: SunshineCloudsEffector = tracked_point_effectors[i]
 		if not is_instance_valid(effector):

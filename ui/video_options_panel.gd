@@ -140,8 +140,9 @@ func _apply_all_settings() -> void:
 	var exp_val: float = float(
 		GlobalSettings.get_setting("Settings", "exposure", VideoConfig.DEFAULT_EXPOSURE)
 	)
+	var raw_dof_amount: float = float(GlobalSettings.get_setting("Settings", "dof_amount", 0.15))
 	var dof_val: bool = bool(
-		GlobalSettings.get_setting("Settings", "dof_enabled", VideoConfig.DEFAULT_DOF)
+		GlobalSettings.get_setting("Settings", "dof_enabled", raw_dof_amount > 0.005)
 	)
 	var mb_strength: float = float(
 		GlobalSettings.get_setting("Settings", "motion_blur", VideoConfig.DEFAULT_MOTION_BLUR)
@@ -165,7 +166,6 @@ func _apply_all_settings() -> void:
 	var glow_key: String = (
 		GlobalSettings.get_setting("Settings", "glow", VideoConfig.DEFAULT_GLOW) as String
 	)
-	var raw_dof_amount: float = float(GlobalSettings.get_setting("Settings", "dof_amount", 0.15))
 
 	var config: Dictionary = {
 		"fsr_scale": VideoConfig.FSR_MODES.get(fsr_key, 1.0) as float,
@@ -180,18 +180,18 @@ func _apply_all_settings() -> void:
 		"texture_filter": VideoConfig.TEXTURE_FILTER_MODES.get(tex_filter, 2),
 		"resolution_scale": res_scale,
 		"exposure": exp_val,
-		"dof_enabled": dof_val,
 		"motion_blur": mb_strength,
 		"mesh_lod": GlobalSettings.get_setting("Settings", "mesh_lod_threshold", 1.0) as float,
 		"debanding": GlobalSettings.get_setting("Settings", "debanding", true) as bool,
 		"tonemap_key": GlobalSettings.get_setting("Settings", "tonemap_mode", "Filmic") as String,
+		"dof_amount": raw_dof_amount if dof_val else 0.0,
+		"dof_enabled": dof_val,
 		"ssao": VideoConfig.SSAO_MODES.get(ssao_key, {}) as Dictionary,
 		"ssi": VideoConfig.SSI_MODES.get(ssi_key, {}) as Dictionary,
 		"ssr": VideoConfig.SSR_MODES.get(ssr_key, {}) as Dictionary,
 		"sdfgi": VideoConfig.SDFGI_MODES.get(sdfgi_key, {}) as Dictionary,
 		"fog": VideoConfig.FOG_MODES.get(fog_key, {}) as Dictionary,
 		"glow": VideoConfig.GLOW_MODES.get(glow_key, {}) as Dictionary,
-		"dof_amount": raw_dof_amount if dof_val else 0.0,
 	}
 	VideoApplier.apply_viewport_pipeline(get_tree(), get_viewport(), config)
 

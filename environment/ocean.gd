@@ -1,6 +1,7 @@
 @tool
-extends MeshInstance3D
 ## Controls the ocean water plane, GPU wave simulation bindings, and spray positioning.
+class_name Ocean
+extends MeshInstance3D
 
 ## Mesh quality level determining polygon density.
 enum MeshQuality {
@@ -11,21 +12,24 @@ enum MeshQuality {
 
 ## Material applied to the ocean surface mesh.
 const WATER_MAT: Material = preload("res://environment/mat_ocean.tres")
+
 ## Material applied to spray particle emissions.
 const SPRAY_MAT: Material = preload("res://environment/mat_spray.tres")
+
 ## Ultra-high density clipmap mesh asset.
 const WATER_MESH_HIGH8_K: Mesh = preload("res://assets/ocean_waves/ocean/clipmap_high_8k.obj")
+
 ## Standard high density clipmap mesh asset.
 const WATER_MESH_HIGH: Mesh = preload("res://assets/ocean_waves/ocean/clipmap_high.obj")
+
 ## Low density clipmap mesh asset.
 const WATER_MESH_LOW: Mesh = preload("res://assets/ocean_waves/ocean/clipmap_low.obj")
 
 @export_group("Optimization & Targets")
-
-## The target node (usually the player) that the water simulation will track.
+## The target node that the water simulation will track.
 @export var player_target: Node3D
 
-## Maximum distance from the target before the simulation suspends.
+## Maximum distance in meters from target before simulation throttles.
 @export var max_sim_distance: float = 300.0
 
 ## Defines the total size of your ocean plane to keep particles inside.
@@ -44,7 +48,6 @@ const WATER_MESH_LOW: Mesh = preload("res://assets/ocean_waves/ocean/clipmap_low
 		_update_scales_uniform()
 
 @export_group("Colors & Subsurface Glow")
-
 ## Base color of the deep water.
 @export_color_no_alpha var water_color: Color = Color(0.01, 0.02, 0.03):
 	set(value):
@@ -61,25 +64,24 @@ const WATER_MESH_LOW: Mesh = preload("res://assets/ocean_waves/ocean/clipmap_low
 @export_color_no_alpha var crest_color: Color = Color(0.0, 0.65, 0.85):
 	set(value):
 		crest_color = value
-		if WATER_MAT:
+		if is_instance_valid(WATER_MAT):
 			WATER_MAT.set_shader_parameter("crest_color", crest_color)
 
 ## Controls the intensity of the light passing through wave peaks.
 @export_range(0.0, 2.0) var crest_glow_intensity: float = 0.8:
 	set(value):
 		crest_glow_intensity = value
-		if WATER_MAT:
+		if is_instance_valid(WATER_MAT):
 			WATER_MAT.set_shader_parameter("crest_glow_intensity", crest_glow_intensity)
 
 ## Controls how much ambient light is captured by heavily aerated foam.
 @export_range(0.0, 2.0) var aerated_foam_glow: float = 0.5:
 	set(value):
 		aerated_foam_glow = value
-		if WATER_MAT:
+		if is_instance_valid(WATER_MAT):
 			WATER_MAT.set_shader_parameter("aerated_foam_glow", aerated_foam_glow)
 
 @export_group("Wave Parameters")
-
 ## Parameter configurations used to generate multi-frequency wave cascades.
 @export var parameters: Array[WaveCascadeParameters]:
 	set(value):
@@ -103,16 +105,11 @@ const WATER_MESH_LOW: Mesh = preload("res://assets/ocean_waves/ocean/clipmap_low
 		_setup_cpu_displacement_textures()
 
 @export_group("Performance Parameters")
-
 ## Available square resolution dimensions for generated wave maps.
 enum WaveMapResolution {
-	## 128x128 wave map resolution.
 	RES_128 = 128,
-	## 256x256 wave map resolution.
 	RES_256 = 256,
-	## 512x512 wave map resolution.
 	RES_512 = 512,
-	## 1024x1024 wave map resolution.
 	RES_1024 = 1024,
 }
 
@@ -120,7 +117,7 @@ enum WaveMapResolution {
 @export var map_size: WaveMapResolution = WaveMapResolution.RES_1024:
 	set(value):
 		map_size = value
-		print("ocean.gd: Updating map_size to: ", map_size)
+		print("Ocean: Updating map_size to: ", map_size)
 		if is_inside_tree():
 			_setup_wave_generator()
 
@@ -136,7 +133,6 @@ enum WaveMapResolution {
 			mesh = WATER_MESH_HIGH8_K
 
 @export_group("Tools & Actions")
-
 ## Triggers the process to bake the current wave states into a static resource.
 @export var bake_waves_to_res: bool = false:
 	set(value):
@@ -153,39 +149,56 @@ enum WaveMapResolution {
 
 ## Random number generator instance used for procedural spectrum seeding.
 var rng: RandomNumberGenerator = RandomNumberGenerator.new()
+
 ## The active wave generator child node driving GPU compute passes.
 var wave_generator: WaveGenerator
+
 ## Total accumulated simulation time.
 var time: float = 0.0
+
 ## Texture array referencing displacement map slices on the GPU.
 var displacement_maps: Texture2DArrayRD = Texture2DArrayRD.new()
+
 ## Texture array referencing normal map slices on the GPU.
 var normal_maps: Texture2DArrayRD = Texture2DArrayRD.new()
+
 ## Controls whether CPU readback updates are active.
 var update_textures: bool = true
+
 ## Flag indicating whether water height calculations completed for the frame.
 var just_calculated_water: bool = false
+
 ## Thread lock for synchronizing CPU displacement image accesses.
 var mutex: Mutex = Mutex.new()
+
 ## Cache of CPU-side displacement images for physical height sampling.
 var cpu_displacement_textures: Dictionary = {}
+
 ## Target time interval for refreshing CPU displacement textures.
 var _displacement_textures_total_update_interval: float = 1.0 / 30.0
+
 ## Elapsed timer tracking intervals between CPU readbacks.
 var _displacement_textures_update_time: float = 0.0
+
 ## Current index in the cascade queue being read back to the CPU.
 var _texture_loading_index: int = 0
+
 ## Guards against simultaneous asynchronous GPU readback operations.
 var _is_reading_back: bool = false
+
 ## Position of the camera in the previous frame to identify rapid movement.
 var _last_cam_pos: Vector3 = Vector3.ZERO
+
 ## Cached active camera reference.
 var _cached_camera: Camera3D = null
+
+## Throttle accumulator for updating distant ocean simulations.
+var _distant_timer: float = 0.0
 
 
 ## Initializes global shader parameters when entering the tree.
 func _enter_tree() -> void:
-	print("ocean.gd: Entering scene tree.")
+	print("Ocean: Entering scene tree.")
 	RenderingServer.global_shader_parameter_set(&"water_color", water_color.srgb_to_linear())
 	RenderingServer.global_shader_parameter_set(&"foam_color", foam_color.srgb_to_linear())
 	if Engine.is_editor_hint() and parameters != null and not parameters.is_empty():
@@ -198,9 +211,9 @@ func _init() -> void:
 	rng.set_seed(1234)
 
 
-## Prepares culling bounds and starts simulation services.
+## Prepares culling bounds, wave generator, and runs initial GPU compute pass.
 func _ready() -> void:
-	print("ocean.gd: Executing _ready().")
+	print("Ocean: Executing _ready() and forcing initial wave calculations.")
 	extra_cull_margin = 150.0
 	RenderingServer.global_shader_parameter_set(&"water_color", water_color.srgb_to_linear())
 	RenderingServer.global_shader_parameter_set(&"foam_color", foam_color.srgb_to_linear())
@@ -208,6 +221,7 @@ func _ready() -> void:
 	if parameters != null and not parameters.is_empty():
 		_setup_wave_generator()
 		_update_scales_uniform()
+		_update_water(0.016)
 		_setup_cpu_displacement_textures()
 
 
@@ -236,14 +250,15 @@ func _process(delta: float) -> void:
 		return
 
 	if is_instance_valid(player_target):
-		if (
-			global_position.distance_squared_to(player_target.global_position)
-			> max_sim_distance * max_sim_distance
-		):
-			return
+		var dist_sq: float = global_position.distance_squared_to(player_target.global_position)
+		if dist_sq > max_sim_distance * max_sim_distance:
+			_distant_timer += delta
+			if _distant_timer < 0.1:
+				return
+			_distant_timer = 0.0
 
 	var cam: Camera3D = _get_camera()
-	if cam:
+	if is_instance_valid(cam):
 		var distance_moved_sq: float = _last_cam_pos.distance_squared_to(cam.global_position)
 		_last_cam_pos = cam.global_position
 		if distance_moved_sq > 25.0:
@@ -263,18 +278,17 @@ func _process(delta: float) -> void:
 	time += delta
 
 
-## Configures the wave generator node and hooks resource updates.
+## Configures the wave generator child node synchronously.
 func _setup_wave_generator() -> void:
 	var rd: RenderingDevice = RenderingServer.get_rendering_device()
-	if not rd:
-		printerr("ocean.gd: RenderingDevice is null. Skipping GPU init.")
+	if not is_instance_valid(rd):
+		printerr("Ocean: RenderingDevice is null. Skipping GPU init.")
 		return
 
 	if parameters == null or parameters.is_empty():
-		print("ocean.gd: No WaveCascadeParameters configured. Waiting for parameters.")
 		return
 
-	print("ocean.gd: Setting up wave generator with %d cascades..." % parameters.size())
+	print("Ocean: Initializing synchronous wave generator with ", parameters.size(), " cascades.")
 
 	for param: WaveCascadeParameters in parameters:
 		if is_instance_valid(param):
@@ -284,7 +298,7 @@ func _setup_wave_generator() -> void:
 		wave_generator = WaveGenerator.new()
 		wave_generator.name = "WaveGenerator"
 		wave_generator.textures_created.connect(_on_wave_textures_created)
-		add_child.call_deferred(wave_generator)
+		add_child(wave_generator)
 
 	wave_generator.map_size = map_size
 	wave_generator.init_gpu(maxi(2, parameters.size()))
@@ -292,7 +306,7 @@ func _setup_wave_generator() -> void:
 
 ## Updates global shader parameters when new RD textures are created.
 func _on_wave_textures_created(disp_rid: RID, norm_rid: RID) -> void:
-	print("ocean.gd: Received new texture RIDs from WaveGenerator.")
+	print("Ocean: Received new texture RIDs from WaveGenerator.")
 	if not disp_rid.is_valid() or not norm_rid.is_valid():
 		return
 
@@ -306,7 +320,7 @@ func _on_wave_textures_created(disp_rid: RID, norm_rid: RID) -> void:
 
 ## Updates uniform map scales on ocean and spray materials.
 func _update_scales_uniform() -> void:
-	print("ocean.gd: Updating uniform map scales.")
+	print("Ocean: Updating uniform map scales.")
 	var map_scales: PackedVector4Array
 	map_scales.resize(parameters.size())
 	for i: int in range(parameters.size()):
@@ -316,11 +330,11 @@ func _update_scales_uniform() -> void:
 			uv_scale.x, uv_scale.y, params.displacement_scale, params.normal_scale
 		)
 
-	if WATER_MAT:
+	if is_instance_valid(WATER_MAT):
 		WATER_MAT.set_shader_parameter(&"map_scales", map_scales)
-	if SPRAY_MAT:
+	if is_instance_valid(SPRAY_MAT):
 		SPRAY_MAT.set_shader_parameter(&"map_scales", map_scales)
-	if spray_particles and spray_particles.process_material:
+	if is_instance_valid(spray_particles) and spray_particles.process_material:
 		var proc_mat: Material = spray_particles.process_material
 		proc_mat.set_shader_parameter(&"map_scales", map_scales)
 		proc_mat.set_shader_parameter(&"spawn_radius", spray_spawn_radius)
@@ -402,7 +416,7 @@ func _on_texture_data_received(tex: PackedByteArray, idx: int) -> void:
 
 ## Schedules initial synchronous displacement map readbacks for CPU physics.
 func _setup_cpu_displacement_textures() -> void:
-	print("ocean.gd: Setting up CPU displacement textures.")
+	print("Ocean: Scheduling initial CPU displacement texture downloads.")
 	var used_idx: Array[int] = []
 	for i: int in range(parameters.size()):
 		var cascade: WaveCascadeParameters = parameters[i]
@@ -415,10 +429,7 @@ func _setup_cpu_displacement_textures() -> void:
 ## Performs the initial download of displacement maps on the render thread.
 func _do_initial_texture_readback(used_indices: Array[int]) -> void:
 	var device: RenderingDevice = RenderingServer.get_rendering_device()
-	if not device:
-		return
-
-	if not is_instance_valid(wave_generator):
+	if not device or not is_instance_valid(wave_generator):
 		return
 
 	if not wave_generator.descriptors.has(&"displacement_map"):
@@ -449,7 +460,6 @@ func _world_to_uv(w: Vector2, tile_length: Vector2) -> Vector2:
 
 ## Computes the ocean wave height displacement at a given world position.
 func get_height(world_pos: Vector3, steps: int = 3) -> float:
-	print("ocean.gd: Calculating height from world position.")
 	var world_pos_xz: Vector2 = Vector2(world_pos.x, world_pos.z)
 	var summed_height: float = 0.0
 
@@ -477,12 +487,12 @@ func get_height(world_pos: Vector3, steps: int = 3) -> float:
 	return summed_height
 
 
-## Bakes an animated sequence of displacement maps into a static Texture2DArray resource.
+## Bakes an animated sequence of displacement maps into a static Texture2DArray.
 func bake_waves_to_res_routine() -> void:
-	print("ocean.gd: Executing bake_waves_to_res_routine().")
+	print("Ocean: Executing bake_waves_to_res_routine().")
 	var device: RenderingDevice = RenderingServer.get_rendering_device()
 	if not device or not is_instance_valid(wave_generator):
-		printerr("ocean.gd: Cannot bake waves without valid GPU resources.")
+		printerr("Ocean: Cannot bake waves without valid GPU resources.")
 		return
 
 	var frames_to_bake: int = 64
@@ -523,7 +533,7 @@ func bake_waves_to_res_routine() -> void:
 
 ## Resets cascade configuration parameters back to standard baseline presets.
 func force_reset_cascades() -> void:
-	print("ocean.gd: Force resetting cascade parameters.")
+	print("Ocean: Force resetting cascade parameters.")
 	if parameters.is_empty():
 		return
 	for p: WaveCascadeParameters in parameters:

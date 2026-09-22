@@ -167,14 +167,13 @@ const SHADOW_QUALITIES: Dictionary = {
 	"High (Smooth)": {"atlas_size": 4096, "filter": 2}
 }
 
-## Map of Tonemapper option labels to configuration identifiers.
-const TONEMAP_MODES: Dictionary = {
-	"Linear": "linear",
-	"Reinhard": "reinhard",
-	"Filmic": "filmic",
-	"ACES": "aces",
-	"AgX": "agx",
-	"AgX (Punchy)": "agx_punchy"
+## Map of tonemapper labels to engine [enum Environment.ToneMapper] values.
+const TONEMAP_MODES: Dictionary[String, Environment.ToneMapper] = {
+	"Linear": Environment.TONE_MAPPER_LINEAR,
+	"Reinhard": Environment.TONE_MAPPER_REINHARDT,
+	"Filmic": Environment.TONE_MAPPER_FILMIC,
+	"ACES": Environment.TONE_MAPPER_ACES,
+	"AgX": Environment.TONE_MAPPER_AGX
 }
 
 ## Map of texture Anisotropic filtering levels to integer settings.
@@ -206,9 +205,9 @@ const SSR_MODES: Dictionary = {
 
 ## Map of SDFGI quality tiers to cascade count configurations.
 const SDFGI_MODES: Dictionary = {
-	"Off": {"enabled": false, "cascades": 4},
-	"Low": {"enabled": true, "cascades": 4},
-	"Medium": {"enabled": true, "cascades": 4},
+	"Off": {"enabled": false, "cascades": 2},
+	"Low": {"enabled": true, "cascades": 2},
+	"Medium": {"enabled": true, "cascades": 3},
 	"High": {"enabled": true, "cascades": 4}
 }
 

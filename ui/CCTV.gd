@@ -1,5 +1,4 @@
 ## Interactive in-world security terminal displaying live camera feeds.
-## Throttles update rates and isolates internal camera passes to sustain 60 FPS.
 class_name CCTV
 extends StaticBody3D
 
@@ -104,12 +103,13 @@ var _stored_bg_mode: Environment.BGMode = Environment.BG_KEEP
 
 ## Connects interactable components, initializes screen materials, and limits pipeline.
 func _ready() -> void:
-	print("[CCTV] Initializing security terminal instance: ", name)
-	if (
-		is_instance_valid(interact_comp)
-		and not interact_comp.interacted.is_connected(_on_interacted)
-	):
-		interact_comp.interacted.connect(_on_interacted)
+	print("CCTV: Initializing security terminal instance: ", name)
+	if not is_instance_valid(camera_vp):
+		camera_vp = get_node_or_null("CCTVViewport") as SubViewport
+
+	if is_instance_valid(interact_comp):
+		if not interact_comp.interacted.is_connected(_on_interacted):
+			interact_comp.interacted.connect(_on_interacted)
 
 	screen_mat_override = screen_mesh.get_material_override() as StandardMaterial3D
 	if not is_instance_valid(screen_mat_override):
@@ -124,7 +124,6 @@ func _ready() -> void:
 	if is_instance_valid(cctv_camera):
 		cctv_camera.far = camera_far_distance
 		target_fov = cctv_camera.fov
-		cctv_camera.current = true
 		_force_clear_environment()
 
 	_update_tutorial_text()
@@ -138,7 +137,7 @@ func _ready() -> void:
 
 ## Strips shadow maps and anti-aliasing features from the CCTV viewport.
 func _configure_cctv_viewport() -> void:
-	print("[CCTV] Applying stripped graphics pipeline limits to viewport.")
+	print("CCTV: Applying stripped graphics pipeline limits to viewport.")
 	if not is_instance_valid(camera_vp):
 		return
 
@@ -156,7 +155,6 @@ func _configure_cctv_viewport() -> void:
 
 
 ## Manages camera rotation, FOV interpolation, and throttles viewport redraw rate.
-## [param delta] Frame duration in seconds.
 func _process(delta: float) -> void:
 	if _interaction_cooldown > 0.0:
 		_interaction_cooldown -= delta
@@ -177,37 +175,36 @@ func _process(delta: float) -> void:
 
 
 ## Intercepts camera navigation inputs and detaches player upon exit command.
-## [param event] Input event to process.
 func _input(event: InputEvent) -> void:
 	if not is_controlling:
 		return
 
 	if event.is_action_pressed("interact") and _interaction_cooldown <= 0.0:
-		print("[CCTV] Player pressed interact to disconnect.")
+		print("CCTV: Player pressed interact to disconnect.")
 		_stop_controlling()
 		get_viewport().set_input_as_handled()
 		return
 
 	if event.is_action_pressed("shoot"):
-		print("[CCTV] Player requested camera cycle.")
+		print("CCTV: Player requested camera cycle.")
 		_cycle_camera()
 		get_viewport().set_input_as_handled()
 		return
 
 	if event is InputEventMouseButton and event.is_pressed():
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			print("[CCTV] Zooming camera IN.")
+			print("CCTV: Zooming camera IN.")
 			target_fov -= zoom_speed
 			get_viewport().set_input_as_handled()
 		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			print("[CCTV] Zooming camera OUT.")
+			print("CCTV: Zooming camera OUT.")
 			target_fov += zoom_speed
 			get_viewport().set_input_as_handled()
 
 
 ## Overrides camera environment to permanently disable SDFGI, fog, and SSR passes.
 func _force_clear_environment() -> void:
-	print("[CCTV] Stripping camera environment of fog, sky, and SDFGI.")
+	print("CCTV: Stripping camera environment of fog, sky, and SDFGI.")
 	var cctv_env: Environment = cctv_camera.environment
 	if not is_instance_valid(cctv_env):
 		cctv_env = Environment.new()
@@ -232,7 +229,7 @@ func _force_clear_environment() -> void:
 
 ## Refreshes onscreen control keybind hints and total camera numbers.
 func _update_tutorial_text() -> void:
-	print("[CCTV] Refreshing onscreen terminal tutorial text.")
+	print("CCTV: Refreshing onscreen terminal tutorial text.")
 	if not is_instance_valid(tutorial_label):
 		return
 
@@ -247,12 +244,11 @@ func _update_tutorial_text() -> void:
 
 
 ## Binds the player to CCTV controls and disables external volumetric systems.
-## [param player] Character body claiming control of the terminal.
 func _on_interacted(player: CharacterBody3D) -> void:
 	if is_controlling or _interaction_cooldown > 0.0:
 		return
 
-	print("[CCTV] Player attached to terminal screen. Freezing outside systems.")
+	print("CCTV: Player attached to terminal screen. Freezing outside systems.")
 	is_controlling = true
 	current_player = player
 	_interaction_cooldown = 0.3
@@ -263,12 +259,12 @@ func _on_interacted(player: CharacterBody3D) -> void:
 
 	if disable_global_volumetrics and is_instance_valid(world_env):
 		if is_instance_valid(world_env.compositor):
-			print("[CCTV] Unhooking Compositor from WorldEnvironment.")
+			print("CCTV: Unhooking Compositor from WorldEnvironment.")
 			_stored_compositor = world_env.compositor
 			world_env.compositor = null
 
 		if is_instance_valid(world_env.environment):
-			print("[CCTV] Temporarily disabling volumetric fog.")
+			print("CCTV: Temporarily disabling volumetric fog.")
 			_stored_volumetric_state = world_env.environment.volumetric_fog_enabled
 			world_env.environment.volumetric_fog_enabled = false
 
@@ -281,7 +277,7 @@ func _on_interacted(player: CharacterBody3D) -> void:
 
 ## Detaches the player from terminal controls and restores previous visual states.
 func _stop_controlling() -> void:
-	print("[CCTV] Player detaching from monitor. Restoring world states.")
+	print("CCTV: Player detaching from monitor. Restoring world states.")
 	is_controlling = false
 	_interaction_cooldown = 0.3
 
@@ -290,12 +286,12 @@ func _stop_controlling() -> void:
 
 	if disable_global_volumetrics and is_instance_valid(world_env):
 		if is_instance_valid(_stored_compositor):
-			print("[CCTV] Restoring Compositor to WorldEnvironment.")
+			print("CCTV: Restoring Compositor to WorldEnvironment.")
 			world_env.compositor = _stored_compositor
 			_stored_compositor = null
 
 		if is_instance_valid(world_env.environment):
-			print("[CCTV] Restoring volumetric fog state.")
+			print("CCTV: Restoring volumetric fog state.")
 			world_env.environment.volumetric_fog_enabled = _stored_volumetric_state
 
 	if is_instance_valid(camera_vp):
@@ -312,7 +308,7 @@ func _stop_controlling() -> void:
 
 ## Spawns a fullscreen HUD overlay and hides the main 3D player camera.
 func _enable_fullscreen_mode() -> void:
-	print("[CCTV] Constructing fullscreen HUD overlay.")
+	print("CCTV: Constructing fullscreen HUD overlay.")
 	_fullscreen_canvas = CanvasLayer.new()
 	_fullscreen_canvas.layer = 100
 	add_child(_fullscreen_canvas)
@@ -327,7 +323,7 @@ func _enable_fullscreen_mode() -> void:
 	if is_instance_valid(current_player) and current_player.get("camera_controller"):
 		var cam_controller: Node = current_player.get("camera_controller")
 		if is_instance_valid(cam_controller) and is_instance_valid(cam_controller.get("camera")):
-			print("[CCTV] Disabling player camera cull mask.")
+			print("CCTV: Disabling player camera cull mask.")
 			var p_cam: Camera3D = cam_controller.get("camera") as Camera3D
 			_stored_player_cull_mask = p_cam.cull_mask
 			p_cam.cull_mask = 0
@@ -335,7 +331,7 @@ func _enable_fullscreen_mode() -> void:
 
 ## Frees the fullscreen HUD overlay and restores the main player camera cull mask.
 func _disable_fullscreen_mode() -> void:
-	print("[CCTV] Freeing fullscreen HUD overlay and restoring player camera.")
+	print("CCTV: Freeing fullscreen HUD overlay and restoring player camera.")
 	if is_instance_valid(_fullscreen_canvas):
 		_fullscreen_canvas.queue_free()
 		_fullscreen_canvas = null
@@ -344,13 +340,12 @@ func _disable_fullscreen_mode() -> void:
 	if is_instance_valid(current_player) and current_player.get("camera_controller"):
 		var cam_controller: Node = current_player.get("camera_controller")
 		if is_instance_valid(cam_controller) and is_instance_valid(cam_controller.get("camera")):
-			print("[CCTV] Restoring player camera cull mask.")
+			print("CCTV: Restoring player camera cull mask.")
 			var p_cam: Camera3D = cam_controller.get("camera") as Camera3D
 			p_cam.cull_mask = _stored_player_cull_mask
 
 
 ## Snaps the security camera to the target index in [member camera_locations].
-## [param index] Location marker index to align to.
 func _set_camera(index: int) -> void:
 	if index < 0 or index >= camera_locations.size():
 		return
@@ -359,7 +354,7 @@ func _set_camera(index: int) -> void:
 	if not is_instance_valid(target_loc):
 		return
 
-	print("[CCTV] Setting active camera location to index: ", index)
+	print("CCTV: Setting active camera location to index: ", index)
 	active_cam_idx = index
 	cctv_camera.global_position = target_loc.global_position
 
@@ -380,13 +375,12 @@ func _cycle_camera() -> void:
 	if camera_locations.is_empty():
 		return
 
-	print("[CCTV] Cycling camera feed index.")
+	print("CCTV: Cycling camera feed index.")
 	var next_idx: int = (active_cam_idx + 1) % camera_locations.size()
 	_set_camera(next_idx)
 
 
 ## Rotates camera yaw and pitch axes based on directional axis inputs.
-## [param delta] Frame duration in seconds.
 func _pan_camera(delta: float) -> void:
 	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
 	if input_dir.length_squared() < 0.01:
@@ -403,7 +397,6 @@ func _pan_camera(delta: float) -> void:
 
 
 ## Interpolates camera field of view toward [member target_fov].
-## [param delta] Frame duration in seconds.
 func _handle_zoom(delta: float) -> void:
 	target_fov = clampf(target_fov, min_fov, max_fov)
 	cctv_camera.fov = lerpf(cctv_camera.fov, target_fov, 10.0 * delta)

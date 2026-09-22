@@ -56,8 +56,6 @@ func _populate_dropdowns() -> void:
 
 
 ## Fills target [OptionButton] with keys from a source [Dictionary].
-## [param button] Target dropdown widget.
-## [param source] Source dictionary containing option labels.
 func _populate_button(button: OptionButton, source: Dictionary) -> void:
 	print("EffectsSection: Populating options for: ", button.name)
 	button.clear()
@@ -71,7 +69,7 @@ func _connect_signals() -> void:
 	tonemap_options.item_selected.connect(_on_tonemap_selected)
 
 	_connect_slider(exposure_slider, exposure_line, "exposure", 0.5, 2.0, 0.05)
-	_connect_slider(dof_slider, dof_line, "dof_amount", 0.0, 0.5, 0.01)
+	_connect_dof_slider()
 	_connect_slider(motion_blur_slider, motion_blur_line, "motion_blur", 0.0, 1.5, 0.05)
 
 	debanding_checkbox.toggled.connect(_on_debanding_toggled)
@@ -83,13 +81,46 @@ func _connect_signals() -> void:
 	glow_options.item_selected.connect(_on_glow_selected)
 
 
-## Connects slider and LineEdit pairs with deferred save and signal dispatch on drag end.
-## [param slider] Target [HSlider] node.
-## [param line] Target [LineEdit] node.
-## [param key] Setting key identifier.
-## [param min_v] Minimum clamp limit.
-## [param max_v] Maximum clamp limit.
-## [param step_val] Step interval for the slider.
+## Connects DoF slider and line edit, setting dof_enabled based on magnitude.
+func _connect_dof_slider() -> void:
+	print("EffectsSection: Connecting specialized DoF slider.")
+	dof_slider.min_value = 0.0
+	dof_slider.max_value = 0.5
+	dof_slider.step = 0.01
+
+	dof_slider.value_changed.connect(
+		func(val: float) -> void:
+			if not dof_line.has_focus():
+				dof_line.text = "%.2f" % val
+	)
+
+	dof_slider.drag_ended.connect(
+		func(value_changed: bool) -> void:
+			if value_changed:
+				var amt: float = dof_slider.value
+				var is_active: bool = amt > 0.005
+				print("EffectsSection: Committed DoF amount: ", amt, " Active: ", is_active)
+				GlobalSettings.save_setting("Settings", "dof_amount", amt)
+				GlobalSettings.save_setting("Settings", "dof_enabled", is_active)
+				effects_settings_changed.emit()
+	)
+
+	dof_line.text_submitted.connect(
+		func(text: String) -> void:
+			var trimmed: String = text.strip_edges()
+			if trimmed.is_valid_float():
+				var amt: float = clampf(trimmed.to_float(), 0.0, 0.5)
+				var is_active: bool = amt > 0.005
+				dof_line.text = "%.2f" % amt
+				dof_slider.value = amt
+				GlobalSettings.save_setting("Settings", "dof_amount", amt)
+				GlobalSettings.save_setting("Settings", "dof_enabled", is_active)
+				effects_settings_changed.emit()
+			dof_line.release_focus()
+	)
+
+
+## Connects slider and LineEdit pairs with deferred save and signal dispatch.
 func _connect_slider(
 	slider: HSlider, line: LineEdit, key: String, min_v: float, max_v: float, step_val: float
 ) -> void:
@@ -99,14 +130,12 @@ func _connect_slider(
 	slider.max_value = max_v
 	slider.step = step_val
 
-	# Update numeric readout during drag without firing heavy pipeline invalidations
 	slider.value_changed.connect(
 		func(val: float) -> void:
 			if not line.has_focus():
 				line.text = "%.2f" % val
 	)
 
-	# Persist and dispatch only when release occurs
 	slider.drag_ended.connect(
 		func(value_changed: bool) -> void:
 			if value_changed:
@@ -200,10 +229,7 @@ func load_settings() -> void:
 
 
 ## Safely reads an effect mode string, converting legacy booleans.
-## [param key] Setting dictionary key.
-## [param default_val] Fallback string mode.
 func _load_effect_setting(key: String, default_val: String) -> String:
-	print("EffectsSection: Resolving effect setting: ", key)
 	var raw: Variant = GlobalSettings.get_setting("Settings", key, default_val)
 	if raw is bool:
 		var migrated: String = default_val if raw else "Off"
@@ -213,7 +239,6 @@ func _load_effect_setting(key: String, default_val: String) -> String:
 
 
 ## Updates dropdowns matching active preset data dictionary.
-## [param data] Dictionary of environment flag configurations.
 func apply_preset_dict(data: Dictionary) -> void:
 	print("EffectsSection: Applying environment preset flags.")
 	if data.has("dof_amount"):
@@ -245,10 +270,7 @@ func apply_preset_dict(data: Dictionary) -> void:
 
 
 ## Selects a dropdown item matching target label text.
-## [param dropdown] The target [OptionButton].
-## [param target_text] String label to find and select.
 func _select_dropdown_text(dropdown: OptionButton, target_text: String) -> void:
-	print("EffectsSection: Selecting option: ", target_text, " on ", dropdown.name)
 	for i: int in range(dropdown.get_item_count()):
 		if dropdown.get_item_text(i) == target_text:
 			dropdown.select(i)
@@ -256,7 +278,6 @@ func _select_dropdown_text(dropdown: OptionButton, target_text: String) -> void:
 
 
 ## Handles tonemap algorithm selection.
-## [param index] Item index selected.
 func _on_tonemap_selected(index: int) -> void:
 	var text: String = tonemap_options.get_item_text(index)
 	print("EffectsSection: Tonemap algorithm selected: ", text)
@@ -265,7 +286,6 @@ func _on_tonemap_selected(index: int) -> void:
 
 
 ## Handles color debanding toggles.
-## [param toggled_on] Whether debanding is enabled.
 func _on_debanding_toggled(toggled_on: bool) -> void:
 	print("EffectsSection: Debanding toggled: ", toggled_on)
 	GlobalSettings.save_setting("Settings", "debanding", toggled_on)
@@ -273,7 +293,6 @@ func _on_debanding_toggled(toggled_on: bool) -> void:
 
 
 ## Handles Screen Space Ambient Occlusion quality selection.
-## [param index] Item index selected.
 func _on_ssao_selected(index: int) -> void:
 	var text: String = ssao_options.get_item_text(index)
 	print("EffectsSection: SSAO quality selected: ", text)
@@ -282,7 +301,6 @@ func _on_ssao_selected(index: int) -> void:
 
 
 ## Handles Screen Space Indirect Lighting quality selection.
-## [param index] Item index selected.
 func _on_ssi_selected(index: int) -> void:
 	var text: String = ssi_options.get_item_text(index)
 	print("EffectsSection: SSIL quality selected: ", text)
@@ -291,7 +309,6 @@ func _on_ssi_selected(index: int) -> void:
 
 
 ## Handles Screen Space Reflections quality selection.
-## [param index] Item index selected.
 func _on_ssr_selected(index: int) -> void:
 	var text: String = ssr_options.get_item_text(index)
 	print("EffectsSection: SSR quality selected: ", text)
@@ -300,7 +317,6 @@ func _on_ssr_selected(index: int) -> void:
 
 
 ## Handles SDFGI quality selection.
-## [param index] Item index selected.
 func _on_sdfgi_selected(index: int) -> void:
 	var text: String = sdfgi_options.get_item_text(index)
 	print("EffectsSection: SDFGI quality selected: ", text)
@@ -309,7 +325,6 @@ func _on_sdfgi_selected(index: int) -> void:
 
 
 ## Handles volumetric fog quality selection.
-## [param index] Item index selected.
 func _on_fog_selected(index: int) -> void:
 	var text: String = fog_options.get_item_text(index)
 	print("EffectsSection: Volumetric fog quality selected: ", text)
@@ -318,7 +333,6 @@ func _on_fog_selected(index: int) -> void:
 
 
 ## Handles glow effect quality selection.
-## [param index] Item index selected.
 func _on_glow_selected(index: int) -> void:
 	var text: String = glow_options.get_item_text(index)
 	print("EffectsSection: Glow quality selected: ", text)

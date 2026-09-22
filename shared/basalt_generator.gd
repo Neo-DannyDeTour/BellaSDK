@@ -178,6 +178,7 @@ func _generate() -> void:
 			continue
 
 		var column: MeshInstance3D = MeshInstance3D.new()
+		column.gi_mode = GeometryInstance3D.GI_MODE_DISABLED
 		var mesh: CylinderMesh = CylinderMesh.new()
 
 		mesh.radial_segments = max(4, sides)
