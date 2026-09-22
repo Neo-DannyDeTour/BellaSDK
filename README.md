@@ -36,7 +36,10 @@
 > [!TIP]
 > ### 📦 Full Project (>4GB)
 > The repository is synchronized daily at **6:00 PM**. If you need the complete game assets, levels, or working trees that exceed Git LFS limits, grab the latest archive directly from the [Google Drive Folder](https://drive.google.com/drive/folders/1EIplMuRXGZBpfP5XdidS_mtlFUrvjh8J?usp=drive_link).
+
 > FUCKING FINALLY! I've been searching for a solution for months now. Motherfuckers! Why can't it be easier?! There should be buttons on GitHub automatically offering different options: Drive, Box, Yandex, Yo momma's asshole but NOOOO! You're going to waste hours because we want you to pay for LFS. Sluts!
+
+> "Oh, no! AI is making us stupider. We rely on it more and more". Yeah, I wonder why? I can't fucking find anything anywhere but just googling or applying my intuition. UI/UX sucks balls these days. It's like all of these "designers" are being pumped full of narcotics and gay philosophy in order to produce the most insufferable interface imaginable. Shit happens, sure. We all start somewhere. First version is going to be shit but with enough time and feedback they should be able to fix it and make it *chef's kiss*. WHERE IS IT?!! Why nobody's showing me all the features GitHub and other services have to offer? Them whores keep stopping the game in order to show people how to walk and crouch but when it comes to programming and actually mentally heavy stuff - crickets. And then they keep asking everyone "How could Lenin gain power?" Cuz this is bullshit that doesn't work at all even tho it can be solved in a year or two. 
 
 > [!IMPORTANT]
 > ### 💬 Share Your Thoughts & Prayers
