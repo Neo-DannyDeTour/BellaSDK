@@ -22,7 +22,8 @@ func after_each() -> void:
 ## Tests that _update_suggestion_ui produces correct BBCode output when match_index is active.
 func test_update_suggestion_ui_formatting() -> void:
 	print("TestInGameConsole: Running test_update_suggestion_ui_formatting().")
-	_console.current_matches = ["help", "clear", "quit"]
+	var matches: Array[String] = ["help", "clear", "quit"]
+	_console.set("current_matches", matches)
 	_console.match_index = 1
 
 	_console._update_suggestion_ui()
@@ -38,7 +39,8 @@ func test_update_suggestion_ui_formatting() -> void:
 ## Tests that _update_suggestion_ui handles empty current_matches cleanly.
 func test_update_suggestion_ui_empty() -> void:
 	print("TestInGameConsole: Running test_update_suggestion_ui_empty().")
-	_console.current_matches = []
+	var empty_matches: Array[String] = []
+	_console.set("current_matches", empty_matches)
 	_console.match_index = -1
 
 	_console._update_suggestion_ui()

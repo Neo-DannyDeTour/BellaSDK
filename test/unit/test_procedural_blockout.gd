@@ -26,6 +26,7 @@ func after_each() -> void:
 func test_level_generation_populates_grid() -> void:
 	print("TestProceduralBlockout: Executing test_level_generation_populates_grid().")
 	if not is_instance_valid(generator):
+		assert_true(false, "Generator is invalid")
 		return
 	generator.set("floor_count", 2)
 	generator.set("rooms_per_floor", 2)
@@ -44,6 +45,7 @@ func test_level_generation_populates_grid() -> void:
 func test_radial_room_shape_selection() -> void:
 	print("TestProceduralBlockout: Executing test_radial_room_shape_selection().")
 	if not is_instance_valid(generator):
+		assert_true(false, "Generator is invalid")
 		return
 	generator.set("radial_room_ratio", 1.0)
 	var shape: int = int(generator.call("_select_room_shape"))
@@ -54,6 +56,7 @@ func test_radial_room_shape_selection() -> void:
 func test_ceilings_and_roofs_generation() -> void:
 	print("TestProceduralBlockout: Executing test_ceilings_and_roofs_generation().")
 	if not is_instance_valid(generator):
+		assert_true(false, "Generator is invalid")
 		return
 	generator.set("enable_roofs_and_ceilings", true)
 	generator.call("generate_level")
@@ -72,6 +75,7 @@ func test_ceilings_and_roofs_generation() -> void:
 func test_nested_rooms_generation() -> void:
 	print("TestProceduralBlockout: Executing test_nested_rooms_generation().")
 	if not is_instance_valid(generator):
+		assert_true(false, "Generator is invalid")
 		return
 	generator.set("enable_nested_rooms", true)
 	generator.set("min_room_size", 8)
@@ -86,6 +90,7 @@ func test_nested_rooms_generation() -> void:
 func test_parkour_elements_generation() -> void:
 	print("TestProceduralBlockout: Executing test_parkour_elements_generation().")
 	if not is_instance_valid(generator):
+		assert_true(false, "Generator is invalid")
 		return
 	generator.set("enable_parkour_elements", true)
 	generator.call("generate_level")
@@ -104,6 +109,7 @@ func test_parkour_elements_generation() -> void:
 func test_inner_area_fully_in_room() -> void:
 	print("TestProceduralBlockout: Executing test_inner_area_fully_in_room().")
 	if not is_instance_valid(generator):
+		assert_true(false, "Generator is invalid")
 		return
 	var grid: Dictionary = generator.get("_grid") as Dictionary
 	grid[Vector3i(2, 0, 2)] = 1
@@ -119,6 +125,7 @@ func test_inner_area_fully_in_room() -> void:
 func test_grid_to_world_conversion() -> void:
 	print("TestProceduralBlockout: Executing test_grid_to_world_conversion().")
 	if not is_instance_valid(generator):
+		assert_true(false, "Generator is invalid")
 		return
 	generator.set("cell_size", 2.0)
 	var grid_coord: Vector3i = Vector3i(3, 2, 5)
