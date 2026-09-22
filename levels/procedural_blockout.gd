@@ -292,24 +292,18 @@ func _generate_nested_rooms_for_floor(rooms: Array[Array], floor_idx: int) -> vo
 			var inner_min_z: int = min_z + 2
 			var inner_max_z: int = max_z - 2
 
-			_spawn_nested_inner_box(
-				inner_min_x, inner_max_x, inner_min_z, inner_max_z, grid_y
-			)
+			_spawn_nested_inner_box(inner_min_x, inner_max_x, inner_min_z, inner_max_z, grid_y)
 
 
 ## Instantiates CSG geometry for an inner freestanding room booth/pavilion.
-func _spawn_nested_inner_box(
-	min_x: int, max_x: int, min_z: int, max_z: int, grid_y: int
-) -> void:
+func _spawn_nested_inner_box(min_x: int, max_x: int, min_z: int, max_z: int, grid_y: int) -> void:
 	print("ProceduralBlockout: Spawning nested pavilion inner room structure.")
 	_ensure_containers()
 
 	var start_world: Vector3 = grid_to_world(Vector3i(min_x, grid_y, min_z))
 	var end_world: Vector3 = grid_to_world(Vector3i(max_x + 1, grid_y, max_z + 1))
 	var box_size: Vector3 = Vector3(
-		end_world.x - start_world.x,
-		float(wall_height - 1) * cell_size,
-		end_world.z - start_world.z
+		end_world.x - start_world.x, float(wall_height - 1) * cell_size, end_world.z - start_world.z
 	)
 	var box_center: Vector3 = (
 		start_world + Vector3(box_size.x * 0.5, box_size.y * 0.5, box_size.z * 0.5)
@@ -590,8 +584,10 @@ func _spawn_monkey_bar_traversal(origin: Vector3i) -> void:
 ## Spawns a sprint-jump gap chasm with distinct visual and collision landing pads.
 func _spawn_sprint_jump_chasm(start_coord: Vector3i, target_coord: Vector3i) -> void:
 	print(
-		"ProceduralBlockout: Spawning sprint jump chasm pad between %s and %s."
-		% [start_coord, target_coord]
+		(
+			"ProceduralBlockout: Spawning sprint jump chasm pad between %s and %s."
+			% [start_coord, target_coord]
+		)
 	)
 	var landing_pad: CSGBox3D = CSGBox3D.new()
 	landing_pad.size = Vector3(cell_size * 1.5, 0.3, cell_size * 1.5)
