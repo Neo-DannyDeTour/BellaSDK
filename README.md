@@ -42,7 +42,7 @@
 > ### 💬 Share Your Thoughts & Prayers
 > **Do you want better games or not?!** How are we supposed to give you what you want if you're not sharing your deepest, darkest desires with us?
 > 
-> 👉 **[Click here to confess via the Feedback Form](YOUR_GOOGLE_FORM_URL_HERE)**
+> 👉 **[Click here to confess via the Feedback Form](https://forms.gle/JnrmTWLiLv5Mhzfg8)**
 
 [GOOGLE FORM - please leave your thoughts and prayers there. DO YOU WANT BETTER GAMES OR NOT?!! HOW AM I SUPPOSED TO GIVE YOU WHAT YOU WANT IF YOU'RE NOT SHARING YOUR DEEPEST, DARKEST DESIRES WITH ME? CONFESS!!!]()
 
