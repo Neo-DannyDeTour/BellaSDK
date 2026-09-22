@@ -28,6 +28,11 @@ func before_each() -> void:
 
 	add_child_autofree(mock_camera)
 	add_child_autofree(mock_player)
+
+	# Setting process mode manually to bypass an implicit _ready call when added to tree
+	controller.process_mode = Node.PROCESS_MODE_ALWAYS
+	controller.call("_setup_fullbright_environment")
+
 	add_child_autofree(controller)
 	print("TestSystemMenuController: before_each() setup completed.")
 
