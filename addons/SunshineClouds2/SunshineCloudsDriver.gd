@@ -130,6 +130,8 @@ var _updating_settings: bool = false
 func _ready() -> void:
 	print("SunshineCloudsDriver: Initializing cloud driver components.")
 	_sync_world_environment()
+	if is_instance_valid(clouds_resource):
+		clouds_resource.main_viewport_rid = get_viewport().get_viewport_rid()
 	if update_continuously:
 		if clouds_resource == null:
 			update_continuously = false

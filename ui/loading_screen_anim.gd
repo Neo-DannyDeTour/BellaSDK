@@ -269,7 +269,7 @@ func _cleanup_warmup_viewport() -> void:
 		_warmup_quad_mesh = null
 
 
-## Transitions tree to loaded scene and settles camera before unmasking.
+## Finalizes scene switch, stages SDFGI, and synchronizes video settings.
 func _finalize_scene_transition() -> void:
 	print("LoadingScreen: Evicting previous levels and mounting new scene.")
 	set_process(false)
@@ -309,7 +309,6 @@ func _finalize_scene_transition() -> void:
 	var should_enable_sdfgi: bool = false
 
 	if is_instance_valid(world_env) and is_instance_valid(world_env.environment):
-		# Prevent shared resource mutation across scenes
 		world_env.environment = world_env.environment.duplicate()
 		target_env = world_env.environment
 		should_enable_sdfgi = target_env.sdfgi_enabled
@@ -328,8 +327,10 @@ func _finalize_scene_transition() -> void:
 	if is_instance_valid(target_env) and should_enable_sdfgi:
 		target_env.sdfgi_enabled = true
 		print("LoadingScreen: Camera settled. SDFGI enabled smoothly.")
-		# Allow one frame for cascades to populate under black screen
 		await get_tree().process_frame
+
+	# Enforce player's saved settings onto the new level's viewport & environment
+	_reapply_active_video_settings()
 
 	var fade_tween: Tween = create_tween()
 	fade_tween.tween_property(visual_root, "modulate:a", 0.0, 0.25)
@@ -337,6 +338,79 @@ func _finalize_scene_transition() -> void:
 
 	print("LoadingScreen: Transition complete. Freeing loading screen.")
 	queue_free()
+
+
+## Applies saved video settings from GlobalSettings to the new scene tree.
+func _reapply_active_video_settings() -> void:
+	print("LoadingScreen: Re-applying active user video settings to new scene.")
+	var shadow_key: String = (
+		GlobalSettings.get_setting("Settings", "shadow_quality", "High (Smooth)") as String
+	)
+	var shadow_data: Dictionary = VideoConfig.SHADOW_QUALITIES.get(shadow_key, {}) as Dictionary
+	var fsr_key: String = (
+		GlobalSettings.get_setting("Settings", "fsr_mode", VideoConfig.DEFAULT_FSR_MODE) as String
+	)
+	var aa_key: String = (
+		GlobalSettings.get_setting("Settings", "aa_mode", VideoConfig.DEFAULT_AA_MODE) as String
+	)
+	var vrs_key: String = (
+		GlobalSettings.get_setting("Settings", "vrs_mode", VideoConfig.DEFAULT_VRS_MODE) as String
+	)
+	var tex_filter: String = (
+		GlobalSettings.get_setting("Settings", "texture_filter", VideoConfig.DEFAULT_TEXTURE_FILTER)
+		as String
+	)
+	var ssao_key: String = (
+		GlobalSettings.get_setting("Settings", "ssao", VideoConfig.DEFAULT_SSAO) as String
+	)
+	var ssi_key: String = (
+		GlobalSettings.get_setting("Settings", "ssi", VideoConfig.DEFAULT_SSI) as String
+	)
+	var ssr_key: String = (
+		GlobalSettings.get_setting("Settings", "ssr", VideoConfig.DEFAULT_SSR) as String
+	)
+	var sdfgi_key: String = (
+		GlobalSettings.get_setting("Settings", "sdfgi", VideoConfig.DEFAULT_SDFGI) as String
+	)
+	var fog_key: String = (
+		GlobalSettings.get_setting("Settings", "volumetric_fog", VideoConfig.DEFAULT_FOG) as String
+	)
+	var glow_key: String = (
+		GlobalSettings.get_setting("Settings", "glow", VideoConfig.DEFAULT_GLOW) as String
+	)
+
+	var config: Dictionary = {
+		"fsr_scale": VideoConfig.FSR_MODES.get(fsr_key, 1.0) as float,
+		"aa_settings": VideoConfig.AA_MODES.get(aa_key, {}) as Dictionary,
+		"shadow_atlas": shadow_data.get("atlas_size", 4096) as int,
+		"dynamic_light_shadows":
+		bool(GlobalSettings.get_setting("Settings", "dynamic_light_shadows", true)),
+		"shadow_filter":
+		GlobalSettings.get_setting("Settings", "shadow_filter", "Soft Medium") as String,
+		"positional_shadow_distance":
+		float(GlobalSettings.get_setting("Settings", "positional_shadow_distance", 32.0)),
+		"directional_shadow_distance":
+		float(GlobalSettings.get_setting("Settings", "directional_shadow_distance", 64.0)),
+		"occlusion_culling":
+		bool(GlobalSettings.get_setting("Settings", "occlusion_culling", true)),
+		"vrs_mode": VideoConfig.VRS_MODES.get(vrs_key, Viewport.VRS_DISABLED),
+		"texture_filter": VideoConfig.TEXTURE_FILTER_MODES.get(tex_filter, 2),
+		"resolution_scale": float(GlobalSettings.get_setting("Settings", "resolution_scale", 1.0)),
+		"exposure": float(GlobalSettings.get_setting("Settings", "exposure", 1.0)),
+		"motion_blur": float(GlobalSettings.get_setting("Settings", "motion_blur", 0.0)),
+		"mesh_lod": float(GlobalSettings.get_setting("Settings", "mesh_lod_threshold", 1.0)),
+		"debanding": bool(GlobalSettings.get_setting("Settings", "debanding", true)),
+		"tonemap_key": GlobalSettings.get_setting("Settings", "tonemap_mode", "Filmic") as String,
+		"dof_amount": float(GlobalSettings.get_setting("Settings", "dof_amount", 0.0)),
+		"dof_enabled": bool(GlobalSettings.get_setting("Settings", "dof_enabled", false)),
+		"ssao": VideoConfig.SSAO_MODES.get(ssao_key, {}) as Dictionary,
+		"ssi": VideoConfig.SSI_MODES.get(ssi_key, {}) as Dictionary,
+		"ssr": VideoConfig.SSR_MODES.get(ssr_key, {}) as Dictionary,
+		"sdfgi": VideoConfig.SDFGI_MODES.get(sdfgi_key, {}) as Dictionary,
+		"fog": VideoConfig.FOG_MODES.get(fog_key, {}) as Dictionary,
+		"glow": VideoConfig.GLOW_MODES.get(glow_key, {}) as Dictionary,
+	}
+	VideoApplier.apply_viewport_pipeline(get_tree(), get_viewport(), config)
 
 
 ## Locates the active [WorldEnvironment] inside [param target] branch.

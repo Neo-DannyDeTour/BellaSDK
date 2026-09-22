@@ -283,6 +283,8 @@ func teardown_diorama() -> void:
 	if is_instance_valid(diorama_viewport):
 		diorama_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 		diorama_viewport.process_mode = Node.PROCESS_MODE_DISABLED
+		if diorama_viewport.world_3d and diorama_viewport.world_3d.environment:
+			diorama_viewport.world_3d.environment.sdfgi_enabled = false
 	_set_preview_shader_active(false)
 
 

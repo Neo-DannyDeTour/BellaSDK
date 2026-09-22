@@ -338,6 +338,7 @@ static func _apply_environment_and_materials(tree: SceneTree, config: Dictionary
 static func _populate_environment_values(
 	env: Environment, config: Dictionary, exposure: float, is_preview: bool
 ) -> void:
+	print("VideoApplier: Populating environment settings. Preview: ", is_preview)
 	env.tonemap_exposure = exposure
 
 	var tonemap_key: String = config.get("tonemap_key", "Filmic") as String
@@ -357,11 +358,15 @@ static func _populate_environment_values(
 		env.ssr_max_steps = mini(max_steps, 32) if is_preview else max_steps
 
 	var sdfgi_dict: Dictionary = config.get("sdfgi", {}) as Dictionary
-	env.sdfgi_enabled = sdfgi_dict.get("enabled", false) as bool
-	if env.sdfgi_enabled:
-		var cascades: int = sdfgi_dict.get("cascades", 2) as int
-		env.sdfgi_cascades = mini(cascades, 2) if is_preview else cascades
-		env.sdfgi_y_scale = Environment.SDFGI_Y_SCALE_75_PERCENT
+	# PREVENT PREVIEW LEAKS: The diorama preview MUST NEVER allocate SDFGI cascades.
+	if is_preview:
+		env.sdfgi_enabled = false
+	else:
+		env.sdfgi_enabled = sdfgi_dict.get("enabled", false) as bool
+		if env.sdfgi_enabled:
+			var cascades: int = sdfgi_dict.get("cascades", 2) as int
+			env.sdfgi_cascades = cascades
+			env.sdfgi_y_scale = Environment.SDFGI_Y_SCALE_75_PERCENT
 
 	var fog_dict: Dictionary = config.get("fog", {}) as Dictionary
 	env.volumetric_fog_enabled = fog_dict.get("enabled", false) as bool

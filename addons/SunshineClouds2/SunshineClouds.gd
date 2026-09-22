@@ -340,6 +340,9 @@ var msaa_mode: RenderingServer.ViewportMSAA = (
 	RenderingServer.ViewportMSAA.VIEWPORT_MSAA_DISABLED
 )
 
+## Tracks the main viewport RID to ignore secondary probes and viewports.
+var main_viewport_rid: RID = RID()
+
 # --- Player Interaction & Public Methods ---
 
 
@@ -965,6 +968,18 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 		initialize_compute()
 		return
 
+	var buffers: RenderSceneBuffersRD = (
+		render_data.get_render_scene_buffers() as RenderSceneBuffersRD
+	)
+	if not buffers:
+		return
+
+	# IGNORE SECONDARY PASSES: Skip execution on reflection probes and non-main viewports.
+	if main_viewport_rid.is_valid():
+		var expected_target: RID = RenderingServer.viewport_get_render_target(main_viewport_rid)
+		if buffers.get_render_target() != expected_target:
+			return
+
 	if not (
 		pipeline.is_valid()
 		and height_gradient
@@ -975,12 +990,6 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 		and dither_noise
 		and curl_noise
 	):
-		return
-
-	var buffers: RenderSceneBuffersRD = (
-		render_data.get_render_scene_buffers() as RenderSceneBuffersRD
-	)
-	if not buffers:
 		return
 
 	msaa_mode = buffers.get_msaa_3d()
