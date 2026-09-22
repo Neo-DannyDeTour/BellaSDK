@@ -1,17 +1,20 @@
-## Procedural multi-floor generator generating rooms, walls, and CSG stairs.
+## Procedural multi-floor generator generating rooms, walls, roofs, and parkour structures.
 class_name ProceduralBlockout
 extends Node3D
 
 ## Emitted by [method generate_level] when layout is built with [param grid].
 signal generation_completed(grid: Dictionary)
 
-## Layout voxel types representing rooms, corridors, stairs, and walls.
+## Layout voxel types representing rooms, corridors, stairs, walls, and structures.
 enum CellType {
 	EMPTY = 0,
 	ROOM = 1,
 	CORRIDOR = 2,
 	STAIRS = 3,
 	WALL = 4,
+	LANDING_PAD = 5,
+	CROUCH_DUCT = 6,
+	VAULT_OBSTACLE = 7,
 }
 
 ## Structural geometry templates available for procedural room footprints.
@@ -20,6 +23,7 @@ enum RoomShape {
 	L_SHAPE = 1,
 	T_SHAPE = 2,
 	CROSS = 3,
+	RADIAL = 4,
 }
 
 @export_group("GridMap Nodes")
@@ -67,6 +71,32 @@ enum RoomShape {
 ## Length in grid cells for vertical stairwells bridging floors.
 @export var stair_length_cells: int = 3
 
+@export_group("Architectural Features")
+## Toggles generation of solid roofs and ceilings above interior spaces.
+@export var enable_roofs_and_ceilings: bool = true
+
+## Ratio of radial/octagonal rooms generated versus standard shapes (0.0 to 1.0).
+@export_range(0.0, 1.0, 0.05) var radial_room_ratio: float = 0.25
+
+## Enables nested "room within a room" spatial structures in large halls.
+@export var enable_nested_rooms: bool = true
+
+## Enables window cutouts and skylight openings in walls and roofs.
+@export var enable_fenestration: bool = true
+
+@export_group("Parkour Traversal Metrics")
+## Enables placement of parkour traversal elements (vaults, monkey bars, etc).
+@export var enable_parkour_elements: bool = true
+
+## Maximum horizontal sprint-jump gap distance in meters.
+@export var sprint_jump_max_distance: float = 6.0
+
+## Height clearance in meters for crouch crawlspaces and ductwork.
+@export var crouch_clearance_height: float = 1.1
+
+## Height range in meters for vaultable half-height obstacles and sills.
+@export var vault_obstacle_height: float = 1.0
+
 ## Internal map of [Vector3i] grid coordinates to [constant CellType] values.
 var _grid: Dictionary = {}
 
@@ -75,6 +105,15 @@ var _rooms_by_floor: Array[Array] = []
 
 ## Container node hosting spawned [ProceduralStairsCSG] instances.
 var _stairs_container: Node3D
+
+## Container node hosting generated ceiling and roof geometry.
+var _ceiling_container: Node3D
+
+## Container node hosting parkour geometry and [MonkeyBarVolume] nodes.
+var _parkour_container: Node3D
+
+## Container node hosting nested room inner volumes.
+var _nested_container: Node3D
 
 
 ## Initializes generator references, cleans prior children, and builds level.
@@ -85,7 +124,7 @@ func _ready() -> void:
 	if not is_instance_valid(player):
 		player = get_node_or_null("Player") as CharacterBody3D
 
-	_ensure_stairs_container()
+	_ensure_containers()
 	generate_level()
 
 
@@ -94,12 +133,16 @@ func generate_level() -> void:
 	print("ProceduralBlockout: Starting level generation pipeline.")
 	_grid.clear()
 	_rooms_by_floor.clear()
-	_clear_stairs()
+	_clear_generated_containers()
 
 	for floor_idx: int in range(floor_count):
 		print("ProceduralBlockout: Generating floor index %d." % floor_idx)
 		var rooms: Array[Array] = _generate_floor_rooms(floor_idx)
 		_rooms_by_floor.append(rooms)
+
+		if enable_nested_rooms:
+			_generate_nested_rooms_for_floor(rooms, floor_idx)
+
 		_connect_floor_rooms(rooms, floor_idx)
 
 	for floor_idx: int in range(floor_count - 1):
@@ -107,6 +150,13 @@ func generate_level() -> void:
 		_connect_floors(_rooms_by_floor[floor_idx], _rooms_by_floor[floor_idx + 1], floor_idx)
 
 	_generate_walls()
+
+	if enable_roofs_and_ceilings:
+		_generate_ceilings_and_roofs()
+
+	if enable_parkour_elements:
+		_generate_parkour_elements()
+
 	_build_gridmap()
 	_place_player_at_start()
 
@@ -125,7 +175,7 @@ func _generate_floor_rooms(floor_index: int) -> Array[Array]:
 		if placed_rooms.size() >= rooms_per_floor:
 			break
 
-		var shape_type: RoomShape = randi() % 4 as RoomShape
+		var shape_type: RoomShape = _select_room_shape()
 		var rw: int = randi_range(min_room_size, max_room_size)
 		var rd: int = randi_range(min_room_size, max_room_size)
 		var rx: int = randi_range(3, floor_size.x - rw - stair_length_cells - 3)
@@ -142,6 +192,17 @@ func _generate_floor_rooms(floor_index: int) -> Array[Array]:
 			placed_rooms.append(candidate_cells)
 
 	return placed_rooms
+
+
+## Selects a [enum RoomShape] considering Inspector radial preferences.
+func _select_room_shape() -> RoomShape:
+	print("ProceduralBlockout: Selecting room shape with radial ratio.")
+	if randf() < radial_room_ratio:
+		return RoomShape.RADIAL
+	var standard_shapes: Array[RoomShape] = [
+		RoomShape.RECTANGLE, RoomShape.L_SHAPE, RoomShape.T_SHAPE, RoomShape.CROSS
+	]
+	return standard_shapes[randi() % standard_shapes.size()]
 
 
 ## Assembles cell offsets for [param shape] around [param origin].
@@ -186,7 +247,93 @@ func _create_room_cells(origin: Vector3i, size: Vector2i, shape: RoomShape) -> A
 					if in_horiz or in_vert:
 						cells.append(origin + Vector3i(x, 0, z))
 
+		RoomShape.RADIAL:
+			var radius: float = float(mini(size.x, size.y)) * 0.5
+			var center_x: float = float(origin.x) + float(size.x) * 0.5
+			var center_z: float = float(origin.z) + float(size.y) * 0.5
+			for x: int in range(size.x):
+				for z: int in range(size.y):
+					var px: float = float(origin.x + x) + 0.5
+					var pz: float = float(origin.z + z) + 0.5
+					var dx: float = px - center_x
+					var dz: float = pz - center_z
+					var dist_sq: float = dx * dx + dz * dz
+					if dist_sq <= radius * radius:
+						cells.append(origin + Vector3i(x, 0, z))
+
 	return cells
+
+
+## Generates secondary inner freestanding rooms ("room within a room").
+func _generate_nested_rooms_for_floor(rooms: Array[Array], floor_idx: int) -> void:
+	print("ProceduralBlockout: Generating nested inner rooms on floor %d." % floor_idx)
+	for room_cells in rooms:
+		if room_cells.size() < 25:
+			continue
+
+		var min_x: int = 99999
+		var max_x: int = -99999
+		var min_z: int = 99999
+		var max_z: int = -99999
+		var grid_y: int = floor_idx * floor_height_cells
+
+		for cell: Vector3i in room_cells:
+			min_x = mini(min_x, cell.x)
+			max_x = maxi(max_x, cell.x)
+			min_z = mini(min_z, cell.z)
+			max_z = maxi(max_z, cell.z)
+
+		var room_w: int = max_x - min_x + 1
+		var room_d: int = max_z - min_z + 1
+
+		if room_w >= 6 and room_d >= 6:
+			var inner_min_x: int = min_x + 2
+			var inner_max_x: int = max_x - 2
+			var inner_min_z: int = min_z + 2
+			var inner_max_z: int = max_z - 2
+
+			_spawn_nested_inner_box(
+				inner_min_x, inner_max_x, inner_min_z, inner_max_z, grid_y
+			)
+
+
+## Instantiates CSG geometry for an inner freestanding room booth/pavilion.
+func _spawn_nested_inner_box(
+	min_x: int, max_x: int, min_z: int, max_z: int, grid_y: int
+) -> void:
+	print("ProceduralBlockout: Spawning nested pavilion inner room structure.")
+	_ensure_containers()
+
+	var start_world: Vector3 = grid_to_world(Vector3i(min_x, grid_y, min_z))
+	var end_world: Vector3 = grid_to_world(Vector3i(max_x + 1, grid_y, max_z + 1))
+	var box_size: Vector3 = Vector3(
+		end_world.x - start_world.x,
+		float(wall_height - 1) * cell_size,
+		end_world.z - start_world.z
+	)
+	var box_center: Vector3 = (
+		start_world + Vector3(box_size.x * 0.5, box_size.y * 0.5, box_size.z * 0.5)
+	)
+
+	var outer_box: CSGBox3D = CSGBox3D.new()
+	outer_box.size = box_size
+	outer_box.position = box_center
+	outer_box.use_collision = true
+	outer_box.collision_layer = 1
+	outer_box.collision_mask = 0
+
+	var inner_box: CSGBox3D = CSGBox3D.new()
+	inner_box.size = box_size - Vector3(0.4, 0.0, 0.4)
+	inner_box.operation = CSGShape3D.OPERATION_SUBTRACTION
+
+	var doorway: CSGBox3D = CSGBox3D.new()
+	doorway.size = Vector3(1.2, 2.2, 0.8)
+	doorway.position = Vector3(0.0, -box_size.y * 0.5 + 1.1, box_size.z * 0.5)
+	doorway.operation = CSGShape3D.OPERATION_SUBTRACTION
+
+	outer_box.add_child(inner_box)
+	outer_box.add_child(doorway)
+	_nested_container.add_child(outer_box)
 
 
 ## Evaluates if [param cells] can fit without overlapping occupied grid space.
@@ -314,6 +461,154 @@ func _generate_walls() -> void:
 		_grid[wall_cell] = CellType.WALL
 
 
+## Generates solid roof and ceiling geometry above all interior room cells.
+func _generate_ceilings_and_roofs() -> void:
+	print("ProceduralBlockout: Building room roof and ceiling enclosure geometry.")
+	_ensure_containers()
+
+	var ceiling_cells: Dictionary = {}
+	for cell: Vector3i in _grid:
+		var type: int = _grid[cell]
+		if type == CellType.ROOM or type == CellType.CORRIDOR:
+			var roof_coord: Vector3i = cell + Vector3i(0, wall_height, 0)
+			ceiling_cells[roof_coord] = true
+
+	for roof_coord: Vector3i in ceiling_cells:
+		if enable_fenestration and randf() < 0.08:
+			_spawn_skylight_opening(roof_coord)
+		else:
+			_spawn_ceiling_tile(roof_coord)
+
+
+## Spawns a solid CSG ceiling block for a roof coordinate.
+func _spawn_ceiling_tile(coord: Vector3i) -> void:
+	print("ProceduralBlockout: Spawning ceiling tile at %s." % coord)
+	var tile: CSGBox3D = CSGBox3D.new()
+	tile.size = Vector3(cell_size, 0.2, cell_size)
+	var pos: Vector3 = grid_to_world(coord)
+	pos.y -= 0.1
+	tile.position = pos
+	tile.use_collision = true
+	tile.collision_layer = 1
+	tile.collision_mask = 0
+	_ceiling_container.add_child(tile)
+
+
+## Spawns an angled skylight window framing cutout in the roof.
+func _spawn_skylight_opening(coord: Vector3i) -> void:
+	print("ProceduralBlockout: Spawning skylight cutout at %s." % coord)
+	var skylight_frame: CSGBox3D = CSGBox3D.new()
+	skylight_frame.size = Vector3(cell_size, 0.4, cell_size)
+	var pos: Vector3 = grid_to_world(coord)
+	skylight_frame.position = pos
+	skylight_frame.use_collision = true
+	skylight_frame.collision_layer = 1
+	skylight_frame.collision_mask = 0
+
+	var cutout: CSGBox3D = CSGBox3D.new()
+	cutout.size = Vector3(cell_size * 0.7, 0.6, cell_size * 0.7)
+	cutout.operation = CSGShape3D.OPERATION_SUBTRACTION
+	skylight_frame.add_child(cutout)
+
+	_ceiling_container.add_child(skylight_frame)
+
+
+## Places parkour structures (crouch crawlspaces, vault sills, gaps, monkey bars).
+func _generate_parkour_elements() -> void:
+	print("ProceduralBlockout: Placing parkour traversal structures across level.")
+	_ensure_containers()
+
+	var room_centers: Array[Vector3i] = []
+	for room_cells in _rooms_by_floor:
+		for room in room_cells:
+			if not room.is_empty():
+				room_centers.append(room[floori(float(room.size()) / 2.0)])
+
+	for i: int in range(room_centers.size()):
+		var center: Vector3i = room_centers[i]
+
+		if i % 4 == 0:
+			_spawn_crouch_crawlspace(center)
+
+		if i % 3 == 0:
+			_spawn_vault_obstacle_and_sills(center)
+
+		if i % 2 == 0:
+			_spawn_monkey_bar_traversal(center)
+
+		if i % 5 == 0 and i + 1 < room_centers.size():
+			_spawn_sprint_jump_chasm(center, room_centers[i + 1])
+
+
+## Spawns a low crouch crawlspace / duct structure with proper clearance.
+func _spawn_crouch_crawlspace(origin: Vector3i) -> void:
+	print("ProceduralBlockout: Spawning crouch duct at %s." % origin)
+	var duct: CSGBox3D = CSGBox3D.new()
+	duct.size = Vector3(cell_size * 2.0, crouch_clearance_height + 0.2, cell_size * 1.5)
+	var world_pos: Vector3 = grid_to_world(origin) + Vector3(0.0, duct.size.y * 0.5, 0.0)
+	duct.position = world_pos
+	duct.use_collision = true
+	duct.collision_layer = 1
+	duct.collision_mask = 0
+
+	var tunnel_cut: CSGBox3D = CSGBox3D.new()
+	tunnel_cut.size = Vector3(cell_size * 2.2, crouch_clearance_height, cell_size * 1.1)
+	tunnel_cut.operation = CSGShape3D.OPERATION_SUBTRACTION
+	duct.add_child(tunnel_cut)
+
+	_parkour_container.add_child(duct)
+
+
+## Spawns half-height vault obstacles (0.8m–1.4m) and window sills.
+func _spawn_vault_obstacle_and_sills(origin: Vector3i) -> void:
+	print("ProceduralBlockout: Spawning vault obstacle at %s." % origin)
+	var wall: CSGBox3D = CSGBox3D.new()
+	wall.size = Vector3(cell_size * 1.2, vault_obstacle_height, 0.3)
+	var world_pos: Vector3 = (
+		grid_to_world(origin) + Vector3(cell_size * 0.5, vault_obstacle_height * 0.5, 0.0)
+	)
+	wall.position = world_pos
+	wall.use_collision = true
+	wall.collision_layer = 1
+	wall.collision_mask = 0
+	_parkour_container.add_child(wall)
+
+
+## Spawns a [MonkeyBarVolume] instance mounted near ceiling for overhead grab.
+func _spawn_monkey_bar_traversal(origin: Vector3i) -> void:
+	print("ProceduralBlockout: Spawning overhead monkey bar volume at %s." % origin)
+	var monkey_bars: MonkeyBarVolume = MonkeyBarVolume.new()
+	monkey_bars.name = "MonkeyBars_%d_%d" % [origin.x, origin.z]
+	monkey_bars.size = Vector3(0.8, 0.3, cell_size * 2.5)
+	var world_pos: Vector3 = (
+		grid_to_world(origin) + Vector3(0.0, float(wall_height) * cell_size - 0.6, 0.0)
+	)
+	monkey_bars.position = world_pos
+	_parkour_container.add_child(monkey_bars)
+
+
+## Spawns a sprint-jump gap chasm with distinct visual and collision landing pads.
+func _spawn_sprint_jump_chasm(start_coord: Vector3i, target_coord: Vector3i) -> void:
+	print(
+		"ProceduralBlockout: Spawning sprint jump chasm pad between %s and %s."
+		% [start_coord, target_coord]
+	)
+	var landing_pad: CSGBox3D = CSGBox3D.new()
+	landing_pad.size = Vector3(cell_size * 1.5, 0.3, cell_size * 1.5)
+
+	var start_world: Vector3 = grid_to_world(start_coord)
+	var target_world: Vector3 = grid_to_world(target_coord)
+	var gap_dir: Vector3 = (target_world - start_world).normalized()
+	var jump_dist: float = minf((target_world - start_world).length(), sprint_jump_max_distance)
+
+	landing_pad.position = start_world + gap_dir * jump_dist + Vector3(0.0, 0.15, 0.0)
+	landing_pad.use_collision = true
+	landing_pad.collision_layer = 1
+	landing_pad.collision_mask = 0
+
+	_parkour_container.add_child(landing_pad)
+
+
 ## Populates [member grid_map] items according to internal cell layout.
 func _build_gridmap() -> void:
 	print("ProceduralBlockout: Writing layout tiles into GridMap.")
@@ -354,9 +649,9 @@ func _place_player_at_start() -> void:
 			break
 
 
-## Ensures the container node for procedural stairs exists in scene.
-func _ensure_stairs_container() -> void:
-	print("ProceduralBlockout: Verifying stairs container node.")
+## Ensures all container nodes exist for generated geometry.
+func _ensure_containers() -> void:
+	print("ProceduralBlockout: Verifying generator container nodes.")
 	if not is_instance_valid(_stairs_container):
 		_stairs_container = get_node_or_null("StairsContainer") as Node3D
 		if not _stairs_container:
@@ -364,12 +659,39 @@ func _ensure_stairs_container() -> void:
 			_stairs_container.name = "StairsContainer"
 			add_child(_stairs_container)
 
+	if not is_instance_valid(_ceiling_container):
+		_ceiling_container = get_node_or_null("CeilingContainer") as Node3D
+		if not _ceiling_container:
+			_ceiling_container = Node3D.new()
+			_ceiling_container.name = "CeilingContainer"
+			add_child(_ceiling_container)
 
-## Clears existing stair instances prior to layout regeneration.
-func _clear_stairs() -> void:
-	print("ProceduralBlockout: Removing previous stair instances.")
-	_ensure_stairs_container()
+	if not is_instance_valid(_parkour_container):
+		_parkour_container = get_node_or_null("ParkourContainer") as Node3D
+		if not _parkour_container:
+			_parkour_container = Node3D.new()
+			_parkour_container.name = "ParkourContainer"
+			add_child(_parkour_container)
+
+	if not is_instance_valid(_nested_container):
+		_nested_container = get_node_or_null("NestedContainer") as Node3D
+		if not _nested_container:
+			_nested_container = Node3D.new()
+			_nested_container.name = "NestedContainer"
+			add_child(_nested_container)
+
+
+## Clears existing generated node instances prior to layout regeneration.
+func _clear_generated_containers() -> void:
+	print("ProceduralBlockout: Removing previous generated geometry instances.")
+	_ensure_containers()
 	for child: Node in _stairs_container.get_children():
+		child.queue_free()
+	for child: Node in _ceiling_container.get_children():
+		child.queue_free()
+	for child: Node in _parkour_container.get_children():
+		child.queue_free()
+	for child: Node in _nested_container.get_children():
 		child.queue_free()
 
 
