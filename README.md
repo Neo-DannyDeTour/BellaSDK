@@ -23,7 +23,7 @@
 
 [GOOGLE FORM - please leave your thoughts and prayers there. DO YOU WANT BETTER GAMES OR NOT?!! HOW AM I SUPPOSED TO GIVE YOU WHAT YOU WANT IF YOU'RE NOT SHARING YOUR DEEPEST, DARKEST DESIRES WITH ME? CONFESS!!!](https://forms.gle/JnrmTWLiLv5Mhzfg8)
 
-[FULL PROJECT](https://drive.google.com/drive/folders/1EIplMuRXGZBpfP5XdidS_mtlFUrvjh8J?usp=sharing](https://drive.google.com/file/d/1k398_lUNh7q4iS1eBDNuYZyqvsMXFX_z/view?usp=drive_link) - now everything is automated. New versions of the project are going to be automatically uploaded to DRIVE every day at 6pm. FUCKING FINALLY! I've been searching for a solution for months now. Motherfuckers! Why can't it be easier?! There should be buttons on GitHub automatically offering different options: Drive, Box, Yandex, Yo momma's asshole but NOOOO! You're going to waste hours because we want you to pay for LFS. Sluts!
+[FULL PROJECT](https://drive.google.com/file/d/1k398_lUNh7q4iS1eBDNuYZyqvsMXFX_z/view?usp=drive_link) - now everything is automated. New versions of the project are going to be automatically uploaded to DRIVE every day at 6pm. FUCKING FINALLY! I've been searching for a solution for months now. Motherfuckers! Why can't it be easier?! There should be buttons on GitHub automatically offering different options: Drive, Box, Yandex, Yo momma's asshole but NOOOO! You're going to waste hours because we want you to pay for LFS. Sluts!
 
 ## <u>BellaSDK - a fun project</u>
 
