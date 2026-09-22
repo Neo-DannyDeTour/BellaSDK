@@ -44,6 +44,9 @@ enum RoomShape {
 @export var wall_tile_id: int = 3
 
 @export_group("Floor Layout")
+## Toggles whether level generation runs automatically during [method _ready].
+@export var auto_generate_on_ready: bool = true
+
 ## Total number of vertical floor levels generated along the Y axis.
 @export var floor_count: int = 3
 
@@ -125,7 +128,8 @@ func _ready() -> void:
 		player = get_node_or_null("Player") as CharacterBody3D
 
 	_ensure_containers()
-	generate_level()
+	if auto_generate_on_ready:
+		generate_level()
 
 
 ## Executes full generation pipeline across floors and emits signal.
@@ -267,7 +271,7 @@ func _create_room_cells(origin: Vector3i, size: Vector2i, shape: RoomShape) -> A
 ## Generates secondary inner freestanding rooms ("room within a room").
 func _generate_nested_rooms_for_floor(rooms: Array[Array], floor_idx: int) -> void:
 	print("ProceduralBlockout: Generating nested inner rooms on floor %d." % floor_idx)
-	for room_cells in rooms:
+	for room_cells: Array in rooms:
 		if room_cells.size() < 25:
 			continue
 
@@ -277,11 +281,11 @@ func _generate_nested_rooms_for_floor(rooms: Array[Array], floor_idx: int) -> vo
 		var max_z: int = -99999
 		var grid_y: int = floor_idx * floor_height_cells
 
-		for cell: Vector3i in room_cells:
-			min_x = mini(min_x, cell.x)
-			max_x = maxi(max_x, cell.x)
-			min_z = mini(min_z, cell.z)
-			max_z = maxi(max_z, cell.z)
+		for cell_elem: Vector3i in room_cells:
+			min_x = mini(min_x, cell_elem.x)
+			max_x = maxi(max_x, cell_elem.x)
+			min_z = mini(min_z, cell_elem.z)
+			max_z = maxi(max_z, cell_elem.z)
 
 		var room_w: int = max_x - min_x + 1
 		var room_d: int = max_z - min_z + 1
@@ -302,8 +306,8 @@ func _generate_nested_rooms_for_floor(rooms: Array[Array], floor_idx: int) -> vo
 func _is_inner_area_fully_in_room(
 	min_x: int, max_x: int, min_z: int, max_z: int, grid_y: int
 ) -> bool:
-	for x in range(min_x, max_x + 1):
-		for z in range(min_z, max_z + 1):
+	for x: int in range(min_x, max_x + 1):
+		for z: int in range(min_z, max_z + 1):
 			var cell: Vector3i = Vector3i(x, grid_y, z)
 			if get_cell(cell) != CellType.ROOM:
 				return false
@@ -344,7 +348,9 @@ func _spawn_nested_inner_box(min_x: int, max_x: int, min_z: int, max_z: int, gri
 	outer_box.add_child(doorway)
 	_nested_container.add_child(outer_box)
 
-	var peri_pos: Vector3 = box_center + Vector3(0.0, box_size.y + 0.4, 0.0)
+	var peri_pos: Vector3 = (
+		start_world + Vector3(box_size.x * 0.5, box_size.y - 0.3, box_size.z * 0.5)
+	)
 	var monkey_bars: MonkeyBarVolume = MonkeyBarVolume.new()
 	monkey_bars.name = "PerimeterBars_%d_%d" % [min_x, min_z]
 	monkey_bars.size = Vector3(box_size.x, 0.3, box_size.z)
@@ -474,9 +480,11 @@ func _generate_walls() -> void:
 						wall_positions.append(wall_cell)
 
 	for wall_cell: Vector3i in wall_positions:
-		_grid[wall_cell] = CellType.WALL
-		if enable_fenestration and wall_cell.y % floor_height_cells == 1 and randf() < 0.12:
+		if enable_fenestration and randf() < 0.12:
+			_grid[wall_cell] = CellType.EMPTY
 			_spawn_window_fenestration_sill(wall_cell)
+		else:
+			_grid[wall_cell] = CellType.WALL
 
 
 ## Spawns a window cutout wall section with a vaultable sill (0.8m–1.4m height).
@@ -485,19 +493,14 @@ func _spawn_window_fenestration_sill(coord: Vector3i) -> void:
 	_ensure_containers()
 
 	var wall_box: CSGBox3D = CSGBox3D.new()
-	wall_box.size = Vector3(cell_size, cell_size, 0.3)
-	var pos: Vector3 = grid_to_world(coord) + Vector3(0.0, cell_size * 0.5, 0.0)
+	wall_box.size = Vector3(cell_size, vault_obstacle_height, 0.3)
+	var pos: Vector3 = grid_to_world(coord) + Vector3(0.0, vault_obstacle_height * 0.5, 0.0)
 	wall_box.position = pos
 	wall_box.use_collision = true
 	wall_box.collision_layer = 1
 	wall_box.collision_mask = 0
 	wall_box.add_to_group("vaultable")
-
-	var window_cut: CSGBox3D = CSGBox3D.new()
-	window_cut.size = Vector3(cell_size * 0.7, 1.2, 0.5)
-	window_cut.position = Vector3(0.0, 0.2, 0.0)
-	window_cut.operation = CSGShape3D.OPERATION_SUBTRACTION
-	wall_box.add_child(window_cut)
+	wall_box.add_to_group("climbable")
 
 	_parkour_container.add_child(wall_box)
 
@@ -546,11 +549,6 @@ func _spawn_skylight_opening(coord: Vector3i) -> void:
 	skylight_frame.collision_layer = 1
 	skylight_frame.collision_mask = 0
 
-	var cutout: CSGBox3D = CSGBox3D.new()
-	cutout.size = Vector3(cell_size * 0.7, 0.6, cell_size * 0.7)
-	cutout.operation = CSGShape3D.OPERATION_SUBTRACTION
-	skylight_frame.add_child(cutout)
-
 	_ceiling_container.add_child(skylight_frame)
 
 
@@ -560,24 +558,22 @@ func _generate_parkour_elements() -> void:
 	_ensure_containers()
 
 	var room_centers: Array[Vector3i] = []
-	for room_cells in _rooms_by_floor:
-		for room in room_cells:
+	for room_cells: Array in _rooms_by_floor:
+		for room: Array in room_cells:
 			if not room.is_empty():
 				room_centers.append(room[floori(float(room.size()) / 2.0)])
 
 	for i: int in range(room_centers.size()):
 		var center: Vector3i = room_centers[i]
+		var type_index: int = i % 4
 
-		if i % 4 == 0:
+		if type_index == 0:
 			_spawn_crouch_crawlspace(center)
-
-		if i % 3 == 0:
+		elif type_index == 1:
 			_spawn_vault_obstacle_and_sills(center)
-
-		if i % 2 == 0:
+		elif type_index == 2:
 			_spawn_monkey_bar_traversal(center)
-
-		if i % 5 == 0 and i + 1 < room_centers.size():
+		elif type_index == 3 and i + 1 < room_centers.size():
 			_spawn_sprint_jump_chasm(center, room_centers[i + 1])
 
 
@@ -593,11 +589,6 @@ func _spawn_crouch_crawlspace(origin: Vector3i) -> void:
 	duct.use_collision = true
 	duct.collision_layer = 1
 	duct.collision_mask = 0
-
-	var tunnel_cut: CSGBox3D = CSGBox3D.new()
-	tunnel_cut.size = Vector3(cell_size * 2.2, crouch_clearance_height, cell_size * 1.1)
-	tunnel_cut.operation = CSGShape3D.OPERATION_SUBTRACTION
-	duct.add_child(tunnel_cut)
 
 	_parkour_container.add_child(duct)
 
@@ -643,20 +634,21 @@ func _spawn_sprint_jump_chasm(start_coord: Vector3i, target_coord: Vector3i) -> 
 			% [start_coord, target_coord]
 		)
 	)
-	var gap_coord: Vector3i = (start_coord + target_coord) / 2
-	_grid[gap_coord] = CellType.EMPTY
+	var dir_step: Vector3i = target_coord - start_coord
+	if dir_step.x != 0:
+		dir_step.x = 1 if dir_step.x > 0 else -1
+	if dir_step.z != 0:
+		dir_step.z = 1 if dir_step.z > 0 else -1
 
-	var landing_coord: Vector3i = gap_coord + Vector3i(1, 0, 0)
+	var gap_coord: Vector3i = start_coord + dir_step
+	var landing_coord: Vector3i = gap_coord + dir_step
+
+	_grid[gap_coord] = CellType.EMPTY
 	_grid[landing_coord] = CellType.LANDING_PAD
 
 	var landing_pad: CSGBox3D = CSGBox3D.new()
-	landing_pad.size = Vector3(cell_size * 1.5, 0.3, cell_size * 1.5)
-	var start_world: Vector3 = grid_to_world(start_coord)
-	var target_world: Vector3 = grid_to_world(target_coord)
-	var gap_dir: Vector3 = (target_world - start_world).normalized()
-	var jump_dist: float = minf((target_world - start_world).length(), sprint_jump_max_distance)
-
-	landing_pad.position = start_world + gap_dir * jump_dist + Vector3(0.0, 0.15, 0.0)
+	landing_pad.size = Vector3(cell_size * 1.2, 0.3, cell_size * 1.2)
+	landing_pad.position = grid_to_world(landing_coord) + Vector3(0.0, 0.15, 0.0)
 	landing_pad.use_collision = true
 	landing_pad.collision_layer = 1
 	landing_pad.collision_mask = 0
