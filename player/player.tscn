@@ -502,7 +502,9 @@ shape = SubResource("SphereShape3D_mdl7e")
 
 [node name="GPUParticlesCollisionSphere3D" type="GPUParticlesCollisionSphere3D" parent="." unique_id=1390424873]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+cull_mask = 512
 script = ExtResource("20_sfy4j")
+max_radius = 2.0
 
 [node name="InteractionScanner" type="Node" parent="." unique_id=807129051 node_paths=PackedStringArray("player_body", "camera", "interact_shapecast", "empty_interact_audio")]
 script = ExtResource("24_p07f3")

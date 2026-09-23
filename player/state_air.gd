@@ -285,6 +285,8 @@ func _handle_landing() -> void:
 	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
 	var stats: Node = player.stats_component
 
+	var impact_fall_speed: float = loco.last_velocity.y
+
 	var is_safe_landing: bool = false
 	var is_slide_surface: bool = false
 
@@ -309,7 +311,7 @@ func _handle_landing() -> void:
 			if current_is_slide:
 				is_slide_surface = true
 
-	if loco.last_velocity.y <= -20.0 and is_instance_valid(stats.health_component):
+	if impact_fall_speed <= -20.0 and is_instance_valid(stats.health_component):
 		if is_safe_landing:
 			print("StateAir: Impact neutralized by safe landing material.")
 		else:
@@ -317,13 +319,14 @@ func _handle_landing() -> void:
 			var max_hp: int = stats.health_component.get("max_health") as int
 			stats.health_component.take_damage(max_hp)
 
+	var msg: Dictionary = {"landing_speed": impact_fall_speed}
+
 	if is_slide_surface:
 		print("StateAir: Slide surface detected. Transitioning to Slide.")
-		state_machine.transition_to("Slide")
+		state_machine.transition_to("Slide", msg)
 		return
 
 	print("StateAir: Standard ground detected. Transitioning to Ground.")
-	var msg: Dictionary = {}
 	if jump_buffer_timer > 0.0:
 		var interact: PlayerInteractionComponent = (
 			player.interaction_component as PlayerInteractionComponent

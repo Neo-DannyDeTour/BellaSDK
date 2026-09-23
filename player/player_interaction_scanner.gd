@@ -215,22 +215,42 @@ func _get_interactable_component_at_shapecast() -> Node:
 # --------------------------------------
 # TERMINAL MODE
 # --------------------------------------
+## Activates terminal focus mode, differentiating between numeric and minigame terminals.
+## [param terminal] The terminal [Node3D] interacted with.
 func enter_terminal_mode(terminal: Node3D) -> void:
-	print("InteractionScanner: enter_terminal_mode called.")
+	print("InteractionScanner: Entering terminal mode.")
 	is_in_terminal_mode = true
 	active_terminal = terminal
+
 	if is_instance_valid(player_body):
 		terminal_start_pos = player_body.global_position
 
-	# Standardized Event Bus Emission
+	var is_circle_keypad: bool = is_instance_valid(terminal) and bool(terminal.get("captures_wasd"))
+
+	if is_circle_keypad:
+		print("InteractionScanner: Circle keypad detected. Locking player and camera.")
+		if is_instance_valid(player_body):
+			player_body.set("is_terminal_locked", true)
+
+		# Center camera on the terminal mesh
+		if is_instance_valid(camera) and is_instance_valid(terminal):
+			var target_pos: Vector3 = terminal.global_position
+			if "mesh_instance_3d" in terminal and is_instance_valid(terminal.mesh_instance_3d):
+				target_pos = terminal.mesh_instance_3d.global_position
+			camera.look_at(target_pos, Vector3.UP)
+	else:
+		print("InteractionScanner: Numeric keypad detected. Leaving player free to aim.")
+		if is_instance_valid(player_body):
+			player_body.set("is_terminal_locked", false)
+
 	if is_instance_valid(Events) and Events.has_signal("terminal_mode_toggled"):
 		Events.terminal_mode_toggled.emit(true)
 	terminal_mode_toggled.emit(true)
 
 
+## Exits terminal mode, restores movement and camera look, and stops minigames.
 func exit_terminal_mode() -> void:
-	print("InteractionScanner: exit_terminal_mode called.")
-
+	print("InteractionScanner: Exiting terminal mode.")
 	if is_instance_valid(active_terminal):
 		if active_terminal.has_method("clear_mouse_hover"):
 			active_terminal.clear_mouse_hover()
@@ -238,30 +258,31 @@ func exit_terminal_mode() -> void:
 	is_in_terminal_mode = false
 	active_terminal = null
 
-	# Standardized Event Bus Emission
+	if is_instance_valid(player_body):
+		player_body.set("is_terminal_locked", false)
+		if is_instance_valid(player_body.locomotion_component):
+			player_body.locomotion_component.set_physics_active(true)
+
 	if is_instance_valid(Events) and Events.has_signal("terminal_mode_toggled"):
 		Events.terminal_mode_toggled.emit(false)
 	terminal_mode_toggled.emit(false)
 
 
+## Evaluates whether the player should automatically exit terminal mode.
+## [return] True if exit thresholds are crossed.
 func _should_exit_terminal_mode() -> bool:
-	if (
-		GestureInputManager.is_action_pressed("forward")
-		or GestureInputManager.is_action_pressed("backward")
-		or GestureInputManager.is_action_pressed("left")
-		or GestureInputManager.is_action_pressed("right")
-	):
-		return true
+	var is_circle_keypad: bool = (
+		is_instance_valid(active_terminal) and bool(active_terminal.get("captures_wasd"))
+	)
 
-	if (
-		GestureInputManager.is_action_just_pressed("jump")
-		or GestureInputManager.is_action_just_pressed("crouch")
-	):
-		return true
+	# Circle keypad: ONLY the Interact key can exit. Never auto-exit.
+	if is_circle_keypad:
+		return false
 
+	# Numeric keypad: Auto-exits if the player walks away or looks away
 	if (
 		is_instance_valid(player_body)
-		and player_body.global_position.distance_squared_to(terminal_start_pos) > 1.0
+		and player_body.global_position.distance_squared_to(terminal_start_pos) > 2.5
 	):
 		return true
 
@@ -270,7 +291,7 @@ func _should_exit_terminal_mode() -> bool:
 			active_terminal.global_position
 		)
 		var camera_forward: Vector3 = -camera.global_transform.basis.z
-		if rad_to_deg(camera_forward.angle_to(dir_to_terminal)) > 45.0:
+		if rad_to_deg(camera_forward.angle_to(dir_to_terminal)) > 55.0:
 			return true
 
 	return false

@@ -30,12 +30,18 @@ var _toggle_sprint_enabled: bool = false
 var _cancel_crouch_on_jump: bool = false
 
 
-## Configures velocities, reads accessibility settings, and executes buffered jumps.
-## [param msg] Initialization data dictionary passed from the previous state.
+## Configures velocities, reads accessibility settings, and executes landing crater.
 func enter(msg: Dictionary = {}) -> void:
 	print("StateGround: enter() called. Resetting Y velocity and current speed.")
+	var fall_speed: float = msg.get("landing_speed", 0.0)
+
 	player.velocity.y = 0.0
 	current_speed = 0.0
+
+	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	if is_instance_valid(loco) and is_instance_valid(loco.footstep_manager):
+		var fm: FootstepManager = loco.footstep_manager as FootstepManager
+		fm.stamp_landing_crater(fall_speed)
 
 	_toggle_crouch_enabled = (
 		GlobalSettings.get_setting("Accessibility", "toggle_crouch", false) as bool

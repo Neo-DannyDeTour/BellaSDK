@@ -38,7 +38,7 @@ var in_game_console: CanvasLayer
 var flashlight_controller: FlashlightController
 
 ## Local node reference for receiving and managing the player's health points.
-var health_component: HealthComponent
+@onready var health_component: HealthComponent = $Components/HealthComponent
 
 ## Indicates if the player character has died, used to globally block input and physics.
 var is_dead: bool = false
@@ -48,6 +48,12 @@ var is_on_sand_surface: bool = false
 
 ## Flag indicating if the player is actively standing on a surface grouped as "ice".
 var is_on_ice_surface: bool = false
+
+## Indicates if the player is currently focused on an active terminal.
+var is_in_terminal_mode: bool = false
+
+## Indicates if movement and camera look are locked by a minigame terminal.
+var is_terminal_locked: bool = false
 
 
 # --------------------------------------
@@ -107,6 +113,10 @@ func _capture_mouse() -> void:
 ## [param event] The [InputEvent] received from the engine.
 func _input(event: InputEvent) -> void:
 	if _is_input_blocked():
+		return
+
+	# Lock camera rotation only when locked to a circle minigame terminal
+	if is_terminal_locked and event is InputEventMouseMotion:
 		return
 
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
@@ -194,9 +204,25 @@ func _on_player_died() -> void:
 # --------------------------------------
 # MASTER PHYSICS ROUTING
 # --------------------------------------
-## Master physics update loop driving state machines, locomotion, and gesture input polling.
+## Master physics update loop driving state machines, locomotion, and interaction polling.
 ## [param delta] The physics frame delta time in seconds.
 func _physics_process(delta: float) -> void:
+	# Lock player locomotion completely during the circle minigame
+	if is_terminal_locked:
+		velocity = Vector3.ZERO
+		if is_instance_valid(locomotion_component):
+			locomotion_component.set_physics_active(false)
+
+		if is_instance_valid(interaction_component):
+			if interaction_component.has_method("process_interaction"):
+				interaction_component.process_interaction(delta)
+			elif (
+				interaction_component.get("interaction_scanner")
+				and interaction_component.interaction_scanner.has_method("process_interaction")
+			):
+				interaction_component.interaction_scanner.process_interaction(delta)
+		return
+
 	var disable_states: bool = (
 		_is_input_blocked() or (is_instance_valid(system_menu) and system_menu.flying)
 	)
@@ -390,11 +416,24 @@ func set_glider_visible(p_is_visible: bool) -> void:
 ## [param terminal] The terminal [Node3D] interacted with.
 func enter_terminal_mode(terminal: Node3D) -> void:
 	print("Player: Entering terminal focus mode.")
+	is_in_terminal_mode = true
+	velocity = Vector3.ZERO
+	if is_instance_valid(locomotion_component):
+		locomotion_component.set_physics_active(false)
+
 	if (
 		is_instance_valid(interaction_component)
 		and is_instance_valid(interaction_component.interaction_scanner)
 	):
 		interaction_component.interaction_scanner.enter_terminal_mode(terminal)
+
+
+## Restores player locomotion and camera controls after terminal exit.
+func exit_terminal_mode() -> void:
+	print("Player: Restoring movement and camera look.")
+	is_in_terminal_mode = false
+	if is_instance_valid(locomotion_component):
+		locomotion_component.set_physics_active(true)
 
 
 ## Locks locomotion while the player operates fixed machinery.
