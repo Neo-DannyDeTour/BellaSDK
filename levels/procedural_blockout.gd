@@ -267,7 +267,7 @@ func _create_room_cells(origin: Vector3i, size: Vector2i, shape: RoomShape) -> A
 ## Generates secondary inner freestanding rooms ("room within a room").
 func _generate_nested_rooms_for_floor(rooms: Array[Array], floor_idx: int) -> void:
 	print("ProceduralBlockout: Generating nested inner rooms on floor %d." % floor_idx)
-	for room_cells in rooms:
+	for room_cells: Array in rooms:
 		if room_cells.size() < 25:
 			continue
 
@@ -302,8 +302,8 @@ func _generate_nested_rooms_for_floor(rooms: Array[Array], floor_idx: int) -> vo
 func _is_inner_area_fully_in_room(
 	min_x: int, max_x: int, min_z: int, max_z: int, grid_y: int
 ) -> bool:
-	for x in range(min_x, max_x + 1):
-		for z in range(min_z, max_z + 1):
+	for x: int in range(min_x, max_x + 1):
+		for z: int in range(min_z, max_z + 1):
 			var cell: Vector3i = Vector3i(x, grid_y, z)
 			if get_cell(cell) != CellType.ROOM:
 				return false
@@ -560,8 +560,8 @@ func _generate_parkour_elements() -> void:
 	_ensure_containers()
 
 	var room_centers: Array[Vector3i] = []
-	for room_cells in _rooms_by_floor:
-		for room in room_cells:
+	for room_cells: Array in _rooms_by_floor:
+		for room: Array in room_cells:
 			if not room.is_empty():
 				room_centers.append(room[floori(float(room.size()) / 2.0)])
 
@@ -643,7 +643,12 @@ func _spawn_sprint_jump_chasm(start_coord: Vector3i, target_coord: Vector3i) -> 
 			% [start_coord, target_coord]
 		)
 	)
-	var gap_coord: Vector3i = (start_coord + target_coord) / 2
+	var sum_coord: Vector3i = start_coord + target_coord
+	var gap_coord: Vector3i = Vector3i(
+		floori(float(sum_coord.x) / 2.0),
+		floori(float(sum_coord.y) / 2.0),
+		floori(float(sum_coord.z) / 2.0)
+	)
 	_grid[gap_coord] = CellType.EMPTY
 
 	var landing_coord: Vector3i = gap_coord + Vector3i(1, 0, 0)
