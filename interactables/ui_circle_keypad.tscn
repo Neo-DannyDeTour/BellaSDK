@@ -1,0 +1,60 @@
+[gd_scene format=3 uid="uid://bf0caum6xi688"]
+
+[ext_resource type="Script" uid="uid://dvqyy3541d8mg" path="res://interactables/ui_circle_keypad.gd" id="1_12d4i"]
+
+[node name="UiCircleKeypad" type="Control" unique_id=827470392]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_12d4i")
+fail_damage = 100
+perfect_heal_amount = 100
+
+[node name="Background" type="ColorRect" parent="." unique_id=35413897]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.0627451, 0.07058824, 0.08627451, 1)
+
+[node name="CircleCanvas" type="Control" parent="." unique_id=1096098253]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="CenterContainer" type="CenterContainer" parent="." unique_id=332281619]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PromptIcon" type="TextureRect" parent="CenterContainer" unique_id=2073508349]
+custom_minimum_size = Vector2(96, 96)
+layout_mode = 2
+stretch_mode = 5
+
+[node name="PromptLabel" type="Label" parent="CenterContainer" unique_id=702176140]
+layout_mode = 2
+theme_override_font_sizes/font_size = 64
+
+[node name="StatusLabel" type="Label" parent="." unique_id=483723405]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -17.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 32
