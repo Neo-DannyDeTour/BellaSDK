@@ -1,35 +1,41 @@
-## A dynamic particle collision sphere that scales based on player movement.
-##
-## Attached to the player, this [GPUParticlesCollisionSphere3D] pushes GPU smoke
-## and fog out of the way, expanding its radius smoothly as the player's speed increases.
+## Dynamic collision sphere scaling with player horizontal movement velocity.
 class_name SmokeWakeCollider
 extends GPUParticlesCollisionSphere3D
 
-## The base radius of the collider when the player is standing still.
+## Collision mask value targeting render Layer 10 (Volumetrics).
+const LAYER_VOLUMETRICS_MASK: int = 512
+
+## Base collision sphere radius when player is idle.
 @export var base_radius: float = 1.0
 
-## The maximum radius when the player is moving at full speed.
+## Maximum collision sphere radius at full sprint speed.
 @export var max_radius: float = 3.0
 
-## How fast the collider expands and shrinks.
+## Interpolation speed coefficient for radius expansion.
 @export var lerp_speed: float = 5.0
 
-## Reference to the parent [CharacterBody3D] to track velocity.
-@onready var _player: CharacterBody3D = $".."
+## Velocity scalar converting world speed into additional radius meters.
+@export var speed_scale: float = 0.4
+
+## Node reference to parent player CharacterBody3D.
+@onready var _player: CharacterBody3D = get_parent() as CharacterBody3D
 
 
-## Called every frame to adjust the collision radius based on parent velocity.
-## [param delta] The time elapsed since the previous frame.
+## Validates parent node type and initializes layer mask.
+func _ready() -> void:
+	print("SmokeWakeCollider: Initialized on player. Restricting cull mask.")
+	cull_mask = LAYER_VOLUMETRICS_MASK
+	radius = base_radius
+
+
+## Smoothly resizes collider radius based on horizontal movement speed.
 func _process(delta: float) -> void:
 	if not is_instance_valid(_player):
 		return
 
-	# Calculate the player's current speed
-	var speed: float = _player.velocity.length()
+	var horizontal_velocity: Vector2 = Vector2(_player.velocity.x, _player.velocity.z)
+	var speed: float = horizontal_velocity.length()
+	var target_radius: float = clampf(base_radius + (speed * speed_scale), base_radius, max_radius)
 
-	# Map the speed to a target radius.
-	# Adjust the 0.4 multiplier based on your game's movement speed.
-	var target_radius: float = clampf(base_radius + (speed * 0.4), base_radius, max_radius)
-
-	# Smoothly interpolate the collision radius
-	radius = lerpf(radius, target_radius, delta * lerp_speed)
+	var weight: float = 1.0 - exp(-lerp_speed * delta)
+	radius = lerpf(radius, target_radius, weight)
