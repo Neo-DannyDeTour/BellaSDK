@@ -225,7 +225,10 @@ func enter_terminal_mode(terminal: Node3D) -> void:
 	if is_instance_valid(player_body):
 		terminal_start_pos = player_body.global_position
 
-	var is_circle_keypad: bool = is_instance_valid(terminal) and bool(terminal.get("captures_wasd"))
+	var captures_wasd_val: Variant = (
+		terminal.get("captures_wasd") if is_instance_valid(terminal) else null
+	)
+	var is_circle_keypad: bool = captures_wasd_val == true
 
 	if is_circle_keypad:
 		print("InteractionScanner: Circle keypad detected. Locking player and camera.")
@@ -271,9 +274,10 @@ func exit_terminal_mode() -> void:
 ## Evaluates whether the player should automatically exit terminal mode.
 ## [return] True if exit thresholds are crossed.
 func _should_exit_terminal_mode() -> bool:
-	var is_circle_keypad: bool = (
-		is_instance_valid(active_terminal) and bool(active_terminal.get("captures_wasd"))
+	var captures_wasd_val: Variant = (
+		active_terminal.get("captures_wasd") if is_instance_valid(active_terminal) else null
 	)
+	var is_circle_keypad: bool = captures_wasd_val == true
 
 	# Circle keypad: ONLY the Interact key can exit. Never auto-exit.
 	if is_circle_keypad:

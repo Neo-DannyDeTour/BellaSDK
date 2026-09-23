@@ -9,8 +9,10 @@ var generator: Node = null
 ## Setup method executed prior to each test run.
 func before_each() -> void:
 	print("TestProceduralBlockout: Setting up generator test instance.")
-	generator = load("res://levels/procedural_blockout.tscn").instantiate()
+	var script: GDScript = load("res://levels/procedural_blockout.gd") as GDScript
+	generator = script.new() as Node
 	if is_instance_valid(generator):
+		generator.set("auto_generate_on_ready", false)
 		add_child_autofree(generator)
 
 
