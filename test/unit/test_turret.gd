@@ -11,28 +11,11 @@ var dummy_target: Node3D = null
 var health_comp: HealthComponent = null
 
 
-## Mock turret to override required components that are usually built in the editor scene.
-class MockTurret:
-	extends "res://enemies/turret.gd"
-
-	func _ready() -> void:
-		# Bypass area and shape setup since they rely on child nodes existing in the real scene
-		pass
-
-
 func before_each() -> void:
 	print("TestTurret: before_each() setup.")
 
-	turret = MockTurret.new()
+	turret = load("res://enemies/turret.tscn").instantiate()
 	add_child_autofree(turret)
-
-	var head_node: Node3D = Node3D.new()
-	turret.add_child(head_node)
-	turret.head = head_node
-
-	var particles: GPUParticles3D = GPUParticles3D.new()
-	head_node.add_child(particles)
-	turret.bullet_particles = particles
 
 	dummy_target = Node3D.new()
 	dummy_target.name = "DummyTarget"
@@ -48,8 +31,6 @@ func before_each() -> void:
 
 	add_child_autofree(dummy_target)
 	health_comp._ready()
-
-	turret._ready()
 
 
 func test_set_target() -> void:
