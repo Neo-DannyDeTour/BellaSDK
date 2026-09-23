@@ -131,6 +131,9 @@ var _is_active: bool = true
 ## Cache of overlapping bodies currently inside the hazard radius.
 var _targets_in_smoke: Array[Node3D] = []
 
+## Tracks whether the player is currently inside this hazard instance.
+var _is_player_inside: bool = false
+
 ## Direct reference to the collision shape node.
 @onready
 var _collision_shape: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
@@ -192,11 +195,20 @@ func _on_body_entered(body: Node3D) -> void:
 		_targets_in_smoke.append(body)
 		print("SmokeHazard: Target entered smoke -> ", body.name)
 
+		if body.is_in_group(&"player") or body is Player:
+			_is_player_inside = true
+			if _is_active:
+				Events.steam_hazard_toggled.emit(true)
+
 
 ## Unregisters exiting bodies from the active targets list.
 func _on_body_exited(body: Node3D) -> void:
 	_targets_in_smoke.erase(body)
 	print("SmokeHazard: Target exited smoke -> ", body.name)
+
+	if body.is_in_group(&"player") or body is Player:
+		_is_player_inside = false
+		Events.steam_hazard_toggled.emit(false)
 
 
 ## Applies periodic damage to targets having a valid [HealthComponent].
@@ -240,12 +252,10 @@ func _find_health_component(target: Node) -> HealthComponent:
 	if target is HealthComponent:
 		return target as HealthComponent
 
-	# Check children recursively
 	for child: Node in target.find_children("*", "HealthComponent", true, false):
 		if child is HealthComponent:
 			return child as HealthComponent
 
-	# Check parent hierarchy as fallback
 	var curr_parent: Node = target.get_parent()
 	while curr_parent != null:
 		if curr_parent is HealthComponent:
@@ -264,6 +274,9 @@ func _set_hazard_state(active: bool) -> void:
 	_phase_timer = 0.0
 	_tick_timer = 0.0
 	print("SmokeHazard: State changed -> active = ", active)
+
+	if _is_player_inside:
+		Events.steam_hazard_toggled.emit(active)
 
 	if not is_inside_tree():
 		return
@@ -298,7 +311,6 @@ func _update_collision_and_visualizer() -> void:
 		as EditorTriggerVisualizer
 	)
 
-	# Update Collision
 	if is_instance_valid(col):
 		col.position = hazard_offset
 		if visualizer_shape == EditorTriggerVisualizer.ShapeType.BOX:
@@ -310,7 +322,6 @@ func _update_collision_and_visualizer() -> void:
 				col.shape = SphereShape3D.new()
 			(col.shape as SphereShape3D).radius = cloud_radius
 
-	# Update Visualizer
 	if is_instance_valid(vis):
 		vis.position = hazard_offset
 		vis.shape_type = visualizer_shape
@@ -322,7 +333,6 @@ func _update_collision_and_visualizer() -> void:
 		vis.trigger_color = visualizer_color
 		vis.trigger_text = visualizer_text
 		vis.show_in_game = show_visualizer_in_game
-		# Explicitly trigger visualizer mesh recreation in editor
 		vis._update_mesh()
 		vis._update_material()
 

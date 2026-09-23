@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://c0w8cuky8ail3"]
+
+[ext_resource type="Script" uid="uid://dt3xwwxuhcuay" path="res://environment/dust_volume.gd" id="1_cue1o"]
+
+[node name="DustVolume" type="GPUParticles3D" unique_id=1530447784]
+script = ExtResource("1_cue1o")
+
+[node name="CullingEnabler" type="VisibleOnScreenEnabler3D" parent="." unique_id=461414028]

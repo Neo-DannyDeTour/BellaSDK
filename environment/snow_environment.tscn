@@ -1,0 +1,61 @@
+[gd_scene format=3 uid="uid://um1lcvqmxas8"]
+
+[ext_resource type="Shader" uid="uid://bdg4n0o4v00h7" path="res://snow_deform.gdshader" id="1_vtuf0"]
+[ext_resource type="Script" uid="uid://uioes3f83n4i" path="res://environment/snow_painter.gd" id="2_ns64g"]
+[ext_resource type="Script" uid="uid://cw7bonlfblun4" path="res://environment/snow_ground.gd" id="2_rxwmd"]
+[ext_resource type="Texture2D" uid="uid://cci02oruadujf" path="res://assets/images/boot_mud_texture.png" id="4_xs68i"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_xs68i"]
+noise_type = 3
+frequency = 0.02
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_rxwmd"]
+noise = SubResource("FastNoiseLite_xs68i")
+seamless = true
+
+[sub_resource type="ViewportTexture" id="ViewportTexture_xs68i"]
+viewport_path = NodePath("SnowGround/DeformViewport")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_534t5"]
+resource_local_to_scene = true
+render_priority = 0
+shader = ExtResource("1_vtuf0")
+shader_parameter/displacement_texture = SubResource("ViewportTexture_xs68i")
+shader_parameter/base_height_noise = SubResource("NoiseTexture2D_rxwmd")
+shader_parameter/terrain_height_scale = 0.8
+shader_parameter/max_depression_depth = 0.50000002375
+shader_parameter/ground_dimensions = Vector2(20, 20)
+shader_parameter/snow_color = Color(0.92, 0.95, 1, 1)
+shader_parameter/dirt_color = Color(0.24, 0.17, 0.12, 1)
+shader_parameter/snow_roughness = 0.85
+shader_parameter/dirt_roughness = 0.95
+shader_parameter/dirt_threshold = 0.25
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_534t5"]
+material = SubResource("ShaderMaterial_534t5")
+size = Vector2(20, 20)
+subdivide_width = 128
+subdivide_depth = 128
+
+[sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_ns64g"]
+data = PackedVector3Array(1, 0, 1, -1, 0, 1, 1, 0, -1, -1, 0, 1, -1, 0, -1, 1, 0, -1)
+
+[node name="SnowEnvironment" type="Node3D" unique_id=1680313811]
+
+[node name="SnowGround" type="MeshInstance3D" parent="." unique_id=1501026606 groups=["snow"]]
+mesh = SubResource("PlaneMesh_534t5")
+script = ExtResource("2_rxwmd")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="SnowGround" unique_id=1386414301]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SnowGround/StaticBody3D" unique_id=1301036281]
+shape = SubResource("ConcavePolygonShape3D_ns64g")
+
+[node name="DeformViewport" type="SubViewport" parent="SnowGround" unique_id=1829229450]
+disable_3d = true
+size = Vector2i(1024, 1024)
+render_target_update_mode = 4
+
+[node name="SnowPainter" type="Node2D" parent="SnowGround/DeformViewport" unique_id=1751532281]
+script = ExtResource("2_ns64g")
+footprint_texture = ExtResource("4_xs68i")
