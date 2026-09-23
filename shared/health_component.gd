@@ -48,9 +48,14 @@ func take_damage(amount: int) -> void:
 	health_changed.emit(current_health)
 	print("HealthComponent: take_damage() - Current health is now ", current_health, ".")
 
-	if is_player_health and Events.has_signal("player_health_changed"):
-		print("HealthComponent: take_damage() - Relaying health to global Events bus.")
-		Events.player_health_changed.emit(current_health)
+	if is_player_health:
+		if Events.has_signal("player_damaged"):
+			print("HealthComponent: take_damage() - Emitting player_damaged on Events bus.")
+			Events.player_damaged.emit(amount)
+
+		if Events.has_signal("player_health_changed"):
+			print("HealthComponent: take_damage() - Relaying health to global Events bus.")
+			Events.player_health_changed.emit(current_health)
 
 	if current_health == 0:
 		die()
@@ -70,9 +75,14 @@ func heal(amount: int) -> void:
 	health_changed.emit(current_health)
 	print("HealthComponent: heal() - Current health is now ", current_health, ".")
 
-	if is_player_health and Events.has_signal("player_health_changed"):
-		print("HealthComponent: heal() - Relaying heal to global Events bus.")
-		Events.player_health_changed.emit(current_health)
+	if is_player_health:
+		if Events.has_signal("player_healed"):
+			print("HealthComponent: heal() - Emitting player_healed on Events bus.")
+			Events.player_healed.emit(amount)
+
+		if Events.has_signal("player_health_changed"):
+			print("HealthComponent: heal() - Relaying heal to global Events bus.")
+			Events.player_health_changed.emit(current_health)
 
 
 ## Increases maximum capacity and raises current health proportionally.

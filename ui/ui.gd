@@ -33,9 +33,6 @@ var is_ui_hidden: bool = false
 ## Security variable: Indicates if debug commands are allowed via input or events.
 var is_debug_allowed: bool = OS.has_feature("debug")
 
-## Tracks previous health locally to distinguish damage from healing.
-var _last_known_health: int = 100
-
 
 ## Initializes UI processing modes, connects top-level UI signals, and checks testbed status.
 func _ready() -> void:
@@ -55,8 +52,10 @@ func _ready() -> void:
 ## Binds top-level event bus listeners.
 func _connect_signals() -> void:
 	print("UIController: Connecting top-level event bus signals.")
-	if not Events.player_health_changed.is_connected(_on_player_health_changed):
-		Events.player_health_changed.connect(_on_player_health_changed)
+	if not Events.player_damaged.is_connected(_on_player_damaged):
+		Events.player_damaged.connect(_on_player_damaged)
+	if not Events.player_healed.is_connected(_on_player_healed):
+		Events.player_healed.connect(_on_player_healed)
 	if not Events.ui_visibility_toggle_requested.is_connected(_toggle_ui_elements):
 		Events.ui_visibility_toggle_requested.connect(_toggle_ui_elements)
 	if not Events.metrics_panel_toggle_requested.is_connected(_toggle_metrics_panel):
@@ -106,16 +105,20 @@ func _input(event: InputEvent) -> void:
 				notification_hud.show_warning_message("Can't sprint", 2.0)
 
 
-## Routes health changes to the screen effects manager for pain or heal flashes.
-## [param new_health] The new total health value.
-func _on_player_health_changed(new_health: int) -> void:
-	print("UIController: Health updated -> new: ", new_health, " old: ", _last_known_health)
-	if new_health < _last_known_health:
+## Handles damage signals by triggering the screen pain flash effect.
+## [param amount] Total damage taken by the player.
+func _on_player_damaged(amount: int) -> void:
+	print("UIController: _on_player_damaged() -> Took ", amount, " damage.")
+	if is_instance_valid(screen_effects):
 		screen_effects.trigger_pain_effect()
-	elif new_health > _last_known_health:
-		screen_effects.trigger_heal_effect()
 
-	_last_known_health = new_health
+
+## Handles healing signals by pulsing the green recovery vignette.
+## [param amount] Total health restored to the player.
+func _on_player_healed(amount: int) -> void:
+	print("UIController: _on_player_healed() -> Healed ", amount, " points.")
+	if is_instance_valid(screen_effects):
+		screen_effects.trigger_heal_effect()
 
 
 ## Toggles gameplay HUD visibility for clean screenshots or immersion.

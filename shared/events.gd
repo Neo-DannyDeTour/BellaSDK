@@ -338,6 +338,18 @@ signal wolf_vision_toggled(is_active: bool)
 @warning_ignore("unused_signal")
 signal godmode_toggled(is_active: bool)
 
+## Emitted when player enters or stops taking steam hazard damage. Passes [param is_active].
+@warning_ignore("unused_signal")
+signal steam_hazard_toggled(is_active: bool)
+
+## Emitted when the player sustains damage. Passes [param amount] of damage taken.
+@warning_ignore("unused_signal")
+signal player_damaged(amount: int)
+
+## Emitted when the player restores health. Passes [param amount] of health restored.
+@warning_ignore("unused_signal")
+signal player_healed(amount: int)
+
 ## Visual animation style presets for chapter title card sequences.
 enum ChapterAnimStyle {
 	SIMPLE,

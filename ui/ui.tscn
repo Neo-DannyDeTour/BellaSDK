@@ -32,6 +32,7 @@
 [ext_resource type="Script" uid="uid://68godg1f7m7p" path="res://ui/player_status_hud.gd" id="17_c44sx"]
 [ext_resource type="Texture2D" uid="uid://bxdqmfj8erajr" path="res://assets/images/UI_Icon_Boot_Ice.png" id="18_bw7v0"]
 [ext_resource type="Texture2D" uid="uid://drekpdqmtmxfi" path="res://assets/images/UI_Icon_Swimming.jpeg" id="22_hhu8p"]
+[ext_resource type="Texture2D" uid="uid://bn63dm0hsg3ta" path="res://assets/images/UI_icon_steam_damage.jpeg" id="23_1bm0a"]
 [ext_resource type="Script" uid="uid://c5ucjjha1efk8" path="res://ui/notification_hud.gd" id="23_k48q6"]
 [ext_resource type="Script" uid="uid://dvlg5io1bfsi1" path="res://ui/debug_overlay.gd" id="24_c74r5"]
 [ext_resource type="Script" uid="uid://th5tgjsebcpu" path="res://ui/ammo_hud.gd" id="34_p762i"]
@@ -329,6 +330,58 @@ grow_vertical = 2
 texture = ExtResource("13_ju45i")
 
 [node name="TimerLabel" type="Label" parent="PlayerStatusHUD/VBoxContainer/SprintDebuff" unique_id=359487356]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(1, 0, 0, 1)
+theme_override_constants/outline_size = 10
+theme_override_font_sizes/font_size = 36
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="SteamDebuff" type="Control" parent="PlayerStatusHUD/VBoxContainer" unique_id=2096961036]
+custom_minimum_size = Vector2(128, 128)
+layout_mode = 2
+
+[node name="SteamIcon" type="TextureRect" parent="PlayerStatusHUD/VBoxContainer/SteamDebuff" unique_id=1712599911]
+custom_minimum_size = Vector2(128, 128)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("23_1bm0a")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="DebuffBar" type="TextureProgressBar" parent="PlayerStatusHUD/VBoxContainer/SteamDebuff" unique_id=220312747]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+step = 0.01
+fill_mode = 5
+nine_patch_stretch = true
+texture_progress = ExtResource("23_1bm0a")
+tint_progress = Color(0, 0, 0, 0.78431374)
+
+[node name="BorderOverlay" type="NinePatchRect" parent="PlayerStatusHUD/VBoxContainer/SteamDebuff" unique_id=1665821438]
+material = SubResource("ShaderMaterial_3tx63")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("23_1bm0a")
+
+[node name="TimerLabel" type="Label" parent="PlayerStatusHUD/VBoxContainer/SteamDebuff" unique_id=1119323470]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

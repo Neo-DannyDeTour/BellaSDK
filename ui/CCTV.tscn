@@ -19,8 +19,8 @@ render_priority = 0
 shader = ExtResource("4_qkb5d")
 shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
 shader_parameter/blink_speed = 8.00000038
-shader_parameter/min_intensity = 0.01
-shader_parameter/max_intensity = 0.050000002375
+shader_parameter/min_intensity = 0.2
+shader_parameter/max_intensity = 1.0
 shader_parameter/alpha_scissor_threshold = 0.5
 
 [sub_resource type="Environment" id="Environment_dcbol"]
@@ -61,14 +61,11 @@ far = 1000.0
 [node name="CanvasLayer" type="CanvasLayer" parent="CCTVViewport" unique_id=751183537]
 
 [node name="MarginContainer" type="MarginContainer" parent="CCTVViewport/CanvasLayer" unique_id=513532609]
-anchors_preset = 3
-anchor_left = 1.0
+anchors_preset = 2
 anchor_top = 1.0
-anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = -40.0
-offset_top = -40.0
-grow_horizontal = 0
+offset_top = -73.0
+offset_right = 41.0
 grow_vertical = 0
 theme_override_constants/margin_left = 20
 theme_override_constants/margin_top = 20
@@ -77,4 +74,4 @@ theme_override_constants/margin_bottom = 20
 
 [node name="TutorialLabel" type="Label" parent="CCTVViewport/CanvasLayer/MarginContainer" unique_id=790318665]
 layout_mode = 2
-theme_override_font_sizes/font_size = 64
+theme_override_font_sizes/font_size = 16

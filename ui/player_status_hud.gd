@@ -63,6 +63,18 @@ extends MarginContainer
 ## Numeric timer label displaying remaining swim duration.
 @onready var swim_timer_label: Label = $VBoxContainer/SwimDebuff/TimerLabel
 
+## Container managing the layout of the steam debuff UI.
+@onready var steam_debuff_container: Control = $VBoxContainer/SteamDebuff
+
+## Texture progress bar layered over the steam debuff icon.
+@onready var steam_bar: TextureProgressBar = $VBoxContainer/SteamDebuff/DebuffBar
+
+## Frame border overlay node for steam status.
+@onready var steam_border: NinePatchRect = $VBoxContainer/SteamDebuff/BorderOverlay
+
+## Numeric timer label displaying remaining steam debuff duration.
+@onready var steam_timer_label: Label = $VBoxContainer/SteamDebuff/TimerLabel
+
 ## Stores the sliced textures for each state of a health heart.
 var heart_textures: Array[AtlasTexture] = []
 
@@ -111,6 +123,9 @@ var is_infinite_swim: bool = false
 ## Tracks whether the player's head is currently submerged underwater.
 var is_submerged: bool = false
 
+## Tracks if the player is currently standing in an active steam hazard.
+var is_in_steam: bool = false
+
 
 ## Lifecycle method called when the node enters the scene tree.
 ## Initializes containers, heart textures, and binds event bus listeners.
@@ -137,6 +152,9 @@ func _initialize_indicators() -> void:
 	swim_debuff_container.hide()
 	swim_bar.hide()
 	swim_timer_label.hide()
+	steam_debuff_container.hide()
+	steam_bar.hide()
+	steam_timer_label.hide()
 
 
 ## Binds status and keycard events from the global [Events] bus and [KeycardSystem].
@@ -158,6 +176,8 @@ func _connect_signals() -> void:
 		Events.oxygen_timer_started.connect(_on_oxygen_timer_started)
 	if not Events.oxygen_timer_stopped.is_connected(_on_oxygen_timer_stopped):
 		Events.oxygen_timer_stopped.connect(_on_oxygen_timer_stopped)
+	if not Events.steam_hazard_toggled.is_connected(_on_steam_hazard_toggled):
+		Events.steam_hazard_toggled.connect(_on_steam_hazard_toggled)
 
 	if not KeycardSystem.card_picked_up.is_connected(_on_card_picked_up):
 		KeycardSystem.card_picked_up.connect(_on_card_picked_up)
@@ -440,8 +460,6 @@ func _on_infinite_swim_toggled(enabled: bool) -> void:
 		swim_bar.hide()
 		swim_timer_label.hide()
 	else:
-		# If turned off underwater, StateSwim re-emits oxygen_timer_started,
-		# but if not received yet, make sure the slot stays ready.
 		swim_debuff_container.show()
 		swim_border.show()
 
@@ -498,6 +516,17 @@ func _on_oxygen_timer_stopped() -> void:
 	swim_timer_label.hide()
 	swim_border.hide()
 	swim_debuff_container.hide()
+
+
+## Updates steam hazard indicator icon and border overlay without progress bar.
+## [param is_active] True if the player is actively exposed to steam damage.
+func _on_steam_hazard_toggled(is_active: bool) -> void:
+	print("PlayerStatusHUD: Steam hazard toggled -> ", is_active)
+	is_in_steam = is_active
+	steam_debuff_container.visible = is_in_steam
+	steam_border.visible = is_in_steam
+	steam_bar.hide()
+	steam_timer_label.hide()
 
 
 ## Updates persistent sand sprint-restriction status.

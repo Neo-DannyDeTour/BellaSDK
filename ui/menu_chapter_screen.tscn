@@ -5,6 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://dqqg54m0bl4k1" path="res://assets/images/chapter_imgs/TestBED.png" id="3_ef8iv"]
 [ext_resource type="Texture2D" uid="uid://yxgdfvdpfmu7" path="res://assets/images/chapter_imgs/VisTEST.png" id="4_1symm"]
 [ext_resource type="Shader" uid="uid://d3hb763n705g4" path="res://ui/menu_chapter_screen.gdshader" id="5_ef8iv"]
+[ext_resource type="Texture2D" uid="uid://btwn1wen2po7u" path="res://assets/images/chapter_imgs/ProceduralTEST.png" id="5_odh0u"]
 [ext_resource type="FontFile" uid="uid://dg3xyu4f8ta7g" path="res://assets/fonts/kramola/Kramola.otf" id="5_sl2hs"]
 [ext_resource type="PackedScene" uid="uid://8m8l0uplgvm" path="res://ui/HorrorButton.tscn" id="7_8qdoq"]
 [ext_resource type="Texture2D" uid="uid://bam022gmwifjq" path="res://assets/kenney_input-prompts_1.5/Steam Controller/Vector/steam_button_start_icon.svg" id="7_51c2a"]
@@ -30,6 +31,14 @@ image = ExtResource("4_1symm")
 scene_path = "uid://b285s5kmnxvmg"
 metadata/_custom_type_script = "uid://45jvq8yps1jm"
 
+[sub_resource type="Resource" id="Resource_xs68i"]
+script = ExtResource("2_sl2hs")
+chapter_name = "Procedural Labyrinth"
+description = "Procedural labyrinth made for inspiration. I'll be generating new rooms and seeing what can be moved to the main game"
+image = ExtResource("5_odh0u")
+scene_path = "uid://dxdy3802b0jpj"
+metadata/_custom_type_script = "uid://45jvq8yps1jm"
+
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_1symm"]
 shader = ExtResource("5_ef8iv")
 shader_parameter/blur_amount = 2.0
@@ -44,7 +53,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_w8ad5")
-chapters = Array[ExtResource("2_sl2hs")]([SubResource("Resource_53ons"), SubResource("Resource_h04da")])
+chapters = Array[ExtResource("2_sl2hs")]([SubResource("Resource_53ons"), SubResource("Resource_h04da"), SubResource("Resource_xs68i")])
 
 [node name="Background" type="TextureRect" parent="." unique_id=2096381043]
 unique_name_in_owner = true

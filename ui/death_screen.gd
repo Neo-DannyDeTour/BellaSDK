@@ -17,7 +17,13 @@ const DEATH_MESSAGES: Array[String] = [
 	"Bella is no more",
 	"Go to Hell!",
 	"Your soul is mine!",
-	"Nevermore..."
+	"Nevermore...",
+	"Sic transit gloria mundi",
+	"Pulvis et umbra sumus",
+	"Mors vincit omnia",
+	"Mors certa, hora incerta",
+	"You're next!",
+	"I'll get you next!",
 ]
 
 ## Points defining healthy heartbeat ECG waveform trajectory.
