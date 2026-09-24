@@ -2,8 +2,10 @@
 
 [ext_resource type="Script" uid="uid://ccxtu6rccjfsm" path="res://shared/puzzle_socket.gd" id="1_rlwot"]
 [ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="2_bme3t"]
+[ext_resource type="Texture2D" uid="uid://v37vwebxtkq3" path="res://assets/images/lightning_editor.png" id="2_pn8k3"]
 [ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="3_ngqtq"]
 [ext_resource type="Script" uid="uid://cnmn3hgnt0afn" path="res://interactables/output_transmitter_3d.gd" id="4_88djp"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="4_khcvt"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_bme3t"]
 size = Vector3(1, 1, 0.20678711)
@@ -19,15 +21,30 @@ height = 0.1
 radial_segments = 32
 rings = 0
 
-[node name="Socket" type="Area3D" unique_id=1509623913 node_paths=PackedStringArray("snap_position", "indicator_light", "socket_interact_comp", "transmitter")]
-collision_mask = 5
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_84u8d"]
+render_priority = 0
+shader = ExtResource("4_khcvt")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.2
+shader_parameter/max_intensity = 1.0
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_534t5"]
+size = Vector3(1, 1, 0.2)
+
+[node name="Socket" type="StaticBody3D" unique_id=1325480196 node_paths=PackedStringArray("snap_position", "indicator_light", "label", "socket_interact_comp", "highlight_comp", "plug_trigger_area", "transmitter") groups=["not_climbable"]]
+collision_layer = 4
+collision_mask = 0
 script = ExtResource("1_rlwot")
 snap_position = NodePath("Marker3D")
 indicator_light = NodePath("OmniLight3D")
+label = NodePath("Label3D")
 socket_interact_comp = NodePath("InteractComponent")
+highlight_comp = NodePath("HighlightComponent")
+plug_trigger_area = NodePath("PlugTriggerArea")
+power_source_texture = ExtResource("2_pn8k3")
 transmitter = NodePath("OutputTransmitter3D")
-
-[node name="Marker3D" type="Marker3D" parent="." unique_id=1039557250]
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1266546364]
 shape = SubResource("BoxShape3D_bme3t")
@@ -43,10 +60,28 @@ light_color = Color(0.029999971, 1, 0.11083323, 1)
 script = ExtResource("2_bme3t")
 metadata/_custom_type_script = "uid://cqawbvidns1th"
 
-[node name="HighlightComponent" type="Node" parent="." unique_id=417254049]
+[node name="HighlightComponent" type="Node" parent="." unique_id=417254049 node_paths=PackedStringArray("interact_component")]
 script = ExtResource("3_ngqtq")
+outline_material = SubResource("ShaderMaterial_84u8d")
+interact_component = NodePath("../InteractComponent")
 metadata/_custom_type_script = "uid://dgig0tamvkdxx"
 
 [node name="OutputTransmitter3D" type="Node3D" parent="." unique_id=607250813]
 script = ExtResource("4_88djp")
 metadata/_custom_type_script = "uid://cnmn3hgnt0afn"
+
+[node name="Label3D" type="Label3D" parent="." unique_id=94711629]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.25706017)
+visible = false
+billboard = 1
+no_depth_test = true
+
+[node name="PlugTriggerArea" type="Area3D" parent="." unique_id=2091037510]
+collision_layer = 0
+collision_mask = 4
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="PlugTriggerArea" unique_id=1876325317]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.0043945313)
+shape = SubResource("BoxShape3D_534t5")
+
+[node name="Marker3D" type="Marker3D" parent="." unique_id=1039557250]
