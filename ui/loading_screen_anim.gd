@@ -318,7 +318,23 @@ func _finalize_scene_transition() -> void:
 	root.add_child(new_scene)
 	get_tree().current_scene = new_scene
 
-	# Unpause so Camera3D and player spawn positions update
+	var player_node: Player = new_scene.find_child("Player", true, false) as Player
+	if is_instance_valid(player_node):
+		if is_instance_valid(player_node.locomotion_component):
+			player_node.locomotion_component.set_physics_active(false)
+		player_node.velocity = Vector3.ZERO
+
+	# Settle PhysicsServer3D and await asynchronous CSGCombiner3D collision baking
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+
+	if is_instance_valid(player_node):
+		_snap_player_to_floor(player_node)
+		player_node.activate_gameplay_camera()
+		if is_instance_valid(player_node.locomotion_component):
+			player_node.locomotion_component.set_physics_active(true)
+
 	get_tree().paused = false
 
 	for frame_idx: int in range(SETTLING_FRAMES):
@@ -329,7 +345,6 @@ func _finalize_scene_transition() -> void:
 		print("LoadingScreen: Camera settled. SDFGI enabled smoothly.")
 		await get_tree().process_frame
 
-	# Enforce player's saved settings onto the new level's viewport & environment
 	_reapply_active_video_settings()
 
 	var fade_tween: Tween = create_tween()
@@ -422,3 +437,18 @@ func _find_world_environment(target: Node) -> WorldEnvironment:
 	if not env_nodes.is_empty():
 		return env_nodes[0] as WorldEnvironment
 	return null
+
+
+## Snaps player position downward using direct space state raycast.
+func _snap_player_to_floor(player: Player) -> void:
+	print("LoadingScreen: Snapping player position to collision floor.")
+	var space_state: PhysicsDirectSpaceState3D = player.get_world_3d().direct_space_state
+	var ray_origin: Vector3 = player.global_position + Vector3(0.0, 0.5, 0.0)
+	var ray_end: Vector3 = player.global_position - Vector3(0.0, 5.0, 0.0)
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
+		ray_origin, ray_end, 1
+	)
+	var hit: Dictionary = space_state.intersect_ray(query)
+	if not hit.is_empty():
+		player.global_position = (hit.position as Vector3) + Vector3(0.0, 0.05, 0.0)
+		print("LoadingScreen: Player aligned to floor at: ", player.global_position)

@@ -77,13 +77,15 @@ var _vision_meshes: Array[MeshInstance3D] = []
 ## Cached array of all secondary cameras residing in the diorama scene.
 var _all_diorama_cameras: Array[Camera3D] = []
 
+## Cached runtime instance of the instantiated diorama level.
+var _instantiated_diorama: Node3D = null
 
-## Lifecycle initialization hooking textures, scenarios, and signals.
+
+## Initializes UI router, scenario isolation, and pre-warms the diorama.
 func _ready() -> void:
-	print("OptionsRouter: Initializing UI router and isolating diorama.")
+	print("OptionsRouter: Initializing UI router.")
 	_isolate_viewport_scenario()
-	_neutralize_diorama_hotspots()
-	_bind_diorama_textures()
+	_prewarm_diorama()
 	_connect_tab_buttons()
 
 	if is_instance_valid(master_back_button):
@@ -94,23 +96,52 @@ func _ready() -> void:
 
 	visibility_changed.connect(_on_visibility_changed)
 	_current_panel = video_panel
-
 	_route_diorama_view(video_panel)
 	_evaluate_diorama_state()
 
 
-## Assigns an isolated [World3D] instance safely to prevent scenario cross-talk.
+## Establishes an isolated [World3D] scenario to prevent scenario cross-talk.
 func _isolate_viewport_scenario() -> void:
-	print("OptionsRouter: Verifying DioramaViewport scenario isolation.")
+	print("OptionsRouter: Establishing isolated World3D scenario.")
 	if not is_instance_valid(diorama_viewport):
 		return
 
 	diorama_viewport.own_world_3d = true
-	if diorama_viewport.world_3d == null or diorama_viewport.world_3d == get_tree().root.world_3d:
-		var iso_world: World3D = World3D.new()
-		iso_world.environment = Environment.new()
-		diorama_viewport.world_3d = iso_world
-		print("OptionsRouter: Instantiated distinct World3D and Environment.")
+
+	var cur_world: World3D = diorama_viewport.find_world_3d()
+	if not is_instance_valid(cur_world):
+		cur_world = World3D.new()
+		diorama_viewport.world_3d = cur_world
+
+	var clean_env: Environment = cur_world.environment
+	if not is_instance_valid(clean_env):
+		clean_env = Environment.new()
+		cur_world.environment = clean_env
+
+	clean_env.background_mode = Environment.BG_COLOR
+	clean_env.background_color = Color(0.12, 0.12, 0.14, 1.0)
+	clean_env.sdfgi_enabled = false
+	clean_env.ssao_enabled = false
+	clean_env.ssil_enabled = false
+	clean_env.volumetric_fog_enabled = false
+	clean_env.glow_enabled = false
+
+
+## Pre-warms diorama once on boot for 0ms instantaneous tab switching.
+func _prewarm_diorama() -> void:
+	print("OptionsRouter: Pre-warming diorama scene instance.")
+	if not is_instance_valid(diorama_viewport):
+		return
+
+	_instantiated_diorama = (diorama_viewport.get_node_or_null("SettingsLevel") as Node3D)
+	if not is_instance_valid(_instantiated_diorama):
+		var scene: PackedScene = load("res://player/settings_level.tscn") as PackedScene
+		if is_instance_valid(scene):
+			_instantiated_diorama = scene.instantiate() as Node3D
+			diorama_viewport.add_child(_instantiated_diorama)
+
+	_neutralize_diorama_hotspots()
+	_bind_diorama_textures()
 
 
 ## Binds the shared diorama ViewportTexture to preview displays.
@@ -160,13 +191,12 @@ func _connect_tab_buttons() -> void:
 		accessibility_button.pressed.connect(_on_tab_pressed.bind(accessibility_panel))
 
 
-## Strips physics collisions and isolates render layers inside the preview.
+## Strips physics collisions and isolates preview camera render layers.
 func _neutralize_diorama_hotspots() -> void:
-	print("OptionsRouter: Neutralizing collisions and lights in preview.")
+	print("OptionsRouter: Neutralizing collisions and cameras in preview.")
 	if not is_instance_valid(diorama_viewport):
 		return
 
-	# Strip all collisions inside the diorama to prevent physics space contamination
 	var bodies: Array[Node] = diorama_viewport.find_children("*", "CollisionObject3D", true, false)
 	for b_node: Node in bodies:
 		var c_obj: CollisionObject3D = b_node as CollisionObject3D
@@ -183,13 +213,9 @@ func _neutralize_diorama_hotspots() -> void:
 		var cam: Camera3D = c_node as Camera3D
 		if is_instance_valid(cam):
 			cam.current = false
+			if cam is ExtendedCamera3D:
+				(cam as ExtendedCamera3D).is_player_camera = false
 			_all_diorama_cameras.append(cam)
-
-	var mirrors: Array[Node] = diorama_viewport.find_children("*", "Mirror", true, false)
-	for m_node: Node in mirrors:
-		m_node.process_mode = Node.PROCESS_MODE_DISABLED
-		if m_node is Node3D:
-			(m_node as Node3D).visible = false
 
 
 ## Returns all options sub-panels as a typed array.
@@ -262,12 +288,12 @@ func _evaluate_diorama_state() -> void:
 
 	var is_preview: bool = _current_panel == video_panel or _current_panel == accessibility_panel
 	var should_render: bool = is_visible_in_tree() and is_preview
-	print("OptionsRouter: Diorama render update mode: ", should_render)
+	print("OptionsRouter: Diorama state evaluated. Render: ", should_render)
 
 	if should_render:
 		diorama_viewport.process_mode = Node.PROCESS_MODE_INHERIT
 		diorama_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
-		_activate_graphics_camera()
+		_route_diorama_view(_current_panel)
 	else:
 		diorama_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 		diorama_viewport.process_mode = Node.PROCESS_MODE_DISABLED
@@ -276,15 +302,21 @@ func _evaluate_diorama_state() -> void:
 	_set_preview_shader_active(should_render)
 
 
-## Forcibly deactivates diorama rendering and camera to release GPU resources.
+## Forcibly tears down diorama hierarchy when starting gameplay level.
 func teardown_diorama() -> void:
-	print("OptionsRouter: Tearing down diorama viewport safely.")
+	print("OptionsRouter: Tearing down diorama viewport for gameplay.")
 	_deactivate_all_diorama_cameras()
 	if is_instance_valid(diorama_viewport):
 		diorama_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 		diorama_viewport.process_mode = Node.PROCESS_MODE_DISABLED
-		if diorama_viewport.world_3d and diorama_viewport.world_3d.environment:
-			diorama_viewport.world_3d.environment.sdfgi_enabled = false
+
+	if is_instance_valid(_instantiated_diorama):
+		_instantiated_diorama.queue_free()
+		_instantiated_diorama = null
+
+	_vision_meshes.clear()
+	_all_diorama_cameras.clear()
+	_graphics_camera = null
 	_set_preview_shader_active(false)
 
 

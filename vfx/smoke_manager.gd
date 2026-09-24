@@ -1,62 +1,111 @@
+## Manages GPU compute dispatches and bullet hole simulation buffers for [FogVolume].
 extends Node
 
+## Maximum number of concurrent bullet holes tracked in the compute buffer.
 const MAX_HOLES: int = 50
-const BUFFER_SIZE: int = MAX_HOLES * 32
+
+## Byte size of a single hole data struct (8 floats: 32 bytes) in std430 layout.
+const HOLE_STRIDE_BYTES: int = 32
+
+## Total byte capacity of the GPU storage buffer holding bullet hole data.
+const BUFFER_SIZE: int = MAX_HOLES * HOLE_STRIDE_BYTES
+
+## Total byte capacity of the push constants buffer (20 floats * 4 bytes).
+const PUSH_CONSTANTS_SIZE: int = 80
 
 @export_group("System Controls")
+## Time in seconds before a bullet hole completely heals and dissipates.
 @export var heal_time_seconds: float = 4.0
+
+## Radius around the player that dynamically clears volumetric smoke.
 @export var player_trail_radius: float = 3.5
 
 @export_group("Cinematic Pellet Effects")
+## Intensity factor for clearing smoke inside bullet cavities.
 @export_range(0.0, 1.0) var hole_clear_intensity: float = 0.8
+
+## Strength of turbulent rotational swirls around bullet cavities.
 @export var swirl_strength: float = 1.8
+
+## Spatial frequency of the rotational turbulence around bullet cavities.
 @export var swirl_frequency: float = 0.5
 
 @export_group("Optimizations")
+## Precomputed 3D noise texture used for volumetric turbulence.
 @export var precomputed_noise: Texture3D
 
-var active_holes: Array[Dictionary] = []
+## Pre-allocated byte buffer for GPU storage buffer updates without heap allocations.
+var _hole_byte_buffer: PackedByteArray = PackedByteArray()
+
+## Pre-allocated byte buffer for push constant data dispatched to [RenderingDevice].
+var _push_constants_buffer: PackedByteArray = PackedByteArray()
+
+## Flat array storing elapsed lifetimes in seconds for each active hole.
+var _hole_lifetimes: PackedFloat32Array = PackedFloat32Array()
+
+## Current count of active bullet holes tracked in the buffer.
+var _active_hole_count: int = 0
+
+## Cached world position of the player for local fog clearing.
 var current_player_pos: Vector3 = Vector3.ZERO
+
+## Total accumulated simulation time in seconds.
 var global_time: float = 0.0
 
-## The RenderingDevice used for compute operations. Needs manual cleanup.
+## The [RenderingDevice] used for compute operations. Needs manual cleanup.
 var rd: RenderingDevice
-## The compiled compute shader. Needs manual cleanup.
+
+## The compiled compute shader [RID]. Needs manual cleanup.
 var shader: RID
-## The compute pipeline instance. Needs manual cleanup.
+
+## The compute pipeline instance [RID]. Needs manual cleanup.
 var pipeline: RID
-## The 3D texture RID used for density storage. Needs manual cleanup.
+
+## The 3D texture [RID] used for density storage. Needs manual cleanup.
 var texture_rid: RID
-## The storage buffer for hole data. Needs manual cleanup.
+
+## The storage buffer [RID] for hole data. Needs manual cleanup.
 var buffer_rid: RID
-## The uniform set binding all resources. MUST BE FREED FIRST during cleanup.
+
+## The uniform set [RID] binding all resources. Freed first in cleanup.
 var uniform_set: RID
-## Holds the GPU texture RID for the generated noise. Needs manual cleanup.
+
+## Holds the GPU texture [RID] for generated noise. Needs manual cleanup.
 var noise_rd_rid: RID
-## Holds the GPU sampler RID. Needs manual cleanup.
+
+## Holds the GPU sampler [RID]. Needs manual cleanup.
 var sampler_rid: RID
+
+## The currently bound [FogVolume] receiving computed smoke density.
 var active_fog_volume: FogVolume
+
+## Indicates whether the compute pipeline is ready for dispatch.
 var is_initialized: bool = false
+
+## The [Texture3DRD] wrapper bridging the compute texture to materials.
 var godot_texture: Texture3DRD
 
-# OPTIMIZATION: Pre-allocated buffer to prevent Garbage Collection stutters
-var _hole_buffer: PackedFloat32Array = PackedFloat32Array()
 
-
+## Initializes the compute buffer, textures, and pipeline on [Node] ready.
 func _ready() -> void:
+	print("SmokeManager: Initializing smoke manager node.")
 	rd = RenderingServer.get_rendering_device()
 
-	_hole_buffer.resize(MAX_HOLES * 8)
+	_hole_byte_buffer.resize(BUFFER_SIZE)
+	_hole_byte_buffer.fill(0)
+	_push_constants_buffer.resize(PUSH_CONSTANTS_SIZE)
+	_push_constants_buffer.fill(0)
+	_hole_lifetimes.resize(MAX_HOLES)
+	_hole_lifetimes.fill(0.0)
 
 	if precomputed_noise == null:
 		precomputed_noise = preload("res://vfx/smoke_noise_3d.tres") as Texture3D
 
-	assert(precomputed_noise != null, "SmokeManager requires smoke_noise_3d.tres to be valid!")
+	assert(precomputed_noise != null, "SmokeManager requires smoke_noise_3d.tres!")
 
 	while not precomputed_noise.get_rid().is_valid():
 		await precomputed_noise.changed
 
-	print("SmokeManager: Initializing smoke manager node.")
 	if DisplayServer.get_name() == "headless":
 		print("SmokeManager: Headless mode detected, skipping GPU initialization.")
 		return
@@ -64,6 +113,7 @@ func _ready() -> void:
 	_initialize_gpu()
 
 
+## Creates a [RenderingDevice] texture [RID] from a [Texture3D] resource.
 func _create_rd_noise_texture(tex: Texture3D) -> RID:
 	print("SmokeManager: _create_rd_noise_texture() called.")
 	var images: Array[Image] = tex.get_data()
@@ -92,6 +142,7 @@ func _create_rd_noise_texture(tex: Texture3D) -> RID:
 	return rd.texture_create(fmt, view, [bytes])
 
 
+## Compiles compute shader, initializes textures, buffers, and uniform sets.
 func _initialize_gpu() -> void:
 	print("SmokeManager: _initialize_gpu() called.")
 	const SHADER_FILE: RDShaderFile = preload("res://vfx/smoke_compute.glsl")
@@ -114,14 +165,10 @@ func _initialize_gpu() -> void:
 	var view: RDTextureView = RDTextureView.new()
 	texture_rid = rd.texture_create(fmt, view)
 
-	# --- THE MISSING BRIDGE ---
-	# Wrap the raw RenderingDevice texture so Godot materials can read it
 	godot_texture = Texture3DRD.new()
 	godot_texture.texture_rd_rid = texture_rid
 
-	var empty_bytes: PackedByteArray = PackedByteArray()
-	empty_bytes.resize(BUFFER_SIZE)
-	buffer_rid = rd.storage_buffer_create(BUFFER_SIZE, empty_bytes)
+	buffer_rid = rd.storage_buffer_create(BUFFER_SIZE, _hole_byte_buffer)
 
 	noise_rd_rid = _create_rd_noise_texture(precomputed_noise)
 	assert(noise_rd_rid.is_valid(), "Failed to create GPU noise texture!")
@@ -152,18 +199,23 @@ func _initialize_gpu() -> void:
 	noise_uniform.add_id(noise_rd_rid)
 
 	uniform_set = rd.uniform_set_create([tex_uniform, buf_uniform, noise_uniform], shader, 0)
-	assert(uniform_set.is_valid(), "SmokeManager: uniform_set_create returned null.")
+	assert(uniform_set.is_valid(), "SmokeManager: uniform_set_create failed.")
 
 	is_initialized = true
 
+	if is_instance_valid(active_fog_volume):
+		active_fog_volume.assign_compute_texture(godot_texture)
 
+
+## Handles engine notifications to clean up GPU resources on deletion.
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
 		_cleanup_gpu()
 
 
+## Releases all allocated [RenderingDevice] resources and [RID] instances.
 func _cleanup_gpu() -> void:
-	print("SmokeManager: _cleanup_gpu() called. Freeing GPU resources to prevent VRAM leak.")
+	print("SmokeManager: _cleanup_gpu() called.")
 	if not rd:
 		return
 	if uniform_set.is_valid():
@@ -182,82 +234,94 @@ func _cleanup_gpu() -> void:
 		rd.free_rid(sampler_rid)
 
 
+## Binds an active [FogVolume] and assigns the computed [Texture3DRD].
 func register_fog_volume(volume: FogVolume) -> void:
-	print("SmokeManager: register_fog_volume() called with volume: " + volume.name)
+	print("SmokeManager: register_fog_volume() called with: ", volume.name)
 	active_fog_volume = volume
-	if is_instance_valid(godot_texture) and volume.has_method("assign_compute_texture"):
-		volume.assign_compute_texture(godot_texture)
+	if is_initialized and is_instance_valid(godot_texture):
+		if volume.has_method("assign_compute_texture"):
+			volume.assign_compute_texture(godot_texture)
 
 
+## Clears the registered [FogVolume] reference if it matches the current volume.
 func clear_fog_volume(volume: FogVolume) -> void:
 	print("SmokeManager: clear_fog_volume() called.")
 	if active_fog_volume == volume:
 		active_fog_volume = null
 
 
+## Updates the cached player position used for volumetric clearing.
 func update_player_position(pos: Vector3) -> void:
 	current_player_pos = pos
 
 
+## Adds a bullet hole cavity by writing directly into pre-allocated memory.
 func add_bullet_hole(start: Vector3, dir: Vector3, length: float, radius: float = 1.0) -> void:
 	print("SmokeManager: add_bullet_hole() called.")
-	if active_holes.size() >= MAX_HOLES:
-		active_holes.pop_front()
+	var target_idx: int = _active_hole_count
 
-	active_holes.append(
-		{"start": start, "end": start + (dir * length), "radius": radius, "time_alive": 0.0}
-	)
+	if _active_hole_count >= MAX_HOLES:
+		var oldest_idx: int = 0
+		var max_age: float = -1.0
+		for i: int in range(_active_hole_count):
+			if _hole_lifetimes[i] > max_age:
+				max_age = _hole_lifetimes[i]
+				oldest_idx = i
+		target_idx = oldest_idx
+	else:
+		_active_hole_count += 1
+
+	_hole_lifetimes[target_idx] = 0.0
+	var end_pos: Vector3 = start + (dir * length)
+	var offset: int = target_idx * HOLE_STRIDE_BYTES
+
+	_hole_byte_buffer.encode_float(offset, start.x)
+	_hole_byte_buffer.encode_float(offset + 4, start.y)
+	_hole_byte_buffer.encode_float(offset + 8, start.z)
+	_hole_byte_buffer.encode_float(offset + 12, radius)
+	_hole_byte_buffer.encode_float(offset + 16, end_pos.x)
+	_hole_byte_buffer.encode_float(offset + 20, end_pos.y)
+	_hole_byte_buffer.encode_float(offset + 24, end_pos.z)
+	_hole_byte_buffer.encode_float(offset + 28, 0.0)
 
 
+## Updates hole lifetimes and dispatches the compute pass per frame.
 func _process(delta: float) -> void:
 	if not is_initialized:
 		return
 
 	global_time += delta
 
-	# 1. Update lifetimes and prune old holes directly
-	for i: int in range(active_holes.size() - 1, -1, -1):
-		active_holes[i].time_alive += delta
-		if active_holes[i].time_alive > heal_time_seconds:
-			active_holes.remove_at(i)
+	var i: int = _active_hole_count - 1
+	while i >= 0:
+		_hole_lifetimes[i] += delta
+		if _hole_lifetimes[i] >= heal_time_seconds:
+			var last_idx: int = _active_hole_count - 1
+			if i < last_idx:
+				_hole_lifetimes[i] = _hole_lifetimes[last_idx]
+				var src_offset: int = last_idx * HOLE_STRIDE_BYTES
+				var dst_offset: int = i * HOLE_STRIDE_BYTES
+				for b: int in range(HOLE_STRIDE_BYTES):
+					_hole_byte_buffer[dst_offset + b] = _hole_byte_buffer[src_offset + b]
+			_active_hole_count -= 1
+		else:
+			var norm_age: float = _hole_lifetimes[i] / heal_time_seconds
+			_hole_byte_buffer.encode_float(i * HOLE_STRIDE_BYTES + 28, norm_age)
+		i -= 1
 
-	# OPTIMIZATION: Do not process arrays or dispatch shader if there's no fog volume to draw to
-	if not is_instance_valid(active_fog_volume) or not active_fog_volume.is_inside_tree():
+	if not is_instance_valid(active_fog_volume):
+		return
+	if not active_fog_volume.is_inside_tree():
 		return
 
-	# 2. Extract safe state on MAIN THREAD
 	var safe_fog_size: Vector3 = active_fog_volume.size
 	var safe_fog_pos: Vector3 = active_fog_volume.global_position
-
-	# Evaluate frames on the Main Thread to guarantee it flips properly
 	var is_even_frame: bool = Engine.get_process_frames() % 2 == 0
-	var holes_to_process: int = mini(active_holes.size(), MAX_HOLES)
 
-	# 3. Use pre-allocated buffer on MAIN THREAD to prevent dynamic allocation spikes
-	var safe_hole_bytes: PackedByteArray = PackedByteArray()
-
-	if holes_to_process > 0:
-		for i: int in range(holes_to_process):
-			var hole: Dictionary = active_holes[i]
-			var offset: int = i * 8
-			_hole_buffer[offset] = hole.start.x
-			_hole_buffer[offset + 1] = hole.start.y
-			_hole_buffer[offset + 2] = hole.start.z
-			_hole_buffer[offset + 3] = hole.radius
-			_hole_buffer[offset + 4] = hole.end.x
-			_hole_buffer[offset + 5] = hole.end.y
-			_hole_buffer[offset + 6] = hole.end.z
-			_hole_buffer[offset + 7] = hole.time_alive
-
-		# Slicing the used portion prevents passing junk data or sending a zero-sized array
-		safe_hole_bytes = _hole_buffer.slice(0, holes_to_process * 8).to_byte_array()
-
-	# 4. Dispatch with fully prepared, thread-safe primitives
 	RenderingServer.call_on_render_thread(
 		_dispatch_to_compute_shader.bind(
 			delta,
-			safe_hole_bytes,
-			holes_to_process,
+			_active_hole_count,
 			safe_fog_size,
 			safe_fog_pos,
 			current_player_pos,
@@ -267,9 +331,9 @@ func _process(delta: float) -> void:
 	)
 
 
+## Dispatches the compute shader pass on the render thread.
 func _dispatch_to_compute_shader(
 	delta: float,
-	hole_bytes: PackedByteArray,
 	holes_count: int,
 	fog_size: Vector3,
 	fog_pos: Vector3,
@@ -280,47 +344,38 @@ func _dispatch_to_compute_shader(
 	if not is_initialized or not uniform_set.is_valid() or fog_size == Vector3.ZERO:
 		return
 
-	# Buffer updates are safe here, and we only send valid bytes
-	if hole_bytes.size() > 0:
-		rd.buffer_update(buffer_rid, 0, hole_bytes.size(), hole_bytes)
+	if holes_count > 0:
+		var bytes_to_upload: int = holes_count * HOLE_STRIDE_BYTES
+		rd.buffer_update(buffer_rid, 0, bytes_to_upload, _hole_byte_buffer)
 
 	var grid_pos: Vector3 = fog_pos - (fog_size / 2.0)
 	var heal_rate: float = 1.0 / heal_time_seconds
 	var z_offset: float = 64.0 if is_even_frame else 0.0
 
-	# These push constants are highly optimized struct copies in C++, safe to leave alone
-	var push_constants_array: PackedFloat32Array = PackedFloat32Array(
-		[
-			player_pos.x,
-			player_pos.y,
-			player_pos.z,
-			float(holes_count),
-			grid_pos.x,
-			grid_pos.y,
-			grid_pos.z,
-			delta * 2.0,
-			fog_size.x,
-			fog_size.y,
-			fog_size.z,
-			current_time,
-			hole_clear_intensity,
-			swirl_strength,
-			swirl_frequency,
-			player_trail_radius,
-			z_offset,
-			heal_rate,
-			0.0,
-			0.0
-		]
-	)
-
-	var push_constants_bytes: PackedByteArray = push_constants_array.to_byte_array()
+	_push_constants_buffer.encode_float(0, player_pos.x)
+	_push_constants_buffer.encode_float(4, player_pos.y)
+	_push_constants_buffer.encode_float(8, player_pos.z)
+	_push_constants_buffer.encode_float(12, float(holes_count))
+	_push_constants_buffer.encode_float(16, grid_pos.x)
+	_push_constants_buffer.encode_float(20, grid_pos.y)
+	_push_constants_buffer.encode_float(24, grid_pos.z)
+	_push_constants_buffer.encode_float(28, delta * 2.0)
+	_push_constants_buffer.encode_float(32, fog_size.x)
+	_push_constants_buffer.encode_float(36, fog_size.y)
+	_push_constants_buffer.encode_float(40, fog_size.z)
+	_push_constants_buffer.encode_float(44, current_time)
+	_push_constants_buffer.encode_float(48, hole_clear_intensity)
+	_push_constants_buffer.encode_float(52, swirl_strength)
+	_push_constants_buffer.encode_float(56, swirl_frequency)
+	_push_constants_buffer.encode_float(60, player_trail_radius)
+	_push_constants_buffer.encode_float(64, z_offset)
+	_push_constants_buffer.encode_float(68, heal_rate)
+	_push_constants_buffer.encode_float(72, 0.0)
+	_push_constants_buffer.encode_float(76, 0.0)
 
 	var compute_list: int = rd.compute_list_begin()
 	rd.compute_list_bind_compute_pipeline(compute_list, pipeline)
 	rd.compute_list_bind_uniform_set(compute_list, uniform_set, 0)
-	rd.compute_list_set_push_constant(
-		compute_list, push_constants_bytes, push_constants_bytes.size()
-	)
+	rd.compute_list_set_push_constant(compute_list, _push_constants_buffer, PUSH_CONSTANTS_SIZE)
 	rd.compute_list_dispatch(compute_list, 16, 16, 8)
 	rd.compute_list_end()

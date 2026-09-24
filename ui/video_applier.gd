@@ -70,20 +70,12 @@ static func is_vrs_supported() -> bool:
 	return driver != "gl_compatibility"
 
 
-## Applies rendering parameters across the main viewport and preview subviewport.
+## Applies visual pipeline parameters across viewports cleanly.
 static func apply_viewport_pipeline(
 	tree: SceneTree, main_viewport: Viewport, config: Dictionary
 ) -> void:
 	print("VideoApplier: Synchronizing rendering pipelines.")
 	_last_applied_config = config.duplicate(true)
-
-	var target_viewports: Array[Viewport] = [main_viewport]
-	var diorama_vp: SubViewport = (
-		tree.root.find_child("DioramaViewport", true, false) as SubViewport
-	)
-	if is_instance_valid(diorama_vp):
-		if diorama_vp not in target_viewports:
-			target_viewports.append(diorama_vp)
 
 	_apply_rendering_server_qualities(config)
 	_apply_light_shadows(tree, config)
@@ -99,7 +91,6 @@ static func apply_viewport_pipeline(
 	var primary_msaa: Viewport.MSAA = (
 		aa_settings.get("msaa", Viewport.MSAA_DISABLED) as Viewport.MSAA
 	)
-
 	var raw_vrs: Viewport.VRSMode = (
 		config.get("vrs_mode", Viewport.VRS_DISABLED) as Viewport.VRSMode
 	)
@@ -111,88 +102,72 @@ static func apply_viewport_pipeline(
 	if raw_vrs == Viewport.VRS_TEXTURE and not is_instance_valid(_cached_vrs_texture):
 		_cached_vrs_texture = VrsTextureGenerator.create_radial_density_map()
 
-	for vp: Viewport in target_viewports:
-		var is_diorama: bool = vp is SubViewport
-		vp.canvas_item_default_texture_filter = (
-			filter_mode as Viewport.DefaultCanvasItemTextureFilter
+	# Configure primary gameplay viewport
+	main_viewport.canvas_item_default_texture_filter = (
+		filter_mode as Viewport.DefaultCanvasItemTextureFilter
+	)
+	main_viewport.use_occlusion_culling = occ_cull
+
+	if raw_vrs == Viewport.VRS_TEXTURE and is_instance_valid(_cached_vrs_texture):
+		main_viewport.vrs_texture = _cached_vrs_texture
+		main_viewport.vrs_mode = Viewport.VRS_TEXTURE
+	else:
+		main_viewport.vrs_mode = Viewport.VRS_DISABLED
+		main_viewport.vrs_texture = null
+
+	if fsr_scale < 1.0:
+		if main_viewport.scaling_3d_mode != Viewport.SCALING_3D_MODE_FSR2:
+			main_viewport.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR2
+		main_viewport.scaling_3d_scale = fsr_scale
+		main_viewport.use_taa = false
+	else:
+		if main_viewport.scaling_3d_mode != Viewport.SCALING_3D_MODE_BILINEAR:
+			main_viewport.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
+		main_viewport.scaling_3d_scale = raw_scale
+		main_viewport.use_taa = aa_settings.get("taa", false) as bool
+
+	main_viewport.msaa_3d = primary_msaa
+	main_viewport.screen_space_aa = (
+		aa_settings.get("fxaa", Viewport.SCREEN_SPACE_AA_DISABLED) as Viewport.ScreenSpaceAA
+	)
+	main_viewport.use_debanding = config.get("debanding", true) as bool
+	main_viewport.mesh_lod_threshold = config.get("mesh_lod", 1.0) as float
+
+	var requested_atlas: int = config.get("shadow_atlas", 4096) as int
+	var main_atlas: int = maxi(requested_atlas, 2048)
+	if main_viewport.positional_shadow_atlas_size != main_atlas:
+		main_viewport.positional_shadow_atlas_size = main_atlas
+		_cached_shadow_atlas_size = main_atlas
+		main_viewport.positional_shadow_atlas_16_bits = true
+		main_viewport.set_positional_shadow_atlas_quadrant_subdiv(
+			0, Viewport.SHADOW_ATLAS_QUADRANT_SUBDIV_4
 		)
-		if vp.use_occlusion_culling != (occ_cull if not is_diorama else false):
-			vp.use_occlusion_culling = occ_cull if not is_diorama else false
-
-		if raw_vrs == Viewport.VRS_TEXTURE and is_instance_valid(_cached_vrs_texture):
-			if vp.vrs_texture != _cached_vrs_texture:
-				vp.vrs_texture = _cached_vrs_texture
-			if vp.vrs_mode != Viewport.VRS_TEXTURE:
-				vp.vrs_mode = Viewport.VRS_TEXTURE
-		else:
-			if vp.vrs_mode != Viewport.VRS_DISABLED:
-				vp.vrs_mode = Viewport.VRS_DISABLED
-			if vp.vrs_texture != null:
-				vp.vrs_texture = null
-
-		if fsr_scale < 1.0 and not is_diorama:
-			if vp.scaling_3d_mode != Viewport.SCALING_3D_MODE_FSR2:
-				vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR2
-			if not is_equal_approx(vp.scaling_3d_scale, fsr_scale):
-				vp.scaling_3d_scale = fsr_scale
-			if vp.use_taa:
-				vp.use_taa = false
-		else:
-			if vp.scaling_3d_mode != Viewport.SCALING_3D_MODE_BILINEAR:
-				vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
-			var target_scale: float = raw_scale if not is_diorama else 1.0
-			if not is_equal_approx(vp.scaling_3d_scale, target_scale):
-				vp.scaling_3d_scale = target_scale
-			var target_taa: bool = (
-				(aa_settings.get("taa", false) as bool) if not is_diorama else false
-			)
-			if vp.use_taa != target_taa:
-				vp.use_taa = target_taa
-
-		var target_msaa: Viewport.MSAA = (
-			_clamp_preview_msaa(primary_msaa) if is_diorama else primary_msaa
+		main_viewport.set_positional_shadow_atlas_quadrant_subdiv(
+			1, Viewport.SHADOW_ATLAS_QUADRANT_SUBDIV_4
 		)
-		if vp.msaa_3d != target_msaa:
-			vp.msaa_3d = target_msaa
-
-		var target_fxaa: Viewport.ScreenSpaceAA = (
-			aa_settings.get("fxaa", Viewport.SCREEN_SPACE_AA_DISABLED) as Viewport.ScreenSpaceAA
+		main_viewport.set_positional_shadow_atlas_quadrant_subdiv(
+			2, Viewport.SHADOW_ATLAS_QUADRANT_SUBDIV_16
 		)
-		if vp.screen_space_aa != target_fxaa:
-			vp.screen_space_aa = target_fxaa
+		main_viewport.set_positional_shadow_atlas_quadrant_subdiv(
+			3, Viewport.SHADOW_ATLAS_QUADRANT_SUBDIV_64
+		)
 
-		var target_deband: bool = config.get("debanding", true) as bool
-		if vp.use_debanding != target_deband:
-			vp.use_debanding = target_deband
-
-		var target_lod: float = config.get("mesh_lod", 1.0) as float
-		if not is_equal_approx(vp.mesh_lod_threshold, target_lod):
-			vp.mesh_lod_threshold = target_lod
-
-		var requested_atlas: int = config.get("shadow_atlas", 4096) as int
-		if is_diorama:
-			var dio_atlas: int = mini(requested_atlas, 1024)
-			if vp.positional_shadow_atlas_size != dio_atlas:
-				vp.positional_shadow_atlas_size = dio_atlas
-		else:
-			var main_atlas: int = maxi(requested_atlas, 2048)
-			if vp.positional_shadow_atlas_size != main_atlas:
-				vp.positional_shadow_atlas_size = main_atlas
-			if _cached_shadow_atlas_size != main_atlas:
-				_cached_shadow_atlas_size = main_atlas
-				vp.positional_shadow_atlas_16_bits = true
-				vp.set_positional_shadow_atlas_quadrant_subdiv(
-					0, Viewport.SHADOW_ATLAS_QUADRANT_SUBDIV_4
-				)
-				vp.set_positional_shadow_atlas_quadrant_subdiv(
-					1, Viewport.SHADOW_ATLAS_QUADRANT_SUBDIV_4
-				)
-				vp.set_positional_shadow_atlas_quadrant_subdiv(
-					2, Viewport.SHADOW_ATLAS_QUADRANT_SUBDIV_16
-				)
-				vp.set_positional_shadow_atlas_quadrant_subdiv(
-					3, Viewport.SHADOW_ATLAS_QUADRANT_SUBDIV_64
-				)
+	# Configure diorama viewport with static, non-mutating settings to prevent shader rebuilds
+	var diorama_vp: SubViewport = (
+		tree.root.find_child("DioramaViewport", true, false) as SubViewport
+	)
+	if is_instance_valid(diorama_vp):
+		diorama_vp.use_occlusion_culling = false
+		diorama_vp.vrs_mode = Viewport.VRS_DISABLED
+		diorama_vp.vrs_texture = null
+		diorama_vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
+		diorama_vp.scaling_3d_scale = 1.0
+		diorama_vp.use_taa = false
+		diorama_vp.msaa_3d = Viewport.MSAA_DISABLED
+		diorama_vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED
+		diorama_vp.use_debanding = false
+		if diorama_vp.positional_shadow_atlas_size != 1024:
+			diorama_vp.positional_shadow_atlas_size = 1024
 
 	_apply_environment_and_materials(tree, config)
 

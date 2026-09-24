@@ -171,7 +171,7 @@
 [ext_resource type="PackedScene" uid="uid://b2q17sc6ru25s" path="res://environment/citadel_core.tscn" id="169_w0yce"]
 [ext_resource type="PackedScene" uid="uid://bn5ay1rfbr545" path="res://enemies/turret.tscn" id="170_mbsc5"]
 [ext_resource type="PackedScene" uid="uid://dkkb1kcbkcq8b" path="res://environment/Citadel_TEST_2.tscn" id="171_02oo0"]
-[ext_resource type="Texture2D" uid="uid://dsivnyy5avt2d" path="res://assets/images/graffiti/graffiti_godisnowhere.png" id="172_m6pxm"]
+[ext_resource type="Texture2D" uid="uid://dsivnyy5avt2d" path="res://assets/decals/graffiti/graffiti_godisnowhere.png" id="172_m6pxm"]
 [ext_resource type="PackedScene" uid="uid://c2wwhkmcnb4em" path="res://environment/twisted_hallway_logic.tscn" id="173_foiew"]
 [ext_resource type="PackedScene" uid="uid://ba4l00wwbw7mp" path="res://assets/VisTEST/2. Modular_Models/Props/table.tscn" id="174_fhe77"]
 [ext_resource type="PackedScene" uid="uid://rwrkhcgtcnw4" path="res://interactables/note_item.tscn" id="175_fq054"]
