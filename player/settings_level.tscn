@@ -1603,7 +1603,6 @@ shape = SubResource("ConcavePolygonShape3D_ubk4r")
 
 [node name="EnergyCell" parent="StaticBody3D" unique_id=594279821 instance=ExtResource("28_8plba")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.27061, 1.7249999, 3.1201766)
-charged_color = Color(0, 0, 0, 1)
 glow_energy = 5.0
 is_charged = true
 
@@ -1620,64 +1619,80 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.0183465, 1.8355883, 0.8748
 
 [node name="OmniLight3D" type="OmniLight3D" parent="Lights/Apply_Light4" unique_id=241492925]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35592544, -0.09112573, 0)
+layers = 1024
 light_color = Color(1, 1, 0.3647059, 1)
 light_energy = 2.0
+light_cull_mask = 1024
 
 [node name="Apply_Light8" parent="Lights" unique_id=1315958823 instance=ExtResource("35_gh7m2")]
 transform = Transform3D(-4.222196e-08, -1.131334e-08, -1, -0.25881904, 0.9659258, 0, 0.9659258, 0.25881904, -4.371139e-08, 1.5206349, 4.3282604, -8.473009)
 
 [node name="OmniLight3D" type="OmniLight3D" parent="Lights/Apply_Light8" unique_id=467652509]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35592544, -0.09112573, 0)
+layers = 1024
 light_color = Color(1, 1, 0.3647059, 1)
 light_energy = 2.0
+light_cull_mask = 1024
 
 [node name="Apply_Light9" parent="Lights" unique_id=662007761 instance=ExtResource("35_gh7m2")]
 transform = Transform3D(-4.222196e-08, -1.131334e-08, -1, -0.25881904, 0.9659258, 0, 0.9659258, 0.25881904, -4.371139e-08, 7.553853, 4.3282604, -8.473009)
 
 [node name="OmniLight3D" type="OmniLight3D" parent="Lights/Apply_Light9" unique_id=1872131255]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35592544, -0.09112573, 0)
+layers = 1024
 light_color = Color(1, 1, 0.3647059, 1)
 light_energy = 2.0
+light_cull_mask = 1024
 
 [node name="Apply_Light10" parent="Lights" unique_id=1460301258 instance=ExtResource("35_gh7m2")]
 transform = Transform3D(-4.222196e-08, -1.131334e-08, -1, -0.25881904, 0.9659258, 0, 0.9659258, 0.25881904, -4.371139e-08, 13.509912, 4.3282604, -8.473009)
 
 [node name="OmniLight3D" type="OmniLight3D" parent="Lights/Apply_Light10" unique_id=1398673301]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35592544, -0.09112573, 0)
+layers = 1024
 light_color = Color(1, 1, 0.3647059, 1)
 light_energy = 2.0
+light_cull_mask = 1024
 
 [node name="Apply_Light5" parent="Lights" unique_id=1612911720 instance=ExtResource("35_gh7m2")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.0183465, 1.8355883, 6.250375)
 
 [node name="OmniLight3D" type="OmniLight3D" parent="Lights/Apply_Light5" unique_id=2098898253]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35592544, -0.09112573, 0)
+layers = 1024
 light_color = Color(1, 1, 0.3647059, 1)
 light_energy = 2.0
+light_cull_mask = 1024
 
 [node name="Apply_Light6" parent="Lights" unique_id=217191568 instance=ExtResource("35_gh7m2")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.0183465, 5.904278, 4.044298)
 
 [node name="OmniLight3D" type="OmniLight3D" parent="Lights/Apply_Light6" unique_id=1675103555]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35592544, -0.09112573, 0)
+layers = 1024
 light_color = Color(1, 1, 0.3647059, 1)
 light_energy = 2.0
+light_cull_mask = 1024
 
 [node name="Apply_Light11" parent="Lights" unique_id=1429939692 instance=ExtResource("35_gh7m2")]
 transform = Transform3D(-1, 0, -8.742278e-08, 0, 1, 0, 8.742278e-08, 0, -1, 19.714788, 2.8968754, 3.462603)
 
 [node name="OmniLight3D" type="OmniLight3D" parent="Lights/Apply_Light11" unique_id=1765145557]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35592544, -0.09112573, 0)
+layers = 1024
 light_color = Color(1, 1, 0.3647059, 1)
 light_energy = 2.0
+light_cull_mask = 1024
 
 [node name="Apply_Light7" parent="Lights" unique_id=2046935873 instance=ExtResource("35_gh7m2")]
 transform = Transform3D(0, 0, 1.0000001, 0, 1, 0, -1.0000001, 0, 0, 13.26716, 4.4681077, 8.0308)
 
 [node name="OmniLight3D" type="OmniLight3D" parent="Lights/Apply_Light7" unique_id=1368512118]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.35592544, -0.09112573, 0)
+layers = 1024
 light_color = Color(1, 1, 0.3647059, 1)
 light_energy = 2.0
+light_cull_mask = 1024
 
 [node name="Boxs_Cables" parent="." unique_id=835119832 groups=["not_climbable"] instance=ExtResource("37_kja8q")]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, -2.031752, 2.3109965, -7.385595)
@@ -1695,7 +1710,7 @@ transform = Transform3D(-2.1855694e-08, 0, -0.5, 0, 1, 0, 0.5, 0, -2.1855694e-08
 transform = Transform3D(-1, 0, 8.742278e-08, 4.371139e-08, 0.8660254, 0.5, -7.5710346e-08, 0.5, -0.8660254, 10.824263, 7.9405446, -17.505405)
 light_color = Color(0.8039216, 1, 1, 1)
 light_energy = 16.0
-shadow_enabled = true
+light_cull_mask = 1024
 spot_range = 50.0
 
 [node name="Shack" type="Node3D" parent="." unique_id=465905829]
@@ -1984,6 +1999,7 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.15385, 1.6999998, -7.77256
 transform = Transform3D(-0.2572059, -0.37599525, 0.8902094, 0, 0.9212017, 0.3890854, -0.96635664, 0.100075066, -0.2369385, 6.6659365, 5.51173, 1.2105148)
 fov = 50.935745
 script = ExtResource("56_b307c")
+is_player_camera = false
 
 [node name="VisionAssistMesh" type="MeshInstance3D" parent="Cameras/Camera_interactables" unique_id=1553510083]
 transform = Transform3D(1, 0, 0, 0, 1.0000001, 0, 0, 0, 1, 0, 0, -0.5)
@@ -1995,6 +2011,7 @@ mesh = SubResource("QuadMesh_534t5")
 [node name="Camera_friends" type="Camera3D" parent="Cameras" unique_id=1383175001]
 transform = Transform3D(-4.073253e-08, -0.25881907, 0.9659258, -2.2626676e-08, 0.9659259, 0.25881907, -1, -1.1313335e-08, -4.5200817e-08, 0.96683985, 2.9471734, -7.7050676)
 script = ExtResource("56_b307c")
+is_player_camera = false
 
 [node name="VisionAssistMesh" type="MeshInstance3D" parent="Cameras/Camera_friends" unique_id=484296219]
 transform = Transform3D(1, 0, 0, 0, 1, 5.11372e-16, 0, 5.1137205e-16, 1, 0, 0.112, -0.5)
@@ -2006,6 +2023,7 @@ mesh = SubResource("QuadMesh_534t5")
 [node name="Camera_default" type="Camera3D" parent="Cameras" unique_id=348962621]
 transform = Transform3D(-0.71856016, 0.15644555, -0.67764014, 0, 0.9743701, 0.22495104, 0.69546485, 0.16164087, -0.70014346, -1.4505682, 4.93593, -8.007081)
 script = ExtResource("56_b307c")
+is_player_camera = false
 
 [node name="VisionAssistMesh" type="MeshInstance3D" parent="Cameras/Camera_default" unique_id=1628167229]
 transform = Transform3D(1, 0, 0, 0, 0.99999994, 0, 0, 0, 1, 0, 0, -0.5)
@@ -2017,6 +2035,7 @@ mesh = SubResource("QuadMesh_534t5")
 [node name="Camera_enemies" type="Camera3D" parent="Cameras" unique_id=1217663442]
 transform = Transform3D(1, 0, 0, 0, 0.9659258, 0.25881904, 0, -0.25881904, 0.9659258, 17, 3.695727, -3.4484444)
 script = ExtResource("56_b307c")
+is_player_camera = false
 
 [node name="VisionAssistMesh" type="MeshInstance3D" parent="Cameras/Camera_enemies" unique_id=1483469657]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.5)
@@ -2030,4 +2049,3 @@ transform = Transform3D(-4.371139e-08, 0.258819, -0.9659258, 0, 0.96592575, 0.25
 cull_mask = 1024
 far = 250.0
 script = ExtResource("55_334ql")
-sweep_speed = 0.4

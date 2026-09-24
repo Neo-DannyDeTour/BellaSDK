@@ -55,22 +55,24 @@ var is_in_terminal_mode: bool = false
 ## Indicates if movement and camera look are locked by a minigame terminal.
 var is_terminal_locked: bool = false
 
+## Sensitivity scale applied to mouse look during terminal interactions.
+var terminal_mouse_sensitivity_scale: float = 1.0
+
 
 # --------------------------------------
 # INITIALIZATION
 # --------------------------------------
 ## Lifecycle method called when the node enters the scene tree.
-## Configures groups, captures mouse, and initializes attached components.
 func _ready() -> void:
 	print("Player: Initializing character controller.")
 	add_to_group("saveable")
 	add_to_group("player")
 
-	# Resolve HealthComponent if a test mock hasn't pre-assigned it
 	if not is_instance_valid(health_component):
-		health_component = get_node_or_null("Components/HealthComponent") as HealthComponent
+		health_component = (get_node_or_null("Components/HealthComponent") as HealthComponent)
 
 	call_deferred("_capture_mouse")
+	activate_gameplay_camera()
 
 	in_game_console = (
 		(
@@ -93,8 +95,6 @@ func _ready() -> void:
 	if is_instance_valid(stats_component):
 		stats_component.initialize(self)
 
-	#_bridge_health_signals()
-
 	if is_instance_valid(health_component):
 		if not health_component.died.is_connected(_on_player_died):
 			health_component.died.connect(_on_player_died)
@@ -115,14 +115,18 @@ func _input(event: InputEvent) -> void:
 	if _is_input_blocked():
 		return
 
-	# Lock camera rotation only when locked to a circle minigame terminal
 	if is_terminal_locked and event is InputEventMouseMotion:
 		return
 
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		if is_instance_valid(camera_controller) and is_instance_valid(interaction_component):
+			var motion_event: InputEventMouseMotion = event as InputEventMouseMotion
+			if not is_zero_approx(terminal_mouse_sensitivity_scale - 1.0):
+				motion_event = event.duplicate() as InputEventMouseMotion
+				motion_event.relative *= terminal_mouse_sensitivity_scale
+
 			camera_controller.handle_mouse_input(
-				event,
+				motion_event,
 				interaction_component.is_in_terminal_mode,
 				interaction_component.is_heavy_lifting,
 				interaction_component.heavy_lift_yaw_base
@@ -137,6 +141,13 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if is_instance_valid(interaction_component):
 		interaction_component.process_unhandled_input(event)
+
+
+## Sets mouse look sensitivity multiplier for terminal interfaces.
+## [param p_scale] Mouse sensitivity multiplier value.
+func set_terminal_mouse_sensitivity_scale(p_scale: float) -> void:
+	print("Player: Setting terminal mouse sensitivity scale to: ", p_scale)
+	terminal_mouse_sensitivity_scale = p_scale
 
 
 ## Evaluates if UI overlays, menus, terminals, or death states should block gameplay input.
@@ -207,8 +218,12 @@ func _on_player_died() -> void:
 ## Master physics update loop driving state machines, locomotion, and interaction polling.
 ## [param delta] The physics frame delta time in seconds.
 func _physics_process(delta: float) -> void:
-	# Lock player locomotion completely during the circle minigame
-	if is_terminal_locked:
+	var in_terminal_state: bool = (
+		is_terminal_locked
+		or (is_instance_valid(state_machine) and state_machine.state.name == "Terminal")
+	)
+
+	if in_terminal_state:
 		velocity = Vector3.ZERO
 		if is_instance_valid(locomotion_component):
 			locomotion_component.set_physics_active(false)
@@ -418,22 +433,47 @@ func enter_terminal_mode(terminal: Node3D) -> void:
 	print("Player: Entering terminal focus mode.")
 	is_in_terminal_mode = true
 	velocity = Vector3.ZERO
-	if is_instance_valid(locomotion_component):
-		locomotion_component.set_physics_active(false)
 
-	if (
-		is_instance_valid(interaction_component)
-		and is_instance_valid(interaction_component.interaction_scanner)
-	):
-		interaction_component.interaction_scanner.enter_terminal_mode(terminal)
+	var captures_wasd: bool = is_instance_valid(terminal) and bool(terminal.get("captures_wasd"))
+	if captures_wasd and is_instance_valid(state_machine):
+		state_machine.transition_to("Terminal", {"terminal": terminal})
+
+	if is_instance_valid(interaction_component):
+		interaction_component.set("is_in_terminal_mode", true)
+		if is_instance_valid(interaction_component.interaction_scanner):
+			interaction_component.interaction_scanner.enter_terminal_mode(terminal)
+
+
+## Re-asserts the player's primary camera as the active viewport camera.
+func activate_gameplay_camera() -> void:
+	print("Player: Re-asserting primary gameplay camera.")
+	if is_instance_valid(camera_controller) and is_instance_valid(camera_controller.camera):
+		camera_controller.camera.make_current()
 
 
 ## Restores player locomotion and camera controls after terminal exit.
 func exit_terminal_mode() -> void:
+	if not is_in_terminal_mode and not is_terminal_locked:
+		return
+
 	print("Player: Restoring movement and camera look.")
 	is_in_terminal_mode = false
+	is_terminal_locked = false
+	terminal_mouse_sensitivity_scale = 1.0
+
 	if is_instance_valid(locomotion_component):
 		locomotion_component.set_physics_active(true)
+
+	if is_instance_valid(state_machine) and state_machine.state.name == "Terminal":
+		state_machine.transition_to("Ground")
+
+	if is_instance_valid(interaction_component):
+		interaction_component.set("is_in_terminal_mode", false)
+		if (
+			is_instance_valid(interaction_component.interaction_scanner)
+			and interaction_component.interaction_scanner.is_in_terminal_mode
+		):
+			interaction_component.interaction_scanner.exit_terminal_mode()
 
 
 ## Locks locomotion while the player operates fixed machinery.
@@ -565,28 +605,6 @@ func launch_from_path(throw_vel: Vector3) -> void:
 		state_machine.transition_to("Air", {"release_dir": throw_vel})
 
 
-### Connects local health component signals to the event bus.
-#func _bridge_health_signals() -> void:
-#print("Player: Bridging health component signals to Events bus.")
-#
-#if is_instance_valid(health_component):
-#if not health_component.health_changed.is_connected(_on_local_health_changed):
-#health_component.health_changed.connect(_on_local_health_changed)
-#print("Player: Successfully bridged HealthComponent to global Events.")
-#else:
-#push_warning("Player: HealthComponent node not found at $Components/HealthComponent!")
-
-### Forwards health change events from the local component to the global event bus.
-### [param new_health] Current health value.
-#func _on_local_health_changed(new_health: int) -> void:
-#if (
-#Events.has_user_signal("player_health_changed")
-#or Events.has_signal("player_health_changed")
-#):
-#print("Player: Emitting player_health_changed: ", new_health)
-#Events.player_health_changed.emit(new_health)
-
-
 # --------------------------------------
 # HEALTH & DAMAGE ROUTING
 # --------------------------------------
@@ -645,3 +663,18 @@ func _update_floor_surface_detection() -> void:
 		is_on_ice_surface = on_ice
 		print("Player: Ice surface changed -> ", is_on_ice_surface)
 		Events.ice_surface_toggled.emit(is_on_ice_surface)
+
+
+## Transitions locomotion into the vacuum tube transport state.
+func enter_tube(tube_node: Node3D) -> void:
+	print("Player: Entering vacuum tube state.")
+	if is_instance_valid(locomotion_component):
+		locomotion_component.reset_momentum()
+	if is_instance_valid(state_machine):
+		state_machine.transition_to("Tube", {"tube": tube_node})
+
+
+## Ejects the player from a tube and transfers velocity into airborne state.
+func exit_tube(throw_vel: Vector3) -> void:
+	print("Player: Exiting tube with impulse velocity: ", throw_vel)
+	launch_from_path(throw_vel)

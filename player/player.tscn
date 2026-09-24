@@ -66,6 +66,8 @@
 [ext_resource type="Script" uid="uid://be6128jq53jja" path="res://player/push_wheel.gd" id="49_8pxes"]
 [ext_resource type="Script" uid="uid://c7rka8po7jog8" path="res://player/weapon_inventory_component.gd" id="51_or4qq"]
 [ext_resource type="Script" uid="uid://b71yx1y4kvv2e" path="res://player/state_path_slide.gd" id="59_3dxkp"]
+[ext_resource type="Script" uid="uid://c03hxslxesikm" path="res://player/state_terminal.gd" id="67_hggc2"]
+[ext_resource type="Script" uid="uid://34lx2eim448b" path="res://player/state_tube.gd" id="68_b2j0d"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_cw2d6"]
 radius = 0.1
@@ -512,6 +514,8 @@ player_body = NodePath("..")
 camera = NodePath("../Head/Eyes/Camera3D")
 interact_shapecast = NodePath("../Head/Eyes/Camera3D/InteractionShapeCast")
 empty_interact_audio = NodePath("EmptyInteractAudio")
+base_reach = null
+floor_reach = null
 
 [node name="EmptyInteractAudio" type="AudioStreamPlayer" parent="InteractionScanner" unique_id=1912212616]
 stream = ExtResource("13_or4qq")
@@ -671,6 +675,12 @@ script = ExtResource("49_8pxes")
 
 [node name="PathSlide" type="Node" parent="StateMachine" unique_id=1793153979]
 script = ExtResource("59_3dxkp")
+
+[node name="Terminal" type="Node" parent="StateMachine" unique_id=1380249134]
+script = ExtResource("67_hggc2")
+
+[node name="Tube" type="Node" parent="StateMachine" unique_id=692214786]
+script = ExtResource("68_b2j0d")
 
 [connection signal="area_entered" from="WaterDetector" to="." method="_on_water_detector_area_entered"]
 [connection signal="area_exited" from="WaterDetector" to="." method="_on_water_detector_area_exited"]

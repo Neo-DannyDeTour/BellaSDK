@@ -1,7 +1,14 @@
+## Raycasts and evaluates interactable components in the center of the viewport.
 class_name InteractionScanner
 extends Node
 
+## Emitted when terminal focus mode begins or terminates.
+## [param is_active] True if terminal mode is active.
 signal terminal_mode_toggled(is_active: bool)
+
+## Emitted when heavy lifting state changes.
+## [param is_lifting] True if carrying heavy object.
+## [param yaw_base] Player yaw heading base angle.
 signal heavy_lift_state_changed(is_lifting: bool, yaw_base: float)
 
 ## Emitted when an interactable object enters the center of the player's crosshair.
@@ -13,28 +20,52 @@ signal object_hover_focused(object_name: String, caller: Node)
 var _last_focused_interactable: Node = null
 
 @export_category("Node References")
+## Interacting player controller instance.
 @export var player_body: CharacterBody3D
+
+## First-person gameplay camera.
 @export var camera: Camera3D
+
+## Shapecast detecting interactable targets in crosshair reach.
 @export var interact_shapecast: ShapeCast3D
+
+## Audio player for interactions when hands are empty.
 @export var empty_interact_audio: AudioStreamPlayer
 
 @export_category("Interaction Settings")
+## Minimum horizontal reach distance in meters.
 @export var base_reach: float = 0.7
+
+## Extended reach distance when looking down at the floor.
 @export var floor_reach: float = 2.2
 
-# --- CLEANED UP VARIABLES ---
+## Active interactable component currently in focus.
 var current_interactable: Node = null
-var master_component: Node = null  # Reference to the Master
 
+## Reference to the master interaction component.
+var master_component: Node = null
+
+## Indicates if player is carrying a heavy two-handed object.
 var is_heavy_lifting: bool = false
+
+## Yaw heading angle baseline for clamping rotation during heavy carry.
 var heavy_lift_yaw_base: float = 0.0
 
+## Indicates if terminal focus mode is currently active.
 var is_in_terminal_mode: bool = false
+
+## Active terminal instance being operated.
 var active_terminal: Node3D = null
+
+## Coordinates of player when terminal mode began.
 var terminal_start_pos: Vector3 = Vector3.ZERO
+
+## Hit coordinate of the most recent interaction shapecast.
 var current_hit_point: Vector3 = Vector3.ZERO
 
 
+## Establishes reference link to master interaction component.
+## [param master] Master component node instance.
 func setup_master_link(master: Node) -> void:
 	print("InteractionScanner: Link to Master Component established.")
 	master_component = master
@@ -65,8 +96,6 @@ func process_interaction(_delta: float) -> void:
 
 			print("InteractionScanner: Focused interactable -> ", speakable_name)
 			object_hover_focused.emit(speakable_name, target_node)
-			# NOTE: Do NOT emit Events.object_focused here.
-			# Hovering below triggers hover_cursor(), which manages TTS prompt emission.
 
 	if current_interactable:
 		var hit_point: Vector3 = interact_shapecast.get_collision_point(0)
@@ -82,8 +111,8 @@ func process_interaction(_delta: float) -> void:
 				current_interactable.interact_held(player_body)
 
 
+## Triggers object interaction, item pickup, or empty sound cue.
 func handle_interact_input() -> void:
-	# 1. We ONLY reach this function if the Master Component confirmed hands are empty!
 	if is_in_terminal_mode:
 		exit_terminal_mode()
 		return
@@ -106,6 +135,7 @@ func handle_interact_input() -> void:
 			empty_interact_audio.play()
 
 
+## Routes trigger shoot inputs to terminal clicks or equipped weapons.
 func handle_shoot_input() -> void:
 	if is_in_terminal_mode and is_instance_valid(active_terminal):
 		print("InteractionScanner: Shooting terminal raycast.")
@@ -148,6 +178,8 @@ func handle_reload_input() -> void:
 					break
 
 
+## Sets heavy lifting state and captures initial yaw heading.
+## [param value] Whether heavy lifting mode is enabled.
 func set_heavy_lifting(value: bool) -> void:
 	is_heavy_lifting = value
 	if is_heavy_lifting and is_instance_valid(player_body):
@@ -155,8 +187,8 @@ func set_heavy_lifting(value: bool) -> void:
 	heavy_lift_state_changed.emit(is_heavy_lifting, heavy_lift_yaw_base)
 
 
+## Safely drops held heavy physics object via master component.
 func drop_heavy_object_safely() -> void:
-	# Route the drop command back up to the Master
 	if is_heavy_lifting and is_instance_valid(master_component):
 		print("InteractionScanner: Routing heavy drop request to Master.")
 		master_component.drop_held_item()
@@ -166,6 +198,7 @@ func drop_heavy_object_safely() -> void:
 # --------------------------------------
 # DYNAMIC REACH & SCANNING
 # --------------------------------------
+## Adjusts shapecast ray length based on camera pitch angle.
 func _update_dynamic_reach() -> void:
 	var look_pitch: float = interact_shapecast.global_rotation.x
 	var down_weight: float = clampf(-look_pitch / (PI / 2.0), 0.0, 1.0)
@@ -173,6 +206,8 @@ func _update_dynamic_reach() -> void:
 	interact_shapecast.target_position = Vector3(0, 0, -current_reach)
 
 
+## Finds the closest enabled interactable component within the shapecast volume.
+## [return] Nearest active [InteractComponent] found, or null.
 func _get_interactable_component_at_shapecast() -> Node:
 	var closest_comp: Node = null
 	var closest_dist: float = INF
@@ -195,6 +230,9 @@ func _get_interactable_component_at_shapecast() -> Node:
 				current_node = current_node.get_parent()
 
 			if is_instance_valid(comp):
+				if "is_enabled" in comp and not bool(comp.get("is_enabled")):
+					continue
+
 				var interactable_parent: Node = comp.get_parent()
 
 				if interactable_parent.has_method("is_valid_pickup_position"):
@@ -232,7 +270,6 @@ func enter_terminal_mode(terminal: Node3D) -> void:
 		if is_instance_valid(player_body):
 			player_body.set("is_terminal_locked", true)
 
-		# Center camera on the terminal mesh
 		if is_instance_valid(camera) and is_instance_valid(terminal):
 			var target_pos: Vector3 = terminal.global_position
 			if "mesh_instance_3d" in terminal and is_instance_valid(terminal.mesh_instance_3d):
@@ -250,17 +287,25 @@ func enter_terminal_mode(terminal: Node3D) -> void:
 
 ## Exits terminal mode, restores movement and camera look, and stops minigames.
 func exit_terminal_mode() -> void:
-	print("InteractionScanner: Exiting terminal mode.")
-	if is_instance_valid(active_terminal):
-		if active_terminal.has_method("clear_mouse_hover"):
-			active_terminal.clear_mouse_hover()
+	if not is_in_terminal_mode:
+		return
 
+	print("InteractionScanner: Exiting terminal mode.")
+	var terminal_to_clear: Node3D = active_terminal
 	is_in_terminal_mode = false
 	active_terminal = null
 
+	if is_instance_valid(terminal_to_clear):
+		if terminal_to_clear.has_method("clear_mouse_hover"):
+			terminal_to_clear.clear_mouse_hover()
+
 	if is_instance_valid(player_body):
 		player_body.set("is_terminal_locked", false)
-		if is_instance_valid(player_body.locomotion_component):
+		if player_body.has_method("set_terminal_mouse_sensitivity_scale"):
+			player_body.call("set_terminal_mouse_sensitivity_scale", 1.0)
+		if player_body.has_method("exit_terminal_mode"):
+			player_body.exit_terminal_mode()
+		elif is_instance_valid(player_body.locomotion_component):
 			player_body.locomotion_component.set_physics_active(true)
 
 	if is_instance_valid(Events) and Events.has_signal("terminal_mode_toggled"):
@@ -275,11 +320,9 @@ func _should_exit_terminal_mode() -> bool:
 		is_instance_valid(active_terminal) and bool(active_terminal.get("captures_wasd"))
 	)
 
-	# Circle keypad: ONLY the Interact key can exit. Never auto-exit.
 	if is_circle_keypad:
 		return false
 
-	# Numeric keypad: Auto-exits if the player walks away or looks away
 	if (
 		is_instance_valid(player_body)
 		and player_body.global_position.distance_squared_to(terminal_start_pos) > 2.5
@@ -297,6 +340,8 @@ func _should_exit_terminal_mode() -> bool:
 	return false
 
 
+## Projects raycast from screen center to inject cursor events into terminal mesh.
+## [param is_click] Whether to simulate click instead of motion.
 func shoot_terminal_raycast(is_click: bool) -> void:
 	if is_click:
 		print("InteractionScanner: shoot_terminal_raycast executed a click.")
