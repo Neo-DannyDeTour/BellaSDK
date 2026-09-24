@@ -1,39 +1,59 @@
 @tool
-## Generates a physics-driven catenary cable with dynamic [PinJoint3D] chains and visual meshes.
+## Physics-driven catenary cable using Verlet particle integration and batched MultiMesh.
 ##
-## Connects two endpoints using a segmented chain of [RigidBody3D] links, updating
-## orientational transforms of visual cylinder segments to match physics bodies at runtime.
+## Connects two endpoints without instantiating child bodies, solving catenary curves
+## and rendering all visual cylindrical segments in a single batched GPU draw call.
 class_name PhysicsCable3D
 extends Node3D
 
-## Configuration references for attachment endpoints.
 @export_category("Cable Connections")
-## Starting anchor [Node3D] point for the cable.
+## Starting anchor [Node3D] point where the cable originates.
 @export var start_anchor: Node3D
 
-## Ending plug [RigidBody3D] point where the cable terminates.
+## Ending plug [RigidBody3D] point where the cable terminates and interacts with physics.
 @export var end_plug: RigidBody3D
 
-## Physics simulation properties.
 @export_category("Physics Properties")
-## The [PackedScene] template instantiated for each rigid link in the physics chain.
-@export var link_scene: PackedScene = preload("res://interactables/cable_link.tscn")
+## Total physical length of the cable in meters when fully extended.
+@export var cable_length_meters: float = 3.0:
+	set(value):
+		cable_length_meters = maxf(0.5, value)
+		if Engine.is_editor_hint():
+			_update_debug_sphere_transform()
 
-## Total physical length of the cable in meters.
-@export var cable_length_meters: float = 3.0
+## Target distance spacing in meters between consecutive simulated particle nodes.
+@export var link_spacing: float = 0.2:
+	set(value):
+		link_spacing = maxf(0.05, value)
 
-## Distance spacing between consecutive physics link nodes.
-@export var link_spacing: float = 0.2
+## Gravitational acceleration vector applied to free-hanging cable particles.
+@export var gravity: Vector3 = Vector3(0.0, -9.8, 0.0)
 
-## Visual styling options.
+## Velocity damping factor per simulation step to prevent endless oscillation.
+@export_range(0.8, 0.999) var damping: float = 0.98
+
+## Number of relaxation solver iterations per physics frame for cable stiffness.
+@export_range(1, 16) var constraint_iterations: int = 5
+
+## Elastic tension stiffness pulling on the plug when the cable is stretched taut.
+@export var tension_force: float = 60.0
+
 @export_category("Appearance")
-## Base tint color applied to cable mesh segments.
-@export var cable_color: Color = Color(0.1, 0.1, 0.1)
+## Base albedo color applied to the instanced cable cylinder mesh segments.
+@export var cable_color: Color = Color(0.1, 0.1, 0.1):
+	set(value):
+		cable_color = value
+		if is_instance_valid(_material):
+			_material.albedo_color = cable_color
 
-## Radial thickness of the visual cable cylinders.
-@export var thickness: float = 0.04
+## Radial thickness of the visual cable cylinder instances in meters.
+@export var thickness: float = 0.04:
+	set(value):
+		thickness = value
+		if is_instance_valid(_base_mesh):
+			_base_mesh.top_radius = thickness
+			_base_mesh.bottom_radius = thickness
 
-## In-editor debug tools.
 @export_category("Debug")
 ## Toggles visibility of the editor distance reach sphere visualizer.
 @export var show_debug_sphere: bool = true:
@@ -46,17 +66,23 @@ extends Node3D
 ## Editor-only placeholder icon node.
 @onready var _editor_icon: Node3D = get_node_or_null("%EditorIcon") as Node3D
 
-## Shared material cache keyed by [Color] to prevent duplicate shader pipeline states.
-static var _material_cache: Dictionary[Color, StandardMaterial3D] = {}
+## Current world-space positions of simulated Verlet particles.
+var _positions: PackedVector3Array = PackedVector3Array()
 
-## Collection of instantiated physics link bodies.
-var _links: Array[RigidBody3D] = []
+## World-space positions of simulated Verlet particles from the previous frame.
+var _prev_positions: PackedVector3Array = PackedVector3Array()
 
-## Collection of visual cylinder mesh instances bridging the links.
-var _visual_segments: Array[MeshInstance3D] = []
+## Single [MultiMeshInstance3D] node rendering all cable segments in one draw call.
+var _multimesh_instance: MultiMeshInstance3D
 
-## Shared cylinder mesh resource used by all visual segment instances.
+## The [MultiMesh] resource containing per-instance transformation matrices.
+var _multimesh: MultiMesh
+
+## Shared cylinder mesh resource used across all segment instances.
 var _base_mesh: CylinderMesh
+
+## Shared material resource applied to the instanced cable mesh.
+var _material: StandardMaterial3D
 
 ## Editor visualizer mesh indicating maximum cable extension range.
 var _debug_sphere: MeshInstance3D
@@ -67,28 +93,40 @@ var _last_start_pos: Vector3 = Vector3.ZERO
 ## Cached position of the end plug from the previous frame.
 var _last_end_pos: Vector3 = Vector3.ZERO
 
+## Desired rest distance between adjacent particles.
+var _segment_length: float = 0.2
 
-## Initializes runtime physics chains or editor debug spheres based on context.
+## Total count of simulated particle points along the cable.
+var _point_count: int = 0
+
+
+## Initializes simulation particles, batched mesh instances, or editor debug helpers.
 func _ready() -> void:
 	print("PhysicsCable3D: _ready() called.")
 	if not Engine.is_editor_hint():
 		if is_instance_valid(_editor_icon):
 			_editor_icon.queue_free()
 
-		_create_base_mesh()
 		_setup_cable_system()
 	else:
 		_setup_debug_sphere()
 
 
-## Updates visual segment transforms or editor debug sphere positions each frame.
-## [param _delta] Frame time elapsed in seconds.
+## Updates editor debug visuals or propagates cable transforms to the GPU instance buffer.
 func _process(_delta: float) -> void:
 	if Engine.is_editor_hint():
 		_update_debug_sphere_transform()
 		return
 
-	if _links.is_empty() or _visual_segments.is_empty():
+	if _point_count < 2 or not is_instance_valid(_multimesh):
+		return
+
+	_update_multimesh_transforms()
+
+
+## Advances the Verlet particle integration and constraint solver steps.
+func _physics_process(delta: float) -> void:
+	if Engine.is_editor_hint():
 		return
 
 	if not is_instance_valid(start_anchor) or not is_instance_valid(end_plug):
@@ -97,59 +135,140 @@ func _process(_delta: float) -> void:
 	var start_pos: Vector3 = start_anchor.global_position
 	var end_pos: Vector3 = end_plug.global_position
 
-	var needs_update: bool = false
-	if not start_pos.is_equal_approx(_last_start_pos) or not end_pos.is_equal_approx(_last_end_pos):
-		needs_update = true
-	else:
-		for link: RigidBody3D in _links:
-			if is_instance_valid(link) and not link.is_sleeping():
-				needs_update = true
-				break
+	var last_idx: int = _point_count - 1
+	_positions[0] = start_pos
+	_positions[last_idx] = end_pos
 
-	if not needs_update:
+	var dt_sq: float = delta * delta
+	for i: int in range(1, last_idx):
+		var current: Vector3 = _positions[i]
+		var vel: Vector3 = (current - _prev_positions[i]) * damping
+		_prev_positions[i] = current
+		_positions[i] = current + vel + (gravity * dt_sq)
+
+	for iter: int in range(constraint_iterations):
+		_positions[0] = start_pos
+		_positions[last_idx] = end_pos
+
+		for i: int in range(last_idx):
+			var p_a: Vector3 = _positions[i]
+			var p_b: Vector3 = _positions[i + 1]
+			var delta_vec: Vector3 = p_b - p_a
+			var dist: float = delta_vec.length()
+
+			if dist > 0.0001:
+				var diff: float = (dist - _segment_length) / dist
+				var correction: Vector3 = delta_vec * (0.5 * diff)
+
+				if i != 0:
+					_positions[i] += correction
+				if (i + 1) != last_idx:
+					_positions[i + 1] -= correction
+
+	var total_dist: float = start_pos.distance_to(end_pos)
+	if total_dist > cable_length_meters:
+		var stretch: float = total_dist - cable_length_meters
+		var pull_dir: Vector3 = (start_pos - end_pos).normalized()
+		end_plug.apply_central_force(pull_dir * (stretch * tension_force))
+
+
+## Configures cable particle positions and initializes the [MultiMeshInstance3D].
+func _setup_cable_system() -> void:
+	print("PhysicsCable3D: _setup_cable_system() initializing Verlet system.")
+	if not is_instance_valid(start_anchor) or not is_instance_valid(end_plug):
+		push_error("PhysicsCable3D: Start anchor or End plug is unassigned!")
 		return
+
+	var segment_count: int = maxi(2, int(cable_length_meters / link_spacing))
+	_point_count = segment_count + 1
+	_segment_length = cable_length_meters / float(segment_count)
+
+	_positions.resize(_point_count)
+	_prev_positions.resize(_point_count)
+
+	var start_pos: Vector3 = start_anchor.global_position
+	var end_pos: Vector3 = end_plug.global_position
+
+	for i: int in range(_point_count):
+		var t: float = float(i) / float(segment_count)
+		var pos: Vector3 = start_pos.lerp(end_pos, t)
+		_positions[i] = pos
+		_prev_positions[i] = pos
 
 	_last_start_pos = start_pos
 	_last_end_pos = end_pos
 
-	var p1: Vector3 = start_pos
-	var segment_index: int = 0
-
-	for link: RigidBody3D in _links:
-		if not is_instance_valid(link):
-			continue
-		var p2: Vector3 = link.global_position
-		_update_visual_segment(_visual_segments[segment_index], p1, p2)
-		p1 = p2
-		segment_index += 1
-
-	if segment_index < _visual_segments.size():
-		_update_visual_segment(_visual_segments[segment_index], p1, end_pos)
+	_create_resources(segment_count)
+	_configure_plug_tether()
 
 
-## Generates shared cylinder mesh and caches material resources by color.
-func _create_base_mesh() -> void:
-	print("PhysicsCable3D: Generating base mesh for visual segments.")
+## Sets up shared mesh, material, and the [MultiMeshInstance3D] node.
+func _create_resources(segment_count: int) -> void:
+	print("PhysicsCable3D: Building MultiMesh for ", segment_count, " segments.")
+	_material = StandardMaterial3D.new()
+	_material.albedo_color = cable_color
+	_material.roughness = 0.8
+
 	_base_mesh = CylinderMesh.new()
 	_base_mesh.top_radius = thickness
 	_base_mesh.bottom_radius = thickness
 	_base_mesh.height = 1.0
 	_base_mesh.radial_segments = 8
 	_base_mesh.rings = 1
+	_base_mesh.material = _material
 
-	if not _material_cache.has(cable_color):
-		var mat: StandardMaterial3D = StandardMaterial3D.new()
-		mat.albedo_color = cable_color
-		mat.roughness = 0.8
-		_material_cache[cable_color] = mat
+	_multimesh = MultiMesh.new()
+	_multimesh.transform_format = MultiMesh.TRANSFORM_3D
+	_multimesh.instance_count = segment_count
+	_multimesh.mesh = _base_mesh
 
-	_base_mesh.material = _material_cache[cable_color]
+	_multimesh_instance = MultiMeshInstance3D.new()
+	_multimesh_instance.multimesh = _multimesh
+	_multimesh_instance.top_level = true
+	_multimesh_instance.layers = 4
+	_multimesh_instance.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+
+	add_child(_multimesh_instance)
 
 
-## Combines physics chain generation and visual segment creation in a single immediate pass.
-func _setup_cable_system() -> void:
-	_generate_physics_chain()
-	_generate_visual_segments()
+## Updates instance transforms in the [MultiMesh] to align segments with particles.
+func _update_multimesh_transforms() -> void:
+	var segment_count: int = _point_count - 1
+	for i: int in range(segment_count):
+		var p1: Vector3 = _positions[i]
+		var p2: Vector3 = _positions[i + 1]
+		var dir: Vector3 = p2 - p1
+		var dist: float = dir.length()
+
+		if dist < 0.0001:
+			continue
+
+		var y_axis: Vector3 = dir / dist
+		var up_hint: Vector3 = Vector3.UP if absf(y_axis.y) < 0.99 else Vector3.RIGHT
+		var x_axis: Vector3 = up_hint.cross(y_axis).normalized()
+		var z_axis: Vector3 = y_axis.cross(x_axis).normalized()
+
+		var mesh_basis: Basis = Basis(x_axis, y_axis * dist, z_axis)
+		var center: Vector3 = (p1 + p2) * 0.5
+		_multimesh.set_instance_transform(i, Transform3D(mesh_basis, center))
+
+
+## Synchronizes tether parameters if endpoints implement plug interface contracts.
+func _configure_plug_tether() -> void:
+	print("PhysicsCable3D: Configuring plug endpoints.")
+	if "max_cable_length" in end_plug:
+		end_plug.max_cable_length = cable_length_meters
+	if "anchor_point" in end_plug:
+		end_plug.anchor_point = start_anchor
+	if "partner_plug" in end_plug and "partner_plug" in start_anchor:
+		end_plug.partner_plug = start_anchor
+
+	if "max_cable_length" in start_anchor:
+		start_anchor.max_cable_length = cable_length_meters
+	if "anchor_point" in start_anchor:
+		start_anchor.anchor_point = end_plug
+	if "partner_plug" in start_anchor:
+		start_anchor.partner_plug = end_plug
 
 
 ## Instantiates editor range sphere visualizer.
@@ -171,27 +290,10 @@ func _setup_debug_sphere() -> void:
 	sphere_mesh.material = mat
 	_debug_sphere.mesh = sphere_mesh
 	_debug_sphere.top_level = true
-	_debug_sphere.cast_shadow = (GeometryInstance3D.SHADOW_CASTING_SETTING_OFF)
+	_debug_sphere.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	_debug_sphere.visible = show_debug_sphere
 
 	add_child(_debug_sphere)
-
-
-## Updates orientation and scale of a visual cylinder segment spanning two points.
-## [param segment] The target [MeshInstance3D] to position and stretch.
-## [param p1] Starting 3D position.
-## [param p2] Ending 3D position.
-func _update_visual_segment(segment: MeshInstance3D, p1: Vector3, p2: Vector3) -> void:
-	var dist: float = p1.distance_to(p2)
-	segment.global_position = p1.lerp(p2, 0.5)
-
-	var dir: Vector3 = p2 - p1
-	if dir.length_squared() > 0.000001:
-		var up: Vector3 = Vector3.UP if absf(dir.normalized().y) < 0.99 else Vector3.RIGHT
-		segment.look_at(p2, up)
-		segment.rotate_object_local(Vector3.RIGHT, PI / 2.0)
-
-	segment.scale = Vector3(1.0, dist, 1.0)
 
 
 ## Keeps the debug sphere anchored to the start position and scaled to cable reach.
@@ -200,101 +302,3 @@ func _update_debug_sphere_transform() -> void:
 		_debug_sphere.global_position = start_anchor.global_position
 		var diameter: float = cable_length_meters * 2.0
 		_debug_sphere.scale = Vector3(diameter, diameter, diameter)
-
-
-## Instantiates visual segment meshes corresponding to gaps between physics links.
-func _generate_visual_segments() -> void:
-	print("PhysicsCable3D: Spawning visual cylinder segments.")
-	var total_points: int = _links.size() + 1
-
-	for i: int in range(total_points):
-		var segment: MeshInstance3D = MeshInstance3D.new()
-		segment.mesh = _base_mesh
-		segment.top_level = true
-		add_child(segment)
-		_visual_segments.append(segment)
-
-
-## Builds the dynamic physics chain using instantiated link scenes and pin joints.
-func _generate_physics_chain() -> void:
-	print("PhysicsCable3D: _generate_physics_chain() generating cable.")
-
-	if not link_scene:
-		push_error("PhysicsCable3D: link_scene is not assigned in inspector.")
-		return
-
-	if not is_instance_valid(start_anchor) or not is_instance_valid(end_plug):
-		return
-
-	var total_links: int = int(cable_length_meters / link_spacing)
-
-	if end_plug.get_class() == "TetheredPlug" or end_plug.has_method("get_class"):
-		if "max_cable_length" in end_plug:
-			end_plug.max_cable_length = cable_length_meters
-		if "anchor_point" in end_plug:
-			end_plug.anchor_point = start_anchor
-		if "partner_plug" in end_plug and "partner_plug" in start_anchor:
-			end_plug.partner_plug = start_anchor
-
-	if start_anchor.get_class() == "TetheredPlug" or start_anchor.has_method("get_class"):
-		if "max_cable_length" in start_anchor:
-			start_anchor.max_cable_length = cable_length_meters
-		if "anchor_point" in start_anchor:
-			start_anchor.anchor_point = end_plug
-		if "partner_plug" in start_anchor:
-			start_anchor.partner_plug = end_plug
-
-	var start_pos: Vector3 = start_anchor.global_position
-	var end_pos: Vector3 = end_plug.global_position
-	var previous_body: Node3D = start_anchor
-
-	var straight_dist: float = start_pos.distance_to(end_pos)
-	var droop_amount: float = maxf(0.0, cable_length_meters - straight_dist) * 0.5
-
-	for i: int in range(total_links):
-		var raw_instance: Node = link_scene.instantiate()
-		if not (raw_instance is RigidBody3D):
-			if is_instance_valid(raw_instance):
-				raw_instance.queue_free()
-			push_error("PhysicsCable3D: Instantiated link is not a RigidBody3D!")
-			return
-
-		var link: RigidBody3D = raw_instance as RigidBody3D
-		link.mass = 0.05
-		add_child(link)
-
-		for prev: RigidBody3D in _links:
-			link.add_collision_exception_with(prev)
-
-		if start_anchor is PhysicsBody3D:
-			link.add_collision_exception_with(start_anchor as PhysicsBody3D)
-
-		var fraction: float = float(i + 1) / float(total_links + 1)
-		var drop_y: float = 4.0 * droop_amount * fraction * (1.0 - fraction)
-		var drop_offset: Vector3 = Vector3.DOWN * drop_y
-		link.global_position = (start_pos.lerp(end_pos, fraction) + drop_offset)
-
-		if not link.global_position.is_equal_approx(previous_body.global_position):
-			link.look_at(previous_body.global_position)
-
-		_links.append(link)
-
-		var joint: PinJoint3D = PinJoint3D.new()
-		add_child(joint)
-		joint.global_position = previous_body.global_position.lerp(link.global_position, 0.5)
-
-		if previous_body is PhysicsBody3D:
-			joint.node_a = joint.get_path_to(previous_body)
-
-		joint.node_b = joint.get_path_to(link)
-		previous_body = link
-
-	var final_joint: PinJoint3D = PinJoint3D.new()
-	add_child(final_joint)
-	final_joint.global_position = previous_body.global_position.lerp(end_pos, 0.5)
-	final_joint.node_a = final_joint.get_path_to(previous_body)
-	final_joint.node_b = final_joint.get_path_to(end_plug)
-
-	if end_plug is CollisionObject3D:
-		for prev: RigidBody3D in _links:
-			end_plug.add_collision_exception_with(prev)

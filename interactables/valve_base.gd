@@ -150,12 +150,6 @@ func _ready() -> void:
 	if is_instance_valid(prompt_icon):
 		prompt_icon.hide()
 
-	_show_text_prompts = (GlobalSettings.get_setting("Gameplay", "show_item_prompts", true) as bool)
-
-	if Events.has_signal("item_prompts_toggled"):
-		if not Events.item_prompts_toggled.is_connected(_on_item_prompts_toggled):
-			Events.item_prompts_toggled.connect(_on_item_prompts_toggled)
-
 	if requires_installation:
 		is_installed = false
 		has_been_installed = false
@@ -164,6 +158,15 @@ func _ready() -> void:
 
 	if Engine.is_editor_hint():
 		return
+
+	if is_instance_valid(GlobalSettings) and GlobalSettings.has_method("get_setting"):
+		_show_text_prompts = (
+			GlobalSettings.get_setting("Gameplay", "show_item_prompts", true) as bool
+		)
+
+	if is_instance_valid(Events) and Events.has_signal("item_prompts_toggled"):
+		if not Events.item_prompts_toggled.is_connected(_on_item_prompts_toggled):
+			Events.item_prompts_toggled.connect(_on_item_prompts_toggled)
 
 	wheel = get_node_or_null("Valve")
 	if is_instance_valid(wheel):
@@ -231,6 +234,9 @@ func _process(delta: float) -> void:
 func _get_effective_turn_mode() -> int:
 	if turn_mode != TurnMode.SETTINGS_DEFAULT:
 		return turn_mode
+
+	if Engine.is_editor_hint() or not is_instance_valid(GlobalSettings):
+		return TurnMode.HOLD
 
 	var saved_setting: String = (
 		GlobalSettings.get_setting("Gameplay", "valve_turn_mode", "Hold") as String

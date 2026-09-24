@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://b5y30krsrnv3p"]
+
+[ext_resource type="Script" uid="uid://ddccie8y5dmpt" path="res://interactables/pneumatic_tube.gd" id="1_bs8jf"]
+[ext_resource type="Shader" uid="uid://c2hytnuh2vgko" path="res://interactables/pneumatic_tube_glass.gdshader" id="2_4nacb"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_bs8jf"]
+render_priority = 0
+shader = ExtResource("2_4nacb")
+shader_parameter/glass_tint = Color(0.82, 0.92, 0.98, 0.15)
+shader_parameter/edge_color = Color(0.9, 0.98, 1, 0.7)
+shader_parameter/rib_color = Color(0.18, 0.2, 0.22, 0.85)
+shader_parameter/fresnel_power = 3.5
+shader_parameter/glass_roughness = 0.1
+shader_parameter/seam_frequency = 12.0
+shader_parameter/seam_thickness = 0.04
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_534t5"]
+radius = 1.2
+
+[node name="PneumaticTube" type="Path3D" unique_id=556010823]
+script = ExtResource("1_bs8jf")
+outer_radius = 1.5
+wall_thickness = 0.08
+exit_launch_speed = 28.0
+
+[node name="TubeMesh" type="CSGPolygon3D" parent="." unique_id=2097655995]
+mode = 2
+path_node = NodePath("..")
+path_interval_type = 0
+path_interval = 0.5
+path_simplify_angle = 0.0
+path_rotation = 1
+path_rotation_accurate = false
+path_local = true
+path_continuous_u = true
+path_u_distance = 1.0
+path_joined = false
+material = SubResource("ShaderMaterial_bs8jf")
+
+[node name="IntakeArea" type="Area3D" parent="." unique_id=1114816217]
+collision_layer = 0
+collision_mask = 30
+
+[node name="IntakeCollision" type="CollisionShape3D" parent="IntakeArea" unique_id=803243550]
+shape = SubResource("SphereShape3D_534t5")
+
+[node name="ExitMarker" type="Marker3D" parent="." unique_id=1717623618]
+transform = Transform3D(0.325247, 0.15124977, -0.9334549, 0, 0.98712575, 0.15994619, 0.9456291, -0.052022018, 0.32105967, 119.93042, 29.62542, -189.70938)

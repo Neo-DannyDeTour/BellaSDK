@@ -1,103 +1,103 @@
-## 2D timing minigame matching circles via WASD with stages and health rewards.
+## 2D circle timing minigame matching keys with radial cues.
 class_name UICircleTimingKeypad
 extends Control
 
-## Emitted when the entire puzzle sequence is successfully cleared.
+## Emitted when puzzle is fully cleared.
 @warning_ignore("unused_signal")
 signal code_entered(code: String)
 
-## Emitted when a key input is processed during the challenge.
+## Emitted on key press during minigame.
 @warning_ignore("unused_signal")
 signal button_clicked(button_name: String)
 
-## Emitted to request a SubViewport redraw.
+## Emitted to trigger viewport redraw.
 @warning_ignore("unused_signal")
 signal display_updated
 
-## Emitted on complete failure lockout with damage dealt.
+## Emitted on failure lockout with damage payload.
 @warning_ignore("unused_signal")
 signal puzzle_failed(damage: int)
 
-## Base directory for Kenney input prompt icon assets.
+## Kenney input prompt icon directory.
 const ICON_BASE_PATH: String = "res://assets/kenney_input-prompts_1.5/Keyboard & Mouse/Default/"
 
-## Number of successful circle matches required to fully solve the puzzle.
+## Target stages required to solve puzzle.
 @export var required_stages: int = 3
 
-## Maximum misses allowed before reset. Set <= 0 for infinite tries.
+## Maximum attempts allowed before reset.
 @export var max_tries: int = 5
 
-## Damage dealt to the player when all tries are exhausted.
+## Overload damage dealt to player on reset.
 @export var fail_damage: int = 20
 
-## Health restored to the player for completing without a single miss.
+## Health restored to player on flawless victory.
 @export var perfect_heal_amount: int = 25
 
-## Pixel radius tolerance allowed between circles for a valid match.
+## Radius pixel tolerance for a successful match.
 @export var hit_tolerance: float = 14.0
 
-## Duration in seconds of one full circle expansion and contraction cycle.
+## Period length in seconds for circle cycle.
 @export var cycle_duration: float = 2.4
 
-## Border color of the fixed target circle.
+## Outline color of static target circle.
 @export var target_color: Color = Color.WHITE
 
-## Border color of the pulsing animated circle.
+## Outline color of animated pulse circle.
 @export var pulse_color: Color = Color.DEEP_SKY_BLUE
 
-## Remaining attempts before lockout reset occurs.
+## Remaining tries before lockout reset.
 var tries_remaining: int = 5
 
-## Number of successful matches achieved in current attempt run.
+## Count of stages cleared in current attempt.
 var current_stage: int = 0
 
-## Tracks if player completed all stages with zero misses.
+## True if completed without misses or late hits.
 var is_flawless: bool = true
 
-## Controls whether the puzzle is actively processing frames and inputs.
+## True while minigame is actively processing.
 var is_active: bool = false
 
-## Radius in pixels of the fixed target circle.
+## Target circle radius in pixels.
 var target_radius: float = 80.0
 
-## Real-time animated radius of the pulsating circle.
+## Current animated circle radius.
 var current_radius: float = 25.0
 
-## Minimum pulsating circle radius in pixels.
+## Minimum radius of expanding circle.
 var min_radius: float = 30.0
 
-## Maximum pulsating circle radius in pixels.
+## Maximum radius of expanding circle.
 var max_radius: float = 180.0
 
-## Accumulated frame time within the active pulse cycle.
+## Elapsed time within active pulse cycle.
 var cycle_timer: float = 0.0
 
-## Active WASD key prompt string required from the player.
+## Current active WASD key required.
 var active_key: String = "W"
 
-## Prevents input evaluation during lockout or completion feedback states.
+## Input lock flag during transitions.
 var is_locked: bool = false
 
-## Cached reference to the interacting character for healing and damage.
+## Interacting player reference for health updates.
 var linked_player: CharacterBody3D = null
 
-## Supported key prompt candidates.
+## Key candidates for challenge pool.
 var key_candidates: Array[String] = ["W", "A", "S", "D"]
 
-## Overlay canvas responsible for drawing the timing circles.
+## Canvas control drawing timing circles.
 @onready var circle_canvas: Control = $CircleCanvas
 
-## TextureRect displaying Kenney WASD icon.
+## Icon display for active key prompt.
 @onready var prompt_icon: TextureRect = $CenterContainer/PromptIcon
 
-## Fallback label displaying plain key letters.
+## Fallback label for active key prompt.
 @onready var prompt_label: Label = $CenterContainer/PromptLabel
 
-## Feedback status label displaying progress and tries.
+## Status label displaying tries and stages.
 @onready var status_label: Label = $StatusLabel
 
 
-## Initializes canvas draw signal and disables processing until activated.
+## Connects draw signals and hides initial cues.
 func _ready() -> void:
 	print("UICircleTimingKeypad: Initializing timing minigame in dormant state.")
 	set_process(false)
@@ -106,8 +106,7 @@ func _ready() -> void:
 	_hide_challenge_elements()
 
 
-## Advances circle animation and registers timeouts when active.
-## [param delta] Frame delta time in seconds.
+## Animates circle pulse and detects cycle timeout.
 func _process(delta: float) -> void:
 	if not is_active or is_locked:
 		return
@@ -128,7 +127,7 @@ func _process(delta: float) -> void:
 	display_updated.emit()
 
 
-## Draws the circles on the dedicated canvas when active.
+## Draws target and animated circles on canvas.
 func _on_canvas_draw() -> void:
 	if not is_active:
 		return
@@ -137,7 +136,7 @@ func _on_canvas_draw() -> void:
 	circle_canvas.draw_arc(center, current_radius, 0.0, TAU, 64, pulse_color, 3.0, true)
 
 
-## Activates the minigame when the player interacts with the terminal.
+## Starts puzzle loop and resets attempt values.
 func start_puzzle() -> void:
 	print("UICircleTimingKeypad: Activating minigame loop.")
 	is_active = true
@@ -151,7 +150,7 @@ func start_puzzle() -> void:
 	_update_status_ui()
 
 
-## Halts puzzle animation and hides dynamic visuals on terminal exit.
+## Stops puzzle loop and clears visual prompts.
 func stop_puzzle() -> void:
 	print("UICircleTimingKeypad: Deactivating minigame loop.")
 	is_active = false
@@ -162,14 +161,13 @@ func stop_puzzle() -> void:
 	display_updated.emit()
 
 
-## Caches interacting player reference for healing and damage routing.
-## [param player] Character controller node.
+## Binds interacting player [CharacterBody3D] reference.
 func set_player_reference(player: CharacterBody3D) -> void:
 	print("UICircleTimingKeypad: Player reference bound -> ", player)
 	linked_player = player
 
 
-## Generates a new target radius and resolves Kenney icon or label fallback.
+## Selects random radius and updates key prompt.
 func _pick_random_challenge() -> void:
 	target_radius = randf_range(min_radius + 25.0, max_radius - 25.0)
 	active_key = key_candidates.pick_random()
@@ -201,8 +199,7 @@ func _pick_random_challenge() -> void:
 	display_updated.emit()
 
 
-## Evaluates incoming key presses against circle radius tolerance and stage logic.
-## [param key_name] Uppercase key identifier.
+## Validates key input, radius timing, and flawless state.
 func handle_key_input(key_name: String) -> void:
 	if not is_active or is_locked:
 		return
@@ -216,6 +213,13 @@ func handle_key_input(key_name: String) -> void:
 	var is_key_matched: bool = pressed_key == active_key
 
 	if is_radius_matched and is_key_matched:
+		var is_expanding: bool = cycle_timer <= (cycle_duration * 0.5)
+		var hit_before_larger: bool = is_expanding and (current_radius <= target_radius)
+
+		if not hit_before_larger:
+			print("UICircleTimingKeypad: Hit registered after target size. Flawless forfeited.")
+			is_flawless = false
+
 		current_stage += 1
 		print("UICircleTimingKeypad: Stage cleared -> ", current_stage, "/", required_stages)
 		if current_stage >= required_stages:
@@ -230,7 +234,7 @@ func handle_key_input(key_name: String) -> void:
 		_handle_failure()
 
 
-## Finalizes puzzle completion, awards flawless healing, and emits solve signal.
+## Awards heal on flawless run and emits [signal code_entered].
 func _complete_puzzle() -> void:
 	print("UICircleTimingKeypad: All stages completed.")
 	is_locked = true
@@ -253,7 +257,7 @@ func _complete_puzzle() -> void:
 	code_entered.emit(active_key)
 
 
-## Deducts attempts, resets sequence on mistake, and triggers failure on zero tries.
+## Deducts tries, applies damage on zero tries, and resets.
 func _handle_failure() -> void:
 	current_stage = 0
 	if max_tries > 0:
@@ -278,13 +282,13 @@ func _handle_failure() -> void:
 		_pick_random_challenge()
 
 
-## Hides WASD prompt icons and letters.
+## Hides key icon and label prompts.
 func _hide_challenge_elements() -> void:
 	prompt_icon.visible = false
 	prompt_label.visible = false
 
 
-## Updates status label with stage progression and remaining attempts.
+## Updates stage and remaining attempt labels.
 func _update_status_ui() -> void:
 	var tries_text: String = "INF" if max_tries <= 0 else str(tries_remaining)
 	status_label.text = "STAGE: %d/%d  |  TRIES: %s" % [current_stage, required_stages, tries_text]
@@ -292,8 +296,7 @@ func _update_status_ui() -> void:
 	display_updated.emit()
 
 
-## Displays failure lockout styling on the status label.
-## [param is_correct] Whether attempt solved puzzle.
+## Updates status label on validation failure.
 func display_result(is_correct: bool) -> void:
 	print("UICircleTimingKeypad: Displaying validation result -> ", is_correct)
 	if not is_correct:

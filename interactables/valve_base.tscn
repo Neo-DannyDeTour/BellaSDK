@@ -23,9 +23,7 @@ size = Vector3(0.6, 0.1, 0.6)
 
 [node name="ValveBase" type="StaticBody3D" unique_id=86858914 node_paths=PackedStringArray("label", "prompt_icon")]
 script = ExtResource("1_epeg1")
-turn_mode = null
 is_back_and_forth = false
-auto_return_delay = null
 label = NodePath("Label3D")
 prompt_icon = NodePath("PromptIcon")
 
@@ -44,7 +42,8 @@ interact_component = NodePath("../InteractComponent")
 metadata/_custom_type_script = "uid://dgig0tamvkdxx"
 
 [node name="Label3D" type="Label3D" parent="." unique_id=1180216320]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.39249182, 0.2, 0.07568967)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.45, 0.2, 0)
+visible = false
 billboard = 1
 no_depth_test = true
 
@@ -63,6 +62,7 @@ stream = ExtResource("7_0ogc3")
 
 [node name="PromptIcon" type="Sprite3D" parent="." unique_id=871037923]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.5, 0, 0)
+visible = false
 pixel_size = 0.002
 billboard = 1
 double_sided = false

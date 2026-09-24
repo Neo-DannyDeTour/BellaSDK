@@ -1,46 +1,55 @@
 ## Universal 3D terminal projecting swappable 2D UIs onto a physical mesh.
+@tool
 class_name DoorKeypad
 extends StaticBody3D
 
-## Emitted when the keypad puzzle has been solved.
+## Emitted when [member valid_code] is accepted and targets trigger.
 @warning_ignore("unused_signal")
 signal code_accepted
 
-## The packed UI scene instantiated inside the terminal viewport.
+@onready var output_transmitter: OutputTransmitter3D = $OutputTransmitter3D
+
+## Packed UI scene instantiated inside [member sub_viewport].
 @export var ui_scene: PackedScene
 
-## Valid combination code string for numeric style keypads.
+## Valid combination code string for numeric keypads.
 @export var valid_code: String = "1234"
 
-## Target nodes powered or triggered when puzzle is solved.
+## Target nodes powered when puzzle is solved.
 @export var targets: Array[Node3D]
 
-## Indicates if directional keys should be consumed by terminal.
+## Determines if WASD inputs are captured for minigames.
 @export var captures_wasd: bool = false
 
-## Debug line renderer displaying connection links to targets.
+## Mouse sensitivity scale applied to player look for numeric UI.
+@export var numeric_mouse_sensitivity_scale: float = 0.5
+
+## Tracks whether the terminal puzzle has been successfully solved.
+var is_solved: bool = false
+
+## Line renderer displaying links to [member targets] in editor.
 var debug_line: MeshInstance3D
 
-## Active player instance currently engaged with terminal.
+## Active player [CharacterBody3D] currently using terminal.
 var active_player: CharacterBody3D = null
 
-## Active UI control instantiated in the viewport.
+## Active [Control] interface inside [member sub_viewport].
 var current_ui: Control = null
 
-## Target mesh receiving UI projection material.
+## Target [MeshInstance3D] receiving UI projection material.
 @onready var mesh_instance_3d: MeshInstance3D = $MeshInstance3D
 
-## SubViewport rendering interactive 2D interface.
+## [SubViewport] rendering the active 2D interface.
 @onready var sub_viewport: SubViewport = $DoorKeypadSubViewport
 
-## Raycast and interaction collider detector component.
+## Component detecting player interaction raycasts.
 @onready var interact_component: InteractComponent = $InteractComponent
 
-## Spatial audio player for button and error sounds.
+## Spatial audio player for terminal sound effects.
 @onready var keypad_audio: AudioStreamPlayer3D = $KeypadAudio
 
 
-## Sets up viewport rendering, instantiates assigned UI scene, and connects signals.
+## Initializes viewport and binds interaction signals.
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
@@ -52,7 +61,7 @@ func _ready() -> void:
 		interact_component.interacted.connect(_on_player_interacted)
 
 
-## Instantiates exported UI scene inside the SubViewport.
+## Instantiates [member ui_scene] in [member sub_viewport].
 func _setup_ui_instance() -> void:
 	print("DoorKeypad: Setting up SubViewport UI instance.")
 	if sub_viewport.get_child_count() > 0:
@@ -79,15 +88,13 @@ func _setup_ui_instance() -> void:
 		captures_wasd = true
 
 
-## Redraws targets connection lines while editing in editor.
-## [param _delta] Frame delta time in seconds.
+## Draws connection lines to [member targets] in editor.
 func _process(_delta: float) -> void:
 	if Engine.is_editor_hint():
 		_draw_connection_line()
 
 
-## Intercepts WASD inputs when active and routes to UI.
-## [param event] Engine hardware input event.
+## Routes WASD key input events to [member current_ui].
 func _unhandled_input(event: InputEvent) -> void:
 	if active_player == null or not captures_wasd or not is_instance_valid(current_ui):
 		return
@@ -105,9 +112,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 
-## Handles player terminal engagement, activating dynamic redraws.
-## [param character] Interacting player instance.
+## Engages terminal mode and scales player mouse sensitivity.
 func _on_player_interacted(character: CharacterBody3D) -> void:
+	if is_solved and current_ui is UICircleTimingKeypad:
+		print("DoorKeypad: Circle minigame already solved. Interaction denied.")
+		return
+
 	print("DoorKeypad: Player entered terminal.")
 	active_player = character
 	sub_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
@@ -118,14 +128,32 @@ func _on_player_interacted(character: CharacterBody3D) -> void:
 		if current_ui.has_method("start_puzzle"):
 			current_ui.call("start_puzzle")
 
+	if current_ui is UIKeypad and character.has_method("set_terminal_mouse_sensitivity_scale"):
+		print("DoorKeypad: Scaling mouse sensitivity to 0.5x for numeric keypad.")
+		character.call("set_terminal_mouse_sensitivity_scale", numeric_mouse_sensitivity_scale)
+
 	request_viewport_refresh()
 	if character.has_method("enter_terminal_mode"):
 		character.enter_terminal_mode(self)
 
 
-## Clears active interaction state and restores frozen viewport.
+## Exits terminal mode and restores player sensitivity.
+func _exit_terminal() -> void:
+	print("DoorKeypad: Auto-exiting terminal mode.")
+	if is_instance_valid(active_player) and active_player.has_method("exit_terminal_mode"):
+		active_player.call("exit_terminal_mode")
+	clear_mouse_hover()
+
+
+## Clears active interaction state and freezes viewport.
 func clear_mouse_hover() -> void:
 	print("DoorKeypad: Player exited terminal. Halting puzzle.")
+	if (
+		is_instance_valid(active_player)
+		and active_player.has_method("set_terminal_mouse_sensitivity_scale")
+	):
+		active_player.call("set_terminal_mouse_sensitivity_scale", 1.0)
+
 	active_player = null
 	sub_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 
@@ -140,58 +168,48 @@ func clear_mouse_hover() -> void:
 	request_viewport_refresh()
 
 
-## Requests single redraw pass when viewport is frozen.
+## Forces a single redraw pass on [member sub_viewport].
 func request_viewport_refresh() -> void:
 	if is_instance_valid(sub_viewport):
 		if sub_viewport.render_target_update_mode != SubViewport.UPDATE_ALWAYS:
 			sub_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 
 
-## Plays sound effects on UI interactions.
-## [param _button_name] Pressed button identifier.
+## Plays audio cue when interface buttons are pressed.
 func _on_ui_button_clicked(_button_name: String) -> void:
 	print("DoorKeypad: Playing interaction audio cue.")
 	if is_instance_valid(keypad_audio) and keypad_audio.stream != null:
 		keypad_audio.play()
 
 
-## Validates submitted code and activates connected mechanics.
-## [param code] String sequence sent by UI.
+## Validates code, fires triggers, and initiates exit.
 func _on_ui_code_entered(code: String) -> void:
 	print("DoorKeypad: Validating submitted code -> ", code)
 	var is_correct: bool = (code == valid_code) or captures_wasd
 
 	if is_correct:
 		print("DoorKeypad: Unlock validated.")
+		if current_ui is UICircleTimingKeypad:
+			is_solved = true
 		code_accepted.emit()
 		_trigger_targets()
 		if is_instance_valid(current_ui) and current_ui.has_method("display_result"):
 			current_ui.call("display_result", true)
+		get_tree().create_timer(1.2).timeout.connect(_exit_terminal)
 	else:
 		print("DoorKeypad: Unlock rejected.")
 		if is_instance_valid(current_ui) and current_ui.has_method("display_result"):
 			current_ui.call("display_result", false)
 
 
-## Forwards power activation signals to target nodes.
+## Powers attached [OutputTransmitter3D] child.
 func _trigger_targets() -> void:
-	print("DoorKeypad: Activating target mechanics.")
-	for target: Node3D in targets:
-		if not is_instance_valid(target):
-			continue
-		if target.has_method("add_power"):
-			target.call("add_power")
-		else:
-			var comp: Node = target.get_node_or_null("PowerComponent")
-			if comp and comp.has_method("add_power"):
-				comp.call("add_power")
-			elif "open" in target:
-				target.set("open", true)
+	print("DoorKeypad: Triggering OutputTransmitter3D.")
+	if is_instance_valid(output_transmitter):
+		output_transmitter.power_on()
 
 
-## Maps world-space raycast hit position to 2D SubViewport coordinates.
-## [param global_hit] World hit coordinate.
-## [return] Mapped 2D viewport coordinates.
+## Maps 3D world raycast hit point to 2D viewport coordinates.
 func get_viewport_pos_from_3d(global_hit: Vector3) -> Vector2:
 	var local_pos: Vector3 = mesh_instance_3d.to_local(global_hit)
 	var aabb: AABB = mesh_instance_3d.mesh.get_aabb()
@@ -209,8 +227,7 @@ func get_viewport_pos_from_3d(global_hit: Vector3) -> Vector2:
 	return Vector2(percent_x * sub_viewport.size.x, percent_y * sub_viewport.size.y)
 
 
-## Injects mouse motion into SubViewport.
-## [param global_hit] World raycast hit position.
+## Injects mouse motion into [member sub_viewport].
 func inject_mouse_motion(global_hit: Vector3) -> void:
 	var event: InputEventMouseMotion = InputEventMouseMotion.new()
 	var pos: Vector2 = get_viewport_pos_from_3d(global_hit)
@@ -220,8 +237,7 @@ func inject_mouse_motion(global_hit: Vector3) -> void:
 	sub_viewport.push_input(event)
 
 
-## Injects mouse click event into SubViewport.
-## [param global_hit] World raycast hit position.
+## Injects mouse button press into [member sub_viewport].
 func inject_mouse_click(global_hit: Vector3) -> void:
 	print("DoorKeypad: Injecting click at: ", global_hit)
 	var pos: Vector2 = get_viewport_pos_from_3d(global_hit)
@@ -237,8 +253,7 @@ func inject_mouse_click(global_hit: Vector3) -> void:
 	get_tree().process_frame.connect(_release_mouse_click.bind(pos), CONNECT_ONE_SHOT)
 
 
-## Sends mouse release event into SubViewport.
-## [param pos] 2D coordinates to release.
+## Releases simulated mouse button in [member sub_viewport].
 func _release_mouse_click(pos: Vector2) -> void:
 	var event_release: InputEventMouseButton = InputEventMouseButton.new()
 	event_release.device = 1
@@ -251,7 +266,7 @@ func _release_mouse_click(pos: Vector2) -> void:
 	request_viewport_refresh()
 
 
-## Renders debug lines connecting keypad to targets in editor.
+## Renders debug link lines to [member targets] in editor.
 func _draw_connection_line() -> void:
 	if targets.is_empty():
 		if is_instance_valid(debug_line):

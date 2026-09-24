@@ -6,6 +6,7 @@
 [ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="3_tae6v"]
 [ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="4_f1hol"]
 [ext_resource type="AudioStream" uid="uid://kqb187s7hql2" path="res://assets/sounds/Keypad.wav" id="6_jyx7n"]
+[ext_resource type="Script" uid="uid://cnmn3hgnt0afn" path="res://interactables/output_transmitter_3d.gd" id="7_wjh8v"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_jyx7n"]
 render_priority = 0
@@ -33,6 +34,9 @@ size = Vector3(0.001, 0.5, 0.5)
 [node name="DoorKeypad" type="StaticBody3D" unique_id=224452826]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 0, 0, 0)
 script = ExtResource("1_mcbx6")
+valid_code = null
+captures_wasd = null
+numeric_mouse_sensitivity_scale = null
 
 [node name="InteractComponent" type="Node" parent="." unique_id=546308194]
 script = ExtResource("2_wk8ac")
@@ -58,5 +62,9 @@ shape = SubResource("BoxShape3D_koi6h")
 
 [node name="KeypadAudio" type="AudioStreamPlayer3D" parent="." unique_id=1237021702]
 stream = ExtResource("6_jyx7n")
+
+[node name="OutputTransmitter3D" type="Node3D" parent="." unique_id=2039145109]
+script = ExtResource("7_wjh8v")
+metadata/_custom_type_script = "uid://cnmn3hgnt0afn"
 
 [connection signal="code_entered" from="DoorKeypadSubViewport/Keypad" to="." method="_on_keypad_code_entered"]
