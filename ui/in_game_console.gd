@@ -787,14 +787,10 @@ func _register_easter_egg_commands() -> void:
 	registry.register_command(
 		ConsoleCommand.new("soyuz", "", func(_a: PackedStringArray) -> void: write("Nerushimuy!"))
 	)
-	registry.register_command(
-		ConsoleCommand.new(
-			"motherlode",
-			"",
-			func(_a: PackedStringArray) -> void:
-				write("This is a classic get-rich-quick scheme! Arrested!")
-		)
-	)
+	var on_motherlode: Callable = func(_a: PackedStringArray) -> void:
+		write("This is a classic get-rich-quick scheme! Arrested!")
+
+	registry.register_command(ConsoleCommand.new("motherlode", "", on_motherlode))
 	registry.register_command(
 		ConsoleCommand.new(
 			"konami",

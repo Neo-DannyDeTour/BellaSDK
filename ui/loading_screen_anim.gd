@@ -315,6 +315,7 @@ func _finalize_scene_transition() -> void:
 		target_env.sdfgi_enabled = false
 		print("LoadingScreen: Staged SDFGI off on duplicated environment.")
 
+	# Add scene to tree
 	root.add_child(new_scene)
 	get_tree().current_scene = new_scene
 
@@ -324,7 +325,9 @@ func _finalize_scene_transition() -> void:
 			player_node.locomotion_component.set_physics_active(false)
 		player_node.velocity = Vector3.ZERO
 
-	# Settle PhysicsServer3D and await asynchronous CSGCombiner3D collision baking
+	# Unpause first so PhysicsServer3D can process CSG collision generation
+	get_tree().paused = false
+
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 	await get_tree().physics_frame
@@ -334,8 +337,6 @@ func _finalize_scene_transition() -> void:
 		player_node.activate_gameplay_camera()
 		if is_instance_valid(player_node.locomotion_component):
 			player_node.locomotion_component.set_physics_active(true)
-
-	get_tree().paused = false
 
 	for frame_idx: int in range(SETTLING_FRAMES):
 		await get_tree().process_frame

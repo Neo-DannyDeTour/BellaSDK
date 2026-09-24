@@ -193,8 +193,12 @@ func _on_resume_pressed() -> void:
 	print("UI: Player clicked Resume.")
 	await prepare_for_level_transition()
 	var parent: Node = get_parent()
-	if is_instance_valid(parent) and parent.has_method("toggle_pause"):
-		parent.call("toggle_pause")
+	if is_instance_valid(parent):
+		var player: Node = parent.find_child("Player", true, false)
+		if is_instance_valid(player) and player.has_method("activate_gameplay_camera"):
+			player.call("activate_gameplay_camera")
+		if parent.has_method("toggle_pause"):
+			parent.call("toggle_pause")
 
 
 ## Opens chapter selection screen for starting a new session.

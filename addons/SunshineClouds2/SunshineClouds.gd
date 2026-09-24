@@ -385,9 +385,11 @@ func _notification(what: int) -> void:
 		RenderingServer.call_on_render_thread(clear_compute)
 
 
-## Frees all allocated [RenderingDevice] buffers, textures, samplers, and pipelines.
+## Releases all allocated compute, raster, and uniform resources.
 func clear_compute() -> void:
 	if rd:
+		_clear_uniform_sets()
+
 		if pipeline.is_valid():
 			rd.free_rid(pipeline)
 		if shader.is_valid():
@@ -697,26 +699,29 @@ func initialize_raster_pipelines(color_texture: RID, depth_texture: RID) -> void
 	)
 
 
-## Reallocates resolution-dependent storage and accumulation textures when viewport dimensions change.
+## Reallocates storage textures and frees invalidated uniform sets.
 func reallocate_textures(
 	new_size: Vector2i, view_count: int, is_msaa_on: bool, buffers: RenderSceneBuffersRD
 ) -> void:
+	# Clear uniform sets FIRST so we do not attempt to free auto-invalidated handles later
+	_clear_uniform_sets()
+
 	for item: RID in accumulation_textures:
-		if item.is_valid():
+		if item.is_valid() and is_instance_valid(rd):
 			rd.free_rid(item)
 	accumulation_textures.clear()
 
 	for item: RID in blit_screen_images:
-		if item.is_valid():
+		if item.is_valid() and is_instance_valid(rd):
 			rd.free_rid(item)
 	blit_screen_images.clear()
 
-	if resized_depth.is_valid():
+	if resized_depth.is_valid() and is_instance_valid(rd):
 		rd.free_rid(resized_depth)
 
 	color_images.clear()
 
-	for view in range(view_count):
+	for view: int in range(view_count):
 		color_images.append(buffers.get_color_layer(view, false))
 		var depth_image: RID = buffers.get_depth_layer(view, false)
 
@@ -742,7 +747,7 @@ func reallocate_textures(
 		base_colorformat.width = new_size.x
 		base_colorformat.height = new_size.y
 
-		for _i in range(7):
+		for _i: int in range(7):
 			accumulation_textures.append(
 				rd.texture_create(
 					base_colorformat, RDTextureView.new(), [blank_image_data]
@@ -962,6 +967,15 @@ func build_view_uniform_sets(
 	uniform_sets.append(rd.uniform_set_create(display_uniforms, display_shader, 0))
 
 
+## Safely releases active uniform set RIDs from the [RenderingDevice].
+func _clear_uniform_sets() -> void:
+	for u_set: RID in uniform_sets:
+		if u_set.is_valid() and is_instance_valid(rd):
+			if rd.uniform_set_is_valid(u_set):
+				rd.free_rid(u_set)
+	uniform_sets.clear()
+
+
 ## Engine render thread entry point orchestrating compute dispatches and screen composition.
 func _render_callback(_effect_callback_type: int, render_data: RenderData) -> void:
 	if rd == null:
@@ -974,11 +988,11 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 	if not buffers:
 		return
 
-	# IGNORE SECONDARY PASSES: Skip execution on reflection probes and non-main viewports.
-	if main_viewport_rid.is_valid():
-		var expected_target: RID = RenderingServer.viewport_get_render_target(main_viewport_rid)
-		if buffers.get_render_target() != expected_target:
-			return
+	# STRICT VIEWPORT GUARD: Never run clouds on diorama, secondary probes, or mirrors
+	var main_win: Window = Engine.get_main_loop().root
+	var main_target: RID = RenderingServer.viewport_get_render_target(main_win.get_viewport_rid())
+	if buffers.get_render_target() != main_target:
+		return
 
 	if not (
 		pipeline.is_valid()
@@ -1005,7 +1019,6 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 	var view_count: int = buffers.get_view_count()
 	var render_scene_data: RenderSceneData = render_data.get_render_scene_data()
 
-	# Recompile pipelines ONLY if MSAA mode changes
 	if msaa_mode != last_msaa_mode:
 		initialize_compute()
 		initialize_raster_pipelines(
@@ -1013,17 +1026,14 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 			buffers.get_depth_layer(0, is_msaa_on)
 		)
 
-	# Reallocate textures ONLY if viewport resolution changes
 	if size != last_size or accumulation_textures.is_empty():
 		reallocate_textures(new_size, view_count, is_msaa_on, buffers)
 		initialize_raster_pipelines(
 			buffers.get_color_layer(0, is_msaa_on),
 			buffers.get_depth_layer(0, is_msaa_on)
 		)
-		uniform_sets.clear()
+		_clear_uniform_sets()
 
-	# Rebuild uniform sets if invalidated by engine buffer swaps (SDFGI/SSR)
-	var current_color_layer: RID = buffers.get_color_layer(0, is_msaa_on)
 	var needs_uniform_rebuild: bool = (
 		uniform_sets.is_empty()
 		or uniform_sets.size() != view_count * 4
@@ -1036,7 +1046,7 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 		for v in range(view_count):
 			color_images.append(buffers.get_color_layer(v, false))
 
-		uniform_sets.clear()
+		_clear_uniform_sets()
 		for view in range(view_count):
 			build_view_uniform_sets(
 				view, new_size, is_msaa_on, buffers, render_scene_data
@@ -1071,28 +1081,24 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 	var y_groups: int = ((size.y - 1) / 8 / resscale) + 1
 
 	for view in range(view_count):
-		# 1. Prepass Compute Dispatch
 		var prepass_list: int = rd.compute_list_begin()
 		rd.compute_list_bind_compute_pipeline(prepass_list, prepass_pipeline)
 		rd.compute_list_bind_uniform_set(prepass_list, uniform_sets[view * 4], 0)
 		rd.compute_list_dispatch(prepass_list, x_groups, y_groups, 1)
 		rd.compute_list_end()
 
-		# 2. Main Compute Raymarch Dispatch
 		var compute_list: int = rd.compute_list_begin()
 		rd.compute_list_bind_compute_pipeline(compute_list, pipeline)
 		rd.compute_list_bind_uniform_set(compute_list, uniform_sets[(view * 4) + 1], 0)
 		rd.compute_list_dispatch(compute_list, x_groups, y_groups, 1)
 		rd.compute_list_end()
 
-		# 3. Postpass Bilateral Filter Dispatch
 		var postpass_list: int = rd.compute_list_begin()
 		rd.compute_list_bind_compute_pipeline(postpass_list, postpass_pipeline)
 		rd.compute_list_bind_uniform_set(postpass_list, uniform_sets[(view * 4) + 2], 0)
 		rd.compute_list_dispatch(postpass_list, prepass_x_groups, prepass_y_groups, 1)
 		rd.compute_list_end()
 
-		# 4. Display Raster Composition Draw
 		var display_list: int = rd.draw_list_begin(
 			framebuffer, RenderingDevice.DRAW_DEFAULT_ALL
 		)

@@ -304,19 +304,11 @@ func _evaluate_diorama_state() -> void:
 
 ## Forcibly tears down diorama hierarchy when starting gameplay level.
 func teardown_diorama() -> void:
-	print("OptionsRouter: Tearing down diorama viewport for gameplay.")
+	print("OptionsRouter: Putting diorama viewport to sleep.")
 	_deactivate_all_diorama_cameras()
 	if is_instance_valid(diorama_viewport):
 		diorama_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 		diorama_viewport.process_mode = Node.PROCESS_MODE_DISABLED
-
-	if is_instance_valid(_instantiated_diorama):
-		_instantiated_diorama.queue_free()
-		_instantiated_diorama = null
-
-	_vision_meshes.clear()
-	_all_diorama_cameras.clear()
-	_graphics_camera = null
 	_set_preview_shader_active(false)
 
 
