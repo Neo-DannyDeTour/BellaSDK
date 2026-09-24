@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://um1lcvqmxas8"]
 
-[ext_resource type="Shader" uid="uid://bdg4n0o4v00h7" path="res://snow_deform.gdshader" id="1_vtuf0"]
+[ext_resource type="Shader" uid="uid://bdg4n0o4v00h7" path="res://vfx/snow_deform.gdshader" id="1_vtuf0"]
 [ext_resource type="Script" uid="uid://uioes3f83n4i" path="res://environment/snow_painter.gd" id="2_ns64g"]
 [ext_resource type="Script" uid="uid://cw7bonlfblun4" path="res://environment/snow_ground.gd" id="2_rxwmd"]
 [ext_resource type="Texture2D" uid="uid://cci02oruadujf" path="res://assets/images/boot_mud_texture.png" id="4_xs68i"]
