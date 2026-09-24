@@ -42,7 +42,7 @@ func test_exit_terminal_mode() -> void:
 	watch_signals(scanner)
 	scanner.call("exit_terminal_mode")
 
-	assert_false(
+	assert_true(
 		scanner.get("is_in_terminal_mode") == false, "Scanner should have exited terminal mode."
 	)
 	assert_null(scanner.get("active_terminal"), "Terminal reference should be cleared.")
