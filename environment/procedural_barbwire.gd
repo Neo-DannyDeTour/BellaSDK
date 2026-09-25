@@ -1,8 +1,7 @@
 @tool
-## Generates procedural straight or coiled barbed wire meshes with instanced MultiMesh barbs.
+## Generates straight or coiled barbed wire meshes with instanced [MultiMesh] barbs.
 ##
-## Constructs wire geometry using a [Path3D] and [CSGPolygon3D] extrusion, batching
-## barb spikes into a [MultiMeshInstance3D] for optimal rendering performance.
+## Constructs geometry using [Path3D] and sweeps [CSGPolygon3D] profile along curve.
 class_name ProceduralBarbwire
 extends Node3D
 
@@ -14,63 +13,74 @@ enum WireType {
 
 ## Geometric configuration profile for the wire.
 @export_category("Wire Shape")
+
 ## The procedural path style (Straight span or Helical spring).
 @export var wire_type: ProceduralBarbwire.WireType = ProceduralBarbwire.WireType.STRAIGHT:
 	set(value):
 		wire_type = value
-		_request_rebuild()
+		if is_inside_tree():
+			_request_rebuild()
 
 ## Total length of the barbed wire in meters.
 @export var length: float = 10.0:
 	set(value):
 		length = value
-		_request_rebuild()
+		if is_inside_tree():
+			_request_rebuild()
 
 ## Radius thickness of the main extruded wire line.
 @export var wire_thickness: float = 0.02:
 	set(value):
 		wire_thickness = value
-		_request_rebuild()
+		if is_inside_tree():
+			_request_rebuild()
 
 ## Configuration parameters for helical spring generation.
 @export_category("Spring Settings")
+
 ## Radial expansion distance of helical coils from the center axis.
 @export var spring_radius: float = 0.3:
 	set(value):
 		spring_radius = value
-		_request_rebuild()
+		if is_inside_tree():
+			_request_rebuild()
 
 ## Total number of full helical turns across the wire length.
 @export var spring_coils: int = 12:
 	set(value):
 		spring_coils = value
-		_request_rebuild()
+		if is_inside_tree():
+			_request_rebuild()
 
 ## Number of curve sample vertices generated per individual spring coil.
 @export var spring_resolution: int = 64:
 	set(value):
 		spring_resolution = maxi(4, value)
-		_request_rebuild()
+		if is_inside_tree():
+			_request_rebuild()
 
 ## Configuration parameters for decorative barbs.
 @export_category("Barbs")
+
 ## Linear distance along the curve between successive barb clusters.
 @export var barb_spacing: float = 0.5:
 	set(value):
 		barb_spacing = maxf(0.1, value)
-		_request_rebuild()
+		if is_inside_tree():
+			_request_rebuild()
 
 ## Scale dimension of individual barb spikes.
 @export var barb_size: float = 0.08:
 	set(value):
 		barb_size = value
-		_request_rebuild()
+		if is_inside_tree():
+			_request_rebuild()
 
 ## Tracks whether a deferred mesh rebuild is currently pending.
 var _is_dirty: bool = false
 
 
-## Lifecycle ready callback ensuring geometry exists without redundant runtime rebuilds.
+## Lifecycle ready callback ensuring geometry exists without redundant rebuilds.
 func _ready() -> void:
 	print("ProceduralBarbwire: _ready() called.")
 	if Engine.is_editor_hint() or get_child_count() == 0:
@@ -84,16 +94,16 @@ func _request_rebuild() -> void:
 
 	if not _is_dirty:
 		_is_dirty = true
+		print("ProceduralBarbwire: Scheduling deferred rebuild.")
 		call_deferred(&"_rebuild")
 
 
-## Clears existing child nodes and rebuilds the procedural curve, wire mesh, and barbs.
+## Clears existing child nodes via [Utilities] and rebuilds procedural curve and meshes.
 func _rebuild() -> void:
 	_is_dirty = false
-	print("ProceduralBarbwire: Rebuilding mesh structure.")
+	print("ProceduralBarbwire: Rebuilding mesh structure via Utilities.")
 
-	for child: Node in get_children():
-		child.queue_free()
+	Utilities.clear_children(self)
 
 	var curve: Curve3D = _generate_curve()
 	_build_wire_mesh(curve)
@@ -101,8 +111,8 @@ func _rebuild() -> void:
 
 
 ## Calculates a straight or helical [Curve3D] based on configuration settings.
-## Returns the populated [Curve3D] instance.
 func _generate_curve() -> Curve3D:
+	print("ProceduralBarbwire: Generating curve for wire type: ", wire_type)
 	var curve: Curve3D = Curve3D.new()
 	curve.bake_interval = 0.1
 
@@ -124,7 +134,7 @@ func _generate_curve() -> Curve3D:
 	return curve
 
 
-## Sweeps a polygonal circular profile along the supplied path curve using [CSGPolygon3D].
+## Sweeps circular profile along supplied guide curve using [CSGPolygon3D].
 ## [param curve] The guide curve to sweep the polygon cross-section across.
 func _build_wire_mesh(curve: Curve3D) -> void:
 	print("ProceduralBarbwire: Building wire mesh sweep along curve.")
@@ -153,9 +163,10 @@ func _build_wire_mesh(curve: Curve3D) -> void:
 	polygon.polygon = profile
 
 
-## Instantiates star-shaped barb geometry along the curve sampled intervals using [MultiMesh].
+## Instantiates star barb geometry along curve sampled intervals via [MultiMesh].
 ## [param curve] The baked curve from which transform matrices are sampled.
 func _build_barbs(curve: Curve3D) -> void:
+	print("ProceduralBarbwire: Building instanced MultiMesh barbs along curve.")
 	var baked_length: float = curve.get_baked_length()
 	var barb_count: int = floori(baked_length / barb_spacing)
 
