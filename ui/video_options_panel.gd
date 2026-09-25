@@ -22,6 +22,7 @@ var _pending_gpu_index: int = -1
 ## Connects section events, activates diorama rendering, and applies settings.
 func _ready() -> void:
 	print("VideoOptions: Main panel coordinator initialized.")
+	visibility_changed.connect(_on_visibility_changed)
 	display_section.display_settings_changed.connect(_apply_all_settings)
 	quality_section.preset_changed.connect(_on_preset_changed)
 	quality_section.quality_settings_changed.connect(_apply_all_settings)
@@ -35,14 +36,26 @@ func _ready() -> void:
 		if manager.has_signal("benchmark_completed"):
 			manager.benchmark_completed.connect(_on_benchmark_completed)
 
-	VideoApplier.set_diorama_active(get_tree(), true)
-	_apply_all_settings()
+	if is_visible_in_tree():
+		VideoApplier.set_diorama_active(get_tree(), true)
+		_apply_all_settings()
 
 
 ## Lifecycle cleanup ensuring diorama sleeping when the options panel exits tree.
 func _exit_tree() -> void:
 	print("VideoOptions: Exiting tree; putting diorama rendering to sleep.")
 	VideoApplier.set_diorama_active(get_tree(), false)
+
+
+## Synchronizes diorama state and reapplies visual pipeline on show.
+func _on_visibility_changed() -> void:
+	if is_visible_in_tree():
+		print("VideoOptions: Panel became visible. Pushing full state to diorama.")
+		VideoApplier.set_diorama_active(get_tree(), true)
+		_apply_all_settings()
+	else:
+		print("VideoOptions: Panel hidden. Putting diorama to sleep.")
+		VideoApplier.set_diorama_active(get_tree(), false)
 
 
 ## Synchronizes preset effects settings when the master preset changes.

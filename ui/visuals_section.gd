@@ -30,6 +30,43 @@ const DEFAULT_SCREEN_FILTER: int = 0
 ## Default constant value for world environment gamma.
 const DEFAULT_GAMMA: float = 1.0
 
+## Default constant index for interactable outline highlight visibility mode.
+const DEFAULT_OUTLINE_MODE: int = 2
+
+## Available palette color names for target outline highlights.
+const OUTLINE_COLOR_NAMES: Array[String] = [
+	"Green", "Cyan", "Yellow", "Orange", "Red", "Magenta", "White"
+]
+
+## Color values corresponding to outline palette selection names.
+const OUTLINE_COLOR_VALUES: Array[Color] = [
+	Color(0.0, 1.0, 0.5, 1.0),
+	Color(0.0, 0.8, 1.0, 1.0),
+	Color(1.0, 0.9, 0.1, 1.0),
+	Color(1.0, 0.5, 0.0, 1.0),
+	Color(1.0, 0.2, 0.2, 1.0),
+	Color(1.0, 0.1, 0.8, 1.0),
+	Color(1.0, 1.0, 1.0, 1.0)
+]
+
+## Default constant index for outline highlight color.
+const DEFAULT_OUTLINE_COLOR_INDEX: int = 0
+
+## Default constant value for outline blink speed oscillation.
+const DEFAULT_OUTLINE_BLINK_SPEED: float = 8.0
+
+## Default constant value for outline minimum pulse intensity.
+const DEFAULT_OUTLINE_MIN_INTENSITY: float = 0.2
+
+## Default constant value for outline maximum pulse intensity.
+const DEFAULT_OUTLINE_MAX_INTENSITY: float = 1.0
+
+## Color modulation applied to the active outline mode button.
+const ACTIVE_BUTTON_COLOR: Color = Color(0.25, 0.75, 1.0, 1.0)
+
+## Color modulation applied to inactive outline mode buttons.
+const INACTIVE_BUTTON_COLOR: Color = Color(1.0, 1.0, 1.0, 1.0)
+
 ## Dropdown menu for selecting colorblind shader correction filters.
 @onready var colorblind_option: OptionButton = get_node_or_null("%ColorblindOption")
 
@@ -72,6 +109,36 @@ const DEFAULT_GAMMA: float = 1.0
 ## Toggle switch for high-contrast UI mode.
 @onready var high_contrast_toggle: CheckButton = get_node_or_null("%HighContrastToggle")
 
+## Button switching interactable outline highlight to off.
+@onready var outline_off_button: Button = get_node_or_null("%OutlineOffButton")
+
+## Button switching interactable outline highlight to always visible.
+@onready var outline_always_button: Button = get_node_or_null("%OutlineAlwaysButton")
+
+## Button switching interactable outline highlight to focus-only visibility.
+@onready var outline_focus_button: Button = get_node_or_null("%OutlineFocusButton")
+
+## Dropdown menu for selecting outline highlight color.
+@onready var outline_color_option: OptionButton = get_node_or_null("%OutlineColorOption")
+
+## Slider for adjusting outline blink pulse speed.
+@onready var outline_blink_slider: HSlider = get_node_or_null("%OutlineBlinkSpeedSlider")
+
+## Text input for manual outline blink pulse speed entry.
+@onready var outline_blink_input: LineEdit = get_node_or_null("%OutlineBlinkSpeedLine")
+
+## Slider for adjusting outline minimum pulse intensity.
+@onready var outline_min_slider: HSlider = get_node_or_null("%OutlineMinIntensitySlider")
+
+## Text input for manual outline minimum pulse intensity entry.
+@onready var outline_min_input: LineEdit = get_node_or_null("%OutlineMinIntensityLine")
+
+## Slider for adjusting outline maximum pulse intensity.
+@onready var outline_max_slider: HSlider = get_node_or_null("%OutlineMaxIntensitySlider")
+
+## Text input for manual outline maximum pulse intensity entry.
+@onready var outline_max_input: LineEdit = get_node_or_null("%OutlineMaxIntensityLine")
+
 
 ## Lifecycle initialization method configuring options and slider listeners.
 func _ready() -> void:
@@ -80,7 +147,7 @@ func _ready() -> void:
 	_connect_signals()
 
 
-## Populates [OptionButton] items for screen filters and colorblind presets.
+## Populates [OptionButton] items for screen filters, colorblind, and outline colors.
 func _populate_dropdowns() -> void:
 	if is_instance_valid(screen_filter_option):
 		screen_filter_option.clear()
@@ -94,6 +161,11 @@ func _populate_dropdowns() -> void:
 		]
 		for mode: String in colorblind_modes:
 			colorblind_option.add_item(mode)
+
+	if is_instance_valid(outline_color_option):
+		outline_color_option.clear()
+		for col_name: String in OUTLINE_COLOR_NAMES:
+			outline_color_option.add_item(col_name)
 
 
 ## Connects interactive controls and slider value adjustments.
@@ -122,6 +194,52 @@ func _connect_signals() -> void:
 		photosensitivity_toggle.toggled.connect(_on_photosensitivity_toggled)
 	if is_instance_valid(high_contrast_toggle):
 		high_contrast_toggle.toggled.connect(_on_high_contrast_toggled)
+
+	_connect_outline_controls()
+
+
+## Connects input signals for outline highlight mode buttons and shader parameter controls.
+func _connect_outline_controls() -> void:
+	if is_instance_valid(outline_off_button):
+		outline_off_button.pressed.connect(func() -> void: _on_outline_mode_selected(0))
+	if is_instance_valid(outline_always_button):
+		outline_always_button.pressed.connect(func() -> void: _on_outline_mode_selected(1))
+	if is_instance_valid(outline_focus_button):
+		outline_focus_button.pressed.connect(func() -> void: _on_outline_mode_selected(2))
+
+	if is_instance_valid(outline_color_option):
+		outline_color_option.item_selected.connect(_on_outline_color_selected)
+
+	_connect_slider(
+		outline_blink_slider,
+		outline_blink_input,
+		"outline_blink_speed",
+		0.0,
+		20.0,
+		"Accessibility",
+		false,
+		_apply_outline_blink_speed
+	)
+	_connect_slider(
+		outline_min_slider,
+		outline_min_input,
+		"outline_min_intensity",
+		0.0,
+		1.0,
+		"Accessibility",
+		false,
+		_apply_outline_min_intensity
+	)
+	_connect_slider(
+		outline_max_slider,
+		outline_max_input,
+		"outline_max_intensity",
+		0.0,
+		5.0,
+		"Accessibility",
+		false,
+		_apply_outline_max_intensity
+	)
 
 
 ## Reads stored visual options from [GlobalSettings] into UI components.
@@ -165,6 +283,156 @@ func load_settings() -> void:
 				)
 			)
 		)
+
+	_load_outline_settings()
+
+
+## Loads outline highlight preferences and broadcasts them to the active scene.
+func _load_outline_settings() -> void:
+	print("UI: Loading Outline Highlight settings.")
+	var outline_mode: int = int(
+		GlobalSettings.get_setting("Accessibility", "outline_mode", DEFAULT_OUTLINE_MODE)
+	)
+	_update_outline_buttons_ui(outline_mode)
+	_apply_outline_mode(outline_mode)
+
+	if is_instance_valid(outline_color_option):
+		var col_idx: int = int(
+			GlobalSettings.get_setting(
+				"Accessibility", "outline_color_index", DEFAULT_OUTLINE_COLOR_INDEX
+			)
+		)
+		outline_color_option.selected = col_idx
+		_apply_outline_color(col_idx)
+
+	_load_slider_custom(
+		outline_blink_slider,
+		outline_blink_input,
+		"outline_blink_speed",
+		DEFAULT_OUTLINE_BLINK_SPEED,
+		"Accessibility"
+	)
+	_apply_outline_blink_speed(
+		(
+			outline_blink_slider.value
+			if is_instance_valid(outline_blink_slider)
+			else DEFAULT_OUTLINE_BLINK_SPEED
+		)
+	)
+
+	_load_slider_custom(
+		outline_min_slider,
+		outline_min_input,
+		"outline_min_intensity",
+		DEFAULT_OUTLINE_MIN_INTENSITY,
+		"Accessibility"
+	)
+	_apply_outline_min_intensity(
+		(
+			outline_min_slider.value
+			if is_instance_valid(outline_min_slider)
+			else DEFAULT_OUTLINE_MIN_INTENSITY
+		)
+	)
+
+	_load_slider_custom(
+		outline_max_slider,
+		outline_max_input,
+		"outline_max_intensity",
+		DEFAULT_OUTLINE_MAX_INTENSITY,
+		"Accessibility"
+	)
+	_apply_outline_max_intensity(
+		(
+			outline_max_slider.value
+			if is_instance_valid(outline_max_slider)
+			else DEFAULT_OUTLINE_MAX_INTENSITY
+		)
+	)
+
+
+## Handles selection of an outline highlight mode by index.
+## [param mode] The chosen mode index: 0 = Off, 1 = Always, 2 = On Focus.
+func _on_outline_mode_selected(mode: int) -> void:
+	print("Player selected Outline Mode: ", mode)
+	GlobalSettings.save_setting("Accessibility", "outline_mode", mode)
+	_update_outline_buttons_ui(mode)
+	_apply_outline_mode(mode)
+
+
+## Updates button states and active colors according to the selected mode.
+## [param selected_mode] The currently active outline mode index.
+func _update_outline_buttons_ui(selected_mode: int) -> void:
+	print("UI: Updating Outline Mode buttons display to mode: ", selected_mode)
+	var buttons: Array[Button] = [outline_off_button, outline_always_button, outline_focus_button]
+	for i: int in range(buttons.size()):
+		var btn: Button = buttons[i]
+		if not is_instance_valid(btn):
+			continue
+		var is_active: bool = i == selected_mode
+		btn.button_pressed = is_active
+		btn.self_modulate = ACTIVE_BUTTON_COLOR if is_active else INACTIVE_BUTTON_COLOR
+
+
+## Broadcasts outline mode changes across the global event bus.
+## [param mode] The active outline mode index.
+func _apply_outline_mode(mode: int) -> void:
+	print("Engine: Applying Outline Mode: ", mode)
+	if has_node("/root/Events"):
+		var events: Node = get_node("/root/Events")
+		if events.has_signal("outline_mode_changed"):
+			events.outline_mode_changed.emit(mode)
+
+
+## Handles outline color selection from the dropdown menu.
+## [param index] The chosen color palette index.
+func _on_outline_color_selected(index: int) -> void:
+	print("Player selected Outline Color index: ", index)
+	GlobalSettings.save_setting("Accessibility", "outline_color_index", index)
+	_apply_outline_color(index)
+
+
+## Broadcasts target outline color changes across the event bus.
+## [param index] Outline color preset index.
+func _apply_outline_color(index: int) -> void:
+	if index < 0 or index >= OUTLINE_COLOR_VALUES.size():
+		return
+	var chosen_color: Color = OUTLINE_COLOR_VALUES[index]
+	print("Engine: Applying Outline Color: ", chosen_color)
+	if has_node("/root/Events"):
+		var events: Node = get_node("/root/Events")
+		if events.has_signal("outline_color_changed"):
+			events.outline_color_changed.emit(chosen_color)
+
+
+## Broadcasts target outline blink speed changes across the event bus.
+## [param val] Blink speed pulse value.
+func _apply_outline_blink_speed(val: float) -> void:
+	print("Engine: Applying Outline Blink Speed: ", val)
+	if has_node("/root/Events"):
+		var events: Node = get_node("/root/Events")
+		if events.has_signal("outline_blink_speed_changed"):
+			events.outline_blink_speed_changed.emit(val)
+
+
+## Broadcasts target outline minimum intensity changes.
+## [param val] Minimum pulse intensity value.
+func _apply_outline_min_intensity(val: float) -> void:
+	print("Engine: Applying Outline Min Intensity: ", val)
+	if has_node("/root/Events"):
+		var events: Node = get_node("/root/Events")
+		if events.has_signal("outline_min_intensity_changed"):
+			events.outline_min_intensity_changed.emit(val)
+
+
+## Broadcasts target outline maximum intensity changes.
+## [param val] Maximum pulse intensity value.
+func _apply_outline_max_intensity(val: float) -> void:
+	print("Engine: Applying Outline Max Intensity: ", val)
+	if has_node("/root/Events"):
+		var events: Node = get_node("/root/Events")
+		if events.has_signal("outline_max_intensity_changed"):
+			events.outline_max_intensity_changed.emit(val)
 
 
 ## Connects companion slider and LineEdit pairs with instant clear and revert on defocus.
@@ -248,8 +516,20 @@ func _connect_slider(
 ## [param key] Setting key identifier.
 ## [param default_val] Fallback float value.
 func _load_slider(slider: HSlider, input_box: LineEdit, key: String, default_val: float) -> void:
+	_load_slider_custom(slider, input_box, key, default_val, "Settings")
+
+
+## Reads a float setting from a specific section and synchronizes slider and text box.
+## [param slider] The target [HSlider] node.
+## [param input_box] The target [LineEdit] node.
+## [param key] Setting key identifier.
+## [param default_val] Fallback float value.
+## [param section] GlobalSettings category section.
+func _load_slider_custom(
+	slider: HSlider, input_box: LineEdit, key: String, default_val: float, section: String
+) -> void:
 	if is_instance_valid(slider):
-		var val: float = float(GlobalSettings.get_setting("Settings", key, default_val))
+		var val: float = float(GlobalSettings.get_setting(section, key, default_val))
 		slider.set_value_no_signal(val)
 		if is_instance_valid(input_box):
 			input_box.text = "%.2f" % val

@@ -21,46 +21,137 @@ signal effects_settings_changed
 @onready var motion_blur_slider: HSlider = %MotionBlurSlider
 ## Reference to the motion blur input [LineEdit].
 @onready var motion_blur_line: LineEdit = %MotionBlurLine
-## Reference to the SSAO quality [OptionButton].
-@onready var ssao_options: OptionButton = %SSAOOptionButton
-## Reference to SSIL quality [OptionButton].
-@onready var ssi_options: OptionButton = %SSIOptionButton
-## Reference to Screen Space Reflections quality [OptionButton].
-@onready var ssr_options: OptionButton = %SSROptionButton
-## Reference to the SDFGI quality [OptionButton].
-@onready var sdfgi_options: OptionButton = %SDFGIOptionButton
-## Reference to the volumetric fog quality [OptionButton].
-@onready var fog_options: OptionButton = %FogOptionButton
-## Reference to the glow quality [OptionButton].
-@onready var glow_options: OptionButton = %GlowOptionButton
+
+## SSAO toggle buttons.
+@onready var ssao_off_button: Button = %SSAOOffButton
+@onready var ssao_low_button: Button = %SSAOLowButton
+@onready var ssao_medium_button: Button = %SSAOMediumButton
+@onready var ssao_high_button: Button = %SSAOHighButton
+
+## SSIL toggle buttons.
+@onready var ssi_off_button: Button = %SSIOffButton
+@onready var ssi_low_button: Button = %SSILowButton
+@onready var ssi_medium_button: Button = %SSIMediumButton
+@onready var ssi_high_button: Button = %SSIHighButton
+
+## SSR toggle buttons.
+@onready var ssr_off_button: Button = %SSROffButton
+@onready var ssr_low_button: Button = %SSRLowButton
+@onready var ssr_medium_button: Button = %SSRMediumButton
+@onready var ssr_high_button: Button = %SSRHighButton
+
+## SDFGI toggle buttons.
+@onready var sdfgi_off_button: Button = %SDFGIOffButton
+@onready var sdfgi_low_button: Button = %SDFGILowButton
+@onready var sdfgi_medium_button: Button = %SDFGIMediumButton
+@onready var sdfgi_high_button: Button = %SDFGIHighButton
+
+## Volumetric fog toggle buttons.
+@onready var fog_off_button: Button = %FogOffButton
+@onready var fog_low_button: Button = %FogLowButton
+@onready var fog_medium_button: Button = %FogMediumButton
+@onready var fog_high_button: Button = %FogHighButton
+
+## Glow toggle buttons.
+@onready var glow_off_button: Button = %GlowOffButton
+@onready var glow_low_button: Button = %GlowLowButton
+@onready var glow_medium_button: Button = %GlowMediumButton
+@onready var glow_high_button: Button = %GlowHighButton
+
+## Internal lookup maps associating mode keys with their respective toggle buttons.
+var _ssao_btn_map: Dictionary[String, Button] = {}
+var _ssi_btn_map: Dictionary[String, Button] = {}
+var _ssr_btn_map: Dictionary[String, Button] = {}
+var _sdfgi_btn_map: Dictionary[String, Button] = {}
+var _fog_btn_map: Dictionary[String, Button] = {}
+var _glow_btn_map: Dictionary[String, Button] = {}
 
 
 ## Populates tonemapper algorithms and hooks widget state listeners.
 func _ready() -> void:
 	print("EffectsSection: Initializing effects UI.")
+	_setup_button_mappings()
 	_populate_dropdowns()
 	_connect_signals()
 	load_settings()
 
 
-## Populates all dropdown widgets with options declared in [VideoConfig].
+## Configures ButtonGroups and dictionary mappings for all multi-button effect rows.
+func _setup_button_mappings() -> void:
+	print("EffectsSection: Configuring button groups and mapping lookups.")
+	_ssao_btn_map = {
+		"Off": ssao_off_button,
+		"Low": ssao_low_button,
+		"Medium": ssao_medium_button,
+		"High": ssao_high_button,
+	}
+	_setup_group(_ssao_btn_map)
+
+	_ssi_btn_map = {
+		"Off": ssi_off_button,
+		"Low": ssi_low_button,
+		"Medium": ssi_medium_button,
+		"High": ssi_high_button,
+	}
+	_setup_group(_ssi_btn_map)
+
+	_ssr_btn_map = {
+		"Off": ssr_off_button,
+		"Low": ssr_low_button,
+		"Medium": ssr_medium_button,
+		"High": ssr_high_button,
+	}
+	_setup_group(_ssr_btn_map)
+
+	_sdfgi_btn_map = {
+		"Off": sdfgi_off_button,
+		"Low": sdfgi_low_button,
+		"Medium": sdfgi_medium_button,
+		"High": sdfgi_high_button,
+	}
+	_setup_group(_sdfgi_btn_map)
+
+	_fog_btn_map = {
+		"Off": fog_off_button,
+		"Low": fog_low_button,
+		"Medium": fog_medium_button,
+		"High": fog_high_button,
+	}
+	_setup_group(_fog_btn_map)
+
+	_glow_btn_map = {
+		"Off": glow_off_button,
+		"Low": glow_low_button,
+		"Medium": glow_medium_button,
+		"High": glow_high_button,
+	}
+	_setup_group(_glow_btn_map)
+
+
+## Assigns a unified [ButtonGroup] and pressed visual styles to buttons.
+func _setup_group(mapping: Dictionary[String, Button]) -> void:
+	var group: ButtonGroup = ButtonGroup.new()
+
+	var pressed_style: StyleBoxFlat = StyleBoxFlat.new()
+	pressed_style.bg_color = Color(0.06, 0.06, 0.07, 1.0)
+	pressed_style.border_color = Color(0.3, 0.3, 0.35, 1.0)
+	pressed_style.set_border_width_all(1)
+	pressed_style.set_corner_radius_all(3)
+
+	for btn: Button in mapping.values():
+		btn.toggle_mode = true
+		btn.button_group = group
+		btn.add_theme_stylebox_override("pressed", pressed_style)
+		btn.add_theme_stylebox_override("hover_pressed", pressed_style)
+		btn.add_theme_color_override("font_pressed_color", Color(0.7, 0.7, 0.7, 1.0))
+
+
+## Populates standalone dropdown widgets with options declared in [VideoConfig].
 func _populate_dropdowns() -> void:
-	print("EffectsSection: Populating all effects dropdown options.")
-	_populate_button(tonemap_options, VideoConfig.TONEMAP_MODES)
-	_populate_button(ssao_options, VideoConfig.SSAO_MODES)
-	_populate_button(ssi_options, VideoConfig.SSI_MODES)
-	_populate_button(ssr_options, VideoConfig.SSR_MODES)
-	_populate_button(sdfgi_options, VideoConfig.SDFGI_MODES)
-	_populate_button(fog_options, VideoConfig.FOG_MODES)
-	_populate_button(glow_options, VideoConfig.GLOW_MODES)
-
-
-## Fills target [OptionButton] with keys from a source [Dictionary].
-func _populate_button(button: OptionButton, source: Dictionary) -> void:
-	print("EffectsSection: Populating options for: ", button.name)
-	button.clear()
-	for key: Variant in source.keys():
-		button.add_item(str(key))
+	print("EffectsSection: Populating tonemap options.")
+	tonemap_options.clear()
+	for key: Variant in VideoConfig.TONEMAP_MODES.keys():
+		tonemap_options.add_item(str(key))
 
 
 ## Connects all widget selection signals to their corresponding handler methods.
@@ -73,12 +164,20 @@ func _connect_signals() -> void:
 	_connect_slider(motion_blur_slider, motion_blur_line, "motion_blur", 0.0, 1.5, 0.05)
 
 	debanding_checkbox.toggled.connect(_on_debanding_toggled)
-	ssao_options.item_selected.connect(_on_ssao_selected)
-	ssi_options.item_selected.connect(_on_ssi_selected)
-	ssr_options.item_selected.connect(_on_ssr_selected)
-	sdfgi_options.item_selected.connect(_on_sdfgi_selected)
-	fog_options.item_selected.connect(_on_fog_selected)
-	glow_options.item_selected.connect(_on_glow_selected)
+
+	_connect_button_row(_ssao_btn_map, "ssao")
+	_connect_button_row(_ssi_btn_map, "ssi")
+	_connect_button_row(_ssr_btn_map, "ssr")
+	_connect_button_row(_sdfgi_btn_map, "sdfgi")
+	_connect_button_row(_fog_btn_map, "volumetric_fog")
+	_connect_button_row(_glow_btn_map, "glow")
+
+
+## Connects pressed events for each button in a dictionary to save and emit settings.
+func _connect_button_row(mapping: Dictionary[String, Button], config_key: String) -> void:
+	for mode_key: String in mapping.keys():
+		var btn: Button = mapping[mode_key]
+		btn.pressed.connect(_on_effect_button_pressed.bind(config_key, mode_key))
 
 
 ## Connects DoF slider and line edit, setting dof_enabled based on magnitude.
@@ -209,23 +308,21 @@ func load_settings() -> void:
 	motion_blur_slider.set_value_no_signal(mb_val)
 	motion_blur_line.text = "%.2f" % mb_val
 
-	var saved_ssao: String = _load_effect_setting("ssao", VideoConfig.DEFAULT_SSAO)
-	_select_dropdown_text(ssao_options, saved_ssao)
+	_sync_button_row(_ssao_btn_map, "ssao", VideoConfig.DEFAULT_SSAO)
+	_sync_button_row(_ssi_btn_map, "ssi", VideoConfig.DEFAULT_SSI)
+	_sync_button_row(_ssr_btn_map, "ssr", VideoConfig.DEFAULT_SSR)
+	_sync_button_row(_sdfgi_btn_map, "sdfgi", VideoConfig.DEFAULT_SDFGI)
+	_sync_button_row(_fog_btn_map, "volumetric_fog", VideoConfig.DEFAULT_FOG)
+	_sync_button_row(_glow_btn_map, "glow", VideoConfig.DEFAULT_GLOW)
 
-	var saved_ssi: String = _load_effect_setting("ssi", VideoConfig.DEFAULT_SSI)
-	_select_dropdown_text(ssi_options, saved_ssi)
 
-	var saved_ssr: String = _load_effect_setting("ssr", VideoConfig.DEFAULT_SSR)
-	_select_dropdown_text(ssr_options, saved_ssr)
-
-	var saved_sdfgi: String = _load_effect_setting("sdfgi", VideoConfig.DEFAULT_SDFGI)
-	_select_dropdown_text(sdfgi_options, saved_sdfgi)
-
-	var saved_fog: String = _load_effect_setting("volumetric_fog", VideoConfig.DEFAULT_FOG)
-	_select_dropdown_text(fog_options, saved_fog)
-
-	var saved_glow: String = _load_effect_setting("glow", VideoConfig.DEFAULT_GLOW)
-	_select_dropdown_text(glow_options, saved_glow)
+## Reads a persisted setting and activates the corresponding toggle button in the row.
+func _sync_button_row(
+	mapping: Dictionary[String, Button], config_key: String, default_val: String
+) -> void:
+	var mode: String = _load_effect_setting(config_key, default_val)
+	for key: String in mapping.keys():
+		mapping[key].button_pressed = (key == mode)
 
 
 ## Safely reads an effect mode string, converting legacy booleans.
@@ -238,7 +335,7 @@ func _load_effect_setting(key: String, default_val: String) -> String:
 	return str(raw)
 
 
-## Updates dropdowns matching active preset data dictionary.
+## Updates widgets matching active preset data dictionary.
 func apply_preset_dict(data: Dictionary) -> void:
 	print("EffectsSection: Applying environment preset flags.")
 	if data.has("dof_amount"):
@@ -255,18 +352,18 @@ func apply_preset_dict(data: Dictionary) -> void:
 		motion_blur_slider.set_value_no_signal(mb_v)
 		motion_blur_line.text = "%.2f" % mb_v
 
-	if data.has("ssao"):
-		_select_dropdown_text(ssao_options, data["ssao"] as String)
-	if data.has("ssi"):
-		_select_dropdown_text(ssi_options, data["ssi"] as String)
-	if data.has("ssr"):
-		_select_dropdown_text(ssr_options, data["ssr"] as String)
-	if data.has("sdfgi"):
-		_select_dropdown_text(sdfgi_options, data["sdfgi"] as String)
-	if data.has("volumetric_fog"):
-		_select_dropdown_text(fog_options, data["volumetric_fog"] as String)
-	if data.has("glow"):
-		_select_dropdown_text(glow_options, data["glow"] as String)
+	if data.has("ssao") and _ssao_btn_map.has(str(data["ssao"])):
+		_ssao_btn_map[str(data["ssao"])].button_pressed = true
+	if data.has("ssi") and _ssi_btn_map.has(str(data["ssi"])):
+		_ssi_btn_map[str(data["ssi"])].button_pressed = true
+	if data.has("ssr") and _ssr_btn_map.has(str(data["ssr"])):
+		_ssr_btn_map[str(data["ssr"])].button_pressed = true
+	if data.has("sdfgi") and _sdfgi_btn_map.has(str(data["sdfgi"])):
+		_sdfgi_btn_map[str(data["sdfgi"])].button_pressed = true
+	if data.has("volumetric_fog") and _fog_btn_map.has(str(data["volumetric_fog"])):
+		_fog_btn_map[str(data["volumetric_fog"])].button_pressed = true
+	if data.has("glow") and _glow_btn_map.has(str(data["glow"])):
+		_glow_btn_map[str(data["glow"])].button_pressed = true
 
 
 ## Selects a dropdown item matching target label text.
@@ -292,49 +389,10 @@ func _on_debanding_toggled(toggled_on: bool) -> void:
 	effects_settings_changed.emit()
 
 
-## Handles Screen Space Ambient Occlusion quality selection.
-func _on_ssao_selected(index: int) -> void:
-	var text: String = ssao_options.get_item_text(index)
-	print("EffectsSection: SSAO quality selected: ", text)
-	GlobalSettings.save_setting("Settings", "ssao", text)
-	effects_settings_changed.emit()
-
-
-## Handles Screen Space Indirect Lighting quality selection.
-func _on_ssi_selected(index: int) -> void:
-	var text: String = ssi_options.get_item_text(index)
-	print("EffectsSection: SSIL quality selected: ", text)
-	GlobalSettings.save_setting("Settings", "ssi", text)
-	effects_settings_changed.emit()
-
-
-## Handles Screen Space Reflections quality selection.
-func _on_ssr_selected(index: int) -> void:
-	var text: String = ssr_options.get_item_text(index)
-	print("EffectsSection: SSR quality selected: ", text)
-	GlobalSettings.save_setting("Settings", "ssr", text)
-	effects_settings_changed.emit()
-
-
-## Handles SDFGI quality selection.
-func _on_sdfgi_selected(index: int) -> void:
-	var text: String = sdfgi_options.get_item_text(index)
-	print("EffectsSection: SDFGI quality selected: ", text)
-	GlobalSettings.save_setting("Settings", "sdfgi", text)
-	effects_settings_changed.emit()
-
-
-## Handles volumetric fog quality selection.
-func _on_fog_selected(index: int) -> void:
-	var text: String = fog_options.get_item_text(index)
-	print("EffectsSection: Volumetric fog quality selected: ", text)
-	GlobalSettings.save_setting("Settings", "volumetric_fog", text)
-	effects_settings_changed.emit()
-
-
-## Handles glow effect quality selection.
-func _on_glow_selected(index: int) -> void:
-	var text: String = glow_options.get_item_text(index)
-	print("EffectsSection: Glow quality selected: ", text)
-	GlobalSettings.save_setting("Settings", "glow", text)
-	effects_settings_changed.emit()
+## Handles any effect button press, saving setting and notifying pipeline.
+func _on_effect_button_pressed(config_key: String, mode_key: String) -> void:
+	print("EffectsSection: Pressed ", config_key, " -> ", mode_key)
+	var current_val: String = _load_effect_setting(config_key, "")
+	if current_val != mode_key:
+		GlobalSettings.save_setting("Settings", config_key, mode_key)
+		effects_settings_changed.emit()

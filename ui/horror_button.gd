@@ -107,7 +107,7 @@ static var active_horror_buttons: int = 0
 ## Mask texture used for flashlight illumination highlights.
 @export var flashlight_texture: Texture2D
 
-## Texture displayed on the button face for chapter previews and card graphics.
+## Texture displayed on button face for chapter previews and card graphics.
 @export var button_image: Texture2D = null:
 	set(value):
 		button_image = value
@@ -127,6 +127,7 @@ static var active_horror_buttons: int = 0
 @export var play_icon: Texture2D
 
 # --- INTERNAL STATE ---
+
 ## Internal or child texture rect representing the play icon overlay.
 var play_overlay: TextureRect
 
@@ -259,6 +260,7 @@ func _get_minimum_size() -> Vector2:
 
 ## Updates background shader or rect texture when a preview image is assigned.
 func _update_button_image() -> void:
+	print("HorrorButton: [", name, "] updating button preview image.")
 	if is_instance_valid(bg_material) and button_image != null:
 		bg_material.set_shader_parameter("blood_texture", button_image)
 
@@ -291,12 +293,14 @@ func _ready() -> void:
 	randomize()
 	original_scale = offset_transform_scale
 
-	button_down.connect(
+	Utilities.safe_connect(
+		button_down,
 		func() -> void:
 			print("HorrorButton: [", name, "] pressed.")
 			is_clicking = true
 	)
-	button_up.connect(
+	Utilities.safe_connect(
+		button_up,
 		func() -> void:
 			print("HorrorButton: [", name, "] released.")
 			is_clicking = false
@@ -349,8 +353,8 @@ func _ready() -> void:
 	else:
 		label_material = null
 
-	mouse_entered.connect(_on_mouse_entered)
-	mouse_exited.connect(_on_mouse_exited)
+	Utilities.safe_connect(mouse_entered, _on_mouse_entered)
+	Utilities.safe_connect(mouse_exited, _on_mouse_exited)
 
 	update_minimum_size()
 	_sync_child_rects()
@@ -361,7 +365,7 @@ func _ready() -> void:
 func _find_internal_nodes() -> void:
 	for child: Node in get_children():
 		if child is Control:
-			child.mouse_filter = Control.MOUSE_FILTER_IGNORE
+			(child as Control).mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 		if child is Label:
 			text_label = child as Label
@@ -395,18 +399,18 @@ func _configure_child_anchors() -> void:
 		text_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 
 
-## Synchronizes dimensions and pivots to child shaders and nodes.
+## Synchronizes dimensions and pivots to child shaders and nodes via [Utilities].
 func _sync_child_rects() -> void:
 	if size == _last_known_size:
 		return
 
 	_last_known_size = size
-	pivot_offset = size / 2.0
+	Utilities.center_control(self)
 
 	if is_instance_valid(shadow_rect):
-		shadow_rect.pivot_offset = size / 2.0
+		Utilities.center_control(shadow_rect)
 	if is_instance_valid(text_label):
-		text_label.pivot_offset = size / 2.0
+		Utilities.center_control(text_label)
 
 	if is_instance_valid(bg_material):
 		bg_material.set_shader_parameter("rect_size", size)
@@ -433,24 +437,22 @@ func _on_mouse_entered() -> void:
 		play_overlay.visible = true
 
 	if is_instance_valid(bg_material):
-		if is_instance_valid(shine_tween) and shine_tween.is_valid():
-			shine_tween.kill()
-
-		shine_tween = create_tween()
-		bg_material.set_shader_parameter("sweep_progress", -0.3)
-		(
-			shine_tween
-			. tween_method(
-				func(val: float) -> void:
-					if is_instance_valid(bg_material):
-						bg_material.set_shader_parameter("sweep_progress", val),
-				-0.3,
-				1.8,
-				0.55
+		shine_tween = Utilities.reset_tween(self, shine_tween)
+		if is_instance_valid(shine_tween):
+			bg_material.set_shader_parameter("sweep_progress", -0.3)
+			(
+				shine_tween
+				. tween_method(
+					func(val: float) -> void:
+						if is_instance_valid(bg_material):
+							bg_material.set_shader_parameter("sweep_progress", val),
+					-0.3,
+					1.8,
+					0.55
+				)
+				. set_trans(Tween.TRANS_QUAD)
+				. set_ease(Tween.EASE_OUT)
 			)
-			. set_trans(Tween.TRANS_QUAD)
-			. set_ease(Tween.EASE_OUT)
-		)
 
 
 ## Resets hover state, lowers z-index, and clears click tracker.
@@ -467,6 +469,8 @@ func _on_mouse_exited() -> void:
 
 
 ## Drives damped spring physics toward target scale vectors.
+## [param delta] Frame time delta in seconds.
+## [param target_scale] Desired scale Vector2.
 func _update_spring_scale(delta: float, target_scale: Vector2) -> void:
 	var delta_pos: Vector2 = offset_transform_scale - target_scale
 	var spring_force: Vector2 = (-spring_stiffness * delta_pos) - (spring_damping * scale_velocity)
@@ -491,6 +495,7 @@ func _update_shadow_projection() -> void:
 
 
 ## Processes 3D parallax tilting, spring scales, and glitch timers.
+## [param delta] Frame time delta in seconds.
 func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
@@ -529,7 +534,6 @@ func _process(delta: float) -> void:
 	current_tilt = current_tilt.lerp(tilt_target, response_speed * delta)
 	_update_shadow_projection()
 
-	# Process text heartbeat scaling per frame
 	_process_text_heartbeat()
 
 	if is_instance_valid(bg_material):
@@ -552,6 +556,7 @@ func _process(delta: float) -> void:
 
 
 ## Configures button as a chapter card using [ChapterData] properties.
+## [param chapter] Resource data container for chapter visual assets.
 func setup_chapter_card(chapter: ChapterData) -> void:
 	print("HorrorButton: [", name, "] setup chapter card executed.")
 	is_chapter_card = true

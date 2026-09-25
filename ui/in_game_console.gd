@@ -584,7 +584,8 @@ func _register_debug_commands() -> void:
 			"deathscreen",
 			"Previews a specific death screen effect.",
 			_cmd_deathscreen,
-			func() -> Array[String]: return ["ecg", "cave", "lava", "static", "glass"],
+			func() -> Array[String]:
+				return ["ecg", "cave", "lava", "static", "glass", "jitter", "burn"],
 			true
 		)
 	)
@@ -1198,7 +1199,7 @@ func _cmd_die(_args: PackedStringArray) -> void:
 func _cmd_deathscreen(args: PackedStringArray) -> void:
 	print("InGameConsole: Action Executing 'deathscreen' preview.")
 	if args.is_empty():
-		write("Usage: deathscreen <ecg|cave|lava|static|glass>", "yellow")
+		write("Usage: deathscreen <ecg|cave|lava|static|glass|jitter>", "yellow")
 		return
 
 	var screen_name: String = args[0].to_lower()
@@ -1230,8 +1231,12 @@ func _cmd_deathscreen(args: PackedStringArray) -> void:
 			chosen_effect = DeathScreen.EffectType.TV_STATIC
 		"glass":
 			chosen_effect = DeathScreen.EffectType.GLASS
+		"jitter":
+			chosen_effect = DeathScreen.EffectType.JITTER
+		"burn":
+			chosen_effect = DeathScreen.EffectType.BURN
 		_:
-			var err: String = "Unknown screen. Available: ecg, cave, lava, static, glass"
+			var err: String = "Unknown screen. Available: ecg, cave, lava, static, glass, jitter, burn"
 			write(err, "red")
 			return
 

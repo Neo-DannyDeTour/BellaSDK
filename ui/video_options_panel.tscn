@@ -53,11 +53,10 @@ size_flags_horizontal = 3
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-current_tab = 1
+current_tab = 0
 
 [node name="DisplaySection" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs" unique_id=1916241005]
 unique_name_in_owner = true
-visible = false
 layout_mode = 2
 script = ExtResource("2_pq2we")
 metadata/_tab_index = 0
@@ -72,10 +71,28 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Display Mode"
 
-[node name="DisplayOptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/DisplaySection/DisplaySection" unique_id=451077006]
+[node name="DisplayModeButtons" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/DisplaySection/DisplaySection" unique_id=1754202547]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="FullscreenButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/DisplaySection/DisplaySection/DisplayModeButtons" unique_id=1043622255]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+text = "Fullscreen"
+
+[node name="BorderlessButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/DisplaySection/DisplaySection/DisplayModeButtons" unique_id=2036388703]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Borderless"
+
+[node name="WindowedButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/DisplaySection/DisplaySection/DisplayModeButtons" unique_id=1607330326]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Windowed"
 
 [node name="MonitorLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/DisplaySection/DisplaySection" unique_id=1642937299]
 layout_mode = 2
@@ -102,10 +119,28 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "VSync"
 
-[node name="VSyncOptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/DisplaySection/DisplaySection" unique_id=1028915301]
+[node name="VSyncButtons" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/DisplaySection/DisplaySection" unique_id=1081538944]
+layout_mode = 2
+size_flags_horizontal = 3
+alignment = 1
+
+[node name="VSyncDisabledButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/DisplaySection/DisplaySection/VSyncButtons" unique_id=750635115]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+text = "Disabled"
+
+[node name="VSyncEnabledButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/DisplaySection/DisplaySection/VSyncButtons" unique_id=999793729]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Enabled"
+
+[node name="VSyncAdaptiveButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/DisplaySection/DisplaySection/VSyncButtons" unique_id=583106938]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Adaptive"
 
 [node name="FPSLimitLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/DisplaySection/DisplaySection" unique_id=514501971]
 layout_mode = 2
@@ -119,6 +154,7 @@ size_flags_horizontal = 3
 
 [node name="QualitySection" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs" unique_id=705787455]
 unique_name_in_owner = true
+visible = false
 layout_mode = 2
 script = ExtResource("3_jvqaf")
 metadata/_tab_index = 1
@@ -135,10 +171,33 @@ text = "Quality Preset"
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="PresetOptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=48319492]
+[node name="PresetButtons" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=48319492]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PresetLowButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer/PresetButtons" unique_id=191010001]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+text = "Low"
+
+[node name="PresetMediumButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer/PresetButtons" unique_id=191010002]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Medium"
+
+[node name="PresetHighButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer/PresetButtons" unique_id=191010003]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "High"
+
+[node name="PresetUltraButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer/PresetButtons" unique_id=191010004]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Ultra"
 
 [node name="ShadowsLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=1015290028]
 layout_mode = 2
@@ -148,9 +207,33 @@ text = "Shadow Quality"
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="ShadowOptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=853344946]
+[node name="ShadowButtons" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=853344946]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ShadowOffButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer/ShadowButtons" unique_id=191020001]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
+text = "Off"
+
+[node name="ShadowLowButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer/ShadowButtons" unique_id=191020002]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Low"
+
+[node name="ShadowMediumButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer/ShadowButtons" unique_id=191020003]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Med"
+
+[node name="ShadowHighButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer/ShadowButtons" unique_id=191020004]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "High"
 
 [node name="ShadowFilterLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=71974996]
 layout_mode = 2
@@ -159,13 +242,37 @@ text = "Shadow Softness"
 [node name="Control19" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=1702677994]
 layout_mode = 2
 
-[node name="ShadowFilterOptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=1755260193]
+[node name="ShadowFilterButtons" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=1755260193]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ShadowFilterHardButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer/ShadowFilterButtons" unique_id=191030001]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
+text = "Hard"
+
+[node name="ShadowFilterLowButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer/ShadowFilterButtons" unique_id=191030002]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Low"
+
+[node name="ShadowFilterMediumButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer/ShadowFilterButtons" unique_id=191030003]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Med"
+
+[node name="ShadowFilterHighButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer/ShadowFilterButtons" unique_id=191030004]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "High"
 
 [node name="VRSLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=179240691]
 layout_mode = 2
-text = "VSR"
+text = "VRS"
 
 [node name="Control3" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=1331640161]
 layout_mode = 2
@@ -181,9 +288,33 @@ text = "Texture Filtering"
 [node name="Control4" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=856873588]
 layout_mode = 2
 
-[node name="TextureFilterOptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=151009394]
+[node name="TextureFilterButtons" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=151009394]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TexFilterNearestButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer/TextureFilterButtons" unique_id=191040001]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
+text = "Nearest"
+
+[node name="TexFilterLinearButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer/TextureFilterButtons" unique_id=191040002]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Linear"
+
+[node name="TexFilterLinMipButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer/TextureFilterButtons" unique_id=191040003]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Lin Mip"
+
+[node name="TexFilterNearMipButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer/TextureFilterButtons" unique_id=191040004]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Near Mip"
 
 [node name="AntiAliasingLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=860707510]
 layout_mode = 2
@@ -205,9 +336,33 @@ text = "FSR Mode"
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="FSROptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=672198012]
+[node name="FSRButtons" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=672198012]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="FSRNativeButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer/FSRButtons" unique_id=191050001]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
+text = "Native"
+
+[node name="FSRQualityButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer/FSRButtons" unique_id=191050002]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Quality"
+
+[node name="FSRBalancedButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer/FSRButtons" unique_id=191050003]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Balanced"
+
+[node name="FSRPerfButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer/FSRButtons" unique_id=191050004]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Perform"
 
 [node name="AnisotropyLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/QualitySection/GridContainer" unique_id=1742282786]
 layout_mode = 2
@@ -373,10 +528,33 @@ text = "Ambient Occlusion (SSAO)"
 [node name="Control5" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=699393098]
 layout_mode = 2
 
-[node name="SSAOOptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1376402346]
+[node name="SSAOButtons" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1376402346]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SSAOOffButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/SSAOButtons" unique_id=184010001]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+text = "Off"
+
+[node name="SSAOLowButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/SSAOButtons" unique_id=184010002]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Low"
+
+[node name="SSAOMediumButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/SSAOButtons" unique_id=184010003]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Medium"
+
+[node name="SSAOHighButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/SSAOButtons" unique_id=184010004]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "High"
 
 [node name="SSILabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1431800039]
 layout_mode = 2
@@ -386,10 +564,33 @@ text = "SSI"
 [node name="Control6" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1317389459]
 layout_mode = 2
 
-[node name="SSIOptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=739962485]
+[node name="SSIButtons" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=739962485]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SSIOffButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/SSIButtons" unique_id=184020001]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+text = "Off"
+
+[node name="SSILowButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/SSIButtons" unique_id=184020002]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Low"
+
+[node name="SSIMediumButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/SSIButtons" unique_id=184020003]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Med"
+
+[node name="SSIHighButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/SSIButtons" unique_id=184020004]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "High"
 
 [node name="SSRLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1861964047]
 layout_mode = 2
@@ -399,10 +600,33 @@ text = "Screen Space Reflections"
 [node name="Control7" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1164794429]
 layout_mode = 2
 
-[node name="SSROptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1698568236]
+[node name="SSRButtons" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1698568236]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SSROffButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/SSRButtons" unique_id=184030001]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+text = "Off"
+
+[node name="SSRLowButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/SSRButtons" unique_id=184030002]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Low"
+
+[node name="SSRMediumButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/SSRButtons" unique_id=184030003]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Med"
+
+[node name="SSRHighButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/SSRButtons" unique_id=184030004]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "High"
 
 [node name="SDFGILabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=856357752]
 layout_mode = 2
@@ -412,10 +636,33 @@ text = "Global Illumination"
 [node name="Control8" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=2034201923]
 layout_mode = 2
 
-[node name="SDFGIOptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=634287788]
+[node name="SDFGIButtons" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=634287788]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="SDFGIOffButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/SDFGIButtons" unique_id=184040001]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+text = "Off"
+
+[node name="SDFGILowButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/SDFGIButtons" unique_id=184040002]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Low"
+
+[node name="SDFGIMediumButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/SDFGIButtons" unique_id=184040003]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Med"
+
+[node name="SDFGIHighButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/SDFGIButtons" unique_id=184040004]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "High"
 
 [node name="FogLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=812546211]
 layout_mode = 2
@@ -425,10 +672,33 @@ text = "Fog"
 [node name="Control9" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=216763173]
 layout_mode = 2
 
-[node name="FogOptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=598623393]
+[node name="FogButtons" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=598623393]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="FogOffButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/FogButtons" unique_id=184050001]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+text = "Off"
+
+[node name="FogLowButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/FogButtons" unique_id=184050002]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Low"
+
+[node name="FogMediumButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/FogButtons" unique_id=184050003]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Med"
+
+[node name="FogHighButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/FogButtons" unique_id=184050004]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "High"
 
 [node name="GlowLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1535427844]
 layout_mode = 2
@@ -437,10 +707,33 @@ text = "Glow"
 [node name="Control10" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=161550917]
 layout_mode = 2
 
-[node name="GlowOptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=2087257755]
+[node name="GlowButtons" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=2087257755]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="GlowOffButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/GlowButtons" unique_id=184060001]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+text = "Off"
+
+[node name="GlowLowButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/GlowButtons" unique_id=184060002]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Low"
+
+[node name="GlowMediumButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/GlowButtons" unique_id=184060004]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Med"
+
+[node name="GlowHighButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/GlowButtons" unique_id=184060003]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "High"
 
 [node name="HardwareSection" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs" unique_id=881455893]
 unique_name_in_owner = true
@@ -455,7 +748,7 @@ columns = 2
 
 [node name="GPUAdapterLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/HardwareSection/GridContainer" unique_id=613857809]
 layout_mode = 2
-text = "Quality Preset"
+text = "Graphics Card"
 
 [node name="GPUAdapterOptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/HardwareSection/GridContainer" unique_id=1816861026]
 unique_name_in_owner = true
@@ -466,9 +759,27 @@ size_flags_horizontal = 3
 layout_mode = 2
 text = "Renderer"
 
-[node name="RendererOptionButton" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/HardwareSection/GridContainer" unique_id=995062922]
+[node name="RendererButtons" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/HardwareSection/GridContainer" unique_id=995062922]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="RendererForwardButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/HardwareSection/GridContainer/RendererButtons" unique_id=185001001]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
+text = "Forward+"
+
+[node name="RendererMobileButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/HardwareSection/GridContainer/RendererButtons" unique_id=185001002]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Mobile"
+
+[node name="RendererCompatButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/HardwareSection/GridContainer/RendererButtons" unique_id=185001003]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Compatibility"
 
 [node name="AutoTuneLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/HardwareSection/GridContainer" unique_id=355278480]
 layout_mode = 2
@@ -478,6 +789,7 @@ text = "Auto Tune"
 [node name="AutoTuneButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/HardwareSection/GridContainer" unique_id=1119118289]
 unique_name_in_owner = true
 layout_mode = 2
+text = "Auto-Tune for 60 FPS"
 
 [node name="VideoDioramaSocket" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=624873472]
 unique_name_in_owner = true

@@ -174,10 +174,15 @@ func _start_shader_warmup() -> void:
 	camera.cull_mask = 1
 	_warmup_viewport.add_child(camera)
 
-	var light: DirectionalLight3D = DirectionalLight3D.new()
-	light.shadow_enabled = true
-	light.rotation_degrees = Vector3(-45.0, 45.0, 0.0)
-	_warmup_viewport.add_child(light)
+	var dir_light: DirectionalLight3D = DirectionalLight3D.new()
+	dir_light.shadow_enabled = true
+	dir_light.rotation_degrees = Vector3(-45.0, 45.0, 0.0)
+	_warmup_viewport.add_child(dir_light)
+
+	var omni_light: OmniLight3D = OmniLight3D.new()
+	omni_light.position = Vector3(0.0, 1.0, 1.0)
+	omni_light.omni_range = 5.0
+	_warmup_viewport.add_child(omni_light)
 
 	_warmup_container_3d = Node3D.new()
 	_warmup_viewport.add_child(_warmup_container_3d)
@@ -236,7 +241,6 @@ func _compile_materials_budgeted() -> void:
 
 ## Applies [param mat] to dummy nodes to trigger GPU shader compilation.
 func _warmup_material(mat: Material) -> void:
-	#print("LoadingScreen: Warming shader pipeline for: ", mat.resource_name)
 	var is_2d: bool = mat is CanvasItemMaterial
 
 	if mat is ShaderMaterial:
@@ -315,7 +319,6 @@ func _finalize_scene_transition() -> void:
 		target_env.sdfgi_enabled = false
 		print("LoadingScreen: Staged SDFGI off on duplicated environment.")
 
-	# Add scene to tree
 	root.add_child(new_scene)
 	get_tree().current_scene = new_scene
 
@@ -325,7 +328,6 @@ func _finalize_scene_transition() -> void:
 			player_node.locomotion_component.set_physics_active(false)
 		player_node.velocity = Vector3.ZERO
 
-	# Unpause first so PhysicsServer3D can process CSG collision generation
 	get_tree().paused = false
 
 	await get_tree().physics_frame
@@ -335,8 +337,6 @@ func _finalize_scene_transition() -> void:
 	if is_instance_valid(player_node):
 		_snap_player_to_floor(player_node)
 		player_node.activate_gameplay_camera()
-		if is_instance_valid(player_node.locomotion_component):
-			player_node.locomotion_component.set_physics_active(true)
 
 	for frame_idx: int in range(SETTLING_FRAMES):
 		await get_tree().process_frame
@@ -345,12 +345,17 @@ func _finalize_scene_transition() -> void:
 		target_env.sdfgi_enabled = true
 		print("LoadingScreen: Camera settled. SDFGI enabled smoothly.")
 		await get_tree().process_frame
+		await get_tree().process_frame
 
 	_reapply_active_video_settings()
 
 	var fade_tween: Tween = create_tween()
 	fade_tween.tween_property(visual_root, "modulate:a", 0.0, 0.25)
 	await fade_tween.finished
+
+	if is_instance_valid(player_node) and is_instance_valid(player_node.locomotion_component):
+		player_node.locomotion_component.set_physics_active(true)
+		print("LoadingScreen: Re-enabled player locomotion after visual fade.")
 
 	print("LoadingScreen: Transition complete. Freeing loading screen.")
 	queue_free()
@@ -429,14 +434,26 @@ func _reapply_active_video_settings() -> void:
 	VideoApplier.apply_viewport_pipeline(get_tree(), get_viewport(), config)
 
 
-## Locates the active [WorldEnvironment] inside [param target] branch.
+## Locates [WorldEnvironment] safely even if [param target] is not yet inside the tree.
 func _find_world_environment(target: Node) -> WorldEnvironment:
 	print("LoadingScreen: Locating WorldEnvironment in scene hierarchy.")
 	if target is WorldEnvironment:
 		return target as WorldEnvironment
+
+	var direct_env: WorldEnvironment = (
+		target.get_node_or_null("WorldEnvironment") as WorldEnvironment
+	)
+	if is_instance_valid(direct_env):
+		return direct_env
+
+	for child: Node in target.get_children():
+		if child is WorldEnvironment:
+			return child as WorldEnvironment
+
 	var env_nodes: Array[Node] = target.find_children("", "WorldEnvironment", true, false)
 	if not env_nodes.is_empty():
 		return env_nodes[0] as WorldEnvironment
+
 	return null
 
 
@@ -449,6 +466,7 @@ func _snap_player_to_floor(player: Player) -> void:
 	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
 		ray_origin, ray_end, 1
 	)
+	query.exclude = [player.get_rid()]
 	var hit: Dictionary = space_state.intersect_ray(query)
 	if not hit.is_empty():
 		player.global_position = (hit.position as Vector3) + Vector3(0.0, 0.05, 0.0)

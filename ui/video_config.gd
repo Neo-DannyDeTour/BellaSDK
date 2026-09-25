@@ -223,6 +223,7 @@ const FOG_MODES: Dictionary = {
 const GLOW_MODES: Dictionary = {
 	"Off": {"enabled": false, "bicubic": false},
 	"Low": {"enabled": true, "bicubic": false},
+	"Medium": {"enabled": true, "bicubic": false},
 	"High": {"enabled": true, "bicubic": true}
 }
 
@@ -247,7 +248,7 @@ const PRESETS: Dictionary = {
 		"sdfgi": "Off",
 		"volumetric_fog": "Off",
 		"glow": "Off",
-		"mesh_lod_threshold": 2.0
+		"mesh_lod_threshold": 32.0
 	},
 	"Medium":
 	{
@@ -268,7 +269,7 @@ const PRESETS: Dictionary = {
 		"sdfgi": "Off",
 		"volumetric_fog": "Off",
 		"glow": "Low",
-		"mesh_lod_threshold": 1.5
+		"mesh_lod_threshold": 16.0
 	},
 	"High":
 	{
@@ -289,7 +290,7 @@ const PRESETS: Dictionary = {
 		"sdfgi": "Low",
 		"volumetric_fog": "Off",
 		"glow": "High",
-		"mesh_lod_threshold": 1.0
+		"mesh_lod_threshold": 4.0
 	},
 	"Ultra":
 	{
@@ -310,6 +311,6 @@ const PRESETS: Dictionary = {
 		"sdfgi": "High",
 		"volumetric_fog": "High",
 		"glow": "High",
-		"mesh_lod_threshold": 0.5
+		"mesh_lod_threshold": 0.0
 	}
 }

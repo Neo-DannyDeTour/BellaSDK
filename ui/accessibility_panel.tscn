@@ -54,7 +54,7 @@ horizontal_scroll_mode = 0
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-current_tab = 3
+current_tab = 1
 
 [node name="Vision & Contrast" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs" unique_id=984845854]
 visible = false
@@ -172,7 +172,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="Visuals & Shaders" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs" unique_id=1903507557]
-visible = false
 layout_mode = 2
 metadata/_tab_index = 1
 
@@ -301,6 +300,98 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="OutlineLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=197427039]
+layout_mode = 2
+text = "Target Outlines"
+
+[node name="Spacer_Outline" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1281098152]
+layout_mode = 2
+
+[node name="OutlineButtonsContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1318920045]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+alignment = 2
+
+[node name="OutlineOffButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlineButtonsContainer" unique_id=711505982]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Off"
+
+[node name="OutlineAlwaysButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlineButtonsContainer" unique_id=1543072400]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Always"
+
+[node name="OutlineFocusButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlineButtonsContainer" unique_id=1982686890]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "On Focus"
+
+[node name="OutlineColorLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=877029254]
+layout_mode = 2
+text = "Outline Color"
+
+[node name="Spacer_OutlineColor" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=407926163]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="OutlineColorOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=300541257]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="OutlineBlinkSpeedLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1314562797]
+layout_mode = 2
+text = "Outline Blink Speed"
+
+[node name="OutlineBlinkSpeedLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1533567550]
+unique_name_in_owner = true
+layout_mode = 2
+text = "8.0"
+
+[node name="OutlineBlinkSpeedSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1642046806]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 20.0
+step = 0.1
+value = 8.0
+
+[node name="OutlineMinIntensityLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1427949610]
+layout_mode = 2
+text = "Outline Min Intensity"
+
+[node name="OutlineMinIntensityLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1377116460]
+unique_name_in_owner = true
+layout_mode = 2
+text = "0.20"
+
+[node name="OutlineMinIntensitySlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=564650649]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 5.0
+step = 0.05
+value = 0.2
+
+[node name="OutlineMaxIntensityLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1823484351]
+layout_mode = 2
+text = "Outline Max Intensity"
+
+[node name="OutlineMaxIntensityLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=849111463]
+unique_name_in_owner = true
+layout_mode = 2
+text = "1.0"
+
+[node name="OutlineMaxIntensitySlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1509498055]
+unique_name_in_owner = true
+layout_mode = 2
+max_value = 5.0
+step = 0.05
+value = 1.0
+
 [node name="Display & UI" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs" unique_id=581747133]
 visible = false
 layout_mode = 2
@@ -372,6 +463,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="Controls" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs" unique_id=72797506]
+visible = false
 layout_mode = 2
 metadata/_tab_index = 3
 

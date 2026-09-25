@@ -6,7 +6,7 @@ extends CanvasLayer
 enum DeathState { CROUCHING, WALKING, SPRINTING }
 
 ## Visual effect types available for the death sequence presentation.
-enum EffectType { ECG, LAVA, CAVE_TUNNEL, TV_STATIC, GLASS }
+enum EffectType { ECG, LAVA, CAVE_TUNNEL, TV_STATIC, GLASS, JITTER, BURN }
 
 ## Randomized messages displayed to the player upon dying.
 const DEATH_MESSAGES: Array[String] = [
@@ -81,6 +81,12 @@ static var _effect_pool: Array[EffectType] = []
 ## Full screen square glass distortion overlay node.
 @onready var glass_overlay: ColorRect = $GlassOverlay
 
+## Full screen horizontal jitter distortion overlay node.
+@onready var jitter_overlay: ColorRect = $JitterOverlay
+
+## Full screen digital burn shader overlay node.
+@onready var burn_overlay: ColorRect = $BurnOverlay
+
 ## Pain vignette flash overlay node.
 @onready var pain_overlay: ColorRect = $PainOverlay
 
@@ -147,6 +153,12 @@ func _ready() -> void:
 
 	if is_instance_valid(glass_overlay):
 		glass_overlay.hide()
+
+	if is_instance_valid(jitter_overlay):
+		jitter_overlay.hide()
+
+	if is_instance_valid(burn_overlay):
+		burn_overlay.hide()
 
 	if is_instance_valid(pain_overlay):
 		pain_overlay.hide()
@@ -246,6 +258,10 @@ func play_death_sequence(death_state: int = DeathState.WALKING) -> void:
 		tv_static_overlay.hide()
 	if is_instance_valid(glass_overlay):
 		glass_overlay.hide()
+	if is_instance_valid(jitter_overlay):
+		jitter_overlay.hide()
+	if is_instance_valid(burn_overlay):
+		burn_overlay.hide()
 
 	match _active_effect:
 		EffectType.ECG:
@@ -258,6 +274,10 @@ func play_death_sequence(death_state: int = DeathState.WALKING) -> void:
 			_start_tv_static_effect()
 		EffectType.GLASS:
 			_start_glass_effect()
+		EffectType.JITTER:
+			_start_jitter_effect()
+		EffectType.BURN:
+			_start_burn_effect()
 
 	get_tree().create_timer(3.0).timeout.connect(_allow_skipping)
 	get_tree().create_timer(10.0).timeout.connect(_return_to_main_menu)
@@ -295,6 +315,10 @@ func play_death_preview(effect: EffectType, death_state: int = DeathState.WALKIN
 		tv_static_overlay.hide()
 	if is_instance_valid(glass_overlay):
 		glass_overlay.hide()
+	if is_instance_valid(jitter_overlay):
+		jitter_overlay.hide()
+	if is_instance_valid(burn_overlay):
+		burn_overlay.hide()
 
 	match _active_effect:
 		EffectType.ECG:
@@ -307,6 +331,10 @@ func play_death_preview(effect: EffectType, death_state: int = DeathState.WALKIN
 			_start_tv_static_effect()
 		EffectType.GLASS:
 			_start_glass_effect()
+		EffectType.JITTER:
+			_start_jitter_effect()
+		EffectType.BURN:
+			_start_burn_effect()
 
 	var close_preview: Callable = func() -> void:
 		print("DeathScreen: Preview complete, restoring game.")
@@ -316,6 +344,87 @@ func play_death_preview(effect: EffectType, death_state: int = DeathState.WALKIN
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 	get_tree().create_timer(4.5).timeout.connect(close_preview)
+
+
+## Runs digital burn shader transition ramping into pure black.
+func _start_burn_effect() -> void:
+	print("DeathScreen: _start_burn_effect() - Starting burn transition.")
+	if not is_instance_valid(burn_overlay):
+		push_error("DeathScreen: burn_overlay node is missing.")
+		return
+
+	burn_overlay.show()
+	burn_overlay.modulate.a = 1.0
+
+	var mat: ShaderMaterial = burn_overlay.material as ShaderMaterial
+	if not is_instance_valid(mat):
+		push_error("DeathScreen: burn_overlay material is invalid.")
+		return
+
+	mat.set_shader_parameter("threshold", 1.2)
+
+	var burn_tween: Tween = create_tween()
+	(
+		burn_tween
+		. tween_property(mat, "shader_parameter/threshold", -0.2, 2.5)
+		. set_trans(Tween.TRANS_QUAD)
+		. set_ease(Tween.EASE_IN)
+	)
+
+	if is_instance_valid(death_label):
+		var label_tween: Tween = create_tween()
+		label_tween.tween_interval(2.0)
+		label_tween.tween_property(death_label, "modulate:a", 1.0, 1.2)
+
+
+## Runs horizontal jitter glitch displacement ramping into pure black.
+func _start_jitter_effect() -> void:
+	print("DeathScreen: _start_jitter_effect() - Starting jitter transition.")
+	if not is_instance_valid(jitter_overlay):
+		push_error("DeathScreen: jitter_overlay node is missing.")
+		return
+
+	jitter_overlay.show()
+	jitter_overlay.modulate.a = 1.0
+
+	var mat: ShaderMaterial = jitter_overlay.material as ShaderMaterial
+	if not is_instance_valid(mat):
+		push_error("DeathScreen: jitter_overlay material is invalid.")
+		return
+
+	mat.set_shader_parameter("power", 0.0)
+	mat.set_shader_parameter("intensity", 0.0)
+	mat.set_shader_parameter("black_fade", 0.0)
+
+	_play_static_audio()
+
+	var jitter_tween: Tween = create_tween().set_parallel(true)
+	(
+		jitter_tween
+		. tween_property(mat, "shader_parameter/power", 0.9, 2.5)
+		. set_trans(Tween.TRANS_QUAD)
+		. set_ease(Tween.EASE_IN)
+	)
+	(
+		jitter_tween
+		. tween_property(mat, "shader_parameter/intensity", 1.0, 2.0)
+		. set_trans(Tween.TRANS_QUAD)
+		. set_ease(Tween.EASE_IN)
+	)
+
+	var fade_tween: Tween = create_tween()
+	fade_tween.tween_interval(0.8)
+	(
+		fade_tween
+		. tween_property(mat, "shader_parameter/black_fade", 1.0, 1.8)
+		. set_trans(Tween.TRANS_QUAD)
+		. set_ease(Tween.EASE_IN)
+	)
+
+	if is_instance_valid(death_label):
+		var label_tween: Tween = create_tween()
+		label_tween.tween_interval(2.0)
+		label_tween.tween_property(death_label, "modulate:a", 1.0, 1.2)
 
 
 ## Runs full-screen glass distortion ramping into darkness.

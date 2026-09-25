@@ -7,6 +7,8 @@
 [ext_resource type="Shader" uid="uid://b02wdmnk5w5s" path="res://vfx/death_screen_tv_static.gdshader" id="5_h4ie6"]
 [ext_resource type="Texture2D" uid="uid://bpputyrxx77ye" path="res://assets/images/Death_Screen_Mannequin.jpeg" id="6_ynprq"]
 [ext_resource type="Shader" uid="uid://boxq2fnrk6fle" path="res://ui/death_glass_screen.gdshader" id="7_ynprq"]
+[ext_resource type="Shader" uid="uid://bjmfgg3aka7a4" path="res://ui/death_screen_jitter.gdshader" id="8_usilr"]
+[ext_resource type="Shader" uid="uid://c3fp1usejrloc" path="res://vfx/death_screen_burn.gdshader" id="9_jqi4p"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_g3utg"]
 shader = ExtResource("2_g3utg")
@@ -70,6 +72,18 @@ shader_parameter/lens_curve = 0.15
 shader_parameter/distortion_mix = 0.0
 shader_parameter/black_fade = 0.0
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_1j7qv"]
+shader = ExtResource("8_usilr")
+shader_parameter/power = 0.0
+shader_parameter/intensity = 0.0
+shader_parameter/black_fade = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_usilr"]
+shader = ExtResource("9_jqi4p")
+shader_parameter/threshold = 1.2
+shader_parameter/first_color = Color(0.8, 0.4, 0.2, 1)
+shader_parameter/second_color = Color(0.5, 0, 0, 1)
+
 [node name="DeathScreen" type="CanvasLayer" unique_id=1910211973 groups=["death_screen"]]
 script = ExtResource("1_36x74")
 
@@ -125,6 +139,22 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="PainOverlay" type="ColorRect" parent="." unique_id=1681156949]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="JitterOverlay" type="ColorRect" parent="." unique_id=89068652]
+material = SubResource("ShaderMaterial_1j7qv")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BurnOverlay" type="ColorRect" parent="." unique_id=347855258]
+material = SubResource("ShaderMaterial_usilr")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
