@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://ckx2iw4xdsaqd"]
 
 [ext_resource type="PackedScene" uid="uid://mqae3mth7tfx" path="res://interactables/pickable_object.tscn" id="1_cgl81"]
-[ext_resource type="PackedScene" uid="uid://dxjvfecyxxbn5" path="res://assets/VisTEST/2. Modular_Models/Props/barrel_green.tscn" id="2_nag1q"]
 
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_cgl81"]
 height = 1.2494141

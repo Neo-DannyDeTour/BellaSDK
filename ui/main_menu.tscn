@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://c261acv3ex6c0"]
 
 [ext_resource type="Script" uid="uid://4nkt0134wccl" path="res://ui/main_menu.gd" id="1_2o76q"]
-[ext_resource type="Texture2D" uid="uid://dutrfuowe3e1q" path="res://assets/images/Concept/Key_art.PNG" id="2_iyrh0"]
 [ext_resource type="Texture2D" uid="uid://2txo48fixqan" path="res://assets/images/MainMenuPlate.png" id="3_8jgmr"]
 [ext_resource type="PackedScene" uid="uid://8m8l0uplgvm" path="res://ui/HorrorButton.tscn" id="3_kaxbk"]
 [ext_resource type="Script" uid="uid://b53ak0y1rcvq4" path="res://ui/settings_search.gd" id="5_kaxbk"]

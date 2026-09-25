@@ -115,7 +115,7 @@ func test_inner_area_fully_in_room() -> void:
 	grid[Vector3i(2, 0, 3)] = 1
 	grid[Vector3i(3, 0, 3)] = 1
 
-	var is_valid: bool = bool(generator.call("_is_inner_area_fully_in_room", 2, 3, 2, 3, 0))
+	var is_valid: bool = generator.call("_is_inner_area_fully_in_room", 2, 3, 2, 3, 0) == true
 	assert_true(is_valid, "Inner area surrounded by room cells should be valid.")
 
 

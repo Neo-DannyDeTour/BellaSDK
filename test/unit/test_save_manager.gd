@@ -52,8 +52,8 @@ class MockSaveManager:
 
 	## Sorts save entries by favorite flag and ID descending.
 	func _sort_saves(a: Dictionary, b: Dictionary) -> bool:
-		var a_fav: bool = bool(a.get("is_favorite", false))
-		var b_fav: bool = bool(b.get("is_favorite", false))
+		var a_fav: bool = a.get("is_favorite", false) == true
+		var b_fav: bool = b.get("is_favorite", false) == true
 		if a_fav != b_fav:
 			return a_fav
 		var a_id: int = int(a.get("id", 0))

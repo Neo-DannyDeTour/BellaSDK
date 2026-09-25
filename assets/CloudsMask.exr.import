@@ -10,7 +10,7 @@ metadata={
 
 [deps]
 
-source_file="res://CloudsMask.exr"
+source_file="res://assets/CloudsMask.exr"
 dest_files=["res://.godot/imported/CloudsMask.exr-a4dc82dfc63f5190d03b4cb0c51c469e.ctex"]
 
 [params]
