@@ -77,6 +77,7 @@ const SCREEN_FILTER_REGISTRY: Array[Dictionary] = [
 		"index": 23,
 		"path": "res://vfx/mandelbrot.gdshader"
 	},
+	{"id": "oldphoto", "name": "OldPhoto", "index": 25, "path": "res://vfx/old_photo.gdshader"},
 	{"id": "80sfantasy", "name": "80sFantasy", "index": 24, "path": "res://vfx/80sfantasy.gdshader"}
 ]
 
