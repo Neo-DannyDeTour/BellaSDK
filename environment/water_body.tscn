@@ -18,7 +18,7 @@ seamless = true
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ugvly"]
 render_priority = 0
 shader = ExtResource("1_70utq")
-shader_parameter/water_time = 6727.067
+shader_parameter/water_time = 380.864
 shader_parameter/water_size = Vector3(1, 1, 1)
 shader_parameter/show_side_walls = false
 shader_parameter/shallow_color = Color(0.22, 0.65, 0.78, 1)
@@ -81,10 +81,6 @@ mesh = SubResource("BoxMesh_aaijj")
 script = ExtResource("2_ejx8y")
 water_size = Vector3(1, 1, 1)
 splash_sound = ExtResource("6_266v4")
-auto_manage_probe = null
-probe_box_height = null
-probe_padding = null
-probe_update_mode = null
 
 [node name="SwimmableArea3D" type="Area3D" parent="." unique_id=1515298068 groups=["water_area"]]
 unique_name_in_owner = true

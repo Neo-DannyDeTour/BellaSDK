@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://co0yykjjmnb8w" path="res://interactables/universal_cable_3d.gd" id="1_1k8xa"]
 [ext_resource type="Script" uid="uid://bed0r62y5bkkh" path="res://player/breakable_rope.gd" id="2_1k8xa"]
 
-[sub_resource type="Curve3D" id="Curve3D_piff3"]
+[sub_resource type="Curve3D" id="Curve3D_h75n5"]
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_7wyys"]
 top_radius = 0.05
@@ -15,7 +15,7 @@ height = 21.01036
 radius = 0.05
 
 [node name="UniversalCable3D" type="Path3D" unique_id=190499329]
-curve = SubResource("Curve3D_piff3")
+curve = SubResource("Curve3D_h75n5")
 script = ExtResource("1_1k8xa")
 metadata/_custom_type_script = "uid://co0yykjjmnb8w"
 

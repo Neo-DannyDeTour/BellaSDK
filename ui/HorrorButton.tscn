@@ -18,6 +18,8 @@ shader_parameter/perspective_strength = 0.15
 shader_parameter/sweep_progress = -0.5
 shader_parameter/hover_intensity = 0.0
 shader_parameter/angle = 25.0
+shader_parameter/corner_cut = 14.0
+shader_parameter/bevel_width = 5.0
 shader_parameter/base_color = Color(0, 0, 0, 1)
 shader_parameter/shine_color = Color(1, 0.34117648, 0.34117648, 0.6)
 shader_parameter/shine_width = 0.15
@@ -29,6 +31,7 @@ shader_parameter/blood_offset = Vector2(0, 0)
 shader_parameter/blood_scale = 1.0
 shader_parameter/flashlight_color = Color(1, 1, 1, 1)
 shader_parameter/flashlight_energy = 0.8
+shader_parameter/is_card_mode = false
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_8ojwr"]
 shader = ExtResource("9_f66sc")
@@ -44,6 +47,11 @@ shader_parameter/glow_color = Color(1, 0.85, 0.4, 1)
 shader_parameter/rect_size = Vector2(0, 0)
 shader_parameter/ui_tilt = Vector2(0, 0)
 shader_parameter/perspective_strength = 0.15
+shader_parameter/heartbeat_speed = 4.2
+shader_parameter/heartbeat_strength = 0.06
+shader_parameter/grime_color = Color(0.06, 0.04, 0.02, 1)
+shader_parameter/grime_height = 0.65
+shader_parameter/grime_intensity = 0.85
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_fec17"]
 shader = ExtResource("10_fjsb0")
@@ -51,6 +59,7 @@ shader_parameter/ui_tilt = Vector2(0, 0)
 shader_parameter/perspective_strength = 0.15
 shader_parameter/line_color = Color(1, 1, 1, 1)
 shader_parameter/line_thickness = 2.0
+shader_parameter/corner_cut = 14.0
 shader_parameter/rect_size = Vector2(0, 0)
 shader_parameter/speed = 1.5
 shader_parameter/trail_length = 0.3

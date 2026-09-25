@@ -1,15 +1,15 @@
-[gd_scene load_steps=2 format=3 uid="uid://4jb53yqktyfg"]
+[gd_scene format=3 uid="uid://4jb53yqktyfg"]
 
 [ext_resource type="Script" uid="uid://cqlvpwidawld6" path="res://addons/gut/gui/GutControl.gd" id="1_eprql"]
 
-[node name="GutControl" type="Control"]
+[node name="GutControl" type="Control" unique_id=1998504453]
 layout_mode = 3
 anchors_preset = 0
 offset_right = 295.0
 offset_bottom = 419.0
 script = ExtResource("1_eprql")
 
-[node name="Bg" type="ColorRect" parent="."]
+[node name="Bg" type="ColorRect" parent="." unique_id=2001154060]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -18,7 +18,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.36, 0.36, 0.36, 1)
 
-[node name="VBox" type="VBoxContainer" parent="."]
+[node name="VBox" type="VBoxContainer" parent="." unique_id=97931299]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -26,34 +26,37 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Tabs" type="TabContainer" parent="VBox"]
+[node name="Tabs" type="TabContainer" parent="VBox" unique_id=322558728]
 layout_mode = 2
 size_flags_vertical = 3
+current_tab = 0
 
-[node name="Tests" type="Tree" parent="VBox/Tabs"]
+[node name="Tests" type="Tree" parent="VBox/Tabs" unique_id=1183346620]
 layout_mode = 2
 size_flags_vertical = 3
 hide_root = true
+metadata/_tab_index = 0
 
-[node name="SettingsScroll" type="ScrollContainer" parent="VBox/Tabs"]
+[node name="SettingsScroll" type="ScrollContainer" parent="VBox/Tabs" unique_id=1609051071]
 visible = false
 layout_mode = 2
 size_flags_vertical = 3
+metadata/_tab_index = 1
 
-[node name="Settings" type="VBoxContainer" parent="VBox/Tabs/SettingsScroll"]
+[node name="Settings" type="VBoxContainer" parent="VBox/Tabs/SettingsScroll" unique_id=550121072]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="Buttons" type="HBoxContainer" parent="VBox"]
+[node name="Buttons" type="HBoxContainer" parent="VBox" unique_id=1672646009]
 layout_mode = 2
 
-[node name="RunTests" type="Button" parent="VBox/Buttons"]
+[node name="RunTests" type="Button" parent="VBox/Buttons" unique_id=1455697210]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Run All"
 
-[node name="RunSelected" type="Button" parent="VBox/Buttons"]
+[node name="RunSelected" type="Button" parent="VBox/Buttons" unique_id=996010935]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Run Selected"

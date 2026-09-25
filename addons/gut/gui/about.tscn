@@ -22,7 +22,7 @@ script = ExtResource("1_bg86c")
 offset_left = 8.0
 offset_top = 8.0
 offset_right = 1492.0
-offset_bottom = 751.0
+offset_bottom = 757.0
 alignment = 1
 
 [node name="MakeRoomForLogo" type="CenterContainer" parent="HBox" unique_id=1274652102]
@@ -35,7 +35,7 @@ size_flags_horizontal = 3
 theme_override_constants/separation = 0
 
 [node name="CheckForUpdate" parent="HBox/VBoxContainer" unique_id=381385621 instance=ExtResource("2_kpic4")]
-custom_minimum_size = Vector2(0, 76)
+custom_minimum_size = Vector2(0, 47)
 layout_mode = 2
 
 [node name="Scroll" type="ScrollContainer" parent="HBox/VBoxContainer" unique_id=1684204946]

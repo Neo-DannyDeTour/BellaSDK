@@ -12,14 +12,14 @@ albedo_color = Color(0.66999996, 1, 0.64, 1)
 material = SubResource("StandardMaterial3D_yqsag")
 size = Vector3(1.5, 0.1, 1.5)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_hpv63"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_codlq"]
 size = Vector3(2, 2, 2)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vsimk"]
 transparency = 1
 albedo_color = Color(1, 1, 0.078431375, 0.19607843)
 
-[sub_resource type="BoxMesh" id="BoxMesh_qvr53"]
+[sub_resource type="BoxMesh" id="BoxMesh_hpv63"]
 material = SubResource("StandardMaterial3D_vsimk")
 size = Vector3(2, 2, 2)
 
@@ -37,11 +37,11 @@ mesh = SubResource("BoxMesh_vsimk")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1043040143]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
-shape = SubResource("BoxShape3D_hpv63")
+shape = SubResource("BoxShape3D_codlq")
 
 [node name="TriggerField" type="MeshInstance3D" parent="." unique_id=1783728773]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
-mesh = SubResource("BoxMesh_qvr53")
+mesh = SubResource("BoxMesh_hpv63")
 
 [node name="HologramMesh" type="MeshInstance3D" parent="." unique_id=1510068088]
 transform = Transform3D(0.5, 0, 0, 0, 1, 0, 0, 0, 0.5, 0, 1, 0)

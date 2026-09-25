@@ -30,7 +30,6 @@
 [ext_resource type="Texture2D" uid="uid://ck71y35j4wcbw" path="res://assets/VisTEST/1. Textures/Tileables/Concrete/Concrete_Holes/T_Concrete_Holes_Metallic.png" id="28_5ppnl"]
 [ext_resource type="PackedScene" uid="uid://bmkchgyaeq2c8" path="res://interactables/energy_cell.tscn" id="28_8plba"]
 [ext_resource type="PackedScene" uid="uid://ep02e3j752sd" path="res://shared/ventilator.tscn" id="28_lnrub"]
-[ext_resource type="Texture2D" uid="uid://hjtae12r5r6v" path="res://assets/VisTEST/2. Modular_Models/Walls/Walls_Concrete_Holes/Walls_Concrete_Holes_T_Concrete_Holes_Normal.png" id="31_5ywpj"]
 [ext_resource type="Texture2D" uid="uid://c8633sadx70bw" path="res://assets/VisTEST/1. Textures/Tileables/Concrete/Concrete_Holes/T_Concrete_Holes_Normal.png" id="29_334ql"]
 [ext_resource type="Texture2D" uid="uid://d0gbtyc4xwli3" path="res://assets/VisTEST/1. Textures/Tileables/Concrete/Concrete_Holes/T_Concrete_Holes_Roughness.png" id="30_5ppnl"]
 [ext_resource type="PackedScene" uid="uid://c0cvl8ftmnbgv" path="res://assets/VisTEST/2. Modular_Models/Walkway/walkway_right.tscn" id="33_r02c6"]
@@ -46,7 +45,10 @@
 [ext_resource type="PackedScene" uid="uid://cre2eqhw64w1f" path="res://assets/VisTEST/2. Modular_Models/Props/scaffolding_structure.tscn" id="45_52h53"]
 [ext_resource type="PackedScene" uid="uid://cf8pnlqxpdri3" path="res://interactables/pickable_barrel_red.tscn" id="46_ubk4r"]
 [ext_resource type="Texture2D" uid="uid://dqbpt2iyril23" path="res://assets/VisTEST/2. Modular_Models/Walls/Wall_Fan/Wall_Fan_T_Concrete_BaseColor-T_Concrete_Alpha.png" id="47_6vg87"]
+[ext_resource type="PackedScene" uid="uid://b85u3svdjg12c" path="res://assets/VisTEST/2. Modular_Models/Props/pickable_chair_small.tscn" id="52_8plba"]
 [ext_resource type="PackedScene" uid="uid://bqmsu8rh0h335" path="res://interactables/env_chapter_trigger.tscn" id="52_wkfn1"]
+[ext_resource type="PackedScene" uid="uid://8ppxay3ijlcv" path="res://shared/godiva.glb" id="53_5ppnl"]
+[ext_resource type="PackedScene" uid="uid://doye0x78kds5e" path="res://assets/VisTEST/2. Modular_Models/Props/computer_old.tscn" id="54_5ppnl"]
 [ext_resource type="Script" uid="uid://6ldpudwj5c25" path="res://environment/graphics_cctv_camera.gd" id="55_334ql"]
 [ext_resource type="PackedScene" uid="uid://bn5ay1rfbr545" path="res://enemies/turret.tscn" id="55_b307c"]
 [ext_resource type="Script" uid="uid://dlrddmx144blj" path="res://player/camera_3d.gd" id="56_b307c"]
@@ -1962,27 +1964,6 @@ transform = Transform3D(-0.87457746, -0.4725532, -0.10866326, 0, 0.22410071, -0.
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.257725, 0.3337083, -8.055398)
 mesh = SubResource("PlaneMesh_ubk4r")
 
-[node name="PickableObject" parent="." unique_id=998803613 instance=ExtResource("48_mhg1j")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.779611, 0.100000024, 1.2330317)
-
-[node name="PickableObject3" parent="." unique_id=777159233 instance=ExtResource("48_mhg1j")]
-transform = Transform3D(-0.6343529, 0, 0.7730436, 0, 1, 0, -0.7730436, 0, -0.6343529, 18.828419, 0.099999905, 5.3362646)
-
-[node name="PickableChairSmall" parent="." unique_id=2036281333 instance=ExtResource("48_mhg1j")]
-transform = Transform3D(0.70710677, 0.70710677, 0, -0.70710677, 0.70710677, 0, 0, 0, 1, 11.373505, 0.53358066, 6.0474205)
-
-[node name="PickableChairSmall2" parent="." unique_id=1133744404 instance=ExtResource("48_mhg1j")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.209952, 0.100000024, -2.901669)
-
-[node name="PickableObject2" parent="." unique_id=449858058 instance=ExtResource("47_mhg1j")]
-transform = Transform3D(-0.0015470906, -0.99999875, 0.0002715692, 0.9849396, -0.0015707447, -0.1728918, 0.17289202, 0, 0.9849408, 17.723475, 1.5510979, 7.0966377)
-
-[node name="PickableObject4" parent="." unique_id=1089681237 instance=ExtResource("47_mhg1j")]
-transform = Transform3D(0.9690589, 0, -0.24682985, 0, 1, 0, 0.24682985, 0, 0.9690589, 11.085868, 1.225, 3.0739083)
-
-[node name="PickableObject5" parent="." unique_id=733427909 instance=ExtResource("47_mhg1j")]
-transform = Transform3D(-0.81328356, 0, 0.58186746, 0, 1, 0, -0.58186746, 0, -0.81328356, 10.8490095, 1.2249999, 4.543701)
-
 [node name="Label3D2" type="Label3D" parent="." unique_id=1734334926]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.391062, 9.684599, 1.9035821)
 billboard = 1
@@ -1996,9 +1977,6 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.6088676, 3.6163845, 2.84208
 
 [node name="PickableBarrelGreen" parent="." unique_id=1275037664 instance=ExtResource("56_k566i")]
 transform = Transform3D(0.5424285, 0, -0.84010196, 0, 1, 0, 0.84010196, 0, 0.5424285, 2.2152977, 2.5072021, 2.374266)
-
-[node name="godiva" parent="." unique_id=1337161665 groups=["friends"] instance=ExtResource("54_334ql")]
-transform = Transform3D(5.7620454e-08, 0, 1, 0, 1, 0, -1, 0, 5.7620454e-08, -0.6258802, 1.2046778, -7.755484)
 
 [node name="Turret" parent="." unique_id=1468587336 instance=ExtResource("55_b307c")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.15385, 1.6999998, -7.7725606)
@@ -2059,3 +2037,24 @@ transform = Transform3D(-4.371139e-08, 0.258819, -0.9659258, 0, 0.96592575, 0.25
 cull_mask = 1024
 far = 250.0
 script = ExtResource("55_334ql")
+
+[node name="PickableChairSmall3" parent="." unique_id=1861586999 instance=ExtResource("52_8plba")]
+transform = Transform3D(0.35328335, 0, -0.93551636, 0, 1, 0, 0.93551636, 0, 0.35328335, 8.526003, 0.099999905, -3.2157695)
+
+[node name="PickableChairSmall4" parent="." unique_id=938727572 instance=ExtResource("52_8plba")]
+transform = Transform3D(0.6530693, 0, 0.7572982, 0, 1, 0, -0.7572982, 0, 0.6530693, 10.609435, 0.099999666, 1.560758)
+
+[node name="PickableChairSmall5" parent="." unique_id=923906398 instance=ExtResource("52_8plba")]
+transform = Transform3D(-4.222196e-08, 0.9659258, -0.25881904, -1, -4.371139e-08, 0, -1.131334e-08, 0.25881904, 0.9659258, 11.187056, 0.35000002, 6.169318)
+
+[node name="godiva" parent="." unique_id=1455954834 groups=["friends"] instance=ExtResource("53_5ppnl")]
+transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -0.9560971, 1.2046778, -7.726941)
+
+[node name="Computer_old" parent="." unique_id=655820456 instance=ExtResource("54_5ppnl")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.122244, 1.2249999, 4.5787706)
+
+[node name="Computer_old2" parent="." unique_id=1599713807 instance=ExtResource("54_5ppnl")]
+transform = Transform3D(-0.9659258, 0, 0.25881913, 0, 1, 0, -0.25881913, 0, -0.9659258, 11.298313, 1.2249999, 3.0636907)
+
+[node name="Computer_old3" parent="." unique_id=1472240845 instance=ExtResource("54_5ppnl")]
+transform = Transform3D(0.9659258, 0, -0.25881904, 0, 1, 0, 0.25881904, 0, 0.9659258, 8.824446, 1.2250001, -4.456406)

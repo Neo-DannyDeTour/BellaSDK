@@ -13,7 +13,7 @@ corner_radius_top_left = 20
 corner_radius_top_right = 20
 
 [node name="CheckForUpdate" type="Control" unique_id=381385621]
-custom_minimum_size = Vector2(0, 53)
+custom_minimum_size = Vector2(0, 47)
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -36,7 +36,7 @@ focus_mode = 2
 theme_override_fonts/mono_font = ExtResource("2_lsin2")
 theme_override_styles/normal = SubResource("StyleBoxFlat_lsin2")
 bbcode_enabled = true
-text = "[center][color=ROYAL_BLUE][url=https://github.com/bitwes/Gut/releases/tag/v0.0.0]GUT 0.0.0[/url][/color] is now available![/center]
+text = "[center]GUT 9.7.1 is the lastest version for Godot 4.7.1[/center]
 "
 selection_enabled = true
 

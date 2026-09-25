@@ -32,7 +32,9 @@ func test_update_suggestion_ui_formatting() -> void:
 		+ "[color=gray]  quit[/color]"
 	)
 
-	var label = _console.get_node_or_null("BackgroundPanel/LayoutContainer/SuggestionLog")
+	var label: RichTextLabel = (
+		_console.get_node_or_null("BackgroundPanel/LayoutContainer/SuggestionLog") as RichTextLabel
+	)
 	assert_eq(label.text, expected)
 
 
@@ -45,6 +47,8 @@ func test_update_suggestion_ui_empty() -> void:
 
 	_console.call("_update_suggestion_ui")
 
-	var label = _console.get_node_or_null("BackgroundPanel/LayoutContainer/SuggestionLog")
+	var label: RichTextLabel = (
+		_console.get_node_or_null("BackgroundPanel/LayoutContainer/SuggestionLog") as RichTextLabel
+	)
 
 	assert_eq(label.text, "")

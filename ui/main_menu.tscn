@@ -18,7 +18,6 @@
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_50h1w"]
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_6bivr"]
-texture = ExtResource("2_iyrh0")
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jiymt"]
 bg_color = Color(0, 0, 0, 1)

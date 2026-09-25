@@ -10,12 +10,27 @@ shader_parameter/wave_speed = 2.5
 shader_parameter/wave_amplitude = 0.15
 shader_parameter/wave_frequency = 3.0
 shader_parameter/wave_phases = 2.0
+shader_parameter/wind_direction = Vector3(0, 0, 1)
+shader_parameter/wind_intensity = 1.0
+shader_parameter/noise_strength = 0.2
 shader_parameter/roughness = 0.6
 
 [sub_resource type="QuadMesh" id="QuadMesh_uirjs"]
 material = SubResource("ShaderMaterial_85f7d")
 subdivide_width = 64
 subdivide_depth = 32
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_uirjs"]
+render_priority = 0
+shader = ExtResource("1_mpfsw")
+shader_parameter/wave_speed = 2.5
+shader_parameter/wave_amplitude = 0.15
+shader_parameter/wave_frequency = 3.0
+shader_parameter/wave_phases = 2.0
+shader_parameter/wind_direction = Vector3(0, 0, 1)
+shader_parameter/wind_intensity = 1.0
+shader_parameter/noise_strength = 0.2
+shader_parameter/roughness = 0.6
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_bsdtl"]
 render_priority = 0
@@ -24,6 +39,9 @@ shader_parameter/wave_speed = 2.5
 shader_parameter/wave_amplitude = 0.15
 shader_parameter/wave_frequency = 3.0
 shader_parameter/wave_phases = 2.0
+shader_parameter/wind_direction = Vector3(0, 0, 1)
+shader_parameter/wind_intensity = 1.0
+shader_parameter/noise_strength = 0.2
 shader_parameter/roughness = 0.6
 
 [sub_resource type="QuadMesh" id="QuadMesh_gsg4x"]
@@ -39,6 +57,8 @@ back_mesh = NodePath("Back")
 
 [node name="Front" type="MeshInstance3D" parent="." unique_id=1595903470]
 mesh = SubResource("QuadMesh_uirjs")
+surface_material_override/0 = SubResource("ShaderMaterial_uirjs")
 
 [node name="Back" type="MeshInstance3D" parent="." unique_id=387078032]
 mesh = SubResource("QuadMesh_gsg4x")
+surface_material_override/0 = SubResource("ShaderMaterial_uirjs")

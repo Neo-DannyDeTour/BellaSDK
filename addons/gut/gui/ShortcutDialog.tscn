@@ -7,15 +7,15 @@
 oversampling_override = 1.0
 title = "GUT Shortcuts"
 position = Vector2i(0, 36)
-size = Vector2i(1920, 1728)
+size = Vector2i(960, 864)
 visible = true
 script = ExtResource("1_qq8qn")
 
 [node name="Scroll" type="ScrollContainer" parent="." unique_id=1914806303]
 offset_left = 8.0
 offset_top = 8.0
-offset_right = 1912.0
-offset_bottom = 1679.0
+offset_right = 952.0
+offset_bottom = 821.0
 
 [node name="Layout" type="VBoxContainer" parent="Scroll" unique_id=501181924]
 layout_mode = 2

@@ -16,8 +16,8 @@
 [sub_resource type="ButtonGroup" id="ButtonGroup_bskl7"]
 
 [node name="GutBottomPanel" type="Control" unique_id=1136630421]
-clip_contents = true
 custom_minimum_size = Vector2(250, 0)
+clip_contents = true
 layout_mode = 3
 anchor_left = -0.0025866
 anchor_top = -0.00176575
@@ -271,7 +271,7 @@ size_flags_vertical = 3
 
 [node name="RunResults" parent="layout/RSplit/CResults/HSplitResults" unique_id=1277406275 instance=ExtResource("5")]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(255, 0)
+custom_minimum_size = Vector2(237, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
@@ -297,7 +297,7 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 
 [node name="ShortcutDialog" parent="." unique_id=1224532527 instance=ExtResource("7_srqj5")]
-size = Vector2i(1512, 1571)
+size = Vector2i(960, 864)
 visible = false
 
 [node name="ShellOutOptions" parent="." unique_id=1974075127 instance=ExtResource("7_xv2r3")]

@@ -2,7 +2,7 @@
 
 [ext_resource type="RDShaderFile" uid="uid://dx1y5cye1m1hu" path="res://addons/SunshineClouds2/SunshineCloudsCompute.glsl" id="1_0jtrb"]
 [ext_resource type="CompressedTexture3D" uid="uid://dei12lsgrjpyu" path="res://addons/SunshineClouds2/NoiseTextures/curl_noise_varied.tga" id="2_uu0np"]
-[ext_resource type="CompressedTexture3D" uid="uid://b3uyfsp4in821" path="res://addons/SunshineClouds2/NoiseTextures/bluenoise_Dither.png" id="3_6wvml"]
+[ext_resource type="Texture2D" uid="uid://b3uyfsp4in821" path="res://addons/SunshineClouds2/NoiseTextures/bluenoise_Dither.png" id="3_6wvml"]
 [ext_resource type="Script" uid="uid://bxlm4e5qfb7uu" path="res://addons/SunshineClouds2/SunshineCloudEffector.gd" id="3_afwv5"]
 [ext_resource type="Script" uid="uid://djusduuxf0voj" path="res://addons/SunshineClouds2/SunshineCloudsDriver.gd" id="3_unbdf"]
 [ext_resource type="Texture2D" uid="uid://de2nsujnhdlg0" path="res://addons/SunshineClouds2/NoiseTextures/ExtraLargeScaleNoise.tres" id="4_2j4np"]
@@ -54,7 +54,7 @@ post_pass_compute_shader = ExtResource("8_4bu1u")
 wind_direction = Vector3(2, 0, 2)
 directional_lights_data = Array[Vector4]([Vector4(0.41753477, 0.55014515, -0.7231909, 32), Vector4(1, 1, 1, 1)])
 point_lights_data = Array[Vector4]([Vector4(10743.6, 6693.89, -43458.2, 20000), Vector4(0.76, 0.374933, 0.1824, 11.7)])
-point_effector_data = Array[Vector4]([Vector4(8262.199, 4970.841, -38297.613, 20000), Vector4(2, 0, 0, 0), Vector4(7401.0215, 4970.841, -38121.527, 16000), Vector4(-3, 0, 0, 0)])
+point_effector_data = Array[Vector4]([Vector4(8262.199, 4970.841, -38297.613, 20000), Vector4(2, 1, 0, 0), Vector4(7401.0215, 4970.841, -38121.527, 16000), Vector4(-3, 1, 0, 0)])
 
 [sub_resource type="Compositor" id="Compositor_nuogy"]
 compositor_effects = Array[CompositorEffect]([SubResource("CompositorEffect_g0kkk")])

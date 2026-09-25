@@ -35,7 +35,7 @@ material = SubResource("ShaderMaterial_7iqo5")
 size = Vector2(2, 2)
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_kuidg"]
-size = Vector3(2, 2, 0.2)
+size = Vector3(2, 2, 0.3)
 
 [node name="BurnableObstacle" type="StaticBody3D" unique_id=1793786556]
 collision_mask = 0

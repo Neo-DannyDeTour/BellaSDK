@@ -5,7 +5,7 @@
 [ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://shared/editor_trigger_visualizer.gd" id="3_cu1br"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_534t5"]
-size = Vector3(1, 2, 1)
+size = Vector3(4, 4, 4)
 
 [sub_resource type="Curve" id="Curve_ru5di"]
 _data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.22331443, 1), 0.0, 0.0, 0, 0, Vector2(0.91853917, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
@@ -65,7 +65,7 @@ albedo_color = Color(0.9, 0.2, 0.1, 0.3)
 
 [sub_resource type="BoxMesh" id="BoxMesh_ey1cf"]
 material = SubResource("StandardMaterial3D_vgutb")
-size = Vector3(1, 2, 1)
+size = Vector3(4, 4, 4)
 
 [node name="SmokeHazard" type="Area3D" unique_id=761632134]
 collision_mask = 2
@@ -73,11 +73,12 @@ script = ExtResource("1_smpq6")
 damage_per_tick = 25.0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1050280486]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2, 0)
 shape = SubResource("BoxShape3D_534t5")
 
 [node name="SmokeParticles" type="GPUParticles3D" parent="." unique_id=1134440122]
 amount = 50
-lifetime = 0.25
+lifetime = 2.0
 fixed_fps = 60
 process_material = SubResource("ParticleProcessMaterial_cu1br")
 draw_pass_1 = SubResource("QuadMesh_smpq6")
@@ -85,4 +86,7 @@ draw_pass_1 = SubResource("QuadMesh_smpq6")
 [node name="EditorTriggerVisualizer" type="MeshInstance3D" parent="." unique_id=1237472038]
 mesh = SubResource("BoxMesh_ey1cf")
 script = ExtResource("3_cu1br")
+trigger_size = Vector3(4, 4, 4)
+trigger_color = Color(0.9, 0.2, 0.1, 0.3)
+trigger_text = "SMOKE HAZARD"
 metadata/_custom_type_script = "uid://q4v42nidwdr2"

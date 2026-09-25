@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://dwwvcmlkqxpsx"]
 
-[ext_resource type="Shader" uid="uid://cdkjcs7jkiadb" path="res://vfx/curtain.gdshader" id="2_27ip1"]
 [ext_resource type="Script" uid="uid://dqgh26rl0oo77" path="res://interactables/curtain.gd" id="1_curtain"]
+[ext_resource type="Shader" uid="uid://cdkjcs7jkiadb" path="res://vfx/curtain.gdshader" id="2_27ip1"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_4kl38"]
 render_priority = 0
@@ -17,13 +17,11 @@ subdivide_width = 10
 subdivide_depth = 10
 
 [node name="Curtain" type="SoftBody3D" unique_id=1466427782]
-script = ExtResource("1_curtain")
 transform = Transform3D(1, 0, 0, 0, 2.9802322e-08, -1, 0, 1, 2.9802322e-08, 0, 0, 0)
 layers = 4
 mesh = SubResource("PlaneMesh_l1t7u")
 collision_layer = 4
 collision_mask = 7
-total_mass = 1.0
 pinned_points = [143, 142, 141, 140, 139, 138, 137, 136, 135, 134, 133, 132]
 attachments/0/point_index = 143
 attachments/0/spatial_attachment_path = NodePath("")
@@ -61,3 +59,4 @@ attachments/10/offset = Vector3(0, 0, 0)
 attachments/11/point_index = 132
 attachments/11/spatial_attachment_path = NodePath("")
 attachments/11/offset = Vector3(0, 0, 0)
+script = ExtResource("1_curtain")

@@ -6,7 +6,7 @@
 [ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="3_bk77a"]
 
 [sub_resource type="GDScript" id="GDScript_jmjch"]
-script/source = "class_name PushwheelStick
+script/source = "#class_name PushwheelStick
 extends RigidBody3D
 
 var original_collision_layer: int
@@ -23,14 +23,14 @@ func pick_up(hold_pos: Marker3D, _player: CharacterBody3D) -> void:
 	freeze = true
 	collision_layer = 0
 	collision_mask = 0
-	
+
 	# Reparent smoothly to the player's hand
 	var current_parent: Node = get_parent()
 	if is_instance_valid(current_parent):
 		current_parent.remove_child(self)
-		
+
 	hold_pos.add_child(self)
-	
+
 	# Snap perfectly into the hold marker
 	position = Vector3.ZERO
 	rotation = Vector3.ZERO
@@ -48,18 +48,18 @@ func throw(force: Vector3) -> void:
 func _release_from_hand() -> void:
 	var current_global_pos: Vector3 = global_position
 	var current_global_rot: Vector3 = global_rotation
-	
+
 	var current_parent: Node = get_parent()
 	if is_instance_valid(current_parent):
 		current_parent.remove_child(self)
-		
+
 	# Drop it back into the main world space
 	var scene_root: Node = get_tree().current_scene
 	scene_root.add_child(self)
-	
+
 	global_position = current_global_pos
 	global_rotation = current_global_rot
-	
+
 	# Re-enable physics simulation
 	freeze = false
 	collision_layer = original_collision_layer
@@ -84,6 +84,7 @@ shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
 shader_parameter/blink_speed = 8.0
 shader_parameter/min_intensity = 0.01
 shader_parameter/max_intensity = 0.05
+shader_parameter/alpha_scissor_threshold = 0.5
 
 [node name="PushwheelStick" type="RigidBody3D" unique_id=1881415021]
 collision_layer = 5

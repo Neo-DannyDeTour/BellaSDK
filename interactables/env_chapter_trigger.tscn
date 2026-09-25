@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://shared/editor_trigger_visualizer.gd" id="2_n4a5r"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_ehemb"]
+size = Vector3(2, 2, 2)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yjd84"]
 transparency = 1

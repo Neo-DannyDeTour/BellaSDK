@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3 uid="uid://bsmrb5nocmcin"]
+[gd_scene format=3 uid="uid://bsmrb5nocmcin"]
 
 [ext_resource type="Script" uid="uid://dnan3ytl8evv1" path="res://addons/SunshineClouds2/Dock/CloudsEditorController.gd" id="1_c42ej"]
 [ext_resource type="Texture2D" uid="uid://l06i8g7p2msv" path="res://addons/SunshineClouds2/Dock/Icons/caret-down-solid.svg" id="2_8dri0"]
@@ -17,15 +17,15 @@
 [sub_resource type="LabelSettings" id="LabelSettings_yqrwx"]
 font_size = 24
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tc6ic"]
-bg_color = Color(0.257374, 0.311252, 0.386689, 0.564706)
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ml10g"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_yqrwx"]
 bg_color = Color(0.0680232, 0.0903094, 0.121509, 0.564706)
 
-[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ml10g"]
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tc6ic"]
+bg_color = Color(0.257374, 0.311252, 0.386689, 0.564706)
 
-[node name="CloudsEditor" type="Control" node_paths=PackedStringArray("CloudsStatusLabel", "CloudsActiveToggle", "CloudsDriverRefresh", "CloudsDriverAccordianButton", "UseMaskToggle", "MaskStatusLabel", "MaskFilePath", "MaskResolution", "MaskWidth", "DrawWeightEnable", "DrawColorEnable", "DrawColorPicker", "DrawTools", "DrawSharpness", "DrawStrength")]
+[node name="CloudsEditor" type="Control" unique_id=909405739]
 clip_contents = true
 layout_mode = 3
 anchors_preset = 15
@@ -35,26 +35,11 @@ offset_bottom = 278.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_c42ej")
-clouds_status_label = NodePath("ScrollContainer/VBoxContainer/PanelContainer/VBoxContainer/VBoxContainer/Label")
-clouds_active_toggle = NodePath("ScrollContainer/VBoxContainer/PanelContainer/VBoxContainer/VBoxContainer/CheckButton")
-clouds_driver_refresh = NodePath("ScrollContainer/VBoxContainer/PanelContainer/VBoxContainer/VBoxContainer/DriverQueryButton")
-clouds_driver_accordian_button = NodePath("ScrollContainer/VBoxContainer/PanelContainer/VBoxContainer/AccordionButton")
-use_mask_toggle = NodePath("ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MaskUsageCheckButton")
-mask_status_label = NodePath("ScrollContainer/VBoxContainer/MaskStatusOutput")
-mask_file_path = NodePath("ScrollContainer/VBoxContainer/HBoxContainer/LineEdit")
-mask_resolution = NodePath("ScrollContainer/VBoxContainer/MaskSettings/VBoxContainer/Resolution/SpinBox")
-mask_width = NodePath("ScrollContainer/VBoxContainer/MaskSettings/VBoxContainer/Width/SpinBox")
-draw_weight_enable = NodePath("ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer/HBoxContainer/CloudsWeight")
-draw_color_enable = NodePath("ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer/HBoxContainer/CloudsColor")
-draw_color_picker = NodePath("ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer/GridContainer/ColorPicker")
-draw_tools = NodePath("ScrollContainer/VBoxContainer/DrawTools")
-draw_sharpness = NodePath("ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer/GridContainer/VBoxContainer/Sharpness")
-draw_strength = NodePath("ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer/GridContainer/VBoxContainer/Strength")
 compute_shader = ExtResource("2_yqrwx")
 drawing_color = Color(0.769578, 0.731927, 0.149317, 1)
 inverted_drawing_color = Color(0.765928, 0.254294, 0.0203708, 1)
 
-[node name="ScrollContainer" type="ScrollContainer" parent="."]
+[node name="ScrollContainer" type="ScrollContainer" parent="." unique_id=1814183081]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -63,62 +48,62 @@ grow_horizontal = 2
 grow_vertical = 2
 horizontal_scroll_mode = 0
 
-[node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer" unique_id=882086447]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="HBoxContainer2" type="HBoxContainer" parent="ScrollContainer/VBoxContainer"]
+[node name="HBoxContainer2" type="HBoxContainer" parent="ScrollContainer/VBoxContainer" unique_id=1473717655]
 layout_mode = 2
 alignment = 1
 
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/HBoxContainer2"]
+[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/HBoxContainer2" unique_id=478704159]
 layout_mode = 2
 text = "Sunshine Clouds Editor"
 label_settings = SubResource("LabelSettings_yqrwx")
 
-[node name="TextureRect" type="TextureRect" parent="ScrollContainer/VBoxContainer/HBoxContainer2"]
+[node name="TextureRect" type="TextureRect" parent="ScrollContainer/VBoxContainer/HBoxContainer2" unique_id=1574171848]
 layout_mode = 2
 texture = ExtResource("2_tc6ic")
 expand_mode = 3
 
-[node name="HSeparator2" type="HSeparator" parent="ScrollContainer/VBoxContainer"]
+[node name="HSeparator2" type="HSeparator" parent="ScrollContainer/VBoxContainer" unique_id=490209425]
 custom_minimum_size = Vector2(0, 18.49)
 layout_mode = 2
 
-[node name="MaskStatusOutput" type="Label" parent="ScrollContainer/VBoxContainer"]
+[node name="MaskStatusOutput" type="Label" parent="ScrollContainer/VBoxContainer" unique_id=1274523940]
 layout_mode = 2
 text = "Mask Detected: res://CloudsMask.png"
 
-[node name="HBoxContainer" type="HBoxContainer" parent="ScrollContainer/VBoxContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="ScrollContainer/VBoxContainer" unique_id=2030831893]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/HBoxContainer"]
+[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/HBoxContainer" unique_id=2025872817]
 layout_mode = 2
 text = "Mask Path:"
 
-[node name="LineEdit" type="LineEdit" parent="ScrollContainer/VBoxContainer/HBoxContainer"]
+[node name="LineEdit" type="LineEdit" parent="ScrollContainer/VBoxContainer/HBoxContainer" unique_id=2040206907]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "res://assets/CloudsMask.exr"
 
-[node name="MaskBuildButton" type="Button" parent="ScrollContainer/VBoxContainer"]
+[node name="MaskBuildButton" type="Button" parent="ScrollContainer/VBoxContainer" unique_id=727482036]
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Refresh Mask Reference"
 
-[node name="MaskSettings" type="PanelContainer" parent="ScrollContainer/VBoxContainer"]
+[node name="MaskSettings" type="PanelContainer" parent="ScrollContainer/VBoxContainer" unique_id=1962264650]
 layout_mode = 2
 theme_override_styles/panel = ExtResource("2_x2oe8")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer/VBoxContainer/MaskSettings"]
+[node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer/VBoxContainer/MaskSettings" unique_id=517343556]
 layout_mode = 2
 
-[node name="AccordionButton" type="Button" parent="ScrollContainer/VBoxContainer/MaskSettings/VBoxContainer"]
+[node name="AccordionButton" type="Button" parent="ScrollContainer/VBoxContainer/MaskSettings/VBoxContainer" unique_id=378971561]
 layout_mode = 2
-theme_override_styles/hover = SubResource("StyleBoxFlat_tc6ic")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_yqrwx")
 theme_override_styles/normal = SubResource("StyleBoxEmpty_ml10g")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_yqrwx")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tc6ic")
 text = "Mask Settings"
 icon = ExtResource("2_8dri0")
 alignment = 0
@@ -127,32 +112,32 @@ expand_icon = true
 script = ExtResource("2_wp1ai")
 metadata/_custom_type_script = "uid://cb3ho8b5lgx55"
 
-[node name="Resolution" type="HBoxContainer" parent="ScrollContainer/VBoxContainer/MaskSettings/VBoxContainer"]
+[node name="Resolution" type="HBoxContainer" parent="ScrollContainer/VBoxContainer/MaskSettings/VBoxContainer" unique_id=274300320]
 visible = false
 layout_mode = 2
 
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/MaskSettings/VBoxContainer/Resolution"]
+[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/MaskSettings/VBoxContainer/Resolution" unique_id=345103987]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Mask Resolution"
 
-[node name="SpinBox" type="SpinBox" parent="ScrollContainer/VBoxContainer/MaskSettings/VBoxContainer/Resolution"]
+[node name="SpinBox" type="SpinBox" parent="ScrollContainer/VBoxContainer/MaskSettings/VBoxContainer/Resolution" unique_id=1061699886]
 layout_mode = 2
 size_flags_horizontal = 3
 min_value = 32.0
 max_value = 1024.0
 value = 128.0
 
-[node name="Width" type="HBoxContainer" parent="ScrollContainer/VBoxContainer/MaskSettings/VBoxContainer"]
+[node name="Width" type="HBoxContainer" parent="ScrollContainer/VBoxContainer/MaskSettings/VBoxContainer" unique_id=1125815280]
 visible = false
 layout_mode = 2
 
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/MaskSettings/VBoxContainer/Width"]
+[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/MaskSettings/VBoxContainer/Width" unique_id=131232766]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Mask Width"
 
-[node name="SpinBox" type="SpinBox" parent="ScrollContainer/VBoxContainer/MaskSettings/VBoxContainer/Width"]
+[node name="SpinBox" type="SpinBox" parent="ScrollContainer/VBoxContainer/MaskSettings/VBoxContainer/Width" unique_id=748999894]
 layout_mode = 2
 size_flags_horizontal = 3
 min_value = 12.0
@@ -160,18 +145,18 @@ max_value = 1024.0
 value = 32.0
 suffix = "km"
 
-[node name="PanelContainer" type="PanelContainer" parent="ScrollContainer/VBoxContainer"]
+[node name="PanelContainer" type="PanelContainer" parent="ScrollContainer/VBoxContainer" unique_id=350570362]
 layout_mode = 2
 theme_override_styles/panel = ExtResource("2_x2oe8")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer/VBoxContainer/PanelContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer/VBoxContainer/PanelContainer" unique_id=1926966047]
 layout_mode = 2
 
-[node name="AccordionButton" type="Button" parent="ScrollContainer/VBoxContainer/PanelContainer/VBoxContainer"]
+[node name="AccordionButton" type="Button" parent="ScrollContainer/VBoxContainer/PanelContainer/VBoxContainer" unique_id=435193722]
 layout_mode = 2
-theme_override_styles/hover = SubResource("StyleBoxFlat_tc6ic")
-theme_override_styles/pressed = SubResource("StyleBoxFlat_yqrwx")
 theme_override_styles/normal = SubResource("StyleBoxEmpty_ml10g")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_yqrwx")
+theme_override_styles/hover = SubResource("StyleBoxFlat_tc6ic")
 text = "Driver Controls
 "
 icon = ExtResource("2_8dri0")
@@ -181,42 +166,42 @@ expand_icon = true
 script = ExtResource("2_wp1ai")
 metadata/_custom_type_script = "uid://cb3ho8b5lgx55"
 
-[node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer/VBoxContainer/PanelContainer/VBoxContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer/VBoxContainer/PanelContainer/VBoxContainer" unique_id=507727340]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/VBoxContainer/VBoxContainer"]
+[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/PanelContainer/VBoxContainer/VBoxContainer" unique_id=1179225516]
 layout_mode = 2
 text = "Clouds not present"
 
-[node name="CheckButton" type="CheckButton" parent="ScrollContainer/VBoxContainer/PanelContainer/VBoxContainer/VBoxContainer"]
+[node name="CheckButton" type="CheckButton" parent="ScrollContainer/VBoxContainer/PanelContainer/VBoxContainer/VBoxContainer" unique_id=370802311]
 layout_mode = 2
 text = "Clouds Updating"
 
-[node name="DriverQueryButton" type="Button" parent="ScrollContainer/VBoxContainer/PanelContainer/VBoxContainer/VBoxContainer"]
+[node name="DriverQueryButton" type="Button" parent="ScrollContainer/VBoxContainer/PanelContainer/VBoxContainer/VBoxContainer" unique_id=1429498249]
 visible = false
 layout_mode = 2
 size_flags_horizontal = 0
 text = "Search for Driver"
 
-[node name="DrawTools" type="PanelContainer" parent="ScrollContainer/VBoxContainer"]
+[node name="DrawTools" type="PanelContainer" parent="ScrollContainer/VBoxContainer" unique_id=164045781]
 layout_mode = 2
 theme_override_styles/panel = ExtResource("2_x2oe8")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer/VBoxContainer/DrawTools"]
+[node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer/VBoxContainer/DrawTools" unique_id=165123963]
 layout_mode = 2
 
-[node name="MaskUsageCheckButton" type="CheckButton" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer"]
+[node name="MaskUsageCheckButton" type="CheckButton" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer" unique_id=210676469]
 layout_mode = 2
 text = "Clouds Mask Enabled"
 
-[node name="MarginContainer2" type="MarginContainer" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer"]
+[node name="MarginContainer2" type="MarginContainer" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer" unique_id=154233353]
 layout_mode = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
 
-[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer2"]
+[node name="Label" type="Label" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer2" unique_id=2115596379]
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 text = "Draw mode allows for creation of clouds directly using a mask texture.
@@ -230,24 +215,24 @@ Ctrl+Left Mouse Button: Erase Clouds
 Escape: Disable draw mode"
 autowrap_mode = 3
 
-[node name="HSeparator" type="HSeparator" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer"]
+[node name="HSeparator" type="HSeparator" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer" unique_id=1503217101]
 custom_minimum_size = Vector2(0, 17.4)
 layout_mode = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer" unique_id=879976924]
 layout_mode = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
 
-[node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer" unique_id=367570748]
 layout_mode = 2
 
-[node name="HBoxContainer" type="HBoxContainer" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer" unique_id=91047254]
 layout_mode = 2
 
-[node name="CloudsWeight" type="TextureButton" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer/HBoxContainer"]
+[node name="CloudsWeight" type="TextureButton" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1073265047]
 custom_minimum_size = Vector2(50, 50)
 layout_mode = 2
 tooltip_text = "Draw Cloud Weight"
@@ -259,7 +244,7 @@ texture_hover = ExtResource("9_kg56n")
 ignore_texture_size = true
 stretch_mode = 4
 
-[node name="CloudsColor" type="TextureButton" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer/HBoxContainer"]
+[node name="CloudsColor" type="TextureButton" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer/HBoxContainer" unique_id=659667563]
 custom_minimum_size = Vector2(50, 50)
 layout_mode = 2
 tooltip_text = "Draw Cloud Color"
@@ -271,25 +256,25 @@ texture_hover = ExtResource("12_lwakg")
 ignore_texture_size = true
 stretch_mode = 4
 
-[node name="HBoxContainer" type="HBoxContainer" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer/HBoxContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer/HBoxContainer" unique_id=1921407033]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 25
 alignment = 2
 
-[node name="Button" type="Button" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer/HBoxContainer/HBoxContainer"]
+[node name="Button" type="Button" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer/HBoxContainer/HBoxContainer" unique_id=1588395877]
 layout_mode = 2
 tooltip_text = "Will fill the mask with the selected color and draw strength (This cannot be undone, make backups of your mask texture)."
 focus_mode = 0
-theme_override_colors/font_hover_color = Color(1, 0.1, 0, 0.968627)
 theme_override_colors/font_color = Color(0.94, 0.313333, 0, 0.682353)
+theme_override_colors/font_hover_color = Color(1, 0.1, 0, 0.968627)
 text = "Flood Fill mask"
 
-[node name="HSeparator" type="HSeparator" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer"]
+[node name="HSeparator" type="HSeparator" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer" unique_id=616125249]
 custom_minimum_size = Vector2(0, 17.4)
 layout_mode = 2
 
-[node name="GridContainer" type="GridContainer" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer"]
+[node name="GridContainer" type="GridContainer" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer" unique_id=1401463347]
 layout_mode = 2
 theme_override_constants/h_separation = 20
 columns = 2
@@ -297,7 +282,7 @@ script = ExtResource("13_w3q10")
 target_column_count = 2
 minimum_column_size = 250.0
 
-[node name="ColorPicker" type="ColorPicker" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer/GridContainer"]
+[node name="ColorPicker" type="ColorPicker" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer/GridContainer" unique_id=1325298863]
 layout_mode = 2
 size_flags_horizontal = 0
 size_flags_vertical = 0
@@ -308,32 +293,32 @@ color_mode = 3
 sampler_visible = false
 presets_visible = false
 
-[node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer/GridContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer/GridContainer" unique_id=1740809945]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label2" type="Label" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer/GridContainer/VBoxContainer"]
+[node name="Label2" type="Label" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer/GridContainer/VBoxContainer" unique_id=1065628190]
 layout_mode = 2
 text = "Draw Strength:"
 
-[node name="Strength" type="HSlider" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer/GridContainer/VBoxContainer"]
+[node name="Strength" type="HSlider" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer/GridContainer/VBoxContainer" unique_id=1212877345]
 layout_mode = 2
 max_value = 5.0
 step = 0.0
 value = 0.5
 
-[node name="Label3" type="Label" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer/GridContainer/VBoxContainer"]
+[node name="Label3" type="Label" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer/GridContainer/VBoxContainer" unique_id=1655863556]
 layout_mode = 2
 text = "Draw Sharpness:"
 
-[node name="Sharpness" type="HSlider" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer/GridContainer/VBoxContainer"]
+[node name="Sharpness" type="HSlider" parent="ScrollContainer/VBoxContainer/DrawTools/VBoxContainer/MarginContainer/VBoxContainer/GridContainer/VBoxContainer" unique_id=216551330]
 layout_mode = 2
 min_value = 0.05
 max_value = 0.95
 step = 0.0
 value = 0.2
 
-[node name="HSeparator" type="HSeparator" parent="ScrollContainer/VBoxContainer"]
+[node name="HSeparator" type="HSeparator" parent="ScrollContainer/VBoxContainer" unique_id=449037170]
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
 

@@ -1,12 +1,12 @@
-[gd_scene load_steps=7 format=3 uid="uid://i9fqs3fgubaab"]
+[gd_scene format=3 uid="uid://bjl0mykxpviqr"]
 
-[ext_resource type="Script" path="res://vfx/plasma_spark.gd" id="1_spark"]
-[ext_resource type="Shader" path="res://vfx/plasma_spark.gdshader" id="2_shader"]
+[ext_resource type="Script" uid="uid://csgui4nijqn23" path="res://vfx/plasma_spark.gd" id="1_spark"]
+[ext_resource type="Shader" uid="uid://cbd36otelko80" path="res://vfx/plasma_spark.gdshader" id="2_shader"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_spark"]
 render_priority = 0
 shader = ExtResource("2_shader")
-shader_parameter/spark_color = Color(0.2, 0.8, 1.0, 1)
+shader_parameter/spark_color = Color(0.2, 0.8, 1, 1)
 shader_parameter/core_intensity = 2.0
 
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_spark"]
@@ -25,7 +25,7 @@ scale_max = 0.2
 
 [sub_resource type="QuadMesh" id="QuadMesh_spark"]
 
-[node name="PlasmaSpark" type="GPUParticles3D"]
+[node name="PlasmaSpark" type="GPUParticles3D" unique_id=1126257735]
 material_override = SubResource("ShaderMaterial_spark")
 emitting = false
 amount = 50

@@ -14,8 +14,6 @@ resource_local_to_scene = true
 render_priority = 0
 shader = ExtResource("1_kcjdk")
 shader_parameter/albedo_texture = ExtResource("2_key31")
-shader_parameter/scroll_speed = 2.0
-shader_parameter/rotation_angle = 3.141592653589793
 shader_parameter/texture_scale = 1.0
 
 [sub_resource type="PlaneMesh" id="PlaneMesh_kcjdk"]
@@ -31,8 +29,10 @@ shape = SubResource("BoxShape3D_2bp38")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1102015546]
 material_override = SubResource("ShaderMaterial_key31")
+instance_shader_parameters/rotation_angle = 3.141592653589793
+instance_shader_parameters/scroll_speed = 2.0
 mesh = SubResource("PlaneMesh_kcjdk")
 
 [node name="DirectionArrow" type="MeshInstance3D" parent="." unique_id=125089575]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0, 1.5, 0)
 mesh = ExtResource("4_i2gnb")

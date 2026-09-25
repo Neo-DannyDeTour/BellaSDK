@@ -1,8 +1,8 @@
-[gd_scene load_steps=2 format=3 uid="uid://cs1q7xvewlwx5"]
+[gd_scene format=3 uid="uid://cs1q7xvewlwx5"]
 
 [ext_resource type="Texture2D" uid="uid://1qp4s87d4dpp" path="res://addons/renderdoc_launcher/res/renderdoc_logo.png" id="1_ieckf"]
 
-[node name="Control" type="Control"]
+[node name="Control" type="Control" unique_id=336020090]
 custom_minimum_size = Vector2(120, 40)
 layout_mode = 3
 anchors_preset = 15
@@ -11,12 +11,12 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Panel" type="Panel" parent="."]
+[node name="Panel" type="Panel" parent="." unique_id=1080656255]
 layout_mode = 0
 offset_right = 120.0
 offset_bottom = 40.0
 
-[node name="HBoxContainer" type="HBoxContainer" parent="Panel"]
+[node name="HBoxContainer" type="HBoxContainer" parent="Panel" unique_id=1112998617]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -24,11 +24,11 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="Panel/HBoxContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="Panel/HBoxContainer" unique_id=57038715]
 custom_minimum_size = Vector2(4, 0)
 layout_mode = 2
 
-[node name="RenderDocButton" type="TextureButton" parent="Panel/HBoxContainer"]
+[node name="RenderDocButton" type="TextureButton" parent="Panel/HBoxContainer" unique_id=1969955969]
 custom_minimum_size = Vector2(24, 24)
 layout_mode = 2
 size_flags_horizontal = 0
@@ -37,14 +37,14 @@ texture_normal = ExtResource("1_ieckf")
 ignore_texture_size = true
 stretch_mode = 4
 
-[node name="OptionButton" type="OptionButton" parent="Panel/HBoxContainer"]
+[node name="OptionButton" type="OptionButton" parent="Panel/HBoxContainer" unique_id=1083909895]
 layout_mode = 2
 size_flags_horizontal = 8
 tooltip_text = "Choose which scene RenderDoc should launch with"
 toggle_mode = false
 flat = true
 
-[node name="FileDialog" type="FileDialog" parent="."]
+[node name="FileDialog" type="FileDialog" parent="." unique_id=1748940725]
 title = "Open a File"
 initial_position = 1
 size = Vector2i(500, 600)

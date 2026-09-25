@@ -2,7 +2,62 @@
 
 [ext_resource type="Script" uid="uid://dt3xwwxuhcuay" path="res://environment/dust_volume.gd" id="1_cue1o"]
 
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_cue1o"]
+emission_shape = 3
+emission_box_extents = Vector3(3, 2, 3)
+initial_velocity_min = 0.02
+initial_velocity_max = 0.06
+gravity = Vector3(0, -0.015, 0)
+scale_min = 0.015
+scale_max = 0.045
+color = Color(0.92, 0.88, 0.78, 0.35)
+turbulence_enabled = true
+turbulence_noise_strength = 0.25
+turbulence_noise_scale = 2.0
+turbulence_noise_speed = Vector3(0.08, 0.04, 0.08)
+collision_mode = 1
+collision_friction = 0.1
+collision_bounce = 0.2
+
+[sub_resource type="Gradient" id="Gradient_aowhr"]
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_adyco"]
+gradient = SubResource("Gradient_aowhr")
+width = 32
+height = 32
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.5, 0)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_314w8"]
+transparency = 1
+blend_mode = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_texture = SubResource("GradientTexture2D_adyco")
+billboard_mode = 3
+billboard_keep_scale = true
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+proximity_fade_enabled = true
+proximity_fade_distance = 0.4
+distance_fade_mode = 1
+distance_fade_min_distance = 0.6
+distance_fade_max_distance = 1.2
+
+[sub_resource type="QuadMesh" id="QuadMesh_r8pfb"]
+material = SubResource("StandardMaterial3D_314w8")
+
 [node name="DustVolume" type="GPUParticles3D" unique_id=1530447784]
+layers = 512
+amount = 160
+lifetime = 8.0
+visibility_aabb = AABB(-3, -2, -3, 6, 4, 6)
+process_material = SubResource("ParticleProcessMaterial_cue1o")
+draw_pass_1 = SubResource("QuadMesh_r8pfb")
 script = ExtResource("1_cue1o")
 
 [node name="CullingEnabler" type="VisibleOnScreenEnabler3D" parent="." unique_id=461414028]
+aabb = AABB(-3, -2, -3, 6, 4, 6)

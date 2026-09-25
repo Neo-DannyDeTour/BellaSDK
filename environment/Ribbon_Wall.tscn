@@ -6,15 +6,12 @@
 [sub_resource type="ViewportTexture" id="ViewportTexture_1gle2"]
 viewport_path = NodePath("ScreenViewport")
 
-[sub_resource type="ViewportTexture" id="ViewportTexture_37qkp"]
-viewport_path = NodePath("ScreenViewport")
-
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_37qkp"]
 resource_local_to_scene = true
 albedo_texture = SubResource("ViewportTexture_1gle2")
 emission_enabled = true
 emission_energy_multiplier = 3.0
-emission_texture = SubResource("ViewportTexture_37qkp")
+emission_texture = SubResource("ViewportTexture_1gle2")
 
 [sub_resource type="QuadMesh" id="QuadMesh_1gle2"]
 resource_local_to_scene = true
@@ -38,7 +35,7 @@ shader_parameter/iterations = 5
 shader_parameter/frq_start = 20.0
 shader_parameter/frq_coef = 1.0
 shader_parameter/alpha_threshold = 0.0
-shader_parameter/custom_time = 1.9597222222222186
+shader_parameter/custom_time = 0.281313333333327
 
 [node name="RibbonWall" type="Node3D" unique_id=1115391137]
 script = ExtResource("1_1gle2")

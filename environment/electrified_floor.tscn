@@ -5,7 +5,7 @@
 [ext_resource type="Shader" uid="uid://ckhwv7iiq0vs" path="res://environment/electrified_floor.gdshader" id="3_6b0rb"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_534t5"]
-size = Vector3(2, 0.2, 2)
+size = Vector3(2, 0.5, 2)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tx8to"]
 albedo_texture = ExtResource("2_wbu1w")
@@ -28,7 +28,7 @@ shader_parameter/strike_frequency = 0.4770000226575
 [sub_resource type="PlaneMesh" id="PlaneMesh_i44y8"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_1j7qv"]
-size = Vector3(2, 0.2, 2)
+size = Vector3(2, 1, 2)
 
 [node name="ElectrifiedFloor" type="StaticBody3D" unique_id=1382971459 node_paths=PackedStringArray("damage_area")]
 collision_layer = 16
@@ -54,4 +54,5 @@ collision_layer = 16
 collision_mask = 18
 
 [node name="DamageCollision" type="CollisionShape3D" parent="DamageArea" unique_id=1091018607]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
 shape = SubResource("BoxShape3D_1j7qv")

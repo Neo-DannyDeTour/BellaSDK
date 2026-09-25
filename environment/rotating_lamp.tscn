@@ -10,6 +10,12 @@ rings = 0
 [sub_resource type="BoxMesh" id="BoxMesh_wts27"]
 size = Vector3(0.4, 0.8, 0.5)
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_qd872"]
+albedo_color = Color(1, 0, 0, 1)
+emission_enabled = true
+emission = Color(1, 0, 0, 1)
+emission_energy_multiplier = 5.0
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ptton"]
 albedo_color = Color(0, 0, 0, 1)
 
@@ -28,6 +34,7 @@ mesh = SubResource("CylinderMesh_wts27")
 [node name="LightMesh" type="MeshInstance3D" parent="Rotor" unique_id=346408938]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.1, -0.5, 0)
 mesh = SubResource("BoxMesh_wts27")
+surface_material_override/0 = SubResource("StandardMaterial3D_qd872")
 
 [node name="Blocker" type="MeshInstance3D" parent="Rotor" unique_id=382123604]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.1, -0.5, 0)
@@ -35,3 +42,5 @@ mesh = SubResource("BoxMesh_qd872")
 
 [node name="SpotLight3D" type="SpotLight3D" parent="Rotor" unique_id=1689428239]
 transform = Transform3D(-3.785517e-08, -0.5, 0.86602545, -2.1855692e-08, 0.86602545, 0.5, -1, -1.7763568e-15, -4.3711385e-08, -0.5446497, -0.53712726, 0)
+light_color = Color(1, 0, 0, 1)
+light_energy = 5.0

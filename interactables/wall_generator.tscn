@@ -24,9 +24,6 @@ shader_parameter/alpha_scissor_threshold = 0.5
 [node name="WallGenerator" type="StaticBody3D" unique_id=1081908824 node_paths=PackedStringArray("socket_marker", "socket_area", "status_label", "transmitter", "interact_comp", "highlight_comp")]
 collision_mask = 0
 script = ExtResource("1_4myyk")
-eject_tilt_degrees = null
-cell_half_height = null
-reinsertion_cooldown = null
 socket_marker = NodePath("SocketMarker")
 socket_area = NodePath("SocketArea")
 status_label = NodePath("StatusLabel")
