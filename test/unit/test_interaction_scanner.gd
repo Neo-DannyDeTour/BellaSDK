@@ -25,7 +25,7 @@ func test_enter_terminal_mode() -> void:
 	watch_signals(scanner)
 	scanner.call("enter_terminal_mode", terminal)
 
-	assert_true(bool(scanner.get("is_in_terminal_mode")), "Scanner should be in terminal mode.")
+	assert_true(scanner.get("is_in_terminal_mode") == true, "Scanner should be in terminal mode.")
 	assert_eq(
 		scanner.get("active_terminal"), terminal, "Active terminal reference should be stored."
 	)
@@ -42,8 +42,8 @@ func test_exit_terminal_mode() -> void:
 	watch_signals(scanner)
 	scanner.call("exit_terminal_mode")
 
-	assert_false(
-		bool(scanner.get("is_in_terminal_mode")), "Scanner should have exited terminal mode."
+	assert_true(
+		scanner.get("is_in_terminal_mode") == false, "Scanner should have exited terminal mode."
 	)
 	assert_null(scanner.get("active_terminal"), "Terminal reference should be cleared.")
 	assert_signal_emitted_with_parameters(scanner, "terminal_mode_toggled", [false])

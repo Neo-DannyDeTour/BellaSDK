@@ -27,7 +27,7 @@ func test_add_card() -> void:
 
 	system.call("add_card", &"red_card")
 
-	assert_true(bool(system.call("has_card", &"red_card")), "System should have red_card.")
+	assert_true(system.call("has_card", &"red_card") == true, "System should have red_card.")
 	assert_signal_emitted_with_parameters(system, "card_picked_up", [&"red_card"])
 
 
@@ -50,7 +50,7 @@ func test_consume_card() -> void:
 
 	system.call("consume_card", &"green_card")
 
-	assert_false(bool(system.call("has_card", &"green_card")), "System should not have green_card.")
+	assert_false(system.call("has_card", &"green_card") == true, "System should not have green_card.")
 	assert_signal_emitted_with_parameters(system, "card_used", [&"green_card"])
 
 

@@ -3,7 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://2db87kewe2f2" path="res://player/player.tscn" id="1_fd7ir"]
 [ext_resource type="Script" uid="uid://j0w6d0k03cwm" path="res://levels/procedural_blockout.gd" id="1_jp0io"]
 [ext_resource type="Texture2D" uid="uid://b4mtef0obdnql" path="res://assets/HDR/qwantani_moonrise_puresky_2k.hdr" id="2_n6e28"]
-[ext_resource type="MeshLibrary" uid="uid://d5x0yx6v668g" path="res://blockout_library.tres" id="2_s5yrl"]
+[ext_resource type="MeshLibrary" uid="uid://d5x0yx6v668g" path="res://assets/blockout_library.tres" id="2_s5yrl"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_n6e28"]
 panorama = ExtResource("2_n6e28")
