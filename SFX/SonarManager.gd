@@ -1,15 +1,11 @@
 ## Manages spatial navigation sonar pings and categorized audio cues for accessibility.
-##
-## Scans the surrounding 3D environment for categorized objects, sorting them by
-## priority and distance while applying raycast occlusion, rear-cone spectral filtering,
-## and staggered playback delays.
+#class_name SonarManager
 extends Node
 
-## Emitted when a sonar scan finishes scanning the surroundings.
-## [param targets_found] The number of audible targets detected during the scan.
+## Emitted when a sonar scan finishes scanning the surroundings with target count.
 signal on_scan_completed(targets_found: int)
 
-## Maximum concurrent 3D audio players pooled for echo playback.
+## Maximum concurrent [AudioStreamPlayer3D] pooled for echo playback.
 const MAX_AUDIO_PLAYERS: int = 16
 
 ## Dedicated audio bus name for accessibility sound effects.
@@ -19,23 +15,25 @@ const SFX_BUS_NAME: StringName = &"AccesibilitySFX"
 const SPATIAL_DEDUPLICATION_THRESHOLD_SQ: float = 1.0
 
 @export_category("Sonar Audio Streams")
-## The sound played centered on the player when triggering a ping scan.
+
+## Sound played centered on the player when triggering a ping scan.
 @export var ping_emitter_sound: AudioStream
 
-## The audio stream used for interactable physical objects (barrels, levers, items).
+## Audio stream used for interactable physical objects.
 @export var interactable_echo_sound: AudioStream
 
-## The audio stream used for navigational waypoints, exit routes, and objectives.
+## Audio stream used for navigational waypoints and exit routes.
 @export var waypoint_echo_sound: AudioStream
 
-## The audio stream used for environmental hazards, enemies, or drop-offs.
+## Audio stream used for environmental hazards, enemies, or drop-offs.
 @export var hazard_echo_sound: AudioStream
 
 @export_category("Sonar Tuning")
+
 ## Maximum scan radius in meters.
 @export var scan_radius: float = 25.0
 
-## Speed of the virtual sound wave in meters per second for staggered playback.
+## Speed of virtual sound wave in meters per second for staggered playback.
 @export var wave_speed: float = 40.0
 
 ## Minimum time in seconds between consecutive echoes to prevent audio clutter.
@@ -47,10 +45,10 @@ const SPATIAL_DEDUPLICATION_THRESHOLD_SQ: float = 1.0
 ## Collision mask used for physics raycast occlusion detection.
 @export_flags_3d_physics var occlusion_collision_mask: int = 1
 
-## Dedicated 2D audio player for the outgoing local ping chime.
+## Dedicated [AudioStreamPlayer] for the outgoing local ping chime.
 var _local_ping_player: AudioStreamPlayer = AudioStreamPlayer.new()
 
-## Pool of recycled 3D audio players to prevent runtime node allocations.
+## Pool of recycled [AudioStreamPlayer3D] nodes to prevent runtime allocations.
 var _player_pool: Array[AudioStreamPlayer3D] = []
 
 ## Internal counter tracking active players inside the object pool.
@@ -60,8 +58,7 @@ var _pool_index: int = 0
 var _current_sweep_id: int = 0
 
 
-## Lifecycle method called when the node enters the scene tree.
-## Initializes the audio player pool and configures bus routing.
+## Initializes audio player pool and connects to global event dispatcher.
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	print("SonarManager: Initializing spatial audio pool.")
@@ -70,12 +67,12 @@ func _ready() -> void:
 	if has_node("/root/Events"):
 		var events_node: Node = get_node("/root/Events")
 		if events_node.has_signal("sonar_ping_requested"):
-			events_node.sonar_ping_requested.connect(trigger_sonar)
-			print("SonarManager: Successfully hooked to Events.sonar_ping_requested.")
+			Utilities.safe_connect(events_node.sonar_ping_requested, trigger_sonar)
+			print("SonarManager: Hooked to Events.sonar_ping_requested.")
 
 
-## Executes an active sonar sweep centered on the provided origin node or camera.
-## [param origin_node] The [Node3D] representing the player or camera position.
+## Executes active sonar sweep centered on origin node using [method Utilities.delay_call].
+## [param origin_node] Node representing player or camera origin.
 func trigger_sonar(origin_node: Node3D) -> void:
 	if not is_instance_valid(origin_node):
 		print("SonarManager: Invalid origin node passed to trigger_sonar.")
@@ -84,7 +81,7 @@ func trigger_sonar(origin_node: Node3D) -> void:
 	_current_sweep_id += 1
 	var active_sweep_id: int = _current_sweep_id
 
-	print("SonarManager: Ping triggered at position: ", origin_node.global_position)
+	print("SonarManager: Ping triggered at: ", origin_node.global_position)
 	if _local_ping_player.stream != null:
 		_local_ping_player.play()
 
@@ -108,7 +105,6 @@ func trigger_sonar(origin_node: Node3D) -> void:
 			if not is_instance_valid(item):
 				continue
 
-			# Exclude items belonging to the Options Menu Diorama SubViewport
 			if item.get_viewport() != target_viewport:
 				continue
 
@@ -165,7 +161,7 @@ func trigger_sonar(origin_node: Node3D) -> void:
 			seen_positions.append(node.global_position)
 			candidate_nodes.append(node)
 
-	# Step 3: Occlusion and priority ranking
+	# Step 3: Occlusion and priority ranking via Utilities.raycast_3d
 	var targets_to_ping: Array[Dictionary] = []
 	for target_3d: Node3D in candidate_nodes:
 		var dist: float = origin_pos.distance_to(target_3d.global_position)
@@ -181,7 +177,6 @@ func trigger_sonar(origin_node: Node3D) -> void:
 				}
 			)
 
-	# Sort by Priority ascending (0 = highest), then Distance ascending
 	targets_to_ping.sort_custom(
 		func(a: Dictionary, b: Dictionary) -> bool:
 			if (a["priority"] as int) != (b["priority"] as int):
@@ -192,7 +187,6 @@ func trigger_sonar(origin_node: Node3D) -> void:
 	if targets_to_ping.size() > max_audible_targets:
 		targets_to_ping = targets_to_ping.slice(0, max_audible_targets)
 
-	# Re-sort retained targets strictly by distance for proper wave expansion timing
 	targets_to_ping.sort_custom(
 		func(a: Dictionary, b: Dictionary) -> bool:
 			return (a["distance"] as float) < (b["distance"] as float)
@@ -207,7 +201,9 @@ func trigger_sonar(origin_node: Node3D) -> void:
 		var scheduled_delay: float = maxf(natural_delay, last_scheduled_time + min_cue_separation)
 		last_scheduled_time = scheduled_delay
 
-		tree.create_timer(scheduled_delay).timeout.connect(
+		Utilities.delay_call(
+			self,
+			scheduled_delay,
 			_play_target_echo.bind(
 				active_sweep_id, origin_pos, forward_dir, target_node, is_occluded
 			)
@@ -216,8 +212,9 @@ func trigger_sonar(origin_node: Node3D) -> void:
 	on_scan_completed.emit(targets_to_ping.size())
 
 
-## Configures the local ping player and pre-allocates the 3D player pool.
+## Configures local ping player and pre-allocates 3D player pool.
 func _setup_audio_nodes() -> void:
+	print("SonarManager: Configuring audio bus routing and pooling.")
 	var resolved_bus: StringName = SFX_BUS_NAME
 	if AudioServer.get_bus_index(resolved_bus) == -1:
 		resolved_bus = &"AccessibilitySFX"
@@ -239,9 +236,9 @@ func _setup_audio_nodes() -> void:
 		_player_pool.append(player_3d)
 
 
-## Ascends node hierarchy to find the canonical root [Node3D] representing the interactable entity.
-## [param node] The target [Node3D] detected via group queries.
-## Returns the highest root [Node3D] representing the interactable asset.
+## Ascends node hierarchy to find canonical root [Node3D] representing interactable entity.
+## [param node] Target node detected via group query.
+## [return] Highest root [Node3D] representing interactable asset.
 func _resolve_interactable_root(node: Node3D) -> Node3D:
 	if not is_instance_valid(node):
 		return null
@@ -270,9 +267,9 @@ func _resolve_interactable_root(node: Node3D) -> Node3D:
 	return candidate
 
 
-## Calculates integer priority rank for audio filtering (lower is higher priority).
-## [param target_node] The [Node3D] evaluated.
-## Returns priority rank from 0 (highest) to 2 (lowest).
+## Calculates integer priority rank for audio filtering.
+## [param target_node] Evaluated node.
+## [return] Priority rank from 0 (highest) to 2 (lowest).
 func _get_target_priority(target_node: Node3D) -> int:
 	if target_node.is_in_group(&"hazard"):
 		return 0
@@ -281,27 +278,27 @@ func _get_target_priority(target_node: Node3D) -> int:
 	return 2
 
 
-## Casts a physics raycast from origin to target to verify direct line of sight.
+## Casts physics ray using [method Utilities.raycast_3d] to verify line of sight.
 ## [param space_state] Direct 3D physics space state.
-## [param origin_pos] Origin coordinates of the ping.
-## [param target_node] The destination [Node3D].
-## Returns true if an occluding collider intercepts the ray.
+## [param origin_pos] Origin coordinates of ping.
+## [param target_node] Destination target node.
+## [return] True if an occluding collider intercepts ray.
 func _check_occlusion(
 	space_state: PhysicsDirectSpaceState3D, origin_pos: Vector3, target_node: Node3D
 ) -> bool:
-	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-		origin_pos, target_node.global_position, occlusion_collision_mask
-	)
+	var exclude: Array[RID] = []
 	if target_node is CollisionObject3D:
-		query.exclude = [(target_node as CollisionObject3D).get_rid()]
+		exclude.append((target_node as CollisionObject3D).get_rid())
 
-	var result: Dictionary = space_state.intersect_ray(query)
+	var result: Dictionary = Utilities.raycast_3d(
+		space_state, origin_pos, target_node.global_position, occlusion_collision_mask, exclude
+	)
 	return not result.is_empty()
 
 
-## Resolves the appropriate AudioStream based on node groups.
-## [param target_node] The [Node3D] being evaluated.
-## Returns the corresponding [AudioStream] or null if unassigned.
+## Resolves audio stream based on group membership.
+## [param target_node] Target node.
+## [return] Matching [AudioStream] or null if unassigned.
 func _resolve_target_stream(target_node: Node3D) -> AudioStream:
 	if target_node.is_in_group(&"hazard") and hazard_echo_sound != null:
 		return hazard_echo_sound
@@ -310,12 +307,12 @@ func _resolve_target_stream(target_node: Node3D) -> AudioStream:
 	return interactable_echo_sound
 
 
-## Plays a spatialized 3D echo at the location of a detected target.
-## [param sweep_id] Token tracking the active sweep instance.
-## [param player_pos] The global position of the listener for elevation calculation.
-## [param forward_dir] Forward vector of the listener to evaluate rear attenuation.
-## [param target_node] The [Node3D] destination receiving the acoustic bounce.
-## [param is_occluded] Whether the line of sight is obstructed.
+## Plays spatialized 3D echo at target location with spectral attenuation.
+## [param sweep_id] Token tracking active sweep instance.
+## [param player_pos] Global position of listener.
+## [param forward_dir] Forward vector of listener.
+## [param target_node] Destination node receiving echo.
+## [param is_occluded] Whether line of sight is obstructed.
 func _play_target_echo(
 	sweep_id: int, player_pos: Vector3, forward_dir: Vector3, target_node: Node3D, is_occluded: bool
 ) -> void:
@@ -338,20 +335,17 @@ func _play_target_echo(
 	player_3d.global_position = target_node.global_position
 	player_3d.stream = stream_to_play
 
-	# Vertical pitch elevation calculation
 	var height_diff: float = target_node.global_position.y - player_pos.y
 	var elevation_factor: float = clampf(height_diff / 4.0, -0.3, 0.3)
 	var final_pitch: float = 1.0 + elevation_factor
 	var final_volume_db: float = 0.0
 
-	# Front / Rear spectral cone-of-confusion shaping
 	var to_target: Vector3 = (target_node.global_position - player_pos).normalized()
 	var dot: float = forward_dir.dot(to_target)
 	if dot < 0.0:
 		final_pitch *= lerpf(0.85, 1.0, dot + 1.0)
 		final_volume_db -= lerpf(4.0, 0.0, dot + 1.0)
 
-	# Occlusion dampening
 	if is_occluded:
 		final_volume_db -= 6.0
 		final_pitch *= 0.8

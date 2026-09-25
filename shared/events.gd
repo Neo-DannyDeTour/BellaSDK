@@ -350,6 +350,31 @@ signal player_damaged(amount: int)
 @warning_ignore("unused_signal")
 signal player_healed(amount: int)
 
+## Emitted when outline highlight mode changes (0=Off, 1=Always, 2=Focus).
+## [param mode] Mode index: 0 for Off, 1 for Always, 2 for On Focus.
+@warning_ignore("unused_signal")
+signal outline_mode_changed(mode: int)
+
+## Emitted when target outline color is modified in accessibility settings.
+## [param color] The new [Color] value for the outline.
+@warning_ignore("unused_signal")
+signal outline_color_changed(color: Color)
+
+## Emitted when target outline blink speed is adjusted.
+## [param speed] Pulse oscillation speed in cycles per second.
+@warning_ignore("unused_signal")
+signal outline_blink_speed_changed(speed: float)
+
+## Emitted when target outline minimum pulse intensity is modified.
+## [param intensity] Minimum alpha/intensity clamp between 0.0 and 1.0.
+@warning_ignore("unused_signal")
+signal outline_min_intensity_changed(intensity: float)
+
+## Emitted when target outline maximum pulse intensity is modified.
+## [param intensity] Maximum alpha/intensity clamp between 0.0 and 5.0.
+@warning_ignore("unused_signal")
+signal outline_max_intensity_changed(intensity: float)
+
 ## Visual animation style presets for chapter title card sequences.
 enum ChapterAnimStyle {
 	SIMPLE,

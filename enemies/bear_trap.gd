@@ -15,6 +15,9 @@ var current_state: TrapState = TrapState.OPEN
 ## Stores a reference to the trapped [Player] to restore their movement states later.
 var trapped_player: Player = null
 
+## Active tween controlling jaw closure; managed via [method Utilities.reset_tween].
+var _snap_tween: Tween = null
+
 ## The left jaw visual node used for the snapping animation pivot.
 @onready var left_jaw: Node3D = $LeftJawPivot
 
@@ -31,16 +34,15 @@ var trapped_player: Player = null
 ## Initializes the beartrap in the OPEN state, setting jaw angles and connecting signals.
 func _ready() -> void:
 	print("BearTrap: _ready() - Initializing beartrap in OPEN state.")
-	body_entered.connect(_on_body_entered)
-	immobilize_timer.timeout.connect(_on_immobilize_timeout)
-	sprint_block_timer.timeout.connect(_on_sprint_block_timeout)
+	Utilities.safe_connect(body_entered, _on_body_entered)
+	Utilities.safe_connect(immobilize_timer.timeout, _on_immobilize_timeout)
+	Utilities.safe_connect(sprint_block_timer.timeout, _on_sprint_block_timeout)
 
 	left_jaw.rotation_degrees.z = 45.0
 	right_jaw.rotation_degrees.z = -45.0
 
 
-## Handles the collision event when a body enters the [Area3D].
-## Checks if the body is a [Player] and triggers the trap if it is open.
+## Handles collision when body enters [Area3D], triggering trap if body is [Player].
 ## [param body] The [Node3D] that entered the trigger area.
 func _on_body_entered(body: Node3D) -> void:
 	if current_state == TrapState.OPEN and body is Player:
@@ -48,16 +50,21 @@ func _on_body_entered(body: Node3D) -> void:
 		snap_shut(body as Player)
 
 
-## Closes the jaws, damages the [Player], and applies movement and sprint debuffs.
-## [param player] The [Player] caught in the trap.
+## Closes the jaws, damages [param player], and applies movement and sprint debuffs.
 func snap_shut(player: Player) -> void:
 	print("BearTrap: snap_shut() - Closing jaws and applying debuffs to player.")
 	current_state = TrapState.CLOSED
 	trapped_player = player
 
-	var tween: Tween = create_tween().set_parallel(true)
-	tween.tween_property(left_jaw, "rotation_degrees:z", 0.0, 0.1).set_trans(Tween.TRANS_BOUNCE)
-	tween.tween_property(right_jaw, "rotation_degrees:z", 0.0, 0.1).set_trans(Tween.TRANS_BOUNCE)
+	_snap_tween = Utilities.reset_tween(self, _snap_tween)
+	if is_instance_valid(_snap_tween):
+		_snap_tween.set_parallel(true)
+		_snap_tween.tween_property(left_jaw, "rotation_degrees:z", 0.0, 0.1).set_trans(
+			Tween.TRANS_BOUNCE
+		)
+		_snap_tween.tween_property(right_jaw, "rotation_degrees:z", 0.0, 0.1).set_trans(
+			Tween.TRANS_BOUNCE
+		)
 
 	trapped_player.take_damage(150)
 

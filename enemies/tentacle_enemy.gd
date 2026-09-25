@@ -1,8 +1,7 @@
 ## An organic enemy that manipulates physics objects and attacks the player.
 ##
-## [TentacleEnemy] controls a procedural visual tentacle mesh and uses an invisible
-## target node to puppet its movements. It idly plays with surrounding [RigidBody3D] objects,
-## but becomes hostile when the player approaches, utilizing physical strikes or throwing mechanics.
+## Controls procedural tentacle mesh and uses an invisible target node.
+## Interacts with surrounding [RigidBody3D] objects and strikes or throws objects at [Player].
 class_name TentacleEnemy
 extends StaticBody3D
 
@@ -12,7 +11,7 @@ enum State { IDLE, PLAYING, HOLDING, SPOTTED, ATTACKING }
 ## The delay in seconds before the enemy strikes after spotting the player.
 @export var charge_delay: float = 2.0
 
-## The probability (0.0 to 1.0) that the enemy will grab an object and throw it during combat.
+## The probability (0.0 to 1.0) that the enemy will grab an object and throw it.
 @export_range(0.0, 1.0) var throw_attack_chance: float = 0.4
 
 ## The force applied when throwing a pickable object at the player.
@@ -63,7 +62,10 @@ var _is_striking: bool = false
 ## Coordinates where the tentacle wants to randomly place a held object.
 var _place_target: Vector3 = Vector3.ZERO
 
-## The invisible spatial node that drives the actual procedural mesh generation target.
+## Active tween controlling physical strikes and throws; managed via [Utilities].
+var _action_tween: Tween = null
+
+## The invisible spatial node that drives procedural mesh generation target.
 @onready var tentacle_target: Node3D = $TentacleTarget
 
 ## The sphere volume that detects incoming players and objects.
@@ -73,16 +75,16 @@ var _place_target: Vector3 = Vector3.ZERO
 @onready var health_component: HealthComponent = $HealthComponent
 
 
-## Initializes signal connections and starts the tentacle in an upright idle posture.
+## Initializes signal connections and starts tentacle in upright idle posture.
 func _ready() -> void:
 	print("TentacleEnemy: _ready() - Initializing snake-like enemy.")
 	tentacle_target.position = Vector3(0.0, max_reach * 0.5, 0.0)
 
-	detection_area.body_entered.connect(_on_detection_area_body_entered)
-	detection_area.body_exited.connect(_on_detection_area_body_exited)
+	Utilities.safe_connect(detection_area.body_entered, _on_detection_area_body_entered)
+	Utilities.safe_connect(detection_area.body_exited, _on_detection_area_body_exited)
 
 	if is_instance_valid(health_component):
-		health_component.died.connect(_on_died)
+		Utilities.safe_connect(health_component.died, _on_died)
 
 	_switch_state(State.IDLE)
 
@@ -118,7 +120,7 @@ func _process_idle(delta: float) -> void:
 	tentacle_target.position = tentacle_target.position.lerp(desired_pos, delta * track_speed)
 
 
-## Hovers menacingly over a toy object and periodically decides to poke or grab it.
+## Hovers menacingly over toy object and periodically decides to poke or grab it.
 ## [param delta] The physics step duration in seconds.
 func _process_playing(delta: float) -> void:
 	_idle_time += delta
@@ -181,10 +183,9 @@ func _process_spotted(delta: float) -> void:
 		_decide_attack()
 
 
-## Locks the position of held rigidbodies directly to the tentacle tip during physics tweens.
+## Locks position of held rigidbodies directly to tentacle tip during physics tweens.
 ## [param _delta] The physics step duration in seconds.
 func _process_attacking(_delta: float) -> void:
-	# Ensure the held object perfectly follows the tentacle head during attack/throw animations
 	if is_instance_valid(held_object):
 		held_object.global_position = tentacle_target.global_position
 
@@ -213,12 +214,10 @@ func _switch_state(new_state: State) -> void:
 func _decide_attack() -> void:
 	print("TentacleEnemy: _decide_attack() - Choosing attack pattern.")
 
-	# If already holding something, immediately throw it.
 	if is_instance_valid(held_object):
 		throw_object_at_player()
 		return
 
-	# Roll the dice to see if we should throw an object instead of biting
 	if randf() <= throw_attack_chance:
 		var potential_weapons: Array[RigidBody3D] = []
 		for body: Node3D in detection_area.get_overlapping_bodies():
@@ -230,7 +229,6 @@ func _decide_attack() -> void:
 			_perform_grab_and_throw(chosen_weapon)
 			return
 
-	# Fallback to standard strike if chance fails or no objects are nearby
 	strike_player()
 
 
@@ -268,25 +266,27 @@ func grab_object(body: RigidBody3D) -> void:
 	_switch_state(State.HOLDING)
 
 
-## Orchestrates a multi-step sequence using physics tweens to lift an object before throwing.
+## Orchestrates multi-step sequence using physics tweens to lift object before throwing.
 ## [param weapon] The [RigidBody3D] to snatch.
 func _perform_grab_and_throw(weapon: RigidBody3D) -> void:
 	print("TentacleEnemy: _perform_grab_and_throw() - Snatching weapon to throw!")
 	_is_striking = true
 
-	# Run the tween strictly during the physics step to avoid rigid body desyncs
-	var tween: Tween = create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
+	_action_tween = Utilities.reset_tween(self, _action_tween)
+	if not _action_tween:
+		_is_striking = false
+		return
 
-	# Dart to the object quickly
+	_action_tween.set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
+
 	(
-		tween
+		_action_tween
 		. tween_property(tentacle_target, "global_position", weapon.global_position, 0.2)
 		. set_trans(Tween.TRANS_CUBIC)
 		. set_ease(Tween.EASE_OUT)
 	)
 
-	# Freeze and secure it to the head
-	tween.tween_callback(
+	_action_tween.tween_callback(
 		func() -> void:
 			if is_instance_valid(weapon):
 				held_object = weapon
@@ -296,17 +296,15 @@ func _perform_grab_and_throw(weapon: RigidBody3D) -> void:
 				_switch_state(State.SPOTTED)
 	)
 
-	# Lift the object up before throwing to ensure proper physics clearance
 	var lift_pos: Vector3 = global_position + Vector3(0.0, max_reach * 0.6, 0.0)
 	(
-		tween
+		_action_tween
 		. tween_property(tentacle_target, "global_position", lift_pos, 0.25)
 		. set_trans(Tween.TRANS_SINE)
 		. set_ease(Tween.EASE_IN_OUT)
 	)
 
-	# Execute the actual throw
-	tween.tween_callback(
+	_action_tween.tween_callback(
 		func() -> void:
 			if is_instance_valid(held_object):
 				throw_object_at_player()
@@ -316,7 +314,7 @@ func _perform_grab_and_throw(weapon: RigidBody3D) -> void:
 	)
 
 
-## Applies massive linear velocity to the currently held object towards the player.
+## Applies massive linear velocity to currently held object towards the player.
 func throw_object_at_player() -> void:
 	print("TentacleEnemy: throw_object_at_player() - Throwing object!")
 	_is_striking = true
@@ -333,20 +331,23 @@ func throw_object_at_player() -> void:
 	throw_dir.y += 0.2
 	throw_dir = throw_dir.normalized()
 
-	# Cache the object locally before nulling to ensure _process_attacking releases it immediately
 	var projectile: RigidBody3D = held_object
 	held_object = null
 
 	projectile.freeze = false
-	# Direct linear_velocity assignment is far more reliable than apply_central_impulse
-	# on the exact same frame a RigidBody3D is unfrozen in Godot 4.
 	projectile.linear_velocity = throw_dir * throw_force
 
-	# Visual follow-through and recoil after throwing
-	var tween: Tween = create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
-	tween.tween_property(tentacle_target, "position", Vector3(0.0, max_reach * 0.5, 0.0), 0.3)
+	_action_tween = Utilities.reset_tween(self, _action_tween)
+	if not _action_tween:
+		_is_striking = false
+		return
 
-	tween.tween_callback(
+	_action_tween.set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
+	_action_tween.tween_property(
+		tentacle_target, "position", Vector3(0.0, max_reach * 0.5, 0.0), 0.3
+	)
+
+	_action_tween.tween_callback(
 		func() -> void:
 			_is_striking = false
 			if is_instance_valid(target_player):
@@ -374,17 +375,21 @@ func strike_player() -> void:
 		strike_target = target_player.global_position
 		strike_target.y += 1.0
 
-	# Set to physics process mode for engine consistency across all attacks
-	var tween: Tween = create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
+	_action_tween = Utilities.reset_tween(self, _action_tween)
+	if not _action_tween:
+		_is_striking = false
+		return
+
+	_action_tween.set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
 
 	(
-		tween
+		_action_tween
 		. tween_property(tentacle_target, "global_position", strike_target, 0.15)
 		. set_trans(Tween.TRANS_BACK)
 		. set_ease(Tween.EASE_IN)
 	)
 
-	tween.tween_callback(
+	_action_tween.tween_callback(
 		func() -> void:
 			if is_instance_valid(target_player) and target_player.has_method("take_damage"):
 				print("TentacleEnemy: strike_player() - Hit landed.")
@@ -392,12 +397,12 @@ func strike_player() -> void:
 	)
 
 	(
-		tween
+		_action_tween
 		. tween_property(tentacle_target, "position", Vector3(0.0, max_reach * 0.5, 0.0), 0.3)
 		. set_delay(0.1)
 	)
 
-	tween.tween_callback(
+	_action_tween.tween_callback(
 		func() -> void:
 			_is_striking = false
 			if not is_instance_valid(target_player):
@@ -441,7 +446,7 @@ func _on_detection_area_body_exited(body: Node3D) -> void:
 			_switch_state(State.IDLE)
 
 
-## Frees held objects and animates the tentacle drooping to the floor upon death.
+## Frees held objects and animates tentacle drooping to floor upon death.
 func _on_died() -> void:
 	print("TentacleEnemy: _on_died() - Enemy defeated.")
 
@@ -449,5 +454,7 @@ func _on_died() -> void:
 		held_object.freeze = false
 		held_object = null
 
-	var tween: Tween = create_tween()
-	tween.tween_property(tentacle_target, "position:y", 0.0, 0.5)
+	_action_tween = Utilities.reset_tween(self, _action_tween)
+	if not _action_tween:
+		return
+	_action_tween.tween_property(tentacle_target, "position:y", 0.0, 0.5)

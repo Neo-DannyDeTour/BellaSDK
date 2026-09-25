@@ -16,7 +16,8 @@ const PREVIEW_PARTICLES_NAME: String = "EditorPowerSourcePreview"
 @export var is_power_source: bool = false:
 	set(value):
 		is_power_source = value
-		_update_editor_preview()
+		if is_inside_tree():
+			_update_editor_preview()
 ## Requires an active power loop to distribute energy to targets.
 @export var requires_power_link: bool = false
 ## Determines if the inserted plug can be extracted by player interaction.
@@ -37,20 +38,23 @@ const PREVIEW_PARTICLES_NAME: String = "EditorPowerSourcePreview"
 @export var power_source_texture: Texture2D:
 	set(value):
 		power_source_texture = value
-		_update_editor_preview()
+		if is_inside_tree():
+			_update_editor_preview()
 
 ## Transmitter node passing logic triggers and progress to targets.
 @export_category("Connections")
 @export var transmitter: OutputTransmitter3D:
 	set(value):
 		transmitter = value
-		_sync_transmitter()
+		if is_inside_tree():
+			_sync_transmitter()
 
 ## Array of destination nodes receiving power signals.
-@export var targets: Array[Node3D]:
+@export var targets: Array[Node3D] = []:
 	set(value):
 		targets = value
-		_sync_transmitter()
+		if is_inside_tree():
+			_sync_transmitter()
 
 ## Tracks whether a plug is physically inserted and connected.
 var is_powered: bool = false
@@ -126,7 +130,7 @@ func _ready() -> void:
 
 ## Safely propagates the target array to the attached transmitter.
 func _sync_transmitter() -> void:
-	if not is_inside_tree():
+	if not is_inside_tree() or not is_node_ready():
 		return
 	if is_instance_valid(transmitter):
 		transmitter.targets = targets
@@ -202,7 +206,6 @@ func _build_lightning_particles() -> GPUParticles3D:
 
 
 ## Extracts the plug and transfers it into the player's hands on interact.
-## [param character] The character body performing the interaction.
 func _on_socket_interacted(character: CharacterBody3D) -> void:
 	print("Socket: Player interacted with socket.")
 	if not is_powered:
@@ -236,28 +239,24 @@ func _on_socket_interacted(character: CharacterBody3D) -> void:
 
 
 ## Direct interact method fallback invoked when interacted directly by scanner.
-## [param character] The character body performing the interaction.
 func interact_with(character: CharacterBody3D) -> void:
 	print("Socket: interact_with fallback called by character.")
 	_on_socket_interacted(character)
 
 
 ## Detects a compatible plug entering the socket trigger zone.
-## [param body] The 3D body entering the trigger area.
 func _on_body_entered(body: Node3D) -> void:
 	if not is_powered and body.is_in_group("plug") and not is_cooling_down:
 		plug_in(body)
 
 
 ## Detects when the active plug leaves the socket trigger boundary.
-## [param body] The 3D body exiting the trigger area.
 func _on_body_exited(body: Node3D) -> void:
 	if is_powered and body == current_plug:
 		unplug()
 
 
 ## Connects the plug, handles forced drop, and updates circuit states.
-## [param plug] The plug node being attached to the socket.
 func plug_in(plug: Node3D) -> void:
 	print("Socket: Plugging in ", plug.name)
 	if plug.has_method("drop") and plug.get("is_held"):
@@ -301,7 +300,6 @@ func plug_in(plug: Node3D) -> void:
 
 
 ## Waits for a physics tick before aligning and locking the plug.
-## [param plug] The plug node to align after physics settles.
 func _trigger_delayed_snap(plug: Node3D) -> void:
 	print("Socket: Awaiting physics frame to guarantee clean state.")
 	await get_tree().physics_frame
@@ -407,7 +405,6 @@ func _on_socket_unfocused() -> void:
 
 
 ## Synchronizes prompt visibility when toggled in the settings menu.
-## [param enabled] New visibility boolean from global setting event.
 func _on_item_prompts_toggled(enabled: bool) -> void:
 	print("Socket: Item prompt visibility updated -> ", enabled)
 	_show_text_prompts = enabled
@@ -416,7 +413,6 @@ func _on_item_prompts_toggled(enabled: bool) -> void:
 
 
 ## Reacts to power state modifications emitted by the connected plug.
-## [param has_power] Whether the connected plug is active.
 func _on_plug_power_changed(has_power: bool) -> void:
 	if not is_power_source and is_powered and requires_power_link:
 		if has_power:
@@ -450,7 +446,6 @@ func _deenergize_targets() -> void:
 
 
 ## Freezes and locks the plug transform to the target snap position.
-## [param plug] The plug node being positioned and locked.
 func _snap_and_freeze_plug(plug: Node3D) -> void:
 	print("Socket: Snapping and freezing plug to exact center.")
 	if not is_instance_valid(plug) or not is_instance_valid(snap_position):
