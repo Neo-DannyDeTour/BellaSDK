@@ -5,6 +5,7 @@ extends Node
 # --------------------------------------
 # CONSTANTS & VARIABLES
 # --------------------------------------
+
 ## Minimum mass in kilograms required for an object to be considered heavy.
 const HEAVY_OBJECT_MASS_THRESHOLD: float = 10.0
 
@@ -15,10 +16,12 @@ const DROP_REPICK_COOLDOWN_MSEC: int = 400
 # EXPORTS
 # --------------------------------------
 @export_category("Item Handling")
+
 ## The impulse force magnitude applied when throwing a held item.
 @export var throw_strength: float = 15.0
 
 @export_category("Node References")
+
 ## Shape cast used for detecting short-range physics items to grab.
 @export var interact_cast: ShapeCast3D
 
@@ -37,10 +40,11 @@ const DROP_REPICK_COOLDOWN_MSEC: int = 400
 # --------------------------------------
 # VARIABLES
 # --------------------------------------
+
 ## Reference to the parent player entity.
 var player: CharacterBody3D
 
-## The RigidBody3D currently being carried by the player.
+## The [RigidBody3D] currently being carried by the player.
 var held_item: RigidBody3D = null:
 	set(value):
 		var changed: bool = held_item != value
@@ -87,8 +91,7 @@ func initialize(p_player: Node3D) -> void:
 	):
 		interaction_scanner.setup_master_link(self)
 
-	if not Events.item_dropped.is_connected(_on_global_item_dropped):
-		Events.item_dropped.connect(_on_global_item_dropped)
+	Utilities.safe_connect(Events.item_dropped, _on_global_item_dropped)
 
 
 ## Evaluates physics frame tick updates and polls action inputs consistently.
@@ -135,7 +138,7 @@ func process_interaction(delta: float) -> void:
 			if Time.get_ticks_msec() - _last_grab_time < 200:
 				return
 
-			print("InteractionComponent: Interact pressed while holding. Dropping item.")
+			print("InteractionComponent: Interact pressed while holding. Drop.")
 			drop_held_item()
 			return
 
@@ -180,7 +183,6 @@ func process_unhandled_input(_event: InputEvent = null) -> void:
 
 
 ## Attempts to detect and grab a physics item within the grab shape cast volume.
-## [return] True if an item was successfully grabbed.
 func _try_pick_up() -> bool:
 	var time_since_drop: int = Time.get_ticks_msec() - _last_drop_time
 	if time_since_drop < DROP_REPICK_COOLDOWN_MSEC:
@@ -195,10 +197,7 @@ func _try_pick_up() -> bool:
 				target_body = (target_body as Area3D).get_parent()
 
 			if target_body is RigidBody3D and target_body.has_method("pick_up"):
-				print(
-					"InteractionComponent: Short-range grab successful on ",
-					(target_body as Node).name
-				)
+				print("InteractionComponent: Short-range grab on ", (target_body as Node).name)
 				force_grab_item(target_body as RigidBody3D)
 				return true
 	return false
@@ -247,7 +246,7 @@ func drop_held_item() -> void:
 ## [param actor] The entity [Node3D] that initiated the drop.
 func _on_global_item_dropped(item: Node3D, actor: Node3D) -> void:
 	if actor == player:
-		print("InteractionComponent: Global drop received. Restoring hands/weapons.")
+		print("InteractionComponent: Global drop received. Restoring weapons.")
 		_last_drop_time = Time.get_ticks_msec()
 		held_item = null
 		update_heavy_carry_state()
@@ -257,7 +256,7 @@ func _on_global_item_dropped(item: Node3D, actor: Node3D) -> void:
 
 ## Clears tracking state for carried items and unhides weapons.
 func force_clear_hands() -> void:
-	print("InteractionComponent: force_clear_hands() called. Clearing tracking variables.")
+	print("InteractionComponent: force_clear_hands() called.")
 	_last_drop_time = Time.get_ticks_msec()
 	held_item = null
 	update_heavy_carry_state()
@@ -320,20 +319,15 @@ func force_grab_item(item: RigidBody3D) -> void:
 	_set_weapon_active(false)
 
 
-## Reparents and positions an item onto the weapon holder socket.
+## Reparents and positions an item onto weapon holder socket using [Utilities].
 ## [param item] The [Node3D] to attach.
 ## [param item_anchor] Spatial anchor marker [Marker3D].
 ## [param p_player] Target [Node3D] player instance.
 func attach_item_to_weapon_holder(
 	item: Node3D, item_anchor: Marker3D, p_player: Node3D = null
 ) -> void:
-	print("InteractionComponent: attach_item_to_weapon_holder() called. Reparenting item.")
-
-	var current_parent: Node = item.get_parent()
-	if is_instance_valid(current_parent):
-		current_parent.remove_child(item)
-
-	weapon_holder.add_child(item)
+	print("InteractionComponent: attach_item_to_weapon_holder() reparenting item.")
+	Utilities.reparent_keep_transform(item, weapon_holder, true)
 
 	var offset: Vector3 = item.global_position - item_anchor.global_position
 	item.global_position = hold_position.global_position + offset

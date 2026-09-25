@@ -1,56 +1,69 @@
-## Controls the player's flashlight, managing dynamic shadows, flickering,
-## and volumetric fog rendering logic.
-##
-## Tracks wall proximity to adjust position, adds procedural jitter, and
-## synchronizes sway with mouse motion.
+## Controls player flashlight, handling dynamic shadows, procedural jitter, and pushback raycasts.
 class_name FlashlightController
 extends Node3D
 
 @export_category("Node References")
-## Reference to the main player view camera for calculating raycasts.
+
+## Reference to the main player view [Camera3D] for calculating forward raycasts.
 @export var camera: Camera3D
-## Reference to the main forward-facing spotlight.
+
+## Reference to the primary [SpotLight3D] spotlight.
 @export var flashlight: SpotLight3D
-## Optional ambient light to illuminate the area immediately surrounding the player.
+
+## Optional ambient [OmniLight3D] illuminating the area surrounding the player.
 @export var omni_light: OmniLight3D
 
 @export_category("Flashlight Settings")
-## The distance in meters the raycast checks to detect walls and retract the flashlight.
+
+## Distance in meters checked to detect walls and retract the flashlight.
 @export var flashlight_maintain_distance: float = 1.5
-## The default target light energy during stable operation.
+
+## Default target light energy during stable operation.
 @export var base_energy: float = 10.0
-## Intensity scalar specifically for rendering the beam inside volumetric fog.
+
+## Intensity scalar for rendering the beam inside volumetric fog.
 @export var volumetric_energy: float = 8.0
-## The maximum magnitude of procedural sway offset based on mouse movement.
+
+## Maximum magnitude of procedural sway offset based on mouse movement.
 @export var sway_amount: float = 5.0
-## The interpolation speed for returning the sway offset to center.
+
+## Interpolation speed for returning sway offset to center.
 @export var smooth_speed: float = 10.0
-## The interpolation speed for the flashlight retracting backwards.
+
+## Interpolation speed for the flashlight retracting backwards.
 @export var flashlight_pos_smoothness: float = 10.0
-## The interpolation speed for the flashlight sway rotation.
+
+## Interpolation speed for the flashlight sway rotation.
 @export var flashlight_rot_smoothness: float = 10.0
 
 ## Cached local resting position of the flashlight setup.
 var default_pos: Vector3 = Vector3.ZERO
+
 ## Calculated 2D coordinate for procedural sway offset targeting.
 var sway_target: Vector2 = Vector2.ZERO
+
 ## Remaining duration in seconds for an active flicker event.
 var flicker_timer: float = 0.0
+
 ## Tracks if the flashlight is currently executing a flicker event.
 var is_flickering: bool = false
+
 ## Accumulated time index used for the procedural noise generator.
 var noise_time: float = 0.0
-## Dedicated noise instance used to create subtle positional jitter.
+
+## Dedicated [FastNoiseLite] instance creating subtle positional jitter.
 var jitter_noise: FastNoiseLite = FastNoiseLite.new()
+
+## Cached [RID] of the parent player physics body to exclude from pushback rays.
+var _player_rid: RID = RID()
 
 
 ## Caches initial positions and injects self into the parent player node.
 func _ready() -> void:
-	print("FlashlightController executing: Initializing setup.")
+	print("FlashlightController: Initializing setup.")
 	default_pos = position
 	flashlight.visible = false
 
-	# Enforce the volumetric beam energy required for the custom fog shader
 	flashlight.light_volumetric_fog_energy = volumetric_energy
 
 	if omni_light != null:
@@ -60,8 +73,11 @@ func _ready() -> void:
 	jitter_noise.frequency = 0.8
 
 	var player_node: Node = get_tree().get_first_node_in_group("player")
-	if is_instance_valid(player_node) and "flashlight_controller" in player_node:
-		player_node.set("flashlight_controller", self)
+	if is_instance_valid(player_node):
+		if "flashlight_controller" in player_node:
+			player_node.set("flashlight_controller", self)
+		if player_node is CollisionObject3D:
+			_player_rid = (player_node as CollisionObject3D).get_rid()
 
 
 ## Catches unhandled input for the flashlight toggle action.
@@ -74,7 +90,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if omni_light != null:
 			omni_light.visible = new_state
 
-		print("Player executing: Toggled flashlight visibility to ", new_state)
+		print("FlashlightController: Toggled flashlight visibility -> ", new_state)
 
 
 ## Executes per-frame logic when the flashlight is powered on.
@@ -103,21 +119,28 @@ func _apply_sway(delta: float) -> void:
 	sway_target = sway_target.lerp(Vector2.ZERO, delta * (smooth_speed * 0.5))
 
 
-## Raycasts forward and smoothly pulls the flashlight body backward
-## to prevent clipping through walls.
+## Raycasts forward using [method Utilities.raycast_3d] to retract from walls.
 ## [param delta] Frame time delta in seconds.
 func _apply_pushback(delta: float) -> void:
+	if not is_instance_valid(camera):
+		return
+
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
+	if not space_state:
+		return
+
 	var forward_dir: Vector3 = -camera.global_transform.basis.z
 	var ray_start: Vector3 = camera.global_position
 	var ray_end: Vector3 = ray_start + (forward_dir * flashlight_maintain_distance)
+	var exclude: Array[RID] = [_player_rid] if _player_rid.is_valid() else []
 
-	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(ray_start, ray_end)
-	query.hit_from_inside = false
-	var result: Dictionary = space_state.intersect_ray(query)
+	# Check Environment (Layer 1) and Interactive (Layer 3)
+	var mask: int = (1 << 0) | (1 << 2)
+	var result: Dictionary = Utilities.raycast_3d(space_state, ray_start, ray_end, mask, exclude)
 
-	if result:
-		var dist: float = ray_start.distance_to(result.position)
+	if not result.is_empty():
+		var hit_pos: Vector3 = result.get("position", ray_end)
+		var dist: float = ray_start.distance_to(hit_pos)
 		var base_push: float = flashlight_maintain_distance - dist
 		var prox: float = clampf(1.0 - (dist / flashlight_maintain_distance), 0.0, 1.0)
 		var extra_push: float = (flashlight_maintain_distance * 0.25) * prox
@@ -128,7 +151,7 @@ func _apply_pushback(delta: float) -> void:
 		flashlight.position.z = lerpf(flashlight.position.z, 0.0, delta * 15.0)
 
 
-## Introduces random energy flickering and subtle rotational noise to mimic aging hardware.
+## Introduces random energy flickering and subtle rotational noise.
 ## [param delta] Frame time delta in seconds.
 func _apply_instability(delta: float) -> void:
 	if not is_flickering and randf() < 0.003:

@@ -23,12 +23,15 @@
 [ext_resource type="PackedScene" uid="uid://dwh4tpa0bfuy5" path="res://assets/VisTEST/2. Modular_Models/Props/corruged_cable.tscn" id="22_mchul"]
 [ext_resource type="PackedScene" uid="uid://ct1rsiotqkdqd" path="res://assets/VisTEST/2. Modular_Models/Props/wall_fan.tscn" id="24_frgva"]
 [ext_resource type="PackedScene" uid="uid://dmkmxdv0oc3q7" path="res://assets/VisTEST/2. Modular_Models/Props/walkway_left.tscn" id="25_oyi4l"]
+[ext_resource type="Texture2D" uid="uid://diasbtyrlfkn0" path="res://assets/VisTEST/1. Textures/Tileables/Concrete/Concrete_Holes/T_Concrete_Holes_BaseColor.png" id="26_8plba"]
 [ext_resource type="PackedScene" uid="uid://dpjfvh3ireax5" path="res://assets/VisTEST/2. Modular_Models/Props/ladder_left_1m.tscn" id="26_wd0o1"]
+[ext_resource type="Texture2D" uid="uid://ca4wrwioj6ouv" path="res://assets/VisTEST/1. Textures/Tileables/Concrete/Concrete_Holes/T_Concrete_Holes_Emission.png" id="27_5ppnl"]
 [ext_resource type="PackedScene" uid="uid://b4pr7b4xgvkr7" path="res://assets/VisTEST/2. Modular_Models/Props/ladder_right_1m.tscn" id="27_l0g8g"]
+[ext_resource type="Texture2D" uid="uid://ck71y35j4wcbw" path="res://assets/VisTEST/1. Textures/Tileables/Concrete/Concrete_Holes/T_Concrete_Holes_Metallic.png" id="28_5ppnl"]
 [ext_resource type="PackedScene" uid="uid://bmkchgyaeq2c8" path="res://interactables/energy_cell.tscn" id="28_8plba"]
 [ext_resource type="PackedScene" uid="uid://ep02e3j752sd" path="res://shared/ventilator.tscn" id="28_lnrub"]
-[ext_resource type="Texture2D" uid="uid://8u68cwmy0fbf" path="res://assets/VisTEST/2. Modular_Models/Walls/Walls_Concrete_Holes/Walls_Concrete_Holes_T_Concrete_Holes_Emission.png" id="30_r02c6"]
-[ext_resource type="Texture2D" uid="uid://hjtae12r5r6v" path="res://assets/VisTEST/2. Modular_Models/Walls/Walls_Concrete_Holes/Walls_Concrete_Holes_T_Concrete_Holes_Normal.png" id="31_5ywpj"]
+[ext_resource type="Texture2D" uid="uid://c8633sadx70bw" path="res://assets/VisTEST/1. Textures/Tileables/Concrete/Concrete_Holes/T_Concrete_Holes_Normal.png" id="29_334ql"]
+[ext_resource type="Texture2D" uid="uid://d0gbtyc4xwli3" path="res://assets/VisTEST/1. Textures/Tileables/Concrete/Concrete_Holes/T_Concrete_Holes_Roughness.png" id="30_5ppnl"]
 [ext_resource type="PackedScene" uid="uid://c0cvl8ftmnbgv" path="res://assets/VisTEST/2. Modular_Models/Walkway/walkway_right.tscn" id="33_r02c6"]
 [ext_resource type="PackedScene" uid="uid://dr5pltmyu223j" path="res://assets/VisTEST/2. Modular_Models/Props/apply_light.tscn" id="35_gh7m2"]
 [ext_resource type="PackedScene" uid="uid://c4ns10vnlk1hx" path="res://assets/VisTEST/2. Modular_Models/Props/boxs_cables_wall_big.tscn" id="37_kja8q"]
@@ -53,10 +56,14 @@
 [ext_resource type="Shader" uid="uid://cp26motkbojta" path="res://ui/VisionAssist.gdshader" id="57_fbi2v"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_6sdu6"]
+albedo_texture = ExtResource("26_8plba")
+metallic = 1.0
+metallic_texture = ExtResource("28_5ppnl")
+roughness_texture = ExtResource("30_5ppnl")
 emission_enabled = true
-emission_texture = ExtResource("30_r02c6")
+emission_texture = ExtResource("27_5ppnl")
 normal_enabled = true
-normal_texture = ExtResource("31_5ywpj")
+normal_texture = ExtResource("29_334ql")
 uv1_scale = Vector3(0.5, 0.5, 0.5)
 uv1_triplanar = true
 uv1_world_triplanar = true
@@ -1315,11 +1322,11 @@ transform = Transform3D(-2, 0, -3.019916e-07, 0, 1, 0, 3.019916e-07, 0, -2, -1.9
 transform = Transform3D(1, 0, 0, 0, -0.4226183, -0.9063077, 0, 0.9063077, -0.4226183, 5, 4, -9.2)
 
 [node name="Ventilator2" parent="." unique_id=1234997426 instance=ExtResource("28_lnrub")]
-transform = Transform3D(1, 0, 0, 0, -0.4226183, -0.9063077, 0, 0.9063077, -0.4226183, 11, 4, -9.2)
+transform = Transform3D(1, 0, 0, 0, -0.4226183, -0.9063077, 0, 0.9063077, -0.4226183, 17, 4, -9.2)
 speed = 0.0
 
 [node name="Ventilator3" parent="." unique_id=1455749176 instance=ExtResource("28_lnrub")]
-transform = Transform3D(1, 0, 0, 0, -0.4226183, -0.9063077, 0, 0.9063077, -0.4226183, 17, 4, -9.2)
+transform = Transform3D(1, 0, 0, 0, -0.4226183, -0.9063077, 0, 0.9063077, -0.4226183, 11, 4, -9.2)
 speed = 0.2
 
 [node name="Walls_concrete" type="Node3D" parent="." unique_id=1348358058]
@@ -1603,6 +1610,11 @@ shape = SubResource("ConcavePolygonShape3D_ubk4r")
 
 [node name="EnergyCell" parent="StaticBody3D" unique_id=594279821 instance=ExtResource("28_8plba")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.27061, 1.7249999, 3.1201766)
+glow_energy = 5.0
+is_charged = true
+
+[node name="EnergyCell2" parent="StaticBody3D" unique_id=151777018 instance=ExtResource("28_8plba")]
+transform = Transform3D(0.86062056, 0.50924677, -2.2259883e-08, 0, -4.371139e-08, -1, -0.50924677, 0.86062056, -3.7618918e-08, 9.8584585, 1.4749998, -4.488438)
 glow_energy = 5.0
 is_charged = true
 

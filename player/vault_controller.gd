@@ -5,10 +5,13 @@ extends Node
 # --------------------------------------
 # SIGNALS
 # --------------------------------------
+
 ## Emitted when a vault movement sequence starts.
 signal vault_started
+
 ## Emitted when a vault movement sequence completes.
 signal vault_finished
+
 ## Emitted when crouching stance toggles during a vault.
 signal crouch_state_changed(is_crouching: bool)
 
@@ -16,53 +19,72 @@ signal crouch_state_changed(is_crouching: bool)
 # EXPORTS
 # --------------------------------------
 @export_category("Node References")
-## Character body used for physical movement.
+
+## Character body [CharacterBody3D] used for physical movement.
 @export var player_body: CharacterBody3D
-## Camera used to derive forward heading.
+
+## View [Camera3D] used to derive forward heading.
 @export var camera: Camera3D
-## Head node used for camera vertical offsets.
+
+## Head [Node3D] used for camera vertical offsets.
 @export var head: Node3D
-## Eye level node used for rotational roll tilts.
+
+## Eye level [Node3D] used for rotational roll tilts.
 @export var eyes: Node3D
-## Full-height physical collision shape.
+
+## Full-height physical [CollisionShape3D].
 @export var standing_collision: CollisionShape3D
-## Crouch-height physical collision shape.
+
+## Crouch-height physical [CollisionShape3D].
 @export var crouching_collision: CollisionShape3D
 
 @export_category("Vault Settings")
+
 ## Maximum height considered a step instead of a vault.
 @export var max_step_height: float = 0.5
-## Target depth for the head position during crouching vaults.
+
+## Target vertical depth for head position during crouching vaults.
 @export var crouching_depth: float = 0.7
-## Clearance depth required behind the ledge to complete a vault.
+
+## Clearance depth in meters required behind ledge to complete vault.
 @export var vault_depth_clearance: float = 0.5
+
 ## Automatically scans for vaultable ledges during physics frames.
 @export var auto_scan: bool = true
 
 # --------------------------------------
 # VARIABLES
 # --------------------------------------
+
 ## Tracks whether a vault tween sequence is actively executing.
 var is_vaulting: bool = false
+
 ## Flags whether the most recent raycast scan discovered a ledge.
 var can_vault_current_ledge: bool = false
+
 ## World space coordinate of the top surface of the detected ledge.
 var current_ledge_point: Vector3 = Vector3.ZERO
+
 ## World space coordinate of the outer edge of the detected ledge.
 var current_ledge_edge: Vector3 = Vector3.ZERO
+
 ## Height differential between the player body and the ledge top.
 var current_vault_height: float = 0.0
+
 ## Flags whether landing clearance mandates ending in a crouch.
 var current_vault_requires_crouch: bool = false
-## Flags whether the player is currently holding an object.
+
+## Flags whether the player is currently carrying an object.
 var is_holding_item: bool = false
 
+## Active managed tween driving vault motion via [method Utilities.reset_tween].
+var _vault_tween: Tween = null
 
-## Lifecycle callback initializing controller properties and listeners.
+
+## Initializes controller properties and connects to event signals.
 func _ready() -> void:
 	print("VaultController: _ready() called. Initialized.")
-	if not Events.held_item_changed.is_connected(_on_held_item_changed):
-		Events.held_item_changed.connect(_on_held_item_changed)
+	Utilities.safe_connect(Events.held_item_changed, _on_held_item_changed)
 
 
 ## Physics frame update managing continuous obstacle and ledge scanning.
@@ -91,7 +113,9 @@ func _on_held_item_changed(is_holding: bool) -> void:
 # --------------------------------------
 # CORE PROCESS LOGIC
 # --------------------------------------
-## Casts rays forward and downward to identify vaultable ledge geometry.
+
+
+## Casts rays using [method Utilities.raycast_3d] to identify ledge geometry.
 ## [param max_reach] Maximum reach distance in meters.
 func process_vault_scan(max_reach: float = 2.1) -> void:
 	can_vault_current_ledge = false
@@ -101,34 +125,35 @@ func process_vault_scan(max_reach: float = 2.1) -> void:
 		return
 
 	var space_state: PhysicsDirectSpaceState3D = player_body.get_world_3d().direct_space_state
+	if not space_state:
+		return
+
 	var exclude_rids: Array[RID] = [player_body.get_rid()]
 
 	var forward_dir: Vector3 = -camera.global_transform.basis.z
 	forward_dir.y = 0.0
 	forward_dir = forward_dir.normalized()
 
-	var ray_query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-		Vector3.ZERO, Vector3.ZERO
-	)
-	ray_query.exclude = exclude_rids
-
-	# 1. FORWARD CAST (Multi-Height Wall Check)
+	# 1. FORWARD CAST (Multi-Height Wall Check against Layer 1 Environment and Layer 3 Interactive)
 	var heights_to_check: Array[float] = [0.5, 1.0, 1.5]
 	var forward_result: Dictionary = {}
+	var mask: int = (1 << 0) | (1 << 2)
 
 	for height_offset: float in heights_to_check:
 		var detect_start: Vector3 = player_body.global_position + Vector3(0.0, height_offset, 0.0)
-		ray_query.from = detect_start
-		ray_query.to = detect_start + (forward_dir * 1.2)
+		var detect_end: Vector3 = detect_start + (forward_dir * 1.2)
 
-		var hit: Dictionary = space_state.intersect_ray(ray_query)
+		var hit: Dictionary = Utilities.raycast_3d(
+			space_state, detect_start, detect_end, mask, exclude_rids
+		)
 		if not hit.is_empty():
-			var hit_collider: Object = hit["collider"]
+			var hit_collider: Object = hit.get("collider")
 			if _is_airborne_or_invalid_target(hit_collider):
 				Events.vault_prompt_updated.emit(false, Vector3.ZERO)
 				return
 
-			if absf(hit["normal"].y) <= 0.2:
+			var hit_norm: Vector3 = hit.get("normal", Vector3.ZERO)
+			if absf(hit_norm.y) <= 0.2:
 				forward_result = hit
 				break
 
@@ -136,27 +161,28 @@ func process_vault_scan(max_reach: float = 2.1) -> void:
 		Events.vault_prompt_updated.emit(false, Vector3.ZERO)
 		return
 
-	var highest_hit: Vector3 = forward_result["position"]
-	var hit_normal: Vector3 = forward_result["normal"]
+	var highest_hit: Vector3 = forward_result.get("position", Vector3.ZERO)
+	var hit_normal: Vector3 = forward_result.get("normal", Vector3.ZERO)
 
 	# 2. DOWNWARD CAST (Find Ledge Top)
 	var down_start: Vector3 = highest_hit - (hit_normal * 0.15)
 	down_start.y = player_body.global_position.y + max_reach
+	var down_end: Vector3 = down_start + Vector3(0.0, -max_reach - 0.5, 0.0)
 
-	ray_query.from = down_start
-	ray_query.to = down_start + Vector3(0.0, -max_reach - 0.5, 0.0)
-
-	var down_result: Dictionary = space_state.intersect_ray(ray_query)
-	if down_result.is_empty() or down_result["normal"].y < 0.7:
+	var down_result: Dictionary = Utilities.raycast_3d(
+		space_state, down_start, down_end, mask, exclude_rids
+	)
+	var down_norm: Vector3 = down_result.get("normal", Vector3.ZERO)
+	if down_result.is_empty() or down_norm.y < 0.7:
 		Events.vault_prompt_updated.emit(false, Vector3.ZERO)
 		return
 
-	var down_collider: Object = down_result["collider"]
+	var down_collider: Object = down_result.get("collider")
 	if _is_airborne_or_invalid_target(down_collider):
 		Events.vault_prompt_updated.emit(false, Vector3.ZERO)
 		return
 
-	var ledge_point: Vector3 = down_result["position"]
+	var ledge_point: Vector3 = down_result.get("position", Vector3.ZERO)
 	var vault_height: float = ledge_point.y - player_body.global_position.y
 
 	if vault_height <= max_step_height or vault_height > max_reach:
@@ -167,14 +193,14 @@ func process_vault_scan(max_reach: float = 2.1) -> void:
 	var clearance_start: Vector3 = ledge_point + (forward_dir * 0.15) + Vector3(0.0, 0.05, 0.0)
 	var clearance_end: Vector3 = clearance_start + Vector3(0.0, 1.8, 0.0)
 
-	ray_query.from = clearance_start
-	ray_query.to = clearance_end
-
-	var clearance_result: Dictionary = space_state.intersect_ray(ray_query)
+	var clearance_result: Dictionary = Utilities.raycast_3d(
+		space_state, clearance_start, clearance_end, mask, exclude_rids
+	)
 	var requires_crouch: bool = false
 
 	if not clearance_result.is_empty():
-		var hit_height: float = clearance_result["position"].y - ledge_point.y
+		var hit_y: float = clearance_result.get("position", Vector3.ZERO).y
+		var hit_height: float = hit_y - ledge_point.y
 		if hit_height < 0.9:
 			Events.vault_prompt_updated.emit(false, Vector3.ZERO)
 			return
@@ -206,7 +232,6 @@ func _is_airborne_or_invalid_target(collider: Object) -> bool:
 	if _is_collider_or_parent_in_group(node, "not_climbable"):
 		return true
 
-	# If it's a dynamic physics item, only ignore if it's currently moving in the air
 	if node is RigidBody3D:
 		var rb: RigidBody3D = node as RigidBody3D
 		if "is_held" in rb and rb.get("is_held"):
@@ -220,7 +245,9 @@ func _is_airborne_or_invalid_target(collider: Object) -> bool:
 # --------------------------------------
 # VAULT EXECUTION
 # --------------------------------------
-## Initiates a vault sequence towards the cached ledge if available.
+
+
+## Initiates a vault sequence towards cached ledge if available.
 ## [param is_currently_crouching] Player's starting crouch stance flag.
 ## [return] True if vault execution began successfully.
 func try_vault(is_currently_crouching: bool) -> bool:
@@ -247,7 +274,7 @@ func try_vault(is_currently_crouching: bool) -> bool:
 	return true
 
 
-## Runs tween animations moving the character body onto the ledge.
+## Runs tween animations moving character body onto ledge using [method Utilities.reset_tween].
 ## [param target_point] Destination point coordinate on top of the ledge.
 ## [param forward_dir] Normalized forward movement direction vector.
 ## [param vault_height] Vertical distance to travel in meters.
@@ -273,18 +300,23 @@ func _perform_vault(
 	var vault_time: float = clampf(vault_height * 0.75, 0.4, 1.5)
 	var final_pos: Vector3 = target_point + (forward_dir * 0.2)
 
-	var vault_tween: Tween = create_tween().set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
-	vault_tween.set_parallel(true)
+	_vault_tween = Utilities.reset_tween(self, _vault_tween)
+	if not is_instance_valid(_vault_tween):
+		is_vaulting = false
+		return
+
+	_vault_tween.set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
+	_vault_tween.set_parallel(true)
 
 	(
-		vault_tween
+		_vault_tween
 		. tween_property(player_body, "global_position:y", final_pos.y + 0.1, vault_time * 0.7)
 		. set_trans(Tween.TRANS_QUAD)
 		. set_ease(Tween.EASE_OUT)
 	)
 
 	(
-		vault_tween
+		_vault_tween
 		. tween_property(player_body, "global_position", final_pos, vault_time * 0.3)
 		. set_trans(Tween.TRANS_LINEAR)
 		. set_delay(vault_time * 0.7)
@@ -292,7 +324,7 @@ func _perform_vault(
 
 	if force_crouch:
 		(
-			vault_tween
+			_vault_tween
 			. tween_property(head, "position:y", crouching_depth, vault_time * 0.6)
 			. set_trans(Tween.TRANS_SINE)
 			. set_ease(Tween.EASE_OUT)
@@ -300,17 +332,17 @@ func _perform_vault(
 
 	var tilt_amount: float = deg_to_rad(5.0)
 	(
-		vault_tween
+		_vault_tween
 		. tween_property(eyes, "rotation:z", tilt_amount, vault_time * 0.5)
 		. set_trans(Tween.TRANS_SINE)
 		. set_ease(Tween.EASE_IN_OUT)
 	)
 
-	vault_tween.tween_property(eyes, "rotation:z", 0.0, vault_time * 0.5).set_delay(
+	_vault_tween.tween_property(eyes, "rotation:z", 0.0, vault_time * 0.5).set_delay(
 		vault_time * 0.5
 	)
 
-	vault_tween.chain().tween_callback(
+	_vault_tween.chain().tween_callback(
 		func() -> void:
 			is_vaulting = false
 			eyes.rotation.z = 0.0
@@ -320,7 +352,7 @@ func _perform_vault(
 	)
 
 
-## Tests motion recovery to push the player clear if stuck in walls.
+## Tests motion recovery to push player clear if stuck in walls.
 ## [param forward_dir] Facing direction during vault traversal.
 func _ensure_player_unstuck(forward_dir: Vector3) -> void:
 	print("VaultController: _ensure_player_unstuck() called.")
@@ -342,10 +374,10 @@ func _ensure_player_unstuck(forward_dir: Vector3) -> void:
 			print("VaultController: Corrected overlap by: ", push_vector)
 
 
-## Checks whether a collider or its parent hierarchy belongs to a group.
-## [param collider] The hit physics body or area.
-## [param group_name] The group string identifier to locate.
-## [return] True if any node up to 4 ancestors belongs to the group.
+## Checks whether collider or its parent hierarchy belongs to group.
+## [param collider] Hit physics body or area.
+## [param group_name] Group string identifier.
+## [return] True if any node up to 4 ancestors belongs to group.
 func _is_collider_or_parent_in_group(collider: Object, group_name: String) -> bool:
 	if not collider is Node:
 		return false
