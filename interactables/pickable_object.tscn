@@ -17,8 +17,8 @@ render_priority = 0
 shader = ExtResource("4_spxwp")
 shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
 shader_parameter/blink_speed = 8.00000038
-shader_parameter/min_intensity = 0.01
-shader_parameter/max_intensity = 0.050000002375
+shader_parameter/min_intensity = 0.2
+shader_parameter/max_intensity = 1.0
 shader_parameter/alpha_scissor_threshold = 0.5
 
 [node name="PickableObject" type="RigidBody3D" unique_id=594279821 node_paths=PackedStringArray("interact_comp", "mesh", "label", "prompt_icon", "probe_container") groups=["interactables"]]

@@ -34,9 +34,6 @@ size = Vector3(0.001, 0.5, 0.5)
 [node name="DoorKeypad" type="StaticBody3D" unique_id=224452826]
 transform = Transform3D(-4.371139e-08, 0, -1, 0, 1, 0, 1, 0, -4.371139e-08, 0, 0, 0)
 script = ExtResource("1_mcbx6")
-valid_code = null
-captures_wasd = null
-numeric_mouse_sensitivity_scale = null
 
 [node name="InteractComponent" type="Node" parent="." unique_id=546308194]
 script = ExtResource("2_wk8ac")
