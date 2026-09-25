@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://ctplsgipirsn1"]
+
+[ext_resource type="Script" uid="uid://b6gft5yo25iku" path="res://testbed_loader.gd" id="1_vjvmr"]
+[ext_resource type="PackedScene" uid="uid://dn6pth4ryiv4s" path="res://ui/loading_screen_anim.tscn" id="2_i1e1o"]
+
+[node name="TestbedLoader" type="Node3D" unique_id=1820846934]
+script = ExtResource("1_vjvmr")
+loading_screen_scene = ExtResource("2_i1e1o")
+testbed_path = "uid://omwvkueo82i7"
