@@ -50,7 +50,9 @@ func test_consume_card() -> void:
 
 	system.call("consume_card", &"green_card")
 
-	assert_false(system.call("has_card", &"green_card") == true, "System should not have green_card.")
+	assert_false(
+		system.call("has_card", &"green_card") == true, "System should not have green_card."
+	)
 	assert_signal_emitted_with_parameters(system, "card_used", [&"green_card"])
 
 
