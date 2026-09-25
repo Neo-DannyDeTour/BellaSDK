@@ -53,14 +53,20 @@ var _target_player: Node3D = null
 @onready var _mesh: MeshInstance3D = $MeshInstance3D
 
 
-## Caches the starting height and connects necessary physics signals.
+## Caches the starting height, configures collision masks, and connects signals.
 func _ready() -> void:
+	print("FlyingTile: _ready() - Initializing flying tile trap.")
 	_start_y = global_position.y
 
-	_activation_area.body_entered.connect(_on_activation_area_body_entered)
-	body_entered.connect(_on_body_entered)
+	collision_layer = CollisionLayers.MASK_NONE
+	collision_mask = CollisionLayers.MASK_PLAYER | CollisionLayers.MASK_ENVIRONMENT
 
-	print("Flying tile initialized and waiting for player.")
+	if is_instance_valid(_activation_area):
+		_activation_area.collision_layer = CollisionLayers.MASK_NONE
+		_activation_area.collision_mask = CollisionLayers.MASK_PLAYER
+		Utilities.safe_connect(_activation_area.body_entered, _on_activation_area_body_entered)
+
+	Utilities.safe_connect(body_entered, _on_body_entered)
 
 
 ## Main physics loop driving state transitions, movement, and visual rotations.
@@ -77,7 +83,7 @@ func _physics_process(delta: float) -> void:
 
 			if global_position.y >= _start_y + rise_height:
 				_current_state = State.SPINNING
-				print("Tile reached target height. Starting to spin.")
+				print("FlyingTile: Reached target height. Starting to spin.")
 
 		State.SPINNING:
 			_mesh.rotate_y(25.0 * delta)
@@ -102,7 +108,7 @@ func _on_activation_area_body_entered(body: Node3D) -> void:
 	if _current_state == State.IDLE and body.is_in_group("player"):
 		_target_player = body
 		_current_state = State.RISING
-		print("Player entered activation sphere. Tile rising.")
+		print("FlyingTile: Player entered activation sphere. Tile rising.")
 
 
 ## Locks in the attack direction and begins moving towards the player.
@@ -116,7 +122,7 @@ func _start_attack() -> void:
 	else:
 		_attack_direction = Vector3.FORWARD
 
-	print("Tile attacking towards player!")
+	print("FlyingTile: Attacking towards target position.")
 
 
 ## Resolves collisions during the attack phase, dealing damage to valid targets.
@@ -125,9 +131,11 @@ func _on_body_entered(body: Node3D) -> void:
 	if _current_state != State.ATTACKING:
 		return
 
-	var health_comp: HealthComponent = body.get_node_or_null("HealthComponent") as HealthComponent
+	var health_comp: HealthComponent = (
+		NodeQuery.find_first_child_of_type(body, HealthComponent) as HealthComponent
+	)
 
-	if health_comp:
+	if is_instance_valid(health_comp):
 		print("FlyingTile: Direct hit! Calling HealthComponent.take_damage(100)")
 		health_comp.take_damage(100)
 		_destroy_tile("Succeeded in hitting player.")
@@ -142,5 +150,5 @@ func _on_body_entered(body: Node3D) -> void:
 ## Cleans up the node from memory.
 ## [param reason] Diagnostic string explaining why the destruction occurred.
 func _destroy_tile(reason: String) -> void:
-	print("Tile destroyed. Reason: ", reason)
+	print("FlyingTile: Destroyed. Reason: ", reason)
 	queue_free()

@@ -34,6 +34,9 @@ var _snap_tween: Tween = null
 ## Initializes the beartrap in the OPEN state, setting jaw angles and connecting signals.
 func _ready() -> void:
 	print("BearTrap: _ready() - Initializing beartrap in OPEN state.")
+	collision_layer = CollisionLayers.MASK_NONE
+	collision_mask = CollisionLayers.MASK_PLAYER
+
 	Utilities.safe_connect(body_entered, _on_body_entered)
 	Utilities.safe_connect(immobilize_timer.timeout, _on_immobilize_timeout)
 	Utilities.safe_connect(sprint_block_timer.timeout, _on_sprint_block_timeout)
@@ -51,6 +54,7 @@ func _on_body_entered(body: Node3D) -> void:
 
 
 ## Closes the jaws, damages [param player], and applies movement and sprint debuffs.
+## [param player] The [Player] entity trapped in the jaws.
 func snap_shut(player: Player) -> void:
 	print("BearTrap: snap_shut() - Closing jaws and applying debuffs to player.")
 	current_state = TrapState.CLOSED

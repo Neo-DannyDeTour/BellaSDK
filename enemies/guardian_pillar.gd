@@ -47,13 +47,14 @@ var target_player: Node3D = null
 
 ## Orients targeting laser and binds state timer completion.
 func _ready() -> void:
-	print("GuardianPillar: Initializing defense turret.")
+	print("GuardianPillar: _ready() - Initializing defense turret.")
 	laser_mesh.hide()
 	laser_mesh.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
-	state_timer.timeout.connect(_on_state_timer_timeout)
+	Utilities.safe_connect(state_timer.timeout, _on_state_timer_timeout)
 
 
 ## Updates state logic per physics frame tick.
+## [param delta] The time elapsed since the previous physics tick in seconds.
 func _physics_process(delta: float) -> void:
 	match current_state:
 		State.SCANNING:
@@ -67,6 +68,7 @@ func _physics_process(delta: float) -> void:
 
 
 ## Rotates turret head and inspects vision cone for hostiles.
+## [param delta] The time elapsed since the previous physics tick in seconds.
 func _process_scanning(delta: float) -> void:
 	head.rotate_y(scan_speed * delta)
 	_detect_player_in_cone()
@@ -84,7 +86,7 @@ func _detect_player_in_cone() -> void:
 	var query: PhysicsShapeQueryParameters3D = PhysicsShapeQueryParameters3D.new()
 	query.shape = shape
 	query.transform = global_transform
-	query.collision_mask = 2
+	query.collision_mask = CollisionLayers.MASK_PLAYER
 
 	var results: Array[Dictionary] = space_state.intersect_shape(query)
 
@@ -107,19 +109,20 @@ func _detect_player_in_cone() -> void:
 
 
 ## Raycasts toward target to confirm unobstructed line of sight.
+## [param target] The target [Node3D] to verify line of sight for.
+## Returns `true` if line of sight is clear, `false` otherwise.
 func _has_line_of_sight(target: Node3D) -> bool:
 	print("GuardianPillar: Checking line of sight to target.")
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
-	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-		head.global_position, target.global_position, 3
+	var hit: Dictionary = Utilities.raycast_3d(
+		space_state,
+		head.global_position,
+		target.global_position,
+		CollisionLayers.MASK_ENVIRONMENT | CollisionLayers.MASK_PLAYER,
+		[self.get_rid()]
 	)
-	query.exclude = [self.get_rid()]
 
-	var result: Dictionary = space_state.intersect_ray(query)
-	if result and result["collider"] == target:
-		return true
-
-	return false
+	return bool(hit and hit.get("collider") == target)
 
 
 ## Adjusts head to track active target and scales laser beam.
@@ -140,6 +143,7 @@ func _process_targeting() -> void:
 
 
 ## Transitions operational state machine and adjusts timers.
+## [param new_state] The target [enum State] to switch to.
 func _change_state(new_state: State) -> void:
 	current_state = new_state
 	print("GuardianPillar: State transitioned to ", State.keys()[current_state])
