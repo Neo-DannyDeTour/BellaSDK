@@ -43,6 +43,9 @@ enum RoomShape {
 ## Item ID in [MeshLibrary] for [constant CellType.WALL] boundary blocks.
 @export var wall_tile_id: int = 3
 
+## Controls whether [method generate_level] is triggered automatically during [method _ready].
+@export var auto_generate_on_ready: bool = true
+
 @export_group("Floor Layout")
 ## Total number of vertical floor levels generated along the Y axis.
 @export var floor_count: int = 3
@@ -125,7 +128,8 @@ func _ready() -> void:
 		player = get_node_or_null("Player") as CharacterBody3D
 
 	_ensure_containers()
-	generate_level()
+	if auto_generate_on_ready:
+		generate_level()
 
 
 ## Executes full generation pipeline across floors and emits signal.
