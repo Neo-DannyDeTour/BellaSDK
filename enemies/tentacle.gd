@@ -35,7 +35,7 @@ func _ready() -> void:
 	_spawn_visual_segments()
 
 
-## Frame execution lifecycle method that recalculates and positions the Bezier curve segments.
+## Frame execution lifecycle method that recalculates and positions Bezier curve segments.
 ## [param _delta] The time elapsed since the previous physics tick in seconds.
 func _process(_delta: float) -> void:
 	if not is_instance_valid(base_node) or not is_instance_valid(target_node):
@@ -53,7 +53,7 @@ func _process(_delta: float) -> void:
 
 	for i: int in range(segment_count):
 		var t: float = float(i + 1) / float(segment_count)
-		var current_pos: Vector3 = _get_quadratic_bezier(p0, p1, p2, t)
+		var current_pos: Vector3 = MathUtils.quadratic_bezier(p0, p1, p2, t)
 
 		_update_visual_segment(_segments[i], prev_pos, current_pos)
 		prev_pos = current_pos
@@ -69,13 +69,13 @@ func _create_base_mesh() -> void:
 	_base_mesh.radial_segments = 8
 	_base_mesh.rings = 1
 
-	var mat: StandardMaterial3D = StandardMaterial3D.new()
-	mat.albedo_color = tentacle_color
-	mat.roughness = 0.6
-	_base_mesh.material = mat
+	var raw_mat: StandardMaterial3D = StandardMaterial3D.new()
+	raw_mat.albedo_color = tentacle_color
+	raw_mat.roughness = 0.6
+	_base_mesh.material = MaterialCache.get_instance(raw_mat)
 
 
-## Instantiates the requested number of mesh segments and stores them in the internal array.
+## Instantiates the requested number of mesh segments and stores them in internal array.
 func _spawn_visual_segments() -> void:
 	print("ProceduralTentacle3D: _spawn_visual_segments() - Instantiating segments.")
 	for i: int in range(segment_count):
@@ -87,19 +87,7 @@ func _spawn_visual_segments() -> void:
 		_segments.append(segment)
 
 
-## Mathematical helper calculating a point along a quadratic Bezier curve.
-## [param p0] The starting point vector.
-## [param p1] The control point vector dictating the arc.
-## [param p2] The ending point vector.
-## [param t] The interpolation step from 0.0 to 1.0.
-## Returns the calculated point as a [Vector3].
-func _get_quadratic_bezier(p0: Vector3, p1: Vector3, p2: Vector3, t: float) -> Vector3:
-	var q0: Vector3 = p0.lerp(p1, t)
-	var q1: Vector3 = p1.lerp(p2, t)
-	return q0.lerp(q1, t)
-
-
-## Transforms, rotates, and stretches an individual segment to connect two points flawlessly.
+## Transforms, rotates, and stretches an individual segment to connect two points.
 ## [param segment] The visual [MeshInstance3D] to update.
 ## [param p1] The starting position for the segment.
 ## [param p2] The ending position for the segment.

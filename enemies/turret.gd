@@ -95,13 +95,16 @@ func _ready() -> void:
 	sphere.radius = detection_radius
 	detection_shape.shape = sphere
 
-	detection_area.body_entered.connect(_on_body_entered)
-	detection_area.body_exited.connect(_on_body_exited)
-	detection_area.area_entered.connect(_on_area_entered)
-	detection_area.area_exited.connect(_on_area_exited)
+	detection_area.collision_layer = CollisionLayers.MASK_NONE
+	detection_area.collision_mask = (CollisionLayers.MASK_PLAYER | CollisionLayers.MASK_ENEMIES)
 
-	screen_notifier.screen_entered.connect(_on_screen_entered)
-	screen_notifier.screen_exited.connect(_on_screen_exited)
+	Utilities.safe_connect(detection_area.body_entered, _on_body_entered)
+	Utilities.safe_connect(detection_area.body_exited, _on_body_exited)
+	Utilities.safe_connect(detection_area.area_entered, _on_area_entered)
+	Utilities.safe_connect(detection_area.area_exited, _on_area_exited)
+
+	Utilities.safe_connect(screen_notifier.screen_entered, _on_screen_entered)
+	Utilities.safe_connect(screen_notifier.screen_exited, _on_screen_exited)
 	_is_on_screen = screen_notifier.is_on_screen()
 
 	hitscan_ray.enabled = false
@@ -134,7 +137,6 @@ func _evaluate_sleep_state() -> void:
 		var dist_sq: float = global_position.distance_squared_to(_cached_player.global_position)
 		is_nearby = dist_sq <= (sleep_distance * sleep_distance)
 
-	# Active if directly looked at OR within proximity distance
 	var should_sleep: bool = not (_is_on_screen or is_nearby)
 
 	if should_sleep != _is_sleeping:
@@ -164,20 +166,22 @@ func _wake_up() -> void:
 
 ## Finds and caches the player instance from the player node group.
 func _find_player() -> void:
-	var players: Array[Node] = get_tree().get_nodes_in_group(&"player")
-	if not players.is_empty() and players[0] is Node3D:
-		_cached_player = players[0] as Node3D
+	if not is_inside_tree():
+		return
+	_cached_player = NodeQuery.get_single_node_in_group(get_tree(), &"player") as Node3D
 
 
 ## Recursively aggregates collision [RID] instances across child nodes.
+## [param node] The root [Node] to recursively harvest collision RIDs from.
 func _build_exclude_rids(node: Node) -> void:
 	if node is CollisionObject3D:
-		_exclude_rids.append(node.get_rid())
-	for i: int in node.get_child_count():
-		_build_exclude_rids(node.get_child(i))
+		_exclude_rids.append((node as CollisionObject3D).get_rid())
+	for child: Node in node.get_children():
+		_build_exclude_rids(child)
 
 
 ## Steps sleep checks, panning rotations, and active target engagements.
+## [param delta] The physics step duration in seconds.
 func _process(delta: float) -> void:
 	_proximity_timer += delta
 	if _proximity_timer >= proximity_interval:
@@ -197,6 +201,7 @@ func _process(delta: float) -> void:
 
 
 ## Changes state and handles particle deactivation on scan transition.
+## [param new_state] The target [enum TurretState] to transition to.
 func _change_state(new_state: TurretState) -> void:
 	print("Turret: Transitioning operational state to: ", new_state)
 	current_state = new_state
@@ -206,11 +211,13 @@ func _change_state(new_state: TurretState) -> void:
 
 
 ## Pans the turret head continuously around its Y axis while searching.
+## [param delta] The physics step duration in seconds.
 func _process_scanning(delta: float) -> void:
 	head.rotate_y(scan_speed * delta)
 
 
 ## Tracks the active target, validates line of sight, and triggers shots.
+## [param delta] The physics step duration in seconds.
 func _process_engaging(delta: float) -> void:
 	if not _is_active_target(target):
 		_set_target(null)
@@ -226,6 +233,7 @@ func _process_engaging(delta: float) -> void:
 
 
 ## Assigns a target and retrieves its [HealthComponent] instance.
+## [param new_target] The target [Node3D] to lock onto.
 func _set_target(new_target: Node3D) -> void:
 	print("Turret: Assigning target entity: ", new_target)
 	target = new_target
@@ -234,17 +242,14 @@ func _set_target(new_target: Node3D) -> void:
 	if target == null:
 		return
 
-	var comp: Node = target.get_node_or_null("Components/HealthComponent")
-	if comp is HealthComponent:
-		target_health_comp = comp
-		return
-
-	var fallback: Node = target.find_child("HealthComponent", true, false)
-	if fallback is HealthComponent:
-		target_health_comp = fallback as HealthComponent
+	target_health_comp = (
+		NodeQuery.find_first_child_of_type(target, HealthComponent) as HealthComponent
+	)
 
 
 ## Validates that the target is still alive, visible, and processing.
+## [param node] The target [Node3D] to check for active state.
+## Returns `true` if active, `false` otherwise.
 func _is_active_target(node: Node3D) -> bool:
 	if node == null or not is_instance_valid(node):
 		return false
@@ -254,6 +259,8 @@ func _is_active_target(node: Node3D) -> bool:
 
 
 ## Checks if a node belongs to any defined hostile group.
+## [param node] The [Node] to check against hostile group names.
+## Returns `true` if hostile, `false` otherwise.
 func _is_hostile(node: Node) -> bool:
 	for group: StringName in hostile_groups:
 		if node.is_in_group(group):
@@ -262,6 +269,7 @@ func _is_hostile(node: Node) -> bool:
 
 
 ## Computes the target offset, clearing offset for [ShootingTarget].
+## Returns the calculated aim offset [Vector3].
 func _get_actual_aim_offset() -> Vector3:
 	if target is ShootingTarget:
 		return Vector3.ZERO
@@ -269,6 +277,7 @@ func _get_actual_aim_offset() -> Vector3:
 
 
 ## Interpolates head rotation toward the target using quaternion slerp.
+## [param delta] The physics step duration in seconds.
 func _aim_at_target(delta: float) -> void:
 	var target_pos: Vector3 = target.global_position + _get_actual_aim_offset()
 	var cur_tr: Transform3D = head.global_transform
@@ -281,22 +290,24 @@ func _aim_at_target(delta: float) -> void:
 
 
 ## Performs a space state raycast to confirm clear line of sight.
+## Returns `true` if unobstructed line of sight exists, `false` otherwise.
 func _has_line_of_sight() -> bool:
 	var space: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var start_pos: Vector3 = hitscan_ray.global_position
 	var end_pos: Vector3 = target.global_position + _get_actual_aim_offset()
 
-	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(start_pos, end_pos)
-	# Physics Layer 1 (Environment), Layer 2 (Player), Layer 5 (Enemies)
-	query.collision_mask = (1 << 0) | (1 << 1) | (1 << 4)
-	query.collide_with_areas = true
-	query.exclude = _exclude_rids
+	var mask: int = (
+		CollisionLayers.MASK_ENVIRONMENT
+		| CollisionLayers.MASK_PLAYER
+		| CollisionLayers.MASK_ENEMIES
+	)
+	var hit: Dictionary = Utilities.raycast_3d(space, start_pos, end_pos, mask, _exclude_rids)
 
-	var result: Dictionary = space.intersect_ray(query)
-	return bool(result and result.collider == target)
+	return bool(hit and hit.get("collider") == target)
 
 
 ## Evaluates dot product between muzzle forward vector and target vector.
+## Returns `true` if aiming directly at target within tolerance.
 func _is_aimed_at_target() -> bool:
 	var target_pos: Vector3 = target.global_position + _get_actual_aim_offset()
 	var dir_to_target: Vector3 = hitscan_ray.global_position.direction_to(target_pos)
@@ -307,6 +318,7 @@ func _is_aimed_at_target() -> bool:
 
 
 ## Decrements weapon cooldown and fires when ready.
+## [param delta] The physics step duration in seconds.
 func _handle_shooting(delta: float) -> void:
 	fire_cooldown -= delta
 	if fire_cooldown <= 0.0:
@@ -330,6 +342,7 @@ func _damage_target() -> void:
 
 
 ## Handles new bodies entering the spherical detection boundary.
+## [param body] The [Node3D] that entered the detection area.
 func _on_body_entered(body: Node3D) -> void:
 	if _is_sleeping or is_friendly:
 		return
@@ -340,6 +353,7 @@ func _on_body_entered(body: Node3D) -> void:
 
 
 ## Handles bodies exiting the detection boundary and re-acquires.
+## [param body] The [Node3D] that exited the detection area.
 func _on_body_exited(body: Node3D) -> void:
 	if body == target:
 		print("Turret: Target body left perimeter: ", body.name)
@@ -347,6 +361,7 @@ func _on_body_exited(body: Node3D) -> void:
 
 
 ## Handles new areas entering the spherical detection boundary.
+## [param area] The [Area3D] that entered the detection area.
 func _on_area_entered(area: Area3D) -> void:
 	if _is_sleeping or is_friendly:
 		return
@@ -357,6 +372,7 @@ func _on_area_entered(area: Area3D) -> void:
 
 
 ## Handles areas exiting the detection boundary and re-acquires.
+## [param area] The [Area3D] that exited the detection area.
 func _on_area_exited(area: Area3D) -> void:
 	if area == target:
 		print("Turret: Target area left perimeter: ", area.name)
