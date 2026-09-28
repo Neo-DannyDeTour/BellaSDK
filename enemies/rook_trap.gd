@@ -221,7 +221,6 @@ func _setup_trigger_areas() -> void:
 			trigger_area.body_entered,
 			func(body: Node3D) -> void:
 				if body.is_in_group(&"player"):
-				if body.is_in_group("player"):
 					print("RookTrap: Player entered detection zone ", idx)
 					trigger_trap(idx)
 		)

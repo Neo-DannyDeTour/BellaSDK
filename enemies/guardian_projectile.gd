@@ -37,11 +37,8 @@ func _ready() -> void:
 	collision_mask = CollisionLayers.MASK_ENVIRONMENT | CollisionLayers.MASK_PLAYER
 
 	Utilities.safe_connect(body_entered, _on_body_entered)
-	Utilities.delay_call(self, lifetime, _explode)
 	Utilities.safe_connect(explosion_timer.timeout, queue_free)
-
-	Utilities.delay_call(self, lifetime, Callable(self, "_explode"))
-	Utilities.safe_connect(body_entered, _on_body_entered)
+	Utilities.delay_call(self, lifetime, _explode)
 
 
 ## Defines the travel direction and calculates the final velocity vector.
@@ -102,8 +99,8 @@ func _explode() -> void:
 	var results: Array[Dictionary] = space_state.intersect_shape(query)
 	print("EnergyBlast: Explosion caught ", results.size(), " objects in radius.")
 
-	for result: Variant in results:
-		var collider: Object = (result as Dictionary).get("collider")
+	for result: Dictionary in results:
+		var collider: Object = result.get("collider")
 		if collider is Node3D:
 			_apply_damage(collider as Node3D)
 
@@ -125,10 +122,3 @@ func _apply_damage(target: Node3D) -> void:
 	if is_instance_valid(comp):
 		print("EnergyBlast: Damaged health component on ", root_node.name)
 		comp.take_damage(damage)
-
-	var health_comp: HealthComponent = (
-		NodeQuery.find_first_child_of_type(target, HealthComponent) as HealthComponent
-	)
-	if is_instance_valid(health_comp):
-		print("EnergyBlast: Damaged component on ", target.name)
-		health_comp.take_damage(damage)
