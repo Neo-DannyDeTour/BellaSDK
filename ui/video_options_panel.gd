@@ -22,6 +22,8 @@ var _pending_gpu_index: int = -1
 ## Connects section events, activates diorama rendering, and applies settings.
 func _ready() -> void:
 	print("VideoOptions: Main panel coordinator initialized.")
+	if is_instance_valid(restart_dialog):
+		restart_dialog.hide()
 	visibility_changed.connect(_on_visibility_changed)
 	display_section.display_settings_changed.connect(_apply_all_settings)
 	quality_section.preset_changed.connect(_on_preset_changed)

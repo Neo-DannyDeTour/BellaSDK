@@ -34,7 +34,7 @@ signal noclip_toggled(is_flying: bool)
 @export_category("Menu Settings")
 
 ## Packed scene resource representing the main pause and system menu.
-@export var menu_scene: PackedScene = load("res://ui/main_menu.tscn")
+@export var menu_scene: PackedScene
 
 @export_category("Noclip Settings")
 
@@ -109,6 +109,10 @@ func _find_console_reference() -> void:
 
 ## Instantiates the menu scene and attaches it to the viewport root safely.
 func _setup_menu() -> void:
+	if not menu_scene:
+		if ResourceLoader.exists("res://ui/main_menu.tscn"):
+			menu_scene = load("res://ui/main_menu.tscn") as PackedScene
+
 	if not menu_scene:
 		print("SystemMenuController: menu_scene is null or not assigned.")
 		return
