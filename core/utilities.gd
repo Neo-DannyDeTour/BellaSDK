@@ -98,3 +98,10 @@ static func find_ancestor_of_type(node: Node, script_type: Script) -> Node:
 			return current
 		current = current.get_parent()
 	return null
+
+
+## Safely kills [param tween] if it is valid and active.
+static func safe_kill_tween(tween: Tween) -> void:
+	if is_instance_valid(tween) and tween.is_valid():
+		tween.kill()
+		print("[Utilities] Killed active tween.")

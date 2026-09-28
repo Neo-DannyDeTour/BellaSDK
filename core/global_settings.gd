@@ -290,9 +290,27 @@ func _load_all_settings() -> void:
 
 ## Broadcasts signals and sets global variables for visual boot configurations.
 func _apply_boot_settings() -> void:
-	print("System: Applying boot settings (UI scale, fonts, filters, accessibility).")
+	print("System: Applying boot settings (Window, VSync, UI scale, fonts).")
+	var win: Window = get_window()
+	var mode: DisplayServer.WindowMode = (
+		get_setting("Settings", "display_mode", VideoConfig.DEFAULT_DISPLAY)
+		as DisplayServer.WindowMode
+	)
+	var screen_idx: int = get_setting("Settings", "screen_index", 0) as int
+	var res: Vector2i = Vector2i(
+		get_setting("Settings", "resolution_x", 1920) as int,
+		get_setting("Settings", "resolution_y", 1080) as int
+	)
+	VideoApplier.apply_window_settings(win, mode, screen_idx, res)
+
+	var vsync: DisplayServer.VSyncMode = (
+		get_setting("Settings", "vsync_mode", VideoConfig.DEFAULT_VSYNC) as DisplayServer.VSyncMode
+	)
+	var fps_cap: int = get_setting("Settings", "fps_limit", VideoConfig.DEFAULT_FPS) as int
+	VideoApplier.apply_engine_limits(vsync, fps_cap)
+
 	var ui_scale: float = get_setting("Settings", "ui_scale", 1.0) as float
-	get_window().content_scale_factor = ui_scale
+	win.content_scale_factor = ui_scale
 
 	var events: Node = get_node_or_null("/root/Events")
 	if is_instance_valid(events):
