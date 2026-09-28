@@ -12,7 +12,7 @@ var _is_debug_allowed: bool = OS.has_feature("debug")
 func register_command(cmd: ConsoleCommand) -> void:
 	if cmd.is_debug and not _is_debug_allowed:
 		return
-	print("ConsoleCommandRegistry: Adding command '", cmd.name, "'")
+	#print("ConsoleCommandRegistry: Adding command '", cmd.name, "'")
 	_commands[cmd.name.to_lower()] = cmd
 
 

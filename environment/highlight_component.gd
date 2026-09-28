@@ -267,7 +267,7 @@ func _apply_to_mesh(base_mesh: GeometryInstance3D, mat: Material) -> void:
 
 		base_mesh.custom_aabb = AABB(Vector3(-2.0, -2.0, -2.0), Vector3(4.0, 4.0, 4.0))
 	else:
-		print("HighlightComponent: Removing highlight mesh from: ", base_mesh.name)
+		#print("HighlightComponent: Removing highlight mesh from: ", base_mesh.name)
 		var existing_hl: Node = base_mesh.get_node_or_null(child_name)
 		if is_instance_valid(existing_hl):
 			existing_hl.queue_free()

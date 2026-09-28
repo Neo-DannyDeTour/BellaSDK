@@ -41,7 +41,7 @@ static func get_variant(base_material: Material, variant_key: String) -> Materia
 		return _material_cache[key]
 	var new_inst: Material = base_material.duplicate() as Material
 	_material_cache[key] = new_inst
-	print("[MaterialCache] Cached new variant [%s]" % key)
+	#print("[MaterialCache] Cached new variant [%s]" % key)
 	return new_inst
 
 

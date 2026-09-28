@@ -41,7 +41,7 @@ static func reset_tween(node: Node, existing_tween: Tween) -> Tween:
 static func safe_connect(sig: Signal, callable: Callable, flags: int = 0) -> bool:
 	if not sig.is_connected(callable):
 		sig.connect(callable, flags)
-		print("[Utilities] Connected signal ", sig.get_name(), " to ", callable.get_method())
+		#print("[Utilities] Connected signal ", sig.get_name(), " to ", callable.get_method())
 		return true
 	return false
 

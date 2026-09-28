@@ -507,7 +507,7 @@ func _update_slot_button_text(button: Button, action: String, slot_index: int) -
 	if not is_instance_valid(button):
 		return
 
-	print("UI: Updating slot button for action: ", action, " [Slot ", slot_index, "]")
+	#print("UI: Updating slot button for action: ", action, " [Slot ", slot_index, "]")
 	var events: Array[InputEvent] = InputMap.action_get_events(action)
 
 	var existing_container: Node = button.get_node_or_null("PreviewContainer")

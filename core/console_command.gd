@@ -22,7 +22,7 @@ func _init(
 	p_arg_provider: Callable = Callable(),
 	p_is_debug: bool = false
 ) -> void:
-	print("ConsoleCommand: Registered command '", p_name, "'")
+	#print("ConsoleCommand: Registered command '", p_name, "'")
 	name = p_name
 	description = p_desc
 	handler = p_handler
