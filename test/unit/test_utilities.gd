@@ -232,10 +232,14 @@ func test_delay_call_execution() -> void:
 	var node: Node = Node.new()
 	add_child_autofree(node)
 	var target_callable: Callable = Callable(self, "_on_test_ping_received")
-	var timer: SceneTreeTimer = Utilities.delay_call(node, 0.05, target_callable)
+	var timer: SceneTreeTimer = Utilities.delay_call(node, 0.05, target_callable, true)
 	assert_not_null(timer, "Timer instance should not be null.")
 	assert_false(_callback_executed, "Callback should not fire immediately.")
-	await wait_seconds(0.1)
+
+	watch_signals(timer)
+	await wait_for_signal(timer.timeout, 0.5)
+
+	assert_signal_emitted(timer, "timeout", "SceneTreeTimer should emit timeout signal.")
 	assert_true(_callback_executed, "Callback should be triggered after delay timeout.")
 
 

@@ -11,8 +11,8 @@ signal terminal_mode_toggled(is_active: bool)
 ## [param yaw_base] Player yaw heading base angle.
 signal heavy_lift_state_changed(is_lifting: bool, yaw_base: float)
 
-## Emitted when an interactable object enters the center of the player's crosshair.
-## [param object_name] Semantic name of the focused object.
+## Emitted when an interactable object enters center of player crosshair.
+## [param object_name] Semantic name of focused object.
 ## [param caller] Node instance sending the trigger.
 signal object_hover_focused(object_name: String, caller: Node)
 
@@ -20,6 +20,7 @@ signal object_hover_focused(object_name: String, caller: Node)
 var _last_focused_interactable: Node = null
 
 @export_category("Node References")
+
 ## Interacting player controller instance.
 @export var player_body: CharacterBody3D
 
@@ -33,6 +34,7 @@ var _last_focused_interactable: Node = null
 @export var empty_interact_audio: AudioStreamPlayer
 
 @export_category("Interaction Settings")
+
 ## Minimum horizontal reach distance in meters.
 @export var base_reach: float = 0.7
 
@@ -65,14 +67,12 @@ var current_hit_point: Vector3 = Vector3.ZERO
 
 
 ## Establishes reference link to master interaction component.
-## [param master] Master component node instance.
 func setup_master_link(master: Node) -> void:
 	print("InteractionScanner: Link to Master Component established.")
 	master_component = master
 
 
 ## Evaluates the active Shapecast to detect interactables and trigger audio cues.
-## [param _delta] Elapsed physics frame time in seconds.
 func process_interaction(_delta: float) -> void:
 	if is_in_terminal_mode:
 		if _should_exit_terminal_mode():
@@ -92,7 +92,7 @@ func process_interaction(_delta: float) -> void:
 			var target_node: Node = current_interactable.get_parent()
 			var speakable_name: String = target_node.name
 			if "display_name" in target_node:
-				speakable_name = target_node.display_name as String
+				speakable_name = str(target_node.get("display_name"))
 
 			print("InteractionScanner: Focused interactable -> ", speakable_name)
 			object_hover_focused.emit(speakable_name, target_node)
@@ -100,7 +100,7 @@ func process_interaction(_delta: float) -> void:
 	if current_interactable:
 		var hit_point: Vector3 = interact_shapecast.get_collision_point(0)
 		if current_interactable.has_method("hover_cursor"):
-			current_interactable.hover_cursor(player_body, hit_point)
+			current_interactable.call("hover_cursor", player_body, hit_point)
 
 		if GestureInputManager.is_action_pressed("interact"):
 			var is_hands_empty: bool = true
@@ -108,7 +108,7 @@ func process_interaction(_delta: float) -> void:
 				is_hands_empty = false
 
 			if is_hands_empty and current_interactable.has_method("interact_held"):
-				current_interactable.interact_held(player_body)
+				current_interactable.call("interact_held", player_body)
 
 
 ## Triggers object interaction, item pickup, or empty sound cue.
@@ -120,16 +120,16 @@ func handle_interact_input() -> void:
 	if current_interactable:
 		if current_interactable.has_method("interact_with"):
 			print("InteractionScanner: Triggering interaction on object.")
-			current_interactable.interact_with(player_body)
+			current_interactable.call("interact_with", player_body)
 
-		var parent_node: Node = current_interactable.get_parent() as Node
+		var parent_node: Node = current_interactable.get_parent()
 		if is_instance_valid(parent_node) and parent_node.has_method("pick_up"):
 			print("InteractionScanner: Found pickable object. Instructing Master to grab.")
 			if is_instance_valid(master_component):
-				master_component.force_grab_item(parent_node as RigidBody3D)
+				master_component.call("force_grab_item", parent_node as RigidBody3D)
 
 			if parent_node.has_method("on_grabbed"):
-				parent_node.on_grabbed()
+				parent_node.call("on_grabbed")
 	else:
 		if is_instance_valid(empty_interact_audio):
 			empty_interact_audio.play()
@@ -154,7 +154,7 @@ func handle_shoot_input() -> void:
 			inv.shoot_active_weapon()
 		else:
 			for child: Node in weapon_holder.get_children():
-				if child.has_method("shoot") and bool(child.get("visible")):
+				if child.has_method("shoot") and child.get("visible") == true:
 					child.call("shoot", camera)
 					break
 
@@ -173,13 +173,12 @@ func handle_reload_input() -> void:
 			inv.reload_active_weapon()
 		else:
 			for child: Node in weapon_holder.get_children():
-				if child.has_method("reload") and bool(child.get("visible")):
+				if child.has_method("reload") and child.get("visible") == true:
 					child.call("reload")
 					break
 
 
 ## Sets heavy lifting state and captures initial yaw heading.
-## [param value] Whether heavy lifting mode is enabled.
 func set_heavy_lifting(value: bool) -> void:
 	is_heavy_lifting = value
 	if is_heavy_lifting and is_instance_valid(player_body):
@@ -191,13 +190,10 @@ func set_heavy_lifting(value: bool) -> void:
 func drop_heavy_object_safely() -> void:
 	if is_heavy_lifting and is_instance_valid(master_component):
 		print("InteractionScanner: Routing heavy drop request to Master.")
-		master_component.drop_held_item()
+		master_component.call("drop_held_item")
 		set_heavy_lifting(false)
 
 
-# --------------------------------------
-# DYNAMIC REACH & SCANNING
-# --------------------------------------
 ## Adjusts shapecast ray length based on camera pitch angle.
 func _update_dynamic_reach() -> void:
 	var look_pitch: float = interact_shapecast.global_rotation.x
@@ -206,8 +202,7 @@ func _update_dynamic_reach() -> void:
 	interact_shapecast.target_position = Vector3(0, 0, -current_reach)
 
 
-## Finds the closest enabled interactable component within the shapecast volume.
-## [return] Nearest active [InteractComponent] found, or null.
+## Finds the closest enabled interactable component using [NodeQuery].
 func _get_interactable_component_at_shapecast() -> Node:
 	var closest_comp: Node = null
 	var closest_dist: float = INF
@@ -219,24 +214,31 @@ func _get_interactable_component_at_shapecast() -> Node:
 		if not is_instance_valid(collider) or collider == player_body:
 			continue
 
-		if collider is Node:
-			var current_node: Node = collider as Node
+		if collider is Node3D:
 			var comp: Node = null
+			var root_target: Node3D = NodeQuery.resolve_interactable_root(collider as Node3D)
+			if is_instance_valid(root_target):
+				comp = root_target.get_node_or_null("InteractComponent")
 
-			while is_instance_valid(current_node) and current_node != get_tree().root:
-				comp = current_node.get_node_or_null("InteractComponent")
-				if is_instance_valid(comp):
-					break
-				current_node = current_node.get_parent()
+			if not is_instance_valid(comp):
+				var current_node: Node = collider as Node
+				while is_instance_valid(current_node) and current_node != get_tree().root:
+					comp = current_node.get_node_or_null("InteractComponent")
+					if is_instance_valid(comp):
+						break
+					current_node = current_node.get_parent()
 
 			if is_instance_valid(comp):
-				if "is_enabled" in comp and not bool(comp.get("is_enabled")):
+				if "is_enabled" in comp and comp.get("is_enabled") == false:
 					continue
 
 				var interactable_parent: Node = comp.get_parent()
 
 				if interactable_parent.has_method("is_valid_pickup_position"):
-					if not interactable_parent.is_valid_pickup_position(player_body):
+					var is_valid: bool = bool(
+						interactable_parent.call("is_valid_pickup_position", player_body)
+					)
+					if not is_valid:
 						continue
 
 				var hit_point: Vector3 = interact_shapecast.get_collision_point(i)
@@ -250,11 +252,7 @@ func _get_interactable_component_at_shapecast() -> Node:
 	return closest_comp
 
 
-# --------------------------------------
-# TERMINAL MODE
-# --------------------------------------
 ## Activates terminal focus mode, differentiating between numeric and minigame terminals.
-## [param terminal] The terminal [Node3D] interacted with.
 func enter_terminal_mode(terminal: Node3D) -> void:
 	print("InteractionScanner: Entering terminal mode.")
 	is_in_terminal_mode = true
@@ -263,7 +261,11 @@ func enter_terminal_mode(terminal: Node3D) -> void:
 	if is_instance_valid(player_body):
 		terminal_start_pos = player_body.global_position
 
-	var is_circle_keypad: bool = is_instance_valid(terminal) and bool(terminal.get("captures_wasd"))
+	var is_circle_keypad: bool = (
+		is_instance_valid(terminal)
+		and ("captures_wasd" in terminal)
+		and terminal.get("captures_wasd") == true
+	)
 
 	if is_circle_keypad:
 		print("InteractionScanner: Circle keypad detected. Locking player and camera.")
@@ -272,8 +274,12 @@ func enter_terminal_mode(terminal: Node3D) -> void:
 
 		if is_instance_valid(camera) and is_instance_valid(terminal):
 			var target_pos: Vector3 = terminal.global_position
-			if "mesh_instance_3d" in terminal and is_instance_valid(terminal.mesh_instance_3d):
-				target_pos = terminal.mesh_instance_3d.global_position
+			if (
+				"mesh_instance_3d" in terminal
+				and is_instance_valid(terminal.get("mesh_instance_3d"))
+			):
+				var mesh_node: Node3D = terminal.get("mesh_instance_3d") as Node3D
+				target_pos = mesh_node.global_position
 			camera.look_at(target_pos, Vector3.UP)
 	else:
 		print("InteractionScanner: Numeric keypad detected. Leaving player free to aim.")
@@ -297,16 +303,21 @@ func exit_terminal_mode() -> void:
 
 	if is_instance_valid(terminal_to_clear):
 		if terminal_to_clear.has_method("clear_mouse_hover"):
-			terminal_to_clear.clear_mouse_hover()
+			terminal_to_clear.call("clear_mouse_hover")
 
 	if is_instance_valid(player_body):
 		player_body.set("is_terminal_locked", false)
 		if player_body.has_method("set_terminal_mouse_sensitivity_scale"):
 			player_body.call("set_terminal_mouse_sensitivity_scale", 1.0)
 		if player_body.has_method("exit_terminal_mode"):
-			player_body.exit_terminal_mode()
-		elif is_instance_valid(player_body.locomotion_component):
-			player_body.locomotion_component.set_physics_active(true)
+			player_body.call("exit_terminal_mode")
+		elif (
+			"locomotion_component" in player_body
+			and is_instance_valid(player_body.get("locomotion_component"))
+		):
+			var loco: Node = player_body.get("locomotion_component") as Node
+			if loco.has_method("set_physics_active"):
+				loco.call("set_physics_active", true)
 
 	if is_instance_valid(Events) and Events.has_signal("terminal_mode_toggled"):
 		Events.terminal_mode_toggled.emit(false)
@@ -314,10 +325,11 @@ func exit_terminal_mode() -> void:
 
 
 ## Evaluates whether the player should automatically exit terminal mode.
-## [return] True if exit thresholds are crossed.
 func _should_exit_terminal_mode() -> bool:
 	var is_circle_keypad: bool = (
-		is_instance_valid(active_terminal) and bool(active_terminal.get("captures_wasd"))
+		is_instance_valid(active_terminal)
+		and ("captures_wasd" in active_terminal)
+		and active_terminal.get("captures_wasd") == true
 	)
 
 	if is_circle_keypad:
@@ -325,7 +337,7 @@ func _should_exit_terminal_mode() -> bool:
 
 	if (
 		is_instance_valid(player_body)
-		and player_body.global_position.distance_squared_to(terminal_start_pos) > 2.5
+		and (player_body.global_position.distance_squared_to(terminal_start_pos) > 2.5)
 	):
 		return true
 
@@ -341,7 +353,6 @@ func _should_exit_terminal_mode() -> bool:
 
 
 ## Projects raycast from screen center to inject cursor events into terminal mesh.
-## [param is_click] Whether to simulate click instead of motion.
 func shoot_terminal_raycast(is_click: bool) -> void:
 	if is_click:
 		print("InteractionScanner: shoot_terminal_raycast executed a click.")
@@ -361,13 +372,14 @@ func shoot_terminal_raycast(is_click: bool) -> void:
 	if is_instance_valid(player_body):
 		query.exclude = [player_body.get_rid()]
 
-	query.collision_mask = 5
+	query.collision_mask = (CollisionLayers.MASK_ENVIRONMENT | CollisionLayers.MASK_INTERACTIVE)
 
 	var space_state: PhysicsDirectSpaceState3D = player_body.get_world_3d().direct_space_state
 	var result: Dictionary = space_state.intersect_ray(query)
 
 	if result and result.get("collider") == active_terminal:
+		var hit_pos: Vector3 = result.get("position", Vector3.ZERO) as Vector3
 		if is_click and active_terminal.has_method("inject_mouse_click"):
-			active_terminal.inject_mouse_click(result.position)
+			active_terminal.call("inject_mouse_click", hit_pos)
 		elif active_terminal.has_method("inject_mouse_motion"):
-			active_terminal.inject_mouse_motion(result.position)
+			active_terminal.call("inject_mouse_motion", hit_pos)

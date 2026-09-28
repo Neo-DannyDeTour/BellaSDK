@@ -29,13 +29,15 @@ static func apply_window_settings(
 	if window.current_screen != screen_idx:
 		window.current_screen = screen_idx
 
-	if DisplayServer.window_get_mode() != mode:
-		DisplayServer.window_set_mode(mode)
+	var target_mode: Window.Mode = mode as Window.Mode
+	if window.mode != target_mode:
+		window.mode = target_mode
 
 	if window.content_scale_size != resolution:
 		window.content_scale_size = resolution
 
 	if not window.is_embedded() and window.mode == Window.MODE_WINDOWED:
+		window.borderless = false
 		if window.size != resolution:
 			window.size = resolution
 

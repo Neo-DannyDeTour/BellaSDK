@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://dmfjusac5ca6c"]
+
+[ext_resource type="Shader" uid="uid://ds7t2x8iiysp" path="res://vfx/oil_spill.gdshader" id="1_0oqa3"]
+[ext_resource type="Script" uid="uid://b02jjxi5q2i2b" path="res://environment/oil_spill_path.gd" id="1_nwsng"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_gkfgn"]
+noise_type = 3
+frequency = 0.0298
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_nwsng"]
+noise = SubResource("FastNoiseLite_gkfgn")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_nwsng"]
+resource_local_to_scene = true
+render_priority = 1
+shader = ExtResource("1_0oqa3")
+shader_parameter/oil_color = Color(0.04, 0.035, 0.03, 0.95)
+shader_parameter/burn_color = Color(1, 0.35, 0.02, 1)
+shader_parameter/ash_color = Color(0.02, 0.02, 0.02, 0.4)
+shader_parameter/iridescence_strength = 0.85
+shader_parameter/wet_roughness = 0.06
+shader_parameter/wet_metallic = 0.606000028785
+shader_parameter/edge_falloff = 0.7750000368125
+shader_parameter/stroke_cap_length = 0.08
+shader_parameter/bristle_strength = 0.35
+shader_parameter/noise_scale = 6.0
+shader_parameter/noise_tex = SubResource("NoiseTexture2D_nwsng")
+shader_parameter/ignite_center = 0.5
+shader_parameter/burn_radius = 0.0
+shader_parameter/burn_edge_width = 0.06
+
+[sub_resource type="ConcavePolygonShape3D" id="ConcavePolygonShape3D_gkfgn"]
+resource_local_to_scene = true
+
+[node name="OilSpill" type="Path3D" unique_id=1362347901]
+script = ExtResource("1_nwsng")
+step_distance = 0.4
+surface_offset_y = 0.015
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1793297878]
+material_override = SubResource("ShaderMaterial_nwsng")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=240105142]
+collision_layer = 4
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=1351887862]
+shape = SubResource("ConcavePolygonShape3D_gkfgn")

@@ -1,5 +1,4 @@
-## Manages full-screen post-processing overlays for rain, underwater submersion, and waterfalls.
-##
+## Manages full-screen post-processing overlays for rain, underwater, and waterfalls.
 ## Controls shader parameters and transitions across screen-space [ColorRect] overlays.
 class_name ScreenVFXManager
 extends Node
@@ -50,19 +49,19 @@ var water_mat: ShaderMaterial = null
 var waterfall_mat: ShaderMaterial = null
 
 
-## Duplicates and isolates overlay materials to prevent shared resource mutation.
+## Initializes cached shader materials via [MaterialCache] preventing VRAM stalls.
 func _ready() -> void:
 	print("ScreenVFXManager: _ready() - Initializing isolated overlay materials.")
 	if is_instance_valid(waterfall_overlay) and waterfall_overlay.material:
-		waterfall_mat = (waterfall_overlay.material.duplicate() as ShaderMaterial)
+		waterfall_mat = (MaterialCache.get_instance(waterfall_overlay.material) as ShaderMaterial)
 		waterfall_overlay.material = waterfall_mat
 
 	if is_instance_valid(rain_drops_overlay) and rain_drops_overlay.material:
-		rain_mat = (rain_drops_overlay.material.duplicate() as ShaderMaterial)
+		rain_mat = (MaterialCache.get_instance(rain_drops_overlay.material) as ShaderMaterial)
 		rain_drops_overlay.material = rain_mat
 
 	if is_instance_valid(screen_water_ui) and screen_water_ui.material:
-		water_mat = screen_water_ui.material.duplicate() as ShaderMaterial
+		water_mat = (MaterialCache.get_instance(screen_water_ui.material) as ShaderMaterial)
 		screen_water_ui.material = water_mat
 
 
@@ -97,18 +96,19 @@ func _handle_rain_drops(delta: float, camera_pitch: float) -> void:
 	if not is_instance_valid(rain_drops_overlay) or not is_instance_valid(rain_mat):
 		return
 
+	var pitch_clamped: float = MathUtils.clamp_angle_rad(camera_pitch, -PI * 0.5, PI * 0.5)
 	var target_drop: float = 0.0
 	var target_wash: float = 0.0
 
 	if in_rain_volume:
-		if camera_pitch > -0.3 and camera_pitch < 0.6:
-			if camera_pitch <= 0.1:
-				target_drop = remap(camera_pitch, -0.3, 0.1, 0.0, 1.0)
+		if pitch_clamped > -0.3 and pitch_clamped < 0.6:
+			if pitch_clamped <= 0.1:
+				target_drop = remap(pitch_clamped, -0.3, 0.1, 0.0, 1.0)
 			else:
-				target_drop = remap(camera_pitch, 0.1, 0.6, 1.0, 0.0)
+				target_drop = remap(pitch_clamped, 0.1, 0.6, 1.0, 0.0)
 
-		if camera_pitch > 0.3:
-			target_wash = remap(camera_pitch, 0.3, 1.2, 0.0, 1.0)
+		if pitch_clamped > 0.3:
+			target_wash = remap(pitch_clamped, 0.3, 1.2, 0.0, 1.0)
 
 	target_drop = clampf(target_drop, 0.0, 1.0)
 	target_wash = clampf(target_wash, 0.0, 1.0)
@@ -142,8 +142,7 @@ func set_underwater_state(is_underwater: bool) -> void:
 		return
 
 	if is_underwater:
-		if is_instance_valid(water_clear_tween) and water_clear_tween.is_valid():
-			water_clear_tween.kill()
+		Utilities.safe_kill_tween(water_clear_tween)
 		water_clear_tween = null
 		screen_water_ui.show()
 		water_mat.set_shader_parameter("clear_progress", 0.0)
@@ -211,8 +210,7 @@ func enter_waterfall() -> void:
 	if not is_instance_valid(waterfall_overlay) or not is_instance_valid(waterfall_mat):
 		return
 
-	if is_instance_valid(waterfall_clear_tween) and waterfall_clear_tween.is_valid():
-		waterfall_clear_tween.kill()
+	Utilities.safe_kill_tween(waterfall_clear_tween)
 	waterfall_clear_tween = null
 
 	waterfall_overlay.show()

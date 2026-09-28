@@ -44,6 +44,7 @@ InputHelper="*uid://5wsuikeojvgu"
 ShockwaveManager="*uid://cxv4l5k6gkqyi"
 PostProcessLayer="*uid://dmjj5l722vik8"
 InGameConsole="*uid://b16t0oiv28pqa"
+AudioPool="*res://core/audio_pool.gd"
 
 [debug]
 
@@ -54,6 +55,7 @@ gdscript/warnings/untyped_declaration=2
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
+window/size/mode="fullscreen"
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 window/vsync/vsync_mode=0

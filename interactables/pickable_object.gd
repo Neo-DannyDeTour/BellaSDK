@@ -1,101 +1,114 @@
-## Represents a physical object that the player can pick up, throw, and interact with.
-## Manages buoyancy, physics interpolation, custom TTS accessibility prompts, and holding logic.
+## Physical object for player pickup, throws, buoyancy, and TTS prompts.
 class_name PickableObject
 extends RigidBody3D
 
 @export_category("Pickable Nodes")
-## The [InteractComponent] responsible for handling raycast focus and interaction signals.
+
+## The [InteractComponent] handling focus and interaction signals.
 @export var interact_comp: InteractComponent
-## The primary visual [Node3D] (usually a MeshInstance3D) representing the object.
+
+## The primary visual [Node3D] representing the object.
 @export var mesh: Node3D
-## The floating [Label3D] used to display interaction prompts.
+
+## The floating [Label3D] displaying interaction prompts.
 @export var label: Label3D
-## The [Sprite3D] used to render prompt icon textures beside the label.
+
+## The [Sprite3D] rendering prompt icon textures beside the label.
 @export var prompt_icon: Sprite3D
 
-## Visual component used to apply outlines or highlights when focused.
-@onready var highlight_comp: HighlightComponent = $HighlightComponent
-## The physical bounds of the object.
-@onready var collision: CollisionShape3D = $CollisionShape3D
-## The default world gravity derived from project settings.
-@onready var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
+## Visual [HighlightComponent] applying outlines when focused.
+@onready var highlight_comp: HighlightComponent = (
+	get_node_or_null("HighlightComponent") as HighlightComponent
+)
+
+## The physical [CollisionShape3D] bounding the object.
+@onready var collision: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
+
+## The default world gravity scalar from project settings.
+@onready var gravity: float = float(ProjectSettings.get_setting("physics/3d/default_gravity", 9.8))
 
 @export_category("Buoyancy")
-## Node containing [Marker3D] children representing volumetric probe points for water physics.
+
+## Node containing [Marker3D] children for buoyancy probes.
 @export var probe_container: Node3D
-## How strongly the water pushes up against the object. (3.0 is a great value!)
+
+## Upward buoyant force multiplier applied by water volumes.
 @export var float_force: float = 3.0
-## Friction applied when moving through water.
+
+## Linear drag coefficient applied when moving through water.
 @export var water_drag: float = 0.5
-## Angular friction applied to rotation when submerged.
+
+## Angular drag coefficient applied to rotation in water.
 @export var water_angular_drag: float = 0.5
 
-# --- HOLDING CONFIG ---
-## Minimum distance maintained between the camera and the object while held.
+## Minimum distance maintained between camera and object.
 const MIN_HOLD_DISTANCE: float = 1.2
 
-## How much closer to the player this object should be positioned when held.
+## Distance offset pulling held object closer to player.
 @export var hold_distance_offset: float = 0.0
 
-## How transparent the object gets when held (0.0 = solid, 1.0 = completely invisible).
+## Transparency applied to the object while held.
 @export_range(0.0, 1.0) var held_transparency: float = 0.25
 
-## The mass at which an object is forced to be held lower on the screen (e.g., heavy barrels).
+## Mass threshold triggering heavy carry offsets.
 @export var heavy_mass_threshold: float = 10.0
-## How far down on the Y-axis heavy objects are held to avoid blocking the camera.
+
+## Downward Y-axis offset applied to held heavy objects.
 @export var heavy_y_drop: float = 0.5
-## Height above player feet where heavy objects hover while held.
+
+## Height above floor where heavy objects hover.
 @export var heavy_floor_clearance: float = 0.35
 
-## Transparency applied specifically to heavy objects when held.
+## Transparency applied specifically to heavy held objects.
 @export_range(0.0, 1.0) var heavy_held_transparency: float = 0.55
 
-# --- COMBAT / IMPACT CONFIG ---
-## The minimum velocity required for the object to register as a damaging projectile.
+## Minimum impact speed required to register damage.
 @export var damage_velocity_threshold: float = 8.0
 
-## The base damage applied to a struck target upon a high-speed collision.
+## Base damage points dealt upon high-speed impact.
 @export var projectile_damage: int = 20
 
 @export_category("Accessibility")
-## The dedicated [ShaderMaterial] applied as an overlay to highlight this object through walls.
+
+## Dedicated [ShaderMaterial] highlighting the object.
 @export var vision_assist_material: ShaderMaterial
 
-## Relative yaw offset between camera and object preserved during hold.
+## Relative yaw offset between camera and object.
 var _held_relative_yaw: float = 0.0
 
-## Tracks the velocity from the previous physics frame to accurately gauge impact speed.
+## Linear velocity vector recorded on preceding frame.
 var _last_velocity: Vector3 = Vector3.ZERO
 
-## Indicates if the object is currently grasped by a player or entity.
+## Tracks whether object is currently grasped.
 var is_held: bool = false
-## The [Marker3D] target the object visually tracks towards when held.
+
+## Spatial [Marker3D] target tracking held object.
 var hold_target: Marker3D = null
-## The [Node3D] entity currently holding the object.
+
+## Entity [Node3D] currently holding this object.
 var holder: Node3D = null
 
-## Base directory path where Kenney input prompt icons are stored.
+## Base directory path where prompt icons are stored.
 const ICON_BASE_PATH: String = "res://assets/kenney_input-prompts_1.5/Keyboard & Mouse/Default/"
 
-## Cached resolved icon paths mapped to avoid disk checks during gameplay.
+## Cached resolved icon file paths dictionary.
 var _icon_path_cache: Dictionary = {}
 
-## Indicates whether text prompt labels are displayed over focused objects.
+## Determines whether text prompt labels are displayed.
 var _show_text_prompts: bool = true
 
-# --- GLOBAL STATE TRACKING ---
-## Indicates if the [PickableObject] is currently locked and cannot be interacted with.
+## Tracks whether interaction is temporarily locked.
 var is_locked: bool = false:
 	set(value):
 		is_locked = value
 		print("PickableObject: is_locked state changed to ", is_locked)
 		if is_locked:
-			if is_instance_valid(mesh):
-				mesh.material_overlay = null
+			if is_instance_valid(mesh) and mesh is GeometryInstance3D:
+				(mesh as GeometryInstance3D).material_overlay = null
 			if is_instance_valid(label):
 				label.hide()
 
-## Indicates if the object is currently inside a water volume.
+## Indicates whether object is inside an active water volume.
 var is_in_water: bool = false:
 	set(value):
 		if is_in_water != value:
@@ -103,79 +116,74 @@ var is_in_water: bool = false:
 			print("PickableObject: is_in_water state changed to ", is_in_water)
 			_update_process_state()
 
-## Indicates if the player is currently in noclip or flying mode.
+## Indicates whether player is in noclip flight mode.
 var _is_player_flying: bool = false
 
-# --- WATER TRACKING ---
-## Indicates if the object is fully submerged beneath the water plane.
+## Indicates whether object is submerged in water.
 var submerged: bool = false
-## Reference to the current water [Node3D] applying buoyancy forces.
+
+## Current water [Node3D] instance applying buoyancy.
 var current_water_node: Node3D = null
-## The system time in milliseconds when the object was last grabbed.
+
+## System time in milliseconds when object was grabbed.
 var _grab_time: int = 0
 
-## Cached [Camera3D] reference to avoid expensive viewport lookups every frame.
+## Cached [Camera3D] reference to avoid viewport lookups.
 var _cached_camera: Camera3D = null
 
-## Cached array of child probe nodes used to calculate buoyancy without recursive lookups.
+## Cached array of child probe nodes for buoyancy.
 var _probes: Array[Node] = []
 
-## Tracks if the object was recently dropped to prevent immediate TTS spam on refocus.
+## Tracks whether TTS grab prompts are on cooldown.
 var _is_tts_cooldown: bool = false
 
-## Timestamp in milliseconds tracking the last continuous wake ripple spawned.
+## Timestamp in milliseconds tracking last wake ripple.
 var _last_wake_time: int = 0
 
-## Tracks preceding physics tick submerged state for impact VFX.
+## Preceding frame submersion state for impact detection.
 var _was_submerged: bool = false
 
 
-## Initializes references, continuous collision detection, and contact monitoring.
+## Initializes references, collision detection, and contacts.
 func _ready() -> void:
 	print("PickableObject: _ready() called. Initializing ", name)
 	continuous_cd = true
+
 	if not is_instance_valid(interact_comp):
-		interact_comp = $InteractComponent
+		interact_comp = (get_node_or_null("InteractComponent") as InteractComponent)
 	if not is_instance_valid(mesh):
-		mesh = $Mesh
+		mesh = get_node_or_null("Mesh") as Node3D
 	if not is_instance_valid(label):
-		label = $Label3D
+		label = get_node_or_null("Label3D") as Label3D
 	if not is_instance_valid(prompt_icon):
 		prompt_icon = get_node_or_null("PromptIcon") as Sprite3D
 	if not is_instance_valid(probe_container):
-		probe_container = $ProbeContainer
+		probe_container = get_node_or_null("ProbeContainer") as Node3D
 
 	if is_instance_valid(probe_container):
 		_probes = probe_container.get_children()
 
-	_show_text_prompts = (GlobalSettings.get_setting("Gameplay", "show_item_prompts", true) as bool)
+	if is_instance_valid(GlobalSettings) and GlobalSettings.has_method("get_setting"):
+		_show_text_prompts = bool(GlobalSettings.get_setting("Gameplay", "show_item_prompts", true))
 
 	if is_instance_valid(label):
 		label.hide()
 
 	if is_instance_valid(interact_comp):
-		if not interact_comp.focused.is_connected(_on_interact_component_focused):
-			interact_comp.focused.connect(_on_interact_component_focused)
-		if not interact_comp.unfocused.is_connected(_on_interact_component_unfocused):
-			interact_comp.unfocused.connect(_on_interact_component_unfocused)
+		Utilities.safe_connect(interact_comp.focused, _on_interact_component_focused)
+		Utilities.safe_connect(interact_comp.unfocused, _on_interact_component_unfocused)
 
-	sleeping_state_changed.connect(_on_sleeping_state_changed)
+	Utilities.safe_connect(sleeping_state_changed, _on_sleeping_state_changed)
 
-	if (
-		Events.has_signal("noclip_toggled")
-		and not Events.noclip_toggled.is_connected(_on_noclip_toggled)
-	):
-		Events.noclip_toggled.connect(_on_noclip_toggled)
-
-	if (
-		Events.has_signal("item_prompts_toggled")
-		and not Events.item_prompts_toggled.is_connected(_on_item_prompts_toggled)
-	):
-		Events.item_prompts_toggled.connect(_on_item_prompts_toggled)
+	if is_instance_valid(Events):
+		if Events.has_signal("noclip_toggled"):
+			Utilities.safe_connect(Events.noclip_toggled, _on_noclip_toggled)
+		if Events.has_signal("item_prompts_toggled"):
+			Utilities.safe_connect(Events.item_prompts_toggled, _on_item_prompts_toggled)
 
 	contact_monitor = true
 	max_contacts_reported = 2
-	body_entered.connect(_on_body_entered)
+	Utilities.safe_connect(body_entered, _on_body_entered)
 
 	_update_process_state()
 
@@ -184,7 +192,7 @@ func _ready() -> void:
 		_revert_warmup_deferred()
 
 
-## Updates prompt visibility setting when changed in the settings menu.
+## Updates prompt visibility setting when changed.
 func _on_item_prompts_toggled(enabled: bool) -> void:
 	print("PickableObject: Item prompt visibility updated -> ", enabled)
 	_show_text_prompts = enabled
@@ -192,24 +200,24 @@ func _on_item_prompts_toggled(enabled: bool) -> void:
 		label.hide()
 
 
-## Triggers when the player toggles noclip mode. Updates internal flight state.
+## Triggers when player toggles noclip mode.
 func _on_noclip_toggled(is_flying: bool) -> void:
 	print("PickableObject: Noclip state updated via Event Bus -> ", is_flying)
 	_is_player_flying = is_flying
 
 
-## Triggers when the physics sleeping state changes to optimize processing loops.
+## Triggers when physics sleeping state changes.
 func _on_sleeping_state_changed() -> void:
 	_update_process_state()
 
 
-## Enables or disables physics processing based on whether the object needs active updates.
+## Enables or disables physics processing based on state.
 func _update_process_state() -> void:
 	var should_process: bool = is_held or is_in_water or not sleeping
 	set_physics_process(should_process)
 
 
-## Defers the reversion of the object's transparency to prevent frame drops during compilation.
+## Defers transparency restoration for shader compilation.
 func _revert_warmup_deferred() -> void:
 	print("PickableObject: _revert_warmup_deferred() executing shader compilation.")
 	await get_tree().process_frame
@@ -219,7 +227,7 @@ func _revert_warmup_deferred() -> void:
 		_set_model_transparency(mesh, 0.0)
 
 
-## Attaches the object to the player's hold target and applies transparency.
+## Attaches object to player hold target with transparency.
 func pick_up(target: Marker3D, player_node: Node3D) -> void:
 	if is_locked:
 		return
@@ -237,7 +245,7 @@ func pick_up(target: Marker3D, player_node: Node3D) -> void:
 		else holder.global_transform.basis.get_euler().y
 	)
 	var obj_yaw: float = global_transform.basis.get_euler().y
-	_held_relative_yaw = wrapf(obj_yaw - cam_yaw, -PI, PI)
+	_held_relative_yaw = MathUtils.clamp_angle_rad(obj_yaw - cam_yaw, -PI, PI)
 
 	if is_instance_valid(label):
 		label.hide()
@@ -258,16 +266,18 @@ func pick_up(target: Marker3D, player_node: Node3D) -> void:
 		_set_model_transparency(active_mesh, alpha)
 
 	if is_instance_valid(interact_comp):
-		interact_comp.is_currently_focused = false
-		interact_comp.unfocused.emit()
+		interact_comp.set("is_currently_focused", false)
+		if interact_comp.has_signal("unfocused"):
+			interact_comp.unfocused.emit()
 		interact_comp.process_mode = Node.PROCESS_MODE_DISABLED
 
 	add_collision_exception_with(holder)
 	_update_process_state()
-	Events.item_picked_up.emit(self, holder)
+	if is_instance_valid(Events) and Events.has_signal("item_picked_up"):
+		Events.item_picked_up.emit(self, holder)
 
 
-## Releases the object from the player's grasp and restores full opacity.
+## Releases object from player grasp and restores opacity.
 func drop() -> void:
 	print("PickableObject: drop() called. Action: Dropping object.")
 	if Time.get_ticks_msec() - _grab_time < 100:
@@ -282,7 +292,7 @@ func drop() -> void:
 		prompt_icon.hide()
 
 	_is_tts_cooldown = true
-	get_tree().create_timer(1.5, false).timeout.connect(_reset_tts_cooldown)
+	Utilities.delay_call(self, 1.5, _reset_tts_cooldown)
 
 	var active_mesh: Node3D = _resolve_visual_mesh()
 	if is_instance_valid(active_mesh):
@@ -291,7 +301,7 @@ func drop() -> void:
 	if is_locked:
 		holder = null
 		if is_instance_valid(interact_comp):
-			interact_comp.is_currently_focused = false
+			interact_comp.set("is_currently_focused", false)
 		_update_process_state()
 		return
 
@@ -301,7 +311,7 @@ func drop() -> void:
 
 	if is_instance_valid(holder):
 		if "velocity" in holder:
-			linear_velocity = holder.velocity
+			linear_velocity = holder.get("velocity") as Vector3
 
 		var cam_forward: Vector3 = Vector3.FORWARD
 		var cam: Camera3D = _get_camera()
@@ -316,7 +326,8 @@ func drop() -> void:
 		toss_dir.y = 0.2
 		apply_central_impulse(toss_dir.normalized() * clear_impulse_mag)
 
-		Events.item_dropped.emit(self, holder)
+		if is_instance_valid(Events) and Events.has_signal("item_dropped"):
+			Events.item_dropped.emit(self, holder)
 
 		var previous_holder: Node3D = holder
 		_wait_to_enable_collision(previous_holder)
@@ -326,7 +337,7 @@ func drop() -> void:
 	_update_process_state()
 
 
-## Drops the object and applies a significant central impulse to throw it.
+## Drops object and applies central impulse to throw it.
 func throw(impulse_vector: Vector3) -> void:
 	print(
 		"PickableObject: throw() called. Throwing: ", name, " with force: ", impulse_vector.length()
@@ -336,10 +347,10 @@ func throw(impulse_vector: Vector3) -> void:
 		apply_central_impulse(impulse_vector)
 
 
-## Defers enabling the interact component until the object has safely landed.
+## Defers enabling interact component until object settles.
 func _wait_for_rest_to_enable_interact() -> void:
 	if is_instance_valid(interact_comp):
-		interact_comp.is_currently_focused = false
+		interact_comp.set("is_currently_focused", false)
 		interact_comp.process_mode = Node.PROCESS_MODE_DISABLED
 
 	while is_instance_valid(self) and not is_held:
@@ -351,27 +362,27 @@ func _wait_for_rest_to_enable_interact() -> void:
 		interact_comp.process_mode = Node.PROCESS_MODE_INHERIT
 
 
-## Checks if the object has settled near or on a physical collision surface.
-## [return] True if contact or floor collision is detected.
+## Checks if object has settled on physical surface.
 func is_on_floor_approx() -> bool:
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
 		global_position, global_position + Vector3(0.0, -0.6, 0.0)
 	)
+	query.collision_mask = CollisionLayers.MASK_ENVIRONMENT
 	query.exclude = [self.get_rid()]
 	var res: Dictionary = space_state.intersect_ray(query)
 	return not res.is_empty()
 
 
-## Resets the cooldown timer, allowing the text-to-speech engine to speak the grab prompt again.
+## Resets the cooldown timer for TTS prompts.
 func _reset_tts_cooldown() -> void:
-	print("PickableObject: _reset_tts_cooldown() called. TTS focus prompts re-enabled.")
+	print("PickableObject: _reset_tts_cooldown() called. TTS re-enabled.")
 	_is_tts_cooldown = false
 
 
-## Periodically checks distance to the player to safely re-enable collision.
+## Periodically checks distance to re-enable collision.
 func _attempt_enable_collision(player_node: Node3D) -> void:
-	print("PickableObject: _attempt_enable_collision() executing collision check.")
+	print("PickableObject: _attempt_enable_collision() executing check.")
 	if not is_instance_valid(self) or not is_instance_valid(player_node):
 		return
 
@@ -380,16 +391,15 @@ func _attempt_enable_collision(player_node: Node3D) -> void:
 	if dist_sq > 2.25:
 		remove_collision_exception_with(player_node)
 	else:
-		get_tree().create_timer(0.1).timeout.connect(_attempt_enable_collision.bind(player_node))
+		Utilities.delay_call(self, 0.1, _attempt_enable_collision.bind(player_node))
 
 
-## Called when the player focuses on this pickable object. Highlights the mesh and triggers TTS.
+## Handles focus events, highlighting mesh and TTS cues.
 func _on_interact_component_focused() -> void:
-	print("PickableObject: _on_interact_component_focused() called. Highlighting object.")
+	print("PickableObject: _on_interact_component_focused() called.")
 	if is_locked or is_held:
 		return
 
-	# Suppress HUD focus prompt while the item is sailing through the air
 	if linear_velocity.length() > 0.8:
 		if is_instance_valid(label):
 			label.hide()
@@ -403,7 +413,7 @@ func _on_interact_component_focused() -> void:
 	if is_instance_valid(prompt_icon) and prompt_icon.texture != null:
 		prompt_icon.show()
 
-	if Events.has_signal("object_focused") and not _is_tts_cooldown:
+	if is_instance_valid(Events) and Events.has_signal("object_focused") and not _is_tts_cooldown:
 		var events: Array[InputEvent] = InputMap.action_get_events("interact")
 		var key_name: String = ""
 		if not events.is_empty():
@@ -418,9 +428,9 @@ func _on_interact_component_focused() -> void:
 		Events.object_focused.emit(tts_prompt, mesh)
 
 
-## Formats the floating [Label3D] and [Sprite3D] icon using the [InputHelper] autoload.
+## Formats floating prompt label and icon textures.
 func _update_label_text() -> void:
-	print("PickableObject: _update_label_text() called. Updating visual prompts.")
+	print("PickableObject: _update_label_text() called. Updating prompts.")
 	var events: Array[InputEvent] = InputMap.action_get_events("interact")
 	var key_name: String = "???"
 	var icon_tex: Texture2D = null
@@ -447,16 +457,16 @@ func _update_label_text() -> void:
 			label.position.x = 0.0
 
 
-## Called when the player looks away. Removes the highlight and hides the label and icon.
+## Hides labels and icons when player stops focusing.
 func _on_interact_component_unfocused() -> void:
-	print("PickableObject: _on_interact_component_unfocused() called. Removing highlight.")
+	print("PickableObject: _on_interact_component_unfocused() called.")
 	if is_instance_valid(label):
 		label.hide()
 	if is_instance_valid(prompt_icon):
 		prompt_icon.hide()
 
 
-## Processes object movement towards the hold target with mass-specific height clamping.
+## Processes hold motion, buoyancy, and physics raycasts.
 func _physics_process(_delta: float) -> void:
 	if is_held and is_instance_valid(hold_target) and is_instance_valid(holder):
 		var target_pos: Vector3 = hold_target.global_position
@@ -471,7 +481,6 @@ func _physics_process(_delta: float) -> void:
 		var is_heavy: bool = mass >= heavy_mass_threshold
 
 		if is_heavy:
-			# Keep heavy barrels anchored just above the floor in front of the player
 			var flat_forward: Vector3 = Vector3(cam_forward.x, 0.0, cam_forward.z).normalized()
 			var carry_dist: float = maxf(MIN_HOLD_DISTANCE - hold_distance_offset, 1.1)
 			target_pos = (
@@ -480,19 +489,17 @@ func _physics_process(_delta: float) -> void:
 				+ Vector3(0.0, heavy_floor_clearance, 0.0)
 			)
 
-			# Verify floor clearance below target
 			var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 			var floor_query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
 				target_pos + Vector3(0.0, 0.5, 0.0), target_pos + Vector3(0.0, -1.0, 0.0)
 			)
-			floor_query.collision_mask = 1
+			floor_query.collision_mask = CollisionLayers.MASK_ENVIRONMENT
 			floor_query.exclude = [get_rid(), holder.get_rid()]
 			var floor_hit: Dictionary = space_state.intersect_ray(floor_query)
 			if not floor_hit.is_empty():
 				var ground_y: float = (floor_hit.position as Vector3).y
 				target_pos.y = ground_y + heavy_floor_clearance
 		else:
-			# Standard light object handling
 			var to_target: Vector3 = target_pos - cam_origin
 			var forward_projection: float = to_target.dot(cam_forward)
 			var required_dist: float = maxf(MIN_HOLD_DISTANCE - hold_distance_offset, 0.8)
@@ -507,7 +514,7 @@ func _physics_process(_delta: float) -> void:
 			return
 
 		var holder_velocity: Vector3 = (
-			holder.get("velocity") if "velocity" in holder else Vector3.ZERO
+			holder.get("velocity") as Vector3 if "velocity" in holder else Vector3.ZERO
 		)
 		var distance_vector: Vector3 = target_pos - global_position
 
@@ -549,8 +556,8 @@ func _physics_process(_delta: float) -> void:
 				if not is_instance_valid(p):
 					continue
 
-				var wave_height: float = current_water_node.get_wave_height_at_pos(
-					p.global_position
+				var wave_height: float = float(
+					current_water_node.call("get_wave_height_at_pos", p.global_position)
 				)
 				var depth: float = wave_height - p.global_position.y
 
@@ -568,8 +575,10 @@ func _physics_process(_delta: float) -> void:
 		print("PickableObject: Water impact registered -> speed: ", impact_speed)
 		if is_instance_valid(current_water_node):
 			var ripple_power: float = maxf(impact_speed * 0.3, 1.2)
-			current_water_node.spawn_ripple(global_position, ripple_power)
-			current_water_node.play_splash_sound(global_position, impact_speed)
+			if current_water_node.has_method("spawn_ripple"):
+				current_water_node.call("spawn_ripple", global_position, ripple_power)
+			if current_water_node.has_method("play_splash_sound"):
+				current_water_node.call("play_splash_sound", global_position, impact_speed)
 
 	_was_submerged = submerged
 
@@ -581,12 +590,12 @@ func _physics_process(_delta: float) -> void:
 		if linear_velocity.length() > 0.8 and cur_time - _last_wake_time > 400:
 			_last_wake_time = cur_time
 			if current_water_node.has_method("spawn_ripple"):
-				current_water_node.spawn_ripple(global_position, 0.4)
+				current_water_node.call("spawn_ripple", global_position, 0.4)
 
 	_last_velocity = linear_velocity
 
 
-## Triggered by the physics engine whenever this rigid body collides with another physics body.
+## Deals impact damage if collision velocity is high.
 func _on_body_entered(body: Node) -> void:
 	if is_held:
 		return
@@ -601,11 +610,10 @@ func _on_body_entered(body: Node) -> void:
 				" damage to ",
 				body.name
 			)
-			body.take_damage(projectile_damage)
+			body.call("take_damage", projectile_damage)
 
 
-## Waits until the object is safely away
-## from the player before restoring collision to avoid clipping.
+## Safely clears collision exception after clearing radius.
 func _wait_to_enable_collision(player_node: Node3D) -> void:
 	print("PickableObject: _wait_to_enable_collision() waiting for clearance.")
 	var max_wait_frames: int = 30
@@ -643,15 +651,17 @@ func _wait_to_enable_collision(player_node: Node3D) -> void:
 			var push_vector: Vector3 = flat_backward * push_distance
 
 			var safe_travel: Vector3 = push_vector
-			var kin_collision: KinematicCollision3D = player_node.move_and_collide(
-				push_vector, true
+			var kin_collision: KinematicCollision3D = (
+				(player_node as PhysicsBody3D).move_and_collide(push_vector, true)
+				if player_node is PhysicsBody3D
+				else null
 			)
 			if kin_collision:
 				safe_travel = kin_collision.get_travel()
 
 			var target_pos: Vector3 = player_node.global_position + safe_travel
 
-			var tween: Tween = get_tree().create_tween()
+			var tween: Tween = create_tween()
 			(
 				tween
 				. tween_property(player_node, "global_position", target_pos, 0.15)
@@ -672,7 +682,7 @@ func _wait_to_enable_collision(player_node: Node3D) -> void:
 		remove_collision_exception_with(player_node)
 
 
-## Recursively applies transparency across all child GeometryInstance3D nodes.
+## Recursively applies transparency across child meshes.
 func _set_model_transparency(parent_node: Node, alpha: float) -> void:
 	if not is_instance_valid(parent_node):
 		return
@@ -685,40 +695,37 @@ func _set_model_transparency(parent_node: Node, alpha: float) -> void:
 		_set_model_transparency(child, alpha)
 
 
-## Retrieves and caches the active [Camera3D] for calculating hold offsets and nudges.
+## Retrieves and caches active [Camera3D] for hold math.
 func _get_camera() -> Camera3D:
 	if not is_instance_valid(_cached_camera):
 		_cached_camera = (get_viewport().get_camera_3d() if get_viewport() else null)
 	return _cached_camera
 
 
-## Signal callback for toggling the accessibility highlight.
+## Toggles accessibility material overlay on visual mesh.
 func _on_vision_assist_toggled(is_active: bool) -> void:
-	print(
-		"PickableObject: _on_vision_assist_toggled() triggered. Applying material overlay: ",
-		is_active
-	)
+	print("PickableObject: _on_vision_assist_toggled() triggered. Overlay: ", is_active)
 
 	if is_instance_valid(mesh):
 		var target_material: ShaderMaterial = vision_assist_material if is_active else null
 		_set_model_overlay(mesh, target_material)
 
 
-## Recursive helper to apply the overlay material to the root mesh and all child meshes.
+## Recursively applies overlay material across child meshes.
 func _set_model_overlay(parent_node: Node, mat: ShaderMaterial) -> void:
 	if not is_instance_valid(parent_node):
 		return
 
 	if parent_node is GeometryInstance3D:
-		parent_node.material_overlay = mat
+		(parent_node as GeometryInstance3D).material_overlay = mat
 
 	for child: Node in parent_node.get_children():
 		_set_model_overlay(child, mat)
 
 
-## Parses the name of [member mesh] to generate a clean, natural voice string.
+## Parses mesh node name to generate natural TTS string.
 func _get_clean_mesh_name() -> String:
-	print("PickableObject: _get_clean_mesh_name() called. Parsing mesh string.")
+	print("PickableObject: _get_clean_mesh_name() parsing mesh name.")
 
 	if not is_instance_valid(mesh) or mesh == self:
 		return "object"
@@ -759,7 +766,7 @@ func _get_clean_mesh_name() -> String:
 	return final_name
 
 
-## Resolves an [InputEvent] to a valid file path of a matching Kenney icon texture.
+## Resolves [InputEvent] to matching icon texture path.
 func _get_event_icon_path(event: InputEvent) -> String:
 	print("PickableObject: _get_event_icon_path() resolving icon for ", event.as_text())
 	var possible_filenames: Array[String] = []
@@ -842,7 +849,7 @@ func _get_event_icon_path(event: InputEvent) -> String:
 
 		for full_path: String in candidate_paths:
 			if _icon_path_cache.has(full_path):
-				return _icon_path_cache[full_path] as String
+				return str(_icon_path_cache[full_path])
 
 			if ResourceLoader.exists(full_path):
 				_icon_path_cache[full_path] = full_path
@@ -851,7 +858,7 @@ func _get_event_icon_path(event: InputEvent) -> String:
 	return ""
 
 
-## Resolves visual mesh references from children if export is unassigned.
+## Resolves visual mesh references from children if needed.
 func _resolve_visual_mesh() -> Node3D:
 	print("PickableObject: _resolve_visual_mesh() called.")
 	if is_instance_valid(mesh):

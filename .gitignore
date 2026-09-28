@@ -26,8 +26,7 @@ assets/props
 assets/sounds
 assets/textures
 assets/VisTEST
-assets/weapons/
-!assets/weapons/hitscan_weapon.gd
+assets/weapons
 
 addons/imgui-godot/
 

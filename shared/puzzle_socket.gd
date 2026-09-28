@@ -1,48 +1,60 @@
-## Manages puzzle socket interactions, power transmission states, and dynamic prompt visibility.
 @tool
+## Manages puzzle socket interactions, power transmission states, and dynamic prompts.
 class_name PuzzleSocket
 extends StaticBody3D
 
 ## Emitted when the socket enters an active powered state.
 signal socket_powered_on
-## Emitted when the socket loses power or its connection is cut.
+
+## Emitted when socket loses power or connection is cut.
 signal socket_powered_off
 
-## Node name used for the editor-only lightning particle preview.
+## Node name used for the editor-only preview.
 const PREVIEW_PARTICLES_NAME: String = "EditorPowerSourcePreview"
 
-## Determines if this socket supplies power to connected plugs.
 @export_group("Socket Settings")
+
+## Determines if socket supplies power to connected plugs.
 @export var is_power_source: bool = false:
 	set(value):
 		is_power_source = value
 		if is_inside_tree():
 			_update_editor_preview()
-## Requires an active power loop to distribute energy to targets.
+
+## Requires active power loop to distribute energy.
 @export var requires_power_link: bool = false
-## Determines if the inserted plug can be extracted by player interaction.
+
+## Determines if inserted plug can be unplugged.
 @export var can_be_unplugged: bool = true
-## Reference point marker defining where the plug locks visually.
+
+## Reference point marker defining where plug locks.
 @export var snap_position: Marker3D
+
 ## Light node indicating power connection status.
 @export var indicator_light: Light3D
-## In-world 3D label displaying interaction prompts to the player.
+
+## In-world 3D label displaying interaction prompts.
 @export var label: Label3D
-## Component handling player aim focus and interaction triggers.
+
+## Component handling aim focus and interact triggers.
 @export var socket_interact_comp: InteractComponent
+
 ## Component handling visual mesh highlight outlining.
 @export var highlight_comp: Node
-## Trigger area responsible for detecting when a plug enters or exits the socket.
+
+## Trigger area detecting when plug enters or exits.
 @export var plug_trigger_area: Area3D
-## Particle texture displayed in the editor when the socket is a power source.
+
+## Particle texture displayed in editor for power source.
 @export var power_source_texture: Texture2D:
 	set(value):
 		power_source_texture = value
 		if is_inside_tree():
 			_update_editor_preview()
 
-## Transmitter node passing logic triggers and progress to targets.
 @export_category("Connections")
+
+## Transmitter passing logic triggers to targets.
 @export var transmitter: OutputTransmitter3D:
 	set(value):
 		transmitter = value
@@ -56,17 +68,20 @@ const PREVIEW_PARTICLES_NAME: String = "EditorPowerSourcePreview"
 		if is_inside_tree():
 			_sync_transmitter()
 
-## Tracks whether a plug is physically inserted and connected.
+## Tracks whether plug is inserted and connected.
 var is_powered: bool = false
-## Reference to the currently inserted plug node.
+
+## Reference to currently inserted plug node.
 var current_plug: Node3D = null
-## Prevents instant re-insertion right after an unplug event.
+
+## Prevents instant re-insertion right after unplug.
 var is_cooling_down: bool = false
-## Controls prompt text visibility based on player game settings.
+
+## Controls prompt text visibility from player settings.
 var _show_text_prompts: bool = true
 
 
-## Initializes component listeners, default light state, and prompt settings.
+## Initializes component listeners and prompt settings.
 func _ready() -> void:
 	print("PuzzleSocket: Initializing _ready() lifecycle.")
 	_sync_transmitter()
@@ -87,7 +102,7 @@ func _ready() -> void:
 		plug_trigger_area = get_node_or_null("PlugTriggerArea") as Area3D
 
 	if not is_instance_valid(socket_interact_comp):
-		socket_interact_comp = get_node_or_null("InteractComponent") as InteractComponent
+		socket_interact_comp = (get_node_or_null("InteractComponent") as InteractComponent)
 
 	if is_instance_valid(label):
 		label.hide()
@@ -106,7 +121,7 @@ func _ready() -> void:
 		plug_trigger_area.body_entered.connect(_on_body_entered)
 		plug_trigger_area.body_exited.connect(_on_body_exited)
 	else:
-		push_error("PuzzleSocket: Missing PlugTriggerArea child node!")
+		print("PuzzleSocket: No PlugTriggerArea child node detected.")
 
 	if is_instance_valid(GlobalSettings) and GlobalSettings.has_method("get_setting"):
 		var raw_setting: Variant = GlobalSettings.get_setting("Gameplay", "show_item_prompts", true)
@@ -125,10 +140,10 @@ func _ready() -> void:
 		if not socket_interact_comp.unfocused.is_connected(_on_socket_unfocused):
 			socket_interact_comp.unfocused.connect(_on_socket_unfocused)
 	else:
-		push_error("PuzzleSocket: CRITICAL - Could not find InteractComponent on ", name)
+		print("PuzzleSocket: No InteractComponent attached to ", name)
 
 
-## Safely propagates the target array to the attached transmitter.
+## Safely propagates target array to transmitter.
 func _sync_transmitter() -> void:
 	if not is_inside_tree() or not is_node_ready():
 		return
@@ -136,7 +151,7 @@ func _sync_transmitter() -> void:
 		transmitter.targets = targets
 
 
-## Manages the editor-only lightning particle preview instance based on state.
+## Manages editor-only lightning preview instance.
 func _update_editor_preview() -> void:
 	if not Engine.is_editor_hint() or not is_inside_tree():
 		return
@@ -159,14 +174,14 @@ func _update_editor_preview() -> void:
 		existing_preview.queue_free()
 
 
-## Cleans up any editor preview nodes that leaked into runtime memory.
+## Cleans up editor preview nodes from runtime.
 func _remove_editor_preview() -> void:
 	var existing_preview: Node = get_node_or_null(PREVIEW_PARTICLES_NAME)
 	if is_instance_valid(existing_preview):
 		existing_preview.queue_free()
 
 
-## Constructs procedural electric spark particles for editor visualization.
+## Constructs procedural electric spark particles.
 func _build_lightning_particles() -> GPUParticles3D:
 	var particles: GPUParticles3D = GPUParticles3D.new()
 	var particle_mat: ParticleProcessMaterial = ParticleProcessMaterial.new()
@@ -205,13 +220,10 @@ func _build_lightning_particles() -> GPUParticles3D:
 	return particles
 
 
-## Extracts the plug and transfers it into the player's hands on interact.
+## Extracts plug and transfers it into player hands.
 func _on_socket_interacted(character: CharacterBody3D) -> void:
 	print("Socket: Player interacted with socket.")
-	if not is_powered:
-		return
-
-	if not can_be_unplugged:
+	if not is_powered or not can_be_unplugged:
 		return
 
 	var released_plug: Node3D = current_plug
@@ -229,39 +241,39 @@ func _on_socket_interacted(character: CharacterBody3D) -> void:
 					PhysicsServer3D.BODY_STATE_TRANSFORM,
 					player_hand_marker.global_transform
 				)
-				released_plug.linear_velocity = Vector3.ZERO
-				released_plug.angular_velocity = Vector3.ZERO
+				(released_plug as RigidBody3D).linear_velocity = Vector3.ZERO
+				(released_plug as RigidBody3D).angular_velocity = Vector3.ZERO
 
-			released_plug.pick_up(player_hand_marker, character)
+			released_plug.call("pick_up", player_hand_marker, character)
 			_on_socket_unfocused()
 		else:
-			push_warning("Socket: Could not find hold_position on Player!")
+			print("Socket: No hold_position found on Player.")
 
 
-## Direct interact method fallback invoked when interacted directly by scanner.
+## Direct interact method fallback invoked by scanner.
 func interact_with(character: CharacterBody3D) -> void:
 	print("Socket: interact_with fallback called by character.")
 	_on_socket_interacted(character)
 
 
-## Detects a compatible plug entering the socket trigger zone.
+## Detects compatible plug entering trigger zone.
 func _on_body_entered(body: Node3D) -> void:
 	if not is_powered and body.is_in_group("plug") and not is_cooling_down:
 		plug_in(body)
 
 
-## Detects when the active plug leaves the socket trigger boundary.
+## Detects when active plug leaves trigger boundary.
 func _on_body_exited(body: Node3D) -> void:
 	if is_powered and body == current_plug:
 		unplug()
 
 
-## Connects the plug, handles forced drop, and updates circuit states.
+## Connects plug, handles forced drop, and updates power.
 func plug_in(plug: Node3D) -> void:
 	print("Socket: Plugging in ", plug.name)
-	if plug.has_method("drop") and plug.get("is_held"):
+	if plug.has_method("drop") and plug.get("is_held") == true:
 		print("Socket: Plug is currently held. Forcing drop.")
-		plug.drop()
+		plug.call("drop")
 
 	is_powered = true
 	current_plug = plug
@@ -277,13 +289,13 @@ func plug_in(plug: Node3D) -> void:
 			_on_socket_focused()
 
 	if plug.has_signal("power_state_changed"):
-		plug.power_state_changed.connect(_on_plug_power_changed)
+		plug.connect("power_state_changed", _on_plug_power_changed)
 
 	if is_power_source:
 		if is_instance_valid(indicator_light):
 			indicator_light.light_color = Color.GREEN
 		if plug.has_method("set_power_state"):
-			plug.set_power_state(true)
+			plug.call("set_power_state", true)
 	else:
 		if requires_power_link:
 			if plug.get("is_energized") == true:
@@ -299,7 +311,7 @@ func plug_in(plug: Node3D) -> void:
 			_energize_targets()
 
 
-## Waits for a physics tick before aligning and locking the plug.
+## Waits for physics frame before aligning plug.
 func _trigger_delayed_snap(plug: Node3D) -> void:
 	print("Socket: Awaiting physics frame to guarantee clean state.")
 	await get_tree().physics_frame
@@ -308,7 +320,7 @@ func _trigger_delayed_snap(plug: Node3D) -> void:
 		_snap_and_freeze_plug(plug)
 
 
-## Detaches the current plug, restores physics, and resets outputs.
+## Detaches current plug and resets circuit outputs.
 func unplug() -> void:
 	print("Socket: Unplug sequence initiated.")
 	if not can_be_unplugged or not is_powered:
@@ -317,7 +329,7 @@ func unplug() -> void:
 	if is_instance_valid(current_plug):
 		if is_power_source:
 			if current_plug.has_method("set_power_state"):
-				current_plug.set_power_state(false)
+				current_plug.call("set_power_state", false)
 		else:
 			if requires_power_link:
 				if current_plug.get("is_energized") == true:
@@ -326,7 +338,7 @@ func unplug() -> void:
 				_deenergize_targets()
 
 		if current_plug.has_signal("power_state_changed"):
-			current_plug.power_state_changed.disconnect(_on_plug_power_changed)
+			current_plug.disconnect("power_state_changed", _on_plug_power_changed)
 
 	is_powered = false
 	is_cooling_down = true
@@ -345,14 +357,14 @@ func unplug() -> void:
 		indicator_light.light_color = Color.RED
 
 
-## Displays context prompts, enables highlight, and emits speech cues.
+## Displays context prompts and enables highlight.
 func _on_socket_focused() -> void:
 	print("Socket: _on_socket_focused() called.")
 	if is_instance_valid(highlight_comp) and highlight_comp.has_method("set_highlighted"):
-		highlight_comp.set_highlighted(true)
+		highlight_comp.call("set_highlighted", true)
 
 	if not is_instance_valid(label):
-		print("Socket: Label node reference is NULL!")
+		print("Socket: Label node reference is NULL.")
 		return
 
 	var events: Array[InputEvent] = InputMap.action_get_events("interact")
@@ -382,29 +394,33 @@ func _on_socket_focused() -> void:
 	else:
 		label.text = ""
 
-	print("Socket: Label text set to: '", label.text, "' | show_prompts: ", _show_text_prompts)
+	print("Socket: Label text set to: '", label.text, "'")
 
 	if _show_text_prompts and not label.text.is_empty():
 		label.show()
 	else:
 		label.hide()
 
-	if Events.has_signal("object_focused") and not speech_text.is_empty():
+	if (
+		is_instance_valid(Events)
+		and Events.has_signal("object_focused")
+		and not speech_text.is_empty()
+	):
 		print("Socket: Broadcasting object_focused prompt to TTSandy.")
 		Events.object_focused.emit(speech_text, self)
 
 
-## Hides prompt label and disables highlight when focus is lost.
+## Hides prompt label and disables highlight on unfocus.
 func _on_socket_unfocused() -> void:
 	print("Socket: _on_socket_unfocused() called.")
 	if is_instance_valid(highlight_comp) and highlight_comp.has_method("set_highlighted"):
-		highlight_comp.set_highlighted(false)
+		highlight_comp.call("set_highlighted", false)
 
 	if is_instance_valid(label):
 		label.hide()
 
 
-## Synchronizes prompt visibility when toggled in the settings menu.
+## Synchronizes prompt visibility when toggled in menu.
 func _on_item_prompts_toggled(enabled: bool) -> void:
 	print("Socket: Item prompt visibility updated -> ", enabled)
 	_show_text_prompts = enabled
@@ -412,7 +428,7 @@ func _on_item_prompts_toggled(enabled: bool) -> void:
 		label.hide()
 
 
-## Reacts to power state modifications emitted by the connected plug.
+## Reacts to power state modifications emitted by plug.
 func _on_plug_power_changed(has_power: bool) -> void:
 	if not is_power_source and is_powered and requires_power_link:
 		if has_power:
@@ -425,27 +441,27 @@ func _on_plug_power_changed(has_power: bool) -> void:
 			_deenergize_targets()
 
 
-## Broadcasts power-on signal and instructs transmitter to trigger targets.
+## Broadcasts power-on signal and notifies transmitter.
 func _energize_targets() -> void:
 	print("Socket: Energizing targets via Transmitter.")
 	socket_powered_on.emit()
 	if is_instance_valid(transmitter):
 		transmitter.power_on()
 	else:
-		push_warning("Socket: Missing OutputTransmitter3D! Cannot energize targets.")
+		print("Socket: No OutputTransmitter3D assigned.")
 
 
-## Broadcasts power-off signal and instructs transmitter to reset targets.
+## Broadcasts power-off signal and notifies transmitter.
 func _deenergize_targets() -> void:
 	print("Socket: De-energizing targets via Transmitter.")
 	socket_powered_off.emit()
 	if is_instance_valid(transmitter):
 		transmitter.power_off()
 	else:
-		push_warning("Socket: Missing OutputTransmitter3D! Cannot de-energize targets.")
+		print("Socket: No OutputTransmitter3D assigned.")
 
 
-## Freezes and locks the plug transform to the target snap position.
+## Freezes and locks plug transform to snap position.
 func _snap_and_freeze_plug(plug: Node3D) -> void:
 	print("Socket: Snapping and freezing plug to exact center.")
 	if not is_instance_valid(plug) or not is_instance_valid(snap_position):
@@ -458,14 +474,14 @@ func _snap_and_freeze_plug(plug: Node3D) -> void:
 		target_transform = target_transform * marker.transform.affine_inverse()
 
 	if plug is RigidBody3D:
-		plug.linear_velocity = Vector3.ZERO
-		plug.angular_velocity = Vector3.ZERO
+		(plug as RigidBody3D).linear_velocity = Vector3.ZERO
+		(plug as RigidBody3D).angular_velocity = Vector3.ZERO
 
 		PhysicsServer3D.body_set_state(
 			plug.get_rid(), PhysicsServer3D.BODY_STATE_TRANSFORM, target_transform
 		)
 
 		plug.global_transform = target_transform
-		plug.freeze = true
+		(plug as RigidBody3D).freeze = true
 	else:
 		plug.global_transform = target_transform

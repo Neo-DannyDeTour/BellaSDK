@@ -134,22 +134,26 @@ var is_heavy_carrying: bool = false
 ## Extra mass in kilograms of currently held physical object.
 var carried_weight: float = 0.0
 
+## Internal vertical velocity tracking head stance spring animation.
+var _head_velocity_y: float = 0.0
+
 
 ## Subscribes to global event bus signals and initializes state.
 func _ready() -> void:
 	print("LocomotionComponent: _ready() initialized.")
 	if Events.has_signal("heavy_carry_toggled"):
-		if not Events.heavy_carry_toggled.is_connected(_on_heavy_carry_toggled):
-			Events.heavy_carry_toggled.connect(_on_heavy_carry_toggled)
+		Utilities.safe_connect(Events.heavy_carry_toggled, _on_heavy_carry_toggled)
 
 
 ## Caches parent [CharacterBody3D] for physical updates.
+## [param p_player] Parent player body reference.
 func initialize(p_player: CharacterBody3D) -> void:
 	print("LocomotionComponent: initialize() called. Caching player reference.")
 	player = p_player
 
 
 ## Enables or disables movement and gravity processing.
+## [param active] Whether locomotion physics are active.
 func set_physics_active(active: bool) -> void:
 	if is_active != active:
 		print("LocomotionComponent: set_physics_active() -> ", active)
@@ -157,6 +161,7 @@ func set_physics_active(active: bool) -> void:
 
 
 ## Executes floor weight application and head height interpolation.
+## [param delta] Elapsed frame delta time in seconds.
 func process_movement(delta: float) -> void:
 	if not is_active or not is_instance_valid(player):
 		return
@@ -169,17 +174,21 @@ func process_movement(delta: float) -> void:
 
 
 ## Evaluates if player sprinted within the given millisecond window.
+## [param time_window_ms] Millisecond window threshold.
+## [return] True if sprint was triggered within the window.
 func did_run_recently(time_window_ms: int = 10000) -> bool:
 	print("LocomotionComponent: did_run_recently() evaluated.")
 	return (Time.get_ticks_msec() - _last_sprint_time) <= time_window_ms
 
 
 ## Updates player intended movement direction vector.
+## [param new_dir] Normalized 3D movement direction.
 func set_direction(new_dir: Vector3) -> void:
 	direction = new_dir
 
 
 ## Returns the normalized intended movement vector.
+## [return] Normalized movement heading vector.
 func get_direction() -> Vector3:
 	return direction
 
@@ -194,6 +203,8 @@ func reset_momentum() -> void:
 
 
 ## Updates heavy carrying state, carried mass, and sprint allowance.
+## [param active] Whether heavy carrying is enabled.
+## [param weight] Carried physical mass in kilograms.
 func set_heavy_carry(active: bool, weight: float = 0.0) -> void:
 	print("LocomotionComponent: set_heavy_carry() -> ", active, " (mass: ", weight, "kg)")
 	is_heavy_carrying = active
@@ -202,12 +213,14 @@ func set_heavy_carry(active: bool, weight: float = 0.0) -> void:
 
 
 ## Handles [signal Events.heavy_carry_toggled] to restrict locomotion.
+## [param is_heavy] True if heavy carry state is active.
 func _on_heavy_carry_toggled(is_heavy: bool) -> void:
 	print("LocomotionComponent: _on_heavy_carry_toggled() received -> ", is_heavy)
 	set_heavy_carry(is_heavy, 15.0 if is_heavy else 0.0)
 
 
 ## Calculates current walking speed scaled by heavy carry modifiers.
+## [return] Effective movement speed in meters per second.
 func get_effective_walk_speed() -> float:
 	var base_speed: float = walking_speed
 	if crouching:
@@ -222,6 +235,8 @@ func get_effective_walk_speed() -> float:
 
 
 ## Calculates adjusted jump velocity based on carry state.
+## [param base_jump_velocity] Unmodified jump velocity magnitude.
+## [return] Scaled jump velocity in meters per second.
 func get_effective_jump_velocity(base_jump_velocity: float) -> float:
 	if is_heavy_carrying:
 		if not allow_heavy_carry_jump:
@@ -277,10 +292,15 @@ func _apply_weight_to_floor() -> void:
 			return
 
 
-## Smoothly interpolates head node height based on stance.
+## Smoothly interpolates head node height using [method MathUtils.damped_spring].
+## [param delta] Elapsed frame delta time in seconds.
 func _interpolate_head_height(delta: float) -> void:
 	if not is_instance_valid(head):
 		return
 
 	var target_height: float = CROUCHING_HEIGHT if crouching else STANDING_HEIGHT
-	head.position.y = lerpf(head.position.y, target_height, delta * 15.0)
+	var spring_res: Dictionary = MathUtils.damped_spring(
+		head.position.y, target_height, _head_velocity_y, 180.0, 20.0, delta
+	)
+	head.position.y = spring_res[&"position"]
+	_head_velocity_y = spring_res[&"velocity"]

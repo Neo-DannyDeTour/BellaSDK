@@ -1,8 +1,5 @@
-## Global autoload managing real-time AAA high-contrast silhouette overlays
-## across target scene groups.
-##
-## Hooks into scene loading to recursively apply unshaded flat color materials
-## as overlays to all geometry and sprites within designated accessibility groups.
+## Global manager handling real-time high-contrast silhouette overlays across target groups.
+## Coordinates scene trees and applies unshaded stencil materials to accessibility objects.
 # class_name VisionAssistManager
 extends Node
 
@@ -29,41 +26,41 @@ uniform float alpha_scissor = 0.5;
 uniform bool enable_billboard = false;
 
 void vertex() {
-	if (enable_billboard) {
-		vec3 scale = vec3(
-			length(MODEL_MATRIX[0].xyz),
-			length(MODEL_MATRIX[1].xyz),
-			length(MODEL_MATRIX[2].xyz)
-		);
+    if (enable_billboard) {
+        vec3 scale = vec3(
+            length(MODEL_MATRIX[0].xyz),
+            length(MODEL_MATRIX[1].xyz),
+            length(MODEL_MATRIX[2].xyz)
+        );
 
-		mat4 billboard_matrix = mat4(
-			normalize(VIEW_MATRIX[0]),
-			normalize(VIEW_MATRIX[1]),
-			normalize(VIEW_MATRIX[2]),
-			MODELVIEW_MATRIX[3]
-		);
+        mat4 billboard_matrix = mat4(
+            normalize(VIEW_MATRIX[0]),
+            normalize(VIEW_MATRIX[1]),
+            normalize(VIEW_MATRIX[2]),
+            MODELVIEW_MATRIX[3]
+        );
 
-		billboard_matrix = billboard_matrix * mat4(
-			vec4(scale.x, 0.0, 0.0, 0.0),
-			vec4(0.0, scale.y, 0.0, 0.0),
-			vec4(0.0, 0.0, scale.z, 0.0),
-			vec4(0.0, 0.0, 0.0, 1.0)
-		);
+        billboard_matrix = billboard_matrix * mat4(
+            vec4(scale.x, 0.0, 0.0, 0.0),
+            vec4(0.0, scale.y, 0.0, 0.0),
+            vec4(0.0, 0.0, scale.z, 0.0),
+            vec4(0.0, 0.0, 0.0, 1.0)
+        );
 
-		MODELVIEW_MATRIX = billboard_matrix;
-	}
+        MODELVIEW_MATRIX = billboard_matrix;
+    }
 }
 
 void fragment() {
-	float alpha = texture(base_texture, UV).a;
-	if (alpha < alpha_scissor) {
-		discard;
-	}
-	ALBEDO = highlight_color.rgb;
+    float alpha = texture(base_texture, UV).a;
+    if (alpha < alpha_scissor) {
+        discard;
+    }
+    ALBEDO = highlight_color.rgb;
 }
 """
 
-## Tracks whether vision assist high-contrast silhouettes are currently rendered globally.
+## Tracks whether vision assist high-contrast silhouettes are rendered globally.
 var is_active: bool = false
 
 ## Tracks whether diorama preview silhouette overlays are explicitly enabled.
@@ -72,7 +69,7 @@ var diorama_preview_active: bool = false
 ## Current background shading mode applied behind overlays.
 var current_mode: String = "aaa_blue"
 
-## Dictionary mapping scene group names to their target outline and fill colors.
+## Dictionary mapping scene group names to target outline and fill colors.
 var group_colors: Dictionary[String, Color] = {
 	"friends": Color(0.0, 0.5, 1.0, 1.0),
 	"enemies": Color(1.0, 0.1, 0.1, 1.0),
@@ -82,7 +79,7 @@ var group_colors: Dictionary[String, Color] = {
 	"cover": Color(1.0, 1.0, 1.0, 1.0)
 }
 
-## Caches instantiated unshaded ShaderMaterial instances per group.
+## Caches instantiated unshaded [ShaderMaterial] instances per group.
 var _group_materials: Dictionary[String, ShaderMaterial] = {}
 
 ## Base shader resource enforcing solid silhouettes with billboarding support.
@@ -100,16 +97,20 @@ func _ready() -> void:
 	if has_node("/root/Events"):
 		var events: Node = get_node("/root/Events")
 		if events.has_signal("vision_assist_toggled"):
-			events.vision_assist_toggled.connect(_on_vision_assist_toggled)
+			Utilities.safe_connect(events.vision_assist_toggled, _on_vision_assist_toggled)
 		if events.has_signal("vision_assist_mode_changed"):
-			events.vision_assist_mode_changed.connect(_on_vision_assist_mode_changed)
+			Utilities.safe_connect(
+				events.vision_assist_mode_changed, _on_vision_assist_mode_changed
+			)
 		if events.has_signal("vision_assist_color_changed"):
-			events.vision_assist_color_changed.connect(_on_vision_assist_color_changed)
+			Utilities.safe_connect(
+				events.vision_assist_color_changed, _on_vision_assist_color_changed
+			)
 
-	get_tree().node_added.connect(_on_scene_node_added)
+	Utilities.safe_connect(get_tree().node_added, _on_scene_node_added)
 
 
-## Reconstructs and caches the ShaderMaterial associated with a specific group key.
+## Reconstructs and caches the [ShaderMaterial] associated with a group key.
 ## [param group_name] The target scene group identifier.
 func _rebuild_material_for_group(group_name: String) -> void:
 	var mat: ShaderMaterial = ShaderMaterial.new()
@@ -117,11 +118,12 @@ func _rebuild_material_for_group(group_name: String) -> void:
 	mat.set_shader_parameter("highlight_color", group_colors[group_name])
 	mat.render_priority = 100
 	_group_materials[group_name] = mat
+	print("VisionAssistManager: Rebuilt material for group -> ", group_name)
 
 
 ## Controls whether silhouette overlays render in the diorama viewport.
 ## [param diorama_root] Root [Node] of the diorama hierarchy.
-## [param active] Target display state for the diorama overlay silhouettes.
+## [param active] Target display state for diorama silhouettes.
 func set_diorama_overlays_active(diorama_root: Node, active: bool) -> void:
 	if not is_instance_valid(diorama_root):
 		return
@@ -137,7 +139,7 @@ func set_diorama_overlays_active(diorama_root: Node, active: bool) -> void:
 				_apply_overlay_to_meshes(node, active, mat)
 
 
-## Recursively applies high-contrast silhouette overlays to an isolated diorama hierarchy.
+## Recursively applies high-contrast silhouette overlays to diorama scenes.
 ## [param diorama_root] Root [Node] of the diorama scene.
 func apply_diorama_overlays(diorama_root: Node) -> void:
 	set_diorama_overlays_active(diorama_root, diorama_preview_active)
@@ -194,7 +196,7 @@ func _on_vision_assist_color_changed(target_group: String, color_name: String) -
 		_apply_overlay_to_meshes(node, active_state, target_material)
 
 
-## Applies overlays immediately to newly spawned nodes belonging to configured groups.
+## Applies overlays immediately to newly spawned nodes belonging to groups.
 ## [param node] The newly added [Node] instance.
 func _on_scene_node_added(node: Node) -> void:
 	if not is_active and not diorama_preview_active:
@@ -218,22 +220,21 @@ func _on_scene_node_added(node: Node) -> void:
 			break
 
 
-## Evaluates whether a given node is situated within the diorama preview viewport.
+## Evaluates whether a given node is situated within a diorama preview.
 ## [param node] Target [Node] to evaluate.
-## [return] `true` if the node resides within a SubViewport or Diorama tree.
+## [return] True if the node resides within a SubViewport or Diorama tree.
 func _is_node_in_diorama(node: Node) -> bool:
-	var current: Node = node
-	while is_instance_valid(current):
-		if current is SubViewport or current.name == "FastDioramaMap":
-			return true
-		current = current.get_parent()
-	return false
+	if not is_instance_valid(node):
+		return false
+	if NodeQuery.find_ancestor_of_type(node, SubViewport) != null:
+		return true
+	return NodeQuery.find_ancestor_with_meta(node, &"is_diorama") != null
 
 
-## Recursively sets or removes stencil materials on geometry and sprite instances.
+## Recursively sets or removes stencil materials via [MaterialCache].
 ## [param target_node] Target [Node] to process.
-## [param active_state] Flag indicating if overlay should be applied or cleared.
-## [param target_material] [ShaderMaterial] instance configured for the group.
+## [param active_state] Flag indicating if overlay is applied or cleared.
+## [param target_material] [ShaderMaterial] instance configured for group.
 func _apply_overlay_to_meshes(
 	target_node: Node, active_state: bool, target_material: ShaderMaterial
 ) -> void:
@@ -256,7 +257,7 @@ func _apply_overlay_to_meshes(
 					var active_mat: Material = mesh_inst.get_active_material(0)
 					if is_instance_valid(active_mat):
 						if "albedo_texture" in active_mat:
-							base_tex = active_mat.get("albedo_texture") as Texture2D
+							base_tex = (active_mat.get("albedo_texture") as Texture2D)
 						if "billboard_mode" in active_mat:
 							needs_billboard = (
 								active_mat.get("billboard_mode")
@@ -264,7 +265,14 @@ func _apply_overlay_to_meshes(
 							)
 
 			if is_instance_valid(base_tex) or needs_billboard:
-				final_mat = target_material.duplicate() as ShaderMaterial
+				var var_key: String = (
+					"%d_%s"
+					% [
+						base_tex.get_instance_id() if is_instance_valid(base_tex) else 0,
+						str(needs_billboard)
+					]
+				)
+				final_mat = MaterialCache.get_variant(target_material, var_key) as ShaderMaterial
 				if is_instance_valid(base_tex):
 					final_mat.set_shader_parameter("base_texture", base_tex)
 				final_mat.set_shader_parameter("enable_billboard", needs_billboard)

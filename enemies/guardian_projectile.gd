@@ -30,14 +30,12 @@ var velocity: Vector3 = Vector3.ZERO
 @onready var explosion_timer: Timer = $ExplosionTimer
 
 
-## Initializes the projectile, configures collision masks, and starts lifetime timer.
+## Initializes the projectile, configures collision masks, and starts the lifetime timer.
 func _ready() -> void:
-	print("EnergyBlast: _ready() - Initializing energy blast projectile.")
-	collision_layer = CollisionLayers.MASK_NONE
-	collision_mask = CollisionLayers.MASK_ENVIRONMENT | CollisionLayers.MASK_PLAYER
+	set_collision_mask_value(CollisionLayers.LAYER_ENVIRONMENT_IDX, true)
+	set_collision_mask_value(CollisionLayers.LAYER_PLAYER_IDX, true)
 
 	Utilities.safe_connect(body_entered, _on_body_entered)
-	Utilities.safe_connect(explosion_timer.timeout, queue_free)
 	Utilities.delay_call(self, lifetime, _explode)
 
 
@@ -82,8 +80,7 @@ func _explode() -> void:
 	velocity = Vector3.ZERO
 
 	var tween: Tween = create_tween()
-	if is_instance_valid(tween):
-		tween.tween_property(mesh, "scale", Vector3.ONE * explosion_radius, 0.15)
+	tween.tween_property(mesh, "scale", Vector3.ONE * explosion_radius, 0.15)
 
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var shape: SphereShape3D = SphereShape3D.new()
@@ -100,15 +97,16 @@ func _explode() -> void:
 	print("EnergyBlast: Explosion caught ", results.size(), " objects in radius.")
 
 	for result: Dictionary in results:
-		var collider: Object = result.get("collider")
+		var collider: Object = result["collider"]
 		if collider is Node3D:
 			_apply_damage(collider as Node3D)
 
 	explosion_timer.start(0.3)
+	Utilities.safe_connect(explosion_timer.timeout, queue_free)
 
 
-## Searches the target's subtree for a [HealthComponent] to apply damage.
-## [param target] The [Node3D] caught in the explosion blast radius.
+## Resolves target root and damage components via [NodeQuery].
+## [param target] The [Node3D] caught in the blast radius.
 func _apply_damage(target: Node3D) -> void:
 	print("EnergyBlast: _apply_damage() - Analyzing target: ", target.name)
 	var root_node: Node3D = NodeQuery.resolve_interactable_root(target)

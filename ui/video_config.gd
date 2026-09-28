@@ -2,7 +2,7 @@
 class_name VideoConfig
 extends RefCounted
 
-## The default application display mode.
+## The default application display mode (Borderless Fullscreen).
 const DEFAULT_DISPLAY: int = DisplayServer.WINDOW_MODE_FULLSCREEN
 
 ## The default framerate target.
@@ -14,8 +14,8 @@ const DEFAULT_FSR_MODE: String = "Disabled (Native)"
 ## The default Anti-Aliasing configuration string.
 const DEFAULT_AA_MODE: String = "Disabled"
 
-## The default VSync state.
-const DEFAULT_VSYNC: DisplayServer.VSyncMode = DisplayServer.VSYNC_ENABLED
+## The default VSync state (Disabled).
+const DEFAULT_VSYNC: DisplayServer.VSyncMode = DisplayServer.VSYNC_DISABLED
 
 ## The default preset configuration string.
 const DEFAULT_PRESET: String = "High"
@@ -133,8 +133,8 @@ const FPS_LIMITS: Dictionary[String, int] = {
 
 ## Map of VSync option labels to [enum DisplayServer.VSyncMode] values.
 const VSYNC_MODES: Dictionary = {
-	"Enabled": DisplayServer.VSYNC_ENABLED,
 	"Disabled": DisplayServer.VSYNC_DISABLED,
+	"Enabled": DisplayServer.VSYNC_ENABLED,
 	"Adaptive": DisplayServer.VSYNC_ADAPTIVE
 }
 

@@ -1,26 +1,18 @@
-## Global autoload responsible for generating Text-to-Speech spatial descriptions.
-##
-## SpatialDescriber acts as an accessibility layer that translates the 3D positions
-## of surrounding objects into conversational, directional language and routes it
-## to the [TTSManager].
-## It gathers interactable objects within the active player [Camera3D] frustum,
-## eliminates duplicate node representations, verifies line-of-sight with raycasts,
-## groups identical items into clusters, and prioritizes items from nearest
-## in front to peripheral to far away.
+## Global autoload generating spoken Text-to-Speech directional descriptions of surroundings.
 extends Node
 
-## Emitted when an environment description string has been generated.
-## [param description_text] The formatted spoken summary string.
+## Emitted when an environment description string has been generated for TTS output.
+## [param description_text] Formatted spoken summary string.
 signal on_description_generated(description_text: String)
 
 @export_category("Spatial Description Tuning")
 ## Maximum search radius in meters around the origin node.
 @export var description_radius: float = 12.0
 
-## Distance threshold in meters separating immediate foreground from far objects.
+## Distance threshold in meters separating foreground from far objects.
 @export var nearby_distance_threshold: float = 4.0
 
-## Maximum distance in meters between identical items to be grouped together.
+## Maximum distance in meters between identical items to cluster them together.
 @export var cluster_distance_threshold: float = 2.5
 
 ## Distance threshold squared (0.25m / 50cm) to merge duplicate collision proxies.
@@ -30,16 +22,15 @@ signal on_description_generated(description_text: String)
 @export var max_announced_clusters: int = 4
 
 ## Collision mask used to filter out occluded items from narration.
-@export_flags_3d_physics var occlusion_collision_mask: int = 1
+@export_flags_3d_physics var occlusion_collision_mask: int = CollisionLayers.MASK_ENVIRONMENT
 
 ## Default eye-level vertical offset added when origin_node is not a Camera3D.
 @export var eye_height_offset: float = 1.6
 
-## Minimum elevation in meters above eye level before qualifying an entity as 'above you'.
+## Minimum elevation in meters above eye level qualifying an entity as 'above you'.
 @export var above_elevation_threshold: float = 0.35
 
-## Minimum vertical distance in meters below
-## the player's ground plane before qualifying as 'below you'.
+## Minimum vertical distance in meters below player ground plane qualifying as 'below you'.
 @export var below_ground_threshold: float = 0.5
 
 ## Regular expression used for splitting camelCase identifiers into spaced words.
@@ -65,8 +56,10 @@ func _ready() -> void:
 	if has_node("/root/Events"):
 		var events_node: Node = get_node("/root/Events")
 		if events_node.has_signal("describe_surroundings_requested"):
-			events_node.describe_surroundings_requested.connect(describe_surroundings)
-			print("SpatialDescriber: Connected to Events.describe_surroundings_requested.")
+			Utilities.safe_connect(
+				events_node.describe_surroundings_requested, describe_surroundings
+			)
+			print("SpatialDescriber: Hooked to Events.describe_surroundings_requested.")
 
 
 ## Executes a localized sweep and generates an audible narration summary for interactables.
@@ -87,7 +80,6 @@ func describe_surroundings(origin_node: Node3D) -> void:
 	var view_pos: Vector3 = camera.global_position
 	var space_state: PhysicsDirectSpaceState3D = origin_node.get_world_3d().direct_space_state
 
-	# Establish the ground walking plane to distinguish standing floor from pits/stairs.
 	var ground_y: float = (
 		origin_node.global_position.y if origin_node != camera else (view_pos.y - eye_height_offset)
 	)
@@ -214,9 +206,9 @@ func describe_surroundings(origin_node: Node3D) -> void:
 	on_description_generated.emit(final_speech)
 
 
-## Resolves the active [Camera3D] for the viewpoint sweep.
+## Resolves active [Camera3D] for viewpoint sweep.
 ## [param origin_node] The root player or observer node.
-## Returns the active [Camera3D] or null.
+## [return] The active [Camera3D] or null.
 func _resolve_active_camera(origin_node: Node3D) -> Camera3D:
 	print("SpatialDescriber: Resolving active camera.")
 	if origin_node is Camera3D:
@@ -229,17 +221,22 @@ func _resolve_active_camera(origin_node: Node3D) -> Camera3D:
 	return origin_node.find_child("*Camera*", true, false) as Camera3D
 
 
-## Ascends node hierarchy to find the canonical root [Node3D] representing the interactable entity.
-## [param node] The target [Node3D] detected via group queries.
-## Returns the highest root [Node3D] representing the interactable asset.
+## Ascends node hierarchy to find canonical root [Node3D] using [NodeQuery].
+## [param node] Target node detected via group query.
+## [return] Highest root [Node3D] representing interactable asset.
 func _resolve_interactable_root(node: Node3D) -> Node3D:
 	if not is_instance_valid(node):
 		return null
 
+	var resolved: Node3D = NodeQuery.resolve_interactable_root(node)
+	if is_instance_valid(resolved) and resolved != node:
+		return resolved
+
 	var candidate: Node3D = node
 	var current: Node = node
+	var root_node: Node = get_tree().root
 
-	while is_instance_valid(current) and current != get_tree().root:
+	while is_instance_valid(current) and current != root_node:
 		if current == get_tree().current_scene:
 			break
 
@@ -259,12 +256,18 @@ func _resolve_interactable_root(node: Node3D) -> Node3D:
 
 ## Ascertains if a node belongs to a menu, settings preview, or UI diorama branch.
 ## [param node] The target node being evaluated.
-## Returns true if the node is within any menu or preview hierarchy.
+## [return] True if the node is within any menu or preview hierarchy.
 func _is_menu_or_diorama_node(node: Node) -> bool:
+	if not is_instance_valid(node):
+		return false
+
+	if NodeQuery.find_ancestor_of_type(node, Control) != null:
+		return true
+
 	var current: Node = node
-	while is_instance_valid(current) and current != get_tree().root:
-		if current is Control:
-			return true
+	var root_node: Node = get_tree().root
+
+	while is_instance_valid(current) and current != root_node:
 		var lower_name: String = current.name.to_lower()
 		if (
 			lower_name.contains("menu")
@@ -274,12 +277,12 @@ func _is_menu_or_diorama_node(node: Node) -> bool:
 		):
 			return true
 		current = current.get_parent()
+
 	return false
 
 
-## Sorts clusters into distinct priority buckets
-## (Front -> Sides -> Far), sorting by distance ascending.
-## [param camera] The viewing [Camera3D].
+## Sorts clusters into distinct priority buckets (Front -> Sides -> Far).
+## [param camera] Viewing [Camera3D].
 ## [param view_pos] Global coordinates of the camera.
 ## [param clusters] Array of clustered entity dictionaries.
 func _sort_clusters_prioritized(
@@ -320,7 +323,7 @@ func _sort_clusters_prioritized(
 ## Assigns an integer priority rank based on distance and forward alignment.
 ## [param dist] Euclidean distance to target in meters.
 ## [param dot_fwd] Horizontal dot product with camera forward.
-## Returns numerical priority (0 = Front near, 1 = Sides near, 2 = Far).
+## [return] Priority (0 = Front near, 1 = Sides near, 2 = Far).
 func _get_cluster_priority(dist: float, dot_fwd: float) -> int:
 	if dist <= nearby_distance_threshold:
 		if dot_fwd >= 0.4:
@@ -330,8 +333,8 @@ func _get_cluster_priority(dist: float, dot_fwd: float) -> int:
 
 
 ## Groups nearby identical objects into single counted clusters.
-## [param targets] List of individual validated target dictionaries.
-## Returns an array of clustered items with average positions.
+## [param targets] List of validated target dictionaries.
+## [return] Array of clustered items with average positions.
 func _cluster_targets(targets: Array[Dictionary]) -> Array[Dictionary]:
 	print("SpatialDescriber: Clustering %d detected targets." % targets.size())
 	var clusters: Array[Dictionary] = []
@@ -359,13 +362,12 @@ func _cluster_targets(targets: Array[Dictionary]) -> Array[Dictionary]:
 	return clusters
 
 
-## Determines relative direction and
-## vertical elevation relative to camera orientation and ground level.
-## [param camera] The viewing [Camera3D].
-## [param view_pos] The eye-level camera position.
-## [param target_pos] Global coordinates of the target entity.
-## [param ground_y] Ground-level Y elevation representing the player's walking plane.
-## Returns an intuitive spatial direction string.
+## Determines relative direction and elevation relative to camera orientation.
+## [param camera] Viewing [Camera3D].
+## [param view_pos] Eye-level camera position.
+## [param target_pos] Global coordinates of target entity.
+## [param ground_y] Ground-level Y elevation representing player walking plane.
+## [return] Intuitive spatial direction string.
 func _get_relative_direction(
 	camera: Camera3D, view_pos: Vector3, target_pos: Vector3, ground_y: float
 ) -> String:
@@ -396,20 +398,18 @@ func _get_relative_direction(
 	else:
 		horiz_phrase = "directly behind you"
 
-	# If elevated above eye level (e.g., catwalks, high shelves, ceilings)
 	if (target_pos.y - view_pos.y) > above_elevation_threshold:
 		return "above you " + horiz_phrase
 
-	# If significantly below the player's standing floor (e.g., pits, stairwells)
 	if target_pos.y < (ground_y - below_ground_threshold):
 		return "below you " + horiz_phrase
 
 	return horiz_phrase
 
 
-## Resolves an accessible English display name from properties, mesh references, or node hierarchy.
+## Resolves accessible display name from properties, mesh references, or node hierarchy.
 ## [param target_node] Target [Node3D] being examined.
-## Returns a human-friendly string name.
+## [return] Human-friendly string name.
 func _resolve_display_name(target_node: Node3D) -> String:
 	if target_node is PickableObject:
 		var pickable: PickableObject = target_node as PickableObject
@@ -445,8 +445,8 @@ func _resolve_display_name(target_node: Node3D) -> String:
 
 
 ## Recursively searches for instantiated sub-scenes or descriptive mesh instances.
-## [param current_node] The [Node] to inspect.
-## Returns the resolved mesh name string, or an empty string if none found.
+## [param current_node] Node to inspect.
+## [return] Resolved mesh name string or empty string.
 func _find_mesh_name(current_node: Node) -> String:
 	for child: Node in current_node.get_children():
 		var raw_name: String = child.name
@@ -473,9 +473,9 @@ func _find_mesh_name(current_node: Node) -> String:
 	return ""
 
 
-## Evaluates whether a node name is an engine default placeholder or structural component.
-## [param node_name] The raw node name to evaluate.
-## Returns true if the name matches generic structural patterns.
+## Evaluates whether a node name is an engine default placeholder or component.
+## [param node_name] Raw node name to evaluate.
+## [return] True if name matches generic structural patterns.
 func _is_generic_name(node_name: String) -> bool:
 	var lower_name: String = node_name.to_lower()
 	return (
@@ -492,12 +492,12 @@ func _is_generic_name(node_name: String) -> bool:
 	)
 
 
-## Performs multi-point raycasts between camera view position and target to avoid railing clipping.
+## Performs multi-point raycasts to verify line-of-sight visibility.
 ## [param space_state] Direct 3D physics space state.
-## [param view_pos] Eye-level coordinates of the camera.
+## [param view_pos] Eye-level coordinates of camera.
 ## [param target_node] Target [Node3D] to verify visibility towards.
-## [param origin_node] The observer node to exclude from ray hits.
-## Returns true if all test points on the target are occluded.
+## [param origin_node] Observer node excluded from ray hits.
+## [return] True if all test points on target are occluded.
 func _is_occluded(
 	space_state: PhysicsDirectSpaceState3D,
 	view_pos: Vector3,
@@ -516,19 +516,16 @@ func _is_occluded(
 	_collect_collision_rids(origin_node, exclusions)
 
 	for point: Vector3 in test_points:
-		var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-			view_pos, point, occlusion_collision_mask
+		var result: Dictionary = Utilities.raycast_3d(
+			space_state, view_pos, point, occlusion_collision_mask, exclusions
 		)
-		query.exclude = exclusions
-
-		var result: Dictionary = space_state.intersect_ray(query)
 		if result.is_empty():
 			return false
 
 	return true
 
 
-## Recursively collects physics RIDs from a node tree to exclude them from raycasting.
+## Recursively collects physics RIDs from a node tree to exclude from raycasting.
 ## [param node] Root [Node] to gather collision objects from.
 ## [param rids] Array to append found [RID] references into.
 func _collect_collision_rids(node: Node, rids: Array[RID]) -> void:
@@ -540,18 +537,18 @@ func _collect_collision_rids(node: Node, rids: Array[RID]) -> void:
 		_collect_collision_rids(child, rids)
 
 
-## Cleans digits, symbols, camelCase, and separators from an identifier to make it human-readable.
-## [param raw_name] The raw identifier string to sanitize.
-## Returns a formatted string with spaces.
+## Cleans digits, symbols, camelCase, and separators from an identifier string.
+## [param raw_name] Raw identifier string to sanitize.
+## [return] Formatted string with spaces.
 func _clean_name(raw_name: String) -> String:
 	var separated_name: String = _regex_camel.sub(raw_name, "$1 $2", true)
 	return _regex_symbols.sub(separated_name.to_lower(), " ", true).strip_edges()
 
 
 ## Pluralizes a noun phrase if the count is greater than one.
-## [param item_name] The singular noun description.
+## [param item_name] Singular noun description.
 ## [param count] Number of items in the cluster.
-## Returns formatted count and noun string.
+## [return] Formatted count and noun string.
 func _format_plural(item_name: String, count: int) -> String:
 	if count == 1:
 		return "1 " + item_name
@@ -567,7 +564,7 @@ func _format_plural(item_name: String, count: int) -> String:
 
 
 ## Dispatches the compiled description string to TTSManager.
-## [param speech_text] The text prompt for synthesis.
+## [param speech_text] Text prompt for synthesis.
 func _speak(speech_text: String) -> void:
 	print("SpatialDescriber: _speak() called with text: ", speech_text)
 	if has_node("/root/TTSManager"):

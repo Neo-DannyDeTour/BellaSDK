@@ -1,16 +1,13 @@
-## Horror UI button featuring wide octagon slabs, spring physics, and tilts.
+## Horror UI button featuring wide octagon slabs, spring physics, and mouse tilt parallax.
+## Manages text glitch cycles, flashlight highlights, and responsive interactive feedback.
 @tool
 class_name HorrorButton
 extends Button
 
-# --- GLOBAL CONFIGURATION ---
-
 ## Total active [HorrorButton] instances currently tracked in scene.
 static var active_horror_buttons: int = 0
 
-# --- INSPECTOR PROPERTIES ---
-
-## Toggles complete background slab visibility for external placement flexibility.
+## Toggles complete background slab visibility for external placement.
 @export var invisible_background: bool = false:
 	set(value):
 		invisible_background = value
@@ -39,8 +36,6 @@ static var active_horror_buttons: int = 0
 		text_padding = value
 		if is_inside_tree():
 			update_minimum_size()
-
-# --- ANIMATION CONFIGURATION ---
 
 ## Visual scale multiplier applied to offset transform when hovered.
 @export var hover_scale: Vector2 = Vector2(1.08, 1.08)
@@ -126,8 +121,6 @@ static var active_horror_buttons: int = 0
 ## Icon texture used for chapter play overlay button.
 @export var play_icon: Texture2D
 
-# --- INTERNAL STATE ---
-
 ## Internal or child texture rect representing the play icon overlay.
 var play_overlay: TextureRect
 
@@ -205,6 +198,7 @@ var is_chapter_card: bool = false
 
 
 ## Handles engine notifications for layout resizing and theme updates.
+## [param what] Notification identifier received from engine.
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_THEME_CHANGED:
 		update_minimum_size()
@@ -309,7 +303,9 @@ func _ready() -> void:
 	glitch_timer = randf_range(min_glitch_time, max_glitch_time)
 
 	if is_instance_valid(bg_rect) and bg_rect.material is ShaderMaterial:
-		bg_material = bg_rect.material.duplicate() as ShaderMaterial
+		bg_material = (
+			MaterialCache.get_variant(bg_rect.material, str(get_instance_id())) as ShaderMaterial
+		)
 		bg_rect.material = bg_material
 		bg_material.set_shader_parameter("hover_intensity", 0.0)
 		bg_material.set_shader_parameter(
@@ -326,7 +322,10 @@ func _ready() -> void:
 		bg_material = null
 
 	if is_instance_valid(border_rect) and border_rect.material is ShaderMaterial:
-		border_material = border_rect.material.duplicate() as ShaderMaterial
+		border_material = (
+			MaterialCache.get_variant(border_rect.material, str(get_instance_id()))
+			as ShaderMaterial
+		)
 		border_rect.material = border_material
 		border_material.set_shader_parameter("hover_intensity", 0.0)
 	else:
@@ -342,7 +341,9 @@ func _ready() -> void:
 	can_glitch = not glitch_text.is_empty()
 
 	if is_instance_valid(text_label) and text_label.material is ShaderMaterial:
-		label_material = text_label.material.duplicate() as ShaderMaterial
+		label_material = (
+			MaterialCache.get_variant(text_label.material, str(get_instance_id())) as ShaderMaterial
+		)
 		text_label.material = label_material
 
 		for i: int in 2:
@@ -399,7 +400,7 @@ func _configure_child_anchors() -> void:
 		text_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 
 
-## Synchronizes dimensions and pivots to child shaders and nodes via [Utilities].
+## Synchronizes dimensions and pivots to child shaders via [Utilities].
 func _sync_child_rects() -> void:
 	if size == _last_known_size:
 		return
@@ -468,14 +469,30 @@ func _on_mouse_exited() -> void:
 		pace_timers[i] = 0.0
 
 
-## Drives damped spring physics toward target scale vectors.
+## Drives damped spring physics toward target scale via [MathUtils.damped_spring].
 ## [param delta] Frame time delta in seconds.
-## [param target_scale] Desired scale Vector2.
+## [param target_scale] Desired scale [Vector2].
 func _update_spring_scale(delta: float, target_scale: Vector2) -> void:
-	var delta_pos: Vector2 = offset_transform_scale - target_scale
-	var spring_force: Vector2 = (-spring_stiffness * delta_pos) - (spring_damping * scale_velocity)
-	scale_velocity += spring_force * delta
-	offset_transform_scale += scale_velocity * delta
+	var sx: Dictionary = MathUtils.damped_spring(
+		offset_transform_scale.x,
+		target_scale.x,
+		scale_velocity.x,
+		spring_stiffness,
+		spring_damping,
+		delta
+	)
+	var sy: Dictionary = MathUtils.damped_spring(
+		offset_transform_scale.y,
+		target_scale.y,
+		scale_velocity.y,
+		spring_stiffness,
+		spring_damping,
+		delta
+	)
+	offset_transform_scale.x = sx[&"position"]
+	scale_velocity.x = sx[&"velocity"]
+	offset_transform_scale.y = sy[&"position"]
+	scale_velocity.y = sy[&"velocity"]
 
 
 ## Updates contact shadow position and alpha based on tilt and lift.
@@ -504,8 +521,8 @@ func _process(delta: float) -> void:
 		return
 
 	var mouse_pos: Vector2 = get_local_mouse_position()
-	var center_x: float = size.x / 2.0
-	var center_y: float = size.y / 2.0
+	var center_x: float = size.x * 0.5
+	var center_y: float = size.y * 0.5
 
 	var target_rotation: float = 0.0
 	var tilt_target: Vector2 = Vector2.ZERO
@@ -515,7 +532,8 @@ func _process(delta: float) -> void:
 		current_hover_intensity = move_toward(current_hover_intensity, 1.0, 3.5 * delta)
 		var norm_x: float = clampf((mouse_pos.x - center_x) / center_x, -1.0, 1.0)
 		var norm_y: float = clampf((mouse_pos.y - center_y) / center_y, -1.0, 1.0)
-		target_rotation = deg_to_rad(max_rotation_degrees * norm_x)
+		var max_rad: float = deg_to_rad(max_rotation_degrees)
+		target_rotation = MathUtils.clamp_angle_rad(max_rad * norm_x, -max_rad, max_rad)
 		tilt_target = Vector2(norm_x, norm_y)
 
 		if is_clicking:
@@ -597,7 +615,7 @@ func setup_chapter_card(chapter: ChapterData) -> void:
 	_sync_child_rects()
 
 
-## Applies physical lub-dub heartbeat scaling directly to the text label.
+## Applies physical heartbeat scaling directly to the text label.
 func _process_text_heartbeat() -> void:
 	if not is_instance_valid(text_label):
 		return

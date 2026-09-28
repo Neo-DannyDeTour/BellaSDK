@@ -43,11 +43,15 @@ var press_tween: Tween
 var can_press: bool = true
 
 ## Reference to the internal interaction handler.
-@onready var interact_component: InteractComponent = $InteractComponent
+@onready var interact_component: InteractComponent = (
+	get_node_or_null("InteractComponent") as InteractComponent
+)
 ## Reference to the internal highlighting handler.
-@onready var highlight_component: HighlightComponent = $HighlightComponent
+@onready var highlight_component: HighlightComponent = (
+	get_node_or_null("HighlightComponent") as HighlightComponent
+)
 ## Reference to the 3D label displaying interaction prompts.
-@onready var label_interact: Label3D = $LabelInteract
+@onready var label_interact: Label3D = get_node_or_null("LabelInteract") as Label3D
 
 
 ## Initializes the button, synchronizes local targets, and connects interaction signals.

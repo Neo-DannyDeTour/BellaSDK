@@ -1,9 +1,9 @@
-## Plays context-aware footsteps and indents dynamic terrain surfaces.
+## Plays context-aware footsteps and indents dynamic terrain surfaces using [CollisionLayers].
 class_name FootstepManager
 extends Node3D
 
 @export_category("Node References")
-## Reference to the main player body, used as the origin for downward raycasts.
+## Reference to main player body used as origin for downward raycasts.
 @export var player_body: CharacterBody3D
 
 @export_category("Audio Players")
@@ -33,7 +33,7 @@ extends Node3D
 @export var crouch_step_interval: float = 0.65
 ## Time gap between climbing sounds while ascending or descending ladders.
 @export var ladder_step_interval: float = 0.55
-## Time gap between grabbing sounds while on monkey bars (if not looping).
+## Time gap between grabbing sounds while on monkey bars.
 @export var monkey_bar_step_interval: float = 0.65
 
 @export_category("Deformation Settings")
@@ -53,29 +53,36 @@ const SURFACE_WET: StringName = &"wet_dirt"
 ## Fast lookup string for snow surface group checks.
 const SURFACE_SNOW: StringName = &"snow"
 
-## Tracks remaining time before the next footstep sound can trigger.
+## Tracks remaining time before next footstep sound can trigger.
 var step_timer: float = 0.0
-## Flags if the player is currently standing on an ice surface.
+## Flags if player is currently standing on ice surface.
 var is_on_ice: bool = false
-## Flags if the player is currently standing on deformable snow.
+## Flags if player is currently standing on deformable snow.
 var is_on_snow: bool = false
-## The currently selected audio player based on surface detection.
+## Currently selected audio player based on surface detection.
 var active_audio_player: AudioStreamPlayer = null
-## Active [SnowGround] node currently beneath the player body.
+## Active [SnowGround] node currently beneath player body.
 var _current_snow_ground: SnowGround = null
-## World coordinate of the most recent floor raycast collision.
+## World coordinate of most recent floor raycast collision.
 var _last_hit_position: Vector3 = Vector3.ZERO
-## World position of the previous slide deformation stamp.
+## World position of previous slide deformation stamp.
 var _last_slide_carve_pos: Vector3 = Vector3.ZERO
 
 
-## Initializes the default audio stream player on node setup.
+## Initializes default audio stream player on node setup.
 func _ready() -> void:
 	print("FootstepManager: _ready() initialized.")
 	active_audio_player = audio_default
 
 
 ## Evaluates speed and surface material to trigger audio and snow stamps.
+## [param delta] Frame delta time in seconds.
+## [param is_grounded] True if player is grounded.
+## [param velocity_length] Speed magnitude of player.
+## [param is_sprinting] True if sprint is active.
+## [param is_crouching] True if crouch is active.
+## [param is_on_ladder] True if climbing ladder.
+## [param is_on_monkey_bar] True if hanging on monkey bars.
 func process_surface_and_footsteps(
 	delta: float,
 	is_grounded: bool,
@@ -134,17 +141,15 @@ func process_surface_and_footsteps(
 		step_timer = 0.0
 
 
-## Projects a downward ray to read surface colliders and hit positions.
+## Projects downward ray using [CollisionLayers] and identifies ground.
 func _scan_surface_material() -> void:
 	var space_state: PhysicsDirectSpaceState3D = player_body.get_world_3d().direct_space_state
 	var ray_start: Vector3 = player_body.global_position + Vector3(0.0, 0.5, 0.0)
 	var ray_end: Vector3 = player_body.global_position + Vector3(0.0, -1.0, 0.0)
 
-	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(ray_start, ray_end)
-	query.exclude = [player_body.get_rid()]
-	query.collision_mask = 1
-
-	var result: Dictionary = space_state.intersect_ray(query)
+	var result: Dictionary = Utilities.raycast_3d(
+		space_state, ray_start, ray_end, CollisionLayers.MASK_ENVIRONMENT, [player_body.get_rid()]
+	)
 
 	active_audio_player = audio_default
 	is_on_ice = false
@@ -157,41 +162,64 @@ func _scan_surface_material() -> void:
 	var collider: Object = result.get("collider")
 	_last_hit_position = result.get("position", Vector3.ZERO)
 
-	if not is_instance_valid(collider):
+	if not is_instance_valid(collider) or not (collider is Node):
 		return
 
 	var target_node: Node = collider as Node
-	var parent_node: Node = target_node.get_parent() if target_node else null
+	var snow_node: Node = NodeQuery.find_ancestor_of_type(target_node, SnowGround)
 
 	if target_node is SnowGround:
 		_current_snow_ground = target_node as SnowGround
 		is_on_snow = true
-	elif parent_node is SnowGround:
-		_current_snow_ground = parent_node as SnowGround
+	elif is_instance_valid(snow_node):
+		_current_snow_ground = snow_node as SnowGround
 		is_on_snow = true
 	elif (
-		target_node.is_in_group(SURFACE_SNOW)
-		or (parent_node and parent_node.is_in_group(SURFACE_SNOW))
+		NodeQuery.find_ancestor_in_group(target_node, SURFACE_SNOW) != null
+		or target_node.is_in_group(SURFACE_SNOW)
 	):
 		is_on_snow = true
-		if parent_node is SnowGround:
-			_current_snow_ground = parent_node as SnowGround
+		if is_instance_valid(snow_node):
+			_current_snow_ground = snow_node as SnowGround
 
 	if is_on_snow and audio_snow:
 		active_audio_player = audio_snow
-	elif target_node.is_in_group(SURFACE_ICE):
+	elif (
+		target_node.is_in_group(SURFACE_ICE)
+		or NodeQuery.find_ancestor_in_group(target_node, SURFACE_ICE) != null
+	):
 		is_on_ice = true
 		if audio_ice:
 			active_audio_player = audio_ice
-	elif target_node.is_in_group(SURFACE_METAL) and audio_metal:
+	elif (
+		(
+			target_node.is_in_group(SURFACE_METAL)
+			or NodeQuery.find_ancestor_in_group(target_node, SURFACE_METAL) != null
+		)
+		and audio_metal
+	):
 		active_audio_player = audio_metal
-	elif target_node.is_in_group(SURFACE_STONE) and audio_stone:
+	elif (
+		(
+			target_node.is_in_group(SURFACE_STONE)
+			or NodeQuery.find_ancestor_in_group(target_node, SURFACE_STONE) != null
+		)
+		and audio_stone
+	):
 		active_audio_player = audio_stone
-	elif target_node.is_in_group(SURFACE_WET) and audio_wet_dirt:
+	elif (
+		(
+			target_node.is_in_group(SURFACE_WET)
+			or NodeQuery.find_ancestor_in_group(target_node, SURFACE_WET) != null
+		)
+		and audio_wet_dirt
+	):
 		active_audio_player = audio_wet_dirt
 
 
 ## Stamps a footprint depression into active [SnowGround] at impact point.
+## [param is_sprinting] True if player is sprinting.
+## [param is_crouching] True if player is crouched.
 func _stamp_snow_footstep(is_sprinting: bool, is_crouching: bool) -> void:
 	if not is_instance_valid(_current_snow_ground):
 		return
@@ -205,26 +233,9 @@ func _stamp_snow_footstep(is_sprinting: bool, is_crouching: bool) -> void:
 		radius *= 0.85
 		intensity = 0.45
 
-	# Calculate 2D rotation angle.
-	# In Godot, the forward vector of a 3D node points down the -Z axis (0, 0, -1).
-	# Since deformation happens in the local planar coordinate system of SnowGround (UV space is 2D),
-	# we need the rotation in the XZ plane.
-
-	# Extract the rotation around the Y-axis (up vector).
 	var travel_basis: Basis = player_body.global_transform.basis
-	var travel_forward: Vector3 = travel_basis.z.normalized()  # Extract Z direction
+	var travel_forward: Vector3 = travel_basis.z.normalized()
 	var rotation_angle: float = atan2(-travel_forward.x, travel_forward.z)
-
-	# atan2 gives the angle from the positive Z axis clockwise toward the positive X axis.
-	# Since our texture points +Y 'up' on the canvas, 0 rotation on the canvas is forward.
-	# This angle calculation should map player yaw correctly.
-	# We negate 'travel_forward.x' because Godot's screen coordinates (used by CanvasPainter)
-	# are X-right and Y-down.
-
-	# Apply a +90 degree correction to align the boot texture correctly if necessary.
-	# For a texture that points "up", no correction is needed.
-
-	# rotation_angle = wrapf(rotation_angle + PI/2.0, -PI, PI)
 
 	print(
 		"FootstepManager: Stamping boot print at ",
@@ -232,11 +243,12 @@ func _stamp_snow_footstep(is_sprinting: bool, is_crouching: bool) -> void:
 		" angle: ",
 		rad_to_deg(rotation_angle)
 	)
-	# Pass the angle to SnowGround.
 	_current_snow_ground.deform_at(_last_hit_position, radius, intensity, rotation_angle)
 
 
 ## Carves continuous displacement impressions into [SnowGround] while sliding.
+## [param _delta] Frame delta time in seconds.
+## [param speed_ratio] Speed ratio multiplier.
 func carve_slide(_delta: float, speed_ratio: float) -> void:
 	if not is_on_snow or not is_instance_valid(_current_snow_ground):
 		return
@@ -251,7 +263,9 @@ func carve_slide(_delta: float, speed_ratio: float) -> void:
 	_current_snow_ground.deform_at(_last_hit_position, radius, 0.9)
 
 
-## Recharges the footstep step timer based on the current movement state.
+## Recharges the footstep step timer based on current movement state.
+## [param is_sprinting] True if sprinting.
+## [param is_crouching] True if crouch walking.
 func _reset_timer(is_sprinting: bool, is_crouching: bool) -> void:
 	if is_sprinting:
 		step_timer = sprint_step_interval
@@ -269,6 +283,7 @@ func stop_looping_sounds() -> void:
 
 
 ## Stamps an impact crater into snow based on vertical landing speed.
+## [param fall_speed] Downward impact velocity magnitude.
 func stamp_landing_crater(fall_speed: float) -> void:
 	_scan_surface_material()
 	if not is_on_snow or not is_instance_valid(_current_snow_ground):

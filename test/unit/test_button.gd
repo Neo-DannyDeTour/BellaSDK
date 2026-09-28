@@ -1,3 +1,5 @@
+## Unit tests verifying LogicButton focus, highlight, and global event triggers.
+class_name TestButton
 extends GutTest
 
 ## The LogicButton instance under test.
@@ -10,10 +12,13 @@ var mock_mesh: MeshInstance3D = null
 var mock_label: Label3D = null
 ## Mock interact component.
 var mock_interact_comp: InteractComponent = null
+## Mock highlight component.
+var mock_highlight_comp: HighlightComponent = null
 
 
+## Sets up button dependencies and mock child nodes before each test.
 func before_each() -> void:
-	print("TestButton: before_each() setup.")
+	print("TestButton: before_each() setup started.")
 
 	button = load("res://shared/button.gd").new()
 
@@ -25,20 +30,26 @@ func before_each() -> void:
 	mock_label.name = "LabelInteract"
 	button.add_child(mock_label)
 
-	mock_interact_comp = load("res://interactables/interact_component.gd").new()
+	mock_interact_comp = (
+		load("res://interactables/interact_component.gd").new() as InteractComponent
+	)
 	mock_interact_comp.name = "InteractComponent"
 	button.add_child(mock_interact_comp)
 
-	var mock_highlight: Node = Node.new()
-	mock_highlight.name = "HighlightComponent"
-	button.add_child(mock_highlight)
+	mock_highlight_comp = (
+		load("res://environment/highlight_component.gd").new() as HighlightComponent
+	)
+	mock_highlight_comp.name = "HighlightComponent"
+	button.add_child(mock_highlight_comp)
 
 	add_child_autofree(button)
 
 	mock_player = CharacterBody3D.new()
 	add_child_autofree(mock_player)
+	await get_tree().process_frame
 
 
+## Verifies that focusing displays the interact label and assigns the overlay material.
 func test_on_focus() -> void:
 	print("TestButton: test_on_focus() called.")
 	button.outline_material = ShaderMaterial.new()
@@ -48,6 +59,7 @@ func test_on_focus() -> void:
 	assert_not_null(mock_mesh.material_overlay, "Mesh should have material overlay on focus.")
 
 
+## Verifies that unfocusing hides the interact label and clears the overlay material.
 func test_on_unfocus() -> void:
 	print("TestButton: test_on_unfocus() called.")
 	mock_label.show()
@@ -59,6 +71,7 @@ func test_on_unfocus() -> void:
 	assert_null(mock_mesh.material_overlay, "Mesh material overlay should be cleared on unfocus.")
 
 
+## Verifies that interacting with a populated event name emits level_event_triggered.
 func test_global_event_broadcast() -> void:
 	print("TestButton: test_global_event_broadcast() called.")
 	button.global_event_name = "test_event"

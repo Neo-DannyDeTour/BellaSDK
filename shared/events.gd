@@ -342,6 +342,10 @@ signal godmode_toggled(is_active: bool)
 @warning_ignore("unused_signal")
 signal steam_hazard_toggled(is_active: bool)
 
+## Emitted when player enters or stops taking fire hazard damage. Passes [param is_active].
+@warning_ignore("unused_signal")
+signal fire_hazard_toggled(is_active: bool)
+
 ## Emitted when the player sustains damage. Passes [param amount] of damage taken.
 @warning_ignore("unused_signal")
 signal player_damaged(amount: int)

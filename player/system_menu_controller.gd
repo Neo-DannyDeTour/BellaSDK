@@ -110,7 +110,7 @@ func _find_console_reference() -> void:
 ## Instantiates the menu scene and attaches it to the viewport root safely.
 func _setup_menu() -> void:
 	if not menu_scene:
-		push_warning("SystemMenuController: menu_scene is null or not assigned.")
+		print("SystemMenuController: menu_scene is null or not assigned.")
 		return
 
 	var scene_node: Node = menu_scene.instantiate()

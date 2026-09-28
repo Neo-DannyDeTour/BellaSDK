@@ -43,16 +43,10 @@ const SPATIAL_DEDUPLICATION_THRESHOLD_SQ: float = 1.0
 @export var max_audible_targets: int = 8
 
 ## Collision mask used for physics raycast occlusion detection.
-@export_flags_3d_physics var occlusion_collision_mask: int = 1
+@export_flags_3d_physics var occlusion_collision_mask: int = CollisionLayers.MASK_ENVIRONMENT
 
 ## Dedicated [AudioStreamPlayer] for the outgoing local ping chime.
-var _local_ping_player: AudioStreamPlayer = AudioStreamPlayer.new()
-
-## Pool of recycled [AudioStreamPlayer3D] nodes to prevent runtime allocations.
-var _player_pool: Array[AudioStreamPlayer3D] = []
-
-## Internal counter tracking active players inside the object pool.
-var _pool_index: int = 0
+var _local_ping_player: AudioStreamPlayer = null
 
 ## Incremental ID tracking active sweeps to cancel stale timers on rapid pings.
 var _current_sweep_id: int = 0
@@ -72,7 +66,6 @@ func _ready() -> void:
 
 
 ## Executes active sonar sweep centered on origin node using [method Utilities.delay_call].
-## [param origin_node] Node representing player or camera origin.
 func trigger_sonar(origin_node: Node3D) -> void:
 	if not is_instance_valid(origin_node):
 		print("SonarManager: Invalid origin node passed to trigger_sonar.")
@@ -82,7 +75,7 @@ func trigger_sonar(origin_node: Node3D) -> void:
 	var active_sweep_id: int = _current_sweep_id
 
 	print("SonarManager: Ping triggered at: ", origin_node.global_position)
-	if _local_ping_player.stream != null:
+	if is_instance_valid(_local_ping_player) and _local_ping_player.stream != null:
 		_local_ping_player.play()
 
 	var target_viewport: Viewport = origin_node.get_viewport()
@@ -98,7 +91,6 @@ func trigger_sonar(origin_node: Node3D) -> void:
 	if tree == null:
 		return
 
-	# Step 1: Collect canonical roots keyed by unique instance ID
 	var unique_targets: Dictionary = {}
 	for group_name: StringName in query_groups:
 		for item: Node in tree.get_nodes_in_group(group_name):
@@ -123,7 +115,6 @@ func trigger_sonar(origin_node: Node3D) -> void:
 				if not unique_targets.has(root_id):
 					unique_targets[root_id] = root_target
 
-	# Step 2: Strip child nodes, hidden objects, and co-located duplicate instances
 	var candidate_nodes: Array[Node3D] = []
 	var seen_positions: Array[Vector3] = []
 
@@ -161,7 +152,6 @@ func trigger_sonar(origin_node: Node3D) -> void:
 			seen_positions.append(node.global_position)
 			candidate_nodes.append(node)
 
-	# Step 3: Occlusion and priority ranking via Utilities.raycast_3d
 	var targets_to_ping: Array[Dictionary] = []
 	for target_3d: Node3D in candidate_nodes:
 		var dist: float = origin_pos.distance_to(target_3d.global_position)
@@ -212,36 +202,30 @@ func trigger_sonar(origin_node: Node3D) -> void:
 	on_scan_completed.emit(targets_to_ping.size())
 
 
-## Configures local ping player and pre-allocates 3D player pool.
+## Configures local ping player and resolves accessibility audio bus routing.
 func _setup_audio_nodes() -> void:
-	print("SonarManager: Configuring audio bus routing and pooling.")
+	print("SonarManager: Configuring audio bus routing.")
 	var resolved_bus: StringName = SFX_BUS_NAME
 	if AudioServer.get_bus_index(resolved_bus) == -1:
 		resolved_bus = &"AccessibilitySFX"
 		if AudioServer.get_bus_index(resolved_bus) == -1:
 			resolved_bus = &"Master"
 
-	_local_ping_player.bus = resolved_bus
-	if ping_emitter_sound != null:
-		_local_ping_player.stream = ping_emitter_sound
-	add_child(_local_ping_player)
-
-	for i: int in range(MAX_AUDIO_PLAYERS):
-		var player_3d: AudioStreamPlayer3D = AudioStreamPlayer3D.new()
-		player_3d.bus = resolved_bus
-		player_3d.max_distance = scan_radius
-		player_3d.attenuation_model = (AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE)
-		player_3d.unit_size = 3.0
-		add_child(player_3d)
-		_player_pool.append(player_3d)
+	_local_ping_player = AudioPool.get_pooled_player_2d()
+	if is_instance_valid(_local_ping_player):
+		_local_ping_player.bus = resolved_bus
+		if ping_emitter_sound != null:
+			_local_ping_player.stream = ping_emitter_sound
 
 
-## Ascends node hierarchy to find canonical root [Node3D] representing interactable entity.
-## [param node] Target node detected via group query.
-## [return] Highest root [Node3D] representing interactable asset.
+## Ascends node hierarchy to find canonical root [Node3D] using [NodeQuery].
 func _resolve_interactable_root(node: Node3D) -> Node3D:
 	if not is_instance_valid(node):
 		return null
+
+	var canonical: Node3D = NodeQuery.resolve_interactable_root(node)
+	if is_instance_valid(canonical) and canonical != node:
+		return canonical
 
 	var candidate: Node3D = node
 	var current: Node = node
@@ -268,8 +252,6 @@ func _resolve_interactable_root(node: Node3D) -> Node3D:
 
 
 ## Calculates integer priority rank for audio filtering.
-## [param target_node] Evaluated node.
-## [return] Priority rank from 0 (highest) to 2 (lowest).
 func _get_target_priority(target_node: Node3D) -> int:
 	if target_node.is_in_group(&"hazard"):
 		return 0
@@ -279,10 +261,6 @@ func _get_target_priority(target_node: Node3D) -> int:
 
 
 ## Casts physics ray using [method Utilities.raycast_3d] to verify line of sight.
-## [param space_state] Direct 3D physics space state.
-## [param origin_pos] Origin coordinates of ping.
-## [param target_node] Destination target node.
-## [return] True if an occluding collider intercepts ray.
 func _check_occlusion(
 	space_state: PhysicsDirectSpaceState3D, origin_pos: Vector3, target_node: Node3D
 ) -> bool:
@@ -297,8 +275,6 @@ func _check_occlusion(
 
 
 ## Resolves audio stream based on group membership.
-## [param target_node] Target node.
-## [return] Matching [AudioStream] or null if unassigned.
 func _resolve_target_stream(target_node: Node3D) -> AudioStream:
 	if target_node.is_in_group(&"hazard") and hazard_echo_sound != null:
 		return hazard_echo_sound
@@ -307,12 +283,7 @@ func _resolve_target_stream(target_node: Node3D) -> AudioStream:
 	return interactable_echo_sound
 
 
-## Plays spatialized 3D echo at target location with spectral attenuation.
-## [param sweep_id] Token tracking active sweep instance.
-## [param player_pos] Global position of listener.
-## [param forward_dir] Forward vector of listener.
-## [param target_node] Destination node receiving echo.
-## [param is_occluded] Whether line of sight is obstructed.
+## Plays spatialized 3D echo at target location via [AudioPool].
 func _play_target_echo(
 	sweep_id: int, player_pos: Vector3, forward_dir: Vector3, target_node: Node3D, is_occluded: bool
 ) -> void:
@@ -326,14 +297,21 @@ func _play_target_echo(
 	if stream_to_play == null:
 		return
 
-	var player_3d: AudioStreamPlayer3D = _player_pool[_pool_index]
-	_pool_index = (_pool_index + 1) % MAX_AUDIO_PLAYERS
+	var resolved_bus: StringName = SFX_BUS_NAME
+	if AudioServer.get_bus_index(resolved_bus) == -1:
+		resolved_bus = &"AccessibilitySFX"
+		if AudioServer.get_bus_index(resolved_bus) == -1:
+			resolved_bus = &"Master"
 
-	if player_3d.playing:
-		player_3d.stop()
+	var player_3d: AudioStreamPlayer3D = AudioPool.play_sfx_3d(
+		stream_to_play, target_node.global_position, resolved_bus
+	)
+	if not is_instance_valid(player_3d):
+		return
 
-	player_3d.global_position = target_node.global_position
-	player_3d.stream = stream_to_play
+	player_3d.max_distance = scan_radius
+	player_3d.attenuation_model = (AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE)
+	player_3d.unit_size = 3.0
 
 	var height_diff: float = target_node.global_position.y - player_pos.y
 	var elevation_factor: float = clampf(height_diff / 4.0, -0.3, 0.3)
@@ -363,4 +341,3 @@ func _play_target_echo(
 		"dB | Occluded: ",
 		is_occluded
 	)
-	player_3d.play()

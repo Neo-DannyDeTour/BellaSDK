@@ -2,19 +2,12 @@
 class_name PlayerInteractionComponent
 extends Node
 
-# --------------------------------------
-# CONSTANTS & VARIABLES
-# --------------------------------------
-
 ## Minimum mass in kilograms required for an object to be considered heavy.
 const HEAVY_OBJECT_MASS_THRESHOLD: float = 10.0
 
 ## Cooldown duration in milliseconds after dropping before re-grab is allowed.
 const DROP_REPICK_COOLDOWN_MSEC: int = 400
 
-# --------------------------------------
-# EXPORTS
-# --------------------------------------
 @export_category("Item Handling")
 
 ## The impulse force magnitude applied when throwing a held item.
@@ -36,10 +29,6 @@ const DROP_REPICK_COOLDOWN_MSEC: int = 400
 
 ## Reference to the long-range interaction and scanner sub-component.
 @export var interaction_scanner: Node
-
-# --------------------------------------
-# VARIABLES
-# --------------------------------------
 
 ## Reference to the parent player entity.
 var player: CharacterBody3D
@@ -182,7 +171,7 @@ func process_unhandled_input(_event: InputEvent = null) -> void:
 	pass
 
 
-## Attempts to detect and grab a physics item within the grab shape cast volume.
+## Attempts to detect and grab a physics item using [NodeQuery].
 func _try_pick_up() -> bool:
 	var time_since_drop: int = Time.get_ticks_msec() - _last_drop_time
 	if time_since_drop < DROP_REPICK_COOLDOWN_MSEC:
@@ -192,15 +181,22 @@ func _try_pick_up() -> bool:
 	if interact_cast.is_colliding():
 		for i: int in range(interact_cast.get_collision_count()):
 			var collider: Object = interact_cast.get_collider(i)
-			var target_body: Object = collider
+			if not (collider is Node3D):
+				continue
+			var target_body: Node3D = collider as Node3D
 			if target_body is Area3D:
-				target_body = (target_body as Area3D).get_parent()
+				target_body = target_body.get_parent() as Node3D
+
+			var root_node: Node3D = NodeQuery.resolve_interactable_root(target_body)
+			if root_node is RigidBody3D and root_node.has_method("pick_up"):
+				print("InteractionComponent: Short-range grab on ", root_node.name)
+				force_grab_item(root_node as RigidBody3D)
+				return true
 
 			if target_body is RigidBody3D and target_body.has_method("pick_up"):
-				print("InteractionComponent: Short-range grab on ", (target_body as Node).name)
+				print("InteractionComponent: Short-range grab on ", target_body.name)
 				force_grab_item(target_body as RigidBody3D)
 				return true
-	return false
 
 
 ## Throws the currently held physics object forward along camera orientation.

@@ -1,23 +1,24 @@
-## 3D water volume with Gerstner waves, rigid body buoyancy, and dynamic interactive 3D ripples.
-##
-## Manages water geometry, surface waves, physics forces, and underwater audio/visual states.
+## 3D water volume with Gerstner waves, rigid body buoyancy, and dynamic ripples.
+## Manages water geometry, surface waves, physics forces, and audio/visual states.
 @tool
 class_name WaterBody
 extends MeshInstance3D
 
-## Emitted when an object splashes into or out of the water volume with impact velocity.
+## Emitted when an object splashes into or out of water with impact velocity.
+## [param global_pos] World coordinates of the splash impact.
+## [param velocity] Linear impact speed magnitude.
 signal splashed(global_pos: Vector3, velocity: float)
 
-## Total number of active dynamic ripples stored in the GPU uniform buffer array.
+## Total number of active dynamic ripples stored in the uniform buffer array.
 const MAX_RIPPLES: int = 16
 
-## Horizontal propagation velocity of dynamic impact ripples in meters per second.
+## Horizontal propagation velocity of dynamic impact ripples in m/s.
 const RIPPLE_SPEED: float = 3.0
 
-## Spatial wavelength of concentric impact ripples along the surface plane in meters.
+## Spatial wavelength of concentric impact ripples along the surface in meters.
 const RIPPLE_WAVELENGTH: float = 1.0
 
-## Total lifespan in seconds before dynamic impact ripples completely dissipate.
+## Total lifespan in seconds before dynamic impact ripples completely fade.
 const RIPPLE_LIFETIME: float = 2.5
 
 ## Dimensions of the water volume in meters (X: length, Y: depth, Z: width).
@@ -46,7 +47,7 @@ const RIPPLE_LIFETIME: float = 2.5
 ## Maximum water depth in meters where absorption gradient reaches deep color.
 @export_range(0.5, 50.0, 0.5) var depth_distance: float = 4.5
 
-## Steepness factor of Gerstner wave crests between 0.0 (sine) and 1.0 (crested).
+## Steepness factor of Gerstner wave crests between 0.0 (sine) and 1.0.
 @export_range(0.0, 1.0, 0.05) var wave_steepness: float = 0.35
 
 ## Primary Gerstner wave amplitude peak in meters.
@@ -107,28 +108,28 @@ const RIPPLE_LIFETIME: float = 2.5
 		if is_inside_tree():
 			_update_reflection_probe()
 
-## Vertical height in meters of the reflection probe box above the water surface.
+## Vertical height in meters of reflection probe box above water surface.
 @export_range(2.0, 50.0, 1.0) var probe_box_height: float = 16.0:
 	set(value):
 		probe_box_height = value
 		if is_inside_tree():
 			_update_reflection_probe()
 
-## Horizontal margin in meters extending the probe boundary beyond water edges.
+## Horizontal margin in meters extending probe boundary beyond water edges.
 @export_range(0.0, 10.0, 0.5) var probe_padding: float = 2.0:
 	set(value):
 		probe_padding = value
 		if is_inside_tree():
 			_update_reflection_probe()
 
-## Update frequency mode for the child [ReflectionProbe] cubemap generation.
+## Update frequency mode for child [ReflectionProbe] cubemap generation.
 @export var probe_update_mode: ReflectionProbe.UpdateMode = ReflectionProbe.UPDATE_ALWAYS:
 	set(value):
 		probe_update_mode = value
 		if is_inside_tree():
 			_update_reflection_probe()
 
-## Active rigid bodies currently submerged and simulated inside this water volume.
+## Active rigid bodies currently submerged and simulated in water volume.
 var floating_bodies: Array[RigidBody3D] = []
 
 ## Active character bodies currently submerged inside this water volume.
@@ -137,7 +138,7 @@ var character_bodies: Array[CharacterBody3D] = []
 ## Preceding frame positions of submerged bodies for ripple movement tracking.
 var _last_body_positions: Dictionary = {}
 
-## Timestamp tracking last ripple emission time for each tracked submerged body.
+## Timestamp tracking last ripple emission time for each submerged body.
 var _last_body_ripple_times: Dictionary = {}
 
 ## Rate-limiter flag preventing duplicate splash audio playback during load.
@@ -146,7 +147,7 @@ var can_splash: bool = true
 ## Submerged state of the active camera during the preceding frame.
 var _was_underwater: bool = false
 
-## Y coordinate of the camera from the preceding frame for velocity tracking.
+## Y coordinate of the camera from preceding frame for velocity tracking.
 var _last_camera_y: float = 0.0
 
 ## Active tween driving screen-space resurface wash and droplets animation.
@@ -162,7 +163,7 @@ static var last_frame_drew_underwater_effect: int = -999
 var _ripples_buffer: Array[Vector4] = []
 
 
-## Resolves the active [ShaderMaterial] from material override or mesh surface.
+## Resolves active [ShaderMaterial] from material override or mesh surface.
 func _get_water_material() -> ShaderMaterial:
 	if material_override is ShaderMaterial:
 		return material_override as ShaderMaterial
@@ -202,7 +203,7 @@ func _update_reflection_probe() -> void:
 	probe.box_projection = true
 	probe.interior = false
 	probe.enable_shadows = false
-	probe.cull_mask = (1 << 0) | (1 << 1)
+	probe.cull_mask = (CollisionLayers.RENDER_MASK_ENVIRONMENT | CollisionLayers.RENDER_MASK_PLAYER)
 	probe.update_mode = probe_update_mode
 	probe.blend_distance = 0.5
 
@@ -254,7 +255,9 @@ func _ready() -> void:
 
 	var swimmable_area: Area3D = get_node_or_null("%SwimmableArea3D") as Area3D
 	if is_instance_valid(swimmable_area):
-		swimmable_area.collision_mask |= (1 << 1) | (1 << 2)
+		swimmable_area.collision_mask |= (
+			CollisionLayers.MASK_PLAYER | CollisionLayers.MASK_INTERACTIVE
+		)
 		Utilities.safe_connect(swimmable_area.body_entered, _on_swimmable_area_body_entered)
 		Utilities.safe_connect(swimmable_area.body_exited, _on_swimmable_area_body_exited)
 
@@ -262,7 +265,8 @@ func _ready() -> void:
 	can_splash = true
 
 
-## Simulates realistic buoyancy forces and generates continuous movement ripples.
+## Simulates realistic buoyancy forces and generates movement ripples.
+## [param delta] Frame delta time in seconds.
 func _physics_process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
@@ -319,6 +323,7 @@ func _physics_process(delta: float) -> void:
 
 
 ## Syncs shader parameters, evaluates camera submersion, and drives screen wipe.
+## [param delta] Frame delta time in seconds.
 func _process(delta: float) -> void:
 	var mat: ShaderMaterial = _get_water_material()
 	var current_time: float = float(Time.get_ticks_msec()) / 1000.0
@@ -457,6 +462,8 @@ func _process(delta: float) -> void:
 
 
 ## Computes dynamic surface water height combining Gerstner waves and ripples.
+## [param global_pos] Global position where wave height is evaluated.
+## [return] Surface Y coordinate in world space.
 func get_wave_height_at_pos(global_pos: Vector3) -> float:
 	var cur_time: float = (float(Time.get_ticks_msec()) / 1000.0) * wave_speed
 	var k: float = TAU / maxf(wave_length, 0.1)
@@ -497,6 +504,8 @@ func get_wave_height_at_pos(global_pos: Vector3) -> float:
 
 
 ## Computes surface normal vector at [param global_pos] using finite differences.
+## [param global_pos] Position where normal vector is evaluated.
+## [return] Normalized surface normal [Vector3].
 func get_water_surface_normal(global_pos: Vector3) -> Vector3:
 	var step: float = 0.15
 	var h_center: float = get_wave_height_at_pos(global_pos)
@@ -508,7 +517,8 @@ func get_water_surface_normal(global_pos: Vector3) -> Vector3:
 	return tangent_z.cross(tangent_x).normalized()
 
 
-## Checks if active [Camera3D] is positioned beneath the dynamic water surface.
+## Checks if active [Camera3D] is positioned beneath dynamic water surface.
+## [return] True if camera lens is submerged under water surface.
 func should_draw_camera_underwater_effect() -> bool:
 	var viewport: Viewport = get_viewport()
 	var camera: Camera3D = viewport.get_camera_3d() if viewport else null
@@ -538,6 +548,7 @@ func should_draw_camera_underwater_effect() -> bool:
 
 
 ## Registers entering bodies, triggers impact ripples, and plays splash audio.
+## [param body] Submerged 3D body entering water volume.
 func _on_swimmable_area_body_entered(body: Node3D) -> void:
 	print("WaterBody: Submerged object entered water volume -> ", body.name)
 	var impact_speed: float = 0.0
@@ -569,6 +580,7 @@ func _on_swimmable_area_body_entered(body: Node3D) -> void:
 
 
 ## Unregisters exiting bodies, triggers exit ripples, and plays exit splashes.
+## [param body] Submerged 3D body exiting water volume.
 func _on_swimmable_area_body_exited(body: Node3D) -> void:
 	print("WaterBody: Submerged object exited water volume -> ", body.name)
 	var exit_speed: float = 0.0
@@ -595,28 +607,27 @@ func _on_swimmable_area_body_exited(body: Node3D) -> void:
 		splashed.emit(body.global_position, exit_speed)
 
 
-## Spawns an instanced [AudioStreamPlayer3D] playing splash audio at surface.
+## Plays splash sound at surface impact point using pre-allocated [AudioPool].
+## [param impact_pos] Surface coordinate where splash occurred.
+## [param speed] Impact velocity magnitude of the body.
 func play_splash_sound(impact_pos: Vector3, speed: float) -> void:
 	if not can_splash or not splash_sound:
 		return
 
 	print("WaterBody: Playing 3D splash audio at ", impact_pos, " speed: ", speed)
-	var audio_player: AudioStreamPlayer3D = AudioStreamPlayer3D.new()
-	audio_player.stream = splash_sound
-
-	var volume_multiplier: float = clampf(speed / 8.0, 0.25, 1.8)
-	audio_player.volume_db = linear_to_db(volume_multiplier)
-	audio_player.max_distance = 15.0
-	audio_player.unit_size = 1.2
-
 	var surface_y: float = get_wave_height_at_pos(impact_pos)
-	audio_player.position = Vector3(impact_pos.x, surface_y, impact_pos.z)
-	Utilities.safe_connect(audio_player.finished, audio_player.queue_free)
-	add_child.call_deferred(audio_player)
-	audio_player.call_deferred(&"play")
+	var play_pos: Vector3 = Vector3(impact_pos.x, surface_y, impact_pos.z)
+	var audio_player: AudioStreamPlayer3D = AudioPool.play_sfx_3d(splash_sound, play_pos, &"SFX")
+	if is_instance_valid(audio_player):
+		var volume_multiplier: float = clampf(speed / 8.0, 0.25, 1.8)
+		audio_player.volume_db = linear_to_db(volume_multiplier)
+		audio_player.max_distance = 15.0
+		audio_player.unit_size = 1.2
 
 
-## Allocates a dynamic ripple at [param global_pos] into the uniform ring buffer.
+## Allocates a dynamic ripple at [param global_pos] into uniform ring buffer.
+## [param global_pos] World coordinate where ripple originates.
+## [param impact_strength] Intensity scalar scaling ripple height.
 func spawn_ripple(global_pos: Vector3, impact_strength: float = 1.0) -> void:
 	print("WaterBody: Spawning 3D ripple at ", global_pos, " strength: ", impact_strength)
 	var spawn_time: float = float(Time.get_ticks_msec()) / 1000.0

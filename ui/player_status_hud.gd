@@ -1,134 +1,150 @@
-## Manages player status indicators including health hearts,
-## unified debuff slots, and collected keycards.
+## Manages player status indicators including health hearts, debuff slots, and keycards.
 class_name PlayerStatusHUD
 extends MarginContainer
 
-## Slices of the heart textures for varying health states.
+## Sliced texture frames of health hearts for varying status levels.
 @export var hearts_atlas: Texture2D
 
 ## Maps keycard IDs to their respective inventory icon textures.
 @export var card_textures: Dictionary[StringName, Texture2D] = {}
 
-## Container arranging the health heart icons horizontally.
+## Container arranging health heart icons horizontally.
 @onready var hearts_container: HBoxContainer = $VBoxContainer/HeartsContainer
 
 ## Container arranging collected keycard icons horizontally.
 @onready var keycards_container: HBoxContainer = $VBoxContainer/KeycardsContainer
 
-## Container managing the layout of the sprint debuff UI.
+## Container managing layout of sprint debuff UI slot.
 @onready var sprint_debuff_container: Control = $VBoxContainer/SprintDebuff
 
-## Texture progress bar layered over the sprint debuff icon.
+## Texture progress bar layered over sprint debuff icon.
 @onready var sprint_bar: TextureProgressBar = $VBoxContainer/SprintDebuff/DebuffBar
 
-## Frame border overlay node for sprint status.
+## Frame border overlay node for sprint status slot.
 @onready var sprint_border: NinePatchRect = $VBoxContainer/SprintDebuff/BorderOverlay
 
 ## Numeric timer label displaying remaining sprint debuff duration.
 @onready var sprint_timer_label: Label = $VBoxContainer/SprintDebuff/TimerLabel
 
-## Container managing the layout of the immobilize debuff UI.
+## Container managing layout of immobilize debuff UI slot.
 @onready var immobilize_container: Control = $VBoxContainer/ImmobilizeDebuff
 
-## Texture progress bar layered over the immobilize debuff icon.
+## Texture progress bar layered over immobilize debuff icon.
 @onready var move_bar: TextureProgressBar = $VBoxContainer/ImmobilizeDebuff/DebuffBar
 
-## Frame border overlay node for immobilize status.
+## Frame border overlay node for immobilize status slot.
 @onready var immobilize_border: NinePatchRect = $VBoxContainer/ImmobilizeDebuff/BorderOverlay
 
 ## Numeric timer label displaying remaining immobilize duration.
 @onready var immobilize_timer_label: Label = $VBoxContainer/ImmobilizeDebuff/TimerLabel
 
-## Container managing the layout of the ice debuff UI.
+## Container managing layout of ice debuff UI slot.
 @onready var ice_debuff_container: Control = $VBoxContainer/IceDebuff
 
-## Texture progress bar layered over the ice debuff icon.
+## Texture progress bar layered over ice debuff icon.
 @onready var ice_bar: TextureProgressBar = $VBoxContainer/IceDebuff/DebuffBar
 
-## Frame border overlay node for ice status.
+## Frame border overlay node for ice status slot.
 @onready var ice_border: NinePatchRect = $VBoxContainer/IceDebuff/BorderOverlay
 
 ## Numeric timer label displaying remaining ice debuff duration.
 @onready var ice_timer_label: Label = $VBoxContainer/IceDebuff/TimerLabel
 
-## Container managing the layout of the swim debuff UI.
+## Container managing layout of swim debuff UI slot.
 @onready var swim_debuff_container: Control = $VBoxContainer/SwimDebuff
 
-## Texture progress bar layered over the swim debuff icon.
+## Texture progress bar layered over swim debuff icon.
 @onready var swim_bar: TextureProgressBar = $VBoxContainer/SwimDebuff/DebuffBar
 
-## Frame border overlay node for swim status.
+## Frame border overlay node for swim status slot.
 @onready var swim_border: NinePatchRect = $VBoxContainer/SwimDebuff/BorderOverlay
 
 ## Numeric timer label displaying remaining swim duration.
 @onready var swim_timer_label: Label = $VBoxContainer/SwimDebuff/TimerLabel
 
-## Container managing the layout of the steam debuff UI.
+## Container managing layout of steam debuff UI slot.
 @onready var steam_debuff_container: Control = $VBoxContainer/SteamDebuff
 
-## Texture progress bar layered over the steam debuff icon.
+## Texture progress bar layered over steam debuff icon.
 @onready var steam_bar: TextureProgressBar = $VBoxContainer/SteamDebuff/DebuffBar
 
-## Frame border overlay node for steam status.
+## Frame border overlay node for steam status slot.
 @onready var steam_border: NinePatchRect = $VBoxContainer/SteamDebuff/BorderOverlay
 
 ## Numeric timer label displaying remaining steam debuff duration.
 @onready var steam_timer_label: Label = $VBoxContainer/SteamDebuff/TimerLabel
 
-## Stores the sliced textures for each state of a health heart.
+## Container managing layout of fire debuff UI slot.
+@onready var fire_debuff_container: Control = $VBoxContainer/FireDebuff
+
+## Texture progress bar layered over fire debuff icon.
+@onready var fire_bar: TextureProgressBar = $VBoxContainer/FireDebuff/DebuffBar
+
+## Frame border overlay node for fire status slot.
+@onready var fire_border: NinePatchRect = $VBoxContainer/FireDebuff/BorderOverlay
+
+## Numeric timer label displaying remaining fire debuff duration.
+@onready var fire_timer_label: Label = $VBoxContainer/FireDebuff/TimerLabel
+
+## Stores sliced textures for each state of health heart.
 var heart_textures: Array[AtlasTexture] = []
 
-## Stores the UI nodes representing the player's health hearts.
+## Stores UI nodes representing player's health hearts.
 var heart_nodes: Array[TextureRect] = []
 
 ## Stores active tweens for individual heart damage animations.
 var heart_tweens: Array[Tween] = []
 
-## Stores the currently instantiated keycard texture rectangles.
+## Stores instantiated keycard texture rectangles mapped by ID.
 var active_card_icons: Dictionary = {}
 
-## Tracks the player's current health to determine when to update the UI.
+## Tracks current player health to determine when to update UI.
 var current_health: int = 300
 
-## Animates the sprint debuff progress bar and timer label.
+## Animates sprint debuff progress bar and timer label.
 var debuff_tween: Tween
 
-## Animates the immobilize debuff progress bar and timer label.
+## Animates immobilize debuff progress bar and timer label.
 var immobilize_tween: Tween
 
-## Animates the swim progress bar and timer label.
+## Animates swim oxygen progress bar and timer label.
 var swim_tween: Tween
 
-## Tracks if the player is currently under an active timed sprint cooldown.
+## Animates or fades fire damage indicator when burning ceases.
+var fire_tween: Tween
+
+## Tracks if timed sprint cooldown is currently active.
 var is_sprint_timer_active: bool = false
 
-## Tracks if the player is currently standing on sand.
+## Tracks if player is currently standing on sand.
 var is_on_sand: bool = false
 
-## Tracks if the player is currently carrying a heavy object.
+## Tracks if player is currently carrying heavy object.
 var is_heavy_carrying: bool = false
 
-## Tracks if the player is currently standing on ice.
+## Tracks if player is currently standing on ice.
 var is_on_ice: bool = false
 
-## Tracks if the player is currently under the effects of an immobilize debuff.
+## Tracks if player is under immobilize debuff effect.
 var is_immobilized: bool = false
 
-## Tracks if the player is currently under the effects of a sprint block debuff.
+## Tracks if player is under sprint blocked debuff effect.
 var is_sprint_blocked: bool = false
 
-## Tracks if infinite swim accessibility mode is currently enabled.
+## Tracks if infinite swim accessibility mode is enabled.
 var is_infinite_swim: bool = false
 
-## Tracks whether the player's head is currently submerged underwater.
+## Tracks whether player head is submerged underwater.
 var is_submerged: bool = false
 
-## Tracks if the player is currently standing in an active steam hazard.
+## Tracks if player is standing in active steam hazard.
 var is_in_steam: bool = false
 
+## Tracks if player is actively suffering fire damage.
+var is_in_fire: bool = false
 
-## Lifecycle method called when the node enters the scene tree.
-## Initializes containers, heart textures, and binds event bus listeners.
+
+## Lifecycle method called when node enters the tree.
 func _ready() -> void:
 	print("PlayerStatusHUD: _ready() called. Initializing status HUD.")
 	is_infinite_swim = bool(GlobalSettings.get_setting("Accessibility", "infinite_swim", false))
@@ -155,42 +171,34 @@ func _initialize_indicators() -> void:
 	steam_debuff_container.hide()
 	steam_bar.hide()
 	steam_timer_label.hide()
+	fire_debuff_container.hide()
+	fire_border.hide()
+	fire_bar.hide()
+	fire_timer_label.hide()
 
 
-## Binds status and keycard events from the global [Events] bus and [KeycardSystem].
+## Binds status and keycard events from global bus using [Utilities.safe_connect].
 func _connect_signals() -> void:
 	print("PlayerStatusHUD: Connecting global event bus signals.")
-	if not Events.player_health_changed.is_connected(update_health):
-		Events.player_health_changed.connect(update_health)
-	if not Events.sprint_debuff_applied.is_connected(_on_sprint_debuff_applied):
-		Events.sprint_debuff_applied.connect(_on_sprint_debuff_applied)
-	if not Events.immobilize_debuff_applied.is_connected(_on_immobilize_debuff_applied):
-		Events.immobilize_debuff_applied.connect(_on_immobilize_debuff_applied)
-	if not Events.sand_surface_toggled.is_connected(_on_sand_surface_toggled):
-		Events.sand_surface_toggled.connect(_on_sand_surface_toggled)
-	if not Events.ice_surface_toggled.is_connected(_on_ice_surface_toggled):
-		Events.ice_surface_toggled.connect(_on_ice_surface_toggled)
-	if not Events.heavy_carry_toggled.is_connected(_on_heavy_carry_toggled):
-		Events.heavy_carry_toggled.connect(_on_heavy_carry_toggled)
-	if not Events.oxygen_timer_started.is_connected(_on_oxygen_timer_started):
-		Events.oxygen_timer_started.connect(_on_oxygen_timer_started)
-	if not Events.oxygen_timer_stopped.is_connected(_on_oxygen_timer_stopped):
-		Events.oxygen_timer_stopped.connect(_on_oxygen_timer_stopped)
-	if not Events.steam_hazard_toggled.is_connected(_on_steam_hazard_toggled):
-		Events.steam_hazard_toggled.connect(_on_steam_hazard_toggled)
+	Utilities.safe_connect(Events.player_health_changed, update_health)
+	Utilities.safe_connect(Events.sprint_debuff_applied, _on_sprint_debuff_applied)
+	Utilities.safe_connect(Events.immobilize_debuff_applied, _on_immobilize_debuff_applied)
+	Utilities.safe_connect(Events.sand_surface_toggled, _on_sand_surface_toggled)
+	Utilities.safe_connect(Events.ice_surface_toggled, _on_ice_surface_toggled)
+	Utilities.safe_connect(Events.heavy_carry_toggled, _on_heavy_carry_toggled)
+	Utilities.safe_connect(Events.oxygen_timer_started, _on_oxygen_timer_started)
+	Utilities.safe_connect(Events.oxygen_timer_stopped, _on_oxygen_timer_stopped)
+	Utilities.safe_connect(Events.steam_hazard_toggled, _on_steam_hazard_toggled)
+	Utilities.safe_connect(Events.fire_hazard_toggled, _on_fire_hazard_toggled)
 
-	if not KeycardSystem.card_picked_up.is_connected(_on_card_picked_up):
-		KeycardSystem.card_picked_up.connect(_on_card_picked_up)
-	if not KeycardSystem.card_used.is_connected(_on_card_used):
-		KeycardSystem.card_used.connect(_on_card_used)
-
-	if not Events.infinite_swim_toggled.is_connected(_on_infinite_swim_toggled):
-		Events.infinite_swim_toggled.connect(_on_infinite_swim_toggled)
+	Utilities.safe_connect(KeycardSystem.card_picked_up, _on_card_picked_up)
+	Utilities.safe_connect(KeycardSystem.card_used, _on_card_used)
+	Utilities.safe_connect(Events.infinite_swim_toggled, _on_infinite_swim_toggled)
 
 
-## Slices the heart atlas and builds initial health container representations.
+## Slices the heart atlas and builds initial health representations.
 func _initialize_hearts() -> void:
-	print("PlayerStatusHUD: _initialize_hearts() called. Setting up health display.")
+	print("PlayerStatusHUD: _initialize_hearts() called.")
 	if not hearts_atlas:
 		push_warning("Hearts atlas not assigned in PlayerStatusHUD inspector!")
 		return
@@ -213,7 +221,7 @@ func _initialize_hearts() -> void:
 
 ## Dynamically adds a single heart UI node container to the screen layout.
 func _add_heart_node() -> void:
-	print("PlayerStatusHUD: _add_heart_node() - Expanding maximum heart UI count.")
+	print("PlayerStatusHUD: _add_heart_node() - Expanding heart UI count.")
 	var atlas_height: float = hearts_atlas.get_height()
 	var frame_width: float = hearts_atlas.get_width() / 5.0
 	var target_size: Vector2 = Vector2(frame_width * 2.0, atlas_height * 2.0)
@@ -236,10 +244,10 @@ func _add_heart_node() -> void:
 	heart_tweens.append(null)
 
 
-## Re-renders all heart frames and plays health change damage or heal tweens.
-## [param new_health] The current integer health total.
+## Re-renders all heart frames and plays health change animations.
+## [param new_health] Current integer health total.
 func update_health(new_health: int) -> void:
-	print("PlayerStatusHUD: update_health() called with new value: ", new_health)
+	print("PlayerStatusHUD: update_health() called with: ", new_health)
 
 	while new_health > heart_nodes.size() * 100:
 		_add_heart_node()
@@ -280,20 +288,20 @@ func update_health(new_health: int) -> void:
 
 
 ## Runs a vertical bounce tween on the target heart node when damaged.
-## [param index] The heart slot index to animate.
+## [param index] Heart slot index to animate.
 func _animate_heart_damage(index: int) -> void:
 	print("PlayerStatusHUD: _animate_heart_damage() called for index: ", index)
 	if index < 0 or index >= heart_nodes.size():
 		return
 
 	var heart: TextureRect = heart_nodes[index]
-
-	if heart_tweens[index] and heart_tweens[index].is_valid():
-		heart_tweens[index].kill()
+	heart_tweens[index] = Utilities.reset_tween(self, heart_tweens[index])
+	if not is_instance_valid(heart_tweens[index]):
+		return
 
 	heart.position.y = 0.0
-	var tween: Tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	heart_tweens[index] = tween
+	var tween: Tween = heart_tweens[index]
+	tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 
 	var jump_height: float = -15.0
 	var duration: float = 0.08
@@ -304,8 +312,8 @@ func _animate_heart_damage(index: int) -> void:
 
 
 ## Spawns a scaling green ghost texture to visually represent health recovery.
-## [param index] The heart slot index to animate.
-## [param frame_index] Sliced texture frame index to duplicate on the ghost.
+## [param index] Heart slot index to animate.
+## [param frame_index] Sliced texture frame index to duplicate on ghost.
 func _animate_heart_heal(index: int, frame_index: int) -> void:
 	print("PlayerStatusHUD: _animate_heart_heal() called for index: ", index)
 	if index < 0 or index >= heart_nodes.size():
@@ -321,14 +329,13 @@ func _animate_heart_heal(index: int, frame_index: int) -> void:
 	ghost.size = heart.size
 	ghost.position = Vector2.ZERO
 	ghost.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	ghost.pivot_offset = ghost.size / 2.0
+	Utilities.center_control(ghost)
 	ghost.modulate = Color(0.0, 1.0, 0.2, 0.5)
 
 	heart.add_child(ghost)
 
-	var tween: Tween = create_tween().set_parallel(true).set_trans(Tween.TRANS_CUBIC).set_ease(
-		Tween.EASE_OUT
-	)
+	var tween: Tween = create_tween().set_parallel(true)
+	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 	var anim_duration: float = 0.5
 	tween.tween_property(ghost, "scale", Vector2(3.0, 3.0), anim_duration)
@@ -336,8 +343,8 @@ func _animate_heart_heal(index: int, frame_index: int) -> void:
 	tween.chain().tween_callback(ghost.queue_free)
 
 
-## Adds a keycard texture rectangle to the HUD inventory display.
-## [param card_id] Unique identifier key of the collected card.
+## Adds a keycard texture rectangle using [method Utilities.center_control].
+## [param card_id] Unique identifier key of collected card.
 func _on_card_picked_up(card_id: StringName) -> void:
 	print("PlayerStatusHUD: Displaying new card ID ", card_id)
 	var card_rect: TextureRect = TextureRect.new()
@@ -355,18 +362,20 @@ func _on_card_picked_up(card_id: StringName) -> void:
 	active_card_icons[card_id] = card_rect
 
 	card_rect.scale = Vector2.ZERO
-	card_rect.pivot_offset = card_rect.custom_minimum_size / 2.0
-	var tween: Tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	Utilities.center_control(card_rect)
+	var tween: Tween = create_tween().set_trans(Tween.TRANS_BACK)
+	tween.set_ease(Tween.EASE_OUT)
 	tween.tween_property(card_rect, "scale", Vector2.ONE, 0.4)
 
 
-## Animates and removes a used keycard icon from the HUD inventory display.
-## [param card_id] Unique identifier key of the consumed card.
+## Animates and removes used keycard icon safely avoiding leaks.
+## [param card_id] Unique identifier key of consumed card.
 func _on_card_used(card_id: StringName) -> void:
 	print("PlayerStatusHUD: Removing used card ID ", card_id)
 	if active_card_icons.has(card_id):
 		var card_rect: TextureRect = active_card_icons[card_id]
-		var tween: Tween = create_tween().set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+		var tween: Tween = create_tween().set_trans(Tween.TRANS_BACK)
+		tween.set_ease(Tween.EASE_IN)
 		tween.tween_property(card_rect, "scale", Vector2.ZERO, 0.2)
 		tween.finished.connect(card_rect.queue_free)
 		active_card_icons.erase(card_id)
@@ -375,7 +384,7 @@ func _on_card_used(card_id: StringName) -> void:
 ## Starts and animates the sprint debuff progress bar cooldown.
 ## [param duration] Length of the debuff in seconds.
 func _on_sprint_debuff_applied(duration: float) -> void:
-	print("PlayerStatusHUD: _on_sprint_debuff_applied() - Starting UI for ", duration, "s.")
+	print("PlayerStatusHUD: _on_sprint_debuff_applied() - Starting for ", duration)
 	is_sprint_timer_active = true
 	sprint_bar.show()
 	sprint_timer_label.show()
@@ -385,10 +394,10 @@ func _on_sprint_debuff_applied(duration: float) -> void:
 
 	_sync_sprint_display()
 
-	if debuff_tween and debuff_tween.is_valid():
-		debuff_tween.kill()
+	debuff_tween = Utilities.reset_tween(self, debuff_tween)
+	if not is_instance_valid(debuff_tween):
+		return
 
-	debuff_tween = create_tween()
 	debuff_tween.tween_method(
 		func(val: float) -> void:
 			sprint_bar.value = val
@@ -410,7 +419,7 @@ func _on_sprint_debuff_applied(duration: float) -> void:
 ## Starts and animates the immobilize debuff progress bar cooldown.
 ## [param duration] Length of the debuff in seconds.
 func _on_immobilize_debuff_applied(duration: float) -> void:
-	print("PlayerStatusHUD: _on_immobilize_debuff_applied() - Starting UI for ", duration, "s.")
+	print("PlayerStatusHUD: _on_immobilize_debuff_applied() - Starting UI for ", duration)
 	is_immobilized = true
 	immobilize_container.show()
 	move_bar.show()
@@ -421,10 +430,10 @@ func _on_immobilize_debuff_applied(duration: float) -> void:
 	move_bar.value = duration
 	immobilize_timer_label.text = "%.1fs" % duration
 
-	if immobilize_tween and immobilize_tween.is_valid():
-		immobilize_tween.kill()
+	immobilize_tween = Utilities.reset_tween(self, immobilize_tween)
+	if not is_instance_valid(immobilize_tween):
+		return
 
-	immobilize_tween = create_tween()
 	immobilize_tween.tween_method(
 		func(val: float) -> void:
 			move_bar.value = val
@@ -453,7 +462,7 @@ func _on_infinite_swim_toggled(enabled: bool) -> void:
 		return
 
 	if is_infinite_swim:
-		if swim_tween and swim_tween.is_valid():
+		if is_instance_valid(swim_tween) and swim_tween.is_valid():
 			swim_tween.kill()
 		swim_debuff_container.show()
 		swim_border.show()
@@ -473,14 +482,15 @@ func _on_oxygen_timer_started(duration: float) -> void:
 	swim_border.show()
 
 	if is_infinite_swim:
-		if swim_tween and swim_tween.is_valid():
+		if is_instance_valid(swim_tween) and swim_tween.is_valid():
 			swim_tween.kill()
 		swim_bar.hide()
 		swim_timer_label.hide()
 		return
 
-	if swim_tween and swim_tween.is_valid():
-		swim_tween.kill()
+	swim_tween = Utilities.reset_tween(self, swim_tween)
+	if not is_instance_valid(swim_tween):
+		return
 
 	swim_bar.show()
 	swim_timer_label.show()
@@ -488,7 +498,6 @@ func _on_oxygen_timer_started(duration: float) -> void:
 	swim_bar.value = duration
 	swim_timer_label.text = "%.1fs" % duration
 
-	swim_tween = create_tween()
 	swim_tween.tween_method(
 		func(val: float) -> void:
 			swim_bar.value = val
@@ -509,7 +518,7 @@ func _on_oxygen_timer_started(duration: float) -> void:
 func _on_oxygen_timer_stopped() -> void:
 	print("PlayerStatusHUD: _on_oxygen_timer_stopped() - Player surfaced.")
 	is_submerged = false
-	if swim_tween and swim_tween.is_valid():
+	if is_instance_valid(swim_tween) and swim_tween.is_valid():
 		swim_tween.kill()
 
 	swim_bar.hide()
@@ -518,8 +527,8 @@ func _on_oxygen_timer_stopped() -> void:
 	swim_debuff_container.hide()
 
 
-## Updates steam hazard indicator icon and border overlay without progress bar.
-## [param is_active] True if the player is actively exposed to steam damage.
+## Updates steam hazard indicator icon and border overlay.
+## [param is_active] True if the player is actively exposed to steam.
 func _on_steam_hazard_toggled(is_active: bool) -> void:
 	print("PlayerStatusHUD: Steam hazard toggled -> ", is_active)
 	is_in_steam = is_active
@@ -527,6 +536,17 @@ func _on_steam_hazard_toggled(is_active: bool) -> void:
 	steam_border.visible = is_in_steam
 	steam_bar.hide()
 	steam_timer_label.hide()
+
+
+## Updates fire hazard indicator icon and border overlay.
+## [param is_active] True if the player is actively exposed to fire.
+func _on_fire_hazard_toggled(is_active: bool) -> void:
+	print("PlayerStatusHUD: Fire hazard toggled -> ", is_active)
+	is_in_fire = is_active
+	fire_debuff_container.visible = is_in_fire
+	fire_border.visible = is_in_fire
+	fire_bar.hide()
+	fire_timer_label.hide()
 
 
 ## Updates persistent sand sprint-restriction status.
@@ -559,7 +579,7 @@ func _on_heavy_carry_toggled(is_active: bool) -> void:
 ## Resolves visibility of the sprint slot and border across active sources.
 func _sync_sprint_display() -> void:
 	print("PlayerStatusHUD: Synchronizing sprint debuff slot visibility.")
-	is_sprint_blocked = is_sprint_timer_active or is_on_sand or is_heavy_carrying
+	is_sprint_blocked = (is_sprint_timer_active or is_on_sand or is_heavy_carrying)
 	sprint_debuff_container.visible = is_sprint_blocked
 	sprint_border.visible = is_sprint_blocked
 

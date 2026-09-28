@@ -1,7 +1,6 @@
 ## Applies an outline material to target meshes when the parent interactable is focused.
 ##
-## Caches visual geometry in [method _ready]
-## to avoid recursive tree walks during interaction events.
+## Caches visual geometry in [method _ready] to avoid recursive tree walks during interactions.
 class_name HighlightComponent
 extends Node
 
@@ -22,10 +21,10 @@ const OUTLINE_COLOR_VALUES: Array[Color] = [
 ## Array of specific meshes to highlight. Leave empty to auto-detect nodes.
 @export var target_meshes: Array[GeometryInstance3D]
 
-## The component handling interaction logic. Assign in the inspector for performance.
+## The component handling interaction logic. Assign in inspector for performance.
 @export var interact_component: Node
 
-## Tracks whether the current target is actively being focused on by the player.
+## Tracks whether the current target is actively focused by the player.
 var _is_focused: bool = false
 
 ## Tracks whether the highlight effect is temporarily disabled or overridden.
@@ -61,10 +60,12 @@ func _ready() -> void:
 			interact_component = parent.get_node_or_null("InteractComponent")
 
 	if is_instance_valid(interact_component):
-		interact_component.focused.connect(_on_focus)
-		interact_component.unfocused.connect(_on_unfocus)
+		if interact_component.has_signal("focused"):
+			interact_component.connect("focused", _on_focus)
+		if interact_component.has_signal("unfocused"):
+			interact_component.connect("unfocused", _on_unfocus)
 	else:
-		print("HighlightComponent: No InteractComponent assigned or found in parent!")
+		print("HighlightComponent: No InteractComponent assigned or found in parent.")
 
 	_cache_target_meshes()
 	_connect_outline_events()
@@ -93,20 +94,27 @@ func _connect_outline_events() -> void:
 func _load_initial_settings() -> void:
 	if has_node("/root/GlobalSettings"):
 		var settings: Node = get_node("/root/GlobalSettings")
-		_outline_mode = int(settings.get_setting("Accessibility", "outline_mode", 2))
-		var col_idx: int = int(settings.get_setting("Accessibility", "outline_color_index", 0))
+		_outline_mode = int(settings.call("get_setting", "Accessibility", "outline_mode", 2))
+		var col_idx: int = int(
+			settings.call("get_setting", "Accessibility", "outline_color_index", 0)
+		)
 		if col_idx >= 0 and col_idx < OUTLINE_COLOR_VALUES.size():
 			_outline_color = OUTLINE_COLOR_VALUES[col_idx]
-		_blink_speed = float(settings.get_setting("Accessibility", "outline_blink_speed", 8.0))
-		_min_intensity = float(settings.get_setting("Accessibility", "outline_min_intensity", 0.2))
-		_max_intensity = float(settings.get_setting("Accessibility", "outline_max_intensity", 1.0))
+		_blink_speed = float(
+			settings.call("get_setting", "Accessibility", "outline_blink_speed", 8.0)
+		)
+		_min_intensity = float(
+			settings.call("get_setting", "Accessibility", "outline_min_intensity", 0.2)
+		)
+		_max_intensity = float(
+			settings.call("get_setting", "Accessibility", "outline_max_intensity", 1.0)
+		)
 
 	_apply_shader_parameters()
 	_refresh_highlight()
 
 
 ## Responds to global outline mode changes and updates highlight meshes.
-## [param mode] The new mode index: 0 = Off, 1 = Always, 2 = On Focus.
 func _on_outline_mode_changed(mode: int) -> void:
 	print("HighlightComponent: Outline mode updated to: ", mode)
 	_outline_mode = mode
@@ -114,7 +122,6 @@ func _on_outline_mode_changed(mode: int) -> void:
 
 
 ## Responds to global outline color changes and updates material.
-## [param color] The new highlight [Color].
 func _on_outline_color_changed(color: Color) -> void:
 	print("HighlightComponent: Outline color updated to: ", color)
 	_outline_color = color
@@ -122,7 +129,6 @@ func _on_outline_color_changed(color: Color) -> void:
 
 
 ## Responds to global outline blink speed changes.
-## [param speed] Pulse oscillation speed.
 func _on_outline_blink_speed_changed(speed: float) -> void:
 	print("HighlightComponent: Outline blink speed updated to: ", speed)
 	_blink_speed = speed
@@ -130,7 +136,6 @@ func _on_outline_blink_speed_changed(speed: float) -> void:
 
 
 ## Responds to global outline minimum intensity changes.
-## [param intensity] Minimum alpha intensity.
 func _on_outline_min_intensity_changed(intensity: float) -> void:
 	print("HighlightComponent: Outline min intensity updated to: ", intensity)
 	_min_intensity = intensity
@@ -138,7 +143,6 @@ func _on_outline_min_intensity_changed(intensity: float) -> void:
 
 
 ## Responds to global outline maximum intensity changes.
-## [param intensity] Maximum alpha intensity.
 func _on_outline_max_intensity_changed(intensity: float) -> void:
 	print("HighlightComponent: Outline max intensity updated to: ", intensity)
 	_max_intensity = intensity
@@ -149,7 +153,7 @@ func _on_outline_max_intensity_changed(intensity: float) -> void:
 func _apply_shader_parameters() -> void:
 	if not is_instance_valid(outline_material):
 		return
-	print("HighlightComponent: Syncing shader uniforms to material.")
+
 	outline_material.set_shader_parameter("highlight_color", _outline_color)
 	outline_material.set_shader_parameter("blink_speed", _blink_speed)
 	outline_material.set_shader_parameter("min_intensity", _min_intensity)
@@ -158,7 +162,6 @@ func _apply_shader_parameters() -> void:
 
 ## Evaluates current focus and mode rules to apply or clear highlights.
 func _refresh_highlight() -> void:
-	print("HighlightComponent: Refreshing highlight for mode: ", _outline_mode)
 	if _is_suppressed or _outline_mode == 0:
 		_update_materials(null)
 		return
@@ -209,7 +212,6 @@ func _on_unfocus() -> void:
 
 
 ## Temporarily suppresses or restores the highlight state based on game events.
-## [param state] True to suppress highlights; false to restore focus state.
 func suppress(state: bool) -> void:
 	print("HighlightComponent: Suppress state set to: ", state)
 	_is_suppressed = state
@@ -217,16 +219,16 @@ func suppress(state: bool) -> void:
 
 
 ## Applies or clears the outline material across all cached geometry targets.
-## [param mat] The material to apply, or null to clear highlights.
 func _update_materials(mat: Material) -> void:
-	for m: GeometryInstance3D in _cached_meshes:
-		if is_instance_valid(m):
-			_apply_to_mesh(m, mat)
+	for i: int in range(_cached_meshes.size() - 1, -1, -1):
+		var m: GeometryInstance3D = _cached_meshes[i]
+		if not is_instance_valid(m):
+			_cached_meshes.remove_at(i)
+			continue
+		_apply_to_mesh(m, mat)
 
 
 ## Instantiates or cleans up child overlay nodes and updates bounds on target mesh.
-## [param base_mesh] The target mesh receiving the outline.
-## [param mat] The outline material to set, or null to remove existing outlines.
 func _apply_to_mesh(base_mesh: GeometryInstance3D, mat: Material) -> void:
 	var child_name: String = "HighlightOverlayChild"
 
@@ -241,20 +243,20 @@ func _apply_to_mesh(base_mesh: GeometryInstance3D, mat: Material) -> void:
 			var is_flat: bool = false
 
 			if base_mesh is MeshInstance3D:
-				hl_mesh.mesh = base_mesh.mesh
-				if base_mesh.skeleton:
-					hl_mesh.skeleton = base_mesh.skeleton
-				if base_mesh.skin:
-					hl_mesh.skin = base_mesh.skin
+				hl_mesh.mesh = (base_mesh as MeshInstance3D).mesh
+				if (base_mesh as MeshInstance3D).skeleton:
+					hl_mesh.skeleton = (base_mesh as MeshInstance3D).skeleton
+				if (base_mesh as MeshInstance3D).skin:
+					hl_mesh.skin = (base_mesh as MeshInstance3D).skin
 
 				if hl_mesh.mesh is QuadMesh or hl_mesh.mesh is PlaneMesh:
 					is_flat = true
 
 			elif base_mesh is CSGShape3D:
-				var csg_data: Array = base_mesh.get_meshes()
+				var csg_data: Array = (base_mesh as CSGShape3D).get_meshes()
 				if csg_data.size() == 2 and csg_data[1] is ArrayMesh:
-					hl_mesh.transform = csg_data[0]
-					hl_mesh.mesh = csg_data[1]
+					hl_mesh.transform = csg_data[0] as Transform3D
+					hl_mesh.mesh = csg_data[1] as ArrayMesh
 
 			base_mesh.add_child(hl_mesh)
 

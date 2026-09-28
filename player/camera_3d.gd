@@ -1,9 +1,9 @@
-## Manages [Camera3D] audio listening, screen shake trauma decay, DoF, and motion blur overlays.
+## Camera controller handling audio listening, screen shake trauma decay, DoF, and motion blur.
 class_name ExtendedCamera3D
 extends Camera3D
 
 @export_category("Camera Role")
-## If true, activates [AudioListener3D] and runs process loop on boot.
+## Activates the child [AudioListener3D] and enables camera process ticks when true.
 @export var is_player_camera: bool = true
 
 @export_category("Screenshake Settings")
@@ -34,7 +34,7 @@ var motion_blur_mesh: MeshInstance3D = null
 ## Dedicated [AudioListener3D] instance attached as a child node for 3D panning.
 var _spatial_listener: AudioListener3D = null
 
-## Cached duplicated [ShaderMaterial] instance driving vision assist color modes.
+## Cached unique [ShaderMaterial] instance driving vision assist color modes.
 var _vision_shader_material: ShaderMaterial = null
 ## Cached [ShaderMaterial] instance applying screen-space motion blur convolution.
 var _motion_blur_material: ShaderMaterial = null
@@ -80,11 +80,11 @@ func _ready() -> void:
 		if events.has_signal("player_camera_registered"):
 			events.emit_signal("player_camera_registered", self)
 		if events.has_signal("screenshake_requested"):
-			events.screenshake_requested.connect(_on_screenshake_requested)
+			Utilities.safe_connect(events.screenshake_requested, _on_screenshake_requested)
 		if events.has_signal("vision_assist_toggled"):
-			events.vision_assist_toggled.connect(_on_vision_assist_toggled)
+			Utilities.safe_connect(events.vision_assist_toggled, _on_vision_assist_toggled)
 		if events.has_signal("vision_assist_mode_changed"):
-			events.vision_assist_mode_changed.connect(set_vision_assist_mode)
+			Utilities.safe_connect(events.vision_assist_mode_changed, set_vision_assist_mode)
 
 
 ## Configures [CameraAttributesPractical] and ensures DoF is disabled on boot.
@@ -113,7 +113,7 @@ func _setup_motion_blur_quad() -> void:
 	var existing_layer: Node = get_node_or_null("MotionBlurLayer")
 	if is_instance_valid(existing_layer):
 		motion_blur_layer = existing_layer as CanvasLayer
-		motion_blur_rect = motion_blur_layer.get_node_or_null("BlurRect") as ColorRect
+		motion_blur_rect = (motion_blur_layer.get_node_or_null("BlurRect") as ColorRect)
 	else:
 		motion_blur_layer = CanvasLayer.new()
 		motion_blur_layer.name = "MotionBlurLayer"
@@ -138,24 +138,24 @@ uniform float motion_blur_strength = 0.0;
 uniform int blur_samples = 4;
 
 void fragment() {
-	vec2 vel = camera_angular_velocity * motion_blur_strength * 0.08;
-	vel = clamp(vel, vec2(-0.05), vec2(0.05));
+    vec2 vel = camera_angular_velocity * motion_blur_strength * 0.08;
+    vel = clamp(vel, vec2(-0.05), vec2(0.05));
 
-	if (motion_blur_strength <= 0.005 || length(vel) < 0.00005) {
-		COLOR = texture(screen_texture, SCREEN_UV);
-	} else {
-		vec4 color = vec4(0.0);
-		for (int i = 0; i < blur_samples; i++) {
-			float offset_scale = (float(i) / float(blur_samples - 1)) - 0.5;
-			vec2 sample_uv = clamp(
-				SCREEN_UV + (vel * offset_scale),
-				vec2(0.001),
-				vec2(0.999)
-			);
-			color += texture(screen_texture, sample_uv);
-		}
-		COLOR = color / float(blur_samples);
-	}
+    if (motion_blur_strength <= 0.005 || length(vel) < 0.00005) {
+        COLOR = texture(screen_texture, SCREEN_UV);
+    } else {
+        vec4 color = vec4(0.0);
+        for (int i = 0; i < blur_samples; i++) {
+            float offset_scale = (float(i) / float(blur_samples - 1)) - 0.5;
+            vec2 sample_uv = clamp(
+                SCREEN_UV + (vel * offset_scale),
+                vec2(0.001),
+                vec2(0.999)
+            );
+            color += texture(screen_texture, sample_uv);
+        }
+        COLOR = color / float(blur_samples);
+    }
 }
 """
 	_motion_blur_material = ShaderMaterial.new()
@@ -164,6 +164,7 @@ void fragment() {
 
 
 ## Sets motion blur shader strength and toggles [CanvasLayer] visibility directly.
+## [param strength] Blur intensity scalar to assign.
 func set_motion_blur_strength(strength: float) -> void:
 	print("ExtendedCamera3D: Setting motion blur strength to: ", strength)
 	var is_active: bool = strength > 0.005
@@ -188,7 +189,7 @@ func _resolve_vision_mesh() -> void:
 				break
 
 
-## Duplicates vision assist material into an isolated unique [ShaderMaterial].
+## Caches or retrieves isolated vision assist material instance via [MaterialCache].
 func _cache_vision_material() -> void:
 	print("ExtendedCamera3D: Caching unique vision assist material.")
 	_resolve_vision_mesh()
@@ -197,9 +198,10 @@ func _cache_vision_material() -> void:
 		if not is_instance_valid(active_mat):
 			active_mat = vision_assist_mesh.get_active_material(0)
 		if active_mat is ShaderMaterial:
-			_vision_shader_material = active_mat.duplicate() as ShaderMaterial
-			_vision_shader_material.render_priority = 10
-			vision_assist_mesh.set_surface_override_material(0, _vision_shader_material)
+			_vision_shader_material = (MaterialCache.get_instance(active_mat) as ShaderMaterial)
+			if is_instance_valid(_vision_shader_material):
+				_vision_shader_material.render_priority = 10
+				vision_assist_mesh.set_surface_override_material(0, _vision_shader_material)
 
 
 ## Creates and activates child [AudioListener3D] node for spatial 3D sound panning.
@@ -212,6 +214,7 @@ func _setup_audio_listener() -> void:
 
 
 ## Processes shake trauma decay and updates motion blur angular velocity vectors.
+## [param delta] Frame delta time in seconds.
 func _process(delta: float) -> void:
 	if _trauma > 0.0:
 		_trauma = maxf(_trauma - (_decay_rate * delta), 0.0)
@@ -226,6 +229,7 @@ func _process(delta: float) -> void:
 
 
 ## Submits camera angular delta to shader when blur overlay is actively visible.
+## [param delta] Frame delta time in seconds.
 func _update_motion_blur_matrices(delta: float) -> void:
 	if not is_instance_valid(_motion_blur_material):
 		return
@@ -250,17 +254,21 @@ func _update_motion_blur_matrices(delta: float) -> void:
 	_prev_camera_quat = cur_quat
 
 
-## Computes procedural noise offsets and applies h_offset, v_offset, and roll.
+## Computes procedural noise offsets and applies clamped translation and roll.
+## [param delta] Frame delta time in seconds.
 func _apply_shake(delta: float) -> void:
 	_time_passed += delta * noise_speed
 	var shake_power: float = (_trauma * _trauma) * _amplitude
 
-	h_offset = max_offset_x * shake_power * _noise.get_noise_2d(_time_passed, 0.0)
-	v_offset = max_offset_y * shake_power * _noise.get_noise_2d(_time_passed, 100.0)
-	rotation_degrees.z = (max_roll_z * shake_power * _noise.get_noise_2d(_time_passed, 200.0))
+	h_offset = (max_offset_x * shake_power * _noise.get_noise_2d(_time_passed, 0.0))
+	v_offset = (max_offset_y * shake_power * _noise.get_noise_2d(_time_passed, 100.0))
+	var raw_roll: float = max_roll_z * shake_power * _noise.get_noise_2d(_time_passed, 200.0)
+	rotation_degrees.z = MathUtils.clamp_angle_deg(raw_roll, -max_roll_z, max_roll_z)
 
 
 ## Receives shake impulse event from bus and sets [member _trauma] and decay rate.
+## [param intensity] Shake peak magnitude.
+## [param duration] Duration in seconds until decay finishes.
 func _on_screenshake_requested(intensity: float, duration: float) -> void:
 	print("ExtendedCamera3D: Shake requested on: ", name, " -> ", intensity)
 	_amplitude = maxf(_amplitude, clampf(intensity, 0.0, 16.0))
@@ -269,6 +277,7 @@ func _on_screenshake_requested(intensity: float, duration: float) -> void:
 
 
 ## Toggles visibility on [member vision_assist_mesh] when accessibility is flipped.
+## [param is_active] True if vision assist is enabled.
 func _on_vision_assist_toggled(is_active: bool) -> void:
 	print("ExtendedCamera3D: Toggling vision assist to: ", is_active)
 	_resolve_vision_mesh()
@@ -277,6 +286,7 @@ func _on_vision_assist_toggled(is_active: bool) -> void:
 
 
 ## Updates shader mode integer uniform for accessibility high-contrast rendering.
+## [param mode_name] Accessibility color mode key.
 func set_vision_assist_mode(mode_name: String) -> void:
 	print("ExtendedCamera3D: Setting vision assist mode: ", mode_name)
 	if not is_instance_valid(_vision_shader_material):
