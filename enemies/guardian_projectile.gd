@@ -30,13 +30,17 @@ var velocity: Vector3 = Vector3.ZERO
 @onready var explosion_timer: Timer = $ExplosionTimer
 
 
-## Initializes the projectile, configures collision masks, and starts the lifetime timer.
+## Initializes the projectile, configures collision masks, and starts lifetime timer.
 func _ready() -> void:
-	set_collision_mask_value(CollisionLayers.LAYER_ENVIRONMENT_IDX, true)
-	set_collision_mask_value(CollisionLayers.LAYER_PLAYER_IDX, true)
+	print("EnergyBlast: _ready() - Initializing energy blast projectile.")
+	collision_layer = CollisionLayers.MASK_NONE
+	collision_mask = CollisionLayers.MASK_ENVIRONMENT | CollisionLayers.MASK_PLAYER
 
 	Utilities.safe_connect(body_entered, _on_body_entered)
 	Utilities.delay_call(self, lifetime, _explode)
+	Utilities.safe_connect(explosion_timer.timeout, queue_free)
+
+	Utilities.delay_call(self, lifetime, Callable(self, "_explode"))
 
 
 ## Defines the travel direction and calculates the final velocity vector.
@@ -80,7 +84,8 @@ func _explode() -> void:
 	velocity = Vector3.ZERO
 
 	var tween: Tween = create_tween()
-	tween.tween_property(mesh, "scale", Vector3.ONE * explosion_radius, 0.15)
+	if is_instance_valid(tween):
+		tween.tween_property(mesh, "scale", Vector3.ONE * explosion_radius, 0.15)
 
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var shape: SphereShape3D = SphereShape3D.new()
@@ -102,7 +107,6 @@ func _explode() -> void:
 			_apply_damage(collider as Node3D)
 
 	explosion_timer.start(0.3)
-	Utilities.safe_connect(explosion_timer.timeout, queue_free)
 
 
 ## Resolves target root and damage components via [NodeQuery].

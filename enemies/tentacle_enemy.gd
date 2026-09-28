@@ -56,7 +56,7 @@ var _interact_timer: float = 0.0
 ## Timer regulating idle swaying animations.
 var _idle_time: float = 0.0
 
-## Indicates if an attack animation (handled via Tween) is actively blocking other actions.
+## Indicates if an attack animation (handled via Tween) is actively blocking actions.
 var _is_striking: bool = false
 
 ## Coordinates where the tentacle wants to randomly place a held object.
@@ -80,8 +80,13 @@ func _ready() -> void:
 	print("TentacleEnemy: _ready() - Initializing snake-like enemy.")
 	tentacle_target.position = Vector3(0.0, max_reach * 0.5, 0.0)
 
-	Utilities.safe_connect(detection_area.body_entered, _on_detection_area_body_entered)
-	Utilities.safe_connect(detection_area.body_exited, _on_detection_area_body_exited)
+	if is_instance_valid(detection_area):
+		detection_area.collision_layer = CollisionLayers.MASK_NONE
+		detection_area.collision_mask = (
+			CollisionLayers.MASK_PLAYER | CollisionLayers.MASK_INTERACTIVE
+		)
+		Utilities.safe_connect(detection_area.body_entered, _on_detection_area_body_entered)
+		Utilities.safe_connect(detection_area.body_exited, _on_detection_area_body_exited)
 
 	if is_instance_valid(health_component):
 		Utilities.safe_connect(health_component.died, _on_died)
@@ -266,7 +271,7 @@ func grab_object(body: RigidBody3D) -> void:
 	_switch_state(State.HOLDING)
 
 
-## Orchestrates multi-step sequence using physics tweens to lift object before throwing.
+## Orchestrates sequence using physics tweens to lift object before throwing.
 ## [param weapon] The [RigidBody3D] to snatch.
 func _perform_grab_and_throw(weapon: RigidBody3D) -> void:
 	print("TentacleEnemy: _perform_grab_and_throw() - Snatching weapon to throw!")

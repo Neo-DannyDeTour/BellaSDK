@@ -37,7 +37,10 @@ var _origin_position: Vector3 = Vector3.ZERO
 ## Current destination marker global position.
 var _target_position: Vector3 = Vector3.ZERO
 
-## Kinematic body representing physical moving part of trap.
+## Base material resource used for path track lines.
+var _track_base_mat: StandardMaterial3D = null
+
+## The kinematic body representing the physical moving part of the trap.
 @onready var moving_body: AnimatableBody3D = $MovingBody
 
 ## Trigger volume attached to moving body dealing damage.
@@ -53,6 +56,7 @@ func _ready() -> void:
 	if is_instance_valid(moving_body):
 		_origin_position = moving_body.global_position
 
+	_init_track_material()
 	_draw_path_lines()
 
 	if not Engine.is_editor_hint():
@@ -61,8 +65,15 @@ func _ready() -> void:
 			Utilities.safe_connect(player_hitbox.body_entered, _on_player_hitbox_body_entered)
 
 
-## Processes movement interpolation based on current active state.
-## [param delta] Physics step duration in seconds.
+## Creates base track material to be cached via [MaterialCache].
+func _init_track_material() -> void:
+	_track_base_mat = StandardMaterial3D.new()
+	_track_base_mat.albedo_color = Color.BLACK
+	_track_base_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+
+
+## Processes the movement interpolation based on the current active state.
+## [param delta] The physics step duration in seconds.
 func _physics_process(delta: float) -> void:
 	if Engine.is_editor_hint() or _state == State.IDLE or not is_instance_valid(moving_body):
 		return
@@ -144,11 +155,9 @@ func _draw_path_lines() -> void:
 
 		var mesh_instance: MeshInstance3D = MeshInstance3D.new()
 		var box_mesh: BoxMesh = BoxMesh.new()
-		var mat: StandardMaterial3D = StandardMaterial3D.new()
 
-		mat.albedo_color = Color.BLACK
-		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		box_mesh.material = mat
+		if is_instance_valid(_track_base_mat):
+			box_mesh.material = MaterialCache.get_instance(_track_base_mat)
 
 		var start_pos: Vector3 = (
 			_origin_position if _origin_position != Vector3.ZERO else global_position
@@ -207,11 +216,13 @@ func _setup_trigger_areas() -> void:
 		if not flat_start.is_equal_approx(flat_marker):
 			trigger_area.look_at(flat_marker, Vector3.UP)
 
-		trigger_area.body_entered.connect(
+		var idx: int = i
+		Utilities.safe_connect(
+			trigger_area.body_entered,
 			func(body: Node3D) -> void:
 				if body.is_in_group(&"player"):
-					print("RookTrap: Player entered detection zone ", i)
-					trigger_trap(i)
+					print("RookTrap: Player entered detection zone ", idx)
+					trigger_trap(idx)
 		)
 
 

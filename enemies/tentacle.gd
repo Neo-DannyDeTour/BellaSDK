@@ -55,7 +55,7 @@ func _process(_delta: float) -> void:
 
 	for i: int in range(segment_count):
 		var t: float = float(i + 1) / float(segment_count)
-		var current_pos: Vector3 = _get_quadratic_bezier(p0, p1, p2, t)
+		var current_pos: Vector3 = MathUtils.quadratic_bezier(p0, p1, p2, t)
 
 		_update_visual_segment(_segments[i], prev_pos, current_pos)
 		prev_pos = current_pos
@@ -71,13 +71,13 @@ func _create_base_mesh() -> void:
 	_base_mesh.radial_segments = 8
 	_base_mesh.rings = 1
 
-	var mat: StandardMaterial3D = StandardMaterial3D.new()
-	mat.albedo_color = tentacle_color
-	mat.roughness = 0.6
-	_base_mesh.material = mat
+	var raw_mat: StandardMaterial3D = StandardMaterial3D.new()
+	raw_mat.albedo_color = tentacle_color
+	raw_mat.roughness = 0.6
+	_base_mesh.material = MaterialCache.get_instance(raw_mat)
 
 
-## Instantiates the requested number of mesh segments and stores them in the internal array.
+## Instantiates the requested number of mesh segments and stores them in internal array.
 func _spawn_visual_segments() -> void:
 	print("ProceduralTentacle3D: _spawn_visual_segments() - Instantiating segments.")
 	for i: int in range(segment_count):
