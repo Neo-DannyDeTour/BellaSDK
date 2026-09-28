@@ -46,6 +46,8 @@ jobs:
 
       - name: Create Stub Files for Excluded Assets
         run: |
+          set -e
+
           # 1. Base directories
           mkdir -p assets/sounds \
                    "assets/VisTEST/2. Modular_Models/Walls" \
@@ -60,21 +62,28 @@ jobs:
 
           # 3. Dynamic scan: generate dummy mp3 for any sound referenced in .tscn files
           find . -type f -name "*.tscn" -exec grep -oE 'res://[^"]*\.(mp3|wav|ogg)' {} + 2>/dev/null | sed -E 's/.*:(res:\/\/.*)/\1/' | sort -u | while read -r sound_path; do
+            [ -z "$sound_path" ] && continue
             fs_path="${sound_path#res://}"
             mkdir -p "$(dirname "$fs_path")"
-            [ ! -f "$fs_path" ] && cp assets/sounds/ping_emitter_sound.mp3 "$fs_path"
+            if [ ! -f "$fs_path" ]; then
+              cp assets/sounds/ping_emitter_sound.mp3 "$fs_path"
+            fi
           done
 
           # 4. Dynamic scan: generate valid 1x1 PNG stubs for any missing textures/images referenced in .tscn files
           PNG_DATA='\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15c4\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
           find . -type f -name "*.tscn" -exec grep -oE 'res://[^"]*\.(png|jpg|jpeg|hdr|exr|tga)' {} + 2>/dev/null | sed -E 's/.*:(res:\/\/.*)/\1/' | sort -u | while read -r img_path; do
+            [ -z "$img_path" ] && continue
             fs_path="${img_path#res://}"
             mkdir -p "$(dirname "$fs_path")"
-            [ ! -f "$fs_path" ] && printf "$PNG_DATA" > "$fs_path"
+            if [ ! -f "$fs_path" ]; then
+              printf "%b" "$PNG_DATA" > "$fs_path"
+            fi
           done
 
           # 5. Dynamic scan: generate dummy .tscn stubs for any missing sub-scenes referenced in .tscn files
           find . -type f -name "*.tscn" -exec grep -oE 'res://[^"]*\.(tscn|scn)' {} + 2>/dev/null | sed -E 's/.*:(res:\/\/.*)/\1/' | sort -u | while read -r scene_path; do
+            [ -z "$scene_path" ] && continue
             fs_path="${scene_path#res://}"
             mkdir -p "$(dirname "$fs_path")"
             if [ ! -f "$fs_path" ]; then
