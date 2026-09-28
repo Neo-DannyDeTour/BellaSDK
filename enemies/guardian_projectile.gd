@@ -1,48 +1,42 @@
-## A fast-moving projectile that damages entities upon impact.
-##
-## [EnergyBlast] is typically fired by a [GuardianPillar]. It travels in a straight line
-## until it collides with a valid body or its lifetime expires, at which point it triggers
-## an area-of-effect explosion, applying damage via [HealthComponent].
+## High-speed projectile fired by guardian pillars triggering spherical damage explosions.
 class_name EnergyBlast
 extends Area3D
 
-## The speed in meters per second at which the projectile travels.
+## Speed in meters per second at which the projectile travels.
 @export var speed: float = 25.0
 
-## The amount of health points deducted from targets caught in the explosion.
+## Health points deducted from targets caught in explosion radius.
 @export var damage: int = 100
 
-## The radius in meters of the spherical damage area created upon detonation.
+## Radius in meters of spherical damage area created upon detonation.
 @export var explosion_radius: float = 4.0
 
-## The maximum time in seconds the projectile can exist before self-detonating.
+## Maximum lifespan in seconds before self-detonating.
 @export var lifetime: float = 3.0
 
-## Tracks if the projectile is currently undergoing its explosion sequence.
+## Tracks if projectile is currently undergoing explosion sequence.
 var is_exploding: bool = false
 
-## The constant movement vector applied per frame during the flight phase.
+## Movement velocity vector applied per frame during flight phase.
 var velocity: Vector3 = Vector3.ZERO
 
-## The primary visual geometry of the projectile, which expands during the explosion.
+## Visual geometry of projectile that expands during explosion.
 @onready var mesh: MeshInstance3D = $MeshInstance3D
 
-## The collision shape used for initial impact detection.
+## Collision shape used for initial impact detection.
 @onready var collision: CollisionShape3D = $CollisionShape3D
 
-## The timer dictating how long the explosion visual persists before destruction.
+## Timer dictating how long explosion visual persists before removal.
 @onready var explosion_timer: Timer = $ExplosionTimer
 
 
 ## Initializes the projectile, configures collision masks, and starts the lifetime timer.
 func _ready() -> void:
-	set_collision_mask_value(1, true)
-	set_collision_mask_value(2, true)
+	set_collision_mask_value(CollisionLayers.LAYER_ENVIRONMENT_IDX, true)
+	set_collision_mask_value(CollisionLayers.LAYER_PLAYER_IDX, true)
 
-	body_entered.connect(_on_body_entered)
-
-	var timer: SceneTreeTimer = get_tree().create_timer(lifetime)
-	timer.timeout.connect(_explode)
+	Utilities.safe_connect(body_entered, _on_body_entered)
+	Utilities.delay_call(self, lifetime, _explode)
 
 
 ## Defines the travel direction and calculates the final velocity vector.
@@ -75,7 +69,7 @@ func _on_body_entered(body: Node3D) -> void:
 	_explode()
 
 
-## Halts movement, expands the mesh visually, and calculates AOE damage via a physics shape cast.
+## Halts movement, expands mesh visually, and calculates AOE damage via [CollisionLayers].
 func _explode() -> void:
 	if is_exploding:
 		return
@@ -95,35 +89,34 @@ func _explode() -> void:
 	var query: PhysicsShapeQueryParameters3D = PhysicsShapeQueryParameters3D.new()
 	query.shape = shape
 	query.transform = global_transform
-	query.collision_mask = collision_mask
+	query.collision_mask = (CollisionLayers.MASK_ENVIRONMENT | CollisionLayers.MASK_PLAYER)
 	query.collide_with_bodies = true
 	query.collide_with_areas = true
 
 	var results: Array[Dictionary] = space_state.intersect_shape(query)
 	print("EnergyBlast: Explosion caught ", results.size(), " objects in radius.")
 
-	for result: Variant in results:
+	for result: Dictionary in results:
 		var collider: Object = result["collider"]
 		if collider is Node3D:
 			_apply_damage(collider as Node3D)
 
 	explosion_timer.start(0.3)
-	explosion_timer.timeout.connect(queue_free)
+	Utilities.safe_connect(explosion_timer.timeout, queue_free)
 
 
-## Searches the target's direct and nested children for a [HealthComponent] to apply damage.
-## [param target] The [Node3D] caught in the explosion blast radius.
+## Resolves target root and damage components via [NodeQuery].
+## [param target] The [Node3D] caught in the blast radius.
 func _apply_damage(target: Node3D) -> void:
 	print("EnergyBlast: _apply_damage() - Analyzing target: ", target.name)
+	var root_node: Node3D = NodeQuery.resolve_interactable_root(target)
+	var comp: HealthComponent = (
+		NodeQuery.find_first_child_of_type(root_node, HealthComponent) as HealthComponent
+	)
 
-	for child: Node in target.get_children():
-		if child is HealthComponent:
-			print("EnergyBlast: Damaged direct component on ", target.name)
-			(child as HealthComponent).take_damage(damage)
-			return
+	if not is_instance_valid(comp) and target != root_node:
+		comp = NodeQuery.find_first_child_of_type(target, HealthComponent) as HealthComponent
 
-		for subchild: Node in child.get_children():
-			if subchild is HealthComponent:
-				print("EnergyBlast: Damaged nested component inside ", child.name)
-				(subchild as HealthComponent).take_damage(damage)
-				return
+	if is_instance_valid(comp):
+		print("EnergyBlast: Damaged health component on ", root_node.name)
+		comp.take_damage(damage)

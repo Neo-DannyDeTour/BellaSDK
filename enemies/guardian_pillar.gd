@@ -50,10 +50,11 @@ func _ready() -> void:
 	print("GuardianPillar: Initializing defense turret.")
 	laser_mesh.hide()
 	laser_mesh.rotation_degrees = Vector3(-90.0, 0.0, 0.0)
-	state_timer.timeout.connect(_on_state_timer_timeout)
+	Utilities.safe_connect(state_timer.timeout, _on_state_timer_timeout)
 
 
 ## Updates state logic per physics frame tick.
+## [param delta] Elapsed physics frame delta time in seconds.
 func _physics_process(delta: float) -> void:
 	match current_state:
 		State.SCANNING:
@@ -67,12 +68,13 @@ func _physics_process(delta: float) -> void:
 
 
 ## Rotates turret head and inspects vision cone for hostiles.
+## [param delta] Frame delta time in seconds.
 func _process_scanning(delta: float) -> void:
 	head.rotate_y(scan_speed * delta)
 	_detect_player_in_cone()
 
 
-## Queries world space within vision cone for valid player targets.
+## Queries world space within vision cone using [CollisionLayers.MASK_PLAYER].
 func _detect_player_in_cone() -> void:
 	if is_friendly:
 		return
@@ -84,13 +86,13 @@ func _detect_player_in_cone() -> void:
 	var query: PhysicsShapeQueryParameters3D = PhysicsShapeQueryParameters3D.new()
 	query.shape = shape
 	query.transform = global_transform
-	query.collision_mask = 2
+	query.collision_mask = CollisionLayers.MASK_PLAYER
 
 	var results: Array[Dictionary] = space_state.intersect_shape(query)
 
 	for result: Dictionary in results:
 		var collider: Object = result["collider"]
-		if collider is Node3D and (collider as Node).is_in_group("player"):
+		if collider is Node3D and (collider as Node).is_in_group(&"player"):
 			var player_node: Node3D = collider as Node3D
 			var dir_to_player: Vector3 = head.global_position.direction_to(
 				player_node.global_position
@@ -98,7 +100,7 @@ func _detect_player_in_cone() -> void:
 			var forward_dir: Vector3 = -head.global_basis.z
 			var angle_to_player: float = rad_to_deg(forward_dir.angle_to(dir_to_player))
 
-			if angle_to_player <= field_of_view_degrees / 2.0:
+			if angle_to_player <= field_of_view_degrees * 0.5:
 				if _has_line_of_sight(player_node):
 					print("GuardianPillar: Target spotted. Locking on.")
 					target_player = player_node
@@ -106,20 +108,21 @@ func _detect_player_in_cone() -> void:
 					return
 
 
-## Raycasts toward target to confirm unobstructed line of sight.
+## Raycasts toward target using [CollisionLayers] to confirm line of sight.
+## [param target] Target [Node3D] to verify line of sight towards.
+## [return] True if unobstructed line of sight exists.
 func _has_line_of_sight(target: Node3D) -> bool:
 	print("GuardianPillar: Checking line of sight to target.")
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-		head.global_position, target.global_position, 3
+		head.global_position,
+		target.global_position,
+		CollisionLayers.MASK_ENVIRONMENT | CollisionLayers.MASK_PLAYER
 	)
-	query.exclude = [self.get_rid()]
+	query.exclude = [get_rid()]
 
 	var result: Dictionary = space_state.intersect_ray(query)
-	if result and result["collider"] == target:
-		return true
-
-	return false
+	return bool(result and result.get("collider") == target)
 
 
 ## Adjusts head to track active target and scales laser beam.
@@ -135,11 +138,12 @@ func _process_targeting() -> void:
 	var dist_sq: float = head.global_position.distance_squared_to(target_pos)
 	var dist: float = sqrt(dist_sq)
 
-	laser_mesh.scale.y = dist / 2.0
-	laser_mesh.position = Vector3(0.0, 0.0, -dist / 2.0)
+	laser_mesh.scale.y = dist * 0.5
+	laser_mesh.position = Vector3(0.0, 0.0, -dist * 0.5)
 
 
 ## Transitions operational state machine and adjusts timers.
+## [param new_state] The target [enum State] to transition to.
 func _change_state(new_state: State) -> void:
 	current_state = new_state
 	print("GuardianPillar: State transitioned to ", State.keys()[current_state])

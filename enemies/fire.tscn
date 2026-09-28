@@ -1,0 +1,129 @@
+[gd_scene format=3 uid="uid://bfaun4x51r3tq"]
+
+[ext_resource type="Script" uid="uid://bct7ru8d3uxmn" path="res://enemies/fire.gd" id="1_vfejn"]
+[ext_resource type="Shader" uid="uid://cn1troa3q0dbr" path="res://vfx/fire.gdshader" id="2_o23bq"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_noise"]
+noise_type = 3
+frequency = 0.03
+fractal_octaves = 3
+
+[sub_resource type="NoiseTexture3D" id="NoiseTexture3D_fire"]
+noise = SubResource("FastNoiseLite_noise")
+seamless = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_fire"]
+render_priority = 0
+shader = ExtResource("2_o23bq")
+shader_parameter/raymarch_steps = 14
+shader_parameter/sample_jitter = true
+shader_parameter/sample_noise = SubResource("NoiseTexture3D_fire")
+shader_parameter/time_scale = 0.75
+shader_parameter/noise_scale = 0.55
+shader_parameter/noise_threshold = 0.38
+shader_parameter/fire_height = 2.5500000000000003
+shader_parameter/fire_width = 1.2000000000000002
+shader_parameter/box_center = Vector3(0, 0, 0)
+shader_parameter/sharpness_cutoff = 2.2
+shader_parameter/wind_direction = Vector3(1, 0, 0)
+shader_parameter/wind_strength = 0.5
+shader_parameter/emission_strength = 11.5
+shader_parameter/color_core = Vector3(1, 0.95, 0.75)
+shader_parameter/color_mid = Vector3(1, 0.45, 0.05)
+shader_parameter/color_outer = Vector3(0.75, 0.08, 0.01)
+shader_parameter/color_smoke = Vector3(0.08, 0.06, 0.06)
+
+[sub_resource type="BoxMesh" id="BoxMesh_volume"]
+size = Vector3(3.965, 3.4425, 3.965)
+
+[sub_resource type="Gradient" id="Gradient_ember"]
+offsets = PackedFloat32Array(0, 0.65, 1)
+colors = PackedColorArray(1, 0.8, 0.3, 1, 1, 0.35, 0.05, 0.8, 0.2, 0.05, 0, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_ember"]
+gradient = SubResource("Gradient_ember")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_ember"]
+emission_shape = 3
+emission_box_extents = Vector3(0.5, 0.05, 0.5)
+direction = Vector3(0, 1, 0)
+spread = 24.0
+initial_velocity_min = 1.0
+initial_velocity_max = 2.4
+gravity = Vector3(1, 0.8, 0)
+scale_min = 0.5
+scale_max = 1.2
+color_ramp = SubResource("GradientTexture1D_ember")
+turbulence_enabled = true
+turbulence_noise_strength = 1.2
+turbulence_noise_scale = 2.5
+
+[sub_resource type="Gradient" id="Gradient_spark_mask"]
+offsets = PackedFloat32Array(0, 0.2, 0.7, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0.9, 1, 1, 1, 0.25, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_spark"]
+gradient = SubResource("Gradient_spark_mask")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.5, 0)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ember"]
+transparency = 1
+blend_mode = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_color = Color(1.5, 0.95, 0.4, 1)
+albedo_texture = SubResource("GradientTexture2D_spark")
+billboard_mode = 3
+billboard_keep_scale = true
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="QuadMesh" id="QuadMesh_ember"]
+material = SubResource("StandardMaterial3D_ember")
+size = Vector2(0.06, 0.06)
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_burn"]
+height = 2.55
+radius = 0.6
+
+[node name="Fire" type="Node3D" unique_id=1685202888 node_paths=PackedStringArray("mesh_instance", "fire_light", "ember_particles", "burn_area", "burn_shape")]
+script = ExtResource("1_vfejn")
+mesh_instance = NodePath("FireMesh")
+fire_light = NodePath("OmniLight3D")
+ember_particles = NodePath("EmberParticles")
+burn_area = NodePath("BurnArea")
+burn_shape = NodePath("BurnArea/BurnCollisionShape")
+fire_height = 2.5500000000000003
+fire_width = 1.2000000000000002
+fire_speed = 0.75
+emission_strength = 11.5
+
+[node name="FireMesh" type="MeshInstance3D" parent="." unique_id=1828278241]
+layers = 512
+material_override = SubResource("ShaderMaterial_fire")
+mesh = SubResource("BoxMesh_volume")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=1274832452]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+light_color = Color(1, 0.627451, 0.2, 1)
+light_energy = 2.5
+omni_range = 8.0
+
+[node name="EmberParticles" type="GPUParticles3D" parent="." unique_id=1665888006]
+amount = 48
+lifetime = 1.8
+preprocess = 0.5
+randomness = 0.4
+process_material = SubResource("ParticleProcessMaterial_ember")
+draw_pass_1 = SubResource("QuadMesh_ember")
+
+[node name="BurnArea" type="Area3D" parent="." unique_id=1057261334]
+collision_layer = 0
+collision_mask = 30
+
+[node name="BurnCollisionShape" type="CollisionShape3D" parent="BurnArea" unique_id=1456063342]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.275, 0)
+shape = SubResource("CylinderShape3D_burn")

@@ -1,8 +1,4 @@
-## A visual manager that generates a procedural, arcing tentacle mesh between two points.
-##
-## [ProceduralTentacle3D] dynamically constructs a series of cylinder segments arranged
-## along a quadratic Bezier curve to visually connect a base node and a target node.
-## It handles creating and pooling the meshes efficiently to maintain a high framerate.
+## Dynamic arcing tentacle mesh generated between two points via [MathUtils.quadratic_bezier].
 class_name ProceduralTentacle3D
 extends Node3D
 
@@ -28,14 +24,20 @@ var _segments: Array[MeshInstance3D] = []
 var _base_mesh: CylinderMesh
 
 
-## Initializes the shared mesh and spawns the required number of visual segments.
+## Initializes shared mesh and resolves target node using [NodeQuery].
 func _ready() -> void:
 	print("ProceduralTentacle3D: _ready() - Generating optimized procedural tentacle.")
+	if not is_instance_valid(target_node):
+		var found_target: Node = NodeQuery.get_single_node_in_group(get_tree(), &"player")
+		if found_target is Node3D:
+			target_node = found_target as Node3D
+			print("ProceduralTentacle3D: Resolved target to player via NodeQuery.")
+
 	_create_base_mesh()
 	_spawn_visual_segments()
 
 
-## Frame execution lifecycle method that recalculates and positions the Bezier curve segments.
+## Frame execution lifecycle recalculating segments via [method MathUtils.quadratic_bezier].
 ## [param _delta] The time elapsed since the previous physics tick in seconds.
 func _process(_delta: float) -> void:
 	if not is_instance_valid(base_node) or not is_instance_valid(target_node):
@@ -87,19 +89,17 @@ func _spawn_visual_segments() -> void:
 		_segments.append(segment)
 
 
-## Mathematical helper calculating a point along a quadratic Bezier curve.
+## Mathematical helper calculating a point along a curve via [MathUtils.quadratic_bezier].
 ## [param p0] The starting point vector.
 ## [param p1] The control point vector dictating the arc.
 ## [param p2] The ending point vector.
 ## [param t] The interpolation step from 0.0 to 1.0.
-## Returns the calculated point as a [Vector3].
+## [return] The calculated point [Vector3].
 func _get_quadratic_bezier(p0: Vector3, p1: Vector3, p2: Vector3, t: float) -> Vector3:
-	var q0: Vector3 = p0.lerp(p1, t)
-	var q1: Vector3 = p1.lerp(p2, t)
-	return q0.lerp(q1, t)
+	return MathUtils.quadratic_bezier(p0, p1, p2, t)
 
 
-## Transforms, rotates, and stretches an individual segment to connect two points flawlessly.
+## Transforms, rotates, and stretches an individual segment to connect two points.
 ## [param segment] The visual [MeshInstance3D] to update.
 ## [param p1] The starting position for the segment.
 ## [param p2] The ending position for the segment.
