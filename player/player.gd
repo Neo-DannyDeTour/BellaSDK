@@ -691,3 +691,15 @@ func enter_tube(tube_node: Node3D) -> void:
 func exit_tube(throw_vel: Vector3) -> void:
 	print("Player: Exiting tube with impulse velocity: ", throw_vel)
 	launch_from_path(throw_vel)
+
+
+## Handles area enter detection for water bodies.
+## [param area] The detected [Area3D] water volume.
+func _on_water_detector_area_entered(area: Area3D) -> void:
+	print("Player: Entered water volume -> ", area.name)
+
+
+## Handles area exit detection for water bodies.
+## [param area] The exited [Area3D] water volume.
+func _on_water_detector_area_exited(area: Area3D) -> void:
+	print("Player: Exited water volume -> ", area.name)
