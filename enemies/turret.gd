@@ -174,6 +174,7 @@ func _find_player() -> void:
 
 
 ## Recursively aggregates collision [RID] instances across child nodes.
+## Recursively aggregates collision [RID] instances across child nodes.
 ## [param node] The root [Node] to recursively harvest collision RIDs from.
 func _build_exclude_rids(node: Node) -> void:
 	if node is CollisionObject3D:
@@ -235,6 +236,7 @@ func _process_engaging(delta: float) -> void:
 
 
 ## Assigns target entity and resolves [HealthComponent] using [NodeQuery].
+## Assigns a target and retrieves its [HealthComponent] instance.
 ## [param new_target] The target [Node3D] to lock onto.
 func _set_target(new_target: Node3D) -> void:
 	print("Turret: Assigning target entity: ", new_target)
@@ -249,6 +251,7 @@ func _set_target(new_target: Node3D) -> void:
 	)
 
 
+## Validates that the target is still alive, visible, and processing.
 ## Validates that the target is still alive, visible, and processing.
 ## [param node] The target [Node3D] to check for active state.
 ## Returns `true` if active, `false` otherwise.
@@ -292,6 +295,7 @@ func _aim_at_target(delta: float) -> void:
 
 
 ## Performs a space state raycast to confirm clear line of sight to target.
+## Performs a space state raycast to confirm clear line of sight.
 ## Returns `true` if unobstructed line of sight exists, `false` otherwise.
 func _has_line_of_sight() -> bool:
 	var space: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state

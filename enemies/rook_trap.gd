@@ -52,7 +52,7 @@ var _track_base_mat: StandardMaterial3D = null
 
 ## Initializes trap, saving origin position and dynamically building triggers.
 func _ready() -> void:
-	print("RookTrap: Initializing trap instance -> ", name)
+	print("RookTrap: _ready() - Initializing rook trap.")
 	if is_instance_valid(moving_body):
 		_origin_position = moving_body.global_position
 
@@ -221,6 +221,7 @@ func _setup_trigger_areas() -> void:
 			trigger_area.body_entered,
 			func(body: Node3D) -> void:
 				if body.is_in_group(&"player"):
+				if body.is_in_group("player"):
 					print("RookTrap: Player entered detection zone ", idx)
 					trigger_trap(idx)
 		)
@@ -240,6 +241,7 @@ func _on_player_hitbox_body_entered(body: Node3D) -> void:
 		)
 		if is_instance_valid(health_comp):
 			health_comp.take_damage(damage_amount)
+
 		elif body.has_method("take_damage"):
 			body.call("take_damage", damage_amount)
 

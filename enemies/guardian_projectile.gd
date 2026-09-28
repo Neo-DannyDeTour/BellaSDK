@@ -41,6 +41,7 @@ func _ready() -> void:
 	Utilities.safe_connect(explosion_timer.timeout, queue_free)
 
 	Utilities.delay_call(self, lifetime, Callable(self, "_explode"))
+	Utilities.safe_connect(body_entered, _on_body_entered)
 
 
 ## Defines the travel direction and calculates the final velocity vector.
@@ -101,16 +102,16 @@ func _explode() -> void:
 	var results: Array[Dictionary] = space_state.intersect_shape(query)
 	print("EnergyBlast: Explosion caught ", results.size(), " objects in radius.")
 
-	for result: Dictionary in results:
-		var collider: Object = result["collider"]
+	for result: Variant in results:
+		var collider: Object = (result as Dictionary).get("collider")
 		if collider is Node3D:
 			_apply_damage(collider as Node3D)
 
 	explosion_timer.start(0.3)
 
 
-## Resolves target root and damage components via [NodeQuery].
-## [param target] The [Node3D] caught in the blast radius.
+## Searches the target's subtree for a [HealthComponent] to apply damage.
+## [param target] The [Node3D] caught in the explosion blast radius.
 func _apply_damage(target: Node3D) -> void:
 	print("EnergyBlast: _apply_damage() - Analyzing target: ", target.name)
 	var root_node: Node3D = NodeQuery.resolve_interactable_root(target)
@@ -124,3 +125,10 @@ func _apply_damage(target: Node3D) -> void:
 	if is_instance_valid(comp):
 		print("EnergyBlast: Damaged health component on ", root_node.name)
 		comp.take_damage(damage)
+
+	var health_comp: HealthComponent = (
+		NodeQuery.find_first_child_of_type(target, HealthComponent) as HealthComponent
+	)
+	if is_instance_valid(health_comp):
+		print("EnergyBlast: Damaged component on ", target.name)
+		health_comp.take_damage(damage)

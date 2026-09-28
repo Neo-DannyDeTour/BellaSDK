@@ -37,7 +37,7 @@ func _ready() -> void:
 	_spawn_visual_segments()
 
 
-## Frame execution lifecycle recalculating segments via [method MathUtils.quadratic_bezier].
+## Frame execution lifecycle method that recalculates and positions Bezier curve segments.
 ## [param _delta] The time elapsed since the previous physics tick in seconds.
 func _process(_delta: float) -> void:
 	if not is_instance_valid(base_node) or not is_instance_valid(target_node):

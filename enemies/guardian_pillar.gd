@@ -122,6 +122,22 @@ func _has_line_of_sight(target: Node3D) -> bool:
 		[self.get_rid()]
 	)
 
+
+## Raycasts toward target to confirm unobstructed line of sight.
+## [param target] The target [Node3D] to verify line of sight for.
+## Returns `true` if line of sight is clear, `false` otherwise.
+func _has_line_of_sight(target: Node3D) -> bool:
+	print("GuardianPillar: Checking line of sight to target.")
+	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
+	var hit: Dictionary = Utilities.raycast_3d(
+		space_state,
+		head.global_position,
+		target.global_position,
+		CollisionLayers.MASK_ENVIRONMENT | CollisionLayers.MASK_PLAYER,
+		[self.get_rid()]
+	)
+	return bool(hit and hit.get("collider") == target)
+
 	return bool(hit and hit.get("collider") == target)
 
 
@@ -143,7 +159,7 @@ func _process_targeting() -> void:
 
 
 ## Transitions operational state machine and adjusts timers.
-## [param new_state] The target [enum State] to transition to.
+## [param new_state] The target [enum State] to switch to.
 func _change_state(new_state: State) -> void:
 	current_state = new_state
 	print("GuardianPillar: State transitioned to ", State.keys()[current_state])
