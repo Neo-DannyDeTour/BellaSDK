@@ -198,6 +198,8 @@ func _try_pick_up() -> bool:
 				force_grab_item(target_body as RigidBody3D)
 				return true
 
+	return false
+
 
 ## Throws the currently held physics object forward along camera orientation.
 func throw_held_item() -> void:
@@ -316,7 +318,7 @@ func force_grab_item(item: RigidBody3D) -> void:
 
 
 ## Reparents and positions an item onto weapon holder socket using [Utilities].
-## [param item] The [Node3D] to attach.
+## [param item] The item [Node3D] to attach.
 ## [param item_anchor] Spatial anchor marker [Marker3D].
 ## [param p_player] Target [Node3D] player instance.
 func attach_item_to_weapon_holder(
