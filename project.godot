@@ -58,8 +58,8 @@ window/size/viewport_height=720
 window/size/mode="fullscreen"
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+display_server/driver.linuxbsd="wayland"
 window/vsync/vsync_mode=0
-window/subwindows/embed_subwindows=true
 
 [dotnet]
 
@@ -67,7 +67,7 @@ project/assembly_name="FPS_Test"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/KGB_Agent/plugin.cfg", "res://addons/csg_toolkit/plugin.cfg", "res://addons/gdLinter/plugin.cfg", "res://addons/gut/plugin.cfg", "res://addons/renderdoc_launcher/plugin.cfg")
+enabled=PackedStringArray("res://addons/csg_toolkit/plugin.cfg", "res://addons/gdLinter/plugin.cfg", "res://addons/gut/plugin.cfg", "res://addons/renderdoc_launcher/plugin.cfg")
 
 [filesystem]
 

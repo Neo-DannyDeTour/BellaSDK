@@ -60,18 +60,12 @@ extends Area3D
 var _has_triggered: bool = false
 
 
-## Removes debug visualizers at runtime and registers the collision signal.
+## Initializes [EnvChapterTrigger] bounds and binds player entry signals.
 func _ready() -> void:
+	print("EnvChapterTrigger: Initializing trigger bounds and connections.")
+	_update_bounds()
 	if Engine.is_editor_hint():
-		_update_bounds()
 		return
-
-	var visualizer: EditorTriggerVisualizer = (
-		get_node_or_null("EditorTriggerVisualizer") as EditorTriggerVisualizer
-	)
-	if is_instance_valid(visualizer) and not show_in_game:
-		visualizer.queue_free()
-		print("EnvChapterTrigger: Editor visualizer freed for game performance.")
 
 	body_entered.connect(_on_body_entered)
 

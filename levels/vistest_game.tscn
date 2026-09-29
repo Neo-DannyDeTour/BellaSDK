@@ -55,6 +55,8 @@
 [ext_resource type="PackedScene" uid="uid://4m1edbr3oqv5" path="res://shared/trigger_hint.tscn" id="53_ol82b"]
 [ext_resource type="PackedScene" uid="uid://36tm5fsdgnad" path="res://environment/accessible_label_body.tscn" id="54_w467f"]
 [ext_resource type="PackedScene" uid="uid://ckx2iw4xdsaqd" path="res://interactables/pickable_barrel_green.tscn" id="55_0j0ri"]
+[ext_resource type="PackedScene" uid="uid://cm0v3ely026rf" path="res://environment/music_trigger.tscn" id="56_1uqfy"]
+[ext_resource type="AudioStream" uid="uid://bvcvtu0ysqlk7" path="res://assets/music/The_Weight_Beneath.mp3" id="57_gcc1y"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_kja8q"]
 panorama = ExtResource("1_t0tlv")
@@ -2055,3 +2057,24 @@ Press tilde to open dee-bug menu."
 transform = Transform3D(0.5424285, 0, -0.84010196, 0, 1, 0, 0.84010196, 0, 0.5424285, 2.2152977, 2.5072021, 2.374266)
 continuous_cd = false
 angular_damp = 0.0
+
+[node name="MusicTrigger" parent="." unique_id=2127577534 node_paths=PackedStringArray("connected_music_trigger") instance=ExtResource("56_1uqfy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.325419, 1.0999999, -0.6000457)
+audio_stream = ExtResource("57_gcc1y")
+connected_music_trigger = NodePath("../MusicTrigger2")
+switch_mode = 1
+crossfade_duration = 0.0
+trigger_once = true
+manual_override_time = true
+custom_start_time = 12.0
+custom_end_time = 24.0
+
+[node name="MusicTrigger2" parent="." unique_id=420265713 instance=ExtResource("56_1uqfy")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.9422646, 1.0999999, -0.6000457)
+switch_mode = 1
+crossfade_duration = 0.0
+trigger_once = true
+section_index = 2
+manual_override_time = true
+custom_start_time = 24.0
+custom_end_time = 48.0
