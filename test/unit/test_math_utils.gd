@@ -103,8 +103,12 @@ func test_clamp_angle_deg() -> void:
 func test_clamp_angle_rad() -> void:
 	print("Testing MathUtils.clamp_angle_rad()...")
 	var max_rad: float = PI / 2
-	var res: float = MathUtils.clamp_angle_rad(3.0 * PI, -max_rad, max_rad)
-	assert_almost_eq(res, max_rad, 0.01, "Angle in rads should be clamped to max")
+
+	var res_min: float = MathUtils.clamp_angle_rad(3.0 * PI, -max_rad, max_rad)
+	assert_almost_eq(res_min, -max_rad, 0.01, "Angle in rads should be clamped to min")
+
+	var res_max: float = MathUtils.clamp_angle_rad(2.6 * PI, -max_rad, max_rad)
+	assert_almost_eq(res_max, max_rad, 0.01, "Angle in rads should be clamped to max")
 
 
 func test_smooth_damp_angle() -> void:
