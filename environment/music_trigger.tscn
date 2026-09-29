@@ -1,0 +1,36 @@
+[gd_scene format=3 uid="uid://cm0v3ely026rf"]
+
+[ext_resource type="Script" uid="uid://b2o0o7w5tddw8" path="res://Music/music_trigger.gd" id="1_6i8sb"]
+[ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://shared/editor_trigger_visualizer.gd" id="2_vyms6"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_d8oxk"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.9, 0.5, 0.1, 0.4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_a1qts"]
+material = SubResource("StandardMaterial3D_d8oxk")
+size = Vector3(2, 2, 2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_vyms6"]
+
+[node name="MusicTrigger" type="Area3D" unique_id=2127577534 node_paths=PackedStringArray("visualizer")]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_6i8sb")
+visualizer = NodePath("EditorTriggerVisualizer")
+bpm = 120.0
+beats_per_bar = 4
+bars_per_section = 8
+tap_tempo = false
+manual_override_time = false
+metadata/_custom_type_script = "uid://b2o0o7w5tddw8"
+
+[node name="EditorTriggerVisualizer" type="MeshInstance3D" parent="." unique_id=1719912112]
+mesh = SubResource("BoxMesh_a1qts")
+script = ExtResource("2_vyms6")
+trigger_text = "Part 1 (0.0s - 16.0s)"
+metadata/_custom_type_script = "uid://q4v42nidwdr2"
+
+[node name="CollisionShape3D2" type="CollisionShape3D" parent="." unique_id=212820892]
+shape = SubResource("BoxShape3D_vyms6")
