@@ -57,6 +57,7 @@ var toggle_states: Dictionary = {
 	"shadows": true,
 	"showcolliders": false,
 	"showfps": false,
+	"showtrigger": false,
 	"subtitles": false,
 	"togglecrouch": false,
 	"togglesprint": false,
@@ -575,17 +576,24 @@ func _cmd_uiscale(args: PackedStringArray) -> void:
 ## Registers debug-only commands restricted to development builds.
 func _register_debug_commands() -> void:
 	print("InGameConsole: Registering debug commands.")
+	# ... (Keep existing debug commands: die, deathscreen, noclip, etc.) ...
+
 	registry.register_command(
-		ConsoleCommand.new("die", "Drains player health to zero.", _cmd_die, Callable(), true)
+		ConsoleCommand.new(
+			"showtrigger",
+			"Toggles trigger visualizer mesh visibility.",
+			_cmd_showtrigger,
+			func() -> Array[String]: return ["on", "off"],
+			true
+		)
 	)
 
 	registry.register_command(
 		ConsoleCommand.new(
-			"deathscreen",
-			"Previews a specific death screen effect.",
-			_cmd_deathscreen,
-			func() -> Array[String]:
-				return ["ecg", "cave", "lava", "static", "glass", "jitter", "burn"],
+			"hidetrigger",
+			"Hides all trigger visualizer meshes.",
+			_cmd_hidetrigger,
+			Callable(),
 			true
 		)
 	)
@@ -1688,3 +1696,35 @@ func _cmd_audio_spatial(args: PackedStringArray) -> void:
 		GlobalSettings.save_setting("Audio", "spatial_audio", active)
 	var stat: String = "enabled." if active else "disabled (2D stereo)."
 	write("Spatial 3D audio " + stat, "green")
+
+
+## Toggles or explicitly sets visibility of trigger visualizers.
+func _cmd_showtrigger(args: PackedStringArray) -> void:
+	print("InGameConsole: _cmd_showtrigger called with args: ", args)
+	var active: bool = not toggle_states.get("showtrigger", false)
+	if not args.is_empty():
+		active = args[0].to_lower() == "on" or args[0] == "1"
+	_set_trigger_visibility(active)
+
+
+## Explicitly hides all trigger visualizer meshes in the world.
+func _cmd_hidetrigger(_args: PackedStringArray) -> void:
+	print("InGameConsole: _cmd_hidetrigger called.")
+	_set_trigger_visibility(false)
+
+
+## Propagates trigger visibility state to event bus and groups.
+func _set_trigger_visibility(active: bool) -> void:
+	print("InGameConsole: Setting trigger visibility to: ", active)
+	toggle_states["showtrigger"] = active
+	EditorTriggerVisualizer.set_global_debug_visibility(active)
+
+	if has_node("/root/Events"):
+		var events: Node = get_node("/root/Events")
+		if events.has_signal("trigger_visibility_toggled"):
+			events.trigger_visibility_toggled.emit(active)
+
+	get_tree().call_group(&"trigger_visualizers", "set_debug_visibility", active)
+
+	var stat: String = "visible." if active else "hidden."
+	write("Triggers set to " + stat, "green")

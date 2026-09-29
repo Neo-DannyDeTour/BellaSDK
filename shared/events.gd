@@ -74,6 +74,10 @@ signal waterfall_vfx_toggled(is_active: bool, wash_intensity: float, clear_progr
 @warning_ignore("unused_signal")
 signal noclip_toggled(is_flying: bool)
 
+## Emitted when trigger visibility is toggled. Passes [param is_active].
+@warning_ignore("unused_signal")
+signal trigger_visibility_toggled(is_active: bool)
+
 ## Emitted when the noclip button is pressed in debug interfaces.
 @warning_ignore("unused_signal")
 signal noclip_ui_button_pressed

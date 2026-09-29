@@ -1,3 +1,4 @@
+@tool
 class_name HintTrigger
 extends Area3D
 
@@ -45,14 +46,12 @@ enum HintType { CUSTOM, INTERACT, JUMP, CROUCH, SPRINT, FLASHLIGHT, ZOOM }
 var _triggered: bool = false
 
 
+## Initializes [HintTrigger] collision, syncs visuals, and binds signals.
 func _ready() -> void:
+	print("HintTrigger: Initializing trigger.")
+	_update_visuals()
 	if Engine.is_editor_hint():
-		_update_visuals()
 		return
-
-	for child: Node in get_children():
-		if child is EditorTriggerVisualizer:
-			child.queue_free()
 
 	body_entered.connect(_on_body_entered)
 
