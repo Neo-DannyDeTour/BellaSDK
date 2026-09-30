@@ -1,0 +1,8 @@
+[gd_scene format=3 uid="uid://bfrx1p3s7c30s"]
+
+[ext_resource type="Script" uid="uid://btum86oan8ns2" path="res://enemies/drone_swarm_controller.gd" id="1_1qgku"]
+[ext_resource type="PackedScene" uid="uid://b0bth5xt3qh8o" path="res://enemies/elf_drone.tscn" id="2_v72qm"]
+
+[node name="DroneSwarm" type="Node3D" unique_id=1309843266]
+script = ExtResource("1_1qgku")
+drone_scene = ExtResource("2_v72qm")

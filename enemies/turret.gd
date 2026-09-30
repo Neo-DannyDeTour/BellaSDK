@@ -32,9 +32,6 @@ enum TurretState { SCANNING, ENGAGING }
 ## Vertical and horizontal spatial offset vector applied to the target center.
 @export var aim_offset: Vector3 = Vector3(0.0, 1.2, 0.0)
 
-## String names of groups flagged as hostile targets.
-@export var hostile_groups: Array[StringName] = [&"player", &"target"]
-
 ## Bounding volume notifier checking if the turret is within view frustum.
 @onready var screen_notifier: VisibleOnScreenNotifier3D = $VisibleOnScreenNotifier3D
 
@@ -52,6 +49,10 @@ enum TurretState { SCANNING, ENGAGING }
 
 ## Directional [RayCast3D] reference used for muzzle forward vector math.
 @onready var hitscan_ray: RayCast3D = $Head/Muzzle/HitscanRay
+
+## The [FactionComponent] managing hostility and targeting rules.
+@onready
+var faction_component: FactionComponent = get_node_or_null("FactionComponent") as FactionComponent
 
 ## Current active state determining if turret pans or tracks targets.
 var current_state: TurretState = TurretState.SCANNING
@@ -260,14 +261,18 @@ func _is_active_target(node: Node3D) -> bool:
 	return true
 
 
-## Checks if a node belongs to any defined hostile group.
-## [param node] Checked node instance.
-## [return] True if node is in hostile groups.
+## Validates target hostility strictly via the entity's [FactionComponent].
+## [param node] Target entity evaluated.
+## [return] True if node has a hostile faction.
 func _is_hostile(node: Node) -> bool:
-	for group: StringName in hostile_groups:
-		if node.is_in_group(group):
-			return true
-	return false
+	if faction_component == null or node == null:
+		return false
+
+	var other_fc: FactionComponent = FactionComponent.get_faction_component(node)
+	if other_fc == null:
+		return false
+
+	return faction_component.is_hostile_to(other_fc)
 
 
 ## Computes the target offset, clearing offset for [ShootingTarget].
@@ -294,6 +299,9 @@ func _aim_at_target(delta: float) -> void:
 ## Performs a space state raycast to confirm clear line of sight to target.
 ## [return] True if direct line of sight exists without occlusion.
 func _has_line_of_sight() -> bool:
+	if not is_instance_valid(target):
+		return false
+
 	var space: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var start_pos: Vector3 = hitscan_ray.global_position
 	var end_pos: Vector3 = target.global_position + _get_actual_aim_offset()
@@ -308,7 +316,16 @@ func _has_line_of_sight() -> bool:
 	query.exclude = _exclude_rids
 
 	var result: Dictionary = space.intersect_ray(query)
-	return bool(result and result.collider == target)
+	if result.is_empty():
+		return false
+
+	var hit_collider: Object = result.collider
+	var is_direct_hit: bool = (
+		hit_collider == target
+		or (hit_collider is Node and target.is_ancestor_of(hit_collider as Node))
+	)
+
+	return is_direct_hit
 
 
 ## Evaluates dot product between muzzle forward vector and target vector.

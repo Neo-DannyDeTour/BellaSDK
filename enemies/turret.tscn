@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://bn5ay1rfbr545"]
 
 [ext_resource type="Script" uid="uid://q7h0rb2kx2vx" path="res://enemies/turret.gd" id="1_svvud"]
+[ext_resource type="Script" uid="uid://q7rcgal41c7b" path="res://scripts/faction_component.gd" id="2_ni5yt"]
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_wkqx2"]
 height = 1.0
@@ -65,3 +66,8 @@ collision_mask = 18
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="DetectionArea" unique_id=346760763]
 shape = SubResource("SphereShape3D_svvud")
+
+[node name="FactionComponent" type="Node" parent="." unique_id=1711112455]
+script = ExtResource("2_ni5yt")
+hostile_mask = 17
+metadata/_custom_type_script = "uid://q7rcgal41c7b"

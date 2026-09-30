@@ -1,0 +1,92 @@
+[gd_scene format=3 uid="uid://b0bth5xt3qh8o"]
+
+[ext_resource type="Script" uid="uid://bb83n110f7vm7" path="res://enemies/elf_drone.gd" id="1_rmqe5"]
+[ext_resource type="Script" uid="uid://q7rcgal41c7b" path="res://scripts/faction_component.gd" id="2_3bcr4"]
+[ext_resource type="Script" uid="uid://cbwy13aembb7w" path="res://shared/health_component.gd" id="3_eevwv"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_534t5"]
+radius = 0.25
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rmqe5"]
+albedo_color = Color(0.39607844, 0.8980392, 1, 1)
+emission_enabled = true
+emission = Color(0.39607844, 0.8980392, 1, 1)
+emission_energy_multiplier = 4.0
+
+[sub_resource type="SphereMesh" id="SphereMesh_534t5"]
+material = SubResource("StandardMaterial3D_rmqe5")
+radius = 0.25
+height = 0.5
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_beam"]
+transparency = 1
+cull_mode = 2
+shading_mode = 0
+albedo_color = Color(0.39607844, 0.8980392, 1, 0.85)
+
+[sub_resource type="BoxMesh" id="BoxMesh_534t5"]
+material = SubResource("StandardMaterial3D_beam")
+size = Vector3(0.05, 0.05, 1)
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_beam"]
+emission_shape = 1
+emission_sphere_radius = 0.2
+gravity = Vector3(0, 1.2, 0)
+color = Color(0.39607844, 0.8980392, 1, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_part"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.39607844, 0.8980392, 1, 0.9)
+billboard_mode = 3
+billboard_keep_scale = true
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="QuadMesh" id="QuadMesh_part"]
+material = SubResource("StandardMaterial3D_part")
+size = Vector2(0.06, 0.06)
+
+[node name="ElfDrone" type="CharacterBody3D" unique_id=1765288211]
+collision_layer = 4
+script = ExtResource("1_rmqe5")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1681311853]
+shape = SubResource("SphereShape3D_534t5")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1517310030]
+layers = 4
+mesh = SubResource("SphereMesh_534t5")
+
+[node name="HealingBeam" type="MeshInstance3D" parent="." unique_id=1137041514]
+visible = false
+layers = 4
+mesh = SubResource("BoxMesh_534t5")
+
+[node name="BeamParticles" type="GPUParticles3D" parent="." unique_id=780834728]
+layers = 4
+emitting = false
+amount = 24
+lifetime = 0.6
+process_material = SubResource("ParticleProcessMaterial_beam")
+draw_pass_1 = SubResource("QuadMesh_part")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=1402827623]
+light_color = Color(0.39607844, 0.8980392, 1, 1)
+light_energy = 1.5
+omni_range = 3.0
+
+[node name="Components" type="Node" parent="." unique_id=1239428641]
+
+[node name="FactionComponent" type="Node" parent="Components" unique_id=326473142]
+script = ExtResource("2_3bcr4")
+faction = 8
+hostile_mask = 0
+is_passive = true
+metadata/_custom_type_script = "uid://q7rcgal41c7b"
+
+[node name="HealthComponent" type="Node" parent="Components" unique_id=1075036050]
+script = ExtResource("3_eevwv")
+max_health = 50
+metadata/_custom_type_script = "uid://cbwy13aembb7w"
