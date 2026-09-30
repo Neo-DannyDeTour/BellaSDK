@@ -454,7 +454,6 @@ func _build_mirrored_slider_row(row: HBoxContainer, item: Dictionary) -> void:
 			func(changed: String) -> void:
 				if orig_le.text != changed:
 					orig_le.text = changed
-					orig_le.text_changed.emit(changed)
 		)
 		orig_le.text_changed.connect(sync_le)
 		cloned_le.tree_exited.connect(
@@ -543,7 +542,6 @@ func _build_mirrored_line_edit_row(row: HBoxContainer, item: Dictionary) -> void
 		func(changed: String) -> void:
 			if orig_le.text != changed:
 				orig_le.text = changed
-				orig_le.text_changed.emit(changed)
 	)
 	orig_le.text_changed.connect(sync_le)
 	cloned_le.tree_exited.connect(

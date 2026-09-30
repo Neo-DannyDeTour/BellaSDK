@@ -399,7 +399,7 @@ static func set_diorama_active(tree: SceneTree, is_menu_active: bool) -> void:
 
 	if is_menu_active:
 		diorama_vp.own_world_3d = true
-		diorama_vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+		diorama_vp.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
 		diorama_vp.process_mode = Node.PROCESS_MODE_INHERIT
 	else:
 		diorama_vp.render_target_update_mode = SubViewport.UPDATE_DISABLED

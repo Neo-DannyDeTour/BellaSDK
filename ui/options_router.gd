@@ -127,7 +127,7 @@ func _isolate_viewport_scenario() -> void:
 	clean_env.glow_enabled = false
 
 
-## Pre-warms diorama once on boot for 0ms instantaneous tab switching.
+## Pre-warms diorama scene safely to prevent memory leaks on load.
 func _prewarm_diorama() -> void:
 	print("OptionsRouter: Pre-warming diorama scene instance.")
 	if not is_instance_valid(diorama_viewport):
@@ -137,8 +137,14 @@ func _prewarm_diorama() -> void:
 	if not is_instance_valid(_instantiated_diorama):
 		var scene: PackedScene = load("res://player/settings_level.tscn") as PackedScene
 		if is_instance_valid(scene):
-			_instantiated_diorama = scene.instantiate() as Node3D
-			diorama_viewport.add_child(_instantiated_diorama)
+			var raw_instance: Node = scene.instantiate()
+			if raw_instance is Node3D:
+				_instantiated_diorama = raw_instance as Node3D
+				diorama_viewport.add_child(_instantiated_diorama)
+			else:
+				print("OptionsRouter: Failed to cast diorama to Node3D.")
+				if is_instance_valid(raw_instance):
+					raw_instance.queue_free()
 
 	_neutralize_diorama_hotspots()
 	_bind_diorama_textures()
@@ -281,7 +287,7 @@ func _route_diorama_view(active_panel: Panel) -> void:
 		_deactivate_all_diorama_cameras()
 
 
-## Evaluates conditions and sets [SubViewport] update mode.
+## Evaluates visibility and updates the diorama [SubViewport] mode.
 func _evaluate_diorama_state() -> void:
 	if not is_instance_valid(diorama_viewport):
 		return
@@ -292,10 +298,10 @@ func _evaluate_diorama_state() -> void:
 
 	if should_render:
 		diorama_viewport.process_mode = Node.PROCESS_MODE_INHERIT
-		diorama_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+		diorama_viewport.render_target_update_mode = (SubViewport.UPDATE_WHEN_VISIBLE)
 		_route_diorama_view(_current_panel)
 	else:
-		diorama_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+		diorama_viewport.render_target_update_mode = (SubViewport.UPDATE_DISABLED)
 		diorama_viewport.process_mode = Node.PROCESS_MODE_DISABLED
 		_deactivate_all_diorama_cameras()
 

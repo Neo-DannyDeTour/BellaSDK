@@ -100,6 +100,25 @@ var _stored_cctv_sky: Sky = null
 ## Original background mode cached from the CCTV camera environment.
 var _stored_bg_mode: Environment.BGMode = Environment.BG_KEEP
 
+## Stored original environment reference to restore upon tree exit.
+var _original_cctv_env: Environment = null
+
+
+## Lifecycle teardown restoring modified environment states and stopping feeds.
+func _exit_tree() -> void:
+	print("CCTV: Restoring environment states on exit tree.")
+	if is_instance_valid(cctv_camera):
+		if is_instance_valid(_original_cctv_env):
+			cctv_camera.environment = _original_cctv_env
+		elif is_instance_valid(cctv_camera.environment):
+			if _stored_cctv_sky != null:
+				cctv_camera.environment.sky = _stored_cctv_sky
+			if _stored_bg_mode != Environment.BG_KEEP:
+				cctv_camera.environment.background_mode = _stored_bg_mode
+
+	if is_controlling:
+		_stop_controlling()
+
 
 ## Connects interactable components, initializes screen materials, and limits pipeline.
 func _ready() -> void:
@@ -205,6 +224,9 @@ func _input(event: InputEvent) -> void:
 ## Overrides camera environment to permanently disable SDFGI, fog, and SSR passes.
 func _force_clear_environment() -> void:
 	print("CCTV: Stripping camera environment of fog, sky, and SDFGI.")
+	if _original_cctv_env == null and is_instance_valid(cctv_camera.environment):
+		_original_cctv_env = cctv_camera.environment
+
 	var cctv_env: Environment = cctv_camera.environment
 	if not is_instance_valid(cctv_env):
 		cctv_env = Environment.new()

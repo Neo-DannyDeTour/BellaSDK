@@ -116,9 +116,15 @@ func _on_play_pressed() -> void:
 	if is_instance_valid(parent) and parent.has_method("prepare_for_level_transition"):
 		await parent.call("prepare_for_level_transition")
 
-	var loader: LoadingScreen = LOADING_SCREEN_SCENE.instantiate() as LoadingScreen
-	loader.level_scene_path = selected_chapter.scene_path
-	get_tree().root.add_child(loader)
+	var raw_loader: Node = LOADING_SCREEN_SCENE.instantiate()
+	if raw_loader is LoadingScreen:
+		var loader: LoadingScreen = raw_loader as LoadingScreen
+		loader.level_scene_path = selected_chapter.scene_path
+		get_tree().root.add_child(loader)
+	else:
+		print("ChapterScreen: Failed to cast scene to LoadingScreen; freeing instance.")
+		if is_instance_valid(raw_loader):
+			raw_loader.queue_free()
 
 
 ## Handles returning to previous menu or restoring parent navigation buttons.
