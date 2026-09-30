@@ -131,6 +131,9 @@ var _is_active: bool = true
 ## Cache of overlapping bodies currently inside the hazard radius.
 var _targets_in_smoke: Array[Node3D] = []
 
+## Cache mapping overlapping bodies to their detected [HealthComponent].
+var _health_cache: Dictionary = {}
+
 ## Tracks whether the player is currently inside this hazard instance.
 var _is_player_inside: bool = false
 
@@ -195,6 +198,10 @@ func _on_body_entered(body: Node3D) -> void:
 		_targets_in_smoke.append(body)
 		print("SmokeHazard: Target entered smoke -> ", body.name)
 
+		var health: HealthComponent = _find_health_component(body)
+		if is_instance_valid(health):
+			_health_cache[body] = health
+
 		if body.is_in_group(&"player") or body is Player:
 			_is_player_inside = true
 			if _is_active:
@@ -204,6 +211,7 @@ func _on_body_entered(body: Node3D) -> void:
 ## Unregisters exiting bodies from the active targets list.
 func _on_body_exited(body: Node3D) -> void:
 	_targets_in_smoke.erase(body)
+	_health_cache.erase(body)
 	print("SmokeHazard: Target exited smoke -> ", body.name)
 
 	if body.is_in_group(&"player") or body is Player:
@@ -222,7 +230,12 @@ func _apply_tick_damage() -> void:
 			print("SmokeHazard: Target occluded by wall -> ", target.name)
 			continue
 
-		var health: HealthComponent = _find_health_component(target)
+		var health: HealthComponent = _health_cache.get(target) as HealthComponent
+		if not is_instance_valid(health):
+			health = _find_health_component(target)
+			if is_instance_valid(health):
+				_health_cache[target] = health
+
 		if is_instance_valid(health):
 			print("SmokeHazard: Damaging HealthComponent on ", target.name)
 			damage_ticked.emit(target, damage_per_tick)
@@ -246,23 +259,35 @@ func _has_line_of_sight(target: Node3D) -> bool:
 
 ## Traverses node hierarchy to find [HealthComponent] on target or children.
 func _find_health_component(target: Node) -> HealthComponent:
+	print("SmokeHazard: Resolving HealthComponent on -> ", target.name)
 	if not is_instance_valid(target):
 		return null
 
 	if target is HealthComponent:
 		return target as HealthComponent
 
-	for child: Node in target.find_children("*", "HealthComponent", true, false):
-		if child is HealthComponent:
-			return child as HealthComponent
+	if target.has_node("HealthComponent"):
+		var direct_comp: Node = target.get_node("HealthComponent")
+		if direct_comp is HealthComponent:
+			return direct_comp as HealthComponent
+
+	if target.has_node("Components/HealthComponent"):
+		var nested_comp: Node = target.get_node("Components/HealthComponent")
+		if nested_comp is HealthComponent:
+			return nested_comp as HealthComponent
+
+	var found_child: Node = target.find_child("HealthComponent", true, false)
+	if found_child is HealthComponent:
+		return found_child as HealthComponent
 
 	var curr_parent: Node = target.get_parent()
 	while curr_parent != null:
 		if curr_parent is HealthComponent:
 			return curr_parent as HealthComponent
-		for sibling: Node in curr_parent.get_children():
-			if sibling is HealthComponent:
-				return sibling as HealthComponent
+		if curr_parent.has_node("HealthComponent"):
+			var p_comp: Node = curr_parent.get_node("HealthComponent")
+			if p_comp is HealthComponent:
+				return p_comp as HealthComponent
 		curr_parent = curr_parent.get_parent()
 
 	return null

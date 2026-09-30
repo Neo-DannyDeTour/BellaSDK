@@ -79,15 +79,21 @@ func _sync_targets_to_transmitter() -> void:
 		transmitter.targets = targets
 
 
-## Instantiates [member ui_scene] in [member sub_viewport] using [Utilities].
+## Safely instantiates [member ui_scene] inside [member sub_viewport].
 func _setup_ui_instance() -> void:
 	print("DoorKeypad: Setting up SubViewport UI instance.")
 	if is_instance_valid(sub_viewport) and sub_viewport.get_child_count() > 0:
 		Utilities.clear_children(sub_viewport)
 
 	if ui_scene != null:
-		current_ui = ui_scene.instantiate() as Control
-		sub_viewport.add_child(current_ui)
+		var raw_instance: Node = ui_scene.instantiate()
+		if raw_instance is Control:
+			current_ui = raw_instance as Control
+			sub_viewport.add_child(current_ui)
+		else:
+			print("DoorKeypad: Instantiated node is not a Control; freeing.")
+			if is_instance_valid(raw_instance):
+				raw_instance.queue_free()
 	elif is_instance_valid(sub_viewport) and sub_viewport.get_child_count() > 0:
 		current_ui = sub_viewport.get_child(0) as Control
 
@@ -123,7 +129,7 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 
-## Engages terminal mode and scales player mouse sensitivity.
+## Engages terminal mode and activates viewport rendering.
 func _on_player_interacted(character: CharacterBody3D) -> void:
 	if is_solved and current_ui is UICircleTimingKeypad:
 		print("DoorKeypad: Minigame already solved. Interaction denied.")
@@ -131,7 +137,7 @@ func _on_player_interacted(character: CharacterBody3D) -> void:
 
 	print("DoorKeypad: Player entered terminal.")
 	active_player = character
-	sub_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+	sub_viewport.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
 
 	if is_instance_valid(current_ui):
 		if current_ui.has_method("set_player_reference"):
@@ -183,7 +189,10 @@ func clear_mouse_hover() -> void:
 func request_viewport_refresh() -> void:
 	print("DoorKeypad: Requesting SubViewport redraw pass.")
 	if is_instance_valid(sub_viewport):
-		if sub_viewport.render_target_update_mode != SubViewport.UPDATE_ALWAYS:
+		if (
+			sub_viewport.render_target_update_mode != SubViewport.UPDATE_WHEN_VISIBLE
+			and sub_viewport.render_target_update_mode != SubViewport.UPDATE_ALWAYS
+		):
 			sub_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 
 

@@ -44,6 +44,11 @@ var flashlight_controller: FlashlightController
 ## Local node reference for receiving and managing the player's health points.
 @onready var health_component: HealthComponent = $Components/HealthComponent
 
+## The [FactionComponent] governing player faction allegiance and hostility.
+@onready var faction_component: FactionComponent = (
+	get_node_or_null("Components/FactionComponent") as FactionComponent
+)
+
 ## Indicates if the player character has died, used to globally block input and physics.
 var is_dead: bool = false
 
@@ -75,6 +80,9 @@ func _ready() -> void:
 
 	if not is_instance_valid(health_component):
 		health_component = (get_node_or_null("Components/HealthComponent") as HealthComponent)
+
+	if not is_instance_valid(faction_component):
+		faction_component = (get_node_or_null("Components/FactionComponent") as FactionComponent)
 
 	call_deferred("_capture_mouse")
 	activate_gameplay_camera()

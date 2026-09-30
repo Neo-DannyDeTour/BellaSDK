@@ -38,6 +38,16 @@ var _is_on_screen: bool = true
 ## Cached empty [Compositor] applied to isolate from global compute effects.
 var _empty_compositor: Compositor = null
 
+## Cached original environment applied to portal camera prior to overrides.
+var _original_camera_environment: Environment = null
+
+
+## Restores original camera environment and unregisters signals on exit.
+func _exit_tree() -> void:
+	print("Portal: Restoring camera environment on exit tree for ", name)
+	if is_instance_valid(portal_camera) and is_instance_valid(_original_camera_environment):
+		portal_camera.environment = _original_camera_environment
+
 
 ## Initializes portal listeners, duplicates shaders, and wires culling hooks.
 func _ready() -> void:
@@ -87,6 +97,9 @@ func _isolate_portal_camera_compositor() -> void:
 ## Configures an isolated environment disabling heavy fog and GI passes.
 func _configure_portal_environment() -> void:
 	print("Portal: Configuring isolated environment for ", portal_camera.name)
+	if is_instance_valid(portal_camera) and _original_camera_environment == null:
+		_original_camera_environment = portal_camera.environment
+
 	var env: Environment = Environment.new()
 	env.sdfgi_enabled = false
 	env.ssao_enabled = false

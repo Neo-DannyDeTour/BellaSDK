@@ -65,6 +65,7 @@
 [ext_resource type="Script" uid="uid://7lmc8o36ewqw" path="res://player/StateMachineLock.gd" id="48_mmwog"]
 [ext_resource type="Script" uid="uid://be6128jq53jja" path="res://player/push_wheel.gd" id="49_8pxes"]
 [ext_resource type="Script" uid="uid://c7rka8po7jog8" path="res://player/weapon_inventory_component.gd" id="51_or4qq"]
+[ext_resource type="Script" uid="uid://q7rcgal41c7b" path="res://scripts/faction_component.gd" id="52_7l6ig"]
 [ext_resource type="Script" uid="uid://b71yx1y4kvv2e" path="res://player/state_path_slide.gd" id="59_3dxkp"]
 [ext_resource type="Script" uid="uid://c03hxslxesikm" path="res://player/state_terminal.gd" id="67_hggc2"]
 [ext_resource type="Script" uid="uid://34lx2eim448b" path="res://player/state_tube.gd" id="68_b2j0d"]
@@ -623,6 +624,12 @@ is_player_health = true
 script = ExtResource("51_or4qq")
 weapon_holder = NodePath("../../Head/Eyes/Camera3D/WeaponHolder")
 camera = NodePath("../../Head/Eyes/Camera3D")
+
+[node name="FactionComponent" type="Node" parent="Components" unique_id=872072572]
+script = ExtResource("52_7l6ig")
+faction = 1
+hostile_mask = 2
+metadata/_custom_type_script = "uid://q7rcgal41c7b"
 
 [node name="StateMachine" type="Node" parent="." unique_id=2011174862]
 script = ExtResource("30_axnmu")

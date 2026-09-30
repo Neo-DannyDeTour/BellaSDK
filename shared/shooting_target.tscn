@@ -3,6 +3,7 @@
 [ext_resource type="Texture2D" uid="uid://ctcx8liq755d3" path="res://assets/images/icon_target.png" id="1_afs67"]
 [ext_resource type="Script" uid="uid://x81w5rltap52" path="res://shared/shooting_target.gd" id="1_d0hho"]
 [ext_resource type="Script" uid="uid://cbwy13aembb7w" path="res://shared/health_component.gd" id="2_d0hho"]
+[ext_resource type="Script" uid="uid://q7rcgal41c7b" path="res://scripts/faction_component.gd" id="4_3456p"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_3456p"]
 size = Vector3(2, 2, 2)
@@ -24,3 +25,9 @@ texture = ExtResource("1_afs67")
 [node name="HealthComponent" type="Node" parent="." unique_id=1810752158]
 script = ExtResource("2_d0hho")
 metadata/_custom_type_script = "uid://cbwy13aembb7w"
+
+[node name="FactionComponent" type="Node" parent="." unique_id=840480621]
+script = ExtResource("4_3456p")
+faction = 16
+hostile_mask = 0
+metadata/_custom_type_script = "uid://q7rcgal41c7b"

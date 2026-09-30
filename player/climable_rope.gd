@@ -426,11 +426,17 @@ func _build_dynamic_rope() -> void:
 		previous_body = link
 
 		if not can_use_multimesh:
-			var segment: Node3D = chain_scene.instantiate() as Node3D
-			segment.scale = chain_mesh_scale
-			segment.top_level = true
-			add_child(segment)
-			_visual_segments.append(segment)
+			var raw_segment: Node = chain_scene.instantiate()
+			if raw_segment is Node3D:
+				var segment: Node3D = raw_segment as Node3D
+				segment.scale = chain_mesh_scale
+				segment.top_level = true
+				add_child(segment)
+				_visual_segments.append(segment)
+			else:
+				print("PhysicsClimbableRope3D: Failed to cast segment to Node3D; freeing.")
+				if is_instance_valid(raw_segment):
+					raw_segment.queue_free()
 
 	if is_instance_valid(original_rope_body):
 		original_rope_body.queue_free()
