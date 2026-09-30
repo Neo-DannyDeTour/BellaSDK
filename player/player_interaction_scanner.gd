@@ -1,23 +1,21 @@
-## Raycasts and evaluates interactable components in the center of the viewport.
 class_name InteractionScanner
 extends Node
+## Raycasts and evaluates interactable components in the center of the viewport.
 
-## Emitted when terminal focus mode begins or terminates.
-## [param is_active] True if terminal mode is active.
+## Emitted when terminal focus mode begins or terminates. Passes [param is_active].
 signal terminal_mode_toggled(is_active: bool)
 
-## Emitted when heavy lifting state changes.
-## [param is_lifting] True if carrying heavy object.
-## [param yaw_base] Player yaw heading base angle.
+## Emitted when heavy lifting state changes. Passes [param is_lifting] and [param yaw_base].
 signal heavy_lift_state_changed(is_lifting: bool, yaw_base: float)
 
-## Emitted when an interactable object enters center of player crosshair.
-## [param object_name] Semantic name of focused object.
-## [param caller] Node instance sending the trigger.
+## Emitted when interactable enters crosshair reach. Passes [param object_name] and [param caller].
 signal object_hover_focused(object_name: String, caller: Node)
 
 ## Stores the previous interactable to avoid re-announcing on every frame.
 var _last_focused_interactable: Node = null
+
+## Cached array of RIDs excluded from terminal interaction raycasts.
+var _excluded_rids: Array[RID] = []
 
 @export_category("Node References")
 
@@ -70,9 +68,11 @@ var current_hit_point: Vector3 = Vector3.ZERO
 func setup_master_link(master: Node) -> void:
 	print("InteractionScanner: Link to Master Component established.")
 	master_component = master
+	if is_instance_valid(player_body):
+		_excluded_rids = [player_body.get_rid()]
 
 
-## Evaluates the active Shapecast to detect interactables and trigger audio cues.
+## Evaluates active shapecast to detect interactables and trigger audio cues.
 func process_interaction(_delta: float) -> void:
 	if is_in_terminal_mode:
 		if _should_exit_terminal_mode():
@@ -96,6 +96,8 @@ func process_interaction(_delta: float) -> void:
 
 			print("InteractionScanner: Focused interactable -> ", speakable_name)
 			object_hover_focused.emit(speakable_name, target_node)
+			if Events.has_signal("object_focused"):
+				Events.object_focused.emit(speakable_name, target_node)
 
 	if current_interactable:
 		var hit_point: Vector3 = interact_shapecast.get_collision_point(0)
@@ -131,8 +133,20 @@ func handle_interact_input() -> void:
 			if parent_node.has_method("on_grabbed"):
 				parent_node.call("on_grabbed")
 	else:
-		if is_instance_valid(empty_interact_audio):
-			empty_interact_audio.play()
+		_play_empty_interact_audio()
+
+
+## Plays empty interaction audio cue via throttled audio manager.
+func _play_empty_interact_audio() -> void:
+	if not is_instance_valid(empty_interact_audio) or empty_interact_audio.stream == null:
+		return
+	var audio_mgr: Node = get_node_or_null("/root/AudioManager")
+	if is_instance_valid(audio_mgr) and audio_mgr.has_method("play_sfx_2d_throttled"):
+		audio_mgr.call(
+			"play_sfx_2d_throttled", empty_interact_audio.stream, empty_interact_audio.bus
+		)
+	else:
+		empty_interact_audio.play()
 
 
 ## Routes trigger shoot inputs to terminal clicks or equipped weapons.
@@ -352,32 +366,30 @@ func _should_exit_terminal_mode() -> bool:
 	return false
 
 
-## Projects raycast from screen center to inject cursor events into terminal mesh.
+## Projects raycast from screen center using zero-allocation [method Utilities.raycast_3d].
 func shoot_terminal_raycast(is_click: bool) -> void:
 	if is_click:
 		print("InteractionScanner: shoot_terminal_raycast executed a click.")
 
-	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
-	var screen_center: Vector2 = viewport_size / 2.0
-
-	if not is_instance_valid(camera):
+	if not is_instance_valid(camera) or not is_instance_valid(player_body):
 		return
+
+	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
+	var screen_center: Vector2 = viewport_size * 0.5
 
 	var ray_origin: Vector3 = camera.project_ray_origin(screen_center)
 	var ray_normal: Vector3 = camera.project_ray_normal(screen_center)
-	var ray_end: Vector3 = ray_origin + ray_normal * 3.0
-
-	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(ray_origin, ray_end)
-
-	if is_instance_valid(player_body):
-		query.exclude = [player_body.get_rid()]
-
-	query.collision_mask = (CollisionLayers.MASK_ENVIRONMENT | CollisionLayers.MASK_INTERACTIVE)
+	var ray_end: Vector3 = ray_origin + (ray_normal * 3.0)
 
 	var space_state: PhysicsDirectSpaceState3D = player_body.get_world_3d().direct_space_state
-	var result: Dictionary = space_state.intersect_ray(query)
+	if not is_instance_valid(space_state):
+		return
 
-	if result and result.get("collider") == active_terminal:
+	var result: Dictionary = Utilities.raycast_3d(
+		space_state, ray_origin, ray_end, Types.MASK_SOLID_WORLD, _excluded_rids
+	)
+
+	if not result.is_empty() and result.get("collider") == active_terminal:
 		var hit_pos: Vector3 = result.get("position", Vector3.ZERO) as Vector3
 		if is_click and active_terminal.has_method("inject_mouse_click"):
 			active_terminal.call("inject_mouse_click", hit_pos)

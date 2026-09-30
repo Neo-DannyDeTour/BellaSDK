@@ -34,6 +34,40 @@ var engine_fallback_font: Font = null
 ## Guard to ensure disk fonts are only loaded and parsed once.
 var _is_cached: bool = false
 
+# --- GAME LIFECYCLE & SESSION SIGNALS ---
+## Emitted when the game match or level loop starts.
+@warning_ignore("unused_signal")
+signal game_started
+
+## Emitted when game execution is paused. Passes [param is_paused].
+@warning_ignore("unused_signal")
+signal game_pause_toggled(is_paused: bool)
+
+## Emitted when player dies or level objective fails. Passes [param reason].
+@warning_ignore("unused_signal")
+signal game_over_triggered(reason: String)
+
+## Emitted when a new map or level load completes. Passes [param level_name].
+@warning_ignore("unused_signal")
+signal level_loaded(level_name: String)
+
+# --- WAVE SPAWNER & ENEMY LIFECYCLE SIGNALS ---
+## Emitted when an enemy wave begins. Passes [param wave_number].
+@warning_ignore("unused_signal")
+signal wave_started(wave_number: int)
+
+## Emitted when an enemy wave is cleared. Passes [param wave_number].
+@warning_ignore("unused_signal")
+signal wave_completed(wave_number: int)
+
+## Emitted when an enemy unit spawns into the world. Passes [param enemy_node].
+@warning_ignore("unused_signal")
+signal enemy_spawned(enemy_node: Node3D)
+
+## Emitted when an enemy is slain. Passes [param enemy_node] and [param killer_node].
+@warning_ignore("unused_signal")
+signal enemy_killed(enemy_node: Node3D, killer_node: Node3D)
+
 # --- PLAYER STATE SIGNALS ---
 ## Emitted when the player's health reaches zero.
 @warning_ignore("unused_signal")
@@ -359,27 +393,22 @@ signal player_damaged(amount: int)
 signal player_healed(amount: int)
 
 ## Emitted when outline highlight mode changes (0=Off, 1=Always, 2=Focus).
-## [param mode] Mode index: 0 for Off, 1 for Always, 2 for On Focus.
 @warning_ignore("unused_signal")
 signal outline_mode_changed(mode: int)
 
 ## Emitted when target outline color is modified in accessibility settings.
-## [param color] The new [Color] value for the outline.
 @warning_ignore("unused_signal")
 signal outline_color_changed(color: Color)
 
 ## Emitted when target outline blink speed is adjusted.
-## [param speed] Pulse oscillation speed in cycles per second.
 @warning_ignore("unused_signal")
 signal outline_blink_speed_changed(speed: float)
 
 ## Emitted when target outline minimum pulse intensity is modified.
-## [param intensity] Minimum alpha/intensity clamp between 0.0 and 1.0.
 @warning_ignore("unused_signal")
 signal outline_min_intensity_changed(intensity: float)
 
 ## Emitted when target outline maximum pulse intensity is modified.
-## [param intensity] Maximum alpha/intensity clamp between 0.0 and 5.0.
 @warning_ignore("unused_signal")
 signal outline_max_intensity_changed(intensity: float)
 
@@ -408,19 +437,18 @@ enum ChapterAnimStyle {
 }
 
 
-## Lifecycle constructor initializing baseline font mappings.
+## Lifecycle constructor initializing baseline event bus logging.
 func _init() -> void:
 	print("Events: _init() called.")
 
 
-## Lifecycle method connecting signal listeners.
+## Lifecycle method connecting signal listeners for global typography.
 func _ready() -> void:
 	print("Events: _ready() called. Binding event listeners.")
 	font_changed.connect(_on_font_changed)
 
 
-## Replaces the project's root theme default font and forces an immediate UI redraw.
-## [param font_name] The identifier key of the font to apply.
+## Replaces root theme default font and forces an immediate UI redraw.
 func _on_font_changed(font_name: String) -> void:
 	print("Events: Changing global font to '", font_name, "'.")
 
@@ -449,7 +477,7 @@ func _on_font_changed(font_name: String) -> void:
 	print("Events: Global font '", font_name, "' applied successfully.")
 
 
-## Dynamically iterates the GlobalSettings font registry and caches loaded resources once.
+## Dynamically iterates the GlobalSettings font registry and caches loaded resources.
 func _load_registered_fonts() -> void:
 	if _is_cached:
 		return
@@ -489,8 +517,6 @@ func _load_registered_fonts() -> void:
 
 
 ## Recursively propagates explicit font overrides down all active Control nodes.
-## [param parent] Root parent [Node] to traverse.
-## [param new_font] The [Font] instance to assign.
 func _apply_font_override_recursive(parent: Node, new_font: Font) -> void:
 	if not is_instance_valid(parent):
 		return

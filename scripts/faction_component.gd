@@ -1,24 +1,14 @@
-## Component managing entity allegiances, relationship masks, and hostility checks.
 class_name FactionComponent
 extends Node
+## Manages entity allegiances, relationship masks, and hostility checks via [Types.Faction].
 
-## Defines broad faction allegiances used for relationship and hostility filtering.
-enum Faction {
-	NONE = 0,
-	PLAYER = 1 << 0,
-	ENEMY = 1 << 1,
-	CIVILIAN = 1 << 2,
-	NEUTRAL = 1 << 3,
-	TARGET = 1 << 4,
-}
+## Emitted when [member faction] changes. Passes [param old_faction] and [param new_faction].
+signal faction_changed(old_faction: Types.Faction, new_faction: Types.Faction)
 
-## Emitted when [member faction] changes, passing old and new [enum Faction].
-signal faction_changed(old_faction: Faction, new_faction: Faction)
+## Primary [enum Types.Faction] allegiance assigned to this entity.
+@export var faction: Types.Faction = Types.Faction.ENEMY
 
-## Primary [enum Faction] allegiance assigned to this entity.
-@export var faction: Faction = Faction.ENEMY
-
-## Bitmask defining which [enum Faction] flags this entity considers hostile.
+## Bitmask defining which [enum Types.Faction] flags this entity considers hostile.
 @export_flags("Player:1", "Enemy:2", "Civilian:4", "Neutral:8", "Target:16")
 var hostile_mask: int = 1
 
@@ -42,17 +32,17 @@ func is_hostile_to(other: FactionComponent) -> bool:
 
 
 ## Updates [member faction] and broadcasts the [signal faction_changed] signal.
-func set_faction(new_faction: Faction) -> void:
+func set_faction(new_faction: Types.Faction) -> void:
 	if faction == new_faction:
 		return
 	print("FactionComponent: Changing faction from ", faction, " to ", new_faction)
-	var old: Faction = faction
+	var old: Types.Faction = faction
 	faction = new_faction
 	faction_changed.emit(old, new_faction)
 
 
-## Bitwise-adds target [enum Faction] into [member hostile_mask].
-func add_hostile_faction(target_faction: Faction) -> void:
+## Bitwise-adds target [enum Types.Faction] into [member hostile_mask].
+func add_hostile_faction(target_faction: Types.Faction) -> void:
 	print("FactionComponent: Adding hostile faction flag: ", target_faction)
 	hostile_mask |= int(target_faction)
 

@@ -1,47 +1,64 @@
-## Manages player weapon slots 1-5, quick switching, and active visibility.
 class_name WeaponInventoryComponent
 extends Node
+## Manages player weapon slots 1-5, quick switching, and active visibility.
+
+## Pre-cached action names for inventory slot hotkeys to avoid string allocations.
+const SLOT_ACTIONS: Array[StringName] = [
+	&"weapon_slot_1",
+	&"weapon_slot_2",
+	&"weapon_slot_3",
+	&"weapon_slot_4",
+	&"weapon_slot_5",
+]
+
+## Action name for quick swapping to previous weapon slot.
+const LAST_WEAPON_ACTION: StringName = &"last_weapon"
+
+## Total number of available weapon inventory slots.
+const MAX_SLOT_COUNT: int = 5
 
 ## References mapped to inventory slots 0 through 4.
 var slots: Array[Node3D] = [null, null, null, null, null]
+
 ## Index of currently equipped slot (-1 when empty).
 var current_slot_index: int = -1
+
 ## Index of previously equipped slot for fast swapping.
 var previous_slot_index: int = -1
 
-## Reference to the WeaponHolder 3D socket node.
+## Reference to the [member weapon_holder] 3D socket node.
 @export var weapon_holder: Node3D
-## Reference to the player camera node.
+
+## Reference to the primary player [Camera3D] node.
 @export var camera: Camera3D
 
 
-## Connects child listeners and initializes slot states.
+## Connects child listeners and initializes slot states on ready.
 func _ready() -> void:
 	print("WeaponInventoryComponent: _ready() called. Initializing inventory.")
 	_scan_existing_weapons()
 
 
-## Intercepts numeric slot hotkeys 1-5 and quick swap.
-## [param event] The incoming engine [InputEvent].
+## Intercepts numeric slot hotkeys 1-5 and quick swap with zero allocations.
 func _input(event: InputEvent) -> void:
 	if event.is_echo() or not event.is_pressed():
 		return
 
-	for i: int in range(5):
-		var action_name: StringName = StringName("weapon_slot_" + str(i + 1))
+	for i: int in range(MAX_SLOT_COUNT):
+		var action_name: StringName = SLOT_ACTIONS[i]
 		if InputMap.has_action(action_name) and event.is_action_pressed(action_name):
 			print("WeaponInventoryComponent: Hotkey pressed for slot ", i + 1)
 			select_slot(i)
 			get_viewport().set_input_as_handled()
 			return
 
-	if InputMap.has_action(&"last_weapon") and event.is_action_pressed(&"last_weapon"):
+	if InputMap.has_action(LAST_WEAPON_ACTION) and event.is_action_pressed(LAST_WEAPON_ACTION):
 		print("WeaponInventoryComponent: Hotkey pressed for last weapon.")
 		swap_to_previous()
 		get_viewport().set_input_as_handled()
 
 
-## Scans the WeaponHolder node for weapons already in the scene.
+## Scans the [member weapon_holder] node for existing weapons in the scene.
 func _scan_existing_weapons() -> void:
 	if not is_instance_valid(weapon_holder):
 		return
@@ -50,19 +67,16 @@ func _scan_existing_weapons() -> void:
 			register_weapon(child as Node3D)
 
 
-## Registers a weapon into its preferred slot or first free slot.
-## [param weapon] The [Node3D] weapon instance to register.
+## Registers a weapon into its preferred slot or first available free slot.
 func register_weapon(weapon: Node3D) -> void:
 	var weapon_tag_val: Variant = weapon.get("weapon_tag")
 	var tag: String = str(weapon_tag_val) if weapon_tag_val != null else String(weapon.name)
 	print("WeaponInventoryComponent: Registering weapon -> ", tag)
 
-	# Determine target index (0-based) from weapon's default_slot (1-based)
 	var default_slot_val: Variant = weapon.get("default_slot")
 	var slot_val: int = int(default_slot_val) if default_slot_val != null else 1
 	var target_idx: int = clampi(slot_val - 1, 0, slots.size() - 1)
 
-	# If preferred slot is occupied by an existing weapon, displace or search free slot
 	if slots[target_idx] != null and slots[target_idx] != weapon:
 		var placed: bool = false
 		for i: int in range(slots.size()):
@@ -75,13 +89,10 @@ func register_weapon(weapon: Node3D) -> void:
 
 	slots[target_idx] = weapon
 	print("WeaponInventoryComponent: Assigned ", tag, " to slot ", target_idx + 1)
-
-	# Immediately switch to newly acquired weapon
 	select_slot(target_idx)
 
 
-## Selects a specific inventory slot [param index] (0 to 4).
-## [param index] The zero-based slot index to equip.
+## Equips weapon in slot [param index] and broadcasts [signal Events.active_weapon_changed].
 func select_slot(index: int) -> void:
 	if index < 0 or index >= slots.size():
 		return
@@ -116,14 +127,14 @@ func select_slot(index: int) -> void:
 		active_gun.call("sync_ammo_ui")
 
 
-## Swaps directly back to previously equipped weapon.
+## Swaps directly back to previously equipped weapon slot.
 func swap_to_previous() -> void:
 	print("WeaponInventoryComponent: Fast swapping to previous weapon.")
 	if previous_slot_index != -1 and slots[previous_slot_index] != null:
 		select_slot(previous_slot_index)
 
 
-## Fires the active weapon. Called by InteractionScanner.
+## Triggers primary fire on the currently equipped weapon in [member slots].
 func shoot_active_weapon() -> void:
 	print("WeaponInventoryComponent: shoot_active_weapon() called.")
 	if current_slot_index >= 0 and is_instance_valid(slots[current_slot_index]):
@@ -131,7 +142,7 @@ func shoot_active_weapon() -> void:
 			slots[current_slot_index].call("shoot", camera)
 
 
-## Triggers reload on the currently equipped weapon.
+## Triggers reload on the currently equipped weapon in [member slots].
 func reload_active_weapon() -> void:
 	print("WeaponInventoryComponent: reload_active_weapon() called.")
 	if current_slot_index >= 0 and is_instance_valid(slots[current_slot_index]):
@@ -139,10 +150,7 @@ func reload_active_weapon() -> void:
 			slots[current_slot_index].call("reload")
 
 
-## Adds ammunition to reserve pool for weapons matching [param target_ammo_type].
-## [param target_ammo_type] Identifier string matching weapon ammo types.
-## [param amount] Number of rounds to add to reserve.
-## [return] True if ammunition was accepted.
+## Adds reserve ammunition to weapons matching [param target_ammo_type].
 func add_ammo(target_ammo_type: StringName, amount: int) -> bool:
 	print("WeaponInventoryComponent: Adding ", amount, " rounds of ", target_ammo_type)
 	var applied: bool = false

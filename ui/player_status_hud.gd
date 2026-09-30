@@ -1,12 +1,15 @@
-## Manages player status indicators including health hearts, debuff slots, and keycards.
 class_name PlayerStatusHUD
 extends MarginContainer
+## Player status HUD managing health hearts, hazard slots, and inventory keycards.
 
 ## Sliced texture frames of health hearts for varying status levels.
 @export var hearts_atlas: Texture2D
 
 ## Maps keycard IDs to their respective inventory icon textures.
 @export var card_textures: Dictionary[StringName, Texture2D] = {}
+
+## Palette and asset registry providing theme colors and fallback textures.
+@export var reference_data: ReferenceData
 
 ## Container arranging health heart icons horizontally.
 @onready var hearts_container: HBoxContainer = $VBoxContainer/HeartsContainer
@@ -96,7 +99,7 @@ var heart_nodes: Array[TextureRect] = []
 var heart_tweens: Array[Tween] = []
 
 ## Stores instantiated keycard texture rectangles mapped by ID.
-var active_card_icons: Dictionary = {}
+var active_card_icons: Dictionary[StringName, TextureRect] = {}
 
 ## Tracks current player health to determine when to update UI.
 var current_health: int = 300
@@ -190,10 +193,14 @@ func _connect_signals() -> void:
 	Utilities.safe_connect(Events.oxygen_timer_stopped, _on_oxygen_timer_stopped)
 	Utilities.safe_connect(Events.steam_hazard_toggled, _on_steam_hazard_toggled)
 	Utilities.safe_connect(Events.fire_hazard_toggled, _on_fire_hazard_toggled)
-
-	Utilities.safe_connect(KeycardSystem.card_picked_up, _on_card_picked_up)
-	Utilities.safe_connect(KeycardSystem.card_used, _on_card_used)
 	Utilities.safe_connect(Events.infinite_swim_toggled, _on_infinite_swim_toggled)
+
+	var keycard_sys: Node = get_node_or_null("/root/KeycardSystem")
+	if is_instance_valid(keycard_sys):
+		if keycard_sys.has_signal("card_picked_up"):
+			Utilities.safe_connect(keycard_sys.card_picked_up, _on_card_picked_up)
+		if keycard_sys.has_signal("card_used"):
+			Utilities.safe_connect(keycard_sys.card_used, _on_card_used)
 
 
 ## Slices the heart atlas and builds initial health representations.
@@ -245,10 +252,8 @@ func _add_heart_node() -> void:
 
 
 ## Re-renders all heart frames and plays health change animations.
-## [param new_health] Current integer health total.
 func update_health(new_health: int) -> void:
 	print("PlayerStatusHUD: update_health() called with: ", new_health)
-
 	while new_health > heart_nodes.size() * 100:
 		_add_heart_node()
 
@@ -288,21 +293,20 @@ func update_health(new_health: int) -> void:
 
 
 ## Runs a vertical bounce tween on the target heart node when damaged.
-## [param index] Heart slot index to animate.
 func _animate_heart_damage(index: int) -> void:
 	print("PlayerStatusHUD: _animate_heart_damage() called for index: ", index)
 	if index < 0 or index >= heart_nodes.size():
 		return
 
 	var heart: TextureRect = heart_nodes[index]
-	heart_tweens[index] = Utilities.reset_tween(self, heart_tweens[index])
+	heart_tweens[index] = Utilities.reset_tween_ext(
+		self, heart_tweens[index], Tween.TRANS_SINE, Tween.EASE_IN_OUT
+	)
 	if not is_instance_valid(heart_tweens[index]):
 		return
 
 	heart.position.y = 0.0
 	var tween: Tween = heart_tweens[index]
-	tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-
 	var jump_height: float = -15.0
 	var duration: float = 0.08
 
@@ -311,9 +315,7 @@ func _animate_heart_damage(index: int) -> void:
 	tween.tween_property(heart, "position:y", 0.0, duration)
 
 
-## Spawns a scaling green ghost texture to visually represent health recovery.
-## [param index] Heart slot index to animate.
-## [param frame_index] Sliced texture frame index to duplicate on ghost.
+## Spawns a scaling heal ghost texture to visually represent health recovery.
 func _animate_heart_heal(index: int, frame_index: int) -> void:
 	print("PlayerStatusHUD: _animate_heart_heal() called for index: ", index)
 	if index < 0 or index >= heart_nodes.size():
@@ -330,13 +332,21 @@ func _animate_heart_heal(index: int, frame_index: int) -> void:
 	ghost.position = Vector2.ZERO
 	ghost.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	Utilities.center_control(ghost)
-	ghost.modulate = Color(0.0, 1.0, 0.2, 0.5)
+
+	var heal_tint: Color = Color(0.2, 0.85, 0.35, 0.5)
+	if is_instance_valid(reference_data):
+		heal_tint = reference_data.success_color
+		heal_tint.a = 0.5
+	ghost.modulate = heal_tint
 
 	heart.add_child(ghost)
 
-	var tween: Tween = create_tween().set_parallel(true)
-	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	var tween: Tween = Utilities.reset_tween_ext(self, null, Tween.TRANS_CUBIC, Tween.EASE_OUT)
+	if not is_instance_valid(tween):
+		ghost.queue_free()
+		return
 
+	tween.set_parallel(true)
 	var anim_duration: float = 0.5
 	tween.tween_property(ghost, "scale", Vector2(3.0, 3.0), anim_duration)
 	tween.tween_property(ghost, "modulate:a", 0.0, anim_duration)
@@ -344,7 +354,6 @@ func _animate_heart_heal(index: int, frame_index: int) -> void:
 
 
 ## Adds a keycard texture rectangle using [method Utilities.center_control].
-## [param card_id] Unique identifier key of collected card.
 func _on_card_picked_up(card_id: StringName) -> void:
 	print("PlayerStatusHUD: Displaying new card ID ", card_id)
 	var card_rect: TextureRect = TextureRect.new()
@@ -353,36 +362,36 @@ func _on_card_picked_up(card_id: StringName) -> void:
 	card_rect.custom_minimum_size = Vector2(80.0, 130.0)
 	card_rect.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
-	if card_textures.has(card_id):
-		card_rect.texture = card_textures[card_id]
-	else:
-		print("PlayerStatusHUD Warning: No texture mapped for card ID: ", card_id)
+	var resolved_icon: Texture2D = card_textures.get(card_id, null)
+	if resolved_icon == null and is_instance_valid(reference_data):
+		resolved_icon = reference_data.get_category_icon(Types.ItemCategory.KEYCARD)
+	card_rect.texture = resolved_icon
 
 	keycards_container.add_child(card_rect)
 	active_card_icons[card_id] = card_rect
 
 	card_rect.scale = Vector2.ZERO
 	Utilities.center_control(card_rect)
-	var tween: Tween = create_tween().set_trans(Tween.TRANS_BACK)
-	tween.set_ease(Tween.EASE_OUT)
-	tween.tween_property(card_rect, "scale", Vector2.ONE, 0.4)
+	var tween: Tween = Utilities.reset_tween_ext(self, null, Tween.TRANS_BACK, Tween.EASE_OUT)
+	if is_instance_valid(tween):
+		tween.tween_property(card_rect, "scale", Vector2.ONE, 0.4)
 
 
-## Animates and removes used keycard icon safely avoiding leaks.
-## [param card_id] Unique identifier key of consumed card.
+## Animates and removes used keycard icon safely avoiding memory leaks.
 func _on_card_used(card_id: StringName) -> void:
 	print("PlayerStatusHUD: Removing used card ID ", card_id)
 	if active_card_icons.has(card_id):
 		var card_rect: TextureRect = active_card_icons[card_id]
-		var tween: Tween = create_tween().set_trans(Tween.TRANS_BACK)
-		tween.set_ease(Tween.EASE_IN)
-		tween.tween_property(card_rect, "scale", Vector2.ZERO, 0.2)
-		tween.finished.connect(card_rect.queue_free)
+		var tween: Tween = Utilities.reset_tween_ext(self, null, Tween.TRANS_BACK, Tween.EASE_IN)
+		if is_instance_valid(tween):
+			tween.tween_property(card_rect, "scale", Vector2.ZERO, 0.2)
+			tween.finished.connect(card_rect.queue_free)
+		else:
+			card_rect.queue_free()
 		active_card_icons.erase(card_id)
 
 
 ## Starts and animates the sprint debuff progress bar cooldown.
-## [param duration] Length of the debuff in seconds.
 func _on_sprint_debuff_applied(duration: float) -> void:
 	print("PlayerStatusHUD: _on_sprint_debuff_applied() - Starting for ", duration)
 	is_sprint_timer_active = true
@@ -394,7 +403,9 @@ func _on_sprint_debuff_applied(duration: float) -> void:
 
 	_sync_sprint_display()
 
-	debuff_tween = Utilities.reset_tween(self, debuff_tween)
+	debuff_tween = Utilities.reset_tween_ext(
+		self, debuff_tween, Tween.TRANS_LINEAR, Tween.EASE_IN_OUT
+	)
 	if not is_instance_valid(debuff_tween):
 		return
 
@@ -417,9 +428,8 @@ func _on_sprint_debuff_applied(duration: float) -> void:
 
 
 ## Starts and animates the immobilize debuff progress bar cooldown.
-## [param duration] Length of the debuff in seconds.
 func _on_immobilize_debuff_applied(duration: float) -> void:
-	print("PlayerStatusHUD: _on_immobilize_debuff_applied() - Starting UI for ", duration)
+	print("PlayerStatusHUD: _on_immobilize_debuff_applied() - Starting for ", duration)
 	is_immobilized = true
 	immobilize_container.show()
 	move_bar.show()
@@ -430,7 +440,9 @@ func _on_immobilize_debuff_applied(duration: float) -> void:
 	move_bar.value = duration
 	immobilize_timer_label.text = "%.1fs" % duration
 
-	immobilize_tween = Utilities.reset_tween(self, immobilize_tween)
+	immobilize_tween = Utilities.reset_tween_ext(
+		self, immobilize_tween, Tween.TRANS_LINEAR, Tween.EASE_IN_OUT
+	)
 	if not is_instance_valid(immobilize_tween):
 		return
 
@@ -453,7 +465,6 @@ func _on_immobilize_debuff_applied(duration: float) -> void:
 
 
 ## Handles updates to the infinite swim mode setting.
-## [param enabled] True if infinite swim mode is turned on.
 func _on_infinite_swim_toggled(enabled: bool) -> void:
 	print("PlayerStatusHUD: Infinite swim toggled -> ", enabled)
 	is_infinite_swim = enabled
@@ -462,8 +473,7 @@ func _on_infinite_swim_toggled(enabled: bool) -> void:
 		return
 
 	if is_infinite_swim:
-		if is_instance_valid(swim_tween) and swim_tween.is_valid():
-			swim_tween.kill()
+		Utilities.safe_kill_tween(swim_tween)
 		swim_debuff_container.show()
 		swim_border.show()
 		swim_bar.hide()
@@ -474,7 +484,6 @@ func _on_infinite_swim_toggled(enabled: bool) -> void:
 
 
 ## Starts and animates the submerged swim progress bar and timer label.
-## [param duration] Length of the swim breath timer in seconds.
 func _on_oxygen_timer_started(duration: float) -> void:
 	print("PlayerStatusHUD: _on_oxygen_timer_started() called. Duration: ", duration)
 	is_submerged = true
@@ -482,13 +491,12 @@ func _on_oxygen_timer_started(duration: float) -> void:
 	swim_border.show()
 
 	if is_infinite_swim:
-		if is_instance_valid(swim_tween) and swim_tween.is_valid():
-			swim_tween.kill()
+		Utilities.safe_kill_tween(swim_tween)
 		swim_bar.hide()
 		swim_timer_label.hide()
 		return
 
-	swim_tween = Utilities.reset_tween(self, swim_tween)
+	swim_tween = Utilities.reset_tween_ext(self, swim_tween, Tween.TRANS_LINEAR, Tween.EASE_IN_OUT)
 	if not is_instance_valid(swim_tween):
 		return
 
@@ -518,9 +526,7 @@ func _on_oxygen_timer_started(duration: float) -> void:
 func _on_oxygen_timer_stopped() -> void:
 	print("PlayerStatusHUD: _on_oxygen_timer_stopped() - Player surfaced.")
 	is_submerged = false
-	if is_instance_valid(swim_tween) and swim_tween.is_valid():
-		swim_tween.kill()
-
+	Utilities.safe_kill_tween(swim_tween)
 	swim_bar.hide()
 	swim_timer_label.hide()
 	swim_border.hide()
@@ -528,7 +534,6 @@ func _on_oxygen_timer_stopped() -> void:
 
 
 ## Updates steam hazard indicator icon and border overlay.
-## [param is_active] True if the player is actively exposed to steam.
 func _on_steam_hazard_toggled(is_active: bool) -> void:
 	print("PlayerStatusHUD: Steam hazard toggled -> ", is_active)
 	is_in_steam = is_active
@@ -539,7 +544,6 @@ func _on_steam_hazard_toggled(is_active: bool) -> void:
 
 
 ## Updates fire hazard indicator icon and border overlay.
-## [param is_active] True if the player is actively exposed to fire.
 func _on_fire_hazard_toggled(is_active: bool) -> void:
 	print("PlayerStatusHUD: Fire hazard toggled -> ", is_active)
 	is_in_fire = is_active
@@ -550,7 +554,6 @@ func _on_fire_hazard_toggled(is_active: bool) -> void:
 
 
 ## Updates persistent sand sprint-restriction status.
-## [param is_active] True if the player is currently on sand.
 func _on_sand_surface_toggled(is_active: bool) -> void:
 	print("PlayerStatusHUD: Sand surface toggled -> ", is_active)
 	is_on_sand = is_active
@@ -558,7 +561,6 @@ func _on_sand_surface_toggled(is_active: bool) -> void:
 
 
 ## Updates ice surface status indicator and border overlay.
-## [param is_active] True if the player is currently on ice.
 func _on_ice_surface_toggled(is_active: bool) -> void:
 	print("PlayerStatusHUD: Ice surface toggled -> ", is_active)
 	is_on_ice = is_active
@@ -569,7 +571,6 @@ func _on_ice_surface_toggled(is_active: bool) -> void:
 
 
 ## Toggles sprint debuff icon visibility based on heavy carry status.
-## [param is_active] True if the player is holding a heavy object.
 func _on_heavy_carry_toggled(is_active: bool) -> void:
 	print("PlayerStatusHUD: Heavy carry toggled -> ", is_active)
 	is_heavy_carrying = is_active

@@ -1,6 +1,6 @@
-## Manages the post-death screen sequences, shader transitions, and audio.
 class_name DeathScreen
 extends CanvasLayer
+## Manages post-death screen sequences, visual shaders, and smooth menu transitions.
 
 ## Player movement state at moment of death influencing pacing.
 enum DeathState { CROUCHING, WALKING, SPRINTING }
@@ -180,7 +180,7 @@ func _ready() -> void:
 			ecg_mat.set_shader_parameter("points", HEALTHY_POINTS)
 
 	if Events.has_signal("player_died"):
-		Events.player_died.connect(play_death_sequence)
+		Utilities.safe_connect(Events.player_died, play_death_sequence)
 
 
 ## Handles skip inputs via mouse click when permitted by [member _skip_allowed].
@@ -246,10 +246,13 @@ func play_death_sequence(death_state: int = DeathState.WALKING) -> void:
 	if is_instance_valid(pain_overlay):
 		pain_overlay.show()
 		pain_overlay.color.a = 0.6
-		var flash_tween: Tween = create_tween()
-		flash_tween.tween_interval(0.3)
-		flash_tween.tween_property(pain_overlay, "color:a", 0.0, 0.4)
-		flash_tween.tween_callback(pain_overlay.hide)
+		var flash_tween: Tween = Utilities.reset_tween_ext(
+			self, null, Tween.TRANS_CUBIC, Tween.EASE_OUT
+		)
+		if is_instance_valid(flash_tween):
+			flash_tween.tween_interval(0.3)
+			flash_tween.tween_property(pain_overlay, "color:a", 0.0, 0.4)
+			flash_tween.tween_callback(pain_overlay.hide)
 
 	ecg_monitor.hide()
 	lava_overlay.hide()
@@ -279,71 +282,8 @@ func play_death_sequence(death_state: int = DeathState.WALKING) -> void:
 		EffectType.BURN:
 			_start_burn_effect()
 
-	get_tree().create_timer(3.0).timeout.connect(_allow_skipping)
-	get_tree().create_timer(10.0).timeout.connect(_return_to_main_menu)
-
-
-## Runs a preview of the specified [enum EffectType] for testing.
-func play_death_preview(effect: EffectType, death_state: int = DeathState.WALKING) -> void:
-	print("DeathScreen: play_death_preview() - Previewing effect: ", effect)
-	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	show()
-
-	_stop_all_audio()
-	_skip_allowed = false
-	_is_dead = true
-	death_label.text = DEATH_MESSAGES.pick_random()
-
-	var viewport_size: Vector2 = get_viewport().get_visible_rect().size
-	_aspect = viewport_size.x / viewport_size.y
-	_active_effect = effect
-
-	background.modulate.a = 0.0
-
-	if is_instance_valid(pain_overlay):
-		pain_overlay.show()
-		pain_overlay.color.a = 0.6
-		var flash_tween: Tween = create_tween()
-		flash_tween.tween_interval(0.3)
-		flash_tween.tween_property(pain_overlay, "color:a", 0.0, 0.4)
-		flash_tween.tween_callback(pain_overlay.hide)
-
-	ecg_monitor.hide()
-	lava_overlay.hide()
-	cave_tunnel_overlay.hide()
-	if is_instance_valid(tv_static_overlay):
-		tv_static_overlay.hide()
-	if is_instance_valid(glass_overlay):
-		glass_overlay.hide()
-	if is_instance_valid(jitter_overlay):
-		jitter_overlay.hide()
-	if is_instance_valid(burn_overlay):
-		burn_overlay.hide()
-
-	match _active_effect:
-		EffectType.ECG:
-			_start_ecg_effect(death_state)
-		EffectType.LAVA:
-			_start_lava_effect()
-		EffectType.CAVE_TUNNEL:
-			_start_cave_tunnel_effect()
-		EffectType.TV_STATIC:
-			_start_tv_static_effect()
-		EffectType.GLASS:
-			_start_glass_effect()
-		EffectType.JITTER:
-			_start_jitter_effect()
-		EffectType.BURN:
-			_start_burn_effect()
-
-	var close_preview: Callable = func() -> void:
-		print("DeathScreen: Preview complete, restoring game.")
-		_is_dead = false
-		_stop_all_audio()
-		hide()
-		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-
-	get_tree().create_timer(4.5).timeout.connect(close_preview)
+	Utilities.delay_call(self, 3.0, _allow_skipping)
+	Utilities.delay_call(self, 10.0, _return_to_main_menu)
 
 
 ## Runs digital burn shader transition ramping into pure black.
@@ -363,13 +303,9 @@ func _start_burn_effect() -> void:
 
 	mat.set_shader_parameter("threshold", 1.2)
 
-	var burn_tween: Tween = create_tween()
-	(
-		burn_tween
-		. tween_property(mat, "shader_parameter/threshold", -0.2, 2.5)
-		. set_trans(Tween.TRANS_QUAD)
-		. set_ease(Tween.EASE_IN)
-	)
+	var burn_tween: Tween = Utilities.reset_tween_ext(self, null, Tween.TRANS_QUAD, Tween.EASE_IN)
+	if is_instance_valid(burn_tween):
+		burn_tween.tween_property(mat, "shader_parameter/threshold", -0.2, 2.5)
 
 	if is_instance_valid(death_label):
 		var label_tween: Tween = create_tween()
@@ -429,7 +365,7 @@ func _start_jitter_effect() -> void:
 
 ## Runs full-screen glass distortion ramping into darkness.
 func _start_glass_effect() -> void:
-	print("DeathScreen: _start_glass_effect() - Starting glass distortion sequence.")
+	print("DeathScreen: _start_glass_effect() - Starting glass distortion.")
 	if not is_instance_valid(glass_overlay):
 		push_error("DeathScreen: glass_overlay node is missing.")
 		return
@@ -735,7 +671,7 @@ func _allow_skipping() -> void:
 	_skip_allowed = true
 
 
-## Cleans up state and transitions the tree to the main menu scene.
+## Cleans up state and transitions to main menu via [SceneTransition].
 func _return_to_main_menu() -> void:
 	if not is_inside_tree():
 		return
@@ -744,4 +680,9 @@ func _return_to_main_menu() -> void:
 	_is_dead = false
 	_stop_all_audio()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	get_tree().change_scene_to_file("res://ui/main_menu.tscn")
+
+	var transition_mgr: Node = get_node_or_null("/root/SceneTransition")
+	if is_instance_valid(transition_mgr) and transition_mgr.has_method("change_scene_to_file"):
+		transition_mgr.call("change_scene_to_file", "res://ui/main_menu.tscn", 0.5)
+	else:
+		get_tree().change_scene_to_file("res://ui/main_menu.tscn")

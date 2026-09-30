@@ -25,6 +25,7 @@ buses/default_bus_layout="uid://blb10t72ak8ru"
 
 [autoload]
 
+Global="*res://core/global.gd"
 Events="*uid://duejfvfifyd20"
 DebugManager="*uid://psgaa5vua8a3"
 SmokeManager="*uid://b1t38dkohipue"
@@ -45,6 +46,8 @@ ShockwaveManager="*uid://cxv4l5k6gkqyi"
 PostProcessLayer="*uid://dmjj5l722vik8"
 InGameConsole="*uid://b16t0oiv28pqa"
 AudioPool="*res://core/audio_pool.gd"
+AudioManager="*res://core/audio_manager.gd"
+SceneTransition="*res://core/scene_transition.gd"
 
 [debug]
 

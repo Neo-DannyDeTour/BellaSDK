@@ -1,8 +1,6 @@
-## Central controller entity coordinating locomotion, input routing, and accessibility actions.
-##
-## Interfaces with modular components for locomotion, camera, interactions, and environment.
 class_name Player
 extends CharacterBody3D
+## Central player coordinator for locomotion, camera, input, and environmental interactions.
 
 # --------------------------------------
 # COMPONENT REFERENCES (Cached for 60 FPS)
@@ -72,11 +70,15 @@ var terminal_mouse_sensitivity_scale: float = 1.0
 # --------------------------------------
 
 
-## Lifecycle initialization registering groups, subcomponents, and signals.
+## Lifecycle initialization registering groups, subcomponents, and global hooks.
 func _ready() -> void:
 	print("Player: Initializing character controller.")
 	add_to_group("saveable")
 	add_to_group("player")
+
+	var global_singleton: Node = get_node_or_null("/root/Global")
+	if is_instance_valid(global_singleton) and "main" in global_singleton:
+		global_singleton.set("main", self)
 
 	if not is_instance_valid(health_component):
 		health_component = (get_node_or_null("Components/HealthComponent") as HealthComponent)
@@ -124,7 +126,6 @@ func _capture_mouse() -> void:
 
 
 ## Routes hardware mouse motion into camera controller.
-## [param event] Engine input event.
 func _input(event: InputEvent) -> void:
 	if _is_input_blocked():
 		return
@@ -148,7 +149,6 @@ func _input(event: InputEvent) -> void:
 
 
 ## Routes unhandled interaction inputs to interaction component.
-## [param event] Engine unhandled input event.
 func _unhandled_input(event: InputEvent) -> void:
 	if _is_input_blocked():
 		return
@@ -158,7 +158,6 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 ## Sets mouse look sensitivity multiplier for terminal interfaces.
-## [param p_scale] Sensitivity scalar value.
 func set_terminal_mouse_sensitivity_scale(p_scale: float) -> void:
 	print("Player: Setting terminal mouse sensitivity scale to: ", p_scale)
 	terminal_mouse_sensitivity_scale = p_scale
@@ -231,7 +230,6 @@ func _on_player_died() -> void:
 
 
 ## Central physics loop routing locomotion, environment, and interaction updates.
-## [param delta] Physics frame delta time in seconds.
 func _physics_process(delta: float) -> void:
 	var in_terminal_state: bool = (
 		is_terminal_locked
@@ -320,7 +318,6 @@ func _physics_process(delta: float) -> void:
 
 
 ## Forwards ladder entrance event to environment component.
-## [param ladder_node] Ladder spatial instance.
 func enter_ladder(ladder_node: Node3D) -> void:
 	print("Player: Forwarding ladder enter to EnvironmentComponent.")
 	if is_instance_valid(environment_component):
@@ -328,7 +325,6 @@ func enter_ladder(ladder_node: Node3D) -> void:
 
 
 ## Forwards ladder exit event to environment component.
-## [param ladder_node] Ladder spatial instance.
 func exit_ladder(ladder_node: Node3D) -> void:
 	print("Player: Forwarding ladder exit to EnvironmentComponent.")
 	if is_instance_valid(environment_component):
@@ -336,7 +332,6 @@ func exit_ladder(ladder_node: Node3D) -> void:
 
 
 ## Switches movement logic to swimming mode inside water body volume.
-## [param water_volume] Water body instance.
 func enter_water(water_volume: Node3D) -> void:
 	print("Player: Forwarding water enter to EnvironmentComponent.")
 	if is_instance_valid(environment_component):
@@ -344,7 +339,6 @@ func enter_water(water_volume: Node3D) -> void:
 
 
 ## Exits swimming state and restores default ground and air locomotion.
-## [param water_volume] Water body instance.
 func exit_water(water_volume: Node3D) -> void:
 	print("Player: Forwarding water exit to EnvironmentComponent.")
 	if is_instance_valid(environment_component):
@@ -352,8 +346,6 @@ func exit_water(water_volume: Node3D) -> void:
 
 
 ## Applies upward vertical force from an updraft vent.
-## [param strength] Vertical impulse velocity scalar.
-## [param top_y] Maximum height limit of updraft.
 func enter_updraft(strength: float, top_y: float) -> void:
 	print("Player: Forwarding updraft enter to EnvironmentComponent.")
 	if is_instance_valid(environment_component):
@@ -368,8 +360,6 @@ func exit_updraft() -> void:
 
 
 ## Relocates player to coordinates and applies temporary input stun via [Utilities].
-## [param new_position] Destination coordinates.
-## [param stun_time] Stun duration in seconds.
 func teleport_to(new_position: Vector3, stun_time: float = 0.1) -> void:
 	print("Player: Teleporting player to: ", new_position)
 	global_position = new_position
@@ -382,7 +372,6 @@ func teleport_to(new_position: Vector3, stun_time: float = 0.1) -> void:
 
 
 ## Registers an available monkey bar handle within player reach.
-## [param bar_node] Monkey bar node reference.
 func set_available_monkey_bar(bar_node: Node3D) -> void:
 	print("Player: Setting active monkey bar handle.")
 	if is_instance_valid(environment_component):
@@ -390,7 +379,6 @@ func set_available_monkey_bar(bar_node: Node3D) -> void:
 
 
 ## Clears active monkey bar handle when player moves out of reach.
-## [param bar_node] Monkey bar node reference.
 func clear_available_monkey_bar(bar_node: Node3D) -> void:
 	print("Player: Clearing active monkey bar handle.")
 	if (
@@ -408,9 +396,6 @@ func has_zipline_cooldown() -> bool:
 
 
 ## Attaches player to zipline traversal segment.
-## [param zipline_node] Zipline reference.
-## [param start_pos] World coordinate of starting point.
-## [param end_pos] World coordinate of destination point.
 func _on_zipline_grabbed(zipline_node: Node3D, start_pos: Vector3, end_pos: Vector3) -> void:
 	print("Player: Traversing zipline segment.")
 	if is_instance_valid(environment_component):
@@ -418,7 +403,6 @@ func _on_zipline_grabbed(zipline_node: Node3D, start_pos: Vector3, end_pos: Vect
 
 
 ## Attaches player to physics rope link.
-## [param rope_node] Targeted rope rigid body.
 func _on_rope_grabbed(rope_node: RigidBody3D) -> void:
 	print("Player: Gripping rope link.")
 	if is_instance_valid(environment_component):
@@ -426,7 +410,6 @@ func _on_rope_grabbed(rope_node: RigidBody3D) -> void:
 
 
 ## Updates visibility of equipped glider mesh.
-## [param p_is_visible] Glider render visibility.
 func set_glider_visible(p_is_visible: bool) -> void:
 	print("Player: Updating glider mesh visibility: ", p_is_visible)
 	if (
@@ -444,7 +427,6 @@ func set_glider_visible(p_is_visible: bool) -> void:
 
 
 ## Enters terminal camera and UI focus mode.
-## [param terminal] Interacted terminal node.
 func enter_terminal_mode(terminal: Node3D) -> void:
 	print("Player: Entering terminal focus mode.")
 	is_in_terminal_mode = true
@@ -465,6 +447,8 @@ func activate_gameplay_camera() -> void:
 	print("Player: Re-asserting primary gameplay camera.")
 	if is_instance_valid(camera_controller) and is_instance_valid(camera_controller.camera):
 		camera_controller.camera.make_current()
+		if Events.has_signal("player_camera_registered"):
+			Events.player_camera_registered.emit(camera_controller.camera)
 
 
 ## Restores default locomotion and free camera look after exiting terminal.
@@ -493,7 +477,6 @@ func exit_terminal_mode() -> void:
 
 
 ## Sets machine lock state to constrain player movement.
-## [param locked] True if locked into machine interaction.
 func set_machine_lock(locked: bool) -> void:
 	print("Player: Setting machine lock state to: ", locked)
 	if is_instance_valid(interaction_component):
@@ -555,7 +538,6 @@ func get_save_data() -> Dictionary:
 
 
 ## Deserializes and restores player position, camera pitch/yaw, and component state.
-## [param data] Serialized data dictionary payload.
 func load_save_data(data: Dictionary) -> void:
 	print("Player: Restoring serialized state data.")
 
@@ -595,7 +577,6 @@ func exit_rain_volume() -> void:
 
 
 ## Initiates guide rail slide movement along target spline or stick.
-## [param stick] Guide rail node reference.
 func enter_path_slide(stick: Node3D) -> void:
 	print("Player: Entering rail slide.")
 
@@ -614,7 +595,6 @@ func exit_path_slide() -> void:
 
 
 ## Launches player from guide path with impulse velocity vector.
-## [param throw_vel] Impulse ejection velocity.
 func launch_from_path(throw_vel: Vector3) -> void:
 	print("Player: Launching from path with velocity: ", throw_vel)
 	velocity = throw_vel
@@ -628,7 +608,6 @@ func launch_from_path(throw_vel: Vector3) -> void:
 
 
 ## Forwards damage application requests to the HealthComponent.
-## [param amount] Damage value to apply.
 func take_damage(amount: int) -> void:
 	print("Player: Routing damage to HealthComponent: ", amount)
 	if is_instance_valid(health_component) and health_component.has_method("take_damage"):
@@ -636,7 +615,6 @@ func take_damage(amount: int) -> void:
 
 
 ## Forwards healing point additions to the HealthComponent.
-## [param amount] Healing value to apply.
 func heal(amount: int) -> void:
 	print("Player: Routing healing to HealthComponent: ", amount)
 	if is_instance_valid(health_component) and health_component.has_method("heal"):
@@ -644,7 +622,6 @@ func heal(amount: int) -> void:
 
 
 ## Applies directional impulse force and transitions player into airborne state.
-## [param force] Knockback velocity vector.
 func apply_knockback(force: Vector3) -> void:
 	print("Player: Applying knockback force and transitioning to Air state.")
 
@@ -685,7 +662,6 @@ func _update_floor_surface_detection() -> void:
 
 
 ## Transitions locomotion into vacuum tube transport state.
-## [param tube_node] Target vacuum tube geometry node.
 func enter_tube(tube_node: Node3D) -> void:
 	print("Player: Entering vacuum tube state.")
 	if is_instance_valid(locomotion_component):
@@ -695,19 +671,16 @@ func enter_tube(tube_node: Node3D) -> void:
 
 
 ## Ejects player from vacuum tube and transfers exit velocity.
-## [param throw_vel] Ejection velocity vector.
 func exit_tube(throw_vel: Vector3) -> void:
 	print("Player: Exiting tube with impulse velocity: ", throw_vel)
 	launch_from_path(throw_vel)
 
 
 ## Handles area enter detection for water bodies.
-## [param area] The detected [Area3D] water volume.
 func _on_water_detector_area_entered(area: Area3D) -> void:
 	print("Player: Entered water volume -> ", area.name)
 
 
 ## Handles area exit detection for water bodies.
-## [param area] The exited [Area3D] water volume.
 func _on_water_detector_area_exited(area: Area3D) -> void:
 	print("Player: Exited water volume -> ", area.name)
