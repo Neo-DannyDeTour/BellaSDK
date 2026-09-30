@@ -68,16 +68,22 @@ func test_damage_player() -> void:
 
 func test_is_hostile() -> void:
 	print("TestTurret: test_is_hostile() called.")
-	var groups: Array[StringName] = [&"player"]
-	turret.hostile_groups = groups
+	var turret_faction: FactionComponent = turret.faction_component
 
-	var mock_enemy: Node = Node.new()
-	mock_enemy.add_to_group("enemy")
-	var mock_player: Node = Node.new()
-	mock_player.add_to_group("player")
+	var faction_script: GDScript = load("res://scripts/faction_component.gd") as GDScript
 
-	assert_false(turret._is_hostile(mock_enemy), "Should not identify non-hostile groups.")
-	assert_true(turret._is_hostile(mock_player), "Should identify hostile groups.")
+	var mock_enemy: Node3D = Node3D.new()
+	var enemy_faction: FactionComponent = faction_script.new() as FactionComponent
+	enemy_faction.faction = 2  # Faction.MONSTER (same as turret default)
+	mock_enemy.add_child(enemy_faction)
+
+	var mock_player: Node3D = Node3D.new()
+	var player_faction: FactionComponent = faction_script.new() as FactionComponent
+	player_faction.faction = 0  # Faction.PLAYER
+	mock_player.add_child(player_faction)
+
+	assert_false(turret._is_hostile(mock_enemy), "Should not identify same faction as hostile.")
+	assert_true(turret._is_hostile(mock_player), "Should identify player faction as hostile.")
 
 	mock_enemy.free()
 	mock_player.free()
