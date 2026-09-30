@@ -156,9 +156,15 @@ func _on_spawn_timer_timeout() -> void:
 	var enemy_node: Node3D = enemy_instance as Node3D
 	if not is_instance_valid(enemy_node):
 		push_error("WaveSpawner: [", name, "] instantiated enemy is not Node3D.")
+		enemy_instance.queue_free()
 		return
 
-	get_tree().current_scene.add_child(enemy_node)
+	var current_scene: Node = get_tree().current_scene
+	if is_instance_valid(current_scene):
+		current_scene.add_child(enemy_node)
+	else:
+		get_tree().root.add_child(enemy_node)
+
 	enemy_node.global_position = spawn_pos
 	_alive_enemies.append(enemy_node)
 	_remaining_to_spawn -= 1
