@@ -74,12 +74,12 @@ func test_is_hostile() -> void:
 
 	var mock_enemy: Node3D = Node3D.new()
 	var enemy_faction: FactionComponent = faction_script.new() as FactionComponent
-	enemy_faction.faction = 2  # Faction.MONSTER (same as turret default)
+	enemy_faction.faction = Types.Faction.ENEMY
 	mock_enemy.add_child(enemy_faction)
 
 	var mock_player: Node3D = Node3D.new()
 	var player_faction: FactionComponent = faction_script.new() as FactionComponent
-	player_faction.faction = 0  # Faction.PLAYER
+	player_faction.faction = Types.Faction.PLAYER
 	mock_player.add_child(player_faction)
 
 	assert_false(turret._is_hostile(mock_enemy), "Should not identify same faction as hostile.")
