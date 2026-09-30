@@ -68,13 +68,18 @@ func test_damage_player() -> void:
 
 func test_is_hostile() -> void:
 	print("TestTurret: test_is_hostile() called.")
-	var groups: Array[StringName] = [&"player"]
-	turret.hostile_groups = groups
 
 	var mock_enemy: Node = Node.new()
-	mock_enemy.add_to_group("enemy")
+	var mock_enemy_faction: FactionComponent = FactionComponent.new()
+	mock_enemy_faction.faction = FactionComponent.Faction.ENEMY
+	mock_enemy_faction.name = "FactionComponent"
+	mock_enemy.add_child(mock_enemy_faction)
+
 	var mock_player: Node = Node.new()
-	mock_player.add_to_group("player")
+	var mock_player_faction: FactionComponent = FactionComponent.new()
+	mock_player_faction.faction = FactionComponent.Faction.PLAYER
+	mock_player_faction.name = "FactionComponent"
+	mock_player.add_child(mock_player_faction)
 
 	assert_false(turret._is_hostile(mock_enemy), "Should not identify non-hostile groups.")
 	assert_true(turret._is_hostile(mock_player), "Should identify hostile groups.")

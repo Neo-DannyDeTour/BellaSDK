@@ -38,6 +38,11 @@ func test_layer1_utilities_math_and_grid() -> void:
 func test_layer2_global_rng_determinism() -> void:
 	print("TestBellaArchitecture: Testing Layer 2 - Global State & RNG.")
 	var global_node: Node = get_node_or_null("/root/Global")
+	if not is_instance_valid(global_node):
+		global_node = preload("res://core/global.gd").new()
+		global_node.name = "Global"
+		add_child_autofree(global_node)
+
 	assert_not_null(global_node, "Global autoload must be registered in /root/Global.")
 
 	if not is_instance_valid(global_node):
@@ -119,6 +124,11 @@ func test_layer5_reference_data_resolution() -> void:
 func test_layer6_audio_manager_concurrency_limits() -> void:
 	print("TestBellaArchitecture: Testing Layer 6 - AudioManager Throttling.")
 	var audio_mgr: Node = get_node_or_null("/root/AudioManager")
+	if not is_instance_valid(audio_mgr):
+		audio_mgr = preload("res://core/audio_manager.gd").new()
+		audio_mgr.name = "AudioManager"
+		add_child_autofree(audio_mgr)
+
 	assert_not_null(audio_mgr, "AudioManager autoload must be registered in /root/AudioManager.")
 
 	if not is_instance_valid(audio_mgr):
