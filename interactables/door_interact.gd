@@ -25,7 +25,7 @@ var power_component: PowerComponent
 @onready var timer: Timer = $Timer
 
 
-## Initializes the door, checks for [PowerComponent], and connects signals.
+## Initializes door, checks [PowerComponent], and enforces initial state.
 func _ready() -> void:
 	power_component = get_node_or_null("PowerComponent") as PowerComponent
 
@@ -38,10 +38,17 @@ func _ready() -> void:
 		if not power_component.powered_off.is_connected(_on_powered_off):
 			power_component.powered_off.connect(_on_powered_off)
 
+		if not power_component.is_powered:
+			open = false
+
 	if is_instance_valid(animation_player):
 		if open:
 			animation_player.play("open")
 			animation_player.seek(animation_player.current_animation_length, true)
+		else:
+			animation_player.play("open")
+			animation_player.seek(0.0, true)
+			animation_player.stop()
 
 
 ## Triggered by [PowerComponent] when required power is met. Opens the door.

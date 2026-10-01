@@ -59,9 +59,10 @@ gdscript/warnings/untyped_declaration=2
 window/size/viewport_width=1280
 window/size/viewport_height=720
 window/size/mode="fullscreen"
+window/subwindows/embed_subwindows=false
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
-display_server/driver.linuxbsd="wayland"
+display_server/driver.linuxbsd="x11"
 window/vsync/vsync_mode=0
 
 [dotnet]
@@ -70,7 +71,7 @@ project/assembly_name="FPS_Test"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/csg_toolkit/plugin.cfg", "res://addons/gdLinter/plugin.cfg", "res://addons/gut/plugin.cfg", "res://addons/renderdoc_launcher/plugin.cfg")
+enabled=PackedStringArray("res://addons/csg_toolkit/plugin.cfg", "res://addons/detour_event_sequencer/plugin.cfg", "res://addons/gdLinter/plugin.cfg", "res://addons/gut/plugin.cfg", "res://addons/renderdoc_launcher/plugin.cfg")
 
 [filesystem]
 

@@ -42,11 +42,11 @@ func _ready() -> void:
 	if faction_component == null:
 		faction_component = FactionComponent.new()
 		faction_component.name = "FactionComponent"
-		faction_component.faction = FactionComponent.Faction.TARGET
+		faction_component.faction = Types.Faction.TARGET
 		faction_component.hostile_mask = 0
 		add_child(faction_component)
 	else:
-		faction_component.faction = FactionComponent.Faction.TARGET
+		faction_component.set_faction(Types.Faction.TARGET)
 
 	if not Engine.is_editor_hint() and hide_in_game:
 		if icon_sprite != null:
