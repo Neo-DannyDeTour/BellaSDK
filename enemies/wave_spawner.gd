@@ -158,7 +158,10 @@ func _on_spawn_timer_timeout() -> void:
 		push_error("WaveSpawner: [", name, "] instantiated enemy is not Node3D.")
 		return
 
-	get_tree().current_scene.add_child(enemy_node)
+	var target_parent: Node = get_tree().current_scene
+	if target_parent == null:
+		target_parent = get_parent() if get_parent() != null else self
+	target_parent.add_child(enemy_node)
 	enemy_node.global_position = spawn_pos
 	_alive_enemies.append(enemy_node)
 	_remaining_to_spawn -= 1
