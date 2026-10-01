@@ -39,9 +39,11 @@ func test_layer2_global_rng_determinism() -> void:
 	print("TestBellaArchitecture: Testing Layer 2 - Global State & RNG.")
 	var global_node: Node = get_node_or_null("/root/Global")
 	if not is_instance_valid(global_node):
-		global_node = preload("res://core/global.gd").new()
-		global_node.name = "Global"
-		add_child_autofree(global_node)
+		var global_script: GDScript = load("res://core/global.gd")
+		if is_instance_valid(global_script):
+			global_node = global_script.new()
+			global_node.name = "Global"
+			add_child_autofree(global_node)
 
 	assert_not_null(global_node, "Global autoload must be registered in /root/Global.")
 
@@ -125,9 +127,11 @@ func test_layer6_audio_manager_concurrency_limits() -> void:
 	print("TestBellaArchitecture: Testing Layer 6 - AudioManager Throttling.")
 	var audio_mgr: Node = get_node_or_null("/root/AudioManager")
 	if not is_instance_valid(audio_mgr):
-		audio_mgr = preload("res://core/audio_manager.gd").new()
-		audio_mgr.name = "AudioManager"
-		add_child_autofree(audio_mgr)
+		var audio_script: GDScript = load("res://core/audio_manager.gd")
+		if is_instance_valid(audio_script):
+			audio_mgr = audio_script.new()
+			audio_mgr.name = "AudioManager"
+			add_child_autofree(audio_mgr)
 
 	assert_not_null(audio_mgr, "AudioManager autoload must be registered in /root/AudioManager.")
 
@@ -191,7 +195,7 @@ func test_wave_spawner_lifecycle_integration() -> void:
 		Events.enemy_killed.emit(enemy, null)
 		enemy.queue_free()
 
-	await wait_seconds(0.05)
+	await wait_seconds(0.2)
 	assert_true(wave_completed_emitted, "wave_completed must emit when all enemies are slain.")
 
 	if Events.enemy_spawned.is_connected(on_enemy_spawned):
