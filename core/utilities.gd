@@ -108,7 +108,7 @@ static func raycast_3d(
 	_cached_ray_query.collide_with_areas = false
 	_cached_ray_query.collide_with_bodies = true
 	var hit: Dictionary = space_state.intersect_ray(_cached_ray_query)
-	print("[Utilities] Cast 3D ray from ", origin, " to ", target, ". Hit: ", not hit.is_empty())
+	#print("[Utilities] Cast 3D ray from ", origin, " to ", target, ". Hit: ", not hit.is_empty())
 	return hit
 
 

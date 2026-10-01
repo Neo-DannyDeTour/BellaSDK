@@ -1,4 +1,4 @@
-class_name SceneTransition
+#class_name SceneTransition
 extends CanvasLayer
 ## Manages threaded background scene loading with full-screen CanvasLayer visual transitions.
 

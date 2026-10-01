@@ -1,4 +1,4 @@
-class_name AudioManager
+#class_name AudioManager
 extends Node
 ## Polyphony-limited audio manager with pitch variation and concurrency suppression.
 

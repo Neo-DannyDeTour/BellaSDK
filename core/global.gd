@@ -1,4 +1,4 @@
-class_name Global
+#class_name Global
 extends Node
 ## Global game state coordinator, deterministic RNG provider, and scene hook registry.
 
