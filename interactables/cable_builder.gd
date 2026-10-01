@@ -1,69 +1,74 @@
 @tool
-## A utility component that constructs a straight 3D cable connecting two points.
-##
-## Automatically updates a mesh and collision shape to stretch between the endpoints
-## of a provided [Path3D] curve. Only the first and last points of the curve are used.
+## Constructs a straight 3D cable between the endpoints of a [Path3D] curve.
 class_name CableBuilderComponent
 extends Node
 
-## The curve defining the start and end points of the cable.
+## Curve defining the start and end points of the cable.
 @export var path_node: Path3D
-## The cylindrical mesh representing the visual cable.
+
+## Cylindrical mesh instance representing the visual cable.
 @export var mesh_node: MeshInstance3D
-## The collision shape matching the physical presence of the cable.
+
+## Collision shape matching the physical volume of the cable.
 @export var collision_node: CollisionShape3D
 
 
-## Duplicates mesh and collision resources to ensure modifications are isolated per instance.
+## Initializes unique mesh and collision resources and builds cable.
 func _ready() -> void:
-	# Make the shapes unique so multiple ropes don't break each other
-	if mesh_node and mesh_node.mesh:
-		mesh_node.mesh = mesh_node.mesh.duplicate()
-	if collision_node and collision_node.shape:
-		collision_node.shape = collision_node.shape.duplicate()
-
+	print("CableBuilderComponent: Initializing cable geometry on: ", name)
+	if is_instance_valid(mesh_node) and mesh_node.mesh != null:
+		if not mesh_node.mesh.resource_local_to_scene:
+			mesh_node.mesh = mesh_node.mesh.duplicate()
+			mesh_node.mesh.resource_local_to_scene = true
+	if is_instance_valid(collision_node) and collision_node.shape != null:
+		if not collision_node.shape.resource_local_to_scene:
+			collision_node.shape = collision_node.shape.duplicate()
+			collision_node.shape.resource_local_to_scene = true
 	build_cable()
 
 
-## Updates the cable geometry while running in the editor to provide real-time feedback.
+## Rebuilds cable geometry in editor when modified.
 func _process(_delta: float) -> void:
 	if Engine.is_editor_hint():
 		build_cable()
 
 
-## Recalculates and applies the position, rotation, and height of the mesh and collision shapes.
+## Computes cable transform, height, and collision to bridge endpoints.
 func build_cable() -> void:
-	if not path_node or not path_node.curve or path_node.curve.get_point_count() < 2:
+	print("CableBuilderComponent: build_cable() recalculating geometry.")
+	if not is_instance_valid(path_node) or path_node.curve == null:
 		return
-	if not mesh_node or not collision_node:
+	if path_node.curve.get_point_count() < 2:
+		return
+	if not is_instance_valid(mesh_node) or not is_instance_valid(collision_node):
 		return
 
-	# The foolproof 2-point lock
 	while path_node.curve.get_point_count() > 2:
 		path_node.curve.remove_point(path_node.curve.get_point_count() - 1)
 
-	# Math & World Space Conversion
 	var start_pos: Vector3 = path_node.to_global(path_node.curve.get_point_position(0))
-	var end_pos: Vector3 = path_node.to_global(
-		path_node.curve.get_point_position(path_node.curve.get_point_count() - 1)
-	)
+	var end_idx: int = path_node.curve.get_point_count() - 1
+	var end_pos: Vector3 = path_node.to_global(path_node.curve.get_point_position(end_idx))
 
 	var distance: float = start_pos.distance_to(end_pos)
-	var center: Vector3 = start_pos.lerp(end_pos, 0.5)
+	var center: Vector3 = MathUtils.get_midpoint(start_pos, end_pos)
 	var direction: Vector3 = (end_pos - start_pos).normalized()
 
-	# Size
-	if mesh_node.mesh:
-		mesh_node.mesh.height = distance
-	if collision_node.shape:
-		collision_node.shape.height = distance
+	if mesh_node.mesh is CylinderMesh:
+		(mesh_node.mesh as CylinderMesh).height = distance
+	elif mesh_node.mesh != null and &"height" in mesh_node.mesh:
+		mesh_node.mesh.set(&"height", distance)
 
-	# Position & Rotation
+	if collision_node.shape is CylinderShape3D:
+		(collision_node.shape as CylinderShape3D).height = distance
+	elif collision_node.shape != null and &"height" in collision_node.shape:
+		collision_node.shape.set(&"height", distance)
+
 	mesh_node.global_position = center
 	var up_vector: Vector3 = Vector3.UP
-	if abs(direction.y) > 0.99:
+	if absf(direction.y) > 0.99:
 		up_vector = Vector3.RIGHT
 
 	mesh_node.look_at(end_pos, up_vector)
-	mesh_node.rotate_object_local(Vector3.RIGHT, PI / 2.0)
+	mesh_node.rotate_object_local(Vector3.RIGHT, PI * 0.5)
 	collision_node.global_transform = mesh_node.global_transform

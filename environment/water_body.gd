@@ -1,34 +1,28 @@
-## 3D water volume with Gerstner waves, rigid body buoyancy, and dynamic ripples.
-## Manages water geometry, surface waves, physics forces, and audio/visual states.
 @tool
+## 3D water volume with Gerstner waves, buoyancy, and dynamic ripples.
 class_name WaterBody
 extends MeshInstance3D
 
-## Emitted when an object splashes into or out of water with impact velocity.
-## [param global_pos] World coordinates of the splash impact.
-## [param velocity] Linear impact speed magnitude.
+## Emitted when an object splashes into or out of water with impact speed.
 signal splashed(global_pos: Vector3, velocity: float)
 
-## Total number of active dynamic ripples stored in the uniform buffer array.
+## Total number of active dynamic ripples stored in uniform buffer.
 const MAX_RIPPLES: int = 16
-
-## Horizontal propagation velocity of dynamic impact ripples in m/s.
+## Horizontal propagation velocity of dynamic ripples in meters per second.
 const RIPPLE_SPEED: float = 3.0
-
-## Spatial wavelength of concentric impact ripples along the surface in meters.
+## Spatial wavelength of concentric impact ripples along surface in meters.
 const RIPPLE_WAVELENGTH: float = 1.0
-
-## Total lifespan in seconds before dynamic impact ripples completely fade.
+## Total lifespan in seconds before dynamic impact ripples fade.
 const RIPPLE_LIFETIME: float = 2.5
 
-## Dimensions of the water volume in meters (X: length, Y: depth, Z: width).
+## Dimensions of water volume in meters (X: length, Y: depth, Z: width).
 @export var water_size: Vector3 = Vector3(10.0, 3.0, 10.0):
 	set(value):
 		water_size = value
 		if is_inside_tree():
 			_update_bounds()
 
-## Target density of mesh vertices per meter along horizontal axes for waves.
+## Target density of mesh vertices per meter along horizontal axes.
 @export_range(1.0, 8.0, 0.5) var vertex_density: float = 3.5:
 	set(value):
 		vertex_density = value
@@ -47,7 +41,7 @@ const RIPPLE_LIFETIME: float = 2.5
 ## Maximum water depth in meters where absorption gradient reaches deep color.
 @export_range(0.5, 50.0, 0.5) var depth_distance: float = 4.5
 
-## Steepness factor of Gerstner wave crests between 0.0 (sine) and 1.0.
+## Steepness factor of Gerstner wave crests between 0.0 and 1.0.
 @export_range(0.0, 1.0, 0.05) var wave_steepness: float = 0.35
 
 ## Primary Gerstner wave amplitude peak in meters.
@@ -90,7 +84,7 @@ const RIPPLE_LIFETIME: float = 2.5
 ## Maximum vertical 3D displacement amplitude for dynamic ripples in meters.
 @export var ripple_mesh_height: float = 0.22
 
-## Whether vertical perimeter side walls of the water mesh should render.
+## Whether vertical perimeter side walls of water mesh should render.
 @export var show_side_walls: bool = false
 
 ## Underwater volumetric fog tint color applied when submerged.
@@ -100,8 +94,7 @@ const RIPPLE_LIFETIME: float = 2.5
 @export_range(0.0, 250.0) var fog_fade_dist: float = 5.0
 
 @export_group("Automatic Reflection Probe")
-
-## Toggles automatic instantiation and sizing of the child [ReflectionProbe].
+## Toggles automatic instantiation and sizing of child [ReflectionProbe].
 @export var auto_manage_probe: bool = true:
 	set(value):
 		auto_manage_probe = value
@@ -129,6 +122,14 @@ const RIPPLE_LIFETIME: float = 2.5
 		if is_inside_tree():
 			_update_reflection_probe()
 
+## Cached surface ambient audio stream player child node.
+@onready
+var surface_audio: AudioStreamPlayer = get_node_or_null("%SurfaceAudio") as AudioStreamPlayer
+
+## Cached underwater ambient audio stream player child node.
+@onready
+var underwater_audio: AudioStreamPlayer = get_node_or_null("%UnderwaterAudio") as AudioStreamPlayer
+
 ## Active rigid bodies currently submerged and simulated in water volume.
 var floating_bodies: Array[RigidBody3D] = []
 
@@ -144,10 +145,10 @@ var _last_body_ripple_times: Dictionary = {}
 ## Rate-limiter flag preventing duplicate splash audio playback during load.
 var can_splash: bool = true
 
-## Submerged state of the active camera during the preceding frame.
+## Submerged state of active camera during preceding frame.
 var _was_underwater: bool = false
 
-## Y coordinate of the camera from preceding frame for velocity tracking.
+## Y coordinate of camera from preceding frame for velocity tracking.
 var _last_camera_y: float = 0.0
 
 ## Active tween driving screen-space resurface wash and droplets animation.
@@ -179,7 +180,7 @@ func _update_reflection_probe() -> void:
 	if not auto_manage_probe or not is_inside_tree():
 		return
 
-	print("WaterBody: Synchronizing automatic reflection probe bounds and origin.")
+	print("WaterBody: Synchronizing reflection probe bounds and origin.")
 	var probe: ReflectionProbe = get_node_or_null("%ReflectionProbe") as ReflectionProbe
 	if not is_instance_valid(probe):
 		probe = get_node_or_null("ReflectionProbe") as ReflectionProbe
@@ -192,7 +193,7 @@ func _update_reflection_probe() -> void:
 		if Engine.is_editor_hint() and owner:
 			probe.owner = owner
 
-	probe.position = Vector3(0.0, 0.0, 0.0)
+	probe.position = Vector3.ZERO
 	var total_box_height: float = maxf(water_size.y + probe_box_height, 12.0)
 	probe.size = Vector3(
 		water_size.x + probe_padding * 2.0, total_box_height, water_size.z + probe_padding * 2.0
@@ -258,15 +259,16 @@ func _ready() -> void:
 		swimmable_area.collision_mask |= (
 			CollisionLayers.MASK_PLAYER | CollisionLayers.MASK_INTERACTIVE
 		)
-		Utilities.safe_connect(swimmable_area.body_entered, _on_swimmable_area_body_entered)
-		Utilities.safe_connect(swimmable_area.body_exited, _on_swimmable_area_body_exited)
+		if not swimmable_area.body_entered.is_connected(_on_swimmable_area_body_entered):
+			swimmable_area.body_entered.connect(_on_swimmable_area_body_entered)
+		if not swimmable_area.body_exited.is_connected(_on_swimmable_area_body_exited):
+			swimmable_area.body_exited.connect(_on_swimmable_area_body_exited)
 
 	await get_tree().create_timer(1.0).timeout
 	can_splash = true
 
 
-## Simulates realistic buoyancy forces and generates movement ripples.
-## [param delta] Frame delta time in seconds.
+## Simulates buoyancy forces and generates movement ripples.
 func _physics_process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
@@ -323,7 +325,6 @@ func _physics_process(delta: float) -> void:
 
 
 ## Syncs shader parameters, evaluates camera submersion, and drives screen wipe.
-## [param delta] Frame delta time in seconds.
 func _process(delta: float) -> void:
 	var mat: ShaderMaterial = _get_water_material()
 	var current_time: float = float(Time.get_ticks_msec()) / 1000.0
@@ -356,7 +357,7 @@ func _process(delta: float) -> void:
 		var cam_velocity_y: float = 0.0
 
 		if is_instance_valid(camera):
-			cam_velocity_y = ((camera.global_position.y - _last_camera_y) / maxf(delta, 0.001))
+			cam_velocity_y = (camera.global_position.y - _last_camera_y) / maxf(delta, 0.001)
 			_last_camera_y = camera.global_position.y
 
 		var is_underwater: bool = should_draw_camera_underwater_effect()
@@ -376,13 +377,6 @@ func _process(delta: float) -> void:
 
 				Events.underwater_vfx_toggled.emit(true, 0.85, 0.0, 0.0)
 
-				var surface_audio: AudioStreamPlayer = (
-					get_node_or_null("%SurfaceAudio") as AudioStreamPlayer
-				)
-				var underwater_audio: AudioStreamPlayer = (
-					get_node_or_null("%UnderwaterAudio") as AudioStreamPlayer
-				)
-
 				if is_instance_valid(surface_audio) and surface_audio.playing:
 					surface_audio.stream_paused = true
 
@@ -396,56 +390,50 @@ func _process(delta: float) -> void:
 				(fog_volume.material as ShaderMaterial).set_shader_parameter(&"edge_fade", 1.1)
 
 			if _was_underwater:
-				print("WaterBody: Camera surfaced. Triggering wipe and droplets.")
+				print("WaterBody: Camera surfaced. Triggering screen wipe.")
 				_was_underwater = false
 
-				_resurface_tween = Utilities.reset_tween(self, _resurface_tween)
-				if is_instance_valid(_resurface_tween):
-					_resurface_tween.set_parallel(false)
+				if is_instance_valid(_resurface_tween) and _resurface_tween.is_valid():
+					_resurface_tween.kill()
+				_resurface_tween = create_tween()
+				_resurface_tween.set_parallel(false)
 
-					(
-						_resurface_tween
-						. tween_method(
-							func(prog: float) -> void:
-								var wipe_pct: float = clampf(prog / 1.5, 0.0, 1.0)
-								var wash: float = (1.0 - wipe_pct) * 0.95
-								Events.waterfall_vfx_toggled.emit(true, wash, prog),
-							0.0,
-							1.5,
-							0.9
-						)
-						. set_trans(Tween.TRANS_CUBIC)
-						. set_ease(Tween.EASE_OUT)
+				(
+					_resurface_tween
+					. tween_method(
+						func(prog: float) -> void:
+							var wipe_pct: float = clampf(prog / 1.5, 0.0, 1.0)
+							var wash: float = (1.0 - wipe_pct) * 0.95
+							Events.waterfall_vfx_toggled.emit(true, wash, prog),
+						0.0,
+						1.5,
+						0.9
 					)
-
-					_resurface_tween.tween_callback(
-						func() -> void:
-							Events.waterfall_vfx_toggled.emit(false, 0.0, 1.5)
-							Events.underwater_vfx_toggled.emit(false, 0.0, 1.0, 1.5)
-					)
-
-					(
-						_resurface_tween
-						. tween_method(
-							func(drop_val: float) -> void:
-								Events.underwater_vfx_toggled.emit(false, 0.0, drop_val, 1.5),
-							1.0,
-							0.0,
-							2.5
-						)
-						. set_trans(Tween.TRANS_SINE)
-						. set_ease(Tween.EASE_OUT)
-					)
-
-					_resurface_tween.tween_callback(
-						func() -> void: Events.underwater_vfx_toggled.emit(false, 0.0, 0.0, 1.5)
-					)
-
-				var surface_audio: AudioStreamPlayer = (
-					get_node_or_null("%SurfaceAudio") as AudioStreamPlayer
+					. set_trans(Tween.TRANS_CUBIC)
+					. set_ease(Tween.EASE_OUT)
 				)
-				var underwater_audio: AudioStreamPlayer = (
-					get_node_or_null("%UnderwaterAudio") as AudioStreamPlayer
+
+				_resurface_tween.tween_callback(
+					func() -> void:
+						Events.waterfall_vfx_toggled.emit(false, 0.0, 1.5)
+						Events.underwater_vfx_toggled.emit(false, 0.0, 1.0, 1.5)
+				)
+
+				(
+					_resurface_tween
+					. tween_method(
+						func(drop_val: float) -> void:
+							Events.underwater_vfx_toggled.emit(false, 0.0, drop_val, 1.5),
+						1.0,
+						0.0,
+						2.5
+					)
+					. set_trans(Tween.TRANS_SINE)
+					. set_ease(Tween.EASE_OUT)
+				)
+
+				_resurface_tween.tween_callback(
+					func() -> void: Events.underwater_vfx_toggled.emit(false, 0.0, 0.0, 1.5)
 				)
 
 				if is_instance_valid(underwater_audio) and underwater_audio.playing:
@@ -462,8 +450,6 @@ func _process(delta: float) -> void:
 
 
 ## Computes dynamic surface water height combining Gerstner waves and ripples.
-## [param global_pos] Global position where wave height is evaluated.
-## [return] Surface Y coordinate in world space.
 func get_wave_height_at_pos(global_pos: Vector3) -> float:
 	var cur_time: float = (float(Time.get_ticks_msec()) / 1000.0) * wave_speed
 	var k: float = TAU / maxf(wave_length, 0.1)
@@ -504,8 +490,6 @@ func get_wave_height_at_pos(global_pos: Vector3) -> float:
 
 
 ## Computes surface normal vector at [param global_pos] using finite differences.
-## [param global_pos] Position where normal vector is evaluated.
-## [return] Normalized surface normal [Vector3].
 func get_water_surface_normal(global_pos: Vector3) -> Vector3:
 	var step: float = 0.15
 	var h_center: float = get_wave_height_at_pos(global_pos)
@@ -518,7 +502,6 @@ func get_water_surface_normal(global_pos: Vector3) -> Vector3:
 
 
 ## Checks if active [Camera3D] is positioned beneath dynamic water surface.
-## [return] True if camera lens is submerged under water surface.
 func should_draw_camera_underwater_effect() -> bool:
 	var viewport: Viewport = get_viewport()
 	var camera: Camera3D = viewport.get_camera_3d() if viewport else null
@@ -548,7 +531,6 @@ func should_draw_camera_underwater_effect() -> bool:
 
 
 ## Registers entering bodies, triggers impact ripples, and plays splash audio.
-## [param body] Submerged 3D body entering water volume.
 func _on_swimmable_area_body_entered(body: Node3D) -> void:
 	print("WaterBody: Submerged object entered water volume -> ", body.name)
 	var impact_speed: float = 0.0
@@ -559,7 +541,7 @@ func _on_swimmable_area_body_entered(body: Node3D) -> void:
 			floating_bodies.append(rb)
 		impact_speed = rb.linear_velocity.length()
 		_last_body_positions[rb.get_instance_id()] = rb.global_position
-		_last_body_ripple_times[rb.get_instance_id()] = (float(Time.get_ticks_msec()) / 1000.0)
+		_last_body_ripple_times[rb.get_instance_id()] = float(Time.get_ticks_msec()) / 1000.0
 
 	elif body is CharacterBody3D:
 		var cb: CharacterBody3D = body as CharacterBody3D
@@ -567,7 +549,7 @@ func _on_swimmable_area_body_entered(body: Node3D) -> void:
 			character_bodies.append(cb)
 		impact_speed = cb.velocity.length()
 		_last_body_positions[cb.get_instance_id()] = cb.global_position
-		_last_body_ripple_times[cb.get_instance_id()] = (float(Time.get_ticks_msec()) / 1000.0)
+		_last_body_ripple_times[cb.get_instance_id()] = float(Time.get_ticks_msec()) / 1000.0
 		if body.has_method("enter_water"):
 			body.enter_water(self)
 
@@ -580,7 +562,6 @@ func _on_swimmable_area_body_entered(body: Node3D) -> void:
 
 
 ## Unregisters exiting bodies, triggers exit ripples, and plays exit splashes.
-## [param body] Submerged 3D body exiting water volume.
 func _on_swimmable_area_body_exited(body: Node3D) -> void:
 	print("WaterBody: Submerged object exited water volume -> ", body.name)
 	var exit_speed: float = 0.0
@@ -608,8 +589,6 @@ func _on_swimmable_area_body_exited(body: Node3D) -> void:
 
 
 ## Plays splash sound at surface impact point using pre-allocated [AudioPool].
-## [param impact_pos] Surface coordinate where splash occurred.
-## [param speed] Impact velocity magnitude of the body.
 func play_splash_sound(impact_pos: Vector3, speed: float) -> void:
 	if not can_splash or not splash_sound:
 		return
@@ -626,8 +605,6 @@ func play_splash_sound(impact_pos: Vector3, speed: float) -> void:
 
 
 ## Allocates a dynamic ripple at [param global_pos] into uniform ring buffer.
-## [param global_pos] World coordinate where ripple originates.
-## [param impact_strength] Intensity scalar scaling ripple height.
 func spawn_ripple(global_pos: Vector3, impact_strength: float = 1.0) -> void:
 	print("WaterBody: Spawning 3D ripple at ", global_pos, " strength: ", impact_strength)
 	var spawn_time: float = float(Time.get_ticks_msec()) / 1000.0

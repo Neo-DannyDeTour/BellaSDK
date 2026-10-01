@@ -1,40 +1,30 @@
 ## Controls accessibility, visual, and gameplay ergonomics options.
-## Coordinates child section components, event subscriptions, and theme updates.
 class_name AccessibilityPanel
 extends Panel
 
-## Child section managing vision assist and high contrast silhouettes.
-@onready var vision_section: AccessibilityVisionSection = (
-	find_child("VisionSection", true, false) as AccessibilityVisionSection
-)
+## Section managing vision assist and high contrast silhouettes.
+@export var vision_section: AccessibilityVisionSection
 
-## Child section managing environment adjustments and screen filters.
-@onready var visuals_section: AccessibilityVisualsSection = (
-	find_child("VisualsSection", true, false) as AccessibilityVisualsSection
-)
+## Section managing environment adjustments and screen filters.
+@export var visuals_section: AccessibilityVisualsSection
 
-## Child section managing display scale, typography, and FOV.
-@onready var display_ui_section: AccessibilityDisplayUISection = (
-	find_child("DisplayUISection", true, false) as AccessibilityDisplayUISection
-)
+## Section managing display scale, typography, and FOV.
+@export var display_ui_section: AccessibilityDisplayUISection
 
-## Child section managing gameplay controls, vibration, and sensitivity.
-@onready var controls_section: AccessibilityControlsSection = (
-	find_child("ControlsSection", true, false) as AccessibilityControlsSection
-)
+## Section managing gameplay controls, vibration, and sensitivity.
+@export var controls_section: AccessibilityControlsSection
 
-## Child section managing subtitles, TTS, and mono audio mixing.
-@onready var subs_audio_section: AccessibilitySubsAudioSection = (
-	find_child("SubsAudioSection", true, false) as AccessibilitySubsAudioSection
-)
+## Section managing subtitles, TTS, and mono audio mixing.
+@export var subs_audio_section: AccessibilitySubsAudioSection
 
 ## TabContainer organizing settings sections into distinct tabs.
-@onready var settings_tabs: TabContainer = find_child("SettingsTabs", true, false) as TabContainer
+@export var settings_tabs: TabContainer
 
 
-## Lifecycle initialization method orchestrating child components and event subscriptions.
+## Lifecycle initialization method orchestrating child components.
 func _ready() -> void:
-	print("UI: Accessibility Panel orchestrator initialized.")
+	print("AccessibilityPanel: Initializing accessibility panel.")
+	_resolve_section_references()
 	_connect_event_bus()
 	_connect_tab_routing()
 	_connect_section_hover_routing()
@@ -42,16 +32,33 @@ func _ready() -> void:
 	visible = true
 
 
-## Connects tab selection events to toggle preview shaders based on the active tab.
+## Resolves section node references via Scene Unique Names or NodeQuery.
+func _resolve_section_references() -> void:
+	print("AccessibilityPanel: Resolving section node references.")
+	if vision_section == null:
+		vision_section = get_node_or_null("%VisionSection") as AccessibilityVisionSection
+	if visuals_section == null:
+		visuals_section = get_node_or_null("%VisualsSection") as AccessibilityVisualsSection
+	if display_ui_section == null:
+		display_ui_section = get_node_or_null("%DisplayUISection") as AccessibilityDisplayUISection
+	if controls_section == null:
+		controls_section = get_node_or_null("%ControlsSection") as AccessibilityControlsSection
+	if subs_audio_section == null:
+		subs_audio_section = get_node_or_null("%SubsAudioSection") as AccessibilitySubsAudioSection
+	if settings_tabs == null:
+		settings_tabs = get_node_or_null("%SettingsTabs") as TabContainer
+
+
+## Connects tab selection events to toggle preview shaders.
 func _connect_tab_routing() -> void:
+	print("AccessibilityPanel: Connecting tab routing signals.")
 	if is_instance_valid(settings_tabs):
 		settings_tabs.tab_changed.connect(_on_tab_changed)
 
 
-## Handles tab switching in [TabContainer] to disable preview shaders when unfocused.
-## [param tab_index] The zero-based index of the newly active tab.
+## Handles tab switching in [TabContainer] to disable preview shaders.
 func _on_tab_changed(tab_index: int) -> void:
-	print("UI: Accessibility tab switched to index: ", tab_index)
+	print("AccessibilityPanel: Switched to tab index: ", tab_index)
 	if not is_instance_valid(settings_tabs) or not is_instance_valid(vision_section):
 		return
 	var active_tab: Node = settings_tabs.get_child(tab_index)
@@ -61,8 +68,9 @@ func _on_tab_changed(tab_index: int) -> void:
 	vision_section.set_preview_effects_active(is_vision_active)
 
 
-## Connects mouse hover events so preview shaders only activate in the Vision section.
+## Connects mouse hover events to toggle preview shaders.
 func _connect_section_hover_routing() -> void:
+	print("AccessibilityPanel: Binding section hover routing.")
 	if is_instance_valid(vision_section):
 		vision_section.mouse_entered.connect(
 			func() -> void:
@@ -84,7 +92,7 @@ func _connect_section_hover_routing() -> void:
 
 ## Delegates settings loading to each individual section controller.
 func _load_all_sections() -> void:
-	print("UI: Triggering section loads.")
+	print("AccessibilityPanel: Loading all section configurations.")
 	if is_instance_valid(vision_section):
 		vision_section.load_settings()
 	if is_instance_valid(visuals_section):
@@ -97,61 +105,53 @@ func _load_all_sections() -> void:
 		subs_audio_section.load_settings()
 
 
-## Subscribes to global EventBus signals to sync UI when console commands run.
+## Subscribes to global [Events] bus signals to sync UI with commands.
 func _connect_event_bus() -> void:
-	if not has_node("/root/Events"):
-		return
-	var events: Node = get_node("/root/Events")
-	if events.has_signal("colorblind_mode_changed"):
-		events.colorblind_mode_changed.connect(_on_external_colorblind_changed)
-	if events.has_signal("high_contrast_toggled"):
-		events.high_contrast_toggled.connect(_on_external_high_contrast_changed)
-	if events.has_signal("photosensitivity_mode_toggled"):
-		events.photosensitivity_mode_toggled.connect(_on_external_photosensitivity_changed)
-	if events.has_signal("vision_assist_toggled"):
-		events.vision_assist_toggled.connect(_on_external_vision_assist_changed)
-	if events.has_signal("font_scale_changed"):
-		events.font_scale_changed.connect(_on_font_scale_changed)
+	print("AccessibilityPanel: Connecting to global Events bus.")
+	Events.colorblind_mode_changed.connect(_on_external_colorblind_changed)
+	Events.high_contrast_toggled.connect(_on_external_high_contrast_changed)
+	Events.photosensitivity_mode_toggled.connect(_on_external_photosensitivity_changed)
+	Events.vision_assist_toggled.connect(_on_external_vision_assist_changed)
+	Events.font_scale_changed.connect(_on_font_scale_changed)
 
 
 ## Forwards external colorblind changes to the visuals section.
-## [param mode] Mode index passed by console.
 func _on_external_colorblind_changed(mode: int) -> void:
+	print("AccessibilityPanel: Colorblind mode changed to: ", mode)
 	if is_instance_valid(visuals_section):
 		visuals_section.sync_external_colorblind(mode)
 
 
-## Forwards external high contrast changes to the visuals section.
-## [param active] Enabled state passed by console.
+## Forwards external high contrast changes to visuals section.
 func _on_external_high_contrast_changed(active: bool) -> void:
+	print("AccessibilityPanel: High contrast toggled: ", active)
 	if is_instance_valid(visuals_section):
 		visuals_section.sync_external_high_contrast(active)
 
 
-## Forwards external photosensitivity changes to the visuals section.
-## [param active] Enabled state passed by console.
+## Forwards external photosensitivity changes to visuals section.
 func _on_external_photosensitivity_changed(active: bool) -> void:
+	print("AccessibilityPanel: Photosensitivity toggled: ", active)
 	if is_instance_valid(visuals_section):
 		visuals_section.sync_external_photosensitivity(active)
 
 
-## Forwards external vision assist toggle changes to the vision section.
-## [param active] Enabled state passed by console.
+## Forwards external vision assist toggle changes to vision section.
 func _on_external_vision_assist_changed(active: bool) -> void:
+	print("AccessibilityPanel: Vision assist toggled: ", active)
 	if is_instance_valid(vision_section):
 		vision_section.sync_external_vision_assist(active)
 
 
-## Responds to global font scaling updates and triggers tree theme notification.
-## [param scale_factor] Multiplier for UI font scaling.
+## Responds to global font scaling updates and refreshes theme.
 func _on_font_scale_changed(scale_factor: float) -> void:
+	print("AccessibilityPanel: Font scale changed: ", scale_factor)
 	if is_instance_valid(display_ui_section):
 		display_ui_section.apply_font_scale_to_theme(scale_factor)
 	_propagate_theme_refresh(self)
 
 
-## Notifies control nodes down the subtree to invalidate their theme caches.
-## [param node] The parent [Node] starting point.
+## Notifies control nodes down subtree to invalidate theme caches.
 func _propagate_theme_refresh(node: Node) -> void:
 	if not is_instance_valid(node):
 		return
@@ -161,9 +161,9 @@ func _propagate_theme_refresh(node: Node) -> void:
 		_propagate_theme_refresh(child)
 
 
-## Refreshes docked diorama cameras and resets preview shader to normal.
+## Refreshes docked diorama cameras and resets preview shader.
 func _setup_diorama_cameras() -> void:
-	print("UI: OptionsRouter notified AccessibilityPanel to refresh diorama cameras.")
+	print("AccessibilityPanel: Refreshing diorama cameras.")
 	if is_instance_valid(vision_section):
 		vision_section.cache_diorama_cameras()
 		vision_section.set_preview_effects_active(false)

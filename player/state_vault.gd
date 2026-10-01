@@ -1,39 +1,42 @@
+## Handles ledge vault execution and handoff via [VaultController].
 class_name StateVault
 extends PlayerState
 
 
+## Initializes vault state, connects finish signal, and resets player velocity.
 func enter(_msg: Dictionary = {}) -> void:
-	# 1. Safely route to the vault controller via the new component architecture
-	var env: Node = player.environment_component
-	var vault_ctrl: Node = env.get("vault_controller") if is_instance_valid(env) else null
+	print("StateVault: enter() called. Initializing vault execution.")
+	var env: PlayerEnvironmentComponent = player.environment_component as PlayerEnvironmentComponent
+	var vault_ctrl: Node = env.vault_controller if is_instance_valid(env) else null
 
 	if is_instance_valid(vault_ctrl):
-		# Listen for the VaultController to tell us it's done
-		if not vault_ctrl.vault_finished.is_connected(_on_vault_finished):
-			vault_ctrl.vault_finished.connect(_on_vault_finished)
+		if not vault_ctrl.is_connected(&"vault_finished", _on_vault_finished):
+			vault_ctrl.connect(&"vault_finished", _on_vault_finished)
 
-	# 2. Kill momentum so the player doesn't slide during the vault
 	player.velocity = Vector3.ZERO
 
 
+## Cleans up signal connections on [VaultController] during state exit.
 func exit() -> void:
-	var env: Node = player.environment_component
-	var vault_ctrl: Node = env.get("vault_controller") if is_instance_valid(env) else null
+	print("StateVault: exit() called. Cleaning up vault connections.")
+	var env: PlayerEnvironmentComponent = player.environment_component as PlayerEnvironmentComponent
+	var vault_ctrl: Node = env.vault_controller if is_instance_valid(env) else null
 
 	if is_instance_valid(vault_ctrl):
-		# Clean up the connection so it doesn't fire multiple times
-		if vault_ctrl.vault_finished.is_connected(_on_vault_finished):
-			vault_ctrl.vault_finished.disconnect(_on_vault_finished)
+		if vault_ctrl.is_connected(&"vault_finished", _on_vault_finished):
+			vault_ctrl.disconnect(&"vault_finished", _on_vault_finished)
 
 
+## Maintains suspended physics state while vault tweens translate player.
 func physics_update(_delta: float) -> void:
-	# Do absolutely nothing. The VaultController's Tweens are moving the player.
-	pass
+	print("StateVault: physics_update() holding player velocity during vault tween.")
+	player.velocity = Vector3.ZERO
 
 
+## Handles vault completion and transitions player to [StateGround] or [StateAir].
 func _on_vault_finished() -> void:
-	# Return control to the player based on where they landed
+	print("StateVault: _on_vault_finished() triggered. Evaluating landing state.")
 	if player.is_on_floor():
-		state_machine.transition_to("Ground")
+		state_machine.transition_to(&"Ground")
 	else:
-		state_machine.transition_to("Air")
+		state_machine.transition_to(&"Air")

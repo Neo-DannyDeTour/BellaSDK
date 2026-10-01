@@ -1,10 +1,7 @@
-## Manages mid-air movement, variable gravity, coyote time, and jump buffering.
+## Manages mid-air movement, variable gravity, coyote time, and jump buffering in [StateAir].
 class_name StateAir
 extends PlayerState
 
-# --------------------------------------
-# CONSTANTS & VARIABLES
-# --------------------------------------
 ## Upward velocity applied when executing a standard jump.
 const JUMP_VELOCITY: float = 4.5
 
@@ -32,42 +29,43 @@ var launch_gravity: float = 9.8
 ## Specialized descent gravity scalar applied during jump pad launches.
 var launch_fall_gravity: float = 9.8
 
+## Reusable transition payload dictionary to eliminate runtime heap allocations.
+var _transition_msg: Dictionary = {}
+
 
 ## Initializes airborne state, processes knockback impulses, and sets timers.
-## [param msg] Initialization data dictionary passed from the previous state.
 func enter(msg: Dictionary = {}) -> void:
 	print("StateAir: enter() called. Initializing air state.")
-	has_jumped = msg.has("jump") and msg["jump"] == true
+	has_jumped = msg.has(&"jump") and msg[&"jump"] == true
 
-	if msg.has("knockback_force"):
-		player.velocity = msg["knockback_force"] as Vector3
+	if msg.has(&"knockback_force"):
+		player.velocity = msg[&"knockback_force"] as Vector3
 		coyote_timer = 0.0
 		jump_buffer_timer = 0.0
 		print("StateAir: Knockback applied with force: ", player.velocity)
 
-	is_launched = msg.has("jump_pad") and msg["jump_pad"] == true
+	is_launched = msg.has(&"jump_pad") and msg[&"jump_pad"] == true
 	if is_launched:
 		print("StateAir: Player launched via jump pad.")
-		launch_gravity = msg.get("launch_gravity", 9.8) as float
-		launch_fall_gravity = msg.get("launch_fall_gravity", 9.8) as float
+		launch_gravity = float(msg.get(&"launch_gravity", 9.8))
+		launch_fall_gravity = float(msg.get(&"launch_fall_gravity", 9.8))
 
-	var loco: Node = player.locomotion_component
+	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
 
-	if msg.has("release_dir"):
-		var r_dir: Vector3 = msg["release_dir"]
+	if msg.has(&"release_dir"):
+		var r_dir: Vector3 = msg[&"release_dir"]
 		loco.set_direction(Vector3(r_dir.x, 0.0, r_dir.z).normalized())
 		print("StateAir: Inherited momentum direction from previous state.")
 
-	if msg.has("coyote_time") and msg["coyote_time"] == true and not msg.has("knockback_force"):
+	if msg.has(&"coyote_time") and msg[&"coyote_time"] == true and not msg.has(&"knockback_force"):
 		coyote_timer = loco.coyote_time_duration
-	elif not msg.has("knockback_force"):
+	elif not msg.has(&"knockback_force"):
 		coyote_timer = 0.0
 
 	jump_buffer_timer = 0.0
 
 
 ## Applies gravity, mid-air steering, collision checks, and transitions.
-## [param delta] The physics frame delta time in seconds.
 func physics_update(delta: float) -> void:
 	print("StateAir: physics_update() processing mid-air frame.")
 	_handle_gravity(delta)
@@ -76,18 +74,18 @@ func physics_update(delta: float) -> void:
 	if not is_launched:
 		_handle_jump_input()
 
-	var loco: Node = player.locomotion_component
-	var env: Node = player.environment_component
-	var input_dir: Vector2 = GestureInputManager.get_vector("left", "right", "forward", "backward")
+	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	var env: PlayerEnvironmentComponent = player.environment_component as PlayerEnvironmentComponent
+	var input_dir: Vector2 = GestureInputManager.get_vector(
+		&"left", &"right", &"forward", &"backward"
+	)
 
 	if env.in_updraft:
 		loco.sprint_active = false
 		loco.crouching = false
 
-	# 1. Process standard or high-momentum air movement
 	_apply_air_movement(delta, input_dir)
 
-	# 2. Updraft steering boost
 	if env.in_updraft and input_dir != Vector2.ZERO and not is_launched:
 		var walk_dir: Vector3 = (
 			(player.global_transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
@@ -108,12 +106,11 @@ func physics_update(delta: float) -> void:
 	_check_monkey_bar_grab()
 
 
-## Applies gravity or updraft forces based on player state.
-## [param delta] The physics frame delta time in seconds.
+## Applies gravity or updraft forces based on environment context via [MathUtils].
 func _handle_gravity(delta: float) -> void:
 	print("StateAir: _handle_gravity() applying vertical acceleration.")
-	var loco: Node = player.locomotion_component
-	var env: Node = player.environment_component
+	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	var env: PlayerEnvironmentComponent = player.environment_component as PlayerEnvironmentComponent
 
 	if is_launched:
 		if player.velocity.y < 0.0:
@@ -126,15 +123,14 @@ func _handle_gravity(delta: float) -> void:
 		if player.is_on_ceiling():
 			player.velocity.y = -0.1
 		else:
-			player.velocity.y = lerpf(player.velocity.y, env.updraft_strength, delta * 4.0)
+			player.velocity.y = MathUtils.damp(player.velocity.y, env.updraft_strength, 4.0, delta)
 	elif player.velocity.y < 0.0:
 		player.velocity.y -= loco.gravity * loco.fall_gravity_multiplier * delta
 	else:
 		player.velocity.y -= loco.gravity * delta
 
 
-## Decays coyote time and jump buffer timers.
-## [param delta] The physics frame delta time in seconds.
+## Decays coyote time and jump buffer timers by [param delta].
 func _handle_timers(delta: float) -> void:
 	print("StateAir: _handle_timers() ticking countdowns.")
 	if coyote_timer > 0.0:
@@ -143,7 +139,7 @@ func _handle_timers(delta: float) -> void:
 		jump_buffer_timer -= delta
 
 
-## Processes mid-air jump inputs, enforcing heavy carry restrictions.
+## Processes mid-air jump inputs, enforcing heavy carrying restrictions.
 func _handle_jump_input() -> void:
 	print("StateAir: _handle_jump_input() checking airborne jump requests.")
 	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
@@ -152,7 +148,7 @@ func _handle_jump_input() -> void:
 	)
 	var is_holding_heavy: bool = is_instance_valid(interact) and interact.is_heavy_carrying
 
-	if GestureInputManager.is_action_just_pressed("jump"):
+	if GestureInputManager.is_action_just_pressed(&"jump"):
 		print("StateAir: Jump input detected.")
 		if is_holding_heavy:
 			print("StateAir: Jump rejected. Object is too heavy (>= 10kg).")
@@ -182,9 +178,7 @@ func _perform_coyote_jump() -> void:
 		player.velocity.y = JUMP_VELOCITY
 
 
-## Computes horizontal air steering and momentum damping.
-## [param delta] The physics frame delta time in seconds.
-## [param input_dir] Normalized 2D movement input vector.
+## Computes horizontal air steering and momentum damping via [MathUtils].
 func _apply_air_movement(delta: float, input_dir: Vector2) -> void:
 	print("StateAir: _apply_air_movement() calculating horizontal air steering.")
 	if is_launched:
@@ -207,37 +201,37 @@ func _apply_air_movement(delta: float, input_dir: Vector2) -> void:
 	)
 	var steer_rate: float = loco.air_lerp_speed * 0.5 if is_holding_heavy else loco.air_lerp_speed
 
-	# 1. High Momentum Handling (Rope / Swing Dismount)
 	if current_speed > max_air_speed:
 		var air_drag: float = 1.2
-		horizontal_velocity = horizontal_velocity.lerp(Vector2.ZERO, air_drag * delta)
+		horizontal_velocity = MathUtils.damp(horizontal_velocity, Vector2.ZERO, air_drag, delta)
 
 		if input_dir != Vector2.ZERO:
 			var steer_vec: Vector2 = Vector2(target_dir.x, target_dir.z) * (max_air_speed * delta)
 			horizontal_velocity += steer_vec
-			loco.set_direction(loco.get_direction().lerp(target_dir, delta * steer_rate))
+			loco.set_direction(MathUtils.damp(loco.get_direction(), target_dir, steer_rate, delta))
 
 		player.velocity.x = horizontal_velocity.x
 		player.velocity.z = horizontal_velocity.y
 		return
 
-	# 2. Standard Air Movement
 	if input_dir != Vector2.ZERO:
-		loco.set_direction(loco.get_direction().lerp(target_dir, delta * steer_rate))
+		loco.set_direction(MathUtils.damp(loco.get_direction(), target_dir, steer_rate, delta))
 		if current_speed < max_air_speed:
-			current_speed = lerpf(current_speed, max_air_speed, delta * steer_rate)
+			current_speed = MathUtils.damp(current_speed, max_air_speed, steer_rate, delta)
 	else:
-		current_speed = lerpf(current_speed, 0.0, delta * steer_rate)
+		current_speed = MathUtils.damp(current_speed, 0.0, steer_rate, delta)
 
 	player.velocity.x = loco.get_direction().x * current_speed
 	player.velocity.z = loco.get_direction().z * current_speed
 
 
-## Polls surface contacts, landing conditions, and ledge vaults.
+## Polls surface contacts, landing conditions, water, and ledge vaults.
 func _check_transitions() -> void:
 	print("StateAir: _check_transitions() checking state handoffs.")
-	var env: Node = player.environment_component
-	var interact: Node = player.interaction_component
+	var env: PlayerEnvironmentComponent = player.environment_component as PlayerEnvironmentComponent
+	var interact: PlayerInteractionComponent = (
+		player.interaction_component as PlayerInteractionComponent
+	)
 
 	if player.is_on_floor() and player.velocity.y <= 0.0:
 		_handle_landing()
@@ -245,48 +239,47 @@ func _check_transitions() -> void:
 
 	if is_instance_valid(env.current_water_node) and player.velocity.y < -1.0:
 		print("StateAir: Entering deep water.")
-		state_machine.transition_to("Swim")
+		state_machine.transition_to(&"Swim")
 		return
 
 	var is_holding_item: bool = is_instance_valid(interact.held_item)
-	var is_pressing_forward: bool = GestureInputManager.is_action_pressed("forward")
+	var is_pressing_forward: bool = GestureInputManager.is_action_pressed(&"forward")
 
 	if (
 		is_pressing_forward
 		and player.velocity.y < 2.0
 		and is_instance_valid(env.vault_controller)
-		and not env.vault_controller.get("is_vaulting")
+		and not env.vault_controller.get(&"is_vaulting")
 		and env.ladder_cooldown <= 0.2
 	):
 		if not is_holding_item:
 			env.vault_controller.process_vault_scan()
 			var jump_requested: bool = (
-				GestureInputManager.is_action_just_pressed("jump") or jump_buffer_timer > 0.0
+				GestureInputManager.is_action_just_pressed(&"jump") or jump_buffer_timer > 0.0
 			)
-			if jump_requested and env.vault_controller.get("can_vault_current_ledge"):
+			if jump_requested and env.vault_controller.get(&"can_vault_current_ledge"):
 				var loco: PlayerLocomotionComponent = (
 					player.locomotion_component as PlayerLocomotionComponent
 				)
 				if env.vault_controller.try_vault(loco.crouching):
 					jump_buffer_timer = 0.0
 					print("StateAir: Vaulting ledge on jump input.")
-					state_machine.transition_to("Vault")
+					state_machine.transition_to(&"Vault")
 					return
 
 	if is_holding_item and interact.held_item is GliderItem and player.velocity.y < 0.0:
 		print("StateAir: Player is holding a GliderItem and falling. Transitioning to Glide.")
-		state_machine.transition_to("Glide")
+		state_machine.transition_to(&"Glide")
 		return
 
 
-## Processes ground collision, evaluates fall damage, and transitions.
+## Processes ground collision, evaluates fall damage, and triggers landing.
 func _handle_landing() -> void:
 	print("StateAir: _handle_landing() called. Processing ground impact.")
 	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
-	var stats: Node = player.stats_component
+	var stats: StatsComponent = player.stats_component as StatsComponent
 
 	var impact_fall_speed: float = loco.last_velocity.y
-
 	var is_safe_landing: bool = false
 	var is_slide_surface: bool = false
 
@@ -299,14 +292,15 @@ func _handle_landing() -> void:
 			continue
 
 		if collision.get_normal().y > 0.1:
-			if collider.is_in_group("safe_landing"):
+			var node_col: Node = collider as Node
+			if node_col.is_in_group(&"safe_landing"):
 				is_safe_landing = true
 
-			var current_is_slide: bool = collider.is_in_group("slide_surface")
+			var current_is_slide: bool = node_col.is_in_group(&"slide_surface")
 			if not current_is_slide:
-				var parent_node: Node = collider.get_parent()
+				var parent_node: Node = node_col.get_parent()
 				if is_instance_valid(parent_node):
-					current_is_slide = parent_node.is_in_group("slide_surface")
+					current_is_slide = parent_node.is_in_group(&"slide_surface")
 
 			if current_is_slide:
 				is_slide_surface = true
@@ -316,14 +310,15 @@ func _handle_landing() -> void:
 			print("StateAir: Impact neutralized by safe landing material.")
 		else:
 			print("StateAir: Heavy impact detected. Applying fall damage.")
-			var max_hp: int = stats.health_component.get("max_health") as int
+			var max_hp: int = int(stats.health_component.get(&"max_health"))
 			stats.health_component.take_damage(max_hp)
 
-	var msg: Dictionary = {"landing_speed": impact_fall_speed}
+	_transition_msg.clear()
+	_transition_msg[&"landing_speed"] = impact_fall_speed
 
 	if is_slide_surface:
 		print("StateAir: Slide surface detected. Transitioning to Slide.")
-		state_machine.transition_to("Slide", msg)
+		state_machine.transition_to(&"Slide", _transition_msg)
 		return
 
 	print("StateAir: Standard ground detected. Transitioning to Ground.")
@@ -333,14 +328,12 @@ func _handle_landing() -> void:
 		)
 		var is_holding_heavy: bool = is_instance_valid(interact) and interact.is_heavy_carrying
 		if not is_holding_heavy:
-			msg["jump_buffered"] = true
+			_transition_msg[&"jump_buffered"] = true
 
-	state_machine.transition_to("Ground", msg)
+	state_machine.transition_to(&"Ground", _transition_msg)
 
 
 ## Updates camera transforms and interaction scanner raycasts.
-## [param delta] The physics frame delta time in seconds.
-## [param input_dir] Normalized 2D movement input vector.
 func _update_components(delta: float, input_dir: Vector2) -> void:
 	print("StateAir: _update_components() polling camera and scanner.")
 	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
@@ -360,11 +353,13 @@ func _update_components(delta: float, input_dir: Vector2) -> void:
 ## Checks for nearby monkey bar handles and transitions to [StateMonkeyBars].
 func _check_monkey_bar_grab() -> void:
 	print("StateAir: _check_monkey_bar_grab() checking grab targets.")
-	var env: Node = player.environment_component
+	var env: PlayerEnvironmentComponent = player.environment_component as PlayerEnvironmentComponent
 
 	if not is_instance_valid(env):
 		return
 
 	if is_instance_valid(env.available_monkey_bar) and env.monkey_bar_cooldown <= 0.0:
 		print("StateAir: Grabbed monkey bar.")
-		state_machine.transition_to("MonkeyBars", {"volume_node": env.available_monkey_bar})
+		_transition_msg.clear()
+		_transition_msg[&"volume_node"] = env.available_monkey_bar
+		state_machine.transition_to(&"MonkeyBars", _transition_msg)

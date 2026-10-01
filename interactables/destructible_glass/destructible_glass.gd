@@ -1,9 +1,9 @@
-## Destructible glass pane with deferred procedural shard generation on physical impact.
 @tool
+## Destructible glass pane with deferred procedural shard generation on impact.
 class_name DestructibleGlass
 extends RigidBody3D
 
-## Emitted when the glass receives breaking damage or high-speed impact.
+## Emitted when glass receives breaking damage or high-speed impact.
 signal glass_broken
 
 @export_group("Dimensions & Shards")
@@ -14,7 +14,7 @@ signal glass_broken
 		_apply_dimensions()
 		_update_material()
 
-## Thickness of the glass pane along the Z axis.
+## Thickness of glass pane along Z axis.
 @export var glass_thickness: float = 0.1:
 	set(value):
 		glass_thickness = value
@@ -33,23 +33,23 @@ signal glass_broken
 		can_break = value
 		_update_material()
 
-## Distance radius around impact point where shards are detached.
+## Distance radius around impact point where shards detach.
 @export var shatter_radius: float = 0.8
 
-## Minimum incoming damage required to shatter the intact pane.
+## Minimum incoming damage required to shatter the pane.
 @export var damage_threshold: float = 10.0
 
-## Minimum relative collision speed required to shatter the glass.
+## Minimum relative collision speed required to shatter glass.
 @export var impact_velocity_threshold: float = 5.0
 
 ## Time in seconds before detached shards scale down and despawn.
 @export var shard_cleanup_time: float = 5.0
 
-## Audio stream played when the glass pane breaks.
+## Audio stream played when glass pane breaks.
 @export var break_sound: AudioStream
 
 @export_group("Shader Parameters")
-## Base color tint assigned to the glass material shader.
+## Base color tint assigned to glass material shader.
 @export var glass_color: Color = Color(0.8, 0.9, 1.0, 0.4):
 	set(value):
 		glass_color = value
@@ -61,13 +61,13 @@ signal glass_broken
 		net_color = value
 		_update_material()
 
-## UV scale factor applied to the reinforcement net shader.
+## UV scale factor applied to reinforcement net shader.
 @export var net_scale: float = 20.0:
 	set(value):
 		net_scale = value
 		_update_material()
 
-## Tracks whether the primary intact sheet has shattered.
+## Tracks whether primary intact sheet has shattered.
 var _is_broken: bool = false
 
 ## Tracks whether shard rigid bodies have been generated.
@@ -76,45 +76,40 @@ var _shards_generated: bool = false
 ## Two-dimensional grid storing active [DestructibleGlassShard] instances.
 var _shard_grid: Array = []
 
-## Visual mesh instance of the intact glass sheet.
+## Visual mesh instance of intact glass sheet.
 @onready var intact_mesh: MeshInstance3D = $IntactMesh
 
-## Collision shape of the intact glass sheet.
+## Collision shape of intact glass sheet.
 @onready var intact_collision: CollisionShape3D = $IntactCollision
-
-## Audio player for glass breakage sound effects.
-@onready var break_sound_player: AudioStreamPlayer3D = $BreakSound
 
 ## Hierarchy parent node containing generated shard nodes.
 @onready var shards_container: Node3D = $ShardsContainer
 
 
-## Physics shard piece instantiated dynamically when [DestructibleGlass] shatters.
+## Physics shard piece instantiated dynamically when glass shatters.
 class DestructibleGlassShard:
 	extends RigidBody3D
 
 	## Reference to root [DestructibleGlass] controller.
 	var main_glass: DestructibleGlass
 
-	## Column index of the shard within the grid.
+	## Column index of shard within grid.
 	var grid_x: int = -1
 
-	## Row index of the shard within the grid.
+	## Row index of shard within grid.
 	var grid_y: int = -1
 
-	## Indicates whether this shard has already detached.
+	## Indicates whether this shard has detached.
 	var is_destroyed: bool = false
 
-	## Initializes contact reporting and signals for the shard body.
+	## Initializes contact reporting and signals for shard body.
 	func _ready() -> void:
+		print("GlassShard: Initializing shard at (", grid_x, ", ", grid_y, ").")
 		contact_monitor = true
 		max_contacts_reported = 1
-		Utilities.safe_connect(body_entered, _on_shard_body_entered)
+		body_entered.connect(_on_shard_body_entered)
 
 	## Relays damage impulses to [DestructibleGlass] or applies physics force.
-	## [param amount] Incoming damage amount.
-	## [param hit_position] Impact contact coordinates.
-	## [param hit_dir] Incoming trajectory vector.
 	func take_damage(amount: float, hit_position: Vector3, hit_dir: Vector3) -> void:
 		if main_glass == null:
 			return
@@ -128,7 +123,6 @@ class DestructibleGlassShard:
 			apply_impulse(impulse, offset)
 
 	## Evaluates impact speed on frozen shards to trigger further breakage.
-	## [param body] Physics body colliding with the shard.
 	func _on_shard_body_entered(body: Node) -> void:
 		if not freeze or is_destroyed or main_glass == null:
 			return
@@ -150,6 +144,7 @@ class DestructibleGlassShard:
 
 ## Validates dimensions, configures audio, and binds collision callbacks.
 func _ready() -> void:
+	print("DestructibleGlass: Initializing glass pane: ", name)
 	_apply_dimensions()
 	_update_material()
 
@@ -157,15 +152,11 @@ func _ready() -> void:
 		return
 
 	if not scale.is_equal_approx(Vector3.ONE):
-		print("DestructibleGlass (", name, "): Baking scale into dimensions.")
 		glass_size = Vector2(glass_size.x * scale.x, glass_size.y * scale.y)
 		glass_thickness *= scale.z
 		scale = Vector3.ONE
 
-	Utilities.safe_connect(body_entered, _on_body_entered)
-
-	if break_sound != null and is_instance_valid(break_sound_player):
-		break_sound_player.stream = break_sound
+	body_entered.connect(_on_body_entered)
 
 
 ## Updates intact mesh and collision shapes matching exported dimensions.
@@ -175,7 +166,6 @@ func _apply_dimensions() -> void:
 
 	var mesh_inst: MeshInstance3D = get_node_or_null("IntactMesh") as MeshInstance3D
 	var coll: CollisionShape3D = get_node_or_null("IntactCollision") as CollisionShape3D
-
 	var dimensions: Vector3 = Vector3(glass_size.x, glass_size.y, glass_thickness)
 
 	if mesh_inst != null and mesh_inst.mesh is BoxMesh:
@@ -190,8 +180,7 @@ func _update_material() -> void:
 	if not is_inside_tree():
 		return
 
-	print("DestructibleGlass (", name, "): Updating material parameters.")
-
+	print("DestructibleGlass: Updating shader uniforms on: ", name)
 	var mesh_inst: MeshInstance3D = get_node_or_null("IntactMesh") as MeshInstance3D
 	if mesh_inst != null:
 		_apply_instance_shader_parameters(mesh_inst)
@@ -209,7 +198,6 @@ func _update_material() -> void:
 
 
 ## Writes color, scale, and armor properties to mesh instance uniforms.
-## [param mesh_instance] Target mesh receiving uniforms.
 func _apply_instance_shader_parameters(mesh_instance: MeshInstance3D) -> void:
 	mesh_instance.set_instance_shader_parameter("is_armored", not can_break)
 	mesh_instance.set_instance_shader_parameter("glass_scale", glass_size)
@@ -219,12 +207,8 @@ func _apply_instance_shader_parameters(mesh_instance: MeshInstance3D) -> void:
 
 
 ## Processes damage taken, initiating glass shatter or localized chipping.
-## [param amount] Incoming damage amount.
-## [param hit_position] Impact point coordinates.
-## [param hit_dir] Incoming direction vector.
 func take_damage(amount: float, hit_position: Vector3, hit_dir: Vector3) -> void:
-	print("DestructibleGlass (", name, "): take_damage registered: ", amount)
-
+	print("DestructibleGlass: take_damage registered: ", amount)
 	if amount >= damage_threshold:
 		if not _is_broken:
 			_is_broken = true
@@ -233,13 +217,12 @@ func take_damage(amount: float, hit_position: Vector3, hit_dir: Vector3) -> void
 			call_deferred("chip_glass", hit_position, hit_dir)
 
 
-## Inspects physical body velocities colliding with the intact pane.
-## [param body] Colliding body node.
+## Inspects physical body velocities colliding with intact pane.
 func _on_body_entered(body: Node) -> void:
 	if _is_broken:
 		return
 
-	print("DestructibleGlass (", name, "): Checking body impact velocity.")
+	print("DestructibleGlass: Body impact detected.")
 	var speed: float = 0.0
 	var rel_vel: Vector3 = Vector3.ZERO
 
@@ -251,7 +234,7 @@ func _on_body_entered(body: Node) -> void:
 		speed = rel_vel.length()
 
 	if speed >= impact_velocity_threshold:
-		print("DestructibleGlass (", name, "): Impact velocity met. Breaking.")
+		print("DestructibleGlass: Impact velocity met. Breaking.")
 		_is_broken = true
 		var hit_dir: Vector3 = rel_vel.normalized()
 		call_deferred("_break_initial", body.global_position, hit_dir)
@@ -259,7 +242,7 @@ func _on_body_entered(body: Node) -> void:
 
 ## Generates shard procedural meshes and rigid bodies lazily on break.
 func _precalculate_shards() -> void:
-	print("DestructibleGlass (", name, "): Lazily building shard grid...")
+	print("DestructibleGlass: Building shard grid lazily.")
 	_shards_generated = true
 
 	var size: Vector3 = Vector3(glass_size.x, glass_size.y, glass_thickness)
@@ -290,12 +273,6 @@ func _precalculate_shards() -> void:
 	var active_mat: Material = intact_mesh.material_override
 	if active_mat == null:
 		active_mat = intact_mesh.get_surface_override_material(0)
-
-	if active_mat == null and intact_mesh.mesh != null:
-		if intact_mesh.mesh is PrimitiveMesh:
-			active_mat = intact_mesh.mesh.material
-		elif intact_mesh.mesh.get_surface_count() > 0:
-			active_mat = intact_mesh.mesh.surface_get_material(0)
 
 	_shard_grid.clear()
 
@@ -371,17 +348,6 @@ func _precalculate_shards() -> void:
 
 
 ## Constructs triangular faces and normals for a single shard wedge.
-## [param st] Target surface tool.
-## [param lv1] Local vertex 1.
-## [param lv2] Local vertex 2.
-## [param lv3] Local vertex 3.
-## [param lv4] Local vertex 4.
-## [param gv1] Global coordinate vertex 1.
-## [param gv2] Global coordinate vertex 2.
-## [param gv3] Global coordinate vertex 3.
-## [param gv4] Global coordinate vertex 4.
-## [param ht] Half thickness along Z axis.
-## [param size] 2D dimensions of shard.
 func _add_faces_to_surfacetool(
 	st: SurfaceTool,
 	lv1: Vector2,
@@ -400,7 +366,6 @@ func _add_faces_to_surfacetool(
 	var uv3: Vector2 = Vector2(gv3.x / size.x + 0.5, 0.5 - (gv3.y / size.y))
 	var uv4: Vector2 = Vector2(gv4.x / size.x + 0.5, 0.5 - (gv4.y / size.y))
 
-	# Front face
 	st.set_normal(Vector3(0, 0, 1))
 	st.set_uv(uv1)
 	st.add_vertex(Vector3(lv1.x, lv1.y, ht))
@@ -415,7 +380,6 @@ func _add_faces_to_surfacetool(
 	st.set_uv(uv4)
 	st.add_vertex(Vector3(lv4.x, lv4.y, ht))
 
-	# Back face
 	st.set_normal(Vector3(0, 0, -1))
 	st.set_uv(uv3)
 	st.add_vertex(Vector3(lv3.x, lv3.y, -ht))
@@ -430,7 +394,6 @@ func _add_faces_to_surfacetool(
 	st.set_uv(uv1)
 	st.add_vertex(Vector3(lv1.x, lv1.y, -ht))
 
-	# Top and Bottom Edges
 	st.set_normal(Vector3(0, 1, 0))
 	st.set_uv(uv4)
 	st.add_vertex(Vector3(lv4.x, lv4.y, ht))
@@ -459,7 +422,6 @@ func _add_faces_to_surfacetool(
 	st.set_uv(uv2)
 	st.add_vertex(Vector3(lv2.x, lv2.y, -ht))
 
-	# Left and Right Edges
 	st.set_normal(Vector3(1, 0, 0))
 	st.set_uv(uv3)
 	st.add_vertex(Vector3(lv3.x, lv3.y, ht))
@@ -490,10 +452,8 @@ func _add_faces_to_surfacetool(
 
 
 ## Deactivates intact collision and generates shard pieces on initial shatter.
-## [param hit_position] World position of initial impact.
-## [param hit_dir] Trajectory heading of breaking blow.
 func _break_initial(hit_position: Vector3, hit_dir: Vector3) -> void:
-	print("DestructibleGlass (", name, "): Initial shatter triggered.")
+	print("DestructibleGlass: Initial shatter triggered.")
 	glass_broken.emit()
 
 	intact_mesh.hide()
@@ -506,15 +466,13 @@ func _break_initial(hit_position: Vector3, hit_dir: Vector3) -> void:
 	chip_glass(hit_position, hit_dir)
 
 
-## Detaches shards within impact radius and imparts outward explosive velocity.
-## [param hit_position] Impact point coordinates.
-## [param hit_dir] Trajectory vector.
+## Detaches shards within impact radius and imparts outward velocity.
 func chip_glass(hit_position: Vector3, hit_dir: Vector3) -> void:
-	print("DestructibleGlass (", name, "): Chipping shards at impact point.")
-
-	if break_sound_player.stream != null:
-		break_sound_player.pitch_scale = randf_range(0.85, 1.15)
-		break_sound_player.play()
+	print("DestructibleGlass: Chipping shards at impact point.")
+	if break_sound != null:
+		var sfx: AudioStreamPlayer3D = AudioPool.play_sfx_3d(break_sound, hit_position)
+		if is_instance_valid(sfx):
+			sfx.pitch_scale = randf_range(0.85, 1.15)
 
 	for child: Node in shards_container.get_children():
 		if child is DestructibleGlassShard and child.freeze and not child.is_destroyed:
@@ -547,7 +505,7 @@ func chip_glass(hit_position: Vector3, hit_dir: Vector3) -> void:
 
 ## Evaluates structural edge connectivity, dropping unsupported island shards.
 func _update_shard_connectivity() -> void:
-	print("DestructibleGlass (", name, "): Checking shard graph connectivity.")
+	print("DestructibleGlass: Checking shard connectivity graph.")
 	var visited: Array = []
 
 	for r: int in range(shard_rows):
@@ -594,11 +552,7 @@ func _update_shard_connectivity() -> void:
 				if is_instance_valid(cell):
 					var shard: DestructibleGlassShard = cell as DestructibleGlassShard
 					if shard.freeze and not shard.is_destroyed:
-						print(
-							"DestructibleGlass (",
-							name,
-							"): Island detected. Dropping floating shard."
-						)
+						print("DestructibleGlass: Island detected. Dropping floating shard.")
 						shard.freeze = false
 						shard.is_destroyed = true
 						_shard_grid[r][c] = null
@@ -611,7 +565,6 @@ func _update_shard_connectivity() -> void:
 
 
 ## Tweens detached shard scale down after delay before queueing node free.
-## [param shard] Shard rigid body scheduled for removal.
 func _schedule_shard_cleanup(shard: RigidBody3D) -> void:
 	var mesh_inst: MeshInstance3D = null
 

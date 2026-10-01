@@ -39,15 +39,16 @@ var _is_transitioning: bool = false
 @onready var background: TextureRect = %Background
 
 
-## Initializes signals and populates the chapter selection list.
+## Initializes signals and populates chapter selection list.
 func _ready() -> void:
+	print("ChapterScreen: _ready() initializing chapter menu screen.")
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	active_instance = self
 	chapter_button_template.hide()
 	play_button.pressed.connect(_on_play_pressed)
 	back_button.pressed.connect(_on_back_pressed)
 
-	for i: int in chapters.size():
+	for i: int in range(chapters.size()):
 		var chapter: ChapterData = chapters[i]
 		var item: Control = chapter_button_template.duplicate() as Control
 		item.show()
@@ -71,18 +72,20 @@ func _ready() -> void:
 
 ## Cleans up static active instance reference upon scene exit.
 func _exit_tree() -> void:
+	print("ChapterScreen: _exit_tree() cleaning up active instance.")
 	if active_instance == self:
 		active_instance = null
 
 
 ## Intercepts UI cancel actions to handle back navigation safely.
 func _input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_cancel"):
+	if event.is_action_pressed(&"ui_cancel"):
+		print("ChapterScreen: _input() captured ui_cancel.")
 		_on_back_pressed()
 		get_viewport().set_input_as_handled()
 
 
-## Handles selection updates when a chapter is clicked or hovered.
+## Handles selection updates when a chapter is selected.
 func _on_chapter_selected(chapter: ChapterData) -> void:
 	print("ChapterScreen: Selected chapter: ", chapter.chapter_name)
 	selected_chapter = chapter
@@ -99,11 +102,12 @@ func _on_chapter_clicked(chapter: ChapterData) -> void:
 
 ## Executes game scene launch logic with strict mutual exclusion.
 func _on_play_pressed() -> void:
+	print("ChapterScreen: _on_play_pressed() triggered.")
 	if _is_transitioning:
 		print("ChapterScreen: Transition underway. Ignoring play press.")
 		return
 
-	if not selected_chapter or selected_chapter.scene_path.is_empty():
+	if selected_chapter == null or selected_chapter.scene_path.is_empty():
 		push_warning("ChapterScreen: No valid scene path assigned!")
 		return
 
@@ -113,8 +117,8 @@ func _on_play_pressed() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	var parent: Node = get_parent()
-	if is_instance_valid(parent) and parent.has_method("prepare_for_level_transition"):
-		await parent.call("prepare_for_level_transition")
+	if is_instance_valid(parent) and parent.has_method(&"prepare_for_level_transition"):
+		await parent.call(&"prepare_for_level_transition")
 
 	var raw_loader: Node = LOADING_SCREEN_SCENE.instantiate()
 	if raw_loader is LoadingScreen:
@@ -127,17 +131,20 @@ func _on_play_pressed() -> void:
 			raw_loader.queue_free()
 
 
-## Handles returning to previous menu or restoring parent navigation buttons.
+## Returns to previous menu or transitions via [SceneTransition].
 func _on_back_pressed() -> void:
+	print("ChapterScreen: Navigating back.")
 	if _is_transitioning:
 		return
-	print("ChapterScreen: Navigating back.")
+
 	var parent: Node = get_parent()
-	if parent and "main_buttons" in parent:
-		parent.main_buttons.show()
+	if is_instance_valid(parent) and &"main_buttons" in parent:
+		var mb: CanvasItem = parent.get(&"main_buttons") as CanvasItem
+		if is_instance_valid(mb):
+			mb.show()
 		queue_free()
 	else:
-		get_tree().change_scene_to_file("res://ui/main_menu.tscn")
+		SceneTransition.change_scene_to_file("res://ui/main_menu.tscn", 0.3)
 
 
 ## Double-click on chapter image immediately executes game launch.
@@ -146,7 +153,8 @@ func _on_image_gui_input(event: InputEvent, chapter: ChapterData) -> void:
 		return
 
 	if event is InputEventMouseButton:
-		if event.button_index == MOUSE_BUTTON_LEFT and event.double_click:
+		var mb_event: InputEventMouseButton = event as InputEventMouseButton
+		if mb_event.button_index == MOUSE_BUTTON_LEFT and mb_event.double_click:
 			print("ChapterScreen: Double-clicked chapter: ", chapter.chapter_name)
 			_on_chapter_selected(chapter)
 			_on_play_pressed()
@@ -162,6 +170,7 @@ func _on_chapter_hovered(chapter: ChapterData) -> void:
 
 ## Restores preview details back to selected chapter on mouse exit.
 func _on_chapter_unhovered() -> void:
+	print("ChapterScreen: Unhovered chapter card.")
 	if is_instance_valid(selected_chapter):
 		background.texture = selected_chapter.image
 		desc_title.text = selected_chapter.chapter_name

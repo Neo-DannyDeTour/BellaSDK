@@ -1,198 +1,186 @@
 @tool
-## 3D spatial trigger volume that dynamically applies color grading, LUTs, and bloom overrides.
+## 3D trigger applying color grading, LUTs, and bloom overrides to player.
 class_name ColorGradingVolume3D
 extends Area3D
 
-## Visual preset options for common color profiles.
+## Visual preset options for common color grading profiles.
 enum Preset { CUSTOM, BLACK_AND_WHITE, SEPIA, COLD, WARM }
 
 ## Geometry options for the 3D trigger visualizer and collision hull.
 enum ShapeType { BOX, SPHERE }
 
-@export_category("Editor Visualization")
-
-## Determines the shape of the physical volume and its visual representation in the editor.
+## Determines the shape of the physical volume and its visual debug mesh.
 @export var shape_type: ShapeType = ShapeType.BOX:
 	set(value):
 		shape_type = value
 		_update_visuals()
 
-## Determines if the trigger visualizer mesh should be visible during active gameplay.
+## Determines if the trigger visualizer mesh should be visible in-game.
 @export var show_in_game: bool = false:
 	set(value):
 		show_in_game = value
 		_update_visuals()
 
-## Defines the physical dimensions of the color grading volume and its visual representation.
+## Defines physical dimensions of color grading volume and visualizer.
 @export var volume_size: Vector3 = Vector3(4.0, 4.0, 4.0):
 	set(value):
 		volume_size = value
 		_update_visuals()
 
-## Sets the visual color of the volume box in the editor to help differentiate trigger types.
+## Sets visual color of volume debug wireframe rendered in editor.
 @export var volume_color: Color = Color(0.2, 0.6, 1.0, 0.4):
 	set(value):
 		volume_color = value
 		_update_visuals()
 
-## Determines the text displayed above the volume in the editor for quick identification.
+## Text displayed above volume wireframe in editor for identification.
 @export var volume_text: String = "COLOR GRADING":
 	set(value):
 		volume_text = value
 		_update_visuals()
 
-@export_category("Color Grading Volume")
-
-## The custom color grading shader file (.gdshader) containing the grading logic.
+## Custom color grading shader resource containing rendering passes.
 @export var grading_shader: Shader:
 	set(value):
 		grading_shader = value
 		_initialize_material()
 
-## Predefined color grading settings to quickly apply specific visual moods.
+## Predefined color grading settings to quickly apply visual moods.
 @export var preset: Preset = Preset.CUSTOM:
 	set(value):
 		preset = value
 		_apply_preset()
 
-@export_group("Base Parameters")
-
-## Adjusts the overall lightness or darkness of the screen image.
+## Overall lightness or darkness adjustment of post-processed view.
 @export var brightness: float = 1.0:
 	set(value):
 		brightness = value
 		_update_shader_params()
 
-## Modifies the difference between the lightest and darkest areas of the image.
+## Contrast separation between dark and light tones on screen.
 @export var contrast: float = 1.0:
 	set(value):
 		contrast = value
 		_update_shader_params()
 
-## Changes the intensity and vibrancy of the colors on screen.
+## Intensity and vibrancy of screen color channels.
 @export var saturation: float = 1.0:
 	set(value):
 		saturation = value
 		_update_shader_params()
 
-@export_group("White Balance")
-
-## Shifts the image temperature toward cool blue (negative) or warm orange (positive).
+## White balance color temperature shift between cool blue and warm orange.
 @export_range(-1.0, 1.0) var temperature: float = 0.0:
 	set(value):
 		temperature = value
 		_update_shader_params()
 
-## Shifts the image tint toward green (negative) or magenta (positive).
+## White balance color tint shift between green and magenta.
 @export_range(-1.0, 1.0) var tint: float = 0.0:
 	set(value):
 		tint = value
 		_update_shader_params()
 
-@export_group("ASC CDL (Color Wheels)")
-
-## Tints and adjusts the darkest parts of the image (Shadows).
+## Tints and adjusts the darkest shadow tones of screen image.
 @export var lift_color: Color = Color(0.0, 0.0, 0.0, 1.0):
 	set(value):
 		lift_color = value
 		_update_shader_params()
 
-## Tints and adjusts the middle range of the image (Midtones).
+## Tints and adjusts the midtone tonal range of screen image.
 @export var gamma_color: Color = Color(1.0, 1.0, 1.0, 1.0):
 	set(value):
 		gamma_color = value
 		_update_shader_params()
 
-## Tints and adjusts the brightest areas of the image (Highlights).
+## Tints and adjusts the brightest highlight areas of screen image.
 @export var gain_color: Color = Color(1.0, 1.0, 1.0, 1.0):
 	set(value):
 		gain_color = value
 		_update_shader_params()
 
-@export_group("3D LUT")
-
-## The 3D Look-Up Table texture used for complex baked color transformations.
+## Look-Up Table 3D texture resource used for baked color transformations.
 @export var lut_texture: Texture3D:
 	set(value):
 		lut_texture = value
 		_update_shader_params()
 
-## Controls how strongly the 3D LUT overrides the underlying color adjustments.
+## Blend intensity scalar for 3D Look-Up Table color transform.
 @export_range(0.0, 1.0) var lut_intensity: float = 0.0:
 	set(value):
 		lut_intensity = value
 		_update_shader_params()
 
-@export_group("Cinematic Lens")
-
-## Applies red and blue color separation at the edges of the screen.
+## Chromatic aberration color fringe separation at screen boundaries.
 @export_range(0.0, 0.05) var aberration_amount: float = 0.0:
 	set(value):
 		aberration_amount = value
 		_update_shader_params()
 
-## Darkens the edges of the screen to draw the player's eye toward the center.
+## Darkness attenuation factor applied around viewport periphery.
 @export_range(0.0, 1.0) var vignette_intensity: float = 0.0:
 	set(value):
 		vignette_intensity = value
 		_update_shader_params()
 
-## Adds subtle, animated noise overlay to simulate film texture.
+## Film grain noise intensity factor overlaid across screen quad.
 @export_range(0.0, 1.0) var grain_amount: float = 0.0:
 	set(value):
 		grain_amount = value
 		_update_shader_params()
 
-@export_group("World Bloom Override")
-
-## The specific WorldEnvironment node to target for high-quality glow/bloom changes.
+## Target [WorldEnvironment] instance receiving bloom overrides.
 @export var target_environment: WorldEnvironment
 
-## The target glow intensity applied to the WorldEnvironment when the player enters.
+## Target bloom intensity applied to environment upon volume entry.
 @export var volume_bloom_intensity: float = 1.0
 
-@export_group("Volume Control")
-
-## The duration in seconds it takes for the color grading and bloom effects to fade.
+## Duration in seconds for fading grading overlay and bloom values.
 @export var blend_time: float = 1.0
 
-## Toggles the color grading overlay in the editor for previewing changes.
+## Toggles color grading overlay in editor viewport for previews.
 @export var preview_in_editor: bool = false:
 	set(value):
 		preview_in_editor = value
 		_update_editor_preview()
 
-## The CanvasLayer used to draw the color grading overlay on top of the screen UI.
-var _canvas_layer: CanvasLayer
+## Dedicated [CanvasLayer] drawing post-process pass over viewport.
+var _canvas_layer: CanvasLayer = null
 
-## Captures the screen texture to be processed by the color grading shader.
-var _back_buffer: BackBufferCopy
+## Viewport copy node capturing screen texture before grading pass.
+var _back_buffer: BackBufferCopy = null
 
-## The UI element that holds the shader material and applies it across the screen.
-var _color_rect: ColorRect
+## Fullscreen color rectangle applying color grading shader material.
+var _color_rect: ColorRect = null
 
-## Handles the smooth interpolation of the effect opacity when a player enters or exits.
-var _blend_tween: Tween
+## Active [Tween] interpolating grading rect opacity during entry/exit.
+var _blend_tween: Tween = null
 
-## Handles the smooth interpolation of the WorldEnvironment glow intensity.
-var _bloom_tween: Tween
+## Active [Tween] interpolating environment glow bloom intensity.
+var _bloom_tween: Tween = null
 
-## The active shader material containing the color grading logic and parameters.
-var _material: ShaderMaterial
+## Instantiated [ShaderMaterial] holding grading logic and uniforms.
+var _material: ShaderMaterial = null
 
-## Stores the original glow intensity of the target environment to restore upon exiting.
+## Cached original glow intensity of target [WorldEnvironment].
 var _original_glow_intensity: float = 0.0
 
-## Stores the original bloom spread value of the target environment to restore upon exiting.
+## Cached original glow bloom value of target [WorldEnvironment].
 var _original_glow_bloom: float = 0.0
 
+## Cached collision shape child node defining volume trigger area.
+var _collision_shape: CollisionShape3D = null
 
-## Lifecycle method handling editor visualization setup or runtime signal connections.
+
+## Configures player collision masks, caches baseline bloom, and sets up UI.
 func _ready() -> void:
+	_collision_shape = get_node_or_null("CollisionShape3D") as CollisionShape3D
 	if Engine.is_editor_hint():
 		_update_visuals()
 	else:
-		add_to_group("color_grading_volumes")
+		collision_layer = CollisionLayers.MASK_NONE
+		collision_mask = CollisionLayers.MASK_PLAYER
+		add_to_group(&"color_grading_volumes")
 
 		if not show_in_game:
 			for child: Node in get_children():
@@ -207,42 +195,39 @@ func _ready() -> void:
 			_original_glow_bloom = target_environment.environment.glow_bloom
 			target_environment.environment.glow_enabled = true
 
-	print("ColorGradingVolume3D: Initializing node setup for screen overlay on ", name)
+	print("ColorGradingVolume3D: Initializing post-processing volume: ", name)
 	_setup_screen_ui()
 
 
-## Rebuilds collision shapes and visual debug meshes in the editor viewport.
+## Rebuilds collision shapes and visual debug meshes in editor viewport.
 func _update_visuals() -> void:
-	var col: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
-	if col:
+	if not is_instance_valid(_collision_shape):
+		_collision_shape = get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if is_instance_valid(_collision_shape):
 		if shape_type == ShapeType.BOX:
-			if not col.shape is BoxShape3D:
-				col.shape = BoxShape3D.new()
-
-			if not col.shape.resource_local_to_scene:
-				col.shape = col.shape.duplicate()
-				col.shape.resource_local_to_scene = true
-
-			var box: BoxShape3D = col.shape as BoxShape3D
-			box.size = volume_size
-
+			if not _collision_shape.shape is BoxShape3D:
+				_collision_shape.shape = BoxShape3D.new()
+			if Engine.is_editor_hint() and not _collision_shape.shape.resource_local_to_scene:
+				_collision_shape.shape = _collision_shape.shape.duplicate()
+				_collision_shape.shape.resource_local_to_scene = true
+			(_collision_shape.shape as BoxShape3D).size = volume_size
 		elif shape_type == ShapeType.SPHERE:
-			if not col.shape is SphereShape3D:
-				col.shape = SphereShape3D.new()
-
-			if not col.shape.resource_local_to_scene:
-				col.shape = col.shape.duplicate()
-				col.shape.resource_local_to_scene = true
-
-			var sphere: SphereShape3D = col.shape as SphereShape3D
-			sphere.radius = volume_size.x / 2.0
+			if not _collision_shape.shape is SphereShape3D:
+				_collision_shape.shape = SphereShape3D.new()
+			if Engine.is_editor_hint() and not _collision_shape.shape.resource_local_to_scene:
+				_collision_shape.shape = _collision_shape.shape.duplicate()
+				_collision_shape.shape.resource_local_to_scene = true
+			(_collision_shape.shape as SphereShape3D).radius = volume_size.x * 0.5
 
 	var visual: EditorTriggerVisualizer = _get_visualizer()
-	if visual:
-		if visual.mesh and not visual.mesh.resource_local_to_scene:
+	if is_instance_valid(visual):
+		if (
+			Engine.is_editor_hint()
+			and visual.mesh != null
+			and not visual.mesh.resource_local_to_scene
+		):
 			visual.mesh = visual.mesh.duplicate(true)
 			visual.mesh.resource_local_to_scene = true
-
 		@warning_ignore("int_as_enum_without_cast")
 		visual.shape_type = shape_type as int
 		visual.show_in_game = show_in_game
@@ -251,8 +236,7 @@ func _update_visuals() -> void:
 		visual.trigger_text = volume_text
 
 
-## Retrieves the visualizer child node responsible for in-editor wireframe display.
-## [return] The matched [EditorTriggerVisualizer] or null if absent.
+## Retrieves the visualizer child node responsible for wireframe display.
 func _get_visualizer() -> EditorTriggerVisualizer:
 	for child: Node in get_children():
 		if child is EditorTriggerVisualizer:
@@ -260,12 +244,12 @@ func _get_visualizer() -> EditorTriggerVisualizer:
 	return null
 
 
-## Creates named CanvasLayer, BackBufferCopy, and ColorRect components in a disabled default state.
+## Creates dedicated CanvasLayer, BackBufferCopy, and ColorRect components.
 func _setup_screen_ui() -> void:
 	if not is_inside_tree():
 		return
 
-	print("ColorGradingVolume3D: Spawning gated CanvasLayer for ", name)
+	print("ColorGradingVolume3D: Setting up screen quad hierarchy for: ", name)
 	_canvas_layer = CanvasLayer.new()
 	_canvas_layer.name = "ColorGradingCanvasLayer"
 	_canvas_layer.layer = 10
@@ -288,12 +272,12 @@ func _setup_screen_ui() -> void:
 	_initialize_material()
 
 
-## Instantiates the ShaderMaterial instance and loads the target shader.
+## Instantiates [ShaderMaterial] and loads grading shader resource.
 func _initialize_material() -> void:
 	if not is_inside_tree() or not is_instance_valid(_color_rect) or grading_shader == null:
 		return
 
-	if not _material:
+	if _material == null:
 		_material = ShaderMaterial.new()
 		_color_rect.material = _material
 
@@ -302,34 +286,33 @@ func _initialize_material() -> void:
 	_update_editor_preview()
 
 
-## Syncs all inspector grading uniforms to the active [ShaderMaterial].
+## Synchronizes inspector parameters to active [ShaderMaterial] uniforms.
 func _update_shader_params() -> void:
 	if not is_instance_valid(_material):
 		return
 
-	_material.set_shader_parameter("brightness", brightness)
-	_material.set_shader_parameter("contrast", contrast)
-	_material.set_shader_parameter("saturation", saturation)
+	_material.set_shader_parameter(&"brightness", brightness)
+	_material.set_shader_parameter(&"contrast", contrast)
+	_material.set_shader_parameter(&"saturation", saturation)
+	_material.set_shader_parameter(&"temperature", temperature)
+	_material.set_shader_parameter(&"tint", tint)
 
-	_material.set_shader_parameter("temperature", temperature)
-	_material.set_shader_parameter("tint", tint)
-
-	_material.set_shader_parameter("lift_color", Vector3(lift_color.r, lift_color.g, lift_color.b))
+	_material.set_shader_parameter(&"lift_color", Vector3(lift_color.r, lift_color.g, lift_color.b))
 	_material.set_shader_parameter(
-		"gamma_color", Vector3(gamma_color.r, gamma_color.g, gamma_color.b)
+		&"gamma_color", Vector3(gamma_color.r, gamma_color.g, gamma_color.b)
 	)
-	_material.set_shader_parameter("gain_color", Vector3(gain_color.r, gain_color.g, gain_color.b))
+	_material.set_shader_parameter(&"gain_color", Vector3(gain_color.r, gain_color.g, gain_color.b))
 
-	if lut_texture:
-		_material.set_shader_parameter("lut_texture", lut_texture)
-	_material.set_shader_parameter("lut_intensity", lut_intensity)
+	if lut_texture != null:
+		_material.set_shader_parameter(&"lut_texture", lut_texture)
+	_material.set_shader_parameter(&"lut_intensity", lut_intensity)
 
-	_material.set_shader_parameter("aberration_amount", aberration_amount)
-	_material.set_shader_parameter("vignette_intensity", vignette_intensity)
-	_material.set_shader_parameter("grain_amount", grain_amount)
+	_material.set_shader_parameter(&"aberration_amount", aberration_amount)
+	_material.set_shader_parameter(&"vignette_intensity", vignette_intensity)
+	_material.set_shader_parameter(&"grain_amount", grain_amount)
 
 
-## Applies calibrated numeric presets to all primary color parameters.
+## Applies calibrated color values corresponding to selected [param preset].
 func _apply_preset() -> void:
 	if preset == Preset.CUSTOM:
 		return
@@ -359,7 +342,7 @@ func _apply_preset() -> void:
 			temperature = 0.6
 
 
-## Toggles canvas layer and material rendering inside the editor viewport.
+## Toggles canvas layer visibility inside editor viewport for previews.
 func _update_editor_preview() -> void:
 	if (
 		not is_inside_tree()
@@ -370,48 +353,44 @@ func _update_editor_preview() -> void:
 
 	if Engine.is_editor_hint():
 		if preview_in_editor and grading_shader != null:
-			print("ColorGradingVolume3D: Enabling editor preview on ", name)
+			print("ColorGradingVolume3D: Enabling editor preview on: ", name)
 			_canvas_layer.show()
 			_color_rect.show()
 			_color_rect.modulate.a = 1.0
 		else:
-			print("ColorGradingVolume3D: Disabling editor preview on ", name)
+			print("ColorGradingVolume3D: Disabling editor preview on: ", name)
 			_color_rect.modulate.a = 0.0
 			_color_rect.hide()
 			_canvas_layer.hide()
 
 
-## Handles trigger entry and initiates smooth effect transitions.
-## [param body] The [Node3D] entering the volume.
+## Initiates smooth fade-in transitions when player enters volume.
 func _on_body_entered(body: Node3D) -> void:
-	if body.is_in_group("player") or body.name == "Player":
-		print("ColorGradingVolume3D: Player entered volume -> ", name)
+	if body.is_in_group(&"player"):
+		print("ColorGradingVolume3D: Player entered volume: ", name)
 		_fade_effect(1.0)
 		_fade_bloom(volume_bloom_intensity)
 
 
-## Handles trigger exit and fades the screen overlays back to baseline.
-## [param body] The [Node3D] exiting the volume.
+## Initiates smooth fade-out transitions when player exits volume.
 func _on_body_exited(body: Node3D) -> void:
-	if body.is_in_group("player") or body.name == "Player":
-		print("ColorGradingVolume3D: Player exited volume -> ", name)
+	if body.is_in_group(&"player"):
+		print("ColorGradingVolume3D: Player exited volume: ", name)
 		_fade_effect(0.0)
 		_fade_bloom(_original_glow_bloom)
 
 
-## Tweens the opacity of the screen grading quad and toggles layer visibility.
-## [param target_alpha] Desired target alpha value (0.0 to 1.0).
+## Tweens opacity of screen grading quad and gates canvas visibility.
 func _fade_effect(target_alpha: float) -> void:
 	if not is_instance_valid(_color_rect) or not is_instance_valid(_canvas_layer):
 		return
 
-	print("ColorGradingVolume3D: Executing shader alpha fade to ", target_alpha, " on ", name)
-
+	print("ColorGradingVolume3D: Fading shader alpha to: ", target_alpha)
 	if target_alpha > 0.0:
 		_canvas_layer.show()
 		_color_rect.show()
 
-	if _blend_tween and _blend_tween.is_valid():
+	if _blend_tween != null and _blend_tween.is_valid():
 		_blend_tween.kill()
 
 	_blend_tween = create_tween()
@@ -420,24 +399,24 @@ func _fade_effect(target_alpha: float) -> void:
 	)
 
 	if target_alpha <= 0.0:
-		_blend_tween.tween_callback(
-			func() -> void:
-				if is_instance_valid(_color_rect):
-					_color_rect.hide()
-				if is_instance_valid(_canvas_layer):
-					_canvas_layer.hide()
-		)
+		_blend_tween.tween_callback(_on_fade_out_finished)
 
 
-## Tweens target WorldEnvironment bloom intensity.
-## [param target_intensity] Desired glow bloom intensity.
+## Callback hiding canvas layer once fade-out tween concludes.
+func _on_fade_out_finished() -> void:
+	if is_instance_valid(_color_rect):
+		_color_rect.hide()
+	if is_instance_valid(_canvas_layer):
+		_canvas_layer.hide()
+
+
+## Tweens target [WorldEnvironment] glow bloom intensity.
 func _fade_bloom(target_intensity: float) -> void:
 	if not is_instance_valid(target_environment) or target_environment.environment == null:
 		return
 
-	print("ColorGradingVolume3D: Fading environment bloom to ", target_intensity)
-
-	if _bloom_tween and _bloom_tween.is_valid():
+	print("ColorGradingVolume3D: Fading environment bloom to: ", target_intensity)
+	if _bloom_tween != null and _bloom_tween.is_valid():
 		_bloom_tween.kill()
 
 	_bloom_tween = create_tween()
@@ -448,12 +427,12 @@ func _fade_bloom(target_intensity: float) -> void:
 	)
 
 
-## Instantly resets all color grading overlays and disables the canvas layer.
+## Resets all color grading overlays and restores default environment glow.
 func reset_to_default() -> void:
-	print("ColorGradingVolume3D: Resetting volume overlay to defaults on ", name)
-	if _blend_tween and _blend_tween.is_valid():
+	print("ColorGradingVolume3D: Resetting volume overlay to defaults.")
+	if _blend_tween != null and _blend_tween.is_valid():
 		_blend_tween.kill()
-	if _bloom_tween and _bloom_tween.is_valid():
+	if _bloom_tween != null and _bloom_tween.is_valid():
 		_bloom_tween.kill()
 
 	if is_instance_valid(_color_rect):

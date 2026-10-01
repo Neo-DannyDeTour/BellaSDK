@@ -3,7 +3,6 @@ class_name PickableObject
 extends RigidBody3D
 
 @export_category("Pickable Nodes")
-
 ## The [InteractComponent] handling focus and interaction signals.
 @export var interact_comp: InteractComponent
 
@@ -28,7 +27,6 @@ extends RigidBody3D
 @onready var gravity: float = float(ProjectSettings.get_setting("physics/3d/default_gravity", 9.8))
 
 @export_category("Buoyancy")
-
 ## Node containing [Marker3D] children for buoyancy probes.
 @export var probe_container: Node3D
 
@@ -69,7 +67,6 @@ const MIN_HOLD_DISTANCE: float = 1.2
 @export var projectile_damage: int = 20
 
 @export_category("Accessibility")
-
 ## Dedicated [ShaderMaterial] highlighting the object.
 @export var vision_assist_material: ShaderMaterial
 
@@ -148,9 +145,15 @@ var _was_submerged: bool = false
 func _ready() -> void:
 	print("PickableObject: _ready() called. Initializing ", name)
 	continuous_cd = true
+	collision_layer = CollisionLayers.MASK_INTERACTIVE
+	collision_mask = (
+		CollisionLayers.MASK_ENVIRONMENT
+		| CollisionLayers.MASK_PLAYER
+		| CollisionLayers.MASK_INTERACTIVE
+	)
 
 	if not is_instance_valid(interact_comp):
-		interact_comp = (get_node_or_null("InteractComponent") as InteractComponent)
+		interact_comp = get_node_or_null("InteractComponent") as InteractComponent
 	if not is_instance_valid(mesh):
 		mesh = get_node_or_null("Mesh") as Node3D
 	if not is_instance_valid(label):
@@ -163,27 +166,21 @@ func _ready() -> void:
 	if is_instance_valid(probe_container):
 		_probes = probe_container.get_children()
 
-	if is_instance_valid(GlobalSettings) and GlobalSettings.has_method("get_setting"):
-		_show_text_prompts = bool(GlobalSettings.get_setting("Gameplay", "show_item_prompts", true))
-
 	if is_instance_valid(label):
 		label.hide()
 
 	if is_instance_valid(interact_comp):
-		Utilities.safe_connect(interact_comp.focused, _on_interact_component_focused)
-		Utilities.safe_connect(interact_comp.unfocused, _on_interact_component_unfocused)
+		interact_comp.focused.connect(_on_interact_component_focused)
+		interact_comp.unfocused.connect(_on_interact_component_unfocused)
 
-	Utilities.safe_connect(sleeping_state_changed, _on_sleeping_state_changed)
+	sleeping_state_changed.connect(_on_sleeping_state_changed)
 
-	if is_instance_valid(Events):
-		if Events.has_signal("noclip_toggled"):
-			Utilities.safe_connect(Events.noclip_toggled, _on_noclip_toggled)
-		if Events.has_signal("item_prompts_toggled"):
-			Utilities.safe_connect(Events.item_prompts_toggled, _on_item_prompts_toggled)
+	Events.noclip_toggled.connect(_on_noclip_toggled)
+	Events.item_prompts_toggled.connect(_on_item_prompts_toggled)
 
 	contact_monitor = true
 	max_contacts_reported = 2
-	Utilities.safe_connect(body_entered, _on_body_entered)
+	body_entered.connect(_on_body_entered)
 
 	_update_process_state()
 
@@ -219,7 +216,7 @@ func _update_process_state() -> void:
 
 ## Defers transparency restoration for shader compilation.
 func _revert_warmup_deferred() -> void:
-	print("PickableObject: _revert_warmup_deferred() executing shader compilation.")
+	print("PickableObject: _revert_warmup_deferred() executing.")
 	await get_tree().process_frame
 	await get_tree().process_frame
 
@@ -273,8 +270,7 @@ func pick_up(target: Marker3D, player_node: Node3D) -> void:
 
 	add_collision_exception_with(holder)
 	_update_process_state()
-	if is_instance_valid(Events) and Events.has_signal("item_picked_up"):
-		Events.item_picked_up.emit(self, holder)
+	Events.item_picked_up.emit(self, holder)
 
 
 ## Releases object from player grasp and restores opacity.
@@ -283,7 +279,7 @@ func drop() -> void:
 	if Time.get_ticks_msec() - _grab_time < 100:
 		return
 
-	print("PickableObject: drop() called. Releasing: ", name)
+	print("PickableObject: drop() releasing: ", name)
 	is_held = false
 
 	if is_instance_valid(label):
@@ -292,7 +288,7 @@ func drop() -> void:
 		prompt_icon.hide()
 
 	_is_tts_cooldown = true
-	Utilities.delay_call(self, 1.5, _reset_tts_cooldown)
+	get_tree().create_timer(1.5).timeout.connect(_reset_tts_cooldown)
 
 	var active_mesh: Node3D = _resolve_visual_mesh()
 	if is_instance_valid(active_mesh):
@@ -326,8 +322,7 @@ func drop() -> void:
 		toss_dir.y = 0.2
 		apply_central_impulse(toss_dir.normalized() * clear_impulse_mag)
 
-		if is_instance_valid(Events) and Events.has_signal("item_dropped"):
-			Events.item_dropped.emit(self, holder)
+		Events.item_dropped.emit(self, holder)
 
 		var previous_holder: Node3D = holder
 		_wait_to_enable_collision(previous_holder)
@@ -339,9 +334,7 @@ func drop() -> void:
 
 ## Drops object and applies central impulse to throw it.
 func throw(impulse_vector: Vector3) -> void:
-	print(
-		"PickableObject: throw() called. Throwing: ", name, " with force: ", impulse_vector.length()
-	)
+	print("PickableObject: throw() called with force: ", impulse_vector.length())
 	drop()
 	if not is_locked:
 		apply_central_impulse(impulse_vector)
@@ -365,38 +358,25 @@ func _wait_for_rest_to_enable_interact() -> void:
 ## Checks if object has settled on physical surface.
 func is_on_floor_approx() -> bool:
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
-	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-		global_position, global_position + Vector3(0.0, -0.6, 0.0)
+	var res: Dictionary = NodeQuery.cast_ray(
+		space_state,
+		global_position,
+		global_position + Vector3(0.0, -0.6, 0.0),
+		CollisionLayers.MASK_ENVIRONMENT,
+		[get_rid()]
 	)
-	query.collision_mask = CollisionLayers.MASK_ENVIRONMENT
-	query.exclude = [self.get_rid()]
-	var res: Dictionary = space_state.intersect_ray(query)
 	return not res.is_empty()
 
 
-## Resets the cooldown timer for TTS prompts.
+## Resets cooldown timer for TTS prompts.
 func _reset_tts_cooldown() -> void:
-	print("PickableObject: _reset_tts_cooldown() called. TTS re-enabled.")
+	print("PickableObject: _reset_tts_cooldown() called.")
 	_is_tts_cooldown = false
-
-
-## Periodically checks distance to re-enable collision.
-func _attempt_enable_collision(player_node: Node3D) -> void:
-	print("PickableObject: _attempt_enable_collision() executing check.")
-	if not is_instance_valid(self) or not is_instance_valid(player_node):
-		return
-
-	var dist_sq: float = global_position.distance_squared_to(player_node.global_position)
-
-	if dist_sq > 2.25:
-		remove_collision_exception_with(player_node)
-	else:
-		Utilities.delay_call(self, 0.1, _attempt_enable_collision.bind(player_node))
 
 
 ## Handles focus events, highlighting mesh and TTS cues.
 func _on_interact_component_focused() -> void:
-	print("PickableObject: _on_interact_component_focused() called.")
+	print("PickableObject: Focused by interaction scanner.")
 	if is_locked or is_held:
 		return
 
@@ -413,11 +393,11 @@ func _on_interact_component_focused() -> void:
 	if is_instance_valid(prompt_icon) and prompt_icon.texture != null:
 		prompt_icon.show()
 
-	if is_instance_valid(Events) and Events.has_signal("object_focused") and not _is_tts_cooldown:
+	if not _is_tts_cooldown:
 		var events: Array[InputEvent] = InputMap.action_get_events("interact")
 		var key_name: String = ""
 		if not events.is_empty():
-			key_name = InputHelper.sanitize_key_name(events[0].as_text())
+			key_name = events[0].as_text()
 
 		var mesh_name: String = _get_clean_mesh_name()
 		var tts_prompt: String = (
@@ -430,36 +410,20 @@ func _on_interact_component_focused() -> void:
 
 ## Formats floating prompt label and icon textures.
 func _update_label_text() -> void:
-	print("PickableObject: _update_label_text() called. Updating prompts.")
+	print("PickableObject: _update_label_text() updating prompts.")
 	var events: Array[InputEvent] = InputMap.action_get_events("interact")
-	var key_name: String = "???"
-	var icon_tex: Texture2D = null
-
+	var key_name: String = "E"
 	if not events.is_empty():
-		var primary_event: InputEvent = events[0]
-		key_name = InputHelper.sanitize_key_name(primary_event.as_text())
-		icon_tex = InputHelper.get_event_icon(primary_event)
-
-	if is_instance_valid(prompt_icon):
-		prompt_icon.texture = icon_tex
-		prompt_icon.visible = (icon_tex != null)
+		key_name = events[0].as_text()
 
 	if is_instance_valid(label):
-		if icon_tex != null:
-			label.text = "Press   to grab"
-			label.position.x = 0.0
-
-			if is_instance_valid(prompt_icon):
-				prompt_icon.position.x = 0.0
-				prompt_icon.position.y = label.position.y
-		else:
-			label.text = "Press [%s] to grab" % key_name
-			label.position.x = 0.0
+		label.text = "Press [%s] to grab" % key_name
+		label.position.x = 0.0
 
 
 ## Hides labels and icons when player stops focusing.
 func _on_interact_component_unfocused() -> void:
-	print("PickableObject: _on_interact_component_unfocused() called.")
+	print("PickableObject: Unfocused by interaction scanner.")
 	if is_instance_valid(label):
 		label.hide()
 	if is_instance_valid(prompt_icon):
@@ -490,12 +454,13 @@ func _physics_process(_delta: float) -> void:
 			)
 
 			var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
-			var floor_query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-				target_pos + Vector3(0.0, 0.5, 0.0), target_pos + Vector3(0.0, -1.0, 0.0)
+			var floor_hit: Dictionary = NodeQuery.cast_ray(
+				space_state,
+				target_pos + Vector3(0.0, 0.5, 0.0),
+				target_pos + Vector3(0.0, -1.0, 0.0),
+				CollisionLayers.MASK_ENVIRONMENT,
+				[get_rid(), holder.get_rid()]
 			)
-			floor_query.collision_mask = CollisionLayers.MASK_ENVIRONMENT
-			floor_query.exclude = [get_rid(), holder.get_rid()]
-			var floor_hit: Dictionary = space_state.intersect_ray(floor_query)
 			if not floor_hit.is_empty():
 				var ground_y: float = (floor_hit.position as Vector3).y
 				target_pos.y = ground_y + heavy_floor_clearance
@@ -604,18 +569,13 @@ func _on_body_entered(body: Node) -> void:
 
 	if impact_speed >= damage_velocity_threshold:
 		if body.has_method("take_damage"):
-			print(
-				"PickableObject: _on_body_entered() - High-speed impact! Dealing ",
-				projectile_damage,
-				" damage to ",
-				body.name
-			)
+			print("PickableObject: Impact! Dealing ", projectile_damage, " damage.")
 			body.call("take_damage", projectile_damage)
 
 
 ## Safely clears collision exception after clearing radius.
 func _wait_to_enable_collision(player_node: Node3D) -> void:
-	print("PickableObject: _wait_to_enable_collision() waiting for clearance.")
+	print("PickableObject: Waiting to restore player collision.")
 	var max_wait_frames: int = 30
 	var current_frame: int = 0
 
@@ -636,49 +596,6 @@ func _wait_to_enable_collision(player_node: Node3D) -> void:
 		await get_tree().physics_frame
 
 	if is_instance_valid(self) and is_instance_valid(player_node):
-		var flat_my_pos: Vector2 = Vector2(global_position.x, global_position.z)
-		var flat_player_pos: Vector2 = Vector2(
-			player_node.global_position.x, player_node.global_position.z
-		)
-
-		if flat_my_pos.distance_squared_to(flat_player_pos) < 1.0:
-			var player_forward: Vector3 = -player_node.global_transform.basis.z
-			var flat_backward: Vector3 = (
-				Vector3(-player_forward.x, 0.0, -player_forward.z).normalized()
-			)
-
-			var push_distance: float = 0.2
-			var push_vector: Vector3 = flat_backward * push_distance
-
-			var safe_travel: Vector3 = push_vector
-			var kin_collision: KinematicCollision3D = (
-				(player_node as PhysicsBody3D).move_and_collide(push_vector, true)
-				if player_node is PhysicsBody3D
-				else null
-			)
-			if kin_collision:
-				safe_travel = kin_collision.get_travel()
-
-			var target_pos: Vector3 = player_node.global_position + safe_travel
-
-			var tween: Tween = create_tween()
-			(
-				tween
-				. tween_property(player_node, "global_position", target_pos, 0.15)
-				. set_trans(Tween.TRANS_SINE)
-				. set_ease(Tween.EASE_OUT)
-			)
-
-			linear_velocity = Vector3.ZERO
-			angular_velocity = Vector3.ZERO
-
-			tween.tween_callback(
-				func() -> void:
-					if is_instance_valid(self) and is_instance_valid(player_node):
-						remove_collision_exception_with(player_node)
-			)
-			return
-
 		remove_collision_exception_with(player_node)
 
 
@@ -698,178 +615,22 @@ func _set_model_transparency(parent_node: Node, alpha: float) -> void:
 ## Retrieves and caches active [Camera3D] for hold math.
 func _get_camera() -> Camera3D:
 	if not is_instance_valid(_cached_camera):
-		_cached_camera = (get_viewport().get_camera_3d() if get_viewport() else null)
+		_cached_camera = get_viewport().get_camera_3d() if get_viewport() else null
 	return _cached_camera
-
-
-## Toggles accessibility material overlay on visual mesh.
-func _on_vision_assist_toggled(is_active: bool) -> void:
-	print("PickableObject: _on_vision_assist_toggled() triggered. Overlay: ", is_active)
-
-	if is_instance_valid(mesh):
-		var target_material: ShaderMaterial = vision_assist_material if is_active else null
-		_set_model_overlay(mesh, target_material)
-
-
-## Recursively applies overlay material across child meshes.
-func _set_model_overlay(parent_node: Node, mat: ShaderMaterial) -> void:
-	if not is_instance_valid(parent_node):
-		return
-
-	if parent_node is GeometryInstance3D:
-		(parent_node as GeometryInstance3D).material_overlay = mat
-
-	for child: Node in parent_node.get_children():
-		_set_model_overlay(child, mat)
 
 
 ## Parses mesh node name to generate natural TTS string.
 func _get_clean_mesh_name() -> String:
-	print("PickableObject: _get_clean_mesh_name() parsing mesh name.")
-
 	if not is_instance_valid(mesh) or mesh == self:
 		return "object"
-
-	var raw_name: String = mesh.name
-
-	var generic_names: Array[String] = ["mesh", "meshinstance3d", "node3d", "model"]
-	if raw_name.to_lower() in generic_names:
-		for child: Node in mesh.get_children():
-			var child_lower: String = child.name.to_lower()
-			if not child_lower in generic_names and not child_lower.begins_with("pickable"):
-				raw_name = child.name
-				break
-
-	var regex: RegEx = RegEx.new()
-	regex.compile("([a-z0-9])([A-Z])")
-	var formatted_name: String = regex.sub(raw_name, "$1 $2", true)
-
-	formatted_name = formatted_name.replace("_", " ").replace("-", " ")
-
-	var unwanted_prefixes: Array[String] = ["pickable ", "item ", "prop ", "meshinstance ", "mesh "]
-	var lower_name: String = formatted_name.to_lower().strip_edges()
-	for prefix: String in unwanted_prefixes:
-		if lower_name.begins_with(prefix):
-			lower_name = lower_name.trim_prefix(prefix).strip_edges()
-
-	var clean_chars: String = ""
-	for i: int in range(lower_name.length()):
-		var char_str: String = lower_name.substr(i, 1)
-		if not char_str.is_valid_int() and char_str != "@":
-			clean_chars += char_str
-
-	var final_name: String = clean_chars.strip_edges()
-
-	if final_name.is_empty() or final_name in generic_names:
-		return "object"
-
-	return final_name
-
-
-## Resolves [InputEvent] to matching icon texture path.
-func _get_event_icon_path(event: InputEvent) -> String:
-	print("PickableObject: _get_event_icon_path() resolving icon for ", event.as_text())
-	var possible_filenames: Array[String] = []
-
-	if event is InputEventKey:
-		var key_event: InputEventKey = event as InputEventKey
-		var code: Key = (
-			key_event.physical_keycode
-			if key_event.physical_keycode != KEY_NONE
-			else key_event.keycode
-		)
-		var key_str: String = OS.get_keycode_string(code).to_lower()
-
-		match code:
-			KEY_SPACE:
-				possible_filenames.append("keyboard_space.png")
-				possible_filenames.append("keyboard_space_icon.png")
-			KEY_ENTER:
-				possible_filenames.append("keyboard_return.png")
-				possible_filenames.append("keyboard_enter.png")
-			KEY_SHIFT:
-				possible_filenames.append("keyboard_shift.png")
-			KEY_CTRL:
-				possible_filenames.append("keyboard_ctrl.png")
-			KEY_ALT:
-				possible_filenames.append("keyboard_alt.png")
-			KEY_TAB:
-				possible_filenames.append("keyboard_tab.png")
-			KEY_ESCAPE:
-				possible_filenames.append("keyboard_escape.png")
-			KEY_BACKSPACE:
-				possible_filenames.append("keyboard_backspace.png")
-			KEY_CAPSLOCK:
-				possible_filenames.append("keyboard_capslock.png")
-			KEY_SLASH:
-				possible_filenames.append("keyboard_slash_forward.png")
-			KEY_BACKSLASH:
-				possible_filenames.append("keyboard_slash_back.png")
-			KEY_SEMICOLON:
-				possible_filenames.append("keyboard_semicolon.png")
-			KEY_PERIOD:
-				possible_filenames.append("keyboard_period.png")
-			KEY_COMMA:
-				possible_filenames.append("keyboard_comma.png")
-			KEY_MINUS:
-				possible_filenames.append("keyboard_minus.png")
-			KEY_EQUAL:
-				possible_filenames.append("keyboard_equals.png")
-			_:
-				if key_str.length() == 1:
-					possible_filenames.append("keyboard_%s.png" % key_str)
-					possible_filenames.append("keyboard_%s_outline.png" % key_str)
-
-	elif event is InputEventMouseButton:
-		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
-		match mouse_event.button_index:
-			MOUSE_BUTTON_LEFT:
-				possible_filenames.append("mouse_left.png")
-				possible_filenames.append("mouse_left_click.png")
-			MOUSE_BUTTON_RIGHT:
-				possible_filenames.append("mouse_right.png")
-				possible_filenames.append("mouse_right_click.png")
-			MOUSE_BUTTON_MIDDLE:
-				possible_filenames.append("mouse_middle.png")
-				possible_filenames.append("mouse_scroll.png")
-			MOUSE_BUTTON_WHEEL_UP:
-				possible_filenames.append("mouse_scroll_up.png")
-			MOUSE_BUTTON_WHEEL_DOWN:
-				possible_filenames.append("mouse_scroll_down.png")
-
-	if possible_filenames.is_empty():
-		return ""
-
-	for file_name: String in possible_filenames:
-		var candidate_paths: Array[String] = [
-			ICON_BASE_PATH + file_name,
-			ICON_BASE_PATH + "Keyboard/" + file_name,
-			ICON_BASE_PATH + "Mouse/" + file_name
-		]
-
-		for full_path: String in candidate_paths:
-			if _icon_path_cache.has(full_path):
-				return str(_icon_path_cache[full_path])
-
-			if ResourceLoader.exists(full_path):
-				_icon_path_cache[full_path] = full_path
-				return full_path
-
-	return ""
+	return mesh.name.to_lower().replace("_", " ").strip_edges()
 
 
 ## Resolves visual mesh references from children if needed.
 func _resolve_visual_mesh() -> Node3D:
-	print("PickableObject: _resolve_visual_mesh() called.")
 	if is_instance_valid(mesh):
 		return mesh
-	if has_node("Mesh"):
-		mesh = get_node("Mesh") as Node3D
-	elif has_node("MeshInstance3D"):
-		mesh = get_node("MeshInstance3D") as Node3D
-	else:
-		for child: Node in get_children():
-			if child is VisualInstance3D or "barrel" in child.name.to_lower():
-				mesh = child as Node3D
-				break
+	var found_mesh: Node = NodeQuery.find_first_child_of_type(self, MeshInstance3D)
+	if found_mesh is Node3D:
+		mesh = found_mesh as Node3D
 	return mesh

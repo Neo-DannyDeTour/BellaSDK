@@ -412,6 +412,18 @@ signal outline_min_intensity_changed(intensity: float)
 @warning_ignore("unused_signal")
 signal outline_max_intensity_changed(intensity: float)
 
+## Emitted when reticle acquires an interactable target with its HUD prompt.
+@warning_ignore("unused_signal")
+signal interaction_focused(target: CollisionObject3D, prompt: String)
+
+## Emitted when reticle loses focus from an active interactable target.
+@warning_ignore("unused_signal")
+signal interaction_unfocused(previous_target: CollisionObject3D)
+
+## Emitted when an interaction action completes between target and interactor.
+@warning_ignore("unused_signal")
+signal interacted(target: CollisionObject3D, interactor: Node3D)
+
 ## Visual animation style presets for chapter title card sequences.
 enum ChapterAnimStyle {
 	SIMPLE,

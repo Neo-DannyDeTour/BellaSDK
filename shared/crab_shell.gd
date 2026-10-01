@@ -1,55 +1,47 @@
-## An animatable falling shell object used for set pieces.
-##
-## This object remains hidden at its editor position until triggered. Upon triggering,
-## it calculates a spawn position above its target and falls along a Bezier arc,
-## emitting smoke before landing gracefully at its initial transform.
+## Animatable falling shell piece following a quadratic Bezier trajectory.
 class_name CrabShell
 extends AnimatableBody3D
 
-## Distance in meters to move backward along the shell's local Y (Up) axis to find the spawn point.
+## Distance in meters along local Y axis to find spawn point.
 @export var drop_distance: float = 100.0
 
-## Time in seconds required for the shell to complete its descent.
+## Time in seconds required for shell to complete descent.
 @export var travel_time: float = 4.0
 
 ## Time in seconds to wait after trigger activation before dropping.
 @export var drop_delay: float = 0.5
 
-## Peak elevation added to the mid-point of the drop arc (applied along the local Z axis).
+## Peak elevation added to mid-point along local Z axis.
 @export var arc_height: float = 20.0
 
-## Distance in meters from the landing spot where the smoke trail activates.
+## Distance from landing spot where smoke trail activates.
 @export var smoke_distance_threshold: float = 20.0
 
 ## Smoke particle system instance attached to the shell.
 @export var smoke_trail: GPUParticles3D
 
-## Elapsed time tracker during the falling sequence.
+## Elapsed time tracker during falling sequence.
 var _current_time: float = 0.0
 
-## Active state flag indicating whether the shell is falling.
+## Active state flag indicating whether shell is falling.
 var _is_falling: bool = false
 
-## Safety lock to prevent trigger volumes from firing the drop sequence multiple times.
+## Safety lock preventing duplicate drop triggers.
 var _has_triggered: bool = false
 
-## Cached editor transform representing the final landed position and angle.
+## Cached editor transform representing final landed position.
 var _target_transform: Transform3D
 
-## World position where the shell spawns high in the air.
+## World position where shell spawns high in air.
 var _start_pos: Vector3
 
-## Mid-point control position for calculating the arc trajectory.
+## Mid-point control position for calculating arc trajectory.
 var _control_pos: Vector3
 
 
-## Disables physics processing and caches the initial landing transform.
-##
-## Lifecycle triggers: Called on `_ready` by engine.
-## No parameters.
-## Returns: void.
+## Disables physics processing and caches initial landing transform.
 func _ready() -> void:
-	print("CrabShell initializing: Caching target transform and awaiting trigger.")
+	print("CrabShell: Initializing crab shell set piece.")
 	set_physics_process(false)
 	visible = false
 	_target_transform = global_transform
@@ -60,41 +52,30 @@ func _ready() -> void:
 		smoke_trail.top_level = true
 
 
-## Initiates the drop sequence, applying any configured drop delay.
-##
-## Lifecycle triggers: Called publicly when triggered.
-## No parameters.
-## Returns: void.
+## Initiates drop sequence, applying configured delay.
 func trigger_drop() -> void:
 	if _has_triggered:
 		return
 
 	_has_triggered = true
-	print("CrabShell triggered: Starting drop delay of ", drop_delay, " seconds.")
-
+	print("CrabShell: Triggered drop sequence with delay: ", drop_delay)
 	if drop_delay > 0.0:
 		await get_tree().create_timer(drop_delay).timeout
 	_start_falling()
 
 
-## Calculates the spawn point and curve control position, and begins physics processing.
-##
-## Lifecycle triggers: Called privately by [method trigger_drop].
-## No parameters.
-## Returns: void.
+## Calculates spawn and control points and starts physics process.
 func _start_falling() -> void:
-	print("CrabShell falling: Spawning and starting trajectory.")
+	print("CrabShell: Spawning and beginning descent.")
 	_current_time = 0.0
 
 	var target_pos: Vector3 = _target_transform.origin
 	var clean_basis: Basis = _target_transform.basis.orthonormalized()
 
 	_start_pos = target_pos + (clean_basis.y * drop_distance)
-
 	var mid_point: Vector3 = _start_pos.lerp(target_pos, 0.5)
 	_control_pos = mid_point + (clean_basis.z * arc_height)
 
-	# Atomic transform assignment prevents physics snapping on spawn
 	global_transform = Transform3D(clean_basis, _start_pos)
 	visible = true
 
@@ -107,22 +88,16 @@ func _start_falling() -> void:
 	set_physics_process(true)
 
 
-## Interpolates the shell's position along the calculated Bezier arc.
-##
-## Lifecycle triggers: Called on `_physics_process` by engine.
-## [param delta] Time elapsed since the last physics frame.
-## Returns: void.
+## Interpolates shell position along quadratic Bezier curve via [MathUtils].
 func _physics_process(delta: float) -> void:
 	if not _is_falling:
 		return
 
 	_current_time += delta
-
-	# clampf protects against math overshoots dropping frames
 	var t: float = clampf(_current_time / travel_time, 0.0, 1.0)
 
 	if t >= 1.0:
-		print("CrabShell landing: Reached target destination.")
+		print("CrabShell: Shell landed at destination.")
 		_is_falling = false
 		set_physics_process(false)
 		global_transform = _target_transform
@@ -132,43 +107,22 @@ func _physics_process(delta: float) -> void:
 		_on_impact()
 		return
 
-	var new_pos: Vector3 = _calculate_bezier(t)
-
-	# Atomic transform assignment prevents physics snapping during flight
+	var new_pos: Vector3 = MathUtils.quadratic_bezier(
+		_start_pos, _control_pos, _target_transform.origin, t
+	)
 	global_transform = Transform3D(_target_transform.basis, new_pos)
 
 	if is_instance_valid(smoke_trail):
 		smoke_trail.global_position = new_pos
-
 		if not smoke_trail.emitting:
 			var dist_sq: float = new_pos.distance_squared_to(_target_transform.origin)
 			if dist_sq <= (smoke_distance_threshold * smoke_distance_threshold):
-				print(
-					"CrabShell falling: Reached ",
-					smoke_distance_threshold,
-					"m threshold. Activating smoke."
-				)
+				print("CrabShell: Within threshold. Activating smoke trail.")
 				smoke_trail.emitting = true
 
 
-## Computes a position along a quadratic Bezier curve given a time percentage.
-##
-## Lifecycle triggers: Called privately by [method _physics_process].
-## [param t] The interpolation weight between 0.0 and 1.0.
-## [return] The interpolated [Vector3] position along the curve.
-func _calculate_bezier(t: float) -> Vector3:
-	var target_pos: Vector3 = _target_transform.origin
-	var q0: Vector3 = _start_pos.lerp(_control_pos, t)
-	var q1: Vector3 = _control_pos.lerp(target_pos, t)
-	return q0.lerp(q1, t)
-
-
-## Handles the landing event, such as disabling the particle emitter.
-##
-## Lifecycle triggers: Called privately by [method _physics_process].
-## No parameters.
-## Returns: void.
+## Deactivates particle emitter upon landing impact.
 func _on_impact() -> void:
-	print("CrabShell impact: Sequence finished, deactivating smoke trail.")
+	print("CrabShell: Shell impact completed.")
 	if is_instance_valid(smoke_trail):
 		smoke_trail.emitting = false

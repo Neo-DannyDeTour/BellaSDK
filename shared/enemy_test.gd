@@ -1,48 +1,52 @@
+## Physics-driven test dummy with bobbing motion and damage knockback.
 class_name EnemyTest
 extends RigidBody3D
 
-## The current health of the enemy test dummy.
-@export var health: int = 200
-## The force applied to the dummy when hit.
+## Injected [HealthComponent] managing life points and death handling.
+@export var health_component: HealthComponent
+
+## The impulse force applied to the dummy when struck by attacks.
 @export var knockback_force: float = 0.5
-## The vertical impulse applied when knocked back.
+
+## The vertical impulse added during knockback to lift the dummy.
 @export var vertical_kick: float = 0.7
 
-# --- THE FIGHTING BAG BOBBING ---
-## Internal timer used for the bobbing motion.
+## Accumulated elapsed time used to compute the oscillating bob motion.
 var time_passed: float = 0.0
 
 
+## Initializes dependencies and binds death lifecycle signal.
+func _ready() -> void:
+	print("EnemyTest: Initializing test dummy.")
+	if health_component == null:
+		var found_comp: Node = NodeQuery.find_first_child_of_type(self, HealthComponent)
+		if found_comp is HealthComponent:
+			health_component = found_comp as HealthComponent
+
+	if is_instance_valid(health_component):
+		health_component.died.connect(die)
+
+
+## Applies oscillatory vertical bobbing force on the physics body.
 func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
-	# This creates a "Fighting Bag" bobbing effect
-	# It adds a tiny constant force that oscillates over time
 	time_passed += get_process_delta_time()
 	var bob: float = sin(time_passed * 2.0) * 0.5
 	state.apply_force(Vector3(0.0, bob, 0.0))
 
 
-# --- TAKING DAMAGE & KNOCKBACK ---
+## Subtracts health through component and applies directional knockback impulse.
 func take_damage(amount: int, hit_position: Vector3, dir: Vector3) -> void:
 	print("EnemyTest: take_damage() called. Amount: ", amount, " | Pos: ", hit_position)
 
-	health -= amount
-	print("EnemyTest: Hit! Remaining Health: ", health)
+	if is_instance_valid(health_component):
+		health_component.take_damage(amount)
 
-	# THE PHYSICS PUNCH
-	# We take the pellet direction, flatten the Y slightly so they fly 'back',
-	# and then add a 'kick' upward so they catch some air.
 	var punch: Vector3 = dir.normalized() * knockback_force
 	punch.y += vertical_kick
-
 	apply_central_impulse(punch)
 
 
-func _process(_delta: float) -> void:
-	if health <= 0:
-		die()
-
-
+## Handles entity death by freeing the physics body from the tree.
 func die() -> void:
 	print("EnemyTest: die() called. Freeing physics body.")
-	# TODO: Spawn some red particles or a sound here!
 	queue_free()

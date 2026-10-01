@@ -1,39 +1,38 @@
-## A trap that snaps shut when the player steps on it, dealing damage and applying debuffs.
-##
-## Acts as a static hazard in the environment. When the player enters the [Area3D],
-## the trap closes, damages the player, and prevents them from moving or sprinting
-## for a specific duration using timers.
+## Ground trap snapping shut on contact to deal damage and immobilize player.
 class_name BearTrap
 extends Area3D
 
-## Defines the possible operational states of the beartrap.
+## Defines possible operational states of beartrap.
 enum TrapState { OPEN, CLOSED }
 
-## Tracks the current operational state of the beartrap.
+## Tracks current operational state of beartrap.
 var current_state: TrapState = TrapState.OPEN
 
-## Stores a reference to the trapped [Player] to restore their movement states later.
+## Stores reference to trapped player to restore mobility.
 var trapped_player: Player = null
 
-## Active tween controlling jaw closure; managed via [method Utilities.reset_tween].
+## Active tween controlling jaw snapping closure animation.
 var _snap_tween: Tween = null
 
-## The left jaw visual node used for the snapping animation pivot.
+## Left jaw visual node used for snapping animation pivot.
 @onready var left_jaw: Node3D = $LeftJawPivot
 
-## The right jaw visual node used for the snapping animation pivot.
+## Right jaw visual node used for snapping animation pivot.
 @onready var right_jaw: Node3D = $RightJawPivot
 
-## [Timer] to control the 2-second duration where the player cannot move.
+## Timer controlling player immobilization duration.
 @onready var immobilize_timer: Timer = $ImmobilizeTimer
 
-## [Timer] to control the 5-second duration where the player cannot sprint.
+## Timer controlling sprint prevention duration.
 @onready var sprint_block_timer: Timer = $SprintBlockTimer
 
 
-## Initializes the beartrap in the OPEN state, setting jaw angles and connecting signals.
+## Initializes jaw rotations and connects trigger signals.
 func _ready() -> void:
-	print("BearTrap: _ready() - Initializing beartrap in OPEN state.")
+	print("BearTrap: _ready() initializing bear trap.")
+	collision_layer = CollisionLayers.MASK_NONE
+	collision_mask = CollisionLayers.MASK_PLAYER
+
 	Utilities.safe_connect(body_entered, _on_body_entered)
 	Utilities.safe_connect(immobilize_timer.timeout, _on_immobilize_timeout)
 	Utilities.safe_connect(sprint_block_timer.timeout, _on_sprint_block_timeout)
@@ -42,19 +41,19 @@ func _ready() -> void:
 	right_jaw.rotation_degrees.z = -45.0
 
 
-## Handles collision when body enters [Area3D], triggering trap if body is [Player].
-## [param body] The [Node3D] that entered the trigger area.
+## Evaluates body entry and triggers trap closure on player.
 func _on_body_entered(body: Node3D) -> void:
+	print("BearTrap: _on_body_entered() body: ", body.name)
 	if current_state == TrapState.OPEN and body is Player:
-		print("BearTrap: _on_body_entered() - Player stepped in the trap!")
+		print("BearTrap: Player triggered trap!")
 		snap_shut(body as Player)
 
 
-## Closes the jaws, damages [param player], and applies movement and sprint debuffs.
-func snap_shut(player: Player) -> void:
-	print("BearTrap: snap_shut() - Closing jaws and applying debuffs to player.")
+## Snaps jaws shut, inflicts damage, and applies mobility debuffs.
+func snap_shut(target_player: Player) -> void:
+	print("BearTrap: snap_shut() closing jaws on player: ", target_player.name)
 	current_state = TrapState.CLOSED
-	trapped_player = player
+	trapped_player = target_player
 
 	_snap_tween = Utilities.reset_tween(self, _snap_tween)
 	if is_instance_valid(_snap_tween):
@@ -66,13 +65,19 @@ func snap_shut(player: Player) -> void:
 			Tween.TRANS_BOUNCE
 		)
 
-	trapped_player.take_damage(150)
+	var health_comp: HealthComponent = (
+		NodeQuery.find_first_child_of_type(trapped_player, HealthComponent) as HealthComponent
+	)
+	if is_instance_valid(health_comp):
+		health_comp.take_damage(150)
+	elif trapped_player.has_method(&"take_damage"):
+		trapped_player.call(&"take_damage", 150)
 
 	if is_instance_valid(trapped_player.system_menu):
-		trapped_player.system_menu.set("is_stunned", true)
+		trapped_player.system_menu.set(&"is_stunned", true)
 
 	if is_instance_valid(trapped_player.locomotion_component):
-		trapped_player.locomotion_component.set("can_sprint", false)
+		trapped_player.locomotion_component.set(&"can_sprint", false)
 
 	Events.sprint_debuff_applied.emit(5.0)
 	Events.immobilize_debuff_applied.emit(2.0)
@@ -81,16 +86,16 @@ func snap_shut(player: Player) -> void:
 	sprint_block_timer.start(5.0)
 
 
-## Restores the player's ability to move after the immobilize timer completes.
+## Restores player movement after immobilization timer expires.
 func _on_immobilize_timeout() -> void:
-	print("BearTrap: _on_immobilize_timeout() - Freeing player movement.")
+	print("BearTrap: _on_immobilize_timeout() restoring player movement.")
 	if is_instance_valid(trapped_player) and is_instance_valid(trapped_player.system_menu):
-		trapped_player.system_menu.set("is_stunned", false)
+		trapped_player.system_menu.set(&"is_stunned", false)
 
 
-## Restores the player's ability to sprint after the sprint block timer completes.
+## Restores player sprint ability after sprint timer expires.
 func _on_sprint_block_timeout() -> void:
-	print("BearTrap: _on_sprint_block_timeout() - Restoring sprint capability.")
+	print("BearTrap: _on_sprint_block_timeout() restoring player sprint.")
 	if is_instance_valid(trapped_player) and is_instance_valid(trapped_player.locomotion_component):
-		trapped_player.locomotion_component.set("can_sprint", true)
+		trapped_player.locomotion_component.set(&"can_sprint", true)
 		trapped_player = null

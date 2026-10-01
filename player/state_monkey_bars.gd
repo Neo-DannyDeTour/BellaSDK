@@ -1,77 +1,80 @@
+## Handles overhead monkey bar navigation, hanging, and traversal in [StateMonkeyBars].
 class_name StateMonkeyBars
 extends PlayerState
 
-# --------------------------------------
-# CONSTANTS
-# --------------------------------------
+## Horizontal traversal speed along overhead monkey bar volume.
 const MONKEY_BAR_SPEED: float = 2.5
+
+## Vertical downward offset below monkey bar trigger volume.
 const MONKEY_BAR_HANG_OFFSET: float = 2.1
 
-# --------------------------------------
-# VARIABLES
-# --------------------------------------
+## Active monkey bar trigger volume currently occupied by player.
 var current_monkey_bar_volume: Node3D = null
 
-# CACHED NODE
+## Cached [AnimationPlayer] node driving first-person camera animations.
 var _camera_anims: AnimationPlayer = null
 
+## Cached horizontal velocity vector to prevent runtime heap allocations.
+var _flat_vel: Vector2 = Vector2.ZERO
 
+## Reusable transition payload dictionary to avoid runtime allocations.
+var _transition_msg: Dictionary = {}
+
+
+## Attaches player to monkey bars, plays idle animation, and locks sprint FOV.
 func enter(msg: Dictionary = {}) -> void:
+	print("StateMonkeyBars: enter() called. Player mounting monkey bars.")
 	if not is_instance_valid(_camera_anims):
 		_camera_anims = player.get_node_or_null("%CameraAnims") as AnimationPlayer
 
-	if not msg.has("volume_node"):
-		state_machine.transition_to("Air")
+	if not msg.has(&"volume_node"):
+		state_machine.transition_to(&"Air")
 		return
 
-	current_monkey_bar_volume = msg["volume_node"]
-
-	# Instantly kill vertical momentum so we "catch" the bar
+	current_monkey_bar_volume = msg[&"volume_node"] as Node3D
 	player.velocity.y = 0.0
 
 	if is_instance_valid(_camera_anims):
-		_camera_anims.play("monkey_bar_idle")
+		_camera_anims.play(&"monkey_bar_idle")
 
-	# Force the camera back to base_fov
 	if is_instance_valid(player.camera_controller):
-		print("StateMonkeyBars: Disabling sprint FOV flag")
+		print("StateMonkeyBars: Disabling sprint FOV scaling.")
 		player.camera_controller.disable_sprint_fov = true
 
 
+## Restores camera animations, stops looping audio, and resets sprint FOV.
 func exit() -> void:
+	print("StateMonkeyBars: exit() called. Player dismounting monkey bars.")
 	current_monkey_bar_volume = null
 
-	# FIX: Route cooldown to your environment_component
-	if is_instance_valid(player.environment_component):
-		player.environment_component.monkey_bar_cooldown = 0.5
+	var env: PlayerEnvironmentComponent = player.environment_component as PlayerEnvironmentComponent
+	if is_instance_valid(env):
+		env.monkey_bar_cooldown = 0.5
 
 	if is_instance_valid(_camera_anims):
-		_camera_anims.play("idle", 0.2)
+		_camera_anims.play(&"idle", 0.2)
 
-	# --- NEW: Kill the looping audio when we let go ---
-	if (
-		is_instance_valid(player.locomotion_component)
-		and is_instance_valid(player.locomotion_component.get("footstep_manager"))
-	):
-		if player.locomotion_component.footstep_manager.has_method("stop_looping_sounds"):
-			player.locomotion_component.footstep_manager.stop_looping_sounds()
-			print("StateMonkeyBars: Stopped looping monkey bar sounds")
+	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	if is_instance_valid(loco) and is_instance_valid(loco.footstep_manager):
+		if loco.footstep_manager.has_method(&"stop_looping_sounds"):
+			loco.footstep_manager.call(&"stop_looping_sounds")
+			print("StateMonkeyBars: Stopped looping monkey bar sounds.")
 
-	# Re-enable the ability to sprint FOV when returning to ground/air
 	if is_instance_valid(player.camera_controller):
-		print("StateMonkeyBars: Re-enabling sprint FOV flag")
+		print("StateMonkeyBars: Re-enabling sprint FOV scaling.")
 		player.camera_controller.disable_sprint_fov = false
 
 
+## Processes horizontal locomotion, vertical magnetism, audio, and dismounts.
 func physics_update(delta: float) -> void:
-	# Print statement omitted here to prevent console spam at 60 FPS
+	print("StateMonkeyBars: physics_update() processing monkey bar traversal.")
+	var env: PlayerEnvironmentComponent = player.environment_component as PlayerEnvironmentComponent
 	var active_bar: Node3D = null
-
-	if is_instance_valid(player.environment_component):
-		active_bar = player.environment_component.get("available_monkey_bar") as Node3D
+	if is_instance_valid(env):
+		active_bar = env.available_monkey_bar
 
 	if active_bar == null:
-		state_machine.transition_to("Air")
+		state_machine.transition_to(&"Air")
 		return
 
 	if current_monkey_bar_volume != active_bar:
@@ -81,35 +84,31 @@ func physics_update(delta: float) -> void:
 		_perform_dismount()
 		return
 
-	var input_dir: Vector2 = GestureInputManager.get_vector("left", "right", "forward", "backward")
+	var input_dir: Vector2 = GestureInputManager.get_vector(
+		&"left", &"right", &"forward", &"backward"
+	)
 
 	_apply_horizontal_movement(input_dir)
 	_apply_vertical_magnetism()
 	_handle_animations(input_dir)
-
 	player.move_and_slide()
 
-	# --- NEW: Play Monkey Bar Sounds ---
-	# We only pass horizontal velocity so the vertical magnetism wobble doesn't trigger audio
-	var flat_vel: Vector2 = Vector2(player.velocity.x, player.velocity.z)
-	if (
-		is_instance_valid(player.locomotion_component)
-		and is_instance_valid(player.locomotion_component.get("footstep_manager"))
-	):
-		player.locomotion_component.footstep_manager.process_surface_and_footsteps(
-			delta, false, flat_vel.length(), false, false, false, true
+	_flat_vel.x = player.velocity.x
+	_flat_vel.y = player.velocity.z
+
+	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	if is_instance_valid(loco) and is_instance_valid(loco.footstep_manager):
+		loco.footstep_manager.process_surface_and_footsteps(
+			delta, false, _flat_vel.length(), false, false, false, true
 		)
 
 	player.camera_controller.update_camera(delta, input_dir, false, false, false, MONKEY_BAR_SPEED)
-
 	_check_dismount_conditions()
 
 
-# --------------------------------------
-# PRIVATE METHODS
-# --------------------------------------
+## Calculates horizontal velocity relative to camera orientation.
 func _apply_horizontal_movement(input_dir: Vector2) -> void:
-	# FIX: Route camera reference through camera_controller
+	print("StateMonkeyBars: _apply_horizontal_movement() steering character.")
 	var look_dir: Vector3 = player.camera_controller.get_camera_look_dir()
 	var right_dir: Vector3 = player.camera_controller.get_camera_right_dir()
 
@@ -121,59 +120,61 @@ func _apply_horizontal_movement(input_dir: Vector2) -> void:
 	var target_dir: Vector3 = (look_dir * -input_dir.y) + (right_dir * input_dir.x)
 	var final_dir: Vector3 = Vector3.ZERO
 
-	if is_instance_valid(player.locomotion_component):
-		if target_dir.length() > 0.0:
-			player.locomotion_component.set_direction(target_dir.normalized())
+	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	if is_instance_valid(loco):
+		if target_dir.length_squared() > 0.0:
+			loco.set_direction(target_dir.normalized())
 		else:
-			player.locomotion_component.set_direction(Vector3.ZERO)
-		final_dir = player.locomotion_component.get_direction()
+			loco.set_direction(Vector3.ZERO)
+		final_dir = loco.get_direction()
 	else:
-		if target_dir.length() > 0.0:
+		if target_dir.length_squared() > 0.0:
 			final_dir = target_dir.normalized()
 
 	player.velocity.x = final_dir.x * MONKEY_BAR_SPEED
 	player.velocity.z = final_dir.z * MONKEY_BAR_SPEED
 
 
+## Snaps player vertical position to underside of monkey bar volume.
 func _apply_vertical_magnetism() -> void:
+	print("StateMonkeyBars: _apply_vertical_magnetism() applying height clamp.")
 	var volume: MonkeyBarVolume = current_monkey_bar_volume as MonkeyBarVolume
 	if not is_instance_valid(volume):
 		return
 
 	var player_pos: Vector3 = player.global_position
-
-	# 1. Convert the player's position to the volume's local coordinate space
 	var local_pos: Vector3 = volume.to_local(player_pos)
-
-	# 2. Snap the local Y exactly to the bottom face of the CSGBox3D
 	local_pos.y = -volume.size.y / 2.0
 
-	# 3. Convert back to global space to find the true slanted height
 	var target_global: Vector3 = volume.to_global(local_pos)
 	var target_y: float = target_global.y - MONKEY_BAR_HANG_OFFSET
 	var distance_to_target: float = target_y - player_pos.y
-	# If the player manages to slip too far away
+
 	if absf(distance_to_target) > 4.0:
 		_perform_dismount()
 		return
 
-	# Smoothly pull them to the exact hang height
 	var pull_speed: float = distance_to_target * 12.0
 	player.velocity.y = clampf(pull_speed, -6.0, 6.0)
 
 
+## Updates procedural character animations based on movement vector.
 func _handle_animations(_input_dir: Vector2) -> void:
-	pass
+	print("StateMonkeyBars: _handle_animations() checking camera anim clips.")
 
 
+## Evaluates jump or crouch inputs to trigger monkey bar dismount.
 func _check_dismount_conditions() -> void:
+	print("StateMonkeyBars: _check_dismount_conditions() polling release buttons.")
 	if (
-		GestureInputManager.is_action_just_pressed("jump")
-		or GestureInputManager.is_action_just_pressed("crouch")
+		GestureInputManager.is_action_just_pressed(&"jump")
+		or GestureInputManager.is_action_just_pressed(&"crouch")
 	):
 		_perform_dismount()
 
 
+## Applies exit downward push and transitions state into [StateAir].
 func _perform_dismount() -> void:
-	player.velocity.y = -2.0  # Slight downward push to cleanly exit the trigger volume
-	state_machine.transition_to("Air")
+	print("StateMonkeyBars: _perform_dismount() dismounting monkey bars.")
+	player.velocity.y = -2.0
+	state_machine.transition_to(&"Air")

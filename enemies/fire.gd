@@ -1,22 +1,27 @@
 @tool
-## [VolumetricFire] manages volumetric fire, embers, wind, and an interactive [Area3D] burn trigger.
+## Volumetric fire manager with embers, lighting, and burn detection area.
 class_name VolumetricFire
 extends Node3D
 
 ## Default light flicker frequency for flame illumination in [method _process].
 const FLICKER_FREQUENCY: float = 12.0
 ## Volumetric render layer mask (Layer 10) for 3D raymarching culling.
-const VOLUMETRIC_LAYER_MASK: int = 512
+const VOLUMETRIC_LAYER_MASK: int = CollisionLayers.RENDER_MASK_VOLUMETRICS
 ## Environment render layer mask (Layer 1) for ember particle visibility.
-const ENVIRONMENT_LAYER_MASK: int = 1
-## Default 3D physics mask targeting Layer 2 (Player), 3, 4, and 5.
-const DEFAULT_PHYSICS_MASK: int = 30
+const ENVIRONMENT_LAYER_MASK: int = CollisionLayers.RENDER_MASK_ENVIRONMENT
+## Default physics mask targeting players, interactables, debris, and enemies.
+const DEFAULT_PHYSICS_MASK: int = (
+	CollisionLayers.MASK_PLAYER
+	| CollisionLayers.MASK_INTERACTIVE
+	| CollisionLayers.MASK_DEBRIS
+	| CollisionLayers.MASK_ENEMIES
+)
 
 ## Emitted when [method ignite] enables fire rendering and burn monitoring.
 signal ignited
 ## Emitted when [method extinguish] halts fire rendering and damage triggers.
 signal extinguished
-## Emitted when [member burn_area] detects a combustible body.
+## Emitted when [member burn_area] detects a combustible body. Passes [param body].
 signal body_ignited(body: Node3D)
 
 ## Target [Node3D] ignored by [member burn_area] to prevent self-collision.
@@ -34,7 +39,7 @@ signal body_ignited(body: Node3D)
 ## Dynamic [OmniLight3D] providing flickering ambient fire illumination.
 @export var fire_light: OmniLight3D
 
-## System emitting drifting ash and glowing ember particles in [member _ready].
+## System emitting drifting ash and glowing ember particles.
 @export var ember_particles: GPUParticles3D:
 	set(value):
 		ember_particles = value
@@ -161,27 +166,44 @@ func _damage_target(target: Node3D, amount: int) -> void:
 	elif target.has_method(&"take_damage"):
 		target.call(&"take_damage", amount)
 	else:
-		var health: HealthComponent = target.get_node_or_null(^"HealthComponent") as HealthComponent
+		var health: HealthComponent = _resolve_health_component(target)
 		if is_instance_valid(health):
 			health.take_damage(amount)
 
 
+## Resolves [HealthComponent] on [param target] via property or [NodeQuery].
+func _resolve_health_component(target: Node3D) -> HealthComponent:
+	print("[VolumetricFire] Resolving HealthComponent for: ", target.name)
+	if not is_instance_valid(target):
+		return null
+	if "health_component" in target:
+		var comp: Variant = target.get("health_component")
+		if comp is HealthComponent:
+			return comp as HealthComponent
+	var found_comp: Node = NodeQuery.find_first_child_of_type(target, HealthComponent)
+	if found_comp is HealthComponent:
+		return found_comp as HealthComponent
+	return null
+
+
 ## Checks if [param target] can receive damage or has [HealthComponent].
 func _can_take_damage(target: Node3D) -> bool:
+	print("[VolumetricFire] Checking damage capability for: ", target.name)
 	return (
 		target.has_method(&"take_fire_damage")
 		or target.has_method(&"take_damage")
-		or target.has_node(^"HealthComponent")
+		or is_instance_valid(_resolve_health_component(target))
 	)
 
 
 ## Returns true if [param body] is the player character.
 func _is_player_body(body: Node3D) -> bool:
+	print("[VolumetricFire] Checking if body is player: ", body.name if body else "null")
 	if not is_instance_valid(body):
 		return false
-	if body is Player or body.is_in_group(&"player"):
+	if body.is_in_group(&"player"):
 		return true
-	var health: HealthComponent = body.get_node_or_null(^"HealthComponent") as HealthComponent
+	var health: HealthComponent = _resolve_health_component(body)
 	return is_instance_valid(health) and health.is_player_health
 
 
@@ -203,7 +225,7 @@ func ignite() -> void:
 	ignited.emit()
 
 
-## Extinguishes the fire, stopping rendering, lighting, and burn detection.
+## Extinguishes fire, stopping rendering, lighting, and burn detection.
 func extinguish() -> void:
 	print("[VolumetricFire] Extinguishing fire and disabling burn trigger.")
 	_is_burning = false
@@ -217,7 +239,7 @@ func extinguish() -> void:
 	if is_instance_valid(burn_area):
 		burn_area.monitoring = false
 
-	if _is_player_present and Events.has_signal("fire_hazard_toggled"):
+	if _is_player_present:
 		Events.fire_hazard_toggled.emit(false)
 		_is_player_present = false
 
@@ -225,7 +247,7 @@ func extinguish() -> void:
 	extinguished.emit()
 
 
-## Sets the vertical fire height and synchronizes shapes and uniforms.
+## Sets vertical fire height and synchronizes shapes and uniforms.
 func set_fire_height(value: float) -> void:
 	print("[VolumetricFire] Fire height changed to: ", value)
 	fire_height = maxf(0.05, value)
@@ -237,7 +259,7 @@ func set_fire_height(value: float) -> void:
 			_update_burn_shape()
 
 
-## Sets the horizontal fire width and synchronizes shapes and uniforms.
+## Sets horizontal fire width and synchronizes shapes and uniforms.
 func set_fire_width(value: float) -> void:
 	print("[VolumetricFire] Fire width changed to: ", value)
 	fire_width = maxf(0.05, value)
@@ -291,6 +313,7 @@ func set_wind_strength(value: float) -> void:
 
 ## Syncs flame dimensions, speed, emission, and wind uniforms to shader.
 func _update_shader_parameters() -> void:
+	print("[VolumetricFire] Updating shader parameters.")
 	if not is_instance_valid(_material):
 		return
 	_material.set_shader_parameter("fire_height", fire_height)
@@ -303,6 +326,7 @@ func _update_shader_parameters() -> void:
 
 ## Adjusts ember particle trajectory and velocity based on wind forces.
 func _update_particle_parameters() -> void:
+	print("[VolumetricFire] Updating particle parameters.")
 	if not is_instance_valid(ember_particles):
 		return
 	var process_mat: Material = ember_particles.process_material
@@ -313,6 +337,7 @@ func _update_particle_parameters() -> void:
 
 ## Synchronizes dimensions of [member burn_shape] to match fire dimensions.
 func _update_burn_shape() -> void:
+	print("[VolumetricFire] Updating burn collision shape.")
 	if not is_instance_valid(burn_shape):
 		return
 	var shape: Shape3D = burn_shape.shape
@@ -324,6 +349,7 @@ func _update_burn_shape() -> void:
 
 ## Resizes and aligns unique [member mesh_instance] bounding box.
 func _update_volume_mesh() -> void:
+	print("[VolumetricFire] Updating volume mesh boundaries.")
 	if not is_instance_valid(mesh_instance):
 		return
 	mesh_instance.position = Vector3.ZERO
@@ -331,7 +357,6 @@ func _update_volume_mesh() -> void:
 	if not is_instance_valid(box):
 		return
 
-	# Duplicate mesh resource so resizing one box doesn't resize all fires
 	if not box.is_local_to_scene():
 		box = box.duplicate() as BoxMesh
 		mesh_instance.mesh = box
@@ -344,9 +369,10 @@ func _update_volume_mesh() -> void:
 
 ## Connects collision signals and configures physics masks on [member burn_area].
 func _setup_burn_area() -> void:
+	print("[VolumetricFire] Setting up burn area collision masks.")
 	if not is_instance_valid(burn_area):
 		return
-	burn_area.collision_layer = 0
+	burn_area.collision_layer = CollisionLayers.MASK_NONE
 	burn_area.collision_mask = DEFAULT_PHYSICS_MASK
 	if not burn_area.body_entered.is_connected(_on_burn_area_body_entered):
 		burn_area.body_entered.connect(_on_burn_area_body_entered)
@@ -364,8 +390,7 @@ func _on_burn_area_body_entered(body: Node3D) -> void:
 
 	if _is_player_body(body):
 		_is_player_present = true
-		if Events.has_signal("fire_hazard_toggled"):
-			Events.fire_hazard_toggled.emit(true)
+		Events.fire_hazard_toggled.emit(true)
 
 	var is_combustible: bool = false
 	if body.has_method(&"apply_heat"):
@@ -393,14 +418,14 @@ func _on_burn_area_body_exited(body: Node3D) -> void:
 
 	if _is_player_body(body):
 		_is_player_present = false
-		if Events.has_signal("fire_hazard_toggled"):
-			Events.fire_hazard_toggled.emit(false)
+		Events.fire_hazard_toggled.emit(false)
 
 	_active_combustible_bodies.erase(body)
 
 
-## Fetches and duplicates active [ShaderMaterial] to avoid shared mutation.
+## Caches shader material through [MaterialCache] to prevent GPU stalls.
 func _cache_material() -> void:
+	print("[VolumetricFire] Caching shader material via MaterialCache.")
 	if not is_instance_valid(mesh_instance):
 		_material = null
 		return
@@ -410,8 +435,8 @@ func _cache_material() -> void:
 		mat = mesh_instance.get_active_material(0)
 
 	if mat is ShaderMaterial:
-		# Duplicate material to prevent cross-instance uniform bleeding
-		_material = mat.duplicate() as ShaderMaterial
+		var variant_key: String = "fire_%d" % get_instance_id()
+		_material = MaterialCache.get_variant(mat, variant_key) as ShaderMaterial
 		mesh_instance.material_override = _material
 	else:
 		_material = null
@@ -419,6 +444,7 @@ func _cache_material() -> void:
 
 ## Assigns [member mesh_instance] to Layer 10 and embers to Layer 1.
 func _apply_render_layer() -> void:
+	print("[VolumetricFire] Applying visual render layers.")
 	if is_instance_valid(mesh_instance):
 		mesh_instance.layers = VOLUMETRIC_LAYER_MASK
 	if is_instance_valid(ember_particles):

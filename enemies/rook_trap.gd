@@ -1,5 +1,5 @@
-## Dynamic trap entity that rushes along floor tracks toward destination markers on trigger.
 @tool
+## Dynamic trap entity rushing along floor tracks toward destination markers.
 class_name RookTrap
 extends Node3D
 
@@ -21,7 +21,7 @@ enum State { IDLE, ATTACKING, RETURNING }
 ## Vertical offset used to draw black track lines flush with floor.
 @export var track_y_offset: float = -0.48
 
-## Array of destination points trap generates paths and triggers towards.
+## Destination markers trap generates paths and triggers towards.
 @export var markers: Array[Marker3D] = []:
 	set(value):
 		markers = value
@@ -47,7 +47,7 @@ var _target_position: Vector3 = Vector3.ZERO
 @onready var path_lines_container: Node3D = $PathLines
 
 
-## Initializes trap, saving origin position and dynamically building triggers.
+## Initializes trap, caching origin position and building triggers.
 func _ready() -> void:
 	print("RookTrap: Initializing trap instance -> ", name)
 	if is_instance_valid(moving_body):
@@ -58,11 +58,12 @@ func _ready() -> void:
 	if not Engine.is_editor_hint():
 		_setup_trigger_areas()
 		if is_instance_valid(player_hitbox):
+			player_hitbox.collision_layer = CollisionLayers.MASK_NONE
+			player_hitbox.collision_mask = CollisionLayers.MASK_PLAYER
 			Utilities.safe_connect(player_hitbox.body_entered, _on_player_hitbox_body_entered)
 
 
 ## Processes movement interpolation based on current active state.
-## [param delta] Physics step duration in seconds.
 func _physics_process(delta: float) -> void:
 	if Engine.is_editor_hint() or _state == State.IDLE or not is_instance_valid(moving_body):
 		return
@@ -82,7 +83,7 @@ func _physics_process(delta: float) -> void:
 		if dist_sq <= move_step_sq:
 			moving_body.global_position = _target_position
 			_state = State.RETURNING
-			print("RookTrap: Reached target. Returning slowly.")
+			print("RookTrap: Target reached. Returning to origin.")
 		else:
 			moving_body.global_position += direction * move_step
 
@@ -95,17 +96,16 @@ func _physics_process(delta: float) -> void:
 		if dist_sq <= move_step_sq:
 			moving_body.global_position = _origin_position
 			_state = State.IDLE
-			print("RookTrap: Returned to origin. Awaiting input.")
+			print("RookTrap: Returned to origin position.")
 		else:
 			moving_body.global_position += direction * move_step
 
 
 ## Manually triggers trap to rush toward a specific marker in array.
-## [param marker_index] Zero-based array index of target [Marker3D].
 func trigger_trap(marker_index: int) -> void:
-	print("RookTrap: trigger_trap() called with index ", marker_index)
+	print("RookTrap: trigger_trap() index: ", marker_index)
 	if _state != State.IDLE:
-		print("RookTrap: Ignored trigger - trap is currently moving.")
+		print("RookTrap: Trigger ignored - trap is moving.")
 		return
 
 	if marker_index < 0 or marker_index >= markers.size():
@@ -115,7 +115,7 @@ func trigger_trap(marker_index: int) -> void:
 	if is_instance_valid(markers[marker_index]):
 		_target_position = markers[marker_index].global_position
 		_state = State.ATTACKING
-		print("RookTrap: Activated! Rushing toward marker ", marker_index)
+		print("RookTrap: Activated rushing toward marker: ", marker_index)
 		_check_immediate_overlap()
 
 
@@ -130,9 +130,9 @@ func _check_immediate_overlap() -> void:
 		_on_player_hitbox_body_entered(body)
 
 
-## Generates flat track meshes using [method Utilities.clear_children].
+## Generates flat track meshes using [method MathUtils.get_midpoint].
 func _draw_path_lines() -> void:
-	print("RookTrap: _draw_path_lines() - Generating track meshes.")
+	print("RookTrap: _draw_path_lines() building track meshes.")
 	if not is_instance_valid(path_lines_container):
 		return
 
@@ -144,36 +144,40 @@ func _draw_path_lines() -> void:
 
 		var mesh_instance: MeshInstance3D = MeshInstance3D.new()
 		var box_mesh: BoxMesh = BoxMesh.new()
-		var mat: StandardMaterial3D = StandardMaterial3D.new()
-
-		mat.albedo_color = Color.BLACK
-		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		var mat: StandardMaterial3D = (
+			MaterialCache.get_variant(
+				&"rook_trap_track_mat",
+				func() -> Material:
+					var m: StandardMaterial3D = StandardMaterial3D.new()
+					m.albedo_color = Color.BLACK
+					m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+					return m
+			)
+			as StandardMaterial3D
+		)
 		box_mesh.material = mat
 
 		var start_pos: Vector3 = (
 			_origin_position if _origin_position != Vector3.ZERO else global_position
 		)
-
 		var flat_start: Vector3 = Vector3(start_pos.x, start_pos.y + track_y_offset, start_pos.z)
 		var flat_marker: Vector3 = Vector3(
 			marker.global_position.x, flat_start.y, marker.global_position.z
 		)
 
 		var dist: float = flat_start.distance_to(flat_marker)
-
 		box_mesh.size = Vector3(0.2, 0.05, dist)
 		mesh_instance.mesh = box_mesh
 		path_lines_container.add_child(mesh_instance)
 
-		mesh_instance.global_position = flat_start.lerp(flat_marker, 0.5)
-
+		mesh_instance.global_position = MathUtils.get_midpoint(flat_start, flat_marker)
 		if not flat_start.is_equal_approx(flat_marker):
 			mesh_instance.look_at(flat_marker, Vector3.UP)
 
 
 ## Creates flat player detection zones using [CollisionLayers].
 func _setup_trigger_areas() -> void:
-	print("RookTrap: _setup_trigger_areas() - Creating player detection zones.")
+	print("RookTrap: _setup_trigger_areas() creating detection areas.")
 	for i: int in range(markers.size()):
 		var marker: Marker3D = markers[i]
 		if not is_instance_valid(marker):
@@ -189,53 +193,49 @@ func _setup_trigger_areas() -> void:
 		var start_pos: Vector3 = (
 			_origin_position if _origin_position != Vector3.ZERO else global_position
 		)
-
 		var flat_start: Vector3 = Vector3(start_pos.x, start_pos.y + track_y_offset, start_pos.z)
 		var flat_marker: Vector3 = Vector3(
 			marker.global_position.x, flat_start.y, marker.global_position.z
 		)
 
 		var dist: float = flat_start.distance_to(flat_marker)
-
 		box.size = Vector3(0.8, 2.0, dist)
 		coll_shape.shape = box
 
 		trigger_area.add_child(coll_shape)
 		add_child(trigger_area)
 
-		trigger_area.global_position = flat_start.lerp(flat_marker, 0.5)
+		trigger_area.global_position = MathUtils.get_midpoint(flat_start, flat_marker)
 		if not flat_start.is_equal_approx(flat_marker):
 			trigger_area.look_at(flat_marker, Vector3.UP)
 
 		trigger_area.body_entered.connect(
 			func(body: Node3D) -> void:
 				if body.is_in_group(&"player"):
-					print("RookTrap: Player entered detection zone ", i)
+					print("RookTrap: Player entered detection zone: ", i)
 					trigger_trap(i)
 		)
 
 
 ## Deals damage and applies knockback when moving body impacts player.
-## [param body] The [Node3D] struck by the trap hitbox.
 func _on_player_hitbox_body_entered(body: Node3D) -> void:
+	print("RookTrap: _on_player_hitbox_body_entered() body: ", body.name)
 	if _state != State.ATTACKING:
 		return
 
 	if body.is_in_group(&"player"):
-		print("RookTrap: Player hit while attacking! Dealing damage.")
-
+		print("RookTrap: Struck player. Applying damage and knockback.")
 		var health_comp: HealthComponent = (
 			NodeQuery.find_first_child_of_type(body, HealthComponent) as HealthComponent
 		)
 		if is_instance_valid(health_comp):
 			health_comp.take_damage(damage_amount)
-		elif body.has_method("take_damage"):
-			body.call("take_damage", damage_amount)
+		elif body.has_method(&"take_damage"):
+			body.call(&"take_damage", damage_amount)
 
-		if body.has_method("apply_knockback"):
+		if body.has_method(&"apply_knockback"):
 			var push_dir: Vector3 = global_position.direction_to(body.global_position)
 			push_dir.y = 0.5
 			push_dir = push_dir.normalized()
-
 			var force: Vector3 = push_dir * knockback_force
-			body.call("apply_knockback", force)
+			body.call(&"apply_knockback", force)

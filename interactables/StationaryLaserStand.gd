@@ -1,67 +1,90 @@
-## Stationary laser turret casting continuous reflecting beams and handling player control.
-## Emits energy beams, sparks, and smoke using pre-allocated pools to ensure 60 FPS pacing.
+## Stationary laser turret casting reflecting beams and using [ObjectPool].
 class_name StationaryLaserStand
 extends StaticBody3D
 
-## The maximum number of scorch trail decals allowed in the object pool.
+## Maximum count of active scorch trail decals maintained in [ObjectPool].
 const MAX_TRAIL_DECALS: int = 60
 
-## Maximum distance the laser beam can travel in a single straight segment.
+## Maximum distance laser beam travels in a single straight segment.
 @export var max_distance: float = 50.0
-## Maximum number of reflections allowed off mirrors.
+
+## Maximum number of reflective bounces allowed across mirror surfaces.
 @export var max_bounces: int = 5
-## Rotational speed in radians per second when controlled by player.
+
+## Turret rotational speed in radians per second during player control.
 @export var rotation_speed: float = 2.0
 
-## Indicates whether player is currently actively controlling this stand.
+@export_group("Object Pools")
+## Dedicated [ObjectPool] managing reusable scorch trail [Decal] nodes.
+@export var trail_pool: ObjectPool
+
+## Dedicated [ObjectPool] managing reusable laser impact spark emitters.
+@export var impact_emitter_pool: ObjectPool
+
+## Dedicated [ObjectPool] managing reusable drifting smoke emitters.
+@export var smoke_emitter_pool: ObjectPool
+
+## Indicates whether player currently exercises active manual control.
 var is_controlled: bool = false
-## Reference to the [CharacterBody3D] currently controlling this stand.
+
+## Reference to [CharacterBody3D] player controller operating the stand.
 var controlling_player: CharacterBody3D = null
-## Tracks if player just attached to avoid immediate detachment.
+
+## Guard preventing immediate detachment on same frame control was taken.
 var _just_attached: bool = false
-## Last valid node struck by laser receiving a power signal.
+
+## Last node struck by laser receiving power signal via [method power_on].
 var _last_target: Node3D = null
-## Pool of [MeshInstance3D] nodes visually representing beam segments.
+
+## Internal pool of [MeshInstance3D] nodes representing beam segments.
 var _beam_pool: Array[MeshInstance3D] = []
+
 ## Pool of [GPUParticles3D] emitting energy particles along beam paths.
 var _beam_particles_pool: Array[GPUParticles3D] = []
+
 ## Pool of [GPUParticles3D] spawning sparks where laser impacts surfaces.
 var _impact_particles_pool: Array[GPUParticles3D] = []
-## Pool of [GPUParticles3D] emitting drifting smoke along beam paths.
+
+## Pool of [GPUParticles3D] emitting drifting smoke along beam segments.
 var _smoke_particles_pool: Array[GPUParticles3D] = []
+
 ## Pool of [Decal] nodes representing active scorch marks at impacts.
 var _decal_pool: Array[Decal] = []
-## Pool of [Decal] nodes leaving fading scorch marks across surfaces.
-var _trail_pool: Array[Decal] = []
-## Ring buffer index pointer for reusing scorch trail [Decal] nodes.
-var _trail_index: int = 0
+
 ## Generated [GradientTexture2D] used for active laser burn decals.
 var _scorch_texture: GradientTexture2D
+
 ## Generated [GradientTexture2D] used for fading trail scorch decals.
 var _trail_texture: GradientTexture2D
 
 ## Template particle system used for beam core energy effects.
 @onready
 var base_beam_particles: GPUParticles3D = get_node_or_null("Turret/BeamParticles") as GPUParticles3D
+
 ## Template particle system used when laser impacts a surface.
 @onready var base_impact_particles: GPUParticles3D = (
 	get_node_or_null("Turret/ImpactParticles") as GPUParticles3D
 )
+
 ## Template particle system used to spawn drifting smoke along laser.
 @onready var base_smoke_particles: GPUParticles3D = (
 	get_node_or_null("Turret/SmokeParticles") as GPUParticles3D
 )
+
 ## Rotating mechanism pivot node of the laser stand.
 @onready var turret: Node3D = $Turret
+
 ## Starting 3D coordinate and rotation from which laser is cast.
 @onready var laser_origin: Marker3D = $Turret/LaserOrigin
+
 ## Template 3D mesh used to construct segmented laser lines.
 @onready var base_beam_mesh: MeshInstance3D = $Turret/BeamMesh
+
 ## Interaction component allowing player to assume manual control.
 @onready var interact_comp: InteractComponent = $InteractComponent
 
 
-## Initializes object pools, generated textures, and binds interaction signals.
+## Initializes object pools, textures, and binds interaction signals.
 func _ready() -> void:
 	print("StationaryLaserStand: Initializing pools and resources.")
 	_scorch_texture = _create_scorch_texture()
@@ -77,16 +100,38 @@ func _ready() -> void:
 		base_smoke_particles.emitting = false
 
 	if is_instance_valid(interact_comp):
-		Utilities.safe_connect(interact_comp.interacted, _on_interacted)
+		interact_comp.interacted.connect(_on_interacted)
 
-	_initialize_trail_pool()
+	if not is_instance_valid(trail_pool):
+		_setup_default_trail_pool()
+
 	_preallocate_beam_pools()
 
 
-## Pre-allocates all segment pools on boot to achieve 0 runtime allocations.
+## Instantiates default [ObjectPool] for scorch trail decals if unset.
+func _setup_default_trail_pool() -> void:
+	print("StationaryLaserStand: Initializing default trail ObjectPool.")
+	var template_decal: Decal = Decal.new()
+	template_decal.texture_albedo = _trail_texture
+	template_decal.size = Vector3(0.5, 0.5, 0.5)
+	template_decal.top_level = true
+
+	var decal_scene: PackedScene = PackedScene.new()
+	decal_scene.pack(template_decal)
+	template_decal.queue_free()
+
+	trail_pool = ObjectPool.new()
+	trail_pool.name = "TrailDecalPool"
+	trail_pool.template_scene = decal_scene
+	trail_pool.initial_pool_size = MAX_TRAIL_DECALS
+	trail_pool.can_grow = true
+	add_child(trail_pool)
+
+
+## Pre-allocates laser segment meshes, decals, and particle emitters.
 func _preallocate_beam_pools() -> void:
 	var pool_capacity: int = max_bounces + 1
-	print("StationaryLaserStand: Pre-allocating pools capacity: ", pool_capacity)
+	print("StationaryLaserStand: Pre-allocating beam pools capacity: ", pool_capacity)
 
 	for i: int in range(pool_capacity):
 		var beam: MeshInstance3D = MeshInstance3D.new()
@@ -124,6 +169,10 @@ func _preallocate_beam_pools() -> void:
 			var ip: GPUParticles3D = base_impact_particles.duplicate()
 			ip.top_level = true
 			ip.emitting = false
+			if ip.process_material:
+				ip.process_material = (
+					MaterialCache.get_instance(ip.process_material) as ParticleProcessMaterial
+				)
 			add_child(ip)
 			_impact_particles_pool.append(ip)
 
@@ -138,21 +187,9 @@ func _preallocate_beam_pools() -> void:
 		_decal_pool.append(decal)
 
 
-## Initializes trail pool of fading scorch decals.
-func _initialize_trail_pool() -> void:
-	print("StationaryLaserStand: Initializing 60 FPS trail pool.")
-	for i: int in range(MAX_TRAIL_DECALS):
-		var d: Decal = Decal.new()
-		d.texture_albedo = _trail_texture
-		d.size = Vector3(0.5, 0.5, 0.5)
-		d.top_level = true
-		d.visible = false
-		add_child(d)
-		_trail_pool.append(d)
-
-
 ## Creates radial gradient texture for active laser hit scorch mark.
 func _create_scorch_texture() -> GradientTexture2D:
+	print("StationaryLaserStand: Creating scorch gradient texture.")
 	var grad: Gradient = Gradient.new()
 	grad.offsets = PackedFloat32Array([0.0, 0.15, 0.3, 1.0])
 	grad.colors = PackedColorArray(
@@ -174,8 +211,9 @@ func _create_scorch_texture() -> GradientTexture2D:
 	return tex
 
 
-## Creates radial gradient texture for black fading scorch trail marks.
+## Creates radial gradient texture for fading scorch trail marks.
 func _create_trail_texture() -> GradientTexture2D:
+	print("StationaryLaserStand: Creating trail gradient texture.")
 	var grad: Gradient = Gradient.new()
 	grad.offsets = PackedFloat32Array([0.0, 0.4, 1.0])
 	grad.colors = PackedColorArray(
@@ -192,8 +230,7 @@ func _create_trail_texture() -> GradientTexture2D:
 	return tex
 
 
-## Evaluates input, handles player rotation, and processes laser raycasts.
-## [param delta] Frame delta time in seconds.
+## Evaluates player input, rotates turret, and updates laser bounces.
 func _physics_process(delta: float) -> void:
 	if is_controlled:
 		_handle_rotation_input(delta)
@@ -207,24 +244,23 @@ func _physics_process(delta: float) -> void:
 	_process_laser()
 
 
-## Handles horizontal rotational user input.
-## [param delta] Frame delta time in seconds.
+## Handles horizontal rotational user input during player control.
 func _handle_rotation_input(delta: float) -> void:
 	var turn_input: float = GestureInputManager.get_axis("left", "right")
 	if turn_input != 0.0:
 		turret.rotate_y(-turn_input * rotation_speed * delta)
 
 
-## Releases player control if distance exceeds maximum range.
+## Releases player control if distance exceeds maximum allowed range.
 func _check_auto_release() -> void:
-	if controlling_player:
+	if is_instance_valid(controlling_player):
 		var dist_sq: float = global_position.distance_squared_to(controlling_player.global_position)
 		if dist_sq > 9.0:
 			print("StationaryLaserStand: Player out of range. Releasing.")
 			_release_control()
 
 
-## Evaluates bouncing laser segments via centralized [CollisionLayers].
+## Raycasts bouncing laser segments through [CollisionLayers] masks.
 func _process_laser() -> void:
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var current_origin: Vector3 = laser_origin.global_position
@@ -243,13 +279,10 @@ func _process_laser() -> void:
 
 	while bounces <= max_bounces:
 		var target_pos: Vector3 = current_origin + (current_direction * max_distance)
-		var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-			current_origin, target_pos
+		var query_mask: int = CollisionLayers.MASK_ENVIRONMENT | CollisionLayers.MASK_INTERACTIVE
+		var result: Dictionary = NodeQuery.cast_ray(
+			space_state, current_origin, target_pos, query_mask, exclude_rids
 		)
-		query.collision_mask = (CollisionLayers.MASK_ENVIRONMENT | CollisionLayers.MASK_INTERACTIVE)
-		query.exclude = exclude_rids
-
-		var result: Dictionary = space_state.intersect_ray(query)
 
 		if result.is_empty():
 			beam_points.append(target_pos)
@@ -293,40 +326,37 @@ func _process_laser() -> void:
 	_update_beam_visuals(beam_points, beam_normals)
 
 
-## Delegates power state to nodes struck by laser.
-## [param hit_target] Target node receiving power.
+## Delegates power state to nodes struck by laser via [method power_on].
 func _update_power_target(hit_target: Node3D) -> void:
 	if hit_target != _last_target:
 		_clear_last_target()
 		if hit_target:
-			print("StationaryLaserStand: Laser hit valid power target!")
+			print("StationaryLaserStand: Laser hit valid power target: ", hit_target.name)
 			hit_target.call("power_on")
 			_last_target = hit_target
 
 
-## Powers off the previously struck node upon beam disconnection.
+## Disconnects power from previous target node via [method power_off].
 func _clear_last_target() -> void:
 	if _last_target != null:
 		if _last_target.has_method("power_off"):
-			print("StationaryLaserStand: Connection broken. Powering off.")
+			print("StationaryLaserStand: Power connection broken on: ", _last_target.name)
 			_last_target.call("power_off")
 		_last_target = null
 
 
-## Toggles control state when interacted with by a player.
-## [param character] Interacting character controller.
+## Toggles control state when interacted with by a player character.
 func _on_interacted(character: CharacterBody3D) -> void:
-	print("StationaryLaserStand: Interaction triggered by player.")
+	print("StationaryLaserStand: Interaction triggered by: ", character.name)
 	if not is_controlled:
 		_take_control(character)
 	else:
 		_release_control()
 
 
-## Binds the given player character to enable manual rotation.
-## [param character] Player character instance to bind.
+## Binds given player character to enable manual turret rotation.
 func _take_control(character: CharacterBody3D) -> void:
-	print("StationaryLaserStand: Player took control of the stand.")
+	print("StationaryLaserStand: Player took control of stand: ", character.name)
 	is_controlled = true
 	_just_attached = true
 	controlling_player = character
@@ -335,9 +365,9 @@ func _take_control(character: CharacterBody3D) -> void:
 		controlling_player.set_machine_lock(true)
 
 
-## Releases current player from controlling the stand.
+## Releases current player from controlling the stationary stand.
 func _release_control() -> void:
-	print("StationaryLaserStand: Player released control.")
+	print("StationaryLaserStand: Player released control of stand.")
 	is_controlled = false
 
 	if is_instance_valid(controlling_player):
@@ -347,9 +377,7 @@ func _release_control() -> void:
 	controlling_player = null
 
 
-## Updates visual segments, particles, and decals using pre-allocated pools.
-## [param points] Segment start and bounce points.
-## [param normals] Surface normals at bounce points.
+## Updates segment meshes, particles, and scorch decals from pools.
 func _update_beam_visuals(points: PackedVector3Array, normals: PackedVector3Array) -> void:
 	var segments_needed: int = points.size() - 1
 	var max_capacity: int = _beam_pool.size()
@@ -465,24 +493,34 @@ func _update_beam_visuals(points: PackedVector3Array, normals: PackedVector3Arra
 						decal.rotate_object_local(Vector3.RIGHT, -PI * 0.5)
 
 
-## Spawns a fading scorch mark decal at the given position.
-## [param pos] Global spawn position.
-## [param xform] Basis rotation transform for the decal.
+## Spawns a fading scorch mark decal utilizing [member trail_pool].
 func _leave_trail_mark(pos: Vector3, xform: Transform3D) -> void:
-	var trail: Decal = _trail_pool[_trail_index]
-	_trail_index = (_trail_index + 1) % MAX_TRAIL_DECALS
+	print("StationaryLaserStand: Spawning scorch trail decal via ObjectPool.")
+	if not is_instance_valid(trail_pool):
+		return
 
-	trail.global_transform = xform
-	trail.global_position = pos
-	trail.visible = true
-	trail.albedo_mix = 1.0
+	var trail: Node = trail_pool.spawn_with_transform(xform)
+	if not is_instance_valid(trail):
+		return
 
-	var tween: Tween = create_tween()
-	tween.tween_property(trail, "albedo_mix", 0.0, 1.0)
-	tween.tween_callback(func() -> void: trail.visible = false)
+	if trail is Node3D:
+		(trail as Node3D).global_position = pos
+
+	if trail is Decal:
+		var d: Decal = trail as Decal
+		d.visible = true
+		d.albedo_mix = 1.0
+
+		var tween: Tween = create_tween()
+		tween.tween_property(d, "albedo_mix", 0.0, 1.0)
+		tween.tween_callback(
+			func() -> void:
+				if is_instance_valid(trail_pool) and is_instance_valid(trail):
+					trail_pool.recycle(trail)
+		)
 
 
-## Checks for standard player inputs to release control of stand.
+## Checks for standard player detachment inputs to release control.
 func _handle_detachment_input() -> void:
 	if (
 		GestureInputManager.is_action_just_pressed("interact")

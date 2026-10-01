@@ -1,25 +1,30 @@
-## A destructible physics rope that breaks after sustaining sufficient damage.
-##
-## Acts as a structural weak point in puzzle mechanics. Once the rope's health drops
-## to zero, it broadcasts a signal (useful for dropping drawbridges or heavy objects)
-## and then frees its root hierarchy.
+## Destructible physics rope that snaps after sustaining critical damage.
 class_name BreakableRope
 extends StaticBody3D
 
-## Emitted when the rope's health reaches zero and it snaps.
+## Emitted when the rope snaps after its health drops to zero.
 signal rope_broken
 
-## The total amount of damage this rope can sustain before breaking.
-@export var health: int = 10
+## Injected [HealthComponent] tracking structural damage and death.
+@export var health_component: HealthComponent
 
-## Tracks if the rope has already been destroyed to prevent duplicate breaking logic.
+## Prevents duplicate destruction logic if damage occurs after breaking.
 var is_broken: bool = false
 
 
-## Handles incoming damage, such as from shotgun blasts or physics impacts.
-## [param amount] The damage value to subtract from health.
-## [param hit_position] The global coordinate where the impact occurred.
-## [param direction] The trajectory vector of the incoming attack.
+## Caches [HealthComponent] dependency and binds to death signal.
+func _ready() -> void:
+	print("BreakableRope: Initializing rope entity.")
+	if health_component == null:
+		var found_comp: Node = NodeQuery.find_first_child_of_type(self, HealthComponent)
+		if found_comp is HealthComponent:
+			health_component = found_comp as HealthComponent
+
+	if is_instance_valid(health_component):
+		health_component.died.connect(snap_rope)
+
+
+## Applies damage through [HealthComponent] if rope is intact.
 func take_damage(amount: int, hit_position: Vector3, direction: Vector3) -> void:
 	print(
 		"BreakableRope: take_damage() called. Amount: ",
@@ -31,27 +36,18 @@ func take_damage(amount: int, hit_position: Vector3, direction: Vector3) -> void
 	)
 
 	if is_broken:
-		return  # Stop right here! We are already dead.
+		return
 
-	# 1. Subtract the shotgun's damage from the rope's health
-	health -= amount
-
-	# 2. Only break if health drops to 0 or below
-	if health <= 0:
-		is_broken = true
-		snap_rope()
+	if is_instance_valid(health_component):
+		health_component.take_damage(amount)
 
 
-## Executes the destruction sequence, broadcasting the signal and cleaning up nodes.
+## Emits [signal rope_broken] and frees the root hierarchy.
 func snap_rope() -> void:
 	print("BreakableRope: snap_rope() called. Rope snapped!")
-
-	# 3. Emit the EXACT signal the drawbridge is listening for
+	is_broken = true
 	rope_broken.emit()
 
-	# Play snap sound, spawn particle, hide mesh, etc.
-
-	# 4. Delete the entire Path3D root, not just the StaticBody!
 	if owner:
 		print("BreakableRope: Freeing owner node.")
 		owner.queue_free()

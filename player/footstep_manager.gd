@@ -1,4 +1,4 @@
-## Plays context-aware footsteps and indents dynamic terrain surfaces using [CollisionLayers].
+## Plays context-aware footsteps and stamps snow using [CollisionLayers] and [AudioPool].
 class_name FootstepManager
 extends Node3D
 
@@ -6,23 +6,23 @@ extends Node3D
 ## Reference to main player body used as origin for downward raycasts.
 @export var player_body: CharacterBody3D
 
-@export_category("Audio Players")
-## Default footstep sound played when no specific surface is matched.
-@export var audio_default: AudioStreamPlayer
-## Footstep sound for metal grid/panel surfaces.
-@export var audio_metal: AudioStreamPlayer
-## Footstep sound for hard stone/concrete surfaces.
-@export var audio_stone: AudioStreamPlayer
+@export_category("Audio Streams")
+## Default footstep sound played when no surface matches.
+@export var sound_default: AudioStream
+## Footstep sound for metal grid and panel surfaces.
+@export var sound_metal: AudioStream
+## Footstep sound for hard stone and concrete surfaces.
+@export var sound_stone: AudioStream
 ## Footstep sound for mud or wet dirt surfaces.
-@export var audio_wet_dirt: AudioStreamPlayer
+@export var sound_wet_dirt: AudioStream
 ## Footstep sound for slippery ice surfaces.
-@export var audio_ice: AudioStreamPlayer
-## Footstep sound played when traversing deformable snow surfaces.
-@export var audio_snow: AudioStreamPlayer
-## Climbing sound used specifically while traversing ladders.
-@export var audio_ladder: AudioStreamPlayer
-## Hand-over-hand looping audio used specifically for monkey bar traversal.
-@export var audio_monkey_bar: AudioStreamPlayer
+@export var sound_ice: AudioStream
+## Footstep sound played when traversing snow surfaces.
+@export var sound_snow: AudioStream
+## Climbing sound used while traversing ladders.
+@export var sound_ladder: AudioStream
+## Audio stream used for monkey bar traversal.
+@export var sound_monkey_bar: AudioStream
 
 @export_category("Timing Intervals")
 ## Time gap between footstep sounds while walking normally.
@@ -59,30 +59,25 @@ var step_timer: float = 0.0
 var is_on_ice: bool = false
 ## Flags if player is currently standing on deformable snow.
 var is_on_snow: bool = false
-## Currently selected audio player based on surface detection.
-var active_audio_player: AudioStreamPlayer = null
+## Currently selected audio stream based on surface detection.
+var active_stream: AudioStream = null
 ## Active [SnowGround] node currently beneath player body.
 var _current_snow_ground: SnowGround = null
 ## World coordinate of most recent floor raycast collision.
 var _last_hit_position: Vector3 = Vector3.ZERO
 ## World position of previous slide deformation stamp.
 var _last_slide_carve_pos: Vector3 = Vector3.ZERO
+## Reference to pooled looping player used for monkey bar traversal.
+var _looping_player: AudioStreamPlayer = null
 
 
-## Initializes default audio stream player on node setup.
+## Initializes footstep manager and verifies audio dependencies.
 func _ready() -> void:
 	print("FootstepManager: _ready() initialized.")
-	active_audio_player = audio_default
+	active_stream = sound_default
 
 
 ## Evaluates speed and surface material to trigger audio and snow stamps.
-## [param delta] Frame delta time in seconds.
-## [param is_grounded] True if player is grounded.
-## [param velocity_length] Speed magnitude of player.
-## [param is_sprinting] True if sprint is active.
-## [param is_crouching] True if crouch is active.
-## [param is_on_ladder] True if climbing ladder.
-## [param is_on_monkey_bar] True if hanging on monkey bars.
 func process_surface_and_footsteps(
 	delta: float,
 	is_grounded: bool,
@@ -93,25 +88,24 @@ func process_surface_and_footsteps(
 	is_on_monkey_bar: bool = false
 ) -> void:
 	if is_on_monkey_bar:
-		active_audio_player = audio_monkey_bar
+		active_stream = sound_monkey_bar
 		if velocity_length > 0.1:
-			if active_audio_player and not active_audio_player.playing:
-				print("FootstepManager: Started looping monkey bar sound.")
-				active_audio_player.play()
+			if _looping_player == null or not _looping_player.playing:
+				print("FootstepManager: Playing monkey bar traversal sound.")
+				_looping_player = AudioPool.play_sfx_2d(active_stream)
 		else:
-			if active_audio_player and active_audio_player.playing:
-				print("FootstepManager: Stopped monkey bar sound.")
-				active_audio_player.stop()
+			stop_looping_sounds()
 		return
 
+	stop_looping_sounds()
+
 	if is_on_ladder:
-		active_audio_player = audio_ladder
+		active_stream = sound_ladder
 		if velocity_length > 0.5:
 			step_timer -= delta
 			if step_timer <= 0.0:
 				print("FootstepManager: Playing ladder climbing sound.")
-				if active_audio_player:
-					active_audio_player.play()
+				AudioPool.play_sfx_2d(active_stream)
 				step_timer = ladder_step_interval
 		else:
 			step_timer = 0.0
@@ -129,9 +123,9 @@ func process_surface_and_footsteps(
 	if velocity_length > 0.5:
 		step_timer -= delta
 		if step_timer <= 0.0:
-			print("FootstepManager: Playing surface footstep sound.")
-			if active_audio_player:
-				active_audio_player.play()
+			print("FootstepManager: Playing surface footstep sound via AudioPool.")
+			if active_stream != null:
+				AudioPool.play_sfx_2d(active_stream)
 
 			if is_on_snow and is_instance_valid(_current_snow_ground):
 				_stamp_snow_footstep(is_sprinting, is_crouching)
@@ -147,11 +141,11 @@ func _scan_surface_material() -> void:
 	var ray_start: Vector3 = player_body.global_position + Vector3(0.0, 0.5, 0.0)
 	var ray_end: Vector3 = player_body.global_position + Vector3(0.0, -1.0, 0.0)
 
-	var result: Dictionary = Utilities.raycast_3d(
+	var result: Dictionary = NodeQuery.cast_ray(
 		space_state, ray_start, ray_end, CollisionLayers.MASK_ENVIRONMENT, [player_body.get_rid()]
 	)
 
-	active_audio_player = audio_default
+	active_stream = sound_default
 	is_on_ice = false
 	is_on_snow = false
 	_current_snow_ground = null
@@ -182,44 +176,42 @@ func _scan_surface_material() -> void:
 		if is_instance_valid(snow_node):
 			_current_snow_ground = snow_node as SnowGround
 
-	if is_on_snow and audio_snow:
-		active_audio_player = audio_snow
+	if is_on_snow and sound_snow:
+		active_stream = sound_snow
 	elif (
 		target_node.is_in_group(SURFACE_ICE)
 		or NodeQuery.find_ancestor_in_group(target_node, SURFACE_ICE) != null
 	):
 		is_on_ice = true
-		if audio_ice:
-			active_audio_player = audio_ice
+		if sound_ice:
+			active_stream = sound_ice
 	elif (
 		(
 			target_node.is_in_group(SURFACE_METAL)
 			or NodeQuery.find_ancestor_in_group(target_node, SURFACE_METAL) != null
 		)
-		and audio_metal
+		and sound_metal
 	):
-		active_audio_player = audio_metal
+		active_stream = sound_metal
 	elif (
 		(
 			target_node.is_in_group(SURFACE_STONE)
 			or NodeQuery.find_ancestor_in_group(target_node, SURFACE_STONE) != null
 		)
-		and audio_stone
+		and sound_stone
 	):
-		active_audio_player = audio_stone
+		active_stream = sound_stone
 	elif (
 		(
 			target_node.is_in_group(SURFACE_WET)
 			or NodeQuery.find_ancestor_in_group(target_node, SURFACE_WET) != null
 		)
-		and audio_wet_dirt
+		and sound_wet_dirt
 	):
-		active_audio_player = audio_wet_dirt
+		active_stream = sound_wet_dirt
 
 
-## Stamps a footprint depression into active [SnowGround] at impact point.
-## [param is_sprinting] True if player is sprinting.
-## [param is_crouching] True if player is crouched.
+## Stamps footprint depression into active [SnowGround] at impact point.
 func _stamp_snow_footstep(is_sprinting: bool, is_crouching: bool) -> void:
 	if not is_instance_valid(_current_snow_ground):
 		return
@@ -237,18 +229,11 @@ func _stamp_snow_footstep(is_sprinting: bool, is_crouching: bool) -> void:
 	var travel_forward: Vector3 = travel_basis.z.normalized()
 	var rotation_angle: float = atan2(-travel_forward.x, travel_forward.z)
 
-	print(
-		"FootstepManager: Stamping boot print at ",
-		_last_hit_position,
-		" angle: ",
-		rad_to_deg(rotation_angle)
-	)
+	print("FootstepManager: Stamping boot print at ", _last_hit_position)
 	_current_snow_ground.deform_at(_last_hit_position, radius, intensity, rotation_angle)
 
 
 ## Carves continuous displacement impressions into [SnowGround] while sliding.
-## [param _delta] Frame delta time in seconds.
-## [param speed_ratio] Speed ratio multiplier.
 func carve_slide(_delta: float, speed_ratio: float) -> void:
 	if not is_on_snow or not is_instance_valid(_current_snow_ground):
 		return
@@ -263,9 +248,7 @@ func carve_slide(_delta: float, speed_ratio: float) -> void:
 	_current_snow_ground.deform_at(_last_hit_position, radius, 0.9)
 
 
-## Recharges the footstep step timer based on current movement state.
-## [param is_sprinting] True if sprinting.
-## [param is_crouching] True if crouch walking.
+## Recharges footstep step timer based on movement state.
 func _reset_timer(is_sprinting: bool, is_crouching: bool) -> void:
 	if is_sprinting:
 		step_timer = sprint_step_interval
@@ -275,15 +258,15 @@ func _reset_timer(is_sprinting: bool, is_crouching: bool) -> void:
 		step_timer = walk_step_interval
 
 
-## Halts playback of continuous audio streams, such as the monkey bar loop.
+## Halts playback of continuous audio streams like monkey bar sound.
 func stop_looping_sounds() -> void:
-	if audio_monkey_bar and audio_monkey_bar.playing:
-		print("FootstepManager: Force stopping looping sounds on state exit.")
-		audio_monkey_bar.stop()
+	if is_instance_valid(_looping_player) and _looping_player.playing:
+		print("FootstepManager: Stopping looping audio player.")
+		_looping_player.stop()
+		_looping_player = null
 
 
-## Stamps an impact crater into snow based on vertical landing speed.
-## [param fall_speed] Downward impact velocity magnitude.
+## Stamps landing crater into snow based on vertical fall speed.
 func stamp_landing_crater(fall_speed: float) -> void:
 	_scan_surface_material()
 	if not is_on_snow or not is_instance_valid(_current_snow_ground):

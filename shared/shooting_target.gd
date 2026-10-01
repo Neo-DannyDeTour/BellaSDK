@@ -1,4 +1,4 @@
-## Target dummy actor managed by [TargetVolume] for weapon testing.
+## Target dummy actor managed by target volumes for weapon testing.
 class_name ShootingTarget
 extends StaticBody3D
 
@@ -15,13 +15,13 @@ extends StaticBody3D
 @export var despawn_time: float = 0.5
 
 ## The [HealthComponent] instance managing life points and death events.
-@onready var health_component: Node = $HealthComponent
+@export var health_component: HealthComponent
 
 ## The [FactionComponent] providing team affiliation for hostile targeting.
-@onready var faction_component: FactionComponent = $FactionComponent
+@export var faction_component: FactionComponent
 
 ## Visual 2D sprite icon representing the target in 3D space.
-@onready var icon_sprite: Sprite3D = $Sprite3D
+@export var icon_sprite: Sprite3D
 
 ## Active tween handling jiggle animations upon taking damage.
 var _jiggle_tween: Tween
@@ -39,18 +39,31 @@ func _ready() -> void:
 	_default_collision_layer = collision_layer
 	_default_collision_mask = collision_mask
 
+	if health_component == null:
+		var found_health: Node = NodeQuery.find_first_child_of_type(self, HealthComponent)
+		if found_health is HealthComponent:
+			health_component = found_health as HealthComponent
+
 	if faction_component == null:
-		faction_component = FactionComponent.new()
-		faction_component.name = "FactionComponent"
-		faction_component.faction = Types.Faction.TARGET
-		faction_component.hostile_mask = 0
-		add_child(faction_component)
+		var found_faction: Node = NodeQuery.find_first_child_of_type(self, FactionComponent)
+		if found_faction is FactionComponent:
+			faction_component = found_faction as FactionComponent
+		else:
+			faction_component = FactionComponent.new()
+			faction_component.name = "FactionComponent"
+			faction_component.faction = Types.Faction.TARGET
+			faction_component.hostile_mask = 0
+			add_child(faction_component)
 	else:
 		faction_component.set_faction(Types.Faction.TARGET)
 
-	if not Engine.is_editor_hint() and hide_in_game:
-		if icon_sprite != null:
-			icon_sprite.visible = false
+	if icon_sprite == null:
+		var found_sprite: Node = NodeQuery.find_first_child_of_type(self, Sprite3D)
+		if found_sprite is Sprite3D:
+			icon_sprite = found_sprite as Sprite3D
+
+	if not Engine.is_editor_hint() and hide_in_game and icon_sprite != null:
+		icon_sprite.visible = false
 
 	if health_component != null:
 		health_component.max_health = target_health
@@ -58,17 +71,14 @@ func _ready() -> void:
 		health_component.died.connect(_on_target_died)
 
 	if not can_player_hit:
-		set_collision_layer_value(1, false)
+		collision_layer &= ~CollisionLayers.MASK_ENVIRONMENT
 
 
 ## Inflicts damage, triggers jiggle feedback, and delegates to [HealthComponent].
-## [param amount] Damage value subtracted from health.
-## [param _pos] Unused hit impact location vector.
-## [param _dir] Unused projectile impact vector.
 func take_damage(amount: int, _pos: Vector3 = Vector3.ZERO, _dir: Vector3 = Vector3.ZERO) -> void:
 	print("ShootingTarget: Target hit for ", amount, " damage!")
 	_play_jiggle_animation()
-	if health_component != null and health_component.has_method("take_damage"):
+	if is_instance_valid(health_component):
 		health_component.take_damage(amount)
 
 
@@ -99,8 +109,8 @@ func _on_target_died() -> void:
 	if icon_sprite != null:
 		icon_sprite.hide()
 
-	collision_layer = 0
-	collision_mask = 0
+	collision_layer = CollisionLayers.MASK_NONE
+	collision_mask = CollisionLayers.MASK_NONE
 
 
 ## Restores initial collision flags, health pool, and visual visibility.
@@ -112,5 +122,5 @@ func reset() -> void:
 	if icon_sprite != null and not (hide_in_game and not Engine.is_editor_hint()):
 		icon_sprite.show()
 
-	if health_component != null and health_component.has_method("reset"):
+	if is_instance_valid(health_component):
 		health_component.reset()

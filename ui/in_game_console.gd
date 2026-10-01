@@ -19,25 +19,32 @@ const ENEMY_SCENE_PATHS: Dictionary[String, String] = {
 
 ## Reference to [RichTextLabel] output log display.
 @onready var output_log: RichTextLabel = $BackgroundPanel/LayoutContainer/OutputLog
+
 ## Reference to [RichTextLabel] suggestion display.
 @onready var suggestion_label: RichTextLabel = $BackgroundPanel/LayoutContainer/SuggestionLog
+
 ## Reference to [LineEdit] text input bar.
 @onready var command_input: LineEdit = $BackgroundPanel/LayoutContainer/CommandInput
 
 ## Central registry storing and routing [ConsoleCommand] instances.
 var registry: ConsoleCommandRegistry = ConsoleCommandRegistry.new()
+
 ## Manages [ConsoleHistory] command submission and navigation.
 var history: ConsoleHistory = ConsoleHistory.new(100)
 
-## Holds the list of autocomplete string matches for the current input.
+## Holds the list of autocomplete string matches for current input.
 var current_matches: Array[String] = []
-## Tracks the currently selected index within autocomplete matches.
+
+## Tracks currently selected index within autocomplete matches.
 var match_index: int = -1
+
 ## Prevents text change events from triggering during match navigation.
 var is_navigating_matches: bool = false
-## Indicates whether the console UI nodes have been fully initialized.
+
+## Indicates whether console UI nodes have been fully initialized.
 var is_ui_ready: bool = false
-## Stores queued messages to display when the UI initializes.
+
+## Stores queued messages to display when UI initializes.
 var message_history: Array[Dictionary] = []
 
 ## Tracks active state of boolean commands to allow single-word toggling.
@@ -70,13 +77,13 @@ var toggle_states: Dictionary = {
 
 ## Lifecycle constructor initializing and registering base console commands.
 func _init() -> void:
-	print("InGameConsole: _init() called. Registering default commands.")
+	print("InGameConsole: _init() registering default commands.")
 	_register_default_commands()
 
 
-## Lifecycle initialization method binding UI events and signal handlers.
+## Lifecycle initialization binding UI events and signal handlers.
 func _ready() -> void:
-	print("InGameConsole: _ready() called. Binding UI signals.")
+	print("InGameConsole: _ready() binding UI signals.")
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 128
 	visible = false
@@ -105,17 +112,13 @@ func _ready() -> void:
 	_connect_event_bus()
 
 
-## Connects the console to relevant global event bus signals.
+## Connects console to relevant global event bus signals.
 func _connect_event_bus() -> void:
 	print("InGameConsole: Connecting event bus signals.")
-	if not has_node("/root/Events"):
-		return
-
-	var events: Node = get_node("/root/Events")
-	if events.has_signal("console_toggle_requested"):
-		events.console_toggle_requested.connect(_on_console_toggle_requested)
-	if events.has_signal("noclip_toggled"):
-		events.noclip_toggled.connect(_on_external_noclip_toggled)
+	if Events.has_signal(&"console_toggle_requested"):
+		Events.console_toggle_requested.connect(_on_console_toggle_requested)
+	if Events.has_signal(&"noclip_toggled"):
+		Events.noclip_toggled.connect(_on_external_noclip_toggled)
 
 
 ## Keeps internal noclip toggle state synchronized with external events.
@@ -124,7 +127,7 @@ func _on_external_noclip_toggled(is_active: bool) -> void:
 	toggle_states["noclip"] = is_active
 
 
-## Intercepts Escape and UI cancellation inputs to dismiss the terminal.
+## Intercepts Escape and UI cancellation inputs to dismiss terminal.
 func _input(event: InputEvent) -> void:
 	if event.is_action_pressed(&"ui_cancel") and visible:
 		print("InGameConsole: ui_cancel pressed. Closing console.")
@@ -135,7 +138,8 @@ func _input(event: InputEvent) -> void:
 ## Handles keyboard navigation for command history and autocomplete lists.
 func _on_line_edit_gui_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed:
-		if event.keycode == KEY_UP:
+		var key_ev: InputEventKey = event as InputEventKey
+		if key_ev.keycode == KEY_UP:
 			print("InGameConsole: Key UP pressed.")
 			command_input.accept_event()
 			if current_matches.is_empty():
@@ -143,7 +147,7 @@ func _on_line_edit_gui_input(event: InputEvent) -> void:
 			else:
 				_navigate_suggestions(-1)
 
-		elif event.keycode == KEY_DOWN:
+		elif key_ev.keycode == KEY_DOWN:
 			print("InGameConsole: Key DOWN pressed.")
 			command_input.accept_event()
 			if current_matches.is_empty():
@@ -151,7 +155,7 @@ func _on_line_edit_gui_input(event: InputEvent) -> void:
 			else:
 				_navigate_suggestions(1)
 
-		elif event.keycode == KEY_TAB:
+		elif key_ev.keycode == KEY_TAB:
 			print("InGameConsole: Key TAB pressed.")
 			command_input.accept_event()
 			if not current_matches.is_empty():
@@ -161,7 +165,7 @@ func _on_line_edit_gui_input(event: InputEvent) -> void:
 				command_input.caret_column = command_input.text.length()
 				_on_text_changed(command_input.text)
 
-		elif event.keycode in [KEY_ENTER, KEY_KP_ENTER]:
+		elif key_ev.keycode in [KEY_ENTER, KEY_KP_ENTER]:
 			print("InGameConsole: Key ENTER pressed.")
 			command_input.accept_event()
 			_on_command_submitted(command_input.text)
@@ -216,7 +220,7 @@ func _navigate_suggestions(direction: int) -> void:
 	_update_suggestion_ui()
 
 
-## Updates the BBCode formatting of the autocomplete suggestions panel.
+## Updates BBCode formatting of autocomplete suggestions panel.
 func _update_suggestion_ui() -> void:
 	print("InGameConsole: Updating suggestion UI elements.")
 	var lines: PackedStringArray = []
@@ -248,7 +252,7 @@ func _navigate_history(direction: int) -> void:
 	command_input.caret_column = command_input.text.length()
 
 
-## Appends a formatted message to the console output log.
+## Appends a formatted message to console output log.
 func write(message: String, color: String = "white") -> void:
 	print("Console Output: ", message)
 	if not is_ui_ready:
@@ -261,19 +265,19 @@ func write(message: String, color: String = "white") -> void:
 	output_log.newline()
 
 
-## Appends an informational log message to the terminal.
+## Appends an informational log message to terminal.
 func log_info(msg: String) -> void:
 	print("InGameConsole logging info: ", msg)
 	write(msg, "lightgray")
 
 
-## Appends a warning message to the terminal.
+## Appends a warning message to terminal.
 func log_warn(msg: String) -> void:
 	print("InGameConsole logging warning: ", msg)
 	write("[WARNING] " + msg, "yellow")
 
 
-## Appends an error message to the terminal.
+## Appends an error message to terminal.
 func log_error(msg: String) -> void:
 	print("InGameConsole logging error: ", msg)
 	write("[ERROR] " + msg, "red")
@@ -303,7 +307,7 @@ func _on_command_submitted(text: String) -> void:
 	var args: PackedStringArray = parts.slice(1)
 
 	var cmd: ConsoleCommand = registry.get_command(command_name)
-	if cmd:
+	if cmd != null:
 		print("InGameConsole: Executing command '", command_name, "'")
 		cmd.handler.call(args)
 	else:
@@ -314,7 +318,7 @@ func _on_command_submitted(text: String) -> void:
 		command_input.grab_focus()
 
 
-## Toggles console visibility, manages pause state, and handles mouse mode.
+## Toggles console visibility, pause state, and mouse mode.
 func _on_console_toggle_requested() -> void:
 	print("InGameConsole: _on_console_toggle_requested() received.")
 	visible = not visible
@@ -325,26 +329,25 @@ func _on_console_toggle_requested() -> void:
 		command_input.clear()
 		_reset_suggestions()
 		history.reset_index()
-		command_input.call_deferred("grab_focus")
+		command_input.call_deferred(&"grab_focus")
 		print("InGameConsole: Console UI toggled -> OPENED.")
 	else:
 		get_tree().paused = false
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		print("InGameConsole: Console UI toggled -> CLOSED.")
 
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("console_toggled"):
-			events.console_toggled.emit(visible)
+	Events.console_toggled.emit(visible)
 
 
 ## Returns autocomplete candidates for colorblind shader modes.
 func _get_colorblind_options() -> Array[String]:
+	print("InGameConsole: _get_colorblind_options() fetched.")
 	return ["normal", "protanopia", "deuteranopia", "tritanopia", "mono", "achromatopsia", "split"]
 
 
 ## Returns available font identifiers from [GlobalSettings].
 func _get_font_options() -> Array[String]:
+	print("InGameConsole: _get_font_options() fetched.")
 	if is_instance_valid(GlobalSettings):
 		return GlobalSettings.get_font_ids()
 	return []
@@ -352,6 +355,7 @@ func _get_font_options() -> Array[String]:
 
 ## Returns available screen filter identifiers from [GlobalSettings].
 func _get_screen_filter_options() -> Array[String]:
+	print("InGameConsole: _get_screen_filter_options() fetched.")
 	if is_instance_valid(GlobalSettings):
 		return GlobalSettings.get_screen_filter_ids()
 	return []
@@ -359,6 +363,7 @@ func _get_screen_filter_options() -> Array[String]:
 
 ## Returns enemy identifier keys for spawnenemy autocomplete.
 func _get_enemy_options() -> Array[String]:
+	print("InGameConsole: _get_enemy_options() fetched.")
 	var keys: Array[String] = []
 	for k: String in ENEMY_SCENE_PATHS.keys():
 		keys.append(k)
@@ -396,27 +401,22 @@ func _cmd_restart(_args: PackedStringArray) -> void:
 	get_tree().reload_current_scene()
 
 
-## Registers core terminal commands and sets up autocompletion providers.
+## Registers core terminal commands and sets up autocompletion.
 func _register_default_commands() -> void:
 	print("InGameConsole: Registering default commands.")
 	registry.register_command(
 		ConsoleCommand.new("help", "Lists all available commands.", _cmd_help)
 	)
-
 	registry.register_command(ConsoleCommand.new("clear", "Clears the output log.", _cmd_clear))
-
 	registry.register_command(
 		ConsoleCommand.new("quit", "Exits the application immediately.", _cmd_quit)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new("exit", "Exits the application immediately.", _cmd_quit)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new("restart", "Reloads the active scene.", _cmd_restart)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
 			"colorblind",
@@ -425,33 +425,26 @@ func _register_default_commands() -> void:
 			_get_colorblind_options
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new("highcontrast", "Toggles high contrast overlay mode.", _cmd_highcontrast)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new("screenshake", "Triggers a screenshake event.", _cmd_screenshake)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new("subtitles", "Toggles dialogue subtitles.", _cmd_subtitles)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new("mono_audio", "Toggles mono audio downmixing.", _cmd_mono_audio)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
 			"photosensitivity", "Toggles photosensitive safety filter.", _cmd_photosensitivity
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new("setfont", "Changes global font style.", _cmd_setfont, _get_font_options)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
 			"screenfilter",
@@ -460,7 +453,6 @@ func _register_default_commands() -> void:
 			_get_screen_filter_options
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
 			"visionassist",
@@ -469,19 +461,15 @@ func _register_default_commands() -> void:
 			func() -> Array[String]: return ["mode", "color"]
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new("wolfvision", "Toggles wolf vision mode.", _cmd_wolfvision)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new("uiscale", "Scales the user interface.", _cmd_uiscale)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new("fov", "Overrides camera field of view.", _cmd_fov)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
 			"shadows",
@@ -490,7 +478,6 @@ func _register_default_commands() -> void:
 			func() -> Array[String]: return ["on", "off"]
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
 			"vsync",
@@ -499,31 +486,25 @@ func _register_default_commands() -> void:
 			func() -> Array[String]: return ["on", "off"]
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new("hidehud", "Toggles HUD visibility.", _cmd_hidehud)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new("gamma", "Adjusts environment tonemap exposure.", _cmd_gamma)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new("noshake", "Disables camera screenshake triggers.", _cmd_noshake)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
 			"togglecrouch", "Switches crouch input between hold and toggle.", _cmd_togglecrouch
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
 			"togglesprint", "Switches sprint input between hold and toggle.", _cmd_togglesprint
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
 			"aimassist",
@@ -532,13 +513,11 @@ func _register_default_commands() -> void:
 			func() -> Array[String]: return ["on", "off"]
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
 			"textspeed", "Sets dialogue text reveal speed multiplier.", _cmd_textspeed
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
 			"audio_spatial",
@@ -547,7 +526,6 @@ func _register_default_commands() -> void:
 			func() -> Array[String]: return ["on", "off"]
 		)
 	)
-
 	_register_debug_commands()
 	_register_easter_egg_commands()
 
@@ -555,7 +533,7 @@ func _register_default_commands() -> void:
 ## Sets the engine time scale factor.
 func _cmd_gamespeed(args: PackedStringArray) -> void:
 	print("InGameConsole: Action Set Gamespeed")
-	if args.size() > 0:
+	if not args.is_empty():
 		var new_speed: float = args[0].to_float()
 		Engine.time_scale = clampf(new_speed, 0.1, 10.0)
 		write("Time scale set to: " + str(Engine.time_scale), "green")
@@ -566,7 +544,7 @@ func _cmd_gamespeed(args: PackedStringArray) -> void:
 ## Sets the UI display scale factor.
 func _cmd_uiscale(args: PackedStringArray) -> void:
 	print("InGameConsole: _cmd_uiscale called with args: ", args)
-	if args.size() > 0:
+	if not args.is_empty():
 		var sc: float = args[0].to_float()
 		write("UI Scale set to: " + str(sc), "green")
 	else:
@@ -576,8 +554,6 @@ func _cmd_uiscale(args: PackedStringArray) -> void:
 ## Registers debug-only commands restricted to development builds.
 func _register_debug_commands() -> void:
 	print("InGameConsole: Registering debug commands.")
-	# ... (Keep existing debug commands: die, deathscreen, noclip, etc.) ...
-
 	registry.register_command(
 		ConsoleCommand.new(
 			"showtrigger",
@@ -587,7 +563,6 @@ func _register_debug_commands() -> void:
 			true
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
 			"hidetrigger",
@@ -597,13 +572,11 @@ func _register_debug_commands() -> void:
 			true
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
 			"noclip", "Toggles noclip collision mode.", _cmd_noclip, Callable(), true
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
 			"fullbright",
@@ -613,13 +586,11 @@ func _register_debug_commands() -> void:
 			true
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
 			"wireframe", "Toggles wireframe rendering mode.", _cmd_wireframe, Callable(), true
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
 			"wireframeoverlay",
@@ -629,7 +600,6 @@ func _register_debug_commands() -> void:
 			true
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
 			"collision",
@@ -639,61 +609,44 @@ func _register_debug_commands() -> void:
 			true
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
-			"gamespeed", "Sets the engine time scale factor.", _cmd_gamespeed, Callable(), true
+			"gamespeed", "Sets engine time scale factor.", _cmd_gamespeed, Callable(), true
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
-			"normals", "Toggles normal buffer debug visualization.", _cmd_normals, Callable(), true
+			"normals", "Toggles normal buffer debug view.", _cmd_normals, Callable(), true
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
 			"sethealth", "Sets player health value directly.", _cmd_sethealth, Callable(), true
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
-			"showfps",
-			"Toggles on-screen performance diagnostic HUD.",
-			_cmd_showfps,
-			Callable(),
-			true
+			"showfps", "Toggles performance diagnostic HUD.", _cmd_showfps, Callable(), true
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new("stat_fps", "Alias for showfps command.", _cmd_showfps, Callable(), true)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
 			"teleport", "Teleports player to XYZ coordinates.", _cmd_teleport, Callable(), true
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
-			"printpos", "Prints current player global coordinates.", _cmd_printpos, Callable(), true
+			"printpos", "Prints current player coordinates.", _cmd_printpos, Callable(), true
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
-			"reloadmap",
-			"Reloads current scene tree state immediately.",
-			_cmd_reloadmap,
-			Callable(),
-			true
+			"reloadmap", "Reloads current scene tree state.", _cmd_reloadmap, Callable(), true
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
 			"showcolliders",
@@ -703,21 +656,25 @@ func _register_debug_commands() -> void:
 			true
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new("fly", "Toggles flight navigation mode.", _cmd_fly, Callable(), true)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new("god", "Toggles godmode invulnerability.", _cmd_god, Callable(), true)
 	)
-
+	registry.register_command(
+		ConsoleCommand.new("die", "Kills player instantly.", _cmd_die, Callable(), true)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"deathscreen", "Previews death sequence.", _cmd_deathscreen, Callable(), true
+		)
+	)
 	registry.register_command(
 		ConsoleCommand.new(
 			"give", "Adds an item into player inventory.", _cmd_give, Callable(), true
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
 			"give_ammo",
@@ -727,23 +684,16 @@ func _register_debug_commands() -> void:
 			true
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
 			"spawnenemy", "Instantiates an enemy entity.", _cmd_spawnenemy, _get_enemy_options, true
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
-			"killall",
-			"Destroys all active entities in enemies group.",
-			_cmd_killall,
-			Callable(),
-			true
+			"killall", "Destroys active entities in enemies group.", _cmd_killall, Callable(), true
 		)
 	)
-
 	registry.register_command(
 		ConsoleCommand.new(
 			"sv_gravity",
@@ -758,9 +708,8 @@ func _register_debug_commands() -> void:
 ## Easter egg handler for sv_cheats command.
 func _cmd_sv_cheats(args: PackedStringArray) -> void:
 	print("InGameConsole: _cmd_sv_cheats called with args: ", args)
-	if args.size() > 0 and args[0] == "1":
-		var msg: String = "You don't need it. God gave us enough impulse."
-		write(msg, "white")
+	if not args.is_empty() and args[0] == "1":
+		write("You don't need it. God gave us enough impulse.", "white")
 	else:
 		write("Usage: sv_cheats 1", "red")
 
@@ -768,9 +717,8 @@ func _cmd_sv_cheats(args: PackedStringArray) -> void:
 ## Easter egg handler for impulse command.
 func _cmd_impulse(args: PackedStringArray) -> void:
 	print("InGameConsole: _cmd_impulse called with args: ", args)
-	if args.size() > 0 and args[0] == "101":
-		var msg: String = "Bella is a trained professional."
-		write(msg, "white")
+	if not args.is_empty() and args[0] == "101":
+		write("Bella is a trained professional.", "white")
 	else:
 		write("Usage: impulse 101", "red")
 
@@ -796,10 +744,14 @@ func _register_easter_egg_commands() -> void:
 	registry.register_command(
 		ConsoleCommand.new("soyuz", "", func(_a: PackedStringArray) -> void: write("Nerushimuy!"))
 	)
-	var on_motherlode: Callable = func(_a: PackedStringArray) -> void:
-		write("This is a classic get-rich-quick scheme! Arrested!")
-
-	registry.register_command(ConsoleCommand.new("motherlode", "", on_motherlode))
+	registry.register_command(
+		ConsoleCommand.new(
+			"motherlode",
+			"",
+			func(_a: PackedStringArray) -> void:
+				write("This is a classic get-rich-quick scheme! Arrested!")
+		)
+	)
 	registry.register_command(
 		ConsoleCommand.new(
 			"konami",
@@ -893,10 +845,7 @@ func _cmd_colorblind(args: PackedStringArray) -> void:
 			write(err, "red")
 			return
 
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("colorblind_mode_changed"):
-			events.colorblind_mode_changed.emit(mode_int)
+	Events.colorblind_mode_changed.emit(mode_int)
 	write("Colorblind mode set to: " + mode_arg, "green")
 
 
@@ -905,10 +854,7 @@ func _cmd_highcontrast(_args: PackedStringArray) -> void:
 	toggle_states["highcontrast"] = not toggle_states["highcontrast"]
 	var active: bool = toggle_states["highcontrast"]
 	print("InGameConsole: Toggled highcontrast to: ", active)
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("high_contrast_toggled"):
-			events.high_contrast_toggled.emit(active)
+	Events.high_contrast_toggled.emit(active)
 	write("High contrast " + ("activated." if active else "deactivated."), "green")
 
 
@@ -929,11 +875,7 @@ func _cmd_screenshake(args: PackedStringArray) -> void:
 	if args.size() > 1:
 		duration = args[1].to_float()
 
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("screenshake_requested"):
-			events.screenshake_requested.emit(amount, duration)
-
+	Events.screenshake_requested.emit(amount, duration)
 	var msg: String = (
 		"Screenshake: Intensity "
 		+ str(clampf(amount, 0.0, 16.0))
@@ -949,10 +891,7 @@ func _cmd_subtitles(_args: PackedStringArray) -> void:
 	toggle_states["subtitles"] = not toggle_states["subtitles"]
 	var active: bool = toggle_states["subtitles"]
 	print("InGameConsole: Toggled subtitles to: ", active)
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("subtitles_toggled"):
-			events.subtitles_toggled.emit(active)
+	Events.subtitles_toggled.emit(active)
 	write("Subtitles " + ("activated." if active else "deactivated."), "green")
 
 
@@ -969,10 +908,7 @@ func _cmd_photosensitivity(_args: PackedStringArray) -> void:
 	toggle_states["photosensitivity"] = not toggle_states["photosensitivity"]
 	var active: bool = toggle_states["photosensitivity"]
 	print("InGameConsole: Toggled photosensitivity to: ", active)
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("photosensitivity_mode_toggled"):
-			events.photosensitivity_mode_toggled.emit(active)
+	Events.photosensitivity_mode_toggled.emit(active)
 	var status_str: String = "activated." if active else "deactivated."
 	write("Photosensitivity mode " + status_str, "green")
 
@@ -991,10 +927,7 @@ func _cmd_setfont(args: PackedStringArray) -> void:
 
 	var font_choice: String = args[0].to_lower()
 	if font_choice in valid_fonts:
-		if has_node("/root/Events"):
-			var events: Node = get_node("/root/Events")
-			if events.has_signal("font_changed"):
-				events.font_changed.emit(font_choice)
+		Events.font_changed.emit(font_choice)
 		write("Global font set to: " + font_choice, "green")
 	else:
 		write("Unknown font. Available: " + ", ".join(valid_fonts), "red")
@@ -1014,10 +947,7 @@ func _cmd_screenfilter(args: PackedStringArray) -> void:
 
 	var filter_type: String = args[0].to_lower()
 	if filter_type == "off" or filter_type in valid_filters:
-		if has_node("/root/Events"):
-			var events: Node = get_node("/root/Events")
-			if events.has_signal("screen_filter_changed"):
-				events.screen_filter_changed.emit(filter_type)
+		Events.screen_filter_changed.emit(filter_type)
 		write("Screen filter: " + filter_type, "green")
 	else:
 		write("Unknown filter. Available: " + ", ".join(valid_filters), "red")
@@ -1030,10 +960,7 @@ func _cmd_visionassist(args: PackedStringArray) -> void:
 		toggle_states["visionassist"] = not toggle_states["visionassist"]
 		var active: bool = toggle_states["visionassist"]
 		print("InGameConsole: Vision assist toggled to: ", active)
-		if has_node("/root/Events"):
-			var events: Node = get_node("/root/Events")
-			if events.has_signal("vision_assist_toggled"):
-				events.vision_assist_toggled.emit(active)
+		Events.vision_assist_toggled.emit(active)
 		var stat: String = "activated." if active else "deactivated."
 		write("Vision assist " + stat, "green")
 		return
@@ -1042,10 +969,7 @@ func _cmd_visionassist(args: PackedStringArray) -> void:
 	if arg1 == "mode" and args.size() == 2:
 		var mode_name: String = args[1].to_lower()
 		if mode_name in ["black_and_white", "aaa_blue", "pure_black"]:
-			if has_node("/root/Events"):
-				var events: Node = get_node("/root/Events")
-				if events.has_signal("vision_assist_mode_changed"):
-					events.vision_assist_mode_changed.emit(mode_name)
+			Events.vision_assist_mode_changed.emit(mode_name)
 			write("Vision Assist mode set to: " + mode_name, "green")
 		else:
 			var err: String = "Invalid mode. Use 'black_and_white', 'aaa_blue', or 'pure_black'."
@@ -1053,10 +977,7 @@ func _cmd_visionassist(args: PackedStringArray) -> void:
 	elif arg1 == "color" and args.size() == 3:
 		var target_group: String = args[1].to_lower()
 		var color_name: String = args[2].to_lower()
-		if has_node("/root/Events"):
-			var events: Node = get_node("/root/Events")
-			if events.has_signal("vision_assist_color_changed"):
-				events.vision_assist_color_changed.emit(target_group, color_name)
+		Events.vision_assist_color_changed.emit(target_group, color_name)
 		var msg: String = "Vision Assist: Changed " + target_group + " to " + color_name
 		write(msg, "green")
 	else:
@@ -1072,20 +993,14 @@ func _cmd_wolfvision(_args: PackedStringArray) -> void:
 	toggle_states["wolfvision"] = not toggle_states["wolfvision"]
 	var active: bool = toggle_states["wolfvision"]
 	print("InGameConsole: Wolf vision toggled to: ", active)
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("wolf_vision_toggled"):
-			events.wolf_vision_toggled.emit(active)
+	Events.wolf_vision_toggled.emit(active)
 	write("Wolf vision " + ("activated." if active else "deactivated."), "green")
 
 
 ## Handles noclip command toggling.
 func _cmd_noclip(_args: PackedStringArray) -> void:
 	print("InGameConsole: Action toggling noclip.")
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("noclip_ui_button_pressed"):
-			events.noclip_ui_button_pressed.emit()
+	Events.noclip_ui_button_pressed.emit()
 	var active: bool = not toggle_states.get("noclip", false)
 	write("Noclip " + ("activated." if active else "deactivated."), "green")
 
@@ -1095,10 +1010,7 @@ func _cmd_fullbright(_args: PackedStringArray) -> void:
 	toggle_states["fullbright"] = not toggle_states["fullbright"]
 	var active: bool = toggle_states["fullbright"]
 	print("InGameConsole: Toggled fullbright to: ", active)
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("fullbright_toggled"):
-			events.fullbright_toggled.emit(active)
+	Events.fullbright_toggled.emit(active)
 	write("Fullbright " + ("activated." if active else "deactivated."), "green")
 
 
@@ -1107,10 +1019,7 @@ func _cmd_wireframe(_args: PackedStringArray) -> void:
 	toggle_states["wireframe"] = not toggle_states["wireframe"]
 	var active: bool = toggle_states["wireframe"]
 	print("InGameConsole: Toggled wireframe to: ", active)
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("wireframe_toggled"):
-			events.wireframe_toggled.emit(active)
+	Events.wireframe_toggled.emit(active)
 	write("Wireframe " + ("activated." if active else "deactivated."), "green")
 
 
@@ -1119,10 +1028,7 @@ func _cmd_wireframe_overlay(_args: PackedStringArray) -> void:
 	toggle_states["wireframeoverlay"] = not toggle_states["wireframeoverlay"]
 	var active: bool = toggle_states["wireframeoverlay"]
 	print("InGameConsole: Toggled wireframe overlay to: ", active)
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("wireframe_overlay_toggled"):
-			events.wireframe_overlay_toggled.emit(active)
+	Events.wireframe_overlay_toggled.emit(active)
 	var status_str: String = "activated." if active else "deactivated."
 	write("Wireframe overlay " + status_str, "green")
 
@@ -1133,19 +1039,14 @@ func _cmd_collision(_args: PackedStringArray) -> void:
 	var active: bool = toggle_states["collision"]
 	print("InGameConsole: Toggled collisions to: ", active)
 	get_tree().debug_collisions_hint = active
-	var root_node: Node = get_tree().current_scene
-	if root_node:
-		_refresh_collision_nodes(root_node, active)
+	var colliders: Array[Node] = get_tree().get_nodes_in_group(&"debug_colliders")
+	for col: Node in colliders:
+		if col is CanvasItem:
+			(col as CanvasItem).visible = active
+		elif col is Node3D:
+			(col as Node3D).visible = active
 	var stat: String = "activated." if active else "deactivated."
 	write("Collision shapes " + stat, "green")
-
-
-## Recursively updates visibility of collision visualizers.
-func _refresh_collision_nodes(node: Node, show_collisions: bool) -> void:
-	if node is CollisionShape3D or node is RayCast3D or node is ShapeCast3D:
-		node.visible = show_collisions
-	for child: Node in node.get_children():
-		_refresh_collision_nodes(child, show_collisions)
 
 
 ## Handles normal buffer visualization debug mode toggling.
@@ -1160,43 +1061,28 @@ func _cmd_normals(_args: PackedStringArray) -> void:
 		write("Normal view activated.", "green")
 
 
-## Resolves the player [HealthComponent] without recursive tree traversal.
-func _get_player_health_component(player: Node) -> HealthComponent:
-	if not is_instance_valid(player):
+## Resolves player [HealthComponent] without tree traversal.
+func _get_player_health_component(player_node: Node) -> HealthComponent:
+	print("InGameConsole: Resolving health component on: ", player_node.name)
+	if not is_instance_valid(player_node):
 		return null
-
-	var comp: Variant = player.get("health_component")
-	if is_instance_valid(comp) and comp is HealthComponent:
-		return comp as HealthComponent
-
-	var direct_path: Node = player.get_node_or_null("Components/HealthComponent")
-	if is_instance_valid(direct_path) and direct_path is HealthComponent:
-		return direct_path as HealthComponent
-
-	var shallow_path: Node = player.get_node_or_null("HealthComponent")
-	if is_instance_valid(shallow_path) and shallow_path is HealthComponent:
-		return shallow_path as HealthComponent
-
-	return null
+	return NodeQuery.find_first_child_of_type(player_node, HealthComponent) as HealthComponent
 
 
 ## Handles die debug command using direct component resolution.
 func _cmd_die(_args: PackedStringArray) -> void:
 	print("InGameConsole: Action Executing 'die' command.")
-	var player: Node = get_tree().get_first_node_in_group("player")
-	if not is_instance_valid(player):
+	var player_node: Node = NodeQuery.get_single_node_in_group(get_tree(), &"player")
+	if not is_instance_valid(player_node):
 		write("Player node not found in the 'player' group.", "yellow")
 		return
 
-	var health_comp: HealthComponent = _get_player_health_component(player)
-
+	var health_comp: HealthComponent = _get_player_health_component(player_node)
 	if is_instance_valid(health_comp):
 		health_comp.current_health = 0
 		health_comp.health_changed.emit(0)
-		if health_comp.is_player_health and has_node("/root/Events"):
-			var events: Node = get_node("/root/Events")
-			if events.has_signal("player_health_changed"):
-				events.player_health_changed.emit(0)
+		if health_comp.is_player_health:
+			Events.player_health_changed.emit(0)
 		health_comp.die()
 		write("Player health drained to 0. You died.", "red")
 	else:
@@ -1211,17 +1097,14 @@ func _cmd_deathscreen(args: PackedStringArray) -> void:
 		return
 
 	var screen_name: String = args[0].to_lower()
-	var ds: DeathScreen = null
-	var ds_node: Node = get_tree().get_first_node_in_group("death_screen")
+	var ds: DeathScreen = (
+		NodeQuery.get_single_node_in_group(get_tree(), &"death_screen") as DeathScreen
+	)
 
-	if is_instance_valid(ds_node) and ds_node is DeathScreen:
-		ds = ds_node as DeathScreen
-	else:
+	if not is_instance_valid(ds):
 		var curr_scene: Node = get_tree().current_scene
 		if is_instance_valid(curr_scene):
-			var direct_ui: Node = curr_scene.get_node_or_null("UI/DeathScreen")
-			if direct_ui is DeathScreen:
-				ds = direct_ui as DeathScreen
+			ds = NodeQuery.find_first_child_of_type(curr_scene, DeathScreen) as DeathScreen
 
 	if not is_instance_valid(ds):
 		write("DeathScreen node not found in scene tree.", "red")
@@ -1249,7 +1132,7 @@ func _cmd_deathscreen(args: PackedStringArray) -> void:
 			return
 
 	_on_console_toggle_requested()
-	ds.play_death_preview(chosen_effect)
+	ds.play_death_sequence()
 	write("Previewing death screen: " + screen_name.to_upper(), "green")
 
 
@@ -1261,21 +1144,18 @@ func _cmd_sethealth(args: PackedStringArray) -> void:
 		return
 
 	var health_val: int = clampi(args[0].to_int(), 0, 300)
-	var player: Node = get_tree().get_first_node_in_group("player")
-	if not is_instance_valid(player):
+	var player_node: Node = NodeQuery.get_single_node_in_group(get_tree(), &"player")
+	if not is_instance_valid(player_node):
 		write("Player node not found in the 'player' group.", "yellow")
 		return
 
-	var health_comp: HealthComponent = _get_player_health_component(player)
-
+	var health_comp: HealthComponent = _get_player_health_component(player_node)
 	if is_instance_valid(health_comp):
 		health_comp.current_health = health_val
 		health_comp.health_changed.emit(health_comp.current_health)
 
-		if health_comp.is_player_health and has_node("/root/Events"):
-			var events: Node = get_node("/root/Events")
-			if events.has_signal("player_health_changed"):
-				events.player_health_changed.emit(health_comp.current_health)
+		if health_comp.is_player_health:
+			Events.player_health_changed.emit(health_comp.current_health)
 
 		if health_comp.current_health == 0:
 			health_comp.die()
@@ -1290,10 +1170,7 @@ func _cmd_showfps(_args: PackedStringArray) -> void:
 	toggle_states["showfps"] = not toggle_states["showfps"]
 	var active: bool = toggle_states["showfps"]
 	print("InGameConsole: Toggled showfps -> ", active)
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("metrics_panel_toggle_requested"):
-			events.metrics_panel_toggle_requested.emit()
+	Events.metrics_panel_toggle_requested.emit()
 	write("FPS monitor " + ("enabled." if active else "disabled."), "green")
 
 
@@ -1305,15 +1182,15 @@ func _cmd_teleport(args: PackedStringArray) -> void:
 		return
 
 	var target_pos: Vector3 = Vector3(args[0].to_float(), args[1].to_float(), args[2].to_float())
-	var player: Node = get_tree().get_first_node_in_group("player")
-	if not is_instance_valid(player):
+	var player_node: Node = NodeQuery.get_single_node_in_group(get_tree(), &"player")
+	if not is_instance_valid(player_node):
 		write("Player entity not found in 'player' group.", "red")
 		return
 
-	if player.has_method("teleport_to"):
-		player.call("teleport_to", target_pos, 0.0)
-	elif player is Node3D:
-		(player as Node3D).global_position = target_pos
+	if player_node.has_method(&"teleport_to"):
+		player_node.call(&"teleport_to", target_pos, 0.0)
+	elif player_node is Node3D:
+		(player_node as Node3D).global_position = target_pos
 
 	write("Teleported player to: " + str(target_pos), "green")
 
@@ -1321,18 +1198,18 @@ func _cmd_teleport(args: PackedStringArray) -> void:
 ## Outputs the player's current global position coordinates.
 func _cmd_printpos(_args: PackedStringArray) -> void:
 	print("InGameConsole: Executing printpos.")
-	var player: Node3D = get_tree().get_first_node_in_group("player") as Node3D
-	if not is_instance_valid(player):
+	var player_node: Node3D = NodeQuery.get_single_node_in_group(get_tree(), &"player") as Node3D
+	if not is_instance_valid(player_node):
 		write("Player entity not found.", "red")
 		return
 
-	var pos: Vector3 = player.global_position
+	var pos: Vector3 = player_node.global_position
 	var formatted_pos: String = "%.2f, %.2f, %.2f" % [pos.x, pos.y, pos.z]
 	print("Player Global Position: ", formatted_pos)
 	write("Position: " + formatted_pos, "cyan")
 
 
-## Resets the current scene state without restarting the engine.
+## Resets the current scene state without restarting engine.
 func _cmd_reloadmap(_args: PackedStringArray) -> void:
 	print("InGameConsole: Executing reloadmap.")
 	write("Reloading map...", "yellow")
@@ -1353,13 +1230,13 @@ func _cmd_fly(_args: PackedStringArray) -> void:
 	var active: bool = toggle_states["fly"]
 	print("InGameConsole: Toggled fly mode -> ", active)
 
-	var player: Node = get_tree().get_first_node_in_group("player")
-	if is_instance_valid(player):
-		var loco: Node = player.get("locomotion_component")
+	var player_node: Node = NodeQuery.get_single_node_in_group(get_tree(), &"player")
+	if is_instance_valid(player_node):
+		var loco: Node = player_node.get(&"locomotion_component")
 		if is_instance_valid(loco):
 			var def_grav: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
-			loco.set("gravity", 0.0 if active else def_grav)
-			print("InGameConsole: PlayerLocomotionComponent gravity -> ", loco.get("gravity"))
+			loco.set(&"gravity", 0.0 if active else def_grav)
+			print("InGameConsole: PlayerLocomotionComponent gravity -> ", loco.get(&"gravity"))
 
 	write("Fly mode " + ("activated." if active else "deactivated."), "green")
 
@@ -1369,13 +1246,8 @@ func _cmd_god(_args: PackedStringArray) -> void:
 	toggle_states["god"] = not toggle_states["god"]
 	var active: bool = toggle_states["god"]
 	print("InGameConsole: Toggled godmode -> ", active)
-
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		events.set("is_godmode", active)
-		if events.has_signal("godmode_toggled"):
-			events.godmode_toggled.emit(active)
-
+	Events.set(&"is_godmode", active)
+	Events.godmode_toggled.emit(active)
 	write("Godmode " + ("activated." if active else "deactivated."), "green")
 
 
@@ -1388,11 +1260,7 @@ func _cmd_give(args: PackedStringArray) -> void:
 
 	var item_name: String = args[0].to_lower()
 	var amount: int = args[1].to_int() if args.size() > 1 else 1
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("inventory_item_given"):
-			events.inventory_item_given.emit(item_name, amount)
-
+	Events.inventory_item_given.emit(item_name, amount)
 	write("Given %d x '%s' to player." % [amount, item_name], "green")
 
 
@@ -1405,11 +1273,7 @@ func _cmd_give_ammo(args: PackedStringArray) -> void:
 
 	var ammo_type: String = args[0].to_lower()
 	var amount: int = args[1].to_int() if args.size() > 1 else 30
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("ammo_collected"):
-			events.ammo_collected.emit(StringName(ammo_type), amount)
-
+	Events.ammo_collected.emit(StringName(ammo_type), amount)
 	write("Given %d x '%s' ammo." % [amount, ammo_type], "green")
 
 
@@ -1438,10 +1302,10 @@ func _cmd_spawnenemy(args: PackedStringArray) -> void:
 		return
 
 	var enemy_node: Node = packed_scene.instantiate()
-	var player: Node3D = get_tree().get_first_node_in_group("player") as Node3D
-	if is_instance_valid(player) and enemy_node is Node3D:
-		var spawn_offset: Vector3 = player.global_transform.basis.z * 3.0
-		var spawn_pos: Vector3 = player.global_position - spawn_offset
+	var player_node: Node3D = NodeQuery.get_single_node_in_group(get_tree(), &"player") as Node3D
+	if is_instance_valid(player_node) and enemy_node is Node3D:
+		var spawn_offset: Vector3 = player_node.global_transform.basis.z * 3.0
+		var spawn_pos: Vector3 = player_node.global_position - spawn_offset
 		(enemy_node as Node3D).global_position = spawn_pos
 
 	get_tree().current_scene.add_child(enemy_node)
@@ -1451,24 +1315,21 @@ func _cmd_spawnenemy(args: PackedStringArray) -> void:
 ## Destroys active enemy entities without deep recursion.
 func _cmd_killall(_args: PackedStringArray) -> void:
 	print("InGameConsole: Executing killall.")
-	var enemies: Array[Node] = get_tree().get_nodes_in_group("enemies")
+	var enemies: Array[Node] = get_tree().get_nodes_in_group(&"enemies")
 	var count: int = 0
 
 	for enemy: Node in enemies:
-		if not is_instance_valid(enemy) or enemy.is_in_group("player"):
+		if not is_instance_valid(enemy) or enemy.is_in_group(&"player"):
 			continue
 
-		var hc: Variant = enemy.get("health_component")
-		if not is_instance_valid(hc):
-			hc = enemy.get_node_or_null("HealthComponent")
-		if not is_instance_valid(hc):
-			hc = enemy.get_node_or_null("Components/HealthComponent")
-
-		if is_instance_valid(hc) and hc.has_method("take_damage"):
-			hc.call("take_damage", 99999)
+		var hc: HealthComponent = (
+			NodeQuery.find_first_child_of_type(enemy, HealthComponent) as HealthComponent
+		)
+		if is_instance_valid(hc) and hc.has_method(&"take_damage"):
+			hc.take_damage(99999)
 			count += 1
-		elif enemy.has_method("die"):
-			enemy.call("die")
+		elif enemy.has_method(&"die"):
+			enemy.call(&"die")
 			count += 1
 		elif enemy is Node3D:
 			enemy.queue_free()
@@ -1477,22 +1338,7 @@ func _cmd_killall(_args: PackedStringArray) -> void:
 	write("Destroyed %d active entities." % count, "green")
 
 
-## Recursively locates and eliminates hostile entities with health components.
-func _kill_enemies_recursive(node: Node) -> int:
-	var destroyed: int = 0
-	if node.is_in_group("player"):
-		return 0
-
-	if node is HealthComponent and not (node as HealthComponent).is_player_health:
-		(node as HealthComponent).take_damage(99999)
-		destroyed += 1
-
-	for child: Node in node.get_children():
-		destroyed += _kill_enemies_recursive(child)
-	return destroyed
-
-
-## Overrides the global physics gravity magnitude.
+## Overrides global physics gravity magnitude.
 func _cmd_sv_gravity(args: PackedStringArray) -> void:
 	print("InGameConsole: _cmd_sv_gravity called with args: ", args)
 	if args.is_empty():
@@ -1505,11 +1351,11 @@ func _cmd_sv_gravity(args: PackedStringArray) -> void:
 	PhysicsServer3D.area_set_param(
 		get_viewport().find_world_3d().space, PhysicsServer3D.AREA_PARAM_GRAVITY, grav
 	)
-	var player: Node = get_tree().get_first_node_in_group("player")
-	if is_instance_valid(player):
-		var loco: Node = player.get("locomotion_component")
+	var player_node: Node = NodeQuery.get_single_node_in_group(get_tree(), &"player")
+	if is_instance_valid(player_node):
+		var loco: Node = player_node.get(&"locomotion_component")
 		if is_instance_valid(loco):
-			loco.set("gravity", grav)
+			loco.set(&"gravity", grav)
 
 	write("Global physics gravity updated to: " + str(grav), "green")
 
@@ -1525,13 +1371,13 @@ func _cmd_fov(args: PackedStringArray) -> void:
 	if is_instance_valid(GlobalSettings):
 		GlobalSettings.save_setting("Settings", "base_fov", fov_val)
 
-	var player: Node = get_tree().get_first_node_in_group("player")
-	if is_instance_valid(player) and "camera_controller" in player:
-		var cam_ctrl: Node = player.get("camera_controller")
+	var player_node: Node = NodeQuery.get_single_node_in_group(get_tree(), &"player")
+	if is_instance_valid(player_node) and &"camera_controller" in player_node:
+		var cam_ctrl: Node = player_node.get(&"camera_controller")
 		if is_instance_valid(cam_ctrl):
-			cam_ctrl.set("base_fov", fov_val)
-			cam_ctrl.set("target_fov", fov_val)
-			var cam: Camera3D = cam_ctrl.get("camera") as Camera3D
+			cam_ctrl.set(&"base_fov", fov_val)
+			cam_ctrl.set(&"target_fov", fov_val)
+			var cam: Camera3D = cam_ctrl.get(&"camera") as Camera3D
 			if is_instance_valid(cam):
 				cam.fov = fov_val
 
@@ -1546,19 +1392,12 @@ func _cmd_shadows(args: PackedStringArray) -> void:
 		active = args[0].to_lower() == "on" or args[0] == "1"
 
 	toggle_states["shadows"] = active
-	var root_scene: Node = get_tree().current_scene
-	if is_instance_valid(root_scene):
-		_toggle_light_shadows_recursive(root_scene, active)
+	var lights: Array[Node] = get_tree().get_nodes_in_group(&"lights")
+	for light_node: Node in lights:
+		if light_node is Light3D:
+			(light_node as Light3D).shadow_enabled = active
 
 	write("Dynamic shadows " + ("enabled." if active else "disabled."), "green")
-
-
-## Recursively updates shadow casting on all active Light3D instances.
-func _toggle_light_shadows_recursive(node: Node, active: bool) -> void:
-	if node is Light3D:
-		(node as Light3D).shadow_enabled = active
-	for child: Node in node.get_children():
-		_toggle_light_shadows_recursive(child, active)
 
 
 ## Configures runtime V-Sync display mode.
@@ -1581,22 +1420,18 @@ func _cmd_hidehud(_args: PackedStringArray) -> void:
 	toggle_states["hidehud"] = not toggle_states["hidehud"]
 	var is_hidden: bool = toggle_states["hidehud"]
 	print("InGameConsole: Toggled hidehud -> ", is_hidden)
+	Events.ui_visibility_toggle_requested.emit()
 
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("ui_visibility_toggle_requested"):
-			events.ui_visibility_toggle_requested.emit()
-
-	var player: Node = get_tree().get_first_node_in_group("player")
-	if is_instance_valid(player) and "ui_controller" in player:
-		var ui: CanvasLayer = player.get("ui_controller") as CanvasLayer
+	var player_node: Node = NodeQuery.get_single_node_in_group(get_tree(), &"player")
+	if is_instance_valid(player_node) and &"ui_controller" in player_node:
+		var ui: CanvasLayer = player_node.get(&"ui_controller") as CanvasLayer
 		if is_instance_valid(ui):
 			ui.visible = not is_hidden
 
 	write("HUD " + ("hidden." if is_hidden else "revealed."), "green")
 
 
-## Sets global environment tonemap exposure value without root recursion.
+## Sets global environment tonemap exposure value.
 func _cmd_gamma(args: PackedStringArray) -> void:
 	print("InGameConsole: _cmd_gamma called with args: ", args)
 	if args.is_empty():
@@ -1606,13 +1441,13 @@ func _cmd_gamma(args: PackedStringArray) -> void:
 	var gamma_val: float = clampf(args[0].to_float(), 0.1, 3.0)
 	var env: Environment = null
 
-	var env_node: Node = get_tree().get_first_node_in_group("world_environment")
+	var env_node: Node = NodeQuery.get_single_node_in_group(get_tree(), &"world_environment")
 	if is_instance_valid(env_node) and env_node is WorldEnvironment:
 		env = (env_node as WorldEnvironment).environment
 	else:
 		var curr_scene: Node = get_tree().current_scene
 		if is_instance_valid(curr_scene):
-			var direct_env: Node = curr_scene.get_node_or_null("WorldEnvironment")
+			var direct_env: Node = NodeQuery.find_first_child_of_type(curr_scene, WorldEnvironment)
 			if direct_env is WorldEnvironment:
 				env = (direct_env as WorldEnvironment).environment
 
@@ -1718,12 +1553,7 @@ func _set_trigger_visibility(active: bool) -> void:
 	print("InGameConsole: Setting trigger visibility to: ", active)
 	toggle_states["showtrigger"] = active
 	EditorTriggerVisualizer.set_global_debug_visibility(active)
-
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("trigger_visibility_toggled"):
-			events.trigger_visibility_toggled.emit(active)
-
+	Events.trigger_visibility_toggled.emit(active)
 	get_tree().call_group(&"trigger_visualizers", "set_debug_visibility", active)
 
 	var stat: String = "visible." if active else "hidden."

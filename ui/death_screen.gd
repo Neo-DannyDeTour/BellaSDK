@@ -1,6 +1,6 @@
+## Manages post-death sequences, visual shaders, and audio routing via [AudioPool].
 class_name DeathScreen
 extends CanvasLayer
-## Manages post-death screen sequences, visual shaders, and smooth menu transitions.
 
 ## Player movement state at moment of death influencing pacing.
 enum DeathState { CROUCHING, WALKING, SPRINTING }
@@ -23,7 +23,7 @@ const DEATH_MESSAGES: Array[String] = [
 	"Mors vincit omnia",
 	"Mors certa, hora incerta",
 	"You're next!",
-	"I'll get you next!",
+	"I'll get you next!"
 ]
 
 ## Points defining healthy heartbeat ECG waveform trajectory.
@@ -102,16 +102,16 @@ var _flatline_stream: AudioStreamWAV
 ## Procedural audio stream for TV static noise.
 var _static_stream: AudioStreamWAV
 
-## Audio stream player node for sequence sound effects.
-var _heart_audio: AudioStreamPlayer
+## Active looping audio player managed by [AudioPool].
+var _active_loop_player: AudioStreamPlayer = null
 
-## Whether the player is currently permitted to skip the screen.
+## Whether the player is currently permitted to skip screen.
 var _skip_allowed: bool = false
 
 ## Indicates if a death sequence is actively running.
 var _is_dead: bool = false
 
-## Elapsed time passed to the ECG shader for horizontal line movement.
+## Elapsed time passed to ECG shader for line animation.
 var _shader_time: float = 0.0
 
 ## Viewport aspect ratio used for shader alignment.
@@ -120,74 +120,69 @@ var _aspect: float = 1.0
 ## Pacing speed multiplier for ECG animation and audio.
 var _target_speed: float = 2.0
 
-## Number of heartbeat spikes rendered across the screen.
+## Number of heartbeat spikes rendered across screen.
 var _cycle_count: int = 0
 
-## Whether the flatline audio and visual state has started.
+## Whether flatline audio and visual state has started.
 var _flatline_started: bool = false
 
 ## The currently active [enum EffectType] being played.
 var _active_effect: EffectType = EffectType.GLASS
 
+## Reusable array buffer for ECG point interpolation preventing heap allocations.
+var _lerp_points: Array[Vector2] = []
+
 
 ## Initializes node references, audio buffers, and signal listeners.
 func _ready() -> void:
-	print("DeathScreen: _ready() - Initializing UI, audio, and overlays.")
-	randomize()
+	print("DeathScreen: _ready() initializing UI, audio, and overlays.")
 	hide()
 	death_label.modulate.a = 0.0
 	background.modulate.a = 0.0
 
 	if is_instance_valid(ecg_monitor):
 		ecg_monitor.hide()
-
 	if is_instance_valid(lava_overlay):
 		lava_overlay.hide()
-
 	if is_instance_valid(cave_tunnel_overlay):
 		cave_tunnel_overlay.hide()
 		cave_tunnel_overlay.color = Color.WHITE
-
 	if is_instance_valid(tv_static_overlay):
 		tv_static_overlay.hide()
-
 	if is_instance_valid(glass_overlay):
 		glass_overlay.hide()
-
 	if is_instance_valid(jitter_overlay):
 		jitter_overlay.hide()
-
 	if is_instance_valid(burn_overlay):
 		burn_overlay.hide()
-
 	if is_instance_valid(pain_overlay):
 		pain_overlay.hide()
 		pain_overlay.color = Color(1.0, 0.0, 0.0, 0.0)
-
-	if has_node("HeartAudio"):
-		_heart_audio = $HeartAudio as AudioStreamPlayer
-	else:
-		_heart_audio = AudioStreamPlayer.new()
-		add_child(_heart_audio)
 
 	_beep_stream = _generate_tone(800.0, 0.15, false, 0.25)
 	_flatline_stream = _generate_tone(350.0, 0.5, true, 0.08)
 	_static_stream = _generate_white_noise(0.5, true, 0.015)
 
+	_lerp_points.resize(HEALTHY_POINTS.size())
+	for i: int in range(HEALTHY_POINTS.size()):
+		_lerp_points[i] = HEALTHY_POINTS[i]
+
 	if is_instance_valid(ecg_monitor):
 		var ecg_mat: ShaderMaterial = ecg_monitor.material as ShaderMaterial
 		if is_instance_valid(ecg_mat):
-			ecg_mat.set_shader_parameter("points", HEALTHY_POINTS)
+			ecg_mat.set_shader_parameter(&"points", HEALTHY_POINTS)
 
-	if Events.has_signal("player_died"):
+	if Events.has_signal(&"player_died"):
 		Utilities.safe_connect(Events.player_died, play_death_sequence)
 
 
-## Handles skip inputs via mouse click when permitted by [member _skip_allowed].
+## Handles skip inputs via mouse click when permitted.
 func _input(event: InputEvent) -> void:
-	if _skip_allowed and event is InputEventMouseButton and event.pressed:
-		print("DeathScreen: _input() - Skipping death screen.")
-		_return_to_main_menu()
+	if _skip_allowed and event is InputEventMouseButton:
+		var mb: InputEventMouseButton = event as InputEventMouseButton
+		if mb.pressed:
+			print("DeathScreen: _input() skipping death screen.")
+			_return_to_main_menu()
 
 
 ## Advances ECG shader playback and triggers beep sounds over time.
@@ -200,7 +195,7 @@ func _process(delta: float) -> void:
 
 	var mat: ShaderMaterial = ecg_monitor.material as ShaderMaterial
 	if is_instance_valid(mat):
-		mat.set_shader_parameter("u_time", _shader_time)
+		mat.set_shader_parameter(&"u_time", _shader_time)
 
 	var next_spike_time: float = float(_cycle_count) * (_aspect * 2.0)
 	if prev_time < next_spike_time and _shader_time >= next_spike_time:
@@ -211,9 +206,9 @@ func _process(delta: float) -> void:
 		_cycle_count += 1
 
 
-## Draws the next non-repeating [enum EffectType] from [member _effect_pool].
+## Draws next non-repeating [enum EffectType] from pool.
 func _get_next_effect() -> EffectType:
-	print("DeathScreen: _get_next_effect() - Fetching effect from pool.")
+	print("DeathScreen: _get_next_effect() fetching effect from pool.")
 	if _effect_pool.is_empty():
 		var all_effects: Array = EffectType.values()
 		for e: int in all_effects:
@@ -224,9 +219,9 @@ func _get_next_effect() -> EffectType:
 	return selected
 
 
-## Triggers full death takeover and starts the selected effect.
+## Triggers full death takeover and starts selected effect.
 func play_death_sequence(death_state: int = DeathState.WALKING) -> void:
-	print("DeathScreen: play_death_sequence() - Death triggered. State: ", death_state)
+	print("DeathScreen: play_death_sequence() state: ", death_state)
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	show()
 
@@ -239,7 +234,7 @@ func play_death_sequence(death_state: int = DeathState.WALKING) -> void:
 	_aspect = viewport_size.x / viewport_size.y
 
 	_active_effect = _get_next_effect()
-	print("DeathScreen: play_death_sequence() - Active effect: ", _active_effect)
+	print("DeathScreen: Active effect: ", _active_effect)
 
 	background.modulate.a = 0.0
 
@@ -288,7 +283,7 @@ func play_death_sequence(death_state: int = DeathState.WALKING) -> void:
 
 ## Runs digital burn shader transition ramping into pure black.
 func _start_burn_effect() -> void:
-	print("DeathScreen: _start_burn_effect() - Starting burn transition.")
+	print("DeathScreen: _start_burn_effect() starting burn transition.")
 	if not is_instance_valid(burn_overlay):
 		push_error("DeathScreen: burn_overlay node is missing.")
 		return
@@ -301,7 +296,7 @@ func _start_burn_effect() -> void:
 		push_error("DeathScreen: burn_overlay material is invalid.")
 		return
 
-	mat.set_shader_parameter("threshold", 1.2)
+	mat.set_shader_parameter(&"threshold", 1.2)
 
 	var burn_tween: Tween = Utilities.reset_tween_ext(self, null, Tween.TRANS_QUAD, Tween.EASE_IN)
 	if is_instance_valid(burn_tween):
@@ -315,7 +310,7 @@ func _start_burn_effect() -> void:
 
 ## Runs horizontal jitter glitch displacement ramping into pure black.
 func _start_jitter_effect() -> void:
-	print("DeathScreen: _start_jitter_effect() - Starting jitter transition.")
+	print("DeathScreen: _start_jitter_effect() starting jitter transition.")
 	if not is_instance_valid(jitter_overlay):
 		push_error("DeathScreen: jitter_overlay node is missing.")
 		return
@@ -328,9 +323,9 @@ func _start_jitter_effect() -> void:
 		push_error("DeathScreen: jitter_overlay material is invalid.")
 		return
 
-	mat.set_shader_parameter("power", 0.0)
-	mat.set_shader_parameter("intensity", 0.0)
-	mat.set_shader_parameter("black_fade", 0.0)
+	mat.set_shader_parameter(&"power", 0.0)
+	mat.set_shader_parameter(&"intensity", 0.0)
+	mat.set_shader_parameter(&"black_fade", 0.0)
 
 	_play_static_audio()
 
@@ -365,7 +360,7 @@ func _start_jitter_effect() -> void:
 
 ## Runs full-screen glass distortion ramping into darkness.
 func _start_glass_effect() -> void:
-	print("DeathScreen: _start_glass_effect() - Starting glass distortion.")
+	print("DeathScreen: _start_glass_effect() starting glass distortion.")
 	if not is_instance_valid(glass_overlay):
 		push_error("DeathScreen: glass_overlay node is missing.")
 		return
@@ -378,14 +373,14 @@ func _start_glass_effect() -> void:
 		push_error("DeathScreen: glass_overlay material is invalid.")
 		return
 
-	mat.set_shader_parameter("distortion_mix", 0.0)
-	mat.set_shader_parameter("lens_strength", 1.8)
-	mat.set_shader_parameter("lens_curve", 0.15)
-	mat.set_shader_parameter("chromatic_spread", 0.0)
-	mat.set_shader_parameter("black_fade", 0.0)
-	mat.set_shader_parameter("box_size", Vector2(1.05, 1.05))
-	mat.set_shader_parameter("box_radius", 0.25)
-	mat.set_shader_parameter("border_weight", 0.0)
+	mat.set_shader_parameter(&"distortion_mix", 0.0)
+	mat.set_shader_parameter(&"lens_strength", 1.8)
+	mat.set_shader_parameter(&"lens_curve", 0.15)
+	mat.set_shader_parameter(&"chromatic_spread", 0.0)
+	mat.set_shader_parameter(&"black_fade", 0.0)
+	mat.set_shader_parameter(&"box_size", Vector2(1.05, 1.05))
+	mat.set_shader_parameter(&"box_radius", 0.25)
+	mat.set_shader_parameter(&"border_weight", 0.0)
 
 	var warp_tween: Tween = create_tween().set_parallel(true)
 	(
@@ -430,7 +425,7 @@ func _start_glass_effect() -> void:
 
 ## Starts the hospital ECG monitor shader visual sequence.
 func _start_ecg_effect(death_state: int) -> void:
-	print("DeathScreen: _start_ecg_effect() - Starting ECG monitor.")
+	print("DeathScreen: _start_ecg_effect() starting ECG monitor.")
 	if not is_instance_valid(ecg_monitor):
 		push_error("DeathScreen: ecg_monitor node is missing.")
 		return
@@ -444,8 +439,8 @@ func _start_ecg_effect(death_state: int) -> void:
 
 	var mat: ShaderMaterial = ecg_monitor.material as ShaderMaterial
 	if is_instance_valid(mat):
-		mat.set_shader_parameter("points", HEALTHY_POINTS)
-		mat.set_shader_parameter("resolution", get_viewport().get_visible_rect().size)
+		mat.set_shader_parameter(&"points", HEALTHY_POINTS)
+		mat.set_shader_parameter(&"resolution", get_viewport().get_visible_rect().size)
 
 	var ecg_tween: Tween = create_tween().set_parallel(true)
 	if is_instance_valid(background):
@@ -467,14 +462,14 @@ func _start_ecg_effect(death_state: int) -> void:
 
 ## Begins rising lava overlay shader sequence.
 func _start_lava_effect() -> void:
-	print("DeathScreen: _start_lava_effect() - Dynamically filling lava.")
+	print("DeathScreen: _start_lava_effect() dynamically filling lava.")
 	lava_overlay.show()
 	lava_overlay.modulate.a = 0.0
 
 	var lava_mat: ShaderMaterial = lava_overlay.material as ShaderMaterial
 	if is_instance_valid(lava_mat):
-		lava_mat.set_shader_parameter("emission", 0.0)
-		lava_mat.set_shader_parameter("resolution", get_viewport().get_visible_rect().size)
+		lava_mat.set_shader_parameter(&"emission", 0.0)
+		lava_mat.set_shader_parameter(&"resolution", get_viewport().get_visible_rect().size)
 
 	var lava_tween: Tween = create_tween().set_parallel(true)
 	lava_tween.tween_property(lava_overlay, "modulate:a", 1.0, 2.5)
@@ -486,13 +481,13 @@ func _start_lava_effect() -> void:
 
 ## Begins 3D cave tunnel raymarching shader sequence.
 func _start_cave_tunnel_effect() -> void:
-	print("DeathScreen: _start_cave_tunnel_effect() - Descending into cave tunnel.")
+	print("DeathScreen: _start_cave_tunnel_effect() descending into cave tunnel.")
 	cave_tunnel_overlay.show()
 	cave_tunnel_overlay.modulate.a = 0.0
 
 	var cave_mat: ShaderMaterial = cave_tunnel_overlay.material as ShaderMaterial
 	if is_instance_valid(cave_mat):
-		cave_mat.set_shader_parameter("resolution", get_viewport().get_visible_rect().size)
+		cave_mat.set_shader_parameter(&"resolution", get_viewport().get_visible_rect().size)
 
 	var tunnel_tween: Tween = create_tween().set_parallel(true)
 	tunnel_tween.tween_property(cave_tunnel_overlay, "modulate:a", 1.0, 2.5)
@@ -501,7 +496,7 @@ func _start_cave_tunnel_effect() -> void:
 
 ## Runs TV CRT static noise and picture reveal sequence.
 func _start_tv_static_effect() -> void:
-	print("DeathScreen: _start_tv_static_effect() - Starting TV static effect.")
+	print("DeathScreen: _start_tv_static_effect() starting TV static effect.")
 	if not is_instance_valid(tv_static_overlay):
 		push_error("DeathScreen: tv_static_overlay node is missing.")
 		return
@@ -511,7 +506,7 @@ func _start_tv_static_effect() -> void:
 
 	var mat: ShaderMaterial = tv_static_overlay.material as ShaderMaterial
 	if is_instance_valid(mat):
-		mat.set_shader_parameter("static_intensity", 1.0)
+		mat.set_shader_parameter(&"static_intensity", 1.0)
 
 	_play_static_audio()
 
@@ -541,7 +536,7 @@ func _trigger_flatline() -> void:
 	if _flatline_started:
 		return
 
-	print("DeathScreen: _trigger_flatline() - Triggering flatline transition.")
+	print("DeathScreen: _trigger_flatline() triggering flatline transition.")
 	_flatline_started = true
 	_play_flatline()
 
@@ -558,7 +553,7 @@ func _trigger_flatline() -> void:
 func _generate_tone(
 	freq: float, duration: float, loop: bool, volume: float = 1.0
 ) -> AudioStreamWAV:
-	print("DeathScreen: _generate_tone() - Generating procedural audio tone.")
+	print("DeathScreen: _generate_tone() generating procedural audio tone.")
 	var stream: AudioStreamWAV = AudioStreamWAV.new()
 	stream.format = AudioStreamWAV.FORMAT_16_BITS
 	stream.mix_rate = 44100
@@ -593,7 +588,7 @@ func _generate_tone(
 
 ## Procedurally synthesizes a white noise [AudioStreamWAV] buffer.
 func _generate_white_noise(duration: float, loop: bool, volume: float = 1.0) -> AudioStreamWAV:
-	print("DeathScreen: _generate_white_noise() - Generating procedural white noise.")
+	print("DeathScreen: _generate_white_noise() generating procedural white noise.")
 	var stream: AudioStreamWAV = AudioStreamWAV.new()
 	stream.format = AudioStreamWAV.FORMAT_16_BITS
 	stream.mix_rate = 44100
@@ -618,56 +613,53 @@ func _generate_white_noise(duration: float, loop: bool, volume: float = 1.0) -> 
 	return stream
 
 
-## Interpolates ECG shader points between healthy and flatline states.
+## Zero-allocation in-place point interpolation for ECG shader waveform.
 func _lerp_heartbeat_to_flatline(weight: float) -> void:
-	var current_points: Array[Vector2] = []
 	for i: int in range(HEALTHY_POINTS.size()):
-		var lerped_point: Vector2 = HEALTHY_POINTS[i].lerp(FLATLINE_POINTS[i], weight)
-		current_points.append(lerped_point)
+		_lerp_points[i] = HEALTHY_POINTS[i].lerp(FLATLINE_POINTS[i], weight)
 
 	var mat: ShaderMaterial = ecg_monitor.material as ShaderMaterial
 	if is_instance_valid(mat):
-		mat.set_shader_parameter("points", current_points)
+		mat.set_shader_parameter(&"points", _lerp_points)
 
 
-## Plays the short heartbeat beep audio tone.
+## Plays one-shot heartbeat beep audio via [AudioPool].
 func _play_beep() -> void:
 	if not _is_dead:
 		return
-	print("DeathScreen: _play_beep() - Playing heartbeat beep.")
-	_heart_audio.stream = _beep_stream
-	_heart_audio.play()
+	print("DeathScreen: _play_beep() routing heartbeat beep to AudioPool.")
+	AudioPool.play_sfx_2d(_beep_stream)
 
 
-## Plays continuous flatline tone on [member _heart_audio].
+## Plays continuous flatline tone via [AudioPool].
 func _play_flatline() -> void:
 	if not _is_dead:
 		return
-	print("DeathScreen: _play_flatline() - Playing flatline audio.")
-	_heart_audio.stream = _flatline_stream
-	_heart_audio.play()
+	print("DeathScreen: _play_flatline() routing flatline tone to AudioPool.")
+	_stop_all_audio()
+	_active_loop_player = AudioPool.play_sfx_2d(_flatline_stream)
 
 
-## Plays looping static noise on [member _heart_audio].
+## Plays looping static noise via [AudioPool].
 func _play_static_audio() -> void:
 	if not _is_dead:
 		return
-	print("DeathScreen: _play_static_audio() - Playing TV static noise.")
-	_heart_audio.stream = _static_stream
-	_heart_audio.play()
+	print("DeathScreen: _play_static_audio() routing static noise to AudioPool.")
+	_stop_all_audio()
+	_active_loop_player = AudioPool.play_sfx_2d(_static_stream)
 
 
-## Stops all active procedural audio streams.
+## Halts active looping sound player.
 func _stop_all_audio() -> void:
-	print("DeathScreen: _stop_all_audio() - Halting audio streams.")
-	if is_instance_valid(_heart_audio):
-		_heart_audio.stop()
-		_heart_audio.stream = null
+	print("DeathScreen: _stop_all_audio() stopping loop player.")
+	if is_instance_valid(_active_loop_player):
+		_active_loop_player.stop()
+		_active_loop_player = null
 
 
 ## Sets [member _skip_allowed] to true allowing player skip.
 func _allow_skipping() -> void:
-	print("DeathScreen: _allow_skipping() - Input skip unlocked.")
+	print("DeathScreen: _allow_skipping() input skip unlocked.")
 	_skip_allowed = true
 
 
@@ -676,13 +668,8 @@ func _return_to_main_menu() -> void:
 	if not is_inside_tree():
 		return
 
-	print("DeathScreen: _return_to_main_menu() - Changing scene to main menu.")
+	print("DeathScreen: _return_to_main_menu() transitioning to main menu.")
 	_is_dead = false
 	_stop_all_audio()
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-
-	var transition_mgr: Node = get_node_or_null("/root/SceneTransition")
-	if is_instance_valid(transition_mgr) and transition_mgr.has_method("change_scene_to_file"):
-		transition_mgr.call("change_scene_to_file", "res://ui/main_menu.tscn", 0.5)
-	else:
-		get_tree().change_scene_to_file("res://ui/main_menu.tscn")
+	SceneTransition.change_scene_to_file("res://ui/main_menu.tscn", 0.5)

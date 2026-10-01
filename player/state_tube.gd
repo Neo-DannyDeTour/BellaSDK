@@ -1,18 +1,18 @@
-## State handling player transport inside a [PneumaticTube] in crouched stance.
+## Handles player transit inside pneumatic transport tubes in [StateTube].
 class_name StateTube
 extends PlayerState
 
 ## Active tube instance currently carrying the player character.
 var active_tube: Node3D = null
 
-## Tracks whether the player character was crouched prior to suction.
+## Tracks whether the player was crouched prior to entering pneumatic tube.
 var _was_crouched_before: bool = false
 
 
-## Forces crouch height, disables movement physics, and caches entry state.
+## Locks player stance to crouched, disables locomotion, and caches stance.
 func enter(msg: Dictionary = {}) -> void:
 	print("StateTube: enter() called. Player entering tube state.")
-	active_tube = msg.get("tube") as Node3D
+	active_tube = msg.get(&"tube") as Node3D
 	var pl: Player = player as Player
 
 	if is_instance_valid(pl) and is_instance_valid(pl.locomotion_component):
@@ -30,7 +30,7 @@ func enter(msg: Dictionary = {}) -> void:
 			loco.set_physics_active(false)
 
 
-## Restores original stance collisions and re-enables locomotion physics.
+## Restores pre-tube crouch stance and re-enables locomotion physics.
 func exit() -> void:
 	print("StateTube: exit() called. Player exiting tube state.")
 	var pl: Player = player as Player
@@ -55,17 +55,18 @@ func exit() -> void:
 	active_tube = null
 
 
-## Unhandled input routing during tube transport.
+## Consumes input events during tube transit without affecting movement.
 func handle_input(_event: InputEvent) -> void:
-	pass
+	print("StateTube: handle_input() consuming input event during tube transit.")
 
 
-## Process frame tick during tube transport.
+## Per-frame logic update executing during tube transport.
 func update(_delta: float) -> void:
-	pass
+	print("StateTube: update() running visual update tick.")
 
 
-## Physics frame tick ensuring player velocity is locked while moving on path.
+## Locks player velocity to zero while traveling along pneumatic spline.
 func physics_update(_delta: float) -> void:
+	print("StateTube: physics_update() locking character velocity.")
 	if is_instance_valid(player):
 		player.velocity = Vector3.ZERO

@@ -138,17 +138,25 @@ const INACTIVE_BUTTON_COLOR: Color = Color(1.0, 1.0, 1.0, 1.0)
 ## Text input for manual outline maximum pulse intensity entry.
 @onready var outline_max_input: LineEdit = get_node_or_null("%OutlineMaxIntensityLine")
 
+## Cached [Curve] resource for gamma adjustments.
+var _gamma_curve: Curve = Curve.new()
 
-## Lifecycle initialization method configuring options and slider listeners.
+## Cached [CurveTexture] resource for tonemap color correction.
+var _gamma_texture: CurveTexture = CurveTexture.new()
+
+
+## Lifecycle initialization configuring options and slider listeners.
 func _ready() -> void:
 	print("UI: Initializing Visuals Section.")
+	_gamma_texture.curve = _gamma_curve
 	_populate_dropdowns()
 	_connect_signals()
 	load_settings()
 
 
-## Populates [OptionButton] items for screen filters, colorblind, and outline colors.
+## Populates [OptionButton] items for filters, colorblind, and outlines.
 func _populate_dropdowns() -> void:
+	print("UI: _populate_dropdowns() populating options.")
 	if is_instance_valid(screen_filter_option):
 		screen_filter_option.clear()
 		for filter_name: String in GlobalSettings.get_screen_filter_display_names():
@@ -170,6 +178,7 @@ func _populate_dropdowns() -> void:
 
 ## Connects interactive controls and slider value adjustments.
 func _connect_signals() -> void:
+	print("UI: _connect_signals() binding visual sliders.")
 	if is_instance_valid(colorblind_option):
 		colorblind_option.item_selected.connect(_on_colorblind_selected)
 	if is_instance_valid(screen_filter_option):
@@ -198,8 +207,9 @@ func _connect_signals() -> void:
 	_connect_outline_controls()
 
 
-## Connects input signals for outline highlight mode buttons and parameters.
+## Connects input signals for outline highlight mode buttons.
 func _connect_outline_controls() -> void:
+	print("UI: _connect_outline_controls() binding outline buttons.")
 	if is_instance_valid(outline_off_button):
 		outline_off_button.pressed.connect(func() -> void: _on_outline_mode_selected(0))
 	if is_instance_valid(outline_always_button):
@@ -287,7 +297,7 @@ func load_settings() -> void:
 	_load_outline_settings()
 
 
-## Loads outline highlight preferences and broadcasts them to the active scene.
+## Loads outline highlight preferences and applies them.
 func _load_outline_settings() -> void:
 	print("UI: Loading Outline Highlight settings.")
 	var outline_mode: int = int(
@@ -359,7 +369,7 @@ func _on_outline_mode_selected(mode: int) -> void:
 	_apply_outline_mode(mode)
 
 
-## Updates button states and active colors according to the selected mode.
+## Updates button states and active colors according to selected mode.
 func _update_outline_buttons_ui(selected_mode: int) -> void:
 	print("UI: Updating Outline Mode buttons display to mode: ", selected_mode)
 	var buttons: Array[Button] = [outline_off_button, outline_always_button, outline_focus_button]
@@ -372,59 +382,44 @@ func _update_outline_buttons_ui(selected_mode: int) -> void:
 		btn.self_modulate = ACTIVE_BUTTON_COLOR if is_active else INACTIVE_BUTTON_COLOR
 
 
-## Broadcasts outline mode changes across the global event bus.
+## Broadcasts outline mode changes across global [Events] singleton.
 func _apply_outline_mode(mode: int) -> void:
 	print("Engine: Applying Outline Mode: ", mode)
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("outline_mode_changed"):
-			events.outline_mode_changed.emit(mode)
+	Events.outline_mode_changed.emit(mode)
 
 
-## Handles outline color selection from the dropdown menu.
+## Handles outline color selection from dropdown menu.
 func _on_outline_color_selected(index: int) -> void:
 	print("Player selected Outline Color index: ", index)
 	GlobalSettings.save_setting("Accessibility", "outline_color_index", index)
 	_apply_outline_color(index)
 
 
-## Broadcasts target outline color changes across the event bus.
+## Broadcasts target outline color changes across [Events].
 func _apply_outline_color(index: int) -> void:
 	if index < 0 or index >= OUTLINE_COLOR_VALUES.size():
 		return
 	var chosen_color: Color = OUTLINE_COLOR_VALUES[index]
 	print("Engine: Applying Outline Color: ", chosen_color)
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("outline_color_changed"):
-			events.outline_color_changed.emit(chosen_color)
+	Events.outline_color_changed.emit(chosen_color)
 
 
-## Broadcasts target outline blink speed changes across the event bus.
+## Broadcasts target outline blink speed changes across [Events].
 func _apply_outline_blink_speed(val: float) -> void:
 	print("Engine: Applying Outline Blink Speed: ", val)
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("outline_blink_speed_changed"):
-			events.outline_blink_speed_changed.emit(val)
+	Events.outline_blink_speed_changed.emit(val)
 
 
-## Broadcasts target outline minimum intensity changes.
+## Broadcasts target outline minimum intensity changes across [Events].
 func _apply_outline_min_intensity(val: float) -> void:
 	print("Engine: Applying Outline Min Intensity: ", val)
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("outline_min_intensity_changed"):
-			events.outline_min_intensity_changed.emit(val)
+	Events.outline_min_intensity_changed.emit(val)
 
 
-## Broadcasts target outline maximum intensity changes.
+## Broadcasts target outline maximum intensity changes across [Events].
 func _apply_outline_max_intensity(val: float) -> void:
 	print("Engine: Applying Outline Max Intensity: ", val)
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("outline_max_intensity_changed"):
-			events.outline_max_intensity_changed.emit(val)
+	Events.outline_max_intensity_changed.emit(val)
 
 
 ## Connects companion slider and LineEdit pairs with instant clear and revert on defocus.
@@ -438,6 +433,7 @@ func _connect_slider(
 	is_int: bool = false,
 	custom_cb: Callable = Callable()
 ) -> void:
+	print("UI: _connect_slider() binding key: ", key)
 	if is_instance_valid(slider):
 		slider.min_value = min_val
 		slider.max_value = max_val
@@ -494,7 +490,7 @@ func _connect_slider(
 		)
 
 
-## Reads a float setting and synchronizes slider and LineEdit representations.
+## Reads a float setting and synchronizes slider and text box.
 func _load_slider(slider: HSlider, input_box: LineEdit, key: String, default_val: float) -> void:
 	_load_slider_custom(slider, input_box, key, default_val, "Settings")
 
@@ -503,6 +499,7 @@ func _load_slider(slider: HSlider, input_box: LineEdit, key: String, default_val
 func _load_slider_custom(
 	slider: HSlider, input_box: LineEdit, key: String, default_val: float, section: String
 ) -> void:
+	print("UI: _load_slider_custom() loading key: ", key)
 	if is_instance_valid(slider):
 		var val: float = float(GlobalSettings.get_setting(section, key, default_val))
 		slider.set_value_no_signal(val)
@@ -517,20 +514,18 @@ func _on_colorblind_selected(index: int) -> void:
 	_apply_colorblind_settings()
 
 
-## Broadcasts selected colorblind mode to global event bus.
+## Broadcasts selected colorblind mode to global [Events] singleton.
 func _apply_colorblind_settings() -> void:
 	if not is_instance_valid(colorblind_option):
 		return
 	var mode: int = colorblind_option.selected
 	print("Engine: Applying Colorblind shader mode: ", mode)
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("colorblind_mode_changed"):
-			events.colorblind_mode_changed.emit(mode)
+	Events.colorblind_mode_changed.emit(mode)
 
 
 ## Handles screen filter dropdown selections.
 func _on_screen_filter_selected(index: int) -> void:
+	print("UI: _on_screen_filter_selected() index: ", index)
 	GlobalSettings.save_setting("Settings", "screen_filter", index)
 	_apply_screen_filter(index)
 
@@ -542,38 +537,27 @@ func _apply_screen_filter(index: int) -> void:
 		return
 	var filter_name: String = filter_ids[index]
 	print("Player selected Screen Filter: ", filter_name)
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("screen_filter_changed"):
-			events.screen_filter_changed.emit(filter_name)
+	Events.screen_filter_changed.emit(filter_name)
 
 
-## Broadcasts film grain intensity value updates.
+## Broadcasts film grain intensity value updates across [Events].
 func _apply_film_grain(val: float) -> void:
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("film_grain_changed"):
-			events.film_grain_changed.emit(val)
+	print("UI: _apply_film_grain() value: ", val)
+	Events.film_grain_changed.emit(val)
 
 
 ## Handles photosensitivity safe mode toggling.
 func _on_photosensitivity_toggled(toggled_on: bool) -> void:
 	print("Player toggled Photosensitivity Mode to: ", toggled_on)
 	GlobalSettings.save_setting("Accessibility", "photosensitivity", toggled_on)
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("photosensitivity_mode_toggled"):
-			events.photosensitivity_mode_toggled.emit(toggled_on)
+	Events.photosensitivity_mode_toggled.emit(toggled_on)
 
 
 ## Handles high contrast mode toggling.
 func _on_high_contrast_toggled(toggled_on: bool) -> void:
 	print("Player toggled High Contrast UI to: ", toggled_on)
 	GlobalSettings.save_setting("Accessibility", "high_contrast_ui", toggled_on)
-	if has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("high_contrast_toggled"):
-			events.high_contrast_toggled.emit(toggled_on)
+	Events.high_contrast_toggled.emit(toggled_on)
 
 
 ## Applies adjustments to the active [WorldEnvironment].
@@ -590,50 +574,38 @@ func _apply_visual_settings() -> void:
 		_apply_gamma_to_environment(gamma_slider.value, env_node.environment)
 
 
-## Updates the [Environment] adjustment color correction gradient using a gamma power curve.
+## Updates [Environment] adjustment color correction gradient via power curve.
 func _apply_gamma_to_environment(gamma_val: float, env: Environment) -> void:
 	if not is_instance_valid(env):
 		return
 	print("Engine: Updating Environment gamma curve to: ", gamma_val)
-	var curve: Curve = Curve.new()
+	_gamma_curve.clear_points()
 	var sample_points: int = 16
 	for i: int in range(sample_points + 1):
 		var t: float = float(i) / float(sample_points)
 		var val: float = pow(t, 1.0 / maxf(gamma_val, 0.001))
-		curve.add_point(Vector2(t, val))
+		_gamma_curve.add_point(Vector2(t, val))
 
-	var curve_tex: CurveTexture = CurveTexture.new()
-	curve_tex.curve = curve
-	env.adjustment_color_correction = curve_tex
+	env.adjustment_color_correction = _gamma_texture
 
 
-## Finds the active [WorldEnvironment] node in the tree with fallbacks.
+## Finds the active [WorldEnvironment] node using [NodeQuery].
 func _find_world_environment() -> WorldEnvironment:
-	var env_nodes: Array[Node] = get_tree().get_nodes_in_group("world_environment")
-	if not env_nodes.is_empty():
-		return env_nodes[0] as WorldEnvironment
+	print("UI: _find_world_environment() resolving environment node.")
+	var env_node: Node = NodeQuery.get_single_node_in_group(get_tree(), &"world_environment")
+	if env_node is WorldEnvironment:
+		return env_node as WorldEnvironment
 
-	var root: Node = get_tree().current_scene
-	if not root:
-		root = get_tree().root
-	return _find_first_child_of_type(root, "WorldEnvironment") as WorldEnvironment
+	var curr_scene: Node = get_tree().current_scene
+	if is_instance_valid(curr_scene):
+		var direct: Node = NodeQuery.find_first_child_of_type(curr_scene, WorldEnvironment)
+		if direct is WorldEnvironment:
+			return direct as WorldEnvironment
 
-
-## Recursively searches a subtree for the first node matching a type name.
-func _find_first_child_of_type(parent: Node, type_str: String) -> Node:
-	if not parent:
-		return null
-	if parent.is_class(type_str) or parent.get_class() == type_str:
-		return parent
-	for child: Node in parent.get_children():
-		var found: Node = _find_first_child_of_type(child, type_str)
-		if found:
-			return found
 	return null
 
 
 ## Synchronizes colorblind mode dropdown selection from external events.
-## [param mode] External colorblind mode index.
 func sync_external_colorblind(mode: int) -> void:
 	print("UI: Syncing external colorblind mode index: ", mode)
 	if is_instance_valid(colorblind_option) and colorblind_option.selected != mode:
@@ -641,7 +613,6 @@ func sync_external_colorblind(mode: int) -> void:
 
 
 ## Synchronizes high contrast button toggle from external events.
-## [param active] External state.
 func sync_external_high_contrast(active: bool) -> void:
 	print("UI: Syncing external high contrast UI state: ", active)
 	if is_instance_valid(high_contrast_toggle) and high_contrast_toggle.button_pressed != active:
@@ -649,7 +620,6 @@ func sync_external_high_contrast(active: bool) -> void:
 
 
 ## Synchronizes photosensitivity button toggle from external events.
-## [param active] External state.
 func sync_external_photosensitivity(active: bool) -> void:
 	print("UI: Syncing external photosensitivity mode state: ", active)
 	if (

@@ -1,5 +1,5 @@
-## Autonomous pulsing hazard dealing damage via [HealthComponent] with visualizer sync.
 @tool
+## Pulsing hazard dealing periodic damage to overlapping bodies via HealthComponent.
 class_name SmokeHazard
 extends Area3D
 
@@ -7,8 +7,7 @@ extends Area3D
 signal damage_ticked(target: Node3D, amount: float)
 
 @export_group("Hazard Damage & Timers")
-
-## Base damage dealt per tick to bodies inside the smoke cloud.
+## Base damage dealt per tick to bodies inside smoke cloud.
 @export var damage_per_tick: float = 5.0
 
 ## Time in seconds between consecutive damage ticks.
@@ -21,57 +20,55 @@ signal damage_ticked(target: Node3D, amount: float)
 		_update_cloud_bounds()
 		_update_collision_and_visualizer()
 
-## Time in seconds the hazard remains active and emitting.
+## Time in seconds hazard remains active and emitting.
 @export var active_duration: float = 3.0
 
-## Time in seconds the hazard pauses between active bursts.
+## Time in seconds hazard pauses between active bursts.
 @export var pause_duration: float = 2.0
 
 ## Enables environment raycast occlusion to stop damage through walls.
 @export var check_wall_occlusion: bool = true
 
 @export_group("Hazard Shape & Transform")
-
-## Geometric shape displayed in the visualizer and synced to collision.
+## Geometric shape displayed in visualizer and synced to collision.
 @export
 var visualizer_shape: EditorTriggerVisualizer.ShapeType = EditorTriggerVisualizer.ShapeType.BOX:
 	set(value):
 		visualizer_shape = value
 		_update_collision_and_visualizer()
 
-## 3D dimensions of the hazard collision box and visualizer box.
+## 3D dimensions of hazard collision box and visualizer box.
 @export var visualizer_size: Vector3 = Vector3(4.0, 4.0, 4.0):
 	set(value):
 		visualizer_size = value
 		_update_collision_and_visualizer()
 
-## 3D position offset for both collision shape and visualizer mesh.
+## 3D position offset for collision shape and visualizer mesh.
 @export var hazard_offset: Vector3 = Vector3.ZERO:
 	set(value):
 		hazard_offset = value
 		_update_collision_and_visualizer()
 
-## Toggles visibility of the debug trigger shape in runtime builds.
+## Toggles visibility of debug trigger shape in runtime builds.
 @export var show_visualizer_in_game: bool = false:
 	set(value):
 		show_visualizer_in_game = value
 		_update_collision_and_visualizer()
 
-## Color and transparency of the editor debug trigger shape.
+## Color and transparency of editor debug trigger shape.
 @export var visualizer_color: Color = Color(0.9, 0.2, 0.1, 0.3):
 	set(value):
 		visualizer_color = value
 		_update_collision_and_visualizer()
 
-## Text label displayed on the editor debug shape.
+## Text label displayed on editor debug shape.
 @export var visualizer_text: String = "SMOKE HAZARD":
 	set(value):
 		visualizer_text = value
 		_update_collision_and_visualizer()
 
 @export_group("Particle Settings")
-
-## Base tint applied to the smoke particles.
+## Base tint applied to smoke particles.
 @export var smoke_color: Color = Color(0.9, 0.9, 0.9, 0.85):
 	set(value):
 		smoke_color = value
@@ -83,7 +80,7 @@ var visualizer_shape: EditorTriggerVisualizer.ShapeType = EditorTriggerVisualize
 		particle_lifetime = maxf(0.1, value)
 		_update_particle_lifetime()
 
-## Overall velocity scaling factor for the emission system.
+## Overall velocity scaling factor for emission system.
 @export var particle_speed: float = 4.0:
 	set(value):
 		particle_speed = value
@@ -101,7 +98,7 @@ var visualizer_shape: EditorTriggerVisualizer.ShapeType = EditorTriggerVisualize
 		velocity_max = value
 		_update_particle_velocity()
 
-## Angle in degrees for the emission cone spread.
+## Angle in degrees for emission cone spread.
 @export_range(0.0, 180.0) var spread: float = 25.0:
 	set(value):
 		spread = value
@@ -128,23 +125,23 @@ var _phase_timer: float = 0.0
 ## Flag indicating whether hazard is actively venting smoke.
 var _is_active: bool = true
 
-## Cache of overlapping bodies currently inside the hazard radius.
+## Cache of overlapping bodies currently inside hazard radius.
 var _targets_in_smoke: Array[Node3D] = []
 
-## Cache mapping overlapping bodies to their detected [HealthComponent].
+## Cache mapping overlapping bodies to detected [HealthComponent].
 var _health_cache: Dictionary = {}
 
-## Tracks whether the player is currently inside this hazard instance.
+## Tracks whether player is currently inside this hazard instance.
 var _is_player_inside: bool = false
 
-## Direct reference to the collision shape node.
+## Direct reference to collision shape node.
 @onready
 var _collision_shape: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
 
-## Direct reference to the particle system node.
+## Direct reference to particle system node.
 @onready var _particles: GPUParticles3D = get_node_or_null("SmokeParticles") as GPUParticles3D
 
-## Direct reference to the trigger visualizer helper node.
+## Direct reference to trigger visualizer helper node.
 @onready var _visualizer: EditorTriggerVisualizer = (
 	get_node_or_null("EditorTriggerVisualizer") as EditorTriggerVisualizer
 )
@@ -192,7 +189,7 @@ func _process(delta: float) -> void:
 			_set_hazard_state(true)
 
 
-## Registers entering bodies into the active targets list.
+## Registers entering bodies into active targets list.
 func _on_body_entered(body: Node3D) -> void:
 	if not _targets_in_smoke.has(body):
 		_targets_in_smoke.append(body)
@@ -202,19 +199,19 @@ func _on_body_entered(body: Node3D) -> void:
 		if is_instance_valid(health):
 			_health_cache[body] = health
 
-		if body.is_in_group(&"player") or body is Player:
+		if body.is_in_group(&"player"):
 			_is_player_inside = true
 			if _is_active:
 				Events.steam_hazard_toggled.emit(true)
 
 
-## Unregisters exiting bodies from the active targets list.
+## Unregisters exiting bodies from active targets list.
 func _on_body_exited(body: Node3D) -> void:
 	_targets_in_smoke.erase(body)
 	_health_cache.erase(body)
 	print("SmokeHazard: Target exited smoke -> ", body.name)
 
-	if body.is_in_group(&"player") or body is Player:
+	if body.is_in_group(&"player"):
 		_is_player_inside = false
 		Events.steam_hazard_toggled.emit(false)
 
@@ -240,8 +237,6 @@ func _apply_tick_damage() -> void:
 			print("SmokeHazard: Damaging HealthComponent on ", target.name)
 			damage_ticked.emit(target, damage_per_tick)
 			health.take_damage(int(roundf(damage_per_tick)))
-		else:
-			print("SmokeHazard: No HealthComponent found on target -> ", target.name)
 
 
 ## Validates clear line of sight avoiding floor clipping against Layer 1.
@@ -250,14 +245,13 @@ func _has_line_of_sight(target: Node3D) -> bool:
 	var start_pos: Vector3 = global_position + hazard_offset + Vector3(0.0, 0.5, 0.0)
 	var end_pos: Vector3 = target.global_position + Vector3(0.0, 0.5, 0.0)
 
-	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-		start_pos, end_pos, 1
+	var result: Dictionary = NodeQuery.cast_ray(
+		space_state, start_pos, end_pos, CollisionLayers.MASK_ENVIRONMENT
 	)
-	var result: Dictionary = space_state.intersect_ray(query)
 	return result.is_empty()
 
 
-## Traverses node hierarchy to find [HealthComponent] on target or children.
+## Resolves [HealthComponent] on target via properties or [NodeQuery].
 func _find_health_component(target: Node) -> HealthComponent:
 	print("SmokeHazard: Resolving HealthComponent on -> ", target.name)
 	if not is_instance_valid(target):
@@ -266,29 +260,18 @@ func _find_health_component(target: Node) -> HealthComponent:
 	if target is HealthComponent:
 		return target as HealthComponent
 
-	if target.has_node("HealthComponent"):
-		var direct_comp: Node = target.get_node("HealthComponent")
-		if direct_comp is HealthComponent:
-			return direct_comp as HealthComponent
+	if "health_component" in target:
+		var comp: Variant = target.get("health_component")
+		if comp is HealthComponent:
+			return comp as HealthComponent
 
-	if target.has_node("Components/HealthComponent"):
-		var nested_comp: Node = target.get_node("Components/HealthComponent")
-		if nested_comp is HealthComponent:
-			return nested_comp as HealthComponent
-
-	var found_child: Node = target.find_child("HealthComponent", true, false)
+	var found_child: Node = NodeQuery.find_first_child_of_type(target, HealthComponent)
 	if found_child is HealthComponent:
 		return found_child as HealthComponent
 
-	var curr_parent: Node = target.get_parent()
-	while curr_parent != null:
-		if curr_parent is HealthComponent:
-			return curr_parent as HealthComponent
-		if curr_parent.has_node("HealthComponent"):
-			var p_comp: Node = curr_parent.get_node("HealthComponent")
-			if p_comp is HealthComponent:
-				return p_comp as HealthComponent
-		curr_parent = curr_parent.get_parent()
+	var ancestor: Node = NodeQuery.find_ancestor_of_type(target, HealthComponent)
+	if ancestor is HealthComponent:
+		return ancestor as HealthComponent
 
 	return null
 
@@ -376,7 +359,7 @@ func _update_cloud_bounds() -> void:
 		mat.emission_sphere_radius = cloud_radius * 0.35
 
 
-## Updates shader uniform color parameter on the draw pass quad material.
+## Updates shader uniform color parameter on draw pass quad material.
 func _update_particle_visuals() -> void:
 	if not is_inside_tree():
 		return
@@ -391,7 +374,7 @@ func _update_particle_visuals() -> void:
 			mat.set_shader_parameter("smoke_color", smoke_color)
 
 
-## Updates the lifetime value on the particle node.
+## Updates lifetime value on particle node.
 func _update_particle_lifetime() -> void:
 	if not is_inside_tree():
 		return
@@ -436,9 +419,9 @@ func _update_particle_scale() -> void:
 		mat.scale_max = scale_max
 
 
-## Offsets the collision shape upward so its bottom aligns with the origin.
+## Offsets collision shape upward so bottom aligns with origin.
 func _align_collision_to_base(col_shape: CollisionShape3D) -> void:
-	print("SmokeHazard: Aligning collision base on ", name)
+	print("SmokeHazard: Aligning collision base on: ", name)
 	if not is_instance_valid(col_shape) or not col_shape.shape is BoxShape3D:
 		return
 

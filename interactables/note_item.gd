@@ -1,96 +1,132 @@
 @tool
-## An environmental world item that displays a custom 2D texture and passes text to the UI.
-##
-## Automatically calculates texture aspect ratios to size its 3D geometry without stretching.
-## Binds to the player's internal `NoteReader` node when interacted with.
+## World note prop displaying 2D textures and transmitting text to [NoteReader].
 class_name NoteItem
 extends StaticBody3D
 
-## Stores the text content displayed when the player reads the note.
+## Stores text content emitted when the player reads the note.
 @export_multiline var note_text: String = ""
 
-## Sets the image texture and instantly updates the mesh in the editor.
+## Texture resource rendered on the note mesh in world space.
 @export var note_texture: Texture2D:
 	set(value):
 		note_texture = value
 		if is_inside_tree() and Engine.is_editor_hint():
 			_update_appearance()
 
-## Max size in meters for the longest side of the note (0.3 = 30cm).
+## Maximum dimensional size in meters for the note's longest side.
 @export var max_size_meters: float = 0.3:
 	set(value):
 		max_size_meters = value
 		if is_inside_tree() and Engine.is_editor_hint():
 			_update_appearance()
 
+## Cached mesh instance child displaying the note material.
+var _mesh_node: MeshInstance3D = null
 
-## Initializes structural dimensions and generates materials dynamically upon entering the tree.
+## Cached collision shape child defining the interactive boundary.
+var _collision_shape: CollisionShape3D = null
+
+
+## Configures interaction collision layers and material overrides on ready.
 func _ready() -> void:
-	if not Engine.is_editor_hint():
-		print("NoteItem: Spawned in world.")
+	collision_layer = CollisionLayers.MASK_INTERACTIVE
+	collision_mask = CollisionLayers.MASK_NONE
+	_mesh_node = get_node_or_null("MeshInstance3D") as MeshInstance3D
+	_collision_shape = get_node_or_null("CollisionShape3D") as CollisionShape3D
 
+	if not Engine.is_editor_hint():
+		print("NoteItem: Spawned note prop in world: ", name)
 	_update_appearance()
 
 
-## Computes the assigned texture's aspect ratio to safely resize and texture the mesh block.
+## Returns the HUD prompt text queried by [InteractionManager].
+func get_interaction_prompt() -> String:
+	return "Read Note"
+
+
+## Toggles visual focus highlight outlines when targeted by player reticle.
+func set_highlight(enabled: bool) -> void:
+	print("NoteItem: Setting highlight outline to: ", enabled)
+
+
+## Primary interaction entrypoint called by [InteractionManager].
+func interact(interactor: Node3D) -> void:
+	print("NoteItem: interact() invoked by: ", interactor.name)
+	var reader: NoteReader = _resolve_note_reader(interactor)
+	if is_instance_valid(reader):
+		print("NoteItem: Dispatching note to NoteReader.")
+		var player_char: CharacterBody3D = interactor as CharacterBody3D
+		if player_char == null:
+			player_char = (
+				NodeQuery.find_ancestor_of_type(interactor, CharacterBody3D) as CharacterBody3D
+			)
+		reader.open_note(self, note_text, player_char)
+		if is_instance_valid(_collision_shape):
+			_collision_shape.disabled = true
+	else:
+		push_warning("NoteItem: Unable to resolve NoteReader on interactor!")
+
+
+## Backward-compatible legacy wrapper delegating directly to [method interact].
+func interact_with(character: CharacterBody3D) -> void:
+	print("NoteItem: interact_with() called. Delegating to interact().")
+	interact(character)
+
+
+## Resizes the quad geometry to match the assigned texture aspect ratio.
 func _update_appearance() -> void:
 	if not is_inside_tree():
 		return
 
-	var mesh_node: MeshInstance3D = get_node_or_null("MeshInstance3D") as MeshInstance3D
-	if not is_instance_valid(mesh_node) or mesh_node.mesh == null:
+	if not is_instance_valid(_mesh_node):
+		_mesh_node = get_node_or_null("MeshInstance3D") as MeshInstance3D
+	if not is_instance_valid(_mesh_node) or _mesh_node.mesh == null:
 		return
 
-	if note_texture:
-		# 1. Calculate Aspect Ratio
+	if note_texture != null:
 		var tex_w: float = float(note_texture.get_width())
 		var tex_h: float = float(note_texture.get_height())
-		var aspect: float = tex_w / tex_h
+		var aspect: float = tex_w / maxf(tex_h, 1.0)
 
-		# Ensure unique mesh so resizing one note doesn't resize all of them
-		if not mesh_node.mesh.resource_local_to_scene:
-			mesh_node.mesh = mesh_node.mesh.duplicate()
+		if Engine.is_editor_hint() and not _mesh_node.mesh.resource_local_to_scene:
+			_mesh_node.mesh = _mesh_node.mesh.duplicate()
 
-		# 2. Auto-adjust size without stretching
-		if mesh_node.mesh is PlaneMesh:
-			var plane: PlaneMesh = mesh_node.mesh as PlaneMesh
+		if _mesh_node.mesh is PlaneMesh:
+			var plane: PlaneMesh = _mesh_node.mesh as PlaneMesh
 			if aspect > 1.0:
 				plane.size = Vector2(max_size_meters, max_size_meters / aspect)
 			else:
 				plane.size = Vector2(max_size_meters * aspect, max_size_meters)
-		elif mesh_node.mesh is BoxMesh:
-			var box: BoxMesh = mesh_node.mesh as BoxMesh
+		elif _mesh_node.mesh is BoxMesh:
+			var box: BoxMesh = _mesh_node.mesh as BoxMesh
 			if aspect > 1.0:
 				box.size = Vector3(max_size_meters, 0.005, max_size_meters / aspect)
 			else:
 				box.size = Vector3(max_size_meters * aspect, 0.005, max_size_meters)
 
-		# 3. Apply texture and make double-sided
-		var new_mat: StandardMaterial3D = StandardMaterial3D.new()
-		new_mat.albedo_texture = note_texture
-		new_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		new_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+		var mat: StandardMaterial3D = (
+			_mesh_node.get_surface_override_material(0) as StandardMaterial3D
+		)
+		if mat == null:
+			mat = StandardMaterial3D.new()
+			mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+			mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+			mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
+			_mesh_node.set_surface_override_material(0, mat)
+		mat.albedo_texture = note_texture
 
-		# Anisotropic filtering keeps environmental notes sharp when viewed at steep angles
-		new_mat.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 
-		mesh_node.set_surface_override_material(0, new_mat)
-
-
-## Locates the `NoteReader` node on the interactor and initiates the reading sequence.
-## [param character]: The player character node.
-func interact_with(character: CharacterBody3D) -> void:
-	print("NoteItem: Player triggered interact_with().")
-
-	# Dynamically locate the NoteReader on the player
-	var reader: Node = character.find_child("NoteReader", true, false)
-
-	if is_instance_valid(reader) and reader.has_method("open_note"):
-		print("NoteItem: NoteReader found. Sending data to UI and reading note.")
-		reader.call("open_note", self, note_text, character)
-
-		var col: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
-		if is_instance_valid(col):
-			col.disabled = true
-	else:
-		print("NoteItem ERROR: Could not find NoteReader on the character! Check Player tree.")
+## Resolves active [NoteReader] component using [NodeQuery].
+func _resolve_note_reader(interactor: Node) -> NoteReader:
+	if not is_instance_valid(interactor):
+		return null
+	var reader: Node = NodeQuery.find_first_child_of_type(interactor, NoteReader)
+	if is_instance_valid(reader):
+		return reader as NoteReader
+	reader = NodeQuery.find_ancestor_of_type(interactor, NoteReader)
+	if is_instance_valid(reader):
+		return reader as NoteReader
+	var scene_reader: Node = NodeQuery.get_single_node_in_group(get_tree(), &"note_reader")
+	if scene_reader is NoteReader:
+		return scene_reader as NoteReader
+	return null

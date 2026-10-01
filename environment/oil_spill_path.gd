@@ -1,40 +1,40 @@
 @tool
-## Generates a smooth, ignitable oil puddle path spawning [VolumetricFire].
+## Generates an ignitable oil puddle ribbon spawning [VolumetricFire].
 class_name OilSpillPath
 extends Path3D
 
-## Emitted when [method ignite] is triggered, passing world hit coordinates.
+## Emitted when [method ignite] triggers, passing hit position.
 signal ignited(hit_position: Vector3)
 
-## Emitted when combustion finishes along the entire curve length.
+## Emitted when combustion completes across the entire curve.
 signal combustion_completed
 
-## Physics collision layer bitmask for Interactive objects (Layer 3).
-const INTERACTIVE_PHYSICS_LAYER: int = 4
+## Physics collision layer bitmask for Interactive objects from [CollisionLayers].
+const INTERACTIVE_PHYSICS_LAYER: int = CollisionLayers.MASK_INTERACTIVE
 
 @export_category("Spill Dimensions")
-## Lateral width of the generated oil puddle ribbon in meters.
+## Lateral ribbon width of generated oil puddle in meters.
 @export_range(0.2, 5.0, 0.1) var spill_width: float = 1.4:
 	set(value):
 		spill_width = value
 		if is_inside_tree():
 			generate_spill()
 
-## Sampling step distance in meters along [Curve3D] for geometry.
+## Curve sampling step distance in meters for ribbon geometry.
 @export_range(0.05, 1.0, 0.05) var step_distance: float = 0.15:
 	set(value):
 		step_distance = value
 		if is_inside_tree():
 			generate_spill()
 
-## Height offset in meters above terrain to eliminate visual z-fighting.
+## Vertical surface offset in meters above terrain geometry.
 @export_range(0.001, 0.05, 0.002) var surface_offset_y: float = 0.02:
 	set(value):
 		surface_offset_y = value
 		if is_inside_tree():
 			generate_spill()
 
-## Automatically computes smooth Bezier handles for curve control points.
+## Automatically calculates smooth Bezier control handles.
 @export var auto_smooth_curve: bool = true:
 	set(value):
 		auto_smooth_curve = value
@@ -42,72 +42,94 @@ const INTERACTIVE_PHYSICS_LAYER: int = 4
 			generate_spill()
 
 @export_category("Ignition & Fire Propagation")
-## Preloaded [VolumetricFire] scene instantiated along burning segments.
+## Preloaded [VolumetricFire] scene spawned along burning path.
 @export var volumetric_fire_scene: PackedScene
-## Distance interval in meters between consecutive spawned fire instances.
+
+## Distance interval in meters between consecutive fire hazards.
 @export_range(0.5, 4.0, 0.1) var fire_spacing: float = 1.2
-## Height scale multiplier applied to spawned [VolumetricFire] instances.
+
+## Height scale multiplier applied to spawned fire instances.
 @export_range(0.5, 3.0, 0.1) var fire_height_multiplier: float = 1.0
-## Linear propagation speed of combustion along the curve in meters/sec.
+
+## Propagation speed of fire combustion along path in m/s.
 @export var flame_spread_speed: float = 4.0
-## Active burning state flag governing fire spread in [method _process].
+
+## Active burning state flag governing fire spread in process.
 @export var is_burning: bool = false
 
-## Current outward combustion spread radius in meters from ignition point.
+## Current combustion spread radius in meters from ignition point.
 var _burn_radius_meters: float = 0.0
-## Normalized 0.0 to 1.0 curve position where initial ignition occurred.
+
+## Normalized curve position where initial ignition occurred.
 var _ignite_center_uv: float = 0.5
-## Arc length in meters along curve where initial ignition occurred.
+
+## Curve distance in meters where initial ignition occurred.
 var _ignite_center_dist: float = 0.0
-## Total arc length in meters of the underlying [Curve3D].
+
+## Total baked arc length in meters of underlying [Curve3D].
 var _curve_length: float = 1.0
-## Guard flag preventing recursive [signal Curve3D.changed] callbacks.
+
+## Guard flag preventing recursive curve regeneration.
 var _is_updating_curve: bool = false
-## Precomputed arc length positions for spawning fire instances.
+
+## Precomputed curve distances for spawning fire hazard stations.
 var _fire_station_distances: PackedFloat32Array = PackedFloat32Array()
-## Tracking flags marking which fire stations have already spawned.
+
+## Tracking flags marking which fire stations have spawned fire.
 var _fire_station_spawned: Array[bool] = []
-## List of currently active spawned [VolumetricFire] instances.
+
+## Active spawned [VolumetricFire] hazard instances.
 var _spawned_fires: Array[Node3D] = []
 
-## Reference to child [MeshInstance3D] displaying the oil puddle ribbon.
-@onready var mesh_instance: MeshInstance3D = $MeshInstance3D as MeshInstance3D
-## Child [StaticBody3D] registering raycast hits on Layer 3.
-@onready var static_body: StaticBody3D = $StaticBody3D as StaticBody3D
-## Child [CollisionShape3D] holding the generated concave polygon shape.
-@onready var collision_shape: CollisionShape3D = $StaticBody3D/CollisionShape3D as CollisionShape3D
+## Pre-cached child [MeshInstance3D] displaying ribbon mesh.
+var _cached_mesh_instance: MeshInstance3D = null
+
+## Pre-cached child [StaticBody3D] registering raycast hits.
+var _cached_static_body: StaticBody3D = null
+
+## Pre-cached child [CollisionShape3D] holding trimesh shape.
+var _cached_collision_shape: CollisionShape3D = null
 
 
-## Resolves and returns child [MeshInstance3D] safely across editor reloads.
+## Resolves and returns child [MeshInstance3D] safely.
 func _get_mesh_node() -> MeshInstance3D:
-	if not is_instance_valid(mesh_instance):
-		mesh_instance = get_node_or_null("MeshInstance3D") as MeshInstance3D
-	return mesh_instance
+	if not is_instance_valid(_cached_mesh_instance):
+		_cached_mesh_instance = get_node_or_null("MeshInstance3D") as MeshInstance3D
+	return _cached_mesh_instance
 
 
-## Resolves and returns child [StaticBody3D] safely across editor reloads.
+## Resolves and returns child [StaticBody3D] safely.
 func _get_body_node() -> StaticBody3D:
-	if not is_instance_valid(static_body):
-		static_body = get_node_or_null("StaticBody3D") as StaticBody3D
-	return static_body
+	if not is_instance_valid(_cached_static_body):
+		_cached_static_body = get_node_or_null("StaticBody3D") as StaticBody3D
+	return _cached_static_body
 
 
-## Resolves and returns child [CollisionShape3D] safely across reloads.
+## Resolves and returns child [CollisionShape3D] safely.
 func _get_shape_node() -> CollisionShape3D:
-	if not is_instance_valid(collision_shape):
-		collision_shape = get_node_or_null("StaticBody3D/CollisionShape3D") as CollisionShape3D
-	return collision_shape
+	if not is_instance_valid(_cached_collision_shape):
+		_cached_collision_shape = (
+			get_node_or_null("StaticBody3D/CollisionShape3D") as CollisionShape3D
+		)
+	return _cached_collision_shape
 
 
-## Binds curve listeners and creates a unique shader material instance.
+## Initializes curve listeners, material, and geometry via [MaterialCache].
 func _ready() -> void:
 	print("OilSpillPath: Initializing oil spill instance.")
 	_ensure_curve_listener()
 
 	var mesh_node: MeshInstance3D = _get_mesh_node()
-	if is_instance_valid(mesh_node) and mesh_node.material_override:
-		mesh_node.material_override = mesh_node.material_override.duplicate()
-		mesh_node.material_override.render_priority = 1
+	if is_instance_valid(mesh_node) and mesh_node.material_override != null:
+		var base_mat: Material = mesh_node.material_override
+		var mat_key: StringName = StringName("oil_spill_mat_" + str(get_instance_id()))
+		mesh_node.material_override = MaterialCache.get_variant(
+			mat_key,
+			func() -> Material:
+				var m: Material = base_mat.duplicate()
+				m.render_priority = 1
+				return m
+		)
 
 	if not Engine.is_editor_hint():
 		is_burning = false
@@ -116,14 +138,15 @@ func _ready() -> void:
 	generate_spill()
 
 
-## Connects [signal Curve3D.changed] if not already subscribed.
+## Subscribes to curve change notifications safely.
 func _ensure_curve_listener() -> void:
+	print("OilSpillPath: _ensure_curve_listener() binding curve changes.")
 	if is_instance_valid(curve):
 		if not curve.changed.is_connected(_on_curve_changed):
 			curve.changed.connect(_on_curve_changed)
 
 
-## Auto-calculates smooth cubic Bezier handles for linear curve points.
+## Calculates smooth Bezier handles for control points.
 func _smooth_curve_points() -> void:
 	print("OilSpillPath: Auto-smoothing curve control points.")
 	if not is_instance_valid(curve) or curve.point_count < 2:
@@ -143,7 +166,7 @@ func _smooth_curve_points() -> void:
 		curve.set_point_out(i, tangent)
 
 
-## Advances combustion spread radius and spawns fire along the curve.
+## Updates fire propagation radius and spawns hazards.
 func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		if is_instance_valid(curve):
@@ -173,7 +196,7 @@ func _process(delta: float) -> void:
 	if is_instance_valid(mesh_node) and mesh_node.material_override:
 		var mat: ShaderMaterial = mesh_node.material_override as ShaderMaterial
 		if is_instance_valid(mat):
-			mat.set_shader_parameter("burn_radius", normalized_radius)
+			mat.set_shader_parameter(&"burn_radius", normalized_radius)
 
 	if normalized_radius >= 1.5:
 		print("OilSpillPath: Combustion complete across path.")
@@ -181,7 +204,7 @@ func _process(delta: float) -> void:
 		combustion_completed.emit()
 
 
-## Samples the [Curve3D], rebuilds ribbon mesh, and updates physics.
+## Builds ribbon geometry and updates collision trimesh.
 func generate_spill() -> void:
 	if _is_updating_curve:
 		return
@@ -219,8 +242,9 @@ func generate_spill() -> void:
 	_is_updating_curve = false
 
 
-## Precomputes arc length stations for spawning fire instances safely.
+## Precomputes spacing intervals for spawning fire hazard.
 func _rebuild_fire_stations() -> void:
+	print("OilSpillPath: _rebuild_fire_stations() precomputing hazard positions.")
 	_fire_station_distances.clear()
 	_fire_station_spawned.clear()
 
@@ -236,7 +260,7 @@ func _rebuild_fire_stations() -> void:
 		_fire_station_spawned.append(false)
 
 
-## Constructs a smooth UV-mapped quad ribbon [ArrayMesh] along points.
+## Generates UV-mapped ribbon [ArrayMesh] along points.
 func _build_ribbon_mesh(points: PackedVector3Array) -> ArrayMesh:
 	print("OilSpillPath: Building ribbon mesh arrays.")
 	var vertices: PackedVector3Array = PackedVector3Array()
@@ -303,7 +327,7 @@ func _build_ribbon_mesh(points: PackedVector3Array) -> ArrayMesh:
 	return mesh
 
 
-## Generates a concave polygon collision shape from ribbon geometry.
+## Generates concave trimesh shape for interactive body.
 func _update_collision_shape(mesh: ArrayMesh) -> void:
 	print("OilSpillPath: Updating StaticBody3D collision shape.")
 	var body_node: StaticBody3D = _get_body_node()
@@ -313,13 +337,13 @@ func _update_collision_shape(mesh: ArrayMesh) -> void:
 		return
 
 	body_node.collision_layer = INTERACTIVE_PHYSICS_LAYER
-	body_node.collision_mask = 0
+	body_node.collision_mask = CollisionLayers.MASK_NONE
 
 	var shape: ConcavePolygonShape3D = mesh.create_trimesh_shape()
 	shape_node.shape = shape
 
 
-## Spawns a [VolumetricFire] instance at the specified curve distance.
+## Spawns [VolumetricFire] hazard at specified distance.
 func _spawn_fire_at_distance(dist: float) -> void:
 	print("OilSpillPath: Spawning fire along path at distance: ", dist)
 	if not is_instance_valid(volumetric_fire_scene):
@@ -334,19 +358,17 @@ func _spawn_fire_at_distance(dist: float) -> void:
 
 	add_child(fire)
 	fire.position = local_pos
-	# Do NOT overwrite fire.fire_width or fire.fire_height here
-	# so it retains its authored dimensions from fire.tscn.
 	fire.ignite()
 	_spawned_fires.append(fire)
 
 
-## Weapon damage entrypoint triggering [method ignite] on projectile hit.
+## Damage reception entrypoint triggering fire ignition.
 func take_damage(_damage: int, hit_pos: Vector3, _shot_dir: Vector3) -> void:
 	print("OilSpillPath: Hit received at ", hit_pos, " -> igniting.")
 	ignite(hit_pos)
 
 
-## Starts combustion at closest curve point to the hit coordinates.
+## Initiates oil combustion at closest curve coordinate.
 func ignite(hit_pos: Vector3 = Vector3.ZERO) -> void:
 	print("OilSpillPath: ignite() triggered at position: ", hit_pos)
 	if is_burning:
@@ -365,13 +387,13 @@ func ignite(hit_pos: Vector3 = Vector3.ZERO) -> void:
 	if is_instance_valid(mesh_node) and mesh_node.material_override:
 		var mat: ShaderMaterial = mesh_node.material_override as ShaderMaterial
 		if is_instance_valid(mat):
-			mat.set_shader_parameter("ignite_center", _ignite_center_uv)
-			mat.set_shader_parameter("burn_radius", 0.0)
+			mat.set_shader_parameter(&"ignite_center", _ignite_center_uv)
+			mat.set_shader_parameter(&"burn_radius", 0.0)
 
 	ignited.emit(hit_pos)
 
 
-## Halts combustion and extinguishes all active fire instances.
+## Halts combustion and cleans up spawned fire hazards.
 func extinguish() -> void:
 	print("OilSpillPath: extinguish() called.")
 	is_burning = false
@@ -390,10 +412,10 @@ func extinguish() -> void:
 	if is_instance_valid(mesh_node) and mesh_node.material_override:
 		var mat: ShaderMaterial = mesh_node.material_override as ShaderMaterial
 		if is_instance_valid(mat):
-			mat.set_shader_parameter("burn_radius", 0.0)
+			mat.set_shader_parameter(&"burn_radius", 0.0)
 
 
-## Editor callback rebuilding geometry when [Curve3D] alters.
+## Handles curve changes in editor to rebuild geometry.
 func _on_curve_changed() -> void:
 	if _is_updating_curve:
 		return

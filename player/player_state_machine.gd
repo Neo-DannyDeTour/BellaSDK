@@ -1,76 +1,43 @@
-## Manages the active state and transitions for the player character.
+## Player locomotion state machine extending [StateMachine] with player injection.
 class_name PlayerStateMachine
-extends Node
+extends StateMachine
 
-## Emitted when the state machine transitions to the given state.
-##
-## [param state_name] The name of the new state.
+## Emitted when state transitions to new state, passing state name string.
 signal transitioned(state_name: String)
 
-@export_category("State Machine Configuration")
+## Cached reference to controlling [CharacterBody3D] player instance.
+var player: CharacterBody3D = null
 
-## Inspector path pointing to the initial [PlayerState] node.
-@export var initial_state: NodePath
-
-## The currently active player state handling engine ticks.
-@onready var state: PlayerState = get_node(initial_state) as PlayerState
-
-## Cache for O(1) state transitions mapping state names to nodes.
-var _states: Dictionary = {}
+## Backward-compatible accessor property exposing [member current_state].
+var state: State:
+	get:
+		return current_state
+	set(value):
+		current_state = value
 
 
-## Lifecycle method injecting dependencies into child state nodes.
+## Injects player dependencies into child states and enters initial state.
 func _ready() -> void:
-	print("PlayerStateMachine: _ready() called. Awaiting owner readiness.")
-	await owner.ready
+	print("PlayerStateMachine: Initializing player state machine on: ", name)
+	if owner != null:
+		await owner.ready
+		player = owner as CharacterBody3D
 
-	print("PlayerStateMachine: Owner ready. Injecting dependencies.")
 	for child: Node in get_children():
-		if child is PlayerState:
-			child.state_machine = self
-			child.player = owner as CharacterBody3D
-			_states[child.name] = child
+		if &"player" in child:
+			child.set(&"player", player)
 
-	print("PlayerStateMachine: Booting initial state: ", state.name)
-	state.enter({})
+	state_changed.connect(_on_state_machine_state_changed)
+	super._ready()
 
 
-## Routes unhandled input events to the active state.
-##
-## [param event] The [InputEvent] to be handled.
-func _unhandled_input(event: InputEvent) -> void:
-	state.handle_input(event)
+## Transitions to a new state passing an optional payload dictionary.
+func transition_to(target_state_name: StringName, msg: Dictionary = {}) -> void:
+	print("PlayerStateMachine: Transitioning to: ", target_state_name)
+	change_state(target_state_name, msg)
 
 
-## Routes process ticks to the active state.
-##
-## [param delta] The process frame delta time.
-func _process(delta: float) -> void:
-	state.update(delta)
-
-
-## Routes physics process ticks to the active state.
-##
-## [param delta] The physics frame delta time.
-func _physics_process(delta: float) -> void:
-	state.physics_update(delta)
-
-
-## Transitions to a new state passing optional data.
-##
-## [param target_state_name] The string name of the target [PlayerState] node.
-## [param msg] Optional dictionary payload for state initialization.
-func transition_to(target_state_name: String, msg: Dictionary = {}) -> void:
-	print("PlayerStateMachine: transition_to() to: ", target_state_name)
-
-	if not _states.has(target_state_name):
-		push_warning(
-			"StateMachine: Cannot transition to state '%s' (Node not found)." % target_state_name
-		)
-		return
-
-	state.exit()
-	state = _states[target_state_name] as PlayerState
-	state.enter(msg)
-
-	transitioned.emit(state.name)
+## Relays base [signal StateMachine.state_changed] to legacy [signal transitioned].
+func _on_state_machine_state_changed(_old_state: State, new_state: State) -> void:
+	print("PlayerStateMachine: State transitioned to: ", new_state.name)
+	transitioned.emit(String(new_state.name))
