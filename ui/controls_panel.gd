@@ -1,8 +1,8 @@
-## Manages player key remapping UI, multi-slot bindings, categories, and behavior settings.
+## Manages key remapping, mouse look sensitivity, aim assist, and behavior modes.
 class_name ControlsPanel
 extends Panel
 
-## Structure mapping categories to exact ProjectSettings InputMap action names.
+## Structure mapping categories to project input actions.
 const ACTION_CATEGORIES: Dictionary = {
 	"Movement": ["forward", "backward", "left", "right", "jump", "crouch", "sprint"],
 	"Interactions & Combat":
@@ -27,110 +27,130 @@ const ACTION_CATEGORIES: Dictionary = {
 	"Developer Stuff": ["noclip", "console", "debug_menu"]
 }
 
-## Base directory path where Kenney input prompt icons are stored.
+## Directory path for Kenney prompt icons.
 const ICON_BASE_PATH: String = "res://assets/kenney_input-prompts_1.5/Keyboard & Mouse/Default/"
 
-## List of actions that are inherently hold-activated by design.
+## Actions requiring continuous key holding.
 const HOLD_ACTIONS: Array[String] = ["ttsandy", "describe_surroundings"]
 
-## Duration in seconds a button must be held down to be registered as a Hold binding.
+## Minimum hold threshold duration in seconds.
 const HOLD_TIME_THRESHOLD: float = 0.45
 
-## Maximum time gap in seconds between consecutive presses to register multi-tap gestures.
+## Time gap allowed between consecutive taps.
 const MULTI_TAP_TIME_WINDOW: float = 0.30
 
-## Number of rapid taps required within the multi-tap window to register a mash gesture.
+## Tap count required to register mashing.
 const MASH_THRESHOLD_COUNT: int = 3
 
-## Time gap in seconds allowed between chord member key presses.
+## Time window allowed to complete a chord.
 const CHORD_COMPLETION_WINDOW: float = 0.25
 
-## Display size for input prompt icon textures inside remapping buttons.
+## Display size for prompt textures inside buttons.
 @export var prompt_icon_size: Vector2 = Vector2(36.0, 36.0)
 
-## Indicates if the player is currently pressing keys to remap an action.
-var is_remapping: bool = false
+## Slider for mouse look sensitivity.
+@onready var mouse_sens_slider: HSlider = %MouseSensitivitySlider
 
-## The specific input action string currently being remapped.
-var action_to_remap: String = ""
+## LineEdit input for mouse sensitivity.
+@onready var mouse_sens_input: LineEdit = %MouseSensitivityLine
 
-## The target event index being remapped (0 for Primary, 1 for Secondary).
-var target_slot_index: int = 0
+## CheckButton for vertical axis inversion.
+@onready var invert_y_toggle: CheckButton = %InvertYToggle
 
-## Reference to the UI button currently waiting for player input.
-var remapping_button: Button = null
+## CheckButton for enabling aim assist.
+@onready var aim_assist_toggle: CheckButton = %AimAssistToggle
 
-## The candidate input event currently being evaluated for gestures.
-var _pending_event: InputEvent = null
+## Slider for adjusting aim assist strength.
+@onready var aim_assist_slider: HSlider = %AimAssistSlider
 
-## List of unique input events pressed simultaneously for chord binding detection.
-var _chord_events: Array[InputEvent] = []
+## LineEdit input for aim assist strength.
+@onready var aim_assist_input: LineEdit = %AimAssistLine
 
-## Tracks whether the candidate key or mouse button is currently held down.
-var _is_candidate_pressed: bool = false
+## Slider for controller vibration.
+@onready var vibration_slider: HSlider = %VibrationSlider
 
-## Countdown timer tracking hold duration.
-var _hold_timer: float = 0.0
+## LineEdit input for vibration strength.
+@onready var vibration_input: LineEdit = %VibrationLine
 
-## Countdown timer tracking multi-tap detection window.
-var _multi_tap_timer: float = 0.0
-
-## Countdown timer allowing multiple simultaneous keys to register as a chord.
-var _chord_timer: float = 0.0
-
-## Tracks how many times the candidate button was tapped within the detection window.
-var _press_count: int = 0
-
-## Cache mapping resolved file paths to preloaded textures to prevent redundant disk I/O.
-var _icon_cache: Dictionary = {}
-
-## Container holding the categorized action list.
+## Container holding categorized action rows.
 @onready var action_list_container: VBoxContainer = %ActionListContainer
 
-## GridContainer displaying column headers (Action, Primary, Secondary, Reset).
+## GridContainer displaying table headers.
 @onready var header_grid: GridContainer = %HeaderGrid
 
-## Reference to the [Label] indicating the crouch behavior setting.
+## Label displaying crouch setting text.
 @onready var crouch_mode_label: Label = %CrouchModeLabel
 
-## Reference to the [OptionButton] dropdown for crouch input behavior mode.
+## OptionButton for crouch toggle mode.
 @onready var crouch_mode_option: OptionButton = %CrouchModeOption
 
-## Reference to the [Label] indicating the sprint behavior setting.
+## Label displaying sprint setting text.
 @onready var sprint_mode_label: Label = %SprintModeLabel
 
-## Option dropdown for Sprint input behavior mode.
+## OptionButton for sprint toggle mode.
 @onready var sprint_mode_option: OptionButton = %SprintModeOption
 
-## Reference to the [Label] indicating the valve turning behavior setting.
+## Label displaying valve setting text.
 @onready var valve_mode_label: Label = %ValveModeLabel
 
-## Option dropdown for Valve turning behavior mode.
+## OptionButton for valve turn mode.
 @onready var valve_mode_option: OptionButton = %ValveModeOption
 
+## Indicates active remapping state.
+var is_remapping: bool = false
 
-## Lifecycle method called when the node enters the scene tree.
-## Builds the complete remapping interface and registers behavior toggles.
+## Action key currently being remapped.
+var action_to_remap: String = ""
+
+## Active slot being edited (0 or 1).
+var target_slot_index: int = 0
+
+## Reference to active remapping button.
+var remapping_button: Button = null
+
+## Pending candidate event being tested.
+var _pending_event: InputEvent = null
+
+## List of chord input events.
+var _chord_events: Array[InputEvent] = []
+
+## Flag indicating candidate key press.
+var _is_candidate_pressed: bool = false
+
+## Hold detection timer accumulator.
+var _hold_timer: float = 0.0
+
+## Multi-tap detection timer accumulator.
+var _multi_tap_timer: float = 0.0
+
+## Chord completion timer accumulator.
+var _chord_timer: float = 0.0
+
+## Count of recorded sequential presses.
+var _press_count: int = 0
+
+## Cache mapping paths to loaded textures.
+var _icon_cache: Dictionary = {}
+
+
+## Configures UI listeners and builds the action rebind list in [method _ready].
 func _ready() -> void:
 	print("UI: Controls Panel initialized.")
-
 	if is_instance_valid(crouch_mode_option):
 		crouch_mode_option.focus_mode = Control.FOCUS_NONE
-
 	if is_instance_valid(sprint_mode_option):
 		sprint_mode_option.focus_mode = Control.FOCUS_NONE
-
 	if is_instance_valid(valve_mode_option):
 		valve_mode_option.focus_mode = Control.FOCUS_NONE
 
 	_format_header_grid()
 	_ensure_all_actions_registered()
 	_setup_behavior_controls()
+	_setup_mouse_aim_controls()
 	_create_control_list()
 
 
-## Frame lifecycle method monitoring gesture recognition timers while remapping.
-## [param delta] Elapsed time since the previous frame in seconds.
+## Monitors input gesture timers each frame while remapping is active.
 func _process(delta: float) -> void:
 	if not is_remapping or _pending_event == null:
 		return
@@ -146,10 +166,10 @@ func _process(delta: float) -> void:
 		_hold_timer += delta
 		if _hold_timer >= HOLD_TIME_THRESHOLD:
 			if _press_count >= 2:
-				print("System: Double-Tap & Hold gesture recognized.")
+				print("System: Double-Tap & Hold recognized.")
 				_pending_event.set_meta("gesture", "double_tap_hold")
 			else:
-				print("System: Hold gesture recognized.")
+				print("System: Hold recognized.")
 				_pending_event.set_meta("gesture", "hold")
 			_finalize_gesture_remap(_pending_event)
 	elif _multi_tap_timer > 0.0:
@@ -159,12 +179,158 @@ func _process(delta: float) -> void:
 				print("System: Mash gesture recognized.")
 				_pending_event.set_meta("gesture", "mash")
 			elif _press_count == 2:
-				print("System: Double-tap recognized on timeout.")
+				print("System: Double-tap recognized.")
 				_pending_event.set_meta("gesture", "double_tap")
 			else:
-				print("System: Single tap recognized on timeout.")
+				print("System: Single tap recognized.")
 				_pending_event.set_meta("gesture", "single_tap")
 			_finalize_gesture_remap(_pending_event)
+
+
+## Connects and synchronizes mouse and aim input widgets.
+func _setup_mouse_aim_controls() -> void:
+	print("UI: Configuring Mouse & Aim sliders.")
+	_connect_slider(
+		mouse_sens_slider,
+		mouse_sens_input,
+		"mouse_sensitivity",
+		0.05,
+		5.0,
+		"Controls",
+		_apply_mouse_sensitivity
+	)
+	_connect_slider(aim_assist_slider, aim_assist_input, "aim_assist_amount", 0.0, 1.0, "Gameplay")
+	_connect_slider(vibration_slider, vibration_input, "vibration_strength", 0.0, 2.0, "Gameplay")
+
+	if is_instance_valid(invert_y_toggle):
+		var inv: bool = bool(GlobalSettings.get_setting("Controls", "invert_y", false))
+		invert_y_toggle.set_pressed_no_signal(inv)
+		invert_y_toggle.toggled.connect(
+			func(toggled_on: bool) -> void:
+				print("Controls: Invert Y changed -> ", toggled_on)
+				GlobalSettings.save_setting("Controls", "invert_y", toggled_on)
+				_apply_invert_y(toggled_on)
+		)
+
+	if is_instance_valid(aim_assist_toggle):
+		var aim: bool = bool(GlobalSettings.get_setting("Gameplay", "aim_assist", true))
+		aim_assist_toggle.set_pressed_no_signal(aim)
+		aim_assist_toggle.toggled.connect(
+			func(toggled_on: bool) -> void:
+				print("Controls: Aim Assist changed -> ", toggled_on)
+				GlobalSettings.save_setting("Gameplay", "aim_assist", toggled_on)
+		)
+
+	_load_slider(mouse_sens_slider, mouse_sens_input, "mouse_sensitivity", 1.0, "Controls")
+	_load_slider(aim_assist_slider, aim_assist_input, "aim_assist_amount", 0.5, "Gameplay")
+	_load_slider(vibration_slider, vibration_input, "vibration_strength", 1.0, "Gameplay")
+	_apply_mouse_sensitivity(
+		mouse_sens_slider.value if is_instance_valid(mouse_sens_slider) else 1.0
+	)
+
+
+## Applies mouse sensitivity to the active player camera controller.
+func _apply_mouse_sensitivity(sens: float) -> void:
+	print("Engine: Applying Mouse Sensitivity: ", sens)
+	var player: Node = get_tree().get_first_node_in_group("player")
+	if (
+		is_instance_valid(player)
+		and "camera_controller" in player
+		and is_instance_valid(player.camera_controller)
+	):
+		if player.camera_controller.has_method("set_mouse_sensitivity"):
+			player.camera_controller.set_mouse_sensitivity(sens)
+		else:
+			player.camera_controller.mouse_sensitivity_base = sens
+			player.camera_controller.mouse_sensitivity = sens
+
+
+## Applies vertical look inversion to the player camera controller.
+func _apply_invert_y(inverted: bool) -> void:
+	print("Engine: Applying Invert Y: ", inverted)
+	var player: Node = get_tree().get_first_node_in_group("player")
+	if (
+		is_instance_valid(player)
+		and "camera_controller" in player
+		and is_instance_valid(player.camera_controller)
+	):
+		player.camera_controller.invert_y = inverted
+
+
+## Connects companion slider and LineEdit pairs with synchronized validation.
+func _connect_slider(
+	slider: HSlider,
+	input_box: LineEdit,
+	key: String,
+	min_val: float,
+	max_val: float,
+	section: String,
+	apply_cb: Callable = Callable()
+) -> void:
+	if is_instance_valid(slider):
+		slider.min_value = min_val
+		slider.max_value = max_val
+		slider.value_changed.connect(
+			func(val: float) -> void:
+				if is_instance_valid(input_box) and not input_box.has_focus():
+					input_box.text = "%.2f" % val
+				if apply_cb.is_valid():
+					apply_cb.call(val)
+		)
+		slider.drag_ended.connect(
+			func(changed: bool) -> void:
+				if changed:
+					print("Controls: Saved ", key, " -> ", slider.value)
+					GlobalSettings.save_setting(section, key, slider.value)
+		)
+
+	if is_instance_valid(input_box):
+		input_box.focus_entered.connect(
+			func() -> void:
+				input_box.set_meta("pre_focus_text", input_box.text)
+				input_box.text = ""
+		)
+		input_box.text_submitted.connect(
+			func(txt: String) -> void:
+				var trimmed: String = txt.strip_edges()
+				var fallback: String = str(input_box.get_meta("pre_focus_text", ""))
+				if trimmed.is_empty() or not trimmed.is_valid_float():
+					input_box.text = fallback
+				else:
+					var c_val: float = clampf(trimmed.to_float(), min_val, max_val)
+					input_box.text = "%.2f" % c_val
+					print("Controls: Manually entered ", key, " -> ", c_val)
+					GlobalSettings.save_setting(section, key, c_val)
+					if is_instance_valid(slider):
+						slider.value = c_val
+				input_box.release_focus()
+		)
+		input_box.focus_exited.connect(
+			func() -> void:
+				var trimmed: String = input_box.text.strip_edges()
+				var fallback: String = str(input_box.get_meta("pre_focus_text", ""))
+				if trimmed.is_empty() or not trimmed.is_valid_float():
+					input_box.text = fallback
+				else:
+					var c_val: float = clampf(trimmed.to_float(), min_val, max_val)
+					input_box.text = "%.2f" % c_val
+					if is_instance_valid(slider):
+						if not is_equal_approx(slider.value, c_val):
+							print("Controls: Saved ", key, " on defocus: ", c_val)
+							GlobalSettings.save_setting(section, key, c_val)
+							slider.value = c_val
+		)
+
+
+## Reads a float setting and synchronizes slider without firing change signals.
+func _load_slider(
+	slider: HSlider, input_box: LineEdit, key: String, default_val: float, section: String
+) -> void:
+	if is_instance_valid(slider):
+		var val: float = float(GlobalSettings.get_setting(section, key, default_val))
+		slider.set_value_no_signal(val)
+		if is_instance_valid(input_box):
+			input_box.text = "%.2f" % val
 
 
 ## Formats the 5-column header grid and creates missing reset headers.
@@ -172,7 +338,6 @@ func _format_header_grid() -> void:
 	print("UI: Formatting controls header grid.")
 	if not is_instance_valid(header_grid):
 		return
-
 	header_grid.columns = 5
 	header_grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
@@ -190,15 +355,6 @@ func _format_header_grid() -> void:
 	var primary_header: Label = header_grid.get_node_or_null("ColPrimary") as Label
 	var secondary_header: Label = header_grid.get_node_or_null("ColSecondary") as Label
 	var reset_secondary_header: Label = header_grid.get_node_or_null("ColClear") as Label
-
-	if action_header == null and labels.size() > 0:
-		action_header = labels[0] as Label
-	if primary_header == null and labels.size() > 1:
-		primary_header = labels[1] as Label
-	if secondary_header == null and labels.size() > 2:
-		secondary_header = labels[2] as Label
-	if reset_secondary_header == null and labels.size() > 3:
-		reset_secondary_header = labels[3] as Label
 
 	if is_instance_valid(action_header):
 		header_grid.move_child(action_header, 0)
@@ -218,7 +374,9 @@ func _format_header_grid() -> void:
 		reset_primary_header.custom_minimum_size = Vector2(40.0, 0.0)
 		reset_primary_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		if is_instance_valid(reset_secondary_header):
-			reset_primary_header.theme_type_variation = reset_secondary_header.theme_type_variation
+			reset_primary_header.theme_type_variation = (
+				reset_secondary_header.theme_type_variation
+			)
 			reset_primary_header.text = reset_secondary_header.text
 
 	if is_instance_valid(secondary_header):
@@ -234,39 +392,17 @@ func _format_header_grid() -> void:
 		reset_secondary_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
 
-## Ensures all defined actions exist inside [InputMap] to prevent lookup failures.
+## Ensures all defined actions exist in [InputMap].
 func _ensure_all_actions_registered() -> void:
-	print("ControlsPanel: Verifying all action mappings in InputMap.")
+	print("ControlsPanel: Verifying action mappings in InputMap.")
 	for category: String in ACTION_CATEGORIES.keys():
 		for action: String in ACTION_CATEGORIES[category]:
 			if not InputMap.has_action(action):
-				print("System: Registering missing InputMap action: ", action)
+				print("System: Registering missing action: ", action)
 				InputMap.add_action(action)
-				if action == "ttsandy":
-					var default_key: InputEventKey = InputEventKey.new()
-					default_key.physical_keycode = KEY_T
-					default_key.set_meta("gesture", "hold")
-					InputMap.action_add_event(action, default_key)
-				elif action == "reload":
-					var reload_key: InputEventKey = InputEventKey.new()
-					reload_key.keycode = KEY_R
-					reload_key.physical_keycode = KEY_R
-					InputMap.action_add_event(action, reload_key)
-				elif action.begins_with("weapon_slot_"):
-					var slot_num: int = action.trim_prefix("weapon_slot_").to_int()
-					var key_code_val: Key = (KEY_0 + slot_num) as Key
-					var key_ev: InputEventKey = InputEventKey.new()
-					key_ev.keycode = key_code_val
-					key_ev.physical_keycode = key_code_val
-					InputMap.action_add_event(action, key_ev)
-				elif action == "last_weapon":
-					var x_ev: InputEventKey = InputEventKey.new()
-					x_ev.keycode = KEY_X
-					x_ev.physical_keycode = KEY_X
-					InputMap.action_add_event(action, x_ev)
 
 
-## Sets up options and loads persisted behavior preferences (Toggle vs Hold vs Mash).
+## Configures behavior dropdowns (Crouch, Sprint, Valve).
 func _setup_behavior_controls() -> void:
 	print("UI: Configuring Input Behavior dropdowns.")
 	if is_instance_valid(crouch_mode_label):
@@ -280,72 +416,53 @@ func _setup_behavior_controls() -> void:
 		crouch_mode_option.clear()
 		crouch_mode_option.add_item("Hold", 0)
 		crouch_mode_option.add_item("Toggle", 1)
-
-		var saved_crouch: String = (
-			GlobalSettings.get_setting("Gameplay", "crouch_mode", "Hold") as String
+		var sc: String = GlobalSettings.get_setting("Gameplay", "crouch_mode", "Hold") as String
+		crouch_mode_option.selected = 1 if sc == "Toggle" else 0
+		crouch_mode_option.item_selected.connect(
+			func(idx: int) -> void:
+				var m: String = crouch_mode_option.get_item_text(idx)
+				print("Settings: Changed Crouch Mode -> ", m)
+				GlobalSettings.save_setting("Gameplay", "crouch_mode", m)
 		)
-		crouch_mode_option.selected = 1 if saved_crouch == "Toggle" else 0
-		crouch_mode_option.item_selected.connect(_on_crouch_mode_selected)
 
 	if is_instance_valid(sprint_mode_option):
 		sprint_mode_option.clear()
 		sprint_mode_option.add_item("Hold", 0)
 		sprint_mode_option.add_item("Toggle", 1)
-
-		var saved_sprint: String = (
-			GlobalSettings.get_setting("Gameplay", "sprint_mode", "Hold") as String
+		var ss: String = GlobalSettings.get_setting("Gameplay", "sprint_mode", "Hold") as String
+		sprint_mode_option.selected = 1 if ss == "Toggle" else 0
+		sprint_mode_option.item_selected.connect(
+			func(idx: int) -> void:
+				var m: String = sprint_mode_option.get_item_text(idx)
+				print("Settings: Changed Sprint Mode -> ", m)
+				GlobalSettings.save_setting("Gameplay", "sprint_mode", m)
 		)
-		sprint_mode_option.selected = 1 if saved_sprint == "Toggle" else 0
-		sprint_mode_option.item_selected.connect(_on_sprint_mode_selected)
 
 	if is_instance_valid(valve_mode_option):
 		valve_mode_option.clear()
 		valve_mode_option.add_item("Hold", 0)
 		valve_mode_option.add_item("One-Time Press", 1)
 		valve_mode_option.add_item("Rapid Mash", 2)
-
-		var saved_valve: String = (
-			GlobalSettings.get_setting("Gameplay", "valve_turn_mode", "Hold") as String
-		)
-		match saved_valve:
+		var sv: String = GlobalSettings.get_setting("Gameplay", "valve_turn_mode", "Hold") as String
+		match sv:
 			"One-Time Press":
 				valve_mode_option.selected = 1
 			"Rapid Mash":
 				valve_mode_option.selected = 2
 			_:
 				valve_mode_option.selected = 0
-		valve_mode_option.item_selected.connect(_on_valve_mode_selected)
+		valve_mode_option.item_selected.connect(
+			func(idx: int) -> void:
+				var m: String = valve_mode_option.get_item_text(idx)
+				print("Settings: Changed Valve Mode -> ", m)
+				GlobalSettings.save_setting("Gameplay", "valve_turn_mode", m)
+		)
 
 
-## Handles crouch mode selection changes.
-## [param index] The selected dropdown index.
-func _on_crouch_mode_selected(index: int) -> void:
-	var mode: String = crouch_mode_option.get_item_text(index)
-	print("Settings: Player changed Crouch Mode to: ", mode)
-	GlobalSettings.save_setting("Gameplay", "crouch_mode", mode)
-
-
-## Handles sprint mode selection changes.
-## [param index] The selected dropdown index.
-func _on_sprint_mode_selected(index: int) -> void:
-	var mode: String = sprint_mode_option.get_item_text(index)
-	print("Settings: Player changed Sprint Mode to: ", mode)
-	GlobalSettings.save_setting("Gameplay", "sprint_mode", mode)
-
-
-## Handles valve interaction mode changes and updates GlobalSettings.
-## [param index] The selected dropdown index.
-func _on_valve_mode_selected(index: int) -> void:
-	var mode: String = valve_mode_option.get_item_text(index)
-	print("Settings: Player changed Valve Turn Mode to: ", mode)
-	GlobalSettings.save_setting("Gameplay", "valve_turn_mode", mode)
-
-
-## Generates the UI elements grouped by categories with primary and secondary slots.
+## Generates action list remapping items grouped by category.
 func _create_control_list() -> void:
 	if not is_instance_valid(action_list_container):
 		return
-
 	print("UI: Building categorized controls list.")
 	for child: Node in action_list_container.get_children():
 		child.queue_free()
@@ -366,11 +483,8 @@ func _create_control_list() -> void:
 			_create_action_row(grid, action)
 
 
-## Creates a row with primary/secondary remap buttons and separate clear buttons.
-## [param parent_grid] The [GridContainer] hosting the row.
-## [param action] The input action key string.
+## Creates a rebind row with primary and secondary slots.
 func _create_action_row(parent_grid: GridContainer, action: String) -> void:
-	print("UI: Creating control row for action: ", action)
 	var action_label: Label = Label.new()
 	action_label.text = action.replace("_", " ").capitalize()
 	action_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -424,11 +538,7 @@ func _create_action_row(parent_grid: GridContainer, action: String) -> void:
 	_update_slot_button_text(secondary_btn, action, 1)
 
 
-## Clears the binding in a specific slot and updates the row buttons.
-## [param action] The input action key string to clear.
-## [param slot_index] The target slot index (0 for Primary, 1 for Secondary).
-## [param primary_btn] Direct reference to primary slot [Button].
-## [param secondary_btn] Direct reference to secondary slot [Button].
+## Clears an event slot binding and syncs UI buttons.
 func _on_clear_slot_pressed(
 	action: String, slot_index: int, primary_btn: Button, secondary_btn: Button
 ) -> void:
@@ -438,12 +548,10 @@ func _on_clear_slot_pressed(
 
 	if InputMap.has_action(action):
 		var events: Array[InputEvent] = InputMap.action_get_events(action)
-		if slot_index == 0:
-			if events.size() > 0:
-				events.remove_at(0)
-		elif slot_index == 1:
-			if events.size() > 1:
-				events.remove_at(1)
+		if slot_index == 0 and events.size() > 0:
+			events.remove_at(0)
+		elif slot_index == 1 and events.size() > 1:
+			events.remove_at(1)
 
 		InputMap.action_erase_events(action)
 		for ev: InputEvent in events:
@@ -454,9 +562,7 @@ func _on_clear_slot_pressed(
 	_update_slot_button_text(secondary_btn, action, 1)
 
 
-## Cleans up Godot input text representations by stripping physical markers.
-## [param raw_text] Raw string from [method InputEvent.as_text].
-## [return] Sanitized, clean key name.
+## Normalizes input string names.
 func _sanitize_key_name(raw_text: String) -> String:
 	var clean: String = raw_text
 	clean = clean.replace(" - Physical", "")
@@ -465,23 +571,18 @@ func _sanitize_key_name(raw_text: String) -> String:
 	return clean.strip_edges()
 
 
-## Helper to construct a normalized [InputEvent] from a custom unique event ID.
-## [param event_id] The unique integer representation of a key or mouse button.
-## [return] A newly created [InputEvent] corresponding to the ID.
+## Constructs an [InputEvent] from an integer ID.
 func _create_event_from_id(event_id: int) -> InputEvent:
 	if event_id >= 100000:
 		var mouse_ev: InputEventMouseButton = InputEventMouseButton.new()
 		mouse_ev.button_index = (event_id - 100000) as MouseButton
 		return mouse_ev
-
 	var key_ev: InputEventKey = InputEventKey.new()
 	key_ev.physical_keycode = event_id as Key
 	return key_ev
 
 
-## Builds a UI preview element (icon [TextureRect] or [Label]) for an input event.
-## [param event] The [InputEvent] to generate an element for.
-## [return] A configured [Control] ready to add to a layout container.
+## Builds an icon or text control for an event.
 func _create_event_display_node(event: InputEvent) -> Control:
 	var icon_tex: Texture2D = _get_event_icon(event)
 	if icon_tex != null:
@@ -492,24 +593,17 @@ func _create_event_display_node(event: InputEvent) -> Control:
 		tex_rect.custom_minimum_size = prompt_icon_size
 		tex_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		return tex_rect
-
 	var lbl: Label = Label.new()
 	lbl.text = _sanitize_key_name(event.as_text())
 	lbl.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return lbl
 
 
-## Updates display layout, text, and icons on a button for an action slot.
-## [param button] The [Button] to update.
-## [param action] The input action key string.
-## [param slot_index] Target slot index (0 for Primary, 1 for Secondary).
+## Updates display layout and icons on a slot button.
 func _update_slot_button_text(button: Button, action: String, slot_index: int) -> void:
 	if not is_instance_valid(button):
 		return
-
-	#print("UI: Updating slot button for action: ", action, " [Slot ", slot_index, "]")
 	var events: Array[InputEvent] = InputMap.action_get_events(action)
-
 	var existing_container: Node = button.get_node_or_null("PreviewContainer")
 	if existing_container != null:
 		existing_container.queue_free()
@@ -557,27 +651,21 @@ func _update_slot_button_text(button: Button, action: String, slot_index: int) -
 			var key_id: int = keys_array[i] as int
 			var ev: InputEvent = _create_event_from_id(key_id)
 			container.add_child(_create_event_display_node(ev))
-
 			if i < keys_array.size() - 1:
-				var separator_label: Label = Label.new()
-				separator_label.text = " → " if is_ordered else " + "
-				separator_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-				container.add_child(separator_label)
+				var sep: Label = Label.new()
+				sep.text = " → " if is_ordered else " + "
+				sep.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				container.add_child(sep)
 	else:
 		container.add_child(_create_event_display_node(target_ev))
 
 
-## Handles toggle state changes on remapping buttons to begin listening for inputs.
-## [param toggled_on] Whether remapping mode is active.
-## [param button] The button that triggered the event.
-## [param action] The input action key string.
-## [param slot_index] The target slot index.
+## Handles remapping button click to listen for hardware inputs.
 func _on_remap_button_toggled(
 	toggled_on: bool, button: Button, action: String, slot_index: int
 ) -> void:
 	if not is_instance_valid(button):
 		return
-
 	var existing_container: Node = button.get_node_or_null("PreviewContainer")
 	if existing_container != null:
 		existing_container.queue_free()
@@ -603,9 +691,9 @@ func _on_remap_button_toggled(
 		_update_slot_button_text(button, action, slot_index)
 
 
-## Resets all temporary gesture recognition parameters and timers.
+## Resets gesture recognition variables.
 func _reset_gesture_state() -> void:
-	print("System: Resetting gesture detection state.")
+	print("System: Resetting gesture state.")
 	_pending_event = null
 	_chord_events.clear()
 	_is_candidate_pressed = false
@@ -615,10 +703,7 @@ func _reset_gesture_state() -> void:
 	_press_count = 0
 
 
-## Compares two input events to verify if they represent the same hardware input.
-## [param ev1] First [InputEvent].
-## [param ev2] Second [InputEvent].
-## [return] True if both events represent identical hardware inputs.
+## Checks if two events correspond to identical hardware keys.
 func _is_same_input(ev1: InputEvent, ev2: InputEvent) -> bool:
 	if ev1 is InputEventKey and ev2 is InputEventKey:
 		var k1: InputEventKey = ev1 as InputEventKey
@@ -633,9 +718,7 @@ func _is_same_input(ev1: InputEvent, ev2: InputEvent) -> bool:
 	return false
 
 
-## Generates a unique integer identifier for hardware inputs.
-## [param event] The [InputEvent] to identify.
-## [return] A unique integer ID.
+## Generates unique identifier for event types.
 func _get_unique_event_id(event: InputEvent) -> int:
 	if event is InputEventKey:
 		var k: InputEventKey = event as InputEventKey
@@ -645,8 +728,7 @@ func _get_unique_event_id(event: InputEvent) -> int:
 	return -1
 
 
-## Intercepts global input events to evaluate gestures and chord combinations.
-## [param event] The [InputEvent] received from the engine.
+## Captures incoming input events during remapping.
 func _input(event: InputEvent) -> void:
 	if not visible or not is_remapping:
 		return
@@ -655,13 +737,11 @@ func _input(event: InputEvent) -> void:
 		var key_event: InputEventKey = event as InputEventKey
 		if key_event.is_echo():
 			return
-
 		var clean_key: InputEventKey = InputEventKey.new()
 		clean_key.physical_keycode = key_event.physical_keycode
 		clean_key.keycode = key_event.keycode
 		_process_gesture_event(clean_key, key_event.is_pressed())
 		get_viewport().set_input_as_handled()
-
 	elif event is InputEventMouseButton:
 		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
 		var clean_mouse: InputEventMouseButton = InputEventMouseButton.new()
@@ -670,17 +750,15 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
-## Feeds a normalized key/button press or release into the gesture pipeline.
-## [param clean_event] Normalized [InputEvent].
-## [param is_pressed] Whether the physical button is pressed down.
+## Feeds cleaned input event into gesture detection pipeline.
 func _process_gesture_event(clean_event: InputEvent, is_pressed: bool) -> void:
 	if is_pressed:
-		var exists_in_chord: bool = false
+		var exists: bool = false
 		for ev: InputEvent in _chord_events:
 			if _is_same_input(ev, clean_event):
-				exists_in_chord = true
+				exists = true
 				break
-		if not exists_in_chord:
+		if not exists:
 			_chord_events.append(clean_event)
 
 		if _chord_events.size() > 1:
@@ -711,7 +789,6 @@ func _process_gesture_event(clean_event: InputEvent, is_pressed: bool) -> void:
 	else:
 		if _chord_events.size() > 1:
 			return
-
 		if _is_candidate_pressed and _pending_event != null:
 			_is_candidate_pressed = false
 			if _hold_timer < HOLD_TIME_THRESHOLD:
@@ -720,62 +797,34 @@ func _process_gesture_event(clean_event: InputEvent, is_pressed: bool) -> void:
 					remapping_button.text = "Waiting next tap..."
 
 
-## Finalizes chord assignment maintaining exact sequential press order.
+## Finalizes chord keys sequence binding.
 func _finalize_chord_remap() -> void:
 	var base_event: InputEvent = _chord_events[_chord_events.size() - 1]
 	var key_ids: Array[int] = []
 	for ev: InputEvent in _chord_events:
 		key_ids.append(_get_unique_event_id(ev))
-
-	print("System: Finalizing ordered chord with sequence IDs: ", key_ids)
 	base_event.set_meta("gesture", "ordered_chord")
 	base_event.set_meta("chord_keys", key_ids)
 	_finalize_gesture_remap(base_event)
 
 
-## Finalizes captured input assignment, updates UI, and persists config.
-## [param new_event] The finalized [InputEvent] to assign.
+## Stores finalized event into slot and flushes changes.
 func _finalize_gesture_remap(new_event: InputEvent) -> void:
-	var gesture_name: String = "single_tap"
-	if new_event.has_meta("gesture"):
-		gesture_name = new_event.get_meta("gesture") as String
-
-	print(
-		"System: Assigning ",
-		_sanitize_key_name(new_event.as_text()),
-		" [Gesture: ",
-		gesture_name,
-		"] to ",
-		action_to_remap,
-		" [Slot ",
-		target_slot_index,
-		"]"
-	)
-
 	_assign_event_to_action_slot(action_to_remap, target_slot_index, new_event)
-
 	var active_btn: Button = remapping_button
 	is_remapping = false
 	remapping_button = null
 	_reset_gesture_state()
-
 	_save_action_mapping(action_to_remap)
-
 	if is_instance_valid(active_btn):
 		active_btn.button_pressed = false
 
 
-## Assigns an event specifically to either the primary or secondary slot.
-## [param action] Action to assign the event to.
-## [param slot_index] Target index (0 or 1).
-## [param new_event] New [InputEvent] to store.
+## Assigns an event directly to an action slot.
 func _assign_event_to_action_slot(action: String, slot_index: int, new_event: InputEvent) -> void:
-	print("System: Assigning event to slot ", slot_index, " for ", action)
 	if not InputMap.has_action(action):
 		InputMap.add_action(action)
-
 	var events: Array[InputEvent] = InputMap.action_get_events(action)
-
 	if slot_index == 0:
 		if events.is_empty():
 			InputMap.action_add_event(action, new_event)
@@ -794,30 +843,25 @@ func _assign_event_to_action_slot(action: String, slot_index: int, new_event: In
 				InputMap.action_add_event(action, ev)
 
 
-## Restores all keybindings to factory default configurations.
-func _on_reset_all_pressed() -> void:
-	print("UI: Resetting all keybindings to default.")
+## Resets all bindings to ProjectSettings defaults.
+func reset_to_defaults() -> void:
+	print("UI: ControlsPanel -> Executing reset to default.")
 	InputMap.load_from_project_settings()
-	_save_controls()
-	_refresh_all_buttons()
+	for category: String in ACTION_CATEGORIES.keys():
+		for action: String in ACTION_CATEGORIES[category]:
+			_save_action_mapping(action)
+	if is_instance_valid(action_list_container):
+		for grid: Node in action_list_container.find_children("", "GridContainer", true, false):
+			for child: Node in grid.get_children():
+				if child is Button and child.has_meta("slot"):
+					_update_slot_button_text(
+						child as Button,
+						child.get_meta("action") as String,
+						child.get_meta("slot") as int
+					)
 
 
-## Refreshes button texts across all category grids.
-func _refresh_all_buttons() -> void:
-	print("UI: Refreshing all control buttons.")
-	if not is_instance_valid(action_list_container):
-		return
-
-	for grid: Node in action_list_container.find_children("", "GridContainer", true, false):
-		for child: Node in grid.get_children():
-			if child is Button and child.has_meta("slot"):
-				var action: String = child.get_meta("action") as String
-				var slot: int = child.get_meta("slot") as int
-				_update_slot_button_text(child, action, slot)
-
-
-## Persists a single modified action mapping into [GlobalSettings].
-## [param action] Action name key to save.
+## Persists a single modified action mapping.
 func _save_action_mapping(action: String) -> void:
 	print("System: Saving action mapping for: ", action)
 	if InputMap.has_action(action):
@@ -825,122 +869,54 @@ func _save_action_mapping(action: String) -> void:
 		GlobalSettings.save_setting("Controls", action, events)
 
 
-## Persists all active action mappings into [GlobalSettings].
-func _save_controls() -> void:
-	print("System: Saving all action mappings to GlobalSettings.")
-	for category: String in ACTION_CATEGORIES.keys():
-		for action: String in ACTION_CATEGORIES[category]:
-			_save_action_mapping(action)
-
-
-## Resets all keybindings to factory default configurations and refreshes UI.
-func reset_to_defaults() -> void:
-	print("UI: ControlsPanel -> Executing reset to default.")
-	_on_reset_all_pressed()
-
-
-## Resolves an [InputEvent] to a matching default Kenney prompt icon texture.
-## [param event] The [InputEvent] to find an icon for.
-## [return] The loaded [Texture2D], or null if no matching asset exists.
+## Resolves input prompt textures from cache or disk.
 func _get_event_icon(event: InputEvent) -> Texture2D:
-	var possible_filenames: Array[String] = []
-
+	var filenames: Array[String] = []
 	if event is InputEventKey:
-		var key_event: InputEventKey = event as InputEventKey
 		var code: Key = (
-			key_event.physical_keycode
-			if key_event.physical_keycode != KEY_NONE
-			else key_event.keycode
+			(event as InputEventKey).physical_keycode
+			if (event as InputEventKey).physical_keycode != KEY_NONE
+			else (event as InputEventKey).keycode
 		)
 		var key_str: String = OS.get_keycode_string(code).to_lower()
-
 		match code:
 			KEY_SPACE:
-				possible_filenames.append("keyboard_space.png")
-				possible_filenames.append("keyboard_space_icon.png")
+				filenames.append("keyboard_space.png")
 			KEY_ENTER:
-				possible_filenames.append("keyboard_return.png")
-				possible_filenames.append("keyboard_enter.png")
+				filenames.append("keyboard_return.png")
 			KEY_SHIFT:
-				possible_filenames.append("keyboard_shift.png")
+				filenames.append("keyboard_shift.png")
 			KEY_CTRL:
-				possible_filenames.append("keyboard_ctrl.png")
+				filenames.append("keyboard_ctrl.png")
 			KEY_ALT:
-				possible_filenames.append("keyboard_alt.png")
+				filenames.append("keyboard_alt.png")
 			KEY_TAB:
-				possible_filenames.append("keyboard_tab.png")
+				filenames.append("keyboard_tab.png")
 			KEY_ESCAPE:
-				possible_filenames.append("keyboard_escape.png")
-			KEY_BACKSPACE:
-				possible_filenames.append("keyboard_backspace.png")
-			KEY_CAPSLOCK:
-				possible_filenames.append("keyboard_capslock.png")
-			KEY_SLASH:
-				possible_filenames.append("keyboard_slash_forward.png")
-			KEY_BACKSLASH:
-				possible_filenames.append("keyboard_slash_back.png")
-			KEY_SEMICOLON:
-				possible_filenames.append("keyboard_semicolon.png")
-			KEY_PERIOD:
-				possible_filenames.append("keyboard_period.png")
-			KEY_COMMA:
-				possible_filenames.append("keyboard_comma.png")
-			KEY_MINUS:
-				possible_filenames.append("keyboard_minus.png")
-			KEY_EQUAL:
-				possible_filenames.append("keyboard_equals.png")
-			KEY_PAGEUP:
-				possible_filenames.append("keyboard_page_up.png")
-			KEY_PAGEDOWN:
-				possible_filenames.append("keyboard_page_down.png")
-			KEY_PAUSE:
-				possible_filenames.append("keyboard_pause.png")
-			KEY_SCROLLLOCK:
-				possible_filenames.append("keyboard_scroll_lock.png")
-			KEY_PRINT:
-				possible_filenames.append("keyboard_printscreen.png")
+				filenames.append("keyboard_escape.png")
 			_:
 				if key_str.length() == 1:
-					possible_filenames.append("keyboard_%s.png" % key_str)
-					possible_filenames.append("keyboard_%s_outline.png" % key_str)
-
+					filenames.append("keyboard_%s.png" % key_str)
 	elif event is InputEventMouseButton:
-		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
-		match mouse_event.button_index:
+		match (event as InputEventMouseButton).button_index:
 			MOUSE_BUTTON_LEFT:
-				possible_filenames.append("mouse_left.png")
-				possible_filenames.append("mouse_left_click.png")
-				possible_filenames.append("mouse_left_outline.png")
+				filenames.append("mouse_left.png")
 			MOUSE_BUTTON_RIGHT:
-				possible_filenames.append("mouse_right.png")
-				possible_filenames.append("mouse_right_click.png")
-				possible_filenames.append("mouse_right_outline.png")
+				filenames.append("mouse_right.png")
 			MOUSE_BUTTON_MIDDLE:
-				possible_filenames.append("mouse_middle.png")
-				possible_filenames.append("mouse_scroll.png")
-			MOUSE_BUTTON_WHEEL_UP:
-				possible_filenames.append("mouse_scroll_up.png")
-			MOUSE_BUTTON_WHEEL_DOWN:
-				possible_filenames.append("mouse_scroll_down.png")
+				filenames.append("mouse_middle.png")
 
-	if possible_filenames.is_empty():
-		return null
-
-	for file_name: String in possible_filenames:
-		var candidate_paths: Array[String] = [
-			ICON_BASE_PATH + file_name,
-			ICON_BASE_PATH + "Keyboard/" + file_name,
-			ICON_BASE_PATH + "Mouse/" + file_name
+	for fname: String in filenames:
+		var paths: Array[String] = [
+			ICON_BASE_PATH + fname,
+			ICON_BASE_PATH + "Keyboard/" + fname,
+			ICON_BASE_PATH + "Mouse/" + fname
 		]
-
-		for full_path: String in candidate_paths:
-			if _icon_cache.has(full_path):
-				return _icon_cache[full_path] as Texture2D
-
-			if ResourceLoader.exists(full_path):
-				var tex: Texture2D = load(full_path) as Texture2D
-				_icon_cache[full_path] = tex
+		for p: String in paths:
+			if _icon_cache.has(p):
+				return _icon_cache[p] as Texture2D
+			if ResourceLoader.exists(p):
+				var tex: Texture2D = load(p) as Texture2D
+				_icon_cache[p] = tex
 				return tex
-
-	print("UI: Icon not found for event across search paths: ", event.as_text())
 	return null

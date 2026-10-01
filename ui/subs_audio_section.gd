@@ -1,5 +1,4 @@
 ## Controls subtitles formatting, palette colors, TTS narration, and audio mixing.
-## Attached to the SubsAudioSection [GridContainer].
 class_name AccessibilitySubsAudioSection
 extends GridContainer
 
@@ -78,11 +77,12 @@ const DEFAULT_MONO_AUDIO: bool = false
 @onready var mono_audio_toggle: CheckButton = get_node_or_null("%MonoAudioToggle")
 
 
-## Lifecycle initialization method registering dropdowns and connecting signals.
+## Lifecycle initialization method registering dropdowns, signals, and stored settings.
 func _ready() -> void:
 	print("UI: Initializing Subtitles & Audio Section.")
 	_populate_dropdowns()
 	_connect_signals()
+	load_settings()
 
 
 ## Populates [OptionButton] items for subtitle colors and typography.
@@ -159,6 +159,15 @@ func _connect_signals() -> void:
 		tts_toggle.toggled.connect(_on_tts_toggled)
 	if is_instance_valid(mono_audio_toggle):
 		mono_audio_toggle.toggled.connect(_on_mono_audio_toggled)
+
+	var ev: Node = get_node_or_null("/root/Events")
+	if is_instance_valid(ev):
+		if ev.has_signal("subtitles_toggled"):
+			ev.connect("subtitles_toggled", sync_external_subtitles_enabled)
+		if ev.has_signal("subtitle_size_changed"):
+			ev.connect("subtitle_size_changed", sync_external_subtitle_size)
+		if ev.has_signal("subtitle_bg_opacity_changed"):
+			ev.connect("subtitle_bg_opacity_changed", sync_external_subtitle_opacity)
 
 
 ## Reads subtitle and audio preferences from [GlobalSettings].
@@ -238,7 +247,6 @@ func load_settings() -> void:
 		tts_toggle.set_pressed_no_signal(
 			bool(GlobalSettings.get_setting("Accessibility", "tts_enabled", DEFAULT_TTS_ENABLED))
 		)
-
 	if is_instance_valid(mono_audio_toggle):
 		mono_audio_toggle.set_pressed_no_signal(
 			bool(GlobalSettings.get_setting("Audio", "mono_audio", DEFAULT_MONO_AUDIO))
@@ -246,14 +254,6 @@ func load_settings() -> void:
 
 
 ## Connects companion slider and LineEdit pairs with instant clear and revert on defocus.
-## [param slider] The [HSlider] node.
-## [param input_box] The [LineEdit] node.
-## [param key] Setting key identifier.
-## [param min_val] Minimum clamp limit.
-## [param max_val] Maximum clamp limit.
-## [param section] [GlobalSettings] section category.
-## [param is_int] Whether to format display text as integer.
-## [param apply_cb] The [Callable] invoked when numeric value modifies.
 func _connect_slider(
 	slider: HSlider,
 	input_box: LineEdit,
@@ -318,12 +318,6 @@ func _connect_slider(
 
 
 ## Reads a float setting and synchronizes slider and LineEdit representations.
-## [param slider] The target [HSlider] node.
-## [param input_box] The target [LineEdit] node.
-## [param key] Setting key identifier.
-## [param default_val] Fallback float value.
-## [param section] [GlobalSettings] category section.
-## [param is_int] Format as integer if true.
 func _load_slider(
 	slider: HSlider,
 	input_box: LineEdit,
@@ -348,12 +342,11 @@ func _request_preview_subtitle() -> void:
 	var events: Node = get_node_or_null("/root/Events")
 	if is_instance_valid(events) and events.has_signal("subtitle_requested"):
 		events.subtitle_requested.emit(
-			"Narrator", "This is a preview of dialogue text with current settings.", 1.5
+			"Narrator", "This is a preview of dialogue text with current settings.", 3.0
 		)
 
 
 ## Handles master subtitle enabling and broadcasts changes.
-## [param toggled_on] Whether subtitles should display.
 func _on_enable_subs_toggled(toggled_on: bool) -> void:
 	print("Player toggled Enable Subtitles to: ", toggled_on)
 	GlobalSettings.save_setting("Accessibility", "subtitles_enabled", toggled_on)
@@ -363,7 +356,6 @@ func _on_enable_subs_toggled(toggled_on: bool) -> void:
 
 
 ## Broadcasts master subtitle visibility across [Events] bus and synchronizes node layers.
-## [param enabled] Subtitles active state.
 func _apply_subtitles_enabled(enabled: bool) -> void:
 	print("Engine: Applying Enable Subtitles: ", enabled)
 	var events: Node = get_node_or_null("/root/Events")
@@ -372,7 +364,6 @@ func _apply_subtitles_enabled(enabled: bool) -> void:
 
 
 ## Broadcasts subtitle font size adjustments across the [Events] bus.
-## [param size_val] Subtitle font size in pixels.
 func _apply_subtitle_size(size_val: float) -> void:
 	print("Engine: Applying Subtitle Size: ", size_val)
 	var events: Node = get_node_or_null("/root/Events")
@@ -381,7 +372,6 @@ func _apply_subtitle_size(size_val: float) -> void:
 
 
 ## Broadcasts subtitle background opacity percentage adjustments across the [Events] bus.
-## [param opacity_val] Subtitle background alpha percentage (0.0 to 100.0).
 func _apply_subtitle_bg_opacity(opacity_val: float) -> void:
 	var normalized_alpha: float = clampf(opacity_val / 100.0, 0.0, 1.0)
 	print("Engine: Applying Subtitle Background Opacity: ", opacity_val, "%")
@@ -391,7 +381,6 @@ func _apply_subtitle_bg_opacity(opacity_val: float) -> void:
 
 
 ## Handles subtitle text color dropdown changes.
-## [param index] Palette index selected by player.
 func _on_sub_text_color_selected(index: int) -> void:
 	print("Player selected Subtitle Text Color: ", COLOR_NAMES[index])
 	GlobalSettings.save_setting("Accessibility", "subtitle_text_color", index)
@@ -400,7 +389,6 @@ func _on_sub_text_color_selected(index: int) -> void:
 
 
 ## Broadcasts subtitle text color choice across the [Events] bus.
-## [param index] Target palette color index.
 func _apply_subtitle_text_color(index: int) -> void:
 	if index < 0 or index >= COLOR_NAMES.size():
 		return
@@ -412,7 +400,6 @@ func _apply_subtitle_text_color(index: int) -> void:
 
 
 ## Handles subtitle background color dropdown changes.
-## [param index] Palette index selected by player.
 func _on_sub_bg_color_selected(index: int) -> void:
 	print("Player selected Subtitle Background Color: ", COLOR_NAMES[index])
 	GlobalSettings.save_setting("Accessibility", "subtitle_bg_color", index)
@@ -421,7 +408,6 @@ func _on_sub_bg_color_selected(index: int) -> void:
 
 
 ## Broadcasts subtitle background box color choice across the [Events] bus.
-## [param index] Target palette color index.
 func _apply_subtitle_bg_color(index: int) -> void:
 	if index < 0 or index >= COLOR_NAMES.size():
 		return
@@ -433,7 +419,6 @@ func _apply_subtitle_bg_color(index: int) -> void:
 
 
 ## Handles speaker name color dropdown changes.
-## [param index] Palette index selected by player.
 func _on_sub_speaker_color_selected(index: int) -> void:
 	print("Player selected Speaker Name Color: ", COLOR_NAMES[index])
 	GlobalSettings.save_setting("Accessibility", "subtitle_speaker_color", index)
@@ -442,7 +427,6 @@ func _on_sub_speaker_color_selected(index: int) -> void:
 
 
 ## Broadcasts speaker name color choice across the [Events] bus.
-## [param index] Target palette color index.
 func _apply_subtitle_speaker_color(index: int) -> void:
 	if index < 0 or index >= COLOR_NAMES.size():
 		return
@@ -454,7 +438,6 @@ func _apply_subtitle_speaker_color(index: int) -> void:
 
 
 ## Handles toggling speaker names visibility in subtitles.
-## [param toggled_on] Whether speaker names should be shown.
 func _on_sub_show_names_toggled(toggled_on: bool) -> void:
 	print("Player toggled Show Speaker Names to: ", toggled_on)
 	GlobalSettings.save_setting("Accessibility", "subtitle_show_names", toggled_on)
@@ -463,7 +446,6 @@ func _on_sub_show_names_toggled(toggled_on: bool) -> void:
 
 
 ## Broadcasts show/hide speaker names toggle across the [Events] bus.
-## [param enabled] Enabled state.
 func _apply_subtitle_show_names(enabled: bool) -> void:
 	print("Engine: Applying Show Speaker Names: ", enabled)
 	var events: Node = get_node_or_null("/root/Events")
@@ -472,7 +454,6 @@ func _apply_subtitle_show_names(enabled: bool) -> void:
 
 
 ## Handles subtitle speaker color distinction toggling.
-## [param toggled_on] Enabled state.
 func _on_sub_colors_toggled(toggled_on: bool) -> void:
 	print("Player toggled Subtitle Speaker Colors to: ", toggled_on)
 	GlobalSettings.save_setting("Accessibility", "subtitle_colors", toggled_on)
@@ -480,7 +461,6 @@ func _on_sub_colors_toggled(toggled_on: bool) -> void:
 
 
 ## Handles Text-to-Speech narration toggling.
-## [param toggled_on] Enabled state.
 func _on_tts_toggled(toggled_on: bool) -> void:
 	print("Player toggled Text-to-Speech to: ", toggled_on)
 	GlobalSettings.save_setting("Accessibility", "tts_enabled", toggled_on)
@@ -490,7 +470,32 @@ func _on_tts_toggled(toggled_on: bool) -> void:
 
 
 ## Handles mono audio mix toggling.
-## [param toggled_on] Enabled state.
 func _on_mono_audio_toggled(toggled_on: bool) -> void:
 	print("Player toggled Mono Audio to: ", toggled_on)
 	GlobalSettings.save_setting("Audio", "mono_audio", toggled_on)
+
+
+## Synchronizes toggle state from external events.
+func sync_external_subtitles_enabled(enabled: bool) -> void:
+	if is_instance_valid(enable_subs_toggle) and enable_subs_toggle.button_pressed != enabled:
+		enable_subs_toggle.set_pressed_no_signal(enabled)
+
+
+## Synchronizes font size from external events.
+func sync_external_subtitle_size(size_val: float) -> void:
+	if is_instance_valid(sub_size_slider) and not is_equal_approx(sub_size_slider.value, size_val):
+		sub_size_slider.set_value_no_signal(size_val)
+		if is_instance_valid(sub_size_input):
+			sub_size_input.text = str(int(size_val))
+
+
+## Synchronizes background opacity from external events.
+func sync_external_subtitle_opacity(norm_alpha: float) -> void:
+	var percent_val: float = norm_alpha * 100.0
+	if (
+		is_instance_valid(sub_bg_opacity_slider)
+		and not is_equal_approx(sub_bg_opacity_slider.value, percent_val)
+	):
+		sub_bg_opacity_slider.set_value_no_signal(percent_val)
+		if is_instance_valid(sub_bg_opacity_input):
+			sub_bg_opacity_input.text = str(int(percent_val))

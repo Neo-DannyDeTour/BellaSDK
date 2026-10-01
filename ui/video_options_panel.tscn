@@ -827,4 +827,3 @@ horizontal_alignment = 2
 
 [node name="RestartDialog" type="ConfirmationDialog" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=747216340]
 unique_name_in_owner = true
-visible = false

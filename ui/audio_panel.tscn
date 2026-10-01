@@ -23,7 +23,11 @@ theme_override_constants/margin_right = 32
 theme_override_constants/margin_bottom = 32
 
 [node name="MainVBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=718337972]
+custom_minimum_size = Vector2(640, 0)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 3
+theme_override_constants/separation = 12
 
 [node name="HeaderLabel" type="Label" parent="MarginContainer/MainVBoxContainer" unique_id=1410569502]
 layout_mode = 2
@@ -38,146 +42,200 @@ layout_mode = 2
 [node name="ScrollContainer" type="ScrollContainer" parent="MarginContainer/MainVBoxContainer" unique_id=1002227739]
 layout_mode = 2
 size_flags_vertical = 3
+horizontal_scroll_mode = 0
 
-[node name="GridContainer" type="GridContainer" parent="MarginContainer/MainVBoxContainer/ScrollContainer" unique_id=547319572]
+[node name="ContentVBox" type="VBoxContainer" parent="MarginContainer/MainVBoxContainer/ScrollContainer" unique_id=3001001001]
 layout_mode = 2
-size_flags_horizontal = 6
+size_flags_horizontal = 3
+theme_override_constants/separation = 14
+
+[node name="VolumeGrid" type="GridContainer" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox" unique_id=547319572]
+layout_mode = 2
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 8
 columns = 3
 
-[node name="MasterLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=695135965]
+[node name="MasterLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/VolumeGrid" unique_id=695135965]
 layout_mode = 2
 text = "Master Volume"
 
-[node name="MasterLine" type="LineEdit" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=1900685203]
+[node name="MasterLine" type="LineEdit" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/VolumeGrid" unique_id=1900685203]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 
-[node name="MasterSlider" type="HSlider" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=672617986]
+[node name="MasterSlider" type="HSlider" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/VolumeGrid" unique_id=672617986]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 value = 100.0
 
-[node name="MusicLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=1291749741]
+[node name="MusicLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/VolumeGrid" unique_id=1291749741]
 layout_mode = 2
 text = "Music Volume"
 
-[node name="MusicLine" type="LineEdit" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=727267716]
+[node name="MusicLine" type="LineEdit" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/VolumeGrid" unique_id=727267716]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 
-[node name="MusicSlider" type="HSlider" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=1348410465]
+[node name="MusicSlider" type="HSlider" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/VolumeGrid" unique_id=1348410465]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 value = 100.0
 
-[node name="SFXLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=490748844]
+[node name="SFXLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/VolumeGrid" unique_id=490748844]
 layout_mode = 2
 text = "SFX Volume"
 
-[node name="SFXLine" type="LineEdit" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=485515937]
+[node name="SFXLine" type="LineEdit" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/VolumeGrid" unique_id=485515937]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 
-[node name="SFXSlider" type="HSlider" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=54287623]
+[node name="SFXSlider" type="HSlider" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/VolumeGrid" unique_id=54287623]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 value = 100.0
 
-[node name="AccesibilitySFXLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=1100154090]
-layout_mode = 2
-text = "AccesibilitySFX Volume"
-
-[node name="AccesibilitySFXLine" type="LineEdit" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=1068325894]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(60, 0)
-layout_mode = 2
-
-[node name="AccesibilitySFXSlider" type="HSlider" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=213352781]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(300, 0)
-layout_mode = 2
-size_flags_horizontal = 3
-value = 100.0
-
-[node name="VoiceLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=957578827]
+[node name="VoiceLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/VolumeGrid" unique_id=957578827]
 layout_mode = 2
 text = "Voice Volume"
 
-[node name="VoiceLine" type="LineEdit" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=1086017812]
+[node name="VoiceLine" type="LineEdit" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/VolumeGrid" unique_id=1086017812]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 
-[node name="VoiceSlider" type="HSlider" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=298134572]
+[node name="VoiceSlider" type="HSlider" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/VolumeGrid" unique_id=298134572]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 value = 100.0
 
-[node name="AmbientLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=1794011502]
+[node name="AmbientLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/VolumeGrid" unique_id=1794011502]
 layout_mode = 2
 text = "Ambient Volume"
 
-[node name="AmbientLine" type="LineEdit" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=1724548739]
+[node name="AmbientLine" type="LineEdit" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/VolumeGrid" unique_id=1724548739]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 
-[node name="AmbientSlider" type="HSlider" parent="MarginContainer/MainVBoxContainer/ScrollContainer/GridContainer" unique_id=288262438]
+[node name="AmbientSlider" type="HSlider" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/VolumeGrid" unique_id=288262438]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(300, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 value = 100.0
 
-[node name="HSeparator2" type="HSeparator" parent="MarginContainer/MainVBoxContainer" unique_id=777436757]
+[node name="AccesibilitySFXLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/VolumeGrid" unique_id=1100154090]
+layout_mode = 2
+text = "Accessibility SFX"
+
+[node name="AccesibilitySFXLine" type="LineEdit" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/VolumeGrid" unique_id=1068325894]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 
-[node name="GridContainer" type="GridContainer" parent="MarginContainer/MainVBoxContainer" unique_id=838375324]
+[node name="AccesibilitySFXSlider" type="HSlider" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/VolumeGrid" unique_id=213352781]
+unique_name_in_owner = true
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 3
+size_flags_horizontal = 3
+value = 100.0
+
+[node name="HSeparator2" type="HSeparator" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox" unique_id=777436757]
+layout_mode = 2
+
+[node name="SubtitlesQuickGrid" type="GridContainer" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox" unique_id=3001001002]
+layout_mode = 2
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 8
 columns = 3
 
-[node name="Control" type="Control" parent="MarginContainer/MainVBoxContainer/GridContainer" unique_id=1401765384]
+[node name="EnableSubsLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/SubtitlesQuickGrid" unique_id=3001001003]
+layout_mode = 2
+text = "Enable Subtitles"
+
+[node name="Spacer_Subs" type="Control" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/SubtitlesQuickGrid" unique_id=3001001004]
 layout_mode = 2
 
-[node name="MonoAudioToggle" type="CheckButton" parent="MarginContainer/MainVBoxContainer/GridContainer" unique_id=621733051]
+[node name="EnableSubsToggle" type="CheckButton" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/SubtitlesQuickGrid" unique_id=3001001005]
 unique_name_in_owner = true
+layout_mode = 2
+
+[node name="SubSizeLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/SubtitlesQuickGrid" unique_id=3001001006]
+layout_mode = 2
+text = "Subtitle Size"
+
+[node name="SubSizeLine" type="LineEdit" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/SubtitlesQuickGrid" unique_id=3001001007]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+
+[node name="SubSizeSlider" type="HSlider" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/SubtitlesQuickGrid" unique_id=3001001008]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 12.0
+max_value = 48.0
+value = 24.0
+
+[node name="SubBgOpacityLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/SubtitlesQuickGrid" unique_id=3001001009]
+layout_mode = 2
+text = "Subtitle BG Opacity"
+
+[node name="SubBgOpacityLine" type="LineEdit" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/SubtitlesQuickGrid" unique_id=3001001010]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+
+[node name="SubBgOpacitySlider" type="HSlider" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/SubtitlesQuickGrid" unique_id=3001001011]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+value = 50.0
+
+[node name="HSeparator3" type="HSeparator" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox" unique_id=3001001012]
+layout_mode = 2
+
+[node name="HardwareGrid" type="GridContainer" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox" unique_id=838375324]
+layout_mode = 2
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 8
+columns = 3
+
+[node name="MonoAudioLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/HardwareGrid" unique_id=3001001013]
 layout_mode = 2
 text = "Mono Audio"
 
-[node name="Control2" type="Control" parent="MarginContainer/MainVBoxContainer/GridContainer" unique_id=244865379]
+[node name="Spacer_Mono" type="Control" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/HardwareGrid" unique_id=1401765384]
 layout_mode = 2
 
-[node name="Control3" type="Control" parent="MarginContainer/MainVBoxContainer/GridContainer" unique_id=2037575572]
-layout_mode = 2
-
-[node name="Label" type="Label" parent="MarginContainer/MainVBoxContainer/GridContainer" unique_id=1313088636]
-layout_mode = 2
-text = "Output Profile"
-
-[node name="OutputProfileOption" type="OptionButton" parent="MarginContainer/MainVBoxContainer/GridContainer" unique_id=1691124953]
+[node name="MonoAudioToggle" type="CheckButton" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/HardwareGrid" unique_id=621733051]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="Control4" type="Control" parent="MarginContainer/MainVBoxContainer/GridContainer" unique_id=230390167]
+[node name="ProfileLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/HardwareGrid" unique_id=1313088636]
+layout_mode = 2
+text = "Output Profile"
+
+[node name="Spacer_Profile" type="Control" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/HardwareGrid" unique_id=2037575572]
 layout_mode = 2
 
-[node name="Label2" type="Label" parent="MarginContainer/MainVBoxContainer/GridContainer" unique_id=1461007866]
+[node name="OutputProfileOption" type="OptionButton" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/HardwareGrid" unique_id=1691124953]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MuteLabel" type="Label" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/HardwareGrid" unique_id=1461007866]
 layout_mode = 2
 text = "Mute on Focus Loss"
 
-[node name="MuteOnFocusToggle" type="CheckButton" parent="MarginContainer/MainVBoxContainer/GridContainer" unique_id=1423642329]
+[node name="Spacer_Mute" type="Control" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/HardwareGrid" unique_id=230390167]
+layout_mode = 2
+
+[node name="MuteOnFocusToggle" type="CheckButton" parent="MarginContainer/MainVBoxContainer/ScrollContainer/ContentVBox/HardwareGrid" unique_id=1423642329]
 unique_name_in_owner = true
 layout_mode = 2

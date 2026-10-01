@@ -30,6 +30,9 @@ const CHAPTER_SCREEN: PackedScene = preload("res://ui/menu_chapter_screen.tscn")
 ## Panel dedicated to managing game save slots.
 @onready var save_load_panel: Panel = $SaveLoadPanel
 
+## Horror glow border and interior mouse spotlight coordinator.
+@onready var highlighter: UniversalSettingHighlighter = %SettingRowHighlighter
+
 # Navigation Buttons
 
 ## Button to unpause and resume active session.
@@ -70,10 +73,21 @@ func _ready() -> void:
 	_connect_primary_buttons()
 	_connect_subcomponents()
 	_check_game_context()
+	_register_all_setting_panels()
 	_return_to_main_buttons()
 
 	# Sleep diorama rendering on boot until options are opened
 	VideoApplier.set_diorama_active(get_tree(), false)
+
+
+## Scans and registers all options panels into the highlight controller.
+func _register_all_setting_panels() -> void:
+	print("UI: Registering panels with horror glow highlighter.")
+	if not is_instance_valid(highlighter) or not is_instance_valid(options_router):
+		return
+	for panel: Control in options_router.get_all_panels():
+		if is_instance_valid(panel):
+			highlighter.register_panel(panel)
 
 
 ## Connects all root navigation buttons to their respective callbacks.
@@ -176,6 +190,8 @@ func _stop_main_theme() -> void:
 func _return_to_main_buttons() -> void:
 	print("UI: Restoring root menu view.")
 	VideoApplier.set_diorama_active(get_tree(), false)
+	if is_instance_valid(highlighter):
+		highlighter.clear_highlight()
 	if is_instance_valid(game_name_label):
 		game_name_label.visible = true
 	if is_instance_valid(main_buttons):

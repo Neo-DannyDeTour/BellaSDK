@@ -15,6 +15,8 @@
 [ext_resource type="Shader" uid="uid://w674ybxmnkoi" path="res://vfx/diorama_post_process.gdshader" id="11_kaxbk"]
 [ext_resource type="Script" uid="uid://7t34h1kqmrcr" path="res://ui/diorama_post_process.gd" id="12_0nobx"]
 [ext_resource type="PackedScene" uid="uid://dhh7c5j6i8bkk" path="res://player/settings_level.tscn" id="13_0nobx"]
+[ext_resource type="Shader" uid="uid://coifevcbmk5s2" path="res://ui/horror_glow_border.gdshader" id="16_iyrh0"]
+[ext_resource type="Script" uid="uid://c2qxdkxabijvi" path="res://ui/universal_setting_highlighter.gd" id="17_8jgmr"]
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_50h1w"]
 
@@ -39,6 +41,18 @@ environment = SubResource("Environment_iyrh0")
 shader = ExtResource("11_kaxbk")
 shader_parameter/filter_mode = 0
 shader_parameter/grain_amount = 0.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_534t5"]
+shader = ExtResource("16_iyrh0")
+shader_parameter/ui_tilt = Vector2(0, 0)
+shader_parameter/perspective_strength = 0.15
+shader_parameter/line_color = Color(1, 1, 1, 1)
+shader_parameter/line_thickness = 2.0
+shader_parameter/corner_cut = 14.0
+shader_parameter/rect_size = Vector2(0, 0)
+shader_parameter/speed = 1.5
+shader_parameter/trail_length = 0.3
+shader_parameter/hover_intensity = 0.0
 
 [node name="MainMenu" type="CanvasLayer" unique_id=1244757478 node_paths=PackedStringArray("main_theme_player") groups=["hide_on_save"]]
 process_mode = 3
@@ -374,3 +388,11 @@ size_flags_horizontal = 3
 
 [node name="MainThemePlayer" type="AudioStreamPlayer" parent="." unique_id=122940660]
 bus = &"Music"
+
+[node name="SettingRowHighlighter" type="ColorRect" parent="." unique_id=1383813776]
+unique_name_in_owner = true
+material = SubResource("ShaderMaterial_534t5")
+offset_right = 10.0
+offset_bottom = 10.0
+mouse_filter = 2
+script = ExtResource("17_8jgmr")

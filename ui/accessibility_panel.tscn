@@ -64,6 +64,8 @@ metadata/_tab_index = 0
 [node name="VisionSection" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Vision & Contrast" unique_id=1425124961]
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 8
 columns = 3
 script = ExtResource("3_jicom")
 
@@ -175,42 +177,60 @@ size_flags_horizontal = 3
 layout_mode = 2
 metadata/_tab_index = 1
 
-[node name="VisualsSection" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders" unique_id=1655322122]
+[node name="VisualsSection" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders" unique_id=1655322122]
 layout_mode = 2
-columns = 3
+theme_override_constants/separation = 12
 script = ExtResource("4_sr7p7")
 
-[node name="ColorblindLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1777782324]
+[node name="FiltersGrid" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=4001001001]
+layout_mode = 2
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 8
+columns = 3
+
+[node name="ColorblindLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/FiltersGrid" unique_id=1777782324]
 layout_mode = 2
 text = "Colorblind Mode"
 
-[node name="Spacer_CB" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=2071410110]
+[node name="Spacer_CB" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/FiltersGrid" unique_id=2071410110]
 layout_mode = 2
 
-[node name="ColorblindOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1701607343]
+[node name="ColorblindOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/FiltersGrid" unique_id=1701607343]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
 
-[node name="ScreenFilterLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1470095200]
+[node name="ScreenFilterLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/FiltersGrid" unique_id=1470095200]
 layout_mode = 2
 text = "Screenfilter"
 
-[node name="Spacer_ScreenFilter" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=254633818]
+[node name="Spacer_ScreenFilter" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/FiltersGrid" unique_id=254633818]
 layout_mode = 2
 
-[node name="ScreenFilterOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1102982787]
+[node name="ScreenFilterOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/FiltersGrid" unique_id=1102982787]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
 
-[node name="BrightnessLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=686284605]
+[node name="HSeparator1" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=4001001002]
+layout_mode = 2
+
+[node name="EnvironmentGrid" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=4001001003]
+layout_mode = 2
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 8
+columns = 3
+
+[node name="BrightnessLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/EnvironmentGrid" unique_id=686284605]
 layout_mode = 2
 text = "Brightness"
 
-[node name="BrightnessLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=976196478]
+[node name="BrightnessLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/EnvironmentGrid" unique_id=976196478]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 
-[node name="BrightnessSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1042379306]
+[node name="BrightnessSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/EnvironmentGrid" unique_id=1042379306]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -218,15 +238,16 @@ max_value = 3.0
 step = 0.01
 value = 1.0
 
-[node name="ContrastLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1266853019]
+[node name="ContrastLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/EnvironmentGrid" unique_id=1266853019]
 layout_mode = 2
 text = "Contrast"
 
-[node name="ContrastLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1430935328]
+[node name="ContrastLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/EnvironmentGrid" unique_id=1430935328]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 
-[node name="ContrastSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1909607972]
+[node name="ContrastSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/EnvironmentGrid" unique_id=1909607972]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -234,15 +255,16 @@ max_value = 3.0
 step = 0.01
 value = 1.0
 
-[node name="SaturationLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=749161311]
+[node name="SaturationLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/EnvironmentGrid" unique_id=749161311]
 layout_mode = 2
 text = "Saturation"
 
-[node name="SaturationLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=2022102502]
+[node name="SaturationLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/EnvironmentGrid" unique_id=2022102502]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 
-[node name="SaturationSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=2049954714]
+[node name="SaturationSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/EnvironmentGrid" unique_id=2049954714]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -250,15 +272,16 @@ max_value = 3.0
 step = 0.01
 value = 1.0
 
-[node name="GammaLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=660194453]
+[node name="GammaLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/EnvironmentGrid" unique_id=660194453]
 layout_mode = 2
 text = "Gamma"
 
-[node name="GammaLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1535609543]
+[node name="GammaLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/EnvironmentGrid" unique_id=1535609543]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 
-[node name="GammaSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=168776207]
+[node name="GammaSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/EnvironmentGrid" unique_id=168776207]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -266,128 +289,151 @@ max_value = 3.0
 step = 0.01
 value = 1.0
 
-[node name="FilmGrainLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1191401400]
+[node name="FilmGrainLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/EnvironmentGrid" unique_id=1191401400]
 layout_mode = 2
 text = "Film Grain"
 
-[node name="FilmGrainEdit" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1292214577]
+[node name="FilmGrainEdit" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/EnvironmentGrid" unique_id=1292214577]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 
-[node name="FilmGrainSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=2045712158]
+[node name="FilmGrainSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/EnvironmentGrid" unique_id=2045712158]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
+max_value = 20.0
+step = 0.1
 
-[node name="PhotosensitivityLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1884347696]
+[node name="HSeparator2" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=4001001004]
+layout_mode = 2
+
+[node name="ModesGrid" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=4001001005]
+layout_mode = 2
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 8
+columns = 3
+
+[node name="PhotosensitivityLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/ModesGrid" unique_id=1884347696]
 layout_mode = 2
 text = "Photosensitivity Mode"
 
-[node name="Spacer_Photosensitivity" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=876018615]
+[node name="Spacer_Photosensitivity" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/ModesGrid" unique_id=876018615]
 layout_mode = 2
 
-[node name="PhotosensitivityToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=399741898]
+[node name="PhotosensitivityToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/ModesGrid" unique_id=399741898]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="HighContrastLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=939637041]
+[node name="HighContrastLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/ModesGrid" unique_id=939637041]
 layout_mode = 2
-text = "High Contrast"
+text = "High Contrast UI"
 
-[node name="Spacer_HighContrast" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1953678287]
+[node name="Spacer_HighContrast" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/ModesGrid" unique_id=1953678287]
 layout_mode = 2
 
-[node name="HighContrastToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1285910016]
+[node name="HighContrastToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/ModesGrid" unique_id=1285910016]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="OutlineLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=197427039]
+[node name="HSeparator3" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=4001001006]
+layout_mode = 2
+
+[node name="OutlinesGrid" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=4001001007]
+layout_mode = 2
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 8
+columns = 3
+
+[node name="OutlineLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=197427039]
 layout_mode = 2
 text = "Target Outlines"
 
-[node name="Spacer_Outline" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1281098152]
+[node name="Spacer_Outline" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=1281098152]
 layout_mode = 2
 
-[node name="OutlineButtonsContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1318920045]
+[node name="OutlineButtonsContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=1318920045]
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_constants/separation = 8
-alignment = 2
 
-[node name="OutlineOffButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlineButtonsContainer" unique_id=711505982]
+[node name="OutlineOffButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid/OutlineButtonsContainer" unique_id=711505982]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Off"
 
-[node name="OutlineAlwaysButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlineButtonsContainer" unique_id=1543072400]
+[node name="OutlineAlwaysButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid/OutlineButtonsContainer" unique_id=1543072400]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Always"
 
-[node name="OutlineFocusButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlineButtonsContainer" unique_id=1982686890]
+[node name="OutlineFocusButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid/OutlineButtonsContainer" unique_id=1982686890]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "On Focus"
 
-[node name="OutlineColorLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=877029254]
+[node name="OutlineColorLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=877029254]
 layout_mode = 2
 text = "Outline Color"
 
-[node name="Spacer_OutlineColor" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=407926163]
+[node name="Spacer_OutlineColor" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=407926163]
 layout_mode = 2
-size_flags_horizontal = 3
 
-[node name="OutlineColorOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=300541257]
+[node name="OutlineColorOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=300541257]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="OutlineBlinkSpeedLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1314562797]
+[node name="OutlineBlinkSpeedLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=1314562797]
 layout_mode = 2
 text = "Outline Blink Speed"
 
-[node name="OutlineBlinkSpeedLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1533567550]
+[node name="OutlineBlinkSpeedLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=1533567550]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
-text = "8.0"
 
-[node name="OutlineBlinkSpeedSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1642046806]
+[node name="OutlineBlinkSpeedSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=1642046806]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
 max_value = 20.0
 step = 0.1
 value = 8.0
 
-[node name="OutlineMinIntensityLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1427949610]
+[node name="OutlineMinIntensityLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=1427949610]
 layout_mode = 2
 text = "Outline Min Intensity"
 
-[node name="OutlineMinIntensityLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1377116460]
+[node name="OutlineMinIntensityLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=1377116460]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
-text = "0.20"
 
-[node name="OutlineMinIntensitySlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=564650649]
+[node name="OutlineMinIntensitySlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=564650649]
 unique_name_in_owner = true
 layout_mode = 2
-max_value = 5.0
+size_flags_horizontal = 3
+max_value = 1.0
 step = 0.05
 value = 0.2
 
-[node name="OutlineMaxIntensityLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1823484351]
+[node name="OutlineMaxIntensityLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=1823484351]
 layout_mode = 2
 text = "Outline Max Intensity"
 
-[node name="OutlineMaxIntensityLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=849111463]
+[node name="OutlineMaxIntensityLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=849111463]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
-text = "1.0"
 
-[node name="OutlineMaxIntensitySlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=1509498055]
+[node name="OutlineMaxIntensitySlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=1509498055]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
 max_value = 5.0
 step = 0.05
 value = 1.0
@@ -399,6 +445,8 @@ metadata/_tab_index = 2
 
 [node name="DisplayUISection" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Display & UI" unique_id=1840145301]
 layout_mode = 2
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 8
 columns = 3
 script = ExtResource("5_6v5k4")
 
@@ -408,6 +456,7 @@ text = "Field of View"
 
 [node name="FOVLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Display & UI/DisplayUISection" unique_id=199507414]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 
 [node name="FOVSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Display & UI/DisplayUISection" unique_id=723988044]
@@ -418,12 +467,25 @@ min_value = 10.0
 max_value = 150.0
 value = 75.0
 
+[node name="SprintFovLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Display & UI/DisplayUISection" unique_id=1415163888]
+layout_mode = 2
+text = "Disable Sprint FOV"
+
+[node name="Spacer_SprintFov" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Display & UI/DisplayUISection" unique_id=1480541691]
+layout_mode = 2
+
+[node name="SprintFovCheckbox" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Display & UI/DisplayUISection" unique_id=174581541]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
 [node name="UI_ScaleLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Display & UI/DisplayUISection" unique_id=785792894]
 layout_mode = 2
 text = "UI Scale"
 
 [node name="UIScaleLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Display & UI/DisplayUISection" unique_id=375535810]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 
 [node name="UIScaleSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Display & UI/DisplayUISection" unique_id=1780903147]
@@ -440,6 +502,7 @@ text = "Font Scale"
 
 [node name="Font_ScaleLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Display & UI/DisplayUISection" unique_id=822140595]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 
 [node name="Font_ScaleSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Display & UI/DisplayUISection" unique_id=1230384517]
@@ -450,18 +513,6 @@ max_value = 2.0
 step = 0.01
 value = 1.0
 
-[node name="SprintFovLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Display & UI/DisplayUISection" unique_id=1415163888]
-layout_mode = 2
-text = "Disable Sprint FOV"
-
-[node name="Spacer_SprintFov" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Display & UI/DisplayUISection" unique_id=1480541691]
-layout_mode = 2
-
-[node name="SprintFovCheckbox" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Display & UI/DisplayUISection" unique_id=174581541]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-
 [node name="Controls" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs" unique_id=72797506]
 visible = false
 layout_mode = 2
@@ -469,6 +520,8 @@ metadata/_tab_index = 3
 
 [node name="ControlsSection" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Controls" unique_id=1268707635]
 layout_mode = 2
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 8
 columns = 3
 script = ExtResource("5_58lo4")
 
@@ -478,6 +531,7 @@ text = "Mouse Sensitivity"
 
 [node name="MouseSensitivityLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Controls/ControlsSection" unique_id=1474107718]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 
 [node name="MouseSensitivitySlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Controls/ControlsSection" unique_id=1816352778]
@@ -492,6 +546,7 @@ text = "Aim Assist Amount"
 
 [node name="AimAssistLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Controls/ControlsSection" unique_id=78355937]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 
 [node name="AimAssistSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Controls/ControlsSection" unique_id=1470963975]
@@ -504,6 +559,7 @@ text = "Vibration"
 
 [node name="VibrationLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Controls/ControlsSection" unique_id=1595979355]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 
 [node name="VibrationSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Controls/ControlsSection" unique_id=1962313817]
@@ -583,7 +639,7 @@ layout_mode = 2
 layout_mode = 2
 text = "Infinite Swim"
 
-[node name="Control" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Controls/ControlsSection" unique_id=1729228834]
+[node name="Spacer_InfiniteSwim" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Controls/ControlsSection" unique_id=1729228834]
 layout_mode = 2
 
 [node name="InfiniteSwimToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Controls/ControlsSection" unique_id=131169950]
@@ -597,6 +653,8 @@ metadata/_tab_index = 4
 
 [node name="SubsAudioSection" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Audio & Subs" unique_id=1964517084]
 layout_mode = 2
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 8
 columns = 3
 script = ExtResource("5_8kniv")
 
@@ -672,6 +730,7 @@ text = "Subtitle Size"
 
 [node name="SubSizeLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Audio & Subs/SubsAudioSection" unique_id=2064499793]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 
 [node name="SubSizeSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Audio & Subs/SubsAudioSection" unique_id=149361381]
@@ -686,6 +745,7 @@ text = "Subtitle BG Opacity"
 
 [node name="SubBgOpacityLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Audio & Subs/SubsAudioSection" unique_id=510626932]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
 layout_mode = 2
 
 [node name="SubBgOpacitySlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Audio & Subs/SubsAudioSection" unique_id=160369827]

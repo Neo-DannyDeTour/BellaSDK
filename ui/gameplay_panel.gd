@@ -1,52 +1,58 @@
-## Controls gameplay and accessibility configuration toggles in the UI.
+## Coordinates gameplay preferences, mirrored motion toggles, and locale switches.
 class_name GameplayPanel
 extends Panel
 
-## Array of ISO language codes aligned with option button item indices.
+## Sequential ISO language code list corresponding to dropdown option items.
 const SUPPORTED_LOCALES: Array[String] = ["en", "es", "ru"]
 
-## Dropdown menu for selecting the active game difficulty.
+## Dropdown menu for picking game difficulty.
 @onready var difficulty_option: OptionButton = %DifficultyOption
 
-## Dropdown menu for selecting the localization language.
+## Dropdown menu for picking language.
 @onready var language_option: OptionButton = %LanguageOption
 
-## Dropdown menu for selecting the multiplayer matchmaking region.
+## Dropdown menu for picking matchmaking region.
 @onready var region_option: OptionButton = %RegionOption
 
-## Toggles the invincible state where player health cannot drop below zero.
+## CheckButton for developer godmode toggle.
 @onready var godmode_toggle: CheckButton = %GodmodeToggle
 
-## Security variable: Indicates if debug commands (godmode) are allowed.
-var is_debug_allowed: bool = OS.has_feature("debug")
+## GridContainer wrapping debug commands for production hiding.
+@onready var section_debug: GridContainer = %SectionDebug
 
-## Toggles the display of introductory hints and tooltips.
+## CheckButton for introductory tutorials.
 @onready var tutorials_toggle: CheckButton = %TutorialsToggle
 
-## Toggles the display of floating text labels above interactive items.
+## CheckButton for floating item prompts.
 @onready var item_prompts_toggle: CheckButton = %ItemPromptsCheckbox
 
-## Toggles the camera headbobbing animation during movement.
+## CheckButton for camera headbobbing.
 @onready var headbob_toggle: CheckButton = %HeadbobCheckbox
 
-## Toggles the visibility of the center screen crosshair.
+## CheckButton for screen center crosshair.
 @onready var crosshair_toggle: CheckButton = %CrosshairCheckbox
 
+## CheckButton for reducing motion sickness.
+@onready var reduce_motion_toggle: CheckButton = %ReduceMotionCheckbox
 
-## Initializes panel state, loads saved preferences, and connects UI events.
+## Flag indicating whether debug features are available.
+var is_debug_allowed: bool = OS.has_feature("debug")
+
+
+## Initializes UI widgets, applies saved settings, and binds listener signals.
 func _ready() -> void:
-	print("GameplayPanel: _ready() called.")
-	if not is_debug_allowed and is_instance_valid(godmode_toggle):
-		godmode_toggle.hide()
+	print("GameplayPanel: Initializing panel.")
+	if not is_debug_allowed and is_instance_valid(section_debug):
+		section_debug.hide()
 
 	_setup_language_options()
 	_load_preferences()
 	_connect_signals()
 
 
-## Populates language dropdown entries dynamically to prevent index mismatches.
+## Populates language dropdown items in order.
 func _setup_language_options() -> void:
-	print("GameplayPanel: Populating language options.")
+	print("GameplayPanel: Populating languages.")
 	if not is_instance_valid(language_option):
 		return
 	language_option.clear()
@@ -55,28 +61,28 @@ func _setup_language_options() -> void:
 	language_option.add_item("Русский", 2)
 
 
-## Loads persisted settings into controls without triggering change callbacks.
+## Loads stored settings from disk into UI widgets.
 func _load_preferences() -> void:
-	print("GameplayPanel: Loading preferences.")
+	print("GameplayPanel: Restoring saved preferences.")
 	if is_instance_valid(item_prompts_toggle):
-		var show_prompts: bool = (
-			GlobalSettings.get_setting("Gameplay", "show_item_prompts", true) as bool
-		)
-		item_prompts_toggle.set_pressed_no_signal(show_prompts)
+		var show_p: bool = GlobalSettings.get_setting("Gameplay", "show_item_prompts", true) as bool
+		item_prompts_toggle.set_pressed_no_signal(show_p)
 
 	if is_instance_valid(tutorials_toggle):
-		var tutorials: bool = GlobalSettings.get_setting("Gameplay", "show_tutorials", true) as bool
-		tutorials_toggle.set_pressed_no_signal(tutorials)
+		var tuts: bool = GlobalSettings.get_setting("Gameplay", "show_tutorials", true) as bool
+		tutorials_toggle.set_pressed_no_signal(tuts)
 
 	if is_instance_valid(headbob_toggle):
-		var headbob: bool = GlobalSettings.get_setting("Gameplay", "headbob_enabled", true) as bool
-		headbob_toggle.set_pressed_no_signal(headbob)
+		var hb: bool = GlobalSettings.get_setting("Gameplay", "headbob_enabled", true) as bool
+		headbob_toggle.set_pressed_no_signal(hb)
 
 	if is_instance_valid(crosshair_toggle):
-		var crosshair: bool = (
-			GlobalSettings.get_setting("Gameplay", "crosshair_enabled", true) as bool
-		)
-		crosshair_toggle.set_pressed_no_signal(crosshair)
+		var ch: bool = GlobalSettings.get_setting("Gameplay", "crosshair_enabled", true) as bool
+		crosshair_toggle.set_pressed_no_signal(ch)
+
+	if is_instance_valid(reduce_motion_toggle):
+		var rm: bool = GlobalSettings.get_setting("Accessibility", "reduce_motion", false) as bool
+		reduce_motion_toggle.set_pressed_no_signal(rm)
 
 	if is_instance_valid(difficulty_option):
 		var diff_idx: int = GlobalSettings.get_setting("Gameplay", "difficulty", 1) as int
@@ -92,9 +98,9 @@ func _load_preferences() -> void:
 		region_option.selected = reg_idx
 
 
-## Wires up all user interface signals to local listener methods.
+## Connects all control signals to local handlers.
 func _connect_signals() -> void:
-	print("GameplayPanel: Connecting signals...")
+	print("GameplayPanel: Connecting UI signals.")
 	if is_instance_valid(difficulty_option):
 		difficulty_option.item_selected.connect(_on_difficulty_selected)
 	if is_instance_valid(godmode_toggle):
@@ -107,75 +113,82 @@ func _connect_signals() -> void:
 		headbob_toggle.toggled.connect(_on_headbob_toggled)
 	if is_instance_valid(crosshair_toggle):
 		crosshair_toggle.toggled.connect(_on_crosshair_toggled)
+	if is_instance_valid(reduce_motion_toggle):
+		reduce_motion_toggle.toggled.connect(_on_reduce_motion_toggled)
 	if is_instance_valid(language_option):
 		language_option.item_selected.connect(_on_language_selected)
 	if is_instance_valid(region_option):
 		region_option.item_selected.connect(_on_region_selected)
 
 
-## Applies chosen locale via [TranslationServer] matching index in array.
+## Applies locale code using [TranslationServer].
 func _apply_language(index: int) -> void:
-	print("GameplayPanel: Applying language index ", index)
+	print("GameplayPanel: Applying locale index -> ", index)
 	if index >= 0 and index < SUPPORTED_LOCALES.size():
 		var target_locale: String = SUPPORTED_LOCALES[index]
 		TranslationServer.set_locale(target_locale)
 
 
 ## Handles difficulty option selection.
-## [param index] Chosen difficulty index.
 func _on_difficulty_selected(index: int) -> void:
-	print("GameplayPanel: Difficulty changed to index ", index)
+	print("GameplayPanel: Difficulty changed -> ", index)
 	GlobalSettings.save_setting("Gameplay", "difficulty", index)
 
 
 ## Handles godmode toggle state changes.
-## [param button_pressed] Enabled state.
 func _on_godmode_toggled(button_pressed: bool) -> void:
-	print("GameplayPanel: _on_godmode_toggled() - State: ", button_pressed)
+	print("GameplayPanel: Godmode changed -> ", button_pressed)
 	if not is_debug_allowed:
 		return
-	Events.is_godmode = button_pressed
+	var events: Node = get_node_or_null("/root/Events")
+	if is_instance_valid(events):
+		events.set("is_godmode", button_pressed)
 
 
 ## Handles tutorial visibility changes.
-## [param button_pressed] Enabled state.
 func _on_tutorials_toggled(button_pressed: bool) -> void:
-	print("GameplayPanel: Tutorials toggled. State: ", button_pressed)
+	print("GameplayPanel: Tutorials changed -> ", button_pressed)
 	GlobalSettings.save_setting("Gameplay", "show_tutorials", button_pressed)
 
 
-## Handles item prompt label visibility changes, saves preference, and notifies the bus.
-## [param button_pressed] Enabled state.
+## Handles item prompt visibility changes.
 func _on_item_prompts_toggled(button_pressed: bool) -> void:
-	print("GameplayPanel: Item prompts toggled. State: ", button_pressed)
+	print("GameplayPanel: Item prompts changed -> ", button_pressed)
 	GlobalSettings.save_setting("Gameplay", "show_item_prompts", button_pressed)
-	Events.item_prompts_toggled.emit(button_pressed)
+	var events: Node = get_node_or_null("/root/Events")
+	if is_instance_valid(events) and events.has_signal("item_prompts_toggled"):
+		events.emit_signal("item_prompts_toggled", button_pressed)
 
 
 ## Handles camera headbob toggle state changes.
-## [param button_pressed] Enabled state.
 func _on_headbob_toggled(button_pressed: bool) -> void:
-	print("GameplayPanel: Headbob toggled. State: ", button_pressed)
+	print("GameplayPanel: Headbob changed -> ", button_pressed)
 	GlobalSettings.save_setting("Gameplay", "headbob_enabled", button_pressed)
 
 
 ## Handles crosshair toggle state changes.
-## [param button_pressed] Enabled state.
 func _on_crosshair_toggled(button_pressed: bool) -> void:
-	print("GameplayPanel: Crosshair toggled. State: ", button_pressed)
+	print("GameplayPanel: Crosshair changed -> ", button_pressed)
 	GlobalSettings.save_setting("Gameplay", "crosshair_enabled", button_pressed)
 
 
-## Handles localization language selection, updates server, and saves preference.
-## [param index] Chosen language index.
+## Handles motion reduction toggle state changes.
+func _on_reduce_motion_toggled(button_pressed: bool) -> void:
+	print("GameplayPanel: Reduce motion changed -> ", button_pressed)
+	GlobalSettings.save_setting("Accessibility", "reduce_motion", button_pressed)
+	var events: Node = get_node_or_null("/root/Events")
+	if is_instance_valid(events) and events.has_signal("reduce_motion_toggled"):
+		events.emit_signal("reduce_motion_toggled", button_pressed)
+
+
+## Handles localization language selection.
 func _on_language_selected(index: int) -> void:
-	print("GameplayPanel: Language changed to index ", index)
+	print("GameplayPanel: Language selected -> ", index)
 	GlobalSettings.save_setting("Gameplay", "language", index)
 	_apply_language(index)
 
 
 ## Handles matchmaking region selection.
-## [param index] Chosen region index.
 func _on_region_selected(index: int) -> void:
-	print("GameplayPanel: Matchmaking region changed to index ", index)
+	print("GameplayPanel: Region selected -> ", index)
 	GlobalSettings.save_setting("Gameplay", "region", index)

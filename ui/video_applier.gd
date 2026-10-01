@@ -49,8 +49,7 @@ static func apply_engine_limits(vsync_mode: DisplayServer.VSyncMode, fps_limit: 
 
 	var active_vsync: DisplayServer.VSyncMode = DisplayServer.window_get_vsync_mode()
 	if active_vsync != vsync_mode:
-		print("VideoApplier: Driver fell back to VSync mode: ", active_vsync)
-		GlobalSettings.save_setting("Settings", "vsync_mode", active_vsync)
+		print("VideoApplier: Display driver clamped VSync to: ", active_vsync)
 
 	Engine.max_fps = fps_limit
 

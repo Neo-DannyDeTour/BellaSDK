@@ -23,7 +23,11 @@ theme_override_constants/margin_right = 32
 theme_override_constants/margin_bottom = 32
 
 [node name="ContentVBox" type="VBoxContainer" parent="MarginContainer" unique_id=1501613889]
+custom_minimum_size = Vector2(640, 0)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 3
+theme_override_constants/separation = 10
 
 [node name="HeaderLabel" type="Label" parent="MarginContainer/ContentVBox" unique_id=1238118003]
 layout_mode = 2
@@ -35,8 +39,92 @@ vertical_alignment = 1
 [node name="HSeparator" type="HSeparator" parent="MarginContainer/ContentVBox" unique_id=1699420982]
 layout_mode = 2
 
+[node name="MouseAimGrid" type="GridContainer" parent="MarginContainer/ContentVBox" unique_id=2001001001]
+layout_mode = 2
+theme_override_constants/h_separation = 16
+theme_override_constants/v_separation = 8
+columns = 3
+
+[node name="MouseSensitivityLabel" type="Label" parent="MarginContainer/ContentVBox/MouseAimGrid" unique_id=2001001002]
+layout_mode = 2
+text = "Mouse Sensitivity"
+
+[node name="MouseSensitivityLine" type="LineEdit" parent="MarginContainer/ContentVBox/MouseAimGrid" unique_id=2001001003]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+
+[node name="MouseSensitivitySlider" type="HSlider" parent="MarginContainer/ContentVBox/MouseAimGrid" unique_id=2001001004]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 2.0
+step = 0.05
+value = 1.0
+
+[node name="InvertYLabel" type="Label" parent="MarginContainer/ContentVBox/MouseAimGrid" unique_id=2001001005]
+layout_mode = 2
+text = "Invert Y Axis"
+
+[node name="Spacer_InvertY" type="Control" parent="MarginContainer/ContentVBox/MouseAimGrid" unique_id=2001001006]
+layout_mode = 2
+
+[node name="InvertYToggle" type="CheckButton" parent="MarginContainer/ContentVBox/MouseAimGrid" unique_id=2001001007]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="AimAssistToggleLabel" type="Label" parent="MarginContainer/ContentVBox/MouseAimGrid" unique_id=2001001008]
+layout_mode = 2
+text = "Aim Assist"
+
+[node name="Spacer_AimAssist" type="Control" parent="MarginContainer/ContentVBox/MouseAimGrid" unique_id=2001001009]
+layout_mode = 2
+
+[node name="AimAssistToggle" type="CheckButton" parent="MarginContainer/ContentVBox/MouseAimGrid" unique_id=2001001010]
+unique_name_in_owner = true
+layout_mode = 2
+
+[node name="AimAssistAmountLabel" type="Label" parent="MarginContainer/ContentVBox/MouseAimGrid" unique_id=2001001011]
+layout_mode = 2
+text = "Aim Assist Amount"
+
+[node name="AimAssistLine" type="LineEdit" parent="MarginContainer/ContentVBox/MouseAimGrid" unique_id=2001001012]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+
+[node name="AimAssistSlider" type="HSlider" parent="MarginContainer/ContentVBox/MouseAimGrid" unique_id=2001001013]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 1.0
+step = 0.05
+value = 0.5
+
+[node name="VibrationLabel" type="Label" parent="MarginContainer/ContentVBox/MouseAimGrid" unique_id=2001001014]
+layout_mode = 2
+text = "Vibration Strength"
+
+[node name="VibrationLine" type="LineEdit" parent="MarginContainer/ContentVBox/MouseAimGrid" unique_id=2001001015]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(64, 0)
+layout_mode = 2
+
+[node name="VibrationSlider" type="HSlider" parent="MarginContainer/ContentVBox/MouseAimGrid" unique_id=2001001016]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 2.0
+step = 0.05
+value = 1.0
+
+[node name="HSeparator2" type="HSeparator" parent="MarginContainer/ContentVBox" unique_id=1423602958]
+layout_mode = 2
+
 [node name="BehaviorSection" type="HBoxContainer" parent="MarginContainer/ContentVBox" unique_id=189408522]
 layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
 
 [node name="CrouchModeLabel" type="Label" parent="MarginContainer/ContentVBox/BehaviorSection" unique_id=701025219]
 unique_name_in_owner = true
@@ -62,11 +150,7 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="BehaviorGrid" type="GridContainer" parent="MarginContainer/ContentVBox/BehaviorSection" unique_id=327060306]
-layout_mode = 2
-columns = 2
-
-[node name="HSeparator2" type="HSeparator" parent="MarginContainer/ContentVBox" unique_id=1423602958]
+[node name="HSeparator3" type="HSeparator" parent="MarginContainer/ContentVBox" unique_id=93275491]
 layout_mode = 2
 
 [node name="HeaderGrid" type="GridContainer" parent="MarginContainer/ContentVBox" unique_id=1581947926]
@@ -103,11 +187,9 @@ horizontal_alignment = 1
 [node name="ActionScrollContainer" type="ScrollContainer" parent="MarginContainer/ContentVBox" unique_id=1406048210]
 layout_mode = 2
 size_flags_vertical = 3
+horizontal_scroll_mode = 0
 
 [node name="ActionListContainer" type="VBoxContainer" parent="MarginContainer/ContentVBox/ActionScrollContainer" unique_id=1322296008]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-
-[node name="HSeparator3" type="HSeparator" parent="MarginContainer/ContentVBox" unique_id=93275491]
-layout_mode = 2

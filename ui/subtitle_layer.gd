@@ -11,6 +11,9 @@ const DEFAULT_CPS: float = 25.0
 ## Transition animation speed in seconds for alpha fade transitions.
 const FADE_DURATION: float = 0.2
 
+## Canvas layer priority ensuring subtitles render above menus.
+const SUBTITLE_LAYER_INDEX: int = 125
+
 ## Main background panel providing contrast backing behind subtitle text.
 @onready var background_panel: PanelContainer = $MarginContainer/BackgroundPanel
 
@@ -45,17 +48,29 @@ var is_speaker_name_shown: bool = true
 ## Master toggle determining if subtitles are permitted to render on screen.
 var is_subtitles_enabled: bool = true
 
+## Cached raw text string of the dialogue currently displayed.
+var _current_raw_text: String = ""
 
-## Lifecycle method called when the node enters the scene tree.
-## Sets process mode, loads saved settings, and connects signal listeners.
+## Cached speaker name of the dialogue currently displayed.
+var _current_speaker: String = ""
+
+
+## Initializes layer priority, node properties, saved settings, and signals.
 func _ready() -> void:
 	print("SubtitleLayer: _ready() called. Initializing subtitle display.")
+	layer = SUBTITLE_LAYER_INDEX
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	visible = true
 
+	if is_instance_valid(margin_container):
+		margin_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	if is_instance_valid(background_panel):
+		background_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
 	if is_instance_valid(subtitle_label):
+		subtitle_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		subtitle_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		subtitle_label.visible_characters_behavior = (TextServer.VC_CHARS_AFTER_SHAPING)
+		subtitle_label.visible_characters_behavior = TextServer.VC_CHARS_BEFORE_SHAPING
 		subtitle_label.scroll_following = false
 		subtitle_label.add_theme_constant_override("line_separation", 4)
 
@@ -64,7 +79,7 @@ func _ready() -> void:
 	_connect_signals()
 
 
-## Pulls active settings directly from GlobalSettings at launch.
+## Pulls active settings directly from [GlobalSettings] at launch.
 func _load_saved_settings() -> void:
 	print("SubtitleLayer: Loading settings from GlobalSettings.")
 	var gs: Node = get_node_or_null("/root/GlobalSettings")
@@ -94,8 +109,8 @@ func _load_saved_settings() -> void:
 		active_bg_color = color_names[bg_idx].to_lower()
 
 	_update_panel_stylebox()
-
 	is_speaker_name_shown = bool(gs.get_setting("Accessibility", "subtitle_show_names", true))
+	print("SubtitleLayer: Subtitles enabled state: ", is_subtitles_enabled)
 
 
 ## Binds subtitle and dialogue customization signals from the global [Events] bus.
@@ -138,9 +153,6 @@ func _hide_subtitles_immediate() -> void:
 
 
 ## Renders typewriter subtitle dialogue synced to duration with reading grace time.
-## [param speaker] Name identifier of the entity speaking.
-## [param text] Dialogue body string to display.
-## [param duration] Visible display duration in seconds.
 func show_subtitle(speaker: String, text: String, duration: float) -> void:
 	if not is_subtitles_enabled:
 		print("SubtitleLayer: Subtitles disabled; dropping request.")
@@ -151,26 +163,45 @@ func show_subtitle(speaker: String, text: String, duration: float) -> void:
 		return
 
 	print("SubtitleLayer: Displaying dialogue from '", speaker, "'.")
+	_current_speaker = speaker
+	_current_raw_text = text
+
+	var is_already_showing: bool = background_panel.visible and background_panel.modulate.a > 0.2
 
 	if fade_tween and fade_tween.is_valid():
 		fade_tween.kill()
 
-	var formatted_body: String = ""
-	if is_speaker_name_shown and not speaker.is_empty():
-		formatted_body = ("[color=" + active_speaker_color + "]" + speaker + ":[/color] ")
-	formatted_body += ("[color=" + active_text_color + "]" + text + "[/color]")
+	_format_and_apply_text()
+
+	var parsed_len: int = subtitle_label.get_parsed_text().length()
+	var total_chars: int = maxi(parsed_len, subtitle_label.get_total_character_count())
+	if total_chars <= 0:
+		total_chars = text.length()
+
+	background_panel.visible = true
+
+	# Keep existing display visible without restarting typewriter from character zero
+	if is_already_showing:
+		background_panel.modulate.a = 1.0
+		subtitle_label.visible_characters = -1
+		fade_tween = create_tween()
+		fade_tween.tween_interval(duration + READING_GRACE_PERIOD)
+		(
+			fade_tween
+			. tween_property(background_panel, "modulate:a", 0.0, FADE_DURATION)
+			. set_trans(Tween.TRANS_SINE)
+			. set_ease(Tween.EASE_IN)
+		)
+		fade_tween.tween_callback(_hide_subtitles_immediate)
+		return
 
 	subtitle_label.scroll_following = false
-	subtitle_label.text = formatted_body
 	subtitle_label.visible_characters = 0
 
 	var scroll_bar: VScrollBar = subtitle_label.get_v_scroll_bar()
 	if is_instance_valid(scroll_bar):
 		scroll_bar.value = 0.0
 
-	background_panel.visible = true
-
-	var total_chars: int = subtitle_label.get_total_character_count()
 	var type_dur: float = duration if duration > 0.0 else (float(total_chars) / DEFAULT_CPS)
 
 	fade_tween = create_tween()
@@ -204,14 +235,32 @@ func show_subtitle(speaker: String, text: String, duration: float) -> void:
 	fade_tween.tween_callback(_hide_subtitles_immediate)
 
 
+## Formats stored speaker and dialogue text using active BBCode palette colors.
+func _format_and_apply_text() -> void:
+	if not is_instance_valid(subtitle_label):
+		return
+	var formatted_body: String = ""
+	if is_speaker_name_shown and not _current_speaker.is_empty():
+		formatted_body = ("[color=" + active_speaker_color + "]" + _current_speaker + ":[/color] ")
+	formatted_body += ("[color=" + active_text_color + "]" + _current_raw_text + "[/color]")
+	subtitle_label.text = formatted_body
+
+
+## Updates visible dialogue in real time when styling preferences change.
+func _refresh_current_dialogue() -> void:
+	if not is_instance_valid(background_panel) or not background_panel.visible:
+		return
+	print("SubtitleLayer: Refreshing active subtitle styling on screen.")
+	_format_and_apply_text()
+	subtitle_label.visible_characters = -1
+
+
 ## Updates visible character count and forces the active line fully into frame.
-## [param char_count] Count of visible characters to reveal.
 func _animate_typing_and_scroll(char_count: int) -> void:
 	if not is_instance_valid(subtitle_label):
 		return
 
 	subtitle_label.visible_characters = char_count
-
 	var scroll_bar: VScrollBar = subtitle_label.get_v_scroll_bar()
 	if not is_instance_valid(scroll_bar):
 		return
@@ -244,7 +293,6 @@ func hide_subtitle() -> void:
 
 
 ## Updates the subtitle font resource dynamically when selected.
-## [param font_id] Identifier or path of the chosen font.
 func _on_font_changed(font_id: String) -> void:
 	print("SubtitleLayer: Updating subtitle label font -> ", font_id)
 	if not is_instance_valid(subtitle_label):
@@ -262,7 +310,6 @@ func _on_font_changed(font_id: String) -> void:
 
 
 ## Toggles global master visibility for the subtitle layer.
-## [param is_active] True if subtitles should be rendered.
 func _on_subtitles_toggled(is_active: bool) -> void:
 	print("SubtitleLayer: Master subtitle visibility toggled -> ", is_active)
 	is_subtitles_enabled = is_active
@@ -271,12 +318,15 @@ func _on_subtitles_toggled(is_active: bool) -> void:
 
 
 ## Updates default font size for subtitle rendering.
-## [param font_size] New font size in pixels.
 func _on_subtitle_size_changed(font_size: float) -> void:
 	print("SubtitleLayer: Subtitle font size adjusted -> ", font_size)
 	active_font_size = font_size
 	if is_instance_valid(subtitle_label):
-		subtitle_label.add_theme_font_size_override("normal_font_size", int(font_size))
+		var size_int: int = int(font_size)
+		subtitle_label.add_theme_font_size_override("normal_font_size", size_int)
+		subtitle_label.add_theme_font_size_override("bold_font_size", size_int)
+		subtitle_label.add_theme_font_size_override("italics_font_size", size_int)
+		subtitle_label.add_theme_font_size_override("bold_italics_font_size", size_int)
 
 
 ## Rebuilds the background panel StyleBoxFlat with current color and opacity.
@@ -299,7 +349,6 @@ func _update_panel_stylebox() -> void:
 
 
 ## Updates background panel opacity.
-## [param opacity] Normalized opacity value from 0.0 to 1.0.
 func _on_subtitle_bg_opacity_changed(opacity: float) -> void:
 	print("SubtitleLayer: Background opacity adjusted -> ", opacity)
 	active_bg_opacity = clampf(opacity, 0.0, 1.0)
@@ -307,14 +356,13 @@ func _on_subtitle_bg_opacity_changed(opacity: float) -> void:
 
 
 ## Updates dialogue body text color string.
-## [param color_key] Color name representation.
 func _on_subtitle_text_color_changed(color_key: String) -> void:
 	print("SubtitleLayer: Dialogue text color updated -> ", color_key)
 	active_text_color = color_key
+	_refresh_current_dialogue()
 
 
 ## Updates background panel tint color.
-## [param color_key] Color name representation.
 func _on_subtitle_bg_color_changed(color_key: String) -> void:
 	print("SubtitleLayer: Subtitle background color updated -> ", color_key)
 	active_bg_color = color_key
@@ -322,14 +370,14 @@ func _on_subtitle_bg_color_changed(color_key: String) -> void:
 
 
 ## Updates speaker tag highlight color string.
-## [param color_key] Color name representation.
 func _on_subtitle_speaker_color_changed(color_key: String) -> void:
 	print("SubtitleLayer: Speaker tag color updated -> ", color_key)
 	active_speaker_color = color_key
+	_refresh_current_dialogue()
 
 
 ## Toggles whether speaker names precede dialogue text.
-## [param enabled] True to display speaker prefix tags.
 func _on_subtitle_show_names_toggled(enabled: bool) -> void:
 	print("SubtitleLayer: Show speaker names toggled -> ", enabled)
 	is_speaker_name_shown = enabled
+	_refresh_current_dialogue()
