@@ -386,3 +386,20 @@ func apply_wave_motion(index: int, base_pos: Vector3) -> Vector3:
 	var wave_y: float = sin((elapsed_time * wave_frequency) + phase) * wave_amplitude
 	base_pos.y += wave_y
 	return base_pos
+
+
+## Adopts solo drone into swarm, resizes arrays, and begins formation cycles.
+func adopt_drone(solo_drone: ElfDrone) -> void:
+	print("DroneSwarmController: adopt_drone() - Adopting drone into flock.")
+	if not is_instance_valid(solo_drone) or drones.has(solo_drone):
+		return
+
+	drones.append(solo_drone)
+	current_offsets.append(solo_drone.global_position - global_position)
+	drone_count = drones.size()
+
+	# Transition from 30m roam into the formation cycle
+	mode = Mode.FORMATION
+	formation = Formation.CIRCLE
+	auto_cycle_formations = true
+	cycle_timer = 0.0

@@ -90,3 +90,5 @@ metadata/_custom_type_script = "uid://q7rcgal41c7b"
 script = ExtResource("3_eevwv")
 max_health = 50
 metadata/_custom_type_script = "uid://cbwy13aembb7w"
+
+[node name="Node" type="Node" parent="Components" unique_id=1768342723]
