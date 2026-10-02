@@ -1,16 +1,12 @@
 ## A trap that appears as a normal tile but attacks the player when approached.
-##
-## [FlyingTile] acts as an environment hazard. When a player enters its activation
-## area, it lifts off the ground, spins to telegraph the attack, and then launches
-## itself at the player's last known position.
 class_name FlyingTile
 extends Area3D
 
 ## Defines the sequential lifecycle phases of the flying tile trap.
 enum State { IDLE, RISING, SPINNING, ATTACKING }
 
-## The amount of health points deducted from the target upon collision.
 @export_group("Tile Settings")
+## The amount of health points deducted from the target upon collision.
 @export var damage: int = 1
 
 ## The height in meters the tile will rise before attacking.
@@ -29,7 +25,7 @@ enum State { IDLE, RISING, SPINNING, ATTACKING }
 @export var lifetime_after_attack: float = 1.5
 
 ## Tracks the current operational phase of the trap.
-var _current_state: State = State.IDLE
+var _current_state: FlyingTile.State = FlyingTile.State.IDLE
 
 ## The cached initial Y position to calculate relative rise height.
 var _start_y: float = 0.0
@@ -37,10 +33,10 @@ var _start_y: float = 0.0
 ## Accumulates delta time while in the spinning phase.
 var _spin_timer: float = 0.0
 
-## Accumulates delta time while in the attacking phase to handle lifetime expiration.
+## Accumulates delta time while in the attacking phase.
 var _attack_timer: float = 0.0
 
-## The locked normalized vector direction the tile travels during the attack.
+## The locked normalized vector direction the tile travels during attack.
 var _attack_direction: Vector3 = Vector3.ZERO
 
 ## Reference to the targeted player node.
@@ -53,7 +49,7 @@ var _target_player: Node3D = null
 @onready var _mesh: MeshInstance3D = $MeshInstance3D
 
 
-## Caches the starting height and connects necessary physics signals.
+## Caches starting height and connects area and body entry signals.
 func _ready() -> void:
 	_start_y = global_position.y
 
@@ -63,23 +59,22 @@ func _ready() -> void:
 	print("Flying tile initialized and waiting for player.")
 
 
-## Main physics loop driving state transitions, movement, and visual rotations.
-## [param delta] The time elapsed since the previous physics tick in seconds.
+## Main physics loop driving state transitions, movement, and rotations.
 func _physics_process(delta: float) -> void:
 	match _current_state:
-		State.IDLE:
+		FlyingTile.State.IDLE:
 			pass
 
-		State.RISING:
+		FlyingTile.State.RISING:
 			global_position.y = move_toward(
 				global_position.y, _start_y + rise_height, rise_speed * delta
 			)
 
 			if global_position.y >= _start_y + rise_height:
-				_current_state = State.SPINNING
+				_current_state = FlyingTile.State.SPINNING
 				print("Tile reached target height. Starting to spin.")
 
-		State.SPINNING:
+		FlyingTile.State.SPINNING:
 			_mesh.rotate_y(25.0 * delta)
 			_mesh.rotate_x(5.0 * delta)
 
@@ -87,7 +82,7 @@ func _physics_process(delta: float) -> void:
 			if _spin_timer >= spin_duration:
 				_start_attack()
 
-		State.ATTACKING:
+		FlyingTile.State.ATTACKING:
 			_mesh.rotate_y(40.0 * delta)
 			global_position += _attack_direction * attack_speed * delta
 
@@ -97,17 +92,16 @@ func _physics_process(delta: float) -> void:
 
 
 ## Locks onto the player and transitions to the rising state.
-## [param body] The [Node3D] that entered the trigger area.
 func _on_activation_area_body_entered(body: Node3D) -> void:
-	if _current_state == State.IDLE and body.is_in_group("player"):
+	if _current_state == FlyingTile.State.IDLE and body.is_in_group(&"player"):
 		_target_player = body
-		_current_state = State.RISING
+		_current_state = FlyingTile.State.RISING
 		print("Player entered activation sphere. Tile rising.")
 
 
 ## Locks in the attack direction and begins moving towards the player.
 func _start_attack() -> void:
-	_current_state = State.ATTACKING
+	_current_state = FlyingTile.State.ATTACKING
 
 	if is_instance_valid(_target_player):
 		var target_pos: Vector3 = _target_player.global_position
@@ -119,10 +113,9 @@ func _start_attack() -> void:
 	print("Tile attacking towards player!")
 
 
-## Resolves collisions during the attack phase, dealing damage to valid targets.
-## [param body] The [Node3D] struck by the tile.
+## Resolves collisions during attack phase, dealing damage to targets.
 func _on_body_entered(body: Node3D) -> void:
-	if _current_state != State.ATTACKING:
+	if _current_state != FlyingTile.State.ATTACKING:
 		return
 
 	var health_comp: HealthComponent = body.get_node_or_null("HealthComponent") as HealthComponent
@@ -131,7 +124,7 @@ func _on_body_entered(body: Node3D) -> void:
 		print("FlyingTile: Direct hit! Calling HealthComponent.take_damage(100)")
 		health_comp.take_damage(100)
 		_destroy_tile("Succeeded in hitting player.")
-	elif body.is_in_group("player"):
+	elif body.is_in_group(&"player"):
 		push_warning("FlyingTile: Player hit but no HealthComponent found!")
 		_destroy_tile("Hit player, but no HealthComponent found.")
 	else:
@@ -139,8 +132,7 @@ func _on_body_entered(body: Node3D) -> void:
 		_destroy_tile("Collided with environment.")
 
 
-## Cleans up the node from memory.
-## [param reason] Diagnostic string explaining why the destruction occurred.
+## Cleans up the node instance from memory.
 func _destroy_tile(reason: String) -> void:
 	print("Tile destroyed. Reason: ", reason)
 	queue_free()

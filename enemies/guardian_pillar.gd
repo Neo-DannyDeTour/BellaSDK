@@ -27,7 +27,7 @@ enum State { SCANNING, TARGETING, FROZEN, COOLDOWN }
 @export var field_of_view_degrees: float = 60.0
 
 ## Active operational state of the turret.
-var current_state: State = State.SCANNING
+var current_state: GuardianPillar.State = GuardianPillar.State.SCANNING
 
 ## Currently tracked hostile target, or null if unassigned.
 var target_player: Node3D = null
@@ -54,21 +54,19 @@ func _ready() -> void:
 
 
 ## Updates state logic per physics frame tick.
-## [param delta] Elapsed physics frame delta time in seconds.
 func _physics_process(delta: float) -> void:
 	match current_state:
-		State.SCANNING:
+		GuardianPillar.State.SCANNING:
 			_process_scanning(delta)
-		State.TARGETING:
+		GuardianPillar.State.TARGETING:
 			_process_targeting()
-		State.FROZEN:
+		GuardianPillar.State.FROZEN:
 			pass
-		State.COOLDOWN:
+		GuardianPillar.State.COOLDOWN:
 			pass
 
 
 ## Rotates turret head and inspects vision cone for hostiles.
-## [param delta] Frame delta time in seconds.
 func _process_scanning(delta: float) -> void:
 	head.rotate_y(scan_speed * delta)
 	_detect_player_in_cone()
@@ -104,13 +102,11 @@ func _detect_player_in_cone() -> void:
 				if _has_line_of_sight(player_node):
 					print("GuardianPillar: Target spotted. Locking on.")
 					target_player = player_node
-					_change_state(State.TARGETING)
+					_change_state(GuardianPillar.State.TARGETING)
 					return
 
 
 ## Raycasts toward target using [CollisionLayers] to confirm line of sight.
-## [param target] Target [Node3D] to verify line of sight towards.
-## [return] True if unobstructed line of sight exists.
 func _has_line_of_sight(target: Node3D) -> bool:
 	print("GuardianPillar: Checking line of sight to target.")
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
@@ -129,7 +125,7 @@ func _has_line_of_sight(target: Node3D) -> bool:
 func _process_targeting() -> void:
 	if is_friendly or not is_instance_valid(target_player):
 		print("GuardianPillar: Target missing or disabled. Resuming scan.")
-		_change_state(State.SCANNING)
+		_change_state(GuardianPillar.State.SCANNING)
 		return
 
 	var target_pos: Vector3 = target_player.global_position
@@ -143,36 +139,35 @@ func _process_targeting() -> void:
 
 
 ## Transitions operational state machine and adjusts timers.
-## [param new_state] The target [enum State] to transition to.
-func _change_state(new_state: State) -> void:
+func _change_state(new_state: GuardianPillar.State) -> void:
 	current_state = new_state
-	print("GuardianPillar: State transitioned to ", State.keys()[current_state])
+	print("GuardianPillar: State transitioned to ", GuardianPillar.State.keys()[current_state])
 
 	match current_state:
-		State.SCANNING:
+		GuardianPillar.State.SCANNING:
 			laser_mesh.hide()
 			target_player = null
-		State.TARGETING:
+		GuardianPillar.State.TARGETING:
 			laser_mesh.show()
 			state_timer.start(targeting_time)
-		State.FROZEN:
+		GuardianPillar.State.FROZEN:
 			state_timer.start(freeze_time)
-		State.COOLDOWN:
+		GuardianPillar.State.COOLDOWN:
 			laser_mesh.hide()
 			state_timer.start(2.0)
 
 
 ## Advances state machine when active timer period elapses.
 func _on_state_timer_timeout() -> void:
-	print("GuardianPillar: State timer elapsed for ", State.keys()[current_state])
+	print("GuardianPillar: State timer elapsed for ", GuardianPillar.State.keys()[current_state])
 	match current_state:
-		State.TARGETING:
-			_change_state(State.FROZEN)
-		State.FROZEN:
+		GuardianPillar.State.TARGETING:
+			_change_state(GuardianPillar.State.FROZEN)
+		GuardianPillar.State.FROZEN:
 			_shoot_projectile()
-			_change_state(State.COOLDOWN)
-		State.COOLDOWN:
-			_change_state(State.SCANNING)
+			_change_state(GuardianPillar.State.COOLDOWN)
+		GuardianPillar.State.COOLDOWN:
+			_change_state(GuardianPillar.State.SCANNING)
 
 
 ## Safely instantiates and launches an [EnergyBlast] projectile.

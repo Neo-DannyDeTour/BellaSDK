@@ -198,7 +198,8 @@ func _can_take_damage(target: Node3D) -> bool:
 
 ## Returns true if [param body] is the player character.
 func _is_player_body(body: Node3D) -> bool:
-	print("[VolumetricFire] Checking if body is player: ", body.name if body else "null")
+	var body_name: StringName = body.name if is_instance_valid(body) else &"null"
+	print("[VolumetricFire] Checking if body is player: ", body_name)
 	if not is_instance_valid(body):
 		return false
 	if body.is_in_group(&"player"):

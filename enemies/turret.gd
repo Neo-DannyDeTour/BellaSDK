@@ -378,7 +378,8 @@ func _spawn_tracer_effect(start_pos: Vector3, end_pos: Vector3) -> void:
 
 ## Recycles pooled hitscan tracer instance back to [member tracer_pool].
 func _recycle_tracer(tracer: Node) -> void:
-	print("Turret: Recycling pooled tracer: ", tracer.name if is_instance_valid(tracer) else "null")
+	var tracer_id: StringName = tracer.name if is_instance_valid(tracer) else &"null"
+	print("Turret: Recycling pooled tracer: ", tracer_id)
 	if is_instance_valid(tracer_pool) and is_instance_valid(tracer):
 		tracer_pool.recycle(tracer)
 

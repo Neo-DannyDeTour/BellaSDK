@@ -30,7 +30,7 @@ enum State { IDLE, PLAYING, HOLDING, SPOTTED, ATTACKING }
 @export var interact_interval: float = 1.5
 
 ## Current operational state of tentacle.
-var current_state: State = State.IDLE
+var current_state: TentacleEnemy.State = TentacleEnemy.State.IDLE
 
 ## Active [RigidBody3D] prop currently held.
 var held_object: RigidBody3D = null
@@ -92,7 +92,7 @@ func _ready() -> void:
 	if is_instance_valid(health_component):
 		Utilities.safe_connect(health_component.died, _on_died)
 
-	_switch_state(State.IDLE)
+	_switch_state(TentacleEnemy.State.IDLE)
 
 
 ## Dispatches physics updates based on active state.
@@ -102,13 +102,13 @@ func _physics_process(delta: float) -> void:
 		return
 
 	match current_state:
-		State.IDLE:
+		TentacleEnemy.State.IDLE:
 			_process_idle(delta)
-		State.PLAYING:
+		TentacleEnemy.State.PLAYING:
 			_process_playing(delta)
-		State.HOLDING:
+		TentacleEnemy.State.HOLDING:
 			_process_holding(delta)
-		State.SPOTTED:
+		TentacleEnemy.State.SPOTTED:
 			_process_spotted(delta)
 
 
@@ -121,7 +121,7 @@ func _process_idle(delta: float) -> void:
 	_desired_pos.y = (max_reach * 0.5) + sin(_idle_time * 0.8) * 2.0
 	_desired_pos.z = cos(_idle_time * 1.5) * (max_reach * 0.4)
 
-	tentacle_target.position = MathUtils.damp(
+	tentacle_target.position = MathUtils.damp_v3(
 		tentacle_target.position, _desired_pos, track_speed, delta
 	)
 
@@ -133,14 +133,14 @@ func _process_playing(delta: float) -> void:
 	_interact_timer += delta
 
 	if not is_instance_valid(target_toy):
-		_switch_state(State.IDLE)
+		_switch_state(TentacleEnemy.State.IDLE)
 		return
 
 	_desired_pos = target_toy.global_position + Vector3(0.0, 1.2, 0.0)
 	_desired_pos.x += sin(_idle_time * 3.0) * 0.6
 	_desired_pos.z += cos(_idle_time * 2.5) * 0.6
 
-	tentacle_target.global_position = MathUtils.damp(
+	tentacle_target.global_position = MathUtils.damp_v3(
 		tentacle_target.global_position, _desired_pos, track_speed, delta
 	)
 
@@ -156,37 +156,37 @@ func _process_playing(delta: float) -> void:
 func _process_holding(delta: float) -> void:
 	print("TentacleEnemy: _process_holding() carrying held prop.")
 	if not is_instance_valid(held_object):
-		_switch_state(State.IDLE)
+		_switch_state(TentacleEnemy.State.IDLE)
 		return
 
 	_hold_timer += delta
-	tentacle_target.position = MathUtils.damp(
+	tentacle_target.position = MathUtils.damp_v3(
 		tentacle_target.position, _place_target, track_speed, delta
 	)
 	held_object.global_position = tentacle_target.global_position
 
 	if _hold_timer >= hold_duration:
 		drop_object()
-		_switch_state(State.PLAYING)
+		_switch_state(TentacleEnemy.State.PLAYING)
 
 
 ## Tracks player target and charges strike attack.
 func _process_spotted(delta: float) -> void:
 	print("TentacleEnemy: _process_spotted() charging strike on target.")
 	if not is_instance_valid(target_player):
-		_switch_state(State.IDLE)
+		_switch_state(TentacleEnemy.State.IDLE)
 		return
 
 	_desired_pos = target_player.global_position
 	_desired_pos.y += 1.0
 
-	tentacle_target.global_position = MathUtils.damp(
+	tentacle_target.global_position = MathUtils.damp_v3(
 		tentacle_target.global_position, _desired_pos, track_speed * 0.4, delta
 	)
 
 	_charge_timer += delta
 	if _charge_timer >= charge_delay:
-		_switch_state(State.ATTACKING)
+		_switch_state(TentacleEnemy.State.ATTACKING)
 		_decide_attack()
 
 
@@ -198,20 +198,20 @@ func _process_attacking(_delta: float) -> void:
 
 
 ## Transitions active state and resets tick timers.
-func _switch_state(new_state: State) -> void:
+func _switch_state(new_state: TentacleEnemy.State) -> void:
 	print("TentacleEnemy: _switch_state() switching to state: ", new_state)
 	if current_state == new_state:
 		return
 
 	current_state = new_state
 	match current_state:
-		State.IDLE:
+		TentacleEnemy.State.IDLE:
 			_check_for_pickables()
-		State.PLAYING:
+		TentacleEnemy.State.PLAYING:
 			_interact_timer = 0.0
-		State.HOLDING:
+		TentacleEnemy.State.HOLDING:
 			_hold_timer = 0.0
-		State.SPOTTED:
+		TentacleEnemy.State.SPOTTED:
 			_charge_timer = 0.0
 
 
@@ -243,7 +243,7 @@ func _check_for_pickables() -> void:
 		if body is RigidBody3D and not bool(body.get(&"is_held")):
 			print("TentacleEnemy: Target prop detected: ", body.name)
 			target_toy = body
-			_switch_state(State.PLAYING)
+			_switch_state(TentacleEnemy.State.PLAYING)
 			return
 
 
@@ -265,7 +265,7 @@ func grab_object(body: RigidBody3D) -> void:
 	var rx: float = randf_range(-max_reach * 0.5, max_reach * 0.5)
 	var rz: float = randf_range(-max_reach * 0.5, max_reach * 0.5)
 	_place_target = Vector3(rx, max_reach * 0.3, rz)
-	_switch_state(State.HOLDING)
+	_switch_state(TentacleEnemy.State.HOLDING)
 
 
 ## Orchestrates multi-step grab and throw tween.
@@ -280,7 +280,7 @@ func _perform_grab_and_throw(weapon: RigidBody3D) -> void:
 	_action_tween.set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
 	(
 		_action_tween
-		. tween_property(tentacle_target, "global_position", weapon.global_position, 0.2)
+		. tween_property(tentacle_target, ^"global_position", weapon.global_position, 0.2)
 		. set_trans(Tween.TRANS_CUBIC)
 		. set_ease(Tween.EASE_OUT)
 	)
@@ -292,13 +292,13 @@ func _perform_grab_and_throw(weapon: RigidBody3D) -> void:
 				held_object.freeze = true
 			else:
 				_is_striking = false
-				_switch_state(State.SPOTTED)
+				_switch_state(TentacleEnemy.State.SPOTTED)
 	)
 
 	var lift_pos: Vector3 = global_position + Vector3(0.0, max_reach * 0.6, 0.0)
 	(
 		_action_tween
-		. tween_property(tentacle_target, "global_position", lift_pos, 0.25)
+		. tween_property(tentacle_target, ^"global_position", lift_pos, 0.25)
 		. set_trans(Tween.TRANS_SINE)
 		. set_ease(Tween.EASE_IN_OUT)
 	)
@@ -309,7 +309,7 @@ func _perform_grab_and_throw(weapon: RigidBody3D) -> void:
 				throw_object_at_player()
 			else:
 				_is_striking = false
-				_switch_state(State.SPOTTED)
+				_switch_state(TentacleEnemy.State.SPOTTED)
 	)
 
 
@@ -320,7 +320,7 @@ func throw_object_at_player() -> void:
 
 	if not is_instance_valid(held_object) or not is_instance_valid(target_player):
 		_is_striking = false
-		_switch_state(State.SPOTTED)
+		_switch_state(TentacleEnemy.State.SPOTTED)
 		return
 
 	var target_pos: Vector3 = target_player.global_position
@@ -342,16 +342,16 @@ func throw_object_at_player() -> void:
 
 	_action_tween.set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
 	_action_tween.tween_property(
-		tentacle_target, "position", Vector3(0.0, max_reach * 0.5, 0.0), 0.3
+		tentacle_target, ^"position", Vector3(0.0, max_reach * 0.5, 0.0), 0.3
 	)
 
 	_action_tween.tween_callback(
 		func() -> void:
 			_is_striking = false
 			if is_instance_valid(target_player):
-				_switch_state(State.SPOTTED)
+				_switch_state(TentacleEnemy.State.SPOTTED)
 			else:
-				_switch_state(State.IDLE)
+				_switch_state(TentacleEnemy.State.IDLE)
 	)
 
 
@@ -380,7 +380,7 @@ func strike_player() -> void:
 	_action_tween.set_process_mode(Tween.TWEEN_PROCESS_PHYSICS)
 	(
 		_action_tween
-		. tween_property(tentacle_target, "global_position", strike_target, 0.15)
+		. tween_property(tentacle_target, ^"global_position", strike_target, 0.15)
 		. set_trans(Tween.TRANS_BACK)
 		. set_ease(Tween.EASE_IN)
 	)
@@ -401,7 +401,7 @@ func strike_player() -> void:
 
 	(
 		_action_tween
-		. tween_property(tentacle_target, "position", Vector3(0.0, max_reach * 0.5, 0.0), 0.3)
+		. tween_property(tentacle_target, ^"position", Vector3(0.0, max_reach * 0.5, 0.0), 0.3)
 		. set_delay(0.1)
 	)
 
@@ -409,9 +409,9 @@ func strike_player() -> void:
 		func() -> void:
 			_is_striking = false
 			if not is_instance_valid(target_player):
-				_switch_state(State.IDLE)
+				_switch_state(TentacleEnemy.State.IDLE)
 			else:
-				_switch_state(State.SPOTTED)
+				_switch_state(TentacleEnemy.State.SPOTTED)
 	)
 
 
@@ -421,15 +421,15 @@ func _on_detection_area_body_entered(body: Node3D) -> void:
 	if body.is_in_group(&"player"):
 		target_player = body
 		if is_instance_valid(held_object):
-			_switch_state(State.ATTACKING)
+			_switch_state(TentacleEnemy.State.ATTACKING)
 			throw_object_at_player()
 		else:
-			_switch_state(State.SPOTTED)
-	elif body is RigidBody3D and current_state == State.IDLE:
+			_switch_state(TentacleEnemy.State.SPOTTED)
+	elif body is RigidBody3D and current_state == TentacleEnemy.State.IDLE:
 		if bool(body.get(&"is_held")):
 			return
 		target_toy = body
-		_switch_state(State.PLAYING)
+		_switch_state(TentacleEnemy.State.PLAYING)
 
 
 ## Handles entity exiting detection territory.
@@ -437,12 +437,16 @@ func _on_detection_area_body_exited(body: Node3D) -> void:
 	print("TentacleEnemy: _on_detection_area_body_exited() with: ", body.name)
 	if body == target_player:
 		target_player = null
-		if current_state in [State.SPOTTED, State.ATTACKING] and not _is_striking:
-			_switch_state(State.IDLE)
+		var in_combat_state: bool = (
+			current_state == TentacleEnemy.State.SPOTTED
+			or current_state == TentacleEnemy.State.ATTACKING
+		)
+		if in_combat_state and not _is_striking:
+			_switch_state(TentacleEnemy.State.IDLE)
 	elif body == target_toy:
 		target_toy = null
-		if current_state == State.PLAYING:
-			_switch_state(State.IDLE)
+		if current_state == TentacleEnemy.State.PLAYING:
+			_switch_state(TentacleEnemy.State.IDLE)
 
 
 ## Drops held prop and droops tentacle on defeat.
@@ -454,4 +458,4 @@ func _on_died() -> void:
 
 	_action_tween = Utilities.reset_tween(self, _action_tween)
 	if is_instance_valid(_action_tween):
-		_action_tween.tween_property(tentacle_target, "position:y", 0.0, 0.5)
+		_action_tween.tween_property(tentacle_target, ^"position:y", 0.0, 0.5)

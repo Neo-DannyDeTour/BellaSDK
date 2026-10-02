@@ -29,7 +29,7 @@ enum State { IDLE, ATTACKING, RETURNING }
 			_draw_path_lines()
 
 ## Tracks current operational phase of trap.
-var _state: State = State.IDLE
+var _state: RookTrap.State = RookTrap.State.IDLE
 
 ## Cached starting position of moving body.
 var _origin_position: Vector3 = Vector3.ZERO
@@ -138,24 +138,21 @@ func _draw_path_lines() -> void:
 
 	Utilities.clear_children(path_lines_container)
 
+	var base_mat: StandardMaterial3D = StandardMaterial3D.new()
+	base_mat.albedo_color = Color.BLACK
+	base_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+
+	var cached_mat: StandardMaterial3D = (
+		MaterialCache.get_variant(base_mat, "black_track") as StandardMaterial3D
+	)
+
 	for marker: Marker3D in markers:
 		if not is_instance_valid(marker):
 			continue
 
 		var mesh_instance: MeshInstance3D = MeshInstance3D.new()
 		var box_mesh: BoxMesh = BoxMesh.new()
-		var mat: StandardMaterial3D = (
-			MaterialCache.get_variant(
-				&"rook_trap_track_mat",
-				func() -> Material:
-					var m: StandardMaterial3D = StandardMaterial3D.new()
-					m.albedo_color = Color.BLACK
-					m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-					return m
-			)
-			as StandardMaterial3D
-		)
-		box_mesh.material = mat
+		box_mesh.material = cached_mat
 
 		var start_pos: Vector3 = (
 			_origin_position if _origin_position != Vector3.ZERO else global_position

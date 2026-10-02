@@ -1,4 +1,5 @@
-## Coordinates drone formations, automated cycling, and player healing.
+## Coordinates drone formations, layout cycling, area exploration, and player healing.
+@tool
 class_name DroneSwarmController
 extends Node3D
 
@@ -12,13 +13,21 @@ signal healing_completed(target_player: Node3D)
 enum Formation { CIRCLE, SQUARE, CROSS }
 
 ## Operational behavioral modes for swarm.
-enum Mode { IDLE, PATH_FOLLOW, FORMATION, HEAL_PLAYER }
+enum Mode { IDLE, PATH_FOLLOW, FORMATION, HEAL_PLAYER, EXPLORE }
 
 ## Drone packed scene instantiated in swarm.
-@export var drone_scene: PackedScene
+@export var drone_scene: PackedScene:
+	set(value):
+		drone_scene = value
+		if Engine.is_editor_hint() and is_inside_tree():
+			spawn_drones()
 
 ## Total drone instances spawned in swarm.
-@export_range(1, 64) var drone_count: int = 10
+@export_range(1, 64) var drone_count: int = 10:
+	set(value):
+		drone_count = value
+		if Engine.is_editor_hint() and is_inside_tree():
+			spawn_drones()
 
 ## Active geometric arrangement of drones.
 @export var formation: Formation = Formation.CIRCLE
@@ -57,7 +66,7 @@ enum Mode { IDLE, PATH_FOLLOW, FORMATION, HEAL_PLAYER }
 @export var cycle_interval: float = 6.0
 
 ## Detection radius in meters sensing player.
-@export var detection_radius: float = 12.0
+@export var detection_radius: float = 30.0
 
 ## Health points restored to player per second.
 @export var heal_rate_per_sec: float = 25.0
@@ -65,11 +74,23 @@ enum Mode { IDLE, PATH_FOLLOW, FORMATION, HEAL_PLAYER }
 ## Orbit angular velocity in radians per second.
 @export var orbit_speed: float = 1.6
 
+## Exploration radius in meters for free roaming.
+@export var explore_radius: float = 30.0
+
+## Interval in seconds between wander re-routes.
+@export var explore_retarget_interval: float = 4.0
+
 ## Internal list of active managed drone nodes.
 var drones: Array[ElfDrone] = []
 
 ## Interpolated local offset coordinates.
 var current_offsets: Array[Vector3] = []
+
+## Target wander destinations per drone slot.
+var explore_targets: Array[Vector3] = []
+
+## Timer tracking next wander retargeting.
+var explore_timer: float = 0.0
 
 ## Running elapsed time in seconds for waves.
 var elapsed_time: float = 0.0
@@ -99,22 +120,42 @@ var detected_player: Node3D = null
 var detector_area: Area3D = null
 
 
-## Initializes detection volume and spawns drones.
+## Cleans up spawned preview drones when leaving tree.
+func _exit_tree() -> void:
+	print("DroneSwarmController: _exit_tree() cleaning up drones.")
+	_clear_drones()
+
+
+## Initializes detection volume, events, and spawns drones.
 func _ready() -> void:
 	print("DroneSwarmController: _ready() initializing swarm controller.")
-	_setup_detector_area()
+	if not Engine.is_editor_hint():
+		_setup_detector_area()
+		if has_node("/root/Events"):
+			var events: Node = get_node("/root/Events")
+			if events.has_signal("player_damaged"):
+				events.player_damaged.connect(_on_player_damaged)
 	spawn_drones()
 
 
-## Processes swarm logic, waves, and movement.
+## Drives swarm behavior, formations, waves, and movement.
 func _physics_process(delta: float) -> void:
 	elapsed_time += delta
 	var center_pos: Vector3 = global_position
 
-	_check_player_health_and_state(delta)
+	if not Engine.is_editor_hint():
+		if is_instance_valid(detector_area) and detected_player == null:
+			for body: Node3D in detector_area.get_overlapping_bodies():
+				if _is_player(body):
+					detected_player = body
+					break
+		_check_player_health_and_state(delta)
 
-	if auto_cycle_formations and mode != Mode.HEAL_PLAYER:
+	if auto_cycle_formations and mode != Mode.HEAL_PLAYER and mode != Mode.EXPLORE:
 		_process_auto_cycling(delta)
+
+	if mode == Mode.EXPLORE:
+		_process_explore_mode(delta)
 
 	match mode:
 		Mode.PATH_FOLLOW:
@@ -126,12 +167,12 @@ func _physics_process(delta: float) -> void:
 					center_pos = path_to_follow.to_global(local_pos)
 
 		Mode.HEAL_PLAYER:
-			var target: Node3D = detected_player if detected_player != null else player_target
+			var target: Node3D = _find_player_target()
 			if target != null:
 				center_pos = target.global_position
 				orbit_angle += orbit_speed * delta
 
-		Mode.FORMATION, Mode.IDLE:
+		Mode.FORMATION, Mode.IDLE, Mode.EXPLORE:
 			center_pos = global_position
 
 	if is_instance_valid(detector_area):
@@ -142,14 +183,42 @@ func _physics_process(delta: float) -> void:
 		if not is_instance_valid(drone):
 			continue
 
-		var target_offset: Vector3 = calculate_slot_offset(i, drones.size())
-		current_offsets[i] = MathUtils.damp(
-			current_offsets[i], target_offset, formation_transition_speed, delta
+		var target_offset: Vector3 = Vector3.ZERO
+		if mode == Mode.EXPLORE and i < explore_targets.size():
+			target_offset = explore_targets[i]
+		else:
+			target_offset = calculate_slot_offset(i, drones.size())
+
+		current_offsets[i] = current_offsets[i].lerp(
+			target_offset, clampf(formation_transition_speed * delta, 0.0, 1.0)
 		)
 
 		var target_pos: Vector3 = center_pos + current_offsets[i]
 		target_pos = apply_wave_motion(i, target_pos)
 		drone.set_target_position(target_pos)
+
+		if Engine.is_editor_hint():
+			drone.global_position = target_pos
+
+
+## Ticks wander retargeting timer in exploration mode.
+func _process_explore_mode(delta: float) -> void:
+	explore_timer += delta
+	if explore_timer >= explore_retarget_interval:
+		explore_timer = 0.0
+		_retarget_explore_positions()
+
+
+## Generates randomized offsets within exploration radius.
+func _retarget_explore_positions() -> void:
+	print("DroneSwarmController: _retarget_explore_positions() picking targets.")
+	for i: int in range(explore_targets.size()):
+		var random_dir: Vector3 = (
+			Vector3(randf_range(-1.0, 1.0), randf_range(-0.3, 0.3), randf_range(-1.0, 1.0))
+			. normalized()
+		)
+		var random_dist: float = randf_range(2.0, explore_radius)
+		explore_targets[i] = random_dir * random_dist
 
 
 ## Creates player detection trigger volume.
@@ -157,8 +226,8 @@ func _setup_detector_area() -> void:
 	print("DroneSwarmController: _setup_detector_area() creating area.")
 	detector_area = Area3D.new()
 	detector_area.name = "PlayerDetectionArea"
-	detector_area.collision_layer = CollisionLayers.MASK_NONE
-	detector_area.collision_mask = CollisionLayers.MASK_PLAYER
+	detector_area.collision_layer = 0
+	detector_area.collision_mask = 2
 
 	var col_shape: CollisionShape3D = CollisionShape3D.new()
 	var sphere: SphereShape3D = SphereShape3D.new()
@@ -172,14 +241,14 @@ func _setup_detector_area() -> void:
 	detector_area.body_exited.connect(_on_detector_body_exited)
 
 
-## Registers player entering detection volume.
+## Handles body entered event on [Area3D].
 func _on_detector_body_entered(body: Node3D) -> void:
 	print("DroneSwarmController: _on_detector_body_entered() body: ", body.name)
 	if _is_player(body):
 		detected_player = body
 
 
-## Clears player exiting detection volume.
+## Handles body exited event on [Area3D].
 func _on_detector_body_exited(body: Node3D) -> void:
 	print("DroneSwarmController: _on_detector_body_exited() body: ", body.name)
 	if body == detected_player:
@@ -188,7 +257,13 @@ func _on_detector_body_exited(body: Node3D) -> void:
 		detected_player = null
 
 
-## Evaluates if given node is player entity.
+## Handles global player damage notification from [Events].
+func _on_player_damaged(_amount: int) -> void:
+	print("DroneSwarmController: Player damage signaled via Events bus.")
+	_check_player_health_and_state(0.0)
+
+
+## Checks if target node is valid player entity.
 func _is_player(node: Node3D) -> bool:
 	if node == null:
 		return false
@@ -200,20 +275,61 @@ func _is_player(node: Node3D) -> bool:
 	return false
 
 
-## Resolves [HealthComponent] on target entity.
+## Finds player node reference via target, detected, or group.
+func _find_player_target() -> Node3D:
+	if is_instance_valid(player_target):
+		return player_target
+	if is_instance_valid(detected_player):
+		return detected_player
+	var player_nodes: Array[Node] = get_tree().get_nodes_in_group(&"player")
+	if not player_nodes.is_empty() and player_nodes[0] is Node3D:
+		return player_nodes[0] as Node3D
+	return null
+
+
+## Finds [HealthComponent] on target entity using query fallbacks.
 func _get_health_component(node: Node) -> HealthComponent:
 	if not is_instance_valid(node):
 		return null
-	return NodeQuery.find_first_child_of_type(node, HealthComponent) as HealthComponent
+	if "health_component" in node:
+		var comp: Variant = node.get("health_component")
+		if comp is HealthComponent:
+			return comp as HealthComponent
+	var direct: Node = node.get_node_or_null("HealthComponent")
+	if direct is HealthComponent:
+		return direct as HealthComponent
+	var comp_dir: Node = node.get_node_or_null("Components/HealthComponent")
+	if comp_dir is HealthComponent:
+		return comp_dir as HealthComponent
+	var found: HealthComponent = (
+		NodeQuery.find_first_child_of_type(node, HealthComponent) as HealthComponent
+	)
+	if is_instance_valid(found):
+		return found
+	for child: Node in node.get_children():
+		if child is HealthComponent:
+			return child as HealthComponent
+	return null
 
 
 ## Checks player health and dispenses healing.
 func _check_player_health_and_state(delta: float) -> void:
-	var target: Node3D = detected_player if detected_player != null else player_target
+	var target: Node3D = _find_player_target()
 	if target == null:
 		return
 
+	var dist_to_player: float = global_position.distance_to(target.global_position)
+	if dist_to_player > detection_radius and mode != Mode.HEAL_PLAYER:
+		return
+
 	var health_comp: HealthComponent = _get_health_component(target)
+	if health_comp == null:
+		var dmg_nodes: Array[Node] = get_tree().get_nodes_in_group(&"damageable")
+		for d: Node in dmg_nodes:
+			if d is HealthComponent and (d as HealthComponent).is_player_health:
+				health_comp = d as HealthComponent
+				break
+
 	if health_comp == null:
 		return
 
@@ -251,7 +367,7 @@ func start_healing_player(target: Node3D) -> void:
 ## Restores swarm back to prior operation mode.
 func stop_healing_player() -> void:
 	print("DroneSwarmController: stop_healing_player() returning to prior mode.")
-	var healed_node: Node3D = detected_player if detected_player != null else player_target
+	var healed_node: Node3D = _find_player_target()
 	mode = previous_mode
 	formation = previous_formation
 	cycle_timer = 0.0
@@ -280,11 +396,22 @@ func cycle_next_formation() -> void:
 	set_formation(next_formation)
 
 
+## Clears and frees all managed drone instances.
+func _clear_drones() -> void:
+	print("DroneSwarmController: _clear_drones() clearing instances.")
+	for drone: ElfDrone in drones:
+		if is_instance_valid(drone):
+			drone.queue_free()
+	drones.clear()
+	current_offsets.clear()
+	explore_targets.clear()
+
+
 ## Instantiates configured drone instances.
 func spawn_drones() -> void:
 	print("DroneSwarmController: spawn_drones() spawning drone flock.")
+	_clear_drones()
 	if drone_scene == null:
-		push_error("DroneSwarmController: No drone_scene assigned!")
 		return
 
 	for i: int in range(drone_count):
@@ -294,8 +421,10 @@ func spawn_drones() -> void:
 			add_child(drone)
 			var offset: Vector3 = calculate_slot_offset(i, drone_count)
 			drone.global_position = global_position + offset
+			drone.task_state = ElfDrone.TaskState.FOLLOW_SWARM
 			drones.append(drone)
 			current_offsets.append(offset)
+			explore_targets.append(offset)
 
 
 ## Sets active formation layout for swarm.
@@ -308,6 +437,13 @@ func set_formation(new_formation: Formation) -> void:
 func set_mode(new_mode: Mode) -> void:
 	print("DroneSwarmController: set_mode() setting mode to: ", new_mode)
 	mode = new_mode
+
+
+## Switches swarm layout to cross formation.
+func switch_to_cross_formation(_param: Variant = null) -> void:
+	print("DroneSwarmController: switch_to_cross_formation() executed.")
+	set_mode(Mode.FORMATION)
+	set_formation(Formation.CROSS)
 
 
 ## Computes local slot offset coordinate.
@@ -370,17 +506,15 @@ func apply_wave_motion(index: int, base_pos: Vector3) -> Vector3:
 	return base_pos
 
 
-## Adopts solo drone into active swarm flock.
+## Adopts solo drone into active swarm flock smoothly.
 func adopt_drone(solo_drone: ElfDrone) -> void:
 	print("DroneSwarmController: adopt_drone() adopting solo drone.")
 	if not is_instance_valid(solo_drone) or drones.has(solo_drone):
 		return
 
 	drones.append(solo_drone)
-	current_offsets.append(solo_drone.global_position - global_position)
+	var local_offset: Vector3 = solo_drone.global_position - global_position
+	current_offsets.append(local_offset)
+	explore_targets.append(local_offset)
 	drone_count = drones.size()
-
-	mode = Mode.FORMATION
-	formation = Formation.CIRCLE
-	auto_cycle_formations = true
-	cycle_timer = 0.0
+	solo_drone.task_state = ElfDrone.TaskState.FOLLOW_SWARM
