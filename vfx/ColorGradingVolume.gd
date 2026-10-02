@@ -1,44 +1,85 @@
 @tool
 ## 3D trigger applying color grading, LUTs, and bloom overrides to player.
+## Synchronizes volume bounds with an integrated [EditorTriggerVisualizer].
 class_name ColorGradingVolume3D
 extends Area3D
 
 ## Visual preset options for common color grading profiles.
 enum Preset { CUSTOM, BLACK_AND_WHITE, SEPIA, COLD, WARM }
 
+@export_group("Trigger Volume")
 ## Geometry options for the 3D trigger visualizer and collision hull.
-enum ShapeType { BOX, SPHERE }
-
-## Determines the shape of the physical volume and its visual debug mesh.
-@export var shape_type: ShapeType = ShapeType.BOX:
+@export var shape_type: EditorTriggerVisualizer.ShapeType = EditorTriggerVisualizer.ShapeType.BOX:
 	set(value):
 		shape_type = value
-		_update_visuals()
-
-## Determines if the trigger visualizer mesh should be visible in-game.
-@export var show_in_game: bool = false:
-	set(value):
-		show_in_game = value
-		_update_visuals()
+		if is_inside_tree():
+			_update_visuals()
 
 ## Defines physical dimensions of color grading volume and visualizer.
 @export var volume_size: Vector3 = Vector3(4.0, 4.0, 4.0):
 	set(value):
 		volume_size = value
-		_update_visuals()
+		if is_inside_tree():
+			_update_visuals()
 
-## Sets visual color of volume debug wireframe rendered in editor.
-@export var volume_color: Color = Color(0.2, 0.6, 1.0, 0.4):
+## Local offset applied to both the collision shape and the visualizer node.
+@export var volume_offset: Vector3 = Vector3.ZERO:
+	set(value):
+		volume_offset = value
+		if is_inside_tree():
+			_update_visuals()
+
+@export_group("Trigger Debug Visualizer")
+## Determines if the trigger visualizer mesh should be visible in-game.
+@export var show_in_game: bool = false:
+	set(value):
+		show_in_game = value
+		if is_inside_tree():
+			_update_visuals()
+
+## Base tint and opacity applied to the volumetric inner fill.
+@export var volume_color: Color = Color(0.2, 0.6, 1.0, 0.25):
 	set(value):
 		volume_color = value
-		_update_visuals()
+		if is_inside_tree():
+			_update_visuals()
+
+## Edge color for the outline wireframe cage and orientation arrow.
+@export var outline_color: Color = Color(0.4, 0.8, 1.0, 0.9):
+	set(value):
+		outline_color = value
+		if is_inside_tree():
+			_update_visuals()
+
+## Allows the visualizer to remain visible through walls and level geometry.
+@export var x_ray_mode: bool = false:
+	set(value):
+		x_ray_mode = value
+		if is_inside_tree():
+			_update_visuals()
+
+## Displays an arrow pointing along -Z indicating player entry heading.
+@export var show_orientation: bool = true:
+	set(value):
+		show_orientation = value
+		if is_inside_tree():
+			_update_visuals()
+
+## Appends metric dimensions to the 3D billboard text label.
+@export var show_metric_dimensions: bool = true:
+	set(value):
+		show_metric_dimensions = value
+		if is_inside_tree():
+			_update_visuals()
 
 ## Text displayed above volume wireframe in editor for identification.
 @export var volume_text: String = "COLOR GRADING":
 	set(value):
 		volume_text = value
-		_update_visuals()
+		if is_inside_tree():
+			_update_visuals()
 
+@export_group("Grading Settings")
 ## Custom color grading shader resource containing rendering passes.
 @export var grading_shader: Shader:
 	set(value):
@@ -129,6 +170,7 @@ enum ShapeType { BOX, SPHERE }
 		grain_amount = value
 		_update_shader_params()
 
+@export_group("Environment & Blending")
 ## Target [WorldEnvironment] instance receiving bloom overrides.
 @export var target_environment: WorldEnvironment
 
@@ -175,20 +217,17 @@ var _collision_shape: CollisionShape3D = null
 ## Configures player collision masks, caches baseline bloom, and sets up UI.
 func _ready() -> void:
 	_collision_shape = get_node_or_null("CollisionShape3D") as CollisionShape3D
-	if Engine.is_editor_hint():
-		_update_visuals()
-	else:
-		collision_layer = CollisionLayers.MASK_NONE
-		collision_mask = CollisionLayers.MASK_PLAYER
+	_update_visuals()
+
+	if not Engine.is_editor_hint():
+		collision_layer = 0
+		collision_mask = 2
 		add_to_group(&"color_grading_volumes")
 
-		if not show_in_game:
-			for child: Node in get_children():
-				if child.get_class() == "EditorTriggerVisualizer":
-					child.queue_free()
-
-		body_entered.connect(_on_body_entered)
-		body_exited.connect(_on_body_exited)
+		if not body_entered.is_connected(_on_body_entered):
+			body_entered.connect(_on_body_entered)
+		if not body_exited.is_connected(_on_body_exited):
+			body_exited.connect(_on_body_exited)
 
 		if is_instance_valid(target_environment) and target_environment.environment != null:
 			_original_glow_intensity = target_environment.environment.glow_intensity
@@ -201,47 +240,56 @@ func _ready() -> void:
 
 ## Rebuilds collision shapes and visual debug meshes in editor viewport.
 func _update_visuals() -> void:
+	if not is_inside_tree():
+		return
+
 	if not is_instance_valid(_collision_shape):
 		_collision_shape = get_node_or_null("CollisionShape3D") as CollisionShape3D
+
 	if is_instance_valid(_collision_shape):
-		if shape_type == ShapeType.BOX:
+		if shape_type == EditorTriggerVisualizer.ShapeType.BOX:
 			if not _collision_shape.shape is BoxShape3D:
 				_collision_shape.shape = BoxShape3D.new()
-			if Engine.is_editor_hint() and not _collision_shape.shape.resource_local_to_scene:
+			else:
 				_collision_shape.shape = _collision_shape.shape.duplicate()
-				_collision_shape.shape.resource_local_to_scene = true
-			(_collision_shape.shape as BoxShape3D).size = volume_size
-		elif shape_type == ShapeType.SPHERE:
+			_collision_shape.shape.resource_local_to_scene = true
+			var box_shape: BoxShape3D = _collision_shape.shape as BoxShape3D
+			box_shape.size = volume_size
+		elif shape_type == EditorTriggerVisualizer.ShapeType.SPHERE:
 			if not _collision_shape.shape is SphereShape3D:
 				_collision_shape.shape = SphereShape3D.new()
-			if Engine.is_editor_hint() and not _collision_shape.shape.resource_local_to_scene:
+			else:
 				_collision_shape.shape = _collision_shape.shape.duplicate()
-				_collision_shape.shape.resource_local_to_scene = true
-			(_collision_shape.shape as SphereShape3D).radius = volume_size.x * 0.5
+			_collision_shape.shape.resource_local_to_scene = true
+			var sphere_shape: SphereShape3D = _collision_shape.shape as SphereShape3D
+			sphere_shape.radius = volume_size.x * 0.5
+
+		_collision_shape.position = volume_offset
 
 	var visual: EditorTriggerVisualizer = _get_visualizer()
 	if is_instance_valid(visual):
-		if (
-			Engine.is_editor_hint()
-			and visual.mesh != null
-			and not visual.mesh.resource_local_to_scene
-		):
-			visual.mesh = visual.mesh.duplicate(true)
-			visual.mesh.resource_local_to_scene = true
-		@warning_ignore("int_as_enum_without_cast")
-		visual.shape_type = shape_type as int
-		visual.show_in_game = show_in_game
+		visual.shape_type = shape_type
 		visual.trigger_size = volume_size
 		visual.trigger_color = volume_color
+		visual.outline_color = outline_color
+		visual.x_ray_mode = x_ray_mode
+		visual.show_orientation = show_orientation
+		visual.show_metric_dimensions = show_metric_dimensions
 		visual.trigger_text = volume_text
+		visual.show_in_game = show_in_game
+		visual.position = volume_offset
 
 
 ## Retrieves the visualizer child node responsible for wireframe display.
 func _get_visualizer() -> EditorTriggerVisualizer:
-	for child: Node in get_children():
-		if child is EditorTriggerVisualizer:
-			return child as EditorTriggerVisualizer
-	return null
+	var visual: EditorTriggerVisualizer = (
+		get_node_or_null("EditorTriggerVisualizer") as EditorTriggerVisualizer
+	)
+	if not is_instance_valid(visual):
+		for child: Node in get_children():
+			if child is EditorTriggerVisualizer:
+				return child as EditorTriggerVisualizer
+	return visual
 
 
 ## Creates dedicated CanvasLayer, BackBufferCopy, and ColorRect components.

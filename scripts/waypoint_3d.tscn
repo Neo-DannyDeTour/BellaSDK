@@ -1,6 +1,27 @@
 [gd_scene format=3 uid="uid://fj7yao3clphv"]
 
 [ext_resource type="Script" uid="uid://d1gyk1i0vm82b" path="res://scripts/waypoint_3d.gd" id="1_6kdaa"]
+[ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://triggers/editor_trigger_visualizer.gd" id="2_oxbmq"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_oxbmq"]
+transparency = 1
+cull_mode = 2
+shading_mode = 0
+albedo_color = Color(0.1, 0.7, 0.9, 0.25)
+
+[sub_resource type="SphereMesh" id="SphereMesh_rvapd"]
+material = SubResource("StandardMaterial3D_oxbmq")
+radius = 1.0
+height = 2.0
 
 [node name="Waypoint3D" type="Marker3D" unique_id=807474795]
 script = ExtResource("1_6kdaa")
+
+[node name="EditorTriggerVisualizer" type="MeshInstance3D" parent="." unique_id=830687232]
+mesh = SubResource("SphereMesh_rvapd")
+script = ExtResource("2_oxbmq")
+shape_type = 1
+trigger_color = Color(0.1, 0.7, 0.9, 0.25)
+outline_color = Color(0.2, 0.85, 1, 0.9)
+trigger_text = "WAYPOINT"
+metadata/_custom_type_script = "uid://q4v42nidwdr2"

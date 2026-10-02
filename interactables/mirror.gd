@@ -165,14 +165,9 @@ func _setup_mirror() -> void:
 	if is_instance_valid(mirror_quad):
 		var mat: Material = mirror_quad.get_active_material(0)
 		if is_instance_valid(mat) and not mat.resource_local_to_scene:
-			var mat_key: StringName = StringName("mirror_mat_" + str(get_instance_id()))
-			var cached_mat: Material = MaterialCache.get_variant(
-				mat_key,
-				func() -> Material:
-					var m: Material = mat.duplicate()
-					m.resource_local_to_scene = true
-					return m
-			)
+			var variant_id: String = "mirror_%d" % get_instance_id()
+			var cached_mat: Material = MaterialCache.get_variant(mat, variant_id)
+			cached_mat.resource_local_to_scene = true
 			mirror_quad.set_surface_override_material(0, cached_mat)
 
 	_main_cam = _find_camera()

@@ -2,6 +2,7 @@
 class_name State
 extends Node
 
+@warning_ignore("unused_signal")
 ## Emitted when requesting a state change. Passes target state name and payload.
 signal transition_requested(target_state_name: StringName, message: Dictionary)
 

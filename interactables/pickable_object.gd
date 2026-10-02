@@ -88,9 +88,6 @@ var holder: Node3D = null
 ## Base directory path where prompt icons are stored.
 const ICON_BASE_PATH: String = "res://assets/kenney_input-prompts_1.5/Keyboard & Mouse/Default/"
 
-## Cached resolved icon file paths dictionary.
-var _icon_path_cache: Dictionary = {}
-
 ## Determines whether text prompt labels are displayed.
 var _show_text_prompts: bool = true
 

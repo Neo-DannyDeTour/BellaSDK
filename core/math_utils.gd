@@ -107,3 +107,23 @@ static func smooth_damp_angle(
 	var new_vel: float = (velocity - omega * temp) * exp_decay
 	var new_pos: float = target_unwrapped + (change + temp) * exp_decay
 	return Vector2(new_pos, new_vel)
+
+
+## Exponentially damps a scalar float towards a target value.
+static func damp(current: float, target: float, smoothing: float, delta: float) -> float:
+	return lerpf(current, target, 1.0 - exp(-smoothing * delta))
+
+
+## Exponentially damps a [Vector2] towards a target vector.
+static func damp_v2(current: Vector2, target: Vector2, smoothing: float, delta: float) -> Vector2:
+	return current.lerp(target, 1.0 - exp(-smoothing * delta))
+
+
+## Exponentially damps a [Vector3] towards a target vector.
+static func damp_v3(current: Vector3, target: Vector3, smoothing: float, delta: float) -> Vector3:
+	return current.lerp(target, 1.0 - exp(-smoothing * delta))
+
+
+## Calculates the exact midpoint vector between two points.
+static func get_midpoint(a: Vector3, b: Vector3) -> Vector3:
+	return (a + b) * 0.5

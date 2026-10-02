@@ -1,8 +1,14 @@
 @tool
+## Volume managing pooled target instantiation, proximity sleep, and spawn cycling.
+## Integrates [EditorTriggerVisualizer] for in-editor wireframe and bounds display.
 class_name TargetVolume
 extends Area3D
 
+## Defines target replenishment triggers based on time or elimination.
 enum SpawnMode { TIME_BASED, WAIT_FOR_KILL }
+
+## Alias for the editor trigger visualizer geometry type enum.
+const SHAPE_TYPE = EditorTriggerVisualizer.ShapeType
 
 @export_category("Target Spawner")
 
@@ -15,7 +21,7 @@ enum SpawnMode { TIME_BASED, WAIT_FOR_KILL }
 ## The maximum number of targets allowed to be active at once in this volume.
 @export var max_active_targets: int = 3
 
-## The total number of target instances created at startup to recycle without runtime instantiation.
+## Total target instances created at startup to recycle without runtime instantiation.
 @export var pool_size: int = 10
 
 ## How long to wait before cycling or spawning new targets in TIME_BASED mode.
@@ -30,47 +36,85 @@ enum SpawnMode { TIME_BASED, WAIT_FOR_KILL }
 @export var total_targets_to_spawn: int = 10
 
 @export_category("Volume Bounds")
+## The shape drawn in the editor to represent the spawn volume.
+@export var visualizer_shape_type: SHAPE_TYPE = SHAPE_TYPE.BOX:
+	set(value):
+		visualizer_shape_type = value
+		if is_inside_tree():
+			_update_visuals()
 
 ## The 3D boundaries defining the area where targets can spawn.
 @export var volume_size: Vector3 = Vector3(2.0, 2.0, 2.0):
 	set(value):
 		volume_size = value
-		_update_visuals()
+		if is_inside_tree():
+			_update_visuals()
 
-@export_category("Behavior")
-
-## If greater than zero, active targets will teleport to a new random location on this interval.
-@export var randomize_position_timer: float = 0.0
+## Local offset applied to both the collision shape and the visualizer node.
+@export var volume_offset: Vector3 = Vector3.ZERO:
+	set(value):
+		volume_offset = value
+		if is_inside_tree():
+			_update_visuals()
 
 @export_category("Visualizer Controls")
 
-## The shape drawn in the editor to represent the spawn volume.
-## Property: Visualizer Shape Type.
-@export var visualizer_shape_type: EditorTriggerVisualizer.ShapeType:
+## Controls whether the visualizer mesh and label remain visible during gameplay.
+@export var show_visualizer_in_game: bool = false:
 	set(value):
-		visualizer_shape_type = value
-		_update_visuals()
+		show_visualizer_in_game = value
+		if is_inside_tree():
+			_update_visuals()
 
-## The color of the debug visualization in the editor.
-@export var visualizer_color: Color = Color(0.9, 0.5, 0.1, 0.4):
+## Base tint and opacity applied to the volumetric inner fill in the editor.
+@export var visualizer_color: Color = Color(0.9, 0.5, 0.1, 0.25):
 	set(value):
 		visualizer_color = value
-		_update_visuals()
+		if is_inside_tree():
+			_update_visuals()
+
+## Edge color applied to the wireframe bounding cage and orientation arrow.
+@export var outline_color: Color = Color(1.0, 0.8, 0.3, 0.9):
+	set(value):
+		outline_color = value
+		if is_inside_tree():
+			_update_visuals()
+
+## Allows the visualizer to remain visible through walls and level geometry.
+@export var x_ray_mode: bool = false:
+	set(value):
+		x_ray_mode = value
+		if is_inside_tree():
+			_update_visuals()
+
+## Displays an arrow pointing along -Z indicating spawner orientation.
+@export var show_orientation: bool = true:
+	set(value):
+		show_orientation = value
+		if is_inside_tree():
+			_update_visuals()
+
+## Appends metric dimensions to the 3D billboard text label.
+@export var show_metric_dimensions: bool = true:
+	set(value):
+		show_metric_dimensions = value
+		if is_inside_tree():
+			_update_visuals()
 
 ## The label shown on the visualizer in the editor.
 @export var visualizer_text: String = "TARGET SPAWNER":
 	set(value):
 		visualizer_text = value
-		_update_visuals()
+		if is_inside_tree():
+			_update_visuals()
 
-## If true, the editor visualization will also render during gameplay for debugging.
-@export var show_visualizer_in_game: bool = false:
-	set(value):
-		show_visualizer_in_game = value
-		_update_visuals()
+@export_category("Behavior")
 
 ## Distance in meters beyond which this volume halts target spawning.
 @export var active_distance: float = 40.0
+
+## If greater than zero, active targets will teleport to a new location on this interval.
+@export var randomize_position_timer: float = 0.0
 
 ## Cached player instance for proximity checks.
 var _player_ref: Node3D = null
@@ -97,17 +141,14 @@ var jump_timer: float = 0.0
 var targets_spawned_so_far: int = 0
 
 
-func _init() -> void:
-	visualizer_shape_type = EditorTriggerVisualizer.ShapeType.BOX
-
-
+## Initializes pool, sets collision layers, and synchronizes visual state.
 func _ready() -> void:
+	_update_visuals()
 	if Engine.is_editor_hint():
-		_update_visuals()
 		return
 
 	var editor_mesh: EditorTriggerVisualizer = _get_visualizer()
-	if editor_mesh and not show_visualizer_in_game:
+	if is_instance_valid(editor_mesh) and not show_visualizer_in_game:
 		print("TargetVolume: Removing editor visualizer for gameplay.")
 		editor_mesh.queue_free()
 
@@ -119,7 +160,6 @@ func _ready() -> void:
 
 
 ## Frame lifecycle method monitoring player proximity and managing spawns.
-## [param delta] Frame execution delta in seconds.
 func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
@@ -143,47 +183,80 @@ func _process(delta: float) -> void:
 	_handle_spawning(delta)
 
 
+## Rebuilds collision shapes and visualizer meshes matching volume settings.
 func _update_visuals() -> void:
-	var col: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
-	if col:
-		if not col.shape:
-			col.shape = BoxShape3D.new()
+	if not is_inside_tree():
+		return
 
-		if not col.shape.resource_local_to_scene:
-			col.shape = col.shape.duplicate()
+	var col: CollisionShape3D = _get_collision_shape()
+	if is_instance_valid(col):
+		if visualizer_shape_type == EditorTriggerVisualizer.ShapeType.BOX:
+			if not col.shape is BoxShape3D:
+				col.shape = BoxShape3D.new()
+			else:
+				col.shape = col.shape.duplicate()
 			col.shape.resource_local_to_scene = true
+			var box_shape: BoxShape3D = col.shape as BoxShape3D
+			box_shape.size = volume_size
+		elif visualizer_shape_type == EditorTriggerVisualizer.ShapeType.SPHERE:
+			if not col.shape is SphereShape3D:
+				col.shape = SphereShape3D.new()
+			else:
+				col.shape = col.shape.duplicate()
+			col.shape.resource_local_to_scene = true
+			var sphere_shape: SphereShape3D = col.shape as SphereShape3D
+			sphere_shape.radius = volume_size.x * 0.5
 
-		if col.shape is BoxShape3D:
-			var box: BoxShape3D = col.shape as BoxShape3D
-			box.size = volume_size
+		col.position = volume_offset
 
 	var visual: EditorTriggerVisualizer = _get_visualizer()
-	if visual:
+	if is_instance_valid(visual):
 		visual.shape_type = visualizer_shape_type
 		visual.trigger_size = volume_size
 		visual.trigger_color = visualizer_color
+		visual.outline_color = outline_color
+		visual.x_ray_mode = x_ray_mode
+		visual.show_orientation = show_orientation
+		visual.show_metric_dimensions = show_metric_dimensions
 		visual.trigger_text = visualizer_text
 		visual.show_in_game = show_visualizer_in_game
+		visual.position = volume_offset
 
 
+## Safely resolves the child [CollisionShape3D] instance.
+func _get_collision_shape() -> CollisionShape3D:
+	var col: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if not is_instance_valid(col):
+		for child: Node in get_children():
+			if child is CollisionShape3D:
+				return child as CollisionShape3D
+	return col
+
+
+## Safely retrieves the child [EditorTriggerVisualizer] node.
 func _get_visualizer() -> EditorTriggerVisualizer:
-	for child: Node in get_children():
-		if child is EditorTriggerVisualizer:
-			return child as EditorTriggerVisualizer
-	return null
+	var visual: EditorTriggerVisualizer = (
+		get_node_or_null("EditorTriggerVisualizer") as EditorTriggerVisualizer
+	)
+	if not is_instance_valid(visual):
+		for child: Node in get_children():
+			if child is EditorTriggerVisualizer:
+				return child as EditorTriggerVisualizer
+	return visual
 
 
+## Pre-instantiates targets into the inactive pool.
 func _initialize_pool() -> void:
-	print("TargetVolume: _initialize_pool() - Building target pool of size: ", pool_size)
+	print("TargetVolume: _initialize_pool() - Building pool of size: ", pool_size)
 	if target_scene == null:
 		return
 
 	for i: int in range(pool_size):
-		var new_target: Node3D = target_scene.instantiate()
-		get_parent().call_deferred("add_child", new_target)
+		var new_target: Node3D = target_scene.instantiate() as Node3D
+		get_parent().call_deferred(&"add_child", new_target)
 
-		new_target.set_deferred("visible", false)
-		new_target.set_deferred("process_mode", Node.PROCESS_MODE_DISABLED)
+		new_target.set_deferred(&"visible", false)
+		new_target.set_deferred(&"process_mode", Node.PROCESS_MODE_DISABLED)
 
 		new_target.visibility_changed.connect(
 			func() -> void:
@@ -194,6 +267,7 @@ func _initialize_pool() -> void:
 		inactive_targets.append(new_target)
 
 
+## Periodically relocates active targets within the volume boundaries.
 func _handle_repositioning(delta: float) -> void:
 	if randomize_position_timer <= 0.0 or active_targets.is_empty():
 		return
@@ -207,6 +281,7 @@ func _handle_repositioning(delta: float) -> void:
 				t.global_position = _get_random_position()
 
 
+## Evaluates timers and target counts to deploy pooled targets.
 func _handle_spawning(delta: float) -> void:
 	if not spawn_infinitely and targets_spawned_so_far >= total_targets_to_spawn:
 		if active_targets.is_empty():
@@ -241,16 +316,29 @@ func _handle_spawning(delta: float) -> void:
 			_spawn_target()
 
 
+## Calculates a randomized global point located inside the volume bounds.
 func _get_random_position() -> Vector3:
-	var extents: Vector3 = volume_size / 2.0
-	var rand_x: float = randf_range(-extents.x, extents.x)
-	var rand_y: float = randf_range(-extents.y, extents.y)
-	var rand_z: float = randf_range(-extents.z, extents.z)
+	var local_spawn_pos: Vector3 = volume_offset
+	if visualizer_shape_type == EditorTriggerVisualizer.ShapeType.BOX:
+		var extents: Vector3 = volume_size * 0.5
+		var rand_x: float = randf_range(-extents.x, extents.x)
+		var rand_y: float = randf_range(-extents.y, extents.y)
+		var rand_z: float = randf_range(-extents.z, extents.z)
+		local_spawn_pos += Vector3(rand_x, rand_y, rand_z)
+	elif visualizer_shape_type == EditorTriggerVisualizer.ShapeType.SPHERE:
+		var radius: float = volume_size.x * 0.5
+		var u: float = randf()
+		var v: float = randf()
+		var theta: float = u * TAU
+		var phi: float = acos(2.0 * v - 1.0)
+		var r: float = pow(randf(), 1.0 / 3.0) * radius
+		var sin_phi: float = sin(phi)
+		local_spawn_pos += Vector3(r * sin_phi * cos(theta), r * sin_phi * sin(theta), r * cos(phi))
 
-	var local_spawn_pos: Vector3 = Vector3(rand_x, rand_y, rand_z)
 	return global_transform * local_spawn_pos
 
 
+## Retrieves an inactive target from the pool and deploys it to the world.
 func _spawn_target() -> void:
 	if inactive_targets.is_empty():
 		print("TargetVolume: WARNING - Pool is empty! Increase pool_size.")
@@ -263,11 +351,11 @@ func _spawn_target() -> void:
 	target.visible = true
 	target.process_mode = Node.PROCESS_MODE_INHERIT
 
-	if target.has_method("reset"):
+	if target.has_method(&"reset"):
 		target.reset()
 	elif "health_component" in target:
 		var health_comp: Node = target.get("health_component") as Node
-		if is_instance_valid(health_comp) and health_comp.has_method("reset"):
+		if is_instance_valid(health_comp) and health_comp.has_method(&"reset"):
 			health_comp.reset()
 
 	active_targets.append(target)
@@ -280,6 +368,7 @@ func _spawn_target() -> void:
 	)
 
 
+## Recycles an inactive target back into the object pool.
 func _on_target_disabled(target_node: Node3D) -> void:
 	if active_targets.has(target_node):
 		active_targets.erase(target_node)

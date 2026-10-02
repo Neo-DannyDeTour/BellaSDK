@@ -15,13 +15,17 @@ signal state_changed(old_state: State, new_state: State)
 var current_state: State = null
 
 ## Internal dictionary mapping state names to [State] child nodes.
-var _states: Dictionary = {}
+var _states: Dictionary[StringName, State] = {}
 
 
 ## Collects child states, binds transitions, and enters initial state.
 func _ready() -> void:
 	print("StateMachine: Initializing state machine: ", name)
 	_collect_states()
+
+	# Skip automatic start here if this is PlayerStateMachine (it starts after player injection)
+	if self is PlayerStateMachine:
+		return
 
 	if is_instance_valid(initial_state):
 		change_state(initial_state.name)

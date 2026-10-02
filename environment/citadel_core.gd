@@ -58,10 +58,8 @@ func _initialize_materials() -> void:
 
 ## Retrieves or creates a cached [ShaderMaterial] for [param mesh_node].
 func _setup_material(mesh_node: MeshInstance3D) -> ShaderMaterial:
-	print(
-		"CitadelCore: Setting up material for: ",
-		mesh_node.name if is_instance_valid(mesh_node) else "null"
-	)
+	var target_name: StringName = mesh_node.name if is_instance_valid(mesh_node) else &"null"
+	print("CitadelCore: Setting up material for: ", target_name)
 	if not is_instance_valid(mesh_node):
 		return null
 

@@ -59,7 +59,6 @@ gdscript/warnings/untyped_declaration=2
 window/size/viewport_width=1280
 window/size/viewport_height=720
 window/size/mode="fullscreen"
-window/subwindows/embed_subwindows=false
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 display_server/driver.linuxbsd="x11"

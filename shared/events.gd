@@ -424,6 +424,9 @@ signal interaction_unfocused(previous_target: CollisionObject3D)
 @warning_ignore("unused_signal")
 signal interacted(target: CollisionObject3D, interactor: Node3D)
 
+@warning_ignore("unused_signal")
+signal transition_requested(target_state_name: StringName, message: Dictionary)
+
 ## Visual animation style presets for chapter title card sequences.
 enum ChapterAnimStyle {
 	SIMPLE,

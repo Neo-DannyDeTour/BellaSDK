@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://c6vn1e6vovmwf"]
 
 [ext_resource type="Script" uid="uid://c4wvnb20sgxl0" path="res://shared/target_volume.gd" id="1_n1xgv"]
-[ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://shared/editor_trigger_visualizer.gd" id="2_npu2o"]
+[ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://triggers/editor_trigger_visualizer.gd" id="2_npu2o"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_npu2o"]
 resource_local_to_scene = true

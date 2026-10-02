@@ -80,7 +80,7 @@ func _process(delta: float) -> void:
 
 ## Restores initial state and makes particle visible.
 func reset_particle() -> void:
-	print("Particle: Resetting particle for spawn.")
+	#print("Particle: Resetting particle for spawn.")
 	is_active = true
 	is_melting = false
 	current_radius = initial_radius
@@ -91,7 +91,8 @@ func reset_particle() -> void:
 
 ## Deactivates particle and teleports out of view.
 func deactivate() -> void:
-	print("Particle: Deactivating particle.")
+	if not Engine.is_editor_hint():
+		print("Particle: Deactivating particle.")
 	is_active = false
 	is_melting = false
 	visible = false
@@ -116,7 +117,7 @@ func _get_shader_material() -> ShaderMaterial:
 
 ## Assigns particle noise texture to shader uniform.
 func set_particle_image(image: ImageTexture) -> void:
-	print("Particle: Assigning particle image texture.")
+	#print("Particle: Assigning particle image texture.")
 	var mat: ShaderMaterial = _get_shader_material()
 	if mat != null:
 		mat.set_shader_parameter(&"particles", image)
@@ -124,7 +125,7 @@ func set_particle_image(image: ImageTexture) -> void:
 
 ## Updates particle count uniform in shader.
 func update_n_particles(n: int) -> void:
-	print("Particle: Updating particle count uniform to: ", n)
+	#print("Particle: Updating particle count uniform to: ", n)
 	var mat: ShaderMaterial = _get_shader_material()
 	if mat != null:
 		mat.set_shader_parameter(&"n_particles", n)

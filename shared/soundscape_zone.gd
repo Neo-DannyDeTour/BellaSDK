@@ -1,14 +1,82 @@
 @tool
 ## Area3D volume managing ambient loops and pooled one-shot environmental SFX.
+## Integrates [EditorTriggerVisualizer] for in-editor wireframe and bounds display.
 class_name SoundscapeZone
 extends Area3D
 
-## Dimensions of soundscape area volume box in meters.
+@export_group("Trigger Volume")
+## Geometric shape type used for collision and visual debug bounds.
+@export var shape_type: EditorTriggerVisualizer.ShapeType = EditorTriggerVisualizer.ShapeType.BOX:
+	set(value):
+		shape_type = value
+		if is_inside_tree():
+			_update_bounds()
+
+## Dimensions of soundscape area volume in meters.
 @export var zone_size: Vector3 = Vector3(1.0, 1.0, 1.0):
 	set(value):
 		zone_size = value
-		_update_bounds()
+		if is_inside_tree():
+			_update_bounds()
 
+## Local offset applied to both the collision shape and the visualizer node.
+@export var zone_offset: Vector3 = Vector3.ZERO:
+	set(value):
+		zone_offset = value
+		if is_inside_tree():
+			_update_bounds()
+
+@export_group("Trigger Debug Visualizer")
+## Determines if the trigger visualizer mesh should be visible in-game.
+@export var show_in_game: bool = false:
+	set(value):
+		show_in_game = value
+		if is_inside_tree():
+			_update_bounds()
+
+## Base tint and opacity applied to the volumetric inner fill.
+@export var zone_color: Color = Color(0.2, 0.8, 0.6, 0.25):
+	set(value):
+		zone_color = value
+		if is_inside_tree():
+			_update_bounds()
+
+## Edge color for the outline wireframe cage and orientation arrow.
+@export var outline_color: Color = Color(0.4, 1.0, 0.8, 0.9):
+	set(value):
+		outline_color = value
+		if is_inside_tree():
+			_update_bounds()
+
+## Allows the visualizer to remain visible through walls and level geometry.
+@export var x_ray_mode: bool = false:
+	set(value):
+		x_ray_mode = value
+		if is_inside_tree():
+			_update_bounds()
+
+## Displays an arrow pointing along -Z indicating player entry heading.
+@export var show_orientation: bool = true:
+	set(value):
+		show_orientation = value
+		if is_inside_tree():
+			_update_bounds()
+
+## Appends metric dimensions to the 3D billboard text label.
+@export var show_metric_dimensions: bool = true:
+	set(value):
+		show_metric_dimensions = value
+		if is_inside_tree():
+			_update_bounds()
+
+## Text displayed above volume wireframe in editor for identification.
+@export var zone_text: String = "SOUNDSCAPE":
+	set(value):
+		zone_text = value
+		if is_inside_tree():
+			_update_bounds()
+
+@export_group("Soundscape Settings")
 ## The resource containing ambient track and random sounds.
 @export var soundscape: SoundscapeData
 
@@ -40,13 +108,15 @@ static var default_zone: Area3D = null
 var current_tween: Tween
 
 ## Primary audio stream player for background ambient music.
-@onready var ambient_player: AudioStreamPlayer = $AmbientPlayer
+@onready
+var ambient_player: AudioStreamPlayer = get_node_or_null("AmbientPlayer") as AudioStreamPlayer
 
 ## Internal timer used for scheduling random environmental one-shot sounds.
-@onready var timer: Timer = $RandomSoundTimer
+@onready var timer: Timer = get_node_or_null("RandomSoundTimer") as Timer
 
 ## Attached collision shape node defining trigger boundaries.
-@onready var collision_shape: CollisionShape3D = $CollisionShape3D
+@onready
+var collision_shape: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
 
 ## System timestamp in milliseconds tracking last exit time.
 var _last_exit_time: int = 0
@@ -69,7 +139,8 @@ func _ready() -> void:
 	if is_instance_valid(ambient_player):
 		ambient_player.bus = &"Ambient"
 		ambient_player.volume_db = -80.0
-		ambient_player.finished.connect(_on_ambient_finished)
+		if not ambient_player.finished.is_connected(_on_ambient_finished):
+			ambient_player.finished.connect(_on_ambient_finished)
 
 	if is_default_soundscape:
 		default_zone = self
@@ -77,33 +148,81 @@ func _ready() -> void:
 	add_to_group(&"soundscape_zones")
 
 	if is_instance_valid(timer):
-		timer.timeout.connect(_on_timer_timeout)
+		if not timer.timeout.is_connected(_on_timer_timeout):
+			timer.timeout.connect(_on_timer_timeout)
 
-	body_entered.connect(_on_body_entered)
-	body_exited.connect(_on_body_exited)
+	if not body_entered.is_connected(_on_body_entered):
+		body_entered.connect(_on_body_entered)
+	if not body_exited.is_connected(_on_body_exited):
+		body_exited.connect(_on_body_exited)
 
 	if is_default_soundscape:
-		call_deferred("_deferred_check_fallback")
+		call_deferred(&"_deferred_check_fallback")
 
 
-## Updates box collision shape size to match [member zone_size].
+## Rebuilds collision shapes and synchronizes debug visualizer properties.
 func _update_bounds() -> void:
 	if not is_inside_tree():
 		return
 
-	var shape_node: CollisionShape3D = (
-		(
-			collision_shape
-			if is_instance_valid(collision_shape)
-			else get_node_or_null("CollisionShape3D")
-		)
-		as CollisionShape3D
-	)
+	var shape_node: CollisionShape3D = _get_collision_shape()
 	if is_instance_valid(shape_node):
-		if not shape_node.shape is BoxShape3D:
-			shape_node.shape = BoxShape3D.new()
-		shape_node.shape.resource_local_to_scene = true
-		(shape_node.shape as BoxShape3D).size = zone_size
+		if shape_type == EditorTriggerVisualizer.ShapeType.BOX:
+			if not shape_node.shape is BoxShape3D:
+				shape_node.shape = BoxShape3D.new()
+			else:
+				shape_node.shape = shape_node.shape.duplicate()
+			shape_node.shape.resource_local_to_scene = true
+			var box_shape: BoxShape3D = shape_node.shape as BoxShape3D
+			box_shape.size = zone_size
+		elif shape_type == EditorTriggerVisualizer.ShapeType.SPHERE:
+			if not shape_node.shape is SphereShape3D:
+				shape_node.shape = SphereShape3D.new()
+			else:
+				shape_node.shape = shape_node.shape.duplicate()
+			shape_node.shape.resource_local_to_scene = true
+			var sphere_shape: SphereShape3D = shape_node.shape as SphereShape3D
+			sphere_shape.radius = zone_size.x * 0.5
+
+		shape_node.position = zone_offset
+
+	var visual: EditorTriggerVisualizer = _get_visualizer()
+	if is_instance_valid(visual):
+		visual.shape_type = shape_type
+		visual.trigger_size = zone_size
+		visual.trigger_color = zone_color
+		visual.outline_color = outline_color
+		visual.x_ray_mode = x_ray_mode
+		visual.show_orientation = show_orientation
+		visual.show_metric_dimensions = show_metric_dimensions
+		visual.trigger_text = zone_text
+		visual.show_in_game = show_in_game
+		visual.position = zone_offset
+
+
+## Safely retrieves the child [CollisionShape3D] instance.
+func _get_collision_shape() -> CollisionShape3D:
+	if is_instance_valid(collision_shape):
+		return collision_shape
+	var col: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if not is_instance_valid(col):
+		for child: Node in get_children():
+			if child is CollisionShape3D:
+				col = child
+				break
+	return col
+
+
+## Safely retrieves the child [EditorTriggerVisualizer] instance.
+func _get_visualizer() -> EditorTriggerVisualizer:
+	var visual: EditorTriggerVisualizer = (
+		get_node_or_null("EditorTriggerVisualizer") as EditorTriggerVisualizer
+	)
+	if not is_instance_valid(visual):
+		for child: Node in get_children():
+			if child is EditorTriggerVisualizer:
+				return child as EditorTriggerVisualizer
+	return visual
 
 
 ## Activates soundscape zone when player enters volume.
@@ -140,7 +259,7 @@ func _on_body_exited(body: Node3D) -> void:
 
 		if not persist_after_exit:
 			_stop_soundscape()
-			call_deferred("_deferred_check_fallback")
+			call_deferred(&"_deferred_check_fallback")
 
 
 ## Checks and restores default fallback soundscape when idle.

@@ -51,11 +51,11 @@
 [ext_resource type="PackedScene" uid="uid://jvgnyc7a68n6" path="res://shared/soundscape_zone.tscn" id="48_u4cxf"]
 [ext_resource type="AudioStream" uid="uid://1w1y07mxmm0h" path="res://assets/sounds/SoundscapeHorror.wav" id="49_vawem"]
 [ext_resource type="Script" uid="uid://cl68g6jurgp0h" path="res://shared/soundscape_data.gd" id="50_7ix0b"]
-[ext_resource type="PackedScene" uid="uid://bqmsu8rh0h335" path="res://interactables/env_chapter_trigger.tscn" id="51_52lpc"]
-[ext_resource type="PackedScene" uid="uid://4m1edbr3oqv5" path="res://shared/trigger_hint.tscn" id="53_ol82b"]
+[ext_resource type="PackedScene" uid="uid://bqmsu8rh0h335" path="res://triggers/env_chapter_trigger.tscn" id="51_52lpc"]
+[ext_resource type="PackedScene" uid="uid://4m1edbr3oqv5" path="res://triggers/trigger_hint.tscn" id="53_ol82b"]
 [ext_resource type="PackedScene" uid="uid://36tm5fsdgnad" path="res://environment/accessible_label_body.tscn" id="54_w467f"]
 [ext_resource type="PackedScene" uid="uid://ckx2iw4xdsaqd" path="res://interactables/pickable_barrel_green.tscn" id="55_0j0ri"]
-[ext_resource type="PackedScene" uid="uid://cm0v3ely026rf" path="res://environment/music_trigger.tscn" id="56_1uqfy"]
+[ext_resource type="PackedScene" uid="uid://cm0v3ely026rf" path="res://triggers/music_trigger.tscn" id="56_1uqfy"]
 [ext_resource type="AudioStream" uid="uid://bvcvtu0ysqlk7" path="res://assets/music/The_Weight_Beneath.mp3" id="57_gcc1y"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_kja8q"]
@@ -2016,22 +2016,19 @@ activate_once = true
 
 [node name="ChapterTrigger2" parent="." unique_id=986591175 instance=ExtResource("51_52lpc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.6088676, 3.6163845, 2.4663794)
+trigger_offset = Vector3(0, 0, 0)
+trigger_color = Color(0.9, 0.5, 0.1, 0.4)
+x_ray_mode = false
 trigger_text = "TRIGGER Chapter Title"
 chapter_name = "Vistest Level"
 
 [node name="TriggerHint" parent="." unique_id=1784504971 instance=ExtResource("53_ol82b")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.34226102, 3.5, 2.7305722)
-trigger_size = Vector3(2, 2, 2)
-trigger_color = Color(0.2, 0.6, 1, 0.8)
 trigger_text = "HINT jump"
-custom_message = ""
-trigger_once = true
-show_on_screen = true
 
 [node name="TriggerHint2" parent="." unique_id=1323132102 instance=ExtResource("53_ol82b")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5829079, 3.5, 5.6184735)
 trigger_size = Vector3(0.75, 2, 2)
-trigger_color = Color(0.2, 0.6, 1, 0.8)
 trigger_text = "HINT blind00"
 hint_type = 0
 custom_message = "HI! You've just activated the custom hint message. You're located in a dark, moody room on the second floor. There is a room with 3 broken ventilators up ahead, an old shack to your right and a couple of tables. This room has no gameplay goal. Just a visual test of my future game. "

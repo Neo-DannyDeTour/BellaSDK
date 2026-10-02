@@ -4,6 +4,24 @@
 [ext_resource type="ArrayMesh" uid="uid://bpuvpvb5ebdda" path="res://assets/dev_meshes/dev_cyllinder.obj" id="1_yyywg"]
 [ext_resource type="Shader" uid="uid://g5aps1jw4kxy" path="res://player/holographic_scanner.gdshader" id="2_yqsag"]
 [ext_resource type="AudioStream" uid="uid://cyf6ecoydomsp" path="res://assets/sounds/Checkpoint.mp3" id="4_codlq"]
+[ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://triggers/editor_trigger_visualizer.gd" id="5_hpv63"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_qvr53"]
+resource_local_to_scene = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_hpv63"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.48235294, 0.6862745, 0.40392157, 0.4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_qvr53"]
+resource_local_to_scene = true
+material = SubResource("StandardMaterial3D_hpv63")
+size = Vector3(2, 2, 2)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_c45tw"]
+render_priority = 0
+shader = ExtResource("2_yqsag")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_yqsag"]
 albedo_color = Color(0.66999996, 1, 0.64, 1)
@@ -12,36 +30,28 @@ albedo_color = Color(0.66999996, 1, 0.64, 1)
 material = SubResource("StandardMaterial3D_yqsag")
 size = Vector3(1.5, 0.1, 1.5)
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_codlq"]
-size = Vector3(2, 2, 2)
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vsimk"]
-transparency = 1
-albedo_color = Color(1, 1, 0.078431375, 0.19607843)
-
-[sub_resource type="BoxMesh" id="BoxMesh_hpv63"]
-material = SubResource("StandardMaterial3D_vsimk")
-size = Vector3(2, 2, 2)
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_c45tw"]
-render_priority = 0
-shader = ExtResource("2_yqsag")
-
 [node name="Checkpoint" type="Area3D" unique_id=1794218671]
 collision_mask = 2
 script = ExtResource("1_vsimk")
+trigger_color = Color(0.48235294, 0.6862745, 0.40392157, 0.4)
+show_orientation = false
+show_metric_dimensions = false
 activation_sound = ExtResource("4_codlq")
-
-[node name="Base" type="MeshInstance3D" parent="." unique_id=1127149194]
-mesh = SubResource("BoxMesh_vsimk")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1043040143]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
-shape = SubResource("BoxShape3D_codlq")
+shape = SubResource("BoxShape3D_qvr53")
 
-[node name="TriggerField" type="MeshInstance3D" parent="." unique_id=1783728773]
+[node name="EditorTriggerVisualizer" type="MeshInstance3D" parent="." unique_id=288397545]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
-mesh = SubResource("BoxMesh_hpv63")
+mesh = SubResource("BoxMesh_qvr53")
+script = ExtResource("5_hpv63")
+trigger_color = Color(0.48235294, 0.6862745, 0.40392157, 0.4)
+outline_color = Color(0.3, 0.8, 1, 0.9)
+show_orientation = false
+show_metric_dimensions = false
+trigger_text = "CHECKPOINT"
+metadata/_custom_type_script = "uid://q4v42nidwdr2"
 
 [node name="HologramMesh" type="MeshInstance3D" parent="." unique_id=1510068088]
 transform = Transform3D(0.5, 0, 0, 0, 1, 0, 0, 0, 0.5, 0, 1, 0)
@@ -54,9 +64,7 @@ instance_shader_parameters/line_thickness = 0.1
 instance_shader_parameters/speed = 1.0
 mesh = ExtResource("1_yyywg")
 
-[node name="Label3D" type="Label3D" parent="." unique_id=674038350]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
-billboard = 1
-text = "Checkpoint"
+[node name="Base" type="MeshInstance3D" parent="." unique_id=1127149194]
+mesh = SubResource("BoxMesh_vsimk")
 
 [node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="." unique_id=1421716230]

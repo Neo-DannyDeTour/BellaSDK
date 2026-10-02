@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://b6saw37qcvs0i"]
 
 [ext_resource type="Script" uid="uid://cyo1ru2r8j23r" path="res://vfx/screenshake_effect.gd" id="1_we1fn"]
-[ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://shared/editor_trigger_visualizer.gd" id="2_07aef"]
+[ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://triggers/editor_trigger_visualizer.gd" id="2_07aef"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_07aef"]
 resource_local_to_scene = true

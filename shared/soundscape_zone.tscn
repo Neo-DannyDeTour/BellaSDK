@@ -1,16 +1,27 @@
 [gd_scene format=3 uid="uid://jvgnyc7a68n6"]
 
 [ext_resource type="Script" uid="uid://ctliepsue23ik" path="res://shared/soundscape_zone.gd" id="1_74h8o"]
+[ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://triggers/editor_trigger_visualizer.gd" id="2_jnken"]
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_38j8q"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_jnken"]
 resource_local_to_scene = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8s06l"]
+transparency = 1
+cull_mode = 2
+shading_mode = 0
+albedo_color = Color(0.2, 0.8, 0.6, 0.25)
+
+[sub_resource type="BoxMesh" id="BoxMesh_p06p8"]
+material = SubResource("StandardMaterial3D_8s06l")
 
 [node name="SoundscapeZone" type="Area3D" unique_id=297960288]
 collision_mask = 2
 script = ExtResource("1_74h8o")
+show_orientation = false
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1628676536]
-shape = SubResource("BoxShape3D_38j8q")
+shape = SubResource("BoxShape3D_jnken")
 debug_color = Color(0, 1, 0.43529412, 1)
 
 [node name="AmbientPlayer" type="AudioStreamPlayer" parent="." unique_id=427616135]
@@ -18,3 +29,13 @@ debug_color = Color(0, 1, 0.43529412, 1)
 [node name="OneShotPlayer" type="AudioStreamPlayer" parent="." unique_id=274425712]
 
 [node name="RandomSoundTimer" type="Timer" parent="." unique_id=1340882841]
+
+[node name="EditorTriggerVisualizer" type="MeshInstance3D" parent="." unique_id=467778345]
+mesh = SubResource("BoxMesh_p06p8")
+script = ExtResource("2_jnken")
+trigger_size = Vector3(1, 1, 1)
+trigger_color = Color(0.2, 0.8, 0.6, 0.25)
+outline_color = Color(0.4, 1, 0.8, 0.9)
+show_orientation = false
+trigger_text = "SOUNDSCAPE"
+metadata/_custom_type_script = "uid://q4v42nidwdr2"

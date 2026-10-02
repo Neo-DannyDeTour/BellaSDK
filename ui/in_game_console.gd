@@ -1061,11 +1061,21 @@ func _cmd_normals(_args: PackedStringArray) -> void:
 		write("Normal view activated.", "green")
 
 
-## Resolves player [HealthComponent] without tree traversal.
+## Resolves player [HealthComponent] by searching player children recursively.
 func _get_player_health_component(player_node: Node) -> HealthComponent:
 	print("InGameConsole: Resolving health component on: ", player_node.name)
 	if not is_instance_valid(player_node):
 		return null
+
+	if player_node.has_node("Components/HealthComponent"):
+		var direct_comp: Node = player_node.get_node("Components/HealthComponent")
+		if direct_comp is HealthComponent:
+			return direct_comp as HealthComponent
+
+	var comps: Array[Node] = player_node.find_children("*", "HealthComponent", true, false)
+	if not comps.is_empty():
+		return comps[0] as HealthComponent
+
 	return NodeQuery.find_first_child_of_type(player_node, HealthComponent) as HealthComponent
 
 
@@ -1132,7 +1142,7 @@ func _cmd_deathscreen(args: PackedStringArray) -> void:
 			return
 
 	_on_console_toggle_requested()
-	ds.play_death_sequence()
+	ds.play_death_sequence(chosen_effect)
 	write("Previewing death screen: " + screen_name.to_upper(), "green")
 
 

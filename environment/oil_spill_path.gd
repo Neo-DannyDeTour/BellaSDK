@@ -122,14 +122,10 @@ func _ready() -> void:
 	var mesh_node: MeshInstance3D = _get_mesh_node()
 	if is_instance_valid(mesh_node) and mesh_node.material_override != null:
 		var base_mat: Material = mesh_node.material_override
-		var mat_key: StringName = StringName("oil_spill_mat_" + str(get_instance_id()))
-		mesh_node.material_override = MaterialCache.get_variant(
-			mat_key,
-			func() -> Material:
-				var m: Material = base_mat.duplicate()
-				m.render_priority = 1
-				return m
-		)
+		var mat_key: String = "oil_spill_mat_" + str(get_instance_id())
+		var custom_mat: Material = MaterialCache.get_variant(base_mat, mat_key)
+		custom_mat.render_priority = 1
+		mesh_node.material_override = custom_mat
 
 	if not Engine.is_editor_hint():
 		is_burning = false

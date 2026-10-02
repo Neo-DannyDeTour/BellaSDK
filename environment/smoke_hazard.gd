@@ -1,9 +1,11 @@
 @tool
 ## Pulsing hazard dealing periodic damage to overlapping bodies via HealthComponent.
+## Integrates [EditorTriggerVisualizer] for in-editor wireframe and bounds display.
 class_name SmokeHazard
 extends Area3D
 
 ## Emitted when an entity takes a tick of damage inside the smoke cloud.
+## Passes the damaged target [Node3D] and the numeric damage dealt.
 signal damage_ticked(target: Node3D, amount: float)
 
 @export_group("Hazard Damage & Timers")
@@ -17,8 +19,9 @@ signal damage_ticked(target: Node3D, amount: float)
 @export var cloud_radius: float = 2.0:
 	set(value):
 		cloud_radius = value
-		_update_cloud_bounds()
-		_update_collision_and_visualizer()
+		if is_inside_tree():
+			_update_cloud_bounds()
+			_update_collision_and_visualizer()
 
 ## Time in seconds hazard remains active and emitting.
 @export var active_duration: float = 3.0
@@ -29,92 +32,135 @@ signal damage_ticked(target: Node3D, amount: float)
 ## Enables environment raycast occlusion to stop damage through walls.
 @export var check_wall_occlusion: bool = true
 
-@export_group("Hazard Shape & Transform")
+@export_group("Trigger Volume")
 ## Geometric shape displayed in visualizer and synced to collision.
 @export
 var visualizer_shape: EditorTriggerVisualizer.ShapeType = EditorTriggerVisualizer.ShapeType.BOX:
 	set(value):
 		visualizer_shape = value
-		_update_collision_and_visualizer()
+		if is_inside_tree():
+			_update_collision_and_visualizer()
 
 ## 3D dimensions of hazard collision box and visualizer box.
 @export var visualizer_size: Vector3 = Vector3(4.0, 4.0, 4.0):
 	set(value):
 		visualizer_size = value
-		_update_collision_and_visualizer()
+		if is_inside_tree():
+			_update_collision_and_visualizer()
 
 ## 3D position offset for collision shape and visualizer mesh.
 @export var hazard_offset: Vector3 = Vector3.ZERO:
 	set(value):
 		hazard_offset = value
-		_update_collision_and_visualizer()
+		if is_inside_tree():
+			_update_collision_and_visualizer()
 
+@export_group("Trigger Debug Visualizer")
 ## Toggles visibility of debug trigger shape in runtime builds.
 @export var show_visualizer_in_game: bool = false:
 	set(value):
 		show_visualizer_in_game = value
-		_update_collision_and_visualizer()
+		if is_inside_tree():
+			_update_collision_and_visualizer()
 
 ## Color and transparency of editor debug trigger shape.
-@export var visualizer_color: Color = Color(0.9, 0.2, 0.1, 0.3):
+@export var visualizer_color: Color = Color(0.9, 0.2, 0.1, 0.25):
 	set(value):
 		visualizer_color = value
-		_update_collision_and_visualizer()
+		if is_inside_tree():
+			_update_collision_and_visualizer()
+
+## Edge color applied to the wireframe bounding cage and orientation arrow.
+@export var outline_color: Color = Color(1.0, 0.4, 0.2, 0.9):
+	set(value):
+		outline_color = value
+		if is_inside_tree():
+			_update_collision_and_visualizer()
+
+## Allows the visualizer to remain visible through walls and level geometry.
+@export var x_ray_mode: bool = false:
+	set(value):
+		x_ray_mode = value
+		if is_inside_tree():
+			_update_collision_and_visualizer()
+
+## Displays an arrow pointing along -Z indicating hazard emission heading.
+@export var show_orientation: bool = true:
+	set(value):
+		show_orientation = value
+		if is_inside_tree():
+			_update_collision_and_visualizer()
+
+## Appends metric dimensions to the 3D billboard text label.
+@export var show_metric_dimensions: bool = true:
+	set(value):
+		show_metric_dimensions = value
+		if is_inside_tree():
+			_update_collision_and_visualizer()
 
 ## Text label displayed on editor debug shape.
 @export var visualizer_text: String = "SMOKE HAZARD":
 	set(value):
 		visualizer_text = value
-		_update_collision_and_visualizer()
+		if is_inside_tree():
+			_update_collision_and_visualizer()
 
 @export_group("Particle Settings")
 ## Base tint applied to smoke particles.
 @export var smoke_color: Color = Color(0.9, 0.9, 0.9, 0.85):
 	set(value):
 		smoke_color = value
-		_update_particle_visuals()
+		if is_inside_tree():
+			_update_particle_visuals()
 
 ## Overall lifetime in seconds for individual smoke puffs.
 @export var particle_lifetime: float = 2.0:
 	set(value):
 		particle_lifetime = maxf(0.1, value)
-		_update_particle_lifetime()
+		if is_inside_tree():
+			_update_particle_lifetime()
 
 ## Overall velocity scaling factor for emission system.
 @export var particle_speed: float = 4.0:
 	set(value):
 		particle_speed = value
-		_update_particle_velocity()
+		if is_inside_tree():
+			_update_particle_velocity()
 
 ## Minimum initial upward ejection speed.
 @export var velocity_min: float = 3.0:
 	set(value):
 		velocity_min = value
-		_update_particle_velocity()
+		if is_inside_tree():
+			_update_particle_velocity()
 
 ## Maximum initial upward ejection speed.
 @export var velocity_max: float = 6.0:
 	set(value):
 		velocity_max = value
-		_update_particle_velocity()
+		if is_inside_tree():
+			_update_particle_velocity()
 
 ## Angle in degrees for emission cone spread.
 @export_range(0.0, 180.0) var spread: float = 25.0:
 	set(value):
 		spread = value
-		_update_particle_velocity()
+		if is_inside_tree():
+			_update_particle_velocity()
 
 ## Minimum randomized uniform scale multiplier.
 @export var scale_min: float = 0.8:
 	set(value):
 		scale_min = value
-		_update_particle_scale()
+		if is_inside_tree():
+			_update_particle_scale()
 
 ## Maximum randomized uniform scale multiplier.
 @export var scale_max: float = 2.0:
 	set(value):
 		scale_max = value
-		_update_particle_scale()
+		if is_inside_tree():
+			_update_particle_scale()
 
 ## Internal interval timer used to trigger damage cycles.
 var _tick_timer: float = 0.0
@@ -150,10 +196,6 @@ var _collision_shape: CollisionShape3D = get_node_or_null("CollisionShape3D") as
 ## Connects collision callbacks and synchronizes parameters on ready.
 func _ready() -> void:
 	print("SmokeHazard: Initialized at ", global_position)
-	if not Engine.is_editor_hint():
-		body_entered.connect(_on_body_entered)
-		body_exited.connect(_on_body_exited)
-
 	_update_collision_and_visualizer()
 	_update_cloud_bounds()
 	_update_particle_visuals()
@@ -161,7 +203,12 @@ func _ready() -> void:
 	_update_particle_velocity()
 	_update_particle_scale()
 	_set_hazard_state(true)
-	_align_collision_to_base(_collision_shape)
+
+	if not Engine.is_editor_hint():
+		if not body_entered.is_connected(_on_body_entered):
+			body_entered.connect(_on_body_entered)
+		if not body_exited.is_connected(_on_body_exited):
+			body_exited.connect(_on_body_exited)
 
 
 ## Advances cycle timers and handles damage ticks during active phases.
@@ -289,10 +336,7 @@ func _set_hazard_state(active: bool) -> void:
 	if not is_inside_tree():
 		return
 
-	var parts: GPUParticles3D = (
-		_particles if is_instance_valid(_particles) else get_node_or_null("SmokeParticles")
-		as GPUParticles3D
-	)
+	var parts: GPUParticles3D = _get_particles()
 	if is_instance_valid(parts):
 		parts.emitting = active
 
@@ -302,36 +346,29 @@ func _update_collision_and_visualizer() -> void:
 	if not is_inside_tree():
 		return
 
-	var col: CollisionShape3D = (
-		(
-			_collision_shape
-			if is_instance_valid(_collision_shape)
-			else get_node_or_null("CollisionShape3D")
-		)
-		as CollisionShape3D
-	)
-	var vis: EditorTriggerVisualizer = (
-		(
-			_visualizer
-			if is_instance_valid(_visualizer)
-			else get_node_or_null("EditorTriggerVisualizer")
-		)
-		as EditorTriggerVisualizer
-	)
-
+	var col: CollisionShape3D = _get_collision_shape()
 	if is_instance_valid(col):
-		col.position = hazard_offset
 		if visualizer_shape == EditorTriggerVisualizer.ShapeType.BOX:
 			if not col.shape is BoxShape3D:
 				col.shape = BoxShape3D.new()
-			(col.shape as BoxShape3D).size = visualizer_size
+			else:
+				col.shape = col.shape.duplicate()
+			col.shape.resource_local_to_scene = true
+			var box: BoxShape3D = col.shape as BoxShape3D
+			box.size = visualizer_size
 		elif visualizer_shape == EditorTriggerVisualizer.ShapeType.SPHERE:
 			if not col.shape is SphereShape3D:
 				col.shape = SphereShape3D.new()
-			(col.shape as SphereShape3D).radius = cloud_radius
+			else:
+				col.shape = col.shape.duplicate()
+			col.shape.resource_local_to_scene = true
+			var sphere: SphereShape3D = col.shape as SphereShape3D
+			sphere.radius = cloud_radius
 
+		col.position = hazard_offset
+
+	var vis: EditorTriggerVisualizer = _get_visualizer()
 	if is_instance_valid(vis):
-		vis.position = hazard_offset
 		vis.shape_type = visualizer_shape
 		if visualizer_shape == EditorTriggerVisualizer.ShapeType.BOX:
 			vis.trigger_size = visualizer_size
@@ -339,10 +376,13 @@ func _update_collision_and_visualizer() -> void:
 			vis.trigger_size = Vector3.ONE * (cloud_radius * 2.0)
 
 		vis.trigger_color = visualizer_color
+		vis.outline_color = outline_color
+		vis.x_ray_mode = x_ray_mode
+		vis.show_orientation = show_orientation
+		vis.show_metric_dimensions = show_metric_dimensions
 		vis.trigger_text = visualizer_text
 		vis.show_in_game = show_visualizer_in_game
-		vis._update_mesh()
-		vis._update_material()
+		vis.position = hazard_offset
 
 
 ## Updates particle system process material emission radius.
@@ -350,10 +390,7 @@ func _update_cloud_bounds() -> void:
 	if not is_inside_tree():
 		return
 
-	var parts: GPUParticles3D = (
-		_particles if is_instance_valid(_particles) else get_node_or_null("SmokeParticles")
-		as GPUParticles3D
-	)
+	var parts: GPUParticles3D = _get_particles()
 	if is_instance_valid(parts) and parts.process_material is ParticleProcessMaterial:
 		var mat: ParticleProcessMaterial = parts.process_material as ParticleProcessMaterial
 		mat.emission_sphere_radius = cloud_radius * 0.35
@@ -364,14 +401,11 @@ func _update_particle_visuals() -> void:
 	if not is_inside_tree():
 		return
 
-	var parts: GPUParticles3D = (
-		_particles if is_instance_valid(_particles) else get_node_or_null("SmokeParticles")
-		as GPUParticles3D
-	)
+	var parts: GPUParticles3D = _get_particles()
 	if is_instance_valid(parts) and parts.draw_pass_1:
 		if parts.draw_pass_1.material is ShaderMaterial:
 			var mat: ShaderMaterial = parts.draw_pass_1.material as ShaderMaterial
-			mat.set_shader_parameter("smoke_color", smoke_color)
+			mat.set_shader_parameter(&"smoke_color", smoke_color)
 
 
 ## Updates lifetime value on particle node.
@@ -379,10 +413,7 @@ func _update_particle_lifetime() -> void:
 	if not is_inside_tree():
 		return
 
-	var parts: GPUParticles3D = (
-		_particles if is_instance_valid(_particles) else get_node_or_null("SmokeParticles")
-		as GPUParticles3D
-	)
+	var parts: GPUParticles3D = _get_particles()
 	if is_instance_valid(parts):
 		parts.lifetime = particle_lifetime
 
@@ -392,10 +423,7 @@ func _update_particle_velocity() -> void:
 	if not is_inside_tree():
 		return
 
-	var parts: GPUParticles3D = (
-		_particles if is_instance_valid(_particles) else get_node_or_null("SmokeParticles")
-		as GPUParticles3D
-	)
+	var parts: GPUParticles3D = _get_particles()
 	if is_instance_valid(parts) and parts.process_material is ParticleProcessMaterial:
 		var mat: ParticleProcessMaterial = parts.process_material as ParticleProcessMaterial
 		mat.direction = Vector3.UP
@@ -409,21 +437,41 @@ func _update_particle_scale() -> void:
 	if not is_inside_tree():
 		return
 
-	var parts: GPUParticles3D = (
-		_particles if is_instance_valid(_particles) else get_node_or_null("SmokeParticles")
-		as GPUParticles3D
-	)
+	var parts: GPUParticles3D = _get_particles()
 	if is_instance_valid(parts) and parts.process_material is ParticleProcessMaterial:
 		var mat: ParticleProcessMaterial = parts.process_material as ParticleProcessMaterial
 		mat.scale_min = scale_min
 		mat.scale_max = scale_max
 
 
-## Offsets collision shape upward so bottom aligns with origin.
-func _align_collision_to_base(col_shape: CollisionShape3D) -> void:
-	print("SmokeHazard: Aligning collision base on: ", name)
-	if not is_instance_valid(col_shape) or not col_shape.shape is BoxShape3D:
-		return
+## Safely resolves child [CollisionShape3D] node.
+func _get_collision_shape() -> CollisionShape3D:
+	if is_instance_valid(_collision_shape):
+		return _collision_shape
+	var col: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
+	if not is_instance_valid(col):
+		for child: Node in get_children():
+			if child is CollisionShape3D:
+				return child as CollisionShape3D
+	return col
 
-	var box: BoxShape3D = col_shape.shape as BoxShape3D
-	col_shape.position.y = box.size.y * 0.5
+
+## Safely resolves child [EditorTriggerVisualizer] node.
+func _get_visualizer() -> EditorTriggerVisualizer:
+	if is_instance_valid(_visualizer):
+		return _visualizer
+	var vis: EditorTriggerVisualizer = (
+		get_node_or_null("EditorTriggerVisualizer") as EditorTriggerVisualizer
+	)
+	if not is_instance_valid(vis):
+		for child: Node in get_children():
+			if child is EditorTriggerVisualizer:
+				return child as EditorTriggerVisualizer
+	return vis
+
+
+## Safely resolves child [GPUParticles3D] node.
+func _get_particles() -> GPUParticles3D:
+	if is_instance_valid(_particles):
+		return _particles
+	return get_node_or_null("SmokeParticles") as GPUParticles3D

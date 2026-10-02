@@ -1,8 +1,19 @@
 [gd_scene format=3 uid="uid://opttt7tvnuir"]
 
 [ext_resource type="Script" uid="uid://dos2gajmpo6s1" path="res://shared/health_modifier.gd" id="1_tv85v"]
+[ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://triggers/editor_trigger_visualizer.gd" id="2_fr66n"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_5kuhq"]
+size = Vector3(2, 2, 2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_pjh6i"]
+transparency = 1
+cull_mode = 2
+shading_mode = 0
+albedo_color = Color(0.9, 0.5, 0.1, 0.25)
+
+[sub_resource type="BoxMesh" id="BoxMesh_b7xf3"]
+material = SubResource("StandardMaterial3D_pjh6i")
 size = Vector3(2, 2, 2)
 
 [node name="HealthModifier" type="Area3D" unique_id=1142556164]
@@ -13,3 +24,8 @@ script = ExtResource("1_tv85v")
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1743148784]
 shape = SubResource("BoxShape3D_5kuhq")
 debug_color = Color(0.9490196, 0, 0.5686275, 1)
+
+[node name="EditorTriggerVisualizer" type="MeshInstance3D" parent="." unique_id=877967725]
+mesh = SubResource("BoxMesh_b7xf3")
+script = ExtResource("2_fr66n")
+metadata/_custom_type_script = "uid://q4v42nidwdr2"
