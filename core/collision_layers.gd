@@ -57,6 +57,7 @@ const RENDER_MASK_ALL: int = 0xFFFFF
 
 ## Converts a 1-based layer index into its corresponding single-bit mask.
 static func layer_to_mask(layer_index: int) -> int:
+	print("CollisionLayers: Converting layer index ", layer_index, " to bitmask.")
 	if layer_index < 1 or layer_index > 32:
 		return 0
 	return 1 << (layer_index - 1)
@@ -64,6 +65,7 @@ static func layer_to_mask(layer_index: int) -> int:
 
 ## Checks if the specified bitmask contains the given 1-based layer index.
 static func has_layer(mask: int, layer_index: int) -> bool:
+	print("CollisionLayers: Testing mask ", mask, " against layer ", layer_index)
 	if layer_index < 1 or layer_index > 32:
 		return false
 	return (mask & (1 << (layer_index - 1))) != 0

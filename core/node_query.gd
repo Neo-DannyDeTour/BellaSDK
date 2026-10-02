@@ -2,9 +2,13 @@
 class_name NodeQuery
 extends Object
 
+## Cached reusable ray query parameters instance to avoid heap allocations.
+static var _cached_ray_query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.new()
+
 
 ## Traverses up the scene tree to find an ancestor node matching [param target_type].
 static func find_ancestor_of_type(node: Node, target_type: Variant) -> Node:
+	print("NodeQuery: Finding ancestor of type for node: ", node)
 	if not is_instance_valid(node):
 		return null
 	var current: Node = node.get_parent()
@@ -17,6 +21,7 @@ static func find_ancestor_of_type(node: Node, target_type: Variant) -> Node:
 
 ## Traverses up the scene tree to find an ancestor belonging to [param group_name].
 static func find_ancestor_in_group(node: Node, group_name: StringName) -> Node:
+	print("NodeQuery: Finding ancestor in group '", group_name, "' for node: ", node)
 	if not is_instance_valid(node):
 		return null
 	var current: Node = node.get_parent()
@@ -29,6 +34,7 @@ static func find_ancestor_in_group(node: Node, group_name: StringName) -> Node:
 
 ## Traverses up the scene tree to find an ancestor implementing [param method_name].
 static func find_ancestor_with_method(node: Node, method_name: StringName) -> Node:
+	print("NodeQuery: Finding ancestor with method '", method_name, "' on: ", node)
 	if not is_instance_valid(node):
 		return null
 	var current: Node = node.get_parent()
@@ -41,6 +47,7 @@ static func find_ancestor_with_method(node: Node, method_name: StringName) -> No
 
 ## Traverses up the scene tree to find an ancestor defining [param meta_name].
 static func find_ancestor_with_meta(node: Node, meta_name: StringName) -> Node:
+	print("NodeQuery: Finding ancestor with meta '", meta_name, "' on: ", node)
 	if not is_instance_valid(node):
 		return null
 	var current: Node = node.get_parent()
@@ -53,9 +60,10 @@ static func find_ancestor_with_meta(node: Node, meta_name: StringName) -> Node:
 
 ## Finds the first immediate child matching [param target_type].
 static func find_first_child_of_type(node: Node, target_type: Variant) -> Node:
+	print("NodeQuery: Finding first child of type on node: ", node)
 	if not is_instance_valid(node):
 		return null
-	for child in node.get_children():
+	for child: Node in node.get_children():
 		if is_instance_of(child, target_type):
 			return child
 	return null
@@ -63,10 +71,11 @@ static func find_first_child_of_type(node: Node, target_type: Variant) -> Node:
 
 ## Collects all immediate children matching [param target_type].
 static func find_children_of_type(node: Node, target_type: Variant) -> Array[Node]:
+	print("NodeQuery: Collecting children of type on node: ", node)
 	var result: Array[Node] = []
 	if not is_instance_valid(node):
 		return result
-	for child in node.get_children():
+	for child: Node in node.get_children():
 		if is_instance_of(child, target_type):
 			result.append(child)
 	return result
@@ -74,10 +83,11 @@ static func find_children_of_type(node: Node, target_type: Variant) -> Array[Nod
 
 ## Collects all immediate children belonging to [param group_name].
 static func find_children_in_group(node: Node, group_name: StringName) -> Array[Node]:
+	print("NodeQuery: Collecting children in group '", group_name, "' on: ", node)
 	var result: Array[Node] = []
 	if not is_instance_valid(node):
 		return result
-	for child in node.get_children():
+	for child: Node in node.get_children():
 		if child.is_in_group(group_name):
 			result.append(child)
 	return result
@@ -85,6 +95,7 @@ static func find_children_in_group(node: Node, group_name: StringName) -> Array[
 
 ## Safely retrieves the first node in [param group_name] or null if missing.
 static func get_single_node_in_group(tree: SceneTree, group_name: StringName) -> Node:
+	print("NodeQuery: Getting single node from group: ", group_name)
 	if not is_instance_valid(tree):
 		return null
 	var nodes: Array[Node] = tree.get_nodes_in_group(group_name)
@@ -95,6 +106,7 @@ static func get_single_node_in_group(tree: SceneTree, group_name: StringName) ->
 
 ## Resolves an interactable root entity by inspecting parent chain groups and methods.
 static func resolve_interactable_root(collider: Node3D) -> Node3D:
+	print("NodeQuery: Resolving interactable root entity for collider: ", collider)
 	if not is_instance_valid(collider):
 		return null
 	if collider.has_method(&"interact") or collider.is_in_group(&"interactable"):
@@ -115,9 +127,13 @@ static func cast_ray(
 	collision_mask: int = CollisionLayers.MASK_ENVIRONMENT,
 	exclude: Array[RID] = []
 ) -> Dictionary:
-	if space_state == null:
+	print("NodeQuery: Executing static raycast from ", from, " to ", to)
+	if not is_instance_valid(space_state):
 		return {}
-	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-		from, to, collision_mask, exclude
-	)
-	return space_state.intersect_ray(query)
+	_cached_ray_query.from = from
+	_cached_ray_query.to = to
+	_cached_ray_query.collision_mask = collision_mask
+	_cached_ray_query.exclude = exclude
+	_cached_ray_query.collide_with_areas = false
+	_cached_ray_query.collide_with_bodies = true
+	return space_state.intersect_ray(_cached_ray_query)

@@ -744,14 +744,14 @@ func _register_easter_egg_commands() -> void:
 	registry.register_command(
 		ConsoleCommand.new("soyuz", "", func(_a: PackedStringArray) -> void: write("Nerushimuy!"))
 	)
-	registry.register_command(
-		ConsoleCommand.new(
-			"motherlode",
-			"",
-			func(_a: PackedStringArray) -> void:
-				write("This is a classic get-rich-quick scheme! Arrested!")
-		)
-	)
+	## Callback for the motherlode cheat command.
+	var motherlode_callback: Callable = func(_args: PackedStringArray) -> void:
+		print("Executing motherlode cheat command.")
+		write("This is a classic get-rich-quick scheme! Arrested!")
+
+	## Instance of the motherlode console command.
+	var motherlode_cmd: ConsoleCommand = ConsoleCommand.new("motherlode", "", motherlode_callback)
+	registry.register_command(motherlode_cmd)
 	registry.register_command(
 		ConsoleCommand.new(
 			"konami",

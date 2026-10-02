@@ -424,6 +424,7 @@ signal interaction_unfocused(previous_target: CollisionObject3D)
 @warning_ignore("unused_signal")
 signal interacted(target: CollisionObject3D, interactor: Node3D)
 
+## Emitted to request a state machine transition with target state and payload.
 @warning_ignore("unused_signal")
 signal transition_requested(target_state_name: StringName, message: Dictionary)
 
@@ -494,6 +495,7 @@ func _on_font_changed(font_name: String) -> void:
 
 ## Dynamically iterates the GlobalSettings font registry and caches loaded resources.
 func _load_registered_fonts() -> void:
+	print("Events: Loading registered fonts from GlobalSettings.")
 	if _is_cached:
 		return
 
@@ -504,9 +506,10 @@ func _load_registered_fonts() -> void:
 	if not is_instance_valid(global_settings_node):
 		return
 
-	var registry: Array = global_settings_node.get("FONT_REGISTRY") as Array
-	if registry == null:
+	var registry_variant: Variant = global_settings_node.get("FONT_REGISTRY")
+	if not (registry_variant is Array):
 		return
+	var registry: Array = registry_variant as Array
 
 	for entry_variant: Variant in registry:
 		if not entry_variant is Dictionary:
@@ -533,6 +536,7 @@ func _load_registered_fonts() -> void:
 
 ## Recursively propagates explicit font overrides down all active Control nodes.
 func _apply_font_override_recursive(parent: Node, new_font: Font) -> void:
+	print("Events: Applying recursive font override on node: ", parent)
 	if not is_instance_valid(parent):
 		return
 

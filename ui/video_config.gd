@@ -12,10 +12,10 @@ const DEFAULT_FPS: int = 60
 const DEFAULT_FSR_MODE: String = "Disabled (Native)"
 
 ## The default Anti-Aliasing configuration string.
-const DEFAULT_AA_MODE: String = "Disabled"
+const DEFAULT_AA_MODE: String = "TAA (Smooth)"
 
-## The default VSync state (Disabled).
-const DEFAULT_VSYNC: DisplayServer.VSyncMode = DisplayServer.VSYNC_DISABLED
+## The default VSync state (Enabled).
+const DEFAULT_VSYNC: DisplayServer.VSyncMode = DisplayServer.VSYNC_ENABLED
 
 ## The default preset configuration string.
 const DEFAULT_PRESET: String = "High"
@@ -151,12 +151,12 @@ const AA_MODES: Dictionary = {
 	{"msaa": Viewport.MSAA_DISABLED, "taa": false, "fxaa": Viewport.SCREEN_SPACE_AA_FXAA},
 	"TAA (Smooth)":
 	{"msaa": Viewport.MSAA_DISABLED, "taa": true, "fxaa": Viewport.SCREEN_SPACE_AA_DISABLED},
+	"TAA + FXAA (High)":
+	{"msaa": Viewport.MSAA_DISABLED, "taa": true, "fxaa": Viewport.SCREEN_SPACE_AA_FXAA},
 	"MSAA 2x": {"msaa": Viewport.MSAA_2X, "taa": false, "fxaa": Viewport.SCREEN_SPACE_AA_DISABLED},
 	"MSAA 4x": {"msaa": Viewport.MSAA_4X, "taa": false, "fxaa": Viewport.SCREEN_SPACE_AA_DISABLED},
 	"MSAA 8x (Heavy)":
-	{"msaa": Viewport.MSAA_8X, "taa": false, "fxaa": Viewport.SCREEN_SPACE_AA_DISABLED},
-	"MSAA 2x + TAA (High)":
-	{"msaa": Viewport.MSAA_2X, "taa": true, "fxaa": Viewport.SCREEN_SPACE_AA_DISABLED}
+	{"msaa": Viewport.MSAA_8X, "taa": false, "fxaa": Viewport.SCREEN_SPACE_AA_DISABLED}
 }
 
 ## Map of shadow quality options to atlas sizes and filter settings.
@@ -297,20 +297,20 @@ const PRESETS: Dictionary = {
 		"shadow_quality": "High (Smooth)",
 		"dynamic_light_shadows": true,
 		"shadow_filter": "Soft High",
-		"positional_shadow_distance": 48.0,
-		"directional_shadow_distance": 96.0,
+		"positional_shadow_distance": 40.0,
+		"directional_shadow_distance": 80.0,
 		"occlusion_culling": true,
 		"vrs_mode": "Disabled",
 		"texture_filter": "Linear Mipmap",
 		"resolution_scale": 1.0,
 		"dof_enabled": true,
-		"motion_blur": 1.0,
+		"motion_blur": 0.75,
 		"ssao": "High",
-		"ssi": "High",
-		"ssr": "High",
-		"sdfgi": "High",
-		"volumetric_fog": "High",
+		"ssi": "Medium",
+		"ssr": "Medium",
+		"sdfgi": "Medium",
+		"volumetric_fog": "Medium",
 		"glow": "High",
-		"mesh_lod_threshold": 0.0
+		"mesh_lod_threshold": 1.0
 	}
 }
