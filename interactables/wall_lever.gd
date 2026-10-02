@@ -124,6 +124,7 @@ func _ready() -> void:
 
 
 ## Handles player interaction triggered by [InteractComponent].
+## [param character]: Character initiating the interaction.
 func interact_with(character: CharacterBody3D) -> void:
 	if is_one_time_use and _is_used:
 		print("WallLever: Cannot use ", name, " - lever is already spent.")
@@ -158,6 +159,7 @@ func install_stick() -> void:
 
 
 ## Toggles lever state and animates rotation toward target angle.
+## [param character]: Character pulling the lever.
 func toggle(character: CharacterBody3D = null) -> void:
 	is_pulled = not is_pulled
 	var actor: String = String(character.name) if is_instance_valid(character) else "Script"
@@ -206,8 +208,8 @@ func _drop_stick() -> void:
 		if stick_node is RigidBody3D:
 			var rb: RigidBody3D = stick_node as RigidBody3D
 			rb.freeze = false
-			rb.collision_layer = 4
-			rb.collision_mask = 1
+			rb.collision_layer = CollisionLayers.LAYER_DEBRIS_IDX
+			rb.collision_mask = CollisionLayers.MASK_ENVIRONMENT
 			var forward_dir: Vector3 = -global_transform.basis.z
 			rb.apply_central_impulse((forward_dir * 0.4) + (Vector3.DOWN * 0.2))
 			rb.apply_torque_impulse(Vector3(randf_range(-0.5, 0.5), 0.2, 0.5))
@@ -227,6 +229,7 @@ func _on_pull_completed() -> void:
 
 
 ## Updates [member stick_pivot] rotation via tween or snap.
+## [param animate]: Whether to animate rotation using tween.
 func _update_handle_pose(animate: bool) -> void:
 	if not is_instance_valid(stick_pivot):
 		return
@@ -235,11 +238,8 @@ func _update_handle_pose(animate: bool) -> void:
 	var target_rot: Vector3 = Vector3(deg_to_rad(target_deg), 0.0, 0.0)
 
 	if animate and not Engine.is_editor_hint() and is_inside_tree():
-		if is_instance_valid(_tween) and _tween.is_running():
-			_tween.kill()
-
 		_is_animating = true
-		_tween = create_tween()
+		_tween = Utilities.reset_tween(self, _tween)
 		(
 			_tween
 			. tween_property(stick_pivot, "rotation", target_rot, pull_duration)
@@ -252,6 +252,7 @@ func _update_handle_pose(animate: bool) -> void:
 
 
 ## Updates action prompt string based on completeness and player.
+## [param character]: Character looking at the lever.
 func _update_prompt_text(character: CharacterBody3D = null) -> void:
 	if not is_instance_valid(prompt_label):
 		return
@@ -269,6 +270,8 @@ func _update_prompt_text(character: CharacterBody3D = null) -> void:
 
 
 ## Validates whether player character inventory possesses handle.
+## [param character]: Character checking for item.
+## Returns true if character has stick item.
 func _character_has_stick(character: CharacterBody3D) -> bool:
 	if not is_instance_valid(character):
 		return false
@@ -279,6 +282,7 @@ func _character_has_stick(character: CharacterBody3D) -> bool:
 
 
 ## Removes the stick item from character inventory upon mounting.
+## [param character]: Character giving up stick item.
 func _consume_stick_from_character(character: CharacterBody3D) -> void:
 	if not is_instance_valid(character):
 		return
@@ -321,6 +325,7 @@ func _sync_targets_to_transmitter() -> void:
 
 
 ## Setter for [member output_targets] updating child transmitter.
+## [param value]: Target nodes list.
 func _set_output_targets(value: Array[Node3D]) -> void:
 	output_targets = value
 	if not is_inside_tree():
@@ -329,6 +334,7 @@ func _set_output_targets(value: Array[Node3D]) -> void:
 
 
 ## Setter for [member is_complete] updating stick visibility.
+## [param value]: True if lever is complete.
 func _set_is_complete(value: bool) -> void:
 	is_complete = value
 	if not is_inside_tree():
@@ -337,6 +343,7 @@ func _set_is_complete(value: bool) -> void:
 
 
 ## Setter for [member is_pulled] adjusting handle pose in editor.
+## [param value]: True if lever is pulled.
 func _set_is_pulled(value: bool) -> void:
 	is_pulled = value
 	if not is_inside_tree():

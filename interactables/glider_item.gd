@@ -16,8 +16,6 @@ var current_holder: CharacterBody3D = null
 ## [param p_is_visible]: Boolean state for mesh visibility.
 func set_glider_mesh_visible(p_is_visible: bool) -> void:
 	print("GliderItem: set_glider_mesh_visible() called. State: ", p_is_visible)
-	# Toggle your specific mesh node here. For example:
-	# get_node("MeshInstance3D").visible = p_is_visible
 
 
 ## Locks the player and tweens them to the [member player_anchor] before attaching.
@@ -30,14 +28,14 @@ func pick_up(hold_position: Marker3D, player: CharacterBody3D) -> void:
 
 	# 1. Disable physics while being picked up and held
 	freeze = true
-	collision_layer = 0
-	collision_mask = 0
+	collision_layer = CollisionLayers.MASK_NONE
+	collision_mask = CollisionLayers.MASK_NONE
 
-	# 2. Lock the player in place using your existing function
+	# 2. Lock the player in place using existing function
 	if player.has_method("set_machine_lock"):
 		player.call("set_machine_lock", true)
 
-	# 3. Tween the player's global X/Z to the anchor, but keep their Y to avoid clipping into the floor
+	# 3. Tween player's global X/Z to anchor, keeping Y to avoid clipping floor
 	var tween: Tween = get_tree().create_tween()
 	var target_pos: Vector3 = Vector3(
 		player_anchor.global_position.x, player.global_position.y, player_anchor.global_position.z
@@ -52,7 +50,7 @@ func pick_up(hold_position: Marker3D, player: CharacterBody3D) -> void:
 	tween.tween_callback(_on_player_reached_anchor.bind(player, hold_position))
 
 
-## Callback after the tween finishes. Attaches the glider and restricts sprinting.
+## Callback after tween finishes. Attaches glider and restricts sprinting.
 ## [param player]: The character node that was moved.
 ## [param _hold_position]: The weapon mount socket.
 func _on_player_reached_anchor(player: CharacterBody3D, _hold_position: Marker3D) -> void:
@@ -74,7 +72,7 @@ func _on_player_reached_anchor(player: CharacterBody3D, _hold_position: Marker3D
 		player.call("set_machine_lock", false)
 
 
-## Restores player sprint ability, detaches the glider, and applies a throwing impulse.
+## Restores player sprint ability, detaches glider, and applies throwing impulse.
 ## [param force]: The 3D directional vector representing throw strength.
 ## [param scene_root]: The root node to re-parent the glider into.
 func throw_item(force: Vector3, scene_root: Node) -> void:
@@ -87,25 +85,21 @@ func throw_item(force: Vector3, scene_root: Node) -> void:
 			loco_comp.set("can_sprint", true)
 	current_holder = null
 
-	# Detach from player and put back in world
-	var current_parent: Node = get_parent()
-	if is_instance_valid(current_parent):
-		current_parent.remove_child(self)
-
+	# Detach from player and put back in world safely
 	if is_instance_valid(scene_root):
-		scene_root.add_child(self)
+		Utilities.reparent_keep_transform(self, scene_root)
 
 	# Re-enable physics
 	freeze = false
-	collision_layer = 1
-	collision_mask = 1
+	collision_layer = CollisionLayers.LAYER_ENVIRONMENT_IDX
+	collision_mask = CollisionLayers.MASK_ENVIRONMENT
 
 	apply_central_impulse(force)
 
 
-## Detaches the glider without force, dropping it safely at the provided coordinates.
+## Detaches glider without force, dropping it safely at provided coordinates.
 ## [param scene_root]: The root node to re-parent the glider into.
-## [param drop_pos]: The safe 3D coordinate to spawn the glider at (usually the player's feet).
+## [param drop_pos]: Safe 3D coordinate to spawn glider at (usually player feet).
 func drop_item(scene_root: Node, drop_pos: Vector3) -> void:
 	print("GliderItem: drop_item() called. Detaching from player.")
 
@@ -116,18 +110,14 @@ func drop_item(scene_root: Node, drop_pos: Vector3) -> void:
 			loco_comp.set("can_sprint", true)
 	current_holder = null
 
-	var current_parent: Node = get_parent()
-	if is_instance_valid(current_parent):
-		current_parent.remove_child(self)
-
 	if is_instance_valid(scene_root):
-		scene_root.add_child(self)
+		Utilities.reparent_keep_transform(self, scene_root)
 
-	# Place it safely at the player's feet
+	# Place safely at target position
 	global_position = drop_pos
 	transform.basis = Basis.IDENTITY
 
 	# Re-enable physics so it can be picked up again
 	freeze = false
-	collision_layer = 1
-	collision_mask = 1
+	collision_layer = CollisionLayers.LAYER_ENVIRONMENT_IDX
+	collision_mask = CollisionLayers.MASK_ENVIRONMENT
