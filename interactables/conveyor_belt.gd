@@ -1,8 +1,8 @@
 @tool
 ## A physical conveyor belt surface that continuously translates physics bodies.
 ##
-## Adjusts the underlying `constant_linear_velocity` parameter while simultaneously scrolling
-## a custom shader texture to match the speed and direction vectors.
+## Adjusts underlying constant_linear_velocity parameter while scrolling a custom
+## shader texture to match speed and direction vectors.
 class_name ConveyorBelt
 extends StaticBody3D
 
@@ -29,14 +29,14 @@ extends StaticBody3D
 			_update_size()
 
 @export_group("Visual Synchronization")
-## Automatically calculates the shader UV rotation based on the physical [member move_direction].
+## Automatically calculates shader UV rotation based on physical move_direction.
 @export var auto_sync_visuals: bool = true:
 	set(value):
 		auto_sync_visuals = value
 		if is_inside_tree() and Engine.is_editor_hint():
 			_update_all()
 
-## Overrides the shader rotation if [member auto_sync_visuals] is disabled.
+## Overrides shader rotation if auto_sync_visuals is disabled.
 @export_range(0.0, 360.0) var manual_texture_rotation: float = 0.0:
 	set(value):
 		manual_texture_rotation = value
@@ -68,24 +68,27 @@ func _update_all() -> void:
 	_update_size()
 
 
-## Applies the calculated velocity vector to the underlying [StaticBody3D] surface properties.
+## Applies calculated velocity vector to static body surface properties.
 func _update_physics() -> void:
 	if not is_node_ready():
 		return
 
 	if not Engine.is_editor_hint():
-		print("_update_physics() called: Applying velocity.")
+		print(
+			"ConveyorBelt: _update_physics() called. Velocity: ",
+			move_direction.normalized() * speed
+		)
 
 	constant_linear_velocity = move_direction.normalized() * speed
 
 
-## Re-calculates and transmits rotation and speed variables to the surface shader material.
+## Re-calculates and transmits rotation and speed variables to surface shader material.
 func _update_visuals() -> void:
 	if not is_node_ready():
 		return
 
 	if not Engine.is_editor_hint():
-		print("_update_visuals() called: Synchronizing shader parameters.")
+		print("ConveyorBelt: _update_visuals() called. Speed: ", speed)
 
 	var angle: float = 0.0
 
@@ -99,7 +102,7 @@ func _update_visuals() -> void:
 		mesh.set_instance_shader_parameter("scroll_speed", speed)
 
 
-## Rotates the debug arrow node to face the exact trajectory of the current [member move_direction].
+## Rotates debug arrow node to face exact trajectory of current move_direction.
 func _update_arrow() -> void:
 	if not is_node_ready() or not is_instance_valid(direction_arrow):
 		return
@@ -117,19 +120,22 @@ func _update_arrow() -> void:
 		direction_arrow.basis = Basis(right_axis, up_axis, forward_axis)
 
 
-## Synchronizes the dimensions of the active visual mesh and physical collision shape.
+## Synchronizes dimensions of active visual mesh and physical collision shape.
 func _update_size() -> void:
 	if not is_node_ready():
 		return
 
 	if not Engine.is_editor_hint():
-		print("_update_size() called: Adjusting floor mesh and collision boundaries.")
+		print("ConveyorBelt: _update_size() called. Size: ", conveyor_size)
 
 	if is_instance_valid(mesh):
 		if mesh.mesh is BoxMesh:
-			mesh.mesh.size = Vector3(conveyor_size.x, 0.1, conveyor_size.y)
+			var box_mesh: BoxMesh = mesh.mesh as BoxMesh
+			box_mesh.size = Vector3(conveyor_size.x, 0.1, conveyor_size.y)
 		elif mesh.mesh is PlaneMesh:
-			mesh.mesh.size = Vector2(conveyor_size.x, conveyor_size.y)
+			var plane_mesh: PlaneMesh = mesh.mesh as PlaneMesh
+			plane_mesh.size = Vector2(conveyor_size.x, conveyor_size.y)
 
 	if is_instance_valid(collision_shape) and collision_shape.shape is BoxShape3D:
-		collision_shape.shape.size = Vector3(conveyor_size.x, 0.1, conveyor_size.y)
+		var box_shape: BoxShape3D = collision_shape.shape as BoxShape3D
+		box_shape.size = Vector3(conveyor_size.x, 0.1, conveyor_size.y)
