@@ -23,7 +23,6 @@ class MockState:
 	var exit_called: bool = false
 
 	## Enters the mock state.
-	## [param _msg] Optional dictionary containing initialization data.
 	func enter(_msg: Dictionary = {}) -> void:
 		print("TestPlayerStateMachine: MockState enter() called. State: ", self.name)
 		is_active = true
@@ -54,7 +53,7 @@ func before_each() -> void:
 	sm.add_child(state1)
 	sm.add_child(state2)
 
-	sm.initial_state = NodePath("State1")
+	sm.initial_state = state1
 	sm.owner = mock_player
 	sm.set("_states", {"State1": state1, "State2": state2})
 	sm.state = state1
@@ -77,7 +76,6 @@ func test_initialization() -> void:
 
 
 ## Verifies successful transition between valid states.
-## Validates [signal PlayerStateMachine.transitioned].
 func test_transition_to_valid_state() -> void:
 	print("TestPlayerStateMachine: test_transition_to_valid_state() called.")
 	watch_signals(sm)

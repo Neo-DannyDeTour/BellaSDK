@@ -62,7 +62,6 @@ window/size/mode="fullscreen"
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 display_server/driver.linuxbsd="wayland"
-window/vsync/vsync_mode=1
 
 [dotnet]
 
@@ -230,7 +229,6 @@ locale/translations=PackedStringArray("res://translations/translations.en.transl
 rendering_device/driver.windows="d3d12"
 textures/vram_compression/import_s3tc_bptc=true
 textures/vram_compression/import_etc2_astc=true
-anti_aliasing/quality/msaa_3d=0
 environment/volumetric_fog/volume_size=128
 environment/volumetric_fog/volume_depth=128
 anti_aliasing/quality/screen_space_aa=1
