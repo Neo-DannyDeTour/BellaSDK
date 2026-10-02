@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://4m1edbr3oqv5"]
 
-[ext_resource type="Script" uid="uid://d3i7nh8syoejq" path="res://shared/trigger_hint.gd" id="1_vmfsq"]
-[ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://shared/editor_trigger_visualizer.gd" id="2_bqsr1"]
+[ext_resource type="Script" uid="uid://d3i7nh8syoejq" path="res://triggers/trigger_hint.gd" id="1_vmfsq"]
+[ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://triggers/editor_trigger_visualizer.gd" id="2_bqsr1"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_bqsr1"]
 resource_local_to_scene = true
@@ -19,14 +19,9 @@ size = Vector3(2, 2, 2)
 [node name="TriggerHint" type="Area3D" unique_id=1784504971]
 collision_mask = 2
 script = ExtResource("1_vmfsq")
-trigger_size = null
-trigger_color = null
-trigger_text = null
+trigger_color = Color(0.2, 0.6, 1, 0.8)
 hint_type = 2
-custom_message = null
-trigger_once = null
 duration = 5.0
-show_on_screen = null
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1008902751]
 shape = SubResource("BoxShape3D_bqsr1")

@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://cm0v3ely026rf"]
 
-[ext_resource type="Script" uid="uid://b2o0o7w5tddw8" path="res://Music/music_trigger.gd" id="1_6i8sb"]
-[ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://shared/editor_trigger_visualizer.gd" id="2_vyms6"]
+[ext_resource type="Script" uid="uid://b2o0o7w5tddw8" path="res://triggers/music_trigger.gd" id="1_6i8sb"]
+[ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://triggers/editor_trigger_visualizer.gd" id="2_vyms6"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_d8oxk"]
 transparency = 1

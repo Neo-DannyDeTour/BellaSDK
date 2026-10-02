@@ -1,0 +1,28 @@
+[gd_scene format=3 uid="uid://bt2yp0m8wpona"]
+
+[ext_resource type="Script" uid="uid://c5t4572bmo3lm" path="res://addons/detour_event_sequencer/event_sequence_trigger.gd" id="1_o68vc"]
+[ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://triggers/editor_trigger_visualizer.gd" id="2_as5r7"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_534t5"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3wg87"]
+transparency = 1
+cull_mode = 2
+shading_mode = 0
+albedo_color = Color(0.9, 0.5, 0.1, 0.25)
+
+[sub_resource type="BoxMesh" id="BoxMesh_htm4c"]
+material = SubResource("StandardMaterial3D_3wg87")
+size = Vector3(2, 2, 2)
+
+[node name="EventSequenceTrigger" type="Area3D" unique_id=1446420347]
+script = ExtResource("1_o68vc")
+show_orientation = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1620342169]
+shape = SubResource("BoxShape3D_534t5")
+
+[node name="EditorTriggerVisualizer" type="MeshInstance3D" parent="." unique_id=451896210]
+mesh = SubResource("BoxMesh_htm4c")
+script = ExtResource("2_as5r7")
+metadata/_custom_type_script = "uid://q4v42nidwdr2"
