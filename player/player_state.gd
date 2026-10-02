@@ -1,44 +1,31 @@
+## Base player state providing injected actor reference and lifecycle stubs.
 class_name PlayerState
-extends Node
+extends State
 
-# --------------------------------------
-# DEPENDENCY INJECTION
-# --------------------------------------
-# These are populated automatically by the StateMachine when the game starts.
+## Reference to controlling [CharacterBody3D] player instance.
 var player: CharacterBody3D
-var state_machine: Node
 
 
-# --------------------------------------
-# VIRTUAL METHODS
-# --------------------------------------
-# Called by the state machine when transitioning INTO this state.
-# The 'msg' dictionary allows you to pass data (like jump velocity or zip-line vectors).
+## Virtual method called when entering this state with optional parameters.
 func enter(_msg: Dictionary = {}) -> void:
-	# Virtual method: Intentionally left blank for child classes to override.
 	return
 
 
-# Called by the state machine when transitioning OUT of this state.
-# Use this to clean up tweens, reset variables, or release objects.
+## Virtual method called when exiting this state for cleanup.
 func exit() -> void:
-	# Virtual method: Intentionally left blank for child classes to override.
 	return
 
 
-# Corresponds to _unhandled_input()
+## Virtual method receiving unhandled input events forwarded from state machine.
 func handle_input(_event: InputEvent) -> void:
-	# Virtual method: Intentionally left blank for child classes to override.
 	return
 
 
-# Corresponds to _process()
+## Virtual method executed during the standard frame processing loop.
 func update(_delta: float) -> void:
-	# Virtual method: Intentionally left blank for child classes to override.
 	return
 
 
-# Corresponds to _physics_process()
+## Virtual method executed during the physics process frame update.
 func physics_update(_delta: float) -> void:
-	# Virtual method: Intentionally left blank for child classes to override.
 	return

@@ -203,19 +203,21 @@ func _apply_air_movement(delta: float, input_dir: Vector2) -> void:
 
 	if current_speed > max_air_speed:
 		var air_drag: float = 1.2
-		horizontal_velocity = MathUtils.damp(horizontal_velocity, Vector2.ZERO, air_drag, delta)
+		horizontal_velocity = MathUtils.damp_v2(horizontal_velocity, Vector2.ZERO, air_drag, delta)
 
 		if input_dir != Vector2.ZERO:
 			var steer_vec: Vector2 = Vector2(target_dir.x, target_dir.z) * (max_air_speed * delta)
 			horizontal_velocity += steer_vec
-			loco.set_direction(MathUtils.damp(loco.get_direction(), target_dir, steer_rate, delta))
+			loco.set_direction(
+				MathUtils.damp_v3(loco.get_direction(), target_dir, steer_rate, delta)
+			)
 
 		player.velocity.x = horizontal_velocity.x
 		player.velocity.z = horizontal_velocity.y
 		return
 
 	if input_dir != Vector2.ZERO:
-		loco.set_direction(MathUtils.damp(loco.get_direction(), target_dir, steer_rate, delta))
+		loco.set_direction(MathUtils.damp_v3(loco.get_direction(), target_dir, steer_rate, delta))
 		if current_speed < max_air_speed:
 			current_speed = MathUtils.damp(current_speed, max_air_speed, steer_rate, delta)
 	else:
@@ -277,7 +279,7 @@ func _check_transitions() -> void:
 func _handle_landing() -> void:
 	print("StateAir: _handle_landing() called. Processing ground impact.")
 	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
-	var stats: StatsComponent = player.stats_component as StatsComponent
+	var stats: Node = player.get(&"stats_component") as Node
 
 	var impact_fall_speed: float = loco.last_velocity.y
 	var is_safe_landing: bool = false
@@ -305,13 +307,16 @@ func _handle_landing() -> void:
 			if current_is_slide:
 				is_slide_surface = true
 
-	if impact_fall_speed <= -20.0 and is_instance_valid(stats.health_component):
+	var health_comp: Node = (
+		stats.get(&"health_component") as Node if is_instance_valid(stats) else null
+	)
+	if impact_fall_speed <= -20.0 and is_instance_valid(health_comp):
 		if is_safe_landing:
 			print("StateAir: Impact neutralized by safe landing material.")
 		else:
 			print("StateAir: Heavy impact detected. Applying fall damage.")
-			var max_hp: int = int(stats.health_component.get(&"max_health"))
-			stats.health_component.take_damage(max_hp)
+			var max_hp: int = int(health_comp.get(&"max_health"))
+			health_comp.call(&"take_damage", max_hp)
 
 	_transition_msg.clear()
 	_transition_msg[&"landing_speed"] = impact_fall_speed

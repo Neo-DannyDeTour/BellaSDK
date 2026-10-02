@@ -210,7 +210,7 @@ func _process(delta: float) -> void:
 		_proxy_mesh_instance.rotation.y, final_y, damp_weight
 	)
 
-	_target_sway = MathUtils.damp(_target_sway, Vector3.ZERO, sway_return_speed * 0.5, delta)
+	_target_sway = MathUtils.damp_v3(_target_sway, Vector3.ZERO, sway_return_speed * 0.5, delta)
 
 	if _is_glass_active and is_instance_valid(_zoomed_mesh_instance):
 		_update_magnifier_shader(mouse_pos, screen_size)

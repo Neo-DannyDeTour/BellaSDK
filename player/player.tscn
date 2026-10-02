@@ -521,15 +521,9 @@ floor_reach = null
 [node name="EmptyInteractAudio" type="AudioStreamPlayer" parent="InteractionScanner" unique_id=1912212616]
 stream = ExtResource("13_or4qq")
 
-[node name="FootstepManager" type="Node3D" parent="." unique_id=8024466 node_paths=PackedStringArray("player_body", "audio_default", "audio_metal", "audio_stone", "audio_wet_dirt", "audio_ladder", "audio_monkey_bar")]
+[node name="FootstepManager" type="Node3D" parent="." unique_id=8024466 node_paths=PackedStringArray("player_body")]
 script = ExtResource("13_viqgg")
 player_body = NodePath("..")
-audio_default = NodePath("DefaultAudio")
-audio_metal = NodePath("MetalAudio")
-audio_stone = NodePath("StoneAudio")
-audio_wet_dirt = NodePath("WetDirtAudio")
-audio_ladder = NodePath("LadderAudio")
-audio_monkey_bar = NodePath("MonkeBarAudio")
 
 [node name="DefaultAudio" type="AudioStreamPlayer" parent="FootstepManager" unique_id=1100202989]
 stream = SubResource("AudioStreamRandomizer_d3wef")
@@ -631,7 +625,7 @@ faction = 1
 hostile_mask = 2
 metadata/_custom_type_script = "uid://q7rcgal41c7b"
 
-[node name="StateMachine" type="Node" parent="." unique_id=2011174862]
+[node name="StateMachine" type="Node" parent="." unique_id=2011174862 node_paths=PackedStringArray("initial_state")]
 script = ExtResource("30_axnmu")
 initial_state = NodePath("Ground")
 
@@ -667,12 +661,6 @@ script = ExtResource("42_art4l")
 
 [node name="Glide" type="Node" parent="StateMachine" unique_id=474297086]
 script = ExtResource("43_fjxoa")
-forward_speed = null
-max_fall_speed = null
-debug_updraft_force = null
-turn_speed = null
-max_bank_angle = null
-bank_lerp_speed = null
 
 [node name="MachineLock" type="Node" parent="StateMachine" unique_id=899012239]
 script = ExtResource("48_mmwog")

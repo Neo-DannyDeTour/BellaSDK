@@ -253,7 +253,7 @@ func _apply_rope_position(delta: float) -> void:
 
 	if rope_lerp_weight < 45.0:
 		rope_lerp_weight += delta * 150.0
-		player.global_position = MathUtils.damp(player.global_position, target_pos, 15.0, delta)
+		player.global_position = MathUtils.damp_v3(player.global_position, target_pos, 15.0, delta)
 	else:
 		player.global_position = target_pos
 

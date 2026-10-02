@@ -41,6 +41,9 @@ signal noclip_toggled(is_flying: bool)
 ## Base movement speed while sprinting in noclip mode.
 @export var base_sprinting_speed: float = 6.5
 
+## Multiplier scaling default noclip flight movement speed.
+@export var default_noclip_speed_multiplier: float = 8.0
+
 ## Degrees of roll applied to the camera when strafing in noclip mode.
 @export var camera_tilt_amount: float = 3.0
 
@@ -85,6 +88,7 @@ var _in_game_console: CanvasLayer = null
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	print("SystemMenuController: Initializing system menu and debug handlers.")
+	noclip_speed_multiplier = default_noclip_speed_multiplier
 	_setup_menu()
 	_setup_fullbright_environment()
 	_find_console_reference()
@@ -279,6 +283,8 @@ func toggle_noclip() -> void:
 				loco.set("last_velocity", Vector3.ZERO)
 
 	Events.noclip_toggled.emit(flying)
+	if flying:
+		Events.noclip_speed_changed.emit(noclip_speed_multiplier)
 	noclip_toggled.emit(flying)
 
 

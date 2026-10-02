@@ -82,7 +82,7 @@ func physics_update(delta: float) -> void:
 	var forward_momentum: Vector3 = player.velocity - current_lateral
 
 	var target_lateral: Vector3 = steer_dir * (input_dir.x * slide_steering_speed)
-	current_lateral = MathUtils.damp(current_lateral, target_lateral, 10.0, delta)
+	current_lateral = MathUtils.damp_v3(current_lateral, target_lateral, 10.0, delta)
 	player.velocity = forward_momentum + current_lateral
 
 	if player.velocity.length_squared() > (max_slide_speed * max_slide_speed):

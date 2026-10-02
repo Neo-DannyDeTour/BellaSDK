@@ -247,7 +247,7 @@ func _apply_swim_velocity(delta: float, input_dir: Vector2) -> void:
 
 	var target_xz: Vector2 = Vector2(target_velocity.x, target_velocity.z)
 	var current_xz: Vector2 = Vector2(player.velocity.x, player.velocity.z)
-	current_xz = MathUtils.damp(current_xz, target_xz, 8.0, delta)
+	current_xz = MathUtils.damp_v2(current_xz, target_xz, 8.0, delta)
 
 	player.velocity.x = current_xz.x
 	player.velocity.z = current_xz.y

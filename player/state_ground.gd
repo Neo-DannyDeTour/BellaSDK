@@ -277,7 +277,7 @@ func _apply_movement(delta: float, input_dir: Vector2) -> void:
 		(player.transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
 	)
 
-	loco.set_direction(MathUtils.damp(loco.get_direction(), target_dir, active_lerp, delta))
+	loco.set_direction(MathUtils.damp_v3(loco.get_direction(), target_dir, active_lerp, delta))
 
 	if player.is_on_floor():
 		player.velocity.y = -0.1

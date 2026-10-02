@@ -86,17 +86,15 @@ func _ready() -> void:
 	if not is_instance_valid(faction_component):
 		faction_component = (get_node_or_null("Components/FactionComponent") as FactionComponent)
 
-	call_deferred("_capture_mouse")
+	_capture_mouse()
 	activate_gameplay_camera()
 
-	in_game_console = (
-		(
-			get_node_or_null("/root/InGameConsole") as CanvasLayer
-			if has_node("/root/InGameConsole")
-			else get_node_or_null("/root/Console")
-		)
-		as CanvasLayer
+	var console_node: Node = (
+		get_node_or_null("/root/InGameConsole")
+		if has_node("/root/InGameConsole")
+		else get_node_or_null("/root/Console")
 	)
+	in_game_console = console_node as CanvasLayer
 
 	if not is_instance_valid(ui_controller):
 		ui_controller = get_node_or_null("UI") as UIController
@@ -117,6 +115,9 @@ func _ready() -> void:
 ## Locks and hides mouse cursor for first-person gameplay navigation.
 func _capture_mouse() -> void:
 	print("Player: Capturing mouse cursor.")
+	if not is_inside_tree():
+		return
+	await get_tree().process_frame
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
@@ -233,7 +234,11 @@ func _on_player_died() -> void:
 func _physics_process(delta: float) -> void:
 	var in_terminal_state: bool = (
 		is_terminal_locked
-		or (is_instance_valid(state_machine) and state_machine.state.name == "Terminal")
+		or (
+			is_instance_valid(state_machine)
+			and state_machine.has_method(&"is_in_state")
+			and state_machine.is_in_state(&"Terminal")
+		)
 	)
 
 	if in_terminal_state:
@@ -464,8 +469,12 @@ func exit_terminal_mode() -> void:
 	if is_instance_valid(locomotion_component):
 		locomotion_component.set_physics_active(true)
 
-	if is_instance_valid(state_machine) and state_machine.state.name == "Terminal":
-		state_machine.transition_to("Ground")
+	if (
+		is_instance_valid(state_machine)
+		and state_machine.has_method(&"is_in_state")
+		and state_machine.is_in_state(&"Terminal")
+	):
+		state_machine.transition_to(&"Ground")
 
 	if is_instance_valid(interaction_component):
 		interaction_component.set("is_in_terminal_mode", false)

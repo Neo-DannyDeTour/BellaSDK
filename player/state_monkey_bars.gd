@@ -17,9 +17,6 @@ var _camera_anims: AnimationPlayer = null
 ## Cached horizontal velocity vector to prevent runtime heap allocations.
 var _flat_vel: Vector2 = Vector2.ZERO
 
-## Reusable transition payload dictionary to avoid runtime allocations.
-var _transition_msg: Dictionary = {}
-
 
 ## Attaches player to monkey bars, plays idle animation, and locks sprint FOV.
 func enter(msg: Dictionary = {}) -> void:

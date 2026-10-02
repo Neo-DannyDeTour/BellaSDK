@@ -104,7 +104,7 @@ func _process(delta: float) -> void:
 	_apply_instability(delta)
 
 
-## Smoothly rotates flashlight rig via [MathUtils.damp] in response to sway.
+## Smoothly rotates flashlight rig via [MathUtils] damping in response to sway.
 func _apply_sway(delta: float) -> void:
 	sway_target.x = clampf(sway_target.x, -MAX_SWAY_BOUND, MAX_SWAY_BOUND)
 	sway_target.y = clampf(sway_target.y, -MAX_SWAY_BOUND, MAX_SWAY_BOUND)
@@ -113,8 +113,8 @@ func _apply_sway(delta: float) -> void:
 		sway_target.y * (sway_amount * 0.0015), sway_target.x * (sway_amount * 0.0015), 0.0
 	)
 
-	rotation = MathUtils.damp(rotation, target_rot, flashlight_rot_smoothness, delta)
-	sway_target = MathUtils.damp(sway_target, Vector2.ZERO, smooth_speed * 0.5, delta)
+	rotation = MathUtils.damp_v3(rotation, target_rot, flashlight_rot_smoothness, delta)
+	sway_target = MathUtils.damp_v2(sway_target, Vector2.ZERO, smooth_speed * 0.5, delta)
 
 
 ## Performs zero-allocation raycasts to retract flashlight from obstacles.
