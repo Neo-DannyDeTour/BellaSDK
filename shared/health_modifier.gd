@@ -197,6 +197,10 @@ func _resolve_health_node(body: Node3D) -> HealthComponent:
 	if child_comp is HealthComponent:
 		return child_comp as HealthComponent
 
+	var found: Node = body.find_child("*HealthComponent*", true, false)
+	if found is HealthComponent:
+		return found as HealthComponent
+
 	return null
 
 
