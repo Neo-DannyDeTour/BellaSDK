@@ -458,7 +458,7 @@ func _register_default_commands() -> void:
 			"visionassist",
 			"Configures vision assist highlights.",
 			_cmd_visionassist,
-			func() -> Array[String]: return ["mode", "color"]
+			func(): return ["mode", "color"]
 		)
 	)
 	registry.register_command(
@@ -472,10 +472,7 @@ func _register_default_commands() -> void:
 	)
 	registry.register_command(
 		ConsoleCommand.new(
-			"shadows",
-			"Toggles global shadow casting.",
-			_cmd_shadows,
-			func() -> Array[String]: return ["on", "off"]
+			"shadows", "Toggles global shadow casting.", _cmd_shadows, func(): return ["on", "off"]
 		)
 	)
 	registry.register_command(
@@ -483,7 +480,7 @@ func _register_default_commands() -> void:
 			"vsync",
 			"Toggles vertical synchronization mode.",
 			_cmd_vsync,
-			func() -> Array[String]: return ["on", "off"]
+			func(): return ["on", "off"]
 		)
 	)
 	registry.register_command(
@@ -510,7 +507,7 @@ func _register_default_commands() -> void:
 			"aimassist",
 			"Toggles controller aim friction and magnetism.",
 			_cmd_aimassist,
-			func() -> Array[String]: return ["on", "off"]
+			func(): return ["on", "off"]
 		)
 	)
 	registry.register_command(
@@ -523,7 +520,7 @@ func _register_default_commands() -> void:
 			"audio_spatial",
 			"Toggles positional 3D audio downmixing.",
 			_cmd_audio_spatial,
-			func() -> Array[String]: return ["on", "off"]
+			func(): return ["on", "off"]
 		)
 	)
 	_register_debug_commands()
@@ -559,7 +556,7 @@ func _register_debug_commands() -> void:
 			"showtrigger",
 			"Toggles trigger visualizer mesh visibility.",
 			_cmd_showtrigger,
-			func() -> Array[String]: return ["on", "off"],
+			func(): return ["on", "off"],
 			true
 		)
 	)
@@ -680,7 +677,7 @@ func _register_debug_commands() -> void:
 			"give_ammo",
 			"Adds specified ammo type into inventory.",
 			_cmd_give_ammo,
-			func() -> Array[String]: return ["bullet", "energy", "shell", "rocket"],
+			func(): return ["bullet", "energy", "shell", "rocket"],
 			true
 		)
 	)
