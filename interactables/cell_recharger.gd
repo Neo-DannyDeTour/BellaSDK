@@ -83,6 +83,7 @@ func _on_focus_lost() -> void:
 
 
 ## Handles player interaction; grabs docked cell or docks held cell.
+## [param character]: Character interacting with recharger.
 func interact_with(character: CharacterBody3D) -> void:
 	print("CellRecharger: interact_with() called by ", character.name)
 	if is_instance_valid(docked_cell):
@@ -104,6 +105,7 @@ func interact_with(character: CharacterBody3D) -> void:
 
 
 ## Triggered when an entity enters the dock detection area.
+## [param body]: Body entering dock area.
 func _on_dock_area_body_entered(body: Node3D) -> void:
 	if is_instance_valid(docked_cell):
 		return
@@ -114,6 +116,7 @@ func _on_dock_area_body_entered(body: Node3D) -> void:
 
 
 ## Docks the [EnergyCell] into the station and begins charging.
+## [param cell]: Energy cell to dock.
 func dock_cell(cell: EnergyCell) -> void:
 	if not is_instance_valid(cell) or is_instance_valid(docked_cell):
 		return
@@ -165,6 +168,7 @@ func dock_cell(cell: EnergyCell) -> void:
 
 
 ## Runs visual charge tween and status label text updates.
+## [param cell]: Cell being charged.
 func _start_charge_sequence(cell: EnergyCell) -> void:
 	if not is_instance_valid(cell):
 		return
@@ -172,8 +176,7 @@ func _start_charge_sequence(cell: EnergyCell) -> void:
 	cell.fill_progress = 0.0
 	recharge_started.emit(cell)
 
-	if is_instance_valid(_charge_tween) and _charge_tween.is_valid():
-		_charge_tween.kill()
+	Utilities.safe_kill_tween(_charge_tween)
 
 	_charge_tween = create_tween()
 	(
@@ -261,6 +264,8 @@ func _finish_recharge() -> void:
 
 
 ## Clears dock state when the recharged cell is taken by player.
+## [param item]: Picked up object.
+## [param _holder]: Character picking up object.
 func _on_cell_picked_up(item: PickableObject, _holder: Node3D) -> void:
 	if item == docked_cell:
 		print("CellRecharger: Cell grabbed by player, clearing dock.")
@@ -280,6 +285,7 @@ func _update_label() -> void:
 
 
 ## Displays temporary feedback on the floating label.
+## [param msg]: Feedback message text.
 func _show_feedback(msg: String) -> void:
 	if not is_instance_valid(status_label):
 		return
@@ -298,16 +304,19 @@ func _show_feedback(msg: String) -> void:
 
 
 ## Finds an [EnergyCell] held by the specified player character.
+## [param character]: Character checking for held cell.
+## Returns energy cell instance or null.
 func _find_held_cell(character: CharacterBody3D) -> EnergyCell:
 	var held_prop: Variant = character.get("held_object")
 	if is_instance_valid(held_prop) and held_prop is EnergyCell:
 		return held_prop as EnergyCell
 
 	var tree: SceneTree = get_tree()
-	if not tree:
+	if not tree or not is_instance_valid(tree.root):
 		return null
 
-	for node: Node in tree.get_nodes_in_group("pickable_objects"):
+	var pickables: Array[Node] = NodeQuery.find_children_in_group(tree.root, &"pickable_objects")
+	for node: Node in pickables:
 		if node is EnergyCell and (node as EnergyCell).holder == character:
 			return node as EnergyCell
 
