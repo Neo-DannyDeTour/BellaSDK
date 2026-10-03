@@ -1,6 +1,5 @@
 @tool
-## Trigger volume requesting camera trauma through [CameraShakeManager].
-## Synchronizes volume bounds with an integrated [EditorTriggerVisualizer].
+## Trigger volume requesting camera trauma through [ScreenEffectsCore].
 class_name ScreenshakeEffect
 extends Area3D
 
@@ -19,7 +18,7 @@ extends Area3D
 		if is_inside_tree():
 			_update_visuals()
 
-## Local offset applied to both the collision shape and the visualizer node.
+## Local offset applied to both the collision shape and visualizer node.
 @export var trigger_offset: Vector3 = Vector3.ZERO:
 	set(value):
 		trigger_offset = value
@@ -80,7 +79,7 @@ extends Area3D
 ## Dictates whether the screen shake triggers once or repetitively.
 @export var trigger_once: bool = true
 
-## Peak trauma intensity requested from [CameraShakeManager].
+## Peak trauma intensity requested from [ScreenEffectsCore].
 @export_range(0.0, 16.0) var shake_intensity: float = 4.0
 
 ## Duration in seconds of sustained screen shake trauma.

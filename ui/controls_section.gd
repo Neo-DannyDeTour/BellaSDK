@@ -2,6 +2,9 @@
 class_name AccessibilityControlsSection
 extends GridContainer
 
+# --------------------------------------
+# CONSTANTS
+# --------------------------------------
 ## Default constant value for mouse look sensitivity.
 const DEFAULT_MOUSE_SENSITIVITY: float = 1.0
 
@@ -32,6 +35,9 @@ const DEFAULT_CANCEL_CROUCH_ON_JUMP: bool = true
 ## Default constant value for infinite swim accessibility toggle.
 const DEFAULT_INFINITE_SWIM: bool = false
 
+# --------------------------------------
+# NODE REFERENCES
+# --------------------------------------
 ## Slider for adjusting mouse look sensitivity.
 @onready var mouse_sens_slider: HSlider = get_node_or_null("%MouseSensitivitySlider")
 
@@ -79,8 +85,7 @@ func _ready() -> void:
 	load_settings()
 
 
-## Resolves the infinite swim CheckButton with fallback searching if unique name is missing.
-## Returns the resolved [CheckButton] or null.
+## Resolves the infinite swim CheckButton with fallback searching.
 func _resolve_swim_toggle() -> CheckButton:
 	var btn: CheckButton = get_node_or_null("%InfiniteSwimToggle") as CheckButton
 	if not is_instance_valid(btn):
@@ -92,6 +97,7 @@ func _resolve_swim_toggle() -> CheckButton:
 
 ## Connects interactive controls inputs and slider listeners.
 func _connect_signals() -> void:
+	print("UI: Binding controls section input signals.")
 	_connect_slider(
 		mouse_sens_slider,
 		mouse_sens_input,
@@ -123,10 +129,9 @@ func _connect_signals() -> void:
 	if is_instance_valid(infinite_swim_toggle):
 		if not infinite_swim_toggle.toggled.is_connected(_on_infinite_swim_toggled):
 			infinite_swim_toggle.toggled.connect(_on_infinite_swim_toggled)
-			print("AccessibilityControlsSection: Bound InfiniteSwimToggle signal.")
 
 
-## Loads stored control preferences from [GlobalSettings].
+## Loads stored control preferences from [GlobalSettings] silently.
 func load_settings() -> void:
 	print("UI: Loading Controls settings.")
 	_load_slider(
@@ -198,18 +203,9 @@ func load_settings() -> void:
 			GlobalSettings.get_setting("Accessibility", "infinite_swim", DEFAULT_INFINITE_SWIM)
 		)
 		infinite_swim_toggle.set_pressed_no_signal(inf_swim)
-		Events.infinite_swim_toggled.emit(inf_swim)
-		print("UI: Loaded infinite_swim setting: ", inf_swim)
 
 
-## Connects slider and [LineEdit] pairs with synchronization.
-## [param slider] The [HSlider] instance.
-## [param input_box] The [LineEdit] instance.
-## [param key] Setting key identifier.
-## [param min_val] Minimum clamp limit.
-## [param max_val] Maximum clamp limit.
-## [param section] GlobalSettings section category.
-## [param apply_cb] Optional callable triggered on numeric change.
+## Connects slider and [LineEdit] pairs with throttled commit logic.
 func _connect_slider(
 	slider: HSlider,
 	input_box: LineEdit,
@@ -226,14 +222,14 @@ func _connect_slider(
 			func(val: float) -> void:
 				if is_instance_valid(input_box) and not input_box.has_focus():
 					input_box.text = "%.2f" % val
-				if apply_cb.is_valid():
-					apply_cb.call(val)
+				if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+					_commit_control_slider_val(key, val, section, apply_cb)
 		)
 		slider.drag_ended.connect(
 			func(changed: bool) -> void:
 				if changed:
 					print("Player adjusted ", key, " to: ", slider.value)
-					GlobalSettings.save_setting(section, key, slider.value)
+					_commit_control_slider_val(key, slider.value, section, apply_cb)
 		)
 
 	if is_instance_valid(input_box):
@@ -243,43 +239,59 @@ func _connect_slider(
 				input_box.text = ""
 		)
 		input_box.text_submitted.connect(
-			func(txt: String) -> void:
-				var trimmed: String = txt.strip_edges()
-				var fallback: String = str(input_box.get_meta("pre_focus_text", ""))
-				if trimmed.is_empty() or not trimmed.is_valid_float():
-					input_box.text = fallback
-				else:
-					var clamped_val: float = clampf(trimmed.to_float(), min_val, max_val)
-					input_box.text = "%.2f" % clamped_val
-					print("Player manually typed ", key, " input: ", clamped_val)
-					GlobalSettings.save_setting(section, key, clamped_val)
-					if is_instance_valid(slider):
-						slider.value = clamped_val
+			func(_txt: String) -> void:
+				_commit_control_line_edit(
+					slider, input_box, key, min_val, max_val, section, apply_cb
+				)
 				input_box.release_focus()
 		)
 		input_box.focus_exited.connect(
 			func() -> void:
-				var trimmed: String = input_box.text.strip_edges()
-				var fallback: String = str(input_box.get_meta("pre_focus_text", ""))
-				if trimmed.is_empty() or not trimmed.is_valid_float():
-					input_box.text = fallback
-				else:
-					var clamped_val: float = clampf(trimmed.to_float(), min_val, max_val)
-					input_box.text = "%.2f" % clamped_val
-					if is_instance_valid(slider):
-						if not is_equal_approx(slider.value, clamped_val):
-							print("Player committed ", key, " input on defocus: ", clamped_val)
-							GlobalSettings.save_setting(section, key, clamped_val)
-							slider.value = clamped_val
+				_commit_control_line_edit(
+					slider, input_box, key, min_val, max_val, section, apply_cb
+				)
 		)
 
 
+## Commits control slider value to settings and triggers callback if modified.
+func _commit_control_slider_val(
+	key: String, val: float, section: String, apply_cb: Callable
+) -> void:
+	var current: float = float(GlobalSettings.get_setting(section, key, -999.0))
+	if not is_equal_approx(current, val):
+		GlobalSettings.save_setting(section, key, val)
+		if apply_cb.is_valid():
+			apply_cb.call(val)
+
+
+## Commits LineEdit input to control slider and storage safely.
+func _commit_control_line_edit(
+	slider: HSlider,
+	input_box: LineEdit,
+	key: String,
+	min_val: float,
+	max_val: float,
+	section: String,
+	apply_cb: Callable
+) -> void:
+	var trimmed: String = input_box.text.strip_edges()
+	var fallback: String = str(input_box.get_meta("pre_focus_text", ""))
+	if trimmed.is_empty() or not trimmed.is_valid_float():
+		input_box.text = fallback
+		return
+
+	var clamped_val: float = clampf(trimmed.to_float(), min_val, max_val)
+	var formatted: String = "%.2f" % clamped_val
+	input_box.text = formatted
+	input_box.set_meta("pre_focus_text", formatted)
+
+	if is_instance_valid(slider):
+		slider.set_value_no_signal(clamped_val)
+
+	_commit_control_slider_val(key, clamped_val, section, apply_cb)
+
+
 ## Reads a float setting and synchronizes slider without signals.
-## [param slider] The target [HSlider] node.
-## [param input_box] The target [LineEdit] node.
-## [param key] Setting key identifier.
-## [param default_val] Fallback float value.
-## [param section] GlobalSettings category section.
 func _load_slider(
 	slider: HSlider, input_box: LineEdit, key: String, default_val: float, section: String
 ) -> void:
@@ -291,10 +303,9 @@ func _load_slider(
 
 
 ## Applies mouse sensitivity settings to player camera controller.
-## [param sens] Mouse sensitivity value.
 func _apply_mouse_sensitivity(sens: float) -> void:
 	print("Engine: Applying Mouse Sensitivity: ", sens)
-	var player: Node = get_tree().get_first_node_in_group("player")
+	var player: Node = get_tree().get_first_node_in_group(&"player")
 	if (
 		is_instance_valid(player)
 		and "camera_controller" in player
@@ -308,11 +319,14 @@ func _apply_mouse_sensitivity(sens: float) -> void:
 
 
 ## Handles vertical axis inversion toggling.
-## [param toggled_on] Enabled state.
 func _on_invert_y_toggled(toggled_on: bool) -> void:
+	var current: bool = bool(GlobalSettings.get_setting("Controls", "invert_y", DEFAULT_INVERT_Y))
+	if current == toggled_on:
+		return
+
 	print("Player toggled Invert Y to: ", toggled_on)
 	GlobalSettings.save_setting("Controls", "invert_y", toggled_on)
-	var player: Node = get_tree().get_first_node_in_group("player")
+	var player: Node = get_tree().get_first_node_in_group(&"player")
 	if (
 		is_instance_valid(player)
 		and "camera_controller" in player
@@ -322,39 +336,66 @@ func _on_invert_y_toggled(toggled_on: bool) -> void:
 
 
 ## Handles toggle crouch button mode setting.
-## [param toggled_on] Enabled state.
 func _on_toggle_crouch_toggled(toggled_on: bool) -> void:
+	var current: bool = bool(
+		GlobalSettings.get_setting("Controls", "toggle_crouch", DEFAULT_TOGGLE_CROUCH)
+	)
+	if current == toggled_on:
+		return
+
 	print("Player toggled Toggle Crouch to: ", toggled_on)
 	GlobalSettings.save_setting("Controls", "toggle_crouch", toggled_on)
 
 
 ## Handles toggle sprint button mode setting.
-## [param toggled_on] Enabled state.
 func _on_toggle_sprint_toggled(toggled_on: bool) -> void:
+	var current: bool = bool(
+		GlobalSettings.get_setting("Controls", "toggle_sprint", DEFAULT_TOGGLE_SPRINT)
+	)
+	if current == toggled_on:
+		return
+
 	print("Player toggled Toggle Sprint to: ", toggled_on)
 	GlobalSettings.save_setting("Controls", "toggle_sprint", toggled_on)
 
 
 ## Handles cancel crouch on jump setting.
-## [param toggled_on] Enabled state.
 func _on_cancel_crouch_jump_toggled(toggled_on: bool) -> void:
+	var current: bool = bool(
+		GlobalSettings.get_setting(
+			"Gameplay", "cancel_crouch_on_jump", DEFAULT_CANCEL_CROUCH_ON_JUMP
+		)
+	)
+	if current == toggled_on:
+		return
+
 	print("Player toggled Cancel Crouch On Jump to: ", toggled_on)
 	GlobalSettings.save_setting("Gameplay", "cancel_crouch_on_jump", toggled_on)
 
 
 ## Handles aim assistance system toggling.
-## [param toggled_on] Enabled state.
 func _on_aim_assist_toggled(toggled_on: bool) -> void:
+	var current: bool = bool(
+		GlobalSettings.get_setting("Gameplay", "aim_assist", DEFAULT_AIM_ASSIST)
+	)
+	if current == toggled_on:
+		return
+
 	print("Player toggled Aim Assist to: ", toggled_on)
 	GlobalSettings.save_setting("Gameplay", "aim_assist", toggled_on)
 
 
 ## Handles motion reduction toggle updates.
-## [param toggled_on] Enabled state.
 func _on_reduce_motion_toggled(toggled_on: bool) -> void:
+	var current: bool = bool(
+		GlobalSettings.get_setting("Accessibility", "reduce_motion", DEFAULT_REDUCE_MOTION)
+	)
+	if current == toggled_on:
+		return
+
 	print("Player toggled Reduce Motion to: ", toggled_on)
 	GlobalSettings.save_setting("Accessibility", "reduce_motion", toggled_on)
-	var player: Node = get_tree().get_first_node_in_group("player")
+	var player: Node = get_tree().get_first_node_in_group(&"player")
 	if (
 		is_instance_valid(player)
 		and "camera_controller" in player
@@ -364,8 +405,13 @@ func _on_reduce_motion_toggled(toggled_on: bool) -> void:
 
 
 ## Handles infinite swim toggle updates and broadcasts state changes.
-## [param toggled_on] Enabled state.
 func _on_infinite_swim_toggled(toggled_on: bool) -> void:
+	var current: bool = bool(
+		GlobalSettings.get_setting("Accessibility", "infinite_swim", DEFAULT_INFINITE_SWIM)
+	)
+	if current == toggled_on:
+		return
+
 	print("Player toggled Infinite Swim to: ", toggled_on)
 	GlobalSettings.save_setting("Accessibility", "infinite_swim", toggled_on, true)
 	Events.infinite_swim_toggled.emit(toggled_on)

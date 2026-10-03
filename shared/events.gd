@@ -1,6 +1,9 @@
-## Global event bus singleton for routing cross-system game events, UI toggles, and font overrides.
+## Global event bus singleton routing cross-system game events and typography.
 extends Node
 
+# --------------------------------------
+# CONSTANTS
+# --------------------------------------
 ## Standard Control type names that render typography in Godot UI.
 const UI_FONT_TYPES: Array[StringName] = [
 	&"Label",
@@ -22,19 +25,24 @@ const UI_FONT_KEYS: Array[StringName] = [
 	&"font", &"normal_font", &"bold_font", &"italics_font", &"bold_italics_font", &"mono_font"
 ]
 
-## Tracks whether the player is currently invincible.
+# --------------------------------------
+# VARIABLES
+# --------------------------------------
+## Tracks whether the player character is currently invincible.
 var is_godmode: bool = false
 
-## Dictionary mapping available font identifier keys to their loaded [Font] resources.
+## Dictionary mapping font identifier keys to loaded [Font] resources.
 var fonts: Dictionary[String, Font] = {}
 
-## Fallback built-in engine font captured directly from ThemeDB.
+## Fallback built-in engine font captured directly from [ThemeDB].
 var engine_fallback_font: Font = null
 
 ## Guard to ensure disk fonts are only loaded and parsed once.
 var _is_cached: bool = false
 
-# --- GAME LIFECYCLE & SESSION SIGNALS ---
+# --------------------------------------
+# GAME LIFECYCLE & SESSION SIGNALS
+# --------------------------------------
 ## Emitted when the game match or level loop starts.
 @warning_ignore("unused_signal")
 signal game_started
@@ -51,7 +59,9 @@ signal game_over_triggered(reason: String)
 @warning_ignore("unused_signal")
 signal level_loaded(level_name: String)
 
-# --- WAVE SPAWNER & ENEMY LIFECYCLE SIGNALS ---
+# --------------------------------------
+# WAVE SPAWNER & ENEMY LIFECYCLE SIGNALS
+# --------------------------------------
 ## Emitted when an enemy wave begins. Passes [param wave_number].
 @warning_ignore("unused_signal")
 signal wave_started(wave_number: int)
@@ -64,11 +74,13 @@ signal wave_completed(wave_number: int)
 @warning_ignore("unused_signal")
 signal enemy_spawned(enemy_node: Node3D)
 
-## Emitted when an enemy is slain. Passes [param enemy_node] and [param killer_node].
+## Emitted when an enemy is slain. Passes [param enemy_node] and killer node.
 @warning_ignore("unused_signal")
 signal enemy_killed(enemy_node: Node3D, killer_node: Node3D)
 
-# --- PLAYER STATE SIGNALS ---
+# --------------------------------------
+# PLAYER STATE & COMMAND SIGNALS
+# --------------------------------------
 ## Emitted when the player's health reaches zero.
 @warning_ignore("unused_signal")
 signal player_died
@@ -76,6 +88,30 @@ signal player_died
 ## Emitted when player health points change. Passes [param new_health].
 @warning_ignore("unused_signal")
 signal player_health_changed(new_health: int)
+
+## Emitted to forcefully set player health. Passes [param health_amount].
+@warning_ignore("unused_signal")
+signal player_health_set_requested(health_amount: int)
+
+## Emitted to trigger instant player death from debug terminal.
+@warning_ignore("unused_signal")
+signal player_kill_requested
+
+## Emitted to grant an item to inventory. Passes [param item_name] and amount.
+@warning_ignore("unused_signal")
+signal inventory_item_given(item_name: String, amount: int)
+
+## Emitted to toggle flight navigation mode. Passes [param is_flying].
+@warning_ignore("unused_signal")
+signal flight_mode_toggled(is_flying: bool)
+
+## Emitted to override world gravity scalar. Passes [param gravity].
+@warning_ignore("unused_signal")
+signal gravity_override_requested(gravity: float)
+
+## Emitted to request player teleportation. Passes [param target_position].
+@warning_ignore("unused_signal")
+signal teleport_requested(target_position: Vector3)
 
 ## Emitted when the player enters or leaves crouch. Passes [param is_crouching].
 @warning_ignore("unused_signal")
@@ -89,7 +125,7 @@ signal player_zoomed(is_zooming: bool)
 @warning_ignore("unused_signal")
 signal player_electrocuted
 
-## Emitted when underwater visual effects toggle with state and intensity params.
+## Emitted when underwater visual effects toggle with state and intensity.
 @warning_ignore("unused_signal")
 signal underwater_vfx_toggled(
 	is_underwater: bool, wash_intensity: float, drop_intensity: float, clear_progress: float
@@ -103,7 +139,9 @@ signal rain_vfx_toggled(intensity: float)
 @warning_ignore("unused_signal")
 signal waterfall_vfx_toggled(is_active: bool, wash_intensity: float, clear_progress: float)
 
-# --- CHEAT & DEBUG SIGNALS ---
+# --------------------------------------
+# CHEAT & DEBUG SIGNALS
+# --------------------------------------
 ## Emitted when noclip fly mode is toggled. Passes [param is_flying].
 @warning_ignore("unused_signal")
 signal noclip_toggled(is_flying: bool)
@@ -144,7 +182,9 @@ signal console_toggled(is_open: bool)
 @warning_ignore("unused_signal")
 signal console_toggle_requested
 
-# --- ACCESSIBILITY & VISUAL SETTINGS ---
+# --------------------------------------
+# ACCESSIBILITY & VISUAL SETTINGS
+# --------------------------------------
 ## Emitted when high contrast shader mode is toggled. Passes [param is_active].
 @warning_ignore("unused_signal")
 signal high_contrast_toggled(is_active: bool)
@@ -185,7 +225,26 @@ signal vision_assist_color_changed(target_group: String, color_name: String)
 @warning_ignore("unused_signal")
 signal tts_state_changed(enabled: bool)
 
-# --- GAMEPLAY FEEDBACK & UI SIGNALS ---
+# --------------------------------------
+# GAMEPLAY FEEDBACK & UI SIGNALS
+# --------------------------------------
+## Emitted to request a centralized screen fade with blur and blink settings.
+@warning_ignore("unused_signal")
+signal screen_fade_requested(
+	fade_color: Color,
+	fade_in_time: float,
+	hold_time: float,
+	fade_out_time: float,
+	use_blur: bool,
+	max_blur: float,
+	use_blink: bool,
+	blink_count: int
+)
+
+## Emitted to trigger a 3D visual shockwave at [param position].
+@warning_ignore("unused_signal")
+signal shockwave_requested(position: Vector3, radius: float, speed: float)
+
 ## Emitted when terminal interaction mode is toggled. Passes [param is_active].
 @warning_ignore("unused_signal")
 signal terminal_mode_toggled(is_active: bool)
@@ -364,7 +423,7 @@ signal weapon_ammo_changed(current: int, reserve: int, capacity: int)
 @warning_ignore("unused_signal")
 signal weapon_reloaded(weapon_tag: String)
 
-## Emitted when an ammo box is gathered. Passes [param ammo_type] and [param amount].
+## Emitted when an ammo box is gathered. Passes [param ammo_type] and amount.
 @warning_ignore("unused_signal")
 signal ammo_collected(ammo_type: StringName, amount: int)
 
@@ -376,19 +435,19 @@ signal wolf_vision_toggled(is_active: bool)
 @warning_ignore("unused_signal")
 signal godmode_toggled(is_active: bool)
 
-## Emitted when player enters or stops taking steam hazard damage. Passes [param is_active].
+## Emitted when player enters or stops taking steam hazard damage.
 @warning_ignore("unused_signal")
 signal steam_hazard_toggled(is_active: bool)
 
-## Emitted when player enters or stops taking fire hazard damage. Passes [param is_active].
+## Emitted when player enters or stops taking fire hazard damage.
 @warning_ignore("unused_signal")
 signal fire_hazard_toggled(is_active: bool)
 
-## Emitted when the player sustains damage. Passes [param amount] of damage taken.
+## Emitted when the player sustains damage. Passes [param amount] taken.
 @warning_ignore("unused_signal")
 signal player_damaged(amount: int)
 
-## Emitted when the player restores health. Passes [param amount] of health restored.
+## Emitted when the player restores health. Passes [param amount] restored.
 @warning_ignore("unused_signal")
 signal player_healed(amount: int)
 
@@ -489,11 +548,11 @@ func _on_font_changed(font_name: String) -> void:
 		active_theme.set_font("font", type_name, target_font)
 
 	_apply_font_override_recursive(root_window, target_font)
-	get_tree().call_group("3d_text", "set", "font", target_font)
+	get_tree().call_group(&"3d_text", "set", "font", target_font)
 	print("Events: Global font '", font_name, "' applied successfully.")
 
 
-## Dynamically iterates the GlobalSettings font registry and caches loaded resources.
+## Dynamically iterates the GlobalSettings font registry and caches resources.
 func _load_registered_fonts() -> void:
 	print("Events: Loading registered fonts from GlobalSettings.")
 	if _is_cached:
@@ -534,7 +593,7 @@ func _load_registered_fonts() -> void:
 	_is_cached = true
 
 
-## Recursively propagates explicit font overrides down all active Control nodes.
+## Recursively propagates explicit font overrides down active Control nodes.
 func _apply_font_override_recursive(parent: Node, new_font: Font) -> void:
 	print("Events: Applying recursive font override on node: ", parent)
 	if not is_instance_valid(parent):

@@ -40,10 +40,9 @@ func _ready() -> void:
 		change_state(fallback_state.name)
 
 
-## Transitions to a new state passing an optional payload dictionary.
-func transition_to(target_state_name: StringName, msg: Dictionary = {}) -> void:
-	print("PlayerStateMachine: Transitioning to: ", target_state_name)
-	change_state(target_state_name, msg)
+## Alias forwarding transition requests to [method change_state].
+func transition_to(target_state_name: StringName, message: Dictionary = {}) -> bool:
+	return change_state(target_state_name, message)
 
 
 ## Relays base [signal StateMachine.state_changed] to legacy [signal transitioned].

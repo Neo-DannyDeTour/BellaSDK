@@ -1,29 +1,35 @@
-## Coordinates sub-panel sections and delegates engine rendering settings execution.
+## Coordinates video sub-panels and delegates rendering settings.
 class_name VideoOptions
 extends Panel
 
 ## Reference to the display sub-section controller [DisplaySection].
 @onready var display_section: DisplaySection = %DisplaySection
+
 ## Reference to the quality sub-section controller [QualitySection].
 @onready var quality_section: QualitySection = %QualitySection
+
 ## Reference to the effects sub-section controller [EffectsSection].
 @onready var effects_section: EffectsSection = %EffectsSection
+
 ## Reference to the hardware sub-section controller [HardwareSection].
 @onready var hardware_section: HardwareSection = %HardwareSection
+
 ## Reference to the restart confirmation [ConfirmationDialog].
 @onready var restart_dialog: ConfirmationDialog = %RestartDialog
 
 ## Cached pending rendering method chosen before restarting.
 var _pending_renderer: String = ""
+
 ## Cached pending GPU adapter index chosen before restarting.
 var _pending_gpu_index: int = -1
 
 
-## Connects section events, activates diorama rendering, and applies settings.
+## Connects section events and applies initial video settings.
 func _ready() -> void:
 	print("VideoOptions: Main panel coordinator initialized.")
 	if is_instance_valid(restart_dialog):
 		restart_dialog.hide()
+
 	visibility_changed.connect(_on_visibility_changed)
 	display_section.display_settings_changed.connect(_apply_all_settings)
 	quality_section.preset_changed.connect(_on_preset_changed)
@@ -33,9 +39,9 @@ func _ready() -> void:
 	hardware_section.auto_tune_requested.connect(_on_auto_tune_requested)
 	restart_dialog.confirmed.connect(_on_restart_dialog_confirmed)
 
-	if has_node("/root/GraphicsManager"):
-		var manager: Node = get_node("/root/GraphicsManager")
-		if manager.has_signal("benchmark_completed"):
+	var manager: Node = SystemLocator.get_graphics_manager()
+	if is_instance_valid(manager) and manager.has_signal("benchmark_completed"):
+		if not manager.benchmark_completed.is_connected(_on_benchmark_completed):
 			manager.benchmark_completed.connect(_on_benchmark_completed)
 
 	if is_visible_in_tree():
@@ -43,13 +49,13 @@ func _ready() -> void:
 		_apply_all_settings()
 
 
-## Lifecycle cleanup ensuring diorama sleeping when the options panel exits tree.
+## Cleans up diorama rendering when panel exits scene tree.
 func _exit_tree() -> void:
 	print("VideoOptions: Exiting tree; putting diorama rendering to sleep.")
 	VideoApplier.set_diorama_active(get_tree(), false)
 
 
-## Synchronizes diorama state and reapplies visual pipeline on show.
+## Synchronizes diorama state when panel visibility toggles.
 func _on_visibility_changed() -> void:
 	if is_visible_in_tree():
 		print("VideoOptions: Panel became visible. Pushing full state to diorama.")
@@ -60,8 +66,7 @@ func _on_visibility_changed() -> void:
 		VideoApplier.set_diorama_active(get_tree(), false)
 
 
-## Synchronizes preset effects settings when the master preset changes.
-## [param preset] The newly selected preset identifier.
+## Updates section settings when master preset selection changes.
 func _on_preset_changed(preset: String) -> void:
 	print("VideoOptions: Quality preset changed to: ", preset)
 	if VideoConfig.PRESETS.has(preset):
@@ -73,7 +78,7 @@ func _on_preset_changed(preset: String) -> void:
 	_apply_all_settings()
 
 
-## Collects active configurations across sections and dispatches to [VideoApplier].
+## Gathers all configuration values and applies them to viewport.
 func _apply_all_settings() -> void:
 	print("VideoOptions: Dispatching full state payload to VideoApplier.")
 	var mode: DisplayServer.WindowMode = (
@@ -211,10 +216,7 @@ func _apply_all_settings() -> void:
 	VideoApplier.apply_viewport_pipeline(get_tree(), get_viewport(), config)
 
 
-## Opens the restart confirmation popup when changing GPU or graphics backend.
-## [param msg] Confirmation description text.
-## [param rend_key] Selected renderer identifier.
-## [param gpu_idx] Selected physical GPU index.
+## Displays restart confirmation dialog for GPU or driver changes.
 func _on_restart_required(msg: String, rend_key: String, gpu_idx: int) -> void:
 	print("VideoOptions: Restart confirmation requested.")
 	_pending_renderer = rend_key
@@ -223,7 +225,7 @@ func _on_restart_required(msg: String, rend_key: String, gpu_idx: int) -> void:
 	restart_dialog.popup_centered()
 
 
-## Confirms restart, persists pending flags, and relaunches the application.
+## Persists launch arguments and restarts application.
 func _on_restart_dialog_confirmed() -> void:
 	print("VideoOptions: Restart confirmed. Persisting launch parameters.")
 	var restart_args: Array[String] = []
@@ -244,17 +246,16 @@ func _on_restart_dialog_confirmed() -> void:
 	get_tree().quit()
 
 
-## Dispatches auto-tuning request to the [GraphicsManager] singleton.
+## Dispatches auto-tune benchmark pass to [GraphicsManager].
 func _on_auto_tune_requested() -> void:
 	print("VideoOptions: Dispatching 60 FPS benchmark pass.")
 	hardware_section.set_benchmark_state(true)
-	if has_node("/root/GraphicsManager"):
-		var manager: Node = get_node("/root/GraphicsManager")
+	var manager: Node = SystemLocator.get_graphics_manager()
+	if is_instance_valid(manager) and manager.has_method("run_benchmark_for_60fps"):
 		manager.call("run_benchmark_for_60fps")
 
 
-## Restores section widgets once benchmark completes.
-## [param _optimal_level] Output benchmark tier index.
+## Refreshes UI sections after benchmark routine completes.
 func _on_benchmark_completed(_optimal_level: int) -> void:
 	print("VideoOptions: Benchmark completed. Refreshing all panels.")
 	hardware_section.set_benchmark_state(false)

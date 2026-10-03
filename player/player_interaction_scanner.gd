@@ -1,7 +1,10 @@
+## Scans and evaluates interactable components in the center of the screen.
 class_name InteractionScanner
 extends Node
-## Raycasts and evaluates interactable components in the center of the viewport.
 
+# --------------------------------------
+# SIGNALS
+# --------------------------------------
 ## Emitted when terminal focus mode begins or terminates. Passes [param is_active].
 signal terminal_mode_toggled(is_active: bool)
 
@@ -11,14 +14,34 @@ signal heavy_lift_state_changed(is_lifting: bool, yaw_base: float)
 ## Emitted when interactable enters crosshair reach. Passes [param object_name] and [param caller].
 signal object_hover_focused(object_name: String, caller: Node)
 
-## Stores the previous interactable to avoid re-announcing on every frame.
-var _last_focused_interactable: Node = null
+# --------------------------------------
+# ZERO-ALLOCATION IDENTIFIERS
+# --------------------------------------
+## Name of the interactable component node to search for.
+const COMPONENT_NAME: StringName = &"InteractComponent"
 
-## Cached array of RIDs excluded from terminal interaction raycasts.
-var _excluded_rids: Array[RID] = []
+## Property identifier for custom interactable display titles.
+const PROP_DISPLAY_NAME: StringName = &"display_name"
 
+## Property identifier for checking if an interactable is active.
+const PROP_IS_ENABLED: StringName = &"is_enabled"
+
+## Action identifier for triggering primary interaction.
+const ACTION_INTERACT: StringName = &"interact"
+
+## Action identifier for triggering weapon fire or terminal clicks.
+const ACTION_SHOOT: StringName = &"shoot"
+
+## Action identifier for triggering weapon reload.
+const ACTION_RELOAD: StringName = &"reload"
+
+## Maximum query rate for continuous terminal hover queries in seconds.
+const TERMINAL_RAYCAST_INTERVAL: float = 0.05
+
+# --------------------------------------
+# EXPORTS
+# --------------------------------------
 @export_category("Node References")
-
 ## Interacting player controller instance.
 @export var player_body: CharacterBody3D
 
@@ -32,12 +55,29 @@ var _excluded_rids: Array[RID] = []
 @export var empty_interact_audio: AudioStreamPlayer
 
 @export_category("Interaction Settings")
-
 ## Minimum horizontal reach distance in meters.
 @export var base_reach: float = 0.7
 
 ## Extended reach distance when looking down at the floor.
 @export var floor_reach: float = 2.2
+
+## Interval in seconds between interactable shapecast queries (10 Hz).
+@export var scan_interval: float = 0.1
+
+# --------------------------------------
+# RUNTIME STATE
+# --------------------------------------
+## Stores the previous interactable to avoid re-announcing on every frame.
+var _last_focused_interactable: Node = null
+
+## Cached array of RIDs excluded from terminal interaction raycasts.
+var _excluded_rids: Array[RID] = []
+
+## Accumulator measuring elapsed frame time for throttled interaction scans.
+var _scan_timer: float = 0.0
+
+## Accumulator measuring elapsed frame time for terminal hover raycasts.
+var _terminal_raycast_timer: float = 0.0
 
 ## Active interactable component currently in focus.
 var current_interactable: Node = null
@@ -48,7 +88,7 @@ var master_component: Node = null
 ## Indicates if player is carrying a heavy two-handed object.
 var is_heavy_lifting: bool = false
 
-## Yaw heading angle baseline for clamping rotation during heavy carry.
+## Yaw heading baseline for clamping rotation during heavy carry.
 var heavy_lift_yaw_base: float = 0.0
 
 ## Indicates if terminal focus mode is currently active.
@@ -60,7 +100,7 @@ var active_terminal: Node3D = null
 ## Coordinates of player when terminal mode began.
 var terminal_start_pos: Vector3 = Vector3.ZERO
 
-## Hit coordinate of the most recent interaction shapecast.
+## Hit coordinate of the most recent interaction query.
 var current_hit_point: Vector3 = Vector3.ZERO
 
 
@@ -72,45 +112,59 @@ func setup_master_link(master: Node) -> void:
 		_excluded_rids = [player_body.get_rid()]
 
 
-## Evaluates active shapecast to detect interactables and trigger audio cues.
-func process_interaction(_delta: float) -> void:
+## Evaluates shapecast at throttled rate to detect interactables.
+func process_interaction(delta: float) -> void:
 	if is_in_terminal_mode:
 		if _should_exit_terminal_mode():
 			exit_terminal_mode()
 			return
 
 		if is_instance_valid(active_terminal):
-			shoot_terminal_raycast(false)
+			_terminal_raycast_timer += delta
+			if _terminal_raycast_timer >= TERMINAL_RAYCAST_INTERVAL:
+				_terminal_raycast_timer = 0.0
+				shoot_terminal_raycast(false)
 		return
 
-	_update_dynamic_reach()
-	current_interactable = _get_interactable_component_at_shapecast()
+	_scan_timer += delta
+	var should_rescan: bool = _scan_timer >= scan_interval
+	if should_rescan:
+		_scan_timer = 0.0
+		_update_dynamic_reach()
+		current_interactable = _get_interactable_component_at_shapecast()
+		_update_focus_announcements()
 
-	if current_interactable != _last_focused_interactable:
-		_last_focused_interactable = current_interactable
-		if is_instance_valid(current_interactable):
-			var target_node: Node = current_interactable.get_parent()
-			var speakable_name: String = target_node.name
-			if "display_name" in target_node:
-				speakable_name = str(target_node.get("display_name"))
+	if is_instance_valid(current_interactable):
+		if interact_shapecast.get_collision_count() > 0:
+			current_hit_point = interact_shapecast.get_collision_point(0)
+			if current_interactable.has_method("hover_cursor"):
+				current_interactable.call("hover_cursor", player_body, current_hit_point)
 
-			print("InteractionScanner: Focused interactable -> ", speakable_name)
-			object_hover_focused.emit(speakable_name, target_node)
-			if Events.has_signal("object_focused"):
-				Events.object_focused.emit(speakable_name, target_node)
-
-	if current_interactable:
-		var hit_point: Vector3 = interact_shapecast.get_collision_point(0)
-		if current_interactable.has_method("hover_cursor"):
-			current_interactable.call("hover_cursor", player_body, hit_point)
-
-		if GestureInputManager.is_action_pressed("interact"):
+		if GestureInputManager.is_action_pressed(ACTION_INTERACT):
 			var is_hands_empty: bool = true
 			if is_instance_valid(master_component) and master_component.get("held_item") != null:
 				is_hands_empty = false
 
 			if is_hands_empty and current_interactable.has_method("interact_held"):
 				current_interactable.call("interact_held", player_body)
+
+
+## Broadcasts focus change events when a new interactable enters view.
+func _update_focus_announcements() -> void:
+	if current_interactable == _last_focused_interactable:
+		return
+
+	_last_focused_interactable = current_interactable
+	if is_instance_valid(current_interactable):
+		var target_node: Node = current_interactable.get_parent()
+		var speakable_name: String = target_node.name
+		if PROP_DISPLAY_NAME in target_node:
+			speakable_name = str(target_node.get(PROP_DISPLAY_NAME))
+
+		print("InteractionScanner: Focused interactable -> ", speakable_name)
+		object_hover_focused.emit(speakable_name, target_node)
+		if Events.has_signal("object_focused"):
+			Events.object_focused.emit(speakable_name, target_node)
 
 
 ## Triggers object interaction, item pickup, or empty sound cue.
@@ -173,7 +227,7 @@ func handle_shoot_input() -> void:
 					break
 
 
-## Routes reload inputs to the equipped inventory weapon or weapon holder child.
+## Routes reload inputs to the equipped inventory weapon.
 func handle_reload_input() -> void:
 	print("InteractionScanner: handle_reload_input() called.")
 	var weapon_holder: Node = (
@@ -216,7 +270,7 @@ func _update_dynamic_reach() -> void:
 	interact_shapecast.target_position = Vector3(0, 0, -current_reach)
 
 
-## Finds the closest enabled interactable component using [NodeQuery].
+## Finds the closest enabled interactable component via [NodeQuery].
 func _get_interactable_component_at_shapecast() -> Node:
 	var closest_comp: Node = null
 	var closest_dist: float = INF
@@ -232,18 +286,18 @@ func _get_interactable_component_at_shapecast() -> Node:
 			var comp: Node = null
 			var root_target: Node3D = NodeQuery.resolve_interactable_root(collider as Node3D)
 			if is_instance_valid(root_target):
-				comp = root_target.get_node_or_null("InteractComponent")
+				comp = root_target.get_node_or_null(NodePath(COMPONENT_NAME))
 
 			if not is_instance_valid(comp):
 				var current_node: Node = collider as Node
 				while is_instance_valid(current_node) and current_node != get_tree().root:
-					comp = current_node.get_node_or_null("InteractComponent")
+					comp = current_node.get_node_or_null(NodePath(COMPONENT_NAME))
 					if is_instance_valid(comp):
 						break
 					current_node = current_node.get_parent()
 
 			if is_instance_valid(comp):
-				if "is_enabled" in comp and comp.get("is_enabled") == false:
+				if PROP_IS_ENABLED in comp and comp.get(PROP_IS_ENABLED) == false:
 					continue
 
 				var interactable_parent: Node = comp.get_parent()
@@ -266,11 +320,12 @@ func _get_interactable_component_at_shapecast() -> Node:
 	return closest_comp
 
 
-## Activates terminal focus mode, differentiating between numeric and minigame terminals.
+## Activates terminal focus mode for numeric or minigame interfaces.
 func enter_terminal_mode(terminal: Node3D) -> void:
 	print("InteractionScanner: Entering terminal mode.")
 	is_in_terminal_mode = true
 	active_terminal = terminal
+	_terminal_raycast_timer = 0.0
 
 	if is_instance_valid(player_body):
 		terminal_start_pos = player_body.global_position
@@ -305,7 +360,7 @@ func enter_terminal_mode(terminal: Node3D) -> void:
 	terminal_mode_toggled.emit(true)
 
 
-## Exits terminal mode, restores movement and camera look, and stops minigames.
+## Exits terminal mode and restores default camera and movement control.
 func exit_terminal_mode() -> void:
 	if not is_in_terminal_mode:
 		return
@@ -314,6 +369,7 @@ func exit_terminal_mode() -> void:
 	var terminal_to_clear: Node3D = active_terminal
 	is_in_terminal_mode = false
 	active_terminal = null
+	_terminal_raycast_timer = 0.0
 
 	if is_instance_valid(terminal_to_clear):
 		if terminal_to_clear.has_method("clear_mouse_hover"):
@@ -366,7 +422,7 @@ func _should_exit_terminal_mode() -> bool:
 	return false
 
 
-## Projects raycast from screen center using zero-allocation [method Utilities.raycast_3d].
+## Projects raycast from screen center via [method Utilities.raycast_3d].
 func shoot_terminal_raycast(is_click: bool) -> void:
 	if is_click:
 		print("InteractionScanner: shoot_terminal_raycast executed a click.")

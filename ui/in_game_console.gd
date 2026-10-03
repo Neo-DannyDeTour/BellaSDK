@@ -2,6 +2,9 @@
 #class_name InGameConsole
 extends CanvasLayer
 
+# --------------------------------------
+# CONSTANTS
+# --------------------------------------
 ## Maps enemy identifier strings to their scene resource file paths.
 const ENEMY_SCENE_PATHS: Dictionary[String, String] = {
 	"bear_trap": "res://enemies/bear_trap.tscn",
@@ -17,6 +20,9 @@ const ENEMY_SCENE_PATHS: Dictionary[String, String] = {
 	"turret": "res://enemies/turret.tscn"
 }
 
+# --------------------------------------
+# NODE REFERENCES
+# --------------------------------------
 ## Reference to [RichTextLabel] output log display.
 @onready var output_log: RichTextLabel = $BackgroundPanel/LayoutContainer/OutputLog
 
@@ -26,6 +32,9 @@ const ENEMY_SCENE_PATHS: Dictionary[String, String] = {
 ## Reference to [LineEdit] text input bar.
 @onready var command_input: LineEdit = $BackgroundPanel/LayoutContainer/CommandInput
 
+# --------------------------------------
+# RUNTIME STATE
+# --------------------------------------
 ## Central registry storing and routing [ConsoleCommand] instances.
 var registry: ConsoleCommandRegistry = ConsoleCommandRegistry.new()
 
@@ -697,7 +706,7 @@ func _register_debug_commands() -> void:
 	registry.register_command(
 		ConsoleCommand.new(
 			"sv_gravity",
-			"Overrides global physics gravity vector magnitude.",
+			"Overrides global physics gravity magnitude.",
 			_cmd_sv_gravity,
 			Callable(),
 			true
@@ -744,6 +753,7 @@ func _register_easter_egg_commands() -> void:
 	registry.register_command(
 		ConsoleCommand.new("soyuz", "", func(_a: PackedStringArray) -> void: write("Nerushimuy!"))
 	)
+
 	## Callback for the motherlode cheat command.
 	var motherlode_callback: Callable = func(_args: PackedStringArray) -> void:
 		print("Executing motherlode cheat command.")
@@ -1061,42 +1071,12 @@ func _cmd_normals(_args: PackedStringArray) -> void:
 		write("Normal view activated.", "green")
 
 
-## Resolves player [HealthComponent] by searching player children recursively.
-func _get_player_health_component(player_node: Node) -> HealthComponent:
-	print("InGameConsole: Resolving health component on: ", player_node.name)
-	if not is_instance_valid(player_node):
-		return null
-
-	if player_node.has_node("Components/HealthComponent"):
-		var direct_comp: Node = player_node.get_node("Components/HealthComponent")
-		if direct_comp is HealthComponent:
-			return direct_comp as HealthComponent
-
-	var comps: Array[Node] = player_node.find_children("*", "HealthComponent", true, false)
-	if not comps.is_empty():
-		return comps[0] as HealthComponent
-
-	return NodeQuery.find_first_child_of_type(player_node, HealthComponent) as HealthComponent
-
-
-## Handles die debug command using direct component resolution.
+## Handles die debug command by broadcasting kill request to event bus.
 func _cmd_die(_args: PackedStringArray) -> void:
 	print("InGameConsole: Action Executing 'die' command.")
-	var player_node: Node = NodeQuery.get_single_node_in_group(get_tree(), &"player")
-	if not is_instance_valid(player_node):
-		write("Player node not found in the 'player' group.", "yellow")
-		return
-
-	var health_comp: HealthComponent = _get_player_health_component(player_node)
-	if is_instance_valid(health_comp):
-		health_comp.current_health = 0
-		health_comp.health_changed.emit(0)
-		if health_comp.is_player_health:
-			Events.player_health_changed.emit(0)
-		health_comp.die()
-		write("Player health drained to 0. You died.", "red")
-	else:
-		write("HealthComponent not found in player's components.", "yellow")
+	Events.player_health_set_requested.emit(0)
+	Events.player_kill_requested.emit()
+	write("Player kill signal dispatched.", "red")
 
 
 ## Handles deathscreen preview command via group and scene lookups.
@@ -1146,7 +1126,7 @@ func _cmd_deathscreen(args: PackedStringArray) -> void:
 	write("Previewing death screen: " + screen_name.to_upper(), "green")
 
 
-## Handles sethealth debug command with input validation.
+## Handles sethealth debug command with input validation via event bus.
 func _cmd_sethealth(args: PackedStringArray) -> void:
 	print("InGameConsole: Action Executing 'sethealth' command.")
 	if args.is_empty() or not args[0].is_valid_int():
@@ -1154,25 +1134,8 @@ func _cmd_sethealth(args: PackedStringArray) -> void:
 		return
 
 	var health_val: int = clampi(args[0].to_int(), 0, 300)
-	var player_node: Node = NodeQuery.get_single_node_in_group(get_tree(), &"player")
-	if not is_instance_valid(player_node):
-		write("Player node not found in the 'player' group.", "yellow")
-		return
-
-	var health_comp: HealthComponent = _get_player_health_component(player_node)
-	if is_instance_valid(health_comp):
-		health_comp.current_health = health_val
-		health_comp.health_changed.emit(health_comp.current_health)
-
-		if health_comp.is_player_health:
-			Events.player_health_changed.emit(health_comp.current_health)
-
-		if health_comp.current_health == 0:
-			health_comp.die()
-
-		write("Player health forcefully set to: " + str(health_val), "green")
-	else:
-		write("HealthComponent not found on the player entity.", "yellow")
+	Events.player_health_set_requested.emit(health_val)
+	write("Player health set request broadcast: " + str(health_val), "green")
 
 
 ## Toggles the on-screen FPS and performance diagnostic HUD.
@@ -1184,7 +1147,7 @@ func _cmd_showfps(_args: PackedStringArray) -> void:
 	write("FPS monitor " + ("enabled." if active else "disabled."), "green")
 
 
-## Teleports the player entity to target coordinates.
+## Teleports the player entity to target coordinates via event bus.
 func _cmd_teleport(args: PackedStringArray) -> void:
 	print("InGameConsole: _cmd_teleport called with args: ", args)
 	if args.size() < 3:
@@ -1192,17 +1155,8 @@ func _cmd_teleport(args: PackedStringArray) -> void:
 		return
 
 	var target_pos: Vector3 = Vector3(args[0].to_float(), args[1].to_float(), args[2].to_float())
-	var player_node: Node = NodeQuery.get_single_node_in_group(get_tree(), &"player")
-	if not is_instance_valid(player_node):
-		write("Player entity not found in 'player' group.", "red")
-		return
-
-	if player_node.has_method(&"teleport_to"):
-		player_node.call(&"teleport_to", target_pos, 0.0)
-	elif player_node is Node3D:
-		(player_node as Node3D).global_position = target_pos
-
-	write("Teleported player to: " + str(target_pos), "green")
+	Events.teleport_requested.emit(target_pos)
+	write("Teleport command dispatched to: " + str(target_pos), "green")
 
 
 ## Outputs the player's current global position coordinates.
@@ -1234,20 +1188,12 @@ func _cmd_showcolliders(args: PackedStringArray) -> void:
 	_cmd_collision(args)
 
 
-## Toggles gravity-free flight navigation mode.
+## Toggles gravity-free flight navigation mode via event bus.
 func _cmd_fly(_args: PackedStringArray) -> void:
 	toggle_states["fly"] = not toggle_states["fly"]
 	var active: bool = toggle_states["fly"]
 	print("InGameConsole: Toggled fly mode -> ", active)
-
-	var player_node: Node = NodeQuery.get_single_node_in_group(get_tree(), &"player")
-	if is_instance_valid(player_node):
-		var loco: Node = player_node.get(&"locomotion_component")
-		if is_instance_valid(loco):
-			var def_grav: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
-			loco.set(&"gravity", 0.0 if active else def_grav)
-			print("InGameConsole: PlayerLocomotionComponent gravity -> ", loco.get(&"gravity"))
-
+	Events.flight_mode_toggled.emit(active)
 	write("Fly mode " + ("activated." if active else "deactivated."), "green")
 
 
@@ -1261,7 +1207,7 @@ func _cmd_god(_args: PackedStringArray) -> void:
 	write("Godmode " + ("activated." if active else "deactivated."), "green")
 
 
-## Grants an item directly to the player inventory.
+## Grants an item directly to player inventory via event bus.
 func _cmd_give(args: PackedStringArray) -> void:
 	print("InGameConsole: _cmd_give called with args: ", args)
 	if args.is_empty():
@@ -1348,7 +1294,7 @@ func _cmd_killall(_args: PackedStringArray) -> void:
 	write("Destroyed %d active entities." % count, "green")
 
 
-## Overrides global physics gravity magnitude.
+## Overrides global physics gravity magnitude via event bus.
 func _cmd_sv_gravity(args: PackedStringArray) -> void:
 	print("InGameConsole: _cmd_sv_gravity called with args: ", args)
 	if args.is_empty():
@@ -1361,12 +1307,7 @@ func _cmd_sv_gravity(args: PackedStringArray) -> void:
 	PhysicsServer3D.area_set_param(
 		get_viewport().find_world_3d().space, PhysicsServer3D.AREA_PARAM_GRAVITY, grav
 	)
-	var player_node: Node = NodeQuery.get_single_node_in_group(get_tree(), &"player")
-	if is_instance_valid(player_node):
-		var loco: Node = player_node.get(&"locomotion_component")
-		if is_instance_valid(loco):
-			loco.set(&"gravity", grav)
-
+	Events.gravity_override_requested.emit(grav)
 	write("Global physics gravity updated to: " + str(grav), "green")
 
 
@@ -1425,19 +1366,12 @@ func _cmd_vsync(args: PackedStringArray) -> void:
 	write("V-Sync " + ("enabled." if enable else "disabled."), "green")
 
 
-## Toggles player HUD layer node visibility.
+## Toggles player HUD layer node visibility via event bus.
 func _cmd_hidehud(_args: PackedStringArray) -> void:
 	toggle_states["hidehud"] = not toggle_states["hidehud"]
 	var is_hidden: bool = toggle_states["hidehud"]
 	print("InGameConsole: Toggled hidehud -> ", is_hidden)
 	Events.ui_visibility_toggle_requested.emit()
-
-	var player_node: Node = NodeQuery.get_single_node_in_group(get_tree(), &"player")
-	if is_instance_valid(player_node) and &"ui_controller" in player_node:
-		var ui: CanvasLayer = player_node.get(&"ui_controller") as CanvasLayer
-		if is_instance_valid(ui):
-			ui.visible = not is_hidden
-
 	write("HUD " + ("hidden." if is_hidden else "revealed."), "green")
 
 

@@ -1,68 +1,77 @@
+## Central coordinator for player locomotion, camera, input, and environment interactions.
 class_name Player
 extends CharacterBody3D
-## Central player coordinator for locomotion, camera, input, and environmental interactions.
+
+# --------------------------------------
+# CONSTANTS & ZERO-ALLOCATION IDENTIFIERS
+# --------------------------------------
+## Group name identifier for detecting sand ground surfaces.
+const GROUP_SAND: StringName = &"sand"
+
+## Group name identifier for detecting ice ground surfaces.
+const GROUP_ICE: StringName = &"ice"
 
 # --------------------------------------
 # COMPONENT REFERENCES (Cached for 60 FPS)
 # --------------------------------------
 @export_category("Core Modules")
 
-## Handles all physics, gravity, and state machine locomotion.
+## Handles physics, gravity, and state machine locomotion updates.
 @export var locomotion_component: Node
 
-## Handles raycasting, item holding, and machine interfaces.
+## Handles raycasting, item holding, and machine interactions.
 @export var interaction_component: Node
 
-## Handles external triggers (water, rain, updrafts, ladders).
+## Handles external triggers such as water, rain, updrafts, and ladders.
 @export var environment_component: Node
 
-## Manages health, damage, and save data serialization.
+## Manages player health, damage calculation, and stat serialization.
 @export var stats_component: Node
 
-## The root State Machine controlling player states.
+## Root state machine node managing active player states.
 @export var state_machine: Node
 
 @export_category("System References")
 
-## Controls the camera's rotation, positioning, and visual effects (FOV, shake).
+## Controls camera orientation, positioning, and camera shake.
 @export var camera_controller: CameraController
 
-## Manages all system-level menus, pause state, and noclip functionality.
+## Manages system menus, pause state, and developer noclip modes.
 @export var system_menu: SystemMenuController
 
-## Reference to the main UI controller for HUD and screen effects.
+## Reference to main UI controller for HUD and screen overlays.
 @export var ui_controller: UIController
 
-## Reference to the global UI console overlay for entering debug commands.
+## Reference to global UI console overlay for debug commands.
 var in_game_console: CanvasLayer
 
-## Handles toggling the player's flashlight and managing its battery consumption.
+## Manages flashlight toggling and battery consumption.
 var flashlight_controller: FlashlightController
 
-## Local node reference for receiving and managing the player's health points.
+## Local reference to the player's [HealthComponent] instance.
 @onready var health_component: HealthComponent = $Components/HealthComponent
 
-## The [FactionComponent] governing player faction allegiance and hostility.
+## The [FactionComponent] governing player faction allegiance.
 @onready var faction_component: FactionComponent = (
 	get_node_or_null("Components/FactionComponent") as FactionComponent
 )
 
-## Indicates if the player character has died, used to globally block input and physics.
+## Tracks whether player character is dead to block inputs.
 var is_dead: bool = false
 
-## Flag indicating if the player is actively standing on a surface grouped as "sand".
+## Tracks whether the player is currently standing on sand.
 var is_on_sand_surface: bool = false
 
-## Flag indicating if the player is actively standing on a surface grouped as "ice".
+## Tracks whether the player is currently standing on ice.
 var is_on_ice_surface: bool = false
 
-## Indicates if the player is currently focused on an active terminal.
+## Tracks whether the player is interacting with a terminal.
 var is_in_terminal_mode: bool = false
 
-## Indicates if movement and camera look are locked by a minigame terminal.
+## Indicates if movement and camera look are locked by a terminal.
 var is_terminal_locked: bool = false
 
-## Sensitivity scale applied to mouse look during terminal interactions.
+## Sensitivity scale applied to mouse look during terminal interaction.
 var terminal_mouse_sensitivity_scale: float = 1.0
 
 # --------------------------------------
@@ -70,11 +79,11 @@ var terminal_mouse_sensitivity_scale: float = 1.0
 # --------------------------------------
 
 
-## Lifecycle initialization registering groups, subcomponents, and global hooks.
+## Initializes groups, subcomponents, and global singleton bindings.
 func _ready() -> void:
 	print("Player: Initializing character controller.")
-	add_to_group("saveable")
-	add_to_group("player")
+	add_to_group(&"saveable")
+	add_to_group(&"player")
 
 	var global_singleton: Node = get_node_or_null("/root/Global")
 	if is_instance_valid(global_singleton) and "main" in global_singleton:
@@ -111,8 +120,17 @@ func _ready() -> void:
 	if is_instance_valid(health_component):
 		Utilities.safe_connect(health_component.died, _on_player_died)
 
+	if Events.has_signal(&"player_health_set_requested"):
+		Utilities.safe_connect(Events.player_health_set_requested, _on_health_set_requested)
+	if Events.has_signal(&"player_kill_requested"):
+		Utilities.safe_connect(Events.player_kill_requested, _on_player_died)
+	if Events.has_signal(&"teleport_requested"):
+		Utilities.safe_connect(Events.teleport_requested, teleport_to)
+	if Events.has_signal(&"flight_mode_toggled"):
+		Utilities.safe_connect(Events.flight_mode_toggled, _on_flight_mode_toggled)
 
-## Locks and hides mouse cursor for first-person gameplay navigation.
+
+## Captures and locks the mouse cursor for first-person gameplay.
 func _capture_mouse() -> void:
 	print("Player: Capturing mouse cursor.")
 	if not is_inside_tree():
@@ -126,7 +144,7 @@ func _capture_mouse() -> void:
 # --------------------------------------
 
 
-## Routes hardware mouse motion into camera controller.
+## Routes mouse motion events to the [CameraController].
 func _input(event: InputEvent) -> void:
 	if _is_input_blocked():
 		return
@@ -149,7 +167,7 @@ func _input(event: InputEvent) -> void:
 			)
 
 
-## Routes unhandled interaction inputs to interaction component.
+## Forwards unhandled input events to the [member interaction_component].
 func _unhandled_input(event: InputEvent) -> void:
 	if _is_input_blocked():
 		return
@@ -158,13 +176,13 @@ func _unhandled_input(event: InputEvent) -> void:
 		interaction_component.process_unhandled_input(event)
 
 
-## Sets mouse look sensitivity multiplier for terminal interfaces.
+## Configures the mouse look sensitivity multiplier for terminal interfaces.
 func set_terminal_mouse_sensitivity_scale(p_scale: float) -> void:
 	print("Player: Setting terminal mouse sensitivity scale to: ", p_scale)
 	terminal_mouse_sensitivity_scale = p_scale
 
 
-## Checks whether input is blocked by death, menus, console, or machine locks.
+## Evaluates whether player input is blocked by UI, pause, or death.
 func _is_input_blocked() -> bool:
 	var is_console_open: bool = is_instance_valid(in_game_console) and in_game_console.visible
 	var is_operating: bool = (
@@ -187,7 +205,7 @@ func _is_input_blocked() -> bool:
 	return is_blocked
 
 
-## Evaluates surroundings description action trigger from gesture manager.
+## Dispatches surroundings description requests from gesture manager.
 func _handle_describe_input() -> void:
 	if not is_instance_valid(GestureInputManager):
 		return
@@ -198,7 +216,7 @@ func _handle_describe_input() -> void:
 			Events.describe_surroundings_requested.emit(self)
 
 
-## Handles player death, disables movement, and evaluates death screen pose.
+## Handles player death, disables physics, and broadcasts death state.
 func _on_player_died() -> void:
 	print("Player: Death detected. Locking controls and broadcasting event.")
 	is_dead = true
@@ -230,7 +248,7 @@ func _on_player_died() -> void:
 # --------------------------------------
 
 
-## Central physics loop routing locomotion, environment, and interaction updates.
+## Executes physics processing, locomotion, and surface detection.
 func _physics_process(delta: float) -> void:
 	var in_terminal_state: bool = (
 		is_terminal_locked
@@ -322,49 +340,49 @@ func _physics_process(delta: float) -> void:
 # --------------------------------------
 
 
-## Forwards ladder entrance event to environment component.
+## Forwards ladder entrance notifications to [member environment_component].
 func enter_ladder(ladder_node: Node3D) -> void:
 	print("Player: Forwarding ladder enter to EnvironmentComponent.")
 	if is_instance_valid(environment_component):
 		environment_component.enter_ladder(ladder_node)
 
 
-## Forwards ladder exit event to environment component.
+## Forwards ladder exit notifications to [member environment_component].
 func exit_ladder(ladder_node: Node3D) -> void:
 	print("Player: Forwarding ladder exit to EnvironmentComponent.")
 	if is_instance_valid(environment_component):
 		environment_component.exit_ladder(ladder_node)
 
 
-## Switches movement logic to swimming mode inside water body volume.
+## Transitions locomotion into swimming state for water volumes.
 func enter_water(water_volume: Node3D) -> void:
 	print("Player: Forwarding water enter to EnvironmentComponent.")
 	if is_instance_valid(environment_component):
 		environment_component.enter_water(water_volume)
 
 
-## Exits swimming state and restores default ground and air locomotion.
+## Restores default locomotion upon leaving water volumes.
 func exit_water(water_volume: Node3D) -> void:
 	print("Player: Forwarding water exit to EnvironmentComponent.")
 	if is_instance_valid(environment_component):
 		environment_component.exit_water(water_volume)
 
 
-## Applies upward vertical force from an updraft vent.
+## Applies vertical updraft force to [member environment_component].
 func enter_updraft(strength: float, top_y: float) -> void:
 	print("Player: Forwarding updraft enter to EnvironmentComponent.")
 	if is_instance_valid(environment_component):
 		environment_component.enter_updraft(strength, top_y)
 
 
-## Notifies environment component of leaving updraft volume.
+## Notifies [member environment_component] of leaving updraft volume.
 func exit_updraft() -> void:
 	print("Player: Forwarding updraft exit to EnvironmentComponent.")
 	if is_instance_valid(environment_component):
 		environment_component.exit_updraft()
 
 
-## Relocates player to coordinates and applies temporary input stun via [Utilities].
+## Teleports player to [param new_position] with brief stun period.
 func teleport_to(new_position: Vector3, stun_time: float = 0.1) -> void:
 	print("Player: Teleporting player to: ", new_position)
 	global_position = new_position
@@ -376,14 +394,14 @@ func teleport_to(new_position: Vector3, stun_time: float = 0.1) -> void:
 		Utilities.delay_call(self, stun_time, func() -> void: system_menu.is_stunned = false)
 
 
-## Registers an available monkey bar handle within player reach.
+## Registers an active monkey bar handle on [member environment_component].
 func set_available_monkey_bar(bar_node: Node3D) -> void:
 	print("Player: Setting active monkey bar handle.")
 	if is_instance_valid(environment_component):
 		environment_component.available_monkey_bar = bar_node
 
 
-## Clears active monkey bar handle when player moves out of reach.
+## Clears active monkey bar handle on [member environment_component].
 func clear_available_monkey_bar(bar_node: Node3D) -> void:
 	print("Player: Clearing active monkey bar handle.")
 	if (
@@ -393,7 +411,7 @@ func clear_available_monkey_bar(bar_node: Node3D) -> void:
 		environment_component.available_monkey_bar = null
 
 
-## Checks whether zipline interaction cooldown is currently active.
+## Returns true if zipline interaction cooldown is currently active.
 func has_zipline_cooldown() -> bool:
 	if is_instance_valid(environment_component):
 		return environment_component.zipline_cooldown > 0.0
@@ -414,7 +432,7 @@ func _on_rope_grabbed(rope_node: RigidBody3D) -> void:
 		environment_component.enter_rope(rope_node)
 
 
-## Updates visibility of equipped glider mesh.
+## Toggles visibility of equipped glider mesh.
 func set_glider_visible(p_is_visible: bool) -> void:
 	print("Player: Updating glider mesh visibility: ", p_is_visible)
 	if (
@@ -431,7 +449,7 @@ func set_glider_visible(p_is_visible: bool) -> void:
 # --------------------------------------
 
 
-## Enters terminal camera and UI focus mode.
+## Focuses camera and input on the specified [param terminal] node.
 func enter_terminal_mode(terminal: Node3D) -> void:
 	print("Player: Entering terminal focus mode.")
 	is_in_terminal_mode = true
@@ -447,7 +465,7 @@ func enter_terminal_mode(terminal: Node3D) -> void:
 			interaction_component.interaction_scanner.enter_terminal_mode(terminal)
 
 
-## Restores player camera as the active primary viewport camera.
+## Activates primary player camera as the current viewport camera.
 func activate_gameplay_camera() -> void:
 	print("Player: Re-asserting primary gameplay camera.")
 	if is_instance_valid(camera_controller) and is_instance_valid(camera_controller.camera):
@@ -456,7 +474,7 @@ func activate_gameplay_camera() -> void:
 			Events.player_camera_registered.emit(camera_controller.camera)
 
 
-## Restores default locomotion and free camera look after exiting terminal.
+## Exits terminal mode and restores default camera and movement control.
 func exit_terminal_mode() -> void:
 	if not is_in_terminal_mode and not is_terminal_locked:
 		return
@@ -485,7 +503,7 @@ func exit_terminal_mode() -> void:
 			interaction_component.interaction_scanner.exit_terminal_mode()
 
 
-## Sets machine lock state to constrain player movement.
+## Updates machine lock state and transitions state machine.
 func set_machine_lock(locked: bool) -> void:
 	print("Player: Setting machine lock state to: ", locked)
 	if is_instance_valid(interaction_component):
@@ -498,7 +516,7 @@ func set_machine_lock(locked: bool) -> void:
 			state_machine.transition_to("Ground")
 
 
-## Engages machine operation mode and resets physics velocity.
+## Engages machine operation mode and zeroes velocity momentum.
 func start_operating_machine() -> void:
 	print("Player: Engaging machine operation.")
 	if is_instance_valid(interaction_component):
@@ -511,7 +529,7 @@ func start_operating_machine() -> void:
 		state_machine.transition_to("MachineLock")
 
 
-## Disengages machine operation mode and restores first-person controls.
+## Disengages machine operation mode and restores default controls.
 func stop_operating_machine() -> void:
 	print("Player: Disengaging machine operation.")
 	if is_instance_valid(interaction_component):
@@ -527,7 +545,7 @@ func stop_operating_machine() -> void:
 # --------------------------------------
 
 
-## Serializes player spatial coordinates, camera rotation, and stats into a dictionary.
+## Returns serialized player position, rotation, and component stats.
 func get_save_data() -> Dictionary:
 	print("Player: Serializing state data.")
 	var data: Dictionary = {}
@@ -546,7 +564,7 @@ func get_save_data() -> Dictionary:
 	return data
 
 
-## Deserializes and restores player position, camera pitch/yaw, and component state.
+## Restores serialized player coordinates, rotation, and component state.
 func load_save_data(data: Dictionary) -> void:
 	print("Player: Restoring serialized state data.")
 
@@ -571,21 +589,21 @@ func load_save_data(data: Dictionary) -> void:
 		stats_component.load_save_data(data)
 
 
-## Forwards rain entrance notification to environment component.
+## Forwards rain entrance notification to [member environment_component].
 func enter_rain_volume() -> void:
 	print("Player: Entering rain volume.")
 	if is_instance_valid(environment_component):
 		environment_component.enter_rain_volume()
 
 
-## Forwards rain exit notification to environment component.
+## Forwards rain exit notification to [member environment_component].
 func exit_rain_volume() -> void:
 	print("Player: Exiting rain volume.")
 	if is_instance_valid(environment_component):
 		environment_component.exit_rain_volume()
 
 
-## Initiates guide rail slide movement along target spline or stick.
+## Starts guide rail slide movement along target spline [param stick].
 func enter_path_slide(stick: Node3D) -> void:
 	print("Player: Entering rail slide.")
 
@@ -596,14 +614,14 @@ func enter_path_slide(stick: Node3D) -> void:
 		state_machine.transition_to("PathSlide", {"stick": stick})
 
 
-## Disengages from active rail sliding sequence into airborne state.
+## Exits rail slide state into airborne state.
 func exit_path_slide() -> void:
 	print("Player: Exiting rail slide.")
 	if is_instance_valid(state_machine):
 		state_machine.transition_to("Air")
 
 
-## Launches player from guide path with impulse velocity vector.
+## Launches player along [param throw_vel] impulse vector.
 func launch_from_path(throw_vel: Vector3) -> void:
 	print("Player: Launching from path with velocity: ", throw_vel)
 	velocity = throw_vel
@@ -616,21 +634,21 @@ func launch_from_path(throw_vel: Vector3) -> void:
 # --------------------------------------
 
 
-## Forwards damage application requests to the HealthComponent.
+## Routes damage reduction to [member health_component].
 func take_damage(amount: int) -> void:
 	print("Player: Routing damage to HealthComponent: ", amount)
 	if is_instance_valid(health_component) and health_component.has_method("take_damage"):
 		health_component.take_damage(amount)
 
 
-## Forwards healing point additions to the HealthComponent.
+## Routes health point recovery to [member health_component].
 func heal(amount: int) -> void:
 	print("Player: Routing healing to HealthComponent: ", amount)
 	if is_instance_valid(health_component) and health_component.has_method("heal"):
 		health_component.heal(amount)
 
 
-## Applies directional impulse force and transitions player into airborne state.
+## Applies impulse force [param force] and enters airborne state.
 func apply_knockback(force: Vector3) -> void:
 	print("Player: Applying knockback force and transitioning to Air state.")
 
@@ -639,7 +657,7 @@ func apply_knockback(force: Vector3) -> void:
 			state_machine.transition_to("Air", {"knockback_force": force})
 
 
-## Evaluates ground surface under player to toggle sand and ice locomotion flags.
+## Zero-allocation floor scan updating sand and ice surface state.
 func _update_floor_surface_detection() -> void:
 	var on_sand: bool = false
 	var on_ice: bool = false
@@ -652,9 +670,9 @@ func _update_floor_surface_detection() -> void:
 				var collider: Object = collision.get_collider()
 				if is_instance_valid(collider) and collider is Node:
 					var floor_node: Node = collider as Node
-					if floor_node.is_in_group(&"sand"):
+					if floor_node.is_in_group(GROUP_SAND):
 						on_sand = true
-					if floor_node.is_in_group(&"ice"):
+					if floor_node.is_in_group(GROUP_ICE):
 						on_ice = true
 
 	if on_sand != is_on_sand_surface:
@@ -670,7 +688,7 @@ func _update_floor_surface_detection() -> void:
 		Events.ice_surface_toggled.emit(is_on_ice_surface)
 
 
-## Transitions locomotion into vacuum tube transport state.
+## Enters vacuum tube transport sequence with [param tube_node].
 func enter_tube(tube_node: Node3D) -> void:
 	print("Player: Entering vacuum tube state.")
 	if is_instance_valid(locomotion_component):
@@ -679,17 +697,38 @@ func enter_tube(tube_node: Node3D) -> void:
 		state_machine.transition_to("Tube", {"tube": tube_node})
 
 
-## Ejects player from vacuum tube and transfers exit velocity.
+## Ejects player from vacuum tube with [param throw_vel] velocity.
 func exit_tube(throw_vel: Vector3) -> void:
 	print("Player: Exiting tube with impulse velocity: ", throw_vel)
 	launch_from_path(throw_vel)
 
 
-## Handles area enter detection for water bodies.
+## Logs entrance into water detector [param area] volume.
 func _on_water_detector_area_entered(area: Area3D) -> void:
 	print("Player: Entered water volume -> ", area.name)
 
 
-## Handles area exit detection for water bodies.
+## Logs exit from water detector [param area] volume.
 func _on_water_detector_area_exited(area: Area3D) -> void:
 	print("Player: Exited water volume -> ", area.name)
+
+
+## Handles direct health change requests dispatched via [Events].
+func _on_health_set_requested(amount: int) -> void:
+	print("Player: Health set requested via event bus -> ", amount)
+	if is_instance_valid(health_component):
+		health_component.current_health = amount
+		health_component.health_changed.emit(amount)
+		if health_component.is_player_health:
+			Events.player_health_changed.emit(amount)
+		if amount <= 0:
+			_on_player_died()
+
+
+## Handles flight mode toggles dispatched via [Events].
+func _on_flight_mode_toggled(is_flying: bool) -> void:
+	print("Player: Flight mode toggled via event bus -> ", is_flying)
+	if is_instance_valid(system_menu):
+		system_menu.flying = is_flying
+	if is_instance_valid(locomotion_component):
+		locomotion_component.set_physics_active(not is_flying)

@@ -2,27 +2,39 @@
 class_name QualitySection
 extends VBoxContainer
 
+# --------------------------------------
+# SIGNALS
+# --------------------------------------
 ## Emitted when the master preset selection changes.
 signal preset_changed(preset_name: String)
 
 ## Emitted when individual graphics quality options change.
 signal quality_settings_changed
 
+# --------------------------------------
+# NODE REFERENCES
+# --------------------------------------
 ## Preset "Low" toggle [Button].
 @onready var preset_low_button: Button = %PresetLowButton
+
 ## Preset "Medium" toggle [Button].
 @onready var preset_medium_button: Button = %PresetMediumButton
+
 ## Preset "High" toggle [Button].
 @onready var preset_high_button: Button = %PresetHighButton
+
 ## Preset "Ultra" toggle [Button].
 @onready var preset_ultra_button: Button = %PresetUltraButton
 
 ## Shadow quality "Off" toggle [Button].
 @onready var shadow_off_button: Button = %ShadowOffButton
+
 ## Shadow quality "Low" toggle [Button].
 @onready var shadow_low_button: Button = %ShadowLowButton
+
 ## Shadow quality "Medium" toggle [Button].
 @onready var shadow_medium_button: Button = %ShadowMediumButton
+
 ## Shadow quality "High" toggle [Button].
 @onready var shadow_high_button: Button = %ShadowHighButton
 
@@ -31,66 +43,91 @@ signal quality_settings_changed
 
 ## Shadow filter "Hard" toggle [Button].
 @onready var shadow_filter_hard_button: Button = %ShadowFilterHardButton
+
 ## Shadow filter "Soft Low" toggle [Button].
 @onready var shadow_filter_low_button: Button = %ShadowFilterLowButton
+
 ## Shadow filter "Soft Medium" toggle [Button].
 @onready var shadow_filter_medium_button: Button = %ShadowFilterMediumButton
+
 ## Shadow filter "Soft High" toggle [Button].
 @onready var shadow_filter_high_button: Button = %ShadowFilterHighButton
 
 ## Reference to positional shadow distance input [LineEdit].
 @onready var pos_dist_line: LineEdit = %PositionalShadowDistanceLine
+
 ## Reference to positional shadow distance slider [HSlider].
 @onready var pos_dist_slider: HSlider = %PositionalShadowDistanceSlider
+
 ## Reference to directional shadow distance input [LineEdit].
 @onready var dir_dist_line: LineEdit = %DirectionalShadowDistanceLine
+
 ## Reference to directional shadow distance slider [HSlider].
 @onready var dir_dist_slider: HSlider = %DirectionalShadowDistanceSlider
+
 ## Reference to occlusion culling toggle [CheckBox].
 @onready var occlusion_checkbox: CheckBox = %OcclusionCullingCheckBox
+
 ## Reference to the VRS mode [OptionButton].
 @onready var vrs_options: OptionButton = %VRSOptionButton
 
 ## Texture filter "Nearest" toggle [Button].
 @onready var tex_filter_nearest_button: Button = %TexFilterNearestButton
+
 ## Texture filter "Linear" toggle [Button].
 @onready var tex_filter_linear_button: Button = %TexFilterLinearButton
+
 ## Texture filter "Linear Mipmap" toggle [Button].
 @onready var tex_filter_lin_mip_button: Button = %TexFilterLinMipButton
+
 ## Texture filter "Nearest Mipmap" toggle [Button].
 @onready var tex_filter_near_mip_button: Button = %TexFilterNearMipButton
 
 ## Reference to resolution scale input [LineEdit].
 @onready var res_scale_line: LineEdit = %ResolutionScaleLine
+
 ## Reference to resolution scale slider [HSlider].
 @onready var res_scale_slider: HSlider = %ResolutionScaleSlider
+
 ## Reference to anti-aliasing configuration [OptionButton].
 @onready var aa_options: OptionButton = %AAOptionButton
 
 ## FSR "Native" toggle [Button].
 @onready var fsr_native_button: Button = %FSRNativeButton
+
 ## FSR "Quality" toggle [Button].
 @onready var fsr_quality_button: Button = %FSRQualityButton
+
 ## FSR "Balanced" toggle [Button].
 @onready var fsr_balanced_button: Button = %FSRBalancedButton
+
 ## FSR "Performance" toggle [Button].
 @onready var fsr_perf_button: Button = %FSRPerfButton
 
 ## Reference to anisotropic filtering level [OptionButton].
 @onready var anisotropy_options: OptionButton = %AnisotropyOptionButton
+
 ## Reference to the Mesh LOD slider [HSlider].
 @onready var mesh_lod_slider: HSlider = %MeshLODSlider
+
 ## Reference to the Mesh LOD input [LineEdit].
 @onready var mesh_lod_line: LineEdit = %MeshLODLine
 
+# --------------------------------------
+# RUNTIME LOOKUP MAPPINGS
+# --------------------------------------
 ## Lookup map associating preset names with toggle buttons.
 var _preset_btn_map: Dictionary[String, Button] = {}
+
 ## Lookup map associating shadow quality names with toggle buttons.
 var _shadow_btn_map: Dictionary[String, Button] = {}
+
 ## Lookup map associating shadow filter names with toggle buttons.
 var _shadow_filter_btn_map: Dictionary[String, Button] = {}
+
 ## Lookup map associating texture filter names with toggle buttons.
 var _texture_filter_btn_map: Dictionary[String, Button] = {}
+
 ## Lookup map associating FSR mode names with toggle buttons.
 var _fsr_btn_map: Dictionary[String, Button] = {}
 
@@ -208,7 +245,7 @@ func _connect_button_row(mapping: Dictionary[String, Button], config_key: String
 		btn.pressed.connect(_on_quality_button_pressed.bind(config_key, mode_key))
 
 
-## Connects slider and LineEdit pairs with immediate save and live dispatch.
+## Connects slider and LineEdit pairs with throttled commit and live labels.
 func _connect_slider(
 	slider: HSlider,
 	line: LineEdit,
@@ -220,6 +257,7 @@ func _connect_slider(
 ) -> void:
 	if not is_instance_valid(slider) or not is_instance_valid(line):
 		return
+
 	slider.min_value = min_v
 	slider.max_value = max_v
 	slider.step = step_val
@@ -228,10 +266,19 @@ func _connect_slider(
 		func(val: float) -> void:
 			if not line.has_focus():
 				line.text = (
-					str(int(val)) if is_int else ("%.1f" % val if step_val == 0.1 else "%.2f" % val)
+					str(int(val))
+					if is_int
+					else ("%.1f" % val if is_equal_approx(step_val, 0.1) else "%.2f" % val)
 				)
-			GlobalSettings.save_setting("Settings", key, val)
-			quality_settings_changed.emit()
+			if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+				_commit_slider_value(key, val)
+	)
+
+	slider.drag_ended.connect(
+		func(value_changed: bool) -> void:
+			if value_changed:
+				print("QualitySection: Drag ended for ", key, " -> ", slider.value)
+				_commit_slider_value(key, slider.value)
 	)
 
 	line.focus_entered.connect(
@@ -241,45 +288,58 @@ func _connect_slider(
 	)
 
 	line.text_submitted.connect(
-		func(text: String) -> void:
-			var trimmed: String = text.strip_edges()
-			var fallback: String = str(line.get_meta("pre_focus_text", ""))
-			if trimmed.is_empty() or not trimmed.is_valid_float():
-				line.text = fallback
-			else:
-				var c_val: float = clampf(trimmed.to_float(), min_v, max_v)
-				var s_val: float = snappedf(c_val, step_val)
-				line.text = (
-					str(int(s_val))
-					if is_int
-					else ("%.1f" % s_val if step_val == 0.1 else "%.2f" % s_val)
-				)
-				slider.value = s_val
-				print("QualitySection: Committed ", key, " input: ", s_val)
-				GlobalSettings.save_setting("Settings", key, s_val)
-				quality_settings_changed.emit()
+		func(_text: String) -> void:
+			_commit_slider_line(slider, line, key, min_v, max_v, step_val, is_int)
 			line.release_focus()
 	)
 
 	line.focus_exited.connect(
-		func() -> void:
-			var trimmed: String = line.text.strip_edges()
-			var fallback: String = str(line.get_meta("pre_focus_text", ""))
-			if trimmed.is_empty() or not trimmed.is_valid_float():
-				line.text = fallback
-			else:
-				var c_val: float = clampf(trimmed.to_float(), min_v, max_v)
-				var s_val: float = snappedf(c_val, step_val)
-				line.text = (
-					str(int(s_val))
-					if is_int
-					else ("%.1f" % s_val if step_val == 0.1 else "%.2f" % s_val)
-				)
-				slider.value = s_val
-				print("QualitySection: Saved ", key, " on defocus: ", s_val)
-				GlobalSettings.save_setting("Settings", key, s_val)
-				quality_settings_changed.emit()
+		func() -> void: _commit_slider_line(slider, line, key, min_v, max_v, step_val, is_int)
 	)
+
+
+## Persists slider value and emits pipeline notification if changed.
+func _commit_slider_value(key: String, val: float) -> void:
+	var current: float = float(GlobalSettings.get_setting("Settings", key, -999.0))
+	if not is_equal_approx(current, val):
+		print("QualitySection: Persisting ", key, " -> ", val)
+		GlobalSettings.save_setting("Settings", key, val)
+		quality_settings_changed.emit()
+
+
+## Commits manual text input value to slider and settings without double-emitting.
+func _commit_slider_line(
+	slider: HSlider,
+	line: LineEdit,
+	key: String,
+	min_v: float,
+	max_v: float,
+	step_val: float,
+	is_int: bool
+) -> void:
+	var trimmed: String = line.text.strip_edges()
+	var fallback: String = str(line.get_meta("pre_focus_text", ""))
+	if trimmed.is_empty() or not trimmed.is_valid_float():
+		line.text = fallback
+		return
+
+	var c_val: float = clampf(trimmed.to_float(), min_v, max_v)
+	var s_val: float = snappedf(c_val, step_val)
+	var formatted_text: String = (
+		str(int(s_val))
+		if is_int
+		else ("%.1f" % s_val if is_equal_approx(step_val, 0.1) else "%.2f" % s_val)
+	)
+	line.text = formatted_text
+	line.set_meta("pre_focus_text", formatted_text)
+
+	var current_saved: float = float(GlobalSettings.get_setting("Settings", key, -999.0))
+	slider.set_value_no_signal(s_val)
+
+	if not is_equal_approx(current_saved, s_val):
+		print("QualitySection: Committed new ", key, " text input: ", s_val)
+		GlobalSettings.save_setting("Settings", key, s_val)
+		quality_settings_changed.emit()
 
 
 ## Synchronizes UI widgets with saved configuration values.
@@ -424,59 +484,71 @@ func _sync_dropdown(
 			return
 
 
-## Handles master preset button press.
+## Handles master preset button press without duplicate bulk saves.
 func _on_preset_pressed(preset: String) -> void:
 	print("QualitySection: Preset button pressed: ", preset)
+	var current_preset: String = str(GlobalSettings.get_setting("Settings", "preset", ""))
+	if current_preset == preset:
+		return
+
 	if VideoConfig.PRESETS.has(preset):
 		var data: Dictionary = VideoConfig.PRESETS[preset] as Dictionary
 		apply_preset_dict(data)
 
-		var bulk_data: Dictionary = {"preset": preset}
-		for key: String in data.keys():
-			bulk_data[key] = data[key]
-		GlobalSettings.save_settings_bulk("Settings", bulk_data)
-	else:
-		GlobalSettings.save_setting("Settings", "preset", preset)
-
+	GlobalSettings.save_setting("Settings", "preset", preset)
 	preset_changed.emit(preset)
 
 
 ## Handles dynamic light shadows toggle state changes.
 func _on_dynamic_shadows_toggled(toggled_on: bool) -> void:
 	print("QualitySection: Dynamic shadows toggled: ", toggled_on)
-	GlobalSettings.save_setting("Settings", "dynamic_light_shadows", toggled_on)
-	quality_settings_changed.emit()
+	var current: bool = bool(
+		GlobalSettings.get_setting("Settings", "dynamic_light_shadows", not toggled_on)
+	)
+	if current != toggled_on:
+		GlobalSettings.save_setting("Settings", "dynamic_light_shadows", toggled_on)
+		quality_settings_changed.emit()
 
 
 ## Handles occlusion culling toggle state changes.
 func _on_occlusion_toggled(toggled_on: bool) -> void:
 	print("QualitySection: Occlusion culling toggled: ", toggled_on)
-	GlobalSettings.save_setting("Settings", "occlusion_culling", toggled_on)
-	quality_settings_changed.emit()
+	var current: bool = bool(
+		GlobalSettings.get_setting("Settings", "occlusion_culling", not toggled_on)
+	)
+	if current != toggled_on:
+		GlobalSettings.save_setting("Settings", "occlusion_culling", toggled_on)
+		quality_settings_changed.emit()
 
 
 ## Handles VRS dropdown selection.
 func _on_vrs_selected(index: int) -> void:
 	var text: String = vrs_options.get_item_text(index)
 	print("QualitySection: VRS mode selected: ", text)
-	GlobalSettings.save_setting("Settings", "vrs_mode", text)
-	quality_settings_changed.emit()
+	var current: String = str(GlobalSettings.get_setting("Settings", "vrs_mode", ""))
+	if current != text:
+		GlobalSettings.save_setting("Settings", "vrs_mode", text)
+		quality_settings_changed.emit()
 
 
 ## Handles Anti-Aliasing pipeline changes.
 func _on_aa_selected(index: int) -> void:
 	var text: String = aa_options.get_item_text(index)
 	print("QualitySection: Anti-aliasing mode changed: ", text)
-	GlobalSettings.save_setting("Settings", "aa_mode", text)
-	quality_settings_changed.emit()
+	var current: String = str(GlobalSettings.get_setting("Settings", "aa_mode", ""))
+	if current != text:
+		GlobalSettings.save_setting("Settings", "aa_mode", text)
+		quality_settings_changed.emit()
 
 
 ## Handles texture anisotropic filtering level changes.
 func _on_anisotropy_selected(index: int) -> void:
 	var text: String = anisotropy_options.get_item_text(index)
 	print("QualitySection: Anisotropic filtering changed: ", text)
-	GlobalSettings.save_setting("Settings", "anisotropy", text)
-	quality_settings_changed.emit()
+	var current: String = str(GlobalSettings.get_setting("Settings", "anisotropy", ""))
+	if current != text:
+		GlobalSettings.save_setting("Settings", "anisotropy", text)
+		quality_settings_changed.emit()
 
 
 ## Handles any quality button press, saving setting and notifying pipeline.

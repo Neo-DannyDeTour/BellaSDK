@@ -2,15 +2,24 @@
 class_name StateMachine
 extends Node
 
+# --------------------------------------
+# SIGNALS
+# --------------------------------------
 ## Emitted when active state changes, passing old and new [State] nodes.
 signal state_changed(old_state: State, new_state: State)
 
+# --------------------------------------
+# EXPORTS
+# --------------------------------------
 ## Initial active [State] set upon state machine initialization.
 @export var initial_state: State
 
 ## Tracks whether state transitions are currently locked.
 @export var is_locked: bool = false
 
+# --------------------------------------
+# RUNTIME STATE
+# --------------------------------------
 ## Currently active [State] instance processing frame updates.
 var current_state: State = null
 
@@ -23,7 +32,6 @@ func _ready() -> void:
 	print("StateMachine: Initializing state machine: ", name)
 	_collect_states()
 
-	# Skip automatic start here if this is PlayerStateMachine (it starts after player injection)
 	if self is PlayerStateMachine:
 		return
 
@@ -95,9 +103,14 @@ func change_state(target_state_name: StringName, message: Dictionary = {}) -> bo
 	return true
 
 
+## Alias forwarding transition requests to [method change_state].
+func transition_to(target_state_name: StringName, message: Dictionary = {}) -> bool:
+	return change_state(target_state_name, message)
+
+
 ## Callback receiving transition signals from individual state nodes.
 func _on_transition_requested(target_state_name: StringName, message: Dictionary = {}) -> void:
-	print("StateMachine: Received transition request signal to: ", target_state_name)
+	print("StateMachine: Received transition signal to: ", target_state_name)
 	change_state(target_state_name, message)
 
 

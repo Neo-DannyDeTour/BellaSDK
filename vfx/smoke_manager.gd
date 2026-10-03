@@ -1,10 +1,14 @@
-## Manages GPU compute dispatches and bullet hole simulation buffers for [FogVolume].
+## Manages GPU compute dispatches and bullet hole buffers for [FogVolume].
+#class_name SmokeManager
 extends Node
 
+# --------------------------------------
+# BUFFER SIZES & LAYOUT SPECIFICATIONS
+# --------------------------------------
 ## Maximum number of concurrent bullet holes tracked in the compute buffer.
 const MAX_HOLES: int = 50
 
-## Byte size of a single hole data struct (8 floats: 32 bytes) in std430 layout.
+## Byte size of a single hole data struct in std430 layout.
 const HOLE_STRIDE_BYTES: int = 32
 
 ## Total byte capacity of the GPU storage buffer holding bullet hole data.
@@ -13,6 +17,9 @@ const BUFFER_SIZE: int = MAX_HOLES * HOLE_STRIDE_BYTES
 ## Total byte capacity of the push constants buffer (20 floats * 4 bytes).
 const PUSH_CONSTANTS_SIZE: int = 80
 
+# --------------------------------------
+# EXPORTS
+# --------------------------------------
 @export_group("System Controls")
 ## Time in seconds before a bullet hole completely heals and dissipates.
 @export var heal_time_seconds: float = 4.0
@@ -27,17 +34,20 @@ const PUSH_CONSTANTS_SIZE: int = 80
 ## Strength of turbulent rotational swirls around bullet cavities.
 @export var swirl_strength: float = 1.8
 
-## Spatial frequency of the rotational turbulence around bullet cavities.
+## Spatial frequency of rotational turbulence around bullet cavities.
 @export var swirl_frequency: float = 0.5
 
 @export_group("Optimizations")
 ## Precomputed 3D noise texture used for volumetric turbulence.
 @export var precomputed_noise: Texture3D
 
-## Pre-allocated byte buffer for GPU storage buffer updates without heap allocations.
+# --------------------------------------
+# RUNTIME BUFFERS & STATE
+# --------------------------------------
+## Pre-allocated byte buffer for GPU storage buffer updates.
 var _hole_byte_buffer: PackedByteArray = PackedByteArray()
 
-## Pre-allocated byte buffer for push constant data dispatched to [RenderingDevice].
+## Pre-allocated byte buffer for push constant data dispatched to GPU.
 var _push_constants_buffer: PackedByteArray = PackedByteArray()
 
 ## Flat array storing elapsed lifetimes in seconds for each active hole.
@@ -52,29 +62,32 @@ var current_player_pos: Vector3 = Vector3.ZERO
 ## Total accumulated simulation time in seconds.
 var global_time: float = 0.0
 
-## The [RenderingDevice] used for compute operations. Needs manual cleanup.
+# --------------------------------------
+# RENDERING DEVICE HANDLES
+# --------------------------------------
+## The [RenderingDevice] used for low-level compute operations.
 var rd: RenderingDevice
 
-## The compiled compute shader [RID]. Needs manual cleanup.
-var shader: RID
+## The compiled compute shader [RID]. Freed on cleanup.
+var shader: RID = RID()
 
-## The compute pipeline instance [RID]. Needs manual cleanup.
-var pipeline: RID
+## The compute pipeline instance [RID]. Freed on cleanup.
+var pipeline: RID = RID()
 
-## The 3D texture [RID] used for density storage. Needs manual cleanup.
-var texture_rid: RID
+## The 3D texture [RID] used for density storage. Freed on cleanup.
+var texture_rid: RID = RID()
 
-## The storage buffer [RID] for hole data. Needs manual cleanup.
-var buffer_rid: RID
+## The storage buffer [RID] for hole data. Freed on cleanup.
+var buffer_rid: RID = RID()
 
-## The uniform set [RID] binding all resources. Freed first in cleanup.
-var uniform_set: RID
+## The uniform set [RID] binding all resources. Freed first on cleanup.
+var uniform_set: RID = RID()
 
-## Holds the GPU texture [RID] for generated noise. Needs manual cleanup.
-var noise_rd_rid: RID
+## Holds the GPU texture [RID] for generated noise. Freed on cleanup.
+var noise_rd_rid: RID = RID()
 
-## Holds the GPU sampler [RID]. Needs manual cleanup.
-var sampler_rid: RID
+## Holds the GPU sampler [RID]. Freed on cleanup.
+var sampler_rid: RID = RID()
 
 ## The currently bound [FogVolume] receiving computed smoke density.
 var active_fog_volume: FogVolume
@@ -86,7 +99,7 @@ var is_initialized: bool = false
 var godot_texture: Texture3DRD
 
 
-## Initializes the compute buffer, textures, and pipeline on [Node] ready.
+## Initializes compute buffers, textures, and pipeline on [Node] ready.
 func _ready() -> void:
 	print("SmokeManager: Initializing smoke manager node.")
 	rd = RenderingServer.get_rendering_device()
@@ -142,9 +155,12 @@ func _create_rd_noise_texture(tex: Texture3D) -> RID:
 	return rd.texture_create(fmt, view, [bytes])
 
 
-## Compiles compute shader, initializes textures, buffers, and uniform sets.
+## Compiles compute shader, textures, buffers, and uniform sets.
 func _initialize_gpu() -> void:
 	print("SmokeManager: _initialize_gpu() called.")
+	if is_initialized:
+		_cleanup_gpu()
+
 	const SHADER_FILE: RDShaderFile = preload("res://vfx/smoke_compute.glsl")
 	var shader_spirv: RDShaderSPIRV = SHADER_FILE.get_spirv()
 	shader = rd.shader_create_from_spirv(shader_spirv)
@@ -213,28 +229,54 @@ func _notification(what: int) -> void:
 		_cleanup_gpu()
 
 
+## Lifecycle exit notification ensuring GPU resources are released.
+func _exit_tree() -> void:
+	print("SmokeManager: _exit_tree() invoked. Releasing GPU resources.")
+	_cleanup_gpu()
+
+
 ## Releases all allocated [RenderingDevice] resources and [RID] instances.
 func _cleanup_gpu() -> void:
 	print("SmokeManager: _cleanup_gpu() called.")
 	if not rd:
 		return
+
+	is_initialized = false
+
+	if is_instance_valid(godot_texture):
+		godot_texture.texture_rd_rid = RID()
+		godot_texture = null
+
 	if uniform_set.is_valid():
 		rd.free_rid(uniform_set)
+		uniform_set = RID()
+
 	if pipeline.is_valid():
 		rd.free_rid(pipeline)
+		pipeline = RID()
+
 	if shader.is_valid():
 		rd.free_rid(shader)
+		shader = RID()
+
 	if buffer_rid.is_valid():
 		rd.free_rid(buffer_rid)
+		buffer_rid = RID()
+
 	if texture_rid.is_valid():
 		rd.free_rid(texture_rid)
+		texture_rid = RID()
+
 	if noise_rd_rid.is_valid():
 		rd.free_rid(noise_rd_rid)
+		noise_rd_rid = RID()
+
 	if sampler_rid.is_valid():
 		rd.free_rid(sampler_rid)
+		sampler_rid = RID()
 
 
-## Binds an active [FogVolume] and assigns the computed [Texture3DRD].
+## Binds an active [FogVolume] and assigns computed [Texture3DRD].
 func register_fog_volume(volume: FogVolume) -> void:
 	print("SmokeManager: register_fog_volume() called with: ", volume.name)
 	active_fog_volume = volume
@@ -243,19 +285,19 @@ func register_fog_volume(volume: FogVolume) -> void:
 			volume.assign_compute_texture(godot_texture)
 
 
-## Clears the registered [FogVolume] reference if it matches the current volume.
+## Clears registered [FogVolume] if matching [param volume].
 func clear_fog_volume(volume: FogVolume) -> void:
 	print("SmokeManager: clear_fog_volume() called.")
 	if active_fog_volume == volume:
 		active_fog_volume = null
 
 
-## Updates the cached player position used for volumetric clearing.
+## Updates cached player position [param pos] for volumetric clearing.
 func update_player_position(pos: Vector3) -> void:
 	current_player_pos = pos
 
 
-## Adds a bullet hole cavity by writing directly into pre-allocated memory.
+## Adds bullet hole cavity by writing directly into pre-allocated memory.
 func add_bullet_hole(start: Vector3, dir: Vector3, length: float, radius: float = 1.0) -> void:
 	print("SmokeManager: add_bullet_hole() called.")
 	var target_idx: int = _active_hole_count
@@ -285,7 +327,7 @@ func add_bullet_hole(start: Vector3, dir: Vector3, length: float, radius: float 
 	_hole_byte_buffer.encode_float(offset + 28, 0.0)
 
 
-## Updates hole lifetimes and dispatches the compute pass per frame.
+## Updates hole lifetimes and dispatches compute pass per frame.
 func _process(delta: float) -> void:
 	if not is_initialized:
 		return

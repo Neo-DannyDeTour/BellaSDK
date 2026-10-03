@@ -2,6 +2,9 @@
 class_name AccessibilityVisualsSection
 extends VBoxContainer
 
+# --------------------------------------
+# CONSTANTS
+# --------------------------------------
 ## Default constant value for world environment brightness.
 const DEFAULT_BRIGHTNESS: float = 1.0
 
@@ -66,6 +69,9 @@ const ACTIVE_BUTTON_COLOR: Color = Color(0.25, 0.75, 1.0, 1.0)
 ## Color modulation applied to inactive outline mode buttons.
 const INACTIVE_BUTTON_COLOR: Color = Color(1.0, 1.0, 1.0, 1.0)
 
+# --------------------------------------
+# NODE REFERENCES
+# --------------------------------------
 ## Dropdown menu for selecting colorblind shader correction filters.
 @onready var colorblind_option: OptionButton = get_node_or_null("%ColorblindOption")
 
@@ -138,6 +144,9 @@ const INACTIVE_BUTTON_COLOR: Color = Color(1.0, 1.0, 1.0, 1.0)
 ## Text input for manual outline maximum pulse intensity entry.
 @onready var outline_max_input: LineEdit = get_node_or_null("%OutlineMaxIntensityLine")
 
+# --------------------------------------
+# RUNTIME STATE
+# --------------------------------------
 ## Cached [Curve] resource for gamma adjustments.
 var _gamma_curve: Curve = Curve.new()
 
@@ -156,7 +165,7 @@ func _ready() -> void:
 
 ## Populates [OptionButton] items for filters, colorblind, and outlines.
 func _populate_dropdowns() -> void:
-	print("UI: _populate_dropdowns() populating options.")
+	print("UI: Populating visuals dropdown options.")
 	if is_instance_valid(screen_filter_option):
 		screen_filter_option.clear()
 		for filter_name: String in GlobalSettings.get_screen_filter_display_names():
@@ -178,7 +187,7 @@ func _populate_dropdowns() -> void:
 
 ## Connects interactive controls and slider value adjustments.
 func _connect_signals() -> void:
-	print("UI: _connect_signals() binding visual sliders.")
+	print("UI: Binding visual slider and toggle signals.")
 	if is_instance_valid(colorblind_option):
 		colorblind_option.item_selected.connect(_on_colorblind_selected)
 	if is_instance_valid(screen_filter_option):
@@ -209,7 +218,7 @@ func _connect_signals() -> void:
 
 ## Connects input signals for outline highlight mode buttons.
 func _connect_outline_controls() -> void:
-	print("UI: _connect_outline_controls() binding outline buttons.")
+	print("UI: Binding outline controls.")
 	if is_instance_valid(outline_off_button):
 		outline_off_button.pressed.connect(func() -> void: _on_outline_mode_selected(0))
 	if is_instance_valid(outline_always_button):
@@ -252,21 +261,18 @@ func _connect_outline_controls() -> void:
 	)
 
 
-## Reads stored visual options from [GlobalSettings] into UI components.
+## Reads stored visual options from [GlobalSettings] into UI without bus flood.
 func load_settings() -> void:
 	print("UI: Loading Visuals settings.")
 	if is_instance_valid(colorblind_option):
 		colorblind_option.selected = int(
 			GlobalSettings.get_setting("Settings", "colorblind_mode", DEFAULT_COLORBLIND_MODE)
 		)
-		_apply_colorblind_settings()
 
 	if is_instance_valid(screen_filter_option):
-		var initial_filter: int = int(
+		screen_filter_option.selected = int(
 			GlobalSettings.get_setting("Settings", "screen_filter", DEFAULT_SCREEN_FILTER)
 		)
-		screen_filter_option.selected = initial_filter
-		_apply_screen_filter(initial_filter)
 
 	_load_slider(brightness_slider, brightness_input, "brightness", DEFAULT_BRIGHTNESS)
 	_load_slider(contrast_slider, contrast_input, "contrast", DEFAULT_CONTRAST)
@@ -297,14 +303,13 @@ func load_settings() -> void:
 	_load_outline_settings()
 
 
-## Loads outline highlight preferences and applies them.
+## Loads outline highlight preferences into UI silently.
 func _load_outline_settings() -> void:
 	print("UI: Loading Outline Highlight settings.")
 	var outline_mode: int = int(
 		GlobalSettings.get_setting("Accessibility", "outline_mode", DEFAULT_OUTLINE_MODE)
 	)
 	_update_outline_buttons_ui(outline_mode)
-	_apply_outline_mode(outline_mode)
 
 	if is_instance_valid(outline_color_option):
 		var col_idx: int = int(
@@ -313,7 +318,6 @@ func _load_outline_settings() -> void:
 			)
 		)
 		outline_color_option.selected = col_idx
-		_apply_outline_color(col_idx)
 
 	_load_slider_custom(
 		outline_blink_slider,
@@ -322,14 +326,6 @@ func _load_outline_settings() -> void:
 		DEFAULT_OUTLINE_BLINK_SPEED,
 		"Accessibility"
 	)
-	_apply_outline_blink_speed(
-		(
-			outline_blink_slider.value
-			if is_instance_valid(outline_blink_slider)
-			else DEFAULT_OUTLINE_BLINK_SPEED
-		)
-	)
-
 	_load_slider_custom(
 		outline_min_slider,
 		outline_min_input,
@@ -337,14 +333,6 @@ func _load_outline_settings() -> void:
 		DEFAULT_OUTLINE_MIN_INTENSITY,
 		"Accessibility"
 	)
-	_apply_outline_min_intensity(
-		(
-			outline_min_slider.value
-			if is_instance_valid(outline_min_slider)
-			else DEFAULT_OUTLINE_MIN_INTENSITY
-		)
-	)
-
 	_load_slider_custom(
 		outline_max_slider,
 		outline_max_input,
@@ -352,17 +340,16 @@ func _load_outline_settings() -> void:
 		DEFAULT_OUTLINE_MAX_INTENSITY,
 		"Accessibility"
 	)
-	_apply_outline_max_intensity(
-		(
-			outline_max_slider.value
-			if is_instance_valid(outline_max_slider)
-			else DEFAULT_OUTLINE_MAX_INTENSITY
-		)
-	)
 
 
 ## Handles selection of an outline highlight mode by index.
 func _on_outline_mode_selected(mode: int) -> void:
+	var current: int = int(
+		GlobalSettings.get_setting("Accessibility", "outline_mode", DEFAULT_OUTLINE_MODE)
+	)
+	if current == mode:
+		return
+
 	print("Player selected Outline Mode: ", mode)
 	GlobalSettings.save_setting("Accessibility", "outline_mode", mode)
 	_update_outline_buttons_ui(mode)
@@ -371,7 +358,7 @@ func _on_outline_mode_selected(mode: int) -> void:
 
 ## Updates button states and active colors according to selected mode.
 func _update_outline_buttons_ui(selected_mode: int) -> void:
-	print("UI: Updating Outline Mode buttons display to mode: ", selected_mode)
+	print("UI: Updating Outline Mode buttons display to: ", selected_mode)
 	var buttons: Array[Button] = [outline_off_button, outline_always_button, outline_focus_button]
 	for i: int in range(buttons.size()):
 		var btn: Button = buttons[i]
@@ -390,6 +377,14 @@ func _apply_outline_mode(mode: int) -> void:
 
 ## Handles outline color selection from dropdown menu.
 func _on_outline_color_selected(index: int) -> void:
+	var current: int = int(
+		GlobalSettings.get_setting(
+			"Accessibility", "outline_color_index", DEFAULT_OUTLINE_COLOR_INDEX
+		)
+	)
+	if current == index:
+		return
+
 	print("Player selected Outline Color index: ", index)
 	GlobalSettings.save_setting("Accessibility", "outline_color_index", index)
 	_apply_outline_color(index)
@@ -422,7 +417,7 @@ func _apply_outline_max_intensity(val: float) -> void:
 	Events.outline_max_intensity_changed.emit(val)
 
 
-## Connects companion slider and LineEdit pairs with instant clear and revert on defocus.
+## Connects companion slider and LineEdit pairs with throttled commit logic.
 func _connect_slider(
 	slider: HSlider,
 	input_box: LineEdit,
@@ -433,7 +428,7 @@ func _connect_slider(
 	is_int: bool = false,
 	custom_cb: Callable = Callable()
 ) -> void:
-	print("UI: _connect_slider() binding key: ", key)
+	print("UI: Binding slider for key: ", key)
 	if is_instance_valid(slider):
 		slider.min_value = min_val
 		slider.max_value = max_val
@@ -441,16 +436,14 @@ func _connect_slider(
 			func(val: float) -> void:
 				if is_instance_valid(input_box) and not input_box.has_focus():
 					input_box.text = str(int(val)) if is_int else ("%.2f" % val)
-				if custom_cb.is_valid():
-					custom_cb.call(val)
-				else:
-					_apply_visual_settings()
+				if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+					_commit_visual_slider_val(key, val, section, custom_cb)
 		)
 		slider.drag_ended.connect(
 			func(changed: bool) -> void:
 				if changed:
 					print("Player adjusted ", key, " to: ", slider.value)
-					GlobalSettings.save_setting(section, key, slider.value)
+					_commit_visual_slider_val(key, slider.value, section, custom_cb)
 		)
 
 	if is_instance_valid(input_box):
@@ -460,34 +453,59 @@ func _connect_slider(
 				input_box.text = ""
 		)
 		input_box.text_submitted.connect(
-			func(txt: String) -> void:
-				var trimmed: String = txt.strip_edges()
-				var fallback: String = str(input_box.get_meta("pre_focus_text", ""))
-				if trimmed == "" or not trimmed.is_valid_float():
-					input_box.text = fallback
-				else:
-					var new_val: float = clampf(trimmed.to_float(), min_val, max_val)
-					input_box.text = str(int(new_val)) if is_int else ("%.2f" % new_val)
-					print("Player manually typed ", key, " input: ", new_val)
-					GlobalSettings.save_setting(section, key, new_val)
-					if is_instance_valid(slider):
-						slider.value = new_val
+			func(_txt: String) -> void:
+				_commit_visual_line_edit(
+					slider, input_box, key, min_val, max_val, section, is_int, custom_cb
+				)
 				input_box.release_focus()
 		)
 		input_box.focus_exited.connect(
 			func() -> void:
-				var trimmed: String = input_box.text.strip_edges()
-				var fallback: String = str(input_box.get_meta("pre_focus_text", ""))
-				if trimmed == "" or not trimmed.is_valid_float():
-					input_box.text = fallback
-				else:
-					var new_val: float = clampf(trimmed.to_float(), min_val, max_val)
-					input_box.text = str(int(new_val)) if is_int else ("%.2f" % new_val)
-					if is_instance_valid(slider) and not is_equal_approx(slider.value, new_val):
-						print("Player committed ", key, " input on defocus: ", new_val)
-						GlobalSettings.save_setting(section, key, new_val)
-						slider.value = new_val
+				_commit_visual_line_edit(
+					slider, input_box, key, min_val, max_val, section, is_int, custom_cb
+				)
 		)
+
+
+## Commits slider value to storage and triggers callback if changed.
+func _commit_visual_slider_val(
+	key: String, val: float, section: String, custom_cb: Callable
+) -> void:
+	var current: float = float(GlobalSettings.get_setting(section, key, -999.0))
+	if not is_equal_approx(current, val):
+		GlobalSettings.save_setting(section, key, val)
+		if custom_cb.is_valid():
+			custom_cb.call(val)
+		else:
+			_apply_visual_settings()
+
+
+## Commits LineEdit input to visual slider and storage safely.
+func _commit_visual_line_edit(
+	slider: HSlider,
+	input_box: LineEdit,
+	key: String,
+	min_val: float,
+	max_val: float,
+	section: String,
+	is_int: bool,
+	custom_cb: Callable
+) -> void:
+	var trimmed: String = input_box.text.strip_edges()
+	var fallback: String = str(input_box.get_meta("pre_focus_text", ""))
+	if trimmed.is_empty() or not trimmed.is_valid_float():
+		input_box.text = fallback
+		return
+
+	var new_val: float = clampf(trimmed.to_float(), min_val, max_val)
+	var formatted: String = str(int(new_val)) if is_int else ("%.2f" % new_val)
+	input_box.text = formatted
+	input_box.set_meta("pre_focus_text", formatted)
+
+	if is_instance_valid(slider):
+		slider.set_value_no_signal(new_val)
+
+	_commit_visual_slider_val(key, new_val, section, custom_cb)
 
 
 ## Reads a float setting and synchronizes slider and text box.
@@ -499,7 +517,6 @@ func _load_slider(slider: HSlider, input_box: LineEdit, key: String, default_val
 func _load_slider_custom(
 	slider: HSlider, input_box: LineEdit, key: String, default_val: float, section: String
 ) -> void:
-	print("UI: _load_slider_custom() loading key: ", key)
 	if is_instance_valid(slider):
 		var val: float = float(GlobalSettings.get_setting(section, key, default_val))
 		slider.set_value_no_signal(val)
@@ -509,6 +526,12 @@ func _load_slider_custom(
 
 ## Handles user selection of colorblind dropdown options.
 func _on_colorblind_selected(index: int) -> void:
+	var current: int = int(
+		GlobalSettings.get_setting("Settings", "colorblind_mode", DEFAULT_COLORBLIND_MODE)
+	)
+	if current == index:
+		return
+
 	print("Player changed colorblind mode to index: ", index)
 	GlobalSettings.save_setting("Settings", "colorblind_mode", index)
 	_apply_colorblind_settings()
@@ -525,7 +548,13 @@ func _apply_colorblind_settings() -> void:
 
 ## Handles screen filter dropdown selections.
 func _on_screen_filter_selected(index: int) -> void:
-	print("UI: _on_screen_filter_selected() index: ", index)
+	var current: int = int(
+		GlobalSettings.get_setting("Settings", "screen_filter", DEFAULT_SCREEN_FILTER)
+	)
+	if current == index:
+		return
+
+	print("UI: Screen filter selected index: ", index)
 	GlobalSettings.save_setting("Settings", "screen_filter", index)
 	_apply_screen_filter(index)
 
@@ -542,12 +571,18 @@ func _apply_screen_filter(index: int) -> void:
 
 ## Broadcasts film grain intensity value updates across [Events].
 func _apply_film_grain(val: float) -> void:
-	print("UI: _apply_film_grain() value: ", val)
+	print("UI: Applying film grain intensity: ", val)
 	Events.film_grain_changed.emit(val)
 
 
 ## Handles photosensitivity safe mode toggling.
 func _on_photosensitivity_toggled(toggled_on: bool) -> void:
+	var current: bool = bool(
+		GlobalSettings.get_setting("Accessibility", "photosensitivity", DEFAULT_PHOTOSENSITIVITY)
+	)
+	if current == toggled_on:
+		return
+
 	print("Player toggled Photosensitivity Mode to: ", toggled_on)
 	GlobalSettings.save_setting("Accessibility", "photosensitivity", toggled_on)
 	Events.photosensitivity_mode_toggled.emit(toggled_on)
@@ -555,6 +590,12 @@ func _on_photosensitivity_toggled(toggled_on: bool) -> void:
 
 ## Handles high contrast mode toggling.
 func _on_high_contrast_toggled(toggled_on: bool) -> void:
+	var current: bool = bool(
+		GlobalSettings.get_setting("Accessibility", "high_contrast_ui", DEFAULT_HIGH_CONTRAST)
+	)
+	if current == toggled_on:
+		return
+
 	print("Player toggled High Contrast UI to: ", toggled_on)
 	GlobalSettings.save_setting("Accessibility", "high_contrast_ui", toggled_on)
 	Events.high_contrast_toggled.emit(toggled_on)
@@ -591,7 +632,6 @@ func _apply_gamma_to_environment(gamma_val: float, env: Environment) -> void:
 
 ## Finds the active [WorldEnvironment] node using [NodeQuery].
 func _find_world_environment() -> WorldEnvironment:
-	print("UI: _find_world_environment() resolving environment node.")
 	var env_node: Node = NodeQuery.get_single_node_in_group(get_tree(), &"world_environment")
 	if env_node is WorldEnvironment:
 		return env_node as WorldEnvironment

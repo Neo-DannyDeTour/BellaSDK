@@ -2,23 +2,36 @@
 class_name EffectsSection
 extends VBoxContainer
 
+# --------------------------------------
+# SIGNALS
+# --------------------------------------
 ## Emitted when effect options change to trigger viewport environment updates.
 signal effects_settings_changed
 
+# --------------------------------------
+# NODE REFERENCES
+# --------------------------------------
 ## Reference to the tonemapper algorithm [OptionButton].
 @onready var tonemap_options: OptionButton = %TonemapOptionButton
+
 ## Reference to the exposure direct numerical input [LineEdit].
 @onready var exposure_line: LineEdit = %ExposureLine
+
 ## Reference to the exposure slider [HSlider].
 @onready var exposure_slider: HSlider = %ExposureSlider
+
 ## Reference to the color debanding toggle [CheckBox].
 @onready var debanding_checkbox: CheckBox = %DebandingCheckBox
+
 ## Reference to the depth of field amount input [LineEdit].
 @onready var dof_line: LineEdit = %DoFLine
+
 ## Reference to the depth of field amount slider [HSlider].
 @onready var dof_slider: HSlider = %DoFSlider
+
 ## Reference to the motion blur slider [HSlider].
 @onready var motion_blur_slider: HSlider = %MotionBlurSlider
+
 ## Reference to the motion blur input [LineEdit].
 @onready var motion_blur_line: LineEdit = %MotionBlurLine
 
@@ -58,6 +71,9 @@ signal effects_settings_changed
 @onready var glow_medium_button: Button = %GlowMediumButton
 @onready var glow_high_button: Button = %GlowHighButton
 
+# --------------------------------------
+# RUNTIME LOOKUP MAPPINGS
+# --------------------------------------
 ## Internal lookup maps associating mode keys with their respective toggle buttons.
 var _ssao_btn_map: Dictionary[String, Button] = {}
 var _ssi_btn_map: Dictionary[String, Button] = {}
@@ -180,7 +196,7 @@ func _connect_button_row(mapping: Dictionary[String, Button], config_key: String
 		btn.pressed.connect(_on_effect_button_pressed.bind(config_key, mode_key))
 
 
-## Connects DoF slider and line edit, setting dof_enabled based on magnitude.
+## Connects DoF slider and line edit with single-dispatch commit logic.
 func _connect_dof_slider() -> void:
 	print("EffectsSection: Connecting specialized DoF slider.")
 	dof_slider.min_value = 0.0
@@ -191,32 +207,64 @@ func _connect_dof_slider() -> void:
 		func(val: float) -> void:
 			if not dof_line.has_focus():
 				dof_line.text = "%.2f" % val
+			if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+				_commit_dof_value(val)
 	)
 
 	dof_slider.drag_ended.connect(
 		func(value_changed: bool) -> void:
 			if value_changed:
-				var amt: float = dof_slider.value
-				var is_active: bool = amt > 0.005
-				print("EffectsSection: Committed DoF amount: ", amt, " Active: ", is_active)
-				GlobalSettings.save_setting("Settings", "dof_amount", amt)
-				GlobalSettings.save_setting("Settings", "dof_enabled", is_active)
-				effects_settings_changed.emit()
+				print("EffectsSection: Committed DoF drag: ", dof_slider.value)
+				_commit_dof_value(dof_slider.value)
+	)
+
+	dof_line.focus_entered.connect(
+		func() -> void:
+			dof_line.set_meta("pre_focus_text", dof_line.text)
+			dof_line.text = ""
 	)
 
 	dof_line.text_submitted.connect(
-		func(text: String) -> void:
-			var trimmed: String = text.strip_edges()
-			if trimmed.is_valid_float():
-				var amt: float = clampf(trimmed.to_float(), 0.0, 0.5)
-				var is_active: bool = amt > 0.005
-				dof_line.text = "%.2f" % amt
-				dof_slider.value = amt
-				GlobalSettings.save_setting("Settings", "dof_amount", amt)
-				GlobalSettings.save_setting("Settings", "dof_enabled", is_active)
-				effects_settings_changed.emit()
+		func(_text: String) -> void:
+			_commit_dof_line()
 			dof_line.release_focus()
 	)
+
+	dof_line.focus_exited.connect(func() -> void: _commit_dof_line())
+
+
+## Persists DoF amount and enabled state if value changed.
+func _commit_dof_value(amt: float) -> void:
+	var current: float = float(GlobalSettings.get_setting("Settings", "dof_amount", -1.0))
+	if not is_equal_approx(current, amt):
+		var is_active: bool = amt > 0.005
+		GlobalSettings.save_setting("Settings", "dof_amount", amt)
+		GlobalSettings.save_setting("Settings", "dof_enabled", is_active)
+		effects_settings_changed.emit()
+
+
+## Commits manual text input to DoF slider and settings without double-emitting.
+func _commit_dof_line() -> void:
+	var trimmed: String = dof_line.text.strip_edges()
+	var fallback: String = str(dof_line.get_meta("pre_focus_text", ""))
+	if trimmed.is_empty() or not trimmed.is_valid_float():
+		dof_line.text = fallback
+		return
+
+	var amt: float = clampf(trimmed.to_float(), 0.0, 0.5)
+	var formatted: String = "%.2f" % amt
+	dof_line.text = formatted
+	dof_line.set_meta("pre_focus_text", formatted)
+
+	var current: float = float(GlobalSettings.get_setting("Settings", "dof_amount", -1.0))
+	dof_slider.set_value_no_signal(amt)
+
+	if not is_equal_approx(current, amt):
+		var is_active: bool = amt > 0.005
+		print("EffectsSection: Committed new DoF text input: ", amt)
+		GlobalSettings.save_setting("Settings", "dof_amount", amt)
+		GlobalSettings.save_setting("Settings", "dof_enabled", is_active)
+		effects_settings_changed.emit()
 
 
 ## Connects slider and LineEdit pairs with deferred save and signal dispatch.
@@ -225,6 +273,7 @@ func _connect_slider(
 ) -> void:
 	if not is_instance_valid(slider) or not is_instance_valid(line):
 		return
+
 	slider.min_value = min_v
 	slider.max_value = max_v
 	slider.step = step_val
@@ -233,14 +282,15 @@ func _connect_slider(
 		func(val: float) -> void:
 			if not line.has_focus():
 				line.text = "%.2f" % val
+			if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+				_commit_effect_slider_value(key, val)
 	)
 
 	slider.drag_ended.connect(
 		func(value_changed: bool) -> void:
 			if value_changed:
 				print("EffectsSection: Drag ended for ", key, " -> ", slider.value)
-				GlobalSettings.save_setting("Settings", key, slider.value)
-				effects_settings_changed.emit()
+				_commit_effect_slider_value(key, slider.value)
 	)
 
 	line.focus_entered.connect(
@@ -250,37 +300,48 @@ func _connect_slider(
 	)
 
 	line.text_submitted.connect(
-		func(text: String) -> void:
-			var trimmed: String = text.strip_edges()
-			var fallback: String = str(line.get_meta("pre_focus_text", ""))
-			if trimmed.is_empty() or not trimmed.is_valid_float():
-				line.text = fallback
-			else:
-				var c_val: float = clampf(trimmed.to_float(), min_v, max_v)
-				var s_val: float = snappedf(c_val, step_val)
-				line.text = "%.2f" % s_val
-				slider.value = s_val
-				print("EffectsSection: Committed ", key, " input: ", s_val)
-				GlobalSettings.save_setting("Settings", key, s_val)
-				effects_settings_changed.emit()
+		func(_text: String) -> void:
+			_commit_effect_line(slider, line, key, min_v, max_v, step_val)
 			line.release_focus()
 	)
 
 	line.focus_exited.connect(
-		func() -> void:
-			var trimmed: String = line.text.strip_edges()
-			var fallback: String = str(line.get_meta("pre_focus_text", ""))
-			if trimmed.is_empty() or not trimmed.is_valid_float():
-				line.text = fallback
-			else:
-				var c_val: float = clampf(trimmed.to_float(), min_v, max_v)
-				var s_val: float = snappedf(c_val, step_val)
-				line.text = "%.2f" % s_val
-				slider.value = s_val
-				print("EffectsSection: Saved ", key, " on defocus: ", s_val)
-				GlobalSettings.save_setting("Settings", key, s_val)
-				effects_settings_changed.emit()
+		func() -> void: _commit_effect_line(slider, line, key, min_v, max_v, step_val)
 	)
+
+
+## Persists effect slider value if modified from storage.
+func _commit_effect_slider_value(key: String, val: float) -> void:
+	var current: float = float(GlobalSettings.get_setting("Settings", key, -999.0))
+	if not is_equal_approx(current, val):
+		print("EffectsSection: Persisting ", key, " -> ", val)
+		GlobalSettings.save_setting("Settings", key, val)
+		effects_settings_changed.emit()
+
+
+## Commits LineEdit input to effect slider and settings safely.
+func _commit_effect_line(
+	slider: HSlider, line: LineEdit, key: String, min_v: float, max_v: float, step_val: float
+) -> void:
+	var trimmed: String = line.text.strip_edges()
+	var fallback: String = str(line.get_meta("pre_focus_text", ""))
+	if trimmed.is_empty() or not trimmed.is_valid_float():
+		line.text = fallback
+		return
+
+	var c_val: float = clampf(trimmed.to_float(), min_v, max_v)
+	var s_val: float = snappedf(c_val, step_val)
+	var formatted: String = "%.2f" % s_val
+	line.text = formatted
+	line.set_meta("pre_focus_text", formatted)
+
+	var current: float = float(GlobalSettings.get_setting("Settings", key, -999.0))
+	slider.set_value_no_signal(s_val)
+
+	if not is_equal_approx(current, s_val):
+		print("EffectsSection: Committed new ", key, " text input: ", s_val)
+		GlobalSettings.save_setting("Settings", key, s_val)
+		effects_settings_changed.emit()
 
 
 ## Synchronizes widgets with values persisted in [GlobalSettings].
@@ -378,15 +439,19 @@ func _select_dropdown_text(dropdown: OptionButton, target_text: String) -> void:
 func _on_tonemap_selected(index: int) -> void:
 	var text: String = tonemap_options.get_item_text(index)
 	print("EffectsSection: Tonemap algorithm selected: ", text)
-	GlobalSettings.save_setting("Settings", "tonemap_mode", text)
-	effects_settings_changed.emit()
+	var current: String = str(GlobalSettings.get_setting("Settings", "tonemap_mode", ""))
+	if current != text:
+		GlobalSettings.save_setting("Settings", "tonemap_mode", text)
+		effects_settings_changed.emit()
 
 
 ## Handles color debanding toggles.
 func _on_debanding_toggled(toggled_on: bool) -> void:
 	print("EffectsSection: Debanding toggled: ", toggled_on)
-	GlobalSettings.save_setting("Settings", "debanding", toggled_on)
-	effects_settings_changed.emit()
+	var current: bool = bool(GlobalSettings.get_setting("Settings", "debanding", not toggled_on))
+	if current != toggled_on:
+		GlobalSettings.save_setting("Settings", "debanding", toggled_on)
+		effects_settings_changed.emit()
 
 
 ## Handles any effect button press, saving setting and notifying pipeline.

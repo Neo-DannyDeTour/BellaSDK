@@ -1,8 +1,10 @@
 ## Controls typography fonts, font scaling, UI scale factor, and field of view.
-## Attached to the DisplayUISection [GridContainer].
 class_name AccessibilityDisplayUISection
 extends GridContainer
 
+# --------------------------------------
+# CONSTANTS
+# --------------------------------------
 ## Base font sizes cached to prevent compounding scale factors.
 const BASE_FONT_SIZES: Dictionary[String, int] = {
 	"default": 16, "Label": 16, "Button": 16, "OptionButton": 14, "LineEdit": 14, "CheckButton": 14
@@ -23,6 +25,9 @@ const DEFAULT_FONT_MODE: int = 0
 ## Default constant value for typography font scaling multiplier.
 const DEFAULT_FONT_SCALE: float = 1.0
 
+# --------------------------------------
+# NODE REFERENCES
+# --------------------------------------
 ## Slider for adjusting camera field of view.
 @onready var fov_slider: HSlider = get_node_or_null("%FOVSlider")
 
@@ -57,6 +62,7 @@ func _ready() -> void:
 
 ## Populates [OptionButton] items for typography fonts.
 func _populate_dropdowns() -> void:
+	print("UI: Populating font options dropdown.")
 	if is_instance_valid(font_option):
 		font_option.clear()
 		for font_name: String in GlobalSettings.get_font_display_names():
@@ -65,6 +71,7 @@ func _populate_dropdowns() -> void:
 
 ## Connects UI input signals for display scaling and typography.
 func _connect_signals() -> void:
+	print("UI: Binding Display & UI input signals.")
 	_connect_slider(
 		fov_slider, fov_input, "base_fov", 60.0, 120.0, "Settings", true, _on_fov_adjusted
 	)
@@ -90,7 +97,7 @@ func _connect_signals() -> void:
 		font_option.item_selected.connect(_on_font_selected)
 
 
-## Reads display, UI, and FOV preferences from [GlobalSettings].
+## Reads display, UI, and FOV preferences from [GlobalSettings] silently.
 func load_settings() -> void:
 	print("UI: Loading Display and UI settings.")
 	_load_slider(fov_slider, fov_input, "base_fov", DEFAULT_FOV, "Settings", true)
@@ -99,34 +106,18 @@ func load_settings() -> void:
 			GlobalSettings.get_setting("Settings", "disable_sprint_fov", DEFAULT_DISABLE_SPRINT_FOV)
 		)
 		sprint_fov_checkbox.set_pressed_no_signal(disable_sprint)
-	_apply_fov_settings()
+	apply_current_fov_to_preview()
 
 	_load_slider(ui_scale_slider, ui_scale_input, "ui_scale", DEFAULT_UI_SCALE, "Settings")
-	_apply_ui_scale(
-		ui_scale_slider.value if is_instance_valid(ui_scale_slider) else DEFAULT_UI_SCALE
-	)
-
 	_load_slider(font_scale_slider, font_scale_input, "font_scale", DEFAULT_FONT_SCALE, "Settings")
-	_apply_font_scale_settings(
-		font_scale_slider.value if is_instance_valid(font_scale_slider) else DEFAULT_FONT_SCALE
-	)
 
 	if is_instance_valid(font_option):
 		font_option.selected = int(
 			GlobalSettings.get_setting("Settings", "font_mode", DEFAULT_FONT_MODE)
 		)
-		_apply_font_settings()
 
 
-## Connects companion slider and LineEdit pairs with instant clear and revert on defocus.
-## [param slider] The [HSlider] node.
-## [param input_box] The [LineEdit] node.
-## [param key] Setting key identifier.
-## [param min_val] Minimum clamp limit.
-## [param max_val] Maximum clamp limit.
-## [param section] [GlobalSettings] section category.
-## [param is_int] Whether to format display text as integer.
-## [param apply_cb] The [Callable] invoked when numeric value modifies.
+## Connects companion slider and LineEdit pairs with throttled commit logic.
 func _connect_slider(
 	slider: HSlider,
 	input_box: LineEdit,
@@ -144,13 +135,14 @@ func _connect_slider(
 			func(val: float) -> void:
 				if is_instance_valid(input_box) and not input_box.has_focus():
 					input_box.text = str(int(val)) if is_int else ("%.2f" % val)
-				apply_cb.call(val)
+				if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
+					_commit_display_slider_val(key, val, section, apply_cb)
 		)
 		slider.drag_ended.connect(
 			func(changed: bool) -> void:
 				if changed:
 					print("Player adjusted ", key, " to: ", slider.value)
-					GlobalSettings.save_setting(section, key, slider.value)
+					_commit_display_slider_val(key, slider.value, section, apply_cb)
 		)
 
 	if is_instance_valid(input_box):
@@ -160,43 +152,60 @@ func _connect_slider(
 				input_box.text = ""
 		)
 		input_box.text_submitted.connect(
-			func(txt: String) -> void:
-				var trimmed: String = txt.strip_edges()
-				var fallback: String = str(input_box.get_meta("pre_focus_text", ""))
-				if trimmed == "" or not trimmed.is_valid_float():
-					input_box.text = fallback
-				else:
-					var clamped_val: float = clampf(trimmed.to_float(), min_val, max_val)
-					input_box.text = str(int(clamped_val)) if is_int else ("%.2f" % clamped_val)
-					print("Player manually typed ", key, " input: ", clamped_val)
-					GlobalSettings.save_setting(section, key, clamped_val)
-					if is_instance_valid(slider):
-						slider.value = clamped_val
+			func(_txt: String) -> void:
+				_commit_display_line_edit(
+					slider, input_box, key, min_val, max_val, section, is_int, apply_cb
+				)
 				input_box.release_focus()
 		)
 		input_box.focus_exited.connect(
 			func() -> void:
-				var trimmed: String = input_box.text.strip_edges()
-				var fallback: String = str(input_box.get_meta("pre_focus_text", ""))
-				if trimmed == "" or not trimmed.is_valid_float():
-					input_box.text = fallback
-				else:
-					var clamped_val: float = clampf(trimmed.to_float(), min_val, max_val)
-					input_box.text = str(int(clamped_val)) if is_int else ("%.2f" % clamped_val)
-					if is_instance_valid(slider) and not is_equal_approx(slider.value, clamped_val):
-						print("Player committed ", key, " input on defocus: ", clamped_val)
-						GlobalSettings.save_setting(section, key, clamped_val)
-						slider.value = clamped_val
+				_commit_display_line_edit(
+					slider, input_box, key, min_val, max_val, section, is_int, apply_cb
+				)
 		)
 
 
+## Commits slider value and triggers callback if modified.
+func _commit_display_slider_val(
+	key: String, val: float, section: String, apply_cb: Callable
+) -> void:
+	var current: float = float(GlobalSettings.get_setting(section, key, -999.0))
+	if not is_equal_approx(current, val):
+		GlobalSettings.save_setting(section, key, val)
+		if apply_cb.is_valid():
+			apply_cb.call(val)
+
+
+## Commits LineEdit input to slider and storage safely.
+func _commit_display_line_edit(
+	slider: HSlider,
+	input_box: LineEdit,
+	key: String,
+	min_val: float,
+	max_val: float,
+	section: String,
+	is_int: bool,
+	apply_cb: Callable
+) -> void:
+	var trimmed: String = input_box.text.strip_edges()
+	var fallback: String = str(input_box.get_meta("pre_focus_text", ""))
+	if trimmed.is_empty() or not trimmed.is_valid_float():
+		input_box.text = fallback
+		return
+
+	var clamped_val: float = clampf(trimmed.to_float(), min_val, max_val)
+	var formatted: String = str(int(clamped_val)) if is_int else ("%.2f" % clamped_val)
+	input_box.text = formatted
+	input_box.set_meta("pre_focus_text", formatted)
+
+	if is_instance_valid(slider):
+		slider.set_value_no_signal(clamped_val)
+
+	_commit_display_slider_val(key, clamped_val, section, apply_cb)
+
+
 ## Reads a float setting and synchronizes slider and LineEdit representations.
-## [param slider] The target [HSlider] node.
-## [param input_box] The target [LineEdit] node.
-## [param key] Setting key identifier.
-## [param default_val] Fallback float value.
-## [param section] [GlobalSettings] category section.
-## [param is_int] Format as integer if true.
 func _load_slider(
 	slider: HSlider,
 	input_box: LineEdit,
@@ -213,14 +222,18 @@ func _load_slider(
 
 
 ## Handles slider and typed FOV adjustments.
-## [param _val] Numeric FOV degrees.
 func _on_fov_adjusted(_val: float) -> void:
 	_apply_fov_settings()
 
 
 ## Handles toggling of dynamic sprint FOV expansion.
-## [param toggled_on] Whether sprint FOV expansion is disabled.
 func _on_sprint_fov_toggled(toggled_on: bool) -> void:
+	var current: bool = bool(
+		GlobalSettings.get_setting("Settings", "disable_sprint_fov", DEFAULT_DISABLE_SPRINT_FOV)
+	)
+	if current == toggled_on:
+		return
+
 	print("Player toggled Sprint FOV to: ", toggled_on)
 	GlobalSettings.save_setting("Settings", "disable_sprint_fov", toggled_on)
 	_apply_fov_settings()
@@ -235,7 +248,7 @@ func _apply_fov_settings() -> void:
 
 	apply_current_fov_to_preview()
 
-	var player: Node = get_tree().get_first_node_in_group("player")
+	var player: Node = get_tree().get_first_node_in_group(&"player")
 	if is_instance_valid(player) and "camera_controller" in player and player.camera_controller:
 		player.camera_controller.base_fov = current_fov
 		if is_instance_valid(sprint_fov_checkbox):
@@ -256,15 +269,17 @@ func apply_current_fov_to_preview() -> void:
 
 
 ## Adjusts window content scaling factor for user interface elements.
-## [param scale_val] Target UI scale factor.
 func _apply_ui_scale(scale_val: float) -> void:
 	print("Engine: Applying UI Scale adjustments: ", scale_val)
 	get_window().content_scale_factor = scale_val
 
 
 ## Handles font override selection changes from the dropdown menu.
-## [param index] Font selection index.
 func _on_font_selected(index: int) -> void:
+	var current: int = int(GlobalSettings.get_setting("Settings", "font_mode", DEFAULT_FONT_MODE))
+	if current == index:
+		return
+
 	print("UI: Player selected font dropdown index: ", index)
 	GlobalSettings.save_setting("Settings", "font_mode", index)
 	_apply_font_settings()
@@ -281,22 +296,16 @@ func _apply_font_settings() -> void:
 		return
 	var target_font_id: String = font_ids[mode]
 	print("UI: Broadcasting font change to: '", target_font_id, "'.")
-	var events_node: Node = get_node_or_null("/root/Events")
-	if is_instance_valid(events_node) and events_node.has_signal("font_changed"):
-		events_node.font_changed.emit(target_font_id)
+	Events.font_changed.emit(target_font_id)
 
 
 ## Broadcasts typography font scale factor changes across the [Events] bus.
-## [param scale_val] Font scaling multiplier.
 func _apply_font_scale_settings(scale_val: float) -> void:
 	print("Engine: Applying Font Scale adjustments: ", scale_val)
-	var events_node: Node = get_node_or_null("/root/Events")
-	if is_instance_valid(events_node) and events_node.has_signal("font_scale_changed"):
-		events_node.font_scale_changed.emit(scale_val)
+	Events.font_scale_changed.emit(scale_val)
 
 
 ## Updates the font sizes across common [Control] types using the active theme.
-## [param scale_factor] The active font scale multiplier.
 func apply_font_scale_to_theme(scale_factor: float) -> void:
 	print("UI: Rescaling base theme font sizes with factor: ", scale_factor)
 	var target_theme: Theme = theme

@@ -2,25 +2,39 @@
 class_name DisplaySection
 extends VBoxContainer
 
+# --------------------------------------
+# SIGNALS
+# --------------------------------------
 ## Emitted when display settings change to trigger renderer pipeline updates.
 signal display_settings_changed
 
+# --------------------------------------
+# NODE REFERENCES
+# --------------------------------------
 ## Reference to the exclusive fullscreen toggle [Button].
 @onready var fullscreen_button: Button = %FullscreenButton
+
 ## Reference to the borderless windowed toggle [Button].
 @onready var borderless_button: Button = %BorderlessButton
+
 ## Reference to the windowed mode toggle [Button].
 @onready var windowed_button: Button = %WindowedButton
+
 ## Reference to the active monitor [OptionButton].
 @onready var monitor_options: OptionButton = %MonitorOptionButton
+
 ## Reference to the resolution selection [OptionButton].
 @onready var resolution_options: OptionButton = %ResolutionOptionButton
+
 ## Reference to the framerate limit cap [OptionButton].
 @onready var fps_options: OptionButton = %FPSOptionButton
+
 ## Reference to the VSync disabled toggle [Button].
 @onready var vsync_disabled_button: Button = %VSyncDisabledButton
+
 ## Reference to the VSync enabled toggle [Button].
 @onready var vsync_enabled_button: Button = %VSyncEnabledButton
+
 ## Reference to the VSync adaptive toggle [Button].
 @onready var vsync_adaptive_button: Button = %VSyncAdaptiveButton
 
@@ -109,7 +123,6 @@ func load_settings() -> void:
 
 
 ## Synchronizes display mode button toggle states.
-## [param active_mode] The active [enum DisplayServer.WindowMode] enum integer.
 func _update_display_mode_ui(active_mode: int) -> void:
 	print("DisplaySection: Updating display mode buttons for mode: ", active_mode)
 	fullscreen_button.button_pressed = (
@@ -120,7 +133,6 @@ func _update_display_mode_ui(active_mode: int) -> void:
 
 
 ## Synchronizes VSync button toggle states.
-## [param active_mode] The active [enum DisplayServer.VSyncMode] enum integer.
 func _update_vsync_ui(active_mode: int) -> void:
 	print("DisplaySection: Updating VSync buttons for mode: ", active_mode)
 	var is_exclusive: bool = (
@@ -138,7 +150,6 @@ func _update_vsync_ui(active_mode: int) -> void:
 
 
 ## Handles window mode button selection.
-## [param mode] The chosen [enum DisplayServer.WindowMode] enum integer.
 func _on_display_mode_pressed(mode: int) -> void:
 	print("DisplaySection: Display mode selected: ", mode)
 	var current_mode: int = (
@@ -151,7 +162,6 @@ func _on_display_mode_pressed(mode: int) -> void:
 
 
 ## Handles VSync mode button selection.
-## [param mode] The chosen [enum DisplayServer.VSyncMode] enum integer.
 func _on_vsync_mode_pressed(mode: int) -> void:
 	print("DisplaySection: VSync mode selected: ", mode)
 	var current_mode: int = (
@@ -164,8 +174,6 @@ func _on_vsync_mode_pressed(mode: int) -> void:
 
 
 ## Populates a single [OptionButton] with keys from a dictionary.
-## [param dropdown] Target [OptionButton] widget.
-## [param data_dict] Source lookup [Dictionary].
 func _fill_dropdown(dropdown: OptionButton, data_dict: Dictionary) -> void:
 	print("DisplaySection: Populating dropdown entries.")
 	dropdown.clear()
@@ -174,8 +182,6 @@ func _fill_dropdown(dropdown: OptionButton, data_dict: Dictionary) -> void:
 
 
 ## Selects an [OptionButton] item matching target label text.
-## [param dropdown] Target [OptionButton] widget.
-## [param target_text] String label text to match.
 func _select_dropdown_text(dropdown: OptionButton, target_text: String) -> void:
 	print("DisplaySection: Selecting dropdown item by label: ", target_text)
 	for i: int in range(dropdown.get_item_count()):
@@ -185,10 +191,6 @@ func _select_dropdown_text(dropdown: OptionButton, target_text: String) -> void:
 
 
 ## Matches a saved setting value to an item in an [OptionButton].
-## [param dropdown] Target [OptionButton] widget.
-## [param dict] Source lookup [Dictionary].
-## [param key] Setting key identifier [String].
-## [param default_val] Fallback setting value.
 func _sync_dropdown(
 	dropdown: OptionButton, dict: Dictionary, key: String, default_val: Variant
 ) -> void:
@@ -207,7 +209,6 @@ func _sync_dropdown(
 
 
 ## Handles target monitor changes and notifies listeners if modified.
-## [param index] Selected monitor index.
 func _on_monitor_selected(index: int) -> void:
 	print("DisplaySection: Monitor selected: ", index)
 	var current_screen: int = GlobalSettings.get_setting("Settings", "screen_index", 0) as int
@@ -217,7 +218,6 @@ func _on_monitor_selected(index: int) -> void:
 
 
 ## Handles resolution changes and bulk-saves coordinates if modified.
-## [param index] Selected resolution index.
 func _on_resolution_selected(index: int) -> void:
 	print("DisplaySection: Resolution selected: ", index)
 	var text: String = resolution_options.get_item_text(index)
@@ -233,7 +233,6 @@ func _on_resolution_selected(index: int) -> void:
 
 
 ## Handles engine framerate cap limit changes.
-## [param index] Selected framerate limit option index.
 func _on_fps_selected(index: int) -> void:
 	print("DisplaySection: FPS limit selected: ", index)
 	var text: String = fps_options.get_item_text(index)

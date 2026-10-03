@@ -2,25 +2,39 @@
 class_name HardwareSection
 extends VBoxContainer
 
+# --------------------------------------
+# SIGNALS
+# --------------------------------------
 ## Emitted when changing GPU or renderer backend to request confirmation.
 signal restart_required(message: String, renderer_key: String, gpu_idx: int)
 
 ## Emitted when the user starts the automated 60 FPS tuning benchmark pass.
 signal auto_tune_requested
 
+# --------------------------------------
+# NODE REFERENCES
+# --------------------------------------
 ## Reference to the video card selection [OptionButton].
 @onready var gpu_options: OptionButton = %GPUAdapterOptionButton
+
 ## Forward+ renderer toggle [Button].
 @onready var renderer_forward_button: Button = %RendererForwardButton
+
 ## Mobile renderer toggle [Button].
 @onready var renderer_mobile_button: Button = %RendererMobileButton
+
 ## Compatibility renderer toggle [Button].
 @onready var renderer_compat_button: Button = %RendererCompatButton
+
 ## Reference to the auto-optimization benchmark [Button].
 @onready var auto_tune_button: Button = %AutoTuneButton
 
+# --------------------------------------
+# RUNTIME LOOKUP MAPPINGS
+# --------------------------------------
 ## Map storing GPU adapter names mapped to their physical hardware index.
 var _available_gpus: Dictionary = {}
+
 ## Lookup map associating renderer keys with toggle buttons.
 var _renderer_btn_map: Dictionary[String, Button] = {}
 

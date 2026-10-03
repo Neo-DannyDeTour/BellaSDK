@@ -69,7 +69,7 @@ func enter(msg: Dictionary = {}) -> void:
 
 ## Processes surfaces, stair snapping, inputs, and ground momentum via [MathUtils].
 func physics_update(delta: float) -> void:
-	print("StateGround: physics_update() processing ground locomotion frame.")
+	#print("StateGround: physics_update() processing ground locomotion frame.")
 	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
 	var env: PlayerEnvironmentComponent = player.environment_component as PlayerEnvironmentComponent
 
@@ -183,7 +183,7 @@ func _perform_jump() -> void:
 
 ## Calculates target movement speed based on stance, heavy carrying, and terrain.
 func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
-	print("StateGround: _calculate_target_speed() evaluating movement velocities.")
+	#print("StateGround: _calculate_target_speed() evaluating movement velocities.")
 	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
 	var interact: PlayerInteractionComponent = (
 		player.interaction_component as PlayerInteractionComponent
@@ -262,7 +262,7 @@ func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
 
 ## Interpolates horizontal velocity and applies surface friction via [MathUtils].
 func _apply_movement(delta: float, input_dir: Vector2) -> void:
-	print("StateGround: _apply_movement() applying directional momentum.")
+	#print("StateGround: _apply_movement() applying directional momentum.")
 	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
 	var interact: PlayerInteractionComponent = (
 		player.interaction_component as PlayerInteractionComponent

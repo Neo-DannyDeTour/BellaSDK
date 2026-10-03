@@ -1,6 +1,5 @@
 @tool
-## Trigger volume initiating camera fade, blur, and blinking screen overlays upon player entry.
-## Synchronizes volume bounds with an integrated [EditorTriggerVisualizer].
+## Trigger volume initiating camera transition sequences via [ScreenEffectsCore].
 class_name FadeTrigger
 extends Area3D
 
@@ -19,7 +18,7 @@ extends Area3D
 		if is_inside_tree():
 			_update_visuals()
 
-## Local offset applied to both the collision shape and the visualizer node.
+## Local offset applied to both the collision shape and visualizer node.
 @export var trigger_offset: Vector3 = Vector3.ZERO:
 	set(value):
 		trigger_offset = value
@@ -109,17 +108,11 @@ extends Area3D
 ## Tracks whether this trigger has already been activated by a player.
 var _triggered: bool = false
 
-## Stores the currently running animation tween so it can be interrupted if needed.
-var _active_tween: Tween
-
-## Reference to the screen overlay node used for visual effects.
-@onready var overlay: ColorRect = get_node_or_null("CanvasLayer/ColorRect") as ColorRect
-
 ## Cached collision shape child defining the trigger bounds.
 var _collision_shape: CollisionShape3D = null
 
 
-## Initializes bounds, caches baseline shader parameters, and connects callbacks.
+## Initializes bounds and connects body entry callback.
 func _ready() -> void:
 	_collision_shape = get_node_or_null("CollisionShape3D") as CollisionShape3D
 	_update_visuals()
@@ -127,19 +120,13 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 
+	collision_layer = CollisionLayers.MASK_NONE
+	collision_mask = CollisionLayers.MASK_PLAYER
+
 	if not show_in_game:
 		var editor_mesh: EditorTriggerVisualizer = _get_visualizer()
 		if is_instance_valid(editor_mesh):
 			editor_mesh.queue_free()
-
-	if is_instance_valid(overlay):
-		overlay.visible = false
-		var mat: ShaderMaterial = overlay.material as ShaderMaterial
-		if is_instance_valid(mat):
-			mat.set_shader_parameter(&"fade_amount", 0.0)
-			mat.set_shader_parameter(&"blur_amount", 0.0)
-			mat.set_shader_parameter(&"blink_openness", 1.0)
-			mat.set_shader_parameter(&"fade_color", fade_color)
 
 	if not body_entered.is_connected(_on_body_entered):
 		body_entered.connect(_on_body_entered)
@@ -212,133 +199,20 @@ func _on_body_entered(body: Node3D) -> void:
 
 	_triggered = true
 	print("FadeTrigger: Activated by: ", body.name, ". Starting screen fade sequence.")
-	_start_effect_sequence()
+	_dispatch_fade_sequence()
 
 
-## Orchestrates tween phases for screen fade, blur, and eye-blink animations.
-func _start_effect_sequence() -> void:
-	print("FadeTrigger: Executing visual effect sequence overlays.")
-	if not is_instance_valid(overlay):
-		overlay = get_node_or_null("CanvasLayer/ColorRect") as ColorRect
-		if not is_instance_valid(overlay):
-			push_error("FadeTrigger: Missing CanvasLayer/ColorRect overlay node.")
-			return
-
-	var mat: ShaderMaterial = overlay.material as ShaderMaterial
-	if not is_instance_valid(mat):
-		push_error("FadeTrigger: ColorRect is missing a ShaderMaterial.")
-		return
-
-	overlay.visible = true
-
-	if _active_tween != null and _active_tween.is_valid():
-		_active_tween.kill()
-
-	_active_tween = create_tween()
-
-	# --- Phase 1: FADE IN ---
-	(
-		_active_tween
-		. tween_method(_set_fade.bind(mat), 0.0, 1.0, fade_in_duration)
-		. set_trans(Tween.TRANS_SINE)
-		. set_ease(Tween.EASE_IN_OUT)
-	)
-
-	if use_blur:
-		(
-			_active_tween
-			. parallel()
-			. tween_method(_set_blur.bind(mat), 0.0, max_blur, fade_in_duration)
-			. set_trans(Tween.TRANS_SINE)
-			. set_ease(Tween.EASE_IN_OUT)
+## Dispatches screen transition parameters to centralized [ScreenEffectsCore].
+func _dispatch_fade_sequence() -> void:
+	print("FadeTrigger: Dispatching transition payload to ScreenEffectsCore.")
+	if Events.has_signal(&"screen_fade_requested"):
+		Events.screen_fade_requested.emit(
+			fade_color,
+			fade_in_duration,
+			hold_duration,
+			fade_out_duration,
+			use_blur,
+			max_blur,
+			use_blink,
+			blink_count
 		)
-
-	if use_blink:
-		var single_blink_time: float = fade_in_duration / float(blink_count)
-
-		for i: int in range(blink_count):
-			var delay: float = i * single_blink_time
-			var is_last: bool = i == blink_count - 1
-
-			if not is_last:
-				(
-					_active_tween
-					. parallel()
-					. tween_method(_set_blink.bind(mat), 1.0, 0.0, single_blink_time * 0.5)
-					. set_delay(delay)
-					. set_trans(Tween.TRANS_SINE)
-					. set_ease(Tween.EASE_IN_OUT)
-				)
-				(
-					_active_tween
-					. parallel()
-					. tween_method(_set_blink.bind(mat), 0.0, 1.0, single_blink_time * 0.5)
-					. set_delay(delay + single_blink_time * 0.5)
-					. set_trans(Tween.TRANS_SINE)
-					. set_ease(Tween.EASE_IN_OUT)
-				)
-			else:
-				(
-					_active_tween
-					. parallel()
-					. tween_method(_set_blink.bind(mat), 1.0, 0.0, single_blink_time)
-					. set_delay(delay)
-					. set_trans(Tween.TRANS_SINE)
-					. set_ease(Tween.EASE_IN_OUT)
-				)
-
-	# --- Phase 2: HOLD ---
-	_active_tween.tween_interval(hold_duration)
-
-	# --- Phase 3: FADE OUT ---
-	(
-		_active_tween
-		. tween_method(_set_fade.bind(mat), 1.0, 0.0, fade_out_duration)
-		. set_trans(Tween.TRANS_SINE)
-		. set_ease(Tween.EASE_IN_OUT)
-	)
-
-	if use_blur:
-		(
-			_active_tween
-			. parallel()
-			. tween_method(_set_blur.bind(mat), max_blur, 0.0, fade_out_duration)
-			. set_trans(Tween.TRANS_SINE)
-			. set_ease(Tween.EASE_IN_OUT)
-		)
-
-	if use_blink:
-		(
-			_active_tween
-			. parallel()
-			. tween_method(_set_blink.bind(mat), 0.0, 1.0, fade_out_duration)
-			. set_trans(Tween.TRANS_SINE)
-			. set_ease(Tween.EASE_IN_OUT)
-		)
-
-	# --- Phase 4: CLEANUP ---
-	_active_tween.tween_callback(_on_sequence_finished)
-
-
-## Updates screen fade uniform parameter on overlay shader material.
-func _set_fade(value: float, mat: ShaderMaterial) -> void:
-	mat.set_shader_parameter(&"fade_amount", value)
-
-
-## Updates screen blur uniform parameter on overlay shader material.
-func _set_blur(value: float, mat: ShaderMaterial) -> void:
-	mat.set_shader_parameter(&"blur_amount", value)
-
-
-## Updates eye blinking openness uniform parameter on overlay shader material.
-func _set_blink(value: float, mat: ShaderMaterial) -> void:
-	mat.set_shader_parameter(&"blink_openness", value)
-
-
-## Concludes screen transition sequence, hides overlay, and resets single-fire guard.
-func _on_sequence_finished() -> void:
-	print("FadeTrigger: Sequence finished, resetting.")
-	if is_instance_valid(overlay):
-		overlay.visible = false
-	if not trigger_once:
-		_triggered = false
