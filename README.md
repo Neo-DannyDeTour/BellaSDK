@@ -5,6 +5,7 @@
 ![Platforms](https://img.shields.io/badge/Platforms-Windows%20%7C%20Linux-lightgray.svg)
 ![Genre](https://img.shields.io/badge/Genre-FPS-red.svg)
 ![GDScript Lines](https://img.shields.io/badge/GDScript-61k%2B_lines-7852FF?logo=godotengine&logoColor=white)
+![Total Lines](https://sloc.xyz/github/Neo-DannyDeTour/BellaSDK)
 ![Accessibility](https://img.shields.io/badge/Accessibility-Piper_TTS_(WIP)-blueviolet)
 ![Last Commit](https://img.shields.io/github/last-commit/Neo-DannyDeTour/BellaSDK)
 ![Repo Size](https://img.shields.io/github/repo-size/Neo-DannyDeTour/BellaSDK)
