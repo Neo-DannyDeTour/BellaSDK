@@ -5,6 +5,12 @@ extends CanvasLayer
 ## Tracks whether an active loading screen transition is currently in flight.
 static var is_transition_active: bool = false
 
+## Maximum milliseconds budgeted per frame for material warmup.
+const MAX_WARMUP_TIME_MS: int = 12
+
+## Number of idle frames to wait for camera transform settling before SDFGI.
+const SETTLING_FRAMES: int = 4
+
 ## The file path to the level scene that needs to be loaded in the background.
 @export_file("*.tscn", "*.scn") var level_scene_path: String = ""
 
@@ -28,12 +34,6 @@ static var is_transition_active: bool = false
 
 ## The audio player responsible for loading screen background audio.
 @onready var audio_player: AudioStreamPlayer = $VisualRoot/AudioStreamPlayer
-
-## Maximum milliseconds budgeted per frame for material warmup.
-const MAX_WARMUP_TIME_MS: int = 12
-
-## Number of idle frames to wait for camera transform settling before SDFGI.
-const SETTLING_FRAMES: int = 3
 
 ## Array receiving percentage progress from [ResourceLoader].
 var _progress_array: Array[float] = [0.0]
@@ -85,13 +85,11 @@ func _ready() -> void:
 		return
 
 	print("LoadingScreen: Starting background load for: ", level_scene_path)
-	get_tree().paused = true
 	_select_random_presentation()
 
 	var error: Error = ResourceLoader.load_threaded_request(level_scene_path, "", true)
 	if error != OK:
 		push_error("LoadingScreen: Request failed: " + error_string(error))
-		get_tree().paused = false
 		_cleanup_warmup_viewport()
 		set_process(false)
 		return
@@ -138,14 +136,12 @@ func _process(_delta: float) -> void:
 
 			ResourceLoader.THREAD_LOAD_FAILED:
 				set_process(false)
-				get_tree().paused = false
 				audio_player.stop()
 				_cleanup_warmup_viewport()
 				push_error("LoadingScreen: Failed loading assets from disk.")
 
 			ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
 				set_process(false)
-				get_tree().paused = false
 				audio_player.stop()
 				_cleanup_warmup_viewport()
 				push_error("LoadingScreen: Invalid scene path provided.")
@@ -163,6 +159,7 @@ func _start_shader_warmup() -> void:
 
 	print("LoadingScreen: Allocating isolated warmup SubViewport.")
 	_warmup_viewport = SubViewport.new()
+	_warmup_viewport.process_mode = Node.PROCESS_MODE_ALWAYS
 	_warmup_viewport.own_world_3d = true
 	_warmup_viewport.world_3d = World3D.new()
 	_warmup_viewport.size = Vector2i(64, 64)
@@ -220,19 +217,18 @@ func _compile_materials_budgeted() -> void:
 		var start_time: int = Time.get_ticks_msec()
 
 		while _compile_index < total_mats:
-			var mat: Material = baked_shader_cache.materials[_compile_index]
-			if is_instance_valid(mat):
-				_warmup_material(mat)
+			var res: Resource = baked_shader_cache.materials[_compile_index]
+			if res is Material:
+				_warmup_material(res as Material)
 			_compile_index += 1
 
 			var warmup_ratio: float = float(_compile_index) / float(total_mats)
 			progress_bar.value = 70.0 + (warmup_ratio * 30.0)
 
 			if (Time.get_ticks_msec() - start_time) >= MAX_WARMUP_TIME_MS:
-				await get_tree().process_frame
 				break
 
-	await get_tree().process_frame
+		await get_tree().process_frame
 
 	print("LoadingScreen: Shader warmup completed. Freeing warmup viewport.")
 	_cleanup_warmup_viewport()
@@ -273,7 +269,7 @@ func _cleanup_warmup_viewport() -> void:
 		_warmup_quad_mesh = null
 
 
-## Finalizes scene switch, stages SDFGI, and synchronizes video settings.
+## Finalizes scene switch, sweeps camera to compile PSOs, and stages SDFGI.
 func _finalize_scene_transition() -> void:
 	print("LoadingScreen: Evicting previous levels and mounting new scene.")
 	set_process(false)
@@ -285,7 +281,6 @@ func _finalize_scene_transition() -> void:
 	)
 	if not is_instance_valid(loaded_scene):
 		push_error("LoadingScreen: Failed to retrieve valid PackedScene.")
-		get_tree().paused = false
 		return
 
 	var root: Window = get_tree().root
@@ -305,30 +300,32 @@ func _finalize_scene_transition() -> void:
 	var new_scene: Node = loaded_scene.instantiate()
 	if not is_instance_valid(new_scene):
 		push_error("LoadingScreen: Failed to instantiate PackedScene.")
-		get_tree().paused = false
 		return
 
 	var world_env: WorldEnvironment = _find_world_environment(new_scene)
 	var target_env: Environment = null
-	var should_enable_sdfgi: bool = false
 
 	if is_instance_valid(world_env) and is_instance_valid(world_env.environment):
 		world_env.environment = world_env.environment.duplicate()
 		target_env = world_env.environment
-		should_enable_sdfgi = target_env.sdfgi_enabled
 		target_env.sdfgi_enabled = false
-		print("LoadingScreen: Staged SDFGI off on duplicated environment.")
+		print("LoadingScreen: Initialized environment with SDFGI staged off.")
 
 	root.add_child(new_scene)
 	get_tree().current_scene = new_scene
+
+	var chunker: WorldChunkManager = (
+		new_scene.find_child("WorldChunkManager", true, false) as WorldChunkManager
+	)
+	if is_instance_valid(chunker):
+		print("LoadingScreen: Waiting for WorldChunkManager initial zone...")
+		await chunker.initial_zone_ready
 
 	var player_node: Player = new_scene.find_child("Player", true, false) as Player
 	if is_instance_valid(player_node):
 		if is_instance_valid(player_node.locomotion_component):
 			player_node.locomotion_component.set_physics_active(false)
 		player_node.velocity = Vector3.ZERO
-
-	get_tree().paused = false
 
 	await get_tree().physics_frame
 	await get_tree().physics_frame
@@ -338,17 +335,38 @@ func _finalize_scene_transition() -> void:
 		_snap_player_to_floor(player_node)
 		player_node.activate_gameplay_camera()
 
+	# 1. Synchronize render pipeline, shadow atlas, and AA first
+	print("LoadingScreen: Synchronizing viewport pipeline prior to GI activation.")
+	await _reapply_active_video_settings()
+
+	# 2. Settle camera transform
 	for frame_idx: int in range(SETTLING_FRAMES):
 		await get_tree().process_frame
 
+	# 3. Activate SDFGI
+	var sdfgi_setting: String = (
+		GlobalSettings.get_setting("Settings", "sdfgi", VideoConfig.DEFAULT_SDFGI) as String
+	)
+	var sdfgi_dict: Dictionary = VideoConfig.SDFGI_MODES.get(sdfgi_setting, {}) as Dictionary
+	var should_enable_sdfgi: bool = sdfgi_dict.get("enabled", false) as bool
+
 	if is_instance_valid(target_env) and should_enable_sdfgi:
 		target_env.sdfgi_enabled = true
-		print("LoadingScreen: Camera settled. SDFGI enabled smoothly.")
+		print("LoadingScreen: SDFGI enabled smoothly.")
 		await get_tree().process_frame
 		await get_tree().process_frame
 
-	_reapply_active_video_settings()
+	# 4. 360-Degree Frustum Warmup (Forces Vulkan PSO compilation behind the black screen)
+	if is_instance_valid(player_node) and is_instance_valid(player_node.camera_controller):
+		print("LoadingScreen: Performing 360-degree frustum sweep to cache pipeline states.")
+		var original_rot: float = player_node.rotation.y
+		for angle_deg: float in [90.0, 180.0, 270.0, 0.0]:
+			player_node.rotation.y = original_rot + deg_to_rad(angle_deg)
+			await get_tree().process_frame
+		player_node.rotation.y = original_rot
+		await get_tree().process_frame
 
+	# 5. Fade out transition
 	var fade_tween: Tween = create_tween()
 	fade_tween.tween_property(visual_root, "modulate:a", 0.0, 0.25)
 	await fade_tween.finished
@@ -390,9 +408,6 @@ func _reapply_active_video_settings() -> void:
 	var ssr_key: String = (
 		GlobalSettings.get_setting("Settings", "ssr", VideoConfig.DEFAULT_SSR) as String
 	)
-	var sdfgi_key: String = (
-		GlobalSettings.get_setting("Settings", "sdfgi", VideoConfig.DEFAULT_SDFGI) as String
-	)
 	var fog_key: String = (
 		GlobalSettings.get_setting("Settings", "volumetric_fog", VideoConfig.DEFAULT_FOG) as String
 	)
@@ -427,11 +442,11 @@ func _reapply_active_video_settings() -> void:
 		"ssao": VideoConfig.SSAO_MODES.get(ssao_key, {}) as Dictionary,
 		"ssi": VideoConfig.SSI_MODES.get(ssi_key, {}) as Dictionary,
 		"ssr": VideoConfig.SSR_MODES.get(ssr_key, {}) as Dictionary,
-		"sdfgi": VideoConfig.SDFGI_MODES.get(sdfgi_key, {}) as Dictionary,
+		"sdfgi": {"enabled": false},
 		"fog": VideoConfig.FOG_MODES.get(fog_key, {}) as Dictionary,
 		"glow": VideoConfig.GLOW_MODES.get(glow_key, {}) as Dictionary,
 	}
-	VideoApplier.apply_viewport_pipeline(get_tree(), get_viewport(), config)
+	await VideoApplier.apply_viewport_pipeline(get_tree(), get_viewport(), config)
 
 
 ## Locates [WorldEnvironment] safely even if [param target] is not yet inside the tree.

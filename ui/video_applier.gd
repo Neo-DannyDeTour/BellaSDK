@@ -433,16 +433,17 @@ static func _populate_environment_values(
 
 	var fog_dict: Dictionary = config.get("fog", {}) as Dictionary
 	var fog_active: bool = fog_dict.get("enabled", false) as bool
+	env.volumetric_fog_enabled = fog_active
+
 	if is_preview:
-		env.volumetric_fog_enabled = fog_active
 		if fog_active:
 			env.volumetric_fog_density = 0.02
 			env.volumetric_fog_albedo = Color(0.85, 0.9, 0.95)
 	else:
-		if fog_active and env.volumetric_fog_density > 0.0001:
-			env.volumetric_fog_enabled = true
-		else:
-			env.volumetric_fog_enabled = false
+		if fog_active:
+			print(
+				"VideoApplier: Volumetric fog enabled. Base density: ", env.volumetric_fog_density
+			)
 
 	var glow_dict: Dictionary = config.get("glow", {}) as Dictionary
 	env.glow_enabled = glow_dict.get("enabled", false) as bool

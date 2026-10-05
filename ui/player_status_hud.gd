@@ -1,6 +1,6 @@
+## Player status HUD managing health hearts, hazard slots, and inventory keycards.
 class_name PlayerStatusHUD
 extends MarginContainer
-## Player status HUD managing health hearts, hazard slots, and inventory keycards.
 
 ## Sliced texture frames of health hearts for varying status levels.
 @export var hearts_atlas: Texture2D
@@ -146,6 +146,15 @@ var is_in_steam: bool = false
 ## Tracks if player is actively suffering fire damage.
 var is_in_fire: bool = false
 
+## Tracks last rendered tenth of second for sprint timer label.
+var _last_sprint_tenth: int = -1
+
+## Tracks last rendered tenth of second for immobilize timer label.
+var _last_move_tenth: int = -1
+
+## Tracks last rendered tenth of second for swim timer label.
+var _last_swim_tenth: int = -1
+
 
 ## Lifecycle method called when node enters the tree.
 func _ready() -> void:
@@ -180,7 +189,7 @@ func _initialize_indicators() -> void:
 	fire_timer_label.hide()
 
 
-## Binds status and keycard events from global bus using [Utilities.safe_connect].
+## Binds status and keycard events from global bus using [method Utilities.safe_connect].
 func _connect_signals() -> void:
 	print("PlayerStatusHUD: Connecting global event bus signals.")
 	Utilities.safe_connect(Events.player_health_changed, update_health)
@@ -400,6 +409,7 @@ func _on_sprint_debuff_applied(duration: float) -> void:
 	sprint_bar.max_value = duration
 	sprint_bar.value = duration
 	sprint_timer_label.text = "%.1fs" % duration
+	_last_sprint_tenth = -1
 
 	_sync_sprint_display()
 
@@ -409,14 +419,14 @@ func _on_sprint_debuff_applied(duration: float) -> void:
 	if not is_instance_valid(debuff_tween):
 		return
 
-	debuff_tween.tween_method(
-		func(val: float) -> void:
-			sprint_bar.value = val
-			sprint_timer_label.text = "%.1fs" % val,
-		duration,
-		0.0,
-		duration
-	)
+	var update_sprint: Callable = func(val: float) -> void:
+		sprint_bar.value = val
+		var current_tenth: int = int(roundf(val * 10.0))
+		if current_tenth != _last_sprint_tenth:
+			_last_sprint_tenth = current_tenth
+			sprint_timer_label.text = "%.1fs" % (float(current_tenth) * 0.1)
+
+	debuff_tween.tween_method(update_sprint, duration, 0.0, duration)
 	debuff_tween.finished.connect(
 		func() -> void:
 			print("PlayerStatusHUD: Timed sprint debuff completed.")
@@ -439,6 +449,7 @@ func _on_immobilize_debuff_applied(duration: float) -> void:
 	move_bar.max_value = duration
 	move_bar.value = duration
 	immobilize_timer_label.text = "%.1fs" % duration
+	_last_move_tenth = -1
 
 	immobilize_tween = Utilities.reset_tween_ext(
 		self, immobilize_tween, Tween.TRANS_LINEAR, Tween.EASE_IN_OUT
@@ -446,14 +457,14 @@ func _on_immobilize_debuff_applied(duration: float) -> void:
 	if not is_instance_valid(immobilize_tween):
 		return
 
-	immobilize_tween.tween_method(
-		func(val: float) -> void:
-			move_bar.value = val
-			immobilize_timer_label.text = "%.1fs" % val,
-		duration,
-		0.0,
-		duration
-	)
+	var update_immobilize: Callable = func(val: float) -> void:
+		move_bar.value = val
+		var current_tenth: int = int(roundf(val * 10.0))
+		if current_tenth != _last_move_tenth:
+			_last_move_tenth = current_tenth
+			immobilize_timer_label.text = "%.1fs" % (float(current_tenth) * 0.1)
+
+	immobilize_tween.tween_method(update_immobilize, duration, 0.0, duration)
 	immobilize_tween.finished.connect(
 		func() -> void:
 			print("PlayerStatusHUD: Immobilize debuff expired. Hiding UI.")
@@ -505,15 +516,16 @@ func _on_oxygen_timer_started(duration: float) -> void:
 	swim_bar.max_value = duration
 	swim_bar.value = duration
 	swim_timer_label.text = "%.1fs" % duration
+	_last_swim_tenth = -1
 
-	swim_tween.tween_method(
-		func(val: float) -> void:
-			swim_bar.value = val
-			swim_timer_label.text = "%.1fs" % val,
-		duration,
-		0.0,
-		duration
-	)
+	var update_swim: Callable = func(val: float) -> void:
+		swim_bar.value = val
+		var current_tenth: int = int(roundf(val * 10.0))
+		if current_tenth != _last_swim_tenth:
+			_last_swim_tenth = current_tenth
+			swim_timer_label.text = "%.1fs" % (float(current_tenth) * 0.1)
+
+	swim_tween.tween_method(update_swim, duration, 0.0, duration)
 	swim_tween.finished.connect(
 		func() -> void:
 			print("PlayerStatusHUD: Swim oxygen timer expired. Drowning begins.")

@@ -118,6 +118,12 @@ var _stored_bg_mode: Environment.BGMode = Environment.BG_KEEP
 ## Stored original environment reference to restore upon tree exit.
 var _original_cctv_env: Environment = null
 
+## Cached squared idle update distance avoiding runtime sqrt calls.
+var _idle_update_dist_sq: float = 64.0
+
+## Empty compositor isolating CCTV camera from compute passes.
+var _empty_cctv_compositor: Compositor = null
+
 
 ## Lifecycle teardown restoring modified environment states and feeds.
 func _exit_tree() -> void:
@@ -138,6 +144,8 @@ func _exit_tree() -> void:
 ## Connects interactable components and applies viewport limits.
 func _ready() -> void:
 	print("CCTV: Initializing security terminal instance: ", name)
+	_idle_update_dist_sq = idle_update_distance * idle_update_distance
+
 	if not is_instance_valid(camera_vp):
 		camera_vp = get_node_or_null("CCTVViewport") as SubViewport
 
@@ -158,6 +166,8 @@ func _ready() -> void:
 	if is_instance_valid(cctv_camera):
 		cctv_camera.far = camera_far_distance
 		target_fov = cctv_camera.fov
+		_isolate_cctv_compositor()
+		_configure_cctv_camera_cull_mask()
 		_force_clear_environment()
 
 	_update_tutorial_text()
@@ -186,6 +196,21 @@ func _configure_cctv_viewport() -> void:
 
 	if is_instance_valid(screen_mat_override):
 		screen_mat_override.albedo_texture = camera_vp.get_texture()
+
+
+## Assigns empty compositor to isolate CCTV camera from compute passes.
+func _isolate_cctv_compositor() -> void:
+	print("CCTV: Isolating compositor for: ", cctv_camera.name)
+	_empty_cctv_compositor = Compositor.new()
+	_empty_cctv_compositor.compositor_effects = []
+	cctv_camera.compositor = _empty_cctv_compositor
+
+
+## Excludes portal and volumetric layers from CCTV camera cull mask.
+func _configure_cctv_camera_cull_mask() -> void:
+	print("CCTV: Configuring camera cull mask for: ", cctv_camera.name)
+	# Layer 4 (Portals = 8) and Layer 10 (Volumetrics = 512): ~520
+	cctv_camera.cull_mask = cctv_camera.cull_mask & ~520
 
 
 ## Manages camera rotation, FOV lerp, and throttles viewport updates.
@@ -224,7 +249,7 @@ func _process_idle_screen(delta: float) -> void:
 		return
 
 	var dist_sq: float = global_position.distance_squared_to(player_node.global_position)
-	if dist_sq > (idle_update_distance * idle_update_distance):
+	if dist_sq > _idle_update_dist_sq:
 		_idle_timer = 0.0
 		return
 

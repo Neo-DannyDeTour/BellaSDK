@@ -1,7 +1,4 @@
-## Visual manager for rendering full-screen cinematic chapter titles.
-##
-## Spawns dynamic animated text overlays using cached shaders and tweens
-## triggered by the [signal Events.chapter_triggered] global event.
+## Visual manager rendering chapter titles and cinematic overlays via cached shaders.
 class_name ChapterDisplay
 extends MarginContainer
 
@@ -41,6 +38,7 @@ const SHADER_VHS: Shader = preload("res://vfx/chapter_text_vhs.gdshader")
 ## Light sweep specular reflection [Shader] resource.
 const SHADER_LIGHT_SWEEP: Shader = preload("res://vfx/chapter_text_light_sweep.gdshader")
 
+## Animation styles routed directly to post-processing shader pipelines.
 const SHADER_ANIM_STYLES: Array[Events.ChapterAnimStyle] = [
 	Events.ChapterAnimStyle.GLITCH,
 	Events.ChapterAnimStyle.REVEAL,
@@ -62,7 +60,7 @@ const SHADER_ANIM_STYLES: Array[Events.ChapterAnimStyle] = [
 @onready var _sub_viewport: SubViewport = $EffectContainer/ChapterLabelSubViewport
 
 ## [RichTextLabel] responsible for rendering chapter text and BBCode.
-@onready var chapter_label: RichTextLabel = %ChapterLabelSubViewport/ChapterLabel
+@onready var chapter_label: RichTextLabel = $EffectContainer/ChapterLabelSubViewport/ChapterLabel
 
 ## Active [Tween] orchestrating chapter title text animation sequences.
 var _chapter_tween: Tween
@@ -74,31 +72,46 @@ var _material_cache: Dictionary[Events.ChapterAnimStyle, ShaderMaterial] = {}
 var _blur_material: ShaderMaterial
 
 
-## Called when node enters the scene tree. Sets up caching and initial gating.
+## Initializes UI anchors, material cache, and connects [Events] signals.
 func _ready() -> void:
 	print("ChapterDisplay: _ready() called. Initializing shader material cache.")
+	set_anchors_preset(Control.PRESET_FULL_RECT)
+	mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	chapter_label.bbcode_enabled = true
 	chapter_label.fit_content = false
 	chapter_label.clip_contents = false
 	chapter_label.modulate.a = 0.0
 	chapter_label.visible = false
+	chapter_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	_init_material_cache()
 
+	if is_instance_valid(effect_container):
+		effect_container.stretch = false
+		effect_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		effect_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+		effect_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		effect_container.material = null
+		effect_container.visible = false
+
 	if is_instance_valid(_sub_viewport):
 		_sub_viewport.disable_3d = true
+		_sub_viewport.transparent_bg = true
 		_sub_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
-
-	if is_instance_valid(effect_container):
-		effect_container.visible = false
 
 	if not Events.chapter_triggered.is_connected(_on_chapter_triggered):
 		Events.chapter_triggered.connect(_on_chapter_triggered)
+
+	if Events.has_signal(&"wake_up_text_requested"):
+		if not Events.wake_up_text_requested.is_connected(_on_wake_up_text_requested):
+			Events.wake_up_text_requested.connect(_on_wake_up_text_requested)
 
 	resized.connect(_on_resized)
 	_on_resized()
 
 
-## Pre-allocates and caches all [ShaderMaterial] instances to avoid runtime allocs.
+## Pre-allocates and caches all [ShaderMaterial] instances.
 func _init_material_cache() -> void:
 	print("ChapterDisplay: Building pre-allocated ShaderMaterial cache.")
 	_material_cache[Events.ChapterAnimStyle.GLITCH] = _create_material(SHADER_GLITCH)
@@ -117,7 +130,6 @@ func _init_material_cache() -> void:
 
 
 ## Helper creating a [ShaderMaterial] with a bound [Shader].
-## [param shader_res] The [Shader] resource to assign.
 func _create_material(shader_res: Shader) -> ShaderMaterial:
 	print("ChapterDisplay: Allocating material for ", shader_res.resource_path)
 	var mat: ShaderMaterial = ShaderMaterial.new()
@@ -128,51 +140,55 @@ func _create_material(shader_res: Shader) -> ShaderMaterial:
 ## Recomputes structural layout constraints when window size changes.
 func _on_resized() -> void:
 	print("ChapterDisplay: _on_resized() called. Updating layout bounds.")
-	if not is_instance_valid(effect_container) or not is_instance_valid(chapter_label):
+	if not is_instance_valid(chapter_label) or not is_inside_tree():
 		return
 
-	set_anchors_preset(Control.PRESET_FULL_RECT)
-	effect_container.set_anchors_preset(Control.PRESET_FULL_RECT)
-	effect_container.custom_minimum_size = Vector2.ZERO
-
 	var screen_size: Vector2 = get_viewport_rect().size
+	if screen_size.x <= 0.0 or screen_size.y <= 0.0:
+		return
+
+	if is_instance_valid(effect_container) and is_instance_valid(_sub_viewport):
+		_sub_viewport.size = Vector2i(screen_size)
+		effect_container.custom_minimum_size = screen_size
+
 	var vertical_offset: float = 60.0
 	var label_height: float = 120.0
 	var centered_y: float = (screen_size.y * 0.5) - (label_height * 0.5) + vertical_offset
-	var half_label_size: Vector2 = Vector2(screen_size.x * 0.5, label_height * 0.5)
 
-	chapter_label.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	chapter_label.set_deferred("size", Vector2(screen_size.x, label_height))
-	chapter_label.set_deferred("position", Vector2(0.0, centered_y))
-	chapter_label.set_deferred("pivot_offset", half_label_size)
+	chapter_label.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	chapter_label.offset_left = 0.0
+	chapter_label.offset_right = 0.0
+	chapter_label.offset_top = centered_y
+	chapter_label.offset_bottom = centered_y + label_height
+	chapter_label.pivot_offset = Vector2(screen_size.x * 0.5, label_height * 0.5)
 
 
 ## Handles chapter sequence triggers by delegating to animation effects.
-## [param chapter_name] Heading text to render.
-## [param anim_style] Transition identifier from [enum Events.ChapterAnimStyle].
-## [param display_duration] Active screen display time in seconds.
-## [param text_color] Font modulation [Color].
 func _on_chapter_triggered(
 	chapter_name: String,
 	anim_style: Events.ChapterAnimStyle,
 	display_duration: float,
 	text_color: Color
 ) -> void:
-	print("ChapterDisplay: Triggered sequence for '", chapter_name, "' with style ID ", anim_style)
+	print("ChapterDisplay: Triggered '", chapter_name, "' with style ID ", anim_style)
+
+	visible = true
+	_on_resized()
+
+	if is_instance_valid(_chapter_tween) and _chapter_tween.is_valid():
+		_chapter_tween.kill()
 
 	if is_instance_valid(_sub_viewport):
-		_sub_viewport.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
+		_sub_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 
 	if is_instance_valid(effect_container):
+		effect_container.modulate = Color.WHITE
+		effect_container.material = null
 		effect_container.visible = true
 
 	chapter_label.add_theme_color_override("default_color", text_color)
 	chapter_label.visible = true
 	chapter_label.material = null
-	chapter_label.pivot_offset = chapter_label.size / 2.0
-
-	if _chapter_tween and _chapter_tween.is_valid():
-		_chapter_tween.kill()
 
 	_chapter_tween = create_tween()
 
@@ -181,7 +197,7 @@ func _on_chapter_triggered(
 	else:
 		match anim_style:
 			Events.ChapterAnimStyle.SIMPLE:
-				_play_simple(chapter_name, display_duration)
+				_play_simple(chapter_name, display_duration, 1.0, 1.0)
 			Events.ChapterAnimStyle.WAVE:
 				_play_wave(chapter_name, display_duration)
 			Events.ChapterAnimStyle.GLOW:
@@ -200,9 +216,35 @@ func _on_chapter_triggered(
 				_play_blur(chapter_name, display_duration)
 			_:
 				print("ChapterDisplay: Unknown style ID, triggering fallback.")
-				_play_simple(chapter_name, display_duration)
+				_play_simple(chapter_name, display_duration, 1.0, 1.0)
 
-	_chapter_tween.chain().tween_callback(_disable_viewport)
+	_chapter_tween.finished.connect(_disable_viewport)
+
+
+## Handles cinematic text requests from wake-up triggers with custom timings.
+func _on_wake_up_text_requested(text: String, fade_in: float, hold: float, fade_out: float) -> void:
+	print("ChapterDisplay: Playing wake-up text sequence: '", text, "'")
+	visible = true
+	_on_resized()
+
+	if is_instance_valid(_chapter_tween) and _chapter_tween.is_valid():
+		_chapter_tween.kill()
+
+	if is_instance_valid(_sub_viewport):
+		_sub_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+
+	if is_instance_valid(effect_container):
+		effect_container.modulate = Color.WHITE
+		effect_container.material = null
+		effect_container.visible = true
+
+	chapter_label.add_theme_color_override("default_color", Color.WHITE)
+	chapter_label.visible = true
+	chapter_label.material = null
+
+	_chapter_tween = create_tween()
+	_play_simple(text, hold, fade_in, fade_out)
+	_chapter_tween.finished.connect(_disable_viewport)
 
 
 ## Shuts down the [SubViewport] rendering pipeline once animations conclude.
@@ -215,25 +257,24 @@ func _disable_viewport() -> void:
 		effect_container.material = null
 	if is_instance_valid(_sub_viewport):
 		_sub_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	hide()
 
 
-## Displays text statically with a smooth fade in and fade out.
-## [param chapter_name] Display text string.
-## [param duration] Visible display duration in seconds.
-func _play_simple(chapter_name: String, duration: float) -> void:
+## Displays text statically with configurable fade and hold durations.
+func _play_simple(
+	chapter_name: String, duration: float, fade_in: float = 1.0, fade_out: float = 1.0
+) -> void:
 	print("ChapterDisplay: Playing SIMPLE animation.")
 	chapter_label.text = "[center]" + chapter_name + "[/center]"
 	chapter_label.visible_ratio = 1.0
 	chapter_label.modulate.a = 0.0
 
-	_chapter_tween.tween_property(chapter_label, "modulate:a", 1.0, 1.0)
+	_chapter_tween.tween_property(chapter_label, "modulate:a", 1.0, fade_in)
 	_chapter_tween.tween_interval(duration)
-	_chapter_tween.tween_property(chapter_label, "modulate:a", 0.0, 1.0)
+	_chapter_tween.tween_property(chapter_label, "modulate:a", 0.0, fade_out)
 
 
 ## Applies a continuous sine wave undulation effect to text characters.
-## [param chapter_name] Display text string.
-## [param duration] Visible display duration in seconds.
 func _play_wave(chapter_name: String, duration: float) -> void:
 	print("ChapterDisplay: Playing WAVE animation.")
 	var wave_tag: String = "[wave amp=50.0 freq=5.0 connected=1]"
@@ -247,8 +288,6 @@ func _play_wave(chapter_name: String, duration: float) -> void:
 
 
 ## Iteratively reveals characters simulating terminal typewriter text.
-## [param chapter_name] Display text string.
-## [param duration] Visible display duration in seconds.
 func _play_typewriter(chapter_name: String, duration: float) -> void:
 	print("ChapterDisplay: Playing TYPEWRITER animation.")
 	chapter_label.modulate.a = 1.0
@@ -264,8 +303,6 @@ func _play_typewriter(chapter_name: String, duration: float) -> void:
 
 
 ## Drives a physical slam animation with anticipation and bounce.
-## [param chapter_name] Display text string.
-## [param duration] Visible display duration in seconds.
 func _play_slam(chapter_name: String, duration: float) -> void:
 	print("ChapterDisplay: Playing SLAM animation with anticipation jump.")
 	chapter_label.text = "[center]" + chapter_name + "[/center]"
@@ -330,15 +367,12 @@ func _play_slam(chapter_name: String, duration: float) -> void:
 
 
 ## Expands text scale aggressively outward using spring easing.
-## [param chapter_name] Display text string.
-## [param duration] Visible display duration in seconds.
 func _play_spring(chapter_name: String, duration: float) -> void:
 	print("ChapterDisplay: Playing SPRING animation.")
 	chapter_label.text = "[center]" + chapter_name + "[/center]"
 	chapter_label.visible_ratio = 1.0
 	chapter_label.modulate.a = 1.0
 	chapter_label.scale = Vector2.ZERO
-	chapter_label.pivot_offset = chapter_label.size / 2.0
 
 	var intro_time: float = 0.8
 	var outro_time: float = 0.5
@@ -357,8 +391,6 @@ func _play_spring(chapter_name: String, duration: float) -> void:
 
 
 ## Drifts text smoothly across the screen diagonally.
-## [param chapter_name] Display text string.
-## [param duration] Visible display duration in seconds.
 func _play_drift(chapter_name: String, duration: float) -> void:
 	print("ChapterDisplay: Playing DRIFT animation.")
 	chapter_label.text = "[center]" + chapter_name + "[/center]"
@@ -386,16 +418,13 @@ func _play_drift(chapter_name: String, duration: float) -> void:
 
 
 ## Applies a pre-cached [ShaderMaterial] and animates its progress uniform.
-## [param chapter_name] Display text string.
-## [param duration] Visible display duration in seconds.
-## [param anim_style] Target shader animation style key.
 func _play_cached_shader(
 	chapter_name: String, duration: float, anim_style: Events.ChapterAnimStyle
 ) -> void:
 	print("ChapterDisplay: Playing cached shader effect for style ", anim_style)
 	var mat: ShaderMaterial = _material_cache.get(anim_style)
 	if not is_instance_valid(mat):
-		_play_simple(chapter_name, duration)
+		_play_simple(chapter_name, duration, 1.0, 1.0)
 		return
 
 	chapter_label.text = "[center]" + chapter_name + "[/center]"
@@ -415,8 +444,6 @@ func _play_cached_shader(
 
 
 ## Fades out and blurs text using the cached depth-of-field [ShaderMaterial].
-## [param chapter_name] Display text string.
-## [param duration] Visible display duration in seconds.
 func _play_blur(chapter_name: String, duration: float) -> void:
 	print("ChapterDisplay: Playing BLUR animation with cached material.")
 	chapter_label.text = "[center]" + chapter_name + "[/center]"
@@ -460,8 +487,6 @@ func _play_blur(chapter_name: String, duration: float) -> void:
 
 
 ## Manipulates text stroke borders to create a pulsating neon light halo.
-## [param chapter_name] Display text string.
-## [param duration] Visible display duration in seconds.
 func _play_glow(chapter_name: String, duration: float) -> void:
 	print("ChapterDisplay: Playing GLOW animation via outline tween.")
 	chapter_label.text = "[center]" + chapter_name + "[/center]"
@@ -508,15 +533,12 @@ func _play_glow(chapter_name: String, duration: float) -> void:
 
 
 ## Animates text scale repetitively mimicking a heartbeat pulse.
-## [param chapter_name] Display text string.
-## [param duration] Visible display duration in seconds.
 func _play_heartbeat(chapter_name: String, duration: float) -> void:
 	print("ChapterDisplay: Playing HEARTBEAT animation.")
 	chapter_label.text = "[center]" + chapter_name + "[/center]"
 	chapter_label.visible_ratio = 1.0
 	chapter_label.modulate.a = 0.0
 	chapter_label.scale = Vector2.ONE
-	chapter_label.pivot_offset = chapter_label.size / 2.0
 
 	var fade_time: float = 0.5
 	var pulse_time: float = 0.35

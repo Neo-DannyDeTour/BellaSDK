@@ -259,7 +259,14 @@ func _on_start_game_pressed() -> void:
 	var parent: Node = get_parent()
 	if is_instance_valid(parent) and parent.has_method("toggle_pause"):
 		await prepare_for_level_transition()
-		get_tree().reload_current_scene()
+		var current_path: String = get_tree().current_scene.scene_file_path
+		if not current_path.is_empty() and ResourceLoader.exists("res://ui/loading_screen.tscn"):
+			var loader_scene: PackedScene = load("res://ui/loading_screen.tscn") as PackedScene
+			var loader: LoadingScreen = loader_scene.instantiate() as LoadingScreen
+			loader.level_scene_path = current_path
+			get_tree().root.add_child(loader)
+		else:
+			get_tree().reload_current_scene()
 
 
 ## Opens the options menu overlay and awakens diorama rendering.

@@ -26,8 +26,14 @@ extends Control
 ## ColorRect applying full-screen canine dichromatic color and acuity filtering.
 @onready var wolf_vision_overlay: ColorRect = $WolfVisionOverlay
 
+## ColorRect applying full-screen fade transitions and color flashes.
+@onready var fade_overlay: ColorRect = $FadeOverlay
+
 ## Animates smooth strength transitions when toggling wolf vision.
 var wolf_vision_tween: Tween
+
+## Active [Tween] animating full-screen fade and blink transitions.
+var fade_tween: Tween
 
 ## The speed multiplier for vignette interpolation animations.
 var ui_lerp_speed: float = 15.0
@@ -68,10 +74,13 @@ var _is_underwater_active: bool = false
 ## Tracks whether the camera is currently playing the surfacing waterfall wipe.
 var _is_surfacing_active: bool = false
 
+## Cached shader material applied to the fullscreen transition overlay.
+var _fade_material: ShaderMaterial = null
+
 
 ## Initializes layout, default shader states, and connects event listeners.
 func _ready() -> void:
-	print("ScreenEffectsManager: _ready() called. Initializing overlay materials.")
+	print("ScreenEffectsManager: Initializing overlay materials.")
 	_setup_fullscreen_layout()
 	_initialize_overlays()
 	_connect_signals()
@@ -91,7 +100,8 @@ func _setup_fullscreen_layout() -> void:
 		glitch_overlay,
 		fisheye_zoom,
 		water_vfx_overlay,
-		wolf_vision_overlay
+		wolf_vision_overlay,
+		fade_overlay
 	]
 
 	for overlay: Control in overlays:
@@ -103,6 +113,16 @@ func _setup_fullscreen_layout() -> void:
 ## Sets default shader parameter states and hides inactive visual overlays.
 func _initialize_overlays() -> void:
 	print("ScreenEffectsManager: Initializing default overlay parameters.")
+	if is_instance_valid(vignette):
+		if vignette.material is ShaderMaterial:
+			(vignette.material as ShaderMaterial).set_shader_parameter(&"vignette_opacity", 0.0)
+		vignette.hide()
+
+	_ensure_fade_material()
+	if is_instance_valid(fade_overlay):
+		fade_overlay.modulate = Color.WHITE
+		fade_overlay.hide()
+
 	if is_instance_valid(glitch_overlay) and glitch_overlay.material is ShaderMaterial:
 		(glitch_overlay.material as ShaderMaterial).set_shader_parameter(&"intensity", 0.0)
 		glitch_overlay.hide()
@@ -134,6 +154,26 @@ func _initialize_overlays() -> void:
 		wolf_vision_overlay.hide()
 
 
+## Verifies material presence and instantiates fallback transition shader.
+func _ensure_fade_material() -> void:
+	if not is_instance_valid(fade_overlay):
+		return
+
+	if is_instance_valid(fade_overlay.material) and fade_overlay.material is ShaderMaterial:
+		_fade_material = fade_overlay.material as ShaderMaterial
+		return
+
+	const SHADER_PATH: String = "res://shaders/screen_transition.gdshader"
+	if ResourceLoader.exists(SHADER_PATH):
+		var shader: Shader = load(SHADER_PATH) as Shader
+		if is_instance_valid(shader):
+			_fade_material = ShaderMaterial.new()
+			_fade_material.shader = shader
+			fade_overlay.material = _fade_material
+	else:
+		push_warning("ScreenEffectsManager: Shader file not found at " + SHADER_PATH)
+
+
 ## Safely binds overlay events from the global [Events] bus.
 func _connect_signals() -> void:
 	print("ScreenEffectsManager: Connecting global event bus signals.")
@@ -149,9 +189,12 @@ func _connect_signals() -> void:
 		Events.waterfall_vfx_toggled.connect(_on_waterfall_vfx_toggled)
 	if not Events.rain_vfx_toggled.is_connected(_on_rain_vfx_toggled):
 		Events.rain_vfx_toggled.connect(_on_rain_vfx_toggled)
-	if Events.has_signal("wolf_vision_toggled"):
-		if not Events.wolf_vision_toggled.is_connected(_on_wolf_vision_toggled):
-			Events.wolf_vision_toggled.connect(_on_wolf_vision_toggled)
+	if Events.has_signal(&"screen_blackout_instant_requested"):
+		Events.screen_blackout_instant_requested.connect(set_screen_black_instant)
+	if Events.has_signal(&"screen_wake_up_requested"):
+		Events.screen_wake_up_requested.connect(start_wake_up)
+	if Events.has_signal(&"screen_fade_requested"):
+		Events.screen_fade_requested.connect(_on_screen_fade_requested)
 
 
 ## Updates screen-space vignette transitions and rain pitch scaling every frame.
@@ -164,6 +207,7 @@ func _process(delta: float) -> void:
 			current_opacity, target_vignette_opacity, delta * ui_lerp_speed
 		)
 		mat.set_shader_parameter(&"vignette_opacity", new_opacity)
+		vignette.visible = new_opacity > 0.001
 
 	_process_rain_pitch_and_vfx(delta)
 
@@ -175,7 +219,6 @@ func _on_player_crouched(crouching: bool) -> void:
 
 
 ## Smoothly tweens the fisheye lens distortion when zooming in or out.
-## [param is_zooming] True if the player is actively zoomed in.
 func _on_player_zoomed(is_zooming: bool) -> void:
 	print("ScreenEffectsManager: _on_player_zoomed() received -> ", is_zooming)
 	if not is_instance_valid(fisheye_zoom) or not (fisheye_zoom.material is ShaderMaterial):
@@ -301,21 +344,7 @@ func _on_player_electrocuted() -> void:
 
 
 ## Updates unified water overlay parameters and handles automatic node visibility.
-## [param mode] 0 = Basic Ripples/Droplets, 1 = Diagonal Wipe, 2 = Waterfall Flow.
-## [param drops] Intensity for pop-in droplets (0.0 to 1.0).
-## [param wash] Intensity for center rings/flowing water (0.0 to 1.0).
-## [param clear_prog] Wipe progress across screen (0.0 to 1.5).
 func set_water_vfx_state(mode: int, drops: float, wash: float, clear_prog: float = 0.0) -> void:
-	print(
-		"ScreenEffectsManager: Setting Water VFX mode -> ",
-		mode,
-		" drops -> ",
-		drops,
-		" wash -> ",
-		wash,
-		" wipe -> ",
-		clear_prog
-	)
 	if not is_instance_valid(water_vfx_overlay):
 		return
 
@@ -359,21 +388,10 @@ func _on_underwater_vfx_toggled(
 	is_submerged: bool, wash_intensity: float, drop_intensity: float, clear_prog: float
 ) -> void:
 	_is_underwater_active = is_submerged
-	print(
-		"ScreenEffectsManager: Underwater VFX -> Submerged: ",
-		is_submerged,
-		" Wash: ",
-		wash_intensity,
-		" Drops: ",
-		drop_intensity
-	)
-
 	if is_submerged:
 		_is_surfacing_active = false
-		# Fullscreen submerged refraction & ambient distortion
 		set_water_vfx_state(0, drop_intensity, wash_intensity, 0.0)
 	else:
-		# Surfaced: droplets on lens if drops remain, else fully clear
 		if drop_intensity > 0.001:
 			_is_surfacing_active = true
 			set_water_vfx_state(0, drop_intensity, 0.0, clear_prog)
@@ -385,7 +403,6 @@ func _on_underwater_vfx_toggled(
 ## Handles waterfall screen wash and wipe transitions emitted by WaterfallStream.
 func _on_waterfall_vfx_toggled(is_active: bool, wash_intensity: float, clear_prog: float) -> void:
 	_is_waterfall_active = is_active
-	print("ScreenEffectsManager: Waterfall VFX -> Active: ", is_active, " Wipe: ", clear_prog)
 	if is_active:
 		set_water_vfx_state(2, 0.6, wash_intensity, clear_prog)
 	else:
@@ -406,7 +423,6 @@ func _on_rain_vfx_toggled(intensity: float) -> void:
 
 
 ## Smoothly blends canine dichromacy post-processing effect in and out.
-## [param is_active] True if the wolf vision filter should be displayed.
 func _on_wolf_vision_toggled(is_active: bool) -> void:
 	print("ScreenEffectsManager: _on_wolf_vision_toggled() -> ", is_active)
 	if not is_instance_valid(wolf_vision_overlay):
@@ -440,3 +456,204 @@ func _on_wolf_vision_toggled(is_active: bool) -> void:
 				if not is_active:
 					wolf_vision_overlay.hide()
 		)
+
+
+## Snaps overlay to solid color immediately with initial blur level.
+func set_screen_black_instant(
+	is_black: bool, blur: float = 0.0, color: Color = Color.BLACK
+) -> void:
+	print("ScreenEffectsManager: Setting instant screen blackout -> ", is_black)
+	_ensure_fade_material()
+	if not is_instance_valid(fade_overlay):
+		return
+
+	if fade_tween and fade_tween.is_valid():
+		fade_tween.kill()
+
+	if is_black:
+		fade_overlay.visible = true
+		fade_overlay.modulate = Color.WHITE
+		fade_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+		if is_instance_valid(_fade_material):
+			_fade_material.set_shader_parameter(&"fade_color", color)
+			_fade_material.set_shader_parameter(&"fade_amount", 1.0)
+			_fade_material.set_shader_parameter(&"blur_amount", blur)
+			_fade_material.set_shader_parameter(&"blink_openness", 0.0)
+		else:
+			fade_overlay.color = color
+			fade_overlay.modulate.a = 1.0
+	else:
+		if is_instance_valid(_fade_material):
+			_fade_material.set_shader_parameter(&"fade_amount", 0.0)
+			_fade_material.set_shader_parameter(&"blur_amount", 0.0)
+			_fade_material.set_shader_parameter(&"blink_openness", 1.0)
+		fade_overlay.hide()
+
+
+## Visual wake-up sequence clearing blackness, revealing blur, and focusing.
+func start_wake_up(
+	fade_color: Color = Color.BLACK,
+	eye_open_time: float = 2.0,
+	max_blur: float = 2.5,
+	blink_count: int = 3,
+	blur_clear_time: float = 1.5
+) -> void:
+	print("ScreenEffectsManager: Starting phased wake-up transition.")
+	_ensure_fade_material()
+	if not is_instance_valid(fade_overlay):
+		return
+
+	fade_overlay.visible = true
+	fade_overlay.modulate = Color.WHITE
+	fade_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+
+	if is_instance_valid(_fade_material):
+		_fade_material.set_shader_parameter(&"fade_color", fade_color)
+		_fade_material.set_shader_parameter(&"fade_amount", 1.0)
+		_fade_material.set_shader_parameter(&"blur_amount", max_blur)
+		_fade_material.set_shader_parameter(&"blink_openness", 0.0)
+
+	if fade_tween and fade_tween.is_valid():
+		fade_tween.kill()
+
+	fade_tween = create_tween()
+
+	# Phase 1: Dissolve black overlay and open eyelids while blur stays active
+	(
+		fade_tween
+		. tween_method(_set_fade_amount, 1.0, 0.0, eye_open_time)
+		. set_trans(Tween.TRANS_SINE)
+		. set_ease(Tween.EASE_IN_OUT)
+	)
+
+	if blink_count > 0:
+		var single_blink: float = eye_open_time / float(blink_count)
+		for i: int in range(blink_count):
+			var delay: float = i * single_blink
+			var half_step: float = single_blink * 0.5
+			var target_openness: float = float(i + 1) / float(blink_count)
+			(
+				fade_tween
+				. parallel()
+				. tween_method(_set_blink_openness, 0.0, target_openness, half_step)
+				. set_delay(delay)
+				. set_trans(Tween.TRANS_SINE)
+			)
+			if i < blink_count - 1:
+				(
+					fade_tween
+					. parallel()
+					. tween_method(_set_blink_openness, target_openness, 0.0, half_step)
+					. set_delay(delay + half_step)
+					. set_trans(Tween.TRANS_SINE)
+				)
+
+	# Phase 2: Fade blurry surroundings back into sharp focus
+	(
+		fade_tween
+		. tween_method(_set_blur_amount, max_blur, 0.0, blur_clear_time)
+		. set_trans(Tween.TRANS_SINE)
+		. set_ease(Tween.EASE_OUT)
+	)
+
+	fade_tween.tween_callback(_on_fade_finished)
+
+
+## Updates screen fade uniform on transition overlay shader.
+func _set_fade_amount(val: float) -> void:
+	if is_instance_valid(_fade_material):
+		_fade_material.set_shader_parameter(&"fade_amount", val)
+
+
+## Updates screen blur uniform on transition overlay shader.
+func _set_blur_amount(val: float) -> void:
+	if is_instance_valid(_fade_material):
+		_fade_material.set_shader_parameter(&"blur_amount", val)
+
+
+## Updates eye blink openness uniform on transition overlay shader.
+func _set_blink_openness(val: float) -> void:
+	if is_instance_valid(_fade_material):
+		_fade_material.set_shader_parameter(&"blink_openness", val)
+
+
+## Executes screen fade sequences requested by triggers or console commands.
+func _on_screen_fade_requested(
+	fade_color: Color,
+	fade_in_duration: float,
+	hold_duration: float,
+	fade_out_duration: float,
+	use_blur: bool,
+	max_blur: float,
+	_use_blink: bool,
+	_blink_count: int
+) -> void:
+	print("ScreenEffectsManager: _on_screen_fade_requested() called.")
+	_ensure_fade_material()
+	if not is_instance_valid(fade_overlay):
+		return
+
+	if fade_tween and fade_tween.is_valid():
+		fade_tween.kill()
+
+	fade_overlay.show()
+	fade_overlay.modulate = Color.WHITE
+
+	if is_instance_valid(_fade_material):
+		_fade_material.set_shader_parameter(&"fade_color", fade_color)
+		_fade_material.set_shader_parameter(&"fade_amount", 0.0)
+		_fade_material.set_shader_parameter(&"blur_amount", 0.0)
+		_fade_material.set_shader_parameter(&"blink_openness", 1.0)
+
+		fade_tween = create_tween()
+		(
+			fade_tween
+			. tween_method(_set_fade_amount, 0.0, 1.0, fade_in_duration)
+			. set_trans(Tween.TRANS_SINE)
+			. set_ease(Tween.EASE_IN_OUT)
+		)
+
+		if use_blur:
+			(
+				fade_tween
+				. parallel()
+				. tween_method(_set_blur_amount, 0.0, max_blur, fade_in_duration)
+				. set_trans(Tween.TRANS_SINE)
+				. set_ease(Tween.EASE_IN_OUT)
+			)
+
+		fade_tween.tween_interval(hold_duration)
+
+		(
+			fade_tween
+			. tween_method(_set_fade_amount, 1.0, 0.0, fade_out_duration)
+			. set_trans(Tween.TRANS_SINE)
+			. set_ease(Tween.EASE_IN_OUT)
+		)
+
+		if use_blur:
+			(
+				fade_tween
+				. parallel()
+				. tween_method(_set_blur_amount, max_blur, 0.0, fade_out_duration)
+				. set_trans(Tween.TRANS_SINE)
+				. set_ease(Tween.EASE_IN_OUT)
+			)
+
+		fade_tween.tween_callback(_on_fade_finished)
+	else:
+		fade_overlay.color = fade_color
+		fade_overlay.modulate.a = 0.0
+		fade_tween = create_tween()
+		fade_tween.tween_property(fade_overlay, "modulate:a", 1.0, fade_in_duration)
+		fade_tween.tween_interval(hold_duration)
+		fade_tween.tween_property(fade_overlay, "modulate:a", 0.0, fade_out_duration)
+		fade_tween.finished.connect(_on_fade_finished)
+
+
+## Hides the fade overlay and resets modulate alpha when fade completes.
+func _on_fade_finished() -> void:
+	print("ScreenEffectsManager: Screen fade transition completed.")
+	if is_instance_valid(fade_overlay):
+		fade_overlay.hide()
