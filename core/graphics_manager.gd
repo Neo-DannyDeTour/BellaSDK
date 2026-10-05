@@ -1,8 +1,6 @@
 ## Global autoload managing automatic graphics scaling and performance optimizations.
 ##
-## GraphicsManager continuously monitors the application's framerate.
-## If it dips below [constant TARGET_FPS_MINIMUM], it progressively disables heavy features
-## to maintain a playable 60 FPS target.
+## Continuously tracks framerate and scales graphics to maintain 60 FPS.
 extends Node
 
 ## Emitted when the performance profile drops a level to regain FPS.
@@ -44,6 +42,9 @@ var _fps_timer: Timer = null
 ## The current integer step representing visual quality downgrade.
 var _sdfgi_downgrade_level: int = 0
 
+## Cached radial Variable Rate Shading density texture.
+var _vrs_density_texture: ImageTexture = null
+
 
 ## Lifecycle method configuring low-end hardware checks and startup mode.
 func _ready() -> void:
@@ -78,6 +79,7 @@ func enable_user_mode() -> void:
 	if is_instance_valid(_fps_timer):
 		_fps_timer.stop()
 
+	apply_vrs_state(false)
 	profile_mode_changed.emit(is_auto_optimizing)
 
 
@@ -147,6 +149,24 @@ func run_benchmark_for_60fps() -> void:
 	benchmark_completed.emit(_sdfgi_downgrade_level)
 
 
+## Configures Variable Rate Shading texture and mode on root [Viewport].
+## [param enabled] Whether to attach and activate VRS density mapping.
+func apply_vrs_state(enabled: bool) -> void:
+	print("GraphicsManager: Updating Variable Rate Shading state: ", enabled)
+	var vp: Viewport = get_tree().root
+	if not is_instance_valid(vp):
+		return
+
+	if enabled:
+		if not is_instance_valid(_vrs_density_texture):
+			_vrs_density_texture = VrsTextureGenerator.create_radial_density_map()
+		vp.vrs_texture = _vrs_density_texture
+		vp.vrs_mode = Viewport.VRS_TEXTURE
+	else:
+		vp.vrs_mode = Viewport.VRS_DISABLED
+		vp.vrs_texture = null
+
+
 ## Emits the current profile mode to any listeners safely after initialization.
 func _emit_profile_state() -> void:
 	print("GraphicsManager: Emitting initial profile state.")
@@ -174,7 +194,6 @@ func _on_fps_timer_timeout() -> void:
 
 
 ## Analyzes the [RenderingServer] video adapter string to determine if it is an integrated GPU.
-## Returns true if low-end hardware is suspected.
 func _detect_low_end_hardware() -> bool:
 	print("GraphicsManager: Evaluating current video adapter.")
 	var adapter_name: String = RenderingServer.get_video_adapter_name().to_lower()
@@ -195,6 +214,7 @@ func _apply_global_viewport_settings() -> void:
 	if is_instance_valid(root_viewport):
 		root_viewport.msaa_3d = Viewport.MSAA_DISABLED
 	RenderingServer.environment_set_volumetric_fog_volume_size(32, 32)
+	apply_vrs_state(true)
 
 
 ## Scene tree signal callback checking for new [WorldEnvironment] nodes.
@@ -216,7 +236,6 @@ func _on_node_added(node: Node) -> void:
 
 
 ## Looks up the current [Environment] resource connected to the active 3D world.
-## Returns the active [Environment] resource or fallback.
 func _get_current_environment() -> Environment:
 	var vp: Viewport = get_viewport()
 	if is_instance_valid(vp) and vp.find_world_3d():
@@ -232,7 +251,7 @@ func _get_current_environment() -> Environment:
 ## Applies immediate performance settings directly to the given [Environment] resource.
 ## [param env] The environment to alter.
 func _tweak_environment(env: Environment) -> void:
-	print("GraphicsManager: Disabling heavy effects for optimization mode without saving to disk.")
+	print("GraphicsManager: Disabling heavy effects for optimization mode.")
 	if is_instance_valid(env):
 		env.ssao_enabled = false
 		env.ssr_enabled = false
@@ -297,6 +316,7 @@ func _apply_downgrade_step(step: int) -> void:
 			vp.scaling_3d_mode = Viewport.SCALING_3D_MODE_FSR2
 			vp.scaling_3d_scale = 0.50
 			vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED
+			apply_vrs_state(true)
 		2:
 			var win: Window = vp as Window
 			if (

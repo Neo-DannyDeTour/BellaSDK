@@ -11,6 +11,9 @@ const SHOCKWAVE_POOL_SIZE: int = 6
 ## Default fallback camera trauma decay rate per second.
 const DEFAULT_TRAUMA_DECAY: float = 1.0
 
+## Screen transition overlay [Shader] resource.
+const SHADER_TRANSITION: Shader = preload("res://shaders/screen_transition.gdshader")
+
 # --------------------------------------
 # EXPORTS
 # --------------------------------------
@@ -46,29 +49,51 @@ var _next_shockwave_index: int = 0
 var _current_trauma: float = 0.0
 
 
-## Initializes the screen overlay, connects event bus, and warms shockwave pool.
+## Initializes screen overlay, shader resources, and event listeners.
 func _ready() -> void:
 	print("ScreenEffectsCore: Initializing centralized screen effects.")
 	layer = 120
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
+	_setup_overlay_rect()
+	_connect_event_bus()
+	_init_shockwave_pool()
+
+
+## Configures full-screen overlay rect dimensions and default shader.
+func _setup_overlay_rect() -> void:
+	print("ScreenEffectsCore: Configuring fullscreen overlay geometry.")
 	if not is_instance_valid(overlay_rect):
 		overlay_rect = get_node_or_null("OverlayRect") as ColorRect
 
 	if not is_instance_valid(overlay_rect):
 		overlay_rect = ColorRect.new()
 		overlay_rect.name = "OverlayRect"
-		overlay_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
 		overlay_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(overlay_rect)
 
+	overlay_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay_rect.size = get_viewport().get_visible_rect().size
 	overlay_rect.visible = false
 
-	if is_instance_valid(overlay_rect.material) and overlay_rect.material is ShaderMaterial:
-		_overlay_material = overlay_rect.material as ShaderMaterial
+	if not is_instance_valid(_overlay_material):
+		if is_instance_valid(overlay_rect.material) and overlay_rect.material is ShaderMaterial:
+			_overlay_material = overlay_rect.material as ShaderMaterial
+		else:
+			_overlay_material = ShaderMaterial.new()
+			_overlay_material.shader = SHADER_TRANSITION
+			overlay_rect.material = _overlay_material
 
-	_connect_event_bus()
-	_init_shockwave_pool()
+	if not get_viewport().size_changed.is_connected(_on_viewport_size_changed):
+		get_viewport().size_changed.connect(_on_viewport_size_changed)
+
+
+## Re-anchors overlay rect whenever viewport resolution changes.
+func _on_viewport_size_changed() -> void:
+	print("ScreenEffectsCore: Viewport resized. Updating overlay bounds.")
+	if is_instance_valid(overlay_rect):
+		overlay_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		overlay_rect.size = get_viewport().get_visible_rect().size
 
 
 ## Connects the core effects controller to global [Events] bus signals.
@@ -80,6 +105,10 @@ func _connect_event_bus() -> void:
 		Events.screen_fade_requested.connect(start_screen_fade)
 	if Events.has_signal(&"shockwave_requested"):
 		Events.shockwave_requested.connect(trigger_shockwave)
+	if Events.has_signal(&"screen_blackout_instant_requested"):
+		Events.screen_blackout_instant_requested.connect(set_screen_black_instant)
+	if Events.has_signal(&"screen_wake_up_requested"):
+		Events.screen_wake_up_requested.connect(start_wake_up)
 
 
 ## Pre-instantiates a cyclic pool of shockwave particles to avoid GC allocations.
@@ -130,12 +159,7 @@ func start_screen_fade(
 	if not is_instance_valid(overlay_rect):
 		return
 
-	if not is_instance_valid(_overlay_material):
-		var shader: Shader = load("res://shaders/screen_transition.gdshader") as Shader
-		if is_instance_valid(shader):
-			_overlay_material = ShaderMaterial.new()
-			_overlay_material.shader = shader
-			overlay_rect.material = _overlay_material
+	_ensure_shader_ready()
 
 	if not is_instance_valid(_overlay_material):
 		overlay_rect.color = fade_color
@@ -154,7 +178,6 @@ func start_screen_fade(
 
 	_active_fade_tween = create_tween()
 
-	# Phase 1: Fade In & Blur
 	(
 		_active_fade_tween
 		. tween_method(_set_shader_fade, 0.0, 1.0, fade_in_time)
@@ -191,10 +214,8 @@ func start_screen_fade(
 				. set_trans(Tween.TRANS_SINE)
 			)
 
-	# Phase 2: Hold
 	_active_fade_tween.tween_interval(hold_time)
 
-	# Phase 3: Fade Out
 	(
 		_active_fade_tween
 		. tween_method(_set_shader_fade, 1.0, 0.0, fade_out_time)
@@ -228,6 +249,15 @@ func _run_simple_color_fade(fade_in: float, hold: float, fade_out: float) -> voi
 	_active_fade_tween.tween_callback(_on_fade_finished)
 
 
+## Verifies material presence and instantiates fallback shader material.
+func _ensure_shader_ready() -> void:
+	if not is_instance_valid(_overlay_material):
+		_overlay_material = ShaderMaterial.new()
+		_overlay_material.shader = SHADER_TRANSITION
+		if is_instance_valid(overlay_rect):
+			overlay_rect.material = _overlay_material
+
+
 ## Updates screen fade uniform on transition overlay shader.
 func _set_shader_fade(val: float) -> void:
 	if is_instance_valid(_overlay_material):
@@ -246,7 +276,7 @@ func _set_shader_blink(val: float) -> void:
 		_overlay_material.set_shader_parameter(&"blink_openness", val)
 
 
-## Concludes the active fade transition and hides the fullscreen rect.
+## Concludes active fade transition and hides fullscreen rect.
 func _on_fade_finished() -> void:
 	print("ScreenEffectsCore: Screen fade transition completed.")
 	if is_instance_valid(overlay_rect):
@@ -273,6 +303,7 @@ func trigger_shockwave(spawn_pos: Vector3, radius: float = 5.0, speed: float = 2
 
 ## Dynamic instantiation fallback when particle pool is uninitialized.
 func _spawn_dynamic_shockwave(spawn_pos: Vector3, radius: float, speed: float) -> void:
+	print("ScreenEffectsCore: Spawning dynamic unpooled shockwave.")
 	if not is_instance_valid(shockwave_scene):
 		return
 
@@ -295,3 +326,109 @@ func _spawn_dynamic_shockwave(spawn_pos: Vector3, radius: float, speed: float) -
 		)
 	else:
 		instance.queue_free()
+
+
+## Snaps overlay to solid color instantly to hide level before wake-up.
+func set_screen_black_instant(
+	is_black: bool, blur: float = 0.0, color: Color = Color.BLACK
+) -> void:
+	print("ScreenEffectsCore: Setting instant screen black -> ", is_black, " Color: ", color)
+	if not is_instance_valid(overlay_rect):
+		_setup_overlay_rect()
+
+	_ensure_shader_ready()
+
+	if _active_fade_tween != null and _active_fade_tween.is_valid():
+		_active_fade_tween.kill()
+
+	if is_black:
+		overlay_rect.visible = true
+		overlay_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		overlay_rect.size = get_viewport().get_visible_rect().size
+
+		if is_instance_valid(_overlay_material):
+			_overlay_material.set_shader_parameter(&"fade_color", color)
+			_set_shader_fade(1.0)
+			_set_shader_blur(blur)
+			_set_shader_blink(0.0)
+		else:
+			overlay_rect.color = color
+			overlay_rect.modulate.a = 1.0
+	else:
+		if is_instance_valid(_overlay_material):
+			_set_shader_fade(0.0)
+			_set_shader_blur(0.0)
+			_set_shader_blink(1.0)
+		else:
+			overlay_rect.modulate.a = 0.0
+		overlay_rect.visible = false
+
+
+## Plays visual wake-up clearing black overlay first then clearing blur.
+func start_wake_up(
+	fade_color: Color = Color.BLACK,
+	eye_open_time: float = 2.0,
+	max_blur: float = 2.5,
+	blink_count: int = 3,
+	blur_clear_time: float = 1.5
+) -> void:
+	print("ScreenEffectsCore: Starting phased wake-up sequence.")
+	if not is_instance_valid(overlay_rect):
+		_setup_overlay_rect()
+
+	_ensure_shader_ready()
+
+	overlay_rect.visible = true
+	overlay_rect.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	overlay_rect.size = get_viewport().get_visible_rect().size
+
+	if is_instance_valid(_overlay_material):
+		_overlay_material.set_shader_parameter(&"fade_color", fade_color)
+		_set_shader_fade(1.0)
+		_set_shader_blur(max_blur)
+		_set_shader_blink(0.0)
+
+	if _active_fade_tween != null and _active_fade_tween.is_valid():
+		_active_fade_tween.kill()
+
+	_active_fade_tween = create_tween()
+
+	# Phase 1: Blackness dissipates and eyelids flutter open. Blur stays at max_blur.
+	(
+		_active_fade_tween
+		. tween_method(_set_shader_fade, 1.0, 0.0, eye_open_time)
+		. set_trans(Tween.TRANS_SINE)
+		. set_ease(Tween.EASE_IN_OUT)
+	)
+
+	if blink_count > 0:
+		var single_blink: float = eye_open_time / float(blink_count)
+		for i: int in range(blink_count):
+			var delay: float = i * single_blink
+			var half_step: float = single_blink * 0.5
+			var target_openness: float = float(i + 1) / float(blink_count)
+			(
+				_active_fade_tween
+				. parallel()
+				. tween_method(_set_shader_blink, 0.0, target_openness, half_step)
+				. set_delay(delay)
+				. set_trans(Tween.TRANS_SINE)
+			)
+			if i < blink_count - 1:
+				(
+					_active_fade_tween
+					. parallel()
+					. tween_method(_set_shader_blink, target_openness, 0.0, half_step)
+					. set_delay(delay + half_step)
+					. set_trans(Tween.TRANS_SINE)
+				)
+
+	# Phase 2: Player sees blurry surroundings, then blur returns to normal.
+	(
+		_active_fade_tween
+		. tween_method(_set_shader_blur, max_blur, 0.0, blur_clear_time)
+		. set_trans(Tween.TRANS_SINE)
+		. set_ease(Tween.EASE_OUT)
+	)
+
+	_active_fade_tween.tween_callback(_on_fade_finished)
