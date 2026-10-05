@@ -111,10 +111,11 @@ var last_msg: Dictionary = {}
 
 
 ## Simulates state transition call.
-func transition_to(target_state_name: String, msg: Dictionary = {}) -> void:
+func change_state(target_state_name: StringName, msg: Dictionary = {}) -> bool:
 	print("MockStateMachine: Transitioning to ", target_state_name)
 	last_transition = target_state_name
 	last_msg = msg
+	return true
 """
 	sm_script.reload()
 	mock_state_machine.set_script(sm_script)
@@ -143,7 +144,7 @@ func test_jump_buffered() -> void:
 	print("TestStateGround: test_jump_buffered() called.")
 	state_ground.enter({"jump_buffered": true})
 
-	assert_eq(mock_state_machine.last_transition, "Air", "Should transition to Air state.")
+	assert_eq(mock_state_machine.get("last_transition"), "Air", "Should transition to Air state.")
 	assert_eq(
 		mock_player.velocity.y,
 		state_ground.JUMP_VELOCITY,

@@ -147,6 +147,7 @@ func test_wave_spawner_lifecycle_integration() -> void:
 	var spawner: WaveSpawner = WaveSpawner.new()
 	spawner.name = "TestWaveSpawner"
 	spawner.total_waves = 1
+	spawner._ready()
 	spawner.base_enemy_count = 2
 	spawner.min_spawn_interval = 0.01
 	spawner.max_spawn_interval = 0.02
@@ -183,7 +184,7 @@ func test_wave_spawner_lifecycle_integration() -> void:
 		Events.enemy_killed.emit(enemy, null)
 		enemy.queue_free()
 
-	await wait_seconds(0.05)
+	await wait_frames(2)
 	assert_true(wave_completed_emitted, "wave_completed must emit when all enemies are slain.")
 
 	if Events.enemy_spawned.is_connected(on_enemy_spawned):
