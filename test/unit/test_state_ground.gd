@@ -62,7 +62,7 @@ func set_direction(d: Vector3) -> void:
 
 	var dummy_script: GDScript = GDScript.new()
 	dummy_script.source_code = """
-extends Node
+extends StateMachine
 
 ## Stub initialization method.
 func initialize(_p: Node) -> void:
@@ -98,10 +98,10 @@ func initialize(_p: Node) -> void:
 
 	add_child_autoqfree(mock_player)
 
-	mock_state_machine = Node.new()
+	mock_state_machine = StateMachine.new()
 	var sm_script: GDScript = GDScript.new()
 	sm_script.source_code = """
-extends Node
+extends StateMachine
 
 ## Tracks the last target state transition.
 var last_transition: String = ""
@@ -111,10 +111,11 @@ var last_msg: Dictionary = {}
 
 
 ## Simulates state transition call.
-func transition_to(target_state_name: String, msg: Dictionary = {}) -> void:
+func change_state(target_state_name: StringName, msg: Dictionary = {}) -> bool:
 	print("MockStateMachine: Transitioning to ", target_state_name)
 	last_transition = target_state_name
 	last_msg = msg
+	return true
 """
 	sm_script.reload()
 	mock_state_machine.set_script(sm_script)
@@ -143,7 +144,7 @@ func test_jump_buffered() -> void:
 	print("TestStateGround: test_jump_buffered() called.")
 	state_ground.enter({"jump_buffered": true})
 
-	assert_eq(mock_state_machine.last_transition, "Air", "Should transition to Air state.")
+	assert_eq(mock_state_machine.get("last_transition"), "Air", "Should transition to Air state.")
 	assert_eq(
 		mock_player.velocity.y,
 		state_ground.JUMP_VELOCITY,

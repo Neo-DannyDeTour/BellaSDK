@@ -5,7 +5,7 @@ var stats: Variant = null
 
 
 class MockHealthComponent:
-	extends Node
+	extends HealthComponent
 	## Mocked current health
 	var current_health: int = 100
 
