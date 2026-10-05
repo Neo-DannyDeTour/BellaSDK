@@ -3,6 +3,35 @@
 class_name FadeTrigger
 extends Area3D
 
+@export_group("Trigger Settings")
+## Determines if the effect should only happen the first time a player enters.
+@export var trigger_once: bool = true
+
+## Duration in seconds for the screen to fade to the target color.
+@export var fade_in_duration: float = 1.0
+
+## Duration in seconds the screen remains fully faded before returning.
+@export var hold_duration: float = 0.5
+
+## Duration in seconds for the screen to return to normal.
+@export var fade_out_duration: float = 1.0
+
+@export_group("Visual Effects")
+## The target color the screen will fade towards.
+@export var fade_color: Color = Color.BLACK
+
+## Enables a blur effect during the fade transition.
+@export var use_blur: bool = true
+
+## The maximum intensity of the blur effect.
+@export var max_blur: float = 2.5
+
+## Enables a blinking effect during the transition.
+@export var use_blink: bool = false
+
+## The number of times the screen blinks during the fade sequence.
+@export_range(1, 10) var blink_count: int = 1
+
 @export_group("Trigger Volume")
 ## Geometric shape options for the 3D trigger visualizer and collision hull.
 @export var shape_type: EditorTriggerVisualizer.ShapeType = EditorTriggerVisualizer.ShapeType.BOX:
@@ -74,36 +103,6 @@ extends Area3D
 		trigger_text = value
 		if is_inside_tree():
 			_update_visuals()
-
-@export_group("Trigger Settings")
-## Determines if the effect should only happen the first time a player enters.
-@export var trigger_once: bool = true
-
-@export_group("Fade Timings")
-## Duration in seconds for the screen to fade to the target color.
-@export var fade_in_duration: float = 1.0
-
-## Duration in seconds the screen remains fully faded before returning.
-@export var hold_duration: float = 0.5
-
-## Duration in seconds for the screen to return to normal.
-@export var fade_out_duration: float = 1.0
-
-@export_group("Visual Effects")
-## The target color the screen will fade towards.
-@export var fade_color: Color = Color.BLACK
-
-## Enables a blur effect during the fade transition.
-@export var use_blur: bool = true
-
-## The maximum intensity of the blur effect.
-@export var max_blur: float = 2.5
-
-## Enables a blinking effect during the transition.
-@export var use_blink: bool = false
-
-## The number of times the screen blinks during the fade sequence.
-@export_range(1, 10) var blink_count: int = 1
 
 ## Tracks whether this trigger has already been activated by a player.
 var _triggered: bool = false

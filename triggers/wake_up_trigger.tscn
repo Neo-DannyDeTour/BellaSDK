@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://cdrlxi46q0ym"]
+
+[ext_resource type="Script" uid="uid://dhcpuwseckbe1" path="res://triggers/wake_up_trigger.gd" id="1_lbap5"]
+[ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://triggers/editor_trigger_visualizer.gd" id="1_lkw7v"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_avmgx"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lbap5"]
+transparency = 1
+cull_mode = 2
+shading_mode = 0
+albedo_color = Color(0.9, 0.5, 0.1, 0.25)
+
+[sub_resource type="BoxMesh" id="BoxMesh_avmgx"]
+material = SubResource("StandardMaterial3D_lbap5")
+size = Vector3(2, 2, 2)
+
+[node name="WakeUpTrigger" type="Area3D" unique_id=92180357]
+script = ExtResource("1_lbap5")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=972507255]
+shape = SubResource("BoxShape3D_avmgx")
+
+[node name="EditorTriggerVisualizer" type="MeshInstance3D" parent="." unique_id=355161360]
+mesh = SubResource("BoxMesh_avmgx")
+script = ExtResource("1_lkw7v")
+metadata/_custom_type_script = "uid://q4v42nidwdr2"
