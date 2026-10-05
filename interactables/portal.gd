@@ -35,6 +35,9 @@ var _empty_compositor: Compositor = null
 ## Cached original environment applied to portal camera prior to overrides.
 var _original_camera_environment: Environment = null
 
+## Cached squared maximum render distance avoiding runtime sqrt calls.
+var _max_render_distance_sq: float = 900.0
+
 
 ## Restores original camera environment on exit tree.
 func _exit_tree() -> void:
@@ -46,12 +49,16 @@ func _exit_tree() -> void:
 ## Initializes portal listeners, caches materials, and sets up culling.
 func _ready() -> void:
 	print("Portal: Initializing: ", name)
+	_max_render_distance_sq = max_render_distance * max_render_distance
+
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
 
 	portal_camera.current = true
+	_configure_sub_viewport()
 	_isolate_portal_camera_compositor()
 	_configure_portal_environment()
+	_configure_portal_camera_cull_mask()
 
 	Events.player_camera_registered.connect(_on_player_camera_registered)
 	_setup_screen_notifier()
@@ -67,10 +74,22 @@ func _ready() -> void:
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
 	sub_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 
-	_assign_world_3d.call_deferred()
-
 	if not is_instance_valid(player_camera):
 		_find_and_assign_player_camera()
+
+
+## Strips shadow passes, AA, and LOD overhead from [member sub_viewport].
+func _configure_sub_viewport() -> void:
+	print("Portal: Configuring SubViewport graphics limits for: ", name)
+	if not is_instance_valid(sub_viewport):
+		return
+	sub_viewport.positional_shadow_atlas_size = 0
+	sub_viewport.msaa_3d = Viewport.MSAA_DISABLED
+	sub_viewport.screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED
+	sub_viewport.use_taa = false
+	sub_viewport.use_debanding = false
+	sub_viewport.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
+	sub_viewport.mesh_lod_threshold = 2.0
 
 
 ## Overrides [member portal_camera] compositor to disable compute shaders.
@@ -100,16 +119,13 @@ func _configure_portal_environment() -> void:
 	portal_camera.environment = env
 
 
-## Safely attaches parent 3D world to [member sub_viewport] if unassigned.
-func _assign_world_3d() -> void:
-	print("Portal: Binding World3D to SubViewport for: ", name)
-	if not is_instance_valid(sub_viewport):
+## Culls portal and volumetric layers from [member portal_camera] mask.
+func _configure_portal_camera_cull_mask() -> void:
+	print("Portal: Configuring camera cull mask for: ", portal_camera.name)
+	if not is_instance_valid(portal_camera):
 		return
-	sub_viewport.own_world_3d = false
-	var parent_world: World3D = get_viewport().find_world_3d()
-	if is_instance_valid(parent_world):
-		if sub_viewport.world_3d != parent_world:
-			sub_viewport.world_3d = parent_world
+	# Layer 4 (Portals = 8) and Layer 10 (Volumetrics = 512): ~520
+	portal_camera.cull_mask = portal_camera.cull_mask & ~520
 
 
 ## Sets up a [VisibleOnScreenNotifier3D] to cull updates when out of view.
@@ -189,7 +205,7 @@ func _process(_delta: float) -> void:
 	var to_player: Vector3 = player_camera.global_position - global_position
 	var is_in_front: bool = global_transform.basis.z.dot(to_player) > 0.0
 	var dist_sq: float = global_position.distance_squared_to(player_camera.global_position)
-	var in_range: bool = dist_sq <= (max_render_distance * max_render_distance)
+	var in_range: bool = dist_sq <= _max_render_distance_sq
 
 	if not is_in_front or not in_range:
 		linked_portal._set_viewport_mode(SubViewport.UPDATE_DISABLED)

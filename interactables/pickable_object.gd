@@ -55,6 +55,9 @@ const MIN_HOLD_DISTANCE: float = 1.2
 ## Additional distance offset pulling held object closer to the player.
 @export var hold_distance_offset: float = 0.0
 
+## Maximum separation distance before object automatically drops when stuck.
+@export var max_detach_distance: float = 1.3
+
 ## Visual mesh transparency applied while the object is held.
 @export_range(0.0, 1.0) var held_transparency: float = 0.25
 
@@ -65,7 +68,7 @@ const MIN_HOLD_DISTANCE: float = 1.2
 @export var heavy_y_drop: float = 0.5
 
 ## Height clearance above the ground where heavy objects hover.
-@export var heavy_floor_clearance: float = 0.35
+@export var heavy_floor_clearance: float = 0.08
 
 ## Visual mesh transparency applied specifically to heavy held objects.
 @export_range(0.0, 1.0) var heavy_held_transparency: float = 0.55
@@ -76,7 +79,10 @@ const MIN_HOLD_DISTANCE: float = 1.2
 ## Base damage points dealt to colliding actors upon high-speed impact.
 @export var projectile_damage: int = 20
 
-@export_category("Accessibility")
+@export_category("Stability & Accessibility")
+## Locks motion into static platform while player stands on top.
+@export var lock_on_player_stand: bool = true
+
 ## Dedicated [ShaderMaterial] highlighting the object for accessibility.
 @export var vision_assist_material: ShaderMaterial
 
@@ -152,6 +158,9 @@ var _cached_mesh_name: String = ""
 ## Cached key name string for the interact action prompt label.
 var _cached_interact_key: String = "E"
 
+## Frame countdown timer holding static lock when stepped on.
+var _standing_lock_ticks: int = 0
+
 
 ## Initializes collision layers, node references, signals, and cache.
 func _ready() -> void:
@@ -197,10 +206,8 @@ func _ready() -> void:
 	_cached_exclude_rids = [get_rid()]
 
 	_update_process_state()
-
-	if is_instance_valid(mesh):
-		set_model_transparency(mesh, held_transparency)
-		_revert_warmup_deferred()
+	set_model_transparency(self, held_transparency)
+	_revert_warmup_deferred()
 
 
 ## Caches clean mesh name and interact key text for zero allocations.
@@ -248,7 +255,7 @@ func _on_sleeping_state_changed() -> void:
 
 ## Evaluates whether physics processing should be enabled or disabled.
 func _update_process_state() -> void:
-	var should_process: bool = is_held or is_in_water or not sleeping
+	var should_process: bool = is_held or is_in_water or not sleeping or _standing_lock_ticks > 0
 	set_physics_process(should_process)
 
 
@@ -257,9 +264,7 @@ func _revert_warmup_deferred() -> void:
 	print("PickableObject: _revert_warmup_deferred() executing.")
 	await get_tree().process_frame
 	await get_tree().process_frame
-
-	if is_instance_valid(mesh):
-		set_model_transparency(mesh, 0.0)
+	set_model_transparency(self, 0.0)
 
 
 ## Attaches object to player hold target and applies transparency.
@@ -294,12 +299,10 @@ func pick_up(target: Marker3D, player_node: Node3D) -> void:
 	sleeping = false
 	gravity_scale = 0.0
 
-	var active_mesh: Node3D = _resolve_visual_mesh()
-	if is_instance_valid(active_mesh):
-		var alpha: float = (
-			heavy_held_transparency if mass >= heavy_mass_threshold else held_transparency
-		)
-		set_model_transparency(active_mesh, alpha)
+	var alpha: float = (
+		heavy_held_transparency if mass >= heavy_mass_threshold else held_transparency
+	)
+	set_model_transparency(self, alpha)
 
 	if is_instance_valid(interact_comp):
 		interact_comp.set("is_currently_focused", false)
@@ -316,13 +319,9 @@ func pick_up(target: Marker3D, player_node: Node3D) -> void:
 	Events.item_picked_up.emit(self, holder)
 
 
-## Releases object from player grasp, applying toss impulse if moving.
+## Releases object from player grasp, restoring full visibility.
 func drop() -> void:
 	print("PickableObject: drop() called. Action: Dropping object.")
-	if Time.get_ticks_msec() - _grab_time < 100:
-		return
-
-	print("PickableObject: drop() releasing: ", name)
 	is_held = false
 
 	if is_instance_valid(label):
@@ -333,9 +332,7 @@ func drop() -> void:
 	_is_tts_cooldown = true
 	get_tree().create_timer(1.5).timeout.connect(_reset_tts_cooldown)
 
-	var active_mesh: Node3D = _resolve_visual_mesh()
-	if is_instance_valid(active_mesh):
-		set_model_transparency(active_mesh, 0.0)
+	set_model_transparency(self, 0.0)
 
 	if is_locked:
 		holder = null
@@ -388,9 +385,33 @@ func throw(impulse_vector: Vector3) -> void:
 		apply_central_impulse(impulse_vector)
 
 
-## Informs holder components of heavy carry status and sprint lock.
+## Informs holder locomotion component of heavy carry status.
 func notify_holder_heavy_carry(p_holder: Node3D, active: bool, mass_val: float) -> void:
 	print("PickableObject: Updating holder heavy carry status: ", active)
+	if not is_instance_valid(p_holder):
+		return
+
+	var loco_comp: Node = (
+		p_holder.get("locomotion_component") if "locomotion_component" in p_holder else p_holder
+	)
+	if is_instance_valid(loco_comp):
+		if loco_comp.has_method("set_heavy_carry"):
+			loco_comp.call("set_heavy_carry", active, mass_val)
+		else:
+			if "can_sprint" in loco_comp:
+				loco_comp.set("can_sprint", not active)
+			if "can_jump" in loco_comp:
+				loco_comp.set("can_jump", not active)
+			if "sprint_active" in loco_comp and active:
+				loco_comp.set("sprint_active", false)
+
+	if "can_jump" in p_holder:
+		p_holder.set("can_jump", not active)
+
+
+## Informs holder interaction scanner of heavy lifting stance.
+func notify_holder_heavy_lifting(p_holder: Node3D, active: bool) -> void:
+	print("PickableObject: Updating holder heavy lifting stance: ", active)
 	if not is_instance_valid(p_holder):
 		return
 
@@ -408,18 +429,6 @@ func notify_holder_heavy_carry(p_holder: Node3D, active: bool, mass_val: float) 
 				scanner.set("heavy_lift_yaw_base", p_holder.global_rotation.y)
 			if scanner.has_method("set_heavy_lifting"):
 				scanner.call("set_heavy_lifting", active)
-
-	var loco_comp: Node = (
-		p_holder.get("locomotion_component") if "locomotion_component" in p_holder else p_holder
-	)
-	if is_instance_valid(loco_comp):
-		if loco_comp.has_method("set_heavy_carry"):
-			loco_comp.call("set_heavy_carry", active, mass_val)
-		else:
-			if "can_sprint" in loco_comp:
-				loco_comp.set("can_sprint", not active)
-			if "sprint_active" in loco_comp and active:
-				loco_comp.set("sprint_active", false)
 
 
 ## Toggles input stun on the holder system menu controller.
@@ -459,9 +468,42 @@ func set_model_transparency(parent_node: Node, alpha: float) -> void:
 		set_model_transparency(child, alpha)
 
 
-## Backwards-compatible alias for child classes calling [_set_model_transparency].
+## Backwards-compatible alias for child classes calling transparency.
 func _set_model_transparency(parent_node: Node, alpha: float) -> void:
 	set_model_transparency(parent_node, alpha)
+
+
+## Computes vertical distance from origin to bottom edge when upright.
+func _get_upright_bottom_extent() -> float:
+	if is_instance_valid(collision) and collision.shape != null:
+		var shape: Shape3D = collision.shape
+		if shape is CylinderShape3D:
+			return (shape as CylinderShape3D).height * 0.5 - collision.position.y
+		if shape is CapsuleShape3D:
+			return (shape as CapsuleShape3D).height * 0.5 - collision.position.y
+		if shape is BoxShape3D:
+			return (shape as BoxShape3D).size.y * 0.5 - collision.position.y
+
+	var target_mesh: Node3D = _resolve_visual_mesh()
+	if target_mesh is VisualInstance3D:
+		var aabb: AABB = (target_mesh as VisualInstance3D).get_aabb()
+		return (aabb.size.y * 0.5) - target_mesh.position.y
+
+	return 0.5
+
+
+## Locks object into a static platform while player stands on it.
+func register_player_standing() -> void:
+	if not lock_on_player_stand or is_held:
+		return
+
+	_standing_lock_ticks = 4
+	if not freeze:
+		freeze_mode = RigidBody3D.FREEZE_MODE_STATIC
+		freeze = true
+		linear_velocity = Vector3.ZERO
+		angular_velocity = Vector3.ZERO
+		_update_process_state()
 
 
 ## Waits until holder is out of range before restoring collisions.
@@ -567,8 +609,14 @@ func _on_interact_component_unfocused() -> void:
 		prompt_icon.hide()
 
 
-## Evaluates hold tracking, water buoyancy, and impact physics.
+## Evaluates hold tracking, standing locks, and water buoyancy.
 func _physics_process(delta: float) -> void:
+	if not is_held and lock_on_player_stand and _standing_lock_ticks > 0:
+		_standing_lock_ticks -= 1
+		if _standing_lock_ticks == 0 and freeze:
+			freeze = false
+			_update_process_state()
+
 	if is_held and is_instance_valid(hold_target) and is_instance_valid(holder):
 		_process_standard_hold(delta)
 
@@ -592,23 +640,24 @@ func _process_standard_hold(_delta: float) -> void:
 	if is_heavy:
 		var flat_forward: Vector3 = Vector3(cam_forward.x, 0.0, cam_forward.z).normalized()
 		var carry_dist: float = maxf(MIN_HOLD_DISTANCE - hold_distance_offset, 1.1)
-		target_pos = (
-			holder.global_position
-			+ (flat_forward * carry_dist)
-			+ Vector3(0.0, heavy_floor_clearance, 0.0)
-		)
+		target_pos = holder.global_position + (flat_forward * carry_dist)
 
+		var bottom_extent: float = _get_upright_bottom_extent()
 		var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 		var floor_hit: Dictionary = NodeQuery.cast_ray(
 			space_state,
 			target_pos + Vector3(0.0, 0.5, 0.0),
-			target_pos + Vector3(0.0, -1.0, 0.0),
+			target_pos + Vector3(0.0, -2.0, 0.0),
 			CollisionLayers.MASK_ENVIRONMENT,
 			_cached_exclude_rids
 		)
 		if not floor_hit.is_empty():
 			var ground_y: float = (floor_hit.position as Vector3).y
-			target_pos.y = ground_y + heavy_floor_clearance
+			target_pos.y = ground_y + bottom_extent + heavy_floor_clearance
+		else:
+			target_pos.y = (
+				holder.global_position.y + bottom_extent + heavy_floor_clearance - heavy_y_drop
+			)
 	else:
 		var to_target: Vector3 = target_pos - cam_origin
 		var forward_projection: float = to_target.dot(cam_forward)
@@ -618,8 +667,10 @@ func _process_standard_hold(_delta: float) -> void:
 			target_pos += cam_forward * (required_dist - forward_projection)
 
 	var dist_sq: float = global_position.distance_squared_to(target_pos)
-	var has_grab_settled: bool = (Time.get_ticks_msec() - _grab_time) > 300
-	if dist_sq > 9.0 and has_grab_settled and not _is_player_flying:
+	var has_grab_settled: bool = (Time.get_ticks_msec() - _grab_time) > 250
+	var detach_threshold_sq: float = max_detach_distance * max_detach_distance
+	if dist_sq > detach_threshold_sq and has_grab_settled and not _is_player_flying:
+		print("PickableObject: Stuck distance exceeded. Dropping: ", name)
 		drop()
 		return
 
@@ -627,7 +678,7 @@ func _process_standard_hold(_delta: float) -> void:
 		holder.get("velocity") as Vector3 if "velocity" in holder else Vector3.ZERO
 	)
 	var distance_vector: Vector3 = target_pos - global_position
-	var pos_stiffness: float = 8.0 if is_heavy else 20.0
+	var pos_stiffness: float = 14.0 if is_heavy else 20.0
 	linear_velocity = holder_velocity + (distance_vector * pos_stiffness)
 
 	var cam_yaw: float = (
@@ -635,21 +686,27 @@ func _process_standard_hold(_delta: float) -> void:
 		if is_instance_valid(cam)
 		else holder.global_transform.basis.get_euler().y
 	)
-	var target_yaw: float = cam_yaw + _held_relative_yaw
+
+	# Smoothly ease yaw alignment while returning pitch and roll upright
+	var elapsed_ratio: float = clampf(float(Time.get_ticks_msec() - _grab_time) / 350.0, 0.0, 1.0)
+	var current_held_yaw: float = lerpf(_held_relative_yaw, 0.0, elapsed_ratio)
+	var target_yaw: float = cam_yaw + current_held_yaw
 	var target_basis: Basis = Basis.from_euler(Vector3(0.0, target_yaw, 0.0))
 
-	var current_quat: Quaternion = global_basis.get_rotation_quaternion()
-	var diff_quat: Quaternion = target_basis.get_rotation_quaternion() * current_quat.inverse()
+	var q_target: Quaternion = target_basis.get_rotation_quaternion()
+	var q_current: Quaternion = global_basis.get_rotation_quaternion()
+	var q_diff: Quaternion = q_target * q_current.inverse()
+	if q_diff.w < 0.0:
+		q_diff = -q_diff
 
-	var axis: Vector3 = Vector3(diff_quat.x, diff_quat.y, diff_quat.z)
-	var angle: float = 2.0 * acos(clampf(diff_quat.w, -1.0, 1.0))
+	var angle: float = 2.0 * acos(clampf(q_diff.w, -1.0, 1.0))
+	var axis_len_sq: float = q_diff.x * q_diff.x + q_diff.y * q_diff.y + q_diff.z * q_diff.z
 
-	if angle > PI:
-		angle -= TAU
-
-	var rot_stiffness: float = 8.0 if is_heavy else 25.0
-	if axis.length_squared() > 0.0001:
-		angular_velocity = axis.normalized() * (angle * rot_stiffness)
+	# Damped angular spring allows smooth upright rotation without instant snapping
+	var rot_stiffness: float = 8.0 if is_heavy else 18.0
+	if axis_len_sq > 0.0001:
+		var axis: Vector3 = Vector3(q_diff.x, q_diff.y, q_diff.z) / sqrt(axis_len_sq)
+		angular_velocity = axis * (angle * rot_stiffness)
 	else:
 		angular_velocity = Vector3.ZERO
 
@@ -708,6 +765,10 @@ func _process_buoyancy() -> void:
 ## Inflicts projectile damage if impact velocity exceeds threshold.
 func _on_body_entered(body: Node) -> void:
 	if is_held:
+		return
+
+	# Prevent self-inflicted damage when walking or tumbling near the player
+	if body == holder or body.is_in_group(&"player") or body is CharacterBody3D:
 		return
 
 	var impact_speed: float = _last_velocity.length()

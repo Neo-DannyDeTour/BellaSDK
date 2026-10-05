@@ -159,6 +159,7 @@ func _finish_pickup() -> void:
 
 	notify_holder_stun(holder, false)
 	notify_holder_heavy_carry(holder, true, mass)
+	notify_holder_heavy_lifting(holder, true)
 
 
 ## Pushes box along floor geometry without heap allocations.
@@ -280,6 +281,7 @@ func _finish_drop(previous_holder: Node3D) -> void:
 	if is_instance_valid(previous_holder):
 		notify_holder_stun(previous_holder, false)
 		notify_holder_heavy_carry(previous_holder, false, 0.0)
+		notify_holder_heavy_lifting(previous_holder, false)
 		notify_holder_clear_hands(previous_holder)
 		wait_to_enable_collision(previous_holder)
 

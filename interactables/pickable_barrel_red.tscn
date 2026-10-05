@@ -17,7 +17,7 @@ shader_parameter/alpha_scissor_threshold = 0.5
 height = 1.25
 radius = 0.45
 
-[node name="PickableBarrelRed" unique_id=259863869 node_paths=PackedStringArray("mesh") groups=["not_climbable"] instance=ExtResource("1_aapj8")]
+[node name="PickableBarrelRed" unique_id=259863869 node_paths=PackedStringArray("mesh") groups=["magnetizable"] instance=ExtResource("1_aapj8")]
 mass = 10.0
 mesh = NodePath("Barrel_red")
 held_transparency = 0.75
