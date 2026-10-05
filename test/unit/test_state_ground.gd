@@ -62,7 +62,7 @@ func set_direction(d: Vector3) -> void:
 
 	var dummy_script: GDScript = GDScript.new()
 	dummy_script.source_code = """
-extends Node
+extends StateMachine
 
 ## Stub initialization method.
 func initialize(_p: Node) -> void:
@@ -98,10 +98,10 @@ func initialize(_p: Node) -> void:
 
 	add_child_autoqfree(mock_player)
 
-	mock_state_machine = Node.new()
+	mock_state_machine = StateMachine.new()
 	var sm_script: GDScript = GDScript.new()
 	sm_script.source_code = """
-extends Node
+extends StateMachine
 
 ## Tracks the last target state transition.
 var last_transition: String = ""

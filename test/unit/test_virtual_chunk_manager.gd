@@ -12,7 +12,7 @@ var manager: Node = null
 ## Instantiates [ChunkManager] and registers autofree cleanup before each test.
 func before_each() -> void:
 	print("TestChunkManager: Executing before_each() setup.")
-	manager = load("res://core/chunk_manager.gd").new() as Node
+	manager = load("res://core/virtual_chunk_manager.gd").new() as Node
 	add_child_autofree(manager)
 
 

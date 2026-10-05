@@ -30,6 +30,7 @@ func before_each() -> void:
 	components_node.add_child(health_comp)
 
 	add_child_autofree(dummy_target)
+	dummy_target.set("health_component", health_comp)
 	health_comp._ready()
 
 
