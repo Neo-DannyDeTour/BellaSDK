@@ -345,11 +345,18 @@ func _process(delta: float) -> void:
 		mat.set_shader_parameter(&"ripples", _ripples_buffer)
 
 	var fog_volume: FogVolume = get_node_or_null("%FogVolume") as FogVolume
-	if is_instance_valid(fog_volume) and fog_volume.material is ShaderMaterial:
-		var fog_mat: ShaderMaterial = fog_volume.material as ShaderMaterial
-		fog_mat.set_shader_parameter(&"albedo", fog_color)
-		fog_mat.set_shader_parameter(&"emission", fog_color)
-		fog_volume.base_fade_dist = fog_fade_dist
+	if is_instance_valid(fog_volume):
+		if fog_volume.material is ShaderMaterial:
+			var fog_mat: ShaderMaterial = fog_volume.material as ShaderMaterial
+			fog_mat.set_shader_parameter(&"albedo", fog_color)
+			fog_mat.set_shader_parameter(&"emission", fog_color)
+			fog_volume.set(&"base_fade_dist", fog_fade_dist)
+		elif fog_volume.material is FogMaterial:
+			var fog_mat: FogMaterial = fog_volume.material as FogMaterial
+			fog_mat.albedo = fog_color
+			fog_mat.emission = fog_color
+			fog_mat.density = 0.12 if should_draw_camera_underwater_effect() else 0.04
+			fog_mat.edge_fade = 0.1 if should_draw_camera_underwater_effect() else 0.8
 
 	if not Engine.is_editor_hint():
 		var viewport: Viewport = get_viewport()

@@ -18,7 +18,7 @@ seamless = true
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ugvly"]
 render_priority = 0
 shader = ExtResource("1_70utq")
-shader_parameter/water_time = 380.864
+shader_parameter/water_time = 2848.585
 shader_parameter/water_size = Vector3(1, 1, 1)
 shader_parameter/show_side_walls = false
 shader_parameter/shallow_color = Color(0.22, 0.65, 0.78, 1)
