@@ -74,6 +74,9 @@ var is_terminal_locked: bool = false
 ## Sensitivity scale applied to mouse look during terminal interaction.
 var terminal_mouse_sensitivity_scale: float = 1.0
 
+## Tracks whether a cinematic sequence locks player input and physics.
+var is_cinematic_locked: bool = false
+
 # --------------------------------------
 # INITIALIZATION
 # --------------------------------------
@@ -128,6 +131,8 @@ func _ready() -> void:
 		Utilities.safe_connect(Events.teleport_requested, teleport_to)
 	if Events.has_signal(&"flight_mode_toggled"):
 		Utilities.safe_connect(Events.flight_mode_toggled, _on_flight_mode_toggled)
+	if Events.has_signal(&"player_cinematic_lock_requested"):
+		Utilities.safe_connect(Events.player_cinematic_lock_requested, _on_cinematic_lock_requested)
 
 
 ## Captures and locks the mouse cursor for first-person gameplay.
@@ -201,6 +206,7 @@ func _is_input_blocked() -> bool:
 		or is_console_open
 		or is_operating
 		or is_dead
+		or is_cinematic_locked
 	)
 	return is_blocked
 
@@ -732,3 +738,15 @@ func _on_flight_mode_toggled(is_flying: bool) -> void:
 		system_menu.flying = is_flying
 	if is_instance_valid(locomotion_component):
 		locomotion_component.set_physics_active(not is_flying)
+
+
+## Updates cinematic lock state and halts locomotion momentum.
+func _on_cinematic_lock_requested(locked: bool) -> void:
+	print("Player: Cinematic lock state updated -> ", locked)
+	is_cinematic_locked = locked
+	if locked:
+		velocity = Vector3.ZERO
+		if is_instance_valid(locomotion_component):
+			locomotion_component.set_physics_active(false)
+	elif is_instance_valid(locomotion_component):
+		locomotion_component.set_physics_active(true)

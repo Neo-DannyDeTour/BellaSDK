@@ -256,6 +256,8 @@ func _on_global_item_dropped(item: Node3D, actor: Node3D) -> void:
 func force_clear_hands() -> void:
 	print("InteractionComponent: force_clear_hands() called.")
 	_last_drop_time = Time.get_ticks_msec()
+	if is_instance_valid(held_item) and held_item.has_method("drop"):
+		held_item.drop()
 	held_item = null
 	update_heavy_carry_state()
 	_set_weapon_active(true)
@@ -295,8 +297,11 @@ func update_heavy_carry_state() -> void:
 		print("InteractionComponent: Heavy carry toggled -> ", is_heavy_carrying)
 		if is_instance_valid(player) and "locomotion_component" in player:
 			var loco: Node = player.locomotion_component
-			if is_instance_valid(loco) and "can_sprint" in loco:
-				loco.set("can_sprint", not is_heavy_carrying)
+			if is_instance_valid(loco):
+				if "can_sprint" in loco:
+					loco.set("can_sprint", not is_heavy_carrying)
+				if "can_jump" in loco:
+					loco.set("can_jump", not is_heavy_carrying)
 		Events.heavy_carry_toggled.emit(is_heavy_carrying)
 
 

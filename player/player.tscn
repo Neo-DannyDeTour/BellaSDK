@@ -635,7 +635,7 @@ script = ExtResource("31_fvsjc")
 [node name="Air" type="Node" parent="StateMachine" unique_id=1102320837]
 script = ExtResource("32_hxdpb")
 
-[node name="Ladders" type="Node" parent="StateMachine" unique_id=37171048]
+[node name="Ladder" type="Node" parent="StateMachine" unique_id=37171048]
 script = ExtResource("33_agngo")
 
 [node name="Zipline" type="Node" parent="StateMachine" unique_id=780864794]

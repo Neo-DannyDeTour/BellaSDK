@@ -99,33 +99,33 @@ func set_mouse_sensitivity(new_sens: float) -> void:
 ## [param is_terminal_mode] Whether terminal focus restricts mouse movement.
 ## [param is_heavy_lifting] Whether heavy lifting restricts camera yaw/pitch.
 ## [param _heavy_lift_yaw_base] Yaw constraint baseline angle.
+## Evaluates incoming mouse motion to rotate the player body and camera head smoothly.
 func handle_mouse_input(
 	event: InputEventMouseMotion,
 	is_terminal_mode: bool,
 	is_heavy_lifting: bool,
 	_heavy_lift_yaw_base: float
 ) -> void:
-	if absf(event.relative.x) > 50.0 or absf(event.relative.y) > 50.0:
-		print("CameraController: Large mouse movement detected, processing input.")
-
 	var active_sens: float = mouse_sensitivity
 	if is_terminal_mode:
 		active_sens *= 0.5
 
 	var y_multiplier: float = -1.0 if invert_y else 1.0
 	var pitch_input: float = event.relative.y * active_sens * y_multiplier
+	var yaw_input: float = event.relative.x * active_sens
 
 	if is_heavy_lifting:
-		head.rotation.y -= deg_to_rad(event.relative.x * active_sens)
-		head.rotation.y = clampf(head.rotation.y, deg_to_rad(-15.0), deg_to_rad(15.0))
-
-		head.rotation.x -= deg_to_rad(pitch_input)
-		head.rotation.x = clampf(head.rotation.x, deg_to_rad(-15.0), deg_to_rad(89.0))
+		head.rotation.y = clampf(
+			head.rotation.y - deg_to_rad(yaw_input), deg_to_rad(-15.0), deg_to_rad(15.0)
+		)
+		head.rotation.x = clampf(
+			head.rotation.x - deg_to_rad(pitch_input), deg_to_rad(-15.0), deg_to_rad(89.0)
+		)
 	else:
-		player_body.rotate_y(deg_to_rad(-event.relative.x * active_sens))
-
-		head.rotation.x -= deg_to_rad(pitch_input)
-		head.rotation.x = clampf(head.rotation.x, deg_to_rad(-89.0), deg_to_rad(89.0))
+		player_body.rotate_y(deg_to_rad(-yaw_input))
+		head.rotation.x = clampf(
+			head.rotation.x - deg_to_rad(pitch_input), deg_to_rad(-89.0), deg_to_rad(89.0)
+		)
 
 	head.rotation.z = 0.0
 

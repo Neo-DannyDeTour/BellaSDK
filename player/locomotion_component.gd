@@ -146,6 +146,9 @@ var carried_weight: float = 0.0
 ## Internal vertical velocity tracking head stance spring animation.
 var _head_velocity_y: float = 0.0
 
+## Determines whether the player is currently permitted to jump.
+var can_jump: bool = true
+
 
 ## Subscribes to global event bus signals and initializes state.
 func _ready() -> void:
@@ -210,6 +213,7 @@ func set_heavy_carry(active: bool, weight: float = 0.0) -> void:
 	is_heavy_carrying = active
 	carried_weight = weight if active else 0.0
 	can_sprint = not active
+	can_jump = not active if not allow_heavy_carry_jump else true
 
 
 ## Handles [signal Events.heavy_carry_toggled] state updates.
@@ -244,7 +248,7 @@ func get_effective_jump_velocity(base_jump_velocity: float) -> float:
 	return base_jump_velocity
 
 
-## Injects downward forces into floor bodies without string allocs.
+## Injects downward forces into floor bodies without rotational levering.
 func _apply_weight_to_floor() -> void:
 	if not player.is_on_floor():
 		if is_instance_valid(_last_weighed_body):
@@ -258,18 +262,25 @@ func _apply_weight_to_floor() -> void:
 		var collider: Object = collision.get_collider()
 
 		if collider is RigidBody3D and collision.get_normal().y > 0.5:
-			var body_name: StringName = collider.name
+			var rb: RigidBody3D = collider as RigidBody3D
+
+			# Lock pickable objects into stable static platforms while stood on
+			if rb.has_method("register_player_standing"):
+				rb.call("register_player_standing")
+				return
+
+			var body_name: StringName = rb.name
 			var is_cable_or_socket: bool = (
-				collider.is_in_group(GROUP_CABLE_LINK)
-				or collider.is_in_group(GROUP_SOCKET)
+				rb.is_in_group(GROUP_CABLE_LINK)
+				or rb.is_in_group(GROUP_SOCKET)
 				or body_name.begins_with(&"CableLink")
 				or body_name.begins_with(&"Socket")
 			)
 
-			if is_cable_or_socket or collider.is_in_group(GROUP_IGNORE_WEIGHT):
-				if _last_weighed_body != collider:
-					print("LocomotionComponent: Stepped on ", collider.name, ". Ignoring weight.")
-					_last_weighed_body = collider
+			if is_cable_or_socket or rb.is_in_group(GROUP_IGNORE_WEIGHT):
+				if _last_weighed_body != rb:
+					print("LocomotionComponent: Stepped on ", rb.name, ". Ignoring weight.")
+					_last_weighed_body = rb
 				return
 
 			var mass: float = (
@@ -278,19 +289,19 @@ func _apply_weight_to_floor() -> void:
 			if is_heavy_carrying:
 				mass += maxf(carried_weight, 10.0)
 
-			var downward_force: float = mass * gravity
-			var hit_position: Vector3 = collision.get_position() - collider.global_position
+			var downward_force: Vector3 = Vector3.DOWN * (mass * gravity)
 
-			collider.apply_force(Vector3.DOWN * downward_force, hit_position)
+			# Use central force to prevent torque levering and edge-launching
+			rb.apply_central_force(downward_force)
 
-			if _last_weighed_body != collider:
+			if _last_weighed_body != rb:
 				print(
 					"LocomotionComponent: Applied ",
-					downward_force,
-					" downward force to ",
-					collider.name
+					downward_force.length(),
+					" downward central force to ",
+					rb.name
 				)
-				_last_weighed_body = collider
+				_last_weighed_body = rb
 			return
 
 

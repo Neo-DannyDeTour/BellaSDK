@@ -299,7 +299,7 @@ func _apply_movement(delta: float, input_dir: Vector2) -> void:
 
 ## Updates camera position, footsteps, scanners, and physics pushers.
 func _update_components(delta: float, input_dir: Vector2) -> void:
-	print("StateGround: _update_components() polling attached subsystems.")
+	#print("StateGround: _update_components() polling attached subsystems.")
 	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
 	var interact: PlayerInteractionComponent = (
 		player.interaction_component as PlayerInteractionComponent
