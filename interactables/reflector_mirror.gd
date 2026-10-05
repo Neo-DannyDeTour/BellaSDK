@@ -29,12 +29,11 @@ func _ready() -> void:
 	add_to_group("mirror")
 	_mark_children_as_mirrors(self)
 
-	if interact_comp:
-		interact_comp.interacted.connect(_on_interacted)
+	if is_instance_valid(interact_comp) and interact_comp.has_signal("interacted"):
+		interact_comp.connect("interacted", _on_interacted)
 
 
 ## Processes rotation input and detachment logic every physics frame if currently controlled.
-## [param delta]: The time elapsed since the last physics frame.
 func _physics_process(delta: float) -> void:
 	if is_controlled:
 		_handle_rotation_input(delta)
@@ -53,7 +52,6 @@ func get_reflect_marker() -> Marker3D:
 
 
 ## Reads player input axes and applies horizontal rotation to [member mirror_head].
-## [param delta]: The physics frame delta used for framerate-independent rotation.
 func _handle_rotation_input(delta: float) -> void:
 	var turn_input: float = GestureInputManager.get_axis("left", "right")
 
@@ -76,7 +74,6 @@ func _check_auto_release() -> void:
 
 
 ## Triggered when the interaction component emits a signal. Toggles control states.
-## [param character]: The [CharacterBody3D] interacting with the mirror.
 func _on_interacted(character: CharacterBody3D) -> void:
 	print("ReflectorMirror: Player triggered interaction.")
 	if not is_controlled:
@@ -86,7 +83,6 @@ func _on_interacted(character: CharacterBody3D) -> void:
 
 
 ## Assigns the player as the controller and locks their machine state if applicable.
-## [param character]: The [CharacterBody3D] taking control.
 func _take_control(character: CharacterBody3D) -> void:
 	print("ReflectorMirror: Player took control of the mirror.")
 	is_controlled = true
@@ -94,7 +90,7 @@ func _take_control(character: CharacterBody3D) -> void:
 	controlling_player = character
 
 	if controlling_player.has_method("set_machine_lock"):
-		controlling_player.set_machine_lock(true)
+		controlling_player.call("set_machine_lock", true)
 
 
 ## Frees the player from mirror control and unlocks their machine state.
@@ -102,14 +98,13 @@ func _release_control() -> void:
 	print("ReflectorMirror: Player released control of the mirror.")
 	is_controlled = false
 
-	if controlling_player and controlling_player.has_method("set_machine_lock"):
-		controlling_player.set_machine_lock(false)
+	if is_instance_valid(controlling_player) and controlling_player.has_method("set_machine_lock"):
+		controlling_player.call("set_machine_lock", false)
 
 	controlling_player = null
 
 
 ## Recursively assigns the "mirror" group to this node and all valid physical children.
-## [param node]: The root [Node] to iterate through.
 func _mark_children_as_mirrors(node: Node) -> void:
 	for child: Node in node.get_children():
 		if child is PhysicsBody3D:

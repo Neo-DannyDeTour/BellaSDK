@@ -219,8 +219,9 @@ func _initialize_gpu() -> void:
 
 	is_initialized = true
 
-	if is_instance_valid(active_fog_volume):
-		active_fog_volume.assign_compute_texture(godot_texture)
+	if is_instance_valid(active_fog_volume) and is_instance_valid(godot_texture):
+		if active_fog_volume.has_method("assign_compute_texture"):
+			active_fog_volume.call("assign_compute_texture", godot_texture)
 
 
 ## Handles engine notifications to clean up GPU resources on deletion.
@@ -282,7 +283,7 @@ func register_fog_volume(volume: FogVolume) -> void:
 	active_fog_volume = volume
 	if is_initialized and is_instance_valid(godot_texture):
 		if volume.has_method("assign_compute_texture"):
-			volume.assign_compute_texture(godot_texture)
+			volume.call("assign_compute_texture", godot_texture)
 
 
 ## Clears registered [FogVolume] if matching [param volume].

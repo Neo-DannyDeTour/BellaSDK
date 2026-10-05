@@ -222,9 +222,10 @@ func _find_camera() -> Camera3D:
 	print("Mirror: Searching scene tree for active Camera3D.")
 	if Engine.is_editor_hint():
 		var ed_interface: Object = Engine.get_singleton(&"EditorInterface")
-		if is_instance_valid(ed_interface):
-			var ed_vp: SubViewport = ed_interface.get_editor_viewport_3d()
-			if is_instance_valid(ed_vp):
+		if is_instance_valid(ed_interface) and ed_interface.has_method("get_editor_viewport_3d"):
+			var ed_vp_var: Variant = ed_interface.call("get_editor_viewport_3d", 0)
+			if ed_vp_var is SubViewport:
+				var ed_vp: SubViewport = ed_vp_var as SubViewport
 				return ed_vp.get_camera_3d()
 		return null
 

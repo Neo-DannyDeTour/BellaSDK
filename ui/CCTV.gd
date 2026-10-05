@@ -149,9 +149,10 @@ func _ready() -> void:
 	if not is_instance_valid(camera_vp):
 		camera_vp = get_node_or_null("CCTVViewport") as SubViewport
 
-	if is_instance_valid(interact_comp):
-		if not interact_comp.interacted.is_connected(_on_interacted):
-			interact_comp.interacted.connect(_on_interacted)
+	if is_instance_valid(interact_comp) and interact_comp.has_signal(&"interacted"):
+		var interact_signal: Signal = interact_comp.get(&"interacted") as Signal
+		if not interact_signal.is_connected(_on_interacted):
+			interact_signal.connect(_on_interacted)
 
 	screen_mat_override = screen_mesh.get_material_override() as StandardMaterial3D
 	if not is_instance_valid(screen_mat_override):
@@ -277,15 +278,17 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 
-	if event is InputEventMouseButton and event.is_pressed():
-		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			print("CCTV: Zooming camera IN.")
-			target_fov -= zoom_speed
-			get_viewport().set_input_as_handled()
-		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			print("CCTV: Zooming camera OUT.")
-			target_fov += zoom_speed
-			get_viewport().set_input_as_handled()
+	if event is InputEventMouseButton:
+		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
+		if mouse_event.is_pressed():
+			if mouse_event.button_index == MOUSE_BUTTON_WHEEL_UP:
+				print("CCTV: Zooming camera IN.")
+				target_fov -= zoom_speed
+				get_viewport().set_input_as_handled()
+			elif mouse_event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+				print("CCTV: Zooming camera OUT.")
+				target_fov += zoom_speed
+				get_viewport().set_input_as_handled()
 
 
 ## Overrides camera environment to permanently disable heavy render passes.
@@ -411,12 +414,14 @@ func _enable_fullscreen_mode() -> void:
 	_fullscreen_canvas.add_child(_fullscreen_rect)
 
 	if is_instance_valid(current_player) and current_player.get("camera_controller"):
-		var cam_controller: Node = current_player.get("camera_controller")
-		if is_instance_valid(cam_controller) and is_instance_valid(cam_controller.get("camera")):
-			print("CCTV: Disabling player camera cull mask.")
-			var p_cam: Camera3D = cam_controller.get("camera") as Camera3D
-			_stored_player_cull_mask = p_cam.cull_mask
-			p_cam.cull_mask = 0
+		var cam_controller: Variant = current_player.get("camera_controller")
+		if cam_controller is Object and is_instance_valid(cam_controller):
+			var raw_cam: Variant = (cam_controller as Object).get("camera")
+			if raw_cam is Camera3D and is_instance_valid(raw_cam):
+				print("CCTV: Disabling player camera cull mask.")
+				var p_cam: Camera3D = raw_cam as Camera3D
+				_stored_player_cull_mask = p_cam.cull_mask
+				p_cam.cull_mask = 0
 
 
 ## Frees fullscreen HUD overlay and restores main player camera cull mask.
@@ -428,11 +433,13 @@ func _disable_fullscreen_mode() -> void:
 		_fullscreen_rect = null
 
 	if is_instance_valid(current_player) and current_player.get("camera_controller"):
-		var cam_controller: Node = current_player.get("camera_controller")
-		if is_instance_valid(cam_controller) and is_instance_valid(cam_controller.get("camera")):
-			print("CCTV: Restoring player camera cull mask.")
-			var p_cam: Camera3D = cam_controller.get("camera") as Camera3D
-			p_cam.cull_mask = _stored_player_cull_mask
+		var cam_controller: Variant = current_player.get("camera_controller")
+		if cam_controller is Object and is_instance_valid(cam_controller):
+			var raw_cam: Variant = (cam_controller as Object).get("camera")
+			if raw_cam is Camera3D and is_instance_valid(raw_cam):
+				print("CCTV: Restoring player camera cull mask.")
+				var p_cam: Camera3D = raw_cam as Camera3D
+				p_cam.cull_mask = _stored_player_cull_mask
 
 
 ## Snaps security camera to target index in [member camera_locations].

@@ -151,7 +151,7 @@ func _on_player_interacted(character: CharacterBody3D) -> void:
 
 	request_viewport_refresh()
 	if character.has_method("enter_terminal_mode"):
-		character.enter_terminal_mode(self)
+		character.call(&"enter_terminal_mode", self)
 
 
 ## Exits terminal mode and restores player sensitivity.

@@ -20,13 +20,12 @@ func _ready() -> void:
 	if has_node("/root/Events"):
 		var events: Node = get_node("/root/Events")
 		if events.has_signal("screen_filter_changed"):
-			events.screen_filter_changed.connect(_on_screen_filter_changed)
+			events.connect("screen_filter_changed", _on_screen_filter_changed)
 		if events.has_signal("film_grain_changed"):
-			events.film_grain_changed.connect(_on_film_grain_changed)
+			events.connect("film_grain_changed", _on_film_grain_changed)
 
 
 ## Updates screen filter shader integer parameter.
-## [param filter_name] String key of the selected filter.
 func _on_screen_filter_changed(filter_name: String) -> void:
 	var clean_filter: String = filter_name.to_lower()
 	var mode_index: int = GlobalSettings.get_screen_filter_index(clean_filter)
@@ -43,7 +42,6 @@ func _on_screen_filter_changed(filter_name: String) -> void:
 
 
 ## Updates film grain intensity within the viewport shader.
-## [param intensity] Active grain multiplier.
 func _on_film_grain_changed(intensity: float) -> void:
 	print("Diorama: Setting film grain intensity to: ", intensity)
 	if not _post_mat:

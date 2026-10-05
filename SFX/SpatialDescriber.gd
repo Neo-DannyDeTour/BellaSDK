@@ -1,8 +1,8 @@
 ## Global autoload generating spoken Text-to-Speech directional descriptions of surroundings.
+#class_name SpatialDescriber
 extends Node
 
 ## Emitted when an environment description string has been generated for TTS output.
-## [param description_text] Formatted spoken summary string.
 signal on_description_generated(description_text: String)
 
 @export_category("Spatial Description Tuning")
@@ -56,14 +56,11 @@ func _ready() -> void:
 	if has_node("/root/Events"):
 		var events_node: Node = get_node("/root/Events")
 		if events_node.has_signal("describe_surroundings_requested"):
-			Utilities.safe_connect(
-				events_node.describe_surroundings_requested, describe_surroundings
-			)
+			events_node.connect("describe_surroundings_requested", describe_surroundings)
 			print("SpatialDescriber: Hooked to Events.describe_surroundings_requested.")
 
 
-## Executes a localized sweep and generates an audible narration summary for interactables.
-## [param origin_node] The [Node3D] representing the player or camera.
+## Executes a localized sweep and generates an audible narration summary.
 func describe_surroundings(origin_node: Node3D) -> void:
 	print("SpatialDescriber: describe_surroundings() invoked.")
 	if not is_instance_valid(origin_node):
@@ -187,9 +184,9 @@ func describe_surroundings(origin_node: Node3D) -> void:
 	var announced: Array[Dictionary] = clusters.slice(0, max_announced_clusters)
 
 	for cluster: Dictionary in announced:
-		var count: int = cluster["count"] as int
-		var item_name: String = cluster["name"] as String
-		var avg_pos: Vector3 = cluster["avg_pos"] as Vector3
+		var count: int = int(cluster.get("count", 1))
+		var item_name: String = str(cluster.get("name", ""))
+		var avg_pos: Vector3 = cluster.get("avg_pos", Vector3.ZERO) as Vector3
 		var avg_dist: float = view_pos.distance_to(avg_pos)
 		var rounded_dist: int = maxi(1, int(roundf(avg_dist)))
 
@@ -207,8 +204,6 @@ func describe_surroundings(origin_node: Node3D) -> void:
 
 
 ## Resolves active [Camera3D] for viewpoint sweep.
-## [param origin_node] The root player or observer node.
-## [return] The active [Camera3D] or null.
 func _resolve_active_camera(origin_node: Node3D) -> Camera3D:
 	print("SpatialDescriber: Resolving active camera.")
 	if origin_node is Camera3D:
@@ -221,9 +216,7 @@ func _resolve_active_camera(origin_node: Node3D) -> Camera3D:
 	return origin_node.find_child("*Camera*", true, false) as Camera3D
 
 
-## Ascends node hierarchy to find canonical root [Node3D] using [NodeQuery].
-## [param node] Target node detected via group query.
-## [return] Highest root [Node3D] representing interactable asset.
+## Ascends node hierarchy to find canonical root [Node3D].
 func _resolve_interactable_root(node: Node3D) -> Node3D:
 	if not is_instance_valid(node):
 		return null
@@ -255,8 +248,6 @@ func _resolve_interactable_root(node: Node3D) -> Node3D:
 
 
 ## Ascertains if a node belongs to a menu, settings preview, or UI diorama branch.
-## [param node] The target node being evaluated.
-## [return] True if the node is within any menu or preview hierarchy.
 func _is_menu_or_diorama_node(node: Node) -> bool:
 	if not is_instance_valid(node):
 		return false
@@ -282,9 +273,6 @@ func _is_menu_or_diorama_node(node: Node) -> bool:
 
 
 ## Sorts clusters into distinct priority buckets (Front -> Sides -> Far).
-## [param camera] Viewing [Camera3D].
-## [param view_pos] Global coordinates of the camera.
-## [param clusters] Array of clustered entity dictionaries.
 func _sort_clusters_prioritized(
 	camera: Camera3D, view_pos: Vector3, clusters: Array[Dictionary]
 ) -> void:
@@ -295,8 +283,8 @@ func _sort_clusters_prioritized(
 
 	clusters.sort_custom(
 		func(a: Dictionary, b: Dictionary) -> bool:
-			var pos_a: Vector3 = a["avg_pos"] as Vector3
-			var pos_b: Vector3 = b["avg_pos"] as Vector3
+			var pos_a: Vector3 = a.get("avg_pos", Vector3.ZERO) as Vector3
+			var pos_b: Vector3 = b.get("avg_pos", Vector3.ZERO) as Vector3
 			var dist_a: float = view_pos.distance_to(pos_a)
 			var dist_b: float = view_pos.distance_to(pos_b)
 
@@ -321,9 +309,6 @@ func _sort_clusters_prioritized(
 
 
 ## Assigns an integer priority rank based on distance and forward alignment.
-## [param dist] Euclidean distance to target in meters.
-## [param dot_fwd] Horizontal dot product with camera forward.
-## [return] Priority (0 = Front near, 1 = Sides near, 2 = Far).
 func _get_cluster_priority(dist: float, dot_fwd: float) -> int:
 	if dist <= nearby_distance_threshold:
 		if dot_fwd >= 0.4:
@@ -333,22 +318,20 @@ func _get_cluster_priority(dist: float, dot_fwd: float) -> int:
 
 
 ## Groups nearby identical objects into single counted clusters.
-## [param targets] List of validated target dictionaries.
-## [return] Array of clustered items with average positions.
 func _cluster_targets(targets: Array[Dictionary]) -> Array[Dictionary]:
 	print("SpatialDescriber: Clustering %d detected targets." % targets.size())
 	var clusters: Array[Dictionary] = []
 
 	for target: Dictionary in targets:
-		var target_name: String = target["name"] as String
-		var target_pos: Vector3 = target["position"] as Vector3
+		var target_name: String = str(target.get("name", ""))
+		var target_pos: Vector3 = target.get("position", Vector3.ZERO) as Vector3
 		var found_cluster: bool = false
 
 		for cluster: Dictionary in clusters:
-			if (cluster["name"] as String) == target_name:
-				var center: Vector3 = cluster["avg_pos"] as Vector3
+			if str(cluster.get("name", "")) == target_name:
+				var center: Vector3 = cluster.get("avg_pos", Vector3.ZERO) as Vector3
 				if center.distance_to(target_pos) <= cluster_distance_threshold:
-					var old_count: int = cluster["count"] as int
+					var old_count: int = int(cluster.get("count", 1))
 					var new_count: int = old_count + 1
 					var total_pos: Vector3 = (center * float(old_count)) + target_pos
 					cluster["avg_pos"] = total_pos / float(new_count)
@@ -363,11 +346,6 @@ func _cluster_targets(targets: Array[Dictionary]) -> Array[Dictionary]:
 
 
 ## Determines relative direction and elevation relative to camera orientation.
-## [param camera] Viewing [Camera3D].
-## [param view_pos] Eye-level camera position.
-## [param target_pos] Global coordinates of target entity.
-## [param ground_y] Ground-level Y elevation representing player walking plane.
-## [return] Intuitive spatial direction string.
 func _get_relative_direction(
 	camera: Camera3D, view_pos: Vector3, target_pos: Vector3, ground_y: float
 ) -> String:
@@ -407,21 +385,24 @@ func _get_relative_direction(
 	return horiz_phrase
 
 
-## Resolves accessible display name from properties, mesh references, or node hierarchy.
-## [param target_node] Target [Node3D] being examined.
-## [return] Human-friendly string name.
+## Resolves accessible display name from properties or node hierarchy.
 func _resolve_display_name(target_node: Node3D) -> String:
 	if target_node is PickableObject:
 		var pickable: PickableObject = target_node as PickableObject
 		if pickable.has_method("_get_clean_mesh_name"):
-			var clean_mesh: String = pickable._get_clean_mesh_name()
+			var clean_mesh_var: Variant = pickable.call("_get_clean_mesh_name")
+			var clean_mesh: String = str(clean_mesh_var)
 			if clean_mesh != "object":
 				return clean_mesh
 
 	if target_node.has_meta(&"display_name"):
 		return _clean_name(str(target_node.get_meta(&"display_name")))
-	if "display_name" in target_node and not str(target_node.display_name).is_empty():
-		return _clean_name(str(target_node.display_name))
+
+	if "display_name" in target_node:
+		var raw_display_prop: Variant = target_node.get("display_name")
+		var display_str: String = str(raw_display_prop)
+		if not display_str.is_empty():
+			return _clean_name(display_str)
 
 	if "mesh" in target_node:
 		var raw_mesh_prop: Variant = target_node.get("mesh")
@@ -445,8 +426,6 @@ func _resolve_display_name(target_node: Node3D) -> String:
 
 
 ## Recursively searches for instantiated sub-scenes or descriptive mesh instances.
-## [param current_node] Node to inspect.
-## [return] Resolved mesh name string or empty string.
 func _find_mesh_name(current_node: Node) -> String:
 	for child: Node in current_node.get_children():
 		var raw_name: String = child.name
@@ -474,8 +453,6 @@ func _find_mesh_name(current_node: Node) -> String:
 
 
 ## Evaluates whether a node name is an engine default placeholder or component.
-## [param node_name] Raw node name to evaluate.
-## [return] True if name matches generic structural patterns.
 func _is_generic_name(node_name: String) -> bool:
 	var lower_name: String = node_name.to_lower()
 	return (
@@ -493,11 +470,6 @@ func _is_generic_name(node_name: String) -> bool:
 
 
 ## Performs multi-point raycasts to verify line-of-sight visibility.
-## [param space_state] Direct 3D physics space state.
-## [param view_pos] Eye-level coordinates of camera.
-## [param target_node] Target [Node3D] to verify visibility towards.
-## [param origin_node] Observer node excluded from ray hits.
-## [return] True if all test points on target are occluded.
 func _is_occluded(
 	space_state: PhysicsDirectSpaceState3D,
 	view_pos: Vector3,
@@ -526,8 +498,6 @@ func _is_occluded(
 
 
 ## Recursively collects physics RIDs from a node tree to exclude from raycasting.
-## [param node] Root [Node] to gather collision objects from.
-## [param rids] Array to append found [RID] references into.
 func _collect_collision_rids(node: Node, rids: Array[RID]) -> void:
 	if not is_instance_valid(node):
 		return
@@ -538,17 +508,12 @@ func _collect_collision_rids(node: Node, rids: Array[RID]) -> void:
 
 
 ## Cleans digits, symbols, camelCase, and separators from an identifier string.
-## [param raw_name] Raw identifier string to sanitize.
-## [return] Formatted string with spaces.
 func _clean_name(raw_name: String) -> String:
 	var separated_name: String = _regex_camel.sub(raw_name, "$1 $2", true)
 	return _regex_symbols.sub(separated_name.to_lower(), " ", true).strip_edges()
 
 
 ## Pluralizes a noun phrase if the count is greater than one.
-## [param item_name] Singular noun description.
-## [param count] Number of items in the cluster.
-## [return] Formatted count and noun string.
 func _format_plural(item_name: String, count: int) -> String:
 	if count == 1:
 		return "1 " + item_name
@@ -564,11 +529,10 @@ func _format_plural(item_name: String, count: int) -> String:
 
 
 ## Dispatches the compiled description string to TTSManager.
-## [param speech_text] Text prompt for synthesis.
 func _speak(speech_text: String) -> void:
 	print("SpatialDescriber: _speak() called with text: ", speech_text)
 	if has_node("/root/TTSManager"):
 		var tts: Node = get_node("/root/TTSManager")
 		if tts.has_method("speak"):
-			tts.speak(speech_text)
+			tts.call("speak", speech_text)
 			print("SpatialDescriber: Dispatched speech to TTSManager.")

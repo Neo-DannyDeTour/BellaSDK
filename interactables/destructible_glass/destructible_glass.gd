@@ -74,7 +74,7 @@ var _is_broken: bool = false
 var _shards_generated: bool = false
 
 ## Two-dimensional grid storing active [DestructibleGlassShard] instances.
-var _shard_grid: Array = []
+var _shard_grid: Array[Array] = []
 
 ## Visual mesh instance of intact glass sheet.
 @onready var intact_mesh: MeshInstance3D = $IntactMesh
@@ -131,10 +131,12 @@ class DestructibleGlassShard:
 		var rel_vel: Vector3 = Vector3.ZERO
 
 		if body is RigidBody3D:
-			rel_vel = body.linear_velocity - linear_velocity
+			var rb: RigidBody3D = body as RigidBody3D
+			rel_vel = rb.linear_velocity - linear_velocity
 			speed = rel_vel.length()
 		elif body is CharacterBody3D:
-			rel_vel = body.velocity
+			var cb: CharacterBody3D = body as CharacterBody3D
+			rel_vel = cb.velocity
 			speed = rel_vel.length()
 
 		if speed >= main_glass.impact_velocity_threshold:
@@ -194,7 +196,7 @@ func _update_material() -> void:
 			if child is RigidBody3D:
 				for sub_child: Node in child.get_children():
 					if sub_child is MeshInstance3D:
-						_apply_instance_shader_parameters(sub_child)
+						_apply_instance_shader_parameters(sub_child as MeshInstance3D)
 
 
 ## Writes color, scale, and armor properties to mesh instance uniforms.
@@ -225,19 +227,25 @@ func _on_body_entered(body: Node) -> void:
 	print("DestructibleGlass: Body impact detected.")
 	var speed: float = 0.0
 	var rel_vel: Vector3 = Vector3.ZERO
+	var impact_pos: Vector3 = global_position
+
+	if body is Node3D:
+		impact_pos = (body as Node3D).global_position
 
 	if body is RigidBody3D:
-		rel_vel = body.linear_velocity - linear_velocity
+		var rb: RigidBody3D = body as RigidBody3D
+		rel_vel = rb.linear_velocity - linear_velocity
 		speed = rel_vel.length()
 	elif body is CharacterBody3D:
-		rel_vel = body.velocity
+		var cb: CharacterBody3D = body as CharacterBody3D
+		rel_vel = cb.velocity
 		speed = rel_vel.length()
 
 	if speed >= impact_velocity_threshold:
 		print("DestructibleGlass: Impact velocity met. Breaking.")
 		_is_broken = true
 		var hit_dir: Vector3 = rel_vel.normalized()
-		call_deferred("_break_initial", body.global_position, hit_dir)
+		call_deferred("_break_initial", impact_pos, hit_dir)
 
 
 ## Generates shard procedural meshes and rigid bodies lazily on break.
@@ -277,7 +285,7 @@ func _precalculate_shards() -> void:
 	_shard_grid.clear()
 
 	for row: int in range(shard_rows):
-		var row_arr: Array = []
+		var row_arr: Array[DestructibleGlassShard] = []
 		for col: int in range(shard_cols):
 			var shard_body: DestructibleGlassShard = DestructibleGlassShard.new()
 			shard_body.main_glass = self
@@ -475,29 +483,34 @@ func chip_glass(hit_position: Vector3, hit_dir: Vector3) -> void:
 			sfx.pitch_scale = randf_range(0.85, 1.15)
 
 	for child: Node in shards_container.get_children():
-		if child is DestructibleGlassShard and child.freeze and not child.is_destroyed:
-			var dist: float = child.global_position.distance_to(hit_position)
+		if not (child is DestructibleGlassShard):
+			continue
 
-			if dist <= shatter_radius:
-				child.is_destroyed = true
+		var shard: DestructibleGlassShard = child as DestructibleGlassShard
+		if not shard.freeze or shard.is_destroyed:
+			continue
 
-				if (
-					child.grid_y >= 0
-					and child.grid_y < shard_rows
-					and child.grid_x >= 0
-					and child.grid_x < shard_cols
-				):
-					_shard_grid[child.grid_y][child.grid_x] = null
+		var dist: float = shard.global_position.distance_to(hit_position)
+		if dist <= shatter_radius:
+			shard.is_destroyed = true
 
-				if can_break:
-					child.freeze = false
-					var shard_pos: Vector3 = child.global_position
-					var exp_dir: Vector3 = (shard_pos - hit_position).normalized()
-					var final_dir: Vector3 = (hit_dir + exp_dir * 0.5).normalized()
-					var force_mag: float = randf_range(5.0, 15.0)
+			if (
+				shard.grid_y >= 0
+				and shard.grid_y < shard_rows
+				and shard.grid_x >= 0
+				and shard.grid_x < shard_cols
+			):
+				_shard_grid[shard.grid_y][shard.grid_x] = null
 
-					child.apply_impulse(final_dir * force_mag)
-					_schedule_shard_cleanup(child)
+			if can_break:
+				shard.freeze = false
+				var shard_pos: Vector3 = shard.global_position
+				var exp_dir: Vector3 = (shard_pos - hit_position).normalized()
+				var final_dir: Vector3 = (hit_dir + exp_dir * 0.5).normalized()
+				var force_mag: float = randf_range(5.0, 15.0)
+
+				shard.apply_impulse(final_dir * force_mag)
+				_schedule_shard_cleanup(shard)
 
 	if can_break:
 		_update_shard_connectivity()
@@ -506,7 +519,7 @@ func chip_glass(hit_position: Vector3, hit_dir: Vector3) -> void:
 ## Evaluates structural edge connectivity, dropping unsupported island shards.
 func _update_shard_connectivity() -> void:
 	print("DestructibleGlass: Checking shard connectivity graph.")
-	var visited: Array = []
+	var visited: Array[Array] = []
 
 	for r: int in range(shard_rows):
 		var row_vis: Array[bool] = []
@@ -519,12 +532,10 @@ func _update_shard_connectivity() -> void:
 	for r: int in range(shard_rows):
 		for c: int in range(shard_cols):
 			if r == 0 or r == shard_rows - 1 or c == 0 or c == shard_cols - 1:
-				var cell: Variant = _shard_grid[r][c]
-				if is_instance_valid(cell):
-					var shard: DestructibleGlassShard = cell as DestructibleGlassShard
-					if shard.freeze and not shard.is_destroyed:
-						queue.append(shard)
-						visited[r][c] = true
+				var shard: DestructibleGlassShard = _shard_grid[r][c]
+				if is_instance_valid(shard) and shard.freeze and not shard.is_destroyed:
+					queue.append(shard)
+					visited[r][c] = true
 
 	var directions: Array[Vector2i] = [
 		Vector2i(0, -1), Vector2i(0, 1), Vector2i(-1, 0), Vector2i(1, 0)
@@ -538,30 +549,34 @@ func _update_shard_connectivity() -> void:
 
 			if nx >= 0 and nx < shard_cols and ny >= 0 and ny < shard_rows:
 				if not visited[ny][nx]:
-					var cell: Variant = _shard_grid[ny][nx]
-					if is_instance_valid(cell):
-						var neighbor: DestructibleGlassShard = cell as DestructibleGlassShard
-						if neighbor.freeze and not neighbor.is_destroyed:
-							visited[ny][nx] = true
-							queue.append(neighbor)
+					var neighbor: DestructibleGlassShard = _shard_grid[ny][nx]
+					if (
+						is_instance_valid(neighbor)
+						and neighbor.freeze
+						and not neighbor.is_destroyed
+					):
+						visited[ny][nx] = true
+						queue.append(neighbor)
 
 	for r: int in range(shard_rows):
 		for c: int in range(shard_cols):
 			if not visited[r][c]:
-				var cell: Variant = _shard_grid[r][c]
-				if is_instance_valid(cell):
-					var shard: DestructibleGlassShard = cell as DestructibleGlassShard
-					if shard.freeze and not shard.is_destroyed:
-						print("DestructibleGlass: Island detected. Dropping floating shard.")
-						shard.freeze = false
-						shard.is_destroyed = true
-						_shard_grid[r][c] = null
+				var island_shard: DestructibleGlassShard = _shard_grid[r][c]
+				if (
+					is_instance_valid(island_shard)
+					and island_shard.freeze
+					and not island_shard.is_destroyed
+				):
+					print("DestructibleGlass: Island detected. Dropping floating shard.")
+					island_shard.freeze = false
+					island_shard.is_destroyed = true
+					_shard_grid[r][c] = null
 
-						var tumble: Vector3 = Vector3(
-							randf_range(-0.5, 0.5), randf_range(-0.5, 0.5), randf_range(-0.5, 0.5)
-						)
-						shard.apply_torque_impulse(tumble)
-						_schedule_shard_cleanup(shard)
+					var tumble: Vector3 = Vector3(
+						randf_range(-0.5, 0.5), randf_range(-0.5, 0.5), randf_range(-0.5, 0.5)
+					)
+					island_shard.apply_torque_impulse(tumble)
+					_schedule_shard_cleanup(island_shard)
 
 
 ## Tweens detached shard scale down after delay before queueing node free.
@@ -570,9 +585,9 @@ func _schedule_shard_cleanup(shard: RigidBody3D) -> void:
 
 	for child: Node in shard.get_children():
 		if child is CollisionShape3D:
-			child.set_deferred("disabled", true)
+			(child as CollisionShape3D).set_deferred("disabled", true)
 		elif child is MeshInstance3D:
-			mesh_inst = child
+			mesh_inst = child as MeshInstance3D
 
 	if mesh_inst != null:
 		var tween: Tween = create_tween()

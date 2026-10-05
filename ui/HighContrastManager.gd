@@ -1,7 +1,4 @@
 ## Global autoload that manages high-contrast UI elements for accessibility.
-##
-## This manager recursively applies a solid black stylebox background to all
-## Text and RichText labels in the game when high-contrast mode is enabled.
 #class_name HighContrastManager
 extends Node
 
@@ -12,15 +9,16 @@ var high_contrast_style: StyleBoxFlat = StyleBoxFlat.new()
 var is_active: bool = false
 
 
-## Called when the node enters the scene tree.
 ## Initializes the stylebox, loads settings, and connects to events.
 func _ready() -> void:
 	print("System: High Contrast Manager initialized.")
 	_setup_stylebox()
 	_connect_to_events()
 
-	# Load default state on boot
-	is_active = GlobalSettings.get_setting("Accessibility", "high_contrast_ui", false) as bool
+	var setting_val: Variant = GlobalSettings.get_setting(
+		"Accessibility", "high_contrast_ui", false
+	)
+	is_active = (setting_val == true)
 	get_tree().node_added.connect(_on_scene_node_added)
 
 
@@ -37,12 +35,11 @@ func _setup_stylebox() -> void:
 ## Hooks into the global Events autoload to listen for setting toggles.
 func _connect_to_events() -> void:
 	var root_events: Node = get_node_or_null("/root/Events")
-	if root_events and root_events.has_signal("high_contrast_changed"):
+	if is_instance_valid(root_events) and root_events.has_signal("high_contrast_changed"):
 		root_events.connect("high_contrast_changed", _on_high_contrast_toggled)
 
 
 ## Triggered when the player changes the high contrast setting in the menu.
-## [param toggled_on] The new boolean state of the setting.
 func _on_high_contrast_toggled(toggled_on: bool) -> void:
 	print("System: High Contrast toggled globally to: ", toggled_on)
 	is_active = toggled_on
@@ -50,14 +47,12 @@ func _on_high_contrast_toggled(toggled_on: bool) -> void:
 
 
 ## Signal callback when any new node enters the scene tree.
-## [param node] The newly spawned [Node].
 func _on_scene_node_added(node: Node) -> void:
 	if is_active:
 		_apply_contrast_to_node(node)
 
 
-## Recursively iterates through the entire scene tree to apply or remove contrast styles.
-## [param parent] The root [Node] to begin searching from.
+## Recursively iterates through the entire scene tree to apply or remove styles.
 func _process_all_nodes(parent: Node) -> void:
 	_apply_contrast_to_node(parent)
 	for child: Node in parent.get_children():
@@ -65,16 +60,17 @@ func _process_all_nodes(parent: Node) -> void:
 
 
 ## Checks if a node is a text element and applies the contrast style if active.
-## [param node] The target [Node] to evaluate.
 func _apply_contrast_to_node(node: Node) -> void:
 	if node is Label:
+		var label_node: Label = node as Label
 		if is_active:
-			node.add_theme_stylebox_override("normal", high_contrast_style)
+			label_node.add_theme_stylebox_override("normal", high_contrast_style)
 		else:
-			node.remove_theme_stylebox_override("normal")
+			label_node.remove_theme_stylebox_override("normal")
 
 	elif node is RichTextLabel:
+		var rich_node: RichTextLabel = node as RichTextLabel
 		if is_active:
-			node.add_theme_stylebox_override("normal", high_contrast_style)
+			rich_node.add_theme_stylebox_override("normal", high_contrast_style)
 		else:
-			node.remove_theme_stylebox_override("normal")
+			rich_node.remove_theme_stylebox_override("normal")

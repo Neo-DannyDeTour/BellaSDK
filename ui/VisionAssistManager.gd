@@ -97,21 +97,16 @@ func _ready() -> void:
 	if has_node("/root/Events"):
 		var events: Node = get_node("/root/Events")
 		if events.has_signal("vision_assist_toggled"):
-			Utilities.safe_connect(events.vision_assist_toggled, _on_vision_assist_toggled)
+			events.connect("vision_assist_toggled", _on_vision_assist_toggled)
 		if events.has_signal("vision_assist_mode_changed"):
-			Utilities.safe_connect(
-				events.vision_assist_mode_changed, _on_vision_assist_mode_changed
-			)
+			events.connect("vision_assist_mode_changed", _on_vision_assist_mode_changed)
 		if events.has_signal("vision_assist_color_changed"):
-			Utilities.safe_connect(
-				events.vision_assist_color_changed, _on_vision_assist_color_changed
-			)
+			events.connect("vision_assist_color_changed", _on_vision_assist_color_changed)
 
 	Utilities.safe_connect(get_tree().node_added, _on_scene_node_added)
 
 
 ## Reconstructs and caches the [ShaderMaterial] associated with a group key.
-## [param group_name] The target scene group identifier.
 func _rebuild_material_for_group(group_name: String) -> void:
 	var mat: ShaderMaterial = ShaderMaterial.new()
 	mat.shader = _silhouette_shader
@@ -122,8 +117,6 @@ func _rebuild_material_for_group(group_name: String) -> void:
 
 
 ## Controls whether silhouette overlays render in the diorama viewport.
-## [param diorama_root] Root [Node] of the diorama hierarchy.
-## [param active] Target display state for diorama silhouettes.
 func set_diorama_overlays_active(diorama_root: Node, active: bool) -> void:
 	if not is_instance_valid(diorama_root):
 		return
@@ -140,13 +133,11 @@ func set_diorama_overlays_active(diorama_root: Node, active: bool) -> void:
 
 
 ## Recursively applies high-contrast silhouette overlays to diorama scenes.
-## [param diorama_root] Root [Node] of the diorama scene.
 func apply_diorama_overlays(diorama_root: Node) -> void:
 	set_diorama_overlays_active(diorama_root, diorama_preview_active)
 
 
 ## Handles global vision assist toggle events across all registered groups.
-## [param toggled_on] Whether high-contrast overlays should be displayed.
 func _on_vision_assist_toggled(toggled_on: bool) -> void:
 	if is_active == toggled_on:
 		return
@@ -169,15 +160,12 @@ func _on_vision_assist_toggled(toggled_on: bool) -> void:
 
 
 ## Updates background desaturation and tint rendering styles.
-## [param mode_name] Key identifier matching the preset style.
 func _on_vision_assist_mode_changed(mode_name: String) -> void:
 	print("VisionAssistManager: Changing background mode style to: ", mode_name)
 	current_mode = mode_name
 
 
 ## Updates the highlight color assigned to a specific group in real-time.
-## [param target_group] The group key identifier.
-## [param color_name] Named color string from the palette.
 func _on_vision_assist_color_changed(target_group: String, color_name: String) -> void:
 	var clean_group: String = target_group.to_lower()
 	var clean_color: String = color_name.to_lower()
@@ -197,7 +185,6 @@ func _on_vision_assist_color_changed(target_group: String, color_name: String) -
 
 
 ## Applies overlays immediately to newly spawned nodes belonging to groups.
-## [param node] The newly added [Node] instance.
 func _on_scene_node_added(node: Node) -> void:
 	if not is_active and not diorama_preview_active:
 		return
@@ -221,8 +208,6 @@ func _on_scene_node_added(node: Node) -> void:
 
 
 ## Evaluates whether a given node is situated within a diorama preview.
-## [param node] Target [Node] to evaluate.
-## [return] True if the node resides within a SubViewport or Diorama tree.
 func _is_node_in_diorama(node: Node) -> bool:
 	if not is_instance_valid(node):
 		return false
@@ -232,9 +217,6 @@ func _is_node_in_diorama(node: Node) -> bool:
 
 
 ## Recursively sets or removes stencil materials via [MaterialCache].
-## [param target_node] Target [Node] to process.
-## [param active_state] Flag indicating if overlay is applied or cleared.
-## [param target_material] [ShaderMaterial] instance configured for group.
 func _apply_overlay_to_meshes(
 	target_node: Node, active_state: bool, target_material: ShaderMaterial
 ) -> void:
@@ -242,44 +224,45 @@ func _apply_overlay_to_meshes(
 		return
 
 	if target_node is GeometryInstance3D:
+		var geom_node: GeometryInstance3D = target_node as GeometryInstance3D
 		if active_state:
 			var final_mat: ShaderMaterial = target_material
 			var base_tex: Texture2D = null
 			var needs_billboard: bool = false
 
-			if target_node is Sprite3D:
-				var sprite: Sprite3D = target_node as Sprite3D
+			if geom_node is Sprite3D:
+				var sprite: Sprite3D = geom_node as Sprite3D
 				base_tex = sprite.texture
 				needs_billboard = (sprite.billboard != BaseMaterial3D.BILLBOARD_DISABLED)
-			elif target_node is MeshInstance3D:
-				var mesh_inst: MeshInstance3D = target_node as MeshInstance3D
+			elif geom_node is MeshInstance3D:
+				var mesh_inst: MeshInstance3D = geom_node as MeshInstance3D
 				if mesh_inst.mesh:
 					var active_mat: Material = mesh_inst.get_active_material(0)
 					if is_instance_valid(active_mat):
 						if "albedo_texture" in active_mat:
-							base_tex = (active_mat.get("albedo_texture") as Texture2D)
+							var tex_var: Variant = active_mat.get("albedo_texture")
+							if tex_var is Texture2D:
+								base_tex = tex_var as Texture2D
 						if "billboard_mode" in active_mat:
+							var bb_mode_var: Variant = active_mat.get("billboard_mode")
+							var bb_mode_int: int = int(bb_mode_var)
 							needs_billboard = (
-								active_mat.get("billboard_mode")
-								!= BaseMaterial3D.BILLBOARD_DISABLED
+								bb_mode_int != int(BaseMaterial3D.BILLBOARD_DISABLED)
 							)
 
 			if is_instance_valid(base_tex) or needs_billboard:
-				var var_key: String = (
-					"%d_%s"
-					% [
-						base_tex.get_instance_id() if is_instance_valid(base_tex) else 0,
-						str(needs_billboard)
-					]
-				)
-				final_mat = MaterialCache.get_variant(target_material, var_key) as ShaderMaterial
+				var base_id: int = base_tex.get_instance_id() if is_instance_valid(base_tex) else 0
+				var var_key: String = "%d_%s" % [base_id, str(needs_billboard)]
+				var cached_var: Variant = MaterialCache.get_variant(target_material, var_key)
+				if cached_var is ShaderMaterial:
+					final_mat = cached_var as ShaderMaterial
 				if is_instance_valid(base_tex):
 					final_mat.set_shader_parameter("base_texture", base_tex)
 				final_mat.set_shader_parameter("enable_billboard", needs_billboard)
 
-			target_node.material_overlay = final_mat
+			geom_node.material_overlay = final_mat
 		else:
-			target_node.material_overlay = null
+			geom_node.material_overlay = null
 
 	for child: Node in target_node.get_children(true):
 		_apply_overlay_to_meshes(child, active_state, target_material)

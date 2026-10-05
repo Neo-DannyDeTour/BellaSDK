@@ -257,18 +257,18 @@ func _update_multimesh_transforms() -> void:
 func _configure_plug_tether() -> void:
 	print("PhysicsCable3D: Configuring plug endpoints.")
 	if "max_cable_length" in end_plug:
-		end_plug.max_cable_length = cable_length_meters
+		end_plug.set("max_cable_length", cable_length_meters)
 	if "anchor_point" in end_plug:
-		end_plug.anchor_point = start_anchor
+		end_plug.set("anchor_point", start_anchor)
 	if "partner_plug" in end_plug and "partner_plug" in start_anchor:
-		end_plug.partner_plug = start_anchor
+		end_plug.set("partner_plug", start_anchor)
 
 	if "max_cable_length" in start_anchor:
-		start_anchor.max_cable_length = cable_length_meters
+		start_anchor.set("max_cable_length", cable_length_meters)
 	if "anchor_point" in start_anchor:
-		start_anchor.anchor_point = end_plug
+		start_anchor.set("anchor_point", end_plug)
 	if "partner_plug" in start_anchor:
-		start_anchor.partner_plug = end_plug
+		start_anchor.set("partner_plug", end_plug)
 
 
 ## Instantiates editor range sphere visualizer.

@@ -62,13 +62,13 @@ func _connect_signals() -> void:
 		return
 	var events: Node = get_node("/root/Events")
 	if events.has_signal("colorblind_mode_changed"):
-		events.colorblind_mode_changed.connect(set_colorblind_mode)
+		events.connect("colorblind_mode_changed", set_colorblind_mode)
 	if events.has_signal("high_contrast_toggled"):
-		events.high_contrast_toggled.connect(set_high_contrast)
+		events.connect("high_contrast_toggled", set_high_contrast)
 	if events.has_signal("screen_filter_changed"):
-		events.screen_filter_changed.connect(set_screen_filter)
+		events.connect("screen_filter_changed", set_screen_filter)
 	if events.has_signal("film_grain_changed"):
-		events.film_grain_changed.connect(set_film_grain)
+		events.connect("film_grain_changed", set_film_grain)
 
 
 ## Updates the mode uniform on the colorblind [ShaderMaterial].
