@@ -440,10 +440,10 @@ func _connect_floors(
 	_spawn_csg_stairs(stair_run_start)
 
 
-## Instantiates a [ProceduralStairsCSG] node aligned to the stair run cells.
+## Instantiates a [ProceduralStairs] node aligned to the stair run cells.
 func _spawn_csg_stairs(start_coord: Vector3i) -> void:
-	print("ProceduralBlockout: Spawning CSG stairs at %s." % start_coord)
-	var stairs: ProceduralStairsCSG = ProceduralStairsCSG.new()
+	print("ProceduralBlockout: Spawning procedural stairs at %s." % start_coord)
+	var stairs: ProceduralStairs = ProceduralStairs.new()
 	stairs.name = "Stairs_%d_%d" % [start_coord.x, start_coord.y]
 	stairs.total_height = float(floor_height_cells) * cell_size
 	stairs.total_length = float(stair_length_cells) * cell_size
@@ -451,8 +451,6 @@ func _spawn_csg_stairs(start_coord: Vector3i) -> void:
 	stairs.step_count = maxi(6, int(stairs.total_height / 0.25))
 	stairs.fill_to_floor = true
 	stairs.generate_smooth_ramp = true
-	stairs.collision_layer = 1
-	stairs.collision_mask = 0
 
 	var origin_world: Vector3 = grid_to_world(start_coord)
 	stairs.position = origin_world + Vector3(0.0, 0.0, -cell_size * 0.5)

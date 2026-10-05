@@ -91,8 +91,6 @@ func reset_particle() -> void:
 
 ## Deactivates particle and teleports out of view.
 func deactivate() -> void:
-	if not Engine.is_editor_hint():
-		print("Particle: Deactivating particle.")
 	is_active = false
 	is_melting = false
 	visible = false
@@ -150,5 +148,5 @@ func _on_area_body_entered(_body: Node3D) -> void:
 	if not is_active or is_melting or alive_time < GRACE_PERIOD:
 		return
 
-	print("Particle: Floor collision confirmed. Starting melt.")
+	#print("Particle: Floor collision confirmed. Starting melt.")
 	is_melting = true

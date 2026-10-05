@@ -229,6 +229,7 @@ locale/translations=PackedStringArray("res://translations/translations.en.transl
 rendering_device/driver.windows="d3d12"
 textures/vram_compression/import_s3tc_bptc=true
 textures/vram_compression/import_etc2_astc=true
+global_illumination/gi/use_half_resolution=true
 environment/volumetric_fog/volume_size=128
 environment/volumetric_fog/volume_depth=128
 anti_aliasing/quality/screen_space_aa=1

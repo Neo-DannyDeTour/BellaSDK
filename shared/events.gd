@@ -228,13 +228,13 @@ signal tts_state_changed(enabled: bool)
 # --------------------------------------
 # GAMEPLAY FEEDBACK & UI SIGNALS
 # --------------------------------------
-## Emitted to request a centralized screen fade with blur and blink settings.
+## Emitted when a screen fade transition is requested by a trigger or console.
 @warning_ignore("unused_signal")
 signal screen_fade_requested(
 	fade_color: Color,
-	fade_in_time: float,
-	hold_time: float,
-	fade_out_time: float,
+	fade_in_duration: float,
+	hold_duration: float,
+	fade_out_duration: float,
 	use_blur: bool,
 	max_blur: float,
 	use_blink: bool,
@@ -486,6 +486,28 @@ signal interacted(target: CollisionObject3D, interactor: Node3D)
 ## Emitted to request a state machine transition with target state and payload.
 @warning_ignore("unused_signal")
 signal transition_requested(target_state_name: StringName, message: Dictionary)
+
+## Emitted to toggle player movement and camera controls during cutscenes.
+@warning_ignore("unused_signal")
+signal player_cinematic_lock_requested(is_locked: bool)
+
+@warning_ignore("unused_signal")
+## Emitted to snap screen overlay to solid black with blur and color.
+signal screen_blackout_instant_requested(is_black: bool, blur: float, fade_color: Color)
+
+@warning_ignore("unused_signal")
+## Emitted to request wake-up eyelid opening and blur clear transition.
+signal screen_wake_up_requested(
+	fade_color: Color,
+	eye_open_time: float,
+	max_blur: float,
+	blink_count: int,
+	blur_clear_time: float
+)
+
+@warning_ignore("unused_signal")
+## Emitted when cinematic narrative or chapter text needs to be displayed.
+signal wake_up_text_requested(text: String, fade_in: float, hold: float, fade_out: float)
 
 ## Visual animation style presets for chapter title card sequences.
 enum ChapterAnimStyle {

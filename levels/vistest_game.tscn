@@ -2016,14 +2016,13 @@ activate_once = true
 
 [node name="ChapterTrigger2" parent="." unique_id=986591175 instance=ExtResource("51_52lpc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.6088676, 3.6163845, 2.4663794)
-trigger_offset = Vector3(0, 0, 0)
 trigger_color = Color(0.9, 0.5, 0.1, 0.4)
-x_ray_mode = false
 trigger_text = "TRIGGER Chapter Title"
 chapter_name = "Vistest Level"
+animation_style = 12
 
 [node name="TriggerHint" parent="." unique_id=1784504971 instance=ExtResource("53_ol82b")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.34226102, 3.5, 2.7305722)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.4702663, 1.0999999, 4.6692953)
 trigger_text = "HINT jump"
 
 [node name="TriggerHint2" parent="." unique_id=1323132102 instance=ExtResource("53_ol82b")]
@@ -2037,6 +2036,8 @@ show_on_screen = false
 
 [node name="AccessibleLabelBody" parent="." unique_id=513336368 instance=ExtResource("54_w467f")]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -1.7210659, 4.541558, 4.0062213)
+collision_layer = 4
+collision_mask = 0
 display_text = "Assets and the initial layout
  are created by Lucas Andres Manzoni
 https://www.behance.net/lucasandresmanzoni
@@ -2046,6 +2047,8 @@ tts_alt_text = "\"Assets and the initial layout are created by Lucas Andres Manz
 
 [node name="AccessibleLabelBody2" parent="." unique_id=1617479103 instance=ExtResource("54_w467f")]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -1.7210659, 3.7932253, 4.0062213)
+collision_layer = 4
+collision_mask = 0
 display_text = "Q to noclip; ~ to debug menu"
 tts_alt_text = "Press the Q key, to no clip.
 Press tilde to open dee-bug menu."

@@ -128,7 +128,7 @@ func _process_idle(delta: float) -> void:
 
 ## Evaluates toy hovering and periodic interactions.
 func _process_playing(delta: float) -> void:
-	print("TentacleEnemy: _process_playing() hovering over toy.")
+	#print("TentacleEnemy: _process_playing() hovering over toy.")
 	_idle_time += delta
 	_interact_timer += delta
 

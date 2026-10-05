@@ -15,7 +15,6 @@ const SFX_BUS_NAME: StringName = &"AccesibilitySFX"
 const SPATIAL_DEDUPLICATION_THRESHOLD_SQ: float = 1.0
 
 @export_category("Sonar Audio Streams")
-
 ## Sound played centered on the player when triggering a ping scan.
 @export var ping_emitter_sound: AudioStream
 
@@ -29,7 +28,6 @@ const SPATIAL_DEDUPLICATION_THRESHOLD_SQ: float = 1.0
 @export var hazard_echo_sound: AudioStream
 
 @export_category("Sonar Tuning")
-
 ## Maximum scan radius in meters.
 @export var scan_radius: float = 25.0
 
@@ -152,16 +150,17 @@ func trigger_sonar(origin_node: Node3D) -> void:
 			seen_positions.append(node.global_position)
 			candidate_nodes.append(node)
 
+	var scan_radius_sq: float = scan_radius * scan_radius
 	var targets_to_ping: Array[Dictionary] = []
 	for target_3d: Node3D in candidate_nodes:
-		var dist: float = origin_pos.distance_to(target_3d.global_position)
-		if dist <= scan_radius:
+		var dist_sq: float = origin_pos.distance_squared_to(target_3d.global_position)
+		if dist_sq <= scan_radius_sq:
 			var priority: int = _get_target_priority(target_3d)
 			var is_occluded: bool = _check_occlusion(space_state, origin_pos, target_3d)
 			targets_to_ping.append(
 				{
 					"node": target_3d,
-					"distance": dist,
+					"distance_sq": dist_sq,
 					"priority": priority,
 					"is_occluded": is_occluded
 				}
@@ -171,7 +170,7 @@ func trigger_sonar(origin_node: Node3D) -> void:
 		func(a: Dictionary, b: Dictionary) -> bool:
 			if (a["priority"] as int) != (b["priority"] as int):
 				return (a["priority"] as int) < (b["priority"] as int)
-			return (a["distance"] as float) < (b["distance"] as float)
+			return (a["distance_sq"] as float) < (b["distance_sq"] as float)
 	)
 
 	if targets_to_ping.size() > max_audible_targets:
@@ -179,13 +178,14 @@ func trigger_sonar(origin_node: Node3D) -> void:
 
 	targets_to_ping.sort_custom(
 		func(a: Dictionary, b: Dictionary) -> bool:
-			return (a["distance"] as float) < (b["distance"] as float)
+			return (a["distance_sq"] as float) < (b["distance_sq"] as float)
 	)
 
 	var last_scheduled_time: float = 0.0
 	for target_data: Dictionary in targets_to_ping:
 		var target_node: Node3D = target_data["node"] as Node3D
-		var distance: float = target_data["distance"] as float
+		var dist_sq: float = target_data["distance_sq"] as float
+		var distance: float = sqrt(dist_sq)
 		var is_occluded: bool = target_data["is_occluded"] as bool
 		var natural_delay: float = distance / wave_speed
 		var scheduled_delay: float = maxf(natural_delay, last_scheduled_time + min_cue_separation)
@@ -199,6 +199,7 @@ func trigger_sonar(origin_node: Node3D) -> void:
 			)
 		)
 
+	print("SonarManager: Sonar sweep completed with %d targets." % targets_to_ping.size())
 	on_scan_completed.emit(targets_to_ping.size())
 
 
