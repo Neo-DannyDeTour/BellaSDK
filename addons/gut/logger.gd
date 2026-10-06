@@ -1,4 +1,4 @@
-var types = {
+var types: Variant = {
 	debug = 'debug',
 	deprecated = 'deprecated',
 	expected_error = 'expected_error',
@@ -13,7 +13,7 @@ var types = {
 	warn = 'warn',
 }
 
-var fmts = {
+var fmts: Variant = {
 	red = 'red',
 	yellow = 'yellow',
 	green = 'green',
@@ -25,7 +25,7 @@ var fmts = {
 	none = null
 }
 
-var _type_data = {
+var _type_data: Variant = {
 	types.debug:		{disp='DEBUG', 			enabled=true, fmt=fmts.bold},
 	types.deprecated:	{disp='DEPRECATED', 	enabled=true, fmt=fmts.none},
 	types.error:		{disp='GUT ERROR', 		enabled=true, fmt=fmts.red},
@@ -40,7 +40,7 @@ var _type_data = {
 	types.warn:			{disp='GUT WARNING', 	enabled=true, fmt=fmts.yellow},
 }
 
-var _logs = {
+var _logs: Variant = {
 	types.warn: [],
 	types.error: [],
 	types.info: [],
@@ -50,24 +50,24 @@ var _logs = {
 	types.failed: [],
 }
 
-var _printers = {
+var _printers: Variant = {
 	terminal = null,
 	gui = null,
 	console = null
 }
 
-var _gut = null
-var _indent_level = 0
-var _min_indent_level = 0
-var _indent_string = '    '
-var _less_test_names = false
-var _yield_calls = 0
-var _last_yield_text = ''
+var _gut: Variant = null
+var _indent_level: int = 0
+var _min_indent_level: int = 0
+var _indent_string: String = '    '
+var _less_test_names: bool = false
+var _yield_calls: int = 0
+var _last_yield_text: String = ''
 
 
 
 
-func _init():
+func _init() -> void:
 	_printers.terminal = GutUtils.Printers.GutTerminalPrinter.new()
 	_printers.console = GutUtils.Printers.GutConsolePrinter.new()
 	# There were some problems in the timing of disabling this at the right
@@ -76,35 +76,35 @@ func _init():
 	_printers.console.set_disabled(true)
 
 
-func _indent_text(text):
-	var to_return = text
-	var ending_newline = ''
+func _indent_text(text: Variant) -> Variant:
+	var to_return: Variant = text
+	var ending_newline: String = ''
 
 	if(text.ends_with("\n")):
 		ending_newline = "\n"
 		to_return = to_return.left(to_return.length() -1)
 
-	var pad = get_indent()
+	var pad: Variant = get_indent()
 	to_return = to_return.replace("\n", "\n" + pad)
 	to_return += ending_newline
 
 	return pad + to_return
 
 
-func _should_print_to_printer(key_name):
+func _should_print_to_printer(key_name: Variant) -> Variant:
 	return _printers[key_name] != null and !_printers[key_name].get_disabled()
 
 
-func _print_test_name():
+func _print_test_name() -> Variant:
 	if(_gut == null):
 		return
 
-	var cur_test = _gut.get_current_test_object()
+	var cur_test: Variant = _gut.get_current_test_object()
 	if(cur_test == null):
 		return false
 
 	if(!cur_test.has_printed_name):
-		var param_text = ''
+		var param_text: String = ''
 		if(cur_test.arg_count > 0):
 			# Just an FYI, parameter_handler in gut might not be set yet so can't
 			# use it here for cooler output.
@@ -113,42 +113,42 @@ func _print_test_name():
 		cur_test.has_printed_name = true
 
 
-func _output(text, fmt=null):
+func _output(text: Variant, fmt: Variant = null) -> void:
 	for key in _printers:
 		if(_should_print_to_printer(key)):
 			_printers[key].send(text, fmt)
 
 
-func _log(text, fmt=fmts.none):
+func _log(text: Variant, fmt: Variant = fmts.none) -> void:
 	_print_test_name()
-	var indented = _indent_text(text)
+	var indented: Variant = _indent_text(text)
 	_output(indented, fmt)
 
 # ---------------
 # Get Methods
 # ---------------
-func get_warnings():
+func get_warnings() -> Variant:
 	return get_log_entries(types.warn)
 
 
-func get_errors():
+func get_errors() -> Variant:
 	return get_log_entries(types.error)
 
 
-func get_infos():
+func get_infos() -> Variant:
 	return get_log_entries(types.info)
 
 
-func get_debugs():
+func get_debugs() -> Variant:
 	return get_log_entries(types.debug)
 
 
-func get_deprecated():
+func get_deprecated() -> Variant:
 	return get_log_entries(types.deprecated)
 
 
-func get_count(log_type=null):
-	var count = 0
+func get_count(log_type: Variant = null) -> Variant:
+	var count: int = 0
 	if(log_type == null):
 		for key in _logs:
 			count += _logs[key].size()
@@ -157,12 +157,12 @@ func get_count(log_type=null):
 	return count
 
 
-func get_log_entries(log_type):
+func get_log_entries(log_type: Variant) -> Variant:
 	return _logs[log_type]
 
 
-func get_indent():
-	var pad = ''
+func get_indent() -> Variant:
+	var pad: String = ''
 	for i in range(_indent_level):
 		pad += _indent_string
 
@@ -172,8 +172,8 @@ func get_indent():
 # ---------------
 # Log methods
 # ---------------
-func _output_type(type, text):
-	var td = _type_data[type]
+func _output_type(type: Variant, text: Variant) -> void:
+	var td: Variant = _type_data[type]
 	if(!td.enabled):
 		# if(_logs.has(type)):
 		# 	_logs[type].append(text)
@@ -184,20 +184,20 @@ func _output_type(type, text):
 		if(_logs.has(type)):
 			_logs[type].append(text)
 
-		var start = str('[', td.disp, ']')
+		var start: Variant = str('[', td.disp, ']')
 		if(text != null and text != ''):
 			start += ':  '
 		else:
 			start += ' '
-		var indented_start = _indent_text(start)
-		var indented_end = _indent_text(text)
+		var indented_start: Variant = _indent_text(start)
+		var indented_end: Variant = _indent_text(text)
 		indented_end = indented_end.lstrip(_indent_string)
 		_output(indented_start, td.fmt)
 		_output(indented_end + "\n")
 
 
-func _output_type_no_indent(type, text):
-	var td = _type_data[type]
+func _output_type_no_indent(type: Variant, text: Variant) -> void:
+	var td: Variant = _type_data[type]
 	if(!td.enabled):
 		# if(_logs.has(type)):
 		# 	_logs[type].append(text)
@@ -208,24 +208,24 @@ func _output_type_no_indent(type, text):
 		if(_logs.has(type)):
 			_logs[type].append(text)
 
-		var start = str('[', td.disp, ']')
+		var start: Variant = str('[', td.disp, ']')
 		_output(start, td.fmt)
 		_output(text + "\n")
 
 
-func debug(text):
+func debug(text: Variant) -> void:
 	_output_type(types.debug, text)
 
 
 # supply some text or the name of the deprecated method and the replacement.
-func deprecated(text, alt_method=null):
-	var msg = text
+func deprecated(text: Variant, alt_method: Variant = null) -> Variant:
+	var msg: Variant = text
 	if(alt_method):
 		msg = str('The method ', text, ' is deprecated, use ', alt_method , ' instead.')
 	return _output_type(types.deprecated, msg)
 
 
-func error(text):
+func error(text: Variant) -> void:
 	_output_type(types.error, text)
 	# Use the _gut one instead of GutUtils.get_error_tracker() for testing
 	# purposes.  This probably means this should have its own reference but
@@ -234,20 +234,20 @@ func error(text):
 		_gut.error_tracker.add_gut_error(text)
 
 
-func expected_error(text):
+func expected_error(text: Variant) -> void:
 	_output_type_no_indent(types.expected_error, text)
 
 
-func failed(text):
+func failed(text: Variant) -> void:
 	_output_type(types.failed, text)
 
 
-func info(text):
+func info(text: Variant) -> void:
 	_output_type(types.info, text)
 
 
-func orphan(text):
-	var td = _type_data["orphan"]
+func orphan(text: Variant) -> void:
+	var td: Variant = _type_data["orphan"]
 	if(!td.enabled):
 		return
 	_output(_indent_text(text), td.fmt)
@@ -255,23 +255,23 @@ func orphan(text):
 	# _output_type(types.orphan, text)
 
 
-func passed(text):
+func passed(text: Variant) -> void:
 	_output_type(types.passed, text)
 
 
-func pending(text):
+func pending(text: Variant) -> void:
 	_output_type(types.pending, text)
 
 
-func risky(text):
+func risky(text: Variant) -> void:
 	_output_type(types.risky, text)
 
 
-func warn(text):
+func warn(text: Variant) -> void:
 	_output_type(types.warn, text)
 
 
-func log(text='', fmt=fmts.none):
+func log(text: String = '', fmt: Variant = fmts.none) -> Variant:
 	if(text == ''):
 		_output("\n")
 	else:
@@ -279,17 +279,17 @@ func log(text='', fmt=fmts.none):
 	return null
 
 
-func lograw(text, fmt=fmts.none):
+func lograw(text: Variant, fmt: Variant = fmts.none) -> Variant:
 	return _output(text, fmt)
 
 
-func p(p1='', p2='', p3='', p4='', p5='', p6='', p7='', p8='', p9='', p10='', ):
+func p(p1: String = '', p2: String = '', p3: String = '', p4: String = '', p5: String = '', p6: String = '', p7: String = '', p8: String = '', p9: String = '', p10: String = '') -> void:
 	self.log(str(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10))
 
 
 # Print the test name if we aren't skipping names of tests that pass (basically
 # what _less_test_names means))
-func log_test_name():
+func log_test_name() -> void:
 	# suppress output if we haven't printed the test name yet and
 	# what to print is the test name.
 	if(!_less_test_names):
@@ -298,11 +298,11 @@ func log_test_name():
 # ---------------
 # Misc
 # ---------------
-func get_gut():
+func get_gut() -> Variant:
 	return _gut
 
 
-func set_gut(gut):
+func set_gut(gut: Variant) -> void:
 	_gut = gut
 	if(_gut == null):
 		_printers.gui = null
@@ -311,76 +311,76 @@ func set_gut(gut):
 			_printers.gui = GutUtils.Printers.GutGuiPrinter.new()
 
 
-func get_indent_level():
+func get_indent_level() -> Variant:
 	return _indent_level
 
 
-func set_indent_level(indent_level):
+func set_indent_level(indent_level: Variant) -> void:
 	_indent_level = max(_min_indent_level, indent_level)
 
 
-func get_indent_string():
+func get_indent_string() -> Variant:
 	return _indent_string
 
 
-func set_indent_string(indent_string):
+func set_indent_string(indent_string: Variant) -> void:
 	_indent_string = indent_string
 
 
-func clear():
+func clear() -> void:
 	for key in _logs:
 		_logs[key].clear()
 
 
-func inc_indent():
+func inc_indent() -> void:
 	_indent_level += 1
 
 
-func dec_indent():
+func dec_indent() -> void:
 	_indent_level = max(_min_indent_level, _indent_level -1)
 
 
-func is_type_enabled(type):
+func is_type_enabled(type: Variant) -> Variant:
 	return _type_data[type].enabled
 
 
-func set_type_enabled(type, is_enabled):
+func set_type_enabled(type: Variant, is_enabled: Variant) -> void:
 	_type_data[type].enabled = is_enabled
 
 
-func get_less_test_names():
+func get_less_test_names() -> Variant:
 	return _less_test_names
 
 
-func set_less_test_names(less_test_names):
+func set_less_test_names(less_test_names: Variant) -> void:
 	_less_test_names = less_test_names
 
 
-func disable_printer(name, is_disabled):
+func disable_printer(name: Variant, is_disabled: Variant) -> void:
 	if(_printers[name] != null):
 		_printers[name].set_disabled(is_disabled)
 
 
-func is_printer_disabled(name):
+func is_printer_disabled(name: Variant) -> Variant:
 	return _printers[name].get_disabled()
 
 
-func disable_formatting(is_disabled):
+func disable_formatting(is_disabled: Variant) -> void:
 	for key in _printers:
 		_printers[key].set_format_enabled(!is_disabled)
 
 
-func disable_all_printers(is_disabled):
+func disable_all_printers(is_disabled: Variant) -> void:
 	for p in _printers:
 		disable_printer(p, is_disabled)
 
 
-func get_printer(printer_key):
+func get_printer(printer_key: Variant) -> Variant:
 	return _printers[printer_key]
 
 
-func _yield_text_terminal(text):
-	var printer = _printers['terminal']
+func _yield_text_terminal(text: Variant) -> void:
+	var printer: Variant = _printers['terminal']
 	if(_yield_calls != 0):
 		printer.clear_line()
 		printer.back(_last_yield_text.length())
@@ -388,12 +388,12 @@ func _yield_text_terminal(text):
 
 
 # Format and printing rules for the "Awaiting" messages.
-func wait_msg(text):
+func wait_msg(text: Variant) -> void:
 	if(_type_data.warn.enabled):
 		self.log(text, fmts.yellow)
 
 
-func get_gui_bbcode():
+func get_gui_bbcode() -> Variant:
 	return _printers.gui.get_bbcode()
 
 

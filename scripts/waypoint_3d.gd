@@ -7,7 +7,7 @@ extends Marker3D
 signal reached(actor: Node3D)
 
 ## Alias for the editor trigger visualizer geometry type enum.
-const SHAPE_TYPE = EditorTriggerVisualizer.ShapeType
+const SHAPE_TYPE: Variant = EditorTriggerVisualizer.ShapeType
 
 @export_group("Waypoint Navigation")
 ## Distance in units to consider an actor within arrival threshold.

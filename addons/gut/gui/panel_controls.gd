@@ -2,17 +2,17 @@
 # ------------------------------------------------------------------------------
 class BaseGutPanelControl:
 	extends HBoxContainer
-	var label = Label.new()
-	var _lbl_unsaved = Label.new()
-	var _lbl_invalid = Label.new()
+	var label: Label = Label.new()
+	var _lbl_unsaved: Label = Label.new()
+	var _lbl_invalid: Label = Label.new()
 
-	var value = null:
+	var value: Variant = null:
 		get: return get_value()
 		set(val): set_value(val)
 
 	signal changed
 
-	func _init(title, val, hint=""):
+	func _init(title: Variant, val: Variant, hint: String = "") -> void:
 		size_flags_horizontal = SIZE_EXPAND_FILL
 		mouse_filter = MOUSE_FILTER_PASS
 
@@ -32,21 +32,21 @@ class BaseGutPanelControl:
 		label.tooltip_text = hint
 
 
-	func mark_unsaved(is_it=true):
+	func mark_unsaved(is_it: bool = true) -> void:
 		_lbl_unsaved.visible = is_it
 
 
-	func mark_invalid(is_it):
+	func mark_invalid(is_it: Variant) -> void:
 		_lbl_invalid.visible = is_it
 
 	# -- Virtual --
 	#
 	# value_ctrl (all should declare the value_ctrl)
 	#
-	func set_value(value):
+	func set_value(value: Variant) -> void:
 		pass
 
-	func get_value():
+	func get_value() -> void:
 		pass
 
 
@@ -55,9 +55,9 @@ class BaseGutPanelControl:
 class GpcNumber:
 	extends BaseGutPanelControl
 
-	var value_ctrl = SpinBox.new()
+	var value_ctrl: SpinBox = SpinBox.new()
 
-	func _init(title, val, v_min, v_max, hint=""):
+	func _init(title: Variant, val: Variant, v_min: Variant, v_max: Variant, hint: String = "") -> void:
 		super._init(title, val, hint)
 
 		value_ctrl.value = val
@@ -68,13 +68,13 @@ class GpcNumber:
 		value_ctrl.select_all_on_focus = true
 		add_child(value_ctrl)
 
-	func _on_value_changed(new_value):
+	func _on_value_changed(new_value: Variant) -> void:
 		changed.emit()
 
-	func get_value():
+	func get_value() -> Variant:
 		return value_ctrl.value
 
-	func set_value(val):
+	func set_value(val: Variant) -> void:
 		value_ctrl.value = val
 
 
@@ -83,7 +83,7 @@ class GpcNumber:
 class GpcFloat:
 	extends GpcNumber
 
-	func _init(title, val, step, v_min, v_max, hint=""):
+	func _init(title: Variant, val: Variant, step: Variant, v_min: Variant, v_max: Variant, hint: String = "") -> void:
 		super._init(title, val, v_min, v_max, hint)
 		value_ctrl.step = step
 		value_ctrl.value = val
@@ -94,9 +94,9 @@ class GpcFloat:
 class GpcString:
 	extends BaseGutPanelControl
 
-	var value_ctrl = LineEdit.new()
+	var value_ctrl: LineEdit = LineEdit.new()
 
-	func _init(title, val, hint=""):
+	func _init(title: Variant, val: Variant, hint: String = "") -> void:
 		super._init(title, val, hint)
 
 		value_ctrl.size_flags_horizontal = value_ctrl.SIZE_EXPAND_FILL
@@ -107,13 +107,13 @@ class GpcString:
 		if(title == ''):
 			label.visible = false
 
-	func _on_text_changed(new_value):
+	func _on_text_changed(new_value: Variant) -> void:
 		changed.emit()
 
-	func get_value():
+	func get_value() -> Variant:
 		return value_ctrl.text
 
-	func set_value(val):
+	func set_value(val: Variant) -> void:
 		value_ctrl.text = val
 
 
@@ -123,11 +123,11 @@ class GpcString:
 class GpcMultiLineString:
 	extends BaseGutPanelControl
 
-	var value_ctrl = TextEdit.new()
+	var value_ctrl: TextEdit = TextEdit.new()
 
-	func _init(title, val, hint=""):
+	func _init(title: Variant, val: Variant, hint: String = "") -> void:
 		super._init(title, val, hint)
-		var vbox = VBoxContainer.new()
+		var vbox: VBoxContainer = VBoxContainer.new()
 		vbox.size_flags_horizontal = SIZE_EXPAND_FILL
 		add_child(vbox)
 		label.reparent(vbox)
@@ -137,13 +137,13 @@ class GpcMultiLineString:
 		value_ctrl.scroll_fit_content_height = true
 		vbox.add_child(value_ctrl)
 
-	func _on_text_changed(new_value):
+	func _on_text_changed(new_value: Variant) -> void:
 		changed.emit()
 
-	func get_value():
+	func get_value() -> Variant:
 		return value_ctrl.text
 
-	func set_value(val):
+	func set_value(val: Variant) -> void:
 		value_ctrl.text = val
 
 
@@ -153,22 +153,22 @@ class GpcMultiLineString:
 class GpcBoolean:
 	extends BaseGutPanelControl
 
-	var value_ctrl = CheckBox.new()
+	var value_ctrl: CheckBox = CheckBox.new()
 
-	func _init(title, val, hint=""):
+	func _init(title: Variant, val: Variant, hint: String = "") -> void:
 		super._init(title, val, hint)
 
 		value_ctrl.button_pressed = val
 		value_ctrl.toggled.connect(_on_button_toggled)
 		add_child(value_ctrl)
 
-	func _on_button_toggled(new_value):
+	func _on_button_toggled(new_value: Variant) -> void:
 		changed.emit()
 
-	func get_value():
+	func get_value() -> Variant:
 		return value_ctrl.button_pressed
 
-	func set_value(val):
+	func set_value(val: Variant) -> void:
 		value_ctrl.button_pressed = val
 
 
@@ -179,16 +179,16 @@ class GpcBoolean:
 class GpcSelect:
 	extends BaseGutPanelControl
 
-	var value_ctrl = OptionButton.new()
+	var value_ctrl: OptionButton = OptionButton.new()
 
-	var text = '' :
+	var text: Variant = '' :
 		get: return value_ctrl.get_item_text(value_ctrl.selected)
 		set(val): pass
 
-	func _init(title, val, choices, hint=""):
+	func _init(title: Variant, val: Variant, choices: Variant, hint: String = "") -> void:
 		super._init(title, val, hint)
 
-		var select_idx = 0
+		var select_idx: int = 0
 		for i in range(choices.size()):
 			value_ctrl.add_item(choices[i])
 			if(val == choices[i]):
@@ -198,13 +198,13 @@ class GpcSelect:
 		value_ctrl.item_selected.connect(_on_item_selected)
 		add_child(value_ctrl)
 
-	func _on_item_selected(idx):
+	func _on_item_selected(idx: Variant) -> void:
 		changed.emit()
 
-	func get_value():
+	func get_value() -> Variant:
 		return value_ctrl.selected
 
-	func set_value(val):
+	func set_value(val: Variant) -> void:
 		value_ctrl.selected = val
 
 
@@ -213,18 +213,18 @@ class GpcSelect:
 class GpcColor:
 	extends BaseGutPanelControl
 
-	var value_ctrl = ColorPickerButton.new()
+	var value_ctrl: ColorPickerButton = ColorPickerButton.new()
 
-	func _init(title, val, hint=""):
+	func _init(title: Variant, val: Variant, hint: String = "") -> void:
 		super._init(title, val, hint)
 		value_ctrl.size_flags_horizontal = value_ctrl.SIZE_EXPAND_FILL
 		value_ctrl.color = val
 		add_child(value_ctrl)
 
-	func get_value():
+	func get_value() -> Variant:
 		return value_ctrl.color
 
-	func set_value(val):
+	func set_value(val: Variant) -> void:
 		value_ctrl.color = val
 
 
@@ -233,13 +233,13 @@ class GpcColor:
 class GpcDirectory:
 	extends BaseGutPanelControl
 
-	var value_ctrl := LineEdit.new()
-	var dialog := FileDialog.new()
-	var enabled_button = CheckButton.new()
+	var value_ctrl: LineEdit = LineEdit.new()
+	var dialog: FileDialog = FileDialog.new()
+	var enabled_button: CheckButton = CheckButton.new()
 
-	var _btn_dir := Button.new()
+	var _btn_dir: Button = Button.new()
 
-	func _init(title, val, hint=""):
+	func _init(title: Variant, val: Variant, hint: String = "") -> void:
 		super._init(title, val, hint)
 
 		label.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
@@ -265,34 +265,34 @@ class GpcDirectory:
 		add_child(_btn_dir)
 		add_child(dialog)
 
-	func _update_display():
-		var is_empty = value_ctrl.text == ''
+	func _update_display() -> void:
+		var is_empty: Variant = value_ctrl.text == ''
 		enabled_button.button_pressed = !is_empty
 		enabled_button.disabled = is_empty
 
 
-	func _ready():
+	func _ready() -> void:
 		if(Engine.is_editor_hint()):
 			dialog.size = Vector2(1000, 700)
 		else:
 			dialog.size = Vector2(500, 350)
 		_update_display()
 
-	func _on_value_changed(new_text):
+	func _on_value_changed(new_text: Variant) -> void:
 		_update_display()
 
-	func _on_selected(path):
+	func _on_selected(path: Variant) -> void:
 		value_ctrl.text = path
 		_update_display()
 
-	func _on_dir_button_pressed():
+	func _on_dir_button_pressed() -> void:
 		dialog.current_dir = value_ctrl.text
 		dialog.popup_centered()
 
-	func get_value():
+	func get_value() -> Variant:
 		return value_ctrl.text
 
-	func set_value(val):
+	func set_value(val: Variant) -> void:
 		value_ctrl.text = val
 
 
@@ -303,45 +303,45 @@ class GpcDirectory:
 class GpcFileDialogSuperPlus:
 	extends FileDialog
 
-	var show_diretory_types = true :
+	var show_diretory_types: Variant = true :
 		set(val) :
 			show_diretory_types = val
 			_update_display()
 
-	var show_res = true :
+	var show_res: Variant = true :
 		set(val) :
 			show_res = val
 			_update_display()
 
-	var show_user = true :
+	var show_user: Variant = true :
 		set(val) :
 			show_user = val
 			_update_display()
 
-	var show_os = true :
+	var show_os: Variant = true :
 		set(val) :
 			show_os = val
 			_update_display()
 
-	var _dir_type_hbox = null
-	var _btn_res = null
-	var _btn_user = null
-	var _btn_os = null
+	var _dir_type_hbox: Variant = null
+	var _btn_res: Variant = null
+	var _btn_user: Variant = null
+	var _btn_os: Variant = null
 
-	func _ready():
+	func _ready() -> void:
 		_init_controls()
 		_update_display()
 
 
-	func _init_controls():
+	func _init_controls() -> void:
 		_dir_type_hbox = HBoxContainer.new()
 
 		_btn_res = Button.new()
 		_btn_user = Button.new()
 		_btn_os = Button.new()
-		var spacer1 = CenterContainer.new()
+		var spacer1: CenterContainer = CenterContainer.new()
 		spacer1.size_flags_horizontal = spacer1.SIZE_EXPAND_FILL
-		var spacer2 = spacer1.duplicate()
+		var spacer2: Variant = spacer1.duplicate()
 
 		_dir_type_hbox.add_child(spacer1)
 		_dir_type_hbox.add_child(_btn_res)
@@ -361,7 +361,7 @@ class GpcFileDialogSuperPlus:
 		_btn_os.pressed.connect(func(): access = ACCESS_FILESYSTEM)
 
 
-	func _update_display():
+	func _update_display() -> void:
 		if(is_inside_tree()):
 			_dir_type_hbox.visible = show_diretory_types
 			_btn_res.visible = show_res
@@ -374,16 +374,16 @@ class GpcFileDialogSuperPlus:
 class GpcSaveLoad:
 	extends BaseGutPanelControl
 
-	var btn_load = Button.new()
-	var btn_save = Button.new()
+	var btn_load: Button = Button.new()
+	var btn_save: Button = Button.new()
 
-	var dlg_load := GpcFileDialogSuperPlus.new()
-	var dlg_save := GpcFileDialogSuperPlus.new()
+	var dlg_load: GpcFileDialogSuperPlus = GpcFileDialogSuperPlus.new()
+	var dlg_save: GpcFileDialogSuperPlus = GpcFileDialogSuperPlus.new()
 
 	signal save_path_chosen(path)
 	signal load_path_chosen(path)
 
-	func _init(title, val, hint):
+	func _init(title: Variant, val: Variant, hint: Variant) -> void:
 		super._init(title, val, hint)
 
 		btn_load.text = "Load"
@@ -409,7 +409,7 @@ class GpcSaveLoad:
 		add_child(dlg_save)
 
 
-	func _ready():
+	func _ready() -> void:
 		if(Engine.is_editor_hint()):
 			dlg_load.size = Vector2(1000, 700)
 			dlg_save.size = Vector2(1000, 700)
@@ -417,16 +417,16 @@ class GpcSaveLoad:
 			dlg_load.size = Vector2(500, 350)
 			dlg_save.size = Vector2(500, 350)
 
-	func _on_load_selected(path):
+	func _on_load_selected(path: Variant) -> void:
 		load_path_chosen.emit(path)
 
-	func _on_save_selected(path):
+	func _on_save_selected(path: Variant) -> void:
 		save_path_chosen.emit(path)
 
-	func _on_load_pressed():
+	func _on_load_pressed() -> void:
 		dlg_load.popup_centered()
 
-	func _on_save_pressed():
+	func _on_save_pressed() -> void:
 		dlg_save.popup_centered()
 
 # ------------------------------------------------------------------------------

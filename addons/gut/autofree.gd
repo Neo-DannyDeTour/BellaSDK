@@ -28,18 +28,18 @@
 # ##############################################################################
 # Class used to keep track of objects to be freed and utilities to free them.
 # ##############################################################################
-var _to_free = []
-var _to_queue_free = []
-var _ref_counted_doubles = []
-var _all_instance_ids = []
+var _to_free: Array = []
+var _to_queue_free: Array = []
+var _ref_counted_doubles: Array = []
+var _all_instance_ids: Array = []
 
 
-func _add_instance_id(thing):
+func _add_instance_id(thing: Variant) -> void:
 	if(thing.has_method("get_instance_id")):
 		_all_instance_ids.append(thing.get_instance_id())
 
 
-func add_free(thing):
+func add_free(thing: Variant) -> void:
 	if(typeof(thing) == TYPE_OBJECT):
 		_add_instance_id(thing)
 		if(!thing is RefCounted):
@@ -48,21 +48,21 @@ func add_free(thing):
 			_ref_counted_doubles.append(thing)
 
 
-func add_queue_free(thing):
+func add_queue_free(thing: Variant) -> void:
 	if(typeof(thing) == TYPE_OBJECT):
 		_add_instance_id(thing)
 		_to_queue_free.append(thing)
 
 
-func get_queue_free_count():
+func get_queue_free_count() -> Variant:
 	return _to_queue_free.size()
 
 
-func get_free_count():
+func get_free_count() -> Variant:
 	return _to_free.size()
 
 
-func free_all():
+func free_all() -> void:
 	for node in _to_free:
 		if(is_instance_valid(node)):
 			if(GutUtils.is_double(node)):
@@ -82,5 +82,5 @@ func free_all():
 	_all_instance_ids.clear()
 
 
-func has_instance_id(id):
+func has_instance_id(id: Variant) -> Variant:
 	return _all_instance_ids.has(id)

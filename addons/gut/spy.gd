@@ -8,15 +8,15 @@
 #       method2:[ [p1, p2], [p1, p2] ]
 #   },
 # }
-var _calls = {}
-var _lgr = GutUtils.get_logger()
-var _compare = GutUtils.Comparator.new()
+var _calls: Dictionary = {}
+var _lgr: Variant = GutUtils.get_logger()
+var _compare: Variant = GutUtils.Comparator.new()
 
-func _find_parameters(call_params, params_to_find):
-	var found = false
-	var idx = 0
+func _find_parameters(call_params: Variant, params_to_find: Variant) -> Variant:
+	var found: bool = false
+	var idx: int = 0
 	while(idx < call_params.size() and !found):
-		var result = _compare.deep(call_params[idx], params_to_find)
+		var result: Variant = _compare.deep(call_params[idx], params_to_find)
 		if(result.are_equal):
 			found = true
 		else:
@@ -24,8 +24,8 @@ func _find_parameters(call_params, params_to_find):
 	return found
 
 
-func _get_params_as_string(params):
-	var to_return = ''
+func _get_params_as_string(params: Variant) -> Variant:
+	var to_return: String = ''
 	if(params == null):
 		return ''
 
@@ -42,7 +42,7 @@ func _get_params_as_string(params):
 	return to_return
 
 
-func add_call(variant, method_name, parameters=null):
+func add_call(variant: Variant, method_name: Variant, parameters: Variant = null) -> void:
 	if(!_calls.has(variant)):
 		_calls[variant] = {}
 
@@ -52,8 +52,8 @@ func add_call(variant, method_name, parameters=null):
 	_calls[variant][method_name].append(parameters)
 
 
-func was_called(variant, method_name, parameters=null):
-	var to_return = false
+func was_called(variant: Variant, method_name: Variant, parameters: Variant = null) -> Variant:
+	var to_return: bool = false
 	if(_calls.has(variant) and _calls[variant].has(method_name)):
 		if(parameters):
 			to_return = _find_parameters(_calls[variant][method_name], parameters)
@@ -62,12 +62,12 @@ func was_called(variant, method_name, parameters=null):
 	return to_return
 
 
-func get_call_parameters(variant, method_name, index=-1):
-	var to_return = null
-	var get_index = -1
+func get_call_parameters(variant: Variant, method_name: Variant, index: int = -1) -> Variant:
+	var to_return: Variant = null
+	var get_index: int = -1
 
 	if(_calls.has(variant) and _calls[variant].has(method_name)):
-		var call_size = _calls[variant][method_name].size()
+		var call_size: Variant = _calls[variant][method_name].size()
 		if(index == -1):
 			# get the most recent call by default
 			get_index =  call_size -1
@@ -82,8 +82,8 @@ func get_call_parameters(variant, method_name, index=-1):
 	return to_return
 
 
-func call_count(instance, method_name, parameters=null):
-	var to_return = 0
+func call_count(instance: Variant, method_name: Variant, parameters: Variant = null) -> Variant:
+	var to_return: int = 0
 
 	if(was_called(instance, method_name)):
 		if(parameters):
@@ -95,12 +95,12 @@ func call_count(instance, method_name, parameters=null):
 	return to_return
 
 
-func clear():
+func clear() -> void:
 	_calls = {}
 
 
-func get_call_list_as_string(instance):
-	var to_return = ''
+func get_call_list_as_string(instance: Variant) -> Variant:
+	var to_return: String = ''
 	if(_calls.has(instance)):
 		for method in _calls[instance]:
 			for i in range(_calls[instance][method].size()):
@@ -108,9 +108,9 @@ func get_call_list_as_string(instance):
 	return to_return
 
 
-func get_logger():
+func get_logger() -> Variant:
 	return _lgr
 
 
-func set_logger(logger):
+func set_logger(logger: Variant) -> void:
 	_lgr = logger

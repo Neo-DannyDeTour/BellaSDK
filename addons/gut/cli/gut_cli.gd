@@ -1,8 +1,8 @@
 extends Node
 
-var Optparse = load('res://addons/gut/cli/optparse.gd')
-var Gut = load('res://addons/gut/gut.gd')
-var GutRunner = load('res://addons/gut/gui/GutRunner.tscn')
+const Optparse = load('res://addons/gut/cli/optparse.gd')
+const Gut = load('res://addons/gut/gut.gd')
+const GutRunner = load('res://addons/gut/gui/GutRunner.tscn')
 
 # ------------------------------------------------------------------------------
 # Helper class to resolve the various different places where an option can
@@ -16,53 +16,53 @@ var GutRunner = load('res://addons/gut/gui/GutRunner.tscn')
 # will punch through null values of higher precedented hashes.
 # ------------------------------------------------------------------------------
 class GutCliOptionResolver:
-	var base_opts = {}
-	var cmd_opts = {}
-	var config_opts = {}
+	var base_opts: Dictionary = {}
+	var cmd_opts: Dictionary = {}
+	var config_opts: Dictionary = {}
 
 
-	func get_value(key):
+	func get_value(key: Variant) -> Variant:
 		return _nvl(cmd_opts[key], _nvl(config_opts[key], base_opts[key]))
 
-	func set_base_opts(opts):
+	func set_base_opts(opts: Variant) -> void:
 		base_opts = opts
 		cmd_opts = _null_copy(opts)
 		config_opts = _null_copy(opts)
 
 	# creates a copy of a hash with all values null.
-	func _null_copy(h):
-		var new_hash = {}
+	func _null_copy(h: Variant) -> Variant:
+		var new_hash: Dictionary = {}
 		for key in h:
 			new_hash[key] = null
 		return new_hash
 
-	func _nvl(a, b):
+	func _nvl(a: Variant, b: Variant) -> Variant:
 		if(a == null):
 			return b
 		else:
 			return a
 
-	func _string_it(h):
-		var to_return = ''
+	func _string_it(h: Variant) -> Variant:
+		var to_return: String = ''
 		for key in h:
 			to_return += str('(',key, ':', _nvl(h[key], 'NULL'), ')')
 		return to_return
 
-	func to_s():
+	func to_s() -> Variant:
 		return str("base:\n", _string_it(base_opts), "\n", \
 				"config:\n", _string_it(config_opts), "\n", \
 				"cmd:\n", _string_it(cmd_opts), "\n", \
 				"resolved:\n", _string_it(get_resolved_values()))
 
-	func get_resolved_values():
-		var to_return = {}
+	func get_resolved_values() -> Variant:
+		var to_return: Dictionary = {}
 		for key in base_opts:
 			to_return[key] = get_value(key)
 		return to_return
 
-	func to_s_verbose():
-		var to_return = ''
-		var resolved = get_resolved_values()
+	func to_s_verbose() -> Variant:
+		var to_return: String = ''
+		var resolved: Variant = get_resolved_values()
 		for key in base_opts:
 			to_return += str(key, "\n")
 			to_return += str('  default: ', _nvl(base_opts[key], 'NULL'), "\n")
@@ -76,14 +76,14 @@ class GutCliOptionResolver:
 # Here starts the actual script that uses the Options class to kick off Gut
 # and run your tests.
 # ------------------------------------------------------------------------------
-var _gut_config = load('res://addons/gut/gut_config.gd').new()
+var _gut_config: Variant = load('res://addons/gut/gut_config.gd').new()
 
 # array of command line options specified
-var _final_opts = []
+var _final_opts: Array = []
 
 
-func setup_options(options, font_names):
-	var opts = Optparse.new()
+func setup_options(options: Variant, font_names: Variant) -> void:
+	var opts: Optparse = Optparse.new()
 	opts.banner =\
 """
 The GUT CLI
@@ -157,14 +157,14 @@ an immediate "=":
 	opts.add("-gcheck_update", false, "Check for update")
 
 	# run as in editor, for shelling out purposes through Editor.
-	var o = opts.add('-graie', false, 'do not use')
+	var o: Variant = opts.add('-graie', false, 'do not use')
 	o.show_in_help = false
 	return opts
 
 
 # Parses options, applying them to the _tester or setting values
 # in the options struct.
-func extract_command_line_options(from, to):
+func extract_command_line_options(from: Variant, to: Variant) -> void:
 	to.compact_mode = from.get_value_or_null('-gcompact_mode')
 	to.config_file = from.get_value_or_null('-gconfig')
 	to.dirs = from.get_value_or_null('-gdir')
@@ -204,13 +204,13 @@ func extract_command_line_options(from, to):
 
 
 
-func _print_gutconfigs(values):
-	var header = """Here is a sample of a full .gutconfig.json file.
+func _print_gutconfigs(values: Variant) -> void:
+	var header: Variant = """Here is a sample of a full .gutconfig.json file.
 You do not need to specify all values in your own file.  The values supplied in
 this sample are what would be used if you ran gut w/o the -gprint_gutconfig_sample
 option.   Option priority is:  command-line, .gutconfig, default)."""
 	print("\n", header.replace("\n", ' '), "\n")
-	var resolved = values
+	var resolved: Variant = values
 
 	# remove_at some options that don't make sense to be in config
 	resolved.erase("config_file")
@@ -225,11 +225,11 @@ option.   Option priority is:  command-line, .gutconfig, default)."""
 	print(JSON.stringify(resolved, ' '))
 
 
-func _run_tests(opt_resolver):
+func _run_tests(opt_resolver: Variant) -> void:
 	_final_opts = opt_resolver.get_resolved_values();
 	_gut_config.options = _final_opts
 
-	var runner = GutRunner.instantiate()
+	var runner: GutRunner = GutRunner.instantiate()
 	runner.set_gut_config(_gut_config)
 	get_tree().root.add_child(runner)
 
@@ -239,8 +239,8 @@ func _run_tests(opt_resolver):
 		runner.run_tests()
 
 
-var update_detector = null
-func _check_for_update():
+var update_detector: Variant = null
+func _check_for_update() -> void:
 	print(str("Checking for update for GUT ", GutUtils.version_numbers.gut_version))
 	update_detector = GutUtils.UpdateDetector.new()
 	add_child(update_detector)
@@ -249,18 +249,18 @@ func _check_for_update():
 
 
 # parse options and run Gut
-func main():
-	var opt_resolver = GutCliOptionResolver.new()
+func main() -> void:
+	var opt_resolver: GutCliOptionResolver = GutCliOptionResolver.new()
 	opt_resolver.set_base_opts(_gut_config.default_options)
 
-	var cli_opts = setup_options(_gut_config.default_options, _gut_config.valid_fonts)
+	var cli_opts: Variant = setup_options(_gut_config.default_options, _gut_config.valid_fonts)
 
 	cli_opts.parse()
-	var all_options_valid = cli_opts.unused.size() == 0
+	var all_options_valid: Variant = cli_opts.unused.size() == 0
 	extract_command_line_options(cli_opts, opt_resolver.cmd_opts)
 
-	var config_path = opt_resolver.get_value('config_file')
-	var load_result = 1
+	var config_path: Variant = opt_resolver.get_value('config_file')
+	var load_result: int = 1
 	# Checking for an empty config path allows us to not use a config file via
 	# the -gconfig_file option since using "-gconfig_file=" or -gconfig_file=''"
 	# will result in an empty string.

@@ -3,9 +3,9 @@ class_name GutStringUtils
 # Hash containing all the built in types in Godot.  This provides an English
 # name for the types that corosponds with the type constants defined in the
 # engine.
-var types = {}
+var types: Dictionary = {}
 
-func _init_types_dictionary():
+func _init_types_dictionary() -> void:
 	types[TYPE_NIL] = 'NIL'
 	types[TYPE_AABB] = 'AABB'
 	types[TYPE_ARRAY] = 'ARRAY'
@@ -47,25 +47,25 @@ func _init_types_dictionary():
 	types[TYPE_VECTOR4I] = 'VECTOR4I'
 
 # Types to not be formatted when using _str
-var _str_ignore_types = [
+var _str_ignore_types: Variant = [
 	TYPE_INT, TYPE_FLOAT, TYPE_STRING,
 	TYPE_NIL, TYPE_BOOL
 ]
 
-func _init():
+func _init() -> void:
 	_init_types_dictionary()
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
-func _get_filename(path):
+func _get_filename(path: Variant) -> Variant:
 	return path.split('/')[-1]
 
 # ------------------------------------------------------------------------------
 # Gets the filename of an object passed in.  This does not return the
 # full path to the object, just the filename.
 # ------------------------------------------------------------------------------
-func _get_obj_filename(thing):
-	var filename = null
+func _get_obj_filename(thing: Variant) -> Variant:
+	var filename: Variant = null
 
 	if(thing == null or
 		GutUtils.is_native_class(thing) or
@@ -94,9 +94,9 @@ func _get_obj_filename(thing):
 # Better object/thing to string conversion.  Includes extra details about
 # whatever is passed in when it can/should.
 # ------------------------------------------------------------------------------
-func type2str(thing):
-	var filename = _get_obj_filename(thing)
-	var str_thing = str(thing)
+func type2str(thing: Variant) -> Variant:
+	var filename: Variant = _get_obj_filename(thing)
+	var str_thing: Variant = str(thing)
 
 	if(thing == null):
 		# According to str there is a difference between null and an Object
@@ -119,13 +119,13 @@ func type2str(thing):
 		if(GutUtils.is_native_class(thing)):
 			str_thing = GutUtils.get_native_class_name(thing)
 		elif(GutUtils.is_double(thing)):
-			var double_path = _get_filename(thing.__gutdbl.thepath)
+			var double_path: Variant = _get_filename(thing.__gutdbl.thepath)
 			if(thing.__gutdbl.subpath != ''):
 				double_path += str('/', thing.__gutdbl.subpath)
 			elif(thing.__gutdbl.singleton_name != ''):
 				double_path = thing.__gutdbl.singleton_name + " Singleton"
 
-			var double_type = "double"
+			var double_type: String = "double"
 			if(thing.__gutdbl.is_partial):
 				double_type = "partial-double"
 
@@ -146,8 +146,8 @@ func type2str(thing):
 # 10 chars.  If the string is  smaller than max_size the entire string is
 # returned.  If max_size is -1 then truncation is skipped.
 # ------------------------------------------------------------------------------
-func truncate_string(src, max_size):
-	var to_return = src
+func truncate_string(src: Variant, max_size: Variant) -> Variant:
+	var to_return: Variant = src
 	if(src.length() > max_size - 10 and max_size != -1):
 		to_return = str(src.substr(0, max_size - 10), '...',  src.substr(src.length() - 10, src.length()))
 	return to_return
@@ -161,14 +161,14 @@ func indent_text(text: String, times: int, pad: String) -> String:
 	if(times == 0):
 		return text
 
-	var to_return := text
-	var ending_newline := ''
+	var to_return: Variant = text
+	var ending_newline: String = ''
 
 	if(text.ends_with("\n")):
 		ending_newline = "\n"
 		to_return = to_return.left(-1)
 
-	var padding := pad.repeat(times)
+	var padding: Variant = pad.repeat(times)
 	to_return = to_return.replace("\n", "\n" + padding)
 	to_return += ending_newline
 

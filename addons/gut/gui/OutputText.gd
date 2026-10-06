@@ -1,43 +1,43 @@
 @tool
 extends VBoxContainer
 
-var GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
-var PanelControls = load('res://addons/gut/gui/panel_controls.gd')
+const GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
+const PanelControls = load('res://addons/gut/gui/panel_controls.gd')
 
 # ##############################################################################
 # Keeps search results from the TextEdit
 # ##############################################################################
 class TextEditSearcher:
 	var te : TextEdit
-	var _last_term = ''
-	var _last_pos = Vector2(-1, -1)
-	var _ignore_caret_change = false
+	var _last_term: String = ''
+	var _last_pos: Vector2 = Vector2(-1, -1)
+	var _ignore_caret_change: bool = false
 
-	func set_text_edit(which):
+	func set_text_edit(which: Variant) -> void:
 		te = which
 		te.caret_changed.connect(_on_caret_changed)
 
 
-	func _on_caret_changed():
+	func _on_caret_changed() -> void:
 		if(_ignore_caret_change):
 			_ignore_caret_change = false
 		else:
 			_last_pos = _get_caret();
 
 
-	func _get_caret():
+	func _get_caret() -> Variant:
 		return Vector2(te.get_caret_column(), te.get_caret_line())
 
 
-	func _set_caret_and_sel(pos, len):
+	func _set_caret_and_sel(pos: Variant, len: Variant) -> void:
 		te.set_caret_line(pos.y)
 		te.set_caret_column(pos.x)
 		if(len > 0):
 			te.select(pos.y, pos.x, pos.y, pos.x + len)
 
 
-	func _find(term, search_flags):
-		var pos = _get_caret()
+	func _find(term: Variant, search_flags: Variant) -> void:
+		var pos: Variant = _get_caret()
 		if(term == _last_term):
 			if(search_flags == 0):
 				pos = _last_pos
@@ -46,7 +46,7 @@ class TextEditSearcher:
 				pos = _last_pos
 				pos.x -= 1
 
-		var result = te.search(term, search_flags, pos.y, pos.x)
+		var result: Variant = te.search(term, search_flags, pos.y, pos.x)
 #		print('searching from ', pos, ' for "', term, '" = ', result)
 		if(result.y != -1):
 			_ignore_caret_change = true
@@ -55,17 +55,17 @@ class TextEditSearcher:
 
 		_last_term = term
 
-	func find_next(term):
+	func find_next(term: Variant) -> void:
 		_find(term, 0)
 
-	func find_prev(term):
+	func find_prev(term: Variant) -> void:
 		_find(term, te.SEARCH_BACKWARDS)
 
 
 # ##############################################################################
 # Start OutputText control code
 # ##############################################################################
-@onready var _ctrls = {
+@onready var _ctrls: Variant = {
 	output = $Output,
 	settings_bar = $Settings,
 	use_colors = $Settings/UseColors,
@@ -82,14 +82,14 @@ class TextEditSearcher:
 	}
 }
 
-var _sr = TextEditSearcher.new()
+var _sr: TextEditSearcher = TextEditSearcher.new()
 var _highlighter : CodeHighlighter
-var _font_name = null
-var _user_prefs = GutEditorGlobals.user_prefs
-var _font_name_pctrl = null
-var _font_size_pctrl = null
+var _font_name: Variant = null
+var _user_prefs: Variant = GutEditorGlobals.user_prefs
+var _font_name_pctrl: Variant = null
+var _font_size_pctrl: Variant = null
 
-var keywords = [
+var keywords: Variant = [
 	['Failed', Color.RED],
 	['Passed', Color.GREEN],
 	['Pending', Color.YELLOW],
@@ -103,7 +103,7 @@ var keywords = [
 
 # Automatically used when running the OutputText scene from the editor.  Changes
 # to this method only affect test-running the control through the editor.
-func _test_running_setup():
+func _test_running_setup() -> void:
 	_ctrls.use_colors.text = 'use colors'
 	_ctrls.show_search.text = 'search'
 	_ctrls.word_wrap.text = 'ww'
@@ -121,7 +121,7 @@ func _test_running_setup():
 	_ctrls.output.caret_changed.connect(_on_caret_changed)
 
 
-func _ready():
+func _ready() -> void:
 	if(get_parent() is SubViewport):
 		return
 
@@ -141,8 +141,8 @@ func _ready():
 	_add_other_ctrls()
 
 
-func _add_other_ctrls():
-	var fname = GutUtils.gut_fonts.DEFAULT_CUSTOM_FONT_NAME
+func _add_other_ctrls() -> void:
+	var fname: Variant = GutUtils.gut_fonts.DEFAULT_CUSTOM_FONT_NAME
 	if(_user_prefs != null):
 		fname = _user_prefs.output_font_name.value
 	_font_name_pctrl = PanelControls.GpcSelect.new('Font', fname, GutUtils.avail_fonts,
@@ -152,7 +152,7 @@ func _add_other_ctrls():
 	_ctrls.settings_bar.add_child(_font_name_pctrl)
 	set_all_fonts(fname)
 
-	var fsize = 30
+	var fsize: int = 30
 	if(_user_prefs != null):
 		fsize = _user_prefs.output_font_size.value
 	_font_size_pctrl = PanelControls.GpcNumber.new('Font Size', fsize , 5, 100,
@@ -169,16 +169,16 @@ func _add_other_ctrls():
 
 # Call this after changes in colors and the like to get them to apply.  reloads
 # the text of the output control.
-func _refresh_output():
-	var orig_pos = _ctrls.output.scroll_vertical
-	var text = _ctrls.output.text
+func _refresh_output() -> void:
+	var orig_pos: Variant = _ctrls.output.scroll_vertical
+	var text: Variant = _ctrls.output.text
 
 	_ctrls.output.text = text
 	_ctrls.output.scroll_vertical = orig_pos
 
 
-func _create_highlighter(default_color=Color(1, 1, 1, 1)):
-	var to_return = CodeHighlighter.new()
+func _create_highlighter(default_color: Color = Color(1, 1, 1, 1)) -> CodeHighlighter:
+	var to_return: CodeHighlighter = CodeHighlighter.new()
 
 	to_return.function_color = default_color
 	to_return.number_color = default_color
@@ -191,14 +191,14 @@ func _create_highlighter(default_color=Color(1, 1, 1, 1)):
 	return to_return
 
 
-func _setup_colors():
+func _setup_colors() -> void:
 	_ctrls.output.clear()
 	_highlighter = _create_highlighter()
 	_ctrls.output.queue_redraw()
 
 
 
-func _use_highlighting(should):
+func _use_highlighting(should: Variant) -> void:
 	if(should):
 		_ctrls.output.syntax_highlighter = _highlighter
 	else:
@@ -208,60 +208,60 @@ func _use_highlighting(should):
 # ------------------
 # Events
 # ------------------
-func _on_caret_changed():
-	var txt = str("line:",_ctrls.output.get_caret_line(), ' col:', _ctrls.output.get_caret_column())
+func _on_caret_changed() -> void:
+	var txt: Variant = str("line:",_ctrls.output.get_caret_line(), ' col:', _ctrls.output.get_caret_column())
 	_ctrls.caret_position.text = str(txt)
 
-func _on_font_size_changed():
+func _on_font_size_changed() -> void:
 	set_font_size(_font_size_pctrl.value)
 	if(_user_prefs != null):
 		_user_prefs.output_font_size.value = _font_size_pctrl.value
 		_user_prefs.output_font_size.save_it()
 
-func _on_font_name_changed():
+func _on_font_name_changed() -> void:
 	set_all_fonts(_font_name_pctrl.text)
 	if(_user_prefs != null):
 		_user_prefs.output_font_name.value = _font_name_pctrl.text
 		_user_prefs.output_font_name.save_it()
 
-func _on_CopyButton_pressed():
+func _on_CopyButton_pressed() -> void:
 	copy_to_clipboard()
 
-func _on_UseColors_pressed():
+func _on_UseColors_pressed() -> void:
 	_use_highlighting(_ctrls.use_colors.button_pressed)
 
-func _on_ClearButton_pressed():
+func _on_ClearButton_pressed() -> void:
 	clear()
 
-func _on_ShowSearch_pressed():
+func _on_ShowSearch_pressed() -> void:
 	show_search(_ctrls.show_search.button_pressed)
 
-func _on_SearchTerm_focus_entered():
+func _on_SearchTerm_focus_entered() -> void:
 	_ctrls.search_bar.search_term.call_deferred('select_all')
 
-func _on_SearchNext_pressed():
+func _on_SearchNext_pressed() -> void:
 	_sr.find_next(_ctrls.search_bar.search_term.text)
 
-func _on_SearchPrev_pressed():
+func _on_SearchPrev_pressed() -> void:
 	_sr.find_prev(_ctrls.search_bar.search_term.text)
 
-func _on_SearchTerm_text_changed(new_text):
+func _on_SearchTerm_text_changed(new_text: Variant) -> void:
 	if(new_text == ''):
 		_ctrls.output.deselect()
 	else:
 		_sr.find_next(new_text)
 
-func _on_SearchTerm_text_entered(new_text):
+func _on_SearchTerm_text_entered(new_text: Variant) -> void:
 	if(Input.is_physical_key_pressed(KEY_SHIFT)):
 		_sr.find_prev(new_text)
 	else:
 		_sr.find_next(new_text)
 
-func _on_SearchTerm_gui_input(event):
+func _on_SearchTerm_gui_input(event: Variant) -> void:
 	if(event is InputEventKey and !event.pressed and event.keycode == KEY_ESCAPE):
 		show_search(false)
 
-func _on_WordWrap_pressed():
+func _on_WordWrap_pressed() -> void:
 	if(_ctrls.word_wrap.button_pressed):
 		_ctrls.output.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
 	else:
@@ -269,13 +269,13 @@ func _on_WordWrap_pressed():
 
 	_ctrls.output.queue_redraw()
 
-func _on_settings_pressed():
+func _on_settings_pressed() -> void:
 	_ctrls.settings_bar.visible = $Toolbar/ShowSettings.button_pressed
 
 # ------------------
 # Public
 # ------------------
-func show_search(should):
+func show_search(should: Variant) -> void:
 	_ctrls.search_bar.bar.visible = should
 	if(should):
 		_ctrls.search_bar.search_term.grab_focus()
@@ -283,28 +283,28 @@ func show_search(should):
 	_ctrls.show_search.button_pressed = should
 
 
-func search(text, start_pos, highlight=true):
+func search(text: Variant, start_pos: Variant, highlight: bool = true) -> Variant:
 	return _sr.find_next(text)
 
 
-func copy_to_clipboard():
-	var selected = _ctrls.output.get_selected_text()
+func copy_to_clipboard() -> void:
+	var selected: Variant = _ctrls.output.get_selected_text()
 	if(selected != ''):
 		DisplayServer.clipboard_set(selected)
 	else:
 		DisplayServer.clipboard_set(_ctrls.output.text)
 
 
-func clear():
+func clear() -> void:
 	_ctrls.output.text = ''
 
 
-func _set_font(custom_name, theme_font_name):
-	var font = GutUtils.gut_fonts.get_font_for_theme_font_name(theme_font_name, custom_name)
+func _set_font(custom_name: Variant, theme_font_name: Variant) -> void:
+	var font: Variant = GutUtils.gut_fonts.get_font_for_theme_font_name(theme_font_name, custom_name)
 	_ctrls.output.add_theme_font_override(theme_font_name, font)
 
 
-func set_all_fonts(base_name):
+func set_all_fonts(base_name: Variant) -> void:
 	_font_name = GutUtils.nvl(base_name, 'Default')
 
 	_set_font(base_name, 'font')
@@ -314,39 +314,39 @@ func set_all_fonts(base_name):
 	_set_font(base_name, 'bold_italics_font')
 
 
-func set_font_size(new_size):
+func set_font_size(new_size: Variant) -> void:
 	_ctrls.output.set("theme_override_font_sizes/font_size", new_size)
 
 
-func set_use_colors(value):
+func set_use_colors(value: Variant) -> void:
 	pass
 
 
-func get_use_colors():
+func get_use_colors() -> Variant:
 	return false;
 
 
-func get_rich_text_edit():
+func get_rich_text_edit() -> Variant:
 	return _ctrls.output
 
 
-func load_file(path):
-	var f = FileAccess.open(path, FileAccess.READ)
+func load_file(path: Variant) -> void:
+	var f: Variant = FileAccess.open(path, FileAccess.READ)
 	if(f == null):
 		return
 
-	var t = f.get_as_text()
+	var t: Variant = f.get_as_text()
 	f = null # closes file
 	_ctrls.output.text = t
 	_ctrls.output.scroll_vertical = _ctrls.output.get_line_count()
 	_ctrls.output.set_deferred('scroll_vertical', _ctrls.output.get_line_count())
 
 
-func add_text(text):
+func add_text(text: Variant) -> void:
 	if(is_inside_tree()):
 		_ctrls.output.text += text
 
 
-func scroll_to_line(line):
+func scroll_to_line(line: Variant) -> void:
 	_ctrls.output.scroll_vertical = line
 	_ctrls.output.set_caret_line(line)

@@ -19,9 +19,9 @@ enum TREAT_AS {
 	FAILURE,
 }
 
-const GUT_METADATA = '__gutdbl'
+const GUT_METADATA: String = '__gutdbl'
 
-const TEST_STATUSES = {
+const TEST_STATUSES: Variant = {
 	NO_ASSERTS = 'no asserts',
 	SKIPPED = 'skipped',
 	NOT_RUN = 'not run',
@@ -32,32 +32,32 @@ const TEST_STATUSES = {
 	PASSED = 'pass'
 }
 
-const DOUBLE_TEMPLATES = {
+const DOUBLE_TEMPLATES: Variant = {
 	FUNCTION = 'res://addons/gut/double_templates/function_template.txt',
 	INIT = 'res://addons/gut/double_templates/init_template.txt',
 	SCRIPT = 'res://addons/gut/double_templates/script_template.txt',
 }
 
-const NOTHING := '__NOTHING__'
-const NO_TEST := 'NONE'
-const GUT_ERROR_TYPE = 999
+const NOTHING: String = '__NOTHING__'
+const NO_TEST: String = 'NONE'
+const GUT_ERROR_TYPE: int = 999
 
 
 ## This dictionary defaults to all the native classes that we cannot call new
 ## on.  It is further populated during a run so that we only have to create
 ## a new instance once to get the class name string.
-static var gdscript_native_class_names_by_type = {
+static var gdscript_native_class_names_by_type: Variant = {
 	Tween:"Tween",
 	CanvasItem:"CanvasItem",
 }
 
 
-static var GutScene = load('res://addons/gut/GutScene.tscn')
-static var LazyLoader = load('res://addons/gut/lazy_loader.gd')
-static var VersionNumbers = load("res://addons/gut/version_numbers.gd")
-static var WarningsManager = load("res://addons/gut/warnings_manager.gd")
-static var EditorGlobals = load("res://addons/gut/gui/editor_globals.gd")
-static var RunExternallyScene = load("res://addons/gut/gui/RunExternally.tscn")
+static var GutScene: Variant = load('res://addons/gut/GutScene.tscn')
+static var LazyLoader: Variant = load('res://addons/gut/lazy_loader.gd')
+static var VersionNumbers: Variant = load("res://addons/gut/version_numbers.gd")
+static var WarningsManager: Variant = load("res://addons/gut/warnings_manager.gd")
+static var EditorGlobals: Variant = load("res://addons/gut/gui/editor_globals.gd")
+static var RunExternallyScene: Variant = load("res://addons/gut/gui/RunExternally.tscn")
 
 # --------------------------------
 # Lazy loaded scripts.  These scripts are lazy loaded so that they can be
@@ -65,148 +65,148 @@ static var RunExternallyScene = load("res://addons/gut/gui/RunExternally.tscn")
 # window at the start of a run to adjust warning levels prior to loading
 # everything.
 # --------------------------------
-static var AutoFree = LazyLoader.new('res://addons/gut/autofree.gd'):
+static var AutoFree: LazyLoader = LazyLoader.new('res://addons/gut/autofree.gd'):
 	get: return AutoFree.get_loaded()
 	set(val): pass
-static var Awaiter = LazyLoader.new('res://addons/gut/awaiter.gd'):
+static var Awaiter: LazyLoader = LazyLoader.new('res://addons/gut/awaiter.gd'):
 	get: return Awaiter.get_loaded()
 	set(val): pass
-static var Comparator = LazyLoader.new('res://addons/gut/comparator.gd'):
+static var Comparator: LazyLoader = LazyLoader.new('res://addons/gut/comparator.gd'):
 	get: return Comparator.get_loaded()
 	set(val): pass
-static var CollectedTest = LazyLoader.new('res://addons/gut/collected_test.gd'):
+static var CollectedTest: LazyLoader = LazyLoader.new('res://addons/gut/collected_test.gd'):
 	get: return CollectedTest.get_loaded()
 	set(val): pass
-static var CollectedScript = LazyLoader.new('res://addons/gut/collected_script.gd'):
+static var CollectedScript: LazyLoader = LazyLoader.new('res://addons/gut/collected_script.gd'):
 	get: return CollectedScript.get_loaded()
 	set(val): pass
-static var CompareResult = LazyLoader.new('res://addons/gut/compare_result.gd'):
+static var CompareResult: LazyLoader = LazyLoader.new('res://addons/gut/compare_result.gd'):
 	get: return CompareResult.get_loaded()
 	set(val): pass
-static var DiffFormatter = LazyLoader.new("res://addons/gut/diff_formatter.gd"):
+static var DiffFormatter: LazyLoader = LazyLoader.new("res://addons/gut/diff_formatter.gd"):
 	get: return DiffFormatter.get_loaded()
 	set(val): pass
-static var DiffTool = LazyLoader.new('res://addons/gut/diff_tool.gd'):
+static var DiffTool: LazyLoader = LazyLoader.new('res://addons/gut/diff_tool.gd'):
 	get: return DiffTool.get_loaded()
 	set(val): pass
-static var DoubleTools = LazyLoader.new("res://addons/gut/double_tools.gd"):
+static var DoubleTools: LazyLoader = LazyLoader.new("res://addons/gut/double_tools.gd"):
 	get: return DoubleTools.get_loader()
 	set(val): pass
-static var Doubler = LazyLoader.new('res://addons/gut/doubler.gd'):
+static var Doubler: LazyLoader = LazyLoader.new('res://addons/gut/doubler.gd'):
 	get: return Doubler.get_loaded()
 	set(val): pass
-static var DynamicGdScript = LazyLoader.new("res://addons/gut/dynamic_gdscript.gd") :
+static var DynamicGdScript: LazyLoader = LazyLoader.new("res://addons/gut/dynamic_gdscript.gd") :
 	get: return DynamicGdScript.get_loaded()
 	set(val): pass
-static var GodotSingletons = LazyLoader.new('res://addons/gut/godot_singletons.gd') :
+static var GodotSingletons: LazyLoader = LazyLoader.new('res://addons/gut/godot_singletons.gd') :
 	get: return GodotSingletons.get_loaded()
 	set(val): pass
-static var Gut = LazyLoader.new('res://addons/gut/gut.gd'):
+static var Gut: LazyLoader = LazyLoader.new('res://addons/gut/gut.gd'):
 	get: return Gut.get_loaded()
 	set(val): pass
-static var GutConfig = LazyLoader.new('res://addons/gut/gut_config.gd'):
+static var GutConfig: LazyLoader = LazyLoader.new('res://addons/gut/gut_config.gd'):
 	get: return GutConfig.get_loaded()
 	set(val): pass
-static var GutFonts = LazyLoader.new("res://addons/gut/gut_fonts.gd"):
+static var GutFonts: LazyLoader = LazyLoader.new("res://addons/gut/gut_fonts.gd"):
 	get: return GutFonts.get_loaded()
 	set(val): pass
-static var HookScript = LazyLoader.new('res://addons/gut/hook_script.gd'):
+static var HookScript: LazyLoader = LazyLoader.new('res://addons/gut/hook_script.gd'):
 	get: return HookScript.get_loaded()
 	set(val): pass
-static var InnerClassRegistry = LazyLoader.new('res://addons/gut/inner_class_registry.gd'):
+static var InnerClassRegistry: LazyLoader = LazyLoader.new('res://addons/gut/inner_class_registry.gd'):
 	get: return InnerClassRegistry.get_loaded()
 	set(val): pass
-static var InputFactory = LazyLoader.new("res://addons/gut/input_factory.gd"):
+static var InputFactory: LazyLoader = LazyLoader.new("res://addons/gut/input_factory.gd"):
 	get: return InputFactory.get_loaded()
 	set(val): pass
-static var InputSender = LazyLoader.new("res://addons/gut/input_sender.gd"):
+static var InputSender: LazyLoader = LazyLoader.new("res://addons/gut/input_sender.gd"):
 	get: return InputSender.get_loaded()
 	set(val): pass
-static var JunitXmlExport = LazyLoader.new('res://addons/gut/junit_xml_export.gd'):
+static var JunitXmlExport: LazyLoader = LazyLoader.new('res://addons/gut/junit_xml_export.gd'):
 	get: return JunitXmlExport.get_loaded()
 	set(val): pass
-static var GutLogger = LazyLoader.new('res://addons/gut/logger.gd') : # everything should use get_logger
+static var GutLogger: LazyLoader = LazyLoader.new('res://addons/gut/logger.gd') : # everything should use get_logger
 	get: return GutLogger.get_loaded()
 	set(val): pass
-static var MethodMaker = LazyLoader.new('res://addons/gut/method_maker.gd'):
+static var MethodMaker: LazyLoader = LazyLoader.new('res://addons/gut/method_maker.gd'):
 	get: return MethodMaker.get_loaded()
 	set(val): pass
-static var OneToMany = LazyLoader.new('res://addons/gut/one_to_many.gd'):
+static var OneToMany: LazyLoader = LazyLoader.new('res://addons/gut/one_to_many.gd'):
 	get: return OneToMany.get_loaded()
 	set(val): pass
-static var OptionMaker = LazyLoader.new('res://addons/gut/gui/option_maker.gd'):
+static var OptionMaker: LazyLoader = LazyLoader.new('res://addons/gut/gui/option_maker.gd'):
 	get: return OptionMaker.get_loaded()
 	set(val): pass
-static var OrphanCounter = LazyLoader.new('res://addons/gut/orphan_counter.gd'):
+static var OrphanCounter: LazyLoader = LazyLoader.new('res://addons/gut/orphan_counter.gd'):
 	get: return OrphanCounter.get_loaded()
 	set(val): pass
-static var ParameterFactory = LazyLoader.new('res://addons/gut/parameter_factory.gd'):
+static var ParameterFactory: LazyLoader = LazyLoader.new('res://addons/gut/parameter_factory.gd'):
 	get: return ParameterFactory.get_loaded()
 	set(val): pass
-static var ParameterHandler = LazyLoader.new('res://addons/gut/parameter_handler.gd'):
+static var ParameterHandler: LazyLoader = LazyLoader.new('res://addons/gut/parameter_handler.gd'):
 	get: return ParameterHandler.get_loaded()
 	set(val): pass
-static var Printers = LazyLoader.new('res://addons/gut/printers.gd'):
+static var Printers: LazyLoader = LazyLoader.new('res://addons/gut/printers.gd'):
 	get: return Printers.get_loaded()
 	set(val): pass
-static var ResultExporter = LazyLoader.new('res://addons/gut/result_exporter.gd'):
+static var ResultExporter: LazyLoader = LazyLoader.new('res://addons/gut/result_exporter.gd'):
 	get: return ResultExporter.get_loaded()
 	set(val): pass
-static var ScriptCollector = LazyLoader.new('res://addons/gut/script_parser.gd'):
+static var ScriptCollector: LazyLoader = LazyLoader.new('res://addons/gut/script_parser.gd'):
 	get: return ScriptCollector.get_loaded()
 	set(val): pass
-static var SignalWatcher = LazyLoader.new('res://addons/gut/signal_watcher.gd'):
+static var SignalWatcher: LazyLoader = LazyLoader.new('res://addons/gut/signal_watcher.gd'):
 	get: return SignalWatcher.get_loaded()
 	set(val): pass
-static var SingletonParser = LazyLoader.new('res://addons/gut/singleton_parser.gd'):
+static var SingletonParser: LazyLoader = LazyLoader.new('res://addons/gut/singleton_parser.gd'):
 	get: return SingletonParser.get_loaded()
 	set(val): pass
-static var Spy = LazyLoader.new('res://addons/gut/spy.gd'):
+static var Spy: LazyLoader = LazyLoader.new('res://addons/gut/spy.gd'):
 	get: return Spy.get_loaded()
 	set(val): pass
-static var Strutils = LazyLoader.new('res://addons/gut/strutils.gd'):
+static var Strutils: LazyLoader = LazyLoader.new('res://addons/gut/strutils.gd'):
 	get: return Strutils.get_loaded()
 	set(val): pass
-static var Stubber = LazyLoader.new('res://addons/gut/stubber.gd'):
+static var Stubber: LazyLoader = LazyLoader.new('res://addons/gut/stubber.gd'):
 	get: return Stubber.get_loaded()
 	set(val): pass
-static var StubParams = LazyLoader.new('res://addons/gut/stub_params.gd'):
+static var StubParams: LazyLoader = LazyLoader.new('res://addons/gut/stub_params.gd'):
 	get: return StubParams.get_loaded()
 	set(val): pass
-static var Stubs = LazyLoader.new('res://addons/gut/stubs.gd'):
+static var Stubs: LazyLoader = LazyLoader.new('res://addons/gut/stubs.gd'):
 	get: return Stubs.get_loaded()
 	set(val): pass
-static var Summary = LazyLoader.new('res://addons/gut/summary.gd'):
+static var Summary: LazyLoader = LazyLoader.new('res://addons/gut/summary.gd'):
 	get: return Summary.get_loaded()
 	set(val): pass
-static var Test = LazyLoader.new('res://addons/gut/test.gd'):
+static var Test: LazyLoader = LazyLoader.new('res://addons/gut/test.gd'):
 	get: return Test.get_loaded()
 	set(val): pass
-static var TestCollector = LazyLoader.new('res://addons/gut/test_collector.gd'):
+static var TestCollector: LazyLoader = LazyLoader.new('res://addons/gut/test_collector.gd'):
 	get: return TestCollector.get_loaded()
 	set(val): pass
-static var ThingCounter = LazyLoader.new('res://addons/gut/thing_counter.gd'):
+static var ThingCounter: LazyLoader = LazyLoader.new('res://addons/gut/thing_counter.gd'):
 	get: return ThingCounter.get_loaded()
 	set(val): pass
-static var UpdateDetector = LazyLoader.new('res://addons/gut/update_detector.gd'):
+static var UpdateDetector: LazyLoader = LazyLoader.new('res://addons/gut/update_detector.gd'):
 	get: return UpdateDetector.get_loaded()
 	set(val): pass
 # --------------------------------
 
-static var gut_fonts = GutFonts.new()
-static var avail_fonts = gut_fonts.get_font_names()
-static var strutils = Strutils.new()
+static var gut_fonts: GutFonts = GutFonts.new()
+static var avail_fonts: Variant = gut_fonts.get_font_names()
+static var strutils: Strutils = Strutils.new()
 
-static var version_numbers = VersionNumbers.new(
+static var version_numbers: VersionNumbers = VersionNumbers.new(
 	'9.7.1' # gut_versrion (source of truth)
 )
 
 
-static var warnings_at_start := { # WarningsManager dictionary
+static var warnings_at_start: Variant = { # WarningsManager dictionary
 	exclude_addons = true
 }
 
-static var warnings_when_loading_test_scripts := { # WarningsManager dictionary
+static var warnings_when_loading_test_scripts: Variant = { # WarningsManager dictionary
 	enable = false
 }
 
@@ -217,19 +217,19 @@ static var warnings_when_loading_test_scripts := { # WarningsManager dictionary
 # When running in test mode this will always return a new logger so that errors
 # are not caused by getting bad warn/error/etc counts.
 # ------------------------------------------------------------------------------
-static var _lgr = null
-static func get_logger():
+static var _lgr: Variant = null
+static func get_logger() -> Variant:
 	if(_lgr == null):
 		_lgr = GutLogger.new()
 	return _lgr
 
-static var _error_tracker = null
-static func get_error_tracker():
+static var _error_tracker: Variant = null
+static func get_error_tracker() -> Variant:
 	if(_error_tracker == null):
 		_error_tracker = GutErrorTracker.new()
 	return _error_tracker
 
-static var inner_class_registry = InnerClassRegistry.new()
+static var inner_class_registry: InnerClassRegistry = InnerClassRegistry.new()
 
 
 # ##############################################################################
@@ -238,17 +238,17 @@ static var inner_class_registry = InnerClassRegistry.new()
 
 
 # This must be static so that the scripts are counted.
-static var _dyn_gdscript = DynamicGdScript.new()
+static var _dyn_gdscript: DynamicGdScript = DynamicGdScript.new()
 # ##############################################################################
 # Public Methods
 # ##############################################################################
-static func create_script_from_source(source, override_path=null):
-	var are_warnings_enabled = WarningsManager.are_warnings_enabled()
+static func create_script_from_source(source: Variant, override_path: Variant = null) -> Variant:
+	var are_warnings_enabled: Variant = WarningsManager.are_warnings_enabled()
 	WarningsManager.enable_warnings(false)
 
-	var DynamicScript = _dyn_gdscript.create_script_from_source(source, override_path)
+	var DynamicScript: Variant = _dyn_gdscript.create_script_from_source(source, override_path)
 	if(typeof(DynamicScript) == TYPE_INT):
-		var l = get_logger()
+		var l: Variant = get_logger()
 		l.error(str('Could not create script from source.  Error:  ', DynamicScript))
 		l.info(str("Source Code:\n", add_line_numbers(source)))
 
@@ -260,29 +260,29 @@ static func create_script_from_source(source, override_path=null):
 # Get the EditorInterface instance without having to make a direct reference to
 # it.  This allows for testing to be done on editor scripts that require it
 # without having the parser error when you refer to it when not in the editor.
-static func get_editor_interface():
+static func get_editor_interface() -> Variant:
 	if(Engine.is_editor_hint()):
-		var inst = load("res://addons/gut/get_editor_interface.gd").new()
+		var inst: Variant = load("res://addons/gut/get_editor_interface.gd").new()
 		return inst.get_it()
 	else:
 		return null
 
 
-static func godot_version_string():
+static func godot_version_string() -> Variant:
 	return version_numbers.make_godot_version_string()
 
 
-static func is_godot_version(expected):
+static func is_godot_version(expected: Variant) -> Variant:
 	return VersionNumbers.VerNumTools.is_godot_version_eq(expected)
 
 
-static func is_godot_version_gte(expected):
+static func is_godot_version_gte(expected: Variant) -> Variant:
 	return VersionNumbers.VerNumTools.is_godot_version_gte(expected)
 
 
-const INSTALL_OK_TEXT = 'Everything checks out'
-static func make_install_check_text(template_paths=DOUBLE_TEMPLATES, ver_nums=version_numbers):
-	var text = INSTALL_OK_TEXT
+const INSTALL_OK_TEXT: String = 'Everything checks out'
+static func make_install_check_text(template_paths: Variant = DOUBLE_TEMPLATES, ver_nums: Variant = version_numbers) -> Variant:
+	var text: Variant = INSTALL_OK_TEXT
 	if(!FileAccess.file_exists(template_paths.FUNCTION) or
 		!FileAccess.file_exists(template_paths.INIT) or
 		!FileAccess.file_exists(template_paths.SCRIPT)):
@@ -310,8 +310,8 @@ static func make_install_check_text(template_paths=DOUBLE_TEMPLATES, ver_nums=ve
 # This description is longer than the code, you should have just read the code
 # and the tests.
 # ------------------------------------------------------------------------------
-static func get_enum_value(thing, e, default=null):
-	var to_return = default
+static func get_enum_value(thing: Variant, e: Variant, default: Variant = null) -> Variant:
+	var to_return: Variant = default
 
 	if(typeof(thing) == TYPE_STRING and str(thing.to_int()) == thing):
 		thing = thing.to_int()
@@ -319,7 +319,7 @@ static func get_enum_value(thing, e, default=null):
 		thing = int(thing)
 
 	if(typeof(thing) == TYPE_STRING):
-		var converted = thing.to_upper().replace(' ', '_')
+		var converted: Variant = thing.to_upper().replace(' ', '_')
 		if(e.keys().has(converted)):
 			to_return = e[converted]
 	else:
@@ -332,7 +332,7 @@ static func get_enum_value(thing, e, default=null):
 # ------------------------------------------------------------------------------
 # return if_null if value is null otherwise return value
 # ------------------------------------------------------------------------------
-static func nvl(value, if_null):
+static func nvl(value: Variant, if_null: Variant) -> Variant:
 	if(value == null):
 		return if_null
 	else:
@@ -341,17 +341,17 @@ static func nvl(value, if_null):
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
-static func pretty_print(dict, indent = '  '):
+static func pretty_print(dict: Variant, indent: String = '  ') -> void:
 	print(JSON.stringify(dict, indent))
 
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
-static func print_properties(props, thing, print_all_meta=false):
+static func print_properties(props: Variant, thing: Variant, print_all_meta: bool = false) -> void:
 	for i in range(props.size()):
-		var prop_name = props[i].name
-		var prop_value = thing.get(props[i].name)
-		var print_value = str(prop_value)
+		var prop_name: Variant = props[i].name
+		var prop_value: Variant = thing.get(props[i].name)
+		var print_value: Variant = str(prop_value)
 		if(print_value.length() > 100):
 			print_value = print_value.substr(0, 97) + '...'
 		elif(print_value == ''):
@@ -362,7 +362,7 @@ static func print_properties(props, thing, print_all_meta=false):
 			print('  ', props[i])
 
 
-static func print_method_list(thing):
+static func print_method_list(thing: Variant) -> void:
 	for entry in thing.get_method_list():
 		print("* ", entry.name)
 
@@ -373,11 +373,11 @@ static func print_method_list(thing):
 # list.  This also does not assume the index of the 'script' node property in
 # a nodes's property list.
 # ------------------------------------------------------------------------------
-static func get_scene_script_object(scene):
-	var state = scene.get_state()
-	var to_return = null
-	var root_node_path = NodePath(".")
-	var node_idx = 0
+static func get_scene_script_object(scene: Variant) -> Variant:
+	var state: Variant = scene.get_state()
+	var to_return: Variant = null
+	var root_node_path: Variant = NodePath(".")
+	var node_idx: int = 0
 
 	while(node_idx < state.get_node_count() and to_return == null):
 		if(state.get_node_path(node_idx) == root_node_path):
@@ -397,23 +397,23 @@ static func get_scene_script_object(scene):
 # of the time but sometimes it does not catch it.  The str comparison seems to
 # fill in the gaps.  I've not seen any errors after adding that check.
 # ------------------------------------------------------------------------------
-static func is_freed(obj):
-	var wr = weakref(obj)
+static func is_freed(obj: Variant) -> Variant:
+	var wr: Variant = weakref(obj)
 	return !(wr.get_ref() and str(obj) != '<Freed Object>')
 
 
 # ------------------------------------------------------------------------------
 # Pretty self explanitory.
 # ------------------------------------------------------------------------------
-static func is_not_freed(obj):
+static func is_not_freed(obj: Variant) -> Variant:
 	return !is_freed(obj)
 
 
 # ------------------------------------------------------------------------------
 # Checks if the passed in object is a GUT Double or Partial Double.
 # ------------------------------------------------------------------------------
-static func is_double(obj):
-	var to_return = false
+static func is_double(obj: Variant) -> Variant:
+	var to_return: bool = false
 	if(typeof(obj) == TYPE_OBJECT and is_instance_valid(obj)):
 		to_return = obj.has_method('__gutdbl_check_method__')
 	return to_return
@@ -422,8 +422,8 @@ static func is_double(obj):
 # ------------------------------------------------------------------------------
 # Checks an object to see if it is a GDScriptNativeClass
 # ------------------------------------------------------------------------------
-static func is_native_class(thing):
-	var it_is = false
+static func is_native_class(thing: Variant) -> Variant:
+	var it_is: bool = false
 	if(typeof(thing) == TYPE_OBJECT):
 		it_is = str(thing).begins_with("<GDScriptNativeClass#")
 	return it_is
@@ -432,7 +432,7 @@ static func is_native_class(thing):
 # ------------------------------------------------------------------------------
 # Checks if the passed in is an instance of a class
 # ------------------------------------------------------------------------------
-static func is_instance(obj):
+static func is_instance(obj: Variant) -> Variant:
 	return typeof(obj) == TYPE_OBJECT and \
 		!is_native_class(obj) and \
 		!obj.has_method('new') and \
@@ -442,7 +442,7 @@ static func is_instance(obj):
 # ------------------------------------------------------------------------------
 # Checks if the passed in is a GDScript
 # ------------------------------------------------------------------------------
-static func is_gdscript(obj):
+static func is_gdscript(obj: Variant) -> Variant:
 	return typeof(obj) == TYPE_OBJECT and str(obj).contains('<GDScript#')
 
 
@@ -452,15 +452,15 @@ static func is_gdscript(obj):
 # Looks like the resource_path will be populated for gdscripts, and not populated
 # for gdscripts inside a gdscript.
 # ------------------------------------------------------------------------------
-static func is_inner_class(obj):
+static func is_inner_class(obj: Variant) -> Variant:
 	return is_gdscript(obj) and obj.resource_path == ''
 
 
 # ------------------------------------------------------------------------------
 # Returns an array of values by calling get(property) on each element in source
 # ------------------------------------------------------------------------------
-static func extract_property_from_array(source, property):
-	var to_return = []
+static func extract_property_from_array(source: Variant, property: Variant) -> Variant:
+	var to_return: Array = []
 	for i in (source.size()):
 		to_return.append(source[i].get(property))
 	return to_return
@@ -469,7 +469,7 @@ static func extract_property_from_array(source, property):
 # ------------------------------------------------------------------------------
 # true if what is passed in is null or an empty string.
 # ------------------------------------------------------------------------------
-static func is_null_or_empty(text):
+static func is_null_or_empty(text: Variant) -> Variant:
 	return text == null or text == ''
 
 
@@ -477,13 +477,13 @@ static func is_null_or_empty(text):
 # Get the name of a native class or null if the object passed in is not a
 # native class.
 # ------------------------------------------------------------------------------
-static func get_native_class_name(thing):
-	var to_return = null
+static func get_native_class_name(thing: Variant) -> Variant:
+	var to_return: Variant = null
 	if(is_native_class(thing)):
 		if(gdscript_native_class_names_by_type.has(thing)):
 			to_return = gdscript_native_class_names_by_type[thing]
 		else:
-			var newone = thing.new()
+			var newone: Variant = thing.new()
 			to_return = newone.get_class()
 			if(!newone is RefCounted):
 				newone.free()
@@ -494,8 +494,8 @@ static func get_native_class_name(thing):
 # ------------------------------------------------------------------------------
 # Write a file.
 # ------------------------------------------------------------------------------
-static func write_file(path, content):
-	var f = FileAccess.open(path, FileAccess.WRITE)
+static func write_file(path: Variant, content: Variant) -> Variant:
+	var f: Variant = FileAccess.open(path, FileAccess.WRITE)
 	if(f != null):
 		f.store_string(content)
 	f = null;
@@ -506,13 +506,13 @@ static func write_file(path, content):
 # ------------------------------------------------------------------------------
 # Returns the text of a file or an empty string if the file could not be opened.
 # ------------------------------------------------------------------------------
-static func get_file_as_text(path):
-	var to_return = ''
-	var f = FileAccess.open(path, FileAccess.READ)
+static func get_file_as_text(path: Variant) -> Variant:
+	var to_return: String = ''
+	var f: Variant = FileAccess.open(path, FileAccess.READ)
 	if(f != null):
 		to_return = f.get_as_text()
 	else:
-		var err = FileAccess.get_open_error()
+		var err: Variant = FileAccess.get_open_error()
 		_lgr.error(str('Could not open file ', path, '.  Error ', err))
 	f = null
 	return to_return
@@ -523,18 +523,18 @@ static func get_file_as_text(path):
 # each element until it finds the returned value.  -1 is returned if not found
 # or the index is returned if found.
 # ------------------------------------------------------------------------------
-static func search_array_idx(ar, prop_method, value):
-	var found = false
-	var idx = 0
+static func search_array_idx(ar: Variant, prop_method: Variant, value: Variant) -> Variant:
+	var found: bool = false
+	var idx: int = 0
 
 	while(idx < ar.size() and !found):
-		var item = ar[idx]
-		var prop = item.get(prop_method)
+		var item: Variant = ar[idx]
+		var prop: Variant = item.get(prop_method)
 		if(!(prop is Callable)):
 			if(item.get(prop_method) == value):
 				found = true
 		elif(prop != null):
-			var called_val = prop.call()
+			var called_val: Variant = prop.call()
 			if(called_val == value):
 				found = true
 
@@ -552,8 +552,8 @@ static func search_array_idx(ar, prop_method, value):
 # each element until it finds the returned value.  The item in the array is
 # returned or null if it is not found (this method originally came first).
 # ------------------------------------------------------------------------------
-static func search_array(ar, prop_method, value):
-	var idx = search_array_idx(ar, prop_method, value)
+static func search_array(ar: Variant, prop_method: Variant, value: Variant) -> Variant:
+	var idx: Variant = search_array_idx(ar, prop_method, value)
 
 	if(idx != -1):
 		return ar[idx]
@@ -561,18 +561,18 @@ static func search_array(ar, prop_method, value):
 		return null
 
 
-static func are_datatypes_same(got, expected):
+static func are_datatypes_same(got: Variant, expected: Variant) -> Variant:
 	return !(typeof(got) != typeof(expected) and got != null and expected != null)
 
 
-static func get_script_text(obj):
+static func get_script_text(obj: Variant) -> Variant:
 	return obj.get_script().get_source_code()
 
 
-static func dec2bistr(decimal_value, max_bits = 31):
-	var binary_string = ""
-	var temp
-	var count = max_bits
+static func dec2bistr(decimal_value: Variant, max_bits: int = 31) -> Variant:
+	var binary_string: String = ""
+	var temp: Variant
+	var count: Variant = max_bits
 
 	while(count >= 0):
 		temp = decimal_value >> count
@@ -585,29 +585,29 @@ static func dec2bistr(decimal_value, max_bits = 31):
 	return binary_string
 
 
-static func add_line_numbers(contents):
+static func add_line_numbers(contents: Variant) -> Variant:
 	if(contents == null):
 		return ''
 
-	var to_return = ""
-	var lines = contents.split("\n")
-	var line_num = 1
+	var to_return: String = ""
+	var lines: Variant = contents.split("\n")
+	var line_num: int = 1
 	for line in lines:
-		var line_str = str(line_num).lpad(6, ' ')
+		var line_str: Variant = str(line_num).lpad(6, ' ')
 		to_return += str(line_str, ' |', line, "\n")
 		line_num += 1
 	return to_return
 
 
-static func get_display_size():
+static func get_display_size() -> Variant:
 	return Engine.get_main_loop().get_viewport().get_visible_rect()
 
 
-static func find_method_meta(methods, method_name):
-	var meta = null
-	var idx = 0
+static func find_method_meta(methods: Variant, method_name: Variant) -> Variant:
+	var meta: Variant = null
+	var idx: int = 0
 	while (idx < methods.size() and meta == null):
-		var m = methods[idx]
+		var m: Variant = methods[idx]
 		if(m.name == method_name):
 			meta = m
 		idx += 1
@@ -615,7 +615,7 @@ static func find_method_meta(methods, method_name):
 	return meta
 
 
-static func get_method_meta(object, method_name):
+static func get_method_meta(object: Variant, method_name: Variant) -> Variant:
 	if(object is GDScript):
 		return find_method_meta(object.get_script_method_list(), method_name)
 	elif(is_native_class(object)):
@@ -624,7 +624,7 @@ static func get_method_meta(object, method_name):
 		return find_method_meta(object.get_method_list(), method_name)
 
 
-static func is_singleton(thing):
+static func is_singleton(thing: Variant) -> Variant:
 	if(typeof(thing) == TYPE_OBJECT):
 		return GodotSingletons.class_ref.has(thing)
 	elif(typeof(thing) == TYPE_STRING):
@@ -635,12 +635,12 @@ static func is_singleton(thing):
 
 
 
-static func is_singleton_double(thing):
+static func is_singleton_double(thing: Variant) -> Variant:
 	return is_double(thing) and thing.__gutdbl_values.singleton_name != ''
 
 
 
-static func is_headless():
+static func is_headless() -> Variant:
 	return DisplayServer.get_name() == "headless"
 # ##############################################################################
 #(G)odot (U)nit (T)est class

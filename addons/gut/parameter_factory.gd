@@ -37,12 +37,12 @@
 ## Parameters:[br]
 ##[li]names:  an array of names to be used as keys in the dictionaries[/li]
 ##[li]values:  an array of arrays of values.[/li]
-static func named_parameters(names, values):
-	var named = []
+static func named_parameters(names: Variant, values: Variant) -> Variant:
+	var named: Array = []
 	for i in range(values.size()):
-		var entry = {}
+		var entry: Dictionary = {}
 
-		var parray = values[i]
+		var parray: Variant = values[i]
 		if(typeof(parray) != TYPE_ARRAY):
 			parray = [values[i]]
 

@@ -1,6 +1,6 @@
 class_name GutConstants
 
-const TYPE_STRINGS = {
+const TYPE_STRINGS: Variant = {
 	TYPE_NIL : 'TYPE_NIL',
 	TYPE_BOOL : 'TYPE_BOOL',
 	TYPE_INT : 'TYPE_INT',
@@ -47,7 +47,7 @@ const TYPE_STRINGS = {
 # Use get_default_return_value.  The functions look weird, but they are here
 # so that each call to a doubled method returns a unique instance of things for
 # anything that would be passed by reference.
-static var _default_returns = {
+static var _default_returns: Variant = {
 	TYPE_NIL : null,
 	TYPE_BOOL : false,
 	TYPE_INT : 0,
@@ -93,7 +93,7 @@ static var _default_returns = {
 # Seeded with any type constant where the constant name can't be converted to
 # a string using pascal case and/or the values need manual conversion.  The
 # rest are added in _static_init.
-static var TYPE_KEYWORDS = {
+static var TYPE_KEYWORDS: Variant = {
 	TYPE_NIL : 'null',
 	TYPE_BOOL : 'bool',
 	TYPE_INT : 'int',
@@ -101,7 +101,7 @@ static var TYPE_KEYWORDS = {
 }
 
 
-static var NOT_SET := &"___NOT__SET___"
+static var NOT_SET: StringName = &"___NOT__SET___"
 
 
 static func _static_init() -> void:
@@ -112,14 +112,14 @@ static func _static_init() -> void:
 			TYPE_KEYWORDS[key] = n.to_pascal_case()
 
 
-static func is_not_set(val):
+static func is_not_set(val: Variant) -> Variant:
 	return typeof(val) == TYPE_STRING_NAME and val == NOT_SET
 
 
-static func get_default_return_value(type=null):
+static func get_default_return_value(type: Variant = null) -> Variant:
 	if(type == null or typeof(type) != TYPE_INT):
 		return null
-	var to_return = null
+	var to_return: Variant = null
 	if(is_not_set(type)):
 		to_return = null
 	elif(_default_returns.has(type)):

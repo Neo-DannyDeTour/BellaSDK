@@ -6,20 +6,20 @@ class_name GutTrackedError
 
 ## This will be an [code]Array[ScriptBacktrace][/code] for engine/push errors.
 ## This will the result of [code]get_stack[/code] for GUT errors.
-var backtrace = []
+var backtrace: Array = []
 ## Usually the description
-var code = GutUtils.NO_TEST
-var rationale = GutUtils.NO_TEST
+var code: Variant = GutUtils.NO_TEST
+var rationale: Variant = GutUtils.NO_TEST
 ## [enum Logger.ErrorType] value or, for GUT errors, this will be [code skip-lint]GutUtils.GUT_ERROR_TYPE[/code].
-var error_type = -1
-var editor_notify = false
+var error_type: int = -1
+var editor_notify: bool = false
 
 ## The full path to the file where the error occurred.
-var file = GutUtils.NO_TEST
+var file: Variant = GutUtils.NO_TEST
 ## The function name in [member file] where the error occurred.
-var function = GutUtils.NO_TEST
+var function: Variant = GutUtils.NO_TEST
 ## The line number in [member file]
-var line = -1
+var line: int = -1
 
 ## Used by GUT to flag errors as being handled.  This is set by various asserts
 ## or can be set in a test.  When set to [code]true[/code] GUT will ignore it
@@ -27,7 +27,7 @@ var line = -1
 ## test.  Setting this value prior to performing any of the error related
 ## asserts may have unexpected results.  It is recommended you either set this
 ## manually or use the error asserts.
-var handled = false
+var handled: bool = false
 
 
 ## _to_string that is not _to_string.
@@ -42,28 +42,28 @@ func to_s() -> String:
 
 
 ## Returns [code]true[/code] if the error is a push_error.
-func is_push_error():
+func is_push_error() -> Variant:
 	return error_type != GutUtils.GUT_ERROR_TYPE and function == &"push_error"
 
 
 ## Returns [code]true[/code] if the error is an engine error.  This includes
 ## all errors that pass through the [Logger] that do not originate from the
 ## [code]push_error[/code] function.
-func is_engine_error():
+func is_engine_error() -> Variant:
 	return error_type >= 0 and error_type != GutUtils.GUT_ERROR_TYPE and !is_push_error() and !is_push_warning()
 
 
-func is_push_warning():
+func is_push_warning() -> Variant:
 	return function == &"push_warning"
 
 
 ## Returns [code]true[/code] if the error is a GUT error.  Some fields may not
 ## be populated for GUT errors.
-func is_gut_error():
+func is_gut_error() -> Variant:
 	return error_type == GutUtils.GUT_ERROR_TYPE
 
 
-func contains_text(text):
+func contains_text(text: Variant) -> Variant:
 	return code.to_lower().find(text.to_lower()) != -1 or \
 		rationale.to_lower().find(text.to_lower()) != -1
 
@@ -72,8 +72,8 @@ func contains_text(text):
 ## This returns a name for the error_type as far as this class is concerned.
 ## Use the various [code]is_[/code] methods to check if an error is a certain
 ## type.
-func get_error_type_name():
-	var to_return = "Unknown"
+func get_error_type_name() -> Variant:
+	var to_return: String = "Unknown"
 
 	if(is_gut_error()):
 		to_return =  &"GUT"

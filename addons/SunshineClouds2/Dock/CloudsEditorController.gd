@@ -19,7 +19,7 @@ enum DrawingMode {
 }
 
 ## Legacy enum alias for backward compatibility.
-const DRAWINGMODE = DrawingMode
+const DRAWINGMODE: Variant = DrawingMode
 
 @export_category("Driver Tools")
 ## Label displaying active cloud driver registration status.

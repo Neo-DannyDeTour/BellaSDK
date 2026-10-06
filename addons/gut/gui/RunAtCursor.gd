@@ -1,9 +1,9 @@
 @tool
 extends Control
 
-var EditorCaretContextNotifier = load('res://addons/gut/editor_caret_context_notifier.gd')
+const EditorCaretContextNotifier = load('res://addons/gut/editor_caret_context_notifier.gd')
 
-@onready var _ctrls = {
+@onready var _ctrls: Variant = {
 	btn_script = $HBox/BtnRunScript,
 	btn_inner = $HBox/BtnRunInnerClass,
 	btn_method = $HBox/BtnRunMethod,
@@ -12,24 +12,24 @@ var EditorCaretContextNotifier = load('res://addons/gut/editor_caret_context_not
 	arrow_2 = $HBox/Arrow2
 }
 
-var _caret_notifier = null
+var _caret_notifier: Variant = null
 
-var _last_info = {
+var _last_info: Variant = {
 	script = null,
 	inner_class = null,
 	method = null
 }
 
-var disabled = false :
+var disabled: Variant = false :
 	set(val):
 		disabled = val
 		if(is_inside_tree()):
 			_ctrls.btn_script.disabled = val
 			_ctrls.btn_inner.disabled = val
 			_ctrls.btn_method.disabled = val
-var method_prefix = 'test_'
-var inner_class_prefix = 'Test'
-var menu_manager = null :
+var method_prefix: String = 'test_'
+var inner_class_prefix: String = 'Test'
+var menu_manager: Variant = null :
 	set(val):
 		menu_manager = val
 		menu_manager.run_script.connect(_on_BtnRunScript_pressed)
@@ -43,7 +43,7 @@ var menu_manager = null :
 signal run_tests(what)
 
 
-func _ready():
+func _ready() -> void:
 	_ctrls.lbl_none.visible = true
 	_ctrls.btn_script.visible = false
 	_ctrls.btn_inner.visible = false
@@ -58,7 +58,7 @@ func _ready():
 	disabled = disabled
 
 
-func _on_caret_notifer_changed(data):
+func _on_caret_notifer_changed(data: Variant) -> void:
 	if(data.is_test_script):
 		_last_info = data
 		_update_buttons(_last_info)
@@ -68,7 +68,7 @@ func _on_caret_notifer_changed(data):
 # Private
 # ----------------
 
-func _update_buttons(info):
+func _update_buttons(info: Variant) -> void:
 	_ctrls.lbl_none.visible = false
 	_ctrls.btn_script.visible = info.script != null
 
@@ -80,7 +80,7 @@ func _update_buttons(info):
 	_ctrls.btn_inner.text = str(info.inner_class)
 	_ctrls.btn_inner.tooltip_text = str("Run all tests in Inner-Test-Class ", info.inner_class)
 
-	var is_test_method = info.method != null and info.method.begins_with(method_prefix)
+	var is_test_method: Variant = info.method != null and info.method.begins_with(method_prefix)
 	_ctrls.btn_method.visible = is_test_method
 	_ctrls.arrow_2.visible = is_test_method
 	if(is_test_method):
@@ -99,34 +99,34 @@ func _update_buttons(info):
 	_update_size.call_deferred()
 
 
-func _update_size():
+func _update_size() -> void:
 	custom_minimum_size.x = _ctrls.btn_method.size.x + _ctrls.btn_method.position.x
 
-var _last_run_info = {}
-func _emit_run_tests(info):
+var _last_run_info: Dictionary = {}
+func _emit_run_tests(info: Variant) -> void:
 	_last_run_info = info.duplicate()
 	run_tests.emit(info)
 
 # ----------------
 # Events
 # ----------------
-func _on_BtnRunScript_pressed():
-	var info = _last_info.duplicate()
+func _on_BtnRunScript_pressed() -> void:
+	var info: Variant = _last_info.duplicate()
 	info.script = info.script.resource_path.get_file()
 	info.inner_class = null
 	info.method = null
 	_emit_run_tests(info)
 
 
-func _on_BtnRunInnerClass_pressed():
-	var info = _last_info.duplicate()
+func _on_BtnRunInnerClass_pressed() -> void:
+	var info: Variant = _last_info.duplicate()
 	info.script = info.script.resource_path.get_file()
 	info.method = null
 	_emit_run_tests(info)
 
 
-func _on_BtnRunMethod_pressed():
-	var info = _last_info.duplicate()
+func _on_BtnRunMethod_pressed() -> void:
+	var info: Variant = _last_info.duplicate()
 	info.script = info.script.resource_path.get_file()
 	_emit_run_tests(info)
 
@@ -134,12 +134,12 @@ func _on_BtnRunMethod_pressed():
 # ----------------
 # Public
 # ----------------
-func rerun():
+func rerun() -> void:
 	if(_last_run_info != {}):
 		_emit_run_tests(_last_run_info)
 
 
-func run_at_cursor():
+func run_at_cursor() -> void:
 	if(_ctrls.btn_method.visible):
 		_on_BtnRunMethod_pressed()
 	elif(_ctrls.btn_inner.visible):
@@ -150,22 +150,22 @@ func run_at_cursor():
 		print("nothing selected")
 
 
-func get_script_button():
+func get_script_button() -> Variant:
 	return _ctrls.btn_script
 
 
-func get_inner_button():
+func get_inner_button() -> Variant:
 	return _ctrls.btn_inner
 
 
-func get_test_button():
+func get_test_button() -> Variant:
 	return _ctrls.btn_method
 
 
-func set_inner_class_prefix(value):
+func set_inner_class_prefix(value: Variant) -> void:
 	_caret_notifier.inner_class_prefix = value
 
 
-func apply_gut_config(gut_config):
+func apply_gut_config(gut_config: Variant) -> void:
 	_caret_notifier.script_prefix = gut_config.options.prefix
 	_caret_notifier.script_suffix = gut_config.options.suffix

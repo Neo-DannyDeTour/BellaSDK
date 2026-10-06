@@ -4,37 +4,37 @@ extends Node2D
 class GutEyeball:
 	extends Node2D
 
-	var _should_draw_laser = false
-	var _laser_end_pos = Vector2.ZERO
+	var _should_draw_laser: bool = false
+	var _laser_end_pos: Vector2 = Vector2.ZERO
 	var _laser_timer : Timer = null
 	var _color_tween : Tween
 	var _size_tween : Tween
 
 	var sprite : Sprite2D = null
-	var default_position = Vector2(0, 0)
-	var move_radius = 25
-	var move_center = Vector2(0, 0)
-	var default_color = Color(0.31, 0.31, 0.31)
-	var _color = default_color :
+	var default_position: Vector2 = Vector2(0, 0)
+	var move_radius: int = 25
+	var move_center: Vector2 = Vector2(0, 0)
+	var default_color: Color = Color(0.31, 0.31, 0.31)
+	var _color: Variant = default_color :
 		set(val):
 			_color = val
 			queue_redraw()
-	var color = _color :
+	var color: Variant = _color :
 		set(val):
 			_start_color_tween(_color, val)
 		get(): return _color
-	var default_size = 70
-	var _size = default_size :
+	var default_size: int = 70
+	var _size: Variant = default_size :
 		set(val):
 			_size = val
 			queue_redraw()
-	var size = _size :
+	var size: Variant = _size :
 		set(val):
 			_start_size_tween(_size, val)
 		get(): return _size
 
 
-	func _init(node):
+	func _init(node: Variant) -> void:
 		sprite = node
 		default_position = sprite.position
 		move_center = sprite.position
@@ -45,7 +45,7 @@ class GutEyeball:
 		sprite.visible = false
 
 
-	func _ready():
+	func _ready() -> void:
 		_laser_timer = Timer.new()
 		_laser_timer.wait_time = .1
 		_laser_timer.one_shot = true
@@ -53,12 +53,12 @@ class GutEyeball:
 		_laser_timer.timeout.connect(func():  _should_draw_laser = false)
 
 
-	func _process(_delta):
+	func _process(_delta: float) -> void:
 		if(_should_draw_laser):
 			queue_redraw()
 
 
-	func _start_color_tween(old_color, new_color):
+	func _start_color_tween(old_color: Variant, new_color: Variant) -> void:
 		if(_color_tween != null and _color_tween.is_running()):
 			_color_tween.kill()
 		_color_tween = create_tween()
@@ -66,7 +66,7 @@ class GutEyeball:
 		_color_tween.play()
 
 
-	func _start_size_tween(old_size, new_size):
+	func _start_size_tween(old_size: Variant, new_size: Variant) -> void:
 		if(_size_tween != null and _size_tween.is_running()):
 			_size_tween.kill()
 		_size_tween = create_tween()
@@ -74,56 +74,56 @@ class GutEyeball:
 		_size_tween.play()
 
 
-	var _laser_size = 20.0
+	var _laser_size: float = 20.0
 	func _draw() -> void:
 		draw_circle(Vector2.ZERO, size, color, true, -1, true)
 		if(_should_draw_laser):
-			var end_pos = (_laser_end_pos - global_position) * 2
-			var laser_size = _laser_size * (float(size)/float(default_size))
+			var end_pos: Variant = (_laser_end_pos - global_position) * 2
+			var laser_size: Variant = _laser_size * (float(size)/float(default_size))
 			draw_line(Vector2.ZERO, end_pos, color, laser_size)
 			draw_line(Vector2.ZERO, end_pos, Color(1, 1, 1, .5), laser_size * .8)
 
 
 	# There's a bug in here where the eye shakes like crazy.  It's a feature
 	# now.  Don't fix it.
-	func look_at_local_position(local_pos):
-		var dir = position.direction_to(local_pos)
-		var dist = position.distance_to(local_pos)
+	func look_at_local_position(local_pos: Variant) -> void:
+		var dir: Variant = position.direction_to(local_pos)
+		var dist: Variant = position.distance_to(local_pos)
 		position = move_center + (dir * min(dist, move_radius))
 		position.x = clamp(position.x, move_center.x - move_radius, move_center.x + move_radius)
 		position.y = clamp(position.y, move_center.y - move_radius, move_center.y + move_radius)
 
 
-	func reset():
+	func reset() -> void:
 		color = default_color
 		size = default_size
 
 
-	func eye_laser(global_pos):
+	func eye_laser(global_pos: Variant) -> void:
 		_should_draw_laser = true
 		_laser_end_pos = global_pos
 		_laser_timer.start()
 
 
-	func _stop_laser():
+	func _stop_laser() -> void:
 		_should_draw_laser = false
 
 
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
-var GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
+const GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
 # Active means it's actively doing stuff.  When this is not active the eyes
 # won't follow, but you can still make the sizes change by calling methods on
 # this.
-@export var active = false :
+@export var active: Variant = false :
 	set(val):
 		active = val
 		if(!active and is_inside_tree()):
 			left_eye.position = left_eye.default_position
 			right_eye.position = right_eye.default_position
 # When disabled, this will reset to default and you can't make it do anything.
-@export var disabled = false :
+@export var disabled: Variant = false :
 	set(val):
 		disabled = val
 		if(disabled and is_inside_tree()):
@@ -137,23 +137,23 @@ var GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
 			$BaseLogo.texture = _normal
 			modulate = Color.WHITE
 
-@onready var _reset_timer = $ResetTimer
-@onready var _face_button = $FaceButton
+@onready var _reset_timer: Node = $ResetTimer
+@onready var _face_button: Control = $FaceButton
 @onready var left_eye : GutEyeball = GutEyeball.new($BaseLogo/LeftEye)
 @onready var right_eye : GutEyeball = GutEyeball.new($BaseLogo/RightEye)
 
-var _no_shine = load("res://addons/gut/images/GutIconV2_no_shine.png")
-var _normal = load("res://addons/gut/images/GutIconV2_base.png")
-var _is_in_edited_scene = false
+var _no_shine: Variant = load("res://addons/gut/images/GutIconV2_no_shine.png")
+var _normal: Variant = load("res://addons/gut/images/GutIconV2_base.png")
+var _is_in_edited_scene: bool = false
 
 signal pressed
 
-func _debug_ready():
+func _debug_ready() -> void:
 	position = Vector2(500, 500)
 	active = true
 
 
-func _ready():
+func _ready() -> void:
 	_is_in_edited_scene = GutEditorGlobals.is_being_edited_in_editor(self)
 
 	if(get_parent() == get_tree().root):
@@ -166,7 +166,7 @@ func _ready():
 	_face_button.modulate.a = 0.0
 
 
-func _process(_delta):
+func _process(_delta: float) -> void:
 	if(active and !disabled and !_is_in_edited_scene):
 		left_eye.look_at_local_position(get_local_mouse_position())
 		right_eye.look_at_local_position(get_local_mouse_position())
@@ -187,7 +187,7 @@ func _on_face_button_pressed() -> void:
 # ----------------
 # Public
 # ----------------
-func set_eye_scale(left, right=left):
+func set_eye_scale(left: Variant, right: Variant = left) -> void:
 	if(disabled or _is_in_edited_scene):
 		return
 	left_eye.size = left_eye.default_size * left
@@ -195,14 +195,14 @@ func set_eye_scale(left, right=left):
 	_reset_timer.start()
 
 
-func reset_eye_size():
+func reset_eye_size() -> void:
 	if(disabled or _is_in_edited_scene):
 		return
 	left_eye.size = left_eye.default_size
 	right_eye.size = right_eye.default_size
 
 
-func set_eye_color(left, right=left):
+func set_eye_color(left: Variant, right: Variant = left) -> void:
 	if(disabled or _is_in_edited_scene):
 		return
 	left_eye.color = left
@@ -210,7 +210,7 @@ func set_eye_color(left, right=left):
 	_reset_timer.start()
 
 
-func reset_eye_color():
+func reset_eye_color() -> void:
 	if(disabled or _is_in_edited_scene):
 		return
 	left_eye.color = left_eye.default_color

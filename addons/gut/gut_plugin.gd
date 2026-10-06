@@ -1,25 +1,25 @@
 @tool
 extends EditorPlugin
 
-var VersionConversion = load("res://addons/gut/version_conversion.gd")
-var MenuManager = load("res://addons/gut/gut_menu.gd")
-var BottomPanelScene = preload('res://addons/gut/gui/GutBottomPanel.tscn')
-var GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
-var GutDock = load('res://addons/gut/gui/gut_dock.gd')
-var UpdateRequiredDialog = load('res://addons/gut/gui/update_required.tscn')
-var CheckForUpdateControl = load("res://addons/gut/gui/check_for_update.tscn")
+const VersionConversion = load("res://addons/gut/version_conversion.gd")
+const MenuManager = load("res://addons/gut/gut_menu.gd")
+const BottomPanelScene = preload('res://addons/gut/gui/GutBottomPanel.tscn')
+const GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
+const GutDock = load('res://addons/gut/gui/gut_dock.gd')
+const UpdateRequiredDialog = load('res://addons/gut/gui/update_required.tscn')
+const CheckForUpdateControl = load("res://addons/gut/gui/check_for_update.tscn")
 
 var _bottom_panel : Control = null
-var _menu_mgr = null
-var _gut_button = null
-var _gut_window = null
-var _dock_mode = 'none'
-var _gut_dock = null
-var _update_required = null
-var _check_for_update = null
+var _menu_mgr: Variant = null
+var _gut_button: Variant = null
+var _gut_window: Variant = null
+var _dock_mode: String = 'none'
+var _gut_dock: Variant = null
+var _update_required: Variant = null
+var _check_for_update: Variant = null
 
 
-func _init():
+func _init() -> void:
 	if(VersionConversion.error_if_not_all_classes_imported()):
 		return
 
@@ -27,9 +27,9 @@ func _init():
 # This checks the Remote file or Local file.  This will not download the
 # remote file.  I don't want to delay startup for any reason.  Downloading
 # the remote file ocassionally is handled elsewhere.
-func _should_continue_loading_gut():
+func _should_continue_loading_gut() -> Variant:
 	_check_for_update = CheckForUpdateControl.instantiate()
-	var to_return = true
+	var to_return: bool = true
 
 	_update_required = UpdateRequiredDialog.instantiate()
 	get_tree().root.add_child(_update_required)
@@ -48,11 +48,11 @@ func _should_continue_loading_gut():
 	return to_return
 
 
-func _enter_tree():
+func _enter_tree() -> void:
 	if(!_version_conversion()):
 		return
 
-	var should_continue = await _should_continue_loading_gut()
+	var should_continue: Variant = await _should_continue_loading_gut()
 	if(!should_continue):
 		print("GUT loading canceled.  Restart editor to try loading again.")
 		return
@@ -79,7 +79,7 @@ func _enter_tree():
 	# some number of days since we've downloaded it.
 	_check_for_update.visible = false
 	_bottom_panel.add_child(_check_for_update)
-	var days_since = _check_for_update.update_detector.get_days_since_last_fetch()
+	var days_since: Variant = _check_for_update.update_detector.get_days_since_last_fetch()
 	if(days_since >= 1):
 		_check_for_update.update_detector.check_for_update_with_fetch(true)
 
@@ -95,8 +95,8 @@ func _enter_tree():
 	GutEditorGlobals.gut_plugin = self
 
 
-func _version_conversion():
-	var EditorGlobals = load("res://addons/gut/gui/editor_globals.gd")
+func _version_conversion() -> Variant:
+	const EditorGlobals = load("res://addons/gut/gui/editor_globals.gd")
 	EditorGlobals.create_temp_directory()
 
 	if(VersionConversion.error_if_not_all_classes_imported()):
@@ -106,7 +106,7 @@ func _version_conversion():
 	return true
 
 
-func gut_as_panel():
+func gut_as_panel() -> void:
 	_gut_dock = GutDock.new()
 
 	_gut_dock.title = "GUT"
@@ -120,11 +120,11 @@ func gut_as_panel():
 	_gut_dock.dock_shortcut = _bottom_panel.get_panel_shortcut()
 
 
-func toggle_windowed():
+func toggle_windowed() -> void:
 	push_warning("You have to right click the GUT tab and choose 'floating'.  I cannot do this from a menu anymore.")
 
 
-func _exit_tree():
+func _exit_tree() -> void:
 	remove_tool_menu_item("GUT")
 	_menu_mgr = null
 	GutEditorGlobals.user_prefs.save_it()
@@ -140,13 +140,13 @@ func _exit_tree():
 	_check_for_update.queue_free()
 
 
-func show_output_panel():
+func show_output_panel() -> void:
 	if(_gut_dock == null or !_gut_dock.is_inside_tree()):
 		return
 
-	var panel = null
-	var kids = _gut_dock.get_parent().get_children()
-	var idx = 0
+	var panel: Variant = null
+	var kids: Variant = _gut_dock.get_parent().get_children()
+	var idx: int = 0
 
 	while(idx < kids.size() and panel == null):
 		if(kids[idx].name == 'Output'):

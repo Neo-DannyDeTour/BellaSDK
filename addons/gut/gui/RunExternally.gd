@@ -27,39 +27,39 @@ extends Control
 # 			_anim_text = text.rpad(text.length() + _cur_dots, dot)
 
 
-var GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
+const GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
 
-@onready var btn_kill_it = $BgControl/VBox/Kill
-@onready var bg_control = $BgControl
+@onready var btn_kill_it: Node = $BgControl/VBox/Kill
+@onready var bg_control: Node = $BgControl
 
-var _pipe_results = {}
-var _debug_mode = false
+var _pipe_results: Dictionary = {}
+var _debug_mode: bool = false
 var _std_thread : Thread
 var _escape_regex : RegEx = RegEx.new()
-var _text_buffer = ''
+var _text_buffer: String = ''
 
-var bottom_panel = null :
+var bottom_panel: Variant = null :
 	set(val):
 		bottom_panel = val
 		bottom_panel.resized.connect(_on_bottom_panel_resized)
-var blocking_mode = "Blocking"
-var additional_arguments = []
-var remove_escape_characters = true
-@export var bg_color = Color.WHITE:
+var blocking_mode: String = "Blocking"
+var additional_arguments: Array = []
+var remove_escape_characters: bool = true
+@export var bg_color: Color = Color.WHITE:
 	set(val):
 		bg_color = val
 		if(is_inside_tree()):
 			bg_control.get("theme_override_styles/panel").bg_color = bg_color
 
 
-func _debug_ready():
+func _debug_ready() -> void:
 	_debug_mode = true
 	additional_arguments = ['-gselect', 'test_awaiter.gd', '-gconfig', 'res://.gutconfig.json'] # '-gunit_test_name', 'test_can_clear_spies'
 	blocking_mode = "NonBlocking"
 	run_tests()
 
 
-func _ready():
+func _ready() -> void:
 	_escape_regex.compile("\\x1b\\[[0-9;]*m")
 	btn_kill_it.visible = false
 
@@ -77,11 +77,11 @@ func _process(_delta: float) -> void:
 # ----------
 # Private
 # ----------
-func _center_me():
+func _center_me() -> void:
 	position = get_parent().size / 2.0 - size / 2.0
 
 
-func _output_text(text, should_scroll = true):
+func _output_text(text: Variant, should_scroll: bool = true) -> void:
 	if(_debug_mode):
 		print(text)
 	else:
@@ -96,31 +96,31 @@ func _output_text(text, should_scroll = true):
 			_text_buffer += text
 
 
-func _scroll_output_pane(line):
+func _scroll_output_pane(line: Variant) -> void:
 	if(!_debug_mode and bottom_panel != null):
-		var txt_ctrl = bottom_panel.get_text_output_control().get_rich_text_edit()
+		var txt_ctrl: Variant = bottom_panel.get_text_output_control().get_rich_text_edit()
 		if(line == -1):
 			line = txt_ctrl.get_line_count()
 		txt_ctrl.scroll_vertical = line
 
 
-func _add_arguments_to_output():
+func _add_arguments_to_output() -> void:
 	if(additional_arguments.size() != 0):
 		_output_text(
 			str("Run Mode arguments: ", ' '.join(additional_arguments), "\n\n")
 		)
 
 
-func _load_json():
+func _load_json() -> void:
 	if(_debug_mode):
 		pass # could load file and print it if we want.
 	elif(bottom_panel != null):
 		bottom_panel.load_result_json()
 
 
-func _run_blocking(options):
+func _run_blocking(options: Variant) -> void:
 	btn_kill_it.visible = false
-	var output = []
+	var output: Array = []
 	await get_tree().create_timer(.1).timeout
 
 	OS.execute(OS.get_executable_path(), options, output, true)
@@ -133,7 +133,7 @@ func _run_blocking(options):
 	queue_free()
 
 
-func _read_non_blocking_stdio():
+func _read_non_blocking_stdio() -> void:
 	while(OS.is_process_running(_pipe_results.pid)):
 		while(_pipe_results.stderr.get_length() > 0):
 			_output_text(_pipe_results.stderr.get_line() + "\n")
@@ -145,14 +145,14 @@ func _read_non_blocking_stdio():
 		await get_tree().process_frame
 
 
-func _run_non_blocking(options):
+func _run_non_blocking(options: Variant) -> void:
 	_pipe_results = OS.execute_with_pipe(OS.get_executable_path(), options, false)
 	_std_thread = Thread.new()
 	_std_thread.start(_read_non_blocking_stdio)
 	btn_kill_it.visible = true
 
 
-func _end_non_blocking():
+func _end_non_blocking() -> void:
 	_add_arguments_to_output()
 	_scroll_output_pane(-1)
 
@@ -182,17 +182,17 @@ func _on_color_rect_gui_input(event: InputEvent) -> void:
 			position += event.relative
 
 
-func _on_bottom_panel_resized():
+func _on_bottom_panel_resized() -> void:
 	_center_me()
 
 
 # ----------------
 # Public
 # ----------------
-func run_tests():
+func run_tests() -> void:
 	_center_me()
 
-	var options = ["-s", "res://addons/gut/gut_cmdln.gd", "-graie", "-gdisable_colors",
+	var options: Variant = ["-s", "res://addons/gut/gut_cmdln.gd", "-graie", "-gdisable_colors",
 		"-gconfig", GutEditorGlobals.editor_run_gut_config_path]
 	options.append_array(additional_arguments)
 
@@ -202,15 +202,15 @@ func run_tests():
 		_run_non_blocking(options)
 
 
-func get_godot_help():
+func get_godot_help() -> Variant:
 	_text_buffer = ''
-	var options = ["--help", "--headless"]
+	var options: Array = ["--help", "--headless"]
 	await _run_blocking(options)
 	return _text_buffer
 
 
-func get_gut_help():
+func get_gut_help() -> Variant:
 	_text_buffer = ''
-	var options = ["-s", "res://addons/gut/gut_cmdln.gd", "-gh", "--headless"]
+	var options: Array = ["-s", "res://addons/gut/gut_cmdln.gd", "-gh", "--headless"]
 	await _run_blocking(options)
 	return _text_buffer
