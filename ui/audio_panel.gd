@@ -2,12 +2,18 @@
 class_name AudioPanel
 extends Panel
 
+# --------------------------------------
+# CONSTANTS
+# --------------------------------------
 ## Fallback volume scale applied when no saved audio preference exists.
 const DEFAULT_VOLUME: float = 100.0
 
 ## Decibel difference threshold required to commit an engine bus change.
 const DB_CHANGE_EPSILON: float = 0.05
 
+# --------------------------------------
+# NODE REFERENCES
+# --------------------------------------
 ## Master bus slider.
 @onready var master_slider: HSlider = %MasterSlider
 
@@ -198,27 +204,33 @@ func _request_preview_subtitle() -> void:
 		return
 	var events: Node = get_node_or_null("/root/Events")
 	if is_instance_valid(events) and events.has_signal("subtitle_requested"):
-		events.subtitle_requested.emit(
-			"Narrator", "This is a preview of dialogue text with current settings.", 2.5
+		events.emit_signal(
+			"subtitle_requested",
+			"Narrator",
+			"This is a preview of dialogue text with current settings.",
+			2.5
 		)
 
 
 ## Restores subtitle states from [GlobalSettings].
 func _load_subtitle_mirrors() -> void:
 	if is_instance_valid(enable_subs_toggle):
-		var en: bool = bool(GlobalSettings.get_setting("Accessibility", "subtitles_enabled", true))
+		var raw_en: Variant = GlobalSettings.get_setting("Accessibility", "subtitles_enabled", true)
+		var en: bool = bool(raw_en)
 		enable_subs_toggle.set_pressed_no_signal(en)
 
 	if is_instance_valid(sub_size_slider):
-		var s_val: float = float(GlobalSettings.get_setting("Accessibility", "subtitle_size", 24.0))
+		var raw_size: Variant = GlobalSettings.get_setting("Accessibility", "subtitle_size", 24.0)
+		var s_val: float = float(raw_size)
 		sub_size_slider.set_value_no_signal(s_val)
 		if is_instance_valid(sub_size_input):
 			sub_size_input.text = str(int(s_val))
 
 	if is_instance_valid(sub_bg_opacity_slider):
-		var op: float = float(
-			GlobalSettings.get_setting("Accessibility", "subtitle_bg_opacity", 50.0)
+		var raw_op: Variant = GlobalSettings.get_setting(
+			"Accessibility", "subtitle_bg_opacity", 50.0
 		)
+		var op: float = float(raw_op)
 		sub_bg_opacity_slider.set_value_no_signal(op)
 		if is_instance_valid(sub_bg_opacity_input):
 			sub_bg_opacity_input.text = str(int(op))
@@ -252,7 +264,7 @@ func _connect_custom_slider(
 		slider.value_changed.connect(
 			func(val: float) -> void:
 				if is_instance_valid(input_box) and not input_box.has_focus():
-					input_box.text = str(int(val)) if is_int else ("%.2f" % val)
+					input_box.text = (str(int(val)) if is_int else ("%.2f" % val))
 				apply_cb.call(val)
 		)
 		slider.drag_ended.connect(
@@ -276,7 +288,7 @@ func _connect_custom_slider(
 					input_box.text = fallback
 				else:
 					var c_val: float = clampf(trimmed.to_float(), min_v, max_v)
-					input_box.text = str(int(c_val)) if is_int else ("%.2f" % c_val)
+					input_box.text = (str(int(c_val)) if is_int else ("%.2f" % c_val))
 					print("Audio: Manually entered ", key, " -> ", c_val)
 					GlobalSettings.save_setting(section, key, c_val)
 					if is_instance_valid(slider):
@@ -291,7 +303,7 @@ func _connect_custom_slider(
 					input_box.text = fallback
 				else:
 					var c_val: float = clampf(trimmed.to_float(), min_v, max_v)
-					input_box.text = str(int(c_val)) if is_int else ("%.2f" % c_val)
+					input_box.text = (str(int(c_val)) if is_int else ("%.2f" % c_val))
 					if is_instance_valid(slider):
 						if not is_equal_approx(slider.value, c_val):
 							print("Audio: Saved ", key, " on defocus: ", c_val)
@@ -311,24 +323,28 @@ func _load_audio_settings() -> void:
 	_apply_and_set("Ambient", ambient_slider, ambient_input)
 
 	if is_instance_valid(mono_audio_toggle):
-		var is_mono: bool = GlobalSettings.get_setting("Accessibility", "mono_audio", false) as bool
+		var raw_mono: Variant = GlobalSettings.get_setting("Accessibility", "mono_audio", false)
+		var is_mono: bool = bool(raw_mono)
 		mono_audio_toggle.set_pressed_no_signal(is_mono)
 		_apply_mono_audio(is_mono)
 
 	if is_instance_valid(output_profile_option):
-		var p_idx: int = GlobalSettings.get_setting("Audio", "output_profile", 0) as int
+		var raw_idx: Variant = GlobalSettings.get_setting("Audio", "output_profile", 0)
+		var p_idx: int = int(raw_idx)
 		output_profile_option.selected = p_idx
 		_apply_output_profile(p_idx)
 
 	if is_instance_valid(mute_on_focus_toggle):
-		var m_foc: bool = GlobalSettings.get_setting("Audio", "mute_on_focus", true) as bool
+		var raw_foc: Variant = GlobalSettings.get_setting("Audio", "mute_on_focus", true)
+		var m_foc: bool = bool(raw_foc)
 		mute_on_focus_toggle.set_pressed_no_signal(m_foc)
 		_apply_mute_on_focus(m_foc)
 
 
 ## Retrieves stored bus level and updates controls.
 func _apply_and_set(bus_name: String, slider: HSlider, input_box: LineEdit) -> void:
-	var vol: float = GlobalSettings.get_setting("Audio", bus_name, DEFAULT_VOLUME) as float
+	var raw_vol: Variant = GlobalSettings.get_setting("Audio", bus_name, DEFAULT_VOLUME)
+	var vol: float = float(raw_vol)
 	if is_instance_valid(slider):
 		slider.value = vol
 	if is_instance_valid(input_box):
@@ -349,7 +365,12 @@ func _on_volume_changed(value: float, input_node: LineEdit, bus_name: String) ->
 func _on_volume_drag_ended(value_changed: bool, bus_name: String, slider: HSlider) -> void:
 	if value_changed and is_instance_valid(slider):
 		print("Audio: Drag ended for ", bus_name, " -> ", slider.value)
-		GlobalSettings.save_setting("Audio", bus_name, slider.value)
+		GlobalSettings.save_setting(section_name(bus_name), bus_name, slider.value)
+
+
+## Helper returning config section name for audio bus setting.
+func section_name(_bus: String) -> String:
+	return "Audio"
 
 
 ## Converts linear volume into decibels for the target bus.

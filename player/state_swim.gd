@@ -60,9 +60,10 @@ func enter(_msg: Dictionary = {}) -> void:
 	print("StateSwim: enter() called. Setting up water physics.")
 	is_infinite_swim = bool(GlobalSettings.get_setting("Accessibility", "infinite_swim", false))
 
-	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
-	loco.standing_collision.disabled = false
-	loco.crouching_collision.disabled = true
+	var loco: PlayerLocomotionComponent = _get_locomotion()
+	if is_instance_valid(loco):
+		loco.standing_collision.disabled = false
+		loco.crouching_collision.disabled = true
 
 	head_in_water = false
 	chest_in_water = false
@@ -76,9 +77,7 @@ func enter(_msg: Dictionary = {}) -> void:
 func exit() -> void:
 	print("StateSwim: exit() called. Cleaning up water state.")
 	if head_in_water:
-		var env: PlayerEnvironmentComponent = (
-			player.environment_component as PlayerEnvironmentComponent
-		)
+		var env: PlayerEnvironmentComponent = _get_environment()
 		var vfx: Node = env.vfx_manager if is_instance_valid(env) else null
 		if is_instance_valid(vfx) and vfx.has_method(&"trigger_surface_wipe"):
 			vfx.call(&"trigger_surface_wipe")
@@ -91,7 +90,12 @@ func exit() -> void:
 	was_head_in_water = false
 	oxygen_timer = 0.0
 	drown_tick_timer = 0.0
-	player.camera_controller.eyes.rotation.z = 0.0
+
+	var cam_ctrl: Node = _get_camera_controller()
+	if is_instance_valid(cam_ctrl):
+		var eyes: Node3D = cam_ctrl.get(&"eyes") as Node3D
+		if is_instance_valid(eyes):
+			eyes.rotation.z = 0.0
 
 
 ## Evaluates water depth, applies swim velocity, and checks transitions.
@@ -146,10 +150,15 @@ func _apply_drowning_damage() -> void:
 	print("StateSwim: Applying drowning damage tick.")
 	var health_comp: HealthComponent = null
 
-	if is_instance_valid(player.health_component):
-		health_comp = player.health_component as HealthComponent
-	elif is_instance_valid(player.stats_component):
-		health_comp = player.stats_component.health_component as HealthComponent
+	var health_val: Variant = player.get(&"health_component")
+	if health_val is HealthComponent and is_instance_valid(health_val):
+		health_comp = health_val as HealthComponent
+	else:
+		var stats_val: Variant = player.get(&"stats_component")
+		if stats_val is Node and is_instance_valid(stats_val as Node):
+			var sub_health: Variant = (stats_val as Node).get(&"health_component")
+			if sub_health is HealthComponent and is_instance_valid(sub_health):
+				health_comp = sub_health as HealthComponent
 
 	if is_instance_valid(health_comp):
 		health_comp.take_damage(DROWN_DAMAGE_PER_TICK)
@@ -163,10 +172,11 @@ func _calculate_water_depth() -> void:
 	chest_in_water = false
 
 	var space_state: PhysicsDirectSpaceState3D = player.get_world_3d().direct_space_state
-	if space_state == null or _point_query == null:
+	var cam: Camera3D = _get_camera()
+	if space_state == null or _point_query == null or not is_instance_valid(cam):
 		return
 
-	var cam_pos: Vector3 = player.camera_controller.camera.global_position
+	var cam_pos: Vector3 = cam.global_position
 
 	_point_query.position = cam_pos - Vector3(0.0, 0.2, 0.0)
 	var head_results: Array[Dictionary] = space_state.intersect_point(_point_query, 4)
@@ -195,12 +205,15 @@ func _calculate_water_depth() -> void:
 ## Computes horizontal swim velocity, vertical buoyancy, and water jumps.
 func _apply_swim_velocity(delta: float, input_dir: Vector2) -> void:
 	print("StateSwim: _apply_swim_velocity() applying fluid forces.")
-	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	var loco: PlayerLocomotionComponent = _get_locomotion()
+	var cam: Camera3D = _get_camera()
+	if not is_instance_valid(loco) or not is_instance_valid(cam):
+		return
 
 	loco.head.position.y = MathUtils.damp(loco.head.position.y, 1.8, loco.default_lerp_speed, delta)
 
 	var input_vec: Vector3 = Vector3(input_dir.x, 0.0, input_dir.y)
-	var cam_basis: Basis = player.camera_controller.camera.global_transform.basis
+	var cam_basis: Basis = cam.global_transform.basis
 	var swim_dir: Vector3 = (cam_basis * input_vec).normalized()
 	var target_velocity: Vector3 = swim_dir * loco.swimming_speed
 
@@ -208,7 +221,8 @@ func _apply_swim_velocity(delta: float, input_dir: Vector2) -> void:
 	just_water_jumped = false
 
 	if GestureInputManager.is_action_just_pressed(&"jump") and not head_in_water:
-		var vault_ctrl: Node = player.environment_component.vault_controller
+		var env: PlayerEnvironmentComponent = _get_environment()
+		var vault_ctrl: Node = env.vault_controller if is_instance_valid(env) else null
 		if is_instance_valid(vault_ctrl):
 			vault_ctrl.call(&"process_vault_scan")
 			if bool(vault_ctrl.get(&"can_vault_current_ledge")):
@@ -258,22 +272,28 @@ func _apply_swim_velocity(delta: float, input_dir: Vector2) -> void:
 
 ## Manages procedural camera banking during strafing and triggers splash VFX.
 func _handle_camera_and_vfx(delta: float, input_dir: Vector2) -> void:
-	print("StateSwim: _handle_camera_and_vfx() updating procedural visual effects.")
+	print("StateSwim: _handle_camera_and_vfx() updating visual effects.")
 	var target_tilt: float = 0.0
-	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	var loco: PlayerLocomotionComponent = _get_locomotion()
+	var cam_ctrl: Node = _get_camera_controller()
+	var tilt_amount: float = (
+		float(cam_ctrl.get(&"camera_tilt_amount")) if is_instance_valid(cam_ctrl) else 0.0
+	)
+	var eyes: Node3D = cam_ctrl.get(&"eyes") as Node3D if is_instance_valid(cam_ctrl) else null
 
 	if input_dir.x > 0.1:
-		target_tilt = deg_to_rad(player.camera_controller.camera_tilt_amount * 2.0)
+		target_tilt = deg_to_rad(tilt_amount * 2.0)
 	elif input_dir.x < -0.1:
-		target_tilt = deg_to_rad(-player.camera_controller.camera_tilt_amount * 2.0)
+		target_tilt = deg_to_rad(-tilt_amount * 2.0)
 
-	player.camera_controller.eyes.rotation.z = MathUtils.damp(
-		player.camera_controller.eyes.rotation.z, target_tilt, loco.default_lerp_speed / 3.0, delta
-	)
+	if is_instance_valid(eyes) and is_instance_valid(loco):
+		eyes.rotation.z = MathUtils.damp(
+			eyes.rotation.z, target_tilt, loco.default_lerp_speed / 3.0, delta
+		)
 
 	_update_flashlight_underwater(head_in_water, delta)
 
-	var env: PlayerEnvironmentComponent = player.environment_component as PlayerEnvironmentComponent
+	var env: PlayerEnvironmentComponent = _get_environment()
 	var vfx: Node = env.vfx_manager if is_instance_valid(env) else null
 	if is_instance_valid(vfx):
 		if head_in_water and not was_head_in_water:
@@ -283,7 +303,7 @@ func _handle_camera_and_vfx(delta: float, input_dir: Vector2) -> void:
 			if vfx.has_method(&"trigger_surface_wipe"):
 				vfx.call(&"trigger_surface_wipe")
 
-			var water_node: Node = env.current_water_node
+			var water_node: Node = env.current_water_node if is_instance_valid(env) else null
 			if is_instance_valid(water_node) and water_node.has_method(&"play_splash_sound"):
 				print("StateSwim: Head broke surface. Triggering splash sound.")
 				var exit_speed: float = maxf(absf(player.velocity.y), 10.0)
@@ -293,23 +313,30 @@ func _handle_camera_and_vfx(delta: float, input_dir: Vector2) -> void:
 ## Adjusts flashlight intensity underwater to compensate for light falloff.
 func _update_flashlight_underwater(is_submerged: bool, delta: float) -> void:
 	print("StateSwim: _update_flashlight_underwater() adjusting beam energy.")
-	var flash_ctrl: Node = player.get(&"flashlight_controller")
-	if flash_ctrl == null and player.get(&"interaction_component"):
-		var interact: Node = player.interaction_component
-		flash_ctrl = interact.get(&"flashlight_controller") if is_instance_valid(interact) else null
+	var flash_ctrl: Node = null
+	var direct_ctrl: Variant = player.get(&"flashlight_controller")
+	if direct_ctrl is Node and is_instance_valid(direct_ctrl as Node):
+		flash_ctrl = direct_ctrl as Node
+	else:
+		var interact: Variant = player.get(&"interaction_component")
+		if interact is Node and is_instance_valid(interact as Node):
+			var sub_ctrl: Variant = (interact as Node).get(&"flashlight_controller")
+			if sub_ctrl is Node and is_instance_valid(sub_ctrl as Node):
+				flash_ctrl = sub_ctrl as Node
 
 	if is_instance_valid(flash_ctrl) and flash_ctrl.get(&"flashlight"):
 		var light: Light3D = flash_ctrl.get(&"flashlight") as Light3D
 		var base_energy: float = float(flash_ctrl.get(&"base_energy"))
 		var target_energy: float = base_energy * 4.0 if is_submerged else base_energy
 
-		light.light_energy = MathUtils.damp(light.light_energy, target_energy, 4.0, delta)
+		if is_instance_valid(light):
+			light.light_energy = MathUtils.damp(light.light_energy, target_energy, 4.0, delta)
 
 
 ## Evaluates water exit criteria to transition to [StateAir] or [StateGround].
 func _check_transitions() -> void:
 	print("StateSwim: _check_transitions() validating environment state.")
-	var env: PlayerEnvironmentComponent = player.environment_component as PlayerEnvironmentComponent
+	var env: PlayerEnvironmentComponent = _get_environment()
 	if not is_instance_valid(env) or env.current_water_node == null:
 		print("StateSwim: No active water node. Transitioning to Air.")
 		state_machine.transition_to(&"Air")
@@ -318,3 +345,43 @@ func _check_transitions() -> void:
 	if player.is_on_floor() and not chest_in_water and not head_in_water:
 		print("StateSwim: Exiting shallow water. Transitioning to Ground.")
 		state_machine.transition_to(&"Ground")
+
+
+## Safely retrieves the player locomotion component.
+func _get_locomotion() -> PlayerLocomotionComponent:
+	if not is_instance_valid(player):
+		return null
+	var val: Variant = player.get(&"locomotion_component")
+	if val is PlayerLocomotionComponent and is_instance_valid(val):
+		return val as PlayerLocomotionComponent
+	return null
+
+
+## Safely retrieves the player environment component.
+func _get_environment() -> PlayerEnvironmentComponent:
+	if not is_instance_valid(player):
+		return null
+	var val: Variant = player.get(&"environment_component")
+	if val is PlayerEnvironmentComponent and is_instance_valid(val):
+		return val as PlayerEnvironmentComponent
+	return null
+
+
+## Safely retrieves the player camera controller component.
+func _get_camera_controller() -> Node:
+	if not is_instance_valid(player):
+		return null
+	var ctrl: Variant = player.get(&"camera_controller")
+	if ctrl is Node and is_instance_valid(ctrl as Node):
+		return ctrl as Node
+	return null
+
+
+## Safely retrieves the player [Camera3D] node.
+func _get_camera() -> Camera3D:
+	var ctrl: Node = _get_camera_controller()
+	if is_instance_valid(ctrl):
+		var cam: Variant = ctrl.get(&"camera")
+		if cam is Camera3D and is_instance_valid(cam as Camera3D):
+			return cam as Camera3D
+	return null

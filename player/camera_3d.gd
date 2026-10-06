@@ -80,11 +80,17 @@ func _ready() -> void:
 		if events.has_signal("player_camera_registered"):
 			events.emit_signal("player_camera_registered", self)
 		if events.has_signal("screenshake_requested"):
-			Utilities.safe_connect(events.screenshake_requested, _on_screenshake_requested)
+			Utilities.safe_connect(
+				Signal(events, &"screenshake_requested"), _on_screenshake_requested
+			)
 		if events.has_signal("vision_assist_toggled"):
-			Utilities.safe_connect(events.vision_assist_toggled, _on_vision_assist_toggled)
+			Utilities.safe_connect(
+				Signal(events, &"vision_assist_toggled"), _on_vision_assist_toggled
+			)
 		if events.has_signal("vision_assist_mode_changed"):
-			Utilities.safe_connect(events.vision_assist_mode_changed, set_vision_assist_mode)
+			Utilities.safe_connect(
+				Signal(events, &"vision_assist_mode_changed"), set_vision_assist_mode
+			)
 
 
 ## Configures [CameraAttributesPractical] and ensures DoF is disabled on boot.
@@ -138,24 +144,24 @@ uniform float motion_blur_strength = 0.0;
 uniform int blur_samples = 4;
 
 void fragment() {
-    vec2 vel = camera_angular_velocity * motion_blur_strength * 0.08;
-    vel = clamp(vel, vec2(-0.05), vec2(0.05));
+	vec2 vel = camera_angular_velocity * motion_blur_strength * 0.08;
+	vel = clamp(vel, vec2(-0.05), vec2(0.05));
 
-    if (motion_blur_strength <= 0.005 || length(vel) < 0.00005) {
-        COLOR = texture(screen_texture, SCREEN_UV);
-    } else {
-        vec4 color = vec4(0.0);
-        for (int i = 0; i < blur_samples; i++) {
-            float offset_scale = (float(i) / float(blur_samples - 1)) - 0.5;
-            vec2 sample_uv = clamp(
-                SCREEN_UV + (vel * offset_scale),
-                vec2(0.001),
-                vec2(0.999)
-            );
-            color += texture(screen_texture, sample_uv);
-        }
-        COLOR = color / float(blur_samples);
-    }
+	if (motion_blur_strength <= 0.005 || length(vel) < 0.00005) {
+		COLOR = texture(screen_texture, SCREEN_UV);
+	} else {
+		vec4 color = vec4(0.0);
+		for (int i = 0; i < blur_samples; i++) {
+			float offset_scale = (float(i) / float(blur_samples - 1)) - 0.5;
+			vec2 sample_uv = clamp(
+				SCREEN_UV + (vel * offset_scale),
+				vec2(0.001),
+				vec2(0.999)
+			);
+			color += texture(screen_texture, sample_uv);
+		}
+		COLOR = color / float(blur_samples);
+	}
 }
 """
 	_motion_blur_material = ShaderMaterial.new()

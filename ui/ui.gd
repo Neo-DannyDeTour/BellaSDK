@@ -1,12 +1,12 @@
-## Root coordinator managing high-level UI visibility,
-## inputs, and routing to specialized sub-components.
+## Root coordinator managing high-level UI visibility, inputs, and routing.
+## Expected at scene root to coordinate HUD components and debug overlays.
 class_name UIController
 extends CanvasLayer
 
-## Reference to the screen post-processing effect manager.
+## Reference to the screen post-processing manager [ScreenEffectsManager].
 @onready var screen_effects: ScreenEffectsManager = $ScreenEffectsManager
 
-## Reference to the center reticle HUD.
+## Reference to the center reticle HUD [CrosshairHUD].
 @onready var crosshair_hud: CrosshairHUD = $CrosshairHUD
 
 ## Reference to the player health and debuff status indicators.
@@ -15,7 +15,7 @@ extends CanvasLayer
 ## Reference to the notification and note reading overlay manager.
 @onready var notification_hud: NotificationHUD = $NotificationHUD
 
-## Reference to the developer debug tools overlay.
+## Reference to the developer debug tools overlay [DebugOverlay].
 @onready var debug_overlay: DebugOverlay = $DebugOverlay
 
 ## Reference to the performance metrics panel.
@@ -24,7 +24,7 @@ extends CanvasLayer
 ## Reference to the frame time graph visualizer.
 @onready var frame_graph: ColorRect = $FrameGraph
 
-## Reference to the render diagnostics panel.
+## Reference to the render diagnostics panel [RenderDiagnosticsPanel].
 @onready var diagnostics_panel: RenderDiagnosticsPanel = %DiagnosticsPanel
 
 ## Tracks whether the user interface is currently hidden for clean screenshots.
@@ -34,7 +34,7 @@ var is_ui_hidden: bool = false
 var is_debug_allowed: bool = OS.has_feature("debug")
 
 
-## Initializes UI processing modes, connects top-level UI signals, and checks testbed status.
+## Initializes UI processing modes, connects signals, and checks testbed status.
 func _ready() -> void:
 	print("UIController: _ready() called. Initializing UI coordinator.")
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -46,10 +46,10 @@ func _ready() -> void:
 		frame_graph.hide()
 
 	_connect_signals()
-	call_deferred("_check_if_testbed")
+	call_deferred(&"_check_if_testbed")
 
 
-## Binds top-level event bus listeners.
+## Binds top-level event bus listeners to handle UI and gameplay state changes.
 func _connect_signals() -> void:
 	print("UIController: Connecting top-level event bus signals.")
 	if not Events.player_damaged.is_connected(_on_player_damaged):
@@ -70,25 +70,25 @@ func _input(event: InputEvent) -> void:
 	if not is_debug_allowed:
 		return
 
+	var is_hotkey_pressed: bool = false
 	if (
-		(
-			(InputMap.has_action(&"console") and event.is_action_pressed(&"console"))
-			or (InputMap.has_action(&"debug_menu") and event.is_action_pressed(&"debug_menu"))
-			or (
-				event is InputEventKey
-				and event.pressed
-				and event.keycode in [KEY_QUOTELEFT, KEY_ASCIITILDE, KEY_F3]
-			)
-		)
-		and not event.is_echo()
+		(InputMap.has_action(&"console") and event.is_action_pressed(&"console"))
+		or (InputMap.has_action(&"debug_menu") and event.is_action_pressed(&"debug_menu"))
 	):
+		is_hotkey_pressed = true
+	elif event is InputEventKey and (event as InputEventKey).is_pressed():
+		var key_ev: InputEventKey = event as InputEventKey
+		if key_ev.keycode in [KEY_QUOTELEFT, KEY_ASCIITILDE, KEY_F3]:
+			is_hotkey_pressed = true
+
+	if is_hotkey_pressed and not event.is_echo():
 		print("UIController: Console toggle requested. Emitting console_toggle_requested.")
 		Events.console_toggle_requested.emit()
 		get_viewport().set_input_as_handled()
 		return
 
 	if event is InputEventKey and event.is_pressed() and not event.is_echo():
-		if player_status_hud.is_immobilized:
+		if is_instance_valid(player_status_hud) and player_status_hud.is_immobilized:
 			if (
 				event.is_action_pressed(&"forward")
 				or event.is_action_pressed(&"backward")
@@ -98,11 +98,13 @@ func _input(event: InputEvent) -> void:
 				or event.is_action_pressed(&"sprint")
 			):
 				print("UIController: Movement blocked - immobilized.")
-				notification_hud.show_warning_message("Can't move!", 2.0)
-		elif player_status_hud.is_sprint_blocked:
+				if is_instance_valid(notification_hud):
+					notification_hud.show_warning_message("Can't move!", 2.0)
+		elif is_instance_valid(player_status_hud) and player_status_hud.is_sprint_blocked:
 			if event.is_action_pressed(&"sprint"):
 				print("UIController: Movement blocked - sprint cooldown.")
-				notification_hud.show_warning_message("Can't sprint", 2.0)
+				if is_instance_valid(notification_hud):
+					notification_hud.show_warning_message("Can't sprint", 2.0)
 
 
 ## Handles damage signals by triggering the screen pain flash effect.
@@ -141,13 +143,13 @@ func _toggle_ui_elements() -> void:
 ## Toggles metrics panel and frame graph visibility.
 func _toggle_metrics_panel() -> void:
 	print("UIController: Toggling metrics panel.")
-	if is_instance_valid(metrics_panel) and metrics_panel.has_method("toggle_window"):
-		metrics_panel.toggle_window()
+	if is_instance_valid(metrics_panel) and metrics_panel.has_method(&"toggle_window"):
+		metrics_panel.call(&"toggle_window")
 
 		if is_instance_valid(frame_graph):
 			frame_graph.visible = metrics_panel.visible
 
-		if is_instance_valid(debug_overlay.metrics_button):
+		if is_instance_valid(debug_overlay) and is_instance_valid(debug_overlay.metrics_button):
 			debug_overlay.metrics_button.text = (
 				"Metrics ON" if metrics_panel.visible else "Metrics OFF"
 			)
@@ -156,15 +158,19 @@ func _toggle_metrics_panel() -> void:
 ## Toggles the render diagnostics panel visibility.
 func _toggle_diagnostics_panel() -> void:
 	print("UIController: Toggling diagnostics panel.")
-	if is_instance_valid(diagnostics_panel) and diagnostics_panel.has_method("toggle_window"):
-		var is_open: bool = diagnostics_panel.toggle_window()
-		if is_instance_valid(debug_overlay.render_diagnostic_button):
+	if is_instance_valid(diagnostics_panel) and diagnostics_panel.has_method(&"toggle_window"):
+		var toggle_result: Variant = diagnostics_panel.call(&"toggle_window")
+		var is_open: bool = toggle_result == true
+		if (
+			is_instance_valid(debug_overlay)
+			and is_instance_valid(debug_overlay.render_diagnostic_button)
+		):
 			debug_overlay.render_diagnostic_button.text = (
 				"Diagnostics ON" if is_open else "Render Diagnostics"
 			)
 
 
-## Checks if current scene is a testbed or visual test level to automatically show metrics.
+## Checks if current scene is a testbed or visual test level to show metrics.
 func _check_if_testbed() -> void:
 	print("UIController: Checking if current scene is TestbedMap or VisTest.")
 	var current_scene: Node = get_tree().current_scene

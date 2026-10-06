@@ -402,9 +402,10 @@ func _update_particle_visuals() -> void:
 		return
 
 	var parts: GPUParticles3D = _get_particles()
-	if is_instance_valid(parts) and parts.draw_pass_1:
-		if parts.draw_pass_1.material is ShaderMaterial:
-			var mat: ShaderMaterial = parts.draw_pass_1.material as ShaderMaterial
+	if is_instance_valid(parts) and is_instance_valid(parts.draw_pass_1):
+		var prim: PrimitiveMesh = parts.draw_pass_1 as PrimitiveMesh
+		if is_instance_valid(prim) and prim.material is ShaderMaterial:
+			var mat: ShaderMaterial = prim.material as ShaderMaterial
 			mat.set_shader_parameter(&"smoke_color", smoke_color)
 
 

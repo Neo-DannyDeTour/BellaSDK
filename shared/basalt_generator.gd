@@ -1,9 +1,5 @@
 @tool
-## Generates a procedural field of basalt columns.
-##
-## This tool script creates a field of basalt columns in the editor based on various
-## parameters such as width, depth, and density. It also supports magnetic nodes
-## that push columns upwards when nearby.
+## Generates a procedural field of basalt columns in the editor with magnet support.
 class_name BasaltGenerator
 extends Node3D
 
@@ -86,14 +82,10 @@ var _needs_generation: bool = false
 ## The timestamp of the last parameter edit.
 var _last_edit_time: int = 0
 ## The delay in milliseconds before generating after an edit to debounce inputs.
-var _debounce_delay_ms: int = 1000  # 1 second
+var _debounce_delay_ms: int = 1000
 
 
-## Process loop that handles debounced generation in the editor.
-##
-## Engine lifecycle trigger: called every frame during `_process`.
-## [param _delta] Time elapsed since the last frame.
-## Returns: void.
+## Debounces and triggers procedural column generation during editor frames.
 func _process(_delta: float) -> void:
 	if Engine.is_editor_hint() and _needs_generation:
 		if Time.get_ticks_msec() - _last_edit_time > _debounce_delay_ms:
@@ -101,22 +93,14 @@ func _process(_delta: float) -> void:
 			_generate()
 
 
-## Queues a generation pass, resetting the debounce timer.
-##
-## Lifecycle triggers: Called privately when properties change.
-## No parameters.
-## Returns: void.
+## Queues generation and marks timestamp when exported parameters update.
 func _queue_generation() -> void:
 	if Engine.is_editor_hint() and is_inside_tree() and is_node_ready():
 		_needs_generation = true
 		_last_edit_time = Time.get_ticks_msec()
 
 
-## Generates the field of basalt columns, clearing any previous ones.
-##
-## Lifecycle triggers: Called privately by [method _process].
-## No parameters.
-## Returns: void.
+## Clears existing geometry and generates positioned basalt column instances.
 func _generate() -> void:
 	if not is_inside_tree():
 		return
@@ -132,11 +116,11 @@ func _generate() -> void:
 	if not is_inside_tree():
 		return
 
-	# Find magnets by checking for properties
-	var magnets: Array[Node] = []
+	# Find magnets as Node3D instances
+	var magnets: Array[Node3D] = []
 	for child: Node in get_children():
-		if "push_force" in child and "effect_radius" in child:
-			magnets.append(child)
+		if child is Node3D and "push_force" in child and "effect_radius" in child:
+			magnets.append(child as Node3D)
 
 	var placed_positions: Array[Vector2] = []
 
@@ -190,18 +174,24 @@ func _generate() -> void:
 		var col_global_pos: Vector3 = to_global(col_position)
 
 		# Apply Magnets
-		for magnet: Node in magnets:
+		for magnet: Node3D in magnets:
 			if not is_instance_valid(magnet):
 				continue
+
+			var magnet_radius: float = float(magnet.get("effect_radius"))
+			var magnet_push: float = float(magnet.get("push_force"))
+			var magnet_pos: Vector3 = magnet.global_position
+
 			var dist_sq: float = Vector2(col_global_pos.x, col_global_pos.z).distance_squared_to(
-				Vector2(magnet.global_position.x, magnet.global_position.z)
+				Vector2(magnet_pos.x, magnet_pos.z)
 			)
-			var effect_rad_sq: float = magnet.effect_radius * magnet.effect_radius
+			var effect_rad_sq: float = magnet_radius * magnet_radius
+
 			if dist_sq < effect_rad_sq:
 				var dist: float = sqrt(dist_sq)
-				var influence: float = 1.0 - (dist / magnet.effect_radius)
+				var influence: float = 1.0 - (dist / magnet_radius)
 				influence = smoothstep(0.0, 1.0, influence)
-				final_height += magnet.push_force * influence
+				final_height += magnet_push * influence
 
 		mesh.height = max(0.1, final_height)
 		column.mesh = mesh

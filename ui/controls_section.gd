@@ -302,20 +302,23 @@ func _load_slider(
 			input_box.text = "%.2f" % val
 
 
+## Retrieves the active [CameraController] node from the player group safely.
+func _get_camera_controller() -> CameraController:
+	var player: Node = get_tree().get_first_node_in_group(&"player")
+	if not is_instance_valid(player):
+		return null
+	var controller_val: Variant = player.get(&"camera_controller")
+	if controller_val is CameraController and is_instance_valid(controller_val):
+		return controller_val as CameraController
+	return null
+
+
 ## Applies mouse sensitivity settings to player camera controller.
 func _apply_mouse_sensitivity(sens: float) -> void:
 	print("Engine: Applying Mouse Sensitivity: ", sens)
-	var player: Node = get_tree().get_first_node_in_group(&"player")
-	if (
-		is_instance_valid(player)
-		and "camera_controller" in player
-		and is_instance_valid(player.camera_controller)
-	):
-		if player.camera_controller.has_method("set_mouse_sensitivity"):
-			player.camera_controller.set_mouse_sensitivity(sens)
-		else:
-			player.camera_controller.mouse_sensitivity_base = sens
-			player.camera_controller.mouse_sensitivity = sens
+	var controller: CameraController = _get_camera_controller()
+	if is_instance_valid(controller):
+		controller.set_mouse_sensitivity(sens)
 
 
 ## Handles vertical axis inversion toggling.
@@ -326,13 +329,9 @@ func _on_invert_y_toggled(toggled_on: bool) -> void:
 
 	print("Player toggled Invert Y to: ", toggled_on)
 	GlobalSettings.save_setting("Controls", "invert_y", toggled_on)
-	var player: Node = get_tree().get_first_node_in_group(&"player")
-	if (
-		is_instance_valid(player)
-		and "camera_controller" in player
-		and is_instance_valid(player.camera_controller)
-	):
-		player.camera_controller.invert_y = toggled_on
+	var controller: CameraController = _get_camera_controller()
+	if is_instance_valid(controller):
+		controller.invert_y = toggled_on
 
 
 ## Handles toggle crouch button mode setting.
@@ -395,13 +394,9 @@ func _on_reduce_motion_toggled(toggled_on: bool) -> void:
 
 	print("Player toggled Reduce Motion to: ", toggled_on)
 	GlobalSettings.save_setting("Accessibility", "reduce_motion", toggled_on)
-	var player: Node = get_tree().get_first_node_in_group(&"player")
-	if (
-		is_instance_valid(player)
-		and "camera_controller" in player
-		and is_instance_valid(player.camera_controller)
-	):
-		player.camera_controller.reduce_motion = toggled_on
+	var controller: CameraController = _get_camera_controller()
+	if is_instance_valid(controller):
+		controller.reduce_motion = toggled_on
 
 
 ## Handles infinite swim toggle updates and broadcasts state changes.

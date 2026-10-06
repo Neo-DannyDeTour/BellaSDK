@@ -115,8 +115,9 @@ func _input(event: InputEvent) -> void:
 	if not _is_reading or _current_note == null:
 		return
 
-	if event is InputEventKey and event.physical_keycode == KEY_Z:
-		if event.pressed and not event.echo:
+	if event is InputEventKey:
+		var key_event: InputEventKey = event as InputEventKey
+		if key_event.physical_keycode == KEY_Z and key_event.pressed and not key_event.echo:
 			_is_glass_active = not _is_glass_active
 			if is_instance_valid(_zoomed_mesh_instance):
 				_zoomed_mesh_instance.visible = _is_glass_active
@@ -124,32 +125,38 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 			return
 
-	if _is_glass_active and event is InputEventMouseButton and event.pressed:
-		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			_adjust_3d_glass(1.0)
-			get_viewport().set_input_as_handled()
-			return
-		if event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			_adjust_3d_glass(-1.0)
-			get_viewport().set_input_as_handled()
-			return
+	if event is InputEventMouseButton:
+		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
+		if _is_glass_active and mouse_event.pressed:
+			if mouse_event.button_index == MOUSE_BUTTON_WHEEL_UP:
+				_adjust_3d_glass(1.0)
+				get_viewport().set_input_as_handled()
+				return
+			if mouse_event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+				_adjust_3d_glass(-1.0)
+				get_viewport().set_input_as_handled()
+				return
+
+		if mouse_event.double_click:
+			if mouse_event.button_index == MOUSE_BUTTON_LEFT:
+				_target_rot = Vector2.ZERO
+				if is_instance_valid(_proxy_mesh_instance):
+					_proxy_mesh_instance.rotation.x = wrapf(
+						_proxy_mesh_instance.rotation.x, -PI, PI
+					)
+					_proxy_mesh_instance.rotation.y = wrapf(
+						_proxy_mesh_instance.rotation.y, -PI, PI
+					)
+				print("NoteReader: Double L-Click detected. Resetting rotation.")
+			elif mouse_event.button_index == MOUSE_BUTTON_RIGHT:
+				_is_inverted = not _is_inverted
+				_update_instruction_text()
+				print("NoteReader: Double R-Click detected. Axis inverted: ", _is_inverted)
 
 	if event.is_action_pressed(&"interact"):
 		get_viewport().set_input_as_handled()
 		close_note()
 		return
-
-	if event is InputEventMouseButton and event.double_click:
-		if event.button_index == MOUSE_BUTTON_LEFT:
-			_target_rot = Vector2.ZERO
-			if is_instance_valid(_proxy_mesh_instance):
-				_proxy_mesh_instance.rotation.x = wrapf(_proxy_mesh_instance.rotation.x, -PI, PI)
-				_proxy_mesh_instance.rotation.y = wrapf(_proxy_mesh_instance.rotation.y, -PI, PI)
-			print("NoteReader: Double L-Click detected. Resetting rotation.")
-		elif event.button_index == MOUSE_BUTTON_RIGHT:
-			_is_inverted = not _is_inverted
-			_update_instruction_text()
-			print("NoteReader: Double R-Click detected. Axis inverted: ", _is_inverted)
 
 	if event.is_action_pressed(&"shoot"):
 		_is_inspecting = true
@@ -159,13 +166,14 @@ func _input(event: InputEvent) -> void:
 		print("NoteReader: Stopped mouse dragging inspection.")
 
 	if event is InputEventMouseMotion:
+		var motion_event: InputEventMouseMotion = event as InputEventMouseMotion
 		if _is_inspecting:
 			var invert_mult: float = -1.0 if _is_inverted else 1.0
-			_target_rot.y -= event.relative.x * mouse_rotation_speed * invert_mult
-			_target_rot.x += event.relative.y * mouse_rotation_speed * invert_mult
+			_target_rot.y -= motion_event.relative.x * mouse_rotation_speed * invert_mult
+			_target_rot.x += motion_event.relative.y * mouse_rotation_speed * invert_mult
 		else:
-			_target_sway.y -= event.relative.x * sway_multiplier
-			_target_sway.x -= event.relative.y * sway_multiplier
+			_target_sway.y -= motion_event.relative.x * sway_multiplier
+			_target_sway.x -= motion_event.relative.y * sway_multiplier
 			_target_sway.y = clampf(_target_sway.y, -max_sway_angle, max_sway_angle)
 			_target_sway.x = clampf(_target_sway.x, -max_sway_angle, max_sway_angle)
 
@@ -476,5 +484,6 @@ func _get_key_string_for_action(action_name: StringName, fallback: String) -> St
 		var events: Array[InputEvent] = InputMap.action_get_events(action_name)
 		for ev: InputEvent in events:
 			if ev is InputEventKey:
-				return "[" + OS.get_keycode_string(ev.physical_keycode) + "]"
+				var key_ev: InputEventKey = ev as InputEventKey
+				return "[" + OS.get_keycode_string(key_ev.physical_keycode) + "]"
 	return "[" + fallback + "]"

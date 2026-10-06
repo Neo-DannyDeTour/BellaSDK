@@ -1,11 +1,8 @@
-## A wall-mounted machine providing healing to the player over time when held.
-##
-## Tracks player proximity with procedural tentacle, updates UI screen, and drains fluid cylinder.
+## Wall-mounted machine providing healing to the player over time when held.
 class_name HealthDispenser
 extends StaticBody3D
 
 @export_category("Health Settings")
-
 ## Texture displayed on screen when player health is very low (<= 33%).
 @export var tex_low_health: Texture2D
 
@@ -28,7 +25,6 @@ extends StaticBody3D
 @export var max_dispenser_health: int = 200
 
 @export_category("Node References")
-
 ## Screen [Sprite3D] projecting the dynamic health status texture.
 @export var screen_sprite: Sprite3D
 
@@ -42,7 +38,6 @@ extends StaticBody3D
 @export var health_cylinder: MeshInstance3D
 
 @export_category("Procedural Tentacle")
-
 ## Number of cylindrical mesh segments forming the procedural tentacle.
 @export var segment_count: int = 15
 
@@ -89,7 +84,7 @@ var _current_target_pos: Vector3
 var _active_weight: float = 0.0
 
 
-## Builds procedural mesh segments, sets resting positions, and prepares health cylinder.
+## Builds procedural mesh segments, sets resting positions, and prepares mesh.
 func _ready() -> void:
 	print("HealthDispenser: _ready() - Initializing dispenser and tentacle.")
 
@@ -109,8 +104,7 @@ func _ready() -> void:
 		Utilities.safe_connect(detection_area.body_exited, _on_body_exited)
 
 
-## Evaluates bezier interpolation to guide procedural tentacle tip toward targets.
-## [param delta] Frame delta time in seconds.
+## Evaluates bezier interpolation to guide procedural tentacle tip to target.
 func _physics_process(delta: float) -> void:
 	var is_targeting: bool = is_instance_valid(_nearby_player)
 	var desired_target: Vector3
@@ -125,12 +119,12 @@ func _physics_process(delta: float) -> void:
 	_current_target_pos = _current_target_pos.lerp(desired_target, delta * 6.0)
 	_update_tentacle_visuals()
 
-	if _active_weight <= 0.0 and _current_target_pos.is_equal_approx(desired_target):
+	var is_resting: bool = (
+		_active_weight <= 0.0 and _current_target_pos.is_equal_approx(desired_target)
+	)
+	if is_resting:
 		print("HealthDispenser: _physics_process() - Tentacle settled, sleep.")
 		set_physics_process(false)
-
-
-# --- PROCEDURAL TENTACLE LOGIC ---
 
 
 ## Creates shared cylinder geometry and material for procedural segments.
@@ -190,21 +184,14 @@ func _update_tentacle_visuals() -> void:
 		prev_pos = current_pos
 
 
-## Computes point along quadratic bezier curve for normalized time [param t].
-## [param p0] Start position.
-## [param p1] Control point.
-## [param p2] End target.
-## [param t] Normalized progress between 0.0 and 1.0.
+## Computes point along quadratic bezier curve for normalized time.
 func _get_quadratic_bezier(p0: Vector3, p1: Vector3, p2: Vector3, t: float) -> Vector3:
 	var q0: Vector3 = p0.lerp(p1, t)
 	var q1: Vector3 = p1.lerp(p2, t)
 	return q0.lerp(q1, t)
 
 
-## Aligns, rotates, and scales cylinder segment between two points in 3D space.
-## [param segment] Target segment instance.
-## [param p1] Origin coordinate.
-## [param p2] Destination coordinate.
+## Aligns, rotates, and scales cylinder segment between two points in 3D.
 func _update_visual_segment(segment: MeshInstance3D, p1: Vector3, p2: Vector3) -> void:
 	var dist_sq: float = p1.distance_squared_to(p2)
 	var dist: float = sqrt(dist_sq)
@@ -212,14 +199,12 @@ func _update_visual_segment(segment: MeshInstance3D, p1: Vector3, p2: Vector3) -
 
 	var dir: Vector3 = p2 - p1
 	if dir.length_squared() > 0.000001:
-		var up: Vector3 = Vector3.UP if absf(dir.normalized().y) < 0.99 else Vector3.RIGHT
+		var is_parallel: bool = absf(dir.normalized().y) >= 0.99
+		var up: Vector3 = Vector3.RIGHT if is_parallel else Vector3.UP
 		segment.look_at(p2, up)
-		segment.rotate_object_local(Vector3.RIGHT, PI / 2.0)
+		segment.rotate_object_local(Vector3.RIGHT, PI * 0.5)
 
 	segment.scale = Vector3(1.0, dist, 1.0)
-
-
-# --- HEALTH CYLINDER LOGIC ---
 
 
 ## Initializes cylinder mesh height, vertical offset, and dynamic material.
@@ -230,8 +215,9 @@ func _setup_health_cylinder() -> void:
 	print("HealthDispenser: Setting up health cylinder.")
 	_cylinder_initial_pos_y = health_cylinder.position.y
 
-	if health_cylinder.mesh is CylinderMesh:
-		_cylinder_initial_height = ((health_cylinder.mesh as CylinderMesh).height)
+	var cyl_mesh: CylinderMesh = health_cylinder.mesh as CylinderMesh
+	if cyl_mesh:
+		_cylinder_initial_height = cyl_mesh.height
 	else:
 		_cylinder_initial_height = 1.0
 
@@ -243,7 +229,7 @@ func _setup_health_cylinder() -> void:
 	_update_cylinder_visuals()
 
 
-## Scales cylinder height and shifts albedo color matching health reservoir ratio.
+## Scales cylinder height and shifts albedo color matching reservoir ratio.
 func _update_cylinder_visuals() -> void:
 	if not is_instance_valid(health_cylinder):
 		return
@@ -254,7 +240,7 @@ func _update_cylinder_visuals() -> void:
 
 	health_cylinder.scale.y = ratio
 	var height_lost: float = _cylinder_initial_height * (1.0 - ratio)
-	health_cylinder.position.y = _cylinder_initial_pos_y - (height_lost * 0.5)
+	health_cylinder.position.y = (_cylinder_initial_pos_y - (height_lost * 0.5))
 
 	if is_instance_valid(_cylinder_material):
 		if ratio > 0.50:
@@ -265,11 +251,7 @@ func _update_cylinder_visuals() -> void:
 			_cylinder_material.albedo_color = Color.RED
 
 
-# --- INTERACTION & HEALTH LOGIC ---
-
-
 ## Dispenses health to player during continuous interaction hold events.
-## [param _character] Character initiating interaction.
 func interact_held(_character: CharacterBody3D) -> void:
 	if _current_dispenser_health <= 0:
 		print("HealthDispenser: interact_held() - Dispenser depleted.")
@@ -293,23 +275,22 @@ func interact_held(_character: CharacterBody3D) -> void:
 		var to_heal: int = mini(heal_amount, mini(_current_dispenser_health, needed_hp))
 
 		print("HealthDispenser: interact_held() - Dispensing ", to_heal, " HP.")
-		_player_health_component.call("heal", to_heal)
+		_player_health_component.call(&"heal", to_heal)
 		_current_dispenser_health -= to_heal
 		_update_cylinder_visuals()
 
 
-## Enables tentacle targeting loop when player character enters detection area.
-## [param body] Node entering detection volume.
+## Enables tentacle targeting loop when player enters detection area.
 func _on_body_entered(body: Node3D) -> void:
-	if body is CharacterBody3D and body.is_in_group("player"):
+	var character: CharacterBody3D = body as CharacterBody3D
+	if character and character.is_in_group(&"player"):
 		print("HealthDispenser: _on_body_entered() - Player detected.")
-		_nearby_player = body
+		_nearby_player = character
 		_connect_player_health(_nearby_player)
 		set_physics_process(true)
 
 
-## Cleans up target references and puts tentacle loop to sleep when player exits.
-## [param body] Node exiting detection volume.
+## Cleans up references and puts tentacle to sleep when player exits.
 func _on_body_exited(body: Node3D) -> void:
 	if body == _nearby_player:
 		print("HealthDispenser: _on_body_exited() - Player departed.")
@@ -318,32 +299,30 @@ func _on_body_exited(body: Node3D) -> void:
 
 
 ## Connects player health change signal using [method Utilities.safe_connect].
-## [param player] The detected player character body.
 func _connect_player_health(player: CharacterBody3D) -> void:
 	print("HealthDispenser: Connecting player health component signals.")
 	var health_node: Node = player.get_node_or_null("Components/HealthComponent")
 
-	if is_instance_valid(health_node) and health_node.has_signal("health_changed"):
+	if is_instance_valid(health_node) and health_node.has_signal(&"health_changed"):
 		_player_health_component = health_node
-		Utilities.safe_connect(_player_health_component.health_changed, _on_player_health_changed)
+		var sig: Signal = Signal(_player_health_component, &"health_changed")
+		Utilities.safe_connect(sig, _on_player_health_changed)
 		_update_screen()
 
 
 ## Disconnects active player health signal listener.
 func _disconnect_player_health() -> void:
 	print("HealthDispenser: Disconnecting player health component signals.")
-	if (
-		is_instance_valid(_player_health_component)
-		and _player_health_component.has_signal("health_changed")
-	):
-		if _player_health_component.health_changed.is_connected(_on_player_health_changed):
-			_player_health_component.health_changed.disconnect(_on_player_health_changed)
+	if is_instance_valid(_player_health_component):
+		if _player_health_component.has_signal(&"health_changed"):
+			var sig: Signal = Signal(_player_health_component, &"health_changed")
+			if sig.is_connected(_on_player_health_changed):
+				sig.disconnect(_on_player_health_changed)
 
 	_player_health_component = null
 
 
 ## Refreshes screen texture display when player health changes.
-## [param _new_health] Updated health point value.
 func _on_player_health_changed(_new_health: int) -> void:
 	print("HealthDispenser: Player health changed, refreshing UI screen.")
 	_update_screen()
@@ -351,7 +330,10 @@ func _on_player_health_changed(_new_health: int) -> void:
 
 ## Selects screen status texture matching current player health brackets.
 func _update_screen() -> void:
-	if not is_instance_valid(screen_sprite) or not is_instance_valid(_player_health_component):
+	var is_valid: bool = (
+		is_instance_valid(screen_sprite) and is_instance_valid(_player_health_component)
+	)
+	if not is_valid:
 		return
 
 	var current: float = float(_player_health_component.get("current_health"))

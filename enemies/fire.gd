@@ -332,8 +332,9 @@ func _update_particle_parameters() -> void:
 		return
 	var process_mat: Material = ember_particles.process_material
 	if process_mat is ParticleProcessMaterial:
+		var particle_mat: ParticleProcessMaterial = process_mat as ParticleProcessMaterial
 		var drift_force: Vector3 = wind_direction * (wind_strength * 2.0)
-		process_mat.gravity = Vector3(drift_force.x, 0.8, drift_force.z)
+		particle_mat.gravity = Vector3(drift_force.x, 0.8, drift_force.z)
 
 
 ## Synchronizes dimensions of [member burn_shape] to match fire dimensions.
@@ -343,8 +344,9 @@ func _update_burn_shape() -> void:
 		return
 	var shape: Shape3D = burn_shape.shape
 	if shape is CylinderShape3D:
-		shape.height = fire_height
-		shape.radius = fire_width * 0.5
+		var cyl_shape: CylinderShape3D = shape as CylinderShape3D
+		cyl_shape.height = fire_height
+		cyl_shape.radius = fire_width * 0.5
 		burn_shape.position = Vector3(0.0, fire_height * 0.5, 0.0)
 
 

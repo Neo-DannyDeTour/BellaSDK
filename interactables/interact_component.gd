@@ -3,7 +3,7 @@
 class_name InteractComponent
 extends Node
 
-## Emitted when an entity initiates an interaction.
+## Emitted when [param character] initiates an interaction with this component.
 signal interacted(character: CharacterBody3D)
 
 ## Emitted when the crosshair first focuses this component.
@@ -16,31 +16,32 @@ signal unfocused
 @export var is_enabled: bool = true:
 	set(value):
 		is_enabled = value
+		if not is_inside_tree():
+			return
 		if not is_enabled:
 			is_currently_focused = false
 			characters_hovering.clear()
 			set_process(false)
 
-## Characters hovering.
+## Dictionary tracking hovering character bodies and their hover timestamps.
 var characters_hovering: Dictionary = {}
 
-## Is currently focused.
+## Indicates whether crosshair focus is currently active on this component.
 var is_currently_focused: bool = false
 
-## Last hit position.
+## Stores the last world hit position recorded from interaction raycasts.
 var last_hit_position: Vector3 = Vector3.ZERO
 
-## Last hover time msec.
+## Timestamp in milliseconds of the last registered hover event.
 var _last_hover_time_msec: int = 0
 
 
-## Lifecycle initialization disabling frame updates by default.
+## Disables frame processing on initialization until focus is acquired.
 func _ready() -> void:
 	set_process(false)
 
 
-## Routes interaction event to parent node if enabled.
-## [param character] Interacting player entity.
+## Dispatches interaction event to listeners and invokes parent method.
 func interact_with(character: CharacterBody3D) -> void:
 	if not is_enabled:
 		return
@@ -49,13 +50,11 @@ func interact_with(character: CharacterBody3D) -> void:
 	interacted.emit(character)
 
 	var parent: Node = get_parent()
-	if parent and parent.has_method("interact_with"):
-		parent.interact_with(character)
+	if is_instance_valid(parent) and parent.has_method(&"interact_with"):
+		parent.call(&"interact_with", character)
 
 
-## Updates hover timestamps and activates focus state.
-## [param character] Interacting player entity.
-## [param hit_position] Spatial contact point.
+## Updates hover timestamps, contact position, and emits [signal focused].
 func hover_cursor(character: CharacterBody3D, hit_position: Vector3) -> void:
 	if not is_enabled:
 		if is_currently_focused:
@@ -76,14 +75,12 @@ func hover_cursor(character: CharacterBody3D, hit_position: Vector3) -> void:
 		set_process(true)
 
 
-## Inspects camera viewport for hovered characters.
-## [return] Hovered character body if found, otherwise null.
+## Returns character hovered by the current camera viewport or null.
 func get_character_hovered_by_cur_camera() -> CharacterBody3D:
 	return null
 
 
-## Checks hover expiration timeout and disables processing when focus drops.
-## [param _delta] Frame delta time in seconds.
+## Checks hover timeout and deactivates focus when cursor leaves target.
 func _process(_delta: float) -> void:
 	var current_time: int = Time.get_ticks_msec()
 
@@ -97,11 +94,11 @@ func _process(_delta: float) -> void:
 
 
 ## Passes sustained interaction hold events to parent entity.
-## [param character] Interacting player entity.
 func interact_held(character: CharacterBody3D) -> void:
 	if not is_enabled:
 		return
 
+	print("InteractComponent: Passing sustained interaction to parent from ", character.name)
 	var parent: Node = get_parent()
-	if parent and parent.has_method("interact_held"):
-		parent.interact_held(character)
+	if is_instance_valid(parent) and parent.has_method(&"interact_held"):
+		parent.call(&"interact_held", character)

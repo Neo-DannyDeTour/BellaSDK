@@ -2,9 +2,15 @@
 class_name Turret
 extends Node3D
 
+# --------------------------------------
+# ENUMS
+# --------------------------------------
 ## Operational mode enum representing scanning or engaging states.
 enum TurretState { SCANNING, ENGAGING }
 
+# --------------------------------------
+# EXPORTS
+# --------------------------------------
 ## Whether the turret ignores player and hostile targeting entirely.
 @export var is_friendly: bool = false
 
@@ -41,6 +47,9 @@ enum TurretState { SCANNING, ENGAGING }
 ## Display duration in seconds before recycling a pooled hitscan tracer.
 @export var tracer_duration: float = 0.1
 
+# --------------------------------------
+# NODE REFERENCES
+# --------------------------------------
 ## Bounding volume notifier checking if turret is within view frustum.
 @onready var screen_notifier: VisibleOnScreenNotifier3D = $VisibleOnScreenNotifier3D
 
@@ -63,6 +72,9 @@ enum TurretState { SCANNING, ENGAGING }
 @onready
 var faction_component: FactionComponent = get_node_or_null("FactionComponent") as FactionComponent
 
+# --------------------------------------
+# VARIABLES
+# --------------------------------------
 ## Current active state determining if turret pans or tracks targets.
 var current_state: TurretState = TurretState.SCANNING
 
@@ -97,7 +109,7 @@ func _ready() -> void:
 	var visualizer: EditorTriggerVisualizer = (
 		get_node_or_null("EditorTriggerVisualizer") as EditorTriggerVisualizer
 	)
-	if visualizer != null:
+	if is_instance_valid(visualizer):
 		visualizer.set("shape_type", EditorTriggerVisualizer.ShapeType.SPHERE)
 		visualizer.set("trigger_size", Vector3.ONE * (detection_radius * 2.0))
 
@@ -171,7 +183,7 @@ func _wake_up() -> void:
 	_acquire_new_target()
 
 
-## Finds and caches player instance using [method NodeQuery.get_single_node_in_group].
+## Finds and caches player instance using [NodeQuery].
 func _find_player() -> void:
 	print("Turret: Searching for player instance in group.")
 	var player_node: Node = NodeQuery.get_single_node_in_group(get_tree(), &"player")
@@ -182,7 +194,8 @@ func _find_player() -> void:
 ## Recursively aggregates collision [RID] instances across child nodes.
 func _build_exclude_rids(node: Node) -> void:
 	if node is CollisionObject3D:
-		_exclude_rids.append(node.get_rid())
+		var col_obj: CollisionObject3D = node as CollisionObject3D
+		_exclude_rids.append(col_obj.get_rid())
 	for i: int in node.get_child_count():
 		_build_exclude_rids(node.get_child(i))
 
@@ -313,7 +326,7 @@ func _has_line_of_sight() -> bool:
 	if result.is_empty():
 		return false
 
-	var hit_collider: Object = result.collider
+	var hit_collider: Object = result.get("collider") as Object
 	return (
 		hit_collider == target
 		or (hit_collider is Node and target.is_ancestor_of(hit_collider as Node))

@@ -14,7 +14,11 @@ func enter(msg: Dictionary = {}) -> void:
 	print("StateTerminal: enter() called. Player locked to terminal interface.")
 	if is_instance_valid(player):
 		player.velocity = Vector3.ZERO
-		_locomotion = player.locomotion_component as PlayerLocomotionComponent
+		var typed_player: Player = player as Player
+		if is_instance_valid(typed_player):
+			_locomotion = typed_player.locomotion_component as PlayerLocomotionComponent
+		else:
+			_locomotion = (player.get(&"locomotion_component") as PlayerLocomotionComponent)
 		if is_instance_valid(_locomotion):
 			_locomotion.set_physics_active(false)
 

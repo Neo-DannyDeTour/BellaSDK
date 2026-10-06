@@ -40,9 +40,10 @@ func _ready() -> void:
 	restart_dialog.confirmed.connect(_on_restart_dialog_confirmed)
 
 	var manager: Node = SystemLocator.get_graphics_manager()
-	if is_instance_valid(manager) and manager.has_signal("benchmark_completed"):
-		if not manager.benchmark_completed.is_connected(_on_benchmark_completed):
-			manager.benchmark_completed.connect(_on_benchmark_completed)
+	if is_instance_valid(manager) and manager.has_signal(&"benchmark_completed"):
+		var bench_sig: Signal = Signal(manager, &"benchmark_completed")
+		if not bench_sig.is_connected(_on_benchmark_completed):
+			bench_sig.connect(_on_benchmark_completed)
 
 	if is_visible_in_tree():
 		VideoApplier.set_diorama_active(get_tree(), true)
@@ -67,6 +68,7 @@ func _on_visibility_changed() -> void:
 
 
 ## Updates section settings when master preset selection changes.
+## [param preset] The target quality preset key name to load.
 func _on_preset_changed(preset: String) -> void:
 	print("VideoOptions: Quality preset changed to: ", preset)
 	if VideoConfig.PRESETS.has(preset):
@@ -217,6 +219,9 @@ func _apply_all_settings() -> void:
 
 
 ## Displays restart confirmation dialog for GPU or driver changes.
+## [param msg] Confirmation message prompt to display.
+## [param rend_key] Rendering driver identifier to apply on restart.
+## [param gpu_idx] Dedicated GPU adapter hardware index to apply.
 func _on_restart_required(msg: String, rend_key: String, gpu_idx: int) -> void:
 	print("VideoOptions: Restart confirmation requested.")
 	_pending_renderer = rend_key
@@ -251,11 +256,12 @@ func _on_auto_tune_requested() -> void:
 	print("VideoOptions: Dispatching 60 FPS benchmark pass.")
 	hardware_section.set_benchmark_state(true)
 	var manager: Node = SystemLocator.get_graphics_manager()
-	if is_instance_valid(manager) and manager.has_method("run_benchmark_for_60fps"):
-		manager.call("run_benchmark_for_60fps")
+	if is_instance_valid(manager) and manager.has_method(&"run_benchmark_for_60fps"):
+		manager.call(&"run_benchmark_for_60fps")
 
 
 ## Refreshes UI sections after benchmark routine completes.
+## [param _optimal_level] Recommended graphics tier determined by pass.
 func _on_benchmark_completed(_optimal_level: int) -> void:
 	print("VideoOptions: Benchmark completed. Refreshing all panels.")
 	hardware_section.set_benchmark_state(false)

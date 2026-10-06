@@ -99,10 +99,10 @@ extends Area3D
 @export var activate_once: bool = false
 
 ## Shared pointer tracking the currently active soundscape zone.
-static var current_active_zone: Area3D = null
+static var current_active_zone: SoundscapeZone = null
 
 ## Shared pointer tracking default fallback soundscape zone.
-static var default_zone: Area3D = null
+static var default_zone: SoundscapeZone = null
 
 ## Active tween handling volume fades.
 var current_tween: Tween
@@ -266,9 +266,11 @@ func _on_body_exited(body: Node3D) -> void:
 func _deferred_check_fallback() -> void:
 	print("SoundscapeZone: Evaluating fallback soundscape state.")
 	if current_active_zone == null and default_zone != null:
-		if not default_zone.ambient_player.playing or default_zone.ambient_player.stream_paused:
-			print("SoundscapeZone: Resuming default soundscape: ", default_zone.name)
-			default_zone._start_soundscape()
+		var def_ambient: AudioStreamPlayer = default_zone.ambient_player
+		if is_instance_valid(def_ambient):
+			if not def_ambient.playing or def_ambient.stream_paused:
+				print("SoundscapeZone: Resuming default soundscape: ", default_zone.name)
+				default_zone._start_soundscape()
 
 
 ## Begins ambient playback and schedules pooled one-shot timer.
@@ -298,7 +300,7 @@ func _stop_soundscape() -> void:
 
 
 ## Halts playback if another active zone claims priority.
-func _remote_stop(new_zone: Area3D) -> void:
+func _remote_stop(new_zone: SoundscapeZone) -> void:
 	var is_playing: bool = ambient_player.playing and not ambient_player.stream_paused
 	if new_zone != self and is_playing:
 		print("SoundscapeZone: Remote stop triggered on: ", name)

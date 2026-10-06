@@ -111,6 +111,8 @@ func _connect_signals() -> void:
 
 
 ## Connects palette dropdown instances to the Vision Assist bus and camera switching.
+## [param dropdown] Dropdown control to configure.
+## [param group_name] Highlight group tag to bind.
 func _connect_color_dropdown(dropdown: OptionButton, group_name: String) -> void:
 	if not is_instance_valid(dropdown):
 		return
@@ -123,9 +125,10 @@ func _connect_color_dropdown(dropdown: OptionButton, group_name: String) -> void
 
 	dropdown.item_selected.connect(
 		func(index: int) -> void:
-			var current: int = int(
-				GlobalSettings.get_setting("VisionAssist", group_name + "_color", -1)
+			var current_val: Variant = GlobalSettings.get_setting(
+				"VisionAssist", group_name + "_color", -1
 			)
+			var current: int = current_val as int if current_val is int else -1
 			if current == index:
 				return
 			var col_name: String = COLOR_NAMES[index].to_lower()
@@ -140,16 +143,18 @@ func _connect_color_dropdown(dropdown: OptionButton, group_name: String) -> void
 ## Loads stored vision settings from [GlobalSettings] without bus flood.
 func load_settings() -> void:
 	print("UI: Loading Vision Assist settings.")
-	var vision_enabled: bool = bool(
-		GlobalSettings.get_setting("VisionAssist", "enabled", DEFAULT_VISION_ASSIST)
+	var enabled_val: Variant = GlobalSettings.get_setting(
+		"VisionAssist", "enabled", DEFAULT_VISION_ASSIST
 	)
+	var vision_enabled: bool = enabled_val as bool if enabled_val is bool else DEFAULT_VISION_ASSIST
 	if is_instance_valid(vision_assist_toggle):
 		vision_assist_toggle.set_pressed_no_signal(vision_enabled)
 
 	if is_instance_valid(vision_mode_option):
-		var mode_idx: int = int(
-			GlobalSettings.get_setting("VisionAssist", "mode", DEFAULT_VISION_ASSIST_MODE)
+		var mode_val: Variant = GlobalSettings.get_setting(
+			"VisionAssist", "mode", DEFAULT_VISION_ASSIST_MODE
 		)
+		var mode_idx: int = mode_val as int if mode_val is int else DEFAULT_VISION_ASSIST_MODE
 		vision_mode_option.selected = mode_idx
 		if mode_idx >= 0 and mode_idx < VISION_MODE_KEYS.size():
 			_update_diorama_mode(VISION_MODE_KEYS[mode_idx])
@@ -163,44 +168,54 @@ func load_settings() -> void:
 
 
 ## Synchronizes an [OptionButton] dropdown index from stored settings silently.
+## [param dropdown] Target dropdown UI node.
+## [param group_name] Target highlight category name.
+## [param default_index] Fallback selection index if not set.
 func _sync_group_color_ui(dropdown: OptionButton, group_name: String, default_index: int) -> void:
 	if not is_instance_valid(dropdown):
 		return
-	var idx: int = int(
-		GlobalSettings.get_setting("VisionAssist", group_name + "_color", default_index)
+	var val: Variant = GlobalSettings.get_setting(
+		"VisionAssist", group_name + "_color", default_index
 	)
+	var idx: int = val as int if val is int else default_index
 	dropdown.selected = idx
 
 
 ## Handles toggling of the vision assist rendering system for the player.
+## [param toggled_on] Active state of the vision assist system.
 func _on_vision_assist_toggled(toggled_on: bool) -> void:
-	var current: bool = bool(
-		GlobalSettings.get_setting("VisionAssist", "enabled", DEFAULT_VISION_ASSIST)
+	var enabled_val: Variant = GlobalSettings.get_setting(
+		"VisionAssist", "enabled", DEFAULT_VISION_ASSIST
 	)
+	var current: bool = enabled_val as bool if enabled_val is bool else DEFAULT_VISION_ASSIST
 	if current == toggled_on:
 		return
 
 	print("Player toggled Vision Assist to: ", toggled_on)
 	GlobalSettings.save_setting("VisionAssist", "enabled", toggled_on)
 	var player: Node = get_tree().get_first_node_in_group(&"player")
-	if is_instance_valid(player) and "camera_controller" in player and player.camera_controller:
-		var p_cam: Camera3D = player.camera_controller.get_node_or_null("Camera3D") as Camera3D
-		if is_instance_valid(p_cam) and p_cam.has_method("_on_vision_assist_toggled"):
-			p_cam.call("_on_vision_assist_toggled", toggled_on)
-		var p_mesh: MeshInstance3D = (
-			player.camera_controller.get_node_or_null("Camera3D/VisionAssistMesh") as MeshInstance3D
-		)
-		if is_instance_valid(p_mesh):
-			p_mesh.visible = toggled_on
+	if is_instance_valid(player) and "camera_controller" in player:
+		var cam_ctrl: Node = player.get(&"camera_controller") as Node
+		if is_instance_valid(cam_ctrl):
+			var p_cam: Camera3D = cam_ctrl.get_node_or_null("Camera3D") as Camera3D
+			if is_instance_valid(p_cam) and p_cam.has_method("_on_vision_assist_toggled"):
+				p_cam.call("_on_vision_assist_toggled", toggled_on)
+			var p_mesh: MeshInstance3D = (
+				cam_ctrl.get_node_or_null("Camera3D/VisionAssistMesh") as MeshInstance3D
+			)
+			if is_instance_valid(p_mesh):
+				p_mesh.visible = toggled_on
 
 	Events.vision_assist_toggled.emit(toggled_on)
 
 
 ## Handles vision assist background desaturation mode dropdown selection.
+## [param index] Index of the newly selected vision mode.
 func _on_vision_mode_selected(index: int) -> void:
-	var current: int = int(
-		GlobalSettings.get_setting("VisionAssist", "mode", DEFAULT_VISION_ASSIST_MODE)
+	var mode_val: Variant = GlobalSettings.get_setting(
+		"VisionAssist", "mode", DEFAULT_VISION_ASSIST_MODE
 	)
+	var current: int = mode_val as int if mode_val is int else DEFAULT_VISION_ASSIST_MODE
 	if current == index:
 		return
 
@@ -210,7 +225,9 @@ func _on_vision_mode_selected(index: int) -> void:
 
 
 ## Broadcasts vision assist background style changes across the [Events] bus.
+## [param index] Mode selection index to map to shader parameters.
 func _apply_vision_assist_mode(index: int) -> void:
+	print("UI: Applying vision assist mode index: ", index)
 	if index >= 0 and index < VISION_MODE_KEYS.size():
 		var mode_key: String = VISION_MODE_KEYS[index]
 		_update_diorama_mode(mode_key)
@@ -218,6 +235,7 @@ func _apply_vision_assist_mode(index: int) -> void:
 
 
 ## Synchronizes UI toggle state from external [Events] broadcasts.
+## [param active] Target switch state to match.
 func sync_external_vision_assist(active: bool) -> void:
 	print("UI: Syncing external vision assist toggle: ", active)
 	if is_instance_valid(vision_assist_toggle) and vision_assist_toggle.button_pressed != active:
@@ -257,9 +275,10 @@ func cache_diorama_cameras() -> void:
 	if not is_instance_valid(diorama_root):
 		return
 
-	var mode_idx: int = int(
-		GlobalSettings.get_setting("VisionAssist", "mode", DEFAULT_VISION_ASSIST_MODE)
+	var mode_val: Variant = GlobalSettings.get_setting(
+		"VisionAssist", "mode", DEFAULT_VISION_ASSIST_MODE
 	)
+	var mode_idx: int = mode_val as int if mode_val is int else DEFAULT_VISION_ASSIST_MODE
 	var mode_key: String = (
 		VISION_MODE_KEYS[mode_idx]
 		if mode_idx >= 0 and mode_idx < VISION_MODE_KEYS.size()
@@ -273,7 +292,7 @@ func cache_diorama_cameras() -> void:
 		_diorama_cameras[key] = cam
 
 		if "is_player_camera" in cam:
-			cam.is_player_camera = false
+			cam.set(&"is_player_camera", false)
 		cam.set_process(false)
 
 		var mesh: MeshInstance3D = cam.get_node_or_null("VisionAssistMesh") as MeshInstance3D
@@ -286,10 +305,12 @@ func cache_diorama_cameras() -> void:
 	if _diorama_cameras.has("default"):
 		_switch_diorama_camera("default")
 	elif not _diorama_cameras.is_empty():
-		_switch_diorama_camera(_diorama_cameras.keys()[0])
+		var first_key: String = str(_diorama_cameras.keys()[0])
+		_switch_diorama_camera(first_key)
 
 
 ## Switches active diorama viewport rendering to the specified group camera.
+## [param group_name] Camera identifier tag to switch toward.
 func _switch_diorama_camera(group_name: String) -> void:
 	if _diorama_cameras.is_empty():
 		cache_diorama_cameras()
@@ -317,9 +338,10 @@ func _switch_diorama_camera(group_name: String) -> void:
 	target_cam.make_current()
 	_active_diorama_camera = target_cam
 
-	var mode_idx: int = int(
-		GlobalSettings.get_setting("VisionAssist", "mode", DEFAULT_VISION_ASSIST_MODE)
+	var mode_val: Variant = GlobalSettings.get_setting(
+		"VisionAssist", "mode", DEFAULT_VISION_ASSIST_MODE
 	)
+	var mode_idx: int = mode_val as int if mode_val is int else DEFAULT_VISION_ASSIST_MODE
 	var mode_key: String = (
 		VISION_MODE_KEYS[mode_idx]
 		if mode_idx >= 0 and mode_idx < VISION_MODE_KEYS.size()
@@ -332,6 +354,8 @@ func _switch_diorama_camera(group_name: String) -> void:
 
 
 ## Tweens camera to center bounding box of nodes in a given group.
+## [param group_name] Target entity group identifier.
+## [param diorama_root] Root branch node containing target nodes.
 func _focus_diorama_on_group(group_name: String, diorama_root: Node) -> void:
 	if not is_instance_valid(_active_diorama_camera) or not is_instance_valid(diorama_root):
 		return
@@ -369,7 +393,9 @@ func _focus_diorama_on_group(group_name: String, diorama_root: Node) -> void:
 
 
 ## Updates shader keywords across all cached diorama preview cameras.
+## [param mode_key] Background mode shader identifier token.
 func _update_diorama_mode(mode_key: String) -> void:
+	print("UI: Updating diorama mode shaders with key: ", mode_key)
 	for cam: Camera3D in _diorama_cameras.values():
 		if is_instance_valid(cam) and cam.has_method("set_vision_assist_mode"):
 			cam.call("set_vision_assist_mode", mode_key)
@@ -377,6 +403,7 @@ func _update_diorama_mode(mode_key: String) -> void:
 
 ## Applies silhouette highlight colors directly to all diorama models.
 func _apply_diorama_colors() -> void:
+	print("UI: Applying silhouette highlight colors to diorama.")
 	var diorama_root: Node = _get_diorama_instance()
 	if not is_instance_valid(diorama_root):
 		return
@@ -390,6 +417,7 @@ func _apply_diorama_colors() -> void:
 
 
 ## Toggles vision assist post-process shader meshes and model overlay effects.
+## [param active] Target enabled state for preview silhouettes and shaders.
 func set_preview_effects_active(active: bool) -> void:
 	print("UI: Vision preview effects active -> ", active)
 	var diorama_root: Node = _get_diorama_instance()

@@ -1,38 +1,35 @@
 @tool
+## Generates a cylindrical cable mesh and collision along a 2-point [Path3D].
+class_name UniversalCable3D
 extends Path3D
-class_name UniversalCable3D  # <-- This puts it in your "Add Node" menu!
 
 
+## Initializes default curve points, duplicates resource, and hooks updates.
 func _ready() -> void:
 	if not curve:
 		curve = Curve3D.new()
 		curve.add_point(Vector3.ZERO)
-		curve.add_point(Vector3(0, -3.0, 0))
+		curve.add_point(Vector3(0.0, -3.0, 0.0))
 
-	# --- NEW: THE RESOURCE DECOUPLER ---
-	# Forces Godot to make this curve completely unique so ropes don't share dots!
 	curve = curve.duplicate()
 
-	# Hook directly into Godot's curve editor
 	if not curve.changed.is_connected(_update_cable):
 		curve.changed.connect(_update_cable)
 
 	_update_cable()
 
 
+## Recomputes transform and dimensions for child mesh and collision shape.
 func _update_cable() -> void:
 	if not curve or curve.get_point_count() < 2:
 		return
 
-	# 1. The Foolproof 2-Point Lock
 	while curve.get_point_count() > 2:
 		curve.remove_point(curve.get_point_count() - 1)
 
-	# 2. AUTO-FINDER: Automatically searches its children for a Mesh and Collision!
-	var mesh_node: Node = _get_first_node_of_type(self, "MeshInstance3D")
-	var col_node: Node = _get_first_node_of_type(self, "CollisionShape3D")
+	var mesh_node: MeshInstance3D = _find_mesh_instance(self)
+	var col_node: CollisionShape3D = _find_collision_shape(self)
 
-	# 3. Math (Global space ensures it works perfectly no matter how you arrange the child nodes)
 	var global_start: Vector3 = to_global(curve.get_point_position(0))
 	var global_end: Vector3 = to_global(curve.get_point_position(1))
 
@@ -41,38 +38,53 @@ func _update_cable() -> void:
 	var direction: Vector3 = (global_end - global_start).normalized()
 
 	var up_vector: Vector3 = Vector3.UP
-	if abs(direction.y) > 0.99:
+	if absf(direction.y) > 0.99:
 		up_vector = Vector3.RIGHT
 
-	# 4. Shape the Mesh
 	if mesh_node:
-		if not mesh_node.mesh is CylinderMesh:
-			mesh_node.mesh = CylinderMesh.new()
-		mesh_node.mesh.height = distance
-		mesh_node.mesh.top_radius = 0.05  # Rope thickness
-		mesh_node.mesh.bottom_radius = 0.05
+		var cyl_mesh: CylinderMesh = mesh_node.mesh as CylinderMesh
+		if not cyl_mesh:
+			cyl_mesh = CylinderMesh.new()
+			mesh_node.mesh = cyl_mesh
+
+		cyl_mesh.height = distance
+		cyl_mesh.top_radius = 0.05
+		cyl_mesh.bottom_radius = 0.05
 
 		mesh_node.global_position = global_center
 		mesh_node.look_at(global_end, up_vector)
 		mesh_node.rotate_object_local(Vector3.RIGHT, PI / 2.0)
 
-	# 5. Shape the Collision to match exactly
 	if col_node:
-		if not col_node.shape is CylinderShape3D:
-			col_node.shape = CylinderShape3D.new()
-		col_node.shape.height = distance
-		col_node.shape.radius = 0.05
+		var cyl_shape: CylinderShape3D = col_node.shape as CylinderShape3D
+		if not cyl_shape:
+			cyl_shape = CylinderShape3D.new()
+			col_node.shape = cyl_shape
+
+		cyl_shape.height = distance
+		cyl_shape.radius = 0.05
 
 		if mesh_node:
 			col_node.global_transform = mesh_node.global_transform
 
 
-# The Secret Sauce: Recursively digs through children to find what it needs
-func _get_first_node_of_type(parent: Node, type_name: String) -> Node:
+## Traverses descendants recursively to locate the first [MeshInstance3D].
+func _find_mesh_instance(parent: Node) -> MeshInstance3D:
 	for child: Node in parent.get_children():
-		if child.is_class(type_name):
+		if child is MeshInstance3D:
 			return child
-		var found: Node = _get_first_node_of_type(child, type_name)
+		var found: MeshInstance3D = _find_mesh_instance(child)
+		if found:
+			return found
+	return null
+
+
+## Traverses descendants recursively to locate the first [CollisionShape3D].
+func _find_collision_shape(parent: Node) -> CollisionShape3D:
+	for child: Node in parent.get_children():
+		if child is CollisionShape3D:
+			return child
+		var found: CollisionShape3D = _find_collision_shape(child)
 		if found:
 			return found
 	return null

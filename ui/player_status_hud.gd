@@ -159,7 +159,10 @@ var _last_swim_tenth: int = -1
 ## Lifecycle method called when node enters the tree.
 func _ready() -> void:
 	print("PlayerStatusHUD: _ready() called. Initializing status HUD.")
-	is_infinite_swim = bool(GlobalSettings.get_setting("Accessibility", "infinite_swim", false))
+	var swim_val: Variant = GlobalSettings.get_setting("Accessibility", "infinite_swim", false)
+	if swim_val is bool:
+		is_infinite_swim = swim_val
+
 	_initialize_indicators()
 	_initialize_hearts()
 	_connect_signals()
@@ -206,10 +209,12 @@ func _connect_signals() -> void:
 
 	var keycard_sys: Node = get_node_or_null("/root/KeycardSystem")
 	if is_instance_valid(keycard_sys):
-		if keycard_sys.has_signal("card_picked_up"):
-			Utilities.safe_connect(keycard_sys.card_picked_up, _on_card_picked_up)
-		if keycard_sys.has_signal("card_used"):
-			Utilities.safe_connect(keycard_sys.card_used, _on_card_used)
+		if keycard_sys.has_signal(&"card_picked_up"):
+			var card_picked_sig: Signal = Signal(keycard_sys, &"card_picked_up")
+			Utilities.safe_connect(card_picked_sig, _on_card_picked_up)
+		if keycard_sys.has_signal(&"card_used"):
+			var card_used_sig: Signal = Signal(keycard_sys, &"card_used")
+			Utilities.safe_connect(card_used_sig, _on_card_used)
 
 
 ## Slices the heart atlas and builds initial health representations.
@@ -261,6 +266,7 @@ func _add_heart_node() -> void:
 
 
 ## Re-renders all heart frames and plays health change animations.
+## [param new_health] The updated health total to display.
 func update_health(new_health: int) -> void:
 	print("PlayerStatusHUD: update_health() called with: ", new_health)
 	while new_health > heart_nodes.size() * 100:
@@ -298,10 +304,13 @@ func update_health(new_health: int) -> void:
 		elif health_increased and heart_val > prev_heart_val:
 			_animate_heart_heal(i, frame_index)
 
-		heart_nodes[i].get_parent().visible = true
+		var heart_parent: CanvasItem = heart_nodes[i].get_parent() as CanvasItem
+		if is_instance_valid(heart_parent):
+			heart_parent.visible = true
 
 
 ## Runs a vertical bounce tween on the target heart node when damaged.
+## [param index] Index of the damaged heart in [member heart_nodes].
 func _animate_heart_damage(index: int) -> void:
 	print("PlayerStatusHUD: _animate_heart_damage() called for index: ", index)
 	if index < 0 or index >= heart_nodes.size():
@@ -325,6 +334,8 @@ func _animate_heart_damage(index: int) -> void:
 
 
 ## Spawns a scaling heal ghost texture to visually represent health recovery.
+## [param index] Index of the healed heart in [member heart_nodes].
+## [param frame_index] Sliced atlas frame index representing health status.
 func _animate_heart_heal(index: int, frame_index: int) -> void:
 	print("PlayerStatusHUD: _animate_heart_heal() called for index: ", index)
 	if index < 0 or index >= heart_nodes.size():
@@ -363,6 +374,7 @@ func _animate_heart_heal(index: int, frame_index: int) -> void:
 
 
 ## Adds a keycard texture rectangle using [method Utilities.center_control].
+## [param card_id] Unique identifier for the picked up keycard item.
 func _on_card_picked_up(card_id: StringName) -> void:
 	print("PlayerStatusHUD: Displaying new card ID ", card_id)
 	var card_rect: TextureRect = TextureRect.new()
@@ -387,6 +399,7 @@ func _on_card_picked_up(card_id: StringName) -> void:
 
 
 ## Animates and removes used keycard icon safely avoiding memory leaks.
+## [param card_id] Unique identifier for the used keycard item to discard.
 func _on_card_used(card_id: StringName) -> void:
 	print("PlayerStatusHUD: Removing used card ID ", card_id)
 	if active_card_icons.has(card_id):
@@ -401,6 +414,7 @@ func _on_card_used(card_id: StringName) -> void:
 
 
 ## Starts and animates the sprint debuff progress bar cooldown.
+## [param duration] Cooldown timer duration in seconds.
 func _on_sprint_debuff_applied(duration: float) -> void:
 	print("PlayerStatusHUD: _on_sprint_debuff_applied() - Starting for ", duration)
 	is_sprint_timer_active = true
@@ -438,6 +452,7 @@ func _on_sprint_debuff_applied(duration: float) -> void:
 
 
 ## Starts and animates the immobilize debuff progress bar cooldown.
+## [param duration] Cooldown timer duration in seconds.
 func _on_immobilize_debuff_applied(duration: float) -> void:
 	print("PlayerStatusHUD: _on_immobilize_debuff_applied() - Starting for ", duration)
 	is_immobilized = true
@@ -476,6 +491,7 @@ func _on_immobilize_debuff_applied(duration: float) -> void:
 
 
 ## Handles updates to the infinite swim mode setting.
+## [param enabled] True if infinite swim accessibility mode is active.
 func _on_infinite_swim_toggled(enabled: bool) -> void:
 	print("PlayerStatusHUD: Infinite swim toggled -> ", enabled)
 	is_infinite_swim = enabled
@@ -495,6 +511,7 @@ func _on_infinite_swim_toggled(enabled: bool) -> void:
 
 
 ## Starts and animates the submerged swim progress bar and timer label.
+## [param duration] Remaining oxygen countdown duration in seconds.
 func _on_oxygen_timer_started(duration: float) -> void:
 	print("PlayerStatusHUD: _on_oxygen_timer_started() called. Duration: ", duration)
 	is_submerged = true
@@ -546,6 +563,7 @@ func _on_oxygen_timer_stopped() -> void:
 
 
 ## Updates steam hazard indicator icon and border overlay.
+## [param is_active] True if player is standing in steam hazard.
 func _on_steam_hazard_toggled(is_active: bool) -> void:
 	print("PlayerStatusHUD: Steam hazard toggled -> ", is_active)
 	is_in_steam = is_active
@@ -556,6 +574,7 @@ func _on_steam_hazard_toggled(is_active: bool) -> void:
 
 
 ## Updates fire hazard indicator icon and border overlay.
+## [param is_active] True if player is actively suffering fire damage.
 func _on_fire_hazard_toggled(is_active: bool) -> void:
 	print("PlayerStatusHUD: Fire hazard toggled -> ", is_active)
 	is_in_fire = is_active
@@ -566,6 +585,7 @@ func _on_fire_hazard_toggled(is_active: bool) -> void:
 
 
 ## Updates persistent sand sprint-restriction status.
+## [param is_active] True if player is standing on sand surface.
 func _on_sand_surface_toggled(is_active: bool) -> void:
 	print("PlayerStatusHUD: Sand surface toggled -> ", is_active)
 	is_on_sand = is_active
@@ -573,6 +593,7 @@ func _on_sand_surface_toggled(is_active: bool) -> void:
 
 
 ## Updates ice surface status indicator and border overlay.
+## [param is_active] True if player is standing on ice surface.
 func _on_ice_surface_toggled(is_active: bool) -> void:
 	print("PlayerStatusHUD: Ice surface toggled -> ", is_active)
 	is_on_ice = is_active
@@ -583,6 +604,7 @@ func _on_ice_surface_toggled(is_active: bool) -> void:
 
 
 ## Toggles sprint debuff icon visibility based on heavy carry status.
+## [param is_active] True if player is carrying a heavy object.
 func _on_heavy_carry_toggled(is_active: bool) -> void:
 	print("PlayerStatusHUD: Heavy carry toggled -> ", is_active)
 	is_heavy_carrying = is_active

@@ -1,6 +1,5 @@
 @tool
-## Particle manager driving spatial rain simulation,
-## unshaded billboarding, and player volume detection.
+## Particle manager driving spatial rain simulation, billboard rendering, and player triggers.
 class_name RainParticles
 extends GPUParticles3D
 
@@ -120,7 +119,7 @@ func _ready() -> void:
 	_apply_settings()
 
 	if not Engine.is_editor_hint():
-		call_deferred("_setup_auto_volume")
+		call_deferred(&"_setup_auto_volume")
 
 
 ## Constructs QuadMesh and initializes fallback particle materials.
@@ -205,7 +204,6 @@ func _update_shader_params() -> void:
 
 
 ## Creates a fallback placeholder monochrome droplet shape.
-## [return] The generated placeholder [Texture2D].
 func _generate_fallback_albedo() -> Texture2D:
 	var image: Image = Image.create(32, 128, false, Image.FORMAT_RGBA8)
 	for y: int in range(image.get_height()):
@@ -219,7 +217,6 @@ func _generate_fallback_albedo() -> Texture2D:
 
 
 ## Creates a fallback placeholder normal map with rounded curvature.
-## [return] The generated normal map [Texture2D].
 func _generate_fallback_normal() -> Texture2D:
 	var image: Image = Image.create(32, 128, false, Image.FORMAT_RGBA8)
 	for y: int in range(image.get_height()):
@@ -233,7 +230,7 @@ func _generate_fallback_normal() -> Texture2D:
 	return ImageTexture.create_from_image(image)
 
 
-## Builds an Area3D trigger matching emission bounds to detect player entrance.
+## Builds an [Area3D] trigger matching emission bounds to detect player entrance.
 func _setup_auto_volume() -> void:
 	print("RainParticles: Generating automatic trigger volume.")
 	var rain_area: Area3D = Area3D.new()
@@ -267,20 +264,18 @@ func _setup_auto_volume() -> void:
 
 
 ## Notifies the player controller and triggers screen rain droplets on enter.
-## [param body] The [Node3D] entering the rain trigger.
 func _on_body_entered(body: Node3D) -> void:
 	print("RainParticles: Body entered rain zone -> ", body.name)
-	if body is Player or body.is_in_group(&"player"):
+	if body.is_in_group(&"player") or body.is_class("Player"):
 		Events.rain_vfx_toggled.emit(0.75)
 		if body.has_method("enter_rain_volume"):
-			body.enter_rain_volume()
+			body.call(&"enter_rain_volume")
 
 
 ## Notifies the player controller and clears screen rain droplets on exit.
-## [param body] The [Node3D] leaving the rain trigger.
 func _on_body_exited(body: Node3D) -> void:
 	print("RainParticles: Body exited rain zone -> ", body.name)
-	if body is Player or body.is_in_group(&"player"):
+	if body.is_in_group(&"player") or body.is_class("Player"):
 		Events.rain_vfx_toggled.emit(0.0)
 		if body.has_method("exit_rain_volume"):
-			body.exit_rain_volume()
+			body.call(&"exit_rain_volume")

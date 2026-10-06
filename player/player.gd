@@ -17,19 +17,19 @@ const GROUP_ICE: StringName = &"ice"
 @export_category("Core Modules")
 
 ## Handles physics, gravity, and state machine locomotion updates.
-@export var locomotion_component: Node
+@export var locomotion_component: PlayerLocomotionComponent
 
 ## Handles raycasting, item holding, and machine interactions.
-@export var interaction_component: Node
+@export var interaction_component: PlayerInteractionComponent
 
 ## Handles external triggers such as water, rain, updrafts, and ladders.
-@export var environment_component: Node
+@export var environment_component: PlayerEnvironmentComponent
 
 ## Manages player health, damage calculation, and stat serialization.
-@export var stats_component: Node
+@export var stats_component: PlayerStatsComponent
 
-## Root state machine node managing active player states.
-@export var state_machine: Node
+## Root [StateMachine] managing active player character states.
+@export var state_machine: StateMachine
 
 @export_category("System References")
 
@@ -191,24 +191,13 @@ func set_terminal_mouse_sensitivity_scale(p_scale: float) -> void:
 func _is_input_blocked() -> bool:
 	var is_console_open: bool = is_instance_valid(in_game_console) and in_game_console.visible
 	var is_operating: bool = (
-		is_instance_valid(interaction_component)
-		and bool(interaction_component.get("is_operating_machine"))
+		is_instance_valid(interaction_component) and interaction_component.is_operating_machine
 	)
-	var is_blocked: bool = (
-		(
-			is_instance_valid(system_menu)
-			and (
-				system_menu.is_paused
-				or system_menu.is_menu_open
-				or bool(system_menu.get("is_stunned"))
-			)
-		)
-		or is_console_open
-		or is_operating
-		or is_dead
-		or is_cinematic_locked
+	var is_menu_locked: bool = (
+		is_instance_valid(system_menu)
+		and (system_menu.is_paused or system_menu.is_menu_open or system_menu.is_stunned)
 	)
-	return is_blocked
+	return is_menu_locked or is_console_open or is_operating or is_dead or is_cinematic_locked
 
 
 ## Dispatches surroundings description requests from gesture manager.
@@ -236,10 +225,7 @@ func _on_player_died() -> void:
 		if locomotion_component.crouching:
 			current_death_state = DeathScreen.DeathState.CROUCHING
 			print("Player: Death state evaluated as CROUCHING.")
-		elif (
-			locomotion_component.has_method("did_run_recently")
-			and locomotion_component.did_run_recently()
-		):
+		elif locomotion_component.did_run_recently():
 			current_death_state = DeathScreen.DeathState.SPRINTING
 			print("Player: Death state evaluated as SPRINTING.")
 		else:
@@ -258,11 +244,7 @@ func _on_player_died() -> void:
 func _physics_process(delta: float) -> void:
 	var in_terminal_state: bool = (
 		is_terminal_locked
-		or (
-			is_instance_valid(state_machine)
-			and state_machine.has_method(&"is_in_state")
-			and state_machine.is_in_state(&"Terminal")
-		)
+		or (is_instance_valid(state_machine) and state_machine.is_in_state(&"Terminal"))
 	)
 
 	if in_terminal_state:
@@ -271,13 +253,7 @@ func _physics_process(delta: float) -> void:
 			locomotion_component.set_physics_active(false)
 
 		if is_instance_valid(interaction_component):
-			if interaction_component.has_method("process_interaction"):
-				interaction_component.process_interaction(delta)
-			elif (
-				interaction_component.get("interaction_scanner")
-				and interaction_component.interaction_scanner.has_method("process_interaction")
-			):
-				interaction_component.interaction_scanner.process_interaction(delta)
+			interaction_component.process_interaction(delta)
 		return
 
 	var disable_states: bool = (
@@ -325,20 +301,11 @@ func _physics_process(delta: float) -> void:
 
 	_update_floor_surface_detection()
 
-	if (
-		is_instance_valid(environment_component)
-		and environment_component.has_method("process_environment_physics")
-	):
+	if is_instance_valid(environment_component):
 		environment_component.process_environment_physics(delta)
 
 	if is_instance_valid(interaction_component):
-		if interaction_component.has_method("process_interaction"):
-			interaction_component.process_interaction(delta)
-		elif (
-			interaction_component.get("interaction_scanner")
-			and interaction_component.interaction_scanner.has_method("process_interaction")
-		):
-			interaction_component.interaction_scanner.process_interaction(delta)
+		interaction_component.process_interaction(delta)
 
 
 # --------------------------------------
@@ -446,8 +413,8 @@ func set_glider_visible(p_is_visible: bool) -> void:
 		and is_instance_valid(interaction_component.held_item)
 	):
 		var item: RigidBody3D = interaction_component.held_item
-		if item.has_method("set_glider_mesh_visible"):
-			item.set_glider_mesh_visible(p_is_visible)
+		if item.has_method(&"set_glider_mesh_visible"):
+			item.call(&"set_glider_mesh_visible", p_is_visible)
 
 
 # --------------------------------------
@@ -461,12 +428,16 @@ func enter_terminal_mode(terminal: Node3D) -> void:
 	is_in_terminal_mode = true
 	velocity = Vector3.ZERO
 
-	var captures_wasd: bool = is_instance_valid(terminal) and bool(terminal.get("captures_wasd"))
+	var captures_wasd: bool = false
+	if is_instance_valid(terminal):
+		var wasd_variant: Variant = terminal.get(&"captures_wasd")
+		captures_wasd = wasd_variant == true
+
 	if captures_wasd and is_instance_valid(state_machine):
-		state_machine.transition_to("Terminal", {"terminal": terminal})
+		state_machine.transition_to(&"Terminal", {"terminal": terminal})
 
 	if is_instance_valid(interaction_component):
-		interaction_component.set("is_in_terminal_mode", true)
+		interaction_component.is_in_terminal_mode = true
 		if is_instance_valid(interaction_component.interaction_scanner):
 			interaction_component.interaction_scanner.enter_terminal_mode(terminal)
 
@@ -493,19 +464,12 @@ func exit_terminal_mode() -> void:
 	if is_instance_valid(locomotion_component):
 		locomotion_component.set_physics_active(true)
 
-	if (
-		is_instance_valid(state_machine)
-		and state_machine.has_method(&"is_in_state")
-		and state_machine.is_in_state(&"Terminal")
-	):
+	if is_instance_valid(state_machine) and state_machine.is_in_state(&"Terminal"):
 		state_machine.transition_to(&"Ground")
 
 	if is_instance_valid(interaction_component):
-		interaction_component.set("is_in_terminal_mode", false)
-		if (
-			is_instance_valid(interaction_component.interaction_scanner)
-			and interaction_component.interaction_scanner.is_in_terminal_mode
-		):
+		interaction_component.is_in_terminal_mode = false
+		if is_instance_valid(interaction_component.interaction_scanner):
 			interaction_component.interaction_scanner.exit_terminal_mode()
 
 
@@ -517,9 +481,9 @@ func set_machine_lock(locked: bool) -> void:
 
 	if is_instance_valid(state_machine):
 		if locked:
-			state_machine.transition_to("MachineLock")
+			state_machine.transition_to(&"MachineLock")
 		else:
-			state_machine.transition_to("Ground")
+			state_machine.transition_to(&"Ground")
 
 
 ## Engages machine operation mode and zeroes velocity momentum.
@@ -532,7 +496,7 @@ func start_operating_machine() -> void:
 		locomotion_component.reset_momentum()
 
 	if is_instance_valid(state_machine):
-		state_machine.transition_to("MachineLock")
+		state_machine.transition_to(&"MachineLock")
 
 
 ## Disengages machine operation mode and restores default controls.
@@ -543,7 +507,7 @@ func stop_operating_machine() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 	if is_instance_valid(state_machine):
-		state_machine.transition_to("Ground")
+		state_machine.transition_to(&"Ground")
 
 
 # --------------------------------------
@@ -574,21 +538,28 @@ func get_save_data() -> Dictionary:
 func load_save_data(data: Dictionary) -> void:
 	print("Player: Restoring serialized state data.")
 
-	var loaded_pos: Vector3 = Vector3(
-		data.get("pos_x", global_position.x),
-		data.get("pos_y", global_position.y),
-		data.get("pos_z", global_position.z)
-	)
+	var loaded_pos: Vector3 = global_position
+	if data.has("pos_x"):
+		loaded_pos.x = float(data["pos_x"])
+	if data.has("pos_y"):
+		loaded_pos.y = float(data["pos_y"])
+	if data.has("pos_z"):
+		loaded_pos.z = float(data["pos_z"])
 
 	if is_instance_valid(locomotion_component):
 		locomotion_component.reset_momentum()
 
 	global_position = loaded_pos
-	global_rotation.y = data.get("rot_y", global_rotation.y)
+	if data.has("rot_y"):
+		global_rotation.y = float(data["rot_y"])
 
 	if is_instance_valid(camera_controller):
-		var pitch: float = data.get("head_rot_x", camera_controller.global_rotation.x)
-		var yaw: float = data.get("head_rot_y", camera_controller.global_rotation.y)
+		var pitch: float = camera_controller.global_rotation.x
+		var yaw: float = camera_controller.global_rotation.y
+		if data.has("head_rot_x"):
+			pitch = float(data["head_rot_x"])
+		if data.has("head_rot_y"):
+			yaw = float(data["head_rot_y"])
 		camera_controller.global_rotation = Vector3(pitch, yaw, 0.0)
 
 	if is_instance_valid(stats_component):
@@ -617,14 +588,14 @@ func enter_path_slide(stick: Node3D) -> void:
 		locomotion_component.reset_momentum()
 
 	if is_instance_valid(state_machine):
-		state_machine.transition_to("PathSlide", {"stick": stick})
+		state_machine.transition_to(&"PathSlide", {"stick": stick})
 
 
 ## Exits rail slide state into airborne state.
 func exit_path_slide() -> void:
 	print("Player: Exiting rail slide.")
 	if is_instance_valid(state_machine):
-		state_machine.transition_to("Air")
+		state_machine.transition_to(&"Air")
 
 
 ## Launches player along [param throw_vel] impulse vector.
@@ -632,7 +603,7 @@ func launch_from_path(throw_vel: Vector3) -> void:
 	print("Player: Launching from path with velocity: ", throw_vel)
 	velocity = throw_vel
 	if is_instance_valid(state_machine):
-		state_machine.transition_to("Air", {"release_dir": throw_vel})
+		state_machine.transition_to(&"Air", {"release_dir": throw_vel})
 
 
 # --------------------------------------
@@ -643,24 +614,22 @@ func launch_from_path(throw_vel: Vector3) -> void:
 ## Routes damage reduction to [member health_component].
 func take_damage(amount: int) -> void:
 	print("Player: Routing damage to HealthComponent: ", amount)
-	if is_instance_valid(health_component) and health_component.has_method("take_damage"):
+	if is_instance_valid(health_component):
 		health_component.take_damage(amount)
 
 
 ## Routes health point recovery to [member health_component].
 func heal(amount: int) -> void:
 	print("Player: Routing healing to HealthComponent: ", amount)
-	if is_instance_valid(health_component) and health_component.has_method("heal"):
+	if is_instance_valid(health_component):
 		health_component.heal(amount)
 
 
 ## Applies impulse force [param force] and enters airborne state.
 func apply_knockback(force: Vector3) -> void:
 	print("Player: Applying knockback force and transitioning to Air state.")
-
 	if is_instance_valid(state_machine):
-		if state_machine.has_method("transition_to"):
-			state_machine.transition_to("Air", {"knockback_force": force})
+		state_machine.transition_to(&"Air", {"knockback_force": force})
 
 
 ## Zero-allocation floor scan updating sand and ice surface state.
@@ -700,7 +669,7 @@ func enter_tube(tube_node: Node3D) -> void:
 	if is_instance_valid(locomotion_component):
 		locomotion_component.reset_momentum()
 	if is_instance_valid(state_machine):
-		state_machine.transition_to("Tube", {"tube": tube_node})
+		state_machine.transition_to(&"Tube", {"tube": tube_node})
 
 
 ## Ejects player from vacuum tube with [param throw_vel] velocity.

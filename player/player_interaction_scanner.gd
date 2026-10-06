@@ -1,23 +1,23 @@
-## Scans and evaluates interactable components in the center of the screen.
+## Scans and evaluates interactable components in the center of the viewport.
 class_name InteractionScanner
 extends Node
 
 # --------------------------------------
 # SIGNALS
 # --------------------------------------
-## Emitted when terminal focus mode begins or terminates. Passes [param is_active].
+## Emitted when terminal focus mode begins or terminates.
 signal terminal_mode_toggled(is_active: bool)
 
-## Emitted when heavy lifting state changes. Passes [param is_lifting] and [param yaw_base].
+## Emitted when heavy lifting state changes. Passes state and heading baseline.
 signal heavy_lift_state_changed(is_lifting: bool, yaw_base: float)
 
-## Emitted when interactable enters crosshair reach. Passes [param object_name] and [param caller].
+## Emitted when interactable enters crosshair reach. Passes target name and node.
 signal object_hover_focused(object_name: String, caller: Node)
 
 # --------------------------------------
 # ZERO-ALLOCATION IDENTIFIERS
 # --------------------------------------
-## Name of the interactable component node to search for.
+## Name identifier of the interactable component node to search for.
 const COMPONENT_NAME: StringName = &"InteractComponent"
 
 ## Property identifier for custom interactable display titles.
@@ -35,17 +35,17 @@ const ACTION_SHOOT: StringName = &"shoot"
 ## Action identifier for triggering weapon reload.
 const ACTION_RELOAD: StringName = &"reload"
 
-## Maximum query rate for continuous terminal hover queries in seconds.
+## Maximum query rate in seconds for continuous terminal hover queries.
 const TERMINAL_RAYCAST_INTERVAL: float = 0.05
 
 # --------------------------------------
 # EXPORTS
 # --------------------------------------
 @export_category("Node References")
-## Interacting player controller instance.
-@export var player_body: CharacterBody3D
+## Interacting [Player] controller instance.
+@export var player_body: Player
 
-## First-person gameplay camera.
+## First-person gameplay camera reference.
 @export var camera: Camera3D
 
 ## Shapecast detecting interactable targets in crosshair reach.
@@ -58,16 +58,16 @@ const TERMINAL_RAYCAST_INTERVAL: float = 0.05
 ## Minimum horizontal reach distance in meters.
 @export var base_reach: float = 0.7
 
-## Extended reach distance when looking down at the floor.
+## Extended reach distance in meters when looking down at floor surfaces.
 @export var floor_reach: float = 2.2
 
-## Interval in seconds between interactable shapecast queries (10 Hz).
+## Interval in seconds between interactable shapecast scan passes.
 @export var scan_interval: float = 0.1
 
 # --------------------------------------
 # RUNTIME STATE
 # --------------------------------------
-## Stores the previous interactable to avoid re-announcing on every frame.
+## Stores previous interactable to avoid re-announcing on every frame.
 var _last_focused_interactable: Node = null
 
 ## Cached array of RIDs excluded from terminal interaction raycasts.
@@ -79,22 +79,22 @@ var _scan_timer: float = 0.0
 ## Accumulator measuring elapsed frame time for terminal hover raycasts.
 var _terminal_raycast_timer: float = 0.0
 
-## Active interactable component currently in focus.
+## Active interactable component currently in crosshair focus.
 var current_interactable: Node = null
 
-## Reference to the master interaction component.
-var master_component: Node = null
+## Reference to the master [PlayerInteractionComponent].
+var master_component: PlayerInteractionComponent = null
 
-## Indicates if player is carrying a heavy two-handed object.
+## Indicates whether the player is currently carrying a heavy object.
 var is_heavy_lifting: bool = false
 
 ## Yaw heading baseline for clamping rotation during heavy carry.
 var heavy_lift_yaw_base: float = 0.0
 
-## Indicates if terminal focus mode is currently active.
+## Indicates whether terminal focus mode is currently active.
 var is_in_terminal_mode: bool = false
 
-## Active terminal instance being operated.
+## Active terminal instance currently being operated.
 var active_terminal: Node3D = null
 
 ## Coordinates of player when terminal mode began.
@@ -104,8 +104,8 @@ var terminal_start_pos: Vector3 = Vector3.ZERO
 var current_hit_point: Vector3 = Vector3.ZERO
 
 
-## Establishes reference link to master interaction component.
-func setup_master_link(master: Node) -> void:
+## Establishes link to master [PlayerInteractionComponent] and caches RIDs.
+func setup_master_link(master: PlayerInteractionComponent) -> void:
 	print("InteractionScanner: Link to Master Component established.")
 	master_component = master
 	if is_instance_valid(player_body):
@@ -137,16 +137,16 @@ func process_interaction(delta: float) -> void:
 	if is_instance_valid(current_interactable):
 		if interact_shapecast.get_collision_count() > 0:
 			current_hit_point = interact_shapecast.get_collision_point(0)
-			if current_interactable.has_method("hover_cursor"):
-				current_interactable.call("hover_cursor", player_body, current_hit_point)
+			if current_interactable.has_method(&"hover_cursor"):
+				current_interactable.call(&"hover_cursor", player_body, current_hit_point)
 
 		if GestureInputManager.is_action_pressed(ACTION_INTERACT):
 			var is_hands_empty: bool = true
-			if is_instance_valid(master_component) and master_component.get("held_item") != null:
+			if is_instance_valid(master_component) and master_component.held_item != null:
 				is_hands_empty = false
 
-			if is_hands_empty and current_interactable.has_method("interact_held"):
-				current_interactable.call("interact_held", player_body)
+			if is_hands_empty and current_interactable.has_method(&"interact_held"):
+				current_interactable.call(&"interact_held", player_body)
 
 
 ## Broadcasts focus change events when a new interactable enters view.
@@ -174,18 +174,18 @@ func handle_interact_input() -> void:
 		return
 
 	if current_interactable:
-		if current_interactable.has_method("interact_with"):
+		if current_interactable.has_method(&"interact_with"):
 			print("InteractionScanner: Triggering interaction on object.")
-			current_interactable.call("interact_with", player_body)
+			current_interactable.call(&"interact_with", player_body)
 
 		var parent_node: Node = current_interactable.get_parent()
-		if is_instance_valid(parent_node) and parent_node.has_method("pick_up"):
+		if is_instance_valid(parent_node) and parent_node.has_method(&"pick_up"):
 			print("InteractionScanner: Found pickable object. Instructing Master to grab.")
 			if is_instance_valid(master_component):
-				master_component.call("force_grab_item", parent_node as RigidBody3D)
+				master_component.force_grab_item(parent_node as RigidBody3D)
 
-			if parent_node.has_method("on_grabbed"):
-				parent_node.call("on_grabbed")
+			if parent_node.has_method(&"on_grabbed"):
+				parent_node.call(&"on_grabbed")
 	else:
 		_play_empty_interact_audio()
 
@@ -195,9 +195,9 @@ func _play_empty_interact_audio() -> void:
 	if not is_instance_valid(empty_interact_audio) or empty_interact_audio.stream == null:
 		return
 	var audio_mgr: Node = get_node_or_null("/root/AudioManager")
-	if is_instance_valid(audio_mgr) and audio_mgr.has_method("play_sfx_2d_throttled"):
+	if is_instance_valid(audio_mgr) and audio_mgr.has_method(&"play_sfx_2d_throttled"):
 		audio_mgr.call(
-			"play_sfx_2d_throttled", empty_interact_audio.stream, empty_interact_audio.bus
+			&"play_sfx_2d_throttled", empty_interact_audio.stream, empty_interact_audio.bus
 		)
 	else:
 		empty_interact_audio.play()
@@ -211,8 +211,8 @@ func handle_shoot_input() -> void:
 		get_viewport().set_input_as_handled()
 		return
 
-	var weapon_holder: Node = (
-		master_component.get("weapon_holder") if is_instance_valid(master_component) else null
+	var weapon_holder: Node3D = (
+		master_component.weapon_holder if is_instance_valid(master_component) else null
 	)
 	if is_instance_valid(weapon_holder):
 		var inv: WeaponInventoryComponent = (
@@ -222,16 +222,16 @@ func handle_shoot_input() -> void:
 			inv.shoot_active_weapon()
 		else:
 			for child: Node in weapon_holder.get_children():
-				if child.has_method("shoot") and child.get("visible") == true:
-					child.call("shoot", camera)
+				if child.has_method(&"shoot") and child.get("visible") == true:
+					child.call(&"shoot", camera)
 					break
 
 
 ## Routes reload inputs to the equipped inventory weapon.
 func handle_reload_input() -> void:
 	print("InteractionScanner: handle_reload_input() called.")
-	var weapon_holder: Node = (
-		master_component.get("weapon_holder") if is_instance_valid(master_component) else null
+	var weapon_holder: Node3D = (
+		master_component.weapon_holder if is_instance_valid(master_component) else null
 	)
 	if is_instance_valid(weapon_holder):
 		var inv: WeaponInventoryComponent = (
@@ -241,8 +241,8 @@ func handle_reload_input() -> void:
 			inv.reload_active_weapon()
 		else:
 			for child: Node in weapon_holder.get_children():
-				if child.has_method("reload") and child.get("visible") == true:
-					child.call("reload")
+				if child.has_method(&"reload") and child.get("visible") == true:
+					child.call(&"reload")
 					break
 
 
@@ -258,7 +258,7 @@ func set_heavy_lifting(value: bool) -> void:
 func drop_heavy_object_safely() -> void:
 	if is_heavy_lifting and is_instance_valid(master_component):
 		print("InteractionScanner: Routing heavy drop request to Master.")
-		master_component.call("drop_held_item")
+		master_component.drop_held_item()
 		set_heavy_lifting(false)
 
 
@@ -270,7 +270,7 @@ func _update_dynamic_reach() -> void:
 	interact_shapecast.target_position = Vector3(0, 0, -current_reach)
 
 
-## Finds the closest enabled interactable component via [NodeQuery].
+## Finds closest enabled interactable component via [NodeQuery].
 func _get_interactable_component_at_shapecast() -> Node:
 	var closest_comp: Node = null
 	var closest_dist: float = INF
@@ -301,10 +301,9 @@ func _get_interactable_component_at_shapecast() -> Node:
 					continue
 
 				var interactable_parent: Node = comp.get_parent()
-
-				if interactable_parent.has_method("is_valid_pickup_position"):
-					var is_valid: bool = bool(
-						interactable_parent.call("is_valid_pickup_position", player_body)
+				if interactable_parent.has_method(&"is_valid_pickup_position"):
+					var is_valid: bool = (
+						interactable_parent.call(&"is_valid_pickup_position", player_body) == true
 					)
 					if not is_valid:
 						continue
@@ -321,6 +320,7 @@ func _get_interactable_component_at_shapecast() -> Node:
 
 
 ## Activates terminal focus mode for numeric or minigame interfaces.
+@warning_ignore("unsafe_cast")
 func enter_terminal_mode(terminal: Node3D) -> void:
 	print("InteractionScanner: Entering terminal mode.")
 	is_in_terminal_mode = true
@@ -337,23 +337,21 @@ func enter_terminal_mode(terminal: Node3D) -> void:
 	)
 
 	if is_circle_keypad:
-		print("InteractionScanner: Circle keypad detected. Locking player and camera.")
+		print("InteractionScanner: Circle keypad detected. Locking player.")
 		if is_instance_valid(player_body):
-			player_body.set("is_terminal_locked", true)
+			player_body.is_terminal_locked = true
 
 		if is_instance_valid(camera) and is_instance_valid(terminal):
 			var target_pos: Vector3 = terminal.global_position
-			if (
-				"mesh_instance_3d" in terminal
-				and is_instance_valid(terminal.get("mesh_instance_3d"))
-			):
-				var mesh_node: Node3D = terminal.get("mesh_instance_3d") as Node3D
-				target_pos = mesh_node.global_position
+			if "mesh_instance_3d" in terminal:
+				var mesh_candidate: Variant = terminal.get("mesh_instance_3d")
+				if mesh_candidate is Node3D:
+					target_pos = (mesh_candidate as Node3D).global_position
 			camera.look_at(target_pos, Vector3.UP)
 	else:
-		print("InteractionScanner: Numeric keypad detected. Leaving player free to aim.")
+		print("InteractionScanner: Keypad detected. Leaving player free to aim.")
 		if is_instance_valid(player_body):
-			player_body.set("is_terminal_locked", false)
+			player_body.is_terminal_locked = false
 
 	if is_instance_valid(Events) and Events.has_signal("terminal_mode_toggled"):
 		Events.terminal_mode_toggled.emit(true)
@@ -372,22 +370,13 @@ func exit_terminal_mode() -> void:
 	_terminal_raycast_timer = 0.0
 
 	if is_instance_valid(terminal_to_clear):
-		if terminal_to_clear.has_method("clear_mouse_hover"):
-			terminal_to_clear.call("clear_mouse_hover")
+		if terminal_to_clear.has_method(&"clear_mouse_hover"):
+			terminal_to_clear.call(&"clear_mouse_hover")
 
 	if is_instance_valid(player_body):
-		player_body.set("is_terminal_locked", false)
-		if player_body.has_method("set_terminal_mouse_sensitivity_scale"):
-			player_body.call("set_terminal_mouse_sensitivity_scale", 1.0)
-		if player_body.has_method("exit_terminal_mode"):
-			player_body.call("exit_terminal_mode")
-		elif (
-			"locomotion_component" in player_body
-			and is_instance_valid(player_body.get("locomotion_component"))
-		):
-			var loco: Node = player_body.get("locomotion_component") as Node
-			if loco.has_method("set_physics_active"):
-				loco.call("set_physics_active", true)
+		player_body.is_terminal_locked = false
+		player_body.set_terminal_mouse_sensitivity_scale(1.0)
+		player_body.exit_terminal_mode()
 
 	if is_instance_valid(Events) and Events.has_signal("terminal_mode_toggled"):
 		Events.terminal_mode_toggled.emit(false)
@@ -423,6 +412,7 @@ func _should_exit_terminal_mode() -> bool:
 
 
 ## Projects raycast from screen center via [method Utilities.raycast_3d].
+@warning_ignore("unsafe_cast")
 func shoot_terminal_raycast(is_click: bool) -> void:
 	if is_click:
 		print("InteractionScanner: shoot_terminal_raycast executed a click.")
@@ -446,8 +436,11 @@ func shoot_terminal_raycast(is_click: bool) -> void:
 	)
 
 	if not result.is_empty() and result.get("collider") == active_terminal:
-		var hit_pos: Vector3 = result.get("position", Vector3.ZERO) as Vector3
-		if is_click and active_terminal.has_method("inject_mouse_click"):
-			active_terminal.call("inject_mouse_click", hit_pos)
-		elif active_terminal.has_method("inject_mouse_motion"):
-			active_terminal.call("inject_mouse_motion", hit_pos)
+		var hit_pos: Vector3 = Vector3.ZERO
+		if result.has(&"position") and result[&"position"] is Vector3:
+			hit_pos = result[&"position"] as Vector3
+
+		if is_click and active_terminal.has_method(&"inject_mouse_click"):
+			active_terminal.call(&"inject_mouse_click", hit_pos)
+		elif active_terminal.has_method(&"inject_mouse_motion"):
+			active_terminal.call(&"inject_mouse_motion", hit_pos)

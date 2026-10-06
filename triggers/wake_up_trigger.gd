@@ -157,7 +157,8 @@ var _seq_tween: Tween = null
 
 ## Initializes bounds, collision layers, and executes frame-zero blackout.
 func _ready() -> void:
-	_collision_shape = get_node_or_null("CollisionShape3D") as CollisionShape3D
+	print("WakeUpTrigger: Initializing trigger.")
+	_collision_shape = (get_node_or_null("CollisionShape3D") as CollisionShape3D)
 	_update_visuals()
 
 	if Engine.is_editor_hint():
@@ -175,23 +176,22 @@ func _ready() -> void:
 		body_entered.connect(_on_body_entered)
 
 	if trigger_on_start:
-		# Lock input and force black overlay immediately on frame 0
 		Events.player_cinematic_lock_requested.emit(true)
 		Events.screen_blackout_instant_requested.emit(true, max_blur, fade_color)
 		_find_and_trigger_player()
 
 
-## Rebuilds collision shape and synchronizes [EditorTriggerVisualizer] properties.
+## Rebuilds collision shape and synchronizes [EditorTriggerVisualizer].
 func _update_visuals() -> void:
 	if not is_inside_tree():
 		return
 
 	if not is_instance_valid(_collision_shape):
-		_collision_shape = get_node_or_null("CollisionShape3D") as CollisionShape3D
+		_collision_shape = (get_node_or_null("CollisionShape3D") as CollisionShape3D)
 
 	if is_instance_valid(_collision_shape):
 		if shape_type == EditorTriggerVisualizer.ShapeType.BOX:
-			if not _collision_shape.shape is BoxShape3D:
+			if not (_collision_shape.shape is BoxShape3D):
 				_collision_shape.shape = BoxShape3D.new()
 			else:
 				_collision_shape.shape = _collision_shape.shape.duplicate()
@@ -199,7 +199,7 @@ func _update_visuals() -> void:
 			var box_shape: BoxShape3D = _collision_shape.shape as BoxShape3D
 			box_shape.size = trigger_size
 		elif shape_type == EditorTriggerVisualizer.ShapeType.SPHERE:
-			if not _collision_shape.shape is SphereShape3D:
+			if not (_collision_shape.shape is SphereShape3D):
 				_collision_shape.shape = SphereShape3D.new()
 			else:
 				_collision_shape.shape = _collision_shape.shape.duplicate()
@@ -237,54 +237,57 @@ func _get_visualizer() -> EditorTriggerVisualizer:
 
 ## Finds player node and prepares initial ground placement immediately.
 func _find_and_trigger_player() -> void:
+	print("WakeUpTrigger: Searching for player in scene tree.")
 	if trigger_once and _triggered:
 		return
 
 	var players: Array[Node] = get_tree().get_nodes_in_group(&"player")
-	if not players.is_empty() and players[0] is Node3D:
-		var player: Node3D = players[0] as Node3D
-		_prepare_lying_pose(player)
-		_start_sequence(player)
+	if not players.is_empty() and players[0] is Player:
+		var p: Player = players[0] as Player
+		_prepare_lying_pose(p)
+		_start_sequence(p)
 	else:
 		call_deferred(&"_find_and_trigger_player")
 
 
 ## Evaluates player body entry collision.
 func _on_body_entered(body: Node3D) -> void:
+	print("WakeUpTrigger: _on_body_entered triggered by: ", body.name)
 	if Engine.is_editor_hint():
 		return
 
-	if not body.is_in_group(&"player"):
+	var p: Player = body as Player
+	if not is_instance_valid(p):
 		return
 
 	if trigger_once and _triggered:
 		return
 
-	print("WakeUpTrigger: Player entered trigger zone: ", body.name)
-	_prepare_lying_pose(body)
-	_start_sequence(body)
+	print("WakeUpTrigger: Player entered trigger zone: ", p.name)
+	_prepare_lying_pose(p)
+	_start_sequence(p)
 
 
 ## Presets camera position on ground while hidden behind solid blackout.
-func _prepare_lying_pose(player: Node3D) -> void:
-	_active_camera = _find_camera(player)
+func _prepare_lying_pose(p: Player) -> void:
+	print("WakeUpTrigger: Preparing ground lying pose.")
+	_active_camera = _find_camera(p)
 	if not is_instance_valid(_active_camera):
 		return
 
 	_default_cam_position = _active_camera.position
 	_default_cam_rotation = _active_camera.rotation_degrees
 
-	# Raycast to ground to compute exact floor delta
 	var space_state: PhysicsDirectSpaceState3D = _active_camera.get_world_3d().direct_space_state
 	var ray_params: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-		_active_camera.global_position, _active_camera.global_position + Vector3.DOWN * 6.0
+		_active_camera.global_position, _active_camera.global_position + (Vector3.DOWN * 6.0)
 	)
-	ray_params.exclude = [player.get_rid()]
+	ray_params.exclude = [p.get_rid()]
 	var ray_hit: Dictionary = space_state.intersect_ray(ray_params)
 
-	var floor_y: float = player.global_position.y
+	var floor_y: float = p.global_position.y
 	if not ray_hit.is_empty():
-		floor_y = (ray_hit.position as Vector3).y
+		floor_y = (ray_hit[&"position"] as Vector3).y
 
 	var target_world_y: float = floor_y + lying_camera_height
 	var height_drop: float = _active_camera.global_position.y - target_world_y
@@ -293,30 +296,26 @@ func _prepare_lying_pose(player: Node3D) -> void:
 		_default_cam_position.x, _default_cam_position.y - height_drop, _default_cam_position.z
 	)
 
-	# Snap down instantly in the dark — tilted looking slightly up from the floor
 	_active_camera.position = _lying_cam_position
 	_active_camera.rotation_degrees = Vector3(12.0, _default_cam_rotation.y, lying_camera_roll)
 
 
 ## Orchestrates camera positioning, blinks, and stand-up motion sequentially.
-func _start_sequence(player: Node3D) -> void:
+func _start_sequence(p: Player) -> void:
 	if trigger_once and _triggered:
 		return
 
 	_triggered = true
-	print("WakeUpTrigger: Starting wake-up sequence for: ", player.name)
+	print("WakeUpTrigger: Starting wake-up sequence for: ", p.name)
 	Events.player_cinematic_lock_requested.emit(true)
 	Events.screen_blackout_instant_requested.emit(true, max_blur, fade_color)
 
-	# 1. Schedule narrative text during solid blackness
-	var total_text_time: float = 0.0
+	var total_text_time: float = 0.5
 	if not intro_text.is_empty():
 		total_text_time = (
 			text_delay + text_fade_in_duration + text_hold_duration + text_fade_out_duration
 		)
 		_dispatch_intro_text()
-	else:
-		total_text_time = 0.5
 
 	if _seq_tween and _seq_tween.is_valid():
 		_seq_tween.kill()
@@ -324,29 +323,25 @@ func _start_sequence(player: Node3D) -> void:
 	_seq_tween = create_tween()
 	_seq_tween.tween_interval(total_text_time)
 
-	# 2. Blackness dissolves, eyelids open, and player sees blurry surroundings from ground
 	_seq_tween.tween_callback(
 		func() -> void:
-			print("WakeUpTrigger: Narrative text finished. Eyes opening from floor.")
+			print("WakeUpTrigger: Eyes opening from floor.")
 			Events.screen_wake_up_requested.emit(
 				fade_color, eye_open_duration, max_blur, blink_count, blur_clear_duration
 			)
 	)
 
-	# 3. While eyelids open and blur clears, tilt head up to look at the ceiling/sky
 	_seq_tween.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
 	_seq_tween.tween_property(_active_camera, "rotation_degrees:x", look_up_pitch, look_up_duration)
 	_seq_tween.parallel().tween_property(
 		_active_camera, "rotation_degrees:z", lying_camera_roll * 0.2, look_up_duration
 	)
 
-	# 4. Linger looking up as surrounding blur finishes clearing
 	var remaining_blur_time: float = maxf(
 		0.1, (eye_open_duration + blur_clear_duration) - look_up_duration
 	)
 	_seq_tween.tween_interval(remaining_blur_time + gaze_hold_duration)
 
-	# 5. Stand up from the ground to full standing height and level camera
 	_seq_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	_seq_tween.tween_property(
 		_active_camera, "position:y", _default_cam_position.y, stand_up_duration
@@ -375,6 +370,7 @@ func _dispatch_intro_text() -> void:
 
 ## Finds child [Camera3D] within player node hierarchy.
 func _find_camera(node: Node) -> Camera3D:
+	print("WakeUpTrigger: Scanning node for Camera3D -> ", node.name)
 	if node is Camera3D:
 		return node as Camera3D
 	for child: Node in node.get_children():

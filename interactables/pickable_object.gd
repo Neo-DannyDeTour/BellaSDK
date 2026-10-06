@@ -36,7 +36,7 @@ const MIN_HOLD_DISTANCE: float = 1.2
 @onready var collision: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
 
 ## Default world gravity scalar retrieved from [ProjectSettings].
-@onready var gravity: float = float(ProjectSettings.get_setting("physics/3d/default_gravity", 9.8))
+@onready var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
 
 @export_category("Buoyancy")
 ## Container node holding [Marker3D] points for water buoyancy sampling.
@@ -174,7 +174,7 @@ func _ready() -> void:
 	)
 
 	if not is_instance_valid(interact_comp):
-		interact_comp = get_node_or_null("InteractComponent") as InteractComponent
+		interact_comp = (get_node_or_null("InteractComponent") as InteractComponent)
 	if not is_instance_valid(mesh):
 		mesh = get_node_or_null("Mesh") as Node3D
 	if not is_instance_valid(label):
@@ -215,7 +215,7 @@ func _init_cached_strings() -> void:
 	print("PickableObject: Caching string lookups for UI and TTS.")
 	var target_mesh: Node3D = _resolve_visual_mesh()
 	if is_instance_valid(target_mesh) and target_mesh != self:
-		_cached_mesh_name = target_mesh.name.to_lower().replace("_", " ").strip_edges()
+		_cached_mesh_name = (target_mesh.name.to_lower().replace("_", " ").strip_edges())
 	else:
 		_cached_mesh_name = "object"
 
@@ -250,12 +250,14 @@ func _on_noclip_toggled(is_flying: bool) -> void:
 
 ## Toggles physics process mode when physics sleeping state changes.
 func _on_sleeping_state_changed() -> void:
+	print("PickableObject: Sleeping state changed to ", sleeping)
 	_update_process_state()
 
 
 ## Evaluates whether physics processing should be enabled or disabled.
 func _update_process_state() -> void:
 	var should_process: bool = is_held or is_in_water or not sleeping or _standing_lock_ticks > 0
+	print("PickableObject: Updating physics process state to: ", should_process)
 	set_physics_process(should_process)
 
 
@@ -277,7 +279,10 @@ func pick_up(target: Marker3D, player_node: Node3D) -> void:
 	is_held = true
 	hold_target = target
 	holder = player_node
-	_cached_exclude_rids = [get_rid(), holder.get_rid()]
+	_cached_exclude_rids = [get_rid()]
+	if holder is CollisionObject3D:
+		var col_holder: CollisionObject3D = holder as CollisionObject3D
+		_cached_exclude_rids.append(col_holder.get_rid())
 
 	var cam: Camera3D = _get_camera()
 	var cam_yaw: float = (
@@ -351,7 +356,9 @@ func drop() -> void:
 			notify_holder_heavy_carry(holder, false, 0.0)
 
 		if "velocity" in holder:
-			linear_velocity = holder.get("velocity") as Vector3
+			var raw_vel: Variant = holder.get(&"velocity")
+			if raw_vel is Vector3:
+				linear_velocity = raw_vel
 
 		var cam_forward: Vector3 = Vector3.FORWARD
 		var cam: Camera3D = _get_camera()
@@ -460,6 +467,9 @@ func set_model_transparency(parent_node: Node, alpha: float) -> void:
 	if not is_instance_valid(parent_node):
 		return
 
+	if parent_node == self:
+		print("PickableObject: Setting model transparency to ", alpha)
+
 	if parent_node is GeometryInstance3D:
 		var geom: GeometryInstance3D = parent_node as GeometryInstance3D
 		geom.transparency = alpha
@@ -497,6 +507,7 @@ func register_player_standing() -> void:
 	if not lock_on_player_stand or is_held:
 		return
 
+	print("PickableObject: Player registered standing on object: ", name)
 	_standing_lock_ticks = 4
 	if not freeze:
 		freeze_mode = RigidBody3D.FREEZE_MODE_STATIC
@@ -532,6 +543,7 @@ func wait_to_enable_collision(p_holder: Node3D) -> void:
 
 ## Re-enables interact component once the object has settled to rest.
 func wait_for_rest_to_enable_interact() -> void:
+	print("PickableObject: Waiting for rest to enable interact.")
 	if is_instance_valid(interact_comp):
 		interact_comp.set("is_currently_focused", false)
 		interact_comp.process_mode = Node.PROCESS_MODE_DISABLED
@@ -652,7 +664,8 @@ func _process_standard_hold(_delta: float) -> void:
 			_cached_exclude_rids
 		)
 		if not floor_hit.is_empty():
-			var ground_y: float = (floor_hit.position as Vector3).y
+			var hit_pos: Vector3 = floor_hit.get("position", Vector3.ZERO)
+			var ground_y: float = hit_pos.y
 			target_pos.y = ground_y + bottom_extent + heavy_floor_clearance
 		else:
 			target_pos.y = (
@@ -674,9 +687,12 @@ func _process_standard_hold(_delta: float) -> void:
 		drop()
 		return
 
-	var holder_velocity: Vector3 = (
-		holder.get("velocity") as Vector3 if "velocity" in holder else Vector3.ZERO
-	)
+	var holder_velocity: Vector3 = Vector3.ZERO
+	if "velocity" in holder:
+		var raw_vel: Variant = holder.get(&"velocity")
+		if raw_vel is Vector3:
+			holder_velocity = raw_vel
+
 	var distance_vector: Vector3 = target_pos - global_position
 	var pos_stiffness: float = 14.0 if is_heavy else 20.0
 	linear_velocity = holder_velocity + (distance_vector * pos_stiffness)
@@ -687,7 +703,6 @@ func _process_standard_hold(_delta: float) -> void:
 		else holder.global_transform.basis.get_euler().y
 	)
 
-	# Smoothly ease yaw alignment while returning pitch and roll upright
 	var elapsed_ratio: float = clampf(float(Time.get_ticks_msec() - _grab_time) / 350.0, 0.0, 1.0)
 	var current_held_yaw: float = lerpf(_held_relative_yaw, 0.0, elapsed_ratio)
 	var target_yaw: float = cam_yaw + current_held_yaw
@@ -702,7 +717,6 @@ func _process_standard_hold(_delta: float) -> void:
 	var angle: float = 2.0 * acos(clampf(q_diff.w, -1.0, 1.0))
 	var axis_len_sq: float = q_diff.x * q_diff.x + q_diff.y * q_diff.y + q_diff.z * q_diff.z
 
-	# Damped angular spring allows smooth upright rotation without instant snapping
 	var rot_stiffness: float = 8.0 if is_heavy else 18.0
 	if axis_len_sq > 0.0001:
 		var axis: Vector3 = Vector3(q_diff.x, q_diff.y, q_diff.z) / sqrt(axis_len_sq)
@@ -725,9 +739,11 @@ func _process_buoyancy() -> void:
 				if not is_instance_valid(p):
 					continue
 
-				var wave_height: float = float(
-					current_water_node.call("get_wave_height_at_pos", p.global_position)
-				)
+				var wave_height: float = 0.0
+				if current_water_node.has_method("get_wave_height_at_pos"):
+					wave_height = current_water_node.call(
+						"get_wave_height_at_pos", p.global_position
+					)
 				var depth: float = wave_height - p.global_position.y
 
 				if depth > 0.0:
@@ -767,7 +783,6 @@ func _on_body_entered(body: Node) -> void:
 	if is_held:
 		return
 
-	# Prevent self-inflicted damage when walking or tumbling near the player
 	if body == holder or body.is_in_group(&"player") or body is CharacterBody3D:
 		return
 
@@ -781,7 +796,7 @@ func _on_body_entered(body: Node) -> void:
 ## Returns cached player [Camera3D] from the current active viewport.
 func _get_camera() -> Camera3D:
 	if not is_instance_valid(_cached_camera):
-		_cached_camera = get_viewport().get_camera_3d() if get_viewport() else null
+		_cached_camera = (get_viewport().get_camera_3d() if get_viewport() else null)
 	return _cached_camera
 
 

@@ -104,14 +104,18 @@ func pick_up(_target: Marker3D, player: Node3D) -> void:
 	var query_pos: Vector3 = Vector3(target_stand_pos.x, query_y, target_stand_pos.z)
 
 	_stand_shape_query.transform = Transform3D(Basis(), query_pos)
-	_stand_shape_query.exclude = [get_rid(), player.get_rid()]
+
+	var exclude_rids: Array[RID] = [get_rid()]
+	if player is CollisionObject3D:
+		exclude_rids.append((player as CollisionObject3D).get_rid())
+	_stand_shape_query.exclude = exclude_rids
 
 	if not space_state.intersect_shape(_stand_shape_query).is_empty():
 		return
 
 	_is_animating = true
 	holder = player
-	_cached_exclude_rids = [get_rid(), holder.get_rid()]
+	_cached_exclude_rids = exclude_rids.duplicate()
 
 	add_collision_exception_with(holder)
 	notify_holder_stun(holder, true)

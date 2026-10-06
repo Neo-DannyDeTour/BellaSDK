@@ -1,30 +1,39 @@
 [gd_scene format=3 uid="uid://dwusg7ievwjmh"]
 
-[ext_resource type="Script" uid="uid://co0yykjjmnb8w" path="res://interactables/universal_cable_3d.gd" id="1_1k8xa"]
+[ext_resource type="Script" uid="uid://cbwy13aembb7w" path="res://shared/health_component.gd" id="1_1ekby"]
 [ext_resource type="Script" uid="uid://bed0r62y5bkkh" path="res://player/breakable_rope.gd" id="2_1k8xa"]
 
-[sub_resource type="Curve3D" id="Curve3D_h75n5"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_h75n5"]
+albedo_color = Color(0.25, 0.18, 0.12, 1)
+roughness = 0.9
 
-[sub_resource type="CylinderMesh" id="CylinderMesh_7wyys"]
-top_radius = 0.05
-bottom_radius = 0.05
-height = 21.01036
+[sub_resource type="CylinderMesh" id="CylinderMesh_36oy5"]
+material = SubResource("StandardMaterial3D_h75n5")
+top_radius = 0.04
+bottom_radius = 0.04
+height = 3.0
+radial_segments = 8
+rings = 1
 
-[sub_resource type="CylinderShape3D" id="CylinderShape3D_e3weu"]
-height = 21.01036
-radius = 0.05
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_g8ami"]
+height = 3.0
+radius = 0.04
 
-[node name="UniversalCable3D" type="Path3D" unique_id=190499329]
-curve = SubResource("Curve3D_h75n5")
-script = ExtResource("1_1k8xa")
-metadata/_custom_type_script = "uid://co0yykjjmnb8w"
-
-[node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=2068279624]
+[node name="BreakableRope" type="StaticBody3D" unique_id=1071536592]
+collision_layer = 4
+collision_mask = 0
 script = ExtResource("2_1k8xa")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="StaticBody3D" unique_id=1226795120]
-transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0.58356, 3.6988077, 5.308979)
-mesh = SubResource("CylinderMesh_7wyys")
+[node name="VisualMesh" type="MeshInstance3D" parent="." unique_id=1226795120]
+transform = Transform3D(0, 0, 1, 0, -1, 0, -1, 0, 0, 0, -1.5, 0)
+mesh = SubResource("CylinderMesh_36oy5")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=380681928]
-shape = SubResource("CylinderShape3D_e3weu")
+[node name="CollisionShape" type="CollisionShape3D" parent="." unique_id=380681928]
+transform = Transform3D(0, 0, 1, 0, -1, 0, -1, 0, 0, 0, -1.5, 0)
+shape = SubResource("CylinderShape3D_g8ami")
+
+[node name="HealthComponent" type="Node" parent="." unique_id=1028063556]
+script = ExtResource("1_1ekby")
+max_health = 10
+use_pooling = false
+metadata/_custom_type_script = "uid://cbwy13aembb7w"

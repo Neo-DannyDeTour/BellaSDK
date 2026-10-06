@@ -1,7 +1,4 @@
-## A player state that locks the player into an animation pushing a turnable wheel object.
-##
-## This state disables standard locomotion and locks the player's transform to an anchor point
-## on the wheel, routing forward/backward inputs into the wheel's rotation system.
+## Locks player to [PushWheel] anchor, disabling free movement and mapping input to rotation.
 class_name PushWheelState
 extends PlayerState
 
@@ -15,74 +12,71 @@ var _exit_cooldown: float = 0.0
 var _is_mounting: bool = false
 
 
-## Enters the push wheel state. Receives the `target_transform` to tween to, and the `wheel`
-## node to interact with.
-##
-## [param msg] Initialization data passed from the state machine containing target transforms
-## and the wheel object.
+## Enters state, tweens player to target transform, and attaches to [PushWheel].
 func enter(msg: Dictionary = {}) -> void:
+	print("PushWheelState: enter() called. Setting up wheel interaction.")
 	_is_mounting = false
 
-	if msg.has("target_transform"):
-		var t: Transform3D = msg["target_transform"]
+	if msg.has(&"target_transform"):
+		var t: Transform3D = msg[&"target_transform"]
 		_is_mounting = true
 		var tween: Tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
-		tween.tween_property(player, "global_transform", t, 0.4)
-		# Strict typing for the lambda callback
+		tween.tween_property(player, ^"global_transform", t, 0.4)
 		tween.finished.connect(func() -> void: _is_mounting = false)
 
-	if msg.has("wheel"):
-		active_wheel = msg["wheel"] as PushWheel
+	if msg.has(&"wheel"):
+		active_wheel = msg[&"wheel"] as PushWheel
 		print("PushWheelState: Entered. Attached to wheel.")
 
 		_exit_cooldown = 0.2
 
-		loco_component = player.get_node_or_null("LocomotionComponent") as PlayerLocomotionComponent
+		loco_component = (
+			player.get_node_or_null(^"LocomotionComponent") as PlayerLocomotionComponent
+		)
+
 		if is_instance_valid(loco_component):
 			loco_component.set_physics_active(false)
 			loco_component.reset_momentum()
 			print("PushWheelState: Disabled LocomotionComponent.")
 	else:
 		push_error("PushWheelState: No wheel provided in enter message.")
-		state_machine.transition_to("Ground")
+		state_machine.transition_to(&"Ground")
 
 
-## Corresponds to [method _physics_process]. Routes movement input into the wheel mechanism.
-##
-## [param delta] The physics frame delta time.
+## Routes movement input into wheel rotation and syncs player transform to anchor.
 func physics_update(delta: float) -> void:
+	print("PushWheelState: physics_update() processing wheel rotation frame.")
 	if not is_instance_valid(active_wheel) or not active_wheel.is_installed:
-		state_machine.transition_to("Ground")
+		state_machine.transition_to(&"Ground")
 		return
 
 	if _exit_cooldown > 0.0:
 		_exit_cooldown -= delta
 	else:
 		if (
-			GestureInputManager.is_action_just_pressed("interact")
-			or GestureInputManager.is_action_just_pressed("jump")
+			GestureInputManager.is_action_just_pressed(&"interact")
+			or GestureInputManager.is_action_just_pressed(&"jump")
 		):
 			print("PushWheelState: Player manually released wheel.")
-			state_machine.transition_to("Ground")
+			state_machine.transition_to(&"Ground")
 			return
 
-	var push_input: float = GestureInputManager.get_axis("backward", "forward")
+	var push_input: float = GestureInputManager.get_axis(&"backward", &"forward")
 	if push_input != 0.0:
 		var sync_multiplier: float = _calculate_input_sync_multiplier()
 		active_wheel.push(push_input * sync_multiplier * delta)
 
-	# Only lock the transform IF the mounting tween is finished
 	if not _is_mounting and is_instance_valid(active_wheel.current_active_anchor):
 		player.global_transform = active_wheel.current_active_anchor.global_transform
 
-	if player.get("head") != null:
-		var head: Node3D = player.head as Node3D
+	var head: Node3D = player.get(&"head") as Node3D
+	if is_instance_valid(head):
 		head.rotation.x = lerp_angle(head.rotation.x, 0.0, 10.0 * delta)
 
 
-## Cleans up state properties and restores the player's locomotion on exit.
+## Restores player locomotion component and clears active wheel reference.
 func exit() -> void:
-	print("PushWheelState: Exiting state.")
+	print("PushWheelState: exit() called. Restoring locomotion.")
 	if is_instance_valid(loco_component):
 		loco_component.set_physics_active(true)
 		print("PushWheelState: Re-enabled LocomotionComponent.")
@@ -90,11 +84,9 @@ func exit() -> void:
 	active_wheel = null
 
 
-## Calculates a multiplier (1.0 or -1.0) based on the player's physical orientation relative
-## to the wheel's rotation axis to ensure "forward" always pushes the wheel correctly.
-##
-## Returns a float of 1.0 or -1.0 depending on the calculated dot product alignment.
+## Calculates input multiplier based on player orientation relative to spin axis.
 func _calculate_input_sync_multiplier() -> float:
+	print("PushWheelState: _calculate_input_sync_multiplier() determining axis alignment.")
 	var dir_multi: float = -1.0 if active_wheel.turn_clockwise else 1.0
 	var angular_velocity_dir: Vector3 = (active_wheel.spin_axis * dir_multi).normalized()
 
@@ -108,6 +100,4 @@ func _calculate_input_sync_multiplier() -> float:
 	var player_forward: Vector3 = -player.global_transform.basis.z.normalized()
 	var alignment: float = positive_progress_linear_dir.dot(player_forward)
 
-	# If pressing forward naturally aligns with positive progress, multiply by 1.0.
-	# If on the opposite side, it results in a negative alignment, so we invert the input.
 	return 1.0 if alignment >= 0.0 else -1.0

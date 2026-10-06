@@ -491,12 +491,12 @@ signal transition_requested(target_state_name: StringName, message: Dictionary)
 @warning_ignore("unused_signal")
 signal player_cinematic_lock_requested(is_locked: bool)
 
-@warning_ignore("unused_signal")
 ## Emitted to snap screen overlay to solid black with blur and color.
+@warning_ignore("unused_signal")
 signal screen_blackout_instant_requested(is_black: bool, blur: float, fade_color: Color)
 
-@warning_ignore("unused_signal")
 ## Emitted to request wake-up eyelid opening and blur clear transition.
+@warning_ignore("unused_signal")
 signal screen_wake_up_requested(
 	fade_color: Color,
 	eye_open_time: float,
@@ -505,8 +505,8 @@ signal screen_wake_up_requested(
 	blur_clear_time: float
 )
 
-@warning_ignore("unused_signal")
 ## Emitted when cinematic narrative or chapter text needs to be displayed.
+@warning_ignore("unused_signal")
 signal wake_up_text_requested(text: String, fade_in: float, hold: float, fade_out: float)
 
 ## Visual animation style presets for chapter title card sequences.
@@ -546,6 +546,7 @@ func _ready() -> void:
 
 
 ## Replaces root theme default font and forces an immediate UI redraw.
+## [param font_name] Identifier key of the newly selected font.
 func _on_font_changed(font_name: String) -> void:
 	print("Events: Changing global font to '", font_name, "'.")
 
@@ -575,6 +576,7 @@ func _on_font_changed(font_name: String) -> void:
 
 
 ## Dynamically iterates the GlobalSettings font registry and caches resources.
+@warning_ignore("unsafe_cast")
 func _load_registered_fonts() -> void:
 	print("Events: Loading registered fonts from GlobalSettings.")
 	if _is_cached:
@@ -596,8 +598,8 @@ func _load_registered_fonts() -> void:
 		if not entry_variant is Dictionary:
 			continue
 		var entry: Dictionary = entry_variant as Dictionary
-		var id: String = entry.get("id", "") as String
-		var path: String = entry.get("path", "") as String
+		var id: String = str(entry.get("id", ""))
+		var path: String = str(entry.get("path", ""))
 
 		if id.is_empty() or id == "default":
 			continue
@@ -616,6 +618,8 @@ func _load_registered_fonts() -> void:
 
 
 ## Recursively propagates explicit font overrides down active Control nodes.
+## [param parent] Root control node receiving font replacements.
+## [param new_font] Selected font resource applied to children.
 func _apply_font_override_recursive(parent: Node, new_font: Font) -> void:
 	print("Events: Applying recursive font override on node: ", parent)
 	if not is_instance_valid(parent):

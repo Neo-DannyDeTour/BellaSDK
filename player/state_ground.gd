@@ -38,10 +38,13 @@ func enter(msg: Dictionary = {}) -> void:
 	player.velocity.y = 0.0
 	current_speed = 0.0
 
-	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	var loco: PlayerLocomotionComponent = (
+		player.get(&"locomotion_component") as PlayerLocomotionComponent
+	)
 	if is_instance_valid(loco) and is_instance_valid(loco.footstep_manager):
 		var fm: FootstepManager = loco.footstep_manager as FootstepManager
-		fm.stamp_landing_crater(fall_speed)
+		if is_instance_valid(fm):
+			fm.stamp_landing_crater(fall_speed)
 
 	_toggle_crouch_enabled = bool(
 		GlobalSettings.get_setting("Accessibility", "toggle_crouch", false)
@@ -55,7 +58,7 @@ func enter(msg: Dictionary = {}) -> void:
 
 	if msg.has(&"jump_buffered") and msg[&"jump_buffered"] == true:
 		var interact: PlayerInteractionComponent = (
-			player.interaction_component as PlayerInteractionComponent
+			player.get(&"interaction_component") as PlayerInteractionComponent
 		)
 		var is_holding_heavy: bool = is_instance_valid(interact) and interact.is_heavy_carrying
 
@@ -69,9 +72,12 @@ func enter(msg: Dictionary = {}) -> void:
 
 ## Processes surfaces, stair snapping, inputs, and ground momentum via [MathUtils].
 func physics_update(delta: float) -> void:
-	#print("StateGround: physics_update() processing ground locomotion frame.")
-	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
-	var env: PlayerEnvironmentComponent = player.environment_component as PlayerEnvironmentComponent
+	var loco: PlayerLocomotionComponent = (
+		player.get(&"locomotion_component") as PlayerLocomotionComponent
+	)
+	var env: PlayerEnvironmentComponent = (
+		player.get(&"environment_component") as PlayerEnvironmentComponent
+	)
 
 	if (
 		is_instance_valid(env)
@@ -123,7 +129,7 @@ func physics_update(delta: float) -> void:
 
 	if GestureInputManager.is_action_just_triggered(&"jump"):
 		var interact: PlayerInteractionComponent = (
-			player.interaction_component as PlayerInteractionComponent
+			player.get(&"interaction_component") as PlayerInteractionComponent
 		)
 		var is_holding_heavy: bool = is_instance_valid(interact) and interact.is_heavy_carrying
 
@@ -160,7 +166,9 @@ func physics_update(delta: float) -> void:
 ## Applies upward vertical jump impulse and transitions to [StateAir].
 func _perform_jump() -> void:
 	print("StateGround: _perform_jump() called.")
-	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	var loco: PlayerLocomotionComponent = (
+		player.get(&"locomotion_component") as PlayerLocomotionComponent
+	)
 
 	if loco.sprint_active:
 		player.velocity.y = SPRINT_JUMP_VELOCITY
@@ -183,10 +191,11 @@ func _perform_jump() -> void:
 
 ## Calculates target movement speed based on stance, heavy carrying, and terrain.
 func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
-	#print("StateGround: _calculate_target_speed() evaluating movement velocities.")
-	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	var loco: PlayerLocomotionComponent = (
+		player.get(&"locomotion_component") as PlayerLocomotionComponent
+	)
 	var interact: PlayerInteractionComponent = (
-		player.interaction_component as PlayerInteractionComponent
+		player.get(&"interaction_component") as PlayerInteractionComponent
 	)
 
 	var previous_crouch: bool = loco.crouching
@@ -262,10 +271,11 @@ func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
 
 ## Interpolates horizontal velocity and applies surface friction via [MathUtils].
 func _apply_movement(delta: float, input_dir: Vector2) -> void:
-	#print("StateGround: _apply_movement() applying directional momentum.")
-	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	var loco: PlayerLocomotionComponent = (
+		player.get(&"locomotion_component") as PlayerLocomotionComponent
+	)
 	var interact: PlayerInteractionComponent = (
-		player.interaction_component as PlayerInteractionComponent
+		player.get(&"interaction_component") as PlayerInteractionComponent
 	)
 	var is_holding_heavy: bool = is_instance_valid(interact) and interact.is_heavy_carrying
 
@@ -299,27 +309,36 @@ func _apply_movement(delta: float, input_dir: Vector2) -> void:
 
 ## Updates camera position, footsteps, scanners, and physics pushers.
 func _update_components(delta: float, input_dir: Vector2) -> void:
-	#print("StateGround: _update_components() polling attached subsystems.")
-	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	var loco: PlayerLocomotionComponent = (
+		player.get(&"locomotion_component") as PlayerLocomotionComponent
+	)
 	var interact: PlayerInteractionComponent = (
-		player.interaction_component as PlayerInteractionComponent
+		player.get(&"interaction_component") as PlayerInteractionComponent
 	)
 
-	if is_instance_valid(player.camera_controller):
-		player.camera_controller.update_camera(
-			delta, input_dir, loco.sprint_active, loco.crouching, true, player.velocity.length()
+	var cam_ctrl: Object = player.get(&"camera_controller") as Object
+	if is_instance_valid(cam_ctrl):
+		cam_ctrl.call(
+			&"update_camera",
+			delta,
+			input_dir,
+			loco.sprint_active,
+			loco.crouching,
+			true,
+			player.velocity.length()
 		)
 
-	if is_instance_valid(loco.footstep_manager):
-		loco.footstep_manager.process_surface_and_footsteps(
+	var fm: FootstepManager = loco.footstep_manager as FootstepManager
+	if is_instance_valid(fm):
+		fm.process_surface_and_footsteps(
 			delta, true, player.velocity.length(), loco.sprint_active, loco.crouching
 		)
-		loco.on_ice = bool(loco.footstep_manager.get(&"is_on_ice"))
+		loco.on_ice = bool(fm.get(&"is_on_ice"))
 
-	if is_instance_valid(interact.interaction_scanner):
+	if is_instance_valid(interact) and is_instance_valid(interact.interaction_scanner):
 		interact.interaction_scanner.process_interaction(delta)
 
 	if is_instance_valid(loco.physics_pusher):
-		loco.physics_pusher.process_pushes(
-			interact.held_item, loco.last_velocity, loco.sprinting_speed
+		loco.physics_pusher.call(
+			&"process_pushes", interact.held_item, loco.last_velocity, loco.sprinting_speed
 		)

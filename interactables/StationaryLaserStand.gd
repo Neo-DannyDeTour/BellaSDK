@@ -15,6 +15,7 @@ const MAX_TRAIL_DECALS: int = 60
 @export var rotation_speed: float = 2.0
 
 @export_group("Object Pools")
+
 ## Dedicated [ObjectPool] managing reusable scorch trail [Decal] nodes.
 @export var trail_pool: ObjectPool
 
@@ -27,8 +28,8 @@ const MAX_TRAIL_DECALS: int = 60
 ## Indicates whether player currently exercises active manual control.
 var is_controlled: bool = false
 
-## Reference to [CharacterBody3D] player controller operating the stand.
-var controlling_player: CharacterBody3D = null
+## Reference to [Player] controller operating the stand.
+var controlling_player: Player = null
 
 ## Guard preventing immediate detachment on same frame control was taken.
 var _just_attached: bool = false
@@ -144,7 +145,7 @@ func _preallocate_beam_pools() -> void:
 		_beam_pool.append(beam)
 
 		if is_instance_valid(base_beam_particles):
-			var bp: GPUParticles3D = base_beam_particles.duplicate()
+			var bp: GPUParticles3D = base_beam_particles.duplicate() as GPUParticles3D
 			bp.top_level = true
 			bp.emitting = false
 			if bp.process_material:
@@ -155,7 +156,7 @@ func _preallocate_beam_pools() -> void:
 			_beam_particles_pool.append(bp)
 
 		if is_instance_valid(base_smoke_particles):
-			var sp: GPUParticles3D = base_smoke_particles.duplicate()
+			var sp: GPUParticles3D = base_smoke_particles.duplicate() as GPUParticles3D
 			sp.top_level = true
 			sp.emitting = false
 			if sp.process_material:
@@ -166,7 +167,7 @@ func _preallocate_beam_pools() -> void:
 			_smoke_particles_pool.append(sp)
 
 		if is_instance_valid(base_impact_particles):
-			var ip: GPUParticles3D = base_impact_particles.duplicate()
+			var ip: GPUParticles3D = base_impact_particles.duplicate() as GPUParticles3D
 			ip.top_level = true
 			ip.emitting = false
 			if ip.process_material:
@@ -246,8 +247,8 @@ func _physics_process(delta: float) -> void:
 
 ## Handles horizontal rotational user input during player control.
 func _handle_rotation_input(delta: float) -> void:
-	var turn_input: float = GestureInputManager.get_axis("left", "right")
-	if turn_input != 0.0:
+	var turn_input: float = GestureInputManager.get_axis(&"left", &"right")
+	if not is_zero_approx(turn_input):
 		turret.rotate_y(-turn_input * rotation_speed * delta)
 
 
@@ -289,9 +290,9 @@ func _process_laser() -> void:
 			beam_normals.append(-current_direction)
 			break
 
-		var hit_point: Vector3 = result["position"]
-		var normal: Vector3 = result["normal"]
-		var collider: Object = result["collider"]
+		var hit_point: Vector3 = result[&"position"]
+		var normal: Vector3 = result[&"normal"]
+		var collider: Object = result[&"collider"]
 
 		beam_points.append(hit_point)
 		beam_normals.append(normal)
@@ -309,7 +310,7 @@ func _process_laser() -> void:
 					current_origin = marker.global_position + (current_direction * 0.01)
 				else:
 					current_direction = current_direction.bounce(normal)
-					current_origin = hit_point + normal * 0.01
+					current_origin = hit_point + (normal * 0.01)
 
 				bounces += 1
 				exclude_rids.clear()
@@ -317,7 +318,7 @@ func _process_laser() -> void:
 					exclude_rids.append((collider as CollisionObject3D).get_rid())
 				continue
 
-			if collider.has_method("power_on"):
+			if collider.has_method(&"power_on"):
 				hit_target = collider as Node3D
 
 		break
@@ -332,37 +333,39 @@ func _update_power_target(hit_target: Node3D) -> void:
 		_clear_last_target()
 		if hit_target:
 			print("StationaryLaserStand: Laser hit valid power target: ", hit_target.name)
-			hit_target.call("power_on")
+			hit_target.call(&"power_on")
 			_last_target = hit_target
 
 
 ## Disconnects power from previous target node via [method power_off].
 func _clear_last_target() -> void:
 	if _last_target != null:
-		if _last_target.has_method("power_off"):
+		if _last_target.has_method(&"power_off"):
 			print("StationaryLaserStand: Power connection broken on: ", _last_target.name)
-			_last_target.call("power_off")
+			_last_target.call(&"power_off")
 		_last_target = null
 
 
 ## Toggles control state when interacted with by a player character.
 func _on_interacted(character: CharacterBody3D) -> void:
 	print("StationaryLaserStand: Interaction triggered by: ", character.name)
+	var p: Player = character as Player
+	if not is_instance_valid(p):
+		return
+
 	if not is_controlled:
-		_take_control(character)
+		_take_control(p)
 	else:
 		_release_control()
 
 
 ## Binds given player character to enable manual turret rotation.
-func _take_control(character: CharacterBody3D) -> void:
-	print("StationaryLaserStand: Player took control of stand: ", character.name)
+func _take_control(p: Player) -> void:
+	print("StationaryLaserStand: Player took control of stand: ", p.name)
 	is_controlled = true
 	_just_attached = true
-	controlling_player = character
-
-	if controlling_player.has_method("set_machine_lock"):
-		controlling_player.set_machine_lock(true)
+	controlling_player = p
+	controlling_player.set_machine_lock(true)
 
 
 ## Releases current player from controlling the stationary stand.
@@ -371,8 +374,7 @@ func _release_control() -> void:
 	is_controlled = false
 
 	if is_instance_valid(controlling_player):
-		if controlling_player.has_method("set_machine_lock"):
-			controlling_player.set_machine_lock(false)
+		controlling_player.set_machine_lock(false)
 
 	controlling_player = null
 
@@ -405,7 +407,7 @@ func _update_beam_visuals(points: PackedVector3Array, normals: PackedVector3Arra
 					beam.rotate_object_local(Vector3.RIGHT, PI * 0.5)
 
 				beam.scale = Vector3(1.0, distance, 1.0)
-				beam.set_instance_shader_parameter("segment_length", distance)
+				beam.set_instance_shader_parameter(&"segment_length", distance)
 
 		# 2. Beam Particles
 		if i < _beam_particles_pool.size():
@@ -523,9 +525,9 @@ func _leave_trail_mark(pos: Vector3, xform: Transform3D) -> void:
 ## Checks for standard player detachment inputs to release control.
 func _handle_detachment_input() -> void:
 	if (
-		GestureInputManager.is_action_just_pressed("interact")
-		or GestureInputManager.is_action_just_pressed("jump")
-		or GestureInputManager.is_action_just_pressed("crouch")
+		GestureInputManager.is_action_just_pressed(&"interact")
+		or GestureInputManager.is_action_just_pressed(&"jump")
+		or GestureInputManager.is_action_just_pressed(&"crouch")
 	):
 		print("StationaryLaserStand: Player requested detachment.")
 		_release_control()

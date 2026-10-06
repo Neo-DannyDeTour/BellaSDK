@@ -53,33 +53,42 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	# Toggle on Z press only while an item is held
-	if event is InputEventKey and event.physical_keycode == KEY_Z:
-		if event.pressed and not event.echo:
+	if event is InputEventKey:
+		var key_event: InputEventKey = event as InputEventKey
+		if key_event.physical_keycode == KEY_Z and key_event.pressed and not key_event.echo:
 			_toggle_glass()
 
 	if not _is_active:
 		return
 
 	# Handle mouse wheel scaling
-	if event is InputEventMouseButton and event.pressed:
-		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
-			_adjust_glass(1.0)
-		elif event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-			_adjust_glass(-1.0)
+	if event is InputEventMouseButton:
+		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
+		if mouse_event.pressed:
+			if mouse_event.button_index == MOUSE_BUTTON_WHEEL_UP:
+				_adjust_glass(1.0)
+			elif mouse_event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+				_adjust_glass(-1.0)
 
 
 ## Updates mouse position and aspect ratio uniforms on the shader material each frame.
 ## [param _delta] Frame delta time in seconds.
 func _process(_delta: float) -> void:
-	if _is_active and is_instance_valid(glass_rect) and glass_rect.material != null:
-		var mouse_pos: Vector2 = get_viewport().get_mouse_position()
-		var screen_size: Vector2 = get_viewport().get_visible_rect().size
+	if not _is_active or not is_instance_valid(glass_rect):
+		return
 
-		var mouse_uv: Vector2 = mouse_pos / screen_size
-		var aspect: float = screen_size.x / screen_size.y
+	var shader_mat: ShaderMaterial = glass_rect.material as ShaderMaterial
+	if shader_mat == null:
+		return
 
-		glass_rect.material.set_shader_parameter("mouse_uv", mouse_uv)
-		glass_rect.material.set_shader_parameter("aspect_ratio", aspect)
+	var mouse_pos: Vector2 = get_viewport().get_mouse_position()
+	var screen_size: Vector2 = get_viewport().get_visible_rect().size
+
+	var mouse_uv: Vector2 = mouse_pos / screen_size
+	var aspect: float = screen_size.x / screen_size.y
+
+	shader_mat.set_shader_parameter("mouse_uv", mouse_uv)
+	shader_mat.set_shader_parameter("aspect_ratio", aspect)
 
 
 ## Callback triggered when a note or readable item is opened.
@@ -124,7 +133,11 @@ func _adjust_glass(direction: float) -> void:
 
 ## Pushes current zoom and radius values to the shader material parameters.
 func _update_shader_params() -> void:
-	if is_instance_valid(glass_rect) and glass_rect.material != null:
-		glass_rect.material.set_shader_parameter("zoom", _current_zoom)
-		glass_rect.material.set_shader_parameter("glass_radius_uv", _current_radius)
+	if not is_instance_valid(glass_rect):
+		return
+
+	var shader_mat: ShaderMaterial = glass_rect.material as ShaderMaterial
+	if shader_mat != null:
+		shader_mat.set_shader_parameter("zoom", _current_zoom)
+		shader_mat.set_shader_parameter("glass_radius_uv", _current_radius)
 		print("MagnifyingGlassUI: Shader parameters updated in UI.")

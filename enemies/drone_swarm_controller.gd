@@ -133,8 +133,8 @@ func _ready() -> void:
 		_setup_detector_area()
 		if has_node("/root/Events"):
 			var events: Node = get_node("/root/Events")
-			if events.has_signal("player_damaged"):
-				events.player_damaged.connect(_on_player_damaged)
+			if events.has_signal(&"player_damaged"):
+				events.connect(&"player_damaged", _on_player_damaged)
 	spawn_drones()
 
 

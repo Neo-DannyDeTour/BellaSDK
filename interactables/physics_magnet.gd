@@ -1,46 +1,53 @@
+## Area pulling or repelling RigidBody3D objects in range.
 @tool
 class_name PhysicsMagnet
 extends Area3D
 
-enum MagnetMode { THROWN_ONLY, ALL, REPEL }
+## Defines magnetic influence behavior.
+enum MagnetMode {
+	THROWN_ONLY,
+	ALL,
+	REPEL,
+}
 
 @export_category("Magnet Settings")
-## Mode.
+## Operational mode determining which bodies receive force.
 @export var mode: MagnetMode = MagnetMode.ALL
-## Force multiplier.
+## Force multiplier applied to affected bodies.
 @export var force_multiplier: float = 25.0
-## Throw velocity threshold.
+## Minimum speed squared threshold for [constant MagnetMode.THROWN_ONLY].
 @export var throw_velocity_threshold: float = 3.0
-## Only objects assigned to this group will react to the magnet.
+## Target group name required on bodies for attraction.
 @export var allowed_group: StringName = &"magnetizable"
 
 @export_category("Visuals & Range")
-## Magnet radius.
+## Radius of the magnetic field in meters.
 @export var magnet_radius: float = 5.0:
 	set(value):
 		magnet_radius = value
-		_update_size()
+		if is_inside_tree():
+			_update_size()
 
-## Show visuals.
+## Toggles visibility of the debug visual mesh.
 @export var show_visuals: bool = true:
 	set(value):
 		show_visuals = value
-		_update_visibility()
+		if is_inside_tree():
+			_update_visibility()
 
-## Collision shape.
+## Assigned collision shape defining the area boundary.
 @export var collision_shape: CollisionShape3D
-## Visual mesh.
+## Assigned visual mesh displaying area bounds.
 @export var visual_mesh: MeshInstance3D
 
-## Editor icon.
+## Sprite displayed exclusively within the editor.
 @onready var _editor_icon: Sprite3D = get_node_or_null("%EditorIcon") as Sprite3D
 
-# OPTIMIZATION: Track bodies via signals instead of polling get_overlapping_bodies()
-## Active bodies.
+## Cached active bodies currently inside the magnetic area.
 var _active_bodies: Dictionary = {}
 
 
-## Initializes the magnet area, signal connections, collision settings, and visual bounds.
+## Configures masks, signal hooks, and initial visual dimensions.
 func _ready() -> void:
 	if not Engine.is_editor_hint():
 		if is_instance_valid(_editor_icon):
@@ -51,13 +58,13 @@ func _ready() -> void:
 		set_physics_process(false)
 
 	collision_layer = 0
-	# Mask bits: Layer 1 (value 1) + Layer 3 (value 4) = 5
-	# Or use bitwise syntax: (1 << 0) | (1 << 2)
+	# Layer 1 (Environment) + Layer 3 (Interactive)
 	collision_mask = 5
 	_update_size()
 	_update_visibility()
 
 
+## Registers entered rigid body and wakes up physics process.
 func _on_body_entered(body: Node3D) -> void:
 	if not body is RigidBody3D:
 		return
@@ -65,35 +72,38 @@ func _on_body_entered(body: Node3D) -> void:
 	if not body.is_in_group(allowed_group):
 		return
 
+	print("PhysicsMagnet: Body entered magnet range: ", body.name)
 	_active_bodies[body] = true
-	set_physics_process(true)  # Wake up the magnet
+	set_physics_process(true)
 
 
+## Unregisters exiting rigid body and disables processing when empty.
 func _on_body_exited(body: Node3D) -> void:
 	if _active_bodies.has(body):
+		print("PhysicsMagnet: Body exited magnet range: ", body.name)
 		_active_bodies.erase(body)
 
 		if _active_bodies.is_empty():
-			set_physics_process(false)  # Put the magnet to sleep to save CPU
+			set_physics_process(false)
 
 
+## Applies directional magnetic forces to tracked rigid bodies.
 func _physics_process(_delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
 
-	# OPTIMIZATION: Iterate over the pre-filtered dictionary
 	for body: RigidBody3D in _active_bodies:
 		if is_instance_valid(body) and _should_affect(body):
 			_apply_magnet_force(body)
 
 
+## Validates whether [param body] satisfies mode-specific velocity checks.
 func _should_affect(body: RigidBody3D) -> bool:
 	if body.get("is_held") == true:
 		return false
 
 	if mode == MagnetMode.THROWN_ONLY:
 		var vel: Vector3 = body.linear_velocity
-		# OPTIMIZATION: Compare squared lengths to avoid square root math
 		var threshold_sq: float = throw_velocity_threshold * throw_velocity_threshold
 		if vel.length_squared() < threshold_sq:
 			return false
@@ -101,11 +111,11 @@ func _should_affect(body: RigidBody3D) -> bool:
 	return true
 
 
+## Calculates distance vector and applies central force to [param body].
 func _apply_magnet_force(body: RigidBody3D) -> void:
 	var direction: Vector3 = global_position - body.global_position
 	var dist_sq: float = direction.length_squared()
 
-	# OPTIMIZATION: 0.2 squared is 0.04
 	if dist_sq < 0.04:
 		return
 
@@ -121,15 +131,21 @@ func _apply_magnet_force(body: RigidBody3D) -> void:
 	body.apply_central_force(applied_force)
 
 
+## Synchronizes radius to collision shape and visual sphere mesh.
 func _update_size() -> void:
-	if is_instance_valid(collision_shape) and collision_shape.shape is SphereShape3D:
-		collision_shape.shape.radius = magnet_radius
+	if is_instance_valid(collision_shape):
+		var sphere_shape: SphereShape3D = collision_shape.shape as SphereShape3D
+		if sphere_shape:
+			sphere_shape.radius = magnet_radius
 
-	if is_instance_valid(visual_mesh) and visual_mesh.mesh is SphereMesh:
-		visual_mesh.mesh.radius = magnet_radius
-		visual_mesh.mesh.height = magnet_radius * 2.0
+	if is_instance_valid(visual_mesh):
+		var sphere_mesh: SphereMesh = visual_mesh.mesh as SphereMesh
+		if sphere_mesh:
+			sphere_mesh.radius = magnet_radius
+			sphere_mesh.height = magnet_radius * 2.0
 
 
+## Updates visibility state of [member visual_mesh].
 func _update_visibility() -> void:
 	if is_instance_valid(visual_mesh):
 		visual_mesh.visible = show_visuals

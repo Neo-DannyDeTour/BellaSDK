@@ -69,20 +69,18 @@ func exit() -> void:
 	is_zipline_transitioning = false
 	player.scale = Vector3.ONE
 
+	var p: Player = player as Player
 	var detach_tween: Tween = create_tween().set_parallel(true)
 
-	if is_instance_valid(player.camera_controller):
-		if is_instance_valid(player.camera_controller.head):
-			(
-				detach_tween
-				. tween_property(player.camera_controller.head, "rotation:x", 0.0, 0.15)
-				. set_trans(Tween.TRANS_SINE)
+	if is_instance_valid(p) and is_instance_valid(p.camera_controller):
+		var cam_ctrl: CameraController = p.camera_controller
+		if is_instance_valid(cam_ctrl.head):
+			detach_tween.tween_property(cam_ctrl.head, "rotation:x", 0.0, 0.15).set_trans(
+				Tween.TRANS_SINE
 			)
-		if is_instance_valid(player.camera_controller.eyes):
-			(
-				detach_tween
-				. tween_property(player.camera_controller.eyes, "rotation:z", 0.0, 0.15)
-				. set_trans(Tween.TRANS_SINE)
+		if is_instance_valid(cam_ctrl.eyes):
+			detach_tween.tween_property(cam_ctrl.eyes, "rotation:z", 0.0, 0.15).set_trans(
+				Tween.TRANS_SINE
 			)
 
 
@@ -101,9 +99,11 @@ func physics_update(delta: float) -> void:
 	_calculate_movement(delta, input_dir)
 	_apply_position()
 
-	player.camera_controller.update_camera(
-		delta, input_dir, false, false, false, ZIPLINE_SLIDE_SPEED
-	)
+	var p: Player = player as Player
+	if is_instance_valid(p) and is_instance_valid(p.camera_controller):
+		p.camera_controller.update_camera(
+			delta, input_dir, false, false, false, ZIPLINE_SLIDE_SPEED
+		)
 
 	_check_dismount_conditions()
 
@@ -152,15 +152,15 @@ func _perform_attach_tween() -> void:
 		)
 
 		var pitch_angle: float = asin(downhill_dir.y)
-		if (
-			is_instance_valid(player.camera_controller)
-			and is_instance_valid(player.camera_controller.head)
-		):
-			(
-				attach_tween
-				. tween_property(player.camera_controller.head, "rotation:x", pitch_angle, 0.25)
-				. set_trans(Tween.TRANS_SINE)
-			)
+		var p: Player = player as Player
+		if is_instance_valid(p) and is_instance_valid(p.camera_controller):
+			var cam_ctrl: CameraController = p.camera_controller
+			if is_instance_valid(cam_ctrl.head):
+				(
+					attach_tween
+					. tween_property(cam_ctrl.head, "rotation:x", pitch_angle, 0.25)
+					. set_trans(Tween.TRANS_SINE)
+				)
 
 	attach_tween.set_parallel(false)
 	attach_tween.tween_callback(_on_attach_tween_finished)
@@ -178,7 +178,11 @@ func _calculate_movement(delta: float, input_dir: Vector2) -> void:
 	var downhill_sign: float = 1.0 if zipline_dir.y < 0.0 else -1.0
 	var downhill_vector: Vector3 = zipline_dir * downhill_sign
 
-	var look_forward: Vector3 = player.camera_controller.get_camera_look_dir()
+	var p: Player = player as Player
+	var look_forward: Vector3 = Vector3.FORWARD
+	if is_instance_valid(p) and is_instance_valid(p.camera_controller):
+		look_forward = p.camera_controller.get_camera_look_dir()
+
 	var look_dot_downhill: float = look_forward.dot(downhill_vector)
 
 	var is_looking_downhill: bool = look_dot_downhill > 0.1
@@ -190,7 +194,7 @@ func _calculate_movement(delta: float, input_dir: Vector2) -> void:
 
 	if is_auto_sliding:
 		var fast_slide_speed: float = ZIPLINE_SLIDE_SPEED * 1.8
-		frame_movement = downhill_sign * (fast_slide_speed / zipline_length) * delta
+		frame_movement = (downhill_sign * (fast_slide_speed / zipline_length) * delta)
 	else:
 		if is_looking_downhill and is_pressing_w:
 			is_auto_sliding = true
@@ -234,8 +238,9 @@ func _check_dismount_conditions() -> void:
 ## Applies exit launch impulse and transitions machine into [StateAir].
 func _perform_dismount() -> void:
 	print("StateZipline: _perform_dismount() releasing from zipline.")
-	var env: PlayerEnvironmentComponent = player.environment_component as PlayerEnvironmentComponent
-	if is_instance_valid(env):
+	var p: Player = player as Player
+	if is_instance_valid(p) and is_instance_valid(p.environment_component):
+		var env: PlayerEnvironmentComponent = p.environment_component
 		env.start_zipline_cooldown(0.5)
 
 	var zip_vel: Vector3 = Vector3.ZERO
@@ -243,10 +248,12 @@ func _perform_dismount() -> void:
 		is_instance_valid(current_zipline)
 		and current_zipline.has_method(&"get_current_travel_velocity")
 	):
-		zip_vel = current_zipline.call(&"get_current_travel_velocity") as Vector3
+		zip_vel = (current_zipline.call(&"get_current_travel_velocity") as Vector3)
 
 	if zip_vel.length_squared() < 4.0:
-		var look_dir: Vector3 = player.camera_controller.get_camera_look_dir()
+		var look_dir: Vector3 = Vector3.FORWARD
+		if is_instance_valid(p) and is_instance_valid(p.camera_controller):
+			look_dir = p.camera_controller.get_camera_look_dir()
 		var launch_flat_fwd: Vector3 = Vector3(look_dir.x, 0.0, look_dir.z).normalized()
 
 		if launch_flat_fwd.length_squared() < 0.01:

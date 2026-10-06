@@ -132,7 +132,9 @@ func _ready() -> void:
 
 	print("PushWheel: Initialized. Broken Variant = ", is_broken_variant)
 
-	var interact_comp: Node = get_node_or_null("InteractComponent")
+	var interact_comp: InteractComponent = (
+		get_node_or_null("InteractComponent") as InteractComponent
+	)
 	if is_instance_valid(interact_comp):
 		interact_comp.focused.connect(_on_focused)
 		interact_comp.unfocused.connect(_on_unfocused)
@@ -169,7 +171,7 @@ func _update_stick_collisions() -> void:
 
 	print("PushWheel: Updating physical collisions for sticks.")
 
-	for col: Variant in _stick_collisions:
+	for col: CollisionShape3D in _stick_collisions:
 		if is_instance_valid(col):
 			col.queue_free()
 	_stick_collisions.clear()

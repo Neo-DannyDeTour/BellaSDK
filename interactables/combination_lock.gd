@@ -106,7 +106,7 @@ func _on_code_submitted(code: String) -> void:
 
 		for child: Node in get_children():
 			if child is MeshInstance3D or child is SpotLight3D:
-				child.hide()
+				(child as Node3D).hide()
 
 		if is_instance_valid(interact_comp):
 			interact_comp.process_mode = Node.PROCESS_MODE_DISABLED

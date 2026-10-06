@@ -93,7 +93,7 @@ var _cached_camera: Camera3D
 var _attached_player: CharacterBody3D = null
 
 ## The currently focused interaction component for UI anchoring.
-var _focused_ic: Node
+var _focused_ic: Node3D
 
 ## Stores all dynamically generated rigid body links.
 var _links: Array[RigidBody3D] = []
@@ -168,12 +168,15 @@ func _process(delta: float) -> void:
 
 	if is_instance_valid(_cached_camera) and not player_on_rope:
 		var cam_pos: Vector3 = _cached_camera.global_position
-		if anchor.global_position.distance_squared_to(cam_pos) > CULL_DISTANCE_SQUARED:
+		var dist_sq: float = anchor.global_position.distance_squared_to(cam_pos)
+		if dist_sq > CULL_DISTANCE_SQUARED:
 			return
 
 	_update_visuals()
 
-	if not player_on_rope and is_instance_valid(_focused_ic) and is_instance_valid(interact_label):
+	var has_valid_ic: bool = is_instance_valid(_focused_ic)
+	var has_valid_lbl: bool = is_instance_valid(interact_label)
+	if not player_on_rope and has_valid_ic and has_valid_lbl:
 		_update_label_position()
 
 
@@ -195,12 +198,17 @@ func _update_editor_preview() -> void:
 	var rope_anchor: StaticBody3D = get_node_or_null("Anchor") as StaticBody3D
 	var pivot: Joint3D = get_node_or_null("Pivot") as Joint3D
 
-	if is_instance_valid(rope_mesh) and rope_mesh.mesh:
-		rope_mesh.mesh.height = rope_length
+	if is_instance_valid(rope_mesh) and rope_mesh.mesh != null:
+		if rope_mesh.mesh is PrimitiveMesh:
+			var prim: PrimitiveMesh = rope_mesh.mesh as PrimitiveMesh
+			prim.set("height", rope_length)
 		rope_mesh.position.y = -rope_length * 0.5
 
-	if is_instance_valid(rope_col) and rope_col.shape:
-		rope_col.shape.height = rope_length
+	if is_instance_valid(rope_col) and rope_col.shape != null:
+		if rope_col.shape is CapsuleShape3D:
+			(rope_col.shape as CapsuleShape3D).height = rope_length
+		elif rope_col.shape is CylinderShape3D:
+			(rope_col.shape as CylinderShape3D).height = rope_length
 		rope_col.position.y = -rope_length * 0.5
 
 	if is_instance_valid(rope_anchor):
@@ -250,7 +258,8 @@ func _update_visuals() -> void:
 		var seg_basis: Basis = Basis()
 		if dir.length_squared() > POSITION_EPSILON_SQUARED:
 			var norm_dir: Vector3 = dir.normalized()
-			var up: Vector3 = Vector3.UP if absf(norm_dir.y) < 0.99 else Vector3.RIGHT
+			var is_y_aligned: bool = absf(norm_dir.y) < 0.99
+			var up: Vector3 = Vector3.UP if is_y_aligned else Vector3.RIGHT
 			seg_basis = Basis.looking_at(norm_dir, up)
 			seg_basis = seg_basis.rotated(seg_basis.x, PI / 2.0)
 
@@ -268,7 +277,8 @@ func _update_visuals() -> void:
 		seg_basis = seg_basis.scaled(seg_scale)
 
 		if is_batched:
-			var local_pos: Vector3 = center - _multimesh_instance.global_position
+			var mm_pos: Vector3 = _multimesh_instance.global_position
+			var local_pos: Vector3 = center - mm_pos
 			var xform: Transform3D = Transform3D(seg_basis, local_pos)
 			mmesh.set_instance_transform(i, xform)
 		elif i < _visual_segments.size():
@@ -389,9 +399,12 @@ func _build_dynamic_rope() -> void:
 		if is_instance_valid(interact_template):
 			var ic: Node = interact_template.duplicate()
 			link.add_child(ic)
-			ic.focused.connect(_on_link_focused.bind(ic))
-			ic.unfocused.connect(_on_link_unfocused.bind(ic))
-			ic.interacted.connect(_on_link_interacted.bind(link))
+			if ic.has_signal(&"focused"):
+				ic.connect(&"focused", _on_link_focused.bind(ic))
+			if ic.has_signal(&"unfocused"):
+				ic.connect(&"unfocused", _on_link_unfocused.bind(ic))
+			if ic.has_signal(&"interacted"):
+				ic.connect(&"interacted", _on_link_interacted.bind(link))
 
 		if is_instance_valid(highlight_template):
 			var hc: Node = highlight_template.duplicate()
@@ -434,7 +447,7 @@ func _build_dynamic_rope() -> void:
 				add_child(segment)
 				_visual_segments.append(segment)
 			else:
-				print("PhysicsClimbableRope3D: Failed to cast segment to Node3D; freeing.")
+				print("PhysicsClimbableRope3D: Failed to cast segment to Node3D.")
 				if is_instance_valid(raw_segment):
 					raw_segment.queue_free()
 
@@ -450,7 +463,8 @@ func _build_dynamic_rope() -> void:
 ## Displays the climbing prompt and activates slow motion if configured.
 func _on_link_focused(ic: Node) -> void:
 	if not player_on_rope:
-		_focused_ic = ic
+		if ic is Node3D:
+			_focused_ic = ic as Node3D
 		if is_instance_valid(interact_label):
 			interact_label.show()
 		if activate_slomo:

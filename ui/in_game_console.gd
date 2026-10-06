@@ -146,38 +146,40 @@ func _input(event: InputEvent) -> void:
 
 ## Handles keyboard navigation for command history and autocomplete lists.
 func _on_line_edit_gui_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed:
-		var key_ev: InputEventKey = event as InputEventKey
-		if key_ev.keycode == KEY_UP:
-			print("InGameConsole: Key UP pressed.")
-			command_input.accept_event()
-			if current_matches.is_empty():
-				_navigate_history(-1)
-			else:
-				_navigate_suggestions(-1)
+	if not (event is InputEventKey and event.is_pressed()):
+		return
 
-		elif key_ev.keycode == KEY_DOWN:
-			print("InGameConsole: Key DOWN pressed.")
-			command_input.accept_event()
-			if current_matches.is_empty():
-				_navigate_history(1)
-			else:
-				_navigate_suggestions(1)
+	var key_ev: InputEventKey = event as InputEventKey
+	if key_ev.keycode == KEY_UP:
+		print("InGameConsole: Key UP pressed.")
+		command_input.accept_event()
+		if current_matches.is_empty():
+			_navigate_history(-1)
+		else:
+			_navigate_suggestions(-1)
 
-		elif key_ev.keycode == KEY_TAB:
-			print("InGameConsole: Key TAB pressed.")
-			command_input.accept_event()
-			if not current_matches.is_empty():
-				print("InGameConsole: Autocomplete selected match via Tab.")
-				var match_text: String = current_matches[maxi(0, match_index)]
-				command_input.text = match_text + " "
-				command_input.caret_column = command_input.text.length()
-				_on_text_changed(command_input.text)
+	elif key_ev.keycode == KEY_DOWN:
+		print("InGameConsole: Key DOWN pressed.")
+		command_input.accept_event()
+		if current_matches.is_empty():
+			_navigate_history(1)
+		else:
+			_navigate_suggestions(1)
 
-		elif key_ev.keycode in [KEY_ENTER, KEY_KP_ENTER]:
-			print("InGameConsole: Key ENTER pressed.")
-			command_input.accept_event()
-			_on_command_submitted(command_input.text)
+	elif key_ev.keycode == KEY_TAB:
+		print("InGameConsole: Key TAB pressed.")
+		command_input.accept_event()
+		if not current_matches.is_empty():
+			print("InGameConsole: Autocomplete selected match via Tab.")
+			var match_text: String = current_matches[maxi(0, match_index)]
+			command_input.text = match_text + " "
+			command_input.caret_column = command_input.text.length()
+			_on_text_changed(command_input.text)
+
+	elif key_ev.keycode in [KEY_ENTER, KEY_KP_ENTER]:
+		print("InGameConsole: Key ENTER pressed.")
+		command_input.accept_event()
+		_on_command_submitted(command_input.text)
 
 
 ## Normalizes spaces and refreshes autocomplete suggestions.

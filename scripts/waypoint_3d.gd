@@ -43,7 +43,7 @@ const SHAPE_TYPE: Variant = EditorTriggerVisualizer.ShapeType
 
 @export_group("Trigger Volume")
 ## Geometry options for the 3D trigger visualizer and detection hull.
-@export var shape_type: SHAPE_TYPE = SHAPE_TYPE.SPHERE:
+@export var shape_type: int = EditorTriggerVisualizer.ShapeType.SPHERE:
 	set(value):
 		shape_type = value
 		if is_inside_tree():
@@ -133,8 +133,10 @@ func _ready() -> void:
 
 	if not Engine.is_editor_hint() and has_node("/root/Events"):
 		var events: Node = get_node("/root/Events")
-		if events.has_signal("trigger_visibility_toggled"):
-			events.trigger_visibility_toggled.connect(set_debug_visibility)
+		if events.has_signal(&"trigger_visibility_toggled"):
+			var err: Error = events.connect(&"trigger_visibility_toggled", set_debug_visibility)
+			if err != OK:
+				push_warning("Failed to connect trigger_visibility_toggled")
 
 
 ## Listens for engine notifications to redraw gizmos on transform shifts.
@@ -177,10 +179,9 @@ func _update_chain_arrow() -> void:
 			_chain_mesh.name = "WaypointChainLine"
 			add_child(_chain_mesh)
 
-	var draw_active: bool = (
-		(Engine.is_editor_hint() or show_in_game or EditorTriggerVisualizer.debug_force_visible)
-		and is_instance_valid(next_waypoint)
-	)
+	var force_vis: bool = EditorTriggerVisualizer.debug_force_visible
+	var is_visible_state: bool = Engine.is_editor_hint() or show_in_game or force_vis
+	var draw_active: bool = is_visible_state and is_instance_valid(next_waypoint)
 	_chain_mesh.visible = draw_active
 
 	if not draw_active or not next_waypoint.is_inside_tree():
@@ -237,10 +238,8 @@ func set_debug_visibility(is_active: bool) -> void:
 	if is_instance_valid(visual):
 		visual.set_debug_visibility(is_active)
 	if is_instance_valid(_chain_mesh):
-		_chain_mesh.visible = (
-			(Engine.is_editor_hint() or show_in_game or is_active)
-			and is_instance_valid(next_waypoint)
-		)
+		var should_show: bool = Engine.is_editor_hint() or show_in_game or is_active
+		_chain_mesh.visible = (should_show and is_instance_valid(next_waypoint))
 
 
 ## Creates or updates player detection [Area3D] volume.
@@ -300,6 +299,7 @@ func is_reached(actor_or_pos: Variant) -> bool:
 	var center: Vector3 = global_position + trigger_offset
 	var reached_flag: bool = center.distance_to(check_pos) <= arrival_radius
 	if reached_flag and actor_or_pos is Node3D:
-		print("Waypoint3D: [", name, "] reached by ", (actor_or_pos as Node3D).name)
-		reached.emit(actor_or_pos as Node3D)
+		var node_actor: Node3D = actor_or_pos as Node3D
+		print("Waypoint3D: [", name, "] reached by ", node_actor.name)
+		reached.emit(node_actor)
 	return reached_flag

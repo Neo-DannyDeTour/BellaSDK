@@ -2,9 +2,15 @@
 class_name EnergyCell
 extends PickableObject
 
+# --------------------------------------
+# SIGNALS
+# --------------------------------------
 ## Emitted when the cell charging state changes.
 signal charged_state_changed(is_charged: bool)
 
+# --------------------------------------
+# EXPORTS
+# --------------------------------------
 ## Shader resource used for the bottom-to-top gradient fill animation.
 @export var fill_shader: Shader = preload("res://interactables/energy_cell_fill.gdshader")
 
@@ -21,6 +27,9 @@ signal charged_state_changed(is_charged: bool)
 @export var is_charged: bool = false:
 	set = set_charged
 
+# --------------------------------------
+# VARIABLES
+# --------------------------------------
 ## Runtime material instance supporting gradual filling.
 var _cell_shader_mat: ShaderMaterial = null
 
@@ -39,17 +48,17 @@ func _ready() -> void:
 
 ## Instantiates and assigns the ShaderMaterial on the primary mesh.
 func _setup_shader_material() -> void:
-	if not is_instance_valid(mesh) or not mesh is GeometryInstance3D:
+	if not is_instance_valid(mesh) or not mesh is MeshInstance3D:
 		return
 
-	var geom: GeometryInstance3D = mesh as GeometryInstance3D
+	var mesh_inst: MeshInstance3D = mesh as MeshInstance3D
 	_cell_shader_mat = ShaderMaterial.new()
 	_cell_shader_mat.shader = fill_shader
 	_cell_shader_mat.set_shader_parameter("discharged_color", discharged_color)
 	_cell_shader_mat.set_shader_parameter("charged_color", charged_color)
 	_cell_shader_mat.set_shader_parameter("glow_energy", glow_energy)
 
-	geom.set_surface_override_material(0, _cell_shader_mat)
+	mesh_inst.set_surface_override_material(0, _cell_shader_mat)
 
 
 ## Sets the normalized vertical fill level from 0.0 (bottom) to 1.0 (top).

@@ -32,6 +32,7 @@ func _ready() -> void:
 
 
 ## Subtracts damage from current health and handles death triggers.
+## [param amount] Health points subtracted.
 func take_damage(amount: int) -> void:
 	print("HealthComponent: take_damage() - Took ", amount, " damage.")
 
@@ -56,6 +57,7 @@ func take_damage(amount: int) -> void:
 
 
 ## Restores health up to maximum capacity and emits update signals.
+## [param amount] Health points added.
 func heal(amount: int) -> void:
 	print("HealthComponent: heal() - Healing for ", amount, ".")
 
@@ -73,6 +75,7 @@ func heal(amount: int) -> void:
 
 
 ## Increases maximum capacity and raises current health proportionally.
+## [param amount] Maximum capacity increase.
 func increase_max_health(amount: int) -> void:
 	print("HealthComponent: increase_max_health() - Increasing by ", amount, ".")
 	max_health += amount
@@ -102,10 +105,9 @@ func die() -> void:
 	if use_pooling:
 		print("HealthComponent: die() - Hiding and teleporting actor for pooling.")
 		if target_node is Node3D:
-			target_node.global_position = Vector3(0.0, -10000.0, 0.0)
-
-		if target_node.has_method(&"hide"):
-			target_node.hide()
+			var node_3d: Node3D = target_node as Node3D
+			node_3d.global_position = Vector3(0.0, -10000.0, 0.0)
+			node_3d.visible = false
 
 		target_node.process_mode = Node.PROCESS_MODE_DISABLED
 	else:
@@ -121,7 +123,8 @@ func reset() -> void:
 
 	var target_node: Node = get_parent()
 	if target_node is Node3D:
-		target_node.visible = true
-		target_node.process_mode = Node.PROCESS_MODE_INHERIT
+		var node_3d: Node3D = target_node as Node3D
+		node_3d.visible = true
+		node_3d.process_mode = Node.PROCESS_MODE_INHERIT
 
 	health_changed.emit(current_health)

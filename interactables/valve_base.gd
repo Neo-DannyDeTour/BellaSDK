@@ -160,13 +160,11 @@ func _ready() -> void:
 		return
 
 	if is_instance_valid(GlobalSettings) and GlobalSettings.has_method("get_setting"):
-		_show_text_prompts = (
-			GlobalSettings.get_setting("Gameplay", "show_item_prompts", true) as bool
-		)
+		_show_text_prompts = bool(GlobalSettings.get_setting("Gameplay", "show_item_prompts", true))
 
 	if is_instance_valid(Events) and Events.has_signal("item_prompts_toggled"):
-		if not Events.item_prompts_toggled.is_connected(_on_item_prompts_toggled):
-			Events.item_prompts_toggled.connect(_on_item_prompts_toggled)
+		if not Events.is_connected("item_prompts_toggled", _on_item_prompts_toggled):
+			Events.connect("item_prompts_toggled", _on_item_prompts_toggled)
 
 	wheel = get_node_or_null("Valve")
 	if is_instance_valid(wheel):
@@ -180,10 +178,16 @@ func _ready() -> void:
 
 	var interact_comp: Node = get_node_or_null("InteractComponent")
 	if is_instance_valid(interact_comp):
-		if not interact_comp.focused.is_connected(_on_interact_component_focused):
-			interact_comp.focused.connect(_on_interact_component_focused)
-		if not interact_comp.unfocused.is_connected(_on_interact_component_unfocused):
-			interact_comp.unfocused.connect(_on_interact_component_unfocused)
+		if (
+			interact_comp.has_signal(&"focused")
+			and not interact_comp.is_connected(&"focused", _on_interact_component_focused)
+		):
+			interact_comp.connect(&"focused", _on_interact_component_focused)
+		if (
+			interact_comp.has_signal(&"unfocused")
+			and not interact_comp.is_connected(&"unfocused", _on_interact_component_unfocused)
+		):
+			interact_comp.connect(&"unfocused", _on_interact_component_unfocused)
 
 
 ## Manages per-frame installation detection, player interaction inputs, rotation, and audio state.
@@ -238,8 +242,8 @@ func _get_effective_turn_mode() -> int:
 	if Engine.is_editor_hint() or not is_instance_valid(GlobalSettings):
 		return TurnMode.HOLD
 
-	var saved_setting: String = (
-		GlobalSettings.get_setting("Gameplay", "valve_turn_mode", "Hold") as String
+	var saved_setting: String = String(
+		GlobalSettings.get_setting("Gameplay", "valve_turn_mode", "Hold")
 	)
 	match saved_setting:
 		"One-Time Press":
@@ -260,7 +264,7 @@ func _process_valve_progress(delta: float, key_is_down: bool, true_just_pressed:
 	var effective_mode: int = _get_effective_turn_mode()
 
 	if is_instance_valid(highlight_comp) and highlight_comp.has_method("suppress"):
-		highlight_comp.suppress(key_is_down or _is_auto_turning)
+		highlight_comp.call(&"suppress", key_is_down or _is_auto_turning)
 
 	match effective_mode:
 		TurnMode.HOLD:
@@ -373,13 +377,13 @@ func _apply_visual_rotation() -> void:
 		return
 	var dir_multiplier: float = -1.0 if turn_clockwise else 1.0
 	var total_angle: float = 360.0 * visual_rotations * dir_multiplier * progress
-	wheel.rotation_degrees = (initial_rotation + (spin_axis * total_angle))
+	wheel.rotation_degrees = initial_rotation + (spin_axis * total_angle)
 
 
 ## Checks if the player is holding a pickable valve in proximity to auto-install.
 func _check_installation_proximity() -> void:
 	if not is_instance_valid(_cached_player):
-		_cached_player = (get_tree().get_first_node_in_group("player") as Node3D)
+		_cached_player = get_tree().get_first_node_in_group("player") as Node3D
 
 	if is_instance_valid(_cached_player):
 		var held: Node3D = _get_player_held_object(_cached_player)
@@ -436,49 +440,43 @@ func _on_item_prompts_toggled(enabled: bool) -> void:
 ## Resolves the object currently held by the player character.
 ## [param player] The player node reference to inspect.
 ## [return] The held [Node3D] instance if found, or `null`.
-func _get_player_held_object(player: Node3D) -> Node3D:
-	if not is_instance_valid(player):
+func _get_player_held_object(player_node: Node3D) -> Node3D:
+	if not is_instance_valid(player_node):
 		return null
 
-	if "held_object" in player and player.get("held_object") != null:
-		return player.get("held_object") as Node3D
+	var direct_held: Variant = player_node.get("held_object")
+	if direct_held is Node3D:
+		return direct_held
 
-	var int_comp: Node = (
-		player.get("interaction_component") if "interaction_component" in player else null
-	)
+	var int_comp: Node = player_node.get("interaction_component") as Node
 	if is_instance_valid(int_comp):
-		if "held_item" in int_comp and int_comp.get("held_item") != null:
-			return int_comp.get("held_item") as Node3D
+		var held_item: Variant = int_comp.get("held_item")
+		if held_item is Node3D:
+			return held_item
 
-		var scanner: Node = (
-			int_comp.get("interaction_scanner") if "interaction_scanner" in int_comp else null
-		)
-		if (
-			is_instance_valid(scanner)
-			and "held_object" in scanner
-			and scanner.get("held_object") != null
-		):
-			return scanner.get("held_object") as Node3D
+		var scanner: Node = int_comp.get("interaction_scanner") as Node
+		if is_instance_valid(scanner):
+			var scan_held: Variant = scanner.get("held_object")
+			if scan_held is Node3D:
+				return scan_held
 
 	return null
 
 
 ## Resets all held item slots on the player character.
 ## [param player] The player node reference whose held object will be cleared.
-func _clear_player_held_object(player: Node3D) -> void:
+func _clear_player_held_object(player_node: Node3D) -> void:
 	print("Valve: Clearing player held object references.")
-	if not is_instance_valid(player):
+	if not is_instance_valid(player_node):
 		return
 
-	if "held_object" in player:
-		player.set("held_object", null)
+	if "held_object" in player_node:
+		player_node.set("held_object", null)
 
-	var int_comp: Node = (
-		player.get("interaction_component") if "interaction_component" in player else null
-	)
+	var int_comp: Node = player_node.get("interaction_component") as Node
 	if is_instance_valid(int_comp):
 		if int_comp.has_method("force_clear_hands"):
-			int_comp.force_clear_hands()
+			int_comp.call(&"force_clear_hands")
 		elif "held_item" in int_comp:
 			int_comp.set("held_item", null)
 
@@ -486,12 +484,12 @@ func _clear_player_held_object(player: Node3D) -> void:
 ## Attaches the held valve wheel onto this base unit and removes the item from the player.
 ## [param player] The player node performing the installation.
 ## [param held_valve] The item instance to destroy upon attachment.
-func _install_valve(player: Node3D, held_valve: Node3D) -> void:
+func _install_valve(player_node: Node3D, held_valve: Node3D) -> void:
 	print("Valve: _install_valve() called. Destroying pickable valve.")
 	if is_instance_valid(held_valve):
 		held_valve.queue_free()
 
-	_clear_player_held_object(player)
+	_clear_player_held_object(player_node)
 
 	is_installed = true
 	has_been_installed = true
@@ -502,7 +500,7 @@ func _install_valve(player: Node3D, held_valve: Node3D) -> void:
 	if is_instance_valid(wheel):
 		wheel.show()
 
-	var weapon_holder: Node3D = player.get_node_or_null("%WeaponHolder") as Node3D
+	var weapon_holder: Node3D = player_node.get_node_or_null("%WeaponHolder") as Node3D
 	if is_instance_valid(weapon_holder):
 		weapon_holder.show()
 	print("Valve: Valve Auto-Installed!")
@@ -515,8 +513,8 @@ func _detach_valve() -> void:
 		push_warning("Cannot detach: No Pickable Valve Scene assigned!")
 		return
 
-	var player: Node3D = get_tree().get_first_node_in_group("player") as Node3D
-	if not is_instance_valid(player):
+	var player_node: Node3D = get_tree().get_first_node_in_group("player") as Node3D
+	if not is_instance_valid(player_node):
 		return
 
 	var raw_instance: Node = pickable_valve_scene.instantiate()
@@ -533,8 +531,9 @@ func _detach_valve() -> void:
 
 	get_tree().current_scene.add_child(spawned_valve)
 
-	if "hold_position" in player and is_instance_valid(player.get("hold_position")):
-		spawned_valve.global_position = player.get("hold_position").global_position
+	var hold_pos_var: Variant = player_node.get("hold_position")
+	if hold_pos_var is Node3D and is_instance_valid(hold_pos_var):
+		spawned_valve.global_position = (hold_pos_var as Node3D).global_position
 
 	if is_instance_valid(wheel):
 		spawned_valve.global_position = wheel.global_position
@@ -543,24 +542,18 @@ func _detach_valve() -> void:
 		spawned_valve.global_position = global_position
 
 	var grabbed_successfully: bool = false
-	var int_comp: Node = (
-		player.get("interaction_component") if "interaction_component" in player else null
-	)
+	var int_comp: Node = player_node.get("interaction_component") as Node
 
 	if is_instance_valid(int_comp) and int_comp.has_method("force_grab_item"):
-		int_comp.force_grab_item(spawned_valve as RigidBody3D)
+		int_comp.call(&"force_grab_item", spawned_valve as RigidBody3D)
 		grabbed_successfully = true
-	elif "held_object" in player:
-		player.set("held_object", spawned_valve)
+	elif "held_object" in player_node:
+		player_node.set("held_object", spawned_valve)
 
-	if (
-		not grabbed_successfully
-		and spawned_valve.has_method("pick_up")
-		and "hold_position" in player
-	):
-		spawned_valve.pick_up(player.get("hold_position"), player)
+	if not grabbed_successfully and spawned_valve.has_method("pick_up") and hold_pos_var is Node3D:
+		spawned_valve.call(&"pick_up", hold_pos_var, player_node)
 
-	var weapon_holder: Node3D = player.get_node_or_null("%WeaponHolder") as Node3D
+	var weapon_holder: Node3D = player_node.get_node_or_null("%WeaponHolder") as Node3D
 	if is_instance_valid(weapon_holder) and not grabbed_successfully:
 		weapon_holder.hide()
 
@@ -611,9 +604,10 @@ func _update_valve_label() -> void:
 		var key_name: String = "???"
 
 		if not events.is_empty():
-			var primary_ev: InputEvent = events[0]
-			key_name = InputHelper.sanitize_key_name(primary_ev.as_text())
-			icon_tex = InputHelper.get_event_icon(primary_ev)
+			var primary_ev: InputEvent = events[0] as InputEvent
+			if is_instance_valid(primary_ev):
+				key_name = InputHelper.sanitize_key_name(primary_ev.as_text())
+				icon_tex = InputHelper.get_event_icon(primary_ev)
 
 		var effective_mode: int = _get_effective_turn_mode()
 		var action_verb: String = "Hold"
@@ -660,4 +654,4 @@ func _update_valve_label() -> void:
 
 	if Events.has_signal("object_focused") and not speech_text.is_empty():
 		print("Valve: Broadcasting object_focused prompt to TTSandy.")
-		Events.object_focused.emit(speech_text, self)
+		Events.emit_signal("object_focused", speech_text, self)

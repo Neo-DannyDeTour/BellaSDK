@@ -1,7 +1,7 @@
 @tool
+## Handles the compute pipeline for wave spectra generation and inverse FFT.
 class_name WaveGenerator
 extends Node
-## Handles the compute pipeline for wave spectra generation and inverse FFT.
 
 ## Emitted when GPU resources and cascade textures have been fully allocated.
 signal textures_created(displacement_rid: RID, normal_rid: RID)
@@ -18,9 +18,9 @@ var cpu_map_size: int = 128
 ## Compute rendering context wrapping [RenderingDevice] operations.
 var context: RenderingContext
 ## Cache holding compiled compute pipelines.
-var pipelines: Dictionary = {}
+var pipelines: Dictionary[StringName, Callable] = {}
 ## Cache holding texture and buffer descriptors.
-var descriptors: Dictionary = {}
+var descriptors: Dictionary[StringName, Variant] = {}
 ## Cached cascade parameters passed down from the parent ocean simulation.
 var pass_parameters: Array[WaveCascadeParameters] = []
 ## Tracks whether the compute context and descriptors are allocated and ready.
@@ -155,7 +155,9 @@ func init_gpu(num_cascades: int) -> void:
 	context.compute_list_end()
 
 	is_initialized = true
-	textures_created.emit(descriptors[&"displacement_map"].rid, descriptors[&"normal_map"].rid)
+	var disp_desc: Variant = descriptors[&"displacement_map"]
+	var norm_desc: Variant = descriptors[&"normal_map"]
+	textures_created.emit(disp_desc.rid, norm_desc.rid)
 
 
 ## Advances wave calculations and triggers GPU passes for active cascades.

@@ -91,6 +91,7 @@ var _is_dirty: bool = false
 
 ## Populates the internal [ConfigFile] before other autoloads read from it.
 func _init() -> void:
+	print("System: GlobalSettings initialized.")
 	_load_all_settings()
 
 
@@ -107,6 +108,7 @@ func _ready() -> void:
 ## Intercepts termination requests to guarantee dirty settings are saved.
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_PREDELETE:
+		print("System: Application termination requested. Flushing settings.")
 		flush_to_disk()
 
 
@@ -206,7 +208,8 @@ func get_screen_filter_index(filter_id: String) -> int:
 	var clean_id: String = filter_id.to_lower()
 	for item: Dictionary in SCREEN_FILTER_REGISTRY:
 		if str(item.get("id", "")) == clean_id:
-			return int(item.get("index", 0))
+			var filter_idx: int = item.get("index", 0)
+			return filter_idx
 	return 0
 
 
@@ -241,6 +244,7 @@ func get_font_resource(font_id: String) -> Font:
 
 ## Initializes the internal debounce timer node for lazy disk persistence.
 func _setup_debounce_timer() -> void:
+	print("GlobalSettings: Setting up debounce timer.")
 	_save_debounce_timer = Timer.new()
 	_save_debounce_timer.name = "SaveDebounceTimer"
 	_save_debounce_timer.one_shot = true
@@ -262,44 +266,42 @@ func _load_all_settings() -> void:
 func _apply_boot_settings() -> void:
 	print("System: Applying boot settings (Window, VSync, UI scale, fonts).")
 	var win: Window = get_window()
-	var mode_val: int = int(
-		get_setting("Settings", "display_mode", int(VideoConfig.DEFAULT_DISPLAY))
-	)
+	var mode_val: int = get_setting("Settings", "display_mode", VideoConfig.DEFAULT_DISPLAY)
 	var mode: DisplayServer.WindowMode = mode_val as DisplayServer.WindowMode
-	var screen_idx: int = int(get_setting("Settings", "screen_index", 0))
-	var res_x: int = int(get_setting("Settings", "resolution_x", 1920))
-	var res_y: int = int(get_setting("Settings", "resolution_y", 1080))
+	var screen_idx: int = get_setting("Settings", "screen_index", 0)
+	var res_x: int = get_setting("Settings", "resolution_x", 1920)
+	var res_y: int = get_setting("Settings", "resolution_y", 1080)
 	var res: Vector2i = Vector2i(res_x, res_y)
 	VideoApplier.apply_window_settings(win, mode, screen_idx, res)
 
-	var vsync_val: int = int(get_setting("Settings", "vsync_mode", int(VideoConfig.DEFAULT_VSYNC)))
+	var vsync_val: int = get_setting("Settings", "vsync_mode", VideoConfig.DEFAULT_VSYNC)
 	var vsync: DisplayServer.VSyncMode = vsync_val as DisplayServer.VSyncMode
-	var fps_cap: int = int(get_setting("Settings", "fps_limit", VideoConfig.DEFAULT_FPS))
+	var fps_cap: int = get_setting("Settings", "fps_limit", VideoConfig.DEFAULT_FPS)
 	VideoApplier.apply_engine_limits(vsync, fps_cap)
 
-	var ui_scale: float = float(get_setting("Settings", "ui_scale", 1.0))
+	var ui_scale: float = get_setting("Settings", "ui_scale", 1.0)
 	win.content_scale_factor = ui_scale
 
 	var events: Node = get_node_or_null("/root/Events")
 	if is_instance_valid(events):
-		var saved_font_idx: int = int(get_setting("Settings", "font_mode", 0))
+		var saved_font_idx: int = get_setting("Settings", "font_mode", 0)
 		if saved_font_idx >= 0 and saved_font_idx < FONT_REGISTRY.size():
 			var font_id: String = str(FONT_REGISTRY[saved_font_idx].get("id", ""))
 			if events.has_signal("font_changed"):
 				events.emit_signal("font_changed", font_id)
 
-		var saved_cb: int = int(get_setting("Settings", "colorblind_mode", 0))
+		var saved_cb: int = get_setting("Settings", "colorblind_mode", 0)
 		if events.has_signal("colorblind_mode_changed"):
 			events.emit_signal("colorblind_mode_changed", saved_cb)
 
-		var saved_filter_idx: int = int(get_setting("Settings", "screen_filter", 0))
+		var saved_filter_idx: int = get_setting("Settings", "screen_filter", 0)
 		var filter_ids: Array[String] = get_screen_filter_ids()
 		if saved_filter_idx >= 0 and saved_filter_idx < filter_ids.size():
 			if events.has_signal("screen_filter_changed"):
 				events.emit_signal("screen_filter_changed", filter_ids[saved_filter_idx])
 
 		if events.has_signal("item_prompts_toggled"):
-			var show_prompts: bool = bool(get_setting("Gameplay", "show_item_prompts", true))
+			var show_prompts: bool = get_setting("Gameplay", "show_item_prompts", true)
 			events.emit_signal("item_prompts_toggled", show_prompts)
 
 		if events.has_signal("infinite_swim_toggled"):
@@ -322,19 +324,20 @@ func _apply_input_mappings() -> void:
 		var saved_data: Variant = config.get_value("Controls", action)
 		if saved_data is Array:
 			InputMap.action_erase_events(action)
-			var event_list: Array = saved_data as Array
+			var event_list: Array = saved_data
 			for raw_event: Variant in event_list:
 				if raw_event is InputEvent:
-					var event: InputEvent = raw_event as InputEvent
+					var event: InputEvent = raw_event
 					InputMap.action_add_event(action, event)
 		elif saved_data is InputEvent:
 			InputMap.action_erase_events(action)
-			var single_event: InputEvent = saved_data as InputEvent
+			var single_event: InputEvent = saved_data
 			InputMap.action_add_event(action, single_event)
 
 
 ## Restarts the save debounce countdown to bundle closely timed writes together.
 func _queue_debounced_save() -> void:
+	print("System: Queued debounced save.")
 	if is_instance_valid(_save_debounce_timer):
 		_save_debounce_timer.start(SAVE_DEBOUNCE_DELAY)
 
@@ -342,21 +345,20 @@ func _queue_debounced_save() -> void:
 ## Ensures weapon slot bindings exist in [InputMap] on boot.
 func _ensure_default_weapon_actions() -> void:
 	print("System: Registering default weapon slot actions.")
-	var defaults: Dictionary = {
-		"weapon_slot_1": int(KEY_1),
-		"weapon_slot_2": int(KEY_2),
-		"weapon_slot_3": int(KEY_3),
-		"weapon_slot_4": int(KEY_4),
-		"weapon_slot_5": int(KEY_5),
-		"last_weapon": int(KEY_X),
+	var defaults: Dictionary[String, Key] = {
+		"weapon_slot_1": KEY_1,
+		"weapon_slot_2": KEY_2,
+		"weapon_slot_3": KEY_3,
+		"weapon_slot_4": KEY_4,
+		"weapon_slot_5": KEY_5,
+		"last_weapon": KEY_X,
 	}
 
-	for action: String in defaults.keys():
+	for action: String in defaults:
 		if not InputMap.has_action(action):
 			InputMap.add_action(action)
 			var key_ev: InputEventKey = InputEventKey.new()
-			var key_code_int: int = int(defaults[action])
-			var key_val: Key = key_code_int as Key
+			var key_val: Key = defaults[action]
 			key_ev.keycode = key_val
 			key_ev.physical_keycode = key_val
 			InputMap.action_add_event(action, key_ev)

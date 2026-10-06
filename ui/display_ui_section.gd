@@ -7,7 +7,12 @@ extends GridContainer
 # --------------------------------------
 ## Base font sizes cached to prevent compounding scale factors.
 const BASE_FONT_SIZES: Dictionary[String, int] = {
-	"default": 16, "Label": 16, "Button": 16, "OptionButton": 14, "LineEdit": 14, "CheckButton": 14
+	"Button": 16,
+	"CheckButton": 14,
+	"Label": 16,
+	"LineEdit": 14,
+	"OptionButton": 14,
+	"default": 16,
 }
 
 ## Default constant value for camera base field of view.
@@ -53,7 +58,7 @@ const DEFAULT_FONT_SCALE: float = 1.0
 @onready var font_scale_input: LineEdit = get_node_or_null("%Font_ScaleLine")
 
 
-## Lifecycle initialization method registering typography lists and control hooks.
+## Lifecycle initialization registering typography options and bindings.
 func _ready() -> void:
 	print("UI: Initializing Display & UI Section.")
 	_populate_dropdowns()
@@ -102,9 +107,10 @@ func load_settings() -> void:
 	print("UI: Loading Display and UI settings.")
 	_load_slider(fov_slider, fov_input, "base_fov", DEFAULT_FOV, "Settings", true)
 	if is_instance_valid(sprint_fov_checkbox):
-		var disable_sprint: bool = bool(
-			GlobalSettings.get_setting("Settings", "disable_sprint_fov", DEFAULT_DISABLE_SPRINT_FOV)
+		var raw_sprint: Variant = GlobalSettings.get_setting(
+			"Settings", "disable_sprint_fov", DEFAULT_DISABLE_SPRINT_FOV
 		)
+		var disable_sprint: bool = bool(raw_sprint)
 		sprint_fov_checkbox.set_pressed_no_signal(disable_sprint)
 	apply_current_fov_to_preview()
 
@@ -112,9 +118,10 @@ func load_settings() -> void:
 	_load_slider(font_scale_slider, font_scale_input, "font_scale", DEFAULT_FONT_SCALE, "Settings")
 
 	if is_instance_valid(font_option):
-		font_option.selected = int(
-			GlobalSettings.get_setting("Settings", "font_mode", DEFAULT_FONT_MODE)
+		var raw_font: Variant = GlobalSettings.get_setting(
+			"Settings", "font_mode", DEFAULT_FONT_MODE
 		)
+		font_option.selected = int(raw_font)
 
 
 ## Connects companion slider and LineEdit pairs with throttled commit logic.
@@ -134,7 +141,7 @@ func _connect_slider(
 		slider.value_changed.connect(
 			func(val: float) -> void:
 				if is_instance_valid(input_box) and not input_box.has_focus():
-					input_box.text = str(int(val)) if is_int else ("%.2f" % val)
+					input_box.text = (str(int(val)) if is_int else ("%.2f" % val))
 				if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
 					_commit_display_slider_val(key, val, section, apply_cb)
 		)
@@ -170,7 +177,8 @@ func _connect_slider(
 func _commit_display_slider_val(
 	key: String, val: float, section: String, apply_cb: Callable
 ) -> void:
-	var current: float = float(GlobalSettings.get_setting(section, key, -999.0))
+	var raw_val: Variant = GlobalSettings.get_setting(section, key, -999.0)
+	var current: float = float(raw_val)
 	if not is_equal_approx(current, val):
 		GlobalSettings.save_setting(section, key, val)
 		if apply_cb.is_valid():
@@ -205,7 +213,7 @@ func _commit_display_line_edit(
 	_commit_display_slider_val(key, clamped_val, section, apply_cb)
 
 
-## Reads a float setting and synchronizes slider and LineEdit representations.
+## Reads a float setting and synchronizes slider and LineEdit values.
 func _load_slider(
 	slider: HSlider,
 	input_box: LineEdit,
@@ -215,7 +223,8 @@ func _load_slider(
 	is_int: bool = false
 ) -> void:
 	if is_instance_valid(slider):
-		var val: float = float(GlobalSettings.get_setting(section, key, default_val))
+		var raw_val: Variant = GlobalSettings.get_setting(section, key, default_val)
+		var val: float = float(raw_val)
 		slider.set_value_no_signal(val)
 		if is_instance_valid(input_box):
 			input_box.text = str(int(val)) if is_int else ("%.2f" % val)
@@ -228,9 +237,10 @@ func _on_fov_adjusted(_val: float) -> void:
 
 ## Handles toggling of dynamic sprint FOV expansion.
 func _on_sprint_fov_toggled(toggled_on: bool) -> void:
-	var current: bool = bool(
-		GlobalSettings.get_setting("Settings", "disable_sprint_fov", DEFAULT_DISABLE_SPRINT_FOV)
+	var raw_sprint: Variant = GlobalSettings.get_setting(
+		"Settings", "disable_sprint_fov", DEFAULT_DISABLE_SPRINT_FOV
 	)
+	var current: bool = bool(raw_sprint)
 	if current == toggled_on:
 		return
 
@@ -239,7 +249,7 @@ func _on_sprint_fov_toggled(toggled_on: bool) -> void:
 	_apply_fov_settings()
 
 
-## Applies current base FOV and sprint toggle to player and preview camera controllers.
+## Applies current base FOV and sprint toggle to player and preview cameras.
 func _apply_fov_settings() -> void:
 	if not is_instance_valid(fov_slider):
 		return
@@ -249,10 +259,12 @@ func _apply_fov_settings() -> void:
 	apply_current_fov_to_preview()
 
 	var player: Node = get_tree().get_first_node_in_group(&"player")
-	if is_instance_valid(player) and "camera_controller" in player and player.camera_controller:
-		player.camera_controller.base_fov = current_fov
-		if is_instance_valid(sprint_fov_checkbox):
-			player.camera_controller.disable_sprint_fov = sprint_fov_checkbox.button_pressed
+	if is_instance_valid(player):
+		var cam_ctrl: Object = player.get("camera_controller") as Object
+		if is_instance_valid(cam_ctrl):
+			cam_ctrl.set("base_fov", current_fov)
+			if is_instance_valid(sprint_fov_checkbox):
+				cam_ctrl.set("disable_sprint_fov", sprint_fov_checkbox.button_pressed)
 
 
 ## Applies current slider FOV directly to the docked diorama camera.
@@ -265,7 +277,8 @@ func apply_current_fov_to_preview() -> void:
 	var cams: Array[Node] = socket.find_children("*", "Camera3D", true, false)
 	for node: Node in cams:
 		var cam: Camera3D = node as Camera3D
-		cam.fov = fov_slider.value
+		if is_instance_valid(cam):
+			cam.fov = fov_slider.value
 
 
 ## Adjusts window content scaling factor for user interface elements.
@@ -276,7 +289,8 @@ func _apply_ui_scale(scale_val: float) -> void:
 
 ## Handles font override selection changes from the dropdown menu.
 func _on_font_selected(index: int) -> void:
-	var current: int = int(GlobalSettings.get_setting("Settings", "font_mode", DEFAULT_FONT_MODE))
+	var raw_font: Variant = GlobalSettings.get_setting("Settings", "font_mode", DEFAULT_FONT_MODE)
+	var current: int = int(raw_font)
 	if current == index:
 		return
 
@@ -305,7 +319,7 @@ func _apply_font_scale_settings(scale_val: float) -> void:
 	Events.font_scale_changed.emit(scale_val)
 
 
-## Updates the font sizes across common [Control] types using the active theme.
+## Updates the font sizes across common [Control] types using active theme.
 func apply_font_scale_to_theme(scale_factor: float) -> void:
 	print("UI: Rescaling base theme font sizes with factor: ", scale_factor)
 	var target_theme: Theme = theme
@@ -317,11 +331,13 @@ func apply_font_scale_to_theme(scale_factor: float) -> void:
 		push_warning("UI: No valid Theme found to scale.")
 		return
 
-	var def_size: int = int(round(float(BASE_FONT_SIZES["default"]) * scale_factor))
+	var base_default: float = float(BASE_FONT_SIZES["default"])
+	var def_size: int = int(round(base_default * scale_factor))
 	target_theme.default_font_size = def_size
 
 	for type_name: String in BASE_FONT_SIZES:
 		if type_name == "default":
 			continue
-		var new_size: int = int(round(float(BASE_FONT_SIZES[type_name]) * scale_factor))
+		var base_size: float = float(BASE_FONT_SIZES[type_name])
+		var new_size: int = int(round(base_size * scale_factor))
 		target_theme.set_font_size("font_size", type_name, new_size)

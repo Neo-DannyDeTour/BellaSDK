@@ -59,7 +59,7 @@ func _ready() -> void:
 	if has_node("/root/Events"):
 		var events_node: Node = get_node("/root/Events")
 		if events_node.has_signal("sonar_ping_requested"):
-			Utilities.safe_connect(events_node.sonar_ping_requested, trigger_sonar)
+			Utilities.safe_connect(Signal(events_node, &"sonar_ping_requested"), trigger_sonar)
 			print("SonarManager: Hooked to Events.sonar_ping_requested.")
 
 
@@ -89,7 +89,7 @@ func trigger_sonar(origin_node: Node3D) -> void:
 	if tree == null:
 		return
 
-	var unique_targets: Dictionary = {}
+	var unique_targets: Dictionary[int, Node3D] = {}
 	for group_name: StringName in query_groups:
 		for item: Node in tree.get_nodes_in_group(group_name):
 			if not is_instance_valid(item):
@@ -117,7 +117,7 @@ func trigger_sonar(origin_node: Node3D) -> void:
 	var seen_positions: Array[Vector3] = []
 
 	for root_id: int in unique_targets:
-		var node: Node3D = unique_targets[root_id] as Node3D
+		var node: Node3D = unique_targets[root_id]
 
 		if not node.is_visible_in_tree():
 			continue
@@ -129,7 +129,7 @@ func trigger_sonar(origin_node: Node3D) -> void:
 		var is_child_of_another: bool = false
 		for other_id: int in unique_targets:
 			if root_id != other_id:
-				var other: Node3D = unique_targets[other_id] as Node3D
+				var other: Node3D = unique_targets[other_id]
 				if is_instance_valid(other) and other.is_ancestor_of(node):
 					is_child_of_another = true
 					break
@@ -168,9 +168,13 @@ func trigger_sonar(origin_node: Node3D) -> void:
 
 	targets_to_ping.sort_custom(
 		func(a: Dictionary, b: Dictionary) -> bool:
-			if (a["priority"] as int) != (b["priority"] as int):
-				return (a["priority"] as int) < (b["priority"] as int)
-			return (a["distance_sq"] as float) < (b["distance_sq"] as float)
+			var pri_a: int = a.get("priority", 0)
+			var pri_b: int = b.get("priority", 0)
+			if pri_a != pri_b:
+				return pri_a < pri_b
+			var dist_a: float = a.get("distance_sq", 0.0)
+			var dist_b: float = b.get("distance_sq", 0.0)
+			return dist_a < dist_b
 	)
 
 	if targets_to_ping.size() > max_audible_targets:
@@ -178,15 +182,17 @@ func trigger_sonar(origin_node: Node3D) -> void:
 
 	targets_to_ping.sort_custom(
 		func(a: Dictionary, b: Dictionary) -> bool:
-			return (a["distance_sq"] as float) < (b["distance_sq"] as float)
+			var dist_a: float = a.get("distance_sq", 0.0)
+			var dist_b: float = b.get("distance_sq", 0.0)
+			return dist_a < dist_b
 	)
 
 	var last_scheduled_time: float = 0.0
 	for target_data: Dictionary in targets_to_ping:
-		var target_node: Node3D = target_data["node"] as Node3D
-		var dist_sq: float = target_data["distance_sq"] as float
+		var target_node: Node3D = target_data.get("node")
+		var dist_sq: float = target_data.get("distance_sq", 0.0)
 		var distance: float = sqrt(dist_sq)
-		var is_occluded: bool = target_data["is_occluded"] as bool
+		var is_occluded: bool = target_data.get("is_occluded", false)
 		var natural_delay: float = distance / wave_speed
 		var scheduled_delay: float = maxf(natural_delay, last_scheduled_time + min_cue_separation)
 		last_scheduled_time = scheduled_delay

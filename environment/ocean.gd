@@ -10,11 +10,11 @@ enum MeshQuality {
 	HIGH8K,
 }
 
-## Material applied to the ocean surface mesh.
-const WATER_MAT: Material = preload("res://environment/mat_ocean.tres")
+## Shader material applied to the ocean surface mesh.
+const WATER_MAT: ShaderMaterial = preload("res://environment/mat_ocean.tres")
 
-## Material applied to spray particle emissions.
-const SPRAY_MAT: Material = preload("res://environment/mat_spray.tres")
+## Shader material applied to spray particle emissions.
+const SPRAY_MAT: ShaderMaterial = preload("res://environment/mat_spray.tres")
 
 ## Ultra-high density clipmap mesh asset.
 const WATER_MESH_HIGH8_K: Mesh = preload("res://assets/ocean_waves/ocean/clipmap_high_8k.obj")
@@ -26,6 +26,7 @@ const WATER_MESH_HIGH: Mesh = preload("res://assets/ocean_waves/ocean/clipmap_hi
 const WATER_MESH_LOW: Mesh = preload("res://assets/ocean_waves/ocean/clipmap_low.obj")
 
 @export_group("Optimization & Targets")
+
 ## The target node that the water simulation will track.
 @export var player_target: Node3D
 
@@ -50,6 +51,7 @@ const WATER_MESH_LOW: Mesh = preload("res://assets/ocean_waves/ocean/clipmap_low
 			_update_scales_uniform()
 
 @export_group("Colors & Subsurface Glow")
+
 ## Base color of the deep water.
 @export_color_no_alpha var water_color: Color = Color(0.01, 0.02, 0.03):
 	set(value):
@@ -67,23 +69,24 @@ const WATER_MESH_LOW: Mesh = preload("res://assets/ocean_waves/ocean/clipmap_low
 	set(value):
 		crest_color = value
 		if is_instance_valid(WATER_MAT):
-			WATER_MAT.set_shader_parameter("crest_color", crest_color)
+			WATER_MAT.set_shader_parameter(&"crest_color", crest_color)
 
 ## Controls the intensity of the light passing through wave peaks.
 @export_range(0.0, 2.0) var crest_glow_intensity: float = 0.8:
 	set(value):
 		crest_glow_intensity = value
 		if is_instance_valid(WATER_MAT):
-			WATER_MAT.set_shader_parameter("crest_glow_intensity", crest_glow_intensity)
+			WATER_MAT.set_shader_parameter(&"crest_glow_intensity", crest_glow_intensity)
 
 ## Controls how much ambient light is captured by heavily aerated foam.
 @export_range(0.0, 2.0) var aerated_foam_glow: float = 0.5:
 	set(value):
 		aerated_foam_glow = value
 		if is_instance_valid(WATER_MAT):
-			WATER_MAT.set_shader_parameter("aerated_foam_glow", aerated_foam_glow)
+			WATER_MAT.set_shader_parameter(&"aerated_foam_glow", aerated_foam_glow)
 
 @export_group("Wave Parameters")
+
 ## Parameter configurations used to generate multi-frequency wave cascades.
 @export var parameters: Array[WaveCascadeParameters]:
 	set(value):
@@ -107,6 +110,7 @@ const WATER_MESH_LOW: Mesh = preload("res://assets/ocean_waves/ocean/clipmap_low
 		_setup_cpu_displacement_textures()
 
 @export_group("Performance Parameters")
+
 ## Available square resolution dimensions for generated wave maps.
 enum WaveMapResolution {
 	RES_128 = 128,
@@ -135,6 +139,7 @@ enum WaveMapResolution {
 			mesh = WATER_MESH_HIGH8_K
 
 @export_group("Tools & Actions")
+
 ## Triggers the process to bake the current wave states into a static resource.
 @export var bake_waves_to_res: bool = false:
 	set(value):
@@ -228,7 +233,6 @@ func _ready() -> void:
 
 
 ## Drives spray emitter position tracking and per-frame simulation steps.
-## [param delta] Elapsed frame delta time in seconds.
 func _process(delta: float) -> void:
 	if is_instance_valid(spray_particles):
 		var target_pos: Vector3 = global_position
@@ -291,7 +295,7 @@ func _setup_wave_generator() -> void:
 	if parameters == null or parameters.is_empty():
 		return
 
-	print("Ocean: Initializing synchronous wave generator with ", parameters.size(), " cascades.")
+	print("Ocean: Initializing wave generator with ", parameters.size(), " cascades.")
 
 	for param: WaveCascadeParameters in parameters:
 		if is_instance_valid(param):
@@ -308,8 +312,6 @@ func _setup_wave_generator() -> void:
 
 
 ## Updates global shader parameters when new RD textures are created.
-## [param disp_rid] Displacement map texture resource ID.
-## [param norm_rid] Normal map texture resource ID.
 func _on_wave_textures_created(disp_rid: RID, norm_rid: RID) -> void:
 	print("Ocean: Received new texture RIDs from WaveGenerator.")
 	if not disp_rid.is_valid() or not norm_rid.is_valid():
@@ -326,7 +328,7 @@ func _on_wave_textures_created(disp_rid: RID, norm_rid: RID) -> void:
 ## Updates uniform map scales on ocean and spray materials.
 func _update_scales_uniform() -> void:
 	print("Ocean: Updating uniform map scales.")
-	var map_scales: PackedVector4Array
+	var map_scales: PackedVector4Array = PackedVector4Array()
 	map_scales.resize(parameters.size())
 	for i: int in range(parameters.size()):
 		var params: WaveCascadeParameters = parameters[i]
@@ -339,14 +341,14 @@ func _update_scales_uniform() -> void:
 		WATER_MAT.set_shader_parameter(&"map_scales", map_scales)
 	if is_instance_valid(SPRAY_MAT):
 		SPRAY_MAT.set_shader_parameter(&"map_scales", map_scales)
-	if is_instance_valid(spray_particles) and spray_particles.process_material:
-		var proc_mat: Material = spray_particles.process_material
-		proc_mat.set_shader_parameter(&"map_scales", map_scales)
-		proc_mat.set_shader_parameter(&"spawn_radius", spray_spawn_radius)
+	if is_instance_valid(spray_particles) and is_instance_valid(spray_particles.process_material):
+		var proc_mat: ShaderMaterial = spray_particles.process_material as ShaderMaterial
+		if is_instance_valid(proc_mat):
+			proc_mat.set_shader_parameter(&"map_scales", map_scales)
+			proc_mat.set_shader_parameter(&"spawn_radius", spray_spawn_radius)
 
 
 ## Updates the water simulation through the wave generator.
-## [param delta] Frame delta time in seconds.
 func _update_water(delta: float) -> void:
 	if not RenderingServer.get_rendering_device():
 		return
@@ -359,7 +361,6 @@ func _update_water(delta: float) -> void:
 
 
 ## Handles cleanup before deletion to avoid dangling GPU references.
-## [param what] Notification identifier received from engine.
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
 		RenderingServer.global_shader_parameter_set(&"displacements", null)
@@ -369,7 +370,6 @@ func _notification(what: int) -> void:
 
 
 ## Manages asynchronous round-robin readbacks of displacement maps to the CPU.
-## [param delta] Frame delta time in seconds.
 func _manage_cpu_displacement_textures_updates(delta: float) -> void:
 	if cpu_displacement_textures.is_empty() or _is_reading_back:
 		return
@@ -382,7 +382,7 @@ func _manage_cpu_displacement_textures_updates(delta: float) -> void:
 		if _texture_loading_index >= cpu_displacement_textures.size():
 			_texture_loading_index = 0
 
-		var target_idx: int = cpu_displacement_textures.keys()[_texture_loading_index]
+		var target_idx: int = cpu_displacement_textures.keys()[_texture_loading_index] as int
 		_is_reading_back = true
 		RenderingServer.call_on_render_thread(_do_texture_readback.bind(target_idx))
 		_displacement_textures_update_time = 0.0
@@ -390,8 +390,7 @@ func _manage_cpu_displacement_textures_updates(delta: float) -> void:
 	_displacement_textures_update_time += delta
 
 
-## Dispatches an asynchronous GPU texture download request for the specified cascade.
-## [param idx] Cascade layer index targeted for readback.
+## Dispatches an asynchronous GPU texture download request for the cascade.
 func _do_texture_readback(idx: int) -> void:
 	var device: RenderingDevice = RenderingServer.get_rendering_device()
 	if not device or not is_instance_valid(wave_generator):
@@ -410,8 +409,6 @@ func _do_texture_readback(idx: int) -> void:
 
 
 ## Ingests downsampled texture byte data received asynchronously from the GPU.
-## [param tex] Raw byte buffer returned from GPU texture download.
-## [param idx] Cascade layer index associated with the buffer.
 func _on_texture_data_received(tex: PackedByteArray, idx: int) -> void:
 	if not is_instance_valid(wave_generator):
 		return
@@ -438,7 +435,6 @@ func _setup_cpu_displacement_textures() -> void:
 
 
 ## Performs the initial download of displacement maps on the render thread.
-## [param used_indices] Array of cascade indices to read back synchronously.
 func _do_initial_texture_readback(used_indices: Array[int]) -> void:
 	var device: RenderingDevice = RenderingServer.get_rendering_device()
 	if not device or not is_instance_valid(wave_generator):
@@ -464,19 +460,13 @@ func _do_initial_texture_readback(used_indices: Array[int]) -> void:
 
 
 ## Converts world space coordinates to repeating UV coordinates for a tile.
-## [param w] World coordinate 2D vector.
-## [param tile_length] Dimensions of wave tile in world meters.
-## [return] Normalized repeating UV coordinate vector.
 func _world_to_uv(w: Vector2, tile_length: Vector2) -> Vector2:
 	return Vector2(
 		fposmod(w.x, tile_length.x) / tile_length.x, fposmod(w.y, tile_length.y) / tile_length.y
 	)
 
 
-## Computes ocean wave height displacement using GPU textures or [MathUtils.gerstner_wave].
-## [param world_pos] Global position where wave height is evaluated.
-## [param steps] Number of iterative displacement convergence steps.
-## [return] Total wave displacement height along the vertical Y axis.
+## Computes ocean wave height displacement using GPU textures or Gerstner wave.
 func get_height(world_pos: Vector3, steps: int = 3) -> float:
 	var world_pos_xz: Vector2 = Vector2(world_pos.x, world_pos.z)
 	var summed_height: float = 0.0
@@ -490,17 +480,19 @@ func get_height(world_pos: Vector3, steps: int = 3) -> float:
 			var tile_length: Vector2 = parameters[idx].tile_length
 			var x: Vector2 = world_pos_xz
 			var y: Vector2 = Vector2.ZERO
-			var y_raw: Color
+			var y_raw: Color = Color.BLACK
+			var img: Image = cpu_displacement_textures[idx] as Image
 
-			for i: int in range(steps):
-				var img_v: Vector2 = _world_to_uv(x, tile_length) * map_size_float
-				var pixel_x: int = wrapi(int(img_v.x), 0, map_size_cache)
-				var pixel_y: int = wrapi(int(img_v.y), 0, map_size_cache)
-				y_raw = cpu_displacement_textures[idx].get_pixel(pixel_x, pixel_y)
-				y = Vector2(y_raw.r, y_raw.b)
-				x = world_pos_xz - y
+			if is_instance_valid(img):
+				for i: int in range(steps):
+					var img_v: Vector2 = _world_to_uv(x, tile_length) * map_size_float
+					var pixel_x: int = wrapi(int(img_v.x), 0, map_size_cache)
+					var pixel_y: int = wrapi(int(img_v.y), 0, map_size_cache)
+					y_raw = img.get_pixel(pixel_x, pixel_y)
+					y = Vector2(y_raw.r, y_raw.b)
+					x = world_pos_xz - y
 
-			summed_height += y_raw.g * disp_scale
+				summed_height += y_raw.g * disp_scale
 	else:
 		for i: int in range(parameters.size()):
 			var cascade: WaveCascadeParameters = parameters[i]
@@ -575,8 +567,9 @@ func force_reset_cascades() -> void:
 
 
 ## Retrieves and caches the active camera node from the main viewport.
-## [return] Active viewport [Camera3D] reference or null.
 func _get_camera() -> Camera3D:
 	if not is_instance_valid(_cached_camera):
-		_cached_camera = (get_viewport().get_camera_3d() if get_viewport() else null)
+		var vp: Viewport = get_viewport()
+		if is_instance_valid(vp):
+			_cached_camera = vp.get_camera_3d()
 	return _cached_camera

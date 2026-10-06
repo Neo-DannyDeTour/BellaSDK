@@ -8,17 +8,23 @@ var _fake_input: Vector2 = Vector2(0.0, 1.0)
 
 ## Halts momentum, disables stair snapping, and forces dropping heavy items.
 func enter(_msg: Dictionary = {}) -> void:
-	print("StateFastRope: enter() called. Player attaching to fast rope descent.")
-	player.velocity = Vector3.ZERO
-	player.direction = Vector3.ZERO
+	print("StateFastRope: enter() - Attaching to fast rope descent.")
+	var p: Player = player as Player
+	if not is_instance_valid(p):
+		return
 
-	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
-	if is_instance_valid(loco) and is_instance_valid(loco.stair_controller):
-		loco.stair_controller.set(&"is_enabled", false)
+	p.velocity = Vector3.ZERO
+	if "direction" in p:
+		p.set(&"direction", Vector3.ZERO)
 
-	var interact: PlayerInteractionComponent = (
-		player.interaction_component as PlayerInteractionComponent
-	)
+	var loco: PlayerLocomotionComponent = p.locomotion_component as PlayerLocomotionComponent
+	if is_instance_valid(loco):
+		if "direction" in loco:
+			loco.set(&"direction", Vector3.ZERO)
+		if is_instance_valid(loco.stair_controller):
+			loco.stair_controller.set(&"is_enabled", false)
+
+	var interact: PlayerInteractionComponent = p.interaction_component as PlayerInteractionComponent
 	if is_instance_valid(interact) and is_instance_valid(interact.interaction_scanner):
 		if bool(interact.interaction_scanner.get(&"is_heavy_lifting")):
 			interact.interaction_scanner.call(&"drop_heavy_object_safely")
@@ -26,13 +32,19 @@ func enter(_msg: Dictionary = {}) -> void:
 
 ## Re-enables stair snapping controller on state exit.
 func exit() -> void:
-	print("StateFastRope: exit() called. Player detached from fast rope.")
-	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	print("StateFastRope: exit() - Detached from fast rope.")
+	var p: Player = player as Player
+	if not is_instance_valid(p):
+		return
+
+	var loco: PlayerLocomotionComponent = p.locomotion_component as PlayerLocomotionComponent
 	if is_instance_valid(loco) and is_instance_valid(loco.stair_controller):
 		loco.stair_controller.set(&"is_enabled", true)
 
 
 ## Simulates sprinting forward camera motion during fast-rope descent.
 func physics_update(delta: float) -> void:
-	print("StateFastRope: physics_update() simulating headbob camera descent.")
-	player.camera_controller.update_camera(delta, _fake_input, true, false, false, 20.0)
+	print("StateFastRope: physics_update() - Simulating headbob camera descent.")
+	var p: Player = player as Player
+	if is_instance_valid(p) and is_instance_valid(p.camera_controller):
+		p.camera_controller.update_camera(delta, _fake_input, true, false, false, 20.0)

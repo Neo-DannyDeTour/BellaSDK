@@ -64,13 +64,13 @@ func _ready() -> void:
 	_setup_screen_notifier()
 
 	var mat: Material = portal_mesh.get_active_material(0)
-	if mat and mat is ShaderMaterial:
+	if mat is ShaderMaterial:
 		var variant_key: String = "portal_%d" % get_instance_id()
 		var cached_mat: Material = MaterialCache.get_variant(mat, variant_key)
 		portal_mesh.set_surface_override_material(0, cached_mat)
 		_update_mesh_texture.call_deferred()
 
-	sub_viewport.size = (get_viewport().size / 2).max(Vector2i(256, 256))
+	_on_viewport_size_changed()
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
 	sub_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 
@@ -154,9 +154,10 @@ func _update_mesh_texture() -> void:
 		return
 
 	var mat: Material = portal_mesh.get_surface_override_material(0)
-	if mat and mat is ShaderMaterial:
+	if mat is ShaderMaterial:
+		var shader_mat: ShaderMaterial = mat as ShaderMaterial
 		var target_texture: ViewportTexture = target_vp.get_texture()
-		mat.set_shader_parameter("viewport_texture", target_texture)
+		shader_mat.set_shader_parameter("viewport_texture", target_texture)
 
 
 ## Automatically connects to primary player camera if unassigned.
@@ -185,7 +186,9 @@ func _on_player_camera_registered(cam: Camera3D) -> void:
 ## Resizes [SubViewport] texture when window resolution changes.
 func _on_viewport_size_changed() -> void:
 	print("Portal: Scaling SubViewport size.")
-	sub_viewport.size = (get_viewport().size * 0.5).max(Vector2i(256, 256))
+	var vp_size: Vector2 = get_viewport().get_visible_rect().size
+	var half_size: Vector2i = Vector2i(vp_size * 0.5)
+	sub_viewport.size = half_size.max(Vector2i(256, 256))
 
 
 ## Synchronizes linked portal camera with player perspective.
@@ -237,7 +240,7 @@ func _physics_process(_delta: float) -> void:
 		var current_side: float = _get_side(body.global_position)
 		var previous_side: float = _tracked_bodies[body]
 
-		if sign(current_side) != sign(previous_side):
+		if signf(current_side) != signf(previous_side):
 			print("Portal: Teleporting body: ", body.name)
 			_teleport_body(body)
 			_tracked_bodies.erase(body)
@@ -261,10 +264,13 @@ func _teleport_body(body: Node3D) -> void:
 	body.global_transform = (linked_portal.global_transform * half_turn * relative_trans)
 
 	if "velocity" in body:
-		var relative_velocity: Vector3 = global_transform.basis.inverse() * body.get("velocity")
-		body.set(
-			"velocity", (linked_portal.global_transform.basis * half_turn.basis) * relative_velocity
+		var relative_velocity: Vector3 = (
+			global_transform.basis.inverse() * (body.get("velocity") as Vector3)
 		)
+		var final_velocity: Vector3 = (
+			(linked_portal.global_transform.basis * half_turn.basis) * relative_velocity
+		)
+		body.set("velocity", final_velocity)
 
 
 ## Registers entering physics bodies for plane crossing detection.

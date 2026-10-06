@@ -41,9 +41,8 @@ func enter(msg: Dictionary = {}) -> void:
 		var entry_momentum: Vector3 = Vector3(
 			player.velocity.x, player.velocity.y * 0.2, player.velocity.z
 		)
-		current_rope.apply_impulse(
-			entry_momentum * 1.5, player.global_position - current_rope.global_position
-		)
+		var rel_pos: Vector3 = player.global_position - current_rope.global_position
+		current_rope.apply_impulse(entry_momentum * 1.5, rel_pos)
 
 	player.velocity = Vector3.ZERO
 	player.add_collision_exception_with(current_rope)
@@ -87,8 +86,9 @@ func exit() -> void:
 		player.remove_collision_exception_with(current_rope)
 
 		var rope_root: Node3D = current_rope.get_parent() as Node3D
-		if is_instance_valid(rope_root) and rope_root.has_method(&"on_player_released"):
-			rope_root.call(&"on_player_released")
+		if is_instance_valid(rope_root):
+			if rope_root.has_method(&"on_player_released"):
+				rope_root.call(&"on_player_released")
 
 	current_rope = null
 
@@ -109,12 +109,14 @@ func exit() -> void:
 		. set_ease(Tween.EASE_OUT)
 	)
 
-	(
-		release_tween
-		. tween_property(player.camera_controller.camera, "rotation", Vector3.ZERO, 0.3)
-		. set_trans(Tween.TRANS_SINE)
-		. set_ease(Tween.EASE_OUT)
-	)
+	var cam: Camera3D = _get_camera()
+	if is_instance_valid(cam):
+		(
+			release_tween
+			. tween_property(cam, "rotation", Vector3.ZERO, 0.3)
+			. set_trans(Tween.TRANS_SINE)
+			. set_ease(Tween.EASE_OUT)
+		)
 
 
 ## Routes frame updates to climb or swing logic based on input gestures.
@@ -139,7 +141,12 @@ func _handle_climbing_and_swinging(delta: float, input_dir: Vector2) -> void:
 	print("StateRope: _handle_climbing_and_swinging() evaluating intent.")
 	var rope_root: Node3D = current_rope.get_parent() as Node3D
 	var rope_up: Vector3 = current_rope.global_transform.basis.y.normalized()
-	var look_dir: Vector3 = -player.camera_controller.camera.global_transform.basis.z
+	var cam: Camera3D = _get_camera()
+	var look_dir: Vector3 = (
+		-cam.global_transform.basis.z
+		if is_instance_valid(cam)
+		else -player.global_transform.basis.z
+	)
 
 	var can_swing: bool = (
 		bool(rope_root.get(&"is_swingable"))
@@ -219,13 +226,16 @@ func _handle_climbing_and_swinging(delta: float, input_dir: Vector2) -> void:
 	var play_slide_sound: bool = is_sliding and actually_moved
 	var play_climb_sound: bool = is_climbing_actively and actually_moved
 
-	if is_instance_valid(rope_root) and rope_root.has_method(&"handle_rope_sounds"):
-		rope_root.call(&"handle_rope_sounds", play_climb_sound, play_slide_sound)
+	if is_instance_valid(rope_root):
+		if rope_root.has_method(&"handle_rope_sounds"):
+			rope_root.call(&"handle_rope_sounds", play_climb_sound, play_slide_sound)
 
-	if is_climbing_actively and actually_moved:
-		player.camera_controller.update_camera(delta, input_dir, false, false, false, 6.0)
-	else:
-		player.camera_controller.update_camera(delta, Vector2.ZERO, false, false, false, 0.0)
+	var cam_ctrl: Node = _get_camera_controller()
+	if is_instance_valid(cam_ctrl) and cam_ctrl.has_method(&"update_camera"):
+		if is_climbing_actively and actually_moved:
+			cam_ctrl.call(&"update_camera", delta, input_dir, false, false, false, 6.0)
+		else:
+			cam_ctrl.call(&"update_camera", delta, Vector2.ZERO, false, false, false, 0.0)
 
 
 ## Updates global position and rotation to follow moving rope physics body via [MathUtils].
@@ -240,14 +250,23 @@ func _apply_rope_position(delta: float) -> void:
 		else false
 	)
 
-	var cam_fwd: Vector3 = -player.camera_controller.camera.global_transform.basis.z.normalized()
-	var cam_right: Vector3 = -player.camera_controller.camera.global_transform.basis.x.normalized()
+	var cam: Camera3D = _get_camera()
+	var cam_fwd: Vector3 = (
+		-cam.global_transform.basis.z.normalized()
+		if is_instance_valid(cam)
+		else -player.global_transform.basis.z.normalized()
+	)
+	var cam_right: Vector3 = (
+		-cam.global_transform.basis.x.normalized()
+		if is_instance_valid(cam)
+		else -player.global_transform.basis.x.normalized()
+	)
 	var orbit_fwd: Vector3 = Vector3(cam_fwd.x, 0.0, cam_fwd.z).normalized()
 	var orbit_right: Vector3 = Vector3(cam_right.x, 0.0, cam_right.z).normalized()
 
 	var target_pos: Vector3
 	if can_swing:
-		target_pos = center_grab_pos - (orbit_fwd * 0.7) + (orbit_right * 0.5)
+		target_pos = (center_grab_pos - (orbit_fwd * 0.7) + (orbit_right * 0.5))
 	else:
 		target_pos = center_grab_pos - (orbit_fwd * 0.2)
 
@@ -260,8 +279,9 @@ func _apply_rope_position(delta: float) -> void:
 	player.global_rotation.x = 0.0
 	player.global_rotation.z = 0.0
 
-	var tilt_quat: Quaternion = Quaternion(Vector3.UP, rope_up)
-	player.camera_controller.camera.quaternion = Quaternion.IDENTITY.slerp(tilt_quat, 0.15)
+	if is_instance_valid(cam):
+		var tilt_quat: Quaternion = Quaternion(Vector3.UP, rope_up)
+		cam.quaternion = Quaternion.IDENTITY.slerp(tilt_quat, 0.15)
 	player.velocity = Vector3.ZERO
 
 
@@ -272,7 +292,12 @@ func _check_dismount(input_dir: Vector2) -> void:
 		_perform_jump_dismount(input_dir)
 	elif GestureInputManager.is_action_just_pressed(&"interact"):
 		if rope_lerp_weight > 10.0:
-			var release_dir: Vector3 = -player.camera_controller.camera.global_transform.basis.z
+			var cam: Camera3D = _get_camera()
+			var release_dir: Vector3 = (
+				-cam.global_transform.basis.z
+				if is_instance_valid(cam)
+				else -player.global_transform.basis.z
+			)
 			_transition_out_of_rope(release_dir, 0.0, 0.0)
 
 
@@ -288,7 +313,12 @@ func _perform_jump_dismount(input_dir: Vector2) -> void:
 
 	var grab_offset: Vector3 = player.global_position - current_rope.global_position
 	var rope_momentum: Vector3 = current_rope.angular_velocity.cross(grab_offset)
-	var jump_dir: Vector3 = -player.camera_controller.camera.global_transform.basis.z.normalized()
+	var cam: Camera3D = _get_camera()
+	var jump_dir: Vector3 = (
+		-cam.global_transform.basis.z.normalized()
+		if is_instance_valid(cam)
+		else -player.global_transform.basis.z.normalized()
+	)
 	var flat_jump_dir: Vector3 = Vector3(jump_dir.x, 0.0, jump_dir.z).normalized()
 
 	var vertical_hop: float = 0.0
@@ -316,13 +346,45 @@ func _transition_out_of_rope(
 ) -> void:
 	print("StateRope: _transition_out_of_rope() executing detachment.")
 	var flat_jump_dir: Vector3 = Vector3(release_dir.x, 0.0, release_dir.z).normalized()
-	player.velocity = (flat_jump_dir * forward_push) + Vector3(0.0, vertical_hop, 0.0)
+	player.velocity = ((flat_jump_dir * forward_push) + Vector3(0.0, vertical_hop, 0.0))
 
+	var loc_comp: Node = _get_locomotion()
 	if flat_jump_dir.length_squared() > 0.01:
-		if is_instance_valid(player.locomotion_component):
-			player.locomotion_component.set_direction(flat_jump_dir)
+		if is_instance_valid(loc_comp):
+			if loc_comp.has_method(&"set_direction"):
+				loc_comp.call(&"set_direction", flat_jump_dir)
 
 	player.global_position += release_dir * 0.5
 	_transition_msg.clear()
 	_transition_msg[&"release_dir"] = release_dir
 	state_machine.transition_to(&"Air", _transition_msg)
+
+
+## Safely retrieves the player camera controller component.
+func _get_camera_controller() -> Node:
+	if not is_instance_valid(player):
+		return null
+	var ctrl: Variant = player.get(&"camera_controller")
+	if ctrl is Node and is_instance_valid(ctrl as Node):
+		return ctrl as Node
+	return null
+
+
+## Safely retrieves the player [Camera3D] node.
+func _get_camera() -> Camera3D:
+	var ctrl: Node = _get_camera_controller()
+	if is_instance_valid(ctrl):
+		var cam: Variant = ctrl.get(&"camera")
+		if cam is Camera3D and is_instance_valid(cam as Camera3D):
+			return cam as Camera3D
+	return null
+
+
+## Safely retrieves the player locomotion component.
+func _get_locomotion() -> Node:
+	if not is_instance_valid(player):
+		return null
+	var loc: Variant = player.get(&"locomotion_component")
+	if loc is Node and is_instance_valid(loc as Node):
+		return loc as Node
+	return null

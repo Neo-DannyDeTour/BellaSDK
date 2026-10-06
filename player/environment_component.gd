@@ -1,7 +1,4 @@
 ## Manages player interactions with environmental volumes and structural systems.
-##
-## Tracks cooldowns and state transitions for mechanics like ladders, ziplines,
-## water volumes, updrafts, and environmental VFX triggers.
 class_name PlayerEnvironmentComponent
 extends Node
 

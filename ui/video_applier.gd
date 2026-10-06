@@ -61,8 +61,8 @@ static func apply_engine_limits(vsync_mode: DisplayServer.VSyncMode, fps_limit: 
 static func apply_anisotropy(level: int) -> void:
 	print("VideoApplier: Setting anisotropic filtering level: ", level)
 	var key: String = "rendering/textures/default_filters/anisotropic_filtering_level"
-	var cur: Variant = ProjectSettings.get_setting(key)
-	if cur == null or int(cur) != level:
+	var cur_val: Variant = ProjectSettings.get_setting(key)
+	if cur_val != level:
 		ProjectSettings.set_setting(key, level)
 
 
@@ -120,7 +120,7 @@ static func _apply_stage_shadows_and_lighting(
 	_apply_rendering_server_qualities(config)
 	_apply_light_shadows(tree, config)
 
-	var requested_atlas: int = config.get("shadow_atlas", 4096) as int
+	var requested_atlas: int = config.get("shadow_atlas", 4096)
 	if main_viewport.positional_shadow_atlas_size != requested_atlas:
 		main_viewport.positional_shadow_atlas_size = requested_atlas
 		_cached_shadow_atlas_size = requested_atlas
@@ -148,42 +148,39 @@ static func _apply_stage_viewport_aa_and_scaling(
 	tree: SceneTree, main_viewport: Viewport, config: Dictionary
 ) -> void:
 	print("VideoApplier: Executing Stage 2 (Viewport AA & Scaling).")
-	var filter_mode: int = config.get("texture_filter", 2) as int
+	var filter_mode: int = config.get("texture_filter", 2)
 	var f_key: String = "rendering/textures/default_filters/texture_filter_mode"
 	if ProjectSettings.get_setting(f_key) != filter_mode:
 		ProjectSettings.set_setting(f_key, filter_mode)
 
-	var fsr_scale: float = config.get("fsr_scale", 1.0) as float
-	var raw_scale: float = config.get("resolution_scale", 1.0) as float
+	var fsr_scale: float = config.get("fsr_scale", 1.0)
+	var raw_scale: float = config.get("resolution_scale", 1.0)
 	var active_scale: float = fsr_scale if fsr_scale < 1.0 else raw_scale
 	var active_scaling_mode: Viewport.Scaling3DMode = (
 		Viewport.SCALING_3D_MODE_FSR2 if fsr_scale < 1.0 else Viewport.SCALING_3D_MODE_BILINEAR
 	)
 
-	var aa_settings: Dictionary = config.get("aa_settings", {}) as Dictionary
-	var primary_msaa: Viewport.MSAA = (
-		aa_settings.get("msaa", Viewport.MSAA_DISABLED) as Viewport.MSAA
-	)
-	var active_taa: bool = (fsr_scale >= 1.0) and (aa_settings.get("taa", false) as bool)
-	var active_fxaa: Viewport.ScreenSpaceAA = (
-		aa_settings.get("fxaa", Viewport.SCREEN_SPACE_AA_DISABLED) as Viewport.ScreenSpaceAA
+	var aa_settings: Dictionary = config.get("aa_settings", {})
+	var primary_msaa: Viewport.MSAA = aa_settings.get("msaa", Viewport.MSAA_DISABLED)
+	var taa_enabled: bool = aa_settings.get("taa", false)
+	var active_taa: bool = (fsr_scale >= 1.0) and taa_enabled
+	var active_fxaa: Viewport.ScreenSpaceAA = aa_settings.get(
+		"fxaa", Viewport.SCREEN_SPACE_AA_DISABLED
 	)
 
-	var sdfgi_dict: Dictionary = config.get("sdfgi", {}) as Dictionary
-	var fog_dict: Dictionary = config.get("fog", {}) as Dictionary
-	var is_sdfgi_active: bool = sdfgi_dict.get("enabled", false) as bool
-	var is_fog_active: bool = fog_dict.get("enabled", false) as bool
+	var sdfgi_dict: Dictionary = config.get("sdfgi", {})
+	var fog_dict: Dictionary = config.get("fog", {})
+	var is_sdfgi_active: bool = sdfgi_dict.get("enabled", false)
+	var is_fog_active: bool = fog_dict.get("enabled", false)
 
 	if (is_sdfgi_active or is_fog_active) and primary_msaa != Viewport.MSAA_DISABLED:
 		print("VideoApplier: Disabling MSAA to prevent compute fill-rate stalls.")
 		primary_msaa = Viewport.MSAA_DISABLED
 
-	var raw_vrs: Viewport.VRSMode = (
-		config.get("vrs_mode", Viewport.VRS_DISABLED) as Viewport.VRSMode
-	)
-	var occ_cull: bool = config.get("occlusion_culling", true) as bool
-	var mesh_lod: float = config.get("mesh_lod", 1.0) as float
-	var debanding_val: bool = config.get("debanding", true) as bool
+	var raw_vrs: Viewport.VRSMode = config.get("vrs_mode", Viewport.VRS_DISABLED)
+	var occ_cull: bool = config.get("occlusion_culling", true)
+	var mesh_lod: float = config.get("mesh_lod", 1.0)
+	var debanding_val: bool = config.get("debanding", true)
 
 	if not is_vrs_supported():
 		raw_vrs = Viewport.VRS_DISABLED
@@ -223,7 +220,7 @@ static func _apply_stage_viewport_aa_and_scaling(
 		diorama_vp.screen_space_aa = active_fxaa
 		diorama_vp.use_debanding = debanding_val
 		diorama_vp.mesh_lod_threshold = mesh_lod
-		var requested_atlas: int = config.get("shadow_atlas", 4096) as int
+		var requested_atlas: int = config.get("shadow_atlas", 4096)
 		if diorama_vp.positional_shadow_atlas_size != requested_atlas:
 			diorama_vp.positional_shadow_atlas_size = requested_atlas
 			if requested_atlas > 0:
@@ -239,14 +236,13 @@ static func _apply_stage_environments(tree: SceneTree, config: Dictionary) -> vo
 ## Synchronizes light shadow masks, atlas sizes, biases, and filter qualities.
 static func _apply_light_shadows(tree: SceneTree, config: Dictionary) -> void:
 	print("VideoApplier: Synchronizing light shadow configurations.")
-	var enable_dyn: bool = config.get("dynamic_light_shadows", true) as bool
-	var f_key: String = config.get("shadow_filter", "Soft Medium") as String
-	var filter_mode: RenderingServer.ShadowQuality = (
-		VideoConfig.SHADOW_FILTER_MODES.get(f_key, RenderingServer.SHADOW_QUALITY_SOFT_MEDIUM)
-		as RenderingServer.ShadowQuality
+	var enable_dyn: bool = config.get("dynamic_light_shadows", true)
+	var f_key: String = config.get("shadow_filter", "Soft Medium")
+	var filter_mode: RenderingServer.ShadowQuality = VideoConfig.SHADOW_FILTER_MODES.get(
+		f_key, RenderingServer.SHADOW_QUALITY_SOFT_MEDIUM
 	)
-	var d_dist: float = config.get("directional_shadow_distance", 64.0) as float
-	var p_dist: float = config.get("positional_shadow_distance", 24.0) as float
+	var d_dist: float = config.get("directional_shadow_distance", 64.0)
+	var p_dist: float = config.get("positional_shadow_distance", 24.0)
 	var preview_mask: int = PREVIEW_LAYER_MASK | (1 << 9)
 
 	RenderingServer.positional_soft_shadow_filter_set_quality(filter_mode)
@@ -299,25 +295,25 @@ static func _clamp_preview_msaa(requested_msaa: Viewport.MSAA) -> Viewport.MSAA:
 ## Configures global SSAO, SSIL, and volumetric fog on [RenderingServer].
 static func _apply_rendering_server_qualities(config: Dictionary) -> void:
 	print("VideoApplier: Updating RenderingServer graphic quality settings.")
-	var ssao_dict: Dictionary = config.get("ssao", {}) as Dictionary
+	var ssao_dict: Dictionary = config.get("ssao", {})
 	if not ssao_dict.is_empty():
-		var ssao_q: int = ssao_dict.get("quality", 1) as int
-		var ssao_half: bool = ssao_dict.get("half_size", false) as bool
+		var ssao_q: int = ssao_dict.get("quality", 1)
+		var ssao_half: bool = ssao_dict.get("half_size", false)
 		RenderingServer.environment_set_ssao_quality(
 			ssao_q as RenderingServer.EnvironmentSSAOQuality, ssao_half, 0.5, 2, 1.0, 50.0
 		)
 
-	var ssi_dict: Dictionary = config.get("ssi", {}) as Dictionary
+	var ssi_dict: Dictionary = config.get("ssi", {})
 	if not ssi_dict.is_empty():
-		var ssi_q: int = ssi_dict.get("quality", 1) as int
-		var ssi_half: bool = ssi_dict.get("half_size", false) as bool
+		var ssi_q: int = ssi_dict.get("quality", 1)
+		var ssi_half: bool = ssi_dict.get("half_size", false)
 		RenderingServer.environment_set_ssil_quality(
 			ssi_q as RenderingServer.EnvironmentSSILQuality, ssi_half, 0.5, 2, 1.0, 50.0
 		)
 
-	var fog_dict: Dictionary = config.get("fog", {}) as Dictionary
+	var fog_dict: Dictionary = config.get("fog", {})
 	if not fog_dict.is_empty():
-		var depth: int = fog_dict.get("depth", 64) as int
+		var depth: int = fog_dict.get("depth", 64)
 		if _cached_fog_depth != depth:
 			_cached_fog_depth = depth
 			RenderingServer.environment_set_volumetric_fog_volume_size(64, depth)
@@ -358,8 +354,8 @@ static func _apply_environment_and_materials(tree: SceneTree, config: Dictionary
 		if root_w.environment not in main_environments:
 			main_environments.append(root_w.environment)
 
-	var exp_val: float = config.get("exposure", 1.0) as float
-	var dof_amount: float = config.get("dof_amount", 0.0) as float
+	var exp_val: float = config.get("exposure", 1.0)
+	var dof_amount: float = config.get("dof_amount", 0.0)
 	var is_dof_active: bool = dof_amount > 0.005
 
 	RenderingServer.gi_set_use_half_resolution(true)
@@ -389,7 +385,7 @@ static func _apply_environment_and_materials(tree: SceneTree, config: Dictionary
 			if not is_equal_approx(cam_attr.dof_blur_amount, dof_amount):
 				cam_attr.dof_blur_amount = dof_amount
 
-	var mb_factor: float = config.get("motion_blur", 0.0) as float
+	var mb_factor: float = config.get("motion_blur", 0.0)
 	for c_node: Node in active_cams:
 		if c_node is ExtendedCamera3D:
 			(c_node as ExtendedCamera3D).set_motion_blur_strength(mb_factor)
@@ -402,27 +398,27 @@ static func _populate_environment_values(
 	print("VideoApplier: Populating environment settings. Preview: ", is_preview)
 	env.tonemap_exposure = exposure
 
-	var tonemap_key: String = config.get("tonemap_key", "Filmic") as String
+	var tonemap_key: String = config.get("tonemap_key", "Filmic")
 	if VideoConfig.TONEMAP_MODES.has(tonemap_key):
 		env.tonemap_mode = VideoConfig.TONEMAP_MODES[tonemap_key]
 
-	var ssao_dict: Dictionary = config.get("ssao", {}) as Dictionary
-	env.ssao_enabled = ssao_dict.get("enabled", false) as bool
+	var ssao_dict: Dictionary = config.get("ssao", {})
+	env.ssao_enabled = ssao_dict.get("enabled", false)
 
-	var ssi_dict: Dictionary = config.get("ssi", {}) as Dictionary
-	env.ssil_enabled = ssi_dict.get("enabled", false) as bool
+	var ssi_dict: Dictionary = config.get("ssi", {})
+	env.ssil_enabled = ssi_dict.get("enabled", false)
 
-	var ssr_dict: Dictionary = config.get("ssr", {}) as Dictionary
-	env.ssr_enabled = ssr_dict.get("enabled", false) as bool
+	var ssr_dict: Dictionary = config.get("ssr", {})
+	env.ssr_enabled = ssr_dict.get("enabled", false)
 	if env.ssr_enabled:
-		var max_steps: int = ssr_dict.get("steps", 64) as int
+		var max_steps: int = ssr_dict.get("steps", 64)
 		env.ssr_max_steps = mini(max_steps, 32) if is_preview else max_steps
 
-	var sdfgi_dict: Dictionary = config.get("sdfgi", {}) as Dictionary
-	var is_sdfgi: bool = sdfgi_dict.get("enabled", false) as bool
+	var sdfgi_dict: Dictionary = config.get("sdfgi", {})
+	var is_sdfgi: bool = sdfgi_dict.get("enabled", false)
 	env.sdfgi_enabled = is_sdfgi
 	if is_sdfgi:
-		var cascades: int = sdfgi_dict.get("cascades", 2) as int
+		var cascades: int = sdfgi_dict.get("cascades", 2)
 		env.sdfgi_cascades = mini(cascades, 2) if is_preview else cascades
 		if is_preview:
 			env.sdfgi_min_cell_size = 0.5
@@ -431,8 +427,8 @@ static func _populate_environment_values(
 		env.sdfgi_y_scale = Environment.SDFGI_Y_SCALE_75_PERCENT
 		env.sdfgi_energy = 1.0
 
-	var fog_dict: Dictionary = config.get("fog", {}) as Dictionary
-	var fog_active: bool = fog_dict.get("enabled", false) as bool
+	var fog_dict: Dictionary = config.get("fog", {})
+	var fog_active: bool = fog_dict.get("enabled", false)
 	env.volumetric_fog_enabled = fog_active
 
 	if is_preview:
@@ -445,12 +441,12 @@ static func _populate_environment_values(
 				"VideoApplier: Volumetric fog enabled. Base density: ", env.volumetric_fog_density
 			)
 
-	var glow_dict: Dictionary = config.get("glow", {}) as Dictionary
-	env.glow_enabled = glow_dict.get("enabled", false) as bool
+	var glow_dict: Dictionary = config.get("glow", {})
+	env.glow_enabled = glow_dict.get("enabled", false)
 	if env.glow_enabled:
-		var is_high: bool = (
-			glow_dict.get("high_quality", false) as bool or glow_dict.get("bicubic", false) as bool
-		)
+		var glow_hq: bool = glow_dict.get("high_quality", false)
+		var glow_bicubic: bool = glow_dict.get("bicubic", false)
+		var is_high: bool = glow_hq or glow_bicubic
 		env.glow_blend_mode = (
 			Environment.GLOW_BLEND_MODE_SOFTLIGHT
 			if is_high and not is_preview

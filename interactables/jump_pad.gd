@@ -1,19 +1,16 @@
 @tool
-## A physics trigger that launches the player to a destination along a parabolic arc.
-##
-## Features trajectory visualization. Dynamically modifies gravity during the arc
-## to ensure precise landing on the designated target.
+## Physics trigger that launches the player to a destination along a parabolic arc.
 class_name JumpPad
 extends Area3D
 
-## The specific 3D node the player will land on. If left null, a default child marker is used.
+## Specific 3D node the player lands on; if null, a default child marker is used.
 @export var assigned_target: Node3D:
 	set(value):
 		assigned_target = value
 		if is_inside_tree() and Engine.is_editor_hint():
 			_update_trajectory()
 
-## The peak height the player reaches during the jump trajectory.
+## Peak height the player reaches above the highest point during the jump trajectory.
 @export var apex_height: float = 3.0:
 	set(value):
 		apex_height = maxf(0.1, value)
@@ -27,7 +24,7 @@ extends Area3D
 		if is_inside_tree() and Engine.is_editor_hint():
 			_update_trajectory()
 
-## The base upward gravity applied to the player while ascending.
+## Base upward gravity applied to the player while ascending.
 @export var player_gravity: float = 9.8:
 	set(value):
 		player_gravity = maxf(0.1, value)
@@ -41,25 +38,25 @@ extends Area3D
 		if is_inside_tree() and Engine.is_editor_hint():
 			_update_trajectory()
 
-## The total calculated time for the player to reach the target.
+## Total calculated time for the player to reach the target.
 var _flight_time: float = 0.0
-## The timer used to simulate the ball flight in the editor.
+## Timer used to simulate the ball flight in the editor.
 var _timer: float = 0.0
-## The initial velocity applied to the player upon entering the jump pad.
+## Initial velocity applied to the player upon entering the jump pad.
 var _initial_velocity: Vector3 = Vector3.ZERO
-## The time it takes for the player to reach the apex of the jump.
+## Time it takes for the player to reach the apex of the jump.
 var _t_up: float = 0.0
-## The custom gravity applied while the player is ascending.
+## Custom gravity applied while the player is ascending.
 var _custom_gravity_up: float = 9.8
-## The custom gravity applied while the player is descending.
+## Custom gravity applied while the player is descending.
 var _custom_gravity_down: float = 9.8
 
 ## Cached reference to fallback target node.
 var _target_node: Node3D
 
-## The last recorded position of the jump pad to detect movement.
+## Last recorded position of the jump pad to detect movement.
 var _last_start_pos: Vector3 = Vector3.ZERO
-## The last recorded position of the target to detect movement.
+## Last recorded position of the target to detect movement.
 var _last_target_pos: Vector3 = Vector3.ZERO
 
 ## Cached BallVisual node.
@@ -70,12 +67,12 @@ var _line_visual: MeshInstance3D
 var _apex_visual: MeshInstance3D
 
 
-## Editor-only callback that generates the hidden visualizer nodes and default target.
+## Generates hidden visualizer nodes and default target in the editor.
 func _enter_tree() -> void:
 	_create_default_nodes()
 
 
-## Connects trigger signals and deletes editor-only visualization meshes upon entering play mode.
+## Connects trigger signals and deletes editor visualizer meshes on play.
 func _ready() -> void:
 	collision_layer = CollisionLayers.MASK_NONE
 	collision_mask = CollisionLayers.MASK_PLAYER
@@ -83,7 +80,6 @@ func _ready() -> void:
 	if not body_entered.is_connected(_on_body_entered):
 		body_entered.connect(_on_body_entered)
 
-	# Clean up visualizer nodes when the game actually runs
 	if not Engine.is_editor_hint():
 		var n: Node = get_node_or_null("BallVisual")
 		if is_instance_valid(n):
@@ -98,20 +94,20 @@ func _ready() -> void:
 	_update_trajectory()
 
 
-## Continuously verifies positions of jump pad and target to rebuild parabolic arc.
-## [param delta]: Frame delta time.
+## Continuously verifies positions of pad and target to rebuild arc.
 func _process(delta: float) -> void:
 	var active_target: Node3D = assigned_target
 	if not is_instance_valid(active_target):
 		active_target = get_node_or_null("Target") as Node3D
 
 	if is_instance_valid(active_target):
-		if global_position != _last_start_pos or active_target.global_position != _last_target_pos:
+		var has_pad_moved: bool = global_position != _last_start_pos
+		var has_target_moved: bool = active_target.global_position != _last_target_pos
+		if has_pad_moved or has_target_moved:
 			_update_trajectory()
 			_last_start_pos = global_position
 			_last_target_pos = active_target.global_position
 
-	# Simulate the ball flight in the editor
 	if _flight_time > 0.0 and Engine.is_editor_hint():
 		_timer += delta
 		if _timer > _flight_time + 2.0:
@@ -133,12 +129,11 @@ func _get_configuration_warnings() -> PackedStringArray:
 	return PackedStringArray()
 
 
-## Recalculates launch velocity and gravity based on height, distance, and falloff.
+## Recalculates launch velocity and gravity from spatial delta.
 func _update_trajectory() -> void:
 	if not is_inside_tree():
 		return
 
-	# Fallback to the auto-generated target if the user hasn't assigned one manually
 	var active_target: Node3D = assigned_target
 	if not is_instance_valid(active_target):
 		active_target = get_node_or_null("Target") as Node3D
@@ -158,17 +153,15 @@ func _update_trajectory() -> void:
 	var g_up: float = player_gravity
 	var g_down: float = player_gravity * fall_gravity_multiplier
 
-	# Standard projectile equations
 	var v_y0: float = sqrt(2.0 * g_up * h_start)
 	var base_t_up: float = v_y0 / g_up
 	var base_t_down: float = sqrt((2.0 * h_end) / g_down)
 	var base_flight_time: float = base_t_up + base_t_down
 
-	# Apply speed controls
 	_flight_time = base_flight_time / flight_speed_multiplier
 	_t_up = base_t_up / flight_speed_multiplier
-	_custom_gravity_up = g_up * pow(flight_speed_multiplier, 2)
-	_custom_gravity_down = g_down * pow(flight_speed_multiplier, 2)
+	_custom_gravity_up = g_up * pow(flight_speed_multiplier, 2.0)
+	_custom_gravity_down = g_down * pow(flight_speed_multiplier, 2.0)
 
 	if _flight_time > 0.0:
 		var v_xz: Vector3 = (p_end - p_start) / _flight_time
@@ -191,18 +184,15 @@ func _update_visuals() -> void:
 			_apex_visual.visible = false
 		return
 
-	# Draw the Line
 	if not is_instance_valid(_line_visual):
 		_line_visual = get_node_or_null("LineVisual") as MeshInstance3D
 
 	if is_instance_valid(_line_visual):
 		_line_visual.visible = true
-		_line_visual.top_level = false  # Allow it to inherit transforms naturally
+		_line_visual.top_level = false
 
-		var imm_mesh: ImmediateMesh
-		if _line_visual.mesh is ImmediateMesh:
-			imm_mesh = _line_visual.mesh as ImmediateMesh
-		else:
+		var imm_mesh: ImmediateMesh = _line_visual.mesh as ImmediateMesh
+		if not imm_mesh:
 			imm_mesh = ImmediateMesh.new()
 			_line_visual.mesh = imm_mesh
 			var mat: StandardMaterial3D = StandardMaterial3D.new()
@@ -214,7 +204,6 @@ func _update_visuals() -> void:
 		imm_mesh.surface_begin(Mesh.PRIMITIVE_LINES)
 		var segments: int = 40
 
-		# Convert global trajectory into local space for the ImmediateMesh
 		var prev_pos: Vector3 = _line_visual.to_local(_get_position_at_time(0.0))
 
 		for i: int in range(1, segments + 1):
@@ -226,7 +215,6 @@ func _update_visuals() -> void:
 
 		imm_mesh.surface_end()
 
-	# Position the Apex Marker
 	if not is_instance_valid(_apex_visual):
 		_apex_visual = get_node_or_null("ApexVisual") as MeshInstance3D
 
@@ -237,8 +225,6 @@ func _update_visuals() -> void:
 
 
 ## Solves kinematic equations to find 3D coordinate at flight time.
-## [param t]: The time in seconds elapsed since launch.
-## Returns predicted world coordinate.
 func _get_position_at_time(t: float) -> Vector3:
 	var p0: Vector3 = global_position
 	if not is_instance_valid(_target_node):
@@ -252,7 +238,6 @@ func _get_position_at_time(t: float) -> Vector3:
 		var td: float = t - _t_up
 		var target_y: float = p0.y
 
-		# Prioritize assigned target over internal node to match _update_trajectory math
 		if is_instance_valid(assigned_target):
 			target_y = assigned_target.global_position.y
 		elif is_instance_valid(_target_node):
@@ -266,22 +251,22 @@ func _get_position_at_time(t: float) -> Vector3:
 
 
 ## Detects player entry, applies velocity, and transitions state machine.
-## [param body]: The 3D physics body that triggered the jump pad.
 func _on_body_entered(body: Node3D) -> void:
-	if body.is_in_group("player") or body.get_class() == "CharacterBody3D":
+	var character: CharacterBody3D = body as CharacterBody3D
+	if character and (character.is_in_group(&"player") or character is Player):
 		print(
 			"JumpPad: _on_body_entered() called. Launching player with velocity: ",
 			_initial_velocity
 		)
-		body.velocity = _initial_velocity
+		character.velocity = _initial_velocity
 
-		var sm: Node = body.get_node_or_null("StateMachine")
+		var sm: Node = character.get_node_or_null("StateMachine")
 		if not is_instance_valid(sm):
-			sm = NodeQuery.find_first_child_of_type(body, StateMachine)
+			sm = NodeQuery.find_first_child_of_type(character, StateMachine)
 
 		if is_instance_valid(sm) and sm.has_method("transition_to"):
 			sm.call(
-				"transition_to",
+				&"transition_to",
 				"Air",
 				{
 					"jump_pad": true,
@@ -292,24 +277,19 @@ func _on_body_entered(body: Node3D) -> void:
 
 
 ## Spawns or retrieves nodes safely without cluttering the scene tree.
-## [param node_name]: The string name of the node.
-## [param node_class]: The [Object] class type to instantiate if missing.
-## Returns newly created or existing node reference.
-func _get_or_create_internal_node(node_name: String, node_class: Variant) -> Node:
+func _get_or_create_internal_node(node_name: String, node_factory: Callable) -> Node:
 	var n: Node = get_node_or_null(node_name)
 	if not is_instance_valid(n):
-		n = node_class.new()
+		n = node_factory.call() as Node
 		n.name = node_name
-		# Adding as INTERNAL_MODE_BACK hides it completely from Scene Tree
 		add_child(n, false, Node.INTERNAL_MODE_BACK)
 	return n
 
 
 ## Instantiates target, mesh, and collision required for jump pad to operate.
 func _create_default_nodes() -> void:
-	# 1. Generate Hidden / Internal Nodes (Visible in viewport, hidden in Scene Tree)
 	var col: CollisionShape3D = (
-		_get_or_create_internal_node("CollisionShape3D", CollisionShape3D) as CollisionShape3D
+		_get_or_create_internal_node("CollisionShape3D", CollisionShape3D.new) as CollisionShape3D
 	)
 	if not col.shape:
 		var shape: BoxShape3D = BoxShape3D.new()
@@ -317,7 +297,7 @@ func _create_default_nodes() -> void:
 		col.shape = shape
 
 	var pad: MeshInstance3D = (
-		_get_or_create_internal_node("PadMesh", MeshInstance3D) as MeshInstance3D
+		_get_or_create_internal_node("PadMesh", MeshInstance3D.new) as MeshInstance3D
 	)
 	if not pad.mesh:
 		var box: BoxMesh = BoxMesh.new()
@@ -329,7 +309,7 @@ func _create_default_nodes() -> void:
 
 	if Engine.is_editor_hint():
 		var ball: MeshInstance3D = (
-			_get_or_create_internal_node("BallVisual", MeshInstance3D) as MeshInstance3D
+			_get_or_create_internal_node("BallVisual", MeshInstance3D.new) as MeshInstance3D
 		)
 		ball.top_level = true
 		if not ball.mesh:
@@ -344,12 +324,12 @@ func _create_default_nodes() -> void:
 			ball.mesh = sphere
 
 		var line: MeshInstance3D = (
-			_get_or_create_internal_node("LineVisual", MeshInstance3D) as MeshInstance3D
+			_get_or_create_internal_node("LineVisual", MeshInstance3D.new) as MeshInstance3D
 		)
 		line.top_level = true
 
 		var apex: MeshInstance3D = (
-			_get_or_create_internal_node("ApexVisual", MeshInstance3D) as MeshInstance3D
+			_get_or_create_internal_node("ApexVisual", MeshInstance3D.new) as MeshInstance3D
 		)
 		apex.top_level = true
 		if not apex.mesh:
@@ -361,13 +341,11 @@ func _create_default_nodes() -> void:
 			apex_box.material = a_mat
 			apex.mesh = apex_box
 
-	# 2. Generate Target Node (Explicitly NOT internal so you can see/edit it)
 	var target: Marker3D = get_node_or_null("Target") as Marker3D
 	if not is_instance_valid(target):
 		target = Marker3D.new()
 		target.name = "Target"
 		target.position = Vector3(0.0, 5.0, -10.0)
 		add_child(target)
-		# Setting owner makes it save properly so edits to target stick
 		if Engine.is_editor_hint() and is_inside_tree():
 			target.owner = get_tree().edited_scene_root

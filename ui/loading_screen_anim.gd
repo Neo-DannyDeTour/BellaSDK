@@ -321,10 +321,13 @@ func _finalize_scene_transition() -> void:
 		print("LoadingScreen: Waiting for WorldChunkManager initial zone...")
 		await chunker.initial_zone_ready
 
-	var player_node: Player = new_scene.find_child("Player", true, false) as Player
+	var player_node: CharacterBody3D = (
+		new_scene.find_child("Player", true, false) as CharacterBody3D
+	)
+	var locomotion: PlayerLocomotionComponent = _get_player_locomotion(player_node)
+	if is_instance_valid(locomotion):
+		locomotion.set_physics_active(false)
 	if is_instance_valid(player_node):
-		if is_instance_valid(player_node.locomotion_component):
-			player_node.locomotion_component.set_physics_active(false)
 		player_node.velocity = Vector3.ZERO
 
 	await get_tree().physics_frame
@@ -333,7 +336,8 @@ func _finalize_scene_transition() -> void:
 
 	if is_instance_valid(player_node):
 		_snap_player_to_floor(player_node)
-		player_node.activate_gameplay_camera()
+		if player_node.has_method(&"activate_gameplay_camera"):
+			player_node.call(&"activate_gameplay_camera")
 
 	# 1. Synchronize render pipeline, shadow atlas, and AA first
 	print("LoadingScreen: Synchronizing viewport pipeline prior to GI activation.")
@@ -357,7 +361,8 @@ func _finalize_scene_transition() -> void:
 		await get_tree().process_frame
 
 	# 4. 360-Degree Frustum Warmup (Forces Vulkan PSO compilation behind the black screen)
-	if is_instance_valid(player_node) and is_instance_valid(player_node.camera_controller):
+	var cam_controller: CameraController = _get_camera_controller(player_node)
+	if is_instance_valid(player_node) and is_instance_valid(cam_controller):
 		print("LoadingScreen: Performing 360-degree frustum sweep to cache pipeline states.")
 		var original_rot: float = player_node.rotation.y
 		for angle_deg: float in [90.0, 180.0, 270.0, 0.0]:
@@ -371,8 +376,8 @@ func _finalize_scene_transition() -> void:
 	fade_tween.tween_property(visual_root, "modulate:a", 0.0, 0.25)
 	await fade_tween.finished
 
-	if is_instance_valid(player_node) and is_instance_valid(player_node.locomotion_component):
-		player_node.locomotion_component.set_physics_active(true)
+	if is_instance_valid(locomotion):
+		locomotion.set_physics_active(true)
 		print("LoadingScreen: Re-enabled player locomotion after visual fade.")
 
 	print("LoadingScreen: Transition complete. Freeing loading screen.")
@@ -473,7 +478,7 @@ func _find_world_environment(target: Node) -> WorldEnvironment:
 
 
 ## Snaps player position downward using direct space state raycast.
-func _snap_player_to_floor(player: Player) -> void:
+func _snap_player_to_floor(player: CharacterBody3D) -> void:
 	print("LoadingScreen: Snapping player position to collision floor.")
 	var space_state: PhysicsDirectSpaceState3D = player.get_world_3d().direct_space_state
 	var ray_origin: Vector3 = player.global_position + Vector3(0.0, 0.5, 0.0)
@@ -486,3 +491,23 @@ func _snap_player_to_floor(player: Player) -> void:
 	if not hit.is_empty():
 		player.global_position = (hit.position as Vector3) + Vector3(0.0, 0.05, 0.0)
 		print("LoadingScreen: Player aligned to floor at: ", player.global_position)
+
+
+## Retrieves [PlayerLocomotionComponent] from the target player entity safely.
+func _get_player_locomotion(p_player: Node) -> PlayerLocomotionComponent:
+	if not is_instance_valid(p_player):
+		return null
+	var raw: Variant = p_player.get(&"locomotion_component")
+	if raw is PlayerLocomotionComponent and is_instance_valid(raw):
+		return raw as PlayerLocomotionComponent
+	return null
+
+
+## Retrieves [CameraController] from the target player entity safely.
+func _get_camera_controller(p_player: Node) -> CameraController:
+	if not is_instance_valid(p_player):
+		return null
+	var raw: Variant = p_player.get(&"camera_controller")
+	if raw is CameraController and is_instance_valid(raw):
+		return raw as CameraController
+	return null

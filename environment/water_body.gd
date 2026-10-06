@@ -170,8 +170,10 @@ func _get_water_material() -> ShaderMaterial:
 		return material_override as ShaderMaterial
 	if get_surface_override_material(0) is ShaderMaterial:
 		return get_surface_override_material(0) as ShaderMaterial
-	if mesh and mesh.material is ShaderMaterial:
-		return mesh.material as ShaderMaterial
+	if mesh is PrimitiveMesh:
+		var prim_mesh: PrimitiveMesh = mesh as PrimitiveMesh
+		if prim_mesh.material is ShaderMaterial:
+			return prim_mesh.material as ShaderMaterial
 	return null
 
 
@@ -548,7 +550,8 @@ func _on_swimmable_area_body_entered(body: Node3D) -> void:
 			floating_bodies.append(rb)
 		impact_speed = rb.linear_velocity.length()
 		_last_body_positions[rb.get_instance_id()] = rb.global_position
-		_last_body_ripple_times[rb.get_instance_id()] = float(Time.get_ticks_msec()) / 1000.0
+		var current_sec: float = float(Time.get_ticks_msec()) / 1000.0
+		_last_body_ripple_times[rb.get_instance_id()] = current_sec
 
 	elif body is CharacterBody3D:
 		var cb: CharacterBody3D = body as CharacterBody3D
@@ -556,9 +559,10 @@ func _on_swimmable_area_body_entered(body: Node3D) -> void:
 			character_bodies.append(cb)
 		impact_speed = cb.velocity.length()
 		_last_body_positions[cb.get_instance_id()] = cb.global_position
-		_last_body_ripple_times[cb.get_instance_id()] = float(Time.get_ticks_msec()) / 1000.0
-		if body.has_method("enter_water"):
-			body.enter_water(self)
+		var current_sec: float = float(Time.get_ticks_msec()) / 1000.0
+		_last_body_ripple_times[cb.get_instance_id()] = current_sec
+		if body.has_method(&"enter_water"):
+			body.call(&"enter_water", self)
 
 	var ripple_power: float = clampf(maxf(impact_speed * 0.35, 1.2), 0.3, 2.0)
 	spawn_ripple(body.global_position, ripple_power)
@@ -586,10 +590,11 @@ func _on_swimmable_area_body_exited(body: Node3D) -> void:
 		_last_body_positions.erase(cb.get_instance_id())
 		_last_body_ripple_times.erase(cb.get_instance_id())
 		exit_speed = cb.velocity.length()
-		if body.has_method("exit_water"):
-			body.exit_water(self)
+		if body.has_method(&"exit_water"):
+			body.call(&"exit_water", self)
 
-	spawn_ripple(body.global_position, clampf(maxf(exit_speed * 0.25, 0.8), 0.3, 1.5))
+	var exit_ripple_power: float = clampf(maxf(exit_speed * 0.25, 0.8), 0.3, 1.5)
+	spawn_ripple(body.global_position, exit_ripple_power)
 	if exit_speed >= min_splash_velocity:
 		play_splash_sound(body.global_position, exit_speed)
 		splashed.emit(body.global_position, exit_speed)

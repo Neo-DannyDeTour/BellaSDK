@@ -169,6 +169,7 @@ func _init_csv_logging() -> void:
 
 ## Switches active tab to Viewports & Layers pipeline.
 func _on_pipeline_tab_pressed() -> void:
+	print("RenderDiagnosticsPanel: Switched to Pipeline tab.")
 	_current_tab = DiagnosticTab.PIPELINE
 	_update_tab_button_visuals()
 	_refresh_diagnostics_display()
@@ -176,6 +177,7 @@ func _on_pipeline_tab_pressed() -> void:
 
 ## Switches active tab to performance monitors.
 func _on_perf_tab_pressed() -> void:
+	print("RenderDiagnosticsPanel: Switched to Performance tab.")
 	_current_tab = DiagnosticTab.PERFORMANCE
 	_update_tab_button_visuals()
 	_refresh_diagnostics_display()
@@ -212,6 +214,7 @@ func _update_processing_state() -> void:
 
 
 ## Accumulates delta time, logs hitches, and flushes CSV buffer.
+## [param delta] Elapsed frame time in seconds.
 func _process(delta: float) -> void:
 	var has_logger: bool = _csv_file != null and OS.has_feature("debug")
 
@@ -251,6 +254,7 @@ func toggle_window() -> bool:
 
 
 ## Records hitch telemetry in memory and queues CSV buffer line.
+## [param frame_time_ms] Total elapsed frame duration in milliseconds.
 func _record_hitch_event(frame_time_ms: float) -> void:
 	var vp_rid: RID = get_viewport().get_viewport_rid()
 	var gpu_ms: float = RenderingServer.viewport_get_measured_render_time_gpu(vp_rid)
@@ -307,6 +311,7 @@ func _refresh_diagnostics_display() -> void:
 
 
 ## Audits geometry branches and active shadow lights for a root node.
+## [param root_node] Target root [Node] branch to inspect.
 func _audit_branch_geometry(root_node: Node) -> PackedStringArray:
 	print("RenderDiagnosticsPanel: Auditing branch geometry for ", root_node.name)
 	var lines: PackedStringArray = PackedStringArray()
@@ -326,13 +331,16 @@ func _audit_branch_geometry(root_node: Node) -> PackedStringArray:
 		while not stack.is_empty():
 			var curr: Node = stack.pop_back()
 			if curr is MeshInstance3D:
-				if curr.visible and curr.is_inside_tree():
+				var mesh_node: MeshInstance3D = curr
+				if mesh_node.visible and mesh_node.is_inside_tree():
 					branch_meshes += 1
 			elif curr is MultiMeshInstance3D:
-				if curr.visible and curr.is_inside_tree() and curr.multimesh:
-					branch_multis += curr.multimesh.instance_count
+				var multi_node: MultiMeshInstance3D = curr
+				if multi_node.visible and multi_node.is_inside_tree() and multi_node.multimesh:
+					branch_multis += multi_node.multimesh.instance_count
 			elif curr is Light3D:
-				if curr.visible and curr.shadow_enabled:
+				var light_node: Light3D = curr
+				if light_node.visible and light_node.shadow_enabled:
 					branch_shadows += 1
 
 			for grandchild: Node in curr.get_children():
@@ -465,12 +473,13 @@ Status: [%s] (%.2f ms | %.1f%% budget)
 			pipe_mesh,
 			pipe_canvas,
 			phys_pairs,
-			phys_islands
+			phys_islands,
 		]
 	)
 
 
 ## Extracts active post-processing features on an [Environment] resource.
+## [param env] Source [Environment] resource to inspect.
 func _get_active_environment_effects(env: Environment) -> PackedStringArray:
 	var active_effects: PackedStringArray = PackedStringArray()
 	if not env:
@@ -497,16 +506,21 @@ func _get_active_environment_effects(env: Environment) -> PackedStringArray:
 
 
 ## Resolves active post-processing environment resource for a viewport.
+## [param vp] Viewport node to inspect for [Environment] sources.
 func _detect_viewport_environment_effects(vp: Viewport) -> PackedStringArray:
-	if vp is SubViewport and (vp as SubViewport).disable_3d:
-		return PackedStringArray()
+	if vp is SubViewport:
+		var sub_vp: SubViewport = vp
+		if sub_vp.disable_3d:
+			return PackedStringArray()
 
 	var camera: Camera3D = vp.get_camera_3d()
 	if is_instance_valid(camera) and camera.environment:
 		return _get_active_environment_effects(camera.environment)
 
-	if vp is SubViewport and not (vp as SubViewport).own_world_3d:
-		return PackedStringArray()
+	if vp is SubViewport:
+		var sub_vp_world: SubViewport = vp
+		if not sub_vp_world.own_world_3d:
+			return PackedStringArray()
 
 	var world_3d: World3D = vp.find_world_3d()
 	if is_instance_valid(world_3d) and world_3d.environment:
@@ -516,6 +530,7 @@ func _detect_viewport_environment_effects(vp: Viewport) -> PackedStringArray:
 
 
 ## Formats detected environment effects with warning colors for BBCode.
+## [param effects] List of detected effect name tokens.
 func _format_effects_bbcode(effects: PackedStringArray) -> String:
 	if effects.is_empty():
 		return "[color=gray]None (Clean)[/color]"
@@ -580,6 +595,8 @@ func _build_pipeline_report() -> String:
 
 
 ## Recursively collects all SubViewport instances inside a parent node.
+## [param current_node] Root [Node] branch to scan recursively.
+## [param out_viewports] Accumulator array for discovered [SubViewport] instances.
 func _collect_subviewports(current_node: Node, out_viewports: Array[SubViewport]) -> void:
 	if current_node is SubViewport:
 		out_viewports.append(current_node)
@@ -598,7 +615,7 @@ func _on_scan_geometry_pressed() -> void:
 func _on_live_isolator_pressed() -> void:
 	_is_isolating_layers = not _is_isolating_layers
 	var state_str: String = "on" if _is_isolating_layers else "off"
-	print("live isolator %s" % state_str)
+	print("RenderDiagnosticsPanel: Live isolator %s" % state_str)
 	var cam: Camera3D = get_viewport().get_camera_3d()
 	if is_instance_valid(cam):
 		if _is_isolating_layers:
@@ -609,7 +626,7 @@ func _on_live_isolator_pressed() -> void:
 
 ## Dumps scene tree and performance metrics to debugger console.
 func _on_dump_audit_pressed() -> void:
-	print("dump audit triggered")
+	print("RenderDiagnosticsPanel: Dump audit triggered.")
 	scan_scene_geometry()
 	var report: String = _build_performance_report()
 	print(report)
@@ -621,13 +638,14 @@ func _on_dump_audit_pressed() -> void:
 func _on_diorama_pressed() -> void:
 	_is_diorama_active = not _is_diorama_active
 	var state_str: String = "on" if _is_diorama_active else "off"
-	print("diorama %s" % state_str)
+	print("RenderDiagnosticsPanel: Diorama %s" % state_str)
 	var current_scene: Node = get_tree().current_scene
 	if not is_instance_valid(current_scene):
 		return
 	for child: Node in current_scene.get_children():
-		if child is Node3D and child.name != "Player" and child.name != "Environment":
-			(child as Node3D).visible = not _is_diorama_active
+		if child is Node3D and child.name != &"Player" and child.name != &"Environment":
+			var node_3d: Node3D = child
+			node_3d.visible = not _is_diorama_active
 
 
 ## Finds the active [Environment] on camera, world, or WorldEnvironment node.
@@ -652,13 +670,16 @@ func _get_active_environment() -> Environment:
 	return null
 
 
-## Checks if any child Light3D node currently casts shadows.
+## Checks if any child [Light3D] node currently casts shadows.
+## [param root_node] Root [Node] branch to inspect.
 func _are_any_shadows_enabled(root_node: Node) -> bool:
 	var stack: Array[Node] = [root_node]
 	while not stack.is_empty():
 		var curr: Node = stack.pop_back()
-		if curr is Light3D and (curr as Light3D).shadow_enabled:
-			return true
+		if curr is Light3D:
+			var light_node: Light3D = curr
+			if light_node.shadow_enabled:
+				return true
 		for child: Node in curr.get_children():
 			stack.append(child)
 	return false
@@ -698,12 +719,13 @@ func _on_shadows_toggled() -> void:
 	while not stack.is_empty():
 		var node: Node = stack.pop_back()
 		if node is Light3D:
-			(node as Light3D).shadow_enabled = target_state
+			var light_node: Light3D = node
+			light_node.shadow_enabled = target_state
 		for child: Node in node.get_children():
 			stack.append(child)
 
 	var state_str: String = "on" if target_state else "off"
-	print("shadows %s" % state_str)
+	print("RenderDiagnosticsPanel: Shadows %s" % state_str)
 	if is_instance_valid(shadows_toggle_button):
 		shadows_toggle_button.text = "Shadows %s" % state_str
 	_refresh_diagnostics_display()
@@ -713,14 +735,14 @@ func _on_shadows_toggled() -> void:
 func _on_sdfgi_toggled() -> void:
 	var env: Environment = _get_active_environment()
 	if not env:
-		print("sdfgi off")
+		print("RenderDiagnosticsPanel: SDFGI off (no active environment)")
 		if is_instance_valid(sdfgi_toggle_button):
 			sdfgi_toggle_button.text = "SDFGI off"
 		return
 
 	env.sdfgi_enabled = not env.sdfgi_enabled
 	var state_str: String = "on" if env.sdfgi_enabled else "off"
-	print("SDFGI %s" % state_str)
+	print("RenderDiagnosticsPanel: SDFGI %s" % state_str)
 	if is_instance_valid(sdfgi_toggle_button):
 		sdfgi_toggle_button.text = "SDFGI %s" % state_str
 	_refresh_diagnostics_display()
@@ -730,7 +752,7 @@ func _on_sdfgi_toggled() -> void:
 func _on_fog_toggled() -> void:
 	var env: Environment = _get_active_environment()
 	if not env:
-		print("fog off")
+		print("RenderDiagnosticsPanel: Fog off (no active environment)")
 		if is_instance_valid(fog_toggle_button):
 			fog_toggle_button.text = "Fog off"
 		return
@@ -739,7 +761,7 @@ func _on_fog_toggled() -> void:
 	env.fog_enabled = new_state
 	env.volumetric_fog_enabled = new_state
 	var state_str: String = "on" if new_state else "off"
-	print("fog %s" % state_str)
+	print("RenderDiagnosticsPanel: Fog %s" % state_str)
 	if is_instance_valid(fog_toggle_button):
 		fog_toggle_button.text = "Fog %s" % state_str
 	_refresh_diagnostics_display()

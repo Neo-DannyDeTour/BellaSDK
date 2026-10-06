@@ -27,17 +27,17 @@ func _init() -> void:
 	camera_controller = mock_cam
 	add_child(mock_cam)
 
-	var mock_interact: DummyComponent = DummyComponent.new()
+	var mock_interact: MockInteraction = MockInteraction.new()
 	mock_interact.name = "MockInteractionComponent"
 	interaction_component = mock_interact
 	add_child(mock_interact)
 
-	var mock_env: DummyComponent = DummyComponent.new()
+	var mock_env: MockEnvironment = MockEnvironment.new()
 	mock_env.name = "MockEnvironmentComponent"
 	environment_component = mock_env
 	add_child(mock_env)
 
-	var mock_stats: DummyComponent = DummyComponent.new()
+	var mock_stats: MockStats = MockStats.new()
 	mock_stats.name = "MockStatsComponent"
 	stats_component = mock_stats
 	add_child(mock_stats)
@@ -93,3 +93,30 @@ class MockSystemMenu:
 	## Inert stub simulating noclip movement processing.
 	func process_noclip(_delta: float) -> void:
 		pass
+
+
+## Mock interaction component satisfying [PlayerInteractionComponent] typing.
+class MockInteraction:
+	extends PlayerInteractionComponent
+
+	## Stub constructor setting unpausable process mode.
+	func _init() -> void:
+		print("MockInteraction: _init() called.")
+
+
+## Mock environment component satisfying [PlayerEnvironmentComponent] typing.
+class MockEnvironment:
+	extends PlayerEnvironmentComponent
+
+	## Stub constructor setting unpausable process mode.
+	func _init() -> void:
+		print("MockEnvironment: _init() called.")
+
+
+## Mock stats component satisfying [PlayerStatsComponent] typing.
+class MockStats:
+	extends PlayerStatsComponent
+
+	## Stub constructor setting unpausable process mode.
+	func _init() -> void:
+		print("MockStats: _init() called.")

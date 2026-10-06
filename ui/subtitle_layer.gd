@@ -70,7 +70,7 @@ func _ready() -> void:
 	if is_instance_valid(subtitle_label):
 		subtitle_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		subtitle_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		subtitle_label.visible_characters_behavior = TextServer.VC_CHARS_BEFORE_SHAPING
+		subtitle_label.visible_characters_behavior = (TextServer.VC_CHARS_BEFORE_SHAPING)
 		subtitle_label.scroll_following = false
 		subtitle_label.add_theme_constant_override("line_separation", 4)
 
@@ -83,33 +83,44 @@ func _ready() -> void:
 func _load_saved_settings() -> void:
 	print("SubtitleLayer: Loading settings from GlobalSettings.")
 	var gs: Node = get_node_or_null("/root/GlobalSettings")
-	if not is_instance_valid(gs):
+	if not is_instance_valid(gs) or not gs.has_method("get_setting"):
 		return
 
-	is_subtitles_enabled = bool(gs.get_setting("Accessibility", "subtitles_enabled", true))
-	active_font_size = float(gs.get_setting("Accessibility", "subtitle_size", 24.0))
+	var sub_enabled_raw: Variant = gs.call(
+		&"get_setting", "Accessibility", "subtitles_enabled", true
+	)
+	is_subtitles_enabled = sub_enabled_raw == true
+
+	var font_size_raw: Variant = gs.call(&"get_setting", "Accessibility", "subtitle_size", 24.0)
+	if font_size_raw is float:
+		active_font_size = font_size_raw
+	elif font_size_raw is int:
+		active_font_size = float(font_size_raw)
 	_on_subtitle_size_changed(active_font_size)
 
-	var bg_pct: float = float(gs.get_setting("Accessibility", "subtitle_bg_opacity", 50.0))
+	var bg_pct: float = gs.call(&"get_setting", "Accessibility", "subtitle_bg_opacity", 50.0)
 	active_bg_opacity = clampf(bg_pct / 100.0, 0.0, 1.0)
 
 	var color_names: Array[String] = [
 		"Cyan", "Blue", "Yellow", "Green", "Red", "Magenta", "White", "Black"
 	]
-	var text_idx: int = int(gs.get_setting("Accessibility", "subtitle_text_color", 6))
+	var text_idx: int = gs.call(&"get_setting", "Accessibility", "subtitle_text_color", 6)
 	if text_idx >= 0 and text_idx < color_names.size():
 		active_text_color = color_names[text_idx].to_lower()
 
-	var spk_idx: int = int(gs.get_setting("Accessibility", "subtitle_speaker_color", 0))
+	var spk_idx: int = gs.call(&"get_setting", "Accessibility", "subtitle_speaker_color", 0)
 	if spk_idx >= 0 and spk_idx < color_names.size():
 		active_speaker_color = color_names[spk_idx].to_lower()
 
-	var bg_idx: int = int(gs.get_setting("Accessibility", "subtitle_bg_color", 7))
+	var bg_idx: int = gs.call(&"get_setting", "Accessibility", "subtitle_bg_color", 7)
 	if bg_idx >= 0 and bg_idx < color_names.size():
 		active_bg_color = color_names[bg_idx].to_lower()
 
 	_update_panel_stylebox()
-	is_speaker_name_shown = bool(gs.get_setting("Accessibility", "subtitle_show_names", true))
+	var show_names_raw: Variant = gs.call(
+		&"get_setting", "Accessibility", "subtitle_show_names", true
+	)
+	is_speaker_name_shown = show_names_raw == true
 	print("SubtitleLayer: Subtitles enabled state: ", is_subtitles_enabled)
 
 
@@ -134,8 +145,9 @@ func _connect_signals() -> void:
 		Events.subtitle_speaker_color_changed.connect(_on_subtitle_speaker_color_changed)
 	if not Events.subtitle_show_names_toggled.is_connected(_on_subtitle_show_names_toggled):
 		Events.subtitle_show_names_toggled.connect(_on_subtitle_show_names_toggled)
-	if Events.has_signal("font_changed") and not Events.font_changed.is_connected(_on_font_changed):
-		Events.font_changed.connect(_on_font_changed)
+	if Events.has_signal("font_changed"):
+		if not Events.font_changed.is_connected(_on_font_changed):
+			Events.font_changed.connect(_on_font_changed)
 
 
 ## Instantly resets subtitle visibility, scrolls, and alpha modulation to zero.
@@ -180,7 +192,6 @@ func show_subtitle(speaker: String, text: String, duration: float) -> void:
 
 	background_panel.visible = true
 
-	# Keep existing display visible without restarting typewriter from character zero
 	if is_already_showing:
 		background_panel.modulate.a = 1.0
 		subtitle_label.visible_characters = -1
@@ -237,6 +248,7 @@ func show_subtitle(speaker: String, text: String, duration: float) -> void:
 
 ## Formats stored speaker and dialogue text using active BBCode palette colors.
 func _format_and_apply_text() -> void:
+	print("SubtitleLayer: Formatting dialogue text.")
 	if not is_instance_valid(subtitle_label):
 		return
 	var formatted_body: String = ""
@@ -287,7 +299,7 @@ func hide_subtitle() -> void:
 	if fade_tween and fade_tween.is_valid():
 		fade_tween.kill()
 
-	fade_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN)
+	fade_tween = (create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN))
 	fade_tween.tween_property(background_panel, "modulate:a", 0.0, FADE_DURATION)
 	fade_tween.tween_callback(_hide_subtitles_immediate)
 
@@ -301,7 +313,9 @@ func _on_font_changed(font_id: String) -> void:
 	var gs: Node = get_node_or_null("/root/GlobalSettings")
 	var font_res: Font = null
 	if is_instance_valid(gs) and gs.has_method("get_font_resource"):
-		font_res = gs.get_font_resource(font_id)
+		var raw_font: Variant = gs.call(&"get_font_resource", font_id)
+		if raw_font is Font:
+			font_res = raw_font
 
 	if is_instance_valid(font_res):
 		subtitle_label.add_theme_font_override("normal_font", font_res)
@@ -329,8 +343,9 @@ func _on_subtitle_size_changed(font_size: float) -> void:
 		subtitle_label.add_theme_font_size_override("bold_italics_font_size", size_int)
 
 
-## Rebuilds the background panel StyleBoxFlat with current color and opacity.
+## Rebuilds background [StyleBoxFlat] using active color and opacity.
 func _update_panel_stylebox() -> void:
+	print("SubtitleLayer: Updating background panel stylebox.")
 	if not is_instance_valid(background_panel):
 		return
 

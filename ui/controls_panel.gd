@@ -229,32 +229,31 @@ func _setup_mouse_aim_controls() -> void:
 	)
 
 
-## Applies mouse sensitivity to the active player camera controller.
+## Retrieves the active [CameraController] node from the player group safely.
+func _get_camera_controller() -> CameraController:
+	var player: Node = get_tree().get_first_node_in_group(&"player")
+	if not is_instance_valid(player):
+		return null
+	var controller_val: Variant = player.get(&"camera_controller")
+	if controller_val is CameraController and is_instance_valid(controller_val):
+		return controller_val as CameraController
+	return null
+
+
+## Applies mouse sensitivity settings to player camera controller.
 func _apply_mouse_sensitivity(sens: float) -> void:
 	print("Engine: Applying Mouse Sensitivity: ", sens)
-	var player: Node = get_tree().get_first_node_in_group("player")
-	if (
-		is_instance_valid(player)
-		and "camera_controller" in player
-		and is_instance_valid(player.camera_controller)
-	):
-		if player.camera_controller.has_method("set_mouse_sensitivity"):
-			player.camera_controller.set_mouse_sensitivity(sens)
-		else:
-			player.camera_controller.mouse_sensitivity_base = sens
-			player.camera_controller.mouse_sensitivity = sens
+	var controller: CameraController = _get_camera_controller()
+	if is_instance_valid(controller):
+		controller.set_mouse_sensitivity(sens)
 
 
-## Applies vertical look inversion to the player camera controller.
+## Applies vertical camera look inversion to player camera controller.
 func _apply_invert_y(inverted: bool) -> void:
 	print("Engine: Applying Invert Y: ", inverted)
-	var player: Node = get_tree().get_first_node_in_group("player")
-	if (
-		is_instance_valid(player)
-		and "camera_controller" in player
-		and is_instance_valid(player.camera_controller)
-	):
-		player.camera_controller.invert_y = inverted
+	var controller: CameraController = _get_camera_controller()
+	if is_instance_valid(controller):
+		controller.invert_y = inverted
 
 
 ## Connects companion slider and LineEdit pairs with synchronized validation.
@@ -402,7 +401,7 @@ func _ensure_all_actions_registered() -> void:
 				InputMap.add_action(action)
 
 
-## Configures behavior dropdowns (Crouch, Sprint, Valve).
+## Configures behavior dropdowns for crouch, sprint, and valve interactions.
 func _setup_behavior_controls() -> void:
 	print("UI: Configuring Input Behavior dropdowns.")
 	if is_instance_valid(crouch_mode_label):

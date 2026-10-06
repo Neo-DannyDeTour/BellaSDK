@@ -17,8 +17,9 @@ extends SoftBody3D
 ## [param event] The input event to check against the mapped bake key.
 ## Returns: void.
 func _input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo:
-		if event.keycode == bake_action_key:
+	var key_event: InputEventKey = event as InputEventKey
+	if key_event and key_event.pressed and not key_event.echo:
+		if key_event.keycode == bake_action_key:
 			_bake_cloth()
 
 

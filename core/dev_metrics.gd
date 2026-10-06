@@ -53,7 +53,6 @@ var _settings_info_static_str: String = ""
 
 
 ## Called when the node enters the scene tree for the first time.
-## Caches hardware info and enables rendering measurement overrides.
 func _ready() -> void:
 	print("DevMetricsPanel: Initializing and caching hardware info.")
 	visible = false
@@ -71,8 +70,7 @@ func _ready() -> void:
 	_cache_static_settings_info()
 
 
-## Called every frame to sample frametime history and periodically refresh the UI.
-## [param delta] The time elapsed since the previous frame in seconds.
+## Called every frame to sample frametime history and refresh the UI periodically.
 func _process(delta: float) -> void:
 	if not visible or not player:
 		return
@@ -109,24 +107,26 @@ func _render_metrics_text() -> void:
 	var is_pressing_keys: bool = current_input.length() > 0.1
 
 	var state: String = "UNKNOWN"
-	var sys_menu: Variant = player.get("system_menu")
-	var fsm: Variant = player.get("state_machine")
+	var sys_menu: Object = player.get("system_menu") as Object
+	var fsm: Object = player.get("state_machine") as Object
 
-	if sys_menu and sys_menu.get("flying"):
+	if is_instance_valid(sys_menu) and bool(sys_menu.get("flying")):
 		state = "NOCLIP"
-	elif fsm and fsm.get("state"):
-		state = String(fsm.state.name).to_upper()
-		if state == "GROUND":
-			var loco: Variant = player.get("locomotion_component")
-			if is_instance_valid(loco):
-				if loco.get("crouching"):
-					state = "CROUCH WALKING" if is_pressing_keys else "CROUCH IDLE"
-				elif loco.get("sprint_active"):
-					state = "SPRINTING"
-				elif is_pressing_keys:
-					state = "WALKING"
-				else:
-					state = "IDLE"
+	elif is_instance_valid(fsm) and fsm.get("state"):
+		var fsm_state: Object = fsm.get("state") as Object
+		if is_instance_valid(fsm_state):
+			state = String(fsm_state.get("name")).to_upper()
+			if state == "GROUND":
+				var loco: Object = player.get("locomotion_component") as Object
+				if is_instance_valid(loco):
+					if bool(loco.get("crouching")):
+						state = "CROUCH WALKING" if is_pressing_keys else "CROUCH IDLE"
+					elif bool(loco.get("sprint_active")):
+						state = "SPRINTING"
+					elif is_pressing_keys:
+						state = "WALKING"
+					else:
+						state = "IDLE"
 
 	var cpu_process_ms: float = Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0
 	var physics_process_ms: float = (
@@ -147,9 +147,11 @@ func _render_metrics_text() -> void:
 	var orphan_count: int = int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT))
 
 	var flashlight_str: String = "OFF"
-	var f_ctrl: Variant = player.get("flashlight_controller")
-	if is_instance_valid(f_ctrl) and is_instance_valid(f_ctrl.flashlight):
-		flashlight_str = "ON" if f_ctrl.flashlight.visible else "OFF"
+	var f_ctrl: Object = player.get("flashlight_controller") as Object
+	if is_instance_valid(f_ctrl):
+		var fl: CanvasItem = f_ctrl.get("flashlight") as CanvasItem
+		if is_instance_valid(fl) and fl.visible:
+			flashlight_str = "ON"
 
 	var weapon_str: String = "NONE"
 	var weapon_holder: Node = player.get_node_or_null("%WeaponHolder")
@@ -207,7 +209,7 @@ func _render_metrics_text() -> void:
 	metrics_label.text = text
 
 
-## Samples the current frametime from the [RenderingServer] and pushes it into the history arrays.
+## Samples frame times from [RenderingServer] and updates rolling arrays.
 func _update_frametime_history() -> void:
 	var current_tick: int = Time.get_ticks_usec()
 	var frametime_total: float = (current_tick - _last_tick) * 0.001
@@ -237,10 +239,6 @@ func _update_frametime_history() -> void:
 
 
 ## Formats a metric category into a clean BBCode table row string.
-## [param title] The name of the metric (e.g. "CPU:").
-## [param sum_val] The current rolling sum of the metric.
-## [param history] The array containing the history of the metric.
-## Returns formatted BBCode table row string.
 func _format_metric_row(title: String, sum_val: float, history: Array[float]) -> String:
 	if history.is_empty():
 		return ""
@@ -272,9 +270,7 @@ func _format_metric_row(title: String, sum_val: float, history: Array[float]) ->
 	)
 
 
-## Returns a hex color string based on how fast a millisecond timing is.
-## [param ms] The time in milliseconds.
-## Returns hex color code string.
+## Returns a hex color string based on millisecond execution duration.
 func _get_ms_color(ms: float) -> String:
 	if ms < 8.34:
 		return "#38bdf8"
@@ -285,7 +281,7 @@ func _get_ms_color(ms: float) -> String:
 	return "#ef4444"
 
 
-## Queries the [OS] and [RenderingServer] once on load to build hardware information strings.
+## Queries [OS] and [RenderingServer] once on load to build hardware information strings.
 func _cache_hardware_info() -> void:
 	var cpu_name: String = OS.get_processor_name().replace("(R)", "").replace("(TM)", "")
 	var threads: int = OS.get_processor_count()
@@ -312,8 +308,7 @@ func _cache_static_settings_info() -> void:
 	_settings_info_static_str += "Rendering Method: %s\n" % method_str
 
 
-## Checks the current active viewport to build strings for dynamic graphics settings.
-## Returns formatted string listing dynamic graphics options.
+## Checks the active viewport to build strings for dynamic graphics settings.
 func _get_dynamic_settings_string() -> String:
 	var dyn_str: String = ""
 	var vp: Viewport = get_viewport()

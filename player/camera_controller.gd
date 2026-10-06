@@ -70,6 +70,9 @@ var stair_offset: float = 0.0
 ## Determines if vertical camera movement is inverted.
 var invert_y: bool = false
 
+## Whether screen motion and camera head bobbing are reduced.
+var reduce_motion: bool = false
+
 
 ## Lifecycle initialization method loading saved preferences and camera state.
 func _ready() -> void:
@@ -81,6 +84,7 @@ func _ready() -> void:
 	base_fov = float(GlobalSettings.get_setting("Settings", "base_fov", 75.0))
 	disable_sprint_fov = bool(GlobalSettings.get_setting("Settings", "disable_sprint_fov", false))
 	invert_y = bool(GlobalSettings.get_setting("Controls", "invert_y", false))
+	reduce_motion = bool(GlobalSettings.get_setting("Accessibility", "reduce_motion", false))
 
 	mouse_sensitivity = mouse_sensitivity_base
 	target_fov = base_fov
@@ -94,12 +98,11 @@ func set_mouse_sensitivity(new_sens: float) -> void:
 	mouse_sensitivity = new_sens
 
 
-## Evaluates incoming mouse motion to rotate player body and camera head.
+## Evaluates incoming mouse motion to rotate the player body and camera head smoothly.
 ## [param event] Mouse motion input event.
 ## [param is_terminal_mode] Whether terminal focus restricts mouse movement.
 ## [param is_heavy_lifting] Whether heavy lifting restricts camera yaw/pitch.
 ## [param _heavy_lift_yaw_base] Yaw constraint baseline angle.
-## Evaluates incoming mouse motion to rotate the player body and camera head smoothly.
 func handle_mouse_input(
 	event: InputEventMouseMotion,
 	is_terminal_mode: bool,
@@ -199,7 +202,7 @@ func _update_fov(delta: float, is_sprinting: bool, is_grounded: bool, input_dir:
 ## [param delta] Frame delta time in seconds.
 ## [param input_dir] Current movement vector.
 func _update_tilt(delta: float, input_dir: Vector2) -> void:
-	var target_tilt: float = input_dir.x * camera_tilt_amount
+	var target_tilt: float = 0.0 if reduce_motion else input_dir.x * camera_tilt_amount
 	eyes.rotation.z = lerpf(eyes.rotation.z, deg_to_rad(-target_tilt), delta * lerp_speed)
 
 
@@ -216,6 +219,12 @@ func _update_headbob(
 	is_crouching: bool,
 	intensity_modifier: float = 1.0
 ) -> void:
+	if reduce_motion:
+		headbob_offset = Vector2.ZERO
+		eyes.position.y = stair_offset
+		eyes.position.x = 0.0
+		return
+
 	var bob_speed: float = HEAD_BOBBING_IDLE_SPEED
 
 	if is_sprinting and input_dir != Vector2.ZERO:

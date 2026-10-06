@@ -15,7 +15,12 @@ extends PlayerState
 ## Locks player collision into crouched stance on slide initiation.
 func enter(_msg: Dictionary = {}) -> void:
 	print("StateSlide: enter() called. Player locked into slide.")
-	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	var typed_player: Player = player as Player
+	var loco: PlayerLocomotionComponent = (
+		typed_player.locomotion_component as PlayerLocomotionComponent
+		if is_instance_valid(typed_player)
+		else null
+	)
 	if is_instance_valid(loco):
 		loco.crouching = true
 		loco.standing_collision.disabled = true
@@ -25,7 +30,12 @@ func enter(_msg: Dictionary = {}) -> void:
 ## Restores standing collision shape if overhead raycast clearance allows.
 func exit() -> void:
 	print("StateSlide: exit() called. Restoring default collision state.")
-	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	var typed_player: Player = player as Player
+	var loco: PlayerLocomotionComponent = (
+		typed_player.locomotion_component as PlayerLocomotionComponent
+		if is_instance_valid(typed_player)
+		else null
+	)
 	if is_instance_valid(loco) and not loco.crouch_cast_check.is_colliding():
 		print("StateSlide: Headroom clear. Standing up.")
 		loco.crouching = false
@@ -36,9 +46,16 @@ func exit() -> void:
 ## Updates downhill acceleration, lateral steering, gravity, and bounds.
 func physics_update(delta: float) -> void:
 	print("StateSlide: physics_update() processing slide frame.")
-	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	var typed_player: Player = player as Player
+	var loco: PlayerLocomotionComponent = (
+		typed_player.locomotion_component as PlayerLocomotionComponent
+		if is_instance_valid(typed_player)
+		else null
+	)
 	var interact: PlayerInteractionComponent = (
-		player.interaction_component as PlayerInteractionComponent
+		typed_player.interaction_component as PlayerInteractionComponent
+		if is_instance_valid(typed_player)
+		else null
 	)
 
 	if not player.is_on_floor():
@@ -69,8 +86,10 @@ func physics_update(delta: float) -> void:
 	if is_instance_valid(interact) and is_instance_valid(interact.get(&"camera")):
 		var cam: Camera3D = interact.get(&"camera") as Camera3D
 		camera_right = cam.global_transform.basis.x.normalized()
-	elif is_instance_valid(player.camera_controller):
-		camera_right = player.camera_controller.camera.global_transform.basis.x.normalized()
+	elif is_instance_valid(typed_player) and is_instance_valid(typed_player.camera_controller):
+		var cam: Camera3D = typed_player.camera_controller.camera as Camera3D
+		if is_instance_valid(cam):
+			camera_right = cam.global_transform.basis.x.normalized()
 
 	var steer_dir: Vector3 = camera_right.slide(floor_normal)
 	if steer_dir.length_squared() > 0.0001:
@@ -98,13 +117,20 @@ func physics_update(delta: float) -> void:
 ## Updates camera shake, footstep managers, and snow deformation tracks.
 func _update_components(delta: float, input_dir: Vector2) -> void:
 	print("StateSlide: _update_components() polling camera and footsteps.")
-	var loco: PlayerLocomotionComponent = player.locomotion_component as PlayerLocomotionComponent
+	var typed_player: Player = player as Player
+	var loco: PlayerLocomotionComponent = (
+		typed_player.locomotion_component as PlayerLocomotionComponent
+		if is_instance_valid(typed_player)
+		else null
+	)
 	var interact: PlayerInteractionComponent = (
-		player.interaction_component as PlayerInteractionComponent
+		typed_player.interaction_component as PlayerInteractionComponent
+		if is_instance_valid(typed_player)
+		else null
 	)
 
-	if is_instance_valid(player.camera_controller):
-		player.camera_controller.update_camera(
+	if is_instance_valid(typed_player) and is_instance_valid(typed_player.camera_controller):
+		typed_player.camera_controller.update_camera(
 			delta, input_dir, false, true, true, player.velocity.length()
 		)
 

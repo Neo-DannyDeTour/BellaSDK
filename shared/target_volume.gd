@@ -37,7 +37,7 @@ const SHAPE_TYPE: Variant = EditorTriggerVisualizer.ShapeType
 
 @export_category("Volume Bounds")
 ## The shape drawn in the editor to represent the spawn volume.
-@export var visualizer_shape_type: SHAPE_TYPE = SHAPE_TYPE.BOX:
+@export var visualizer_shape_type: int = EditorTriggerVisualizer.ShapeType.BOX:
 	set(value):
 		visualizer_shape_type = value
 		if is_inside_tree():
@@ -173,7 +173,8 @@ func _process(delta: float) -> void:
 				_player_ref = players[0] as Node3D
 
 		if is_instance_valid(_player_ref):
-			var dist_sq: float = global_position.distance_squared_to(_player_ref.global_position)
+			var p_pos: Vector3 = _player_ref.global_position
+			var dist_sq: float = global_position.distance_squared_to(p_pos)
 			_is_dormant = dist_sq > (active_distance * active_distance)
 
 	if _is_dormant:
@@ -247,7 +248,7 @@ func _get_visualizer() -> EditorTriggerVisualizer:
 
 ## Pre-instantiates targets into the inactive pool.
 func _initialize_pool() -> void:
-	print("TargetVolume: _initialize_pool() - Building pool of size: ", pool_size)
+	print("TargetVolume: _initialize_pool() - Pool size: ", pool_size)
 	if target_scene == null:
 		return
 
@@ -283,7 +284,8 @@ func _handle_repositioning(delta: float) -> void:
 
 ## Evaluates timers and target counts to deploy pooled targets.
 func _handle_spawning(delta: float) -> void:
-	if not spawn_infinitely and targets_spawned_so_far >= total_targets_to_spawn:
+	var limit_hit: bool = not spawn_infinitely and targets_spawned_so_far >= total_targets_to_spawn
+	if limit_hit:
 		if active_targets.is_empty():
 			print("TargetVolume: All targets depleted. Shutting down volume.")
 			set_process(false)
@@ -303,15 +305,18 @@ func _handle_spawning(delta: float) -> void:
 
 			var spawn_count: int = max_active_targets
 			if not spawn_infinitely:
-				var remaining: int = total_targets_to_spawn - targets_spawned_so_far
-				spawn_count = mini(spawn_count, remaining)
+				var rem: int = total_targets_to_spawn - targets_spawned_so_far
+				spawn_count = mini(spawn_count, rem)
 
 			for i: int in range(spawn_count):
 				_spawn_target()
 
 	elif spawn_mode == SpawnMode.WAIT_FOR_KILL:
 		while active_targets.size() < max_active_targets:
-			if not spawn_infinitely and targets_spawned_so_far >= total_targets_to_spawn:
+			var kill_limit: bool = (
+				not spawn_infinitely and targets_spawned_so_far >= total_targets_to_spawn
+			)
+			if kill_limit:
 				break
 			_spawn_target()
 
@@ -352,11 +357,11 @@ func _spawn_target() -> void:
 	target.process_mode = Node.PROCESS_MODE_INHERIT
 
 	if target.has_method(&"reset"):
-		target.reset()
+		target.call(&"reset")
 	elif "health_component" in target:
 		var health_comp: Node = target.get("health_component") as Node
 		if is_instance_valid(health_comp) and health_comp.has_method(&"reset"):
-			health_comp.reset()
+			health_comp.call(&"reset")
 
 	active_targets.append(target)
 	targets_spawned_so_far += 1

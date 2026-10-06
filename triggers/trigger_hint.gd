@@ -1,6 +1,5 @@
+## Physics trigger displaying key-binding hints and notifying [TTSManager].
 @tool
-## Physics trigger volume displaying key-binding hints and notifying [TTSManager].
-## Integrates [EditorTriggerVisualizer] for in-editor wireframe and bounds display.
 class_name HintTrigger
 extends Area3D
 
@@ -9,102 +8,101 @@ enum HintType { CUSTOM, INTERACT, JUMP, CROUCH, SPRINT, FLASHLIGHT, ZOOM }
 
 @export_category("Trigger Volume")
 
-## Selects whether the trigger visualizer and collision represent a box or a sphere.
+## Selects whether visualizer and collision represent a box or a sphere.
 @export var shape_type: EditorTriggerVisualizer.ShapeType = EditorTriggerVisualizer.ShapeType.BOX:
 	set(value):
 		shape_type = value
-		if is_inside_tree():
+		if is_instance_valid(self) and is_inside_tree():
 			_update_visuals()
 
-## Defines the 3D dimensions of the trigger volume in the editor.
+## Defines 3D dimensions of trigger volume in the editor.
 @export var trigger_size: Vector3 = Vector3(2.0, 2.0, 2.0):
 	set(value):
 		trigger_size = value
-		if is_inside_tree():
+		if is_instance_valid(self) and is_inside_tree():
 			_update_visuals()
 
-## Local offset applied to both the collision shape and the visualizer node.
+## Local offset applied to collision shape and visualizer node.
 @export var trigger_offset: Vector3 = Vector3.ZERO:
 	set(value):
 		trigger_offset = value
-		if is_inside_tree():
+		if is_instance_valid(self) and is_inside_tree():
 			_update_visuals()
 
 @export_category("Trigger Debug Visualizer")
 
-## Controls whether the visualizer mesh and label remain visible during gameplay.
+## Controls if visualizer mesh and label stay visible during gameplay.
 @export var show_in_game: bool = false:
 	set(value):
 		show_in_game = value
-		if is_inside_tree():
+		if is_instance_valid(self) and is_inside_tree():
 			_update_visuals()
 
-## Determines the base color and opacity of the editor-only visualizer fill.
+## Determines base color and opacity of editor visualizer fill.
 @export var trigger_color: Color = Color(0.2, 0.6, 1.0, 0.25):
 	set(value):
 		trigger_color = value
-		if is_inside_tree():
+		if is_instance_valid(self) and is_inside_tree():
 			_update_visuals()
 
-## Edge color applied to the wireframe bounding cage and orientation arrow.
+## Edge color applied to wireframe bounding cage and orientation arrow.
 @export var outline_color: Color = Color(0.4, 0.8, 1.0, 0.9):
 	set(value):
 		outline_color = value
-		if is_inside_tree():
+		if is_instance_valid(self) and is_inside_tree():
 			_update_visuals()
 
-## Allows the visualizer to remain visible through walls and level geometry.
+## Allows visualizer to remain visible through walls and level geometry.
 @export var x_ray_mode: bool = false:
 	set(value):
 		x_ray_mode = value
-		if is_inside_tree():
+		if is_instance_valid(self) and is_inside_tree():
 			_update_visuals()
 
 ## Displays an arrow pointing along -Z indicating player entry heading.
 @export var show_orientation: bool = true:
 	set(value):
 		show_orientation = value
-		if is_inside_tree():
+		if is_instance_valid(self) and is_inside_tree():
 			_update_visuals()
 
 ## Appends metric dimensions to the 3D billboard text label.
 @export var show_metric_dimensions: bool = true:
 	set(value):
 		show_metric_dimensions = value
-		if is_inside_tree():
+		if is_instance_valid(self) and is_inside_tree():
 			_update_visuals()
 
-## Sets the 3D text floating above the visualizer in the editor.
+## Sets 3D text floating above visualizer in the editor.
 @export var trigger_text: String = "HINT":
 	set(value):
 		trigger_text = value
-		if is_inside_tree():
+		if is_instance_valid(self) and is_inside_tree():
 			_update_visuals()
 
 @export_category("Hint Settings")
 
-## Select a predefined message from the dropdown or choose CUSTOM.
+## Select predefined message from dropdown or choose CUSTOM.
 @export var hint_type: HintType = HintType.INTERACT
 
-## The text to display only if hint_type is set to CUSTOM. Use brackets like [interact].
+## Text displayed when [member hint_type] is CUSTOM. Use [interact].
 @export_multiline var custom_message: String = ""
 
-## If true, the hint will only trigger once and then permanently ignore future overlaps.
+## When true, triggers only once and ignores future overlaps.
 @export var trigger_once: bool = true
 
-## Determines how long the hint message remains visible on the screen in seconds.
+## Duration in seconds that hint remains visible on screen.
 @export var duration: float = 3.0
 
-## Toggles whether the formatted hint message is broadcast to the screen UI via Events.
+## Broadcasts formatted hint message to screen UI via Events.
 @export var show_on_screen: bool = true
 
-## Internal flag indicating if the hint has already been shown.
 var _triggered: bool = false
 
 
-## Initializes [HintTrigger] collision, syncs visuals, and binds signals.
+## Initializes collision, synchronizes visuals, and connects signals.
 func _ready() -> void:
-	print("HintTrigger: Initializing trigger.")
+	print("HintTrigger: _ready() - Initializing trigger.")
 	_update_visuals()
 	if Engine.is_editor_hint():
 		return
@@ -113,7 +111,7 @@ func _ready() -> void:
 		body_entered.connect(_on_body_entered)
 
 
-## Synchronizes collision dimensions and visualizer node properties with inspector values.
+## Syncs collision shape and visualizer node with inspector values.
 func _update_visuals() -> void:
 	if not is_inside_tree():
 		return
@@ -151,18 +149,18 @@ func _update_visuals() -> void:
 		visualizer.position = trigger_offset
 
 
-## Safely retrieves the child [CollisionShape3D] instance.
+## Safely retrieves child [CollisionShape3D] instance.
 func _get_collision_shape() -> CollisionShape3D:
 	var col: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
 	if not is_instance_valid(col):
 		for child: Node in get_children():
 			if child is CollisionShape3D:
-				col = child
+				col = child as CollisionShape3D
 				break
 	return col
 
 
-## Safely retrieves the child [EditorTriggerVisualizer] node.
+## Safely retrieves child [EditorTriggerVisualizer] node.
 func _get_visualizer_node() -> EditorTriggerVisualizer:
 	var visualizer: EditorTriggerVisualizer = (
 		get_node_or_null("EditorTriggerVisualizer") as EditorTriggerVisualizer
@@ -174,7 +172,7 @@ func _get_visualizer_node() -> EditorTriggerVisualizer:
 	return visualizer
 
 
-## Evaluates player entry, formats template tokens, and dispatches hint requests.
+## Evaluates player entry, formats template tokens, and fires hints.
 func _on_body_entered(body: Node3D) -> void:
 	if not body.is_in_group(&"player"):
 		return
@@ -223,9 +221,9 @@ func _get_raw_message() -> String:
 			return ""
 
 
-## Replaces bracket action tokens with input mapping strings from [InputMap].
+## Replaces bracket action tokens with key strings from [InputMap].
 func _format_message_with_keys(text: String) -> String:
-	print("HintTrigger: Parsing keys for message template...")
+	print("HintTrigger: _format_message_with_keys() - Parsing keys...")
 	var final_text: String = text
 	var actions: Array[String] = [
 		"forward",
@@ -246,16 +244,18 @@ func _format_message_with_keys(text: String) -> String:
 			var events: Array[InputEvent] = InputMap.action_get_events(action)
 			var key_name: String = "Unassigned"
 
-			if events.size() > 0:
+			if not events.is_empty():
 				var ev: InputEvent = events[0]
 
 				if ev is InputEventKey:
-					if ev.physical_keycode != 0:
-						key_name = OS.get_keycode_string(ev.physical_keycode)
+					var key_ev: InputEventKey = ev as InputEventKey
+					if key_ev.physical_keycode != KEY_NONE:
+						key_name = OS.get_keycode_string(key_ev.physical_keycode)
 					else:
-						key_name = OS.get_keycode_string(ev.keycode)
+						key_name = OS.get_keycode_string(key_ev.keycode)
 				elif ev is InputEventMouseButton:
-					match ev.button_index:
+					var mouse_ev: InputEventMouseButton = ev as InputEventMouseButton
+					match mouse_ev.button_index:
 						MOUSE_BUTTON_LEFT:
 							key_name = "Left Click"
 						MOUSE_BUTTON_RIGHT:
@@ -263,7 +263,7 @@ func _format_message_with_keys(text: String) -> String:
 						MOUSE_BUTTON_MIDDLE:
 							key_name = "Middle Click"
 						_:
-							key_name = "Mouse " + str(ev.button_index)
+							key_name = "Mouse " + str(mouse_ev.button_index)
 				else:
 					key_name = ev.as_text().get_slice(" (", 0).strip_edges()
 

@@ -96,10 +96,10 @@ func _ready() -> void:
 	add_to_group(&"trigger_visualizers")
 	_update_visibility()
 
-	if not Engine.is_editor_hint() and has_node("/root/Events"):
-		var events: Node = get_node("/root/Events")
-		if events.has_signal("trigger_visibility_toggled"):
-			events.trigger_visibility_toggled.connect(set_debug_visibility)
+	if not Engine.is_editor_hint() and is_instance_valid(Events):
+		if Events.has_signal(&"trigger_visibility_toggled"):
+			if not Events.trigger_visibility_toggled.is_connected(set_debug_visibility):
+				Events.trigger_visibility_toggled.connect(set_debug_visibility)
 
 
 ## Refreshes geometry, materials, gizmo arrows, and labels simultaneously.
@@ -294,12 +294,14 @@ func _update_visibility() -> void:
 
 
 ## Updates visibility state dynamically from debug signal triggers.
+## [param is_active] Whether debug visibility is enabled.
 func set_debug_visibility(is_active: bool) -> void:
 	print("EditorTriggerVisualizer: Debug visibility toggle -> ", is_active)
 	visible = (Engine.is_editor_hint() or show_in_game or is_active)
 
 
 ## Sets static debug visibility state across all visualizer nodes in the scene.
+## [param is_active] Global visibility flag.
 static func set_global_debug_visibility(is_active: bool) -> void:
 	print("EditorTriggerVisualizer: Global debug visibility -> ", is_active)
 	debug_force_visible = is_active

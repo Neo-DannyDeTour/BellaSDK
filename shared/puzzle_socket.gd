@@ -123,8 +123,10 @@ func _ready() -> void:
 	else:
 		print("PuzzleSocket: No PlugTriggerArea child node detected.")
 
-	if is_instance_valid(GlobalSettings) and GlobalSettings.has_method("get_setting"):
-		var raw_setting: Variant = GlobalSettings.get_setting("Gameplay", "show_item_prompts", true)
+	if is_instance_valid(GlobalSettings) and GlobalSettings.has_method(&"get_setting"):
+		var raw_setting: Variant = GlobalSettings.call(
+			&"get_setting", "Gameplay", "show_item_prompts", true
+		)
 		_show_text_prompts = raw_setting as bool
 
 	if is_instance_valid(Events) and Events.has_signal("item_prompts_toggled"):
@@ -236,13 +238,14 @@ func _on_socket_interacted(character: CharacterBody3D) -> void:
 			character.set("held_object", released_plug)
 
 			if released_plug is RigidBody3D:
+				var rb_plug: RigidBody3D = released_plug as RigidBody3D
 				PhysicsServer3D.body_set_state(
-					released_plug.get_rid(),
+					rb_plug.get_rid(),
 					PhysicsServer3D.BODY_STATE_TRANSFORM,
 					player_hand_marker.global_transform
 				)
-				(released_plug as RigidBody3D).linear_velocity = Vector3.ZERO
-				(released_plug as RigidBody3D).angular_velocity = Vector3.ZERO
+				rb_plug.linear_velocity = Vector3.ZERO
+				rb_plug.angular_velocity = Vector3.ZERO
 
 			released_plug.call("pick_up", player_hand_marker, character)
 			_on_socket_unfocused()
@@ -471,17 +474,18 @@ func _snap_and_freeze_plug(plug: Node3D) -> void:
 
 	if "snap_marker" in plug and is_instance_valid(plug.get("snap_marker")):
 		var marker: Marker3D = plug.get("snap_marker") as Marker3D
-		target_transform = target_transform * marker.transform.affine_inverse()
+		target_transform = (target_transform * marker.transform.affine_inverse())
 
 	if plug is RigidBody3D:
-		(plug as RigidBody3D).linear_velocity = Vector3.ZERO
-		(plug as RigidBody3D).angular_velocity = Vector3.ZERO
+		var rb_plug: RigidBody3D = plug as RigidBody3D
+		rb_plug.linear_velocity = Vector3.ZERO
+		rb_plug.angular_velocity = Vector3.ZERO
 
 		PhysicsServer3D.body_set_state(
-			plug.get_rid(), PhysicsServer3D.BODY_STATE_TRANSFORM, target_transform
+			rb_plug.get_rid(), PhysicsServer3D.BODY_STATE_TRANSFORM, target_transform
 		)
 
-		plug.global_transform = target_transform
-		(plug as RigidBody3D).freeze = true
+		rb_plug.global_transform = target_transform
+		rb_plug.freeze = true
 	else:
 		plug.global_transform = target_transform
