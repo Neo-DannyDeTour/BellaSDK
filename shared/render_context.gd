@@ -88,7 +88,7 @@ func compute_list_add_barrier(compute_list: int) -> void:
 # --- HELPER FUNCTIONS ---
 func load_shader(path: String) -> RID:
 	if not shader_cache.has(path):
-		var shader_file: RDShaderFile = load(path) as RDShaderFile
+		var shader_file: RDShaderFile = load(path) if load(path) is RDShaderFile else null
 		var shader_spirv: RDShaderSPIRV = shader_file.get_spirv()
 		shader_cache[path] = deletion_queue.push(device.shader_create_from_spirv(shader_spirv))
 	return shader_cache[path]

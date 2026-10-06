@@ -53,6 +53,6 @@ func get_save_data() -> Dictionary:
 func load_save_data(data: Dictionary) -> void:
 	print("StatsComponent: load_save_data() called. Restoring health.")
 	if is_instance_valid(health_component):
-		var saved_health: int = data.get("health", 100) as int
+		var saved_health: int = data.get("health", 100)
 		health_component.current_health = saved_health
 		_on_health_changed(saved_health)

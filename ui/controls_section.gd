@@ -87,7 +87,11 @@ func _ready() -> void:
 
 ## Resolves the infinite swim CheckButton with fallback searching.
 func _resolve_swim_toggle() -> CheckButton:
-	var btn: CheckButton = get_node_or_null("%InfiniteSwimToggle") as CheckButton
+	var btn: CheckButton = (
+		get_node_or_null("%InfiniteSwimToggle")
+		if get_node_or_null("%InfiniteSwimToggle") is CheckButton
+		else null
+	)
 	if not is_instance_valid(btn):
 		btn = find_child("InfiniteSwimToggle", true, false) as CheckButton
 	if not is_instance_valid(btn):

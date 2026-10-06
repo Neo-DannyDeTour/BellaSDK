@@ -107,21 +107,27 @@ func _render_metrics_text() -> void:
 	var is_pressing_keys: bool = current_input.length() > 0.1
 
 	var state: String = "UNKNOWN"
-	var sys_menu: Object = player.get("system_menu") as Object
-	var fsm: Object = player.get("state_machine") as Object
+	var sys_menu: Object = (
+		player.get("system_menu") if player.get("system_menu") is Object else null
+	)
+	var fsm: Object = player.get("state_machine") if player.get("state_machine") is Object else null
 
-	if is_instance_valid(sys_menu) and bool(sys_menu.get("flying")):
+	if is_instance_valid(sys_menu) and sys_menu.get("flying"):
 		state = "NOCLIP"
 	elif is_instance_valid(fsm) and fsm.get("state"):
-		var fsm_state: Object = fsm.get("state") as Object
+		var fsm_state: Object = fsm.get("state") if fsm.get("state") is Object else null
 		if is_instance_valid(fsm_state):
 			state = String(fsm_state.get("name")).to_upper()
 			if state == "GROUND":
-				var loco: Object = player.get("locomotion_component") as Object
+				var loco: Object = (
+					player.get("locomotion_component")
+					if player.get("locomotion_component") is Object
+					else null
+				)
 				if is_instance_valid(loco):
-					if bool(loco.get("crouching")):
+					if loco.get("crouching"):
 						state = "CROUCH WALKING" if is_pressing_keys else "CROUCH IDLE"
-					elif bool(loco.get("sprint_active")):
+					elif loco.get("sprint_active"):
 						state = "SPRINTING"
 					elif is_pressing_keys:
 						state = "WALKING"
@@ -147,9 +153,15 @@ func _render_metrics_text() -> void:
 	var orphan_count: int = int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT))
 
 	var flashlight_str: String = "OFF"
-	var f_ctrl: Object = player.get("flashlight_controller") as Object
+	var f_ctrl: Object = (
+		player.get("flashlight_controller")
+		if player.get("flashlight_controller") is Object
+		else null
+	)
 	if is_instance_valid(f_ctrl):
-		var fl: CanvasItem = f_ctrl.get("flashlight") as CanvasItem
+		var fl: CanvasItem = (
+			f_ctrl.get("flashlight") if f_ctrl.get("flashlight") is CanvasItem else null
+		)
 		if is_instance_valid(fl) and fl.visible:
 			flashlight_str = "ON"
 

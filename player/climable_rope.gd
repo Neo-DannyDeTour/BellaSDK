@@ -121,7 +121,9 @@ static var _material_cache: Dictionary = {}
 @onready var anchor: StaticBody3D = $Anchor
 
 ## Original static rope body used as a template before generation.
-@onready var original_rope_body: RigidBody3D = get_node_or_null("RopeBody") as RigidBody3D
+@onready var original_rope_body: RigidBody3D = (
+	get_node_or_null("RopeBody") if get_node_or_null("RopeBody") is RigidBody3D else null
+)
 
 ## The UI label indicating interaction.
 var interact_label: Label3D
@@ -137,7 +139,11 @@ func _ready() -> void:
 		_update_editor_preview()
 		return
 
-	var orig_label: Label3D = get_node_or_null("RopeBody/Label3D") as Label3D
+	var orig_label: Label3D = (
+		get_node_or_null("RopeBody/Label3D")
+		if get_node_or_null("RopeBody/Label3D") is Label3D
+		else null
+	)
 	if is_instance_valid(orig_label):
 		orig_label.get_parent().remove_child(orig_label)
 		add_child(orig_label)
@@ -190,17 +196,25 @@ func _update_editor_preview() -> void:
 	if not is_inside_tree():
 		return
 
-	var rope_mesh: MeshInstance3D = get_node_or_null("RopeBody/MeshInstance3D") as MeshInstance3D
+	var rope_mesh: MeshInstance3D = (
+		get_node_or_null("RopeBody/MeshInstance3D")
+		if get_node_or_null("RopeBody/MeshInstance3D") is MeshInstance3D
+		else null
+	)
 	var rope_col: CollisionShape3D = (
 		get_node_or_null("RopeBody/CollisionShape3D") as CollisionShape3D
 	)
-	var rope_body: RigidBody3D = get_node_or_null("RopeBody") as RigidBody3D
-	var rope_anchor: StaticBody3D = get_node_or_null("Anchor") as StaticBody3D
-	var pivot: Joint3D = get_node_or_null("Pivot") as Joint3D
+	var rope_body: RigidBody3D = (
+		get_node_or_null("RopeBody") if get_node_or_null("RopeBody") is RigidBody3D else null
+	)
+	var rope_anchor: StaticBody3D = (
+		get_node_or_null("Anchor") if get_node_or_null("Anchor") is StaticBody3D else null
+	)
+	var pivot: Joint3D = get_node_or_null("Pivot") if get_node_or_null("Pivot") is Joint3D else null
 
 	if is_instance_valid(rope_mesh) and rope_mesh.mesh != null:
 		if rope_mesh.mesh is PrimitiveMesh:
-			var prim: PrimitiveMesh = rope_mesh.mesh as PrimitiveMesh
+			var prim: PrimitiveMesh = rope_mesh.mesh if rope_mesh.mesh is PrimitiveMesh else null
 			prim.set("height", rope_length)
 		rope_mesh.position.y = -rope_length * 0.5
 
@@ -441,7 +455,7 @@ func _build_dynamic_rope() -> void:
 		if not can_use_multimesh:
 			var raw_segment: Node = chain_scene.instantiate()
 			if raw_segment is Node3D:
-				var segment: Node3D = raw_segment as Node3D
+				var segment: Node3D = raw_segment if raw_segment is Node3D else null
 				segment.scale = chain_mesh_scale
 				segment.top_level = true
 				add_child(segment)

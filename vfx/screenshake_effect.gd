@@ -94,7 +94,8 @@ var _collision_shape: CollisionShape3D = null
 
 ## Configures player-only physics mask and connects body entry signal.
 func _ready() -> void:
-	_collision_shape = get_node_or_null("CollisionShape3D") as CollisionShape3D
+	var col_node: Node = get_node_or_null("CollisionShape3D")
+	_collision_shape = col_node if col_node is CollisionShape3D else null
 	_update_visuals()
 
 	if Engine.is_editor_hint():
@@ -118,7 +119,8 @@ func _update_visuals() -> void:
 		return
 
 	if not is_instance_valid(_collision_shape):
-		_collision_shape = get_node_or_null("CollisionShape3D") as CollisionShape3D
+		var col_node: Node = get_node_or_null("CollisionShape3D")
+		_collision_shape = col_node if col_node is CollisionShape3D else null
 
 	if is_instance_valid(_collision_shape):
 		if shape_type == EditorTriggerVisualizer.ShapeType.BOX:
@@ -127,16 +129,22 @@ func _update_visuals() -> void:
 			else:
 				_collision_shape.shape = _collision_shape.shape.duplicate()
 			_collision_shape.shape.resource_local_to_scene = true
-			var box_shape: BoxShape3D = _collision_shape.shape as BoxShape3D
-			box_shape.size = trigger_size
+			var box_shape: BoxShape3D = (
+				_collision_shape.shape if _collision_shape.shape is BoxShape3D else null
+			)
+			if is_instance_valid(box_shape):
+				box_shape.size = trigger_size
 		elif shape_type == EditorTriggerVisualizer.ShapeType.SPHERE:
 			if not _collision_shape.shape is SphereShape3D:
 				_collision_shape.shape = SphereShape3D.new()
 			else:
 				_collision_shape.shape = _collision_shape.shape.duplicate()
 			_collision_shape.shape.resource_local_to_scene = true
-			var sphere_shape: SphereShape3D = _collision_shape.shape as SphereShape3D
-			sphere_shape.radius = trigger_size.x * 0.5
+			var sphere_shape: SphereShape3D = (
+				_collision_shape.shape if _collision_shape.shape is SphereShape3D else null
+			)
+			if is_instance_valid(sphere_shape):
+				sphere_shape.radius = trigger_size.x * 0.5
 
 		_collision_shape.position = trigger_offset
 
@@ -156,13 +164,12 @@ func _update_visuals() -> void:
 
 ## Locates [EditorTriggerVisualizer] child node for editor previews.
 func _get_visualizer() -> EditorTriggerVisualizer:
-	var visual: EditorTriggerVisualizer = (
-		get_node_or_null("EditorTriggerVisualizer") as EditorTriggerVisualizer
-	)
+	var raw_vis: Node = get_node_or_null("EditorTriggerVisualizer")
+	var visual: EditorTriggerVisualizer = raw_vis if raw_vis is EditorTriggerVisualizer else null
 	if not is_instance_valid(visual):
 		for child: Node in get_children():
 			if child is EditorTriggerVisualizer:
-				return child as EditorTriggerVisualizer
+				return child
 	return visual
 
 

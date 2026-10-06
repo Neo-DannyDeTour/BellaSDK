@@ -97,9 +97,7 @@ func start_next_wave() -> void:
 		all_waves_completed.emit(total_waves)
 		return
 
-	var wave_count: int = int(
-		round(float(base_enemy_count) * pow(wave_growth_rate, current_wave - 1))
-	)
+	var wave_count: int = roundi(float(base_enemy_count) * pow(wave_growth_rate, current_wave - 1))
 	_remaining_to_spawn = wave_count
 	print("WaveSpawner: Wave ", current_wave, " started with ", wave_count, " units.")
 
@@ -135,7 +133,7 @@ func _spawn_one_enemy() -> void:
 		spawn_pos = _valid_spawn_points[idx].global_position
 
 	var enemy_instance: Node = enemy_scene.instantiate()
-	var enemy_node: Node3D = enemy_instance as Node3D
+	var enemy_node: Node3D = enemy_instance if enemy_instance is Node3D else null
 	if not is_instance_valid(enemy_node):
 		push_error("WaveSpawner: [", name, "] instantiated enemy is not Node3D.")
 		return

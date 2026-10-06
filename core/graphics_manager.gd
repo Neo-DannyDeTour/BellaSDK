@@ -318,7 +318,7 @@ func _apply_downgrade_step(step: int) -> void:
 			vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED
 			apply_vrs_state(true)
 		2:
-			var win: Window = vp as Window
+			var win: Window = vp if vp is Window else null
 			if (
 				is_instance_valid(win)
 				and not win.is_embedded()

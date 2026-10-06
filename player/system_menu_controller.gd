@@ -251,7 +251,11 @@ func _on_fullbright_toggled(is_fullbright: bool) -> void:
 		camera.environment = _cached_camera_env
 		_cached_camera_env = null
 
-	var sun: DirectionalLight3D = get_tree().get_first_node_in_group("sun") as DirectionalLight3D
+	var sun: DirectionalLight3D = (
+		get_tree().get_first_node_in_group("sun")
+		if get_tree().get_first_node_in_group("sun") is DirectionalLight3D
+		else null
+	)
 	if is_instance_valid(sun):
 		sun.visible = not is_fullbright
 		sun.shadow_enabled = not is_fullbright

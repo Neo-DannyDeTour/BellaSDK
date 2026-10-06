@@ -85,11 +85,11 @@ func set_mesh_size(value: Vector2) -> void:
 func _update_obstacle_size() -> void:
 	print("BurnableObstacle: Updating obstacle bounds to: ", mesh_size)
 	if is_instance_valid(mesh_instance) and mesh_instance.mesh is QuadMesh:
-		var quad: QuadMesh = mesh_instance.mesh as QuadMesh
+		var quad: QuadMesh = mesh_instance.mesh if mesh_instance.mesh is QuadMesh else null
 		quad.size = mesh_size
 
 	if is_instance_valid(collision_shape) and collision_shape.shape is BoxShape3D:
-		var box: BoxShape3D = collision_shape.shape as BoxShape3D
+		var box: BoxShape3D = collision_shape.shape if collision_shape.shape is BoxShape3D else null
 		box.size = Vector3(mesh_size.x, mesh_size.y, box.size.z)
 
 	if is_instance_valid(trigger_area):
@@ -97,7 +97,7 @@ func _update_obstacle_size() -> void:
 			NodeQuery.find_first_child_of_type(trigger_area, CollisionShape3D) as CollisionShape3D
 		)
 		if is_instance_valid(trig_coll) and trig_coll.shape is BoxShape3D:
-			var t_box: BoxShape3D = trig_coll.shape as BoxShape3D
+			var t_box: BoxShape3D = trig_coll.shape if trig_coll.shape is BoxShape3D else null
 			t_box.size = Vector3(mesh_size.x, mesh_size.y, t_box.size.z + 0.1)
 
 
@@ -109,7 +109,7 @@ func _on_trigger_area_entered(area: Area3D) -> void:
 
 	if area.is_in_group(&"torch_flame"):
 		print("BurnableObstacle: Valid torch detected entering trigger area.")
-		var torch_node: Node3D = area.get_parent() as Node3D
+		var torch_node: Node3D = area.get_parent() if area.get_parent() is Node3D else null
 		if is_instance_valid(torch_node):
 			_start_burn(torch_node, area.global_position)
 
@@ -142,7 +142,7 @@ func _start_burn(torch: Node3D, hit_global_pos: Vector3) -> void:
 
 	var mat: Material = mesh_instance.get_surface_override_material(0)
 	if mat is ShaderMaterial:
-		var shader_mat: ShaderMaterial = mat as ShaderMaterial
+		var shader_mat: ShaderMaterial = mat if mat is ShaderMaterial else null
 		shader_mat.set_shader_parameter("hit_uv", hit_uv)
 
 		var tween: Tween = create_tween()

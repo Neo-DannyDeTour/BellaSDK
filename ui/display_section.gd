@@ -113,12 +113,12 @@ func load_settings() -> void:
 
 	_sync_dropdown(fps_options, VideoConfig.FPS_LIMITS, "fps_limit", VideoConfig.DEFAULT_FPS)
 
-	var saved_screen: int = GlobalSettings.get_setting("Settings", "screen_index", 0) as int
+	var saved_screen: int = GlobalSettings.get_setting("Settings", "screen_index", 0)
 	if saved_screen < monitor_options.get_item_count():
 		monitor_options.select(saved_screen)
 
-	var res_x: int = GlobalSettings.get_setting("Settings", "resolution_x", 1920) as int
-	var res_y: int = GlobalSettings.get_setting("Settings", "resolution_y", 1080) as int
+	var res_x: int = GlobalSettings.get_setting("Settings", "resolution_x", 1920)
+	var res_y: int = GlobalSettings.get_setting("Settings", "resolution_y", 1080)
 	_select_dropdown_text(resolution_options, str(res_x) + " x " + str(res_y))
 
 
@@ -211,7 +211,7 @@ func _sync_dropdown(
 ## Handles target monitor changes and notifies listeners if modified.
 func _on_monitor_selected(index: int) -> void:
 	print("DisplaySection: Monitor selected: ", index)
-	var current_screen: int = GlobalSettings.get_setting("Settings", "screen_index", 0) as int
+	var current_screen: int = GlobalSettings.get_setting("Settings", "screen_index", 0)
 	if current_screen != index:
 		GlobalSettings.save_setting("Settings", "screen_index", index)
 		display_settings_changed.emit()
@@ -221,9 +221,11 @@ func _on_monitor_selected(index: int) -> void:
 func _on_resolution_selected(index: int) -> void:
 	print("DisplaySection: Resolution selected: ", index)
 	var text: String = resolution_options.get_item_text(index)
-	var res: Vector2i = VideoConfig.RESOLUTIONS[text] as Vector2i
-	var cur_x: int = GlobalSettings.get_setting("Settings", "resolution_x", 1920) as int
-	var cur_y: int = GlobalSettings.get_setting("Settings", "resolution_y", 1080) as int
+	var res: Vector2i = (
+		VideoConfig.RESOLUTIONS[text] if VideoConfig.RESOLUTIONS[text] is Vector2i else null
+	)
+	var cur_x: int = GlobalSettings.get_setting("Settings", "resolution_x", 1920)
+	var cur_y: int = GlobalSettings.get_setting("Settings", "resolution_y", 1080)
 
 	if cur_x != res.x or cur_y != res.y:
 		GlobalSettings.save_settings_bulk(
@@ -236,7 +238,7 @@ func _on_resolution_selected(index: int) -> void:
 func _on_fps_selected(index: int) -> void:
 	print("DisplaySection: FPS limit selected: ", index)
 	var text: String = fps_options.get_item_text(index)
-	var limit: int = VideoConfig.FPS_LIMITS[text] as int
+	var limit: int = VideoConfig.FPS_LIMITS[text]
 	var current_limit: int = (
 		GlobalSettings.get_setting("Settings", "fps_limit", VideoConfig.DEFAULT_FPS) as int
 	)

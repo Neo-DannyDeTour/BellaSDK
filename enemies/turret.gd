@@ -69,8 +69,11 @@ enum TurretState { SCANNING, ENGAGING }
 @onready var hitscan_ray: RayCast3D = $Head/Muzzle/HitscanRay
 
 ## The [FactionComponent] managing hostility and targeting rules.
-@onready
-var faction_component: FactionComponent = get_node_or_null("FactionComponent") as FactionComponent
+@onready var faction_component: FactionComponent = (
+	get_node_or_null("FactionComponent")
+	if get_node_or_null("FactionComponent") is FactionComponent
+	else null
+)
 
 # --------------------------------------
 # VARIABLES
@@ -106,8 +109,9 @@ var _is_on_screen: bool = false
 ## Initializes collision shapes, caches references, and binds screen visibility.
 func _ready() -> void:
 	print("Turret: Initializing turret instance: ", name)
+	var raw_viz: Node = get_node_or_null("EditorTriggerVisualizer")
 	var visualizer: EditorTriggerVisualizer = (
-		get_node_or_null("EditorTriggerVisualizer") as EditorTriggerVisualizer
+		raw_viz if raw_viz is EditorTriggerVisualizer else null
 	)
 	if is_instance_valid(visualizer):
 		visualizer.set("shape_type", EditorTriggerVisualizer.ShapeType.SPHERE)
@@ -188,13 +192,13 @@ func _find_player() -> void:
 	print("Turret: Searching for player instance in group.")
 	var player_node: Node = NodeQuery.get_single_node_in_group(get_tree(), &"player")
 	if player_node is Node3D:
-		_cached_player = player_node as Node3D
+		_cached_player = player_node
 
 
 ## Recursively aggregates collision [RID] instances across child nodes.
 func _build_exclude_rids(node: Node) -> void:
 	if node is CollisionObject3D:
-		var col_obj: CollisionObject3D = node as CollisionObject3D
+		var col_obj: CollisionObject3D = node
 		_exclude_rids.append(col_obj.get_rid())
 	for i: int in node.get_child_count():
 		_build_exclude_rids(node.get_child(i))
@@ -260,12 +264,12 @@ func _set_target(new_target: Node3D) -> void:
 	if "health_component" in target:
 		var comp: Variant = target.get("health_component")
 		if comp is HealthComponent:
-			target_health_comp = comp as HealthComponent
+			target_health_comp = comp
 			return
 
 	var found: Node = NodeQuery.find_first_child_of_type(target, HealthComponent)
 	if found is HealthComponent:
-		target_health_comp = found as HealthComponent
+		target_health_comp = found
 
 
 ## Validates that target is alive, visible, and processing.
@@ -326,11 +330,13 @@ func _has_line_of_sight() -> bool:
 	if result.is_empty():
 		return false
 
-	var hit_collider: Object = result.get("collider") as Object
-	return (
-		hit_collider == target
-		or (hit_collider is Node and target.is_ancestor_of(hit_collider as Node))
-	)
+	var hit_collider: Object = result.get("collider")
+	if hit_collider == target:
+		return true
+	if hit_collider is Node:
+		var hit_node: Node = hit_collider
+		return target.is_ancestor_of(hit_node)
+	return false
 
 
 ## Evaluates dot product between muzzle forward vector and target.
@@ -379,7 +385,7 @@ func _spawn_tracer_effect(start_pos: Vector3, end_pos: Vector3) -> void:
 		return
 
 	if tracer is Node3D:
-		var tracer_3d: Node3D = tracer as Node3D
+		var tracer_3d: Node3D = tracer
 		if start_pos.distance_squared_to(end_pos) > 0.001:
 			tracer_3d.look_at(end_pos, Vector3.UP)
 

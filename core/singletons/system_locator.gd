@@ -41,7 +41,9 @@ static func register_service(service_name: StringName, service_instance: Node) -
 ## Returns the registered service [Node] mapped to [param service_name].
 static func get_service(service_name: StringName) -> Node:
 	print("SystemLocator: Resolving service -> ", service_name)
-	var service: Node = _services.get(service_name, null) as Node
+	var service: Node = (
+		_services.get(service_name, null) if _services.get(service_name, null) is Node else null
+	)
 	if not is_instance_valid(service):
 		var root: Window = _get_root_window()
 		if is_instance_valid(root) and root.has_node(NodePath(service_name)):
@@ -94,7 +96,7 @@ static func clear_cache() -> void:
 
 ## Helper resolving root [Window] safely across static scopes.
 static func _get_root_window() -> Window:
-	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	var tree: SceneTree = Engine.get_main_loop() if Engine.get_main_loop() is SceneTree else null
 	if is_instance_valid(tree):
 		return tree.root
 	return null

@@ -148,7 +148,7 @@ func _disable_active_grading_volumes() -> void:
 func _check_game_context() -> void:
 	print("UI: Evaluating game execution context.")
 	if SaveManager.has_method("has_saves"):
-		var saves_exist: bool = SaveManager.has_saves() as bool
+		var saves_exist: bool = SaveManager.has_saves()
 		if is_instance_valid(load_button):
 			load_button.visible = saves_exist
 
@@ -261,8 +261,14 @@ func _on_start_game_pressed() -> void:
 		await prepare_for_level_transition()
 		var current_path: String = get_tree().current_scene.scene_file_path
 		if not current_path.is_empty() and ResourceLoader.exists("res://ui/loading_screen.tscn"):
-			var loader_scene: PackedScene = load("res://ui/loading_screen.tscn") as PackedScene
-			var loader: LoadingScreen = loader_scene.instantiate() as LoadingScreen
+			var loader_scene: PackedScene = (
+				load("res://ui/loading_screen.tscn")
+				if load("res://ui/loading_screen.tscn") is PackedScene
+				else null
+			)
+			var loader: LoadingScreen = (
+				loader_scene.instantiate() if loader_scene.instantiate() is LoadingScreen else null
+			)
 			loader.level_scene_path = current_path
 			get_tree().root.add_child(loader)
 		else:
@@ -341,7 +347,7 @@ func _apply_bucket_calibration() -> void:
 ## [param event] Viewport input event.
 func _input(event: InputEvent) -> void:
 	if not has_calibrated and event is InputEventMouseMotion:
-		var motion: InputEventMouseMotion = event as InputEventMouseMotion
+		var motion: InputEventMouseMotion = event if event is InputEventMouseMotion else null
 		var current_speed: float = motion.velocity.length()
 		if current_speed > max_mouse_speed:
 			max_mouse_speed = current_speed

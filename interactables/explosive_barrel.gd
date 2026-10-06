@@ -82,7 +82,7 @@ func _spawn_explosion_vfx() -> void:
 		print("ExplosiveBarrel: Error - explosion_scene root is not a Node3D!")
 		return
 
-	var explosion_instance: Node3D = raw_instance as Node3D
+	var explosion_instance: Node3D = raw_instance if raw_instance is Node3D else null
 	var curr_scene: Node = get_tree().current_scene
 	if is_instance_valid(curr_scene):
 		curr_scene.add_child(explosion_instance)
@@ -173,7 +173,7 @@ func _apply_aoe_physics() -> void:
 		if not body is RigidBody3D:
 			continue
 
-		var rigid_body: RigidBody3D = body as RigidBody3D
+		var rigid_body: RigidBody3D = body if body is RigidBody3D else null
 
 		if distance <= 0.01:
 			distance = 0.01
@@ -186,7 +186,9 @@ func _apply_aoe_physics() -> void:
 		var impulse: Vector3 = direction * (max_force * force_multiplier)
 
 		if rigid_body is ExplosiveBarrel:
-			var other_barrel: ExplosiveBarrel = rigid_body as ExplosiveBarrel
+			var other_barrel: ExplosiveBarrel = (
+				rigid_body if rigid_body is ExplosiveBarrel else null
+			)
 			if not other_barrel.has_exploded:
 				if distance <= chain_reaction_threshold:
 					other_barrel.call_deferred(&"explode")
@@ -228,7 +230,11 @@ func _find_health_component(node: Node) -> HealthComponent:
 	if node is HealthComponent:
 		return node as HealthComponent
 
-	var direct_comp: HealthComponent = node.get_node_or_null("HealthComponent") as HealthComponent
+	var direct_comp: HealthComponent = (
+		node.get_node_or_null("HealthComponent")
+		if node.get_node_or_null("HealthComponent") is HealthComponent
+		else null
+	)
 	if is_instance_valid(direct_comp):
 		return direct_comp
 

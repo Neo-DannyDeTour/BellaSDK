@@ -116,7 +116,11 @@ func _initialize_audio_spectrum() -> void:
 ## Samples frequency ranges and updates the visual equalizer shader parameters.
 ## [param delta]: Frame delta time.
 func _update_equalizer(delta: float) -> void:
-	var mat: ShaderMaterial = equalizer_mesh.material_override as ShaderMaterial
+	var mat: ShaderMaterial = (
+		equalizer_mesh.material_override
+		if equalizer_mesh.material_override is ShaderMaterial
+		else null
+	)
 	if not mat:
 		return
 

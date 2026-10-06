@@ -90,8 +90,8 @@ func _detect_player_in_cone() -> void:
 
 	for result: Dictionary in results:
 		var collider: Object = result["collider"]
-		if collider is Node3D and (collider as Node).is_in_group(&"player"):
-			var player_node: Node3D = collider as Node3D
+		if collider is Node3D and collider.is_in_group(&"player"):
+			var player_node: Node3D = collider if collider is Node3D else null
 			var dir_to_player: Vector3 = head.global_position.direction_to(
 				player_node.global_position
 			)
@@ -118,7 +118,7 @@ func _has_line_of_sight(target: Node3D) -> bool:
 	query.exclude = [get_rid()]
 
 	var result: Dictionary = space_state.intersect_ray(query)
-	return bool(result and result.get("collider") == target)
+	return not result.is_empty() and result.get("collider") == target
 
 
 ## Adjusts head to track active target and scales laser beam.
@@ -183,7 +183,7 @@ func _shoot_projectile() -> void:
 		raw_proj.queue_free()
 		return
 
-	var proj: EnergyBlast = raw_proj as EnergyBlast
+	var proj: EnergyBlast = raw_proj if raw_proj is EnergyBlast else null
 	get_tree().current_scene.add_child(proj)
 
 	proj.global_transform = spawn_point.global_transform

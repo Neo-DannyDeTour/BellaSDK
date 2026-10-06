@@ -197,7 +197,7 @@ func _update_visuals() -> void:
 			else:
 				col.shape = col.shape.duplicate()
 			col.shape.resource_local_to_scene = true
-			var box_shape: BoxShape3D = col.shape as BoxShape3D
+			var box_shape: BoxShape3D = col.shape if col.shape is BoxShape3D else null
 			box_shape.size = volume_size
 		elif visualizer_shape_type == EditorTriggerVisualizer.ShapeType.SPHERE:
 			if not col.shape is SphereShape3D:
@@ -205,7 +205,7 @@ func _update_visuals() -> void:
 			else:
 				col.shape = col.shape.duplicate()
 			col.shape.resource_local_to_scene = true
-			var sphere_shape: SphereShape3D = col.shape as SphereShape3D
+			var sphere_shape: SphereShape3D = col.shape if col.shape is SphereShape3D else null
 			sphere_shape.radius = volume_size.x * 0.5
 
 		col.position = volume_offset
@@ -226,7 +226,11 @@ func _update_visuals() -> void:
 
 ## Safely resolves the child [CollisionShape3D] instance.
 func _get_collision_shape() -> CollisionShape3D:
-	var col: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
+	var col: CollisionShape3D = (
+		get_node_or_null("CollisionShape3D")
+		if get_node_or_null("CollisionShape3D") is CollisionShape3D
+		else null
+	)
 	if not is_instance_valid(col):
 		for child: Node in get_children():
 			if child is CollisionShape3D:
@@ -253,7 +257,9 @@ func _initialize_pool() -> void:
 		return
 
 	for i: int in range(pool_size):
-		var new_target: Node3D = target_scene.instantiate() as Node3D
+		var new_target: Node3D = (
+			target_scene.instantiate() if target_scene.instantiate() is Node3D else null
+		)
 		get_parent().call_deferred(&"add_child", new_target)
 
 		new_target.set_deferred(&"visible", false)
@@ -359,7 +365,9 @@ func _spawn_target() -> void:
 	if target.has_method(&"reset"):
 		target.call(&"reset")
 	elif "health_component" in target:
-		var health_comp: Node = target.get("health_component") as Node
+		var health_comp: Node = (
+			target.get("health_component") if target.get("health_component") is Node else null
+		)
 		if is_instance_valid(health_comp) and health_comp.has_method(&"reset"):
 			health_comp.call(&"reset")
 

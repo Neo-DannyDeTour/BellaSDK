@@ -117,7 +117,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventKey and event.is_pressed() and not event.is_echo():
-		var key_ev: InputEventKey = event as InputEventKey
+		var key_ev: InputEventKey = event if event is InputEventKey else null
 		var key_str: String = OS.get_keycode_string(key_ev.physical_keycode).to_upper()
 		if key_str.is_empty():
 			key_str = OS.get_keycode_string(key_ev.keycode).to_upper()

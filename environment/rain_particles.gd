@@ -246,7 +246,9 @@ func _setup_auto_volume() -> void:
 	var height: float = 30.0
 
 	if process_material is ParticleProcessMaterial:
-		var pm: ParticleProcessMaterial = process_material as ParticleProcessMaterial
+		var pm: ParticleProcessMaterial = (
+			process_material if process_material is ParticleProcessMaterial else null
+		)
 		if pm.emission_shape == ParticleProcessMaterial.EMISSION_SHAPE_BOX:
 			width = pm.emission_box_extents.x * 2.0
 			depth = pm.emission_box_extents.z * 2.0

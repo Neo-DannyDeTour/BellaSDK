@@ -190,7 +190,9 @@ func _process(delta: float) -> void:
 
 	var mesh_node: MeshInstance3D = _get_mesh_node()
 	if is_instance_valid(mesh_node) and mesh_node.material_override:
-		var mat: ShaderMaterial = mesh_node.material_override as ShaderMaterial
+		var mat: ShaderMaterial = (
+			mesh_node.material_override if mesh_node.material_override is ShaderMaterial else null
+		)
 		if is_instance_valid(mat):
 			mat.set_shader_parameter(&"burn_radius", normalized_radius)
 
@@ -347,7 +349,7 @@ func _spawn_fire_at_distance(dist: float) -> void:
 
 	var local_pos: Vector3 = curve.sample_baked(dist)
 	var fire_node: Node = volumetric_fire_scene.instantiate()
-	var fire: VolumetricFire = fire_node as VolumetricFire
+	var fire: VolumetricFire = fire_node if fire_node is VolumetricFire else null
 	if not is_instance_valid(fire):
 		fire_node.queue_free()
 		return
@@ -381,7 +383,9 @@ func ignite(hit_pos: Vector3 = Vector3.ZERO) -> void:
 
 	var mesh_node: MeshInstance3D = _get_mesh_node()
 	if is_instance_valid(mesh_node) and mesh_node.material_override:
-		var mat: ShaderMaterial = mesh_node.material_override as ShaderMaterial
+		var mat: ShaderMaterial = (
+			mesh_node.material_override if mesh_node.material_override is ShaderMaterial else null
+		)
 		if is_instance_valid(mat):
 			mat.set_shader_parameter(&"ignite_center", _ignite_center_uv)
 			mat.set_shader_parameter(&"burn_radius", 0.0)
@@ -406,7 +410,9 @@ func extinguish() -> void:
 
 	var mesh_node: MeshInstance3D = _get_mesh_node()
 	if is_instance_valid(mesh_node) and mesh_node.material_override:
-		var mat: ShaderMaterial = mesh_node.material_override as ShaderMaterial
+		var mat: ShaderMaterial = (
+			mesh_node.material_override if mesh_node.material_override is ShaderMaterial else null
+		)
 		if is_instance_valid(mat):
 			mat.set_shader_parameter(&"burn_radius", 0.0)
 

@@ -77,7 +77,7 @@ func _input(event: InputEvent) -> void:
 	):
 		is_hotkey_pressed = true
 	elif event is InputEventKey and (event as InputEventKey).is_pressed():
-		var key_ev: InputEventKey = event as InputEventKey
+		var key_ev: InputEventKey = event if event is InputEventKey else null
 		if key_ev.keycode in [KEY_QUOTELEFT, KEY_ASCIITILDE, KEY_F3]:
 			is_hotkey_pressed = true
 

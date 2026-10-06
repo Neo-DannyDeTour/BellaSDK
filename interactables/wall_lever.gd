@@ -202,11 +202,11 @@ func _drop_stick() -> void:
 		spawn_root.add_child(stick_node)
 
 		if stick_node is Node3D:
-			var node_3d: Node3D = stick_node as Node3D
+			var node_3d: Node3D = stick_node if stick_node is Node3D else null
 			node_3d.global_transform = stick_pivot.global_transform
 
 		if stick_node is RigidBody3D:
-			var rb: RigidBody3D = stick_node as RigidBody3D
+			var rb: RigidBody3D = stick_node if stick_node is RigidBody3D else null
 			rb.freeze = false
 			rb.collision_layer = CollisionLayers.LAYER_DEBRIS_IDX
 			rb.collision_mask = CollisionLayers.MASK_ENVIRONMENT

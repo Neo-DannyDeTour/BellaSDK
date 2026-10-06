@@ -30,7 +30,9 @@ func _ready() -> void:
 		_apply_shader_parameters()
 
 	if not Engine.is_editor_hint():
-		var area: Area3D = get_node_or_null("Area3D") as Area3D
+		var area: Area3D = (
+			get_node_or_null("Area3D") if get_node_or_null("Area3D") is Area3D else null
+		)
 		if is_instance_valid(area):
 			area.body_entered.connect(_on_waterfall_body_entered)
 			area.body_exited.connect(_on_waterfall_body_exited)

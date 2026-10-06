@@ -21,7 +21,9 @@ signal deformed(world_position: Vector3)
 ## Hooks dynamic textures to shader and generates uneven collision geometry.
 func _ready() -> void:
 	print("[SnowGround] Hooking viewport texture to displacement shader.")
-	var mat: ShaderMaterial = get_active_material(0) as ShaderMaterial
+	var mat: ShaderMaterial = (
+		get_active_material(0) if get_active_material(0) is ShaderMaterial else null
+	)
 	if mat:
 		var tex: ViewportTexture = deform_viewport.get_texture()
 		mat.set_shader_parameter("displacement_texture", tex)
@@ -54,7 +56,11 @@ func deform_at(
 
 ## Generates a matching [HeightMapShape3D] from the material's noise texture.
 func _setup_heightmap_collision(mat: ShaderMaterial) -> void:
-	var noise_tex: NoiseTexture2D = mat.get_shader_parameter("base_height_noise") as NoiseTexture2D
+	var noise_tex: NoiseTexture2D = (
+		mat.get_shader_parameter("base_height_noise")
+		if mat.get_shader_parameter("base_height_noise") is NoiseTexture2D
+		else null
+	)
 	if not noise_tex or not is_instance_valid(collision_shape):
 		return
 
@@ -65,7 +71,7 @@ func _setup_heightmap_collision(mat: ShaderMaterial) -> void:
 	if not noise_img:
 		return
 
-	var height_scale: float = mat.get_shader_parameter("terrain_height_scale") as float
+	var height_scale: float = mat.get_shader_parameter("terrain_height_scale")
 	var map_size: int = 64
 	noise_img.resize(map_size, map_size, Image.INTERPOLATE_BILINEAR)
 

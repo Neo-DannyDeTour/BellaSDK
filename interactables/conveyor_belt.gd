@@ -130,12 +130,14 @@ func _update_size() -> void:
 
 	if is_instance_valid(mesh):
 		if mesh.mesh is BoxMesh:
-			var box_mesh: BoxMesh = mesh.mesh as BoxMesh
+			var box_mesh: BoxMesh = mesh.mesh if mesh.mesh is BoxMesh else null
 			box_mesh.size = Vector3(conveyor_size.x, 0.1, conveyor_size.y)
 		elif mesh.mesh is PlaneMesh:
-			var plane_mesh: PlaneMesh = mesh.mesh as PlaneMesh
+			var plane_mesh: PlaneMesh = mesh.mesh if mesh.mesh is PlaneMesh else null
 			plane_mesh.size = Vector2(conveyor_size.x, conveyor_size.y)
 
 	if is_instance_valid(collision_shape) and collision_shape.shape is BoxShape3D:
-		var box_shape: BoxShape3D = collision_shape.shape as BoxShape3D
+		var box_shape: BoxShape3D = (
+			collision_shape.shape if collision_shape.shape is BoxShape3D else null
+		)
 		box_shape.size = Vector3(conveyor_size.x, 0.1, conveyor_size.y)

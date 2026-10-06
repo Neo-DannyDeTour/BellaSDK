@@ -34,7 +34,7 @@ func _ready() -> void:
 	print("UIKeypad: Initialization started.")
 	for child: Node in grid_container.get_children():
 		if child is Button:
-			var btn: Button = child as Button
+			var btn: Button = child if child is Button else null
 			btn.focus_mode = Control.FOCUS_NONE
 			btn.pressed.connect(_on_button_pressed.bind(btn.name))
 	print("UIKeypad: Button signals connected successfully.")

@@ -53,27 +53,39 @@ func _physics_process(delta: float) -> void:
 func _update_sizes() -> void:
 	print("ElectrifiedFloor: _update_sizes() - Resizing meshes and colliders to ", floor_size)
 
-	var floor_col: CollisionShape3D = get_node_or_null("FloorCollision") as CollisionShape3D
-	var floor_mesh: MeshInstance3D = get_node_or_null("FloorMesh") as MeshInstance3D
-	var lightning_plane: MeshInstance3D = get_node_or_null("LightningPlane") as MeshInstance3D
+	var floor_col: CollisionShape3D = (
+		get_node_or_null("FloorCollision")
+		if get_node_or_null("FloorCollision") is CollisionShape3D
+		else null
+	)
+	var floor_mesh: MeshInstance3D = (
+		get_node_or_null("FloorMesh") if get_node_or_null("FloorMesh") is MeshInstance3D else null
+	)
+	var lightning_plane: MeshInstance3D = (
+		get_node_or_null("LightningPlane")
+		if get_node_or_null("LightningPlane") is MeshInstance3D
+		else null
+	)
 	var damage_col: CollisionShape3D = (
 		get_node_or_null("DamageArea/DamageCollision") as CollisionShape3D
 	)
 
 	if is_instance_valid(floor_col) and floor_col.shape is BoxShape3D:
-		var box_shape: BoxShape3D = floor_col.shape as BoxShape3D
+		var box_shape: BoxShape3D = floor_col.shape if floor_col.shape is BoxShape3D else null
 		box_shape.size = Vector3(floor_size, 0.5, floor_size)
 
 	if is_instance_valid(floor_mesh) and floor_mesh.mesh is PlaneMesh:
-		var plane: PlaneMesh = floor_mesh.mesh as PlaneMesh
+		var plane: PlaneMesh = floor_mesh.mesh if floor_mesh.mesh is PlaneMesh else null
 		plane.size = Vector2(floor_size, floor_size)
 
 	if is_instance_valid(lightning_plane) and lightning_plane.mesh is PlaneMesh:
-		var lightning: PlaneMesh = lightning_plane.mesh as PlaneMesh
+		var lightning: PlaneMesh = (
+			lightning_plane.mesh if lightning_plane.mesh is PlaneMesh else null
+		)
 		lightning.size = Vector2(floor_size, floor_size)
 
 	if is_instance_valid(damage_col) and damage_col.shape is BoxShape3D:
-		var damage_box: BoxShape3D = damage_col.shape as BoxShape3D
+		var damage_box: BoxShape3D = damage_col.shape if damage_col.shape is BoxShape3D else null
 		damage_box.size = Vector3(floor_size, 1.0, floor_size)
 		damage_col.position.y = 0.25
 

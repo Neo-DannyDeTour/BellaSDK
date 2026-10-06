@@ -223,7 +223,7 @@ func _get_or_create_material(variant_key: String) -> StandardMaterial3D:
 	print("DustVolume: Fetching material from [MaterialCache]: ", variant_key)
 	var archetype: StandardMaterial3D = _get_archetype_material()
 	var cached_mat: Material = MaterialCache.get_variant(archetype, variant_key)
-	var mat: StandardMaterial3D = cached_mat as StandardMaterial3D
+	var mat: StandardMaterial3D = cached_mat if cached_mat is StandardMaterial3D else null
 
 	if not is_instance_valid(mat):
 		mat = StandardMaterial3D.new()
@@ -252,7 +252,9 @@ func _get_or_create_material(variant_key: String) -> StandardMaterial3D:
 func _get_or_create_quad(variant_key: String, mat: StandardMaterial3D) -> QuadMesh:
 	print("DustVolume: Resolving quad mesh for variant: ", variant_key)
 	if _cached_quads.has(variant_key):
-		var existing_quad: QuadMesh = _cached_quads[variant_key] as QuadMesh
+		var existing_quad: QuadMesh = (
+			_cached_quads[variant_key] if _cached_quads[variant_key] is QuadMesh else null
+		)
 		if is_instance_valid(existing_quad):
 			return existing_quad
 
@@ -269,7 +271,9 @@ func _update_volume() -> void:
 	if not is_instance_valid(process_material):
 		process_material = ParticleProcessMaterial.new()
 
-	var p_mat: ParticleProcessMaterial = process_material as ParticleProcessMaterial
+	var p_mat: ParticleProcessMaterial = (
+		process_material if process_material is ParticleProcessMaterial else null
+	)
 	if not is_instance_valid(p_mat):
 		return
 

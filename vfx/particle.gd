@@ -35,10 +35,12 @@ var alive_time: float = 0.0
 var _shader_material: ShaderMaterial
 
 ## Direct reference to attached [MeshInstance3D] node.
-@onready var mesh_instance_3d: MeshInstance3D = $MeshInstance3D as MeshInstance3D
+@onready var mesh_instance_3d: MeshInstance3D = (
+	$MeshInstance3D if $MeshInstance3D is MeshInstance3D else null
+)
 
 ## Direct reference to attached floor detection [Area3D].
-@onready var area_3d: Area3D = $Area3D as Area3D
+@onready var area_3d: Area3D = $Area3D if $Area3D is Area3D else null
 
 
 ## Initializes collision masks and sets top level coordinates.
@@ -103,12 +105,12 @@ func _get_shader_material() -> ShaderMaterial:
 		return _shader_material
 
 	if mesh_instance_3d == null:
-		mesh_instance_3d = (
-			NodeQuery.find_first_child_of_type(self, MeshInstance3D) as MeshInstance3D
-		)
+		var raw_mesh: Node = NodeQuery.find_first_child_of_type(self, MeshInstance3D)
+		mesh_instance_3d = raw_mesh if raw_mesh is MeshInstance3D else null
 
 	if mesh_instance_3d != null:
-		_shader_material = mesh_instance_3d.get_active_material(0) as ShaderMaterial
+		var raw_mat: Material = mesh_instance_3d.get_active_material(0)
+		_shader_material = raw_mat if raw_mat is ShaderMaterial else null
 
 	return _shader_material
 

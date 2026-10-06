@@ -56,7 +56,7 @@ func _input(event: InputEvent) -> void:
 	_last_input_event = event
 
 	if event is InputEventJoypadMotion:
-		var joy_event: InputEventJoypadMotion = event as InputEventJoypadMotion
+		var joy_event: InputEventJoypadMotion = event if event is InputEventJoypadMotion else null
 		if joy_event.axis == JOY_AXIS_RIGHT_Y:
 			gamepad_scroll = joy_event.axis_value
 

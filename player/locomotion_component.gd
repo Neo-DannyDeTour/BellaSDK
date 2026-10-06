@@ -262,7 +262,7 @@ func _apply_weight_to_floor() -> void:
 		var collider: Object = collision.get_collider()
 
 		if collider is RigidBody3D and collision.get_normal().y > 0.5:
-			var rb: RigidBody3D = collider as RigidBody3D
+			var rb: RigidBody3D = collider if collider is RigidBody3D else null
 
 			# Lock pickable objects into stable static platforms while stood on
 			if rb.has_method("register_player_standing"):

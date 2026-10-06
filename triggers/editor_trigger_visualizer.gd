@@ -215,7 +215,11 @@ func _draw_line(target_mesh: ImmediateMesh, from: Vector3, to: Vector3) -> void:
 ## Updates fill and wireframe shaders with depth testing, tint, and opacity.
 func _update_materials() -> void:
 	if mesh != null:
-		var fill_mat: StandardMaterial3D = mesh.surface_get_material(0) as StandardMaterial3D
+		var fill_mat: StandardMaterial3D = (
+			mesh.surface_get_material(0)
+			if mesh.surface_get_material(0) is StandardMaterial3D
+			else null
+		)
 		if fill_mat == null:
 			fill_mat = StandardMaterial3D.new()
 			fill_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA

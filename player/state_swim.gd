@@ -93,7 +93,8 @@ func exit() -> void:
 
 	var cam_ctrl: Node = _get_camera_controller()
 	if is_instance_valid(cam_ctrl):
-		var eyes: Node3D = cam_ctrl.get(&"eyes") as Node3D
+		var raw_eyes: Variant = cam_ctrl.get(&"eyes")
+		var eyes: Node3D = raw_eyes if raw_eyes is Node3D else null
 		if is_instance_valid(eyes):
 			eyes.rotation.z = 0.0
 
@@ -151,14 +152,15 @@ func _apply_drowning_damage() -> void:
 	var health_comp: HealthComponent = null
 
 	var health_val: Variant = player.get(&"health_component")
-	if health_val is HealthComponent and is_instance_valid(health_val):
-		health_comp = health_val as HealthComponent
+	if health_val is HealthComponent:
+		health_comp = health_val
 	else:
 		var stats_val: Variant = player.get(&"stats_component")
-		if stats_val is Node and is_instance_valid(stats_val as Node):
-			var sub_health: Variant = (stats_val as Node).get(&"health_component")
-			if sub_health is HealthComponent and is_instance_valid(sub_health):
-				health_comp = sub_health as HealthComponent
+		if stats_val is Node:
+			var stats_node: Node = stats_val
+			var sub_health: Variant = stats_node.get(&"health_component")
+			if sub_health is HealthComponent:
+				health_comp = sub_health
 
 	if is_instance_valid(health_comp):
 		health_comp.take_damage(DROWN_DAMAGE_PER_TICK)
@@ -225,7 +227,7 @@ func _apply_swim_velocity(delta: float, input_dir: Vector2) -> void:
 		var vault_ctrl: Node = env.vault_controller if is_instance_valid(env) else null
 		if is_instance_valid(vault_ctrl):
 			vault_ctrl.call(&"process_vault_scan")
-			if bool(vault_ctrl.get(&"can_vault_current_ledge")):
+			if vault_ctrl.get(&"can_vault_current_ledge"):
 				if bool(vault_ctrl.call(&"try_vault", loco.crouching)):
 					print("StateSwim: Vault successful. Transitioning to Vault.")
 					actively_swimming_vertical = true
@@ -277,9 +279,13 @@ func _handle_camera_and_vfx(delta: float, input_dir: Vector2) -> void:
 	var loco: PlayerLocomotionComponent = _get_locomotion()
 	var cam_ctrl: Node = _get_camera_controller()
 	var tilt_amount: float = (
-		float(cam_ctrl.get(&"camera_tilt_amount")) if is_instance_valid(cam_ctrl) else 0.0
+		cam_ctrl.get(&"camera_tilt_amount") if is_instance_valid(cam_ctrl) else 0.0
 	)
-	var eyes: Node3D = cam_ctrl.get(&"eyes") as Node3D if is_instance_valid(cam_ctrl) else null
+	var eyes: Node3D = null
+	if is_instance_valid(cam_ctrl):
+		var raw_eyes: Variant = cam_ctrl.get(&"eyes")
+		if raw_eyes is Node3D:
+			eyes = raw_eyes
 
 	if input_dir.x > 0.1:
 		target_tilt = deg_to_rad(tilt_amount * 2.0)
@@ -315,18 +321,19 @@ func _update_flashlight_underwater(is_submerged: bool, delta: float) -> void:
 	print("StateSwim: _update_flashlight_underwater() adjusting beam energy.")
 	var flash_ctrl: Node = null
 	var direct_ctrl: Variant = player.get(&"flashlight_controller")
-	if direct_ctrl is Node and is_instance_valid(direct_ctrl as Node):
-		flash_ctrl = direct_ctrl as Node
+	if direct_ctrl is Node:
+		flash_ctrl = direct_ctrl
 	else:
 		var interact: Variant = player.get(&"interaction_component")
-		if interact is Node and is_instance_valid(interact as Node):
+		if interact is Node:
 			var sub_ctrl: Variant = (interact as Node).get(&"flashlight_controller")
-			if sub_ctrl is Node and is_instance_valid(sub_ctrl as Node):
-				flash_ctrl = sub_ctrl as Node
+			if sub_ctrl is Node:
+				flash_ctrl = sub_ctrl
 
 	if is_instance_valid(flash_ctrl) and flash_ctrl.get(&"flashlight"):
-		var light: Light3D = flash_ctrl.get(&"flashlight") as Light3D
-		var base_energy: float = float(flash_ctrl.get(&"base_energy"))
+		var raw_light: Variant = flash_ctrl.get(&"flashlight")
+		var light: Light3D = raw_light if raw_light is Light3D else null
+		var base_energy: float = flash_ctrl.get(&"base_energy")
 		var target_energy: float = base_energy * 4.0 if is_submerged else base_energy
 
 		if is_instance_valid(light):

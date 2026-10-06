@@ -58,7 +58,7 @@ func process_environment_physics(delta: float) -> void:
 			last_ladder = null
 
 	if is_instance_valid(vfx_manager) and is_instance_valid(player.get_node_or_null("Head")):
-		var head: Node3D = player.get_node("Head") as Node3D
+		var head: Node3D = player.get_node("Head") if player.get_node("Head") is Node3D else null
 		vfx_manager.call("process_vfx", delta, head.rotation.x)
 
 
@@ -149,7 +149,7 @@ func _connect_waterfall_group() -> void:
 	var connected_count: int = 0
 	for node: Node in get_tree().get_nodes_in_group("waterfall_area"):
 		if node is Area3D:
-			var area: Area3D = node as Area3D
+			var area: Area3D = node if node is Area3D else null
 			if not area.body_entered.is_connected(_on_waterfall_entered):
 				area.body_entered.connect(_on_waterfall_entered.bind(area))
 			if not area.body_exited.is_connected(_on_waterfall_exited):

@@ -62,14 +62,14 @@ func _process_all_nodes(parent: Node) -> void:
 ## Checks if a node is a text element and applies the contrast style if active.
 func _apply_contrast_to_node(node: Node) -> void:
 	if node is Label:
-		var label_node: Label = node as Label
+		var label_node: Label = node if node is Label else null
 		if is_active:
 			label_node.add_theme_stylebox_override("normal", high_contrast_style)
 		else:
 			label_node.remove_theme_stylebox_override("normal")
 
 	elif node is RichTextLabel:
-		var rich_node: RichTextLabel = node as RichTextLabel
+		var rich_node: RichTextLabel = node if node is RichTextLabel else null
 		if is_active:
 			rich_node.add_theme_stylebox_override("normal", high_contrast_style)
 		else:

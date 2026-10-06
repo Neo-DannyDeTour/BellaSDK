@@ -227,13 +227,13 @@ func _is_airborne_or_invalid_target(collider: Object) -> bool:
 	if not collider is Node:
 		return true
 
-	var node: Node = collider as Node
+	var node: Node = collider if collider is Node else null
 
 	if _is_collider_or_parent_in_group(node, "not_climbable"):
 		return true
 
 	if node is RigidBody3D:
-		var rb: RigidBody3D = node as RigidBody3D
+		var rb: RigidBody3D = node if node is RigidBody3D else null
 		if "is_held" in rb and rb.get("is_held"):
 			return true
 		if rb.linear_velocity.length() > 0.25:
@@ -382,7 +382,7 @@ func _is_collider_or_parent_in_group(collider: Object, group_name: String) -> bo
 	if not collider is Node:
 		return false
 
-	var current_node: Node = collider as Node
+	var current_node: Node = collider if collider is Node else null
 	for i: int in range(4):
 		if current_node == null:
 			return false

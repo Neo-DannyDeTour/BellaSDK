@@ -36,7 +36,7 @@ func _ready() -> void:
 	if is_instance_valid(initial_state):
 		change_state(initial_state.name)
 	elif not _states.is_empty():
-		var fallback_state: State = _states.values()[0] as State
+		var fallback_state: State = _states.values()[0] if _states.values()[0] is State else null
 		change_state(fallback_state.name)
 
 

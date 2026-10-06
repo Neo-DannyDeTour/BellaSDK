@@ -213,7 +213,9 @@ func _update_mesh_and_collision() -> void:
 
 	if is_instance_valid(_collision_shape):
 		if _collision_shape.shape is BoxShape3D:
-			var box: BoxShape3D = _collision_shape.shape as BoxShape3D
+			var box: BoxShape3D = (
+				_collision_shape.shape if _collision_shape.shape is BoxShape3D else null
+			)
 			box.size = Vector3(wall_size.x, wall_size.y, wall_depth)
 
 	_update_viewport_resolution()

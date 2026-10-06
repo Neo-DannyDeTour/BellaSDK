@@ -125,7 +125,7 @@ func load_settings() -> void:
 	for key: String in _renderer_btn_map.keys():
 		_renderer_btn_map[key].button_pressed = (key == cur_renderer)
 
-	var saved_gpu: int = GlobalSettings.get_setting("Settings", "gpu_adapter_index", 0) as int
+	var saved_gpu: int = GlobalSettings.get_setting("Settings", "gpu_adapter_index", 0)
 	if saved_gpu < gpu_options.get_item_count():
 		gpu_options.select(saved_gpu)
 
@@ -140,8 +140,8 @@ func set_benchmark_state(is_running: bool) -> void:
 ## Handles GPU adapter selection and dispatches restart confirmation.
 func _on_gpu_selected(index: int) -> void:
 	var label: String = gpu_options.get_item_text(index)
-	var gpu_idx: int = _available_gpus.get(label, 0) as int
-	var current_gpu: int = GlobalSettings.get_setting("Settings", "gpu_adapter_index", 0) as int
+	var gpu_idx: int = _available_gpus.get(label, 0)
+	var current_gpu: int = GlobalSettings.get_setting("Settings", "gpu_adapter_index", 0)
 	if current_gpu == gpu_idx:
 		return
 

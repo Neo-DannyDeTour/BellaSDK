@@ -252,7 +252,7 @@ static func _apply_light_shadows(tree: SceneTree, config: Dictionary) -> void:
 		tree, &"lights_directional", "DirectionalLight3D"
 	)
 	for d_node: Node in dir_lights:
-		var d_light: DirectionalLight3D = d_node as DirectionalLight3D
+		var d_light: DirectionalLight3D = d_node if d_node is DirectionalLight3D else null
 		if is_instance_valid(d_light):
 			d_light.shadow_enabled = enable_dyn
 			d_light.directional_shadow_max_distance = d_dist
@@ -268,7 +268,7 @@ static func _apply_light_shadows(tree: SceneTree, config: Dictionary) -> void:
 	var all_pos_lights: Array[Node] = omni_lights + spot_lights
 
 	for node: Node in all_pos_lights:
-		var light: Light3D = node as Light3D
+		var light: Light3D = node if node is Light3D else null
 		if not is_instance_valid(light):
 			continue
 
@@ -338,7 +338,7 @@ static func _apply_environment_and_materials(tree: SceneTree, config: Dictionary
 		tree, &"world_environments", "WorldEnvironment"
 	)
 	for node: Node in we_nodes:
-		var we: WorldEnvironment = node as WorldEnvironment
+		var we: WorldEnvironment = node if node is WorldEnvironment else null
 		if we.is_in_group("ignore_global_video_settings"):
 			continue
 		if is_instance_valid(we) and is_instance_valid(we.environment):
@@ -368,7 +368,7 @@ static func _apply_environment_and_materials(tree: SceneTree, config: Dictionary
 
 	var active_cams: Array[Node] = _get_nodes_by_group_or_type(tree, &"cameras", "Camera3D")
 	for c_node: Node in active_cams:
-		var cam: Camera3D = c_node as Camera3D
+		var cam: Camera3D = c_node if c_node is Camera3D else null
 		if not is_instance_valid(cam):
 			continue
 
@@ -379,7 +379,9 @@ static func _apply_environment_and_materials(tree: SceneTree, config: Dictionary
 			cam.attributes = new_attr
 
 		if cam.attributes is CameraAttributesPractical:
-			var cam_attr: CameraAttributesPractical = cam.attributes as CameraAttributesPractical
+			var cam_attr: CameraAttributesPractical = (
+				cam.attributes if cam.attributes is CameraAttributesPractical else null
+			)
 			if cam_attr.dof_blur_far_enabled != is_dof_active:
 				cam_attr.dof_blur_far_enabled = is_dof_active
 			if not is_equal_approx(cam_attr.dof_blur_amount, dof_amount):

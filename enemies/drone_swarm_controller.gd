@@ -283,7 +283,8 @@ func _find_player_target() -> Node3D:
 		return detected_player
 	var player_nodes: Array[Node] = get_tree().get_nodes_in_group(&"player")
 	if not player_nodes.is_empty() and player_nodes[0] is Node3D:
-		return player_nodes[0] as Node3D
+		var p0: Node = player_nodes[0]
+		return p0 if p0 is Node3D else null
 	return null
 
 
@@ -294,21 +295,19 @@ func _get_health_component(node: Node) -> HealthComponent:
 	if "health_component" in node:
 		var comp: Variant = node.get("health_component")
 		if comp is HealthComponent:
-			return comp as HealthComponent
+			return comp
 	var direct: Node = node.get_node_or_null("HealthComponent")
 	if direct is HealthComponent:
-		return direct as HealthComponent
+		return direct
 	var comp_dir: Node = node.get_node_or_null("Components/HealthComponent")
 	if comp_dir is HealthComponent:
-		return comp_dir as HealthComponent
-	var found: HealthComponent = (
-		NodeQuery.find_first_child_of_type(node, HealthComponent) as HealthComponent
-	)
-	if is_instance_valid(found):
+		return comp_dir
+	var found: Node = NodeQuery.find_first_child_of_type(node, HealthComponent)
+	if found is HealthComponent:
 		return found
 	for child: Node in node.get_children():
 		if child is HealthComponent:
-			return child as HealthComponent
+			return child
 	return null
 
 
@@ -326,9 +325,11 @@ func _check_player_health_and_state(delta: float) -> void:
 	if health_comp == null:
 		var dmg_nodes: Array[Node] = get_tree().get_nodes_in_group(&"damageable")
 		for d: Node in dmg_nodes:
-			if d is HealthComponent and (d as HealthComponent).is_player_health:
-				health_comp = d as HealthComponent
-				break
+			if d is HealthComponent:
+				var hc_node: HealthComponent = d
+				if hc_node.is_player_health:
+					health_comp = hc_node
+					break
 
 	if health_comp == null:
 		return
@@ -339,8 +340,8 @@ func _check_player_health_and_state(delta: float) -> void:
 		else:
 			heal_accumulator += heal_rate_per_sec * delta
 			if heal_accumulator >= 1.0:
-				var points: int = int(heal_accumulator)
-				heal_accumulator -= float(points)
+				var points: int = floori(heal_accumulator)
+				heal_accumulator -= points
 				health_comp.heal(points)
 				print("DroneSwarmController: Dispensed ", points, " HP to player.")
 	elif mode == Mode.HEAL_PLAYER:
@@ -417,7 +418,7 @@ func spawn_drones() -> void:
 	for i: int in range(drone_count):
 		var instance: Node = drone_scene.instantiate()
 		if instance is ElfDrone:
-			var drone: ElfDrone = instance as ElfDrone
+			var drone: ElfDrone = instance
 			add_child(drone)
 			var offset: Vector3 = calculate_slot_offset(i, drone_count)
 			drone.global_position = global_position + offset
@@ -468,7 +469,7 @@ func _calculate_square_offset(index: int, total: int) -> Vector3:
 	var perimeter_progress: float = (float(index) / float(total)) * 4.0
 	var r: float = formation_radius
 	var side_t: float = fmod(perimeter_progress, 1.0)
-	var edge: int = int(perimeter_progress) % 4
+	var edge: int = floori(perimeter_progress) % 4
 
 	match edge:
 		0:
@@ -485,7 +486,7 @@ func _calculate_square_offset(index: int, total: int) -> Vector3:
 
 ## Calculates slot position along cross axes.
 func _calculate_cross_offset(index: int, total: int) -> Vector3:
-	var half: int = maxi(1, int(float(total) / 2.0))
+	var half: int = maxi(1, total / 2)
 	if index < half:
 		var denom: float = float(maxi(1, half - 1))
 		var t: float = ((float(index) / denom) - 0.5) * 2.0
@@ -500,7 +501,7 @@ func _calculate_cross_offset(index: int, total: int) -> Vector3:
 
 ## Applies vertical flight wave displacement.
 func apply_wave_motion(index: int, base_pos: Vector3) -> Vector3:
-	var phase: float = float(index) * wave_phase_step
+	var phase: float = index * wave_phase_step
 	var wave_y: float = sin((elapsed_time * wave_frequency) + phase) * wave_amplitude
 	base_pos.y += wave_y
 	return base_pos

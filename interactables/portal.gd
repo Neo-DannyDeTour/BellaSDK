@@ -155,7 +155,7 @@ func _update_mesh_texture() -> void:
 
 	var mat: Material = portal_mesh.get_surface_override_material(0)
 	if mat is ShaderMaterial:
-		var shader_mat: ShaderMaterial = mat as ShaderMaterial
+		var shader_mat: ShaderMaterial = mat if mat is ShaderMaterial else null
 		var target_texture: ViewportTexture = target_vp.get_texture()
 		shader_mat.set_shader_parameter("viewport_texture", target_texture)
 

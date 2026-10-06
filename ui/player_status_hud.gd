@@ -304,7 +304,9 @@ func update_health(new_health: int) -> void:
 		elif health_increased and heart_val > prev_heart_val:
 			_animate_heart_heal(i, frame_index)
 
-		var heart_parent: CanvasItem = heart_nodes[i].get_parent() as CanvasItem
+		var heart_parent: CanvasItem = (
+			heart_nodes[i].get_parent() if heart_nodes[i].get_parent() is CanvasItem else null
+		)
 		if is_instance_valid(heart_parent):
 			heart_parent.visible = true
 

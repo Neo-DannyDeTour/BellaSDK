@@ -207,7 +207,7 @@ func _apply_layers(node: Node, physics_layer: int, render_layer: int) -> void:
 	phys_nodes.append_array(node.find_children("", "CollisionObject3D", true, false))
 
 	for col_obj: Node in phys_nodes:
-		var c_obj: CollisionObject3D = col_obj as CollisionObject3D
+		var c_obj: CollisionObject3D = col_obj if col_obj is CollisionObject3D else null
 		if is_instance_valid(c_obj):
 			c_obj.collision_layer = phys_mask
 
@@ -217,7 +217,7 @@ func _apply_layers(node: Node, physics_layer: int, render_layer: int) -> void:
 	visual_nodes.append_array(node.find_children("", "VisualInstance3D", true, false))
 
 	for vis_obj: Node in visual_nodes:
-		var v_obj: VisualInstance3D = vis_obj as VisualInstance3D
+		var v_obj: VisualInstance3D = vis_obj if vis_obj is VisualInstance3D else null
 		if is_instance_valid(v_obj):
 			v_obj.layers = rend_mask
 
@@ -242,7 +242,7 @@ func _safe_reparent(node: Node, new_parent: Node) -> void:
 	if node.get_parent() == new_parent:
 		return
 
-	var node_3d: Node3D = node as Node3D
+	var node_3d: Node3D = node if node is Node3D else null
 	var prev_transform: Transform3D = Transform3D.IDENTITY
 	if is_instance_valid(node_3d):
 		prev_transform = node_3d.global_transform

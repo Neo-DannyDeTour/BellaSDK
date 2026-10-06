@@ -72,7 +72,7 @@ func _on_visibility_changed() -> void:
 func _on_preset_changed(preset: String) -> void:
 	print("VideoOptions: Quality preset changed to: ", preset)
 	if VideoConfig.PRESETS.has(preset):
-		var p_data: Dictionary = VideoConfig.PRESETS[preset] as Dictionary
+		var p_data: Dictionary = VideoConfig.PRESETS[preset]
 		effects_section.apply_preset_dict(p_data)
 		quality_section.apply_preset_dict(p_data)
 		GlobalSettings.save_settings_bulk("Settings", p_data)
@@ -87,7 +87,7 @@ func _apply_all_settings() -> void:
 		GlobalSettings.get_setting("Settings", "display_mode", VideoConfig.DEFAULT_DISPLAY)
 		as DisplayServer.WindowMode
 	)
-	var screen_idx: int = GlobalSettings.get_setting("Settings", "screen_index", 0) as int
+	var screen_idx: int = GlobalSettings.get_setting("Settings", "screen_index", 0)
 	var res: Vector2i = Vector2i(
 		GlobalSettings.get_setting("Settings", "resolution_x", 1920) as int,
 		GlobalSettings.get_setting("Settings", "resolution_y", 1080) as int
@@ -107,13 +107,13 @@ func _apply_all_settings() -> void:
 		GlobalSettings.get_setting("Settings", "anisotropy", VideoConfig.DEFAULT_ANISOTROPY)
 		as String
 	)
-	var aniso_val: int = VideoConfig.ANISOTROPY_LEVELS.get(aniso_key, 2) as int
+	var aniso_val: int = VideoConfig.ANISOTROPY_LEVELS.get(aniso_key, 2)
 	VideoApplier.apply_anisotropy(aniso_val)
 
 	var shadow_key: String = (
 		GlobalSettings.get_setting("Settings", "shadow_quality", "High (Smooth)") as String
 	)
-	var shadow_data: Dictionary = VideoConfig.SHADOW_QUALITIES.get(shadow_key, {}) as Dictionary
+	var shadow_data: Dictionary = VideoConfig.SHADOW_QUALITIES.get(shadow_key, {})
 	var fsr_key: String = (
 		GlobalSettings.get_setting("Settings", "fsr_mode", VideoConfig.DEFAULT_FSR_MODE) as String
 	)

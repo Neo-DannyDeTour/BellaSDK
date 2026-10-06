@@ -46,7 +46,7 @@ func _on_body_entered(body: Node3D) -> void:
 	print("BearTrap: _on_body_entered() body: ", body.name)
 	if current_state == TrapState.OPEN and body is Player:
 		print("BearTrap: Player triggered trap!")
-		snap_shut(body as Player)
+		snap_shut(body)
 
 
 ## Snaps jaws shut, inflicts damage, and applies mobility debuffs.
@@ -65,9 +65,8 @@ func snap_shut(target_player: Player) -> void:
 			Tween.TRANS_BOUNCE
 		)
 
-	var health_comp: HealthComponent = (
-		NodeQuery.find_first_child_of_type(trapped_player, HealthComponent) as HealthComponent
-	)
+	var raw_comp: Node = NodeQuery.find_first_child_of_type(trapped_player, HealthComponent)
+	var health_comp: HealthComponent = raw_comp if raw_comp is HealthComponent else null
 	if is_instance_valid(health_comp):
 		health_comp.take_damage(150)
 	elif trapped_player.has_method(&"take_damage"):
