@@ -1,9 +1,9 @@
 @tool
 
-static var GutUserPreferences = load("res://addons/gut/gui/gut_user_preferences.gd")
-static var temp_directory = 'user://gut_temp_directory/'
+static var GutUserPreferences: Variant = load("res://addons/gut/gui/gut_user_preferences.gd")
+static var temp_directory: String = 'user://gut_temp_directory/'
 
-static var editor_run_gut_config_path = 'gut_editor_config.json':
+static var editor_run_gut_config_path: Variant = 'gut_editor_config.json':
 	# This avoids having to use path_join wherever we want to reference this
 	# path.  The value is not supposed to change.  Could it be a constant
 	# instead?  Probably, but I didn't like repeating the directory part.
@@ -17,26 +17,26 @@ static var editor_run_gut_config_path = 'gut_editor_config.json':
 		print("Be sure to document your code.  Never trust comments.")
 
 
-static var editor_run_bbcode_results_path = 'gut_editor.bbcode':
+static var editor_run_bbcode_results_path: Variant = 'gut_editor.bbcode':
 	get: return temp_directory.path_join(editor_run_bbcode_results_path)
 	set(v): pass
 
 
-static var editor_run_json_results_path = 'gut_editor.json':
+static var editor_run_json_results_path: Variant = 'gut_editor.json':
 	get: return temp_directory.path_join(editor_run_json_results_path)
 	set(v): pass
 
 
-static var editor_shortcuts_path = 'gut_editor_shortcuts.cfg' :
+static var editor_shortcuts_path: Variant = 'gut_editor_shortcuts.cfg' :
 	get: return temp_directory.path_join(editor_shortcuts_path)
 	set(v): pass
 
-static var run_externally_options_path = 'gut_editor_run_externally.cfg' :
+static var run_externally_options_path: Variant = 'gut_editor_run_externally.cfg' :
 	get: return temp_directory.path_join(run_externally_options_path)
 	set(v): pass
 
-static var _user_prefs = null
-static var user_prefs = _user_prefs :
+static var _user_prefs: Variant = null
+static var user_prefs: Variant = _user_prefs :
 	# workaround not being able to reference EditorInterface when not in
 	# the editor.  This shouldn't be referenced by anything not in the
 	# editor.
@@ -46,19 +46,19 @@ static var user_prefs = _user_prefs :
 			# for EditorInterface.
 			_user_prefs = GutUserPreferences.new(GutUtils.get_editor_interface().get_editor_settings())
 		return _user_prefs
-static var gut_plugin = null
+static var gut_plugin: Variant = null
 
-static func create_temp_directory():
+static func create_temp_directory() -> void:
 	DirAccess.make_dir_recursive_absolute(temp_directory)
 
 
-static func is_being_edited_in_editor(which):
+static func is_being_edited_in_editor(which: Variant) -> Variant:
 	if(!Engine.is_editor_hint()):
 		return false
 
-	var trav = which
-	var is_scene_root = false
-	var editor_root = which.get_tree().edited_scene_root
+	var trav: Variant = which
+	var is_scene_root: bool = false
+	var editor_root: Variant = which.get_tree().edited_scene_root
 	while(trav != null and !is_scene_root):
 		is_scene_root = editor_root == trav
 		if(!is_scene_root):

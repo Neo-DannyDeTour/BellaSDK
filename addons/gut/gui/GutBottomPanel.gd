@@ -1,30 +1,30 @@
 @tool
 extends Control
 
-var GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
-var GutConfigGui = load('res://addons/gut/gui/gut_config_gui.gd')
-var AboutWindow = load("res://addons/gut/gui/about.tscn")
+const GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
+const GutConfigGui = load('res://addons/gut/gui/gut_config_gui.gd')
+const AboutWindow = load("res://addons/gut/gui/about.tscn")
 
-var _interface = null;
-var _is_running = false :
+var _interface: Variant = null;
+var _is_running: Variant = false :
 	set(val):
 		_is_running = val
 		_disable_run_buttons(_is_running)
 
-var _gut_config = load('res://addons/gut/gut_config.gd').new()
-var _gut_config_gui = null
-var _gut_plugin = null
-var _light_color = Color(0, 0, 0, .5) :
+var _gut_config: Variant = load('res://addons/gut/gut_config.gd').new()
+var _gut_config_gui: Variant = null
+var _gut_plugin: Variant = null
+var _light_color: Color = Color(0, 0, 0, .5) :
 	set(val):
 		_light_color = val
 		if(is_inside_tree()):
 			_ctrls.light.queue_redraw()
-var _panel_button = null
-var _user_prefs = null
-var _shell_out_panel = null
+var _panel_button: Variant = null
+var _user_prefs: Variant = null
+var _shell_out_panel: Variant = null
 
 
-var menu_manager = null :
+var menu_manager: Variant = null :
 	set(val):
 		menu_manager = val
 		if(val != null):
@@ -35,7 +35,7 @@ var menu_manager = null :
 			menu_manager.show_gut.connect(_on_show_gut)
 
 
-@onready var _ctrls = {
+@onready var _ctrls: Variant = {
 	about = %ExtraButtons/About,
 	light = %StatusIndicator,
 	output_button = %ExtraButtons/OutputBtn,
@@ -61,14 +61,14 @@ var menu_manager = null :
 	},
 }
 
-@onready var results_v_split = %VSplitResults
-@onready var results_h_split = %HSplitResults
-@onready var results_tree = %RunResults
-@onready var results_text = %OutputText
-@onready var make_floating_btn = %MakeFloating
+@onready var results_v_split: Variant = %VSplitResults
+@onready var results_h_split: Variant = %HSplitResults
+@onready var results_tree: Variant = %RunResults
+@onready var results_text: Variant = %OutputText
+@onready var make_floating_btn: Variant = %MakeFloating
 
 
-func _ready():
+func _ready() -> void:
 	if(get_parent() is SubViewport):
 		return
 
@@ -95,7 +95,7 @@ func _ready():
 
 	results_tree.set_output_control(results_text)
 
-	var check_import = load('res://addons/gut/images/HSplitContainer.svg')
+	var check_import: Variant = load('res://addons/gut/images/HSplitContainer.svg')
 	if(check_import == null):
 		results_tree.add_centered_text("GUT got some new images that are not imported yet.  Please restart Godot.")
 		print('GUT got some new images that are not imported yet.  Please restart Godot.')
@@ -108,7 +108,7 @@ func _ready():
 	results_vert_layout()
 
 
-func _process(_delta):
+func _process(_delta: float) -> void:
 	if(_is_running):
 		if(_ctrls.run_externally_dialog.should_run_externally()):
 			if(!is_instance_valid(_shell_out_panel)):
@@ -124,12 +124,12 @@ func _process(_delta):
 # ---------------
 # Private
 # ---------------
-func _apply_options_to_controls():
+func _apply_options_to_controls() -> void:
 	hide_settings(_user_prefs.hide_settings.value)
 	hide_result_tree(_user_prefs.hide_result_tree.value)
 	hide_output_text(_user_prefs.hide_output_text.value)
 	results_tree.set_show_orphans(!_gut_config.options.hide_orphans)
-	var shell_dialog_size = _user_prefs.run_externally_options_dialog_size.value
+	var shell_dialog_size: Variant = _user_prefs.run_externally_options_dialog_size.value
 
 	if(shell_dialog_size != Vector2i(-1, -1)):
 		_ctrls.run_externally_dialog.size = Vector2i(shell_dialog_size)
@@ -137,7 +137,7 @@ func _apply_options_to_controls():
 	if(_user_prefs.shortcuts_dialog_size.value != Vector2i(-1, -1)):
 		_ctrls.shortcut_dialog.size = _user_prefs.shortcuts_dialog_size.value
 
-	var mode_ind = 'Ed'
+	var mode_ind: String = 'Ed'
 	if(_ctrls.run_externally_dialog.run_mode == _ctrls.run_externally_dialog.RUN_MODE_BLOCKING):
 		mode_ind = 'ExB'
 	elif(_ctrls.run_externally_dialog.run_mode == _ctrls.run_externally_dialog.RUN_MODE_NON_BLOCKING):
@@ -148,22 +148,22 @@ func _apply_options_to_controls():
 
 
 
-func _disable_run_buttons(should):
+func _disable_run_buttons(should: Variant) -> void:
 	_ctrls.run_button.disabled = should
 	_ctrls.run_at_cursor.disabled = should
 
 
-func _is_test_script(script):
-	var from = script.get_base_script()
+func _is_test_script(script: Variant) -> Variant:
+	var from: Variant = script.get_base_script()
 	while(from and from.resource_path != 'res://addons/gut/test.gd'):
 		from = from.get_base_script()
 
 	return from != null
 
 
-func _show_errors(errs):
+func _show_errors(errs: Variant) -> void:
 	results_text.clear()
-	var text = "Cannot run tests, you have a configuration error:\n"
+	var text: String = "Cannot run tests, you have a configuration error:\n"
 	for e in errs:
 		text += str('*  ', e, "\n")
 	text += "Check your settings ----->"
@@ -172,7 +172,7 @@ func _show_errors(errs):
 	hide_settings(false)
 
 
-func _save_user_prefs():
+func _save_user_prefs() -> void:
 	_user_prefs.hide_settings.value = !_ctrls.settings_button.button_pressed
 	_user_prefs.hide_result_tree.value = !_ctrls.run_results_button.button_pressed
 	_user_prefs.hide_output_text.value = !_ctrls.output_button.button_pressed
@@ -184,18 +184,18 @@ func _save_user_prefs():
 	_user_prefs.save_it()
 
 
-func _save_config():
+func _save_config() -> void:
 	_save_user_prefs()
 
 	_gut_config.options = _gut_config_gui.get_options(_gut_config.options)
-	var w_result = _gut_config.write_options(GutEditorGlobals.editor_run_gut_config_path)
+	var w_result: Variant = _gut_config.write_options(GutEditorGlobals.editor_run_gut_config_path)
 	if(w_result != OK):
 		push_error(str('Could not write options to ', GutEditorGlobals.editor_run_gut_config_path, ': ', w_result))
 	else:
 		_gut_config_gui.mark_saved()
 
 
-func _run_externally():
+func _run_externally() -> void:
 	_shell_out_panel = GutUtils.RunExternallyScene.instantiate()
 	_shell_out_panel.bottom_panel = self
 	_shell_out_panel.blocking_mode = _ctrls.run_externally_dialog.run_mode
@@ -205,7 +205,7 @@ func _run_externally():
 	_shell_out_panel.run_tests()
 
 
-func _run_tests():
+func _run_tests() -> void:
 	show_me()
 	if(_is_running):
 		push_error("GUT:  Cannot run tests, tests are already running.")
@@ -215,7 +215,7 @@ func _run_tests():
 	GutEditorGlobals.create_temp_directory()
 	_light_color = Color.BLUE
 
-	var issues = _gut_config_gui.get_config_issues()
+	var issues: Variant = _gut_config_gui.get_config_issues()
 	if(issues.size() > 0):
 		_show_errors(issues)
 		return
@@ -239,7 +239,7 @@ func _run_tests():
 		_interface.play_custom_scene('res://addons/gut/gui/run_from_editor.tscn')
 
 
-func _apply_shortcuts():
+func _apply_shortcuts() -> void:
 	if(menu_manager != null):
 		menu_manager.apply_gut_shortcuts(_ctrls.shortcut_dialog)
 
@@ -260,7 +260,7 @@ func _apply_shortcuts():
 		get_parent().dock_shortcut = _ctrls.shortcut_dialog.scbtn_panel.get_shortcut()
 
 
-func _run_all():
+func _run_all() -> void:
 	_gut_config.options.selected = null
 	_gut_config.options.inner_class = null
 	_gut_config.options.unit_test_name = null
@@ -271,20 +271,20 @@ func _run_all():
 # ---------------
 # Events
 # ---------------
-func _on_results_bar_draw(bar):
+func _on_results_bar_draw(bar: Variant) -> void:
 	bar.draw_rect(Rect2(Vector2(0, 0), bar.size), Color(0, 0, 0, .2))
 
 
-func _on_Light_draw():
-	var l = _ctrls.light
+func _on_Light_draw() -> void:
+	var l: Variant = _ctrls.light
 	l.draw_circle(Vector2(l.size.x / 2, l.size.y / 2), l.size.x / 2, _light_color)
 
 
-func _on_RunAll_pressed():
+func _on_RunAll_pressed() -> void:
 	_run_all()
 
 
-func _on_Shortcuts_pressed():
+func _on_Shortcuts_pressed() -> void:
 	_ctrls.shortcut_dialog.popup_centered()
 
 
@@ -294,7 +294,7 @@ func _on_sortcut_dialog_confirmed() -> void:
 	_save_user_prefs()
 
 
-func _on_RunAtCursor_run_tests(what):
+func _on_RunAtCursor_run_tests(what: Variant) -> void:
 	_gut_config.options.selected = what.script
 	_gut_config.options.inner_class = what.inner_class
 	_gut_config.options.unit_test_name = what.method
@@ -302,24 +302,24 @@ func _on_RunAtCursor_run_tests(what):
 	_run_tests()
 
 
-func _on_Settings_pressed():
+func _on_Settings_pressed() -> void:
 	hide_settings(!_ctrls.settings_button.button_pressed)
 	_save_config()
 
 
-func _on_OutputBtn_pressed():
+func _on_OutputBtn_pressed() -> void:
 	hide_output_text(!_ctrls.output_button.button_pressed)
 	_save_config()
 
 
-func _on_RunResultsBtn_pressed():
+func _on_RunResultsBtn_pressed() -> void:
 	hide_result_tree(! _ctrls.run_results_button.button_pressed)
 	_save_config()
 
 
 # Currently not used, but will be when I figure out how to put
 # colors into the text results
-func _on_UseColors_pressed():
+func _on_UseColors_pressed() -> void:
 	pass
 
 
@@ -333,7 +333,7 @@ func _on_run_mode_pressed() -> void:
 	_ctrls.run_externally_dialog.popup_centered()
 
 
-func _on_toggle_windowed():
+func _on_toggle_windowed() -> void:
 	_gut_plugin.toggle_windowed()
 
 
@@ -366,18 +366,18 @@ func _on_resized() -> void:
 # ---------------
 # Public
 # ---------------
-func load_shortcuts():
+func load_shortcuts() -> void:
 	_ctrls.shortcut_dialog.load_shortcuts()
 	_apply_shortcuts()
 
 
-func hide_result_tree(should):
+func hide_result_tree(should: Variant) -> void:
 	results_tree.visible = !should
 	_ctrls.run_results_button.button_pressed = !should
 
 
-func hide_settings(should):
-	var s_scroll = _ctrls.settings.get_parent()
+func hide_settings(should: Variant) -> void:
+	var s_scroll: Variant = _ctrls.settings.get_parent()
 	s_scroll.visible = !should
 
 	# collapse only collapses the first control, so we move
@@ -391,12 +391,12 @@ func hide_settings(should):
 	_ctrls.settings_button.button_pressed = !should
 
 
-func hide_output_text(should):
+func hide_output_text(should: Variant) -> void:
 	results_text.visible = !should
 	_ctrls.output_button.button_pressed = !should
 
 
-func clear_results():
+func clear_results() -> void:
 	_light_color = Color(0, 0, 0, .5)
 
 	_ctrls.results.passing.text = "0"
@@ -418,16 +418,16 @@ func clear_results():
 	_ctrls.results.orphans.get_parent().visible = false
 
 
-func load_result_json():
-	var summary = get_file_as_text(GutEditorGlobals.editor_run_json_results_path)
-	var test_json_conv = JSON.new()
+func load_result_json() -> void:
+	var summary: Variant = get_file_as_text(GutEditorGlobals.editor_run_json_results_path)
+	var test_json_conv: JSON = JSON.new()
 	if (test_json_conv.parse(summary) != OK):
 		return
-	var results = test_json_conv.get_data()
+	var results: Variant = test_json_conv.get_data()
 
 	results_tree.load_json_results(results)
 
-	var summary_json = results['test_scripts']['props']
+	var summary_json: Variant = results['test_scripts']['props']
 	_ctrls.results.passing.text = str(int(summary_json.passing))
 	_ctrls.results.passing.get_parent().visible = true
 
@@ -458,30 +458,30 @@ func load_result_json():
 	_ctrls.light.visible = true
 
 
-func load_result_text():
+func load_result_text() -> void:
 	results_text.load_file(GutEditorGlobals.editor_run_bbcode_results_path)
 
 
-func load_result_output():
+func load_result_output() -> void:
 	load_result_text()
 	load_result_json()
 
 
-func set_interface(value):
+func set_interface(value: Variant) -> void:
 	_interface = value
 	results_tree.set_interface(_interface)
 
 
-func set_plugin(value):
+func set_plugin(value: Variant) -> void:
 	_gut_plugin = value
 
 
-func set_panel_button(value):
+func set_panel_button(value: Variant) -> void:
 	_panel_button = value
 
 
-func write_file(path, content):
-	var f = FileAccess.open(path, FileAccess.WRITE)
+func write_file(path: Variant, content: Variant) -> Variant:
+	var f: Variant = FileAccess.open(path, FileAccess.WRITE)
 	if(f != null):
 		f.store_string(content)
 	f = null;
@@ -489,38 +489,38 @@ func write_file(path, content):
 	return FileAccess.get_open_error()
 
 
-func get_file_as_text(path):
-	var to_return = ''
-	var f = FileAccess.open(path, FileAccess.READ)
+func get_file_as_text(path: Variant) -> Variant:
+	var to_return: String = ''
+	var f: Variant = FileAccess.open(path, FileAccess.READ)
 	if(f != null):
 		to_return = f.get_as_text()
 	f = null
 	return to_return
 
 
-func get_text_output_control():
+func get_text_output_control() -> Variant:
 	return results_text
 
 
-func add_output_text(text):
+func add_output_text(text: Variant) -> void:
 	results_text.add_text(text)
 
 
-func show_about():
-	var about = AboutWindow.instantiate()
+func show_about() -> void:
+	var about: AboutWindow = AboutWindow.instantiate()
 	add_child(about)
 	about.popup_centered()
 	about.confirmed.connect(about.queue_free)
 
 
-func show_me():
+func show_me() -> void:
 	get_parent().make_visible()
 
 
-func show_hide():
+func show_hide() -> void:
 	if(owner is Window):
 		if(owner.has_focus()):
-			var win_to_focus_on = EditorInterface.get_editor_main_screen().get_parent()
+			var win_to_focus_on: Variant = EditorInterface.get_editor_main_screen().get_parent()
 			while(win_to_focus_on != null and win_to_focus_on is not Window):
 				win_to_focus_on = win_to_focus_on.get_parent()
 			if(win_to_focus_on != null):
@@ -534,11 +534,11 @@ func show_hide():
 		# own.
 
 
-func get_shortcut_dialog():
+func get_shortcut_dialog() -> Variant:
 	return _ctrls.shortcut_dialog
 
 
-func results_vert_layout():
+func results_vert_layout() -> void:
 	if(results_tree.get_parent() != results_v_split):
 		results_tree.reparent(results_v_split)
 		results_text.reparent(results_v_split)
@@ -546,7 +546,7 @@ func results_vert_layout():
 		results_h_split.visible = false
 
 
-func results_horiz_layout():
+func results_horiz_layout() -> void:
 	if(results_tree.get_parent() != results_h_split):
 		results_tree.reparent(results_h_split)
 		results_text.reparent(results_h_split)
@@ -554,10 +554,10 @@ func results_horiz_layout():
 		results_h_split.visible = true
 
 
-func show_layout_buttons(should):
+func show_layout_buttons(should: Variant) -> void:
 	%HorizLayout.visible = should
 	%VertLayout.visible = should
 
 
-func get_panel_shortcut():
+func get_panel_shortcut() -> void:
 	_ctrls.shortcut_dialog.scbtn_panel.get_shortcut()

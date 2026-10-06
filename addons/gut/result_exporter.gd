@@ -4,18 +4,18 @@
 # of a run and exporting it in a specific format.  This can also serve as a
 # unofficial GUT export format.
 # ------------------------------------------------------------------------------
-var json = JSON.new()
-var strutils = GutStringUtils.new()
+var json: JSON = JSON.new()
+var strutils: GutStringUtils = GutStringUtils.new()
 
-func _export_tests(gut, collected_script):
-	var to_return = {}
-	var tests = collected_script.tests
+func _export_tests(gut: Variant, collected_script: Variant) -> Variant:
+	var to_return: Dictionary = {}
+	var tests: Variant = collected_script.tests
 	for test in tests:
 		if(test.get_status_text() != GutUtils.TEST_STATUSES.NOT_RUN):
-			var orphans = gut.get_orphan_counter().get_orphan_ids(
+			var orphans: Variant = gut.get_orphan_counter().get_orphan_ids(
 				collected_script.get_filename_and_inner(),
 				test.name)
-			var orphan_node_strings = []
+			var orphan_node_strings: Array = []
 			for o in orphans:
 				if(is_instance_id_valid(o)):
 					orphan_node_strings.append(strutils.type2str(instance_from_id(o)))
@@ -34,15 +34,15 @@ func _export_tests(gut, collected_script):
 
 # TODO
 #	errors
-func _export_scripts(gut):
-	var collector = gut.get_test_collector()
+func _export_scripts(gut: Variant) -> Variant:
+	var collector: Variant = gut.get_test_collector()
 	if(collector == null):
 		return {}
 
-	var scripts = {}
+	var scripts: Dictionary = {}
 
 	for s in collector.scripts:
-		var test_data = _export_tests(gut, s)
+		var test_data: Variant = _export_tests(gut, s)
 		scripts[s.get_full_name()] = {
 			'props':{
 				"tests":test_data.keys().size(),
@@ -54,8 +54,8 @@ func _export_scripts(gut):
 		}
 	return scripts
 
-func _make_results_dict():
-	var result =  {
+func _make_results_dict() -> Variant:
+	var result: Variant = {
 		'test_scripts':{
 			"props":{
 				"pending":0,
@@ -74,17 +74,17 @@ func _make_results_dict():
 	return result
 
 
-func get_results_dictionary(gut, include_scripts=true):
-	var scripts = []
+func get_results_dictionary(gut: Variant, include_scripts: bool = true) -> Variant:
+	var scripts: Array = []
 
 	if(include_scripts):
 		scripts = _export_scripts(gut)
 
-	var result =  _make_results_dict()
+	var result: Variant = _make_results_dict()
 
-	var totals = gut.get_summary().get_totals()
+	var totals: Variant = gut.get_summary().get_totals()
 
-	var props = result.test_scripts.props
+	var props: Variant = result.test_scripts.props
 	props.pending = totals.pending
 	props.failures = totals.failing_tests
 	props.passing = totals.passing_tests
@@ -100,26 +100,26 @@ func get_results_dictionary(gut, include_scripts=true):
 	return result
 
 
-func write_json_file(gut, path):
-	var dict = get_results_dictionary(gut)
-	var json_text = JSON.stringify(dict, ' ')
+func write_json_file(gut: Variant, path: Variant) -> Variant:
+	var dict: Variant = get_results_dictionary(gut)
+	var json_text: Variant = JSON.stringify(dict, ' ')
 
-	var f_result = GutUtils.write_file(path, json_text)
+	var f_result: Variant = GutUtils.write_file(path, json_text)
 	if(f_result != OK):
-		var msg = str("Error:  ", f_result, ".  Could not create export file ", path)
+		var msg: Variant = str("Error:  ", f_result, ".  Could not create export file ", path)
 		GutUtils.get_logger().error(msg)
 
 	return f_result
 
 
 
-func write_summary_file(gut, path):
-	var dict = get_results_dictionary(gut, false)
-	var json_text = JSON.stringify(dict, ' ')
+func write_summary_file(gut: Variant, path: Variant) -> Variant:
+	var dict: Variant = get_results_dictionary(gut, false)
+	var json_text: Variant = JSON.stringify(dict, ' ')
 
-	var f_result = GutUtils.write_file(path, json_text)
+	var f_result: Variant = GutUtils.write_file(path, json_text)
 	if(f_result != OK):
-		var msg = str("Error:  ", f_result, ".  Could not create export file ", path)
+		var msg: Variant = str("Error:  ", f_result, ".  Could not create export file ", path)
 		GutUtils.get_logger().error(msg)
 
 	return f_result

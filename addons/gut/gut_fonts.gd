@@ -11,8 +11,8 @@
 # An instance of this could be used to allow users to specify their own fonts.
 # It's not perect for that yet, but it is feasible.
 # ------------------------------------------------------------------------------
-const DEFAULT_CUSTOM_FONT_NAME = 'CourierPrime'
-const THEME_FONT_TO_FONT_TYPES_MAP = {
+const DEFAULT_CUSTOM_FONT_NAME: String = 'CourierPrime'
+const THEME_FONT_TO_FONT_TYPES_MAP: Variant = {
 	'font':FONT_TYPES.REGULAR,
 	'normal_font': FONT_TYPES.REGULAR,
 	'bold_font': FONT_TYPES.BOLD,
@@ -23,7 +23,7 @@ const THEME_FONT_TO_FONT_TYPES_MAP = {
 
 # Values for FONT_TYPES are based on Google font file suffix (not extension).
 # A font file will be a key from fonts + - + FONT_TYPE value + .ttf.
-const FONT_TYPES = {
+const FONT_TYPES: Variant = {
 	REGULAR = 'Regular',
 	BOLD = 'Bold',
 	ITALIC = 'Italic',
@@ -31,7 +31,7 @@ const FONT_TYPES = {
 }
 
 
-var fonts = {
+var fonts: Variant = {
 	'AnonymousPro':{},
 	'CourierPrime':{},
 	'LobsterTwo':{},
@@ -39,28 +39,28 @@ var fonts = {
 }
 
 
-var custom_font_path = 'res://addons/gut/fonts/'
+var custom_font_path: String = 'res://addons/gut/fonts/'
 
 
-func _init():
+func _init() -> void:
 	_populate_default_fonts()
 
 
-func _populate_default_fonts():
-	var ctrl = TextEdit.new()
-	var f = ctrl.get_theme_font('font')
+func _populate_default_fonts() -> void:
+	var ctrl: TextEdit = TextEdit.new()
+	var f: Variant = ctrl.get_theme_font('font')
 	for key in FONT_TYPES:
 		fonts['Default'][FONT_TYPES[key]] = f
 	ctrl.free()
 
 
-func _load_font(font_name, font_type, font_path):
-	var dynamic_font = FontFile.new()
+func _load_font(font_name: Variant, font_type: Variant, font_path: Variant) -> void:
+	var dynamic_font: FontFile = FontFile.new()
 	dynamic_font.load_dynamic_font(font_path)
 	fonts[font_name][font_type] = dynamic_font
 
 
-func get_font(font_name, font_type='Regular'):
+func get_font(font_name: Variant, font_type: String = 'Regular') -> Variant:
 	if(!fonts.has(font_name)):
 		push_error(str("Invalid font name '", font_name, "'"))
 		return fonts['Default'][FONT_TYPES.REGULAR]
@@ -70,7 +70,7 @@ func get_font(font_name, font_type='Regular'):
 		return fonts['Default'][FONT_TYPES.REGULAR]
 
 	if(!fonts[font_name].has(font_type)):
-		var filename = custom_font_path.path_join(str(font_name, '-', font_type, '.ttf'))
+		var filename: Variant = custom_font_path.path_join(str(font_name, '-', font_type, '.ttf'))
 		if(FileAccess.file_exists(filename)):
 			_load_font(font_name, font_type, filename)
 		else:
@@ -80,13 +80,13 @@ func get_font(font_name, font_type='Regular'):
 	return fonts.get(font_name, {}).get(font_type, null)
 
 
-func get_font_names():
+func get_font_names() -> Variant:
 	return fonts.keys()
 
 
 # Maps the various theme font names (font, normal_font, italics_font etc) to
 # a FONT_TYPE.
-func get_font_for_theme_font_name(theme_font_name, custom_font_name):
+func get_font_for_theme_font_name(theme_font_name: Variant, custom_font_name: Variant) -> Variant:
 	if(!THEME_FONT_TO_FONT_TYPES_MAP.has(theme_font_name)):
 		push_error(str("Unknown theme font name ", theme_font_name))
 		return get_font(custom_font_name)

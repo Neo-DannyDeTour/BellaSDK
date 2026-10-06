@@ -1,50 +1,50 @@
 class GutEditorPref:
-	var gut_pref_prefix = 'gut/'
-	var pname = '__not_set__'
-	var default = null
-	var value = '__not_set__'
-	var _settings = null
+	var gut_pref_prefix: String = 'gut/'
+	var pname: String = '__not_set__'
+	var default: Variant = null
+	var value: String = '__not_set__'
+	var _settings: Variant = null
 
-	func _init(n, d, s):
+	func _init(n: Variant, d: Variant, s: Variant) -> void:
 		pname = n
 		default = d
 		_settings = s
 		load_it()
 
-	func _prefstr():
-		var to_return = str(gut_pref_prefix, pname)
+	func _prefstr() -> Variant:
+		var to_return: Variant = str(gut_pref_prefix, pname)
 		return to_return
 
-	func save_it():
+	func save_it() -> void:
 		_settings.set_setting(_prefstr(), value)
 
-	func load_it():
+	func load_it() -> void:
 		if(_settings.has_setting(_prefstr())):
 			value = _settings.get_setting(_prefstr())
 		else:
 			value = default
 
-	func erase():
+	func erase() -> void:
 		_settings.erase(_prefstr())
 
 
-const EMPTY = '-- NOT_SET --'
+const EMPTY: String = '-- NOT_SET --'
 
 # -- Editor ONLY Settings --
-var output_font_name = null
-var output_font_size = null
-var hide_result_tree = null
-var hide_output_text = null
-var hide_settings = null
-var use_colors = null	# ? might be output panel
-var run_externally = null
-var run_externally_options_dialog_size = null
-var shortcuts_dialog_size = null
-var gut_window_size = null
-var gut_window_on_top = null
+var output_font_name: Variant = null
+var output_font_size: Variant = null
+var hide_result_tree: Variant = null
+var hide_output_text: Variant = null
+var hide_settings: Variant = null
+var use_colors: Variant = null	# ? might be output panel
+var run_externally: Variant = null
+var run_externally_options_dialog_size: Variant = null
+var shortcuts_dialog_size: Variant = null
+var gut_window_size: Variant = null
+var gut_window_on_top: Variant = null
 
 
-func _init(editor_settings):
+func _init(editor_settings: Variant) -> void:
 	output_font_name = GutEditorPref.new('output_font_name', 'CourierPrime', editor_settings)
 	output_font_size = GutEditorPref.new('output_font_size', 30, editor_settings)
 	hide_result_tree = GutEditorPref.new('hide_result_tree', false, editor_settings)
@@ -58,22 +58,22 @@ func _init(editor_settings):
 	gut_window_on_top = GutEditorPref.new('editor_window_on_top', false, editor_settings)
 
 
-func save_it():
+func save_it() -> void:
 	for prop in get_property_list():
-		var val = get(prop.name)
+		var val: Variant = get(prop.name)
 		if(val is GutEditorPref):
 			val.save_it()
 
 
-func load_it():
+func load_it() -> void:
 	for prop in get_property_list():
-		var val = get(prop.name)
+		var val: Variant = get(prop.name)
 		if(val is GutEditorPref):
 			val.load_it()
 
 
-func erase_all():
+func erase_all() -> void:
 	for prop in get_property_list():
-		var val = get(prop.name)
+		var val: Variant = get(prop.name)
 		if(val is GutEditorPref):
 			val.erase()

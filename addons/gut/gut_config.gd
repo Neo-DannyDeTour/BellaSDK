@@ -4,18 +4,18 @@
 # to a json file.  It is also responsible for applying these settings to GUT.
 #
 # ##############################################################################
-const FAIL_ERROR_TYPE_ENGINE = &'engine'
-const FAIL_ERROR_TYPE_PUSH_ERROR = &'push_error'
-const FAIL_ERROR_TYPE_GUT = &'gut'
+const FAIL_ERROR_TYPE_ENGINE: StringName = &'engine'
+const FAIL_ERROR_TYPE_PUSH_ERROR: StringName = &'push_error'
+const FAIL_ERROR_TYPE_GUT: StringName = &'gut'
 
 
 
-var valid_fonts = GutUtils.gut_fonts.get_font_names()
-var _deprecated_values = {
+var valid_fonts: Variant = GutUtils.gut_fonts.get_font_names()
+var _deprecated_values: Variant = {
 	"errors_do_not_cause_failure": "Use failure_error_types instead."
 }
 
-var default_options = {
+var default_options: Variant = {
 	background_color = Color(.15, .15, .15, 1).to_html(),
 	config_file = 'res://.gutconfig.json',
 	# used by editor to handle enabled/disabled dirs.  All dirs configured go
@@ -61,17 +61,17 @@ var default_options = {
 }
 
 
-var options = default_options.duplicate()
-var logger = GutUtils.get_logger()
+var options: Variant = default_options.duplicate()
+var logger: Variant = GutUtils.get_logger()
 
-func _null_copy(h):
-	var new_hash = {}
+func _null_copy(h: Variant) -> Variant:
+	var new_hash: Dictionary = {}
 	for key in h:
 		new_hash[key] = null
 	return new_hash
 
 
-func _load_options_from_config_file(file_path, into):
+func _load_options_from_config_file(file_path: Variant, into: Variant) -> Variant:
 	if(!FileAccess.file_exists(file_path)):
 		# Default files are ok to be missing.  Maybe this is too deep a place
 		# to implement this, but here it is.
@@ -81,18 +81,18 @@ func _load_options_from_config_file(file_path, into):
 		else:
 			return 1
 
-	var f = FileAccess.open(file_path, FileAccess.READ)
+	var f: Variant = FileAccess.open(file_path, FileAccess.READ)
 	if(f == null):
-		var result = FileAccess.get_open_error()
+		var result: Variant = FileAccess.get_open_error()
 		logger.error(str("Could not load data ", file_path, ' ', result))
 		return result
 
-	var json = f.get_as_text()
+	var json: Variant = f.get_as_text()
 	f = null # close file
 
-	var test_json_conv = JSON.new()
+	var test_json_conv: JSON = JSON.new()
 	test_json_conv.parse(json)
-	var results = test_json_conv.get_data()
+	var results: Variant = test_json_conv.get_data()
 	# SHORTCIRCUIT
 	if(results == null):
 		logger.error(str("Could not parse file:  ", file_path))
@@ -105,7 +105,7 @@ func _load_options_from_config_file(file_path, into):
 	return 1
 
 
-func _load_dict_into(source, dest):
+func _load_dict_into(source: Variant, dest: Variant) -> void:
 	for key in dest:
 		if(source.has(key)):
 			if(source[key] != null):
@@ -117,7 +117,7 @@ func _load_dict_into(source, dest):
 
 # Apply all the options specified to tester.  This is where the rubber meets
 # the road.
-func _apply_options(opts, gut):
+func _apply_options(opts: Variant, gut: Variant) -> Variant:
 	for entry in _deprecated_values.keys():
 		if(opts.has(entry)):
 			# Use gut.logger instead of our own for testing purposes.
@@ -171,11 +171,11 @@ func _apply_options(opts, gut):
 # --------------------------
 # Public
 # --------------------------
-func write_options(path):
-	var content = JSON.stringify(options, ' ')
+func write_options(path: Variant) -> Variant:
+	var content: Variant = JSON.stringify(options, ' ')
 
-	var f = FileAccess.open(path, FileAccess.WRITE)
-	var result = FileAccess.get_open_error()
+	var f: Variant = FileAccess.open(path, FileAccess.WRITE)
+	var result: Variant = FileAccess.get_open_error()
 	if(f != null):
 		f.store_string(content)
 		f = null # closes file
@@ -185,25 +185,25 @@ func write_options(path):
 
 
 # consistent name
-func save_file(path):
+func save_file(path: Variant) -> void:
 	write_options(path)
 
 
-func load_options(path):
+func load_options(path: Variant) -> Variant:
 	return _load_options_from_config_file(path, options)
 
 
 # consistent name
-func load_file(path):
+func load_file(path: Variant) -> Variant:
 	return load_options(path)
 
 
-func load_options_no_defaults(path):
+func load_options_no_defaults(path: Variant) -> Variant:
 	options = _null_copy(default_options)
 	return _load_options_from_config_file(path, options)
 
 
-func apply_options(gut):
+func apply_options(gut: Variant) -> void:
 	_apply_options(options, gut)
 
 

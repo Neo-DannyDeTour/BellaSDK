@@ -43,42 +43,42 @@ class_name GutInputSender
 class InputSenderQueueItem:
 	extends Node
 
-	var events = []
-	var time_delay = null
-	var frame_delay = null
-	var _waited_frames = 0
-	var _is_ready = false
-	var _delay_started = false
+	var events: Array = []
+	var time_delay: Variant = null
+	var frame_delay: Variant = null
+	var _waited_frames: int = 0
+	var _is_ready: bool = false
+	var _delay_started: bool = false
 
 	signal event_ready
 
 	# TODO should this be done in _physics_process instead or should it be
 	# configurable?
-	func _physics_process(delta):
+	func _physics_process(delta: float) -> void:
 		if(frame_delay > 0 and _delay_started):
 			_waited_frames += 1
 			if(_waited_frames >= frame_delay):
 				event_ready.emit()
 
-	func _init(t_delay,f_delay):
+	func _init(t_delay: Variant, f_delay: Variant) -> void:
 		time_delay = t_delay
 		frame_delay = f_delay
 		_is_ready = time_delay == 0 and frame_delay == 0
 
-	func _on_time_timeout():
+	func _on_time_timeout() -> void:
 		_is_ready = true
 		event_ready.emit()
 
-	func _delay_timer(t):
+	func _delay_timer(t: Variant) -> Variant:
 		return Engine.get_main_loop().root.get_tree().create_timer(t)
 
-	func is_ready():
+	func is_ready() -> Variant:
 		return _is_ready
 
-	func start():
+	func start() -> void:
 		_delay_started = true
 		if(time_delay > 0):
-			var t = _delay_timer(time_delay)
+			var t: Variant = _delay_timer(time_delay)
 			t.connect("timeout",Callable(self,"_on_time_timeout"))
 
 
@@ -89,21 +89,21 @@ class InputSenderQueueItem:
 class InputSenderMouseDraw:
 	extends Node2D
 
-	var down_color = Color(1, 1, 1, .25)
-	var up_color = Color(0, 0, 0, .25)
-	var line_color = Color(1, 0, 0)
-	var disabled = true :
+	var down_color: Color = Color(1, 1, 1, .25)
+	var up_color: Color = Color(0, 0, 0, .25)
+	var line_color: Color = Color(1, 0, 0)
+	var disabled: Variant = true :
 		get : return disabled
 		set(val) :
 			disabled = val
 			queue_redraw()
 
-	var _draw_at = Vector2(0, 0)
-	var _b1_down = false
-	var _b2_down = false
+	var _draw_at: Vector2 = Vector2(0, 0)
+	var _b1_down: bool = false
+	var _b2_down: bool = false
 
 
-	func draw_event(event):
+	func draw_event(event: Variant) -> void:
 		if(event is InputEventMouse):
 			_draw_at = event.position
 			if(event is InputEventMouseButton):
@@ -114,17 +114,17 @@ class InputSenderMouseDraw:
 		queue_redraw()
 
 
-	func _draw_cicled_cursor():
-		var r = 10
-		var b1_color = up_color
-		var b2_color = up_color
+	func _draw_cicled_cursor() -> void:
+		var r: int = 10
+		var b1_color: Variant = up_color
+		var b2_color: Variant = up_color
 
 		if(_b1_down):
-			var pos = _draw_at - (Vector2(r * 1.5, 0))
+			var pos: Variant = _draw_at - (Vector2(r * 1.5, 0))
 			draw_arc(pos, r / 2, 0, 360, 180, b1_color)
 
 		if(_b2_down):
-			var pos = _draw_at + (Vector2(r * 1.5, 0))
+			var pos: Variant = _draw_at + (Vector2(r * 1.5, 0))
 			draw_arc(pos, r / 2, 0, 360, 180, b2_color)
 
 		draw_arc(_draw_at, r, 0, 360, 360, line_color, 1)
@@ -132,10 +132,10 @@ class InputSenderMouseDraw:
 		draw_line(_draw_at - Vector2(r, 0), _draw_at + Vector2(r, 0), line_color)
 
 
-	func _draw_square_cursor():
-		var r = 10
-		var b1_color = up_color
-		var b2_color = up_color
+	func _draw_square_cursor() -> void:
+		var r: int = 10
+		var b1_color: Variant = up_color
+		var b2_color: Variant = up_color
 
 		if(_b1_down):
 			b1_color = down_color
@@ -143,7 +143,7 @@ class InputSenderMouseDraw:
 		if(_b2_down):
 			b2_color = down_color
 
-		var blen = r * .75
+		var blen: Variant = r * .75
 		# left button rectangle
 		draw_rect(Rect2(_draw_at - Vector2(blen, blen), Vector2(blen, blen * 2)), b1_color)
 		# right button rectrangle
@@ -153,7 +153,7 @@ class InputSenderMouseDraw:
 		draw_line(_draw_at - Vector2(r, 0), _draw_at + Vector2(r, 0), line_color)
 
 
-	func _draw():
+	func _draw() -> void:
 		if(disabled):
 			return
 		_draw_square_cursor()
@@ -168,45 +168,45 @@ class InputSenderMouseDraw:
 #
 # ##############################################################################
 ## Local reference to the GutInputFactory static class
-const INPUT_WARN = 'If using Input as a reciever it will not respond to *_down events until a *_up event is recieved.  Call the appropriate *_up event or use hold_for(...) to automatically release after some duration.'
+const INPUT_WARN: String = 'If using Input as a reciever it will not respond to *_down events until a *_up event is recieved.  Call the appropriate *_up event or use hold_for(...) to automatically release after some duration.'
 
-var _lgr = GutUtils.get_logger()
-var _receivers = []
-var _input_queue = []
-var _next_queue_item = null
+var _lgr: Variant = GutUtils.get_logger()
+var _receivers: Array = []
+var _input_queue: Array = []
+var _next_queue_item: Variant = null
 
 # used by hold_for and echo.
-var _last_event = null
+var _last_event: Variant = null
 # indexed by keycode, each entry contains a boolean value indicating the
 # last emitted "pressed" value for that keycode.
-var _pressed_keys = {}
-var _pressed_actions = {}
-var _pressed_mouse_buttons = {}
+var _pressed_keys: Dictionary = {}
+var _pressed_actions: Dictionary = {}
+var _pressed_mouse_buttons: Dictionary = {}
 
-var _auto_flush_input = false
-var _tree_items_parent = null
-var _mouse_draw = null;
+var _auto_flush_input: bool = false
+var _tree_items_parent: Variant = null
+var _mouse_draw: Variant = null;
 
-var _default_mouse_position = {
+var _default_mouse_position: Variant = {
 	position = Vector2(0, 0),
 	global_position = Vector2(0, 0)
 }
 
-var _last_mouse_position = {
+var _last_mouse_position: Variant = {
 }
 
 ## Warp mouse when sending InputEventMouse* events
-var mouse_warp = false
+var mouse_warp: bool = false
 ## Draw mouse position cross hairs.  Useful to see where the mouse is at
 ## when not using [member mouse_warp]
-var draw_mouse = true
+var draw_mouse: bool = true
 
 ## Emitted when all events in the input queue have been sent.
 signal idle
 
 
 ## Accepts a single optional receiver.
-func _init(r=null):
+func _init(r: Variant = null) -> void:
 	if(r != null):
 		add_receiver(r)
 
@@ -219,13 +219,13 @@ func _init(r=null):
 	_mouse_draw.disabled = false
 
 
-func _notification(what):
+func _notification(what: int) -> void:
 	if(what == NOTIFICATION_PREDELETE):
 		if(is_instance_valid(_tree_items_parent)):
 			_tree_items_parent.queue_free()
 
 
-func _add_queue_item(item):
+func _add_queue_item(item: Variant) -> void:
 	item.connect("event_ready", _on_queue_item_ready.bind(item))
 	_next_queue_item = item
 	_input_queue.append(item)
@@ -234,7 +234,7 @@ func _add_queue_item(item):
 		item.start()
 
 
-func _handle_pressed_keys(event):
+func _handle_pressed_keys(event: Variant) -> void:
 	if(event is InputEventKey):
 		if((event.pressed and !event.echo) and is_key_pressed(event.keycode)):
 			_lgr.warn(str("InputSender:  key_down called for ", event.as_text(), " when that key is already pressed.  ", INPUT_WARN))
@@ -249,7 +249,7 @@ func _handle_pressed_keys(event):
 		_pressed_mouse_buttons[event.button_index] = event
 
 
-func _handle_mouse_position(event):
+func _handle_mouse_position(event: Variant) -> void:
 	if(event is InputEventMouse):
 		_mouse_draw.disabled = !draw_mouse
 		_mouse_draw.draw_event(event)
@@ -257,7 +257,7 @@ func _handle_mouse_position(event):
 			DisplayServer.warp_mouse(event.position)
 
 
-func _send_event(event):
+func _send_event(event: Variant) -> void:
 	_handle_mouse_position(event)
 	_handle_pressed_keys(event)
 
@@ -285,7 +285,7 @@ func _send_event(event):
 				r._unhandled_input(event)
 
 
-func _send_or_record_event(event):
+func _send_or_record_event(event: Variant) -> void:
 	_last_event = event
 	if(_next_queue_item != null):
 		_next_queue_item.events.append(event)
@@ -293,26 +293,26 @@ func _send_or_record_event(event):
 		_send_event(event)
 
 
-func _set_last_mouse_positions(event : InputEventMouse):
+func _set_last_mouse_positions(event : InputEventMouse) -> void:
 	_last_mouse_position.position = event.position
 	_last_mouse_position.global_position = event.global_position
 
 
-func _apply_last_position_and_set_last_position(event, position, global_position):
+func _apply_last_position_and_set_last_position(event: Variant, position: Variant, global_position: Variant) -> void:
 	event.position = GutUtils.nvl(position, _last_mouse_position.position)
 	event.global_position = GutUtils.nvl(
 		global_position, _last_mouse_position.global_position)
 	_set_last_mouse_positions(event)
 
 
-func _new_defaulted_mouse_button_event(position, global_position):
-	var event = InputEventMouseButton.new()
+func _new_defaulted_mouse_button_event(position: Variant, global_position: Variant) -> Variant:
+	var event: InputEventMouseButton = InputEventMouseButton.new()
 	_apply_last_position_and_set_last_position(event, position, global_position)
 	return event
 
 
-func _new_defaulted_mouse_motion_event(position, global_position):
-	var event = InputEventMouseMotion.new()
+func _new_defaulted_mouse_motion_event(position: Variant, global_position: Variant) -> Variant:
+	var event: InputEventMouseMotion = InputEventMouseMotion.new()
 	_apply_last_position_and_set_last_position(event, position, global_position)
 	for key in _pressed_mouse_buttons:
 		if(_pressed_mouse_buttons[key].pressed):
@@ -323,11 +323,11 @@ func _new_defaulted_mouse_motion_event(position, global_position):
 # ------------------------------
 # Events
 # ------------------------------
-func _on_queue_item_ready(item):
+func _on_queue_item_ready(item: Variant) -> void:
 	for event in item.events:
 		_send_event(event)
 
-	var done_event = _input_queue.pop_front()
+	var done_event: Variant = _input_queue.pop_front()
 	done_event.queue_free()
 
 	if(_input_queue.size() == 0):
@@ -343,32 +343,32 @@ func _on_queue_item_ready(item):
 
 
 ## Add an object to receive input events.
-func add_receiver(obj):
+func add_receiver(obj: Variant) -> void:
 	_receivers.append(obj)
 
 
 ## Returns the receivers that have been added.
-func get_receivers():
+func get_receivers() -> Variant:
 	return _receivers
 
 
 ## Returns true if the input queue has items to be processed, false if not.
-func is_idle():
+func is_idle() -> Variant:
 	return _input_queue.size() == 0
 
-func is_key_pressed(which):
-	var event = GutInputFactory.key_up(which)
+func is_key_pressed(which: Variant) -> Variant:
+	var event: Variant = GutInputFactory.key_up(which)
 	return _pressed_keys.has(event.keycode) and _pressed_keys[event.keycode]
 
-func is_action_pressed(which):
+func is_action_pressed(which: Variant) -> Variant:
 	return _pressed_actions.has(which) and _pressed_actions[which]
 
-func is_mouse_button_pressed(which):
+func is_mouse_button_pressed(which: Variant) -> Variant:
 	return _pressed_mouse_buttons.has(which) and _pressed_mouse_buttons[which].pressed
 
 
 ## Get the value of [method set_auto_flush_input].
-func get_auto_flush_input():
+func get_auto_flush_input() -> Variant:
 	return _auto_flush_input
 
 
@@ -376,7 +376,7 @@ func get_auto_flush_input():
 ## will call [code]Input.flush_buffered_events[/code] after each event is sent.
 ## See the "use_accumulated_input" section in [wiki]Mocking-Input[/wiki] for more
 ## information.
-func set_auto_flush_input(val):
+func set_auto_flush_input(val: Variant) -> void:
 	_auto_flush_input = val
 
 
@@ -384,10 +384,10 @@ func set_auto_flush_input(val):
 ## next.  By default this will wait [param t] seconds.  You can specify a
 ## number of frames to wait by passing a string composed of a number and "f".
 ## For example [code]wait("5f")[/code] will wait 5 frames.
-func wait(t):
+func wait(t: Variant) -> Variant:
 	if(typeof(t) == TYPE_STRING):
-		var suffix = t.substr(t.length() -1, 1)
-		var val = t.rstrip('s').rstrip('f').to_float()
+		var suffix: Variant = t.substr(t.length() -1, 1)
+		var val: Variant = t.rstrip('s').rstrip('f').to_float()
 
 		if(suffix.to_lower() == 's'):
 			wait_secs(val)
@@ -404,7 +404,7 @@ func wait(t):
 ## [br][br]
 ## This should be done between each test when the [GutInputSender] is a class
 ## level variable so that state does not leak between tests.
-func clear():
+func clear() -> void:
 	_last_event = null
 	_next_queue_item = null
 
@@ -423,45 +423,45 @@ func clear():
 # ------------------------------
 
 ## Sends a [InputEventKey] event with [code]pressed = false[/code].  [param which] can be a character or a [code]KEY_*[/code] constant.
-func key_up(which):
-	var event = GutInputFactory.key_up(which)
+func key_up(which: Variant) -> Variant:
+	var event: Variant = GutInputFactory.key_up(which)
 	_send_or_record_event(event)
 	return self
 
 
 ## Sends a [InputEventKey] event with [code]pressed = true[/code].  [param which] can be a character or a [code]KEY_*[/code] constant.
-func key_down(which):
-	var event = GutInputFactory.key_down(which)
+func key_down(which: Variant) -> Variant:
+	var event: Variant = GutInputFactory.key_down(which)
 	_send_or_record_event(event)
 	return self
 
 
 ## Sends an echo [InputEventKey] event of the last key event.
-func key_echo():
+func key_echo() -> Variant:
 	if(_last_event != null and _last_event is InputEventKey):
-		var new_key = _last_event.duplicate()
+		var new_key: Variant = _last_event.duplicate()
 		new_key.echo = true
 		_send_or_record_event(new_key)
 	return self
 
 
 ## Sends a "action up" [InputEventAction] instance.  [param which] is the name of the action defined in the Key Map.
-func action_up(which, strength=1.0):
-	var event  = GutInputFactory.action_up(which, strength)
+func action_up(which: Variant, strength: float = 1.0) -> Variant:
+	var event: Variant = GutInputFactory.action_up(which, strength)
 	_send_or_record_event(event)
 	return self
 
 
 ## Sends a "action down" [InputEventAction] instance.  [param which] is the name of the action defined in the Key Map.
-func action_down(which, strength=1.0):
-	var event  = GutInputFactory.action_down(which, strength)
+func action_down(which: Variant, strength: float = 1.0) -> Variant:
+	var event: Variant = GutInputFactory.action_down(which, strength)
 	_send_or_record_event(event)
 	return self
 
 
 ## Sends a "button down" [InputEventMouseButton] for the left mouse button.
-func mouse_left_button_down(position=null, global_position=null):
-	var event = _new_defaulted_mouse_button_event(position, global_position)
+func mouse_left_button_down(position: Variant = null, global_position: Variant = null) -> Variant:
+	var event: Variant = _new_defaulted_mouse_button_event(position, global_position)
 	event.pressed = true
 	event.button_index = MOUSE_BUTTON_LEFT
 	_send_or_record_event(event)
@@ -469,8 +469,8 @@ func mouse_left_button_down(position=null, global_position=null):
 
 
 ## Sends a "button up" [InputEventMouseButton] for the left mouse button.
-func mouse_left_button_up(position=null, global_position=null):
-	var event = _new_defaulted_mouse_button_event(position, global_position)
+func mouse_left_button_up(position: Variant = null, global_position: Variant = null) -> Variant:
+	var event: Variant = _new_defaulted_mouse_button_event(position, global_position)
 	event.pressed = false
 	event.button_index = MOUSE_BUTTON_LEFT
 	_send_or_record_event(event)
@@ -478,16 +478,16 @@ func mouse_left_button_up(position=null, global_position=null):
 
 
 ## Sends a "double click" [InputEventMouseButton] for the left mouse button.
-func mouse_double_click(position=null, global_position=null):
-	var event = GutInputFactory.mouse_double_click(position, global_position)
+func mouse_double_click(position: Variant = null, global_position: Variant = null) -> Variant:
+	var event: Variant = GutInputFactory.mouse_double_click(position, global_position)
 	event.double_click = true
 	_send_or_record_event(event)
 	return self
 
 
 ## Sends a "button down" [InputEventMouseButton] for the right mouse button.
-func mouse_right_button_down(position=null, global_position=null):
-	var event = _new_defaulted_mouse_button_event(position, global_position)
+func mouse_right_button_down(position: Variant = null, global_position: Variant = null) -> Variant:
+	var event: Variant = _new_defaulted_mouse_button_event(position, global_position)
 	event.pressed = true
 	event.button_index = MOUSE_BUTTON_RIGHT
 	_send_or_record_event(event)
@@ -495,8 +495,8 @@ func mouse_right_button_down(position=null, global_position=null):
 
 
 ## Sends a "button up" [InputEventMouseButton] for the right mouse button.
-func mouse_right_button_up(position=null, global_position=null):
-	var event = _new_defaulted_mouse_button_event(position, global_position)
+func mouse_right_button_up(position: Variant = null, global_position: Variant = null) -> Variant:
+	var event: Variant = _new_defaulted_mouse_button_event(position, global_position)
 	event.pressed = false
 	event.button_index = MOUSE_BUTTON_RIGHT
 	_send_or_record_event(event)
@@ -504,17 +504,17 @@ func mouse_right_button_up(position=null, global_position=null):
 
 
 ## Sends a [InputEventMouseMotion] to move the mouse the specified positions.
-func mouse_motion(position, global_position=null):
-	var event = _new_defaulted_mouse_motion_event(position, global_position)
+func mouse_motion(position: Variant, global_position: Variant = null) -> Variant:
+	var event: Variant = _new_defaulted_mouse_motion_event(position, global_position)
 	_send_or_record_event(event)
 	return self
 
 
 ## Sends a [InputEventMouseMotion] that moves the mouse [param offset]
 ## from the last [method mouse_motion] or [method mouse_set_position] call.
-func mouse_relative_motion(offset, speed=Vector2(0, 0)):
-	var last_event = _new_defaulted_mouse_motion_event(null, null)
-	var event = GutInputFactory.mouse_relative_motion(offset, last_event, speed)
+func mouse_relative_motion(offset: Variant, speed: Vector2 = Vector2(0, 0)) -> Variant:
+	var last_event: Variant = _new_defaulted_mouse_motion_event(null, null)
+	var event: Variant = GutInputFactory.mouse_relative_motion(offset, last_event, speed)
 	_set_last_mouse_positions(event)
 	_send_or_record_event(event)
 	return self
@@ -522,13 +522,13 @@ func mouse_relative_motion(offset, speed=Vector2(0, 0)):
 
 ## Sets the mouse's position.  This does not send an event.  This position will
 ## be used for the next call to [method mouse_relative_motion].
-func mouse_set_position(position, global_position=null):
-	var event = _new_defaulted_mouse_motion_event(position, global_position)
+func mouse_set_position(position: Variant, global_position: Variant = null) -> Variant:
+	var event: Variant = _new_defaulted_mouse_motion_event(position, global_position)
 	return self
 
 
 ## Performs a left click at the given position.
-func mouse_left_click_at(where, duration = '5f'):
+func mouse_left_click_at(where: Variant, duration: String = '5f') -> Variant:
 	wait_frames(1)
 	mouse_left_button_down(where)
 	hold_for(duration)
@@ -537,7 +537,7 @@ func mouse_left_click_at(where, duration = '5f'):
 
 
 ## Create your own event and use this to send it to all receivers.
-func send_event(event):
+func send_event(event: Variant) -> Variant:
 	_send_or_record_event(event)
 	return self
 
@@ -550,7 +550,7 @@ func send_event(event):
 ## This will send the "release" event ([code]pressed = false[/code]) to all
 ## receivers.  This should be done between each test when using `Input` as a
 ## receiver.
-func release_all():
+func release_all() -> Variant:
 	for key in _pressed_keys:
 		if(_pressed_keys[key]):
 			_send_event(GutInputFactory.key_up(key))
@@ -562,7 +562,7 @@ func release_all():
 	_pressed_actions.clear()
 
 	for key in _pressed_mouse_buttons:
-		var event = _pressed_mouse_buttons[key].duplicate()
+		var event: Variant = _pressed_mouse_buttons[key].duplicate()
 		if(event.pressed):
 			event.pressed = false
 			_send_event(event)
@@ -571,15 +571,15 @@ func release_all():
 	return self
 
 ## Same as [method wait] but only accepts a number of frames to wait.
-func wait_frames(num_frames):
-	var item = InputSenderQueueItem.new(0, num_frames)
+func wait_frames(num_frames: Variant) -> Variant:
+	var item: InputSenderQueueItem = InputSenderQueueItem.new(0, num_frames)
 	_add_queue_item(item)
 	return self
 
 
 ## Same as [method wait] but only accepts a number of seconds to wait.
-func wait_secs(num_secs):
-	var item = InputSenderQueueItem.new(num_secs, 0)
+func wait_secs(num_secs: Variant) -> Variant:
+	var item: InputSenderQueueItem = InputSenderQueueItem.new(num_secs, 0)
 	_add_queue_item(item)
 	return self
 
@@ -592,9 +592,9 @@ func wait_secs(num_secs):
 ## For example [code]sender.action_down('jump').hold_for("10f")[/code] will
 ## cause two [InputEventAction] instances to be sent.  The "jump-down" event
 ## from [method action_down] and then a "jump-up" event after 10 frames.
-func hold_for(duration):
+func hold_for(duration: Variant) -> Variant:
 	if(_last_event != null and _last_event.pressed):
-		var next_event = _last_event.duplicate()
+		var next_event: Variant = _last_event.duplicate()
 		next_event.pressed = false
 
 		wait(duration)
@@ -604,12 +604,12 @@ func hold_for(duration):
 
 ## Same as [method hold_for] but specifically holds for a number of physics
 ## frames.
-func hold_frames(duration:int):
+func hold_frames(duration:int) -> Variant:
 	return hold_for(str(duration, 'f'))
 
 
 ## Same as [method hold_for] but specifically holds for a number of seconds.
-func hold_seconds(duration:float):
+func hold_seconds(duration:float) -> Variant:
 	return hold_for(duration)
 
 

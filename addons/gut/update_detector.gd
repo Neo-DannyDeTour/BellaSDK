@@ -23,31 +23,31 @@ extends Node
 ## file that will be shipped with each version of GUT.  This allows the file to
 ## be updated and still be shipped with each version of GUT.
 ## -----------------------------------------------------------------------------
-var Vnt = load("res://addons/gut/version_numbers.gd").VerNumTools
+var Vnt: Variant = load("res://addons/gut/version_numbers.gd").VerNumTools
 
 
-const REMOTE_FILE_URL = "https://api.github.com/repos/bitwes/gut/contents/addons/gut/versions.json"
-const LOCAL_FILE_PATH = "res://addons/gut/versions.json"
-const REMOTE_FILE_PATH = "user://gut_temp_directory/versions.json"
-const VERSION_ZERO = "0.0.0"
+const REMOTE_FILE_URL: String = "https://api.github.com/repos/bitwes/gut/contents/addons/gut/versions.json"
+const LOCAL_FILE_PATH: String = "res://addons/gut/versions.json"
+const REMOTE_FILE_PATH: String = "user://gut_temp_directory/versions.json"
+const VERSION_ZERO: String = "0.0.0"
 
 class VersionData:
-	var _data := {}
-	var data_issues = []
-	const VERSION_ZERO = "0.0.0"
+	var _data: Dictionary = {}
+	var data_issues: Array = []
+	const VERSION_ZERO: String = "0.0.0"
 
-	var Vnt = load("res://addons/gut/version_numbers.gd").VerNumTools
+	var Vnt: Variant = load("res://addons/gut/version_numbers.gd").VerNumTools
 
 
-	func is_gut_version_valid(gut_v, godot_v):
+	func is_gut_version_valid(gut_v: Variant, godot_v: Variant) -> Variant:
 		if(_data.releases.has(gut_v)):
-			var entry = _data.releases[gut_v]
+			var entry: Variant = _data.releases[gut_v]
 			return Vnt.is_version_gte(godot_v, entry.godot_min) and Vnt.is_version_lte(godot_v, entry.godot_max)
 		else:
 			return false
 
 
-	func parse_data(new_data):
+	func parse_data(new_data: Variant) -> void:
 		data_issues.clear()
 		_data = {}
 		if(typeof(new_data) == TYPE_STRING):
@@ -60,7 +60,7 @@ class VersionData:
 
 		if(_data.has('releases')):
 			for key in _data.releases:
-				var entry = _data.releases[key]
+				var entry: Variant = _data.releases[key]
 				if(!entry.has('godot_min')):
 					data_issues.append(str(key, ' missing godot_min'))
 				if(!entry.has('godot_max')):
@@ -70,7 +70,7 @@ class VersionData:
 
 		if(_data.has('branches')):
 			for key in _data.branches:
-				var entry = _data.branches[key]
+				var entry: Variant = _data.branches[key]
 				if(!entry.has('godot_min')):
 					data_issues.append(str(key, ' missing godot_min'))
 				if(!entry.has('godot_max')):
@@ -79,16 +79,16 @@ class VersionData:
 			data_issues.append('missing branches entry')
 
 
-	func parse_file(path):
+	func parse_file(path: Variant) -> void:
 		if(FileAccess.file_exists(path)):
-			var text = GutUtils.get_file_as_text(path)
+			var text: Variant = GutUtils.get_file_as_text(path)
 			parse_data(text)
 		else:
 			_data = {}
 
 
-	func get_gut_version_for_godot_version(godot_v=null):
-		var to_return = VERSION_ZERO
+	func get_gut_version_for_godot_version(godot_v: Variant = null) -> Variant:
+		var to_return: Variant = VERSION_ZERO
 		if(is_empty()):
 			return to_return
 
@@ -96,23 +96,23 @@ class VersionData:
 			godot_v = GutUtils.version_numbers.make_godot_version_string()
 
 		for key in _data.releases:
-			var entry = _data.releases[key]
+			var entry: Variant = _data.releases[key]
 			if(Vnt.is_version_gte(godot_v, entry.godot_min) and Vnt.is_version_lte(godot_v, entry.godot_max)):
 				if(Vnt.is_version_gte(key, to_return)):
 					to_return = key
 
 		if(to_return == VERSION_ZERO and _data.has('branches')):
 			for key in _data.branches:
-				var entry = _data.branches[key]
+				var entry: Variant = _data.branches[key]
 				if(Vnt.is_version_gte(godot_v, entry.godot_min) and Vnt.is_version_lte(godot_v, entry.godot_max)):
 					to_return = key
 
 		return to_return
 
-	func is_empty():
+	func is_empty() -> Variant:
 		return _data.is_empty()
 
-	func clear():
+	func clear() -> void:
 		_data.clear()
 		data_issues.clear()
 
@@ -123,7 +123,7 @@ class VersionData:
 	# 	else:
 	# 		return false
 
-	func get_data():
+	func get_data() -> Variant:
 		return _data.duplicate(true)
 
 
@@ -131,7 +131,7 @@ var _http_request : HTTPRequest
 var local_data : VersionData = VersionData.new()
 var remote_data : VersionData = VersionData.new()
 
-var min_fetch_wait = 60 * 60 # 1 hour
+var min_fetch_wait: Variant = 60 * 60 # 1 hour
 
 signal download_completed()
 signal updated()
@@ -141,19 +141,19 @@ func _ready() -> void:
 	_setup_http_request(HTTPRequest.new())
 
 
-func _setup_http_request(request):
+func _setup_http_request(request: Variant) -> void:
 	_http_request = request
 	add_child(_http_request)
 	_http_request.timeout = 3.0
 	_http_request.request_completed.connect(self._http_request_completed)
 
 
-func _write_remote_file(data):
+func _write_remote_file(data: Variant) -> void:
 	data.fetch_timestamp = Time.get_unix_time_from_system()
 	GutUtils.write_file(REMOTE_FILE_PATH, JSON.stringify(data))
 
 
-func _url_formatter(url, link_text=null):
+func _url_formatter(url: Variant, link_text: Variant = null) -> Variant:
 	if(link_text == null):
 		return url
 	else:
@@ -164,17 +164,17 @@ func _url_formatter(url, link_text=null):
 # Events
 #------------
 # Called when the HTTP request is completed.
-func _http_request_completed(result, response_code, headers, body):
-	var body_text = body.get_string_from_utf8()
+func _http_request_completed(result: Variant, response_code: Variant, headers: Variant, body: Variant) -> void:
+	var body_text: Variant = body.get_string_from_utf8()
 
 	if(response_code == 200):
-		var json = JSON.new()
-		var err = json.parse(body_text)
+		var json: JSON = JSON.new()
+		var err: Variant = json.parse(body_text)
 		if(err != OK):
 			push_error("[GUT] Invalid JSON: ", json.get_error_message(), '.  ', body_text)
 			download_completed.emit()
 			return
-		var response = json.get_data()
+		var response: Variant = json.get_data()
 
 		remote_data.parse_data(response)
 		if(remote_data.data_issues.size() == 0):
@@ -183,13 +183,13 @@ func _http_request_completed(result, response_code, headers, body):
 			push_error("[GUT] Invalid version data:  ", remote_data.data_issues)
 			remote_data.clear()
 	else:
-		var json = JSON.new()
-		var err = json.parse(body_text)
-		var response = {}
+		var json: JSON = JSON.new()
+		var err: Variant = json.parse(body_text)
+		var response: Dictionary = {}
 		if(err == OK):
 			response = json.get_data()
 
-		var msg = ''
+		var msg: String = ''
 		if(response != null and response.has('message')):
 			msg = str(" (", response.message, ")")
 		push_error("[GUT] Could not get version info, response code:  ", response_code, msg)
@@ -197,31 +197,31 @@ func _http_request_completed(result, response_code, headers, body):
 	download_completed.emit()
 
 
-func _is_branch_version(v : String):
+func _is_branch_version(v : String) -> Variant:
 	return v.find(".") == -1
 #------------
 # Public
 #------------
-func fetch_remote_file():
+func fetch_remote_file() -> Variant:
 	var headers : PackedStringArray = [
 		"Accept: application/vnd.github.raw",
 		"X-GitHub-Api-Version: 2022-11-28"
 	]
-	var error = _http_request.request(REMOTE_FILE_URL, headers)
+	var error: Variant = _http_request.request(REMOTE_FILE_URL, headers)
 	if error != OK:
-		var errtxt = str("[GUT] An error occurred requesting version data:  ", error, ".")
+		var errtxt: Variant = str("[GUT] An error occurred requesting version data:  ", error, ".")
 		remote_data.data_issues.append(errtxt)
 		push_error(errtxt)
 	return error
 
 
-func get_gut_version_for_godot_version(godot_v=null):
-	var to_return = VERSION_ZERO
+func get_gut_version_for_godot_version(godot_v: Variant = null) -> Variant:
+	var to_return: Variant = VERSION_ZERO
 	if(godot_v == null):
 		godot_v = GutUtils.version_numbers.make_godot_version_string()
 
-	var remote_latest = remote_data.get_gut_version_for_godot_version(godot_v)
-	var local_latest = local_data.get_gut_version_for_godot_version(godot_v)
+	var remote_latest: Variant = remote_data.get_gut_version_for_godot_version(godot_v)
+	var local_latest: Variant = local_data.get_gut_version_for_godot_version(godot_v)
 
 	if(remote_latest == VERSION_ZERO and local_latest != VERSION_ZERO):
 		to_return = local_latest
@@ -237,7 +237,7 @@ func get_gut_version_for_godot_version(godot_v=null):
 	return to_return
 
 
-func is_gut_version_valid(gut_v =null, godot_v=null):
+func is_gut_version_valid(gut_v: Variant = null, godot_v: Variant = null) -> Variant:
 	if(gut_v == null):
 		gut_v =  GutUtils.version_numbers.gut_version
 		godot_v =  GutUtils.version_numbers.make_godot_version_string()
@@ -256,7 +256,7 @@ func is_gut_version_valid(gut_v =null, godot_v=null):
 # 		return false
 
 
-func check_for_update():
+func check_for_update() -> void:
 	local_data.parse_file(LOCAL_FILE_PATH)
 	if(FileAccess.file_exists(REMOTE_FILE_PATH)):
 		remote_data.parse_file(REMOTE_FILE_PATH)
@@ -264,9 +264,9 @@ func check_for_update():
 	updated.emit.call_deferred()
 
 
-func check_for_update_with_fetch(force=false):
+func check_for_update_with_fetch(force: bool = false) -> void:
 	remote_data.parse_file(REMOTE_FILE_PATH)
-	var time_since_last_fetch = 60 * 60 * 24 * 10_000 # ten thousand days
+	var time_since_last_fetch: Variant = 60 * 60 * 24 * 10_000 # ten thousand days
 
 	if(remote_data._data.has("fetch_timestamp")):
 		time_since_last_fetch = Time.get_unix_time_from_system() - remote_data._data.fetch_timestamp
@@ -278,13 +278,13 @@ func check_for_update_with_fetch(force=false):
 	check_for_update()
 
 
-func get_update_string(url_formatter:Callable=_url_formatter):
-	var gut_v = GutUtils.version_numbers.gut_version
-	var godot_v = GutUtils.godot_version_string()
-	var version_info = str("GUT ", gut_v, " is the lastest version for Godot ", godot_v)
+func get_update_string(url_formatter:Callable=_url_formatter) -> Variant:
+	var gut_v: Variant = GutUtils.version_numbers.gut_version
+	var godot_v: Variant = GutUtils.godot_version_string()
+	var version_info: Variant = str("GUT ", gut_v, " is the lastest version for Godot ", godot_v)
 
-	var rec_ver = get_gut_version_for_godot_version(godot_v)
-	var rec_ver_link = url_formatter.call(str("https://github.com/bitwes/Gut/releases/tag/v", rec_ver), str("GUT ",rec_ver))
+	var rec_ver: Variant = get_gut_version_for_godot_version(godot_v)
+	var rec_ver_link: Variant = url_formatter.call(str("https://github.com/bitwes/Gut/releases/tag/v", rec_ver), str("GUT ",rec_ver))
 
 	if(is_gut_version_valid(gut_v, godot_v)):
 		if(rec_ver != gut_v):
@@ -308,9 +308,9 @@ func get_update_string(url_formatter:Callable=_url_formatter):
 	return version_info
 
 
-func get_summary_string():
-	var gut_v = GutUtils.version_numbers.gut_version
-	var godot_v = GutUtils.godot_version_string()
+func get_summary_string() -> Variant:
+	var gut_v: Variant = GutUtils.version_numbers.gut_version
+	var godot_v: Variant = GutUtils.godot_version_string()
 
 	return str("GUT:  ", gut_v, "\n",
 		"Godot:  ", godot_v, "\n",
@@ -318,28 +318,28 @@ func get_summary_string():
 		"Latest:  ", get_gut_version_for_godot_version(godot_v))
 
 
-func fetch_limit_wait_time():
-	var remaining = -1
+func fetch_limit_wait_time() -> Variant:
+	var remaining: int = -1
 	if(remote_data.get_data().has("fetch_timestamp")):
-		var time_since_last_fetch = Time.get_unix_time_from_system() - remote_data._data.fetch_timestamp
+		var time_since_last_fetch: Variant = Time.get_unix_time_from_system() - remote_data._data.fetch_timestamp
 		return max(min_fetch_wait - time_since_last_fetch, 0.0)
 	else:
 		return -1
 
 
-func get_days_since_last_fetch():
-	var to_return = 99
+func get_days_since_last_fetch() -> Variant:
+	var to_return: int = 99
 	if(remote_data.get_data().has("fetch_timestamp")):
-		var time_since_last_fetch = Time.get_unix_time_from_system() - remote_data._data.fetch_timestamp
+		var time_since_last_fetch: Variant = Time.get_unix_time_from_system() - remote_data._data.fetch_timestamp
 		to_return = time_since_last_fetch / (60.0 * 60.0 * 24.0)
 	return to_return
 
 
-func is_empty():
+func is_empty() -> Variant:
 	return local_data.is_empty() and remote_data.is_empty()
 
 
-func get_all_data():
+func get_all_data() -> Variant:
 	return {
 		local_data:local_data.get_data(),
 		remote_data:remote_data.get_data()

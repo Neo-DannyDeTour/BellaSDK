@@ -9,10 +9,10 @@
 # 		method_name2: [StubParams, StubParams]
 # 	}
 # }
-var stubs = {}
+var stubs: Dictionary = {}
 
-func _normalize_stub_target(target):
-	var to_return = null
+func _normalize_stub_target(target: Variant) -> Variant:
+	var to_return: Variant = null
 	if(GutUtils.is_native_class(target)):
 		to_return = GutUtils.strutils.type2str(target)
 	elif(typeof(target) == TYPE_OBJECT):
@@ -25,11 +25,11 @@ func _normalize_stub_target(target):
 	return to_return
 
 
-func _get_entries_matching_target(target):
-	var match_on = [target]
-	var trav = target
-	var done = false
-	var current = trav
+func _get_entries_matching_target(target: Variant) -> Variant:
+	var match_on: Array = [target]
+	var trav: Variant = target
+	var done: bool = false
+	var current: Variant = trav
 
 	while(trav != null and !done):
 		if(GutUtils.is_singleton_double(trav)):
@@ -43,7 +43,7 @@ func _get_entries_matching_target(target):
 			if(trav != null):
 				match_on.push_front(trav)
 			else:
-				var type_name = current.get_instance_base_type()
+				var type_name: Variant = current.get_instance_base_type()
 				match_on.push_front(type_name)
 				trav = null
 				done = true
@@ -56,12 +56,12 @@ func _get_entries_matching_target(target):
 	return match_on
 
 
-func clear():
+func clear() -> void:
 	stubs.clear()
 
 
-func add_stub(stub_params):
-	var key = _normalize_stub_target(stub_params.stub_target)
+func add_stub(stub_params: Variant) -> void:
+	var key: Variant = _normalize_stub_target(stub_params.stub_target)
 
 	if(!stubs.has(key)):
 		stubs[key] = {}
@@ -72,31 +72,31 @@ func add_stub(stub_params):
 	stubs[key][stub_params.stub_method].append(stub_params)
 
 
-func get_all_stubs(thing, method):
-	var obj = _normalize_stub_target(thing)
-	var match_on = _get_entries_matching_target(obj)
+func get_all_stubs(thing: Variant, method: Variant) -> Variant:
+	var obj: Variant = _normalize_stub_target(thing)
+	var match_on: Variant = _get_entries_matching_target(obj)
 
-	var matches = []
+	var matches: Array = []
 	for entry in match_on:
 		if(stubs.has(entry) and stubs[entry].has(method)):
 			matches.append_array(stubs[entry][method])
 	return matches
 
 
-func get_default_stub(thing, method):
-	var obj = _normalize_stub_target(thing)
-	var match_on = _get_entries_matching_target(obj)
-	var to_return = null
+func get_default_stub(thing: Variant, method: Variant) -> Variant:
+	var obj: Variant = _normalize_stub_target(thing)
+	var match_on: Variant = _get_entries_matching_target(obj)
+	var to_return: Variant = null
 	for entry in match_on:
 		if(stubs.has(entry) and stubs[entry].has(method)):
-			var method_stubs = stubs[entry][method]
+			var method_stubs: Variant = stubs[entry][method]
 			for stub in method_stubs:
 				if(stub.is_script_default):
 					to_return = stub
 	return to_return
 
-func to_s():
-	var text = ''
+func to_s() -> Variant:
+	var text: String = ''
 	for thing in stubs:
 		text += str("-- ", thing, " --\n")
 		for method in stubs[thing]:

@@ -10,9 +10,9 @@ extends Control
 # Optional controls are marked as such in the _ctrls dictionary.  The names
 # of the controls can be found in _populate_ctrls.
 # ##############################################################################
-var _gut = null
+var _gut: Variant = null
 
-var _ctrls = {
+var _ctrls: Variant = {
 	btn_continue = null,
 	path_dir = null,
 	path_file = null,
@@ -27,16 +27,16 @@ var _ctrls = {
 	tgl_word_wrap = null,		# optional
 }
 
-var _title_mouse = {
+var _title_mouse: Variant = {
 	down = false
 }
 
 
 signal switch_modes()
 
-var _max_position = Vector2(100, 100)
+var _max_position: Vector2 = Vector2(100, 100)
 
-func _ready():
+func _ready() -> void:
 	_populate_ctrls()
 
 	_ctrls.btn_continue.visible = false
@@ -55,7 +55,7 @@ func _ready():
 	_max_position = get_display_size() - Vector2(30, _ctrls.title_bar.size.y)
 
 
-func _process(_delta):
+func _process(_delta: float) -> void:
 	if(_gut != null and _gut.is_running()):
 		set_elapsed_time(_gut.get_elapsed_time())
 
@@ -63,11 +63,11 @@ func _process(_delta):
 # ------------------
 # Private
 # ------------------
-func get_display_size():
+func get_display_size() -> Variant:
 	return get_viewport().get_visible_rect().size
 
 
-func _populate_ctrls():
+func _populate_ctrls() -> void:
 	# Brute force, but flexible.  This allows for all the controls to exist
 	# anywhere, and as long as they all have the right name, they will be
 	# found.
@@ -85,13 +85,13 @@ func _populate_ctrls():
 	_ctrls.tgl_word_wrap = _get_first_child_named("WordWrap", self)
 
 
-func _get_first_child_named(obj_name, parent_obj):
+func _get_first_child_named(obj_name: Variant, parent_obj: Variant) -> Variant:
 	if(parent_obj == null):
 		return null
 
-	var kids = parent_obj.get_children()
-	var index = 0
-	var to_return = null
+	var kids: Variant = parent_obj.get_children()
+	var index: int = 0
+	var to_return: Variant = null
 
 	while(index < kids.size() and to_return == null):
 		if(str(kids[index]).find(str(obj_name, ':')) != -1):
@@ -108,7 +108,7 @@ func _get_first_child_named(obj_name, parent_obj):
 # ------------------
 # Events
 # ------------------
-func _on_title_bar_input(event : InputEvent):
+func _on_title_bar_input(event : InputEvent) -> void:
 	if(event is InputEventMouseMotion):
 		if(_title_mouse.down):
 			position += event.relative
@@ -119,60 +119,60 @@ func _on_title_bar_input(event : InputEvent):
 			_title_mouse.down = event.pressed
 
 
-func _on_continue_pressed():
+func _on_continue_pressed() -> void:
 	_gut.end_teardown_pause()
 
 
-func _on_gut_start_run():
+func _on_gut_start_run() -> void:
 	if(_ctrls.rtl != null):
 		_ctrls.rtl.clear()
 	set_num_scripts(_gut.get_test_collector().scripts.size())
 
 
-func _on_gut_end_run():
+func _on_gut_end_run() -> void:
 	_ctrls.prog_test.value = _ctrls.prog_test.max_value
 	_ctrls.prog_script.value = _ctrls.prog_script.max_value
 
 
-func _on_gut_start_script(script_obj):
+func _on_gut_start_script(script_obj: Variant) -> void:
 	next_script(script_obj.get_full_name(), script_obj.tests.size())
 
 
-func _on_gut_end_script():
+func _on_gut_end_script() -> void:
 	pass
 
 
-func _on_gut_start_test(test_name):
+func _on_gut_start_test(test_name: Variant) -> void:
 	next_test(test_name)
 
 
-func _on_gut_end_test():
+func _on_gut_end_test() -> void:
 	pass
 
 
-func _on_gut_start_pause():
+func _on_gut_start_pause() -> void:
 	pause_before_teardown()
 
 
-func _on_gut_end_pause():
+func _on_gut_end_pause() -> void:
 	_ctrls.btn_continue.visible = false
 
 
-func _on_switch_modes_pressed():
+func _on_switch_modes_pressed() -> void:
 	switch_modes.emit()
 
 
-func _on_word_wrap_toggled(toggled):
+func _on_word_wrap_toggled(toggled: Variant) -> void:
 	_ctrls.rtl.autowrap_mode = toggled
 # ------------------
 # Public
 # ------------------
-func set_num_scripts(val):
+func set_num_scripts(val: Variant) -> void:
 	_ctrls.prog_script.value = 0
 	_ctrls.prog_script.max_value = val
 
 
-func next_script(path, num_tests):
+func next_script(path: Variant, num_tests: Variant) -> void:
 	_ctrls.prog_script.value += 1
 	_ctrls.prog_test.value = 0
 	_ctrls.prog_test.max_value = num_tests
@@ -181,15 +181,15 @@ func next_script(path, num_tests):
 	_ctrls.path_file.text = path.get_file()
 
 
-func next_test(__test_name):
+func next_test(__test_name: Variant) -> void:
 	_ctrls.prog_test.value += 1
 
 
-func pause_before_teardown():
+func pause_before_teardown() -> void:
 	_ctrls.btn_continue.visible = true
 
 
-func set_gut(g):
+func set_gut(g: Variant) -> void:
 	if(_gut == g):
 		return
 	_gut = g
@@ -205,35 +205,35 @@ func set_gut(g):
 	g.start_pause_before_teardown.connect(_on_gut_start_pause)
 	g.end_pause_before_teardown.connect(_on_gut_end_pause)
 
-func get_gut():
+func get_gut() -> Variant:
 	return _gut
 
-func get_textbox():
+func get_textbox() -> Variant:
 	return _ctrls.rtl
 
-func set_elapsed_time(t):
+func set_elapsed_time(t: Variant) -> void:
 	_ctrls.time_label.text = str("%6.1f" % t, 's')
 
 
-func set_bg_color(c):
+func set_bg_color(c: Variant) -> void:
 	_ctrls.rtl_bg.color = c
 
 
-func set_title(text):
+func set_title(text: Variant) -> void:
 	_ctrls.title.text = text
 
 
-func to_top_left():
+func to_top_left() -> void:
 	self.position = Vector2(5, 5)
 
 
-func to_bottom_right():
-	var win_size = get_display_size()
+func to_bottom_right() -> void:
+	var win_size: Variant = get_display_size()
 	self.position = win_size - Vector2(self.size) - Vector2(5, 5)
 
 
-func align_right():
-	var win_size = get_display_size()
+func align_right() -> void:
+	var win_size: Variant = get_display_size()
 	self.position.x = win_size.x - self.size.x -5
 	self.position.y = 5
 	self.size.y = win_size.y - 10

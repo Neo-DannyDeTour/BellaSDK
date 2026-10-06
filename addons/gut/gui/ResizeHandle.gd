@@ -10,28 +10,28 @@ enum ORIENTATION {
 	RIGHT
 }
 
-@export var orientation := ORIENTATION.RIGHT :
+@export var orientation: Variant = ORIENTATION.RIGHT :
 	get: return orientation
 	set(val):
 		orientation = val
 		queue_redraw()
 @export var resize_control : Control = null
-@export var vertical_resize := true
+@export var vertical_resize: bool = true
 
-var _line_width = .5
-var _line_color = Color(.4, .4, .4)
-var _active_line_color = Color(.3, .3, .3)
-var _invalid_line_color = Color(1, 0, 0)
+var _line_width: float = .5
+var _line_color: Color = Color(.4, .4, .4)
+var _active_line_color: Color = Color(.3, .3, .3)
+var _invalid_line_color: Color = Color(1, 0, 0)
 
-var _line_space = 3
-var _num_lines = 8
+var _line_space: int = 3
+var _num_lines: int = 8
 
-var _mouse_down = false
+var _mouse_down: bool = false
 # Called when the node enters the scene tree for the first time.
 
 
-func _draw():
-	var c = _line_color
+func _draw() -> void:
+	var c: Variant = _line_color
 	if(resize_control == null):
 		c = _invalid_line_color
 	elif(_mouse_down):
@@ -43,7 +43,7 @@ func _draw():
 		_draw_resize_handle_right(c)
 
 
-func _gui_input(event):
+func _gui_input(event: InputEvent) -> void:
 	if(resize_control == null):
 		return
 
@@ -55,25 +55,25 @@ func _gui_input(event):
 
 # Draw the lines in the corner to show where you can
 # drag to resize the dialog
-func _draw_resize_handle_right(draw_color):
-	var br = size
+func _draw_resize_handle_right(draw_color: Variant) -> void:
+	var br: Variant = size
 
 	for i in range(_num_lines):
-		var start = br - Vector2(i * _line_space, 0)
-		var end = br - Vector2(0, i * _line_space)
+		var start: Variant = br - Vector2(i * _line_space, 0)
+		var end: Variant = br - Vector2(0, i * _line_space)
 		draw_line(start, end, draw_color, _line_width, true)
 
 
-func _draw_resize_handle_left(draw_color):
-	var bl = Vector2(0, size.y)
+func _draw_resize_handle_left(draw_color: Variant) -> void:
+	var bl: Vector2 = Vector2(0, size.y)
 
 	for i in range(_num_lines):
-		var start = bl + Vector2(i * _line_space, 0)
-		var end = bl -  Vector2(0, i * _line_space)
+		var start: Variant = bl + Vector2(i * _line_space, 0)
+		var end: Variant = bl -  Vector2(0, i * _line_space)
 		draw_line(start, end, draw_color, _line_width, true)
 
 
-func _handle_right_input(event : InputEvent):
+func _handle_right_input(event : InputEvent) -> void:
 	if(event is InputEventMouseMotion):
 		if(_mouse_down and
 			event.global_position.x > 0 and
@@ -88,13 +88,13 @@ func _handle_right_input(event : InputEvent):
 			queue_redraw()
 
 
-func _handle_left_input(event : InputEvent):
+func _handle_left_input(event : InputEvent) -> void:
 	if(event is InputEventMouseMotion):
 		if(_mouse_down and
 			event.global_position.x > 0 and
 			event.global_position.y < DisplayServer.window_get_size().y):
 
-			var start_size = resize_control.size
+			var start_size: Variant = resize_control.size
 			resize_control.size.x -= event.relative.x
 			if(resize_control.size.x != start_size.x):
 				resize_control.global_position.x += event.relative.x

@@ -18,7 +18,7 @@ func test_vision_assist_toggled_benchmark() -> void:
 
 	for group: String in groups:
 		for i: int in range(50):
-			var node := MeshInstance3D.new()
+			var node: MeshInstance3D = MeshInstance3D.new()
 			node.name = group + "_" + str(i)
 			node.add_to_group(group)
 			add_child(autofree(node))

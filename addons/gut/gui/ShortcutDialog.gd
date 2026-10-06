@@ -1,31 +1,31 @@
 @tool
 extends ConfirmationDialog
 
-var GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
-var default_path = GutEditorGlobals.editor_shortcuts_path
+const GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
+var default_path: Variant = GutEditorGlobals.editor_shortcuts_path
 
 
-@onready var scbtn_run_all = $Scroll/Layout/CRunAll/ShortcutButton
-@onready var scbtn_run_current_script = $Scroll/Layout/CRunCurrentScript/ShortcutButton
-@onready var scbtn_run_current_inner = $Scroll/Layout/CRunCurrentInner/ShortcutButton
-@onready var scbtn_run_current_test = $Scroll/Layout/CRunCurrentTest/ShortcutButton
-@onready var scbtn_run_at_cursor = $Scroll/Layout/CRunAtCursor/ShortcutButton
-@onready var scbtn_rerun = $Scroll/Layout/CRerun/ShortcutButton
-@onready var scbtn_panel = $Scroll/Layout/CPanelButton/ShortcutButton
-@onready var scbtn_windowed = $Scroll/Layout/CToggleWindowed/ShortcutButton
+@onready var scbtn_run_all: Control = $Scroll/Layout/CRunAll/ShortcutButton
+@onready var scbtn_run_current_script: Control = $Scroll/Layout/CRunCurrentScript/ShortcutButton
+@onready var scbtn_run_current_inner: Control = $Scroll/Layout/CRunCurrentInner/ShortcutButton
+@onready var scbtn_run_current_test: Control = $Scroll/Layout/CRunCurrentTest/ShortcutButton
+@onready var scbtn_run_at_cursor: Control = $Scroll/Layout/CRunAtCursor/ShortcutButton
+@onready var scbtn_rerun: Control = $Scroll/Layout/CRerun/ShortcutButton
+@onready var scbtn_panel: Control = $Scroll/Layout/CPanelButton/ShortcutButton
+@onready var scbtn_windowed: Control = $Scroll/Layout/CToggleWindowed/ShortcutButton
 
 
-@onready var all_buttons = [
+@onready var all_buttons: Variant = [
 	scbtn_run_all, scbtn_run_current_script, scbtn_run_current_inner,
 	scbtn_run_current_test, scbtn_run_at_cursor, scbtn_rerun,
 	scbtn_panel, scbtn_windowed
 ]
 
 
-func _debug_ready():
+func _debug_ready() -> void:
 	popup_centered()
 
-	var btn = Button.new()
+	var btn: Button = Button.new()
 	btn.text = "show"
 	get_tree().root.add_child(btn)
 	btn.pressed.connect(popup)
@@ -35,7 +35,7 @@ func _debug_ready():
 	size_changed.connect(func(): title = str(size))
 
 
-func _ready():
+func _ready() -> void:
 	for scbtn in all_buttons:
 		scbtn.connect('start_edit', _on_edit_start.bind(scbtn))
 		scbtn.connect('end_edit', _on_edit_end)
@@ -53,7 +53,7 @@ func _ready():
 
 
 
-func _cancel_all():
+func _cancel_all() -> void:
 	for scbtn in all_buttons:
 		scbtn.cancel()
 
@@ -61,19 +61,19 @@ func _cancel_all():
 # ------------
 # Events
 # ------------
-func _on_cancel():
+func _on_cancel() -> void:
 	_cancel_all()
 	load_shortcuts()
 
 
-func _on_edit_start(which):
+func _on_edit_start(which: Variant) -> void:
 	for scbtn in all_buttons:
 		if(scbtn != which):
 			scbtn.disable_set(true)
 			scbtn.disable_clear(true)
 
 
-func _on_edit_end():
+func _on_edit_end() -> void:
 	for scbtn in all_buttons:
 		scbtn.disable_set(false)
 		scbtn.disable_clear(false)
@@ -82,12 +82,12 @@ func _on_edit_end():
 # ------------
 # Public
 # ------------
-func save_shortcuts():
+func save_shortcuts() -> void:
 	save_shortcuts_to_file(default_path)
 
 
-func save_shortcuts_to_file(path):
-	var f = ConfigFile.new()
+func save_shortcuts_to_file(path: Variant) -> void:
+	var f: ConfigFile = ConfigFile.new()
 	f.set_value('main', 'panel_button', scbtn_panel.get_shortcut())
 	f.set_value('main', 'rerun', scbtn_rerun.get_shortcut())
 	f.set_value('main', 'run_all', scbtn_run_all.get_shortcut())
@@ -99,15 +99,15 @@ func save_shortcuts_to_file(path):
 	f.save(path)
 
 
-func load_shortcuts():
+func load_shortcuts() -> void:
 	load_shortcuts_from_file(default_path)
 
 
-func load_shortcuts_from_file(path):
-	var f = ConfigFile.new()
+func load_shortcuts_from_file(path: Variant) -> void:
+	var f: ConfigFile = ConfigFile.new()
 	# as long as this shortcut is never modified, this is fine, otherwise
 	# each thing should get its own default instead.
-	var empty = Shortcut.new()
+	var empty: Shortcut = Shortcut.new()
 
 	f.load(path)
 	scbtn_panel.set_shortcut(f.get_value('main', 'panel_button', empty))

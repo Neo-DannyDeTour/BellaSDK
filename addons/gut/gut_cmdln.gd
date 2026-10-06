@@ -8,7 +8,7 @@
 # ------------------------------------------------------------------------------
 extends SceneTree
 
-var VersionConversion = load("res://addons/gut/version_conversion.gd")
+const VersionConversion = load("res://addons/gut/version_conversion.gd")
 
 @warning_ignore("unsafe_method_access")
 @warning_ignore("inferred_declaration")
@@ -17,8 +17,8 @@ func _init() -> void:
 		quit(0)
 		return
 
-	var max_iter := 20
-	var iter := 0
+	var max_iter: int = 20
+	var iter: int = 0
 
 	# Make a reference to gut_loader so its _static_init is run.
 	var Laoder : Object = load("res://addons/gut/gut_loader.gd")

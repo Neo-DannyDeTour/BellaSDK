@@ -1,13 +1,13 @@
 class MethodMakerCallParameters:
-	var p_name = null
-	var default = null
-	var vararg = false
+	var p_name: Variant = null
+	var default: Variant = null
+	var vararg: bool = false
 
-	func _init(n,d):
+	func _init(n: Variant, d: Variant) -> void:
 		p_name = n
 		default = d
 
-	func get_signature():
+	func get_signature() -> Variant:
 		if(vararg):
 			return "...args: Array"
 		else:
@@ -34,32 +34,32 @@ class MethodMakerCallParameters:
 # 	(usage:7)
 # }]
 # default_args []
-const PARAM_PREFIX = 'p_'
+const PARAM_PREFIX: String = 'p_'
 
 
-var _lgr = GutUtils.get_logger()
-static var _func_template = GutUtils.get_file_as_text('res://addons/gut/double_templates/function_template.txt')
-static var _init_template = GutUtils.get_file_as_text('res://addons/gut/double_templates/init_template.txt')
+var _lgr: Variant = GutUtils.get_logger()
+static var _func_template: Variant = GutUtils.get_file_as_text('res://addons/gut/double_templates/function_template.txt')
+static var _init_template: Variant = GutUtils.get_file_as_text('res://addons/gut/double_templates/init_template.txt')
 
 
 # ###############
 # Private
 # ###############
 
-func _make_stub_default(method, index):
+func _make_stub_default(method: Variant, index: Variant) -> Variant:
 	return str('__gutdbl.default_val("', method, '",', index, ')')
 
 
-func _make_arg_array(method_meta):
-	var to_return = []
+func _make_arg_array(method_meta: Variant) -> Variant:
+	var to_return: Array = []
 
 	for i in range(method_meta.args.size()):
-		var pname = method_meta.args[i].name
-		var dflt_text = _make_stub_default(method_meta.name, i)
+		var pname: Variant = method_meta.args[i].name
+		var dflt_text: Variant = _make_stub_default(method_meta.name, i)
 		to_return.append(MethodMakerCallParameters.new(PARAM_PREFIX + pname, dflt_text))
 
 	if(method_meta.flags & METHOD_FLAG_VARARG):
-		var cp = MethodMakerCallParameters.new("args", "")
+		var cp: MethodMakerCallParameters = MethodMakerCallParameters.new("args", "")
 		cp.vararg = true
 		to_return.append(cp)
 
@@ -72,8 +72,8 @@ func _make_arg_array(method_meta):
 #
 # If a default is found that we don't know how to handle then this method will
 # return null.
-func _get_arg_text(arg_array):
-	var text = ''
+func _get_arg_text(arg_array: Variant) -> Variant:
+	var text: String = ''
 
 	for i in range(arg_array.size()):
 		text += arg_array[i].get_signature()
@@ -84,8 +84,8 @@ func _get_arg_text(arg_array):
 
 
 # creates a call to the function in meta in the super's class.
-func _get_super_call_text(parsed_method, singleton):
-	var return_it = ''
+func _get_super_call_text(parsed_method: Variant, singleton: Variant) -> Variant:
+	var return_it: String = ''
 	if(parsed_method.return_type_text != 'void'):
 		return_it = 'return '
 
@@ -96,7 +96,7 @@ func _get_super_call_text(parsed_method, singleton):
 			'"Cannot call super() because method %s is abstract.")%s' \
 			% [parsed_method.meta.name, return_it]
 
-	var params = ''
+	var params: String = ''
 	for i in range(parsed_method.args.size()):
 		params += PARAM_PREFIX + parsed_method.args[i].name
 		if(i != parsed_method.args.size() -1):
@@ -108,8 +108,8 @@ func _get_super_call_text(parsed_method, singleton):
 		return str(return_it, 'await super(', params, ')')
 
 
-func _get_spy_call_parameters_text(args):
-	var called_with = 'null'
+func _get_spy_call_parameters_text(args: Variant) -> Variant:
+	var called_with: String = 'null'
 
 	if(args.size() > 0):
 		called_with = '['
@@ -122,11 +122,11 @@ func _get_spy_call_parameters_text(args):
 	return called_with
 
 
-func _get_init_text(meta, args, method_params, param_array):
-	var text = null
+func _get_init_text(meta: Variant, args: Variant, method_params: Variant, param_array: Variant) -> Variant:
+	var text: Variant = null
 
-	var decleration = str('func ', meta.name, '(', method_params, ')')
-	var super_params = ''
+	var decleration: Variant = str('func ', meta.name, '(', method_params, ')')
+	var super_params: String = ''
 	if(args.size() > 0):
 		for i in range(args.size()):
 			super_params += args[i].p_name
@@ -152,12 +152,12 @@ func _get_init_text(meta, args, method_params, param_array):
 # types whose defaults are supported will have their values.  If a datatype
 # is not supported and the parameter has a default, a warning message will be
 # printed and the declaration will return null.
-func get_function_text(parsed_method, singleton=null):
-	var meta = parsed_method.meta
-	var text = null
-	var args = _make_arg_array(meta)
-	var param_array = _get_spy_call_parameters_text(args)
-	var method_params = _get_arg_text(args);
+func get_function_text(parsed_method: Variant, singleton: Variant = null) -> Variant:
+	var meta: Variant = parsed_method.meta
+	var text: Variant = null
+	var args: Variant = _make_arg_array(meta)
+	var param_array: Variant = _get_spy_call_parameters_text(args)
+	var method_params: Variant = _get_arg_text(args);
 
 	if(param_array == 'null'):
 		param_array = '[]'
@@ -166,11 +166,11 @@ func get_function_text(parsed_method, singleton=null):
 		if(meta.name == '_init'):
 			text =  _get_init_text(meta, args, method_params, param_array)
 		else:
-			var return_it = ''
+			var return_it: String = ''
 			if(parsed_method.return_type_text != 'void'):
 				return_it = 'return '
 
-			var decleration = str('func ', meta.name, '(', method_params, '):')
+			var decleration: Variant = str('func ', meta.name, '(', method_params, '):')
 			text = _func_template.format({
 				"func_decleration": decleration,
 				"method_name": meta.name,
@@ -182,11 +182,11 @@ func get_function_text(parsed_method, singleton=null):
 	return text
 
 
-func get_logger():
+func get_logger() -> Variant:
 	return _lgr
 
 
-func set_logger(logger):
+func set_logger(logger: Variant) -> void:
 	_lgr = logger
 
 
