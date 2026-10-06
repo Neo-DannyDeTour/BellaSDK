@@ -1,7 +1,7 @@
 @tool
 extends EditorPlugin
 
-const VersionConversion = load("res://addons/gut/version_conversion.gd")
+const VersionConversion = preload("res://addons/gut/version_conversion.gd")
 const MenuManager = load("res://addons/gut/gut_menu.gd")
 const BottomPanelScene = preload('res://addons/gut/gui/GutBottomPanel.tscn')
 const GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
