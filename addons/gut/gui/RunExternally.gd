@@ -27,7 +27,7 @@ extends Control
 # 			_anim_text = text.rpad(text.length() + _cur_dots, dot)
 
 
-const GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
+var GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
 
 @onready var btn_kill_it: Node = $BgControl/VBox/Kill
 @onready var bg_control: Node = $BgControl

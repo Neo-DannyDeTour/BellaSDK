@@ -1,7 +1,7 @@
 @tool
 extends VBoxContainer
 
-const GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
+var GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
 const PanelControls = load('res://addons/gut/gui/panel_controls.gd')
 
 # ##############################################################################

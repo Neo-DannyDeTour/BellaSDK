@@ -1,10 +1,10 @@
 @tool
 extends EditorPlugin
 
-const VersionConversion = preload("res://addons/gut/version_conversion.gd")
+var VersionConversion = load("res://addons/gut/version_conversion.gd")
 const MenuManager = load("res://addons/gut/gut_menu.gd")
 const BottomPanelScene = preload('res://addons/gut/gui/GutBottomPanel.tscn')
-const GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
+var GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
 const GutDock = load('res://addons/gut/gui/gut_dock.gd')
 const UpdateRequiredDialog = load('res://addons/gut/gui/update_required.tscn')
 const CheckForUpdateControl = load("res://addons/gut/gui/check_for_update.tscn")
@@ -96,7 +96,7 @@ func _enter_tree() -> void:
 
 
 func _version_conversion() -> Variant:
-	const EditorGlobals = load("res://addons/gut/gui/editor_globals.gd")
+	var EditorGlobals = load("res://addons/gut/gui/editor_globals.gd")
 	EditorGlobals.create_temp_directory()
 
 	if(VersionConversion.error_if_not_all_classes_imported()):

@@ -1,7 +1,7 @@
 @tool
 extends Control
 
-const GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
+var GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
 
 var _interface: Variant = null
 var _output_control: Variant = null
