@@ -1,7 +1,7 @@
 extends SceneTree
 
-const Optparse = load('res://addons/gut/cli/optparse.gd')
-const WarningsManager = load("res://addons/gut/warnings_manager.gd")
+const Optparse = preload('res://addons/gut/cli/optparse.gd')
+const WarningsManager = preload("res://addons/gut/warnings_manager.gd")
 const WARN_VALUE_PRINT_POSITION: int = 36
 
 var godot_default_warnings: Variant = {

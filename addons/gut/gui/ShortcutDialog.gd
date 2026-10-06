@@ -1,7 +1,7 @@
 @tool
 extends ConfirmationDialog
 
-const GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
+const GutEditorGlobals = preload('res://addons/gut/gui/editor_globals.gd')
 var default_path: Variant = GutEditorGlobals.editor_shortcuts_path
 
 

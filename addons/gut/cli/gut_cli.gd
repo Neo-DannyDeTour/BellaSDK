@@ -1,8 +1,8 @@
 extends Node
 
-const Optparse = load('res://addons/gut/cli/optparse.gd')
-const Gut = load('res://addons/gut/gut.gd')
-const GutRunner = load('res://addons/gut/gui/GutRunner.tscn')
+const Optparse = preload('res://addons/gut/cli/optparse.gd')
+const Gut = preload('res://addons/gut/gut.gd')
+const GutRunner = preload('res://addons/gut/gui/GutRunner.tscn')
 
 # ------------------------------------------------------------------------------
 # Helper class to resolve the various different places where an option can

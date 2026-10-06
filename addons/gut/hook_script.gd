@@ -15,7 +15,7 @@ class_name GutHookScript
 ## Class responsible for generating xml.  You could use this to generate XML
 ## yourself instead of using the built in GUT xml generation options.  See
 ## [addons/gut/junit_xml_export.gd]
-const JunitXmlExport = load('res://addons/gut/junit_xml_export.gd')
+const JunitXmlExport = preload('res://addons/gut/junit_xml_export.gd')
 
 ## This is the instance of [GutMain] that is running the tests.  You can get
 ## information about the run from this object.  This is set by GUT when the

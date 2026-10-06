@@ -1,5 +1,5 @@
 class GutConfigurationUpdater:
-	const EditorGlobals = load("res://addons/gut/gui/editor_globals.gd")
+	const EditorGlobals = preload("res://addons/gut/gui/editor_globals.gd")
 
 	func warn(message: Variant) -> void:
 		print('GUT Warning:  ', message)

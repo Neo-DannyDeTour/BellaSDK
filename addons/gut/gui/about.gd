@@ -1,7 +1,7 @@
 @tool
 extends AcceptDialog
 
-const GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
+const GutEditorGlobals = preload('res://addons/gut/gui/editor_globals.gd')
 
 var _bbcode: Variant = \
 """

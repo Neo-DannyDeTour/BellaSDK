@@ -1,9 +1,9 @@
 @tool
 extends Control
 
-const GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
-const GutConfigGui = load('res://addons/gut/gui/gut_config_gui.gd')
-const AboutWindow = load("res://addons/gut/gui/about.tscn")
+const GutEditorGlobals = preload('res://addons/gut/gui/editor_globals.gd')
+const GutConfigGui = preload('res://addons/gut/gui/gut_config_gui.gd')
+const AboutWindow = preload("res://addons/gut/gui/about.tscn")
 
 var _interface: Variant = null;
 var _is_running: Variant = false :

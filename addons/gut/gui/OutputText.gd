@@ -1,8 +1,8 @@
 @tool
 extends VBoxContainer
 
-const GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
-const PanelControls = load('res://addons/gut/gui/panel_controls.gd')
+const GutEditorGlobals = preload('res://addons/gut/gui/editor_globals.gd')
+const PanelControls = preload('res://addons/gut/gui/panel_controls.gd')
 
 # ##############################################################################
 # Keeps search results from the TextEdit

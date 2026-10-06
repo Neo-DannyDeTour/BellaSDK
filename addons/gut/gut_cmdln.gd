@@ -8,7 +8,7 @@
 # ------------------------------------------------------------------------------
 extends SceneTree
 
-const VersionConversion = load("res://addons/gut/version_conversion.gd")
+const VersionConversion = preload("res://addons/gut/version_conversion.gd")
 
 @warning_ignore("unsafe_method_access")
 @warning_ignore("inferred_declaration")

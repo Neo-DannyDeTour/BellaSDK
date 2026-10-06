@@ -1,5 +1,5 @@
-const PanelControls = load("res://addons/gut/gui/panel_controls.gd")
-const GutConfig = load('res://addons/gut/gut_config.gd')
+const PanelControls = preload("res://addons/gut/gui/panel_controls.gd")
+const GutConfig = preload('res://addons/gut/gut_config.gd')
 
 const DIRS_TO_LIST: int = 6
 

@@ -29,7 +29,7 @@ const WARNING_PATH : String = 'debug/gdscript/warnings/'
 @warning_ignore("unsafe_property_access")
 @warning_ignore("untyped_declaration")
 static func _static_init() -> void:
-	const WarningsManager = load('res://addons/gut/warnings_manager.gd')
+	const WarningsManager = preload('res://addons/gut/warnings_manager.gd')
 	if(!WarningsManager.disabled):
 		WarningsManager.exclude_gut()
 		WarningsManager.exclude_dynamic_files()

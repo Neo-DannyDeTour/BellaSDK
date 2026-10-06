@@ -17,9 +17,9 @@ extends Node2D
 const EXIT_OK: int = 0
 const EXIT_ERROR: int = 1
 
-const Gut = load('res://addons/gut/gut.gd')
-const ResultExporter = load('res://addons/gut/result_exporter.gd')
-const GutConfig = load('res://addons/gut/gut_config.gd')
+const Gut = preload('res://addons/gut/gut.gd')
+const ResultExporter = preload('res://addons/gut/result_exporter.gd')
+const GutConfig = preload('res://addons/gut/gut_config.gd')
 
 var runner_json_path: Variant = null
 var result_bbcode_path: Variant = null
@@ -147,7 +147,7 @@ func _on_tests_finished() -> void:
 # don't have my permission to call this, unless "you" is "me".
 func run_from_editor() -> void:
 	_ran_from_editor = true
-	const GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
+	const GutEditorGlobals = preload('res://addons/gut/gui/editor_globals.gd')
 	runner_json_path = GutUtils.nvl(runner_json_path, GutEditorGlobals.editor_run_gut_config_path)
 	result_bbcode_path = GutUtils.nvl(result_bbcode_path, GutEditorGlobals.editor_run_bbcode_results_path)
 	result_json_path = GutUtils.nvl(result_json_path, GutEditorGlobals.editor_run_json_results_path)

@@ -112,7 +112,7 @@ class GutEyeball:
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
-const GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
+const GutEditorGlobals = preload('res://addons/gut/gui/editor_globals.gd')
 # Active means it's actively doing stuff.  When this is not active the eyes
 # won't follow, but you can still make the sizes change by calling methods on
 # this.

@@ -3,9 +3,9 @@ extends Control
 
 const RUNNER_JSON_PATH: String = 'res://.gut_editor_config.json'
 
-const GutConfig = load('res://addons/gut/gut_config.gd')
-const GutRunnerScene = load('res://addons/gut/gui/GutRunner.tscn')
-const GutConfigGui = load('res://addons/gut/gui/gut_config_gui.gd')
+const GutConfig = preload('res://addons/gut/gut_config.gd')
+const GutRunnerScene = preload('res://addons/gut/gui/GutRunner.tscn')
+const GutConfigGui = preload('res://addons/gut/gui/gut_config_gui.gd')
 
 var _config: GutConfig = GutConfig.new()
 var _config_gui: Variant = null

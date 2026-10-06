@@ -5,7 +5,7 @@ const RUN_MODE_EDITOR: String = 'Editor'
 const RUN_MODE_BLOCKING: String = 'Blocking'
 const RUN_MODE_NON_BLOCKING: String = 'NonBlocking'
 
-const GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
+const GutEditorGlobals = preload('res://addons/gut/gui/editor_globals.gd')
 
 @onready var _bad_arg_dialog: Node = $AcceptDialog
 @onready var _main_container: Control = $ScrollContainer/VBoxContainer

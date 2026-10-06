@@ -1,7 +1,7 @@
 @tool
 extends Control
 
-const EditorCaretContextNotifier = load('res://addons/gut/editor_caret_context_notifier.gd')
+const EditorCaretContextNotifier = preload('res://addons/gut/editor_caret_context_notifier.gd')
 
 @onready var _ctrls: Variant = {
 	btn_script = $HBox/BtnRunScript,

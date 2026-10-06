@@ -1,4 +1,4 @@
-const PanelControls = load("res://addons/gut/gui/panel_controls.gd")
+const PanelControls = preload("res://addons/gut/gui/panel_controls.gd")
 
 # All titles so we can free them when we want.
 var _all_titles: Array = []
