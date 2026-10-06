@@ -8,7 +8,7 @@
 # ------------------------------------------------------------------------------
 extends 'res://addons/gut/gut_cmdln.gd'
 
-func run_tests(runner):
+func run_tests(runner: Variant) -> void:
 	runner.get_gut().get_logger().disable_printer('console', false)
 	runner.run_tests()
 

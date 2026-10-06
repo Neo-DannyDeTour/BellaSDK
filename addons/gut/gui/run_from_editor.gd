@@ -16,7 +16,7 @@ func _ready() -> void:
 	_post_ready.call_deferred()
 
 
-func _post_ready():
+func _post_ready() -> void:
 	var runner : Node = load("res://addons/gut/gui/GutRunner.tscn").instantiate()
 	get_tree().root.add_child(runner)
 	runner.run_from_editor()

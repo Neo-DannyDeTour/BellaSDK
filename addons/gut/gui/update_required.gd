@@ -1,12 +1,12 @@
 @tool
 extends AcceptDialog
 
-var should_continue = false
-var _check_for_update_ctrl = null
+var should_continue: bool = false
+var _check_for_update_ctrl: Variant = null
 
 signal closed
 
-func _ready():
+func _ready() -> void:
 	add_cancel_button("Cancel Loading GUT")
 
 
@@ -25,6 +25,6 @@ func _on_close_requested() -> void:
 	closed.emit.call_deferred()
 
 
-func set_check_for_update_control(ctrl):
+func set_check_for_update_control(ctrl: Variant) -> void:
 	_check_for_update_ctrl = ctrl
 	add_child(ctrl)

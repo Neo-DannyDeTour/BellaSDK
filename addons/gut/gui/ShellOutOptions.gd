@@ -1,33 +1,33 @@
 @tool
 extends ConfirmationDialog
 
-const RUN_MODE_EDITOR = 'Editor'
-const RUN_MODE_BLOCKING = 'Blocking'
-const RUN_MODE_NON_BLOCKING = 'NonBlocking'
+const RUN_MODE_EDITOR: String = 'Editor'
+const RUN_MODE_BLOCKING: String = 'Blocking'
+const RUN_MODE_NON_BLOCKING: String = 'NonBlocking'
 
-var GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
+const GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
 
-@onready var _bad_arg_dialog = $AcceptDialog
-@onready var _main_container = $ScrollContainer/VBoxContainer
+@onready var _bad_arg_dialog: Node = $AcceptDialog
+@onready var _main_container: Control = $ScrollContainer/VBoxContainer
 
-var _blurb_style_box = StyleBoxEmpty.new()
-var _opt_maker_setup = false
+var _blurb_style_box: StyleBoxEmpty = StyleBoxEmpty.new()
+var _opt_maker_setup: bool = false
 var _arg_vbox : VBoxContainer = null
 var _my_ok_button : Button = null
 
 # Run mode button stuff
-var _run_mode_theme = load('res://addons/gut/gui/EditorRadioButton.tres')
-var _button_group = ButtonGroup.new()
+var _run_mode_theme: Variant = load('res://addons/gut/gui/EditorRadioButton.tres')
+var _button_group: ButtonGroup = ButtonGroup.new()
 var _btn_in_editor : Button = null
 var _btn_blocking : Button = null
 var _btn_non_blocking : Button = null
-var _txt_additional_arguments = null
-var _btn_godot_help = null
-var _btn_gut_help = null
+var _txt_additional_arguments: Variant = null
+var _btn_godot_help: Variant = null
+var _btn_gut_help: Variant = null
 
 
-var opt_maker = null
-var default_path = GutEditorGlobals.run_externally_options_path
+var opt_maker: Variant = null
+var default_path: Variant = GutEditorGlobals.run_externally_options_path
 # I like this.  It holds values loaded/saved which makes for an easy
 # reset mechanism.  Hit OK; values get written to this object (not the file
 # system).  Hit Cancel; values are reloaded from this object.  Call the
@@ -37,10 +37,10 @@ var default_path = GutEditorGlobals.run_externally_options_path
 #            preserving old data.  So you gotta find a way to clean it out
 #            somehow.
 # Downside solved:  Clear the config file at the start of the save method.
-var _config_file = ConfigFile.new()
+var _config_file: ConfigFile = ConfigFile.new()
 
-var _run_mode = RUN_MODE_EDITOR
-var run_mode = _run_mode:
+var _run_mode: Variant = RUN_MODE_EDITOR
+var run_mode: Variant = _run_mode:
 	set(val):
 		_run_mode = val
 		if(is_inside_tree()):
@@ -57,7 +57,7 @@ var run_mode = _run_mode:
 		return _run_mode
 
 
-var additional_arguments = '' :
+var additional_arguments: Variant = '' :
 	get():
 		if(_opt_maker_setup):
 			return opt_maker.controls.additional_arguments.value
@@ -65,12 +65,12 @@ var additional_arguments = '' :
 			return additional_arguments
 
 
-func _debug_ready():
+func _debug_ready() -> void:
 	popup_centered()
 	default_path = GutEditorGlobals.temp_directory.path_join('test_external_run_options.cfg')
 	exclusive = false
 
-	var save_btn = Button.new()
+	var save_btn: Button = Button.new()
 	save_btn.text = 'save'
 	save_btn.pressed.connect(func():
 		save_to_file()
@@ -79,7 +79,7 @@ func _debug_ready():
 	save_btn.size = Vector2(100, 100)
 	get_tree().root.add_child(save_btn)
 
-	var load_btn = Button.new()
+	var load_btn: Button = Button.new()
 	load_btn.text = 'load'
 	load_btn.pressed.connect(func():
 		load_from_file()
@@ -88,7 +88,7 @@ func _debug_ready():
 	load_btn.size = Vector2(100, 100)
 	get_tree().root.add_child(load_btn)
 
-	var show_btn = Button.new()
+	var show_btn: Button = Button.new()
 	show_btn.text = 'Show'
 	show_btn.pressed.connect(popup_centered)
 	show_btn.position = Vector2(100, 250)
@@ -96,7 +96,7 @@ func _debug_ready():
 	get_tree().root.add_child(show_btn)
 
 
-func _ready():
+func _ready() -> void:
 	opt_maker = GutUtils.OptionMaker.new(_main_container)
 	_add_controls()
 
@@ -116,13 +116,13 @@ func _ready():
 	run_mode = run_mode
 
 
-func _validate_and_confirm():
+func _validate_and_confirm() -> void:
 	if(validate_arguments()):
 		_save_to_config_file(_config_file)
 		confirmed.emit()
 		hide()
 	else:
-		var dlg_text = str("Invalid arguments.  The following cannot be used:\n",
+		var dlg_text: Variant = str("Invalid arguments.  The following cannot be used:\n",
 			' '.join(_invalid_args))
 
 		if(run_mode == RUN_MODE_BLOCKING):
@@ -133,7 +133,7 @@ func _validate_and_confirm():
 		_bad_arg_dialog.popup_centered()
 
 
-func _on_mode_button_pressed(which):
+func _on_mode_button_pressed(which: Variant) -> void:
 	if(which == _btn_in_editor):
 		_arg_vbox.modulate.a = .3
 	else:
@@ -148,8 +148,8 @@ func _on_mode_button_pressed(which):
 		_run_mode = RUN_MODE_NON_BLOCKING
 
 
-func _add_run_mode_button(text, desc_label, description):
-	var btn = Button.new()
+func _add_run_mode_button(text: Variant, desc_label: Variant, description: Variant) -> Variant:
+	var btn: Button = Button.new()
 	btn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	btn.toggle_mode = true
 	btn.text = text
@@ -160,28 +160,28 @@ func _add_run_mode_button(text, desc_label, description):
 	return btn
 
 
-func _add_blurb(text):
-	var ctrl = opt_maker.add_blurb(text)
+func _add_blurb(text: Variant) -> Variant:
+	var ctrl: Variant = opt_maker.add_blurb(text)
 	ctrl.set("theme_override_styles/normal", _blurb_style_box)
 	return ctrl
 
 
-func _add_title(text):
-	var ctrl = opt_maker.add_title(text)
+func _add_title(text: Variant) -> Variant:
+	var ctrl: Variant = opt_maker.add_title(text)
 	ctrl.get_child(0).horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	return ctrl
 
 
-func _add_controls():
+func _add_controls() -> void:
 	_add_title("Run Modes")
 	_add_blurb(
 		"Choose how GUT will launch tests.  Normally you just run them through the editor, but now " +
 		"you can run them externally.  This is an experimental feature.  It has been tested on Mac " +
 		"and Windows.  Your results may vary.  Feedback welcome at [url]https://github.com/bitwes/Gut/issues[/url].\n ")
 
-	var button_desc_box = HBoxContainer.new()
-	var button_box = VBoxContainer.new()
-	var button_desc = RichTextLabel.new()
+	var button_desc_box: HBoxContainer = HBoxContainer.new()
+	var button_box: VBoxContainer = VBoxContainer.new()
+	var button_desc: RichTextLabel = RichTextLabel.new()
 	button_desc.fit_content = true
 	button_desc.bbcode_enabled = true
 	button_desc.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -241,13 +241,13 @@ func _add_controls():
 	_opt_maker_setup = true
 
 
-func _show_help(help_method_name):
+func _show_help(help_method_name: Variant) -> void:
 	_btn_godot_help.disabled = true
 	_btn_gut_help.disabled = true
-	var re = GutUtils.RunExternallyScene.instantiate()
+	var re: Variant = GutUtils.RunExternallyScene.instantiate()
 	add_child(re)
 	re.visible = false
-	var text = await re.call(help_method_name)
+	var text: Variant = await re.call(help_method_name)
 	print(text)
 	re.queue_free()
 	_btn_godot_help.disabled = false
@@ -256,52 +256,52 @@ func _show_help(help_method_name):
 		GutEditorGlobals.gut_plugin.show_output_panel()
 
 
-func _save_to_config_file(f : ConfigFile):
+func _save_to_config_file(f : ConfigFile) -> void:
 	f.clear()
 	f.set_value('main', 'run_mode', run_mode)
 	f.set_value('main', 'additional_arguments', opt_maker.controls.additional_arguments.value)
 
 
-func save_to_file(path = default_path):
+func save_to_file(path: Variant = default_path) -> void:
 	_save_to_config_file(_config_file)
 	_config_file.save(path)
 
 
-func _load_from_config_file(f):
+func _load_from_config_file(f: Variant) -> void:
 	run_mode = f.get_value('main', 'run_mode', RUN_MODE_EDITOR)
 	opt_maker.controls.additional_arguments.value = \
 		f.get_value('main', 'additional_arguments', '')
 
 
-func load_from_file(path = default_path):
+func load_from_file(path: Variant = default_path) -> void:
 	_config_file.load(path)
 	_load_from_config_file(_config_file)
 
 
-func reset():
+func reset() -> void:
 	_load_from_config_file(_config_file)
 
 
-func get_additional_arguments_array():
+func get_additional_arguments_array() -> Variant:
 	return additional_arguments.split(" ", false)
 
 
-func should_run_externally():
+func should_run_externally() -> Variant:
 	return run_mode != RUN_MODE_EDITOR
 
 
-var _invalid_args = [
+var _invalid_args: Variant = [
 	'-d', '--debug',
 	'-s', '--script',
 	'-e', '--editor'
 ]
-var _invalid_blocking_args = [
+var _invalid_blocking_args: Variant = [
 	'--headless'
 ]
-func validate_arguments():
-	var arg_array = get_additional_arguments_array()
-	var i = 0
-	var invalid_found = false
+func validate_arguments() -> Variant:
+	var arg_array: Variant = get_additional_arguments_array()
+	var i: int = 0
+	var invalid_found: bool = false
 	while i < _invalid_args.size() and !invalid_found:
 		if(arg_array.has(_invalid_args[i])):
 			invalid_found = true
@@ -317,5 +317,5 @@ func validate_arguments():
 	return !invalid_found
 
 
-func get_godot_help():
+func get_godot_help() -> Variant:
 	return ''

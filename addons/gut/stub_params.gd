@@ -1,37 +1,37 @@
-var _is_return_override = false
-var _is_defaults_override = false
-var _is_call_override = false
+var _is_return_override: bool = false
+var _is_defaults_override: bool = false
+var _is_call_override: bool = false
 var _method_meta : Dictionary = {}
 
 
-var _lgr = GutUtils.get_logger()
-var logger = _lgr :
+var _lgr: Variant = GutUtils.get_logger()
+var logger: Variant = _lgr :
 	get: return _lgr
 	set(val): _lgr = val
 
 
-var return_val = GutConstants.NOT_SET :
+var return_val: Variant = GutConstants.NOT_SET :
 	get():
 		if(GutConstants.is_not_set(return_val)):
 			return null
 		else:
 			return return_val
-var return_type = TYPE_NIL
-var stub_target = null
-var parameters = null # the parameter values to match method call on.
-var stub_method = null
-var call_super = false
-var call_this = null
-var locked = false
+var return_type: Variant = TYPE_NIL
+var stub_target: Variant = null
+var parameters: Variant = null # the parameter values to match method call on.
+var stub_method: Variant = null
+var call_super: bool = false
+var call_this: Variant = null
+var locked: bool = false
 
 # When this stub is a parameter stub, this indicates that these are the defaults
 # defined in the script
 # When this stub is an action stub, this indicates it is a default stub added
 # by the stubber.  This is currently used to stub native methods to call super
 # by default, but still be able to override that stub with any other stub.
-var is_script_default = false
+var is_script_default: bool = false
 
-var parameter_count = -1 :
+var parameter_count: Variant = -1 :
 	get():
 		_lgr.deprecated("parameter count deprecated")
 		return -1
@@ -41,11 +41,11 @@ var parameter_count = -1 :
 # override them anymore, since I think this was introduced for stubbing vararg
 # methods, but you still can for now.  This value should only be used if
 # is_defaults_override is true.
-var parameter_defaults = []
+var parameter_defaults: Array = []
 
-const NOT_SET = '|_1_this_is_not_set_1_|'
+const NOT_SET: String = '|_1_this_is_not_set_1_|'
 
-func _init(target=null, method=null, _subpath=null):
+func _init(target: Variant = null, method: Variant = null, _subpath: Variant = null) -> void:
 	stub_target = target
 	stub_method = method
 
@@ -72,20 +72,20 @@ func _init(target=null, method=null, _subpath=null):
 		_load_defaults_from_metadata(method)
 		is_script_default = true
 	elif(stub_target != null and stub_method != null and typeof(stub_target) != TYPE_STRING):
-		var method_list = null
+		var method_list: Variant = null
 		if(typeof(stub_target) == TYPE_OBJECT and stub_target is GDScript):
 			method_list = stub_target.get_script_method_list()
 		elif(!GutUtils.is_native_class(stub_target)):
 			method_list = stub_target.get_method_list()
 		if(method_list != null):
-			var meta = GutUtils.find_method_meta(method_list, stub_method)
+			var meta: Variant = GutUtils.find_method_meta(method_list, stub_method)
 			if(meta != null):
 				_method_meta = meta
 
 
-func _load_defaults_from_metadata(meta):
+func _load_defaults_from_metadata(meta: Variant) -> void:
 	stub_method = meta.name
-	var values = meta.default_args.duplicate()
+	var values: Variant = meta.default_args.duplicate()
 	while (values.size() < meta.args.size()):
 		values.push_front(null)
 
@@ -94,24 +94,24 @@ func _load_defaults_from_metadata(meta):
 	return_val = GutConstants.get_default_return_value(meta.return.type)
 
 
-func _get_method_meta():
+func _get_method_meta() -> Variant:
 	if(_method_meta == {} and typeof(stub_target) == TYPE_OBJECT):
-		var found_meta = GutUtils.get_method_meta(stub_target, stub_method)
+		var found_meta: Variant = GutUtils.get_method_meta(stub_target, stub_method)
 		if(found_meta != null):
 			_method_meta = found_meta
 	return _method_meta
 
 
-func _error_if_locked():
+func _error_if_locked() -> Variant:
 	if(locked):
 		push_error("Cannot change stub as it has been locked.")
 		return true
 	else:
 		return false
 
-func _is_return_value_valid(val):
-	var is_valid = true
-	var meta = _get_method_meta()
+func _is_return_value_valid(val: Variant) -> Variant:
+	var is_valid: bool = true
+	var meta: Variant = _get_method_meta()
 	if((meta.return.type != 0 or (meta.return.type == 0 and !(meta.return.usage && PROPERTY_USAGE_NIL_IS_VARIANT))) and \
 		meta.return.type != typeof(return_val)):
 			is_valid = false
@@ -121,8 +121,8 @@ func _is_return_value_valid(val):
 # Public
 # -------------------------
 func validate() -> bool:
-	var meta = _get_method_meta()
-	var to_return = true
+	var meta: Variant = _get_method_meta()
+	var to_return: bool = true
 
 	if(stub_method != '_init' and meta != {} and call_this == null):
 		if(!_is_return_value_valid(return_val)):
@@ -132,7 +132,7 @@ func validate() -> bool:
 	return to_return
 
 
-func to_return(val):
+func to_return(val: Variant) -> Variant:
 	if(_error_if_locked()):
 		return
 	return_val = val
@@ -142,14 +142,14 @@ func to_return(val):
 	return self
 
 
-func to_do_nothing():
-	var meta = _get_method_meta()
+func to_do_nothing() -> Variant:
+	var meta: Variant = _get_method_meta()
 	if(meta != {}):
 		to_return(GutConstants.get_default_return_value(meta.return.type))
 	return self
 
 
-func to_call_super():
+func to_call_super() -> Variant:
 	if(_error_if_locked()):
 		return
 
@@ -158,11 +158,11 @@ func to_call_super():
 	return self
 
 
-func to_use_singleton():
+func to_use_singleton() -> Variant:
 	return to_call_super()
 
 
-func to_call(callable : Callable):
+func to_call(callable : Callable) -> Variant:
 	if(_error_if_locked()):
 		return
 
@@ -171,9 +171,9 @@ func to_call(callable : Callable):
 	return self
 
 
-func when_passed(p1=NOT_SET,p2=NOT_SET,p3=NOT_SET,p4=NOT_SET,p5=NOT_SET,p6=NOT_SET,p7=NOT_SET,p8=NOT_SET,p9=NOT_SET,p10=NOT_SET):
+func when_passed(p1: Variant = NOT_SET, p2: Variant = NOT_SET, p3: Variant = NOT_SET, p4: Variant = NOT_SET, p5: Variant = NOT_SET, p6: Variant = NOT_SET, p7: Variant = NOT_SET, p8: Variant = NOT_SET, p9: Variant = NOT_SET, p10: Variant = NOT_SET) -> Variant:
 	parameters = [p1,p2,p3,p4,p5,p6,p7,p8,p9,p10]
-	var idx = 0
+	var idx: int = 0
 	while(idx < parameters.size()):
 		if(str(parameters[idx]) == NOT_SET):
 			parameters.remove_at(idx)
@@ -182,16 +182,16 @@ func when_passed(p1=NOT_SET,p2=NOT_SET,p3=NOT_SET,p4=NOT_SET,p5=NOT_SET,p6=NOT_S
 	return self
 
 
-func param_count(_x):
+func param_count(_x: Variant) -> Variant:
 	_lgr.deprecated("Stubbing param_count is no longer required or supported.")
 	return self
 
 
-func param_defaults(values):
+func param_defaults(values: Variant) -> Variant:
 	if(_error_if_locked()):
 		return
 
-	var meta = _get_method_meta()
+	var meta: Variant = _get_method_meta()
 	if(meta != {} and meta.flags & METHOD_FLAG_VARARG):
 		_lgr.error("Cannot stub defaults for methods with varargs:  " + meta.name)
 	else:
@@ -200,24 +200,24 @@ func param_defaults(values):
 	return self
 
 
-func is_default_override_only():
+func is_default_override_only() -> Variant:
 	return is_defaults_override() and !is_return_override() and !is_call_override()
 
 
-func is_return_override():
+func is_return_override() -> Variant:
 	return _is_return_override
 
 
-func is_defaults_override():
+func is_defaults_override() -> Variant:
 	return _is_defaults_override
 
 
-func is_call_override():
+func is_call_override() -> Variant:
 	return _is_call_override
 
 
-func to_s():
-	var base_string = str(stub_target, '.', stub_method)
+func to_s() -> Variant:
+	var base_string: Variant = str(stub_target, '.', stub_method)
 
 	if(parameter_defaults.size() > 0):
 		if(is_script_default):

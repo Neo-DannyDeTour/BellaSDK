@@ -16,12 +16,12 @@ extends Node
 
 
 var _last_info : Dictionary = {}
-var _last_line = -1
+var _last_line: int = -1
 # This is the control that holds all the individual editors.
 var _current_script_editor : ScriptEditor = null
 # Reference to the GDScript for the last script we were notified about.
-var _current_script = null
-var _current_script_is_test_script = false
+var _current_script: Variant = null
+var _current_script_is_test_script: bool = false
 var _current_editor_base : ScriptEditorBase = null
 var _current_editor : CodeEdit = null
 # Quick lookup of editors based on the current script.
@@ -35,10 +35,10 @@ var _editors_for_scripts : Dictionary= {}
 # outside of here by traversing all the classes returned.  It makes this thing
 # less generic and know too much, but this is probably already too generic as
 # it is.
-var inner_class_prefix = "Test"
-var method_prefix = "test_"
-var script_prefix = "test_"
-var script_suffix = ".gd"
+var inner_class_prefix: String = "Test"
+var method_prefix: String = "test_"
+var script_prefix: String = "test_"
+var script_suffix: String = ".gd"
 
 
 # Based on cursor and open editors, this will be emitted.  You do what you
@@ -46,58 +46,58 @@ var script_suffix = ".gd"
 signal it_changed(change_data)
 
 
-func _ready():
+func _ready() -> void:
 	# This will not change, and should not change, over the course of a session.
 	_current_script_editor = EditorInterface.get_script_editor()
 	_current_script_editor.editor_script_changed.connect(_on_editor_script_changed)
 	_current_script_editor.script_close.connect(_on_editor_script_close)
 
 
-func _handle_caret_location(which):
-	var current_line = which.get_caret_line(0) + 1
+func _handle_caret_location(which: Variant) -> void:
+	var current_line: Variant = which.get_caret_line(0) + 1
 	if(_last_line != current_line):
 		_last_line = current_line
 
 		if(_current_script_is_test_script):
-			var new_info = _make_info(which, _current_script, _current_script_is_test_script)
+			var new_info: Variant = _make_info(which, _current_script, _current_script_is_test_script)
 			if(_last_info != new_info):
 				_last_info = new_info
 				it_changed.emit(_last_info.duplicate())
 
 
-func _get_func_name_from_line(text):
+func _get_func_name_from_line(text: Variant) -> Variant:
 	text = text.strip_edges()
-	var left = text.split("(")[0]
-	var func_name = left.split(" ")[1]
+	var left: Variant = text.split("(")[0]
+	var func_name: Variant = left.split(" ")[1]
 	return func_name
 
 
-func _get_class_name_from_line(text):
+func _get_class_name_from_line(text: Variant) -> Variant:
 	text = text.strip_edges()
-	var right = text.split(" ")[1]
-	var the_name = right.rstrip(":")
+	var right: Variant = text.split(" ")[1]
+	var the_name: Variant = right.rstrip(":")
 	return the_name
 
 
-func _make_info(editor, script, test_script_flag):
+func _make_info(editor: Variant, script: Variant, test_script_flag: Variant) -> Variant:
 	if(editor == null):
 		return
 
-	var info = {
+	var info: Variant = {
 		script = script,
 		inner_class = null,
 		method = null,
 		is_test_script = test_script_flag
 	}
 
-	var start_line = editor.get_caret_line()
-	var line = start_line
-	var done_func = false
-	var done_inner = false
+	var start_line: Variant = editor.get_caret_line()
+	var line: Variant = start_line
+	var done_func: bool = false
+	var done_inner: bool = false
 	while(line > 0 and (!done_func or !done_inner)):
 		if(editor.can_fold_line(line)):
-			var text = editor.get_line(line)
-			var strip_text = text.strip_edges(true, false) # only left
+			var text: Variant = editor.get_line(line)
+			var strip_text: Variant = text.strip_edges(true, false) # only left
 
 			if(!done_func and strip_text.begins_with("func ")):
 				info.method = _get_func_name_from_line(text)
@@ -108,7 +108,7 @@ func _make_info(editor, script, test_script_flag):
 					done_inner = true
 
 			if(!done_inner and strip_text.begins_with("class")):
-				var inner_name = _get_class_name_from_line(text)
+				var inner_name: Variant = _get_class_name_from_line(text)
 				# See note about inner_class_prefix, this knows too much, but
 				# if it was to know less it would insanely more difficult
 				# everywhere.
@@ -132,7 +132,7 @@ func _make_info(editor, script, test_script_flag):
 # but the passed in value will be null.
 #
 # This can fire multiple times for the same script when a script is opened.
-func _on_editor_script_changed(script):
+func _on_editor_script_changed(script: Variant) -> void:
 	if(script == null):
 		return
 	_last_line = -1
@@ -150,15 +150,15 @@ func _on_editor_script_changed(script):
 	_handle_caret_location(_current_editor)
 
 
-func _on_editor_script_close(script):
-	var script_editor = _editors_for_scripts.get(script, null)
+func _on_editor_script_close(script: Variant) -> void:
+	var script_editor: Variant = _editors_for_scripts.get(script, null)
 	if(script_editor != null):
 		if(script_editor.caret_changed.is_connected(_on_caret_changed)):
 			script_editor.caret_changed.disconnect(_on_caret_changed)
 			_editors_for_scripts.erase(script)
 
 
-func _on_caret_changed(which):
+func _on_caret_changed(which: Variant) -> void:
 	# Sometimes this is fired for editors that are not the current.  I could
 	# make this fire by saving a file in an external editor.  I was unable to
 	# get useful data out when it wasn't the current editor so I'm only doing
@@ -167,18 +167,18 @@ func _on_caret_changed(which):
 		_handle_caret_location(which)
 
 
-func _could_be_test_script(script):
+func _could_be_test_script(script: Variant) -> Variant:
 	return 	script.resource_path.get_file().begins_with(script_prefix) and \
 		script.resource_path.get_file().ends_with(script_suffix)
 
 # -------------
 # Public
 # -------------
-var _scripts_that_have_been_warned_about = []
-var _we_have_warned_enough = false
-var _max_warnings = 5
-func is_test_script(script):
-	var base = script.get_base_script()
+var _scripts_that_have_been_warned_about: Array = []
+var _we_have_warned_enough: bool = false
+var _max_warnings: int = 5
+func is_test_script(script: Variant) -> Variant:
+	var base: Variant = script.get_base_script()
 	if(base == null and script.get_script_method_list().size() == 0 and _could_be_test_script(script)):
 		if(OS.is_stdout_verbose() or (!_scripts_that_have_been_warned_about.has(script.resource_path) and !_we_have_warned_enough)):
 			_scripts_that_have_been_warned_about.append(script.resource_path)
@@ -200,11 +200,11 @@ func is_test_script(script):
 		return base != null
 
 
-func get_info():
+func get_info() -> Variant:
 	return _last_info.duplicate()
 
 
-func log_values():
+func log_values() -> void:
 	print("---------------------------------------------------------------")
 	print("script                   ", _current_script)
 	print("script_editor            ", _current_script_editor)

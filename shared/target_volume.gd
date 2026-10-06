@@ -8,7 +8,7 @@ extends Area3D
 enum SpawnMode { TIME_BASED, WAIT_FOR_KILL }
 
 ## Alias for the editor trigger visualizer geometry type enum.
-const SHAPE_TYPE = EditorTriggerVisualizer.ShapeType
+const SHAPE_TYPE: Variant = EditorTriggerVisualizer.ShapeType
 
 @export_category("Target Spawner")
 

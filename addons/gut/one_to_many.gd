@@ -5,13 +5,13 @@
 # ignore_many_dupes.  This setting is not retroactive and will only affect
 # new calls to add.
 # ------------------------------------------------------------------------------
-var items = {}
-var ignore_many_dupes = true
+var items: Dictionary = {}
+var ignore_many_dupes: bool = true
 
 # return the size of items or the size of an element in items if "one" was
 # specified.
-func size(one=null):
-	var to_return = 0
+func size(one: Variant = null) -> Variant:
+	var to_return: int = 0
 	if(one == null):
 		to_return = items.size()
 	elif(items.has(one)):
@@ -20,7 +20,7 @@ func size(one=null):
 
 
 # Add an element to "one" if it does not already exist
-func add(one, many_item):
+func add(one: Variant, many_item: Variant) -> void:
 	if(items.has(one)):
 		if(!ignore_many_dupes or !items[one].has(many_item)):
 			items[one].append(many_item)
@@ -28,19 +28,19 @@ func add(one, many_item):
 		items[one] = [many_item]
 
 
-func clear():
+func clear() -> void:
 	items.clear()
 
 
-func has(one, many_item):
-	var to_return = false
+func has(one: Variant, many_item: Variant) -> Variant:
+	var to_return: bool = false
 	if(items.has(one)):
 		to_return = items[one].has(many_item)
 	return to_return
 
 
-func to_s():
-	var to_return = ''
+func to_s() -> Variant:
+	var to_return: String = ''
 	for key in items:
 		to_return += str(key, ":  ", items[key], "\n")
 	return to_return

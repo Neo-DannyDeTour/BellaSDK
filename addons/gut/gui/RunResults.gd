@@ -1,12 +1,12 @@
 @tool
 extends Control
 
-var GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
+const GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
 
-var _interface = null
-var _output_control = null
+var _interface: Variant = null
+var _output_control: Variant = null
 
-@onready var _ctrls = {
+@onready var _ctrls: Variant = {
 	tree = $VBox/Output/Scroll/Tree,
 	toolbar = {
 		toolbar = $VBox/Toolbar,
@@ -20,16 +20,16 @@ var _output_control = null
 	}
 }
 
-func _ready():
+func _ready() -> void:
 	if(get_parent() is SubViewport):
 		return
 
-	var f = null
+	var f: Variant = null
 	if ($FontSampler.get_label_settings() == null) :
 		f = get_theme_default_font()
 	else :
 		f = $FontSampler.get_label_settings().font
-	var s_size = f.get_string_size("000 of 000 passed")
+	var s_size: Variant = f.get_string_size("000 of 000 passed")
 	_ctrls.tree.set_summary_min_width(s_size.x)
 
 	_set_toolbutton_icon(_ctrls.toolbar.collapse, 'CollapseTree', 'c')
@@ -50,7 +50,7 @@ func _ready():
 	call_deferred('_update_min_width')
 
 
-func _test_running_setup():
+func _test_running_setup() -> void:
 	_ctrls.tree.hide_passing = true
 	_ctrls.tree.show_orphans = true
 
@@ -58,23 +58,23 @@ func _test_running_setup():
 	_ctrls.tree.load_json_file(GutEditorGlobals.editor_run_json_results_path)
 
 
-func _set_toolbutton_icon(btn, icon_name, text):
+func _set_toolbutton_icon(btn: Variant, icon_name: Variant, text: Variant) -> void:
 	if(Engine.is_editor_hint()):
 		btn.icon = get_theme_icon(icon_name, 'EditorIcons')
 	else:
 		btn.text = str('[', text, ']')
 
 
-func _update_min_width():
+func _update_min_width() -> void:
 	custom_minimum_size.x = _ctrls.toolbar.toolbar.size.x
 
 
-func _open_script_in_editor(path, line_number):
+func _open_script_in_editor(path: Variant, line_number: Variant) -> void:
 	if(_interface == null):
 		print('Too soon, wait a bit and try again.')
 		return
 
-	var r = load(path)
+	var r: Variant = load(path)
 	if(line_number != null and line_number != -1):
 		_interface.edit_script(r, line_number)
 	else:
@@ -90,17 +90,17 @@ func _open_script_in_editor(path, line_number):
 # each string before it.  (Generic way of searching for a method name in an
 # inner class that may have be a duplicate of a method name in a different
 # inner class)
-func _get_line_number_for_seq_search(search_strings, te):
+func _get_line_number_for_seq_search(search_strings: Variant, te: Variant) -> Variant:
 	if(te == null):
 		print("No Text editor to get line number for")
 		return 0;
 
-	var result = null
-	var line = Vector2i(0, 0)
-	var s_flags = 0
+	var result: Variant = null
+	var line: Vector2i = Vector2i(0, 0)
+	var s_flags: int = 0
 
-	var i = 0
-	var string_found = true
+	var i: int = 0
+	var string_found: bool = true
 	while(i < search_strings.size() and string_found):
 		result = te.search(search_strings[i], s_flags, line.y, line.x)
 		if(result.x != -1):
@@ -112,14 +112,14 @@ func _get_line_number_for_seq_search(search_strings, te):
 	return line.y
 
 
-func _goto_code(path, line, method_name='', inner_class =''):
+func _goto_code(path: Variant, line: Variant, method_name: String = '', inner_class: String = '') -> void:
 	if(_interface == null):
 		print('going to ', [path, line, method_name, inner_class])
 		return
 
 	_open_script_in_editor(path, line)
 	if(line == -1):
-		var search_strings = []
+		var search_strings: Array = []
 		if(inner_class != ''):
 			search_strings.append(inner_class)
 
@@ -133,11 +133,11 @@ func _goto_code(path, line, method_name='', inner_class =''):
 			_interface.get_script_editor().goto_line(line)
 
 
-func _goto_output(path, method_name, inner_class):
+func _goto_output(path: Variant, method_name: Variant, inner_class: Variant) -> void:
 	if(_output_control == null):
 		return
 
-	var search_strings = [path]
+	var search_strings: Array = [path]
 
 	if(inner_class != ''):
 		search_strings.append(inner_class)
@@ -145,7 +145,7 @@ func _goto_output(path, method_name, inner_class):
 	if(method_name != ''):
 		search_strings.append(method_name)
 
-	var line = _get_line_number_for_seq_search(search_strings, _output_control.get_rich_text_edit())
+	var line: Variant = _get_line_number_for_seq_search(search_strings, _output_control.get_rich_text_edit())
 	if(line != null and line != -1):
 		_output_control.scroll_to_line(line)
 
@@ -155,28 +155,28 @@ func _goto_output(path, method_name, inner_class):
 # --------------
 # Events
 # --------------
-func _on_Collapse_pressed():
+func _on_Collapse_pressed() -> void:
 	collapse_selected()
 
 
-func _on_Expand_pressed():
+func _on_Expand_pressed() -> void:
 	expand_selected()
 
 
-func _on_CollapseAll_pressed():
+func _on_CollapseAll_pressed() -> void:
 	collapse_all()
 
 
-func _on_ExpandAll_pressed():
+func _on_ExpandAll_pressed() -> void:
 	expand_all()
 
 
-func _on_Hide_Passing_pressed():
+func _on_Hide_Passing_pressed() -> void:
 	_ctrls.tree.hide_passing = !_ctrls.toolbar.hide_passing.button_pressed
 	_ctrls.tree.load_json_file(GutEditorGlobals.editor_run_json_results_path)
 
 
-func _on_item_selected(script_path, inner_class, test_name, line):
+func _on_item_selected(script_path: Variant, inner_class: Variant, test_name: Variant, line: Variant) -> void:
 	if(_ctrls.toolbar.show_script.button_pressed):
 		_goto_code(script_path, line, test_name, inner_class)
 	if(_ctrls.toolbar.scroll_output.button_pressed):
@@ -188,48 +188,48 @@ func _on_item_selected(script_path, inner_class, test_name, line):
 # --------------
 # Public
 # --------------
-func add_centered_text(t):
+func add_centered_text(t: Variant) -> void:
 	_ctrls.tree.add_centered_text(t)
 
 
-func clear_centered_text():
+func clear_centered_text() -> void:
 	_ctrls.tree.clear_centered_text()
 
 
-func clear():
+func clear() -> void:
 	_ctrls.tree.clear()
 	clear_centered_text()
 
 
-func set_interface(which):
+func set_interface(which: Variant) -> void:
 	_interface = which
 
 
-func collapse_all():
+func collapse_all() -> void:
 	_ctrls.tree.collapse_all()
 
 
-func expand_all():
+func expand_all() -> void:
 	_ctrls.tree.expand_all()
 
 
-func collapse_selected():
-	var item = _ctrls.tree.get_selected()
+func collapse_selected() -> void:
+	var item: Variant = _ctrls.tree.get_selected()
 	if(item != null):
 		_ctrls.tree.set_collapsed_on_all(item, true)
 
 
-func expand_selected():
-	var item = _ctrls.tree.get_selected()
+func expand_selected() -> void:
+	var item: Variant = _ctrls.tree.get_selected()
 	if(item != null):
 		_ctrls.tree.set_collapsed_on_all(item, false)
 
 
-func set_show_orphans(should):
+func set_show_orphans(should: Variant) -> void:
 	_ctrls.tree.show_orphans = should
 
 
-func set_font(font_name, size):
+func set_font(font_name: Variant, size: Variant) -> void:
 	pass
 #	var dyn_font = FontFile.new()
 #	var font_data = FontFile.new()
@@ -242,9 +242,9 @@ func set_font(font_name, size):
 #	_font_size = size
 
 
-func set_output_control(value):
+func set_output_control(value: Variant) -> void:
 	_output_control = value
 
 
-func load_json_results(j):
+func load_json_results(j: Variant) -> void:
 	_ctrls.tree.load_json_results(j)

@@ -1,6 +1,6 @@
 var sub_menu : PopupMenu = null
 
-var _menus = {
+var _menus: Variant = {
 	# name : {
 	# 	index,
 	# 	id,
@@ -19,17 +19,17 @@ signal show_gut
 signal toggle_windowed
 
 
-func _init():
+func _init() -> void:
 	sub_menu = PopupMenu.new()
 	sub_menu.index_pressed.connect(_on_sub_menu_index_pressed)
 	make_menu()
 
 
-func _invalid_index():
+func _invalid_index() -> void:
 	print("bad menu index")
 
 
-func _on_sub_menu_index_pressed(index):
+func _on_sub_menu_index_pressed(index: Variant) -> void:
 	var to_call : Callable = _invalid_index
 	for key in _menus:
 		if(_menus[key].index == index):
@@ -38,8 +38,8 @@ func _on_sub_menu_index_pressed(index):
 	to_call.call()
 
 
-func add_menu(display_text, sig_to_emit, tooltip=''):
-	var index = sub_menu.item_count
+func add_menu(display_text: Variant, sig_to_emit: Variant, tooltip: String = '') -> Variant:
+	var index: Variant = sub_menu.item_count
 	_menus[sig_to_emit.get_name()] = {
 		index = index,
 		id = index,
@@ -51,7 +51,7 @@ func add_menu(display_text, sig_to_emit, tooltip=''):
 
 
 
-func make_menu():
+func make_menu() -> void:
 	# No known way to "make floating" via code with new EditorDock.
 	# add_menu("Toggle Windowed", toggle_windowed,
 	# 	'Toggle GUT in the dock or a floating window')
@@ -74,18 +74,18 @@ func make_menu():
 	add_menu("About", about, 'All about GUT')
 
 
-func set_shortcut(menu_name, accel_or_input_key):
+func set_shortcut(menu_name: Variant, accel_or_input_key: Variant) -> void:
 	if(typeof(accel_or_input_key) == TYPE_INT):
 		sub_menu.set_item_accelerator(_menus[menu_name].index, accel_or_input_key)
 	elif(typeof(accel_or_input_key) == TYPE_OBJECT and accel_or_input_key is InputEventKey):
 		sub_menu.set_item_accelerator(_menus[menu_name].index, accel_or_input_key.get_keycode_with_modifiers())
 
 
-func disable_menu(menu_name, disabled):
+func disable_menu(menu_name: Variant, disabled: Variant) -> void:
 	sub_menu.set_item_disabled(_menus[menu_name].index, disabled)
 
 
-func apply_gut_shortcuts(shortcut_dialog):
+func apply_gut_shortcuts(shortcut_dialog: Variant) -> void:
 	set_shortcut("show_gut",
 		shortcut_dialog.scbtn_panel.get_input_event())
 	set_shortcut("run_all",

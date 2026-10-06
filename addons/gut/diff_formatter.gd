@@ -1,13 +1,13 @@
-var _strutils = GutUtils.Strutils.new()
-const INDENT = '    '
-var _max_to_display = 30
-const ABSOLUTE_MAX_DISPLAYED = 10000
-const UNLIMITED = -1
+var _strutils: Variant = GutUtils.Strutils.new()
+const INDENT: String = '    '
+var _max_to_display: int = 30
+const ABSOLUTE_MAX_DISPLAYED: int = 10000
+const UNLIMITED: int = -1
 
 
-func _single_diff(diff, depth=0):
-	var to_return = ""
-	var brackets = diff.get_brackets()
+func _single_diff(diff: Variant, depth: int = 0) -> Variant:
+	var to_return: String = ""
+	var brackets: Variant = diff.get_brackets()
 
 	if(brackets != null and !diff.are_equal):
 		to_return = ''
@@ -20,8 +20,8 @@ func _single_diff(diff, depth=0):
 	return to_return
 
 
-func make_it(diff):
-	var to_return = ''
+func make_it(diff: Variant) -> Variant:
+	var to_return: String = ''
 	if(diff.are_equal):
 		to_return = diff.summary
 	else:
@@ -33,14 +33,14 @@ func make_it(diff):
 	return to_return
 
 
-func differences_to_s(differences, depth=0):
-	var to_return = ''
-	var keys = differences.keys()
+func differences_to_s(differences: Variant, depth: int = 0) -> Variant:
+	var to_return: String = ''
+	var keys: Variant = differences.keys()
 	keys.sort()
-	var limit = min(_max_to_display, differences.size())
+	var limit: Variant = min(_max_to_display, differences.size())
 
 	for i in range(limit):
-		var key = keys[i]
+		var key: Variant = keys[i]
 		to_return += str(key, ":  ", _single_diff(differences[key], depth))
 
 		if(i != limit -1):
@@ -52,11 +52,11 @@ func differences_to_s(differences, depth=0):
 	return to_return
 
 
-func get_max_to_display():
+func get_max_to_display() -> Variant:
 	return _max_to_display
 
 
-func set_max_to_display(max_to_display):
+func set_max_to_display(max_to_display: Variant) -> void:
 	_max_to_display = max_to_display
 	if(_max_to_display == UNLIMITED):
 		_max_to_display = ABSOLUTE_MAX_DISPLAYED

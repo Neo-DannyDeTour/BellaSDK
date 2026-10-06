@@ -1,24 +1,24 @@
-var PanelControls = load("res://addons/gut/gui/panel_controls.gd")
-var GutConfig = load('res://addons/gut/gut_config.gd')
+const PanelControls = load("res://addons/gut/gui/panel_controls.gd")
+const GutConfig = load('res://addons/gut/gut_config.gd')
 
-const DIRS_TO_LIST = 6
+const DIRS_TO_LIST: int = 6
 
 # specific titles that we need to do stuff with
-var _titles = {
+var _titles: Variant = {
 	dirs = null
 }
 
-var _cfg_ctrls = {}
-var opt_maker = null
+var _cfg_ctrls: Dictionary = {}
+var opt_maker: Variant = null
 
-func _init(cont):
+func _init(cont: Variant) -> void:
 	opt_maker = GutUtils.OptionMaker.new(cont)
 	_cfg_ctrls = opt_maker.controls
 	# _base_container = cont
 
 
-func _add_save_load():
-	var ctrl = PanelControls.GpcSaveLoad.new('Config', '', '')
+func _add_save_load() -> Variant:
+	var ctrl: Variant = PanelControls.GpcSaveLoad.new('Config', '', '')
 
 	ctrl.save_path_chosen.connect(_on_save_path_chosen)
 	ctrl.load_path_chosen.connect(_on_load_path_chosen)
@@ -30,23 +30,23 @@ func _add_save_load():
 # ------------------
 # Events
 # ------------------
-func _on_save_path_chosen(path):
+func _on_save_path_chosen(path: Variant) -> void:
 	save_file(path)
 
 
-func _on_load_path_chosen(path):
+func _on_load_path_chosen(path: Variant) -> void:
 	load_file.bind(path).call_deferred()
 
 # ------------------
 # Public
 # ------------------
-func get_config_issues():
-	var to_return = []
-	var has_directory = false
+func get_config_issues() -> Variant:
+	var to_return: Array = []
+	var has_directory: bool = false
 
 	for i in range(DIRS_TO_LIST):
-		var key = str('directory_', i)
-		var path = _cfg_ctrls[key].value
+		var key: Variant = str('directory_', i)
+		var path: Variant = _cfg_ctrls[key].value
 		if(path != null and path != ''):
 			has_directory = true
 			if(!DirAccess.dir_exists_absolute(path)):
@@ -72,19 +72,19 @@ func get_config_issues():
 	return to_return
 
 
-func clear():
+func clear() -> void:
 	opt_maker.clear()
 
 
-func save_file(path):
-	var gcfg = GutConfig.new()
+func save_file(path: Variant) -> void:
+	var gcfg: GutConfig = GutConfig.new()
 	gcfg.options = get_options({})
 	gcfg.save_file(path)
 
 
 
-func load_file(path):
-	var gcfg = GutConfig.new()
+func load_file(path: Variant) -> void:
+	var gcfg: GutConfig = GutConfig.new()
 	gcfg.load_options(path)
 	clear()
 	set_options(gcfg.options)
@@ -99,14 +99,14 @@ func load_file(path):
 #
 # Also, we can't just skip adding the controls because other things are looking
 # for them and things start to blow up if you don't add them.
-var hide_this = null :
+var hide_this: Variant = null :
 	set(val):
 		val.visible = false
 
 # --------------
 
-func set_options(opts):
-	var options = opts.duplicate()
+func set_options(opts: Variant) -> void:
+	var options: Variant = opts.duplicate()
 
 	# _add_title('Save/Load')
 	_add_save_load()
@@ -172,16 +172,16 @@ func set_options(opts):
 	opt_maker.add_boolean('include_subdirs', options.include_subdirs, 'Include Subdirs',
 		"Include subdirectories of the directories configured below.")
 
-	var dirs_to_load = options.configured_dirs
+	var dirs_to_load: Variant = options.configured_dirs
 	if(options.dirs.size() > dirs_to_load.size()):
 		dirs_to_load = options.dirs
 
 	for i in range(DIRS_TO_LIST):
-		var value = ''
+		var value: String = ''
 		if(dirs_to_load.size() > i):
 			value = dirs_to_load[i]
 
-		var test_dir = opt_maker.add_directory(str('directory_', i), value, str(i))
+		var test_dir: Variant = opt_maker.add_directory(str('directory_', i), value, str(i))
 		test_dir.enabled_button.visible = true
 		test_dir.enabled_button.button_pressed = options.dirs.has(value)
 
@@ -212,8 +212,8 @@ func set_options(opts):
 
 
 
-func get_options(base_opts):
-	var to_return = base_opts.duplicate()
+func get_options(base_opts: Variant) -> Variant:
+	var to_return: Variant = base_opts.duplicate()
 
 	# Settings
 	to_return.log_level = _cfg_ctrls.log_level.value
@@ -239,7 +239,7 @@ func get_options(base_opts):
 	# Fail Error Types
 	to_return.no_error_tracking = !_cfg_ctrls.error_tracking
 
-	var fail_error_types = []
+	var fail_error_types: Array = []
 	if(_cfg_ctrls.engine_errors_cause_failure.value):
 		fail_error_types.append(GutConfig.FAIL_ERROR_TYPE_ENGINE)
 	if(_cfg_ctrls.push_error_errors_cause_failure.value):
@@ -250,11 +250,11 @@ func get_options(base_opts):
 
 	# Directories
 	to_return.include_subdirs = _cfg_ctrls.include_subdirs.value
-	var dirs = []
-	var configured_dirs = []
+	var dirs: Array = []
+	var configured_dirs: Array = []
 	for i in range(DIRS_TO_LIST):
-		var key = str('directory_', i)
-		var ctrl = _cfg_ctrls[key]
+		var key: Variant = str('directory_', i)
+		var ctrl: Variant = _cfg_ctrls[key]
 		if(ctrl.value != '' and ctrl.value != null):
 			configured_dirs.append(ctrl.value)
 			if(ctrl.enabled_button.button_pressed):
@@ -277,6 +277,6 @@ func get_options(base_opts):
 	return to_return
 
 
-func mark_saved():
+func mark_saved() -> void:
 	for key in _cfg_ctrls:
 		_cfg_ctrls[key].mark_unsaved(false)

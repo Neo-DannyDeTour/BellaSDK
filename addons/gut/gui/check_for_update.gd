@@ -1,27 +1,27 @@
 @tool
 extends Control
 
-static var fetch_count = 0
-static var max_fetches = 5
+static var fetch_count: int = 0
+static var max_fetches: int = 5
 
-var update_detector = null
-@onready var rtl = $Output
-var _log_entries = []
-var _verbose = false :
+var update_detector: Variant = null
+@onready var rtl: Control = $Output
+var _log_entries: Array = []
+var _verbose: Variant = false :
 	set(val):
 		if(!_verbose and val):
 			verbose_enabled.emit()
 		_verbose = val
-var _mouse_down_duration = 0.0
-var _mouse_down = false
-var _mouse_down_time_to_show_verbose := 4.0
+var _mouse_down_duration: float = 0.0
+var _mouse_down: bool = false
+var _mouse_down_time_to_show_verbose: float = 4.0
 
 signal verbose_enabled
 
-func _debug_ready():
+func _debug_ready() -> void:
 	_verbose = true
 
-func _ready():
+func _ready() -> void:
 	update_detector = GutUtils.UpdateDetector.new()
 	add_child(update_detector)
 	update_detector.updated.connect(_on_update_detector_updated)
@@ -48,27 +48,27 @@ func _process(delta: float) -> void:
 # Private
 # ----------------
 
-func _log(text):
+func _log(text: Variant) -> void:
 	if(_verbose):
 		_log_entries.append(str(text))
 
 
-func _log_file(path):
+func _log_file(path: Variant) -> void:
 	if(_verbose):
-		var file_text = FileAccess.get_file_as_string(path)
+		var file_text: Variant = FileAccess.get_file_as_string(path)
 		if(file_text == ""):
 			file_text = "--Missing or empty file--"
 		_log(str(path, ":\n[code]", file_text, "[/code]"))
 
 
-func _get_check_for_update_link():
+func _get_check_for_update_link() -> Variant:
 	if(_verbose or update_detector.fetch_limit_wait_time() <= 0.0):
 		return str("[center]", _url_bbcode("_check_for_update", "Check for Update", "ORANGE"), "[/center]")
 	else:
 		return ''
 
 
-func check_for_update(use_fetch, force=false):
+func check_for_update(use_fetch: Variant, force: bool = false) -> void:
 	_log_entries.clear()
 	rtl.text = ""
 	update_detector.check_for_update()
@@ -82,8 +82,8 @@ func check_for_update(use_fetch, force=false):
 		update_detector.check_for_update()
 
 
-func _populate_text():
-	var txt = ""
+func _populate_text() -> void:
+	var txt: String = ""
 	if(!update_detector.is_empty()):
 		txt = str("[center]", update_detector.get_update_string(_url_bbcode), "[/center]")
 	if(_verbose):
@@ -92,21 +92,21 @@ func _populate_text():
 	_post_populate.call_deferred()
 
 
-func _post_populate():
+func _post_populate() -> void:
 	custom_minimum_size.y = min(rtl.get_content_height() + 30, 400)
 
 
-func _url_bbcode(url, link_text=null, color_name="ROYAL_BLUE"):
+func _url_bbcode(url: Variant, link_text: Variant = null, color_name: String = "ROYAL_BLUE") -> Variant:
 	if(link_text == null):
 		link_text = url
-	var text = str("[url=", url, "]", link_text, "[/url]")
+	var text: Variant = str("[url=", url, "]", link_text, "[/url]")
 	return str("[color=", color_name, "]", text, "[/color]")
 
 
 # -----------------
 # Events
 # -----------------
-func _on_update_detector_updated():
+func _on_update_detector_updated() -> void:
 	_log_file(update_detector.REMOTE_FILE_PATH)
 	_log_file(update_detector.LOCAL_FILE_PATH)
 	_log(str("Local:\n[code]", JSON.stringify(update_detector.local_data.get_data(), "  "), "[/code]"))
@@ -122,7 +122,7 @@ func _on_btn_check_button_up() -> void:
 	check_for_update(true, true)
 
 
-func _on_update_detector_download():
+func _on_update_detector_download() -> void:
 	_log("Download completed")
 
 

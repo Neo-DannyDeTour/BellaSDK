@@ -3,23 +3,23 @@
 # work with gut.gd, so I'm fine with that.
 # ------------------------------------------------------------------------------
 # a _test_collector to use when one is not provided.
-var _gut = null
+var _gut: Variant = null
 
 
-func _init(gut=null):
+func _init(gut: Variant = null) -> void:
 	_gut = gut
 
 # ---------------------
 # Private
 # ---------------------
-func _log_end_run_header(gut):
-	var lgr = gut.get_logger()
+func _log_end_run_header(gut: Variant) -> void:
+	var lgr: Variant = gut.get_logger()
 	lgr.log('==============================================', lgr.fmts.yellow)
 	lgr.log("= Run Summary", lgr.fmts.yellow)
 	lgr.log('==============================================', lgr.fmts.yellow)
 
 
-func _log_what_was_run(gut):
+func _log_what_was_run(gut: Variant) -> void:
 	if(!GutUtils.is_null_or_empty(gut._select_script)):
 		gut.p('Ran Scripts matching "' + gut._select_script + '"')
 	if(!GutUtils.is_null_or_empty(gut._unit_test_name)):
@@ -28,14 +28,14 @@ func _log_what_was_run(gut):
 		gut.p('Ran Inner Classes matching "' + gut._inner_class_name + '"')
 
 
-func _total_fmt(text, value):
-	var space = 18
+func _total_fmt(text: Variant, value: Variant) -> Variant:
+	var space: int = 18
 	if(str(value) == '0'):
 		value = 'none'
 	return str(text.rpad(space), str(value).lpad(5))
 
 
-func _log_non_zero_total(text, value, lgr):
+func _log_non_zero_total(text: Variant, value: Variant, lgr: Variant) -> Variant:
 	if(str(value) != '0'):
 		lgr.log(_total_fmt(text, value))
 		return 1
@@ -43,14 +43,14 @@ func _log_non_zero_total(text, value, lgr):
 		return 0
 
 
-func _log_totals(gut, totals):
-	var lgr = gut.get_logger()
+func _log_totals(gut: Variant, totals: Variant) -> Variant:
+	var lgr: Variant = gut.get_logger()
 	lgr.log()
 
 	# lgr.log("---- Totals ----")
 	lgr.log("Totals")
 	lgr.log("------")
-	var issue_count = 0
+	var issue_count: int = 0
 	issue_count += _log_non_zero_total('Errors', totals.errors, lgr)
 	issue_count += _log_non_zero_total('Warnings', totals.warnings, lgr)
 	issue_count += _log_non_zero_total('Deprecated', totals.deprecated, lgr)
@@ -72,8 +72,8 @@ func _log_totals(gut, totals):
 	return totals
 
 
-func _log_nothing_run(gut):
-	var lgr = gut.get_logger()
+func _log_nothing_run(gut: Variant) -> void:
+	var lgr: Variant = gut.get_logger()
 	lgr.error("Nothing was run.")
 	lgr.log('On the one hand nothing failed, on the other hand nothing did anything.')
 	_log_what_was_run(gut)
@@ -82,11 +82,11 @@ func _log_nothing_run(gut):
 # ---------------------
 # Public
 # ---------------------
-func log_all_non_passing_tests(gut=_gut):
-	var test_collector = gut.get_test_collector()
-	var lgr = gut.get_logger()
+func log_all_non_passing_tests(gut: Variant = _gut) -> Variant:
+	var test_collector: Variant = gut.get_test_collector()
+	var lgr: Variant = gut.get_logger()
 
-	var to_return = {
+	var to_return: Variant = {
 		passing = 0,
 		non_passing = 0
 	}
@@ -99,11 +99,11 @@ func log_all_non_passing_tests(gut=_gut):
 
 		if(test_script.was_skipped):
 			lgr.inc_indent()
-			var skip_msg = str('[Risky] Script was skipped:  ', test_script.skip_reason)
+			var skip_msg: Variant = str('[Risky] Script was skipped:  ', test_script.skip_reason)
 			lgr.log(skip_msg, lgr.fmts.yellow)
 			lgr.dec_indent()
 
-		var test_fail_count = 0
+		var test_fail_count: int = 0
 		for test in test_script.tests:
 			if(test.was_run):
 				if(test.is_passing()):
@@ -128,10 +128,10 @@ func log_all_non_passing_tests(gut=_gut):
 	return to_return
 
 
-func log_the_final_line(totals, gut):
-	var lgr = gut.get_logger()
-	var grand_total_text = ""
-	var grand_total_fmt = lgr.fmts.none
+func log_the_final_line(totals: Variant, gut: Variant) -> void:
+	var lgr: Variant = gut.get_logger()
+	var grand_total_text: String = ""
+	var grand_total_fmt: Variant = lgr.fmts.none
 	if(totals.failing_tests > 0):
 		grand_total_text = str(totals.failing_tests, " failing tests")
 		grand_total_fmt = lgr.fmts.red
@@ -148,19 +148,19 @@ func log_the_final_line(totals, gut):
 	lgr.log(str("---- ", grand_total_text, " ----"), grand_total_fmt)
 
 
-func log_totals(gut, totals):
-	var lgr = gut.get_logger()
-	var orig_indent = lgr.get_indent_level()
+func log_totals(gut: Variant, totals: Variant) -> void:
+	var lgr: Variant = gut.get_logger()
+	var orig_indent: Variant = lgr.get_indent_level()
 	lgr.set_indent_level(0)
 	_log_totals(gut, totals)
 	lgr.set_indent_level(orig_indent)
 
 
-func get_totals(gut=_gut):
-	var tc = gut.get_test_collector()
-	var lgr = gut.get_logger()
+func get_totals(gut: Variant = _gut) -> Variant:
+	var tc: Variant = gut.get_test_collector()
+	var lgr: Variant = gut.get_logger()
 
-	var totals = {
+	var totals: Variant = {
 		failing = 0,
 		failing_tests = 0,
 		passing = 0,
@@ -192,23 +192,23 @@ func get_totals(gut=_gut):
 	return totals
 
 
-func log_version_update(gut):
-	var ud = GutUtils.UpdateDetector.new()
+func log_version_update(gut: Variant) -> void:
+	var ud: Variant = GutUtils.UpdateDetector.new()
 	ud.check_for_update()
-	var recommended = ud.get_gut_version_for_godot_version()
+	var recommended: Variant = ud.get_gut_version_for_godot_version()
 	if(recommended != GutUtils.version_numbers.gut_version):
 		gut.get_logger().log(ud.get_update_string())
 	ud.free()
 
 
-func log_end_run(gut=_gut):
-	var totals = get_totals(gut)
+func log_end_run(gut: Variant = _gut) -> void:
+	var totals: Variant = get_totals(gut)
 	if(totals.tests == 0):
 		_log_nothing_run(gut)
 		return
 
 	_log_end_run_header(gut)
-	var lgr = gut.get_logger()
+	var lgr: Variant = gut.get_logger()
 
 	log_all_non_passing_tests(gut)
 	log_totals(gut, totals)

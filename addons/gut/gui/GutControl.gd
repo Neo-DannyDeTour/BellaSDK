@@ -1,27 +1,27 @@
 @tool
 extends Control
 
-const RUNNER_JSON_PATH = 'res://.gut_editor_config.json'
+const RUNNER_JSON_PATH: String = 'res://.gut_editor_config.json'
 
-var GutConfig = load('res://addons/gut/gut_config.gd')
-var GutRunnerScene = load('res://addons/gut/gui/GutRunner.tscn')
-var GutConfigGui = load('res://addons/gut/gui/gut_config_gui.gd')
+const GutConfig = load('res://addons/gut/gut_config.gd')
+const GutRunnerScene = load('res://addons/gut/gui/GutRunner.tscn')
+const GutConfigGui = load('res://addons/gut/gui/gut_config_gui.gd')
 
-var _config = GutConfig.new()
-var _config_gui = null
-var _gut_runner = null
+var _config: GutConfig = GutConfig.new()
+var _config_gui: Variant = null
+var _gut_runner: Variant = null
 var _tree_root : TreeItem = null
 
-var _script_icon = load('res://addons/gut/images/Script.svg')
-var _folder_icon = load('res://addons/gut/images/Folder.svg')
+var _script_icon: Variant = load('res://addons/gut/images/Script.svg')
+var _folder_icon: Variant = load('res://addons/gut/images/Folder.svg')
 
-var _tree_scripts = {}
-var _tree_directories = {}
+var _tree_scripts: Dictionary = {}
+var _tree_directories: Dictionary = {}
 
-const TREE_SCRIPT = 'Script'
-const TREE_DIR = 'Directory'
+const TREE_SCRIPT: String = 'Script'
+const TREE_DIR: String = 'Directory'
 
-@onready var _ctrls = {
+@onready var _ctrls: Variant = {
 	run_tests_button = $VBox/Buttons/RunTests,
 	run_selected = $VBox/Buttons/RunSelected,
 	test_tree = $VBox/Tabs/Tests,
@@ -38,7 +38,7 @@ const TREE_DIR = 'Directory'
 			$Bg.color = bg_color
 
 
-func _ready():
+func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 
@@ -57,25 +57,25 @@ func _ready():
 	call_deferred('_post_ready')
 
 
-func _draw():
+func _draw() -> void:
 	if Engine.is_editor_hint():
 		return
 
-	var gut = _gut_runner.get_gut()
+	var gut: Variant = _gut_runner.get_gut()
 	if(!gut.is_running()):
-		var r = Rect2(Vector2(0, 0), get_rect().size)
+		var r: Rect2 = Rect2(Vector2(0, 0), get_rect().size)
 		draw_rect(r, Color.BLACK, false, 2)
 
 
-func _post_ready():
-	var gut = _gut_runner.get_gut()
+func _post_ready() -> void:
+	var gut: Variant = _gut_runner.get_gut()
 	gut.start_run.connect(_on_gut_run_started)
 	gut.end_run.connect(_on_gut_run_ended)
 	_refresh_tree_and_settings()
 
 
-func _set_meta_for_script_tree_item(item, script, test=null):
-	var meta = {
+func _set_meta_for_script_tree_item(item: Variant, script: Variant, test: Variant = null) -> void:
+	var meta: Variant = {
 		type = TREE_SCRIPT,
 		script = script.path,
 		inner_class = script.inner_class_name,
@@ -88,8 +88,8 @@ func _set_meta_for_script_tree_item(item, script, test=null):
 	item.set_metadata(0, meta)
 
 
-func _set_meta_for_directory_tree_item(item, path, temp_item):
-	var meta = {
+func _set_meta_for_directory_tree_item(item: Variant, path: Variant, temp_item: Variant) -> void:
+	var meta: Variant = {
 		type = TREE_DIR,
 		path = path,
 		temp_item = temp_item
@@ -97,9 +97,9 @@ func _set_meta_for_directory_tree_item(item, path, temp_item):
 	item.set_metadata(0, meta)
 
 
-func _get_script_tree_item(script, parent_item):
+func _get_script_tree_item(script: Variant, parent_item: Variant) -> Variant:
 	if(!_tree_scripts.has(script.path)):
-		var item = _ctrls.test_tree.create_item(parent_item)
+		var item: Variant = _ctrls.test_tree.create_item(parent_item)
 		item.set_text(0, script.path.get_file())
 		item.set_icon(0, _script_icon)
 		_tree_scripts[script.path] = item
@@ -108,8 +108,8 @@ func _get_script_tree_item(script, parent_item):
 	return _tree_scripts[script.path]
 
 
-func _get_directory_tree_item(path):
-	var parent = _tree_root
+func _get_directory_tree_item(path: Variant) -> Variant:
+	var parent: Variant = _tree_root
 	if(!_tree_directories.has(path)):
 
 		var item : TreeItem = null
@@ -126,7 +126,7 @@ func _get_directory_tree_item(path):
 		# temp_item is used in calls with move_before since you must use
 		# move_before or move_after to reparent tree items. This ensures that
 		# there is an item on all directories.  These are deleted later.
-		var temp_item = item.create_child()
+		var temp_item: Variant = item.create_child()
 		temp_item.set_text(0, '<temp>')
 
 		_set_meta_for_directory_tree_item(item, path, temp_item)
@@ -134,9 +134,9 @@ func _get_directory_tree_item(path):
 	return _tree_directories[path]
 
 
-func _find_dir_item_to_move_before(path):
-	var max_matching_len = 0
-	var best_parent = null
+func _find_dir_item_to_move_before(path: Variant) -> Variant:
+	var max_matching_len: int = 0
+	var best_parent: Variant = null
 
 	# Go through all the directory items finding the one that has the longest
 	# path that contains our path.
@@ -145,54 +145,54 @@ func _find_dir_item_to_move_before(path):
 				max_matching_len = key.length()
 				best_parent = _tree_directories[key]
 
-	var to_return = null
+	var to_return: Variant = null
 	if(best_parent != null):
 		to_return = best_parent.get_metadata(0).temp_item
 	return to_return
 
 
-func _reorder_dir_items():
-	var the_keys = _tree_directories.keys()
+func _reorder_dir_items() -> void:
+	var the_keys: Variant = _tree_directories.keys()
 	the_keys.sort()
 	for key in _tree_directories.keys():
-		var to_move = _tree_directories[key]
+		var to_move: Variant = _tree_directories[key]
 		to_move.collapsed = false
-		var move_before = _find_dir_item_to_move_before(key)
+		var move_before: Variant = _find_dir_item_to_move_before(key)
 		if(move_before != null):
 			to_move.move_before(move_before)
-			var new_text = key.substr(move_before.get_parent().get_metadata(0).path.length())
+			var new_text: Variant = key.substr(move_before.get_parent().get_metadata(0).path.length())
 			to_move.set_text(0, new_text)
 
 
-func _remove_dir_temp_items():
+func _remove_dir_temp_items() -> void:
 	for key in _tree_directories.keys():
-		var item = _tree_directories[key].get_metadata(0).temp_item
+		var item: Variant = _tree_directories[key].get_metadata(0).temp_item
 		_tree_directories[key].remove_child(item)
 
 
-func _add_dir_and_script_tree_items():
+func _add_dir_and_script_tree_items() -> void:
 	var tree : Tree = _ctrls.test_tree
 	tree.clear()
 	_tree_root = _ctrls.test_tree.create_item()
 
-	var scripts = _gut_runner.get_gut().get_test_collector().scripts
+	var scripts: Variant = _gut_runner.get_gut().get_test_collector().scripts
 	for script in scripts:
-		var dir_item = _get_directory_tree_item(script.path.get_base_dir())
-		var item = _get_script_tree_item(script, dir_item)
+		var dir_item: Variant = _get_directory_tree_item(script.path.get_base_dir())
+		var item: Variant = _get_script_tree_item(script, dir_item)
 
 		if(script.inner_class_name != ''):
-			var inner_item = tree.create_item(item)
+			var inner_item: Variant = tree.create_item(item)
 			inner_item.set_text(0, script.inner_class_name)
 			_set_meta_for_script_tree_item(inner_item, script)
 			item = inner_item
 
 		for test in script.tests:
-			var test_item = tree.create_item(item)
+			var test_item: Variant = tree.create_item(item)
 			test_item.set_text(0, test.name)
 			_set_meta_for_script_tree_item(test_item, script, test)
 
 
-func _populate_tree():
+func _populate_tree() -> void:
 	_add_dir_and_script_tree_items()
 	_tree_root.set_collapsed_recursive(true)
 	_tree_root.set_collapsed(false)
@@ -200,7 +200,7 @@ func _populate_tree():
 	_remove_dir_temp_items()
 
 
-func _refresh_tree_and_settings():
+func _refresh_tree_and_settings() -> void:
 	_config.apply_options(_gut_runner.get_gut())
 	_gut_runner.set_gut_config(_config)
 	_populate_tree()
@@ -208,7 +208,7 @@ func _refresh_tree_and_settings():
 # ---------------------------
 # Events
 # ---------------------------
-func _on_gut_run_started():
+func _on_gut_run_started() -> void:
 	_ctrls.run_tests_button.disabled = true
 	_ctrls.run_selected.visible = false
 	_ctrls.tabs.visible = false
@@ -217,7 +217,7 @@ func _on_gut_run_started():
 	queue_redraw()
 
 
-func _on_gut_run_ended():
+func _on_gut_run_ended() -> void:
 	_ctrls.run_tests_button.disabled = false
 	_ctrls.run_selected.visible = true
 	_ctrls.tabs.visible = true
@@ -226,36 +226,36 @@ func _on_gut_run_ended():
 	queue_redraw()
 
 
-func _on_run_tests_pressed():
+func _on_run_tests_pressed() -> void:
 	run_all()
 
 
-func _on_run_selected_pressed():
+func _on_run_selected_pressed() -> void:
 	run_selected()
 
 
-func _on_tests_item_activated():
+func _on_tests_item_activated() -> void:
 	run_selected()
 
 # ---------------------------
 # Public
 # ---------------------------
-func get_gut():
+func get_gut() -> Variant:
 	return _gut_runner.get_gut()
 
 
-func get_config():
+func get_config() -> Variant:
 	return _config
 
 
-func run_all():
+func run_all() -> void:
 	_config.options.selected = ''
 	_config.options.inner_class_name = ''
 	_config.options.unit_test_name = ''
 	run_tests()
 
 
-func run_tests(options = null):
+func run_tests(options: Variant = null) -> void:
 	if(options == null):
 		_config.options = _config_gui.get_options(_config.options)
 	else:
@@ -270,13 +270,13 @@ func run_tests(options = null):
 	_gut_runner.run_tests()
 
 
-func run_selected():
-	var sel_item = _ctrls.test_tree.get_selected()
+func run_selected() -> void:
+	var sel_item: Variant = _ctrls.test_tree.get_selected()
 	if(sel_item == null):
 		return
 
-	var options = _config_gui.get_options(_config.options)
-	var meta = sel_item.get_metadata(0)
+	var options: Variant = _config_gui.get_options(_config.options)
+	var meta: Variant = sel_item.get_metadata(0)
 	if(meta.type == TREE_SCRIPT):
 		options.selected = meta.script.get_file()
 		options.inner_class_name = meta.inner_class
@@ -291,7 +291,7 @@ func run_selected():
 	run_tests(options)
 
 
-func load_config_file(path):
+func load_config_file(path: Variant) -> void:
 	_config.load_options(path)
 	_config.options.selected = ''
 	_config.options.inner_class_name = ''

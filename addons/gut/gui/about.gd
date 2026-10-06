@@ -1,9 +1,9 @@
 @tool
 extends AcceptDialog
 
-var GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
+const GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
 
-var _bbcode = \
+var _bbcode: Variant = \
 """
 [center][b]GUT Links[/b]
 {gut_link_table}[/center]
@@ -18,24 +18,24 @@ Thanks for using GUT!
 [/center]
 """
 
-var _gut_links = [
+var _gut_links: Variant = [
 	[&"Documentation", &"https://gut.readthedocs.io"],
 	[&"What's New", &"https://github.com/bitwes/Gut/releases/tag/v{gut_version}"],
 	[&"Repo", &"https://github.com/bitwes/gut"],
 	[&"Report Bugs", &"https://github.com/bitwes/gut/issues"]
 ]
 
-var _vscode_links = [
+var _vscode_links: Variant = [
 	["Repo", "https://github.com/bitwes/gut-extension"],
 	["Market Place", "https://marketplace.visualstudio.com/items?itemName=bitwes.gut-extension"]
 ]
 
-var _donate_link = "https://buymeacoffee.com/bitwes"
-@onready var _logo = $Logo
-@onready var rtl = $HBox/VBoxContainer/Scroll/RichTextLabel
-@onready var check_for_update = $HBox/VBoxContainer/CheckForUpdate
+var _donate_link: String = "https://buymeacoffee.com/bitwes"
+@onready var _logo: Node = $Logo
+@onready var rtl: Control = $HBox/VBoxContainer/Scroll/RichTextLabel
+@onready var check_for_update: Control = $HBox/VBoxContainer/CheckForUpdate
 
-func _ready():
+func _ready() -> void:
 	if(get_parent() is SubViewport):
 		return
 	elif(get_parent() == get_tree().root):
@@ -46,15 +46,15 @@ func _ready():
 	rtl.text = _make_text()
 
 
-func _color_link(link_text):
+func _color_link(link_text: Variant) -> Variant:
 	return str("[color=ROYAL_BLUE]", link_text, "[/color]")
 
 
-func _link_table(entries):
-	var text = ''
+func _link_table(entries: Variant) -> Variant:
+	var text: String = ''
 	for entry in entries:
 		text += str("[cell][right]", entry[0], "[/right][/cell]")
-		var link = str("[url]", entry[1], "[/url]")
+		var link: Variant = str("[url]", entry[1], "[/url]")
 		if(entry[1].length() > 60):
 			link = str("[url=", entry[1], "]", entry[1].substr(0, 50), "...[/url]")
 
@@ -62,18 +62,18 @@ func _link_table(entries):
 	return str('[table=2]', text, '[/table]')
 
 
-func url_bbcode(url, link_text=null):
+func url_bbcode(url: Variant, link_text: Variant = null) -> Variant:
 	if(link_text == null):
 		link_text = url
-	var text = str("[url=", url, "]", link_text, "[/url]")
+	var text: Variant = str("[url=", url, "]", link_text, "[/url]")
 	return _color_link(text)
 
 
-func _make_text():
-	var gut_link_table = _link_table(_gut_links)
-	var vscode_link_table = _link_table(_vscode_links)
+func _make_text() -> Variant:
+	var gut_link_table: Variant = _link_table(_gut_links)
+	var vscode_link_table: Variant = _link_table(_vscode_links)
 
-	var text = _bbcode.format({
+	var text: Variant = _bbcode.format({
 		"gut_link_table":gut_link_table,
 		"vscode_link_table":vscode_link_table,
 		"donate_link":_color_link(str('[url]', _donate_link, '[/url]')),
@@ -81,7 +81,7 @@ func _make_text():
 	return text
 
 
-func _vert_center_logo():
+func _vert_center_logo() -> void:
 	_logo.position.y = size.y / 2.0
 
 
@@ -100,8 +100,8 @@ func _on_mouse_exited() -> void:
 	pass#_logo.active = false
 
 
-var _odd_ball_eyes_l = 1.1
-var _odd_ball_eyes_r = .7
+var _odd_ball_eyes_l: float = 1.1
+var _odd_ball_eyes_r: float = .7
 func _on_rich_text_label_meta_hover_started(meta: Variant) -> void:
 	if(meta == _gut_links[0][1]):
 		_logo.set_eye_color(Color.RED)
@@ -115,7 +115,7 @@ func _on_rich_text_label_meta_hover_started(meta: Variant) -> void:
 		_logo.set_eye_scale(.5, .5)
 	elif(meta == _vscode_links[1][1]):
 		_logo.set_eye_scale(_odd_ball_eyes_l, _odd_ball_eyes_r)
-		var temp = _odd_ball_eyes_l
+		var temp: Variant = _odd_ball_eyes_l
 		_odd_ball_eyes_l = _odd_ball_eyes_r
 		_odd_ball_eyes_r = temp
 	elif(meta == _donate_link):
