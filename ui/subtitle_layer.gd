@@ -93,26 +93,38 @@ func _load_saved_settings() -> void:
 
 	var font_size_raw: Variant = gs.call(&"get_setting", "Accessibility", "subtitle_size", 24.0)
 	if font_size_raw is float:
-		active_font_size = font_size_raw
+		var size_f: float = font_size_raw
+		active_font_size = size_f
 	elif font_size_raw is int:
-		active_font_size = float(font_size_raw)
+		var size_i: int = font_size_raw
+		active_font_size = float(size_i)
 	_on_subtitle_size_changed(active_font_size)
 
-	var bg_pct: float = gs.call(&"get_setting", "Accessibility", "subtitle_bg_opacity", 50.0)
+	var bg_pct_raw: Variant = gs.call(&"get_setting", "Accessibility", "subtitle_bg_opacity", 50.0)
+	var bg_pct: float = 50.0
+	if bg_pct_raw is float:
+		bg_pct = bg_pct_raw
+	elif bg_pct_raw is int:
+		var pct_int: int = bg_pct_raw
+		bg_pct = float(pct_int)
 	active_bg_opacity = clampf(bg_pct / 100.0, 0.0, 1.0)
 
 	var color_names: Array[String] = [
 		"Cyan", "Blue", "Yellow", "Green", "Red", "Magenta", "White", "Black"
 	]
-	var text_idx: int = gs.call(&"get_setting", "Accessibility", "subtitle_text_color", 6)
+
+	var text_idx_raw: Variant = gs.call(&"get_setting", "Accessibility", "subtitle_text_color", 6)
+	var text_idx: int = text_idx_raw if text_idx_raw is int else 6
 	if text_idx >= 0 and text_idx < color_names.size():
 		active_text_color = color_names[text_idx].to_lower()
 
-	var spk_idx: int = gs.call(&"get_setting", "Accessibility", "subtitle_speaker_color", 0)
+	var spk_idx_raw: Variant = gs.call(&"get_setting", "Accessibility", "subtitle_speaker_color", 0)
+	var spk_idx: int = spk_idx_raw if spk_idx_raw is int else 0
 	if spk_idx >= 0 and spk_idx < color_names.size():
 		active_speaker_color = color_names[spk_idx].to_lower()
 
-	var bg_idx: int = gs.call(&"get_setting", "Accessibility", "subtitle_bg_color", 7)
+	var bg_idx_raw: Variant = gs.call(&"get_setting", "Accessibility", "subtitle_bg_color", 7)
+	var bg_idx: int = bg_idx_raw if bg_idx_raw is int else 7
 	if bg_idx >= 0 and bg_idx < color_names.size():
 		active_bg_color = color_names[bg_idx].to_lower()
 

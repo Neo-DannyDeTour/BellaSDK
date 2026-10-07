@@ -1,4 +1,4 @@
-## Coordinates video sub-panels and delegates rendering settings.
+## Coordinates video sub-panels and delegates rendering settings in the scene tree.
 class_name VideoOptions
 extends Panel
 
@@ -24,7 +24,7 @@ var _pending_renderer: String = ""
 var _pending_gpu_index: int = -1
 
 
-## Connects section events and applies initial video settings.
+## Connects section events and applies initial video settings on load.
 func _ready() -> void:
 	print("VideoOptions: Main panel coordinator initialized.")
 	if is_instance_valid(restart_dialog):
@@ -72,7 +72,8 @@ func _on_visibility_changed() -> void:
 func _on_preset_changed(preset: String) -> void:
 	print("VideoOptions: Quality preset changed to: ", preset)
 	if VideoConfig.PRESETS.has(preset):
-		var p_data: Dictionary = VideoConfig.PRESETS[preset]
+		var raw_p_data: Variant = VideoConfig.PRESETS[preset]
+		var p_data: Dictionary = raw_p_data if raw_p_data is Dictionary else {}
 		effects_section.apply_preset_dict(p_data)
 		quality_section.apply_preset_dict(p_data)
 		GlobalSettings.save_settings_bulk("Settings", p_data)
@@ -83,137 +84,171 @@ func _on_preset_changed(preset: String) -> void:
 ## Gathers all configuration values and applies them to viewport.
 func _apply_all_settings() -> void:
 	print("VideoOptions: Dispatching full state payload to VideoApplier.")
-	var mode: DisplayServer.WindowMode = (
-		GlobalSettings.get_setting("Settings", "display_mode", VideoConfig.DEFAULT_DISPLAY)
-		as DisplayServer.WindowMode
+	var mode_val: int = GlobalSettings.get_setting_int(
+		"Settings", "display_mode", VideoConfig.DEFAULT_DISPLAY
 	)
-	var screen_idx: int = GlobalSettings.get_setting("Settings", "screen_index", 0)
-	var res: Vector2i = Vector2i(
-		GlobalSettings.get_setting("Settings", "resolution_x", 1920) as int,
-		GlobalSettings.get_setting("Settings", "resolution_y", 1080) as int
-	)
+	var mode: DisplayServer.WindowMode = mode_val as DisplayServer.WindowMode
+	var screen_idx: int = GlobalSettings.get_setting_int("Settings", "screen_index", 0)
+	var res_x: int = GlobalSettings.get_setting_int("Settings", "resolution_x", 1920)
+	var res_y: int = GlobalSettings.get_setting_int("Settings", "resolution_y", 1080)
+	var res: Vector2i = Vector2i(res_x, res_y)
 	VideoApplier.apply_window_settings(get_window(), mode, screen_idx, res)
 
-	var vsync: DisplayServer.VSyncMode = (
-		GlobalSettings.get_setting("Settings", "vsync_mode", VideoConfig.DEFAULT_VSYNC)
-		as DisplayServer.VSyncMode
+	var vsync_val: int = GlobalSettings.get_setting_int(
+		"Settings", "vsync_mode", VideoConfig.DEFAULT_VSYNC
 	)
-	var fps_cap: int = (
-		GlobalSettings.get_setting("Settings", "fps_limit", VideoConfig.DEFAULT_FPS) as int
+	var vsync: DisplayServer.VSyncMode = vsync_val as DisplayServer.VSyncMode
+	var fps_cap: int = GlobalSettings.get_setting_int(
+		"Settings", "fps_limit", VideoConfig.DEFAULT_FPS
 	)
 	VideoApplier.apply_engine_limits(vsync, fps_cap)
 
-	var aniso_key: String = (
-		GlobalSettings.get_setting("Settings", "anisotropy", VideoConfig.DEFAULT_ANISOTROPY)
-		as String
+	var raw_aniso: Variant = GlobalSettings.get_setting(
+		"Settings", "anisotropy", VideoConfig.DEFAULT_ANISOTROPY
 	)
-	var aniso_val: int = VideoConfig.ANISOTROPY_LEVELS.get(aniso_key, 2)
+	var aniso_key: String = raw_aniso if raw_aniso is String else VideoConfig.DEFAULT_ANISOTROPY
+	var raw_aniso_val: Variant = VideoConfig.ANISOTROPY_LEVELS.get(aniso_key, 2)
+	var aniso_val: int = raw_aniso_val if raw_aniso_val is int else 2
 	VideoApplier.apply_anisotropy(aniso_val)
 
-	var shadow_key: String = (
-		GlobalSettings.get_setting("Settings", "shadow_quality", "High (Smooth)") as String
+	var raw_shadow: Variant = GlobalSettings.get_setting(
+		"Settings", "shadow_quality", "High (Smooth)"
 	)
-	var shadow_data: Dictionary = VideoConfig.SHADOW_QUALITIES.get(shadow_key, {})
-	var fsr_key: String = (
-		GlobalSettings.get_setting("Settings", "fsr_mode", VideoConfig.DEFAULT_FSR_MODE) as String
-	)
-	var aa_key: String = (
-		GlobalSettings.get_setting("Settings", "aa_mode", VideoConfig.DEFAULT_AA_MODE) as String
-	)
+	var shadow_key: String = raw_shadow if raw_shadow is String else "High (Smooth)"
+	var raw_shadow_data: Variant = VideoConfig.SHADOW_QUALITIES.get(shadow_key, {})
+	var shadow_data: Dictionary = raw_shadow_data if raw_shadow_data is Dictionary else {}
 
-	var dyn_shadows: bool = bool(
-		GlobalSettings.get_setting(
-			"Settings", "dynamic_light_shadows", VideoConfig.DEFAULT_DYNAMIC_LIGHT_SHADOWS
-		)
+	var raw_fsr: Variant = GlobalSettings.get_setting(
+		"Settings", "fsr_mode", VideoConfig.DEFAULT_FSR_MODE
+	)
+	var fsr_key: String = raw_fsr if raw_fsr is String else VideoConfig.DEFAULT_FSR_MODE
+	var raw_aa: Variant = GlobalSettings.get_setting(
+		"Settings", "aa_mode", VideoConfig.DEFAULT_AA_MODE
+	)
+	var aa_key: String = raw_aa if raw_aa is String else VideoConfig.DEFAULT_AA_MODE
+
+	var dyn_shadows: bool = GlobalSettings.get_setting_bool(
+		"Settings", "dynamic_light_shadows", VideoConfig.DEFAULT_DYNAMIC_LIGHT_SHADOWS
+	)
+	var raw_filter: Variant = GlobalSettings.get_setting(
+		"Settings", "shadow_filter", VideoConfig.DEFAULT_SHADOW_FILTER
 	)
 	var shadow_filter: String = (
-		GlobalSettings.get_setting("Settings", "shadow_filter", VideoConfig.DEFAULT_SHADOW_FILTER)
-		as String
+		raw_filter if raw_filter is String else VideoConfig.DEFAULT_SHADOW_FILTER
 	)
-	var p_shadow_dist: float = float(
-		GlobalSettings.get_setting(
-			"Settings", "positional_shadow_distance", VideoConfig.DEFAULT_POSITIONAL_SHADOW_DISTANCE
-		)
+	var p_shadow_dist: float = GlobalSettings.get_setting_float(
+		"Settings", "positional_shadow_distance", VideoConfig.DEFAULT_POSITIONAL_SHADOW_DISTANCE
 	)
-	var d_shadow_dist: float = float(
-		GlobalSettings.get_setting(
-			"Settings",
-			"directional_shadow_distance",
-			VideoConfig.DEFAULT_DIRECTIONAL_SHADOW_DISTANCE
-		)
+	var d_shadow_dist: float = GlobalSettings.get_setting_float(
+		"Settings", "directional_shadow_distance", VideoConfig.DEFAULT_DIRECTIONAL_SHADOW_DISTANCE
 	)
-	var occ_cull: bool = bool(
-		GlobalSettings.get_setting(
-			"Settings", "occlusion_culling", VideoConfig.DEFAULT_OCCLUSION_CULLING
-		)
+	var occ_cull: bool = GlobalSettings.get_setting_bool(
+		"Settings", "occlusion_culling", VideoConfig.DEFAULT_OCCLUSION_CULLING
 	)
-	var vrs_key: String = (
-		GlobalSettings.get_setting("Settings", "vrs_mode", VideoConfig.DEFAULT_VRS_MODE) as String
+	var raw_vrs: Variant = GlobalSettings.get_setting(
+		"Settings", "vrs_mode", VideoConfig.DEFAULT_VRS_MODE
+	)
+	var vrs_key: String = raw_vrs if raw_vrs is String else VideoConfig.DEFAULT_VRS_MODE
+	var raw_tex_filter: Variant = GlobalSettings.get_setting(
+		"Settings", "texture_filter", VideoConfig.DEFAULT_TEXTURE_FILTER
 	)
 	var tex_filter: String = (
-		GlobalSettings.get_setting("Settings", "texture_filter", VideoConfig.DEFAULT_TEXTURE_FILTER)
-		as String
+		raw_tex_filter if raw_tex_filter is String else VideoConfig.DEFAULT_TEXTURE_FILTER
 	)
-	var res_scale: float = float(
-		GlobalSettings.get_setting(
-			"Settings", "resolution_scale", VideoConfig.DEFAULT_RESOLUTION_SCALE
-		)
+	var res_scale: float = GlobalSettings.get_setting_float(
+		"Settings", "resolution_scale", VideoConfig.DEFAULT_RESOLUTION_SCALE
 	)
-	var exp_val: float = float(
-		GlobalSettings.get_setting("Settings", "exposure", VideoConfig.DEFAULT_EXPOSURE)
+	var exp_val: float = GlobalSettings.get_setting_float(
+		"Settings", "exposure", VideoConfig.DEFAULT_EXPOSURE
 	)
-	var raw_dof_amount: float = float(GlobalSettings.get_setting("Settings", "dof_amount", 0.15))
-	var dof_val: bool = bool(
-		GlobalSettings.get_setting("Settings", "dof_enabled", raw_dof_amount > 0.005)
+	var raw_dof_amount: float = GlobalSettings.get_setting_float("Settings", "dof_amount", 0.15)
+	var dof_val: bool = GlobalSettings.get_setting_bool(
+		"Settings", "dof_enabled", raw_dof_amount > 0.005
 	)
-	var mb_strength: float = float(
-		GlobalSettings.get_setting("Settings", "motion_blur", VideoConfig.DEFAULT_MOTION_BLUR)
+	var mb_strength: float = GlobalSettings.get_setting_float(
+		"Settings", "motion_blur", VideoConfig.DEFAULT_MOTION_BLUR
 	)
 
-	var ssao_key: String = (
-		GlobalSettings.get_setting("Settings", "ssao", VideoConfig.DEFAULT_SSAO) as String
+	var raw_ssao: Variant = GlobalSettings.get_setting("Settings", "ssao", VideoConfig.DEFAULT_SSAO)
+	var ssao_key: String = raw_ssao if raw_ssao is String else VideoConfig.DEFAULT_SSAO
+	var raw_ssi: Variant = GlobalSettings.get_setting("Settings", "ssi", VideoConfig.DEFAULT_SSI)
+	var ssi_key: String = raw_ssi if raw_ssi is String else VideoConfig.DEFAULT_SSI
+	var raw_ssr: Variant = GlobalSettings.get_setting("Settings", "ssr", VideoConfig.DEFAULT_SSR)
+	var ssr_key: String = raw_ssr if raw_ssr is String else VideoConfig.DEFAULT_SSR
+	var raw_sdfgi: Variant = GlobalSettings.get_setting(
+		"Settings", "sdfgi", VideoConfig.DEFAULT_SDFGI
 	)
-	var ssi_key: String = (
-		GlobalSettings.get_setting("Settings", "ssi", VideoConfig.DEFAULT_SSI) as String
+	var sdfgi_key: String = raw_sdfgi if raw_sdfgi is String else VideoConfig.DEFAULT_SDFGI
+	var raw_fog: Variant = GlobalSettings.get_setting(
+		"Settings", "volumetric_fog", VideoConfig.DEFAULT_FOG
 	)
-	var ssr_key: String = (
-		GlobalSettings.get_setting("Settings", "ssr", VideoConfig.DEFAULT_SSR) as String
-	)
-	var sdfgi_key: String = (
-		GlobalSettings.get_setting("Settings", "sdfgi", VideoConfig.DEFAULT_SDFGI) as String
-	)
-	var fog_key: String = (
-		GlobalSettings.get_setting("Settings", "volumetric_fog", VideoConfig.DEFAULT_FOG) as String
-	)
-	var glow_key: String = (
-		GlobalSettings.get_setting("Settings", "glow", VideoConfig.DEFAULT_GLOW) as String
-	)
+	var fog_key: String = raw_fog if raw_fog is String else VideoConfig.DEFAULT_FOG
+	var raw_glow: Variant = GlobalSettings.get_setting("Settings", "glow", VideoConfig.DEFAULT_GLOW)
+	var glow_key: String = raw_glow if raw_glow is String else VideoConfig.DEFAULT_GLOW
+
+	var raw_fsr_val: Variant = VideoConfig.FSR_MODES.get(fsr_key, 1.0)
+	var fsr_scale: float = raw_fsr_val if raw_fsr_val is float else 1.0
+
+	var raw_aa_val: Variant = VideoConfig.AA_MODES.get(aa_key, {})
+	var aa_settings: Dictionary = raw_aa_val if raw_aa_val is Dictionary else {}
+
+	var raw_atlas: Variant = shadow_data.get("atlas_size", 4096)
+	var shadow_atlas: int = raw_atlas if raw_atlas is int else 4096
+
+	var raw_vrs_val: Variant = VideoConfig.VRS_MODES.get(vrs_key, Viewport.VRS_DISABLED)
+	var vrs_mode: int = raw_vrs_val if raw_vrs_val is int else Viewport.VRS_DISABLED
+
+	var raw_tex_val: Variant = VideoConfig.TEXTURE_FILTER_MODES.get(tex_filter, 2)
+	var tex_filter_val: int = raw_tex_val if raw_tex_val is int else 2
+
+	var mesh_lod: float = GlobalSettings.get_setting_float("Settings", "mesh_lod_threshold", 1.0)
+	var debanding: bool = GlobalSettings.get_setting_bool("Settings", "debanding", true)
+	var raw_tonemap: Variant = GlobalSettings.get_setting("Settings", "tonemap_mode", "Filmic")
+	var tonemap_key: String = raw_tonemap if raw_tonemap is String else "Filmic"
+
+	var raw_ssao_data: Variant = VideoConfig.SSAO_MODES.get(ssao_key, {})
+	var ssao_dict: Dictionary = raw_ssao_data if raw_ssao_data is Dictionary else {}
+
+	var raw_ssi_data: Variant = VideoConfig.SSI_MODES.get(ssi_key, {})
+	var ssi_dict: Dictionary = raw_ssi_data if raw_ssi_data is Dictionary else {}
+
+	var raw_ssr_data: Variant = VideoConfig.SSR_MODES.get(ssr_key, {})
+	var ssr_dict: Dictionary = raw_ssr_data if raw_ssr_data is Dictionary else {}
+
+	var raw_sdfgi_data: Variant = VideoConfig.SDFGI_MODES.get(sdfgi_key, {})
+	var sdfgi_dict: Dictionary = raw_sdfgi_data if raw_sdfgi_data is Dictionary else {}
+
+	var raw_fog_data: Variant = VideoConfig.FOG_MODES.get(fog_key, {})
+	var fog_dict: Dictionary = raw_fog_data if raw_fog_data is Dictionary else {}
+
+	var raw_glow_data: Variant = VideoConfig.GLOW_MODES.get(glow_key, {})
+	var glow_dict: Dictionary = raw_glow_data if raw_glow_data is Dictionary else {}
 
 	var config: Dictionary = {
-		"fsr_scale": VideoConfig.FSR_MODES.get(fsr_key, 1.0) as float,
-		"aa_settings": VideoConfig.AA_MODES.get(aa_key, {}) as Dictionary,
-		"shadow_atlas": shadow_data.get("atlas_size", 4096) as int,
+		"fsr_scale": fsr_scale,
+		"aa_settings": aa_settings,
+		"shadow_atlas": shadow_atlas,
 		"dynamic_light_shadows": dyn_shadows,
 		"shadow_filter": shadow_filter,
 		"positional_shadow_distance": p_shadow_dist,
 		"directional_shadow_distance": d_shadow_dist,
 		"occlusion_culling": occ_cull,
-		"vrs_mode": VideoConfig.VRS_MODES.get(vrs_key, Viewport.VRS_DISABLED),
-		"texture_filter": VideoConfig.TEXTURE_FILTER_MODES.get(tex_filter, 2),
+		"vrs_mode": vrs_mode,
+		"texture_filter": tex_filter_val,
 		"resolution_scale": res_scale,
 		"exposure": exp_val,
 		"motion_blur": mb_strength,
-		"mesh_lod": GlobalSettings.get_setting("Settings", "mesh_lod_threshold", 1.0) as float,
-		"debanding": GlobalSettings.get_setting("Settings", "debanding", true) as bool,
-		"tonemap_key": GlobalSettings.get_setting("Settings", "tonemap_mode", "Filmic") as String,
+		"mesh_lod": mesh_lod,
+		"debanding": debanding,
+		"tonemap_key": tonemap_key,
 		"dof_amount": raw_dof_amount if dof_val else 0.0,
 		"dof_enabled": dof_val,
-		"ssao": VideoConfig.SSAO_MODES.get(ssao_key, {}) as Dictionary,
-		"ssi": VideoConfig.SSI_MODES.get(ssi_key, {}) as Dictionary,
-		"ssr": VideoConfig.SSR_MODES.get(ssr_key, {}) as Dictionary,
-		"sdfgi": VideoConfig.SDFGI_MODES.get(sdfgi_key, {}) as Dictionary,
-		"fog": VideoConfig.FOG_MODES.get(fog_key, {}) as Dictionary,
-		"glow": VideoConfig.GLOW_MODES.get(glow_key, {}) as Dictionary,
+		"ssao": ssao_dict,
+		"ssi": ssi_dict,
+		"ssr": ssr_dict,
+		"sdfgi": sdfgi_dict,
+		"fog": fog_dict,
+		"glow": glow_dict,
 	}
 	VideoApplier.apply_viewport_pipeline(get_tree(), get_viewport(), config)
 

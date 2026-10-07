@@ -300,7 +300,8 @@ func _connect_slider(
 
 ## Persists slider value and emits pipeline notification if changed.
 func _commit_slider_value(key: String, val: float) -> void:
-	var current: float = float(GlobalSettings.get_setting("Settings", key, -999.0))
+	var raw_val: Variant = GlobalSettings.get_setting("Settings", key, -999.0)
+	var current: float = raw_val if (raw_val is float or raw_val is int) else -999.0
 	if not is_equal_approx(current, val):
 		print("QualitySection: Persisting ", key, " -> ", val)
 		GlobalSettings.save_setting("Settings", key, val)
@@ -333,7 +334,8 @@ func _commit_slider_line(
 	line.text = formatted_text
 	line.set_meta("pre_focus_text", formatted_text)
 
-	var current_saved: float = float(GlobalSettings.get_setting("Settings", key, -999.0))
+	var raw_val: Variant = GlobalSettings.get_setting("Settings", key, -999.0)
+	var current_saved: float = raw_val if (raw_val is float or raw_val is int) else -999.0
 	slider.set_value_no_signal(s_val)
 
 	if not is_equal_approx(current_saved, s_val):
@@ -348,47 +350,52 @@ func load_settings() -> void:
 	_sync_button_row(_preset_btn_map, "preset", VideoConfig.DEFAULT_PRESET)
 	_sync_button_row(_shadow_btn_map, "shadow_quality", "High (Smooth)")
 
-	var dyn_val: bool = bool(
-		GlobalSettings.get_setting(
-			"Settings", "dynamic_light_shadows", VideoConfig.DEFAULT_DYNAMIC_LIGHT_SHADOWS
-		)
+	var raw_dyn: Variant = GlobalSettings.get_setting(
+		"Settings", "dynamic_light_shadows", VideoConfig.DEFAULT_DYNAMIC_LIGHT_SHADOWS
 	)
+	var dyn_val: bool = raw_dyn if raw_dyn is bool else VideoConfig.DEFAULT_DYNAMIC_LIGHT_SHADOWS
 	dynamic_shadows_checkbox.set_pressed_no_signal(dyn_val)
 
 	_sync_button_row(_shadow_filter_btn_map, "shadow_filter", VideoConfig.DEFAULT_SHADOW_FILTER)
 
-	var p_dist: float = float(
-		GlobalSettings.get_setting(
-			"Settings", "positional_shadow_distance", VideoConfig.DEFAULT_POSITIONAL_SHADOW_DISTANCE
-		)
+	var raw_p_dist: Variant = GlobalSettings.get_setting(
+		"Settings", "positional_shadow_distance", VideoConfig.DEFAULT_POSITIONAL_SHADOW_DISTANCE
+	)
+	var p_dist: float = (
+		raw_p_dist
+		if (raw_p_dist is float or raw_p_dist is int)
+		else VideoConfig.DEFAULT_POSITIONAL_SHADOW_DISTANCE
 	)
 	pos_dist_slider.set_value_no_signal(p_dist)
 	pos_dist_line.text = str(int(p_dist))
 
-	var d_dist: float = float(
-		GlobalSettings.get_setting(
-			"Settings",
-			"directional_shadow_distance",
-			VideoConfig.DEFAULT_DIRECTIONAL_SHADOW_DISTANCE
-		)
+	var raw_d_dist: Variant = GlobalSettings.get_setting(
+		"Settings", "directional_shadow_distance", VideoConfig.DEFAULT_DIRECTIONAL_SHADOW_DISTANCE
+	)
+	var d_dist: float = (
+		raw_d_dist
+		if (raw_d_dist is float or raw_d_dist is int)
+		else VideoConfig.DEFAULT_DIRECTIONAL_SHADOW_DISTANCE
 	)
 	dir_dist_slider.set_value_no_signal(d_dist)
 	dir_dist_line.text = str(int(d_dist))
 
-	var occ_val: bool = bool(
-		GlobalSettings.get_setting(
-			"Settings", "occlusion_culling", VideoConfig.DEFAULT_OCCLUSION_CULLING
-		)
+	var raw_occ: Variant = GlobalSettings.get_setting(
+		"Settings", "occlusion_culling", VideoConfig.DEFAULT_OCCLUSION_CULLING
 	)
+	var occ_val: bool = raw_occ if raw_occ is bool else VideoConfig.DEFAULT_OCCLUSION_CULLING
 	occlusion_checkbox.set_pressed_no_signal(occ_val)
 
 	_sync_dropdown(vrs_options, VideoConfig.VRS_MODES, "vrs_mode", VideoConfig.DEFAULT_VRS_MODE)
 	_sync_button_row(_texture_filter_btn_map, "texture_filter", VideoConfig.DEFAULT_TEXTURE_FILTER)
 
-	var r_scale: float = float(
-		GlobalSettings.get_setting(
-			"Settings", "resolution_scale", VideoConfig.DEFAULT_RESOLUTION_SCALE
-		)
+	var raw_r_scale: Variant = GlobalSettings.get_setting(
+		"Settings", "resolution_scale", VideoConfig.DEFAULT_RESOLUTION_SCALE
+	)
+	var r_scale: float = (
+		raw_r_scale
+		if (raw_r_scale is float or raw_r_scale is int)
+		else VideoConfig.DEFAULT_RESOLUTION_SCALE
 	)
 	res_scale_slider.set_value_no_signal(r_scale)
 	res_scale_line.text = "%.1f" % r_scale
@@ -402,7 +409,8 @@ func load_settings() -> void:
 		VideoConfig.DEFAULT_ANISOTROPY
 	)
 
-	var lod: float = GlobalSettings.get_setting("Settings", "mesh_lod_threshold", 1.0)
+	var raw_lod: Variant = GlobalSettings.get_setting("Settings", "mesh_lod_threshold", 1.0)
+	var lod: float = raw_lod if (raw_lod is float or raw_lod is int) else 1.0
 	mesh_lod_slider.set_value_no_signal(lod)
 	mesh_lod_line.text = "%.2f" % lod
 
@@ -422,29 +430,37 @@ func apply_preset_dict(data: Dictionary) -> void:
 	if data.has("shadow_quality") and _shadow_btn_map.has(str(data["shadow_quality"])):
 		_shadow_btn_map[str(data["shadow_quality"])].button_pressed = true
 	if data.has("dynamic_light_shadows"):
-		dynamic_shadows_checkbox.set_pressed_no_signal(data["dynamic_light_shadows"] as bool)
+		var raw_dyn: Variant = data["dynamic_light_shadows"]
+		var dyn_state: bool = raw_dyn == true or raw_dyn == 1
+		dynamic_shadows_checkbox.set_pressed_no_signal(dyn_state)
 	if data.has("shadow_filter") and _shadow_filter_btn_map.has(str(data["shadow_filter"])):
 		_shadow_filter_btn_map[str(data["shadow_filter"])].button_pressed = true
 	if data.has("positional_shadow_distance"):
-		var p_d: float = data["positional_shadow_distance"]
+		var raw_p_d: Variant = data["positional_shadow_distance"]
+		var p_d: float = raw_p_d if (raw_p_d is float or raw_p_d is int) else 0.0
 		pos_dist_slider.set_value_no_signal(p_d)
 		pos_dist_line.text = str(int(p_d))
 	if data.has("directional_shadow_distance"):
-		var d_d: float = data["directional_shadow_distance"]
+		var raw_d_d: Variant = data["directional_shadow_distance"]
+		var d_d: float = raw_d_d if (raw_d_d is float or raw_d_d is int) else 0.0
 		dir_dist_slider.set_value_no_signal(d_d)
 		dir_dist_line.text = str(int(d_d))
 	if data.has("occlusion_culling"):
-		occlusion_checkbox.set_pressed_no_signal(data["occlusion_culling"] as bool)
+		var raw_occ: Variant = data["occlusion_culling"]
+		var occ_state: bool = raw_occ == true or raw_occ == 1
+		occlusion_checkbox.set_pressed_no_signal(occ_state)
 	if data.has("vrs_mode"):
-		_select_dropdown_text(vrs_options, data["vrs_mode"] as String)
+		_select_dropdown_text(vrs_options, str(data["vrs_mode"]))
 	if data.has("texture_filter") and _texture_filter_btn_map.has(str(data["texture_filter"])):
 		_texture_filter_btn_map[str(data["texture_filter"])].button_pressed = true
 	if data.has("resolution_scale"):
-		var r_s: float = data["resolution_scale"]
+		var raw_r_s: Variant = data["resolution_scale"]
+		var r_s: float = raw_r_s if (raw_r_s is float or raw_r_s is int) else 1.0
 		res_scale_slider.set_value_no_signal(r_s)
 		res_scale_line.text = "%.1f" % r_s
 	if data.has("mesh_lod_threshold"):
-		var lod_val: float = data["mesh_lod_threshold"]
+		var raw_lod: Variant = data["mesh_lod_threshold"]
+		var lod_val: float = raw_lod if (raw_lod is float or raw_lod is int) else 1.0
 		mesh_lod_slider.set_value_no_signal(lod_val)
 		mesh_lod_line.text = "%.2f" % lod_val
 
@@ -502,9 +518,10 @@ func _on_preset_pressed(preset: String) -> void:
 ## Handles dynamic light shadows toggle state changes.
 func _on_dynamic_shadows_toggled(toggled_on: bool) -> void:
 	print("QualitySection: Dynamic shadows toggled: ", toggled_on)
-	var current: bool = bool(
-		GlobalSettings.get_setting("Settings", "dynamic_light_shadows", not toggled_on)
+	var raw_val: Variant = GlobalSettings.get_setting(
+		"Settings", "dynamic_light_shadows", not toggled_on
 	)
+	var current: bool = raw_val if raw_val is bool else not toggled_on
 	if current != toggled_on:
 		GlobalSettings.save_setting("Settings", "dynamic_light_shadows", toggled_on)
 		quality_settings_changed.emit()
@@ -513,9 +530,10 @@ func _on_dynamic_shadows_toggled(toggled_on: bool) -> void:
 ## Handles occlusion culling toggle state changes.
 func _on_occlusion_toggled(toggled_on: bool) -> void:
 	print("QualitySection: Occlusion culling toggled: ", toggled_on)
-	var current: bool = bool(
-		GlobalSettings.get_setting("Settings", "occlusion_culling", not toggled_on)
+	var raw_val: Variant = GlobalSettings.get_setting(
+		"Settings", "occlusion_culling", not toggled_on
 	)
+	var current: bool = raw_val if raw_val is bool else not toggled_on
 	if current != toggled_on:
 		GlobalSettings.save_setting("Settings", "occlusion_culling", toggled_on)
 		quality_settings_changed.emit()

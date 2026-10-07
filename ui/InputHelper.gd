@@ -1,5 +1,4 @@
-## Utility singleton managing keybind string formatting and icon texture resolution.
-## Provides caching for Kenney prompt icons and cleans up hardware input strings.
+## Utility singleton managing keybind formatting and icon texture resolution.
 # class_name InputHelperClass
 extends Node
 
@@ -11,15 +10,12 @@ var _icon_cache: Dictionary = {}
 
 
 ## Resolves an [InputEvent] to a matching default Kenney prompt icon texture.
-## Searches root and subdirectories with in-memory caching.
-## [param event] The [InputEvent] to find an icon for.
-## [return] The loaded [Texture2D], or null if no matching asset exists.
 func get_event_icon(event: InputEvent) -> Texture2D:
-	print("InputHelper: get_event_icon() called for ", event.as_text())
+	print("InputHelper: Resolving icon for input event -> ", event.as_text())
 	var possible_filenames: Array[String] = []
 
 	if event is InputEventKey:
-		var key_event: InputEventKey = event if event is InputEventKey else null
+		var key_event: InputEventKey = event
 		var code: Key = (
 			key_event.physical_keycode
 			if key_event.physical_keycode != KEY_NONE
@@ -68,7 +64,7 @@ func get_event_icon(event: InputEvent) -> Texture2D:
 					possible_filenames.append("keyboard_%s_outline.png" % key_str)
 
 	elif event is InputEventMouseButton:
-		var mouse_event: InputEventMouseButton = event if event is InputEventMouseButton else null
+		var mouse_event: InputEventMouseButton = event
 		match mouse_event.button_index:
 			MOUSE_BUTTON_LEFT:
 				possible_filenames.append("mouse_left.png")
@@ -98,20 +94,24 @@ func get_event_icon(event: InputEvent) -> Texture2D:
 
 		for full_path: String in candidate_paths:
 			if _icon_cache.has(full_path):
-				return _icon_cache[full_path] as Texture2D
+				var cached_val: Variant = _icon_cache[full_path]
+				if cached_val is Texture2D:
+					return cached_val
+				return null
 
 			if ResourceLoader.exists(full_path):
-				var tex: Texture2D = load(full_path) if load(full_path) is Texture2D else null
-				_icon_cache[full_path] = tex
-				return tex
+				var loaded_res: Resource = load(full_path)
+				if loaded_res is Texture2D:
+					var tex: Texture2D = loaded_res
+					_icon_cache[full_path] = tex
+					return tex
 
 	return null
 
 
 ## Formats a hardware input key into a clean string stripped of internal tags.
-## [param raw_text] Raw string representation from [method InputEvent.as_text].
-## [return] Sanitized, clean label text.
 func sanitize_key_name(raw_text: String) -> String:
+	print("InputHelper: Sanitizing raw key label string -> ", raw_text)
 	var clean: String = raw_text
 	clean = clean.replace(" (Physical)", "")
 	clean = clean.replace(" - Physical", "")

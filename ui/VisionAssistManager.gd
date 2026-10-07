@@ -224,40 +224,36 @@ func _apply_overlay_to_meshes(
 		return
 
 	if target_node is GeometryInstance3D:
-		var geom_node: GeometryInstance3D = (
-			target_node if target_node is GeometryInstance3D else null
-		)
+		var geom_node: GeometryInstance3D = target_node
 		if active_state:
 			var final_mat: ShaderMaterial = target_material
 			var base_tex: Texture2D = null
 			var needs_billboard: bool = false
 
 			if geom_node is Sprite3D:
-				var sprite: Sprite3D = geom_node if geom_node is Sprite3D else null
+				var sprite: Sprite3D = geom_node
 				base_tex = sprite.texture
 				needs_billboard = (sprite.billboard != BaseMaterial3D.BILLBOARD_DISABLED)
 			elif geom_node is MeshInstance3D:
-				var mesh_inst: MeshInstance3D = geom_node if geom_node is MeshInstance3D else null
+				var mesh_inst: MeshInstance3D = geom_node
 				if mesh_inst.mesh:
 					var active_mat: Material = mesh_inst.get_active_material(0)
-					if is_instance_valid(active_mat):
-						if "albedo_texture" in active_mat:
-							var tex_var: Variant = active_mat.get("albedo_texture")
-							if tex_var is Texture2D:
-								base_tex = tex_var as Texture2D
-						if "billboard_mode" in active_mat:
-							var bb_mode_var: Variant = active_mat.get("billboard_mode")
-							var bb_mode_int: int = int(bb_mode_var)
-							needs_billboard = (
-								bb_mode_int != int(BaseMaterial3D.BILLBOARD_DISABLED)
-							)
+					if active_mat is BaseMaterial3D:
+						var base_mat: BaseMaterial3D = active_mat
+						base_tex = base_mat.albedo_texture
+						needs_billboard = (
+							base_mat.billboard_mode != BaseMaterial3D.BILLBOARD_DISABLED
+						)
 
 			if is_instance_valid(base_tex) or needs_billboard:
-				var base_id: int = base_tex.get_instance_id() if is_instance_valid(base_tex) else 0
+				var base_id: int = 0
+				if is_instance_valid(base_tex):
+					base_id = base_tex.get_instance_id()
 				var var_key: String = "%d_%s" % [base_id, str(needs_billboard)]
 				var cached_var: Variant = MaterialCache.get_variant(target_material, var_key)
 				if cached_var is ShaderMaterial:
-					final_mat = cached_var as ShaderMaterial
+					var cached_mat: ShaderMaterial = cached_var
+					final_mat = cached_mat
 				if is_instance_valid(base_tex):
 					final_mat.set_shader_parameter("base_texture", base_tex)
 				final_mat.set_shader_parameter("enable_billboard", needs_billboard)

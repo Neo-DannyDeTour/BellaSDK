@@ -265,13 +265,13 @@ func _connect_outline_controls() -> void:
 func load_settings() -> void:
 	print("UI: Loading Visuals settings.")
 	if is_instance_valid(colorblind_option):
-		colorblind_option.selected = int(
-			GlobalSettings.get_setting("Settings", "colorblind_mode", DEFAULT_COLORBLIND_MODE)
+		colorblind_option.selected = GlobalSettings.get_setting_int(
+			"Settings", "colorblind_mode", DEFAULT_COLORBLIND_MODE
 		)
 
 	if is_instance_valid(screen_filter_option):
-		screen_filter_option.selected = int(
-			GlobalSettings.get_setting("Settings", "screen_filter", DEFAULT_SCREEN_FILTER)
+		screen_filter_option.selected = GlobalSettings.get_setting_int(
+			"Settings", "screen_filter", DEFAULT_SCREEN_FILTER
 		)
 
 	_load_slider(brightness_slider, brightness_input, "brightness", DEFAULT_BRIGHTNESS)
@@ -284,19 +284,15 @@ func load_settings() -> void:
 
 	if is_instance_valid(photosensitivity_toggle):
 		photosensitivity_toggle.set_pressed_no_signal(
-			bool(
-				GlobalSettings.get_setting(
-					"Accessibility", "photosensitivity", DEFAULT_PHOTOSENSITIVITY
-				)
+			GlobalSettings.get_setting_bool(
+				"Accessibility", "photosensitivity", DEFAULT_PHOTOSENSITIVITY
 			)
 		)
 
 	if is_instance_valid(high_contrast_toggle):
 		high_contrast_toggle.set_pressed_no_signal(
-			bool(
-				GlobalSettings.get_setting(
-					"Accessibility", "high_contrast_ui", DEFAULT_HIGH_CONTRAST
-				)
+			GlobalSettings.get_setting_bool(
+				"Accessibility", "high_contrast_ui", DEFAULT_HIGH_CONTRAST
 			)
 		)
 
@@ -306,16 +302,14 @@ func load_settings() -> void:
 ## Loads outline highlight preferences into UI silently.
 func _load_outline_settings() -> void:
 	print("UI: Loading Outline Highlight settings.")
-	var outline_mode: int = int(
-		GlobalSettings.get_setting("Accessibility", "outline_mode", DEFAULT_OUTLINE_MODE)
+	var outline_mode: int = GlobalSettings.get_setting_int(
+		"Accessibility", "outline_mode", DEFAULT_OUTLINE_MODE
 	)
 	_update_outline_buttons_ui(outline_mode)
 
 	if is_instance_valid(outline_color_option):
-		var col_idx: int = int(
-			GlobalSettings.get_setting(
-				"Accessibility", "outline_color_index", DEFAULT_OUTLINE_COLOR_INDEX
-			)
+		var col_idx: int = GlobalSettings.get_setting_int(
+			"Accessibility", "outline_color_index", DEFAULT_OUTLINE_COLOR_INDEX
 		)
 		outline_color_option.selected = col_idx
 
@@ -344,8 +338,8 @@ func _load_outline_settings() -> void:
 
 ## Handles selection of an outline highlight mode by index.
 func _on_outline_mode_selected(mode: int) -> void:
-	var current: int = int(
-		GlobalSettings.get_setting("Accessibility", "outline_mode", DEFAULT_OUTLINE_MODE)
+	var current: int = GlobalSettings.get_setting_int(
+		"Accessibility", "outline_mode", DEFAULT_OUTLINE_MODE
 	)
 	if current == mode:
 		return
@@ -377,10 +371,8 @@ func _apply_outline_mode(mode: int) -> void:
 
 ## Handles outline color selection from dropdown menu.
 func _on_outline_color_selected(index: int) -> void:
-	var current: int = int(
-		GlobalSettings.get_setting(
-			"Accessibility", "outline_color_index", DEFAULT_OUTLINE_COLOR_INDEX
-		)
+	var current: int = GlobalSettings.get_setting_int(
+		"Accessibility", "outline_color_index", DEFAULT_OUTLINE_COLOR_INDEX
 	)
 	if current == index:
 		return
@@ -471,7 +463,7 @@ func _connect_slider(
 func _commit_visual_slider_val(
 	key: String, val: float, section: String, custom_cb: Callable
 ) -> void:
-	var current: float = float(GlobalSettings.get_setting(section, key, -999.0))
+	var current: float = GlobalSettings.get_setting_float(section, key, -999.0)
 	if not is_equal_approx(current, val):
 		GlobalSettings.save_setting(section, key, val)
 		if custom_cb.is_valid():
@@ -518,7 +510,7 @@ func _load_slider_custom(
 	slider: HSlider, input_box: LineEdit, key: String, default_val: float, section: String
 ) -> void:
 	if is_instance_valid(slider):
-		var val: float = float(GlobalSettings.get_setting(section, key, default_val))
+		var val: float = GlobalSettings.get_setting_float(section, key, default_val)
 		slider.set_value_no_signal(val)
 		if is_instance_valid(input_box):
 			input_box.text = "%.2f" % val
@@ -526,8 +518,8 @@ func _load_slider_custom(
 
 ## Handles user selection of colorblind dropdown options.
 func _on_colorblind_selected(index: int) -> void:
-	var current: int = int(
-		GlobalSettings.get_setting("Settings", "colorblind_mode", DEFAULT_COLORBLIND_MODE)
+	var current: int = GlobalSettings.get_setting_int(
+		"Settings", "colorblind_mode", DEFAULT_COLORBLIND_MODE
 	)
 	if current == index:
 		return
@@ -548,8 +540,8 @@ func _apply_colorblind_settings() -> void:
 
 ## Handles screen filter dropdown selections.
 func _on_screen_filter_selected(index: int) -> void:
-	var current: int = int(
-		GlobalSettings.get_setting("Settings", "screen_filter", DEFAULT_SCREEN_FILTER)
+	var current: int = GlobalSettings.get_setting_int(
+		"Settings", "screen_filter", DEFAULT_SCREEN_FILTER
 	)
 	if current == index:
 		return
@@ -577,8 +569,8 @@ func _apply_film_grain(val: float) -> void:
 
 ## Handles photosensitivity safe mode toggling.
 func _on_photosensitivity_toggled(toggled_on: bool) -> void:
-	var current: bool = bool(
-		GlobalSettings.get_setting("Accessibility", "photosensitivity", DEFAULT_PHOTOSENSITIVITY)
+	var current: bool = GlobalSettings.get_setting_bool(
+		"Accessibility", "photosensitivity", DEFAULT_PHOTOSENSITIVITY
 	)
 	if current == toggled_on:
 		return
@@ -590,8 +582,8 @@ func _on_photosensitivity_toggled(toggled_on: bool) -> void:
 
 ## Handles high contrast mode toggling.
 func _on_high_contrast_toggled(toggled_on: bool) -> void:
-	var current: bool = bool(
-		GlobalSettings.get_setting("Accessibility", "high_contrast_ui", DEFAULT_HIGH_CONTRAST)
+	var current: bool = GlobalSettings.get_setting_bool(
+		"Accessibility", "high_contrast_ui", DEFAULT_HIGH_CONTRAST
 	)
 	if current == toggled_on:
 		return

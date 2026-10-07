@@ -235,7 +235,7 @@ func _connect_dof_slider() -> void:
 
 ## Persists DoF amount and enabled state if value changed.
 func _commit_dof_value(amt: float) -> void:
-	var current: float = float(GlobalSettings.get_setting("Settings", "dof_amount", -1.0))
+	var current: float = GlobalSettings.get_setting_float("Settings", "dof_amount", -1.0)
 	if not is_equal_approx(current, amt):
 		var is_active: bool = amt > 0.005
 		GlobalSettings.save_setting("Settings", "dof_amount", amt)
@@ -256,7 +256,7 @@ func _commit_dof_line() -> void:
 	dof_line.text = formatted
 	dof_line.set_meta("pre_focus_text", formatted)
 
-	var current: float = float(GlobalSettings.get_setting("Settings", "dof_amount", -1.0))
+	var current: float = GlobalSettings.get_setting_float("Settings", "dof_amount", -1.0)
 	dof_slider.set_value_no_signal(amt)
 
 	if not is_equal_approx(current, amt):
@@ -312,7 +312,7 @@ func _connect_slider(
 
 ## Persists effect slider value if modified from storage.
 func _commit_effect_slider_value(key: String, val: float) -> void:
-	var current: float = float(GlobalSettings.get_setting("Settings", key, -999.0))
+	var current: float = GlobalSettings.get_setting_float("Settings", key, -999.0)
 	if not is_equal_approx(current, val):
 		print("EffectsSection: Persisting ", key, " -> ", val)
 		GlobalSettings.save_setting("Settings", key, val)
@@ -335,7 +335,7 @@ func _commit_effect_line(
 	line.text = formatted
 	line.set_meta("pre_focus_text", formatted)
 
-	var current: float = float(GlobalSettings.get_setting("Settings", key, -999.0))
+	var current: float = GlobalSettings.get_setting_float("Settings", key, -999.0)
 	slider.set_value_no_signal(s_val)
 
 	if not is_equal_approx(current, s_val):
@@ -350,21 +350,21 @@ func load_settings() -> void:
 	var saved_tonemap: String = _load_effect_setting("tonemap_mode", VideoConfig.DEFAULT_TONEMAP)
 	_select_dropdown_text(tonemap_options, saved_tonemap)
 
-	var exp_val: float = float(
-		GlobalSettings.get_setting("Settings", "exposure", VideoConfig.DEFAULT_EXPOSURE)
+	var exp_val: float = GlobalSettings.get_setting_float(
+		"Settings", "exposure", VideoConfig.DEFAULT_EXPOSURE
 	)
 	exposure_slider.set_value_no_signal(exp_val)
 	exposure_line.text = "%.2f" % exp_val
 
-	var deband_val: bool = bool(GlobalSettings.get_setting("Settings", "debanding", true))
+	var deband_val: bool = GlobalSettings.get_setting_bool("Settings", "debanding", true)
 	debanding_checkbox.set_pressed_no_signal(deband_val)
 
-	var dof_amt: float = float(GlobalSettings.get_setting("Settings", "dof_amount", 0.15))
+	var dof_amt: float = GlobalSettings.get_setting_float("Settings", "dof_amount", 0.15)
 	dof_slider.set_value_no_signal(dof_amt)
 	dof_line.text = "%.2f" % dof_amt
 
-	var mb_val: float = float(
-		GlobalSettings.get_setting("Settings", "motion_blur", VideoConfig.DEFAULT_MOTION_BLUR)
+	var mb_val: float = GlobalSettings.get_setting_float(
+		"Settings", "motion_blur", VideoConfig.DEFAULT_MOTION_BLUR
 	)
 	motion_blur_slider.set_value_no_signal(mb_val)
 	motion_blur_line.text = "%.2f" % mb_val
@@ -400,16 +400,30 @@ func _load_effect_setting(key: String, default_val: String) -> String:
 func apply_preset_dict(data: Dictionary) -> void:
 	print("EffectsSection: Applying environment preset flags.")
 	if data.has("dof_amount"):
-		var dof_a: float = float(data["dof_amount"])
+		var raw_dof: Variant = data["dof_amount"]
+		var dof_a: float = 0.0
+		if raw_dof is float:
+			dof_a = raw_dof
+		elif raw_dof is int:
+			var int_dof: int = raw_dof
+			dof_a = float(int_dof)
 		dof_slider.set_value_no_signal(dof_a)
 		dof_line.text = "%.2f" % dof_a
 	elif data.has("dof_enabled"):
-		var fallback_amt: float = 0.15 if bool(data["dof_enabled"]) else 0.0
+		var raw_enabled: Variant = data["dof_enabled"]
+		var is_dof_on: bool = raw_enabled == true
+		var fallback_amt: float = 0.15 if is_dof_on else 0.0
 		dof_slider.set_value_no_signal(fallback_amt)
 		dof_line.text = "%.2f" % fallback_amt
 
 	if data.has("motion_blur"):
-		var mb_v: float = float(data["motion_blur"])
+		var raw_mb: Variant = data["motion_blur"]
+		var mb_v: float = 0.0
+		if raw_mb is float:
+			mb_v = raw_mb
+		elif raw_mb is int:
+			var int_mb: int = raw_mb
+			mb_v = float(int_mb)
 		motion_blur_slider.set_value_no_signal(mb_v)
 		motion_blur_line.text = "%.2f" % mb_v
 
@@ -448,7 +462,7 @@ func _on_tonemap_selected(index: int) -> void:
 ## Handles color debanding toggles.
 func _on_debanding_toggled(toggled_on: bool) -> void:
 	print("EffectsSection: Debanding toggled: ", toggled_on)
-	var current: bool = bool(GlobalSettings.get_setting("Settings", "debanding", not toggled_on))
+	var current: bool = GlobalSettings.get_setting_bool("Settings", "debanding", not toggled_on)
 	if current != toggled_on:
 		GlobalSettings.save_setting("Settings", "debanding", toggled_on)
 		effects_settings_changed.emit()

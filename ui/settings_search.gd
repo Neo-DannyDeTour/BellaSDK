@@ -236,7 +236,11 @@ func _register_inspected_row(
 	if title.is_empty():
 		return
 
+	print("Registering inspected row: ", title)
+
 	if p_btn != null:
+		var action_val: Variant = p_btn.get_meta("action", "")
+		var action_str: String = str(action_val)
 		_append_search_entry(
 			{
 				"title": title,
@@ -244,16 +248,17 @@ func _register_inspected_row(
 				"tab_name": tab_name,
 				"type": "action",
 				"target": p_btn,
-				"action": p_btn.get_meta("action", "") as String,
+				"action": action_str,
 				"primary_btn": p_btn,
 				"secondary_btn": s_btn,
 				"clear_btn": c_btn
 			}
 		)
 	elif slider != null:
-		var target_node: Control = (
-			line_edit if line_edit is Control else null if line_edit != null else slider as Control
-		)
+		var target_node: Control = slider
+		if line_edit != null:
+			target_node = line_edit
+
 		_append_search_entry(
 			{
 				"title": title,

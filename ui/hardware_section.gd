@@ -119,13 +119,12 @@ func _connect_signals() -> void:
 ## Synchronizes renderer and GPU selections with stored settings.
 func load_settings() -> void:
 	print("HardwareSection: Loading hardware settings from configuration.")
-	var cur_renderer: String = (
-		GlobalSettings.get_setting("Settings", "renderer", "forward_plus") as String
-	)
+	var raw_renderer: Variant = GlobalSettings.get_setting("Settings", "renderer", "forward_plus")
+	var cur_renderer: String = raw_renderer if raw_renderer is String else "forward_plus"
 	for key: String in _renderer_btn_map.keys():
 		_renderer_btn_map[key].button_pressed = (key == cur_renderer)
 
-	var saved_gpu: int = GlobalSettings.get_setting("Settings", "gpu_adapter_index", 0)
+	var saved_gpu: int = GlobalSettings.get_setting_int("Settings", "gpu_adapter_index", 0)
 	if saved_gpu < gpu_options.get_item_count():
 		gpu_options.select(saved_gpu)
 
@@ -140,8 +139,9 @@ func set_benchmark_state(is_running: bool) -> void:
 ## Handles GPU adapter selection and dispatches restart confirmation.
 func _on_gpu_selected(index: int) -> void:
 	var label: String = gpu_options.get_item_text(index)
-	var gpu_idx: int = _available_gpus.get(label, 0)
-	var current_gpu: int = GlobalSettings.get_setting("Settings", "gpu_adapter_index", 0)
+	var raw_gpu_val: Variant = _available_gpus.get(label, 0)
+	var gpu_idx: int = raw_gpu_val if raw_gpu_val is int else 0
+	var current_gpu: int = GlobalSettings.get_setting_int("Settings", "gpu_adapter_index", 0)
 	if current_gpu == gpu_idx:
 		return
 
@@ -157,9 +157,8 @@ func _on_gpu_selected(index: int) -> void:
 ## Handles renderer toggle and dispatches restart confirmation signal.
 func _on_renderer_pressed(rend_key: String, label: String) -> void:
 	print("HardwareSection: Selected rendering engine: ", rend_key)
-	var current_rend: String = (
-		GlobalSettings.get_setting("Settings", "renderer", "forward_plus") as String
-	)
+	var raw_rend: Variant = GlobalSettings.get_setting("Settings", "renderer", "forward_plus")
+	var current_rend: String = raw_rend if raw_rend is String else "forward_plus"
 	if current_rend == rend_key:
 		return
 

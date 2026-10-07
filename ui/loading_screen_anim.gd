@@ -339,20 +339,18 @@ func _finalize_scene_transition() -> void:
 		if player_node.has_method(&"activate_gameplay_camera"):
 			player_node.call(&"activate_gameplay_camera")
 
-	# 1. Synchronize render pipeline, shadow atlas, and AA first
 	print("LoadingScreen: Synchronizing viewport pipeline prior to GI activation.")
 	await _reapply_active_video_settings()
 
-	# 2. Settle camera transform
 	for frame_idx: int in range(SETTLING_FRAMES):
 		await get_tree().process_frame
 
-	# 3. Activate SDFGI
-	var sdfgi_setting: String = (
-		GlobalSettings.get_setting("Settings", "sdfgi", VideoConfig.DEFAULT_SDFGI) as String
+	var sdfgi_setting: String = _get_setting_string(
+		"Settings", "sdfgi", str(VideoConfig.DEFAULT_SDFGI)
 	)
-	var sdfgi_dict: Dictionary = VideoConfig.SDFGI_MODES.get(sdfgi_setting, {})
-	var should_enable_sdfgi: bool = sdfgi_dict.get("enabled", false)
+	var sdfgi_dict: Dictionary = _get_config_dict(VideoConfig.SDFGI_MODES, sdfgi_setting)
+	var should_enable_raw: Variant = sdfgi_dict.get("enabled", false)
+	var should_enable_sdfgi: bool = should_enable_raw == true
 
 	if is_instance_valid(target_env) and should_enable_sdfgi:
 		target_env.sdfgi_enabled = true
@@ -360,7 +358,6 @@ func _finalize_scene_transition() -> void:
 		await get_tree().process_frame
 		await get_tree().process_frame
 
-	# 4. 360-Degree Frustum Warmup (Forces Vulkan PSO compilation behind the black screen)
 	var cam_controller: CameraController = _get_camera_controller(player_node)
 	if is_instance_valid(player_node) and is_instance_valid(cam_controller):
 		print("LoadingScreen: Performing 360-degree frustum sweep to cache pipeline states.")
@@ -371,7 +368,6 @@ func _finalize_scene_transition() -> void:
 		player_node.rotation.y = original_rot
 		await get_tree().process_frame
 
-	# 5. Fade out transition
 	var fade_tween: Tween = create_tween()
 	fade_tween.tween_property(visual_root, "modulate:a", 0.0, 0.25)
 	await fade_tween.finished
@@ -384,77 +380,87 @@ func _finalize_scene_transition() -> void:
 	queue_free()
 
 
-## Applies saved video settings from GlobalSettings to the new scene tree.
+## Applies saved video settings from [GlobalSettings] to the new scene tree.
 func _reapply_active_video_settings() -> void:
 	print("LoadingScreen: Re-applying active user video settings to new scene.")
-	var shadow_key: String = (
-		GlobalSettings.get_setting("Settings", "shadow_quality", "High (Smooth)") as String
+	var shadow_key: String = _get_setting_string("Settings", "shadow_quality", "High (Smooth)")
+	var shadow_data: Dictionary = _get_config_dict(VideoConfig.SHADOW_QUALITIES, shadow_key)
+	var fsr_key: String = _get_setting_string(
+		"Settings", "fsr_mode", str(VideoConfig.DEFAULT_FSR_MODE)
 	)
-	var shadow_data: Dictionary = VideoConfig.SHADOW_QUALITIES.get(shadow_key, {})
-	var fsr_key: String = (
-		GlobalSettings.get_setting("Settings", "fsr_mode", VideoConfig.DEFAULT_FSR_MODE) as String
+	var aa_key: String = _get_setting_string(
+		"Settings", "aa_mode", str(VideoConfig.DEFAULT_AA_MODE)
 	)
-	var aa_key: String = (
-		GlobalSettings.get_setting("Settings", "aa_mode", VideoConfig.DEFAULT_AA_MODE) as String
+	var vrs_key: String = _get_setting_string(
+		"Settings", "vrs_mode", str(VideoConfig.DEFAULT_VRS_MODE)
 	)
-	var vrs_key: String = (
-		GlobalSettings.get_setting("Settings", "vrs_mode", VideoConfig.DEFAULT_VRS_MODE) as String
+	var tex_filter: String = _get_setting_string(
+		"Settings", "texture_filter", str(VideoConfig.DEFAULT_TEXTURE_FILTER)
 	)
-	var tex_filter: String = (
-		GlobalSettings.get_setting("Settings", "texture_filter", VideoConfig.DEFAULT_TEXTURE_FILTER)
-		as String
+	var ssao_key: String = _get_setting_string("Settings", "ssao", str(VideoConfig.DEFAULT_SSAO))
+	var ssi_key: String = _get_setting_string("Settings", "ssi", str(VideoConfig.DEFAULT_SSI))
+	var ssr_key: String = _get_setting_string("Settings", "ssr", str(VideoConfig.DEFAULT_SSR))
+	var fog_key: String = _get_setting_string(
+		"Settings", "volumetric_fog", str(VideoConfig.DEFAULT_FOG)
 	)
-	var ssao_key: String = (
-		GlobalSettings.get_setting("Settings", "ssao", VideoConfig.DEFAULT_SSAO) as String
-	)
-	var ssi_key: String = (
-		GlobalSettings.get_setting("Settings", "ssi", VideoConfig.DEFAULT_SSI) as String
-	)
-	var ssr_key: String = (
-		GlobalSettings.get_setting("Settings", "ssr", VideoConfig.DEFAULT_SSR) as String
-	)
-	var fog_key: String = (
-		GlobalSettings.get_setting("Settings", "volumetric_fog", VideoConfig.DEFAULT_FOG) as String
-	)
-	var glow_key: String = (
-		GlobalSettings.get_setting("Settings", "glow", VideoConfig.DEFAULT_GLOW) as String
-	)
+	var glow_key: String = _get_setting_string("Settings", "glow", str(VideoConfig.DEFAULT_GLOW))
+
+	var raw_fsr: Variant = VideoConfig.FSR_MODES.get(fsr_key, 1.0)
+	var fsr_scale: float = raw_fsr if raw_fsr is float else 1.0
+
+	var raw_atlas: Variant = shadow_data.get("atlas_size", 4096)
+	var shadow_atlas: int = raw_atlas if raw_atlas is int else 4096
+
+	var shadow_filter_str: String = _get_setting_string("Settings", "shadow_filter", "Soft Medium")
+	var tonemap_str: String = _get_setting_string("Settings", "tonemap_mode", "Filmic")
 
 	var config: Dictionary = {
-		"fsr_scale": VideoConfig.FSR_MODES.get(fsr_key, 1.0) as float,
-		"aa_settings": VideoConfig.AA_MODES.get(aa_key, {}) as Dictionary,
-		"shadow_atlas": shadow_data.get("atlas_size", 4096) as int,
+		"fsr_scale": fsr_scale,
+		"aa_settings": _get_config_dict(VideoConfig.AA_MODES, aa_key),
+		"shadow_atlas": shadow_atlas,
 		"dynamic_light_shadows":
-		bool(GlobalSettings.get_setting("Settings", "dynamic_light_shadows", true)),
-		"shadow_filter":
-		GlobalSettings.get_setting("Settings", "shadow_filter", "Soft Medium") as String,
+		GlobalSettings.get_setting_bool("Settings", "dynamic_light_shadows", true),
+		"shadow_filter": shadow_filter_str,
 		"positional_shadow_distance":
-		float(GlobalSettings.get_setting("Settings", "positional_shadow_distance", 32.0)),
+		GlobalSettings.get_setting_float("Settings", "positional_shadow_distance", 32.0),
 		"directional_shadow_distance":
-		float(GlobalSettings.get_setting("Settings", "directional_shadow_distance", 64.0)),
-		"occlusion_culling":
-		bool(GlobalSettings.get_setting("Settings", "occlusion_culling", true)),
+		GlobalSettings.get_setting_float("Settings", "directional_shadow_distance", 64.0),
+		"occlusion_culling": GlobalSettings.get_setting_bool("Settings", "occlusion_culling", true),
 		"vrs_mode": VideoConfig.VRS_MODES.get(vrs_key, Viewport.VRS_DISABLED),
 		"texture_filter": VideoConfig.TEXTURE_FILTER_MODES.get(tex_filter, 2),
-		"resolution_scale": float(GlobalSettings.get_setting("Settings", "resolution_scale", 1.0)),
-		"exposure": float(GlobalSettings.get_setting("Settings", "exposure", 1.0)),
-		"motion_blur": float(GlobalSettings.get_setting("Settings", "motion_blur", 0.0)),
-		"mesh_lod": float(GlobalSettings.get_setting("Settings", "mesh_lod_threshold", 1.0)),
-		"debanding": bool(GlobalSettings.get_setting("Settings", "debanding", true)),
-		"tonemap_key": GlobalSettings.get_setting("Settings", "tonemap_mode", "Filmic") as String,
-		"dof_amount": float(GlobalSettings.get_setting("Settings", "dof_amount", 0.0)),
-		"dof_enabled": bool(GlobalSettings.get_setting("Settings", "dof_enabled", false)),
-		"ssao": VideoConfig.SSAO_MODES.get(ssao_key, {}) as Dictionary,
-		"ssi": VideoConfig.SSI_MODES.get(ssi_key, {}) as Dictionary,
-		"ssr": VideoConfig.SSR_MODES.get(ssr_key, {}) as Dictionary,
+		"resolution_scale": GlobalSettings.get_setting_float("Settings", "resolution_scale", 1.0),
+		"exposure": GlobalSettings.get_setting_float("Settings", "exposure", 1.0),
+		"motion_blur": GlobalSettings.get_setting_float("Settings", "motion_blur", 0.0),
+		"mesh_lod": GlobalSettings.get_setting_float("Settings", "mesh_lod_threshold", 1.0),
+		"debanding": GlobalSettings.get_setting_bool("Settings", "debanding", true),
+		"tonemap_key": tonemap_str,
+		"dof_amount": GlobalSettings.get_setting_float("Settings", "dof_amount", 0.0),
+		"dof_enabled": GlobalSettings.get_setting_bool("Settings", "dof_enabled", false),
+		"ssao": _get_config_dict(VideoConfig.SSAO_MODES, ssao_key),
+		"ssi": _get_config_dict(VideoConfig.SSI_MODES, ssi_key),
+		"ssr": _get_config_dict(VideoConfig.SSR_MODES, ssr_key),
 		"sdfgi": {"enabled": false},
-		"fog": VideoConfig.FOG_MODES.get(fog_key, {}) as Dictionary,
-		"glow": VideoConfig.GLOW_MODES.get(glow_key, {}) as Dictionary,
+		"fog": _get_config_dict(VideoConfig.FOG_MODES, fog_key),
+		"glow": _get_config_dict(VideoConfig.GLOW_MODES, glow_key),
 	}
 	await VideoApplier.apply_viewport_pipeline(get_tree(), get_viewport(), config)
 
 
-## Locates [WorldEnvironment] safely even if [param target] is not yet inside the tree.
+## Safely extracts a string setting from persistent [GlobalSettings].
+func _get_setting_string(category: String, key: String, default_value: String) -> String:
+	var raw: Variant = GlobalSettings.get_setting(category, key, default_value)
+	var result: String = raw if raw is String else default_value
+	return result
+
+
+## Safely extracts a [Dictionary] configuration block by key.
+func _get_config_dict(source: Dictionary, key: String) -> Dictionary:
+	var raw: Variant = source.get(key, {})
+	var result: Dictionary = raw if raw is Dictionary else {}
+	return result
+
+
+## Locates [WorldEnvironment] safely even if [param target] is outside tree.
 func _find_world_environment(target: Node) -> WorldEnvironment:
 	print("LoadingScreen: Locating WorldEnvironment in scene hierarchy.")
 	if target is WorldEnvironment:
@@ -489,7 +495,9 @@ func _snap_player_to_floor(player: CharacterBody3D) -> void:
 	query.exclude = [player.get_rid()]
 	var hit: Dictionary = space_state.intersect_ray(query)
 	if not hit.is_empty():
-		player.global_position = (hit.position as Vector3) + Vector3(0.0, 0.05, 0.0)
+		var raw_pos: Variant = hit.get("position", player.global_position)
+		var hit_pos: Vector3 = raw_pos if raw_pos is Vector3 else player.global_position
+		player.global_position = hit_pos + Vector3(0.0, 0.05, 0.0)
 		print("LoadingScreen: Player aligned to floor at: ", player.global_position)
 
 
@@ -499,7 +507,8 @@ func _get_player_locomotion(p_player: Node) -> PlayerLocomotionComponent:
 		return null
 	var raw: Variant = p_player.get(&"locomotion_component")
 	if raw is PlayerLocomotionComponent and is_instance_valid(raw):
-		return raw as PlayerLocomotionComponent
+		var locomotion: PlayerLocomotionComponent = raw
+		return locomotion
 	return null
 
 
@@ -509,5 +518,6 @@ func _get_camera_controller(p_player: Node) -> CameraController:
 		return null
 	var raw: Variant = p_player.get(&"camera_controller")
 	if raw is CameraController and is_instance_valid(raw):
-		return raw as CameraController
+		var controller: CameraController = raw
+		return controller
 	return null

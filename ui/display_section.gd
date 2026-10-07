@@ -101,24 +101,24 @@ func _connect_signals() -> void:
 ## Loads display settings from storage and updates UI widgets.
 func load_settings() -> void:
 	print("DisplaySection: Loading display settings from disk.")
-	var saved_display: int = (
-		GlobalSettings.get_setting("Settings", "display_mode", VideoConfig.DEFAULT_DISPLAY) as int
+	var saved_display: int = GlobalSettings.get_setting_int(
+		"Settings", "display_mode", VideoConfig.DEFAULT_DISPLAY
 	)
 	_update_display_mode_ui(saved_display)
 
-	var saved_vsync: int = (
-		GlobalSettings.get_setting("Settings", "vsync_mode", VideoConfig.DEFAULT_VSYNC) as int
+	var saved_vsync: int = GlobalSettings.get_setting_int(
+		"Settings", "vsync_mode", VideoConfig.DEFAULT_VSYNC
 	)
 	_update_vsync_ui(saved_vsync)
 
 	_sync_dropdown(fps_options, VideoConfig.FPS_LIMITS, "fps_limit", VideoConfig.DEFAULT_FPS)
 
-	var saved_screen: int = GlobalSettings.get_setting("Settings", "screen_index", 0)
+	var saved_screen: int = GlobalSettings.get_setting_int("Settings", "screen_index", 0)
 	if saved_screen < monitor_options.get_item_count():
 		monitor_options.select(saved_screen)
 
-	var res_x: int = GlobalSettings.get_setting("Settings", "resolution_x", 1920)
-	var res_y: int = GlobalSettings.get_setting("Settings", "resolution_y", 1080)
+	var res_x: int = GlobalSettings.get_setting_int("Settings", "resolution_x", 1920)
+	var res_y: int = GlobalSettings.get_setting_int("Settings", "resolution_y", 1080)
 	_select_dropdown_text(resolution_options, str(res_x) + " x " + str(res_y))
 
 
@@ -152,8 +152,8 @@ func _update_vsync_ui(active_mode: int) -> void:
 ## Handles window mode button selection.
 func _on_display_mode_pressed(mode: int) -> void:
 	print("DisplaySection: Display mode selected: ", mode)
-	var current_mode: int = (
-		GlobalSettings.get_setting("Settings", "display_mode", VideoConfig.DEFAULT_DISPLAY) as int
+	var current_mode: int = GlobalSettings.get_setting_int(
+		"Settings", "display_mode", VideoConfig.DEFAULT_DISPLAY
 	)
 	_update_display_mode_ui(mode)
 	if current_mode != mode:
@@ -164,8 +164,8 @@ func _on_display_mode_pressed(mode: int) -> void:
 ## Handles VSync mode button selection.
 func _on_vsync_mode_pressed(mode: int) -> void:
 	print("DisplaySection: VSync mode selected: ", mode)
-	var current_mode: int = (
-		GlobalSettings.get_setting("Settings", "vsync_mode", VideoConfig.DEFAULT_VSYNC) as int
+	var current_mode: int = GlobalSettings.get_setting_int(
+		"Settings", "vsync_mode", VideoConfig.DEFAULT_VSYNC
 	)
 	_update_vsync_ui(mode)
 	if current_mode != mode:
@@ -177,8 +177,8 @@ func _on_vsync_mode_pressed(mode: int) -> void:
 func _fill_dropdown(dropdown: OptionButton, data_dict: Dictionary) -> void:
 	print("DisplaySection: Populating dropdown entries.")
 	dropdown.clear()
-	for key: String in data_dict.keys():
-		dropdown.add_item(key)
+	for key: Variant in data_dict.keys():
+		dropdown.add_item(str(key))
 
 
 ## Selects an [OptionButton] item matching target label text.
@@ -211,7 +211,7 @@ func _sync_dropdown(
 ## Handles target monitor changes and notifies listeners if modified.
 func _on_monitor_selected(index: int) -> void:
 	print("DisplaySection: Monitor selected: ", index)
-	var current_screen: int = GlobalSettings.get_setting("Settings", "screen_index", 0)
+	var current_screen: int = GlobalSettings.get_setting_int("Settings", "screen_index", 0)
 	if current_screen != index:
 		GlobalSettings.save_setting("Settings", "screen_index", index)
 		display_settings_changed.emit()
@@ -221,11 +221,15 @@ func _on_monitor_selected(index: int) -> void:
 func _on_resolution_selected(index: int) -> void:
 	print("DisplaySection: Resolution selected: ", index)
 	var text: String = resolution_options.get_item_text(index)
-	var res: Vector2i = (
-		VideoConfig.RESOLUTIONS[text] if VideoConfig.RESOLUTIONS[text] is Vector2i else null
-	)
-	var cur_x: int = GlobalSettings.get_setting("Settings", "resolution_x", 1920)
-	var cur_y: int = GlobalSettings.get_setting("Settings", "resolution_y", 1080)
+	var res_default: Vector2i = Vector2i(1920, 1080)
+	var res: Vector2i = res_default
+	if VideoConfig.RESOLUTIONS.has(text):
+		var raw_res: Variant = VideoConfig.RESOLUTIONS[text]
+		if raw_res is Vector2i:
+			res = raw_res
+
+	var cur_x: int = GlobalSettings.get_setting_int("Settings", "resolution_x", 1920)
+	var cur_y: int = GlobalSettings.get_setting_int("Settings", "resolution_y", 1080)
 
 	if cur_x != res.x or cur_y != res.y:
 		GlobalSettings.save_settings_bulk(
@@ -238,9 +242,14 @@ func _on_resolution_selected(index: int) -> void:
 func _on_fps_selected(index: int) -> void:
 	print("DisplaySection: FPS limit selected: ", index)
 	var text: String = fps_options.get_item_text(index)
-	var limit: int = VideoConfig.FPS_LIMITS[text]
-	var current_limit: int = (
-		GlobalSettings.get_setting("Settings", "fps_limit", VideoConfig.DEFAULT_FPS) as int
+	var limit: int = VideoConfig.DEFAULT_FPS
+	if VideoConfig.FPS_LIMITS.has(text):
+		var raw_limit: Variant = VideoConfig.FPS_LIMITS[text]
+		if raw_limit is int:
+			limit = raw_limit
+
+	var current_limit: int = GlobalSettings.get_setting_int(
+		"Settings", "fps_limit", VideoConfig.DEFAULT_FPS
 	)
 	if current_limit != limit:
 		GlobalSettings.save_setting("Settings", "fps_limit", limit)

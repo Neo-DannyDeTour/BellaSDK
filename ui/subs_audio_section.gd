@@ -165,8 +165,8 @@ func _connect_signals() -> void:
 ## Reads subtitle and audio preferences from [GlobalSettings] silently.
 func load_settings() -> void:
 	print("UI: Loading Subtitles and Audio settings.")
-	var subs_enabled: bool = bool(
-		GlobalSettings.get_setting("Accessibility", "subtitles_enabled", DEFAULT_SUBTITLES_ENABLED)
+	var subs_enabled: bool = GlobalSettings.get_setting_bool(
+		"Accessibility", "subtitles_enabled", DEFAULT_SUBTITLES_ENABLED
 	)
 	if is_instance_valid(enable_subs_toggle):
 		enable_subs_toggle.set_pressed_no_signal(subs_enabled)
@@ -185,49 +185,44 @@ func load_settings() -> void:
 	)
 
 	if is_instance_valid(sub_text_color_option):
-		var color_idx: int = int(
-			GlobalSettings.get_setting(
-				"Accessibility", "subtitle_text_color", DEFAULT_SUB_COLOR_INDEX
-			)
+		var color_idx: int = GlobalSettings.get_setting_int(
+			"Accessibility", "subtitle_text_color", DEFAULT_SUB_COLOR_INDEX
 		)
 		sub_text_color_option.selected = color_idx
 
 	if is_instance_valid(sub_bg_color_option):
-		var bg_idx: int = int(
-			GlobalSettings.get_setting(
-				"Accessibility", "subtitle_bg_color", DEFAULT_SUB_BG_COLOR_INDEX
-			)
+		var bg_idx: int = GlobalSettings.get_setting_int(
+			"Accessibility", "subtitle_bg_color", DEFAULT_SUB_BG_COLOR_INDEX
 		)
 		sub_bg_color_option.selected = bg_idx
 
 	if is_instance_valid(sub_speaker_color_option):
-		var spk_idx: int = int(
-			GlobalSettings.get_setting(
-				"Accessibility", "subtitle_speaker_color", DEFAULT_SUB_SPEAKER_COLOR_INDEX
-			)
+		var spk_idx: int = GlobalSettings.get_setting_int(
+			"Accessibility", "subtitle_speaker_color", DEFAULT_SUB_SPEAKER_COLOR_INDEX
 		)
 		sub_speaker_color_option.selected = spk_idx
 
 	if is_instance_valid(sub_show_names_toggle):
-		var show_names: bool = bool(
-			GlobalSettings.get_setting(
-				"Accessibility", "subtitle_show_names", DEFAULT_SUB_SHOW_NAMES
-			)
+		var show_names: bool = GlobalSettings.get_setting_bool(
+			"Accessibility", "subtitle_show_names", DEFAULT_SUB_SHOW_NAMES
 		)
 		sub_show_names_toggle.set_pressed_no_signal(show_names)
 
 	if is_instance_valid(sub_colors_toggle):
-		sub_colors_toggle.set_pressed_no_signal(
-			bool(GlobalSettings.get_setting("Accessibility", "subtitle_colors", DEFAULT_SUB_COLORS))
+		var sub_colors: bool = GlobalSettings.get_setting_bool(
+			"Accessibility", "subtitle_colors", DEFAULT_SUB_COLORS
 		)
+		sub_colors_toggle.set_pressed_no_signal(sub_colors)
 	if is_instance_valid(tts_toggle):
-		tts_toggle.set_pressed_no_signal(
-			bool(GlobalSettings.get_setting("Accessibility", "tts_enabled", DEFAULT_TTS_ENABLED))
+		var tts_enabled: bool = GlobalSettings.get_setting_bool(
+			"Accessibility", "tts_enabled", DEFAULT_TTS_ENABLED
 		)
+		tts_toggle.set_pressed_no_signal(tts_enabled)
 	if is_instance_valid(mono_audio_toggle):
-		mono_audio_toggle.set_pressed_no_signal(
-			bool(GlobalSettings.get_setting("Audio", "mono_audio", DEFAULT_MONO_AUDIO))
+		var mono_audio: bool = GlobalSettings.get_setting_bool(
+			"Audio", "mono_audio", DEFAULT_MONO_AUDIO
 		)
+		mono_audio_toggle.set_pressed_no_signal(mono_audio)
 
 
 ## Connects companion slider and LineEdit pairs with throttled commit logic.
@@ -281,7 +276,7 @@ func _connect_slider(
 
 ## Commits subtitle slider value to settings and triggers callback if modified.
 func _commit_sub_slider_val(key: String, val: float, section: String, commit_cb: Callable) -> void:
-	var current: float = float(GlobalSettings.get_setting(section, key, -999.0))
+	var current: float = GlobalSettings.get_setting_float(section, key, -999.0)
 	if not is_equal_approx(current, val):
 		GlobalSettings.save_setting(section, key, val)
 		if commit_cb.is_valid():
@@ -326,7 +321,7 @@ func _load_slider(
 	is_int: bool = false
 ) -> void:
 	if is_instance_valid(slider):
-		var val: float = float(GlobalSettings.get_setting(section, key, default_val))
+		var val: float = GlobalSettings.get_setting_float(section, key, default_val)
 		slider.set_value_no_signal(val)
 		if is_instance_valid(input_box):
 			input_box.text = str(int(val)) if is_int else ("%.2f" % val)
@@ -345,8 +340,8 @@ func _request_preview_subtitle() -> void:
 
 ## Handles master subtitle enabling and broadcasts changes.
 func _on_enable_subs_toggled(toggled_on: bool) -> void:
-	var current: bool = bool(
-		GlobalSettings.get_setting("Accessibility", "subtitles_enabled", DEFAULT_SUBTITLES_ENABLED)
+	var current: bool = GlobalSettings.get_setting_bool(
+		"Accessibility", "subtitles_enabled", DEFAULT_SUBTITLES_ENABLED
 	)
 	if current == toggled_on:
 		return
@@ -366,7 +361,7 @@ func _apply_subtitles_enabled(enabled: bool) -> void:
 
 ## Handles font dropdown selection for subtitle typography.
 func _on_font_option_selected(index: int) -> void:
-	var current: int = int(GlobalSettings.get_setting("Settings", "font_mode", 0))
+	var current: int = GlobalSettings.get_setting_int("Settings", "font_mode", 0)
 	if current == index:
 		return
 
@@ -405,8 +400,8 @@ func _apply_subtitle_bg_opacity(opacity_val: float) -> void:
 
 ## Handles subtitle text color dropdown changes.
 func _on_sub_text_color_selected(index: int) -> void:
-	var current: int = int(
-		GlobalSettings.get_setting("Accessibility", "subtitle_text_color", DEFAULT_SUB_COLOR_INDEX)
+	var current: int = GlobalSettings.get_setting_int(
+		"Accessibility", "subtitle_text_color", DEFAULT_SUB_COLOR_INDEX
 	)
 	if current == index:
 		return
@@ -428,8 +423,8 @@ func _apply_subtitle_text_color(index: int) -> void:
 
 ## Handles subtitle background color dropdown changes.
 func _on_sub_bg_color_selected(index: int) -> void:
-	var current: int = int(
-		GlobalSettings.get_setting("Accessibility", "subtitle_bg_color", DEFAULT_SUB_BG_COLOR_INDEX)
+	var current: int = GlobalSettings.get_setting_int(
+		"Accessibility", "subtitle_bg_color", DEFAULT_SUB_BG_COLOR_INDEX
 	)
 	if current == index:
 		return
@@ -451,10 +446,8 @@ func _apply_subtitle_bg_color(index: int) -> void:
 
 ## Handles speaker name color dropdown changes.
 func _on_sub_speaker_color_selected(index: int) -> void:
-	var current: int = int(
-		GlobalSettings.get_setting(
-			"Accessibility", "subtitle_speaker_color", DEFAULT_SUB_SPEAKER_COLOR_INDEX
-		)
+	var current: int = GlobalSettings.get_setting_int(
+		"Accessibility", "subtitle_speaker_color", DEFAULT_SUB_SPEAKER_COLOR_INDEX
 	)
 	if current == index:
 		return
@@ -476,8 +469,8 @@ func _apply_subtitle_speaker_color(index: int) -> void:
 
 ## Handles toggling speaker names visibility in subtitles.
 func _on_sub_show_names_toggled(toggled_on: bool) -> void:
-	var current: bool = bool(
-		GlobalSettings.get_setting("Accessibility", "subtitle_show_names", DEFAULT_SUB_SHOW_NAMES)
+	var current: bool = GlobalSettings.get_setting_bool(
+		"Accessibility", "subtitle_show_names", DEFAULT_SUB_SHOW_NAMES
 	)
 	if current == toggled_on:
 		return
@@ -496,8 +489,8 @@ func _apply_subtitle_show_names(enabled: bool) -> void:
 
 ## Handles subtitle speaker color distinction toggling.
 func _on_sub_colors_toggled(toggled_on: bool) -> void:
-	var current: bool = bool(
-		GlobalSettings.get_setting("Accessibility", "subtitle_colors", DEFAULT_SUB_COLORS)
+	var current: bool = GlobalSettings.get_setting_bool(
+		"Accessibility", "subtitle_colors", DEFAULT_SUB_COLORS
 	)
 	if current == toggled_on:
 		return
@@ -509,8 +502,8 @@ func _on_sub_colors_toggled(toggled_on: bool) -> void:
 
 ## Handles Text-to-Speech narration toggling.
 func _on_tts_toggled(toggled_on: bool) -> void:
-	var current: bool = bool(
-		GlobalSettings.get_setting("Accessibility", "tts_enabled", DEFAULT_TTS_ENABLED)
+	var current: bool = GlobalSettings.get_setting_bool(
+		"Accessibility", "tts_enabled", DEFAULT_TTS_ENABLED
 	)
 	if current == toggled_on:
 		return
@@ -522,7 +515,7 @@ func _on_tts_toggled(toggled_on: bool) -> void:
 
 ## Handles mono audio mix toggling.
 func _on_mono_audio_toggled(toggled_on: bool) -> void:
-	var current: bool = bool(GlobalSettings.get_setting("Audio", "mono_audio", DEFAULT_MONO_AUDIO))
+	var current: bool = GlobalSettings.get_setting_bool("Audio", "mono_audio", DEFAULT_MONO_AUDIO)
 	if current == toggled_on:
 		return
 

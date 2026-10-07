@@ -113,8 +113,22 @@ func _ready() -> void:
 	is_ui_ready = true
 
 	for msg: Dictionary in message_history:
-		output_log.push_color(Color(msg["color"]))
-		output_log.add_text(msg["text"])
+		var raw_color: Variant = msg.get("color", Color.WHITE)
+		var text_color: Color = Color.WHITE
+		if raw_color is Color:
+			text_color = raw_color
+		elif raw_color is String:
+			var color_str: String = raw_color
+			text_color = Color(color_str)
+		elif raw_color is int:
+			var color_int: int = raw_color
+			text_color = Color(color_int)
+
+		var raw_text: Variant = msg.get("text", "")
+		var text_content: String = str(raw_text)
+
+		output_log.push_color(text_color)
+		output_log.add_text(text_content)
 		output_log.pop()
 		output_log.newline()
 

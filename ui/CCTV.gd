@@ -74,7 +74,7 @@ var active_cam_idx: int = 0
 var is_controlling: bool = false
 
 ## Reference to player body currently controlling the security feed.
-var current_player: CharacterBody3D = null
+var current_player: Player = null
 
 ## Interpolation target field of view angle in degrees.
 var target_fov: float = 75.0
@@ -338,8 +338,12 @@ func _update_tutorial_text() -> void:
 
 
 ## Binds player to CCTV controls and disables external volumetrics.
-func _on_interacted(player: CharacterBody3D) -> void:
+func _on_interacted(body: Node) -> void:
 	if is_controlling or _interaction_cooldown > 0.0:
+		return
+
+	var player: Player = body as Player
+	if not is_instance_valid(player):
 		return
 
 	print("CCTV: Player attached to terminal screen. Freezing outside systems.")
@@ -363,8 +367,8 @@ func _on_interacted(player: CharacterBody3D) -> void:
 			_stored_volumetric_state = world_env.environment.volumetric_fog_enabled
 			world_env.environment.volumetric_fog_enabled = false
 
-	if is_instance_valid(current_player) and current_player.get("system_menu"):
-		current_player.get("system_menu").is_stunned = true
+	if is_instance_valid(current_player.system_menu):
+		current_player.system_menu.is_stunned = true
 
 	if replace_player_camera:
 		_enable_fullscreen_mode()
@@ -392,13 +396,31 @@ func _stop_controlling() -> void:
 	if is_instance_valid(camera_vp):
 		camera_vp.render_target_update_mode = SubViewport.UPDATE_ONCE
 
-	if is_instance_valid(current_player) and current_player.get("system_menu"):
-		current_player.get("system_menu").is_stunned = false
+	if is_instance_valid(current_player):
+		if is_instance_valid(current_player.system_menu):
+			current_player.system_menu.is_stunned = false
 
-	if replace_player_camera:
-		_disable_fullscreen_mode()
+		if replace_player_camera:
+			_disable_fullscreen_mode()
 
 	current_player = null
+
+
+## Resolves and returns active player [Camera3D], or null if absent.
+func _get_player_camera() -> Camera3D:
+	print("_get_player_camera() resolving player camera instance.")
+	if not is_instance_valid(current_player):
+		return null
+
+	if not is_instance_valid(current_player.camera_controller):
+		return null
+
+	var raw_cam: Variant = current_player.camera_controller.get(&"camera")
+	if raw_cam is Camera3D and is_instance_valid(raw_cam):
+		var cam: Camera3D = raw_cam
+		return cam
+
+	return null
 
 
 ## Spawns fullscreen HUD overlay and hides main 3D player camera.
@@ -415,15 +437,11 @@ func _enable_fullscreen_mode() -> void:
 	_fullscreen_rect.set_anchors_preset(Control.PRESET_FULL_RECT)
 	_fullscreen_canvas.add_child(_fullscreen_rect)
 
-	if is_instance_valid(current_player) and current_player.get("camera_controller"):
-		var cam_controller: Variant = current_player.get("camera_controller")
-		if cam_controller is Object and is_instance_valid(cam_controller):
-			var raw_cam: Variant = (cam_controller as Object).get("camera")
-			if raw_cam is Camera3D and is_instance_valid(raw_cam):
-				print("CCTV: Disabling player camera cull mask.")
-				var p_cam: Camera3D = raw_cam if raw_cam is Camera3D else null
-				_stored_player_cull_mask = p_cam.cull_mask
-				p_cam.cull_mask = 0
+	var p_cam: Camera3D = _get_player_camera()
+	if is_instance_valid(p_cam):
+		print("CCTV: Disabling player camera cull mask.")
+		_stored_player_cull_mask = p_cam.cull_mask
+		p_cam.cull_mask = 0
 
 
 ## Frees fullscreen HUD overlay and restores main player camera cull mask.
@@ -434,14 +452,10 @@ func _disable_fullscreen_mode() -> void:
 		_fullscreen_canvas = null
 		_fullscreen_rect = null
 
-	if is_instance_valid(current_player) and current_player.get("camera_controller"):
-		var cam_controller: Variant = current_player.get("camera_controller")
-		if cam_controller is Object and is_instance_valid(cam_controller):
-			var raw_cam: Variant = (cam_controller as Object).get("camera")
-			if raw_cam is Camera3D and is_instance_valid(raw_cam):
-				print("CCTV: Restoring player camera cull mask.")
-				var p_cam: Camera3D = raw_cam if raw_cam is Camera3D else null
-				p_cam.cull_mask = _stored_player_cull_mask
+	var p_cam: Camera3D = _get_player_camera()
+	if is_instance_valid(p_cam):
+		print("CCTV: Restoring player camera cull mask.")
+		p_cam.cull_mask = _stored_player_cull_mask
 
 
 ## Snaps security camera to target index in [member camera_locations].

@@ -215,22 +215,19 @@ func _request_preview_subtitle() -> void:
 ## Restores subtitle states from [GlobalSettings].
 func _load_subtitle_mirrors() -> void:
 	if is_instance_valid(enable_subs_toggle):
-		var raw_en: Variant = GlobalSettings.get_setting("Accessibility", "subtitles_enabled", true)
-		var en: bool = bool(raw_en)
+		var en: bool = GlobalSettings.get_setting_bool("Accessibility", "subtitles_enabled", true)
 		enable_subs_toggle.set_pressed_no_signal(en)
 
 	if is_instance_valid(sub_size_slider):
-		var raw_size: Variant = GlobalSettings.get_setting("Accessibility", "subtitle_size", 24.0)
-		var s_val: float = float(raw_size)
+		var s_val: float = GlobalSettings.get_setting_float("Accessibility", "subtitle_size", 24.0)
 		sub_size_slider.set_value_no_signal(s_val)
 		if is_instance_valid(sub_size_input):
 			sub_size_input.text = str(int(s_val))
 
 	if is_instance_valid(sub_bg_opacity_slider):
-		var raw_op: Variant = GlobalSettings.get_setting(
+		var op: float = GlobalSettings.get_setting_float(
 			"Accessibility", "subtitle_bg_opacity", 50.0
 		)
-		var op: float = float(raw_op)
 		sub_bg_opacity_slider.set_value_no_signal(op)
 		if is_instance_valid(sub_bg_opacity_input):
 			sub_bg_opacity_input.text = str(int(op))
@@ -323,28 +320,24 @@ func _load_audio_settings() -> void:
 	_apply_and_set("Ambient", ambient_slider, ambient_input)
 
 	if is_instance_valid(mono_audio_toggle):
-		var raw_mono: Variant = GlobalSettings.get_setting("Accessibility", "mono_audio", false)
-		var is_mono: bool = bool(raw_mono)
+		var is_mono: bool = GlobalSettings.get_setting_bool("Accessibility", "mono_audio", false)
 		mono_audio_toggle.set_pressed_no_signal(is_mono)
 		_apply_mono_audio(is_mono)
 
 	if is_instance_valid(output_profile_option):
-		var raw_idx: Variant = GlobalSettings.get_setting("Audio", "output_profile", 0)
-		var p_idx: int = int(raw_idx)
+		var p_idx: int = GlobalSettings.get_setting_int("Audio", "output_profile", 0)
 		output_profile_option.selected = p_idx
 		_apply_output_profile(p_idx)
 
 	if is_instance_valid(mute_on_focus_toggle):
-		var raw_foc: Variant = GlobalSettings.get_setting("Audio", "mute_on_focus", true)
-		var m_foc: bool = bool(raw_foc)
+		var m_foc: bool = GlobalSettings.get_setting_bool("Audio", "mute_on_focus", true)
 		mute_on_focus_toggle.set_pressed_no_signal(m_foc)
 		_apply_mute_on_focus(m_foc)
 
 
 ## Retrieves stored bus level and updates controls.
 func _apply_and_set(bus_name: String, slider: HSlider, input_box: LineEdit) -> void:
-	var raw_vol: Variant = GlobalSettings.get_setting("Audio", bus_name, DEFAULT_VOLUME)
-	var vol: float = float(raw_vol)
+	var vol: float = GlobalSettings.get_setting_float("Audio", bus_name, DEFAULT_VOLUME)
 	if is_instance_valid(slider):
 		slider.value = vol
 	if is_instance_valid(input_box):
