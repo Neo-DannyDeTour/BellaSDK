@@ -17,15 +17,15 @@ func enter(msg: Dictionary = {}) -> void:
 	print("PushWheelState: enter() called. Setting up wheel interaction.")
 	_is_mounting = false
 
-	if msg.has(&"target_transform"):
+	if msg.has(&"target_transform") and msg[&"target_transform"] is Transform3D:
 		var t: Transform3D = msg[&"target_transform"]
 		_is_mounting = true
 		var tween: Tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 		tween.tween_property(player, ^"global_transform", t, 0.4)
 		tween.finished.connect(func() -> void: _is_mounting = false)
 
-	if msg.has(&"wheel"):
-		active_wheel = msg[&"wheel"] as PushWheel
+	if msg.has(&"wheel") and msg[&"wheel"] is PushWheel:
+		active_wheel = msg[&"wheel"]
 		print("PushWheelState: Entered. Attached to wheel.")
 
 		_exit_cooldown = 0.2
@@ -39,7 +39,7 @@ func enter(msg: Dictionary = {}) -> void:
 			loco_component.reset_momentum()
 			print("PushWheelState: Disabled LocomotionComponent.")
 	else:
-		push_error("PushWheelState: No wheel provided in enter message.")
+		push_error("PushWheelState: No valid PushWheel provided in enter message.")
 		state_machine.transition_to(&"Ground")
 
 

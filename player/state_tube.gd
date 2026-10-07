@@ -12,7 +12,8 @@ var _was_crouched_before: bool = false
 ## Locks player stance to crouched, disables locomotion, and caches stance.
 func enter(msg: Dictionary = {}) -> void:
 	print("StateTube: enter() called. Player entering tube state.")
-	active_tube = msg.get(&"tube") as Node3D
+	var raw_tube: Variant = msg.get(&"tube")
+	active_tube = raw_tube if raw_tube is Node3D else null
 	var pl: Player = player if player is Player else null
 
 	if is_instance_valid(pl) and is_instance_valid(pl.locomotion_component):

@@ -346,7 +346,8 @@ func enter_terminal_mode(terminal: Node3D) -> void:
 			if "mesh_instance_3d" in terminal:
 				var mesh_candidate: Variant = terminal.get("mesh_instance_3d")
 				if mesh_candidate is Node3D:
-					target_pos = (mesh_candidate as Node3D).global_position
+					var mesh_node: Node3D = mesh_candidate
+					target_pos = mesh_node.global_position
 			camera.look_at(target_pos, Vector3.UP)
 	else:
 		print("InteractionScanner: Keypad detected. Leaving player free to aim.")

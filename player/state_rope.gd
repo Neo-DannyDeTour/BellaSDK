@@ -25,7 +25,8 @@ func enter(msg: Dictionary = {}) -> void:
 		state_machine.transition_to(&"Air")
 		return
 
-	current_rope = msg[&"rope_node"] as RigidBody3D
+	var raw_rope: Variant = msg[&"rope_node"]
+	current_rope = raw_rope if raw_rope is RigidBody3D else null
 	if not is_instance_valid(current_rope):
 		state_machine.transition_to(&"Air")
 		return
@@ -33,11 +34,12 @@ func enter(msg: Dictionary = {}) -> void:
 	var rope_root: Node3D = (
 		current_rope.get_parent() if current_rope.get_parent() is Node3D else null
 	)
-	var can_swing: bool = (
+	var raw_swing: Variant = (
 		rope_root.get(&"is_swingable")
 		if rope_root != null and &"is_swingable" in rope_root
 		else false
 	)
+	var can_swing: bool = raw_swing == true
 
 	if can_swing:
 		var entry_momentum: Vector3 = Vector3(
@@ -56,9 +58,10 @@ func enter(msg: Dictionary = {}) -> void:
 	var local_top: float = (
 		current_rope.to_local(rope_root.global_position).y if is_instance_valid(rope_root) else 0.0
 	)
-	var max_length: float = (
+	var raw_len: Variant = (
 		rope_root.get(&"rope_length") if rope_root != null and &"rope_length" in rope_root else 10.0
 	)
+	var max_length: float = raw_len if raw_len is float else 10.0
 
 	var top_limit: float = local_top - 2.5
 	var bottom_limit: float = local_top - max_length + 0.5
@@ -371,8 +374,10 @@ func _get_camera_controller() -> Node:
 	if not is_instance_valid(player):
 		return null
 	var ctrl: Variant = player.get(&"camera_controller")
-	if ctrl is Node and is_instance_valid(ctrl as Node):
-		return ctrl as Node
+	if ctrl is Node:
+		var node_ctrl: Node = ctrl
+		if is_instance_valid(node_ctrl):
+			return node_ctrl
 	return null
 
 
@@ -381,8 +386,10 @@ func _get_camera() -> Camera3D:
 	var ctrl: Node = _get_camera_controller()
 	if is_instance_valid(ctrl):
 		var cam: Variant = ctrl.get(&"camera")
-		if cam is Camera3D and is_instance_valid(cam as Camera3D):
-			return cam as Camera3D
+		if cam is Camera3D:
+			var cam_node: Camera3D = cam
+			if is_instance_valid(cam_node):
+				return cam_node
 	return null
 
 
@@ -391,6 +398,8 @@ func _get_locomotion() -> Node:
 	if not is_instance_valid(player):
 		return null
 	var loc: Variant = player.get(&"locomotion_component")
-	if loc is Node and is_instance_valid(loc as Node):
-		return loc as Node
+	if loc is Node:
+		var node_loc: Node = loc
+		if is_instance_valid(node_loc):
+			return node_loc
 	return null

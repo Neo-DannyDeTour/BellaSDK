@@ -542,30 +542,41 @@ func load_save_data(data: Dictionary) -> void:
 
 	var loaded_pos: Vector3 = global_position
 	if data.has("pos_x"):
-		loaded_pos.x = float(data["pos_x"])
+		loaded_pos.x = _extract_float_from_dict(data, "pos_x", loaded_pos.x)
 	if data.has("pos_y"):
-		loaded_pos.y = float(data["pos_y"])
+		loaded_pos.y = _extract_float_from_dict(data, "pos_y", loaded_pos.y)
 	if data.has("pos_z"):
-		loaded_pos.z = float(data["pos_z"])
+		loaded_pos.z = _extract_float_from_dict(data, "pos_z", loaded_pos.z)
 
 	if is_instance_valid(locomotion_component):
 		locomotion_component.reset_momentum()
 
 	global_position = loaded_pos
 	if data.has("rot_y"):
-		global_rotation.y = float(data["rot_y"])
+		global_rotation.y = _extract_float_from_dict(data, "rot_y", global_rotation.y)
 
 	if is_instance_valid(camera_controller):
 		var pitch: float = camera_controller.global_rotation.x
 		var yaw: float = camera_controller.global_rotation.y
 		if data.has("head_rot_x"):
-			pitch = float(data["head_rot_x"])
+			pitch = _extract_float_from_dict(data, "head_rot_x", pitch)
 		if data.has("head_rot_y"):
-			yaw = float(data["head_rot_y"])
+			yaw = _extract_float_from_dict(data, "head_rot_y", yaw)
 		camera_controller.global_rotation = Vector3(pitch, yaw, 0.0)
 
 	if is_instance_valid(stats_component):
 		stats_component.load_save_data(data)
+
+
+## Extracts a float value from a [Dictionary] safely handling [Variant] types.
+func _extract_float_from_dict(source: Dictionary, key: String, default_val: float) -> float:
+	var raw_val: Variant = source.get(key, default_val)
+	if raw_val is float:
+		return raw_val
+	if raw_val is int:
+		var int_val: int = raw_val
+		return float(int_val)
+	return default_val
 
 
 ## Forwards rain entrance notification to [member environment_component].

@@ -78,13 +78,11 @@ var reduce_motion: bool = false
 func _ready() -> void:
 	print("CameraController: Initializing settings.")
 
-	mouse_sensitivity_base = float(
-		GlobalSettings.get_setting("Controls", "mouse_sensitivity", 0.05)
-	)
-	base_fov = float(GlobalSettings.get_setting("Settings", "base_fov", 75.0))
-	disable_sprint_fov = bool(GlobalSettings.get_setting("Settings", "disable_sprint_fov", false))
-	invert_y = bool(GlobalSettings.get_setting("Controls", "invert_y", false))
-	reduce_motion = bool(GlobalSettings.get_setting("Accessibility", "reduce_motion", false))
+	mouse_sensitivity_base = GlobalSettings.get_setting_float("Controls", "mouse_sensitivity", 0.05)
+	base_fov = GlobalSettings.get_setting_float("Settings", "base_fov", 75.0)
+	disable_sprint_fov = GlobalSettings.get_setting_bool("Settings", "disable_sprint_fov", false)
+	invert_y = GlobalSettings.get_setting_bool("Controls", "invert_y", false)
+	reduce_motion = GlobalSettings.get_setting_bool("Accessibility", "reduce_motion", false)
 
 	mouse_sensitivity = mouse_sensitivity_base
 	target_fov = base_fov

@@ -102,7 +102,7 @@ var _instruction_ui: CanvasLayer = null
 var _instruction_label: Label = null
 
 
-## Initializes pre-allocated visual quads and material caches to prevent heap leaks.
+## Pre-allocates inspection quads, materials, and HUD elements on load.
 func _ready() -> void:
 	print("NoteReader: Initializing zero-allocation inspection hierarchy.")
 	_setup_proxy_hierarchy()
@@ -110,13 +110,13 @@ func _ready() -> void:
 	_setup_instruction_ui()
 
 
-## Processes user input for toggling magnification, axis inversion, and rotation.
+## Handles keyboard, mouse motion, and button events during reading.
 func _input(event: InputEvent) -> void:
 	if not _is_reading or _current_note == null:
 		return
 
 	if event is InputEventKey:
-		var key_event: InputEventKey = event if event is InputEventKey else null
+		var key_event: InputEventKey = event
 		if key_event.physical_keycode == KEY_Z and key_event.pressed and not key_event.echo:
 			_is_glass_active = not _is_glass_active
 			if is_instance_valid(_zoomed_mesh_instance):
@@ -126,7 +126,7 @@ func _input(event: InputEvent) -> void:
 			return
 
 	if event is InputEventMouseButton:
-		var mouse_event: InputEventMouseButton = event if event is InputEventMouseButton else null
+		var mouse_event: InputEventMouseButton = event
 		if _is_glass_active and mouse_event.pressed:
 			if mouse_event.button_index == MOUSE_BUTTON_WHEEL_UP:
 				_adjust_3d_glass(1.0)
@@ -166,7 +166,7 @@ func _input(event: InputEvent) -> void:
 		print("NoteReader: Stopped mouse dragging inspection.")
 
 	if event is InputEventMouseMotion:
-		var motion_event: InputEventMouseMotion = event if event is InputEventMouseMotion else null
+		var motion_event: InputEventMouseMotion = event
 		if _is_inspecting:
 			var invert_mult: float = -1.0 if _is_inverted else 1.0
 			_target_rot.y -= motion_event.relative.x * mouse_rotation_speed * invert_mult
@@ -178,7 +178,7 @@ func _input(event: InputEvent) -> void:
 			_target_sway.x = clampf(_target_sway.x, -max_sway_angle, max_sway_angle)
 
 
-## Applies exponential damping to sway, rotation, and magnifying glass shader uniforms.
+## Damps sway, applies rotation input, and updates active shader uniforms.
 func _process(delta: float) -> void:
 	if not _is_reading or not is_instance_valid(_proxy_mesh_instance):
 		return
@@ -224,7 +224,7 @@ func _process(delta: float) -> void:
 		_update_magnifier_shader(mouse_pos, screen_size)
 
 
-## Mounts the reader to camera, configures quad dimensions, and activates inspection.
+## Reparents to camera, displays proxy meshes, and opens note view.
 func open_note(note_node: Node3D, note_text: String, player_character: CharacterBody3D) -> void:
 	print("NoteReader: Opening note inspection view.")
 	_is_reading = true
@@ -262,7 +262,7 @@ func open_note(note_node: Node3D, note_text: String, player_character: Character
 	Events.note_opened.emit(note_text)
 
 
-## Restores player controls, world note visibility, and hides inspection hierarchy.
+## Hides inspection quads, unfreezes player, and restores world note.
 func close_note() -> void:
 	print("NoteReader: Closing note inspection view.")
 	_is_reading = false
@@ -271,13 +271,11 @@ func close_note() -> void:
 	if is_instance_valid(_instruction_ui):
 		_instruction_ui.visible = false
 
-	var global_label: Label = (
-		get_tree().get_first_node_in_group(&"note_instruction_label")
-		if get_tree().get_first_node_in_group(&"note_instruction_label") is Label
-		else null
-	)
-	if is_instance_valid(global_label):
-		global_label.hide()
+	var global_label_node: Node = get_tree().get_first_node_in_group(&"note_instruction_label")
+	if global_label_node is Label:
+		var global_label: Label = global_label_node
+		if is_instance_valid(global_label):
+			global_label.hide()
 
 	if is_instance_valid(_current_player) and _current_player.has_method(&"stop_operating_machine"):
 		_current_player.call(&"stop_operating_machine")
@@ -293,11 +291,11 @@ func close_note() -> void:
 
 	if is_instance_valid(_current_note):
 		_current_note.visible = true
-		var col: CollisionShape3D = (
-			_current_note.get_node_or_null("CollisionShape3D") as CollisionShape3D
-		)
-		if is_instance_valid(col):
-			col.disabled = false
+		var col_node: Node = _current_note.get_node_or_null("CollisionShape3D")
+		if col_node is CollisionShape3D:
+			var col: CollisionShape3D = col_node
+			if is_instance_valid(col):
+				col.disabled = false
 		_current_note = null
 
 	Events.note_closed.emit()
@@ -310,8 +308,9 @@ func _adjust_3d_glass(direction: float) -> void:
 	print("NoteReader: Glass scaled | Zoom: ", _current_zoom, " | Radius: ", _current_radius)
 
 
-## Updates magnifying shader parameters and computes raycast UV focus point.
+## Updates shader parameters and computes raycast UV coordinates on quad.
 func _update_magnifier_shader(mouse_pos: Vector2, screen_size: Vector2) -> void:
+	print("NoteReader: Updating magnifier shader focus and projection.")
 	_zoomed_mesh_instance.rotation = _proxy_mesh_instance.rotation
 	var aspect: float = screen_size.x / screen_size.y
 	var mouse_uv: Vector2 = mouse_pos / screen_size
@@ -329,12 +328,11 @@ func _update_magnifier_shader(mouse_pos: Vector2, screen_size: Vector2) -> void:
 	var ray_dir: Vector3 = cam.project_ray_normal(mouse_pos)
 	var normal: Vector3 = _proxy_mesh_instance.global_transform.basis.z
 	var plane: Plane = Plane(normal, _proxy_mesh_instance.global_position)
-	var hit: Variant = plane.intersects_ray(ray_origin, ray_dir)
+	var hit_variant: Variant = plane.intersects_ray(ray_origin, ray_dir)
 
-	if hit != null:
-		var local_pt: Vector3 = (
-			_proxy_mesh_instance.global_transform.affine_inverse() * (hit as Vector3)
-		)
+	if hit_variant is Vector3:
+		var hit_point: Vector3 = hit_variant
+		var local_pt: Vector3 = _proxy_mesh_instance.global_transform.affine_inverse() * hit_point
 		var u: float = (local_pt.x / _proxy_quad.size.x) + 0.5
 		var v: float = 0.5 - (local_pt.y / _proxy_quad.size.y)
 		_zoomed_material.set_shader_parameter(&"focus_uv", Vector2(u, v))
@@ -373,9 +371,12 @@ func _setup_proxy_hierarchy() -> void:
 
 ## Configures quad dimensions and texture filtering without allocations.
 func _configure_proxy_texture(cam: Camera3D) -> void:
+	print("NoteReader: Configuring proxy quad texture and aspect ratio.")
 	var tex: Texture2D = null
-	if _current_note != null and _current_note.get(&"note_texture") != null:
-		tex = _current_note.get(&"note_texture") as Texture2D
+	if _current_note != null:
+		var raw_tex: Variant = _current_note.get(&"note_texture")
+		if raw_tex is Texture2D:
+			tex = raw_tex
 
 	if tex != null:
 		var fov: float = cam.fov
@@ -452,14 +453,12 @@ func _setup_instruction_ui() -> void:
 ## Updates instruction text on UI label according to active input mappings.
 func _update_instruction_text() -> void:
 	var ui_label: Label = _instruction_label
-	var global_label: Label = (
-		get_tree().get_first_node_in_group(&"note_instruction_label")
-		if get_tree().get_first_node_in_group(&"note_instruction_label") is Label
-		else null
-	)
-	if is_instance_valid(global_label):
-		ui_label = global_label
-		ui_label.show()
+	var global_label_node: Node = get_tree().get_first_node_in_group(&"note_instruction_label")
+	if global_label_node is Label:
+		var global_label: Label = global_label_node
+		if is_instance_valid(global_label):
+			ui_label = global_label
+			ui_label.show()
 
 	if not is_instance_valid(ui_label):
 		return
@@ -492,6 +491,6 @@ func _get_key_string_for_action(action_name: StringName, fallback: String) -> St
 		var events: Array[InputEvent] = InputMap.action_get_events(action_name)
 		for ev: InputEvent in events:
 			if ev is InputEventKey:
-				var key_ev: InputEventKey = ev if ev is InputEventKey else null
+				var key_ev: InputEventKey = ev
 				return "[" + OS.get_keycode_string(key_ev.physical_keycode) + "]"
 	return "[" + fallback + "]"

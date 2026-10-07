@@ -16,14 +16,17 @@ func enter(msg: Dictionary = {}) -> void:
 		player.velocity = Vector3.ZERO
 		var typed_player: Player = player if player is Player else null
 		if is_instance_valid(typed_player):
-			_locomotion = typed_player.locomotion_component as PlayerLocomotionComponent
+			_locomotion = typed_player.locomotion_component
 		else:
-			_locomotion = (player.get(&"locomotion_component") as PlayerLocomotionComponent)
+			var raw_comp: Variant = player.get(&"locomotion_component")
+			_locomotion = (raw_comp if raw_comp is PlayerLocomotionComponent else null)
+
 		if is_instance_valid(_locomotion):
 			_locomotion.set_physics_active(false)
 
-	if msg.has(&"terminal") and msg[&"terminal"] is Node3D:
-		active_terminal = msg[&"terminal"] as Node3D
+	if msg.has(&"terminal"):
+		var raw_terminal: Variant = msg[&"terminal"]
+		active_terminal = (raw_terminal if raw_terminal is Node3D else null)
 
 
 ## Restores locomotion physics and releases terminal reference on exit.

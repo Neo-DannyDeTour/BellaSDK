@@ -50,7 +50,7 @@ func _ready() -> void:
 	_point_query.collide_with_bodies = false
 	_point_query.collision_mask = CollisionLayers.MASK_ENVIRONMENT
 
-	is_infinite_swim = bool(GlobalSettings.get_setting("Accessibility", "infinite_swim", false))
+	is_infinite_swim = GlobalSettings.get_setting_bool("Accessibility", "infinite_swim", false)
 	if not Events.infinite_swim_toggled.is_connected(_on_infinite_swim_toggled):
 		Events.infinite_swim_toggled.connect(_on_infinite_swim_toggled)
 
@@ -58,7 +58,7 @@ func _ready() -> void:
 ## Configures water collisions and resets oxygen and buoyancy timers.
 func enter(_msg: Dictionary = {}) -> void:
 	print("StateSwim: enter() called. Setting up water physics.")
-	is_infinite_swim = bool(GlobalSettings.get_setting("Accessibility", "infinite_swim", false))
+	is_infinite_swim = GlobalSettings.get_setting_bool("Accessibility", "infinite_swim", false)
 
 	var loco: PlayerLocomotionComponent = _get_locomotion()
 	if is_instance_valid(loco):
@@ -227,8 +227,8 @@ func _apply_swim_velocity(delta: float, input_dir: Vector2) -> void:
 		var vault_ctrl: Node = env.vault_controller if is_instance_valid(env) else null
 		if is_instance_valid(vault_ctrl):
 			vault_ctrl.call(&"process_vault_scan")
-			if vault_ctrl.get(&"can_vault_current_ledge"):
-				if bool(vault_ctrl.call(&"try_vault", loco.crouching)):
+			if vault_ctrl.get(&"can_vault_current_ledge") == true:
+				if vault_ctrl.call(&"try_vault", loco.crouching) == true:
 					print("StateSwim: Vault successful. Transitioning to Vault.")
 					actively_swimming_vertical = true
 					just_water_jumped = true
@@ -278,9 +278,11 @@ func _handle_camera_and_vfx(delta: float, input_dir: Vector2) -> void:
 	var target_tilt: float = 0.0
 	var loco: PlayerLocomotionComponent = _get_locomotion()
 	var cam_ctrl: Node = _get_camera_controller()
-	var tilt_amount: float = (
-		cam_ctrl.get(&"camera_tilt_amount") if is_instance_valid(cam_ctrl) else 0.0
+	var raw_tilt: Variant = (
+		cam_ctrl.get(&"camera_tilt_amount") if is_instance_valid(cam_ctrl) else null
 	)
+	var tilt_amount: float = raw_tilt if raw_tilt is float else 0.0
+
 	var eyes: Node3D = null
 	if is_instance_valid(cam_ctrl):
 		var raw_eyes: Variant = cam_ctrl.get(&"eyes")
@@ -326,14 +328,16 @@ func _update_flashlight_underwater(is_submerged: bool, delta: float) -> void:
 	else:
 		var interact: Variant = player.get(&"interaction_component")
 		if interact is Node:
-			var sub_ctrl: Variant = (interact as Node).get(&"flashlight_controller")
+			var interact_node: Node = interact
+			var sub_ctrl: Variant = interact_node.get(&"flashlight_controller")
 			if sub_ctrl is Node:
 				flash_ctrl = sub_ctrl
 
-	if is_instance_valid(flash_ctrl) and flash_ctrl.get(&"flashlight"):
+	if is_instance_valid(flash_ctrl) and flash_ctrl.get(&"flashlight") != null:
 		var raw_light: Variant = flash_ctrl.get(&"flashlight")
 		var light: Light3D = raw_light if raw_light is Light3D else null
-		var base_energy: float = flash_ctrl.get(&"base_energy")
+		var raw_energy: Variant = flash_ctrl.get(&"base_energy")
+		var base_energy: float = raw_energy if raw_energy is float else 1.0
 		var target_energy: float = base_energy * 4.0 if is_submerged else base_energy
 
 		if is_instance_valid(light):
@@ -359,8 +363,10 @@ func _get_locomotion() -> PlayerLocomotionComponent:
 	if not is_instance_valid(player):
 		return null
 	var val: Variant = player.get(&"locomotion_component")
-	if val is PlayerLocomotionComponent and is_instance_valid(val):
-		return val as PlayerLocomotionComponent
+	if val is PlayerLocomotionComponent:
+		var comp: PlayerLocomotionComponent = val
+		if is_instance_valid(comp):
+			return comp
 	return null
 
 
@@ -369,8 +375,10 @@ func _get_environment() -> PlayerEnvironmentComponent:
 	if not is_instance_valid(player):
 		return null
 	var val: Variant = player.get(&"environment_component")
-	if val is PlayerEnvironmentComponent and is_instance_valid(val):
-		return val as PlayerEnvironmentComponent
+	if val is PlayerEnvironmentComponent:
+		var comp: PlayerEnvironmentComponent = val
+		if is_instance_valid(comp):
+			return comp
 	return null
 
 
@@ -379,8 +387,10 @@ func _get_camera_controller() -> Node:
 	if not is_instance_valid(player):
 		return null
 	var ctrl: Variant = player.get(&"camera_controller")
-	if ctrl is Node and is_instance_valid(ctrl as Node):
-		return ctrl as Node
+	if ctrl is Node:
+		var node_ctrl: Node = ctrl
+		if is_instance_valid(node_ctrl):
+			return node_ctrl
 	return null
 
 
@@ -389,6 +399,8 @@ func _get_camera() -> Camera3D:
 	var ctrl: Node = _get_camera_controller()
 	if is_instance_valid(ctrl):
 		var cam: Variant = ctrl.get(&"camera")
-		if cam is Camera3D and is_instance_valid(cam as Camera3D):
-			return cam as Camera3D
+		if cam is Camera3D:
+			var cam_node: Camera3D = cam
+			if is_instance_valid(cam_node):
+				return cam_node
 	return null

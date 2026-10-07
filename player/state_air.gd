@@ -294,7 +294,8 @@ func _check_transitions(
 ## Processes ground collision, evaluates fall damage, and triggers landing.
 func _handle_landing(p: Player, loco: PlayerLocomotionComponent) -> void:
 	print("StateAir: _handle_landing() called. Processing ground impact.")
-	var stats: Node = p.get(&"stats_component") if p.get(&"stats_component") is Node else null
+	var raw_stats: Variant = p.get(&"stats_component")
+	var stats: Node = raw_stats if raw_stats is Node else null
 
 	var impact_fall_speed: float = loco.last_velocity.y
 	var is_safe_landing: bool = false
@@ -322,16 +323,21 @@ func _handle_landing(p: Player, loco: PlayerLocomotionComponent) -> void:
 			if current_is_slide:
 				is_slide_surface = true
 
-	var health_comp: Node = (
-		stats.get(&"health_component") as Node if is_instance_valid(stats) else null
-	)
+	var raw_health: Variant = stats.get(&"health_component") if is_instance_valid(stats) else null
+	var health_comp: Node = raw_health if raw_health is Node else null
+
 	if impact_fall_speed <= -20.0 and is_instance_valid(health_comp):
 		if is_safe_landing:
 			print("StateAir: Impact neutralized by safe landing material.")
 		else:
 			print("StateAir: Heavy impact detected. Applying fall damage.")
 			var max_hp_var: Variant = health_comp.get(&"max_health")
-			var max_hp: int = int(max_hp_var) if max_hp_var != null else 0
+			var max_hp: int = 0
+			if max_hp_var is int:
+				max_hp = max_hp_var
+			elif max_hp_var is float:
+				var max_hp_float: float = max_hp_var
+				max_hp = int(max_hp_float)
 			health_comp.call(&"take_damage", max_hp)
 
 	_transition_msg.clear()

@@ -70,11 +70,20 @@ func _scan_existing_weapons() -> void:
 ## Registers a weapon into its preferred slot or first available free slot.
 func register_weapon(weapon: Node3D) -> void:
 	var weapon_tag_val: Variant = weapon.get("weapon_tag")
-	var tag: String = str(weapon_tag_val) if weapon_tag_val != null else String(weapon.name)
+	var tag: String = str(weapon_tag_val) if weapon_tag_val != null else str(weapon.name)
 	print("WeaponInventoryComponent: Registering weapon -> ", tag)
 
 	var default_slot_val: Variant = weapon.get("default_slot")
-	var slot_val: int = int(default_slot_val) if default_slot_val != null else 1
+	var slot_val: int = 1
+	if default_slot_val is int:
+		slot_val = default_slot_val
+	elif default_slot_val is float:
+		var float_slot: float = default_slot_val
+		slot_val = int(float_slot)
+	elif default_slot_val is bool:
+		var bool_slot: bool = default_slot_val
+		slot_val = int(bool_slot)
+
 	var target_idx: int = clampi(slot_val - 1, 0, slots.size() - 1)
 
 	if slots[target_idx] != null and slots[target_idx] != weapon:

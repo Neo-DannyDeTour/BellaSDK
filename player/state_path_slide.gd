@@ -13,7 +13,8 @@ var hold_offset: Vector3 = Vector3(0.0, -1.0, 0.0)
 func enter(msg: Dictionary = {}) -> void:
 	print("StatePathSlide: enter() called. Player mounting path slide stick.")
 	var typed_player: Player = player if player is Player else null
-	active_stick = msg.get(&"stick") as PathStick
+	var raw_stick: Variant = msg.get(&"stick")
+	active_stick = raw_stick if raw_stick is PathStick else null
 
 	if is_instance_valid(typed_player) and is_instance_valid(typed_player.locomotion_component):
 		typed_player.locomotion_component.set_physics_active(false)

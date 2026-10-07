@@ -107,10 +107,7 @@ func _physics_process(delta: float) -> void:
 		var cam: Camera3D = _get_camera()
 		if is_instance_valid(cam) and is_instance_valid(interact_label):
 			var hit_point_val: Variant = interact_component.last_hit_position
-			var hit_point: Vector3 = Vector3.ZERO
-
-			if hit_point_val is Vector3:
-				hit_point = hit_point_val as Vector3
+			var hit_point: Vector3 = hit_point_val if hit_point_val is Vector3 else Vector3.ZERO
 
 			var cam_right: Vector3 = cam.global_transform.basis.x
 			var cam_up: Vector3 = cam.global_transform.basis.y
@@ -164,7 +161,8 @@ func force_grab_zipline(player: CharacterBody3D) -> void:
 		return
 
 	if player.has_method(&"has_zipline_cooldown"):
-		if bool(player.call(&"has_zipline_cooldown")):
+		var cooldown_val: Variant = player.call(&"has_zipline_cooldown")
+		if cooldown_val == true:
 			print("Zipline: Player has cooldown. Rejecting grab.")
 			return
 
@@ -178,8 +176,9 @@ func force_grab_zipline(player: CharacterBody3D) -> void:
 		if is_instance_valid(interact_label):
 			interact_label.hide()
 
+		var count: int = curve.get_point_count()
 		var point_a: Vector3 = to_global(curve.get_point_position(0))
-		var point_b: Vector3 = to_global(curve.get_point_position(curve.get_point_count() - 1))
+		var point_b: Vector3 = to_global(curve.get_point_position(count - 1))
 
 		player.call(&"_on_zipline_grabbed", self, point_a, point_b)
 

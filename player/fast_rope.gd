@@ -244,8 +244,9 @@ func attach(player: CharacterBody3D) -> void:
 
 	if "stair_controller" in attached_player:
 		var raw_ctrl: Variant = attached_player.get("stair_controller")
-		if raw_ctrl is Node and is_instance_valid(raw_ctrl as Node):
-			(raw_ctrl as Node).set("is_enabled", false)
+		var stair_ctrl: Node = raw_ctrl if raw_ctrl is Node else null
+		if is_instance_valid(stair_ctrl):
+			stair_ctrl.set("is_enabled", false)
 
 	attached_player.add_collision_exception_with(self)
 
@@ -280,8 +281,9 @@ func detach(reached_top: bool) -> void:
 
 	if "stair_controller" in attached_player:
 		var raw_ctrl: Variant = attached_player.get("stair_controller")
-		if raw_ctrl is Node and is_instance_valid(raw_ctrl as Node):
-			(raw_ctrl as Node).set("is_enabled", true)
+		var stair_ctrl: Node = raw_ctrl if raw_ctrl is Node else null
+		if is_instance_valid(stair_ctrl):
+			stair_ctrl.set("is_enabled", true)
 
 	attached_player.remove_collision_exception_with(self)
 

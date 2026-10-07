@@ -78,6 +78,15 @@ var _cylinder_shape: CylinderShape3D
 ## Instance-unique standard material resource.
 var _material: StandardMaterial3D
 
+## Cached hit position used when [HealthComponent] emits [signal HealthComponent.died].
+var _pending_hit_pos: Vector3 = Vector3.ZERO
+
+## Cached hit direction used when [HealthComponent] emits [signal HealthComponent.died].
+var _pending_hit_direction: Vector3 = Vector3.DOWN
+
+## Flag indicating whether a hit position was cached during damage processing.
+var _has_pending_hit: bool = false
+
 
 ## Configures unique resources, binds health listeners, and aligns geometry.
 func _ready() -> void:
@@ -98,7 +107,7 @@ func _process(_delta: float) -> void:
 	if Engine.is_editor_hint():
 		if is_instance_valid(start_anchor) or is_instance_valid(end_anchor):
 			_update_rope_geometry()
-	elif is_instance_valid(end_anchor):
+	elif is_instance_valid(start_anchor) or is_instance_valid(end_anchor):
 		_update_rope_geometry()
 
 
@@ -201,20 +210,34 @@ func take_damage(amount: int, hit_position: Vector3, direction: Vector3) -> void
 	if is_broken:
 		return
 
+	_pending_hit_pos = hit_position
+	_pending_hit_direction = direction
+	_has_pending_hit = true
+
 	if is_instance_valid(_health_component):
 		_health_component.take_damage(amount)
-		if _health_component.current_health <= 0:
+		if not is_broken and _health_component.current_health <= 0:
 			cut_rope_at(hit_position, direction)
 	else:
 		cut_rope_at(hit_position, direction)
 
+	_has_pending_hit = false
 
-## Catches death trigger from [HealthComponent] if damage omitted position.
+
+## Handles [signal HealthComponent.died] and severs the rope.
 func _on_health_component_died() -> void:
 	print("BreakableRope3D: _on_health_component_died() - Health reached zero.")
-	if not is_broken:
-		var mid: Vector3 = (get_start_global_position() + get_end_global_position()) * 0.5
-		cut_rope_at(mid, Vector3.DOWN)
+	if is_broken:
+		return
+
+	var cut_pos: Vector3 = (get_start_global_position() + get_end_global_position()) * 0.5
+	var cut_dir: Vector3 = Vector3.DOWN
+
+	if _has_pending_hit:
+		cut_pos = _pending_hit_pos
+		cut_dir = _pending_hit_direction
+
+	cut_rope_at(cut_pos, cut_dir)
 
 
 ## Snaps rope at [param hit_pos], emitting [signal rope_broken] and spawning strands.
@@ -263,21 +286,22 @@ func _create_severed_strand(
 	tip_body.collision_layer = 0
 	tip_body.collision_mask = 1
 	tip_body.mass = 0.5
-	tip_body.global_position = sever_pos
 
 	var tip_col: CollisionShape3D = CollisionShape3D.new()
 	var sphere: SphereShape3D = SphereShape3D.new()
 	sphere.radius = rope_radius
 	tip_col.shape = sphere
 	tip_body.add_child(tip_col)
+
 	get_tree().current_scene.add_child(tip_body)
+	tip_body.global_position = sever_pos
 	tip_body.apply_central_impulse(impulse)
 
 	var origin_anchor: Node3D = anchor_node
 	if not is_instance_valid(origin_anchor):
 		origin_anchor = Marker3D.new()
-		origin_anchor.global_position = anchor_pos
 		get_tree().current_scene.add_child(origin_anchor)
+		origin_anchor.global_position = anchor_pos
 
 	var cable: PhysicsCable3D = PhysicsCable3D.new()
 	cable.start_anchor = origin_anchor

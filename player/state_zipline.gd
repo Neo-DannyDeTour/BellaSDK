@@ -49,9 +49,14 @@ func enter(msg: Dictionary = {}) -> void:
 		state_machine.transition_to(&"Air")
 		return
 
-	current_zipline = msg[&"zipline_node"] as Node3D
-	zipline_start = msg[&"start_pos"] as Vector3
-	zipline_end = msg[&"end_pos"] as Vector3
+	var raw_node: Variant = msg[&"zipline_node"]
+	current_zipline = raw_node if raw_node is Node3D else null
+
+	var raw_start: Variant = msg[&"start_pos"]
+	zipline_start = raw_start if raw_start is Vector3 else Vector3.ZERO
+
+	var raw_end: Variant = msg[&"end_pos"]
+	zipline_end = raw_end if raw_end is Vector3 else Vector3.ZERO
 
 	zipline_dir = (zipline_end - zipline_start).normalized()
 	zipline_length = zipline_start.distance_to(zipline_end)
@@ -248,7 +253,8 @@ func _perform_dismount() -> void:
 		is_instance_valid(current_zipline)
 		and current_zipline.has_method(&"get_current_travel_velocity")
 	):
-		zip_vel = (current_zipline.call(&"get_current_travel_velocity") as Vector3)
+		var raw_vel: Variant = current_zipline.call(&"get_current_travel_velocity")
+		zip_vel = raw_vel if raw_vel is Vector3 else Vector3.ZERO
 
 	if zip_vel.length_squared() < 4.0:
 		var look_dir: Vector3 = Vector3.FORWARD

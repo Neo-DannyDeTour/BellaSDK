@@ -18,18 +18,20 @@ var _camera_anims: AnimationPlayer = null
 var _flat_vel: Vector2 = Vector2.ZERO
 
 
-## Attaches player to monkey bars, plays idle animation, and locks sprint FOV.
+## Enters monkey bars state, mounts player to bar, and resets vertical velocity.
 func enter(msg: Dictionary = {}) -> void:
 	print("StateMonkeyBars: enter() called. Player mounting monkey bars.")
 	var p: Player = player if player is Player else null
 	if not is_instance_valid(_camera_anims) and is_instance_valid(p):
-		_camera_anims = (p.get_node_or_null("%CameraAnims") as AnimationPlayer)
+		_camera_anims = p.get_node_or_null("%CameraAnims") as AnimationPlayer
 
 	if not msg.has(&"volume_node"):
 		state_machine.transition_to(&"Air")
 		return
 
-	current_monkey_bar_volume = msg[&"volume_node"] as Node3D
+	var raw_node: Variant = msg[&"volume_node"]
+	current_monkey_bar_volume = raw_node if raw_node is Node3D else null
+
 	if is_instance_valid(p):
 		p.velocity.y = 0.0
 
