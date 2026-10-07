@@ -8,12 +8,12 @@
 # ------------------------------------------------------------------------------
 extends SceneTree
 
-const VersionConversion = load("res://addons/gut/version_conversion.gd")
+const VersionConversion = preload("res://addons/gut/version_conversion.gd")
 
 @warning_ignore("unsafe_method_access")
 @warning_ignore("inferred_declaration")
 func _init() -> void:
-	if(VersionConversion.error_if_not_all_classes_imported()):
+	if VersionConversion.error_if_not_all_classes_imported():
 		quit(0)
 		return
 
@@ -21,25 +21,22 @@ func _init() -> void:
 	var iter: int = 0
 
 	# Make a reference to gut_loader so its _static_init is run.
-	var Laoder : Object = load("res://addons/gut/gut_loader.gd")
+	var Laoder: Object = load("res://addons/gut/gut_loader.gd")
 
 	# Not seen this wait more than 1.
-	while(Engine.get_main_loop() == null and iter < max_iter):
+	while Engine.get_main_loop() == null and iter < max_iter:
 		await create_timer(.01).timeout
 		iter += 1
 
-	if(Engine.get_main_loop() == null):
-		push_error('Main loop did not start in time.')
+	if Engine.get_main_loop() == null:
+		push_error("Main loop did not start in time.")
 		quit(0)
 		return
 
-	var cli : Node = load('res://addons/gut/cli/gut_cli.gd').new()
+	var cli: Node = load("res://addons/gut/cli/gut_cli.gd").new()
 	get_root().add_child(cli)
 
 	cli.main()
-
-
-
 
 # ##############################################################################
 #(G)odot (U)nit (T)est class
