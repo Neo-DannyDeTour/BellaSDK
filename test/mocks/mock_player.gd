@@ -58,6 +58,7 @@ func _capture_mouse() -> void:
 
 
 ## Simulates player damage routing and records applied damage values.
+## [param amount] The health reduction magnitude.
 func take_damage(amount: int) -> void:
 	print("MockPlayer: take_damage() called with: ", amount)
 	last_damage = amount
@@ -66,6 +67,7 @@ func take_damage(amount: int) -> void:
 
 
 ## Simulates player healing routing and records applied healing values.
+## [param amount] The health restoration magnitude.
 func heal(amount: int) -> void:
 	print("MockPlayer: heal() called with: ", amount)
 	last_heal = amount
