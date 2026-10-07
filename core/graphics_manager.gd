@@ -54,8 +54,8 @@ func _ready() -> void:
 	get_tree().node_added.connect(_on_node_added)
 
 	var default_auto: bool = _is_low_end
-	var use_auto: bool = bool(
-		GlobalSettings.get_setting("Settings", "use_auto_optimizer", default_auto)
+	var use_auto: bool = GlobalSettings.get_setting_bool(
+		"Settings", "use_auto_optimizer", default_auto
 	)
 
 	if use_auto:
@@ -102,8 +102,8 @@ func enable_auto_mode() -> void:
 	if _is_low_end:
 		call_deferred("_apply_global_viewport_settings")
 
-	var saved_level: int = int(
-		GlobalSettings.get_setting("Settings", "optimized_downgrade_level", 0)
+	var saved_level: int = GlobalSettings.get_setting_int(
+		"Settings", "optimized_downgrade_level", 0
 	)
 	if saved_level > 0:
 		print("GraphicsManager: Restoring previous optimization level: ", saved_level)
@@ -225,8 +225,8 @@ func _on_node_added(node: Node) -> void:
 		_active_environment = (node as WorldEnvironment).environment
 
 		if is_auto_optimizing:
-			var saved_level: int = int(
-				GlobalSettings.get_setting("Settings", "optimized_downgrade_level", 0)
+			var saved_level: int = GlobalSettings.get_setting_int(
+				"Settings", "optimized_downgrade_level", 0
 			)
 			if saved_level > 0 and _sdfgi_downgrade_level < saved_level:
 				_fast_forward_downgrades(saved_level)

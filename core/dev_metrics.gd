@@ -52,16 +52,18 @@ var _settings_info_static_str: String = ""
 @onready var metrics_label: RichTextLabel = $MetricsLabel
 
 
-## Called when the node enters the scene tree for the first time.
+## Initializes hardware info and configures rendering measurements.
 func _ready() -> void:
 	print("DevMetricsPanel: Initializing and caching hardware info.")
 	visible = false
 
-	player = get_tree().get_first_node_in_group("player") as CharacterBody3D
+	var player_node: Node = get_tree().get_first_node_in_group(&"player")
+	if player_node is CharacterBody3D:
+		player = player_node
 
 	metrics_label.bbcode_enabled = true
-	metrics_label.add_theme_color_override("font_outline_color", Color.BLACK)
-	metrics_label.add_theme_constant_override("outline_size", 4)
+	metrics_label.add_theme_color_override(&"font_outline_color", Color.BLACK)
+	metrics_label.add_theme_constant_override(&"outline_size", 4)
 
 	var vp_rid: RID = get_viewport().get_viewport_rid()
 	RenderingServer.viewport_set_measure_render_time(vp_rid, true)
@@ -70,7 +72,7 @@ func _ready() -> void:
 	_cache_static_settings_info()
 
 
-## Called every frame to sample frametime history and refresh the UI periodically.
+## Samples frametimes per frame and updates HUD at a throttled rate.
 func _process(delta: float) -> void:
 	if not visible or not player:
 		return
@@ -102,32 +104,30 @@ func _render_metrics_text() -> void:
 		fps_color = "yellow"
 
 	var current_input: Vector2 = GestureInputManager.get_vector(
-		"left", "right", "forward", "backward"
+		&"left", &"right", &"forward", &"backward"
 	)
 	var is_pressing_keys: bool = current_input.length() > 0.1
 
 	var state: String = "UNKNOWN"
-	var sys_menu: Object = (
-		player.get("system_menu") if player.get("system_menu") is Object else null
-	)
-	var fsm: Object = player.get("state_machine") if player.get("state_machine") is Object else null
+	var raw_sys_menu: Variant = player.get(&"system_menu")
+	var sys_menu: Object = raw_sys_menu if raw_sys_menu is Object else null
+	var raw_fsm: Variant = player.get(&"state_machine")
+	var fsm: Object = raw_fsm if raw_fsm is Object else null
 
-	if is_instance_valid(sys_menu) and sys_menu.get("flying"):
+	if is_instance_valid(sys_menu) and sys_menu.get(&"flying"):
 		state = "NOCLIP"
-	elif is_instance_valid(fsm) and fsm.get("state"):
-		var fsm_state: Object = fsm.get("state") if fsm.get("state") is Object else null
+	elif is_instance_valid(fsm) and fsm.get(&"state"):
+		var raw_fsm_state: Variant = fsm.get(&"state")
+		var fsm_state: Object = raw_fsm_state if raw_fsm_state is Object else null
 		if is_instance_valid(fsm_state):
-			state = String(fsm_state.get("name")).to_upper()
+			state = str(fsm_state.get(&"name")).to_upper()
 			if state == "GROUND":
-				var loco: Object = (
-					player.get("locomotion_component")
-					if player.get("locomotion_component") is Object
-					else null
-				)
+				var raw_loco: Variant = player.get(&"locomotion_component")
+				var loco: Object = raw_loco if raw_loco is Object else null
 				if is_instance_valid(loco):
-					if loco.get("crouching"):
+					if loco.get(&"crouching"):
 						state = "CROUCH WALKING" if is_pressing_keys else "CROUCH IDLE"
-					elif loco.get("sprint_active"):
+					elif loco.get(&"sprint_active"):
 						state = "SPRINTING"
 					elif is_pressing_keys:
 						state = "WALKING"
@@ -153,15 +153,11 @@ func _render_metrics_text() -> void:
 	var orphan_count: int = int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT))
 
 	var flashlight_str: String = "OFF"
-	var f_ctrl: Object = (
-		player.get("flashlight_controller")
-		if player.get("flashlight_controller") is Object
-		else null
-	)
+	var raw_f_ctrl: Variant = player.get(&"flashlight_controller")
+	var f_ctrl: Object = raw_f_ctrl if raw_f_ctrl is Object else null
 	if is_instance_valid(f_ctrl):
-		var fl: CanvasItem = (
-			f_ctrl.get("flashlight") if f_ctrl.get("flashlight") is CanvasItem else null
-		)
+		var raw_fl: Variant = f_ctrl.get(&"flashlight")
+		var fl: CanvasItem = raw_fl if raw_fl is CanvasItem else null
 		if is_instance_valid(fl) and fl.visible:
 			flashlight_str = "ON"
 
@@ -255,10 +251,31 @@ func _format_metric_row(title: String, sum_val: float, history: Array[float]) ->
 	if history.is_empty():
 		return ""
 
-	var avg_val: float = float(sum_val) / float(history.size())
-	var min_val: float = float(history.min())
-	var max_val: float = float(history.max())
-	var last_val: float = float(history.back())
+	var avg_val: float = sum_val / float(history.size())
+
+	var min_val: float = 0.0
+	var raw_min: Variant = history.min()
+	if raw_min is float:
+		min_val = raw_min
+	elif raw_min is int:
+		var int_min: int = raw_min
+		min_val = float(int_min)
+
+	var max_val: float = 0.0
+	var raw_max: Variant = history.max()
+	if raw_max is float:
+		max_val = raw_max
+	elif raw_max is int:
+		var int_max: int = raw_max
+		min_val = float(int_max)
+
+	var last_val: float = 0.0
+	var raw_last: Variant = history.back()
+	if raw_last is float:
+		last_val = raw_last
+	elif raw_last is int:
+		var int_last: int = raw_last
+		last_val = float(int_last)
 
 	var row_format: String = (
 		"[cell]%s [/cell][cell][color=%s]%.2f[/color][/cell]"
@@ -293,8 +310,9 @@ func _get_ms_color(ms: float) -> String:
 	return "#ef4444"
 
 
-## Queries [OS] and [RenderingServer] once on load to build hardware information strings.
+## Queries [OS] and [RenderingServer] once on load to build hardware info.
 func _cache_hardware_info() -> void:
+	print("DevMetricsPanel: Caching host hardware specs.")
 	var cpu_name: String = OS.get_processor_name().replace("(R)", "").replace("(TM)", "")
 	var threads: int = OS.get_processor_count()
 	var os_name: String = OS.get_name()
@@ -312,15 +330,16 @@ func _cache_hardware_info() -> void:
 	)
 
 
-## Queries [ProjectSettings] to build strings for non-dynamic graphics settings.
+## Queries [ProjectSettings] to build strings for static graphics options.
 func _cache_static_settings_info() -> void:
+	print("DevMetricsPanel: Caching static renderer settings.")
 	_settings_info_static_str = ""
 	var method: String = str(ProjectSettings.get_setting("rendering/renderer/rendering_method"))
 	var method_str: String = "Forward+" if method == "forward_plus" else method.capitalize()
 	_settings_info_static_str += "Rendering Method: %s\n" % method_str
 
 
-## Checks the active viewport to build strings for dynamic graphics settings.
+## Checks the active viewport to build strings for dynamic graphics options.
 func _get_dynamic_settings_string() -> String:
 	var dyn_str: String = ""
 	var vp: Viewport = get_viewport()

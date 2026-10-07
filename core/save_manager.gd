@@ -215,7 +215,9 @@ func _sort_saves(a: Dictionary, b: Dictionary) -> bool:
 	if a_fav != b_fav:
 		return a_fav
 
-	return (a.get("id", "0") as String).to_int() > (b.get("id", "0") as String).to_int()
+	var a_id_str: String = str(a.get("id", "0"))
+	var b_id_str: String = str(b.get("id", "0"))
+	return a_id_str.to_int() > b_id_str.to_int()
 
 
 ## Reads existing metadata, updates display fields, and rewrites file.
@@ -233,7 +235,8 @@ func update_save_meta(save_id: String, new_name: String, is_favorite: bool) -> v
 	var parsed: Variant = JSON.parse_string(raw_text)
 	if parsed is Dictionary:
 		var data: Dictionary = parsed
-		_write_metadata(path, new_name, data.get("timestamp", "") as String, is_favorite)
+		var timestamp_str: String = str(data.get("timestamp", ""))
+		_write_metadata(path, new_name, timestamp_str, is_favorite)
 
 
 ## Loads metadata, switches active scene if required, and applies game state.

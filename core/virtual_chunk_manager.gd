@@ -130,7 +130,7 @@ func _unload_chunk(cell_coord: Vector2i) -> void:
 func _update_stream_bounds() -> void:
 	var player_pos: Vector3 = player.global_position
 	var center_cell: Vector2i = _world_to_cell(player_pos)
-	var radius_cells: int = int(ceil(stream_radius / CELL_SIZE))
+	var radius_cells: int = ceili(stream_radius / CELL_SIZE)
 	var desired_cells: Dictionary = {}
 
 	for x: int in range(center_cell.x - radius_cells, center_cell.x + radius_cells + 1):
@@ -155,4 +155,4 @@ func _update_stream_bounds() -> void:
 
 ## Converts a global 3D vector to a 2D horizontal chunk coordinate.
 func _world_to_cell(pos: Vector3) -> Vector2i:
-	return Vector2i(int(floor(pos.x / CELL_SIZE)), int(floor(pos.z / CELL_SIZE)))
+	return Vector2i(floori(pos.x / CELL_SIZE), floori(pos.z / CELL_SIZE))

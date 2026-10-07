@@ -362,3 +362,36 @@ func _ensure_default_weapon_actions() -> void:
 			key_ev.keycode = key_val
 			key_ev.physical_keycode = key_val
 			InputMap.action_add_event(action, key_ev)
+
+
+## Retrieves a boolean setting from the cached config file.
+func get_setting_bool(category: String, key: String, default_value: bool = false) -> bool:
+	print("GlobalSettings: Fetching bool setting -> [", category, "] ", key)
+	var val: Variant = get_setting(category, key, default_value)
+	if val is bool:
+		return val
+	return default_value
+
+
+## Retrieves an integer setting from the cached config file.
+func get_setting_int(category: String, key: String, default_value: int = 0) -> int:
+	print("GlobalSettings: Fetching int setting -> [", category, "] ", key)
+	var val: Variant = get_setting(category, key, default_value)
+	if val is int:
+		return val
+	if val is float:
+		var float_val: float = val
+		return int(float_val)
+	return default_value
+
+
+## Retrieves a floating point setting from the cached config file.
+func get_setting_float(category: String, key: String, default_value: float = 0.0) -> float:
+	print("GlobalSettings: Fetching float setting -> [", category, "] ", key)
+	var val: Variant = get_setting(category, key, default_value)
+	if val is float:
+		return val
+	if val is int:
+		var int_val: int = val
+		return float(int_val)
+	return default_value

@@ -48,7 +48,12 @@ func _process(_delta: float) -> void:
 	)
 	var current_progress: float = 0.0
 	if not _progress_array.is_empty():
-		current_progress = float(_progress_array[0])
+		var raw_val: Variant = _progress_array[0]
+		if raw_val is float:
+			current_progress = raw_val
+		elif raw_val is int:
+			var int_val: int = raw_val
+			current_progress = float(int_val)
 	loading_progress_updated.emit(current_progress)
 
 	match status:
