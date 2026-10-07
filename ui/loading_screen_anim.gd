@@ -240,7 +240,7 @@ func _warmup_material(mat: Material) -> void:
 	var is_2d: bool = mat is CanvasItemMaterial
 
 	if mat is ShaderMaterial:
-		var s_mat: ShaderMaterial = mat as ShaderMaterial
+		var s_mat: ShaderMaterial = mat if mat is ShaderMaterial else null
 		if not is_instance_valid(s_mat.shader):
 			return
 		if s_mat.shader.get_mode() == Shader.MODE_CANVAS_ITEM:
@@ -351,8 +351,8 @@ func _finalize_scene_transition() -> void:
 	var sdfgi_setting: String = (
 		GlobalSettings.get_setting("Settings", "sdfgi", VideoConfig.DEFAULT_SDFGI) as String
 	)
-	var sdfgi_dict: Dictionary = VideoConfig.SDFGI_MODES.get(sdfgi_setting, {}) as Dictionary
-	var should_enable_sdfgi: bool = sdfgi_dict.get("enabled", false) as bool
+	var sdfgi_dict: Dictionary = VideoConfig.SDFGI_MODES.get(sdfgi_setting, {})
+	var should_enable_sdfgi: bool = sdfgi_dict.get("enabled", false)
 
 	if is_instance_valid(target_env) and should_enable_sdfgi:
 		target_env.sdfgi_enabled = true
@@ -390,7 +390,7 @@ func _reapply_active_video_settings() -> void:
 	var shadow_key: String = (
 		GlobalSettings.get_setting("Settings", "shadow_quality", "High (Smooth)") as String
 	)
-	var shadow_data: Dictionary = VideoConfig.SHADOW_QUALITIES.get(shadow_key, {}) as Dictionary
+	var shadow_data: Dictionary = VideoConfig.SHADOW_QUALITIES.get(shadow_key, {})
 	var fsr_key: String = (
 		GlobalSettings.get_setting("Settings", "fsr_mode", VideoConfig.DEFAULT_FSR_MODE) as String
 	)

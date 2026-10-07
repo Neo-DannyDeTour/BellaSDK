@@ -159,7 +159,7 @@ func _scan_surface_material() -> void:
 	if not is_instance_valid(collider) or not (collider is Node):
 		return
 
-	var target_node: Node = collider as Node
+	var target_node: Node = collider if collider is Node else null
 	var snow_node: Node = NodeQuery.find_ancestor_of_type(target_node, SnowGround)
 
 	if target_node is SnowGround:

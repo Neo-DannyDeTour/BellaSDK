@@ -65,36 +65,36 @@ func _setup_language_options() -> void:
 func _load_preferences() -> void:
 	print("GameplayPanel: Restoring saved preferences.")
 	if is_instance_valid(item_prompts_toggle):
-		var show_p: bool = GlobalSettings.get_setting("Gameplay", "show_item_prompts", true) as bool
+		var show_p: bool = GlobalSettings.get_setting("Gameplay", "show_item_prompts", true)
 		item_prompts_toggle.set_pressed_no_signal(show_p)
 
 	if is_instance_valid(tutorials_toggle):
-		var tuts: bool = GlobalSettings.get_setting("Gameplay", "show_tutorials", true) as bool
+		var tuts: bool = GlobalSettings.get_setting("Gameplay", "show_tutorials", true)
 		tutorials_toggle.set_pressed_no_signal(tuts)
 
 	if is_instance_valid(headbob_toggle):
-		var hb: bool = GlobalSettings.get_setting("Gameplay", "headbob_enabled", true) as bool
+		var hb: bool = GlobalSettings.get_setting("Gameplay", "headbob_enabled", true)
 		headbob_toggle.set_pressed_no_signal(hb)
 
 	if is_instance_valid(crosshair_toggle):
-		var ch: bool = GlobalSettings.get_setting("Gameplay", "crosshair_enabled", true) as bool
+		var ch: bool = GlobalSettings.get_setting("Gameplay", "crosshair_enabled", true)
 		crosshair_toggle.set_pressed_no_signal(ch)
 
 	if is_instance_valid(reduce_motion_toggle):
-		var rm: bool = GlobalSettings.get_setting("Accessibility", "reduce_motion", false) as bool
+		var rm: bool = GlobalSettings.get_setting("Accessibility", "reduce_motion", false)
 		reduce_motion_toggle.set_pressed_no_signal(rm)
 
 	if is_instance_valid(difficulty_option):
-		var diff_idx: int = GlobalSettings.get_setting("Gameplay", "difficulty", 1) as int
+		var diff_idx: int = GlobalSettings.get_setting("Gameplay", "difficulty", 1)
 		difficulty_option.selected = diff_idx
 
 	if is_instance_valid(language_option):
-		var lang_idx: int = GlobalSettings.get_setting("Gameplay", "language", 0) as int
+		var lang_idx: int = GlobalSettings.get_setting("Gameplay", "language", 0)
 		language_option.selected = lang_idx
 		_apply_language(lang_idx)
 
 	if is_instance_valid(region_option):
-		var reg_idx: int = GlobalSettings.get_setting("Gameplay", "region", 0) as int
+		var reg_idx: int = GlobalSettings.get_setting("Gameplay", "region", 0)
 		region_option.selected = reg_idx
 
 

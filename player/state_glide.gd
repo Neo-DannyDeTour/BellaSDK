@@ -27,14 +27,16 @@ var is_debug_allowed: bool = OS.has_feature("debug")
 ## Activates glider mesh visuals and locks out heavy item interactions.
 func enter(_msg: Dictionary = {}) -> void:
 	print("StateGlide: enter() called. Deploying glider.")
-	var p: Player = player as Player
+	var p: Player = player if player is Player else null
 	if not is_instance_valid(p):
 		return
 
 	if p.has_method(&"set_glider_visible"):
 		p.call(&"set_glider_visible", true)
 
-	var interact: PlayerInteractionComponent = p.interaction_component as PlayerInteractionComponent
+	var interact: PlayerInteractionComponent = (
+		p.interaction_component if p.interaction_component is PlayerInteractionComponent else null
+	)
 	if is_instance_valid(interact):
 		interact.is_heavy_lifting = true
 
@@ -42,18 +44,22 @@ func enter(_msg: Dictionary = {}) -> void:
 ## Stows glider visuals, resets view transforms, and unlocks interactions.
 func exit() -> void:
 	print("StateGlide: exit() called. Stowing glider.")
-	var p: Player = player as Player
+	var p: Player = player if player is Player else null
 	if not is_instance_valid(p):
 		return
 
 	if p.has_method(&"set_glider_visible"):
 		p.call(&"set_glider_visible", false)
 
-	var interact: PlayerInteractionComponent = p.interaction_component as PlayerInteractionComponent
+	var interact: PlayerInteractionComponent = (
+		p.interaction_component if p.interaction_component is PlayerInteractionComponent else null
+	)
 	if is_instance_valid(interact):
 		interact.is_heavy_lifting = false
 
-		var weapon_holder: Node3D = interact.get(&"weapon_holder") as Node3D
+		var weapon_holder: Node3D = (
+			interact.get(&"weapon_holder") if interact.get(&"weapon_holder") is Node3D else null
+		)
 		if is_instance_valid(weapon_holder):
 			weapon_holder.rotation_degrees.z = 0.0
 			weapon_holder.rotation.x = 0.0
@@ -68,14 +74,16 @@ func exit() -> void:
 ## Executes glide physics, banking, input steering, and transitions.
 func physics_update(delta: float) -> void:
 	print("StateGlide: physics_update() processing glide aerodynamics.")
-	var p: Player = player as Player
+	var p: Player = player if player is Player else null
 	if not is_instance_valid(p):
 		return
 
 	_apply_glide_physics(delta)
 	_handle_debug_updraft()
 
-	var loco: PlayerLocomotionComponent = p.locomotion_component as PlayerLocomotionComponent
+	var loco: PlayerLocomotionComponent = (
+		p.locomotion_component if p.locomotion_component is PlayerLocomotionComponent else null
+	)
 	if is_instance_valid(loco):
 		loco.set(&"last_velocity", p.velocity)
 
@@ -87,12 +95,16 @@ func physics_update(delta: float) -> void:
 ## Applies glide gravity, yaw steering, and damped momentum via [MathUtils].
 func _apply_glide_physics(delta: float) -> void:
 	print("StateGlide: _apply_glide_physics() calculating descent vectors.")
-	var p: Player = player as Player
+	var p: Player = player if player is Player else null
 	if not is_instance_valid(p):
 		return
 
-	var loco: PlayerLocomotionComponent = p.locomotion_component as PlayerLocomotionComponent
-	var interact: PlayerInteractionComponent = p.interaction_component as PlayerInteractionComponent
+	var loco: PlayerLocomotionComponent = (
+		p.locomotion_component if p.locomotion_component is PlayerLocomotionComponent else null
+	)
+	var interact: PlayerInteractionComponent = (
+		p.interaction_component if p.interaction_component is PlayerInteractionComponent else null
+	)
 
 	var gravity: float = loco.gravity if is_instance_valid(loco) else 9.8
 	p.velocity.y = move_toward(p.velocity.y, -max_fall_speed, gravity * delta)
@@ -107,7 +119,9 @@ func _apply_glide_physics(delta: float) -> void:
 		p.rotate_y(-input_dir.x * turn_speed * delta)
 
 	if is_instance_valid(interact):
-		var weapon_holder: Node3D = interact.get(&"weapon_holder") as Node3D
+		var weapon_holder: Node3D = (
+			interact.get(&"weapon_holder") if interact.get(&"weapon_holder") is Node3D else null
+		)
 		if is_instance_valid(weapon_holder):
 			weapon_holder.global_rotation.x = p.global_rotation.x
 			weapon_holder.global_rotation.y = p.global_rotation.y
@@ -126,13 +140,17 @@ func _apply_glide_physics(delta: float) -> void:
 ## Updates visual roll angle of weapon holder via [MathUtils].
 func _bank_glider(input_x: float, delta: float) -> void:
 	print("StateGlide: _bank_glider() setting roll rotation degrees.")
-	var p: Player = player as Player
+	var p: Player = player if player is Player else null
 	if not is_instance_valid(p):
 		return
 
-	var interact: PlayerInteractionComponent = p.interaction_component as PlayerInteractionComponent
+	var interact: PlayerInteractionComponent = (
+		p.interaction_component if p.interaction_component is PlayerInteractionComponent else null
+	)
 	if is_instance_valid(interact):
-		var weapon_holder: Node3D = interact.get(&"weapon_holder") as Node3D
+		var weapon_holder: Node3D = (
+			interact.get(&"weapon_holder") if interact.get(&"weapon_holder") is Node3D else null
+		)
 		if is_instance_valid(weapon_holder):
 			var target_bank: float = -input_x * max_bank_angle
 			weapon_holder.rotation_degrees.z = MathUtils.damp(
@@ -146,7 +164,7 @@ func _handle_debug_updraft() -> void:
 	if not is_debug_allowed:
 		return
 
-	var p: Player = player as Player
+	var p: Player = player if player is Player else null
 	if not is_instance_valid(p):
 		return
 
@@ -158,7 +176,7 @@ func _handle_debug_updraft() -> void:
 ## Evaluates landing and cancel inputs to transition to ground or air.
 func _check_transitions() -> void:
 	print("StateGlide: _check_transitions() evaluating state exits.")
-	var p: Player = player as Player
+	var p: Player = player if player is Player else null
 	if not is_instance_valid(p):
 		return
 
@@ -175,7 +193,7 @@ func _check_transitions() -> void:
 ## Updates camera head motion and interaction scanner while gliding.
 func _update_components(delta: float) -> void:
 	print("StateGlide: _update_components() polling camera and scanner.")
-	var p: Player = player as Player
+	var p: Player = player if player is Player else null
 	if not is_instance_valid(p):
 		return
 
@@ -187,13 +205,19 @@ func _update_components(delta: float) -> void:
 	if is_instance_valid(cam_ctrl):
 		cam_ctrl.update_camera(delta, input_dir, false, false, false, p.velocity.length())
 
-	var interact: PlayerInteractionComponent = p.interaction_component as PlayerInteractionComponent
+	var interact: PlayerInteractionComponent = (
+		p.interaction_component if p.interaction_component is PlayerInteractionComponent else null
+	)
 	if not is_instance_valid(interact):
 		return
 
 	if interact.has_method(&"process_interaction"):
 		interact.call(&"process_interaction", delta)
 	else:
-		var scanner: Object = interact.get(&"interaction_scanner") as Object
+		var scanner: Object = (
+			interact.get(&"interaction_scanner")
+			if interact.get(&"interaction_scanner") is Object
+			else null
+		)
 		if is_instance_valid(scanner) and scanner.has_method(&"process_interaction"):
 			scanner.call(&"process_interaction", delta)

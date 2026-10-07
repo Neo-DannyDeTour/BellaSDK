@@ -134,7 +134,7 @@ func _update_shader_parameter(param_name: String, new_value: Variant) -> void:
 		return
 
 	var active_mat: Material = background_mesh.get_active_material(0)
-	var shader_mat: ShaderMaterial = active_mat as ShaderMaterial
+	var shader_mat: ShaderMaterial = active_mat if active_mat is ShaderMaterial else null
 
 	if is_instance_valid(shader_mat):
 		shader_mat.set_shader_parameter(param_name, new_value)
@@ -164,12 +164,12 @@ func _get_color_name_from_shader() -> String:
 		return "unknown"
 
 	var active_mat: Material = background_mesh.get_active_material(0)
-	var shader_mat: ShaderMaterial = active_mat as ShaderMaterial
+	var shader_mat: ShaderMaterial = active_mat if active_mat is ShaderMaterial else null
 
 	if is_instance_valid(shader_mat):
 		var color_val: Variant = shader_mat.get_shader_parameter("bg_color_a")
 		if color_val is Color:
-			var c: Color = color_val as Color
+			var c: Color = color_val if color_val is Color else null
 			var h: float = c.h
 			var s: float = c.s
 
@@ -236,7 +236,7 @@ func _fit_camera_to_mesh() -> void:
 		print("_fit_camera_to_mesh(): ERROR - Missing target node assignments.")
 		return
 
-	var quad: QuadMesh = background_mesh.mesh as QuadMesh
+	var quad: QuadMesh = background_mesh.mesh if background_mesh.mesh is QuadMesh else null
 	if not is_instance_valid(quad):
 		print("_fit_camera_to_mesh(): ERROR - background_mesh does not contain a QuadMesh.")
 		return

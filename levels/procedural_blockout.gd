@@ -127,9 +127,11 @@ var _nested_container: Node3D
 func _ready() -> void:
 	print("ProceduralBlockout: Initializing generator.")
 	if not is_instance_valid(grid_map):
-		grid_map = get_node_or_null("GridMap") as GridMap
+		var raw_gm: Node = get_node_or_null("GridMap")
+		grid_map = raw_gm if raw_gm is GridMap else null
 	if not is_instance_valid(player):
-		player = get_node_or_null("Player") as CharacterBody3D
+		var raw_p: Node = get_node_or_null("Player")
+		player = raw_p if raw_p is CharacterBody3D else null
 
 	_ensure_containers()
 	generate_level()
@@ -227,17 +229,17 @@ func _create_room_cells(origin: Vector3i, size: Vector2i, shape: RoomShape) -> A
 					cells.append(origin + Vector3i(x, 0, z))
 
 		RoomShape.L_SHAPE:
-			var split_x: int = maxi(2, floori(float(size.x) / 2.0))
-			var split_z: int = maxi(2, floori(float(size.y) / 2.0))
+			var split_x: int = maxi(2, size.x / 2)
+			var split_z: int = maxi(2, size.y / 2)
 			for x: int in range(size.x):
 				for z: int in range(size.y):
 					if x < split_x or z < split_z:
 						cells.append(origin + Vector3i(x, 0, z))
 
 		RoomShape.T_SHAPE:
-			var bar_depth: int = maxi(2, floori(float(size.y) / 3.0))
-			var stem_w: int = maxi(2, floori(float(size.x) / 3.0))
-			var stem_start: int = floori(float(size.x - stem_w) / 2.0)
+			var bar_depth: int = maxi(2, size.y / 3)
+			var stem_w: int = maxi(2, size.x / 3)
+			var stem_start: int = (size.x - stem_w) / 2
 			for x: int in range(size.x):
 				for z: int in range(size.y):
 					var in_bar: bool = z < bar_depth
@@ -246,10 +248,10 @@ func _create_room_cells(origin: Vector3i, size: Vector2i, shape: RoomShape) -> A
 						cells.append(origin + Vector3i(x, 0, z))
 
 		RoomShape.CROSS:
-			var arm_x: int = maxi(2, floori(float(size.x) / 3.0))
-			var arm_z: int = maxi(2, floori(float(size.y) / 3.0))
-			var start_x: int = floori(float(size.x - arm_x) / 2.0)
-			var start_z: int = floori(float(size.y - arm_z) / 2.0)
+			var arm_x: int = maxi(2, size.x / 3)
+			var arm_z: int = maxi(2, size.y / 3)
+			var start_x: int = (size.x - arm_x) / 2
+			var start_z: int = (size.y - arm_z) / 2
 			for x: int in range(size.x):
 				for z: int in range(size.y):
 					var in_horiz: bool = z >= start_z and z < start_z + arm_z
@@ -258,13 +260,13 @@ func _create_room_cells(origin: Vector3i, size: Vector2i, shape: RoomShape) -> A
 						cells.append(origin + Vector3i(x, 0, z))
 
 		RoomShape.RADIAL:
-			var radius: float = float(mini(size.x, size.y)) * 0.5
-			var center_x: float = float(origin.x) + float(size.x) * 0.5
-			var center_z: float = float(origin.z) + float(size.y) * 0.5
+			var radius: float = mini(size.x, size.y) * 0.5
+			var center_x: float = origin.x + size.x * 0.5
+			var center_z: float = origin.z + size.y * 0.5
 			for x: int in range(size.x):
 				for z: int in range(size.y):
-					var px: float = float(origin.x + x) + 0.5
-					var pz: float = float(origin.z + z) + 0.5
+					var px: float = origin.x + x + 0.5
+					var pz: float = origin.z + z + 0.5
 					var dx: float = px - center_x
 					var dz: float = pz - center_z
 					var dist_sq: float = dx * dx + dz * dz
@@ -328,7 +330,7 @@ func _spawn_nested_inner_box(min_x: int, max_x: int, min_z: int, max_z: int, gri
 	var start_world: Vector3 = grid_to_world(Vector3i(min_x, grid_y, min_z))
 	var end_world: Vector3 = grid_to_world(Vector3i(max_x + 1, grid_y, max_z + 1))
 	var box_size: Vector3 = Vector3(
-		end_world.x - start_world.x, float(wall_height - 1) * cell_size, end_world.z - start_world.z
+		end_world.x - start_world.x, (wall_height - 1) * cell_size, end_world.z - start_world.z
 	)
 	var box_center: Vector3 = (
 		start_world + Vector3(box_size.x * 0.5, box_size.y * 0.5, box_size.z * 0.5)
@@ -398,8 +400,8 @@ func _connect_floor_rooms(floor_rooms: Array[Array], floor_index: int) -> void:
 	for i: int in range(floor_rooms.size()):
 		var room_a: Array = floor_rooms[i]
 		var room_b: Array = floor_rooms[(i + 1) % floor_rooms.size()]
-		var center_a: Vector3i = room_a[floori(float(room_a.size()) / 2.0)]
-		var center_b: Vector3i = room_b[floori(float(room_b.size()) / 2.0)]
+		var center_a: Vector3i = room_a[room_a.size() / 2]
+		var center_b: Vector3i = room_b[room_b.size() / 2]
 		_carve_corridor(center_a, center_b)
 
 
@@ -415,8 +417,8 @@ func _connect_floors(
 	var upper_room: Array = floor_b_rooms[0]
 
 	var lower_y: int = floor_index * floor_height_cells
-	var lower_room_center: Vector3i = lower_room[floori(float(lower_room.size()) / 2.0)]
-	var upper_room_center: Vector3i = upper_room[floori(float(upper_room.size()) / 2.0)]
+	var lower_room_center: Vector3i = lower_room[lower_room.size() / 2]
+	var upper_room_center: Vector3i = upper_room[upper_room.size() / 2]
 
 	var stair_run_start: Vector3i = Vector3i(lower_room_center.x + 2, lower_y, lower_room_center.z)
 
@@ -445,10 +447,10 @@ func _spawn_csg_stairs(start_coord: Vector3i) -> void:
 	print("ProceduralBlockout: Spawning procedural stairs at %s." % start_coord)
 	var stairs: ProceduralStairs = ProceduralStairs.new()
 	stairs.name = "Stairs_%d_%d" % [start_coord.x, start_coord.y]
-	stairs.total_height = float(floor_height_cells) * cell_size
-	stairs.total_length = float(stair_length_cells) * cell_size
+	stairs.total_height = floor_height_cells * cell_size
+	stairs.total_length = stair_length_cells * cell_size
 	stairs.stair_width = cell_size
-	stairs.step_count = maxi(6, int(stairs.total_height / 0.25))
+	stairs.step_count = maxi(6, roundi(stairs.total_height / 0.25))
 	stairs.fill_to_floor = true
 	stairs.generate_smooth_ramp = true
 
@@ -571,7 +573,7 @@ func _generate_parkour_elements() -> void:
 	for room_cells: Array in _rooms_by_floor:
 		for room: Array in room_cells:
 			if not room.is_empty():
-				room_centers.append(room[floori(float(room.size()) / 2.0)])
+				room_centers.append(room[room.size() / 2])
 
 	for i: int in range(room_centers.size()):
 		var center: Vector3i = room_centers[i]
@@ -637,7 +639,7 @@ func _spawn_monkey_bar_traversal(origin: Vector3i) -> void:
 	monkey_bars.name = "MonkeyBars_%d_%d" % [origin.x, origin.z]
 	monkey_bars.size = Vector3(0.8, 0.3, cell_size * 2.5)
 	var world_pos: Vector3 = (
-		grid_to_world(origin) + Vector3(0.0, float(wall_height) * cell_size - 0.6, 0.0)
+		grid_to_world(origin) + Vector3(0.0, wall_height * cell_size - 0.6, 0.0)
 	)
 	monkey_bars.position = world_pos
 	_parkour_container.add_child(monkey_bars)
@@ -652,11 +654,7 @@ func _spawn_sprint_jump_chasm(start_coord: Vector3i, target_coord: Vector3i) -> 
 		)
 	)
 	var sum_coord: Vector3i = start_coord + target_coord
-	var gap_coord: Vector3i = Vector3i(
-		floori(float(sum_coord.x) / 2.0),
-		floori(float(sum_coord.y) / 2.0),
-		floori(float(sum_coord.z) / 2.0)
-	)
+	var gap_coord: Vector3i = Vector3i(sum_coord.x / 2, sum_coord.y / 2, sum_coord.z / 2)
 	_grid[gap_coord] = CellType.EMPTY
 
 	var landing_coord: Vector3i = gap_coord + Vector3i(1, 0, 0)
@@ -726,28 +724,32 @@ func _place_player_at_start() -> void:
 func _ensure_containers() -> void:
 	print("ProceduralBlockout: Verifying generator container nodes.")
 	if not is_instance_valid(_stairs_container):
-		_stairs_container = get_node_or_null("StairsContainer") as Node3D
+		var raw_s: Node = get_node_or_null("StairsContainer")
+		_stairs_container = raw_s if raw_s is Node3D else null
 		if not _stairs_container:
 			_stairs_container = Node3D.new()
 			_stairs_container.name = "StairsContainer"
 			add_child(_stairs_container)
 
 	if not is_instance_valid(_ceiling_container):
-		_ceiling_container = get_node_or_null("CeilingContainer") as Node3D
+		var raw_c: Node = get_node_or_null("CeilingContainer")
+		_ceiling_container = raw_c if raw_c is Node3D else null
 		if not _ceiling_container:
 			_ceiling_container = Node3D.new()
 			_ceiling_container.name = "CeilingContainer"
 			add_child(_ceiling_container)
 
 	if not is_instance_valid(_parkour_container):
-		_parkour_container = get_node_or_null("ParkourContainer") as Node3D
+		var raw_p: Node = get_node_or_null("ParkourContainer")
+		_parkour_container = raw_p if raw_p is Node3D else null
 		if not _parkour_container:
 			_parkour_container = Node3D.new()
 			_parkour_container.name = "ParkourContainer"
 			add_child(_parkour_container)
 
 	if not is_instance_valid(_nested_container):
-		_nested_container = get_node_or_null("NestedContainer") as Node3D
+		var raw_n: Node = get_node_or_null("NestedContainer")
+		_nested_container = raw_n if raw_n is Node3D else null
 		if not _nested_container:
 			_nested_container = Node3D.new()
 			_nested_container.name = "NestedContainer"
@@ -773,6 +775,4 @@ func get_cell(coord: Vector3i) -> int:
 ## Converts [param grid_pos] cell coordinates to world space [Vector3].
 func grid_to_world(grid_pos: Vector3i) -> Vector3:
 	print("ProceduralBlockout: Converting %s to world coordinates." % grid_pos)
-	return Vector3(
-		float(grid_pos.x) * cell_size, float(grid_pos.y) * cell_size, float(grid_pos.z) * cell_size
-	)
+	return Vector3(grid_pos.x * cell_size, grid_pos.y * cell_size, grid_pos.z * cell_size)

@@ -69,7 +69,7 @@ func exit() -> void:
 	is_zipline_transitioning = false
 	player.scale = Vector3.ONE
 
-	var p: Player = player as Player
+	var p: Player = player if player is Player else null
 	var detach_tween: Tween = create_tween().set_parallel(true)
 
 	if is_instance_valid(p) and is_instance_valid(p.camera_controller):
@@ -99,7 +99,7 @@ func physics_update(delta: float) -> void:
 	_calculate_movement(delta, input_dir)
 	_apply_position()
 
-	var p: Player = player as Player
+	var p: Player = player if player is Player else null
 	if is_instance_valid(p) and is_instance_valid(p.camera_controller):
 		p.camera_controller.update_camera(
 			delta, input_dir, false, false, false, ZIPLINE_SLIDE_SPEED
@@ -152,7 +152,7 @@ func _perform_attach_tween() -> void:
 		)
 
 		var pitch_angle: float = asin(downhill_dir.y)
-		var p: Player = player as Player
+		var p: Player = player if player is Player else null
 		if is_instance_valid(p) and is_instance_valid(p.camera_controller):
 			var cam_ctrl: CameraController = p.camera_controller
 			if is_instance_valid(cam_ctrl.head):
@@ -178,7 +178,7 @@ func _calculate_movement(delta: float, input_dir: Vector2) -> void:
 	var downhill_sign: float = 1.0 if zipline_dir.y < 0.0 else -1.0
 	var downhill_vector: Vector3 = zipline_dir * downhill_sign
 
-	var p: Player = player as Player
+	var p: Player = player if player is Player else null
 	var look_forward: Vector3 = Vector3.FORWARD
 	if is_instance_valid(p) and is_instance_valid(p.camera_controller):
 		look_forward = p.camera_controller.get_camera_look_dir()
@@ -238,7 +238,7 @@ func _check_dismount_conditions() -> void:
 ## Applies exit launch impulse and transitions machine into [StateAir].
 func _perform_dismount() -> void:
 	print("StateZipline: _perform_dismount() releasing from zipline.")
-	var p: Player = player as Player
+	var p: Player = player if player is Player else null
 	if is_instance_valid(p) and is_instance_valid(p.environment_component):
 		var env: PlayerEnvironmentComponent = p.environment_component
 		env.start_zipline_cooldown(0.5)

@@ -51,7 +51,9 @@ var can_press: bool = true
 	get_node_or_null("HighlightComponent") as HighlightComponent
 )
 ## Reference to the 3D label displaying interaction prompts.
-@onready var label_interact: Label3D = get_node_or_null("LabelInteract") as Label3D
+@onready var label_interact: Label3D = (
+	get_node_or_null("LabelInteract") if get_node_or_null("LabelInteract") is Label3D else null
+)
 
 
 ## Initializes the button, synchronizes local targets, and connects interaction signals.

@@ -46,7 +46,7 @@ func _process(_delta: float) -> void:
 ## Resizes the internal [CollisionShape3D] to extend below the CSG geometry.
 func _update_trigger_box() -> void:
 	if is_instance_valid(col_shape) and is_instance_valid(col_shape.shape):
-		var box: BoxShape3D = col_shape.shape as BoxShape3D
+		var box: BoxShape3D = col_shape.shape if col_shape.shape is BoxShape3D else null
 		box.size = Vector3(size.x, size.y + 1.5, size.z)
 		col_shape.position.y = -0.75
 
@@ -57,7 +57,7 @@ func _on_body_entered(body: Node3D) -> void:
 	if Engine.is_editor_hint():
 		return
 
-	var p: Player = body as Player
+	var p: Player = body if body is Player else null
 	if is_instance_valid(p):
 		p.set_available_monkey_bar(self)
 
@@ -68,6 +68,6 @@ func _on_body_exited(body: Node3D) -> void:
 	if Engine.is_editor_hint():
 		return
 
-	var p: Player = body as Player
+	var p: Player = body if body is Player else null
 	if is_instance_valid(p):
 		p.clear_available_monkey_bar(self)

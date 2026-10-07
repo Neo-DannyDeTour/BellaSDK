@@ -30,7 +30,9 @@ var _fuse_timer: float = 0.0
 @onready var burst_sparks: GPUParticles3D = $BurstSparks
 
 ## Pre-cached editor icon purged at runtime to reduce overhead.
-@onready var _editor_icon: Node3D = get_node_or_null("%EditorIcon") as Node3D
+@onready var _editor_icon: Node3D = (
+	get_node_or_null("%EditorIcon") if get_node_or_null("%EditorIcon") is Node3D else null
+)
 
 
 ## Configures collision masks, sizes sphere shape once, and arms fuse.
@@ -48,7 +50,8 @@ func _ready() -> void:
 	)
 
 	if blast_shape.shape is SphereShape3D:
-		(blast_shape.shape as SphereShape3D).radius = explosion_radius
+		var s_shape: SphereShape3D = blast_shape.shape
+		s_shape.radius = explosion_radius
 
 	_reset_fuse()
 
@@ -80,7 +83,7 @@ func _detonate() -> void:
 			if is_instance_valid(parent_node) and parent_node.get_class() == "PhysicsCable3D":
 				continue
 
-			var target_rb: RigidBody3D = body as RigidBody3D
+			var target_rb: RigidBody3D = body
 			target_rb.sleeping = false
 
 			var dir: Vector3 = center.direction_to(target_rb.global_position)

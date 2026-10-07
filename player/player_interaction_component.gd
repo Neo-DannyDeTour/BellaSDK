@@ -71,7 +71,8 @@ var _last_drop_time: int = 0
 ## Initializes component, caches player, and binds scanner and event listeners.
 func initialize(p_player: CharacterBody3D) -> void:
 	print("InteractionComponent: initialize() called. Caching player reference.")
-	player = p_player as Player
+	if p_player is Player:
+		player = p_player
 
 	if (
 		is_instance_valid(interaction_scanner)
@@ -175,19 +176,25 @@ func _try_pick_up() -> bool:
 			var collider: Object = interact_cast.get_collider(i)
 			if not (collider is Node3D):
 				continue
-			var target_body: Node3D = collider as Node3D
+			var target_body: Node3D = collider if collider is Node3D else null
 			if target_body is Area3D:
-				target_body = target_body.get_parent() as Node3D
+				var parent_node: Node = target_body.get_parent()
+				target_body = parent_node if parent_node is Node3D else null
+
+			if not is_instance_valid(target_body):
+				continue
 
 			var root_node: Node3D = NodeQuery.resolve_interactable_root(target_body)
 			if root_node is RigidBody3D and root_node.has_method(&"pick_up"):
 				print("InteractionComponent: Short-range grab on ", root_node.name)
-				force_grab_item(root_node as RigidBody3D)
+				var rb_root: RigidBody3D = root_node
+				force_grab_item(rb_root)
 				return true
 
 			if target_body is RigidBody3D and target_body.has_method(&"pick_up"):
 				print("InteractionComponent: Short-range grab on ", target_body.name)
-				force_grab_item(target_body as RigidBody3D)
+				var rb_target: RigidBody3D = target_body
+				force_grab_item(rb_target)
 				return true
 
 	return false
@@ -313,7 +320,7 @@ func attach_item_to_weapon_holder(
 	item.global_position = hold_position.global_position + offset
 	item.transform.basis = Basis.IDENTITY
 
-	var target_player: Player = p_player as Player if p_player is Player else player
+	var target_player: Player = p_player if p_player is Player else player
 	if is_instance_valid(target_player) and is_instance_valid(target_player.locomotion_component):
 		target_player.locomotion_component.can_sprint = false
 

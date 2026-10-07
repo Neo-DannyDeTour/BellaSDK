@@ -108,15 +108,23 @@ static var default_zone: SoundscapeZone = null
 var current_tween: Tween
 
 ## Primary audio stream player for background ambient music.
-@onready
-var ambient_player: AudioStreamPlayer = get_node_or_null("AmbientPlayer") as AudioStreamPlayer
+@onready var ambient_player: AudioStreamPlayer = (
+	get_node_or_null("AmbientPlayer")
+	if get_node_or_null("AmbientPlayer") is AudioStreamPlayer
+	else null
+)
 
 ## Internal timer used for scheduling random environmental one-shot sounds.
-@onready var timer: Timer = get_node_or_null("RandomSoundTimer") as Timer
+@onready var timer: Timer = (
+	get_node_or_null("RandomSoundTimer") if get_node_or_null("RandomSoundTimer") is Timer else null
+)
 
 ## Attached collision shape node defining trigger boundaries.
-@onready
-var collision_shape: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
+@onready var collision_shape: CollisionShape3D = (
+	get_node_or_null("CollisionShape3D")
+	if get_node_or_null("CollisionShape3D") is CollisionShape3D
+	else null
+)
 
 ## System timestamp in milliseconds tracking last exit time.
 var _last_exit_time: int = 0
@@ -173,7 +181,7 @@ func _update_bounds() -> void:
 			else:
 				shape_node.shape = shape_node.shape.duplicate()
 			shape_node.shape.resource_local_to_scene = true
-			var box_shape: BoxShape3D = shape_node.shape as BoxShape3D
+			var box_shape: BoxShape3D = shape_node.shape if shape_node.shape is BoxShape3D else null
 			box_shape.size = zone_size
 		elif shape_type == EditorTriggerVisualizer.ShapeType.SPHERE:
 			if not shape_node.shape is SphereShape3D:
@@ -181,7 +189,9 @@ func _update_bounds() -> void:
 			else:
 				shape_node.shape = shape_node.shape.duplicate()
 			shape_node.shape.resource_local_to_scene = true
-			var sphere_shape: SphereShape3D = shape_node.shape as SphereShape3D
+			var sphere_shape: SphereShape3D = (
+				shape_node.shape if shape_node.shape is SphereShape3D else null
+			)
 			sphere_shape.radius = zone_size.x * 0.5
 
 		shape_node.position = zone_offset
@@ -204,7 +214,11 @@ func _update_bounds() -> void:
 func _get_collision_shape() -> CollisionShape3D:
 	if is_instance_valid(collision_shape):
 		return collision_shape
-	var col: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
+	var col: CollisionShape3D = (
+		get_node_or_null("CollisionShape3D")
+		if get_node_or_null("CollisionShape3D") is CollisionShape3D
+		else null
+	)
 	if not is_instance_valid(col):
 		for child: Node in get_children():
 			if child is CollisionShape3D:

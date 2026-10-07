@@ -51,7 +51,7 @@ func _setup_shader_material() -> void:
 	if not is_instance_valid(mesh) or not mesh is MeshInstance3D:
 		return
 
-	var mesh_inst: MeshInstance3D = mesh as MeshInstance3D
+	var mesh_inst: MeshInstance3D = mesh if mesh is MeshInstance3D else null
 	_cell_shader_mat = ShaderMaterial.new()
 	_cell_shader_mat.shader = fill_shader
 	_cell_shader_mat.set_shader_parameter("discharged_color", discharged_color)

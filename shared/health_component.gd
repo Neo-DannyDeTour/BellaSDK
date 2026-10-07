@@ -105,7 +105,7 @@ func die() -> void:
 	if use_pooling:
 		print("HealthComponent: die() - Hiding and teleporting actor for pooling.")
 		if target_node is Node3D:
-			var node_3d: Node3D = target_node as Node3D
+			var node_3d: Node3D = target_node if target_node is Node3D else null
 			node_3d.global_position = Vector3(0.0, -10000.0, 0.0)
 			node_3d.visible = false
 
@@ -123,7 +123,7 @@ func reset() -> void:
 
 	var target_node: Node = get_parent()
 	if target_node is Node3D:
-		var node_3d: Node3D = target_node as Node3D
+		var node_3d: Node3D = target_node if target_node is Node3D else null
 		node_3d.visible = true
 		node_3d.process_mode = Node.PROCESS_MODE_INHERIT
 

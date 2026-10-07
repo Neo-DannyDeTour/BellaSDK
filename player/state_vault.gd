@@ -6,7 +6,7 @@ extends PlayerState
 ## Initializes vault state, connects finish signal, and resets player velocity.
 func enter(_msg: Dictionary = {}) -> void:
 	print("StateVault: enter() called. Initializing vault execution.")
-	var typed_player: Player = player as Player
+	var typed_player: Player = player if player is Player else null
 	var env: PlayerEnvironmentComponent = (
 		typed_player.environment_component as PlayerEnvironmentComponent
 		if is_instance_valid(typed_player)
@@ -24,7 +24,7 @@ func enter(_msg: Dictionary = {}) -> void:
 ## Cleans up signal connections on [VaultController] during state exit.
 func exit() -> void:
 	print("StateVault: exit() called. Cleaning up vault connections.")
-	var typed_player: Player = player as Player
+	var typed_player: Player = player if player is Player else null
 	var env: PlayerEnvironmentComponent = (
 		typed_player.environment_component as PlayerEnvironmentComponent
 		if is_instance_valid(typed_player)

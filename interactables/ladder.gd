@@ -11,7 +11,9 @@ extends Area3D
 			_update_visuals()
 
 ## Editor-only mesh indicating the mountable face of the ladder.
-@onready var arrow: MeshInstance3D = get_node_or_null("Arrow") as MeshInstance3D
+@onready var arrow: MeshInstance3D = (
+	get_node_or_null("Arrow") if get_node_or_null("Arrow") is MeshInstance3D else null
+)
 
 
 ## Initializes collision signals, runtime visibility, and visual box sizing.
@@ -28,7 +30,9 @@ func _ready() -> void:
 		if is_instance_valid(arrow):
 			arrow.hide()
 		if has_node("MeshInstance3D"):
-			var mesh_node: Node3D = get_node("MeshInstance3D") as Node3D
+			var mesh_node: Node3D = (
+				get_node("MeshInstance3D") if get_node("MeshInstance3D") is Node3D else null
+			)
 			if is_instance_valid(mesh_node):
 				mesh_node.hide()
 
@@ -37,14 +41,20 @@ func _ready() -> void:
 func _update_visuals() -> void:
 	print("Ladder: Updating visuals and collision shapes to size: ", ladder_size)
 	if has_node("CollisionShape3D"):
-		var col_node: CollisionShape3D = get_node("CollisionShape3D") as CollisionShape3D
+		var col_node: CollisionShape3D = (
+			get_node("CollisionShape3D")
+			if get_node("CollisionShape3D") is CollisionShape3D
+			else null
+		)
 		if is_instance_valid(col_node) and col_node.shape is BoxShape3D:
 			if Engine.is_editor_hint() and not col_node.shape.resource_local_to_scene:
 				col_node.shape = col_node.shape.duplicate()
 			(col_node.shape as BoxShape3D).size = ladder_size
 
 	if has_node("MeshInstance3D"):
-		var mesh_node: MeshInstance3D = get_node("MeshInstance3D") as MeshInstance3D
+		var mesh_node: MeshInstance3D = (
+			get_node("MeshInstance3D") if get_node("MeshInstance3D") is MeshInstance3D else null
+		)
 		if is_instance_valid(mesh_node) and mesh_node.mesh is BoxMesh:
 			if Engine.is_editor_hint() and not mesh_node.mesh.resource_local_to_scene:
 				mesh_node.mesh = mesh_node.mesh.duplicate()

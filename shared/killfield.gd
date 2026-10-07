@@ -16,7 +16,7 @@ func _ready() -> void:
 func _on_body_entered(body: Node3D) -> void:
 	print("Killfield: _on_body_entered() triggered by node: ", body.name)
 	if body.name == "Player" or body.is_in_group(&"Player"):
-		if "noclip" in body and bool(body.get(&"noclip")) == true:
+		if "noclip" in body and body.get(&"noclip") == true:
 			return
 
 		if SaveManager.last_checkpoint_pos != Vector3.ZERO:

@@ -448,13 +448,21 @@ func _get_player_held_object(player_node: Node3D) -> Node3D:
 	if direct_held is Node3D:
 		return direct_held
 
-	var int_comp: Node = player_node.get("interaction_component") as Node
+	var int_comp: Node = (
+		player_node.get("interaction_component")
+		if player_node.get("interaction_component") is Node
+		else null
+	)
 	if is_instance_valid(int_comp):
 		var held_item: Variant = int_comp.get("held_item")
 		if held_item is Node3D:
 			return held_item
 
-		var scanner: Node = int_comp.get("interaction_scanner") as Node
+		var scanner: Node = (
+			int_comp.get("interaction_scanner")
+			if int_comp.get("interaction_scanner") is Node
+			else null
+		)
 		if is_instance_valid(scanner):
 			var scan_held: Variant = scanner.get("held_object")
 			if scan_held is Node3D:
@@ -473,7 +481,11 @@ func _clear_player_held_object(player_node: Node3D) -> void:
 	if "held_object" in player_node:
 		player_node.set("held_object", null)
 
-	var int_comp: Node = player_node.get("interaction_component") as Node
+	var int_comp: Node = (
+		player_node.get("interaction_component")
+		if player_node.get("interaction_component") is Node
+		else null
+	)
 	if is_instance_valid(int_comp):
 		if int_comp.has_method("force_clear_hands"):
 			int_comp.call(&"force_clear_hands")
@@ -500,7 +512,11 @@ func _install_valve(player_node: Node3D, held_valve: Node3D) -> void:
 	if is_instance_valid(wheel):
 		wheel.show()
 
-	var weapon_holder: Node3D = player_node.get_node_or_null("%WeaponHolder") as Node3D
+	var weapon_holder: Node3D = (
+		player_node.get_node_or_null("%WeaponHolder")
+		if player_node.get_node_or_null("%WeaponHolder") is Node3D
+		else null
+	)
 	if is_instance_valid(weapon_holder):
 		weapon_holder.show()
 	print("Valve: Valve Auto-Installed!")
@@ -513,7 +529,11 @@ func _detach_valve() -> void:
 		push_warning("Cannot detach: No Pickable Valve Scene assigned!")
 		return
 
-	var player_node: Node3D = get_tree().get_first_node_in_group("player") as Node3D
+	var player_node: Node3D = (
+		get_tree().get_first_node_in_group("player")
+		if get_tree().get_first_node_in_group("player") is Node3D
+		else null
+	)
 	if not is_instance_valid(player_node):
 		return
 
@@ -524,7 +544,7 @@ func _detach_valve() -> void:
 		push_warning("Valve: Instantiated valve scene is not a Node3D!")
 		return
 
-	var spawned_valve: Node3D = raw_instance as Node3D
+	var spawned_valve: Node3D = raw_instance if raw_instance is Node3D else null
 
 	if is_instance_valid(outline_material) and "outline_material" in spawned_valve:
 		spawned_valve.set("outline_material", outline_material)
@@ -542,7 +562,11 @@ func _detach_valve() -> void:
 		spawned_valve.global_position = global_position
 
 	var grabbed_successfully: bool = false
-	var int_comp: Node = player_node.get("interaction_component") as Node
+	var int_comp: Node = (
+		player_node.get("interaction_component")
+		if player_node.get("interaction_component") is Node
+		else null
+	)
 
 	if is_instance_valid(int_comp) and int_comp.has_method("force_grab_item"):
 		int_comp.call(&"force_grab_item", spawned_valve as RigidBody3D)
@@ -553,7 +577,11 @@ func _detach_valve() -> void:
 	if not grabbed_successfully and spawned_valve.has_method("pick_up") and hold_pos_var is Node3D:
 		spawned_valve.call(&"pick_up", hold_pos_var, player_node)
 
-	var weapon_holder: Node3D = player_node.get_node_or_null("%WeaponHolder") as Node3D
+	var weapon_holder: Node3D = (
+		player_node.get_node_or_null("%WeaponHolder")
+		if player_node.get_node_or_null("%WeaponHolder") is Node3D
+		else null
+	)
 	if is_instance_valid(weapon_holder) and not grabbed_successfully:
 		weapon_holder.hide()
 
@@ -604,7 +632,7 @@ func _update_valve_label() -> void:
 		var key_name: String = "???"
 
 		if not events.is_empty():
-			var primary_ev: InputEvent = events[0] as InputEvent
+			var primary_ev: InputEvent = events[0] if events[0] is InputEvent else null
 			if is_instance_valid(primary_ev):
 				key_name = InputHelper.sanitize_key_name(primary_ev.as_text())
 				icon_tex = InputHelper.get_event_icon(primary_ev)

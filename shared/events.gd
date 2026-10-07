@@ -576,7 +576,6 @@ func _on_font_changed(font_name: String) -> void:
 
 
 ## Dynamically iterates the GlobalSettings font registry and caches resources.
-@warning_ignore("unsafe_cast")
 func _load_registered_fonts() -> void:
 	print("Events: Loading registered fonts from GlobalSettings.")
 	if _is_cached:
@@ -592,12 +591,12 @@ func _load_registered_fonts() -> void:
 	var registry_variant: Variant = global_settings_node.get("FONT_REGISTRY")
 	if not (registry_variant is Array):
 		return
-	var registry: Array = registry_variant as Array
+	var registry: Array = registry_variant
 
 	for entry_variant: Variant in registry:
 		if not entry_variant is Dictionary:
 			continue
-		var entry: Dictionary = entry_variant as Dictionary
+		var entry: Dictionary = entry_variant
 		var id: String = str(entry.get("id", ""))
 		var path: String = str(entry.get("path", ""))
 
@@ -626,7 +625,7 @@ func _apply_font_override_recursive(parent: Node, new_font: Font) -> void:
 		return
 
 	if parent is Control:
-		var ctrl: Control = parent as Control
+		var ctrl: Control = parent if parent is Control else null
 		for font_key: StringName in UI_FONT_KEYS:
 			ctrl.add_theme_font_override(font_key, new_font)
 		ctrl.notification(Control.NOTIFICATION_THEME_CHANGED)

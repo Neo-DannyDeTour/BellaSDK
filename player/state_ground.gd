@@ -33,7 +33,7 @@ var _transition_msg: Dictionary = {}
 ## Configures velocities, reads accessibility settings, and stamps landing crater.
 func enter(msg: Dictionary = {}) -> void:
 	print("StateGround: enter() called. Resetting Y velocity and current speed.")
-	var fall_speed: float = float(msg.get(&"landing_speed", 0.0))
+	var fall_speed: float = msg.get(&"landing_speed", 0.0)
 
 	player.velocity.y = 0.0
 	current_speed = 0.0
@@ -42,7 +42,9 @@ func enter(msg: Dictionary = {}) -> void:
 		player.get(&"locomotion_component") as PlayerLocomotionComponent
 	)
 	if is_instance_valid(loco) and is_instance_valid(loco.footstep_manager):
-		var fm: FootstepManager = loco.footstep_manager as FootstepManager
+		var fm: FootstepManager = (
+			loco.footstep_manager if loco.footstep_manager is FootstepManager else null
+		)
 		if is_instance_valid(fm):
 			fm.stamp_landing_crater(fall_speed)
 
@@ -82,7 +84,7 @@ func physics_update(delta: float) -> void:
 	if (
 		is_instance_valid(env)
 		and is_instance_valid(env.vault_controller)
-		and bool(env.vault_controller.get(&"is_vaulting"))
+		and env.vault_controller.get(&"is_vaulting")
 	):
 		return
 
@@ -95,7 +97,7 @@ func physics_update(delta: float) -> void:
 		var collider: Object = collision.get_collider()
 
 		if collider is Node:
-			var node_col: Node = collider as Node
+			var node_col: Node = collider if collider is Node else null
 			if node_col.is_in_group(&"slide_surface"):
 				print("StateGround: Slide surface detected. Transitioning to Slide.")
 				state_machine.transition_to(&"Slide")
@@ -106,8 +108,8 @@ func physics_update(delta: float) -> void:
 				loco.on_safe_landing = true
 				print("StateGround: Safe landing material detected. Fall damage neutralized.")
 
-	var is_recently_stepped: bool = float(loco.stair_controller.get(&"time_since_step_up")) < 0.2
-	var snapped_last_frame: bool = bool(loco.stair_controller.get(&"_snapped_to_stairs_last_frame"))
+	var is_recently_stepped: bool = loco.stair_controller.get(&"time_since_step_up") < 0.2
+	var snapped_last_frame: bool = loco.stair_controller.get(&"_snapped_to_stairs_last_frame")
 
 	if not player.is_on_floor() and not snapped_last_frame and not is_recently_stepped:
 		if is_instance_valid(env) and env.current_water_node != null:
@@ -316,7 +318,9 @@ func _update_components(delta: float, input_dir: Vector2) -> void:
 		player.get(&"interaction_component") as PlayerInteractionComponent
 	)
 
-	var cam_ctrl: Object = player.get(&"camera_controller") as Object
+	var cam_ctrl: Object = (
+		player.get(&"camera_controller") if player.get(&"camera_controller") is Object else null
+	)
 	if is_instance_valid(cam_ctrl):
 		cam_ctrl.call(
 			&"update_camera",
@@ -328,12 +332,14 @@ func _update_components(delta: float, input_dir: Vector2) -> void:
 			player.velocity.length()
 		)
 
-	var fm: FootstepManager = loco.footstep_manager as FootstepManager
+	var fm: FootstepManager = (
+		loco.footstep_manager if loco.footstep_manager is FootstepManager else null
+	)
 	if is_instance_valid(fm):
 		fm.process_surface_and_footsteps(
 			delta, true, player.velocity.length(), loco.sprint_active, loco.crouching
 		)
-		loco.on_ice = bool(fm.get(&"is_on_ice"))
+		loco.on_ice = fm.get(&"is_on_ice")
 
 	if is_instance_valid(interact) and is_instance_valid(interact.interaction_scanner):
 		interact.interaction_scanner.process_interaction(delta)

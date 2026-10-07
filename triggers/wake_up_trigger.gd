@@ -196,7 +196,9 @@ func _update_visuals() -> void:
 			else:
 				_collision_shape.shape = _collision_shape.shape.duplicate()
 			_collision_shape.shape.resource_local_to_scene = true
-			var box_shape: BoxShape3D = _collision_shape.shape as BoxShape3D
+			var box_shape: BoxShape3D = (
+				_collision_shape.shape if _collision_shape.shape is BoxShape3D else null
+			)
 			box_shape.size = trigger_size
 		elif shape_type == EditorTriggerVisualizer.ShapeType.SPHERE:
 			if not (_collision_shape.shape is SphereShape3D):
@@ -204,7 +206,9 @@ func _update_visuals() -> void:
 			else:
 				_collision_shape.shape = _collision_shape.shape.duplicate()
 			_collision_shape.shape.resource_local_to_scene = true
-			var sphere_shape: SphereShape3D = _collision_shape.shape as SphereShape3D
+			var sphere_shape: SphereShape3D = (
+				_collision_shape.shape if _collision_shape.shape is SphereShape3D else null
+			)
 			sphere_shape.radius = trigger_size.x * 0.5
 
 		_collision_shape.position = trigger_offset
@@ -243,7 +247,7 @@ func _find_and_trigger_player() -> void:
 
 	var players: Array[Node] = get_tree().get_nodes_in_group(&"player")
 	if not players.is_empty() and players[0] is Player:
-		var p: Player = players[0] as Player
+		var p: Player = players[0] if players[0] is Player else null
 		_prepare_lying_pose(p)
 		_start_sequence(p)
 	else:
@@ -256,7 +260,7 @@ func _on_body_entered(body: Node3D) -> void:
 	if Engine.is_editor_hint():
 		return
 
-	var p: Player = body as Player
+	var p: Player = body if body is Player else null
 	if not is_instance_valid(p):
 		return
 

@@ -28,4 +28,4 @@ func set_opacity(new_opacity: float) -> void:
 func _ready() -> void:
 	print("WaterfallController: Initialized 3D FBM Waterfall shader.")
 	if material_override is ShaderMaterial:
-		waterfall_material = material_override as ShaderMaterial
+		waterfall_material = material_override if material_override is ShaderMaterial else null

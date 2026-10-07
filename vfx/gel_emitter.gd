@@ -111,8 +111,7 @@ func _ready() -> void:
 	particle_data.resize(1024 * 4)
 
 	var emitter_node: Node = get_node_or_null("%splat_emitter")
-	if emitter_node is GPUParticles3D:
-		emitter = emitter_node as GPUParticles3D
+	emitter = emitter_node if emitter_node is GPUParticles3D else null
 
 	call_deferred(&"_initialize_pool")
 	current_spawn_wait = randf_range(0.0, 0.1)
@@ -124,7 +123,7 @@ func _initialize_pool() -> void:
 	particle_pool.clear()
 	for i: int in range(MAX_PARTICLES):
 		var raw_instance: Node = subscene_instance.instantiate()
-		var p: Particle = raw_instance as Particle
+		var p: Particle = raw_instance if raw_instance is Particle else null
 		if p == null:
 			if raw_instance != null:
 				raw_instance.free()
@@ -176,7 +175,8 @@ func _recover_pool_state() -> void:
 	print("GelEmitter: Recovering pool state from editor children.")
 	for child: Node in get_children():
 		if child is Particle:
-			particle_pool.append(child as Particle)
+			var p_child: Particle = child
+			particle_pool.append(p_child)
 
 
 ## Activates and positions the next available inactive particle in the pool.

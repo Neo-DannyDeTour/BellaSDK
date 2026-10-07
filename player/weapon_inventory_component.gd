@@ -157,7 +157,7 @@ func add_ammo(target_ammo_type: StringName, amount: int) -> bool:
 
 	for weapon: Node3D in slots:
 		if is_instance_valid(weapon) and weapon.get("ammo_type") == target_ammo_type:
-			var res_ammo: int = int(weapon.get("reserve_ammo")) + amount
+			var res_ammo: int = weapon.get("reserve_ammo") + amount
 			weapon.set("reserve_ammo", res_ammo)
 			var w_tag: String = str(weapon.get("weapon_tag"))
 			print(w_tag, ": New reserve ammo count -> ", res_ammo)

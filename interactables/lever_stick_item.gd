@@ -95,7 +95,7 @@ func _on_detector_body_entered(body: Node) -> void:
 	print("LeverStickItem: Mount detector body entered by: ", body.name)
 	if not is_held or _is_collected:
 		return
-	var lever: WallLever = body as WallLever
+	var lever: WallLever = body if body is WallLever else null
 	if not is_instance_valid(lever):
 		lever = NodeQuery.find_ancestor_of_type(body, WallLever) as WallLever
 	if is_instance_valid(lever):
@@ -108,7 +108,11 @@ func _on_detector_area_entered(area: Area3D) -> void:
 	print("LeverStickItem: Mount detector area entered by: ", area.name)
 	if not is_held or _is_collected:
 		return
-	var lever: WallLever = NodeQuery.find_ancestor_of_type(area, WallLever) as WallLever
+	var lever: WallLever = (
+		NodeQuery.find_ancestor_of_type(area, WallLever)
+		if NodeQuery.find_ancestor_of_type(area, WallLever) is WallLever
+		else null
+	)
 	if is_instance_valid(lever):
 		_try_mount_on_lever(lever)
 
@@ -127,7 +131,11 @@ func _try_mount_on_lever(lever: WallLever) -> void:
 		mount_detector.set_deferred("monitoring", false)
 
 	if is_instance_valid(holder):
-		var p_interact: Node = holder.get("interaction_component") as Node
+		var p_interact: Node = (
+			holder.get("interaction_component")
+			if holder.get("interaction_component") is Node
+			else null
+		)
 		if is_instance_valid(p_interact) and p_interact.has_method("force_clear_hands"):
 			p_interact.call("force_clear_hands")
 

@@ -179,10 +179,10 @@ func _resolve_health_component(target: Node3D) -> HealthComponent:
 	if "health_component" in target:
 		var comp: Variant = target.get("health_component")
 		if comp is HealthComponent:
-			return comp as HealthComponent
+			return comp
 	var found_comp: Node = NodeQuery.find_first_child_of_type(target, HealthComponent)
 	if found_comp is HealthComponent:
-		return found_comp as HealthComponent
+		return found_comp
 	return null
 
 
@@ -332,7 +332,7 @@ func _update_particle_parameters() -> void:
 		return
 	var process_mat: Material = ember_particles.process_material
 	if process_mat is ParticleProcessMaterial:
-		var particle_mat: ParticleProcessMaterial = process_mat as ParticleProcessMaterial
+		var particle_mat: ParticleProcessMaterial = process_mat
 		var drift_force: Vector3 = wind_direction * (wind_strength * 2.0)
 		particle_mat.gravity = Vector3(drift_force.x, 0.8, drift_force.z)
 
@@ -344,7 +344,7 @@ func _update_burn_shape() -> void:
 		return
 	var shape: Shape3D = burn_shape.shape
 	if shape is CylinderShape3D:
-		var cyl_shape: CylinderShape3D = shape as CylinderShape3D
+		var cyl_shape: CylinderShape3D = shape
 		cyl_shape.height = fire_height
 		cyl_shape.radius = fire_width * 0.5
 		burn_shape.position = Vector3(0.0, fire_height * 0.5, 0.0)
@@ -356,13 +356,15 @@ func _update_volume_mesh() -> void:
 	if not is_instance_valid(mesh_instance):
 		return
 	mesh_instance.position = Vector3.ZERO
-	var box: BoxMesh = mesh_instance.mesh as BoxMesh
-	if not is_instance_valid(box):
+	if not mesh_instance.mesh is BoxMesh:
 		return
+	var box: BoxMesh = mesh_instance.mesh
 
 	if not box.is_local_to_scene():
-		box = box.duplicate() as BoxMesh
-		mesh_instance.mesh = box
+		var box_dup: Resource = box.duplicate()
+		if box_dup is BoxMesh:
+			box = box_dup
+			mesh_instance.mesh = box
 
 	var max_reach: float = maxf(fire_width, fire_height) + wind_strength
 	var span_xz: float = max_reach * 2.6
@@ -439,7 +441,8 @@ func _cache_material() -> void:
 
 	if mat is ShaderMaterial:
 		var variant_key: String = "fire_%d" % get_instance_id()
-		_material = MaterialCache.get_variant(mat, variant_key) as ShaderMaterial
+		var raw_mat: Material = MaterialCache.get_variant(mat, variant_key)
+		_material = raw_mat if raw_mat is ShaderMaterial else null
 		mesh_instance.material_override = _material
 	else:
 		_material = null

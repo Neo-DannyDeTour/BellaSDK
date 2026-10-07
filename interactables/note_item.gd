@@ -55,7 +55,7 @@ func interact(interactor: Node3D) -> void:
 	var reader: NoteReader = _resolve_note_reader(interactor)
 	if is_instance_valid(reader):
 		print("NoteItem: Dispatching note to NoteReader.")
-		var player_char: CharacterBody3D = interactor as CharacterBody3D
+		var player_char: CharacterBody3D = interactor if interactor is CharacterBody3D else null
 		if player_char == null:
 			player_char = (
 				NodeQuery.find_ancestor_of_type(interactor, CharacterBody3D) as CharacterBody3D
@@ -92,13 +92,13 @@ func _update_appearance() -> void:
 			_mesh_node.mesh = _mesh_node.mesh.duplicate()
 
 		if _mesh_node.mesh is PlaneMesh:
-			var plane: PlaneMesh = _mesh_node.mesh as PlaneMesh
+			var plane: PlaneMesh = _mesh_node.mesh if _mesh_node.mesh is PlaneMesh else null
 			if aspect > 1.0:
 				plane.size = Vector2(max_size_meters, max_size_meters / aspect)
 			else:
 				plane.size = Vector2(max_size_meters * aspect, max_size_meters)
 		elif _mesh_node.mesh is BoxMesh:
-			var box: BoxMesh = _mesh_node.mesh as BoxMesh
+			var box: BoxMesh = _mesh_node.mesh if _mesh_node.mesh is BoxMesh else null
 			if aspect > 1.0:
 				box.size = Vector3(max_size_meters, 0.005, max_size_meters / aspect)
 			else:

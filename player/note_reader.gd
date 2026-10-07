@@ -116,7 +116,7 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventKey:
-		var key_event: InputEventKey = event as InputEventKey
+		var key_event: InputEventKey = event if event is InputEventKey else null
 		if key_event.physical_keycode == KEY_Z and key_event.pressed and not key_event.echo:
 			_is_glass_active = not _is_glass_active
 			if is_instance_valid(_zoomed_mesh_instance):
@@ -126,7 +126,7 @@ func _input(event: InputEvent) -> void:
 			return
 
 	if event is InputEventMouseButton:
-		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
+		var mouse_event: InputEventMouseButton = event if event is InputEventMouseButton else null
 		if _is_glass_active and mouse_event.pressed:
 			if mouse_event.button_index == MOUSE_BUTTON_WHEEL_UP:
 				_adjust_3d_glass(1.0)
@@ -166,7 +166,7 @@ func _input(event: InputEvent) -> void:
 		print("NoteReader: Stopped mouse dragging inspection.")
 
 	if event is InputEventMouseMotion:
-		var motion_event: InputEventMouseMotion = event as InputEventMouseMotion
+		var motion_event: InputEventMouseMotion = event if event is InputEventMouseMotion else null
 		if _is_inspecting:
 			var invert_mult: float = -1.0 if _is_inverted else 1.0
 			_target_rot.y -= motion_event.relative.x * mouse_rotation_speed * invert_mult
@@ -271,7 +271,11 @@ func close_note() -> void:
 	if is_instance_valid(_instruction_ui):
 		_instruction_ui.visible = false
 
-	var global_label: Label = get_tree().get_first_node_in_group(&"note_instruction_label") as Label
+	var global_label: Label = (
+		get_tree().get_first_node_in_group(&"note_instruction_label")
+		if get_tree().get_first_node_in_group(&"note_instruction_label") is Label
+		else null
+	)
 	if is_instance_valid(global_label):
 		global_label.hide()
 
@@ -448,7 +452,11 @@ func _setup_instruction_ui() -> void:
 ## Updates instruction text on UI label according to active input mappings.
 func _update_instruction_text() -> void:
 	var ui_label: Label = _instruction_label
-	var global_label: Label = get_tree().get_first_node_in_group(&"note_instruction_label") as Label
+	var global_label: Label = (
+		get_tree().get_first_node_in_group(&"note_instruction_label")
+		if get_tree().get_first_node_in_group(&"note_instruction_label") is Label
+		else null
+	)
 	if is_instance_valid(global_label):
 		ui_label = global_label
 		ui_label.show()
@@ -484,6 +492,6 @@ func _get_key_string_for_action(action_name: StringName, fallback: String) -> St
 		var events: Array[InputEvent] = InputMap.action_get_events(action_name)
 		for ev: InputEvent in events:
 			if ev is InputEventKey:
-				var key_ev: InputEventKey = ev as InputEventKey
+				var key_ev: InputEventKey = ev if ev is InputEventKey else null
 				return "[" + OS.get_keycode_string(key_ev.physical_keycode) + "]"
 	return "[" + fallback + "]"

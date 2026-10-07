@@ -74,7 +74,9 @@ var _mesh_arrays: Array = []
 ## Prepares mesh instances, arrays, and initial strike state.
 func _ready() -> void:
 	print("LightningManager: _ready() initializing procedural mesh hierarchy.")
-	var sprite_icon: Sprite3D = get_node_or_null("Sprite3D") as Sprite3D
+	var sprite_icon: Sprite3D = (
+		get_node_or_null("Sprite3D") if get_node_or_null("Sprite3D") is Sprite3D else null
+	)
 	if is_instance_valid(sprite_icon):
 		sprite_icon.visible = Engine.is_editor_hint()
 

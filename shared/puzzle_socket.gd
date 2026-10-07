@@ -232,13 +232,15 @@ func _on_socket_interacted(character: CharacterBody3D) -> void:
 	unplug()
 
 	if is_instance_valid(released_plug) and released_plug.has_method("pick_up"):
-		var player_hand_marker: Marker3D = character.get("hold_position") as Marker3D
+		var player_hand_marker: Marker3D = (
+			character.get("hold_position") if character.get("hold_position") is Marker3D else null
+		)
 
 		if is_instance_valid(player_hand_marker):
 			character.set("held_object", released_plug)
 
 			if released_plug is RigidBody3D:
-				var rb_plug: RigidBody3D = released_plug as RigidBody3D
+				var rb_plug: RigidBody3D = released_plug if released_plug is RigidBody3D else null
 				PhysicsServer3D.body_set_state(
 					rb_plug.get_rid(),
 					PhysicsServer3D.BODY_STATE_TRANSFORM,
@@ -348,7 +350,7 @@ func unplug() -> void:
 	get_tree().create_timer(1.0, false).timeout.connect(func() -> void: is_cooling_down = false)
 
 	if current_plug is RigidBody3D:
-		var rb_plug: RigidBody3D = current_plug as RigidBody3D
+		var rb_plug: RigidBody3D = current_plug if current_plug is RigidBody3D else null
 		rb_plug.freeze = false
 		if "is_locked" in rb_plug:
 			rb_plug.set("is_locked", false)
@@ -473,11 +475,13 @@ func _snap_and_freeze_plug(plug: Node3D) -> void:
 	var target_transform: Transform3D = snap_position.global_transform
 
 	if "snap_marker" in plug and is_instance_valid(plug.get("snap_marker")):
-		var marker: Marker3D = plug.get("snap_marker") as Marker3D
+		var marker: Marker3D = (
+			plug.get("snap_marker") if plug.get("snap_marker") is Marker3D else null
+		)
 		target_transform = (target_transform * marker.transform.affine_inverse())
 
 	if plug is RigidBody3D:
-		var rb_plug: RigidBody3D = plug as RigidBody3D
+		var rb_plug: RigidBody3D = plug if plug is RigidBody3D else null
 		rb_plug.linear_velocity = Vector3.ZERO
 		rb_plug.angular_velocity = Vector3.ZERO
 

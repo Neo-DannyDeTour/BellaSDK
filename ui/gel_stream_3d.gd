@@ -38,7 +38,7 @@ func _initialize_materials() -> void:
 		_process_mat = ParticleProcessMaterial.new()
 		process_material = _process_mat
 
-	var current_mesh: TubeTrailMesh = draw_pass_1 as TubeTrailMesh
+	var current_mesh: TubeTrailMesh = draw_pass_1 if draw_pass_1 is TubeTrailMesh else null
 	if not current_mesh:
 		current_mesh = TubeTrailMesh.new()
 		current_mesh.radial_steps = 4
@@ -73,7 +73,7 @@ func _update_visuals() -> void:
 
 	_draw_mat.set_shader_parameter("gel_color", gel_color)
 
-	var current_mesh: TubeTrailMesh = draw_pass_1 as TubeTrailMesh
+	var current_mesh: TubeTrailMesh = draw_pass_1 if draw_pass_1 is TubeTrailMesh else null
 	if current_mesh:
 		current_mesh.radius = 0.04 * drop_scale
 

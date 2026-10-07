@@ -79,7 +79,7 @@ func _ready() -> void:
 		size = Vector2(size.x * scale.x, size.y * scale.y)
 		scale = Vector3.ONE
 
-	var quad_mesh: QuadMesh = mirror_quad.mesh as QuadMesh
+	var quad_mesh: QuadMesh = mirror_quad.mesh if mirror_quad.mesh is QuadMesh else null
 	if is_instance_valid(quad_mesh) and not quad_mesh.resource_local_to_scene:
 		mirror_quad.mesh = quad_mesh.duplicate()
 		mirror_quad.mesh.resource_local_to_scene = true
@@ -225,7 +225,7 @@ func _find_camera() -> Camera3D:
 		if is_instance_valid(ed_interface) and ed_interface.has_method("get_editor_viewport_3d"):
 			var ed_vp_var: Variant = ed_interface.call("get_editor_viewport_3d", 0)
 			if ed_vp_var is SubViewport:
-				var ed_vp: SubViewport = ed_vp_var as SubViewport
+				var ed_vp: SubViewport = ed_vp_var if ed_vp_var is SubViewport else null
 				return ed_vp.get_camera_3d()
 		return null
 
@@ -250,7 +250,7 @@ func _update_mirror_size() -> void:
 	if not is_instance_valid(mirror_quad) or not is_instance_valid(mirror_viewport):
 		return
 
-	var q_mesh: QuadMesh = mirror_quad.mesh as QuadMesh
+	var q_mesh: QuadMesh = mirror_quad.mesh if mirror_quad.mesh is QuadMesh else null
 	if is_instance_valid(q_mesh):
 		q_mesh.size = size
 

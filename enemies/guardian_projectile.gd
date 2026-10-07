@@ -99,7 +99,8 @@ func _explode() -> void:
 	for result: Dictionary in results:
 		var collider: Object = result["collider"]
 		if collider is Node3D:
-			_apply_damage(collider as Node3D)
+			var col_node: Node3D = collider
+			_apply_damage(col_node)
 
 	explosion_timer.start(0.3)
 	Utilities.safe_connect(explosion_timer.timeout, queue_free)
@@ -110,12 +111,12 @@ func _explode() -> void:
 func _apply_damage(target: Node3D) -> void:
 	print("EnergyBlast: _apply_damage() - Analyzing target: ", target.name)
 	var root_node: Node3D = NodeQuery.resolve_interactable_root(target)
-	var comp: HealthComponent = (
-		NodeQuery.find_first_child_of_type(root_node, HealthComponent) as HealthComponent
-	)
+	var raw_comp: Node = NodeQuery.find_first_child_of_type(root_node, HealthComponent)
+	var comp: HealthComponent = raw_comp if raw_comp is HealthComponent else null
 
 	if not is_instance_valid(comp) and target != root_node:
-		comp = NodeQuery.find_first_child_of_type(target, HealthComponent) as HealthComponent
+		var raw_comp2: Node = NodeQuery.find_first_child_of_type(target, HealthComponent)
+		comp = raw_comp2 if raw_comp2 is HealthComponent else null
 
 	if is_instance_valid(comp):
 		print("EnergyBlast: Damaged health component on ", root_node.name)

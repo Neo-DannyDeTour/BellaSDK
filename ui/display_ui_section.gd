@@ -260,7 +260,9 @@ func _apply_fov_settings() -> void:
 
 	var player: Node = get_tree().get_first_node_in_group(&"player")
 	if is_instance_valid(player):
-		var cam_ctrl: Object = player.get("camera_controller") as Object
+		var cam_ctrl: Object = (
+			player.get("camera_controller") if player.get("camera_controller") is Object else null
+		)
 		if is_instance_valid(cam_ctrl):
 			cam_ctrl.set("base_fov", current_fov)
 			if is_instance_valid(sprint_fov_checkbox):
@@ -276,7 +278,7 @@ func apply_current_fov_to_preview() -> void:
 		return
 	var cams: Array[Node] = socket.find_children("*", "Camera3D", true, false)
 	for node: Node in cams:
-		var cam: Camera3D = node as Camera3D
+		var cam: Camera3D = node if node is Camera3D else null
 		if is_instance_valid(cam):
 			cam.fov = fov_slider.value
 

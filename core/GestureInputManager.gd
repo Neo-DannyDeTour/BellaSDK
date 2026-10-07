@@ -47,7 +47,7 @@ func _process(delta: float) -> void:
 	var now: float = Time.get_ticks_msec() / 1000.0
 
 	for action: Variant in _input_buffer.keys():
-		var timestamp: float = _input_buffer[action] as float
+		var timestamp: float = _input_buffer[action]
 		if now - timestamp > BUFFER_DURATION:
 			keys_to_remove.append(action)
 
@@ -56,10 +56,10 @@ func _process(delta: float) -> void:
 	keys_to_remove.clear()
 
 	for input_key: Variant in _active_inputs.keys():
-		var data: Dictionary = _active_inputs[input_key] as Dictionary
-		var is_pressed: bool = data["is_pressed"] as bool
-		var gesture_type: String = data["gesture_type"] as String
-		var action: String = data["action"] as String
+		var data: Dictionary = _active_inputs[input_key]
+		var is_pressed: bool = data["is_pressed"]
+		var gesture_type: String = data["gesture_type"]
+		var action: String = data["action"]
 
 		if is_pressed:
 			data["hold_timer"] = (data["hold_timer"] as float) + delta
@@ -89,7 +89,7 @@ func _process(delta: float) -> void:
 	var current_frame: int = Engine.get_physics_frames()
 	var triggered_keys_to_remove: Array = []
 	for action: Variant in _triggered_actions_frame.keys():
-		var target_frame: int = _triggered_actions_frame[action] as int
+		var target_frame: int = _triggered_actions_frame[action]
 		if current_frame > target_frame + 2:
 			triggered_keys_to_remove.append(action)
 	for key: Variant in triggered_keys_to_remove:
@@ -97,7 +97,7 @@ func _process(delta: float) -> void:
 
 	var released_keys_to_remove: Array = []
 	for action: Variant in _released_actions_frame.keys():
-		var target_frame: int = _released_actions_frame[action] as int
+		var target_frame: int = _released_actions_frame[action]
 		if current_frame > target_frame + 2:
 			released_keys_to_remove.append(action)
 	for key: Variant in released_keys_to_remove:
@@ -122,12 +122,12 @@ func _input(event: InputEvent) -> void:
 
 		# 1. Check ordered chords before registering the new key into _held_keys
 		for binding_info: Dictionary in matching_bindings:
-			var gesture_type: String = binding_info["gesture"] as String
-			var chord_keys: Array = binding_info["chord_keys"] as Array
-			var action: String = binding_info["action"] as String
+			var gesture_type: String = binding_info["gesture"]
+			var chord_keys: Array = binding_info["chord_keys"]
+			var action: String = binding_info["action"]
 
 			if gesture_type == "ordered_chord" and not chord_keys.is_empty():
-				var trigger_key: int = chord_keys[chord_keys.size() - 1] as int
+				var trigger_key: int = chord_keys[chord_keys.size() - 1]
 				if input_id == trigger_key and _are_modifier_keys_held(chord_keys):
 					print("System: Ordered chord validated: ", action)
 					_dispatch_action(action, "ordered_chord")
@@ -145,8 +145,8 @@ func _input(event: InputEvent) -> void:
 			return
 
 		for binding_info: Dictionary in matching_bindings:
-			var action: String = binding_info["action"] as String
-			var gesture_type: String = binding_info["gesture"] as String
+			var action: String = binding_info["action"]
+			var gesture_type: String = binding_info["gesture"]
 			var tracking_key: String = str(input_id) + "_" + action
 
 			if gesture_type in ["chord", "ordered_chord"]:
@@ -166,7 +166,7 @@ func _input(event: InputEvent) -> void:
 					"tap_count": 1
 				}
 			else:
-				var data: Dictionary = _active_inputs[tracking_key] as Dictionary
+				var data: Dictionary = _active_inputs[tracking_key]
 				data["is_pressed"] = true
 				data["hold_timer"] = 0.0
 				data["hold_fired"] = false
@@ -182,14 +182,14 @@ func _input(event: InputEvent) -> void:
 		_held_keys.erase(input_id)
 
 		for binding_info: Dictionary in matching_bindings:
-			var action: String = binding_info["action"] as String
-			var gesture_type: String = binding_info["gesture"] as String
+			var action: String = binding_info["action"]
+			var gesture_type: String = binding_info["gesture"]
 			var tracking_key: String = str(input_id) + "_" + action
 
 			_released_actions_frame[action] = Engine.get_physics_frames()
 
 			if _active_inputs.has(tracking_key):
-				var data: Dictionary = _active_inputs[tracking_key] as Dictionary
+				var data: Dictionary = _active_inputs[tracking_key]
 				data["is_pressed"] = false
 				if gesture_type in ["double_tap", "double_tap_hold", "mash"]:
 					data["tap_window"] = MULTI_TAP_WINDOW
@@ -203,7 +203,7 @@ func _input(event: InputEvent) -> void:
 func consume_buffered_action(action: String) -> bool:
 	var now: float = Time.get_ticks_msec() / 1000.0
 	if _input_buffer.has(action):
-		var timestamp: float = _input_buffer[action] as float
+		var timestamp: float = _input_buffer[action]
 		if now - timestamp <= BUFFER_DURATION:
 			print("Buffer: Consumed buffered action: ", action)
 			_input_buffer.erase(action)
@@ -218,7 +218,7 @@ func consume_buffered_action(action: String) -> bool:
 func is_action_just_triggered(action: String) -> bool:
 	var current_frame: int = Engine.get_physics_frames()
 	if _triggered_actions_frame.has(action):
-		var target_frame: int = _triggered_actions_frame[action] as int
+		var target_frame: int = _triggered_actions_frame[action]
 		if abs(current_frame - target_frame) <= 2:
 			return true
 	return false
@@ -233,8 +233,8 @@ func is_action_active(action: String) -> bool:
 
 	var events: Array[InputEvent] = InputMap.action_get_events(action)
 	for bound_event: InputEvent in events:
-		var gesture: String = bound_event.get_meta("gesture", "single_tap") as String
-		var chord_keys: Array = bound_event.get_meta("chord_keys", []) as Array
+		var gesture: String = bound_event.get_meta("gesture", "single_tap")
+		var chord_keys: Array = bound_event.get_meta("chord_keys", [])
 
 		if gesture == "ordered_chord" and not chord_keys.is_empty():
 			if _are_chord_keys_pressed(chord_keys):
@@ -258,8 +258,8 @@ func is_action_pressed(action: String) -> bool:
 
 	var events: Array[InputEvent] = InputMap.action_get_events(action)
 	for bound_event: InputEvent in events:
-		var gesture: String = bound_event.get_meta("gesture", "single_tap") as String
-		var chord_keys: Array = bound_event.get_meta("chord_keys", []) as Array
+		var gesture: String = bound_event.get_meta("gesture", "single_tap")
+		var chord_keys: Array = bound_event.get_meta("chord_keys", [])
 
 		if gesture in ["chord", "ordered_chord"] and not chord_keys.is_empty():
 			if _are_chord_keys_pressed(chord_keys):
@@ -277,7 +277,7 @@ func is_action_pressed(action: String) -> bool:
 func is_action_just_pressed(action: String) -> bool:
 	var current_frame: int = Engine.get_physics_frames()
 	if _triggered_actions_frame.has(action):
-		var target_frame: int = _triggered_actions_frame[action] as int
+		var target_frame: int = _triggered_actions_frame[action]
 		if abs(current_frame - target_frame) <= 2:
 			return true
 	return false
@@ -290,7 +290,7 @@ func is_action_just_released(action: String) -> bool:
 	print("Input: Polling is_action_just_released for action: ", action)
 	var current_frame: int = Engine.get_physics_frames()
 	if _released_actions_frame.has(action):
-		var target_frame: int = _released_actions_frame[action] as int
+		var target_frame: int = _released_actions_frame[action]
 		if abs(current_frame - target_frame) <= 2:
 			return true
 	return false
@@ -323,7 +323,7 @@ func _are_modifier_keys_held(chord_keys: Array) -> bool:
 	if chord_keys.size() < 2:
 		return false
 	for i: int in range(chord_keys.size() - 1):
-		var k: int = chord_keys[i] as int
+		var k: int = chord_keys[i]
 		if not _held_keys.has(k):
 			return false
 	return true
@@ -377,7 +377,7 @@ func _get_actions_for_event(event: InputEvent) -> Array[Dictionary]:
 ## Returns a unique integer ID.
 func _get_unique_event_id(event: InputEvent) -> int:
 	if event is InputEventKey:
-		var k: InputEventKey = event as InputEventKey
+		var k: InputEventKey = event if event is InputEventKey else null
 		return k.physical_keycode if k.physical_keycode != KEY_NONE else k.keycode
 	if event is InputEventMouseButton:
 		return 100000 + (event as InputEventMouseButton).button_index
@@ -390,8 +390,8 @@ func _get_unique_event_id(event: InputEvent) -> int:
 ## Returns true if matching hardware inputs.
 func _is_matching_event(ev1: InputEvent, ev2: InputEvent) -> bool:
 	if ev1 is InputEventKey and ev2 is InputEventKey:
-		var k1: InputEventKey = ev1 as InputEventKey
-		var k2: InputEventKey = ev2 as InputEventKey
+		var k1: InputEventKey = ev1 if ev1 is InputEventKey else null
+		var k2: InputEventKey = ev2 if ev2 is InputEventKey else null
 		var key1: int = k1.physical_keycode if k1.physical_keycode != KEY_NONE else k1.keycode
 		var key2: int = k2.physical_keycode if k2.physical_keycode != KEY_NONE else k2.keycode
 		return key1 == key2

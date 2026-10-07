@@ -18,7 +18,7 @@ const LAYER_VOLUMETRICS_MASK: int = 512
 @export var speed_scale: float = 0.4
 
 ## Node reference to parent player CharacterBody3D.
-@onready var _player: CharacterBody3D = get_parent() as CharacterBody3D
+@onready var _player: CharacterBody3D = get_parent() if get_parent() is CharacterBody3D else null
 
 
 ## Validates parent node type and initializes layer mask.

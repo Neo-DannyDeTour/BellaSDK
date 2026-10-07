@@ -58,9 +58,9 @@ func _update_cable_positions() -> void:
 	for anchor: Node3D in valid_anchors:
 		current_state.append(anchor.global_position)
 		if "droop" in anchor:
-			current_state.append(float(anchor.get("droop")))
+			current_state.append(anchor.get("droop"))
 		if "segments" in anchor:
-			current_state.append(int(anchor.get("segments")))
+			current_state.append(anchor.get("segments"))
 
 	var current_hash: int = current_state.hash()
 
@@ -82,11 +82,9 @@ func _update_cable_positions() -> void:
 		var end_node: Node3D = valid_anchors[span_index + 1]
 
 		# Duck-typing: grab custom droop/segments if available, else fallback
-		var span_droop: float = (
-			float(start_node.get("droop")) if "droop" in start_node else default_droop
-		)
+		var span_droop: float = start_node.get("droop") if "droop" in start_node else default_droop
 		var span_segments: int = (
-			int(start_node.get("segments")) if "segments" in start_node else default_segments
+			start_node.get("segments") if "segments" in start_node else default_segments
 		)
 		span_segments = max(1, span_segments)
 

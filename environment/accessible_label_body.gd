@@ -27,12 +27,10 @@ extends StaticBody3D
 			_update_billboard_mode()
 
 ## Cached reference to the child [Label3D] node.
-@onready var _label_node: Label3D = NodeQuery.find_first_child_of_type(self, Label3D) as Label3D
+@onready var _label_node: Label3D = _resolve_label_node()
 
 ## Cached reference to the child [CollisionShape3D] bounding shape.
-@onready var _col_shape: CollisionShape3D = (
-	NodeQuery.find_first_child_of_type(self, CollisionShape3D) as CollisionShape3D
-)
+@onready var _col_shape: CollisionShape3D = _resolve_collision_shape()
 
 ## Cached reference to the child interaction component node.
 @onready var _interact_comp: Node = _resolve_interact_component()
@@ -97,7 +95,7 @@ func _update_collision_shape() -> void:
 	if not is_instance_valid(col_shape) or not is_instance_valid(label_node):
 		return
 
-	var box: BoxShape3D = col_shape.shape as BoxShape3D
+	var box: BoxShape3D = col_shape.shape if col_shape.shape is BoxShape3D else null
 	if not is_instance_valid(box):
 		box = BoxShape3D.new()
 		col_shape.shape = box
@@ -110,11 +108,21 @@ func _update_collision_shape() -> void:
 	print("AccessibleLabel: Resized collision shape bounds to: ", box.size)
 
 
+func _resolve_label_node() -> Label3D:
+	var raw_node: Node = NodeQuery.find_first_child_of_type(self, Label3D)
+	return raw_node if raw_node is Label3D else null
+
+
+func _resolve_collision_shape() -> CollisionShape3D:
+	var raw_node: Node = NodeQuery.find_first_child_of_type(self, CollisionShape3D)
+	return raw_node if raw_node is CollisionShape3D else null
+
+
 ## Resolves and returns the child [Label3D] using cached reference or [NodeQuery].
 func _get_label_node() -> Label3D:
 	print("AccessibleLabel: Resolving [Label3D] reference.")
 	if not is_instance_valid(_label_node):
-		_label_node = NodeQuery.find_first_child_of_type(self, Label3D) as Label3D
+		_label_node = _resolve_label_node()
 	return _label_node
 
 
@@ -122,9 +130,7 @@ func _get_label_node() -> Label3D:
 func _get_collision_shape() -> CollisionShape3D:
 	print("AccessibleLabel: Resolving [CollisionShape3D] reference.")
 	if not is_instance_valid(_col_shape):
-		_col_shape = (
-			NodeQuery.find_first_child_of_type(self, CollisionShape3D) as CollisionShape3D
-		)
+		_col_shape = _resolve_collision_shape()
 	return _col_shape
 
 

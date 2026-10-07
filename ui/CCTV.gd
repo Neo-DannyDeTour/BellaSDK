@@ -150,7 +150,9 @@ func _ready() -> void:
 		camera_vp = get_node_or_null("CCTVViewport") as SubViewport
 
 	if is_instance_valid(interact_comp) and interact_comp.has_signal(&"interacted"):
-		var interact_signal: Signal = interact_comp.get(&"interacted") as Signal
+		var interact_signal: Signal = (
+			interact_comp.get(&"interacted") if interact_comp.get(&"interacted") is Signal else null
+		)
 		if not interact_signal.is_connected(_on_interacted):
 			interact_signal.connect(_on_interacted)
 
@@ -279,7 +281,7 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventMouseButton:
-		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
+		var mouse_event: InputEventMouseButton = event if event is InputEventMouseButton else null
 		if mouse_event.is_pressed():
 			if mouse_event.button_index == MOUSE_BUTTON_WHEEL_UP:
 				print("CCTV: Zooming camera IN.")
@@ -419,7 +421,7 @@ func _enable_fullscreen_mode() -> void:
 			var raw_cam: Variant = (cam_controller as Object).get("camera")
 			if raw_cam is Camera3D and is_instance_valid(raw_cam):
 				print("CCTV: Disabling player camera cull mask.")
-				var p_cam: Camera3D = raw_cam as Camera3D
+				var p_cam: Camera3D = raw_cam if raw_cam is Camera3D else null
 				_stored_player_cull_mask = p_cam.cull_mask
 				p_cam.cull_mask = 0
 
@@ -438,7 +440,7 @@ func _disable_fullscreen_mode() -> void:
 			var raw_cam: Variant = (cam_controller as Object).get("camera")
 			if raw_cam is Camera3D and is_instance_valid(raw_cam):
 				print("CCTV: Restoring player camera cull mask.")
-				var p_cam: Camera3D = raw_cam as Camera3D
+				var p_cam: Camera3D = raw_cam if raw_cam is Camera3D else null
 				p_cam.cull_mask = _stored_player_cull_mask
 
 

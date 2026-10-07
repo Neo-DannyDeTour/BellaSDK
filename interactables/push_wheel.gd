@@ -307,7 +307,9 @@ func _on_interacted(character: CharacterBody3D) -> void:
 	var state_machine: Node = character.get_node_or_null("StateMachine")
 
 	if is_instance_valid(state_machine) and state_machine.get("state") != null:
-		var state_obj: Object = state_machine.get("state") as Object
+		var state_obj: Object = (
+			state_machine.get("state") if state_machine.get("state") is Object else null
+		)
 		if is_instance_valid(state_obj) and state_obj.get("name") == "PushWheel":
 			print("PushWheel: Player already attached. Ignoring duplicate call.")
 			return
@@ -333,12 +335,18 @@ func _on_interacted(character: CharacterBody3D) -> void:
 
 ## Checks proximity of player carrying repair stick item.
 func _check_for_installation() -> void:
-	var player: Node3D = NodeQuery.get_single_node_in_group(get_tree(), &"player") as Node3D
+	var player: Node3D = (
+		NodeQuery.get_single_node_in_group(get_tree(), &"player")
+		if NodeQuery.get_single_node_in_group(get_tree(), &"player") is Node3D
+		else null
+	)
 	if not is_instance_valid(player):
 		return
 
 	var current_held_item: Node3D = null
-	var int_comp: Node = player.get("interaction_component") as Node
+	var int_comp: Node = (
+		player.get("interaction_component") if player.get("interaction_component") is Node else null
+	)
 	var scanner: Node = null
 
 	if is_instance_valid(int_comp):
@@ -371,7 +379,9 @@ func _install_stick(held_item: Node3D, int_comp: Node, scanner: Node) -> void:
 		scanner.set("held_object", null)
 		if scanner.has_method("set_heavy_lifting"):
 			scanner.call("set_heavy_lifting", false)
-		var w_holder: CanvasItem = scanner.get("weapon_holder") as CanvasItem
+		var w_holder: CanvasItem = (
+			scanner.get("weapon_holder") if scanner.get("weapon_holder") is CanvasItem else null
+		)
 		if is_instance_valid(w_holder):
 			w_holder.show()
 
@@ -395,11 +405,17 @@ func _detach_stick() -> void:
 		push_warning("PushWheel: Cannot detach. No Pickable Scene assigned!")
 		return
 
-	var player: Node3D = NodeQuery.get_single_node_in_group(get_tree(), &"player") as Node3D
+	var player: Node3D = (
+		NodeQuery.get_single_node_in_group(get_tree(), &"player")
+		if NodeQuery.get_single_node_in_group(get_tree(), &"player") is Node3D
+		else null
+	)
 	if not is_instance_valid(player):
 		return
 
-	var spawned_stick: Node3D = pickable_stick_scene.instantiate() as Node3D
+	var spawned_stick: Node3D = (
+		pickable_stick_scene.instantiate() if pickable_stick_scene.instantiate() is Node3D else null
+	)
 	if is_instance_valid(outline_material) and "outline_material" in spawned_stick:
 		spawned_stick.set("outline_material", outline_material)
 
@@ -411,12 +427,16 @@ func _detach_stick() -> void:
 	else:
 		spawned_stick.global_position = global_position
 
-	var int_comp: Node = player.get("interaction_component") as Node
+	var int_comp: Node = (
+		player.get("interaction_component") if player.get("interaction_component") is Node else null
+	)
 	var scanner: Node = null
 	if is_instance_valid(int_comp):
 		scanner = int_comp.get("interaction_scanner") as Node
 
-	var hold_pos: Marker3D = player.get("hold_position") as Marker3D
+	var hold_pos: Marker3D = (
+		player.get("hold_position") if player.get("hold_position") is Marker3D else null
+	)
 	if is_instance_valid(scanner) and scanner.get("hold_position"):
 		hold_pos = scanner.get("hold_position") as Marker3D
 
@@ -427,7 +447,9 @@ func _detach_stick() -> void:
 		scanner.set("held_object", spawned_stick)
 		if scanner.has_method("set_heavy_lifting"):
 			scanner.call("set_heavy_lifting", true)
-		var w_holder: CanvasItem = scanner.get("weapon_holder") as CanvasItem
+		var w_holder: CanvasItem = (
+			scanner.get("weapon_holder") if scanner.get("weapon_holder") is CanvasItem else null
+		)
 		if is_instance_valid(w_holder):
 			w_holder.hide()
 
@@ -487,7 +509,11 @@ func get_interaction_transform(target_pos: Vector3) -> Transform3D:
 	var stand_local_pos: Vector3 = stick_center + (tangent * push_stand_offset * side_multiplier)
 	var global_stand_pos: Vector3 = wheel.to_global(stand_local_pos)
 
-	var player: Node3D = NodeQuery.get_single_node_in_group(get_tree(), &"player") as Node3D
+	var player: Node3D = (
+		NodeQuery.get_single_node_in_group(get_tree(), &"player")
+		if NodeQuery.get_single_node_in_group(get_tree(), &"player") is Node3D
+		else null
+	)
 	if is_instance_valid(player):
 		global_stand_pos.y = player.global_position.y
 

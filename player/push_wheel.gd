@@ -69,7 +69,7 @@ func physics_update(delta: float) -> void:
 	if not _is_mounting and is_instance_valid(active_wheel.current_active_anchor):
 		player.global_transform = active_wheel.current_active_anchor.global_transform
 
-	var head: Node3D = player.get(&"head") as Node3D
+	var head: Node3D = player.get(&"head") if player.get(&"head") is Node3D else null
 	if is_instance_valid(head):
 		head.rotation.x = lerp_angle(head.rotation.x, 0.0, 10.0 * delta)
 

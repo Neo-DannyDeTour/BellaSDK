@@ -42,7 +42,9 @@ var _stress_scene_instance: Node = null
 func _ready() -> void:
 	print("[Benchmark] Initializing headless performance test...")
 	if ResourceLoader.exists(_stress_scene_path):
-		var packed_scene: PackedScene = load(_stress_scene_path) as PackedScene
+		var packed_scene: PackedScene = (
+			load(_stress_scene_path) if load(_stress_scene_path) is PackedScene else null
+		)
 		if is_instance_valid(packed_scene):
 			_stress_scene_instance = packed_scene.instantiate()
 			add_child(_stress_scene_instance)
@@ -58,7 +60,7 @@ func _process(delta: float) -> void:
 
 	if _current_frame <= WARMUP_FRAMES:
 		if _current_frame == WARMUP_FRAMES:
-			_initial_static_memory = int(Performance.get_monitor(Performance.MEMORY_STATIC))
+			_initial_static_memory = roundi(Performance.get_monitor(Performance.MEMORY_STATIC))
 			print(
 				"[Benchmark] Warm-up complete. Baseline memory: ", _initial_static_memory, " bytes."
 			)
@@ -85,27 +87,27 @@ func _finish_benchmark() -> void:
 
 	var has_failed: bool = false
 
-	if float(metrics["p99_ms"]) > MAX_ALLOWED_P99_FRAME_MS:
+	if float(metrics.get("p99_ms", 0.0)) > MAX_ALLOWED_P99_FRAME_MS:
 		printerr(
 			"[FAIL] 99th Percentile frame time exceeded! Got: ",
-			metrics["p99_ms"],
+			metrics.get("p99_ms", 0.0),
 			" ms, Max allowed: ",
 			MAX_ALLOWED_P99_FRAME_MS,
 			" ms"
 		)
 		has_failed = true
 
-	if float(metrics["max_spike_ms"]) > MAX_ALLOWED_FRAME_SPIKE_MS:
+	if float(metrics.get("max_spike_ms", 0.0)) > MAX_ALLOWED_FRAME_SPIKE_MS:
 		printerr(
 			"[FAIL] Frame spike exceeded limit! Got: ",
-			metrics["max_spike_ms"],
+			metrics.get("max_spike_ms", 0.0),
 			" ms, Max allowed: ",
 			MAX_ALLOWED_FRAME_SPIKE_MS,
 			" ms"
 		)
 		has_failed = true
 
-	if int(metrics["orphan_nodes"]) > 0:
+	if int(metrics.get("orphan_nodes", 0)) > 0:
 		printerr("[FAIL] Orphan nodes detected! Count: ", metrics["orphan_nodes"])
 		Node.print_orphan_nodes()
 		has_failed = true
@@ -131,15 +133,15 @@ func _calculate_metrics() -> Dictionary:
 		if time_sample > max_spike:
 			max_spike = time_sample
 
-	var avg_ms: float = total_time_ms / float(sample_count)
-	var p95_index: int = int(float(sample_count) * 0.95)
-	var p99_index: int = int(float(sample_count) * 0.99)
+	var avg_ms: float = total_time_ms / sample_count
+	var p95_index: int = roundi(sample_count * 0.95)
+	var p99_index: int = roundi(sample_count * 0.99)
 
 	var p95_ms: float = _frame_times_ms[mini(p95_index, sample_count - 1)]
 	var p99_ms: float = _frame_times_ms[mini(p99_index, sample_count - 1)]
 
-	var final_static_memory: int = int(Performance.get_monitor(Performance.MEMORY_STATIC))
-	var orphan_count: int = int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT))
+	var final_static_memory: int = roundi(Performance.get_monitor(Performance.MEMORY_STATIC))
+	var orphan_count: int = roundi(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT))
 
 	return {
 		"average_frame_ms": snappedf(avg_ms, 0.01),

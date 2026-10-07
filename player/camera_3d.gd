@@ -99,7 +99,9 @@ func _setup_camera_attributes() -> void:
 	if not is_instance_valid(attributes) or not (attributes is CameraAttributesPractical):
 		attributes = CameraAttributesPractical.new()
 
-	var attr: CameraAttributesPractical = attributes as CameraAttributesPractical
+	var attr: CameraAttributesPractical = (
+		attributes if attributes is CameraAttributesPractical else null
+	)
 	attr.dof_blur_far_distance = 6.0
 	attr.dof_blur_far_transition = 4.0
 	attr.dof_blur_near_distance = 0.5

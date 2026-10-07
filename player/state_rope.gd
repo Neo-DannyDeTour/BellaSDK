@@ -30,9 +30,11 @@ func enter(msg: Dictionary = {}) -> void:
 		state_machine.transition_to(&"Air")
 		return
 
-	var rope_root: Node3D = current_rope.get_parent() as Node3D
+	var rope_root: Node3D = (
+		current_rope.get_parent() if current_rope.get_parent() is Node3D else null
+	)
 	var can_swing: bool = (
-		bool(rope_root.get(&"is_swingable"))
+		rope_root.get(&"is_swingable")
 		if rope_root != null and &"is_swingable" in rope_root
 		else false
 	)
@@ -55,9 +57,7 @@ func enter(msg: Dictionary = {}) -> void:
 		current_rope.to_local(rope_root.global_position).y if is_instance_valid(rope_root) else 0.0
 	)
 	var max_length: float = (
-		float(rope_root.get(&"rope_length"))
-		if rope_root != null and &"rope_length" in rope_root
-		else 10.0
+		rope_root.get(&"rope_length") if rope_root != null and &"rope_length" in rope_root else 10.0
 	)
 
 	var top_limit: float = local_top - 2.5
@@ -85,7 +85,9 @@ func exit() -> void:
 	if is_instance_valid(current_rope):
 		player.remove_collision_exception_with(current_rope)
 
-		var rope_root: Node3D = current_rope.get_parent() as Node3D
+		var rope_root: Node3D = (
+			current_rope.get_parent() if current_rope.get_parent() is Node3D else null
+		)
 		if is_instance_valid(rope_root):
 			if rope_root.has_method(&"on_player_released"):
 				rope_root.call(&"on_player_released")
@@ -139,7 +141,9 @@ func physics_update(delta: float) -> void:
 ## Evaluates player camera angles and input vectors to determine rope locomotion.
 func _handle_climbing_and_swinging(delta: float, input_dir: Vector2) -> void:
 	print("StateRope: _handle_climbing_and_swinging() evaluating intent.")
-	var rope_root: Node3D = current_rope.get_parent() as Node3D
+	var rope_root: Node3D = (
+		current_rope.get_parent() if current_rope.get_parent() is Node3D else null
+	)
 	var rope_up: Vector3 = current_rope.global_transform.basis.y.normalized()
 	var cam: Camera3D = _get_camera()
 	var look_dir: Vector3 = (
@@ -149,12 +153,12 @@ func _handle_climbing_and_swinging(delta: float, input_dir: Vector2) -> void:
 	)
 
 	var can_swing: bool = (
-		bool(rope_root.get(&"is_swingable"))
+		rope_root.get(&"is_swingable")
 		if rope_root != null and &"is_swingable" in rope_root
 		else false
 	)
 	var force_amount: float = (
-		float(rope_root.get(&"swing_force"))
+		rope_root.get(&"swing_force")
 		if rope_root != null and &"swing_force" in rope_root
 		else 1200.0
 	)
@@ -193,9 +197,7 @@ func _handle_climbing_and_swinging(delta: float, input_dir: Vector2) -> void:
 		current_rope.to_local(rope_root.global_position).y if is_instance_valid(rope_root) else 0.0
 	)
 	var max_length: float = (
-		float(rope_root.get(&"rope_length"))
-		if rope_root != null and &"rope_length" in rope_root
-		else 10.0
+		rope_root.get(&"rope_length") if rope_root != null and &"rope_length" in rope_root else 10.0
 	)
 	var top_limit: float = local_top - 2.5
 	var bottom_limit: float = local_top - max_length + 0.5
@@ -241,11 +243,13 @@ func _handle_climbing_and_swinging(delta: float, input_dir: Vector2) -> void:
 ## Updates global position and rotation to follow moving rope physics body via [MathUtils].
 func _apply_rope_position(delta: float) -> void:
 	print("StateRope: _apply_rope_position() syncing with rope transform.")
-	var rope_root: Node3D = current_rope.get_parent() as Node3D
+	var rope_root: Node3D = (
+		current_rope.get_parent() if current_rope.get_parent() is Node3D else null
+	)
 	var rope_up: Vector3 = current_rope.global_transform.basis.y.normalized()
 	var center_grab_pos: Vector3 = current_rope.to_global(Vector3(0.0, rope_offset, 0.0))
 	var can_swing: bool = (
-		bool(rope_root.get(&"is_swingable"))
+		rope_root.get(&"is_swingable")
 		if rope_root != null and &"is_swingable" in rope_root
 		else false
 	)
@@ -304,9 +308,11 @@ func _check_dismount(input_dir: Vector2) -> void:
 ## Calculates directional momentum and boosts when jumping off swing rope.
 func _perform_jump_dismount(input_dir: Vector2) -> void:
 	print("StateRope: _perform_jump_dismount() computing exit velocity.")
-	var rope_root: Node3D = current_rope.get_parent() as Node3D
+	var rope_root: Node3D = (
+		current_rope.get_parent() if current_rope.get_parent() is Node3D else null
+	)
 	var can_swing: bool = (
-		bool(rope_root.get(&"is_swingable"))
+		rope_root.get(&"is_swingable")
 		if rope_root != null and &"is_swingable" in rope_root
 		else false
 	)

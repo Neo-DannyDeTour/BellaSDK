@@ -123,19 +123,23 @@ func _ready() -> void:
 func _update_rope_size() -> void:
 	if is_instance_valid(collision_shape) and collision_shape.shape != null:
 		if collision_shape.shape is BoxShape3D:
-			var box: BoxShape3D = collision_shape.shape as BoxShape3D
+			var box: BoxShape3D = (
+				collision_shape.shape if collision_shape.shape is BoxShape3D else null
+			)
 			box.size.y = rope_length
 		elif collision_shape.shape is CylinderShape3D:
-			var cyl: CylinderShape3D = collision_shape.shape as CylinderShape3D
+			var cyl: CylinderShape3D = (
+				collision_shape.shape if collision_shape.shape is CylinderShape3D else null
+			)
 			cyl.height = rope_length
 		collision_shape.position.y = rope_length / 2.0
 
 	if is_instance_valid(rope_mesh) and rope_mesh.mesh != null:
 		if rope_mesh.mesh is BoxMesh:
-			var box_m: BoxMesh = rope_mesh.mesh as BoxMesh
+			var box_m: BoxMesh = rope_mesh.mesh if rope_mesh.mesh is BoxMesh else null
 			box_m.size.y = rope_length
 		elif rope_mesh.mesh is CylinderMesh:
-			var cyl_m: CylinderMesh = rope_mesh.mesh as CylinderMesh
+			var cyl_m: CylinderMesh = rope_mesh.mesh if rope_mesh.mesh is CylinderMesh else null
 			cyl_m.height = rope_length
 		rope_mesh.position.y = rope_length / 2.0
 

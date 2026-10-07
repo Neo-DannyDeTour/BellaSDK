@@ -15,7 +15,7 @@ extends PlayerState
 ## Locks player collision into crouched stance on slide initiation.
 func enter(_msg: Dictionary = {}) -> void:
 	print("StateSlide: enter() called. Player locked into slide.")
-	var typed_player: Player = player as Player
+	var typed_player: Player = player if player is Player else null
 	var loco: PlayerLocomotionComponent = (
 		typed_player.locomotion_component as PlayerLocomotionComponent
 		if is_instance_valid(typed_player)
@@ -30,7 +30,7 @@ func enter(_msg: Dictionary = {}) -> void:
 ## Restores standing collision shape if overhead raycast clearance allows.
 func exit() -> void:
 	print("StateSlide: exit() called. Restoring default collision state.")
-	var typed_player: Player = player as Player
+	var typed_player: Player = player if player is Player else null
 	var loco: PlayerLocomotionComponent = (
 		typed_player.locomotion_component as PlayerLocomotionComponent
 		if is_instance_valid(typed_player)
@@ -46,7 +46,7 @@ func exit() -> void:
 ## Updates downhill acceleration, lateral steering, gravity, and bounds.
 func physics_update(delta: float) -> void:
 	print("StateSlide: physics_update() processing slide frame.")
-	var typed_player: Player = player as Player
+	var typed_player: Player = player if player is Player else null
 	var loco: PlayerLocomotionComponent = (
 		typed_player.locomotion_component as PlayerLocomotionComponent
 		if is_instance_valid(typed_player)
@@ -84,10 +84,14 @@ func physics_update(delta: float) -> void:
 
 	var camera_right: Vector3 = Vector3.RIGHT
 	if is_instance_valid(interact) and is_instance_valid(interact.get(&"camera")):
-		var cam: Camera3D = interact.get(&"camera") as Camera3D
+		var cam: Camera3D = interact.get(&"camera") if interact.get(&"camera") is Camera3D else null
 		camera_right = cam.global_transform.basis.x.normalized()
 	elif is_instance_valid(typed_player) and is_instance_valid(typed_player.camera_controller):
-		var cam: Camera3D = typed_player.camera_controller.camera as Camera3D
+		var cam: Camera3D = (
+			typed_player.camera_controller.camera
+			if typed_player.camera_controller.camera is Camera3D
+			else null
+		)
 		if is_instance_valid(cam):
 			camera_right = cam.global_transform.basis.x.normalized()
 
@@ -117,7 +121,7 @@ func physics_update(delta: float) -> void:
 ## Updates camera shake, footstep managers, and snow deformation tracks.
 func _update_components(delta: float, input_dir: Vector2) -> void:
 	print("StateSlide: _update_components() polling camera and footsteps.")
-	var typed_player: Player = player as Player
+	var typed_player: Player = player if player is Player else null
 	var loco: PlayerLocomotionComponent = (
 		typed_player.locomotion_component as PlayerLocomotionComponent
 		if is_instance_valid(typed_player)
@@ -135,7 +139,11 @@ func _update_components(delta: float, input_dir: Vector2) -> void:
 		)
 
 	if is_instance_valid(loco) and is_instance_valid(loco.get(&"footstep_manager")):
-		var fm: FootstepManager = loco.get(&"footstep_manager") as FootstepManager
+		var fm: FootstepManager = (
+			loco.get(&"footstep_manager")
+			if loco.get(&"footstep_manager") is FootstepManager
+			else null
+		)
 		fm.process_surface_and_footsteps(delta, true, player.velocity.length(), false, true)
 		var speed_ratio: float = player.velocity.length() / max_slide_speed
 		fm.carve_slide(delta, speed_ratio)

@@ -12,14 +12,23 @@ var last_player_pos: Vector3 = Vector3.ZERO
 var current_travel_velocity: Vector3 = Vector3.ZERO
 var _cached_camera: Camera3D = null
 
+@onready var interact_component: InteractComponent = (
+	$InteractArea/InteractComponent
+	if $InteractArea/InteractComponent is InteractComponent
+	else null
+)
+@onready var highlight_component: HighlightComponent = (
+	$InteractArea/HighlightComponent
+	if $InteractArea/HighlightComponent is HighlightComponent
+	else null
+)
 @onready
-var interact_component: InteractComponent = $InteractArea/InteractComponent as InteractComponent
-@onready
-var highlight_component: HighlightComponent = $InteractArea/HighlightComponent as HighlightComponent
-@onready var interact_label: Label3D = $InteractArea/Label3D as Label3D
+var interact_label: Label3D = $InteractArea/Label3D if $InteractArea/Label3D is Label3D else null
 
-@onready var slide_audio: AudioStreamPlayer3D = $SlideAudio as AudioStreamPlayer3D
-@onready var climb_audio: AudioStreamPlayer3D = $ClimbAudio as AudioStreamPlayer3D
+@onready
+var slide_audio: AudioStreamPlayer3D = $SlideAudio if $SlideAudio is AudioStreamPlayer3D else null
+@onready
+var climb_audio: AudioStreamPlayer3D = $ClimbAudio if $ClimbAudio is AudioStreamPlayer3D else null
 
 
 ## Initializes input action label and binds interaction component signals.

@@ -117,10 +117,14 @@ func _ready() -> void:
 	bash_anchor = global_position
 	explore_anchor = global_position
 
-	mesh_instance = get_node_or_null("MeshInstance3D") as MeshInstance3D
-	healing_beam = get_node_or_null("HealingBeam") as MeshInstance3D
-	beam_particles = get_node_or_null("BeamParticles") as GPUParticles3D
-	omni_light = get_node_or_null("OmniLight3D") as OmniLight3D
+	var m_node: Node = get_node_or_null("MeshInstance3D")
+	mesh_instance = m_node if m_node is MeshInstance3D else null
+	var h_node: Node = get_node_or_null("HealingBeam")
+	healing_beam = h_node if h_node is MeshInstance3D else null
+	var b_node: Node = get_node_or_null("BeamParticles")
+	beam_particles = b_node if b_node is GPUParticles3D else null
+	var o_node: Node = get_node_or_null("OmniLight3D")
+	omni_light = o_node if o_node is OmniLight3D else null
 
 	if is_instance_valid(healing_beam):
 		healing_beam.top_level = true
@@ -212,10 +216,11 @@ func _sweep_for_obstacles(move_heading: Vector3) -> bool:
 	var kin_col: KinematicCollision3D = KinematicCollision3D.new()
 	if test_move(global_transform, move_heading * 0.45, kin_col):
 		var collider: Object = kin_col.get_collider()
-		if collider is Node and not (collider as Node).is_in_group(&"player"):
+		if collider is Node and not collider.is_in_group(&"player"):
 			var hit_norm: Vector3 = kin_col.get_normal()
 			if hit_norm.dot(move_heading) < -obstacle_impact_threshold:
-				_start_bashing_from_collision(collider as Node, hit_norm)
+				var col_node: Node = collider
+				_start_bashing_from_collision(col_node, hit_norm)
 				return true
 	return false
 
@@ -234,7 +239,7 @@ func _process_bash_obstacle(delta: float) -> void:
 		var obstacle_is_open: bool = false
 		if is_instance_valid(hit_obstacle_node):
 			var open_val: Variant = hit_obstacle_node.get("open")
-			if open_val != null and bool(open_val):
+			if open_val == true:
 				obstacle_is_open = true
 
 		var path_is_free: bool = false
@@ -309,15 +314,16 @@ func _apply_movement(delta: float) -> void:
 		for i: int in range(get_slide_collision_count()):
 			var collision: KinematicCollision3D = get_slide_collision(i)
 			var collider: Object = collision.get_collider()
-			if collider is Node and (collider as Node).is_in_group(&"player"):
+			if collider is Node and collider.is_in_group(&"player"):
 				continue
 			var hit_norm: Vector3 = collision.get_normal()
 			var move_heading: Vector3 = desired_velocity.normalized()
 			if move_heading.is_zero_approx():
 				move_heading = displacement.normalized()
 
-			if hit_norm.dot(move_heading) < -obstacle_impact_threshold:
-				_start_bashing_from_collision(collider as Node, hit_norm)
+			if hit_norm.dot(move_heading) < -obstacle_impact_threshold and collider is Node:
+				var col_node2: Node = collider
+				_start_bashing_from_collision(col_node2, hit_norm)
 				break
 
 
@@ -346,7 +352,7 @@ func _resolve_door_or_obstacle(col: Node) -> Node:
 func navigate_to_waypoint(waypoint: Variant = null) -> void:
 	print("ElfDrone: navigate_to_waypoint() called with: ", waypoint)
 	if waypoint is Waypoint3D:
-		target_waypoint = waypoint as Waypoint3D
+		target_waypoint = waypoint
 	elif waypoint is NodePath or waypoint is String:
 		var path_str: String = str(waypoint).strip_edges()
 		if not path_str.is_empty():
@@ -354,7 +360,7 @@ func navigate_to_waypoint(waypoint: Variant = null) -> void:
 			if not is_instance_valid(resolved_node) and is_inside_tree():
 				resolved_node = get_tree().get_root().find_child(path_str, true, false)
 			if resolved_node is Waypoint3D:
-				target_waypoint = resolved_node as Waypoint3D
+				target_waypoint = resolved_node
 
 	if is_instance_valid(target_waypoint):
 		task_state = TaskState.FLY_TO_WAYPOINT
@@ -366,7 +372,8 @@ func navigate_to_waypoint(waypoint: Variant = null) -> void:
 func start_bashing_obstacle(target_obstacle: Variant = null) -> void:
 	print("ElfDrone: start_bashing_obstacle() commanded.")
 	if target_obstacle is Node:
-		hit_obstacle_node = _resolve_door_or_obstacle(target_obstacle as Node)
+		var obs_node: Node = target_obstacle
+		hit_obstacle_node = _resolve_door_or_obstacle(obs_node)
 	bash_anchor = global_position
 	bash_normal = -global_transform.basis.z.normalized()
 	bash_time = 0.0
@@ -392,7 +399,8 @@ func join_flock(_param: Variant = null) -> void:
 func _find_player() -> Node3D:
 	var nodes: Array[Node] = get_tree().get_nodes_in_group(&"player")
 	if not nodes.is_empty() and nodes[0] is Node3D:
-		return nodes[0] as Node3D
+		var n0: Node = nodes[0]
+		return n0 if n0 is Node3D else null
 	return null
 
 
@@ -449,7 +457,8 @@ func _update_beam_transform() -> void:
 func set_glow_color(color: Color) -> void:
 	print("ElfDrone: Applying glow color ", color)
 	if is_instance_valid(mesh_instance):
-		var mat: StandardMaterial3D = mesh_instance.get_active_material(0) as StandardMaterial3D
+		var raw_mat: Material = mesh_instance.get_active_material(0)
+		var mat: StandardMaterial3D = raw_mat if raw_mat is StandardMaterial3D else null
 		if mat != null:
 			mat.albedo_color = color
 			mat.emission = color

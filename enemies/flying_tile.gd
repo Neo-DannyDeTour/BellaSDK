@@ -118,7 +118,8 @@ func _on_body_entered(body: Node3D) -> void:
 	if _current_state != FlyingTile.State.ATTACKING:
 		return
 
-	var health_comp: HealthComponent = body.get_node_or_null("HealthComponent") as HealthComponent
+	var health_node: Node = body.get_node_or_null("HealthComponent")
+	var health_comp: HealthComponent = health_node if health_node is HealthComponent else null
 
 	if health_comp:
 		print("FlyingTile: Direct hit! Calling HealthComponent.take_damage(100)")

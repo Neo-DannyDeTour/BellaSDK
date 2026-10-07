@@ -91,7 +91,7 @@ func _respawn_cube() -> void:
 		print("Error: Failed to load PackedScene at: ", meat_cube_scene_path)
 		return
 
-	var meat_cube_scene: PackedScene = loaded_res as PackedScene
+	var meat_cube_scene: PackedScene = loaded_res if loaded_res is PackedScene else null
 	var raw_instance: Node = meat_cube_scene.instantiate()
 	if not (raw_instance is Node3D):
 		if is_instance_valid(raw_instance):
@@ -99,7 +99,7 @@ func _respawn_cube() -> void:
 		print("Error: Instantiated meat cube root is not a Node3D!")
 		return
 
-	var fresh_cube: Node3D = raw_instance as Node3D
+	var fresh_cube: Node3D = raw_instance if raw_instance is Node3D else null
 	var parent_node: Node = get_parent()
 	if is_instance_valid(parent_node):
 		parent_node.add_child(fresh_cube)

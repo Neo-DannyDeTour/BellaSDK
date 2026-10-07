@@ -112,7 +112,8 @@ func _ready() -> void:
 	_hole_lifetimes.fill(0.0)
 
 	if precomputed_noise == null:
-		precomputed_noise = preload("res://vfx/smoke_noise_3d.tres") as Texture3D
+		const SmokeNoiseRes: Resource = preload("res://vfx/smoke_noise_3d.tres")
+		precomputed_noise = SmokeNoiseRes if SmokeNoiseRes is Texture3D else null
 
 	assert(precomputed_noise != null, "SmokeManager requires smoke_noise_3d.tres!")
 
@@ -398,7 +399,7 @@ func _dispatch_to_compute_shader(
 	_push_constants_buffer.encode_float(0, player_pos.x)
 	_push_constants_buffer.encode_float(4, player_pos.y)
 	_push_constants_buffer.encode_float(8, player_pos.z)
-	_push_constants_buffer.encode_float(12, float(holes_count))
+	_push_constants_buffer.encode_float(12, holes_count * 1.0)
 	_push_constants_buffer.encode_float(16, grid_pos.x)
 	_push_constants_buffer.encode_float(20, grid_pos.y)
 	_push_constants_buffer.encode_float(24, grid_pos.z)

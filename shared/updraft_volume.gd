@@ -9,7 +9,9 @@ extends Area3D
 ## Initializes the node by hiding the debug mesh on ready.
 func _ready() -> void:
 	print("UpdraftVolume: Initializing on: ", name)
-	var debug_mesh: Node3D = get_node_or_null("MeshInstance3D") as Node3D
+	var debug_mesh: Node3D = (
+		get_node_or_null("MeshInstance3D") if get_node_or_null("MeshInstance3D") is Node3D else null
+	)
 	if is_instance_valid(debug_mesh):
 		debug_mesh.hide()
 
@@ -25,16 +27,18 @@ func _on_body_entered(body: Node3D) -> void:
 
 		for child: Node in get_children():
 			if child is CollisionShape3D:
-				var col_shape: CollisionShape3D = child as CollisionShape3D
+				var col_shape: CollisionShape3D = child if child is CollisionShape3D else null
 				if not is_instance_valid(col_shape.shape):
 					continue
 
 				if col_shape.shape is BoxShape3D:
-					var box: BoxShape3D = col_shape.shape as BoxShape3D
+					var box: BoxShape3D = col_shape.shape if col_shape.shape is BoxShape3D else null
 					top_height = col_shape.global_position.y + (box.size.y * 0.5)
 					break
 				elif col_shape.shape is CylinderShape3D:
-					var cyl: CylinderShape3D = col_shape.shape as CylinderShape3D
+					var cyl: CylinderShape3D = (
+						col_shape.shape if col_shape.shape is CylinderShape3D else null
+					)
 					top_height = col_shape.global_position.y + (cyl.height * 0.5)
 					break
 

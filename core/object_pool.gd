@@ -73,7 +73,7 @@ func _create_instance() -> Node:
 	pool_container.add_child(instance)
 
 	if instance is Node3D:
-		var node_3d: Node3D = instance as Node3D
+		var node_3d: Node3D = instance if instance is Node3D else null
 		node_3d.global_position = DORMANT_POSITION_3D
 		node_3d.visible = false
 	elif instance is CanvasItem:
@@ -91,7 +91,7 @@ func spawn(global_pos: Vector3 = Vector3.ZERO, rot_euler: Vector3 = Vector3.ZERO
 		return null
 
 	if instance is Node3D:
-		var node_3d: Node3D = instance as Node3D
+		var node_3d: Node3D = instance if instance is Node3D else null
 		node_3d.global_position = global_pos
 		node_3d.global_rotation = rot_euler
 
@@ -137,11 +137,11 @@ func _activate_instance(instance: Node) -> void:
 	_active_ids[instance.get_instance_id()] = true
 
 	if instance is Node3D:
-		var node_3d: Node3D = instance as Node3D
+		var node_3d: Node3D = instance if instance is Node3D else null
 		node_3d.visible = true
 
 		if instance is RigidBody3D:
-			var rb: RigidBody3D = instance as RigidBody3D
+			var rb: RigidBody3D = instance if instance is RigidBody3D else null
 			rb.linear_velocity = Vector3.ZERO
 			rb.angular_velocity = Vector3.ZERO
 			rb.sleeping = false
@@ -181,12 +181,12 @@ func recycle(instance: Node) -> void:
 	instance.process_mode = Node.PROCESS_MODE_DISABLED
 
 	if instance is Node3D:
-		var node_3d: Node3D = instance as Node3D
+		var node_3d: Node3D = instance if instance is Node3D else null
 		node_3d.visible = false
 		node_3d.global_position = DORMANT_POSITION_3D
 
 		if instance is RigidBody3D:
-			var rb: RigidBody3D = instance as RigidBody3D
+			var rb: RigidBody3D = instance if instance is RigidBody3D else null
 			rb.linear_velocity = Vector3.ZERO
 			rb.angular_velocity = Vector3.ZERO
 			rb.sleeping = true

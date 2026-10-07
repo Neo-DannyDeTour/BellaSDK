@@ -159,7 +159,7 @@ func reset_doors() -> void:
 func animate_door(door: Node3D, target: Vector3) -> void:
 	print("DoubleSlidingDoors: Animating door -> ", door.name)
 	if active_tweens.has(door):
-		var existing_tween: Tween = active_tweens[door] as Tween
+		var existing_tween: Tween = active_tweens[door] if active_tweens[door] is Tween else null
 		if is_instance_valid(existing_tween) and existing_tween.is_valid():
 			existing_tween.kill()
 

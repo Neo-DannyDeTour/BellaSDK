@@ -68,7 +68,7 @@ func _setup_material(mesh_node: MeshInstance3D) -> ShaderMaterial:
 		var variant_key: String = "%d_%s" % [get_instance_id(), mesh_node.name]
 		var cached_mat: Material = MaterialCache.get_variant(mat, variant_key)
 		if cached_mat is ShaderMaterial:
-			var shader_mat: ShaderMaterial = cached_mat as ShaderMaterial
+			var shader_mat: ShaderMaterial = cached_mat if cached_mat is ShaderMaterial else null
 			mesh_node.material_override = shader_mat
 			return shader_mat
 

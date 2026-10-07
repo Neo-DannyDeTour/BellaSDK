@@ -59,8 +59,11 @@ const VOLUMETRIC_LAYER_MASK: int = 1 << 9
 )
 
 ## Cached reference to the preview SubViewport node.
-@onready
-var diorama_viewport: SubViewport = find_child("DioramaViewport", true, false) as SubViewport
+@onready var diorama_viewport: SubViewport = (
+	find_child("DioramaViewport", true, false)
+	if find_child("DioramaViewport", true, false) is SubViewport
+	else null
+)
 
 ## Cached reference to the preview 3D camera.
 var _graphics_camera: Camera3D = null
@@ -135,7 +138,11 @@ func _prewarm_diorama() -> void:
 
 	_instantiated_diorama = (diorama_viewport.get_node_or_null("SettingsLevel") as Node3D)
 	if not is_instance_valid(_instantiated_diorama):
-		var scene: PackedScene = load("res://player/settings_level.tscn") as PackedScene
+		var scene: PackedScene = (
+			load("res://player/settings_level.tscn")
+			if load("res://player/settings_level.tscn") is PackedScene
+			else null
+		)
 		if is_instance_valid(scene):
 			var raw_instance: Node = scene.instantiate()
 			if raw_instance is Node3D:
@@ -205,7 +212,7 @@ func _neutralize_diorama_hotspots() -> void:
 
 	var bodies: Array[Node] = diorama_viewport.find_children("*", "CollisionObject3D", true, false)
 	for b_node: Node in bodies:
-		var c_obj: CollisionObject3D = b_node as CollisionObject3D
+		var c_obj: CollisionObject3D = b_node if b_node is CollisionObject3D else null
 		if is_instance_valid(c_obj):
 			c_obj.collision_layer = 0
 			c_obj.collision_mask = 0
@@ -216,7 +223,7 @@ func _neutralize_diorama_hotspots() -> void:
 	_all_diorama_cameras.clear()
 	var cams: Array[Node] = diorama_viewport.find_children("*", "Camera3D", true, false)
 	for c_node: Node in cams:
-		var cam: Camera3D = c_node as Camera3D
+		var cam: Camera3D = c_node if c_node is Camera3D else null
 		if is_instance_valid(cam):
 			cam.current = false
 			if cam is ExtendedCamera3D:

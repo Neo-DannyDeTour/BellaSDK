@@ -344,16 +344,36 @@ func _format_header_grid() -> void:
 	if labels.is_empty():
 		return
 
-	var reset_primary_header: Label = header_grid.get_node_or_null("ColClearPrimary") as Label
+	var reset_primary_header: Label = (
+		header_grid.get_node_or_null("ColClearPrimary")
+		if header_grid.get_node_or_null("ColClearPrimary") is Label
+		else null
+	)
 	if reset_primary_header == null:
 		reset_primary_header = Label.new()
 		reset_primary_header.name = "ColClearPrimary"
 		header_grid.add_child(reset_primary_header)
 
-	var action_header: Label = header_grid.get_node_or_null("ColAction") as Label
-	var primary_header: Label = header_grid.get_node_or_null("ColPrimary") as Label
-	var secondary_header: Label = header_grid.get_node_or_null("ColSecondary") as Label
-	var reset_secondary_header: Label = header_grid.get_node_or_null("ColClear") as Label
+	var action_header: Label = (
+		header_grid.get_node_or_null("ColAction")
+		if header_grid.get_node_or_null("ColAction") is Label
+		else null
+	)
+	var primary_header: Label = (
+		header_grid.get_node_or_null("ColPrimary")
+		if header_grid.get_node_or_null("ColPrimary") is Label
+		else null
+	)
+	var secondary_header: Label = (
+		header_grid.get_node_or_null("ColSecondary")
+		if header_grid.get_node_or_null("ColSecondary") is Label
+		else null
+	)
+	var reset_secondary_header: Label = (
+		header_grid.get_node_or_null("ColClear")
+		if header_grid.get_node_or_null("ColClear") is Label
+		else null
+	)
 
 	if is_instance_valid(action_header):
 		header_grid.move_child(action_header, 0)
@@ -415,7 +435,7 @@ func _setup_behavior_controls() -> void:
 		crouch_mode_option.clear()
 		crouch_mode_option.add_item("Hold", 0)
 		crouch_mode_option.add_item("Toggle", 1)
-		var sc: String = GlobalSettings.get_setting("Gameplay", "crouch_mode", "Hold") as String
+		var sc: String = GlobalSettings.get_setting("Gameplay", "crouch_mode", "Hold")
 		crouch_mode_option.selected = 1 if sc == "Toggle" else 0
 		crouch_mode_option.item_selected.connect(
 			func(idx: int) -> void:
@@ -428,7 +448,7 @@ func _setup_behavior_controls() -> void:
 		sprint_mode_option.clear()
 		sprint_mode_option.add_item("Hold", 0)
 		sprint_mode_option.add_item("Toggle", 1)
-		var ss: String = GlobalSettings.get_setting("Gameplay", "sprint_mode", "Hold") as String
+		var ss: String = GlobalSettings.get_setting("Gameplay", "sprint_mode", "Hold")
 		sprint_mode_option.selected = 1 if ss == "Toggle" else 0
 		sprint_mode_option.item_selected.connect(
 			func(idx: int) -> void:
@@ -442,7 +462,7 @@ func _setup_behavior_controls() -> void:
 		valve_mode_option.add_item("Hold", 0)
 		valve_mode_option.add_item("One-Time Press", 1)
 		valve_mode_option.add_item("Rapid Mash", 2)
-		var sv: String = GlobalSettings.get_setting("Gameplay", "valve_turn_mode", "Hold") as String
+		var sv: String = GlobalSettings.get_setting("Gameplay", "valve_turn_mode", "Hold")
 		match sv:
 			"One-Time Press":
 				valve_mode_option.selected = 1
@@ -644,10 +664,10 @@ func _update_slot_button_text(button: Button, action: String, slot_index: int) -
 		container.add_child(prefix_label)
 
 	if target_ev.has_meta("chord_keys"):
-		var keys_array: Array = target_ev.get_meta("chord_keys") as Array
+		var keys_array: Array = target_ev.get_meta("chord_keys")
 		var is_ordered: bool = gesture == "ordered_chord"
 		for i: int in range(keys_array.size()):
-			var key_id: int = keys_array[i] as int
+			var key_id: int = keys_array[i]
 			var ev: InputEvent = _create_event_from_id(key_id)
 			container.add_child(_create_event_display_node(ev))
 			if i < keys_array.size() - 1:
@@ -705,14 +725,14 @@ func _reset_gesture_state() -> void:
 ## Checks if two events correspond to identical hardware keys.
 func _is_same_input(ev1: InputEvent, ev2: InputEvent) -> bool:
 	if ev1 is InputEventKey and ev2 is InputEventKey:
-		var k1: InputEventKey = ev1 as InputEventKey
-		var k2: InputEventKey = ev2 as InputEventKey
+		var k1: InputEventKey = ev1 if ev1 is InputEventKey else null
+		var k2: InputEventKey = ev2 if ev2 is InputEventKey else null
 		if k1.physical_keycode != KEY_NONE and k2.physical_keycode != KEY_NONE:
 			return k1.physical_keycode == k2.physical_keycode
 		return k1.keycode == k2.keycode
 	if ev1 is InputEventMouseButton and ev2 is InputEventMouseButton:
-		var m1: InputEventMouseButton = ev1 as InputEventMouseButton
-		var m2: InputEventMouseButton = ev2 as InputEventMouseButton
+		var m1: InputEventMouseButton = ev1 if ev1 is InputEventMouseButton else null
+		var m2: InputEventMouseButton = ev2 if ev2 is InputEventMouseButton else null
 		return m1.button_index == m2.button_index
 	return false
 
@@ -720,7 +740,7 @@ func _is_same_input(ev1: InputEvent, ev2: InputEvent) -> bool:
 ## Generates unique identifier for event types.
 func _get_unique_event_id(event: InputEvent) -> int:
 	if event is InputEventKey:
-		var k: InputEventKey = event as InputEventKey
+		var k: InputEventKey = event if event is InputEventKey else null
 		return k.physical_keycode if k.physical_keycode != KEY_NONE else k.keycode
 	if event is InputEventMouseButton:
 		return 100000 + (event as InputEventMouseButton).button_index
@@ -733,7 +753,7 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventKey:
-		var key_event: InputEventKey = event as InputEventKey
+		var key_event: InputEventKey = event if event is InputEventKey else null
 		if key_event.is_echo():
 			return
 		var clean_key: InputEventKey = InputEventKey.new()
@@ -742,7 +762,7 @@ func _input(event: InputEvent) -> void:
 		_process_gesture_event(clean_key, key_event.is_pressed())
 		get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton:
-		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
+		var mouse_event: InputEventMouseButton = event if event is InputEventMouseButton else null
 		var clean_mouse: InputEventMouseButton = InputEventMouseButton.new()
 		clean_mouse.button_index = mouse_event.button_index
 		_process_gesture_event(clean_mouse, mouse_event.is_pressed())
@@ -915,7 +935,7 @@ func _get_event_icon(event: InputEvent) -> Texture2D:
 			if _icon_cache.has(p):
 				return _icon_cache[p] as Texture2D
 			if ResourceLoader.exists(p):
-				var tex: Texture2D = load(p) as Texture2D
+				var tex: Texture2D = load(p) if load(p) is Texture2D else null
 				_icon_cache[p] = tex
 				return tex
 	return null

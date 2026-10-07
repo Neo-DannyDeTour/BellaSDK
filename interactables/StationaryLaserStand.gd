@@ -59,8 +59,11 @@ var _scorch_texture: GradientTexture2D
 var _trail_texture: GradientTexture2D
 
 ## Template particle system used for beam core energy effects.
-@onready
-var base_beam_particles: GPUParticles3D = get_node_or_null("Turret/BeamParticles") as GPUParticles3D
+@onready var base_beam_particles: GPUParticles3D = (
+	get_node_or_null("Turret/BeamParticles")
+	if get_node_or_null("Turret/BeamParticles") is GPUParticles3D
+	else null
+)
 
 ## Template particle system used when laser impacts a surface.
 @onready var base_impact_particles: GPUParticles3D = (
@@ -145,7 +148,11 @@ func _preallocate_beam_pools() -> void:
 		_beam_pool.append(beam)
 
 		if is_instance_valid(base_beam_particles):
-			var bp: GPUParticles3D = base_beam_particles.duplicate() as GPUParticles3D
+			var bp: GPUParticles3D = (
+				base_beam_particles.duplicate()
+				if base_beam_particles.duplicate() is GPUParticles3D
+				else null
+			)
 			bp.top_level = true
 			bp.emitting = false
 			if bp.process_material:
@@ -156,7 +163,11 @@ func _preallocate_beam_pools() -> void:
 			_beam_particles_pool.append(bp)
 
 		if is_instance_valid(base_smoke_particles):
-			var sp: GPUParticles3D = base_smoke_particles.duplicate() as GPUParticles3D
+			var sp: GPUParticles3D = (
+				base_smoke_particles.duplicate()
+				if base_smoke_particles.duplicate() is GPUParticles3D
+				else null
+			)
 			sp.top_level = true
 			sp.emitting = false
 			if sp.process_material:
@@ -167,7 +178,11 @@ func _preallocate_beam_pools() -> void:
 			_smoke_particles_pool.append(sp)
 
 		if is_instance_valid(base_impact_particles):
-			var ip: GPUParticles3D = base_impact_particles.duplicate() as GPUParticles3D
+			var ip: GPUParticles3D = (
+				base_impact_particles.duplicate()
+				if base_impact_particles.duplicate() is GPUParticles3D
+				else null
+			)
 			ip.top_level = true
 			ip.emitting = false
 			if ip.process_material:
@@ -349,7 +364,7 @@ func _clear_last_target() -> void:
 ## Toggles control state when interacted with by a player character.
 func _on_interacted(character: CharacterBody3D) -> void:
 	print("StationaryLaserStand: Interaction triggered by: ", character.name)
-	var p: Player = character as Player
+	var p: Player = character if character is Player else null
 	if not is_instance_valid(p):
 		return
 
@@ -427,7 +442,9 @@ func _update_beam_visuals(points: PackedVector3Array, normals: PackedVector3Arra
 					)
 					bp.look_at(end, up_dir)
 
-				var mat: ParticleProcessMaterial = bp.process_material as ParticleProcessMaterial
+				var mat: ParticleProcessMaterial = (
+					bp.process_material if bp.process_material is ParticleProcessMaterial else null
+				)
 				if mat:
 					mat.emission_box_extents = Vector3(0.05, 0.05, distance * 0.5)
 
@@ -449,7 +466,9 @@ func _update_beam_visuals(points: PackedVector3Array, normals: PackedVector3Arra
 					)
 					sp.look_at(end, up_dir)
 
-				var smat: ParticleProcessMaterial = sp.process_material as ParticleProcessMaterial
+				var smat: ParticleProcessMaterial = (
+					sp.process_material if sp.process_material is ParticleProcessMaterial else null
+				)
 				if smat:
 					smat.emission_box_extents = Vector3(0.15, 0.15, distance * 0.5)
 					var density: float = 20.0
@@ -509,7 +528,7 @@ func _leave_trail_mark(pos: Vector3, xform: Transform3D) -> void:
 		(trail as Node3D).global_position = pos
 
 	if trail is Decal:
-		var d: Decal = trail as Decal
+		var d: Decal = trail if trail is Decal else null
 		d.visible = true
 		d.albedo_mix = 1.0
 

@@ -44,7 +44,7 @@ func _input(event: InputEvent) -> void:
 	if not (event is InputEventMouseButton and event.is_pressed()):
 		return
 
-	var mouse_event: InputEventMouseButton = event as InputEventMouseButton
+	var mouse_event: InputEventMouseButton = event if event is InputEventMouseButton else null
 	var mouse_pos: Vector2 = mouse_event.global_position
 
 	if is_instance_valid(search_bar):
@@ -117,7 +117,7 @@ func _scan_node_recursively(root_node: Node, tab_idx: int, tab_name: String) -> 
 		return
 
 	if root_node is Label:
-		var label: Label = root_node as Label
+		var label: Label = root_node if root_node is Label else null
 		var label_text: String = label.text.strip_edges()
 		var is_header: bool = (
 			label.name == "HeaderLabel"
@@ -143,7 +143,7 @@ func _inspect_row_siblings(parent: Node, label_node: Label, tab_idx: int, tab_na
 	var child_count: int = parent.get_child_count(true)
 	var max_step: int = MAX_SEARCH_INSPECT_STEP
 	if parent is GridContainer:
-		var grid: GridContainer = parent as GridContainer
+		var grid: GridContainer = parent if parent is GridContainer else null
 		max_step = max(grid.columns, 4)
 
 	var found_slider: HSlider = null
@@ -166,8 +166,8 @@ func _inspect_row_siblings(parent: Node, label_node: Label, tab_idx: int, tab_na
 			continue
 
 		if sibling is Button and (sibling as Button).has_meta("action"):
-			var action_btn: Button = sibling as Button
-			var slot: int = action_btn.get_meta("slot", 0) as int
+			var action_btn: Button = sibling if sibling is Button else null
+			var slot: int = action_btn.get_meta("slot", 0)
 			if slot == 0:
 				found_primary_btn = action_btn
 			elif slot == 1:
@@ -188,7 +188,7 @@ func _inspect_row_siblings(parent: Node, label_node: Label, tab_idx: int, tab_na
 			continue
 
 		if sibling is Label:
-			var test_lbl: Label = sibling as Label
+			var test_lbl: Label = sibling if sibling is Label else null
 			var txt: String = test_lbl.text.strip_edges()
 			var is_numeric: bool = (
 				txt.is_valid_float()
@@ -251,7 +251,9 @@ func _register_inspected_row(
 			}
 		)
 	elif slider != null:
-		var target_node: Control = line_edit as Control if line_edit != null else slider as Control
+		var target_node: Control = (
+			line_edit if line_edit is Control else null if line_edit != null else slider as Control
+		)
 		_append_search_entry(
 			{
 				"title": title,
@@ -289,7 +291,7 @@ func _register_inspected_row(
 
 ## Adds an item dictionary to [member _search_index] avoiding duplicates.
 func _append_search_entry(data: Dictionary) -> void:
-	var clean_title: String = data["title"] as String
+	var clean_title: String = data["title"]
 	for item: Dictionary in _search_index:
 		if item["title"] == clean_title and item["tab_index"] == data["tab_index"]:
 			return
@@ -330,8 +332,8 @@ func _on_search_text_changed(query: String) -> void:
 
 	var matched_count: int = 0
 	for item: Dictionary in _search_index:
-		var title_str: String = item["title"] as String
-		var category_str: String = item["tab_name"] as String
+		var title_str: String = item["title"]
+		var category_str: String = item["tab_name"]
 
 		var matches_title: bool = clean_query in title_str.to_lower()
 		var matches_cat: bool = clean_query in category_str.to_lower()
@@ -386,11 +388,11 @@ func _create_result_row(item: Dictionary) -> HBoxContainer:
 	row.custom_minimum_size.y = 34.0
 	row.add_theme_constant_override("separation", 10)
 
-	var title: String = item["title"] as String
-	var category: String = item["tab_name"] as String
-	var tab_idx: int = item["tab_index"] as int
-	var target: Control = item["target"] as Control
-	var row_type: String = item["type"] as String
+	var title: String = item["title"]
+	var category: String = item["tab_name"]
+	var tab_idx: int = item["tab_index"]
+	var target: Control = item["target"] if item["target"] is Control else null
+	var row_type: String = item["type"]
 
 	var link_btn: Button = Button.new()
 	link_btn.text = "%s  [%s]" % [title, category]
@@ -421,9 +423,13 @@ func _create_result_row(item: Dictionary) -> HBoxContainer:
 
 ## Generates and attaches a mirrored synchronized slider control.
 func _build_mirrored_slider_row(row: HBoxContainer, item: Dictionary) -> void:
-	var orig_sl: HSlider = item["slider"] as HSlider
-	var orig_readout: Label = item.get("readout_lbl", null) as Label
-	var orig_le: LineEdit = item.get("line_edit", null) as LineEdit
+	var orig_sl: HSlider = item["slider"] if item["slider"] is HSlider else null
+	var orig_readout: Label = (
+		item.get("readout_lbl", null) if item.get("readout_lbl", null) is Label else null
+	)
+	var orig_le: LineEdit = (
+		item.get("line_edit", null) if item.get("line_edit", null) is LineEdit else null
+	)
 	var cloned_le: LineEdit = null
 	var readout_lbl: Label = null
 
@@ -516,7 +522,7 @@ func _build_mirrored_slider_row(row: HBoxContainer, item: Dictionary) -> void:
 
 ## Generates and attaches a mirrored standalone [LineEdit] control.
 func _build_mirrored_line_edit_row(row: HBoxContainer, item: Dictionary) -> void:
-	var orig_le: LineEdit = item["line_edit"] as LineEdit
+	var orig_le: LineEdit = item["line_edit"] if item["line_edit"] is LineEdit else null
 	if not is_instance_valid(orig_le):
 		return
 
@@ -555,9 +561,9 @@ func _build_mirrored_line_edit_row(row: HBoxContainer, item: Dictionary) -> void
 
 ## Generates mirrored action trigger and clear buttons for keybinding rows.
 func _build_mirrored_action_row(row: HBoxContainer, item: Dictionary, tab_idx: int) -> void:
-	var orig_p: Button = item["primary_btn"] as Button
-	var orig_s: Button = item["secondary_btn"] as Button
-	var orig_c: Button = item["clear_btn"] as Button
+	var orig_p: Button = item["primary_btn"] if item["primary_btn"] is Button else null
+	var orig_s: Button = item["secondary_btn"] if item["secondary_btn"] is Button else null
+	var orig_c: Button = item["clear_btn"] if item["clear_btn"] is Button else null
 
 	if is_instance_valid(orig_p):
 		var cloned_p: Button = Button.new()
@@ -602,7 +608,7 @@ func _build_mirrored_action_row(row: HBoxContainer, item: Dictionary, tab_idx: i
 ## Generates mirrored generic checkbox, check button, or option buttons.
 func _build_mirrored_generic_row(row: HBoxContainer, target: Control) -> void:
 	if target is OptionButton:
-		var orig_ob: OptionButton = target as OptionButton
+		var orig_ob: OptionButton = target if target is OptionButton else null
 		var cloned_ob: OptionButton = OptionButton.new()
 		for i: int in range(orig_ob.item_count):
 			cloned_ob.add_item(orig_ob.get_item_text(i), orig_ob.get_item_id(i))
@@ -629,7 +635,7 @@ func _build_mirrored_generic_row(row: HBoxContainer, target: Control) -> void:
 		)
 		row.add_child(cloned_ob)
 	elif target is CheckButton:
-		var orig_cb: CheckButton = target as CheckButton
+		var orig_cb: CheckButton = target if target is CheckButton else null
 		var cloned_cb: CheckButton = CheckButton.new()
 		cloned_cb.set_pressed_no_signal(orig_cb.button_pressed)
 
@@ -652,7 +658,7 @@ func _build_mirrored_generic_row(row: HBoxContainer, target: Control) -> void:
 		)
 		row.add_child(cloned_cb)
 	elif target is CheckBox:
-		var orig_chk: CheckBox = target as CheckBox
+		var orig_chk: CheckBox = target if target is CheckBox else null
 		var cloned_chk: CheckBox = CheckBox.new()
 		cloned_chk.set_pressed_no_signal(orig_chk.button_pressed)
 

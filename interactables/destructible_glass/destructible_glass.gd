@@ -131,11 +131,11 @@ class DestructibleGlassShard:
 		var rel_vel: Vector3 = Vector3.ZERO
 
 		if body is RigidBody3D:
-			var rb: RigidBody3D = body as RigidBody3D
+			var rb: RigidBody3D = body if body is RigidBody3D else null
 			rel_vel = rb.linear_velocity - linear_velocity
 			speed = rel_vel.length()
 		elif body is CharacterBody3D:
-			var cb: CharacterBody3D = body as CharacterBody3D
+			var cb: CharacterBody3D = body if body is CharacterBody3D else null
 			rel_vel = cb.velocity
 			speed = rel_vel.length()
 
@@ -166,8 +166,14 @@ func _apply_dimensions() -> void:
 	if not is_inside_tree():
 		return
 
-	var mesh_inst: MeshInstance3D = get_node_or_null("IntactMesh") as MeshInstance3D
-	var coll: CollisionShape3D = get_node_or_null("IntactCollision") as CollisionShape3D
+	var mesh_inst: MeshInstance3D = (
+		get_node_or_null("IntactMesh") if get_node_or_null("IntactMesh") is MeshInstance3D else null
+	)
+	var coll: CollisionShape3D = (
+		get_node_or_null("IntactCollision")
+		if get_node_or_null("IntactCollision") is CollisionShape3D
+		else null
+	)
 	var dimensions: Vector3 = Vector3(glass_size.x, glass_size.y, glass_thickness)
 
 	if mesh_inst != null and mesh_inst.mesh is BoxMesh:
@@ -183,14 +189,20 @@ func _update_material() -> void:
 		return
 
 	print("DestructibleGlass: Updating shader uniforms on: ", name)
-	var mesh_inst: MeshInstance3D = get_node_or_null("IntactMesh") as MeshInstance3D
+	var mesh_inst: MeshInstance3D = (
+		get_node_or_null("IntactMesh") if get_node_or_null("IntactMesh") is MeshInstance3D else null
+	)
 	if mesh_inst != null:
 		_apply_instance_shader_parameters(mesh_inst)
 
 	if not _shards_generated:
 		return
 
-	var container: Node3D = get_node_or_null("ShardsContainer") as Node3D
+	var container: Node3D = (
+		get_node_or_null("ShardsContainer")
+		if get_node_or_null("ShardsContainer") is Node3D
+		else null
+	)
 	if container != null:
 		for child: Node in container.get_children():
 			if child is RigidBody3D:
@@ -233,11 +245,11 @@ func _on_body_entered(body: Node) -> void:
 		impact_pos = (body as Node3D).global_position
 
 	if body is RigidBody3D:
-		var rb: RigidBody3D = body as RigidBody3D
+		var rb: RigidBody3D = body if body is RigidBody3D else null
 		rel_vel = rb.linear_velocity - linear_velocity
 		speed = rel_vel.length()
 	elif body is CharacterBody3D:
-		var cb: CharacterBody3D = body as CharacterBody3D
+		var cb: CharacterBody3D = body if body is CharacterBody3D else null
 		rel_vel = cb.velocity
 		speed = rel_vel.length()
 
@@ -486,7 +498,7 @@ func chip_glass(hit_position: Vector3, hit_dir: Vector3) -> void:
 		if not (child is DestructibleGlassShard):
 			continue
 
-		var shard: DestructibleGlassShard = child as DestructibleGlassShard
+		var shard: DestructibleGlassShard = child if child is DestructibleGlassShard else null
 		if not shard.freeze or shard.is_destroyed:
 			continue
 

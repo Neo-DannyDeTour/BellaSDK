@@ -21,7 +21,7 @@ var _flat_vel: Vector2 = Vector2.ZERO
 ## Attaches player to monkey bars, plays idle animation, and locks sprint FOV.
 func enter(msg: Dictionary = {}) -> void:
 	print("StateMonkeyBars: enter() called. Player mounting monkey bars.")
-	var p: Player = player as Player
+	var p: Player = player if player is Player else null
 	if not is_instance_valid(_camera_anims) and is_instance_valid(p):
 		_camera_anims = (p.get_node_or_null("%CameraAnims") as AnimationPlayer)
 
@@ -45,7 +45,7 @@ func enter(msg: Dictionary = {}) -> void:
 func exit() -> void:
 	print("StateMonkeyBars: exit() called. Player dismounting monkey bars.")
 	current_monkey_bar_volume = null
-	var p: Player = player as Player
+	var p: Player = player if player is Player else null
 	if not is_instance_valid(p):
 		return
 
@@ -70,7 +70,7 @@ func exit() -> void:
 ## Processes horizontal locomotion, vertical magnetism, audio, and dismounts.
 func physics_update(delta: float) -> void:
 	print("StateMonkeyBars: physics_update() processing monkey bar traversal.")
-	var p: Player = player as Player
+	var p: Player = player if player is Player else null
 	if not is_instance_valid(p):
 		return
 
@@ -158,7 +158,9 @@ func _apply_horizontal_movement(input_dir: Vector2, p: Player) -> void:
 ## Snaps player vertical position to underside of monkey bar volume.
 func _apply_vertical_magnetism(p: Player) -> void:
 	print("StateMonkeyBars: _apply_vertical_magnetism() applying height clamp.")
-	var volume: MonkeyBarVolume = current_monkey_bar_volume as MonkeyBarVolume
+	var volume: MonkeyBarVolume = (
+		current_monkey_bar_volume if current_monkey_bar_volume is MonkeyBarVolume else null
+	)
 	if not is_instance_valid(volume):
 		return
 

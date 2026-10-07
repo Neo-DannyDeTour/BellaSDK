@@ -191,7 +191,9 @@ func _update_visuals() -> void:
 		_line_visual.visible = true
 		_line_visual.top_level = false
 
-		var imm_mesh: ImmediateMesh = _line_visual.mesh as ImmediateMesh
+		var imm_mesh: ImmediateMesh = (
+			_line_visual.mesh if _line_visual.mesh is ImmediateMesh else null
+		)
 		if not imm_mesh:
 			imm_mesh = ImmediateMesh.new()
 			_line_visual.mesh = imm_mesh
@@ -252,7 +254,7 @@ func _get_position_at_time(t: float) -> Vector3:
 
 ## Detects player entry, applies velocity, and transitions state machine.
 func _on_body_entered(body: Node3D) -> void:
-	var character: CharacterBody3D = body as CharacterBody3D
+	var character: CharacterBody3D = body if body is CharacterBody3D else null
 	if character and (character.is_in_group(&"player") or character is Player):
 		print(
 			"JumpPad: _on_body_entered() called. Launching player with velocity: ",
@@ -341,7 +343,9 @@ func _create_default_nodes() -> void:
 			apex_box.material = a_mat
 			apex.mesh = apex_box
 
-	var target: Marker3D = get_node_or_null("Target") as Marker3D
+	var target: Marker3D = (
+		get_node_or_null("Target") if get_node_or_null("Target") is Marker3D else null
+	)
 	if not is_instance_valid(target):
 		target = Marker3D.new()
 		target.name = "Target"

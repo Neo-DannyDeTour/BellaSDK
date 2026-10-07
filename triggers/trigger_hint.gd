@@ -123,14 +123,14 @@ func _update_visuals() -> void:
 				col.shape = BoxShape3D.new()
 			else:
 				col.shape = col.shape.duplicate()
-			var box: BoxShape3D = col.shape as BoxShape3D
+			var box: BoxShape3D = col.shape if col.shape is BoxShape3D else null
 			box.size = trigger_size
 		elif shape_type == EditorTriggerVisualizer.ShapeType.SPHERE:
 			if not col.shape is SphereShape3D:
 				col.shape = SphereShape3D.new()
 			else:
 				col.shape = col.shape.duplicate()
-			var sphere: SphereShape3D = col.shape as SphereShape3D
+			var sphere: SphereShape3D = col.shape if col.shape is SphereShape3D else null
 			sphere.radius = trigger_size.x * 0.5
 
 		col.position = trigger_offset
@@ -151,7 +151,11 @@ func _update_visuals() -> void:
 
 ## Safely retrieves child [CollisionShape3D] instance.
 func _get_collision_shape() -> CollisionShape3D:
-	var col: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
+	var col: CollisionShape3D = (
+		get_node_or_null("CollisionShape3D")
+		if get_node_or_null("CollisionShape3D") is CollisionShape3D
+		else null
+	)
 	if not is_instance_valid(col):
 		for child: Node in get_children():
 			if child is CollisionShape3D:
@@ -248,13 +252,15 @@ func _format_message_with_keys(text: String) -> String:
 				var ev: InputEvent = events[0]
 
 				if ev is InputEventKey:
-					var key_ev: InputEventKey = ev as InputEventKey
+					var key_ev: InputEventKey = ev if ev is InputEventKey else null
 					if key_ev.physical_keycode != KEY_NONE:
 						key_name = OS.get_keycode_string(key_ev.physical_keycode)
 					else:
 						key_name = OS.get_keycode_string(key_ev.keycode)
 				elif ev is InputEventMouseButton:
-					var mouse_ev: InputEventMouseButton = ev as InputEventMouseButton
+					var mouse_ev: InputEventMouseButton = (
+						ev if ev is InputEventMouseButton else null
+					)
 					match mouse_ev.button_index:
 						MOUSE_BUTTON_LEFT:
 							key_name = "Left Click"

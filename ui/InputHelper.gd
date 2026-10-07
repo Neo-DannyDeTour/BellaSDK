@@ -19,7 +19,7 @@ func get_event_icon(event: InputEvent) -> Texture2D:
 	var possible_filenames: Array[String] = []
 
 	if event is InputEventKey:
-		var key_event: InputEventKey = event as InputEventKey
+		var key_event: InputEventKey = event if event is InputEventKey else null
 		var code: Key = (
 			key_event.physical_keycode
 			if key_event.physical_keycode != KEY_NONE
@@ -68,7 +68,7 @@ func get_event_icon(event: InputEvent) -> Texture2D:
 					possible_filenames.append("keyboard_%s_outline.png" % key_str)
 
 	elif event is InputEventMouseButton:
-		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
+		var mouse_event: InputEventMouseButton = event if event is InputEventMouseButton else null
 		match mouse_event.button_index:
 			MOUSE_BUTTON_LEFT:
 				possible_filenames.append("mouse_left.png")
@@ -101,7 +101,7 @@ func get_event_icon(event: InputEvent) -> Texture2D:
 				return _icon_cache[full_path] as Texture2D
 
 			if ResourceLoader.exists(full_path):
-				var tex: Texture2D = load(full_path) as Texture2D
+				var tex: Texture2D = load(full_path) if load(full_path) is Texture2D else null
 				_icon_cache[full_path] = tex
 				return tex
 

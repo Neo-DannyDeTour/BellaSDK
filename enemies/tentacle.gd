@@ -30,7 +30,7 @@ func _ready() -> void:
 	if not is_instance_valid(target_node):
 		var found_target: Node = NodeQuery.get_single_node_in_group(get_tree(), &"player")
 		if found_target is Node3D:
-			target_node = found_target as Node3D
+			target_node = found_target
 			print("ProceduralTentacle3D: Resolved target to player via NodeQuery.")
 
 	_create_base_mesh()
@@ -54,7 +54,7 @@ func _process(_delta: float) -> void:
 	var prev_pos: Vector3 = p0
 
 	for i: int in range(segment_count):
-		var t: float = float(i + 1) / float(segment_count)
+		var t: float = (i + 1.0) / float(segment_count)
 		var current_pos: Vector3 = _get_quadratic_bezier(p0, p1, p2, t)
 
 		_update_visual_segment(_segments[i], prev_pos, current_pos)

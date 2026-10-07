@@ -26,7 +26,7 @@ func _ready() -> void:
 ## Allocates and instantiates audio nodes if not yet populated.
 func _ensure_pools_allocated() -> void:
 	if _pool_2d.is_empty():
-		for i in range(POOL_SIZE_2D):
+		for i: int in range(POOL_SIZE_2D):
 			var player_2d: AudioStreamPlayer = AudioStreamPlayer.new()
 			player_2d.name = "AudioPool2D_%d" % i
 			player_2d.bus = &"SFX"
@@ -34,7 +34,7 @@ func _ensure_pools_allocated() -> void:
 			_pool_2d.append(player_2d)
 
 	if _pool_3d.is_empty():
-		for j in range(POOL_SIZE_3D):
+		for j: int in range(POOL_SIZE_3D):
 			var player_3d: AudioStreamPlayer3D = AudioStreamPlayer3D.new()
 			player_3d.name = "AudioPool3D_%d" % j
 			player_3d.bus = &"SFX"

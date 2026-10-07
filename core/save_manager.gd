@@ -114,7 +114,7 @@ func _write_game_state(path: String) -> void:
 	var saved_nodes_count: int = 0
 	for node: Node in saveables:
 		if node.has_method("get_save_data"):
-			var node_data: Dictionary = node.call("get_save_data") as Dictionary
+			var node_data: Dictionary = node.call("get_save_data")
 			var node_key: String = str(node.get_path())
 			total_state[node_key] = node_data
 			saved_nodes_count += 1
@@ -160,14 +160,14 @@ func _load_game_state(path: String) -> void:
 		push_error("SaveManager: Corrupted data in: " + path)
 		return
 
-	var total_state: Dictionary = loaded_data as Dictionary
+	var total_state: Dictionary = loaded_data
 	var loaded_nodes_count: int = 0
 
 	for node_path_str: String in total_state.keys():
 		var node: Node = get_node_or_null(node_path_str)
 		if node:
 			if node.has_method("load_save_data"):
-				var node_data: Dictionary = total_state[node_path_str] as Dictionary
+				var node_data: Dictionary = total_state[node_path_str]
 				node.call("load_save_data", node_data)
 				loaded_nodes_count += 1
 			else:
@@ -197,7 +197,7 @@ func get_all_saves() -> Array[Dictionary]:
 				meta_file.close()
 				var parsed: Variant = JSON.parse_string(raw_text)
 				if parsed is Dictionary:
-					var data: Dictionary = parsed as Dictionary
+					var data: Dictionary = parsed
 					data["base_path"] = base_path
 					data["id"] = file_name.replace("save_", "").replace(".meta", "")
 					saves.append(data)
@@ -209,8 +209,8 @@ func get_all_saves() -> Array[Dictionary]:
 
 ## Compares two save records by favorite flag and ID timestamp order.
 func _sort_saves(a: Dictionary, b: Dictionary) -> bool:
-	var a_fav: bool = a.get("is_favorite", false) as bool
-	var b_fav: bool = b.get("is_favorite", false) as bool
+	var a_fav: bool = a.get("is_favorite", false)
+	var b_fav: bool = b.get("is_favorite", false)
 
 	if a_fav != b_fav:
 		return a_fav
@@ -232,7 +232,7 @@ func update_save_meta(save_id: String, new_name: String, is_favorite: bool) -> v
 
 	var parsed: Variant = JSON.parse_string(raw_text)
 	if parsed is Dictionary:
-		var data: Dictionary = parsed as Dictionary
+		var data: Dictionary = parsed
 		_write_metadata(path, new_name, data.get("timestamp", "") as String, is_favorite)
 
 
@@ -261,9 +261,9 @@ func load_save_game(base_path: String) -> void:
 	var parsed: Variant = JSON.parse_string(raw_text)
 	if not (parsed is Dictionary):
 		return
-	var meta_data: Dictionary = parsed as Dictionary
+	var meta_data: Dictionary = parsed
 
-	var level_path: String = meta_data.get("level_path", "") as String
+	var level_path: String = meta_data.get("level_path", "")
 	var current_scene: Node = get_tree().current_scene
 	var current_path: String = current_scene.scene_file_path if current_scene else ""
 

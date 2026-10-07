@@ -42,7 +42,7 @@ var time_since_step_feedback: float = 100.0
 @onready var stairs_below_cast: RayCast3D = %StairsBelowCast
 
 ## Owning player character controller.
-@onready var player: CharacterBody3D = owner as CharacterBody3D
+@onready var player: CharacterBody3D = owner if owner is CharacterBody3D else null
 
 
 ## Pre-populates physics query parameters with the player's initial transform and RID.
@@ -53,11 +53,15 @@ func _ready() -> void:
 
 ## Tests for an obstacle ahead and snaps the player up onto valid step geometry.
 func snap_up_stairs_check(delta: float, is_sprinting: bool = false) -> bool:
-	var env: Object = player.get("environment_component") as Object
+	var env: Object = (
+		player.get("environment_component")
+		if player.get("environment_component") is Object
+		else null
+	)
 	var vault_ctrl: Object = (
 		env.get("vault_controller") as Object if is_instance_valid(env) else null
 	)
-	var is_vaulting: bool = is_instance_valid(vault_ctrl) and bool(vault_ctrl.get("is_vaulting"))
+	var is_vaulting: bool = is_instance_valid(vault_ctrl) and vault_ctrl.get("is_vaulting")
 
 	if not is_enabled or is_vaulting:
 		return false
@@ -116,10 +120,14 @@ func snap_up_stairs_check(delta: float, is_sprinting: bool = false) -> bool:
 		time_since_step_up = 0.0
 
 		var actual_step_height: float = player.global_position.y - previous_y
-		var loco: Object = player.get("locomotion_component") as Object
+		var loco: Object = (
+			player.get("locomotion_component")
+			if player.get("locomotion_component") is Object
+			else null
+		)
 
 		if is_instance_valid(loco):
-			var head: Node3D = loco.get("head") as Node3D
+			var head: Node3D = loco.get("head") if loco.get("head") is Node3D else null
 			if is_instance_valid(head):
 				head.position.y -= actual_step_height
 
@@ -137,11 +145,15 @@ func snap_up_stairs_check(delta: float, is_sprinting: bool = false) -> bool:
 
 ## Snaps the player downward onto descending stair steps when moving off ledges.
 func snap_down_to_stairs_check() -> void:
-	var env: Object = player.get("environment_component") as Object
+	var env: Object = (
+		player.get("environment_component")
+		if player.get("environment_component") is Object
+		else null
+	)
 	var vault_ctrl: Object = (
 		env.get("vault_controller") as Object if is_instance_valid(env) else null
 	)
-	var is_vaulting: bool = is_instance_valid(vault_ctrl) and bool(vault_ctrl.get("is_vaulting"))
+	var is_vaulting: bool = is_instance_valid(vault_ctrl) and vault_ctrl.get("is_vaulting")
 
 	if not is_enabled or is_vaulting:
 		return
@@ -177,10 +189,14 @@ func snap_down_to_stairs_check() -> void:
 				did_snap = true
 
 				var drop_distance: float = player.global_position.y - previous_y
-				var loco: Object = player.get("locomotion_component") as Object
+				var loco: Object = (
+					player.get("locomotion_component")
+					if player.get("locomotion_component") is Object
+					else null
+				)
 
 				if is_instance_valid(loco):
-					var head: Node3D = loco.get("head") as Node3D
+					var head: Node3D = loco.get("head") if loco.get("head") is Node3D else null
 					if is_instance_valid(head):
 						head.position.y -= drop_distance
 						print("StairController: Snapped DOWN. Camera offset by: ", -drop_distance)
