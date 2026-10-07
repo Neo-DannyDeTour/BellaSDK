@@ -245,16 +245,18 @@ func _generate_references() -> void:
 				if hit_result.is_empty():
 					continue
 
-				final_pos = to_local(hit_result.position)
-				var normal: Vector3 = hit_result.normal
-				var slope_angle: float = rad_to_deg(Vector3.UP.angle_to(normal))
+				var hit_pos: Vector3 = hit_result["position"]
+				var hit_normal: Vector3 = hit_result["normal"]
+
+				final_pos = to_local(hit_pos)
+				var slope_angle: float = rad_to_deg(Vector3.UP.angle_to(hit_normal))
 
 				if slope_angle > max_walkable_slope:
-					invalid_slope_data.append({"pos": final_pos, "normal": normal})
+					invalid_slope_data.append({"pos": final_pos, "normal": hit_normal})
 					continue
 
 				_process_posture_and_walls(
-					hit_result.position,
+					hit_pos,
 					final_pos,
 					standing_xforms,
 					crouching_xforms,
@@ -317,21 +319,18 @@ func _process_posture_and_walls(
 		var wall_hit: Dictionary = _raycast(wall_start, wall_end)
 
 		if not wall_hit.is_empty():
-			var wall_normal: Vector3 = wall_hit.normal
+			var wall_normal: Vector3 = wall_hit["normal"]
 			# Ensure we are hitting a vertical surface (not a slope)
 			if abs(wall_normal.y) < 0.2:
-				var w_pos: Vector3 = to_local(wall_hit.position)
-				# Change: Base at wall floor level (final_pos), pivot bottom for walls too.
+				var wall_pos: Vector3 = wall_hit["position"]
+				var w_pos: Vector3 = to_local(wall_pos)
+				# Base at wall floor level (final_pos), pivot bottom for walls
 				# Offset slightly from the wall so Z-fighting doesn't obscure the texture
 				var w_xform: Transform3D = Transform3D().translated(w_pos + (wall_normal * 0.2))
 
 				# Check overhead clearance for jump climbs
-				var h_start: Vector3 = (
-					wall_hit.position + (wall_normal * 0.1) + Vector3(0.0, max_jump, 0.0)
-				)
-				var h_end: Vector3 = (
-					wall_hit.position + (wall_normal * -0.5) + Vector3(0.0, max_jump, 0.0)
-				)
+				var h_start: Vector3 = wall_pos + (wall_normal * 0.1) + Vector3(0.0, max_jump, 0.0)
+				var h_end: Vector3 = wall_pos + (wall_normal * -0.5) + Vector3(0.0, max_jump, 0.0)
 				var ledge_hit: Dictionary = _raycast(h_start, h_end)
 
 				if not ledge_hit.is_empty():

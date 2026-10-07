@@ -195,15 +195,18 @@ func _resolve_health_node(body: Node3D) -> HealthComponent:
 	if "health_component" in body:
 		var comp: Variant = body.get("health_component")
 		if comp is HealthComponent:
-			return comp as HealthComponent
+			var typed_comp: HealthComponent = comp
+			return typed_comp
 
 	var child_comp: Node = NodeQuery.find_first_child_of_type(body, HealthComponent)
 	if child_comp is HealthComponent:
-		return child_comp as HealthComponent
+		var typed_child: HealthComponent = child_comp
+		return typed_child
 
 	var found: Node = body.find_child("*HealthComponent*", true, false)
 	if found is HealthComponent:
-		return found as HealthComponent
+		var typed_found: HealthComponent = found
+		return typed_found
 
 	return null
 

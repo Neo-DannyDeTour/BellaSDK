@@ -87,22 +87,27 @@ func _ready() -> void:
 	_sync_transmitter()
 
 	if not is_instance_valid(label):
-		label = get_node_or_null("Label3D") as Label3D
+		var n_label: Node = get_node_or_null("Label3D")
+		label = n_label if n_label is Label3D else null
 
 	if not is_instance_valid(highlight_comp):
 		highlight_comp = get_node_or_null("HighlightComponent")
 
 	if not is_instance_valid(snap_position):
-		snap_position = get_node_or_null("Marker3D") as Marker3D
+		var n_marker: Node = get_node_or_null("Marker3D")
+		snap_position = n_marker if n_marker is Marker3D else null
 
 	if not is_instance_valid(indicator_light):
-		indicator_light = get_node_or_null("OmniLight3D") as Light3D
+		var n_light: Node = get_node_or_null("OmniLight3D")
+		indicator_light = n_light if n_light is Light3D else null
 
 	if not is_instance_valid(plug_trigger_area):
-		plug_trigger_area = get_node_or_null("PlugTriggerArea") as Area3D
+		var n_area: Node = get_node_or_null("PlugTriggerArea")
+		plug_trigger_area = n_area if n_area is Area3D else null
 
 	if not is_instance_valid(socket_interact_comp):
-		socket_interact_comp = (get_node_or_null("InteractComponent") as InteractComponent)
+		var n_interact: Node = get_node_or_null("InteractComponent")
+		socket_interact_comp = (n_interact if n_interact is InteractComponent else null)
 
 	if is_instance_valid(label):
 		label.hide()
@@ -127,9 +132,9 @@ func _ready() -> void:
 		var raw_setting: Variant = GlobalSettings.call(
 			&"get_setting", "Gameplay", "show_item_prompts", true
 		)
-		_show_text_prompts = raw_setting as bool
+		_show_text_prompts = raw_setting if raw_setting is bool else true
 
-	if is_instance_valid(Events) and Events.has_signal("item_prompts_toggled"):
+	if is_instance_valid(Events) and Events.has_signal(&"item_prompts_toggled"):
 		if not Events.item_prompts_toggled.is_connected(_on_item_prompts_toggled):
 			Events.item_prompts_toggled.connect(_on_item_prompts_toggled)
 

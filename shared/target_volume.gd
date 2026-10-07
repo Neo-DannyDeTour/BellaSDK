@@ -186,6 +186,7 @@ func _process(delta: float) -> void:
 
 ## Rebuilds collision shapes and visualizer meshes matching volume settings.
 func _update_visuals() -> void:
+	print("_update_visuals() refreshing collision shape and visualizer meshes.")
 	if not is_inside_tree():
 		return
 
@@ -195,24 +196,30 @@ func _update_visuals() -> void:
 			if not col.shape is BoxShape3D:
 				col.shape = BoxShape3D.new()
 			else:
-				col.shape = col.shape.duplicate()
-			col.shape.resource_local_to_scene = true
-			var box_shape: BoxShape3D = col.shape if col.shape is BoxShape3D else null
-			box_shape.size = volume_size
+				var dup: Resource = col.shape.duplicate()
+				col.shape = dup if dup is Shape3D else null
+			if is_instance_valid(col.shape):
+				col.shape.resource_local_to_scene = true
+				var box_shape: BoxShape3D = col.shape if col.shape is BoxShape3D else null
+				if is_instance_valid(box_shape):
+					box_shape.size = volume_size
 		elif visualizer_shape_type == EditorTriggerVisualizer.ShapeType.SPHERE:
 			if not col.shape is SphereShape3D:
 				col.shape = SphereShape3D.new()
 			else:
-				col.shape = col.shape.duplicate()
-			col.shape.resource_local_to_scene = true
-			var sphere_shape: SphereShape3D = col.shape if col.shape is SphereShape3D else null
-			sphere_shape.radius = volume_size.x * 0.5
+				var dup: Resource = col.shape.duplicate()
+				col.shape = dup if dup is Shape3D else null
+			if is_instance_valid(col.shape):
+				col.shape.resource_local_to_scene = true
+				var sphere_shape: SphereShape3D = col.shape if col.shape is SphereShape3D else null
+				if is_instance_valid(sphere_shape):
+					sphere_shape.radius = volume_size.x * 0.5
 
 		col.position = volume_offset
 
 	var visual: EditorTriggerVisualizer = _get_visualizer()
 	if is_instance_valid(visual):
-		visual.shape_type = visualizer_shape_type
+		visual.shape_type = (visualizer_shape_type as EditorTriggerVisualizer.ShapeType)
 		visual.trigger_size = volume_size
 		visual.trigger_color = visualizer_color
 		visual.outline_color = outline_color

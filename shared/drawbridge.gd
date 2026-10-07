@@ -19,6 +19,9 @@ extends Node3D
 		if is_instance_valid(self) and is_inside_tree() and is_node_ready():
 			_update_bridge_shape()
 
+## Array of marker nodes that should stick to and swing with the bridge deck.
+@export var bridge_markers: Array[Node3D] = []
+
 @export_category("Debug Visuals")
 
 ## Shows red cylinder indicating bridge hinge axis in editor.
@@ -46,10 +49,26 @@ var bridge_fallen: bool = false
 @onready var bridge: RigidBody3D = $TheBridge if $TheBridge is RigidBody3D else null
 
 
+## Re-parents bridge markers so they inherit physics motion without editable children.
+func _setup_bridge_markers() -> void:
+	print("Drawbridge: _setup_bridge_markers() - Attaching markers to bridge body.")
+	if not is_instance_valid(bridge):
+		return
+
+	for marker: Node3D in bridge_markers:
+		if is_instance_valid(marker):
+			var global_trans: Transform3D = marker.global_transform
+			marker.reparent(bridge, true)
+			marker.global_transform = global_trans
+
+
 ## Connects rope signals and initializes physical state.
 func _ready() -> void:
 	print("Drawbridge: _ready() - Initializing bridge instance.")
 	_update_bridge_shape()
+
+	if not Engine.is_editor_hint():
+		_setup_bridge_markers()
 
 	var anchor: CollisionObject3D = (
 		get_node_or_null("HingeAnchor")
