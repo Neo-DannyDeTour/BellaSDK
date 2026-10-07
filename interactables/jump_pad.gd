@@ -278,13 +278,16 @@ func _on_body_entered(body: Node3D) -> void:
 			)
 
 
-## Spawns or retrieves nodes safely without cluttering the scene tree.
+## Retrieves or constructs a cached internal child node cleanly.
 func _get_or_create_internal_node(node_name: String, node_factory: Callable) -> Node:
+	print("Resolving internal node: ", node_name)
 	var n: Node = get_node_or_null(node_name)
 	if not is_instance_valid(n):
-		n = node_factory.call() as Node
-		n.name = node_name
-		add_child(n, false, Node.INTERNAL_MODE_BACK)
+		var created: Variant = node_factory.call()
+		if created is Node:
+			n = created
+			n.name = node_name
+			add_child(n, false, Node.INTERNAL_MODE_BACK)
 	return n
 
 

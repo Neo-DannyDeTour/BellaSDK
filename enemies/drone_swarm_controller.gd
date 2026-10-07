@@ -486,7 +486,7 @@ func _calculate_square_offset(index: int, total: int) -> Vector3:
 
 ## Calculates slot position along cross axes.
 func _calculate_cross_offset(index: int, total: int) -> Vector3:
-	var half: int = maxi(1, total / 2)
+	var half: int = maxi(1, int(float(total) / 2.0))
 	if index < half:
 		var denom: float = float(maxi(1, half - 1))
 		var t: float = ((float(index) / denom) - 0.5) * 2.0

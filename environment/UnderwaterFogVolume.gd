@@ -43,17 +43,19 @@ func _process(delta: float) -> void:
 	if not is_instance_valid(_flashlight_controller):
 		var player: Node = get_tree().get_first_node_in_group("player")
 		if is_instance_valid(player) and "flashlight_controller" in player:
-			_flashlight_controller = player.get("flashlight_controller") as Node3D
+			var controller_val: Variant = player.get("flashlight_controller")
+			if controller_val is Node3D:
+				_flashlight_controller = controller_val
 
 	var target_density: float = base_density
 	var target_dist: float = base_fade_dist
 
 	if is_instance_valid(_flashlight_controller):
-		var light: SpotLight3D = (
-			_flashlight_controller.get("flashlight")
-			if _flashlight_controller.get("flashlight") is SpotLight3D
-			else null
-		)
+		var light: SpotLight3D = null
+		var light_val: Variant = _flashlight_controller.get("flashlight")
+		if light_val is SpotLight3D:
+			light = light_val
+
 		if is_instance_valid(light) and light.visible:
 			target_density = flashlight_density
 			target_dist = flashlight_fade_dist
@@ -62,7 +64,7 @@ func _process(delta: float) -> void:
 	_current_fade_dist = lerpf(_current_fade_dist, target_dist, delta * transition_speed)
 
 	if material is ShaderMaterial:
-		var mat: ShaderMaterial = material if material is ShaderMaterial else null
+		var mat: ShaderMaterial = material as ShaderMaterial
 		mat.set_shader_parameter(&"density", _current_density)
 
 		var cam: Camera3D = _get_camera()
@@ -75,7 +77,7 @@ func _process(delta: float) -> void:
 			)
 			mat.set_shader_parameter(&"fade_plane", fade_plane)
 	elif material is FogMaterial:
-		var fmat: FogMaterial = material if material is FogMaterial else null
+		var fmat: FogMaterial = material as FogMaterial
 		fmat.density = _current_density
 		fmat.edge_fade = 0.2
 

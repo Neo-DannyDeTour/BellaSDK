@@ -314,20 +314,21 @@ func _find_health_component(target: Node) -> HealthComponent:
 		return null
 
 	if target is HealthComponent:
-		return target as HealthComponent
+		return target
 
 	if "health_component" in target:
 		var comp: Variant = target.get("health_component")
 		if comp is HealthComponent:
-			return comp as HealthComponent
+			var typed_comp: HealthComponent = comp
+			return typed_comp
 
 	var found_child: Node = NodeQuery.find_first_child_of_type(target, HealthComponent)
 	if found_child is HealthComponent:
-		return found_child as HealthComponent
+		return found_child
 
 	var ancestor: Node = NodeQuery.find_ancestor_of_type(target, HealthComponent)
 	if ancestor is HealthComponent:
-		return ancestor as HealthComponent
+		return ancestor
 
 	return null
 

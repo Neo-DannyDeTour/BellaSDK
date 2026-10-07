@@ -152,7 +152,7 @@ func _update_visuals() -> void:
 
 	var visual: EditorTriggerVisualizer = _get_visualizer()
 	if is_instance_valid(visual):
-		visual.shape_type = shape_type
+		visual.shape_type = (shape_type as EditorTriggerVisualizer.ShapeType)
 		visual.trigger_size = trigger_size
 		visual.trigger_color = trigger_color
 		visual.outline_color = outline_color

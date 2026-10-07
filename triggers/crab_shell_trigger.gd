@@ -1,5 +1,5 @@
 @tool
-## Detection volume that activates an associated [CrabShell] trap upon entity entry.
+## Detection volume that activates an associated shell trap upon entity entry.
 ## Synchronizes volume bounds with an integrated [EditorTriggerVisualizer].
 class_name CrabShellTrigger
 extends Area3D
@@ -77,8 +77,8 @@ extends Area3D
 			_update_visuals()
 
 @export_group("Trap Configuration")
-## Node reference to the [CrabShell] that should be activated by this volume.
-@export var linked_shell: CrabShell
+## Target shell node instance activated by this volume via [method trigger_drop].
+@export var linked_shell: Node3D
 
 ## Cached collision shape child defining the trigger bounds.
 var _collision_shape: CollisionShape3D = null
@@ -159,7 +159,7 @@ func _get_visualizer() -> EditorTriggerVisualizer:
 	return visual
 
 
-## Activates the linked shell when a [CharacterBody3D] enters the volume.
+## Activates linked shell instance when a [CharacterBody3D] enters volume.
 func _on_body_entered(body: Node3D) -> void:
 	if Engine.is_editor_hint():
 		return
@@ -167,5 +167,6 @@ func _on_body_entered(body: Node3D) -> void:
 	if body is CharacterBody3D:
 		print("CrabShellTrigger: Character detected, launching shell.")
 		if is_instance_valid(linked_shell):
-			linked_shell.trigger_drop()
+			if linked_shell.has_method(&"trigger_drop"):
+				linked_shell.call(&"trigger_drop")
 		queue_free()

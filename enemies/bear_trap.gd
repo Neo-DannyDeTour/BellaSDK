@@ -45,8 +45,9 @@ func _ready() -> void:
 func _on_body_entered(body: Node3D) -> void:
 	print("BearTrap: _on_body_entered() body: ", body.name)
 	if current_state == TrapState.OPEN and body is Player:
+		var player: Player = body as Player
 		print("BearTrap: Player triggered trap!")
-		snap_shut(body)
+		snap_shut(player)
 
 
 ## Snaps jaws shut, inflicts damage, and applies mobility debuffs.

@@ -90,8 +90,8 @@ func _detect_player_in_cone() -> void:
 
 	for result: Dictionary in results:
 		var collider: Object = result["collider"]
-		if collider is Node3D and collider.is_in_group(&"player"):
-			var player_node: Node3D = collider if collider is Node3D else null
+		var player_node: Node3D = collider as Node3D
+		if player_node != null and player_node.is_in_group(&"player"):
 			var dir_to_player: Vector3 = head.global_position.direction_to(
 				player_node.global_position
 			)

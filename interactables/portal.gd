@@ -256,21 +256,23 @@ func _get_side(pos: Vector3) -> float:
 
 ## Teleports a body through to linked portal with inverted momentum.
 func _teleport_body(body: Node3D) -> void:
+	print("Teleporting body through linked portal: ", body.name)
 	if not is_instance_valid(linked_portal):
 		return
 
 	var relative_trans: Transform3D = global_transform.affine_inverse() * body.global_transform
 	var half_turn: Transform3D = Transform3D(Basis.from_euler(Vector3(0.0, PI, 0.0)), Vector3.ZERO)
-	body.global_transform = (linked_portal.global_transform * half_turn * relative_trans)
+	body.global_transform = linked_portal.global_transform * half_turn * relative_trans
 
 	if "velocity" in body:
-		var relative_velocity: Vector3 = (
-			global_transform.basis.inverse() * (body.get("velocity") as Vector3)
-		)
-		var final_velocity: Vector3 = (
-			(linked_portal.global_transform.basis * half_turn.basis) * relative_velocity
-		)
-		body.set("velocity", final_velocity)
+		var current_vel: Variant = body.get("velocity")
+		if current_vel is Vector3:
+			var body_velocity: Vector3 = current_vel
+			var relative_velocity: Vector3 = global_transform.basis.inverse() * body_velocity
+			var final_velocity: Vector3 = (
+				(linked_portal.global_transform.basis * half_turn.basis) * relative_velocity
+			)
+			body.set("velocity", final_velocity)
 
 
 ## Registers entering physics bodies for plane crossing detection.

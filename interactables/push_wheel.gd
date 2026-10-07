@@ -120,7 +120,7 @@ func _ready() -> void:
 			wheel.collision_mask = (
 				CollisionLayers.MASK_ENVIRONMENT | CollisionLayers.MASK_INTERACTIVE
 			)
-			print("PushWheel: Configured collision layers for environment/interactive.")
+			print("PushWheel: Configured collision layers.")
 	else:
 		push_error("PushWheel: 'Wheel' reference is missing!")
 
@@ -132,8 +132,9 @@ func _ready() -> void:
 
 	print("PushWheel: Initialized. Broken Variant = ", is_broken_variant)
 
+	var comp_candidate: Variant = get_node_or_null("InteractComponent")
 	var interact_comp: InteractComponent = (
-		get_node_or_null("InteractComponent") as InteractComponent
+		comp_candidate if comp_candidate is InteractComponent else null
 	)
 	if is_instance_valid(interact_comp):
 		interact_comp.focused.connect(_on_focused)
@@ -177,10 +178,11 @@ func _update_stick_collisions() -> void:
 	_stick_collisions.clear()
 
 	if is_broken_variant and not is_installed:
-		print("PushWheel: Broken variant missing stick. No collisions generated.")
+		print("PushWheel: Broken variant missing stick. No shapes added.")
 		return
 
-	var angle_step: float = TAU / float(max(1, stick_count))
+	var count_bound: int = maxi(1, stick_count)
+	var angle_step: float = TAU / float(count_bound)
 	var indices_to_generate: Array[int] = []
 
 	if not is_broken_variant:
@@ -196,7 +198,7 @@ func _update_stick_collisions() -> void:
 		box.size = Vector3(stick_radius, stick_thickness, stick_thickness)
 		col.shape = box
 
-		var angle: float = i * angle_step
+		var angle: float = float(i) * angle_step
 		var stick_dir: Vector3 = Vector3(cos(angle), 0.0, sin(angle))
 
 		col.position = stick_dir * stick_center_distance
@@ -220,7 +222,7 @@ func _update_stick_collisions() -> void:
 			col.add_child(debug_mesh)
 			print("PushWheel: Spawned red debug box for stick collision.")
 
-	print("PushWheel: Generated ", indices_to_generate.size(), " stick collision(s).")
+	print("PushWheel: Generated ", indices_to_generate.size(), " shapes.")
 
 
 ## Synchronizes downstream target references with transmitter.
@@ -254,7 +256,10 @@ func push(delta_amount: float) -> void:
 	_update_visuals()
 	_check_transmitter_power()
 
-	if is_instance_valid(transmitter) and transmitter.has_method("transmit_progress"):
+	var can_transmit: bool = (
+		is_instance_valid(transmitter) and transmitter.has_method("transmit_progress")
+	)
+	if can_transmit:
 		transmitter.call("transmit_progress", progress)
 	else:
 		for target: Node3D in transmitter_targets:
@@ -304,20 +309,21 @@ func _on_interacted(character: CharacterBody3D) -> void:
 	if not is_installed or is_locked:
 		return
 
-	var state_machine: Node = character.get_node_or_null("StateMachine")
+	var sm_candidate: Variant = character.get_node_or_null("StateMachine")
+	var state_machine: Node = sm_candidate if sm_candidate is Node else null
 
-	if is_instance_valid(state_machine) and state_machine.get("state") != null:
-		var state_obj: Object = (
-			state_machine.get("state") if state_machine.get("state") is Object else null
-		)
+	if is_instance_valid(state_machine):
+		var state_var: Variant = state_machine.get("state")
+		var state_obj: Object = state_var if state_var is Object else null
 		if is_instance_valid(state_obj) and state_obj.get("name") == "PushWheel":
-			print("PushWheel: Player already attached. Ignoring duplicate call.")
+			print("PushWheel: Player already attached. Ignoring call.")
 			return
 
 	print("PushWheel: Requesting transition to PushWheel state.")
 
+	var comp_candidate: Variant = get_node_or_null("InteractComponent")
 	var interact_comp: InteractComponent = (
-		get_node_or_null("InteractComponent") as InteractComponent
+		comp_candidate if comp_candidate is InteractComponent else null
 	)
 	var hit_point: Vector3 = Vector3.ZERO
 
@@ -335,26 +341,26 @@ func _on_interacted(character: CharacterBody3D) -> void:
 
 ## Checks proximity of player carrying repair stick item.
 func _check_for_installation() -> void:
-	var player: Node3D = (
-		NodeQuery.get_single_node_in_group(get_tree(), &"player")
-		if NodeQuery.get_single_node_in_group(get_tree(), &"player") is Node3D
-		else null
-	)
+	var raw_player: Variant = NodeQuery.get_single_node_in_group(get_tree(), &"player")
+	var player: Node3D = raw_player if raw_player is Node3D else null
 	if not is_instance_valid(player):
 		return
 
 	var current_held_item: Node3D = null
-	var int_comp: Node = (
-		player.get("interaction_component") if player.get("interaction_component") is Node else null
-	)
+	var raw_int_comp: Variant = player.get("interaction_component")
+	var int_comp: Node = raw_int_comp if raw_int_comp is Node else null
 	var scanner: Node = null
 
 	if is_instance_valid(int_comp):
-		current_held_item = int_comp.get("held_item") as Node3D
-		scanner = int_comp.get("interaction_scanner") as Node
+		var raw_item: Variant = int_comp.get("held_item")
+		current_held_item = raw_item if raw_item is Node3D else null
+
+		var raw_scanner: Variant = int_comp.get("interaction_scanner")
+		scanner = raw_scanner if raw_scanner is Node else null
 
 		if not is_instance_valid(current_held_item) and is_instance_valid(scanner):
-			current_held_item = scanner.get("held_object") as Node3D
+			var raw_scanner_obj: Variant = scanner.get("held_object")
+			current_held_item = (raw_scanner_obj if raw_scanner_obj is Node3D else null)
 
 	if is_instance_valid(current_held_item) and current_held_item is PickableObject:
 		if install_cooldown <= 0.0:
@@ -379,9 +385,8 @@ func _install_stick(held_item: Node3D, int_comp: Node, scanner: Node) -> void:
 		scanner.set("held_object", null)
 		if scanner.has_method("set_heavy_lifting"):
 			scanner.call("set_heavy_lifting", false)
-		var w_holder: CanvasItem = (
-			scanner.get("weapon_holder") if scanner.get("weapon_holder") is CanvasItem else null
-		)
+		var raw_holder: Variant = scanner.get("weapon_holder")
+		var w_holder: CanvasItem = raw_holder if raw_holder is CanvasItem else null
 		if is_instance_valid(w_holder):
 			w_holder.show()
 
@@ -405,17 +410,16 @@ func _detach_stick() -> void:
 		push_warning("PushWheel: Cannot detach. No Pickable Scene assigned!")
 		return
 
-	var player: Node3D = (
-		NodeQuery.get_single_node_in_group(get_tree(), &"player")
-		if NodeQuery.get_single_node_in_group(get_tree(), &"player") is Node3D
-		else null
-	)
+	var raw_player: Variant = NodeQuery.get_single_node_in_group(get_tree(), &"player")
+	var player: Node3D = raw_player if raw_player is Node3D else null
 	if not is_instance_valid(player):
 		return
 
-	var spawned_stick: Node3D = (
-		pickable_stick_scene.instantiate() if pickable_stick_scene.instantiate() is Node3D else null
-	)
+	var raw_stick_inst: Variant = pickable_stick_scene.instantiate()
+	var spawned_stick: Node3D = raw_stick_inst if raw_stick_inst is Node3D else null
+	if not is_instance_valid(spawned_stick):
+		return
+
 	if is_instance_valid(outline_material) and "outline_material" in spawned_stick:
 		spawned_stick.set("outline_material", outline_material)
 
@@ -427,18 +431,19 @@ func _detach_stick() -> void:
 	else:
 		spawned_stick.global_position = global_position
 
-	var int_comp: Node = (
-		player.get("interaction_component") if player.get("interaction_component") is Node else null
-	)
+	var raw_int_comp: Variant = player.get("interaction_component")
+	var int_comp: Node = raw_int_comp if raw_int_comp is Node else null
 	var scanner: Node = null
 	if is_instance_valid(int_comp):
-		scanner = int_comp.get("interaction_scanner") as Node
+		var raw_scanner: Variant = int_comp.get("interaction_scanner")
+		scanner = raw_scanner if raw_scanner is Node else null
 
-	var hold_pos: Marker3D = (
-		player.get("hold_position") if player.get("hold_position") is Marker3D else null
-	)
-	if is_instance_valid(scanner) and scanner.get("hold_position"):
-		hold_pos = scanner.get("hold_position") as Marker3D
+	var raw_hold_pos: Variant = player.get("hold_position")
+	var hold_pos: Marker3D = raw_hold_pos if raw_hold_pos is Marker3D else null
+	if is_instance_valid(scanner):
+		var raw_scanner_hold: Variant = scanner.get("hold_position")
+		if raw_scanner_hold is Marker3D:
+			hold_pos = raw_scanner_hold
 
 	if is_instance_valid(int_comp) and "held_item" in int_comp:
 		int_comp.set("held_item", spawned_stick)
@@ -447,9 +452,8 @@ func _detach_stick() -> void:
 		scanner.set("held_object", spawned_stick)
 		if scanner.has_method("set_heavy_lifting"):
 			scanner.call("set_heavy_lifting", true)
-		var w_holder: CanvasItem = (
-			scanner.get("weapon_holder") if scanner.get("weapon_holder") is CanvasItem else null
-		)
+		var raw_holder: Variant = scanner.get("weapon_holder")
+		var w_holder: CanvasItem = raw_holder if raw_holder is CanvasItem else null
 		if is_instance_valid(w_holder):
 			w_holder.hide()
 
@@ -487,15 +491,16 @@ func _on_unfocused() -> void:
 ## [param target_pos]: Dynamic contact coordinate.
 ## Returns aligned transform for player attachment.
 func get_interaction_transform(target_pos: Vector3) -> Transform3D:
-	print("PushWheel: Calculating fluid interaction transform for target point.")
+	print("PushWheel: Calculating fluid interaction transform.")
 	if not is_instance_valid(wheel):
 		return global_transform
 
 	var local_pos: Vector3 = wheel.to_local(target_pos)
 	var angle: float = atan2(local_pos.z, local_pos.x)
 
-	var angle_step: float = TAU / float(max(1, stick_count))
-	var snapped_angle: float = round(angle / angle_step) * angle_step
+	var count_bound: int = maxi(1, stick_count)
+	var angle_step: float = TAU / float(count_bound)
+	var snapped_angle: float = roundf(angle / angle_step) * angle_step
 
 	var stick_local_dir: Vector3 = Vector3(cos(snapped_angle), 0.0, sin(snapped_angle))
 	var stick_center: Vector3 = stick_local_dir * stick_center_distance
@@ -509,11 +514,8 @@ func get_interaction_transform(target_pos: Vector3) -> Transform3D:
 	var stand_local_pos: Vector3 = stick_center + (tangent * push_stand_offset * side_multiplier)
 	var global_stand_pos: Vector3 = wheel.to_global(stand_local_pos)
 
-	var player: Node3D = (
-		NodeQuery.get_single_node_in_group(get_tree(), &"player")
-		if NodeQuery.get_single_node_in_group(get_tree(), &"player") is Node3D
-		else null
-	)
+	var raw_player: Variant = NodeQuery.get_single_node_in_group(get_tree(), &"player")
+	var player: Node3D = raw_player if raw_player is Node3D else null
 	if is_instance_valid(player):
 		global_stand_pos.y = player.global_position.y
 

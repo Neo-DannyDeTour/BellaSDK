@@ -327,14 +327,17 @@ func _cluster_targets(targets: Array[Dictionary]) -> Array[Dictionary]:
 
 	for target: Dictionary in targets:
 		var target_name: String = str(target.get("name", ""))
-		var target_pos: Vector3 = target.get("position", Vector3.ZERO) as Vector3
+		var raw_pos: Variant = target.get("position", Vector3.ZERO)
+		var target_pos: Vector3 = raw_pos if raw_pos is Vector3 else Vector3.ZERO
 		var found_cluster: bool = false
 
 		for cluster: Dictionary in clusters:
 			if str(cluster.get("name", "")) == target_name:
-				var center: Vector3 = cluster.get("avg_pos", Vector3.ZERO)
+				var raw_center: Variant = cluster.get("avg_pos", Vector3.ZERO)
+				var center: Vector3 = raw_center if raw_center is Vector3 else Vector3.ZERO
 				if center.distance_to(target_pos) <= cluster_distance_threshold:
-					var old_count: int = cluster.get("count", 1)
+					var old_count_raw: Variant = cluster.get("count", 1)
+					var old_count: int = old_count_raw if old_count_raw is int else 1
 					var new_count: int = old_count + 1
 					var total_pos: Vector3 = (center * float(old_count)) + target_pos
 					cluster["avg_pos"] = total_pos / float(new_count)

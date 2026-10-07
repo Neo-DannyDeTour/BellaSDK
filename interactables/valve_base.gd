@@ -141,9 +141,11 @@ func _ready() -> void:
 	_update_transmitter_targets()
 
 	if not is_instance_valid(label):
-		label = get_node_or_null("Label3D") as Label3D
+		var raw_label: Variant = get_node_or_null("Label3D")
+		label = raw_label if raw_label is Label3D else null
 	if not is_instance_valid(prompt_icon):
-		prompt_icon = get_node_or_null("PromptIcon") as Sprite3D
+		var raw_prompt: Variant = get_node_or_null("PromptIcon")
+		prompt_icon = raw_prompt if raw_prompt is Sprite3D else null
 
 	if is_instance_valid(label):
 		label.hide()
@@ -160,13 +162,15 @@ func _ready() -> void:
 		return
 
 	if is_instance_valid(GlobalSettings) and GlobalSettings.has_method("get_setting"):
-		_show_text_prompts = bool(GlobalSettings.get_setting("Gameplay", "show_item_prompts", true))
+		var raw_prompts: Variant = GlobalSettings.get_setting("Gameplay", "show_item_prompts", true)
+		_show_text_prompts = raw_prompts == true
 
 	if is_instance_valid(Events) and Events.has_signal("item_prompts_toggled"):
 		if not Events.is_connected("item_prompts_toggled", _on_item_prompts_toggled):
 			Events.connect("item_prompts_toggled", _on_item_prompts_toggled)
 
-	wheel = get_node_or_null("Valve")
+	var raw_wheel: Variant = get_node_or_null("Valve")
+	wheel = raw_wheel if raw_wheel is Node3D else null
 	if is_instance_valid(wheel):
 		initial_rotation = wheel.rotation_degrees
 		if requires_installation:
@@ -174,9 +178,11 @@ func _ready() -> void:
 	else:
 		push_warning("Valve: Please group meshes under Node3D named 'Valve'!")
 
-	highlight_comp = get_node_or_null("HighlightComponent")
+	var raw_highlight: Variant = get_node_or_null("HighlightComponent")
+	highlight_comp = raw_highlight if raw_highlight is Node else null
 
-	var interact_comp: Node = get_node_or_null("InteractComponent")
+	var raw_interact: Variant = get_node_or_null("InteractComponent")
+	var interact_comp: Node = raw_interact if raw_interact is Node else null
 	if is_instance_valid(interact_comp):
 		if (
 			interact_comp.has_signal(&"focused")
@@ -242,9 +248,8 @@ func _get_effective_turn_mode() -> int:
 	if Engine.is_editor_hint() or not is_instance_valid(GlobalSettings):
 		return TurnMode.HOLD
 
-	var saved_setting: String = String(
-		GlobalSettings.get_setting("Gameplay", "valve_turn_mode", "Hold")
-	)
+	var raw_setting: Variant = GlobalSettings.get_setting("Gameplay", "valve_turn_mode", "Hold")
+	var saved_setting: String = raw_setting if raw_setting is String else "Hold"
 	match saved_setting:
 		"One-Time Press":
 			return TurnMode.ONE_TIME_PRESS
@@ -338,9 +343,7 @@ func _process_press_mode(delta: float, just_pressed: bool) -> void:
 			if reverts_on_release and progress >= 1.0:
 				_auto_return_timer += delta
 				if _auto_return_timer >= auto_return_delay:
-					print(
-						"Valve: Finished opening with reverts_on_release enabled. Auto-returning to 0.0."
-					)
+					print("Valve: Finished opening with reverts_on_release. Auto-returning to 0.0.")
 					current_target_progress = 0.0
 					_auto_return_timer = 0.0
 			elif lock_when_finished and progress >= 1.0:
@@ -383,7 +386,8 @@ func _apply_visual_rotation() -> void:
 ## Checks if the player is holding a pickable valve in proximity to auto-install.
 func _check_installation_proximity() -> void:
 	if not is_instance_valid(_cached_player):
-		_cached_player = get_tree().get_first_node_in_group("player") as Node3D
+		var raw_player: Variant = get_tree().get_first_node_in_group("player")
+		_cached_player = raw_player if raw_player is Node3D else null
 
 	if is_instance_valid(_cached_player):
 		var held: Node3D = _get_player_held_object(_cached_player)
@@ -400,7 +404,7 @@ func _get_transmitter() -> OutputTransmitter3D:
 		return _transmitter
 	for child: Node in get_children():
 		if child is OutputTransmitter3D:
-			_transmitter = child as OutputTransmitter3D
+			_transmitter = child
 			return _transmitter
 	return null
 
@@ -438,7 +442,7 @@ func _on_item_prompts_toggled(enabled: bool) -> void:
 
 
 ## Resolves the object currently held by the player character.
-## [param player] The player node reference to inspect.
+## [param player_node] The player node reference to inspect.
 ## [return] The held [Node3D] instance if found, or `null`.
 func _get_player_held_object(player_node: Node3D) -> Node3D:
 	if not is_instance_valid(player_node):
@@ -448,21 +452,15 @@ func _get_player_held_object(player_node: Node3D) -> Node3D:
 	if direct_held is Node3D:
 		return direct_held
 
-	var int_comp: Node = (
-		player_node.get("interaction_component")
-		if player_node.get("interaction_component") is Node
-		else null
-	)
+	var raw_comp: Variant = player_node.get("interaction_component")
+	var int_comp: Node = raw_comp if raw_comp is Node else null
 	if is_instance_valid(int_comp):
 		var held_item: Variant = int_comp.get("held_item")
 		if held_item is Node3D:
 			return held_item
 
-		var scanner: Node = (
-			int_comp.get("interaction_scanner")
-			if int_comp.get("interaction_scanner") is Node
-			else null
-		)
+		var raw_scanner: Variant = int_comp.get("interaction_scanner")
+		var scanner: Node = raw_scanner if raw_scanner is Node else null
 		if is_instance_valid(scanner):
 			var scan_held: Variant = scanner.get("held_object")
 			if scan_held is Node3D:
@@ -472,7 +470,7 @@ func _get_player_held_object(player_node: Node3D) -> Node3D:
 
 
 ## Resets all held item slots on the player character.
-## [param player] The player node reference whose held object will be cleared.
+## [param player_node] The player node reference whose held object will be cleared.
 func _clear_player_held_object(player_node: Node3D) -> void:
 	print("Valve: Clearing player held object references.")
 	if not is_instance_valid(player_node):
@@ -481,11 +479,8 @@ func _clear_player_held_object(player_node: Node3D) -> void:
 	if "held_object" in player_node:
 		player_node.set("held_object", null)
 
-	var int_comp: Node = (
-		player_node.get("interaction_component")
-		if player_node.get("interaction_component") is Node
-		else null
-	)
+	var raw_comp: Variant = player_node.get("interaction_component")
+	var int_comp: Node = raw_comp if raw_comp is Node else null
 	if is_instance_valid(int_comp):
 		if int_comp.has_method("force_clear_hands"):
 			int_comp.call(&"force_clear_hands")
@@ -494,7 +489,7 @@ func _clear_player_held_object(player_node: Node3D) -> void:
 
 
 ## Attaches the held valve wheel onto this base unit and removes the item from the player.
-## [param player] The player node performing the installation.
+## [param player_node] The player node performing the installation.
 ## [param held_valve] The item instance to destroy upon attachment.
 func _install_valve(player_node: Node3D, held_valve: Node3D) -> void:
 	print("Valve: _install_valve() called. Destroying pickable valve.")
@@ -512,11 +507,8 @@ func _install_valve(player_node: Node3D, held_valve: Node3D) -> void:
 	if is_instance_valid(wheel):
 		wheel.show()
 
-	var weapon_holder: Node3D = (
-		player_node.get_node_or_null("%WeaponHolder")
-		if player_node.get_node_or_null("%WeaponHolder") is Node3D
-		else null
-	)
+	var raw_holder: Variant = player_node.get_node_or_null("%WeaponHolder")
+	var weapon_holder: Node3D = raw_holder if raw_holder is Node3D else null
 	if is_instance_valid(weapon_holder):
 		weapon_holder.show()
 	print("Valve: Valve Auto-Installed!")
@@ -529,11 +521,8 @@ func _detach_valve() -> void:
 		push_warning("Cannot detach: No Pickable Valve Scene assigned!")
 		return
 
-	var player_node: Node3D = (
-		get_tree().get_first_node_in_group("player")
-		if get_tree().get_first_node_in_group("player") is Node3D
-		else null
-	)
+	var raw_player: Variant = get_tree().get_first_node_in_group("player")
+	var player_node: Node3D = raw_player if raw_player is Node3D else null
 	if not is_instance_valid(player_node):
 		return
 
@@ -552,8 +541,9 @@ func _detach_valve() -> void:
 	get_tree().current_scene.add_child(spawned_valve)
 
 	var hold_pos_var: Variant = player_node.get("hold_position")
-	if hold_pos_var is Node3D and is_instance_valid(hold_pos_var):
-		spawned_valve.global_position = (hold_pos_var as Node3D).global_position
+	var hold_pos_node: Node3D = hold_pos_var if hold_pos_var is Node3D else null
+	if is_instance_valid(hold_pos_node):
+		spawned_valve.global_position = hold_pos_node.global_position
 
 	if is_instance_valid(wheel):
 		spawned_valve.global_position = wheel.global_position
@@ -562,26 +552,25 @@ func _detach_valve() -> void:
 		spawned_valve.global_position = global_position
 
 	var grabbed_successfully: bool = false
-	var int_comp: Node = (
-		player_node.get("interaction_component")
-		if player_node.get("interaction_component") is Node
-		else null
-	)
+	var raw_int_comp: Variant = player_node.get("interaction_component")
+	var int_comp: Node = raw_int_comp if raw_int_comp is Node else null
 
 	if is_instance_valid(int_comp) and int_comp.has_method("force_grab_item"):
-		int_comp.call(&"force_grab_item", spawned_valve as RigidBody3D)
+		var rigid_body_valve: RigidBody3D = spawned_valve if spawned_valve is RigidBody3D else null
+		int_comp.call(&"force_grab_item", rigid_body_valve)
 		grabbed_successfully = true
 	elif "held_object" in player_node:
 		player_node.set("held_object", spawned_valve)
 
-	if not grabbed_successfully and spawned_valve.has_method("pick_up") and hold_pos_var is Node3D:
-		spawned_valve.call(&"pick_up", hold_pos_var, player_node)
+	if (
+		not grabbed_successfully
+		and spawned_valve.has_method("pick_up")
+		and is_instance_valid(hold_pos_node)
+	):
+		spawned_valve.call(&"pick_up", hold_pos_node, player_node)
 
-	var weapon_holder: Node3D = (
-		player_node.get_node_or_null("%WeaponHolder")
-		if player_node.get_node_or_null("%WeaponHolder") is Node3D
-		else null
-	)
+	var raw_weapon_holder: Variant = player_node.get_node_or_null("%WeaponHolder")
+	var weapon_holder: Node3D = raw_weapon_holder if raw_weapon_holder is Node3D else null
 	if is_instance_valid(weapon_holder) and not grabbed_successfully:
 		weapon_holder.hide()
 
@@ -632,7 +621,8 @@ func _update_valve_label() -> void:
 		var key_name: String = "???"
 
 		if not events.is_empty():
-			var primary_ev: InputEvent = events[0] if events[0] is InputEvent else null
+			var raw_ev: Variant = events[0]
+			var primary_ev: InputEvent = raw_ev if raw_ev is InputEvent else null
 			if is_instance_valid(primary_ev):
 				key_name = InputHelper.sanitize_key_name(primary_ev.as_text())
 				icon_tex = InputHelper.get_event_icon(primary_ev)
@@ -653,7 +643,7 @@ func _update_valve_label() -> void:
 				speech_verb = "Hold"
 
 		if icon_tex != null:
-			prompt_text = "%s     to turn" % action_verb
+			prompt_text = "%s      to turn" % action_verb
 		else:
 			prompt_text = "%s [%s] to turn" % [action_verb, key_name]
 

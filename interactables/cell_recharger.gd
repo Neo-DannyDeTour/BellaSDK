@@ -304,12 +304,12 @@ func _show_feedback(msg: String) -> void:
 
 
 ## Finds an [EnergyCell] held by the specified player character.
-## [param character]: Character checking for held cell.
-## Returns energy cell instance or null.
 func _find_held_cell(character: CharacterBody3D) -> EnergyCell:
+	print("Searching for held EnergyCell on character: ", character.name)
 	var held_prop: Variant = character.get("held_object")
 	if is_instance_valid(held_prop) and held_prop is EnergyCell:
-		return held_prop as EnergyCell
+		var cell: EnergyCell = held_prop
+		return cell
 
 	var tree: SceneTree = get_tree()
 	if not tree or not is_instance_valid(tree.root):
@@ -317,7 +317,9 @@ func _find_held_cell(character: CharacterBody3D) -> EnergyCell:
 
 	var pickables: Array[Node] = NodeQuery.find_children_in_group(tree.root, &"pickable_objects")
 	for node: Node in pickables:
-		if node is EnergyCell and (node as EnergyCell).holder == character:
-			return node as EnergyCell
+		if node is EnergyCell:
+			var cell: EnergyCell = node
+			if cell.holder == character:
+				return cell
 
 	return null

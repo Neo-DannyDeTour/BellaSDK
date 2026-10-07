@@ -112,8 +112,9 @@ func _ready() -> void:
 	_hole_lifetimes.fill(0.0)
 
 	if precomputed_noise == null:
-		const SmokeNoiseRes: Resource = preload("res://vfx/smoke_noise_3d.tres")
-		precomputed_noise = SmokeNoiseRes if SmokeNoiseRes is Texture3D else null
+		var noise_res: Resource = load("res://vfx/smoke_noise_3d.tres")
+		if noise_res is Texture3D:
+			precomputed_noise = noise_res
 
 	assert(precomputed_noise != null, "SmokeManager requires smoke_noise_3d.tres!")
 

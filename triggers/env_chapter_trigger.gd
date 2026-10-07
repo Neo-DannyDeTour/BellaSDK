@@ -210,15 +210,16 @@ func _on_body_entered(body: Node3D) -> void:
 		)
 
 
-## Generates randomized styling parameters for demonstration scenarios.
+## Applies randomized styling parameters for demonstration scenarios.
 func _apply_random_effects_if_enabled() -> void:
 	if not play_random_effects:
 		return
 
 	print("EnvChapterTrigger: _apply_random_effects_if_enabled() called.")
 
-	var style_values: Array = Events.ChapterAnimStyle.values()
-	animation_style = style_values.pick_random() as Events.ChapterAnimStyle
+	var count: int = Events.ChapterAnimStyle.size()
+	var random_index: int = randi() % count
+	animation_style = random_index as Events.ChapterAnimStyle
 	text_color = Color(randf(), randf(), randf(), 1.0)
 	display_duration = randf_range(3.0, 7.0)
 

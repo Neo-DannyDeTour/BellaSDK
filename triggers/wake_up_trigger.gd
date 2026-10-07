@@ -272,7 +272,7 @@ func _on_body_entered(body: Node3D) -> void:
 	_start_sequence(p)
 
 
-## Presets camera position on ground while hidden behind solid blackout.
+## Presets camera position on ground while hidden behind blackout.
 func _prepare_lying_pose(p: Player) -> void:
 	print("WakeUpTrigger: Preparing ground lying pose.")
 	_active_camera = _find_camera(p)
@@ -291,7 +291,10 @@ func _prepare_lying_pose(p: Player) -> void:
 
 	var floor_y: float = p.global_position.y
 	if not ray_hit.is_empty():
-		floor_y = (ray_hit[&"position"] as Vector3).y
+		var hit_pos_raw: Variant = ray_hit.get(&"position")
+		if hit_pos_raw is Vector3:
+			var hit_pos: Vector3 = hit_pos_raw
+			floor_y = hit_pos.y
 
 	var target_world_y: float = floor_y + lying_camera_height
 	var height_drop: float = _active_camera.global_position.y - target_world_y

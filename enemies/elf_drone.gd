@@ -216,10 +216,10 @@ func _sweep_for_obstacles(move_heading: Vector3) -> bool:
 	var kin_col: KinematicCollision3D = KinematicCollision3D.new()
 	if test_move(global_transform, move_heading * 0.45, kin_col):
 		var collider: Object = kin_col.get_collider()
-		if collider is Node and not collider.is_in_group(&"player"):
+		var col_node: Node = collider as Node
+		if col_node != null and not col_node.is_in_group(&"player"):
 			var hit_norm: Vector3 = kin_col.get_normal()
 			if hit_norm.dot(move_heading) < -obstacle_impact_threshold:
-				var col_node: Node = collider
 				_start_bashing_from_collision(col_node, hit_norm)
 				return true
 	return false
@@ -314,16 +314,16 @@ func _apply_movement(delta: float) -> void:
 		for i: int in range(get_slide_collision_count()):
 			var collision: KinematicCollision3D = get_slide_collision(i)
 			var collider: Object = collision.get_collider()
-			if collider is Node and collider.is_in_group(&"player"):
+			var col_node: Node = collider as Node
+			if col_node == null or col_node.is_in_group(&"player"):
 				continue
 			var hit_norm: Vector3 = collision.get_normal()
 			var move_heading: Vector3 = desired_velocity.normalized()
 			if move_heading.is_zero_approx():
 				move_heading = displacement.normalized()
 
-			if hit_norm.dot(move_heading) < -obstacle_impact_threshold and collider is Node:
-				var col_node2: Node = collider
-				_start_bashing_from_collision(col_node2, hit_norm)
+			if hit_norm.dot(move_heading) < -obstacle_impact_threshold:
+				_start_bashing_from_collision(col_node, hit_norm)
 				break
 
 
