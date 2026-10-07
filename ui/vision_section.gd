@@ -128,7 +128,7 @@ func _connect_color_dropdown(dropdown: OptionButton, group_name: String) -> void
 			var current_val: Variant = GlobalSettings.get_setting(
 				"VisionAssist", group_name + "_color", -1
 			)
-			var current: int = current_val as int if current_val is int else -1
+			var current: int = current_val if current_val is int else -1
 			if current == index:
 				return
 			var col_name: String = COLOR_NAMES[index].to_lower()
@@ -146,7 +146,7 @@ func load_settings() -> void:
 	var enabled_val: Variant = GlobalSettings.get_setting(
 		"VisionAssist", "enabled", DEFAULT_VISION_ASSIST
 	)
-	var vision_enabled: bool = enabled_val as bool if enabled_val is bool else DEFAULT_VISION_ASSIST
+	var vision_enabled: bool = enabled_val if enabled_val is bool else DEFAULT_VISION_ASSIST
 	if is_instance_valid(vision_assist_toggle):
 		vision_assist_toggle.set_pressed_no_signal(vision_enabled)
 
@@ -154,7 +154,7 @@ func load_settings() -> void:
 		var mode_val: Variant = GlobalSettings.get_setting(
 			"VisionAssist", "mode", DEFAULT_VISION_ASSIST_MODE
 		)
-		var mode_idx: int = mode_val as int if mode_val is int else DEFAULT_VISION_ASSIST_MODE
+		var mode_idx: int = mode_val if mode_val is int else DEFAULT_VISION_ASSIST_MODE
 		vision_mode_option.selected = mode_idx
 		if mode_idx >= 0 and mode_idx < VISION_MODE_KEYS.size():
 			_update_diorama_mode(VISION_MODE_KEYS[mode_idx])
@@ -177,7 +177,7 @@ func _sync_group_color_ui(dropdown: OptionButton, group_name: String, default_in
 	var val: Variant = GlobalSettings.get_setting(
 		"VisionAssist", group_name + "_color", default_index
 	)
-	var idx: int = val as int if val is int else default_index
+	var idx: int = val if val is int else default_index
 	dropdown.selected = idx
 
 
@@ -187,7 +187,7 @@ func _on_vision_assist_toggled(toggled_on: bool) -> void:
 	var enabled_val: Variant = GlobalSettings.get_setting(
 		"VisionAssist", "enabled", DEFAULT_VISION_ASSIST
 	)
-	var current: bool = enabled_val as bool if enabled_val is bool else DEFAULT_VISION_ASSIST
+	var current: bool = enabled_val if enabled_val is bool else DEFAULT_VISION_ASSIST
 	if current == toggled_on:
 		return
 
@@ -195,9 +195,15 @@ func _on_vision_assist_toggled(toggled_on: bool) -> void:
 	GlobalSettings.save_setting("VisionAssist", "enabled", toggled_on)
 	var player: Node = get_tree().get_first_node_in_group(&"player")
 	if is_instance_valid(player) and "camera_controller" in player:
-		var cam_ctrl: Node = player.get(&"camera_controller") as Node
+		var cam_ctrl: Node = (
+			player.get(&"camera_controller") if player.get(&"camera_controller") is Node else null
+		)
 		if is_instance_valid(cam_ctrl):
-			var p_cam: Camera3D = cam_ctrl.get_node_or_null("Camera3D") as Camera3D
+			var p_cam: Camera3D = (
+				cam_ctrl.get_node_or_null("Camera3D")
+				if cam_ctrl.get_node_or_null("Camera3D") is Camera3D
+				else null
+			)
 			if is_instance_valid(p_cam) and p_cam.has_method("_on_vision_assist_toggled"):
 				p_cam.call("_on_vision_assist_toggled", toggled_on)
 			var p_mesh: MeshInstance3D = (
@@ -215,7 +221,7 @@ func _on_vision_mode_selected(index: int) -> void:
 	var mode_val: Variant = GlobalSettings.get_setting(
 		"VisionAssist", "mode", DEFAULT_VISION_ASSIST_MODE
 	)
-	var current: int = mode_val as int if mode_val is int else DEFAULT_VISION_ASSIST_MODE
+	var current: int = mode_val if mode_val is int else DEFAULT_VISION_ASSIST_MODE
 	if current == index:
 		return
 
@@ -278,7 +284,7 @@ func cache_diorama_cameras() -> void:
 	var mode_val: Variant = GlobalSettings.get_setting(
 		"VisionAssist", "mode", DEFAULT_VISION_ASSIST_MODE
 	)
-	var mode_idx: int = mode_val as int if mode_val is int else DEFAULT_VISION_ASSIST_MODE
+	var mode_idx: int = mode_val if mode_val is int else DEFAULT_VISION_ASSIST_MODE
 	var mode_key: String = (
 		VISION_MODE_KEYS[mode_idx]
 		if mode_idx >= 0 and mode_idx < VISION_MODE_KEYS.size()
@@ -287,7 +293,7 @@ func cache_diorama_cameras() -> void:
 
 	var camera_nodes: Array[Node] = diorama_root.find_children("Camera_*", "Camera3D", true, false)
 	for node: Node in camera_nodes:
-		var cam: Camera3D = node as Camera3D
+		var cam: Camera3D = node if node is Camera3D else null
 		var key: String = cam.name.trim_prefix("Camera_").to_lower()
 		_diorama_cameras[key] = cam
 
@@ -295,7 +301,11 @@ func cache_diorama_cameras() -> void:
 			cam.set(&"is_player_camera", false)
 		cam.set_process(false)
 
-		var mesh: MeshInstance3D = cam.get_node_or_null("VisionAssistMesh") as MeshInstance3D
+		var mesh: MeshInstance3D = (
+			cam.get_node_or_null("VisionAssistMesh")
+			if cam.get_node_or_null("VisionAssistMesh") is MeshInstance3D
+			else null
+		)
 		if is_instance_valid(mesh):
 			mesh.visible = false
 
@@ -331,7 +341,11 @@ func _switch_diorama_camera(group_name: String) -> void:
 	print("UI: Switching active diorama camera to: ", target_cam.name)
 	for cam: Camera3D in _diorama_cameras.values():
 		if is_instance_valid(cam):
-			var mesh: MeshInstance3D = cam.get_node_or_null("VisionAssistMesh") as MeshInstance3D
+			var mesh: MeshInstance3D = (
+				cam.get_node_or_null("VisionAssistMesh")
+				if cam.get_node_or_null("VisionAssistMesh") is MeshInstance3D
+				else null
+			)
 			if is_instance_valid(mesh):
 				mesh.visible = (cam == target_cam)
 
@@ -341,7 +355,7 @@ func _switch_diorama_camera(group_name: String) -> void:
 	var mode_val: Variant = GlobalSettings.get_setting(
 		"VisionAssist", "mode", DEFAULT_VISION_ASSIST_MODE
 	)
-	var mode_idx: int = mode_val as int if mode_val is int else DEFAULT_VISION_ASSIST_MODE
+	var mode_idx: int = mode_val if mode_val is int else DEFAULT_VISION_ASSIST_MODE
 	var mode_key: String = (
 		VISION_MODE_KEYS[mode_idx]
 		if mode_idx >= 0 and mode_idx < VISION_MODE_KEYS.size()

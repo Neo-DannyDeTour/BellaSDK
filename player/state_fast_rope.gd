@@ -9,7 +9,7 @@ var _fake_input: Vector2 = Vector2(0.0, 1.0)
 ## Halts momentum, disables stair snapping, and forces dropping heavy items.
 func enter(_msg: Dictionary = {}) -> void:
 	print("StateFastRope: enter() - Attaching to fast rope descent.")
-	var p: Player = player as Player
+	var p: Player = player if player is Player else null
 	if not is_instance_valid(p):
 		return
 
@@ -17,27 +17,33 @@ func enter(_msg: Dictionary = {}) -> void:
 	if "direction" in p:
 		p.set(&"direction", Vector3.ZERO)
 
-	var loco: PlayerLocomotionComponent = p.locomotion_component as PlayerLocomotionComponent
+	var loco: PlayerLocomotionComponent = (
+		p.locomotion_component if p.locomotion_component is PlayerLocomotionComponent else null
+	)
 	if is_instance_valid(loco):
 		if "direction" in loco:
 			loco.set(&"direction", Vector3.ZERO)
 		if is_instance_valid(loco.stair_controller):
 			loco.stair_controller.set(&"is_enabled", false)
 
-	var interact: PlayerInteractionComponent = p.interaction_component as PlayerInteractionComponent
+	var interact: PlayerInteractionComponent = (
+		p.interaction_component if p.interaction_component is PlayerInteractionComponent else null
+	)
 	if is_instance_valid(interact) and is_instance_valid(interact.interaction_scanner):
-		if bool(interact.interaction_scanner.get(&"is_heavy_lifting")):
+		if interact.interaction_scanner.get(&"is_heavy_lifting"):
 			interact.interaction_scanner.call(&"drop_heavy_object_safely")
 
 
 ## Re-enables stair snapping controller on state exit.
 func exit() -> void:
 	print("StateFastRope: exit() - Detached from fast rope.")
-	var p: Player = player as Player
+	var p: Player = player if player is Player else null
 	if not is_instance_valid(p):
 		return
 
-	var loco: PlayerLocomotionComponent = p.locomotion_component as PlayerLocomotionComponent
+	var loco: PlayerLocomotionComponent = (
+		p.locomotion_component if p.locomotion_component is PlayerLocomotionComponent else null
+	)
 	if is_instance_valid(loco) and is_instance_valid(loco.stair_controller):
 		loco.stair_controller.set(&"is_enabled", true)
 
@@ -45,6 +51,6 @@ func exit() -> void:
 ## Simulates sprinting forward camera motion during fast-rope descent.
 func physics_update(delta: float) -> void:
 	print("StateFastRope: physics_update() - Simulating headbob camera descent.")
-	var p: Player = player as Player
+	var p: Player = player if player is Player else null
 	if is_instance_valid(p) and is_instance_valid(p.camera_controller):
 		p.camera_controller.update_camera(delta, _fake_input, true, false, false, 20.0)

@@ -129,7 +129,9 @@ func _update_visuals() -> void:
 			else:
 				_collision_shape.shape = _collision_shape.shape.duplicate()
 			_collision_shape.shape.resource_local_to_scene = true
-			var box_shape: BoxShape3D = _collision_shape.shape as BoxShape3D
+			var box_shape: BoxShape3D = (
+				_collision_shape.shape if _collision_shape.shape is BoxShape3D else null
+			)
 			box_shape.size = trigger_size
 		elif shape_type == EditorTriggerVisualizer.ShapeType.SPHERE:
 			if not _collision_shape.shape is SphereShape3D:
@@ -137,7 +139,9 @@ func _update_visuals() -> void:
 			else:
 				_collision_shape.shape = _collision_shape.shape.duplicate()
 			_collision_shape.shape.resource_local_to_scene = true
-			var sphere_shape: SphereShape3D = _collision_shape.shape as SphereShape3D
+			var sphere_shape: SphereShape3D = (
+				_collision_shape.shape if _collision_shape.shape is SphereShape3D else null
+			)
 			sphere_shape.radius = trigger_size.x * 0.5
 
 		_collision_shape.position = trigger_offset
@@ -220,7 +224,9 @@ func _on_tick_timer_timeout() -> void:
 			_health_cache.erase(body)
 			continue
 
-		var comp: HealthComponent = _health_cache.get(body) as HealthComponent
+		var comp: HealthComponent = (
+			_health_cache.get(body) if _health_cache.get(body) is HealthComponent else null
+		)
 		if not is_instance_valid(comp):
 			comp = _resolve_health_node(body)
 			if is_instance_valid(comp):

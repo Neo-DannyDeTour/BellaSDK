@@ -128,7 +128,11 @@ func _initialize_overlays() -> void:
 		glitch_overlay.hide()
 
 	if is_instance_valid(electricity_vignette) and electricity_vignette.material is ShaderMaterial:
-		var mat: ShaderMaterial = electricity_vignette.material as ShaderMaterial
+		var mat: ShaderMaterial = (
+			electricity_vignette.material
+			if electricity_vignette.material is ShaderMaterial
+			else null
+		)
 		mat.set_shader_parameter(&"intensity", 0.0)
 		electricity_vignette.hide()
 
@@ -149,7 +153,11 @@ func _initialize_overlays() -> void:
 
 	if is_instance_valid(wolf_vision_overlay):
 		if wolf_vision_overlay.material is ShaderMaterial:
-			var mat: ShaderMaterial = wolf_vision_overlay.material as ShaderMaterial
+			var mat: ShaderMaterial = (
+				wolf_vision_overlay.material
+				if wolf_vision_overlay.material is ShaderMaterial
+				else null
+			)
 			mat.set_shader_parameter(&"effect_strength", 0.0)
 		wolf_vision_overlay.hide()
 
@@ -165,7 +173,7 @@ func _ensure_fade_material() -> void:
 
 	const SHADER_PATH: String = "res://shaders/screen_transition.gdshader"
 	if ResourceLoader.exists(SHADER_PATH):
-		var shader: Shader = load(SHADER_PATH) as Shader
+		var shader: Shader = load(SHADER_PATH) if load(SHADER_PATH) is Shader else null
 		if is_instance_valid(shader):
 			_fade_material = ShaderMaterial.new()
 			_fade_material.shader = shader
@@ -201,8 +209,8 @@ func _connect_signals() -> void:
 func _process(delta: float) -> void:
 	if is_instance_valid(vignette) and vignette.material is ShaderMaterial:
 		var target_vignette_opacity: float = 0.8 if is_player_crouching else 0.0
-		var mat: ShaderMaterial = vignette.material as ShaderMaterial
-		var current_opacity: float = mat.get_shader_parameter(&"vignette_opacity") as float
+		var mat: ShaderMaterial = vignette.material if vignette.material is ShaderMaterial else null
+		var current_opacity: float = mat.get_shader_parameter(&"vignette_opacity")
 		var new_opacity: float = lerpf(
 			current_opacity, target_vignette_opacity, delta * ui_lerp_speed
 		)
@@ -227,9 +235,11 @@ func _on_player_zoomed(is_zooming: bool) -> void:
 	if fisheye_tween and fisheye_tween.is_valid():
 		fisheye_tween.kill()
 
-	var mat: ShaderMaterial = fisheye_zoom.material as ShaderMaterial
+	var mat: ShaderMaterial = (
+		fisheye_zoom.material if fisheye_zoom.material is ShaderMaterial else null
+	)
 	var target_strength: float = 1.0 if is_zooming else 0.0
-	var current_strength: float = mat.get_shader_parameter(&"effect_strength") as float
+	var current_strength: float = mat.get_shader_parameter(&"effect_strength")
 
 	fisheye_zoom.show()
 	fisheye_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
@@ -286,7 +296,9 @@ func trigger_heal_effect() -> void:
 	if heal_vignette.material is ShaderMaterial:
 		heal_tween.tween_method(
 			func(val: float) -> void:
-				var mat: ShaderMaterial = heal_vignette.material as ShaderMaterial
+				var mat: ShaderMaterial = (
+					heal_vignette.material if heal_vignette.material is ShaderMaterial else null
+				)
 				mat.set_shader_parameter(&"intensity", val)
 				heal_vignette.queue_redraw(),
 			0.8,
@@ -316,7 +328,9 @@ func _on_player_electrocuted() -> void:
 		glitch_tween = create_tween().set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 		glitch_tween.tween_method(
 			func(val: float) -> void:
-				var mat: ShaderMaterial = glitch_overlay.material as ShaderMaterial
+				var mat: ShaderMaterial = (
+					glitch_overlay.material if glitch_overlay.material is ShaderMaterial else null
+				)
 				mat.set_shader_parameter(&"intensity", val)
 				glitch_overlay.queue_redraw(),
 			0.6,
@@ -333,7 +347,11 @@ func _on_player_electrocuted() -> void:
 		electro_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 		electro_tween.tween_method(
 			func(val: float) -> void:
-				var mat: ShaderMaterial = electricity_vignette.material as ShaderMaterial
+				var mat: ShaderMaterial = (
+					electricity_vignette.material
+					if electricity_vignette.material is ShaderMaterial
+					else null
+				)
 				mat.set_shader_parameter(&"intensity", val)
 				electricity_vignette.queue_redraw(),
 			1.0,
@@ -352,7 +370,9 @@ func set_water_vfx_state(mode: int, drops: float, wash: float, clear_prog: float
 	water_vfx_overlay.visible = is_active
 
 	if is_active and water_vfx_overlay.material is ShaderMaterial:
-		var mat: ShaderMaterial = water_vfx_overlay.material as ShaderMaterial
+		var mat: ShaderMaterial = (
+			water_vfx_overlay.material if water_vfx_overlay.material is ShaderMaterial else null
+		)
 		mat.set_shader_parameter(&"effect_mode", mode)
 		mat.set_shader_parameter(&"drop_intensity", drops)
 		mat.set_shader_parameter(&"wash_intensity", wash)
@@ -435,8 +455,10 @@ func _on_wolf_vision_toggled(is_active: bool) -> void:
 	if wolf_vision_tween and wolf_vision_tween.is_valid():
 		wolf_vision_tween.kill()
 
-	var mat: ShaderMaterial = wolf_vision_overlay.material as ShaderMaterial
-	var current_strength: float = mat.get_shader_parameter(&"effect_strength") as float
+	var mat: ShaderMaterial = (
+		wolf_vision_overlay.material if wolf_vision_overlay.material is ShaderMaterial else null
+	)
+	var current_strength: float = mat.get_shader_parameter(&"effect_strength")
 	var target_strength: float = 1.0 if is_active else 0.0
 
 	wolf_vision_overlay.show()

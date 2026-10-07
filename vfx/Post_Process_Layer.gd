@@ -76,7 +76,8 @@ func set_colorblind_mode(mode: int) -> void:
 	print("PostProcessLayer: Applying colorblind mode index: ", mode)
 	if not is_instance_valid(colorblind_rect):
 		return
-	var mat: ShaderMaterial = colorblind_rect.material as ShaderMaterial
+	var raw_mat: Material = colorblind_rect.material
+	var mat: ShaderMaterial = raw_mat if raw_mat is ShaderMaterial else null
 	if is_instance_valid(mat):
 		mat.set_shader_parameter("mode", mode)
 
@@ -116,7 +117,8 @@ func set_screen_filter(filter_name: String) -> void:
 			return
 
 	var mat: ShaderMaterial = ShaderMaterial.new()
-	mat.shader = cached_shaders[clean_filter] as Shader
+	var raw_shader: Resource = cached_shaders[clean_filter]
+	mat.shader = raw_shader if raw_shader is Shader else null
 	screen_filter_rect.material = mat
 	screen_filter_rect.visible = true
 
@@ -126,6 +128,7 @@ func set_film_grain(intensity: float) -> void:
 	print("PostProcessLayer: Setting film grain intensity: ", intensity)
 	if not is_instance_valid(screen_filter_rect) or not screen_filter_rect.visible:
 		return
-	var mat: ShaderMaterial = screen_filter_rect.material as ShaderMaterial
+	var raw_mat: Material = screen_filter_rect.material
+	var mat: ShaderMaterial = raw_mat if raw_mat is ShaderMaterial else null
 	if is_instance_valid(mat):
 		mat.set_shader_parameter("grain_amount", intensity)

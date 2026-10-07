@@ -100,9 +100,11 @@ func trigger_sonar(origin_node: Node3D) -> void:
 
 			var node_3d: Node3D = null
 			if item is Node3D:
-				node_3d = item as Node3D
+				node_3d = item
 			elif item.get_parent() is Node3D:
-				node_3d = item.get_parent() as Node3D
+				var parent_node: Node = item.get_parent()
+				if parent_node is Node3D:
+					node_3d = parent_node
 
 			if not is_instance_valid(node_3d) or node_3d == origin_node:
 				continue
@@ -245,7 +247,7 @@ func _resolve_interactable_root(node: Node3D) -> Node3D:
 			break
 
 		if current is Node3D:
-			var curr_3d: Node3D = current as Node3D
+			var curr_3d: Node3D = current
 			if curr_3d is PickableObject:
 				return curr_3d
 			if curr_3d.has_node("InteractComponent") or curr_3d.has_node("TTSInteractComponent"):
@@ -273,7 +275,8 @@ func _check_occlusion(
 ) -> bool:
 	var exclude: Array[RID] = []
 	if target_node is CollisionObject3D:
-		exclude.append((target_node as CollisionObject3D).get_rid())
+		var target_col: CollisionObject3D = target_node
+		exclude.append(target_col.get_rid())
 
 	var result: Dictionary = Utilities.raycast_3d(
 		space_state, origin_pos, target_node.global_position, occlusion_collision_mask, exclude

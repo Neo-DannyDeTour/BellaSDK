@@ -41,7 +41,9 @@ enum MagnetMode {
 @export var visual_mesh: MeshInstance3D
 
 ## Sprite displayed exclusively within the editor.
-@onready var _editor_icon: Sprite3D = get_node_or_null("%EditorIcon") as Sprite3D
+@onready var _editor_icon: Sprite3D = (
+	get_node_or_null("%EditorIcon") if get_node_or_null("%EditorIcon") is Sprite3D else null
+)
 
 ## Cached active bodies currently inside the magnetic area.
 var _active_bodies: Dictionary = {}
@@ -134,12 +136,14 @@ func _apply_magnet_force(body: RigidBody3D) -> void:
 ## Synchronizes radius to collision shape and visual sphere mesh.
 func _update_size() -> void:
 	if is_instance_valid(collision_shape):
-		var sphere_shape: SphereShape3D = collision_shape.shape as SphereShape3D
+		var sphere_shape: SphereShape3D = (
+			collision_shape.shape if collision_shape.shape is SphereShape3D else null
+		)
 		if sphere_shape:
 			sphere_shape.radius = magnet_radius
 
 	if is_instance_valid(visual_mesh):
-		var sphere_mesh: SphereMesh = visual_mesh.mesh as SphereMesh
+		var sphere_mesh: SphereMesh = visual_mesh.mesh if visual_mesh.mesh is SphereMesh else null
 		if sphere_mesh:
 			sphere_mesh.radius = magnet_radius
 			sphere_mesh.height = magnet_radius * 2.0

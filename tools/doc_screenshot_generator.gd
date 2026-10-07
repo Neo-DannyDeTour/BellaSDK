@@ -101,7 +101,7 @@ func _calculate_aabb(node: Node) -> AABB:
 
 ## Instantiates target scene, frames the camera, forces frames, and writes PNG.
 func _capture_scene(viewport: SubViewport, path: String) -> void:
-	var packed: PackedScene = load(path) as PackedScene
+	var packed: PackedScene = load(path) if load(path) is PackedScene else null
 	if not packed or not packed.can_instantiate():
 		return
 
@@ -114,7 +114,11 @@ func _capture_scene(viewport: SubViewport, path: String) -> void:
 	viewport.add_child(instance)
 
 	var aabb: AABB = _calculate_aabb(instance)
-	var camera: Camera3D = viewport.get_node("CaptureCamera") as Camera3D
+	var camera: Camera3D = (
+		viewport.get_node("CaptureCamera")
+		if viewport.get_node("CaptureCamera") is Camera3D
+		else null
+	)
 
 	var max_dim: float = maxf(aabb.size.x, maxf(aabb.size.y, aabb.size.z))
 	var distance: float = maxf(max_dim * 1.8, 2.5)
@@ -140,7 +144,7 @@ func _capture_scene(viewport: SubViewport, path: String) -> void:
 		return
 
 	var base_stem: String = path.get_file().get_basename()
-	var script: Script = instance.get_script() as Script
+	var script: Script = instance.get_script() if instance.get_script() is Script else null
 	var class_ident: String = base_stem
 
 	if is_instance_valid(script):

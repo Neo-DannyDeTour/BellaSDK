@@ -13,10 +13,14 @@ var _was_crouched_before: bool = false
 func enter(msg: Dictionary = {}) -> void:
 	print("StateTube: enter() called. Player entering tube state.")
 	active_tube = msg.get(&"tube") as Node3D
-	var pl: Player = player as Player
+	var pl: Player = player if player is Player else null
 
 	if is_instance_valid(pl) and is_instance_valid(pl.locomotion_component):
-		var loco: PlayerLocomotionComponent = pl.locomotion_component as PlayerLocomotionComponent
+		var loco: PlayerLocomotionComponent = (
+			pl.locomotion_component
+			if pl.locomotion_component is PlayerLocomotionComponent
+			else null
+		)
 		if loco != null:
 			_was_crouched_before = loco.crouching
 			loco.crouching = true
@@ -33,10 +37,14 @@ func enter(msg: Dictionary = {}) -> void:
 ## Restores pre-tube crouch stance and re-enables locomotion physics.
 func exit() -> void:
 	print("StateTube: exit() called. Player exiting tube state.")
-	var pl: Player = player as Player
+	var pl: Player = player if player is Player else null
 
 	if is_instance_valid(pl) and is_instance_valid(pl.locomotion_component):
-		var loco: PlayerLocomotionComponent = pl.locomotion_component as PlayerLocomotionComponent
+		var loco: PlayerLocomotionComponent = (
+			pl.locomotion_component
+			if pl.locomotion_component is PlayerLocomotionComponent
+			else null
+		)
 		if loco != null:
 			loco.crouching = _was_crouched_before
 			if is_instance_valid(loco.standing_collision):

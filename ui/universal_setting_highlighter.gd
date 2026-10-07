@@ -74,7 +74,7 @@ func _scan_node(node: Node) -> void:
 		return
 
 	if node is TabContainer:
-		var tabs: TabContainer = node as TabContainer
+		var tabs: TabContainer = node if node is TabContainer else null
 		var on_tab_changed: Callable = func(_tab: int) -> void: clear_highlight()
 		if not tabs.tab_changed.is_connected(on_tab_changed):
 			tabs.tab_changed.connect(on_tab_changed)
@@ -122,7 +122,7 @@ func _register_grid(grid: GridContainer) -> void:
 		var row_end: int = mini(i + cols, total)
 		var row_items: Array[Control] = []
 		for j: int in range(i, row_end):
-			var item: Control = children[j] as Control
+			var item: Control = children[j] if children[j] is Control else null
 			if item != null:
 				row_items.append(item)
 		if row_items.is_empty():
@@ -135,7 +135,7 @@ func _register_grid(grid: GridContainer) -> void:
 func _register_hbox_row(hbox: HBoxContainer) -> void:
 	var row_items: Array[Control] = []
 	for child: Node in hbox.get_children():
-		var ctrl: Control = child as Control
+		var ctrl: Control = child if child is Control else null
 		if ctrl != null:
 			row_items.append(ctrl)
 	if row_items.is_empty():
@@ -231,7 +231,7 @@ func _animate_intensity(target_val: float) -> void:
 		return
 	if _fade_tween != null and _fade_tween.is_valid():
 		_fade_tween.kill()
-	var current: float = _shader_mat.get_shader_parameter("hover_intensity") as float
+	var current: float = _shader_mat.get_shader_parameter("hover_intensity")
 	_fade_tween = create_tween()
 	_fade_tween.tween_method(
 		func(val: float) -> void: _shader_mat.set_shader_parameter("hover_intensity", val),

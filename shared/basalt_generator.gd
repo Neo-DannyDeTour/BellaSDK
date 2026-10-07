@@ -178,8 +178,8 @@ func _generate() -> void:
 			if not is_instance_valid(magnet):
 				continue
 
-			var magnet_radius: float = float(magnet.get("effect_radius"))
-			var magnet_push: float = float(magnet.get("push_force"))
+			var magnet_radius: float = magnet.get("effect_radius")
+			var magnet_push: float = magnet.get("push_force")
 			var magnet_pos: Vector3 = magnet.global_position
 
 			var dist_sq: float = Vector2(col_global_pos.x, col_global_pos.z).distance_squared_to(

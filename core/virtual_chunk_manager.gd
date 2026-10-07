@@ -55,11 +55,15 @@ func _poll_threaded_loads() -> void:
 	var completed_coords: Array[Vector2i] = []
 
 	for cell_coord: Vector2i in loading_chunks:
-		var path: String = loading_chunks[cell_coord] as String
+		var path: String = loading_chunks[cell_coord]
 		var status: ResourceLoader.ThreadLoadStatus = ResourceLoader.load_threaded_get_status(path)
 
 		if status == ResourceLoader.THREAD_LOAD_LOADED:
-			var scene: PackedScene = ResourceLoader.load_threaded_get(path) as PackedScene
+			var scene: PackedScene = (
+				ResourceLoader.load_threaded_get(path)
+				if ResourceLoader.load_threaded_get(path) is PackedScene
+				else null
+			)
 			_mount_chunk(cell_coord, scene)
 			completed_coords.append(cell_coord)
 		elif (
@@ -76,7 +80,7 @@ func _poll_threaded_loads() -> void:
 ## Mounts an instantiated chunk scene and notifies listeners.
 func _mount_chunk(cell_coord: Vector2i, scene: PackedScene) -> void:
 	print("WorldChunkManager: Mounting chunk at cell: ", cell_coord)
-	var instance: Node3D = scene.instantiate() as Node3D
+	var instance: Node3D = scene.instantiate() if scene.instantiate() is Node3D else null
 	add_child(instance)
 	loaded_chunks[cell_coord] = instance
 	chunk_loaded.emit(cell_coord)
@@ -97,7 +101,11 @@ func _request_chunk(cell_coord: Vector2i, is_blocking: bool = false) -> void:
 
 	print("WorldChunkManager: Requesting chunk load: ", file_path)
 	if is_blocking:
-		var scene: PackedScene = ResourceLoader.load(file_path) as PackedScene
+		var scene: PackedScene = (
+			ResourceLoader.load(file_path)
+			if ResourceLoader.load(file_path) is PackedScene
+			else null
+		)
 		if is_instance_valid(scene):
 			_mount_chunk(cell_coord, scene)
 	else:
@@ -109,7 +117,9 @@ func _request_chunk(cell_coord: Vector2i, is_blocking: bool = false) -> void:
 func _unload_chunk(cell_coord: Vector2i) -> void:
 	print("WorldChunkManager: Evicting distant chunk: ", cell_coord)
 	if loaded_chunks.has(cell_coord):
-		var chunk_node: Node3D = loaded_chunks[cell_coord] as Node3D
+		var chunk_node: Node3D = (
+			loaded_chunks[cell_coord] if loaded_chunks[cell_coord] is Node3D else null
+		)
 		if is_instance_valid(chunk_node):
 			chunk_node.queue_free()
 		loaded_chunks.erase(cell_coord)

@@ -81,7 +81,9 @@ func _create_save_slot(file_name: String) -> void:
 	if not is_instance_valid(save_list_container):
 		return
 
-	var new_slot: Control = save_slot_template.duplicate() as Control
+	var new_slot: Control = (
+		save_slot_template.duplicate() if save_slot_template.duplicate() is Control else null
+	)
 	if not is_instance_valid(new_slot):
 		return
 	new_slot.show()
@@ -90,9 +92,9 @@ func _create_save_slot(file_name: String) -> void:
 	var load_node: Node = new_slot.find_child("LoadButton", true, false)
 	var del_node: Node = new_slot.find_child("DeleteButton", true, false)
 
-	var name_label: Label = name_node as Label
-	var load_btn: Button = load_node as Button
-	var del_btn: Button = del_node as Button
+	var name_label: Label = name_node if name_node is Label else null
+	var load_btn: Button = load_node if load_node is Button else null
+	var del_btn: Button = del_node if del_node is Button else null
 
 	if is_instance_valid(name_label):
 		name_label.text = file_name.get_basename()

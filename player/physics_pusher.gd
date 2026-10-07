@@ -38,7 +38,7 @@ func process_pushes(
 		if not collider is RigidBody3D:
 			continue
 
-		var rb: RigidBody3D = collider as RigidBody3D
+		var rb: RigidBody3D = collider if collider is RigidBody3D else null
 		if rb.freeze or rb.is_in_group(&"ignore_weight"):
 			continue
 

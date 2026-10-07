@@ -98,9 +98,11 @@ func describe_surroundings(origin_node: Node3D) -> void:
 
 		var node_3d: Node3D = null
 		if item is Node3D:
-			node_3d = item as Node3D
+			node_3d = item
 		elif item.get_parent() is Node3D:
-			node_3d = item.get_parent() as Node3D
+			var parent_node: Node = item.get_parent()
+			if parent_node is Node3D:
+				node_3d = parent_node
 
 		if not is_instance_valid(node_3d) or node_3d == origin_node:
 			continue
@@ -115,7 +117,7 @@ func describe_surroundings(origin_node: Node3D) -> void:
 	var seen_positions: Array[Vector3] = []
 
 	for root_id: int in unique_roots:
-		var node: Node3D = unique_roots[root_id] as Node3D
+		var node: Node3D = unique_roots[root_id]
 		if not node.is_inside_tree() or not node.is_visible_in_tree():
 			continue
 		if "is_held" in node and node.get("is_held") == true:
@@ -126,7 +128,7 @@ func describe_surroundings(origin_node: Node3D) -> void:
 		var is_child_of_another: bool = false
 		for other_id: int in unique_roots:
 			if root_id != other_id:
-				var other: Node3D = unique_roots[other_id] as Node3D
+				var other: Node3D = unique_roots[other_id]
 				if is_instance_valid(other) and other.is_ancestor_of(node):
 					is_child_of_another = true
 					break
@@ -184,9 +186,9 @@ func describe_surroundings(origin_node: Node3D) -> void:
 	var announced: Array[Dictionary] = clusters.slice(0, max_announced_clusters)
 
 	for cluster: Dictionary in announced:
-		var count: int = int(cluster.get("count", 1))
+		var count: int = cluster.get("count", 1)
 		var item_name: String = str(cluster.get("name", ""))
-		var avg_pos: Vector3 = cluster.get("avg_pos", Vector3.ZERO) as Vector3
+		var avg_pos: Vector3 = cluster.get("avg_pos", Vector3.ZERO)
 		var avg_dist: float = view_pos.distance_to(avg_pos)
 		var rounded_dist: int = maxi(1, int(roundf(avg_dist)))
 
@@ -207,13 +209,14 @@ func describe_surroundings(origin_node: Node3D) -> void:
 func _resolve_active_camera(origin_node: Node3D) -> Camera3D:
 	print("SpatialDescriber: Resolving active camera.")
 	if origin_node is Camera3D:
-		return origin_node as Camera3D
+		return origin_node
 
 	var viewport_cam: Camera3D = origin_node.get_viewport().get_camera_3d()
 	if is_instance_valid(viewport_cam):
 		return viewport_cam
 
-	return origin_node.find_child("*Camera*", true, false) as Camera3D
+	var found_cam: Node = origin_node.find_child("*Camera*", true, false)
+	return found_cam if found_cam is Camera3D else null
 
 
 ## Ascends node hierarchy to find canonical root [Node3D].
@@ -234,7 +237,7 @@ func _resolve_interactable_root(node: Node3D) -> Node3D:
 			break
 
 		if current is Node3D:
-			var curr_3d: Node3D = current as Node3D
+			var curr_3d: Node3D = current
 			if curr_3d is PickableObject:
 				return curr_3d
 			if curr_3d.has_node("InteractComponent") or curr_3d.has_node("TTSInteractComponent"):
@@ -283,8 +286,8 @@ func _sort_clusters_prioritized(
 
 	clusters.sort_custom(
 		func(a: Dictionary, b: Dictionary) -> bool:
-			var pos_a: Vector3 = a.get("avg_pos", Vector3.ZERO) as Vector3
-			var pos_b: Vector3 = b.get("avg_pos", Vector3.ZERO) as Vector3
+			var pos_a: Vector3 = a.get("avg_pos", Vector3.ZERO)
+			var pos_b: Vector3 = b.get("avg_pos", Vector3.ZERO)
 			var dist_a: float = view_pos.distance_to(pos_a)
 			var dist_b: float = view_pos.distance_to(pos_b)
 
@@ -329,9 +332,9 @@ func _cluster_targets(targets: Array[Dictionary]) -> Array[Dictionary]:
 
 		for cluster: Dictionary in clusters:
 			if str(cluster.get("name", "")) == target_name:
-				var center: Vector3 = cluster.get("avg_pos", Vector3.ZERO) as Vector3
+				var center: Vector3 = cluster.get("avg_pos", Vector3.ZERO)
 				if center.distance_to(target_pos) <= cluster_distance_threshold:
-					var old_count: int = int(cluster.get("count", 1))
+					var old_count: int = cluster.get("count", 1)
 					var new_count: int = old_count + 1
 					var total_pos: Vector3 = (center * float(old_count)) + target_pos
 					cluster["avg_pos"] = total_pos / float(new_count)
@@ -388,7 +391,7 @@ func _get_relative_direction(
 ## Resolves accessible display name from properties or node hierarchy.
 func _resolve_display_name(target_node: Node3D) -> String:
 	if target_node is PickableObject:
-		var pickable: PickableObject = target_node as PickableObject
+		var pickable: PickableObject = target_node
 		if pickable.has_method("_get_clean_mesh_name"):
 			var clean_mesh_var: Variant = pickable.call("_get_clean_mesh_name")
 			var clean_mesh: String = str(clean_mesh_var)
@@ -409,9 +412,11 @@ func _resolve_display_name(target_node: Node3D) -> String:
 		var resolved_mesh_node: Node = null
 
 		if raw_mesh_prop is Node:
-			resolved_mesh_node = raw_mesh_prop as Node
-		elif raw_mesh_prop is NodePath and not (raw_mesh_prop as NodePath).is_empty():
-			resolved_mesh_node = target_node.get_node_or_null(raw_mesh_prop as NodePath)
+			resolved_mesh_node = raw_mesh_prop
+		elif raw_mesh_prop is NodePath:
+			var np: NodePath = raw_mesh_prop
+			if not np.is_empty():
+				resolved_mesh_node = target_node.get_node_or_null(np)
 
 		if is_instance_valid(resolved_mesh_node):
 			var prop_name: String = resolved_mesh_node.name
@@ -440,7 +445,7 @@ func _find_mesh_name(current_node: Node) -> String:
 			return raw_name
 
 		if child is MeshInstance3D:
-			var mi: MeshInstance3D = child as MeshInstance3D
+			var mi: MeshInstance3D = child
 			if is_instance_valid(mi.mesh) and not mi.mesh.resource_name.is_empty():
 				return mi.mesh.resource_name
 			return raw_name
@@ -502,7 +507,8 @@ func _collect_collision_rids(node: Node, rids: Array[RID]) -> void:
 	if not is_instance_valid(node):
 		return
 	if node is CollisionObject3D:
-		rids.append((node as CollisionObject3D).get_rid())
+		var col_obj: CollisionObject3D = node
+		rids.append(col_obj.get_rid())
 	for child: Node in node.get_children():
 		_collect_collision_rids(child, rids)
 

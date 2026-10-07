@@ -54,7 +54,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	# Toggle on Z press only while an item is held
 	if event is InputEventKey:
-		var key_event: InputEventKey = event as InputEventKey
+		var key_event: InputEventKey = event if event is InputEventKey else null
 		if key_event.physical_keycode == KEY_Z and key_event.pressed and not key_event.echo:
 			_toggle_glass()
 
@@ -63,7 +63,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	# Handle mouse wheel scaling
 	if event is InputEventMouseButton:
-		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
+		var mouse_event: InputEventMouseButton = event if event is InputEventMouseButton else null
 		if mouse_event.pressed:
 			if mouse_event.button_index == MOUSE_BUTTON_WHEEL_UP:
 				_adjust_glass(1.0)
@@ -77,7 +77,9 @@ func _process(_delta: float) -> void:
 	if not _is_active or not is_instance_valid(glass_rect):
 		return
 
-	var shader_mat: ShaderMaterial = glass_rect.material as ShaderMaterial
+	var shader_mat: ShaderMaterial = (
+		glass_rect.material if glass_rect.material is ShaderMaterial else null
+	)
 	if shader_mat == null:
 		return
 
@@ -136,7 +138,9 @@ func _update_shader_params() -> void:
 	if not is_instance_valid(glass_rect):
 		return
 
-	var shader_mat: ShaderMaterial = glass_rect.material as ShaderMaterial
+	var shader_mat: ShaderMaterial = (
+		glass_rect.material if glass_rect.material is ShaderMaterial else null
+	)
 	if shader_mat != null:
 		shader_mat.set_shader_parameter("zoom", _current_zoom)
 		shader_mat.set_shader_parameter("glass_radius_uv", _current_radius)

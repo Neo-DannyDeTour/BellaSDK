@@ -109,7 +109,7 @@ func _draw_connection_line() -> void:
 		var immediate_mesh: ImmediateMesh = ImmediateMesh.new()
 		debug_line.mesh = immediate_mesh
 
-	var mesh: ImmediateMesh = debug_line.mesh as ImmediateMesh
+	var mesh: ImmediateMesh = debug_line.mesh if debug_line.mesh is ImmediateMesh else null
 	mesh.clear_surfaces()
 	mesh.surface_begin(Mesh.PRIMITIVE_LINES)
 

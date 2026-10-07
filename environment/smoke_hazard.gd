@@ -181,11 +181,18 @@ var _health_cache: Dictionary = {}
 var _is_player_inside: bool = false
 
 ## Direct reference to collision shape node.
-@onready
-var _collision_shape: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
+@onready var _collision_shape: CollisionShape3D = (
+	get_node_or_null("CollisionShape3D")
+	if get_node_or_null("CollisionShape3D") is CollisionShape3D
+	else null
+)
 
 ## Direct reference to particle system node.
-@onready var _particles: GPUParticles3D = get_node_or_null("SmokeParticles") as GPUParticles3D
+@onready var _particles: GPUParticles3D = (
+	get_node_or_null("SmokeParticles")
+	if get_node_or_null("SmokeParticles") is GPUParticles3D
+	else null
+)
 
 ## Direct reference to trigger visualizer helper node.
 @onready var _visualizer: EditorTriggerVisualizer = (
@@ -274,7 +281,9 @@ func _apply_tick_damage() -> void:
 			print("SmokeHazard: Target occluded by wall -> ", target.name)
 			continue
 
-		var health: HealthComponent = _health_cache.get(target) as HealthComponent
+		var health: HealthComponent = (
+			_health_cache.get(target) if _health_cache.get(target) is HealthComponent else null
+		)
 		if not is_instance_valid(health):
 			health = _find_health_component(target)
 			if is_instance_valid(health):
@@ -354,7 +363,7 @@ func _update_collision_and_visualizer() -> void:
 			else:
 				col.shape = col.shape.duplicate()
 			col.shape.resource_local_to_scene = true
-			var box: BoxShape3D = col.shape as BoxShape3D
+			var box: BoxShape3D = col.shape if col.shape is BoxShape3D else null
 			box.size = visualizer_size
 		elif visualizer_shape == EditorTriggerVisualizer.ShapeType.SPHERE:
 			if not col.shape is SphereShape3D:
@@ -362,7 +371,7 @@ func _update_collision_and_visualizer() -> void:
 			else:
 				col.shape = col.shape.duplicate()
 			col.shape.resource_local_to_scene = true
-			var sphere: SphereShape3D = col.shape as SphereShape3D
+			var sphere: SphereShape3D = col.shape if col.shape is SphereShape3D else null
 			sphere.radius = cloud_radius
 
 		col.position = hazard_offset
@@ -392,7 +401,9 @@ func _update_cloud_bounds() -> void:
 
 	var parts: GPUParticles3D = _get_particles()
 	if is_instance_valid(parts) and parts.process_material is ParticleProcessMaterial:
-		var mat: ParticleProcessMaterial = parts.process_material as ParticleProcessMaterial
+		var mat: ParticleProcessMaterial = (
+			parts.process_material if parts.process_material is ParticleProcessMaterial else null
+		)
 		mat.emission_sphere_radius = cloud_radius * 0.35
 
 
@@ -403,9 +414,9 @@ func _update_particle_visuals() -> void:
 
 	var parts: GPUParticles3D = _get_particles()
 	if is_instance_valid(parts) and is_instance_valid(parts.draw_pass_1):
-		var prim: PrimitiveMesh = parts.draw_pass_1 as PrimitiveMesh
+		var prim: PrimitiveMesh = parts.draw_pass_1 if parts.draw_pass_1 is PrimitiveMesh else null
 		if is_instance_valid(prim) and prim.material is ShaderMaterial:
-			var mat: ShaderMaterial = prim.material as ShaderMaterial
+			var mat: ShaderMaterial = prim.material if prim.material is ShaderMaterial else null
 			mat.set_shader_parameter(&"smoke_color", smoke_color)
 
 
@@ -426,7 +437,9 @@ func _update_particle_velocity() -> void:
 
 	var parts: GPUParticles3D = _get_particles()
 	if is_instance_valid(parts) and parts.process_material is ParticleProcessMaterial:
-		var mat: ParticleProcessMaterial = parts.process_material as ParticleProcessMaterial
+		var mat: ParticleProcessMaterial = (
+			parts.process_material if parts.process_material is ParticleProcessMaterial else null
+		)
 		mat.direction = Vector3.UP
 		mat.spread = spread
 		mat.initial_velocity_min = velocity_min * (particle_speed / 4.0)
@@ -440,7 +453,9 @@ func _update_particle_scale() -> void:
 
 	var parts: GPUParticles3D = _get_particles()
 	if is_instance_valid(parts) and parts.process_material is ParticleProcessMaterial:
-		var mat: ParticleProcessMaterial = parts.process_material as ParticleProcessMaterial
+		var mat: ParticleProcessMaterial = (
+			parts.process_material if parts.process_material is ParticleProcessMaterial else null
+		)
 		mat.scale_min = scale_min
 		mat.scale_max = scale_max
 
@@ -449,7 +464,11 @@ func _update_particle_scale() -> void:
 func _get_collision_shape() -> CollisionShape3D:
 	if is_instance_valid(_collision_shape):
 		return _collision_shape
-	var col: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
+	var col: CollisionShape3D = (
+		get_node_or_null("CollisionShape3D")
+		if get_node_or_null("CollisionShape3D") is CollisionShape3D
+		else null
+	)
 	if not is_instance_valid(col):
 		for child: Node in get_children():
 			if child is CollisionShape3D:

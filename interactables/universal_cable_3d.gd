@@ -42,7 +42,7 @@ func _update_cable() -> void:
 		up_vector = Vector3.RIGHT
 
 	if mesh_node:
-		var cyl_mesh: CylinderMesh = mesh_node.mesh as CylinderMesh
+		var cyl_mesh: CylinderMesh = mesh_node.mesh if mesh_node.mesh is CylinderMesh else null
 		if not cyl_mesh:
 			cyl_mesh = CylinderMesh.new()
 			mesh_node.mesh = cyl_mesh
@@ -56,7 +56,9 @@ func _update_cable() -> void:
 		mesh_node.rotate_object_local(Vector3.RIGHT, PI / 2.0)
 
 	if col_node:
-		var cyl_shape: CylinderShape3D = col_node.shape as CylinderShape3D
+		var cyl_shape: CylinderShape3D = (
+			col_node.shape if col_node.shape is CylinderShape3D else null
+		)
 		if not cyl_shape:
 			cyl_shape = CylinderShape3D.new()
 			col_node.shape = cyl_shape

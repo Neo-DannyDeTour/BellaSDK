@@ -52,7 +52,9 @@ func physics_update(delta: float) -> void:
 
 	var loco: PlayerLocomotionComponent = p.locomotion_component
 	var env: PlayerEnvironmentComponent = p.environment_component
-	var cam: CameraController = p.camera_controller as CameraController
+	var cam: CameraController = (
+		p.camera_controller if p.camera_controller is CameraController else null
+	)
 
 	_handle_crouch_state(loco)
 
@@ -64,7 +66,9 @@ func physics_update(delta: float) -> void:
 	p.move_and_slide()
 
 	if is_instance_valid(loco):
-		var footsteps: FootstepManager = loco.footstep_manager as FootstepManager
+		var footsteps: FootstepManager = (
+			loco.footstep_manager if loco.footstep_manager is FootstepManager else null
+		)
 		if is_instance_valid(footsteps):
 			footsteps.process_surface_and_footsteps(
 				delta, false, p.velocity.length(), false, false, true

@@ -168,7 +168,9 @@ func _ready() -> void:
 		_lerp_points[i] = HEALTHY_POINTS[i]
 
 	if is_instance_valid(ecg_monitor):
-		var ecg_mat: ShaderMaterial = ecg_monitor.material as ShaderMaterial
+		var ecg_mat: ShaderMaterial = (
+			ecg_monitor.material if ecg_monitor.material is ShaderMaterial else null
+		)
 		if is_instance_valid(ecg_mat):
 			ecg_mat.set_shader_parameter(&"points", HEALTHY_POINTS)
 
@@ -179,7 +181,7 @@ func _ready() -> void:
 ## Handles skip inputs via mouse click when permitted.
 func _input(event: InputEvent) -> void:
 	if _skip_allowed and event is InputEventMouseButton:
-		var mb: InputEventMouseButton = event as InputEventMouseButton
+		var mb: InputEventMouseButton = event if event is InputEventMouseButton else null
 		if mb.pressed:
 			print("DeathScreen: _input() skipping death screen.")
 			_return_to_main_menu()
@@ -193,7 +195,9 @@ func _process(delta: float) -> void:
 	var prev_time: float = _shader_time
 	_shader_time += delta * _target_speed
 
-	var mat: ShaderMaterial = ecg_monitor.material as ShaderMaterial
+	var mat: ShaderMaterial = (
+		ecg_monitor.material if ecg_monitor.material is ShaderMaterial else null
+	)
 	if is_instance_valid(mat):
 		mat.set_shader_parameter(&"u_time", _shader_time)
 
@@ -291,7 +295,9 @@ func _start_burn_effect() -> void:
 	burn_overlay.show()
 	burn_overlay.modulate.a = 1.0
 
-	var mat: ShaderMaterial = burn_overlay.material as ShaderMaterial
+	var mat: ShaderMaterial = (
+		burn_overlay.material if burn_overlay.material is ShaderMaterial else null
+	)
 	if not is_instance_valid(mat):
 		push_error("DeathScreen: burn_overlay material is invalid.")
 		return
@@ -318,7 +324,9 @@ func _start_jitter_effect() -> void:
 	jitter_overlay.show()
 	jitter_overlay.modulate.a = 1.0
 
-	var mat: ShaderMaterial = jitter_overlay.material as ShaderMaterial
+	var mat: ShaderMaterial = (
+		jitter_overlay.material if jitter_overlay.material is ShaderMaterial else null
+	)
 	if not is_instance_valid(mat):
 		push_error("DeathScreen: jitter_overlay material is invalid.")
 		return
@@ -368,7 +376,9 @@ func _start_glass_effect() -> void:
 	glass_overlay.show()
 	glass_overlay.modulate.a = 1.0
 
-	var mat: ShaderMaterial = glass_overlay.material as ShaderMaterial
+	var mat: ShaderMaterial = (
+		glass_overlay.material if glass_overlay.material is ShaderMaterial else null
+	)
 	if not is_instance_valid(mat):
 		push_error("DeathScreen: glass_overlay material is invalid.")
 		return
@@ -437,7 +447,9 @@ func _start_ecg_effect(death_state: int) -> void:
 	_cycle_count = 0
 	_flatline_started = false
 
-	var mat: ShaderMaterial = ecg_monitor.material as ShaderMaterial
+	var mat: ShaderMaterial = (
+		ecg_monitor.material if ecg_monitor.material is ShaderMaterial else null
+	)
 	if is_instance_valid(mat):
 		mat.set_shader_parameter(&"points", HEALTHY_POINTS)
 		mat.set_shader_parameter(&"resolution", get_viewport().get_visible_rect().size)
@@ -466,7 +478,9 @@ func _start_lava_effect() -> void:
 	lava_overlay.show()
 	lava_overlay.modulate.a = 0.0
 
-	var lava_mat: ShaderMaterial = lava_overlay.material as ShaderMaterial
+	var lava_mat: ShaderMaterial = (
+		lava_overlay.material if lava_overlay.material is ShaderMaterial else null
+	)
 	if is_instance_valid(lava_mat):
 		lava_mat.set_shader_parameter(&"emission", 0.0)
 		lava_mat.set_shader_parameter(&"resolution", get_viewport().get_visible_rect().size)
@@ -485,7 +499,9 @@ func _start_cave_tunnel_effect() -> void:
 	cave_tunnel_overlay.show()
 	cave_tunnel_overlay.modulate.a = 0.0
 
-	var cave_mat: ShaderMaterial = cave_tunnel_overlay.material as ShaderMaterial
+	var cave_mat: ShaderMaterial = (
+		cave_tunnel_overlay.material if cave_tunnel_overlay.material is ShaderMaterial else null
+	)
 	if is_instance_valid(cave_mat):
 		cave_mat.set_shader_parameter(&"resolution", get_viewport().get_visible_rect().size)
 
@@ -504,7 +520,9 @@ func _start_tv_static_effect() -> void:
 	tv_static_overlay.show()
 	tv_static_overlay.modulate.a = 1.0
 
-	var mat: ShaderMaterial = tv_static_overlay.material as ShaderMaterial
+	var mat: ShaderMaterial = (
+		tv_static_overlay.material if tv_static_overlay.material is ShaderMaterial else null
+	)
 	if is_instance_valid(mat):
 		mat.set_shader_parameter(&"static_intensity", 1.0)
 
@@ -618,7 +636,9 @@ func _lerp_heartbeat_to_flatline(weight: float) -> void:
 	for i: int in range(HEALTHY_POINTS.size()):
 		_lerp_points[i] = HEALTHY_POINTS[i].lerp(FLATLINE_POINTS[i], weight)
 
-	var mat: ShaderMaterial = ecg_monitor.material as ShaderMaterial
+	var mat: ShaderMaterial = (
+		ecg_monitor.material if ecg_monitor.material is ShaderMaterial else null
+	)
 	if is_instance_valid(mat):
 		mat.set_shader_parameter(&"points", _lerp_points)
 

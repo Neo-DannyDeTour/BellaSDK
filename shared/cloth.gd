@@ -17,7 +17,7 @@ extends SoftBody3D
 ## [param event] The input event to check against the mapped bake key.
 ## Returns: void.
 func _input(event: InputEvent) -> void:
-	var key_event: InputEventKey = event as InputEventKey
+	var key_event: InputEventKey = event if event is InputEventKey else null
 	if key_event and key_event.pressed and not key_event.echo:
 		if key_event.keycode == bake_action_key:
 			_bake_cloth()
@@ -30,7 +30,7 @@ func _input(event: InputEvent) -> void:
 ## Returns: void.
 func _bake_cloth() -> void:
 	print("Baking cloth simulation...")
-	var base_mesh: ArrayMesh = mesh as ArrayMesh
+	var base_mesh: ArrayMesh = mesh if mesh is ArrayMesh else null
 	if not is_instance_valid(base_mesh):
 		printerr("No mesh assigned to SoftBody3D or not ArrayMesh!")
 		return

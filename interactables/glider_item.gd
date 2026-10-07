@@ -56,7 +56,9 @@ func pick_up(hold_position: Marker3D, player: CharacterBody3D) -> void:
 func _on_player_reached_anchor(player: CharacterBody3D, _hold_position: Marker3D) -> void:
 	print("GliderItem: Player reached anchor. Attaching glider to weapon holder.")
 
-	var interaction_comp: Node = player.get("interaction_component") as Node
+	var interaction_comp: Node = (
+		player.get("interaction_component") if player.get("interaction_component") is Node else null
+	)
 	if (
 		is_instance_valid(interaction_comp)
 		and interaction_comp.has_method("attach_item_to_weapon_holder")
@@ -64,7 +66,9 @@ func _on_player_reached_anchor(player: CharacterBody3D, _hold_position: Marker3D
 		interaction_comp.call("attach_item_to_weapon_holder", self, player_anchor, player)
 
 	# 4. Apply restrictions and unlock the player
-	var loco_comp: Node = player.get("locomotion_component") as Node
+	var loco_comp: Node = (
+		player.get("locomotion_component") if player.get("locomotion_component") is Node else null
+	)
 	if is_instance_valid(loco_comp):
 		loco_comp.set("can_sprint", false)
 
@@ -80,7 +84,11 @@ func throw_item(force: Vector3, scene_root: Node) -> void:
 
 	# Restore sprint restriction
 	if is_instance_valid(current_holder):
-		var loco_comp: Node = current_holder.get("locomotion_component") as Node
+		var loco_comp: Node = (
+			current_holder.get("locomotion_component")
+			if current_holder.get("locomotion_component") is Node
+			else null
+		)
 		if is_instance_valid(loco_comp):
 			loco_comp.set("can_sprint", true)
 	current_holder = null
@@ -105,7 +113,11 @@ func drop_item(scene_root: Node, drop_pos: Vector3) -> void:
 
 	# Restore sprint restriction
 	if is_instance_valid(current_holder):
-		var loco_comp: Node = current_holder.get("locomotion_component") as Node
+		var loco_comp: Node = (
+			current_holder.get("locomotion_component")
+			if current_holder.get("locomotion_component") is Node
+			else null
+		)
 		if is_instance_valid(loco_comp):
 			loco_comp.set("can_sprint", true)
 	current_holder = null

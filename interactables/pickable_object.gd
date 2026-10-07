@@ -33,7 +33,11 @@ const MIN_HOLD_DISTANCE: float = 1.2
 )
 
 ## Physical [CollisionShape3D] bounding the object collision.
-@onready var collision: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
+@onready var collision: CollisionShape3D = (
+	get_node_or_null("CollisionShape3D")
+	if get_node_or_null("CollisionShape3D") is CollisionShape3D
+	else null
+)
 
 ## Default world gravity scalar retrieved from [ProjectSettings].
 @onready var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity", 9.8)
@@ -281,7 +285,7 @@ func pick_up(target: Marker3D, player_node: Node3D) -> void:
 	holder = player_node
 	_cached_exclude_rids = [get_rid()]
 	if holder is CollisionObject3D:
-		var col_holder: CollisionObject3D = holder as CollisionObject3D
+		var col_holder: CollisionObject3D = holder if holder is CollisionObject3D else null
 		_cached_exclude_rids.append(col_holder.get_rid())
 
 	var cam: Camera3D = _get_camera()
@@ -471,7 +475,7 @@ func set_model_transparency(parent_node: Node, alpha: float) -> void:
 		print("PickableObject: Setting model transparency to ", alpha)
 
 	if parent_node is GeometryInstance3D:
-		var geom: GeometryInstance3D = parent_node as GeometryInstance3D
+		var geom: GeometryInstance3D = parent_node if parent_node is GeometryInstance3D else null
 		geom.transparency = alpha
 
 	for child: Node in parent_node.get_children():
@@ -735,7 +739,7 @@ func _process_buoyancy() -> void:
 			var probe_mass: float = mass / float(probe_count)
 
 			for node: Node in _probes:
-				var p: Node3D = node as Node3D
+				var p: Node3D = node if node is Node3D else null
 				if not is_instance_valid(p):
 					continue
 

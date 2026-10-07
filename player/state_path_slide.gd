@@ -12,7 +12,7 @@ var hold_offset: Vector3 = Vector3(0.0, -1.0, 0.0)
 ## Suspends locomotion physics and anchors player to sliding stick.
 func enter(msg: Dictionary = {}) -> void:
 	print("StatePathSlide: enter() called. Player mounting path slide stick.")
-	var typed_player: Player = player as Player
+	var typed_player: Player = player if player is Player else null
 	active_stick = msg.get(&"stick") as PathStick
 
 	if is_instance_valid(typed_player) and is_instance_valid(typed_player.locomotion_component):
@@ -22,7 +22,7 @@ func enter(msg: Dictionary = {}) -> void:
 ## Restores locomotion physics and releases player from active stick.
 func exit() -> void:
 	print("StatePathSlide: exit() called. Player releasing from path slide.")
-	var typed_player: Player = player as Player
+	var typed_player: Player = player if player is Player else null
 
 	if is_instance_valid(typed_player) and is_instance_valid(typed_player.locomotion_component):
 		typed_player.locomotion_component.set_physics_active(true)
@@ -38,7 +38,7 @@ func handle_input(event: InputEvent) -> void:
 	print("StatePathSlide: handle_input() polling manual drop gestures.")
 	if event.is_action_pressed(&"jump") or event.is_action_pressed(&"crouch"):
 		print("StatePathSlide: Player requested manual stick release.")
-		var typed_player: Player = player as Player
+		var typed_player: Player = player if player is Player else null
 		if is_instance_valid(typed_player):
 			typed_player.exit_path_slide()
 

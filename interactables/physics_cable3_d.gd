@@ -64,7 +64,9 @@ extends Node3D
 			print("PhysicsCable3D: show_debug_sphere toggled to ", show_debug_sphere)
 
 ## Editor-only placeholder icon node.
-@onready var _editor_icon: Node3D = get_node_or_null("%EditorIcon") as Node3D
+@onready var _editor_icon: Node3D = (
+	get_node_or_null("%EditorIcon") if get_node_or_null("%EditorIcon") is Node3D else null
+)
 
 ## Current world-space positions of simulated Verlet particles.
 var _positions: PackedVector3Array = PackedVector3Array()

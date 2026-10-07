@@ -224,18 +224,20 @@ func _apply_overlay_to_meshes(
 		return
 
 	if target_node is GeometryInstance3D:
-		var geom_node: GeometryInstance3D = target_node as GeometryInstance3D
+		var geom_node: GeometryInstance3D = (
+			target_node if target_node is GeometryInstance3D else null
+		)
 		if active_state:
 			var final_mat: ShaderMaterial = target_material
 			var base_tex: Texture2D = null
 			var needs_billboard: bool = false
 
 			if geom_node is Sprite3D:
-				var sprite: Sprite3D = geom_node as Sprite3D
+				var sprite: Sprite3D = geom_node if geom_node is Sprite3D else null
 				base_tex = sprite.texture
 				needs_billboard = (sprite.billboard != BaseMaterial3D.BILLBOARD_DISABLED)
 			elif geom_node is MeshInstance3D:
-				var mesh_inst: MeshInstance3D = geom_node as MeshInstance3D
+				var mesh_inst: MeshInstance3D = geom_node if geom_node is MeshInstance3D else null
 				if mesh_inst.mesh:
 					var active_mat: Material = mesh_inst.get_active_material(0)
 					if is_instance_valid(active_mat):

@@ -43,7 +43,7 @@ extends Node3D
 var intact_ropes: int = 0
 var bridge_fallen: bool = false
 
-@onready var bridge: RigidBody3D = $TheBridge as RigidBody3D
+@onready var bridge: RigidBody3D = $TheBridge if $TheBridge is RigidBody3D else null
 
 
 ## Connects rope signals and initializes physical state.
@@ -51,12 +51,18 @@ func _ready() -> void:
 	print("Drawbridge: _ready() - Initializing bridge instance.")
 	_update_bridge_shape()
 
-	var anchor: CollisionObject3D = get_node_or_null("HingeAnchor") as CollisionObject3D
+	var anchor: CollisionObject3D = (
+		get_node_or_null("HingeAnchor")
+		if get_node_or_null("HingeAnchor") is CollisionObject3D
+		else null
+	)
 	if is_instance_valid(anchor):
 		anchor.collision_layer = 0
 		anchor.collision_mask = 0
 
-	var debug_pin: Node3D = get_node_or_null("DebugPin") as Node3D
+	var debug_pin: Node3D = (
+		get_node_or_null("DebugPin") if get_node_or_null("DebugPin") is Node3D else null
+	)
 	if is_instance_valid(debug_pin) and not Engine.is_editor_hint():
 		debug_pin.hide()
 
@@ -113,7 +119,7 @@ func _update_bridge_shape() -> void:
 		else:
 			mesh_instance.mesh = mesh_instance.mesh.duplicate() as BoxMesh
 
-		var box_mesh: BoxMesh = mesh_instance.mesh as BoxMesh
+		var box_mesh: BoxMesh = mesh_instance.mesh if mesh_instance.mesh is BoxMesh else null
 		box_mesh.size = bridge_size
 		mesh_instance.position = visual_offset
 
@@ -126,7 +132,7 @@ func _update_bridge_shape() -> void:
 		else:
 			collision.shape = collision.shape.duplicate() as BoxShape3D
 
-		var box_shape: BoxShape3D = collision.shape as BoxShape3D
+		var box_shape: BoxShape3D = collision.shape if collision.shape is BoxShape3D else null
 		box_shape.size = bridge_size
 		collision.position = visual_offset
 
@@ -138,7 +144,9 @@ func _draw_debug_pin() -> void:
 	if not is_node_ready():
 		return
 
-	var existing_pin: Node3D = get_node_or_null("DebugPin") as Node3D
+	var existing_pin: Node3D = (
+		get_node_or_null("DebugPin") if get_node_or_null("DebugPin") is Node3D else null
+	)
 
 	if not show_debug_pin:
 		if is_instance_valid(existing_pin):

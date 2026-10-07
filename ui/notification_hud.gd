@@ -125,7 +125,11 @@ func _update_vault_key_icon() -> void:
 	if events.is_empty():
 		return
 
-	var icon_tex: Texture2D = helper.call("get_event_icon", events[0]) as Texture2D
+	var icon_tex: Texture2D = (
+		helper.call("get_event_icon", events[0])
+		if helper.call("get_event_icon", events[0]) is Texture2D
+		else null
+	)
 	if is_instance_valid(icon_tex):
 		vault_key_icon.texture = icon_tex
 		vault_key_icon.custom_minimum_size = prompt_size

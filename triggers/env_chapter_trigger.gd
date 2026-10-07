@@ -128,14 +128,14 @@ func _update_collision_shape() -> void:
 			col.shape = BoxShape3D.new()
 		else:
 			col.shape = col.shape.duplicate()
-		var box: BoxShape3D = col.shape as BoxShape3D
+		var box: BoxShape3D = col.shape if col.shape is BoxShape3D else null
 		box.size = trigger_size
 	elif shape_type == EditorTriggerVisualizer.ShapeType.SPHERE:
 		if not col.shape is SphereShape3D:
 			col.shape = SphereShape3D.new()
 		else:
 			col.shape = col.shape.duplicate()
-		var sphere: SphereShape3D = col.shape as SphereShape3D
+		var sphere: SphereShape3D = col.shape if col.shape is SphereShape3D else null
 		sphere.radius = trigger_size.x * 0.5
 
 	col.position = trigger_offset
@@ -164,7 +164,11 @@ func _update_visualizer_node() -> void:
 
 ## Safely retrieves the child [CollisionShape3D] instance.
 func _get_collision_shape() -> CollisionShape3D:
-	var col: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
+	var col: CollisionShape3D = (
+		get_node_or_null("CollisionShape3D")
+		if get_node_or_null("CollisionShape3D") is CollisionShape3D
+		else null
+	)
 	if not is_instance_valid(col):
 		for child: Node in get_children():
 			if child is CollisionShape3D:

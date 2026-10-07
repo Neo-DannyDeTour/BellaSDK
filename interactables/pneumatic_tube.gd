@@ -193,16 +193,16 @@ func capture_body(body: Node3D) -> void:
 	rider.had_physics_process = body.is_physics_processing()
 
 	if body is Player:
-		var pl: Player = body as Player
+		var pl: Player = body if body is Player else null
 		pl.enter_tube(self)
 	elif body is RigidBody3D:
-		var rb: RigidBody3D = body as RigidBody3D
+		var rb: RigidBody3D = body if body is RigidBody3D else null
 		rider.was_frozen = rb.freeze
 		rb.freeze = true
 		rb.linear_velocity = Vector3.ZERO
 		rb.angular_velocity = Vector3.ZERO
 	elif body is CharacterBody3D:
-		var cb: CharacterBody3D = body as CharacterBody3D
+		var cb: CharacterBody3D = body if body is CharacterBody3D else null
 		cb.velocity = Vector3.ZERO
 		cb.set_physics_process(false)
 
@@ -217,14 +217,14 @@ func _eject_rider(rider: PneumaticTubeRider) -> void:
 	var launch_vel: Vector3 = _get_exit_vector() * exit_launch_speed
 
 	if rider.body is Player:
-		var pl: Player = rider.body as Player
+		var pl: Player = rider.body if rider.body is Player else null
 		pl.exit_tube(launch_vel)
 	elif rider.body is RigidBody3D:
-		var rb: RigidBody3D = rider.body as RigidBody3D
+		var rb: RigidBody3D = rider.body if rider.body is RigidBody3D else null
 		rb.freeze = rider.was_frozen
 		rb.linear_velocity = launch_vel
 	elif rider.body is CharacterBody3D:
-		var cb: CharacterBody3D = rider.body as CharacterBody3D
+		var cb: CharacterBody3D = rider.body if rider.body is CharacterBody3D else null
 		cb.set_physics_process(rider.had_physics_process)
 		cb.velocity = launch_vel
 

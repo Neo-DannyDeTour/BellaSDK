@@ -45,7 +45,7 @@ func enter(msg: Dictionary = {}) -> void:
 	if not is_instance_valid(p):
 		return
 
-	has_jumped = bool(msg.get(&"jump", false))
+	has_jumped = msg.get(&"jump", false)
 
 	if msg.has(&"knockback_force"):
 		var force: Variant = msg[&"knockback_force"]
@@ -55,11 +55,11 @@ func enter(msg: Dictionary = {}) -> void:
 		jump_buffer_timer = 0.0
 		print("StateAir: Knockback applied with force: ", p.velocity)
 
-	is_launched = bool(msg.get(&"jump_pad", false))
+	is_launched = msg.get(&"jump_pad", false)
 	if is_launched:
 		print("StateAir: Player launched via jump pad.")
-		launch_gravity = float(msg.get(&"launch_gravity", 9.8))
-		launch_fall_gravity = float(msg.get(&"launch_fall_gravity", 9.8))
+		launch_gravity = msg.get(&"launch_gravity", 9.8)
+		launch_fall_gravity = msg.get(&"launch_fall_gravity", 9.8)
 
 	var loco: PlayerLocomotionComponent = p.locomotion_component
 
@@ -70,7 +70,7 @@ func enter(msg: Dictionary = {}) -> void:
 			loco.set_direction(Vector3(r_dir.x, 0.0, r_dir.z).normalized())
 			print("StateAir: Inherited momentum direction from previous state.")
 
-	var has_coyote: bool = bool(msg.get(&"coyote_time", false))
+	var has_coyote: bool = msg.get(&"coyote_time", false)
 	if has_coyote and not msg.has(&"knockback_force"):
 		coyote_timer = loco.coyote_time_duration
 	elif not msg.has(&"knockback_force"):
@@ -294,7 +294,7 @@ func _check_transitions(
 ## Processes ground collision, evaluates fall damage, and triggers landing.
 func _handle_landing(p: Player, loco: PlayerLocomotionComponent) -> void:
 	print("StateAir: _handle_landing() called. Processing ground impact.")
-	var stats: Node = p.get(&"stats_component") as Node
+	var stats: Node = p.get(&"stats_component") if p.get(&"stats_component") is Node else null
 
 	var impact_fall_speed: float = loco.last_velocity.y
 	var is_safe_landing: bool = false
@@ -309,7 +309,7 @@ func _handle_landing(p: Player, loco: PlayerLocomotionComponent) -> void:
 			continue
 
 		if collision.get_normal().y > 0.1:
-			var node_col: Node = collider as Node
+			var node_col: Node = collider if collider is Node else null
 			if node_col.is_in_group(&"safe_landing"):
 				is_safe_landing = true
 
@@ -358,7 +358,9 @@ func _update_components(
 ) -> void:
 	print("StateAir: _update_components() polling camera and scanner.")
 	var interact: PlayerInteractionComponent = p.interaction_component
-	var cam: CameraController = p.camera_controller as CameraController
+	var cam: CameraController = (
+		p.camera_controller if p.camera_controller is CameraController else null
+	)
 
 	if is_instance_valid(cam):
 		cam.update_camera(delta, input_dir, false, loco.crouching, false, p.velocity.length())

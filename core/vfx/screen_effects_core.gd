@@ -126,7 +126,7 @@ func _init_shockwave_pool() -> void:
 	for i: int in range(SHOCKWAVE_POOL_SIZE):
 		var raw_node: Node = shockwave_scene.instantiate()
 		if raw_node is GPUParticles3D:
-			var particles: GPUParticles3D = raw_node as GPUParticles3D
+			var particles: GPUParticles3D = raw_node if raw_node is GPUParticles3D else null
 			particles.one_shot = true
 			particles.emitting = false
 			_shockwave_container.add_child(particles)
@@ -309,7 +309,7 @@ func _spawn_dynamic_shockwave(spawn_pos: Vector3, radius: float, speed: float) -
 
 	var instance: Node = shockwave_scene.instantiate()
 	if instance is GPUParticles3D:
-		var effect: GPUParticles3D = instance as GPUParticles3D
+		var effect: GPUParticles3D = instance if instance is GPUParticles3D else null
 		effect.one_shot = true
 		effect.explosiveness = 1.0
 		effect.speed_scale = maxf(0.01, speed)

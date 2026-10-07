@@ -18,7 +18,9 @@ static func get_instance(base_material: Material) -> Material:
 	if _material_cache.has(key):
 		return _material_cache[key]
 
-	var new_instance: Material = base_material.duplicate() as Material
+	var new_instance: Material = (
+		base_material.duplicate() if base_material.duplicate() is Material else null
+	)
 	_material_cache[key] = new_instance
 	print("[MaterialCache] Cached new material instance for: %s" % key)
 	return new_instance
@@ -37,7 +39,9 @@ static func get_variant(base_material: Material, variant_key: String) -> Materia
 	if _material_cache.has(composite_key):
 		return _material_cache[composite_key]
 
-	var new_inst: Material = base_material.duplicate() as Material
+	var new_inst: Material = (
+		base_material.duplicate() if base_material.duplicate() is Material else null
+	)
 	_material_cache[composite_key] = new_inst
 	print("[MaterialCache] Cached new variant [%s]" % composite_key)
 	return new_inst

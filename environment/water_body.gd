@@ -123,12 +123,18 @@ const RIPPLE_LIFETIME: float = 2.5
 			_update_reflection_probe()
 
 ## Cached surface ambient audio stream player child node.
-@onready
-var surface_audio: AudioStreamPlayer = get_node_or_null("%SurfaceAudio") as AudioStreamPlayer
+@onready var surface_audio: AudioStreamPlayer = (
+	get_node_or_null("%SurfaceAudio")
+	if get_node_or_null("%SurfaceAudio") is AudioStreamPlayer
+	else null
+)
 
 ## Cached underwater ambient audio stream player child node.
-@onready
-var underwater_audio: AudioStreamPlayer = get_node_or_null("%UnderwaterAudio") as AudioStreamPlayer
+@onready var underwater_audio: AudioStreamPlayer = (
+	get_node_or_null("%UnderwaterAudio")
+	if get_node_or_null("%UnderwaterAudio") is AudioStreamPlayer
+	else null
+)
 
 ## Active rigid bodies currently submerged and simulated in water volume.
 var floating_bodies: Array[RigidBody3D] = []
@@ -171,7 +177,7 @@ func _get_water_material() -> ShaderMaterial:
 	if get_surface_override_material(0) is ShaderMaterial:
 		return get_surface_override_material(0) as ShaderMaterial
 	if mesh is PrimitiveMesh:
-		var prim_mesh: PrimitiveMesh = mesh as PrimitiveMesh
+		var prim_mesh: PrimitiveMesh = mesh if mesh is PrimitiveMesh else null
 		if prim_mesh.material is ShaderMaterial:
 			return prim_mesh.material as ShaderMaterial
 	return null
@@ -183,7 +189,11 @@ func _update_reflection_probe() -> void:
 		return
 
 	print("WaterBody: Synchronizing reflection probe bounds and origin.")
-	var probe: ReflectionProbe = get_node_or_null("%ReflectionProbe") as ReflectionProbe
+	var probe: ReflectionProbe = (
+		get_node_or_null("%ReflectionProbe")
+		if get_node_or_null("%ReflectionProbe") is ReflectionProbe
+		else null
+	)
 	if not is_instance_valid(probe):
 		probe = get_node_or_null("ReflectionProbe") as ReflectionProbe
 
@@ -223,13 +233,17 @@ func _update_bounds() -> void:
 	if not (mesh is BoxMesh):
 		mesh = BoxMesh.new()
 
-	var box: BoxMesh = mesh as BoxMesh
+	var box: BoxMesh = mesh if mesh is BoxMesh else null
 	box.size = water_size
 	box.subdivide_width = clampi(int(water_size.x * vertex_density), 8, 256)
 	box.subdivide_depth = clampi(int(water_size.z * vertex_density), 8, 256)
 	box.subdivide_height = 0
 
-	var swimmable_area: Area3D = get_node_or_null("%SwimmableArea3D") as Area3D
+	var swimmable_area: Area3D = (
+		get_node_or_null("%SwimmableArea3D")
+		if get_node_or_null("%SwimmableArea3D") is Area3D
+		else null
+	)
 	if is_instance_valid(swimmable_area):
 		var col: CollisionShape3D = (
 			swimmable_area.get_node_or_null("CollisionShape3D") as CollisionShape3D
@@ -239,7 +253,9 @@ func _update_bounds() -> void:
 				col.shape = BoxShape3D.new()
 			(col.shape as BoxShape3D).size = water_size
 
-	var fog_vol: FogVolume = get_node_or_null("%FogVolume") as FogVolume
+	var fog_vol: FogVolume = (
+		get_node_or_null("%FogVolume") if get_node_or_null("%FogVolume") is FogVolume else null
+	)
 	if is_instance_valid(fog_vol):
 		fog_vol.size = water_size
 
@@ -256,7 +272,11 @@ func _ready() -> void:
 
 	_update_bounds()
 
-	var swimmable_area: Area3D = get_node_or_null("%SwimmableArea3D") as Area3D
+	var swimmable_area: Area3D = (
+		get_node_or_null("%SwimmableArea3D")
+		if get_node_or_null("%SwimmableArea3D") is Area3D
+		else null
+	)
 	if is_instance_valid(swimmable_area):
 		swimmable_area.collision_mask |= (
 			CollisionLayers.MASK_PLAYER | CollisionLayers.MASK_INTERACTIVE
@@ -346,15 +366,21 @@ func _process(delta: float) -> void:
 		mat.set_shader_parameter(&"show_side_walls", show_side_walls)
 		mat.set_shader_parameter(&"ripples", _ripples_buffer)
 
-	var fog_volume: FogVolume = get_node_or_null("%FogVolume") as FogVolume
+	var fog_volume: FogVolume = (
+		get_node_or_null("%FogVolume") if get_node_or_null("%FogVolume") is FogVolume else null
+	)
 	if is_instance_valid(fog_volume):
 		if fog_volume.material is ShaderMaterial:
-			var fog_mat: ShaderMaterial = fog_volume.material as ShaderMaterial
+			var fog_mat: ShaderMaterial = (
+				fog_volume.material if fog_volume.material is ShaderMaterial else null
+			)
 			fog_mat.set_shader_parameter(&"albedo", fog_color)
 			fog_mat.set_shader_parameter(&"emission", fog_color)
 			fog_volume.set(&"base_fade_dist", fog_fade_dist)
 		elif fog_volume.material is FogMaterial:
-			var fog_mat: FogMaterial = fog_volume.material as FogMaterial
+			var fog_mat: FogMaterial = (
+				fog_volume.material if fog_volume.material is FogMaterial else null
+			)
 			fog_mat.albedo = fog_color
 			fog_mat.emission = fog_color
 			fog_mat.density = 0.12 if should_draw_camera_underwater_effect() else 0.04
@@ -545,7 +571,7 @@ func _on_swimmable_area_body_entered(body: Node3D) -> void:
 	var impact_speed: float = 0.0
 
 	if body is RigidBody3D:
-		var rb: RigidBody3D = body as RigidBody3D
+		var rb: RigidBody3D = body if body is RigidBody3D else null
 		if not floating_bodies.has(rb):
 			floating_bodies.append(rb)
 		impact_speed = rb.linear_velocity.length()
@@ -554,7 +580,7 @@ func _on_swimmable_area_body_entered(body: Node3D) -> void:
 		_last_body_ripple_times[rb.get_instance_id()] = current_sec
 
 	elif body is CharacterBody3D:
-		var cb: CharacterBody3D = body as CharacterBody3D
+		var cb: CharacterBody3D = body if body is CharacterBody3D else null
 		if not character_bodies.has(cb):
 			character_bodies.append(cb)
 		impact_speed = cb.velocity.length()
@@ -578,14 +604,14 @@ func _on_swimmable_area_body_exited(body: Node3D) -> void:
 	var exit_speed: float = 0.0
 
 	if body is RigidBody3D:
-		var rb: RigidBody3D = body as RigidBody3D
+		var rb: RigidBody3D = body if body is RigidBody3D else null
 		floating_bodies.erase(rb)
 		_last_body_positions.erase(rb.get_instance_id())
 		_last_body_ripple_times.erase(rb.get_instance_id())
 		exit_speed = rb.linear_velocity.length()
 
 	elif body is CharacterBody3D:
-		var cb: CharacterBody3D = body as CharacterBody3D
+		var cb: CharacterBody3D = body if body is CharacterBody3D else null
 		character_bodies.erase(cb)
 		_last_body_positions.erase(cb.get_instance_id())
 		_last_body_ripple_times.erase(cb.get_instance_id())

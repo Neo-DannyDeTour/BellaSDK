@@ -402,7 +402,7 @@ func load_settings() -> void:
 		VideoConfig.DEFAULT_ANISOTROPY
 	)
 
-	var lod: float = GlobalSettings.get_setting("Settings", "mesh_lod_threshold", 1.0) as float
+	var lod: float = GlobalSettings.get_setting("Settings", "mesh_lod_threshold", 1.0)
 	mesh_lod_slider.set_value_no_signal(lod)
 	mesh_lod_line.text = "%.2f" % lod
 
@@ -426,11 +426,11 @@ func apply_preset_dict(data: Dictionary) -> void:
 	if data.has("shadow_filter") and _shadow_filter_btn_map.has(str(data["shadow_filter"])):
 		_shadow_filter_btn_map[str(data["shadow_filter"])].button_pressed = true
 	if data.has("positional_shadow_distance"):
-		var p_d: float = data["positional_shadow_distance"] as float
+		var p_d: float = data["positional_shadow_distance"]
 		pos_dist_slider.set_value_no_signal(p_d)
 		pos_dist_line.text = str(int(p_d))
 	if data.has("directional_shadow_distance"):
-		var d_d: float = data["directional_shadow_distance"] as float
+		var d_d: float = data["directional_shadow_distance"]
 		dir_dist_slider.set_value_no_signal(d_d)
 		dir_dist_line.text = str(int(d_d))
 	if data.has("occlusion_culling"):
@@ -440,11 +440,11 @@ func apply_preset_dict(data: Dictionary) -> void:
 	if data.has("texture_filter") and _texture_filter_btn_map.has(str(data["texture_filter"])):
 		_texture_filter_btn_map[str(data["texture_filter"])].button_pressed = true
 	if data.has("resolution_scale"):
-		var r_s: float = data["resolution_scale"] as float
+		var r_s: float = data["resolution_scale"]
 		res_scale_slider.set_value_no_signal(r_s)
 		res_scale_line.text = "%.1f" % r_s
 	if data.has("mesh_lod_threshold"):
-		var lod_val: float = data["mesh_lod_threshold"] as float
+		var lod_val: float = data["mesh_lod_threshold"]
 		mesh_lod_slider.set_value_no_signal(lod_val)
 		mesh_lod_line.text = "%.2f" % lod_val
 
@@ -492,7 +492,7 @@ func _on_preset_pressed(preset: String) -> void:
 		return
 
 	if VideoConfig.PRESETS.has(preset):
-		var data: Dictionary = VideoConfig.PRESETS[preset] as Dictionary
+		var data: Dictionary = VideoConfig.PRESETS[preset]
 		apply_preset_dict(data)
 
 	GlobalSettings.save_setting("Settings", "preset", preset)

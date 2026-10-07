@@ -203,13 +203,17 @@ func _sync_from_visualizer() -> void:
 	if visualizer == null or not is_instance_valid(_collision_shape):
 		return
 	if visualizer.shape_type == EditorTriggerVisualizer.ShapeType.BOX:
-		var box: BoxShape3D = _collision_shape.shape as BoxShape3D
+		var box: BoxShape3D = (
+			_collision_shape.shape if _collision_shape.shape is BoxShape3D else null
+		)
 		if box == null:
 			box = BoxShape3D.new()
 			_collision_shape.shape = box
 		box.size = visualizer.trigger_size
 	elif visualizer.shape_type == EditorTriggerVisualizer.ShapeType.SPHERE:
-		var sphere: SphereShape3D = _collision_shape.shape as SphereShape3D
+		var sphere: SphereShape3D = (
+			_collision_shape.shape if _collision_shape.shape is SphereShape3D else null
+		)
 		if sphere == null:
 			sphere = SphereShape3D.new()
 			_collision_shape.shape = sphere
@@ -281,7 +285,7 @@ func _resolve_master_trigger() -> MusicTrigger3D:
 		return null
 	var triggers: Array[Node] = get_tree().get_nodes_in_group(TRIGGER_GROUP)
 	for node: Node in triggers:
-		var trigger: MusicTrigger3D = node as MusicTrigger3D
+		var trigger: MusicTrigger3D = node if node is MusicTrigger3D else null
 		if trigger != null and trigger != self and trigger.audio_stream != null:
 			return trigger
 	return null

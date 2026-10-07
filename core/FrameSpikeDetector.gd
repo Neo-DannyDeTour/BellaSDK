@@ -39,9 +39,13 @@ func _report_spike_data(frame_time_ms: float) -> void:
 	var vram_used: float = Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0
 
 	# Gather Rendering metrics (Draw calls, poly count, objects)
-	var draw_calls: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
-	var primitives: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))
-	var objects: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME))
+	var draw_calls: int = roundi(
+		Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)
+	)
+	var primitives: int = roundi(
+		Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)
+	)
+	var objects: int = roundi(Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME))
 
 	print("--- Performance Snapshot ---")
 	print("RAM Used: ", snapped(mem_used, 0.01), " MB")

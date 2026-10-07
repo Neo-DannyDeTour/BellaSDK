@@ -88,7 +88,8 @@ func scan_for_interactable() -> void:
 	if not hit.is_empty():
 		var collider: Object = hit.get(&"collider")
 		if collider is Node3D:
-			var candidate: Node3D = NodeQuery.resolve_interactable_root(collider as Node3D)
+			var col_3d: Node3D = collider
+			var candidate: Node3D = NodeQuery.resolve_interactable_root(col_3d)
 			if is_instance_valid(candidate) and candidate.has_method(METHOD_INTERACT):
 				new_target = candidate
 	if new_target != current_target:
@@ -151,4 +152,5 @@ func _setup_exclusions() -> void:
 		return
 	var ancestor: Node = NodeQuery.find_ancestor_of_type(source_camera, CollisionObject3D)
 	if ancestor is CollisionObject3D:
-		_exclude_rids.append((ancestor as CollisionObject3D).get_rid())
+		var col_obj: CollisionObject3D = ancestor
+		_exclude_rids.append(col_obj.get_rid())

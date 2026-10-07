@@ -87,7 +87,9 @@ func _dismiss_stack() -> void:
 	_stack_tween = create_tween().set_parallel(true)
 
 	for weapon_id: String in _collected_order:
-		var rect: TextureRect = _spawned_tags.get(weapon_id) as TextureRect
+		var rect: TextureRect = (
+			_spawned_tags.get(weapon_id) if _spawned_tags.get(weapon_id) is TextureRect else null
+		)
 		if not is_instance_valid(rect):
 			continue
 
@@ -103,7 +105,11 @@ func _dismiss_stack() -> void:
 
 ## Spawns and configures a TextureRect node for a weapon tag.
 func _create_tag_node(weapon_id: String) -> void:
-	var tex: Texture2D = TAG_TEXTURES.get(weapon_id, null) as Texture2D
+	var tex: Texture2D = (
+		TAG_TEXTURES.get(weapon_id, null)
+		if TAG_TEXTURES.get(weapon_id, null) is Texture2D
+		else null
+	)
 	if tex == null:
 		return
 
@@ -134,7 +140,9 @@ func _rearrange_stack(is_pickup_drop: bool) -> void:
 	_stack_tween = create_tween().set_parallel(true)
 
 	for weapon_id: String in _collected_order:
-		var rect: TextureRect = _spawned_tags.get(weapon_id) as TextureRect
+		var rect: TextureRect = (
+			_spawned_tags.get(weapon_id) if _spawned_tags.get(weapon_id) is TextureRect else null
+		)
 		if not is_instance_valid(rect):
 			continue
 

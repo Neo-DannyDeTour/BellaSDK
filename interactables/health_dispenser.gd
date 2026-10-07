@@ -215,7 +215,9 @@ func _setup_health_cylinder() -> void:
 	print("HealthDispenser: Setting up health cylinder.")
 	_cylinder_initial_pos_y = health_cylinder.position.y
 
-	var cyl_mesh: CylinderMesh = health_cylinder.mesh as CylinderMesh
+	var cyl_mesh: CylinderMesh = (
+		health_cylinder.mesh if health_cylinder.mesh is CylinderMesh else null
+	)
 	if cyl_mesh:
 		_cylinder_initial_height = cyl_mesh.height
 	else:
@@ -260,8 +262,8 @@ func interact_held(_character: CharacterBody3D) -> void:
 	if not is_instance_valid(_player_health_component):
 		return
 
-	var current_hp: int = int(_player_health_component.get("current_health"))
-	var max_hp: int = int(_player_health_component.get("max_health"))
+	var current_hp: int = _player_health_component.get("current_health")
+	var max_hp: int = _player_health_component.get("max_health")
 	var needed_hp: int = max_hp - current_hp
 
 	if needed_hp <= 0:
@@ -282,7 +284,7 @@ func interact_held(_character: CharacterBody3D) -> void:
 
 ## Enables tentacle targeting loop when player enters detection area.
 func _on_body_entered(body: Node3D) -> void:
-	var character: CharacterBody3D = body as CharacterBody3D
+	var character: CharacterBody3D = body if body is CharacterBody3D else null
 	if character and character.is_in_group(&"player"):
 		print("HealthDispenser: _on_body_entered() - Player detected.")
 		_nearby_player = character
@@ -336,8 +338,8 @@ func _update_screen() -> void:
 	if not is_valid:
 		return
 
-	var current: float = float(_player_health_component.get("current_health"))
-	var maximum: float = float(_player_health_component.get("max_health"))
+	var current: float = _player_health_component.get("current_health")
+	var maximum: float = _player_health_component.get("max_health")
 	var ratio: float = 0.0
 
 	if maximum > 0.0:

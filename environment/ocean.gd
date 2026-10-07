@@ -342,7 +342,11 @@ func _update_scales_uniform() -> void:
 	if is_instance_valid(SPRAY_MAT):
 		SPRAY_MAT.set_shader_parameter(&"map_scales", map_scales)
 	if is_instance_valid(spray_particles) and is_instance_valid(spray_particles.process_material):
-		var proc_mat: ShaderMaterial = spray_particles.process_material as ShaderMaterial
+		var proc_mat: ShaderMaterial = (
+			spray_particles.process_material
+			if spray_particles.process_material is ShaderMaterial
+			else null
+		)
 		if is_instance_valid(proc_mat):
 			proc_mat.set_shader_parameter(&"map_scales", map_scales)
 			proc_mat.set_shader_parameter(&"spawn_radius", spray_spawn_radius)
@@ -382,7 +386,7 @@ func _manage_cpu_displacement_textures_updates(delta: float) -> void:
 		if _texture_loading_index >= cpu_displacement_textures.size():
 			_texture_loading_index = 0
 
-		var target_idx: int = cpu_displacement_textures.keys()[_texture_loading_index] as int
+		var target_idx: int = cpu_displacement_textures.keys()[_texture_loading_index]
 		_is_reading_back = true
 		RenderingServer.call_on_render_thread(_do_texture_readback.bind(target_idx))
 		_displacement_textures_update_time = 0.0
@@ -481,7 +485,9 @@ func get_height(world_pos: Vector3, steps: int = 3) -> float:
 			var x: Vector2 = world_pos_xz
 			var y: Vector2 = Vector2.ZERO
 			var y_raw: Color = Color.BLACK
-			var img: Image = cpu_displacement_textures[idx] as Image
+			var img: Image = (
+				cpu_displacement_textures[idx] if cpu_displacement_textures[idx] is Image else null
+			)
 
 			if is_instance_valid(img):
 				for i: int in range(steps):

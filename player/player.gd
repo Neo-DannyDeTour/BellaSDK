@@ -159,7 +159,9 @@ func _input(event: InputEvent) -> void:
 
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		if is_instance_valid(camera_controller) and is_instance_valid(interaction_component):
-			var motion_event: InputEventMouseMotion = event as InputEventMouseMotion
+			var motion_event: InputEventMouseMotion = (
+				event if event is InputEventMouseMotion else null
+			)
 			if not is_zero_approx(terminal_mouse_sensitivity_scale - 1.0):
 				motion_event = event.duplicate() as InputEventMouseMotion
 				motion_event.relative *= terminal_mouse_sensitivity_scale
@@ -644,7 +646,7 @@ func _update_floor_surface_detection() -> void:
 			if collision.get_normal().dot(up_direction) > 0.5:
 				var collider: Object = collision.get_collider()
 				if is_instance_valid(collider) and collider is Node:
-					var floor_node: Node = collider as Node
+					var floor_node: Node = collider if collider is Node else null
 					if floor_node.is_in_group(GROUP_SAND):
 						on_sand = true
 					if floor_node.is_in_group(GROUP_ICE):

@@ -142,9 +142,8 @@ func _draw_path_lines() -> void:
 	base_mat.albedo_color = Color.BLACK
 	base_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 
-	var cached_mat: StandardMaterial3D = (
-		MaterialCache.get_variant(base_mat, "black_track") as StandardMaterial3D
-	)
+	var raw_mat: Material = MaterialCache.get_variant(base_mat, "black_track")
+	var cached_mat: StandardMaterial3D = raw_mat if raw_mat is StandardMaterial3D else null
 
 	for marker: Marker3D in markers:
 		if not is_instance_valid(marker):
@@ -222,9 +221,8 @@ func _on_player_hitbox_body_entered(body: Node3D) -> void:
 
 	if body.is_in_group(&"player"):
 		print("RookTrap: Struck player. Applying damage and knockback.")
-		var health_comp: HealthComponent = (
-			NodeQuery.find_first_child_of_type(body, HealthComponent) as HealthComponent
-		)
+		var raw_comp: Node = NodeQuery.find_first_child_of_type(body, HealthComponent)
+		var health_comp: HealthComponent = raw_comp if raw_comp is HealthComponent else null
 		if is_instance_valid(health_comp):
 			health_comp.take_damage(damage_amount)
 		elif body.has_method(&"take_damage"):

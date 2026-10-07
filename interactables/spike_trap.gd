@@ -148,7 +148,9 @@ func _update_trigger_shape() -> void:
 
 	proximity_shape_node.position = trigger_offset
 
-	var box_shape: BoxShape3D = proximity_shape_node.shape as BoxShape3D
+	var box_shape: BoxShape3D = (
+		proximity_shape_node.shape if proximity_shape_node.shape is BoxShape3D else null
+	)
 	if box_shape:
 		box_shape.size = trigger_size
 	elif not proximity_shape_node.shape:

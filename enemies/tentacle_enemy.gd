@@ -146,10 +146,12 @@ func _process_playing(delta: float) -> void:
 
 	if _interact_timer >= interact_interval:
 		_interact_timer = 0.0
-		if randf() < 0.25:
-			grab_object(target_toy as RigidBody3D)
-		else:
-			poke_object(target_toy as RigidBody3D)
+		var toy_rb: RigidBody3D = target_toy if target_toy is RigidBody3D else null
+		if is_instance_valid(toy_rb):
+			if randf() < 0.25:
+				grab_object(toy_rb)
+			else:
+				poke_object(toy_rb)
 
 
 ## Carries held prop to local destination position.
@@ -225,8 +227,9 @@ func _decide_attack() -> void:
 	if randf() <= throw_attack_chance:
 		_potential_weapons.clear()
 		for body: Node3D in detection_area.get_overlapping_bodies():
-			if body is RigidBody3D and not bool(body.get(&"is_held")):
-				_potential_weapons.append(body as RigidBody3D)
+			if body is RigidBody3D and body.get(&"is_held") != true:
+				var rb_body: RigidBody3D = body
+				_potential_weapons.append(rb_body)
 
 		if not _potential_weapons.is_empty():
 			var chosen: RigidBody3D = _potential_weapons.pick_random()
@@ -240,7 +243,7 @@ func _decide_attack() -> void:
 func _check_for_pickables() -> void:
 	print("TentacleEnemy: _check_for_pickables() checking for props.")
 	for body: Node3D in detection_area.get_overlapping_bodies():
-		if body is RigidBody3D and not bool(body.get(&"is_held")):
+		if body is RigidBody3D and body.get(&"is_held") != true:
 			print("TentacleEnemy: Target prop detected: ", body.name)
 			target_toy = body
 			_switch_state(TentacleEnemy.State.PLAYING)
@@ -389,10 +392,10 @@ func strike_player() -> void:
 		func() -> void:
 			if is_instance_valid(target_player):
 				print("TentacleEnemy: Strike impact on player.")
-				var health: HealthComponent = (
-					NodeQuery.find_first_child_of_type(target_player, HealthComponent)
-					as HealthComponent
+				var raw_hc: Node = NodeQuery.find_first_child_of_type(
+					target_player, HealthComponent
 				)
+				var health: HealthComponent = raw_hc if raw_hc is HealthComponent else null
 				if is_instance_valid(health):
 					health.take_damage(strike_damage)
 				elif target_player.has_method(&"take_damage"):
@@ -426,7 +429,7 @@ func _on_detection_area_body_entered(body: Node3D) -> void:
 		else:
 			_switch_state(TentacleEnemy.State.SPOTTED)
 	elif body is RigidBody3D and current_state == TentacleEnemy.State.IDLE:
-		if bool(body.get(&"is_held")):
+		if body.get(&"is_held") == true:
 			return
 		target_toy = body
 		_switch_state(TentacleEnemy.State.PLAYING)

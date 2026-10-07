@@ -38,7 +38,7 @@ func _ready() -> void:
 	if is_instance_valid(initial_state):
 		change_state(initial_state.name)
 	elif not _states.is_empty():
-		var fallback_state: State = _states.values()[0] as State
+		var fallback_state: State = _states.values()[0] if _states.values()[0] is State else null
 		change_state(fallback_state.name)
 	else:
 		push_warning("StateMachine: No states configured on: " + name)
@@ -51,7 +51,7 @@ func _collect_states() -> void:
 
 	for child: Node in get_children():
 		if child is State:
-			var state_node: State = child as State
+			var state_node: State = child if child is State else null
 			state_node.state_machine = self
 			state_node.transition_requested.connect(_on_transition_requested)
 			_states[state_node.name] = state_node
@@ -83,7 +83,9 @@ func change_state(target_state_name: StringName, message: Dictionary = {}) -> bo
 		print("StateMachine: Transition rejected, state machine is locked.")
 		return false
 
-	var target_state: State = _states.get(target_state_name) as State
+	var target_state: State = (
+		_states.get(target_state_name) if _states.get(target_state_name) is State else null
+	)
 	if not is_instance_valid(target_state):
 		push_warning("StateMachine: Target state not found: " + str(target_state_name))
 		return false

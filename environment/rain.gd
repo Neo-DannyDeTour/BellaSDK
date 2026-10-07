@@ -5,7 +5,9 @@
 extends MeshInstance3D
 
 ## The active material instance applied to surface 0.
-@onready var _rain_mat: ShaderMaterial = get_active_material(0) as ShaderMaterial
+@onready var _rain_mat: ShaderMaterial = (
+	get_active_material(0) if get_active_material(0) is ShaderMaterial else null
+)
 
 
 ## Initializes default heavy storm rain properties on scene load.

@@ -149,7 +149,7 @@ func _on_line_edit_gui_input(event: InputEvent) -> void:
 	if not (event is InputEventKey and event.is_pressed()):
 		return
 
-	var key_ev: InputEventKey = event as InputEventKey
+	var key_ev: InputEventKey = event if event is InputEventKey else null
 	if key_ev.keycode == KEY_UP:
 		print("InGameConsole: Key UP pressed.")
 		command_input.accept_event()
@@ -1164,7 +1164,11 @@ func _cmd_teleport(args: PackedStringArray) -> void:
 ## Outputs the player's current global position coordinates.
 func _cmd_printpos(_args: PackedStringArray) -> void:
 	print("InGameConsole: Executing printpos.")
-	var player_node: Node3D = NodeQuery.get_single_node_in_group(get_tree(), &"player") as Node3D
+	var player_node: Node3D = (
+		NodeQuery.get_single_node_in_group(get_tree(), &"player")
+		if NodeQuery.get_single_node_in_group(get_tree(), &"player") is Node3D
+		else null
+	)
 	if not is_instance_valid(player_node):
 		write("Player entity not found.", "red")
 		return
@@ -1254,13 +1258,17 @@ func _cmd_spawnenemy(args: PackedStringArray) -> void:
 		write("Scene file not found: " + scene_path, "red")
 		return
 
-	var packed_scene: PackedScene = load(scene_path) as PackedScene
+	var packed_scene: PackedScene = load(scene_path) if load(scene_path) is PackedScene else null
 	if not packed_scene:
 		write("Failed to load scene: " + scene_path, "red")
 		return
 
 	var enemy_node: Node = packed_scene.instantiate()
-	var player_node: Node3D = NodeQuery.get_single_node_in_group(get_tree(), &"player") as Node3D
+	var player_node: Node3D = (
+		NodeQuery.get_single_node_in_group(get_tree(), &"player")
+		if NodeQuery.get_single_node_in_group(get_tree(), &"player") is Node3D
+		else null
+	)
 	if is_instance_valid(player_node) and enemy_node is Node3D:
 		var spawn_offset: Vector3 = player_node.global_transform.basis.z * 3.0
 		var spawn_pos: Vector3 = player_node.global_position - spawn_offset
@@ -1330,7 +1338,9 @@ func _cmd_fov(args: PackedStringArray) -> void:
 		if is_instance_valid(cam_ctrl):
 			cam_ctrl.set(&"base_fov", fov_val)
 			cam_ctrl.set(&"target_fov", fov_val)
-			var cam: Camera3D = cam_ctrl.get(&"camera") as Camera3D
+			var cam: Camera3D = (
+				cam_ctrl.get(&"camera") if cam_ctrl.get(&"camera") is Camera3D else null
+			)
 			if is_instance_valid(cam):
 				cam.fov = fov_val
 

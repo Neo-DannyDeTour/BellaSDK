@@ -283,13 +283,14 @@ func _get_interactable_component_at_shapecast() -> Node:
 			continue
 
 		if collider is Node3D:
+			var col_3d: Node3D = collider
 			var comp: Node = null
-			var root_target: Node3D = NodeQuery.resolve_interactable_root(collider as Node3D)
+			var root_target: Node3D = NodeQuery.resolve_interactable_root(col_3d)
 			if is_instance_valid(root_target):
 				comp = root_target.get_node_or_null(NodePath(COMPONENT_NAME))
 
 			if not is_instance_valid(comp):
-				var current_node: Node = collider as Node
+				var current_node: Node = collider if collider is Node else null
 				while is_instance_valid(current_node) and current_node != get_tree().root:
 					comp = current_node.get_node_or_null(NodePath(COMPONENT_NAME))
 					if is_instance_valid(comp):
@@ -320,7 +321,6 @@ func _get_interactable_component_at_shapecast() -> Node:
 
 
 ## Activates terminal focus mode for numeric or minigame interfaces.
-@warning_ignore("unsafe_cast")
 func enter_terminal_mode(terminal: Node3D) -> void:
 	print("InteractionScanner: Entering terminal mode.")
 	is_in_terminal_mode = true
@@ -412,7 +412,6 @@ func _should_exit_terminal_mode() -> bool:
 
 
 ## Projects raycast from screen center via [method Utilities.raycast_3d].
-@warning_ignore("unsafe_cast")
 func shoot_terminal_raycast(is_click: bool) -> void:
 	if is_click:
 		print("InteractionScanner: shoot_terminal_raycast executed a click.")
@@ -438,7 +437,7 @@ func shoot_terminal_raycast(is_click: bool) -> void:
 	if not result.is_empty() and result.get("collider") == active_terminal:
 		var hit_pos: Vector3 = Vector3.ZERO
 		if result.has(&"position") and result[&"position"] is Vector3:
-			hit_pos = result[&"position"] as Vector3
+			hit_pos = result[&"position"]
 
 		if is_click and active_terminal.has_method(&"inject_mouse_click"):
 			active_terminal.call(&"inject_mouse_click", hit_pos)

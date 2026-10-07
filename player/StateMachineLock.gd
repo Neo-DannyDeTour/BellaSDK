@@ -7,10 +7,12 @@ extends PlayerState
 func enter(_msg: Dictionary = {}) -> void:
 	print("StateMachineLock: enter() initialized. Player physics locked.")
 
-	var p: Player = player as Player
+	var p: Player = player if player is Player else null
 	if is_instance_valid(p):
 		p.velocity = Vector3.ZERO
-		var loco: PlayerLocomotionComponent = p.locomotion_component as PlayerLocomotionComponent
+		var loco: PlayerLocomotionComponent = (
+			p.locomotion_component if p.locomotion_component is PlayerLocomotionComponent else null
+		)
 		if is_instance_valid(loco):
 			loco.reset_momentum()
 

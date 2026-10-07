@@ -40,7 +40,7 @@ func _init_pool() -> void:
 	for i: int in range(POOL_SIZE):
 		var raw_instance: Node = shockwave_scene.instantiate()
 		if raw_instance is GPUParticles3D:
-			var effect: GPUParticles3D = raw_instance as GPUParticles3D
+			var effect: GPUParticles3D = raw_instance
 			effect.one_shot = true
 			effect.emitting = false
 			effect.explosiveness = 1.0
@@ -84,7 +84,7 @@ func _trigger_fallback_shockwave(spawn_position: Vector3, radius: float, speed: 
 		raw_instance.queue_free()
 		return
 
-	var effect: GPUParticles3D = raw_instance as GPUParticles3D
+	var effect: GPUParticles3D = raw_instance
 	effect.one_shot = true
 	effect.explosiveness = 1.0
 	effect.speed_scale = maxf(0.01, speed)

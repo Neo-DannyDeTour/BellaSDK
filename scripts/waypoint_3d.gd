@@ -287,7 +287,7 @@ func _on_detector_body_entered(body: Node3D) -> void:
 func is_reached(actor_or_pos: Variant) -> bool:
 	var check_pos: Vector3 = Vector3.ZERO
 	if actor_or_pos is Node3D:
-		var actor_node: Node3D = actor_or_pos as Node3D
+		var actor_node: Node3D = actor_or_pos if actor_or_pos is Node3D else null
 		if not is_instance_valid(actor_node):
 			return false
 		check_pos = actor_node.global_position
@@ -299,7 +299,7 @@ func is_reached(actor_or_pos: Variant) -> bool:
 	var center: Vector3 = global_position + trigger_offset
 	var reached_flag: bool = center.distance_to(check_pos) <= arrival_radius
 	if reached_flag and actor_or_pos is Node3D:
-		var node_actor: Node3D = actor_or_pos as Node3D
+		var node_actor: Node3D = actor_or_pos if actor_or_pos is Node3D else null
 		print("Waypoint3D: [", name, "] reached by ", node_actor.name)
 		reached.emit(node_actor)
 	return reached_flag

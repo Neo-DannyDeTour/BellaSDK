@@ -102,25 +102,16 @@ func _connect_outline_events() -> void:
 
 
 ## Reads initial outline configuration from [GlobalSettings] and syncs material uniforms.
-@warning_ignore("unsafe_call_argument")
 func _load_initial_settings() -> void:
 	print("HighlightComponent: Loading initial outline settings.")
 	if is_instance_valid(GlobalSettings):
-		_outline_mode = int(GlobalSettings.get_setting("Accessibility", "outline_mode", 2))
-		var col_idx: int = int(
-			GlobalSettings.get_setting("Accessibility", "outline_color_index", 0)
-		)
+		_outline_mode = GlobalSettings.get_setting("Accessibility", "outline_mode", 2)
+		var col_idx: int = GlobalSettings.get_setting("Accessibility", "outline_color_index", 0)
 		if col_idx >= 0 and col_idx < OUTLINE_COLOR_VALUES.size():
 			_outline_color = OUTLINE_COLOR_VALUES[col_idx]
-		_blink_speed = float(
-			GlobalSettings.get_setting("Accessibility", "outline_blink_speed", 8.0)
-		)
-		_min_intensity = float(
-			GlobalSettings.get_setting("Accessibility", "outline_min_intensity", 0.2)
-		)
-		_max_intensity = float(
-			GlobalSettings.get_setting("Accessibility", "outline_max_intensity", 1.0)
-		)
+		_blink_speed = GlobalSettings.get_setting("Accessibility", "outline_blink_speed", 8.0)
+		_min_intensity = GlobalSettings.get_setting("Accessibility", "outline_min_intensity", 0.2)
+		_max_intensity = GlobalSettings.get_setting("Accessibility", "outline_max_intensity", 1.0)
 
 	_apply_shader_parameters()
 	_refresh_highlight()
@@ -253,7 +244,6 @@ func _update_materials(mat: Material) -> void:
 ## Instantiates or cleans up child overlay nodes and updates bounds on target mesh.
 ## [param base_mesh] The target geometry node receiving the outline.
 ## [param mat] The material applied to the overlay mesh.
-@warning_ignore("unsafe_cast")
 func _apply_to_mesh(base_mesh: GeometryInstance3D, mat: Material) -> void:
 	var child_name: String = "HighlightOverlayChild"
 
@@ -268,7 +258,7 @@ func _apply_to_mesh(base_mesh: GeometryInstance3D, mat: Material) -> void:
 			var is_flat: bool = false
 
 			if base_mesh is MeshInstance3D:
-				var mi: MeshInstance3D = base_mesh as MeshInstance3D
+				var mi: MeshInstance3D = base_mesh
 				hl_mesh.mesh = mi.mesh
 				if mi.skeleton:
 					hl_mesh.skeleton = mi.skeleton
@@ -279,12 +269,14 @@ func _apply_to_mesh(base_mesh: GeometryInstance3D, mat: Material) -> void:
 					is_flat = true
 
 			elif base_mesh is CSGShape3D:
-				var csg_data: Array = (base_mesh as CSGShape3D).get_meshes()
+				var csg_shape: CSGShape3D = base_mesh
+				var csg_data: Array = csg_shape.get_meshes()
 				if csg_data.size() == 2:
 					if csg_data[0] is Transform3D:
 						hl_mesh.transform = csg_data[0]
 					if csg_data[1] is Mesh:
-						hl_mesh.mesh = csg_data[1] as Mesh
+						var csg_mesh: Mesh = csg_data[1]
+						hl_mesh.mesh = csg_mesh
 
 			base_mesh.add_child(hl_mesh)
 
