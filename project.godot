@@ -74,7 +74,7 @@ project/assembly_name="FPS_Test"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/csg_toolkit/plugin.cfg", "res://addons/detour_event_sequencer/plugin.cfg", "res://addons/gdLinter/plugin.cfg", "res://addons/renderdoc_launcher/plugin.cfg")
+enabled=PackedStringArray("res://addons/csg_toolkit/plugin.cfg", "res://addons/detour_event_sequencer/plugin.cfg", "res://addons/gdLinter/plugin.cfg", "res://addons/gut/plugin.cfg", "res://addons/renderdoc_launcher/plugin.cfg")
 
 [filesystem]
 

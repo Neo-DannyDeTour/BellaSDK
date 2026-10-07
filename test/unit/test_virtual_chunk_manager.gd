@@ -20,7 +20,8 @@ func before_each() -> void:
 func test_request_chunk() -> void:
 	print("TestWorldChunkManager: Executing test_request_chunk().")
 	manager.call("_request_chunk", Vector2i(1, 1), false)
-	var loading_chunks: Dictionary = manager.get("loading_chunks") as Dictionary
+	var loading_chunks_var: Variant = manager.get("loading_chunks")
+	var loading_chunks: Dictionary = loading_chunks_var if loading_chunks_var is Dictionary else {}
 	assert_true(
 		loading_chunks.has(Vector2i(1, 1)), "Chunk ID should be forced into the loading list."
 	)
@@ -39,7 +40,8 @@ func test_request_chunk_duplicate() -> void:
 func test_unload_chunk() -> void:
 	print("TestWorldChunkManager: Executing test_unload_chunk().")
 	var dummy_node: Node3D = Node3D.new()
-	var loaded_chunks: Dictionary = manager.get("loaded_chunks") as Dictionary
+	var loaded_chunks_var: Variant = manager.get("loaded_chunks")
+	var loaded_chunks: Dictionary = loaded_chunks_var if loaded_chunks_var is Dictionary else {}
 	loaded_chunks[Vector2i(3, 3)] = dummy_node
 	manager.call("_unload_chunk", Vector2i(3, 3))
 	assert_false(loaded_chunks.has(Vector2i(3, 3)), "Chunk ID should be removed from loaded list.")

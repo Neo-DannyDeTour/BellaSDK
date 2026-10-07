@@ -1,17 +1,14 @@
-[gd_scene format=3 uid="uid://b4soockqievkb"]
+[gd_scene format=3 uid="uid://di3wb88riy5gn"]
 
 [ext_resource type="Script" uid="uid://b4soockqievkb" path="res://shared/supply_shell.gd" id="1_script"]
-[ext_resource type="PackedScene" uid="uid://c36rtokx6pcu6" path="res://assets/weapons/ammo_box.tscn" id="2_ammobox"]
 [ext_resource type="Texture2D" uid="uid://bvicax8m3kdh5" path="res://assets/textures/LeLu_Smoke/T_smoke_flipbook.png" id="3_smoke"]
 
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_shell"]
-height = 2.0
 radius = 0.65
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_body"]
 top_radius = 0.6
 bottom_radius = 0.65
-height = 2.0
 radial_segments = 12
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_nozzle"]
@@ -84,10 +81,9 @@ direction = Vector3(0, 0.2, 0)
 spread = 85.0
 initial_velocity_min = 2.5
 initial_velocity_max = 5.5
+gravity = Vector3(0, 0.5, 0)
 damping_min = 3.5
 damping_max = 5.5
-gravity = Vector3(0, 0.5, 0)
-scale_min = 1.0
 scale_max = 2.0
 scale_curve = SubResource("CurveTexture_landing_smoke")
 color_ramp = SubResource("GradientTexture1D_landing_smoke")
@@ -116,15 +112,26 @@ direction = Vector3(0, 0.2, 0)
 spread = 85.0
 initial_velocity_min = 5.0
 initial_velocity_max = 10.0
+gravity = Vector3(0, 0.4, 0)
 damping_min = 6.0
 damping_max = 8.0
-gravity = Vector3(0, 0.4, 0)
 scale_min = 0.8
 scale_max = 1.8
 scale_curve = SubResource("CurveTexture_dust")
 color_ramp = SubResource("GradientTexture1D_dust")
 anim_speed_min = 1.0
 anim_speed_max = 1.0
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_debris"]
+direction = Vector3(0, 1, 0)
+spread = 60.0
+initial_velocity_min = 6.0
+initial_velocity_max = 12.0
+angular_velocity_min = -360.0
+angular_velocity_max = 360.0
+gravity = Vector3(0, -18, 0)
+scale_min = 0.6
+scale_max = 1.4
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_debris"]
 albedo_color = Color(0.25, 0.22, 0.2, 1)
@@ -134,105 +141,87 @@ roughness = 0.9
 material = SubResource("StandardMaterial3D_debris")
 size = Vector3(0.18, 0.14, 0.18)
 
-[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_debris"]
-direction = Vector3(0, 1, 0)
-spread = 60.0
-initial_velocity_min = 6.0
-initial_velocity_max = 12.0
-angular_velocity_min = -360.0
-angular_velocity_max = 360.0
-gravity = Vector3(0, -18.0, 0)
-scale_min = 0.6
-scale_max = 1.4
-
-[node name="SupplyShell" type="AnimatableBody3D" node_paths=PackedStringArray("thrusters", "thruster_particles", "landing_smoke", "impact_dust", "impact_debris")]
-collision_layer = 1
+[node name="SupplyShell" type="AnimatableBody3D" unique_id=1288593599 node_paths=PackedStringArray("thrusters", "thruster_particles", "landing_smoke", "impact_dust", "impact_debris")]
 collision_mask = 0
 script = ExtResource("1_script")
-ammo_box_scene = ExtResource("2_ammobox")
 thrusters = [NodePath("ThrusterFL"), NodePath("ThrusterFR"), NodePath("ThrusterBL"), NodePath("ThrusterBR")]
 thruster_particles = [NodePath("ThrusterFL/FlameParticles"), NodePath("ThrusterFR/FlameParticles"), NodePath("ThrusterBL/FlameParticles"), NodePath("ThrusterBR/FlameParticles")]
 landing_smoke = NodePath("LandingSmokeParticles")
 impact_dust = NodePath("ImpactDustParticles")
 impact_debris = NodePath("ImpactDebrisParticles")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1172861194]
 shape = SubResource("CylinderShape3D_shell")
 
-[node name="BodyMesh" type="MeshInstance3D" parent="."]
+[node name="BodyMesh" type="MeshInstance3D" parent="." unique_id=1757553991]
 mesh = SubResource("CylinderMesh_body")
 
-[node name="ThrusterFL" type="Node3D" parent="."]
+[node name="ThrusterFL" type="Node3D" parent="." unique_id=1174041200]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.65, -0.7, -0.65)
 
-[node name="NozzleMesh" type="MeshInstance3D" parent="ThrusterFL"]
+[node name="NozzleMesh" type="MeshInstance3D" parent="ThrusterFL" unique_id=340333707]
 mesh = SubResource("CylinderMesh_nozzle")
 
-[node name="FlameParticles" type="GPUParticles3D" parent="ThrusterFL"]
+[node name="FlameParticles" type="GPUParticles3D" parent="ThrusterFL" unique_id=1022371931]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.15, 0)
 material_override = SubResource("StandardMaterial3D_flame")
 amount = 24
 lifetime = 0.25
-local_coords = false
 process_material = SubResource("ParticleProcessMaterial_flame")
 draw_pass_1 = SubResource("BoxMesh_flame")
 
-[node name="ThrusterFR" type="Node3D" parent="."]
+[node name="ThrusterFR" type="Node3D" parent="." unique_id=94732485]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.65, -0.7, -0.65)
 
-[node name="NozzleMesh" type="MeshInstance3D" parent="ThrusterFR"]
+[node name="NozzleMesh" type="MeshInstance3D" parent="ThrusterFR" unique_id=757898441]
 mesh = SubResource("CylinderMesh_nozzle")
 
-[node name="FlameParticles" type="GPUParticles3D" parent="ThrusterFR"]
+[node name="FlameParticles" type="GPUParticles3D" parent="ThrusterFR" unique_id=522784185]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.15, 0)
 material_override = SubResource("StandardMaterial3D_flame")
 amount = 24
 lifetime = 0.25
-local_coords = false
 process_material = SubResource("ParticleProcessMaterial_flame")
 draw_pass_1 = SubResource("BoxMesh_flame")
 
-[node name="ThrusterBL" type="Node3D" parent="."]
+[node name="ThrusterBL" type="Node3D" parent="." unique_id=723787961]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.65, -0.7, 0.65)
 
-[node name="NozzleMesh" type="MeshInstance3D" parent="ThrusterBL"]
+[node name="NozzleMesh" type="MeshInstance3D" parent="ThrusterBL" unique_id=276260616]
 mesh = SubResource("CylinderMesh_nozzle")
 
-[node name="FlameParticles" type="GPUParticles3D" parent="ThrusterBL"]
+[node name="FlameParticles" type="GPUParticles3D" parent="ThrusterBL" unique_id=1478722121]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.15, 0)
 material_override = SubResource("StandardMaterial3D_flame")
 amount = 24
 lifetime = 0.25
-local_coords = false
 process_material = SubResource("ParticleProcessMaterial_flame")
 draw_pass_1 = SubResource("BoxMesh_flame")
 
-[node name="ThrusterBR" type="Node3D" parent="."]
+[node name="ThrusterBR" type="Node3D" parent="." unique_id=149164902]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.65, -0.7, 0.65)
 
-[node name="NozzleMesh" type="MeshInstance3D" parent="ThrusterBR"]
+[node name="NozzleMesh" type="MeshInstance3D" parent="ThrusterBR" unique_id=118991334]
 mesh = SubResource("CylinderMesh_nozzle")
 
-[node name="FlameParticles" type="GPUParticles3D" parent="ThrusterBR"]
+[node name="FlameParticles" type="GPUParticles3D" parent="ThrusterBR" unique_id=1218518438]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.15, 0)
 material_override = SubResource("StandardMaterial3D_flame")
 amount = 24
 lifetime = 0.25
-local_coords = false
 process_material = SubResource("ParticleProcessMaterial_flame")
 draw_pass_1 = SubResource("BoxMesh_flame")
 
-[node name="LandingSmokeParticles" type="GPUParticles3D" parent="."]
+[node name="LandingSmokeParticles" type="GPUParticles3D" parent="." unique_id=1032972764]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.9, 0)
 material_override = SubResource("StandardMaterial3D_smoke")
 emitting = false
 amount = 36
 lifetime = 2.2
-local_coords = false
 process_material = SubResource("ParticleProcessMaterial_landing_smoke")
 draw_pass_1 = SubResource("QuadMesh_smoke")
 
-[node name="ImpactDustParticles" type="GPUParticles3D" parent="."]
+[node name="ImpactDustParticles" type="GPUParticles3D" parent="." unique_id=2132451005]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.95, 0)
 material_override = SubResource("StandardMaterial3D_smoke")
 emitting = false
@@ -240,17 +229,15 @@ amount = 28
 lifetime = 1.4
 one_shot = true
 explosiveness = 0.95
-local_coords = false
 process_material = SubResource("ParticleProcessMaterial_dust")
 draw_pass_1 = SubResource("QuadMesh_smoke")
 
-[node name="ImpactDebrisParticles" type="GPUParticles3D" parent="."]
+[node name="ImpactDebrisParticles" type="GPUParticles3D" parent="." unique_id=1257775602]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.85, 0)
 emitting = false
 amount = 24
 lifetime = 1.5
 one_shot = true
 explosiveness = 0.98
-local_coords = false
 process_material = SubResource("ParticleProcessMaterial_debris")
 draw_pass_1 = SubResource("BoxMesh_debris")

@@ -9,7 +9,7 @@ const DEFAULT_SENSITIVITY: float = 0.5
 ## Scene preloaded for instantaneous chapter view display.
 const CHAPTER_SCREEN: PackedScene = preload("res://ui/menu_chapter_screen.tscn")
 
-const LOADING_SCREEN_SCENE: PackedScene = preload("res://ui/loading_screen.tscn")
+const LOADING_SCREEN_SCENE: PackedScene = preload("res://ui/loading_screen_anim.tscn")
 
 ## Audio stream player configured for main theme playback.
 @export var main_theme_player: AudioStreamPlayer

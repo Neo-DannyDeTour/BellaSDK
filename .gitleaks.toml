@@ -1,0 +1,8 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Ignore Godot scene and resource files"
+paths = [
+  '''(?i)\.(tscn|tres|res)$'''
+]
