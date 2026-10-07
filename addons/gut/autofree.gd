@@ -35,21 +35,21 @@ var _all_instance_ids: Array = []
 
 
 func _add_instance_id(thing: Variant) -> void:
-	if(thing.has_method("get_instance_id")):
+	if thing.has_method("get_instance_id"):
 		_all_instance_ids.append(thing.get_instance_id())
 
 
 func add_free(thing: Variant) -> void:
-	if(typeof(thing) == TYPE_OBJECT):
+	if typeof(thing) == TYPE_OBJECT:
 		_add_instance_id(thing)
-		if(!thing is RefCounted):
+		if !thing is RefCounted:
 			_to_free.append(thing)
-		elif(GutUtils.is_double(thing)):
+		elif GutUtils.is_double(thing):
 			_ref_counted_doubles.append(thing)
 
 
 func add_queue_free(thing: Variant) -> void:
-	if(typeof(thing) == TYPE_OBJECT):
+	if typeof(thing) == TYPE_OBJECT:
 		_add_instance_id(thing)
 		_to_queue_free.append(thing)
 
@@ -64,14 +64,14 @@ func get_free_count() -> Variant:
 
 func free_all() -> void:
 	for node in _to_free:
-		if(is_instance_valid(node)):
-			if(GutUtils.is_double(node)):
+		if is_instance_valid(node):
+			if GutUtils.is_double(node):
 				node.__gutdbl_done()
 			node.free()
 	_to_free.clear()
 
 	for i in range(_to_queue_free.size()):
-		if(is_instance_valid(_to_queue_free[i])):
+		if is_instance_valid(_to_queue_free[i]):
 			_to_queue_free[i].queue_free()
 	_to_queue_free.clear()
 

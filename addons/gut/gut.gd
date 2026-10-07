@@ -1,4 +1,4 @@
-extends 'res://addons/gut/gut_to_move.gd'
+extends "res://addons/gut/gut_to_move.gd"
 class_name GutMain
 ## The GUT brains.
 ##
@@ -11,16 +11,15 @@ class_name GutMain
 ## [br]
 ## @ignore-uncommented
 
-
 # ---------------------------
 # Constants
 # ---------------------------
 const LOG_LEVEL_FAIL_ONLY: int = 0
 const LOG_LEVEL_TEST_AND_FAILURES: int = 1
 const LOG_LEVEL_ALL_ASSERTS: int = 2
-const WAITING_MESSAGE: String = '/# waiting #/'
-const PAUSE_MESSAGE: String = '/# Pausing.  Press continue button...#/'
-const COMPLETED: String = 'completed'
+const WAITING_MESSAGE: String = "/# waiting #/"
+const PAUSE_MESSAGE: String = "/# Pausing.  Press continue button...#/"
+const COMPLETED: String = "completed"
 
 # ---------------------------
 # Signals
@@ -42,7 +41,6 @@ signal start_test(test_name)
 ## Emitted after every test method is run. Emitted after [method GutTest.after_each] hook on test is run.
 signal end_test
 
-
 # ---------------------------
 # Settings
 #
@@ -50,24 +48,30 @@ signal end_test
 # gutconfig.
 # ---------------------------
 
-var _inner_class_name: String = ''
+var _inner_class_name: String = ""
 # When set, GUT will only run Inner-Test-Classes that contain this string.
-var inner_class_name: Variant = _inner_class_name :
-	get: return _inner_class_name
-	set(val): _inner_class_name = val
+var inner_class_name: Variant = _inner_class_name:
+	get:
+		return _inner_class_name
+	set(val):
+		_inner_class_name = val
 
 var _ignore_pause_before_teardown: bool = false
 # For batch processing purposes, you may want to ignore any calls to
 # pause_before_teardown that you forgot to remove_at.
-var ignore_pause_before_teardown: Variant = _ignore_pause_before_teardown :
-	get: return _ignore_pause_before_teardown
-	set(val): _ignore_pause_before_teardown = val
+var ignore_pause_before_teardown: Variant = _ignore_pause_before_teardown:
+	get:
+		return _ignore_pause_before_teardown
+	set(val):
+		_ignore_pause_before_teardown = val
 
 var _log_level: int = 1
 ## The log detail level.  Valid values are 0 - 2.  Larger values do not matter.
 var log_level: Variant = _log_level:
-	get: return _log_level
-	set(val): _set_log_level(val)
+	get:
+		return _log_level
+	set(val):
+		_set_log_level(val)
 
 ## The amount of time that must elapse before an "Awaiting" message is printed.
 var wait_log_delay: float = 0.5
@@ -76,99 +80,120 @@ var wait_log_delay: float = 0.5
 # This appears to not be used anymore.  Going to wait for more tests to be
 # ported before removing.
 var _disable_strict_datatype_checks: bool = false
-var disable_strict_datatype_checks: Variant = false :
-	get: return _disable_strict_datatype_checks
-	set(val): _disable_strict_datatype_checks = val
+var disable_strict_datatype_checks: Variant = false:
+	get:
+		return _disable_strict_datatype_checks
+	set(val):
+		_disable_strict_datatype_checks = val
 
-var _export_path: String = ''
+var _export_path: String = ""
 # Path to file that GUT will create which holds a list of all test scripts so
 # that GUT can run tests when a project is exported.
-var export_path: Variant = '' :
-	get: return _export_path
-	set(val): _export_path = val
+var export_path: Variant = "":
+	get:
+		return _export_path
+	set(val):
+		_export_path = val
 
 var _include_subdirectories: bool = false
 # Setting this to true will make GUT search all subdirectories of any directory
 # you have configured GUT to search for tests in.
-var include_subdirectories: Variant = _include_subdirectories :
-	get: return _include_subdirectories
-	set(val): _include_subdirectories = val
-
+var include_subdirectories: Variant = _include_subdirectories:
+	get:
+		return _include_subdirectories
+	set(val):
+		_include_subdirectories = val
 
 var _double_strategy: Variant = GutUtils.DOUBLE_STRATEGY.SCRIPT_ONLY
 # TODO rework what this is and then document it here.
-var double_strategy: Variant = _double_strategy  :
-	get: return _double_strategy
+var double_strategy: Variant = _double_strategy:
+	get:
+		return _double_strategy
 	set(val):
-		if(GutUtils.DOUBLE_STRATEGY.values().has(val)):
+		if GutUtils.DOUBLE_STRATEGY.values().has(val):
 			_double_strategy = val
 			_doubler.set_strategy(double_strategy)
 		else:
 			_lgr.error(str("gut.gd:  invalid double_strategy ", val))
 
-var _pre_run_script: String = ''
+var _pre_run_script: String = ""
 # Path to the script that will be run before all tests are run.  This script
 # must extend GutHookScript
-var pre_run_script: Variant = _pre_run_script :
-	get: return _pre_run_script
-	set(val): _pre_run_script = val
+var pre_run_script: Variant = _pre_run_script:
+	get:
+		return _pre_run_script
+	set(val):
+		_pre_run_script = val
 
-var _post_run_script: String = ''
+var _post_run_script: String = ""
 # Path to the script that will run after all tests have run.  The script
 # must extend GutHookScript
-var post_run_script: Variant = _post_run_script :
-	get: return _post_run_script
-	set(val): _post_run_script = val
+var post_run_script: Variant = _post_run_script:
+	get:
+		return _post_run_script
+	set(val):
+		_post_run_script = val
 
 var _color_output: bool = false
 # Flag to color output at the command line and in the GUT GUI.
-var color_output: Variant = false :
-	get: return _color_output
+var color_output: Variant = false:
+	get:
+		return _color_output
 	set(val):
 		_color_output = val
 		_lgr.disable_formatting(!_color_output)
 
-var _junit_xml_file: String = ''
+var _junit_xml_file: String = ""
 # The full path to where GUT should write a JUnit compliant XML file to which
 # contains the results of all tests run.
-var junit_xml_file: Variant = '' :
-	get: return _junit_xml_file
-	set(val): _junit_xml_file = val
+var junit_xml_file: Variant = "":
+	get:
+		return _junit_xml_file
+	set(val):
+		_junit_xml_file = val
 
 var _junit_xml_timestamp: bool = false
 # When true and junit_xml_file is set, the file name will include a
 # timestamp so that previous files are not overwritten.
-var junit_xml_timestamp: Variant = false :
-	get: return _junit_xml_timestamp
-	set(val): _junit_xml_timestamp = val
+var junit_xml_timestamp: Variant = false:
+	get:
+		return _junit_xml_timestamp
+	set(val):
+		_junit_xml_timestamp = val
 
 # The minimum amout of time GUT will wait before pausing for 1 frame to allow
 # the screen to paint.  GUT checkes after each test to see if enough time has
 # passed.
 var paint_after: Variant = .1:
-	get: return paint_after
-	set(val): paint_after = val
+	get:
+		return paint_after
+	set(val):
+		paint_after = val
 
-var _unit_test_name: String = ''
+var _unit_test_name: String = ""
 # When set GUT will only run tests that contain this string.
-var unit_test_name: Variant = _unit_test_name :
-	get: return _unit_test_name
-	set(val): _unit_test_name = val
+var unit_test_name: Variant = _unit_test_name:
+	get:
+		return _unit_test_name
+	set(val):
+		_unit_test_name = val
 
 var _parameter_handler: Variant = null
 # This is populated by test.gd each time a paramterized test is encountered
 # for the first time.
 # FOR INTERNAL USE ONLY
-var parameter_handler: Variant = _parameter_handler :
-	get: return _parameter_handler
+var parameter_handler: Variant = _parameter_handler:
+	get:
+		return _parameter_handler
 	set(val):
 		_parameter_handler = val
 		_parameter_handler.set_logger(_lgr)
 
 var _lgr: Variant = GutUtils.get_logger()
 # Local reference for the common logger.
-var logger: Variant = _lgr :
-	get: return _lgr
+var logger: Variant = _lgr:
+	get:
+		return _lgr
 	set(val):
 		_lgr = val
 		_lgr.set_gut(self)
@@ -179,43 +204,63 @@ var _add_children_to: Variant = self
 # Sets the object that GUT will add test objects to as it creates them.  The
 # default is self, but can be set to other objects so that GUT is not obscured
 # by the objects added during tests.
-var add_children_to: Variant = self :
-	get: return _add_children_to
-	set(val): _add_children_to = val
-
+var add_children_to: Variant = self:
+	get:
+		return _add_children_to
+	set(val):
+		_add_children_to = val
 
 # ------------
 # Read only
 # ------------
 var _test_collector: Variant = GutUtils.TestCollector.new()
+
+
 func get_test_collector() -> Variant:
 	return _test_collector
+
 
 # var version = null :
 func get_version() -> Variant:
 	return GutUtils.version_numbers.gut_version
 
+
 var _orphan_counter: Variant = GutUtils.OrphanCounter.new()
+
+
 func get_orphan_counter() -> Variant:
 	return _orphan_counter
+
 
 # var _autofree = GutUtils.AutoFree.new()
 func get_autofree() -> Variant:
 	return _orphan_counter.autofree
 
+
 var _stubber: Variant = GutUtils.Stubber.new()
+
+
 func get_stubber() -> Variant:
 	return _stubber
 
+
 var _doubler: Variant = GutUtils.Doubler.new()
+
+
 func get_doubler() -> Variant:
 	return _doubler
 
+
 var _spy: Variant = GutUtils.Spy.new()
+
+
 func get_spy() -> Variant:
 	return _spy
 
+
 var _is_running: bool = false
+
+
 func is_running() -> Variant:
 	return _is_running
 
@@ -223,13 +268,13 @@ func is_running() -> Variant:
 # ---------------------------
 # Private
 # ---------------------------
-var _should_print_versions: Variant = true # used to cut down on output in tests.
+var _should_print_versions: Variant = true  # used to cut down on output in tests.
 var _should_print_summary: bool = true
 
-var _file_prefix: String = 'test_'
-var _inner_class_prefix: String = 'Test'
+var _file_prefix: String = "test_"
+var _inner_class_prefix: String = "Test"
 
-var _select_script: String = ''
+var _select_script: String = ""
 var _last_paint_time: float = 0.0
 var _strutils: Variant = GutUtils.Strutils.new()
 
@@ -254,7 +299,6 @@ var _start_time: float = 0.0
 var _current_test: Variant = null
 var _pause_before_teardown: bool = false
 
-
 # Used to cancel importing scripts if an error has occurred in the setup.  This
 # prevents tests from being run if they were exported and ensures that the
 # error displayed is seen since importing generates a lot of text.
@@ -268,19 +312,22 @@ var _cancel_import: bool = false
 var _auto_queue_free_delay: float = .1
 
 var _time_to_wait_for_final_queue_free: float = .5
+
+
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 func _init(override_logger: Variant = null) -> void:
-	if(override_logger != null):
+	if override_logger != null:
 		logger = override_logger
 	else:
-		logger = logger # force setter logic
+		logger = logger  # force setter logic
 
 	_doubler.set_stubber(_stubber)
 	_doubler.set_spy(_spy)
 	_doubler.set_gut(self)
 
 	update_loggers()
+
 
 # Public for tests that set the logger.  This makes it much easier to propigate
 # test loggers.
@@ -295,39 +342,38 @@ func update_loggers() -> void:
 # Initialize controls
 # ------------------------------------------------------------------------------
 func _ready() -> void:
-	if(_should_print_versions):
-		_lgr.log('---  GUT  ---')
-		_lgr.info(str('using [', OS.get_user_data_dir(), '] for temporary output.'))
+	if _should_print_versions:
+		_lgr.log("---  GUT  ---")
+		_lgr.info(str("using [", OS.get_user_data_dir(), "] for temporary output."))
 
-	if(_select_script != null):
+	if _select_script != null:
 		select_script(_select_script)
 
 	_print_versions()
+
 
 # ------------------------------------------------------------------------------
 # Runs right before free is called.  Can't override `free`.
 # ------------------------------------------------------------------------------
 func _notification(what: int) -> void:
-	if(what == NOTIFICATION_PREDELETE):
+	if what == NOTIFICATION_PREDELETE:
 		for ts in _test_script_objects:
-			if(is_instance_valid(ts)):
+			if is_instance_valid(ts):
 				ts.free()
 
 		_test_script_objects = []
 
 
 func _print_versions(send_all: bool = true) -> void:
-	if(!_should_print_versions):
+	if !_should_print_versions:
 		return
 
 	var info: Variant = GutUtils.version_numbers.get_version_text()
 
-	if(send_all):
+	if send_all:
 		p(info)
 	else:
-		_lgr.get_printer('gui').send(info + "\n")
-
-
+		_lgr.get_printer("gui").send(info + "\n")
 
 
 # ---------------------------
@@ -359,6 +405,7 @@ func _set_log_level(level: Variant) -> void:
 	_lgr.set_type_enabled(_lgr.types.info, level > 1)
 	_lgr.set_type_enabled(_lgr.types.debug, level > 1)
 
+
 # ---------------------------
 #
 # Events
@@ -369,37 +416,42 @@ func end_teardown_pause() -> void:
 	_waiting = false
 	end_pause_before_teardown.emit()
 
+
 # ---------------------------
 #
 # Private
 #
 # ---------------------------
 func _log_test_children_warning(test_script: Variant) -> void:
-	if(!_lgr.is_type_enabled(_lgr.types.orphan)):
+	if !_lgr.is_type_enabled(_lgr.types.orphan):
 		return
 
 	var kids: Variant = test_script.get_children()
-	if(kids.size() > 1):
-		var msg: String = ''
-		if(_log_level == 2):
+	if kids.size() > 1:
+		var msg: String = ""
+		if _log_level == 2:
 			msg = "Test script still has children when all tests finisehd.\n"
 			for i in range(kids.size()):
 				msg += str("  ", _strutils.type2str(kids[i]), "\n")
 			msg += "You can use autofree, autoqfree, add_child_autofree, or add_child_autoqfree to automatically free objects."
 		else:
-			msg = str("Test script has ", kids.size(), " unfreed children.  Increase log level for more details.")
+			msg = str(
+				"Test script has ",
+				kids.size(),
+				" unfreed children.  Increase log level for more details."
+			)
 
 		_lgr.warn(msg)
 
 
 func _log_end_run() -> void:
 	var summary: Variant = GutUtils.Summary.new(self)
-	if(_should_print_summary):
+	if _should_print_summary:
 		_orphan_counter.record_orphans("end_run")
-		if(_lgr.is_type_enabled("orphan") and _orphan_counter.get_count() > 0):
+		if _lgr.is_type_enabled("orphan") and _orphan_counter.get_count() > 0:
 			_lgr.log("\n\n\n")
 			_lgr.orphan("==============================================")
-			_lgr.orphan(str('= ', _orphan_counter.get_count(), ' Orphans'))
+			_lgr.orphan(str("= ", _orphan_counter.get_count(), " Orphans"))
 			_lgr.orphan("==============================================")
 			_orphan_counter.log_all()
 			_lgr.log("\n")
@@ -410,26 +462,23 @@ func _log_end_run() -> void:
 
 
 func _validate_hook_script(path: Variant) -> Variant:
-	var result: Variant = {
-		valid = true,
-		instance = null
-	}
+	var result: Variant = {valid = true, instance = null}
 
 	# empty path is valid but will have a null instance
-	if(path == ''):
+	if path == "":
 		return result
 
-	if(FileAccess.file_exists(path)):
+	if FileAccess.file_exists(path):
 		var inst: Variant = load(path).new()
-		if(inst and inst is GutHookScript):
+		if inst and inst is GutHookScript:
 			result.instance = inst
 			result.valid = true
 		else:
 			result.valid = false
-			_lgr.error('The hook script [' + path + '] does not extend GutHookScript')
+			_lgr.error("The hook script [" + path + "] does not extend GutHookScript")
 	else:
 		result.valid = false
-		_lgr.error('The hook script [' + path + '] does not exist.')
+		_lgr.error("The hook script [" + path + "] does not exist.")
 
 	return result
 
@@ -439,7 +488,7 @@ func _validate_hook_script(path: Variant) -> Variant:
 # GutHookScript or addons/gut/hook_script.gd
 # ------------------------------------------------------------------------------
 func _run_hook_script(inst: Variant) -> Variant:
-	if(inst != null):
+	if inst != null:
 		inst.gut = self
 		await inst.run()
 	return inst
@@ -458,9 +507,9 @@ func _init_run() -> Variant:
 	var pre_hook_result: Variant = _validate_hook_script(_pre_run_script)
 	_pre_run_script_instance = pre_hook_result.instance
 	var post_hook_result: Variant = _validate_hook_script(_post_run_script)
-	_post_run_script_instance  = post_hook_result.instance
+	_post_run_script_instance = post_hook_result.instance
 
-	valid = pre_hook_result.valid and  post_hook_result.valid
+	valid = pre_hook_result.valid and post_hook_result.valid
 
 	return valid
 
@@ -484,7 +533,7 @@ func _end_run() -> void:
 # Add additional export types here.
 # ------------------------------------------------------------------------------
 func _export_results() -> void:
-	if(_junit_xml_file != ''):
+	if _junit_xml_file != "":
 		_export_junit_xml()
 
 
@@ -494,12 +543,12 @@ func _export_junit_xml() -> void:
 	var exporter: Variant = GutUtils.JunitXmlExport.new()
 	var output_file: Variant = _junit_xml_file
 
-	if(_junit_xml_timestamp):
+	if _junit_xml_timestamp:
 		var ext: Variant = "." + output_file.get_extension()
 		output_file = output_file.replace(ext, str("_", Time.get_unix_time_from_system(), ext))
 
 	var f_result: Variant = exporter.write_file(self, output_file)
-	if(f_result == OK):
+	if f_result == OK:
 		p(str("Results saved to ", output_file))
 
 
@@ -507,7 +556,7 @@ func _export_junit_xml() -> void:
 # Print out the heading for a new script
 # ------------------------------------------------------------------------------
 func _print_script_heading(coll_script: Variant) -> void:
-	if(_does_class_name_match(_inner_class_name, coll_script.inner_class_name)):
+	if _does_class_name_match(_inner_class_name, coll_script.inner_class_name):
 		_lgr.log(str("\n\n", coll_script.get_full_name()), _lgr.fmts.underline)
 
 
@@ -515,8 +564,10 @@ func _print_script_heading(coll_script: Variant) -> void:
 # Yes if the class name is null or the script's class name includes class_name
 # ------------------------------------------------------------------------------
 func _does_class_name_match(the_class_name: Variant, script_class_name: Variant) -> Variant:
-	return (the_class_name == null or the_class_name == '') or \
-		(script_class_name != null and str(script_class_name).findn(the_class_name) != -1)
+	return (
+		(the_class_name == null or the_class_name == "")
+		or (script_class_name != null and str(script_class_name).findn(the_class_name) != -1)
+	)
 
 
 # ------------------------------------------------------------------------------
@@ -530,22 +581,28 @@ func _create_script_instance(collected_script: Variant) -> Variant:
 	_test_script_objects.append(test_script)
 	test_script.wait_log_delay = wait_log_delay
 
-	if(!test_script._was_ready_called):
+	if !test_script._was_ready_called:
 		test_script._do_ready_stuff()
-		_lgr.warn(str("!!! YOU HAVE UPSET YOUR GUT !!!\n",
-			"You have overridden _ready in [", collected_script.get_filename_and_inner(), "] ",
-			"but it does not call super._ready().  New additions (or maybe old ",
-			"by the time you see this) require that super._ready() is called.",
-			"\n\n",
-			"GUT is working around this infraction, but may not be able to in ",
-			"the future.  GUT also reserves the right to decide it does not want ",
-			"to work around it in the future.  ",
-			"You should probably use before_all instead of _ready.  I can think ",
-			"of a few reasons why you would want to use _ready but I won't list ",
-			"them here because I think they are bad ideas.  I know they are bad ",
-			"ideas because I did them.  Hence the warning.  This message is ",
-			"intentially long so that it bothers you and you change your ways.\n\n",
-			"Thank you for using GUT."))
+		_lgr.warn(
+			str(
+				"!!! YOU HAVE UPSET YOUR GUT !!!\n",
+				"You have overridden _ready in [",
+				collected_script.get_filename_and_inner(),
+				"] ",
+				"but it does not call super._ready().  New additions (or maybe old ",
+				"by the time you see this) require that super._ready() is called.",
+				"\n\n",
+				"GUT is working around this infraction, but may not be able to in ",
+				"the future.  GUT also reserves the right to decide it does not want ",
+				"to work around it in the future.  ",
+				"You should probably use before_all instead of _ready.  I can think ",
+				"of a few reasons why you would want to use _ready but I won't list ",
+				"them here because I think they are bad ideas.  I know they are bad ",
+				"ideas because I did them.  Hence the warning.  This message is ",
+				"intentially long so that it bothers you and you change your ways.\n\n",
+				"Thank you for using GUT."
+			)
+		)
 	return test_script
 
 
@@ -561,9 +618,9 @@ func _wait_for_continue_button() -> Variant:
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 func _get_indexes_matching_script_name(script_name: Variant) -> Variant:
-	var indexes: Variant = [] # empty runs all
+	var indexes: Variant = []  # empty runs all
 	for i in range(_test_collector.scripts.size()):
-		if(_test_collector.scripts[i].get_filename().find(script_name) != -1):
+		if _test_collector.scripts[i].get_filename().find(script_name) != -1:
 			indexes.append(i)
 	return indexes
 
@@ -573,7 +630,7 @@ func _get_indexes_matching_script_name(script_name: Variant) -> Variant:
 func _get_indexes_matching_path(path: Variant) -> Variant:
 	var indexes: Array = []
 	for i in range(_test_collector.scripts.size()):
-		if(_test_collector.scripts[i].path == path):
+		if _test_collector.scripts[i].path == path:
 			indexes.append(i)
 	return indexes
 
@@ -584,19 +641,31 @@ func _get_indexes_matching_path(path: Variant) -> Variant:
 func _run_parameterized_test(test_script: Variant, test_name: Variant) -> void:
 	await _run_test(test_script, test_name, 0)
 
-	if(_current_test.assert_count == 0 and !_current_test.pending):
-		_lgr.risky('Test did not assert')
+	if _current_test.assert_count == 0 and !_current_test.pending:
+		_lgr.risky("Test did not assert")
 
-	if(_parameter_handler == null):
-		_lgr.error(str('Parameterized test ', _current_test.name, ' did not call use_parameters for the default value of the parameter.'))
-		_fail(str('Parameterized test ', _current_test.name, ' did not call use_parameters for the default value of the parameter.'))
+	if _parameter_handler == null:
+		_lgr.error(
+			str(
+				"Parameterized test ",
+				_current_test.name,
+				" did not call use_parameters for the default value of the parameter."
+			)
+		)
+		_fail(
+			str(
+				"Parameterized test ",
+				_current_test.name,
+				" did not call use_parameters for the default value of the parameter."
+			)
+		)
 	else:
 		var index: int = 1
-		while(!_parameter_handler.is_done()):
+		while !_parameter_handler.is_done():
 			var cur_assert_count: Variant = _current_test.assert_count
 			await _run_test(test_script, test_name, index)
-			if(_current_test.assert_count == cur_assert_count and !_current_test.pending):
-				_lgr.risky('Test did not assert')
+			if _current_test.assert_count == cur_assert_count and !_current_test.pending:
+				_lgr.risky("Test did not assert")
 			index += 1
 
 	_parameter_handler = null
@@ -612,22 +681,26 @@ func _run_test(script_inst: Variant, test_name: Variant, param_index: int = -1) 
 	await script_inst.before_each()
 
 	start_test.emit(test_name)
-	var test_id: Variant = str(script_inst.collected_script.get_filename_and_inner(), ':', test_name)
-	if(param_index != -1):
-		test_id += str('[', param_index, ']')
+	var test_id: Variant = str(
+		script_inst.collected_script.get_filename_and_inner(), ":", test_name
+	)
+	if param_index != -1:
+		test_id += str("[", param_index, "]")
 	error_tracker.start_test(test_id)
 
 	# Reset the time and frame tracking stats of the test
 	script_inst.reset_start_times()
 	await script_inst.call(test_name)
 
-	if(error_tracker.should_test_fail_from_errors(test_id)):
-		script_inst._fail(str("Unexpected Errors:\n", error_tracker.get_fail_text_for_errors(test_id)))
+	if error_tracker.should_test_fail_from_errors(test_id):
+		script_inst._fail(
+			str("Unexpected Errors:\n", error_tracker.get_fail_text_for_errors(test_id))
+		)
 
 	error_tracker.end_test()
 	# if the test called pause_before_teardown then await until
 	# the continue button is pressed.
-	if(_pause_before_teardown and !_ignore_pause_before_teardown):
+	if _pause_before_teardown and !_ignore_pause_before_teardown:
 		start_pause_before_teardown.emit()
 		await _wait_for_continue_button().end_pause_before_teardown
 
@@ -640,12 +713,12 @@ func _run_test(script_inst: Variant, test_name: Variant, param_index: int = -1) 
 	# free and are not found by the orphan counter.
 	var aqf_count: Variant = _orphan_counter.autofree.get_queue_free_count()
 	_orphan_counter.autofree.free_all()
-	if(aqf_count > 0):
+	if aqf_count > 0:
 		await get_tree().create_timer(_auto_queue_free_delay).timeout
 
 	_orphan_counter.end_test(
-		script_inst.collected_script.get_filename_and_inner(), test_name,
-		_log_level > 0)
+		script_inst.collected_script.get_filename_and_inner(), test_name, _log_level > 0
+	)
 
 	_doubler.get_ignored_methods().clear()
 
@@ -653,12 +726,14 @@ func _run_test(script_inst: Variant, test_name: Variant, param_index: int = -1) 
 func get_current_test_orphans() -> Variant:
 	var to_return: Array = []
 	var ct: Variant = get_current_test_object()
-	if(ct.collected_script != null):
+	if ct.collected_script != null:
 		var sname: Variant = ct.collected_script.get_ref().get_filename_and_inner()
-		if(ct.name == &'after_all' or ct.name == &'before_all'):
+		if ct.name == &"after_all" or ct.name == &"before_all":
 			_orphan_counter.record_orphans(sname)
 			to_return = _orphan_counter.get_orphan_ids(sname)
-			to_return.append_array(_orphan_counter.get_orphan_ids(ct.collected_script.get_ref().get_full_name()))
+			to_return.append_array(
+				_orphan_counter.get_orphan_ids(ct.collected_script.get_ref().get_full_name())
+			)
 		else:
 			to_return = _orphan_counter.record_orphans(sname, ct.name)
 
@@ -674,7 +749,7 @@ func get_current_test_orphans() -> Variant:
 func _call_before_all(test_script: Variant, collected_script: Variant) -> void:
 	var before_all_test_obj: Variant = GutUtils.CollectedTest.new()
 	before_all_test_obj.has_printed_name = false
-	before_all_test_obj.name = 'before_all'
+	before_all_test_obj.name = "before_all"
 
 	collected_script.setup_teardown_tests.append(before_all_test_obj)
 	_current_test = before_all_test_obj
@@ -700,7 +775,7 @@ func _call_before_all(test_script: Variant, collected_script: Variant) -> void:
 func _call_after_all(test_script: Variant, collected_script: Variant) -> void:
 	var after_all_test_obj: Variant = GutUtils.CollectedTest.new()
 	after_all_test_obj.has_printed_name = false
-	after_all_test_obj.name = 'after_all'
+	after_all_test_obj.name = "after_all"
 
 	collected_script.setup_teardown_tests.append(after_all_test_obj)
 	_current_test = after_all_test_obj
@@ -719,26 +794,31 @@ func _call_after_all(test_script: Variant, collected_script: Variant) -> void:
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 func _should_skip_script(test_script: Variant, collected_script: Variant) -> Variant:
-	var skip_message: String = 'not skipped'
-	var skip_value: Variant = test_script.get('skip_script')
+	var skip_message: String = "not skipped"
+	var skip_value: Variant = test_script.get("skip_script")
 	var should_skip: bool = false
 
-	if(skip_value == null):
+	if skip_value == null:
 		skip_value = await test_script.should_skip_script()
 	else:
-		_lgr.deprecated('Using the skip_script var has been deprecated.  Implement the new should_skip_script() method in your test instead.')
+		(
+			_lgr
+			. deprecated(
+				"Using the skip_script var has been deprecated.  Implement the new should_skip_script() method in your test instead."
+			)
+		)
 
-	if(skip_value != null):
-		if(typeof(skip_value) == TYPE_BOOL):
+	if skip_value != null:
+		if typeof(skip_value) == TYPE_BOOL:
 			should_skip = skip_value
-			if(skip_value):
-				skip_message = 'script marked to skip'
-		elif(typeof(skip_value) == TYPE_STRING):
+			if skip_value:
+				skip_message = "script marked to skip"
+		elif typeof(skip_value) == TYPE_STRING:
 			should_skip = true
 			skip_message = skip_value
 
-	if(should_skip):
-		var msg: Variant = str('- [Script skipped]:  ', skip_message)
+	if should_skip:
+		var msg: Variant = str("- [Script skipped]:  ", skip_message)
 		_lgr.inc_indent()
 		_lgr.log(msg, _lgr.fmts.yellow)
 		_lgr.dec_indent()
@@ -752,16 +832,15 @@ func _should_skip_script(test_script: Variant, collected_script: Variant) -> Var
 # Run all tests in a script.  This is the core logic for running tests.
 # ------------------------------------------------------------------------------
 func _test_the_scripts(indexes: Array = []) -> void:
-
 	_print_versions(false)
 	var is_valid: Variant = _init_run()
-	if(!is_valid):
-		_lgr.error('Something went wrong and the run was aborted.')
+	if !is_valid:
+		_lgr.error("Something went wrong and the run was aborted.")
 		return
 
 	await _run_hook_script(get_pre_run_script_instance())
-	if(_pre_run_script_instance!= null and _pre_run_script_instance.should_abort()):
-		_lgr.error('pre-run abort')
+	if _pre_run_script_instance != null and _pre_run_script_instance.should_abort():
+		_lgr.error("pre-run abort")
 		end_run.emit()
 		return
 
@@ -770,22 +849,21 @@ func _test_the_scripts(indexes: Array = []) -> void:
 	_last_paint_time = _start_time
 
 	var indexes_to_run: Array = []
-	if(indexes.size()==0):
+	if indexes.size() == 0:
 		for i in range(_test_collector.scripts.size()):
 			indexes_to_run.append(i)
 	else:
 		indexes_to_run = indexes
 
-
 	# loop through scripts
 	for test_indexes in range(indexes_to_run.size()):
 		var coll_script: Variant = _test_collector.scripts[indexes_to_run[test_indexes]]
 
-		if(coll_script.tests.size() > 0):
+		if coll_script.tests.size() > 0:
 			_lgr.set_indent_level(0)
 			_print_script_heading(coll_script)
 
-		if(!coll_script.is_loaded):
+		if !coll_script.is_loaded:
 			break
 
 		start_script.emit(coll_script)
@@ -796,7 +874,7 @@ func _test_the_scripts(indexes: Array = []) -> void:
 		# ----
 		# SHORTCIRCUIT
 		# skip_script logic
-		if(await _should_skip_script(test_script, coll_script)):
+		if await _should_skip_script(test_script, coll_script):
 			_orphan_counter.record_orphans(coll_script.get_full_name())
 			continue
 		# ----
@@ -806,7 +884,7 @@ func _test_the_scripts(indexes: Array = []) -> void:
 		# inner class is set and we do not have a match then empty the tests
 		# for the current test.
 		# !!!
-		if(!_does_class_name_match(_inner_class_name, coll_script.inner_class_name)):
+		if !_does_class_name_match(_inner_class_name, coll_script.inner_class_name):
 			coll_script.tests = []
 		else:
 			coll_script.was_run = true
@@ -819,23 +897,31 @@ func _test_the_scripts(indexes: Array = []) -> void:
 			_spy.clear()
 			_current_test = coll_script.tests[i]
 
-			if((_unit_test_name != '' and _current_test.name.find(_unit_test_name) > -1) or
-				(_unit_test_name == '')):
-
+			if (
+				(_unit_test_name != "" and _current_test.name.find(_unit_test_name) > -1)
+				or (_unit_test_name == "")
+			):
 				var ticks_before: Variant = Time.get_ticks_usec()
 
-				if(_current_test.arg_count > 1):
-					_lgr.error(str('Parameterized test ', _current_test.name,
-						' has too many parameters:  ', _current_test.arg_count, '.'))
-				elif(_current_test.arg_count == 1):
+				if _current_test.arg_count > 1:
+					_lgr.error(
+						str(
+							"Parameterized test ",
+							_current_test.name,
+							" has too many parameters:  ",
+							_current_test.arg_count,
+							"."
+						)
+					)
+				elif _current_test.arg_count == 1:
 					_current_test.was_run = true
 					await _run_parameterized_test(test_script, _current_test.name)
 				else:
 					_current_test.was_run = true
 					await _run_test(test_script, _current_test.name)
 
-				if(!_current_test.did_something()):
-					_lgr.risky(str(_current_test.name, ' did not assert'))
+				if !_current_test.did_something():
+					_lgr.risky(str(_current_test.name, " did not assert"))
 
 				_current_test.has_printed_name = false
 
@@ -845,22 +931,20 @@ func _test_the_scripts(indexes: Array = []) -> void:
 
 				# After each test, check to see if we shoudl wait a frame to
 				# paint based on how much time has elapsed since we last 'painted'
-				if(paint_after > 0.0):
+				if paint_after > 0.0:
 					var now: Variant = Time.get_ticks_msec()
 					var time_since: Variant = (now - _last_paint_time) / 1000.0
-					if(time_since > paint_after):
+					if time_since > paint_after:
 						_last_paint_time = now
 						await get_tree().process_frame
 
 		_current_test = null
 		_lgr.dec_indent()
 
-		if(_does_class_name_match(_inner_class_name, coll_script.inner_class_name)):
+		if _does_class_name_match(_inner_class_name, coll_script.inner_class_name):
 			await _call_after_all(test_script, coll_script)
 
-		_orphan_counter.end_script(
-			coll_script.get_filename_and_inner(),
-			_log_level > 0)
+		_orphan_counter.end_script(coll_script.get_filename_and_inner(), _log_level > 0)
 
 		_log_test_children_warning(test_script)
 		# This might end up being very resource intensive if the scripts
@@ -870,8 +954,13 @@ func _test_the_scripts(indexes: Array = []) -> void:
 		_add_children_to.remove_child(test_script)
 
 		_lgr.set_indent_level(0)
-		if(test_script.get_assert_count() > 0):
-			var script_sum: Variant = str(coll_script.get_passing_test_count(), '/', coll_script.get_ran_test_count(), ' passed.')
+		if test_script.get_assert_count() > 0:
+			var script_sum: Variant = str(
+				coll_script.get_passing_test_count(),
+				"/",
+				coll_script.get_ran_test_count(),
+				" passed."
+			)
 			_lgr.log(script_sum, _lgr.fmts.bold)
 
 		test_script.queue_free()
@@ -893,8 +982,8 @@ func _test_the_scripts(indexes: Array = []) -> void:
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
-func _pass(text: String = '') -> void:
-	if(_current_test):
+func _pass(text: String = "") -> void:
+	if _current_test:
 		_current_test.add_pass(text)
 
 
@@ -903,25 +992,25 @@ func _pass(text: String = '') -> void:
 # parameters.  The
 # ------------------------------------------------------------------------------
 func get_call_count_text() -> Variant:
-	var to_return: String = ''
-	if(_parameter_handler != null):
+	var to_return: String = ""
+	if _parameter_handler != null:
 		# This uses get_call_count -1 because test.gd's use_parameters method
 		# should have been called before we get to any calls for this method
 		# just due to how use_parameters works.  There isn't a way to know
 		# whether we are before or after that call.
-		to_return = str('params[', _parameter_handler.get_call_count() -1, '] ')
+		to_return = str("params[", _parameter_handler.get_call_count() - 1, "] ")
 	return to_return
 
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
-func _fail(text: String = '') -> void:
-	if(_current_test != null):
+func _fail(text: String = "") -> void:
+	if _current_test != null:
 		var line_number: Variant = _extract_line_number(_current_test)
-		var line_text: Variant = '  at line ' + str(line_number)
+		var line_text: Variant = "  at line " + str(line_number)
 		p(line_text, LOG_LEVEL_FAIL_ONLY)
 		# format for summary
-		line_text =  "\n    " + line_text
+		line_text = "\n    " + line_text
 		var call_count_text: Variant = get_call_count_text()
 		_current_test.line_number = line_number
 		_current_test.add_fail(call_count_text + text + line_text)
@@ -929,8 +1018,8 @@ func _fail(text: String = '') -> void:
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
-func _pending(text: String = '') -> void:
-	if(_current_test):
+func _pending(text: String = "") -> void:
+	if _current_test:
 		_current_test.add_pending(text)
 
 
@@ -941,7 +1030,7 @@ func _extract_line_number(current_test: Variant) -> Variant:
 	var line_number: int = -1
 	# if stack trace available than extraxt the test case line number
 	var stackTrace: Variant = get_stack()
-	if(stackTrace!=null):
+	if stackTrace != null:
 		for index in stackTrace.size():
 			var line: Variant = stackTrace[index]
 			var function: Variant = line.get("function")
@@ -958,8 +1047,8 @@ func _get_files(path: Variant, prefix: Variant, suffix: Variant) -> Variant:
 	var files: Array = []
 	var directories: Array = []
 	# ignore addons/gut per issue 294
-	if(path == 'res://addons/gut'):
-		return [];
+	if path == "res://addons/gut":
+		return []
 
 	var d: Variant = DirAccess.open(path)
 	d.include_hidden = false
@@ -970,17 +1059,17 @@ func _get_files(path: Variant, prefix: Variant, suffix: Variant) -> Variant:
 	# until it returns an empty string.  Then I guess you should end it.
 	d.list_dir_begin()
 	var fs_item: Variant = d.get_next()
-	var full_path: String = ''
-	while(fs_item != ''):
+	var full_path: String = ""
+	while fs_item != "":
 		full_path = path.path_join(fs_item)
 
 		# MUST use FileAccess since d.file_exists returns false for exported
 		# projects
-		if(FileAccess.file_exists(full_path)):
-			if(fs_item.begins_with(prefix) and fs_item.ends_with(suffix)):
+		if FileAccess.file_exists(full_path):
+			if fs_item.begins_with(prefix) and fs_item.ends_with(suffix):
 				files.append(full_path)
 		# MUST use DirAccess, d.dir_exists is false for exported projects.
-		elif(include_subdirectories and DirAccess.dir_exists_absolute(full_path)):
+		elif include_subdirectories and DirAccess.dir_exists_absolute(full_path):
 			directories.append(full_path)
 
 		fs_item = d.get_next()
@@ -1001,13 +1090,15 @@ func _get_files(path: Variant, prefix: Variant, suffix: Variant) -> Variant:
 #
 # ---------------------------
 
+
 func get_elapsed_time() -> float:
 	var to_return: float = 0.0
-	if(_start_time != 0.0):
+	if _start_time != 0.0:
 		to_return = Time.get_ticks_msec() - _start_time
 	to_return = to_return / 1000.0
 
 	return to_return
+
 
 # ------------------------------------------------------------------------------
 # Conditionally prints the text to the console/results variable based on the
@@ -1021,8 +1112,9 @@ func get_elapsed_time() -> float:
 func p(text: Variant, level: int = 0) -> void:
 	var str_text: Variant = str(text)
 
-	if(level <= GutUtils.nvl(_log_level, 0)):
+	if level <= GutUtils.nvl(_log_level, 0):
 		_lgr.log(str_text)
+
 
 # ---------------------------
 #
@@ -1030,21 +1122,28 @@ func p(text: Variant, level: int = 0) -> void:
 #
 # ---------------------------
 
+
 # ------------------------------------------------------------------------------
 # Runs all the scripts that were added using add_script
 # ------------------------------------------------------------------------------
 func test_scripts(_run_rest: bool = false) -> void:
-	if(_script_name != null and _script_name != ''):
+	if _script_name != null and _script_name != "":
 		var indexes: Variant = _get_indexes_matching_script_name(_script_name)
-		if(indexes == []):
-			_lgr.error(str(
-				"Could not find script matching '", _script_name, "'.\n",
-				"Check your directory settings and Script Prefix/Suffix settings."))
+		if indexes == []:
+			_lgr.error(
+				str(
+					"Could not find script matching '",
+					_script_name,
+					"'.\n",
+					"Check your directory settings and Script Prefix/Suffix settings."
+				)
+			)
 			end_run.emit()
 		else:
 			_test_the_scripts(indexes)
 	else:
 		_test_the_scripts([])
+
 
 # alias
 func run_tests(run_rest: bool = false) -> void:
@@ -1079,17 +1178,20 @@ func add_directory(path: Variant, prefix: Variant = _file_prefix, suffix: String
 	# check for '' b/c the calls to addin the exported directories 1-6 will pass
 	# '' if the field has not been populated.  This will cause res:// to be
 	# processed which will include all files if include_subdirectories is true.
-	if(path == '' or path == null):
+	if path == "" or path == null:
 		return
 
 	var dir: Variant = DirAccess.open(path)
-	if(dir == null):
-		_lgr.error(str('The path [', path, '] does not exist.'))
+	if dir == null:
+		_lgr.error(str("The path [", path, "] does not exist."))
 	else:
 		var files: Variant = _get_files(path, prefix, suffix)
 		for i in range(files.size()):
-			if(_script_name == null or _script_name == '' or \
-					(_script_name != null and files[i].findn(_script_name) != -1)):
+			if (
+				_script_name == null
+				or _script_name == ""
+				or (_script_name != null and files[i].findn(_script_name) != -1)
+			):
 				add_script(files[i])
 
 
@@ -1109,11 +1211,11 @@ func select_script(script_name: Variant) -> void:
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 func export_tests(path: Variant = _export_path) -> void:
-	if(path == null):
-		_lgr.error('You must pass a path or set the export_path before calling export_tests')
+	if path == null:
+		_lgr.error("You must pass a path or set the export_path before calling export_tests")
 	else:
 		var result: Variant = _test_collector.export_tests(path)
-		if(result):
+		if result:
 			_lgr.info(_test_collector.to_s())
 			_lgr.info("Exported to " + path)
 
@@ -1121,12 +1223,12 @@ func export_tests(path: Variant = _export_path) -> void:
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 func import_tests(path: Variant = _export_path) -> void:
-	if(!FileAccess.file_exists(path)):
-		_lgr.error(str('Cannot import tests:  the path [', path, '] does not exist.'))
+	if !FileAccess.file_exists(path):
+		_lgr.error(str("Cannot import tests:  the path [", path, "] does not exist."))
 	else:
 		_test_collector.clear()
 		var result: Variant = _test_collector.import_tests(path)
-		if(result):
+		if result:
 			_lgr.info("\n" + _test_collector.to_s())
 			_lgr.info("Imported from " + path)
 
@@ -1134,15 +1236,16 @@ func import_tests(path: Variant = _export_path) -> void:
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 func import_tests_if_none_found() -> void:
-	if(!_cancel_import and _test_collector.scripts.size() == 0):
+	if !_cancel_import and _test_collector.scripts.size() == 0:
 		import_tests()
 
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 func export_if_tests_found() -> void:
-	if(_test_collector.scripts.size() > 0):
+	if _test_collector.scripts.size() > 0:
 		export_tests()
+
 
 # ---------------------------
 #
@@ -1154,14 +1257,14 @@ func export_if_tests_found() -> void:
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 func maximize() -> void:
-	_lgr.deprecated('gut.maximize')
+	_lgr.deprecated("gut.maximize")
 
 
 # ------------------------------------------------------------------------------
 # Clears the text of the text box.  This resets all counters.
 # ------------------------------------------------------------------------------
 func clear_text() -> void:
-	_lgr.deprecated('gut.clear_text')
+	_lgr.deprecated("gut.clear_text")
 
 
 # ------------------------------------------------------------------------------
@@ -1170,20 +1273,24 @@ func clear_text() -> void:
 func get_test_count() -> Variant:
 	return _test_collector.get_ran_test_count()
 
+
 # ------------------------------------------------------------------------------
 ## Get the number of assertions that were made
 func get_assert_count() -> Variant:
 	return _test_collector.get_assert_count()
+
 
 # ------------------------------------------------------------------------------
 ## Get the number of assertions that passed
 func get_pass_count() -> Variant:
 	return _test_collector.get_pass_count()
 
+
 # ------------------------------------------------------------------------------
 ## Get the number of assertions that failed
 func get_fail_count() -> Variant:
 	return _test_collector.get_fail_count()
+
 
 # ------------------------------------------------------------------------------
 ## Get the number of tests flagged as pending
@@ -1196,7 +1303,7 @@ func get_pending_count() -> Variant:
 # anything that you have rendered to the screen.
 # ------------------------------------------------------------------------------
 func pause_before_teardown() -> void:
-	_pause_before_teardown = true;
+	_pause_before_teardown = true
 
 
 # ------------------------------------------------------------------------------
@@ -1204,7 +1311,7 @@ func pause_before_teardown() -> void:
 # ------------------------------------------------------------------------------
 func get_current_script_object() -> Variant:
 	var to_return: Variant = null
-	if(_test_script_objects.size() > 0):
+	if _test_script_objects.size() > 0:
 		to_return = _test_script_objects[-1]
 	return to_return
 
@@ -1220,15 +1327,18 @@ func get_current_test_object() -> Variant:
 func get_summary() -> Variant:
 	return GutUtils.Summary.new(self)
 
+
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 func get_pre_run_script_instance() -> Variant:
 	return _pre_run_script_instance
 
+
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 func get_post_run_script_instance() -> Variant:
 	return _post_run_script_instance
+
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
@@ -1247,9 +1357,6 @@ func get_logger() -> Variant:
 ## script.
 func get_test_script_count() -> Variant:
 	return _test_script_objects.size()
-
-
-
 
 # ##############################################################################
 # The MIT License (MIT)

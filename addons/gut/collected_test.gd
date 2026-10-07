@@ -11,20 +11,24 @@ var has_printed_name: bool = false
 var arg_count: int = 0
 
 # the time it took to execute the test in seconds
-var time_taken : float = 0
+var time_taken: float = 0
 
 # The number of asserts in the test.  Converted to a property for backwards
 # compatibility.  This now reflects the text sizes instead of being a value
 # that can be altered externally.
-var assert_count: Variant = 0 :
-	get: return pass_texts.size() + fail_texts.size()
-	set(val): pass
+var assert_count: Variant = 0:
+	get:
+		return pass_texts.size() + fail_texts.size()
+	set(val):
+		pass
 
 # Converted to propety for backwards compatibility.  This now cannot be set
 # externally
-var pending: Variant = false :
-	get: return is_pending()
-	set(val): pass
+var pending: Variant = false:
+	get:
+		return is_pending()
+	set(val):
+		pass
 
 # the line number when the test fails
 var line_number: int = -1
@@ -40,7 +44,7 @@ var orphans: int = 0
 
 var was_run: bool = false
 
-var collected_script : WeakRef = null
+var collected_script: WeakRef = null
 
 
 func did_pass() -> Variant:
@@ -86,15 +90,15 @@ func did_something() -> Variant:
 func get_status_text() -> Variant:
 	var to_return: Variant = GutUtils.TEST_STATUSES.NO_ASSERTS
 
-	if(should_skip):
+	if should_skip:
 		to_return = GutUtils.TEST_STATUSES.SKIPPED
-	elif(!was_run):
+	elif !was_run:
 		to_return = GutUtils.TEST_STATUSES.NOT_RUN
-	elif(pending_texts.size() > 0):
+	elif pending_texts.size() > 0:
 		to_return = GutUtils.TEST_STATUSES.PENDING
-	elif(fail_texts.size() > 0):
+	elif fail_texts.size() > 0:
 		to_return = GutUtils.TEST_STATUSES.FAILED
-	elif(pass_texts.size() > 0):
+	elif pass_texts.size() > 0:
 		to_return = GutUtils.TEST_STATUSES.PASSED
 
 	return to_return
@@ -106,15 +110,13 @@ func get_status() -> Variant:
 
 
 func to_s() -> Variant:
-	var pad: String = '     '
+	var pad: String = "     "
 	var to_return: Variant = str(name, "[", get_status_text(), "]\n")
 
 	for i in range(fail_texts.size()):
-		to_return += str(pad, 'Fail:  ', fail_texts[i])
+		to_return += str(pad, "Fail:  ", fail_texts[i])
 	for i in range(pending_texts.size()):
-		to_return += str(pad, 'Pending:  ', pending_texts[i], "\n")
+		to_return += str(pad, "Pending:  ", pending_texts[i], "\n")
 	for i in range(pass_texts.size()):
-		to_return += str(pad, 'Pass:  ', pass_texts[i], "\n")
+		to_return += str(pad, "Pass:  ", pass_texts[i], "\n")
 	return to_return
-
-

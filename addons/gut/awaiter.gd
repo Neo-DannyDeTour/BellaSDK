@@ -1,5 +1,6 @@
 extends Node
 
+
 class GutAwaiterLogger:
 	var _time_waited: float = 0.0
 	var logger: Variant = GutUtils.get_logger()
@@ -10,22 +11,18 @@ class GutAwaiterLogger:
 
 	func waited(x: Variant) -> void:
 		_time_waited += x
-		if(!logged_initial_message and _time_waited >= wait_log_delay):
+		if !logged_initial_message and _time_waited >= wait_log_delay:
 			log_it()
 			logged_initial_message = true
-
 
 	func reset() -> void:
 		_time_waited = 0.0
 		logged_initial_message = false
 
-
 	func log_it() -> void:
-		if(!disabled):
+		if !disabled:
 			var msg: Variant = str("--- Awaiting ", waiting_on, " ---")
 			logger.wait_msg(msg)
-
-
 
 
 signal timeout
@@ -47,10 +44,11 @@ var _elapsed_time: float = 0.0
 var _elapsed_frames: int = 0
 
 var _did_last_wait_timeout: bool = false
-var did_last_wait_timeout: Variant = false :
-	get: return _did_last_wait_timeout
-	set(val): push_error("Cannot set did_last_wait_timeout")
-
+var did_last_wait_timeout: Variant = false:
+	get:
+		return _did_last_wait_timeout
+	set(val):
+		push_error("Cannot set did_last_wait_timeout")
 
 
 func _ready() -> void:
@@ -62,9 +60,9 @@ func _on_tree_process_frame() -> void:
 	# Count frames here instead of in _process so that tree order never
 	# makes a difference and the count/signaling happens outside of
 	# _process being called.
-	if(_wait_process_frames > 0):
+	if _wait_process_frames > 0:
 		_elapsed_frames += 1
-		if(_elapsed_frames > _wait_process_frames):
+		if _elapsed_frames > _wait_process_frames:
 			_end_wait()
 
 
@@ -72,31 +70,31 @@ func _on_tree_physics_frame() -> void:
 	# Count frames here instead of in _physics_process so that tree order never
 	# makes a difference and the count/signaling happens outside of
 	# _physics_process being called.
-	if(_wait_physics_frames != 0):
+	if _wait_physics_frames != 0:
 		_elapsed_frames += 1
-		if(_elapsed_frames > _wait_physics_frames):
+		if _elapsed_frames > _wait_physics_frames:
 			_end_wait()
 
 
 func _physics_process(delta: float) -> void:
-	if(is_waiting()):
+	if is_waiting():
 		await_logger.waited(delta)
 
-	if(_wait_time != 0.0):
+	if _wait_time != 0.0:
 		_elapsed_time += delta
-		if(_elapsed_time >= _wait_time):
+		if _elapsed_time >= _wait_time:
 			_end_wait()
 
-	if(_predicate_method != null):
+	if _predicate_method != null:
 		_predicate_time_between_elpased += delta
-		if(_predicate_time_between_elpased >= _predicate_time_between):
+		if _predicate_time_between_elpased >= _predicate_time_between:
 			_predicate_time_between_elpased = 0.0
 			var result: Variant = _predicate_method.call()
-			if(_waiting_for_predicate_to_be == false):
-				if(typeof(result) != TYPE_BOOL or result != true):
+			if _waiting_for_predicate_to_be == false:
+				if typeof(result) != TYPE_BOOL or result != true:
 					_end_wait()
 			else:
-				if(typeof(result) == TYPE_BOOL and result == _waiting_for_predicate_to_be):
+				if typeof(result) == TYPE_BOOL and result == _waiting_for_predicate_to_be:
 					_end_wait()
 
 
@@ -104,16 +102,18 @@ func _end_wait() -> void:
 	await_logger.reset()
 	# Check for time before checking for frames so that the extra frames added
 	# when waiting on a signal do not cause a false negative for timing out.
-	if(_wait_time > 0):
+	if _wait_time > 0:
 		_did_last_wait_timeout = _elapsed_time >= _wait_time
-	elif(_wait_physics_frames > 0):
+	elif _wait_physics_frames > 0:
 		_did_last_wait_timeout = _elapsed_frames >= _wait_physics_frames
-	elif(_wait_process_frames > 0):
+	elif _wait_process_frames > 0:
 		_did_last_wait_timeout = _elapsed_frames >= _wait_process_frames
 
-	if(_signal_to_wait_on != null and \
-	   is_instance_valid(_signal_to_wait_on.get_object()) and \
-	   _signal_to_wait_on.is_connected(_signal_callback)):
+	if (
+		_signal_to_wait_on != null
+		and is_instance_valid(_signal_to_wait_on.get_object())
+		and _signal_to_wait_on.is_connected(_signal_callback)
+	):
 		_signal_to_wait_on.disconnect(_signal_callback)
 
 	_wait_process_frames = 0
@@ -126,12 +126,20 @@ func _end_wait() -> void:
 	timeout.emit()
 
 
-const ARG_NOT_SET: String = '_*_argument_*_is_*_not_set_*_'
-func _signal_callback(
-		_arg1: Variant = ARG_NOT_SET, _arg2: Variant = ARG_NOT_SET, _arg3: Variant = ARG_NOT_SET,
-		_arg4: Variant = ARG_NOT_SET, _arg5: Variant = ARG_NOT_SET, _arg6: Variant = ARG_NOT_SET,
-		_arg7: Variant = ARG_NOT_SET, _arg8: Variant = ARG_NOT_SET, _arg9: Variant = ARG_NOT_SET) -> void:
+const ARG_NOT_SET: String = "_*_argument_*_is_*_not_set_*_"
 
+
+func _signal_callback(
+	_arg1: Variant = ARG_NOT_SET,
+	_arg2: Variant = ARG_NOT_SET,
+	_arg3: Variant = ARG_NOT_SET,
+	_arg4: Variant = ARG_NOT_SET,
+	_arg5: Variant = ARG_NOT_SET,
+	_arg6: Variant = ARG_NOT_SET,
+	_arg7: Variant = ARG_NOT_SET,
+	_arg8: Variant = ARG_NOT_SET,
+	_arg9: Variant = ARG_NOT_SET
+) -> void:
 	_signal_to_wait_on.disconnect(_signal_callback)
 	# DO NOT _end_wait here.  For other parts of the test to get the signal that
 	# was waited on, we have to wait for another frames.  For example, the
@@ -139,28 +147,28 @@ func _signal_callback(
 	_wait_process_frames = 1
 
 
-func wait_seconds(x: Variant, msg: String = '') -> void:
+func wait_seconds(x: Variant, msg: String = "") -> void:
 	await_logger.waiting_on = str(x, " seconds ", msg)
 	_did_last_wait_timeout = false
 	_wait_time = x
 	wait_started.emit()
 
 
-func wait_process_frames(x: Variant, msg: String = '') -> void:
+func wait_process_frames(x: Variant, msg: String = "") -> void:
 	await_logger.waiting_on = str(x, " idle frames ", msg)
 	_did_last_wait_timeout = false
 	_wait_process_frames = x
 	wait_started.emit()
 
 
-func wait_physics_frames(x: Variant, msg: String = '') -> void:
+func wait_physics_frames(x: Variant, msg: String = "") -> void:
 	await_logger.waiting_on = str(x, " physics frames ", msg)
 	_did_last_wait_timeout = false
 	_wait_physics_frames = x
 	wait_started.emit()
 
 
-func wait_for_signal(the_signal : Signal, max_time: Variant, msg: String = '') -> void:
+func wait_for_signal(the_signal: Signal, max_time: Variant, msg: String = "") -> void:
 	await_logger.waiting_on = str("signal ", the_signal.get_name(), " or ", max_time, "s ", msg)
 	_did_last_wait_timeout = false
 	the_signal.connect(_signal_callback)
@@ -169,7 +177,12 @@ func wait_for_signal(the_signal : Signal, max_time: Variant, msg: String = '') -
 	wait_started.emit()
 
 
-func wait_until(predicate_function: Callable, max_time: Variant, time_between_calls: float = 0.0, msg: String = '') -> Variant:
+func wait_until(
+	predicate_function: Callable,
+	max_time: Variant,
+	time_between_calls: float = 0.0,
+	msg: String = ""
+) -> Variant:
 	await_logger.waiting_on = str("callable to return TRUE or ", max_time, "s.  ", msg)
 	_predicate_time_between = time_between_calls
 	_predicate_method = predicate_function
@@ -182,7 +195,12 @@ func wait_until(predicate_function: Callable, max_time: Variant, time_between_ca
 	wait_started.emit()
 
 
-func wait_while(predicate_function: Callable, max_time: Variant, time_between_calls: float = 0.0, msg: String = '') -> Variant:
+func wait_while(
+	predicate_function: Callable,
+	max_time: Variant,
+	time_between_calls: float = 0.0,
+	msg: String = ""
+) -> Variant:
 	await_logger.waiting_on = str("callable to return FALSE or ", max_time, "s.  ", msg)
 	_predicate_time_between = time_between_calls
 	_predicate_method = predicate_function
@@ -196,6 +214,4 @@ func wait_while(predicate_function: Callable, max_time: Variant, time_between_ca
 
 
 func is_waiting() -> Variant:
-	return _wait_time != 0.0 or \
-		_wait_physics_frames != 0 or \
-		_wait_process_frames != 0
+	return _wait_time != 0.0 or _wait_physics_frames != 0 or _wait_process_frames != 0

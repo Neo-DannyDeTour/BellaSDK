@@ -3,7 +3,7 @@ class GutParsedSingleton:
 	var enums: Dictionary = {}
 	var properties: Dictionary = {}
 	var signals: Dictionary = {}
-	var singleton_name: String = 'unknown'
+	var singleton_name: String = "unknown"
 	var singleton_id: int = -1
 	var base_singleton: Variant = null
 
@@ -35,32 +35,28 @@ class GutParsedSingleton:
 		for s in ClassDB.class_get_signal_list(sname, true):
 			signals[s.name] = s
 
-
 	func get_signal_text(signal_meta: Variant) -> Variant:
 		var text: String = ""
 		for arg in signal_meta.args:
-			if(text.length() > 0):
+			if text.length() > 0:
 				text += ", "
 			text += arg.name
 
-		return str('signal ', signal_meta.name, '(', text, ')')
-
+		return str("signal ", signal_meta.name, "(", text, ")")
 
 	func get_all_signal_text() -> Variant:
-		var text: String = ''
+		var text: String = ""
 		for key in signals:
-			if(text.length() > 0):
+			if text.length() > 0:
 				text += "\n"
 			text += get_signal_text(signals[key])
 		return text
 
-
 	func get_all_constants_text() -> Variant:
 		var text: String = ""
 		for key in enums:
-			text += str('const ', key, ' = ', enums[key], "\n")
+			text += str("const ", key, " = ", enums[key], "\n")
 		return text
-
 
 	func get_all_properties_text() -> Variant:
 		var text: String = ""
@@ -71,18 +67,18 @@ class GutParsedSingleton:
 			# AudioServer had a property in the meta named "Fallback values" and I
 			# don't know what it is, so I'm ignoring all properties with a space in
 			# the name.
-			if(key.find(" ") == -1):
+			if key.find(" ") == -1:
 				text += str("var ", key, " = ", singleton_name, ".", key, "\n")
 		return text
-
 
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 var singletons: Dictionary = {}
 
+
 func parse(singleton: Variant) -> Variant:
-	if(!singletons.has(singleton)):
+	if !singletons.has(singleton):
 		singletons[singleton] = GutParsedSingleton.new(singleton)
 
 	return singletons[singleton]

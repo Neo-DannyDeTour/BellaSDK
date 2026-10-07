@@ -1,7 +1,6 @@
 @tool
 extends Control
 
-
 @onready var _ctrls: Variant = {
 	shortcut_label = $Layout/lblShortcut,
 	set_button = $Layout/SetButton,
@@ -14,7 +13,7 @@ signal changed
 signal start_edit
 signal end_edit
 
-const NO_SHORTCUT: String = '<None>'
+const NO_SHORTCUT: String = "<None>"
 
 var _source_event: InputEventKey = InputEventKey.new()
 var _pre_edit_event: Variant = null
@@ -23,28 +22,28 @@ var _editing: bool = false
 
 var _modifier_keys: Array = [KEY_ALT, KEY_CTRL, KEY_META, KEY_SHIFT]
 
+
 # Called when the node enters the scene tree for the first time.
 func _ready() -> void:
 	set_process_unhandled_key_input(false)
 
 
 func _display_shortcut() -> void:
-	if(_key_disp == ''):
+	if _key_disp == "":
 		_key_disp = NO_SHORTCUT
 	_ctrls.shortcut_label.text = _key_disp
 
 
 func _is_shift_only_modifier() -> Variant:
-	return _source_event.shift_pressed and \
-		!(_source_event.alt_pressed or \
-			_source_event.ctrl_pressed or \
-			_source_event.meta_pressed) \
+	return (
+		_source_event.shift_pressed
+		and !(_source_event.alt_pressed or _source_event.ctrl_pressed or _source_event.meta_pressed)
 		and !_is_modifier(_source_event.keycode)
+	)
 
 
 func _has_modifier(event: Variant) -> Variant:
-	return event.alt_pressed or event.ctrl_pressed or \
-		event.meta_pressed or event.shift_pressed
+	return event.alt_pressed or event.ctrl_pressed or event.meta_pressed or event.shift_pressed
 
 
 func _is_modifier(keycode: Variant) -> Variant:
@@ -60,23 +59,24 @@ func _edit_mode(should: Variant) -> void:
 	_ctrls.cancel_button.visible = should
 	_ctrls.clear_button.visible = !should
 
-	if(should and to_s() == ''):
-		_ctrls.shortcut_label.text = 'press buttons'
+	if should and to_s() == "":
+		_ctrls.shortcut_label.text = "press buttons"
 	else:
 		_ctrls.shortcut_label.text = to_s()
 
-	if(should):
+	if should:
 		emit_signal("start_edit")
 	else:
 		emit_signal("end_edit")
+
 
 # ---------------
 # Events
 # ---------------
 func _unhandled_key_input(event: Variant) -> void:
-	if(event is InputEventKey):
-		if(event.pressed):
-			if(_has_modifier(event) and !_is_modifier(event.get_keycode_with_modifiers())):
+	if event is InputEventKey:
+		if event.pressed:
+			if _has_modifier(event) and !_is_modifier(event.get_keycode_with_modifiers()):
 				_source_event = event
 				_key_disp = OS.get_keycode_string(event.get_keycode_with_modifiers())
 			else:
@@ -94,7 +94,7 @@ func _on_SetButton_pressed() -> void:
 func _on_SaveButton_pressed() -> void:
 	_edit_mode(false)
 	_pre_edit_event = null
-	emit_signal('changed')
+	emit_signal("changed")
 
 
 func _on_CancelButton_pressed() -> void:
@@ -103,6 +103,7 @@ func _on_CancelButton_pressed() -> void:
 
 func _on_ClearButton_pressed() -> void:
 	clear_shortcut()
+
 
 # ---------------
 # Public
@@ -120,11 +121,13 @@ func get_shortcut() -> Variant:
 	to_return.events.append(_source_event)
 	return to_return
 
+
 func get_input_event() -> Variant:
 	return _source_event
 
+
 func set_shortcut(sc: Variant) -> void:
-	if(sc == null or sc.events == null or sc.events.size() <= 0):
+	if sc == null or sc.events == null or sc.events.size() <= 0:
 		clear_shortcut()
 	else:
 		_source_event = sc.events[0]
@@ -147,7 +150,7 @@ func disable_clear(should: Variant) -> void:
 
 
 func cancel() -> void:
-	if(_editing):
+	if _editing:
 		_edit_mode(false)
 		_source_event = _pre_edit_event
 		_key_disp = to_s()

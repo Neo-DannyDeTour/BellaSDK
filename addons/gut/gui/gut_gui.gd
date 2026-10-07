@@ -18,23 +18,21 @@ var _ctrls: Variant = {
 	path_file = null,
 	prog_script = null,
 	prog_test = null,
-	rtl = null,                 # optional
-	rtl_bg = null,              # required if rtl exists
+	rtl = null,  # optional
+	rtl_bg = null,  # required if rtl exists
 	switch_modes = null,
 	time_label = null,
 	title = null,
 	title_bar = null,
-	tgl_word_wrap = null,		# optional
+	tgl_word_wrap = null,  # optional
 }
 
-var _title_mouse: Variant = {
-	down = false
-}
+var _title_mouse: Variant = {down = false}
 
-
-signal switch_modes()
+signal switch_modes
 
 var _max_position: Vector2 = Vector2(100, 100)
+
 
 func _ready() -> void:
 	_populate_ctrls()
@@ -43,20 +41,20 @@ func _ready() -> void:
 	_ctrls.btn_continue.pressed.connect(_on_continue_pressed)
 	_ctrls.switch_modes.pressed.connect(_on_switch_modes_pressed)
 	_ctrls.title_bar.gui_input.connect(_on_title_bar_input)
-	if(_ctrls.tgl_word_wrap != null):
+	if _ctrls.tgl_word_wrap != null:
 		_ctrls.tgl_word_wrap.toggled.connect(_on_word_wrap_toggled)
 
 	_ctrls.prog_script.value = 0
 	_ctrls.prog_test.value = 0
-	_ctrls.path_dir.text = ''
-	_ctrls.path_file.text = ''
-	_ctrls.time_label.text = ''
+	_ctrls.path_dir.text = ""
+	_ctrls.path_file.text = ""
+	_ctrls.time_label.text = ""
 
 	_max_position = get_display_size() - Vector2(30, _ctrls.title_bar.size.y)
 
 
 func _process(_delta: float) -> void:
-	if(_gut != null and _gut.is_running()):
+	if _gut != null and _gut.is_running():
 		set_elapsed_time(_gut.get_elapsed_time())
 
 
@@ -71,51 +69,50 @@ func _populate_ctrls() -> void:
 	# Brute force, but flexible.  This allows for all the controls to exist
 	# anywhere, and as long as they all have the right name, they will be
 	# found.
-	_ctrls.btn_continue = _get_first_child_named('Continue', self)
-	_ctrls.path_dir = _get_first_child_named('Path', self)
-	_ctrls.path_file = _get_first_child_named('File', self)
-	_ctrls.prog_script = _get_first_child_named('ProgressScript', self)
-	_ctrls.prog_test = _get_first_child_named('ProgressTest', self)
-	_ctrls.rtl = _get_first_child_named('TestOutput', self)
-	_ctrls.rtl_bg = _get_first_child_named('OutputBG', self)
+	_ctrls.btn_continue = _get_first_child_named("Continue", self)
+	_ctrls.path_dir = _get_first_child_named("Path", self)
+	_ctrls.path_file = _get_first_child_named("File", self)
+	_ctrls.prog_script = _get_first_child_named("ProgressScript", self)
+	_ctrls.prog_test = _get_first_child_named("ProgressTest", self)
+	_ctrls.rtl = _get_first_child_named("TestOutput", self)
+	_ctrls.rtl_bg = _get_first_child_named("OutputBG", self)
 	_ctrls.switch_modes = _get_first_child_named("SwitchModes", self)
-	_ctrls.time_label = _get_first_child_named('TimeLabel', self)
+	_ctrls.time_label = _get_first_child_named("TimeLabel", self)
 	_ctrls.title = _get_first_child_named("Title", self)
 	_ctrls.title_bar = _get_first_child_named("TitleBar", self)
 	_ctrls.tgl_word_wrap = _get_first_child_named("WordWrap", self)
 
 
 func _get_first_child_named(obj_name: Variant, parent_obj: Variant) -> Variant:
-	if(parent_obj == null):
+	if parent_obj == null:
 		return null
 
 	var kids: Variant = parent_obj.get_children()
 	var index: int = 0
 	var to_return: Variant = null
 
-	while(index < kids.size() and to_return == null):
-		if(str(kids[index]).find(str(obj_name, ':')) != -1):
+	while index < kids.size() and to_return == null:
+		if str(kids[index]).find(str(obj_name, ":")) != -1:
 			to_return = kids[index]
 		else:
 			to_return = _get_first_child_named(obj_name, kids[index])
-			if(to_return == null):
+			if to_return == null:
 				index += 1
 
 	return to_return
 
 
-
 # ------------------
 # Events
 # ------------------
-func _on_title_bar_input(event : InputEvent) -> void:
-	if(event is InputEventMouseMotion):
-		if(_title_mouse.down):
+func _on_title_bar_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		if _title_mouse.down:
 			position += event.relative
 			position.x = clamp(position.x, 0, _max_position.x)
 			position.y = clamp(position.y, 0, _max_position.y)
-	elif(event is InputEventMouseButton):
-		if(event.button_index == MOUSE_BUTTON_LEFT):
+	elif event is InputEventMouseButton:
+		if event.button_index == MOUSE_BUTTON_LEFT:
 			_title_mouse.down = event.pressed
 
 
@@ -124,7 +121,7 @@ func _on_continue_pressed() -> void:
 
 
 func _on_gut_start_run() -> void:
-	if(_ctrls.rtl != null):
+	if _ctrls.rtl != null:
 		_ctrls.rtl.clear()
 	set_num_scripts(_gut.get_test_collector().scripts.size())
 
@@ -164,6 +161,8 @@ func _on_switch_modes_pressed() -> void:
 
 func _on_word_wrap_toggled(toggled: Variant) -> void:
 	_ctrls.rtl.autowrap_mode = toggled
+
+
 # ------------------
 # Public
 # ------------------
@@ -190,7 +189,7 @@ func pause_before_teardown() -> void:
 
 
 func set_gut(g: Variant) -> void:
-	if(_gut == g):
+	if _gut == g:
 		return
 	_gut = g
 	g.start_run.connect(_on_gut_start_run)
@@ -205,14 +204,17 @@ func set_gut(g: Variant) -> void:
 	g.start_pause_before_teardown.connect(_on_gut_start_pause)
 	g.end_pause_before_teardown.connect(_on_gut_end_pause)
 
+
 func get_gut() -> Variant:
 	return _gut
+
 
 func get_textbox() -> Variant:
 	return _ctrls.rtl
 
+
 func set_elapsed_time(t: Variant) -> void:
-	_ctrls.time_label.text = str("%6.1f" % t, 's')
+	_ctrls.time_label.text = str("%6.1f" % t, "s")
 
 
 func set_bg_color(c: Variant) -> void:
@@ -234,6 +236,6 @@ func to_bottom_right() -> void:
 
 func align_right() -> void:
 	var win_size: Variant = get_display_size()
-	self.position.x = win_size.x - self.size.x -5
+	self.position.x = win_size.x - self.size.x - 5
 	self.position.y = 5
 	self.size.y = win_size.y - 10

@@ -22,28 +22,26 @@
 #
 # This script should conform to, or ignore, the strictest warning settings.
 # ------------------------------------------------------------------------------
-const WARNING_PATH : String = 'debug/gdscript/warnings/'
-
+const WARNING_PATH: String = "debug/gdscript/warnings/"
 
 @warning_ignore("unsafe_method_access")
 @warning_ignore("unsafe_property_access")
 @warning_ignore("untyped_declaration")
 static func _static_init() -> void:
-	const WarningsManager = load('res://addons/gut/warnings_manager.gd')
-	if(!WarningsManager.disabled):
+	const WarningsManager = preload("res://addons/gut/warnings_manager.gd")
+	if !WarningsManager.disabled:
 		WarningsManager.exclude_gut()
 		WarningsManager.exclude_dynamic_files()
 
 	# Force a reference to utils.gd by path.  Using the class_name would cause
 	# utils.gd to load when this script loads, before we could turn off the
 	# warnings.
-	var _utils : Object = load('res://addons/gut/utils.gd')
+	var _utils: Object = load("res://addons/gut/utils.gd")
 
 	# Since load_all exists on the LazyLoader, it should be done now so nothing
 	# sneaks in later...This essentially defeats the "lazy" part of the
 	# LazyLoader, but not the "loader" part of LazyLoader.
 	_utils.LazyLoader.load_all()
-
 
 # ##############################################################################
 # (G)odot (U)nit (T)est class

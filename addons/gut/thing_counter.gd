@@ -1,16 +1,17 @@
 var things: Dictionary = {}
 
+
 func get_unique_count() -> Variant:
 	return things.size()
 
 
 func add_thing_to_count(thing: Variant) -> void:
-	if(!things.has(thing)):
+	if !things.has(thing):
 		things[thing] = 0
 
 
 func add(thing: Variant) -> void:
-	if(things.has(thing)):
+	if things.has(thing):
 		things[thing] += 1
 	else:
 		things[thing] = 1
@@ -22,7 +23,7 @@ func has(thing: Variant) -> Variant:
 
 func count(thing: Variant) -> Variant:
 	var to_return: int = 0
-	if(things.has(thing)):
+	if things.has(thing):
 		to_return = things[thing]
 	return to_return
 
@@ -45,7 +46,7 @@ func to_s() -> Variant:
 func get_max_count() -> Variant:
 	var max_val: Variant = null
 	for key in things:
-		if(max_val == null or things[key] > max_val):
+		if max_val == null or things[key] > max_val:
 			max_val = things[key]
 	return max_val
 

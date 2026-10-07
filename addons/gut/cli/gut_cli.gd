@@ -1,8 +1,9 @@
 extends Node
 
-const Optparse = load('res://addons/gut/cli/optparse.gd')
-const Gut = load('res://addons/gut/gut.gd')
-const GutRunner = load('res://addons/gut/gui/GutRunner.tscn')
+const Optparse = preload("res://addons/gut/cli/optparse.gd")
+const Gut = preload("res://addons/gut/gut.gd")
+const GutRunner = preload("res://addons/gut/gui/GutRunner.tscn")
+
 
 # ------------------------------------------------------------------------------
 # Helper class to resolve the various different places where an option can
@@ -20,7 +21,6 @@ class GutCliOptionResolver:
 	var cmd_opts: Dictionary = {}
 	var config_opts: Dictionary = {}
 
-
 	func get_value(key: Variant) -> Variant:
 		return _nvl(cmd_opts[key], _nvl(config_opts[key], base_opts[key]))
 
@@ -37,22 +37,31 @@ class GutCliOptionResolver:
 		return new_hash
 
 	func _nvl(a: Variant, b: Variant) -> Variant:
-		if(a == null):
+		if a == null:
 			return b
 		else:
 			return a
 
 	func _string_it(h: Variant) -> Variant:
-		var to_return: String = ''
+		var to_return: String = ""
 		for key in h:
-			to_return += str('(',key, ':', _nvl(h[key], 'NULL'), ')')
+			to_return += str("(", key, ":", _nvl(h[key], "NULL"), ")")
 		return to_return
 
 	func to_s() -> Variant:
-		return str("base:\n", _string_it(base_opts), "\n", \
-				"config:\n", _string_it(config_opts), "\n", \
-				"cmd:\n", _string_it(cmd_opts), "\n", \
-				"resolved:\n", _string_it(get_resolved_values()))
+		return str(
+			"base:\n",
+			_string_it(base_opts),
+			"\n",
+			"config:\n",
+			_string_it(config_opts),
+			"\n",
+			"cmd:\n",
+			_string_it(cmd_opts),
+			"\n",
+			"resolved:\n",
+			_string_it(get_resolved_values())
+		)
 
 	func get_resolved_values() -> Variant:
 		var to_return: Dictionary = {}
@@ -61,22 +70,23 @@ class GutCliOptionResolver:
 		return to_return
 
 	func to_s_verbose() -> Variant:
-		var to_return: String = ''
+		var to_return: String = ""
 		var resolved: Variant = get_resolved_values()
 		for key in base_opts:
 			to_return += str(key, "\n")
-			to_return += str('  default: ', _nvl(base_opts[key], 'NULL'), "\n")
-			to_return += str('  config:  ', _nvl(config_opts[key], ' --'), "\n")
-			to_return += str('  cmd:     ', _nvl(cmd_opts[key], ' --'), "\n")
-			to_return += str('  final:   ', _nvl(resolved[key], 'NULL'), "\n")
+			to_return += str("  default: ", _nvl(base_opts[key], "NULL"), "\n")
+			to_return += str("  config:  ", _nvl(config_opts[key], " --"), "\n")
+			to_return += str("  cmd:     ", _nvl(cmd_opts[key], " --"), "\n")
+			to_return += str("  final:   ", _nvl(resolved[key], "NULL"), "\n")
 
 		return to_return
+
 
 # ------------------------------------------------------------------------------
 # Here starts the actual script that uses the Options class to kick off Gut
 # and run your tests.
 # ------------------------------------------------------------------------------
-var _gut_config: Variant = load('res://addons/gut/gut_config.gd').new()
+var _gut_config: Variant = load("res://addons/gut/gut_config.gd").new()
 
 # array of command line options specified
 var _final_opts: Array = []
@@ -84,8 +94,7 @@ var _final_opts: Array = []
 
 func setup_options(options: Variant, font_names: Variant) -> void:
 	var opts: Optparse = Optparse.new()
-	opts.banner =\
-"""
+	opts.banner = """
 The GUT CLI
 -----------
 The default behavior for GUT is to load options from a res://.gutconfig.json if
@@ -111,53 +120,146 @@ an immediate "=":
 	-gconfig=
 """
 	opts.add_heading("Test Config:")
-	opts.add('-gdir', options.dirs, 'List of directories to search for test scripts in.')
-	opts.add('-ginclude_subdirs', false, 'Flag to include all subdirectories specified with -gdir.')
-	opts.add('-gtest', [], 'List of full paths to test scripts to run.')
-	opts.add('-gprefix', options.prefix, 'Prefix used to find tests when specifying -gdir.  Default "[default]".')
-	opts.add('-gsuffix', options.suffix, 'Test script suffix, including .gd extension.  Default "[default]".')
-	opts.add('-gconfig', 'res://.gutconfig.json', 'The config file to load options from.  The default is [default].  Use "-gconfig=" to not use a config file.')
-	opts.add('-gpre_run_script', '', 'pre-run hook script path')
-	opts.add('-gpost_run_script', '', 'post-run hook script path')
-	opts.add('-gerrors_do_not_cause_failure', false, 'When an internal GUT error occurs tests will fail.  With this option set, that does not happen.')
-	opts.add('-gdouble_strategy', 'SCRIPT_ONLY', 'Default strategy to use when doubling.  Valid values are [INCLUDE_NATIVE, SCRIPT_ONLY].  Default "[default]"')
+	opts.add("-gdir", options.dirs, "List of directories to search for test scripts in.")
+	opts.add("-ginclude_subdirs", false, "Flag to include all subdirectories specified with -gdir.")
+	opts.add("-gtest", [], "List of full paths to test scripts to run.")
+	opts.add(
+		"-gprefix",
+		options.prefix,
+		'Prefix used to find tests when specifying -gdir.  Default "[default]".'
+	)
+	opts.add(
+		"-gsuffix",
+		options.suffix,
+		'Test script suffix, including .gd extension.  Default "[default]".'
+	)
+	(
+		opts
+		. add(
+			"-gconfig",
+			"res://.gutconfig.json",
+			'The config file to load options from.  The default is [default].  Use "-gconfig=" to not use a config file.'
+		)
+	)
+	opts.add("-gpre_run_script", "", "pre-run hook script path")
+	opts.add("-gpost_run_script", "", "post-run hook script path")
+	(
+		opts
+		. add(
+			"-gerrors_do_not_cause_failure",
+			false,
+			"When an internal GUT error occurs tests will fail.  With this option set, that does not happen."
+		)
+	)
+	(
+		opts
+		. add(
+			"-gdouble_strategy",
+			"SCRIPT_ONLY",
+			'Default strategy to use when doubling.  Valid values are [INCLUDE_NATIVE, SCRIPT_ONLY].  Default "[default]"'
+		)
+	)
 
 	opts.add_heading("Run Options:")
-	opts.add('-gselect', '', 'All scripts that contain the specified string in their filename will be ran')
-	opts.add('-ginner_class', '', 'Only run inner classes that contain the specified string in their name.')
-	opts.add('-gunit_test_name', '', 'Any test that contains the specified text will be run, all others will be skipped.')
-	opts.add('-gexit', false, 'Exit after running tests.  If not specified you have to manually close the window.')
-	opts.add('-gexit_on_success', false, 'Only exit if zero tests fail.')
-	opts.add('-gignore_pause', false, 'Ignores any calls to pause_before_teardown.')
-	opts.add('-gno_error_tracking', false, 'Disable error tracking.')
-	opts.add('-gfailure_error_types', options.failure_error_types, 'Error types that will cause tests to fail if the are encountered during the execution of a test.  Default "[default]"')
+	opts.add(
+		"-gselect",
+		"",
+		"All scripts that contain the specified string in their filename will be ran"
+	)
+	opts.add(
+		"-ginner_class",
+		"",
+		"Only run inner classes that contain the specified string in their name."
+	)
+	opts.add(
+		"-gunit_test_name",
+		"",
+		"Any test that contains the specified text will be run, all others will be skipped."
+	)
+	opts.add(
+		"-gexit",
+		false,
+		"Exit after running tests.  If not specified you have to manually close the window."
+	)
+	opts.add("-gexit_on_success", false, "Only exit if zero tests fail.")
+	opts.add("-gignore_pause", false, "Ignores any calls to pause_before_teardown.")
+	opts.add("-gno_error_tracking", false, "Disable error tracking.")
+	(
+		opts
+		. add(
+			"-gfailure_error_types",
+			options.failure_error_types,
+			'Error types that will cause tests to fail if the are encountered during the execution of a test.  Default "[default]"'
+		)
+	)
 
 	opts.add_heading("Display Settings:")
-	opts.add('-glog', options.log_level, 'Log level [0-3].  Default [default]')
-	opts.add('-ghide_orphans', false, 'Display orphan counts for tests and scripts.  Default [default].')
-	opts.add('-gmaximize', false, 'Maximizes test runner window to fit the viewport.')
-	opts.add('-gcompact_mode', false, 'The runner will be in compact mode.  This overrides -gmaximize.')
-	opts.add('-gopacity', options.opacity, 'Set opacity of test runner window. Use range 0 - 100. 0 = transparent, 100 = opaque.')
-	opts.add('-gdisable_colors', false, 'Disable command line colors.')
-	opts.add('-gfont_name', options.font_name, str('Valid values are:  ', font_names, '.  Default "[default]"'))
-	opts.add('-gfont_size', options.font_size, 'Font size, default "[default]"')
-	opts.add('-gbackground_color', options.background_color, 'Background color as an html color, default "[default]"')
-	opts.add('-gfont_color',options.font_color, 'Font color as an html color, default "[default]"')
-	opts.add('-gpaint_after', options.paint_after, 'Delay before GUT will add a 1 frame pause to paint the screen/GUI.  default [default]')
-	opts.add('-gwait_log_delay', options.wait_log_delay, 'Delay before GUT will print a message to indicate a test is awaiting one of the wait_* methods.  Default [default]')
+	opts.add("-glog", options.log_level, "Log level [0-3].  Default [default]")
+	opts.add(
+		"-ghide_orphans", false, "Display orphan counts for tests and scripts.  Default [default]."
+	)
+	opts.add("-gmaximize", false, "Maximizes test runner window to fit the viewport.")
+	opts.add(
+		"-gcompact_mode", false, "The runner will be in compact mode.  This overrides -gmaximize."
+	)
+	opts.add(
+		"-gopacity",
+		options.opacity,
+		"Set opacity of test runner window. Use range 0 - 100. 0 = transparent, 100 = opaque."
+	)
+	opts.add("-gdisable_colors", false, "Disable command line colors.")
+	opts.add(
+		"-gfont_name",
+		options.font_name,
+		str("Valid values are:  ", font_names, '.  Default "[default]"')
+	)
+	opts.add("-gfont_size", options.font_size, 'Font size, default "[default]"')
+	opts.add(
+		"-gbackground_color",
+		options.background_color,
+		'Background color as an html color, default "[default]"'
+	)
+	opts.add("-gfont_color", options.font_color, 'Font color as an html color, default "[default]"')
+	opts.add(
+		"-gpaint_after",
+		options.paint_after,
+		"Delay before GUT will add a 1 frame pause to paint the screen/GUI.  default [default]"
+	)
+	(
+		opts
+		. add(
+			"-gwait_log_delay",
+			options.wait_log_delay,
+			"Delay before GUT will print a message to indicate a test is awaiting one of the wait_* methods.  Default [default]"
+		)
+	)
 
 	opts.add_heading("Result Export:")
-	opts.add('-gjunit_xml_file', options.junit_xml_file, 'Export results of run to this file in the Junit XML format.')
-	opts.add('-gjunit_xml_timestamp', options.junit_xml_timestamp, 'Include a timestamp in the -gjunit_xml_file, default [default]')
+	opts.add(
+		"-gjunit_xml_file",
+		options.junit_xml_file,
+		"Export results of run to this file in the Junit XML format."
+	)
+	opts.add(
+		"-gjunit_xml_timestamp",
+		options.junit_xml_timestamp,
+		"Include a timestamp in the -gjunit_xml_file, default [default]"
+	)
 
 	opts.add_heading("Help:")
-	opts.add('-gh', false, 'Print this help.  You did this to see this, so you probably understand.')
-	opts.add('-gpo', false, 'Print option values from all sources and the value used.')
-	opts.add('-gprint_gutconfig_sample', false, 'Print out json that can be used to make a gutconfig file.')
+	opts.add(
+		"-gh", false, "Print this help.  You did this to see this, so you probably understand."
+	)
+	opts.add("-gpo", false, "Print option values from all sources and the value used.")
+	opts.add(
+		"-gprint_gutconfig_sample",
+		false,
+		"Print out json that can be used to make a gutconfig file."
+	)
 	opts.add("-gcheck_update", false, "Check for update")
 
 	# run as in editor, for shelling out purposes through Editor.
-	var o: Variant = opts.add('-graie', false, 'do not use')
+	var o: Variant = opts.add("-graie", false, "do not use")
 	o.show_in_help = false
 	return opts
 
@@ -165,43 +267,42 @@ an immediate "=":
 # Parses options, applying them to the _tester or setting values
 # in the options struct.
 func extract_command_line_options(from: Variant, to: Variant) -> void:
-	to.compact_mode = from.get_value_or_null('-gcompact_mode')
-	to.config_file = from.get_value_or_null('-gconfig')
-	to.dirs = from.get_value_or_null('-gdir')
-	to.disable_colors =  from.get_value_or_null('-gdisable_colors')
-	to.double_strategy = from.get_value_or_null('-gdouble_strategy')
-	to.errors_do_not_cause_failure = from.get_value_or_null('-gerrors_do_not_cause_failure')
-	to.hide_orphans = from.get_value_or_null('-ghide_orphans')
-	to.ignore_pause = from.get_value_or_null('-gignore_pause')
-	to.include_subdirs = from.get_value_or_null('-ginclude_subdirs')
-	to.inner_class = from.get_value_or_null('-ginner_class')
-	to.log_level = from.get_value_or_null('-glog')
-	to.opacity = from.get_value_or_null('-gopacity')
-	to.post_run_script = from.get_value_or_null('-gpost_run_script')
-	to.pre_run_script = from.get_value_or_null('-gpre_run_script')
-	to.prefix = from.get_value_or_null('-gprefix')
-	to.selected = from.get_value_or_null('-gselect')
-	to.should_exit = from.get_value_or_null('-gexit')
-	to.should_exit_on_success = from.get_value_or_null('-gexit_on_success')
-	to.should_maximize = from.get_value_or_null('-gmaximize')
-	to.suffix = from.get_value_or_null('-gsuffix')
-	to.tests = from.get_value_or_null('-gtest')
-	to.unit_test_name = from.get_value_or_null('-gunit_test_name')
-	to.wait_log_delay = from.get_value_or_null('-gwait_log_delay')
+	to.compact_mode = from.get_value_or_null("-gcompact_mode")
+	to.config_file = from.get_value_or_null("-gconfig")
+	to.dirs = from.get_value_or_null("-gdir")
+	to.disable_colors = from.get_value_or_null("-gdisable_colors")
+	to.double_strategy = from.get_value_or_null("-gdouble_strategy")
+	to.errors_do_not_cause_failure = from.get_value_or_null("-gerrors_do_not_cause_failure")
+	to.hide_orphans = from.get_value_or_null("-ghide_orphans")
+	to.ignore_pause = from.get_value_or_null("-gignore_pause")
+	to.include_subdirs = from.get_value_or_null("-ginclude_subdirs")
+	to.inner_class = from.get_value_or_null("-ginner_class")
+	to.log_level = from.get_value_or_null("-glog")
+	to.opacity = from.get_value_or_null("-gopacity")
+	to.post_run_script = from.get_value_or_null("-gpost_run_script")
+	to.pre_run_script = from.get_value_or_null("-gpre_run_script")
+	to.prefix = from.get_value_or_null("-gprefix")
+	to.selected = from.get_value_or_null("-gselect")
+	to.should_exit = from.get_value_or_null("-gexit")
+	to.should_exit_on_success = from.get_value_or_null("-gexit_on_success")
+	to.should_maximize = from.get_value_or_null("-gmaximize")
+	to.suffix = from.get_value_or_null("-gsuffix")
+	to.tests = from.get_value_or_null("-gtest")
+	to.unit_test_name = from.get_value_or_null("-gunit_test_name")
+	to.wait_log_delay = from.get_value_or_null("-gwait_log_delay")
 
-	to.background_color = from.get_value_or_null('-gbackground_color')
-	to.font_color = from.get_value_or_null('-gfont_color')
-	to.font_name = from.get_value_or_null('-gfont_name')
-	to.font_size = from.get_value_or_null('-gfont_size')
-	to.paint_after = from.get_value_or_null('-gpaint_after')
+	to.background_color = from.get_value_or_null("-gbackground_color")
+	to.font_color = from.get_value_or_null("-gfont_color")
+	to.font_name = from.get_value_or_null("-gfont_name")
+	to.font_size = from.get_value_or_null("-gfont_size")
+	to.paint_after = from.get_value_or_null("-gpaint_after")
 
-	to.junit_xml_file = from.get_value_or_null('-gjunit_xml_file')
-	to.junit_xml_timestamp = from.get_value_or_null('-gjunit_xml_timestamp')
+	to.junit_xml_file = from.get_value_or_null("-gjunit_xml_file")
+	to.junit_xml_timestamp = from.get_value_or_null("-gjunit_xml_timestamp")
 
-	to.failure_error_types = from.get_value_or_null('-gfailure_error_types')
-	to.no_error_tracking = from.get_value_or_null('-gno_error_tracking')
-	to.raie = from.get_value_or_null('-graie')
-
+	to.failure_error_types = from.get_value_or_null("-gfailure_error_types")
+	to.no_error_tracking = from.get_value_or_null("-gno_error_tracking")
+	to.raie = from.get_value_or_null("-graie")
 
 
 func _print_gutconfigs(values: Variant) -> void:
@@ -209,37 +310,39 @@ func _print_gutconfigs(values: Variant) -> void:
 You do not need to specify all values in your own file.  The values supplied in
 this sample are what would be used if you ran gut w/o the -gprint_gutconfig_sample
 option.   Option priority is:  command-line, .gutconfig, default)."""
-	print("\n", header.replace("\n", ' '), "\n")
+	print("\n", header.replace("\n", " "), "\n")
 	var resolved: Variant = values
 
 	# remove_at some options that don't make sense to be in config
 	resolved.erase("config_file")
 	resolved.erase("show_help")
 
-	print(JSON.stringify(resolved, '  '))
+	print(JSON.stringify(resolved, "  "))
 
 	for key in resolved:
 		resolved[key] = null
 
 	print("\n\nAnd here's an empty config for you fill in what you want.")
-	print(JSON.stringify(resolved, ' '))
+	print(JSON.stringify(resolved, " "))
 
 
 func _run_tests(opt_resolver: Variant) -> void:
-	_final_opts = opt_resolver.get_resolved_values();
+	_final_opts = opt_resolver.get_resolved_values()
 	_gut_config.options = _final_opts
 
 	var runner: GutRunner = GutRunner.instantiate()
 	runner.set_gut_config(_gut_config)
 	get_tree().root.add_child(runner)
 
-	if(opt_resolver.cmd_opts.raie):
+	if opt_resolver.cmd_opts.raie:
 		runner.run_from_editor()
 	else:
 		runner.run_tests()
 
 
 var update_detector: Variant = null
+
+
 func _check_for_update() -> void:
 	print(str("Checking for update for GUT ", GutUtils.version_numbers.gut_version))
 	update_detector = GutUtils.UpdateDetector.new()
@@ -259,44 +362,47 @@ func main() -> void:
 	var all_options_valid: Variant = cli_opts.unused.size() == 0
 	extract_command_line_options(cli_opts, opt_resolver.cmd_opts)
 
-	var config_path: Variant = opt_resolver.get_value('config_file')
+	var config_path: Variant = opt_resolver.get_value("config_file")
 	var load_result: int = 1
 	# Checking for an empty config path allows us to not use a config file via
 	# the -gconfig_file option since using "-gconfig_file=" or -gconfig_file=''"
 	# will result in an empty string.
-	if(config_path != ''):
+	if config_path != "":
 		load_result = _gut_config.load_options_no_defaults(config_path)
 
 	# SHORTCIRCUIT
-	if(!all_options_valid):
-		print('Unknown arguments:  ', cli_opts.unused)
+	if !all_options_valid:
+		print("Unknown arguments:  ", cli_opts.unused)
 		get_tree().quit(1)
-	elif(load_result == -1):
-		print('Invalid gutconfig ', load_result)
+	elif load_result == -1:
+		print("Invalid gutconfig ", load_result)
 		get_tree().quit(1)
 	else:
 		opt_resolver.config_opts = _gut_config.options
 
-		if(cli_opts.get_value('-gh')):
+		if cli_opts.get_value("-gh"):
 			print(GutUtils.version_numbers.get_version_text())
 			cli_opts.print_help()
 			get_tree().quit(0)
-		elif(cli_opts.get_value('-gpo')):
-			print('All config options and where they are specified.  ' +
-				'The "final" value shows which value will actually be used ' +
-				'based on order of precedence (default < .gutconfig < cmd line).' + "\n")
+		elif cli_opts.get_value("-gpo"):
+			print(
+				(
+					"All config options and where they are specified.  "
+					+ 'The "final" value shows which value will actually be used '
+					+ "based on order of precedence (default < .gutconfig < cmd line)."
+					+ "\n"
+				)
+			)
 			print(opt_resolver.to_s_verbose())
 			get_tree().quit(0)
-		elif(cli_opts.get_value('-gprint_gutconfig_sample')):
+		elif cli_opts.get_value("-gprint_gutconfig_sample"):
 			_print_gutconfigs(opt_resolver.get_resolved_values())
 			get_tree().quit(0)
-		elif(cli_opts.get_value('-gcheck_update')):
+		elif cli_opts.get_value("-gcheck_update"):
 			await _check_for_update()
 			get_tree().quit(0)
 		else:
 			_run_tests(opt_resolver)
-
-
 
 # ##############################################################################
 #(G)odot (U)nit (T)est class

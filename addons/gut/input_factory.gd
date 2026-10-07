@@ -21,16 +21,18 @@ class_name GutInputFactory
 
 static func _to_scancode(which: Variant) -> Variant:
 	var key_code: Variant = which
-	if(typeof(key_code) == TYPE_STRING):
+	if typeof(key_code) == TYPE_STRING:
 		key_code = key_code.to_upper().to_ascii_buffer()[0]
 	return key_code
 
 
 ## Creates a new button with the given propoerties.
-static func new_mouse_button_event(position: Variant, global_position: Variant, pressed: Variant, button_index: Variant) -> InputEventMouseButton:
+static func new_mouse_button_event(
+	position: Variant, global_position: Variant, pressed: Variant, button_index: Variant
+) -> InputEventMouseButton:
 	var event: InputEventMouseButton = InputEventMouseButton.new()
 	event.position = position
-	if(global_position != null):
+	if global_position != null:
 		event.global_position = global_position
 	event.pressed = pressed
 	event.button_index = button_index
@@ -72,50 +74,66 @@ static func action_down(which: Variant, strength: float = 1.0) -> InputEventActi
 
 
 ## Returns a "button down" [InputEventMouseButton] for the left mouse button.
-static func mouse_left_button_down(position: Variant, global_position: Variant = null) -> InputEventMouseButton:
+static func mouse_left_button_down(
+	position: Variant, global_position: Variant = null
+) -> InputEventMouseButton:
 	var event: Variant = new_mouse_button_event(position, global_position, true, MOUSE_BUTTON_LEFT)
 	return event
 
 
 ## Returns a "button up" [InputEventMouseButton] for the left mouse button.
-static func mouse_left_button_up(position: Variant, global_position: Variant = null) -> InputEventMouseButton:
+static func mouse_left_button_up(
+	position: Variant, global_position: Variant = null
+) -> InputEventMouseButton:
 	var event: Variant = new_mouse_button_event(position, global_position, false, MOUSE_BUTTON_LEFT)
 	return event
 
 
 ## Returns a "double click" [InputEventMouseButton] for the left mouse button.
-static func mouse_double_click(position: Variant, global_position: Variant = null) -> InputEventMouseButton:
+static func mouse_double_click(
+	position: Variant, global_position: Variant = null
+) -> InputEventMouseButton:
 	var event: Variant = new_mouse_button_event(position, global_position, false, MOUSE_BUTTON_LEFT)
 	event.double_click = true
 	return event
 
 
 ## Returns a "button down" [InputEventMouseButton] for the right mouse button.
-static func mouse_right_button_down(position: Variant, global_position: Variant = null) -> InputEventMouseButton:
+static func mouse_right_button_down(
+	position: Variant, global_position: Variant = null
+) -> InputEventMouseButton:
 	var event: Variant = new_mouse_button_event(position, global_position, true, MOUSE_BUTTON_RIGHT)
 	return event
 
 
 ## Returns a "button up" [InputEventMouseButton] for the right mouse button.
-static func mouse_right_button_up(position: Variant, global_position: Variant = null) -> InputEventMouseButton:
-	var event: Variant = new_mouse_button_event(position, global_position, false, MOUSE_BUTTON_RIGHT)
+static func mouse_right_button_up(
+	position: Variant, global_position: Variant = null
+) -> InputEventMouseButton:
+	var event: Variant = new_mouse_button_event(
+		position, global_position, false, MOUSE_BUTTON_RIGHT
+	)
 	return event
 
 
 ## Returns a [InputEventMouseMotion] to move the mouse the specified positions.
-static func mouse_motion(position: Variant, global_position: Variant = null) -> InputEventMouseMotion:
+static func mouse_motion(
+	position: Variant, global_position: Variant = null
+) -> InputEventMouseMotion:
 	var event: InputEventMouseMotion = InputEventMouseMotion.new()
 	event.position = position
-	if(global_position != null):
+	if global_position != null:
 		event.global_position = global_position
 	return event
 
 
 ## Returns an [InputEventMouseMotion] that moves the mouse [param offset]
 ## from the last [method mouse_motion] or [method mouse_motion] call.
-static func mouse_relative_motion(offset: Variant, last_motion_event: Variant = null, speed: Vector2 = Vector2(0, 0)) -> InputEventMouseMotion:
+static func mouse_relative_motion(
+	offset: Variant, last_motion_event: Variant = null, speed: Vector2 = Vector2(0, 0)
+) -> InputEventMouseMotion:
 	var event: Variant = null
-	if(last_motion_event == null):
+	if last_motion_event == null:
 		event = mouse_motion(offset)
 		event.velocity = speed
 	else:

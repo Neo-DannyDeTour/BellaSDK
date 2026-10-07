@@ -32,13 +32,35 @@ var handled: bool = false
 
 ## _to_string that is not _to_string.
 func to_s() -> String:
-	return str("CODE:", code, "\nTYPE:", error_type, "\nRATIONALE:", rationale, "\n",
-		file, '->', function, '@', line, "\n",
-		"handled: ", handled, "\n",
-		"gut type: ", get_error_type_name(),"\n",
-		"error_type: ", error_type, "\n",
-		"editor_notify:", editor_notify, "\n",
-		backtrace, "\n")
+	return str(
+		"CODE:",
+		code,
+		"\nTYPE:",
+		error_type,
+		"\nRATIONALE:",
+		rationale,
+		"\n",
+		file,
+		"->",
+		function,
+		"@",
+		line,
+		"\n",
+		"handled: ",
+		handled,
+		"\n",
+		"gut type: ",
+		get_error_type_name(),
+		"\n",
+		"error_type: ",
+		error_type,
+		"\n",
+		"editor_notify:",
+		editor_notify,
+		"\n",
+		backtrace,
+		"\n"
+	)
 
 
 ## Returns [code]true[/code] if the error is a push_error.
@@ -50,7 +72,12 @@ func is_push_error() -> Variant:
 ## all errors that pass through the [Logger] that do not originate from the
 ## [code]push_error[/code] function.
 func is_engine_error() -> Variant:
-	return error_type >= 0 and error_type != GutUtils.GUT_ERROR_TYPE and !is_push_error() and !is_push_warning()
+	return (
+		error_type >= 0
+		and error_type != GutUtils.GUT_ERROR_TYPE
+		and !is_push_error()
+		and !is_push_warning()
+	)
 
 
 func is_push_warning() -> Variant:
@@ -64,8 +91,10 @@ func is_gut_error() -> Variant:
 
 
 func contains_text(text: Variant) -> Variant:
-	return code.to_lower().find(text.to_lower()) != -1 or \
-		rationale.to_lower().find(text.to_lower()) != -1
+	return (
+		code.to_lower().find(text.to_lower()) != -1
+		or rationale.to_lower().find(text.to_lower()) != -1
+	)
 
 
 ## For display purposes only, the actual value returned may change over time.
@@ -75,17 +104,16 @@ func contains_text(text: Variant) -> Variant:
 func get_error_type_name() -> Variant:
 	var to_return: String = "Unknown"
 
-	if(is_gut_error()):
-		to_return =  &"GUT"
-	elif(is_push_error()):
+	if is_gut_error():
+		to_return = &"GUT"
+	elif is_push_error():
 		to_return = &"push_error"
-	elif(is_push_warning()):
-		to_return = &'push_warning'
-	elif(is_engine_error()):
+	elif is_push_warning():
+		to_return = &"push_warning"
+	elif is_engine_error():
 		to_return = str("engine-", error_type)
 
 	return to_return
-
 
 # this might not work in other languages, and feels falkey, but might be
 # useful at some point.

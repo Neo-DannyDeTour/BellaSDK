@@ -7,8 +7,10 @@ class BaseGutPanelControl:
 	var _lbl_invalid: Label = Label.new()
 
 	var value: Variant = null:
-		get: return get_value()
-		set(val): set_value(val)
+		get:
+			return get_value()
+		set(val):
+			set_value(val)
 
 	signal changed
 
@@ -20,21 +22,19 @@ class BaseGutPanelControl:
 		label.mouse_filter = label.MOUSE_FILTER_STOP
 		add_child(label)
 
-		_lbl_unsaved.text = '*'
+		_lbl_unsaved.text = "*"
 		_lbl_unsaved.visible = false
 		add_child(_lbl_unsaved)
 
-		_lbl_invalid.text = '!'
+		_lbl_invalid.text = "!"
 		_lbl_invalid.visible = false
 		add_child(_lbl_invalid)
 
 		label.text = title
 		label.tooltip_text = hint
 
-
 	func mark_unsaved(is_it: bool = true) -> void:
 		_lbl_unsaved.visible = is_it
-
 
 	func mark_invalid(is_it: Variant) -> void:
 		_lbl_invalid.visible = is_it
@@ -57,7 +57,9 @@ class GpcNumber:
 
 	var value_ctrl: SpinBox = SpinBox.new()
 
-	func _init(title: Variant, val: Variant, v_min: Variant, v_max: Variant, hint: String = "") -> void:
+	func _init(
+		title: Variant, val: Variant, v_min: Variant, v_max: Variant, hint: String = ""
+	) -> void:
 		super._init(title, val, hint)
 
 		value_ctrl.value = val
@@ -83,7 +85,14 @@ class GpcNumber:
 class GpcFloat:
 	extends GpcNumber
 
-	func _init(title: Variant, val: Variant, step: Variant, v_min: Variant, v_max: Variant, hint: String = "") -> void:
+	func _init(
+		title: Variant,
+		val: Variant,
+		step: Variant,
+		v_min: Variant,
+		v_max: Variant,
+		hint: String = ""
+	) -> void:
 		super._init(title, val, v_min, v_max, hint)
 		value_ctrl.step = step
 		value_ctrl.value = val
@@ -104,7 +113,7 @@ class GpcString:
 		value_ctrl.text_changed.connect(_on_text_changed)
 		value_ctrl.select_all_on_focus = true
 		add_child(value_ctrl)
-		if(title == ''):
+		if title == "":
 			label.visible = false
 
 	func _on_text_changed(new_value: Variant) -> void:
@@ -115,7 +124,6 @@ class GpcString:
 
 	func set_value(val: Variant) -> void:
 		value_ctrl.text = val
-
 
 
 # ------------------------------------------------------------------------------
@@ -145,7 +153,6 @@ class GpcMultiLineString:
 
 	func set_value(val: Variant) -> void:
 		value_ctrl.text = val
-
 
 
 # ------------------------------------------------------------------------------
@@ -181,9 +188,11 @@ class GpcSelect:
 
 	var value_ctrl: OptionButton = OptionButton.new()
 
-	var text: Variant = '' :
-		get: return value_ctrl.get_item_text(value_ctrl.selected)
-		set(val): pass
+	var text: Variant = "":
+		get:
+			return value_ctrl.get_item_text(value_ctrl.selected)
+		set(val):
+			pass
 
 	func _init(title: Variant, val: Variant, choices: Variant, hint: String = "") -> void:
 		super._init(title, val, hint)
@@ -191,7 +200,7 @@ class GpcSelect:
 		var select_idx: int = 0
 		for i in range(choices.size()):
 			value_ctrl.add_item(choices[i])
-			if(val == choices[i]):
+			if val == choices[i]:
 				select_idx = i
 		value_ctrl.selected = select_idx
 		value_ctrl.size_flags_horizontal = value_ctrl.SIZE_EXPAND_FILL
@@ -244,7 +253,7 @@ class GpcDirectory:
 
 		label.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 
-		_btn_dir.text = '...'
+		_btn_dir.text = "..."
 		_btn_dir.pressed.connect(_on_dir_button_pressed)
 
 		value_ctrl.text = val
@@ -266,13 +275,12 @@ class GpcDirectory:
 		add_child(dialog)
 
 	func _update_display() -> void:
-		var is_empty: Variant = value_ctrl.text == ''
+		var is_empty: Variant = value_ctrl.text == ""
 		enabled_button.button_pressed = !is_empty
 		enabled_button.disabled = is_empty
 
-
 	func _ready() -> void:
-		if(Engine.is_editor_hint()):
+		if Engine.is_editor_hint():
 			dialog.size = Vector2(1000, 700)
 		else:
 			dialog.size = Vector2(500, 350)
@@ -303,23 +311,23 @@ class GpcDirectory:
 class GpcFileDialogSuperPlus:
 	extends FileDialog
 
-	var show_diretory_types: Variant = true :
-		set(val) :
+	var show_diretory_types: Variant = true:
+		set(val):
 			show_diretory_types = val
 			_update_display()
 
-	var show_res: Variant = true :
-		set(val) :
+	var show_res: Variant = true:
+		set(val):
 			show_res = val
 			_update_display()
 
-	var show_user: Variant = true :
-		set(val) :
+	var show_user: Variant = true:
+		set(val):
 			show_user = val
 			_update_display()
 
-	var show_os: Variant = true :
-		set(val) :
+	var show_os: Variant = true:
+		set(val):
 			show_os = val
 			_update_display()
 
@@ -331,7 +339,6 @@ class GpcFileDialogSuperPlus:
 	func _ready() -> void:
 		_init_controls()
 		_update_display()
-
 
 	func _init_controls() -> void:
 		_dir_type_hbox = HBoxContainer.new()
@@ -349,9 +356,9 @@ class GpcFileDialogSuperPlus:
 		_dir_type_hbox.add_child(_btn_os)
 		_dir_type_hbox.add_child(spacer2)
 
-		_btn_res.text = 'res://'
-		_btn_user.text = 'user://'
-		_btn_os.text = '  OS  '
+		_btn_res.text = "res://"
+		_btn_user.text = "user://"
+		_btn_os.text = "  OS  "
 
 		get_vbox().add_child(_dir_type_hbox)
 		get_vbox().move_child(_dir_type_hbox, 0)
@@ -360,9 +367,8 @@ class GpcFileDialogSuperPlus:
 		_btn_user.pressed.connect(func(): access = ACCESS_USERDATA)
 		_btn_os.pressed.connect(func(): access = ACCESS_FILESYSTEM)
 
-
 	func _update_display() -> void:
-		if(is_inside_tree()):
+		if is_inside_tree():
 			_dir_type_hbox.visible = show_diretory_types
 			_btn_res.visible = show_res
 			_btn_user.visible = show_user
@@ -408,9 +414,8 @@ class GpcSaveLoad:
 		dlg_save.file_selected.connect(_on_save_selected)
 		add_child(dlg_save)
 
-
 	func _ready() -> void:
-		if(Engine.is_editor_hint()):
+		if Engine.is_editor_hint():
 			dlg_load.size = Vector2(1000, 700)
 			dlg_save.size = Vector2(1000, 700)
 		else:

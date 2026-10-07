@@ -17,9 +17,9 @@ extends Node2D
 const EXIT_OK: int = 0
 const EXIT_ERROR: int = 1
 
-const Gut = load('res://addons/gut/gut.gd')
-const ResultExporter = load('res://addons/gut/result_exporter.gd')
-const GutConfig = load('res://addons/gut/gut_config.gd')
+const Gut = preload("res://addons/gut/gut.gd")
+const ResultExporter = preload("res://addons/gut/result_exporter.gd")
+const GutConfig = preload("res://addons/gut/gut_config.gd")
 
 var runner_json_path: Variant = null
 var result_bbcode_path: Variant = null
@@ -30,11 +30,11 @@ var gut_config: Variant = null
 
 var error_tracker: Variant = GutUtils.get_error_tracker()
 
-var _hid_gut: Variant = null;
+var _hid_gut: Variant = null
 # Lazy loaded gut instance.  Settable for testing purposes.
-var gut: Variant = _hid_gut :
+var gut: Variant = _hid_gut:
 	get:
-		if(_hid_gut == null):
+		if _hid_gut == null:
 			_hid_gut = Gut.new(lgr)
 			_hid_gut.error_tracker = error_tracker
 		return _hid_gut
@@ -49,30 +49,29 @@ var _ran_from_editor: bool = false
 
 
 func _ready() -> void:
-	GutUtils.WarningsManager.apply_warnings_dictionary(
-		GutUtils.warnings_at_start)
+	GutUtils.WarningsManager.apply_warnings_dictionary(GutUtils.warnings_at_start)
 
 
 func _exit_tree() -> void:
-	if(!_wrote_results and _ran_from_editor):
+	if !_wrote_results and _ran_from_editor:
 		_write_results_for_gut_panel()
 
 
 func _setup_gui(show_gui: Variant) -> void:
-	if(show_gui):
+	if show_gui:
 		_gui.gut = gut
-		var printer: Variant = gut.logger.get_printer('gui')
+		var printer: Variant = gut.logger.get_printer("gui")
 		printer.set_textbox(_gui.get_textbox())
 	else:
-		gut.logger.disable_printer('gui', true)
+		gut.logger.disable_printer("gui", true)
 		_gui.visible = false
 
 	var opts: Variant = gut_config.options
 	_gui.set_font_size(opts.font_size)
 	_gui.set_font(opts.font_name)
-	if(opts.font_color != null and opts.font_color.is_valid_html_color()):
+	if opts.font_color != null and opts.font_color.is_valid_html_color():
 		_gui.set_default_font_color(Color(opts.font_color))
-	if(opts.background_color != null and opts.background_color.is_valid_html_color()):
+	if opts.background_color != null and opts.background_color.is_valid_html_color():
 		_gui.set_background_color(Color(opts.background_color))
 
 	_gui.set_opacity(min(1.0, float(opts.opacity) / 100))
@@ -80,13 +79,13 @@ func _setup_gui(show_gui: Variant) -> void:
 
 
 func _write_results_for_gut_panel() -> void:
-	var content: Variant = _gui.get_textbox().get_parsed_text() #_gut.logger.get_gui_bbcode()
+	var content: Variant = _gui.get_textbox().get_parsed_text()  #_gut.logger.get_gui_bbcode()
 	var f: Variant = FileAccess.open(result_bbcode_path, FileAccess.WRITE)
-	if(f != null):
+	if f != null:
 		f.store_string(content)
-		f = null # closes file
+		f = null  # closes file
 	else:
-		push_error('Could not save bbcode, result = ', FileAccess.get_open_error())
+		push_error("Could not save bbcode, result = ", FileAccess.get_open_error())
 
 	var exporter: ResultExporter = ResultExporter.new()
 	# TODO this should be checked and _wrote_results should maybe not be set, or
@@ -95,13 +94,17 @@ func _write_results_for_gut_panel() -> void:
 	_wrote_results = true
 
 
-func _handle_quit(should_exit: Variant, should_exit_on_success: Variant, override_exit_code: Variant = EXIT_OK) -> void:
-	var quitting_time: Variant = should_exit or \
-		(should_exit_on_success and gut.get_fail_count() == 0) or \
-		GutUtils.is_headless()
+func _handle_quit(
+	should_exit: Variant, should_exit_on_success: Variant, override_exit_code: Variant = EXIT_OK
+) -> void:
+	var quitting_time: Variant = (
+		should_exit
+		or (should_exit_on_success and gut.get_fail_count() == 0)
+		or GutUtils.is_headless()
+	)
 
-	if(!quitting_time):
-		if(should_exit_on_success):
+	if !quitting_time:
+		if should_exit_on_success:
 			lgr.log("There are failing tests, exit manually.")
 		_gui.use_compact_mode(false)
 		return
@@ -111,26 +114,28 @@ func _handle_quit(should_exit: Variant, should_exit_on_success: Variant, overrid
 	# null.
 	var exit_code: Variant = GutUtils.nvl(override_exit_code, EXIT_OK)
 
-	if(gut.get_fail_count() > 0):
+	if gut.get_fail_count() > 0:
 		exit_code = EXIT_ERROR
 
 	# Overwrite the exit code with the post_script's exit code if it is set
 	var post_hook_inst: Variant = gut.get_post_run_script_instance()
-	if(post_hook_inst != null and post_hook_inst.get_exit_code() != null):
+	if post_hook_inst != null and post_hook_inst.get_exit_code() != null:
 		exit_code = post_hook_inst.get_exit_code()
 
 	quit(exit_code)
 
 
 func _end_run(override_exit_code: Variant = EXIT_OK) -> void:
-	if(_ran_from_editor):
+	if _ran_from_editor:
 		_write_results_for_gut_panel()
 
 	GutErrorTracker.deregister_logger(error_tracker)
 
-	_handle_quit(gut_config.options.should_exit,
+	_handle_quit(
+		gut_config.options.should_exit,
 		gut_config.options.should_exit_on_success,
-		override_exit_code)
+		override_exit_code
+	)
 
 
 # -------------
@@ -147,32 +152,36 @@ func _on_tests_finished() -> void:
 # don't have my permission to call this, unless "you" is "me".
 func run_from_editor() -> void:
 	_ran_from_editor = true
-	const GutEditorGlobals = load('res://addons/gut/gui/editor_globals.gd')
+	const GutEditorGlobals = preload("res://addons/gut/gui/editor_globals.gd")
 	runner_json_path = GutUtils.nvl(runner_json_path, GutEditorGlobals.editor_run_gut_config_path)
-	result_bbcode_path = GutUtils.nvl(result_bbcode_path, GutEditorGlobals.editor_run_bbcode_results_path)
+	result_bbcode_path = GutUtils.nvl(
+		result_bbcode_path, GutEditorGlobals.editor_run_bbcode_results_path
+	)
 	result_json_path = GutUtils.nvl(result_json_path, GutEditorGlobals.editor_run_json_results_path)
 
-	if(gut_config == null):
+	if gut_config == null:
 		gut_config = GutConfig.new()
 		gut_config.load_options(runner_json_path)
 
-	call_deferred('run_tests')
+	call_deferred("run_tests")
 
 
 func run_tests(show_gui: bool = true) -> void:
 	_setup_gui(show_gui)
 
-	if(gut_config.options.dirs.size() + gut_config.options.tests.size() == 0):
-		var err_text: Variant = "You do not have any directories configured, so GUT " + \
-			"doesn't know where to find the tests.  Tell GUT where to find the " + \
-			"tests and GUT shall run the tests."
+	if gut_config.options.dirs.size() + gut_config.options.tests.size() == 0:
+		var err_text: Variant = (
+			"You do not have any directories configured, so GUT "
+			+ "doesn't know where to find the tests.  Tell GUT where to find the "
+			+ "tests and GUT shall run the tests."
+		)
 		lgr.error(err_text)
 		push_error(err_text)
 		_end_run(EXIT_ERROR)
 		return
 
 	var install_check_text: Variant = GutUtils.make_install_check_text()
-	if(install_check_text != GutUtils.INSTALL_OK_TEXT):
+	if install_check_text != GutUtils.INSTALL_OK_TEXT:
 		print("\n\n", GutUtils.version_numbers.get_version_text())
 		lgr.error(install_check_text)
 		push_error(install_check_text)
@@ -180,20 +189,20 @@ func run_tests(show_gui: bool = true) -> void:
 		return
 
 	gut.add_children_to = self
-	if(gut.get_parent() == null):
-		if(gut_config.options.gut_on_top):
+	if gut.get_parent() == null:
+		if gut_config.options.gut_on_top:
 			_gut_layer.add_child(gut)
 		else:
 			add_child(gut)
 
-	if(!gut.end_run.is_connected(_on_tests_finished)):
+	if !gut.end_run.is_connected(_on_tests_finished):
 		gut.end_run.connect(_on_tests_finished)
 
 	gut_config.apply_options(gut)
 	if GutUtils.is_headless():
 		gut._ignore_pause_before_teardown = true
 
-	var run_rest_of_scripts: Variant = gut_config.options.unit_test_name == ''
+	var run_rest_of_scripts: Variant = gut_config.options.unit_test_name == ""
 	GutErrorTracker.register_logger(error_tracker)
 	gut.test_scripts(run_rest_of_scripts)
 
@@ -214,11 +223,8 @@ func quit(exit_code: Variant) -> void:
 
 	await get_tree().process_frame
 
-	lgr.info(str('Exiting with code ', exit_code))
+	lgr.info(str("Exiting with code ", exit_code))
 	get_tree().quit(exit_code)
-
-
-
 
 # ##############################################################################
 # The MIT License (MIT)

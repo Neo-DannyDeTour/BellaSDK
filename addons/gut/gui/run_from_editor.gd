@@ -5,7 +5,8 @@
 # ------------------------------------------------------------------------------
 extends Node2D
 
-var GutLoader : Object
+var GutLoader: Object
+
 
 func _init() -> void:
 	GutLoader = load("res://addons/gut/gut_loader.gd")
@@ -17,6 +18,6 @@ func _ready() -> void:
 
 
 func _post_ready() -> void:
-	var runner : Node = load("res://addons/gut/gui/GutRunner.tscn").instantiate()
+	var runner: Node = load("res://addons/gut/gui/GutRunner.tscn").instantiate()
 	get_tree().root.add_child(runner)
 	runner.run_from_editor()

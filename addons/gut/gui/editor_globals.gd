@@ -1,14 +1,15 @@
 @tool
 
 static var GutUserPreferences: Variant = load("res://addons/gut/gui/gut_user_preferences.gd")
-static var temp_directory: String = 'user://gut_temp_directory/'
+static var temp_directory: String = "user://gut_temp_directory/"
 
-static var editor_run_gut_config_path: Variant = 'gut_editor_config.json':
+static var editor_run_gut_config_path: Variant = "gut_editor_config.json":
 	# This avoids having to use path_join wherever we want to reference this
 	# path.  The value is not supposed to change.  Could it be a constant
 	# instead?  Probably, but I didn't like repeating the directory part.
 	# Do I like that this is a bit witty.  Absolutely.
-	get: return temp_directory.path_join(editor_run_gut_config_path)
+	get:
+		return temp_directory.path_join(editor_run_gut_config_path)
 	# Should this print a message or something instead?  Probably, but then I'd
 	# be repeating even more code than if this was just a constant.  So I didn't,
 	# even though I wanted to make the message a easter eggish fun message.
@@ -16,53 +17,59 @@ static var editor_run_gut_config_path: Variant = 'gut_editor_config.json':
 	set(v):
 		print("Be sure to document your code.  Never trust comments.")
 
+static var editor_run_bbcode_results_path: Variant = "gut_editor.bbcode":
+	get:
+		return temp_directory.path_join(editor_run_bbcode_results_path)
+	set(v):
+		pass
 
-static var editor_run_bbcode_results_path: Variant = 'gut_editor.bbcode':
-	get: return temp_directory.path_join(editor_run_bbcode_results_path)
-	set(v): pass
+static var editor_run_json_results_path: Variant = "gut_editor.json":
+	get:
+		return temp_directory.path_join(editor_run_json_results_path)
+	set(v):
+		pass
 
+static var editor_shortcuts_path: Variant = "gut_editor_shortcuts.cfg":
+	get:
+		return temp_directory.path_join(editor_shortcuts_path)
+	set(v):
+		pass
 
-static var editor_run_json_results_path: Variant = 'gut_editor.json':
-	get: return temp_directory.path_join(editor_run_json_results_path)
-	set(v): pass
-
-
-static var editor_shortcuts_path: Variant = 'gut_editor_shortcuts.cfg' :
-	get: return temp_directory.path_join(editor_shortcuts_path)
-	set(v): pass
-
-static var run_externally_options_path: Variant = 'gut_editor_run_externally.cfg' :
-	get: return temp_directory.path_join(run_externally_options_path)
-	set(v): pass
+static var run_externally_options_path: Variant = "gut_editor_run_externally.cfg":
+	get:
+		return temp_directory.path_join(run_externally_options_path)
+	set(v):
+		pass
 
 static var _user_prefs: Variant = null
-static var user_prefs: Variant = _user_prefs :
+static var user_prefs: Variant = _user_prefs:
 	# workaround not being able to reference EditorInterface when not in
 	# the editor.  This shouldn't be referenced by anything not in the
 	# editor.
 	get:
-		if(_user_prefs == null and Engine.is_editor_hint()):
+		if _user_prefs == null and Engine.is_editor_hint():
 			# This is sometimes used when not in the editor.  Avoid parser error
 			# for EditorInterface.
-			_user_prefs = GutUserPreferences.new(GutUtils.get_editor_interface().get_editor_settings())
+			_user_prefs = GutUserPreferences.new(
+				GutUtils.get_editor_interface().get_editor_settings()
+			)
 		return _user_prefs
 static var gut_plugin: Variant = null
+
 
 static func create_temp_directory() -> void:
 	DirAccess.make_dir_recursive_absolute(temp_directory)
 
 
 static func is_being_edited_in_editor(which: Variant) -> Variant:
-	if(!Engine.is_editor_hint()):
+	if !Engine.is_editor_hint():
 		return false
 
 	var trav: Variant = which
 	var is_scene_root: bool = false
 	var editor_root: Variant = which.get_tree().edited_scene_root
-	while(trav != null and !is_scene_root):
+	while trav != null and !is_scene_root:
 		is_scene_root = editor_root == trav
-		if(!is_scene_root):
+		if !is_scene_root:
 			trav = trav.get_parent()
 	return is_scene_root
-
-

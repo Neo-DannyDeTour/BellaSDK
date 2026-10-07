@@ -1,7 +1,7 @@
 @tool
 extends Control
 
-const EditorCaretContextNotifier = load('res://addons/gut/editor_caret_context_notifier.gd')
+const EditorCaretContextNotifier = preload("res://addons/gut/editor_caret_context_notifier.gd")
 
 @onready var _ctrls: Variant = {
 	btn_script = $HBox/BtnRunScript,
@@ -14,22 +14,18 @@ const EditorCaretContextNotifier = load('res://addons/gut/editor_caret_context_n
 
 var _caret_notifier: Variant = null
 
-var _last_info: Variant = {
-	script = null,
-	inner_class = null,
-	method = null
-}
+var _last_info: Variant = {script = null, inner_class = null, method = null}
 
-var disabled: Variant = false :
+var disabled: Variant = false:
 	set(val):
 		disabled = val
-		if(is_inside_tree()):
+		if is_inside_tree():
 			_ctrls.btn_script.disabled = val
 			_ctrls.btn_inner.disabled = val
 			_ctrls.btn_method.disabled = val
-var method_prefix: String = 'test_'
-var inner_class_prefix: String = 'Test'
-var menu_manager: Variant = null :
+var method_prefix: String = "test_"
+var inner_class_prefix: String = "Test"
+var menu_manager: Variant = null:
 	set(val):
 		menu_manager = val
 		menu_manager.run_script.connect(_on_BtnRunScript_pressed)
@@ -38,7 +34,6 @@ var menu_manager: Variant = null :
 		menu_manager.run_inner_class.connect(_on_BtnRunInnerClass_pressed)
 		menu_manager.run_test.connect(_on_BtnRunMethod_pressed)
 		_update_buttons(_last_info)
-
 
 signal run_tests(what)
 
@@ -59,7 +54,7 @@ func _ready() -> void:
 
 
 func _on_caret_notifer_changed(data: Variant) -> void:
-	if(data.is_test_script):
+	if data.is_test_script:
 		_last_info = data
 		_update_buttons(_last_info)
 
@@ -68,11 +63,12 @@ func _on_caret_notifer_changed(data: Variant) -> void:
 # Private
 # ----------------
 
+
 func _update_buttons(info: Variant) -> void:
 	_ctrls.lbl_none.visible = false
 	_ctrls.btn_script.visible = info.script != null
 
-	if(info.script != null and info.is_test_script):
+	if info.script != null and info.is_test_script:
 		_ctrls.btn_script.text = info.script.resource_path.get_file()
 
 	_ctrls.btn_inner.visible = info.inner_class != null
@@ -83,11 +79,11 @@ func _update_buttons(info: Variant) -> void:
 	var is_test_method: Variant = info.method != null and info.method.begins_with(method_prefix)
 	_ctrls.btn_method.visible = is_test_method
 	_ctrls.arrow_2.visible = is_test_method
-	if(is_test_method):
+	if is_test_method:
 		_ctrls.btn_method.text = str(info.method)
 		_ctrls.btn_method.tooltip_text = str("Run test ", info.method)
 
-	if(menu_manager != null):
+	if menu_manager != null:
 		menu_manager.disable_menu("run_script", info.script == null)
 		menu_manager.disable_menu("run_inner_class", info.inner_class == null)
 		menu_manager.disable_menu("run_at_cursor", info.script == null)
@@ -102,10 +98,14 @@ func _update_buttons(info: Variant) -> void:
 func _update_size() -> void:
 	custom_minimum_size.x = _ctrls.btn_method.size.x + _ctrls.btn_method.position.x
 
+
 var _last_run_info: Dictionary = {}
+
+
 func _emit_run_tests(info: Variant) -> void:
 	_last_run_info = info.duplicate()
 	run_tests.emit(info)
+
 
 # ----------------
 # Events
@@ -135,16 +135,16 @@ func _on_BtnRunMethod_pressed() -> void:
 # Public
 # ----------------
 func rerun() -> void:
-	if(_last_run_info != {}):
+	if _last_run_info != {}:
 		_emit_run_tests(_last_run_info)
 
 
 func run_at_cursor() -> void:
-	if(_ctrls.btn_method.visible):
+	if _ctrls.btn_method.visible:
 		_on_BtnRunMethod_pressed()
-	elif(_ctrls.btn_inner.visible):
+	elif _ctrls.btn_inner.visible:
 		_on_BtnRunInnerClass_pressed()
-	elif(_ctrls.btn_script.visible):
+	elif _ctrls.btn_script.visible:
 		_on_BtnRunScript_pressed()
 	else:
 		print("nothing selected")

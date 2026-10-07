@@ -1,14 +1,13 @@
 extends EditorDock
 
-
-var _panel : Control = null
+var _panel: Control = null
 var _current_layout: int = -1
 
 
 func _update_layout(layout: Variant) -> void:
 	_current_layout = layout
-	if(_panel != null):
-		if(layout == DOCK_LAYOUT_FLOATING):
+	if _panel != null:
+		if layout == DOCK_LAYOUT_FLOATING:
 			_windowed_mode()
 		else:
 			_dock_mode()

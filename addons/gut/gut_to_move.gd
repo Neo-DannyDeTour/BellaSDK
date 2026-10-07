@@ -2,6 +2,7 @@
 # to some utility somewhere.
 extends Node
 
+
 # ------------------------------------------------------------------------------
 # deletes all files in a given directory
 # ------------------------------------------------------------------------------
@@ -9,31 +10,33 @@ func directory_delete_files(path: Variant) -> void:
 	var d: Variant = DirAccess.open(path)
 
 	# SHORTCIRCUIT
-	if(d == null):
+	if d == null:
 		return
 
 	# Traversing a directory is kinda odd.  You have to start the process of listing
 	# the contents of a directory with list_dir_begin then use get_next until it
 	# returns an empty string.  Then I guess you should end it.
-	d.list_dir_begin() # TODOGODOT4 fill missing arguments https://github.com/godotengine/godot/pull/40547
-	var thing: Variant = d.get_next() # could be a dir or a file or something else maybe?
-	var full_path: String = ''
-	while(thing != ''):
+	d.list_dir_begin()  # TODOGODOT4 fill missing arguments https://github.com/godotengine/godot/pull/40547
+	var thing: Variant = d.get_next()  # could be a dir or a file or something else maybe?
+	var full_path: String = ""
+	while thing != "":
 		full_path = path + "/" + thing
 		# file_exists returns fasle for directories
-		if(d.file_exists(full_path)):
+		if d.file_exists(full_path):
 			d.remove(full_path)
 		thing = d.get_next()
 
 	d.list_dir_end()
+
 
 # ------------------------------------------------------------------------------
 # deletes the file at the specified path
 # ------------------------------------------------------------------------------
 func file_delete(path: Variant) -> void:
 	var d: Variant = DirAccess.open(path.get_base_dir())
-	if(d != null):
+	if d != null:
 		d.remove(path)
+
 
 # ------------------------------------------------------------------------------
 # Checks to see if the passed in file has any data in it.
@@ -42,21 +45,24 @@ func is_file_empty(path: Variant) -> Variant:
 	var f: Variant = FileAccess.open(path, FileAccess.READ)
 	var result: Variant = FileAccess.get_open_error()
 	var empty: bool = true
-	if(result == OK):
+	if result == OK:
 		empty = f.get_length() == 0
 	f = null
 	return empty
+
 
 # ------------------------------------------------------------------------------
 # ------------------------------------------------------------------------------
 func get_file_as_text(path: Variant) -> Variant:
 	return GutUtils.get_file_as_text(path)
 
+
 # ------------------------------------------------------------------------------
 # Creates an empty file at the specified path
 # ------------------------------------------------------------------------------
 func file_touch(path: Variant) -> void:
 	FileAccess.open(path, FileAccess.WRITE)
+
 
 # ------------------------------------------------------------------------------
 # Simulate a number of frames by calling '_process' and '_physics_process' (if
@@ -69,22 +75,15 @@ func file_touch(path: Variant) -> void:
 # respect this status, for example if you are testing an object which toggles
 # processing, pass 'check_is_processing' as 'true'.
 # ------------------------------------------------------------------------------
-func simulate(obj: Variant, times: Variant, delta: Variant, check_is_processing: bool = false) -> void:
+func simulate(
+	obj: Variant, times: Variant, delta: Variant, check_is_processing: bool = false
+) -> void:
 	for _i in range(times):
-		if (
-			obj.has_method("_process")
-			and (
-				not check_is_processing
-				or obj.is_processing()
-			)
-		):
+		if obj.has_method("_process") and (not check_is_processing or obj.is_processing()):
 			obj._process(delta)
-		if(
+		if (
 			obj.has_method("_physics_process")
-			and (
-				not check_is_processing
-				or obj.is_physics_processing()
-			)
+			and (not check_is_processing or obj.is_physics_processing())
 		):
 			obj._physics_process(delta)
 

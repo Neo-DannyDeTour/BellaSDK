@@ -17,15 +17,19 @@ func _add_attr(name: Variant, value: Variant) -> String:
 
 
 func _export_test_result(test: Dictionary) -> String:
-	var to_return: String = ''
+	var to_return: String = ""
 
 	# Right now the pending and failure messages won't fit in the message
 	# attribute because they can span multiple lines and need to be escaped.
-	if(test.status == 'pending'):
-		var skip_tag: Variant = str("<skipped message=\"pending\">", _wrap_cdata(test.pending[0]), "</skipped>")
+	if test.status == "pending":
+		var skip_tag: Variant = str(
+			'<skipped message="pending">', _wrap_cdata(test.pending[0]), "</skipped>"
+		)
 		to_return += skip_tag
-	elif(test.status == 'fail'):
-		var fail_tag: Variant = str("<failure message=\"failed\">", _wrap_cdata(test.failing[0]), "</failure>")
+	elif test.status == "fail":
+		var fail_tag: Variant = str(
+			'<failure message="failed">', _wrap_cdata(test.failing[0]), "</failure>"
+		)
 		to_return += fail_tag
 
 	return to_return
@@ -85,15 +89,15 @@ func _export_scripts(exp_results: Dictionary) -> String:
 func get_results_xml(gut: GutMain) -> String:
 	var exp_results: Dictionary = _exporter.get_results_dictionary(gut)
 	var to_return: Variant = '<?xml version="1.0" encoding="UTF-8"?>' + "\n"
-	to_return += '<testsuites '
-	to_return += _add_attr("name", 'GutTests')
+	to_return += "<testsuites "
+	to_return += _add_attr("name", "GutTests")
 	to_return += _add_attr("failures", exp_results.test_scripts.props.failures)
-	to_return += _add_attr('tests', exp_results.test_scripts.props.tests)
+	to_return += _add_attr("tests", exp_results.test_scripts.props.tests)
 	to_return += ">\n"
 
 	to_return += _strutils.indent_text(_export_scripts(exp_results), 1, "  ")
 
-	to_return += '</testsuites>'
+	to_return += "</testsuites>"
 	return to_return
 
 
@@ -104,7 +108,7 @@ func write_file(gut: GutMain, path: String) -> int:
 	var xml: Variant = get_results_xml(gut)
 
 	var f_result: int = GutUtils.write_file(path, xml)
-	if(f_result != OK):
+	if f_result != OK:
 		var msg: Variant = str("Error:  ", f_result, ".  Could not create export file ", path)
 		GutUtils.get_logger().error(msg)
 
