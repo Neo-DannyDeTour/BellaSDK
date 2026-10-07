@@ -12,6 +12,8 @@ const PREVIEW_LAYER_MASK: int = 1 << 10
 ## Visual layer bitmask assigned to volumetric fog volumes (Layer 10).
 const VOLUMETRIC_LAYER_MASK: int = 1 << 9
 
+const SETTINGS_LEVEL_SCENE: PackedScene = preload("res://player/settings_level.tscn")
+
 ## Reference to the video settings panel.
 @onready var video_panel: Panel = %VideoOptionsPanel
 
@@ -130,7 +132,7 @@ func _isolate_viewport_scenario() -> void:
 	clean_env.glow_enabled = false
 
 
-## Pre-warms diorama scene safely to prevent memory leaks on load.
+## Pre-warms diorama [Node3D] scene safely to prevent memory leaks.
 func _prewarm_diorama() -> void:
 	print("OptionsRouter: Pre-warming diorama scene instance.")
 	if not is_instance_valid(diorama_viewport):
@@ -138,20 +140,14 @@ func _prewarm_diorama() -> void:
 
 	_instantiated_diorama = (diorama_viewport.get_node_or_null("SettingsLevel") as Node3D)
 	if not is_instance_valid(_instantiated_diorama):
-		var scene: PackedScene = (
-			load("res://player/settings_level.tscn")
-			if load("res://player/settings_level.tscn") is PackedScene
-			else null
-		)
-		if is_instance_valid(scene):
-			var raw_instance: Node = scene.instantiate()
-			if raw_instance is Node3D:
-				_instantiated_diorama = raw_instance as Node3D
-				diorama_viewport.add_child(_instantiated_diorama)
-			else:
-				print("OptionsRouter: Failed to cast diorama to Node3D.")
-				if is_instance_valid(raw_instance):
-					raw_instance.queue_free()
+		var raw_instance: Node = SETTINGS_LEVEL_SCENE.instantiate()
+		if raw_instance is Node3D:
+			_instantiated_diorama = raw_instance as Node3D
+			diorama_viewport.add_child(_instantiated_diorama)
+		else:
+			print("OptionsRouter: Failed to cast diorama to Node3D.")
+			if is_instance_valid(raw_instance):
+				raw_instance.queue_free()
 
 	_neutralize_diorama_hotspots()
 	_bind_diorama_textures()

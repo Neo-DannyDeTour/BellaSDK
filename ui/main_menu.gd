@@ -9,6 +9,8 @@ const DEFAULT_SENSITIVITY: float = 0.5
 ## Scene preloaded for instantaneous chapter view display.
 const CHAPTER_SCREEN: PackedScene = preload("res://ui/menu_chapter_screen.tscn")
 
+const LOADING_SCREEN_SCENE: PackedScene = preload("res://ui/loading_screen.tscn")
+
 ## Audio stream player configured for main theme playback.
 @export var main_theme_player: AudioStreamPlayer
 
@@ -249,7 +251,7 @@ func prepare_for_level_transition() -> void:
 	await get_tree().process_frame
 
 
-## Restarts the current gameplay level with safe teardown of GI buffers.
+## Reloads active level using [LoadingScreen] on start button trigger.
 func _on_start_game_pressed() -> void:
 	print("UI: Player clicked Restart Game. Initiating safe reload.")
 	if not has_calibrated:
@@ -260,17 +262,16 @@ func _on_start_game_pressed() -> void:
 	if is_instance_valid(parent) and parent.has_method("toggle_pause"):
 		await prepare_for_level_transition()
 		var current_path: String = get_tree().current_scene.scene_file_path
-		if not current_path.is_empty() and ResourceLoader.exists("res://ui/loading_screen.tscn"):
-			var loader_scene: PackedScene = (
-				load("res://ui/loading_screen.tscn")
-				if load("res://ui/loading_screen.tscn") is PackedScene
-				else null
-			)
-			var loader: LoadingScreen = (
-				loader_scene.instantiate() if loader_scene.instantiate() is LoadingScreen else null
-			)
-			loader.level_scene_path = current_path
-			get_tree().root.add_child(loader)
+		if not current_path.is_empty():
+			var raw_instance: Node = LOADING_SCREEN_SCENE.instantiate()
+			var loader: LoadingScreen = raw_instance as LoadingScreen
+			if is_instance_valid(loader):
+				loader.level_scene_path = current_path
+				get_tree().root.add_child(loader)
+			else:
+				if is_instance_valid(raw_instance):
+					raw_instance.queue_free()
+				get_tree().reload_current_scene()
 		else:
 			get_tree().reload_current_scene()
 
