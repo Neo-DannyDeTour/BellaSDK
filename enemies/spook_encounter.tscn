@@ -1,0 +1,39 @@
+[gd_scene format=3 uid="uid://8fomapu5n2ds"]
+
+[ext_resource type="Script" uid="uid://d3i643ldk7pae" path="res://enemies/spook_encounter.gd" id="1_mpem4"]
+[ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://triggers/editor_trigger_visualizer.gd" id="3_n7fn1"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_0k3yr"]
+size = Vector3(4, 2.5, 4)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kjmmo"]
+transparency = 1
+cull_mode = 2
+shading_mode = 0
+albedo_color = Color(0.9, 0.5, 0.1, 0.25)
+
+[sub_resource type="BoxMesh" id="BoxMesh_ktd8q"]
+material = SubResource("StandardMaterial3D_kjmmo")
+size = Vector3(2, 2, 2)
+
+[node name="SpookEncounter" type="Area3D" unique_id=876653171]
+script = ExtResource("1_mpem4")
+floor_offset = 0.1
+look_duration_threshold = 0.1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=2115348629]
+shape = SubResource("BoxShape3D_0k3yr")
+
+[node name="Sprite3D" type="Sprite3D" parent="." unique_id=491903343]
+transform = Transform3D(0.5, 0, 0, 0, 0.5, 0, 0, 0, 0.5, 0, 0, 0)
+top_level = true
+billboard = 2
+double_sided = false
+
+[node name="VisibleOnScreenNotifier3D" type="VisibleOnScreenNotifier3D" parent="Sprite3D" unique_id=649823985]
+aabb = AABB(-3, -6, -1, 6, 12, 2)
+
+[node name="EditorTriggerVisualizer" type="MeshInstance3D" parent="." unique_id=1191594556]
+mesh = SubResource("BoxMesh_ktd8q")
+script = ExtResource("3_n7fn1")
+metadata/_custom_type_script = "uid://q4v42nidwdr2"
