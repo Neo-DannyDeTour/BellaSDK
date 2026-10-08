@@ -44,6 +44,13 @@ jobs:
         with:
           godot-version: "4.7.1"
 
+      - name: Install GUT Addon
+        shell: bash
+        run: |
+          mkdir -p addons/gut
+          curl -sSL https://github.com/bitwes/Gut/archive/refs/tags/v9.3.1.tar.gz \
+            | tar -xz --strip-components=2 -C addons/gut Gut-9.3.1/addons/gut
+
       - name: Create Stub Files for Excluded Assets
         run: |
           set -e
