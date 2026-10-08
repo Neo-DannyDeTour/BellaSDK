@@ -47,7 +47,7 @@ jobs:
       - name: Install GUT Addon
         shell: bash
         run: |
-          git clone --depth 1 --branch v9.3.1 https://github.com/bitwes/Gut.git /tmp/gut
+          git clone --depth 1 --branch 9.3.1 https://github.com/bitwes/Gut.git /tmp/gut
           mkdir -p addons
           cp -r /tmp/gut/addons/gut addons/
           rm -rf /tmp/gut
