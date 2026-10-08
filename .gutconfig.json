@@ -21,7 +21,7 @@
   "hide_orphans": false,
   "ignore_pause": false,
   "include_subdirs": true,
-  "junit_xml_file": "",
+  "junit_xml_file": "res://gut_test_results.xml",
   "junit_xml_timestamp": false,
   "log_level": 1.0,
   "no_error_tracking": false,
