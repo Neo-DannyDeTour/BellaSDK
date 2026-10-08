@@ -87,13 +87,16 @@ func _ready() -> void:
 
 ## Resolves the infinite swim CheckButton with fallback searching.
 func _resolve_swim_toggle() -> CheckButton:
-	var btn: CheckButton = (
-		get_node_or_null("%InfiniteSwimToggle")
-		if get_node_or_null("%InfiniteSwimToggle") is CheckButton
-		else null
-	)
+	var unique_node: Node = get_node_or_null("%InfiniteSwimToggle")
+	var btn: CheckButton = null
+	if unique_node is CheckButton:
+		btn = unique_node
+
 	if not is_instance_valid(btn):
-		btn = find_child("InfiniteSwimToggle", true, false) as CheckButton
+		var found_child: Node = find_child("InfiniteSwimToggle", true, false)
+		if found_child is CheckButton:
+			btn = found_child
+
 	if not is_instance_valid(btn):
 		push_error("AccessibilityControlsSection: Could not find InfiniteSwimToggle node!")
 	return btn
@@ -154,34 +157,30 @@ func load_settings() -> void:
 	)
 
 	if is_instance_valid(invert_y_toggle):
-		var invert: bool = bool(
-			GlobalSettings.get_setting("Controls", "invert_y", DEFAULT_INVERT_Y)
-		)
+		var invert: bool = GlobalSettings.get_setting_bool("Controls", "invert_y", DEFAULT_INVERT_Y)
 		invert_y_toggle.set_pressed_no_signal(invert)
 
 	if is_instance_valid(toggle_crouch_button):
-		var crouch: bool = bool(
-			GlobalSettings.get_setting("Controls", "toggle_crouch", DEFAULT_TOGGLE_CROUCH)
+		var crouch: bool = GlobalSettings.get_setting_bool(
+			"Controls", "toggle_crouch", DEFAULT_TOGGLE_CROUCH
 		)
 		toggle_crouch_button.set_pressed_no_signal(crouch)
 
 	if is_instance_valid(toggle_sprint_button):
-		var sprint: bool = bool(
-			GlobalSettings.get_setting("Controls", "toggle_sprint", DEFAULT_TOGGLE_SPRINT)
+		var sprint: bool = GlobalSettings.get_setting_bool(
+			"Controls", "toggle_sprint", DEFAULT_TOGGLE_SPRINT
 		)
 		toggle_sprint_button.set_pressed_no_signal(sprint)
 
 	if is_instance_valid(cancel_crouch_jump_button):
-		var cancel_jump: bool = bool(
-			GlobalSettings.get_setting(
-				"Gameplay", "cancel_crouch_on_jump", DEFAULT_CANCEL_CROUCH_ON_JUMP
-			)
+		var cancel_jump: bool = GlobalSettings.get_setting_bool(
+			"Gameplay", "cancel_crouch_on_jump", DEFAULT_CANCEL_CROUCH_ON_JUMP
 		)
 		cancel_crouch_jump_button.set_pressed_no_signal(cancel_jump)
 
 	if is_instance_valid(aim_assist_toggle):
-		var aim: bool = bool(
-			GlobalSettings.get_setting("Gameplay", "aim_assist", DEFAULT_AIM_ASSIST)
+		var aim: bool = GlobalSettings.get_setting_bool(
+			"Gameplay", "aim_assist", DEFAULT_AIM_ASSIST
 		)
 		aim_assist_toggle.set_pressed_no_signal(aim)
 
@@ -197,14 +196,14 @@ func load_settings() -> void:
 	)
 
 	if is_instance_valid(reduce_motion_toggle):
-		var reduce: bool = bool(
-			GlobalSettings.get_setting("Accessibility", "reduce_motion", DEFAULT_REDUCE_MOTION)
+		var reduce: bool = GlobalSettings.get_setting_bool(
+			"Accessibility", "reduce_motion", DEFAULT_REDUCE_MOTION
 		)
 		reduce_motion_toggle.set_pressed_no_signal(reduce)
 
 	if is_instance_valid(infinite_swim_toggle):
-		var inf_swim: bool = bool(
-			GlobalSettings.get_setting("Accessibility", "infinite_swim", DEFAULT_INFINITE_SWIM)
+		var inf_swim: bool = GlobalSettings.get_setting_bool(
+			"Accessibility", "infinite_swim", DEFAULT_INFINITE_SWIM
 		)
 		infinite_swim_toggle.set_pressed_no_signal(inf_swim)
 
@@ -261,7 +260,7 @@ func _connect_slider(
 func _commit_control_slider_val(
 	key: String, val: float, section: String, apply_cb: Callable
 ) -> void:
-	var current: float = float(GlobalSettings.get_setting(section, key, -999.0))
+	var current: float = GlobalSettings.get_setting_float(section, key, -999.0)
 	if not is_equal_approx(current, val):
 		GlobalSettings.save_setting(section, key, val)
 		if apply_cb.is_valid():
@@ -300,7 +299,7 @@ func _load_slider(
 	slider: HSlider, input_box: LineEdit, key: String, default_val: float, section: String
 ) -> void:
 	if is_instance_valid(slider):
-		var val: float = float(GlobalSettings.get_setting(section, key, default_val))
+		var val: float = GlobalSettings.get_setting_float(section, key, default_val)
 		slider.set_value_no_signal(val)
 		if is_instance_valid(input_box):
 			input_box.text = "%.2f" % val
@@ -312,8 +311,10 @@ func _get_camera_controller() -> CameraController:
 	if not is_instance_valid(player):
 		return null
 	var controller_val: Variant = player.get(&"camera_controller")
-	if controller_val is CameraController and is_instance_valid(controller_val):
-		return controller_val as CameraController
+	if controller_val is CameraController:
+		var camera_node: CameraController = controller_val
+		if is_instance_valid(camera_node):
+			return camera_node
 	return null
 
 
@@ -327,7 +328,7 @@ func _apply_mouse_sensitivity(sens: float) -> void:
 
 ## Handles vertical axis inversion toggling.
 func _on_invert_y_toggled(toggled_on: bool) -> void:
-	var current: bool = bool(GlobalSettings.get_setting("Controls", "invert_y", DEFAULT_INVERT_Y))
+	var current: bool = GlobalSettings.get_setting_bool("Controls", "invert_y", DEFAULT_INVERT_Y)
 	if current == toggled_on:
 		return
 
@@ -340,8 +341,8 @@ func _on_invert_y_toggled(toggled_on: bool) -> void:
 
 ## Handles toggle crouch button mode setting.
 func _on_toggle_crouch_toggled(toggled_on: bool) -> void:
-	var current: bool = bool(
-		GlobalSettings.get_setting("Controls", "toggle_crouch", DEFAULT_TOGGLE_CROUCH)
+	var current: bool = GlobalSettings.get_setting_bool(
+		"Controls", "toggle_crouch", DEFAULT_TOGGLE_CROUCH
 	)
 	if current == toggled_on:
 		return
@@ -352,8 +353,8 @@ func _on_toggle_crouch_toggled(toggled_on: bool) -> void:
 
 ## Handles toggle sprint button mode setting.
 func _on_toggle_sprint_toggled(toggled_on: bool) -> void:
-	var current: bool = bool(
-		GlobalSettings.get_setting("Controls", "toggle_sprint", DEFAULT_TOGGLE_SPRINT)
+	var current: bool = GlobalSettings.get_setting_bool(
+		"Controls", "toggle_sprint", DEFAULT_TOGGLE_SPRINT
 	)
 	if current == toggled_on:
 		return
@@ -364,10 +365,8 @@ func _on_toggle_sprint_toggled(toggled_on: bool) -> void:
 
 ## Handles cancel crouch on jump setting.
 func _on_cancel_crouch_jump_toggled(toggled_on: bool) -> void:
-	var current: bool = bool(
-		GlobalSettings.get_setting(
-			"Gameplay", "cancel_crouch_on_jump", DEFAULT_CANCEL_CROUCH_ON_JUMP
-		)
+	var current: bool = GlobalSettings.get_setting_bool(
+		"Gameplay", "cancel_crouch_on_jump", DEFAULT_CANCEL_CROUCH_ON_JUMP
 	)
 	if current == toggled_on:
 		return
@@ -378,8 +377,8 @@ func _on_cancel_crouch_jump_toggled(toggled_on: bool) -> void:
 
 ## Handles aim assistance system toggling.
 func _on_aim_assist_toggled(toggled_on: bool) -> void:
-	var current: bool = bool(
-		GlobalSettings.get_setting("Gameplay", "aim_assist", DEFAULT_AIM_ASSIST)
+	var current: bool = GlobalSettings.get_setting_bool(
+		"Gameplay", "aim_assist", DEFAULT_AIM_ASSIST
 	)
 	if current == toggled_on:
 		return
@@ -390,8 +389,8 @@ func _on_aim_assist_toggled(toggled_on: bool) -> void:
 
 ## Handles motion reduction toggle updates.
 func _on_reduce_motion_toggled(toggled_on: bool) -> void:
-	var current: bool = bool(
-		GlobalSettings.get_setting("Accessibility", "reduce_motion", DEFAULT_REDUCE_MOTION)
+	var current: bool = GlobalSettings.get_setting_bool(
+		"Accessibility", "reduce_motion", DEFAULT_REDUCE_MOTION
 	)
 	if current == toggled_on:
 		return
@@ -405,12 +404,14 @@ func _on_reduce_motion_toggled(toggled_on: bool) -> void:
 
 ## Handles infinite swim toggle updates and broadcasts state changes.
 func _on_infinite_swim_toggled(toggled_on: bool) -> void:
-	var current: bool = bool(
-		GlobalSettings.get_setting("Accessibility", "infinite_swim", DEFAULT_INFINITE_SWIM)
+	var current: bool = GlobalSettings.get_setting_bool(
+		"Accessibility", "infinite_swim", DEFAULT_INFINITE_SWIM
 	)
 	if current == toggled_on:
 		return
 
 	print("Player toggled Infinite Swim to: ", toggled_on)
 	GlobalSettings.save_setting("Accessibility", "infinite_swim", toggled_on, true)
-	Events.infinite_swim_toggled.emit(toggled_on)
+	var events_node: Node = get_node_or_null("/root/Events")
+	if is_instance_valid(events_node) and events_node.has_signal("infinite_swim_toggled"):
+		events_node.emit_signal("infinite_swim_toggled", toggled_on)

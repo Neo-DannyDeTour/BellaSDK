@@ -159,8 +159,8 @@ func _spawn_one_enemy() -> void:
 
 ## Tracks enemy deaths and completes wave when living count hits zero.
 func _on_enemy_killed(enemy_node: Node3D, killer_node: Node3D) -> void:
-	var killer_name: String = killer_node.name if is_instance_valid(killer_node) else "unknown"
-	var enemy_name: String = enemy_node.name if is_instance_valid(enemy_node) else "unknown"
+	var killer_name: StringName = killer_node.name if is_instance_valid(killer_node) else &"unknown"
+	var enemy_name: StringName = enemy_node.name if is_instance_valid(enemy_node) else &"unknown"
 	print("WaveSpawner: Enemy ", enemy_name, " slain by ", killer_name)
 
 	var idx: int = _alive_enemies.find(enemy_node)

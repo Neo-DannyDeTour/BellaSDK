@@ -2,9 +2,6 @@
 class_name SystemLocator
 extends Node
 
-# --------------------------------------
-# CACHED SINGLETON REFERENCES
-# --------------------------------------
 ## Cached reference to global Text-To-Speech manager node.
 static var _tts_manager: Node = null
 
@@ -16,6 +13,9 @@ static var _graphics_manager: Node = null
 
 ## Generic registry storing dynamic service references by [StringName].
 static var _services: Dictionary = {}
+
+## Optional root window override used to isolate tests from engine autoloads.
+static var root_override: Window = null
 
 
 ## Initializes the service locator and pre-caches available root singletons.
@@ -92,10 +92,13 @@ static func clear_cache() -> void:
 	_keycard_system = null
 	_graphics_manager = null
 	_services.clear()
+	root_override = null
 
 
 ## Helper resolving root [Window] safely across static scopes.
 static func _get_root_window() -> Window:
+	if is_instance_valid(root_override):
+		return root_override
 	var tree: SceneTree = Engine.get_main_loop() if Engine.get_main_loop() is SceneTree else null
 	if is_instance_valid(tree):
 		return tree.root

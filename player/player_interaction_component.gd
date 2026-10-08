@@ -1,4 +1,4 @@
-## Manages player object grabbing, throwing, inventory anchoring, and scanner routing.
+## Manages player item picking, throwing, inventory anchoring, and scanner routing.
 class_name PlayerInteractionComponent
 extends Node
 
@@ -21,19 +21,19 @@ const DROP_REPICK_COOLDOWN_MSEC: int = 400
 ## Marker indicating anchor point for picked-up items in front of player.
 @export var hold_position: Marker3D
 
-## Socket node holding equipped weapons and tools for the [Player].
+## Socket node holding equipped weapons and tools for the player.
 @export var weapon_holder: Node3D
 
-## Reference to the primary [Player] camera node.
+## Reference to the primary player camera node.
 @export var camera: Camera3D
 
 ## Reference to the [InteractionScanner] sub-component.
 @export var interaction_scanner: InteractionScanner
 
-## Reference to the parent [Player] character entity.
-var player: Player
+## Reference to the parent [CharacterBody3D] character entity.
+var player: CharacterBody3D = null
 
-## The [RigidBody3D] currently carried by the [Player].
+## The [RigidBody3D] currently carried by the player.
 var held_item: RigidBody3D = null:
 	set(value):
 		var changed: bool = held_item != value
@@ -71,8 +71,7 @@ var _last_drop_time: int = 0
 ## Initializes component, caches player, and binds scanner and event listeners.
 func initialize(p_player: CharacterBody3D) -> void:
 	print("InteractionComponent: initialize() called. Caching player reference.")
-	if p_player is Player:
-		player = p_player
+	player = p_player
 
 	if (
 		is_instance_valid(interaction_scanner)
@@ -88,7 +87,6 @@ func process_interaction(delta: float) -> void:
 	if is_instance_valid(interaction_scanner):
 		interaction_scanner.process_interaction(delta)
 
-	# 1. Throwing Held Items
 	if is_instance_valid(held_item):
 		var is_throw_triggered: bool = (
 			GestureInputManager.consume_buffered_action("shoot")
@@ -105,7 +103,6 @@ func process_interaction(delta: float) -> void:
 			throw_held_item()
 			return
 
-	# 2. Dropping or Picking Up Items via Interact Action
 	var is_interact_triggered: bool = (
 		GestureInputManager.consume_buffered_action("interact")
 		or (InputMap.has_action("interact") and Input.is_action_just_pressed("interact"))
@@ -140,7 +137,6 @@ func process_interaction(delta: float) -> void:
 			interaction_scanner.handle_interact_input()
 			return
 
-	# 3. Forward Shoot and Reload Inputs when Hands are Empty
 	if not is_instance_valid(held_item):
 		var is_shoot_triggered: bool = (
 			GestureInputManager.consume_buffered_action("shoot")
@@ -264,8 +260,11 @@ func force_clear_hands() -> void:
 func _check_glider_restore(item: Node) -> void:
 	if item.has_method(&"is_class") and item.get("class_name") == "GliderItem":
 		print("InteractionComponent: Released GliderItem. Restoring sprint.")
-		if is_instance_valid(player) and is_instance_valid(player.locomotion_component):
-			player.locomotion_component.can_sprint = true
+		if is_instance_valid(player) and "locomotion_component" in player:
+			var raw_loco: Variant = player.get("locomotion_component")
+			if raw_loco is PlayerLocomotionComponent:
+				var locomotion: PlayerLocomotionComponent = raw_loco
+				locomotion.can_sprint = true
 		is_heavy_lifting = false
 
 
@@ -287,9 +286,12 @@ func update_heavy_carry_state() -> void:
 	if is_heavy_carrying != is_heavy:
 		is_heavy_carrying = is_heavy
 		print("InteractionComponent: Heavy carry toggled -> ", is_heavy_carrying)
-		if is_instance_valid(player) and is_instance_valid(player.locomotion_component):
-			player.locomotion_component.can_sprint = not is_heavy_carrying
-			player.locomotion_component.can_jump = not is_heavy_carrying
+		if is_instance_valid(player) and "locomotion_component" in player:
+			var raw_loco: Variant = player.get("locomotion_component")
+			if raw_loco is PlayerLocomotionComponent:
+				var locomotion: PlayerLocomotionComponent = raw_loco
+				locomotion.can_sprint = not is_heavy_carrying
+				locomotion.can_jump = not is_heavy_carrying
 		Events.heavy_carry_toggled.emit(is_heavy_carrying)
 
 
@@ -311,7 +313,7 @@ func force_grab_item(item: RigidBody3D) -> void:
 
 ## Attaches an item to the weapon holder socket using [Utilities].
 func attach_item_to_weapon_holder(
-	item: Node3D, item_anchor: Marker3D, p_player: Node3D = null
+	item: Node3D, item_anchor: Marker3D, p_player: CharacterBody3D = null
 ) -> void:
 	print("InteractionComponent: attach_item_to_weapon_holder() reparenting item.")
 	Utilities.reparent_keep_transform(item, weapon_holder, true)
@@ -320,9 +322,12 @@ func attach_item_to_weapon_holder(
 	item.global_position = hold_position.global_position + offset
 	item.transform.basis = Basis.IDENTITY
 
-	var target_player: Player = p_player if p_player is Player else player
-	if is_instance_valid(target_player) and is_instance_valid(target_player.locomotion_component):
-		target_player.locomotion_component.can_sprint = false
+	var target_player: CharacterBody3D = p_player if p_player != null else player
+	if is_instance_valid(target_player) and "locomotion_component" in target_player:
+		var raw_loco: Variant = target_player.get("locomotion_component")
+		if raw_loco is PlayerLocomotionComponent:
+			var locomotion: PlayerLocomotionComponent = raw_loco
+			locomotion.can_sprint = false
 
 
 ## Sets heavy lifting state, restricts player sprint, and emits global event.
@@ -333,7 +338,10 @@ func _set_heavy_lifting(active: bool) -> void:
 	print("InteractionComponent: Setting heavy lifting state to: ", active)
 	is_heavy_lifting = active
 
-	if is_instance_valid(player) and is_instance_valid(player.locomotion_component):
-		player.locomotion_component.can_sprint = not active
+	if is_instance_valid(player) and "locomotion_component" in player:
+		var raw_loco: Variant = player.get("locomotion_component")
+		if raw_loco is PlayerLocomotionComponent:
+			var locomotion: PlayerLocomotionComponent = raw_loco
+			locomotion.can_sprint = not active
 
 	Events.heavy_carry_toggled.emit(active)

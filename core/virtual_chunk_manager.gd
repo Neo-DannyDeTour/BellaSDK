@@ -23,6 +23,9 @@ const CELL_SIZE: float = 40.0
 ## Reference to the player node used to evaluate coordinates.
 @export var player: Node3D
 
+## Flag enabling unit test execution without requiring chunk files on disk.
+var bypass_disk_check: bool = false
+
 ## Dictionary of currently mounted chunk instances mapped by [Vector2i].
 var loaded_chunks: Dictionary = {}
 
@@ -96,7 +99,7 @@ func _request_chunk(cell_coord: Vector2i, is_blocking: bool = false) -> void:
 		return
 
 	var file_path: String = chunks_folder_path + "/chunk_%d_%d.scn" % [cell_coord.x, cell_coord.y]
-	if not ResourceLoader.exists(file_path):
+	if not bypass_disk_check and not ResourceLoader.exists(file_path):
 		return
 
 	print("WorldChunkManager: Requesting chunk load: ", file_path)
@@ -110,7 +113,8 @@ func _request_chunk(cell_coord: Vector2i, is_blocking: bool = false) -> void:
 			_mount_chunk(cell_coord, scene)
 	else:
 		loading_chunks[cell_coord] = file_path
-		ResourceLoader.load_threaded_request(file_path, "", false)
+		if not bypass_disk_check:
+			ResourceLoader.load_threaded_request(file_path, "", false)
 
 
 ## Unloads distant chunks outside the streaming perimeter to save memory.

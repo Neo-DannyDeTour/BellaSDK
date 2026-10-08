@@ -1,3 +1,4 @@
+@tool
 ## Manages entity hit points, damage mitigation, and death lifecycle pooling.
 class_name HealthComponent
 extends Node
@@ -26,6 +27,8 @@ var current_health: int = 100
 
 ## Initializes health capacity and registers entity into the damageable group.
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		return
 	print("HealthComponent: _ready() - Initializing health component.")
 	current_health = max_health
 	add_to_group(&"damageable")

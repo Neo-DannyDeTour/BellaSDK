@@ -107,10 +107,9 @@ func load_settings() -> void:
 	print("UI: Loading Display and UI settings.")
 	_load_slider(fov_slider, fov_input, "base_fov", DEFAULT_FOV, "Settings", true)
 	if is_instance_valid(sprint_fov_checkbox):
-		var raw_sprint: Variant = GlobalSettings.get_setting(
+		var disable_sprint: bool = GlobalSettings.get_setting_bool(
 			"Settings", "disable_sprint_fov", DEFAULT_DISABLE_SPRINT_FOV
 		)
-		var disable_sprint: bool = bool(raw_sprint)
 		sprint_fov_checkbox.set_pressed_no_signal(disable_sprint)
 	apply_current_fov_to_preview()
 
@@ -118,10 +117,10 @@ func load_settings() -> void:
 	_load_slider(font_scale_slider, font_scale_input, "font_scale", DEFAULT_FONT_SCALE, "Settings")
 
 	if is_instance_valid(font_option):
-		var raw_font: Variant = GlobalSettings.get_setting(
+		var saved_font_idx: int = GlobalSettings.get_setting_int(
 			"Settings", "font_mode", DEFAULT_FONT_MODE
 		)
-		font_option.selected = int(raw_font)
+		font_option.selected = saved_font_idx
 
 
 ## Connects companion slider and LineEdit pairs with throttled commit logic.
@@ -177,8 +176,7 @@ func _connect_slider(
 func _commit_display_slider_val(
 	key: String, val: float, section: String, apply_cb: Callable
 ) -> void:
-	var raw_val: Variant = GlobalSettings.get_setting(section, key, -999.0)
-	var current: float = float(raw_val)
+	var current: float = GlobalSettings.get_setting_float(section, key, -999.0)
 	if not is_equal_approx(current, val):
 		GlobalSettings.save_setting(section, key, val)
 		if apply_cb.is_valid():
@@ -223,8 +221,7 @@ func _load_slider(
 	is_int: bool = false
 ) -> void:
 	if is_instance_valid(slider):
-		var raw_val: Variant = GlobalSettings.get_setting(section, key, default_val)
-		var val: float = float(raw_val)
+		var val: float = GlobalSettings.get_setting_float(section, key, default_val)
 		slider.set_value_no_signal(val)
 		if is_instance_valid(input_box):
 			input_box.text = str(int(val)) if is_int else ("%.2f" % val)
@@ -237,10 +234,9 @@ func _on_fov_adjusted(_val: float) -> void:
 
 ## Handles toggling of dynamic sprint FOV expansion.
 func _on_sprint_fov_toggled(toggled_on: bool) -> void:
-	var raw_sprint: Variant = GlobalSettings.get_setting(
+	var current: bool = GlobalSettings.get_setting_bool(
 		"Settings", "disable_sprint_fov", DEFAULT_DISABLE_SPRINT_FOV
 	)
-	var current: bool = bool(raw_sprint)
 	if current == toggled_on:
 		return
 
@@ -291,8 +287,7 @@ func _apply_ui_scale(scale_val: float) -> void:
 
 ## Handles font override selection changes from the dropdown menu.
 func _on_font_selected(index: int) -> void:
-	var raw_font: Variant = GlobalSettings.get_setting("Settings", "font_mode", DEFAULT_FONT_MODE)
-	var current: int = int(raw_font)
+	var current: int = GlobalSettings.get_setting_int("Settings", "font_mode", DEFAULT_FONT_MODE)
 	if current == index:
 		return
 
@@ -333,13 +328,22 @@ func apply_font_scale_to_theme(scale_factor: float) -> void:
 		push_warning("UI: No valid Theme found to scale.")
 		return
 
-	var base_default: float = float(BASE_FONT_SIZES["default"])
-	var def_size: int = int(round(base_default * scale_factor))
+	var base_default_int: int = 16
+	if BASE_FONT_SIZES.has("default"):
+		var raw_default: Variant = BASE_FONT_SIZES["default"]
+		if raw_default is int:
+			base_default_int = raw_default
+	var base_default: float = float(base_default_int)
+	var def_size: int = roundi(base_default * scale_factor)
 	target_theme.default_font_size = def_size
 
 	for type_name: String in BASE_FONT_SIZES:
 		if type_name == "default":
 			continue
-		var base_size: float = float(BASE_FONT_SIZES[type_name])
-		var new_size: int = int(round(base_size * scale_factor))
+		var raw_size: Variant = BASE_FONT_SIZES[type_name]
+		var base_size_int: int = 14
+		if raw_size is int:
+			base_size_int = raw_size
+		var base_size: float = float(base_size_int)
+		var new_size: int = roundi(base_size * scale_factor)
 		target_theme.set_font_size("font_size", type_name, new_size)

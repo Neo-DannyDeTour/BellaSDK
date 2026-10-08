@@ -18,13 +18,49 @@ var _index_2d: int = 0
 var _index_3d: int = 0
 
 
-## Pre-allocates audio player instances and adds them to the scene tree.
+## Lifecycle constructor initializing baseline audio pool state.
+func _init() -> void:
+	print("[AudioPool] _init() called.")
+
+
+## Pre-allocates audio player instances and binds global event listeners.
 func _ready() -> void:
+	print("[AudioPool] Initializing audio pool and binding events...")
 	_ensure_pools_allocated()
+	_connect_event_bus()
+
+
+## Binds listeners to the global event bus if present in the tree.
+func _connect_event_bus() -> void:
+	print("[AudioPool] Checking for global event bus...")
+	var events_node: Node = get_node_or_null("/root/Events")
+	if not is_instance_valid(events_node):
+		return
+
+	if events_node.has_signal(&"sfx_2d_requested"):
+		events_node.connect(&"sfx_2d_requested", _on_sfx_2d_requested)
+	if events_node.has_signal(&"sfx_3d_requested"):
+		events_node.connect(&"sfx_3d_requested", _on_sfx_3d_requested)
+	print("[AudioPool] Event bus signals connected successfully.")
+
+
+## Handles 2D sound effect requests from [signal Events.sfx_2d_requested].
+func _on_sfx_2d_requested(stream: AudioStream, bus: StringName = &"SFX") -> void:
+	print("[AudioPool] Received sfx_2d_requested event.")
+	play_sfx_2d(stream, bus)
+
+
+## Handles 3D sound effect requests from [signal Events.sfx_3d_requested].
+func _on_sfx_3d_requested(
+	stream: AudioStream, global_pos: Vector3, bus: StringName = &"SFX"
+) -> void:
+	print("[AudioPool] Received sfx_3d_requested event.")
+	play_sfx_3d(stream, global_pos, bus)
 
 
 ## Allocates and instantiates audio nodes if not yet populated.
 func _ensure_pools_allocated() -> void:
+	print("[AudioPool] Ensuring pools allocated...")
 	if _pool_2d.is_empty():
 		for i: int in range(POOL_SIZE_2D):
 			var player_2d: AudioStreamPlayer = AudioStreamPlayer.new()
@@ -56,7 +92,7 @@ func play_sfx_2d(stream: AudioStream, bus: StringName = &"SFX") -> AudioStreamPl
 	return player
 
 
-## Plays a 3D sound effect at [param global_pos] using a recycled pooled player.
+## Plays a 3D sound effect at [param global_pos] using a pooled player.
 func play_sfx_3d(
 	stream: AudioStream, global_pos: Vector3, bus: StringName = &"SFX"
 ) -> AudioStreamPlayer3D:

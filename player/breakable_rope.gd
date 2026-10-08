@@ -95,7 +95,8 @@ func _ready() -> void:
 	collision_mask = 0
 
 	_setup_internal_nodes()
-	_bind_health_component()
+	if not Engine.is_editor_hint():
+		_bind_health_component()
 	_update_rope_geometry()
 
 
@@ -181,7 +182,7 @@ func _update_rope_geometry() -> void:
 	_cylinder_shape.height = length
 	_cylinder_shape.radius = rope_radius
 
-	var up_hint: Vector3 = Vector3.UP if absf(direction.y) < 0.99 else Vector3.RIGHT
+	var up_hint: Vector3 = Vector3.FORWARD if absf(direction.dot(Vector3.UP)) > 0.95 else Vector3.UP
 	var x_axis: Vector3 = up_hint.cross(direction).normalized()
 	var z_axis: Vector3 = direction.cross(x_axis).normalized()
 	var align_basis: Basis = Basis(x_axis, direction, z_axis)

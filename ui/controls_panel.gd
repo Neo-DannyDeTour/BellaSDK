@@ -203,7 +203,7 @@ func _setup_mouse_aim_controls() -> void:
 	_connect_slider(vibration_slider, vibration_input, "vibration_strength", 0.0, 2.0, "Gameplay")
 
 	if is_instance_valid(invert_y_toggle):
-		var inv: bool = bool(GlobalSettings.get_setting("Controls", "invert_y", false))
+		var inv: bool = GlobalSettings.get_setting_bool("Controls", "invert_y", false)
 		invert_y_toggle.set_pressed_no_signal(inv)
 		invert_y_toggle.toggled.connect(
 			func(toggled_on: bool) -> void:
@@ -213,7 +213,7 @@ func _setup_mouse_aim_controls() -> void:
 		)
 
 	if is_instance_valid(aim_assist_toggle):
-		var aim: bool = bool(GlobalSettings.get_setting("Gameplay", "aim_assist", true))
+		var aim: bool = GlobalSettings.get_setting_bool("Gameplay", "aim_assist", true)
 		aim_assist_toggle.set_pressed_no_signal(aim)
 		aim_assist_toggle.toggled.connect(
 			func(toggled_on: bool) -> void:
@@ -235,8 +235,10 @@ func _get_camera_controller() -> CameraController:
 	if not is_instance_valid(player):
 		return null
 	var controller_val: Variant = player.get(&"camera_controller")
-	if controller_val is CameraController and is_instance_valid(controller_val):
-		return controller_val as CameraController
+	if controller_val is CameraController:
+		var camera_node: CameraController = controller_val
+		if is_instance_valid(camera_node):
+			return camera_node
 	return null
 
 
@@ -326,7 +328,7 @@ func _load_slider(
 	slider: HSlider, input_box: LineEdit, key: String, default_val: float, section: String
 ) -> void:
 	if is_instance_valid(slider):
-		var val: float = float(GlobalSettings.get_setting(section, key, default_val))
+		var val: float = GlobalSettings.get_setting_float(section, key, default_val)
 		slider.set_value_no_signal(val)
 		if is_instance_valid(input_box):
 			input_box.text = "%.2f" % val
@@ -406,9 +408,9 @@ func _format_header_grid() -> void:
 
 	if is_instance_valid(reset_secondary_header):
 		header_grid.move_child(reset_secondary_header, 4)
-		reset_secondary_header.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		reset_secondary_header.size_flags_horizontal = (Control.SIZE_SHRINK_CENTER)
 		reset_secondary_header.custom_minimum_size = Vector2(40.0, 0.0)
-		reset_secondary_header.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		reset_secondary_header.horizontal_alignment = (HORIZONTAL_ALIGNMENT_CENTER)
 
 
 ## Ensures all defined actions exist in [InputMap].
@@ -435,7 +437,10 @@ func _setup_behavior_controls() -> void:
 		crouch_mode_option.clear()
 		crouch_mode_option.add_item("Hold", 0)
 		crouch_mode_option.add_item("Toggle", 1)
-		var sc: String = GlobalSettings.get_setting("Gameplay", "crouch_mode", "Hold")
+		var sc_val: Variant = GlobalSettings.get_setting("Gameplay", "crouch_mode", "Hold")
+		var sc: String = "Hold"
+		if sc_val is String:
+			sc = sc_val
 		crouch_mode_option.selected = 1 if sc == "Toggle" else 0
 		crouch_mode_option.item_selected.connect(
 			func(idx: int) -> void:
@@ -448,7 +453,10 @@ func _setup_behavior_controls() -> void:
 		sprint_mode_option.clear()
 		sprint_mode_option.add_item("Hold", 0)
 		sprint_mode_option.add_item("Toggle", 1)
-		var ss: String = GlobalSettings.get_setting("Gameplay", "sprint_mode", "Hold")
+		var ss_val: Variant = GlobalSettings.get_setting("Gameplay", "sprint_mode", "Hold")
+		var ss: String = "Hold"
+		if ss_val is String:
+			ss = ss_val
 		sprint_mode_option.selected = 1 if ss == "Toggle" else 0
 		sprint_mode_option.item_selected.connect(
 			func(idx: int) -> void:
@@ -462,7 +470,10 @@ func _setup_behavior_controls() -> void:
 		valve_mode_option.add_item("Hold", 0)
 		valve_mode_option.add_item("One-Time Press", 1)
 		valve_mode_option.add_item("Rapid Mash", 2)
-		var sv: String = GlobalSettings.get_setting("Gameplay", "valve_turn_mode", "Hold")
+		var sv_val: Variant = GlobalSettings.get_setting("Gameplay", "valve_turn_mode", "Hold")
+		var sv: String = "Hold"
+		if sv_val is String:
+			sv = sv_val
 		match sv:
 			"One-Time Press":
 				valve_mode_option.selected = 1
@@ -562,8 +573,9 @@ func _on_clear_slot_pressed(
 	action: String, slot_index: int, primary_btn: Button, secondary_btn: Button
 ) -> void:
 	print("UI: Player cleared slot ", slot_index, " for action: ", action)
-	if is_remapping and (remapping_button == primary_btn or remapping_button == secondary_btn):
-		remapping_button.button_pressed = false
+	if is_remapping:
+		if remapping_button == primary_btn or remapping_button == secondary_btn:
+			remapping_button.button_pressed = false
 
 	if InputMap.has_action(action):
 		var events: Array[InputEvent] = InputMap.action_get_events(action)
@@ -637,7 +649,9 @@ func _update_slot_button_text(button: Button, action: String, slot_index: int) -
 	var target_ev: InputEvent = events[slot_index]
 	var gesture: String = ""
 	if target_ev.has_meta("gesture"):
-		gesture = target_ev.get_meta("gesture") as String
+		var raw_gesture: Variant = target_ev.get_meta("gesture")
+		if raw_gesture is String:
+			gesture = raw_gesture
 
 	var container: HBoxContainer = HBoxContainer.new()
 	container.name = "PreviewContainer"
@@ -664,10 +678,16 @@ func _update_slot_button_text(button: Button, action: String, slot_index: int) -
 		container.add_child(prefix_label)
 
 	if target_ev.has_meta("chord_keys"):
-		var keys_array: Array = target_ev.get_meta("chord_keys")
+		var raw_keys: Variant = target_ev.get_meta("chord_keys")
+		var keys_array: Array = []
+		if raw_keys is Array:
+			keys_array = raw_keys
 		var is_ordered: bool = gesture == "ordered_chord"
 		for i: int in range(keys_array.size()):
-			var key_id: int = keys_array[i]
+			var key_val: Variant = keys_array[i]
+			var key_id: int = 0
+			if key_val is int:
+				key_id = key_val
 			var ev: InputEvent = _create_event_from_id(key_id)
 			container.add_child(_create_event_display_node(ev))
 			if i < keys_array.size() - 1:
@@ -725,14 +745,14 @@ func _reset_gesture_state() -> void:
 ## Checks if two events correspond to identical hardware keys.
 func _is_same_input(ev1: InputEvent, ev2: InputEvent) -> bool:
 	if ev1 is InputEventKey and ev2 is InputEventKey:
-		var k1: InputEventKey = ev1 if ev1 is InputEventKey else null
-		var k2: InputEventKey = ev2 if ev2 is InputEventKey else null
+		var k1: InputEventKey = ev1
+		var k2: InputEventKey = ev2
 		if k1.physical_keycode != KEY_NONE and k2.physical_keycode != KEY_NONE:
 			return k1.physical_keycode == k2.physical_keycode
 		return k1.keycode == k2.keycode
 	if ev1 is InputEventMouseButton and ev2 is InputEventMouseButton:
-		var m1: InputEventMouseButton = ev1 if ev1 is InputEventMouseButton else null
-		var m2: InputEventMouseButton = ev2 if ev2 is InputEventMouseButton else null
+		var m1: InputEventMouseButton = ev1
+		var m2: InputEventMouseButton = ev2
 		return m1.button_index == m2.button_index
 	return false
 
@@ -740,7 +760,7 @@ func _is_same_input(ev1: InputEvent, ev2: InputEvent) -> bool:
 ## Generates unique identifier for event types.
 func _get_unique_event_id(event: InputEvent) -> int:
 	if event is InputEventKey:
-		var k: InputEventKey = event if event is InputEventKey else null
+		var k: InputEventKey = event
 		return k.physical_keycode if k.physical_keycode != KEY_NONE else k.keycode
 	if event is InputEventMouseButton:
 		return 100000 + (event as InputEventMouseButton).button_index
@@ -753,7 +773,7 @@ func _input(event: InputEvent) -> void:
 		return
 
 	if event is InputEventKey:
-		var key_event: InputEventKey = event if event is InputEventKey else null
+		var key_event: InputEventKey = event
 		if key_event.is_echo():
 			return
 		var clean_key: InputEventKey = InputEventKey.new()
@@ -762,7 +782,7 @@ func _input(event: InputEvent) -> void:
 		_process_gesture_event(clean_key, key_event.is_pressed())
 		get_viewport().set_input_as_handled()
 	elif event is InputEventMouseButton:
-		var mouse_event: InputEventMouseButton = event if event is InputEventMouseButton else null
+		var mouse_event: InputEventMouseButton = event
 		var clean_mouse: InputEventMouseButton = InputEventMouseButton.new()
 		clean_mouse.button_index = mouse_event.button_index
 		_process_gesture_event(clean_mouse, mouse_event.is_pressed())
@@ -870,14 +890,22 @@ func reset_to_defaults() -> void:
 		for action: String in ACTION_CATEGORIES[category]:
 			_save_action_mapping(action)
 	if is_instance_valid(action_list_container):
-		for grid: Node in action_list_container.find_children("", "GridContainer", true, false):
+		var grids: Array[Node] = action_list_container.find_children(
+			"", "GridContainer", true, false
+		)
+		for grid: Node in grids:
 			for child: Node in grid.get_children():
 				if child is Button and child.has_meta("slot"):
-					_update_slot_button_text(
-						child as Button,
-						child.get_meta("action") as String,
-						child.get_meta("slot") as int
-					)
+					var btn: Button = child
+					var action_meta: Variant = btn.get_meta("action")
+					var slot_meta: Variant = btn.get_meta("slot")
+					var action_name: String = ""
+					if action_meta is String:
+						action_name = action_meta
+					var slot_id: int = 0
+					if slot_meta is int:
+						slot_id = slot_meta
+					_update_slot_button_text(btn, action_name, slot_id)
 
 
 ## Persists a single modified action mapping.
@@ -933,9 +961,15 @@ func _get_event_icon(event: InputEvent) -> Texture2D:
 		]
 		for p: String in paths:
 			if _icon_cache.has(p):
-				return _icon_cache[p] as Texture2D
+				var cached: Variant = _icon_cache[p]
+				if cached is Texture2D:
+					return cached
+				return null
 			if ResourceLoader.exists(p):
-				var tex: Texture2D = load(p) if load(p) is Texture2D else null
+				var res: Resource = load(p)
+				var tex: Texture2D = null
+				if res is Texture2D:
+					tex = res
 				_icon_cache[p] = tex
 				return tex
 	return null

@@ -26,6 +26,17 @@ const UI_FONT_KEYS: Array[StringName] = [
 ]
 
 # --------------------------------------
+# AUDIO & SOUND EFFECT SIGNALS
+# --------------------------------------
+## Emitted to play a 2D sound effect. Passes [param stream] and [param bus].
+@warning_ignore("unused_signal")
+signal sfx_2d_requested(stream: AudioStream, bus: StringName)
+
+## Emitted to play a 3D spatial sound. Passes [param stream], [param pos], [param bus].
+@warning_ignore("unused_signal")
+signal sfx_3d_requested(stream: AudioStream, global_pos: Vector3, bus: StringName)
+
+# --------------------------------------
 # VARIABLES
 # --------------------------------------
 ## Tracks whether the player character is currently invincible.

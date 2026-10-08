@@ -252,7 +252,7 @@ func _process_engaging(delta: float) -> void:
 		bullet_particles.emitting = false
 
 
-## Assigns target entity and resolves [HealthComponent] using [NodeQuery].
+## Assigns target entity and resolves [HealthComponent] using helper lookup.
 func _set_target(new_target: Node3D) -> void:
 	print("Turret: Assigning target entity: ", new_target)
 	target = new_target
@@ -261,15 +261,32 @@ func _set_target(new_target: Node3D) -> void:
 	if target == null:
 		return
 
-	if "health_component" in target:
-		var comp: Variant = target.get("health_component")
-		if comp is HealthComponent:
-			target_health_comp = comp
-			return
+	target_health_comp = _resolve_health_component(target)
 
-	var found: Node = NodeQuery.find_first_child_of_type(target, HealthComponent)
-	if found is HealthComponent:
-		target_health_comp = found
+
+## Recursively resolves [HealthComponent] on target or any child node.
+static func _resolve_health_component(node: Node) -> HealthComponent:
+	if not is_instance_valid(node):
+		return null
+
+	if "health_component" in node:
+		var comp_prop: Variant = node.get("health_component")
+		if comp_prop is HealthComponent:
+			return comp_prop
+
+	if node.has_meta("health_component"):
+		var meta_prop: Variant = node.get_meta("health_component")
+		if meta_prop is HealthComponent:
+			return meta_prop
+
+	for child: Node in node.get_children():
+		if child is HealthComponent:
+			return child
+		var nested: HealthComponent = _resolve_health_component(child)
+		if nested != null:
+			return nested
+
+	return null
 
 
 ## Validates that target is alive, visible, and processing.

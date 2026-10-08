@@ -27,7 +27,10 @@ extends AnimatableBody3D
 
 @export_group("Payload Cargo")
 ## Packed scene instantiated for ground ammunition pickups.
-@export var ammo_box_scene: PackedScene = preload("res://assets/weapons/ammo_box.tscn")
+@export var ammo_box_scene: PackedScene = null
+
+## Fallback path loaded dynamically if no packed scene is assigned in the inspector.
+@export_file("*.tscn") var default_ammo_box_path: String = "res://assets/weapons/ammo_box.tscn"
 
 ## Total count of ammo crates deployed upon touchdown.
 @export var ammo_spawn_count: int = 2
@@ -149,7 +152,6 @@ func _physics_process(delta: float) -> void:
 	_current_time += delta
 	var t: float = clampf(_current_time / travel_time, 0.0, 1.0)
 
-	# Fire ground smoke when entering vertical descent to cushion landing
 	if t >= 0.7 and is_instance_valid(landing_smoke) and not landing_smoke.emitting:
 		print("SupplyShell: Beginning vertical descent. Igniting landing smoke.")
 		landing_smoke.emitting = true
@@ -212,7 +214,6 @@ func _on_touchdown() -> void:
 	_trigger_screenshake()
 	_deploy_ammo_cargo()
 
-	# Retain landing ground smoke for the first couple seconds after impact
 	if is_instance_valid(landing_smoke):
 		print("SupplyShell: Retaining landing smoke for ", landing_smoke_duration, " seconds.")
 		get_tree().create_timer(landing_smoke_duration).timeout.connect(
@@ -225,8 +226,12 @@ func _on_touchdown() -> void:
 
 ## Instantiates configured [AmmoBox] crates around landing zone.
 func _deploy_ammo_cargo() -> void:
-	if not is_instance_valid(ammo_box_scene):
-		print("SupplyShell: ammo_box_scene not assigned. Cargo skipped.")
+	var scene_to_spawn: PackedScene = ammo_box_scene
+	if not is_instance_valid(scene_to_spawn) and ResourceLoader.exists(default_ammo_box_path):
+		scene_to_spawn = load(default_ammo_box_path) as PackedScene
+
+	if not is_instance_valid(scene_to_spawn):
+		print("SupplyShell: ammo_box_scene not assigned or found. Cargo skipped.")
 		return
 
 	print("SupplyShell: Spawning ", ammo_spawn_count, " ammunition boxes.")
@@ -234,7 +239,7 @@ func _deploy_ammo_cargo() -> void:
 	var spawn_radius: float = 1.35
 
 	for i: int in range(ammo_spawn_count):
-		var raw_box: Node = ammo_box_scene.instantiate()
+		var raw_box: Node = scene_to_spawn.instantiate()
 		var ammo_crate: Node3D = raw_box as Node3D
 		if not is_instance_valid(ammo_crate):
 			raw_box.queue_free()

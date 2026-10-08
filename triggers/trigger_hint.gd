@@ -1,5 +1,5 @@
-## Physics trigger displaying key-binding hints and notifying [TTSManager].
 @tool
+## Physics trigger displaying key-binding hints and notifying [TTSManager].
 class_name HintTrigger
 extends Area3D
 
@@ -102,7 +102,7 @@ var _triggered: bool = false
 
 ## Initializes collision, synchronizes visuals, and connects signals.
 func _ready() -> void:
-	print("HintTrigger: _ready() - Initializing trigger.")
+	print("HintTrigger: Initializing trigger instance.")
 	_update_visuals()
 	if Engine.is_editor_hint():
 		return
@@ -197,11 +197,23 @@ func _on_body_entered(body: Node3D) -> void:
 		show_on_screen
 	)
 
-	if show_on_screen:
-		Events.hint_requested.emit(formatted_message, duration)
+	if show_on_screen and has_node("/root/Events"):
+		var events_node: Node = get_node("/root/Events")
+		if events_node.has_signal(&"hint_requested"):
+			events_node.emit_signal(&"hint_requested", formatted_message, duration)
 
-	print("HintTrigger: Sending text to custom TTSManager...")
-	TTSManager.speak(formatted_message, self)
+	_dispatch_tts(formatted_message)
+
+
+## Dispatches speech synthesis requests safely to [TTSManager].
+func _dispatch_tts(message: String) -> void:
+	print("HintTrigger: Forwarding message to TTSManager autoload.")
+	if not has_node("/root/TTSManager"):
+		return
+
+	var tts_node: Node = get_node("/root/TTSManager")
+	if is_instance_valid(tts_node) and tts_node.has_method(&"speak"):
+		tts_node.call(&"speak", message, self)
 
 
 ## Resolves template prompt text matching assigned [member hint_type].
@@ -227,7 +239,7 @@ func _get_raw_message() -> String:
 
 ## Replaces bracket action tokens with key strings from [InputMap].
 func _format_message_with_keys(text: String) -> String:
-	print("HintTrigger: _format_message_with_keys() - Parsing keys...")
+	print("HintTrigger: Formatting action tokens with InputMap keys.")
 	var final_text: String = text
 	var actions: Array[String] = [
 		"forward",
@@ -250,17 +262,14 @@ func _format_message_with_keys(text: String) -> String:
 
 			if not events.is_empty():
 				var ev: InputEvent = events[0]
-
 				if ev is InputEventKey:
-					var key_ev: InputEventKey = ev if ev is InputEventKey else null
+					var key_ev: InputEventKey = ev as InputEventKey
 					if key_ev.physical_keycode != KEY_NONE:
 						key_name = OS.get_keycode_string(key_ev.physical_keycode)
 					else:
 						key_name = OS.get_keycode_string(key_ev.keycode)
 				elif ev is InputEventMouseButton:
-					var mouse_ev: InputEventMouseButton = (
-						ev if ev is InputEventMouseButton else null
-					)
+					var mouse_ev: InputEventMouseButton = ev as InputEventMouseButton
 					match mouse_ev.button_index:
 						MOUSE_BUTTON_LEFT:
 							key_name = "Left Click"
