@@ -2,11 +2,14 @@
 class_name TestPlayerStateMachine
 extends GutTest
 
-## The [PlayerStateMachine] under test.
+## The [PlayerStateMachine] instance under test.
 var sm: PlayerStateMachine = null
-
-## Mock [CharacterBody3D] player reference.
+## Mock [CharacterBody3D] player node reference.
 var mock_player: CharacterBody3D = null
+## Primary mock state reference.
+var state1: MockState = null
+## Secondary mock state reference.
+var state2: MockState = null
 
 
 ## Mock state implementation tracking lifecycle calls for testing.
@@ -15,22 +18,21 @@ class MockState:
 
 	## Tracks if the state is active.
 	var is_active: bool = false
-
 	## Tracks if enter was executed.
 	var enter_called: bool = false
-
 	## Tracks if exit was executed.
 	var exit_called: bool = false
 
 	## Enters the mock state.
+	## [param _msg] Optional parameters passed to state.
 	func enter(_msg: Dictionary = {}) -> void:
-		print("TestPlayerStateMachine: MockState enter() called. State: ", self.name)
+		print("TestPlayerStateMachine: MockState enter() called. State: ", name)
 		is_active = true
 		enter_called = true
 
 	## Exits the mock state.
 	func exit() -> void:
-		print("TestPlayerStateMachine: MockState exit() called. State: ", self.name)
+		print("TestPlayerStateMachine: MockState exit() called. State: ", name)
 		is_active = false
 		exit_called = true
 
@@ -38,13 +40,13 @@ class MockState:
 ## Sets up mock hierarchy and states before each test run.
 func before_each() -> void:
 	print("TestPlayerStateMachine: before_each() setup started.")
-	sm = load("res://player/player_state_machine.gd").new() as PlayerStateMachine
+	sm = PlayerStateMachine.new()
 	mock_player = CharacterBody3D.new()
 
-	var state1: MockState = MockState.new()
+	state1 = MockState.new()
 	state1.name = "State1"
 
-	var state2: MockState = MockState.new()
+	state2 = MockState.new()
 	state2.name = "State2"
 
 	var parent: Node = Node.new()
@@ -58,10 +60,10 @@ func before_each() -> void:
 	sm.set("_states", {"State1": state1, "State2": state2})
 	sm.state = state1
 
-	state1.set("state_machine", sm)
-	state1.set("player", mock_player)
-	state2.set("state_machine", sm)
-	state2.set("player", mock_player)
+	state1.state_machine = sm
+	state1.player = mock_player
+	state2.state_machine = sm
+	state2.player = mock_player
 
 	add_child_autoqfree(parent)
 
@@ -71,8 +73,13 @@ func test_initialization() -> void:
 	print("TestPlayerStateMachine: test_initialization() called.")
 	assert_not_null(sm.state, "State should be initialized to State1")
 	assert_eq(sm.state.name, "State1")
-	assert_eq(sm.state.get("player"), mock_player, "Player dependency should be injected.")
-	assert_eq(sm.state.get("state_machine"), sm, "StateMachine dependency should be injected.")
+	var current_player_state: PlayerState = sm.state as PlayerState
+	assert_not_null(current_player_state, "Current state must be a PlayerState subtype.")
+	if is_instance_valid(current_player_state):
+		assert_eq(current_player_state.player, mock_player, "Player dependency should be injected.")
+		assert_eq(
+			current_player_state.state_machine, sm, "StateMachine dependency should be injected."
+		)
 
 
 ## Verifies successful transition between valid states.
@@ -80,9 +87,6 @@ func test_transition_to_valid_state() -> void:
 	print("TestPlayerStateMachine: test_transition_to_valid_state() called.")
 	watch_signals(sm)
 
-	var states_dict: Dictionary = sm.get("_states") as Dictionary
-	var state1: MockState = states_dict["State1"] as MockState
-	var state2: MockState = states_dict["State2"] as MockState
 	state1.enter()
 
 	sm.transition_to("State2")
@@ -100,8 +104,6 @@ func test_transition_to_invalid_state() -> void:
 	print("TestPlayerStateMachine: test_transition_to_invalid_state() called.")
 	watch_signals(sm)
 
-	var states_dict: Dictionary = sm.get("_states") as Dictionary
-	var state1: MockState = states_dict["State1"] as MockState
 	state1.enter()
 
 	sm.transition_to("State3")

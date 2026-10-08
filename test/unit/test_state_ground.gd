@@ -1,13 +1,13 @@
+## Unit test suite validating StateGround entry, velocities, and buffered jumping.
+class_name TestStateGround
 extends GutTest
 
 ## The ground state under test.
-var state_ground: StateGround
-
+var state_ground: StateGround = null
 ## A mock player node.
-var mock_player: Player
-
+var mock_player: Player = null
 ## A mock state machine.
-var mock_state_machine: Node
+var mock_state_machine: Node = null
 
 
 ## Sets up player dependencies and state machine wiring.
@@ -22,7 +22,9 @@ extends Player
 var simulated_velocity: Vector3 = Vector3.ZERO
 """
 	mock_player_script.reload()
-	mock_player = mock_player_script.new()
+	var raw_player: Variant = mock_player_script.new()
+	if raw_player is Player:
+		mock_player = raw_player
 
 	var loco_script: GDScript = GDScript.new()
 	loco_script.source_code = """
@@ -42,59 +44,73 @@ func set_direction(d: Vector3) -> void:
 	_direction = d
 """
 	loco_script.reload()
-	var loco_comp: PlayerLocomotionComponent = loco_script.new()
-	loco_comp.name = "LocomotionComponent"
-	loco_comp.sprint_active = false
-	loco_comp.crouching = false
-	loco_comp.can_sprint = true
-	loco_comp.walking_speed = 5.0
-	loco_comp.sprinting_speed = 8.0
-	loco_comp.crouching_speed = 3.0
-	loco_comp.ice_lerp_speed = 1.0
-	loco_comp.default_lerp_speed = 10.0
-	loco_comp.on_ice = false
-	loco_comp.on_sand = false
-	loco_comp.on_safe_landing = false
-	loco_comp.gravity = 9.8
+	var raw_loco: Variant = loco_script.new()
+	var loco_comp: PlayerLocomotionComponent = null
+	if raw_loco is PlayerLocomotionComponent:
+		loco_comp = raw_loco
+		loco_comp.name = "LocomotionComponent"
+		loco_comp.sprint_active = false
+		loco_comp.crouching = false
+		loco_comp.can_sprint = true
+		loco_comp.walking_speed = 5.0
+		loco_comp.sprinting_speed = 8.0
+		loco_comp.crouching_speed = 3.0
+		loco_comp.ice_lerp_speed = 1.0
+		loco_comp.default_lerp_speed = 10.0
+		loco_comp.on_ice = false
+		loco_comp.on_sand = false
+		loco_comp.on_safe_landing = false
+		loco_comp.gravity = 9.8
+		mock_player.locomotion_component = loco_comp
+		mock_player.add_child(loco_comp)
 
-	mock_player.locomotion_component = loco_comp
-	mock_player.add_child(loco_comp)
-
-	var dummy_script: GDScript = GDScript.new()
-	dummy_script.source_code = """
-extends StateMachine
-
-## Stub initialization method.
-func initialize(_p: Node) -> void:
-	pass
+	var env_script: GDScript = GDScript.new()
+	env_script.source_code = """
+extends PlayerEnvironmentComponent
 """
-	dummy_script.reload()
+	env_script.reload()
+	var env_raw: Variant = env_script.new()
+	if env_raw is PlayerEnvironmentComponent:
+		var env_comp: PlayerEnvironmentComponent = env_raw
+		env_comp.name = "EnvironmentComponent"
+		mock_player.environment_component = env_comp
+		mock_player.add_child(env_comp)
 
-	var env_comp: Node = Node.new()
-	env_comp.name = "EnvironmentComponent"
-	env_comp.set_script(dummy_script)
-	mock_player.environment_component = env_comp
-	mock_player.add_child(env_comp)
+	var interact_script: GDScript = GDScript.new()
+	interact_script.source_code = """
+extends PlayerInteractionComponent
+"""
+	interact_script.reload()
+	var interact_raw: Variant = interact_script.new()
+	if interact_raw is PlayerInteractionComponent:
+		var interact_comp: PlayerInteractionComponent = interact_raw
+		interact_comp.name = "InteractionComponent"
+		mock_player.interaction_component = interact_comp
+		mock_player.add_child(interact_comp)
 
-	var interact_comp: Node = Node.new()
-	interact_comp.name = "InteractionComponent"
-	interact_comp.set_script(dummy_script)
-	mock_player.interaction_component = interact_comp
-	mock_player.add_child(interact_comp)
-
-	var stat_comp: Node = Node.new()
-	stat_comp.name = "StatsComponent"
-	stat_comp.set_script(dummy_script)
-	mock_player.stats_component = stat_comp
-	mock_player.add_child(stat_comp)
+	var stats_script: GDScript = GDScript.new()
+	stats_script.source_code = """
+extends PlayerStatsComponent
+"""
+	stats_script.reload()
+	var stats_raw: Variant = stats_script.new()
+	if stats_raw is PlayerStatsComponent:
+		var stat_comp: PlayerStatsComponent = stats_raw
+		stat_comp.name = "StatsComponent"
+		mock_player.stats_component = stat_comp
+		mock_player.add_child(stat_comp)
 
 	var components_node: Node = Node.new()
 	components_node.name = "Components"
 	mock_player.add_child(components_node)
 
-	var health_node: Variant = load("res://shared/health_component.gd").new()
-	health_node.name = "HealthComponent"
-	components_node.add_child(health_node)
+	var health_script: GDScript = load("res://shared/health_component.gd") as GDScript
+	if health_script != null:
+		var raw_health: Variant = health_script.new()
+		if raw_health is Node:
+			var health_node: Node = raw_health
+			health_node.name = "HealthComponent"
+			components_node.add_child(health_node)
 
 	add_child_autoqfree(mock_player)
 
@@ -144,7 +160,8 @@ func test_jump_buffered() -> void:
 	print("TestStateGround: test_jump_buffered() called.")
 	state_ground.enter({"jump_buffered": true})
 
-	assert_eq(mock_state_machine.get("last_transition"), "Air", "Should transition to Air state.")
+	var transition_name: String = str(mock_state_machine.get("last_transition"))
+	assert_eq(transition_name, "Air", "Should transition to Air state.")
 	assert_eq(
 		mock_player.velocity.y,
 		state_ground.JUMP_VELOCITY,

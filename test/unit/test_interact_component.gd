@@ -1,3 +1,4 @@
+## Unit tests for [InteractComponent] interaction and hover logic.
 class_name TestInteractComponent
 extends GutTest
 
@@ -5,24 +6,34 @@ extends GutTest
 var component: InteractComponent
 
 ## A mock parent node.
-var mock_parent: Node
+var mock_parent: MockParent
 
 ## A mock character body.
 var mock_character: CharacterBody3D
 
 
+## Mock parent node providing interaction handlers.
 class MockParent:
 	extends Node
+
+	## Tracks if [method interact_with] was called.
 	var interacted_with: bool = false
+
+	## Tracks if [method interact_held] was called.
 	var interact_held_called: bool = false
 
+	## Mock handler recording interact event.
 	func interact_with(_character: CharacterBody3D) -> void:
+		print("MockParent: interact_with called.")
 		interacted_with = true
 
+	## Mock handler recording interact held event.
 	func interact_held(_character: CharacterBody3D) -> void:
+		print("MockParent: interact_held called.")
 		interact_held_called = true
 
 
+## Initializes mock hierarchy and test dependencies.
 func before_each() -> void:
 	print("TestInteractComponent: before_each() setup starting.")
 	component = InteractComponent.new()
@@ -35,6 +46,7 @@ func before_each() -> void:
 	print("TestInteractComponent: before_each() setup completed.")
 
 
+## Verifies hover registration and processing state.
 func test_hover_cursor() -> void:
 	print("TestInteractComponent: test_hover_cursor() running.")
 	var hit_position: Vector3 = Vector3(1, 2, 3)
@@ -53,17 +65,15 @@ func test_hover_cursor() -> void:
 	)
 
 
+## Verifies parent interaction delegation on click.
 func test_interact_with() -> void:
 	print("TestInteractComponent: test_interact_with() running.")
 	component.interact_with(mock_character)
-	assert_true(
-		mock_parent.get("interacted_with"), "Parent's interact_with should have been called."
-	)
+	assert_true(mock_parent.interacted_with, "Parent's interact_with should have been called.")
 
 
+## Verifies parent interaction delegation on held click.
 func test_interact_held() -> void:
 	print("TestInteractComponent: test_interact_held() running.")
 	component.interact_held(mock_character)
-	assert_true(
-		mock_parent.get("interact_held_called"), "Parent's interact_held should have been called."
-	)
+	assert_true(mock_parent.interact_held_called, "Parent's interact_held should have been called.")

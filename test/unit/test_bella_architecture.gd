@@ -8,6 +8,7 @@ var _signal_counts: Dictionary[StringName, int] = {}
 
 ## Test lifecycle setup clearing tracking counters before each test run.
 func before_each() -> void:
+	print("TestBellaArchitecture: Resetting signal tracking counts.")
 	_signal_counts.clear()
 
 
@@ -22,7 +23,7 @@ func test_layer1_utilities_math_and_grid() -> void:
 	var norm_angle: float = Utilities.normalize_angle(raw_angle)
 	assert_almost_eq(norm_angle, 0.0, 0.001, "Angle normalization must wrap to [-PI, PI].")
 
-	var pos_a: Vector3 = Vector3(0.0, 0.0, 0.0)
+	var pos_a: Vector3 = Vector3.ZERO
 	var pos_b: Vector3 = Vector3(3.0, 0.0, 4.0)
 	assert_true(
 		Utilities.is_within_distance_3d(pos_a, pos_b, 5.0),
@@ -39,13 +40,18 @@ func test_layer2_global_rng_determinism() -> void:
 	print("TestBellaArchitecture: Testing Layer 2 - Global State & RNG.")
 	var global_node: Node = get_node_or_null("/root/Global")
 	if not is_instance_valid(global_node):
-		global_node = load("res://core/global.gd").new()
-		add_child_autofree(global_node)
+		var global_script: GDScript = load("res://core/global.gd") as GDScript
+		var new_instance: Object = global_script.new()
+		if new_instance is Node:
+			global_node = new_instance
+			add_child_autofree(global_node)
 
 	assert_not_null(global_node, "Global autoload or fallback instance must exist.")
 
 	global_node.call("set_game_seed", 1337)
-	var rng: RandomNumberGenerator = global_node.get("rng") as RandomNumberGenerator
+	var rng_obj: Object = global_node.get("rng")
+	var rng: RandomNumberGenerator = rng_obj if rng_obj is RandomNumberGenerator else null
+	assert_not_null(rng, "Global RNG instance must be valid.")
 	var val_a: float = rng.randf()
 
 	global_node.call("set_game_seed", 1337)
@@ -54,11 +60,13 @@ func test_layer2_global_rng_determinism() -> void:
 
 	global_node.call("cache_value", &"difficulty_level", 3)
 	var cached: Variant = global_node.call("get_cached_value", &"difficulty_level", 1)
-	assert_eq(int(cached), 3, "Transient cache must return stored runtime values.")
+	var cached_int: int = cached if cached is int else 0
+	assert_eq(cached_int, 3, "Transient cache must return stored runtime values.")
 
 	global_node.call("clear_cache")
 	var fallback: Variant = global_node.call("get_cached_value", &"difficulty_level", 99)
-	assert_eq(int(fallback), 99, "Cleared cache must return fallback value.")
+	var fallback_int: int = fallback if fallback is int else 0
+	assert_eq(fallback_int, 99, "Cleared cache must return fallback value.")
 
 
 ## Test Layer 3: Decoupled Events signal routing and signature arity.
@@ -80,8 +88,10 @@ func test_layer3_events_bus_lifecycle() -> void:
 	Events.wave_started.emit(42)
 	Events.player_died.emit(1)
 
-	assert_eq(_signal_counts.get(&"wave_started", 0), 1, "wave_started signal must emit once.")
-	assert_eq(_signal_counts.get(&"player_died", 0), 1, "player_died signal must emit once.")
+	var wave_started_count: int = _signal_counts.get(&"wave_started", 0)
+	var player_died_count: int = _signal_counts.get(&"player_died", 0)
+	assert_eq(wave_started_count, 1, "wave_started signal must emit once.")
+	assert_eq(player_died_count, 1, "player_died signal must emit once.")
 
 
 ## Test Layer 4: Static Types enums, string lookups, and layer bitmasks.
@@ -121,8 +131,11 @@ func test_layer6_audio_manager_concurrency_limits() -> void:
 	print("TestBellaArchitecture: Testing Layer 6 - AudioManager Throttling.")
 	var audio_mgr: Node = get_node_or_null("/root/AudioManager")
 	if not is_instance_valid(audio_mgr):
-		audio_mgr = load("res://core/audio_manager.gd").new()
-		add_child_autofree(audio_mgr)
+		var audio_script: GDScript = load("res://core/audio_manager.gd") as GDScript
+		var new_mgr: Object = audio_script.new()
+		if new_mgr is Node:
+			audio_mgr = new_mgr
+			add_child_autofree(audio_mgr)
 
 	assert_not_null(audio_mgr, "AudioManager autoload or fallback instance must exist.")
 
@@ -131,10 +144,10 @@ func test_layer6_audio_manager_concurrency_limits() -> void:
 
 	var active_players: Array[AudioStreamPlayer] = []
 	for i: int in range(6):
-		var p: AudioStreamPlayer = (
-			audio_mgr.call("play_sfx_2d_throttled", mock_stream, &"SFX", Vector2.ONE, 4)
-			as AudioStreamPlayer
+		var returned_val: Variant = audio_mgr.call(
+			"play_sfx_2d_throttled", mock_stream, &"SFX", Vector2.ONE, 4
 		)
+		var p: AudioStreamPlayer = returned_val if returned_val is AudioStreamPlayer else null
 		if is_instance_valid(p):
 			active_players.append(p)
 
@@ -175,8 +188,8 @@ func test_wave_spawner_lifecycle_integration() -> void:
 
 	assert_eq(spawned_enemies.size(), 2, "Spawner must spawn all 2 enemies for wave 1.")
 
-	var wave_completed_emitted: bool = false
-	var on_wave_completed: Callable = func(_wave: int) -> void: wave_completed_emitted = true
+	var wave_completed_tracker: Array[bool] = [false]
+	var on_wave_completed: Callable = func(_wave: int) -> void: wave_completed_tracker[0] = true
 
 	Events.wave_completed.connect(on_wave_completed, CONNECT_ONE_SHOT)
 
@@ -185,7 +198,7 @@ func test_wave_spawner_lifecycle_integration() -> void:
 		enemy.queue_free()
 
 	await wait_frames(2)
-	assert_true(wave_completed_emitted, "wave_completed must emit when all enemies are slain.")
+	assert_true(wave_completed_tracker[0], "wave_completed must emit when all enemies are slain.")
 
 	if Events.enemy_spawned.is_connected(on_enemy_spawned):
 		Events.enemy_spawned.disconnect(on_enemy_spawned)

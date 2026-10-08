@@ -20,7 +20,10 @@ var mock_highlight_comp: HighlightComponent = null
 func before_each() -> void:
 	print("TestButton: before_each() setup started.")
 
-	button = load("res://shared/button.gd").new()
+	var button_script: GDScript = load("res://shared/button.gd") as GDScript
+	var raw_button: Object = button_script.new()
+	if raw_button is LogicButton:
+		button = raw_button
 
 	mock_mesh = MeshInstance3D.new()
 	button.add_child(mock_mesh)
@@ -30,15 +33,17 @@ func before_each() -> void:
 	mock_label.name = "LabelInteract"
 	button.add_child(mock_label)
 
-	mock_interact_comp = (
-		load("res://interactables/interact_component.gd").new() as InteractComponent
-	)
+	var interact_script: GDScript = load("res://interactables/interact_component.gd") as GDScript
+	var raw_interact: Object = interact_script.new()
+	if raw_interact is InteractComponent:
+		mock_interact_comp = raw_interact
 	mock_interact_comp.name = "InteractComponent"
 	button.add_child(mock_interact_comp)
 
-	mock_highlight_comp = (
-		load("res://environment/highlight_component.gd").new() as HighlightComponent
-	)
+	var highlight_script: GDScript = load("res://environment/highlight_component.gd") as GDScript
+	var raw_highlight: Object = highlight_script.new()
+	if raw_highlight is HighlightComponent:
+		mock_highlight_comp = raw_highlight
 	mock_highlight_comp.name = "HighlightComponent"
 	button.add_child(mock_highlight_comp)
 

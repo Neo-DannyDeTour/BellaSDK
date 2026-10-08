@@ -1,5 +1,4 @@
-## Unit test suite for validating [PlayerInteractionComponent] logic involving
-## held items and throws.
+## Unit test suite for validating [PlayerInteractionComponent] logic.
 class_name TestPlayerInteractionComponent
 extends GutTest
 
@@ -29,13 +28,12 @@ class MockItem:
 	func drop() -> void:
 		drop_called = true
 
-	## Records the throw action.
-	## [param _force] The forward throw impulse vector.
+	## Records the throw action with forward impulse vector.
 	func throw(_force: Vector3) -> void:
 		throw_called = true
 
 
-## Sets up the test environment with a mock component, player, camera, and item.
+## Sets up test environment with mock component, player, camera, and item.
 func before_each() -> void:
 	print("TestPlayerInteractionComponent: before_each() - Setup.")
 	component = PlayerInteractionComponent.new()
@@ -51,15 +49,14 @@ func before_each() -> void:
 	add_child_autofree(item)
 
 
-## Verifies that [method PlayerInteractionComponent.initialize] successfully caches the player node.
+## Verifies that initialize successfully caches the player node.
 func test_initialize() -> void:
 	print("TestPlayerInteractionComponent: test_initialize().")
 	component.initialize(player)
 	assert_eq(component.player, player, "Player reference should be cached.")
 
 
-## Verifies that [method PlayerInteractionComponent.throw_held_item] clears hands and
-## invokes item throw.
+## Verifies that throw_held_item clears hands and invokes item throw.
 func test_throw_held_item() -> void:
 	print("TestPlayerInteractionComponent: test_throw_held_item().")
 	component.initialize(player)
@@ -71,8 +68,7 @@ func test_throw_held_item() -> void:
 	assert_true(item.throw_called, "Item throw method should be invoked.")
 
 
-## Verifies that [method PlayerInteractionComponent.drop_held_item] clears hands and
-## invokes item drop.
+## Verifies that drop_held_item clears hands and invokes item drop.
 func test_drop_held_item() -> void:
 	print("TestPlayerInteractionComponent: test_drop_held_item().")
 	component.initialize(player)
@@ -84,8 +80,7 @@ func test_drop_held_item() -> void:
 	assert_true(item.drop_called, "Item drop method should be invoked.")
 
 
-## Verifies that [method PlayerInteractionComponent.force_clear_hands] nullifies the
-## held item reference.
+## Verifies that force_clear_hands nullifies the held item reference.
 func test_force_clear_hands() -> void:
 	print("TestPlayerInteractionComponent: test_force_clear_hands().")
 	component.held_item = item
@@ -94,12 +89,11 @@ func test_force_clear_hands() -> void:
 	assert_null(component.held_item, "Hands should be cleared.")
 
 
-## Verifies that heavy lifting states are accurately tracked and updated.
+## Verifies that heavy lifting states are accurately tracked.
 func test_set_heavy_lifting() -> void:
 	print("TestPlayerInteractionComponent: test_set_heavy_lifting().")
 	component.initialize(player)
 
-	# The property is actually is_heavy_lifting. Let's test the setter and effect.
 	component._set_heavy_lifting(true)
 	assert_true(component.is_heavy_lifting, "State should be updated to true.")
 

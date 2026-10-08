@@ -114,8 +114,15 @@ func test_add_ammo() -> void:
 	var result: bool = inventory.add_ammo(StringName("bullets"), 20)
 	assert_true(result, "Adding ammo should return true for matching ammo type.")
 
-	var res_ammo_1: Variant = mock_weapon_1.get("reserve_ammo")
-	assert_eq(int(res_ammo_1), 30, "Reserve ammo should be increased by 20.")
+	var res_ammo_var: Variant = mock_weapon_1.get("reserve_ammo")
+	var res_ammo_1: int = 0
+	if res_ammo_var is int:
+		res_ammo_1 = res_ammo_var
+	elif res_ammo_var is float:
+		var float_val: float = res_ammo_var
+		res_ammo_1 = int(float_val)
+
+	assert_eq(res_ammo_1, 30, "Reserve ammo should be increased by 20.")
 
 	var false_result: bool = inventory.add_ammo(StringName("rockets"), 5)
 	assert_false(false_result, "Adding ammo should return false for unmatched ammo type.")

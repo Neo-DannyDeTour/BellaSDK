@@ -14,8 +14,10 @@ func before_each() -> void:
 	print("TestBearTrap: before_each() setup started.")
 
 	var bear_trap_scene: PackedScene = load("res://enemies/bear_trap.tscn")
-	bear_trap = bear_trap_scene.instantiate() as BearTrap
-	add_child_autoqfree(bear_trap)
+	var instance: Node = bear_trap_scene.instantiate()
+	if instance is BearTrap:
+		bear_trap = instance
+		add_child_autoqfree(bear_trap)
 
 	mock_player = MockPlayer.new()
 	add_child_autoqfree(mock_player)
@@ -30,7 +32,7 @@ func test_initial_state() -> void:
 	)
 
 
-## Validates snapping logic, damage application, and state flags are correctly applied to player.
+## Validates snapping logic, damage application, and state flags applied to player.
 func test_snap_shut() -> void:
 	print("TestBearTrap: test_snap_shut() called.")
 	bear_trap.snap_shut(mock_player)
@@ -42,7 +44,11 @@ func test_snap_shut() -> void:
 	)
 	assert_eq(mock_player.last_damage, 150, "Player should take 150 damage.")
 	assert_not_null(mock_player.system_menu, "System menu must not be null.")
-	assert_true(mock_player.system_menu.get("is_stunned"), "Player should be stunned.")
+
+	var is_stunned_val: Variant = mock_player.system_menu.get("is_stunned")
+	var is_stunned: bool = is_stunned_val is bool and is_stunned_val
+	assert_true(is_stunned, "Player should be stunned.")
+
 	assert_false(mock_player.locomotion_component.can_sprint, "Player sprint should be disabled.")
 	assert_true(bear_trap.immobilize_timer.time_left > 0.0, "Immobilize timer should be started.")
 	assert_true(
@@ -57,10 +63,10 @@ func test_timer_timeouts() -> void:
 
 	bear_trap._on_immobilize_timeout()
 	assert_not_null(mock_player.system_menu, "System menu must not be null.")
-	assert_false(
-		mock_player.system_menu.get("is_stunned"),
-		"Player should not be stunned after immobilize timeout."
-	)
+
+	var is_stunned_val: Variant = mock_player.system_menu.get("is_stunned")
+	var is_stunned: bool = is_stunned_val is bool and is_stunned_val
+	assert_false(is_stunned, "Player should not be stunned after immobilize timeout.")
 
 	bear_trap._on_sprint_block_timeout()
 	assert_not_null(mock_player.locomotion_component, "Locomotion component must not be null.")

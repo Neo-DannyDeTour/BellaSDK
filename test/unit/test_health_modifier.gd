@@ -1,18 +1,20 @@
+@tool
 ## Unit test suite for verifying the behavior of the health modifier system.
+class_name TestHealthModifier
 extends GutTest
 
 ## Preloaded script reference for the health modifier under test.
 const MODIFIER_SCRIPT: GDScript = preload("res://shared/health_modifier.gd")
 
-## Variant instance for the health modifier under test.
-var modifier: Variant = null
+## Instance of the health modifier under test.
+var modifier: Node = null
 ## Dummy physics body to represent a character.
 var dummy_body: Node3D = null
 ## Child health component attached to the dummy body.
 var health_comp: HealthComponent = null
 
 
-## Mock implementation of the health modifier to simulate overlapping bodies.
+## Mock modifier simulating overlapping bodies in the test tree.
 class MockModifier:
 	extends "res://shared/health_modifier.gd"
 
@@ -29,9 +31,10 @@ class MockModifier:
 func before_each() -> void:
 	print("TestHealthModifier: before_each() setup.")
 
+	@warning_ignore("unsafe_method_access")
 	modifier = MODIFIER_SCRIPT.new()
 	add_child_autofree(modifier)
-	modifier.tick_interval = 0.1
+	modifier.set("tick_interval", 0.1)
 
 	dummy_body = Node3D.new()
 	dummy_body.name = "DummyBody"
@@ -40,7 +43,7 @@ func before_each() -> void:
 	components_node.name = "Components"
 	dummy_body.add_child(components_node)
 
-	health_comp = load("res://shared/health_component.gd").new()
+	health_comp = HealthComponent.new()
 	health_comp.name = "HealthComponent"
 	health_comp.max_health = 100
 	components_node.add_child(health_comp)

@@ -1,27 +1,29 @@
+## Unit test suite validating PlayerStatsComponent serialization and health tracking.
+@tool
+class_name TestStatsComponent
 extends GutTest
 
-## Variant instance for the stats component under test
-var stats: Variant = null
+## The [PlayerStatsComponent] instance under test.
+var stats: PlayerStatsComponent = null
 
 
+## Mock health component extending HealthComponent for testing save/load state.
 class MockHealthComponent:
 	extends HealthComponent
-	## Mocked current health
-	var current_health: int = 100
 
-	@warning_ignore("unused_signal")
-	signal health_changed(new_health: int)
-
-	@warning_ignore("unused_signal")
-	signal died
+	## Initializes starting health values.
+	func _init() -> void:
+		current_health = 100
 
 
+## Prepares mock dependencies and stats component before each test.
 func before_each() -> void:
 	print("TestStatsComponent: before_each() setup.")
-	stats = load("res://player/stats_component.gd").new()
+	stats = PlayerStatsComponent.new()
 	add_child_autofree(stats)
 
 
+## Verifies serializing and deserializing health data through the stats component.
 func test_save_load_data() -> void:
 	print("TestStatsComponent: test_save_load_data() called.")
 	var health_comp: MockHealthComponent = MockHealthComponent.new()
@@ -29,9 +31,12 @@ func test_save_load_data() -> void:
 	stats.health_component = health_comp
 
 	health_comp.current_health = 45
-	var data: Dictionary = stats.get_save_data()
+	var raw_data: Dictionary = stats.get_save_data()
+	var typed_data: Dictionary[String, int] = {}
+	typed_data.assign(raw_data)
 
-	assert_eq(data["health"], 45, "Should save health correctly.")
+	var saved_health: int = typed_data.get("health", 0)
+	assert_eq(saved_health, 45, "Should save health correctly.")
 
 	health_comp.current_health = 100
 	stats.load_save_data({"health": 72})

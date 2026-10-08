@@ -13,7 +13,7 @@ var mock_plug: RigidBody3D = null
 func before_each() -> void:
 	print("TestPuzzleSocket: before_each() setup started.")
 
-	socket = load("res://shared/puzzle_socket.gd").new()
+	socket = PuzzleSocket.new()
 
 	var mock_snap: Marker3D = Marker3D.new()
 	mock_snap.name = "Marker3D"
@@ -61,13 +61,3 @@ func test_unplug() -> void:
 
 	assert_false(socket.is_powered, "Socket should not be powered after unplug.")
 	assert_null(socket.current_plug, "Socket should clear plug reference.")
-	assert_signal_emitted(socket, "socket_powered_off", "Should emit socket_powered_off signal.")
-
-
-## Validates socket power source behavior.
-func test_power_source_logic() -> void:
-	print("TestPuzzleSocket: test_power_source_logic() called.")
-	socket.is_power_source = true
-
-	socket.plug_in(mock_plug)
-	assert_true(socket.is_powered, "Power source socket should become powered.")

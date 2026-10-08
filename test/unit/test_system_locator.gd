@@ -1,4 +1,4 @@
-## Unit tests verifying SystemLocator static singleton resolution and caching behavior.
+## Unit tests verifying [SystemLocator] static singleton resolution and caching behavior.
 class_name TestSystemLocator
 extends GutTest
 
@@ -10,6 +10,7 @@ var locator: SystemLocator = null
 class MockWindow:
 	extends Window
 
+	## Lifecycle initialization for mock window.
 	func _ready() -> void:
 		pass
 
@@ -31,6 +32,11 @@ func after_each() -> void:
 ## Verifies _ready calls resolve_all_systems which safely handles missing root nodes.
 func test_ready_resolves_all_systems_safely() -> void:
 	print("TestSystemLocator: Testing _ready safety without target nodes.")
+	var mock_window: MockWindow = MockWindow.new()
+	add_child_autofree(mock_window)
+	SystemLocator.clear_cache()
+	SystemLocator.root_override = mock_window
+
 	locator._ready()
 	assert_null(SystemLocator._tts_manager, "TTSManager should be null if not in tree.")
 	assert_null(SystemLocator._keycard_system, "KeycardSystem should be null if not in tree.")

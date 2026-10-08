@@ -2,13 +2,17 @@
 class_name TestInGameConsole
 extends GutTest
 
-var _console: CanvasLayer
+## Preloaded scene reference for the in-game console under test.
+const CONSOLE_SCENE: PackedScene = preload("res://ui/in_game_console.tscn")
+
+## Instance of the console UI under test.
+var _console: CanvasLayer = null
 
 
 ## Set up test instance before each test method.
 func before_each() -> void:
 	print("TestInGameConsole: Instantiating InGameConsole for test.")
-	_console = load("res://ui/in_game_console.tscn").instantiate()
+	_console = CONSOLE_SCENE.instantiate() as CanvasLayer
 	add_child_autofree(_console)
 
 
@@ -32,10 +36,13 @@ func test_update_suggestion_ui_formatting() -> void:
 		+ "[color=gray]  quit[/color]"
 	)
 
-	var label: RichTextLabel = (
-		_console.get_node_or_null("BackgroundPanel/LayoutContainer/SuggestionLog") as RichTextLabel
+	var label_node: Node = _console.get_node_or_null(
+		"BackgroundPanel/LayoutContainer/SuggestionLog"
 	)
-	assert_eq(label.text, expected)
+	assert_not_null(label_node, "SuggestionLog node should be present.")
+	if label_node is RichTextLabel:
+		var label: RichTextLabel = label_node
+		assert_eq(label.text, expected)
 
 
 ## Tests that _update_suggestion_ui handles empty current_matches cleanly.
@@ -47,8 +54,10 @@ func test_update_suggestion_ui_empty() -> void:
 
 	_console.call("_update_suggestion_ui")
 
-	var label: RichTextLabel = (
-		_console.get_node_or_null("BackgroundPanel/LayoutContainer/SuggestionLog") as RichTextLabel
+	var label_node: Node = _console.get_node_or_null(
+		"BackgroundPanel/LayoutContainer/SuggestionLog"
 	)
-
-	assert_eq(label.text, "")
+	assert_not_null(label_node, "SuggestionLog node should be present.")
+	if label_node is RichTextLabel:
+		var label: RichTextLabel = label_node
+		assert_eq(label.text, "")
