@@ -44,6 +44,7 @@ jobs:
         with:
           godot-version: "4.7.1"
 
+      # 1. Install GUT first so Godot sees its classes during editor import
       - name: Install GUT Addon
         shell: bash
         run: |
@@ -52,6 +53,7 @@ jobs:
           cp -r /tmp/gut/addons/gut addons/
           rm -rf /tmp/gut
 
+      # 2. Generate stubs
       - name: Create Stub Files for Excluded Assets
         run: |
           set -e
@@ -100,9 +102,11 @@ jobs:
             fi
           done
 
-      - name: Import Godot Assets
+      # 3. Import assets & build global script cache
+      - name: Import Godot Assets & Build Class Cache
         run: godot --headless --editor --quit-after 200
 
+      # 4. Run GUT
       - name: Run GUT Test Suite
         run: |
           godot --headless -s res://addons/gut/gut_cmdln.gd \
