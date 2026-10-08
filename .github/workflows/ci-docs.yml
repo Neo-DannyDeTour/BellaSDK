@@ -51,6 +51,9 @@ jobs:
             xvfb \
             libasound2t64
 
+      - name: Pre-import Godot Assets
+        run: godot --headless --editor --quit || true
+      
       - name: Generate 3D Previews
         run: |
           mkdir -p docs_md/images/previews
