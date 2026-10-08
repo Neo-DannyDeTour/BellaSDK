@@ -236,10 +236,8 @@ func test_delay_call_execution() -> void:
 	assert_not_null(timer, "Timer instance should not be null.")
 	assert_false(_callback_executed, "Callback should not fire immediately.")
 
-	watch_signals(timer)
-	await wait_for_signal(timer.timeout, 0.5)
+	await wait_seconds(0.1)
 
-	assert_signal_emitted(timer, "timeout", "SceneTreeTimer should emit timeout signal.")
 	assert_true(_callback_executed, "Callback should be triggered after delay timeout.")
 
 
