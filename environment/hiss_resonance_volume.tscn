@@ -1,0 +1,56 @@
+[gd_scene format=3 uid="uid://cih8g2u1k23op"]
+
+[ext_resource type="Script" uid="uid://vbgp5hqkoqtv" path="res://scripts/hiss_resonance_volume.gd" id="1_m4tud"]
+[ext_resource type="Shader" uid="uid://dpw8rm6v8kuc6" path="res://vfx/control_hiss_distortion.gdshader" id="2_dsb6y"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_ak2ur"]
+noise_type = 3
+frequency = 0.02
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_fegnr"]
+noise = SubResource("FastNoiseLite_ak2ur")
+seamless = true
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_dsb6y"]
+frequency = 0.015
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_m4tud"]
+noise = SubResource("FastNoiseLite_dsb6y")
+seamless = true
+as_normal_map = true
+bump_strength = 16.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hiss"]
+render_priority = 0
+shader = ExtResource("2_dsb6y")
+shader_parameter/noise_texture = SubResource("NoiseTexture2D_fegnr")
+shader_parameter/normal_flow_map = SubResource("NoiseTexture2D_m4tud")
+shader_parameter/flow_speed_primary = Vector2(0.04, 0.08)
+shader_parameter/flow_speed_secondary = Vector2(-0.06, 0.03)
+shader_parameter/texture_tiling = 2.0
+shader_parameter/distortion_strength = 0.035
+shader_parameter/chromatic_aberration = 0.02
+shader_parameter/hiss_color = Color(0.85, 0.08, 0.05, 0.45)
+shader_parameter/haze_intensity = 0.65000000968578
+shader_parameter/depth_softness = 0.66999998502416
+
+[sub_resource type="SphereMesh" id="SphereMesh_volume"]
+material = SubResource("ShaderMaterial_hiss")
+radius = 2.0
+height = 4.0
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_trigger"]
+radius = 2.0
+
+[node name="HissResonanceVolume" type="Area3D" unique_id=753579839 node_paths=PackedStringArray("mesh_instance")]
+collision_layer = 4
+collision_mask = 2
+script = ExtResource("1_m4tud")
+mesh_instance = NodePath("EffectMesh")
+
+[node name="EffectMesh" type="MeshInstance3D" parent="." unique_id=658736870]
+layers = 512
+mesh = SubResource("SphereMesh_volume")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1934304661]
+shape = SubResource("SphereShape3D_trigger")

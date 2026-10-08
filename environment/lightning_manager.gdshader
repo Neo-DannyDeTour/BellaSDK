@@ -1,48 +1,47 @@
 shader_type spatial;
-render_mode shadows_disabled, unshaded, cull_disabled;
+render_mode blend_add, cull_disabled, unshaded, shadows_disabled;
 
-// --- UNIFORMS ---
-uniform vec4 lightning_color : source_color = vec4(0.5, 0.8, 1.0, 1.0);
-uniform vec4 glow_color : source_color = vec4(0.2, 0.5, 1.0, 1.0);
+// --- COLOR UNIFORMS ---
+uniform vec4 core_color : source_color = vec4(1.0, 1.0, 1.0, 1.0);
+uniform vec4 glow_color : source_color = vec4(0.2, 0.6, 1.0, 1.0);
+uniform float core_intensity : hint_range(1.0, 25.0) = 8.0;
+uniform float glow_intensity : hint_range(0.1, 10.0) = 3.0;
 
-// High emission strength makes it "bloom" when Using WorldEnvironment Glow
-uniform float emission_strength : hint_range(0.0, 20.0) = 5.0;
+// --- FALLOFF CONTROLS ---
+uniform float core_falloff : hint_range(1.0, 32.0) = 8.0;
+uniform float glow_falloff : hint_range(0.5, 6.0) = 1.8;
 
-// How sharply the ends fade out (0.0 = no fade)
-uniform float end_fade_sharpness : hint_range(0.0, 10.0) = 2.0;
+// --- TURBULENCE SPEED ---
+uniform float noise_speed : hint_range(1.0, 40.0) = 18.0;
+uniform float pulse_speed : hint_range(1.0, 50.0) = 28.0;
 
-// Internal Varying to pass length info
-varying float length_t; 
-
-void vertex() {
-    // When drawing PRIMITIVE_LINES, Godot standardizes vertex order.
-    // We can approximate the position along the line (0.0 to 1.0)
-    // by comparing vertex ID, but it's not perfect for ImmediateMesh.
-    // Standard unshaded shaders usually rely purely on vertex positioning done in GDScript.
-    
-    // Pass the vertex Y position relative to origin as a rough 'length' approximation
-    // for fragment fading. (GDScript puts the arc/jitter in world space)
-    length_t = VERTEX.y;
+float fast_hash(float p) {
+    return fract(sin(p * 12.9898) * 43758.5453);
 }
 
 void fragment() {
-    // Basic color
-    vec3 base_rgb = lightning_color.rgb;
-    
-    // Add strong emission glow
-    vec3 emission_rgb = glow_color.rgb * emission_strength;
-    
-    // Optional: Fade out near the ends of the segment
-    // (This assumes the GDScript generally keeps the segments aligned)
-    float fade = 1.0;
-    if (end_fade_sharpness > 0.1) {
-        // Simple approximation: fade if near "center" of local vertex space
-        // You might need to adjust or remove this if your arcs are extremely chaotic
-        // or if you feed UVs per vertex in GDScript.
-        // fade = pow(sin(UV.y * PI), end_fade_sharpness); // Doesnt work on lines
-    }
-    
-    ALBEDO = base_rgb;
-    EMISSION = emission_rgb;
-    ALPHA = lightning_color.a * fade;
+    // Ribbon center distance (0.0 at center line, 1.0 at outer borders)
+    float center_dist = abs(UV.x - 0.5) * 2.0;
+
+    // Traveling wave ripple
+    float travel = UV.y * 12.0 - TIME * noise_speed;
+    float wave_noise = sin(travel) * cos(travel * 2.3);
+    float flicker = mix(0.85, 1.15, fast_hash(floor(TIME * pulse_speed)));
+
+    // Core vs Corona masks
+    float core_mask = pow(clamp(1.0 - center_dist, 0.0, 1.0), core_falloff);
+    float glow_mask = pow(clamp(1.0 - center_dist, 0.0, 1.0), glow_falloff);
+    glow_mask *= clamp(1.0 + wave_noise * 0.35, 0.0, 2.0);
+
+    // End contact fade
+    float endpoint_fade = clamp(sin(UV.y * PI) * 2.0, 0.0, 1.0);
+
+    // Direct emission calculations
+    vec3 out_core = core_color.rgb * core_mask * core_intensity;
+    vec3 out_glow = glow_color.rgb * glow_mask * glow_intensity;
+    vec3 total_light = (out_core + out_glow) * (flicker * endpoint_fade);
+
+    // With blend_add, ALBEDO directly contributes the additive color values
+    ALBEDO = total_light;
+    EMISSION = total_light;
 }

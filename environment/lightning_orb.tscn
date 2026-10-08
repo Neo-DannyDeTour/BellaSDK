@@ -1,0 +1,173 @@
+[gd_scene format=3 uid="uid://sgfurub0pwy4"]
+
+[ext_resource type="Script" uid="uid://bquqgw24asp20" path="res://environment/lightning_orb.gd" id="1_1vuj7"]
+[ext_resource type="Shader" uid="uid://c735asb8rcyis" path="res://environment/lightning_orb.gdshader" id="2_x7gcd"]
+[ext_resource type="Shader" uid="uid://c3u0t71hco7iy" path="res://environment/lightning_orb_arc.gdshader" id="3_at7ak"]
+
+[sub_resource type="Curve" id="Curve_alpha"]
+_data = [Vector2(0, 0), 0.0, 2.5, 0, 0, Vector2(0.25, 1), 0.0, 0.0, 0, 0, Vector2(0.75, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -2.5, 0.0, 0, 0]
+point_count = 4
+
+[sub_resource type="CurveTexture" id="CurveTexture_alpha"]
+curve = SubResource("Curve_alpha")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_smoke"]
+emission_shape = 3
+emission_box_extents = Vector3(8, 0.2, 8)
+angle_max = 360.0
+direction = Vector3(0, 1, 0)
+spread = 20.0
+initial_velocity_min = 0.02
+initial_velocity_max = 0.08
+angular_velocity_min = -8.0
+angular_velocity_max = 8.0
+gravity = Vector3(0, 0.03, 0)
+scale_min = 2.0
+scale_max = 3.6
+alpha_curve = SubResource("CurveTexture_alpha")
+
+[sub_resource type="Gradient" id="Gradient_smoke_radial"]
+offsets = PackedFloat32Array(0, 0.35, 0.7, 1)
+colors = PackedColorArray(1, 1, 1, 0.9, 0.8, 0.85, 0.9, 0.5, 0.5, 0.55, 0.65, 0.15, 0, 0, 0, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_smoke_radial"]
+gradient = SubResource("Gradient_smoke_radial")
+width = 128
+height = 128
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.5, 0)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_smoke"]
+transparency = 1
+vertex_color_use_as_albedo = true
+albedo_color = Color(0.2, 0.22, 0.28, 0.75)
+albedo_texture = SubResource("GradientTexture2D_smoke_radial")
+roughness = 0.95
+billboard_mode = 3
+billboard_keep_scale = true
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+proximity_fade_enabled = true
+proximity_fade_distance = 0.8
+
+[sub_resource type="QuadMesh" id="QuadMesh_smoke"]
+material = SubResource("StandardMaterial3D_smoke")
+size = Vector2(2.6, 2.6)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_at7ak"]
+render_priority = 0
+shader = ExtResource("2_x7gcd")
+shader_parameter/core_color = Color(1, 1, 1, 1)
+shader_parameter/plasma_color = Color(0.25, 0.75, 1, 1)
+shader_parameter/rim_color = Color(0.5, 0.9, 1, 1)
+shader_parameter/emission_energy = 16.0
+shader_parameter/fresnel_power = 2.8
+shader_parameter/noise_scale = 6.0
+shader_parameter/noise_speed = 2.5
+shader_parameter/filament_sharpness = 7.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_x7gcd"]
+render_priority = 0
+shader = ExtResource("2_x7gcd")
+shader_parameter/core_color = Color(1, 1, 1, 1)
+shader_parameter/plasma_color = Color(0.25, 0.75, 1, 1)
+shader_parameter/rim_color = Color(0.5, 0.9, 1, 1)
+shader_parameter/emission_energy = 16.0
+shader_parameter/fresnel_power = 2.8
+shader_parameter/noise_scale = 6.0
+shader_parameter/noise_speed = 2.5
+shader_parameter/filament_sharpness = 7.0
+
+[sub_resource type="SphereMesh" id="SphereMesh_orb"]
+material = SubResource("ShaderMaterial_x7gcd")
+radius = 0.35
+height = 0.7
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_5da0y"]
+render_priority = 0
+shader = ExtResource("3_at7ak")
+shader_parameter/core_color = Color(1, 1, 1, 1)
+shader_parameter/glow_color = Color(0.25, 0.65, 1, 1)
+shader_parameter/emission_energy = 22.0
+shader_parameter/core_sharpness = 6.0
+shader_parameter/glow_width = 1.4
+shader_parameter/distortion_strength = 0.22
+
+[sub_resource type="ImmediateMesh" id="ImmediateMesh_x7gcd"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_spark"]
+direction = Vector3(0, 1, 0)
+spread = 75.0
+initial_velocity_min = 4.0
+initial_velocity_max = 8.5
+damping_min = 3.0
+damping_max = 5.0
+scale_min = 0.5
+scale_max = 1.2
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_spark"]
+shading_mode = 0
+albedo_color = Color(2.5, 4, 7, 1)
+billboard_mode = 3
+billboard_keep_scale = true
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="QuadMesh" id="QuadMesh_spark"]
+material = SubResource("StandardMaterial3D_spark")
+size = Vector2(0.09, 0.09)
+
+[node name="LightningOrb" type="Node3D" unique_id=1013904140]
+script = ExtResource("1_1vuj7")
+
+[node name="VolumetricSmoke" type="GPUParticles3D" parent="." unique_id=380666552]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.3, 0)
+layers = 512
+amount = 54
+lifetime = 5.0
+preprocess = 2.0
+process_material = SubResource("ParticleProcessMaterial_smoke")
+draw_pass_1 = SubResource("QuadMesh_smoke")
+
+[node name="InteractiveLightningOrb" type="Node3D" parent="." unique_id=1618581858]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.16312, 0)
+
+[node name="CoreMesh" type="MeshInstance3D" parent="InteractiveLightningOrb" unique_id=1153847789]
+layers = 4
+material_override = SubResource("ShaderMaterial_at7ak")
+mesh = SubResource("SphereMesh_orb")
+
+[node name="OrbLight" type="OmniLight3D" parent="InteractiveLightningOrb" unique_id=102483461]
+layers = 4
+light_color = Color(0.3, 0.75, 1, 1)
+light_energy = 5.0
+light_cull_mask = 517
+omni_range = 10.0
+omni_attenuation = 1.2
+
+[node name="ArcMeshInstance" type="MeshInstance3D" parent="InteractiveLightningOrb" unique_id=11271219]
+layers = 4
+material_override = SubResource("ShaderMaterial_5da0y")
+mesh = SubResource("ImmediateMesh_x7gcd")
+
+[node name="ImpactLight" type="OmniLight3D" parent="InteractiveLightningOrb" unique_id=953690731]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.9002795, 0.020051628, 0.81920975)
+top_level = true
+light_color = Color(0.5, 0.85, 1, 1)
+light_energy = 6.894298
+light_cull_mask = 517
+
+[node name="ImpactSparks" type="GPUParticles3D" parent="InteractiveLightningOrb" unique_id=1877903701]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.9002795, -0.07994838, 0.81920975)
+top_level = true
+layers = 4
+emitting = false
+amount = 36
+lifetime = 0.4
+one_shot = true
+explosiveness = 0.95
+process_material = SubResource("ParticleProcessMaterial_spark")
+draw_pass_1 = SubResource("QuadMesh_spark")
