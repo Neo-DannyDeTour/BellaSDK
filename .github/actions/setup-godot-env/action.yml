@@ -30,3 +30,11 @@ runs:
         version: ${{ inputs.godot-version }}
         use-dotnet: false
         include-templates: ${{ inputs.include-templates == 'true' }}
+
+    - name: Download and Install GUT
+      if: ${{ inputs.install-gut == 'true' }}
+      shell: bash
+      run: |
+        mkdir -p addons/gut
+        curl -sSL https://github.com/bitwes/Gut/archive/refs/tags/v9.3.1.tar.gz \
+          | tar -xz --strip-components=2 -C addons/gut Gut-9.3.1/addons/gut

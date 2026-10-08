@@ -2,12 +2,15 @@
 class_name DocScreenshotGenerator
 extends SceneTree
 
+## Destination directory where captured viewport PNG files are written.
 const OUTPUT_DIR: String = "res://docs_md/images/previews/"
+## Fixed pixel dimensions used for the capture SubViewport.
 const SCREENSHOT_SIZE: Vector2i = Vector2i(800, 600)
+## Root search directory when querying the project for scenes.
 const SCENE_SEARCH_PATH: String = "res://"
 
 
-## Instantiates the rendering pipeline, iterates over scenes, and exits the engine.
+## Initializes capture pipeline, processes scenes, and quits the engine.
 func _init() -> void:
 	print("Starting automated doc screenshot capture...")
 	var dir: DirAccess = DirAccess.open("res://")
@@ -25,8 +28,9 @@ func _init() -> void:
 	quit()
 
 
-## Configures an isolated SubViewport with lighting and an isometric Camera3D.
+## Configures an isolated SubViewport with lights and a Camera3D.
 func _setup_viewport() -> SubViewport:
+	print("Configuring capture viewport...")
 	var vp: SubViewport = SubViewport.new()
 	vp.size = SCREENSHOT_SIZE
 	vp.render_target_update_mode = SubViewport.UPDATE_ALWAYS
@@ -55,8 +59,9 @@ func _setup_viewport() -> SubViewport:
 	return vp
 
 
-## Recursively discovers all .tscn files, excluding addons and build folders.
+## Recursively discovers all .tscn files, skipping ignored folders.
 func _find_scenes(base_path: String) -> Array[String]:
+	print("Scanning directory for scenes: ", base_path)
 	var result: Array[String] = []
 	var dir: DirAccess = DirAccess.open(base_path)
 	if not dir:
@@ -74,8 +79,9 @@ func _find_scenes(base_path: String) -> Array[String]:
 	return result
 
 
-## Computes the combined AABB bounding box for visual nodes in the scene.
+## Computes combined AABB bounds across all VisualInstance3D nodes.
 func _calculate_aabb(node: Node) -> AABB:
+	print("Calculating bounding box for: ", node.name)
 	var total_aabb: AABB = AABB()
 	var found_first: bool = false
 
@@ -83,9 +89,10 @@ func _calculate_aabb(node: Node) -> AABB:
 	while not stack.is_empty():
 		var current: Node = stack.pop_back()
 		if current is VisualInstance3D and not (current is Light3D):
-			var aabb: AABB = current.get_aabb()
+			var visual_item: VisualInstance3D = current as VisualInstance3D
+			var aabb: AABB = visual_item.get_aabb()
 			if aabb.size != Vector3.ZERO:
-				var global_aabb: AABB = current.transform * aabb
+				var global_aabb: AABB = visual_item.transform * aabb
 				if not found_first:
 					total_aabb = global_aabb
 					found_first = true
@@ -99,8 +106,9 @@ func _calculate_aabb(node: Node) -> AABB:
 	return total_aabb
 
 
-## Instantiates target scene, frames the camera, forces frames, and writes PNG.
+## Instantiates target scene, frames view, renders frames, and writes PNG.
 func _capture_scene(viewport: SubViewport, path: String) -> void:
+	print("Processing scene capture for: ", path)
 	var packed: PackedScene = load(path) if load(path) is PackedScene else null
 	if not packed or not packed.can_instantiate():
 		return
