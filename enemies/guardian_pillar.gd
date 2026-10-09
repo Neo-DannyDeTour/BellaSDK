@@ -124,7 +124,7 @@ func _has_line_of_sight(target: Node3D) -> bool:
 ## Adjusts head to track active target and scales laser beam.
 func _process_targeting() -> void:
 	if is_friendly or not is_instance_valid(target_player):
-		print("GuardianPillar: Target missing or disabled. Resuming scan.")
+		# print("GuardianPillar: Target missing or disabled. Resuming scan.")
 		_change_state(GuardianPillar.State.SCANNING)
 		return
 

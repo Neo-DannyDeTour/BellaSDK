@@ -114,7 +114,7 @@ func _physics_process(delta: float) -> void:
 
 ## Evaluates procedural idle sway and moves target.
 func _process_idle(delta: float) -> void:
-	print("TentacleEnemy: _process_idle() updating idle sway.")
+	# print("TentacleEnemy: _process_idle() updating idle sway.")
 	_idle_time += delta
 
 	_desired_pos.x = sin(_idle_time * 1.2) * (max_reach * 0.4)
@@ -156,7 +156,7 @@ func _process_playing(delta: float) -> void:
 
 ## Carries held prop to local destination position.
 func _process_holding(delta: float) -> void:
-	print("TentacleEnemy: _process_holding() carrying held prop.")
+	# print("TentacleEnemy: _process_holding() carrying held prop.")
 	if not is_instance_valid(held_object):
 		_switch_state(TentacleEnemy.State.IDLE)
 		return
@@ -174,7 +174,7 @@ func _process_holding(delta: float) -> void:
 
 ## Tracks player target and charges strike attack.
 func _process_spotted(delta: float) -> void:
-	print("TentacleEnemy: _process_spotted() charging strike on target.")
+	# print("TentacleEnemy: _process_spotted() charging strike on target.")
 	if not is_instance_valid(target_player):
 		_switch_state(TentacleEnemy.State.IDLE)
 		return
@@ -194,7 +194,7 @@ func _process_spotted(delta: float) -> void:
 
 ## Locks held prop transform to tentacle tip.
 func _process_attacking(_delta: float) -> void:
-	print("TentacleEnemy: _process_attacking() locking held object transform.")
+	# print("TentacleEnemy: _process_attacking() locking held object transform.")
 	if is_instance_valid(held_object):
 		held_object.global_position = tentacle_target.global_position
 

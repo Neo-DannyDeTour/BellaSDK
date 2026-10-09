@@ -61,9 +61,9 @@ func _process(delta: float) -> void:
 	if _current_frame <= WARMUP_FRAMES:
 		if _current_frame == WARMUP_FRAMES:
 			_initial_static_memory = roundi(Performance.get_monitor(Performance.MEMORY_STATIC))
-			print(
-				"[Benchmark] Warm-up complete. Baseline memory: ", _initial_static_memory, " bytes."
-			)
+			# print(
+			# 	"[Benchmark] Warm-up complete. Baseline memory: ", _initial_static_memory, " bytes."
+			# )
 		return
 
 	var frame_time_ms: float = delta * 1000.0

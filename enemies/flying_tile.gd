@@ -72,7 +72,7 @@ func _physics_process(delta: float) -> void:
 
 			if global_position.y >= _start_y + rise_height:
 				_current_state = FlyingTile.State.SPINNING
-				print("Tile reached target height. Starting to spin.")
+				# print("Tile reached target height. Starting to spin.")
 
 		FlyingTile.State.SPINNING:
 			_mesh.rotate_y(25.0 * delta)

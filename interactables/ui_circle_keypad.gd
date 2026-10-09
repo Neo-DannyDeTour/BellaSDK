@@ -113,7 +113,7 @@ func _process(delta: float) -> void:
 
 	cycle_timer += delta
 	if cycle_timer >= cycle_duration:
-		print("UICircleTimingKeypad: Full cycle elapsed without matching key.")
+		# print("UICircleTimingKeypad: Full cycle elapsed without matching key.")
 		cycle_timer = 0.0
 		_handle_failure()
 		return

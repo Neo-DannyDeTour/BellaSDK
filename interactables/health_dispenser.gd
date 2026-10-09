@@ -123,7 +123,7 @@ func _physics_process(delta: float) -> void:
 		_active_weight <= 0.0 and _current_target_pos.is_equal_approx(desired_target)
 	)
 	if is_resting:
-		print("HealthDispenser: _physics_process() - Tentacle settled, sleep.")
+		# print("HealthDispenser: _physics_process() - Tentacle settled, sleep.")
 		set_physics_process(false)
 
 

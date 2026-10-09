@@ -36,6 +36,6 @@ func _process(delta: float) -> void:
 
 			# --- NEW: DESTROY ON EMPTY ---
 			if target_scale_y <= 0.0:
-				print("Tank empty! Destroying.")
+				# print("Tank empty! Destroying.")
 				# Optional: Spawn a broken glass sound or particle here!
 				queue_free()

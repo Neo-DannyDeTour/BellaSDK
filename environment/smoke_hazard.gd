@@ -272,13 +272,13 @@ func _on_body_exited(body: Node3D) -> void:
 
 ## Applies periodic damage to targets having a valid [HealthComponent].
 func _apply_tick_damage() -> void:
-	print("SmokeHazard: Ticking damage on ", _targets_in_smoke.size(), " target(s).")
+	# print("SmokeHazard: Ticking damage on ", _targets_in_smoke.size(), " target(s).")
 	for target: Node3D in _targets_in_smoke:
 		if not is_instance_valid(target):
 			continue
 
 		if check_wall_occlusion and not _has_line_of_sight(target):
-			print("SmokeHazard: Target occluded by wall -> ", target.name)
+			# print("SmokeHazard: Target occluded by wall -> ", target.name)
 			continue
 
 		var health: HealthComponent = (
@@ -290,7 +290,7 @@ func _apply_tick_damage() -> void:
 				_health_cache[target] = health
 
 		if is_instance_valid(health):
-			print("SmokeHazard: Damaging HealthComponent on ", target.name)
+			# print("SmokeHazard: Damaging HealthComponent on ", target.name)
 			damage_ticked.emit(target, damage_per_tick)
 			health.take_damage(int(roundf(damage_per_tick)))
 

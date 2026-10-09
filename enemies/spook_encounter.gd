@@ -199,16 +199,16 @@ func _process(delta: float) -> void:
 	)
 
 	if despawn_on_proximity and player_dist <= proximity_threshold:
-		print(
-			"SpookEncounter: Player breached proximity threshold (",
-			snappedf(player_dist, 0.1),
-			"m)."
-		)
+		# print(
+		# 	"SpookEncounter: Player breached proximity threshold (",
+		# 	snappedf(player_dist, 0.1),
+		# 	"m)."
+		# )
 		_despawn_spook()
 		return
 
 	if despawn_on_distance and player_dist >= max_distance_threshold:
-		print("SpookEncounter: Player exceeded max distance (", snappedf(player_dist, 0.1), "m).")
+		# print("SpookEncounter: Player exceeded max distance (", snappedf(player_dist, 0.1), "m).")
 		_despawn_spook()
 		return
 
@@ -218,7 +218,7 @@ func _process(delta: float) -> void:
 
 	if _has_line_of_sight():
 		_accumulated_look_time += delta
-		print("SpookEncounter: Staring at entity: ", snappedf(_accumulated_look_time, 0.05), "s")
+		# print("SpookEncounter: Staring at entity: ", snappedf(_accumulated_look_time, 0.05), "s")
 		if _accumulated_look_time >= look_duration_threshold:
 			_despawn_spook()
 	else:

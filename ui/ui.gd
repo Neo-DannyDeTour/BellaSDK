@@ -97,12 +97,12 @@ func _input(event: InputEvent) -> void:
 				or event.is_action_pressed(&"jump")
 				or event.is_action_pressed(&"sprint")
 			):
-				print("UIController: Movement blocked - immobilized.")
+				# print("UIController: Movement blocked - immobilized.")
 				if is_instance_valid(notification_hud):
 					notification_hud.show_warning_message("Can't move!", 2.0)
 		elif is_instance_valid(player_status_hud) and player_status_hud.is_sprint_blocked:
 			if event.is_action_pressed(&"sprint"):
-				print("UIController: Movement blocked - sprint cooldown.")
+				# print("UIController: Movement blocked - sprint cooldown.")
 				if is_instance_valid(notification_hud):
 					notification_hud.show_warning_message("Can't sprint", 2.0)
 

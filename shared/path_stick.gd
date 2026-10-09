@@ -42,7 +42,7 @@ func _physics_process(delta: float) -> void:
 	progress += current_speed * delta
 
 	if progress_ratio >= 1.0:
-		print("PathStick: Reached path endpoint.")
+		# print("PathStick: Reached path endpoint.")
 		_handle_endpoint()
 
 

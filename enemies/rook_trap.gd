@@ -83,7 +83,7 @@ func _physics_process(delta: float) -> void:
 		if dist_sq <= move_step_sq:
 			moving_body.global_position = _target_position
 			_state = State.RETURNING
-			print("RookTrap: Target reached. Returning to origin.")
+			# print("RookTrap: Target reached. Returning to origin.")
 		else:
 			moving_body.global_position += direction * move_step
 
@@ -96,7 +96,7 @@ func _physics_process(delta: float) -> void:
 		if dist_sq <= move_step_sq:
 			moving_body.global_position = _origin_position
 			_state = State.IDLE
-			print("RookTrap: Returned to origin position.")
+			# print("RookTrap: Returned to origin position.")
 		else:
 			moving_body.global_position += direction * move_step
 

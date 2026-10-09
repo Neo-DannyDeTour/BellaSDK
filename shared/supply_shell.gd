@@ -153,11 +153,11 @@ func _physics_process(delta: float) -> void:
 	var t: float = clampf(_current_time / travel_time, 0.0, 1.0)
 
 	if t >= 0.7 and is_instance_valid(landing_smoke) and not landing_smoke.emitting:
-		print("SupplyShell: Beginning vertical descent. Igniting landing smoke.")
+		# print("SupplyShell: Beginning vertical descent. Igniting landing smoke.")
 		landing_smoke.emitting = true
 
 	if t >= 1.0:
-		print("SupplyShell: Soft touchdown completed at destination.")
+		# print("SupplyShell: Soft touchdown completed at destination.")
 		_is_flying = false
 		set_physics_process(false)
 		global_transform = _target_transform

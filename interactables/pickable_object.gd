@@ -261,7 +261,7 @@ func _on_sleeping_state_changed() -> void:
 ## Evaluates whether physics processing should be enabled or disabled.
 func _update_process_state() -> void:
 	var should_process: bool = is_held or is_in_water or not sleeping or _standing_lock_ticks > 0
-	print("PickableObject: Updating physics process state to: ", should_process)
+	# print("PickableObject: Updating physics process state to: ", should_process)
 	set_physics_process(should_process)
 
 
@@ -687,7 +687,7 @@ func _process_standard_hold(_delta: float) -> void:
 	var has_grab_settled: bool = (Time.get_ticks_msec() - _grab_time) > 250
 	var detach_threshold_sq: float = max_detach_distance * max_detach_distance
 	if dist_sq > detach_threshold_sq and has_grab_settled and not _is_player_flying:
-		print("PickableObject: Stuck distance exceeded. Dropping: ", name)
+		# print("PickableObject: Stuck distance exceeded. Dropping: ", name)
 		drop()
 		return
 
@@ -761,7 +761,7 @@ func _process_buoyancy() -> void:
 
 	if not _was_submerged and submerged and not is_held:
 		var impact_speed: float = linear_velocity.length()
-		print("PickableObject: Water impact registered -> speed: ", impact_speed)
+		# print("PickableObject: Water impact registered -> speed: ", impact_speed)
 		if is_instance_valid(current_water_node):
 			var ripple_power: float = maxf(impact_speed * 0.3, 1.2)
 			if current_water_node.has_method("spawn_ripple"):
