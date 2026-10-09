@@ -135,7 +135,7 @@
 [ext_resource type="Shader" uid="uid://ghthoas7ty6t" path="res://vfx/waterfall_3d.gdshader" id="133_gh8vw"]
 [ext_resource type="PackedScene" uid="uid://c63gjeg0yfvr2" path="res://interactables/laser_target.tscn" id="134_rjx1h"]
 [ext_resource type="Script" uid="uid://cnmn3hgnt0afn" path="res://interactables/output_transmitter_3d.gd" id="135_afiqk"]
-[ext_resource type="PackedScene" uid="uid://g4evrb4isbwd" path="res://interactables/StationaryLaserStand.tscn" id="136_xsorc"]
+[ext_resource type="PackedScene" uid="uid://g4evrb4isbwd" path="res://interactables/stationary_laser_stand.tscn" id="136_xsorc"]
 [ext_resource type="PackedScene" uid="uid://dvymoxg1v0hbq" path="res://interactables/reflector_mirror.tscn" id="137_cmbmh"]
 [ext_resource type="PackedScene" uid="uid://dwwvcmlkqxpsx" path="res://interactables/curtain.tscn" id="138_uetjt"]
 [ext_resource type="PackedScene" uid="uid://bqmsu8rh0h335" path="res://triggers/env_chapter_trigger.tscn" id="139_x7ktv"]

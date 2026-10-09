@@ -1,5 +1,5 @@
 ## Mock environment component tracking ladder interactions for test assertions.
-class_name MockEnvironmentComponent
+#class_name MockEnvironmentComponent
 extends PlayerEnvironmentComponent
 
 ## Last ladder passed into enter_ladder.
