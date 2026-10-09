@@ -74,7 +74,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 ## Manually triggers a lightning discharge toward [param target_position].
 func trigger_strike(target_position: Vector3) -> void:
-	print("InteractiveLightningOrb: Firing lightning strike at ", target_position)
+	#print("InteractiveLightningOrb: Firing lightning strike at ", target_position)
 	lightning_struck.emit(target_position)
 	impact_light.global_position = target_position + Vector3(0.0, 0.2, 0.0)
 	impact_light.light_energy = 5.0
@@ -86,10 +86,16 @@ func trigger_strike(target_position: Vector3) -> void:
 ## Adjusts the pseudo-volumetric smoke emission energy multiplier.
 func set_smoke_intensity(energy: float) -> void:
 	print("InteractiveLightningOrb: Setting smoke illumination energy to ", energy)
-	if is_instance_valid(smoke_particles):
-		var mat: StandardMaterial3D = smoke_particles.draw_pass_1.material as StandardMaterial3D
-		if is_instance_valid(mat):
-			mat.albedo_color.a = clampf(energy, 0.05, 0.8)
+	if not is_instance_valid(smoke_particles):
+		return
+
+	var mesh_res: PrimitiveMesh = smoke_particles.draw_pass_1 as PrimitiveMesh
+	if not is_instance_valid(mesh_res):
+		return
+
+	var mat: StandardMaterial3D = mesh_res.material as StandardMaterial3D
+	if is_instance_valid(mat):
+		mat.albedo_color.a = clampf(energy, 0.05, 0.8)
 
 
 ## Configures the [ImmediateMesh] and unshaded emissive material for electric arcs.

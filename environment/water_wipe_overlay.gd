@@ -1,3 +1,4 @@
+## Controls screen-space water exit wipe shader transitions.
 class_name WaterOverlayController
 extends CanvasLayer
 
@@ -7,17 +8,21 @@ extends CanvasLayer
 var _tween: Tween
 
 
+## Resets the overlay progress to zero on node initialization.
 func _ready() -> void:
+	print("WaterOverlayController: Initializing overlay state")
 	if overlay_rect != null:
 		_set_progress(0.0)
 
 
+## Triggers the cubic water screen wipe when leaving water.
 func trigger_water_exit() -> void:
+	print("WaterOverlayController: Triggering water exit wipe")
 	if overlay_rect == null:
 		return
 
 	var mat: Material = overlay_rect.material
-	if not mat is ShaderMaterial:
+	if not (mat is ShaderMaterial):
 		return
 
 	if _tween != null and _tween.is_valid():
@@ -27,12 +32,12 @@ func trigger_water_exit() -> void:
 	_set_progress(1.0)
 
 	var tweener: MethodTweener = _tween.tween_method(_set_progress, 1.0, 0.0, fade_time)
-
-	# Easing out cubic makes the wipe start fast and smoothly trail off
 	tweener.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 
 
+## Updates the progress uniform on the underlying [ShaderMaterial].
 func _set_progress(value: float) -> void:
-	var mat: Material = overlay_rect.material
-	if mat is ShaderMaterial:
-		mat.set_shader_parameter("progress", value)
+	print("WaterOverlayController: Setting progress to " + str(value))
+	var shader_mat: ShaderMaterial = overlay_rect.material as ShaderMaterial
+	if shader_mat != null:
+		shader_mat.set_shader_parameter("progress", value)

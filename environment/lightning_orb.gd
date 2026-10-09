@@ -92,7 +92,7 @@ func _process(delta: float) -> void:
 
 ## Triggers impact flash and particle burst at [param target_pos].
 func trigger_strike(target_pos: Vector3, normal: Vector3 = Vector3.UP) -> void:
-	print("InteractiveLightningOrb: Firing lightning strike at ", target_pos)
+	#print("InteractiveLightningOrb: Firing lightning strike at ", target_pos)
 	lightning_struck.emit(target_pos, normal)
 	if is_instance_valid(_impact_light):
 		_impact_light.global_position = target_pos + (normal * 0.15)

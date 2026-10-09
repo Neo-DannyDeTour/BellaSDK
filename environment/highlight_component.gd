@@ -171,7 +171,7 @@ func _apply_shader_parameters() -> void:
 
 ## Evaluates current focus and mode rules to apply or clear highlights.
 func _refresh_highlight() -> void:
-	print("HighlightComponent: Refreshing highlight display.")
+	#print("HighlightComponent: Refreshing highlight display.")
 	if _is_suppressed or _outline_mode == 0:
 		_update_materials(null)
 		return
