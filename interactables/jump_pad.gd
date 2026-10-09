@@ -40,14 +40,19 @@ extends Area3D
 
 ## Total calculated time for the player to reach the target.
 var _flight_time: float = 0.0
+
 ## Timer used to simulate the ball flight in the editor.
 var _timer: float = 0.0
+
 ## Initial velocity applied to the player upon entering the jump pad.
 var _initial_velocity: Vector3 = Vector3.ZERO
+
 ## Time it takes for the player to reach the apex of the jump.
 var _t_up: float = 0.0
+
 ## Custom gravity applied while the player is ascending.
 var _custom_gravity_up: float = 9.8
+
 ## Custom gravity applied while the player is descending.
 var _custom_gravity_down: float = 9.8
 
@@ -56,13 +61,16 @@ var _target_node: Node3D
 
 ## Last recorded position of the jump pad to detect movement.
 var _last_start_pos: Vector3 = Vector3.ZERO
+
 ## Last recorded position of the target to detect movement.
 var _last_target_pos: Vector3 = Vector3.ZERO
 
 ## Cached BallVisual node.
 var _ball_visual: Node3D
+
 ## Cached LineVisual node.
 var _line_visual: MeshInstance3D
+
 ## Cached ApexVisual node.
 var _apex_visual: MeshInstance3D
 
@@ -72,13 +80,12 @@ func _enter_tree() -> void:
 	_create_default_nodes()
 
 
-## Connects trigger signals and deletes editor visualizer meshes on play.
+## Connects trigger signals, sets physics masks, and removes editor visuals on play.
 func _ready() -> void:
 	collision_layer = CollisionLayers.MASK_NONE
 	collision_mask = CollisionLayers.MASK_PLAYER
 
-	if not body_entered.is_connected(_on_body_entered):
-		body_entered.connect(_on_body_entered)
+	Utilities.safe_connect(body_entered, _on_body_entered)
 
 	if not Engine.is_editor_hint():
 		var n: Node = get_node_or_null("BallVisual")
