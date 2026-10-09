@@ -1,0 +1,219 @@
+[gd_scene format=3 uid="uid://c6xk7b1p2vqy"]
+
+[ext_resource type="Script" uid="uid://bwyi6a33ckn6f" path="res://enemies/tripmine.gd" id="1_vh6av"]
+[ext_resource type="Shader" uid="uid://jn5ny2fhowtg" path="res://vfx/beam.gdshader" id="2_ou5vt"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_base"]
+top_radius = 0.16
+bottom_radius = 0.18
+height = 0.06
+radial_segments = 24
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_base"]
+albedo_color = Color(0.14, 0.15, 0.17, 1)
+metallic = 0.85
+roughness = 0.35
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_beam"]
+top_radius = 0.02
+bottom_radius = 0.02
+height = 1.0
+radial_segments = 16
+cap_top = false
+cap_bottom = false
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_j3r50"]
+noise_type = 3
+frequency = 0.0622
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_7l6ig"]
+noise = SubResource("FastNoiseLite_j3r50")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_laser"]
+render_priority = 0
+shader = ExtResource("2_ou5vt")
+shader_parameter/core_color = Color(1, 1, 1, 1)
+shader_parameter/inner_color = Color(1, 0.12, 0.36, 1)
+shader_parameter/outer_color = Color(0.85, 0.03, 0.08, 1)
+shader_parameter/smoke_color = Color(0.5, 0.06, 0.03, 1)
+shader_parameter/core_power = 28.0
+shader_parameter/inner_power = 6.0
+shader_parameter/outer_power = 1.6
+shader_parameter/core_intensity = 8.0
+shader_parameter/inner_intensity = 4.0
+shader_parameter/outer_intensity = 4.00000018674012
+shader_parameter/noise_texture = SubResource("NoiseTexture2D_7l6ig")
+shader_parameter/smoke_scale = 2.5
+shader_parameter/smoke_speed = 2.0
+shader_parameter/smoke_intensity = 1.1
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dot"]
+shading_mode = 0
+albedo_color = Color(1, 0.15, 0.2, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_dot"]
+material = SubResource("StandardMaterial3D_dot")
+radius = 0.03
+height = 0.06
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_blast"]
+radius = 6.0
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_fire"]
+direction = Vector3(0, 1, 0)
+spread = 180.0
+initial_velocity_min = 4.0
+initial_velocity_max = 9.0
+gravity = Vector3(0, 0, 0)
+scale_min = 0.4
+color = Color(1, 0.38, 0.05, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_fire"]
+shading_mode = 0
+albedo_color = Color(1, 0.45, 0.1, 1)
+
+[sub_resource type="SphereMesh" id="SphereMesh_fire"]
+material = SubResource("StandardMaterial3D_fire")
+radius = 0.25
+height = 0.5
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_smoke"]
+direction = Vector3(0, 1, 0)
+spread = 90.0
+initial_velocity_min = 1.5
+initial_velocity_max = 3.5
+gravity = Vector3(0, 1.2, 0)
+scale_min = 0.8
+scale_max = 2.0
+color = Color(0.18, 0.18, 0.18, 0.75)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_smoke"]
+transparency = 1
+albedo_color = Color(0.2, 0.2, 0.2, 0.6)
+
+[sub_resource type="SphereMesh" id="SphereMesh_smoke"]
+material = SubResource("StandardMaterial3D_smoke")
+radius = 0.35
+height = 0.7
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_sparks"]
+direction = Vector3(0, 1, 0)
+spread = 180.0
+initial_velocity_min = 9.0
+initial_velocity_max = 16.0
+scale_min = 0.03
+scale_max = 0.06
+color = Color(1, 0.85, 0.25, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sparks"]
+shading_mode = 0
+albedo_color = Color(1, 0.9, 0.3, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_sparks"]
+material = SubResource("StandardMaterial3D_sparks")
+size = Vector3(0.04, 0.04, 0.04)
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_debris"]
+direction = Vector3(0, 1, 0)
+spread = 150.0
+initial_velocity_min = 6.0
+initial_velocity_max = 12.0
+gravity = Vector3(0, -14, 0)
+scale_min = 0.08
+scale_max = 0.22
+color = Color(0.25, 0.25, 0.27, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_debris"]
+albedo_color = Color(0.25, 0.25, 0.27, 1)
+metallic = 0.7
+roughness = 0.6
+
+[sub_resource type="BoxMesh" id="BoxMesh_debris"]
+material = SubResource("StandardMaterial3D_debris")
+size = Vector3(0.15, 0.15, 0.15)
+
+[node name="TripMine" type="Node3D" unique_id=1851501913]
+script = ExtResource("1_vh6av")
+
+[node name="BaseMesh" type="MeshInstance3D" parent="." unique_id=93753986]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0, 0)
+layers = 4
+mesh = SubResource("CylinderMesh_base")
+surface_material_override/0 = SubResource("StandardMaterial3D_base")
+
+[node name="SwivelPivot" type="Node3D" parent="." unique_id=1593848974]
+
+[node name="LaserRayCast" type="RayCast3D" parent="SwivelPivot" unique_id=312579630]
+target_position = Vector3(0, 0, -25)
+collision_mask = 3
+collide_with_areas = true
+
+[node name="LaserBeamMesh" type="MeshInstance3D" parent="SwivelPivot" unique_id=735858166]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 0, -0.5)
+layers = 4
+mesh = SubResource("CylinderMesh_beam")
+surface_material_override/0 = SubResource("ShaderMaterial_laser")
+
+[node name="LaserDotMesh" type="MeshInstance3D" parent="SwivelPivot" unique_id=1733709403]
+layers = 4
+mesh = SubResource("SphereMesh_dot")
+
+[node name="BlastArea" type="Area3D" parent="." unique_id=1295244643]
+collision_layer = 0
+collision_mask = 18
+monitorable = false
+
+[node name="BlastShape" type="CollisionShape3D" parent="BlastArea" unique_id=979653600]
+shape = SubResource("SphereShape3D_blast")
+
+[node name="ExplosionFX" type="Node3D" parent="." unique_id=531618237]
+visible = false
+
+[node name="FireParticles" type="GPUParticles3D" parent="ExplosionFX" unique_id=905449273]
+layers = 4
+emitting = false
+amount = 32
+lifetime = 0.55
+one_shot = true
+explosiveness = 1.0
+process_material = SubResource("ParticleProcessMaterial_fire")
+draw_pass_1 = SubResource("SphereMesh_fire")
+
+[node name="SmokeParticles" type="GPUParticles3D" parent="ExplosionFX" unique_id=1616430474]
+layers = 4
+emitting = false
+amount = 24
+lifetime = 1.2
+one_shot = true
+explosiveness = 0.85
+process_material = SubResource("ParticleProcessMaterial_smoke")
+draw_pass_1 = SubResource("SphereMesh_smoke")
+
+[node name="SparksParticles" type="GPUParticles3D" parent="ExplosionFX" unique_id=1118225405]
+layers = 4
+emitting = false
+amount = 48
+lifetime = 0.75
+one_shot = true
+explosiveness = 1.0
+process_material = SubResource("ParticleProcessMaterial_sparks")
+draw_pass_1 = SubResource("BoxMesh_sparks")
+
+[node name="DebrisParticles" type="GPUParticles3D" parent="ExplosionFX" unique_id=1476085094]
+layers = 4
+emitting = false
+amount = 16
+one_shot = true
+explosiveness = 1.0
+process_material = SubResource("ParticleProcessMaterial_debris")
+draw_pass_1 = SubResource("BoxMesh_debris")
+
+[node name="ExplosionLight" type="OmniLight3D" parent="ExplosionFX" unique_id=406435659]
+visible = false
+light_color = Color(1, 0.58, 0.18, 1)
+light_energy = 0.0
+omni_range = 8.0
+
+[node name="ExplosionAudio" type="AudioStreamPlayer3D" parent="ExplosionFX" unique_id=955854750]
+unit_size = 12.0
+max_distance = 50.0
