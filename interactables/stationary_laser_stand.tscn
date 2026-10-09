@@ -1,0 +1,179 @@
+[gd_scene format=3 uid="uid://g4evrb4isbwd"]
+
+[ext_resource type="Script" uid="uid://bgfrkky6ktf6s" path="res://interactables/stationary_laser_stand.gd" id="1_3nf4h"]
+[ext_resource type="Shader" uid="uid://jn5ny2fhowtg" path="res://vfx/beam.gdshader" id="2_1cv0y"]
+[ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="2_2bfhh"]
+[ext_resource type="Texture2D" uid="uid://civnfn7yss1n" path="res://assets/images/dev_textures/dev_texture_green_1024.png" id="2_bd0g5"]
+[ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="3_bowf1"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="4_xidcn"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_yubuw"]
+size = Vector3(0.5, 1.8, 0.5)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tctc8"]
+albedo_texture = ExtResource("2_bd0g5")
+uv1_triplanar = true
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_1cv0y"]
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_ogymw"]
+noise = SubResource("FastNoiseLite_1cv0y")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_78d5i"]
+render_priority = 0
+shader = ExtResource("2_1cv0y")
+shader_parameter/core_color = Color(1, 1, 1, 1)
+shader_parameter/inner_color = Color(1, 0.12, 0.36, 1)
+shader_parameter/outer_color = Color(0.85, 0.03, 0.08, 1)
+shader_parameter/smoke_color = Color(0.45, 0.08, 0.04, 1)
+shader_parameter/core_power = 26.0
+shader_parameter/inner_power = 6.0
+shader_parameter/outer_power = 1.6
+shader_parameter/core_intensity = 8.0
+shader_parameter/inner_intensity = 4.0
+shader_parameter/outer_intensity = 1.5
+shader_parameter/noise_texture = SubResource("NoiseTexture2D_ogymw")
+shader_parameter/heat_distortion = 0.03
+shader_parameter/heat_blur = 1.2
+shader_parameter/smoke_scale = 2.5
+shader_parameter/smoke_speed = 1.6
+shader_parameter/smoke_intensity = 0.75
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_hymf2"]
+material = SubResource("ShaderMaterial_78d5i")
+top_radius = 0.04
+bottom_radius = 0.04
+height = 1.0
+radial_segments = 16
+rings = 0
+
+[sub_resource type="Shader" id="Shader_drop"]
+code = "shader_type spatial;
+render_mode blend_add, cull_disabled, unshaded, shadows_disabled;
+
+uniform vec4 core_color : source_color = vec4(1.0, 1.0, 1.0, 1.0);
+uniform vec4 inner_color : source_color = vec4(1.0, 0.15, 0.35, 1.0);
+uniform vec4 outer_color : source_color = vec4(0.85, 0.02, 0.05, 1.0);
+
+void vertex() {
+	float taper = mix(1.0, 0.12, pow(clamp(UV.y, 0.0, 1.0), 0.7));
+	VERTEX.xz *= taper;
+}
+
+void fragment() {
+	float ndotv = clamp(abs(dot(NORMAL, VIEW)), 0.0, 1.0);
+	float fade = smoothstep(0.0, 0.08, UV.y) * smoothstep(1.0, 0.85, UV.y);
+	float core = pow(ndotv, 16.0) * 8.0;
+	float inner = pow(ndotv, 4.0) * 4.0;
+	float outer = pow(ndotv, 1.5) * 2.0;
+	ALBEDO = (core_color.rgb * core) + (inner_color.rgb * inner) + (outer_color.rgb * outer);
+	ALPHA = clamp(core + inner + outer, 0.0, 1.0) * fade;
+}
+"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_drop"]
+render_priority = 1
+shader = SubResource("Shader_drop")
+shader_parameter/core_color = Color(1, 1, 1, 1)
+shader_parameter/inner_color = Color(1, 0.15, 0.35, 1)
+shader_parameter/outer_color = Color(0.85, 0.02, 0.05, 1)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_drop"]
+material = SubResource("ShaderMaterial_drop")
+top_radius = 0.14
+bottom_radius = 0.02
+height = 0.45
+radial_segments = 16
+rings = 2
+
+[sub_resource type="Curve" id="Curve_sparks"]
+_data = [Vector2(0, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -2.2, 0.0, 0, 0]
+point_count = 2
+
+[sub_resource type="CurveTexture" id="CurveTexture_sparks"]
+curve = SubResource("Curve_sparks")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_sparks"]
+lifetime_randomness = 0.3
+direction = Vector3(0, 0, 1)
+spread = 50.0
+initial_velocity_min = 4.0
+initial_velocity_max = 8.0
+damping_min = 2.0
+damping_max = 5.0
+scale_curve = SubResource("CurveTexture_sparks")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_sparks"]
+transparency = 1
+blend_mode = 1
+cull_mode = 2
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_color = Color(2.5, 0.8, 0.3, 1)
+
+[sub_resource type="QuadMesh" id="QuadMesh_sparks"]
+material = SubResource("StandardMaterial3D_sparks")
+size = Vector2(0.02, 0.12)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_2c5bn"]
+render_priority = 0
+shader = ExtResource("4_xidcn")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.05
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[node name="StationaryLaserStand" type="StaticBody3D" unique_id=537276294 groups=["interactables"]]
+collision_layer = 5
+collision_mask = 0
+script = ExtResource("1_3nf4h")
+max_distance = 25.0
+rotation_speed = 1.5
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=902953235]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8453735, 0)
+shape = SubResource("BoxShape3D_yubuw")
+
+[node name="PillarMesh" type="CSGCylinder3D" parent="." unique_id=2052673219 groups=["interactables"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
+radius = 0.1
+height = 1.5
+
+[node name="Turret" type="Node3D" parent="." unique_id=1066301723 groups=["interactables"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -0.0906955)
+
+[node name="CSGBox3D" type="CSGBox3D" parent="Turret" unique_id=2053084450 groups=["interactables"]]
+size = Vector3(0.4, 0.4, 0.4)
+material = SubResource("StandardMaterial3D_tctc8")
+
+[node name="BeamMesh" type="MeshInstance3D" parent="Turret" unique_id=1083674601 groups=["interactables"]]
+transform = Transform3D(1, 0, 0, 0, 1.31134e-07, -1, 0, 1, 1.31134e-07, 0, 0, -0.5)
+mesh = SubResource("CylinderMesh_hymf2")
+
+[node name="LaserOrigin" type="Marker3D" parent="Turret" unique_id=1316763259]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.2)
+
+[node name="EmitterDrop" type="MeshInstance3D" parent="Turret/LaserOrigin" unique_id=1316763260]
+transform = Transform3D(1, 0, 0, 0, 1.31134e-07, -1, 0, 1, 1.31134e-07, 0, 0, -0.225)
+mesh = SubResource("CylinderMesh_drop")
+
+[node name="ImpactParticles" type="GPUParticles3D" parent="Turret" unique_id=1281079380]
+emitting = false
+amount = 32
+lifetime = 0.35
+transform_align = 2
+process_material = SubResource("ParticleProcessMaterial_sparks")
+draw_pass_1 = SubResource("QuadMesh_sparks")
+
+[node name="StanceMarker" type="Marker3D" parent="Turret" unique_id=1259799610]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.5, 0.75)
+
+[node name="InteractComponent" type="Node" parent="." unique_id=1654017051]
+script = ExtResource("2_2bfhh")
+metadata/_custom_type_script = "uid://cqawbvidns1th"
+
+[node name="HighlightComponent" type="Node" parent="." unique_id=1732499041]
+script = ExtResource("3_bowf1")
+outline_material = SubResource("ShaderMaterial_2c5bn")
+metadata/_custom_type_script = "uid://dgig0tamvkdxx"

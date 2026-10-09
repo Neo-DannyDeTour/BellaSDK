@@ -21,40 +21,42 @@ size = Vector3(0.4, 0.4, 0.4)
 render_priority = 0
 shader = ExtResource("4_xwuss")
 shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
-shader_parameter/blink_speed = 8.00000038
+shader_parameter/blink_speed = 8.0
 shader_parameter/min_intensity = 0.01
-shader_parameter/max_intensity = 0.050000002375
+shader_parameter/max_intensity = 0.05
 shader_parameter/alpha_scissor_threshold = 0.5
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_0jhp4"]
-size = Vector3(0.4, 2.3, 0.4)
+size = Vector3(0.3, 1.3, 0.3)
 
-[node name="ReflectorMirror" type="AnimatableBody3D" unique_id=715562454 node_paths=PackedStringArray("reflect_marker")]
+[node name="ReflectorMirror" type="AnimatableBody3D" unique_id=715562454 node_paths=PackedStringArray("reflect_marker") groups=["interactables", "mirror"]]
+collision_layer = 5
+collision_mask = 0
 script = ExtResource("1_oena0")
-rotation_speed = 1.0
+rotation_speed = 1.5
 reflect_marker = NodePath("MirrorHead/ReflectMarker")
 
-[node name="CSGCylinder3D" type="CSGCylinder3D" parent="." unique_id=1193011253]
+[node name="CSGCylinder3D" type="CSGCylinder3D" parent="." unique_id=1193011253 groups=["interactables"]]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
 radius = 0.1
 height = 1.5
 
-[node name="MirrorHead" type="AnimatableBody3D" parent="." unique_id=40326137]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.75, 0)
+[node name="MirrorHead" type="AnimatableBody3D" parent="." unique_id=40326137 groups=["interactables", "mirror"]]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+collision_layer = 5
+collision_mask = 0
 
-[node name="HeadMesh" type="MeshInstance3D" parent="MirrorHead" unique_id=2000393190]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+[node name="HeadMesh" type="MeshInstance3D" parent="MirrorHead" unique_id=2000393190 groups=["interactables"]]
 mesh = SubResource("BoxMesh_8pdjq")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="MirrorHead" unique_id=123787464]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
 shape = SubResource("BoxShape3D_oena0")
 
 [node name="ReflectMarker" type="Marker3D" parent="MirrorHead" unique_id=1916103676]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.9, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.2)
 
-[node name="StanceMarker" type="Marker3D" parent="." unique_id=999649063]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.7)
+[node name="StanceMarker" type="Marker3D" parent="MirrorHead" unique_id=999649063]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.5, 0.8)
 
 [node name="InteractComponent" type="Node" parent="." unique_id=1041927048]
 script = ExtResource("1_8pdjq")
@@ -66,5 +68,5 @@ outline_material = SubResource("ShaderMaterial_0jhp4")
 metadata/_custom_type_script = "uid://dgig0tamvkdxx"
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=294701083]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.7, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.65, 0)
 shape = SubResource("BoxShape3D_0jhp4")
