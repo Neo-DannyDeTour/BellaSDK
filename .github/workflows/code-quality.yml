@@ -54,46 +54,51 @@ jobs:
           find addons/gut -type f -name "*.gd" -exec sed -i 's/\bLogger\b/GutLogger/g' {} +
 
       - name: Create Stub Files for Excluded Assets
+        shell: bash
         run: |
           set -e
-          mkdir -p assets/sounds \
-                    "assets/VisTEST/2. Modular_Models/Walls" \
-                    "assets/VisTEST/2. Modular_Models/Props/Barrels" \
-                    interactables
-          { printf '\xff\xfb\x90\x64'; head -c 413 /dev/zero; } > assets/sounds/ping_emitter_sound.mp3
-          cp assets/sounds/ping_emitter_sound.mp3 assets/sounds/echo_sound.mp3
-          cp assets/sounds/ping_emitter_sound.mp3 assets/sounds/waypoint_sound.mp3
-          cp assets/sounds/ping_emitter_sound.mp3 assets/sounds/watch_out_hazard_sound.mp3
-          find . -type f -name "*.tscn" -exec grep -oE 'res://[^"]*\.(mp3|wav|ogg)' {} + 2>/dev/null | sed -E 's/.*:(res:\/\/.*)/\1/' | sort -u | while read -r sound_path; do
-            [ -z "$sound_path" ] && continue
-            fs_path="${sound_path#res://}"
-            mkdir -p "$(dirname "$fs_path")"
-            if [ ! -f "$fs_path" ]; then
-              cp assets/sounds/ping_emitter_sound.mp3 "$fs_path"
-            fi
+
+          DUMMY_PNG_B64="iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="
+          DUMMY_WAV_B64="UklGRiQAAABXQVZFRm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA="
+
+          find . -type f -name "*.tscn" -exec grep -ioE 'res://[^"]*\.(mp3|wav|ogg)' {} + 2>/dev/null \
+            | sed -E 's/.*:(res:\/\/.*)/\1/' | sort -u | while read -r sound_path; do
+              [ -z "$sound_path" ] && continue
+              fs_path="${sound_path#res://}"
+              mkdir -p "$(dirname "$fs_path")"
+              if [ ! -f "$fs_path" ]; then
+                echo "$DUMMY_WAV_B64" | base64 -d > "$fs_path"
+              fi
           done
-          PNG_DATA='\x89PNG\r\n\x1a\n\x00\x00\x00\rIHDR\x00\x00\x00\x01\x00\x00\x00\x01\x08\x06\x00\x00\x00\x1f\x15c4\x00\x00\x00\nIDATx\x9cc\x00\x01\x00\x00\x05\x00\x01\r\n-\xb4\x00\x00\x00\x00IEND\xaeB`\x82'
-          find . -type f -name "*.tscn" -exec grep -oE 'res://[^"]*\.(png|jpg|jpeg|hdr|exr|tga)' {} + 2>/dev/null | sed -E 's/.*:(res:\/\/.*)/\1/' | sort -u | while read -r img_path; do
-            [ -z "$img_path" ] && continue
-            fs_path="${img_path#res://}"
-            mkdir -p "$(dirname "$fs_path")"
-            if [ ! -f "$fs_path" ]; then
-              printf "%b" "$PNG_DATA" > "$fs_path"
-            fi
+
+          find . -type f -name "*.tscn" -exec grep -ioE 'res://[^"]*\.(png|jpg|jpeg|hdr|exr|tga)' {} + 2>/dev/null \
+            | sed -E 's/.*:(res:\/\/.*)/\1/' | sort -u | while read -r img_path; do
+              [ -z "$img_path" ] && continue
+              fs_path="${img_path#res://}"
+              mkdir -p "$(dirname "$fs_path")"
+              if [ ! -f "$fs_path" ]; then
+                echo "$DUMMY_PNG_B64" | base64 -d > "$fs_path"
+              fi
           done
-          find . -type f -name "*.tscn" -exec grep -oE 'res://[^"]*\.(tscn|scn)' {} + 2>/dev/null | sed -E 's/.*:(res:\/\/.*)/\1/' | sort -u | while read -r scene_path; do
-            [ -z "$scene_path" ] && continue
-            fs_path="${scene_path#res://}"
-            mkdir -p "$(dirname "$fs_path")"
-            if [ ! -f "$fs_path" ]; then
-              echo '[gd_scene format=3]' > "$fs_path"
-              echo '[node name="DummySubScene" type="Node3D"]' >> "$fs_path"
-            fi
+
+          find . -type f -name "*.tscn" -exec grep -ioE 'res://[^"]*\.(tscn|scn)' {} + 2>/dev/null \
+            | sed -E 's/.*:(res:\/\/.*)/\1/' | sort -u | while read -r scene_path; do
+              [ -z "$scene_path" ] && continue
+              fs_path="${scene_path#res://}"
+              mkdir -p "$(dirname "$fs_path")"
+              if [ ! -f "$fs_path" ]; then
+                printf '[gd_scene format=3]\n[node name="DummySubScene" type="Node3D"]\n' > "$fs_path"
+              fi
           done
+
+          mkdir -p player
+          if [ ! -f "player/settings_level.tscn" ]; then
+            printf '[gd_scene format=3]\n[node name="SettingsLevel" type="Node3D"]\n' > "player/settings_level.tscn"
+          fi
 
       - name: Import Godot Assets & Build Class Cache
         run: godot --headless --editor --quit-after 200
 
       - name: Run GUT Test Suite
         run: |
-          godot --headless --fixed-fps 60 -s res://addons/gut/gut_cmdln.gd -gconfig=res://.gutconfig.json
+          godot --headless -s res://addons/gut/gut_cmdln.gd -gconfig=res://.gutconfig.json
