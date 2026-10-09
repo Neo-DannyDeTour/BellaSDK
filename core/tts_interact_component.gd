@@ -31,7 +31,7 @@ func _process(_delta: float) -> void:
 	# We use this to cheaply detect focus loss without using heavy Area3D overlap checks.
 	if _has_spoken and Engine.get_process_frames() > _last_hover_frame + 1:
 		_has_spoken = false
-		print("TTSInteractComponent: Focus lost. Resetting TTS trigger.")
+		# print("TTSInteractComponent: Focus lost. Resetting TTS trigger.")
 
 
 ## Triggered by the InteractionScanner when the player looks at the host object.

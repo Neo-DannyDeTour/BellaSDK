@@ -158,7 +158,7 @@ func _process(delta: float) -> void:
 	if is_installed and can_be_detached and just_pressed:
 		var current_time: float = Time.get_ticks_msec() / 1000.0
 		if current_time - last_interact_time <= DOUBLE_TAP_DELAY:
-			print("PushWheel: Double tap detected. Detaching stick.")
+			# print("PushWheel: Double tap detected. Detaching stick.")
 			_detach_stick()
 			last_interact_time = 0.0
 		else:

@@ -197,7 +197,7 @@ func _process(delta: float) -> void:
 			mat.set_shader_parameter(&"burn_radius", normalized_radius)
 
 	if normalized_radius >= 1.5:
-		print("OilSpillPath: Combustion complete across path.")
+		# print("OilSpillPath: Combustion complete across path.")
 		is_burning = false
 		combustion_completed.emit()
 

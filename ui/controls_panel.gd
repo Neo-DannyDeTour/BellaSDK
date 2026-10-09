@@ -158,7 +158,7 @@ func _process(delta: float) -> void:
 	if _chord_timer > 0.0:
 		_chord_timer -= delta
 		if _chord_timer <= 0.0 and _chord_events.size() > 1:
-			print("System: Chord combination finalized.")
+			# print("System: Chord combination finalized.")
 			_finalize_chord_remap()
 			return
 
@@ -166,23 +166,23 @@ func _process(delta: float) -> void:
 		_hold_timer += delta
 		if _hold_timer >= HOLD_TIME_THRESHOLD:
 			if _press_count >= 2:
-				print("System: Double-Tap & Hold recognized.")
+				# print("System: Double-Tap & Hold recognized.")
 				_pending_event.set_meta("gesture", "double_tap_hold")
 			else:
-				print("System: Hold recognized.")
+				# print("System: Hold recognized.")
 				_pending_event.set_meta("gesture", "hold")
 			_finalize_gesture_remap(_pending_event)
 	elif _multi_tap_timer > 0.0:
 		_multi_tap_timer -= delta
 		if _multi_tap_timer <= 0.0:
 			if _press_count >= MASH_THRESHOLD_COUNT:
-				print("System: Mash gesture recognized.")
+				# print("System: Mash gesture recognized.")
 				_pending_event.set_meta("gesture", "mash")
 			elif _press_count == 2:
-				print("System: Double-tap recognized.")
+				# print("System: Double-tap recognized.")
 				_pending_event.set_meta("gesture", "double_tap")
 			else:
-				print("System: Single tap recognized.")
+				# print("System: Single tap recognized.")
 				_pending_event.set_meta("gesture", "single_tap")
 			_finalize_gesture_remap(_pending_event)
 

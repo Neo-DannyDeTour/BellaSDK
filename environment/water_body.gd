@@ -404,7 +404,7 @@ func _process(delta: float) -> void:
 			last_frame_drew_underwater_effect = Engine.get_process_frames()
 
 			if not _was_underwater:
-				print("WaterBody: Camera submerged into water volume.")
+				# print("WaterBody: Camera submerged into water volume.")
 				_was_underwater = true
 				if is_instance_valid(_resurface_tween) and _resurface_tween.is_valid():
 					_resurface_tween.kill()
@@ -425,7 +425,7 @@ func _process(delta: float) -> void:
 				(fog_volume.material as ShaderMaterial).set_shader_parameter(&"edge_fade", 1.1)
 
 			if _was_underwater:
-				print("WaterBody: Camera surfaced. Triggering screen wipe.")
+				# print("WaterBody: Camera surfaced. Triggering screen wipe.")
 				_was_underwater = false
 
 				if is_instance_valid(_resurface_tween) and _resurface_tween.is_valid():

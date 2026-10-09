@@ -144,7 +144,7 @@ func _physics_process(delta: float) -> void:
 	var t: float = clampf(_current_time / travel_time, 0.0, 1.0)
 
 	if t >= 1.0:
-		print("CrabShell: Shell landed at destination.")
+		# print("CrabShell: Shell landed at destination.")
 		_is_falling = false
 		set_physics_process(false)
 		global_transform = _target_transform

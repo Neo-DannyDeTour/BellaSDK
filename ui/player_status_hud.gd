@@ -314,7 +314,7 @@ func update_health(new_health: int) -> void:
 ## Runs a vertical bounce tween on the target heart node when damaged.
 ## [param index] Index of the damaged heart in [member heart_nodes].
 func _animate_heart_damage(index: int) -> void:
-	print("PlayerStatusHUD: _animate_heart_damage() called for index: ", index)
+	# print("PlayerStatusHUD: _animate_heart_damage() called for index: ", index)
 	if index < 0 or index >= heart_nodes.size():
 		return
 
@@ -339,7 +339,7 @@ func _animate_heart_damage(index: int) -> void:
 ## [param index] Index of the healed heart in [member heart_nodes].
 ## [param frame_index] Sliced atlas frame index representing health status.
 func _animate_heart_heal(index: int, frame_index: int) -> void:
-	print("PlayerStatusHUD: _animate_heart_heal() called for index: ", index)
+	# print("PlayerStatusHUD: _animate_heart_heal() called for index: ", index)
 	if index < 0 or index >= heart_nodes.size():
 		return
 
@@ -515,7 +515,7 @@ func _on_infinite_swim_toggled(enabled: bool) -> void:
 ## Starts and animates the submerged swim progress bar and timer label.
 ## [param duration] Remaining oxygen countdown duration in seconds.
 func _on_oxygen_timer_started(duration: float) -> void:
-	print("PlayerStatusHUD: _on_oxygen_timer_started() called. Duration: ", duration)
+	# print("PlayerStatusHUD: _on_oxygen_timer_started() called. Duration: ", duration)
 	is_submerged = true
 	swim_debuff_container.show()
 	swim_border.show()
@@ -547,7 +547,7 @@ func _on_oxygen_timer_started(duration: float) -> void:
 	swim_tween.tween_method(update_swim, duration, 0.0, duration)
 	swim_tween.finished.connect(
 		func() -> void:
-			print("PlayerStatusHUD: Swim oxygen timer expired. Drowning begins.")
+			# print("PlayerStatusHUD: Swim oxygen timer expired. Drowning begins.")
 			swim_bar.value = 0.0
 			swim_timer_label.text = "0.0s"
 	)
@@ -555,7 +555,7 @@ func _on_oxygen_timer_started(duration: float) -> void:
 
 ## Stops the swim countdown and completely hides the swimming HUD slot.
 func _on_oxygen_timer_stopped() -> void:
-	print("PlayerStatusHUD: _on_oxygen_timer_stopped() - Player surfaced.")
+	# print("PlayerStatusHUD: _on_oxygen_timer_stopped() - Player surfaced.")
 	is_submerged = false
 	Utilities.safe_kill_tween(swim_tween)
 	swim_bar.hide()

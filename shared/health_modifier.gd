@@ -219,7 +219,7 @@ func _get_target_bodies() -> Array[Node3D]:
 
 ## Periodically modifies health on cached and newly resolved overlapping bodies.
 func _on_tick_timer_timeout() -> void:
-	print("HealthModifier: Processing tick damage/heal.")
+	# print("HealthModifier: Processing tick damage/heal.")
 	var bodies: Array[Node3D] = _get_target_bodies()
 
 	for body: Node3D in bodies:

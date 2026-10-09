@@ -53,16 +53,16 @@ func _physics_process(delta: float) -> void:
 
 	_debug_timer += delta
 	if _debug_timer >= 1.0:
-		print(
-			"Checking geometry - Current height: ",
-			current_height,
-			" | Target to collapse: ",
-			_initial_height * collapse_threshold
-		)
+		# print(
+		# 	"Checking geometry - Current height: ",
+		# 	current_height,
+		# 	" | Target to collapse: ",
+		# 	_initial_height * collapse_threshold
+		# )
 		_debug_timer = 0.0
 
 	if current_height < (_initial_height * collapse_threshold):
-		print("Autonomous detection: Cube geometry collapsed! Current height: ", current_height)
+		# print("Autonomous detection: Cube geometry collapsed! Current height: ", current_height)
 		trigger_1_second_reset()
 
 

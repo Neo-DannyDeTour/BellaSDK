@@ -241,7 +241,7 @@ func _physics_process(_delta: float) -> void:
 		var previous_side: float = _tracked_bodies[body]
 
 		if signf(current_side) != signf(previous_side):
-			print("Portal: Teleporting body: ", body.name)
+			# print("Portal: Teleporting body: ", body.name)
 			_teleport_body(body)
 			_tracked_bodies.erase(body)
 		else:

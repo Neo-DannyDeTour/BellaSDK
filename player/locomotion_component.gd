@@ -184,7 +184,7 @@ func process_movement(delta: float) -> void:
 
 ## Returns true if sprint was triggered within [param time_window_ms].
 func did_run_recently(time_window_ms: int = 10000) -> bool:
-	print("LocomotionComponent: did_run_recently() evaluated.")
+	# print("LocomotionComponent: did_run_recently() evaluated.")
 	return (Time.get_ticks_msec() - _last_sprint_time) <= time_window_ms
 
 

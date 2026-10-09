@@ -225,7 +225,7 @@ func _process(delta: float) -> void:
 		if _detach_tap_count == 1:
 			_detach_tap_timer = DOUBLE_TAP_DELAY
 		elif _detach_tap_count >= 2:
-			print("Valve: Detach double-tap validated.")
+			# print("Valve: Detach double-tap validated.")
 			_detach_tap_count = 0
 			_detach_tap_timer = 0.0
 			_detach_valve()
@@ -324,7 +324,7 @@ func _process_hold_mode(delta: float, is_interacting: bool) -> void:
 ## [param just_pressed] Whether the interact key was pressed down this frame.
 func _process_press_mode(delta: float, just_pressed: bool) -> void:
 	if just_pressed:
-		print("Valve: One-time press toggled turning state.")
+		# print("Valve: One-time press toggled turning state.")
 		_is_auto_turning = true
 		_auto_return_timer = 0.0
 		if is_back_and_forth and not reverts_on_release:
@@ -343,16 +343,16 @@ func _process_press_mode(delta: float, just_pressed: bool) -> void:
 			if reverts_on_release and progress >= 1.0:
 				_auto_return_timer += delta
 				if _auto_return_timer >= auto_return_delay:
-					print("Valve: Finished opening with reverts_on_release. Auto-returning to 0.0.")
+					# print("Valve: Finished opening with reverts_on_release. Auto-returning to 0.0.")
 					current_target_progress = 0.0
 					_auto_return_timer = 0.0
 			elif lock_when_finished and progress >= 1.0:
 				is_locked = true
 				_is_auto_turning = false
-				print("Valve: Reached completion and locked permanently.")
+				# print("Valve: Reached completion and locked permanently.")
 			else:
 				_is_auto_turning = false
-				print("Valve: Autonomous turning finished at target: ", current_target_progress)
+				# print("Valve: Autonomous turning finished at target: ", current_target_progress)
 
 
 ## Processes turn calculation when valve is configured in rapid mash mode.
@@ -360,12 +360,12 @@ func _process_press_mode(delta: float, just_pressed: bool) -> void:
 ## [param just_pressed] Whether the interact key was pressed down this frame.
 func _process_mash_mode(delta: float, just_pressed: bool) -> void:
 	if just_pressed:
-		print("Valve: Mash impulse added.")
+		# print("Valve: Mash impulse added.")
 		progress = clampf(progress + MASH_IMPULSE_STEP, 0.0, 1.0)
 		if lock_when_finished and progress >= 1.0:
 			is_locked = true
 			progress = 1.0
-			print("Valve: Reached completion via mashing and locked.")
+			# print("Valve: Reached completion via mashing and locked.")
 	else:
 		if reverts_on_release and progress > 0.0 and progress < 1.0:
 			var decay_duration: float = turn_duration * 1.5

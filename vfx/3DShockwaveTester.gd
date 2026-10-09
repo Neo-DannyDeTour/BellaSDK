@@ -24,10 +24,10 @@ func _ready() -> void:
 
 ## Fires a shockwave event when the timer expires.
 func _on_timer_timeout() -> void:
-	print(
-		"ShockwaveTester: _on_timer_timeout() called. Firing shockwave with radius: ", test_radius
-	)
+	# print(
+	# 	"ShockwaveTester: _on_timer_timeout() called. Firing shockwave with radius: ", test_radius
+	# )
 	if shockwave_manager != null:
 		shockwave_manager.trigger_shockwave(global_position, test_radius, 2.0)
 	else:
-		print("ShockwaveTester: shockwave_manager is not assigned!")
+		# print("ShockwaveTester: shockwave_manager is not assigned!")

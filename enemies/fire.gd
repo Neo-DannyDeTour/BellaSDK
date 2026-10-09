@@ -149,7 +149,7 @@ func _physics_process(delta: float) -> void:
 
 ## Deals [member burn_damage_per_tick] to all registered overlapping bodies.
 func _apply_burn_tick() -> void:
-	print("[VolumetricFire] Applying burn tick of ", burn_damage_per_tick, " damage.")
+	# print("[VolumetricFire] Applying burn tick of ", burn_damage_per_tick, " damage.")
 	for i: int in range(_active_combustible_bodies.size() - 1, -1, -1):
 		var target_body: Node3D = _active_combustible_bodies[i]
 		if not is_instance_valid(target_body):

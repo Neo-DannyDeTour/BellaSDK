@@ -88,7 +88,7 @@ func _process(_delta: float) -> void:
 		is_currently_focused = false
 		characters_hovering.clear()
 
-		print("InteractComponent: Focus lost due to timeout.")
+		# print("InteractComponent: Focus lost due to timeout.")
 		unfocused.emit()
 		set_process(false)
 
