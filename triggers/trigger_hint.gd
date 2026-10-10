@@ -97,6 +97,7 @@ enum HintType { CUSTOM, INTERACT, JUMP, CROUCH, SPRINT, FLASHLIGHT, ZOOM }
 ## Broadcasts formatted hint message to screen UI via Events.
 @export var show_on_screen: bool = true
 
+## Internal flag recording whether trigger has executed.
 var _triggered: bool = false
 
 
@@ -107,8 +108,9 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 
-	if not body_entered.is_connected(_on_body_entered):
-		body_entered.connect(_on_body_entered)
+	collision_layer = CollisionLayers.MASK_NONE
+	collision_mask = CollisionLayers.MASK_PLAYER
+	Utilities.safe_connect(body_entered, _on_body_entered)
 
 
 ## Syncs collision shape and visualizer node with inspector values.
@@ -124,14 +126,16 @@ func _update_visuals() -> void:
 			else:
 				col.shape = col.shape.duplicate()
 			var box: BoxShape3D = col.shape if col.shape is BoxShape3D else null
-			box.size = trigger_size
+			if is_instance_valid(box):
+				box.size = trigger_size
 		elif shape_type == EditorTriggerVisualizer.ShapeType.SPHERE:
 			if not col.shape is SphereShape3D:
 				col.shape = SphereShape3D.new()
 			else:
 				col.shape = col.shape.duplicate()
 			var sphere: SphereShape3D = col.shape if col.shape is SphereShape3D else null
-			sphere.radius = trigger_size.x * 0.5
+			if is_instance_valid(sphere):
+				sphere.radius = trigger_size.x * 0.5
 
 		col.position = trigger_offset
 
@@ -149,7 +153,7 @@ func _update_visuals() -> void:
 		visualizer.position = trigger_offset
 
 
-## Safely retrieves child [CollisionShape3D] instance.
+## Safely retrieves child [CollisionShape3D] instance using [NodeQuery].
 func _get_collision_shape() -> CollisionShape3D:
 	var col: CollisionShape3D = (
 		get_node_or_null("CollisionShape3D")
@@ -157,22 +161,20 @@ func _get_collision_shape() -> CollisionShape3D:
 		else null
 	)
 	if not is_instance_valid(col):
-		for child: Node in get_children():
-			if child is CollisionShape3D:
-				col = child as CollisionShape3D
-				break
+		col = NodeQuery.find_first_child_of_type(self, CollisionShape3D) as CollisionShape3D
 	return col
 
 
-## Safely retrieves child [EditorTriggerVisualizer] node.
+## Safely retrieves child [EditorTriggerVisualizer] node using [NodeQuery].
 func _get_visualizer_node() -> EditorTriggerVisualizer:
 	var visualizer: EditorTriggerVisualizer = (
 		get_node_or_null("EditorTriggerVisualizer") as EditorTriggerVisualizer
 	)
 	if not is_instance_valid(visualizer):
-		for child: Node in get_children():
-			if child is EditorTriggerVisualizer:
-				return child as EditorTriggerVisualizer
+		visualizer = (
+			NodeQuery.find_first_child_of_type(self, EditorTriggerVisualizer)
+			as EditorTriggerVisualizer
+		)
 	return visualizer
 
 

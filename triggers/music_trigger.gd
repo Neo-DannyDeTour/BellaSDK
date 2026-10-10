@@ -150,14 +150,16 @@ var _queued_switch_mode: SwitchMode = SwitchMode.IMMEDIATE
 var _queued_crossfade: float = 0.3
 
 
+## Registers group, establishes physics, locates visualizers, and starts auto playback.
 func _ready() -> void:
+	print("MusicTrigger3D: Initializing music trigger node: ", name)
 	add_to_group(TRIGGER_GROUP)
 	_setup_collision()
 	_locate_visualizer()
 	_sync_from_visualizer()
 	if Engine.is_editor_hint():
 		return
-	body_entered.connect(_on_body_entered)
+	Utilities.safe_connect(body_entered, _on_body_entered)
 	var master: MusicTrigger3D = _resolve_master_trigger()
 	if master == self and audio_stream != null:
 		_ensure_players_initialized()
@@ -165,6 +167,7 @@ func _ready() -> void:
 			play_section(section_index, get_start_timestamp(), get_end_timestamp(), is_looping)
 
 
+## Updates editor visualizer syncing and manages active playback loop timers.
 func _process(_delta: float) -> void:
 	if Engine.is_editor_hint():
 		_process_editor_preview()
@@ -176,9 +179,10 @@ func _process(_delta: float) -> void:
 	_handle_loop_and_queue(pos)
 
 
+## Assigns physics collision layers and creates collision shape if needed.
 func _setup_collision() -> void:
-	collision_layer = 0
-	collision_mask = 2
+	collision_layer = CollisionLayers.MASK_NONE
+	collision_mask = CollisionLayers.MASK_PLAYER
 	_collision_shape = get_node_or_null("CollisionShape3D") as CollisionShape3D
 	if _collision_shape == null:
 		_collision_shape = CollisionShape3D.new()
@@ -186,14 +190,19 @@ func _setup_collision() -> void:
 		add_child(_collision_shape)
 
 
+## Resolves visualizer child reference using [NodeQuery].
 func _locate_visualizer() -> void:
 	if visualizer != null:
 		return
 	visualizer = get_node_or_null("EditorTriggerVisualizer") as EditorTriggerVisualizer
 	if visualizer == null:
-		visualizer = find_child("*Visualizer*", false, false) as EditorTriggerVisualizer
+		visualizer = (
+			NodeQuery.find_first_child_of_type(self, EditorTriggerVisualizer)
+			as EditorTriggerVisualizer
+		)
 
 
+## Syncs collision shape bounds with visualizer parameters.
 func _sync_from_visualizer() -> void:
 	if not is_instance_valid(self) or not is_inside_tree():
 		return
@@ -220,6 +229,7 @@ func _sync_from_visualizer() -> void:
 		sphere.radius = visualizer.trigger_size.x / 2.0
 
 
+## Updates display label text on visualizer mesh.
 func _sync_label() -> void:
 	if not is_inside_tree() or visualizer == null or not is_instance_valid(visualizer):
 		return
@@ -229,12 +239,14 @@ func _sync_label() -> void:
 	visualizer.trigger_text = label
 
 
+## Returns the effective section start timestamp in seconds.
 func get_start_timestamp() -> float:
 	if manual_override_time:
 		return custom_start_time
 	return 0.0
 
 
+## Returns the effective section end timestamp in seconds.
 func get_end_timestamp() -> float:
 	if manual_override_time:
 		return custom_end_time
@@ -247,6 +259,7 @@ func get_end_timestamp() -> float:
 	return custom_end_time
 
 
+## Monitors playback position to execute loops or queued transitions.
 func _handle_loop_and_queue(pos: float) -> void:
 	if pos >= _active_end_time - BOUNDARY_TOLERANCE_SEC:
 		if _queued_section != -1:
@@ -257,6 +270,7 @@ func _handle_loop_and_queue(pos: float) -> void:
 			_active_player.stop()
 
 
+## Handles player physics body entry and requests section switch on master.
 func _on_body_entered(_body: Node3D) -> void:
 	if trigger_once and _has_triggered:
 		return
@@ -267,15 +281,13 @@ func _on_body_entered(_body: Node3D) -> void:
 	_has_triggered = true
 	var start_t: float = get_start_timestamp()
 	var end_t: float = get_end_timestamp()
+	print("MusicTrigger3D: Body entered volume. Switching to section: ", section_index)
 	master.request_switch(
 		section_index, start_t, end_t, is_looping, switch_mode, crossfade_duration
 	)
 
 
-## Locates the proper master trigger:
-## 1. If self has an audio_stream, self is master.
-## 2. If connected_music_trigger is explicitly set, use it.
-## 3. Otherwise find another MusicTrigger3D that owns an audio_stream.
+## Locates master music trigger hosting primary audio stream.
 func _resolve_master_trigger() -> MusicTrigger3D:
 	if audio_stream != null:
 		return self
@@ -291,6 +303,7 @@ func _resolve_master_trigger() -> MusicTrigger3D:
 	return null
 
 
+## Instantiates primary and secondary audio players if uninitialized.
 func _ensure_players_initialized() -> void:
 	if _player_a == null:
 		_player_a = _create_audio_player("PlayerA")
@@ -302,9 +315,11 @@ func _ensure_players_initialized() -> void:
 		_standby_player = _player_b
 
 
+## Schedules or immediately executes musical section switch.
 func request_switch(
 	sec_idx: int, start_t: float, end_t: float, looping: bool, mode: SwitchMode, fade_time: float
 ) -> void:
+	print("MusicTrigger3D: Switch requested for section: ", sec_idx)
 	_ensure_players_initialized()
 	if not _active_player.playing:
 		play_section(sec_idx, start_t, end_t, looping)
@@ -321,9 +336,11 @@ func request_switch(
 		_execute_transition()
 
 
+## Commences playback of designated section on active audio player.
 func play_section(
 	sec_idx: int, start_t: float = -1.0, end_t: float = -1.0, looping: bool = true
 ) -> void:
+	print("MusicTrigger3D: Playing section ", sec_idx, " from ", start_t, " to ", end_t)
 	_ensure_players_initialized()
 	_current_section = sec_idx
 	_queued_section = -1
@@ -336,7 +353,9 @@ func play_section(
 	section_changed.emit(_current_section)
 
 
+## Performs smooth audio crossfade transition between active and standby players.
 func _execute_transition() -> void:
+	print("MusicTrigger3D: Executing audio transition to section: ", _queued_section)
 	_ensure_players_initialized()
 	_current_section = _queued_section
 	_active_start_time = _queued_start_time
@@ -346,10 +365,9 @@ func _execute_transition() -> void:
 	_standby_player.stream = audio_stream
 	_standby_player.volume_db = -80.0
 	_standby_player.play(_active_start_time)
-	if is_instance_valid(_crossfade_tween) and _crossfade_tween.is_running():
-		_crossfade_tween.kill()
+	_crossfade_tween = Utilities.reset_tween(self, _crossfade_tween)
 	if _queued_crossfade > 0.0:
-		_crossfade_tween = create_tween().set_parallel(true)
+		_crossfade_tween.set_parallel(true)
 		_crossfade_tween.tween_property(_standby_player, "volume_db", 0.0, _queued_crossfade)
 		_crossfade_tween.tween_property(_active_player, "volume_db", -80.0, _queued_crossfade)
 		var old_active: AudioStreamPlayer = _active_player
@@ -365,6 +383,7 @@ func _execute_transition() -> void:
 	section_changed.emit(_current_section)
 
 
+## Toggles editor preview audio playback.
 func _toggle_editor_preview(enable: bool) -> void:
 	if not Engine.is_editor_hint():
 		return
@@ -384,6 +403,7 @@ func _toggle_editor_preview(enable: bool) -> void:
 		_preview_player_stop()
 
 
+## Checks editor preview playback bounds and handles looping.
 func _process_editor_preview() -> void:
 	if not preview_in_editor or _preview_player == null:
 		return
@@ -398,15 +418,19 @@ func _process_editor_preview() -> void:
 			_preview_player_stop()
 
 
+## Halts editor preview playback safely.
 func _preview_player_stop() -> void:
 	if _preview_player != null:
 		_preview_player.stop()
-	# Set internal backing variable directly to prevent setter recursion loop
 	preview_in_editor = false
 
 
+## Obtains a pooled 2D audio stream player from [AudioPool].
 func _create_audio_player(player_name: String) -> AudioStreamPlayer:
-	var player: AudioStreamPlayer = AudioStreamPlayer.new()
-	player.name = player_name
-	add_child(player)
+	var player: AudioStreamPlayer = AudioPool.get_pooled_player_2d()
+	if not is_instance_valid(player):
+		player = AudioStreamPlayer.new()
+		player.name = player_name
+		add_child(player)
+	print("MusicTrigger3D: Obtained pooled audio player for: ", player_name)
 	return player

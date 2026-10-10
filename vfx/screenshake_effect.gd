@@ -94,6 +94,7 @@ var _collision_shape: CollisionShape3D = null
 
 ## Configures player-only physics mask and connects body entry signal.
 func _ready() -> void:
+	print("ScreenshakeEffect: Initializing trigger volume: ", name)
 	var col_node: Node = get_node_or_null("CollisionShape3D")
 	_collision_shape = col_node if col_node is CollisionShape3D else null
 	_update_visuals()
@@ -109,8 +110,7 @@ func _ready() -> void:
 		if is_instance_valid(editor_mesh):
 			editor_mesh.queue_free()
 
-	if not body_entered.is_connected(_on_body_entered):
-		body_entered.connect(_on_body_entered)
+	Utilities.safe_connect(body_entered, _on_body_entered)
 
 
 ## Updates editor wireframe visualizer and collision box dimensions.
@@ -162,14 +162,15 @@ func _update_visuals() -> void:
 		visual.position = trigger_offset
 
 
-## Locates [EditorTriggerVisualizer] child node for editor previews.
+## Locates [EditorTriggerVisualizer] child node for editor previews using [NodeQuery].
 func _get_visualizer() -> EditorTriggerVisualizer:
 	var raw_vis: Node = get_node_or_null("EditorTriggerVisualizer")
 	var visual: EditorTriggerVisualizer = raw_vis if raw_vis is EditorTriggerVisualizer else null
 	if not is_instance_valid(visual):
-		for child: Node in get_children():
-			if child is EditorTriggerVisualizer:
-				return child
+		visual = (
+			NodeQuery.find_first_child_of_type(self, EditorTriggerVisualizer)
+			as EditorTriggerVisualizer
+		)
 	return visual
 
 

@@ -32,11 +32,13 @@ var _has_triggered: bool = false
 var _cached_camera: Camera3D = null
 
 
-## Connects body entry and exit signals to internal listeners.
+## Connects body entry and exit signals to internal listeners and configures physics layers.
 func _ready() -> void:
 	print("TriggerLook: Initializing gaze trigger volume.")
-	body_entered.connect(_on_body_entered)
-	body_exited.connect(_on_body_exited)
+	collision_layer = CollisionLayers.MASK_NONE
+	collision_mask = CollisionLayers.MASK_PLAYER
+	Utilities.safe_connect(body_entered, _on_body_entered)
+	Utilities.safe_connect(body_exited, _on_body_exited)
 
 
 ## Evaluates player camera gaze alignment against target each frame.
@@ -83,14 +85,14 @@ func _trigger_event() -> void:
 ## Detects player body entry into the trigger volume.
 func _on_body_entered(body: Node3D) -> void:
 	print("TriggerLook: Body entered volume -> ", body.name)
-	if body is Player or body is CharacterBody3D:
+	if body.is_in_group(&"player") or body is Player:
 		_player_inside = true
 
 
 ## Detects player body exit and clears active gaze counters.
 func _on_body_exited(body: Node3D) -> void:
 	print("TriggerLook: Body exited volume -> ", body.name)
-	if body is Player or body is CharacterBody3D:
+	if body.is_in_group(&"player") or body is Player:
 		_player_inside = false
 		_current_look_time = 0.0
 
