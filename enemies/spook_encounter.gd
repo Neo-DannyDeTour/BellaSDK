@@ -1,5 +1,5 @@
 @tool
-## Spawns randomized horror silhouettes flush to the floor with stare and distance despawns.
+## Spawns horror silhouettes behind the player that vanish instantly when turned toward.
 ## Designed as a standalone [Area3D] level design trigger zone in Godot 4.
 class_name SpookEncounter
 extends Area3D
@@ -7,7 +7,7 @@ extends Area3D
 ## Emitted when the spook spawns. Passes [param spawn_pos] world position.
 signal spook_spawned(spawn_pos: Vector3)
 
-## Emitted when the spook vanishes due to player gaze, proximity, or distance.
+## Emitted when the spook vanishes after the player turns around.
 signal spook_vanished
 
 ## Physics collision layer for Environment geometry (Layer 1).
@@ -126,30 +126,28 @@ const PHYSICS_LAYER_PLAYER: int = 2
 		if is_inside_tree():
 			_update_sprite_properties()
 
-@export_group("Despawn Conditions")
+## Enables double-sided shadow casting on the silhouette sprite.
+@export var enable_shadow_casting: bool = true:
+	set(value):
+		enable_shadow_casting = value
+		if is_inside_tree():
+			_update_sprite_properties()
 
-## Continuous staring duration in seconds before despawning.
-@export_range(0.1, 10.0, 0.1) var look_duration_threshold: float = 1.0
+@export_group("Behind Spawn & Gaze Despawn")
 
-## Despawns the spook when the player approaches within proximity.
-@export var despawn_on_proximity: bool = true
+## Distance in meters directly behind the player's back to spawn.
+@export_range(1.0, 10.0, 0.25) var spawn_behind_distance: float = 3.0
 
-## Distance in meters triggering immediate proximity despawn.
-@export_range(0.5, 15.0, 0.5) var proximity_threshold: float = 3.0
+## Forward camera view alignment threshold (dot product) triggering despawn.
+@export_range(-0.2, 0.8, 0.05) var turn_around_threshold: float = 0.15
 
-## Despawns the spook if the player retreats past maximum distance.
-@export var despawn_on_distance: bool = false
-
-## Maximum distance in meters triggering despawn when retreating.
-@export_range(5.0, 50.0, 1.0) var max_distance_threshold: float = 15.0
+## Delay in seconds after entering trigger before spawning behind the player.
+@export_range(0.0, 5.0, 0.1) var spawn_delay: float = 0.5
 
 @export_group("Spawn Parameters")
 
 ## Probability between 0.0 and 1.0 of spawning on trigger entry.
 @export_range(0.0, 1.0, 0.05) var spawn_chance: float = 1.0
-
-## Spawns the spook along the player camera view forward vector.
-@export var bias_spawn_towards_player_view: bool = true
 
 ## Destroys this encounter node after vanishing to prevent re-trigger.
 @export var one_shot: bool = true
@@ -163,9 +161,11 @@ var _spook_sprite: Sprite3D
 var _notifier: VisibleOnScreenNotifier3D
 
 var _player_camera: Camera3D
-var _accumulated_look_time: float = 0.0
+var _tracked_player: Node3D
+var _spawn_timer: float = 0.0
 var _is_active: bool = false
 var _has_triggered: bool = false
+var _active_lifetime: float = 0.0
 
 
 ## Initializes layers, child nodes, gizmo meshes, and collision links.
@@ -184,9 +184,9 @@ func _ready() -> void:
 		body_exited.connect(_on_body_exited)
 
 
-## Evaluates stare duration, proximity distance, and max range each frame.
+## Checks rear spawn readiness and detects turn-around gaze each frame.
 func _process(delta: float) -> void:
-	if Engine.is_editor_hint() or not _is_active:
+	if Engine.is_editor_hint():
 		return
 
 	if not is_instance_valid(_player_camera):
@@ -194,39 +194,29 @@ func _process(delta: float) -> void:
 		if not is_instance_valid(_player_camera):
 			return
 
-	var player_dist: float = _player_camera.global_position.distance_to(
-		_spook_sprite.global_position
-	)
-
-	if despawn_on_proximity and player_dist <= proximity_threshold:
-		# print(
-		# 	"SpookEncounter: Player breached proximity threshold (",
-		# 	snappedf(player_dist, 0.1),
-		# 	"m)."
-		# )
-		_despawn_spook()
-		return
-
-	if despawn_on_distance and player_dist >= max_distance_threshold:
-		# print("SpookEncounter: Player exceeded max distance (", snappedf(player_dist, 0.1), "m).")
-		_despawn_spook()
-		return
-
-	if not is_instance_valid(_notifier) or not _notifier.is_on_screen():
-		_accumulated_look_time = 0.0
-		return
-
-	if _has_line_of_sight():
-		_accumulated_look_time += delta
-		# print("SpookEncounter: Staring at entity: ", snappedf(_accumulated_look_time, 0.05), "s")
-		if _accumulated_look_time >= look_duration_threshold:
+	if _is_active:
+		_active_lifetime += delta
+		# Grace period: ignore despawn for the first 0.35s to allow shadow rendering
+		if _active_lifetime > 0.35 and _is_player_looking_at_spook():
+			print("SpookEncounter: Player turned around! Despawning instantly.")
 			_despawn_spook()
-	else:
-		_accumulated_look_time = 0.0
+		return
+
+	if is_instance_valid(_tracked_player) and not (_has_triggered and one_shot):
+		_spawn_timer -= delta
+		if _spawn_timer <= 0.0:
+			var roll: float = randf()
+			if roll <= spawn_chance:
+				_has_triggered = true
+				_spawn_spook_behind(_tracked_player)
+			else:
+				print("SpookEncounter: Spawn roll missed (", roll, " > ", spawn_chance, ").")
+				_tracked_player = null
 
 
 ## Instantiates collision, sprite, notifier, and gizmo nodes if missing.
 func _ensure_child_nodes() -> void:
+	print("SpookEncounter: Ensuring presence of required child nodes.")
 	if not is_instance_valid(_collision_shape):
 		_collision_shape = get_node_or_null("CollisionShape3D") as CollisionShape3D
 		if not is_instance_valid(_collision_shape):
@@ -285,6 +275,7 @@ func _ensure_child_nodes() -> void:
 
 ## Synchronizes collision box, fill meshes, wireframes, and labels.
 func _rebuild_visuals() -> void:
+	print("SpookEncounter: Rebuilding gizmo visuals.")
 	_ensure_child_nodes()
 	_update_collision_shape()
 	_update_fill_mesh()
@@ -297,6 +288,7 @@ func _rebuild_visuals() -> void:
 
 ## Updates the [BoxShape3D] resource size on [CollisionShape3D].
 func _update_collision_shape() -> void:
+	print("SpookEncounter: Updating collision shape.")
 	if not is_instance_valid(_collision_shape):
 		return
 	var box: BoxShape3D = _collision_shape.shape as BoxShape3D
@@ -308,6 +300,7 @@ func _update_collision_shape() -> void:
 
 ## Updates dimensions of the inner volumetric [BoxMesh] visualizer.
 func _update_fill_mesh() -> void:
+	print("SpookEncounter: Updating fill mesh.")
 	if not is_instance_valid(_fill_mesh_node):
 		return
 	var box_mesh: BoxMesh = _fill_mesh_node.mesh as BoxMesh
@@ -319,6 +312,7 @@ func _update_fill_mesh() -> void:
 
 ## Rebuilds the wireframe cage using [ImmediateMesh] line primitives.
 func _update_wireframe_mesh() -> void:
+	print("SpookEncounter: Updating wireframe mesh lines.")
 	if not is_instance_valid(_wireframe_node):
 		return
 	var imm_mesh: ImmediateMesh = ImmediateMesh.new()
@@ -348,6 +342,7 @@ func _draw_line(target_mesh: ImmediateMesh, from: Vector3, to: Vector3) -> void:
 
 ## Updates unshaded materials, colors, and depth testing on gizmos.
 func _update_materials() -> void:
+	print("SpookEncounter: Updating gizmo materials.")
 	if is_instance_valid(_fill_mesh_node) and _fill_mesh_node.mesh != null:
 		var fill_mat: StandardMaterial3D = StandardMaterial3D.new()
 		fill_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -367,6 +362,7 @@ func _update_materials() -> void:
 
 ## Constructs a local -Z directional gizmo arrow using [ImmediateMesh].
 func _update_arrow() -> void:
+	print("SpookEncounter: Updating orientation arrow.")
 	if not is_instance_valid(_arrow_node):
 		return
 	_arrow_node.visible = show_orientation
@@ -397,6 +393,7 @@ func _update_arrow() -> void:
 
 ## Formats and positions the 3D billboard label above the trigger.
 func _update_text() -> void:
+	print("SpookEncounter: Updating billboard label text.")
 	if not is_instance_valid(_label_node):
 		return
 	var text_output: String = trigger_text
@@ -408,17 +405,22 @@ func _update_text() -> void:
 	_label_node.position = Vector3(0.0, (trigger_size.y * 0.5) + 0.5, 0.0)
 
 
-## Configures billboard, pixel size, and resets preview position.
+## Configures billboard, pixel size, shadow casting, and preview position.
 func _update_sprite_properties() -> void:
+	print("SpookEncounter: Configuring sprite parameters and shadow modes.")
 	if not is_instance_valid(_spook_sprite):
 		return
 
-	_spook_sprite.top_level = false
 	_spook_sprite.texture = spook_texture
 	_spook_sprite.pixel_size = pixel_size
-	_spook_sprite.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
+	_spook_sprite.billboard = BaseMaterial3D.BILLBOARD_DISABLED
 	_spook_sprite.double_sided = true
 	_spook_sprite.shaded = not unshaded_sprite
+
+	# Shadow and cutout requirements for Godot 4:
+	_spook_sprite.alpha_cut = SpriteBase3D.ALPHA_CUT_DISCARD
+	_spook_sprite.alpha_scissor_threshold = 0.5
+	_spook_sprite.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_DOUBLE_SIDED
 
 	var half_y: float = trigger_size.y * 0.5
 	var sprite_h: float = 2.0
@@ -427,19 +429,16 @@ func _update_sprite_properties() -> void:
 	var base_y: float = -half_y + (sprite_h * 0.5) + floor_offset
 
 	if Engine.is_editor_hint():
+		_spook_sprite.top_level = false
 		_spook_sprite.position = Vector3(0.0, base_y, 0.0)
 		_spook_sprite.scale = Vector3.ONE
 		_spook_sprite.flip_h = false
 		_spook_sprite.modulate = Color.WHITE
 
-	if is_instance_valid(_notifier):
-		var notif_size: Vector3 = Vector3(sprite_h * 0.6, sprite_h, sprite_h * 0.6)
-		_notifier.aabb = AABB(-notif_size * 0.5, notif_size)
-		_notifier.position = _spook_sprite.position
-
 
 ## Updates visibility of fill meshes, wireframes, arrows, and labels.
 func _update_visibility() -> void:
+	print("SpookEncounter: Updating gizmo element visibility.")
 	var is_editor: bool = Engine.is_editor_hint()
 	var gizmo_visible: bool = is_editor or show_gizmo_in_game
 	if is_instance_valid(_fill_mesh_node):
@@ -454,6 +453,7 @@ func _update_visibility() -> void:
 
 ## Toggles sprite visibility between editor preview and active state.
 func _update_sprite_visibility() -> void:
+	print("SpookEncounter: Updating sprite visibility toggle.")
 	if not is_instance_valid(_spook_sprite):
 		return
 	if Engine.is_editor_hint():
@@ -464,6 +464,7 @@ func _update_sprite_visibility() -> void:
 
 ## Raycasts downward onto Environment Layer 1 to find floor height.
 func _find_floor_position(candidate_pos: Vector3) -> Vector3:
+	print("SpookEncounter: Raycasting floor height at -> ", candidate_pos)
 	var world: World3D = get_world_3d()
 	if not is_instance_valid(world):
 		return candidate_pos
@@ -472,13 +473,8 @@ func _find_floor_position(candidate_pos: Vector3) -> Vector3:
 	if not is_instance_valid(space_state):
 		return candidate_pos
 
-	var half_y: float = trigger_size.y * 0.5
-	var ray_top: Vector3 = Vector3(
-		candidate_pos.x, global_position.y + half_y + 1.0, candidate_pos.z
-	)
-	var ray_bottom: Vector3 = Vector3(
-		candidate_pos.x, global_position.y - half_y - 10.0, candidate_pos.z
-	)
+	var ray_top: Vector3 = candidate_pos + Vector3(0.0, 2.0, 0.0)
+	var ray_bottom: Vector3 = candidate_pos - Vector3(0.0, 8.0, 0.0)
 
 	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
 		ray_top, ray_bottom, PHYSICS_LAYER_ENVIRONMENT
@@ -488,34 +484,66 @@ func _find_floor_position(candidate_pos: Vector3) -> Vector3:
 		var raw_pos: Variant = hit.get(&"position")
 		if raw_pos is Vector3:
 			var hit_pos: Vector3 = raw_pos
-			print("SpookEncounter: Floor hit detected at ", hit_pos)
+			print("SpookEncounter: Floor surface detected at -> ", hit_pos)
 			return hit_pos
 
-	print("SpookEncounter: Floor raycast missed. Using trigger bottom.")
-	return Vector3(candidate_pos.x, global_position.y - half_y, candidate_pos.z)
+	print("SpookEncounter: Floor raycast missed. Falling back to trigger bottom.")
+	return Vector3(candidate_pos.x, global_position.y - (trigger_size.y * 0.5), candidate_pos.z)
 
 
-## Computes grounded spawn coordinates biased towards player view.
-func _calculate_spawn_position(_player_node: Node3D) -> Vector3:
-	print("SpookEncounter: Calculating grounded spawn coordinates.")
-	var half: Vector3 = trigger_size * 0.5
-	var candidate_x: float = randf_range(-half.x * 0.75, half.x * 0.75)
-	var candidate_z: float = randf_range(-half.z * 0.75, half.z * 0.75)
+## Computes spawn position behind player back avoiding obstacle collision.
+func _calculate_behind_spawn_position(player_node: Node3D) -> Vector3:
+	print("SpookEncounter: Calculating rear spawn location behind player.")
+	var cam_fwd: Vector3 = -_player_camera.global_transform.basis.z
+	var planar_fwd: Vector3 = Vector3(cam_fwd.x, 0.0, cam_fwd.z)
+	if planar_fwd.is_zero_approx():
+		planar_fwd = -player_node.global_transform.basis.z
+		planar_fwd = Vector3(planar_fwd.x, 0.0, planar_fwd.z)
+	planar_fwd = planar_fwd.normalized()
 
-	if bias_spawn_towards_player_view and is_instance_valid(_player_camera):
-		var cam_fwd: Vector3 = -_player_camera.global_transform.basis.z
-		var desired_world: Vector3 = _player_camera.global_position + (cam_fwd * 3.0)
-		var desired_local: Vector3 = to_local(desired_world)
-		candidate_x = clampf(desired_local.x, -half.x * 0.75, half.x * 0.75)
-		candidate_z = clampf(desired_local.z, -half.z * 0.75, half.z * 0.75)
+	var back_dir: Vector3 = -planar_fwd
+	var player_pos: Vector3 = player_node.global_position
+	var desired_rear: Vector3 = player_pos + (back_dir * spawn_behind_distance)
 
-	var sample_world: Vector3 = to_global(Vector3(candidate_x, 0.0, candidate_z))
-	return _find_floor_position(sample_world)
+	var world: World3D = get_world_3d()
+	if is_instance_valid(world):
+		var space_state: PhysicsDirectSpaceState3D = world.direct_space_state
+		if is_instance_valid(space_state):
+			var head_height: Vector3 = Vector3(0.0, 1.2, 0.0)
+			var wall_query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
+				player_pos + head_height, desired_rear + head_height, PHYSICS_LAYER_ENVIRONMENT
+			)
+			var wall_hit: Dictionary = space_state.intersect_ray(wall_query)
+			if not wall_hit.is_empty():
+				var hit_point: Vector3 = wall_hit.get(&"position", desired_rear)
+				print("SpookEncounter: Obstructing wall hit behind player at ", hit_point)
+				desired_rear = hit_point - (back_dir * 0.4)
+
+	return _find_floor_position(desired_rear)
 
 
-## Spawns a randomized unique spook flush to the floor and starts timers.
-func _spawn_spook(player_node: Node3D) -> void:
-	print("SpookEncounter: Spawning entity within trigger boundary.")
+## Checks whether player camera has rotated toward the spook silhouette.
+## Checks whether player camera has rotated toward the spook silhouette.
+func _is_player_looking_at_spook() -> bool:
+	if not is_instance_valid(_player_camera) or not is_instance_valid(_spook_sprite):
+		return false
+
+	var cam_pos: Vector3 = _player_camera.global_position
+	var spook_pos: Vector3 = _spook_sprite.global_position
+	var to_spook: Vector3 = (spook_pos - cam_pos).normalized()
+	var cam_fwd: Vector3 = -_player_camera.global_transform.basis.z.normalized()
+	var dot: float = cam_fwd.dot(to_spook)
+
+	# 0.35 means looking directly at it (approx 70-degree cone)
+	if dot > 0.35 and _has_line_of_sight():
+		return true
+
+	return false
+
+
+## Spawns spook behind player with shadow casting enabled.
+func _spawn_spook_behind(player_node: Node3D) -> void:
+	print("SpookEncounter: Spawning silhouette behind player back.")
 	var chosen_tex: Texture2D = spook_texture
 	if not alternate_textures.is_empty():
 		var all_textures: Array[Texture2D] = alternate_textures.duplicate()
@@ -528,9 +556,9 @@ func _spawn_spook(player_node: Node3D) -> void:
 		return
 
 	_spook_sprite.texture = chosen_tex
-
 	var chosen_scale: float = randf_range(min_scale, max_scale)
 	_spook_sprite.scale = Vector3(chosen_scale, chosen_scale, chosen_scale)
+
 	if random_flip_h:
 		_spook_sprite.flip_h = randf() > 0.5
 	if randomize_tint:
@@ -539,29 +567,37 @@ func _spawn_spook(player_node: Node3D) -> void:
 	else:
 		_spook_sprite.modulate = Color.WHITE
 
-	var floor_point: Vector3 = _calculate_spawn_position(player_node)
+	var floor_point: Vector3 = _calculate_behind_spawn_position(player_node)
 	var sprite_h: float = float(chosen_tex.get_height()) * pixel_size * chosen_scale
 	var target_y: float = floor_point.y + (sprite_h * 0.5) + floor_offset
 
+	_spook_sprite.top_level = true
 	_spook_sprite.global_position = Vector3(floor_point.x, target_y, floor_point.z)
-	_spook_sprite.visible = true
+
+	# Orient sprite flat towards player's forward direction so the rear light hits it square
+	var cam_fwd: Vector3 = -_player_camera.global_transform.basis.z
+	var planar_fwd: Vector3 = Vector3(cam_fwd.x, 0.0, cam_fwd.z).normalized()
+	if not planar_fwd.is_zero_approx():
+		_spook_sprite.look_at(_spook_sprite.global_position + planar_fwd, Vector3.UP)
+
+	if is_instance_valid(_notifier):
+		_notifier.global_position = _spook_sprite.global_position
+
+	_active_lifetime = 0.0
 	_is_active = true
-	_accumulated_look_time = 0.0
+	_spook_sprite.visible = true
 
 	print(
-		"SpookEncounter: Placed at ",
+		"SpookEncounter: Silhouette positioned at ",
 		_spook_sprite.global_position,
-		" | Scale: ",
-		snappedf(chosen_scale, 0.01),
-		" | Flip: ",
-		_spook_sprite.flip_h
+		" behind player."
 	)
 	spook_spawned.emit(_spook_sprite.global_position)
 
 
 ## Hides sprite, cleans state, and emits [signal spook_vanished].
 func _despawn_spook() -> void:
-	print("SpookEncounter: Spook vanished.")
+	print("SpookEncounter: Silhouette vanished instantly.")
 	_is_active = false
 	_spook_sprite.visible = false
 	spook_vanished.emit()
@@ -573,11 +609,16 @@ func _despawn_spook() -> void:
 ## Tests environment occlusion between camera and spook chest.
 func _has_line_of_sight() -> bool:
 	if not is_instance_valid(_player_camera):
-		_player_camera = get_viewport().get_camera_3d()
-		if not is_instance_valid(_player_camera):
-			return false
+		return false
 
-	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
+	var world: World3D = get_world_3d()
+	if not is_instance_valid(world):
+		return false
+
+	var space_state: PhysicsDirectSpaceState3D = world.direct_space_state
+	if not is_instance_valid(space_state):
+		return false
+
 	var sprite_h: float = 2.0
 	if _spook_sprite.texture != null:
 		sprite_h = (
@@ -585,7 +626,7 @@ func _has_line_of_sight() -> bool:
 			* _spook_sprite.pixel_size
 			* _spook_sprite.scale.y
 		)
-	var target_chest: Vector3 = _spook_sprite.global_position + Vector3(0.0, sprite_h * 0.25, 0.0)
+	var target_chest: Vector3 = _spook_sprite.global_position + Vector3(0.0, sprite_h * 0.2, 0.0)
 
 	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
 		_player_camera.global_position, target_chest, PHYSICS_LAYER_ENVIRONMENT
@@ -594,21 +635,21 @@ func _has_line_of_sight() -> bool:
 	return hit.is_empty()
 
 
-## Evaluates spawn roll when a player physics body enters the zone.
+## Registers player entry, initializes camera, and starts spawn timer.
 func _on_body_entered(body: Node3D) -> void:
-	print("SpookEncounter: Body entered trigger -> ", body.name)
+	print("SpookEncounter: Body entered trigger volume -> ", body.name)
 	if _is_active or (_has_triggered and one_shot):
 		return
 
+	_tracked_player = body
 	_player_camera = get_viewport().get_camera_3d()
-	var roll: float = randf()
-	if roll <= spawn_chance:
-		_has_triggered = true
-		_spawn_spook(body)
-	else:
-		print("SpookEncounter: Spawn roll missed (", roll, " > ", spawn_chance, ")")
+	_spawn_timer = spawn_delay
 
 
-## Logs player body exit from the encounter trigger boundary.
+## Clears tracked player reference when leaving the trigger area.
 func _on_body_exited(body: Node3D) -> void:
-	print("SpookEncounter: Body exited trigger -> ", body.name)
+	print("SpookEncounter: Body exited trigger volume -> ", body.name)
+	if _tracked_player == body:
+		_tracked_player = null
+		if _is_active:
+			_despawn_spook()
