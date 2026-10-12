@@ -360,7 +360,7 @@ func _finalize_scene_transition() -> void:
 
 	var cam_controller: CameraController = _get_camera_controller(player_node)
 	if is_instance_valid(player_node) and is_instance_valid(cam_controller):
-		print("LoadingScreen: Performing 360-degree frustum sweep to cache pipeline states.")
+		print("LoadingScreen: Sweeping frustum 360 deg to cache pipeline states.")
 		var original_rot: float = player_node.rotation.y
 		for angle_deg: float in [90.0, 180.0, 270.0, 0.0]:
 			player_node.rotation.y = original_rot + deg_to_rad(angle_deg)
@@ -381,6 +381,7 @@ func _finalize_scene_transition() -> void:
 
 
 ## Applies saved video settings from [GlobalSettings] to the new scene tree.
+@warning_ignore("unsafe_method_access")
 func _reapply_active_video_settings() -> void:
 	print("LoadingScreen: Re-applying active user video settings to new scene.")
 	var shadow_key: String = _get_setting_string("Settings", "shadow_quality", "High (Smooth)")
@@ -418,24 +419,23 @@ func _reapply_active_video_settings() -> void:
 		"fsr_scale": fsr_scale,
 		"aa_settings": _get_config_dict(VideoConfig.AA_MODES, aa_key),
 		"shadow_atlas": shadow_atlas,
-		"dynamic_light_shadows":
-		GlobalSettings.get_setting_bool("Settings", "dynamic_light_shadows", true),
+		"dynamic_light_shadows": _get_setting_bool("Settings", "dynamic_light_shadows", true),
 		"shadow_filter": shadow_filter_str,
 		"positional_shadow_distance":
-		GlobalSettings.get_setting_float("Settings", "positional_shadow_distance", 32.0),
+		_get_setting_float("Settings", "positional_shadow_distance", 32.0),
 		"directional_shadow_distance":
-		GlobalSettings.get_setting_float("Settings", "directional_shadow_distance", 64.0),
-		"occlusion_culling": GlobalSettings.get_setting_bool("Settings", "occlusion_culling", true),
+		_get_setting_float("Settings", "directional_shadow_distance", 64.0),
+		"occlusion_culling": _get_setting_bool("Settings", "occlusion_culling", true),
 		"vrs_mode": VideoConfig.VRS_MODES.get(vrs_key, Viewport.VRS_DISABLED),
 		"texture_filter": VideoConfig.TEXTURE_FILTER_MODES.get(tex_filter, 2),
-		"resolution_scale": GlobalSettings.get_setting_float("Settings", "resolution_scale", 1.0),
-		"exposure": GlobalSettings.get_setting_float("Settings", "exposure", 1.0),
-		"motion_blur": GlobalSettings.get_setting_float("Settings", "motion_blur", 0.0),
-		"mesh_lod": GlobalSettings.get_setting_float("Settings", "mesh_lod_threshold", 1.0),
-		"debanding": GlobalSettings.get_setting_bool("Settings", "debanding", true),
+		"resolution_scale": _get_setting_float("Settings", "resolution_scale", 1.0),
+		"exposure": _get_setting_float("Settings", "exposure", 1.0),
+		"motion_blur": _get_setting_float("Settings", "motion_blur", 0.0),
+		"mesh_lod": _get_setting_float("Settings", "mesh_lod_threshold", 1.0),
+		"debanding": _get_setting_bool("Settings", "debanding", true),
 		"tonemap_key": tonemap_str,
-		"dof_amount": GlobalSettings.get_setting_float("Settings", "dof_amount", 0.0),
-		"dof_enabled": GlobalSettings.get_setting_bool("Settings", "dof_enabled", false),
+		"dof_amount": _get_setting_float("Settings", "dof_amount", 0.0),
+		"dof_enabled": _get_setting_bool("Settings", "dof_enabled", false),
 		"ssao": _get_config_dict(VideoConfig.SSAO_MODES, ssao_key),
 		"ssi": _get_config_dict(VideoConfig.SSI_MODES, ssi_key),
 		"ssr": _get_config_dict(VideoConfig.SSR_MODES, ssr_key),
@@ -447,9 +447,29 @@ func _reapply_active_video_settings() -> void:
 
 
 ## Safely extracts a string setting from persistent [GlobalSettings].
+@warning_ignore("unsafe_method_access")
 func _get_setting_string(category: String, key: String, default_value: String) -> String:
-	var raw: Variant = GlobalSettings.get_setting(category, key, default_value)
+	print("LoadingScreen: Fetching string setting -> [", category, "] ", key)
+	var raw: Variant = GlobalSettings.call(&"get_setting", category, key, default_value)
 	var result: String = raw if raw is String else default_value
+	return result
+
+
+## Safely extracts a boolean setting from persistent [GlobalSettings].
+@warning_ignore("unsafe_method_access")
+func _get_setting_bool(category: String, key: String, default_value: bool) -> bool:
+	print("LoadingScreen: Fetching bool setting -> [", category, "] ", key)
+	var raw: Variant = GlobalSettings.call(&"get_setting_bool", category, key, default_value)
+	var result: bool = raw if raw is bool else default_value
+	return result
+
+
+## Safely extracts a float setting from persistent [GlobalSettings].
+@warning_ignore("unsafe_method_access")
+func _get_setting_float(category: String, key: String, default_value: float) -> float:
+	print("LoadingScreen: Fetching float setting -> [", category, "] ", key)
+	var raw: Variant = GlobalSettings.call(&"get_setting_float", category, key, default_value)
+	var result: float = raw if raw is float else default_value
 	return result
 
 

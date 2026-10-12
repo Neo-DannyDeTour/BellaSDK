@@ -35,6 +35,12 @@ const DEFAULT_GAMMA: float = 1.0
 ## Default constant index for interactable outline highlight visibility mode.
 const DEFAULT_OUTLINE_MODE: int = 2
 
+## Default constant value for enabling first sight outline highlights.
+const DEFAULT_OUTLINE_FIRST_SIGHT: bool = false
+
+## Default constant value for enabling periodic outline highlights.
+const DEFAULT_OUTLINE_PERIODIC: bool = false
+
 ## Available palette color names for target outline highlights.
 const OUTLINE_COLOR_NAMES: Array[String] = [
 	"Green", "Cyan", "Yellow", "Orange", "Red", "Magenta", "White"
@@ -62,6 +68,12 @@ const DEFAULT_OUTLINE_MIN_INTENSITY: float = 0.2
 
 ## Default constant value for outline maximum pulse intensity.
 const DEFAULT_OUTLINE_MAX_INTENSITY: float = 1.0
+
+## Default constant value for outline periodic trigger interval.
+const DEFAULT_OUTLINE_INTERVAL: float = 10.0
+
+## Default constant value for outline temporary pulse duration.
+const DEFAULT_OUTLINE_DURATION: float = 3.0
 
 ## Color modulation applied to the active outline mode button.
 const ACTIVE_BUTTON_COLOR: Color = Color(0.25, 0.75, 1.0, 1.0)
@@ -122,6 +134,24 @@ const INACTIVE_BUTTON_COLOR: Color = Color(1.0, 1.0, 1.0, 1.0)
 
 ## Button switching interactable outline highlight to focus-only visibility.
 @onready var outline_focus_button: Button = get_node_or_null("%OutlineFocusButton")
+
+## Toggle switch for highlighting objects upon first sight.
+@onready var first_sight_toggle: CheckButton = get_node_or_null("%FirstSightToggle")
+
+## Toggle switch for highlighting visible objects periodically.
+@onready var periodic_toggle: CheckButton = get_node_or_null("%PeriodicToggle")
+
+## Slider for adjusting outline periodic interval.
+@onready var outline_interval_slider: HSlider = get_node_or_null("%OutlineIntervalSlider")
+
+## Text input for manual outline periodic interval entry.
+@onready var outline_interval_input: LineEdit = get_node_or_null("%OutlineIntervalLine")
+
+## Slider for adjusting outline temporary pulse duration.
+@onready var outline_duration_slider: HSlider = get_node_or_null("%OutlineDurationSlider")
+
+## Text input for manual outline temporary pulse duration entry.
+@onready var outline_duration_input: LineEdit = get_node_or_null("%OutlineDurationLine")
 
 ## Dropdown menu for selecting outline highlight color.
 @onready var outline_color_option: OptionButton = get_node_or_null("%OutlineColorOption")
@@ -216,7 +246,7 @@ func _connect_signals() -> void:
 	_connect_outline_controls()
 
 
-## Connects input signals for outline highlight mode buttons.
+## Connects input signals for outline highlight controls.
 func _connect_outline_controls() -> void:
 	print("UI: Binding outline controls.")
 	if is_instance_valid(outline_off_button):
@@ -226,9 +256,34 @@ func _connect_outline_controls() -> void:
 	if is_instance_valid(outline_focus_button):
 		outline_focus_button.pressed.connect(func() -> void: _on_outline_mode_selected(2))
 
+	if is_instance_valid(first_sight_toggle):
+		first_sight_toggle.toggled.connect(_on_first_sight_toggled)
+	if is_instance_valid(periodic_toggle):
+		periodic_toggle.toggled.connect(_on_periodic_toggled)
+
 	if is_instance_valid(outline_color_option):
 		outline_color_option.item_selected.connect(_on_outline_color_selected)
 
+	_connect_slider(
+		outline_interval_slider,
+		outline_interval_input,
+		"outline_interval",
+		1.0,
+		60.0,
+		"Accessibility",
+		false,
+		_apply_outline_interval
+	)
+	_connect_slider(
+		outline_duration_slider,
+		outline_duration_input,
+		"outline_duration",
+		0.5,
+		10.0,
+		"Accessibility",
+		false,
+		_apply_outline_duration
+	)
 	_connect_slider(
 		outline_blink_slider,
 		outline_blink_input,
@@ -307,12 +362,38 @@ func _load_outline_settings() -> void:
 	)
 	_update_outline_buttons_ui(outline_mode)
 
+	if is_instance_valid(first_sight_toggle):
+		var fs_val: bool = GlobalSettings.get_setting_bool(
+			"Accessibility", "outline_first_sight", DEFAULT_OUTLINE_FIRST_SIGHT
+		)
+		first_sight_toggle.set_pressed_no_signal(fs_val)
+
+	if is_instance_valid(periodic_toggle):
+		var per_val: bool = GlobalSettings.get_setting_bool(
+			"Accessibility", "outline_periodic", DEFAULT_OUTLINE_PERIODIC
+		)
+		periodic_toggle.set_pressed_no_signal(per_val)
+
 	if is_instance_valid(outline_color_option):
 		var col_idx: int = GlobalSettings.get_setting_int(
 			"Accessibility", "outline_color_index", DEFAULT_OUTLINE_COLOR_INDEX
 		)
 		outline_color_option.selected = col_idx
 
+	_load_slider_custom(
+		outline_interval_slider,
+		outline_interval_input,
+		"outline_interval",
+		DEFAULT_OUTLINE_INTERVAL,
+		"Accessibility"
+	)
+	_load_slider_custom(
+		outline_duration_slider,
+		outline_duration_input,
+		"outline_duration",
+		DEFAULT_OUTLINE_DURATION,
+		"Accessibility"
+	)
 	_load_slider_custom(
 		outline_blink_slider,
 		outline_blink_input,
@@ -348,6 +429,32 @@ func _on_outline_mode_selected(mode: int) -> void:
 	GlobalSettings.save_setting("Accessibility", "outline_mode", mode)
 	_update_outline_buttons_ui(mode)
 	_apply_outline_mode(mode)
+
+
+## Handles toggling of first sight highlight mode.
+func _on_first_sight_toggled(toggled_on: bool) -> void:
+	var current: bool = GlobalSettings.get_setting_bool(
+		"Accessibility", "outline_first_sight", DEFAULT_OUTLINE_FIRST_SIGHT
+	)
+	if current == toggled_on:
+		return
+
+	print("Player toggled First Sight Highlight to: ", toggled_on)
+	GlobalSettings.save_setting("Accessibility", "outline_first_sight", toggled_on)
+	Events.outline_first_sight_toggled.emit(toggled_on)
+
+
+## Handles toggling of periodic highlight mode.
+func _on_periodic_toggled(toggled_on: bool) -> void:
+	var current: bool = GlobalSettings.get_setting_bool(
+		"Accessibility", "outline_periodic", DEFAULT_OUTLINE_PERIODIC
+	)
+	if current == toggled_on:
+		return
+
+	print("Player toggled Periodic Highlight to: ", toggled_on)
+	GlobalSettings.save_setting("Accessibility", "outline_periodic", toggled_on)
+	Events.outline_periodic_toggled.emit(toggled_on)
 
 
 ## Updates button states and active colors according to selected mode.
@@ -389,6 +496,18 @@ func _apply_outline_color(index: int) -> void:
 	var chosen_color: Color = OUTLINE_COLOR_VALUES[index]
 	print("Engine: Applying Outline Color: ", chosen_color)
 	Events.outline_color_changed.emit(chosen_color)
+
+
+## Broadcasts target outline periodic interval changes across [Events].
+func _apply_outline_interval(val: float) -> void:
+	print("Engine: Applying Outline Interval: ", val)
+	Events.outline_interval_changed.emit(val)
+
+
+## Broadcasts target outline pulse duration changes across [Events].
+func _apply_outline_duration(val: float) -> void:
+	print("Engine: Applying Outline Duration: ", val)
+	Events.outline_duration_changed.emit(val)
 
 
 ## Broadcasts target outline blink speed changes across [Events].

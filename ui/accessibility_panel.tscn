@@ -375,6 +375,66 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "On Focus"
 
+[node name="FirstSightLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=2101001001]
+layout_mode = 2
+text = "First Sight Highlight"
+
+[node name="Spacer_FirstSight" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=2101001002]
+layout_mode = 2
+
+[node name="FirstSightToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=2101001003]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PeriodicLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=2101001004]
+layout_mode = 2
+text = "Periodic Highlight"
+
+[node name="Spacer_Periodic" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=2101001005]
+layout_mode = 2
+
+[node name="PeriodicToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=2101001006]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="OutlineIntervalLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=2101001007]
+layout_mode = 2
+text = "Periodic Interval"
+
+[node name="OutlineIntervalLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=2101001008]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+
+[node name="OutlineIntervalSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=2101001009]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 1.0
+max_value = 60.0
+step = 0.5
+value = 10.0
+
+[node name="OutlineDurationLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=2101001010]
+layout_mode = 2
+text = "Highlight Duration"
+
+[node name="OutlineDurationLine" type="LineEdit" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=2101001011]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 0)
+layout_mode = 2
+
+[node name="OutlineDurationSlider" type="HSlider" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=2101001012]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 0.5
+max_value = 10.0
+step = 0.1
+value = 3.0
+
 [node name="OutlineColorLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection/OutlinesGrid" unique_id=877029254]
 layout_mode = 2
 text = "Outline Color"
