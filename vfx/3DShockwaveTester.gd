@@ -31,3 +31,4 @@ func _on_timer_timeout() -> void:
 		shockwave_manager.trigger_shockwave(global_position, test_radius, 2.0)
 	else:
 		# print("ShockwaveTester: shockwave_manager is not assigned!")
+		pass
