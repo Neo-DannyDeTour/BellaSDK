@@ -482,6 +482,22 @@ signal outline_min_intensity_changed(intensity: float)
 @warning_ignore("unused_signal")
 signal outline_max_intensity_changed(intensity: float)
 
+## Emitted when first sight highlight mode is toggled. Passes [param enabled].
+@warning_ignore("unused_signal")
+signal outline_first_sight_toggled(enabled: bool)
+
+## Emitted when periodic highlight mode is toggled. Passes [param enabled].
+@warning_ignore("unused_signal")
+signal outline_periodic_toggled(enabled: bool)
+
+## Emitted when outline periodic interval is adjusted. Passes [param interval] in seconds.
+@warning_ignore("unused_signal")
+signal outline_interval_changed(interval: float)
+
+## Emitted when outline pulse duration is adjusted. Passes [param duration] in seconds.
+@warning_ignore("unused_signal")
+signal outline_duration_changed(duration: float)
+
 ## Emitted when reticle acquires an interactable target with its HUD prompt.
 @warning_ignore("unused_signal")
 signal interaction_focused(target: CollisionObject3D, prompt: String)
