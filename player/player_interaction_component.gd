@@ -9,12 +9,10 @@ const HEAVY_OBJECT_MASS_THRESHOLD: float = 10.0
 const DROP_REPICK_COOLDOWN_MSEC: int = 400
 
 @export_category("Item Handling")
-
 ## Impulse force magnitude applied when throwing a held physical item.
 @export var throw_strength: float = 15.0
 
 @export_category("Node References")
-
 ## Shape cast used for detecting short-range physics items to grab.
 @export var interact_cast: ShapeCast3D
 
@@ -29,6 +27,9 @@ const DROP_REPICK_COOLDOWN_MSEC: int = 400
 
 ## Reference to the [InteractionScanner] sub-component.
 @export var interaction_scanner: InteractionScanner
+
+## Injected reference to the player's [WeaponInventoryComponent].
+@export var weapon_inventory: WeaponInventoryComponent
 
 ## Reference to the parent [CharacterBody3D] character entity.
 var player: CharacterBody3D = null
@@ -73,6 +74,11 @@ func initialize(p_player: CharacterBody3D) -> void:
 	print("InteractionComponent: initialize() called. Caching player reference.")
 	player = p_player
 
+	if not is_instance_valid(weapon_inventory) and is_instance_valid(player):
+		weapon_inventory = (
+			player.find_child("WeaponInventoryComponent", true, false) as WeaponInventoryComponent
+		)
+
 	if (
 		is_instance_valid(interaction_scanner)
 		and interaction_scanner.has_method(&"setup_master_link")
@@ -91,11 +97,6 @@ func process_interaction(delta: float) -> void:
 		var is_throw_triggered: bool = (
 			GestureInputManager.consume_buffered_action("shoot")
 			or GestureInputManager.consume_buffered_action("grenade_throw")
-			or (InputMap.has_action("shoot") and Input.is_action_just_pressed("shoot"))
-			or (
-				InputMap.has_action("grenade_throw")
-				and Input.is_action_just_pressed("grenade_throw")
-			)
 		)
 
 		if is_throw_triggered:
@@ -103,10 +104,7 @@ func process_interaction(delta: float) -> void:
 			throw_held_item()
 			return
 
-	var is_interact_triggered: bool = (
-		GestureInputManager.consume_buffered_action("interact")
-		or (InputMap.has_action("interact") and Input.is_action_just_pressed("interact"))
-	)
+	var is_interact_triggered: bool = GestureInputManager.consume_buffered_action("interact")
 
 	if is_interact_triggered:
 		if is_instance_valid(held_item):
@@ -138,21 +136,21 @@ func process_interaction(delta: float) -> void:
 			return
 
 	if not is_instance_valid(held_item):
-		var is_shoot_triggered: bool = (
-			GestureInputManager.consume_buffered_action("shoot")
-			or (InputMap.has_action("shoot") and Input.is_action_just_pressed("shoot"))
-		)
-		if is_shoot_triggered and is_instance_valid(interaction_scanner):
-			print("InteractionComponent: Forwarding shoot to scanner.")
-			interaction_scanner.handle_shoot_input()
+		var is_shoot_triggered: bool = GestureInputManager.consume_buffered_action("shoot")
+		if is_shoot_triggered:
+			print("InteractionComponent: Processing shoot trigger.")
+			if is_instance_valid(weapon_inventory):
+				weapon_inventory.shoot_active_weapon()
+			elif is_instance_valid(interaction_scanner):
+				interaction_scanner.handle_shoot_input()
 
-		var is_reload_triggered: bool = (
-			GestureInputManager.consume_buffered_action("reload")
-			or (InputMap.has_action("reload") and Input.is_action_just_pressed("reload"))
-		)
-		if is_reload_triggered and is_instance_valid(interaction_scanner):
-			print("InteractionComponent: Forwarding reload to scanner.")
-			interaction_scanner.handle_reload_input()
+		var is_reload_triggered: bool = GestureInputManager.consume_buffered_action("reload")
+		if is_reload_triggered:
+			print("InteractionComponent: Processing reload trigger.")
+			if is_instance_valid(weapon_inventory):
+				weapon_inventory.reload_active_weapon()
+			elif is_instance_valid(interaction_scanner):
+				interaction_scanner.handle_reload_input()
 
 
 ## Evaluates unhandled input events for gesture-resolved input routing.

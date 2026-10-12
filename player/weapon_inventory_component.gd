@@ -1,6 +1,6 @@
+## Manages player weapon slots 1-5, quick switching, and active visibility.
 class_name WeaponInventoryComponent
 extends Node
-## Manages player weapon slots 1-5, quick switching, and active visibility.
 
 ## Pre-cached action names for inventory slot hotkeys to avoid string allocations.
 const SLOT_ACTIONS: Array[StringName] = [
@@ -39,23 +39,18 @@ func _ready() -> void:
 	_scan_existing_weapons()
 
 
-## Intercepts numeric slot hotkeys 1-5 and quick swap with zero allocations.
-func _input(event: InputEvent) -> void:
-	if event.is_echo() or not event.is_pressed():
-		return
-
+## Polls gesture manager for slot swaps and quick swap requests each frame.
+func _process(_delta: float) -> void:
 	for i: int in range(MAX_SLOT_COUNT):
 		var action_name: StringName = SLOT_ACTIONS[i]
-		if InputMap.has_action(action_name) and event.is_action_pressed(action_name):
-			print("WeaponInventoryComponent: Hotkey pressed for slot ", i + 1)
+		if GestureInputManager.consume_buffered_action(String(action_name)):
+			print("WeaponInventoryComponent: Swapping via gesture to slot ", i + 1)
 			select_slot(i)
-			get_viewport().set_input_as_handled()
 			return
 
-	if InputMap.has_action(LAST_WEAPON_ACTION) and event.is_action_pressed(LAST_WEAPON_ACTION):
-		print("WeaponInventoryComponent: Hotkey pressed for last weapon.")
+	if GestureInputManager.consume_buffered_action(String(LAST_WEAPON_ACTION)):
+		print("WeaponInventoryComponent: Swapping to last weapon via gesture.")
 		swap_to_previous()
-		get_viewport().set_input_as_handled()
 
 
 ## Scans the [member weapon_holder] node for existing weapons in the scene.

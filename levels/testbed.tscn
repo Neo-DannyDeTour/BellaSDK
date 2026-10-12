@@ -32,7 +32,7 @@
 [ext_resource type="PackedScene" path="res://interactables/plug_and_cable.tscn" id="27_erim8"]
 [ext_resource type="Shader" uid="uid://6nbh24t00hff" path="res://vfx/caustics_shader.gdshader" id="27_f3k8r"]
 [ext_resource type="PackedScene" uid="uid://2yaelfmj6lmg" path="res://ui/dev_arrow.tscn" id="27_uvnoq"]
-[ext_resource type="PackedScene" uid="uid://bairuv4i4gc64" path="res://shared/enemy_test.tscn" id="32_vvpuy"]
+[ext_resource type="PackedScene" uid="uid://bairuv4i4gc64" path="res://shared/evil_goon.tscn" id="32_vvpuy"]
 [ext_resource type="PackedScene" uid="uid://x7w22l0oyjnc" path="res://environment/water_cube_test.tscn" id="33_2r5js"]
 [ext_resource type="PackedScene" uid="uid://b0h28ew50m1nm" path="res://shared/draw_bridge_system.tscn" id="34_x3nsp"]
 [ext_resource type="PackedScene" uid="uid://dwusg7ievwjmh" path="res://player/breakable_rope.tscn" id="35_ovkd5"]
