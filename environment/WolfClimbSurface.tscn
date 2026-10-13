@@ -1,0 +1,49 @@
+[gd_scene format=3 uid="uid://dorxcqn17y7d2"]
+
+[ext_resource type="Script" uid="uid://bmtbrehkvmrdw" path="res://environment/wolf_climb_surface.gd" id="1_eoqdb"]
+[ext_resource type="Texture2D" uid="uid://ctyvf53bymsn5" path="res://assets/textures/wolf_climb_surface.jpeg" id="2_el8vj"]
+[ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="2_u7eef"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_wall"]
+resource_local_to_scene = true
+size = Vector3(4, 10, 0.2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_1uqfy"]
+albedo_texture = ExtResource("2_el8vj")
+uv1_scale = Vector3(0.5, 0.5, 0.5)
+uv1_triplanar = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_wall"]
+resource_local_to_scene = true
+material = SubResource("StandardMaterial3D_1uqfy")
+size = Vector3(4, 10, 0.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_detect"]
+resource_local_to_scene = true
+size = Vector3(4.2, 10.2, 1)
+
+[node name="WolfClimbSurface" type="StaticBody3D" unique_id=1420225942 node_paths=PackedStringArray("interact_component", "detection_area", "wall_collision_shape", "detection_collision_shape") groups=["wolf_climbable"]]
+collision_mask = 2
+script = ExtResource("1_eoqdb")
+interact_component = NodePath("InteractComponent")
+detection_area = NodePath("DetectionArea")
+wall_collision_shape = NodePath("CollisionShape3D")
+detection_collision_shape = NodePath("DetectionArea/DetectionCollisionShape")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1584392878]
+shape = SubResource("BoxShape3D_wall")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=513515339]
+mesh = SubResource("BoxMesh_wall")
+
+[node name="InteractComponent" type="Node" parent="." unique_id=595640662]
+script = ExtResource("2_u7eef")
+metadata/_custom_type_script = "uid://cqawbvidns1th"
+
+[node name="DetectionArea" type="Area3D" parent="." unique_id=1647901628]
+collision_layer = 4
+collision_mask = 2
+
+[node name="DetectionCollisionShape" type="CollisionShape3D" parent="DetectionArea" unique_id=734259136]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.35)
+shape = SubResource("BoxShape3D_detect")

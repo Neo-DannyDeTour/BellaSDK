@@ -476,7 +476,7 @@ func _on_screen_entered() -> void:
 
 ## Responds to the visibility notifier leaving the camera view.
 func _on_screen_exited() -> void:
-	print("HighlightComponent: Target exited screen view.")
+	#print("HighlightComponent: Target exited screen view.")
 	_is_on_screen = false
 	if _periodic_enabled and _is_periodic_active:
 		_refresh_highlight()
