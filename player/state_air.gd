@@ -1,4 +1,4 @@
-## Manages mid-air movement, variable gravity, coyote time, and jump buffering in [StateAir].
+## Manages mid-air movement, gravity, double jumps, and buffering.
 class_name StateAir
 extends PlayerState
 
@@ -11,34 +11,52 @@ const SPRINT_JUMP_VELOCITY: float = 5.0
 ## Upward velocity applied when jumping from crouched stance.
 const CROUCH_JUMP_VELOCITY: float = 3.5
 
+## Upward velocity applied when executing wolf double jump.
+const WOLF_DOUBLE_JUMP_VELOCITY: float = 7.0
+
 ## Remaining time in seconds where ledge jump is still allowed.
 var coyote_timer: float = 0.0
 
 ## Remaining time in seconds where jump input is cached for landing.
 var jump_buffer_timer: float = 0.0
 
+## Coyote time remaining after running off a wall run surface.
+var wall_coyote_timer: float = 0.0
+
+## Normal vector cached from wall dismount for late jumps.
+var cached_wall_normal: Vector3 = Vector3.ZERO
+
+## Heading vector cached from wall dismount for late jumps.
+var cached_wall_run_dir: Vector3 = Vector3.ZERO
+
 ## Indicates whether jump impulse has executed in current air phase.
 var has_jumped: bool = false
 
-## Indicates whether airborne trajectory originated from a jump pad.
+## Tracks whether wolf mid-air double jump has been consumed.
+var has_wolf_double_jumped: bool = false
+
+## Indicates whether airborne trajectory originated from a launch.
 var is_launched: bool = false
 
-## Specialized ascent gravity scalar applied during jump pad launches.
+## Countdown timer preserving high-speed launch momentum.
+var launch_timer: float = 0.0
+
+## Specialized ascent gravity scalar applied during launches.
 var launch_gravity: float = 9.8
 
-## Specialized descent gravity scalar applied during jump pad launches.
+## Specialized descent gravity scalar applied during launches.
 var launch_fall_gravity: float = 9.8
 
-## Reusable transition payload dictionary to eliminate runtime heap allocations.
+## Reusable transition payload dictionary.
 var _transition_msg: Dictionary = {}
 
 
-## Returns the owning player cast to concrete [Player] or null if invalid.
+## Returns owning player as concrete [Player] instance.
 func _get_player() -> Player:
 	return player as Player
 
 
-## Initializes airborne state, processes knockback impulses, and sets timers.
+## Initializes airborne state, processes launches, and sets timers.
 func enter(msg: Dictionary = {}) -> void:
 	print("StateAir: enter() called. Initializing air state.")
 	var p: Player = _get_player()
@@ -46,6 +64,14 @@ func enter(msg: Dictionary = {}) -> void:
 		return
 
 	has_jumped = msg.get(&"jump", false)
+	has_wolf_double_jumped = false
+	wall_coyote_timer = 0.0
+
+	if msg.get(&"wall_coyote", false) == true:
+		wall_coyote_timer = 0.25
+		cached_wall_normal = msg.get(&"wall_normal", Vector3.ZERO)
+		cached_wall_run_dir = msg.get(&"wall_run_dir", Vector3.ZERO)
+		print("StateAir: Wall coyote window armed for 15m jump.")
 
 	if msg.has(&"knockback_force"):
 		var force: Variant = msg[&"knockback_force"]
@@ -55,9 +81,10 @@ func enter(msg: Dictionary = {}) -> void:
 		jump_buffer_timer = 0.0
 		print("StateAir: Knockback applied with force: ", p.velocity)
 
-	is_launched = msg.get(&"jump_pad", false)
+	is_launched = msg.get(&"jump_pad", false) or msg.get(&"wall_jump_launch", false)
 	if is_launched:
-		print("StateAir: Player launched via jump pad.")
+		print("StateAir: Player launched with preserved high-speed arc.")
+		launch_timer = msg.get(&"launch_duration", 0.85)
 		launch_gravity = msg.get(&"launch_gravity", 9.8)
 		launch_fall_gravity = msg.get(&"launch_fall_gravity", 9.8)
 
@@ -79,9 +106,9 @@ func enter(msg: Dictionary = {}) -> void:
 	jump_buffer_timer = 0.0
 
 
-## Applies gravity, mid-air steering, collision checks, and transitions.
+## Applies gravity, mid-air steering, collisions, and transitions.
 func physics_update(delta: float) -> void:
-	print("StateAir: physics_update() processing mid-air frame.")
+	#print("StateAir: physics_update() processing mid-air frame.")
 	var p: Player = _get_player()
 	if not is_instance_valid(p):
 		return
@@ -91,9 +118,7 @@ func physics_update(delta: float) -> void:
 
 	_handle_gravity(p, loco, env, delta)
 	_handle_timers(delta)
-
-	if not is_launched:
-		_handle_jump_input(p, loco)
+	_handle_jump_input(p, loco)
 
 	var input_dir: Vector2 = GestureInputManager.get_vector(
 		&"left", &"right", &"forward", &"backward"
@@ -114,7 +139,7 @@ func physics_update(delta: float) -> void:
 	loco.last_velocity = p.velocity
 	p.move_and_slide()
 
-	if is_launched and p.get_slide_collision_count() > 0:
+	if is_launched and launch_timer <= 0.0 and p.get_slide_collision_count() > 0:
 		if not p.is_on_floor():
 			is_launched = false
 			print("StateAir: Collision detected mid-launch. Restoring air control.")
@@ -128,7 +153,7 @@ func physics_update(delta: float) -> void:
 func _handle_gravity(
 	p: Player, loco: PlayerLocomotionComponent, env: PlayerEnvironmentComponent, delta: float
 ) -> void:
-	print("StateAir: _handle_gravity() applying vertical acceleration.")
+	#print("StateAir: _handle_gravity() applying vertical acceleration.")
 	if is_launched:
 		if p.velocity.y < 0.0:
 			p.velocity.y -= launch_fall_gravity * delta
@@ -147,30 +172,46 @@ func _handle_gravity(
 		p.velocity.y -= loco.gravity * delta
 
 
-## Decays coyote time and jump buffer timers by [param delta].
+## Decays coyote time, launch timers, and jump buffer timers.
 func _handle_timers(delta: float) -> void:
-	print("StateAir: _handle_timers() ticking countdowns.")
+	#print("StateAir: _handle_timers() ticking countdowns.")
 	if coyote_timer > 0.0:
 		coyote_timer -= delta
 	if jump_buffer_timer > 0.0:
 		jump_buffer_timer -= delta
+	if wall_coyote_timer > 0.0:
+		wall_coyote_timer -= delta
+	if launch_timer > 0.0:
+		launch_timer -= delta
+		if launch_timer <= 0.0:
+			is_launched = false
 
 
-## Processes mid-air jump inputs, enforcing heavy carrying restrictions.
+## Processes mid-air jump and wolf double jump inputs.
 func _handle_jump_input(p: Player, loco: PlayerLocomotionComponent) -> void:
-	print("StateAir: _handle_jump_input() checking airborne jump requests.")
+	#print("StateAir: _handle_jump_input() checking airborne jump requests.")
 	var interact: PlayerInteractionComponent = p.interaction_component
 	var is_holding_heavy: bool = is_instance_valid(interact) and interact.is_heavy_carrying
 
-	if GestureInputManager.is_action_just_pressed(&"jump"):
+	var is_jump_pressed: bool = (
+		GestureInputManager.is_action_just_pressed(&"jump")
+		or GestureInputManager.is_action_just_triggered(&"jump")
+		or Input.is_action_just_pressed(&"jump")
+	)
+
+	if is_jump_pressed:
 		print("StateAir: Jump input detected.")
 		if is_holding_heavy:
 			print("StateAir: Jump rejected. Object is too heavy (>= 10kg).")
 			Events.hint_requested.emit("Cannot jump while carrying a heavy object.", 2.0)
 			return
 
-		if coyote_timer > 0.0 and not has_jumped:
+		if wall_coyote_timer > 0.0:
+			_perform_wall_coyote_jump(p)
+		elif coyote_timer > 0.0 and not has_jumped:
 			_perform_coyote_jump(p, loco)
+		elif p.is_wolf_mode and not has_wolf_double_jumped:
+			_perform_wolf_double_jump(p, loco)
 		else:
 			print("StateAir: Jump input buffered.")
 			jump_buffer_timer = loco.jump_buffer_duration
@@ -190,12 +231,52 @@ func _perform_coyote_jump(p: Player, loco: PlayerLocomotionComponent) -> void:
 		p.velocity.y = JUMP_VELOCITY
 
 
-## Computes horizontal air steering and momentum damping via [MathUtils].
+## Executes late wall jump when running off surface edge.
+func _perform_wall_coyote_jump(p: Player) -> void:
+	print("StateAir: Executing late wall run coyote dismount jump!")
+	wall_coyote_timer = 0.0
+	has_jumped = true
+	is_launched = true
+	launch_timer = 0.85
+
+	p.global_position += cached_wall_normal * 0.35
+	var kick_dir: Vector3 = (cached_wall_normal * 1.5 + cached_wall_run_dir * 0.7).normalized()
+	p.velocity = kick_dir * 20.0
+	p.velocity.y = 7.5
+
+
+## Executes mid-air double jump leap exclusive to wolf mode.
+func _perform_wolf_double_jump(p: Player, loco: PlayerLocomotionComponent) -> void:
+	print("StateAir: Executing wolf form mid-air double jump!")
+	has_wolf_double_jumped = true
+	has_jumped = true
+	is_launched = false
+	launch_timer = 0.0
+
+	p.velocity.y = WOLF_DOUBLE_JUMP_VELOCITY
+
+	var input_dir: Vector2 = GestureInputManager.get_vector(
+		&"left", &"right", &"forward", &"backward"
+	)
+
+	var leap_dir: Vector3 = Vector3.ZERO
+	if input_dir != Vector2.ZERO:
+		leap_dir = (p.global_transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
+	else:
+		leap_dir = -p.global_transform.basis.z.normalized()
+
+	var double_jump_speed: float = maxf(p.velocity.length(), loco.sprinting_speed * 1.25)
+	p.velocity.x = leap_dir.x * double_jump_speed
+	p.velocity.z = leap_dir.z * double_jump_speed
+	loco.set_direction(leap_dir)
+
+
+## Computes horizontal air steering and momentum damping.
 func _apply_air_movement(
 	p: Player, loco: PlayerLocomotionComponent, delta: float, input_dir: Vector2
 ) -> void:
 	print("StateAir: _apply_air_movement() calculating horizontal air steering.")
-	if is_launched:
+	if is_launched and launch_timer > 0.0:
 		return
 
 	var interact: PlayerInteractionComponent = p.interaction_component
@@ -209,6 +290,9 @@ func _apply_air_movement(
 
 	var speed_mult: float = loco.heavy_carry_speed_mult if is_holding_heavy else 1.0
 	var max_air_speed: float = loco.walking_speed * speed_mult
+	if p.is_wolf_mode:
+		max_air_speed = loco.sprinting_speed
+
 	var steer_rate: float = loco.air_lerp_speed * 0.5 if is_holding_heavy else loco.air_lerp_speed
 
 	if current_speed > max_air_speed:
@@ -241,12 +325,118 @@ func _apply_air_movement(
 	p.velocity.z = loco.get_direction().z * current_speed
 
 
-## Polls surface contacts, landing conditions, water, and ledge vaults.
+## Casts forward physics ray to detect climbable walls ahead.
+func _query_wall_in_front(p: Player, distance: float) -> Dictionary:
+	print("StateAir: Querying wall in front via physics raycast.")
+	var space: PhysicsDirectSpaceState3D = p.get_world_3d().direct_space_state
+	var start_pos: Vector3 = p.global_position + Vector3(0.0, 1.0, 0.0)
+	var forward_dir: Vector3 = -p.global_transform.basis.z.normalized()
+	var end_pos: Vector3 = start_pos + forward_dir * distance
+
+	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(start_pos, end_pos)
+	query.exclude = [p.get_rid()]
+	return space.intersect_ray(query)
+
+
+## Evaluates whether collision node belongs to wolf climbables.
+func _is_climbable_surface(node: Node) -> bool:
+	var curr: Node = node
+	while is_instance_valid(curr):
+		if curr.is_in_group(&"wolf_climbable"):
+			return true
+		curr = curr.get_parent()
+	return false
+
+
+## Checks airborne collision and raycast for wall attachment.
+func _check_wolf_air_climb(p: Player) -> bool:
+	if not p.is_wolf_mode:
+		return false
+
+	var climb_normal: Vector3 = Vector3.ZERO
+	var found_climbable: bool = false
+	var hit_surface: WolfClimbSurface = null
+
+	var slide_count: int = p.get_slide_collision_count()
+	for i: int in range(slide_count):
+		var col: KinematicCollision3D = p.get_slide_collision(i)
+		var norm: Vector3 = col.get_normal()
+		if absf(norm.y) < 0.7:
+			var collider: Object = col.get_collider()
+			if collider is Node and _is_climbable_surface(collider as Node):
+				if collider is WolfClimbSurface:
+					hit_surface = collider as WolfClimbSurface
+				found_climbable = true
+				climb_normal = norm
+				break
+
+	if not found_climbable:
+		var ray_hit: Dictionary = _query_wall_in_front(p, 0.9)
+		if not ray_hit.is_empty():
+			var norm: Vector3 = ray_hit.get("normal", Vector3.ZERO)
+			var collider: Object = ray_hit.get("collider", null)
+			if absf(norm.y) < 0.7 and collider is Node and _is_climbable_surface(collider as Node):
+				if collider is WolfClimbSurface:
+					hit_surface = collider as WolfClimbSurface
+				found_climbable = true
+				climb_normal = norm
+
+	if is_instance_valid(hit_surface) and hit_surface.has_dismount_cooldown(p):
+		return false
+
+	if found_climbable:
+		var inward_speed: float = p.velocity.dot(-climb_normal)
+		var is_pressing_fwd: bool = GestureInputManager.is_action_active(&"forward")
+		if inward_speed <= 0.15 and not is_pressing_fwd:
+			return false
+
+		var cam_fwd: Vector3 = -p.global_transform.basis.z.normalized()
+
+		if p.camera_controller is CameraController:
+			@warning_ignore("unsafe_cast")
+			var cam_ctrl: CameraController = p.camera_controller as CameraController
+			if is_instance_valid(cam_ctrl):
+				cam_fwd = cam_ctrl.get_camera_look_dir().normalized()
+
+		var dot_inward: float = cam_fwd.dot(-climb_normal)
+		_transition_msg.clear()
+		_transition_msg[&"wall_normal"] = climb_normal
+		if is_instance_valid(hit_surface):
+			_transition_msg[&"climb_surface"] = hit_surface
+
+		var has_wall_run: bool = (
+			state_machine.has_node("WolfWallRun") or state_machine.has_node("StateWolfWallRun")
+		)
+		var wall_run_state: StringName = (
+			&"WolfWallRun" if state_machine.has_node("WolfWallRun") else &"StateWolfWallRun"
+		)
+
+		if dot_inward > 0.65:
+			print("StateAir: Facing wall directly (>0.65). Transitioning to WolfClimb.")
+			state_machine.transition_to(&"WolfClimb", _transition_msg)
+			return true
+
+		if dot_inward > -0.20 and has_wall_run:
+			print("StateAir: Facing wall at angle (<=0.65). Transitioning to ", wall_run_state)
+			state_machine.transition_to(wall_run_state, _transition_msg)
+			return true
+
+		print("StateAir: Fallback transition to WolfClimb.")
+		state_machine.transition_to(&"WolfClimb", _transition_msg)
+		return true
+
+	return false
+
+
+## Polls landing conditions, water, and ledge vaults.
 func _check_transitions(
 	p: Player, loco: PlayerLocomotionComponent, env: PlayerEnvironmentComponent
 ) -> void:
 	print("StateAir: _check_transitions() checking state handoffs.")
 	var interact: PlayerInteractionComponent = p.interaction_component
+
+	if _check_wolf_air_climb(p):
+		return
 
 	if p.is_on_floor() and p.velocity.y <= 0.0:
 		_handle_landing(p, loco)
@@ -291,9 +481,14 @@ func _check_transitions(
 		return
 
 
-## Processes ground collision, evaluates fall damage, and triggers landing.
+## Processes ground collision and resets double jump.
 func _handle_landing(p: Player, loco: PlayerLocomotionComponent) -> void:
 	print("StateAir: _handle_landing() called. Processing ground impact.")
+	has_wolf_double_jumped = false
+	is_launched = false
+	launch_timer = 0.0
+	wall_coyote_timer = 0.0
+
 	var raw_stats: Variant = p.get(&"stats_component")
 	var stats: Node = raw_stats if raw_stats is Node else null
 
@@ -358,7 +553,7 @@ func _handle_landing(p: Player, loco: PlayerLocomotionComponent) -> void:
 	state_machine.transition_to(&"Ground", _transition_msg)
 
 
-## Updates camera transforms and interaction scanner raycasts.
+## Updates camera transforms and interaction scanner.
 func _update_components(
 	p: Player, loco: PlayerLocomotionComponent, delta: float, input_dir: Vector2
 ) -> void:
@@ -375,7 +570,7 @@ func _update_components(
 		interact.interaction_scanner.process_interaction(delta)
 
 
-## Checks for nearby monkey bar handles and transitions to [StateMonkeyBars].
+## Checks for nearby monkey bar handles to grab.
 func _check_monkey_bar_grab(env: PlayerEnvironmentComponent) -> void:
 	print("StateAir: _check_monkey_bar_grab() checking grab targets.")
 	if not is_instance_valid(env):

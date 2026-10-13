@@ -78,6 +78,20 @@ var terminal_mouse_sensitivity_scale: float = 1.0
 var is_cinematic_locked: bool = false
 
 # --------------------------------------
+# WOLF MODE STATE & REFERENCES
+# --------------------------------------
+## Tracks whether the player is currently in wolf form.
+var is_wolf_mode: bool = false
+
+## First-person claw overlay node displayed during wolf transformation.
+@export var wolf_hands: WolfHands
+
+## Cached weapon inventory component for suppressing armaments.
+@onready var weapon_inventory_component: WeaponInventoryComponent = (
+	get_node_or_null("Components/WeaponInventoryComponent") as WeaponInventoryComponent
+)
+
+# --------------------------------------
 # INITIALIZATION
 # --------------------------------------
 
@@ -133,6 +147,8 @@ func _ready() -> void:
 		Utilities.safe_connect(Events.flight_mode_toggled, _on_flight_mode_toggled)
 	if Events.has_signal(&"player_cinematic_lock_requested"):
 		Utilities.safe_connect(Events.player_cinematic_lock_requested, _on_cinematic_lock_requested)
+	if Events.has_signal(&"wolf_mode_toggled"):
+		Utilities.safe_connect(Events.wolf_mode_toggled, set_wolf_mode)
 
 
 ## Captures and locks the mouse cursor for first-person gameplay.
@@ -732,3 +748,37 @@ func _on_cinematic_lock_requested(locked: bool) -> void:
 			locomotion_component.set_physics_active(false)
 	elif is_instance_valid(locomotion_component):
 		locomotion_component.set_physics_active(true)
+
+
+## Configures wolf form state, adjusts locomotion scalars, and locks armaments.
+func set_wolf_mode(active: bool) -> void:
+	print("Player: Setting wolf mode active state to: ", active)
+	is_wolf_mode = active
+
+	Events.wolf_vision_toggled.emit(active)
+
+	if is_instance_valid(wolf_hands):
+		wolf_hands.set_active(active)
+
+	if is_instance_valid(weapon_inventory_component):
+		weapon_inventory_component.set_process(not active)
+		if is_instance_valid(weapon_inventory_component.weapon_holder):
+			weapon_inventory_component.weapon_holder.visible = not active
+
+	if is_instance_valid(locomotion_component):
+		if active:
+			locomotion_component.walking_speed = 7.0
+			locomotion_component.sprinting_speed = 10.0
+		else:
+			locomotion_component.walking_speed = 5.0
+			locomotion_component.sprinting_speed = 6.5
+
+
+## Evaluates whether machine or terminal interaction is allowed.
+func can_interact_with_machinery() -> bool:
+	print("Player: Checking machinery interaction eligibility.")
+	if is_wolf_mode:
+		print("Player: Wolf form cannot operate machinery.")
+		Events.hint_requested.emit("Wolves cannot operate machinery.", 2.0)
+		return false
+	return true

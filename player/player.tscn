@@ -11,6 +11,7 @@
 [ext_resource type="AudioStream" uid="uid://bp7lht4opa4rr" path="res://assets/sounds/ConcreteFS_1.wav" id="6_khinc"]
 [ext_resource type="AudioStream" uid="uid://oot00opauoyd" path="res://assets/sounds/ConcreteFS_2.wav" id="7_bruh7"]
 [ext_resource type="Texture2D" uid="uid://c7cbvlpeqy6d5" path="res://assets/images/Concept/BellaInGameReflection.png" id="7_cw2d6"]
+[ext_resource type="PackedScene" uid="uid://cea00ctjmumkp" path="res://assets/weapons/wolf_hands.tscn" id="7_kewli"]
 [ext_resource type="AudioStream" uid="uid://bom6y42228vr" path="res://assets/sounds/ConcreteFS_3.wav" id="8_6eyey"]
 [ext_resource type="AudioStream" uid="uid://dxncav7a6yobd" path="res://assets/sounds/MetalFS_1.wav" id="9_d3wef"]
 [ext_resource type="AudioStream" uid="uid://0v4mc2msfgb5" path="res://assets/sounds/MetalFS_2.wav" id="10_o4126"]
@@ -69,6 +70,8 @@
 [ext_resource type="Script" uid="uid://b71yx1y4kvv2e" path="res://player/state_path_slide.gd" id="59_3dxkp"]
 [ext_resource type="Script" uid="uid://c03hxslxesikm" path="res://player/state_terminal.gd" id="67_hggc2"]
 [ext_resource type="Script" uid="uid://34lx2eim448b" path="res://player/state_tube.gd" id="68_b2j0d"]
+[ext_resource type="Script" uid="uid://cpanucihj2fsj" path="res://player/state_wolf_wall_run.gd" id="70_j3r50"]
+[ext_resource type="Script" uid="uid://nmq3xe2f3kq1" path="res://player/state_wolf_climb.gd" id="71_utr5e"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_cw2d6"]
 radius = 0.1
@@ -379,7 +382,7 @@ stream_3/stream = ExtResource("38_b2j0d")
 stream_4/stream = ExtResource("39_7l6ig")
 stream_5/stream = ExtResource("40_j3r50")
 
-[node name="Player" type="CharacterBody3D" unique_id=1502339238 node_paths=PackedStringArray("locomotion_component", "interaction_component", "environment_component", "stats_component", "state_machine", "camera_controller", "system_menu", "ui_controller") groups=["player"]]
+[node name="Player" type="CharacterBody3D" unique_id=1502339238 node_paths=PackedStringArray("locomotion_component", "interaction_component", "environment_component", "stats_component", "state_machine", "camera_controller", "system_menu", "ui_controller", "wolf_hands") groups=["player"]]
 process_mode = 3
 collision_layer = 2
 collision_mask = 21
@@ -392,6 +395,7 @@ state_machine = NodePath("StateMachine")
 camera_controller = NodePath("Head/CameraController")
 system_menu = NodePath("SystemMenuController")
 ui_controller = NodePath("UI")
+wolf_hands = NodePath("Head/Eyes/Camera3D/WolfHands")
 
 [node name="Head" type="Node3D" parent="." unique_id=1584872370]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
@@ -457,6 +461,8 @@ mesh = SubResource("QuadMesh_534t5")
 [node name="NoteReader" type="Marker3D" parent="Head/Eyes/Camera3D" unique_id=693307965]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.2, -0.5)
 script = ExtResource("6_7l6ig")
+
+[node name="WolfHands" parent="Head/Eyes/Camera3D" unique_id=2020303047 instance=ExtResource("7_kewli")]
 
 [node name="CameraAnims" type="AnimationPlayer" parent="Head/Eyes" unique_id=1765016502]
 libraries/ = SubResource("AnimationLibrary_xfc2n")
@@ -676,6 +682,12 @@ script = ExtResource("67_hggc2")
 
 [node name="Tube" type="Node" parent="StateMachine" unique_id=692214786]
 script = ExtResource("68_b2j0d")
+
+[node name="WolfWallRun" type="Node" parent="StateMachine" unique_id=47816659]
+script = ExtResource("70_j3r50")
+
+[node name="WolfClimb" type="Node" parent="StateMachine" unique_id=1814580864]
+script = ExtResource("71_utr5e")
 
 [connection signal="area_entered" from="WaterDetector" to="." method="_on_water_detector_area_entered"]
 [connection signal="area_exited" from="WaterDetector" to="." method="_on_water_detector_area_exited"]

@@ -181,18 +181,21 @@ func _perform_jump() -> void:
 	if not is_instance_valid(loco):
 		return
 
-	if loco.sprint_active:
-		player.velocity.y = SPRINT_JUMP_VELOCITY
+	var is_wolf: bool = player.get(&"is_wolf_mode") == true
+	var is_pressing_fwd: bool = GestureInputManager.is_action_active(&"forward")
+
+	if is_wolf and loco.sprint_active and is_pressing_fwd:
+		print("StateGround: Executing high-speed wolf pounce leap!")
+		var fwd_dir: Vector3 = -player.global_transform.basis.z.normalized()
+		player.velocity.x = fwd_dir.x * (loco.sprinting_speed * 1.6)
+		player.velocity.z = fwd_dir.z * (loco.sprinting_speed * 1.6)
+		player.velocity.y = SPRINT_JUMP_VELOCITY * 1.35
+	elif loco.sprint_active:
+		player.velocity.y = SPRINT_JUMP_VELOCITY * (1.25 if is_wolf else 1.0)
 	elif loco.crouching:
 		player.velocity.y = CROUCH_JUMP_VELOCITY
-		if _cancel_crouch_on_jump and not loco.crouch_cast_check.is_colliding():
-			print("StateGround: Jumping while crouched. Canceling crouch state.")
-			loco.crouching = false
-			loco.standing_collision.disabled = false
-			loco.crouching_collision.disabled = true
-			Events.player_crouch_changed.emit(false)
 	else:
-		player.velocity.y = JUMP_VELOCITY
+		player.velocity.y = JUMP_VELOCITY * (1.3 if is_wolf else 1.0)
 
 	print("StateGround: Executing jump. Velocity Y set to ", player.velocity.y)
 	_transition_msg.clear()
