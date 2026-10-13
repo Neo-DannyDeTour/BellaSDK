@@ -139,6 +139,8 @@ shape = SubResource("CylinderShape3D_82kr7")
 mesh = SubResource("CylinderMesh_2vvrv")
 
 [node name="WindColumnMesh" type="MeshInstance3D" parent="." unique_id=1849204910]
+visibility_range_end = 15.0
+visibility_range_end_margin = 3.0
 mesh = SubResource("CylinderMesh_wind")
 
 [node name="PaperRibbons" type="Node3D" parent="." unique_id=1948201041]
@@ -146,22 +148,32 @@ transform = Transform3D(0.5, 0, 0, 0, -0.5, 7.54979e-08, 0, -7.54979e-08, -0.5, 
 
 [node name="RibbonNorth" type="MeshInstance3D" parent="PaperRibbons" unique_id=1102938471]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.85)
+visibility_range_end = 15.0
+visibility_range_end_margin = 3.0
 mesh = SubResource("QuadMesh_ribbon")
 
 [node name="RibbonSouth" type="MeshInstance3D" parent="PaperRibbons" unique_id=1102938472]
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, -0.85)
+visibility_range_end = 15.0
+visibility_range_end_margin = 3.0
 mesh = SubResource("QuadMesh_ribbon")
 
 [node name="RibbonEast" type="MeshInstance3D" parent="PaperRibbons" unique_id=1102938473]
 transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.85, 0, 0)
+visibility_range_end = 15.0
+visibility_range_end_margin = 3.0
 mesh = SubResource("QuadMesh_ribbon")
 
 [node name="RibbonWest" type="MeshInstance3D" parent="PaperRibbons" unique_id=1102938474]
 transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -0.85, 0, 0)
+visibility_range_end = 15.0
+visibility_range_end_margin = 3.0
 mesh = SubResource("QuadMesh_ribbon")
 
 [node name="DustParticles" type="GPUParticles3D" parent="." unique_id=578439677]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.85, 0)
+visibility_range_end = 15.0
+visibility_range_end_margin = 3.0
 amount = 35
 lifetime = 0.75
 process_material = SubResource("ParticleProcessMaterial_dust")
@@ -169,6 +181,8 @@ draw_pass_1 = SubResource("QuadMesh_dust_quad")
 
 [node name="WindCloudParticles" type="GPUParticles3D" parent="." unique_id=1719073399]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.85, 0)
+visibility_range_end = 15.0
+visibility_range_end_margin = 3.0
 amount = 12
 process_material = SubResource("ParticleProcessMaterial_cloud")
 draw_pass_1 = SubResource("QuadMesh_cloud")

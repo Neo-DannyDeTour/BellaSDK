@@ -203,6 +203,9 @@ func _connect_signals() -> void:
 		Events.screen_wake_up_requested.connect(start_wake_up)
 	if Events.has_signal(&"screen_fade_requested"):
 		Events.screen_fade_requested.connect(_on_screen_fade_requested)
+	if Events.has_signal(&"wolf_vision_toggled"):
+		if not Events.wolf_vision_toggled.is_connected(_on_wolf_vision_toggled):
+			Events.wolf_vision_toggled.connect(_on_wolf_vision_toggled)
 
 
 ## Updates screen-space vignette transitions and rain pitch scaling every frame.

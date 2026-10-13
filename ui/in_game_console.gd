@@ -80,7 +80,8 @@ var toggle_states: Dictionary = {
 	"visionassist": false,
 	"wireframe": false,
 	"wireframeoverlay": false,
-	"wolfvision": false
+	"wolfvision": false,
+	"wolfmode": false,
 }
 
 
@@ -550,6 +551,9 @@ func _register_default_commands() -> void:
 			_cmd_audio_spatial,
 			func() -> Array[String]: return ["on", "off"]
 		)
+	)
+	registry.register_command(
+		ConsoleCommand.new("wolfmode", "Toggles player wolf form transformation.", _cmd_wolfmode)
 	)
 	_register_debug_commands()
 	_register_easter_egg_commands()
@@ -1528,3 +1532,13 @@ func _set_trigger_visibility(active: bool) -> void:
 
 	var stat: String = "visible." if active else "hidden."
 	write("Triggers set to " + stat, "green")
+
+
+## Toggles player wolf mode state and broadcasts to event bus.
+func _cmd_wolfmode(_args: PackedStringArray) -> void:
+	toggle_states["wolfmode"] = not toggle_states["wolfmode"]
+	var active: bool = toggle_states["wolfmode"]
+	print("InGameConsole: Toggled wolfmode -> ", active)
+	Events.wolf_mode_toggled.emit(active)
+	var stat: String = "activated." if active else "deactivated."
+	write("Wolf form " + stat, "green")

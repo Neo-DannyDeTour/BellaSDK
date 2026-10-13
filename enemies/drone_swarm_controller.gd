@@ -211,7 +211,7 @@ func _process_explore_mode(delta: float) -> void:
 
 ## Generates randomized offsets within exploration radius.
 func _retarget_explore_positions() -> void:
-	print("DroneSwarmController: _retarget_explore_positions() picking targets.")
+	#print("DroneSwarmController: _retarget_explore_positions() picking targets.")
 	for i: int in range(explore_targets.size()):
 		var random_dir: Vector3 = (
 			Vector3(randf_range(-1.0, 1.0), randf_range(-0.3, 0.3), randf_range(-1.0, 1.0))

@@ -105,24 +105,18 @@ func _ready() -> void:
 	_evaluate_diorama_state()
 
 
-## Establishes an isolated [World3D] scenario to prevent scenario cross-talk.
+## Configures the isolated diorama [Environment] settings.
 func _isolate_viewport_scenario() -> void:
-	print("OptionsRouter: Establishing isolated World3D scenario.")
+	print("OptionsRouter: Configuring isolated diorama environment.")
 	if not is_instance_valid(diorama_viewport):
 		return
 
-	diorama_viewport.own_world_3d = true
+	var target_world: World3D = diorama_viewport.world_3d
+	if not is_instance_valid(target_world):
+		target_world = World3D.new()
+		diorama_viewport.world_3d = target_world
 
-	var cur_world: World3D = diorama_viewport.find_world_3d()
-	if not is_instance_valid(cur_world):
-		cur_world = World3D.new()
-		diorama_viewport.world_3d = cur_world
-
-	var clean_env: Environment = cur_world.environment
-	if not is_instance_valid(clean_env):
-		clean_env = Environment.new()
-		cur_world.environment = clean_env
-
+	var clean_env: Environment = Environment.new()
 	clean_env.background_mode = Environment.BG_COLOR
 	clean_env.background_color = Color(0.12, 0.12, 0.14, 1.0)
 	clean_env.sdfgi_enabled = false
@@ -130,6 +124,8 @@ func _isolate_viewport_scenario() -> void:
 	clean_env.ssil_enabled = false
 	clean_env.volumetric_fog_enabled = false
 	clean_env.glow_enabled = false
+
+	target_world.environment = clean_env
 
 
 ## Pre-warms diorama [Node3D] scene safely to prevent memory leaks.

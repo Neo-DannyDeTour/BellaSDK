@@ -522,6 +522,10 @@ signal player_cinematic_lock_requested(is_locked: bool)
 @warning_ignore("unused_signal")
 signal screen_blackout_instant_requested(is_black: bool, blur: float, fade_color: Color)
 
+## Emitted when wolf form state changes. Passes [param is_active].
+@warning_ignore("unused_signal")
+signal wolf_mode_toggled(is_active: bool)
+
 ## Emitted to request wake-up eyelid opening and blur clear transition.
 @warning_ignore("unused_signal")
 signal screen_wake_up_requested(

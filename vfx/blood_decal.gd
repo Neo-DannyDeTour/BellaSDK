@@ -20,7 +20,7 @@ func setup(pos: Vector3, normal: Vector3, tex: Texture2D, life: float) -> void:
 
 	if not normal.is_equal_approx(Vector3.UP):
 		var up_vector: Vector3 = Vector3.UP
-		if abs(normal.dot(up_vector)) > 0.99:
+		if absf(normal.dot(up_vector)) > 0.99:
 			up_vector = Vector3.RIGHT
 		var x_axis: Vector3 = up_vector.cross(normal).normalized()
 		var z_axis: Vector3 = normal.cross(x_axis).normalized()
@@ -34,4 +34,11 @@ func setup(pos: Vector3, normal: Vector3, tex: Texture2D, life: float) -> void:
 	var tween: Tween = create_tween()
 	tween.tween_interval(life)
 	tween.tween_property(self, "modulate:a", 0.0, 1.2)
-	tween.tween_callback(queue_free)
+	tween.tween_callback(_on_fade_completed)
+
+
+## Emits [signal decal_expired] and frees the decal instance.
+func _on_fade_completed() -> void:
+	print("BloodDecal: Lifespan expired. Emitting decal_expired.")
+	decal_expired.emit()
+	queue_free()
