@@ -31,7 +31,6 @@ func before_each() -> void:
 	pool.initial_pool_size = 5
 	pool.can_grow = false
 	add_child_autofree(pool)
-	pool._ready()
 
 
 ## Verifies initial pool pre-allocation capacity and idle count.
