@@ -9,7 +9,7 @@ enum TrapState { OPEN, CLOSED }
 var current_state: TrapState = TrapState.OPEN
 
 ## Stores reference to trapped player to restore mobility.
-var trapped_player: Player = null
+var trapped_player: CharacterBody3D = null
 
 ## Active tween controlling jaw snapping closure animation.
 var _snap_tween: Tween = null
@@ -34,24 +34,31 @@ func _ready() -> void:
 	collision_mask = CollisionLayers.MASK_PLAYER
 
 	Utilities.safe_connect(body_entered, _on_body_entered)
-	Utilities.safe_connect(immobilize_timer.timeout, _on_immobilize_timeout)
-	Utilities.safe_connect(sprint_block_timer.timeout, _on_sprint_block_timeout)
+	if is_instance_valid(immobilize_timer):
+		Utilities.safe_connect(immobilize_timer.timeout, _on_immobilize_timeout)
+	if is_instance_valid(sprint_block_timer):
+		Utilities.safe_connect(sprint_block_timer.timeout, _on_sprint_block_timeout)
 
-	left_jaw.rotation_degrees.z = 45.0
-	right_jaw.rotation_degrees.z = -45.0
+	if is_instance_valid(left_jaw):
+		left_jaw.rotation_degrees.z = 45.0
+	if is_instance_valid(right_jaw):
+		right_jaw.rotation_degrees.z = -45.0
 
 
 ## Evaluates body entry and triggers trap closure on player.
 func _on_body_entered(body: Node3D) -> void:
 	print("BearTrap: _on_body_entered() body: ", body.name)
-	if current_state == TrapState.OPEN and body is Player:
-		var player: Player = body as Player
+	if current_state == TrapState.OPEN and (body is Player or body is CharacterBody3D):
+		var player: CharacterBody3D = body as CharacterBody3D
 		print("BearTrap: Player triggered trap!")
 		snap_shut(player)
 
 
 ## Snaps jaws shut, inflicts damage, and applies mobility debuffs.
-func snap_shut(target_player: Player) -> void:
+func snap_shut(target_player: CharacterBody3D) -> void:
+	if not is_instance_valid(target_player):
+		return
+
 	print("BearTrap: snap_shut() closing jaws on player: ", target_player.name)
 	current_state = TrapState.CLOSED
 	trapped_player = target_player
@@ -59,43 +66,54 @@ func snap_shut(target_player: Player) -> void:
 	_snap_tween = Utilities.reset_tween(self, _snap_tween)
 	if is_instance_valid(_snap_tween):
 		_snap_tween.set_parallel(true)
-		_snap_tween.tween_property(left_jaw, "rotation_degrees:z", 0.0, 0.1).set_trans(
-			Tween.TRANS_BOUNCE
-		)
-		_snap_tween.tween_property(right_jaw, "rotation_degrees:z", 0.0, 0.1).set_trans(
-			Tween.TRANS_BOUNCE
-		)
+		if is_instance_valid(left_jaw):
+			_snap_tween.tween_property(left_jaw, "rotation_degrees:z", 0.0, 0.1).set_trans(
+				Tween.TRANS_BOUNCE
+			)
+		if is_instance_valid(right_jaw):
+			_snap_tween.tween_property(right_jaw, "rotation_degrees:z", 0.0, 0.1).set_trans(
+				Tween.TRANS_BOUNCE
+			)
 
-	var raw_comp: Node = NodeQuery.find_first_child_of_type(trapped_player, HealthComponent)
-	var health_comp: HealthComponent = raw_comp if raw_comp is HealthComponent else null
-	if is_instance_valid(health_comp):
-		health_comp.take_damage(150)
-	elif trapped_player.has_method(&"take_damage"):
+	if trapped_player.has_method(&"take_damage"):
 		trapped_player.call(&"take_damage", 150)
+	else:
+		var raw_comp: Node = NodeQuery.find_first_child_of_type(trapped_player, HealthComponent)
+		var health_comp: HealthComponent = raw_comp if raw_comp is HealthComponent else null
+		if is_instance_valid(health_comp):
+			health_comp.take_damage(150)
 
-	if is_instance_valid(trapped_player.system_menu):
-		trapped_player.system_menu.set(&"is_stunned", true)
+	var sys_menu: Object = trapped_player.get(&"system_menu")
+	if is_instance_valid(sys_menu):
+		sys_menu.set(&"is_stunned", true)
 
-	if is_instance_valid(trapped_player.locomotion_component):
-		trapped_player.locomotion_component.set(&"can_sprint", false)
+	var loco_comp: Object = trapped_player.get(&"locomotion_component")
+	if is_instance_valid(loco_comp):
+		loco_comp.set(&"can_sprint", false)
 
 	Events.sprint_debuff_applied.emit(5.0)
 	Events.immobilize_debuff_applied.emit(2.0)
 
-	immobilize_timer.start(2.0)
-	sprint_block_timer.start(5.0)
+	if is_instance_valid(immobilize_timer):
+		immobilize_timer.start(2.0)
+	if is_instance_valid(sprint_block_timer):
+		sprint_block_timer.start(5.0)
 
 
 ## Restores player movement after immobilization timer expires.
 func _on_immobilize_timeout() -> void:
 	print("BearTrap: _on_immobilize_timeout() restoring player movement.")
-	if is_instance_valid(trapped_player) and is_instance_valid(trapped_player.system_menu):
-		trapped_player.system_menu.set(&"is_stunned", false)
+	if is_instance_valid(trapped_player):
+		var sys_menu: Object = trapped_player.get(&"system_menu")
+		if is_instance_valid(sys_menu):
+			sys_menu.set(&"is_stunned", false)
 
 
 ## Restores player sprint ability after sprint timer expires.
 func _on_sprint_block_timeout() -> void:
 	print("BearTrap: _on_sprint_block_timeout() restoring player sprint.")
-	if is_instance_valid(trapped_player) and is_instance_valid(trapped_player.locomotion_component):
-		trapped_player.locomotion_component.set(&"can_sprint", true)
+	if is_instance_valid(trapped_player):
+		var loco_comp: Object = trapped_player.get(&"locomotion_component")
+		if is_instance_valid(loco_comp):
+			loco_comp.set(&"can_sprint", true)
 		trapped_player = null
