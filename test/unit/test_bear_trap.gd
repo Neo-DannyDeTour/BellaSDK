@@ -12,27 +12,23 @@ var mock_player: MockPlayer = null
 ## Sets up the bear trap and typed mock dependencies before each test.
 func before_each() -> void:
 	print("TestBearTrap: before_each() setup started.")
+	bear_trap = BearTrap.new()
 
-	var bear_trap_scene: PackedScene = load("res://enemies/bear_trap.tscn")
-	if is_instance_valid(bear_trap_scene):
-		var instance: Node = bear_trap_scene.instantiate()
-		if instance is BearTrap:
-			bear_trap = instance
+	var left_pivot: Node3D = Node3D.new()
+	left_pivot.name = "LeftJawPivot"
+	bear_trap.add_child(left_pivot)
 
-	if not is_instance_valid(bear_trap):
-		bear_trap = BearTrap.new()
-		var left_pivot: Node3D = Node3D.new()
-		left_pivot.name = "LeftJawPivot"
-		bear_trap.add_child(left_pivot)
-		var right_pivot: Node3D = Node3D.new()
-		right_pivot.name = "RightJawPivot"
-		bear_trap.add_child(right_pivot)
-		var immob_timer: Timer = Timer.new()
-		immob_timer.name = "ImmobilizeTimer"
-		bear_trap.add_child(immob_timer)
-		var sprint_timer: Timer = Timer.new()
-		sprint_timer.name = "SprintBlockTimer"
-		bear_trap.add_child(sprint_timer)
+	var right_pivot: Node3D = Node3D.new()
+	right_pivot.name = "RightJawPivot"
+	bear_trap.add_child(right_pivot)
+
+	var immob_timer: Timer = Timer.new()
+	immob_timer.name = "ImmobilizeTimer"
+	bear_trap.add_child(immob_timer)
+
+	var sprint_timer: Timer = Timer.new()
+	sprint_timer.name = "SprintBlockTimer"
+	bear_trap.add_child(sprint_timer)
 
 	add_child_autofree(bear_trap)
 
