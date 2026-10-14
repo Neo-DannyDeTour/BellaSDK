@@ -92,8 +92,10 @@ func snap_shut(target_player: Node) -> void:
 	if is_instance_valid(loco_comp_obj):
 		loco_comp_obj.set(&"can_sprint", false)
 
-	Events.sprint_debuff_applied.emit(5.0)
-	Events.immobilize_debuff_applied.emit(2.0)
+	if Events.has_signal(&"sprint_debuff_applied"):
+		Events.sprint_debuff_applied.emit(5.0)
+	if Events.has_signal(&"immobilize_debuff_applied"):
+		Events.immobilize_debuff_applied.emit(2.0)
 
 	if is_instance_valid(immobilize_timer):
 		immobilize_timer.start(2.0)
@@ -104,19 +106,21 @@ func snap_shut(target_player: Node) -> void:
 ## Restores player movement after immobilization timer expires.
 func _on_immobilize_timeout() -> void:
 	print("BearTrap: _on_immobilize_timeout() restoring player movement.")
-	if is_instance_valid(trapped_player):
-		var sys_menu: Variant = trapped_player.get(&"system_menu")
-		var sys_menu_obj: Object = sys_menu if sys_menu is Object else null
-		if is_instance_valid(sys_menu_obj):
-			sys_menu_obj.set(&"is_stunned", false)
+	if not is_instance_valid(trapped_player):
+		return
+	var sys_menu: Variant = trapped_player.get(&"system_menu")
+	var sys_menu_obj: Object = sys_menu if sys_menu is Object else null
+	if is_instance_valid(sys_menu_obj):
+		sys_menu_obj.set(&"is_stunned", false)
 
 
 ## Restores player sprint ability after sprint timer expires.
 func _on_sprint_block_timeout() -> void:
 	print("BearTrap: _on_sprint_block_timeout() restoring player sprint.")
-	if is_instance_valid(trapped_player):
-		var loco_comp: Variant = trapped_player.get(&"locomotion_component")
-		var loco_comp_obj: Object = loco_comp if loco_comp is Object else null
-		if is_instance_valid(loco_comp_obj):
-			loco_comp_obj.set(&"can_sprint", true)
-		trapped_player = null
+	if not is_instance_valid(trapped_player):
+		return
+	var loco_comp: Variant = trapped_player.get(&"locomotion_component")
+	var loco_comp_obj: Object = loco_comp if loco_comp is Object else null
+	if is_instance_valid(loco_comp_obj):
+		loco_comp_obj.set(&"can_sprint", true)
+	trapped_player = null

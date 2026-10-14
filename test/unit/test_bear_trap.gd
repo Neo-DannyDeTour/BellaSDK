@@ -72,7 +72,11 @@ func test_snap_shut() -> void:
 ## Validates timeouts resetting player state correctly after trap duration expires.
 func test_timer_timeouts() -> void:
 	print("TestBearTrap: test_timer_timeouts() called.")
+	assert_not_null(bear_trap, "BearTrap instance must exist.")
+	assert_not_null(mock_player, "MockPlayer instance must exist.")
+
 	bear_trap.snap_shut(mock_player)
+	assert_eq(bear_trap.trapped_player, mock_player, "Trapped player reference should be set.")
 
 	bear_trap._on_immobilize_timeout()
 	assert_not_null(mock_player.system_menu, "System menu must not be null.")
