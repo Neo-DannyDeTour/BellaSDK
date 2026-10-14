@@ -34,7 +34,6 @@ func before_each() -> void:
 
 	mock_player = MockPlayer.new()
 	add_child_autofree(mock_player)
-	await get_tree().process_frame
 
 
 ## Validates initial trap state is set to OPEN.
@@ -48,6 +47,10 @@ func test_initial_state() -> void:
 ## Validates snapping logic, damage application, and state flags applied to player.
 func test_snap_shut() -> void:
 	print("TestBearTrap: test_snap_shut() called.")
+	if not is_instance_valid(mock_player):
+		mock_player = MockPlayer.new()
+		add_child_autofree(mock_player)
+
 	bear_trap.snap_shut(mock_player)
 
 	assert_eq(
@@ -72,6 +75,10 @@ func test_snap_shut() -> void:
 ## Validates timeouts resetting player state correctly after trap duration expires.
 func test_timer_timeouts() -> void:
 	print("TestBearTrap: test_timer_timeouts() called.")
+	if not is_instance_valid(mock_player):
+		mock_player = MockPlayer.new()
+		add_child_autofree(mock_player)
+
 	assert_not_null(bear_trap, "BearTrap instance must exist.")
 	assert_not_null(mock_player, "MockPlayer instance must exist.")
 
