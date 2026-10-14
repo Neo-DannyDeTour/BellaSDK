@@ -1,7 +1,4 @@
 ## Editor dock controller managing brush tools, mask painting, and cloud driver bindings.
-##
-## Provides a real-time viewport painting interface to author 2D mask density
-## textures and synchronize parameters directly with [SunshineCloudsDriverGD].
 @tool
 class_name CloudsEditorController
 extends Control
@@ -107,6 +104,9 @@ var current_draw_mode: DrawingMode = DrawingMode.NONE
 ## Tracks whether a continuous brush stroke is currently being held down.
 var drawing_currently: bool = false
 
+## Flags whether the mask texture was modified and needs readback before saving.
+var _mask_dirty: bool = false
+
 ## Flags whether the active brush is inverted to carve/erase density.
 var draw_inverted: bool = false
 
@@ -173,6 +173,7 @@ func _process(delta: float) -> void:
 			draw_brush_tool_material.albedo_color = draw_color_picker.color
 
 		if drawing_currently:
+			_mask_dirty = true
 			RenderingServer.call_on_render_thread(
 				execute_compute.bind(delta, false, Color.WHITE)
 			)
@@ -181,7 +182,7 @@ func _process(delta: float) -> void:
 # --- Scene Scanning & Initialization ---
 
 
-## Performs initial scene tree inspection and validates engine version compatibility.
+## Performs initial scene tree inspection and validates engine version macros.
 func initial_scene_load() -> void:
 	print("CloudsEditorController: Performing initial scene load.")
 	var scene_root: Node = await find_scene_node()
@@ -194,13 +195,14 @@ func initial_scene_load() -> void:
 	if not FileAccess.file_exists(file_path):
 		return
 
-	var file: FileAccess = FileAccess.open(file_path, FileAccess.READ_WRITE)
-	if file == null:
+	var content: String = FileAccess.get_file_as_string(file_path)
+	var major_pos: int = content.find("GODOT_VERSION_MAJOR")
+	var minor_pos: int = content.find("GODOT_VERSION_MINOR")
+	if major_pos == -1 or minor_pos == -1:
 		return
 
-	var content: String = file.get_as_text()
-	var major_index: int = content.find("GODOT_VERSION_MAJOR") + 20
-	var minor_index: int = content.find("GODOT_VERSION_MINOR") + 20
+	var major_index: int = major_pos + 20
+	var minor_index: int = minor_pos + 20
 
 	var needs_update: bool = (
 		content[major_index] != str(version_info.major)
@@ -208,11 +210,13 @@ func initial_scene_load() -> void:
 	)
 
 	if needs_update:
-		print("CloudsEditorController: Engine version mismatch. Updating shader header...")
+		print("CloudsEditorController: Updating shader version header...")
 		content[major_index] = str(version_info.major)
 		content[minor_index] = str(version_info.minor)
-		file.store_string(content)
-		file.close()
+		var file: FileAccess = FileAccess.open(file_path, FileAccess.WRITE)
+		if file != null:
+			file.store_string(content)
+			file.close()
 
 		var reimport_paths: PackedStringArray = [
 			"res://addons/SunshineClouds2/SunshineCloudsCompute.glsl",
@@ -220,7 +224,7 @@ func initial_scene_load() -> void:
 			"res://addons/SunshineClouds2/SunshineCloudsPostCompute.msaa.glsl",
 			"res://addons/SunshineClouds2/SunshineCloudsPreCompute.glsl",
 			"res://addons/SunshineClouds2/SunshineCloudsDisplay.glsl",
-			"res://addons/SunshineClouds2/SunshineCloudsDisplay.msaa.glsl"
+			"res://addons/SunshineClouds2/SunshineCloudsDisplay.msaa.glsl",
 		]
 		EditorInterface.get_resource_filesystem().reimport_files(reimport_paths)
 		await get_tree().create_timer(0.1).timeout
@@ -228,8 +232,6 @@ func initial_scene_load() -> void:
 		if is_instance_valid(driver) and is_instance_valid(driver.clouds_resource):
 			driver.clouds_resource.refresh_compute()
 		print("CloudsEditorController: Shader definitions updated successfully.")
-	else:
-		file.close()
 
 
 ## Refreshes driver bindings when the active edited scene changes.
@@ -286,7 +288,7 @@ func scene_changed(scene_root: Node) -> void:
 	update_status_display()
 
 
-## Recursively searches down scene tree node [param scene_root] to locate a [SunshineCloudsDriverGD].
+## Recursively searches down [param scene_root] to locate a [SunshineCloudsDriverGD].
 func retrieve_clouds_driver(scene_root: Node) -> SunshineCloudsDriverGD:
 	if scene_root == null:
 		return null
@@ -449,7 +451,7 @@ func initialize_compute() -> void:
 	var image: Image
 	if ResourceLoader.exists(path):
 		image = Image.load_from_file(path)
-	if image == null:
+	if image == null or image.get_format() != Image.FORMAT_RGBAF:
 		image = Image.create(res, res, false, Image.FORMAT_RGBAF)
 
 	current_drawing_mask = rd.texture_create(
@@ -468,18 +470,29 @@ func initialize_compute() -> void:
 	compute_enabled = true
 
 
-## Frees rendering device pipeline, shader, and drawing mask allocations.
+## Frees rendering device uniform set, pipeline, shader, and drawing mask allocations.
 func clear_compute() -> void:
-	if rd:
-		if shader.is_valid():
-			rd.free_rid(shader)
-		shader = RID()
-		if current_drawing_mask.is_valid():
-			rd.free_rid(current_drawing_mask)
-		current_drawing_mask = RID()
+	if not rd:
+		return
+
+	if uniform_set.is_valid() and rd.uniform_set_is_valid(uniform_set):
+		rd.free_rid(uniform_set)
+	uniform_set = RID()
+
+	if pipeline.is_valid():
+		rd.free_rid(pipeline)
+	pipeline = RID()
+
+	if shader.is_valid():
+		rd.free_rid(shader)
+	shader = RID()
+
+	if current_drawing_mask.is_valid():
+		rd.free_rid(current_drawing_mask)
+	current_drawing_mask = RID()
 
 
-## Dispatches the compute shader to stamp brush strokes or flood-fill into the mask texture.
+## Dispatches the compute shader to stamp brush strokes or flood-fill into the mask.
 func execute_compute(
 	delta: float, set_value: bool, set_value_color: Color
 ) -> void:
@@ -511,7 +524,7 @@ func execute_compute(
 	)
 
 	if draw_inverted:
-		strength_val = - strength_val
+		strength_val = -strength_val
 
 	var editing_type: float = 0.0
 	if set_value:
@@ -556,22 +569,23 @@ func execute_compute(
 	rd.compute_list_dispatch(compute_list, groups, groups, 1)
 	rd.compute_list_end()
 
-	await RenderingServer.frame_post_draw
-	if current_drawing_mask.is_valid():
-		rd.texture_get_data_async(
-			current_drawing_mask, 0, complete_retrieval
-		)
+
+## Requests a single GPU-to-CPU readback of the painted mask texture.
+func _request_mask_readback() -> void:
+	if rd and current_drawing_mask.is_valid():
+		rd.texture_get_data_async(current_drawing_mask, 0, complete_retrieval)
 
 
 ## Async callback receiving readback byte [param data] from the drawing mask texture.
 func complete_retrieval(data: PackedByteArray) -> void:
 	last_image_data = data
+	_mask_dirty = false
 
 
 # --- Viewport Interaction & Brush Gizmo ---
 
 
-## Projects a ray from [param viewport_camera] at [param event] position to place the brush gizmo.
+## Projects a ray from [param viewport_camera] at [param event] to place the gizmo.
 func iterate_cursor_location(
 	viewport_camera: Camera3D, event: InputEventMouse
 ) -> void:
@@ -605,20 +619,24 @@ func begin_cursor_draw() -> void:
 	drawing_currently = true
 
 
-## Terminates active brush stamp recording.
+## Terminates active brush stamp recording and requests a mask readback.
 func end_cursor_draw() -> void:
 	print("CloudsEditorController: Ending brush stroke.")
 	drawing_currently = false
+	if _mask_dirty:
+		RenderingServer.call_on_render_thread(_request_mask_readback)
 
 
 ## Increases the brush circle radius by 10%.
 func scale_drawing_circle_up() -> void:
+	print("CloudsEditorController: Scaling brush radius up.")
 	draw_scale = minf(draw_scale * 1.1, 100000.0)
 	set_draw_scale()
 
 
 ## Decreases the brush circle radius by 10%.
 func scale_drawing_circle_down() -> void:
+	print("CloudsEditorController: Scaling brush radius down.")
 	draw_scale = maxf(draw_scale * 0.9, 100.0)
 	set_draw_scale()
 
@@ -660,6 +678,7 @@ func flood_fill() -> void:
 	RenderingServer.call_on_render_thread(
 		execute_compute.bind(0.0, true, fill_color)
 	)
+	RenderingServer.call_on_render_thread(_request_mask_readback)
 	await get_tree().create_timer(0.2).timeout
 	call_deferred(&"disable_draw_mode")
 
@@ -777,6 +796,7 @@ func retrieve_travel_distance(pos: Vector3, dir: Vector3) -> float:
 
 ## Toggles continuous cloud simulation updates on the tracked driver.
 func set_clouds_updating() -> void:
+	print("CloudsEditorController: Toggling continuous clouds update.")
 	if is_instance_valid(driver) and is_instance_valid(clouds_active_toggle):
 		driver.update_continuously = clouds_active_toggle.button_pressed
 	update_status_display()

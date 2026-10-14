@@ -7,9 +7,9 @@
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
 layout(rgba32f, binding = 0) uniform image2D output_data_image;
-layout(rgba32f, binding = 1) uniform image2D output_color_image;
-layout(rgba32f, binding = 2) uniform image2D accum_1A_image;
-layout(rgba32f, binding = 3) uniform image2D accum_1B_image;
+layout(rgba16f, binding = 1) uniform image2D output_color_image;
+layout(rgba16f, binding = 2) uniform image2D accum_1A_image;
+layout(rgba16f, binding = 3) uniform image2D accum_1B_image;
 layout(rgba32f, binding = 4) uniform image2D accum_2A_image;
 layout(rgba32f, binding = 5) uniform image2D accum_2B_image;
 
@@ -79,10 +79,6 @@ layout(std430, binding = 16) restrict buffer SamplePointsBuffer {
     vec4 SamplePoints[32];
 };
 
-layout(std140, binding = 17) uniform DummySceneDataBlock {
-    mat4 dummy_mat[8];
-} dummy_scene_data;
-
 float quadraticOut(float t) {
     return -t * (t - 2.0);
 }
@@ -117,7 +113,7 @@ vec2 getCloudLayerIntersections(vec3 ro, vec3 rd, float floorY, float ceilingY) 
 
 float sampleEffectorAdditive(vec3 worldPosition) {
     float effectorAdditive = 0.0;
-    int count = int(genericData.data.light_counts_and_swept.y);
+    int count = min(int(genericData.data.light_counts_and_swept.y), 64);
     for (int i = 0; i < count; i++) {
         float d = distance(pointEffectors[i].position.xyz, worldPosition);
         float r = pointEffectors[i].position.w;
@@ -241,6 +237,51 @@ float sampleLighting(
     return density;
 }
 
+void sampleHistoryBilinear(
+    vec2 reprojectedUV,
+    ivec2 size,
+    bool useAccumA,
+    out vec4 outColor,
+    out vec4 outData)
+{
+    vec2 pixelPos = reprojectedUV * vec2(size) - 0.5;
+    ivec2 baseCoord = ivec2(floor(pixelPos));
+    vec2 f = fract(pixelPos);
+
+    ivec2 c00 = clamp(baseCoord + ivec2(0, 0), ivec2(0), size - ivec2(1));
+    ivec2 c10 = clamp(baseCoord + ivec2(1, 0), ivec2(0), size - ivec2(1));
+    ivec2 c01 = clamp(baseCoord + ivec2(0, 1), ivec2(0), size - ivec2(1));
+    ivec2 c11 = clamp(baseCoord + ivec2(1, 1), ivec2(0), size - ivec2(1));
+
+    vec4 col00, col10, col01, col11;
+    vec4 dat00, dat10, dat01, dat11;
+
+    if (useAccumA) {
+        col00 = imageLoad(accum_1A_image, c00);
+        col10 = imageLoad(accum_1A_image, c10);
+        col01 = imageLoad(accum_1A_image, c01);
+        col11 = imageLoad(accum_1A_image, c11);
+
+        dat00 = imageLoad(accum_2A_image, c00);
+        dat10 = imageLoad(accum_2A_image, c10);
+        dat01 = imageLoad(accum_2A_image, c01);
+        dat11 = imageLoad(accum_2A_image, c11);
+    } else {
+        col00 = imageLoad(accum_1B_image, c00);
+        col10 = imageLoad(accum_1B_image, c10);
+        col01 = imageLoad(accum_1B_image, c01);
+        col11 = imageLoad(accum_1B_image, c11);
+
+        dat00 = imageLoad(accum_2B_image, c00);
+        dat10 = imageLoad(accum_2B_image, c10);
+        dat01 = imageLoad(accum_2B_image, c01);
+        dat11 = imageLoad(accum_2B_image, c11);
+    }
+
+    outColor = mix(mix(col00, col10, f.x), mix(col01, col11, f.x), f.y);
+    outData = mix(mix(dat00, dat10, f.x), mix(dat01, dat11, f.x), f.y);
+}
+
 void main() {
     ivec2 uv = ivec2(gl_GlobalInvocationID.xy);
     ivec2 size = ivec2(genericData.data.raster_and_scales.xy);
@@ -266,14 +307,18 @@ void main() {
     vec3 rd_world = normalize(mat3(genericData.data.cam_inv_view) * normalize(viewPos.xyz));
     vec3 rayOrigin = genericData.data.cam_inv_view[3].xyz;
 
-    float ditherScale = 40.037;
-    vec2 ditherUV = (depthUV * ditherScale) + vec2(mod(genericData.data.time_coverage_density.x, 100.0));
-    float ditherValue = texture(dither_small, ditherUV).r;
+    // 1:1 per-pixel Blue Noise sampling with Golden Ratio temporal sequence
+    ivec2 ditherSize = textureSize(dither_small, 0);
+    float frameSeed = floor(genericData.data.time_coverage_density.x);
+    ivec2 jitterOffset = ivec2(fract(vec2(0.754877666, 0.56984029) * frameSeed) * vec2(ditherSize));
+    ivec2 ditherCoord = (uv + jitterOffset) % max(ditherSize, ivec2(1));
+    float baseBlueNoise = texelFetch(dither_small, ditherCoord, 0).r;
+    float ditherValue = fract(baseBlueNoise + fract(frameSeed * 0.61803398875));
 
     int stepCount = int(genericData.data.cloud_bounds.z);
     int lightingStepCount = int(genericData.data.cloud_bounds.w);
-    int directionalLightCount = int(genericData.data.cloud_params1.y);
-    int pointLightCount = int(genericData.data.light_counts_and_swept.x);
+    int directionalLightCount = min(int(genericData.data.cloud_params1.y), 4);
+    int pointLightCount = min(int(genericData.data.light_counts_and_swept.x), 128);
 
     vec3 extralargeNoisePos = genericData.data.extralarge_noise_scale.xyz;
     vec3 largeNoisePos = genericData.data.large_noise_lighting.xyz;
@@ -315,7 +360,7 @@ void main() {
     float tStart = max(slab.x, 0.0);
     float tEnd = min(slab.y, min(maxTheoreticalStep, linear_depth));
 
-    float newStep = maxstep * ditherValue;
+    float newStep = minstep * ditherValue;
     float traveledDistance = tStart + newStep;
 
     vec3 directionalLightSunUpPower[4] = vec3[4](vec3(0.0), vec3(0.0), vec3(0.0), vec3(0.0));
@@ -341,10 +386,10 @@ void main() {
     vec3 curPos = vec3(0.0);
 
     float curLod = 1.0;
-    float samplePosCount = genericData.data.wind_and_queries.w;
+    int samplePosCount = min(int(genericData.data.wind_and_queries.w), 32);
 
-    if (samplePosCount > 0.0 && uv == ivec2(0)) {
-        for (int i = 0; i < int(samplePosCount); i++) {
+    if (samplePosCount > 0 && uv == ivec2(0)) {
+        for (int i = 0; i < samplePosCount; i++) {
             curPos = SamplePoints[i].xyz;
             vec4 maskSample = texture(extra_large_noise, (curPos.xz - extralargeNoisePos.xz) / extralargenoiseScale);
             SamplePoints[i].w = pow(sampleScene(largeNoisePos, mediumNoisePos, smallNoisePos, curPos, cloudceiling, cloudfloor, maskSample.a, largenoiseScale, mediumnoiseScale, smallnoiseScale, coverage, smallNoiseMultiplier, curlPower, 1.0, false) * densityMultiplier, sharpness);
@@ -444,52 +489,47 @@ void main() {
     lightColor.a = density;
 
     float finalDensityDistance = min(traveledDistance, highestDensityDistance);
-    vec3 worldFinalPos = rayOrigin + rd_world * traveledDistance;
-    vec3 delta = rayOrigin - genericData.data.prev_cam_inv_view[3].xyz;
-    worldFinalPos += delta;
+    float reprDist = (initialdistanceSample > 0.0) ? initialdistanceSample : traveledDistance;
+    vec3 worldFinalPos = rayOrigin + rd_world * reprDist;
 
     vec4 reprojectedClipPos = genericData.data.prev_cam_view * vec4(worldFinalPos, 1.0);
-    bool is_override = (reprojectedClipPos.z <= 0.0);
+    bool is_override = (reprojectedClipPos.z >= 0.0);
 
     vec4 reprojectedScreenPos = genericData.data.prev_cam_projection * reprojectedClipPos;
-    vec2 reprojectedNdc = (reprojectedScreenPos.xy / reprojectedScreenPos.w);
-    vec2 screen_position = (reprojectedNdc * 0.5 + 0.5) - depthUV;
+    vec2 reprojectedNdc = reprojectedScreenPos.xy / max(abs(reprojectedScreenPos.w), 0.00001);
+    vec2 reprojectedUV = reprojectedNdc * 0.5 + 0.5;
 
-    ivec2 adjustedUV = uv + ivec2(screen_position * vec2(size));
-    bool is_out_of_bounds = (adjustedUV.x < 0 || adjustedUV.x >= size.x || adjustedUV.y < 0 || adjustedUV.y >= size.y);
-    ivec2 clampedUV = clamp(adjustedUV, ivec2(0), size - ivec2(1));
+    bool is_out_of_bounds = (
+        reprojectedUV.x < 0.0 || reprojectedUV.x > 1.0 ||
+        reprojectedUV.y < 0.0 || reprojectedUV.y > 1.0
+    );
 
     float accumdecay = genericData.data.lighting_and_accum.y;
-    float usingaccumA = genericData.data.lighting_and_accum.z;
+    bool usingaccumA = (genericData.data.lighting_and_accum.z > 0.0);
+    vec3 delta = rayOrigin - genericData.data.prev_cam_inv_view[3].xyz;
     float travelspeed = length(delta) + maxstep;
 
     vec4 currentColorAccumilation;
     vec4 currentDataAccumilation;
-
-    if (usingaccumA > 0.0) {
-        currentColorAccumilation = imageLoad(accum_1A_image, clampedUV).rgba;
-        currentDataAccumilation = imageLoad(accum_2A_image, clampedUV).rgba;
-    } else {
-        currentColorAccumilation = imageLoad(accum_1B_image, clampedUV).rgba;
-        currentDataAccumilation = imageLoad(accum_2B_image, clampedUV).rgba;
-    }
+    sampleHistoryBilinear(clamp(reprojectedUV, vec2(0.0), vec2(1.0)), size, usingaccumA, currentColorAccumilation, currentDataAccumilation);
 
     float currentDepthBreak = float(depthBreak);
 
-    if (is_override || is_out_of_bounds || (currentDepthBreak != currentDataAccumilation.a && abs(initialdistanceSample - currentDataAccumilation.r) > travelspeed * 0.5)) {
+    if (is_override || is_out_of_bounds || accumdecay <= 0.001 || (abs(currentDepthBreak - currentDataAccumilation.a) > 0.5 && abs(initialdistanceSample - currentDataAccumilation.r) > travelspeed * 0.5)) {
         currentColorAccumilation = lightColor;
         currentDataAccumilation.r = initialdistanceSample;
         currentDataAccumilation.g = traveledDistance;
         currentDataAccumilation.b = finalDensityDistance;
     } else {
-        currentColorAccumilation = mix(lightColor, currentColorAccumilation, accumdecay);
-        currentDataAccumilation.r = mix(initialdistanceSample, currentDataAccumilation.r, accumdecay);
-        currentDataAccumilation.g = mix(traveledDistance, currentDataAccumilation.g, accumdecay);
-        currentDataAccumilation.b = mix(finalDensityDistance, currentDataAccumilation.b, accumdecay);
+        float EffectiveDecay = clamp(accumdecay, 0.0, 0.95);
+        currentColorAccumilation = mix(lightColor, currentColorAccumilation, EffectiveDecay);
+        currentDataAccumilation.r = mix(initialdistanceSample, currentDataAccumilation.r, EffectiveDecay);
+        currentDataAccumilation.g = mix(traveledDistance, currentDataAccumilation.g, EffectiveDecay);
+        currentDataAccumilation.b = mix(finalDensityDistance, currentDataAccumilation.b, EffectiveDecay);
     }
     currentDataAccumilation.a = currentDepthBreak;
 
-    if (usingaccumA > 0.0) {
+    if (usingaccumA) {
         imageStore(accum_1B_image, uv, currentColorAccumilation);
         imageStore(accum_2B_image, uv, currentDataAccumilation);
     } else {
