@@ -26,16 +26,20 @@ func _on_test_ping_received() -> void:
 	_callback_executed = true
 
 
-## Resets test state and internal flags before each test scenario runs.
+## Resets test state, [member SceneTree.paused], and [member Engine.time_scale].
 func before_each() -> void:
 	print("[TestUtilities] Running before_each setup.")
 	_callback_executed = false
+	get_tree().paused = false
+	Engine.time_scale = 1.0
 
 
-## Cleans up transient test artifacts and state after each test scenario completes.
+## Cleans up transient state and unpauses [SceneTree] after each test scenario.
 func after_each() -> void:
 	print("[TestUtilities] Running after_each teardown.")
 	_callback_executed = false
+	get_tree().paused = false
+	Engine.time_scale = 1.0
 
 
 ## Verifies [method Utilities.center_control] calculates pivot from non-zero size.

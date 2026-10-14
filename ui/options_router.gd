@@ -12,6 +12,7 @@ const PREVIEW_LAYER_MASK: int = 1 << 10
 ## Visual layer bitmask assigned to volumetric fog volumes (Layer 10).
 const VOLUMETRIC_LAYER_MASK: int = 1 << 9
 
+## Preloaded 3D diorama scene instantiated inside the preview viewport.
 const SETTINGS_LEVEL_SCENE: PackedScene = preload("res://player/settings_level.tscn")
 
 ## Reference to the video settings panel.
@@ -111,11 +112,6 @@ func _isolate_viewport_scenario() -> void:
 	if not is_instance_valid(diorama_viewport):
 		return
 
-	var target_world: World3D = diorama_viewport.world_3d
-	if not is_instance_valid(target_world):
-		target_world = World3D.new()
-		diorama_viewport.world_3d = target_world
-
 	var clean_env: Environment = Environment.new()
 	clean_env.background_mode = Environment.BG_COLOR
 	clean_env.background_color = Color(0.12, 0.12, 0.14, 1.0)
@@ -125,7 +121,11 @@ func _isolate_viewport_scenario() -> void:
 	clean_env.volumetric_fog_enabled = false
 	clean_env.glow_enabled = false
 
+	var target_world: World3D = World3D.new()
 	target_world.environment = clean_env
+
+	diorama_viewport.own_world_3d = false
+	diorama_viewport.world_3d = target_world
 
 
 ## Pre-warms diorama [Node3D] scene safely to prevent memory leaks.
@@ -225,12 +225,26 @@ func _neutralize_diorama_hotspots() -> void:
 
 ## Returns all options sub-panels as a typed array.
 func get_all_panels() -> Array[Control]:
-	return [video_panel, audio_panel, gameplay_panel, controls_panel, accessibility_panel]
+	print("OptionsRouter: Retrieving all options sub-panels.")
+	return [
+		video_panel,
+		audio_panel,
+		gameplay_panel,
+		controls_panel,
+		accessibility_panel,
+	]
 
 
 ## Returns all category tab buttons as a typed array.
 func get_all_tab_buttons() -> Array[Button]:
-	return [video_button, audio_button, gameplay_button, controls_button, accessibility_button]
+	print("OptionsRouter: Retrieving all category tab buttons.")
+	return [
+		video_button,
+		audio_button,
+		gameplay_button,
+		controls_button,
+		accessibility_button,
+	]
 
 
 ## Opens a specific tab by integer index and updates diorama.
@@ -267,6 +281,7 @@ func _on_tab_pressed(active_panel: Panel) -> void:
 
 ## Routes camera and shaders to match the active tab without reparenting.
 func _route_diorama_view(active_panel: Panel) -> void:
+	print("OptionsRouter: Routing diorama view for active panel.")
 	var is_video: bool = active_panel == video_panel
 	var is_access: bool = active_panel == accessibility_panel
 
@@ -300,7 +315,7 @@ func _evaluate_diorama_state() -> void:
 		diorama_viewport.render_target_update_mode = (SubViewport.UPDATE_WHEN_VISIBLE)
 		_route_diorama_view(_current_panel)
 	else:
-		diorama_viewport.render_target_update_mode = (SubViewport.UPDATE_DISABLED)
+		diorama_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 		diorama_viewport.process_mode = Node.PROCESS_MODE_DISABLED
 		_deactivate_all_diorama_cameras()
 
@@ -319,13 +334,14 @@ func teardown_diorama() -> void:
 
 ## Activates and isolates the preview camera node inside [SubViewport].
 func _activate_graphics_camera() -> void:
+	print("OptionsRouter: Activating diorama graphics camera.")
 	if not is_instance_valid(diorama_viewport):
 		return
 
 	_deactivate_all_diorama_cameras()
 
 	if not is_instance_valid(_graphics_camera):
-		_graphics_camera = diorama_viewport.find_child("Camera_graphics", true, false) as Camera3D
+		_graphics_camera = (diorama_viewport.find_child("Camera_graphics", true, false) as Camera3D)
 		if not is_instance_valid(_graphics_camera):
 			_graphics_camera = (
 				diorama_viewport.find_child("Camera_Graphics", true, false) as Camera3D
@@ -349,6 +365,7 @@ func _deactivate_all_diorama_cameras() -> void:
 
 ## Controls the preview shader pass canvas layer.
 func _set_preview_shader_active(is_active: bool) -> void:
+	print("OptionsRouter: Setting preview shader active state: ", is_active)
 	if is_instance_valid(_preview_layer):
 		_preview_layer.visible = is_active
 		_preview_layer.process_mode = (
@@ -365,6 +382,7 @@ func _on_master_back_pressed() -> void:
 
 ## Relays reset call to [ControlsPanel] if currently active and visible.
 func _on_reset_defaults_pressed() -> void:
+	print("OptionsRouter: Reset defaults button clicked.")
 	if is_instance_valid(controls_panel) and controls_panel.visible:
 		if controls_panel.has_method("reset_to_defaults"):
 			controls_panel.call("reset_to_defaults")
@@ -372,6 +390,7 @@ func _on_reset_defaults_pressed() -> void:
 
 ## Traverses node hierarchy and applies 3D visual layer bitmask.
 func _assign_visual_layer_recursive(root: Node, layer_idx: int) -> void:
+	print("OptionsRouter: Assigning visual layer mask recursively.")
 	var mask: int = 1 << (layer_idx - 1)
 	for child: Node in root.get_children():
 		if child is VisualInstance3D:

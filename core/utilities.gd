@@ -1,6 +1,6 @@
+## Static utility library providing safe node, tween, math, and raycast operations.
 class_name Utilities
 extends RefCounted
-## Static utility library providing safe node, tween, math, and raycast operations.
 
 ## Cached query parameters for [method raycast_3d] to avoid allocations at 60 FPS.
 static var _cached_ray_query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.new()
@@ -72,6 +72,8 @@ static func reset_tween_ext(
 
 ## Safely connects [param sig] to [param callable] if not already connected.
 static func safe_connect(sig: Signal, callable: Callable, flags: int = 0) -> bool:
+	if sig.is_null() or not callable.is_valid():
+		return false
 	if not sig.is_connected(callable):
 		sig.connect(callable, flags)
 		print("[Utilities] Connected signal ", sig.get_name(), " to callable.")
@@ -116,7 +118,7 @@ static func raycast_3d(
 static func delay_call(
 	node: Node, delay_seconds: float, callable: Callable, process_always: bool = false
 ) -> SceneTreeTimer:
-	if not is_instance_valid(node) or not node.is_inside_tree():
+	if not is_instance_valid(node) or not node.is_inside_tree() or not callable.is_valid():
 		return null
 	var timer: SceneTreeTimer = node.get_tree().create_timer(delay_seconds, process_always)
 	timer.timeout.connect(callable, Object.CONNECT_ONE_SHOT)
@@ -164,6 +166,8 @@ static func normalize_angle(angle_rad: float) -> float:
 
 ## Checks if squared distance between [param pos_a] and [param pos_b] <= [param max_dist].
 static func is_within_distance_3d(pos_a: Vector3, pos_b: Vector3, max_dist: float) -> bool:
+	if max_dist < 0.0:
+		return false
 	var is_within: bool = pos_a.distance_squared_to(pos_b) <= (max_dist * max_dist)
 	print(
 		"[Utilities] Distance check between ",

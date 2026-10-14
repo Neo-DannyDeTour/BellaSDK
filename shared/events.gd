@@ -136,6 +136,10 @@ signal player_zoomed(is_zooming: bool)
 @warning_ignore("unused_signal")
 signal player_electrocuted
 
+## Emitted when proximity to an electric field changes vignette [param intensity].
+@warning_ignore("unused_signal")
+signal electricity_vignette_changed(intensity: float)
+
 ## Emitted when underwater visual effects toggle with state and intensity.
 @warning_ignore("unused_signal")
 signal underwater_vfx_toggled(

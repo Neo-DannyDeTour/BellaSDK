@@ -29,6 +29,12 @@ extends Control
 ## ColorRect applying full-screen fade transitions and color flashes.
 @onready var fade_overlay: ColorRect = $FadeOverlay
 
+## Target proximity electricity vignette intensity set by nearby energy fields.
+var _target_electricity_intensity: float = 0.0
+
+## Current interpolated proximity electricity vignette intensity.
+var _current_electricity_intensity: float = 0.0
+
 ## Animates smooth strength transitions when toggling wolf vision.
 var wolf_vision_tween: Tween
 
@@ -189,6 +195,9 @@ func _connect_signals() -> void:
 		Events.player_crouch_changed.connect(_on_player_crouched)
 	if not Events.player_electrocuted.is_connected(_on_player_electrocuted):
 		Events.player_electrocuted.connect(_on_player_electrocuted)
+	if Events.has_signal(&"electricity_vignette_changed"):
+		if not Events.electricity_vignette_changed.is_connected(_on_electricity_vignette_changed):
+			Events.electricity_vignette_changed.connect(_on_electricity_vignette_changed)
 	if not Events.player_zoomed.is_connected(_on_player_zoomed):
 		Events.player_zoomed.connect(_on_player_zoomed)
 	if not Events.underwater_vfx_toggled.is_connected(_on_underwater_vfx_toggled):
@@ -220,6 +229,7 @@ func _process(delta: float) -> void:
 		mat.set_shader_parameter(&"vignette_opacity", new_opacity)
 		vignette.visible = new_opacity > 0.001
 
+	_process_proximity_electricity(delta)
 	_process_rain_pitch_and_vfx(delta)
 
 
@@ -682,3 +692,31 @@ func _on_fade_finished() -> void:
 	print("ScreenEffectsManager: Screen fade transition completed.")
 	if is_instance_valid(fade_overlay):
 		fade_overlay.hide()
+
+
+## Smoothly interpolates the electricity vignette when near an energy gate.
+func _process_proximity_electricity(delta: float) -> void:
+	if electro_tween and electro_tween.is_valid() and electro_tween.is_running():
+		return
+	if not is_instance_valid(electricity_vignette):
+		return
+	if not (electricity_vignette.material is ShaderMaterial):
+		return
+
+	_current_electricity_intensity = lerpf(
+		_current_electricity_intensity, _target_electricity_intensity, delta * 10.0
+	)
+	var mat: ShaderMaterial = electricity_vignette.material as ShaderMaterial
+	if _current_electricity_intensity > 0.001:
+		electricity_vignette.show()
+		mat.set_shader_parameter(&"intensity", _current_electricity_intensity)
+		electricity_vignette.queue_redraw()
+	elif electricity_vignette.visible:
+		mat.set_shader_parameter(&"intensity", 0.0)
+		electricity_vignette.hide()
+
+
+## Updates target electricity vignette intensity when approaching an energy field.
+func _on_electricity_vignette_changed(intensity: float) -> void:
+	print("ScreenEffectsManager: Proximity electricity intensity -> ", intensity)
+	_target_electricity_intensity = clampf(intensity, 0.0, 1.0)

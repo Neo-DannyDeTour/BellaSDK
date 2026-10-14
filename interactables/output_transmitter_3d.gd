@@ -13,7 +13,7 @@ signal deactivated
 @export var targets: Array[Node3D] = []:
 	set(value):
 		targets = value
-		if Engine.is_editor_hint():
+		if Engine.is_editor_hint() and is_inside_tree():
 			_draw_connection_line()
 
 ## Active state flag for outputting power.
@@ -87,6 +87,9 @@ func _deenergize_targets() -> void:
 
 ## Draws debug line connections to all targets.
 func _draw_connection_line() -> void:
+	if not is_inside_tree():
+		return
+
 	if targets.is_empty():
 		if is_instance_valid(debug_line):
 			debug_line.queue_free()
@@ -96,7 +99,7 @@ func _draw_connection_line() -> void:
 	if not is_instance_valid(debug_line):
 		debug_line = MeshInstance3D.new()
 		debug_line.name = "DebugLinkLine"
-		debug_line.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		debug_line.cast_shadow = (GeometryInstance3D.SHADOW_CASTING_SETTING_OFF)
 		add_child(debug_line)
 
 		var mat: StandardMaterial3D = StandardMaterial3D.new()
@@ -110,6 +113,9 @@ func _draw_connection_line() -> void:
 		debug_line.mesh = immediate_mesh
 
 	var mesh: ImmediateMesh = debug_line.mesh if debug_line.mesh is ImmediateMesh else null
+	if not is_instance_valid(mesh):
+		return
+
 	mesh.clear_surfaces()
 	mesh.surface_begin(Mesh.PRIMITIVE_LINES)
 
@@ -123,6 +129,7 @@ func _draw_connection_line() -> void:
 
 ## Routes normalized progress weight to targets.
 func transmit_progress(value: float) -> void:
+	print("OutputTransmitter3D: Transmitting progress -> ", value)
 	for target: Node3D in targets:
 		if is_instance_valid(target) and target.has_method("set_progress"):
 			target.call("set_progress", value)
