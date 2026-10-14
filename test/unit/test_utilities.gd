@@ -240,7 +240,8 @@ func test_delay_call_execution() -> void:
 	assert_not_null(timer, "Timer instance should not be null.")
 	assert_false(_callback_executed, "Callback should not fire immediately.")
 
-	await wait_seconds(0.1)
+	await timer.timeout
+	await get_tree().process_frame
 
 	assert_true(_callback_executed, "Callback should be triggered after delay timeout.")
 

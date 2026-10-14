@@ -1,6 +1,6 @@
+## Complete GUT test suite validating all 7 BellaSDK core architecture layers.
 class_name TestBellaArchitecture
 extends GutTest
-## Comprehensive GUT test suite validating all 7 BellaSDK core architecture layers.
 
 ## Tracking counters capturing signal emissions during test execution.
 var _signal_counts: Dictionary[StringName, int] = {}
@@ -12,7 +12,7 @@ func before_each() -> void:
 	_signal_counts.clear()
 
 
-## Test Layer 1: Utilities static math, grid snapping, and distance tests.
+## Test Layer 1: [Utilities] static math, grid snapping, and distance checks.
 func test_layer1_utilities_math_and_grid() -> void:
 	print("TestBellaArchitecture: Testing Layer 1 - Utilities.")
 	var origin: Vector3 = Vector3(1.23, 4.56, 7.89)
@@ -69,7 +69,7 @@ func test_layer2_global_rng_determinism() -> void:
 	assert_eq(fallback_int, 99, "Cleared cache must return fallback value.")
 
 
-## Test Layer 3: Decoupled Events signal routing and signature arity.
+## Test Layer 3: Decoupled [Events] signal routing and signature arity.
 func test_layer3_events_bus_lifecycle() -> void:
 	print("TestBellaArchitecture: Testing Layer 3 - Events Signal Bus.")
 	assert_not_null(Events, "Events autoload must exist in scene tree.")
@@ -82,8 +82,8 @@ func test_layer3_events_bus_lifecycle() -> void:
 		_signal_counts[&"player_died"] = _signal_counts.get(&"player_died", 0) + 1
 		assert_eq(death_state, 1, "Death state parameter should match emitted value.")
 
-	Events.wave_started.connect(on_wave_started, CONNECT_ONE_SHOT)
-	Events.player_died.connect(on_player_died, CONNECT_ONE_SHOT)
+	Events.wave_started.connect(on_wave_started, Object.CONNECT_ONE_SHOT)
+	Events.player_died.connect(on_player_died, Object.CONNECT_ONE_SHOT)
 
 	Events.wave_started.emit(42)
 	Events.player_died.emit(1)
@@ -94,7 +94,7 @@ func test_layer3_events_bus_lifecycle() -> void:
 	assert_eq(player_died_count, 1, "player_died signal must emit once.")
 
 
-## Test Layer 4: Static Types enums, string lookups, and layer bitmasks.
+## Test Layer 4: Static [Types] enums, string lookups, and layer bitmasks.
 func test_layer4_types_and_collision_masks() -> void:
 	print("TestBellaArchitecture: Testing Layer 4 - Types & Enums.")
 	assert_eq(Types.item_category_to_string(Types.ItemCategory.WEAPON), "Weapon")
@@ -113,7 +113,7 @@ func test_layer4_types_and_collision_masks() -> void:
 	assert_false(bool(solid_mask & Types.MASK_ENEMIES), "Solid world must not include enemies.")
 
 
-## Test Layer 5: ReferenceData palette defaults and category icon fallbacks.
+## Test Layer 5: [ReferenceData] palette defaults and category icon fallbacks.
 func test_layer5_reference_data_resolution() -> void:
 	print("TestBellaArchitecture: Testing Layer 5 - ReferenceData.")
 	var ref_data: ReferenceData = ReferenceData.new()
@@ -126,7 +126,7 @@ func test_layer5_reference_data_resolution() -> void:
 	assert_null(resolved_icon, "Unconfigured icon must return null without crashing.")
 
 
-## Test Layer 6: AudioManager concurrency throttling and instance capping.
+## Test Layer 6: [AudioManager] concurrency throttling and instance capping.
 func test_layer6_audio_manager_concurrency_limits() -> void:
 	print("TestBellaArchitecture: Testing Layer 6 - AudioManager Throttling.")
 	var audio_mgr: Node = get_node_or_null("/root/AudioManager")
@@ -154,7 +154,7 @@ func test_layer6_audio_manager_concurrency_limits() -> void:
 	assert_eq(active_players.size(), 4, "AudioManager must throttle sound playback at limit 4.")
 
 
-## Test Integration: WaveSpawner emitting wave_started, enemy_spawned, and wave_completed.
+## Tests [WaveSpawner] emitting [signal Events.wave_started] and completion.
 func test_wave_spawner_lifecycle_integration() -> void:
 	print("TestBellaArchitecture: Testing WaveSpawner lifecycle integration.")
 	var spawner: WaveSpawner = WaveSpawner.new()
@@ -184,20 +184,25 @@ func test_wave_spawner_lifecycle_integration() -> void:
 	Events.enemy_spawned.connect(on_enemy_spawned)
 
 	spawner.start_spawner()
-	await wait_seconds(0.2)
+
+	var spawn_timer: SceneTreeTimer = get_tree().create_timer(0.2)
+	await spawn_timer.timeout
+	await get_tree().process_frame
 
 	assert_eq(spawned_enemies.size(), 2, "Spawner must spawn all 2 enemies for wave 1.")
 
 	var wave_completed_tracker: Array[bool] = [false]
 	var on_wave_completed: Callable = func(_wave: int) -> void: wave_completed_tracker[0] = true
 
-	Events.wave_completed.connect(on_wave_completed, CONNECT_ONE_SHOT)
+	Events.wave_completed.connect(on_wave_completed, Object.CONNECT_ONE_SHOT)
 
 	for enemy: Node3D in spawned_enemies:
 		Events.enemy_killed.emit(enemy, null)
 		enemy.queue_free()
 
-	await wait_frames(2)
+	await get_tree().process_frame
+	await get_tree().process_frame
+
 	assert_true(wave_completed_tracker[0], "wave_completed must emit when all enemies are slain.")
 
 	if Events.enemy_spawned.is_connected(on_enemy_spawned):

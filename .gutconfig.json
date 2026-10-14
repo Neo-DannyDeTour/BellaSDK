@@ -19,7 +19,7 @@
   "font_size": 16.0,
   "gut_on_top": true,
   "hide_orphans": false,
-  "ignore_pause": false,
+  "ignore_pause": true,
   "include_subdirs": true,
   "junit_xml_file": "res://gut_test_results.xml",
   "junit_xml_timestamp": false,

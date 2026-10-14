@@ -101,4 +101,12 @@ jobs:
 
       - name: Run GUT Test Suite
         run: |
-          godot --headless -s res://addons/gut/gut_cmdln.gd -gconfig=res://.gutconfig.json
+          godot --headless -s res://addons/gut/gut_cmdln.gd -gconfig=res://.gutconfig.json -gexit -gignore_pause
+
+      - name: Upload GUT Test Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gut-test-results
+          path: gut_test_results.xml
+          if-no-files-found: ignore

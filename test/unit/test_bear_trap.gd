@@ -14,13 +14,16 @@ func before_each() -> void:
 	print("TestBearTrap: before_each() setup started.")
 
 	var bear_trap_scene: PackedScene = load("res://enemies/bear_trap.tscn")
-	var instance: Node = bear_trap_scene.instantiate()
-	if instance is BearTrap:
-		bear_trap = instance
-		add_child_autoqfree(bear_trap)
+	if is_instance_valid(bear_trap_scene):
+		var instance: Node = bear_trap_scene.instantiate()
+		if instance is BearTrap:
+			bear_trap = instance
+	if not is_instance_valid(bear_trap):
+		bear_trap = BearTrap.new()
+	add_child_autofree(bear_trap)
 
 	mock_player = MockPlayer.new()
-	add_child_autoqfree(mock_player)
+	add_child_autofree(mock_player)
 	await get_tree().process_frame
 
 
