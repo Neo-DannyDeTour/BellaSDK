@@ -18,9 +18,13 @@ signal deformed(world_position: Vector3)
 @onready var collision_shape: CollisionShape3D = $StaticBody3D/CollisionShape3D
 
 
-## Hooks dynamic textures to shader and generates uneven collision geometry.
+## Hooks dynamic textures to shader and configures on-demand SubViewport updates.
 func _ready() -> void:
 	print("[SnowGround] Hooking viewport texture to displacement shader.")
+	if is_instance_valid(deform_viewport):
+		deform_viewport.render_target_clear_mode = SubViewport.CLEAR_MODE_ONCE
+		deform_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+
 	var mat: ShaderMaterial = (
 		get_active_material(0) if get_active_material(0) is ShaderMaterial else null
 	)
@@ -49,7 +53,6 @@ func deform_at(
 	var canvas_pos: Vector2 = uv * vp_size
 
 	print("[SnowGround] Displacing snow at world coordinates: ", world_position)
-	# Forward the angle to the painter.
 	snow_painter.add_stamp(canvas_pos, radius_px, intensity, angle_rad)
 	deformed.emit(world_position)
 

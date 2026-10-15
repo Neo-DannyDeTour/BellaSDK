@@ -181,6 +181,9 @@ var mutex: Mutex = Mutex.new()
 ## Cache of CPU-side displacement images for physical height sampling.
 var cpu_displacement_textures: Dictionary = {}
 
+## Pre-allocated array of cascade indices to avoid per-frame keys() allocation.
+var _cpu_displacement_keys: PackedInt32Array = PackedInt32Array()
+
 ## Target time interval for refreshing CPU displacement textures.
 var _displacement_textures_total_update_interval: float = 1.0 / 30.0
 
@@ -234,15 +237,17 @@ func _ready() -> void:
 
 ## Drives spray emitter position tracking and per-frame simulation steps.
 func _process(delta: float) -> void:
-	if is_instance_valid(spray_particles):
-		var target_pos: Vector3 = global_position
-		if is_instance_valid(player_target):
-			target_pos = player_target.global_position
-		else:
-			var active_cam: Camera3D = _get_camera()
-			if is_instance_valid(active_cam):
-				target_pos = active_cam.global_position
+	if Engine.is_editor_hint():
+		_update_water(delta)
+		return
 
+	var cam: Camera3D = _get_camera()
+	var tracker_node: Node3D = player_target if is_instance_valid(player_target) else cam
+	var target_pos: Vector3 = (
+		tracker_node.global_position if is_instance_valid(tracker_node) else global_position
+	)
+
+	if is_instance_valid(spray_particles):
 		var local_target: Vector3 = target_pos - global_position
 		var max_dist: float = maxf(0.0, (ocean_plane_size / 2.0) - spray_spawn_radius)
 		local_target.x = clampf(local_target.x, -max_dist, max_dist)
@@ -252,37 +257,33 @@ func _process(delta: float) -> void:
 			global_position + Vector3(local_target.x, 0.0, local_target.z)
 		)
 
-	if Engine.is_editor_hint():
-		_update_water(delta)
-		return
-
-	if is_instance_valid(player_target):
-		var dist_sq: float = global_position.distance_squared_to(player_target.global_position)
+	var sim_delta: float = delta
+	var is_distant: bool = false
+	if is_instance_valid(tracker_node):
+		var dist_sq: float = global_position.distance_squared_to(target_pos)
 		if dist_sq > max_sim_distance * max_sim_distance:
+			is_distant = true
 			_distant_timer += delta
 			if _distant_timer < 0.1:
 				return
+			sim_delta = _distant_timer
+			_distant_timer = 0.0
+		else:
 			_distant_timer = 0.0
 
-	var cam: Camera3D = _get_camera()
 	if is_instance_valid(cam):
 		var distance_moved_sq: float = _last_cam_pos.distance_squared_to(cam.global_position)
 		_last_cam_pos = cam.global_position
-		if distance_moved_sq > 25.0:
-			if update_textures:
-				update_textures = false
-		else:
-			if not update_textures:
-				update_textures = true
+		update_textures = (distance_moved_sq <= 25.0) and not is_distant
 
 	just_calculated_water = false
-	_update_water(delta)
+	_update_water(sim_delta)
 
 	if update_textures:
-		_manage_cpu_displacement_textures_updates(delta)
+		_manage_cpu_displacement_textures_updates(sim_delta)
 
 	just_calculated_water = true
-	time += delta
+	time += sim_delta
 
 
 ## Configures the wave generator child node synchronously.
@@ -375,18 +376,15 @@ func _notification(what: int) -> void:
 
 ## Manages asynchronous round-robin readbacks of displacement maps to the CPU.
 func _manage_cpu_displacement_textures_updates(delta: float) -> void:
-	if cpu_displacement_textures.is_empty() or _is_reading_back:
+	if _cpu_displacement_keys.is_empty() or _is_reading_back:
 		return
 
-	var cache_size: int = cpu_displacement_textures.size()
+	var cache_size: int = _cpu_displacement_keys.size()
 	var time_per_tex: float = _displacement_textures_total_update_interval / float(cache_size)
 
 	if _displacement_textures_update_time > time_per_tex:
-		_texture_loading_index += 1
-		if _texture_loading_index >= cpu_displacement_textures.size():
-			_texture_loading_index = 0
-
-		var target_idx: int = cpu_displacement_textures.keys()[_texture_loading_index]
+		_texture_loading_index = (_texture_loading_index + 1) % cache_size
+		var target_idx: int = _cpu_displacement_keys[_texture_loading_index]
 		_is_reading_back = true
 		RenderingServer.call_on_render_thread(_do_texture_readback.bind(target_idx))
 		_displacement_textures_update_time = 0.0
@@ -450,6 +448,7 @@ func _do_initial_texture_readback(used_indices: Array[int]) -> void:
 	var rid_disp_map: RID = wave_generator.descriptors[&"displacement_map"].rid
 
 	mutex.lock()
+	_cpu_displacement_keys.clear()
 	for i: int in used_indices:
 		var tex: PackedByteArray = device.texture_get_data(rid_disp_map, i)
 		if tex.is_empty():
@@ -460,6 +459,7 @@ func _do_initial_texture_readback(used_indices: Array[int]) -> void:
 		)
 		if img:
 			cpu_displacement_textures[i] = img
+			_cpu_displacement_keys.append(i)
 	mutex.unlock()
 
 
@@ -476,10 +476,10 @@ func get_height(world_pos: Vector3, steps: int = 3) -> float:
 	var summed_height: float = 0.0
 
 	mutex.lock()
-	if is_instance_valid(wave_generator) and not cpu_displacement_textures.is_empty():
+	if is_instance_valid(wave_generator) and not _cpu_displacement_keys.is_empty():
 		var map_size_cache: int = wave_generator.cpu_map_size
 		var map_size_float: float = float(map_size_cache)
-		for idx: int in cpu_displacement_textures.keys():
+		for idx: int in _cpu_displacement_keys:
 			var disp_scale: float = parameters[idx].displacement_scale
 			var tile_length: Vector2 = parameters[idx].tile_length
 			var x: Vector2 = world_pos_xz

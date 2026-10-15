@@ -54,7 +54,7 @@ shape = SubResource("BoxShape3D_rytp7")
 disable_3d = true
 gui_disable_input = true
 size = Vector2i(1024, 512)
-render_target_update_mode = 4
+render_target_update_mode = 3
 
 [node name="RibbonScreen" type="ColorRect" parent="ScreenViewport" unique_id=1441578001]
 material = SubResource("ShaderMaterial_534t5")

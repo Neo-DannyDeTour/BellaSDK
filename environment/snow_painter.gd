@@ -2,17 +2,17 @@
 class_name SnowPainter
 extends Node2D
 
-## Maximum number of persistent footprint stamps retained in the deformation buffer.
-const MAX_STAMPS: int = 500
-
 ## Assign your grayscale boot print texture in the Inspector.
 @export var footprint_texture: Texture2D
 
 ## The calculated scale needed to fit the footprint in the SubViewport.
 var _texture_scale: Vector2 = Vector2.ONE
 
-## Persistent buffer storing active stamps rasterized on redraw.
-var _stamps: Array[Dictionary] = []
+## Tracks whether the initial black canvas clear has been drawn.
+var _needs_initial_clear: bool = true
+
+## Queue of new stamps to rasterize on the next [SubViewport.UPDATE_ONCE] pass.
+var _pending_stamps: Array[Dictionary] = []
 
 
 ## Generates the radial gradient brush and requests the initial canvas clear.
@@ -35,15 +35,17 @@ func _ready() -> void:
 	queue_redraw()
 
 
-## Renders all persistent footprint stamps directly into the frame buffer.
+## Renders only newly queued footprint stamps into the persistent frame buffer.
 func _draw() -> void:
-	var viewport_size: Vector2 = get_viewport_rect().size
-	draw_rect(Rect2(Vector2.ZERO, viewport_size), Color.BLACK)
+	if _needs_initial_clear:
+		var viewport_size: Vector2 = get_viewport_rect().size
+		draw_rect(Rect2(Vector2.ZERO, viewport_size), Color.BLACK)
+		_needs_initial_clear = false
 
-	if not footprint_texture:
+	if not footprint_texture or _pending_stamps.is_empty():
 		return
 
-	for stamp: Dictionary in _stamps:
+	for stamp: Dictionary in _pending_stamps:
 		var pos: Vector2 = stamp["position"]
 		var radius_px: float = stamp["radius"]
 		var intensity: float = stamp["intensity"]
@@ -57,6 +59,8 @@ func _draw() -> void:
 		draw_texture_rect_rotated(
 			footprint_texture, stamp_rect, modulate_color, angle_rad, Vector2(0.5, 0.5)
 		)
+
+	_pending_stamps.clear()
 
 
 ## Renders a texture with specific rotation, modulation, and target size.
@@ -78,16 +82,25 @@ func draw_texture_rect_rotated(
 	draw_set_transform_matrix(Transform2D())
 
 
-## Appends a footprint stamp at [param canvas_pos] coordinates and requests redraw.
+## Queues a single footprint stamp at [param canvas_pos] and wakes the SubViewport.
 func add_stamp(
 	canvas_pos: Vector2, radius: float, intensity: float, angle_rad: float = 0.0
 ) -> void:
 	print(
 		"[SnowPainter] Stamping footprint at pos: ", canvas_pos, " angle: ", rad_to_deg(angle_rad)
 	)
-	_stamps.append(
-		{"position": canvas_pos, "radius": radius, "intensity": intensity, "angle": angle_rad}
+	(
+		_pending_stamps
+		. append(
+			{
+				"position": canvas_pos,
+				"radius": radius,
+				"intensity": intensity,
+				"angle": angle_rad,
+			}
+		)
 	)
-	if _stamps.size() > MAX_STAMPS:
-		_stamps.pop_front()
 	queue_redraw()
+	var vp: Viewport = get_viewport()
+	if vp is SubViewport:
+		(vp as SubViewport).render_target_update_mode = SubViewport.UPDATE_ONCE

@@ -53,8 +53,10 @@ shape = SubResource("ConcavePolygonShape3D_ns64g")
 
 [node name="DeformViewport" type="SubViewport" parent="SnowGround" unique_id=1829229450]
 disable_3d = true
+gui_disable_input = true
 size = Vector2i(1024, 1024)
-render_target_update_mode = 4
+render_target_clear_mode = 2
+render_target_update_mode = 1
 
 [node name="SnowPainter" type="Node2D" parent="SnowGround/DeformViewport" unique_id=1751532281]
 script = ExtResource("2_ns64g")

@@ -121,10 +121,23 @@ var _shader_mat: ShaderMaterial
 ## Elapsed time accumulator driving editor animation updates.
 var _editor_time: float = 0.0
 
+## Frustum visibility notifier gating SubViewport updates at runtime.
+var _visibility_notifier: VisibleOnScreenNotifier3D = null
+
 
 ## Initializes node links, sizes, and flushes shader values.
 func _ready() -> void:
+	print("RibbonWall: Initializing ribbon wall node -> ", name)
+	set_process(Engine.is_editor_hint())
 	_ensure_nodes()
+
+	if not Engine.is_editor_hint():
+		_visibility_notifier = VisibleOnScreenNotifier3D.new()
+		_visibility_notifier.name = "RibbonVisibilityNotifier"
+		add_child(_visibility_notifier)
+		_visibility_notifier.screen_entered.connect(_on_screen_entered)
+		_visibility_notifier.screen_exited.connect(_on_screen_exited)
+
 	_setup_viewport_texture()
 	_update_viewport_resolution()
 	_update_mesh_and_collision()
@@ -134,11 +147,25 @@ func _ready() -> void:
 		_set_shader_param(&"custom_time", -1.0)
 
 
+## Enables SubViewport rendering when the wall enters the camera frustum.
+func _on_screen_entered() -> void:
+	if is_instance_valid(_viewport):
+		_viewport.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
+
+
+## Disables SubViewport rendering when the wall leaves the camera frustum.
+func _on_screen_exited() -> void:
+	if is_instance_valid(_viewport):
+		_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+
+
 ## Advances shader time continuously while working inside the editor.
 func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		_editor_time += delta * speed
 		_set_shader_param(&"custom_time", _editor_time)
+	else:
+		set_process(false)
 
 
 ## Finds child references safely without deserialization errors.
@@ -150,13 +177,13 @@ func _ensure_nodes() -> void:
 		_wall_mesh = get_node_or_null("WallMesh") as MeshInstance3D
 
 	if not is_instance_valid(_collision_shape):
-		_collision_shape = get_node_or_null("StaticBody3D/CollisionShape3D") as CollisionShape3D
+		_collision_shape = (get_node_or_null("StaticBody3D/CollisionShape3D") as CollisionShape3D)
 
 	if not is_instance_valid(_viewport):
 		_viewport = get_node_or_null("ScreenViewport") as SubViewport
 
 	if not is_instance_valid(_screen_rect):
-		_screen_rect = get_node_or_null("ScreenViewport/RibbonScreen") as ColorRect
+		_screen_rect = (get_node_or_null("ScreenViewport/RibbonScreen") as ColorRect)
 
 	if is_instance_valid(_wall_mesh):
 		var active_mat: Material = _wall_mesh.get_active_material(0)
@@ -173,7 +200,7 @@ func _setup_viewport_texture() -> void:
 	if not is_instance_valid(_viewport) or not is_instance_valid(_surface_mat):
 		return
 
-	_viewport.render_target_update_mode = (SubViewport.UPDATE_ALWAYS)
+	_viewport.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
 
 	var vp_tex: ViewportTexture = _viewport.get_texture()
 	_surface_mat.albedo_texture = vp_tex
@@ -217,6 +244,10 @@ func _update_mesh_and_collision() -> void:
 				_collision_shape.shape if _collision_shape.shape is BoxShape3D else null
 			)
 			box.size = Vector3(wall_size.x, wall_size.y, wall_depth)
+
+	if is_instance_valid(_visibility_notifier):
+		var aabb_size: Vector3 = Vector3(wall_size.x, wall_size.y, maxf(wall_depth, 0.5))
+		_visibility_notifier.aabb = AABB(-aabb_size * 0.5, aabb_size).grow(0.5)
 
 	_update_viewport_resolution()
 
