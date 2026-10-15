@@ -51,6 +51,7 @@ twist_span = 0.7853982
 [node name="RopeBody" type="RigidBody3D" parent="." unique_id=1455748252]
 collision_layer = 4
 mass = 50.0
+can_sleep = true
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="RopeBody" unique_id=1793865174]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -2.5, 0)

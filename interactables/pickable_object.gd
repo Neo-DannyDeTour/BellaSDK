@@ -169,7 +169,8 @@ var _standing_lock_ticks: int = 0
 ## Initializes collision layers, node references, signals, and cache.
 func _ready() -> void:
 	print("PickableObject: _ready() called. Initializing ", name)
-	continuous_cd = true
+	can_sleep = true
+	continuous_cd = false
 	collision_layer = CollisionLayers.MASK_INTERACTIVE
 	collision_mask = (
 		CollisionLayers.MASK_ENVIRONMENT
@@ -202,7 +203,7 @@ func _ready() -> void:
 	Events.noclip_toggled.connect(_on_noclip_toggled)
 	Events.item_prompts_toggled.connect(_on_item_prompts_toggled)
 
-	contact_monitor = true
+	contact_monitor = false
 	max_contacts_reported = 2
 	body_entered.connect(_on_body_entered)
 
@@ -252,9 +253,11 @@ func _on_noclip_toggled(is_flying: bool) -> void:
 	_is_player_flying = is_flying
 
 
-## Toggles physics process mode when physics sleeping state changes.
+## Toggles physics process mode and CCD when physics sleeping state changes.
 func _on_sleeping_state_changed() -> void:
 	print("PickableObject: Sleeping state changed to ", sleeping)
+	continuous_cd = not sleeping
+	contact_monitor = not sleeping
 	_update_process_state()
 
 

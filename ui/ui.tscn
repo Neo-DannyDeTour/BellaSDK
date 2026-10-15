@@ -851,6 +851,11 @@ unique_name_in_owner = true
 layout_mode = 2
 text = "Scan Scene Geometry"
 
+[node name="ScanOrphansButton" type="Button" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/HBoxContainer2" unique_id=2081431461]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Scan Orphans"
+
 [node name="DumpAuditButton" type="Button" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/HBoxContainer2" unique_id=1078534750]
 unique_name_in_owner = true
 layout_mode = 2
@@ -879,6 +884,11 @@ text = "Fog"
 unique_name_in_owner = true
 layout_mode = 2
 text = "Diorama"
+
+[node name="TriageGlitchButton" type="Button" parent="DiagnosticsPanel/MarginContainer/VBoxContainer/HBoxContainer3" unique_id=1992837465]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Triage Glitch"
 
 [node name="ScrollContainer" type="ScrollContainer" parent="DiagnosticsPanel/MarginContainer/VBoxContainer" unique_id=1063004264]
 layout_mode = 2

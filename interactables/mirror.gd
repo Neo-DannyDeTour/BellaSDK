@@ -64,6 +64,9 @@ var _skip_frame: bool = false
 ## Original camera environment cached for restore.
 var _original_camera_environment: Environment = null
 
+## Screen visibility notifier used to halt mirror updates when offscreen.
+var _visibility_notifier: VisibleOnScreenNotifier3D = null
+
 
 ## Validates exported nodes and initializes mirror resources.
 func _ready() -> void:
@@ -87,7 +90,27 @@ func _ready() -> void:
 		printerr("Mirror Error: Mesh on mirror_quad is not a QuadMesh!")
 		return
 
+	if not Engine.is_editor_hint():
+		_visibility_notifier = VisibleOnScreenNotifier3D.new()
+		_visibility_notifier.name = "MirrorVisibilityNotifier"
+		add_child(_visibility_notifier)
+		_visibility_notifier.screen_entered.connect(_on_screen_entered)
+		_visibility_notifier.screen_exited.connect(_on_screen_exited)
+
 	_setup_mirror()
+
+
+## Resumes reflection updates when the mirror enters the camera frustum.
+func _on_screen_entered() -> void:
+	set_process(true)
+
+
+## Pauses reflection updates when the mirror exits the camera frustum.
+func _on_screen_exited() -> void:
+	if _init_frames >= 2:
+		if is_instance_valid(mirror_viewport):
+			mirror_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+		set_process(false)
 
 
 ## Restores original camera environment when mirror exits scene tree.
@@ -121,6 +144,12 @@ func _process(_delta: float) -> void:
 	if not _texture_assigned:
 		_assign_texture()
 		_texture_assigned = true
+
+	if is_instance_valid(_visibility_notifier) and not _visibility_notifier.is_on_screen():
+		if is_instance_valid(mirror_viewport):
+			mirror_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+		set_process(false)
+		return
 
 	var mirror_norm: Vector3 = mirror_quad.global_basis.z
 	var to_cam: Vector3 = cur_trans.origin - mirror_quad.global_position
@@ -253,6 +282,10 @@ func _update_mirror_size() -> void:
 	var q_mesh: QuadMesh = mirror_quad.mesh if mirror_quad.mesh is QuadMesh else null
 	if is_instance_valid(q_mesh):
 		q_mesh.size = size
+
+	if is_instance_valid(_visibility_notifier):
+		var aabb_size: Vector3 = Vector3(size.x, size.y, 0.4)
+		_visibility_notifier.aabb = AABB(-aabb_size * 0.5, aabb_size).grow(0.5)
 
 	var target_x: int = int(size.x * float(pixels_per_unit))
 	var target_y: int = int(size.y * float(pixels_per_unit))

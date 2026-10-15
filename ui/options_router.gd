@@ -106,9 +106,9 @@ func _ready() -> void:
 	_evaluate_diorama_state()
 
 
-## Configures the isolated diorama [Environment] settings.
+## Configures the isolated diorama [Environment] and viewport resource clamps.
 func _isolate_viewport_scenario() -> void:
-	print("OptionsRouter: Configuring isolated diorama environment.")
+	print("OptionsRouter: Configuring isolated diorama environment and clamps.")
 	if not is_instance_valid(diorama_viewport):
 		return
 
@@ -126,6 +126,9 @@ func _isolate_viewport_scenario() -> void:
 
 	diorama_viewport.own_world_3d = false
 	diorama_viewport.world_3d = target_world
+	diorama_viewport.positional_shadow_atlas_size = 512
+	diorama_viewport.msaa_3d = Viewport.MSAA_DISABLED
+	diorama_viewport.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
 
 
 ## Pre-warms diorama [Node3D] scene safely to prevent memory leaks.
@@ -169,9 +172,11 @@ func _bind_diorama_textures() -> void:
 
 	_preview_layer = get_node_or_null("PreviewShaderLayer") as CanvasLayer
 	if not is_instance_valid(_preview_layer):
-		_preview_layer = (
-			get_tree().root.find_child("PreviewShaderLayer", true, false) as CanvasLayer
-		)
+		var group_layer: Node = get_tree().get_first_node_in_group(&"preview_shader_layer")
+		if group_layer is CanvasLayer:
+			_preview_layer = group_layer as CanvasLayer
+		else:
+			_preview_layer = (get_tree().root.get_node_or_null("PreviewShaderLayer") as CanvasLayer)
 
 	_vision_meshes.clear()
 	var meshes: Array[Node] = diorama_viewport.find_children(
@@ -196,9 +201,9 @@ func _connect_tab_buttons() -> void:
 		accessibility_button.pressed.connect(_on_tab_pressed.bind(accessibility_panel))
 
 
-## Strips physics collisions and isolates preview camera render layers.
+## Strips physics collisions and caches preview camera references at init.
 func _neutralize_diorama_hotspots() -> void:
-	print("OptionsRouter: Neutralizing collisions and cameras in preview.")
+	print("OptionsRouter: Neutralizing collisions and caching preview cameras.")
 	if not is_instance_valid(diorama_viewport):
 		return
 
@@ -213,6 +218,7 @@ func _neutralize_diorama_hotspots() -> void:
 	_assign_visual_layer_recursive(diorama_viewport, 11)
 
 	_all_diorama_cameras.clear()
+	_graphics_camera = null
 	var cams: Array[Node] = diorama_viewport.find_children("*", "Camera3D", true, false)
 	for c_node: Node in cams:
 		var cam: Camera3D = c_node if c_node is Camera3D else null
@@ -221,6 +227,8 @@ func _neutralize_diorama_hotspots() -> void:
 			if cam is ExtendedCamera3D:
 				(cam as ExtendedCamera3D).is_player_camera = false
 			_all_diorama_cameras.append(cam)
+			if cam.name == &"Camera_graphics" or cam.name == &"Camera_Graphics":
+				_graphics_camera = cam
 
 
 ## Returns all options sub-panels as a typed array.
@@ -311,8 +319,8 @@ func _evaluate_diorama_state() -> void:
 	print("OptionsRouter: Diorama state evaluated. Render: ", should_render)
 
 	if should_render:
-		diorama_viewport.process_mode = Node.PROCESS_MODE_INHERIT
-		diorama_viewport.render_target_update_mode = (SubViewport.UPDATE_WHEN_VISIBLE)
+		diorama_viewport.process_mode = Node.PROCESS_MODE_ALWAYS
+		diorama_viewport.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
 		_route_diorama_view(_current_panel)
 	else:
 		diorama_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
@@ -332,7 +340,7 @@ func teardown_diorama() -> void:
 	_set_preview_shader_active(false)
 
 
-## Activates and isolates the preview camera node inside [SubViewport].
+## Activates and isolates the cached preview camera inside [SubViewport].
 func _activate_graphics_camera() -> void:
 	print("OptionsRouter: Activating diorama graphics camera.")
 	if not is_instance_valid(diorama_viewport):
@@ -340,17 +348,10 @@ func _activate_graphics_camera() -> void:
 
 	_deactivate_all_diorama_cameras()
 
-	if not is_instance_valid(_graphics_camera):
-		_graphics_camera = (diorama_viewport.find_child("Camera_graphics", true, false) as Camera3D)
-		if not is_instance_valid(_graphics_camera):
-			_graphics_camera = (
-				diorama_viewport.find_child("Camera_Graphics", true, false) as Camera3D
-			)
-
 	if is_instance_valid(_graphics_camera):
 		_graphics_camera.cull_mask = PREVIEW_LAYER_MASK | VOLUMETRIC_LAYER_MASK
 		_graphics_camera.current = true
-		_graphics_camera.process_mode = Node.PROCESS_MODE_INHERIT
+		_graphics_camera.process_mode = Node.PROCESS_MODE_ALWAYS
 
 
 ## Deactivates ONLY cameras belonging strictly to the diorama subviewport.
@@ -369,7 +370,7 @@ func _set_preview_shader_active(is_active: bool) -> void:
 	if is_instance_valid(_preview_layer):
 		_preview_layer.visible = is_active
 		_preview_layer.process_mode = (
-			Node.PROCESS_MODE_INHERIT if is_active else Node.PROCESS_MODE_DISABLED
+			Node.PROCESS_MODE_ALWAYS if is_active else Node.PROCESS_MODE_DISABLED
 		)
 
 

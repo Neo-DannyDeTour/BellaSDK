@@ -143,6 +143,7 @@ var targets_spawned_so_far: int = 0
 
 ## Initializes pool, sets collision layers, and synchronizes visual state.
 func _ready() -> void:
+	print("TargetVolume: Initializing target spawner volume: ", name)
 	_update_visuals()
 	if Engine.is_editor_hint():
 		return
@@ -157,6 +158,20 @@ func _ready() -> void:
 
 	spawn_timer = spawn_interval_seconds
 	_initialize_pool()
+
+
+## Frees remaining pooled targets on tree exit to prevent stranded nodes.
+func _exit_tree() -> void:
+	print("TargetVolume: Cleaning up pooled targets on exit.")
+	for target: Node3D in inactive_targets:
+		if is_instance_valid(target) and not target.is_queued_for_deletion():
+			target.queue_free()
+	inactive_targets.clear()
+
+	for target: Node3D in active_targets:
+		if is_instance_valid(target) and not target.is_queued_for_deletion():
+			target.queue_free()
+	active_targets.clear()
 
 
 ## Frame lifecycle method monitoring player proximity and managing spawns.
@@ -186,7 +201,7 @@ func _process(delta: float) -> void:
 
 ## Rebuilds collision shapes and visualizer meshes matching volume settings.
 func _update_visuals() -> void:
-	print("_update_visuals() refreshing collision shape and visualizer meshes.")
+	print("TargetVolume: _update_visuals() refreshing collision shape and meshes.")
 	if not is_inside_tree():
 		return
 
@@ -263,12 +278,19 @@ func _initialize_pool() -> void:
 	if target_scene == null:
 		return
 
-	for i: int in range(pool_size):
-		var new_target: Node3D = (
-			target_scene.instantiate() if target_scene.instantiate() is Node3D else null
-		)
-		get_parent().call_deferred(&"add_child", new_target)
+	var parent_node: Node = get_parent()
+	if not is_instance_valid(parent_node):
+		return
 
+	for i: int in range(pool_size):
+		var raw_instance: Node = target_scene.instantiate()
+		var new_target: Node3D = raw_instance as Node3D
+		if not is_instance_valid(new_target):
+			if is_instance_valid(raw_instance):
+				raw_instance.queue_free()
+			continue
+
+		parent_node.call_deferred(&"add_child", new_target)
 		new_target.set_deferred(&"visible", false)
 		new_target.set_deferred(&"process_mode", Node.PROCESS_MODE_DISABLED)
 

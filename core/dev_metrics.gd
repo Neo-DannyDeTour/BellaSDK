@@ -1,14 +1,11 @@
-## An on-screen developer metrics overlay used for diagnosing performance bottlenecks.
-##
-## [DevMetricsPanel] captures hardware specifications, tracks CPU/GPU frame times,
-## inspects memory/buffers, monitors node counts, and pulls player state data into a real-time HUD.
+## On-screen developer metrics overlay for diagnosing performance bottlenecks.
 class_name DevMetricsPanel
 extends PanelContainer
 
-## The number of frames to store for rolling average calculations.
+## Number of frames stored for rolling average calculations.
 const HISTORY_NUM_FRAMES: int = 150
 
-## Throttle interval in seconds (5 Hz) to prevent per-frame BBCode table parsing.
+## Throttle interval in seconds (5 Hz) preventing per-frame BBCode parsing.
 const METRICS_UPDATE_INTERVAL: float = 0.2
 
 @export_category("Dev Metrics")
@@ -267,7 +264,7 @@ func _format_metric_row(title: String, sum_val: float, history: Array[float]) ->
 		max_val = raw_max
 	elif raw_max is int:
 		var int_max: int = raw_max
-		min_val = float(int_max)
+		max_val = float(int_max)
 
 	var last_val: float = 0.0
 	var raw_last: Variant = history.back()

@@ -1,9 +1,9 @@
-## Manages runtime rendering diagnostics, bottleneck identification, and draw call breakdown.
+## Runtime rendering diagnostics, bottleneck tracking, and glitch triage panel.
 class_name RenderDiagnosticsPanel
 extends PanelContainer
 
 @warning_ignore("unused_signal")
-## Emitted when diagnostic metrics refresh. Passes snapshot data [Dictionary].
+## Emitted when diagnostic metrics refresh. Passes snapshot [Dictionary].
 signal metrics_updated(data: Dictionary)
 
 ## Tab mode selection for diagnostic inspection.
@@ -30,6 +30,21 @@ const CSV_FLUSH_INTERVAL: float = 2.0
 ## Hitch trigger threshold in milliseconds for drop detection.
 const HITCH_STUTTER_THRESHOLD_MS: float = 33.333
 
+## Maximum tail byte window read from log file during orphan inspection.
+const LOG_READ_WINDOW_BYTES: int = 16384
+
+## Lookup table mapping [enum SubViewport.UpdateMode] integers to BBCode labels.
+const UPDATE_MODE_LABELS: Dictionary[int, String] = {
+	0: "[color=gray]DISABLED[/color]",
+	1: "[color=yellow]ONCE[/color]",
+	2: "[color=green]WHEN_VISIBLE[/color]",
+	3: "[color=green]PARENT_VISIBLE[/color]",
+	4: "[color=red]ALWAYS[/color]",
+}
+
+## Enables continuous background CSV hitch logging even when panel is hidden.
+@export var enable_background_hitch_logging: bool = false
+
 ## RichTextLabel displaying real-time formatted diagnostics.
 @onready var diagnostics_label: RichTextLabel = %DiagnosticsLabel
 
@@ -42,12 +57,19 @@ const HITCH_STUTTER_THRESHOLD_MS: float = 33.333
 ## Button triggering an explicit one-off scene geometry scan.
 @onready var scan_geometry_button: Button = %ScanGeometryButton
 
-## Dedicated RichTextLabel for static geometry snapshot.
+## Button triggering an explicit orphan node scan and console dump.
+@onready
+var scan_orphans_button: Button = %ScanOrphansButton if has_node("%ScanOrphansButton") else null
+
+## Dedicated RichTextLabel for static geometry or orphan snapshot.
 @onready var survey_label: RichTextLabel = %SurveyLabel if has_node("%SurveyLabel") else null
 
 ## Button toggling live layer isolation.
-@onready
-var live_isolator_button: Button = %LiveIsolatorButton if has_node("%LiveIsolatorButton") else null
+@onready var live_isolator_button: Button = (
+	%LiveIsolatorButton
+	if has_node("%LiveIsolatorButton")
+	else (%LiveIsolatorTabButton if has_node("%LiveIsolatorTabButton") else null)
+)
 
 ## Button dumping current geometry and render profile to disk.
 @onready var dump_audit_button: Button = %DumpAuditButton if has_node("%DumpAuditButton") else null
@@ -67,6 +89,10 @@ var sdfgi_toggle_button: Button = %ToggleSdfgiButton if has_node("%ToggleSdfgiBu
 ## Button toggling a minimal diorama inspection mode.
 @onready
 var diorama_button: Button = %ToggleDioramaButton if has_node("%ToggleDioramaButton") else null
+
+## Button cycling through VRAM buffer flush and suspect isolation stages.
+@onready
+var triage_glitch_button: Button = %TriageGlitchButton if has_node("%TriageGlitchButton") else null
 
 ## Current active diagnostic tab.
 var _current_tab: DiagnosticTab = DiagnosticTab.PERFORMANCE
@@ -104,6 +130,12 @@ var _is_isolating_layers: bool = false
 ## Tracks active diorama mode state for scene isolation.
 var _is_diorama_active: bool = false
 
+## Current step index (0-4) of the diagonal artifact triage state machine.
+var _triage_step: int = 0
+
+## Cached visibility states of water and particle nodes muted during triage.
+var _triage_muted_nodes: Array[Node3D] = []
+
 
 ## Connects UI signals, sets constraints, and initializes measuring.
 func _ready() -> void:
@@ -116,6 +148,8 @@ func _ready() -> void:
 	perf_tab_button.pressed.connect(_on_perf_tab_pressed)
 	scan_geometry_button.pressed.connect(_on_scan_geometry_pressed)
 
+	if is_instance_valid(scan_orphans_button):
+		scan_orphans_button.pressed.connect(_on_scan_orphans_pressed)
 	if is_instance_valid(live_isolator_button):
 		live_isolator_button.pressed.connect(_on_live_isolator_pressed)
 	if is_instance_valid(dump_audit_button):
@@ -129,13 +163,18 @@ func _ready() -> void:
 	if is_instance_valid(fog_toggle_button):
 		fog_toggle_button.pressed.connect(_on_fog_toggled)
 
+	_ensure_triage_button()
+	if is_instance_valid(triage_glitch_button):
+		triage_glitch_button.pressed.connect(_on_triage_glitch_pressed)
+
 	_update_tab_button_visuals()
 
-	if OS.has_feature("debug"):
+	if OS.get_cmdline_args().has("--log-hitches"):
+		enable_background_hitch_logging = true
+
+	if OS.has_feature("debug") and enable_background_hitch_logging:
 		_init_csv_logging()
 
-	var vp_rid: RID = get_viewport().get_viewport_rid()
-	RenderingServer.viewport_set_measure_render_time(vp_rid, true)
 	_last_tick_usec = Time.get_ticks_usec()
 
 	sync_toggle_button_labels()
@@ -151,8 +190,22 @@ func _exit_tree() -> void:
 		_csv_file = null
 
 
+## Creates the Triage Glitch button dynamically if missing from the scene.
+func _ensure_triage_button() -> void:
+	if is_instance_valid(triage_glitch_button):
+		return
+	if is_instance_valid(diorama_button) and diorama_button.get_parent():
+		print("RenderDiagnosticsPanel: Creating fallback TriageGlitchButton.")
+		triage_glitch_button = Button.new()
+		triage_glitch_button.name = "TriageGlitchButton"
+		triage_glitch_button.text = "Triage Glitch"
+		diorama_button.get_parent().add_child(triage_glitch_button)
+
+
 ## Initializes desktop CSV file handle only in debug builds.
 func _init_csv_logging() -> void:
+	if _csv_file != null:
+		return
 	print("RenderDiagnosticsPanel: Creating debug hitch logger.")
 	var desktop_dir: String = OS.get_system_dir(OS.SYSTEM_DIR_DESKTOP)
 	_csv_path = desktop_dir.path_join("godot_hitches.csv")
@@ -209,14 +262,23 @@ func _apply_layout_constraints() -> void:
 
 ## Gates processing active state based on visibility and debug logging.
 func _update_processing_state() -> void:
-	var needs_process: bool = visible or (_csv_file != null and OS.has_feature("debug"))
+	var bg_logging: bool = (
+		enable_background_hitch_logging and _csv_file != null and OS.has_feature("debug")
+	)
+	var needs_process: bool = visible or bg_logging
+	var vp: Viewport = get_viewport()
+	if is_instance_valid(vp):
+		RenderingServer.viewport_set_measure_render_time(vp.get_viewport_rid(), needs_process)
+	if needs_process:
+		_last_tick_usec = Time.get_ticks_usec()
 	set_process(needs_process)
 
 
 ## Accumulates delta time, logs hitches, and flushes CSV buffer.
-## [param delta] Elapsed frame time in seconds.
 func _process(delta: float) -> void:
-	var has_logger: bool = _csv_file != null and OS.has_feature("debug")
+	var has_logger: bool = (
+		enable_background_hitch_logging and _csv_file != null and OS.has_feature("debug")
+	)
 
 	if has_logger:
 		var now_usec: int = Time.get_ticks_usec()
@@ -254,7 +316,6 @@ func toggle_window() -> bool:
 
 
 ## Records hitch telemetry in memory and queues CSV buffer line.
-## [param frame_time_ms] Total elapsed frame duration in milliseconds.
 func _record_hitch_event(frame_time_ms: float) -> void:
 	var vp_rid: RID = get_viewport().get_viewport_rid()
 	var gpu_ms: float = RenderingServer.viewport_get_measured_render_time_gpu(vp_rid)
@@ -311,9 +372,8 @@ func _refresh_diagnostics_display() -> void:
 
 
 ## Audits geometry branches and active shadow lights for a root node.
-## [param root_node] Target root [Node] branch to inspect.
 func _audit_branch_geometry(root_node: Node) -> PackedStringArray:
-	print("RenderDiagnosticsPanel: Auditing branch geometry for ", root_node.name)
+	print("RenderDiagnosticsPanel: Auditing branch for ", root_node.name)
 	var lines: PackedStringArray = PackedStringArray()
 	var total_meshes: int = 0
 	var total_multimeshes: int = 0
@@ -400,9 +460,98 @@ func scan_scene_geometry() -> void:
 	_last_tick_usec = Time.get_ticks_usec()
 
 
+## Dumps orphan nodes via [method Node.print_orphan_nodes] and parses log.
+func scan_orphan_nodes() -> void:
+	print("RenderDiagnosticsPanel: Scanning for orphan nodes.")
+	_is_performing_manual_scan = true
+
+	var orphan_count: int = int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT))
+	var total_nodes: int = int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
+
+	var output_lines: PackedStringArray = PackedStringArray()
+	output_lines.append("[b][color=yellow]=== ORPHAN NODE AUDIT ===[/color][/b]")
+
+	var count_color: String = "green" if orphan_count == 0 else "red"
+	output_lines.append(
+		(
+			"Total Nodes: %d | Active Orphans: [b][color=%s]%d[/color][/b]"
+			% [total_nodes, count_color, orphan_count]
+		)
+	)
+
+	if orphan_count == 0:
+		output_lines.append("[color=green]No orphan nodes detected. Memory is clean![/color]")
+	else:
+		var log_path: String = "user://logs/godot.log"
+		var pre_len: int = 0
+		if FileAccess.file_exists(log_path):
+			var pre_file: FileAccess = FileAccess.open(log_path, FileAccess.READ)
+			if pre_file:
+				pre_len = pre_file.get_length()
+				pre_file.close()
+
+		print("=== BEGIN ORPHAN NODE DUMP ===")
+		Node.print_orphan_nodes()
+		print("=== END ORPHAN NODE DUMP ===")
+
+		var extracted_list: String = _extract_orphan_dump_from_log(log_path, pre_len)
+		if not extracted_list.is_empty():
+			output_lines.append("\n[b][color=orange]Orphan Node List (from godot.log):[/color][/b]")
+			output_lines.append(extracted_list)
+		else:
+			output_lines.append(
+				"\n[color=cyan]-> Sent Node.print_orphan_nodes() to Console![/color]"
+			)
+			output_lines.append(
+				(
+					"[color=gray](Enable 'debug/file_logging/enable_file_logging' "
+					+ "to display the live node list inside this panel.)[/color]"
+				)
+			)
+
+	_cached_branch_survey = "\n".join(output_lines) + "\n"
+	_apply_survey_to_ui()
+
+	_is_performing_manual_scan = false
+	_last_tick_usec = Time.get_ticks_usec()
+
+
+## Extracts the latest orphan node dump block from the engine log file.
+func _extract_orphan_dump_from_log(log_path: String, start_offset: int) -> String:
+	if not FileAccess.file_exists(log_path):
+		return ""
+
+	var file: FileAccess = FileAccess.open(log_path, FileAccess.READ)
+	if not file:
+		return ""
+
+	var file_len: int = file.get_length()
+	var seek_pos: int = maxi(0, start_offset - 256)
+	if file_len - seek_pos > LOG_READ_WINDOW_BYTES:
+		seek_pos = maxi(0, file_len - LOG_READ_WINDOW_BYTES)
+
+	file.seek(seek_pos)
+	var raw_chunk: String = file.get_as_text()
+	file.close()
+
+	var begin_marker: String = "=== BEGIN ORPHAN NODE DUMP ==="
+	var end_marker: String = "=== END ORPHAN NODE DUMP ==="
+	var start_idx: int = raw_chunk.rfind(begin_marker)
+	var end_idx: int = raw_chunk.rfind(end_marker)
+
+	if start_idx != -1 and end_idx != -1 and end_idx > start_idx:
+		var body_start: int = start_idx + begin_marker.length()
+		var content: String = raw_chunk.substr(body_start, end_idx - body_start).strip_edges()
+		if not content.is_empty():
+			return "[code]" + content + "[/code]"
+
+	return ""
+
+
 ## Updates the survey label with cached scene hierarchy text.
 func _apply_survey_to_ui() -> void:
 	if is_instance_valid(survey_label):
+		survey_label.bbcode_enabled = true
 		survey_label.text = _cached_branch_survey
 
 
@@ -431,6 +580,8 @@ func _build_performance_report() -> String:
 
 	var phys_pairs: int = int(Performance.get_monitor(Performance.PHYSICS_3D_COLLISION_PAIRS))
 	var phys_islands: int = int(Performance.get_monitor(Performance.PHYSICS_3D_ISLAND_COUNT))
+	var total_nodes: int = int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
+	var orphan_nodes: int = int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT))
 
 	var is_gpu: bool = gpu_ms > total_cpu_ms
 	var max_time: float = gpu_ms if is_gpu else total_cpu_ms
@@ -458,6 +609,10 @@ Status: [%s] (%.2f ms | %.1f%% budget)
 === 3D PHYSICS BROADPHASE ===
 * Active Pairs        : %d
 * Physics Islands     : %d
+
+=== SCENE TREE HEALTH ===
+* Active Nodes        : %d
+* Orphan Nodes        : %d (Press [Scan Orphans] to dump)
 """
 		% [
 			"GPU BOUND" if is_gpu else "CPU BOUND",
@@ -474,12 +629,13 @@ Status: [%s] (%.2f ms | %.1f%% budget)
 			pipe_canvas,
 			phys_pairs,
 			phys_islands,
+			total_nodes,
+			orphan_nodes,
 		]
 	)
 
 
 ## Extracts active post-processing features on an [Environment] resource.
-## [param env] Source [Environment] resource to inspect.
 func _get_active_environment_effects(env: Environment) -> PackedStringArray:
 	var active_effects: PackedStringArray = PackedStringArray()
 	if not env:
@@ -506,7 +662,6 @@ func _get_active_environment_effects(env: Environment) -> PackedStringArray:
 
 
 ## Resolves active post-processing environment resource for a viewport.
-## [param vp] Viewport node to inspect for [Environment] sources.
 func _detect_viewport_environment_effects(vp: Viewport) -> PackedStringArray:
 	if vp is SubViewport:
 		var sub_vp: SubViewport = vp
@@ -530,7 +685,6 @@ func _detect_viewport_environment_effects(vp: Viewport) -> PackedStringArray:
 
 
 ## Formats detected environment effects with warning colors for BBCode.
-## [param effects] List of detected effect name tokens.
 func _format_effects_bbcode(effects: PackedStringArray) -> String:
 	if effects.is_empty():
 		return "[color=gray]None (Clean)[/color]"
@@ -541,7 +695,7 @@ func _format_effects_bbcode(effects: PackedStringArray) -> String:
 	return ", ".join(colored_tokens)
 
 
-## Generates hierarchical breakdown of active SubViewports.
+## Generates hierarchical breakdown of active [SubViewport] nodes.
 func _build_pipeline_report() -> String:
 	var text: String = "[b][color=yellow]=== VIEWPORT & RENDER PIPELINE ===[/color][/b]\n"
 	var root_vp: Window = get_tree().root
@@ -560,26 +714,20 @@ func _build_pipeline_report() -> String:
 		text += "[color=gray]  No active SubViewports found in tree.[/color]\n"
 	else:
 		for vp: SubViewport in sub_viewports:
-			var mode_str: String = "ALWAYS"
-			match vp.render_target_update_mode:
-				SubViewport.UPDATE_DISABLED:
-					mode_str = "[color=gray]DISABLED[/color]"
-				SubViewport.UPDATE_ONCE:
-					mode_str = "[color=yellow]ONCE[/color]"
-				SubViewport.UPDATE_WHEN_VISIBLE:
-					mode_str = "[color=green]WHEN_VISIBLE[/color]"
-				SubViewport.UPDATE_WHEN_PARENT_VISIBLE:
-					mode_str = "[color=green]PARENT_VISIBLE[/color]"
-				SubViewport.UPDATE_ALWAYS:
-					mode_str = "[color=red]ALWAYS[/color]"
+			var mode_idx: int = int(vp.render_target_update_mode)
+			var mode_str: String = UPDATE_MODE_LABELS.get(mode_idx, "[color=red]ALWAYS[/color]")
 
 			var vp_rid: RID = vp.get_viewport_rid()
 			var sub_gpu_ms: float = RenderingServer.viewport_get_measured_render_time_gpu(vp_rid)
 			var vp_effects: PackedStringArray = _detect_viewport_environment_effects(vp)
 			var vp_effects_str: String = _format_effects_bbcode(vp_effects)
 
+			var fmt: String = (
+				"* %s (%dx%d) -> Mode: %s | GPU: %.2f ms\n"
+				+ "  ├─ Path: [color=cyan]%s[/color]\n  └─ Effects: %s\n"
+			)
 			text += (
-				"* %s (%dx%d) -> Mode: %s | GPU: %.2f ms\n  ├─ Path: [color=cyan]%s[/color]\n  └─ Effects: %s\n"
+				fmt
 				% [
 					str(vp.name),
 					vp.size.x,
@@ -594,9 +742,7 @@ func _build_pipeline_report() -> String:
 	return text
 
 
-## Recursively collects all SubViewport instances inside a parent node.
-## [param current_node] Root [Node] branch to scan recursively.
-## [param out_viewports] Accumulator array for discovered [SubViewport] instances.
+## Recursively collects all [SubViewport] instances inside a parent node.
 func _collect_subviewports(current_node: Node, out_viewports: Array[SubViewport]) -> void:
 	if current_node is SubViewport:
 		out_viewports.append(current_node)
@@ -609,6 +755,12 @@ func _collect_subviewports(current_node: Node, out_viewports: Array[SubViewport]
 func _on_scan_geometry_pressed() -> void:
 	print("RenderDiagnosticsPanel: Triggering scene hierarchy scan.")
 	scan_scene_geometry()
+
+
+## Triggers orphan node scan when user clicks the scan orphans button.
+func _on_scan_orphans_pressed() -> void:
+	print("RenderDiagnosticsPanel: Triggering orphan node scan.")
+	scan_orphan_nodes()
 
 
 ## Toggles rendering cull mask to isolate base rendering layer.
@@ -624,7 +776,7 @@ func _on_live_isolator_pressed() -> void:
 			cam.cull_mask = 0xFFFFF
 
 
-## Dumps scene tree and performance metrics to debugger console.
+## Dumps scene tree, orphan nodes, and performance metrics to debugger console.
 func _on_dump_audit_pressed() -> void:
 	print("RenderDiagnosticsPanel: Dump audit triggered.")
 	scan_scene_geometry()
@@ -632,6 +784,7 @@ func _on_dump_audit_pressed() -> void:
 	print(report)
 	if is_instance_valid(survey_label):
 		print(_cached_branch_survey)
+	Node.print_orphan_nodes()
 
 
 ## Toggles diorama mode hiding background nodes outside player and world.
@@ -648,6 +801,185 @@ func _on_diorama_pressed() -> void:
 			node_3d.visible = not _is_diorama_active
 
 
+## Cycles through the 5-step glitch triage and buffer flush state machine.
+func _on_triage_glitch_pressed() -> void:
+	_triage_step = (_triage_step + 1) % 5
+	print("RenderDiagnosticsPanel: Triage Glitch step -> ", _triage_step)
+
+	var lines: PackedStringArray = PackedStringArray()
+	lines.append("[b][color=yellow]=== DIAGONAL GLITCH TRIAGE ===[/color][/b]")
+
+	match _triage_step:
+		1:
+			if is_instance_valid(triage_glitch_button):
+				triage_glitch_button.text = "Triage: 1.Flushed"
+			_flush_render_and_cloud_buffers(lines)
+		2:
+			if is_instance_valid(triage_glitch_button):
+				triage_glitch_button.text = "Triage: 2.NoClouds"
+			_set_clouds_compositor_state(false, lines)
+		3:
+			if is_instance_valid(triage_glitch_button):
+				triage_glitch_button.text = "Triage: 3.NoOcean"
+			_set_clouds_compositor_state(true, lines)
+			_set_water_and_particles_state(false, lines)
+		4:
+			if is_instance_valid(triage_glitch_button):
+				triage_glitch_button.text = "Triage: 4.NoOverlay"
+			_set_water_and_particles_state(true, lines)
+			_set_screen_effects_state(false, lines)
+		_:
+			if is_instance_valid(triage_glitch_button):
+				triage_glitch_button.text = "Triage Glitch"
+			_set_clouds_compositor_state(true, lines)
+			_set_water_and_particles_state(true, lines)
+			_set_screen_effects_state(true, lines)
+			lines.append("[color=green]Step 0: All visual subsystems restored.[/color]")
+
+	_cached_branch_survey = "\n".join(lines) + "\n"
+	_apply_survey_to_ui()
+
+
+## Forces reallocation of viewport history buffers and cloud compute textures.
+func _flush_render_and_cloud_buffers(lines: PackedStringArray) -> void:
+	print("RenderDiagnosticsPanel: Flushing VRAM history and cloud buffers.")
+	lines.append("[color=cyan]Step 1: Flushing VRAM History & Cloud Buffers[/color]")
+
+	var clouds_fx: CompositorEffect = _find_clouds_compositor_effect()
+	if is_instance_valid(clouds_fx):
+		clouds_fx.set(&"ignore_accumilation", true)
+		if clouds_fx.has_method(&"refresh_compute"):
+			clouds_fx.call(&"refresh_compute")
+		lines.append("  |- SunshineCloudsGD: Reallocated compute storage RIDs.")
+	else:
+		lines.append("  |- SunshineCloudsGD: No active compositor found.")
+
+	var vp: Viewport = get_viewport()
+	var orig_taa: bool = vp.use_taa
+	var orig_scale: float = vp.scaling_3d_scale
+	vp.use_taa = false
+	vp.scaling_3d_scale = clampf(orig_scale - 0.01, 0.5, 1.0)
+	lines.append("  |- Viewport Buffers: Triggered 1-frame scale jitter & TAA reset.")
+	lines.append(
+		"  [i]If the diagonal lines vanished, history buffer NaN poisoning " + "was the cause![/i]"
+	)
+
+	await get_tree().process_frame
+	if is_instance_valid(vp):
+		vp.scaling_3d_scale = orig_scale
+		vp.use_taa = orig_taa
+
+
+## Enables or disables the SunshineCloudsGD [CompositorEffect] at runtime.
+func _set_clouds_compositor_state(is_active: bool, lines: PackedStringArray) -> void:
+	print("RenderDiagnosticsPanel: Setting clouds compositor -> ", is_active)
+	var clouds_fx: CompositorEffect = _find_clouds_compositor_effect()
+	if is_instance_valid(clouds_fx):
+		clouds_fx.enabled = is_active
+		if is_active and clouds_fx.has_method(&"refresh_compute"):
+			clouds_fx.call(&"refresh_compute")
+		var status: String = "ENABLED" if is_active else "DISABLED"
+		lines.append("  |- SunshineCloudsGD Compositor: [b]%s[/b]" % status)
+	else:
+		lines.append("  |- SunshineCloudsGD Compositor: Not present in scene.")
+
+
+## Hides or restores ocean meshes, water bodies, and GPU splash particles.
+func _set_water_and_particles_state(is_active: bool, lines: PackedStringArray) -> void:
+	print("RenderDiagnosticsPanel: Setting water/particles -> ", is_active)
+	if is_active:
+		var restored_count: int = 0
+		for node: Node3D in _triage_muted_nodes:
+			if is_instance_valid(node):
+				node.visible = true
+				restored_count += 1
+		_triage_muted_nodes.clear()
+		lines.append("  |- Ocean / Water / Particles: Restored %d nodes." % restored_count)
+		return
+
+	_triage_muted_nodes.clear()
+	var current_scene: Node = get_tree().current_scene
+	if not is_instance_valid(current_scene):
+		return
+
+	var stack: Array[Node] = [current_scene]
+	while not stack.is_empty():
+		var curr: Node = stack.pop_back()
+		if curr is Node3D:
+			var n3d: Node3D = curr
+			var n_low: String = str(n3d.name).to_lower()
+			var is_suspect: bool = "ocean" in n_low or "water" in n_low or n3d is GPUParticles3D
+			if is_suspect and n3d.visible:
+				n3d.visible = false
+				_triage_muted_nodes.append(n3d)
+		for child: Node in curr.get_children():
+			stack.append(child)
+
+	lines.append(
+		(
+			"  |- Ocean / Water / GPUParticles3D: Muted [b]%d[/b] visible nodes."
+			% _triage_muted_nodes.size()
+		)
+	)
+
+
+## Toggles visibility on the [ScreenEffectsManager] fullscreen overlay node.
+func _set_screen_effects_state(is_active: bool, lines: PackedStringArray) -> void:
+	print("RenderDiagnosticsPanel: Setting ScreenEffectsManager -> ", is_active)
+	var root_vp: Window = get_tree().root
+	var fx_mgr: Control = null
+	var group_fx: Node = get_tree().get_first_node_in_group(&"screen_effects_manager")
+	if group_fx is Control:
+		fx_mgr = group_fx as Control
+	else:
+		var direct_fx: Node = root_vp.get_node_or_null("ScreenEffectsManager")
+		if direct_fx is Control:
+			fx_mgr = direct_fx as Control
+
+	if is_instance_valid(fx_mgr):
+		fx_mgr.visible = is_active
+		var status: String = "VISIBLE" if is_active else "MUTED"
+		lines.append("  |- ScreenEffectsManager Overlays: [b]%s[/b]" % status)
+	else:
+		lines.append("  |- ScreenEffectsManager: Node not found.")
+
+
+## Locates the active SunshineCloudsGD [CompositorEffect] in the scene.
+func _find_clouds_compositor_effect() -> CompositorEffect:
+	var vp: Viewport = get_viewport()
+	var cam: Camera3D = vp.get_camera_3d()
+	if is_instance_valid(cam) and is_instance_valid(cam.compositor):
+		for fx: CompositorEffect in cam.compositor.compositor_effects:
+			if is_instance_valid(fx):
+				return fx
+
+	var current_scene: Node = get_tree().current_scene
+	if is_instance_valid(current_scene):
+		var world_env: WorldEnvironment = _resolve_world_environment(current_scene)
+		if is_instance_valid(world_env) and is_instance_valid(world_env.compositor):
+			for fx: CompositorEffect in world_env.compositor.compositor_effects:
+				if is_instance_valid(fx):
+					return fx
+
+	return null
+
+
+## Resolves [WorldEnvironment] from scene root without recursive searches.
+func _resolve_world_environment(scene_root: Node) -> WorldEnvironment:
+	if scene_root is WorldEnvironment:
+		return scene_root as WorldEnvironment
+
+	var direct_env: Node = scene_root.get_node_or_null("WorldEnvironment")
+	if direct_env is WorldEnvironment:
+		return direct_env as WorldEnvironment
+
+	for child: Node in scene_root.get_children():
+		if child is WorldEnvironment:
+			return child as WorldEnvironment
+
+	return null
+
+
 ## Finds the active [Environment] on camera, world, or WorldEnvironment node.
 func _get_active_environment() -> Environment:
 	var vp: Viewport = get_viewport()
@@ -661,9 +993,7 @@ func _get_active_environment() -> Environment:
 
 	var current_scene: Node = get_tree().current_scene
 	if is_instance_valid(current_scene):
-		var world_env: WorldEnvironment = (
-			current_scene.find_child("WorldEnvironment", true, false) as WorldEnvironment
-		)
+		var world_env: WorldEnvironment = _resolve_world_environment(current_scene)
 		if is_instance_valid(world_env) and world_env.environment:
 			return world_env.environment
 
@@ -671,7 +1001,6 @@ func _get_active_environment() -> Environment:
 
 
 ## Checks if any child [Light3D] node currently casts shadows.
-## [param root_node] Root [Node] branch to inspect.
 func _are_any_shadows_enabled(root_node: Node) -> bool:
 	var stack: Array[Node] = [root_node]
 	while not stack.is_empty():

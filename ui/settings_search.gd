@@ -1,8 +1,8 @@
-## Search coordinator scanning panels, generating mirrors, and routing navigation callbacks.
+## Search coordinator scanning panels, generating mirrors, and routing callbacks.
 class_name SettingsSearch
 extends HBoxContainer
 
-## Emitted when selecting a search entry. Passes tab index and target [Control] node.
+## Emitted when selecting a search entry. Passes tab index and [Control].
 signal setting_navigated(tab_index: int, target: Control)
 
 ## Maximum column step inspected when pairing labels to interactive inputs.
@@ -37,6 +37,12 @@ var _search_index: Array[Dictionary] = []
 func _ready() -> void:
 	print("UI: SettingsSearch component initialized.")
 	_configure_search_nodes()
+
+
+## Cleans up active search rows when this component exits the scene tree.
+func _exit_tree() -> void:
+	print("UI: SettingsSearch exiting tree. Clearing result rows.")
+	_clear_result_rows()
 
 
 ## Evaluates clicks outside dropdown boundaries to collapse popup window.
@@ -111,7 +117,7 @@ func build_index(option_panels: Array[Control], tab_buttons: Array[Button]) -> v
 	print("UI: SettingsSearch -> Indexed ", _search_index.size(), " entries.")
 
 
-## Recursively scans container nodes to extract interactive controls and paired labels.
+## Recursively scans containers to pair interactive controls with labels.
 func _scan_node_recursively(root_node: Node, tab_idx: int, tab_name: String) -> void:
 	if not is_instance_valid(root_node):
 		return
@@ -144,7 +150,7 @@ func _inspect_row_siblings(parent: Node, label_node: Label, tab_idx: int, tab_na
 	var max_step: int = MAX_SEARCH_INSPECT_STEP
 	if parent is GridContainer:
 		var grid: GridContainer = parent if parent is GridContainer else null
-		max_step = max(grid.columns, 4)
+		max_step = maxi(grid.columns, 4)
 
 	var found_slider: HSlider = null
 	var found_readout_lbl: Label = null
@@ -251,7 +257,7 @@ func _register_inspected_row(
 				"action": action_str,
 				"primary_btn": p_btn,
 				"secondary_btn": s_btn,
-				"clear_btn": c_btn
+				"clear_btn": c_btn,
 			}
 		)
 	elif slider != null:
@@ -268,7 +274,7 @@ func _register_inspected_row(
 				"target": target_node,
 				"slider": slider,
 				"readout_lbl": readout,
-				"line_edit": line_edit
+				"line_edit": line_edit,
 			}
 		)
 	elif line_edit != null:
@@ -279,7 +285,7 @@ func _register_inspected_row(
 				"tab_name": tab_name,
 				"type": "line_edit",
 				"target": line_edit,
-				"line_edit": line_edit
+				"line_edit": line_edit,
 			}
 		)
 	elif generic != null:
@@ -289,7 +295,7 @@ func _register_inspected_row(
 				"tab_index": tab_idx,
 				"tab_name": tab_name,
 				"type": "generic",
-				"target": generic
+				"target": generic,
 			}
 		)
 
@@ -324,16 +330,15 @@ func _on_search_text_changed(query: String) -> void:
 	var clean_query: String = query.strip_edges().to_lower()
 	print("UI: Processing search query -> '", clean_query, "'")
 
+	_clear_result_rows()
+
 	if clean_query.is_empty():
-		_clear_result_rows()
 		if is_instance_valid(search_results_panel):
 			search_results_panel.visible = false
 		return
 
 	if not is_instance_valid(search_results_list):
 		return
-
-	_clear_result_rows()
 
 	var matched_count: int = 0
 	for item: Dictionary in _search_index:
@@ -453,17 +458,18 @@ func _build_mirrored_slider_row(row: HBoxContainer, item: Dictionary) -> void:
 		cloned_le.text_submitted.connect(
 			func(submitted: String) -> void:
 				print("UI: Mirrored LineEdit submitted -> ", submitted)
-				if orig_le.text != submitted:
+				if is_instance_valid(orig_le) and orig_le.text != submitted:
 					orig_le.text = submitted
-					orig_le.text_submitted.emit(submitted)
 				if submitted.is_valid_float() and is_instance_valid(orig_sl):
 					var val: float = submitted.to_float()
 					if not is_equal_approx(orig_sl.value, val):
 						orig_sl.value = val
+				elif is_instance_valid(orig_le):
+					_notify_line_edit_submitted(orig_le, submitted)
 		)
 		cloned_le.text_changed.connect(
 			func(changed: String) -> void:
-				if orig_le.text != changed:
+				if is_instance_valid(orig_le) and orig_le.text != changed:
 					orig_le.text = changed
 		)
 		orig_le.text_changed.connect(sync_le)
@@ -499,12 +505,12 @@ func _build_mirrored_slider_row(row: HBoxContainer, item: Dictionary) -> void:
 				)
 			if is_instance_valid(cloned_le):
 				var has_orig_le: bool = is_instance_valid(orig_le)
-				cloned_le.text = orig_le.text if has_orig_le else ("%.2f" % val)
+				cloned_le.text = (orig_le.text if has_orig_le else ("%.2f" % val))
 
 		cloned_sl.value_changed.connect(
 			func(val: float) -> void:
 				print("UI: Mirrored HSlider changed -> ", val)
-				if not is_equal_approx(orig_sl.value, val):
+				if is_instance_valid(orig_sl) and not is_equal_approx(orig_sl.value, val):
 					orig_sl.value = val
 
 				if is_instance_valid(readout_lbl):
@@ -513,7 +519,7 @@ func _build_mirrored_slider_row(row: HBoxContainer, item: Dictionary) -> void:
 					)
 				if is_instance_valid(cloned_le):
 					var has_orig_le: bool = is_instance_valid(orig_le)
-					cloned_le.text = orig_le.text if has_orig_le else ("%.2f" % val)
+					cloned_le.text = (orig_le.text if has_orig_le else ("%.2f" % val))
 		)
 		orig_sl.value_changed.connect(sync_sl)
 		cloned_sl.tree_exited.connect(
@@ -545,13 +551,13 @@ func _build_mirrored_line_edit_row(row: HBoxContainer, item: Dictionary) -> void
 	cloned_le.text_submitted.connect(
 		func(submitted: String) -> void:
 			print("UI: Mirrored Standalone LineEdit submitted -> ", submitted)
-			if orig_le.text != submitted:
+			if is_instance_valid(orig_le) and orig_le.text != submitted:
 				orig_le.text = submitted
-				orig_le.text_submitted.emit(submitted)
+				_notify_line_edit_submitted(orig_le, submitted)
 	)
 	cloned_le.text_changed.connect(
 		func(changed: String) -> void:
-			if orig_le.text != changed:
+			if is_instance_valid(orig_le) and orig_le.text != changed:
 				orig_le.text = changed
 	)
 	orig_le.text_changed.connect(sync_le)
@@ -564,6 +570,24 @@ func _build_mirrored_line_edit_row(row: HBoxContainer, item: Dictionary) -> void
 	row.add_child(cloned_le)
 
 
+## Relays [signal LineEdit.text_submitted] callbacks without emitting signals.
+func _notify_line_edit_submitted(target_le: LineEdit, submitted: String) -> void:
+	print("UI: Relaying text_submitted callbacks for ", target_le.name)
+	for connection: Dictionary in target_le.text_submitted.get_connections():
+		var callable: Callable = connection.get("callable", Callable())
+		if callable.is_valid():
+			callable.call(submitted)
+
+
+## Relays [signal OptionButton.item_selected] callbacks without emitting signals.
+func _notify_option_selected(target_ob: OptionButton, idx: int) -> void:
+	print("UI: Relaying item_selected callbacks for ", target_ob.name)
+	for connection: Dictionary in target_ob.item_selected.get_connections():
+		var callable: Callable = connection.get("callable", Callable())
+		if callable.is_valid():
+			callable.call(idx)
+
+
 ## Generates mirrored action trigger and clear buttons for keybinding rows.
 func _build_mirrored_action_row(row: HBoxContainer, item: Dictionary, tab_idx: int) -> void:
 	var orig_p: Button = item["primary_btn"] if item["primary_btn"] is Button else null
@@ -572,7 +596,7 @@ func _build_mirrored_action_row(row: HBoxContainer, item: Dictionary, tab_idx: i
 
 	if is_instance_valid(orig_p):
 		var cloned_p: Button = Button.new()
-		cloned_p.text = orig_p.text if not orig_p.text.is_empty() else "Primary"
+		cloned_p.text = (orig_p.text if not orig_p.text.is_empty() else "Primary")
 		cloned_p.custom_minimum_size.x = 90.0
 		cloned_p.pressed.connect(
 			func() -> void:
@@ -583,7 +607,7 @@ func _build_mirrored_action_row(row: HBoxContainer, item: Dictionary, tab_idx: i
 
 	if is_instance_valid(orig_s):
 		var cloned_s: Button = Button.new()
-		cloned_s.text = orig_s.text if not orig_s.text.is_empty() else "Secondary"
+		cloned_s.text = (orig_s.text if not orig_s.text.is_empty() else "Secondary")
 		cloned_s.custom_minimum_size.x = 90.0
 		cloned_s.pressed.connect(
 			func() -> void:
@@ -622,14 +646,14 @@ func _build_mirrored_generic_row(row: HBoxContainer, target: Control) -> void:
 
 		var sync_ob: Callable = func(idx: int) -> void:
 			if is_instance_valid(cloned_ob) and cloned_ob.selected != idx:
-				cloned_ob.selected = idx
+				cloned_ob.select(idx)
 
 		cloned_ob.item_selected.connect(
 			func(idx: int) -> void:
 				print("UI: Mirrored OptionButton changed -> ", idx)
-				if orig_ob.selected != idx:
-					orig_ob.selected = idx
-					orig_ob.item_selected.emit(idx)
+				if is_instance_valid(orig_ob) and orig_ob.selected != idx:
+					orig_ob.select(idx)
+					_notify_option_selected(orig_ob, idx)
 		)
 		orig_ob.item_selected.connect(sync_ob)
 		cloned_ob.tree_exited.connect(
@@ -651,7 +675,7 @@ func _build_mirrored_generic_row(row: HBoxContainer, target: Control) -> void:
 		cloned_cb.toggled.connect(
 			func(pressed: bool) -> void:
 				print("UI: Mirrored CheckButton toggled -> ", pressed)
-				if orig_cb.button_pressed != pressed:
+				if is_instance_valid(orig_cb) and orig_cb.button_pressed != pressed:
 					orig_cb.button_pressed = pressed
 		)
 		orig_cb.toggled.connect(sync_cb)
@@ -674,7 +698,7 @@ func _build_mirrored_generic_row(row: HBoxContainer, target: Control) -> void:
 		cloned_chk.toggled.connect(
 			func(pressed: bool) -> void:
 				print("UI: Mirrored CheckBox toggled -> ", pressed)
-				if orig_chk.button_pressed != pressed:
+				if is_instance_valid(orig_chk) and orig_chk.button_pressed != pressed:
 					orig_chk.button_pressed = pressed
 		)
 		orig_chk.toggled.connect(sync_chk)
@@ -687,10 +711,11 @@ func _build_mirrored_generic_row(row: HBoxContainer, target: Control) -> void:
 		row.add_child(cloned_chk)
 
 
-## Clears current search results rows immediately to avoid signal ghosts.
+## Detaches and frees current search result rows to prevent leaks and ghosts.
 func _clear_result_rows() -> void:
 	print("UI: Cleaning up search result rows.")
 	if not is_instance_valid(search_results_list):
 		return
 	for child: Node in search_results_list.get_children():
+		search_results_list.remove_child(child)
 		child.queue_free()

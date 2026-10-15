@@ -1,5 +1,4 @@
 ## Root coordinator managing high-level UI visibility, inputs, and routing.
-## Expected at scene root to coordinate HUD components and debug overlays.
 class_name UIController
 extends CanvasLayer
 

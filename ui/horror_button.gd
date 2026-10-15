@@ -198,7 +198,6 @@ var is_chapter_card: bool = false
 
 
 ## Handles engine notifications for layout resizing and theme updates.
-## [param what] Notification identifier received from engine.
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_THEME_CHANGED:
 		update_minimum_size()
@@ -261,6 +260,7 @@ func _update_button_image() -> void:
 
 ## Initializes node components, materials, styling, and signal hooks.
 func _ready() -> void:
+	set_process(false)
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_find_internal_nodes()
 	_configure_child_anchors()
@@ -292,12 +292,14 @@ func _ready() -> void:
 		func() -> void:
 			print("HorrorButton: [", name, "] pressed.")
 			is_clicking = true
+			set_process(true)
 	)
 	Utilities.safe_connect(
 		button_up,
 		func() -> void:
 			print("HorrorButton: [", name, "] released.")
 			is_clicking = false
+			set_process(true)
 	)
 
 	glitch_timer = randf_range(min_glitch_time, max_glitch_time)
@@ -434,6 +436,7 @@ func _on_mouse_entered() -> void:
 	print("HorrorButton: [", name, "] mouse hover entered.")
 	is_mouse_over = true
 	z_index = 2
+	set_process(true)
 	if is_instance_valid(play_overlay):
 		play_overlay.visible = true
 
@@ -469,9 +472,7 @@ func _on_mouse_exited() -> void:
 		pace_timers[i] = 0.0
 
 
-## Drives damped spring physics toward target scale via [MathUtils.damped_spring].
-## [param delta] Frame time delta in seconds.
-## [param target_scale] Desired scale [Vector2].
+## Drives damped spring physics toward target scale via [method MathUtils.damped_spring].
 func _update_spring_scale(delta: float, target_scale: Vector2) -> void:
 	var sx: Dictionary = MathUtils.damped_spring(
 		offset_transform_scale.x,
@@ -511,24 +512,24 @@ func _update_shadow_projection() -> void:
 	shadow_rect.scale = Vector2(shadow_scale, shadow_scale)
 
 
-## Processes 3D parallax tilting, spring scales, and glitch timers.
-## [param delta] Frame time delta in seconds.
+## Processes 3D parallax tilting, spring scales, and hover settle checks.
 func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
+		set_process(false)
 		return
 
 	if size.x <= 0.1 or size.y <= 0.1:
 		return
-
-	var mouse_pos: Vector2 = get_local_mouse_position()
-	var center_x: float = size.x * 0.5
-	var center_y: float = size.y * 0.5
 
 	var target_rotation: float = 0.0
 	var tilt_target: Vector2 = Vector2.ZERO
 	var target_scale: Vector2 = original_scale
 
 	if is_mouse_over:
+		var mouse_pos: Vector2 = get_local_mouse_position()
+		var center_x: float = size.x * 0.5
+		var center_y: float = size.y * 0.5
+
 		current_hover_intensity = move_toward(current_hover_intensity, 1.0, 3.5 * delta)
 		var norm_x: float = clampf((mouse_pos.x - center_x) / center_x, -1.0, 1.0)
 		var norm_y: float = clampf((mouse_pos.y - center_y) / center_y, -1.0, 1.0)
@@ -551,8 +552,26 @@ func _process(delta: float) -> void:
 	)
 	current_tilt = current_tilt.lerp(tilt_target, response_speed * delta)
 	_update_shadow_projection()
-
 	_process_text_heartbeat()
+
+	var is_settled: bool = (
+		not is_mouse_over
+		and not is_clicking
+		and current_hover_intensity <= 0.001
+		and offset_transform_scale.distance_squared_to(original_scale) <= 0.00001
+		and scale_velocity.length_squared() <= 0.0001
+		and absf(offset_transform_rotation) <= 0.001
+		and current_tilt.length_squared() <= 0.0001
+	)
+
+	if is_settled:
+		current_hover_intensity = 0.0
+		offset_transform_scale = original_scale
+		scale_velocity = Vector2.ZERO
+		offset_transform_rotation = 0.0
+		current_tilt = Vector2.ZERO
+		_update_shadow_projection()
+		_process_text_heartbeat()
 
 	if is_instance_valid(bg_material):
 		bg_material.set_shader_parameter("hover_intensity", current_hover_intensity)
@@ -572,9 +591,11 @@ func _process(delta: float) -> void:
 		label_material.set_shader_parameter("hover_intensity", current_hover_intensity)
 		label_material.set_shader_parameter("ui_tilt", current_tilt * current_hover_intensity)
 
+	if is_settled:
+		set_process(false)
+
 
 ## Configures button as a chapter card using [ChapterData] properties.
-## [param chapter] Resource data container for chapter visual assets.
 func setup_chapter_card(chapter: ChapterData) -> void:
 	print("HorrorButton: [", name, "] setup chapter card executed.")
 	is_chapter_card = true

@@ -1,4 +1,4 @@
-## Visual manager rendering chapter titles and cinematic overlays via cached shaders.
+## Visual manager rendering chapter titles and cinematic overlays via shaders.
 class_name ChapterDisplay
 extends MarginContainer
 
@@ -29,7 +29,7 @@ const SHADER_SHATTER: Shader = preload("res://vfx/chapter_text_shatter.gdshader"
 ## Depth of field blur [Shader] resource.
 const SHADER_BLUR: Shader = preload("res://vfx/chapter_text_blur.gdshader")
 
-## Doom melt melt-down [Shader] resource.
+## Doom melt-down [Shader] resource.
 const SHADER_DOOM_MELT: Shader = preload("res://vfx/chapter_text_doom_melt.gdshader")
 
 ## Retro VHS tape tracking [Shader] resource.
@@ -65,7 +65,7 @@ const SHADER_ANIM_STYLES: Array[Events.ChapterAnimStyle] = [
 ## Active [Tween] orchestrating chapter title text animation sequences.
 var _chapter_tween: Tween
 
-## Dictionary caching pre-allocated [ShaderMaterial] instances by animation style.
+## Dictionary caching pre-allocated [ShaderMaterial] instances by style.
 var _material_cache: Dictionary[Events.ChapterAnimStyle, ShaderMaterial] = {}
 
 ## Pre-allocated [ShaderMaterial] for the bokeh text blur transition.
@@ -88,7 +88,7 @@ func _ready() -> void:
 	_init_material_cache()
 
 	if is_instance_valid(effect_container):
-		effect_container.stretch = false
+		effect_container.stretch = true
 		effect_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		effect_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
 		effect_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -109,6 +109,15 @@ func _ready() -> void:
 
 	resized.connect(_on_resized)
 	_on_resized()
+
+
+## Ensures the [SubViewport] is disabled if removed mid-animation.
+func _exit_tree() -> void:
+	print("ChapterDisplay: _exit_tree() called. Halting active tweens and viewport.")
+	if is_instance_valid(_chapter_tween) and _chapter_tween.is_valid():
+		_chapter_tween.kill()
+	if is_instance_valid(_sub_viewport):
+		_sub_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 
 
 ## Pre-allocates and caches all [ShaderMaterial] instances.
@@ -147,8 +156,7 @@ func _on_resized() -> void:
 	if screen_size.x <= 0.0 or screen_size.y <= 0.0:
 		return
 
-	if is_instance_valid(effect_container) and is_instance_valid(_sub_viewport):
-		_sub_viewport.size = Vector2i(screen_size)
+	if is_instance_valid(effect_container):
 		effect_container.custom_minimum_size = screen_size
 
 	var vertical_offset: float = 60.0
@@ -178,13 +186,13 @@ func _on_chapter_triggered(
 	if is_instance_valid(_chapter_tween) and _chapter_tween.is_valid():
 		_chapter_tween.kill()
 
-	if is_instance_valid(_sub_viewport):
-		_sub_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
-
 	if is_instance_valid(effect_container):
 		effect_container.modulate = Color.WHITE
 		effect_container.material = null
 		effect_container.visible = true
+
+	if is_instance_valid(_sub_viewport):
+		_sub_viewport.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
 
 	chapter_label.add_theme_color_override("default_color", text_color)
 	chapter_label.visible = true
@@ -218,7 +226,7 @@ func _on_chapter_triggered(
 				print("ChapterDisplay: Unknown style ID, triggering fallback.")
 				_play_simple(chapter_name, display_duration, 1.0, 1.0)
 
-	_chapter_tween.finished.connect(_disable_viewport)
+	_chapter_tween.tween_callback(_disable_viewport)
 
 
 ## Handles cinematic text requests from wake-up triggers with custom timings.
@@ -230,13 +238,13 @@ func _on_wake_up_text_requested(text: String, fade_in: float, hold: float, fade_
 	if is_instance_valid(_chapter_tween) and _chapter_tween.is_valid():
 		_chapter_tween.kill()
 
-	if is_instance_valid(_sub_viewport):
-		_sub_viewport.render_target_update_mode = SubViewport.UPDATE_ALWAYS
-
 	if is_instance_valid(effect_container):
 		effect_container.modulate = Color.WHITE
 		effect_container.material = null
 		effect_container.visible = true
+
+	if is_instance_valid(_sub_viewport):
+		_sub_viewport.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
 
 	chapter_label.add_theme_color_override("default_color", Color.WHITE)
 	chapter_label.visible = true
@@ -244,7 +252,7 @@ func _on_wake_up_text_requested(text: String, fade_in: float, hold: float, fade_
 
 	_chapter_tween = create_tween()
 	_play_simple(text, hold, fade_in, fade_out)
-	_chapter_tween.finished.connect(_disable_viewport)
+	_chapter_tween.tween_callback(_disable_viewport)
 
 
 ## Shuts down the [SubViewport] rendering pipeline once animations conclude.

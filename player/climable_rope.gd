@@ -13,6 +13,15 @@ const CULL_DISTANCE_SQUARED: float = 625.0
 ## Squared distance threshold for checking camera update frequencies.
 const POSITION_EPSILON_SQUARED: float = 0.000001
 
+## 3D Physics Layer 1 bitmask (Environment).
+const PHYS_MASK_ENVIRONMENT: int = 1
+
+## 3D Physics Layer 2 bitmask (Player).
+const PHYS_MASK_PLAYER: int = 2
+
+## 3D Physics Layer 3 bitmask (Interactive).
+const PHYS_LAYER_INTERACTIVE: int = 4
+
 # --------------------------------------
 # EXPORTS
 # --------------------------------------
@@ -110,6 +119,12 @@ var _base_mesh: CylinderMesh
 ## Procedural torus mesh used as a fallback for chains.
 var _default_chain_mesh: TorusMesh
 
+## Single consolidated mid-air grab detection volume.
+var _air_grab_area: Area3D
+
+## Count of links currently awake in the physics server.
+var _awake_link_count: int = 0
+
 ## Shared cache preventing duplication of standard materials.
 static var _material_cache: Dictionary = {}
 
@@ -136,6 +151,7 @@ var interact_label: Label3D
 ## Sets up UI label bindings, creates meshes, and builds the dynamic chain.
 func _ready() -> void:
 	if Engine.is_editor_hint():
+		set_process(false)
 		_update_editor_preview()
 		return
 
@@ -161,13 +177,31 @@ func _ready() -> void:
 	call_deferred("_build_dynamic_rope")
 
 
+## Gates per-frame processing based on awake links, attachment, or focus.
+func _update_process_state() -> void:
+	if Engine.is_editor_hint():
+		set_process(false)
+		return
+	var should_process: bool = (
+		player_on_rope
+		or _awake_link_count > 0
+		or _current_cooldown > 0.0
+		or is_instance_valid(_focused_ic)
+	)
+	set_process(should_process)
+
+
 ## Updates cooldowns, executes distance checks, and refreshes link visuals.
 func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
+		set_process(false)
 		return
 
 	if _current_cooldown > 0.0:
 		_current_cooldown -= delta
+		if _current_cooldown <= 0.0:
+			_current_cooldown = 0.0
+			_update_process_state()
 
 	if not is_instance_valid(_cached_camera):
 		_cached_camera = get_viewport().get_camera_3d()
@@ -178,7 +212,8 @@ func _process(delta: float) -> void:
 		if dist_sq > CULL_DISTANCE_SQUARED:
 			return
 
-	_update_visuals()
+	if player_on_rope or _awake_link_count > 0:
+		_update_visuals()
 
 	var has_valid_ic: bool = is_instance_valid(_focused_ic)
 	var has_valid_lbl: bool = is_instance_valid(interact_label)
@@ -241,18 +276,6 @@ func _update_editor_preview() -> void:
 ## Evaluates link positions and updates batched MultiMesh or discrete segments.
 func _update_visuals() -> void:
 	if _links.is_empty():
-		return
-
-	var needs_update: bool = false
-	if player_on_rope:
-		needs_update = true
-	else:
-		for link: RigidBody3D in _links:
-			if is_instance_valid(link) and not link.is_sleeping():
-				needs_update = true
-				break
-
-	if not needs_update:
 		return
 
 	var p1: Vector3 = anchor.global_position
@@ -355,7 +378,18 @@ func _update_label_position() -> void:
 # --------------------------------------
 
 
-## Instantiates rigid bodies, joints, and collision shapes along the rope length.
+## Tracks sleeping state changes across rope links to gate idle [_process].
+func _on_link_sleeping_state_changed(link: RigidBody3D) -> void:
+	if not is_instance_valid(link):
+		return
+	if link.sleeping:
+		_awake_link_count = maxi(0, _awake_link_count - 1)
+	else:
+		_awake_link_count += 1
+	_update_process_state()
+
+
+## Instantiates rigid bodies, joints, and a single consolidated air-grab area.
 func _build_dynamic_rope() -> void:
 	print("PhysicsClimbableRope3D: Building dynamic rope hierarchy.")
 	var interact_template: Node = null
@@ -386,9 +420,14 @@ func _build_dynamic_rope() -> void:
 		_multimesh_instance.top_level = true
 		add_child(_multimesh_instance)
 
+	_awake_link_count = total_links
+
 	for i: int in range(total_links):
 		var link: RigidBody3D = RigidBody3D.new()
 		link.mass = link_mass
+		link.can_sleep = true
+		link.collision_layer = PHYS_LAYER_INTERACTIVE
+		link.collision_mask = PHYS_MASK_ENVIRONMENT
 		link.angular_damp_mode = RigidBody3D.DAMP_MODE_REPLACE
 		link.linear_damp_mode = RigidBody3D.DAMP_MODE_REPLACE
 		link.angular_damp = 2.5
@@ -402,6 +441,7 @@ func _build_dynamic_rope() -> void:
 		add_child(link)
 		var link_offset: Vector3 = Vector3.DOWN * link_spacing * (i + 1)
 		link.global_position = anchor.global_position + link_offset
+		link.sleeping_state_changed.connect(_on_link_sleeping_state_changed.bind(link))
 
 		var col: CollisionShape3D = CollisionShape3D.new()
 		var cap: CapsuleShape3D = CapsuleShape3D.new()
@@ -423,23 +463,6 @@ func _build_dynamic_rope() -> void:
 		if is_instance_valid(highlight_template):
 			var hc: Node = highlight_template.duplicate()
 			link.add_child(hc)
-
-		var air_area: Area3D = Area3D.new()
-		air_area.collision_layer = 0
-		# Physics Layer 2: Player (1 << 1 = 2)
-		air_area.collision_mask = 2
-
-		var air_col: CollisionShape3D = CollisionShape3D.new()
-		var air_shape: CapsuleShape3D = CapsuleShape3D.new()
-		air_shape.radius = air_grab_radius
-		air_shape.height = link_spacing + (air_grab_radius * 2.0)
-		air_col.shape = air_shape
-		air_area.add_child(air_col)
-		link.add_child(air_area)
-		air_area.body_entered.connect(_on_air_area_entered.bind(link))
-
-		for prev: RigidBody3D in _links:
-			link.add_collision_exception_with(prev)
 
 		_links.append(link)
 
@@ -465,8 +488,40 @@ func _build_dynamic_rope() -> void:
 				if is_instance_valid(raw_segment):
 					raw_segment.queue_free()
 
+	_air_grab_area = Area3D.new()
+	_air_grab_area.name = "ConsolidatedAirGrabArea"
+	_air_grab_area.collision_layer = 0
+	_air_grab_area.collision_mask = PHYS_MASK_PLAYER
+
+	var air_col: CollisionShape3D = CollisionShape3D.new()
+	var air_shape: CylinderShape3D = CylinderShape3D.new()
+	air_shape.radius = (air_grab_radius if not is_swingable else (rope_length * 0.45))
+	air_shape.height = rope_length + (air_grab_radius * 2.0)
+	air_col.shape = air_shape
+	air_col.position = Vector3(0.0, -rope_length * 0.5, 0.0)
+	_air_grab_area.add_child(air_col)
+	add_child(_air_grab_area)
+	_air_grab_area.body_entered.connect(_on_consolidated_air_area_entered)
+
 	if is_instance_valid(original_rope_body):
 		original_rope_body.queue_free()
+
+	_update_visuals()
+	_update_process_state()
+
+
+## Finds the closest rope link to [param world_pos] within [member air_grab_radius].
+func _get_closest_link(world_pos: Vector3) -> RigidBody3D:
+	var best_link: RigidBody3D = null
+	var max_dist_sq: float = (air_grab_radius + 0.5) * (air_grab_radius + 0.5)
+	for link: RigidBody3D in _links:
+		if not is_instance_valid(link):
+			continue
+		var d_sq: float = link.global_position.distance_squared_to(world_pos)
+		if d_sq <= max_dist_sq:
+			max_dist_sq = d_sq
+			best_link = link
+	return best_link
 
 
 # --------------------------------------
@@ -483,6 +538,7 @@ func _on_link_focused(ic: Node) -> void:
 			interact_label.show()
 		if activate_slomo:
 			_set_slomo(0.3)
+		_update_process_state()
 
 
 ## Hides the interaction prompt and resets engine time scale.
@@ -493,6 +549,7 @@ func _on_link_unfocused(ic: Node) -> void:
 			interact_label.hide()
 		if activate_slomo:
 			_set_slomo(1.0)
+		_update_process_state()
 
 
 ## Receives player interaction input from ground proximity.
@@ -505,15 +562,17 @@ func _on_link_interacted(player: CharacterBody3D, link: RigidBody3D) -> void:
 	_attach_to_link(player, link)
 
 
-## Handles automatic mid-air player collision and attachment.
-func _on_air_area_entered(body: Node3D, link: RigidBody3D) -> void:
+## Handles automatic mid-air player collision and attachment via consolidated area.
+func _on_consolidated_air_area_entered(body: Node3D) -> void:
 	if player_on_rope or _current_cooldown > 0.0:
 		return
 
 	if body.has_method("is_on_floor") and body.has_method("_on_rope_grabbed"):
 		if not body.call("is_on_floor"):
-			print("PhysicsClimbableRope3D: Mid-air grab triggered.")
-			_attach_to_link(body as CharacterBody3D, link)
+			var closest: RigidBody3D = _get_closest_link(body.global_position)
+			if is_instance_valid(closest):
+				print("PhysicsClimbableRope3D: Mid-air grab triggered.")
+				_attach_to_link(body as CharacterBody3D, closest)
 
 
 ## Attaches the player to a link, removing damping for free swinging.
@@ -522,6 +581,7 @@ func _attach_to_link(player: CharacterBody3D, link: RigidBody3D) -> void:
 	player_on_rope = true
 	_attached_player = player
 	_focused_ic = null
+	_update_process_state()
 
 	if is_instance_valid(interact_label):
 		interact_label.hide()
@@ -531,6 +591,7 @@ func _attach_to_link(player: CharacterBody3D, link: RigidBody3D) -> void:
 
 	link.angular_damp = 0.0
 	link.linear_damp = 0.0
+	link.sleeping = false
 
 	for l: RigidBody3D in _links:
 		if is_instance_valid(l):
@@ -559,6 +620,8 @@ func on_player_released() -> void:
 
 	if activate_slomo:
 		_set_slomo(1.0)
+
+	_update_process_state()
 
 
 ## Plays or halts looping audio streams for climbing and sliding.
