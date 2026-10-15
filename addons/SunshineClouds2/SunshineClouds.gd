@@ -181,6 +181,16 @@ var refresh_action: Callable = refresh_compute
 ## Normalized horizontal wind movement direction vector.
 @export var wind_direction: Vector3 = Vector3.ZERO
 
+@export_subgroup("Lights")
+## Packed directional light uniform vectors (direction, steps, color, power).
+@export var directional_lights_data: Array[Vector4] = []
+
+## Packed omni light uniform vectors (position, radius, color, intensity).
+@export var point_lights_data: Array[Vector4] = []
+
+## Packed point effector uniform vectors (position, radius, power, falloff).
+@export var point_effector_data: Array[Vector4] = []
+
 ## Extra-large noise sampling position offset in world coordinates.
 var extra_large_scale_clouds_position: Vector3 = Vector3.ZERO
 
@@ -195,16 +205,6 @@ var detail_clouds_position: Vector3 = Vector3.ZERO
 
 ## Accumulated animation time passed into shader uniforms.
 var current_time: float = 0.0
-
-@export_subgroup("Lights")
-## Packed directional light uniform vectors (direction, steps, color, power).
-@export var directional_lights_data: Array[Vector4] = []
-
-## Packed omni light uniform vectors (position, radius, color, intensity).
-@export var point_lights_data: Array[Vector4] = []
-
-## Packed point effector uniform vectors (position, radius, power, falloff).
-@export var point_effector_data: Array[Vector4] = []
 
 ## Position query request buffer for asynchronous density sampling.
 var position_queries: Array[Vector3] = []
@@ -346,7 +346,19 @@ var msaa_mode: RenderingServer.ViewportMSAA = (
 var main_viewport_rid: RID = RID()
 
 
-# --- Player Interaction & Public Methods ---
+## Initializes compositor callback timing and requests render-thread setup.
+func _init() -> void:
+	effect_callback_type = CompositorEffect.EFFECT_CALLBACK_TYPE_PRE_TRANSPARENT
+	access_resolved_depth = true
+	access_resolved_color = true
+	needs_motion_vectors = true
+	RenderingServer.call_on_render_thread(initialize_compute)
+
+
+## Frees rendering device allocations when the resource is destroyed.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE and is_instance_valid(self):
+		RenderingServer.call_on_render_thread(clear_compute)
 
 
 ## Resets viewport dimensions and triggers a complete compute resource refresh.
@@ -354,7 +366,28 @@ func refresh_compute() -> void:
 	print("SunshineCloudsGD: System requesting compute refresh.")
 	mask_drawn_rid = RID()
 	last_size = Vector2i.ZERO
+	_has_prev_matrices = false
+	ignore_accumilation = true
 	RenderingServer.call_on_render_thread(initialize_compute)
+
+
+## Returns a diagnostic dictionary of internal RIDs and buffer states.
+func get_diagnostics_snapshot() -> Dictionary:
+	print("SunshineCloudsGD: Generating diagnostics snapshot.")
+	return {
+		"enabled": enabled,
+		"callback_type": effect_callback_type,
+		"last_size": last_size,
+		"resolution_scale": resolution_scale,
+		"msaa_mode": msaa_mode,
+		"last_msaa_mode": last_msaa_mode,
+		"accum_tex_count": accumulation_textures.size(),
+		"blit_tex_count": blit_screen_images.size(),
+		"uniform_sets_count": uniform_sets.size(),
+		"pipeline_valid": pipeline.is_valid(),
+		"postpass_valid": postpass_pipeline.is_valid(),
+		"display_valid": display_pipeline.is_valid(),
+	}
 
 
 ## Updates the authored external mask texture handle [param new_mask].
@@ -371,26 +404,14 @@ func add_sample(callable: Callable, position: Vector3) -> void:
 	position_query_callables.append(callable)
 
 
-# --- Lifecycle & Pipeline Initialization ---
-
-
-## Initializes compositor callback timing and requests render-thread setup.
-func _init() -> void:
-	effect_callback_type = CompositorEffect.EFFECT_CALLBACK_TYPE_PRE_TRANSPARENT
-	access_resolved_depth = true
-	access_resolved_color = true
-	needs_motion_vectors = true
-	RenderingServer.call_on_render_thread(initialize_compute)
-
-
-## Frees rendering device allocations when the resource is destroyed.
-func _notification(what: int) -> void:
-	if what == NOTIFICATION_PREDELETE and is_instance_valid(self):
-		RenderingServer.call_on_render_thread(clear_compute)
-
-
 ## Releases all allocated compute, raster, and uniform resources.
 func clear_compute() -> void:
+	print("SunshineCloudsGD: Clearing compute resources and RIDs.")
+	position_querying = false
+	position_resetting = false
+	_has_prev_matrices = false
+	ignore_accumilation = true
+
 	if _reflection_texture_rd != null:
 		_reflection_texture_rd.texture_rd_rid = RID()
 		_reflection_texture_rd = null
@@ -438,6 +459,9 @@ func clear_compute() -> void:
 			rd.free_rid(item)
 	blit_screen_images.clear()
 
+	color_images.clear()
+	depth_images.clear()
+
 	pipeline = RID()
 	shader = RID()
 	prepass_pipeline = RID()
@@ -458,6 +482,9 @@ func clear_compute() -> void:
 
 ## Compiles compute and raster pipelines and initializes static sampling states.
 func initialize_compute() -> void:
+	print("SunshineCloudsGD: Initializing compute pipelines.")
+	effect_callback_type = CompositorEffect.EFFECT_CALLBACK_TYPE_PRE_TRANSPARENT
+
 	if not rd:
 		rd = RenderingServer.get_rendering_device()
 		if not rd:
@@ -576,7 +603,6 @@ func initialize_compute() -> void:
 		6, display_vertex_format, [display_vertex_buffer]
 	)
 
-	# std140 GenericData buffer (192 floats * 4 = 768 bytes)
 	general_data_buffer = rd.uniform_buffer_create(768)
 	light_data_buffer = rd.uniform_buffer_create(6272)
 
@@ -587,6 +613,7 @@ func initialize_compute() -> void:
 
 ## Recompiles only the MSAA-dependent postpass and display shaders on MSAA changes.
 func _rebuild_msaa_pipelines() -> bool:
+	print("SunshineCloudsGD: Rebuilding MSAA pipelines for mode ", msaa_mode)
 	_clear_uniform_sets()
 
 	if display_pipeline.is_valid():
@@ -700,6 +727,7 @@ func initialize_raster_pipelines(color_tex: RID, depth_tex: RID) -> void:
 func reallocate_textures(
 	new_size: Vector2i, view_count: int, is_msaa_on: bool, buffers: RenderSceneBuffersRD
 ) -> void:
+	print("SunshineCloudsGD: Reallocating storage textures to ", new_size)
 	_clear_uniform_sets()
 
 	for item: RID in accumulation_textures:
@@ -754,14 +782,16 @@ func reallocate_textures(
 		blit_fmt.usage_bits |= (
 			RenderingDevice.TEXTURE_USAGE_STORAGE_BIT
 			| RenderingDevice.TEXTURE_USAGE_SAMPLING_BIT
+			| RenderingDevice.TEXTURE_USAGE_CAN_COPY_TO_BIT
 		)
-		blit_screen_images.append(rd.texture_create(blit_fmt, RDTextureView.new()))
+		var blit_rid: RID = rd.texture_create(blit_fmt, RDTextureView.new())
+		rd.texture_clear(blit_rid, Color.BLACK, 0, 1, 0, 1)
+		blit_screen_images.append(blit_rid)
 
 		var view_depth: RID = rd.texture_create(depth_fmt, RDTextureView.new())
 		rd.texture_clear(view_depth, Color.BLACK, 0, 1, 0, 1)
 		resized_depths.append(view_depth)
 
-		# Indices 0, 4, 5 store float32 ray distances; 1, 2, 3, 6 store float16 HDR color
 		for i: int in range(7):
 			var is_color_tex: bool = (i == 1 or i == 2 or i == 3 or i == 6)
 			var fmt: RDTextureFormat = color_fmt if is_color_tex else data_fmt
@@ -769,8 +799,11 @@ func reallocate_textures(
 			rd.texture_clear(tex_rid, Color.BLACK, 0, 1, 0, 1)
 			accumulation_textures.append(tex_rid)
 
+	ignore_accumilation = true
+	_has_prev_matrices = false
 
-## Rebuilds uniform set bindings for [param view] using current [param buffers] and [param render_scene_data].
+
+## Rebuilds uniform set bindings for [param view] using active render buffers.
 func build_view_uniform_sets(
 	view: int,
 	is_msaa_on: bool,
@@ -781,7 +814,6 @@ func build_view_uniform_sets(
 	var view_resized_depth: RID = resized_depths[view]
 	var camera_data: RID = render_scene_data.get_uniform_buffer()
 
-	# 1. Prepass Uniforms
 	var prepass_uniforms: Array[RDUniform] = []
 	var prepass_depth: RDUniform = RDUniform.new()
 	prepass_depth.uniform_type = RenderingDevice.UNIFORM_TYPE_SAMPLER_WITH_TEXTURE
@@ -804,7 +836,6 @@ func build_view_uniform_sets(
 
 	uniform_sets.append(rd.uniform_set_create(prepass_uniforms, prepass_shader, 0))
 
-	# 2. Main Compute Uniforms
 	var compute_uniforms: Array[RDUniform] = []
 	for i: int in range(6):
 		var accum_uniform: RDUniform = RDUniform.new()
@@ -885,7 +916,6 @@ func build_view_uniform_sets(
 
 	uniform_sets.append(rd.uniform_set_create(compute_uniforms, shader, 0))
 
-	# 3. Postpass Uniforms
 	var postpass_uniforms: Array[RDUniform] = []
 	var post_color_data: RDUniform = RDUniform.new()
 	post_color_data.uniform_type = RenderingDevice.UNIFORM_TYPE_SAMPLER_WITH_TEXTURE
@@ -955,7 +985,6 @@ func build_view_uniform_sets(
 
 	uniform_sets.append(rd.uniform_set_create(postpass_uniforms, postpass_shader, 0))
 
-	# 4. Display Uniforms
 	var display_uniforms: Array[RDUniform] = []
 	var disp_screen: RDUniform = RDUniform.new()
 	disp_screen.uniform_type = RenderingDevice.UNIFORM_TYPE_SAMPLER_WITH_TEXTURE
@@ -980,6 +1009,9 @@ func _clear_uniform_sets() -> void:
 func _render_callback(_effect_callback_type: int, render_data: RenderData) -> void:
 	if not enabled:
 		return
+
+	if effect_callback_type != CompositorEffect.EFFECT_CALLBACK_TYPE_PRE_TRANSPARENT:
+		effect_callback_type = CompositorEffect.EFFECT_CALLBACK_TYPE_PRE_TRANSPARENT
 
 	if rd == null:
 		initialize_compute()
@@ -1039,16 +1071,25 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 	var view_count: int = buffers.get_view_count()
 	var render_scene_data: RenderSceneData = render_data.get_render_scene_data()
 
-	if msaa_mode != last_msaa_mode:
+	var current_col_0: RID = buffers.get_color_layer(0, is_msaa_on)
+	var current_dep_0: RID = buffers.get_depth_layer(0, false)
+
+	var msaa_changed: bool = (msaa_mode != last_msaa_mode)
+	var target_layers_changed: bool = (
+		color_images.is_empty()
+		or depth_images.is_empty()
+		or color_images[0] != current_col_0
+		or depth_images[0] != current_dep_0
+	)
+
+	if msaa_changed:
 		if not _rebuild_msaa_pipelines():
 			return
-		initialize_raster_pipelines(
-			buffers.get_color_layer(0, is_msaa_on),
-			buffers.get_depth_layer(0, is_msaa_on)
-		)
 
 	if (
 		size != last_size
+		or msaa_changed
+		or target_layers_changed
 		or accumulation_textures.is_empty()
 		or resized_depths.size() != view_count
 	):
@@ -1058,27 +1099,14 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 			buffers.get_depth_layer(0, is_msaa_on)
 		)
 
-	var current_col_0: RID = buffers.get_color_layer(0, is_msaa_on)
-	var current_dep_0: RID = buffers.get_depth_layer(0, false)
-
 	var needs_uniform_rebuild: bool = (
 		uniform_sets.is_empty()
 		or uniform_sets.size() != view_count * 4
-		or color_images.is_empty()
-		or depth_images.is_empty()
-		or color_images[0] != current_col_0
-		or depth_images[0] != current_dep_0
 		or not rd.uniform_set_is_valid(uniform_sets[0])
 		or not rd.uniform_set_is_valid(uniform_sets[2])
 	)
 
 	if needs_uniform_rebuild:
-		color_images.clear()
-		depth_images.clear()
-		for v: int in range(view_count):
-			color_images.append(buffers.get_color_layer(v, is_msaa_on))
-			depth_images.append(buffers.get_depth_layer(v, false))
-
 		_clear_uniform_sets()
 		for view: int in range(view_count):
 			build_view_uniform_sets(view, is_msaa_on, buffers, render_scene_data)
@@ -1093,7 +1121,7 @@ func _render_callback(_effect_callback_type: int, render_data: RenderData) -> vo
 	if current_target != last_render_target:
 		last_render_target = current_target
 		ignore_accumilation = true
-	else:
+	elif size == last_size and not msaa_changed and not target_layers_changed:
 		ignore_accumilation = false
 
 	last_size = size
