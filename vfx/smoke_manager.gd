@@ -1,5 +1,5 @@
 ## Manages GPU compute dispatches and bullet hole buffers for [FogVolume].
-#class_name SmokeManager
+# class_name SmokeManager
 extends Node
 
 # --------------------------------------
@@ -56,6 +56,9 @@ var _hole_lifetimes: PackedFloat32Array = PackedFloat32Array()
 ## Current count of active bullet holes tracked in the buffer.
 var _active_hole_count: int = 0
 
+## Remaining compute frames needed to fully heal both Z-slice halves.
+var _clear_passes_remaining: int = 2
+
 ## Cached world position of the player for local fog clearing.
 var current_player_pos: Vector3 = Vector3.ZERO
 
@@ -102,6 +105,7 @@ var godot_texture: Texture3DRD
 ## Initializes compute buffers, textures, and pipeline on [Node] ready.
 func _ready() -> void:
 	print("SmokeManager: Initializing smoke manager node.")
+	set_process(false)
 	rd = RenderingServer.get_rendering_device()
 
 	_hole_byte_buffer.resize(BUFFER_SIZE)
@@ -220,10 +224,13 @@ func _initialize_gpu() -> void:
 	assert(uniform_set.is_valid(), "SmokeManager: uniform_set_create failed.")
 
 	is_initialized = true
+	_clear_passes_remaining = 2
 
 	if is_instance_valid(active_fog_volume) and is_instance_valid(godot_texture):
 		if active_fog_volume.has_method("assign_compute_texture"):
 			active_fog_volume.call("assign_compute_texture", godot_texture)
+
+	_update_process_state()
 
 
 ## Handles engine notifications to clean up GPU resources on deletion.
@@ -245,6 +252,7 @@ func _cleanup_gpu() -> void:
 		return
 
 	is_initialized = false
+	set_process(false)
 
 	if is_instance_valid(godot_texture):
 		godot_texture.texture_rd_rid = RID()
@@ -279,13 +287,37 @@ func _cleanup_gpu() -> void:
 		sampler_rid = RID()
 
 
+## Evaluates whether player is within active [FogVolume] bounds plus margin.
+func _is_player_inside_volume() -> bool:
+	if not is_instance_valid(active_fog_volume):
+		return false
+	if not active_fog_volume.is_inside_tree():
+		return false
+	var half_extents: Vector3 = (active_fog_volume.size * 0.5) + Vector3.ONE * player_trail_radius
+	var diff: Vector3 = (current_player_pos - active_fog_volume.global_position).abs()
+	return diff.x <= half_extents.x and diff.y <= half_extents.y and diff.z <= half_extents.z
+
+
+## Toggles per-frame processing based on active holes and player proximity.
+func _update_process_state() -> void:
+	if not is_initialized or not is_instance_valid(active_fog_volume):
+		set_process(false)
+		return
+	var should_run: bool = (
+		_active_hole_count > 0 or _clear_passes_remaining > 0 or _is_player_inside_volume()
+	)
+	set_process(should_run)
+
+
 ## Binds an active [FogVolume] and assigns computed [Texture3DRD].
 func register_fog_volume(volume: FogVolume) -> void:
 	print("SmokeManager: register_fog_volume() called with: ", volume.name)
 	active_fog_volume = volume
+	_clear_passes_remaining = 2
 	if is_initialized and is_instance_valid(godot_texture):
 		if volume.has_method("assign_compute_texture"):
 			volume.call("assign_compute_texture", godot_texture)
+	_update_process_state()
 
 
 ## Clears registered [FogVolume] if matching [param volume].
@@ -293,11 +325,17 @@ func clear_fog_volume(volume: FogVolume) -> void:
 	print("SmokeManager: clear_fog_volume() called.")
 	if active_fog_volume == volume:
 		active_fog_volume = null
+		set_process(false)
 
 
 ## Updates cached player position [param pos] for volumetric clearing.
 func update_player_position(pos: Vector3) -> void:
 	current_player_pos = pos
+	if is_initialized and is_instance_valid(active_fog_volume):
+		if _is_player_inside_volume():
+			_clear_passes_remaining = 2
+			if not is_processing():
+				set_process(true)
 
 
 ## Adds bullet hole cavity by writing directly into pre-allocated memory.
@@ -329,10 +367,18 @@ func add_bullet_hole(start: Vector3, dir: Vector3, length: float, radius: float 
 	_hole_byte_buffer.encode_float(offset + 24, end_pos.z)
 	_hole_byte_buffer.encode_float(offset + 28, 0.0)
 
+	_clear_passes_remaining = 2
+	_update_process_state()
+
 
 ## Updates hole lifetimes and dispatches compute pass per frame.
 func _process(delta: float) -> void:
 	if not is_initialized:
+		set_process(false)
+		return
+
+	if not is_instance_valid(active_fog_volume) or not active_fog_volume.is_inside_tree():
+		set_process(false)
 		return
 
 	global_time += delta
@@ -349,15 +395,21 @@ func _process(delta: float) -> void:
 				for b: int in range(HOLE_STRIDE_BYTES):
 					_hole_byte_buffer[dst_offset + b] = _hole_byte_buffer[src_offset + b]
 			_active_hole_count -= 1
+			_clear_passes_remaining = 2
 		else:
 			var norm_age: float = _hole_lifetimes[i] / heal_time_seconds
 			_hole_byte_buffer.encode_float(i * HOLE_STRIDE_BYTES + 28, norm_age)
 		i -= 1
 
-	if not is_instance_valid(active_fog_volume):
-		return
-	if not active_fog_volume.is_inside_tree():
-		return
+	var player_in_vol: bool = _is_player_inside_volume()
+	if player_in_vol:
+		_clear_passes_remaining = 2
+	elif _active_hole_count == 0:
+		if _clear_passes_remaining > 0:
+			_clear_passes_remaining -= 1
+		else:
+			set_process(false)
+			return
 
 	var safe_fog_size: Vector3 = active_fog_volume.size
 	var safe_fog_pos: Vector3 = active_fog_volume.global_position

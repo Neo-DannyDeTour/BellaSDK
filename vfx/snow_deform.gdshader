@@ -21,11 +21,11 @@ float get_height(vec2 uv) {
 }
 
 void vertex() {
-	VERTEX.y += get_height(UV);
+	float h_center = get_height(UV);
+	VERTEX.y += h_center;
 
 	// Finite-difference normal calculation matching terrain mounds + craters
 	float texel = 2.0 / 1024.0;
-	float h_center = get_height(UV);
 	float h_right = get_height(UV + vec2(texel, 0.0));
 	float h_up = get_height(UV + vec2(0.0, texel));
 
