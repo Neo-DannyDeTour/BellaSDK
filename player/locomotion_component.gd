@@ -2,9 +2,6 @@
 class_name PlayerLocomotionComponent
 extends Node
 
-# --------------------------------------
-# CONSTANTS & ZERO-ALLOCATION IDENTIFIERS
-# --------------------------------------
 ## Target local Y position of [member head] when standing.
 const STANDING_HEIGHT: float = 1.8
 
@@ -20,10 +17,14 @@ const GROUP_CABLE_LINK: StringName = &"cable_link"
 ## Group tag identifying socket bodies to bypass weight application.
 const GROUP_SOCKET: StringName = &"socket"
 
-# --------------------------------------
-# EXPORTS
-# --------------------------------------
+## Signal identifier for heavy carry state changes.
+const SIG_HEAVY_CARRY: StringName = &"heavy_carry_toggled"
+
+## Method identifier for locking pickable floor platforms.
+const METHOD_REGISTER_STANDING: StringName = &"register_player_standing"
+
 @export_category("Movement Speeds")
+
 ## Ground walking speed magnitude in meters per second.
 @export var walking_speed: float = 5.0
 
@@ -40,6 +41,7 @@ const GROUP_SOCKET: StringName = &"socket"
 @export var swim_up_speed: float = 5.0
 
 @export_category("Heavy Carry Modifiers")
+
 ## Multiplier applied to walking speed when carrying heavy objects.
 @export_range(0.1, 1.0) var heavy_carry_speed_mult: float = 0.6
 
@@ -50,6 +52,7 @@ const GROUP_SOCKET: StringName = &"socket"
 @export_range(0.0, 1.0) var heavy_carry_jump_mult: float = 0.4
 
 @export_category("Jump & Gravity")
+
 ## Jump input buffer window in seconds before floor contact.
 @export var jump_buffer_duration: float = 0.15
 
@@ -60,6 +63,7 @@ const GROUP_SOCKET: StringName = &"socket"
 @export var fall_gravity_multiplier: float = 1.5
 
 @export_category("Physics Lerping")
+
 ## Direction interpolation speed on standard ground.
 @export var default_lerp_speed: float = 15.0
 
@@ -70,14 +74,16 @@ const GROUP_SOCKET: StringName = &"socket"
 @export var ice_lerp_speed: float = 1.5
 
 @export_category("System References")
+
 ## Reference to [PlayerStatsComponent] managing stamina and mass.
 @export var stats_component: PlayerStatsComponent
 
 @export_category("Node References")
+
 ## Controller managing stair stepping and snapping logic.
 @export var stair_controller: Node
 
-## Manager handling surface-specific footstep audio.
+## Manager handling surface-specific footstep audio and decals/stamps.
 @export var footstep_manager: Node
 
 ## Node applying physical impulses to pushable objects.
@@ -95,20 +101,14 @@ const GROUP_SOCKET: StringName = &"socket"
 ## Camera or head pivot [Node3D] for vertical stance lerping.
 @export var head: Node3D
 
-# --------------------------------------
-# VARIABLES
-# --------------------------------------
 ## Reference to parent [CharacterBody3D] entity.
 var player: CharacterBody3D
 
 ## Flag determining if movement calculations should process.
 var is_active: bool = true
 
-## Previous [RigidBody3D] the player stood on.
-var _last_weighed_body: RigidBody3D = null
-
 ## Default world gravity scalar from [ProjectSettings].
-var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
+var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity") as float
 
 ## Indicates whether sprinting is currently active.
 var sprint_active: bool = false
@@ -134,33 +134,48 @@ var last_velocity: Vector3 = Vector3.ZERO
 ## Indicates if surface negates fall damage.
 var on_safe_landing: bool = false
 
-## System time in milliseconds of the last sprint action.
-var _last_sprint_time: int = 0
-
 ## Tracks whether the player is currently carrying a heavy item.
 var is_heavy_carrying: bool = false
 
 ## Extra mass in kilograms of currently held physical object.
 var carried_weight: float = 0.0
 
-## Internal vertical velocity tracking head stance spring animation.
-var _head_velocity_y: float = 0.0
-
 ## Determines whether the player is currently permitted to jump.
 var can_jump: bool = true
+
+## Previous [RigidBody3D] the player stood on.
+var _last_weighed_body: RigidBody3D = null
+
+## System time in milliseconds of the last sprint action.
+var _last_sprint_time: int = 0
+
+## Internal vertical velocity tracking head stance spring animation.
+var _head_velocity_y: float = 0.0
 
 
 ## Subscribes to global event bus signals and initializes state.
 func _ready() -> void:
+	set_process(false)
+	set_physics_process(false)
 	print("LocomotionComponent: _ready() initialized.")
-	if Events.has_signal("heavy_carry_toggled"):
+	if Events.has_signal(SIG_HEAVY_CARRY):
 		Utilities.safe_connect(Events.heavy_carry_toggled, _on_heavy_carry_toggled)
+
+
+## Disconnects global signals when exiting the scene tree.
+func _exit_tree() -> void:
+	if (
+		Events.has_signal(SIG_HEAVY_CARRY)
+		and Events.heavy_carry_toggled.is_connected(_on_heavy_carry_toggled)
+	):
+		Events.heavy_carry_toggled.disconnect(_on_heavy_carry_toggled)
 
 
 ## Caches parent [CharacterBody3D] reference [param p_player].
 func initialize(p_player: CharacterBody3D) -> void:
 	print("LocomotionComponent: initialize() called. Caching player reference.")
 	player = p_player
+	assert(is_instance_valid(player), "LocomotionComponent: Invalid player reference.")
 
 
 ## Enables or disables movement and gravity processing.
@@ -184,7 +199,6 @@ func process_movement(delta: float) -> void:
 
 ## Returns true if sprint was triggered within [param time_window_ms].
 func did_run_recently(time_window_ms: int = 10000) -> bool:
-	# print("LocomotionComponent: did_run_recently() evaluated.")
 	return (Time.get_ticks_msec() - _last_sprint_time) <= time_window_ms
 
 
@@ -213,13 +227,7 @@ func set_heavy_carry(active: bool, weight: float = 0.0) -> void:
 	is_heavy_carrying = active
 	carried_weight = weight if active else 0.0
 	can_sprint = not active
-	can_jump = not active if not allow_heavy_carry_jump else true
-
-
-## Handles [signal Events.heavy_carry_toggled] state updates.
-func _on_heavy_carry_toggled(is_heavy: bool) -> void:
-	print("LocomotionComponent: _on_heavy_carry_toggled() received -> ", is_heavy)
-	set_heavy_carry(is_heavy, 15.0 if is_heavy else 0.0)
+	can_jump = true if allow_heavy_carry_jump else not active
 
 
 ## Calculates walking speed scaled by crouch, sprint, and carry.
@@ -248,6 +256,12 @@ func get_effective_jump_velocity(base_jump_velocity: float) -> float:
 	return base_jump_velocity
 
 
+## Handles [signal Events.heavy_carry_toggled] state updates.
+func _on_heavy_carry_toggled(is_heavy: bool) -> void:
+	print("LocomotionComponent: _on_heavy_carry_toggled() received -> ", is_heavy)
+	set_heavy_carry(is_heavy, 15.0 if is_heavy else 0.0)
+
+
 ## Injects downward forces into floor bodies without rotational levering.
 func _apply_weight_to_floor() -> void:
 	if not player.is_on_floor():
@@ -259,50 +273,52 @@ func _apply_weight_to_floor() -> void:
 	var slide_count: int = player.get_slide_collision_count()
 	for i: int in range(slide_count):
 		var collision: KinematicCollision3D = player.get_slide_collision(i)
-		var collider: Object = collision.get_collider()
+		if collision.get_normal().y <= 0.5:
+			continue
 
-		if collider is RigidBody3D and collision.get_normal().y > 0.5:
-			var rb: RigidBody3D = collider if collider is RigidBody3D else null
+		var rb: RigidBody3D = collision.get_collider() as RigidBody3D
+		if not is_instance_valid(rb):
+			continue
 
-			# Lock pickable objects into stable static platforms while stood on
-			if rb.has_method("register_player_standing"):
-				rb.call("register_player_standing")
-				return
+		# Lock pickable objects into stable static platforms while stood on
+		if rb.has_method(METHOD_REGISTER_STANDING):
+			rb.call(METHOD_REGISTER_STANDING)
+			return
 
-			var body_name: StringName = rb.name
-			var is_cable_or_socket: bool = (
-				rb.is_in_group(GROUP_CABLE_LINK)
-				or rb.is_in_group(GROUP_SOCKET)
-				or body_name.begins_with(&"CableLink")
-				or body_name.begins_with(&"Socket")
-			)
+		var body_name: StringName = rb.name
+		var is_cable_or_socket: bool = (
+			rb.is_in_group(GROUP_CABLE_LINK)
+			or rb.is_in_group(GROUP_SOCKET)
+			or body_name.begins_with(&"CableLink")
+			or body_name.begins_with(&"Socket")
+		)
 
-			if is_cable_or_socket or rb.is_in_group(GROUP_IGNORE_WEIGHT):
-				if _last_weighed_body != rb:
-					print("LocomotionComponent: Stepped on ", rb.name, ". Ignoring weight.")
-					_last_weighed_body = rb
-				return
-
-			var mass: float = (
-				stats_component.player_mass if is_instance_valid(stats_component) else 80.0
-			)
-			if is_heavy_carrying:
-				mass += maxf(carried_weight, 10.0)
-
-			var downward_force: Vector3 = Vector3.DOWN * (mass * gravity)
-
-			# Use central force to prevent torque levering and edge-launching
-			rb.apply_central_force(downward_force)
-
+		if is_cable_or_socket or rb.is_in_group(GROUP_IGNORE_WEIGHT):
 			if _last_weighed_body != rb:
-				print(
-					"LocomotionComponent: Applied ",
-					downward_force.length(),
-					" downward central force to ",
-					rb.name
-				)
+				print("LocomotionComponent: Stepped on ", rb.name, ". Ignoring weight.")
 				_last_weighed_body = rb
 			return
+
+		var mass: float = (
+			stats_component.player_mass if is_instance_valid(stats_component) else 80.0
+		)
+		if is_heavy_carrying:
+			mass += maxf(carried_weight, 10.0)
+
+		var downward_force: Vector3 = Vector3.DOWN * (mass * gravity)
+
+		# Use central force to prevent torque levering and edge-launching
+		rb.apply_central_force(downward_force)
+
+		if _last_weighed_body != rb:
+			print(
+				"LocomotionComponent: Applied ",
+				downward_force.length(),
+				" downward central force to ",
+				rb.name
+			)
+			_last_weighed_body = rb
+		return
 
 
 ## Smoothly solves head vertical spring position without allocations.

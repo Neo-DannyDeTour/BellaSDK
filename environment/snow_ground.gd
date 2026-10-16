@@ -2,8 +2,14 @@
 class_name SnowGround
 extends MeshInstance3D
 
-## Emitted when [method deform_at] writes a footprint impression.
+## Emitted when [method deform_at] writes a footprint or impact impression.
 signal deformed(world_position: Vector3)
+
+const PARAM_DISPLACEMENT: StringName = &"displacement_texture"
+const PARAM_DIMENSIONS: StringName = &"ground_dimensions"
+const PARAM_NOISE: StringName = &"base_height_noise"
+const PARAM_HEIGHT_SCALE: StringName = &"terrain_height_scale"
+const HEIGHTMAP_RES: int = 64
 
 ## Physical dimensions of the ground mesh plane in world units.
 @export var plane_size: Vector2 = Vector2(20.0, 20.0)
@@ -20,24 +26,31 @@ signal deformed(world_position: Vector3)
 
 ## Hooks dynamic textures to shader and configures on-demand SubViewport updates.
 func _ready() -> void:
-	print("[SnowGround] Hooking viewport texture to displacement shader.")
-	if is_instance_valid(deform_viewport):
-		deform_viewport.render_target_clear_mode = SubViewport.CLEAR_MODE_ONCE
-		deform_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+	set_process(false)
+	set_physics_process(false)
+	assert(is_instance_valid(deform_viewport), "Missing DeformViewport child.")
+	assert(is_instance_valid(snow_painter), "Missing SnowPainter child.")
+	assert(is_instance_valid(collision_shape), "Missing CollisionShape3D child.")
 
-	var mat: ShaderMaterial = (
-		get_active_material(0) if get_active_material(0) is ShaderMaterial else null
-	)
+	print("[SnowGround] Hooking viewport texture to displacement shader.")
+	deform_viewport.render_target_clear_mode = SubViewport.CLEAR_MODE_ONCE
+	deform_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+
+	var mat: ShaderMaterial = get_active_material(0) as ShaderMaterial
 	if mat:
 		var tex: ViewportTexture = deform_viewport.get_texture()
-		mat.set_shader_parameter("displacement_texture", tex)
-		mat.set_shader_parameter("ground_dimensions", plane_size)
+		mat.set_shader_parameter(PARAM_DISPLACEMENT, tex)
+		mat.set_shader_parameter(PARAM_DIMENSIONS, plane_size)
 		_setup_heightmap_collision(mat)
 
 
 ## Converts a 3D [param world_position] into UV space and commands [SnowPainter] to deform.
 func deform_at(
-	world_position: Vector3, radius_px: float = 28.0, intensity: float = 0.6, angle_rad: float = 0.0
+	world_position: Vector3,
+	radius_px: float = 28.0,
+	intensity: float = 0.6,
+	angle_rad: float = 0.0,
+	is_slam: bool = false
 ) -> void:
 	var local_pos: Vector3 = to_local(world_position)
 	var half_size: Vector2 = plane_size * 0.5
@@ -48,22 +61,16 @@ func deform_at(
 	var uv: Vector2 = Vector2(
 		(local_pos.x + half_size.x) / plane_size.x, (local_pos.z + half_size.y) / plane_size.y
 	)
-
-	var vp_size: Vector2 = Vector2(deform_viewport.size)
-	var canvas_pos: Vector2 = uv * vp_size
+	var canvas_pos: Vector2 = uv * Vector2(deform_viewport.size)
 
 	print("[SnowGround] Displacing snow at world coordinates: ", world_position)
-	snow_painter.add_stamp(canvas_pos, radius_px, intensity, angle_rad)
+	snow_painter.add_stamp(canvas_pos, radius_px, intensity, angle_rad, is_slam)
 	deformed.emit(world_position)
 
 
 ## Generates a matching [HeightMapShape3D] from the material's noise texture.
 func _setup_heightmap_collision(mat: ShaderMaterial) -> void:
-	var noise_tex: NoiseTexture2D = (
-		mat.get_shader_parameter("base_height_noise")
-		if mat.get_shader_parameter("base_height_noise") is NoiseTexture2D
-		else null
-	)
+	var noise_tex: NoiseTexture2D = mat.get_shader_parameter(PARAM_NOISE) as NoiseTexture2D
 	if not noise_tex or not is_instance_valid(collision_shape):
 		return
 
@@ -74,26 +81,24 @@ func _setup_heightmap_collision(mat: ShaderMaterial) -> void:
 	if not noise_img:
 		return
 
-	var height_scale: float = mat.get_shader_parameter("terrain_height_scale")
-	var map_size: int = 64
-	noise_img.resize(map_size, map_size, Image.INTERPOLATE_BILINEAR)
+	var height_scale: float = mat.get_shader_parameter(PARAM_HEIGHT_SCALE) as float
+	noise_img.resize(HEIGHTMAP_RES, HEIGHTMAP_RES, Image.INTERPOLATE_BILINEAR)
 
 	var map_data: PackedFloat32Array = PackedFloat32Array()
-	map_data.resize(map_size * map_size)
+	map_data.resize(HEIGHTMAP_RES * HEIGHTMAP_RES)
 
-	for y: int in range(map_size):
-		for x: int in range(map_size):
-			var idx: int = y * map_size + x
-			var val: float = noise_img.get_pixel(x, y).r * height_scale
-			map_data[idx] = val
+	for y: int in range(HEIGHTMAP_RES):
+		var row_offset: int = y * HEIGHTMAP_RES
+		for x: int in range(HEIGHTMAP_RES):
+			map_data[row_offset + x] = noise_img.get_pixel(x, y).r * height_scale
 
 	var h_shape: HeightMapShape3D = HeightMapShape3D.new()
-	h_shape.map_width = map_size
-	h_shape.map_depth = map_size
+	h_shape.map_width = HEIGHTMAP_RES
+	h_shape.map_depth = HEIGHTMAP_RES
 	h_shape.map_data = map_data
 
 	collision_shape.shape = h_shape
-	var step_x: float = plane_size.x / float(map_size - 1)
-	var step_z: float = plane_size.y / float(map_size - 1)
+	var step_x: float = plane_size.x / float(HEIGHTMAP_RES - 1)
+	var step_z: float = plane_size.y / float(HEIGHTMAP_RES - 1)
 	collision_shape.scale = Vector3(step_x, 1.0, step_z)
 	print("[SnowGround] Procedural heightmap collision generated successfully.")

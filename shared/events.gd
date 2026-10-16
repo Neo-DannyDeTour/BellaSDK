@@ -2,30 +2,6 @@
 extends Node
 
 # --------------------------------------
-# CONSTANTS
-# --------------------------------------
-## Standard Control type names that render typography in Godot UI.
-const UI_FONT_TYPES: Array[StringName] = [
-	&"Label",
-	&"Button",
-	&"CheckButton",
-	&"CheckBox",
-	&"OptionButton",
-	&"LineEdit",
-	&"TextEdit",
-	&"RichTextLabel",
-	&"TabBar",
-	&"Tree",
-	&"PopupMenu",
-	&"MenuButton"
-]
-
-## Standard font theme property keys to override on UI controls.
-const UI_FONT_KEYS: Array[StringName] = [
-	&"font", &"normal_font", &"bold_font", &"italics_font", &"bold_italics_font", &"mono_font"
-]
-
-# --------------------------------------
 # AUDIO & SOUND EFFECT SIGNALS
 # --------------------------------------
 ## Emitted to play a 2D sound effect. Passes [param stream] and [param bus].
@@ -35,21 +11,6 @@ signal sfx_2d_requested(stream: AudioStream, bus: StringName)
 ## Emitted to play a 3D spatial sound. Passes [param stream], [param pos], [param bus].
 @warning_ignore("unused_signal")
 signal sfx_3d_requested(stream: AudioStream, global_pos: Vector3, bus: StringName)
-
-# --------------------------------------
-# VARIABLES
-# --------------------------------------
-## Tracks whether the player character is currently invincible.
-var is_godmode: bool = false
-
-## Dictionary mapping font identifier keys to loaded [Font] resources.
-var fonts: Dictionary[String, Font] = {}
-
-## Fallback built-in engine font captured directly from [ThemeDB].
-var engine_fallback_font: Font = null
-
-## Guard to ensure disk fonts are only loaded and parsed once.
-var _is_cached: bool = false
 
 # --------------------------------------
 # GAME LIFECYCLE & SESSION SIGNALS
@@ -544,6 +505,9 @@ signal screen_wake_up_requested(
 @warning_ignore("unused_signal")
 signal wake_up_text_requested(text: String, fade_in: float, hold: float, fade_out: float)
 
+# --------------------------------------
+# ENUMS
+# --------------------------------------
 ## Visual animation style presets for chapter title card sequences.
 enum ChapterAnimStyle {
 	SIMPLE,
@@ -568,23 +532,59 @@ enum ChapterAnimStyle {
 	LIGHT_SWEEP,
 }
 
+# --------------------------------------
+# CONSTANTS
+# --------------------------------------
+## Standard Control type names that render typography in Godot UI.
+const UI_FONT_TYPES: Array[StringName] = [
+	&"Label",
+	&"Button",
+	&"CheckButton",
+	&"CheckBox",
+	&"OptionButton",
+	&"LineEdit",
+	&"TextEdit",
+	&"RichTextLabel",
+	&"TabBar",
+	&"Tree",
+	&"PopupMenu",
+	&"MenuButton"
+]
+
+## Standard font theme property keys to override on UI controls.
+const UI_FONT_KEYS: Array[StringName] = [
+	&"font", &"normal_font", &"bold_font", &"italics_font", &"bold_italics_font", &"mono_font"
+]
+
+# --------------------------------------
+# VARIABLES
+# --------------------------------------
+## Tracks whether the player character is currently invincible.
+var is_godmode: bool = false
+
+## Dictionary mapping font identifier keys to loaded [Font] resources.
+var fonts: Dictionary[String, Font] = {}
+
+## Fallback built-in engine font captured directly from [ThemeDB].
+var engine_fallback_font: Font = null
+
+## Guard to ensure disk fonts are only loaded and parsed once.
+var _is_cached: bool = false
+
 
 ## Lifecycle constructor initializing baseline event bus logging.
 func _init() -> void:
-	print("Events: _init() called.")
+	print("Events: Initialized.")
 
 
 ## Lifecycle method connecting signal listeners for global typography.
 func _ready() -> void:
-	print("Events: _ready() called. Binding event listeners.")
 	font_changed.connect(_on_font_changed)
 
 
 ## Replaces root theme default font and forces an immediate UI redraw.
 ## [param font_name] Identifier key of the newly selected font.
 func _on_font_changed(font_name: String) -> void:
-	print("Events: Changing global font to '", font_name, "'.")
-
 	if not _is_cached:
 		_load_registered_fonts()
 
@@ -607,12 +607,11 @@ func _on_font_changed(font_name: String) -> void:
 
 	_apply_font_override_recursive(root_window, target_font)
 	get_tree().call_group(&"3d_text", "set", "font", target_font)
-	print("Events: Global font '", font_name, "' applied successfully.")
+	print("Events: Global font changed to '", font_name, "'.")
 
 
 ## Dynamically iterates the GlobalSettings font registry and caches resources.
 func _load_registered_fonts() -> void:
-	print("Events: Loading registered fonts from GlobalSettings.")
 	if _is_cached:
 		return
 
@@ -626,27 +625,26 @@ func _load_registered_fonts() -> void:
 	var registry_variant: Variant = global_settings_node.get("FONT_REGISTRY")
 	if not (registry_variant is Array):
 		return
-	var registry: Array = registry_variant
+	var registry: Array = registry_variant as Array
 
 	for entry_variant: Variant in registry:
-		if not entry_variant is Dictionary:
+		if not (entry_variant is Dictionary):
 			continue
-		var entry: Dictionary = entry_variant
-		var id: String = str(entry.get("id", ""))
-		var path: String = str(entry.get("path", ""))
+		var entry: Dictionary = entry_variant as Dictionary
+		var font_id: String = str(entry.get("id", ""))
+		var font_path: String = str(entry.get("path", ""))
 
-		if id.is_empty() or id == "default":
+		if font_id.is_empty() or font_id == "default":
 			continue
 
-		if not path.is_empty() and ResourceLoader.exists(path):
-			var loaded_res: Resource = load(path)
+		if not font_path.is_empty() and ResourceLoader.exists(font_path):
+			var loaded_res: Resource = load(font_path)
 			if loaded_res is Font:
-				fonts[id] = loaded_res as Font
-				print("Events: Cached font '", id, "' from ", path)
+				fonts[font_id] = loaded_res as Font
 			else:
-				push_warning("Events: Resource at " + path + " is not Font.")
+				push_warning("Events: Resource at " + font_path + " is not Font.")
 		else:
-			push_warning("Events: Font file path does not exist: " + path)
+			push_warning("Events: Font file path does not exist: " + font_path)
 
 	_is_cached = true
 
@@ -655,12 +653,11 @@ func _load_registered_fonts() -> void:
 ## [param parent] Root control node receiving font replacements.
 ## [param new_font] Selected font resource applied to children.
 func _apply_font_override_recursive(parent: Node, new_font: Font) -> void:
-	print("Events: Applying recursive font override on node: ", parent)
 	if not is_instance_valid(parent):
 		return
 
 	if parent is Control:
-		var ctrl: Control = parent if parent is Control else null
+		var ctrl: Control = parent as Control
 		for font_key: StringName in UI_FONT_KEYS:
 			ctrl.add_theme_font_override(font_key, new_font)
 		ctrl.notification(Control.NOTIFICATION_THEME_CHANGED)

@@ -76,7 +76,7 @@ static func safe_connect(sig: Signal, callable: Callable, flags: int = 0) -> boo
 		return false
 	if not sig.is_connected(callable):
 		sig.connect(callable, flags)
-		print("[Utilities] Connected signal ", sig.get_name(), " to callable.")
+		#print("[Utilities] Connected signal ", sig.get_name(), " to callable.")
 		return true
 	return false
 

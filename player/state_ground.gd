@@ -14,6 +14,51 @@ const SPRINT_JUMP_VELOCITY: float = 5.0
 ## Ground friction applied to decelerate the player without input.
 const GROUND_FRICTION: float = 25.0
 
+## Group identifier for slide surfaces.
+const GROUP_SLIDE: StringName = &"slide_surface"
+
+## Group identifier for sand surfaces.
+const GROUP_SAND: StringName = &"sand"
+
+## Group identifier for fall-damage-negating surfaces.
+const GROUP_SAFE_LANDING: StringName = &"safe_landing"
+
+## State identifier for sliding.
+const STATE_SLIDE: StringName = &"Slide"
+
+## State identifier for swimming.
+const STATE_SWIM: StringName = &"Swim"
+
+## State identifier for airborne movement.
+const STATE_AIR: StringName = &"Air"
+
+## State identifier for ledge vaulting.
+const STATE_VAULT: StringName = &"Vault"
+
+## Input action identifier for moving left.
+const ACTION_LEFT: StringName = &"left"
+
+## Input action identifier for moving right.
+const ACTION_RIGHT: StringName = &"right"
+
+## Input action identifier for moving forward.
+const ACTION_FORWARD: StringName = &"forward"
+
+## Input action identifier for moving backward.
+const ACTION_BACKWARD: StringName = &"backward"
+
+## Input action identifier for camera zoom.
+const ACTION_ZOOM: StringName = &"zoom"
+
+## Input action identifier for jumping.
+const ACTION_JUMP: StringName = &"jump"
+
+## Input action identifier for crouching.
+const ACTION_CROUCH: StringName = &"crouch"
+
+## Input action identifier for sprinting.
+const ACTION_SPRINT: StringName = &"sprint"
+
 ## Current interpolated movement speed of the player character.
 var current_speed: float = 0.0
 
@@ -33,19 +78,17 @@ var _transition_msg: Dictionary = {}
 ## Configures velocities, reads accessibility settings, and stamps landing crater.
 func enter(msg: Dictionary = {}) -> void:
 	print("StateGround: enter() called. Resetting Y velocity and current speed.")
-	var fall_speed: float = msg.get(&"landing_speed", 0.0)
+	var p: Player = _get_player()
+	if not is_instance_valid(p):
+		return
 
-	player.velocity.y = 0.0
+	var fall_speed: float = msg.get(&"landing_speed", 0.0) as float
+	p.velocity.y = 0.0
 	current_speed = 0.0
 
-	var raw_loco: Variant = player.get(&"locomotion_component")
-	var loco: PlayerLocomotionComponent = (
-		raw_loco if raw_loco is PlayerLocomotionComponent else null
-	)
-	if is_instance_valid(loco) and is_instance_valid(loco.footstep_manager):
-		var fm: FootstepManager = (
-			loco.footstep_manager if loco.footstep_manager is FootstepManager else null
-		)
+	var loco: PlayerLocomotionComponent = p.locomotion_component
+	if is_instance_valid(loco):
+		var fm: FootstepManager = loco.footstep_manager as FootstepManager
 		if is_instance_valid(fm):
 			fm.stamp_landing_crater(fall_speed)
 
@@ -59,11 +102,8 @@ func enter(msg: Dictionary = {}) -> void:
 		"Accessibility", "cancel_crouch_on_jump", false
 	)
 
-	if msg.has(&"jump_buffered") and msg[&"jump_buffered"] == true:
-		var raw_interact: Variant = player.get(&"interaction_component")
-		var interact: PlayerInteractionComponent = (
-			raw_interact if raw_interact is PlayerInteractionComponent else null
-		)
+	if msg.get(&"jump_buffered", false) == true:
+		var interact: PlayerInteractionComponent = p.interaction_component
 		var is_holding_heavy: bool = is_instance_valid(interact) and interact.is_heavy_carrying
 
 		if is_holding_heavy:
@@ -71,17 +111,18 @@ func enter(msg: Dictionary = {}) -> void:
 			Events.hint_requested.emit("Cannot jump while carrying a heavy object.", 2.0)
 			return
 
-		_perform_jump()
+		_perform_jump(p, loco)
 
 
 ## Processes surfaces, stair snapping, inputs, and ground momentum via [MathUtils].
 func physics_update(delta: float) -> void:
-	var raw_loco: Variant = player.get(&"locomotion_component")
-	var loco: PlayerLocomotionComponent = (
-		raw_loco if raw_loco is PlayerLocomotionComponent else null
-	)
-	var raw_env: Variant = player.get(&"environment_component")
-	var env: PlayerEnvironmentComponent = raw_env if raw_env is PlayerEnvironmentComponent else null
+	var p: Player = _get_player()
+	if not is_instance_valid(p):
+		return
+
+	var loco: PlayerLocomotionComponent = p.locomotion_component
+	var env: PlayerEnvironmentComponent = p.environment_component
+	var interact: PlayerInteractionComponent = p.interaction_component
 
 	if (
 		is_instance_valid(env)
@@ -96,57 +137,55 @@ func physics_update(delta: float) -> void:
 	loco.on_sand = false
 	loco.on_safe_landing = false
 
-	var slide_count: int = player.get_slide_collision_count()
+	var slide_count: int = p.get_slide_collision_count()
 	for i: int in range(slide_count):
-		var collision: KinematicCollision3D = player.get_slide_collision(i)
-		var collider: Object = collision.get_collider()
+		var collision: KinematicCollision3D = p.get_slide_collision(i)
+		var node_col: Node = collision.get_collider() as Node
+		if not is_instance_valid(node_col):
+			continue
 
-		if collider is Node:
-			var node_col: Node = collider if collider is Node else null
-			if node_col.is_in_group(&"slide_surface"):
-				print("StateGround: Slide surface detected. Transitioning to Slide.")
-				state_machine.transition_to(&"Slide")
-				return
-			if node_col.is_in_group(&"sand"):
-				loco.on_sand = true
-			if node_col.is_in_group(&"safe_landing"):
-				loco.on_safe_landing = true
-				print("StateGround: Safe landing material detected. Fall damage neutralized.")
+		if _is_collider_in_group(node_col, GROUP_SLIDE):
+			print("StateGround: Slide surface detected. Transitioning to Slide.")
+			state_machine.transition_to(STATE_SLIDE)
+			return
+		if _is_collider_in_group(node_col, GROUP_SAND):
+			loco.on_sand = true
+		if _is_collider_in_group(node_col, GROUP_SAFE_LANDING):
+			loco.on_safe_landing = true
 
-	var is_recently_stepped: bool = loco.stair_controller.get(&"time_since_step_up") < 0.2
-	var snapped_last_frame: bool = loco.stair_controller.get(&"_snapped_to_stairs_last_frame")
+	var is_recently_stepped: bool = (
+		(loco.stair_controller.get(&"time_since_step_up") as float) < 0.2
+	)
+	var snapped_last_frame: bool = (
+		loco.stair_controller.get(&"_snapped_to_stairs_last_frame") == true
+	)
 
-	if not player.is_on_floor() and not snapped_last_frame and not is_recently_stepped:
-		if is_instance_valid(env) and env.current_water_node != null:
+	if not p.is_on_floor() and not snapped_last_frame and not is_recently_stepped:
+		if is_instance_valid(env) and is_instance_valid(env.current_water_node):
 			print("StateGround: Transitioning to Swim.")
-			state_machine.transition_to(&"Swim")
+			state_machine.transition_to(STATE_SWIM)
 			return
 
 		print("StateGround: Floor lost. Transitioning to Air.")
 		_transition_msg.clear()
 		_transition_msg[&"coyote_time"] = true
-		state_machine.transition_to(&"Air", _transition_msg)
+		state_machine.transition_to(STATE_AIR, _transition_msg)
 		return
 
 	var input_dir: Vector2 = GestureInputManager.get_vector(
-		&"left", &"right", &"forward", &"backward"
+		ACTION_LEFT, ACTION_RIGHT, ACTION_FORWARD, ACTION_BACKWARD
 	)
-	if GestureInputManager.is_action_pressed(&"zoom"):
+	if GestureInputManager.is_action_pressed(ACTION_ZOOM):
 		input_dir = Vector2.ZERO
 
-	if GestureInputManager.is_action_just_triggered(&"jump"):
-		var raw_interact: Variant = player.get(&"interaction_component")
-		var interact: PlayerInteractionComponent = (
-			raw_interact if raw_interact is PlayerInteractionComponent else null
-		)
+	if GestureInputManager.is_action_just_triggered(ACTION_JUMP):
 		var is_holding_heavy: bool = is_instance_valid(interact) and interact.is_heavy_carrying
-
 		if is_holding_heavy:
 			print("StateGround: Object is too heavy to jump (>= 10kg).")
 			Events.hint_requested.emit("Cannot jump while carrying a heavy object.", 2.0)
 			return
 
-		var is_pressing_forward: bool = GestureInputManager.is_action_active(&"forward")
+		var is_pressing_forward: bool = GestureInputManager.is_action_active(ACTION_FORWARD)
 		if (
 			is_pressing_forward
 			and not snapped_last_frame
@@ -155,90 +194,100 @@ func physics_update(delta: float) -> void:
 			and env.vault_controller.call(&"try_vault", loco.crouching) == true
 		):
 			print("StateGround: Valid vault detected. Transitioning.")
-			state_machine.transition_to(&"Vault")
+			state_machine.transition_to(STATE_VAULT)
 			return
-		_perform_jump()
+		_perform_jump(p, loco)
 		return
 
-	_calculate_target_speed(delta, input_dir)
-	_apply_movement(delta, input_dir)
-	loco.last_velocity = player.velocity
+	_calculate_target_speed(loco, interact, delta, input_dir)
+	_apply_movement(p, loco, interact, delta, input_dir)
+	loco.last_velocity = p.velocity
 
 	loco.stair_controller.call(&"snap_up_stairs_check", delta, loco.sprint_active)
-	player.move_and_slide()
+	p.move_and_slide()
 	loco.stair_controller.call(&"snap_down_to_stairs_check")
 	loco.stair_controller.call(&"track_floor_state")
-	_update_components(delta, input_dir)
+	_update_components(p, loco, interact, delta, input_dir)
+
+
+## Returns owning player as concrete [Player] instance.
+func _get_player() -> Player:
+	return player as Player
+
+
+## Checks if [param node] or its immediate parent belongs to [param group_name].
+func _is_collider_in_group(node: Node, group_name: StringName) -> bool:
+	if node.is_in_group(group_name):
+		return true
+	var parent_node: Node = node.get_parent()
+	return is_instance_valid(parent_node) and parent_node.is_in_group(group_name)
 
 
 ## Applies upward vertical jump impulse and transitions to [StateAir].
-func _perform_jump() -> void:
+func _perform_jump(p: Player, loco: PlayerLocomotionComponent) -> void:
 	print("StateGround: _perform_jump() called.")
-	var raw_loco: Variant = player.get(&"locomotion_component")
-	var loco: PlayerLocomotionComponent = (
-		raw_loco if raw_loco is PlayerLocomotionComponent else null
-	)
-	if not is_instance_valid(loco):
-		return
+	if (
+		_cancel_crouch_on_jump
+		and loco.crouching
+		and is_instance_valid(loco.crouch_cast_check)
+		and not loco.crouch_cast_check.is_colliding()
+	):
+		loco.crouching = false
+		loco.standing_collision.disabled = false
+		loco.crouching_collision.disabled = true
+		Events.player_crouch_changed.emit(false)
 
-	var is_wolf: bool = player.get(&"is_wolf_mode") == true
-	var is_pressing_fwd: bool = GestureInputManager.is_action_active(&"forward")
+	var is_wolf: bool = p.is_wolf_mode
+	var is_pressing_fwd: bool = GestureInputManager.is_action_active(ACTION_FORWARD)
 
 	if is_wolf and loco.sprint_active and is_pressing_fwd:
 		print("StateGround: Executing high-speed wolf pounce leap!")
-		var fwd_dir: Vector3 = -player.global_transform.basis.z.normalized()
-		player.velocity.x = fwd_dir.x * (loco.sprinting_speed * 1.6)
-		player.velocity.z = fwd_dir.z * (loco.sprinting_speed * 1.6)
-		player.velocity.y = SPRINT_JUMP_VELOCITY * 1.35
+		var fwd_dir: Vector3 = -p.global_transform.basis.z.normalized()
+		p.velocity.x = fwd_dir.x * (loco.sprinting_speed * 1.6)
+		p.velocity.z = fwd_dir.z * (loco.sprinting_speed * 1.6)
+		p.velocity.y = SPRINT_JUMP_VELOCITY * 1.35
 	elif loco.sprint_active:
-		player.velocity.y = SPRINT_JUMP_VELOCITY * (1.25 if is_wolf else 1.0)
+		p.velocity.y = SPRINT_JUMP_VELOCITY * (1.25 if is_wolf else 1.0)
 	elif loco.crouching:
-		player.velocity.y = CROUCH_JUMP_VELOCITY
+		p.velocity.y = CROUCH_JUMP_VELOCITY
 	else:
-		player.velocity.y = JUMP_VELOCITY * (1.3 if is_wolf else 1.0)
+		p.velocity.y = JUMP_VELOCITY * (1.3 if is_wolf else 1.0)
 
-	print("StateGround: Executing jump. Velocity Y set to ", player.velocity.y)
+	print("StateGround: Executing jump. Velocity Y set to ", p.velocity.y)
 	_transition_msg.clear()
 	_transition_msg[&"jump"] = true
-	state_machine.transition_to(&"Air", _transition_msg)
+	state_machine.transition_to(STATE_AIR, _transition_msg)
 
 
 ## Calculates target movement speed based on stance, heavy carrying, and terrain.
-func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
-	var raw_loco: Variant = player.get(&"locomotion_component")
-	var loco: PlayerLocomotionComponent = (
-		raw_loco if raw_loco is PlayerLocomotionComponent else null
-	)
-	var raw_interact: Variant = player.get(&"interaction_component")
-	var interact: PlayerInteractionComponent = (
-		raw_interact if raw_interact is PlayerInteractionComponent else null
-	)
-
-	if not is_instance_valid(loco):
-		return
-
+func _calculate_target_speed(
+	loco: PlayerLocomotionComponent,
+	interact: PlayerInteractionComponent,
+	delta: float,
+	input_dir: Vector2
+) -> void:
 	var previous_crouch: bool = loco.crouching
 	var is_moving: bool = input_dir.length_squared() > 0.01
 
 	var wants_to_crouch: bool = loco.crouching
 	if _toggle_crouch_enabled:
-		if GestureInputManager.is_action_just_triggered(&"crouch"):
+		if GestureInputManager.is_action_just_triggered(ACTION_CROUCH):
 			wants_to_crouch = not loco.crouching
 	else:
-		wants_to_crouch = GestureInputManager.is_action_active(&"crouch")
+		wants_to_crouch = GestureInputManager.is_action_active(ACTION_CROUCH)
 
 	var wants_to_sprint: bool = loco.sprint_active
 	if _toggle_sprint_enabled:
-		if GestureInputManager.is_action_just_triggered(&"sprint"):
+		if GestureInputManager.is_action_just_triggered(ACTION_SPRINT):
 			wants_to_sprint = not loco.sprint_active
 	else:
-		wants_to_sprint = GestureInputManager.is_action_active(&"sprint")
+		wants_to_sprint = GestureInputManager.is_action_active(ACTION_SPRINT)
 
 	if wants_to_sprint and wants_to_crouch:
-		if GestureInputManager.is_action_just_triggered(&"crouch"):
+		if GestureInputManager.is_action_just_triggered(ACTION_CROUCH):
 			print("StateGround: Crouch requested. Prioritizing crouch state.")
 			wants_to_sprint = false
-		elif GestureInputManager.is_action_just_triggered(&"sprint") or loco.sprint_active:
+		elif GestureInputManager.is_action_just_triggered(ACTION_SPRINT) or loco.sprint_active:
 			if not loco.crouch_cast_check.is_colliding():
 				print("StateGround: Sprint requested. Prioritizing sprint state.")
 				wants_to_crouch = false
@@ -249,7 +298,7 @@ func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
 
 	var is_holding_heavy: bool = is_instance_valid(interact) and interact.is_heavy_carrying
 
-	if GestureInputManager.is_action_just_triggered(&"sprint") and is_holding_heavy:
+	if GestureInputManager.is_action_just_triggered(ACTION_SPRINT) and is_holding_heavy:
 		print("StateGround: Sprint rejected. Object is too heavy.")
 		Events.hint_requested.emit("Cannot sprint while carrying a heavy object.", 2.0)
 
@@ -278,94 +327,68 @@ func _calculate_target_speed(delta: float, input_dir: Vector2) -> void:
 		target_speed = loco.crouching_speed
 
 	if is_holding_heavy:
-		target_speed = (
-			loco.walking_speed * loco.heavy_carry_speed_mult
-			if not loco.crouching
-			else loco.crouching_speed * loco.heavy_carry_speed_mult
-		)
+		var base_heavy_speed: float = loco.crouching_speed if loco.crouching else loco.walking_speed
+		target_speed = base_heavy_speed * loco.heavy_carry_speed_mult
 
 	var accel_speed: float = 7.5 if is_holding_heavy else 15.0
 	current_speed = MathUtils.damp(current_speed, target_speed, accel_speed, delta)
 
 
 ## Interpolates horizontal velocity and applies surface friction via [MathUtils].
-func _apply_movement(delta: float, input_dir: Vector2) -> void:
-	var raw_loco: Variant = player.get(&"locomotion_component")
-	var loco: PlayerLocomotionComponent = (
-		raw_loco if raw_loco is PlayerLocomotionComponent else null
-	)
-	var raw_interact: Variant = player.get(&"interaction_component")
-	var interact: PlayerInteractionComponent = (
-		raw_interact if raw_interact is PlayerInteractionComponent else null
-	)
-
-	if not is_instance_valid(loco):
-		return
-
+func _apply_movement(
+	p: Player,
+	loco: PlayerLocomotionComponent,
+	interact: PlayerInteractionComponent,
+	delta: float,
+	input_dir: Vector2
+) -> void:
 	var is_holding_heavy: bool = is_instance_valid(interact) and interact.is_heavy_carrying
 	var active_lerp: float = loco.ice_lerp_speed if loco.on_ice else loco.default_lerp_speed
 	if is_holding_heavy and not loco.on_ice:
 		active_lerp *= 0.65
 
 	var target_dir: Vector3 = (
-		(player.transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
+		(p.transform.basis * Vector3(input_dir.x, 0.0, input_dir.y)).normalized()
 	)
 
 	loco.set_direction(MathUtils.damp_v3(loco.get_direction(), target_dir, active_lerp, delta))
 
-	if player.is_on_floor():
-		player.velocity.y = -0.1
+	if p.is_on_floor():
+		p.velocity.y = -0.1
 	else:
-		player.velocity.y -= loco.gravity * delta
+		p.velocity.y -= loco.gravity * delta
 
 	if input_dir != Vector2.ZERO or loco.on_ice:
-		player.velocity.x = loco.get_direction().x * current_speed
-		player.velocity.z = loco.get_direction().z * current_speed
+		p.velocity.x = loco.get_direction().x * current_speed
+		p.velocity.z = loco.get_direction().z * current_speed
 	else:
 		var friction_val: float = GROUND_FRICTION * 0.7 if is_holding_heavy else GROUND_FRICTION
 		var friction_step: float = friction_val * delta
-		player.velocity.x = move_toward(player.velocity.x, 0.0, friction_step)
-		player.velocity.z = move_toward(player.velocity.z, 0.0, friction_step)
+		p.velocity.x = move_toward(p.velocity.x, 0.0, friction_step)
+		p.velocity.z = move_toward(p.velocity.z, 0.0, friction_step)
 
-		if player.velocity.length_squared() < 0.0001:
+		if p.velocity.length_squared() < 0.0001:
 			loco.set_direction(Vector3.ZERO)
 
 
 ## Updates camera position, footsteps, scanners, and physics pushers.
-func _update_components(delta: float, input_dir: Vector2) -> void:
-	var raw_loco: Variant = player.get(&"locomotion_component")
-	var loco: PlayerLocomotionComponent = (
-		raw_loco if raw_loco is PlayerLocomotionComponent else null
-	)
-	var raw_interact: Variant = player.get(&"interaction_component")
-	var interact: PlayerInteractionComponent = (
-		raw_interact if raw_interact is PlayerInteractionComponent else null
-	)
+func _update_components(
+	p: Player,
+	loco: PlayerLocomotionComponent,
+	interact: PlayerInteractionComponent,
+	delta: float,
+	input_dir: Vector2
+) -> void:
+	var cam_ctrl: CameraController = p.camera_controller
+	var vel_len: float = p.velocity.length()
 
-	if not is_instance_valid(loco):
-		return
-
-	var raw_cam: Variant = player.get(&"camera_controller")
-	var cam_ctrl: Object = raw_cam if raw_cam is Object else null
 	if is_instance_valid(cam_ctrl):
-		cam_ctrl.call(
-			&"update_camera",
-			delta,
-			input_dir,
-			loco.sprint_active,
-			loco.crouching,
-			true,
-			player.velocity.length()
-		)
+		cam_ctrl.update_camera(delta, input_dir, loco.sprint_active, loco.crouching, true, vel_len)
 
-	var fm: FootstepManager = (
-		loco.footstep_manager if loco.footstep_manager is FootstepManager else null
-	)
+	var fm: FootstepManager = loco.footstep_manager as FootstepManager
 	if is_instance_valid(fm):
-		fm.process_surface_and_footsteps(
-			delta, true, player.velocity.length(), loco.sprint_active, loco.crouching
-		)
-		loco.on_ice = fm.get(&"is_on_ice") == true
+		fm.process_surface_and_footsteps(delta, true, vel_len, loco.sprint_active, loco.crouching)
+		loco.on_ice = fm.is_on_ice
 
 	if is_instance_valid(interact) and is_instance_valid(interact.interaction_scanner):
 		interact.interaction_scanner.process_interaction(delta)

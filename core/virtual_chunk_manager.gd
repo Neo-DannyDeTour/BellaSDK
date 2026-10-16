@@ -3,12 +3,15 @@ class_name WorldChunkManager
 extends Node3D
 
 ## Emitted when the initial spawn chunk has loaded and mounted to the tree.
+@warning_ignore("unused_signal")
 signal initial_zone_ready
 
 ## Emitted when a chunk scene finishes instantiating at [param cell_coord].
+@warning_ignore("unused_signal")
 signal chunk_loaded(cell_coord: Vector2i)
 
 ## Emitted when a chunk scene is unloaded at [param cell_coord].
+@warning_ignore("unused_signal")
 signal chunk_unloaded(cell_coord: Vector2i)
 
 ## Grid cell dimension in meters along the horizontal X and Z plane.
@@ -27,10 +30,10 @@ const CELL_SIZE: float = 40.0
 var bypass_disk_check: bool = false
 
 ## Dictionary of currently mounted chunk instances mapped by [Vector2i].
-var loaded_chunks: Dictionary = {}
+var loaded_chunks: Dictionary[Vector2i, Node3D] = {}
 
 ## Dictionary of chunk coordinates currently loading in background threads.
-var loading_chunks: Dictionary = {}
+var loading_chunks: Dictionary[Vector2i, String] = {}
 
 ## Tracks whether the player spawn area has initialized.
 var _is_spawn_ready: bool = false
@@ -42,6 +45,8 @@ func _ready() -> void:
 	if is_instance_valid(player):
 		var spawn_cell: Vector2i = _world_to_cell(player.global_position)
 		_request_chunk(spawn_cell, true)
+	else:
+		set_process(false)
 
 
 ## Evaluates player proximity every frame and updates active chunk requests.
@@ -62,12 +67,10 @@ func _poll_threaded_loads() -> void:
 		var status: ResourceLoader.ThreadLoadStatus = ResourceLoader.load_threaded_get_status(path)
 
 		if status == ResourceLoader.THREAD_LOAD_LOADED:
-			var scene: PackedScene = (
-				ResourceLoader.load_threaded_get(path)
-				if ResourceLoader.load_threaded_get(path) is PackedScene
-				else null
-			)
-			_mount_chunk(cell_coord, scene)
+			var raw_res: Resource = ResourceLoader.load_threaded_get(path)
+			var scene: PackedScene = raw_res as PackedScene
+			if is_instance_valid(scene):
+				_mount_chunk(cell_coord, scene)
 			completed_coords.append(cell_coord)
 		elif (
 			status == ResourceLoader.THREAD_LOAD_FAILED
@@ -83,7 +86,13 @@ func _poll_threaded_loads() -> void:
 ## Mounts an instantiated chunk scene and notifies listeners.
 func _mount_chunk(cell_coord: Vector2i, scene: PackedScene) -> void:
 	print("WorldChunkManager: Mounting chunk at cell: ", cell_coord)
-	var instance: Node3D = scene.instantiate() if scene.instantiate() is Node3D else null
+	var raw_node: Node = scene.instantiate()
+	var instance: Node3D = raw_node as Node3D
+	if not is_instance_valid(instance):
+		if is_instance_valid(raw_node):
+			raw_node.queue_free()
+		return
+
 	add_child(instance)
 	loaded_chunks[cell_coord] = instance
 	chunk_loaded.emit(cell_coord)
@@ -104,11 +113,8 @@ func _request_chunk(cell_coord: Vector2i, is_blocking: bool = false) -> void:
 
 	print("WorldChunkManager: Requesting chunk load: ", file_path)
 	if is_blocking:
-		var scene: PackedScene = (
-			ResourceLoader.load(file_path)
-			if ResourceLoader.load(file_path) is PackedScene
-			else null
-		)
+		var raw_res: Resource = ResourceLoader.load(file_path)
+		var scene: PackedScene = raw_res as PackedScene
 		if is_instance_valid(scene):
 			_mount_chunk(cell_coord, scene)
 	else:
@@ -121,9 +127,7 @@ func _request_chunk(cell_coord: Vector2i, is_blocking: bool = false) -> void:
 func _unload_chunk(cell_coord: Vector2i) -> void:
 	print("WorldChunkManager: Evicting distant chunk: ", cell_coord)
 	if loaded_chunks.has(cell_coord):
-		var chunk_node: Node3D = (
-			loaded_chunks[cell_coord] if loaded_chunks[cell_coord] is Node3D else null
-		)
+		var chunk_node: Node3D = loaded_chunks[cell_coord]
 		if is_instance_valid(chunk_node):
 			chunk_node.queue_free()
 		loaded_chunks.erase(cell_coord)
@@ -135,7 +139,7 @@ func _update_stream_bounds() -> void:
 	var player_pos: Vector3 = player.global_position
 	var center_cell: Vector2i = _world_to_cell(player_pos)
 	var radius_cells: int = ceili(stream_radius / CELL_SIZE)
-	var desired_cells: Dictionary = {}
+	var desired_cells: Dictionary[Vector2i, bool] = {}
 
 	for x: int in range(center_cell.x - radius_cells, center_cell.x + radius_cells + 1):
 		for z: int in range(center_cell.y - radius_cells, center_cell.y + radius_cells + 1):

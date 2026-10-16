@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://uioes3f83n4i" path="res://environment/snow_painter.gd" id="2_ns64g"]
 [ext_resource type="Script" uid="uid://cw7bonlfblun4" path="res://environment/snow_ground.gd" id="2_rxwmd"]
 [ext_resource type="Texture2D" uid="uid://cci02oruadujf" path="res://assets/images/boot_mud_texture.png" id="4_xs68i"]
+[ext_resource type="Texture2D" uid="uid://sbmu2g32lk50" path="res://assets/images/Butt_pound_mud_texture.jpeg" id="5_6jt74"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_xs68i"]
 noise_type = 3
@@ -45,6 +46,7 @@ data = PackedVector3Array(1, 0, 1, -1, 0, 1, 1, 0, -1, -1, 0, 1, -1, 0, -1, 1, 0
 [node name="SnowGround" type="MeshInstance3D" parent="." unique_id=1501026606 groups=["snow"]]
 mesh = SubResource("PlaneMesh_534t5")
 script = ExtResource("2_rxwmd")
+plane_size = null
 
 [node name="StaticBody3D" type="StaticBody3D" parent="SnowGround" unique_id=1386414301]
 
@@ -61,3 +63,4 @@ render_target_update_mode = 1
 [node name="SnowPainter" type="Node2D" parent="SnowGround/DeformViewport" unique_id=1751532281]
 script = ExtResource("2_ns64g")
 footprint_texture = ExtResource("4_xs68i")
+slam_texture = ExtResource("5_6jt74")

@@ -193,7 +193,7 @@ func _setup_visibility_notifier() -> void:
 
 ## Calculates and configures bounding box for [VisibleOnScreenNotifier3D].
 func _setup_notifier_aabb() -> void:
-	print("HighlightComponent: Configuring visibility notifier AABB.")
+	#print("HighlightComponent: Configuring visibility notifier AABB.")
 	if not is_instance_valid(visibility_notifier):
 		return
 
