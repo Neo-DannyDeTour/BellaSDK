@@ -31,13 +31,16 @@ static func clear_children(parent: Node) -> void:
 static func clear_children_in_group(parent: Node, group_name: StringName) -> void:
 	if not is_instance_valid(parent):
 		return
-	var freed_count: int = 0
-	for child: Node in parent.get_children():
-		if child.is_in_group(group_name):
-			child.queue_free()
-			freed_count += 1
+	var children: Array[Node] = NodeQuery.find_children_in_group(parent, group_name)
+	for child: Node in children:
+		child.queue_free()
 	print(
-		"[Utilities] Cleared ", freed_count, " children in '", group_name, "' from: ", parent.name
+		"[Utilities] Cleared ",
+		children.size(),
+		" children in '",
+		group_name,
+		"' from: ",
+		parent.name
 	)
 
 
@@ -76,7 +79,7 @@ static func safe_connect(sig: Signal, callable: Callable, flags: int = 0) -> boo
 		return false
 	if not sig.is_connected(callable):
 		sig.connect(callable, flags)
-		#print("[Utilities] Connected signal ", sig.get_name(), " to callable.")
+		print("[Utilities] Connected signal ", sig.get_name(), " to callable.")
 		return true
 	return false
 
@@ -98,7 +101,7 @@ static func raycast_3d(
 	space_state: PhysicsDirectSpaceState3D,
 	origin: Vector3,
 	target: Vector3,
-	collision_mask: int = 1,
+	collision_mask: int = CollisionLayers.MASK_ENVIRONMENT,
 	exclude: Array[RID] = []
 ) -> Dictionary:
 	if not is_instance_valid(space_state):
@@ -110,7 +113,7 @@ static func raycast_3d(
 	_cached_ray_query.collide_with_areas = false
 	_cached_ray_query.collide_with_bodies = true
 	var hit: Dictionary = space_state.intersect_ray(_cached_ray_query)
-	#print("[Utilities] Cast 3D ray from ", origin, " to ", target, ". Hit: ", not hit.is_empty())
+	print("[Utilities] Cast 3D ray from ", origin, " to ", target, ". Hit: ", not hit.is_empty())
 	return hit
 
 
@@ -130,13 +133,10 @@ static func delay_call(
 static func find_ancestor_of_type(node: Node, script_type: Script) -> Node:
 	if not is_instance_valid(node) or not script_type:
 		return null
-	var current: Node = node.get_parent()
-	while is_instance_valid(current):
-		if is_instance_of(current, script_type):
-			print("[Utilities] Found ancestor ", current.name, " for ", node.name)
-			return current
-		current = current.get_parent()
-	return null
+	var ancestor: Node = NodeQuery.find_ancestor_of_type(node, script_type)
+	if is_instance_valid(ancestor):
+		print("[Utilities] Found ancestor ", ancestor.name, " for ", node.name)
+	return ancestor
 
 
 ## Kills [param tween] safely if valid and currently active.

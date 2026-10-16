@@ -38,9 +38,9 @@ func _connect_event_bus() -> void:
 		return
 
 	if events_node.has_signal(&"sfx_2d_requested"):
-		events_node.connect(&"sfx_2d_requested", _on_sfx_2d_requested)
+		Utilities.safe_connect(Signal(events_node, &"sfx_2d_requested"), _on_sfx_2d_requested)
 	if events_node.has_signal(&"sfx_3d_requested"):
-		events_node.connect(&"sfx_3d_requested", _on_sfx_3d_requested)
+		Utilities.safe_connect(Signal(events_node, &"sfx_3d_requested"), _on_sfx_3d_requested)
 	print("[AudioPool] Event bus signals connected successfully.")
 
 
