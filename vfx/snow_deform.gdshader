@@ -24,13 +24,12 @@ void vertex() {
 	float h_center = get_height(UV);
 	VERTEX.y += h_center;
 
-	// Finite-difference normal calculation matching terrain mounds + craters
-	float texel = 2.0 / 1024.0;
-	float h_right = get_height(UV + vec2(texel, 0.0));
-	float h_up = get_height(UV + vec2(0.0, texel));
+	vec2 texel = 2.0 / vec2(textureSize(displacement_texture, 0));
+	float h_right = get_height(UV + vec2(texel.x, 0.0));
+	float h_up = get_height(UV + vec2(0.0, texel.y));
 
-	float dx = texel * ground_dimensions.x;
-	float dz = texel * ground_dimensions.y;
+	float dx = texel.x * ground_dimensions.x;
+	float dz = texel.y * ground_dimensions.y;
 
 	vec3 tangent = vec3(dx, h_right - h_center, 0.0);
 	vec3 bitangent = vec3(0.0, h_up - h_center, dz);
