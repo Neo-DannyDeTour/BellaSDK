@@ -23,18 +23,6 @@ const SETTLING_FRAMES: int = 4
 ## Optional audio stream matching the second animation (priestess_twoface).
 @export var audio_priestess_twoface: AudioStream
 
-## The visual indicator container to fade smoothly without breaking root layout.
-@onready var visual_root: Control = $VisualRoot
-
-## The animated sprite showing random loading sequence loops.
-@onready var animation: AnimatedSprite2D = $VisualRoot/CenterContainer/SpriteAnchor/AnimatedSprite2D
-
-## The progress bar UI element that fills up as loading completes.
-@onready var progress_bar: ProgressBar = $VisualRoot/CenterContainer/SpriteAnchor/ProgressBar
-
-## The audio player responsible for loading screen background audio.
-@onready var audio_player: AudioStreamPlayer = $VisualRoot/AudioStreamPlayer
-
 ## Array receiving percentage progress from [ResourceLoader].
 var _progress_array: Array[float] = [0.0]
 
@@ -67,6 +55,18 @@ var _warmup_color_rect: ColorRect = null
 
 ## Reusable quad geometry shared across 3D material warmup steps.
 var _warmup_quad_mesh: QuadMesh = null
+
+## The visual indicator container to fade smoothly without breaking root layout.
+@onready var visual_root: Control = $VisualRoot
+
+## The animated sprite showing random loading sequence loops.
+@onready var animation: AnimatedSprite2D = $VisualRoot/CenterContainer/SpriteAnchor/AnimatedSprite2D
+
+## The progress bar UI element that fills up as loading completes.
+@onready var progress_bar: ProgressBar = $VisualRoot/CenterContainer/SpriteAnchor/ProgressBar
+
+## The audio player responsible for loading screen background audio.
+@onready var audio_player: AudioStreamPlayer = $VisualRoot/AudioStreamPlayer
 
 
 ## Initializes background scene loading, animations, and sound playback.
@@ -240,7 +240,7 @@ func _warmup_material(mat: Material) -> void:
 	var is_2d: bool = mat is CanvasItemMaterial
 
 	if mat is ShaderMaterial:
-		var s_mat: ShaderMaterial = mat if mat is ShaderMaterial else null
+		var s_mat: ShaderMaterial = mat as ShaderMaterial
 		if not is_instance_valid(s_mat.shader):
 			return
 		if s_mat.shader.get_mode() == Shader.MODE_CANVAS_ITEM:
@@ -321,6 +321,13 @@ func _finalize_scene_transition() -> void:
 		print("LoadingScreen: Waiting for WorldChunkManager initial zone...")
 		await chunker.initial_zone_ready
 
+	if not is_instance_valid(world_env):
+		world_env = _find_world_environment(new_scene)
+		if is_instance_valid(world_env) and is_instance_valid(world_env.environment):
+			world_env.environment = world_env.environment.duplicate()
+			target_env = world_env.environment
+			target_env.sdfgi_enabled = false
+
 	var player_node: CharacterBody3D = (
 		new_scene.find_child("Player", true, false) as CharacterBody3D
 	)
@@ -342,7 +349,7 @@ func _finalize_scene_transition() -> void:
 	print("LoadingScreen: Synchronizing viewport pipeline prior to GI activation.")
 	await _reapply_active_video_settings()
 
-	for frame_idx: int in range(SETTLING_FRAMES):
+	for _frame_idx: int in range(SETTLING_FRAMES):
 		await get_tree().process_frame
 
 	var sdfgi_setting: String = _get_setting_string(
@@ -401,6 +408,7 @@ func _reapply_active_video_settings() -> void:
 	var ssao_key: String = _get_setting_string("Settings", "ssao", str(VideoConfig.DEFAULT_SSAO))
 	var ssi_key: String = _get_setting_string("Settings", "ssi", str(VideoConfig.DEFAULT_SSI))
 	var ssr_key: String = _get_setting_string("Settings", "ssr", str(VideoConfig.DEFAULT_SSR))
+	var sdfgi_key: String = _get_setting_string("Settings", "sdfgi", str(VideoConfig.DEFAULT_SDFGI))
 	var fog_key: String = _get_setting_string(
 		"Settings", "volumetric_fog", str(VideoConfig.DEFAULT_FOG)
 	)
@@ -414,6 +422,12 @@ func _reapply_active_video_settings() -> void:
 
 	var shadow_filter_str: String = _get_setting_string("Settings", "shadow_filter", "Soft Medium")
 	var tonemap_str: String = _get_setting_string("Settings", "tonemap_mode", "Filmic")
+
+	var user_sdfgi_dict: Dictionary = (
+		_get_config_dict(VideoConfig.SDFGI_MODES, sdfgi_key).duplicate()
+	)
+	var sdfgi_target_enabled: bool = user_sdfgi_dict.get("enabled", false) == true
+	user_sdfgi_dict["enabled"] = false
 
 	var config: Dictionary = {
 		"fsr_scale": fsr_scale,
@@ -439,7 +453,8 @@ func _reapply_active_video_settings() -> void:
 		"ssao": _get_config_dict(VideoConfig.SSAO_MODES, ssao_key),
 		"ssi": _get_config_dict(VideoConfig.SSI_MODES, ssi_key),
 		"ssr": _get_config_dict(VideoConfig.SSR_MODES, ssr_key),
-		"sdfgi": {"enabled": false},
+		"sdfgi": user_sdfgi_dict,
+		"sdfgi_will_enable": sdfgi_target_enabled,
 		"fog": _get_config_dict(VideoConfig.FOG_MODES, fog_key),
 		"glow": _get_config_dict(VideoConfig.GLOW_MODES, glow_key),
 	}
@@ -449,7 +464,6 @@ func _reapply_active_video_settings() -> void:
 ## Safely extracts a string setting from persistent [GlobalSettings].
 @warning_ignore("unsafe_method_access")
 func _get_setting_string(category: String, key: String, default_value: String) -> String:
-	print("LoadingScreen: Fetching string setting -> [", category, "] ", key)
 	var raw: Variant = GlobalSettings.call(&"get_setting", category, key, default_value)
 	var result: String = raw if raw is String else default_value
 	return result
@@ -458,7 +472,6 @@ func _get_setting_string(category: String, key: String, default_value: String) -
 ## Safely extracts a boolean setting from persistent [GlobalSettings].
 @warning_ignore("unsafe_method_access")
 func _get_setting_bool(category: String, key: String, default_value: bool) -> bool:
-	print("LoadingScreen: Fetching bool setting -> [", category, "] ", key)
 	var raw: Variant = GlobalSettings.call(&"get_setting_bool", category, key, default_value)
 	var result: bool = raw if raw is bool else default_value
 	return result
@@ -467,7 +480,6 @@ func _get_setting_bool(category: String, key: String, default_value: bool) -> bo
 ## Safely extracts a float setting from persistent [GlobalSettings].
 @warning_ignore("unsafe_method_access")
 func _get_setting_float(category: String, key: String, default_value: float) -> float:
-	print("LoadingScreen: Fetching float setting -> [", category, "] ", key)
 	var raw: Variant = GlobalSettings.call(&"get_setting_float", category, key, default_value)
 	var result: float = raw if raw is float else default_value
 	return result
@@ -480,7 +492,7 @@ func _get_config_dict(source: Dictionary, key: String) -> Dictionary:
 	return result
 
 
-## Locates [WorldEnvironment] safely even if [param target] is outside tree.
+## Locates [WorldEnvironment] safely while ignoring preview diorama nodes.
 func _find_world_environment(target: Node) -> WorldEnvironment:
 	print("LoadingScreen: Locating WorldEnvironment in scene hierarchy.")
 	if target is WorldEnvironment:
@@ -496,9 +508,11 @@ func _find_world_environment(target: Node) -> WorldEnvironment:
 		if child is WorldEnvironment:
 			return child as WorldEnvironment
 
-	var env_nodes: Array[Node] = target.find_children("", "WorldEnvironment", true, false)
-	if not env_nodes.is_empty():
-		return env_nodes[0] as WorldEnvironment
+	var env_nodes: Array[Node] = target.find_children("*", "WorldEnvironment", true, false)
+	for node: Node in env_nodes:
+		var candidate: WorldEnvironment = node as WorldEnvironment
+		if is_instance_valid(candidate) and candidate.find_parent("DioramaViewport") == null:
+			return candidate
 
 	return null
 

@@ -2,6 +2,18 @@
 class_name VideoOptions
 extends Panel
 
+## Cached pending rendering method chosen before restarting.
+var _pending_renderer: String = ""
+
+## Cached pending GPU adapter index chosen before restarting.
+var _pending_gpu_index: int = -1
+
+## Guard flag preventing signal cascades during bulk preset or benchmark loads.
+var _is_applying_batch: bool = false
+
+## Guard flag coalescing multiple same-frame setting signals into one pipeline pass.
+var _is_pipeline_queued: bool = false
+
 ## Reference to the display sub-section controller [DisplaySection].
 @onready var display_section: DisplaySection = %DisplaySection
 
@@ -17,24 +29,21 @@ extends Panel
 ## Reference to the restart confirmation [ConfirmationDialog].
 @onready var restart_dialog: ConfirmationDialog = %RestartDialog
 
-## Cached pending rendering method chosen before restarting.
-var _pending_renderer: String = ""
-
-## Cached pending GPU adapter index chosen before restarting.
-var _pending_gpu_index: int = -1
-
 
 ## Connects section events and applies initial video settings on load.
 func _ready() -> void:
 	print("VideoOptions: Main panel coordinator initialized.")
+	set_process(false)
+	set_physics_process(false)
+
 	if is_instance_valid(restart_dialog):
 		restart_dialog.hide()
 
 	visibility_changed.connect(_on_visibility_changed)
-	display_section.display_settings_changed.connect(_apply_all_settings)
+	display_section.display_settings_changed.connect(_on_display_settings_changed)
 	quality_section.preset_changed.connect(_on_preset_changed)
-	quality_section.quality_settings_changed.connect(_apply_all_settings)
-	effects_section.effects_settings_changed.connect(_apply_all_settings)
+	quality_section.quality_settings_changed.connect(_on_pipeline_settings_changed)
+	effects_section.effects_settings_changed.connect(_on_pipeline_settings_changed)
 	hardware_section.restart_required.connect(_on_restart_required)
 	hardware_section.auto_tune_requested.connect(_on_auto_tune_requested)
 	restart_dialog.confirmed.connect(_on_restart_dialog_confirmed)
@@ -47,43 +56,109 @@ func _ready() -> void:
 
 	if is_visible_in_tree():
 		VideoApplier.set_diorama_active(get_tree(), true)
-		_apply_all_settings()
+		_queue_pipeline_update()
 
 
-## Cleans up diorama rendering when panel exits scene tree.
+## Cleans up diorama rendering and disconnects global signals on tree exit.
 func _exit_tree() -> void:
-	print("VideoOptions: Exiting tree; putting diorama rendering to sleep.")
-	VideoApplier.set_diorama_active(get_tree(), false)
+	print("VideoOptions: Exiting tree; cleaning up connections and diorama state.")
+	var manager: Node = SystemLocator.get_graphics_manager()
+	if is_instance_valid(manager) and manager.has_signal(&"benchmark_completed"):
+		var bench_sig: Signal = Signal(manager, &"benchmark_completed")
+		if bench_sig.is_connected(_on_benchmark_completed):
+			bench_sig.disconnect(_on_benchmark_completed)
+
+	if is_instance_valid(get_tree()):
+		VideoApplier.set_diorama_active(get_tree(), false)
 
 
 ## Synchronizes diorama state when panel visibility toggles.
 func _on_visibility_changed() -> void:
+	if not is_inside_tree():
+		return
+
 	if is_visible_in_tree():
-		print("VideoOptions: Panel became visible. Pushing full state to diorama.")
+		print("VideoOptions: Panel became visible. Pushing state to diorama.")
 		VideoApplier.set_diorama_active(get_tree(), true)
-		_apply_all_settings()
+		_queue_pipeline_update()
 	else:
-		print("VideoOptions: Panel hidden. Putting diorama to sleep.")
-		VideoApplier.set_diorama_active(get_tree(), false)
+		var parent_router: CanvasItem = get_parent() as CanvasItem
+		var keep_diorama: bool = (
+			is_instance_valid(parent_router) and parent_router.is_visible_in_tree()
+		)
+		if not keep_diorama:
+			print("VideoOptions: Options overlay hidden. Putting diorama to sleep.")
+			VideoApplier.set_diorama_active(get_tree(), false)
+
+
+## Disarms [GraphicsManager] auto-scaling when the player manually changes settings.
+func _disarm_auto_optimizer() -> void:
+	var manager: Node = SystemLocator.get_graphics_manager()
+	if is_instance_valid(manager) and manager.has_method(&"notify_manual_user_override"):
+		manager.call(&"notify_manual_user_override")
+
+
+## Applies window, monitor, and framerate settings when display controls change.
+func _on_display_settings_changed() -> void:
+	if _is_applying_batch:
+		return
+	print("VideoOptions: Display settings changed.")
+	_apply_display_and_engine_settings()
+
+
+## Queues a coalesced 3D viewport pipeline update when quality or effects change.
+func _on_pipeline_settings_changed() -> void:
+	if _is_applying_batch:
+		return
+	_disarm_auto_optimizer()
+	_queue_pipeline_update()
 
 
 ## Updates section settings when master preset selection changes.
 ## [param preset] The target quality preset key name to load.
 func _on_preset_changed(preset: String) -> void:
+	if _is_applying_batch:
+		return
+
 	print("VideoOptions: Quality preset changed to: ", preset)
+	_disarm_auto_optimizer()
 	if VideoConfig.PRESETS.has(preset):
+		_is_applying_batch = true
 		var raw_p_data: Variant = VideoConfig.PRESETS[preset]
 		var p_data: Dictionary = raw_p_data if raw_p_data is Dictionary else {}
 		effects_section.apply_preset_dict(p_data)
 		quality_section.apply_preset_dict(p_data)
 		GlobalSettings.save_settings_bulk("Settings", p_data)
+		_is_applying_batch = false
 
-	_apply_all_settings()
+	_queue_pipeline_update()
 
 
-## Gathers all configuration values and applies them to viewport.
+## Coalesces multiple setting signals in the same frame into one pipeline call.
+func _queue_pipeline_update() -> void:
+	if _is_pipeline_queued:
+		return
+	_is_pipeline_queued = true
+	call_deferred(&"_flush_pipeline_update")
+
+
+## Executes the deferred pipeline update on the active viewport.
+func _flush_pipeline_update() -> void:
+	_is_pipeline_queued = false
+	if not is_inside_tree():
+		return
+	_apply_viewport_pipeline_only()
+
+
+## Gathers all configuration values and applies both display and 3D pipeline.
 func _apply_all_settings() -> void:
 	print("VideoOptions: Dispatching full state payload to VideoApplier.")
+	_apply_display_and_engine_settings()
+	_apply_viewport_pipeline_only()
+
+
+## Applies window mode, resolution, VSync, and FPS cap to [DisplayServer].
+func _apply_display_and_engine_settings() -> void:
 	var mode_val: int = GlobalSettings.get_setting_int(
 		"Settings", "display_mode", VideoConfig.DEFAULT_DISPLAY
 	)
@@ -103,6 +178,9 @@ func _apply_all_settings() -> void:
 	)
 	VideoApplier.apply_engine_limits(vsync, fps_cap)
 
+
+## Gathers 3D quality and effect settings and updates the rendering pipeline.
+func _apply_viewport_pipeline_only() -> void:
 	var raw_aniso: Variant = GlobalSettings.get_setting(
 		"Settings", "anisotropy", VideoConfig.DEFAULT_ANISOTROPY
 	)
@@ -111,6 +189,12 @@ func _apply_all_settings() -> void:
 	var aniso_val: int = raw_aniso_val if raw_aniso_val is int else 2
 	VideoApplier.apply_anisotropy(aniso_val)
 
+	var config: Dictionary = _build_pipeline_config()
+	VideoApplier.apply_viewport_pipeline(get_tree(), get_viewport(), config)
+
+
+## Constructs the normalized configuration dictionary for [VideoApplier].
+func _build_pipeline_config() -> Dictionary:
 	var raw_shadow: Variant = GlobalSettings.get_setting(
 		"Settings", "shadow_quality", "High (Smooth)"
 	)
@@ -224,7 +308,7 @@ func _apply_all_settings() -> void:
 	var raw_glow_data: Variant = VideoConfig.GLOW_MODES.get(glow_key, {})
 	var glow_dict: Dictionary = raw_glow_data if raw_glow_data is Dictionary else {}
 
-	var config: Dictionary = {
+	return {
 		"fsr_scale": fsr_scale,
 		"aa_settings": aa_settings,
 		"shadow_atlas": shadow_atlas,
@@ -250,7 +334,6 @@ func _apply_all_settings() -> void:
 		"fog": fog_dict,
 		"glow": glow_dict,
 	}
-	VideoApplier.apply_viewport_pipeline(get_tree(), get_viewport(), config)
 
 
 ## Displays restart confirmation dialog for GPU or driver changes.
@@ -271,17 +354,18 @@ func _on_restart_dialog_confirmed() -> void:
 	var restart_args: Array[String] = []
 
 	if not _pending_renderer.is_empty():
-		GlobalSettings.save_setting("Settings", "renderer", _pending_renderer)
+		GlobalSettings.save_setting("Settings", "renderer", _pending_renderer, true)
 		var driver_val: String = "opengl3" if _pending_renderer == "gl_compatibility" else "vulkan"
 		restart_args.append("--rendering-driver")
 		restart_args.append(driver_val)
 
 	if _pending_gpu_index >= 0:
-		GlobalSettings.save_setting("Settings", "gpu_adapter_index", _pending_gpu_index)
+		GlobalSettings.save_setting("Settings", "gpu_adapter_index", _pending_gpu_index, true)
 		ProjectSettings.set_setting("rendering/vulkan/rendering_device/device", _pending_gpu_index)
 		restart_args.append("--gpu-index")
 		restart_args.append(str(_pending_gpu_index))
 
+	GlobalSettings.flush_to_disk()
 	OS.set_restart_on_exit(true, PackedStringArray(restart_args))
 	get_tree().quit()
 
@@ -296,12 +380,14 @@ func _on_auto_tune_requested() -> void:
 
 
 ## Refreshes UI sections after benchmark routine completes.
-## [param _optimal_level] Recommended graphics tier determined by pass.
-func _on_benchmark_completed(_optimal_level: int) -> void:
-	print("VideoOptions: Benchmark completed. Refreshing all panels.")
+## [param optimal_level] Recommended graphics tier determined by pass.
+func _on_benchmark_completed(optimal_level: int) -> void:
+	print("VideoOptions: Benchmark completed at tier ", optimal_level, ". Refreshing panels.")
+	_is_applying_batch = true
 	hardware_section.set_benchmark_state(false)
 	display_section.load_settings()
 	quality_section.load_settings()
 	effects_section.load_settings()
 	hardware_section.load_settings()
+	_is_applying_batch = false
 	_apply_all_settings()

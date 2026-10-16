@@ -242,8 +242,6 @@ func _register_inspected_row(
 	if title.is_empty():
 		return
 
-	print("Registering inspected row: ", title)
-
 	if p_btn != null:
 		var action_val: Variant = p_btn.get_meta("action", "")
 		var action_str: String = str(action_val)

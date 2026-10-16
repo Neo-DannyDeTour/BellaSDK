@@ -6,10 +6,21 @@ extends VBoxContainer
 # SIGNALS
 # --------------------------------------
 ## Emitted when changing GPU or renderer backend to request confirmation.
+@warning_ignore("unused_signal")
 signal restart_required(message: String, renderer_key: String, gpu_idx: int)
 
 ## Emitted when the user starts the automated 60 FPS tuning benchmark pass.
+@warning_ignore("unused_signal")
 signal auto_tune_requested
+
+# --------------------------------------
+# RUNTIME LOOKUP MAPPINGS
+# --------------------------------------
+## Map storing GPU adapter names mapped to their physical hardware index.
+var _available_gpus: Dictionary[String, int] = {}
+
+## Lookup map associating renderer keys with toggle buttons.
+var _renderer_btn_map: Dictionary[String, Button] = {}
 
 # --------------------------------------
 # NODE REFERENCES
@@ -29,19 +40,12 @@ signal auto_tune_requested
 ## Reference to the auto-optimization benchmark [Button].
 @onready var auto_tune_button: Button = %AutoTuneButton
 
-# --------------------------------------
-# RUNTIME LOOKUP MAPPINGS
-# --------------------------------------
-## Map storing GPU adapter names mapped to their physical hardware index.
-var _available_gpus: Dictionary = {}
-
-## Lookup map associating renderer keys with toggle buttons.
-var _renderer_btn_map: Dictionary[String, Button] = {}
-
 
 ## Lifecycle method initializing hardware widgets and connecting signals.
 func _ready() -> void:
 	print("HardwareSection: Initializing hardware settings.")
+	set_process(false)
+	set_physics_process(false)
 	_setup_renderer_buttons()
 	_populate_dropdowns()
 	_connect_signals()
@@ -70,6 +74,8 @@ func _setup_group(mapping: Dictionary[String, Button]) -> void:
 	pressed_style.set_corner_radius_all(3)
 
 	for btn: Button in mapping.values():
+		if not is_instance_valid(btn):
+			continue
 		btn.toggle_mode = true
 		btn.button_group = group
 		btn.add_theme_stylebox_override("pressed", pressed_style)
@@ -116,16 +122,18 @@ func _connect_signals() -> void:
 	)
 
 
-## Synchronizes renderer and GPU selections with stored settings.
+## Synchronizes renderer and GPU selections with stored settings silently.
 func load_settings() -> void:
 	print("HardwareSection: Loading hardware settings from configuration.")
 	var raw_renderer: Variant = GlobalSettings.get_setting("Settings", "renderer", "forward_plus")
 	var cur_renderer: String = raw_renderer if raw_renderer is String else "forward_plus"
 	for key: String in _renderer_btn_map.keys():
-		_renderer_btn_map[key].button_pressed = (key == cur_renderer)
+		var btn: Button = _renderer_btn_map[key]
+		if is_instance_valid(btn):
+			btn.set_pressed_no_signal(key == cur_renderer)
 
 	var saved_gpu: int = GlobalSettings.get_setting_int("Settings", "gpu_adapter_index", 0)
-	if saved_gpu < gpu_options.get_item_count():
+	if saved_gpu >= 0 and saved_gpu < gpu_options.get_item_count():
 		gpu_options.select(saved_gpu)
 
 
@@ -133,14 +141,13 @@ func load_settings() -> void:
 func set_benchmark_state(is_running: bool) -> void:
 	print("HardwareSection: Updating auto-tune button state: ", is_running)
 	auto_tune_button.disabled = is_running
-	auto_tune_button.text = ("Benchmarking..." if is_running else "Auto-Tune for 60 FPS")
+	auto_tune_button.text = "Benchmarking..." if is_running else "Auto-Tune for 60 FPS"
 
 
 ## Handles GPU adapter selection and dispatches restart confirmation.
 func _on_gpu_selected(index: int) -> void:
 	var label: String = gpu_options.get_item_text(index)
-	var raw_gpu_val: Variant = _available_gpus.get(label, 0)
-	var gpu_idx: int = raw_gpu_val if raw_gpu_val is int else 0
+	var gpu_idx: int = _available_gpus.get(label, 0)
 	var current_gpu: int = GlobalSettings.get_setting_int("Settings", "gpu_adapter_index", 0)
 	if current_gpu == gpu_idx:
 		return
@@ -161,6 +168,11 @@ func _on_renderer_pressed(rend_key: String, label: String) -> void:
 	var current_rend: String = raw_rend if raw_rend is String else "forward_plus"
 	if current_rend == rend_key:
 		return
+
+	for key: String in _renderer_btn_map.keys():
+		var btn: Button = _renderer_btn_map[key]
+		if is_instance_valid(btn):
+			btn.set_pressed_no_signal(key == current_rend)
 
 	var msg: String = (
 		"Changing the rendering engine to '"

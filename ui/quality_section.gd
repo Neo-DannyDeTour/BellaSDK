@@ -5,11 +5,31 @@ extends VBoxContainer
 # --------------------------------------
 # SIGNALS
 # --------------------------------------
-## Emitted when the master preset selection changes.
+## Emitted when the master preset selection changes. Passes [param preset_name].
+@warning_ignore("unused_signal")
 signal preset_changed(preset_name: String)
 
 ## Emitted when individual graphics quality options change.
+@warning_ignore("unused_signal")
 signal quality_settings_changed
+
+# --------------------------------------
+# RUNTIME LOOKUP MAPPINGS
+# --------------------------------------
+## Lookup map associating preset names with toggle buttons.
+var _preset_btn_map: Dictionary[String, Button] = {}
+
+## Lookup map associating shadow quality names with toggle buttons.
+var _shadow_btn_map: Dictionary[String, Button] = {}
+
+## Lookup map associating shadow filter names with toggle buttons.
+var _shadow_filter_btn_map: Dictionary[String, Button] = {}
+
+## Lookup map associating texture filter names with toggle buttons.
+var _texture_filter_btn_map: Dictionary[String, Button] = {}
+
+## Lookup map associating FSR mode names with toggle buttons.
+var _fsr_btn_map: Dictionary[String, Button] = {}
 
 # --------------------------------------
 # NODE REFERENCES
@@ -113,35 +133,19 @@ signal quality_settings_changed
 ## Reference to the Mesh LOD input [LineEdit].
 @onready var mesh_lod_line: LineEdit = %MeshLODLine
 
-# --------------------------------------
-# RUNTIME LOOKUP MAPPINGS
-# --------------------------------------
-## Lookup map associating preset names with toggle buttons.
-var _preset_btn_map: Dictionary[String, Button] = {}
-
-## Lookup map associating shadow quality names with toggle buttons.
-var _shadow_btn_map: Dictionary[String, Button] = {}
-
-## Lookup map associating shadow filter names with toggle buttons.
-var _shadow_filter_btn_map: Dictionary[String, Button] = {}
-
-## Lookup map associating texture filter names with toggle buttons.
-var _texture_filter_btn_map: Dictionary[String, Button] = {}
-
-## Lookup map associating FSR mode names with toggle buttons.
-var _fsr_btn_map: Dictionary[String, Button] = {}
-
 
 ## Populates dropdown entries and connects widgets to listeners.
 func _ready() -> void:
 	print("QualitySection: Initializing quality section UI.")
+	set_process(false)
+	set_physics_process(false)
 	_setup_button_mappings()
 	_populate_dropdowns()
 	_connect_signals()
 	load_settings()
 
 
-## Configures ButtonGroups and dictionary mappings for quality button rows.
+## Configures [ButtonGroup] instances and dictionary mappings for quality rows.
 func _setup_button_mappings() -> void:
 	print("QualitySection: Configuring button groups and mapping lookups.")
 	_preset_btn_map = {
@@ -196,6 +200,8 @@ func _setup_group(mapping: Dictionary[String, Button]) -> void:
 	pressed_style.set_corner_radius_all(3)
 
 	for btn: Button in mapping.values():
+		if not is_instance_valid(btn):
+			continue
 		btn.toggle_mode = true
 		btn.button_group = group
 		btn.add_theme_stylebox_override("pressed", pressed_style)
@@ -216,7 +222,8 @@ func _connect_signals() -> void:
 	print("QualitySection: Connecting quality section signals.")
 	for preset_name: String in _preset_btn_map.keys():
 		var btn: Button = _preset_btn_map[preset_name]
-		btn.pressed.connect(_on_preset_pressed.bind(preset_name))
+		if is_instance_valid(btn):
+			btn.pressed.connect(_on_preset_pressed.bind(preset_name))
 
 	_connect_button_row(_shadow_btn_map, "shadow_quality")
 	_connect_button_row(_shadow_filter_btn_map, "shadow_filter")
@@ -242,10 +249,11 @@ func _connect_signals() -> void:
 func _connect_button_row(mapping: Dictionary[String, Button], config_key: String) -> void:
 	for mode_key: String in mapping.keys():
 		var btn: Button = mapping[mode_key]
-		btn.pressed.connect(_on_quality_button_pressed.bind(config_key, mode_key))
+		if is_instance_valid(btn):
+			btn.pressed.connect(_on_quality_button_pressed.bind(config_key, mode_key))
 
 
-## Connects slider and LineEdit pairs with throttled commit and live labels.
+## Connects slider and [LineEdit] pairs with throttled commit and live labels.
 func _connect_slider(
 	slider: HSlider,
 	line: LineEdit,
@@ -415,26 +423,34 @@ func load_settings() -> void:
 	mesh_lod_line.text = "%.2f" % lod
 
 
-## Reads a persisted setting and activates the corresponding toggle button.
+## Reads a persisted setting and activates the corresponding toggle button silently.
 func _sync_button_row(
 	mapping: Dictionary[String, Button], config_key: String, default_val: String
 ) -> void:
 	var saved: String = str(GlobalSettings.get_setting("Settings", config_key, default_val))
+	var resolved: String = saved if mapping.has(saved) else default_val
+	_set_group_button_silent(mapping, resolved)
+
+
+## Sets the active button in [param mapping] matching [param target_key] silently.
+func _set_group_button_silent(mapping: Dictionary[String, Button], target_key: String) -> void:
 	for key: String in mapping.keys():
-		mapping[key].button_pressed = (key == saved)
+		var btn: Button = mapping[key]
+		if is_instance_valid(btn):
+			btn.set_pressed_no_signal(key == target_key)
 
 
-## Updates local quality controls without modifying other subsystem states.
+## Updates local quality controls without firing redundant signals.
 func apply_preset_dict(data: Dictionary) -> void:
 	print("QualitySection: Applying preset quality dictionary.")
-	if data.has("shadow_quality") and _shadow_btn_map.has(str(data["shadow_quality"])):
-		_shadow_btn_map[str(data["shadow_quality"])].button_pressed = true
+	if data.has("shadow_quality"):
+		_set_group_button_silent(_shadow_btn_map, str(data["shadow_quality"]))
 	if data.has("dynamic_light_shadows"):
 		var raw_dyn: Variant = data["dynamic_light_shadows"]
 		var dyn_state: bool = raw_dyn == true or raw_dyn == 1
 		dynamic_shadows_checkbox.set_pressed_no_signal(dyn_state)
-	if data.has("shadow_filter") and _shadow_filter_btn_map.has(str(data["shadow_filter"])):
-		_shadow_filter_btn_map[str(data["shadow_filter"])].button_pressed = true
+	if data.has("shadow_filter"):
+		_set_group_button_silent(_shadow_filter_btn_map, str(data["shadow_filter"]))
 	if data.has("positional_shadow_distance"):
 		var raw_p_d: Variant = data["positional_shadow_distance"]
 		var p_d: float = raw_p_d if (raw_p_d is float or raw_p_d is int) else 0.0
@@ -451,8 +467,8 @@ func apply_preset_dict(data: Dictionary) -> void:
 		occlusion_checkbox.set_pressed_no_signal(occ_state)
 	if data.has("vrs_mode"):
 		_select_dropdown_text(vrs_options, str(data["vrs_mode"]))
-	if data.has("texture_filter") and _texture_filter_btn_map.has(str(data["texture_filter"])):
-		_texture_filter_btn_map[str(data["texture_filter"])].button_pressed = true
+	if data.has("texture_filter"):
+		_set_group_button_silent(_texture_filter_btn_map, str(data["texture_filter"]))
 	if data.has("resolution_scale"):
 		var raw_r_s: Variant = data["resolution_scale"]
 		var r_s: float = raw_r_s if (raw_r_s is float or raw_r_s is int) else 1.0
@@ -500,17 +516,10 @@ func _sync_dropdown(
 			return
 
 
-## Handles master preset button press without duplicate bulk saves.
+## Handles master preset button press and delegates bulk apply to [VideoOptions].
 func _on_preset_pressed(preset: String) -> void:
 	print("QualitySection: Preset button pressed: ", preset)
-	var current_preset: String = str(GlobalSettings.get_setting("Settings", "preset", ""))
-	if current_preset == preset:
-		return
-
-	if VideoConfig.PRESETS.has(preset):
-		var data: Dictionary = VideoConfig.PRESETS[preset]
-		apply_preset_dict(data)
-
+	_set_group_button_silent(_preset_btn_map, preset)
 	GlobalSettings.save_setting("Settings", "preset", preset)
 	preset_changed.emit(preset)
 

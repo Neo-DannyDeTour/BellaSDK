@@ -5,8 +5,14 @@ extends RefCounted
 ## Visual Layer bitmask for isolated preview geometry (3D Render Layer 11).
 const PREVIEW_LAYER_MASK: int = 1 << 10
 
+## Visual Layer bitmask for volumetric fog volumes (3D Render Layer 10).
+const VOLUMETRIC_LAYER_MASK: int = 1 << 9
+
 ## Visual Layer bitmask for primary static world geometry (3D Render Layer 1).
 const ENVIRONMENT_LAYER_MASK: int = CollisionLayers.RENDER_MASK_ENVIRONMENT
+
+## Default fallback density when volumetric fog is enabled on a zero-density env.
+const DEFAULT_MAIN_FOG_DENSITY: float = 0.015
 
 ## Cached density texture instance shared across all viewports using VRS.
 static var _cached_vrs_texture: ImageTexture = null
@@ -72,9 +78,10 @@ static func is_vrs_supported() -> bool:
 	var rd: RenderingDevice = RenderingServer.get_rendering_device()
 	if not is_instance_valid(rd):
 		return false
-	var driver: String = ProjectSettings.get_setting_with_override(
+	var raw_driver: Variant = ProjectSettings.get_setting_with_override(
 		"rendering/renderer/rendering_method"
 	)
+	var driver: String = raw_driver if raw_driver is String else ""
 	return driver != "gl_compatibility"
 
 
@@ -120,7 +127,8 @@ static func _apply_stage_shadows_and_lighting(
 	_apply_rendering_server_qualities(config)
 	_apply_light_shadows(tree, config)
 
-	var requested_atlas: int = config.get("shadow_atlas", 4096)
+	var raw_atlas: Variant = config.get("shadow_atlas", 4096)
+	var requested_atlas: int = raw_atlas if raw_atlas is int else 4096
 	if main_viewport.positional_shadow_atlas_size != requested_atlas:
 		main_viewport.positional_shadow_atlas_size = requested_atlas
 		_cached_shadow_atlas_size = requested_atlas
@@ -148,39 +156,62 @@ static func _apply_stage_viewport_aa_and_scaling(
 	tree: SceneTree, main_viewport: Viewport, config: Dictionary
 ) -> void:
 	print("VideoApplier: Executing Stage 2 (Viewport AA & Scaling).")
-	var filter_mode: int = config.get("texture_filter", 2)
+	var raw_filter_mode: Variant = config.get("texture_filter", 2)
+	var filter_mode: int = raw_filter_mode if raw_filter_mode is int else 2
 	var f_key: String = "rendering/textures/default_filters/texture_filter_mode"
 	if ProjectSettings.get_setting(f_key) != filter_mode:
 		ProjectSettings.set_setting(f_key, filter_mode)
 
-	var fsr_scale: float = config.get("fsr_scale", 1.0)
-	var raw_scale: float = config.get("resolution_scale", 1.0)
+	var raw_fsr_scale: Variant = config.get("fsr_scale", 1.0)
+	var fsr_scale: float = raw_fsr_scale if raw_fsr_scale is float else 1.0
+	var raw_res_scale: Variant = config.get("resolution_scale", 1.0)
+	var raw_scale: float = raw_res_scale if raw_res_scale is float else 1.0
 	var active_scale: float = fsr_scale if fsr_scale < 1.0 else raw_scale
 	var active_scaling_mode: Viewport.Scaling3DMode = (
 		Viewport.SCALING_3D_MODE_FSR2 if fsr_scale < 1.0 else Viewport.SCALING_3D_MODE_BILINEAR
 	)
 
-	var aa_settings: Dictionary = config.get("aa_settings", {})
-	var primary_msaa: Viewport.MSAA = aa_settings.get("msaa", Viewport.MSAA_DISABLED)
-	var taa_enabled: bool = aa_settings.get("taa", false)
-	var active_taa: bool = (fsr_scale >= 1.0) and taa_enabled
-	var active_fxaa: Viewport.ScreenSpaceAA = aa_settings.get(
-		"fxaa", Viewport.SCREEN_SPACE_AA_DISABLED
-	)
+	var raw_aa_settings: Variant = config.get("aa_settings", {})
+	var aa_settings: Dictionary = raw_aa_settings if raw_aa_settings is Dictionary else {}
+	var raw_msaa: Variant = aa_settings.get("msaa", Viewport.MSAA_DISABLED)
+	var msaa_val: int = raw_msaa if raw_msaa is int else Viewport.MSAA_DISABLED
+	var primary_msaa: Viewport.MSAA = msaa_val as Viewport.MSAA
 
-	var sdfgi_dict: Dictionary = config.get("sdfgi", {})
-	var fog_dict: Dictionary = config.get("fog", {})
-	var is_sdfgi_active: bool = sdfgi_dict.get("enabled", false)
-	var is_fog_active: bool = fog_dict.get("enabled", false)
+	var raw_taa: Variant = aa_settings.get("taa", false)
+	var taa_enabled: bool = raw_taa if raw_taa is bool else false
+	var active_taa: bool = (fsr_scale >= 1.0) and taa_enabled
+
+	var raw_fxaa: Variant = aa_settings.get("fxaa", Viewport.SCREEN_SPACE_AA_DISABLED)
+	var fxaa_val: int = raw_fxaa if raw_fxaa is int else Viewport.SCREEN_SPACE_AA_DISABLED
+	var active_fxaa: Viewport.ScreenSpaceAA = fxaa_val as Viewport.ScreenSpaceAA
+
+	var sdfgi_dict: Dictionary = _resolve_feature_dict(config, "sdfgi", "", VideoConfig.SDFGI_MODES)
+	var fog_dict: Dictionary = _resolve_feature_dict(
+		config, "fog", "volumetric_fog", VideoConfig.FOG_MODES
+	)
+	var raw_sdfgi_en: Variant = sdfgi_dict.get("enabled", false)
+	var raw_sdfgi_will: Variant = config.get("sdfgi_will_enable", false)
+	var is_sdfgi_active: bool = (
+		(raw_sdfgi_en if raw_sdfgi_en is bool else false)
+		or (raw_sdfgi_will if raw_sdfgi_will is bool else false)
+	)
+	var raw_fog_en: Variant = fog_dict.get("enabled", false)
+	var is_fog_active: bool = raw_fog_en if raw_fog_en is bool else false
 
 	if (is_sdfgi_active or is_fog_active) and primary_msaa != Viewport.MSAA_DISABLED:
 		print("VideoApplier: Disabling MSAA to prevent compute fill-rate stalls.")
 		primary_msaa = Viewport.MSAA_DISABLED
 
-	var raw_vrs: Viewport.VRSMode = config.get("vrs_mode", Viewport.VRS_DISABLED)
-	var occ_cull: bool = config.get("occlusion_culling", true)
-	var mesh_lod: float = config.get("mesh_lod", 1.0)
-	var debanding_val: bool = config.get("debanding", true)
+	var raw_vrs_cfg: Variant = config.get("vrs_mode", Viewport.VRS_DISABLED)
+	var vrs_val: int = raw_vrs_cfg if raw_vrs_cfg is int else Viewport.VRS_DISABLED
+	var raw_vrs: Viewport.VRSMode = vrs_val as Viewport.VRSMode
+
+	var raw_occ: Variant = config.get("occlusion_culling", true)
+	var occ_cull: bool = raw_occ if raw_occ is bool else true
+	var raw_lod: Variant = config.get("mesh_lod", 1.0)
+	var mesh_lod: float = raw_lod if raw_lod is float else 1.0
+	var raw_deband: Variant = config.get("debanding", true)
+	var debanding_val: bool = raw_deband if raw_deband is bool else true
 
 	if not is_vrs_supported():
 		raw_vrs = Viewport.VRS_DISABLED
@@ -209,9 +240,9 @@ static func _apply_stage_viewport_aa_and_scaling(
 
 	var diorama_vp: SubViewport = _resolve_diorama_viewport(tree)
 	if is_instance_valid(diorama_vp):
-		diorama_vp.own_world_3d = true
-		if diorama_vp.world_3d == null:
+		if not is_instance_valid(diorama_vp.world_3d):
 			diorama_vp.world_3d = World3D.new()
+		diorama_vp.own_world_3d = true
 		diorama_vp.use_occlusion_culling = occ_cull
 		diorama_vp.scaling_3d_mode = active_scaling_mode
 		diorama_vp.scaling_3d_scale = active_scale
@@ -220,7 +251,9 @@ static func _apply_stage_viewport_aa_and_scaling(
 		diorama_vp.screen_space_aa = active_fxaa
 		diorama_vp.use_debanding = debanding_val
 		diorama_vp.mesh_lod_threshold = mesh_lod
-		var requested_atlas: int = config.get("shadow_atlas", 4096)
+		var raw_dio_atlas: Variant = config.get("shadow_atlas", 4096)
+		var dio_atlas_req: int = raw_dio_atlas if raw_dio_atlas is int else 4096
+		var requested_atlas: int = mini(dio_atlas_req, 1024)
 		if diorama_vp.positional_shadow_atlas_size != requested_atlas:
 			diorama_vp.positional_shadow_atlas_size = requested_atlas
 			if requested_atlas > 0:
@@ -236,14 +269,24 @@ static func _apply_stage_environments(tree: SceneTree, config: Dictionary) -> vo
 ## Synchronizes light shadow masks, atlas sizes, biases, and filter qualities.
 static func _apply_light_shadows(tree: SceneTree, config: Dictionary) -> void:
 	print("VideoApplier: Synchronizing light shadow configurations.")
-	var enable_dyn: bool = config.get("dynamic_light_shadows", true)
-	var f_key: String = config.get("shadow_filter", "Soft Medium")
-	var filter_mode: RenderingServer.ShadowQuality = VideoConfig.SHADOW_FILTER_MODES.get(
+	var raw_dyn: Variant = config.get("dynamic_light_shadows", true)
+	var enable_dyn: bool = raw_dyn if raw_dyn is bool else true
+	var raw_f_key: Variant = config.get("shadow_filter", "Soft Medium")
+	var f_key: String = raw_f_key if raw_f_key is String else "Soft Medium"
+	var raw_filter_mode: Variant = VideoConfig.SHADOW_FILTER_MODES.get(
 		f_key, RenderingServer.SHADOW_QUALITY_SOFT_MEDIUM
 	)
-	var d_dist: float = config.get("directional_shadow_distance", 64.0)
-	var p_dist: float = config.get("positional_shadow_distance", 24.0)
-	var preview_mask: int = PREVIEW_LAYER_MASK | (1 << 9)
+	var filter_val: int = (
+		raw_filter_mode if raw_filter_mode is int else RenderingServer.SHADOW_QUALITY_SOFT_MEDIUM
+	)
+	var filter_mode: RenderingServer.ShadowQuality = filter_val as RenderingServer.ShadowQuality
+
+	var raw_d_dist: Variant = config.get("directional_shadow_distance", 64.0)
+	var d_dist: float = raw_d_dist if raw_d_dist is float else 64.0
+	var raw_p_dist: Variant = config.get("positional_shadow_distance", 24.0)
+	var p_dist: float = raw_p_dist if raw_p_dist is float else 24.0
+	var preview_mask: int = PREVIEW_LAYER_MASK | VOLUMETRIC_LAYER_MASK
+	var main_light_mask: int = ENVIRONMENT_LAYER_MASK | (1 << 1) | (1 << 2) | VOLUMETRIC_LAYER_MASK
 
 	RenderingServer.positional_soft_shadow_filter_set_quality(filter_mode)
 	RenderingServer.directional_soft_shadow_filter_set_quality(filter_mode)
@@ -252,14 +295,14 @@ static func _apply_light_shadows(tree: SceneTree, config: Dictionary) -> void:
 		tree, &"lights_directional", "DirectionalLight3D"
 	)
 	for d_node: Node in dir_lights:
-		var d_light: DirectionalLight3D = d_node if d_node is DirectionalLight3D else null
+		var d_light: DirectionalLight3D = d_node as DirectionalLight3D
 		if is_instance_valid(d_light):
 			d_light.shadow_enabled = enable_dyn
 			d_light.directional_shadow_max_distance = d_dist
 			if d_light.find_parent("DioramaViewport") != null:
 				d_light.light_cull_mask = preview_mask
 			else:
-				d_light.light_cull_mask = ENVIRONMENT_LAYER_MASK | (1 << 1) | (1 << 2)
+				d_light.light_cull_mask = main_light_mask
 				d_light.shadow_bias = 0.03
 				d_light.shadow_normal_bias = 1.5
 
@@ -268,7 +311,7 @@ static func _apply_light_shadows(tree: SceneTree, config: Dictionary) -> void:
 	var all_pos_lights: Array[Node] = omni_lights + spot_lights
 
 	for node: Node in all_pos_lights:
-		var light: Light3D = node if node is Light3D else null
+		var light: Light3D = node as Light3D
 		if not is_instance_valid(light):
 			continue
 
@@ -283,7 +326,7 @@ static func _apply_light_shadows(tree: SceneTree, config: Dictionary) -> void:
 			if is_diorama:
 				light.light_cull_mask = preview_mask
 			else:
-				light.light_cull_mask = ENVIRONMENT_LAYER_MASK | (1 << 1) | (1 << 2)
+				light.light_cull_mask = main_light_mask
 
 
 ## Clamps preview viewport MSAA strictly to 2X to maintain 60 FPS headroom.
@@ -295,25 +338,32 @@ static func _clamp_preview_msaa(requested_msaa: Viewport.MSAA) -> Viewport.MSAA:
 ## Configures global SSAO, SSIL, and volumetric fog on [RenderingServer].
 static func _apply_rendering_server_qualities(config: Dictionary) -> void:
 	print("VideoApplier: Updating RenderingServer graphic quality settings.")
-	var ssao_dict: Dictionary = config.get("ssao", {})
+	var ssao_dict: Dictionary = _resolve_feature_dict(config, "ssao", "", VideoConfig.SSAO_MODES)
 	if not ssao_dict.is_empty():
-		var ssao_q: int = ssao_dict.get("quality", 1)
-		var ssao_half: bool = ssao_dict.get("half_size", false)
+		var raw_ssao_q: Variant = ssao_dict.get("quality", 1)
+		var ssao_q: int = raw_ssao_q if raw_ssao_q is int else 1
+		var raw_ssao_half: Variant = ssao_dict.get("half_size", false)
+		var ssao_half: bool = raw_ssao_half if raw_ssao_half is bool else false
 		RenderingServer.environment_set_ssao_quality(
 			ssao_q as RenderingServer.EnvironmentSSAOQuality, ssao_half, 0.5, 2, 1.0, 50.0
 		)
 
-	var ssi_dict: Dictionary = config.get("ssi", {})
+	var ssi_dict: Dictionary = _resolve_feature_dict(config, "ssi", "", VideoConfig.SSI_MODES)
 	if not ssi_dict.is_empty():
-		var ssi_q: int = ssi_dict.get("quality", 1)
-		var ssi_half: bool = ssi_dict.get("half_size", false)
+		var raw_ssi_q: Variant = ssi_dict.get("quality", 1)
+		var ssi_q: int = raw_ssi_q if raw_ssi_q is int else 1
+		var raw_ssi_half: Variant = ssi_dict.get("half_size", false)
+		var ssi_half: bool = raw_ssi_half if raw_ssi_half is bool else false
 		RenderingServer.environment_set_ssil_quality(
 			ssi_q as RenderingServer.EnvironmentSSILQuality, ssi_half, 0.5, 2, 1.0, 50.0
 		)
 
-	var fog_dict: Dictionary = config.get("fog", {})
+	var fog_dict: Dictionary = _resolve_feature_dict(
+		config, "fog", "volumetric_fog", VideoConfig.FOG_MODES
+	)
 	if not fog_dict.is_empty():
-		var depth: int = fog_dict.get("depth", 64)
+		var raw_depth: Variant = fog_dict.get("depth", 64)
+		var depth: int = raw_depth if raw_depth is int else 64
 		if _cached_fog_depth != depth:
 			_cached_fog_depth = depth
 			RenderingServer.environment_set_volumetric_fog_volume_size(64, depth)
@@ -327,21 +377,29 @@ static func _apply_environment_and_materials(tree: SceneTree, config: Dictionary
 
 	var diorama_vp: SubViewport = _resolve_diorama_viewport(tree)
 	if is_instance_valid(diorama_vp):
+		if not is_instance_valid(diorama_vp.world_3d):
+			diorama_vp.world_3d = World3D.new()
 		diorama_vp.own_world_3d = true
-		if diorama_vp.find_world_3d():
-			var dio_w: World3D = diorama_vp.find_world_3d()
+		var dio_w: World3D = diorama_vp.find_world_3d()
+		if is_instance_valid(dio_w):
 			if not is_instance_valid(dio_w.environment):
 				dio_w.environment = Environment.new()
 			diorama_environments.append(dio_w.environment)
+		if (
+			is_instance_valid(diorama_vp.world_3d)
+			and is_instance_valid(diorama_vp.world_3d.environment)
+		):
+			if diorama_vp.world_3d.environment not in diorama_environments:
+				diorama_environments.append(diorama_vp.world_3d.environment)
 
 	var we_nodes: Array[Node] = _get_nodes_by_group_or_type(
 		tree, &"world_environments", "WorldEnvironment"
 	)
 	for node: Node in we_nodes:
-		var we: WorldEnvironment = node if node is WorldEnvironment else null
-		if we.is_in_group("ignore_global_video_settings"):
+		var we: WorldEnvironment = node as WorldEnvironment
+		if not is_instance_valid(we) or we.is_in_group("ignore_global_video_settings"):
 			continue
-		if is_instance_valid(we) and is_instance_valid(we.environment):
+		if is_instance_valid(we.environment):
 			if is_instance_valid(diorama_vp) and diorama_vp.is_ancestor_of(we):
 				if we.environment not in diorama_environments:
 					diorama_environments.append(we.environment)
@@ -351,11 +409,16 @@ static func _apply_environment_and_materials(tree: SceneTree, config: Dictionary
 
 	var root_w: World3D = tree.root.find_world_3d()
 	if is_instance_valid(root_w) and is_instance_valid(root_w.environment):
-		if root_w.environment not in main_environments:
+		if (
+			root_w.environment not in main_environments
+			and root_w.environment not in diorama_environments
+		):
 			main_environments.append(root_w.environment)
 
-	var exp_val: float = config.get("exposure", 1.0)
-	var dof_amount: float = config.get("dof_amount", 0.0)
+	var raw_exp: Variant = config.get("exposure", 1.0)
+	var exp_val: float = raw_exp if raw_exp is float else 1.0
+	var raw_dof: Variant = config.get("dof_amount", 0.0)
+	var dof_amount: float = raw_dof if raw_dof is float else 0.0
 	var is_dof_active: bool = dof_amount > 0.005
 
 	RenderingServer.gi_set_use_half_resolution(true)
@@ -368,9 +431,15 @@ static func _apply_environment_and_materials(tree: SceneTree, config: Dictionary
 
 	var active_cams: Array[Node] = _get_nodes_by_group_or_type(tree, &"cameras", "Camera3D")
 	for c_node: Node in active_cams:
-		var cam: Camera3D = c_node if c_node is Camera3D else null
+		var cam: Camera3D = c_node as Camera3D
 		if not is_instance_valid(cam):
 			continue
+
+		if is_instance_valid(cam.environment):
+			var is_cam_preview: bool = (
+				is_instance_valid(diorama_vp) and diorama_vp.is_ancestor_of(cam)
+			)
+			_populate_environment_values(cam.environment, config, exp_val, is_cam_preview)
 
 		if not is_instance_valid(cam.attributes):
 			var new_attr: CameraAttributesPractical = CameraAttributesPractical.new()
@@ -379,15 +448,14 @@ static func _apply_environment_and_materials(tree: SceneTree, config: Dictionary
 			cam.attributes = new_attr
 
 		if cam.attributes is CameraAttributesPractical:
-			var cam_attr: CameraAttributesPractical = (
-				cam.attributes if cam.attributes is CameraAttributesPractical else null
-			)
+			var cam_attr: CameraAttributesPractical = cam.attributes as CameraAttributesPractical
 			if cam_attr.dof_blur_far_enabled != is_dof_active:
 				cam_attr.dof_blur_far_enabled = is_dof_active
 			if not is_equal_approx(cam_attr.dof_blur_amount, dof_amount):
 				cam_attr.dof_blur_amount = dof_amount
 
-	var mb_factor: float = config.get("motion_blur", 0.0)
+	var raw_mb: Variant = config.get("motion_blur", 0.0)
+	var mb_factor: float = raw_mb if raw_mb is float else 0.0
 	for c_node: Node in active_cams:
 		if c_node is ExtendedCamera3D:
 			(c_node as ExtendedCamera3D).set_motion_blur_strength(mb_factor)
@@ -400,27 +468,38 @@ static func _populate_environment_values(
 	print("VideoApplier: Populating environment settings. Preview: ", is_preview)
 	env.tonemap_exposure = exposure
 
-	var tonemap_key: String = config.get("tonemap_key", "Filmic")
+	var raw_tonemap_key: Variant = config.get("tonemap_key", "Filmic")
+	var tonemap_key: String = raw_tonemap_key if raw_tonemap_key is String else "Filmic"
 	if VideoConfig.TONEMAP_MODES.has(tonemap_key):
-		env.tonemap_mode = VideoConfig.TONEMAP_MODES[tonemap_key]
+		var raw_tm_mode: Variant = VideoConfig.TONEMAP_MODES[tonemap_key]
+		if raw_tm_mode is int:
+			var tm_val: int = raw_tm_mode
+			env.tonemap_mode = tm_val as Environment.ToneMapper
 
-	var ssao_dict: Dictionary = config.get("ssao", {})
-	env.ssao_enabled = ssao_dict.get("enabled", false)
+	var ssao_dict: Dictionary = _resolve_feature_dict(config, "ssao", "", VideoConfig.SSAO_MODES)
+	var raw_ssao_en: Variant = ssao_dict.get("enabled", false)
+	env.ssao_enabled = raw_ssao_en if raw_ssao_en is bool else false
 
-	var ssi_dict: Dictionary = config.get("ssi", {})
-	env.ssil_enabled = ssi_dict.get("enabled", false)
+	var ssi_dict: Dictionary = _resolve_feature_dict(config, "ssi", "", VideoConfig.SSI_MODES)
+	var raw_ssi_en: Variant = ssi_dict.get("enabled", false)
+	env.ssil_enabled = raw_ssi_en if raw_ssi_en is bool else false
 
-	var ssr_dict: Dictionary = config.get("ssr", {})
-	env.ssr_enabled = ssr_dict.get("enabled", false)
+	var ssr_dict: Dictionary = _resolve_feature_dict(config, "ssr", "", VideoConfig.SSR_MODES)
+	var raw_ssr_en: Variant = ssr_dict.get("enabled", false)
+	env.ssr_enabled = raw_ssr_en if raw_ssr_en is bool else false
 	if env.ssr_enabled:
-		var max_steps: int = ssr_dict.get("steps", 64)
+		var raw_steps: Variant = ssr_dict.get("steps", 64)
+		var max_steps: int = raw_steps if raw_steps is int else 64
 		env.ssr_max_steps = mini(max_steps, 32) if is_preview else max_steps
 
-	var sdfgi_dict: Dictionary = config.get("sdfgi", {})
-	var is_sdfgi: bool = sdfgi_dict.get("enabled", false)
-	env.sdfgi_enabled = is_sdfgi
-	if is_sdfgi:
-		var cascades: int = sdfgi_dict.get("cascades", 2)
+	var sdfgi_dict: Dictionary = _resolve_feature_dict(config, "sdfgi", "", VideoConfig.SDFGI_MODES)
+	var raw_sdfgi_en: Variant = sdfgi_dict.get("enabled", false)
+	var is_sdfgi: bool = raw_sdfgi_en if raw_sdfgi_en is bool else false
+	var raw_will_sdfgi: Variant = config.get("sdfgi_will_enable", false)
+	var will_enable_sdfgi: bool = raw_will_sdfgi if raw_will_sdfgi is bool else false
+	if is_sdfgi or will_enable_sdfgi:
+		var raw_cascades: Variant = sdfgi_dict.get("cascades", 2)
+		var cascades: int = raw_cascades if raw_cascades is int else 2
 		env.sdfgi_cascades = mini(cascades, 2) if is_preview else cascades
 		if is_preview:
 			env.sdfgi_min_cell_size = 0.5
@@ -428,9 +507,13 @@ static func _populate_environment_values(
 			env.sdfgi_min_cell_size = maxf(env.sdfgi_min_cell_size, 1.0)
 		env.sdfgi_y_scale = Environment.SDFGI_Y_SCALE_75_PERCENT
 		env.sdfgi_energy = 1.0
+	env.sdfgi_enabled = is_sdfgi
 
-	var fog_dict: Dictionary = config.get("fog", {})
-	var fog_active: bool = fog_dict.get("enabled", false)
+	var fog_dict: Dictionary = _resolve_feature_dict(
+		config, "fog", "volumetric_fog", VideoConfig.FOG_MODES
+	)
+	var raw_fog_en: Variant = fog_dict.get("enabled", false)
+	var fog_active: bool = raw_fog_en if raw_fog_en is bool else false
 	env.volumetric_fog_enabled = fog_active
 
 	if is_preview:
@@ -439,21 +522,45 @@ static func _populate_environment_values(
 			env.volumetric_fog_albedo = Color(0.85, 0.9, 0.95)
 	else:
 		if fog_active:
+			if env.volumetric_fog_density <= 0.0001:
+				env.volumetric_fog_density = DEFAULT_MAIN_FOG_DENSITY
 			print(
 				"VideoApplier: Volumetric fog enabled. Base density: ", env.volumetric_fog_density
 			)
 
-	var glow_dict: Dictionary = config.get("glow", {})
-	env.glow_enabled = glow_dict.get("enabled", false)
+	var glow_dict: Dictionary = _resolve_feature_dict(config, "glow", "", VideoConfig.GLOW_MODES)
+	var raw_glow_en: Variant = glow_dict.get("enabled", false)
+	env.glow_enabled = raw_glow_en if raw_glow_en is bool else false
 	if env.glow_enabled:
-		var glow_hq: bool = glow_dict.get("high_quality", false)
-		var glow_bicubic: bool = glow_dict.get("bicubic", false)
+		var raw_glow_hq: Variant = glow_dict.get("high_quality", false)
+		var glow_hq: bool = raw_glow_hq if raw_glow_hq is bool else false
+		var raw_glow_bicubic: Variant = glow_dict.get("bicubic", false)
+		var glow_bicubic: bool = raw_glow_bicubic if raw_glow_bicubic is bool else false
 		var is_high: bool = glow_hq or glow_bicubic
 		env.glow_blend_mode = (
 			Environment.GLOW_BLEND_MODE_SOFTLIGHT
 			if is_high and not is_preview
 			else Environment.GLOW_BLEND_MODE_ADDITIVE
 		)
+
+
+## Resolves a feature configuration dictionary whether passed as Dict or String.
+static func _resolve_feature_dict(
+	config: Dictionary, primary_key: String, alt_key: String, mode_map: Dictionary
+) -> Dictionary:
+	var raw: Variant = config.get(primary_key, null)
+	if raw == null and not alt_key.is_empty():
+		raw = config.get(alt_key, null)
+	if raw is Dictionary:
+		return raw
+	if raw is String:
+		var lookup: Variant = mode_map.get(raw, {})
+		if lookup is Dictionary:
+			return lookup
+	if raw is bool:
+		var enabled_flag: bool = raw
+		return {"enabled": enabled_flag}
+	return {}
 
 
 ## Toggles diorama viewport between dormant and active isolated render states.
@@ -464,9 +571,9 @@ static func set_diorama_active(tree: SceneTree, is_menu_active: bool) -> void:
 		return
 
 	if is_menu_active:
-		diorama_vp.own_world_3d = true
-		if diorama_vp.world_3d == null:
+		if not is_instance_valid(diorama_vp.world_3d):
 			diorama_vp.world_3d = World3D.new()
+		diorama_vp.own_world_3d = true
 		diorama_vp.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
 		diorama_vp.process_mode = Node.PROCESS_MODE_INHERIT
 	else:
@@ -482,11 +589,19 @@ static func _resolve_diorama_viewport(tree: SceneTree) -> SubViewport:
 	return tree.root.find_child("DioramaViewport", true, false) as SubViewport
 
 
-## Retrieves nodes by group if populated, otherwise falls back to tree search.
+## Retrieves all matching nodes by combining group registration and tree search.
 static func _get_nodes_by_group_or_type(
 	tree: SceneTree, group_name: StringName, type_name: String
 ) -> Array[Node]:
-	var nodes: Array[Node] = tree.get_nodes_in_group(group_name)
-	if not nodes.is_empty():
-		return nodes
-	return tree.root.find_children("*", type_name, true, false)
+	var combined: Array[Node] = []
+	var group_nodes: Array[Node] = tree.get_nodes_in_group(group_name)
+	for g_node: Node in group_nodes:
+		if is_instance_valid(g_node) and g_node not in combined:
+			combined.append(g_node)
+
+	var found_nodes: Array[Node] = tree.root.find_children("*", type_name, true, false)
+	for f_node: Node in found_nodes:
+		if is_instance_valid(f_node) and f_node not in combined:
+			combined.append(f_node)
+
+	return combined

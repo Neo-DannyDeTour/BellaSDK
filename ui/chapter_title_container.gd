@@ -140,7 +140,7 @@ func _init_material_cache() -> void:
 
 ## Helper creating a [ShaderMaterial] with a bound [Shader].
 func _create_material(shader_res: Shader) -> ShaderMaterial:
-	print("ChapterDisplay: Allocating material for ", shader_res.resource_path)
+	#print("ChapterDisplay: Allocating material for ", shader_res.resource_path)
 	var mat: ShaderMaterial = ShaderMaterial.new()
 	mat.shader = shader_res
 	return mat

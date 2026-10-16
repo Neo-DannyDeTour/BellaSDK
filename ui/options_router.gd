@@ -2,8 +2,8 @@
 class_name OptionsRouter
 extends Control
 
-@warning_ignore("unused_signal")
 ## Emitted when the player activates [member master_back_button] to exit.
+@warning_ignore("unused_signal")
 signal back_requested
 
 ## Visual layer bitmask assigned to diorama preview geometry (Layer 11).
@@ -14,6 +14,24 @@ const VOLUMETRIC_LAYER_MASK: int = 1 << 9
 
 ## Preloaded 3D diorama scene instantiated inside the preview viewport.
 const SETTINGS_LEVEL_SCENE: PackedScene = preload("res://player/settings_level.tscn")
+
+## Cached reference to the preview 3D camera.
+var _graphics_camera: Camera3D = null
+
+## Currently selected settings panel.
+var _current_panel: Panel = null
+
+## Cached reference to the preview shader layer.
+var _preview_layer: CanvasLayer = null
+
+## Cached list of vision assist mesh nodes inside the diorama.
+var _vision_meshes: Array[MeshInstance3D] = []
+
+## Cached array of all secondary cameras residing in the diorama scene.
+var _all_diorama_cameras: Array[Camera3D] = []
+
+## Cached runtime instance of the instantiated diorama level.
+var _instantiated_diorama: Node3D = null
 
 ## Reference to the video settings panel.
 @onready var video_panel: Panel = %VideoOptionsPanel
@@ -37,7 +55,9 @@ const SETTINGS_LEVEL_SCENE: PackedScene = preload("res://player/settings_level.t
 @onready var audio_button: Button = %AudioButton
 
 ## Button switching to gameplay settings.
-@onready var gameplay_button: Button = %GameplayButton
+@onready var gameplay_button: Button = (
+	%GameplayPanelButton if has_node("%GameplayPanelButton") else %GameplayButton
+)
 
 ## Button switching to controls settings.
 @onready var controls_button: Button = %ControlsButton
@@ -62,29 +82,8 @@ const SETTINGS_LEVEL_SCENE: PackedScene = preload("res://player/settings_level.t
 )
 
 ## Cached reference to the preview SubViewport node.
-@onready var diorama_viewport: SubViewport = (
-	find_child("DioramaViewport", true, false)
-	if find_child("DioramaViewport", true, false) is SubViewport
-	else null
-)
-
-## Cached reference to the preview 3D camera.
-var _graphics_camera: Camera3D = null
-
-## Currently selected settings panel.
-var _current_panel: Panel = null
-
-## Cached reference to the preview shader layer.
-var _preview_layer: CanvasLayer = null
-
-## Cached list of vision assist mesh nodes inside the diorama.
-var _vision_meshes: Array[MeshInstance3D] = []
-
-## Cached array of all secondary cameras residing in the diorama scene.
-var _all_diorama_cameras: Array[Camera3D] = []
-
-## Cached runtime instance of the instantiated diorama level.
-var _instantiated_diorama: Node3D = null
+@onready
+var diorama_viewport: SubViewport = find_child("DioramaViewport", true, false) as SubViewport
 
 
 ## Initializes UI router, scenario isolation, and pre-warms the diorama.
@@ -119,13 +118,22 @@ func _isolate_viewport_scenario() -> void:
 	clean_env.ssao_enabled = false
 	clean_env.ssil_enabled = false
 	clean_env.volumetric_fog_enabled = false
+	clean_env.volumetric_fog_density = 0.02
+	clean_env.volumetric_fog_albedo = Color(0.85, 0.9, 0.95)
 	clean_env.glow_enabled = false
 
-	var target_world: World3D = World3D.new()
-	target_world.environment = clean_env
+	var target_world: World3D = diorama_viewport.world_3d
+	if not is_instance_valid(target_world):
+		target_world = World3D.new()
 
-	diorama_viewport.own_world_3d = false
+	target_world.environment = clean_env
 	diorama_viewport.world_3d = target_world
+	diorama_viewport.own_world_3d = true
+
+	var active_world: World3D = diorama_viewport.find_world_3d()
+	if is_instance_valid(active_world) and not is_instance_valid(active_world.environment):
+		active_world.environment = clean_env
+
 	diorama_viewport.positional_shadow_atlas_size = 512
 	diorama_viewport.msaa_3d = Viewport.MSAA_DISABLED
 	diorama_viewport.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
@@ -137,7 +145,7 @@ func _prewarm_diorama() -> void:
 	if not is_instance_valid(diorama_viewport):
 		return
 
-	_instantiated_diorama = (diorama_viewport.get_node_or_null("SettingsLevel") as Node3D)
+	_instantiated_diorama = diorama_viewport.get_node_or_null("SettingsLevel") as Node3D
 	if not is_instance_valid(_instantiated_diorama):
 		var raw_instance: Node = SETTINGS_LEVEL_SCENE.instantiate()
 		if raw_instance is Node3D:
@@ -152,7 +160,7 @@ func _prewarm_diorama() -> void:
 	_bind_diorama_textures()
 
 
-## Binds the shared diorama ViewportTexture to preview displays.
+## Binds the shared diorama [ViewportTexture] to preview displays.
 func _bind_diorama_textures() -> void:
 	if not is_instance_valid(diorama_viewport):
 		return
@@ -176,14 +184,16 @@ func _bind_diorama_textures() -> void:
 		if group_layer is CanvasLayer:
 			_preview_layer = group_layer as CanvasLayer
 		else:
-			_preview_layer = (get_tree().root.get_node_or_null("PreviewShaderLayer") as CanvasLayer)
+			_preview_layer = get_tree().root.get_node_or_null("PreviewShaderLayer") as CanvasLayer
 
 	_vision_meshes.clear()
 	var meshes: Array[Node] = diorama_viewport.find_children(
 		"VisionAssistMesh", "MeshInstance3D", true, false
 	)
 	for node: Node in meshes:
-		_vision_meshes.append(node as MeshInstance3D)
+		var mesh_inst: MeshInstance3D = node as MeshInstance3D
+		if is_instance_valid(mesh_inst):
+			_vision_meshes.append(mesh_inst)
 
 
 ## Connects all tab navigation buttons to their respective handlers.
@@ -201,27 +211,39 @@ func _connect_tab_buttons() -> void:
 		accessibility_button.pressed.connect(_on_tab_pressed.bind(accessibility_panel))
 
 
-## Strips physics collisions and caches preview camera references at init.
+## Strips physics collisions, isolates environments, and caches preview cameras.
 func _neutralize_diorama_hotspots() -> void:
 	print("OptionsRouter: Neutralizing collisions and caching preview cameras.")
 	if not is_instance_valid(diorama_viewport):
 		return
 
+	var env_nodes: Array[Node] = diorama_viewport.find_children(
+		"*", "WorldEnvironment", true, false
+	)
+	for env_node: Node in env_nodes:
+		var we: WorldEnvironment = env_node as WorldEnvironment
+		if is_instance_valid(we) and is_instance_valid(we.environment):
+			we.environment = we.environment.duplicate()
+			var dio_world: World3D = diorama_viewport.find_world_3d()
+			if is_instance_valid(dio_world):
+				dio_world.environment = we.environment
+
 	var bodies: Array[Node] = diorama_viewport.find_children("*", "CollisionObject3D", true, false)
 	for b_node: Node in bodies:
-		var c_obj: CollisionObject3D = b_node if b_node is CollisionObject3D else null
+		var c_obj: CollisionObject3D = b_node as CollisionObject3D
 		if is_instance_valid(c_obj):
 			c_obj.collision_layer = 0
 			c_obj.collision_mask = 0
 			c_obj.process_mode = Node.PROCESS_MODE_DISABLED
 
+	print("OptionsRouter: Assigning visual layer mask recursively.")
 	_assign_visual_layer_recursive(diorama_viewport, 11)
 
 	_all_diorama_cameras.clear()
 	_graphics_camera = null
 	var cams: Array[Node] = diorama_viewport.find_children("*", "Camera3D", true, false)
 	for c_node: Node in cams:
-		var cam: Camera3D = c_node if c_node is Camera3D else null
+		var cam: Camera3D = c_node as Camera3D
 		if is_instance_valid(cam):
 			cam.current = false
 			if cam is ExtendedCamera3D:
@@ -391,11 +413,15 @@ func _on_reset_defaults_pressed() -> void:
 
 ## Traverses node hierarchy and applies 3D visual layer bitmask.
 func _assign_visual_layer_recursive(root: Node, layer_idx: int) -> void:
-	print("OptionsRouter: Assigning visual layer mask recursively.")
 	var mask: int = 1 << (layer_idx - 1)
+	var light_mask: int = mask | VOLUMETRIC_LAYER_MASK
 	for child: Node in root.get_children():
-		if child is VisualInstance3D:
+		if child is Light3D:
+			var light_node: Light3D = child as Light3D
+			light_node.layers = mask
+			light_node.light_cull_mask = light_mask
+		elif child is FogVolume:
+			(child as FogVolume).layers = VOLUMETRIC_LAYER_MASK
+		elif child is VisualInstance3D:
 			(child as VisualInstance3D).layers = mask
-		elif child is Light3D:
-			(child as Light3D).light_cull_mask = mask
 		_assign_visual_layer_recursive(child, layer_idx)

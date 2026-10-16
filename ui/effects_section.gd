@@ -6,7 +6,38 @@ extends VBoxContainer
 # SIGNALS
 # --------------------------------------
 ## Emitted when effect options change to trigger viewport environment updates.
+@warning_ignore("unused_signal")
 signal effects_settings_changed
+
+# --------------------------------------
+# CONSTANTS
+# --------------------------------------
+## Valid quality tier keys for multi-button environment effect rows.
+const VALID_EFFECT_TIERS: Array[String] = ["Off", "Low", "Medium", "High"]
+
+## Default Depth of Field blur amount when enabled via preset.
+const DEFAULT_ACTIVE_DOF_AMOUNT: float = 0.15
+
+# --------------------------------------
+# RUNTIME LOOKUP MAPPINGS
+# --------------------------------------
+## Lookup map associating SSAO mode keys with toggle buttons.
+var _ssao_btn_map: Dictionary[String, Button] = {}
+
+## Lookup map associating SSIL mode keys with toggle buttons.
+var _ssi_btn_map: Dictionary[String, Button] = {}
+
+## Lookup map associating SSR mode keys with toggle buttons.
+var _ssr_btn_map: Dictionary[String, Button] = {}
+
+## Lookup map associating SDFGI mode keys with toggle buttons.
+var _sdfgi_btn_map: Dictionary[String, Button] = {}
+
+## Lookup map associating volumetric fog mode keys with toggle buttons.
+var _fog_btn_map: Dictionary[String, Button] = {}
+
+## Lookup map associating glow mode keys with toggle buttons.
+var _glow_btn_map: Dictionary[String, Button] = {}
 
 # --------------------------------------
 # NODE REFERENCES
@@ -35,64 +66,91 @@ signal effects_settings_changed
 ## Reference to the motion blur input [LineEdit].
 @onready var motion_blur_line: LineEdit = %MotionBlurLine
 
-## SSAO toggle buttons.
+## SSAO "Off" toggle [Button].
 @onready var ssao_off_button: Button = %SSAOOffButton
+
+## SSAO "Low" toggle [Button].
 @onready var ssao_low_button: Button = %SSAOLowButton
+
+## SSAO "Medium" toggle [Button].
 @onready var ssao_medium_button: Button = %SSAOMediumButton
+
+## SSAO "High" toggle [Button].
 @onready var ssao_high_button: Button = %SSAOHighButton
 
-## SSIL toggle buttons.
+## SSIL "Off" toggle [Button].
 @onready var ssi_off_button: Button = %SSIOffButton
+
+## SSIL "Low" toggle [Button].
 @onready var ssi_low_button: Button = %SSILowButton
+
+## SSIL "Medium" toggle [Button].
 @onready var ssi_medium_button: Button = %SSIMediumButton
+
+## SSIL "High" toggle [Button].
 @onready var ssi_high_button: Button = %SSIHighButton
 
-## SSR toggle buttons.
+## SSR "Off" toggle [Button].
 @onready var ssr_off_button: Button = %SSROffButton
+
+## SSR "Low" toggle [Button].
 @onready var ssr_low_button: Button = %SSRLowButton
+
+## SSR "Medium" toggle [Button].
 @onready var ssr_medium_button: Button = %SSRMediumButton
+
+## SSR "High" toggle [Button].
 @onready var ssr_high_button: Button = %SSRHighButton
 
-## SDFGI toggle buttons.
+## SDFGI "Off" toggle [Button].
 @onready var sdfgi_off_button: Button = %SDFGIOffButton
+
+## SDFGI "Low" toggle [Button].
 @onready var sdfgi_low_button: Button = %SDFGILowButton
+
+## SDFGI "Medium" toggle [Button].
 @onready var sdfgi_medium_button: Button = %SDFGIMediumButton
+
+## SDFGI "High" toggle [Button].
 @onready var sdfgi_high_button: Button = %SDFGIHighButton
 
-## Volumetric fog toggle buttons.
+## Volumetric fog "Off" toggle [Button].
 @onready var fog_off_button: Button = %FogOffButton
+
+## Volumetric fog "Low" toggle [Button].
 @onready var fog_low_button: Button = %FogLowButton
+
+## Volumetric fog "Medium" toggle [Button].
 @onready var fog_medium_button: Button = %FogMediumButton
+
+## Volumetric fog "High" toggle [Button].
 @onready var fog_high_button: Button = %FogHighButton
 
-## Glow toggle buttons.
+## Glow "Off" toggle [Button].
 @onready var glow_off_button: Button = %GlowOffButton
-@onready var glow_low_button: Button = %GlowLowButton
-@onready var glow_medium_button: Button = %GlowMediumButton
-@onready var glow_high_button: Button = %GlowHighButton
 
-# --------------------------------------
-# RUNTIME LOOKUP MAPPINGS
-# --------------------------------------
-## Internal lookup maps associating mode keys with their respective toggle buttons.
-var _ssao_btn_map: Dictionary[String, Button] = {}
-var _ssi_btn_map: Dictionary[String, Button] = {}
-var _ssr_btn_map: Dictionary[String, Button] = {}
-var _sdfgi_btn_map: Dictionary[String, Button] = {}
-var _fog_btn_map: Dictionary[String, Button] = {}
-var _glow_btn_map: Dictionary[String, Button] = {}
+## Glow "Low" toggle [Button].
+@onready var glow_low_button: Button = %GlowLowButton
+
+## Glow "Medium" toggle [Button].
+@onready var glow_medium_button: Button = %GlowMediumButton
+
+## Glow "High" toggle [Button].
+@onready var glow_high_button: Button = %GlowHighButton
 
 
 ## Populates tonemapper algorithms and hooks widget state listeners.
 func _ready() -> void:
 	print("EffectsSection: Initializing effects UI.")
+	set_process(false)
+	set_physics_process(false)
 	_setup_button_mappings()
 	_populate_dropdowns()
 	_connect_signals()
 	load_settings()
 
 
-## Configures ButtonGroups and dictionary mappings for all multi-button effect rows.
+## Configures [ButtonGroup] instances and dictionary mappings for effect rows.
 func _setup_button_mappings() -> void:
 	print("EffectsSection: Configuring button groups and mapping lookups.")
 	_ssao_btn_map = {
@@ -155,6 +213,8 @@ func _setup_group(mapping: Dictionary[String, Button]) -> void:
 	pressed_style.set_corner_radius_all(3)
 
 	for btn: Button in mapping.values():
+		if not is_instance_valid(btn):
+			continue
 		btn.toggle_mode = true
 		btn.button_group = group
 		btn.add_theme_stylebox_override("pressed", pressed_style)
@@ -189,14 +249,15 @@ func _connect_signals() -> void:
 	_connect_button_row(_glow_btn_map, "glow")
 
 
-## Connects pressed events for each button in a dictionary to save and emit settings.
+## Connects pressed events for each button in a dictionary to save settings.
 func _connect_button_row(mapping: Dictionary[String, Button], config_key: String) -> void:
 	for mode_key: String in mapping.keys():
 		var btn: Button = mapping[mode_key]
-		btn.pressed.connect(_on_effect_button_pressed.bind(config_key, mode_key))
+		if is_instance_valid(btn):
+			btn.pressed.connect(_on_effect_button_pressed.bind(config_key, mode_key))
 
 
-## Connects DoF slider and line edit with single-dispatch commit logic.
+## Connects DoF slider and [LineEdit] with single-dispatch commit logic.
 func _connect_dof_slider() -> void:
 	print("EffectsSection: Connecting specialized DoF slider.")
 	dof_slider.min_value = 0.0
@@ -236,8 +297,11 @@ func _connect_dof_slider() -> void:
 ## Persists DoF amount and enabled state if value changed.
 func _commit_dof_value(amt: float) -> void:
 	var current: float = GlobalSettings.get_setting_float("Settings", "dof_amount", -1.0)
-	if not is_equal_approx(current, amt):
-		var is_active: bool = amt > 0.005
+	var is_active: bool = amt > 0.005
+	var current_enabled: bool = GlobalSettings.get_setting_bool(
+		"Settings", "dof_enabled", not is_active
+	)
+	if not is_equal_approx(current, amt) or current_enabled != is_active:
 		GlobalSettings.save_setting("Settings", "dof_amount", amt)
 		GlobalSettings.save_setting("Settings", "dof_enabled", is_active)
 		effects_settings_changed.emit()
@@ -259,15 +323,18 @@ func _commit_dof_line() -> void:
 	var current: float = GlobalSettings.get_setting_float("Settings", "dof_amount", -1.0)
 	dof_slider.set_value_no_signal(amt)
 
-	if not is_equal_approx(current, amt):
-		var is_active: bool = amt > 0.005
+	var is_active: bool = amt > 0.005
+	var current_enabled: bool = GlobalSettings.get_setting_bool(
+		"Settings", "dof_enabled", not is_active
+	)
+	if not is_equal_approx(current, amt) or current_enabled != is_active:
 		print("EffectsSection: Committed new DoF text input: ", amt)
 		GlobalSettings.save_setting("Settings", "dof_amount", amt)
 		GlobalSettings.save_setting("Settings", "dof_enabled", is_active)
 		effects_settings_changed.emit()
 
 
-## Connects slider and LineEdit pairs with deferred save and signal dispatch.
+## Connects slider and [LineEdit] pairs with deferred save and signal dispatch.
 func _connect_slider(
 	slider: HSlider, line: LineEdit, key: String, min_v: float, max_v: float, step_val: float
 ) -> void:
@@ -319,7 +386,7 @@ func _commit_effect_slider_value(key: String, val: float) -> void:
 		effects_settings_changed.emit()
 
 
-## Commits LineEdit input to effect slider and settings safely.
+## Commits [LineEdit] input to effect slider and settings safely.
 func _commit_effect_line(
 	slider: HSlider, line: LineEdit, key: String, min_v: float, max_v: float, step_val: float
 ) -> void:
@@ -347,7 +414,14 @@ func _commit_effect_line(
 ## Synchronizes widgets with values persisted in [GlobalSettings].
 func load_settings() -> void:
 	print("EffectsSection: Loading effects settings from disk.")
-	var saved_tonemap: String = _load_effect_setting("tonemap_mode", VideoConfig.DEFAULT_TONEMAP)
+	var raw_tonemap: Variant = GlobalSettings.get_setting(
+		"Settings", "tonemap_mode", VideoConfig.DEFAULT_TONEMAP
+	)
+	var saved_tonemap: String = (
+		raw_tonemap
+		if (raw_tonemap is String and VideoConfig.TONEMAP_MODES.has(raw_tonemap))
+		else VideoConfig.DEFAULT_TONEMAP
+	)
 	_select_dropdown_text(tonemap_options, saved_tonemap)
 
 	var exp_val: float = GlobalSettings.get_setting_float(
@@ -359,9 +433,15 @@ func load_settings() -> void:
 	var deband_val: bool = GlobalSettings.get_setting_bool("Settings", "debanding", true)
 	debanding_checkbox.set_pressed_no_signal(deband_val)
 
-	var dof_amt: float = GlobalSettings.get_setting_float("Settings", "dof_amount", 0.15)
-	dof_slider.set_value_no_signal(dof_amt)
-	dof_line.text = "%.2f" % dof_amt
+	var raw_dof_amt: float = GlobalSettings.get_setting_float(
+		"Settings", "dof_amount", DEFAULT_ACTIVE_DOF_AMOUNT
+	)
+	var dof_enabled: bool = GlobalSettings.get_setting_bool(
+		"Settings", "dof_enabled", VideoConfig.DEFAULT_DOF
+	)
+	var effective_dof: float = raw_dof_amt if dof_enabled else 0.0
+	dof_slider.set_value_no_signal(effective_dof)
+	dof_line.text = "%.2f" % effective_dof
 
 	var mb_val: float = GlobalSettings.get_setting_float(
 		"Settings", "motion_blur", VideoConfig.DEFAULT_MOTION_BLUR
@@ -377,26 +457,46 @@ func load_settings() -> void:
 	_sync_button_row(_glow_btn_map, "glow", VideoConfig.DEFAULT_GLOW)
 
 
-## Reads a persisted setting and activates the corresponding toggle button in the row.
+## Reads a persisted setting and activates the matching button without signals.
 func _sync_button_row(
 	mapping: Dictionary[String, Button], config_key: String, default_val: String
 ) -> void:
 	var mode: String = _load_effect_setting(config_key, default_val)
+	_set_group_button_silent(mapping, mode)
+
+
+## Sets the active button in [param mapping] matching [param target_key] silently.
+func _set_group_button_silent(mapping: Dictionary[String, Button], target_key: String) -> void:
+	var resolved_key: String = target_key if mapping.has(target_key) else "Off"
 	for key: String in mapping.keys():
-		mapping[key].button_pressed = (key == mode)
+		var btn: Button = mapping[key]
+		if is_instance_valid(btn):
+			btn.set_pressed_no_signal(key == resolved_key)
 
 
-## Safely reads an effect mode string, converting legacy booleans.
+## Safely reads an effect mode string, migrating booleans and invalid values.
 func _load_effect_setting(key: String, default_val: String) -> String:
-	var raw: Variant = GlobalSettings.get_setting("Settings", key, default_val)
+	var fallback: String = default_val if VALID_EFFECT_TIERS.has(default_val) else "Off"
+	var raw: Variant = GlobalSettings.get_setting("Settings", key, fallback)
+
 	if raw is bool:
-		var migrated: String = default_val if raw else "Off"
+		var active_tier: String = (
+			fallback if (fallback != "Off" and not fallback.is_empty()) else "Medium"
+		)
+		var migrated: String = active_tier if (raw as bool) else "Off"
 		GlobalSettings.save_setting("Settings", key, migrated)
 		return migrated
-	return str(raw)
+
+	var str_val: String = str(raw)
+	if VALID_EFFECT_TIERS.has(str_val):
+		return str_val
+
+	if not default_val.is_empty():
+		GlobalSettings.save_setting("Settings", key, fallback)
+	return fallback
 
 
-## Updates widgets matching active preset data dictionary.
+## Updates widgets matching active preset data dictionary without signal storms.
 func apply_preset_dict(data: Dictionary) -> void:
 	print("EffectsSection: Applying environment preset flags.")
 	if data.has("dof_amount"):
@@ -409,12 +509,16 @@ func apply_preset_dict(data: Dictionary) -> void:
 			dof_a = float(int_dof)
 		dof_slider.set_value_no_signal(dof_a)
 		dof_line.text = "%.2f" % dof_a
+		GlobalSettings.save_setting("Settings", "dof_amount", dof_a)
+		GlobalSettings.save_setting("Settings", "dof_enabled", dof_a > 0.005)
 	elif data.has("dof_enabled"):
 		var raw_enabled: Variant = data["dof_enabled"]
 		var is_dof_on: bool = raw_enabled == true
-		var fallback_amt: float = 0.15 if is_dof_on else 0.0
+		var fallback_amt: float = DEFAULT_ACTIVE_DOF_AMOUNT if is_dof_on else 0.0
 		dof_slider.set_value_no_signal(fallback_amt)
 		dof_line.text = "%.2f" % fallback_amt
+		GlobalSettings.save_setting("Settings", "dof_amount", fallback_amt)
+		GlobalSettings.save_setting("Settings", "dof_enabled", is_dof_on)
 
 	if data.has("motion_blur"):
 		var raw_mb: Variant = data["motion_blur"]
@@ -427,18 +531,18 @@ func apply_preset_dict(data: Dictionary) -> void:
 		motion_blur_slider.set_value_no_signal(mb_v)
 		motion_blur_line.text = "%.2f" % mb_v
 
-	if data.has("ssao") and _ssao_btn_map.has(str(data["ssao"])):
-		_ssao_btn_map[str(data["ssao"])].button_pressed = true
-	if data.has("ssi") and _ssi_btn_map.has(str(data["ssi"])):
-		_ssi_btn_map[str(data["ssi"])].button_pressed = true
-	if data.has("ssr") and _ssr_btn_map.has(str(data["ssr"])):
-		_ssr_btn_map[str(data["ssr"])].button_pressed = true
-	if data.has("sdfgi") and _sdfgi_btn_map.has(str(data["sdfgi"])):
-		_sdfgi_btn_map[str(data["sdfgi"])].button_pressed = true
-	if data.has("volumetric_fog") and _fog_btn_map.has(str(data["volumetric_fog"])):
-		_fog_btn_map[str(data["volumetric_fog"])].button_pressed = true
-	if data.has("glow") and _glow_btn_map.has(str(data["glow"])):
-		_glow_btn_map[str(data["glow"])].button_pressed = true
+	if data.has("ssao"):
+		_set_group_button_silent(_ssao_btn_map, str(data["ssao"]))
+	if data.has("ssi"):
+		_set_group_button_silent(_ssi_btn_map, str(data["ssi"]))
+	if data.has("ssr"):
+		_set_group_button_silent(_ssr_btn_map, str(data["ssr"]))
+	if data.has("sdfgi"):
+		_set_group_button_silent(_sdfgi_btn_map, str(data["sdfgi"]))
+	if data.has("volumetric_fog"):
+		_set_group_button_silent(_fog_btn_map, str(data["volumetric_fog"]))
+	if data.has("glow"):
+		_set_group_button_silent(_glow_btn_map, str(data["glow"]))
 
 
 ## Selects a dropdown item matching target label text.
@@ -471,7 +575,7 @@ func _on_debanding_toggled(toggled_on: bool) -> void:
 ## Handles any effect button press, saving setting and notifying pipeline.
 func _on_effect_button_pressed(config_key: String, mode_key: String) -> void:
 	print("EffectsSection: Pressed ", config_key, " -> ", mode_key)
-	var current_val: String = _load_effect_setting(config_key, "")
+	var current_val: String = str(GlobalSettings.get_setting("Settings", config_key, ""))
 	if current_val != mode_key:
 		GlobalSettings.save_setting("Settings", config_key, mode_key)
 		effects_settings_changed.emit()
