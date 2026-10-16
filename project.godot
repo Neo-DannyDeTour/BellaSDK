@@ -28,7 +28,6 @@ buses/default_bus_layout="uid://blb10t72ak8ru"
 Global="*res://core/global.gd"
 Events="*uid://duejfvfifyd20"
 DebugManager="*uid://psgaa5vua8a3"
-SmokeManager="*uid://b1t38dkohipue"
 SaveManager="*uid://bdthpju22khmx"
 KeycardSystem="*uid://0q0pxgqqqrbh"
 GraphicsManager="*uid://c165uw26ca5hj"
@@ -48,6 +47,7 @@ InGameConsole="*uid://b16t0oiv28pqa"
 AudioPool="*res://core/audio_pool.gd"
 AudioManager="*res://core/audio_manager.gd"
 SceneTransition="*res://core/scene_transition.gd"
+SmokeManager="*uid://cux76orvhr6t8"
 
 [debug]
 

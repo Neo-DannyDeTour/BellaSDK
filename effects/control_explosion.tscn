@@ -8,6 +8,9 @@
 
 [node name="ControlExplosion" type="Node3D" unique_id=2091759308]
 script = ExtResource("1_jor4l")
+auto_detonate_on_ready = true
+loop = true
+loop_interval = 1.0
 droplet_shader = ExtResource("2_wxeh2")
 smoke_shader = ExtResource("3_d5m0g")
 shockwave_shader = ExtResource("4_58ljl")

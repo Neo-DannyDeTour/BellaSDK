@@ -28,7 +28,6 @@
 [ext_resource type="AudioStream" uid="uid://dtg0rlu4gvt8g" path="res://assets/sounds/2_Footstep2.wav" id="18_7crtr"]
 [ext_resource type="AudioStream" uid="uid://s8m08oixbyst" path="res://assets/sounds/2_Footstep3.wav" id="19_vgvch"]
 [ext_resource type="AudioStream" uid="uid://cu2qxcce0v0g6" path="res://assets/sounds/FootstepStone1.wav" id="20_n0b8q"]
-[ext_resource type="Script" uid="uid://dkjdvshv5ieah" path="res://vfx/smoke_wake_collider.gd" id="20_sfy4j"]
 [ext_resource type="Script" uid="uid://cbwy13aembb7w" path="res://shared/health_component.gd" id="21_gv3ic"]
 [ext_resource type="AudioStream" uid="uid://cj2n6q5onaxhj" path="res://assets/sounds/FootstepStone2.wav" id="21_jfgyi"]
 [ext_resource type="AudioStream" uid="uid://bvnw8qksa0le4" path="res://assets/sounds/FootstepStone3.wav" id="22_237xx"]
@@ -339,6 +338,50 @@ height = 1.2
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_mdl7e"]
 
+[sub_resource type="GDScript" id="GDScript_utr5e"]
+script/source = "## Dynamic collision sphere scaling with player horizontal movement velocity.
+#class_name SmokeWakeCollider
+extends GPUParticlesCollisionSphere3D
+
+## Collision mask value targeting render Layer 10 (Volumetrics).
+const LAYER_VOLUMETRICS_MASK: int = 512
+
+## Base collision sphere radius when player is idle.
+@export var base_radius: float = 1.0
+
+## Maximum collision sphere radius at full sprint speed.
+@export var max_radius: float = 3.0
+
+## Interpolation speed coefficient for radius expansion.
+@export var lerp_speed: float = 5.0
+
+## Velocity scalar converting world speed into additional radius meters.
+@export var speed_scale: float = 0.4
+
+## Node reference to parent player CharacterBody3D.
+@onready var _player: CharacterBody3D = get_parent() if get_parent() is CharacterBody3D else null
+
+
+## Validates parent node type and initializes layer mask.
+func _ready() -> void:
+	print(\"SmokeWakeCollider: Initialized on player. Restricting cull mask.\")
+	cull_mask = LAYER_VOLUMETRICS_MASK
+	radius = base_radius
+
+
+## Smoothly resizes collider radius based on horizontal movement speed.
+func _process(delta: float) -> void:
+	if not is_instance_valid(_player):
+		return
+
+	var horizontal_velocity: Vector2 = Vector2(_player.velocity.x, _player.velocity.z)
+	var speed: float = horizontal_velocity.length()
+	var target_radius: float = clampf(base_radius + (speed * speed_scale), base_radius, max_radius)
+
+	var weight: float = 1.0 - exp(-lerp_speed * delta)
+	radius = lerpf(radius, target_radius, weight)
+"
+
 [sub_resource type="AudioStreamRandomizer" id="AudioStreamRandomizer_d3wef"]
 streams_count = 6
 stream_0/stream = ExtResource("6_khinc")
@@ -512,8 +555,7 @@ shape = SubResource("SphereShape3D_mdl7e")
 [node name="GPUParticlesCollisionSphere3D" type="GPUParticlesCollisionSphere3D" parent="." unique_id=1390424873]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 cull_mask = 512
-script = ExtResource("20_sfy4j")
-max_radius = 2.0
+script = SubResource("GDScript_utr5e")
 
 [node name="InteractionScanner" type="Node" parent="." unique_id=807129051 node_paths=PackedStringArray("player_body", "camera", "interact_shapecast", "empty_interact_audio")]
 script = ExtResource("24_p07f3")
