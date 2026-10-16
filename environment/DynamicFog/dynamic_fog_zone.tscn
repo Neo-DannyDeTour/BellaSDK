@@ -1,0 +1,39 @@
+[gd_scene format=4 uid="uid://crxji5wue0up2"]
+
+[ext_resource type="Script" uid="uid://bff47l8n1b67j" path="res://environment/DynamicFog/dynamic_fog_zone.gd" id="1_7tbab"]
+[ext_resource type="Shader" uid="uid://bkeprp1ojbgvd" path="res://environment/DynamicFog/dynamic_fog.gdshader" id="1_apgyj"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_utr5e"]
+shader = ExtResource("1_apgyj")
+shader_parameter/base_color = Color(0.72, 0.78, 0.84, 1)
+shader_parameter/emission_color = Color(0.06, 0.09, 0.12, 1)
+shader_parameter/base_density = 1.15
+shader_parameter/height_falloff = 3.2
+shader_parameter/ground_hugging_height = 0.28
+shader_parameter/edge_fade = 0.12
+shader_parameter/wave_speed = 0.38
+shader_parameter/wave_scale = 0.35
+shader_parameter/clump_scale = 0.75
+shader_parameter/clump_contrast = 1.45
+shader_parameter/curl_advection_strength = 1.35
+shader_parameter/active_ray_count = 0
+shader_parameter/ray_starts = PackedVector4Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+shader_parameter/ray_ends = PackedVector4Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+shader_parameter/active_actor_count = 0
+shader_parameter/actor_positions = PackedVector4Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+shader_parameter/actor_velocities = PackedVector4Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_534t5"]
+size = Vector3(2, 2, 2)
+
+[node name="DynamicFogZone" type="FogVolume" unique_id=609312108]
+layers = 512
+material = SubResource("ShaderMaterial_utr5e")
+script = ExtResource("1_7tbab")
+
+[node name="InteractionArea" type="Area3D" parent="." unique_id=595879978]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="InteractionArea" unique_id=1453267147]
+shape = SubResource("BoxShape3D_534t5")
+
+[node name="VisibilityNotifier" type="VisibleOnScreenNotifier3D" parent="." unique_id=711459514]
