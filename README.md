@@ -85,6 +85,10 @@ As someone from the Igromania Magazine once said: HL was created by enthusiasts.
 And most importantly: I need your help. Take it, criticize it, send feedback, give advice. Just please don't ignore me.
 
 ------------------
+### 📁 Project Architecture & Directory Layout
+Looking for where specific features, scenes, or scripts lie? Read the comprehensive [Directory Structure & Domain Architecture Guide](docs/DIRECTORY_STRUCTURE.md).
+
+------------------
 3D Assets are made by Lucas Manzoni [@luanmanz on Fiverr](https://www.fiverr.com/luanmanz?source=inbox)
 
 Sounds are made by Gerard Velez [@gerard_98 on Fiverr](https://www.fiverr.com/inbox/gerard_98)
