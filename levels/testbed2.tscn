@@ -68,7 +68,6 @@
 [ext_resource type="Script" uid="uid://cl68g6jurgp0h" path="res://environment/soundscape_data.gd" id="66_ogn5c"]
 [ext_resource type="PackedScene" uid="uid://blfio0uwhdxp0" path="res://environment/light_logic.tscn" id="67_blafx"]
 [ext_resource type="Script" uid="uid://buk422xy2d1pq" path="res://environment/procedural_monkey_bars.gd" id="68_vt30e"]
-[ext_resource type="PackedScene" uid="uid://cb650up2cyljp" path="res://player/climable_rope.tscn" id="69_a4a5i"]
 [ext_resource type="Script" uid="uid://bohybfp2i35ly" path="res://triggers/spotlight_seq_trigger.gd" id="70_yaxg6"]
 [ext_resource type="Script" uid="uid://v535r6a86e4x" path="res://ui/lvl_instance_hide_building.gd" id="71_hamui"]
 [ext_resource type="PackedScene" uid="uid://cojcb8srg0tkn" path="res://ui/hide_building_test.tscn" id="72_flri8"]
@@ -9573,19 +9572,6 @@ current_angle = 0.0
 max_angle = 360.0
 min_angle = 0.0
 turn_friction = 1.0
-
-[node name="ClimableRope" parent="." unique_id=1704021531 instance=ExtResource("69_a4a5i")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.067865, 24.705517, -3.3210979)
-rope_length = 15.0
-
-[node name="ClimableRope2" parent="." unique_id=1736568801 instance=ExtResource("69_a4a5i")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22.46974, 22.662626, -16.57901)
-is_swingable = true
-swing_force = 500.0
-activate_slomo = true
-rope_length = 13.5
-air_grab_radius = 0.6
-chain_mesh_scale = Vector3(0.01, 0.01, 0.01)
 
 [node name="LightSequence" type="AnimationPlayer" parent="." unique_id=1218410881]
 libraries/ = SubResource("AnimationLibrary_gp0ty")

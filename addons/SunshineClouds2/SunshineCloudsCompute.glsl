@@ -258,6 +258,7 @@ void sampleHistoryBilinear(
 	vec2 reprojectedUV,
 	ivec2 size,
 	bool useAccumA,
+	float targetDepthBreak,
 	out vec4 outColor,
 	out vec4 outData)
 {
@@ -295,8 +296,19 @@ void sampleHistoryBilinear(
 		dat11 = imageLoad(accum_2B_image, c11);
 	}
 
-	outColor = mix(mix(col00, col10, f.x), mix(col01, col11, f.x), f.y);
-	outData = mix(mix(dat00, dat10, f.x), mix(dat01, dat11, f.x), f.y);
+	float w00 = (1.0 - f.x) * (1.0 - f.y) * (1.0 - step(0.5, abs(dat00.a - targetDepthBreak)));
+	float w10 = f.x * (1.0 - f.y) * (1.0 - step(0.5, abs(dat10.a - targetDepthBreak)));
+	float w01 = (1.0 - f.x) * f.y * (1.0 - step(0.5, abs(dat01.a - targetDepthBreak)));
+	float w11 = f.x * f.y * (1.0 - step(0.5, abs(dat11.a - targetDepthBreak)));
+	float wSum = w00 + w10 + w01 + w11;
+
+	if (wSum > 0.0001) {
+		outColor = (col00 * w00 + col10 * w10 + col01 * w01 + col11 * w11) / wSum;
+		outData = (dat00 * w00 + dat10 * w10 + dat01 * w01 + dat11 * w11) / wSum;
+	} else {
+		outColor = vec4(0.0);
+		outData = vec4(0.0, 0.0, 0.0, 1.0 - targetDepthBreak);
+	}
 }
 
 void main() {
@@ -394,7 +406,7 @@ void main() {
 
 	vec4 lightColor = vec4(0.0);
 	vec3 paintedColor = vec3(0.0);
-	float initialdistanceSample = 0.0;
+	float initialdistanceSample = maxTheoreticalStep;
 
 	float lightingSamples = 0.0;
 	float density = 0.0;
@@ -420,6 +432,7 @@ void main() {
 			if (traveledDistance > tEnd) {
 				if (traveledDistance > linear_depth) {
 					depthBreak = true;
+					traveledDistance = linear_depth;
 				}
 				break;
 			}
@@ -432,7 +445,7 @@ void main() {
 			newdensity = ((rawDensity <= 0.00001) ? 0.0 : pow(rawDensity, sharpness)) * depthFade;
 
 			if (newdensity > 0.0) {
-				if (initialdistanceSample == 0.0) {
+				if (initialdistanceSample >= maxTheoreticalStep) {
 					initialdistanceSample = traveledDistance;
 				}
 
@@ -501,6 +514,9 @@ void main() {
 
 			traveledDistance += newStep;
 		}
+	} else if (slab.y > 0.0 && linear_depth < min(slab.y, maxTheoreticalStep)) {
+		depthBreak = true;
+		traveledDistance = linear_depth;
 	}
 
 	density = clamp(density, 0.0, 1.0);
@@ -524,7 +540,7 @@ void main() {
 	}
 
 	float finalDensityDistance = min(traveledDistance, highestDensityDistance);
-	float reprDist = (initialdistanceSample > 0.0) ? initialdistanceSample : traveledDistance;
+	float reprDist = (initialdistanceSample < maxTheoreticalStep) ? initialdistanceSample : traveledDistance;
 	vec3 worldFinalPos = rayOrigin + rd_world * reprDist;
 
 	vec4 reprojectedClipPos = genericData.data.prev_cam_view * vec4(worldFinalPos, 1.0);
@@ -545,17 +561,19 @@ void main() {
 	vec3 delta = rayOrigin - genericData.data.prev_cam_inv_view[3].xyz;
 	float travelspeed = length(delta) + maxstep;
 
+	float currentDepthBreak = float(depthBreak);
 	vec4 currentColorAccumilation;
 	vec4 currentDataAccumilation;
-	sampleHistoryBilinear(clamp(reprojectedUV, vec2(0.0), vec2(1.0)), size, usingaccumA, currentColorAccumilation, currentDataAccumilation);
+	sampleHistoryBilinear(clamp(reprojectedUV, vec2(0.0), vec2(1.0)), size, usingaccumA, currentDepthBreak, currentColorAccumilation, currentDataAccumilation);
 
-	float currentDepthBreak = float(depthBreak);
 	bool historyCorrupted = (
 		any(isnan(currentColorAccumilation)) || any(isinf(currentColorAccumilation)) ||
 		any(isnan(currentDataAccumilation)) || any(isinf(currentDataAccumilation))
 	);
+	bool depthBreakMismatch = (abs(currentDepthBreak - currentDataAccumilation.a) > 0.5);
+	bool depthStepJump = (currentDepthBreak > 0.5 && abs(initialdistanceSample - currentDataAccumilation.r) > travelspeed * 0.5);
 
-	if (historyCorrupted || is_override || is_out_of_bounds || accumdecay <= 0.001 || (abs(currentDepthBreak - currentDataAccumilation.a) > 0.5 && abs(initialdistanceSample - currentDataAccumilation.r) > travelspeed * 0.5)) {
+	if (historyCorrupted || is_override || is_out_of_bounds || accumdecay <= 0.001 || depthBreakMismatch || depthStepJump) {
 		currentColorAccumilation = lightColor;
 		currentDataAccumilation.r = initialdistanceSample;
 		currentDataAccumilation.g = traveledDistance;
@@ -563,7 +581,15 @@ void main() {
 	} else {
 		float EffectiveDecay = clamp(accumdecay, 0.0, 0.95);
 		currentColorAccumilation = mix(lightColor, currentColorAccumilation, EffectiveDecay);
-		currentDataAccumilation.r = mix(initialdistanceSample, currentDataAccumilation.r, EffectiveDecay);
+		if (currentColorAccumilation.a <= 0.0001) {
+			currentDataAccumilation.r = maxTheoreticalStep;
+		} else if (initialdistanceSample < maxTheoreticalStep && currentDataAccumilation.r < maxTheoreticalStep && currentDataAccumilation.r > 0.0) {
+			currentDataAccumilation.r = mix(initialdistanceSample, currentDataAccumilation.r, EffectiveDecay);
+		} else if (currentDataAccumilation.r > 0.0) {
+			currentDataAccumilation.r = min(initialdistanceSample, currentDataAccumilation.r);
+		} else {
+			currentDataAccumilation.r = initialdistanceSample;
+		}
 		currentDataAccumilation.g = mix(traveledDistance, currentDataAccumilation.g, EffectiveDecay);
 		currentDataAccumilation.b = mix(finalDensityDistance, currentDataAccumilation.b, EffectiveDecay);
 	}

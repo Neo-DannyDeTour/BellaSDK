@@ -1,4 +1,4 @@
-## Global coordinator routing weapon trajectories and blasts to active fog and grenade nodes.
+## Global coordinator routing weapon trajectories and blasts to active [DynamicFogZone] nodes.
 # class_name SmokeManager
 extends Node
 
@@ -11,15 +11,12 @@ const MAX_HITSCAN_RADIUS: float = 1.5
 ## Active environmental fog zones currently registered in the scene tree.
 var _zones: Array[DynamicFogZone] = []
 
-## Active smoke grenade clouds currently registered in the scene tree.
-var _grenade_clouds: Array[SmokeGrenadeCloud] = []
-
 
 ## Disables per-frame processing on startup; runs strictly on weapon/zone events.
 func _ready() -> void:
 	set_process(false)
 	set_physics_process(false)
-	print("[SmokeManager] Ready and listening for fog zone and grenade cloud registrations.")
+	print("[SmokeManager] Ready and listening for fog zone registrations.")
 
 
 ## Registers an active [DynamicFogZone] to receive projectile carve events.
@@ -36,22 +33,6 @@ func unregister_zone(zone: DynamicFogZone) -> void:
 	if idx != -1:
 		_zones.remove_at(idx)
 		print("[SmokeManager] Unregistered DynamicFogZone: ", zone.name)
-
-
-## Registers an active [SmokeGrenadeCloud] to receive bullet and blast carve events.
-func register_cloud(cloud: SmokeGrenadeCloud) -> void:
-	if not is_instance_valid(cloud) or _grenade_clouds.has(cloud):
-		return
-	_grenade_clouds.append(cloud)
-	print("[SmokeManager] Registered SmokeGrenadeCloud: ", cloud.name)
-
-
-## Unregisters a [SmokeGrenadeCloud] when it expires or exits the scene tree.
-func unregister_cloud(cloud: SmokeGrenadeCloud) -> void:
-	var idx: int = _grenade_clouds.find(cloud)
-	if idx != -1:
-		_grenade_clouds.remove_at(idx)
-		print("[SmokeManager] Unregistered SmokeGrenadeCloud: ", cloud.name)
 
 
 ## Legacy-compatible entrypoint called directly by [HitscanWeapon._execute_shot_rays].
@@ -73,7 +54,7 @@ func add_bullet_hole(
 func carve_segment(
 	start_pos: Vector3, end_pos: Vector3, radius: float = DEFAULT_BULLET_RADIUS
 ) -> void:
-	if _zones.is_empty() and _grenade_clouds.is_empty():
+	if _zones.is_empty():
 		return
 
 	var seg_min: Vector3 = start_pos.min(end_pos) - Vector3(radius, radius, radius)
@@ -87,11 +68,3 @@ func carve_segment(
 			continue
 		if zone.intersects_world_aabb(seg_aabb):
 			zone.carve_bullet_ray(start_pos, end_pos, radius)
-
-	for i: int in range(_grenade_clouds.size() - 1, -1, -1):
-		var cloud: SmokeGrenadeCloud = _grenade_clouds[i]
-		if not is_instance_valid(cloud):
-			_grenade_clouds.remove_at(i)
-			continue
-		if cloud.intersects_world_aabb(seg_aabb):
-			cloud.carve_bullet_ray(start_pos, end_pos, radius)

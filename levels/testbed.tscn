@@ -8,7 +8,6 @@
 [ext_resource type="PackedScene" uid="uid://cd2cusvmsy432" path="res://interactables/door_interact.tscn" id="6_sx10w"]
 [ext_resource type="PackedScene" uid="uid://ctri3aks5iaof" path="res://interactables/door_slide.tscn" id="7_uvnoq"]
 [ext_resource type="PackedScene" uid="uid://cxniimsmug8x8" path="res://triggers/fade_trigger.tscn" id="8_ue7dh"]
-[ext_resource type="PackedScene" uid="uid://cb650up2cyljp" path="res://player/climable_rope.tscn" id="9_jgmty"]
 [ext_resource type="Texture2D" uid="uid://bsvipy71uu6po" path="res://assets/images/Concept/BellaConcept.png" id="11_62djl"]
 [ext_resource type="Texture2D" uid="uid://ccknyr3ew7ecj" path="res://assets/images/Concept/MaskedMan.PNG" id="12_vvpuy"]
 [ext_resource type="Texture2D" uid="uid://dvfj0xfcc3fex" path="res://assets/images/Concept/MadamWren.PNG" id="13_2r5js"]
@@ -8362,17 +8361,6 @@ metadata/_custom_type_script = "uid://buk422xy2d1pq"
 
 [node name="PickableValve" parent="." unique_id=594279821 instance=ExtResource("50_nefr7")]
 transform = Transform3D(1, 0, 0, 0, 0.70710677, 0.70710677, 0, -0.70710677, 0.70710677, 34.71226, 0.92063177, -13.08078)
-
-[node name="ClimableRope" parent="." unique_id=1704021531 instance=ExtResource("9_jgmty")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -11.067865, 24.705517, -3.3210979)
-is_swingable = false
-rope_length = 15.0
-
-[node name="ClimableRope2" parent="." unique_id=1736568801 instance=ExtResource("9_jgmty")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22.46974, 22.662626, -16.57901)
-swing_force = 100.0
-activate_slomo = true
-rope_length = 13.0
 
 [node name="LightSequence" type="AnimationPlayer" parent="." unique_id=1218410881]
 libraries/ = SubResource("AnimationLibrary_gp0ty")

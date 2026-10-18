@@ -25,17 +25,18 @@ void main() {
     ivec2 start_coord = base_uv * resolutionScale;
 
     // In Godot Reversed-Z: 1.0 is near plane, 0.0 is infinite far sky.
-    // For conservative raymarching occlusion, we track the nearest depth (maximum value in Reversed-Z)
-    float max_depth = 0.0;
+    // Track the farthest depth (minimum value in Reversed-Z) so tiles straddling silhouettes
+    // still march clouds for background sky subpixels while PostCompute clips foreground per pixel.
+    float min_depth = 1.0;
 
     for (int y = 0; y < resolutionScale; y++) {
         for (int x = 0; x < resolutionScale; x++) {
             ivec2 sample_coord = clamp(start_coord + ivec2(x, y), ivec2(0), highres_size - ivec2(1));
             vec2 sample_uv = (vec2(sample_coord) + 0.5) / vec2(highres_size);
             float d = texture(depth_image, sample_uv).r;
-            max_depth = max(max_depth, d);
+            min_depth = min(min_depth, d);
         }
     }
 
-    imageStore(output_depth_image, base_uv, vec4(max_depth, 0.0, 0.0, 0.0));
+    imageStore(output_depth_image, base_uv, vec4(min_depth, 0.0, 0.0, 0.0));
 }
