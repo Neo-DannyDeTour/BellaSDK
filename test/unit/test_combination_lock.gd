@@ -1,54 +1,54 @@
-## Unit test suite validating CombinationLock secret code formatting and code verification.
+## Unit tests for CombinationLock puzzle interactable.
+class_name TestCombinationLock
 extends GutTest
 
-const COMBINATION_LOCK_SCRIPT: GDScript = preload("res://interactables/combination_lock.gd")
-
-## CombinationLock Node3D instance under test.
-var _lock: Node3D
+## Target combination lock instance being tested.
+var _lock: CombinationLock = null
 
 
-## Instantiates a clean CombinationLock node before each test run.
+## Sets up clean CombinationLock test instance.
 func before_each() -> void:
-	print("Setting up CombinationLock instance for testing.")
-	_lock = COMBINATION_LOCK_SCRIPT.new() as Node3D
+	print("TestCombinationLock: before_each() setup started.")
+	_lock = CombinationLock.new()
+	_lock.secret_code = "4567"
 	add_child_autofree(_lock)
 
 
-## Cleans up CombinationLock instance after test execution.
+## Tears down test references.
 func after_each() -> void:
-	print("Tearing down CombinationLock test instance.")
+	print("TestCombinationLock: after_each() cleanup.")
 	_lock = null
 
 
-## Verifies that secret code is truncated to 3 characters and converted to uppercase.
-func test_secret_code_formatting_on_ready() -> void:
-	print("Testing CombinationLock secret code formatting on ready.")
-	_lock.set("secret_code", "abcde")
-	_lock.call("_ready")
+## Verifies that secret code is clamped to 3 characters and converted to uppercase on ready.
+func test_secret_code_formatting() -> void:
+	print("TestCombinationLock: test_secret_code_formatting() called.")
+	_lock.secret_code = "abc12"
+	_lock._ready()
+	assert_eq(_lock.secret_code, "ABC", "Secret code should be trimmed to 3 uppercase characters.")
 
-	var formatted_code: String = _lock.get("secret_code") as String
-	assert_eq(
-		formatted_code,
-		"ABC",
-		"Secret code should be truncated to 3 characters and converted to upper case."
+
+## Verifies submitting code matching secret code triggers lock resolution.
+func test_code_submission_correct() -> void:
+	print("TestCombinationLock: test_code_submission_correct() called.")
+	_lock.secret_code = "789"
+	_lock._ready()
+
+	_lock._on_code_submitted("789")
+	assert_true(
+		_lock.is_queued_for_deletion(),
+		"Lock should be queued for deletion upon correct code submission."
 	)
 
 
-## Verifies code submission evaluation for correct secret code.
-func test_code_submitted_correct() -> void:
-	print("Testing CombinationLock submission with matching code.")
-	_lock.set("secret_code", "789")
-	_lock.call("_ready")
+## Verifies submitting incorrect code keeps lock active.
+func test_code_submission_incorrect() -> void:
+	print("TestCombinationLock: test_code_submission_incorrect() called.")
+	_lock.secret_code = "789"
+	_lock._ready()
 
-	_lock.call("_on_code_submitted", "789")
-	assert_true(true, "Correct code submitted executed cleanly.")
-
-
-## Verifies code submission evaluation for incorrect code.
-func test_code_submitted_incorrect() -> void:
-	print("Testing CombinationLock submission with incorrect code.")
-	_lock.set("secret_code", "789")
-	_lock.call("_ready")
-
-	_lock.call("_on_code_submitted", "000")
-	assert_true(true, "Incorrect code submitted executed cleanly without error.")
+	_lock._on_code_submitted("111")
+	assert_false(
+		_lock.is_queued_for_deletion(),
+		"Lock should remain active when incorrect code is submitted."
+	)
