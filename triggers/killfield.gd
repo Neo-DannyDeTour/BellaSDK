@@ -1,30 +1,43 @@
+@tool
 ## Hazard volume resetting player transform to checkpoint upon collision.
+##
+## [Killfield] detects player entry, verifies noclip status, and relocates
+## the character back to the last recorded checkpoint position.
 class_name Killfield
-extends Area3D
+extends BaseTriggerArea3D
 
+@export_group("Hazard")
 ## Vertical offset applied to respawn position above ground level.
 @export var spawn_height_offset: float = 1.0
 
 
-## Connects entry signal to collision response callback on scene initialization.
+## Initializes trigger settings and prepares hazard collision response.
 func _ready() -> void:
 	print("Killfield: _ready() called. Connecting body_entered signal.")
-	body_entered.connect(_on_body_entered)
+	trigger_once = false
+	if trigger_text == "TRIGGER":
+		trigger_text = "KILLFIELD"
+	super._ready()
+
+
+## Logs body detection and forwards to base player verification logic.
+func _on_body_entered(body: Node3D) -> void:
+	if is_instance_valid(body):
+		print("Killfield: _on_body_entered() triggered by node: ", body.name)
+	super._on_body_entered(body)
 
 
 ## Teleports player body back to last checkpoint upon hazard boundary entry.
-func _on_body_entered(body: Node3D) -> void:
-	print("Killfield: _on_body_entered() triggered by node: ", body.name)
-	if body.name == "Player" or body.is_in_group(&"Player"):
-		if "noclip" in body and body.get(&"noclip") == true:
-			return
+func _on_player_entered(player: Node3D) -> void:
+	if "noclip" in player and player.get(&"noclip") == true:
+		return
 
-		if SaveManager.last_checkpoint_pos != Vector3.ZERO:
-			var safe_drop_position: Vector3 = (
-				SaveManager.last_checkpoint_pos + Vector3(0.0, spawn_height_offset, 0.0)
-			)
+	if SaveManager.last_checkpoint_pos != Vector3.ZERO:
+		var safe_drop_position: Vector3 = (
+			SaveManager.last_checkpoint_pos + Vector3(0.0, spawn_height_offset, 0.0)
+		)
 
-			if body.has_method(&"teleport_to"):
-				body.call(&"teleport_to", safe_drop_position, 0.2)
-			else:
-				push_warning("Killfield: Player missing 'teleport_to' function!")
+		if player.has_method(&"teleport_to"):
+			player.call(&"teleport_to", safe_drop_position, 0.2)
+		else:
+			push_warning("Killfield: Player missing 'teleport_to' function!")

@@ -1,37 +1,27 @@
-## A trigger volume that plays an animation sequence when entered by a character.
+@tool
+## Trigger volume initiating an animation sequence when entered by the player.
 ##
-## [SpotlightSeqTrigger] is designed to detect [CharacterBody3D] nodes
-## and play a one-shot lighting sequence via an [AnimationPlayer].
+## [SpotlightSeqTrigger] detects player entry and triggers a lighting sequence
+## via the configured [member sequence_player].
 class_name SpotlightSeqTrigger
-extends Area3D
+extends BaseTriggerArea3D
 
+@export_group("Sequence")
 ## The animation player responsible for executing the sequence.
 @export var sequence_player: AnimationPlayer
 
-## Internal flag ensuring the sequence only triggers once.
-var has_triggered: bool = false
 
-
-## Connects the entry signal on node creation.
-## Lifecycle trigger: _ready.
-## Returns void.
+## Initializes default trigger text label for editor visualizer.
 func _ready() -> void:
-	body_entered.connect(_on_body_entered)
+	if trigger_text == "TRIGGER":
+		trigger_text = "SPOTLIGHT_SEQ"
+	super._ready()
 
 
-## Checks if the entering body is a valid character and plays the sequence.
-## [param body] The [Node3D] that entered the trigger area.
-## Returns void.
-func _on_body_entered(body: Node3D) -> void:
-	if has_triggered:
-		return
-
-	# Check if the thing entering the trigger is the player.
-	# Since your player is a CharacterBody3D, this is the safest check.
-	if body is CharacterBody3D:
-		has_triggered = true
-
-		if sequence_player:
-			sequence_player.play("turn_off_lights")
-		else:
-			push_error("SequenceTrigger: No AnimationPlayer assigned!")
+## Plays the configured lighting sequence when a valid player enters.
+func _on_player_entered(_player_node: Node3D) -> void:
+	print("SpotlightSeqTrigger: Player entered trigger. Executing lighting sequence.")
+	if is_instance_valid(sequence_player):
+		sequence_player.play("turn_off_lights")
+	else:
+		push_error("SpotlightSeqTrigger: No AnimationPlayer assigned!")
