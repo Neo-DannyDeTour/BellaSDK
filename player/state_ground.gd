@@ -35,30 +35,6 @@ const STATE_AIR: StringName = &"Air"
 ## State identifier for ledge vaulting.
 const STATE_VAULT: StringName = &"Vault"
 
-## Input action identifier for moving left.
-const ACTION_LEFT: StringName = &"left"
-
-## Input action identifier for moving right.
-const ACTION_RIGHT: StringName = &"right"
-
-## Input action identifier for moving forward.
-const ACTION_FORWARD: StringName = &"forward"
-
-## Input action identifier for moving backward.
-const ACTION_BACKWARD: StringName = &"backward"
-
-## Input action identifier for camera zoom.
-const ACTION_ZOOM: StringName = &"zoom"
-
-## Input action identifier for jumping.
-const ACTION_JUMP: StringName = &"jump"
-
-## Input action identifier for crouching.
-const ACTION_CROUCH: StringName = &"crouch"
-
-## Input action identifier for sprinting.
-const ACTION_SPRINT: StringName = &"sprint"
-
 ## Current interpolated movement speed of the player character.
 var current_speed: float = 0.0
 
@@ -208,11 +184,6 @@ func physics_update(delta: float) -> void:
 	loco.stair_controller.call(&"snap_down_to_stairs_check")
 	loco.stair_controller.call(&"track_floor_state")
 	_update_components(p, loco, interact, delta, input_dir)
-
-
-## Returns owning player as concrete [Player] instance.
-func _get_player() -> Player:
-	return player as Player
 
 
 ## Checks if [param node] or its immediate parent belongs to [param group_name].

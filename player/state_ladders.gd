@@ -18,11 +18,6 @@ var current_ladder: Node3D = null
 var _transition_msg: Dictionary = {}
 
 
-## Returns the owning player instance cast to concrete [Player] or null.
-func _get_player() -> Player:
-	return player as Player
-
-
 ## Initializes ladder state and snaps player to ladder surface.
 func enter(msg: Dictionary = {}) -> void:
 	print("StateLadder: enter() called. Initializing ladder state.")

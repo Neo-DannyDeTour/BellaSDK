@@ -39,11 +39,6 @@ var active_surface: WolfClimbSurface = null
 var _transition_msg: Dictionary = {}
 
 
-## Returns owning player as [Player] instance.
-func _get_player() -> Player:
-	return player as Player
-
-
 ## Initializes wall run direction, speed, and camera roll.
 func enter(msg: Dictionary = {}) -> void:
 	print("StateWolfWallRun: enter() called. Initializing wall run.")
@@ -86,9 +81,8 @@ func physics_update(delta: float) -> void:
 		return
 
 	var is_jump_pressed: bool = (
-		GestureInputManager.is_action_just_triggered(&"jump")
-		or GestureInputManager.is_action_just_pressed(&"jump")
-		or Input.is_action_just_pressed(&"jump")
+		GestureInputManager.is_action_just_triggered(ACTION_JUMP)
+		or GestureInputManager.is_action_just_pressed(ACTION_JUMP)
 	)
 
 	if is_jump_pressed:

@@ -89,30 +89,6 @@ const KEY_JUMP: StringName = &"jump"
 ## Transition dictionary key carrying the horizontal release direction vector.
 const KEY_RELEASE_DIR: StringName = &"release_dir"
 
-## Input action identifier for strafe left.
-const ACTION_LEFT: StringName = &"left"
-
-## Input action identifier for strafe right.
-const ACTION_RIGHT: StringName = &"right"
-
-## Input action identifier for move forward.
-const ACTION_FORWARD: StringName = &"forward"
-
-## Input action identifier for move backward.
-const ACTION_BACKWARD: StringName = &"backward"
-
-## Input action identifier for jumping off the rope.
-const ACTION_JUMP: StringName = &"jump"
-
-## Input action identifier for dropping from the rope.
-const ACTION_INTERACT: StringName = &"interact"
-
-## Input action identifier for crouching / fast sliding.
-const ACTION_CROUCH: StringName = &"crouch"
-
-## Input action identifier for sprinting (used for Sprint+S slide alias).
-const ACTION_SPRINT: StringName = &"sprint"
-
 # --------------------------------------
 # PRIVATE VARIABLES
 # --------------------------------------
@@ -427,7 +403,7 @@ func _update_swing_mode(p: Player, delta: float, input_dir: Vector2, is_sliding:
 func _check_dismount(p: Player) -> bool:
 	var jump_pressed: bool = (
 		GestureInputManager.is_action_just_pressed(String(ACTION_JUMP))
-		or Input.is_action_just_pressed(ACTION_JUMP)
+		or GestureInputManager.is_action_just_triggered(String(ACTION_JUMP))
 	)
 	if jump_pressed:
 		var flat_fwd: Vector3 = _get_flat_camera_forward(p)
@@ -451,7 +427,7 @@ func _check_dismount(p: Player) -> bool:
 	if _elapsed_time >= INTERACT_DISMOUNT_GRACE:
 		var interact_pressed: bool = (
 			GestureInputManager.consume_buffered_action(String(ACTION_INTERACT))
-			or Input.is_action_just_pressed(ACTION_INTERACT)
+			or GestureInputManager.is_action_just_pressed(String(ACTION_INTERACT))
 		)
 		if interact_pressed:
 			var carry_vel: Vector3 = (
@@ -495,11 +471,6 @@ func _dismount_drop(p: Player, carry_velocity: Vector3) -> void:
 # --------------------------------------
 # PRIVATE METHODS: HELPERS
 # --------------------------------------
-
-
-## Returns the owning character cast to [Player] or null.
-func _get_player() -> Player:
-	return player as Player
 
 
 ## Safely drops any held item or heavy object when mounting a rope.

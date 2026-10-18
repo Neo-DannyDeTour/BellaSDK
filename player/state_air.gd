@@ -44,21 +44,6 @@ const STATE_MONKEY_BARS: StringName = &"MonkeyBars"
 ## State identifier for wolf climbing.
 const STATE_WOLF_CLIMB: StringName = &"WolfClimb"
 
-## Input action identifier for moving left.
-const ACTION_LEFT: StringName = &"left"
-
-## Input action identifier for moving right.
-const ACTION_RIGHT: StringName = &"right"
-
-## Input action identifier for moving forward.
-const ACTION_FORWARD: StringName = &"forward"
-
-## Input action identifier for moving backward.
-const ACTION_BACKWARD: StringName = &"backward"
-
-## Input action identifier for jumping.
-const ACTION_JUMP: StringName = &"jump"
-
 ## Remaining time in seconds where ledge jump is still allowed.
 var coyote_timer: float = 0.0
 
@@ -196,11 +181,6 @@ func physics_update(delta: float) -> void:
 	_check_monkey_bar_grab(env)
 
 
-## Returns owning player as concrete [Player] instance.
-func _get_player() -> Player:
-	return player as Player
-
-
 ## Applies gravity or updraft forces based on environment context via [MathUtils].
 func _handle_gravity(
 	p: Player, loco: PlayerLocomotionComponent, env: PlayerEnvironmentComponent, delta: float
@@ -245,7 +225,6 @@ func _handle_jump_input(p: Player, loco: PlayerLocomotionComponent) -> void:
 	var is_jump_pressed: bool = (
 		GestureInputManager.is_action_just_pressed(ACTION_JUMP)
 		or GestureInputManager.is_action_just_triggered(ACTION_JUMP)
-		or Input.is_action_just_pressed(ACTION_JUMP)
 	)
 
 	if is_jump_pressed:

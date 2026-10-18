@@ -24,11 +24,6 @@ var _wall_lost_time: float = 0.0
 var _transition_msg: Dictionary = {}
 
 
-## Returns owning player as [Player] instance.
-func _get_player() -> Player:
-	return player as Player
-
-
 ## Clings to wall, zeroes momentum, and caches wall normal.
 func enter(msg: Dictionary = {}) -> void:
 	print("StateWolfClimb: enter() called. Clinging to climbable wall.")
@@ -68,7 +63,8 @@ func physics_update(delta: float) -> void:
 		return
 
 	var is_crouching: bool = (
-		GestureInputManager.is_action_active(&"crouch") or Input.is_action_pressed(&"crouch")
+		GestureInputManager.is_action_active(ACTION_CROUCH)
+		or GestureInputManager.is_action_pressed(ACTION_CROUCH)
 	)
 
 	var input_dir: Vector2 = GestureInputManager.get_vector(
