@@ -1,7 +1,7 @@
 ## Unit test suite validating global event bus emissions and typography overrides.
 extends GutTest
 
-const EventsScript: GDScript = preload("res://shared/events.gd")
+const EventsScript: GDScript = preload("res://core/events.gd")
 
 ## Cached reference to the target event bus instance under test.
 var _events_instance: EventsScript

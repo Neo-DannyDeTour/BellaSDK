@@ -2,7 +2,7 @@
 class_name TestHealthComponent
 extends GutTest
 
-const HEALTH_SCRIPT: GDScript = preload("res://shared/health_component.gd")
+const HEALTH_SCRIPT: GDScript = preload("res://core/components/health_component.gd")
 
 ## The component instance under test.
 var health_comp: Node = null

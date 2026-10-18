@@ -1,8 +1,8 @@
 [gd_scene format=3 uid="uid://b0bth5xt3qh8o"]
 
 [ext_resource type="Script" uid="uid://bb83n110f7vm7" path="res://enemies/elf_drone.gd" id="1_rmqe5"]
-[ext_resource type="Script" uid="uid://q7rcgal41c7b" path="res://scripts/faction_component.gd" id="2_3bcr4"]
-[ext_resource type="Script" uid="uid://cbwy13aembb7w" path="res://shared/health_component.gd" id="3_eevwv"]
+[ext_resource type="Script" uid="uid://q7rcgal41c7b" path="res://core/components/faction_component.gd" id="2_3bcr4"]
+[ext_resource type="Script" uid="uid://cbwy13aembb7w" path="res://core/components/health_component.gd" id="3_eevwv"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_534t5"]
 radius = 0.25

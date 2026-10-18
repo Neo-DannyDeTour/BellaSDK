@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://bn5ay1rfbr545"]
 
 [ext_resource type="Script" uid="uid://q7h0rb2kx2vx" path="res://enemies/turret.gd" id="1_svvud"]
-[ext_resource type="Script" uid="uid://q7rcgal41c7b" path="res://scripts/faction_component.gd" id="2_ni5yt"]
+[ext_resource type="Script" uid="uid://q7rcgal41c7b" path="res://core/components/faction_component.gd" id="2_ni5yt"]
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_wkqx2"]
 height = 1.0

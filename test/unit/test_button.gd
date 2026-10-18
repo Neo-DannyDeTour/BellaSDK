@@ -20,7 +20,7 @@ var mock_highlight_comp: HighlightComponent = null
 func before_each() -> void:
 	print("TestButton: before_each() setup started.")
 
-	var button_script: GDScript = load("res://shared/button.gd") as GDScript
+	var button_script: GDScript = load("res://interactables/button.gd") as GDScript
 	var raw_button: Object = button_script.new()
 	if raw_button is LogicButton:
 		button = raw_button

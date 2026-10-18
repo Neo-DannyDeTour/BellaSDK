@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://cgn4nggvh3arc"]
 
 [ext_resource type="Texture2D" uid="uid://bied5d5m5waqh" path="res://assets/images/icon_pulley.png" id="1_7q16y"]
-[ext_resource type="Script" uid="uid://dboh0h4gqu3ls" path="res://shared/pulley_controller.gd" id="1_pf1y4"]
+[ext_resource type="Script" uid="uid://dboh0h4gqu3ls" path="res://interactables/pulley_controller.gd" id="1_pf1y4"]
 
 [node name="Pulley" type="Node3D" unique_id=298102674]
 script = ExtResource("1_pf1y4")

@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://blfio0uwhdxp0"]
 
 [ext_resource type="Script" uid="uid://bti5v4tlnmavx" path="res://environment/light_logic.gd" id="1_lyj3c"]
-[ext_resource type="Script" uid="uid://c6vsx15ci2q2y" path="res://shared/powered_object.gd" id="1_tytbi"]
+[ext_resource type="Script" uid="uid://c6vsx15ci2q2y" path="res://core/components/powered_object.gd" id="1_tytbi"]
 
 [node name="LightLogic" type="Node3D" unique_id=363324990]
 script = ExtResource("1_lyj3c")

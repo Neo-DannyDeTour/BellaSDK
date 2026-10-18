@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://dne16cpdbsxy3"]
 
 [ext_resource type="Script" uid="uid://caryyrye5arsw" path="res://enemies/tentacle_enemy.gd" id="1_hobao"]
-[ext_resource type="Script" uid="uid://cbwy13aembb7w" path="res://shared/health_component.gd" id="1_jidhk"]
+[ext_resource type="Script" uid="uid://cbwy13aembb7w" path="res://core/components/health_component.gd" id="1_jidhk"]
 [ext_resource type="Script" uid="uid://3ipxasm4sn3p" path="res://enemies/tentacle.gd" id="3_0qmb8"]
 
 [sub_resource type="SphereMesh" id="SphereMesh_hobao"]

@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://csh1x7wcjvejc"]
 
 [ext_resource type="Script" uid="uid://cb75y4eplm7fx" path="res://environment/gothic_energy_gate.gd" id="1_7c20i"]
-[ext_resource type="Script" uid="uid://c6vsx15ci2q2y" path="res://shared/powered_object.gd" id="2_lorfx"]
+[ext_resource type="Script" uid="uid://c6vsx15ci2q2y" path="res://core/components/powered_object.gd" id="2_lorfx"]
 
 [node name="GothicEnergyGate" type="Node3D" unique_id=986271483 node_paths=PackedStringArray("downstream_targets")]
 script = ExtResource("1_7c20i")
