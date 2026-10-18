@@ -387,7 +387,7 @@ func get_setting_int(category: String, key: String, default_value: int = 0) -> i
 
 ## Retrieves a floating point setting from the cached config file.
 func get_setting_float(category: String, key: String, default_value: float = 0.0) -> float:
-	print("GlobalSettings: Fetching float setting -> [", category, "] ", key)
+	#print("GlobalSettings: Fetching float setting -> [", category, "] ", key)
 	var val: Variant = get_setting(category, key, default_value)
 	if val is float:
 		return val

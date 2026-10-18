@@ -2016,23 +2016,25 @@ activate_once = true
 
 [node name="ChapterTrigger2" parent="." unique_id=986591175 instance=ExtResource("51_52lpc")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.6088676, 3.6163845, 2.4663794)
-trigger_color = Color(0.9, 0.5, 0.1, 0.4)
-trigger_text = "TRIGGER Chapter Title"
 chapter_name = "Vistest Level"
 animation_style = 12
+trigger_color = Color(0.9, 0.5, 0.1, 0.4)
+trigger_text = "TRIGGER Chapter Title"
 
 [node name="TriggerHint" parent="." unique_id=1784504971 instance=ExtResource("53_ol82b")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.4702663, 1.0999999, 4.6692953)
+outline_color = Color(0.4, 0.8, 1, 0.9)
 trigger_text = "HINT jump"
 
 [node name="TriggerHint2" parent="." unique_id=1323132102 instance=ExtResource("53_ol82b")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.5829079, 3.5, 5.6184735)
-trigger_size = Vector3(0.75, 2, 2)
-trigger_text = "HINT blind00"
 hint_type = 0
 custom_message = "HI! You've just activated the custom hint message. You're located in a dark, moody room on the second floor. There is a room with 3 broken ventilators up ahead, an old shack to your right and a couple of tables. This room has no gameplay goal. Just a visual test of my future game. "
-trigger_once = false
 show_on_screen = false
+trigger_size = Vector3(0.75, 2, 2)
+trigger_once = false
+outline_color = Color(0.4, 0.8, 1, 0.9)
+trigger_text = "HINT blind00"
 
 [node name="AccessibleLabelBody" parent="." unique_id=513336368 instance=ExtResource("54_w467f")]
 transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, -1.7210659, 4.541558, 4.0062213)
@@ -2064,17 +2066,17 @@ audio_stream = ExtResource("57_gcc1y")
 connected_music_trigger = NodePath("../MusicTrigger2")
 switch_mode = 1
 crossfade_duration = 0.0
-trigger_once = true
 manual_override_time = true
 custom_start_time = 12.0
 custom_end_time = 24.0
+trigger_once = false
 
 [node name="MusicTrigger2" parent="." unique_id=420265713 instance=ExtResource("56_1uqfy")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7.9422646, 1.0999999, -0.6000457)
 switch_mode = 1
 crossfade_duration = 0.0
-trigger_once = true
 section_index = 2
 manual_override_time = true
 custom_start_time = 24.0
 custom_end_time = 48.0
+trigger_once = false

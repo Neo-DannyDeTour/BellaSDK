@@ -40,7 +40,7 @@ var _is_updating_geometry: bool = false
 var _transition_msg: Dictionary = {}
 
 ## Maps player instances to cooldown timestamps.
-var _dismount_cooldowns: Dictionary = {}
+var _dismount_cooldowns: Dictionary[CharacterBody3D, int] = {}
 
 
 ## Updates surface size and recalculates collider boundaries.
@@ -261,7 +261,7 @@ func is_character_on_surface(character: CharacterBody3D) -> bool:
 func has_dismount_cooldown(character: CharacterBody3D) -> bool:
 	var current_time: int = Time.get_ticks_msec()
 	if _dismount_cooldowns.has(character):
-		var expire_time: int = int(_dismount_cooldowns[character])
+		var expire_time: int = _dismount_cooldowns[character]
 		if current_time < expire_time:
 			return true
 		_dismount_cooldowns.erase(character)

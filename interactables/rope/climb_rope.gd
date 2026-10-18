@@ -606,8 +606,10 @@ func _update_prompt_label() -> void:
 
 	var grounded_hover: bool = false
 	for hovered_key: Variant in _interact_component.characters_hovering.keys():
-		var ch: CharacterBody3D = hovered_key as CharacterBody3D
-		if is_instance_valid(ch) and ch.is_on_floor():
+		if not is_instance_valid(hovered_key) or not hovered_key is CharacterBody3D:
+			continue
+		var ch: CharacterBody3D = hovered_key
+		if ch.is_on_floor():
 			grounded_hover = true
 			break
 
@@ -764,7 +766,7 @@ func _rebuild_rope() -> void:
 ## Populates [param mm] with alternating 90-degree procedural oval chain links.
 func _build_chain_multimesh(mm: MultiMesh) -> void:
 	mm.mesh = _get_or_build_chain_mesh()
-	var link_count: int = maxi(1, int(floor(length / CHAIN_LINK_PITCH)))
+	var link_count: int = maxi(1, int(floorf(length / CHAIN_LINK_PITCH)))
 	mm.instance_count = link_count
 
 	var rot_basis: Basis = Basis.from_euler(Vector3(0.0, PI * 0.5, 0.0))
@@ -777,7 +779,7 @@ func _build_chain_multimesh(mm: MultiMesh) -> void:
 ## Initializes Verlet strand points and populates [param mm] for SWING mode.
 func _build_swing_rope(mm: MultiMesh) -> void:
 	mm.mesh = _get_or_build_rope_mesh()
-	var seg_count: int = maxi(2, int(round(length / ROPE_SEGMENT_LEN)))
+	var seg_count: int = maxi(2, int(roundf(length / ROPE_SEGMENT_LEN)))
 	var point_count: int = seg_count + 1
 	var step_len: float = length / float(seg_count)
 
@@ -811,7 +813,7 @@ func _step_verlet(delta: float) -> void:
 	var rest_len: float = length / float(seg_count)
 	var hand_idx: int = -1
 	if _has_hand_point:
-		hand_idx = clampi(int(round(_hand_grab_distance / rest_len)), 1, seg_count)
+		hand_idx = clampi(int(roundf(_hand_grab_distance / rest_len)), 1, seg_count)
 
 	for i: int in range(1, point_count):
 		var cur: Vector3 = _verlet_pos[i]

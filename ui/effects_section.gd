@@ -483,7 +483,7 @@ func _load_effect_setting(key: String, default_val: String) -> String:
 		var active_tier: String = (
 			fallback if (fallback != "Off" and not fallback.is_empty()) else "Medium"
 		)
-		var migrated: String = active_tier if (raw as bool) else "Off"
+		var migrated: String = active_tier if raw == true else "Off"
 		GlobalSettings.save_setting("Settings", key, migrated)
 		return migrated
 

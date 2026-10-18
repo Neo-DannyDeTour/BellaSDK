@@ -100,8 +100,8 @@ func enter(msg: Dictionary = {}) -> void:
 
 	if msg.get(&"wall_coyote", false) == true:
 		wall_coyote_timer = 0.25
-		cached_wall_normal = msg.get(&"wall_normal", Vector3.ZERO) as Vector3
-		cached_wall_run_dir = msg.get(&"wall_run_dir", Vector3.ZERO) as Vector3
+		cached_wall_normal = type_convert(msg.get(&"wall_normal", Vector3.ZERO), TYPE_VECTOR3)
+		cached_wall_run_dir = type_convert(msg.get(&"wall_run_dir", Vector3.ZERO), TYPE_VECTOR3)
 		print("StateAir: Wall coyote window armed for 15m jump.")
 
 	if msg.has(&"knockback_force"):
@@ -117,9 +117,9 @@ func enter(msg: Dictionary = {}) -> void:
 	)
 	if is_launched:
 		print("StateAir: Player launched with preserved high-speed arc.")
-		launch_timer = msg.get(&"launch_duration", 0.85) as float
-		launch_gravity = msg.get(&"launch_gravity", 9.8) as float
-		launch_fall_gravity = msg.get(&"launch_fall_gravity", 9.8) as float
+		launch_timer = type_convert(msg.get(&"launch_duration", 0.85), TYPE_FLOAT)
+		launch_gravity = type_convert(msg.get(&"launch_gravity", 9.8), TYPE_FLOAT)
+		launch_fall_gravity = type_convert(msg.get(&"launch_fall_gravity", 9.8), TYPE_FLOAT)
 
 	var loco: PlayerLocomotionComponent = p.locomotion_component
 
@@ -398,8 +398,9 @@ func _check_wolf_air_climb(p: Player) -> bool:
 	if not found_climbable:
 		var ray_hit: Dictionary = _query_wall_in_front(p, 0.9)
 		if not ray_hit.is_empty():
-			var norm: Vector3 = ray_hit.get("normal", Vector3.ZERO) as Vector3
-			var col_node: Node = ray_hit.get("collider") as Node
+			var norm: Vector3 = ray_hit.get("normal", Vector3.ZERO)
+			var collider: Object = ray_hit.get("collider")
+			var col_node: Node = collider as Node
 			if (
 				absf(norm.y) < 0.7
 				and is_instance_valid(col_node)

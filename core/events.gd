@@ -625,12 +625,12 @@ func _load_registered_fonts() -> void:
 	var registry_variant: Variant = global_settings_node.get("FONT_REGISTRY")
 	if not (registry_variant is Array):
 		return
-	var registry: Array = registry_variant as Array
+	var registry: Array = registry_variant
 
 	for entry_variant: Variant in registry:
 		if not (entry_variant is Dictionary):
 			continue
-		var entry: Dictionary = entry_variant as Dictionary
+		var entry: Dictionary = entry_variant
 		var font_id: String = str(entry.get("id", ""))
 		var font_path: String = str(entry.get("path", ""))
 

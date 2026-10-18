@@ -149,7 +149,7 @@ func _process(_delta: float) -> void:
 
 ## Sets up internal timers for periodic and duration highlight cycles.
 func _setup_timers() -> void:
-	print("HighlightComponent: Setting up internal timers.")
+	#print("HighlightComponent: Setting up internal timers.")
 	_periodic_timer = Timer.new()
 	_periodic_timer.name = "HighlightPeriodicTimer"
 	_periodic_timer.one_shot = false
@@ -167,7 +167,7 @@ func _setup_timers() -> void:
 
 ## Instantiates or connects a [VisibleOnScreenNotifier3D] on the target.
 func _setup_visibility_notifier() -> void:
-	print("HighlightComponent: Setting up visibility notifier.")
+	#print("HighlightComponent: Setting up visibility notifier.")
 	if not is_instance_valid(visibility_notifier):
 		var parent: Node = get_parent()
 		if is_instance_valid(parent):
@@ -234,7 +234,7 @@ func _is_target_on_screen() -> bool:
 
 ## Subscribes to global outline signals from the event bus.
 func _connect_outline_events() -> void:
-	print("HighlightComponent: Binding outline event listeners.")
+	#print("HighlightComponent: Binding outline event listeners.")
 	if not is_instance_valid(Events):
 		return
 
@@ -425,7 +425,7 @@ func _refresh_highlight() -> void:
 
 ## Caches explicitly assigned meshes or discovers them once at startup.
 func _cache_target_meshes() -> void:
-	print("HighlightComponent: Caching target meshes.")
+	#print("HighlightComponent: Caching target meshes.")
 	_cached_meshes.clear()
 
 	if target_meshes.size() > 0:

@@ -132,7 +132,8 @@ func enter(msg: Dictionary = {}) -> void:
 	if not is_instance_valid(p):
 		return
 
-	var rope_candidate: ClimbRope3D = msg.get(KEY_ROPE) as ClimbRope3D
+	var rope_obj: Object = msg.get(KEY_ROPE)
+	var rope_candidate: ClimbRope3D = rope_obj as ClimbRope3D
 	if not is_instance_valid(rope_candidate):
 		state_machine.transition_to(STATE_AIR)
 		return

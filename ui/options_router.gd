@@ -414,12 +414,12 @@ func _on_reset_defaults_pressed() -> void:
 ## Traverses node hierarchy and applies 3D visual layer bitmask.
 func _assign_visual_layer_recursive(root: Node, layer_idx: int) -> void:
 	var mask: int = 1 << (layer_idx - 1)
-	var light_mask: int = mask | VOLUMETRIC_LAYER_MASK
+	var light_cull: int = mask | VOLUMETRIC_LAYER_MASK
 	for child: Node in root.get_children():
 		if child is Light3D:
 			var light_node: Light3D = child as Light3D
 			light_node.layers = mask
-			light_node.light_cull_mask = light_mask
+			light_node.light_cull_mask = light_cull
 		elif child is FogVolume:
 			(child as FogVolume).layers = VOLUMETRIC_LAYER_MASK
 		elif child is VisualInstance3D:

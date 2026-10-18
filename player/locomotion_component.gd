@@ -81,7 +81,7 @@ const METHOD_REGISTER_STANDING: StringName = &"register_player_standing"
 @export_category("Node References")
 
 ## Controller managing stair stepping and snapping logic.
-@export var stair_controller: Node
+@export var stair_controller: StairController
 
 ## Manager handling surface-specific footstep audio and decals/stamps.
 @export var footstep_manager: Node
@@ -108,7 +108,9 @@ var player: CharacterBody3D
 var is_active: bool = true
 
 ## Default world gravity scalar from [ProjectSettings].
-var gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity") as float
+var gravity: float = type_convert(
+	ProjectSettings.get_setting("physics/3d/default_gravity"), TYPE_FLOAT
+)
 
 ## Indicates whether sprinting is currently active.
 var sprint_active: bool = false

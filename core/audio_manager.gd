@@ -31,12 +31,11 @@ func play_sfx_2d_throttled(
 		print("[AudioManager] Suppressed 2D SFX playback limit: ", stream_key)
 		return null
 
-	var pool: Node = get_node_or_null("/root/AudioPool")
-	if not is_instance_valid(pool):
+	if not is_instance_valid(AudioPool):
 		push_error("[AudioManager] AudioPool autoload not present in scene tree.")
 		return null
 
-	var player: AudioStreamPlayer = pool.call(&"get_pooled_player_2d") as AudioStreamPlayer
+	var player: AudioStreamPlayer = AudioPool.get_pooled_player_2d()
 	if not is_instance_valid(player):
 		return null
 
@@ -69,12 +68,11 @@ func play_sfx_3d_throttled(
 		print("[AudioManager] Suppressed 3D SFX playback limit: ", stream_key)
 		return null
 
-	var pool: Node = get_node_or_null("/root/AudioPool")
-	if not is_instance_valid(pool):
+	if not is_instance_valid(AudioPool):
 		push_error("[AudioManager] AudioPool autoload not present in scene tree.")
 		return null
 
-	var player: AudioStreamPlayer3D = pool.call(&"get_pooled_player_3d") as AudioStreamPlayer3D
+	var player: AudioStreamPlayer3D = AudioPool.get_pooled_player_3d()
 	if not is_instance_valid(player):
 		return null
 

@@ -1,3 +1,4 @@
+@tool
 ## A volume that instantly moves the player to a connected portal node.
 ##
 ## Facilitates instant relocation from this [Area3D] to the assigned [member connect_portal].
@@ -20,6 +21,8 @@ func _init() -> void:
 ## Prepares audio player references and initializes base trigger bounds.
 func _ready() -> void:
 	super._ready()
+	if Engine.is_editor_hint():
+		return
 
 	if portal_sound == null:
 		portal_sound = get_node_or_null("AudioStreamPlayer") as AudioStreamPlayer

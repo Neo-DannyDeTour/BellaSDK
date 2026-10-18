@@ -58,7 +58,7 @@ func enter(msg: Dictionary = {}) -> void:
 	if not is_instance_valid(p):
 		return
 
-	var fall_speed: float = msg.get(&"landing_speed", 0.0) as float
+	var fall_speed: float = type_convert(msg.get(&"landing_speed", 0.0), TYPE_FLOAT)
 	p.velocity.y = 0.0
 	current_speed = 0.0
 
@@ -129,9 +129,7 @@ func physics_update(delta: float) -> void:
 		if _is_collider_in_group(node_col, GROUP_SAFE_LANDING):
 			loco.on_safe_landing = true
 
-	var is_recently_stepped: bool = (
-		(loco.stair_controller.get(&"time_since_step_up") as float) < 0.2
-	)
+	var is_recently_stepped: bool = loco.stair_controller.time_since_step_up < 0.2
 	var snapped_last_frame: bool = (
 		loco.stair_controller.get(&"_snapped_to_stairs_last_frame") == true
 	)

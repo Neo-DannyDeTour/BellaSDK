@@ -70,7 +70,8 @@ func deform_at(
 
 ## Generates a matching [HeightMapShape3D] from the material's noise texture.
 func _setup_heightmap_collision(mat: ShaderMaterial) -> void:
-	var noise_tex: NoiseTexture2D = mat.get_shader_parameter(PARAM_NOISE) as NoiseTexture2D
+	var noise_obj: Object = mat.get_shader_parameter(PARAM_NOISE)
+	var noise_tex: NoiseTexture2D = noise_obj as NoiseTexture2D
 	if not noise_tex or not is_instance_valid(collision_shape):
 		return
 
@@ -81,7 +82,7 @@ func _setup_heightmap_collision(mat: ShaderMaterial) -> void:
 	if not noise_img:
 		return
 
-	var height_scale: float = mat.get_shader_parameter(PARAM_HEIGHT_SCALE) as float
+	var height_scale: float = type_convert(mat.get_shader_parameter(PARAM_HEIGHT_SCALE), TYPE_FLOAT)
 	noise_img.resize(HEIGHTMAP_RES, HEIGHTMAP_RES, Image.INTERPOLATE_BILINEAR)
 
 	var map_data: PackedFloat32Array = PackedFloat32Array()

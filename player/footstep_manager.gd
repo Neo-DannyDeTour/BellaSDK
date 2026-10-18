@@ -237,7 +237,8 @@ func _scan_surface_material() -> void:
 	if result.is_empty():
 		return
 
-	var target_node: Node = result.get("collider") as Node
+	var collider: Object = result.get("collider")
+	var target_node: Node = collider as Node
 	_last_hit_position = result.get("position", Vector3.ZERO)
 
 	if not is_instance_valid(target_node):

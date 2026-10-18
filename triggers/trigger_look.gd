@@ -1,3 +1,4 @@
+@tool
 ## Activates connected targets when the player gazes at a specified [Node3D].
 class_name TriggerLook
 extends BaseTriggerArea3D
