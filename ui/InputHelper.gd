@@ -122,3 +122,11 @@ func sanitize_key_name(raw_text: String) -> String:
 	clean = clean.replace("Right Mouse Button", "RMB")
 	clean = clean.replace("Middle Mouse Button", "MMB")
 	return clean.strip_edges()
+
+
+## Retrieves the primary keybind label for [param action] formatted for UI display.
+func get_action_key_label(action: StringName) -> String:
+	var events: Array[InputEvent] = InputMap.action_get_events(action)
+	if events.is_empty():
+		return "???"
+	return sanitize_key_name(events[0].as_text())

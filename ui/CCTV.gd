@@ -495,7 +495,7 @@ func _cycle_camera() -> void:
 
 ## Rotates camera yaw and pitch axes based on directional inputs.
 func _pan_camera(delta: float) -> void:
-	var input_dir: Vector2 = Input.get_vector("left", "right", "forward", "backward")
+	var input_dir: Vector2 = GestureInputManager.get_vector("left", "right", "forward", "backward")
 	if input_dir.length_squared() < 0.01:
 		return
 
