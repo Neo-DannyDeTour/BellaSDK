@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://mttmftrx6fam"]
 
-[ext_resource type="PackedScene" path="res://shared/world_environment.tscn" id="1_ecfbh"]
+[ext_resource type="PackedScene" path="res://environment/world_environment.tscn" id="1_ecfbh"]
 [ext_resource type="Texture2D" path="res://assets/images/dev_textures/standard_7_green_512.png" id="2_uvnoq"]
 [ext_resource type="PackedScene" uid="uid://bwkd1g0rbfurr" path="res://interactables/object_interact.tscn" id="3_cmbf5"]
 [ext_resource type="PackedScene" uid="uid://d1cr6vua8ilv3" path="res://triggers/teleport.tscn" id="4_k74e2"]

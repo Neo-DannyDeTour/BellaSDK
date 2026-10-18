@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://b0n5hga5atr"]
 
-[ext_resource type="Script" uid="uid://c456s26ymsyey" path="res://shared/monke_bar.gd" id="1_ngngr"]
+[ext_resource type="Script" uid="uid://c456s26ymsyey" path="res://environment/monke_bar.gd" id="1_ngngr"]
 [ext_resource type="Material" uid="uid://coniyskrwahs4" path="res://assets/textures/dev_material_area.tres" id="1_tux10"]
 
 [sub_resource type="BoxMesh" id="BoxMesh_ngngr"]
