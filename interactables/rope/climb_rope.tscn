@@ -1,0 +1,83 @@
+[gd_scene format=3 uid="uid://c8r5m2nqv7x1p"]
+
+[ext_resource type="Script" path="res://interactables/rope/climb_rope.gd" id="1_rope"]
+[ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="2_inter"]
+[ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="3_hl"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="4_shdr"]
+[ext_resource type="AudioStream" uid="uid://dgnxwid3n7ce3" path="res://assets/sounds/ClimbRope.wav" id="5_climb"]
+[ext_resource type="AudioStream" uid="uid://b81edi4tvhu8f" path="res://assets/sounds/Zipline.wav" id="6_slide"]
+[ext_resource type="AudioStream" uid="uid://jscbwsu1hyh1" path="res://assets/sounds/RopeSwing.wav" id="7_swing"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_grab"]
+resource_local_to_scene = true
+height = 6.0
+radius = 0.14
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_prox"]
+resource_local_to_scene = true
+height = 6.0
+radius = 0.65
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_outline"]
+render_priority = 0
+shader = ExtResource("4_shdr")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 4.0
+shader_parameter/min_intensity = 0.0
+shader_parameter/max_intensity = 0.5
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[node name="ClimbRope3D" type="Node3D" groups=["interactable", "interactables"]]
+script = ExtResource("1_rope")
+climb_stream = ExtResource("5_climb")
+slide_stream = ExtResource("6_slide")
+swing_stream = ExtResource("7_swing")
+
+[node name="VisualMultiMesh" type="MultiMeshInstance3D" parent="."]
+
+[node name="GrabBody" type="StaticBody3D" parent="."]
+collision_layer = 4
+collision_mask = 0
+
+[node name="GrabCollision" type="CollisionShape3D" parent="GrabBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3, 0)
+shape = SubResource("CylinderShape3D_grab")
+
+[node name="ProximityArea" type="Area3D" parent="."]
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+
+[node name="ProximityCollision" type="CollisionShape3D" parent="ProximityArea"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -3, 0)
+shape = SubResource("CylinderShape3D_prox")
+
+[node name="InteractComponent" type="Node" parent="."]
+script = ExtResource("2_inter")
+metadata/_custom_type_script = "uid://cqawbvidns1th"
+
+[node name="HighlightComponent" type="Node" parent="." node_paths=PackedStringArray("interact_component")]
+script = ExtResource("3_hl")
+outline_material = SubResource("ShaderMaterial_outline")
+interact_component = NodePath("../InteractComponent")
+metadata/_custom_type_script = "uid://dgig0tamvkdxx"
+
+[node name="PromptLabel" type="Label3D" parent="."]
+visible = false
+billboard = 1
+no_depth_test = true
+text = "[E] CLIMB"
+font_size = 16
+outline_size = 8
+
+[node name="ClimbAudio" type="AudioStreamPlayer3D" parent="."]
+stream = ExtResource("5_climb")
+volume_db = -10.0
+
+[node name="SlideAudio" type="AudioStreamPlayer3D" parent="."]
+stream = ExtResource("6_slide")
+volume_db = -6.0
+
+[node name="SwingAudio" type="AudioStreamPlayer3D" parent="."]
+stream = ExtResource("7_swing")
+volume_db = -12.0

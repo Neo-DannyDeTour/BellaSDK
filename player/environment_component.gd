@@ -218,13 +218,6 @@ func enter_zipline(zipline_node: Node3D, start_pos: Vector3, end_pos: Vector3) -
 		)
 
 
-## Directs the state machine to transition to the Rope state.
-func enter_rope(rope_node: RigidBody3D) -> void:
-	print("EnvironmentComponent: enter_rope() called. Triggering Rope state.")
-	if is_instance_valid(state_machine):
-		state_machine.transition_to(STATE_ROPE, {"rope_node": rope_node})
-
-
 ## Notifies the VFX manager that the player has stepped into a rain zone.
 func enter_rain_volume() -> void:
 	print("EnvironmentComponent: enter_rain_volume() called.")

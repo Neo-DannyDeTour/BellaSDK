@@ -1,405 +1,590 @@
-## Handles hanging, climbing, and swinging on interactive ropes in [StateRope].
+## Handles rigid chain climbing and analytic pendulum rope swinging in [StateRope].
 class_name StateRope
 extends PlayerState
 
-## Base speed scalar for climbing up and down the rope.
-const ROPE_CLIMB_SPEED: float = 1.0
+# --------------------------------------
+# CONSTANTS
+# --------------------------------------
 
-## The specific physics body segment of the rope the player is currently grabbing.
-var current_rope: RigidBody3D = null
+## Vertical climb speed along a chain in meters per second.
+# shortcut: fixed constant, promote to ClimbRope3D export if per-instance speed is needed
+const CHAIN_CLIMB_SPEED: float = 1.2
 
-## The local vertical Y-axis offset on the rope segment where the player's hands are anchored.
-var rope_offset: float = 0.0
+## Fast downward slide speed along a chain in meters per second.
+const CHAIN_SLIDE_SPEED: float = 6.0
 
-## Blending weight used to smoothly interpolate the player to the exact rope grab point.
-var rope_lerp_weight: float = 0.0
+## Angular orbit speed around a chain in radians per second (~90 deg/s).
+const CHAIN_ORBIT_SPEED: float = 1.5707963
 
-## Reusable transition payload dictionary to avoid runtime heap allocations.
+## Horizontal standoff radius in meters from the chain axis to the player center.
+const CHAIN_STANDOFF_RADIUS: float = 0.42
+
+## Horizontal speed applied along flat camera forward when jumping off a chain.
+const CHAIN_JUMP_HORIZONTAL: float = 7.0
+
+## Vertical hop velocity applied when jumping off a chain.
+const CHAIN_JUMP_VERTICAL: float = 4.5
+
+## Downward slide speed along a swing rope in meters per second.
+const SWING_SLIDE_SPEED: float = 4.0
+
+## Tangential pump acceleration (m/s^2) when driving a swing with WASD.
+# shortcut: fixed constant, promote to ClimbRope3D export if per-rope pump tuning is needed
+const SWING_PUMP_ACCEL: float = 14.0
+
+## Maximum swing angle in radians (75 deg) beyond which WASD pumping cuts off.
+const SWING_MAX_PUMP_ANGLE_RAD: float = 1.3089969
+
+## Passive angular velocity damping rate for the swing pendulum.
+const SWING_DAMPING: float = 0.35
+
+## Forward velocity boost added along flat camera look when launching from a swing.
+const SWING_JUMP_FWD_BOOST: float = 5.5
+
+## Base upward velocity added when launching from a swing rope.
+const SWING_JUMP_BASE_UP: float = 4.2
+
+## Additional upward velocity scaled by upward camera pitch on swing launch.
+const SWING_JUMP_PITCH_UP: float = 2.8
+
+## Maximum swing speed (m/s) below which the player is still enough to fire a weapon.
+const SWING_STILL_SPEED_THRESHOLD: float = 0.75
+
+## Maximum camera roll tilt in degrees during lateral swinging. Set 0.0 to disable.
+const MAX_SWING_ROLL_DEG: float = 6.0
+
+## Exponential smoothing rate for swing camera roll interpolation.
+const CAMERA_ROLL_LERP_SPEED: float = 10.0
+
+## Duration in seconds of holding slide at the bottom end before auto-dropping off.
+const BOTTOM_HOLD_DROP_TIME: float = 0.15
+
+## Vertical offset in meters from player origin to the hand grip point.
+const HAND_HEIGHT_OFFSET: float = 1.35
+
+## Exponential damping rate pulling the player onto the chain standoff cylinder.
+const MOUNT_SNAP_SPEED: float = 18.0
+
+## Per-rope cooldown in seconds applied when releasing or launching from a rope.
+const REGRAB_COOLDOWN: float = 0.4
+
+## Outward positional nudge in meters applied on jump dismount.
+const DISMOUNT_SEPARATION: float = 0.25
+
+## Minimum time in seconds after mounting before the interact key can dismount.
+const INTERACT_DISMOUNT_GRACE: float = 0.20
+
+## Target state name when dismounting into the air.
+const STATE_AIR: StringName = &"Air"
+
+## Transition dictionary key holding the [ClimbRope3D] instance.
+const KEY_ROPE: StringName = &"rope"
+
+## Transition dictionary key holding the initial grab distance below the anchor.
+const KEY_GRAB_DISTANCE: StringName = &"grab_distance"
+
+## Transition dictionary key indicating a jump dismount occurred.
+const KEY_JUMP: StringName = &"jump"
+
+## Transition dictionary key carrying the horizontal release direction vector.
+const KEY_RELEASE_DIR: StringName = &"release_dir"
+
+## Input action identifier for strafe left.
+const ACTION_LEFT: StringName = &"left"
+
+## Input action identifier for strafe right.
+const ACTION_RIGHT: StringName = &"right"
+
+## Input action identifier for move forward.
+const ACTION_FORWARD: StringName = &"forward"
+
+## Input action identifier for move backward.
+const ACTION_BACKWARD: StringName = &"backward"
+
+## Input action identifier for jumping off the rope.
+const ACTION_JUMP: StringName = &"jump"
+
+## Input action identifier for dropping from the rope.
+const ACTION_INTERACT: StringName = &"interact"
+
+## Input action identifier for crouching / fast sliding.
+const ACTION_CROUCH: StringName = &"crouch"
+
+## Input action identifier for sprinting (used for Sprint+S slide alias).
+const ACTION_SPRINT: StringName = &"sprint"
+
+# --------------------------------------
+# PRIVATE VARIABLES
+# --------------------------------------
+
+## Currently mounted [ClimbRope3D] instance.
+var _rope: ClimbRope3D = null
+
+## Current distance in meters along the rope from the anchor to the player's hands.
+var _grab_distance: float = 2.0
+
+## Current horizontal orbit angle in radians around the chain axis.
+var _orbit_angle: float = 0.0
+
+## World-space tangential velocity of the hand grip point in SWING mode.
+var _swing_velocity: Vector3 = Vector3.ZERO
+
+## Accumulated time in seconds holding slide while clamped at the bottom end.
+var _bottom_slide_timer: float = 0.0
+
+## Time in seconds elapsed since entering [StateRope].
+var _elapsed_time: float = 0.0
+
+## Current smoothed camera roll angle in radians applied to the eyes pivot.
+var _current_roll_rad: float = 0.0
+
+## Tween easing the camera roll back to level upon exiting the state.
+var _roll_reset_tween: Tween = null
+
+## Reusable transition payload dictionary to prevent per-dismount allocations.
 var _transition_msg: Dictionary = {}
 
+# --------------------------------------
+# LIFECYCLE & STATE HOOKS
+# --------------------------------------
 
-## Initializes rope state, calculates grab offsets, and transfers player momentum.
+
+## Initializes rope attachment, drops heavy items, and seeds pendulum momentum.
 func enter(msg: Dictionary = {}) -> void:
-	print("StateRope: enter() called. Player attaching to rope.")
-	if not msg.has(&"rope_node"):
-		state_machine.transition_to(&"Air")
+	print("StateRope: enter() called.")
+	var p: Player = _get_player()
+	if not is_instance_valid(p):
 		return
 
-	var raw_rope: Variant = msg[&"rope_node"]
-	current_rope = raw_rope if raw_rope is RigidBody3D else null
-	if not is_instance_valid(current_rope):
-		state_machine.transition_to(&"Air")
+	var rope_candidate: ClimbRope3D = msg.get(KEY_ROPE) as ClimbRope3D
+	if not is_instance_valid(rope_candidate):
+		state_machine.transition_to(STATE_AIR)
 		return
 
-	var rope_root: Node3D = (
-		current_rope.get_parent() if current_rope.get_parent() is Node3D else null
-	)
-	var raw_swing: Variant = (
-		rope_root.get(&"is_swingable")
-		if rope_root != null and &"is_swingable" in rope_root
-		else false
-	)
-	var can_swing: bool = raw_swing == true
+	_rope = rope_candidate
+	_elapsed_time = 0.0
+	_bottom_slide_timer = 0.0
+	_current_roll_rad = 0.0
 
-	if can_swing:
-		var entry_momentum: Vector3 = Vector3(
-			player.velocity.x, player.velocity.y * 0.2, player.velocity.z
+	if is_instance_valid(_roll_reset_tween):
+		_roll_reset_tween.kill()
+		_roll_reset_tween = null
+
+	_drop_heavy_items_if_needed(p)
+
+	var loco: PlayerLocomotionComponent = p.locomotion_component
+	if is_instance_valid(loco):
+		loco.crouching = false
+		loco.sprint_active = false
+		if is_instance_valid(loco.stair_controller):
+			loco.stair_controller.set(&"is_enabled", false)
+
+	var anchor: Vector3 = _rope.global_position
+	var raw_dist: float = anchor.y - (p.global_position.y + HAND_HEIGHT_OFFSET)
+	if msg.has(KEY_GRAB_DISTANCE):
+		var msg_dist: Variant = msg[KEY_GRAB_DISTANCE]
+		if msg_dist is float:
+			raw_dist = msg_dist
+	_grab_distance = _rope.clamp_grab_distance(raw_dist)
+
+	if _rope.mode == ClimbRope3D.Mode.CHAIN:
+		var radial: Vector3 = Vector3(
+			p.global_position.x - anchor.x, 0.0, p.global_position.z - anchor.z
 		)
-		var rel_pos: Vector3 = player.global_position - current_rope.global_position
-		current_rope.apply_impulse(entry_momentum * 1.5, rel_pos)
-
-	player.velocity = Vector3.ZERO
-	player.add_collision_exception_with(current_rope)
-	rope_lerp_weight = 4.0
-
-	var local_pos: Vector3 = current_rope.to_local(player.global_position)
-	rope_offset = local_pos.y
-
-	var local_top: float = (
-		current_rope.to_local(rope_root.global_position).y if is_instance_valid(rope_root) else 0.0
-	)
-	var raw_len: Variant = (
-		rope_root.get(&"rope_length") if rope_root != null and &"rope_length" in rope_root else 10.0
-	)
-	var max_length: float = raw_len if raw_len is float else 10.0
-
-	var top_limit: float = local_top - 2.5
-	var bottom_limit: float = local_top - max_length + 0.5
-	rope_offset = clampf(rope_offset, bottom_limit, top_limit)
-
-	var face_pos: Vector3 = Vector3(
-		current_rope.global_position.x, player.global_position.y, current_rope.global_position.z
-	)
-	if player.global_position.distance_squared_to(face_pos) > 0.01:
-		var target_transform: Transform3D = player.global_transform.looking_at(face_pos, Vector3.UP)
-		var tween: Tween = create_tween()
-		(
-			tween
-			. tween_property(
-				player, "quaternion", target_transform.basis.get_rotation_quaternion(), 0.3
-			)
-			. set_trans(Tween.TRANS_SINE)
-		)
+		if radial.length_squared() > 0.001:
+			_orbit_angle = atan2(radial.x, radial.z)
+		else:
+			var flat_back: Vector3 = -_get_flat_camera_forward(p)
+			_orbit_angle = atan2(flat_back.x, flat_back.z)
+		_swing_velocity = Vector3.ZERO
+		p.velocity = Vector3.ZERO
+		var hand_pt: Vector3 = Vector3(anchor.x, anchor.y - _grab_distance, anchor.z)
+		_rope.set_hand_point(hand_pt, _grab_distance)
+		_set_weapon_can_fire(p, true)
+	else:
+		var hand_pos: Vector3 = p.global_position + Vector3(0.0, HAND_HEIGHT_OFFSET, 0.0)
+		var rel: Vector3 = hand_pos - anchor
+		if rel.length_squared() < 0.001:
+			rel = Vector3.DOWN * _grab_distance
+		var radial_dir: Vector3 = rel.normalized()
+		_swing_velocity = p.velocity - radial_dir * p.velocity.dot(radial_dir)
+		p.velocity = Vector3.ZERO
+		_rope.set_hand_point(anchor + radial_dir * _grab_distance, _grab_distance)
+		_set_weapon_can_fire(p, _swing_velocity.length() < SWING_STILL_SPEED_THRESHOLD)
 
 
-## Cleans up physics exceptions and smooths camera rotation back upright on exit.
+## Restores weapon firing, stair snapping, camera roll, and rope cooldown on exit.
 func exit() -> void:
-	print("StateRope: exit() called. Player releasing rope.")
-	if is_instance_valid(current_rope):
-		player.remove_collision_exception_with(current_rope)
+	print("StateRope: exit() called.")
+	var p: Player = _get_player()
+	if is_instance_valid(p):
+		_set_weapon_can_fire(p, true)
+		var loco: PlayerLocomotionComponent = p.locomotion_component
+		if is_instance_valid(loco) and is_instance_valid(loco.stair_controller):
+			loco.stair_controller.set(&"is_enabled", true)
+		_ease_camera_roll_to_zero(p)
 
-		var rope_root: Node3D = (
-			current_rope.get_parent() if current_rope.get_parent() is Node3D else null
-		)
-		if is_instance_valid(rope_root):
-			if rope_root.has_method(&"on_player_released"):
-				rope_root.call(&"on_player_released")
+	if is_instance_valid(_rope):
+		_rope.clear_hand_point()
+		_rope.release(REGRAB_COOLDOWN)
+	_rope = null
 
-	current_rope = null
 
-	var release_forward: Vector3 = (
-		Vector3(-player.global_transform.basis.z.x, 0.0, -player.global_transform.basis.z.z)
-		. normalized()
+## Runs per-physics-frame dismount checks and mode-specific rope locomotion.
+func physics_update(delta: float) -> void:
+	var p: Player = _get_player()
+	if not is_instance_valid(p) or not is_instance_valid(_rope) or p.is_dead:
+		state_machine.transition_to(STATE_AIR)
+		return
+
+	_elapsed_time += delta
+
+	var input_dir: Vector2 = GestureInputManager.get_vector(
+		String(ACTION_LEFT), String(ACTION_RIGHT), String(ACTION_FORWARD), String(ACTION_BACKWARD)
 	)
-	if release_forward.length_squared() < 0.001:
-		release_forward = -player.global_transform.basis.z
+	var is_crouch_held: bool = GestureInputManager.is_action_pressed(String(ACTION_CROUCH))
+	var is_sprint_held: bool = GestureInputManager.is_action_pressed(String(ACTION_SPRINT))
+	var is_sliding: bool = is_crouch_held or (is_sprint_held and input_dir.y > 0.1)
 
-	var target_basis: Basis = Basis.looking_at(release_forward, Vector3.UP)
-	var release_tween: Tween = create_tween().set_parallel(true)
+	if _check_dismount(p):
+		return
 
+	if _rope.mode == ClimbRope3D.Mode.CHAIN:
+		_update_chain_mode(p, delta, input_dir, is_sliding)
+	else:
+		_update_swing_mode(p, delta, input_dir, is_sliding)
+
+
+# --------------------------------------
+# PRIVATE METHODS: CHAIN MODE
+# --------------------------------------
+
+
+## Processes vertical climbing, orbiting, fast sliding, and firing gate on a chain.
+func _update_chain_mode(p: Player, delta: float, input_dir: Vector2, is_sliding: bool) -> void:
+	var min_dist: float = ClimbRope3D.MIN_GRAB_OFFSET
+	var max_dist: float = maxf(min_dist, _rope.length - ClimbRope3D.BOTTOM_GRAB_MARGIN)
+	var prev_dist: float = _grab_distance
+
+	if is_sliding:
+		_grab_distance = minf(max_dist, _grab_distance + CHAIN_SLIDE_SPEED * delta)
+	elif absf(input_dir.y) > 0.05:
+		_grab_distance = clampf(
+			_grab_distance + input_dir.y * CHAIN_CLIMB_SPEED * delta, min_dist, max_dist
+		)
+
+	if absf(input_dir.x) > 0.05:
+		_orbit_angle -= input_dir.x * CHAIN_ORBIT_SPEED * delta
+
+	var anchor: Vector3 = _rope.global_position
+	var radial_offset: Vector3 = (
+		Vector3(sin(_orbit_angle), 0.0, cos(_orbit_angle)) * CHAIN_STANDOFF_RADIUS
+	)
+	var target_pos: Vector3 = Vector3(
+		anchor.x + radial_offset.x,
+		anchor.y - _grab_distance - HAND_HEIGHT_OFFSET,
+		anchor.z + radial_offset.z
+	)
+	var smoothed_pos: Vector3 = MathUtils.damp_v3(
+		p.global_position, target_pos, MOUNT_SNAP_SPEED, delta
+	)
+	p.velocity = (smoothed_pos - p.global_position) / maxf(delta, 0.0001)
+	p.move_and_slide()
+	p.velocity = Vector3.ZERO
+
+	var moved_vertically: bool = absf(_grab_distance - prev_dist) > 0.0005
+	var is_climbing_now: bool = (not is_sliding) and moved_vertically
+	var is_sliding_now: bool = is_sliding and moved_vertically
+	_rope.set_audio(is_climbing_now, is_sliding_now, 0.0)
+	_rope.set_hand_point(Vector3(anchor.x, anchor.y - _grab_distance, anchor.z), _grab_distance)
+
+	var is_still: bool = (
+		(not is_sliding) and absf(input_dir.x) <= 0.05 and absf(input_dir.y) <= 0.05
+	)
+	_set_weapon_can_fire(p, is_still)
+
+	var bob_input: Vector2 = input_dir if is_climbing_now else Vector2.ZERO
+	_update_camera_and_roll(p, delta, bob_input, 0.0)
+
+	if is_sliding and _grab_distance >= max_dist - 0.01:
+		_bottom_slide_timer += delta
+		if _bottom_slide_timer >= BOTTOM_HOLD_DROP_TIME:
+			print("StateRope: Bottom slide hold completed on chain. Dropping off.")
+			_dismount_drop(p, Vector3.ZERO)
+	else:
+		_bottom_slide_timer = 0.0
+
+
+# --------------------------------------
+# PRIVATE METHODS: SWING MODE
+# --------------------------------------
+
+
+## Processes analytic spherical pendulum motion, wall impacts, and camera roll.
+func _update_swing_mode(p: Player, delta: float, input_dir: Vector2, is_sliding: bool) -> void:
+	var min_dist: float = ClimbRope3D.MIN_GRAB_OFFSET
+	var max_dist: float = maxf(min_dist, _rope.length - ClimbRope3D.BOTTOM_GRAB_MARGIN)
+	var prev_dist: float = _grab_distance
+
+	if is_sliding:
+		_grab_distance = minf(max_dist, _grab_distance + SWING_SLIDE_SPEED * delta)
+
+	var anchor: Vector3 = _rope.global_position
+	var hand_offset: Vector3 = Vector3(0.0, HAND_HEIGHT_OFFSET, 0.0)
+	var hand_pos: Vector3 = p.global_position + hand_offset
+	var rel: Vector3 = hand_pos - anchor
+	if rel.length_squared() < 0.001:
+		rel = Vector3.DOWN * _grab_distance
+
+	var radial_dir: Vector3 = rel.normalized()
+	var swing_angle: float = acos(clampf(radial_dir.dot(Vector3.DOWN), -1.0, 1.0))
+
+	var grav: float = _get_gravity(p)
+	_swing_velocity.y -= grav * delta
+
+	if (
+		not is_sliding
+		and input_dir.length_squared() > 0.001
+		and swing_angle < SWING_MAX_PUMP_ANGLE_RAD
+	):
+		var cam_fwd: Vector3 = _get_flat_camera_forward(p)
+		var cam_right: Vector3 = _get_flat_camera_right(p)
+		var wish_dir: Vector3 = ((cam_fwd * -input_dir.y) + (cam_right * input_dir.x)).normalized()
+		var tangent_wish: Vector3 = wish_dir - radial_dir * wish_dir.dot(radial_dir)
+		if tangent_wish.length_squared() > 0.0001:
+			_swing_velocity += tangent_wish.normalized() * (SWING_PUMP_ACCEL * delta)
+
+	_swing_velocity *= maxf(0.0, 1.0 - (SWING_DAMPING * delta))
+	_swing_velocity -= radial_dir * _swing_velocity.dot(radial_dir)
+
+	var predicted_hand: Vector3 = hand_pos + (_swing_velocity * delta)
+	var new_rel: Vector3 = predicted_hand - anchor
+	if new_rel.length_squared() < 0.001:
+		new_rel = Vector3.DOWN * _grab_distance
+
+	var new_radial_dir: Vector3 = new_rel.normalized()
+	if new_radial_dir.y > -0.05:
+		new_radial_dir.y = -0.05
+		new_radial_dir = new_radial_dir.normalized()
+
+	var constrained_hand: Vector3 = anchor + (new_radial_dir * _grab_distance)
+	var target_player_pos: Vector3 = constrained_hand - hand_offset
+
+	p.velocity = (target_player_pos - p.global_position) / maxf(delta, 0.0001)
+	p.move_and_slide()
+
+	var col_count: int = p.get_slide_collision_count()
+	if col_count > 0:
+		for i: int in range(col_count):
+			var col: KinematicCollision3D = p.get_slide_collision(i)
+			if is_instance_valid(col):
+				var n: Vector3 = col.get_normal()
+				var into_wall: float = _swing_velocity.dot(n)
+				if into_wall < 0.0:
+					_swing_velocity -= n * into_wall
+
+	var actual_hand: Vector3 = p.global_position + hand_offset
+	var post_rel: Vector3 = actual_hand - anchor
+	if post_rel.length_squared() > 0.001:
+		var post_dir: Vector3 = post_rel.normalized()
+		_swing_velocity -= post_dir * _swing_velocity.dot(post_dir)
+		actual_hand = anchor + (post_dir * _grab_distance)
+		p.global_position = actual_hand - hand_offset
+	p.velocity = Vector3.ZERO
+
+	_rope.set_hand_point(actual_hand, _grab_distance)
+
+	var swing_speed: float = _swing_velocity.length()
+	var is_sliding_now: bool = is_sliding and absf(_grab_distance - prev_dist) > 0.0005
+	_rope.set_audio(false, is_sliding_now, swing_speed)
+
+	var can_shoot_now: bool = (not is_sliding) and (swing_speed < SWING_STILL_SPEED_THRESHOLD)
+	_set_weapon_can_fire(p, can_shoot_now)
+
+	var rope_up: Vector3 = (anchor - actual_hand).normalized()
+	var cam_right_vec: Vector3 = _get_flat_camera_right(p)
+	var side_dot: float = clampf(rope_up.dot(cam_right_vec), -1.0, 1.0)
+	var raw_roll_deg: float = clampf(
+		rad_to_deg(asin(side_dot)), -MAX_SWING_ROLL_DEG, MAX_SWING_ROLL_DEG
+	)
+	_update_camera_and_roll(p, delta, Vector2.ZERO, deg_to_rad(raw_roll_deg))
+
+	if is_sliding and _grab_distance >= max_dist - 0.01:
+		_bottom_slide_timer += delta
+		if _bottom_slide_timer >= BOTTOM_HOLD_DROP_TIME:
+			print("StateRope: Bottom slide hold completed on swing rope. Dropping off.")
+			_dismount_drop(p, _swing_velocity)
+	else:
+		_bottom_slide_timer = 0.0
+
+
+# --------------------------------------
+# PRIVATE METHODS: DISMOUNTING
+# --------------------------------------
+
+
+## Polls jump and interact inputs to execute launch or drop dismounts.
+func _check_dismount(p: Player) -> bool:
+	var jump_pressed: bool = (
+		GestureInputManager.is_action_just_pressed(String(ACTION_JUMP))
+		or Input.is_action_just_pressed(ACTION_JUMP)
+	)
+	if jump_pressed:
+		var flat_fwd: Vector3 = _get_flat_camera_forward(p)
+		if _rope.mode == ClimbRope3D.Mode.CHAIN:
+			var chain_vel: Vector3 = (
+				(flat_fwd * CHAIN_JUMP_HORIZONTAL) + Vector3(0.0, CHAIN_JUMP_VERTICAL, 0.0)
+			)
+			p.global_position += flat_fwd * DISMOUNT_SEPARATION
+			_dismount_jump(p, chain_vel, flat_fwd)
+		else:
+			var look_dir: Vector3 = _get_camera_look_dir(p)
+			var pitch_up: float = clampf(look_dir.y, 0.0, 1.0) * SWING_JUMP_PITCH_UP
+			var up_vel: float = SWING_JUMP_BASE_UP + pitch_up
+			var swing_vel: Vector3 = (
+				_swing_velocity + (flat_fwd * SWING_JUMP_FWD_BOOST) + Vector3(0.0, up_vel, 0.0)
+			)
+			p.global_position += flat_fwd * DISMOUNT_SEPARATION
+			_dismount_jump(p, swing_vel, flat_fwd)
+		return true
+
+	if _elapsed_time >= INTERACT_DISMOUNT_GRACE:
+		var interact_pressed: bool = (
+			GestureInputManager.consume_buffered_action(String(ACTION_INTERACT))
+			or Input.is_action_just_pressed(ACTION_INTERACT)
+		)
+		if interact_pressed:
+			var carry_vel: Vector3 = (
+				_swing_velocity if _rope.mode == ClimbRope3D.Mode.SWING else Vector3.ZERO
+			)
+			_dismount_drop(p, carry_vel)
+			return true
+
+	return false
+
+
+## Applies launch velocity [param launch_vel] and transitions into [StateAir].
+func _dismount_jump(p: Player, launch_vel: Vector3, release_dir: Vector3) -> void:
+	print("StateRope: Executing jump dismount.")
+	p.velocity = launch_vel
+	var loco: PlayerLocomotionComponent = p.locomotion_component
+	if is_instance_valid(loco) and release_dir.length_squared() > 0.001:
+		loco.set_direction(release_dir)
+
+	_transition_msg.clear()
+	_transition_msg[KEY_JUMP] = true
+	_transition_msg[KEY_RELEASE_DIR] = release_dir
+	state_machine.transition_to(STATE_AIR, _transition_msg)
+
+
+## Releases the rope without a jump impulse and transitions into [StateAir].
+func _dismount_drop(p: Player, carry_velocity: Vector3) -> void:
+	print("StateRope: Executing drop dismount.")
+	p.velocity = carry_velocity
+	var flat_dir: Vector3 = Vector3(carry_velocity.x, 0.0, carry_velocity.z)
+	var loco: PlayerLocomotionComponent = p.locomotion_component
+	if is_instance_valid(loco) and flat_dir.length_squared() > 0.01:
+		loco.set_direction(flat_dir.normalized())
+
+	_transition_msg.clear()
+	if flat_dir.length_squared() > 0.01:
+		_transition_msg[KEY_RELEASE_DIR] = flat_dir.normalized()
+	state_machine.transition_to(STATE_AIR, _transition_msg)
+
+
+# --------------------------------------
+# PRIVATE METHODS: HELPERS
+# --------------------------------------
+
+
+## Returns the owning character cast to [Player] or null.
+func _get_player() -> Player:
+	return player as Player
+
+
+## Safely drops any held item or heavy object when mounting a rope.
+func _drop_heavy_items_if_needed(p: Player) -> void:
+	var interact: PlayerInteractionComponent = p.interaction_component
+	if not is_instance_valid(interact):
+		return
+	if (
+		is_instance_valid(interact.interaction_scanner)
+		and interact.interaction_scanner.is_heavy_lifting
+	):
+		interact.interaction_scanner.drop_heavy_object_safely()
+	elif is_instance_valid(interact.held_item):
+		interact.drop_held_item()
+
+
+## Updates [member WeaponInventoryComponent.can_fire] on the player's inventory.
+func _set_weapon_can_fire(p: Player, allowed: bool) -> void:
+	var inv: WeaponInventoryComponent = p.weapon_inventory_component
+	if not is_instance_valid(inv) and is_instance_valid(p.interaction_component):
+		inv = p.interaction_component.weapon_inventory
+	if is_instance_valid(inv):
+		inv.can_fire = allowed
+
+
+## Returns the active gravity scalar from [PlayerLocomotionComponent].
+func _get_gravity(p: Player) -> float:
+	if is_instance_valid(p.locomotion_component):
+		return p.locomotion_component.gravity
+	return 9.8
+
+
+## Returns the 3D forward unit vector of the active player camera.
+func _get_camera_look_dir(p: Player) -> Vector3:
+	if is_instance_valid(p.camera_controller):
+		return p.camera_controller.get_camera_look_dir().normalized()
+	return -p.global_transform.basis.z.normalized()
+
+
+## Returns the horizontal forward unit vector of the active player camera.
+func _get_flat_camera_forward(p: Player) -> Vector3:
+	var look: Vector3 = _get_camera_look_dir(p)
+	var flat: Vector3 = Vector3(look.x, 0.0, look.z)
+	if flat.length_squared() > 0.0001:
+		return flat.normalized()
+	var body_fwd: Vector3 = -p.global_transform.basis.z
+	return Vector3(body_fwd.x, 0.0, body_fwd.z).normalized()
+
+
+## Returns the horizontal right unit vector of the active player camera.
+func _get_flat_camera_right(p: Player) -> Vector3:
+	var fwd: Vector3 = _get_flat_camera_forward(p)
+	return fwd.cross(Vector3.UP).normalized()
+
+
+## Updates camera FOV/headbob and applies smoothed swing roll to the eyes pivot.
+func _update_camera_and_roll(
+	p: Player, delta: float, bob_input: Vector2, target_roll_rad: float
+) -> void:
+	var cam_ctrl: CameraController = p.camera_controller
+	if not is_instance_valid(cam_ctrl):
+		return
+
+	var spd: float = 4.0 if bob_input != Vector2.ZERO else 0.0
+	cam_ctrl.update_camera(delta, bob_input, false, false, false, spd)
+
+	var effective_target: float = 0.0 if cam_ctrl.reduce_motion else target_roll_rad
+	_current_roll_rad = MathUtils.damp(
+		_current_roll_rad, effective_target, CAMERA_ROLL_LERP_SPEED, delta
+	)
+	if is_instance_valid(cam_ctrl.eyes):
+		cam_ctrl.eyes.rotation.z = _current_roll_rad
+
+
+## Smoothly tweens the camera eyes roll angle back to zero upon state exit.
+func _ease_camera_roll_to_zero(p: Player) -> void:
+	var cam_ctrl: CameraController = p.camera_controller
+	if not is_instance_valid(cam_ctrl) or not is_instance_valid(cam_ctrl.eyes):
+		return
+	if is_instance_valid(_roll_reset_tween):
+		_roll_reset_tween.kill()
+	_roll_reset_tween = create_tween()
 	(
-		release_tween
-		. tween_property(player, "quaternion", target_basis.get_rotation_quaternion(), 0.3)
+		_roll_reset_tween
+		. tween_property(cam_ctrl.eyes, "rotation:z", 0.0, 0.25)
 		. set_trans(Tween.TRANS_SINE)
 		. set_ease(Tween.EASE_OUT)
 	)
-
-	var cam: Camera3D = _get_camera()
-	if is_instance_valid(cam):
-		(
-			release_tween
-			. tween_property(cam, "rotation", Vector3.ZERO, 0.3)
-			. set_trans(Tween.TRANS_SINE)
-			. set_ease(Tween.EASE_OUT)
-		)
-
-
-## Routes frame updates to climb or swing logic based on input gestures.
-func physics_update(delta: float) -> void:
-	print("StateRope: physics_update() processing rope attachment.")
-	if not is_instance_valid(current_rope):
-		return
-
-	var input_dir: Vector2 = GestureInputManager.get_vector(
-		&"left", &"right", &"forward", &"backward"
-	)
-
-	_handle_climbing_and_swinging(delta, input_dir)
-	_apply_rope_position(delta)
-
-	if is_instance_valid(current_rope):
-		_check_dismount(input_dir)
-
-
-## Evaluates player camera angles and input vectors to determine rope locomotion.
-func _handle_climbing_and_swinging(delta: float, input_dir: Vector2) -> void:
-	print("StateRope: _handle_climbing_and_swinging() evaluating intent.")
-	var rope_root: Node3D = (
-		current_rope.get_parent() if current_rope.get_parent() is Node3D else null
-	)
-	var rope_up: Vector3 = current_rope.global_transform.basis.y.normalized()
-	var cam: Camera3D = _get_camera()
-	var look_dir: Vector3 = (
-		-cam.global_transform.basis.z
-		if is_instance_valid(cam)
-		else -player.global_transform.basis.z
-	)
-
-	var can_swing: bool = (
-		rope_root.get(&"is_swingable")
-		if rope_root != null and &"is_swingable" in rope_root
-		else false
-	)
-	var force_amount: float = (
-		rope_root.get(&"swing_force")
-		if rope_root != null and &"swing_force" in rope_root
-		else 1200.0
-	)
-
-	var swing_angle_deg: float = rad_to_deg(acos(clampf(rope_up.dot(Vector3.UP), -1.0, 1.0)))
-	var is_actively_swinging: bool = (
-		swing_angle_deg > 5.0 or current_rope.angular_velocity.length() > 0.2
-	)
-
-	var look_dot_rope: float = look_dir.dot(rope_up)
-	var is_looking_up: bool = look_dot_rope > 0.6
-	var is_looking_down: bool = look_dot_rope < -0.2
-
-	var is_pressing_w: bool = input_dir.y < -0.1
-	var is_pressing_s: bool = input_dir.y > 0.1
-	var is_sliding: bool = GestureInputManager.is_action_pressed(&"crouch") and is_looking_down
-
-	var intent_is_climbing: bool = false
-	var climb_direction: float = 0.0
-
-	if not is_sliding:
-		if is_looking_up:
-			if is_pressing_w:
-				intent_is_climbing = true
-				climb_direction = 1.0
-			elif is_pressing_s and not is_actively_swinging:
-				intent_is_climbing = true
-				climb_direction = -1.0
-		elif is_looking_down:
-			if is_pressing_w and not is_actively_swinging:
-				intent_is_climbing = true
-				climb_direction = -1.0
-
-	var is_climbing_actively: bool = false
-	var local_top: float = (
-		current_rope.to_local(rope_root.global_position).y if is_instance_valid(rope_root) else 0.0
-	)
-	var max_length: float = (
-		rope_root.get(&"rope_length") if rope_root != null and &"rope_length" in rope_root else 10.0
-	)
-	var top_limit: float = local_top - 2.5
-	var bottom_limit: float = local_top - max_length + 0.5
-	var old_offset: float = rope_offset
-
-	if is_sliding:
-		rope_offset -= (ROPE_CLIMB_SPEED * 7.0) * delta
-		rope_offset = clampf(rope_offset, bottom_limit, top_limit)
-		print("StateRope: Player sliding down rope.")
-	elif intent_is_climbing:
-		rope_offset += climb_direction * ROPE_CLIMB_SPEED * delta
-		rope_offset = clampf(rope_offset, bottom_limit, top_limit)
-		is_climbing_actively = true
-		print("StateRope: Player actively climbing rope.")
-	else:
-		if can_swing and input_dir.length_squared() > 0.0001:
-			current_rope.sleeping = false
-			var flat_fwd: Vector3 = Vector3(look_dir.x, 0.0, look_dir.z).normalized()
-			var flat_right: Vector3 = flat_fwd.cross(Vector3.UP).normalized()
-			var push_dir: Vector3 = (flat_fwd * -input_dir.y) + (flat_right * input_dir.x)
-
-			if push_dir.length_squared() > 0.01:
-				var applied_force: Vector3 = push_dir.normalized() * force_amount
-				current_rope.apply_central_force(applied_force)
-				print("StateRope: Applying raw swing force: ", applied_force)
-
-	var actually_moved: bool = absf(rope_offset - old_offset) > 0.001
-	var play_slide_sound: bool = is_sliding and actually_moved
-	var play_climb_sound: bool = is_climbing_actively and actually_moved
-
-	if is_instance_valid(rope_root):
-		if rope_root.has_method(&"handle_rope_sounds"):
-			rope_root.call(&"handle_rope_sounds", play_climb_sound, play_slide_sound)
-
-	var cam_ctrl: Node = _get_camera_controller()
-	if is_instance_valid(cam_ctrl) and cam_ctrl.has_method(&"update_camera"):
-		if is_climbing_actively and actually_moved:
-			cam_ctrl.call(&"update_camera", delta, input_dir, false, false, false, 6.0)
-		else:
-			cam_ctrl.call(&"update_camera", delta, Vector2.ZERO, false, false, false, 0.0)
-
-
-## Updates global position and rotation to follow moving rope physics body via [MathUtils].
-func _apply_rope_position(delta: float) -> void:
-	print("StateRope: _apply_rope_position() syncing with rope transform.")
-	var rope_root: Node3D = (
-		current_rope.get_parent() if current_rope.get_parent() is Node3D else null
-	)
-	var rope_up: Vector3 = current_rope.global_transform.basis.y.normalized()
-	var center_grab_pos: Vector3 = current_rope.to_global(Vector3(0.0, rope_offset, 0.0))
-	var can_swing: bool = (
-		rope_root.get(&"is_swingable")
-		if rope_root != null and &"is_swingable" in rope_root
-		else false
-	)
-
-	var cam: Camera3D = _get_camera()
-	var cam_fwd: Vector3 = (
-		-cam.global_transform.basis.z.normalized()
-		if is_instance_valid(cam)
-		else -player.global_transform.basis.z.normalized()
-	)
-	var cam_right: Vector3 = (
-		-cam.global_transform.basis.x.normalized()
-		if is_instance_valid(cam)
-		else -player.global_transform.basis.x.normalized()
-	)
-	var orbit_fwd: Vector3 = Vector3(cam_fwd.x, 0.0, cam_fwd.z).normalized()
-	var orbit_right: Vector3 = Vector3(cam_right.x, 0.0, cam_right.z).normalized()
-
-	var target_pos: Vector3
-	if can_swing:
-		target_pos = (center_grab_pos - (orbit_fwd * 0.7) + (orbit_right * 0.5))
-	else:
-		target_pos = center_grab_pos - (orbit_fwd * 0.2)
-
-	if rope_lerp_weight < 45.0:
-		rope_lerp_weight += delta * 150.0
-		player.global_position = MathUtils.damp_v3(player.global_position, target_pos, 15.0, delta)
-	else:
-		player.global_position = target_pos
-
-	player.global_rotation.x = 0.0
-	player.global_rotation.z = 0.0
-
-	if is_instance_valid(cam):
-		var tilt_quat: Quaternion = Quaternion(Vector3.UP, rope_up)
-		cam.quaternion = Quaternion.IDENTITY.slerp(tilt_quat, 0.15)
-	player.velocity = Vector3.ZERO
-
-
-## Listens for jump or interact actions to release player from current rope.
-func _check_dismount(input_dir: Vector2) -> void:
-	print("StateRope: _check_dismount() polling release triggers.")
-	if GestureInputManager.is_action_just_pressed(&"jump"):
-		_perform_jump_dismount(input_dir)
-	elif GestureInputManager.is_action_just_pressed(&"interact"):
-		if rope_lerp_weight > 10.0:
-			var cam: Camera3D = _get_camera()
-			var release_dir: Vector3 = (
-				-cam.global_transform.basis.z
-				if is_instance_valid(cam)
-				else -player.global_transform.basis.z
-			)
-			_transition_out_of_rope(release_dir, 0.0, 0.0)
-
-
-## Calculates directional momentum and boosts when jumping off swing rope.
-func _perform_jump_dismount(input_dir: Vector2) -> void:
-	print("StateRope: _perform_jump_dismount() computing exit velocity.")
-	var rope_root: Node3D = (
-		current_rope.get_parent() if current_rope.get_parent() is Node3D else null
-	)
-	var can_swing: bool = (
-		rope_root.get(&"is_swingable")
-		if rope_root != null and &"is_swingable" in rope_root
-		else false
-	)
-
-	var grab_offset: Vector3 = player.global_position - current_rope.global_position
-	var rope_momentum: Vector3 = current_rope.angular_velocity.cross(grab_offset)
-	var cam: Camera3D = _get_camera()
-	var jump_dir: Vector3 = (
-		-cam.global_transform.basis.z.normalized()
-		if is_instance_valid(cam)
-		else -player.global_transform.basis.z.normalized()
-	)
-	var flat_jump_dir: Vector3 = Vector3(jump_dir.x, 0.0, jump_dir.z).normalized()
-
-	var vertical_hop: float = 0.0
-	var forward_push: float = 0.0
-
-	if can_swing and input_dir.length_squared() > 0.01:
-		current_rope.apply_impulse(-flat_jump_dir * 12.0, Vector3.ZERO)
-
-		var directional_momentum: float = rope_momentum.dot(jump_dir)
-		var swing_boost: float = maxf(0.0, directional_momentum)
-		var camera_lift: float = maxf(jump_dir.y, 0.0) * 2.5
-
-		vertical_hop = 5.0 + camera_lift + (swing_boost * 0.4)
-		forward_push = 8.0 + (swing_boost * 2.5)
-	else:
-		vertical_hop = 4.5
-		forward_push = 7.0
-
-	_transition_out_of_rope(jump_dir, forward_push, vertical_hop)
-
-
-## Applies exit velocity and transitions state machine back into [StateAir].
-func _transition_out_of_rope(
-	release_dir: Vector3, forward_push: float, vertical_hop: float
-) -> void:
-	print("StateRope: _transition_out_of_rope() executing detachment.")
-	var flat_jump_dir: Vector3 = Vector3(release_dir.x, 0.0, release_dir.z).normalized()
-	player.velocity = ((flat_jump_dir * forward_push) + Vector3(0.0, vertical_hop, 0.0))
-
-	var loc_comp: Node = _get_locomotion()
-	if flat_jump_dir.length_squared() > 0.01:
-		if is_instance_valid(loc_comp):
-			if loc_comp.has_method(&"set_direction"):
-				loc_comp.call(&"set_direction", flat_jump_dir)
-
-	player.global_position += release_dir * 0.5
-	_transition_msg.clear()
-	_transition_msg[&"release_dir"] = release_dir
-	state_machine.transition_to(&"Air", _transition_msg)
-
-
-## Safely retrieves the player camera controller component.
-func _get_camera_controller() -> Node:
-	if not is_instance_valid(player):
-		return null
-	var ctrl: Variant = player.get(&"camera_controller")
-	if ctrl is Node:
-		var node_ctrl: Node = ctrl
-		if is_instance_valid(node_ctrl):
-			return node_ctrl
-	return null
-
-
-## Safely retrieves the player [Camera3D] node.
-func _get_camera() -> Camera3D:
-	var ctrl: Node = _get_camera_controller()
-	if is_instance_valid(ctrl):
-		var cam: Variant = ctrl.get(&"camera")
-		if cam is Camera3D:
-			var cam_node: Camera3D = cam
-			if is_instance_valid(cam_node):
-				return cam_node
-	return null
-
-
-## Safely retrieves the player locomotion component.
-func _get_locomotion() -> Node:
-	if not is_instance_valid(player):
-		return null
-	var loc: Variant = player.get(&"locomotion_component")
-	if loc is Node:
-		var node_loc: Node = loc
-		if is_instance_valid(node_loc):
-			return node_loc
-	return null

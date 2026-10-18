@@ -727,13 +727,6 @@ func _on_zipline_grabbed(zipline_node: Node3D, start_pos: Vector3, end_pos: Vect
 		environment_component.enter_zipline(zipline_node, start_pos, end_pos)
 
 
-## Attaches player to physics rope link.
-func _on_rope_grabbed(rope_node: RigidBody3D) -> void:
-	print("Player: Gripping rope link.")
-	if is_instance_valid(environment_component):
-		environment_component.enter_rope(rope_node)
-
-
 ## Extracts a float value from a [Dictionary] safely handling [Variant] types.
 func _extract_float_from_dict(source: Dictionary, key: String, default_val: float) -> float:
 	var raw_val: Variant = source.get(key, default_val)

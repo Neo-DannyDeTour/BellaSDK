@@ -26,6 +26,9 @@ var current_slot_index: int = -1
 ## Index of previously equipped slot for fast swapping.
 var previous_slot_index: int = -1
 
+## Controls whether the currently equipped weapon is permitted to fire.
+var can_fire: bool = true
+
 ## Reference to the [member weapon_holder] 3D socket node.
 @export var weapon_holder: Node3D
 
@@ -140,6 +143,8 @@ func swap_to_previous() -> void:
 
 ## Triggers primary fire on the currently equipped weapon in [member slots].
 func shoot_active_weapon() -> void:
+	if not can_fire:
+		return
 	print("WeaponInventoryComponent: shoot_active_weapon() called.")
 	if current_slot_index >= 0 and is_instance_valid(slots[current_slot_index]):
 		if slots[current_slot_index].has_method("shoot"):
