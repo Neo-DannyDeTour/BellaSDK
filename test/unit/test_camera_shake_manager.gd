@@ -1,124 +1,115 @@
-## Unit test suite for CameraShakeManager handling screenshake, rumble, and accessibility.
+## Unit tests for [CameraShakeManager] validating trauma decay, process gating, and camera offsets.
 class_name TestCameraShakeManager
 extends GutTest
 
-## Internal reference to the CameraShakeManager node under test.
-var _shake_manager: CameraShakeManager = null
+## The [CameraShakeManager] instance under test.
+var _manager: CameraShakeManager = null
 
-## Internal mock Camera3D node used for registering target camera.
-var _mock_camera: Camera3D = null
+## Mock camera node instance.
+var _camera: Camera3D = null
+
+## Tracks whether shake_finished signal was received.
+var _finished_emitted: bool = false
 
 
-## Sets up nodes and adds them to scene tree before each test.
+## Signal listener recording shake completion.
+func _on_shake_finished() -> void:
+	_finished_emitted = true
+
+
+## Prepares test manager and camera before each test execution.
 func before_each() -> void:
 	print("TestCameraShakeManager: Setting up test environment.")
-	_shake_manager = CameraShakeManager.new()
-	add_child_autofree(_shake_manager)
+	_finished_emitted = false
+	_manager = CameraShakeManager.new()
+	add_child_autoqfree(_manager)
 
-	_mock_camera = Camera3D.new()
-	add_child_autofree(_mock_camera)
+	_camera = Camera3D.new()
+	_camera.name = "TestCamera"
+	_camera.transform = Transform3D.IDENTITY
+	add_child_autoqfree(_camera)
+
+	_manager.register_camera(_camera)
+	_manager.shake_finished.connect(_on_shake_finished)
 
 
-## Cleans up test nodes after each test method.
+## Clears local instance references after each test execution.
 func after_each() -> void:
-	print("TestCameraShakeManager: Cleaning up test environment.")
-	_shake_manager = null
-	_mock_camera = null
+	print("TestCameraShakeManager: Tearing down test environment.")
+	_manager = null
+	_camera = null
 
 
-## Tests initial state and default property assignments.
-func test_initial_state() -> void:
-	print("TestCameraShakeManager: Testing initial property defaults.")
-	assert_eq(_shake_manager.trauma, 0.0, "Initial trauma should be 0.0.")
-	assert_eq(_shake_manager.global_intensity, 1.0, "Default global intensity should be 1.0.")
+## Verifies that process is disabled initially for 60 FPS event-driven efficiency.
+func test_initial_state_and_process_disabled() -> void:
+	print("TestCameraShakeManager: test_initial_state_and_process_disabled() executing.")
+	assert_eq(_manager.trauma, 0.0, "Initial trauma should be 0.0.")
+	assert_false(_manager.is_processing(), "Process should be disabled when idle.")
 
 
-## Tests adding impulse trauma and clamping behavior.
-func test_add_trauma_and_clamping() -> void:
-	print("TestCameraShakeManager: Testing add_trauma clamping.")
-	_shake_manager.add_trauma(0.5)
-	assert_eq(_shake_manager.trauma, 0.5, "Trauma should accumulate to 0.5.")
+## Verifies adding trauma clamps between 0.0 and 1.0 and activates processing.
+func test_add_trauma_clamps_and_wakes_process() -> void:
+	print("TestCameraShakeManager: test_add_trauma_clamps_and_wakes_process() executing.")
+	_manager.add_trauma(0.4)
+	assert_eq(_manager.trauma, 0.4, "Trauma should accumulate.")
+	assert_true(_manager.is_processing(), "Process should be enabled when trauma > 0.")
 
-	_shake_manager.add_trauma(0.8)
-	assert_eq(_shake_manager.trauma, 1.0, "Trauma should be clamped at upper bound 1.0.")
+	_manager.add_trauma(0.8)
+	assert_eq(_manager.trauma, 1.0, "Trauma must clamp at 1.0 maximum.")
 
 
-## Tests accessibility intensity multiplier setter and clamping.
-func test_set_accessibility_scale() -> void:
-	print("TestCameraShakeManager: Testing accessibility scaling limits.")
-	_shake_manager.set_accessibility_scale(0.5)
-	assert_eq(_shake_manager.global_intensity, 0.5, "Global intensity should be set to 0.5.")
+## Verifies starting sustained rumble sets timers and activates processing.
+func test_start_rumble_wakes_process() -> void:
+	print("TestCameraShakeManager: test_start_rumble_wakes_process() executing.")
+	_manager.start_rumble(0.6, 2.0)
+	assert_eq(_manager.get("_sustained_rumble_intensity"), 0.6, "Rumble intensity must be set.")
+	assert_eq(_manager.get("_sustained_rumble_timer"), 2.0, "Rumble timer must be set.")
+	assert_true(_manager.is_processing(), "Process should be enabled during sustained rumble.")
 
-	_shake_manager.set_accessibility_scale(3.0)
+
+## Verifies trauma decay over time and sleeping when decay completes.
+func test_trauma_decay_and_sleep() -> void:
+	print("TestCameraShakeManager: test_trauma_decay_and_sleep() executing.")
+	_manager.add_trauma(0.5)
+	_manager.trauma_decay_rate = 1.0
+
+	# Step half duration
+	_manager._process(0.25)
+	assert_almost_eq(_manager.trauma, 0.25, 0.01, "Trauma should decay linearly with delta.")
+	assert_true(_manager.is_processing(), "Process should remain active while decaying.")
+
+	# Step past zero
+	_manager._process(0.5)
+	assert_eq(_manager.trauma, 0.0, "Trauma should clamp to 0.0.")
+	assert_false(_manager.is_processing(), "Process must sleep once trauma decays.")
+	assert_true(_finished_emitted, "shake_finished must emit when shake concludes.")
+
+
+## Verifies accessibility scaling clamps and modifies effective intensity.
+func test_accessibility_scale_clamping() -> void:
+	print("TestCameraShakeManager: test_accessibility_scale_clamping() executing.")
+	_manager.set_accessibility_scale(0.5)
+	assert_eq(_manager.global_intensity, 0.5, "Intensity scale should update.")
+
+	_manager.set_accessibility_scale(-1.0)
+	assert_eq(_manager.global_intensity, 0.0, "Scale must clamp to minimum 0.0.")
+
+	_manager.set_accessibility_scale(3.5)
+	assert_eq(_manager.global_intensity, 2.0, "Scale must clamp to maximum 2.0.")
+
+
+## Verifies stop_all halts shake, resets camera transform, and sleeps process.
+func test_stop_all_resets_and_sleeps() -> void:
+	print("TestCameraShakeManager: test_stop_all_resets_and_sleeps() executing.")
+	_manager.add_trauma(1.0)
+	_manager.start_rumble(1.0, 5.0)
+	assert_true(_manager.is_processing(), "Process should be active.")
+
+	_manager.stop_all()
+	assert_eq(_manager.trauma, 0.0, "Trauma must reset to 0.0.")
 	assert_eq(
-		_shake_manager.global_intensity, 2.0, "Global intensity should be clamped to max 2.0."
+		_manager.get("_sustained_rumble_intensity"), 0.0, "Rumble intensity must reset to 0.0."
 	)
-
-	_shake_manager.set_accessibility_scale(-0.5)
-	assert_eq(
-		_shake_manager.global_intensity, 0.0, "Global intensity should be clamped to min 0.0."
-	)
-
-
-## Tests register_camera binding and original transform caching.
-func test_register_camera() -> void:
-	print("TestCameraShakeManager: Testing active camera registration.")
-	_mock_camera.transform.origin = Vector3(1.0, 2.0, 3.0)
-	_shake_manager.register_camera(_mock_camera)
-
-	assert_eq(
-		_shake_manager.get("_active_camera"), _mock_camera, "Active camera should be registered."
-	)
-
-
-## Tests process step trauma decay.
-func test_trauma_decay_in_process() -> void:
-	print("TestCameraShakeManager: Testing trauma decay rate step.")
-	_shake_manager.register_camera(_mock_camera)
-	_shake_manager.add_trauma(1.0)
-
-	_shake_manager._process(0.2)
-	assert_true(_shake_manager.trauma < 1.0, "Trauma should decay after process step.")
-
-
-## Tests sustained rumble effect and timer decay.
-func test_start_rumble_and_decay() -> void:
-	print("TestCameraShakeManager: Testing sustained rumble timing.")
-	_shake_manager.register_camera(_mock_camera)
-	_shake_manager.start_rumble(0.8, 1.0)
-
-	assert_eq(
-		_shake_manager.get("_sustained_rumble_intensity"), 0.8, "Rumble intensity should be set."
-	)
-
-	_shake_manager._process(0.5)
-	assert_eq(
-		_shake_manager.get("_sustained_rumble_intensity"),
-		0.8,
-		"Rumble intensity should remain during active timer."
-	)
-
-	_shake_manager._process(0.6)
-	assert_eq(
-		_shake_manager.get("_sustained_rumble_intensity"),
-		0.0,
-		"Rumble intensity should reset to 0 after timer expires."
-	)
-
-
-## Tests stop_all clearing trauma and rumble state.
-func test_stop_all() -> void:
-	print("TestCameraShakeManager: Testing stop_all state reset.")
-	watch_signals(_shake_manager)
-	_shake_manager.add_trauma(0.8)
-	_shake_manager.start_rumble(0.5, 2.0)
-
-	_shake_manager.stop_all()
-
-	assert_eq(_shake_manager.trauma, 0.0, "Trauma should be 0.0 after stop_all().")
-	assert_eq(
-		_shake_manager.get("_sustained_rumble_intensity"), 0.0, "Rumble intensity should be 0.0."
-	)
-	assert_signal_emitted(
-		_shake_manager, "shake_finished", "shake_finished signal should be emitted."
-	)
+	assert_false(_manager.is_processing(), "Process must sleep after stop_all.")
+	assert_true(_finished_emitted, "shake_finished must emit on stop_all.")
+	assert_eq(_camera.transform, Transform3D.IDENTITY, "Camera transform must reset.")

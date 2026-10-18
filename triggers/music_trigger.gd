@@ -1,7 +1,7 @@
 @tool
 ## 3D music volume triggering section switches and editor audio.
 class_name MusicTrigger3D
-extends Area3D
+extends BaseTriggerArea3D
 
 ## Timing rule defining when an incoming musical switch takes place.
 enum SwitchMode {
@@ -63,9 +63,6 @@ const BOUNDARY_TOLERANCE_SEC: float = 0.05
 ## Crossfade duration in seconds between audio transitions.
 @export var crossfade_duration: float = 0.3
 
-## When true, fires only once during gameplay.
-@export var trigger_once: bool = false
-
 @export_group("Section Configuration")
 
 ## Musical section index (1, 2, 3...) of this trigger.
@@ -95,9 +92,6 @@ const BOUNDARY_TOLERANCE_SEC: float = 0.05
 ## Whether this section loops until another section triggers.
 @export var is_looping: bool = true
 
-## Flag indicating whether this trigger has already fired.
-var _has_triggered: bool = false
-
 ## Primary audio player handling current playback.
 var _player_a: AudioStreamPlayer
 
@@ -115,9 +109,6 @@ var _standby_player: AudioStreamPlayer
 
 ## Tween controlling crossfade transitions between players.
 var _crossfade_tween: Tween
-
-## Child collision shape node providing physics bounds.
-var _collision_shape: CollisionShape3D
 
 ## Currently playing section index on master trigger.
 var _current_section: int = -1
@@ -150,16 +141,21 @@ var _queued_switch_mode: SwitchMode = SwitchMode.IMMEDIATE
 var _queued_crossfade: float = 0.3
 
 
+## Configures default trigger properties.
+func _init() -> void:
+	trigger_once = false
+
+
 ## Registers group, establishes physics, locates visualizers, and starts auto playback.
 func _ready() -> void:
+	super._ready()
 	print("MusicTrigger3D: Initializing music trigger node: ", name)
 	add_to_group(TRIGGER_GROUP)
-	_setup_collision()
 	_locate_visualizer()
 	_sync_from_visualizer()
 	if Engine.is_editor_hint():
 		return
-	Utilities.safe_connect(body_entered, _on_body_entered)
+
 	var master: MusicTrigger3D = _resolve_master_trigger()
 	if master == self and audio_stream != null:
 		_ensure_players_initialized()
@@ -177,17 +173,6 @@ func _process(_delta: float) -> void:
 		return
 	var pos: float = _active_player.get_playback_position()
 	_handle_loop_and_queue(pos)
-
-
-## Assigns physics collision layers and creates collision shape if needed.
-func _setup_collision() -> void:
-	collision_layer = CollisionLayers.MASK_NONE
-	collision_mask = CollisionLayers.MASK_PLAYER
-	_collision_shape = get_node_or_null("CollisionShape3D") as CollisionShape3D
-	if _collision_shape == null:
-		_collision_shape = CollisionShape3D.new()
-		_collision_shape.name = "CollisionShape3D"
-		add_child(_collision_shape)
 
 
 ## Resolves visualizer child reference using [NodeQuery].
@@ -209,8 +194,14 @@ func _sync_from_visualizer() -> void:
 	if visualizer == null:
 		_locate_visualizer()
 	_sync_label()
-	if visualizer == null or not is_instance_valid(_collision_shape):
+	if visualizer == null:
 		return
+
+	if not is_instance_valid(_collision_shape):
+		_collision_shape = _get_collision_shape()
+	if not is_instance_valid(_collision_shape):
+		return
+
 	if visualizer.shape_type == EditorTriggerVisualizer.ShapeType.BOX:
 		var box: BoxShape3D = (
 			_collision_shape.shape if _collision_shape.shape is BoxShape3D else null
@@ -231,12 +222,17 @@ func _sync_from_visualizer() -> void:
 
 ## Updates display label text on visualizer mesh.
 func _sync_label() -> void:
-	if not is_inside_tree() or visualizer == null or not is_instance_valid(visualizer):
+	if not is_inside_tree():
+		return
+	var target_vis: EditorTriggerVisualizer = (
+		visualizer if visualizer != null else _get_visualizer()
+	)
+	if not is_instance_valid(target_vis):
 		return
 	var start_t: float = get_start_timestamp()
 	var end_t: float = get_end_timestamp()
 	var label: String = "Part %d (%.1fs - %.1fs)" % [section_index, start_t, end_t]
-	visualizer.trigger_text = label
+	target_vis.trigger_text = label
 
 
 ## Returns the effective section start timestamp in seconds.
@@ -271,17 +267,14 @@ func _handle_loop_and_queue(pos: float) -> void:
 
 
 ## Handles player physics body entry and requests section switch on master.
-func _on_body_entered(_body: Node3D) -> void:
-	if trigger_once and _has_triggered:
-		return
+func _on_player_entered(_player: Node3D) -> void:
 	var master: MusicTrigger3D = _resolve_master_trigger()
 	if master == null:
 		push_warning("MusicTrigger3D: No master music trigger located for: " + name)
 		return
-	_has_triggered = true
 	var start_t: float = get_start_timestamp()
 	var end_t: float = get_end_timestamp()
-	print("MusicTrigger3D: Body entered volume. Switching to section: ", section_index)
+	print("MusicTrigger3D: Player entered volume. Switching to section: ", section_index)
 	master.request_switch(
 		section_index, start_t, end_t, is_looping, switch_mode, crossfade_duration
 	)

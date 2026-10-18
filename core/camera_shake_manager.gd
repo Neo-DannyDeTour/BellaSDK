@@ -45,7 +45,7 @@ var _sustained_rumble_intensity: float = 0.0
 var _sustained_rumble_timer: float = 0.0
 
 
-## Initializes noise parameters and connects global event bus listeners.
+## Initializes noise parameters, connects global event bus listeners, and sleeps process.
 func _ready() -> void:
 	print("CameraShakeManager: Initializing camera shake manager.")
 	_noise.seed = randi()
@@ -54,11 +54,13 @@ func _ready() -> void:
 
 	Events.screenshake_requested.connect(_on_screenshake_requested)
 	Events.player_camera_registered.connect(register_camera)
+	set_process(false)
 
 
 ## Steps trauma decay, samples organic noise, and updates listener camera offsets.
 func _process(delta: float) -> void:
 	if trauma <= 0.0 and _sustained_rumble_timer <= 0.0:
+		set_process(false)
 		return
 
 	if trauma > 0.0:
@@ -74,6 +76,7 @@ func _process(delta: float) -> void:
 	var effective_intensity: float = _calculate_effective_shake()
 	if effective_intensity <= 0.001:
 		_reset_camera()
+		set_process(false)
 		shake_finished.emit()
 		return
 
@@ -130,6 +133,8 @@ func register_camera(camera: Camera3D) -> void:
 func add_trauma(amount: float) -> void:
 	print("CameraShakeManager: Adding impulse trauma: ", amount)
 	trauma = clampf(trauma + amount, 0.0, 1.0)
+	if trauma > 0.0:
+		set_process(true)
 
 
 ## Starts sustained rumble effect with constant intensity and defined duration.
@@ -142,6 +147,8 @@ func start_rumble(intensity: float, duration: float) -> void:
 	)
 	_sustained_rumble_intensity = clampf(intensity, 0.0, 1.0)
 	_sustained_rumble_timer = maxf(0.0, duration)
+	if _sustained_rumble_intensity > 0.0 and _sustained_rumble_timer > 0.0:
+		set_process(true)
 
 
 ## Stops all active trauma and sustained rumble effects immediately.
@@ -151,6 +158,7 @@ func stop_all() -> void:
 	_sustained_rumble_intensity = 0.0
 	_sustained_rumble_timer = 0.0
 	_reset_camera()
+	set_process(false)
 	shake_finished.emit()
 
 

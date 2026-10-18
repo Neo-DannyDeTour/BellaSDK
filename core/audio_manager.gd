@@ -36,11 +36,7 @@ func play_sfx_2d_throttled(
 		push_error("[AudioManager] AudioPool autoload not present in scene tree.")
 		return null
 
-	var player: AudioStreamPlayer = (
-		pool.call("get_pooled_player_2d")
-		if pool.call("get_pooled_player_2d") is AudioStreamPlayer
-		else null
-	)
+	var player: AudioStreamPlayer = pool.call(&"get_pooled_player_2d") as AudioStreamPlayer
 	if not is_instance_valid(player):
 		return null
 
@@ -78,11 +74,7 @@ func play_sfx_3d_throttled(
 		push_error("[AudioManager] AudioPool autoload not present in scene tree.")
 		return null
 
-	var player: AudioStreamPlayer3D = (
-		pool.call("get_pooled_player_3d")
-		if pool.call("get_pooled_player_3d") is AudioStreamPlayer3D
-		else null
-	)
+	var player: AudioStreamPlayer3D = pool.call(&"get_pooled_player_3d") as AudioStreamPlayer3D
 	if not is_instance_valid(player):
 		return null
 

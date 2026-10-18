@@ -1,6 +1,6 @@
 ## Activates connected targets when the player gazes at a specified [Node3D].
 class_name TriggerLook
-extends Area3D
+extends BaseTriggerArea3D
 
 @export_group("Trigger Settings")
 ## The [Node3D] reference the player must look toward.
@@ -12,8 +12,12 @@ extends Area3D
 ## Tolerance cosine dot threshold for looking cone accuracy.
 @export_range(0.0, 1.0) var look_tolerance: float = 0.95
 
-## Determines if this look trigger executes only once.
-@export var fire_once: bool = true
+## Compatibility alias linking to base [member BaseTriggerArea3D.trigger_once].
+@export var fire_once: bool:
+	get:
+		return trigger_once
+	set(value):
+		trigger_once = value
 
 @export_group("Action Settings")
 ## Target nodes receiving power activation calls.
@@ -25,25 +29,24 @@ var _player_inside: bool = false
 ## Accumulated gaze duration on the target node.
 var _current_look_time: float = 0.0
 
-## Tracks whether activation has already triggered.
-var _has_triggered: bool = false
-
 ## Cached viewport [Camera3D] node reference.
 var _cached_camera: Camera3D = null
 
 
-## Connects body entry and exit signals to internal listeners and configures physics layers.
+## Initializes base trigger bounds and gates per-frame process evaluation.
 func _ready() -> void:
-	print("TriggerLook: Initializing gaze trigger volume.")
-	collision_layer = CollisionLayers.MASK_NONE
-	collision_mask = CollisionLayers.MASK_PLAYER
-	Utilities.safe_connect(body_entered, _on_body_entered)
-	Utilities.safe_connect(body_exited, _on_body_exited)
+	super._ready()
+	set_process(false)
 
 
-## Evaluates player camera gaze alignment against target each frame.
+## Evaluates player camera gaze alignment against target each frame while player is inside.
 func _process(delta: float) -> void:
-	if not _player_inside or _has_triggered or not is_instance_valid(look_target):
+	if (
+		not _player_inside
+		or (trigger_once and _has_triggered)
+		or not is_instance_valid(look_target)
+	):
+		set_process(false)
 		return
 
 	var cam: Camera3D = _get_camera()
@@ -62,11 +65,28 @@ func _process(delta: float) -> void:
 		_current_look_time = 0.0
 
 
+## Activates gaze evaluation process when player enters the volume.
+func _on_player_entered(_player: Node3D) -> void:
+	print("TriggerLook: Player entered volume -> ", _player.name)
+	_player_inside = true
+	if not (trigger_once and _has_triggered):
+		set_process(true)
+
+
+## Deactivates gaze evaluation process and resets gaze timer when player exits the volume.
+func _on_player_exited(_player: Node3D) -> void:
+	print("TriggerLook: Player exited volume -> ", _player.name)
+	_player_inside = false
+	_current_look_time = 0.0
+	set_process(false)
+
+
 ## Dispatches power activation to connected targets.
 func _trigger_event() -> void:
 	print("TriggerLook: Gaze threshold met, activating targets.")
-	if fire_once:
+	if trigger_once:
 		_has_triggered = true
+		set_process(false)
 
 	for target: Node in targets:
 		if not is_instance_valid(target):
@@ -80,21 +100,6 @@ func _trigger_event() -> void:
 			if is_instance_valid(comp) and comp.has_method(&"add_power"):
 				print("TriggerLook: Calling add_power() on PowerComponent of: ", target.name)
 				comp.call(&"add_power")
-
-
-## Detects player body entry into the trigger volume.
-func _on_body_entered(body: Node3D) -> void:
-	print("TriggerLook: Body entered volume -> ", body.name)
-	if body.is_in_group(&"player") or body is Player:
-		_player_inside = true
-
-
-## Detects player body exit and clears active gaze counters.
-func _on_body_exited(body: Node3D) -> void:
-	print("TriggerLook: Body exited volume -> ", body.name)
-	if body.is_in_group(&"player") or body is Player:
-		_player_inside = false
-		_current_look_time = 0.0
 
 
 ## Fetches and caches the active viewport [Camera3D] node.

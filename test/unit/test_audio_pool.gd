@@ -1,95 +1,95 @@
-## GUT test validating the audio pool manager class.
+## Unit tests for [AudioPool] validating player pre-allocation and recycled playback.
+class_name TestAudioPool
 extends GutTest
 
-## Local type definition for the unexported audio pool script.
-const AudioPool = preload("res://core/audio_pool.gd")
+const AUDIO_POOL_SCRIPT: GDScript = preload("res://core/audio_pool.gd")
 
-## The name identifying this GUT test suite.
-var test_name: String = "Test AudioPool"
+## The [AudioPool] node instance under test.
+var _audio_pool: Node = null
 
-## The instance of the audio pool being tested.
-var _audio_pool: AudioPool = null
+## Reusable mock audio stream for playback verification.
+var _dummy_stream: AudioStreamWAV = null
 
 
-## Prepares a new audio pool instance before running each test case.
+## Prepares test audio pool and dummy stream before each test execution.
 func before_each() -> void:
-	print("Setting up AudioPool for tests...")
-	_audio_pool = AudioPool.new()
+	print("TestAudioPool: Setting up test environment.")
+	_dummy_stream = AudioStreamWAV.new()
+
+	_audio_pool = AUDIO_POOL_SCRIPT.new() as Node
 	add_child_autoqfree(_audio_pool)
 
 
-## Creates a synthetic [AudioStreamWAV] for non-disk audio testing.
-func _create_dummy_stream() -> AudioStreamWAV:
-	print("Test: Generating dummy AudioStreamWAV...")
-	var stream: AudioStreamWAV = AudioStreamWAV.new()
-	stream.format = AudioStreamWAV.FORMAT_16_BITS
-	stream.mix_rate = 44100
-	stream.data = PackedByteArray([0, 0, 0, 0])
-	return stream
+## Clears local instance references after each test execution.
+func after_each() -> void:
+	print("TestAudioPool: Tearing down test environment.")
+	_audio_pool = null
+	_dummy_stream = null
 
 
-## Verifies pre-allocation and default bus setups for 2D and 3D pools.
-func test_ready_allocates_pools() -> void:
-	print("Testing AudioPool pools allocation...")
-	var players_2d: Array[Node] = _audio_pool.find_children("*", "AudioStreamPlayer", false, false)
-	var players_3d: Array[Node] = _audio_pool.find_children(
-		"*", "AudioStreamPlayer3D", false, false
+## Verifies default pool capacities and player node naming conventions.
+func test_pool_allocation_capacities() -> void:
+	print("TestAudioPool: test_pool_allocation_capacities() executing.")
+	var pool_2d: Array = _audio_pool.get("_pool_2d") as Array
+	var pool_3d: Array = _audio_pool.get("_pool_3d") as Array
+
+	assert_not_null(pool_2d, "2D pool array should be initialized.")
+	assert_eq(pool_2d.size(), 16, "2D pool capacity should default to 16 players.")
+
+	assert_not_null(pool_3d, "3D pool array should be initialized.")
+	assert_eq(pool_3d.size(), 32, "3D pool capacity should default to 32 players.")
+
+	var first_player: AudioStreamPlayer = pool_2d[0] as AudioStreamPlayer
+	assert_eq(first_player.name, "AudioPool2D_0", "First 2D player name format should match.")
+	assert_eq(first_player.bus, &"SFX", "Players should default to SFX bus.")
+
+
+## Verifies circular index slot rotation on repeated 2D play requests.
+func test_play_sfx_2d_rotates_slots() -> void:
+	print("TestAudioPool: test_play_sfx_2d_rotates_slots() executing.")
+	var p1: AudioStreamPlayer = _audio_pool.call("play_sfx_2d", _dummy_stream, &"SFX")
+	assert_not_null(p1, "First 2D play request should return active player.")
+	assert_eq(p1.stream, _dummy_stream, "Player stream should be assigned.")
+
+	var p2: AudioStreamPlayer = _audio_pool.call("play_sfx_2d", _dummy_stream, &"SFX")
+	assert_not_null(p2, "Second 2D play request should return next player.")
+	assert_ne(p1, p2, "Sequential play requests must rotate to distinct pooled players.")
+
+
+## Verifies 3D position and bus assignment on spatial play requests.
+func test_play_sfx_3d_spatial_properties() -> void:
+	print("TestAudioPool: test_play_sfx_3d_spatial_properties() executing.")
+	var target_pos: Vector3 = Vector3(12.0, -4.0, 7.5)
+	var player_3d: AudioStreamPlayer3D = _audio_pool.call(
+		"play_sfx_3d", _dummy_stream, target_pos, &"SFX"
 	)
 
-	assert_eq(players_2d.size(), AudioPool.POOL_SIZE_2D, "2D pool size check")
-	assert_eq(players_3d.size(), AudioPool.POOL_SIZE_3D, "3D pool size check")
-
-	if not players_2d.is_empty():
-		var p2d: AudioStreamPlayer = players_2d[0]
-		assert_not_null(p2d, "Pool 2D elements should not be null")
-		assert_eq(p2d.bus, &"SFX", "Bus should be set to SFX")
-
-	if not players_3d.is_empty():
-		var p3d: AudioStreamPlayer3D = players_3d[0]
-		assert_not_null(p3d, "Pool 3D elements should not be null")
-		assert_eq(p3d.bus, &"SFX", "Bus should be set to SFX")
+	assert_not_null(player_3d, "3D play request should return active player.")
+	assert_eq(player_3d.global_position, target_pos, "3D player must match target coordinates.")
+	assert_eq(player_3d.stream, _dummy_stream, "Stream resource must be assigned.")
 
 
-## Tests retrieving 2D audio stream players from the pool.
-func test_get_pooled_player_2d() -> void:
-	print("Testing AudioPool.get_pooled_player_2d()...")
-	var player1: AudioStreamPlayer = _audio_pool.get_pooled_player_2d()
-	var player2: AudioStreamPlayer = _audio_pool.get_pooled_player_2d()
-	assert_not_null(player1, "Should return an AudioStreamPlayer")
-	assert_ne(player1, player2, "Consecutive calls should return different")
+## Verifies null audio stream calls return null safely.
+func test_null_stream_handling() -> void:
+	print("TestAudioPool: test_null_stream_handling() executing.")
+	var null_2d: AudioStreamPlayer = _audio_pool.call("play_sfx_2d", null, &"SFX")
+	assert_null(null_2d, "play_sfx_2d with null stream must return null.")
+
+	var null_3d: AudioStreamPlayer3D = _audio_pool.call("play_sfx_3d", null, Vector3.ZERO, &"SFX")
+	assert_null(null_3d, "play_sfx_3d with null stream must return null.")
 
 
-## Tests retrieving 3D audio stream players from the pool.
-func test_get_pooled_player_3d() -> void:
-	print("Testing AudioPool.get_pooled_player_3d()...")
-	var player1: AudioStreamPlayer3D = _audio_pool.get_pooled_player_3d()
-	var player2: AudioStreamPlayer3D = _audio_pool.get_pooled_player_3d()
-	assert_not_null(player1, "Should return an AudioStreamPlayer3D")
-	assert_ne(player1, player2, "Consecutive calls should return different")
+## Verifies manual pooled player retrieval advances circular pointers.
+func test_get_pooled_player_retrieval() -> void:
+	print("TestAudioPool: test_get_pooled_player_retrieval() executing.")
+	var p2d_a: AudioStreamPlayer = _audio_pool.call("get_pooled_player_2d")
+	var p2d_b: AudioStreamPlayer = _audio_pool.call("get_pooled_player_2d")
+	assert_not_null(p2d_a, "Idle 2D player retrieval should succeed.")
+	assert_not_null(p2d_b, "Second 2D player retrieval should succeed.")
+	assert_ne(p2d_a, p2d_b, "Retrieved players must advance circularly.")
 
-
-## Tests playing 2D audio streams with circular allocation.
-func test_play_sfx_2d() -> void:
-	print("Testing AudioPool.play_sfx_2d()...")
-	var dummy_stream: AudioStreamWAV = _create_dummy_stream()
-	var player: AudioStreamPlayer = _audio_pool.play_sfx_2d(dummy_stream, &"SFX")
-	assert_not_null(player, "Player should not be null when stream is valid")
-	assert_eq(player.stream, dummy_stream, "Player stream should match input")
-	assert_eq(player.bus, &"SFX", "Player bus should match requested bus")
-
-	var null_player: AudioStreamPlayer = _audio_pool.play_sfx_2d(null, &"SFX")
-	assert_null(null_player, "Null stream should return null player")
-
-
-## Tests playing 3D audio streams with spatial placement.
-func test_play_sfx_3d() -> void:
-	print("Testing AudioPool.play_sfx_3d()...")
-	var dummy_stream: AudioStreamWAV = _create_dummy_stream()
-	var target_pos: Vector3 = Vector3(5.0, 1.0, -3.0)
-	var player: AudioStreamPlayer3D = _audio_pool.play_sfx_3d(dummy_stream, target_pos, &"SFX")
-	assert_not_null(player, "3D player should not be null when stream valid")
-	assert_eq(player.stream, dummy_stream, "3D player stream should match")
-	assert_eq(player.global_position, target_pos, "3D player position match")
-
-	var null_player: AudioStreamPlayer3D = _audio_pool.play_sfx_3d(null, target_pos, &"SFX")
-	assert_null(null_player, "Null stream should return null player")
+	var p3d_a: AudioStreamPlayer3D = _audio_pool.call("get_pooled_player_3d")
+	var p3d_b: AudioStreamPlayer3D = _audio_pool.call("get_pooled_player_3d")
+	assert_not_null(p3d_a, "Idle 3D player retrieval should succeed.")
+	assert_not_null(p3d_b, "Second 3D player retrieval should succeed.")
+	assert_ne(p3d_a, p3d_b, "Retrieved 3D players must advance circularly.")
