@@ -85,13 +85,11 @@ func _stretch_cable_to_fit(top_pos: Vector3, bottom_pos: Vector3) -> void:
 	var delta_vec: Vector3 = bottom_pos - top_pos
 	var dist_sq: float = delta_vec.length_squared()
 
-	cable_mesh.global_position = top_pos.lerp(bottom_pos, 0.5)
-
 	if dist_sq > MIN_SPAN_DISTANCE_SQUARED:
 		var distance: float = sqrt(dist_sq)
-		var norm_dir: Vector3 = delta_vec / distance
-
-		var up_vector: Vector3 = Vector3.UP if absf(norm_dir.y) < 0.999 else Vector3.RIGHT
-		cable_mesh.look_at(bottom_pos, up_vector)
-		cable_mesh.rotate_object_local(Vector3.RIGHT, PI / 2.0)
+		cable_mesh.global_transform = MathUtils.calculate_cylinder_span_transform(
+			top_pos, bottom_pos
+		)
 		cable_mesh.scale = Vector3(1.0, distance * 0.5, 1.0)
+	else:
+		cable_mesh.global_position = top_pos.lerp(bottom_pos, 0.5)

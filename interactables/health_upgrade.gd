@@ -59,23 +59,7 @@ func _update_label_text() -> void:
 	if not is_instance_valid(prompt_label):
 		return
 
-	var events: Array[InputEvent] = InputMap.action_get_events("interact")
-	var key_name: String = "???"
-
-	if events.size() > 0:
-		var raw_text: String = events[0].as_text()
-		key_name = (
-			raw_text
-			. replace(" (Physical)", "")
-			. replace(" - Physical", "")
-			. replace(" (Physics)", "")
-			. replace(" - Physics", "")
-			. replace("Left Mouse Button", "LMB")
-			. replace("Right Mouse Button", "RMB")
-			. replace("Middle Mouse Button", "MMB")
-			. strip_edges()
-		)
-
+	var key_name: String = InputHelper.get_action_key_label(&"interact")
 	prompt_label.text = "Press [%s] to Interact" % [key_name]
 
 

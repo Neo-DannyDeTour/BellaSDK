@@ -224,9 +224,7 @@ func _init_cached_strings() -> void:
 	else:
 		_cached_mesh_name = "object"
 
-	var events: Array[InputEvent] = InputMap.action_get_events("interact")
-	if not events.is_empty():
-		_cached_interact_key = events[0].as_text()
+	_cached_interact_key = InputHelper.get_action_key_label(&"interact")
 
 
 ## Clears overlay materials and hides labels when locked state updates.

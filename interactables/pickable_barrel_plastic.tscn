@@ -1,0 +1,38 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" uid="uid://mqae3mth7tfx" path="res://interactables/pickable_object.tscn" id="1_gl7hy"]
+[ext_resource type="PackedScene" uid="uid://b7lneebb6vgup" path="res://assets/models/props/barrel_plastic/barrel_plastic.glb" id="2_plastic"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_plastic"]
+size = Vector3(1.0, 0.7, 1.0)
+
+[node name="PickableBarrelPlastic" node_paths=PackedStringArray("mesh") groups=["magnetizable"] instance=ExtResource("1_gl7hy")]
+mass = 6.0
+center_of_mass_mode = 1
+center_of_mass = Vector3(0, -0.15, 0)
+mesh = NodePath("Barrel_Plastic")
+held_transparency = 0.75
+
+[node name="MeshInstance3D" parent="." index="2"]
+visible = false
+
+[node name="CollisionShape3D" parent="." index="3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.35, 0)
+shape = SubResource("BoxShape3D_plastic")
+
+[node name="Label3D" parent="." index="4"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
+
+[node name="Marker3D" parent="ProbeContainer" index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.38, 0.05, 0.38)
+
+[node name="Marker3D2" parent="ProbeContainer" index="1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.38, 0.05, 0.38)
+
+[node name="Marker3D3" parent="ProbeContainer" index="2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.38, 0.05, -0.38)
+
+[node name="Marker3D4" parent="ProbeContainer" index="3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.38, 0.05, -0.38)
+
+[node name="Barrel_Plastic" parent="." index="7" instance=ExtResource("2_plastic")]

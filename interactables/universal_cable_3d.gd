@@ -34,15 +34,12 @@ func _update_cable() -> void:
 	var global_end: Vector3 = to_global(curve.get_point_position(1))
 
 	var distance: float = global_start.distance_to(global_end)
-	var global_center: Vector3 = global_start.lerp(global_end, 0.5)
-	var direction: Vector3 = (global_end - global_start).normalized()
-
-	var up_vector: Vector3 = Vector3.UP
-	if absf(direction.y) > 0.99:
-		up_vector = Vector3.RIGHT
+	var span_xform: Transform3D = MathUtils.calculate_cylinder_span_transform(
+		global_start, global_end
+	)
 
 	if mesh_node:
-		var cyl_mesh: CylinderMesh = mesh_node.mesh if mesh_node.mesh is CylinderMesh else null
+		var cyl_mesh: CylinderMesh = mesh_node.mesh as CylinderMesh
 		if not cyl_mesh:
 			cyl_mesh = CylinderMesh.new()
 			mesh_node.mesh = cyl_mesh
@@ -50,43 +47,24 @@ func _update_cable() -> void:
 		cyl_mesh.height = distance
 		cyl_mesh.top_radius = 0.05
 		cyl_mesh.bottom_radius = 0.05
-
-		mesh_node.global_position = global_center
-		mesh_node.look_at(global_end, up_vector)
-		mesh_node.rotate_object_local(Vector3.RIGHT, PI / 2.0)
+		mesh_node.global_transform = span_xform
 
 	if col_node:
-		var cyl_shape: CylinderShape3D = (
-			col_node.shape if col_node.shape is CylinderShape3D else null
-		)
+		var cyl_shape: CylinderShape3D = col_node.shape as CylinderShape3D
 		if not cyl_shape:
 			cyl_shape = CylinderShape3D.new()
 			col_node.shape = cyl_shape
 
 		cyl_shape.height = distance
 		cyl_shape.radius = 0.05
-
-		if mesh_node:
-			col_node.global_transform = mesh_node.global_transform
+		col_node.global_transform = span_xform
 
 
 ## Traverses descendants recursively to locate the first [MeshInstance3D].
 func _find_mesh_instance(parent: Node) -> MeshInstance3D:
-	for child: Node in parent.get_children():
-		if child is MeshInstance3D:
-			return child
-		var found: MeshInstance3D = _find_mesh_instance(child)
-		if found:
-			return found
-	return null
+	return NodeQuery.find_first_child_of_type(parent, MeshInstance3D) as MeshInstance3D
 
 
 ## Traverses descendants recursively to locate the first [CollisionShape3D].
 func _find_collision_shape(parent: Node) -> CollisionShape3D:
-	for child: Node in parent.get_children():
-		if child is CollisionShape3D:
-			return child
-		var found: CollisionShape3D = _find_collision_shape(child)
-		if found:
-			return found
-	return null
+	return NodeQuery.find_first_child_of_type(parent, CollisionShape3D) as CollisionShape3D

@@ -317,7 +317,7 @@ func _handle_rotation_input(delta: float) -> void:
 	var turn_axis: float = GestureInputManager.get_axis(&"left", &"right")
 	if is_zero_approx(turn_axis):
 		if InputMap.has_action(&"ui_left") and InputMap.has_action(&"ui_right"):
-			turn_axis = Input.get_axis(&"ui_left", &"ui_right")
+			turn_axis = GestureInputManager.get_axis(&"ui_left", &"ui_right")
 
 	var keyboard_rot: float = -turn_axis * rotation_speed * delta
 	var total_rot: float = keyboard_rot + _pending_mouse_rotation
@@ -700,7 +700,7 @@ func _handle_detachment_input() -> void:
 		GestureInputManager.is_action_just_pressed(&"interact")
 		or GestureInputManager.is_action_just_pressed(&"jump")
 		or GestureInputManager.is_action_just_pressed(&"crouch")
-		or Input.is_action_just_pressed(&"ui_cancel")
+		or GestureInputManager.is_action_just_pressed(&"ui_cancel")
 	):
 		print("StationaryLaserStand: Detachment requested.")
 		_release_control()
