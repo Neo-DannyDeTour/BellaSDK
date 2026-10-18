@@ -68,13 +68,13 @@ func process_pushes(
 		player_body.velocity.x *= (1.0 - resistance)
 		player_body.velocity.z *= (1.0 - resistance)
 
-		print(
-			"PhysicsPusher: Pushed ",
-			rb.name,
-			" (mass: ",
-			rb.mass,
-			"kg). Applied central impulse: ",
-			impulse_magnitude,
-			", resistance: ",
-			resistance
-		)
+		# print(
+		# 	"PhysicsPusher: Pushed ",
+		# 	rb.name,
+		# 	" (mass: ",
+		# 	rb.mass,
+		# 	"kg). Applied central impulse: ",
+		# 	impulse_magnitude,
+		# 	", resistance: ",
+		# 	resistance
+		# )

@@ -35,7 +35,7 @@ const CONTRAST_SHIFT: float = 0.12
 		architecture_type = value
 		if is_instance_valid(self) and is_inside_tree():
 			_update_shader_parameter("architecture_type", value)
-			print("set_architecture_type(): Active architectural pattern changed to index ", value)
+			# print("set_architecture_type(): Active architectural pattern changed to index ", value)
 
 ## The directory where the PNG files will be written.
 @export_group("Export Settings")
@@ -53,7 +53,7 @@ const CONTRAST_SHIFT: float = 0.12
 		output_resolution = value
 		if is_instance_valid(self) and is_inside_tree():
 			size = Vector2i(value, value)
-			print("output_resolution_set(): Viewport resolution updated to ", value, "x", value)
+			# print("output_resolution_set(): Viewport resolution updated to ", value, "x", value)
 
 ## The main mesh rendering the procedural shader.
 @export_group("Automation Setup")
@@ -101,7 +101,7 @@ const CONTRAST_SHIFT: float = 0.12
 		if is_instance_valid(self) and is_inside_tree():
 			transparent_bg = value
 			_update_shader_parameter("bg_alpha", 0.0 if value else 1.0)
-			print("transparent_grid_only_set(): Transparent background state set to ", value)
+			# print("transparent_grid_only_set(): Transparent background state set to ", value)
 
 ## Randomizes the background color variation.
 @export_group("Actions")
@@ -138,7 +138,7 @@ func _update_shader_parameter(param_name: String, new_value: Variant) -> void:
 
 	if is_instance_valid(shader_mat):
 		shader_mat.set_shader_parameter(param_name, new_value)
-		print("_update_shader_parameter(): Pushed ", param_name, " = ", new_value, " to shader.")
+		# print("_update_shader_parameter(): Pushed ", param_name, " = ", new_value, " to shader.")
 
 
 ## Generates a random base hue and calculates darkened and lightened

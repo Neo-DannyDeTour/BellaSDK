@@ -501,12 +501,12 @@ func _on_duration_timeout() -> void:
 
 ## Responds to periodic pulse interval timer expiration.
 func _on_periodic_timeout() -> void:
-	print("HighlightComponent: Periodic interval tick triggered.")
+	# print("HighlightComponent: Periodic interval tick triggered.")
 	if not _periodic_enabled:
 		return
 
 	if _is_target_on_screen():
-		print("HighlightComponent: Target is visible during tick. Pulsing highlight.")
+		# print("HighlightComponent: Target is visible during tick. Pulsing highlight.")
 		_is_on_screen = true
 		_is_periodic_active = true
 		_refresh_highlight()

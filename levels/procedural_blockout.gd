@@ -145,7 +145,7 @@ func generate_level() -> void:
 	_clear_generated_containers()
 
 	for floor_idx: int in range(floor_count):
-		print("ProceduralBlockout: Generating floor index %d." % floor_idx)
+		# print("ProceduralBlockout: Generating floor index %d." % floor_idx)
 		var rooms: Array[Array] = _generate_floor_rooms(floor_idx)
 		_rooms_by_floor.append(rooms)
 
@@ -155,7 +155,7 @@ func generate_level() -> void:
 		_connect_floor_rooms(rooms, floor_idx)
 
 	for floor_idx: int in range(floor_count - 1):
-		print("ProceduralBlockout: Linking floor %d to %d." % [floor_idx, floor_idx + 1])
+		# print("ProceduralBlockout: Linking floor %d to %d." % [floor_idx, floor_idx + 1])
 		_connect_floors(_rooms_by_floor[floor_idx], _rooms_by_floor[floor_idx + 1], floor_idx)
 
 	_generate_walls()
@@ -175,7 +175,7 @@ func generate_level() -> void:
 
 ## Spawns randomized shaped rooms for a specific [param floor_index].
 func _generate_floor_rooms(floor_index: int) -> Array[Array]:
-	print("ProceduralBlockout: Generating room layouts on floor %d." % floor_index)
+	# print("ProceduralBlockout: Generating room layouts on floor %d." % floor_index)
 	var placed_rooms: Array[Array] = []
 	var max_attempts: int = rooms_per_floor * 10
 	var grid_y: int = floor_index * floor_height_cells
@@ -205,7 +205,7 @@ func _generate_floor_rooms(floor_index: int) -> Array[Array]:
 
 ## Selects a [enum RoomShape] considering Inspector radial preferences.
 func _select_room_shape() -> RoomShape:
-	print("ProceduralBlockout: Selecting room shape with radial ratio.")
+	# print("ProceduralBlockout: Selecting room shape with radial ratio.")
 	if randf() < radial_room_ratio:
 		return RoomShape.RADIAL
 	var standard_shapes: Array[RoomShape] = [
@@ -219,7 +219,7 @@ func _select_room_shape() -> RoomShape:
 
 ## Assembles cell offsets for [param shape] around [param origin].
 func _create_room_cells(origin: Vector3i, size: Vector2i, shape: RoomShape) -> Array[Vector3i]:
-	print("ProceduralBlockout: Assembling cells for room shape %d." % shape)
+	# print("ProceduralBlockout: Assembling cells for room shape %d." % shape)
 	var cells: Array[Vector3i] = []
 
 	match shape:
@@ -278,7 +278,7 @@ func _create_room_cells(origin: Vector3i, size: Vector2i, shape: RoomShape) -> A
 
 ## Generates secondary inner freestanding rooms ("room within a room").
 func _generate_nested_rooms_for_floor(rooms: Array[Array], floor_idx: int) -> void:
-	print("ProceduralBlockout: Generating nested inner rooms on floor %d." % floor_idx)
+	# print("ProceduralBlockout: Generating nested inner rooms on floor %d." % floor_idx)
 	for room_cells: Array in rooms:
 		if room_cells.size() < 25:
 			continue
@@ -324,7 +324,7 @@ func _is_inner_area_fully_in_room(
 
 ## Instantiates CSG geometry for an inner freestanding room pavilion.
 func _spawn_nested_inner_box(min_x: int, max_x: int, min_z: int, max_z: int, grid_y: int) -> void:
-	print("ProceduralBlockout: Spawning nested pavilion inner structure.")
+	# print("ProceduralBlockout: Spawning nested pavilion inner structure.")
 	_ensure_containers()
 
 	var start_world: Vector3 = grid_to_world(Vector3i(min_x, grid_y, min_z))
@@ -366,7 +366,7 @@ func _spawn_nested_inner_box(min_x: int, max_x: int, min_z: int, max_z: int, gri
 
 ## Evaluates if [param cells] can fit without overlapping occupied grid space.
 func _can_place_room(cells: Array[Vector3i]) -> bool:
-	print("ProceduralBlockout: Verifying bounds clearance for candidate room.")
+	# print("ProceduralBlockout: Verifying bounds clearance for candidate room.")
 	for cell: Vector3i in cells:
 		for dx: int in range(-1, 2):
 			for dz: int in range(-1, 2):
@@ -378,7 +378,7 @@ func _can_place_room(cells: Array[Vector3i]) -> bool:
 
 ## Connects [param start] and [param end] points with corridor cells.
 func _carve_corridor(start: Vector3i, end: Vector3i) -> void:
-	print("ProceduralBlockout: Carving corridor from %s to %s." % [start, end])
+	# print("ProceduralBlockout: Carving corridor from %s to %s." % [start, end])
 	var curr: Vector3i = start
 	while curr.x != end.x:
 		curr.x += 1 if end.x > curr.x else -1
@@ -392,8 +392,8 @@ func _carve_corridor(start: Vector3i, end: Vector3i) -> void:
 
 
 ## Connects adjacent rooms on [param floor_index] via carved corridors.
-func _connect_floor_rooms(floor_rooms: Array[Array], floor_index: int) -> void:
-	print("ProceduralBlockout: Linking rooms on floor %d." % floor_index)
+func _connect_floor_rooms(floor_rooms: Array[Array], _floor_index: int) -> void:
+	# print("ProceduralBlockout: Linking rooms on floor %d." % _floor_index)
 	if floor_rooms.size() < 2:
 		return
 
@@ -411,7 +411,7 @@ func _connect_floor_rooms(floor_rooms: Array[Array], floor_index: int) -> void:
 func _connect_floors(
 	floor_a_rooms: Array[Array], floor_b_rooms: Array[Array], floor_index: int
 ) -> void:
-	print("ProceduralBlockout: Connecting stairwell for floor %d." % floor_index)
+	# print("ProceduralBlockout: Connecting stairwell for floor %d." % floor_index)
 	if floor_a_rooms.is_empty() or floor_b_rooms.is_empty():
 		return
 
@@ -448,7 +448,7 @@ func _connect_floors(
 
 ## Instantiates a [ProceduralStairs] node aligned to the stair run cells.
 func _spawn_csg_stairs(start_coord: Vector3i) -> void:
-	print("ProceduralBlockout: Spawning procedural stairs at %s." % start_coord)
+	# print("ProceduralBlockout: Spawning procedural stairs at %s." % start_coord)
 	var stairs: ProceduralStairs = ProceduralStairs.new()
 	stairs.name = "Stairs_%d_%d" % [start_coord.x, start_coord.y]
 	stairs.total_height = float(floor_height_cells) * cell_size
@@ -465,7 +465,7 @@ func _spawn_csg_stairs(start_coord: Vector3i) -> void:
 
 ## Detects perimeter edges of rooms and corridors, filling them with wall cells.
 func _generate_walls() -> void:
-	print("ProceduralBlockout: Calculating boundary wall cells and fenestration.")
+	# print("ProceduralBlockout: Calculating boundary wall cells and fenestration.")
 	var wall_positions: Array[Vector3i] = []
 	var offsets: Array[Vector3i] = [
 		Vector3i(1, 0, 0),
@@ -495,7 +495,7 @@ func _generate_walls() -> void:
 
 ## Spawns a window cutout wall section with a vaultable sill.
 func _spawn_window_fenestration_sill(coord: Vector3i) -> void:
-	print("ProceduralBlockout: Spawning vaultable window sill cutout at %s." % coord)
+	# print("ProceduralBlockout: Spawning vaultable window sill cutout at %s." % coord)
 	_ensure_containers()
 
 	var wall_box: CSGBox3D = CSGBox3D.new()
@@ -518,7 +518,7 @@ func _spawn_window_fenestration_sill(coord: Vector3i) -> void:
 
 ## Generates solid roof and ceiling geometry above all interior room cells.
 func _generate_ceilings_and_roofs() -> void:
-	print("ProceduralBlockout: Building room roof and ceiling enclosure geometry.")
+	# print("ProceduralBlockout: Building room roof and ceiling enclosure geometry.")
 	_ensure_containers()
 
 	var ceiling_cells: Dictionary = {}
@@ -537,7 +537,7 @@ func _generate_ceilings_and_roofs() -> void:
 
 ## Spawns a solid CSG ceiling block for a roof coordinate.
 func _spawn_ceiling_tile(coord: Vector3i) -> void:
-	print("ProceduralBlockout: Spawning ceiling tile at %s." % coord)
+	# print("ProceduralBlockout: Spawning ceiling tile at %s." % coord)
 	var tile: CSGBox3D = CSGBox3D.new()
 	tile.size = Vector3(cell_size, 0.2, cell_size)
 	var pos: Vector3 = grid_to_world(coord)
@@ -551,7 +551,7 @@ func _spawn_ceiling_tile(coord: Vector3i) -> void:
 
 ## Spawns an angled skylight window framing cutout in the roof.
 func _spawn_skylight_opening(coord: Vector3i) -> void:
-	print("ProceduralBlockout: Spawning skylight cutout at %s." % coord)
+	# print("ProceduralBlockout: Spawning skylight cutout at %s." % coord)
 	var skylight_frame: CSGBox3D = CSGBox3D.new()
 	skylight_frame.size = Vector3(cell_size, 0.4, cell_size)
 	var pos: Vector3 = grid_to_world(coord)
@@ -570,7 +570,7 @@ func _spawn_skylight_opening(coord: Vector3i) -> void:
 
 ## Places parkour traversal structures across level.
 func _generate_parkour_elements() -> void:
-	print("ProceduralBlockout: Placing parkour traversal structures across level.")
+	# print("ProceduralBlockout: Placing parkour traversal structures across level.")
 	_ensure_containers()
 
 	var room_centers: Array[Vector3i] = []
@@ -598,7 +598,7 @@ func _generate_parkour_elements() -> void:
 
 ## Spawns a low crouch crawlspace / duct structure with proper clearance.
 func _spawn_crouch_crawlspace(origin: Vector3i) -> void:
-	print("ProceduralBlockout: Spawning crouch duct at %s." % origin)
+	# print("ProceduralBlockout: Spawning crouch duct at %s." % origin)
 	_grid[origin] = CellType.CROUCH_DUCT
 
 	var duct: CSGBox3D = CSGBox3D.new()
@@ -619,7 +619,7 @@ func _spawn_crouch_crawlspace(origin: Vector3i) -> void:
 
 ## Spawns half-height vault obstacles and window sills.
 func _spawn_vault_obstacle_and_sills(origin: Vector3i) -> void:
-	print("ProceduralBlockout: Spawning vault obstacle at %s." % origin)
+	# print("ProceduralBlockout: Spawning vault obstacle at %s." % origin)
 	_grid[origin] = CellType.VAULT_OBSTACLE
 
 	var wall: CSGBox3D = CSGBox3D.new()
@@ -639,7 +639,7 @@ func _spawn_vault_obstacle_and_sills(origin: Vector3i) -> void:
 
 ## Spawns a [MonkeyBarVolume] instance mounted near ceiling for overhead grab.
 func _spawn_monkey_bar_traversal(origin: Vector3i) -> void:
-	print("ProceduralBlockout: Spawning overhead monkey bar volume at %s." % origin)
+	# print("ProceduralBlockout: Spawning overhead monkey bar volume at %s." % origin)
 	var monkey_bars: MonkeyBarVolume = MonkeyBarVolume.new()
 	monkey_bars.name = "MonkeyBars_%d_%d" % [origin.x, origin.z]
 	monkey_bars.size = Vector3(0.8, 0.3, cell_size * 2.5)
@@ -652,12 +652,12 @@ func _spawn_monkey_bar_traversal(origin: Vector3i) -> void:
 
 ## Spawns a sprint-jump gap chasm with distinct visual and collision landing pads.
 func _spawn_sprint_jump_chasm(start_coord: Vector3i, target_coord: Vector3i) -> void:
-	print(
-		(
-			"ProceduralBlockout: Spawning sprint jump pad between %s and %s."
-			% [start_coord, target_coord]
-		)
-	)
+	# print(
+	# 	(
+	# 		"ProceduralBlockout: Spawning sprint jump pad between %s and %s."
+	# 		% [start_coord, target_coord]
+	# 	)
+	# )
 	var sum_coord: Vector3i = start_coord + target_coord
 	var gap_coord: Vector3i = Vector3i(
 		floori(float(sum_coord.x) * 0.5),
@@ -691,7 +691,7 @@ func _spawn_sprint_jump_chasm(start_coord: Vector3i, target_coord: Vector3i) -> 
 
 ## Populates [member grid_map] items according to internal cell layout.
 func _build_gridmap() -> void:
-	print("ProceduralBlockout: Writing layout tiles into GridMap.")
+	# print("ProceduralBlockout: Writing layout tiles into GridMap.")
 	if not is_instance_valid(grid_map):
 		print("ProceduralBlockout: GridMap reference is invalid.")
 		return
@@ -716,7 +716,7 @@ func _build_gridmap() -> void:
 
 ## Teleports [member player] onto the first available floor room cell.
 func _place_player_at_start() -> void:
-	print("ProceduralBlockout: Aligning player spawn location.")
+	# print("ProceduralBlockout: Aligning player spawn location.")
 	if not is_instance_valid(player) or not is_instance_valid(grid_map):
 		return
 
@@ -725,13 +725,13 @@ func _place_player_at_start() -> void:
 			var spawn_pos: Vector3 = grid_map.map_to_local(coord)
 			spawn_pos.y += 1.0
 			player.global_position = spawn_pos
-			print("ProceduralBlockout: Player placed at %s." % spawn_pos)
+			# print("ProceduralBlockout: Player placed at %s." % spawn_pos)
 			break
 
 
 ## Ensures all container nodes exist for generated geometry.
 func _ensure_containers() -> void:
-	print("ProceduralBlockout: Verifying generator container nodes.")
+	# print("ProceduralBlockout: Verifying generator container nodes.")
 	if not is_instance_valid(_stairs_container):
 		var raw_s: Node = get_node_or_null("StairsContainer")
 		_stairs_container = raw_s if raw_s is Node3D else null
@@ -767,7 +767,7 @@ func _ensure_containers() -> void:
 
 ## Clears existing generated node instances prior to layout regeneration via [Utilities].
 func _clear_generated_containers() -> void:
-	print("ProceduralBlockout: Removing previous geometry via Utilities.")
+	# print("ProceduralBlockout: Removing previous geometry via Utilities.")
 	_ensure_containers()
 	Utilities.clear_children(_stairs_container)
 	Utilities.clear_children(_ceiling_container)
@@ -777,13 +777,13 @@ func _clear_generated_containers() -> void:
 
 ## Retrieves the [constant CellType] at specified [param coord].
 func get_cell(coord: Vector3i) -> int:
-	print("ProceduralBlockout: Fetching cell data at %s." % coord)
+	# print("ProceduralBlockout: Fetching cell data at %s." % coord)
 	return _grid.get(coord, CellType.EMPTY)
 
 
 ## Converts [param grid_pos] cell coordinates to world space [Vector3].
 func grid_to_world(grid_pos: Vector3i) -> Vector3:
-	print("ProceduralBlockout: Converting %s to world coordinates." % grid_pos)
+	# print("ProceduralBlockout: Converting %s to world coordinates." % grid_pos)
 	return Vector3(
 		float(grid_pos.x) * cell_size, float(grid_pos.y) * cell_size, float(grid_pos.z) * cell_size
 	)

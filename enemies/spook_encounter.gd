@@ -210,7 +210,7 @@ func _process(delta: float) -> void:
 				_has_triggered = true
 				_spawn_spook_behind(_tracked_player)
 			else:
-				print("SpookEncounter: Spawn roll missed (", roll, " > ", spawn_chance, ").")
+				# print("SpookEncounter: Spawn roll missed (", roll, " > ", spawn_chance, ").")
 				_tracked_player = null
 
 
@@ -288,7 +288,7 @@ func _rebuild_visuals() -> void:
 
 ## Updates the [BoxShape3D] resource size on [CollisionShape3D].
 func _update_collision_shape() -> void:
-	print("SpookEncounter: Updating collision shape.")
+	# print("SpookEncounter: Updating collision shape.")
 	if not is_instance_valid(_collision_shape):
 		return
 	var box: BoxShape3D = _collision_shape.shape as BoxShape3D
@@ -300,7 +300,7 @@ func _update_collision_shape() -> void:
 
 ## Updates dimensions of the inner volumetric [BoxMesh] visualizer.
 func _update_fill_mesh() -> void:
-	print("SpookEncounter: Updating fill mesh.")
+	# print("SpookEncounter: Updating fill mesh.")
 	if not is_instance_valid(_fill_mesh_node):
 		return
 	var box_mesh: BoxMesh = _fill_mesh_node.mesh as BoxMesh
@@ -312,7 +312,7 @@ func _update_fill_mesh() -> void:
 
 ## Rebuilds the wireframe cage using [ImmediateMesh] line primitives.
 func _update_wireframe_mesh() -> void:
-	print("SpookEncounter: Updating wireframe mesh lines.")
+	# print("SpookEncounter: Updating wireframe mesh lines.")
 	if not is_instance_valid(_wireframe_node):
 		return
 	var imm_mesh: ImmediateMesh = ImmediateMesh.new()
@@ -342,7 +342,7 @@ func _draw_line(target_mesh: ImmediateMesh, from: Vector3, to: Vector3) -> void:
 
 ## Updates unshaded materials, colors, and depth testing on gizmos.
 func _update_materials() -> void:
-	print("SpookEncounter: Updating gizmo materials.")
+	# print("SpookEncounter: Updating gizmo materials.")
 	if is_instance_valid(_fill_mesh_node) and _fill_mesh_node.mesh != null:
 		var fill_mat: StandardMaterial3D = StandardMaterial3D.new()
 		fill_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
@@ -362,7 +362,7 @@ func _update_materials() -> void:
 
 ## Constructs a local -Z directional gizmo arrow using [ImmediateMesh].
 func _update_arrow() -> void:
-	print("SpookEncounter: Updating orientation arrow.")
+	# print("SpookEncounter: Updating orientation arrow.")
 	if not is_instance_valid(_arrow_node):
 		return
 	_arrow_node.visible = show_orientation
@@ -393,7 +393,7 @@ func _update_arrow() -> void:
 
 ## Formats and positions the 3D billboard label above the trigger.
 func _update_text() -> void:
-	print("SpookEncounter: Updating billboard label text.")
+	# print("SpookEncounter: Updating billboard label text.")
 	if not is_instance_valid(_label_node):
 		return
 	var text_output: String = trigger_text
@@ -407,7 +407,7 @@ func _update_text() -> void:
 
 ## Configures billboard, pixel size, shadow casting, and preview position.
 func _update_sprite_properties() -> void:
-	print("SpookEncounter: Configuring sprite parameters and shadow modes.")
+	# print("SpookEncounter: Configuring sprite parameters and shadow modes.")
 	if not is_instance_valid(_spook_sprite):
 		return
 
@@ -438,7 +438,7 @@ func _update_sprite_properties() -> void:
 
 ## Updates visibility of fill meshes, wireframes, arrows, and labels.
 func _update_visibility() -> void:
-	print("SpookEncounter: Updating gizmo element visibility.")
+	# print("SpookEncounter: Updating gizmo element visibility.")
 	var is_editor: bool = Engine.is_editor_hint()
 	var gizmo_visible: bool = is_editor or show_gizmo_in_game
 	if is_instance_valid(_fill_mesh_node):
@@ -453,7 +453,7 @@ func _update_visibility() -> void:
 
 ## Toggles sprite visibility between editor preview and active state.
 func _update_sprite_visibility() -> void:
-	print("SpookEncounter: Updating sprite visibility toggle.")
+	# print("SpookEncounter: Updating sprite visibility toggle.")
 	if not is_instance_valid(_spook_sprite):
 		return
 	if Engine.is_editor_hint():

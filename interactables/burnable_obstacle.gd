@@ -74,7 +74,7 @@ func _initialize_material_state() -> void:
 
 ## Sets physical dimensions of obstacle and updates collision shapes.
 func set_mesh_size(value: Vector2) -> void:
-	print("BurnableObstacle: Setting mesh size to: ", value)
+	# print("BurnableObstacle: Setting mesh size to: ", value)
 	mesh_size = value
 	if is_inside_tree():
 		_resolve_node_references()
@@ -83,7 +83,7 @@ func set_mesh_size(value: Vector2) -> void:
 
 ## Synchronizes mesh and collision box sizes with [member mesh_size].
 func _update_obstacle_size() -> void:
-	print("BurnableObstacle: Updating obstacle bounds to: ", mesh_size)
+	# print("BurnableObstacle: Updating obstacle bounds to: ", mesh_size)
 	if is_instance_valid(mesh_instance) and mesh_instance.mesh is QuadMesh:
 		var quad: QuadMesh = mesh_instance.mesh if mesh_instance.mesh is QuadMesh else null
 		quad.size = mesh_size
@@ -152,7 +152,7 @@ func _start_burn(torch: Node3D, hit_global_pos: Vector3) -> void:
 
 ## Tween callback continuously updating shader burn expansion radius.
 func _update_radius(value: float, mat: ShaderMaterial) -> void:
-	print("BurnableObstacle: Updating burn radius: ", value)
+	# print("BurnableObstacle: Updating burn radius: ", value)
 	mat.set_shader_parameter("radius", value)
 
 

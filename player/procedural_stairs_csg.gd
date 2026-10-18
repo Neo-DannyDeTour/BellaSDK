@@ -95,7 +95,7 @@ func _update_stairs() -> void:
 	if step_count < 1:
 		return
 
-	print("ProceduralStairs: Recalculating geometry profiles for: ", name)
+	# print("ProceduralStairs: Recalculating geometry profiles for: ", name)
 	var step_h: float = total_length / float(step_count)
 	var step_v: float = total_height / float(step_count)
 

@@ -39,7 +39,7 @@ func _ready() -> void:
 
 ## Resizes the collision box and editor debug mesh to match inspector bounds.
 func _update_visuals() -> void:
-	print("Ladder: Updating visuals and collision shapes to size: ", ladder_size)
+	# print("Ladder: Updating visuals and collision shapes to size: ", ladder_size)
 	if has_node("CollisionShape3D"):
 		var col_node: CollisionShape3D = (
 			get_node("CollisionShape3D")

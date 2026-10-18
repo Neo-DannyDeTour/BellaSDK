@@ -262,7 +262,7 @@ func _physics_process(delta: float) -> void:
 
 	if _live_ray_count == 0 and _tracked_bodies.is_empty():
 		set_physics_process(false)
-		print("[DynamicFogZone] Idle state reached; sleeping physics on: ", name)
+		# print("[DynamicFogZone] Idle state reached; sleeping physics on: ", name)
 
 
 ## Returns true if [param world_aabb] overlaps this fog volume's world-space bounding box.

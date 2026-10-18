@@ -250,7 +250,7 @@ func extinguish() -> void:
 
 ## Sets vertical fire height and synchronizes shapes and uniforms.
 func set_fire_height(value: float) -> void:
-	print("[VolumetricFire] Fire height changed to: ", value)
+	# print("[VolumetricFire] Fire height changed to: ", value)
 	fire_height = maxf(0.05, value)
 	if is_inside_tree():
 		if is_instance_valid(mesh_instance):
@@ -262,7 +262,7 @@ func set_fire_height(value: float) -> void:
 
 ## Sets horizontal fire width and synchronizes shapes and uniforms.
 func set_fire_width(value: float) -> void:
-	print("[VolumetricFire] Fire width changed to: ", value)
+	# print("[VolumetricFire] Fire width changed to: ", value)
 	fire_width = maxf(0.05, value)
 	if is_inside_tree():
 		if is_instance_valid(mesh_instance):
@@ -274,7 +274,7 @@ func set_fire_width(value: float) -> void:
 
 ## Sets flame convection speed and synchronizes with shader time scale.
 func set_fire_speed(value: float) -> void:
-	print("[VolumetricFire] Fire speed changed to: ", value)
+	# print("[VolumetricFire] Fire speed changed to: ", value)
 	fire_speed = maxf(0.01, value)
 	if is_inside_tree() and is_instance_valid(mesh_instance):
 		_update_shader_parameters()
@@ -282,7 +282,7 @@ func set_fire_speed(value: float) -> void:
 
 ## Sets radiant emission glow and synchronizes with shader uniforms.
 func set_emission_strength(value: float) -> void:
-	print("[VolumetricFire] Emission strength changed to: ", value)
+	# print("[VolumetricFire] Emission strength changed to: ", value)
 	emission_strength = maxf(0.0, value)
 	if is_inside_tree() and is_instance_valid(mesh_instance):
 		_update_shader_parameters()
@@ -290,7 +290,7 @@ func set_emission_strength(value: float) -> void:
 
 ## Sets ambient wind direction for flame deformation and ember drift.
 func set_wind_direction(value: Vector3) -> void:
-	print("[VolumetricFire] Wind direction changed to: ", value)
+	# print("[VolumetricFire] Wind direction changed to: ", value)
 	wind_direction = value.normalized() if value.length_squared() > 0.0001 else Vector3.ZERO
 	if is_inside_tree():
 		if is_instance_valid(mesh_instance):
@@ -302,7 +302,7 @@ func set_wind_direction(value: Vector3) -> void:
 
 ## Sets wind strength magnitude for flame curvature and particle drift.
 func set_wind_strength(value: float) -> void:
-	print("[VolumetricFire] Wind strength changed to: ", value)
+	# print("[VolumetricFire] Wind strength changed to: ", value)
 	wind_strength = maxf(0.0, value)
 	if is_inside_tree():
 		if is_instance_valid(mesh_instance):
@@ -314,7 +314,7 @@ func set_wind_strength(value: float) -> void:
 
 ## Syncs flame dimensions, speed, emission, and wind uniforms to shader.
 func _update_shader_parameters() -> void:
-	print("[VolumetricFire] Updating shader parameters.")
+	# print("[VolumetricFire] Updating shader parameters.")
 	if not is_instance_valid(_material):
 		return
 	_material.set_shader_parameter("fire_height", fire_height)
@@ -327,7 +327,7 @@ func _update_shader_parameters() -> void:
 
 ## Adjusts ember particle trajectory and velocity based on wind forces.
 func _update_particle_parameters() -> void:
-	print("[VolumetricFire] Updating particle parameters.")
+	# print("[VolumetricFire] Updating particle parameters.")
 	if not is_instance_valid(ember_particles):
 		return
 	var process_mat: Material = ember_particles.process_material
@@ -339,7 +339,7 @@ func _update_particle_parameters() -> void:
 
 ## Synchronizes dimensions of [member burn_shape] to match fire dimensions.
 func _update_burn_shape() -> void:
-	print("[VolumetricFire] Updating burn collision shape.")
+	# print("[VolumetricFire] Updating burn collision shape.")
 	if not is_instance_valid(burn_shape):
 		return
 	var shape: Shape3D = burn_shape.shape
@@ -352,7 +352,7 @@ func _update_burn_shape() -> void:
 
 ## Resizes and aligns unique [member mesh_instance] bounding box.
 func _update_volume_mesh() -> void:
-	print("[VolumetricFire] Updating volume mesh boundaries.")
+	# print("[VolumetricFire] Updating volume mesh boundaries.")
 	if not is_instance_valid(mesh_instance):
 		return
 	mesh_instance.position = Vector3.ZERO

@@ -507,7 +507,7 @@ func _build_mirrored_slider_row(row: HBoxContainer, item: Dictionary) -> void:
 
 		cloned_sl.value_changed.connect(
 			func(val: float) -> void:
-				print("UI: Mirrored HSlider changed -> ", val)
+				# print("UI: Mirrored HSlider changed -> ", val)
 				if is_instance_valid(orig_sl) and not is_equal_approx(orig_sl.value, val):
 					orig_sl.value = val
 

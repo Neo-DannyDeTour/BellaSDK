@@ -73,11 +73,11 @@ func _update_physics() -> void:
 	if not is_node_ready():
 		return
 
-	if not Engine.is_editor_hint():
-		print(
-			"ConveyorBelt: _update_physics() called. Velocity: ",
-			move_direction.normalized() * speed
-		)
+	# if not Engine.is_editor_hint():
+	# 	print(
+	# 		"ConveyorBelt: _update_physics() called. Velocity: ",
+	# 		move_direction.normalized() * speed
+	# 	)
 
 	constant_linear_velocity = move_direction.normalized() * speed
 
@@ -87,8 +87,8 @@ func _update_visuals() -> void:
 	if not is_node_ready():
 		return
 
-	if not Engine.is_editor_hint():
-		print("ConveyorBelt: _update_visuals() called. Speed: ", speed)
+	# if not Engine.is_editor_hint():
+	# 	print("ConveyorBelt: _update_visuals() called. Speed: ", speed)
 
 	var angle: float = 0.0
 
@@ -125,8 +125,8 @@ func _update_size() -> void:
 	if not is_node_ready():
 		return
 
-	if not Engine.is_editor_hint():
-		print("ConveyorBelt: _update_size() called. Size: ", conveyor_size)
+	# if not Engine.is_editor_hint():
+	# 	print("ConveyorBelt: _update_size() called. Size: ", conveyor_size)
 
 	if is_instance_valid(mesh):
 		if mesh.mesh is BoxMesh:
