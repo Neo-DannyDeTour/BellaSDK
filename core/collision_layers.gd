@@ -28,6 +28,12 @@ const MASK_ENEMIES: int = 1 << 4
 ## Bitmask enabling all 32 physics collision layers.
 const MASK_ALL: int = 0xFFFFFFFF
 
+## Composite bitmask checking solid world geometry (Environment + Interactive).
+const MASK_SOLID_WORLD: int = MASK_ENVIRONMENT | MASK_INTERACTIVE
+
+## Composite bitmask checking combat targets (Player + Enemies).
+const MASK_COMBAT_ENTITIES: int = MASK_PLAYER | MASK_ENEMIES
+
 ## Render layer 1 index for environment models and level geometry.
 const RENDER_LAYER_ENVIRONMENT_IDX: int = 1
 ## Render layer 2 index for player meshes and first-person viewmodels.

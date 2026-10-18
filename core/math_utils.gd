@@ -127,3 +127,37 @@ static func damp_v3(current: Vector3, target: Vector3, smoothing: float, delta: 
 ## Calculates the exact midpoint vector between two points.
 static func get_midpoint(a: Vector3, b: Vector3) -> Vector3:
 	return (a + b) * 0.5
+
+
+## Snaps a 3D position [param pos] to the nearest grid increment [param grid_step].
+static func snap_to_grid_3d(pos: Vector3, grid_step: float) -> Vector3:
+	if grid_step <= 0.0:
+		return pos
+	return Vector3(
+		snappedf(pos.x, grid_step), snappedf(pos.y, grid_step), snappedf(pos.z, grid_step)
+	)
+
+
+## Normalizes an angle in radians [param angle_rad] to the wrapped range [-PI, PI].
+static func normalize_angle(angle_rad: float) -> float:
+	return wrapf(angle_rad, -PI, PI)
+
+
+## Evaluates whether [param pos_a] and [param pos_b] are within [param max_dist] via squared math.
+static func is_within_distance_3d(pos_a: Vector3, pos_b: Vector3, max_dist: float) -> bool:
+	if max_dist < 0.0:
+		return false
+	return pos_a.distance_squared_to(pos_b) <= (max_dist * max_dist)
+
+
+## Computes [Transform3D] aligning a cylinder mesh spanning between two coordinates.
+static func calculate_cylinder_span_transform(start_pos: Vector3, end_pos: Vector3) -> Transform3D:
+	var delta_vec: Vector3 = end_pos - start_pos
+	var distance: float = delta_vec.length()
+	var center_pos: Vector3 = start_pos.lerp(end_pos, 0.5)
+	if distance < 0.0001:
+		return Transform3D(Basis.IDENTITY, center_pos)
+	var dir: Vector3 = delta_vec / distance
+	var up_vec: Vector3 = Vector3.UP if absf(dir.y) < 0.999 else Vector3.RIGHT
+	var span_xform: Transform3D = Transform3D(Basis.looking_at(dir, up_vec), center_pos)
+	return span_xform.rotated_local(Vector3.RIGHT, PI * 0.5)

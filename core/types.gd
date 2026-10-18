@@ -53,26 +53,26 @@ enum Rarity {
 	LEGENDARY,
 }
 
-## Physics collision bitmask for Layer 1 (Environment).
-const MASK_ENVIRONMENT: int = 1 << 0
+## Physics collision bitmask for Layer 1 (Environment), aliased to [CollisionLayers].
+const MASK_ENVIRONMENT: int = CollisionLayers.MASK_ENVIRONMENT
 
-## Physics collision bitmask for Layer 2 (Player).
-const MASK_PLAYER: int = 1 << 1
+## Physics collision bitmask for Layer 2 (Player), aliased to [CollisionLayers].
+const MASK_PLAYER: int = CollisionLayers.MASK_PLAYER
 
-## Physics collision bitmask for Layer 3 (Interactive).
-const MASK_INTERACTIVE: int = 1 << 2
+## Physics collision bitmask for Layer 3 (Interactive), aliased to [CollisionLayers].
+const MASK_INTERACTIVE: int = CollisionLayers.MASK_INTERACTIVE
 
-## Physics collision bitmask for Layer 4 (Debris).
-const MASK_DEBRIS: int = 1 << 3
+## Physics collision bitmask for Layer 4 (Debris), aliased to [CollisionLayers].
+const MASK_DEBRIS: int = CollisionLayers.MASK_DEBRIS
 
-## Physics collision bitmask for Layer 5 (Enemies).
-const MASK_ENEMIES: int = 1 << 4
+## Physics collision bitmask for Layer 5 (Enemies), aliased to [CollisionLayers].
+const MASK_ENEMIES: int = CollisionLayers.MASK_ENEMIES
 
-## Composite bitmask checking solid world geometry (Environment + Interactive).
-const MASK_SOLID_WORLD: int = MASK_ENVIRONMENT | MASK_INTERACTIVE
+## Composite bitmask checking solid world geometry, aliased to [CollisionLayers].
+const MASK_SOLID_WORLD: int = CollisionLayers.MASK_SOLID_WORLD
 
-## Composite bitmask checking combat targets (Player + Enemies).
-const MASK_COMBAT_ENTITIES: int = MASK_PLAYER | MASK_ENEMIES
+## Composite bitmask checking combat targets, aliased to [CollisionLayers].
+const MASK_COMBAT_ENTITIES: int = CollisionLayers.MASK_COMBAT_ENTITIES
 
 
 ## Converts an [enum ItemCategory] enum value to a human-readable display string.
