@@ -92,12 +92,6 @@ func enter_zipline(_zipline: Node3D, _start: Vector3, _end: Vector3) -> void:
 	print("DummyComponent: enter_zipline() stub called.")
 
 
-## Stub transition hook when grabbing a physical rope link.
-## [param _rope_node] Target [RigidBody3D] link.
-func enter_rope(_rope_node: RigidBody3D) -> void:
-	print("DummyComponent: enter_rope() stub called.")
-
-
 ## Stub notification hook when entering rain regions.
 func enter_rain_volume() -> void:
 	print("DummyComponent: enter_rain_volume() stub called.")
