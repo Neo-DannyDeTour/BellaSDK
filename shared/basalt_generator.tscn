@@ -1,6 +1,0 @@
-[gd_scene format=3 uid="uid://74rrxocvc7yo"]
-
-[ext_resource type="Script" uid="uid://b1ftojowmtii" path="res://shared/basalt_generator.gd" id="1_4nyu1"]
-
-[node name="BasaltGenerator" type="Node3D" unique_id=2106228636]
-script = ExtResource("1_4nyu1")

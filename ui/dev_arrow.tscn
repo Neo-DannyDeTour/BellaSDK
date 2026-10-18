@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://2yaelfmj6lmg"]
 
-[ext_resource type="Script" uid="uid://br53r4mu0jo7r" path="res://shared/dev_hologram_tool.gd" id="1_4dyq1"]
+[ext_resource type="Script" uid="uid://br53r4mu0jo7r" path="res://tools/dev_hologram_tool.gd" id="1_4dyq1"]
 [ext_resource type="ArrayMesh" uid="uid://bkdktt4rqjra1" path="res://assets/dev_meshes/dev_arrow.obj" id="1_iy5na"]
 [ext_resource type="Shader" uid="uid://g5aps1jw4kxy" path="res://player/holographic_scanner.gdshader" id="2_4dyq1"]
 

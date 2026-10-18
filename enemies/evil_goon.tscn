@@ -1,0 +1,38 @@
+[gd_scene format=3 uid="uid://bairuv4i4gc64"]
+
+[ext_resource type="Script" uid="uid://bx5x61wsep5vy" path="res://enemies/evil_goon.gd" id="1_u0qif"]
+[ext_resource type="Texture2D" uid="uid://dfsxgojyut14q" path="res://assets/images/blood_splatters/blood_splatter_00.png" id="2_iuv0i"]
+[ext_resource type="Texture2D" uid="uid://dh00yxaaufnxh" path="res://assets/textures/evil_goon.png" id="2_u0qif"]
+[ext_resource type="Texture2D" uid="uid://j7f8ej46v1us" path="res://assets/images/blood_splatters/blood_splatter_01.png" id="3_5lonj"]
+[ext_resource type="Script" uid="uid://cbwy13aembb7w" path="res://core/components/health_component.gd" id="3_pjr23"]
+[ext_resource type="Texture2D" uid="uid://cupykvxdbxr5" path="res://assets/images/blood_splatters/blood_splatter_02.png" id="4_dsquj"]
+[ext_resource type="Texture2D" uid="uid://c5aosaoy1l3us" path="res://assets/images/blood_splatters/blood_splatter_03.png" id="5_6u2r2"]
+[ext_resource type="Texture2D" uid="uid://cyj4q2k2fmq2p" path="res://assets/images/blood_splatters/blood_splatter_04.png" id="6_62w61"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_m0v7c"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kjjkj"]
+albedo_texture = ExtResource("2_u0qif")
+uv1_world_triplanar = true
+
+[sub_resource type="CapsuleMesh" id="CapsuleMesh_nxobc"]
+material = SubResource("StandardMaterial3D_kjjkj")
+radial_segments = 32
+rings = 4
+
+[node name="EvilGoon" type="RigidBody3D" unique_id=767490549 node_paths=PackedStringArray("health_component") groups=["enemy"]]
+collision_layer = 16
+collision_mask = 23
+script = ExtResource("1_u0qif")
+health_component = NodePath("HealthComponent")
+blood_splatters = Array[Texture2D]([ExtResource("2_iuv0i"), ExtResource("3_5lonj"), ExtResource("4_dsquj"), ExtResource("5_6u2r2"), ExtResource("6_62w61")])
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=199191476]
+shape = SubResource("CapsuleShape3D_m0v7c")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1544492037]
+mesh = SubResource("CapsuleMesh_nxobc")
+
+[node name="HealthComponent" type="Node" parent="." unique_id=1503028368]
+script = ExtResource("3_pjr23")
+metadata/_custom_type_script = "uid://cbwy13aembb7w"

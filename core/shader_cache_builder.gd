@@ -4,7 +4,7 @@ class_name ShaderCacheBuilder
 extends EditorScript
 
 ## The path where the generated [ShaderCache] resource will be saved.
-const CACHE_PATH: String = "res://shared/shader_cache.tres"
+const CACHE_PATH: String = "res://core/shader_cache.tres"
 
 ## The root directory to start scanning for materials.
 const MATERIALS_DIR: String = "res://"

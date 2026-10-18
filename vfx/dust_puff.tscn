@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://d2msewxyv8kst"]
 
-[ext_resource type="Script" uid="uid://7hgne4k1hyxn" path="res://shared/dust_puff.gd" id="1_0josw"]
+[ext_resource type="Script" uid="uid://7hgne4k1hyxn" path="res://vfx/dust_puff.gd" id="1_0josw"]
 
 [sub_resource type="Gradient" id="Gradient_d34ih"]
 colors = PackedColorArray(0.52, 0.52, 0.52, 1, 0.52, 0.52, 0.52, 0)

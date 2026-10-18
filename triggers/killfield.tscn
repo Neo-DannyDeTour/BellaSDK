@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://c1tyucb7msue1"]
+
+[ext_resource type="Script" uid="uid://bgw0ck262xine" path="res://triggers/killfield.gd" id="1_r6clw"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ouo7x"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_jij66"]
+transparency = 1
+cull_mode = 2
+albedo_color = Color(1, 0, 0, 0.19607843)
+
+[sub_resource type="BoxMesh" id="BoxMesh_vq2i0"]
+material = SubResource("StandardMaterial3D_jij66")
+
+[node name="Killfield" type="Area3D" unique_id=2040269414]
+collision_mask = 2
+script = ExtResource("1_r6clw")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=2115725744]
+shape = SubResource("BoxShape3D_ouo7x")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=521976051]
+mesh = SubResource("BoxMesh_vq2i0")

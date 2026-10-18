@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://cih8g2u1k23op"]
 
-[ext_resource type="Script" uid="uid://vbgp5hqkoqtv" path="res://scripts/hiss_resonance_volume.gd" id="1_m4tud"]
+[ext_resource type="Script" uid="uid://vbgp5hqkoqtv" path="res://environment/hiss_resonance_volume.gd" id="1_m4tud"]
 [ext_resource type="Shader" uid="uid://dpw8rm6v8kuc6" path="res://vfx/control_hiss_distortion.gdshader" id="2_dsb6y"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_ak2ur"]

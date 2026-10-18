@@ -1,0 +1,73 @@
+[gd_scene format=3 uid="uid://2mam2k0fdeew"]
+
+[ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="1_mi6dp"]
+[ext_resource type="Script" uid="uid://buvexotjbssoa" path="res://interactables/button.gd" id="1_rhj8v"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="3_1bdt2"]
+[ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="3_i7y4x"]
+[ext_resource type="PackedScene" uid="uid://c5h1le8vd6lj5" path="res://assets/props/valve/button.fbx" id="5_1bdt2"]
+[ext_resource type="AudioStream" uid="uid://0d4rc3osf2n" path="res://assets/sounds/Button.mp3" id="6_8m7bo"]
+[ext_resource type="Script" uid="uid://cnmn3hgnt0afn" path="res://interactables/output_transmitter_3d.gd" id="7_dqcby"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_1bdt2"]
+render_priority = 0
+shader = ExtResource("3_1bdt2")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.0
+shader_parameter/max_intensity = 0.5
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_n4pas"]
+size = Vector3(0.5, 0.3, 0.5)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_8m7bo"]
+render_priority = 0
+shader = ExtResource("3_1bdt2")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.01
+shader_parameter/max_intensity = 0.5
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[node name="Button" type="StaticBody3D" unique_id=1567218577 node_paths=PackedStringArray("pressable_part", "mesh_to_highlight", "transmitter", "click_sound") groups=["not_climbable"]]
+transform = Transform3D(-1, 8.742278e-08, -3.821371e-15, 0, -4.371139e-08, -1, -8.742278e-08, -1, 4.371139e-08, 0, 0, 0)
+collision_layer = 4
+script = ExtResource("1_rhj8v")
+pressable_part = NodePath("Button/button")
+mesh_to_highlight = NodePath("Button/button")
+outline_material = SubResource("ShaderMaterial_1bdt2")
+transmitter = NodePath("OutputTransmitter3D")
+click_sound = NodePath("AudioStreamPlayer3D")
+
+[node name="Button" parent="." unique_id=2020801330 instance=ExtResource("5_1bdt2")]
+transform = Transform3D(-2, 1.7484555e-07, -7.6427436e-15, -1.7484555e-07, -2, 1.7484555e-07, 7.642742e-15, 1.7484555e-07, 2, 0, 0, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=417024670]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.1, -0.058471676)
+shape = SubResource("BoxShape3D_n4pas")
+
+[node name="LabelInteract" type="Label3D" parent="." unique_id=1169131663]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1.020477e-08, -0.116728954, 0.23551145)
+visible = false
+billboard = 1
+text = "[E]"
+font_size = 16
+
+[node name="InteractComponent" type="Node" parent="." unique_id=1334598762]
+script = ExtResource("1_mi6dp")
+metadata/_custom_type_script = "uid://cqawbvidns1th"
+
+[node name="HighlightComponent" type="Node" parent="." unique_id=2008628475 node_paths=PackedStringArray("target_meshes")]
+script = ExtResource("3_i7y4x")
+outline_material = SubResource("ShaderMaterial_8m7bo")
+target_meshes = [NodePath("../Button/button")]
+metadata/_custom_type_script = "uid://dgig0tamvkdxx"
+
+[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="." unique_id=1964384606]
+stream = ExtResource("6_8m7bo")
+
+[node name="OutputTransmitter3D" type="Node3D" parent="." unique_id=623594866]
+script = ExtResource("7_dqcby")
+metadata/_custom_type_script = "uid://cnmn3hgnt0afn"
+
+[editable path="Button"]

@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://b0n5hga5atr"]
+
+[ext_resource type="Script" uid="uid://c456s26ymsyey" path="res://environment/monke_bar.gd" id="1_ngngr"]
+[ext_resource type="Material" uid="uid://coniyskrwahs4" path="res://assets/textures/dev_material_area.tres" id="1_tux10"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_ngngr"]
+material = ExtResource("1_tux10")
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_qp5n6"]
+
+[node name="MonkeBar" type="Area3D" unique_id=1142386375]
+script = ExtResource("1_ngngr")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1041963902]
+mesh = SubResource("BoxMesh_ngngr")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=898626886]
+shape = SubResource("BoxShape3D_qp5n6")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
+[connection signal="body_exited" from="." to="." method="_on_body_exited"]

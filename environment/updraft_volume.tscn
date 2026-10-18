@@ -1,0 +1,196 @@
+[gd_scene format=3 uid="uid://dg62o2u1p8i7i"]
+
+[ext_resource type="Script" uid="uid://banc78j0mbfqh" path="res://environment/updraft_volume.gd" id="1_2vvrv"]
+[ext_resource type="Material" uid="uid://coniyskrwahs4" path="res://assets/textures/dev_material_area.tres" id="1_a53uw"]
+[ext_resource type="AudioStream" uid="uid://c0apybq0uxbwu" path="res://assets/sounds/FastFan.wav" id="3_70jwx"]
+[ext_resource type="Shader" uid="uid://o218o74vkkkf" path="res://vfx/updraft_cylinder.gdshader" id="3_qf1vt"]
+[ext_resource type="Shader" uid="uid://dhr0ymuyrpahm" path="res://vfx/updraft_paper.gdshader" id="4_c1vbq"]
+[ext_resource type="Shader" uid="uid://deem0h0vht7hr" path="res://vfx/updraft_wind.gdshader" id="5_os5yf"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_82kr7"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_2vvrv"]
+material = ExtResource("1_a53uw")
+radial_segments = 8
+rings = 0
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_7xin8"]
+noise_type = 3
+frequency = 0.0632
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_3y8t4"]
+noise = SubResource("FastNoiseLite_7xin8")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_col"]
+render_priority = 0
+shader = ExtResource("3_qf1vt")
+shader_parameter/wind_color = Color(0.6, 0.85, 1, 1)
+shader_parameter/noise_texture = SubResource("NoiseTexture2D_3y8t4")
+shader_parameter/scroll_speed = 2.5999999999999996
+shader_parameter/column_opacity = 0.01
+shader_parameter/fresnel_power = 6.0
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_wind"]
+material = SubResource("ShaderMaterial_col")
+cap_top = false
+cap_bottom = false
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_ribbon"]
+render_priority = 0
+shader = ExtResource("4_c1vbq")
+shader_parameter/ribbon_color = Color(0.95, 0.85, 0.2, 1)
+shader_parameter/wind_speed = 15.0
+shader_parameter/flutter_amplitude = 0.08
+shader_parameter/wave_frequency = 8.0
+
+[sub_resource type="QuadMesh" id="QuadMesh_ribbon"]
+material = SubResource("ShaderMaterial_ribbon")
+size = Vector2(0.08, 1)
+subdivide_depth = 8
+
+[sub_resource type="Gradient" id="Gradient_dust_fade"]
+offsets = PackedFloat32Array(0, 0.2, 0.8, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 0.6, 1, 1, 1, 0.6, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_dust_ramp"]
+gradient = SubResource("Gradient_dust_fade")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_dust"]
+emission_shape = 3
+emission_box_extents = Vector3(0.7, 0.05, 0.7)
+direction = Vector3(0, 1, 0)
+spread = 8.0
+initial_velocity_min = 3.5
+initial_velocity_max = 6.0
+gravity = Vector3(0, 0.2, 0)
+color_ramp = SubResource("GradientTexture1D_dust_ramp")
+
+[sub_resource type="Gradient" id="Gradient_soft_dust"]
+offsets = PackedFloat32Array(0, 0.45, 1)
+colors = PackedColorArray(1, 1, 1, 0.8, 1, 1, 1, 0.4, 1, 1, 1, 0)
+
+[sub_resource type="GradientTexture2D" id="GradientTexture2D_dust_shape"]
+gradient = SubResource("Gradient_soft_dust")
+fill = 1
+fill_from = Vector2(0.5, 0.5)
+fill_to = Vector2(0.5, 0)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_dust_mat"]
+transparency = 1
+shading_mode = 0
+albedo_texture = SubResource("GradientTexture2D_dust_shape")
+billboard_mode = 3
+billboard_keep_scale = true
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+proximity_fade_enabled = true
+proximity_fade_distance = 0.25
+
+[sub_resource type="QuadMesh" id="QuadMesh_dust_quad"]
+material = SubResource("StandardMaterial3D_dust_mat")
+size = Vector2(0.06, 0.06)
+
+[sub_resource type="Curve" id="Curve_cloud_scale"]
+_data = [Vector2(0, 0.3), 0.0, 1.2, 0, 0, Vector2(0.6, 1), 0.0, 0.0, 0, 0, Vector2(1, 0.8), -0.5, 0.0, 0, 0]
+point_count = 3
+
+[sub_resource type="CurveTexture" id="CurveTexture_cloud_scale"]
+curve = SubResource("Curve_cloud_scale")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_cloud"]
+emission_shape = 3
+emission_box_extents = Vector3(0.5, 0.05, 0.5)
+direction = Vector3(0, 1, 0)
+spread = 6.0
+initial_velocity_min = 2.0
+initial_velocity_max = 3.5
+gravity = Vector3(0, 0, 0)
+scale_curve = SubResource("CurveTexture_cloud_scale")
+color_ramp = SubResource("GradientTexture1D_dust_ramp")
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_q07dw"]
+noise_type = 2
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_5awlj"]
+noise = SubResource("FastNoiseLite_q07dw")
+seamless = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_cloud"]
+render_priority = 0
+shader = ExtResource("5_os5yf")
+shader_parameter/cloud_color = Color(0.85, 0.95, 1, 0.35)
+shader_parameter/noise_texture = SubResource("NoiseTexture2D_5awlj")
+shader_parameter/swirl_speed = 1.2
+shader_parameter/softness = 0.35
+
+[sub_resource type="QuadMesh" id="QuadMesh_cloud"]
+material = SubResource("ShaderMaterial_cloud")
+size = Vector2(0.55, 0.55)
+
+[node name="UpdraftVolume" type="Area3D" unique_id=1690739398]
+collision_mask = 2
+script = ExtResource("1_2vvrv")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1399732228]
+shape = SubResource("CylinderShape3D_82kr7")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=1365149769]
+mesh = SubResource("CylinderMesh_2vvrv")
+
+[node name="WindColumnMesh" type="MeshInstance3D" parent="." unique_id=1849204910]
+visibility_range_end = 15.0
+visibility_range_end_margin = 3.0
+mesh = SubResource("CylinderMesh_wind")
+
+[node name="PaperRibbons" type="Node3D" parent="." unique_id=1948201041]
+transform = Transform3D(0.5, 0, 0, 0, -0.5, 7.54979e-08, 0, -7.54979e-08, -0.5, 0, -0.85, 0)
+
+[node name="RibbonNorth" type="MeshInstance3D" parent="PaperRibbons" unique_id=1102938471]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.85)
+visibility_range_end = 15.0
+visibility_range_end_margin = 3.0
+mesh = SubResource("QuadMesh_ribbon")
+
+[node name="RibbonSouth" type="MeshInstance3D" parent="PaperRibbons" unique_id=1102938472]
+transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 0, 0, -0.85)
+visibility_range_end = 15.0
+visibility_range_end_margin = 3.0
+mesh = SubResource("QuadMesh_ribbon")
+
+[node name="RibbonEast" type="MeshInstance3D" parent="PaperRibbons" unique_id=1102938473]
+transform = Transform3D(0, 0, 1, 0, 1, 0, -1, 0, 0, 0.85, 0, 0)
+visibility_range_end = 15.0
+visibility_range_end_margin = 3.0
+mesh = SubResource("QuadMesh_ribbon")
+
+[node name="RibbonWest" type="MeshInstance3D" parent="PaperRibbons" unique_id=1102938474]
+transform = Transform3D(0, 0, -1, 0, 1, 0, 1, 0, 0, -0.85, 0, 0)
+visibility_range_end = 15.0
+visibility_range_end_margin = 3.0
+mesh = SubResource("QuadMesh_ribbon")
+
+[node name="DustParticles" type="GPUParticles3D" parent="." unique_id=578439677]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.85, 0)
+visibility_range_end = 15.0
+visibility_range_end_margin = 3.0
+amount = 35
+lifetime = 0.75
+process_material = SubResource("ParticleProcessMaterial_dust")
+draw_pass_1 = SubResource("QuadMesh_dust_quad")
+
+[node name="WindCloudParticles" type="GPUParticles3D" parent="." unique_id=1719073399]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.85, 0)
+visibility_range_end = 15.0
+visibility_range_end_margin = 3.0
+amount = 12
+process_material = SubResource("ParticleProcessMaterial_cloud")
+draw_pass_1 = SubResource("QuadMesh_cloud")
+
+[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="." unique_id=1374080527]
+stream = ExtResource("3_70jwx")
+autoplay = true
+max_distance = 15.0
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
+[connection signal="body_exited" from="." to="." method="_on_body_exited"]

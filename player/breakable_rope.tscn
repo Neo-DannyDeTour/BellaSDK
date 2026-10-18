@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dwusg7ievwjmh"]
 
-[ext_resource type="Script" uid="uid://cbwy13aembb7w" path="res://shared/health_component.gd" id="1_1ekby"]
+[ext_resource type="Script" uid="uid://cbwy13aembb7w" path="res://core/components/health_component.gd" id="1_1ekby"]
 [ext_resource type="Script" uid="uid://bed0r62y5bkkh" path="res://player/breakable_rope.gd" id="2_1k8xa"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_h75n5"]

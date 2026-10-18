@@ -104,7 +104,7 @@ extends PlayerStatsComponent
 	components_node.name = "Components"
 	mock_player.add_child(components_node)
 
-	var health_script: GDScript = load("res://shared/health_component.gd") as GDScript
+	var health_script: GDScript = load("res://core/components/health_component.gd") as GDScript
 	if health_script != null:
 		var raw_health: Variant = health_script.new()
 		if raw_health is Node:

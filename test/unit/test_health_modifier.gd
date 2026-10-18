@@ -4,7 +4,7 @@ class_name TestHealthModifier
 extends GutTest
 
 ## Preloaded script reference for the health modifier under test.
-const MODIFIER_SCRIPT: GDScript = preload("res://shared/health_modifier.gd")
+const MODIFIER_SCRIPT: GDScript = preload("res://core/components/health_modifier.gd")
 
 ## Instance of the health modifier under test.
 var modifier: Node = null
@@ -16,7 +16,7 @@ var health_comp: HealthComponent = null
 
 ## Mock modifier simulating overlapping bodies in the test tree.
 class MockModifier:
-	extends "res://shared/health_modifier.gd"
+	extends "res://core/components/health_modifier.gd"
 
 	## Simulated collection of bodies inside the modifier area.
 	var mock_bodies: Array[Node3D] = []
