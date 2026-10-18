@@ -223,7 +223,7 @@ func test_raycast_3d_query_cache_mutation() -> void:
 	var dummy_rid: RID = RID()
 	var exclude: Array[RID] = [dummy_rid]
 	Utilities.raycast_3d(space, origin, target, mask, exclude)
-	var query: PhysicsRayQueryParameters3D = Utilities._cached_ray_query
+	var query: PhysicsRayQueryParameters3D = NodeQuery._cached_ray_query
 	assert_eq(query.from, origin, "Cached query 'from' should be updated.")
 	assert_eq(query.to, target, "Cached query 'to' should be updated.")
 	assert_eq(query.collision_mask, mask, "Cached query mask should be updated.")
