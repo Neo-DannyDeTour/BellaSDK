@@ -77,6 +77,10 @@ func _detonate() -> void:
 	var bodies: Array[Node3D] = blast_area.get_overlapping_bodies()
 	var center: Vector3 = global_position
 
+	var smoke_mgr: Node = get_node_or_null("/root/SmokeManager")
+	if is_instance_valid(smoke_mgr) and smoke_mgr.has_method(&"carve_explosion"):
+		smoke_mgr.call(&"carve_explosion", center, explosion_radius, 3.5)
+
 	for body: Node3D in bodies:
 		if body is RigidBody3D and body != self:
 			var parent_node: Node = body.get_parent()
