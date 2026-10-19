@@ -1,95 +1,65 @@
 [gd_scene format=3 uid="uid://c5cl283k1mkjr"]
 
 [ext_resource type="Script" uid="uid://docl5p05jde1x" path="res://environment/smoke_hazard.gd" id="1_smpq6"]
-[ext_resource type="Shader" uid="uid://oxa4vl15ttjy" path="res://vfx/smoke_lod.gdshader" id="2_phnjv"]
+[ext_resource type="Shader" path="res://environment/smoke_hazard.gdshader" id="2_shdr1"]
 [ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://triggers/editor_trigger_visualizer.gd" id="3_cu1br"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_smpq6"]
+resource_local_to_scene = true
+shader = ExtResource("2_shdr1")
+shader_parameter/base_density = 4.0
+shader_parameter/color_dark_grey = Color(0.18, 0.19, 0.21, 1)
+shader_parameter/color_mid_grey = Color(0.46, 0.48, 0.51, 1)
+shader_parameter/color_light_ash = Color(0.78, 0.8, 0.83, 1)
+shader_parameter/emission_strength = 0.06
+shader_parameter/noise_scale = 0.72
+shader_parameter/detail_scale = 2.15
+shader_parameter/warp_strength = 1.35
+shader_parameter/curl_strength = 0.75
+shader_parameter/updraft_speed = 0.55
+shader_parameter/turbulence_speed = 0.35
+shader_parameter/core_radius_ratio = 0.35
+shader_parameter/edge_softness = 0.42
+shader_parameter/height_falloff = 0.28
+shader_parameter/actor_wake_radius = 0.75
+shader_parameter/actor_wake_strength = 0.72
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_cu1br"]
 resource_local_to_scene = true
-size = Vector3(4, 4, 4)
-
-[sub_resource type="Curve" id="Curve_ru5di"]
-_data = [Vector2(0, 0), 0.0, 0.0, 0, 0, Vector2(0.22331443, 1), 0.0, 0.0, 0, 0, Vector2(0.91853917, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), 0.0, 0.0, 0, 0]
-point_count = 4
-
-[sub_resource type="CurveTexture" id="CurveTexture_ey1cf"]
-curve = SubResource("Curve_ru5di")
-
-[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_cu1br"]
-emission_shape = 1
-emission_sphere_radius = 0.7
-angle_min = -179.99998
-angle_max = 180.00002
-direction = Vector3(0, 1, 0)
-spread = 25.0
-initial_velocity_min = 3.0
-initial_velocity_max = 6.0
-gravity = Vector3(0, 0.5, 0)
-damping_min = 1.5000001
-damping_max = 2.5
-scale_min = 0.8
-scale_max = 2.0
-alpha_curve = SubResource("CurveTexture_ey1cf")
-
-[sub_resource type="Gradient" id="Gradient_phnjv"]
-colors = PackedColorArray(1, 1, 1, 1, 0, 0, 0, 1)
-
-[sub_resource type="GradientTexture2D" id="GradientTexture2D_phnjv"]
-gradient = SubResource("Gradient_phnjv")
-fill = 1
-fill_from = Vector2(0.5, 0.5)
-fill_to = Vector2(0.5, 0)
-
-[sub_resource type="FastNoiseLite" id="FastNoiseLite_vgutb"]
-noise_type = 3
-frequency = 0.0284
-
-[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_cu1br"]
-noise = SubResource("FastNoiseLite_vgutb")
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_smpq6"]
-render_priority = 0
-shader = ExtResource("2_phnjv")
-shader_parameter/noise_tex = SubResource("NoiseTexture2D_cu1br")
-shader_parameter/circle_mask = SubResource("GradientTexture2D_phnjv")
-shader_parameter/smoke_color = Color(0.9, 0.9, 0.9, 0.85)
-shader_parameter/max_lod = 8.0
-
-[sub_resource type="QuadMesh" id="QuadMesh_smpq6"]
-material = SubResource("ShaderMaterial_smpq6")
-size = Vector2(0.5, 0.5)
+size = Vector3(4, 3, 4)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vgutb"]
 transparency = 1
 shading_mode = 0
-albedo_color = Color(0.9, 0.2, 0.1, 0.25)
+albedo_color = Color(0.55, 0.58, 0.62, 0.25)
 
 [sub_resource type="BoxMesh" id="BoxMesh_ey1cf"]
+resource_local_to_scene = true
 material = SubResource("StandardMaterial3D_vgutb")
-size = Vector3(4, 4, 4)
+size = Vector3(4, 3, 4)
 
-[node name="SmokeHazard" type="Area3D" unique_id=761632134]
-collision_mask = 2
+[node name="SmokeHazard" type="FogVolume" unique_id=761632134]
+layers = 512
+size = Vector3(4, 3, 4)
+material = SubResource("ShaderMaterial_smpq6")
 script = ExtResource("1_smpq6")
-damage_per_tick = 25.0
-x_ray_mode = null
-show_orientation = null
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1050280486]
+[node name="HazardArea" type="Area3D" parent="." unique_id=1954082311]
+collision_layer = 0
+collision_mask = 30
+monitorable = false
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="HazardArea" unique_id=1050280486]
 shape = SubResource("BoxShape3D_cu1br")
 
-[node name="SmokeParticles" type="GPUParticles3D" parent="." unique_id=1134440122]
-amount = 50
-lifetime = 2.0
-fixed_fps = 60
-process_material = SubResource("ParticleProcessMaterial_cu1br")
-draw_pass_1 = SubResource("QuadMesh_smpq6")
+[node name="VisibilityNotifier" type="VisibleOnScreenNotifier3D" parent="." unique_id=1134440122]
+aabb = AABB(-3, -2.5, -3, 6, 5, 6)
 
 [node name="EditorTriggerVisualizer" type="MeshInstance3D" parent="." unique_id=1237472038]
 mesh = SubResource("BoxMesh_ey1cf")
 script = ExtResource("3_cu1br")
-trigger_size = Vector3(4, 4, 4)
-trigger_color = Color(0.9, 0.2, 0.1, 0.25)
-outline_color = Color(1, 0.4, 0.2, 0.9)
+trigger_size = Vector3(4, 3, 4)
+trigger_color = Color(0.55, 0.58, 0.62, 0.25)
+outline_color = Color(0.75, 0.8, 0.85, 0.9)
 trigger_text = "SMOKE HAZARD"
 metadata/_custom_type_script = "uid://q4v42nidwdr2"

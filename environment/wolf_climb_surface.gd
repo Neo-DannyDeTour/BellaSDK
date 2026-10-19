@@ -48,7 +48,7 @@ func set_surface_size(new_size: Vector2) -> void:
 	var clamped: Vector2 = new_size.max(Vector2(0.1, 0.1))
 	if surface_size.is_equal_approx(clamped):
 		return
-	print("WolfClimbSurface: set_surface_size() called with: ", clamped)
+	#print("WolfClimbSurface: set_surface_size() called with: ", clamped)
 	surface_size = clamped
 	if is_inside_tree() and not _is_updating_geometry:
 		update_surface_geometry()
@@ -59,7 +59,7 @@ func set_surface_thickness(new_thickness: float) -> void:
 	var clamped: float = maxf(new_thickness, 0.05)
 	if is_equal_approx(surface_thickness, clamped):
 		return
-	print("WolfClimbSurface: set_surface_thickness() called with: ", clamped)
+	#print("WolfClimbSurface: set_surface_thickness() called with: ", clamped)
 	surface_thickness = clamped
 	if is_inside_tree() and not _is_updating_geometry:
 		update_surface_geometry()

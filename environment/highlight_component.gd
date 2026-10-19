@@ -277,7 +277,7 @@ func _connect_outline_events() -> void:
 
 ## Reads initial outline configuration from [GlobalSettings] silently.
 func _load_initial_settings() -> void:
-	print("HighlightComponent: Loading initial outline settings.")
+	#print("HighlightComponent: Loading initial outline settings.")
 	if is_instance_valid(GlobalSettings):
 		_outline_mode = GlobalSettings.get_setting("Accessibility", "outline_mode", 2)
 		_first_sight_enabled = GlobalSettings.get_setting(
@@ -465,7 +465,7 @@ func _on_unfocus() -> void:
 
 ## Responds to the visibility notifier entering the camera view.
 func _on_screen_entered() -> void:
-	print("HighlightComponent: Target entered screen view.")
+	#print("HighlightComponent: Target entered screen view.")
 	_is_on_screen = true
 	if _first_sight_enabled and not _has_been_seen:
 		_has_been_seen = true

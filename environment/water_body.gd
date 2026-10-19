@@ -1,656 +1,1288 @@
 @tool
-## 3D water volume with Gerstner waves, buoyancy, and dynamic ripples.
+## High-performance 3D water volume handling multi-scale waves, buoyancy, and underwater VFX.
 class_name WaterBody
 extends MeshInstance3D
 
-## Emitted when an object splashes into or out of water with impact speed.
+## Emitted when a physical body enters or exits the water volume at high vertical speed.
 signal splashed(global_pos: Vector3, velocity: float)
 
-## Total number of active dynamic ripples stored in uniform buffer.
+## Group identifier required by [StateSwim] for point-intersection submersion queries.
+const GROUP_WATER_AREA: StringName = &"water_area"
+
+## Audio bus identifier used for 3D splash sound effects.
+const BUS_SFX: StringName = &"SFX"
+
+## Method identifier invoked on actors entering the water volume.
+const METHOD_ENTER_WATER: StringName = &"enter_water"
+
+## Method identifier invoked on actors exiting the water volume.
+const METHOD_EXIT_WATER: StringName = &"exit_water"
+
+## Property identifier for actor environment subcomponents.
+const PROP_ENV_COMPONENT: StringName = &"environment_component"
+
+## Property identifier for tracking active water node on pickable rigid bodies.
+const PROP_CURRENT_WATER_NODE: StringName = &"current_water_node"
+
+## Property identifier for tracking water overlap state on pickable rigid bodies.
+const PROP_IS_IN_WATER: StringName = &"is_in_water"
+
+## Property identifier for multi-probe array on [PickableObject] instances.
+const PROP_PROBES: StringName = &"_probes"
+
+## Legacy property alias for water volume size used in older scenes.
+const PROP_LEGACY_SIZE: StringName = &"size"
+
+## Legacy property alias for material override used in older scenes.
+const PROP_LEGACY_MATERIAL: StringName = &"material"
+
+## Shader uniform identifier for elapsed water simulation time.
+const PARAM_WATER_TIME: StringName = &"water_time"
+
+## Shader uniform identifier for 3D water box dimensions.
+const PARAM_WATER_SIZE: StringName = &"water_size"
+
+## Shader uniform identifier toggling exterior box side wall rendering.
+const PARAM_SHOW_SIDE_WALLS: StringName = &"show_side_walls"
+
+## Shader uniform identifier for shallow water scatter color.
+const PARAM_SHALLOW_COLOR: StringName = &"shallow_color"
+
+## Shader uniform identifier for deep water scatter color.
+const PARAM_DEEP_COLOR: StringName = &"deep_color"
+
+## Shader uniform identifier for underwater ceiling tint color.
+const PARAM_UNDERWATER_CEILING_COLOR: StringName = &"underwater_ceiling_color"
+
+## Shader uniform identifier for RGB Beer-Lambert absorption rates.
+const PARAM_ABSORPTION_COEFFS: StringName = &"absorption_coefficients"
+
+## Shader uniform identifier for optical depth normalization distance.
+const PARAM_DEPTH_DISTANCE: StringName = &"depth_distance"
+
+## Shader uniform identifier for Beer-Lambert exponential multiplier.
+const PARAM_BEERS_LAW: StringName = &"beers_law"
+
+## Shader uniform identifier for primary wave amplitude.
+const PARAM_WAVE_AMPLITUDE: StringName = &"wave_amplitude"
+
+## Shader uniform identifier for primary wave length.
+const PARAM_WAVE_LENGTH: StringName = &"wave_length"
+
+## Shader uniform identifier for wave phase speed.
+const PARAM_WAVE_SPEED: StringName = &"wave_speed"
+
+## Shader uniform identifier for trochoidal wave crest steepness.
+const PARAM_WAVE_STEEPNESS: StringName = &"wave_steepness"
+
+## Shader uniform identifier for the 16-slot interactive ripple buffer.
+const PARAM_RIPPLES: StringName = &"ripples"
+
+## Shader uniform identifier for interactive ripple displacement height.
+const PARAM_RIPPLE_MESH_HEIGHT: StringName = &"ripple_mesh_height"
+
+## Shader uniform identifier for normal map UV tiling scale.
+const PARAM_UV_SCALE: StringName = &"uv_scale"
+
+## Shader uniform identifier for micro-normal perturbation strength.
+const PARAM_NORMAL_BUMP_STRENGTH: StringName = &"normal_bump_strength"
+
+## Shader uniform identifier for primary normal layer panning velocity.
+const PARAM_PAN_SPEED_1: StringName = &"pan_speed_1"
+
+## Shader uniform identifier for secondary normal layer panning velocity.
+const PARAM_PAN_SPEED_2: StringName = &"pan_speed_2"
+
+## Shader uniform identifier toggling screen-space reflections.
+const PARAM_ENABLE_SSR: StringName = &"enable_ssr"
+
+## Shader uniform identifier for maximum SSR raymarch distance.
+const PARAM_SSR_MAX_DISTANCE: StringName = &"ssr_max_distance"
+
+## Shader uniform identifier for screen-space refraction distortion strength.
+const PARAM_REFRACTION_STRENGTH: StringName = &"refraction_strength"
+
+## Shader uniform identifier for fallback sky reflection tint.
+const PARAM_SKY_REFLECTION_TINT: StringName = &"sky_reflection_tint"
+
+## Shader uniform identifier for base Schlick Fresnel reflectivity.
+const PARAM_FRESNEL_BASE: StringName = &"fresnel_base"
+
+## Shader uniform identifier for Schlick Fresnel exponent power.
+const PARAM_FRESNEL_POWER: StringName = &"fresnel_power"
+
+## Shader uniform identifier for water surface roughness.
+const PARAM_ROUGHNESS: StringName = &"roughness"
+
+## Shader uniform identifier for water specular intensity.
+const PARAM_SPECULAR_STRENGTH: StringName = &"specular_strength"
+
+## Shader uniform identifier for water metallic parameter.
+const PARAM_METALLIC: StringName = &"metallic"
+
+## Shader uniform identifier for shoreline and crest foam noise texture.
+const PARAM_FOAM_NOISE: StringName = &"foam_noise"
+
+## Shader uniform identifier for surface foam albedo color.
+const PARAM_FOAM_COLOR: StringName = &"foam_color"
+
+## Shader uniform identifier for shoreline intersection foam width.
+const PARAM_FOAM_DISTANCE: StringName = &"foam_distance"
+
+## Shader uniform identifier for wave crest foam height threshold.
+const PARAM_CREST_FOAM_THRESHOLD: StringName = &"crest_foam_threshold"
+
+## Fixed capacity of the GPU ripple ring buffer.
 const MAX_RIPPLES: int = 16
-## Horizontal propagation velocity of dynamic ripples in meters per second.
-const RIPPLE_SPEED: float = 3.0
-## Spatial wavelength of concentric impact ripples along surface in meters.
-const RIPPLE_WAVELENGTH: float = 1.0
-## Total lifespan in seconds before dynamic impact ripples fade.
-const RIPPLE_LIFETIME: float = 2.5
 
-## Dimensions of water volume in meters (X: length, Y: depth, Z: width).
-@export var water_size: Vector3 = Vector3(10.0, 3.0, 10.0):
+## Minimum horizontal speed in m/s required for submerged bodies to emit movement ripples.
+const MIN_WAKE_SPEED_SQ: float = 0.49
+
+## Minimum time interval in seconds between movement ripples from the same body.
+const WAKE_COOLDOWN_SEC: float = 0.16
+
+## Minimum squared horizontal distance in meters before a moving body spawns a new ripple.
+const WAKE_MIN_DIST_SQ: float = 0.09
+
+## Normalized propagation direction for wave octave 0 (synced with water_body.gdshader).
+const WAVE_DIR_0: Vector2 = Vector2(0.924678, 0.380749)
+
+## Normalized propagation direction for wave octave 1 (synced with water_body.gdshader).
+const WAVE_DIR_1: Vector2 = Vector2(-0.451481, 0.892281)
+
+## Normalized propagation direction for wave octave 2 (synced with water_body.gdshader).
+const WAVE_DIR_2: Vector2 = Vector2(0.319222, -0.947680)
+
+## Collision mask scanning Layer 2 (Player) and Layer 3 (Interactive).
+const SWIM_COLLISION_MASK: int = 6
+
+@export_category("Volume & Geometry")
+## Dimensions of the water volume box in meters.
+@export var water_size: Vector3 = Vector3(1.0, 1.0, 1.0):
 	set(value):
-		water_size = value
+		water_size = Vector3(maxf(value.x, 0.1), maxf(value.y, 0.1), maxf(value.z, 0.1))
 		if is_inside_tree():
-			_update_bounds()
+			_sync_volume_geometry()
+			_set_shader_param(PARAM_WATER_SIZE, water_size)
 
-## Target density of mesh vertices per meter along horizontal axes.
-@export_range(1.0, 8.0, 0.5) var vertex_density: float = 3.5:
+## Subdivision density per meter used to cap reusable unit mesh subdivisions.
+@export_range(0.5, 16.0, 0.5) var vertex_density: float = 4.0:
 	set(value):
-		vertex_density = value
+		vertex_density = clampf(value, 0.5, 16.0)
 		if is_inside_tree():
-			_update_bounds()
+			_sync_mesh_subdivisions()
 
-## Primary tint albedo color for surface water rendering.
-@export var shallow_color: Color = Color(0.22, 0.65, 0.78, 1.0)
-
-## Deep water absorption color for deep volumetric optical shading.
-@export var deep_color: Color = Color(0.01, 0.05, 0.16, 1.0)
-
-## Light absorption coefficient controlling underwater murkiness via Beer's Law.
-@export_range(0.1, 10.0, 0.1) var beers_law: float = 2.2
-
-## Maximum water depth in meters where absorption gradient reaches deep color.
-@export_range(0.5, 50.0, 0.5) var depth_distance: float = 4.5
-
-## Steepness factor of Gerstner wave crests between 0.0 and 1.0.
-@export_range(0.0, 1.0, 0.05) var wave_steepness: float = 0.35
-
-## Primary Gerstner wave amplitude peak in meters.
-@export var wave_amplitude: float = 0.1:
+## Renders vertical side walls and bottom of the water box when enabled.
+@export var show_side_walls: bool = false:
 	set(value):
-		wave_amplitude = value
+		show_side_walls = value
 		if is_inside_tree():
-			_update_reflection_probe()
+			_set_shader_param(PARAM_SHOW_SIDE_WALLS, show_side_walls)
 
-## Primary Gerstner wave length in meters.
-@export var wave_length: float = 4.5
-
-## Global playback speed scalar of wave motion over time.
-@export var wave_speed: float = 1.4
-
-## Buoyant upward acceleration multiplier applied to submerged rigid bodies.
-@export var buoyancy_power: float = 2.2
-
-## Linear drag damping coefficient slowing submerged bodies in water.
-@export var water_drag: float = 2.8
-
-## Vertical oscillation drag damping vertical bobbing motion in water.
-@export var vertical_drag: float = 1.6
-
-## Angular drag damping coefficient rotational momentum inside water.
-@export var angular_drag: float = 1.2
-
-## Minimum movement speed required to spawn dynamic movement ripples.
-@export var min_ripple_speed: float = 0.7
-
-## Cooldown interval in seconds between consecutive movement ripple spawns.
-@export var ripple_cooldown: float = 0.16
-
-## Minimum impact speed required to play entry and exit splash sounds.
-@export var min_splash_velocity: float = 4.0
-
-## Audio stream resource played during entry, exit, or resurface splashes.
-@export var splash_sound: AudioStream
-
-## Maximum vertical 3D displacement amplitude for dynamic ripples in meters.
-@export var ripple_mesh_height: float = 0.22
-
-## Whether vertical perimeter side walls of water mesh should render.
-@export var show_side_walls: bool = false
-
-## Underwater volumetric fog tint color applied when submerged.
-@export var fog_color: Color = Color(0.0, 0.04, 0.16)
-
-## Distance in meters before underwater volumetric fog reaches full density.
-@export_range(0.0, 250.0) var fog_fade_dist: float = 5.0
-
-@export_group("Automatic Reflection Probe")
-## Toggles automatic instantiation and sizing of child [ReflectionProbe].
-@export var auto_manage_probe: bool = true:
-	set(value):
-		auto_manage_probe = value
-		if is_inside_tree():
-			_update_reflection_probe()
-
-## Vertical height in meters of reflection probe box above water surface.
-@export_range(2.0, 50.0, 1.0) var probe_box_height: float = 16.0:
-	set(value):
-		probe_box_height = value
-		if is_inside_tree():
-			_update_reflection_probe()
-
-## Horizontal margin in meters extending probe boundary beyond water edges.
-@export_range(0.0, 10.0, 0.5) var probe_padding: float = 2.0:
-	set(value):
-		probe_padding = value
-		if is_inside_tree():
-			_update_reflection_probe()
-
-## Update frequency mode for child [ReflectionProbe] cubemap generation.
-@export var probe_update_mode: ReflectionProbe.UpdateMode = ReflectionProbe.UPDATE_ALWAYS:
+## Controls update mode applied to any child [ReflectionProbe] (0=Once, 1=Always).
+@export_enum("Once:0", "Always:1") var probe_update_mode: int = 0:
 	set(value):
 		probe_update_mode = value
 		if is_inside_tree():
-			_update_reflection_probe()
+			_sync_reflection_probe()
 
-## Cached surface ambient audio stream player child node.
-@onready var surface_audio: AudioStreamPlayer = (
-	get_node_or_null("%SurfaceAudio")
-	if get_node_or_null("%SurfaceAudio") is AudioStreamPlayer
-	else null
-)
+@export_category("Wave Simulation")
+## Vertical amplitude of primary surface waves in meters.
+@export_range(0.0, 5.0, 0.01) var wave_amplitude: float = 0.1:
+	set(value):
+		wave_amplitude = maxf(value, 0.0)
+		if is_inside_tree():
+			_set_shader_param(PARAM_WAVE_AMPLITUDE, wave_amplitude)
+			_update_culling_bounds()
 
-## Cached underwater ambient audio stream player child node.
-@onready var underwater_audio: AudioStreamPlayer = (
-	get_node_or_null("%UnderwaterAudio")
-	if get_node_or_null("%UnderwaterAudio") is AudioStreamPlayer
-	else null
-)
+## Wavelength of primary surface waves in meters.
+@export_range(0.25, 100.0, 0.05) var wave_length: float = 4.5:
+	set(value):
+		wave_length = maxf(value, 0.25)
+		if is_inside_tree():
+			_set_shader_param(PARAM_WAVE_LENGTH, wave_length)
 
-## Active rigid bodies currently submerged and simulated in water volume.
-var floating_bodies: Array[RigidBody3D] = []
+## Phase propagation speed of primary waves.
+@export_range(0.0, 20.0, 0.05) var wave_speed: float = 1.4:
+	set(value):
+		wave_speed = maxf(value, 0.0)
+		if is_inside_tree():
+			_set_shader_param(PARAM_WAVE_SPEED, wave_speed)
 
-## Active character bodies currently submerged inside this water volume.
-var character_bodies: Array[CharacterBody3D] = []
+## Trochoidal crest sharpness factor across the 3-octave wave cascade.
+@export_range(0.0, 2.0, 0.01) var wave_steepness: float = 0.35:
+	set(value):
+		wave_steepness = clampf(value, 0.0, 2.0)
+		if is_inside_tree():
+			_set_shader_param(PARAM_WAVE_STEEPNESS, wave_steepness)
 
-## Preceding frame positions of submerged bodies for ripple movement tracking.
-var _last_body_positions: Dictionary = {}
+## Vertical displacement multiplier for dynamic interactive ring ripples.
+@export_range(0.0, 2.0, 0.01) var ripple_mesh_height: float = 0.22:
+	set(value):
+		ripple_mesh_height = maxf(value, 0.0)
+		if is_inside_tree():
+			_set_shader_param(PARAM_RIPPLE_MESH_HEIGHT, ripple_mesh_height)
+			_update_culling_bounds()
 
-## Timestamp tracking last ripple emission time for each submerged body.
-var _last_body_ripple_times: Dictionary = {}
+@export_category("Optics & Absorption")
+## Scatter tint of shallow water regions.
+@export var shallow_color: Color = Color(0.22, 0.65, 0.78, 1.0):
+	set(value):
+		shallow_color = value
+		if is_inside_tree():
+			_set_shader_param(PARAM_SHALLOW_COLOR, shallow_color)
 
-## Rate-limiter flag preventing duplicate splash audio playback during load.
-var can_splash: bool = true
+## Scatter tint of deep murky water regions.
+@export var deep_color: Color = Color(0.01, 0.05, 0.16, 1.0):
+	set(value):
+		deep_color = value
+		if is_inside_tree():
+			_set_shader_param(PARAM_DEEP_COLOR, deep_color)
 
-## Submerged state of active camera during preceding frame.
-var _was_underwater: bool = false
+## Tint applied to the underwater surface ceiling outside Snell's window.
+@export var underwater_ceiling_color: Color = Color(0.0, 0.1, 0.2, 1.0):
+	set(value):
+		underwater_ceiling_color = value
+		if is_inside_tree():
+			_set_shader_param(PARAM_UNDERWATER_CEILING_COLOR, underwater_ceiling_color)
 
-## Y coordinate of camera from preceding frame for velocity tracking.
+## Per-channel RGB Beer-Lambert light absorption coefficients.
+@export var absorption_coefficients: Vector3 = Vector3(1.4, 0.42, 0.08):
+	set(value):
+		absorption_coefficients = value
+		if is_inside_tree():
+			_set_shader_param(PARAM_ABSORPTION_COEFFS, absorption_coefficients)
+
+## Optical depth normalization distance in meters.
+@export_range(0.1, 100.0, 0.1) var depth_distance: float = 4.5:
+	set(value):
+		depth_distance = maxf(value, 0.1)
+		if is_inside_tree():
+			_set_shader_param(PARAM_DEPTH_DISTANCE, depth_distance)
+
+## Exponential Beer-Lambert absorption and turbidity multiplier.
+@export_range(0.1, 20.0, 0.1) var beers_law: float = 2.2:
+	set(value):
+		beers_law = maxf(value, 0.1)
+		if is_inside_tree():
+			_set_shader_param(PARAM_BEERS_LAW, beers_law)
+
+## Non-volumetric underwater depth fog density used when Volumetric Fog is disabled.
+@export_range(0.01, 0.5, 0.005) var fallback_fog_density: float = 0.11
+
+@export_category("Reflections & Surface Detail")
+## Enables raymarched screen-space reflections on the water surface.
+@export var enable_ssr: bool = true:
+	set(value):
+		enable_ssr = value
+		if is_inside_tree():
+			_set_shader_param(PARAM_ENABLE_SSR, enable_ssr)
+
+## Maximum view-space raymarch distance for screen-space reflections.
+@export_range(0.5, 50.0, 0.1) var ssr_max_distance: float = 4.5:
+	set(value):
+		ssr_max_distance = maxf(value, 0.5)
+		if is_inside_tree():
+			_set_shader_param(PARAM_SSR_MAX_DISTANCE, ssr_max_distance)
+
+## Screen-space refraction UV distortion strength.
+@export_range(0.0, 0.2, 0.001) var refraction_strength: float = 0.02:
+	set(value):
+		refraction_strength = clampf(value, 0.0, 0.2)
+		if is_inside_tree():
+			_set_shader_param(PARAM_REFRACTION_STRENGTH, refraction_strength)
+
+## Sky reflection tint blended via Fresnel reflectivity.
+@export var sky_reflection_tint: Color = Color(0.65, 0.82, 1.0, 1.0):
+	set(value):
+		sky_reflection_tint = value
+		if is_inside_tree():
+			_set_shader_param(PARAM_SKY_REFLECTION_TINT, sky_reflection_tint)
+
+## Base reflectivity at normal incidence for Schlick Fresnel.
+@export_range(0.0, 1.0, 0.01) var fresnel_base: float = 0.12:
+	set(value):
+		fresnel_base = clampf(value, 0.0, 1.0)
+		if is_inside_tree():
+			_set_shader_param(PARAM_FRESNEL_BASE, fresnel_base)
+
+## Exponential falloff power for Schlick Fresnel reflectivity.
+@export_range(0.5, 10.0, 0.1) var fresnel_power: float = 3.5:
+	set(value):
+		fresnel_power = maxf(value, 0.5)
+		if is_inside_tree():
+			_set_shader_param(PARAM_FRESNEL_POWER, fresnel_power)
+
+## Micro-surface roughness of the water.
+@export_range(0.0, 1.0, 0.01) var roughness: float = 0.03:
+	set(value):
+		roughness = clampf(value, 0.0, 1.0)
+		if is_inside_tree():
+			_set_shader_param(PARAM_ROUGHNESS, roughness)
+
+## Specular highlight multiplier.
+@export_range(0.0, 1.0, 0.01) var specular_strength: float = 0.5:
+	set(value):
+		specular_strength = clampf(value, 0.0, 1.0)
+		if is_inside_tree():
+			_set_shader_param(PARAM_SPECULAR_STRENGTH, specular_strength)
+
+## Metallic surface reflectance factor.
+@export_range(0.0, 1.0, 0.01) var metallic: float = 0.12:
+	set(value):
+		metallic = clampf(value, 0.0, 1.0)
+		if is_inside_tree():
+			_set_shader_param(PARAM_METALLIC, metallic)
+
+## World-space UV tiling scale for micro-normal perturbation.
+@export var uv_scale: Vector2 = Vector2(2.0, 2.0):
+	set(value):
+		uv_scale = value
+		if is_inside_tree():
+			_set_shader_param(PARAM_UV_SCALE, uv_scale)
+
+## Intensity of procedural and texture micro-normal slopes.
+@export_range(0.0, 8.0, 0.05) var normal_bump_strength: float = 2.0:
+	set(value):
+		normal_bump_strength = maxf(value, 0.0)
+		if is_inside_tree():
+			_set_shader_param(PARAM_NORMAL_BUMP_STRENGTH, normal_bump_strength)
+
+## Primary normal pan velocity vector.
+@export var pan_speed_1: Vector2 = Vector2(0.1, 0.01):
+	set(value):
+		pan_speed_1 = value
+		if is_inside_tree():
+			_set_shader_param(PARAM_PAN_SPEED_1, pan_speed_1)
+
+## Secondary normal pan velocity vector.
+@export var pan_speed_2: Vector2 = Vector2(-0.015, 0.025):
+	set(value):
+		pan_speed_2 = value
+		if is_inside_tree():
+			_set_shader_param(PARAM_PAN_SPEED_2, pan_speed_2)
+
+@export_category("Foam")
+## Seamless noise texture modulating shoreline and crest foam.
+@export var foam_noise: Texture2D = null:
+	set(value):
+		foam_noise = value
+		if is_inside_tree() and is_instance_valid(foam_noise):
+			_set_shader_param(PARAM_FOAM_NOISE, foam_noise)
+
+## Albedo color and opacity of surface foam.
+@export var foam_color: Color = Color(0.92, 0.96, 1.0, 1.0):
+	set(value):
+		foam_color = value
+		if is_inside_tree():
+			_set_shader_param(PARAM_FOAM_COLOR, foam_color)
+
+## Shoreline intersection depth threshold in meters for edge foam.
+@export_range(0.0, 5.0, 0.01) var foam_distance: float = 0.35:
+	set(value):
+		foam_distance = maxf(value, 0.0)
+		if is_inside_tree():
+			_set_shader_param(PARAM_FOAM_DISTANCE, foam_distance)
+
+## Normalized wave crest height threshold for open-water whitecaps.
+@export_range(0.0, 2.0, 0.01) var crest_foam_threshold: float = 0.65:
+	set(value):
+		crest_foam_threshold = maxf(value, 0.0)
+		if is_inside_tree():
+			_set_shader_param(PARAM_CREST_FOAM_THRESHOLD, crest_foam_threshold)
+
+@export_category("Physics, Buoyancy & Audio")
+## Upward buoyant acceleration multiplier applied to submerged rigid bodies.
+@export_range(0.1, 10.0, 0.05) var buoyancy_power: float = 1.5
+
+## Linear drag coefficient opposing submerged rigid body velocity.
+@export_range(0.0, 10.0, 0.05) var water_drag: float = 1.2
+
+## Additional vertical damping coefficient opposing bobbing oscillation.
+@export_range(0.0, 10.0, 0.05) var vertical_drag: float = 2.5
+
+## Angular velocity damping factor applied to submerged rigid bodies.
+@export_range(0.0, 10.0, 0.05) var angular_drag: float = 2.0
+
+## Minimum vertical impact speed in m/s required to emit splash events and audio.
+@export_range(0.5, 20.0, 0.1) var min_splash_velocity: float = 4.0
+
+## Audio stream played via [AudioPool] upon high-velocity water entry or exit.
+@export var splash_sound: AudioStream = null
+
+## Maximum distance from the active camera in meters before wave updates are gated.
+@export_range(10.0, 500.0, 1.0) var max_simulation_distance: float = 95.0
+
+## Accumulated simulation time in seconds synchronized between CPU and GPU.
+var _water_time: float = 0.0
+
+## Cached [RID] of the active [ShaderMaterial] for low-overhead uniform updates.
+var _material_rid: RID = RID()
+
+## Pre-allocated 16-element ring buffer of active ripples `(x, z, spawn_time, amplitude)`.
+var _ripples: Array[Vector4] = []
+
+## Next circular write slot index in [member _ripples].
+var _ripple_write_index: int = 0
+
+## Simulation timestamp when the longest-lived active ripple expires.
+var _active_ripple_expiry: float = 0.0
+
+## Indicates whether the GPU ripple uniform needs a final zeroed flush after expiry.
+var _has_active_ripples: bool = false
+
+## Registered [RigidBody3D] instances currently overlapping the water area.
+var _floating_bodies: Array[RigidBody3D] = []
+
+## Registered [CharacterBody3D] instances currently overlapping the water area.
+var _submerged_characters: Array[CharacterBody3D] = []
+
+## Maps body instance ID to the last [_water_time] a movement ripple was spawned.
+var _body_last_ripple_time: Dictionary[int, float] = {}
+
+## Maps body instance ID to the last horizontal XZ position a movement ripple was spawned.
+var _body_last_ripple_pos: Dictionary[int, Vector2] = {}
+
+## Tracks whether the active viewport camera is currently submerged below the wave surface.
+var _is_camera_submerged: bool = false
+
+## Previous frame's global Y coordinate of the active camera for surfacing speed calculation.
 var _last_camera_y: float = 0.0
 
-## Active tween driving screen-space resurface wash and droplets animation.
-var _resurface_tween: Tween = null
+## Indicates whether [member _last_camera_y] holds a valid sample.
+var _has_last_camera_y: bool = false
 
-## Cyclic ring buffer write pointer for dynamic ripple allocation.
-var _ripple_index: int = 0
+## Cached reference to the active viewport [Camera3D].
+var _cached_camera: Camera3D = null
 
-## Frame counter cache preventing duplicate underwater view evaluations.
-static var last_frame_drew_underwater_effect: int = -999
+## Active [Tween] orchestrating the two-phase camera surfacing screen wipe.
+var _surface_wipe_tween: Tween = null
 
-## Dynamic ripple ring buffer storing [pos_x, pos_z, spawn_time, amplitude].
-var _ripples_buffer: Array[Vector4] = []
+## Tracks whether fallback non-volumetric environment depth fog is currently forced on.
+var _fallback_fog_active: bool = false
 
+## Cached [Environment] resource modified during fallback underwater fog.
+var _cached_env: Environment = null
 
-## Resolves active [ShaderMaterial] from material override or mesh surface.
-func _get_water_material() -> ShaderMaterial:
-	if material_override is ShaderMaterial:
-		return material_override as ShaderMaterial
-	if get_surface_override_material(0) is ShaderMaterial:
-		return get_surface_override_material(0) as ShaderMaterial
-	if mesh is PrimitiveMesh:
-		var prim_mesh: PrimitiveMesh = mesh if mesh is PrimitiveMesh else null
-		if prim_mesh.material is ShaderMaterial:
-			return prim_mesh.material as ShaderMaterial
-	return null
+## Saved [member Environment.fog_enabled] state prior to camera submersion.
+var _orig_fog_enabled: bool = false
 
+## Saved [member Environment.fog_light_color] prior to camera submersion.
+var _orig_fog_color: Color = Color.BLACK
 
-## Synchronizes reflection probe extents and offsets capture origin above waves.
-func _update_reflection_probe() -> void:
-	if not auto_manage_probe or not is_inside_tree():
-		return
+## Saved [member Environment.fog_density] prior to camera submersion.
+var _orig_fog_density: float = 0.01
 
-	print("WaterBody: Synchronizing reflection probe bounds and origin.")
-	var probe: ReflectionProbe = (
-		get_node_or_null("%ReflectionProbe")
-		if get_node_or_null("%ReflectionProbe") is ReflectionProbe
-		else null
-	)
-	if not is_instance_valid(probe):
-		probe = get_node_or_null("ReflectionProbe") as ReflectionProbe
+## Saved [member Environment.fog_sky_affect] prior to camera submersion.
+var _orig_fog_sky_affect: float = 1.0
 
-	if not is_instance_valid(probe):
-		probe = ReflectionProbe.new()
-		probe.name = "ReflectionProbe"
-		probe.unique_name_in_owner = true
-		add_child(probe)
-		if Engine.is_editor_hint() and owner:
-			probe.owner = owner
+## Child [Area3D] registered in group `water_area` for swim and buoyancy detection.
+@onready var _swimmable_area: Area3D = get_node_or_null("%SwimmableArea3D") as Area3D
 
-	probe.position = Vector3.ZERO
-	var total_box_height: float = maxf(water_size.y + probe_box_height, 12.0)
-	probe.size = Vector3(
-		water_size.x + probe_padding * 2.0, total_box_height, water_size.z + probe_padding * 2.0
-	)
+## Child [CollisionShape3D] defining the physical bounds of [member _swimmable_area].
+@onready
+var _collision_shape: CollisionShape3D = get_node_or_null("%CollisionShape3D") as CollisionShape3D
 
-	var capture_y: float = (water_size.y * 0.5) + (wave_amplitude * 1.5) + 1.8
-	probe.origin_offset = Vector3(0.0, capture_y, 0.0)
-	probe.box_projection = true
-	probe.interior = false
-	probe.enable_shadows = false
-	probe.cull_mask = (CollisionLayers.RENDER_MASK_ENVIRONMENT | CollisionLayers.RENDER_MASK_PLAYER)
-	probe.update_mode = probe_update_mode
-	probe.blend_distance = 0.5
+## Child [ShapeCast3D] positioned at the camera to verify spatial overlap with water areas.
+@onready
+var _camera_shape_cast: ShapeCast3D = get_node_or_null("%CameraPosShapeCast3D") as ShapeCast3D
+
+## Child [FogVolume] providing volumetric underwater scattering when volumetric fog is enabled.
+@onready var _fog_volume: FogVolume = get_node_or_null("%FogVolume") as FogVolume
+
+## Child [AudioStreamPlayer3D] playing ambient surface water audio.
+@onready
+var _surface_audio: AudioStreamPlayer3D = get_node_or_null("%SurfaceAudio") as AudioStreamPlayer3D
+
+## Child [AudioStreamPlayer3D] playing muffled underwater loop audio when submerged.
+@onready var _underwater_audio: AudioStreamPlayer3D = (
+	get_node_or_null("%UnderwaterAudio") as AudioStreamPlayer3D
+)
 
 
-## Rebuilds [BoxMesh] subdivisions and updates child [CollisionShape3D] sizes.
-func _update_bounds() -> void:
-	if not is_inside_tree():
-		return
-
-	print("WaterBody: Updating mesh subdivisions and collision volume bounds.")
-	if scale != Vector3.ONE:
-		scale = Vector3.ONE
-
-	if not (mesh is BoxMesh):
-		mesh = BoxMesh.new()
-
-	var box: BoxMesh = mesh if mesh is BoxMesh else null
-	box.size = water_size
-	box.subdivide_width = clampi(int(water_size.x * vertex_density), 8, 256)
-	box.subdivide_depth = clampi(int(water_size.z * vertex_density), 8, 256)
-	box.subdivide_height = 0
-
-	var swimmable_area: Area3D = (
-		get_node_or_null("%SwimmableArea3D")
-		if get_node_or_null("%SwimmableArea3D") is Area3D
-		else null
-	)
-	if is_instance_valid(swimmable_area):
-		var col: CollisionShape3D = (
-			swimmable_area.get_node_or_null("CollisionShape3D") as CollisionShape3D
-		)
-		if is_instance_valid(col):
-			if not (col.shape is BoxShape3D):
-				col.shape = BoxShape3D.new()
-			(col.shape as BoxShape3D).size = water_size
-
-	var fog_vol: FogVolume = (
-		get_node_or_null("%FogVolume") if get_node_or_null("%FogVolume") is FogVolume else null
-	)
-	if is_instance_valid(fog_vol):
-		fog_vol.size = water_size
-
-	_update_reflection_probe()
-
-
-## Lifecycle method configuring collision masks, timer delays, and bounds.
+## Initializes ripple buffers, node invariants, signals, and initial shader state.
 func _ready() -> void:
-	print("WaterBody: Initializing water volume and physics listeners.")
-	process_priority = 999
-	_ripples_buffer.resize(MAX_RIPPLES)
-	for i: int in range(MAX_RIPPLES):
-		_ripples_buffer[i] = Vector4.ZERO
+	_init_ripple_buffer()
+	_cache_material_rid()
+	_sync_volume_geometry()
+	_sync_all_shader_parameters()
+	_sync_reflection_probe()
 
-	_update_bounds()
-
-	var swimmable_area: Area3D = (
-		get_node_or_null("%SwimmableArea3D")
-		if get_node_or_null("%SwimmableArea3D") is Area3D
-		else null
-	)
-	if is_instance_valid(swimmable_area):
-		swimmable_area.collision_mask |= (
-			CollisionLayers.MASK_PLAYER | CollisionLayers.MASK_INTERACTIVE
-		)
-		if not swimmable_area.body_entered.is_connected(_on_swimmable_area_body_entered):
-			swimmable_area.body_entered.connect(_on_swimmable_area_body_entered)
-		if not swimmable_area.body_exited.is_connected(_on_swimmable_area_body_exited):
-			swimmable_area.body_exited.connect(_on_swimmable_area_body_exited)
-
-	await get_tree().create_timer(1.0).timeout
-	can_splash = true
-
-
-## Simulates buoyancy forces and generates movement ripples.
-func _physics_process(delta: float) -> void:
 	if Engine.is_editor_hint():
+		set_physics_process(false)
+		set_process(true)
 		return
 
-	var cur_time: float = float(Time.get_ticks_msec()) / 1000.0
+	print("WaterBody: Initializing water volume -> ", name)
+	assert(is_instance_valid(_swimmable_area), "WaterBody: Missing %SwimmableArea3D child node.")
+	assert(is_instance_valid(_collision_shape), "WaterBody: Missing %CollisionShape3D child node.")
+	assert(is_instance_valid(_fog_volume), "WaterBody: Missing %FogVolume child node.")
+	assert(is_instance_valid(_surface_audio), "WaterBody: Missing %SurfaceAudio child node.")
+	assert(is_instance_valid(_underwater_audio), "WaterBody: Missing %UnderwaterAudio child node.")
 
-	for i: int in range(floating_bodies.size() - 1, -1, -1):
-		var body: RigidBody3D = floating_bodies[i]
-		if not is_instance_valid(body):
-			floating_bodies.remove_at(i)
-			continue
+	if is_instance_valid(_swimmable_area):
+		if not _swimmable_area.is_in_group(GROUP_WATER_AREA):
+			_swimmable_area.add_to_group(GROUP_WATER_AREA)
+		_swimmable_area.collision_mask = SWIM_COLLISION_MASK
+		if not _swimmable_area.body_entered.is_connected(_on_swimmable_area_body_entered):
+			_swimmable_area.body_entered.connect(_on_swimmable_area_body_entered)
+		if not _swimmable_area.body_exited.is_connected(_on_swimmable_area_body_exited):
+			_swimmable_area.body_exited.connect(_on_swimmable_area_body_exited)
 
-		var surface_y: float = get_wave_height_at_pos(body.global_position)
-		var depth: float = surface_y - body.global_position.y
+	if (
+		is_instance_valid(Events)
+		and not Events.player_camera_registered.is_connected(_on_camera_registered)
+	):
+		Events.player_camera_registered.connect(_on_camera_registered)
 
-		if depth > 0.0:
-			var submersion_ratio: float = clampf(depth / 1.2, 0.0, 1.5)
-			var gravity_mag: float = 9.8
-			var upward_accel: float = gravity_mag * buoyancy_power * submersion_ratio
-			var upward_force: Vector3 = Vector3.UP * upward_accel
-
-			var linear_damping: Vector3 = -body.linear_velocity * water_drag
-			var vert_damping: Vector3 = Vector3.UP * (-body.linear_velocity.y * vertical_drag)
-			body.apply_central_force((upward_force + linear_damping + vert_damping) * body.mass)
-			body.angular_velocity *= (1.0 - clampf(angular_drag * delta, 0.0, 0.9))
-
-		var speed_h: float = Vector2(body.linear_velocity.x, body.linear_velocity.z).length()
-		var body_id: int = body.get_instance_id()
-		var last_time: float = _last_body_ripple_times.get(body_id, 0.0)
-		var last_pos: Vector3 = _last_body_positions.get(body_id, body.global_position)
-
-		if speed_h >= min_ripple_speed and (cur_time - last_time) >= ripple_cooldown:
-			if body.global_position.distance_to(last_pos) >= 0.3:
-				spawn_ripple(body.global_position, clampf(speed_h * 0.25, 0.2, 0.8))
-				_last_body_ripple_times[body_id] = cur_time
-				_last_body_positions[body_id] = body.global_position
-
-	for i: int in range(character_bodies.size() - 1, -1, -1):
-		var character: CharacterBody3D = character_bodies[i]
-		if not is_instance_valid(character):
-			character_bodies.remove_at(i)
-			continue
-
-		var char_speed: float = character.velocity.length()
-		var char_id: int = character.get_instance_id()
-		var last_char_time: float = _last_body_ripple_times.get(char_id, 0.0)
-		var last_char_pos: Vector3 = _last_body_positions.get(char_id, character.global_position)
-
-		if char_speed >= min_ripple_speed and (cur_time - last_char_time) >= ripple_cooldown:
-			if character.global_position.distance_to(last_char_pos) >= 0.35:
-				spawn_ripple(character.global_position, clampf(char_speed * 0.2, 0.25, 0.75))
-				_last_body_ripple_times[char_id] = cur_time
-				_last_body_positions[char_id] = character.global_position
+	set_physics_process(false)
+	set_process(true)
 
 
-## Syncs shader parameters, evaluates camera submersion, and drives screen wipe.
-func _process(delta: float) -> void:
-	var mat: ShaderMaterial = _get_water_material()
-	var current_time: float = float(Time.get_ticks_msec()) / 1000.0
-
-	if is_instance_valid(mat):
-		mat.set_shader_parameter(&"water_time", current_time)
-		mat.set_shader_parameter(&"water_size", water_size)
-		mat.set_shader_parameter(&"shallow_color", shallow_color)
-		mat.set_shader_parameter(&"deep_color", deep_color)
-		mat.set_shader_parameter(&"beers_law", beers_law)
-		mat.set_shader_parameter(&"depth_distance", depth_distance)
-		mat.set_shader_parameter(&"wave_amplitude", wave_amplitude)
-		mat.set_shader_parameter(&"wave_length", wave_length)
-		mat.set_shader_parameter(&"wave_speed", wave_speed)
-		mat.set_shader_parameter(&"wave_steepness", wave_steepness)
-		mat.set_shader_parameter(&"ripple_mesh_height", ripple_mesh_height)
-		mat.set_shader_parameter(&"show_side_walls", show_side_walls)
-		mat.set_shader_parameter(&"ripples", _ripples_buffer)
-
-	var fog_volume: FogVolume = (
-		get_node_or_null("%FogVolume") if get_node_or_null("%FogVolume") is FogVolume else null
-	)
-	if is_instance_valid(fog_volume):
-		if fog_volume.material is ShaderMaterial:
-			var fog_mat: ShaderMaterial = (
-				fog_volume.material if fog_volume.material is ShaderMaterial else null
-			)
-			fog_mat.set_shader_parameter(&"albedo", fog_color)
-			fog_mat.set_shader_parameter(&"emission", fog_color)
-			fog_volume.set(&"base_fade_dist", fog_fade_dist)
-		elif fog_volume.material is FogMaterial:
-			var fog_mat: FogMaterial = (
-				fog_volume.material if fog_volume.material is FogMaterial else null
-			)
-			fog_mat.albedo = fog_color
-			fog_mat.emission = fog_color
-			fog_mat.density = 0.12 if should_draw_camera_underwater_effect() else 0.04
-			fog_mat.edge_fade = 0.1 if should_draw_camera_underwater_effect() else 0.8
+## Disconnects signals, kills active tweens, and restores environment fog on tree exit.
+func _exit_tree() -> void:
+	if _surface_wipe_tween and _surface_wipe_tween.is_valid():
+		_surface_wipe_tween.kill()
+		_surface_wipe_tween = null
 
 	if not Engine.is_editor_hint():
-		var viewport: Viewport = get_viewport()
-		var camera: Camera3D = viewport.get_camera_3d() if viewport else null
-		var cam_velocity_y: float = 0.0
-
-		if is_instance_valid(camera):
-			cam_velocity_y = (camera.global_position.y - _last_camera_y) / maxf(delta, 0.001)
-			_last_camera_y = camera.global_position.y
-
-		var is_underwater: bool = should_draw_camera_underwater_effect()
-
-		if is_underwater:
-			if is_instance_valid(fog_volume) and fog_volume.material is ShaderMaterial:
-				(fog_volume.material as ShaderMaterial).set_shader_parameter(&"edge_fade", 0.1)
-
-			last_frame_drew_underwater_effect = Engine.get_process_frames()
-
-			if not _was_underwater:
-				# print("WaterBody: Camera submerged into water volume.")
-				_was_underwater = true
-				if is_instance_valid(_resurface_tween) and _resurface_tween.is_valid():
-					_resurface_tween.kill()
-				_resurface_tween = null
-
-				Events.underwater_vfx_toggled.emit(true, 0.85, 0.0, 0.0)
-
-				if is_instance_valid(surface_audio) and surface_audio.playing:
-					surface_audio.stream_paused = true
-
-				if is_instance_valid(underwater_audio):
-					if not underwater_audio.playing:
-						underwater_audio.play()
-					elif underwater_audio.stream_paused:
-						underwater_audio.stream_paused = false
-		else:
-			if is_instance_valid(fog_volume) and fog_volume.material is ShaderMaterial:
-				(fog_volume.material as ShaderMaterial).set_shader_parameter(&"edge_fade", 1.1)
-
-			if _was_underwater:
-				# print("WaterBody: Camera surfaced. Triggering screen wipe.")
-				_was_underwater = false
-
-				if is_instance_valid(_resurface_tween) and _resurface_tween.is_valid():
-					_resurface_tween.kill()
-				_resurface_tween = create_tween()
-				_resurface_tween.set_parallel(false)
-
-				(
-					_resurface_tween
-					. tween_method(
-						func(prog: float) -> void:
-							var wipe_pct: float = clampf(prog / 1.5, 0.0, 1.0)
-							var wash: float = (1.0 - wipe_pct) * 0.95
-							Events.waterfall_vfx_toggled.emit(true, wash, prog),
-						0.0,
-						1.5,
-						0.9
-					)
-					. set_trans(Tween.TRANS_CUBIC)
-					. set_ease(Tween.EASE_OUT)
-				)
-
-				_resurface_tween.tween_callback(
-					func() -> void:
-						Events.waterfall_vfx_toggled.emit(false, 0.0, 1.5)
-						Events.underwater_vfx_toggled.emit(false, 0.0, 1.0, 1.5)
-				)
-
-				(
-					_resurface_tween
-					. tween_method(
-						func(drop_val: float) -> void:
-							Events.underwater_vfx_toggled.emit(false, 0.0, drop_val, 1.5),
-						1.0,
-						0.0,
-						2.5
-					)
-					. set_trans(Tween.TRANS_SINE)
-					. set_ease(Tween.EASE_OUT)
-				)
-
-				_resurface_tween.tween_callback(
-					func() -> void: Events.underwater_vfx_toggled.emit(false, 0.0, 0.0, 1.5)
-				)
-
-				if is_instance_valid(underwater_audio) and underwater_audio.playing:
-					underwater_audio.stream_paused = true
-
-				if is_instance_valid(surface_audio):
-					if not surface_audio.playing:
-						surface_audio.play()
-					elif surface_audio.stream_paused:
-						surface_audio.stream_paused = false
-
-				if is_instance_valid(camera) and cam_velocity_y >= min_splash_velocity:
-					play_splash_sound(camera.global_position, cam_velocity_y)
+		_restore_fallback_environment_fog()
+		if (
+			is_instance_valid(Events)
+			and Events.player_camera_registered.is_connected(_on_camera_registered)
+		):
+			Events.player_camera_registered.disconnect(_on_camera_registered)
 
 
-## Computes dynamic surface water height combining Gerstner waves and ripples.
-func get_wave_height_at_pos(global_pos: Vector3) -> float:
-	var cur_time: float = (float(Time.get_ticks_msec()) / 1000.0) * wave_speed
-	var k: float = TAU / maxf(wave_length, 0.1)
+## Advances wave simulation clock and evaluates distance-gated camera submersion.
+func _process(delta: float) -> void:
+	if Engine.is_editor_hint():
+		_water_time += delta
+		_set_shader_param(PARAM_WATER_TIME, _water_time)
+		return
 
-	var dir1: Vector2 = Vector2(1.0, 0.2).normalized()
-	var phase1: float = (dir1.x * global_pos.x + dir1.y * global_pos.z) * k + cur_time
-	var h1: float = sin(phase1) * wave_amplitude
+	var cam: Camera3D = _get_active_camera()
+	if is_instance_valid(cam):
+		var half_extents: Vector3 = water_size * 0.5
+		var max_dist: float = max_simulation_distance + half_extents.length()
+		var dist_sq: float = global_position.distance_squared_to(cam.global_position)
+		if dist_sq > max_dist * max_dist and not _is_camera_submerged:
+			return
 
-	var dir2: Vector2 = Vector2(-0.6, 0.8).normalized()
-	var k2: float = k * 1.6
-	var phase2: float = (dir2.x * global_pos.x + dir2.y * global_pos.z) * k2 - (cur_time * 1.15)
-	var h2: float = sin(phase2) * (wave_amplitude * 0.45)
+	_water_time += delta
+	_set_shader_param(PARAM_WATER_TIME, _water_time)
 
-	var dir3: Vector2 = Vector2(0.3, -0.95).normalized()
-	var k3: float = k * 2.8
-	var phase3: float = (dir3.x * global_pos.x + dir3.y * global_pos.z) * k3 + (cur_time * 0.8)
-	var h3: float = sin(phase3) * (wave_amplitude * 0.2)
+	if _has_active_ripples and _water_time >= _active_ripple_expiry:
+		_clear_expired_ripples()
 
-	var now: float = float(Time.get_ticks_msec()) / 1000.0
-	var total_rip_h: float = 0.0
-
-	for rip: Vector4 in _ripples_buffer:
-		var amp: float = rip.w
-		if amp <= 0.001:
-			continue
-		var elapsed: float = now - rip.z
-		if elapsed < 0.0 or elapsed > RIPPLE_LIFETIME:
-			continue
-		var dist: float = Vector2(global_pos.x - rip.x, global_pos.z - rip.y).length()
-		var d_wave: float = dist - (elapsed * RIPPLE_SPEED)
-		var envelope: float = exp(-0.5 * (d_wave * d_wave) / (RIPPLE_WAVELENGTH * 1.2))
-		var decay: float = clampf(1.0 - (elapsed / RIPPLE_LIFETIME), 0.0, 1.0)
-		var k_rip: float = TAU / RIPPLE_WAVELENGTH
-		total_rip_h += sin(k_rip * d_wave) * amp * envelope * decay
-
-	var base_surface_y: float = global_position.y + (water_size.y * 0.5)
-	return base_surface_y + h1 + h2 + h3 + (total_rip_h * ripple_mesh_height)
+	if is_instance_valid(cam):
+		_evaluate_camera_submersion(cam, delta)
 
 
-## Computes surface normal vector at [param global_pos] using finite differences.
-func get_water_surface_normal(global_pos: Vector3) -> Vector3:
-	var step: float = 0.15
-	var h_center: float = get_wave_height_at_pos(global_pos)
-	var h_right: float = get_wave_height_at_pos(global_pos + Vector3(step, 0.0, 0.0))
-	var h_forward: float = get_wave_height_at_pos(global_pos + Vector3(0.0, 0.0, step))
+## Applies buoyancy forces, drag damping, and wake ripples to bodies inside the volume.
+func _physics_process(delta: float) -> void:
+	if Engine.is_editor_hint():
+		set_physics_process(false)
+		return
 
-	var tangent_x: Vector3 = Vector3(step, h_right - h_center, 0.0).normalized()
-	var tangent_z: Vector3 = Vector3(0.0, h_forward - h_center, step).normalized()
-	return tangent_z.cross(tangent_x).normalized()
+	if _floating_bodies.is_empty() and _submerged_characters.is_empty():
+		set_physics_process(false)
+		return
+
+	_process_rigid_bodies_buoyancy(delta)
+	_process_character_wakes()
 
 
-## Checks if active [Camera3D] is positioned beneath dynamic water surface.
-func should_draw_camera_underwater_effect() -> bool:
-	var viewport: Viewport = get_viewport()
-	var camera: Camera3D = viewport.get_camera_3d() if viewport else null
-
-	if not is_instance_valid(camera):
-		return false
-	if last_frame_drew_underwater_effect == Engine.get_process_frames():
-		return false
-
-	var local_cam_pos: Vector3 = to_local(camera.global_position)
-	var half_x: float = water_size.x * 0.5
-	var half_z: float = water_size.z * 0.5
-	var bottom_y: float = -water_size.y * 0.5
-
-	var is_inside_box: bool = (
-		absf(local_cam_pos.x) <= half_x
-		and absf(local_cam_pos.z) <= half_z
-		and local_cam_pos.y >= bottom_y
-	)
-
-	if is_inside_box:
-		var wave_surface_y: float = get_wave_height_at_pos(camera.global_position)
-		if camera.global_position.y < wave_surface_y:
-			return true
-
+## Supports legacy scene property overrides (`size` and `material` in testbed.tscn).
+func _set(property: StringName, value: Variant) -> bool:
+	if property == PROP_LEGACY_SIZE and value is Vector3:
+		water_size = value as Vector3
+		return true
+	if property == PROP_LEGACY_MATERIAL and value is Material:
+		material_override = value as Material
+		_cache_material_rid()
+		_sync_all_shader_parameters()
+		return true
 	return false
 
 
-## Registers entering bodies, triggers impact ripples, and plays splash audio.
-func _on_swimmable_area_body_entered(body: Node3D) -> void:
-	print("WaterBody: Submerged object entered water volume -> ", body.name)
-	var impact_speed: float = 0.0
-
-	if body is RigidBody3D:
-		var rb: RigidBody3D = body if body is RigidBody3D else null
-		if not floating_bodies.has(rb):
-			floating_bodies.append(rb)
-		impact_speed = rb.linear_velocity.length()
-		_last_body_positions[rb.get_instance_id()] = rb.global_position
-		var current_sec: float = float(Time.get_ticks_msec()) / 1000.0
-		_last_body_ripple_times[rb.get_instance_id()] = current_sec
-
-	elif body is CharacterBody3D:
-		var cb: CharacterBody3D = body if body is CharacterBody3D else null
-		if not character_bodies.has(cb):
-			character_bodies.append(cb)
-		impact_speed = cb.velocity.length()
-		_last_body_positions[cb.get_instance_id()] = cb.global_position
-		var current_sec: float = float(Time.get_ticks_msec()) / 1000.0
-		_last_body_ripple_times[cb.get_instance_id()] = current_sec
-		if body.has_method(&"enter_water"):
-			body.call(&"enter_water", self)
-
-	var ripple_power: float = clampf(maxf(impact_speed * 0.35, 1.2), 0.3, 2.0)
-	spawn_ripple(body.global_position, ripple_power)
-
-	if impact_speed >= min_splash_velocity:
-		play_splash_sound(body.global_position, impact_speed)
-		splashed.emit(body.global_position, impact_speed)
+## Retrieves legacy scene property aliases (`size` and `material`).
+func _get(property: StringName) -> Variant:
+	if property == PROP_LEGACY_SIZE:
+		return water_size
+	if property == PROP_LEGACY_MATERIAL:
+		return material_override
+	return null
 
 
-## Unregisters exiting bodies, triggers exit ripples, and plays exit splashes.
-func _on_swimmable_area_body_exited(body: Node3D) -> void:
-	print("WaterBody: Submerged object exited water volume -> ", body.name)
-	var exit_speed: float = 0.0
-
-	if body is RigidBody3D:
-		var rb: RigidBody3D = body if body is RigidBody3D else null
-		floating_bodies.erase(rb)
-		_last_body_positions.erase(rb.get_instance_id())
-		_last_body_ripple_times.erase(rb.get_instance_id())
-		exit_speed = rb.linear_velocity.length()
-
-	elif body is CharacterBody3D:
-		var cb: CharacterBody3D = body if body is CharacterBody3D else null
-		character_bodies.erase(cb)
-		_last_body_positions.erase(cb.get_instance_id())
-		_last_body_ripple_times.erase(cb.get_instance_id())
-		exit_speed = cb.velocity.length()
-		if body.has_method(&"exit_water"):
-			body.call(&"exit_water", self)
-
-	var exit_ripple_power: float = clampf(maxf(exit_speed * 0.25, 0.8), 0.3, 1.5)
-	spawn_ripple(body.global_position, exit_ripple_power)
-	if exit_speed >= min_splash_velocity:
-		play_splash_sound(body.global_position, exit_speed)
-		splashed.emit(body.global_position, exit_speed)
+## Returns the exact global Y height of the water surface at [param global_pos].
+## Matches the GPU vertex shader 3-octave wave cascade and 16-slot ripple ring buffer.
+func get_wave_height_at_pos(global_pos: Vector3) -> float:
+	var base_y: float = global_position.y + (water_size.y * 0.5)
+	var disp: Vector3 = _evaluate_surface_displacement(
+		Vector2(global_pos.x, global_pos.z), _water_time
+	)
+	return base_y + disp.x
 
 
-## Plays splash sound at surface impact point using pre-allocated [AudioPool].
+## Returns the normalized 3D surface normal vector at [param global_pos].
+func get_water_surface_normal(global_pos: Vector3) -> Vector3:
+	var disp: Vector3 = _evaluate_surface_displacement(
+		Vector2(global_pos.x, global_pos.z), _water_time
+	)
+	return Vector3(-disp.y, 1.0, -disp.z).normalized()
+
+
+## Spawns a 3D splash sound effect at the water surface via [AudioPool].
 func play_splash_sound(impact_pos: Vector3, speed: float) -> void:
-	if not can_splash or not splash_sound:
+	if not is_instance_valid(splash_sound) or not is_instance_valid(AudioPool):
 		return
 
-	print("WaterBody: Playing 3D splash audio at ", impact_pos, " speed: ", speed)
 	var surface_y: float = get_wave_height_at_pos(impact_pos)
 	var play_pos: Vector3 = Vector3(impact_pos.x, surface_y, impact_pos.z)
-	var audio_player: AudioStreamPlayer3D = AudioPool.play_sfx_3d(splash_sound, play_pos, &"SFX")
-	if is_instance_valid(audio_player):
-		var volume_multiplier: float = clampf(speed / 8.0, 0.25, 1.8)
-		audio_player.volume_db = linear_to_db(volume_multiplier)
-		audio_player.max_distance = 15.0
-		audio_player.unit_size = 1.2
+	var player_3d: AudioStreamPlayer3D = AudioPool.play_sfx_3d(splash_sound, play_pos, BUS_SFX)
+	if is_instance_valid(player_3d):
+		var speed_ratio: float = clampf(speed / maxf(min_splash_velocity * 3.0, 1.0), 0.15, 1.5)
+		player_3d.volume_db = linear_to_db(speed_ratio)
+		player_3d.pitch_scale = clampf(1.15 - (speed_ratio * 0.25), 0.75, 1.25)
+		print("WaterBody: Splash sound played at ", play_pos, " (speed=", speed, ")")
 
 
-## Allocates a dynamic ripple at [param global_pos] into uniform ring buffer.
-func spawn_ripple(global_pos: Vector3, impact_strength: float = 1.0) -> void:
-	print("WaterBody: Spawning 3D ripple at ", global_pos, " strength: ", impact_strength)
-	var spawn_time: float = float(Time.get_ticks_msec()) / 1000.0
-	var ripple_amp: float = clampf(impact_strength * 0.3, 0.2, 1.0)
+## Injects an expanding circular wave into the 16-slot GPU ripple ring buffer.
+func spawn_ripple(global_pos: Vector3, impact_strength: float) -> void:
+	var clamped_amp: float = clampf(impact_strength, 0.05, 3.0)
+	if _ripples.size() != MAX_RIPPLES:
+		_init_ripple_buffer()
 
-	_ripples_buffer[_ripple_index] = Vector4(global_pos.x, global_pos.z, spawn_time, ripple_amp)
-	_ripple_index = (_ripple_index + 1) % MAX_RIPPLES
+	_ripples[_ripple_write_index] = Vector4(global_pos.x, global_pos.z, _water_time, clamped_amp)
+	_ripple_write_index = (_ripple_write_index + 1) % MAX_RIPPLES
 
-	var mat: ShaderMaterial = _get_water_material()
-	if is_instance_valid(mat):
-		mat.set_shader_parameter(&"ripples", _ripples_buffer)
+	var max_age: float = 1.6 + clamped_amp * 0.9
+	_active_ripple_expiry = maxf(_active_ripple_expiry, _water_time + max_age + 0.1)
+	_has_active_ripples = true
+	_set_shader_param(PARAM_RIPPLES, _ripples)
+
+
+## Returns true if the active [Camera3D] is inside the water bounds and below the wave surface.
+func should_draw_camera_underwater_effect() -> bool:
+	var cam: Camera3D = _get_active_camera()
+	if not is_instance_valid(cam):
+		return false
+
+	var cam_pos: Vector3 = cam.global_position
+	var local_pos: Vector3 = to_local(cam_pos)
+	var half_extents: Vector3 = water_size * 0.5
+
+	if absf(local_pos.x) > half_extents.x or absf(local_pos.z) > half_extents.z:
+		return false
+	if cam_pos.y < global_position.y - half_extents.y:
+		return false
+
+	if is_instance_valid(_camera_shape_cast) and _camera_shape_cast.is_inside_tree():
+		_camera_shape_cast.global_position = cam_pos
+		_camera_shape_cast.force_shapecast_update()
+		if _camera_shape_cast.is_colliding():
+			var hit_y: float = get_wave_height_at_pos(cam_pos)
+			return cam_pos.y < hit_y
+
+	var surface_y: float = get_wave_height_at_pos(cam_pos)
+	return cam_pos.y < surface_y
+
+
+## Evaluates a single trochoidal wave octave, returning `Vector3(height, dh_dx, dh_dz)`.
+func _evaluate_wave_octave(
+	world_xz: Vector2,
+	dir: Vector2,
+	amp: float,
+	length_val: float,
+	speed_val: float,
+	steepness_val: float,
+	t: float
+) -> Vector3:
+	var safe_len: float = maxf(length_val, 0.25)
+	var k: float = TAU / safe_len
+	var omega: float = speed_val * k
+	var theta: float = dir.dot(world_xz) * k + t * omega
+	var s1: float = sin(theta)
+	var c1: float = cos(theta)
+	var s2: float = sin(2.0 * theta)
+	var c2: float = cos(2.0 * theta)
+
+	var h: float = amp * (s1 + 0.5 * steepness_val * s2)
+	var dtheta: float = amp * k * (c1 + steepness_val * c2)
+	return Vector3(h, dir.x * dtheta, dir.y * dtheta)
+
+
+## Evaluates the 3-octave wave cascade and 16-slot ripple ring buffer on CPU.
+## Returns `Vector3(total_height, dh_dx, dh_dz)` matching `water_body.gdshader`.
+func _evaluate_surface_displacement(world_xz: Vector2, t: float) -> Vector3:
+	var total_h: float = 0.0
+	var slope_x: float = 0.0
+	var slope_z: float = 0.0
+
+	if wave_amplitude > 0.0001:
+		var w0: Vector3 = _evaluate_wave_octave(
+			world_xz, WAVE_DIR_0, wave_amplitude, wave_length, wave_speed, wave_steepness * 0.55, t
+		)
+		var w1: Vector3 = _evaluate_wave_octave(
+			world_xz,
+			WAVE_DIR_1,
+			wave_amplitude * 0.42,
+			wave_length * 0.43,
+			wave_speed * 1.28,
+			wave_steepness * 0.30,
+			t
+		)
+		var w2: Vector3 = _evaluate_wave_octave(
+			world_xz,
+			WAVE_DIR_2,
+			wave_amplitude * 0.18,
+			wave_length * 0.19,
+			wave_speed * 1.65,
+			wave_steepness * 0.15,
+			t
+		)
+		total_h += w0.x + w1.x + w2.x
+		slope_x += w0.y + w1.y + w2.y
+		slope_z += w0.z + w1.z + w2.z
+
+	if _has_active_ripples and ripple_mesh_height > 0.0001:
+		var count: int = _ripples.size()
+		for i: int in range(count):
+			var r: Vector4 = _ripples[i]
+			var amp: float = r.w
+			if amp <= 0.0001:
+				continue
+			var age: float = t - r.z
+			var scale_f: float = clampf(amp, 0.05, 3.0)
+			var max_age: float = 1.6 + scale_f * 0.9
+			if age <= 0.0 or age >= max_age:
+				continue
+
+			var dx: float = world_xz.x - r.x
+			var dz: float = world_xz.y - r.y
+			var dist: float = sqrt(dx * dx + dz * dz)
+			var exp_speed: float = 1.15 + scale_f * 0.65
+			var radius: float = age * exp_speed
+			var sigma: float = 0.14 + scale_f * 0.28
+			var delta_r: float = dist - radius
+
+			if absf(delta_r) > sigma * 3.5:
+				continue
+
+			var inv_two_sigma_sq: float = 1.0 / (2.0 * sigma * sigma)
+			var env: float = exp(-(delta_r * delta_r) * inv_two_sigma_sq)
+			var life_ratio: float = 1.0 - (age / max_age)
+			var decay: float = exp(-age * (1.8 / (0.6 + scale_f * 0.4))) * life_ratio
+			var k_r: float = 22.0 / (0.35 + scale_f * 0.65)
+			var phase: float = delta_r * k_r - age * 4.0
+
+			var eff_amp: float = minf(amp, 2.0) * ripple_mesh_height * env * decay
+			var s_p: float = sin(phase)
+			var c_p: float = cos(phase)
+			total_h += s_p * eff_amp
+
+			if dist > 0.0001:
+				var d_dr: float = eff_amp * (k_r * c_p - s_p * delta_r * 2.0 * inv_two_sigma_sq)
+				slope_x += (dx / dist) * d_dr
+				slope_z += (dz / dist) * d_dr
+
+	return Vector3(total_h, slope_x, slope_z)
+
+
+## Pre-allocates the 16-element ripple array with zeroed [Vector4] values.
+func _init_ripple_buffer() -> void:
+	_ripples.resize(MAX_RIPPLES)
+	for i: int in range(MAX_RIPPLES):
+		_ripples[i] = Vector4.ZERO
+	_ripple_write_index = 0
+	_has_active_ripples = false
+
+
+## Clears expired ripples and uploads a single zeroed array to the shader.
+func _clear_expired_ripples() -> void:
+	for i: int in range(MAX_RIPPLES):
+		_ripples[i] = Vector4.ZERO
+	_has_active_ripples = false
+	_set_shader_param(PARAM_RIPPLES, _ripples)
+
+
+## Caches the [RID] of the active [ShaderMaterial] on this mesh instance.
+func _cache_material_rid() -> void:
+	var mat: ShaderMaterial = _get_shader_material()
+	_material_rid = mat.get_rid() if is_instance_valid(mat) else RID()
+
+
+## Resolves the active [ShaderMaterial] from `material_override` or surface slot 0.
+func _get_shader_material() -> ShaderMaterial:
+	if material_override is ShaderMaterial:
+		return material_override as ShaderMaterial
+	if is_instance_valid(mesh) and mesh.get_surface_count() > 0:
+		var surf_mat: Material = get_active_material(0)
+		if surf_mat is ShaderMaterial:
+			return surf_mat as ShaderMaterial
+	return null
+
+
+## Sets a shader parameter directly through [RenderingServer] to avoid Variant overhead.
+func _set_shader_param(param: StringName, value: Variant) -> void:
+	if not _material_rid.is_valid():
+		_cache_material_rid()
+	if _material_rid.is_valid():
+		RenderingServer.material_set_param(_material_rid, param, value)
+
+
+## Pushes all exported optical and wave parameters to the shader once on initialization.
+func _sync_all_shader_parameters() -> void:
+	_cache_material_rid()
+	if not _material_rid.is_valid():
+		return
+	_set_shader_param(PARAM_WATER_TIME, _water_time)
+	_set_shader_param(PARAM_WATER_SIZE, water_size)
+	_set_shader_param(PARAM_SHOW_SIDE_WALLS, show_side_walls)
+	_set_shader_param(PARAM_SHALLOW_COLOR, shallow_color)
+	_set_shader_param(PARAM_DEEP_COLOR, deep_color)
+	_set_shader_param(PARAM_UNDERWATER_CEILING_COLOR, underwater_ceiling_color)
+	_set_shader_param(PARAM_ABSORPTION_COEFFS, absorption_coefficients)
+	_set_shader_param(PARAM_DEPTH_DISTANCE, depth_distance)
+	_set_shader_param(PARAM_BEERS_LAW, beers_law)
+	_set_shader_param(PARAM_WAVE_AMPLITUDE, wave_amplitude)
+	_set_shader_param(PARAM_WAVE_LENGTH, wave_length)
+	_set_shader_param(PARAM_WAVE_SPEED, wave_speed)
+	_set_shader_param(PARAM_WAVE_STEEPNESS, wave_steepness)
+	_set_shader_param(PARAM_RIPPLES, _ripples)
+	_set_shader_param(PARAM_RIPPLE_MESH_HEIGHT, ripple_mesh_height)
+	_set_shader_param(PARAM_UV_SCALE, uv_scale)
+	_set_shader_param(PARAM_NORMAL_BUMP_STRENGTH, normal_bump_strength)
+	_set_shader_param(PARAM_PAN_SPEED_1, pan_speed_1)
+	_set_shader_param(PARAM_PAN_SPEED_2, pan_speed_2)
+	_set_shader_param(PARAM_ENABLE_SSR, enable_ssr)
+	_set_shader_param(PARAM_SSR_MAX_DISTANCE, ssr_max_distance)
+	_set_shader_param(PARAM_REFRACTION_STRENGTH, refraction_strength)
+	_set_shader_param(PARAM_SKY_REFLECTION_TINT, sky_reflection_tint)
+	_set_shader_param(PARAM_FRESNEL_BASE, fresnel_base)
+	_set_shader_param(PARAM_FRESNEL_POWER, fresnel_power)
+	_set_shader_param(PARAM_ROUGHNESS, roughness)
+	_set_shader_param(PARAM_SPECULAR_STRENGTH, specular_strength)
+	_set_shader_param(PARAM_METALLIC, metallic)
+	_set_shader_param(PARAM_FOAM_COLOR, foam_color)
+	_set_shader_param(PARAM_FOAM_DISTANCE, foam_distance)
+	_set_shader_param(PARAM_CREST_FOAM_THRESHOLD, crest_foam_threshold)
+	if is_instance_valid(foam_noise):
+		_set_shader_param(PARAM_FOAM_NOISE, foam_noise)
+
+
+## Synchronizes collision shape, fog volume, unit BoxMesh, and custom AABB with `water_size`.
+func _sync_volume_geometry() -> void:
+	_sync_mesh_subdivisions()
+	_update_culling_bounds()
+
+	var col_node: CollisionShape3D = (
+		(
+			_collision_shape
+			if is_instance_valid(_collision_shape)
+			else get_node_or_null("%CollisionShape3D")
+		)
+		as CollisionShape3D
+	)
+	if is_instance_valid(col_node) and col_node.shape is BoxShape3D:
+		var box_shape: BoxShape3D = col_node.shape as BoxShape3D
+		if box_shape.size != water_size:
+			box_shape.set_deferred(&"size", water_size)
+
+	var fog_node: FogVolume = (
+		_fog_volume if is_instance_valid(_fog_volume) else get_node_or_null("%FogVolume")
+		as FogVolume
+	)
+	if is_instance_valid(fog_node):
+		fog_node.size = water_size
+
+
+## Configures the unit [BoxMesh] with capped subdivisions to avoid 256x256 CPU stalls.
+func _sync_mesh_subdivisions() -> void:
+	if not (mesh is BoxMesh):
+		var new_box: BoxMesh = BoxMesh.new()
+		new_box.size = Vector3.ONE
+		mesh = new_box
+
+	var box_mesh: BoxMesh = mesh as BoxMesh
+	if box_mesh.size != Vector3.ONE:
+		box_mesh.size = Vector3.ONE
+
+	var target_sub_w: int = clampi(int(roundf(water_size.x * vertex_density * 0.5)), 8, 64)
+	var target_sub_d: int = clampi(int(roundf(water_size.z * vertex_density * 0.5)), 8, 64)
+
+	if box_mesh.subdivide_width != target_sub_w:
+		box_mesh.subdivide_width = target_sub_w
+	if box_mesh.subdivide_depth != target_sub_d:
+		box_mesh.subdivide_depth = target_sub_d
+	if box_mesh.subdivide_height != 0:
+		box_mesh.subdivide_height = 0
+
+
+## Updates `custom_aabb` to encompass the scaled `water_size` and maximum wave crest height.
+func _update_culling_bounds() -> void:
+	var vertical_pad: float = (wave_amplitude * 2.0) + (ripple_mesh_height * 2.0) + 0.5
+	var aabb_size: Vector3 = water_size + Vector3(0.5, vertical_pad * 2.0, 0.5)
+	custom_aabb = AABB(-aabb_size * 0.5, aabb_size)
+
+
+## Applies [member probe_update_mode] to any child [ReflectionProbe] attached to the water body.
+func _sync_reflection_probe() -> void:
+	for child: Node in get_children():
+		if child is ReflectionProbe:
+			var probe: ReflectionProbe = child as ReflectionProbe
+			probe.update_mode = (
+				ReflectionProbe.UPDATE_ALWAYS
+				if probe_update_mode == 1
+				else ReflectionProbe.UPDATE_ONCE
+			)
+
+
+## Handles bodies entering `%SwimmableArea3D`, routing swim hooks and registering buoyancy.
+func _on_swimmable_area_body_entered(body: Node3D) -> void:
+	if not is_instance_valid(body):
+		return
+
+	var vertical_speed: float = _get_body_vertical_speed(body)
+	if vertical_speed >= min_splash_velocity:
+		splashed.emit(body.global_position, vertical_speed)
+		play_splash_sound(body.global_position, vertical_speed)
+		spawn_ripple(body.global_position, clampf(vertical_speed * 0.25, 0.4, 2.5))
+	else:
+		spawn_ripple(body.global_position, 0.35)
+
+	if body is CharacterBody3D:
+		var char_body: CharacterBody3D = body as CharacterBody3D
+		if not _submerged_characters.has(char_body):
+			_submerged_characters.append(char_body)
+		_notify_actor_water_transition(char_body, true)
+		print("WaterBody: CharacterBody3D entered water -> ", char_body.name)
+	elif body is RigidBody3D:
+		var rigid_body: RigidBody3D = body as RigidBody3D
+		if not _floating_bodies.has(rigid_body):
+			_floating_bodies.append(rigid_body)
+		if PROP_CURRENT_WATER_NODE in rigid_body:
+			rigid_body.set(PROP_CURRENT_WATER_NODE, self)
+		if PROP_IS_IN_WATER in rigid_body:
+			rigid_body.set(PROP_IS_IN_WATER, true)
+		if rigid_body.has_method(METHOD_ENTER_WATER):
+			rigid_body.call(METHOD_ENTER_WATER, self)
+		print("WaterBody: RigidBody3D entered water -> ", rigid_body.name)
+
+	if not _floating_bodies.is_empty() or not _submerged_characters.is_empty():
+		set_physics_process(true)
+
+
+## Handles bodies exiting `%SwimmableArea3D`, cleaning up state and emitting splash events.
+func _on_swimmable_area_body_exited(body: Node3D) -> void:
+	if not is_instance_valid(body):
+		return
+
+	var instance_id: int = body.get_instance_id()
+	_body_last_ripple_time.erase(instance_id)
+	_body_last_ripple_pos.erase(instance_id)
+
+	var vertical_speed: float = _get_body_vertical_speed(body)
+	if vertical_speed >= min_splash_velocity:
+		splashed.emit(body.global_position, vertical_speed)
+		play_splash_sound(body.global_position, vertical_speed)
+		spawn_ripple(body.global_position, clampf(vertical_speed * 0.2, 0.35, 2.0))
+
+	if body is CharacterBody3D:
+		var char_body: CharacterBody3D = body as CharacterBody3D
+		_submerged_characters.erase(char_body)
+		_notify_actor_water_transition(char_body, false)
+		print("WaterBody: CharacterBody3D exited water -> ", char_body.name)
+	elif body is RigidBody3D:
+		var rigid_body: RigidBody3D = body as RigidBody3D
+		_floating_bodies.erase(rigid_body)
+		if (
+			PROP_CURRENT_WATER_NODE in rigid_body
+			and rigid_body.get(PROP_CURRENT_WATER_NODE) == self
+		):
+			rigid_body.set(PROP_CURRENT_WATER_NODE, null)
+		if PROP_IS_IN_WATER in rigid_body:
+			rigid_body.set(PROP_IS_IN_WATER, false)
+		if rigid_body.has_method(METHOD_EXIT_WATER):
+			rigid_body.call(METHOD_EXIT_WATER, self)
+		print("WaterBody: RigidBody3D exited water -> ", rigid_body.name)
+
+	if _floating_bodies.is_empty() and _submerged_characters.is_empty():
+		set_physics_process(false)
+
+
+## Invokes `enter_water(self)` or `exit_water(self)` on a character or its environment component.
+func _notify_actor_water_transition(actor: CharacterBody3D, is_entering: bool) -> void:
+	var method_name: StringName = METHOD_ENTER_WATER if is_entering else METHOD_EXIT_WATER
+	if actor.has_method(method_name):
+		actor.call(method_name, self)
+		return
+
+	if PROP_ENV_COMPONENT in actor:
+		var env_val: Variant = actor.get(PROP_ENV_COMPONENT)
+		if env_val is Node:
+			var env_node: Node = env_val as Node
+			if is_instance_valid(env_node) and env_node.has_method(method_name):
+				env_node.call(method_name, self)
+
+
+## Extracts the absolute vertical speed of a [Node3D] (`CharacterBody3D` or `RigidBody3D`).
+func _get_body_vertical_speed(body: Node3D) -> float:
+	if body is CharacterBody3D:
+		return absf((body as CharacterBody3D).velocity.y)
+	if body is RigidBody3D:
+		return absf((body as RigidBody3D).linear_velocity.y)
+	return 0.0
+
+
+## Applies Spec §4 buoyancy forces and drag to registered [RigidBody3D] instances.
+func _process_rigid_bodies_buoyancy(delta: float) -> void:
+	var idx: int = _floating_bodies.size() - 1
+	while idx >= 0:
+		var body: RigidBody3D = _floating_bodies[idx]
+		if not is_instance_valid(body) or not body.is_inside_tree():
+			_floating_bodies.remove_at(idx)
+			idx -= 1
+			continue
+
+		var body_pos: Vector3 = body.global_position
+		var surface_y: float = get_wave_height_at_pos(body_pos)
+		var depth: float = surface_y - body_pos.y
+
+		if depth > 0.0:
+			if not _has_custom_multi_probe_buoyancy(body):
+				var submersion_ratio: float = clampf(depth / 1.2, 0.0, 1.5)
+				var a_up: float = 9.8 * buoyancy_power * submersion_ratio
+				var vel: Vector3 = body.linear_velocity
+				var f_up: Vector3 = Vector3(0.0, a_up, 0.0)
+				var f_drag: Vector3 = -vel * water_drag
+				var f_vert: Vector3 = Vector3(0.0, -vel.y * vertical_drag, 0.0)
+				var net_force: Vector3 = (f_up + f_drag + f_vert) * body.mass
+				body.apply_central_force(net_force)
+
+				var ang_damp: float = 1.0 - clampf(angular_drag * delta, 0.0, 0.9)
+				body.angular_velocity *= ang_damp
+
+			_try_emit_movement_ripple(body.get_instance_id(), body_pos, body.linear_velocity)
+
+		idx -= 1
+
+
+## Checks if a [RigidBody3D] runs its own multi-probe buoyancy (such as [PickableObject]).
+func _has_custom_multi_probe_buoyancy(body: RigidBody3D) -> bool:
+	if PROP_PROBES in body and PROP_IS_IN_WATER in body:
+		var probes_val: Variant = body.get(PROP_PROBES)
+		if probes_val is Array:
+			return not (probes_val as Array).is_empty()
+	return false
+
+
+## Evaluates submerged [CharacterBody3D] movement and spawns concentric wake ripples.
+func _process_character_wakes() -> void:
+	var idx: int = _submerged_characters.size() - 1
+	while idx >= 0:
+		var char_body: CharacterBody3D = _submerged_characters[idx]
+		if not is_instance_valid(char_body) or not char_body.is_inside_tree():
+			_submerged_characters.remove_at(idx)
+			idx -= 1
+			continue
+
+		var char_pos: Vector3 = char_body.global_position
+		var surface_y: float = get_wave_height_at_pos(char_pos)
+		if char_pos.y <= surface_y + 0.5:
+			_try_emit_movement_ripple(char_body.get_instance_id(), char_pos, char_body.velocity)
+
+		idx -= 1
+
+
+## Emits a movement wake ripple if horizontal speed >= 0.7 m/s, cooldown >= 0.16s,
+## and delta >= 0.3m.
+func _try_emit_movement_ripple(instance_id: int, world_pos: Vector3, velocity: Vector3) -> void:
+	var horiz_speed_sq: float = velocity.x * velocity.x + velocity.z * velocity.z
+	if horiz_speed_sq < MIN_WAKE_SPEED_SQ:
+		return
+
+	var last_time: float = _body_last_ripple_time.get(instance_id, -999.0)
+	if (_water_time - last_time) < WAKE_COOLDOWN_SEC:
+		return
+
+	var current_xz: Vector2 = Vector2(world_pos.x, world_pos.z)
+	if _body_last_ripple_pos.has(instance_id):
+		var prev_xz: Vector2 = _body_last_ripple_pos[instance_id]
+		if current_xz.distance_squared_to(prev_xz) < WAKE_MIN_DIST_SQ:
+			return
+
+	_body_last_ripple_time[instance_id] = _water_time
+	_body_last_ripple_pos[instance_id] = current_xz
+
+	var horiz_speed: float = sqrt(horiz_speed_sq)
+	var wake_strength: float = clampf(horiz_speed * 0.12, 0.12, 0.65)
+	spawn_ripple(world_pos, wake_strength)
+
+
+## Updates cached camera reference when notified via [signal Events.player_camera_registered].
+func _on_camera_registered(camera: Camera3D) -> void:
+	_cached_camera = camera
+
+
+## Retrieves the active viewport [Camera3D], refreshing the cached reference if invalidated.
+func _get_active_camera() -> Camera3D:
+	if is_instance_valid(_cached_camera) and _cached_camera.is_inside_tree():
+		return _cached_camera
+	var vp: Viewport = get_viewport()
+	_cached_camera = vp.get_camera_3d() if is_instance_valid(vp) else null
+	return _cached_camera
+
+
+## Evaluates whether the active camera crossed the water surface and triggers audio/VFX transitions.
+func _evaluate_camera_submersion(cam: Camera3D, delta: float) -> void:
+	var cam_y: float = cam.global_position.y
+	var cam_vert_speed: float = (
+		absf(cam_y - _last_camera_y) / maxf(delta, 0.0001) if _has_last_camera_y else 0.0
+	)
+	_last_camera_y = cam_y
+	_has_last_camera_y = true
+
+	var now_submerged: bool = should_draw_camera_underwater_effect()
+	if now_submerged == _is_camera_submerged:
+		return
+
+	_is_camera_submerged = now_submerged
+	if _is_camera_submerged:
+		_handle_camera_submerged()
+	else:
+		_handle_camera_surfaced(cam.global_position, cam_vert_speed)
+
+
+## Orchestrates audio, fog volume, fallback depth fog, and screen VFX on camera submersion.
+func _handle_camera_submerged() -> void:
+	print("WaterBody: Camera submerged below surface.")
+	if _surface_wipe_tween and _surface_wipe_tween.is_valid():
+		_surface_wipe_tween.kill()
+		_surface_wipe_tween = null
+
+	if is_instance_valid(Events):
+		Events.waterfall_vfx_toggled.emit(false, 0.0, 1.5)
+		Events.underwater_vfx_toggled.emit(true, 0.85, 0.0, 0.0)
+
+	if is_instance_valid(_surface_audio):
+		_surface_audio.stream_paused = true
+	if is_instance_valid(_underwater_audio):
+		_underwater_audio.stream_paused = false
+		if not _underwater_audio.playing:
+			_underwater_audio.play()
+
+	_update_fog_volume_submersion(true)
+	_apply_fallback_environment_fog()
+
+
+## Orchestrates audio, two-phase screen wipe tween, and splash audio when camera surfaces.
+func _handle_camera_surfaced(cam_pos: Vector3, vertical_speed: float) -> void:
+	print("WaterBody: Camera surfaced from water (speed=", vertical_speed, ").")
+	if is_instance_valid(_underwater_audio):
+		_underwater_audio.stream_paused = true
+	if is_instance_valid(_surface_audio):
+		_surface_audio.stream_paused = false
+		if not _surface_audio.playing and is_instance_valid(_surface_audio.stream):
+			_surface_audio.play()
+
+	_update_fog_volume_submersion(false)
+	_restore_fallback_environment_fog()
+
+	if vertical_speed >= min_splash_velocity:
+		play_splash_sound(cam_pos, vertical_speed)
+		spawn_ripple(cam_pos, clampf(vertical_speed * 0.2, 0.35, 1.5))
+
+	if _surface_wipe_tween and _surface_wipe_tween.is_valid():
+		_surface_wipe_tween.kill()
+
+	_surface_wipe_tween = create_tween()
+	# Phase 1 (0.0 to 0.9s): Cubic ease-out screen wash wipe
+	(
+		_surface_wipe_tween
+		. tween_method(_on_surface_wipe_phase_1, 0.0, 1.0, 0.9)
+		. set_trans(Tween.TRANS_CUBIC)
+		. set_ease(Tween.EASE_OUT)
+	)
+	# Phase 2 (2.5s): Kill wash and fade lingering droplets
+	_surface_wipe_tween.tween_callback(_on_surface_wipe_phase_2_start)
+	(
+		_surface_wipe_tween
+		. tween_method(_on_surface_wipe_phase_2, 0.85, 0.0, 2.5)
+		. set_trans(Tween.TRANS_SINE)
+		. set_ease(Tween.EASE_OUT)
+	)
+
+
+## Tween callback for Phase 1 of camera surfacing wipe (0.0 to 0.9s).
+func _on_surface_wipe_phase_1(progress: float) -> void:
+	if not is_instance_valid(Events):
+		return
+	var wash: float = 1.0 - progress
+	var clear_prog: float = progress * 1.5
+	Events.waterfall_vfx_toggled.emit(true, wash, clear_prog)
+
+
+## Transition callback between Phase 1 and Phase 2 of the surfacing wipe.
+func _on_surface_wipe_phase_2_start() -> void:
+	if not is_instance_valid(Events):
+		return
+	Events.waterfall_vfx_toggled.emit(false, 0.0, 1.5)
+
+
+## Tween callback for Phase 2 of camera surfacing wipe, fading lingering droplets over 2.5s.
+func _on_surface_wipe_phase_2(droplets: float) -> void:
+	if not is_instance_valid(Events):
+		return
+	Events.underwater_vfx_toggled.emit(false, 0.0, droplets, 1.5)
+
+
+## Updates `%FogVolume` density and edge fade on camera submersion state changes.
+func _update_fog_volume_submersion(is_submerged: bool) -> void:
+	if not is_instance_valid(_fog_volume):
+		return
+	if _fog_volume.material is ShaderMaterial:
+		var fog_mat: ShaderMaterial = _fog_volume.material as ShaderMaterial
+		fog_mat.set_shader_parameter(&"edge_fade", 0.05 if is_submerged else 0.15)
+	elif _fog_volume.material is FogMaterial:
+		var fmat: FogMaterial = _fog_volume.material as FogMaterial
+		fmat.edge_fade = 0.05 if is_submerged else 0.2
+
+
+## Enables murky non-volumetric depth fog on the active [Environment] when volumetric fog is off.
+func _apply_fallback_environment_fog() -> void:
+	var vp: Viewport = get_viewport()
+	if not is_instance_valid(vp) or not is_instance_valid(vp.world_3d):
+		return
+	var env: Environment = vp.world_3d.environment
+	if not is_instance_valid(env):
+		return
+
+	# Always guarantee murky underwater depth fog when Volumetric Fog is disabled
+	if not env.volumetric_fog_enabled and not _fallback_fog_active:
+		_cached_env = env
+		_orig_fog_enabled = env.fog_enabled
+		_orig_fog_color = env.fog_light_color
+		_orig_fog_density = env.fog_density
+		_orig_fog_sky_affect = env.fog_sky_affect
+
+		var murk_col: Color = deep_color.lerp(shallow_color, 0.22)
+		env.fog_enabled = true
+		env.fog_light_color = Color(murk_col.r, murk_col.g, murk_col.b, 1.0)
+		env.fog_density = fallback_fog_density
+		env.fog_sky_affect = 1.0
+		_fallback_fog_active = true
+
+
+## Restores original [Environment] depth fog properties when surfacing or exiting tree.
+func _restore_fallback_environment_fog() -> void:
+	if not _fallback_fog_active:
+		return
+	if is_instance_valid(_cached_env):
+		_cached_env.fog_enabled = _orig_fog_enabled
+		_cached_env.fog_light_color = _orig_fog_color
+		_cached_env.fog_density = _orig_fog_density
+		_cached_env.fog_sky_affect = _orig_fog_sky_affect
+	_cached_env = null
+	_fallback_fog_active = false
