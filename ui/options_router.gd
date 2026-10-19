@@ -1,36 +1,36 @@
-## Coordinates options tabs, diorama display routing, and viewport updates.
+## Coordinates options category tabs, diorama sandbox isolation, and preview camera routing.
 class_name OptionsRouter
 extends Control
 
-## Emitted when the player activates [member master_back_button] to exit.
+## Emitted when the player clicks the master back button to exit the options menu.
 @warning_ignore("unused_signal")
 signal back_requested
 
-## Visual layer bitmask assigned to diorama preview geometry (Layer 11).
+## Visual layer bitmask assigned to diorama preview geometry (3D Render Layer 11).
 const PREVIEW_LAYER_MASK: int = 1 << 10
 
-## Visual layer bitmask assigned to volumetric fog volumes (Layer 10).
+## Visual layer bitmask assigned to volumetric fog volumes (3D Render Layer 10).
 const VOLUMETRIC_LAYER_MASK: int = 1 << 9
 
-## Preloaded 3D diorama scene instantiated inside the preview viewport.
+## Preloaded 3D diorama scene instantiated inside the isolated preview SubViewport.
 const SETTINGS_LEVEL_SCENE: PackedScene = preload("res://player/settings_level.tscn")
 
-## Cached reference to the preview 3D camera.
+## Cached reference to the primary graphics preview camera in the diorama.
 var _graphics_camera: Camera3D = null
 
-## Currently selected settings panel.
+## Currently active category settings panel.
 var _current_panel: Panel = null
 
-## Cached reference to the preview shader layer.
+## Cached reference to the preview post-process shader canvas layer.
 var _preview_layer: CanvasLayer = null
 
-## Cached list of vision assist mesh nodes inside the diorama.
+## Cached list of vision assist silhouette meshes inside the diorama.
 var _vision_meshes: Array[MeshInstance3D] = []
 
-## Cached array of all secondary cameras residing in the diorama scene.
+## Cached array of all cameras residing inside the diorama scene.
 var _all_diorama_cameras: Array[Camera3D] = []
 
-## Cached runtime instance of the instantiated diorama level.
+## Cached runtime instance of the diorama 3D level.
 var _instantiated_diorama: Node3D = null
 
 ## Reference to the video settings panel.
@@ -48,47 +48,50 @@ var _instantiated_diorama: Node3D = null
 ## Reference to the accessibility settings panel.
 @onready var accessibility_panel: Panel = %AccessibilityPanel
 
-## Button switching to video settings.
+## Category tab button for video settings.
 @onready var video_button: Button = %VideoButton
 
-## Button switching to audio settings.
+## Category tab button for audio settings.
 @onready var audio_button: Button = %AudioButton
 
-## Button switching to gameplay settings.
+## Category tab button for gameplay settings.
 @onready var gameplay_button: Button = (
 	%GameplayPanelButton if has_node("%GameplayPanelButton") else %GameplayButton
 )
 
-## Button switching to controls settings.
+## Category tab button for controls settings.
 @onready var controls_button: Button = %ControlsButton
 
-## Button switching to accessibility settings.
+## Category tab button for accessibility settings.
 @onready var accessibility_button: Button = %AccessibilityButton
 
-## Master exit button returning the player to the primary title screen view.
+## Master back button returning the player to the main/pause menu.
 @onready var master_back_button: Button = %MasterBackButton
 
-## Button to reset active panel settings back to default.
+## Reset to defaults button for active settings panels.
 @onready var reset_defaults_button: Button = %ResetDefaultsButton
 
-## TextureRect displaying diorama in video panel.
+## TextureRect displaying the live diorama inside the video settings panel.
 @onready var video_display: TextureRect = (
 	video_panel.find_child("VideoDioramaDisplay", true, false) as TextureRect
 )
 
-## TextureRect displaying diorama in accessibility panel.
+## TextureRect displaying the live diorama inside the accessibility settings panel.
 @onready var access_display: TextureRect = (
 	accessibility_panel.find_child("AccessDioramaDisplay", true, false) as TextureRect
 )
 
-## Cached reference to the preview SubViewport node.
+## Isolated SubViewport hosting the 3D settings diorama.
 @onready
 var diorama_viewport: SubViewport = find_child("DioramaViewport", true, false) as SubViewport
 
 
-## Initializes UI router, scenario isolation, and pre-warms the diorama.
+## Initializes the options router, configures the isolated diorama sandbox, and binds tabs.
 func _ready() -> void:
-	print("OptionsRouter: Initializing UI router.")
+	print("OptionsRouter: Initializing options router and diorama sandbox.")
+	set_process(false)
+	set_physics_process(false)
+
 	_isolate_viewport_scenario()
 	_prewarm_diorama()
 	_connect_tab_buttons()
@@ -101,47 +104,57 @@ func _ready() -> void:
 
 	visibility_changed.connect(_on_visibility_changed)
 	_current_panel = video_panel
+	_update_reset_button_visibility()
 	_route_diorama_view(video_panel)
 	_evaluate_diorama_state()
 
 
-## Configures the isolated diorama [Environment] and viewport resource clamps.
+## Returns all options category panels as a typed array.
+func get_all_panels() -> Array[Control]:
+	return [
+		video_panel,
+		audio_panel,
+		gameplay_panel,
+		controls_panel,
+		accessibility_panel,
+	]
+
+
+## Returns all category tab navigation buttons as a typed array.
+func get_all_tab_buttons() -> Array[Button]:
+	return [
+		video_button,
+		audio_button,
+		gameplay_button,
+		controls_button,
+		accessibility_button,
+	]
+
+
+## Selects a category tab by its zero-based index.
+func select_tab_by_index(index: int) -> void:
+	var panels: Array[Control] = get_all_panels()
+	if index >= 0 and index < panels.size():
+		_on_tab_pressed(panels[index] as Panel)
+
+
+## Puts the diorama sandbox into dormant sleep and restores gameplay rendering.
+func teardown_diorama() -> void:
+	print("OptionsRouter: Putting diorama sandbox to sleep.")
+	_deactivate_all_diorama_cameras()
+	_set_preview_shader_active(false)
+	GraphicsManager.set_diorama_mode(false)
+
+
+## Configures the diorama [SubViewport] with fixed buffers and an isolated [World3D].
 func _isolate_viewport_scenario() -> void:
-	print("OptionsRouter: Configuring isolated diorama environment and clamps.")
 	if not is_instance_valid(diorama_viewport):
 		return
-
-	var clean_env: Environment = Environment.new()
-	clean_env.background_mode = Environment.BG_COLOR
-	clean_env.background_color = Color(0.12, 0.12, 0.14, 1.0)
-	clean_env.sdfgi_enabled = false
-	clean_env.ssao_enabled = false
-	clean_env.ssil_enabled = false
-	clean_env.volumetric_fog_enabled = false
-	clean_env.volumetric_fog_density = 0.02
-	clean_env.volumetric_fog_albedo = Color(0.85, 0.9, 0.95)
-	clean_env.glow_enabled = false
-
-	var target_world: World3D = diorama_viewport.world_3d
-	if not is_instance_valid(target_world):
-		target_world = World3D.new()
-
-	target_world.environment = clean_env
-	diorama_viewport.world_3d = target_world
-	diorama_viewport.own_world_3d = true
-
-	var active_world: World3D = diorama_viewport.find_world_3d()
-	if is_instance_valid(active_world) and not is_instance_valid(active_world.environment):
-		active_world.environment = clean_env
-
-	diorama_viewport.positional_shadow_atlas_size = 512
-	diorama_viewport.msaa_3d = Viewport.MSAA_DISABLED
-	diorama_viewport.scaling_3d_mode = Viewport.SCALING_3D_MODE_BILINEAR
+	VideoApplier.configure_diorama_sandbox(diorama_viewport)
 
 
-## Pre-warms diorama [Node3D] scene safely to prevent memory leaks.
+## Instantiates or binds the 3D diorama scene and neutralizes physics collisions.
 func _prewarm_diorama() -> void:
-	print("OptionsRouter: Pre-warming diorama scene instance.")
 	if not is_instance_valid(diorama_viewport):
 		return
 
@@ -151,21 +164,18 @@ func _prewarm_diorama() -> void:
 		if raw_instance is Node3D:
 			_instantiated_diorama = raw_instance as Node3D
 			diorama_viewport.add_child(_instantiated_diorama)
-		else:
-			print("OptionsRouter: Failed to cast diorama to Node3D.")
-			if is_instance_valid(raw_instance):
-				raw_instance.queue_free()
+		elif is_instance_valid(raw_instance):
+			raw_instance.queue_free()
 
 	_neutralize_diorama_hotspots()
 	_bind_diorama_textures()
 
 
-## Binds the shared diorama [ViewportTexture] to preview displays.
+## Binds the shared diorama [ViewportTexture] to the video and accessibility display rects.
 func _bind_diorama_textures() -> void:
 	if not is_instance_valid(diorama_viewport):
 		return
 
-	print("OptionsRouter: Binding ViewportTexture to preview sockets.")
 	var tex: ViewportTexture = diorama_viewport.get_texture()
 
 	if is_instance_valid(video_display):
@@ -178,13 +188,9 @@ func _bind_diorama_textures() -> void:
 		access_display.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		access_display.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
 
-	_preview_layer = get_node_or_null("PreviewShaderLayer") as CanvasLayer
+	_preview_layer = diorama_viewport.get_node_or_null("PreviewShaderLayer") as CanvasLayer
 	if not is_instance_valid(_preview_layer):
-		var group_layer: Node = get_tree().get_first_node_in_group(&"preview_shader_layer")
-		if group_layer is CanvasLayer:
-			_preview_layer = group_layer as CanvasLayer
-		else:
-			_preview_layer = get_tree().root.get_node_or_null("PreviewShaderLayer") as CanvasLayer
+		_preview_layer = get_node_or_null("PreviewShaderLayer") as CanvasLayer
 
 	_vision_meshes.clear()
 	var meshes: Array[Node] = diorama_viewport.find_children(
@@ -196,9 +202,8 @@ func _bind_diorama_textures() -> void:
 			_vision_meshes.append(mesh_inst)
 
 
-## Connects all tab navigation buttons to their respective handlers.
+## Connects category tab buttons using typed Callables.
 func _connect_tab_buttons() -> void:
-	print("OptionsRouter: Connecting category tab signals.")
 	if is_instance_valid(video_button):
 		video_button.pressed.connect(_on_tab_pressed.bind(video_panel))
 	if is_instance_valid(audio_button):
@@ -211,9 +216,8 @@ func _connect_tab_buttons() -> void:
 		accessibility_button.pressed.connect(_on_tab_pressed.bind(accessibility_panel))
 
 
-## Strips physics collisions, isolates environments, and caches preview cameras.
+## Disables physics processing on diorama props, assigns Layer 11, and caches cameras.
 func _neutralize_diorama_hotspots() -> void:
-	print("OptionsRouter: Neutralizing collisions and caching preview cameras.")
 	if not is_instance_valid(diorama_viewport):
 		return
 
@@ -236,7 +240,6 @@ func _neutralize_diorama_hotspots() -> void:
 			c_obj.collision_mask = 0
 			c_obj.process_mode = Node.PROCESS_MODE_DISABLED
 
-	print("OptionsRouter: Assigning visual layer mask recursively.")
 	_assign_visual_layer_recursive(diorama_viewport, 11)
 
 	_all_diorama_cameras.clear()
@@ -253,47 +256,18 @@ func _neutralize_diorama_hotspots() -> void:
 				_graphics_camera = cam
 
 
-## Returns all options sub-panels as a typed array.
-func get_all_panels() -> Array[Control]:
-	print("OptionsRouter: Retrieving all options sub-panels.")
-	return [
-		video_panel,
-		audio_panel,
-		gameplay_panel,
-		controls_panel,
-		accessibility_panel,
-	]
-
-
-## Returns all category tab buttons as a typed array.
-func get_all_tab_buttons() -> Array[Button]:
-	print("OptionsRouter: Retrieving all category tab buttons.")
-	return [
-		video_button,
-		audio_button,
-		gameplay_button,
-		controls_button,
-		accessibility_button,
-	]
-
-
-## Opens a specific tab by integer index and updates diorama.
-func select_tab_by_index(index: int) -> void:
-	print("OptionsRouter: Selecting tab index: ", index)
-	var panels: Array[Control] = get_all_panels()
-	if index >= 0 and index < panels.size():
-		_on_tab_pressed(panels[index] as Panel)
-
-
-## Intercepts visibility changes on the options overlay.
+## Evaluates whether the diorama should be active when options visibility changes.
 func _on_visibility_changed() -> void:
-	print("OptionsRouter: Panel visibility changed: ", is_visible_in_tree())
+	if not is_inside_tree():
+		return
 	_evaluate_diorama_state()
 
 
-## Switches active tab and updates diorama camera routing.
+## Switches the active category tab and updates diorama routing.
 func _on_tab_pressed(active_panel: Panel) -> void:
-	print("OptionsRouter: Selected panel: ", active_panel.name)
+	if not is_instance_valid(active_panel):
+		return
+	print("OptionsRouter: Switching to category tab -> ", active_panel.name)
 	_current_panel = active_panel
 
 	video_panel.visible = (active_panel == video_panel)
@@ -302,16 +276,21 @@ func _on_tab_pressed(active_panel: Panel) -> void:
 	controls_panel.visible = (active_panel == controls_panel)
 	accessibility_panel.visible = (active_panel == accessibility_panel)
 
-	if is_instance_valid(reset_defaults_button):
-		reset_defaults_button.visible = (active_panel == controls_panel)
-
+	_update_reset_button_visibility()
 	_route_diorama_view(active_panel)
 	_evaluate_diorama_state()
 
 
-## Routes camera and shaders to match the active tab without reparenting.
+## Shows the Reset Defaults button on tabs that support resetting (Video and Controls).
+func _update_reset_button_visibility() -> void:
+	if is_instance_valid(reset_defaults_button):
+		reset_defaults_button.visible = (
+			_current_panel == video_panel or _current_panel == controls_panel
+		)
+
+
+## Routes the active diorama camera and vision assist meshes for the current tab.
 func _route_diorama_view(active_panel: Panel) -> void:
-	print("OptionsRouter: Routing diorama view for active panel.")
 	var is_video: bool = active_panel == video_panel
 	var is_access: bool = active_panel == accessibility_panel
 
@@ -324,47 +303,39 @@ func _route_diorama_view(active_panel: Panel) -> void:
 	elif is_access:
 		if (
 			is_instance_valid(accessibility_panel)
-			and accessibility_panel.has_method("_setup_diorama_cameras")
+			and accessibility_panel.has_method(&"_setup_diorama_cameras")
 		):
-			accessibility_panel.call("_setup_diorama_cameras")
+			accessibility_panel.call(&"_setup_diorama_cameras")
 	else:
 		_deactivate_all_diorama_cameras()
 
 
-## Evaluates visibility and updates the diorama [SubViewport] mode.
+## Synchronizes diorama viewport isolation via [GraphicsManager].
 func _evaluate_diorama_state() -> void:
 	if not is_instance_valid(diorama_viewport):
 		return
 
-	var is_preview: bool = _current_panel == video_panel or _current_panel == accessibility_panel
-	var should_render: bool = is_visible_in_tree() and is_preview
-	print("OptionsRouter: Diorama state evaluated. Render: ", should_render)
+	var is_preview_tab: bool = (
+		_current_panel == video_panel or _current_panel == accessibility_panel
+	)
+	var should_render: bool = is_visible_in_tree() and is_preview_tab
 
 	if should_render:
-		diorama_viewport.process_mode = Node.PROCESS_MODE_ALWAYS
-		diorama_viewport.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
+		GraphicsManager.set_diorama_mode(true)
 		_route_diorama_view(_current_panel)
 	else:
-		diorama_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
-		diorama_viewport.process_mode = Node.PROCESS_MODE_DISABLED
 		_deactivate_all_diorama_cameras()
+		if is_visible_in_tree():
+			diorama_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+			diorama_viewport.process_mode = Node.PROCESS_MODE_DISABLED
+		else:
+			GraphicsManager.set_diorama_mode(false)
 
 	_set_preview_shader_active(should_render)
 
 
-## Forcibly tears down diorama hierarchy when starting gameplay level.
-func teardown_diorama() -> void:
-	print("OptionsRouter: Putting diorama viewport to sleep.")
-	_deactivate_all_diorama_cameras()
-	if is_instance_valid(diorama_viewport):
-		diorama_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
-		diorama_viewport.process_mode = Node.PROCESS_MODE_DISABLED
-	_set_preview_shader_active(false)
-
-
-## Activates and isolates the cached preview camera inside [SubViewport].
+## Activates the primary graphics preview camera inside the diorama [SubViewport].
 func _activate_graphics_camera() -> void:
-	print("OptionsRouter: Activating diorama graphics camera.")
 	if not is_instance_valid(diorama_viewport):
 		return
 
@@ -376,9 +347,8 @@ func _activate_graphics_camera() -> void:
 		_graphics_camera.process_mode = Node.PROCESS_MODE_ALWAYS
 
 
-## Deactivates ONLY cameras belonging strictly to the diorama subviewport.
+## Deactivates all cameras belonging to the diorama [SubViewport].
 func _deactivate_all_diorama_cameras() -> void:
-	print("OptionsRouter: Safely disabling diorama-only camera nodes.")
 	for cam: Camera3D in _all_diorama_cameras:
 		if is_instance_valid(cam):
 			cam.current = false
@@ -386,9 +356,8 @@ func _deactivate_all_diorama_cameras() -> void:
 		_graphics_camera.current = false
 
 
-## Controls the preview shader pass canvas layer.
+## Toggles the preview post-process shader layer inside the diorama.
 func _set_preview_shader_active(is_active: bool) -> void:
-	print("OptionsRouter: Setting preview shader active state: ", is_active)
 	if is_instance_valid(_preview_layer):
 		_preview_layer.visible = is_active
 		_preview_layer.process_mode = (
@@ -396,22 +365,21 @@ func _set_preview_shader_active(is_active: bool) -> void:
 		)
 
 
-## Handles master back button clicks and notifies the main menu coordinator.
+## Handles clicks on the master back button.
 func _on_master_back_pressed() -> void:
-	print("OptionsRouter: Master back button clicked.")
+	print("OptionsRouter: Master back button pressed.")
 	teardown_diorama()
 	back_requested.emit()
 
 
-## Relays reset call to [ControlsPanel] if currently active and visible.
+## Invokes `reset_to_defaults()` on the active panel (Video or Controls).
 func _on_reset_defaults_pressed() -> void:
-	print("OptionsRouter: Reset defaults button clicked.")
-	if is_instance_valid(controls_panel) and controls_panel.visible:
-		if controls_panel.has_method("reset_to_defaults"):
-			controls_panel.call("reset_to_defaults")
+	print("OptionsRouter: Reset to defaults pressed.")
+	if is_instance_valid(_current_panel) and _current_panel.has_method(&"reset_to_defaults"):
+		_current_panel.call(&"reset_to_defaults")
 
 
-## Traverses node hierarchy and applies 3D visual layer bitmask.
+## Recursively assigns 3D render layer bitmasks to all visual instances in the diorama.
 func _assign_visual_layer_recursive(root: Node, layer_idx: int) -> void:
 	var mask: int = 1 << (layer_idx - 1)
 	var light_cull: int = mask | VOLUMETRIC_LAYER_MASK

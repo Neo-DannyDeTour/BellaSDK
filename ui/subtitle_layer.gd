@@ -357,7 +357,7 @@ func _on_subtitle_size_changed(font_size: float) -> void:
 
 ## Rebuilds background [StyleBoxFlat] using active color and opacity.
 func _update_panel_stylebox() -> void:
-	print("SubtitleLayer: Updating background panel stylebox.")
+	#print("SubtitleLayer: Updating background panel stylebox.")
 	if not is_instance_valid(background_panel):
 		return
 

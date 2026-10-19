@@ -11,6 +11,78 @@ extends MarginContainer
 ## Palette and asset registry providing theme colors and fallback textures.
 @export var reference_data: ReferenceData
 
+## Stores sliced textures for each state of health heart.
+var heart_textures: Array[AtlasTexture] = []
+
+## Stores UI nodes representing player's health hearts.
+var heart_nodes: Array[TextureRect] = []
+
+## Stores active tweens for individual heart damage animations.
+var heart_tweens: Array[Tween] = []
+
+## Stores instantiated keycard texture rectangles mapped by ID.
+var active_card_icons: Dictionary[StringName, TextureRect] = {}
+
+## Tracks current player health to determine when to update UI.
+var current_health: int = 300
+
+## Animates sprint debuff progress bar and timer label.
+var debuff_tween: Tween
+
+## Animates immobilize debuff progress bar and timer label.
+var immobilize_tween: Tween
+
+## Animates swim oxygen progress bar and timer label.
+var swim_tween: Tween
+
+## Animates or fades fire damage indicator when burning ceases.
+var fire_tween: Tween
+
+## Tracks if timed sprint cooldown is currently active.
+var is_sprint_timer_active: bool = false
+
+## Tracks if player is currently standing on sand.
+var is_on_sand: bool = false
+
+## Tracks if player is currently carrying heavy object.
+var is_heavy_carrying: bool = false
+
+## Tracks if player is currently standing on ice.
+var is_on_ice: bool = false
+
+## Tracks if player is under immobilize debuff effect.
+var is_immobilized: bool = false
+
+## Tracks if player is under sprint blocked debuff effect.
+var is_sprint_blocked: bool = false
+
+## Tracks if infinite swim accessibility mode is enabled.
+var is_infinite_swim: bool = false
+
+## Tracks whether player head is submerged underwater.
+var is_submerged: bool = false
+
+## Tracks if player is standing in active steam hazard.
+var is_in_steam: bool = false
+
+## Tracks if player is actively suffering fire damage.
+var is_in_fire: bool = false
+
+## Tracks last rendered tenth of second for sprint timer label.
+var _last_sprint_tenth: int = -1
+
+## Tracks last rendered tenth of second for immobilize timer label.
+var _last_move_tenth: int = -1
+
+## Tracks last rendered tenth of second for swim timer label.
+var _last_swim_tenth: int = -1
+
+## Reference count of overlapping volumetric smoke hazards currently affecting the player.
+var _active_smoke_hazards: int = 0
+
+## Current normalized [0.0, 1.0] smoke exposure/density displayed on the status bar.
+var _current_smoke_density: float = 0.0
+
 ## Container arranging health heart icons horizontally.
 @onready var hearts_container: HBoxContainer = $VBoxContainer/HeartsContainer
 
@@ -89,72 +161,6 @@ extends MarginContainer
 ## Numeric timer label displaying remaining fire debuff duration.
 @onready var fire_timer_label: Label = $VBoxContainer/FireDebuff/TimerLabel
 
-## Stores sliced textures for each state of health heart.
-var heart_textures: Array[AtlasTexture] = []
-
-## Stores UI nodes representing player's health hearts.
-var heart_nodes: Array[TextureRect] = []
-
-## Stores active tweens for individual heart damage animations.
-var heart_tweens: Array[Tween] = []
-
-## Stores instantiated keycard texture rectangles mapped by ID.
-var active_card_icons: Dictionary[StringName, TextureRect] = {}
-
-## Tracks current player health to determine when to update UI.
-var current_health: int = 300
-
-## Animates sprint debuff progress bar and timer label.
-var debuff_tween: Tween
-
-## Animates immobilize debuff progress bar and timer label.
-var immobilize_tween: Tween
-
-## Animates swim oxygen progress bar and timer label.
-var swim_tween: Tween
-
-## Animates or fades fire damage indicator when burning ceases.
-var fire_tween: Tween
-
-## Tracks if timed sprint cooldown is currently active.
-var is_sprint_timer_active: bool = false
-
-## Tracks if player is currently standing on sand.
-var is_on_sand: bool = false
-
-## Tracks if player is currently carrying heavy object.
-var is_heavy_carrying: bool = false
-
-## Tracks if player is currently standing on ice.
-var is_on_ice: bool = false
-
-## Tracks if player is under immobilize debuff effect.
-var is_immobilized: bool = false
-
-## Tracks if player is under sprint blocked debuff effect.
-var is_sprint_blocked: bool = false
-
-## Tracks if infinite swim accessibility mode is enabled.
-var is_infinite_swim: bool = false
-
-## Tracks whether player head is submerged underwater.
-var is_submerged: bool = false
-
-## Tracks if player is standing in active steam hazard.
-var is_in_steam: bool = false
-
-## Tracks if player is actively suffering fire damage.
-var is_in_fire: bool = false
-
-## Tracks last rendered tenth of second for sprint timer label.
-var _last_sprint_tenth: int = -1
-
-## Tracks last rendered tenth of second for immobilize timer label.
-var _last_move_tenth: int = -1
-
-## Tracks last rendered tenth of second for swim timer label.
-var _last_swim_tenth: int = -1
-
 
 ## Lifecycle method called when node enters the tree.
 func _ready() -> void:
@@ -166,6 +172,60 @@ func _ready() -> void:
 	_initialize_indicators()
 	_initialize_hearts()
 	_connect_signals()
+
+
+## Disconnects global event bus signals when leaving the scene tree.
+func _exit_tree() -> void:
+	if Events.smoke_hazard_changed.is_connected(_on_smoke_hazard_changed):
+		Events.smoke_hazard_changed.disconnect(_on_smoke_hazard_changed)
+	if Events.smoke_exposure_changed.is_connected(_on_smoke_exposure_changed):
+		Events.smoke_exposure_changed.disconnect(_on_smoke_exposure_changed)
+
+
+## Re-renders all heart frames and plays health change animations.
+## [param new_health] The updated health total to display.
+func update_health(new_health: int) -> void:
+	print("PlayerStatusHUD: update_health() called with: ", new_health)
+	while new_health > heart_nodes.size() * 100:
+		_add_heart_node()
+
+	var health_decreased: bool = new_health < current_health
+	var health_increased: bool = new_health > current_health
+	var previous_health: int = current_health
+	current_health = new_health
+
+	if heart_nodes.is_empty() or heart_textures.is_empty():
+		return
+
+	for i: int in range(heart_nodes.size()):
+		var heart_min: int = i * 100
+		var heart_val: int = clampi(current_health - heart_min, 0, 100)
+		var prev_heart_val: int = clampi(previous_health - heart_min, 0, 100)
+
+		var frame_index: int = 0
+		if heart_val >= 100:
+			frame_index = 0
+		elif heart_val >= 75:
+			frame_index = 1
+		elif heart_val >= 50:
+			frame_index = 2
+		elif heart_val >= 25:
+			frame_index = 3
+		else:
+			frame_index = 4
+
+		heart_nodes[i].texture = heart_textures[frame_index]
+
+		if health_decreased and heart_val < prev_heart_val:
+			_animate_heart_damage(i)
+		elif health_increased and heart_val > prev_heart_val:
+			_animate_heart_heal(i, frame_index)
+
+		var heart_parent: CanvasItem = (
+			heart_nodes[i].get_parent() if heart_nodes[i].get_parent() is CanvasItem else null
+		)
+		if is_instance_valid(heart_parent):
+			heart_parent.visible = true
 
 
 ## Sets default visibility states for debuff containers and surface indicators.
@@ -204,6 +264,8 @@ func _connect_signals() -> void:
 	Utilities.safe_connect(Events.oxygen_timer_started, _on_oxygen_timer_started)
 	Utilities.safe_connect(Events.oxygen_timer_stopped, _on_oxygen_timer_stopped)
 	Utilities.safe_connect(Events.steam_hazard_toggled, _on_steam_hazard_toggled)
+	Utilities.safe_connect(Events.smoke_hazard_changed, _on_smoke_hazard_changed)
+	Utilities.safe_connect(Events.smoke_exposure_changed, _on_smoke_exposure_changed)
 	Utilities.safe_connect(Events.fire_hazard_toggled, _on_fire_hazard_toggled)
 	Utilities.safe_connect(Events.infinite_swim_toggled, _on_infinite_swim_toggled)
 
@@ -263,52 +325,6 @@ func _add_heart_node() -> void:
 	wrapper.add_child(rect)
 	heart_nodes.append(rect)
 	heart_tweens.append(null)
-
-
-## Re-renders all heart frames and plays health change animations.
-## [param new_health] The updated health total to display.
-func update_health(new_health: int) -> void:
-	print("PlayerStatusHUD: update_health() called with: ", new_health)
-	while new_health > heart_nodes.size() * 100:
-		_add_heart_node()
-
-	var health_decreased: bool = new_health < current_health
-	var health_increased: bool = new_health > current_health
-	var previous_health: int = current_health
-	current_health = new_health
-
-	if heart_nodes.is_empty() or heart_textures.is_empty():
-		return
-
-	for i: int in range(heart_nodes.size()):
-		var heart_min: int = i * 100
-		var heart_val: int = clampi(current_health - heart_min, 0, 100)
-		var prev_heart_val: int = clampi(previous_health - heart_min, 0, 100)
-
-		var frame_index: int = 0
-		if heart_val >= 100:
-			frame_index = 0
-		elif heart_val >= 75:
-			frame_index = 1
-		elif heart_val >= 50:
-			frame_index = 2
-		elif heart_val >= 25:
-			frame_index = 3
-		else:
-			frame_index = 4
-
-		heart_nodes[i].texture = heart_textures[frame_index]
-
-		if health_decreased and heart_val < prev_heart_val:
-			_animate_heart_damage(i)
-		elif health_increased and heart_val > prev_heart_val:
-			_animate_heart_heal(i, frame_index)
-
-		var heart_parent: CanvasItem = (
-			heart_nodes[i].get_parent() if heart_nodes[i].get_parent() is CanvasItem else null
-		)
-		if is_instance_valid(heart_parent):
-			heart_parent.visible = true
 
 
 ## Runs a vertical bounce tween on the target heart node when damaged.
@@ -569,10 +585,54 @@ func _on_oxygen_timer_stopped() -> void:
 func _on_steam_hazard_toggled(is_active: bool) -> void:
 	print("PlayerStatusHUD: Steam hazard toggled -> ", is_active)
 	is_in_steam = is_active
-	steam_debuff_container.visible = is_in_steam
-	steam_border.visible = is_in_steam
-	steam_bar.hide()
-	steam_timer_label.hide()
+	_sync_smoke_and_steam_display()
+
+
+## Updates reference-counted volumetric smoke hazard status and exposure bar.
+## [param is_inside] True when entering a smoke volume, false when exiting.
+## [param density] Initial or remaining normalized [0.0, 1.0] smoke concentration.
+func _on_smoke_hazard_changed(is_inside: bool, density: float) -> void:
+	if is_inside:
+		_active_smoke_hazards += 1
+		_current_smoke_density = clampf(density, 0.0, 1.0)
+	else:
+		_active_smoke_hazards = maxi(0, _active_smoke_hazards - 1)
+		if _active_smoke_hazards == 0:
+			_current_smoke_density = 0.0
+	print(
+		"PlayerStatusHUD: Smoke hazard changed -> inside: ",
+		is_inside,
+		" active_count: ",
+		_active_smoke_hazards
+	)
+	_sync_smoke_and_steam_display()
+
+
+## Updates the smoke exposure progress bar while the player remains inside smoke.
+## [param exposure] Normalized [0.0, 1.0] suffocation exposure level.
+func _on_smoke_exposure_changed(exposure: float) -> void:
+	if _active_smoke_hazards <= 0:
+		return
+	_current_smoke_density = clampf(exposure, 0.0, 1.0)
+	_sync_smoke_and_steam_display()
+
+
+## Synchronizes visibility and progress bar fill for the shared steam/smoke HUD slot.
+func _sync_smoke_and_steam_display() -> void:
+	var is_hazard_active: bool = is_in_steam or (_active_smoke_hazards > 0)
+	steam_debuff_container.visible = is_hazard_active
+	steam_border.visible = is_hazard_active
+
+	if _active_smoke_hazards > 0:
+		var pct: float = clampf(_current_smoke_density * 100.0, 0.0, 100.0)
+		steam_bar.max_value = 100.0
+		steam_bar.value = pct
+		steam_bar.show()
+		steam_timer_label.text = "%d%%" % int(roundf(pct))
+		steam_timer_label.show()
+	else:
+		steam_bar.hide()
+		steam_timer_label.hide()
 
 
 ## Updates fire hazard indicator icon and border overlay.

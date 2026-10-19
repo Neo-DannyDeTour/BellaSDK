@@ -1,16 +1,11 @@
-## Controls window mode, resolution, monitors, and framerate limits.
+## Controls window mode, active monitor, screen resolution, VSync, and framerate cap.
 class_name DisplaySection
 extends VBoxContainer
 
-# --------------------------------------
-# SIGNALS
-# --------------------------------------
-## Emitted when display settings change to trigger renderer pipeline updates.
+## Emitted when any display or window setting is modified by the player.
+@warning_ignore("unused_signal")
 signal display_settings_changed
 
-# --------------------------------------
-# NODE REFERENCES
-# --------------------------------------
 ## Reference to the exclusive fullscreen toggle [Button].
 @onready var fullscreen_button: Button = %FullscreenButton
 
@@ -20,13 +15,13 @@ signal display_settings_changed
 ## Reference to the windowed mode toggle [Button].
 @onready var windowed_button: Button = %WindowedButton
 
-## Reference to the active monitor [OptionButton].
+## Reference to the active monitor selection [OptionButton].
 @onready var monitor_options: OptionButton = %MonitorOptionButton
 
-## Reference to the resolution selection [OptionButton].
+## Reference to the screen resolution selection [OptionButton].
 @onready var resolution_options: OptionButton = %ResolutionOptionButton
 
-## Reference to the framerate limit cap [OptionButton].
+## Reference to the framerate cap selection [OptionButton].
 @onready var fps_options: OptionButton = %FPSOptionButton
 
 ## Reference to the VSync disabled toggle [Button].
@@ -39,231 +34,209 @@ signal display_settings_changed
 @onready var vsync_adaptive_button: Button = %VSyncAdaptiveButton
 
 
-## Lifecycle method initializing options, button groups, and signal hooks.
+## Initializes display widgets, button groups, and signal listeners.
 func _ready() -> void:
 	print("DisplaySection: Initializing display settings UI.")
+	set_process(false)
+	set_physics_process(false)
 	_setup_button_groups()
 	_populate_dropdowns()
 	_connect_signals()
 	load_settings()
 
 
-## Configures radio toggle button groups for display and VSync options.
+## Synchronizes all display UI controls with the active configuration in [GraphicsManager].
+func load_settings() -> void:
+	print("DisplaySection: Synchronizing display UI with active configuration.")
+	var display_mode: int = GlobalSettings.get_setting_int(
+		"Settings", "display_mode", VideoConfig.DEFAULT_DISPLAY
+	)
+	_update_display_mode_buttons(display_mode)
+
+	var vsync_mode: int = GlobalSettings.get_setting_int(
+		"Settings", "vsync_mode", VideoConfig.DEFAULT_VSYNC
+	)
+	_update_vsync_buttons(vsync_mode, display_mode)
+
+	var fps_cap: int = GlobalSettings.get_setting_int(
+		"Settings", "fps_limit", VideoConfig.DEFAULT_FPS
+	)
+	_select_fps_option(fps_cap)
+
+	var screen_idx: int = GlobalSettings.get_setting_int("Settings", "screen_index", 0)
+	if screen_idx >= 0 and screen_idx < monitor_options.get_item_count():
+		monitor_options.select(screen_idx)
+
+	var res_x: int = GlobalSettings.get_setting_int(
+		"Settings", "resolution_x", VideoConfig.DEFAULT_RES_X
+	)
+	var res_y: int = GlobalSettings.get_setting_int(
+		"Settings", "resolution_y", VideoConfig.DEFAULT_RES_Y
+	)
+	_select_dropdown_text(resolution_options, str(res_x) + " x " + str(res_y))
+
+
+## Configures unified [ButtonGroup] and pressed visual styles for display and VSync buttons.
 func _setup_button_groups() -> void:
-	print("DisplaySection: Setting up button toggle groups.")
-	var display_group: ButtonGroup = ButtonGroup.new()
-	fullscreen_button.button_group = display_group
-	borderless_button.button_group = display_group
-	windowed_button.button_group = display_group
+	var display_btns: Array[Button] = [
+		fullscreen_button,
+		borderless_button,
+		windowed_button,
+	]
+	_configure_toggle_group(display_btns)
 
-	var vsync_group: ButtonGroup = ButtonGroup.new()
-	vsync_disabled_button.button_group = vsync_group
-	vsync_enabled_button.button_group = vsync_group
-	vsync_adaptive_button.button_group = vsync_group
+	var vsync_btns: Array[Button] = [
+		vsync_disabled_button,
+		vsync_enabled_button,
+		vsync_adaptive_button,
+	]
+	_configure_toggle_group(vsync_btns)
 
 
-## Populates monitor and dropdown configuration options.
+## Applies [ButtonGroup] and consistent pressed styleboxes to a row of buttons.
+func _configure_toggle_group(buttons: Array[Button]) -> void:
+	var group: ButtonGroup = ButtonGroup.new()
+	var pressed_style: StyleBoxFlat = StyleBoxFlat.new()
+	pressed_style.bg_color = Color(0.06, 0.06, 0.07, 1.0)
+	pressed_style.border_color = Color(0.3, 0.3, 0.35, 1.0)
+	pressed_style.set_border_width_all(1)
+	pressed_style.set_corner_radius_all(3)
+
+	for btn: Button in buttons:
+		if not is_instance_valid(btn):
+			continue
+		btn.toggle_mode = true
+		btn.button_group = group
+		btn.add_theme_stylebox_override("pressed", pressed_style)
+		btn.add_theme_stylebox_override("hover_pressed", pressed_style)
+		btn.add_theme_color_override("font_pressed_color", Color(0.7, 0.7, 0.7, 1.0))
+
+
+## Populates resolution, framerate cap, and monitor dropdown selectors.
 func _populate_dropdowns() -> void:
-	print("DisplaySection: Populating display dropdowns.")
-	_fill_dropdown(resolution_options, VideoConfig.RESOLUTIONS)
-	_fill_dropdown(fps_options, VideoConfig.FPS_LIMITS)
+	resolution_options.clear()
+	for res_label: String in VideoConfig.RESOLUTIONS.keys():
+		resolution_options.add_item(res_label)
+
+	fps_options.clear()
+	for fps_label: String in VideoConfig.FPS_LIMITS.keys():
+		fps_options.add_item(fps_label)
 
 	monitor_options.clear()
-	var screen_count: int = DisplayServer.get_screen_count()
-	for i: int in range(screen_count):
-		monitor_options.add_item("Monitor " + str(i + 1))
-
-	_check_adaptive_vsync_support()
+	var screen_count: int = maxi(DisplayServer.get_screen_count(), 1)
+	for idx: int in range(screen_count):
+		monitor_options.add_item("Monitor " + str(idx + 1))
 
 
-## Connects UI input signals to handler methods.
+## Connects UI widget signals using typed Callables.
 func _connect_signals() -> void:
-	print("DisplaySection: Connecting UI signals.")
 	fullscreen_button.pressed.connect(
-		_on_display_mode_pressed.bind(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
+		_on_display_mode_selected.bind(DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN)
 	)
 	borderless_button.pressed.connect(
-		_on_display_mode_pressed.bind(DisplayServer.WINDOW_MODE_FULLSCREEN)
+		_on_display_mode_selected.bind(DisplayServer.WINDOW_MODE_FULLSCREEN)
 	)
 	windowed_button.pressed.connect(
-		_on_display_mode_pressed.bind(DisplayServer.WINDOW_MODE_WINDOWED)
+		_on_display_mode_selected.bind(DisplayServer.WINDOW_MODE_WINDOWED)
 	)
 
-	vsync_disabled_button.pressed.connect(_on_vsync_mode_pressed.bind(DisplayServer.VSYNC_DISABLED))
-	vsync_enabled_button.pressed.connect(_on_vsync_mode_pressed.bind(DisplayServer.VSYNC_ENABLED))
-	vsync_adaptive_button.pressed.connect(_on_vsync_mode_pressed.bind(DisplayServer.VSYNC_ADAPTIVE))
+	vsync_disabled_button.pressed.connect(
+		_on_vsync_mode_selected.bind(DisplayServer.VSYNC_DISABLED)
+	)
+	vsync_enabled_button.pressed.connect(_on_vsync_mode_selected.bind(DisplayServer.VSYNC_ENABLED))
+	vsync_adaptive_button.pressed.connect(
+		_on_vsync_mode_selected.bind(DisplayServer.VSYNC_ADAPTIVE)
+	)
 
 	monitor_options.item_selected.connect(_on_monitor_selected)
 	resolution_options.item_selected.connect(_on_resolution_selected)
 	fps_options.item_selected.connect(_on_fps_selected)
 
 
-## Loads display settings from storage and updates UI widgets.
-func load_settings() -> void:
-	print("DisplaySection: Loading display settings from disk.")
-	var saved_display: int = GlobalSettings.get_setting_int(
-		"Settings", "display_mode", VideoConfig.DEFAULT_DISPLAY
-	)
-	_update_display_mode_ui(saved_display)
-
-	var saved_vsync: int = GlobalSettings.get_setting_int(
-		"Settings", "vsync_mode", VideoConfig.DEFAULT_VSYNC
-	)
-	_update_vsync_ui(saved_vsync)
-
-	_sync_dropdown(fps_options, VideoConfig.FPS_LIMITS, "fps_limit", VideoConfig.DEFAULT_FPS)
-
-	var saved_screen: int = GlobalSettings.get_setting_int("Settings", "screen_index", 0)
-	if saved_screen < monitor_options.get_item_count():
-		monitor_options.select(saved_screen)
-
-	var res_x: int = GlobalSettings.get_setting_int("Settings", "resolution_x", 1920)
-	var res_y: int = GlobalSettings.get_setting_int("Settings", "resolution_y", 1080)
-	_select_dropdown_text(resolution_options, str(res_x) + " x " + str(res_y))
-
-
-## Synchronizes display mode button toggle states.
-func _update_display_mode_ui(active_mode: int) -> void:
-	print("DisplaySection: Updating display mode buttons for mode: ", active_mode)
-	fullscreen_button.button_pressed = (
+## Updates display mode toggle button states without emitting signals.
+func _update_display_mode_buttons(active_mode: int) -> void:
+	fullscreen_button.set_pressed_no_signal(
 		active_mode == DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN
 	)
-	borderless_button.button_pressed = (active_mode == DisplayServer.WINDOW_MODE_FULLSCREEN)
-	windowed_button.button_pressed = (active_mode == DisplayServer.WINDOW_MODE_WINDOWED)
+	borderless_button.set_pressed_no_signal(active_mode == DisplayServer.WINDOW_MODE_FULLSCREEN)
+	windowed_button.set_pressed_no_signal(active_mode == DisplayServer.WINDOW_MODE_WINDOWED)
 
 
-## Synchronizes VSync button toggle states.
-func _update_vsync_ui(active_mode: int) -> void:
-	print("DisplaySection: Updating VSync buttons for mode: ", active_mode)
-	var is_exclusive: bool = (
-		DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN
-	)
+## Updates VSync toggle button states without emitting signals.
+func _update_vsync_buttons(active_vsync: int, display_mode: int) -> void:
+	var is_exclusive: bool = display_mode == DisplayServer.WINDOW_MODE_EXCLUSIVE_FULLSCREEN
 	vsync_adaptive_button.disabled = not is_exclusive
 
-	if not is_exclusive and active_mode == DisplayServer.VSYNC_ADAPTIVE:
-		active_mode = DisplayServer.VSYNC_DISABLED
-		GlobalSettings.save_setting("Settings", "vsync_mode", active_mode)
+	if not is_exclusive and active_vsync == DisplayServer.VSYNC_ADAPTIVE:
+		active_vsync = DisplayServer.VSYNC_ENABLED
+		GraphicsManager.set_setting("vsync_mode", active_vsync, false)
 
-	vsync_disabled_button.button_pressed = (active_mode == DisplayServer.VSYNC_DISABLED)
-	vsync_enabled_button.button_pressed = (active_mode == DisplayServer.VSYNC_ENABLED)
-	vsync_adaptive_button.button_pressed = (active_mode == DisplayServer.VSYNC_ADAPTIVE)
-
-
-## Handles window mode button selection.
-func _on_display_mode_pressed(mode: int) -> void:
-	print("DisplaySection: Display mode selected: ", mode)
-	var current_mode: int = GlobalSettings.get_setting_int(
-		"Settings", "display_mode", VideoConfig.DEFAULT_DISPLAY
-	)
-	_update_display_mode_ui(mode)
-	if current_mode != mode:
-		GlobalSettings.save_setting("Settings", "display_mode", mode)
-		display_settings_changed.emit()
+	vsync_disabled_button.set_pressed_no_signal(active_vsync == DisplayServer.VSYNC_DISABLED)
+	vsync_enabled_button.set_pressed_no_signal(active_vsync == DisplayServer.VSYNC_ENABLED)
+	vsync_adaptive_button.set_pressed_no_signal(active_vsync == DisplayServer.VSYNC_ADAPTIVE)
 
 
-## Handles VSync mode button selection.
-func _on_vsync_mode_pressed(mode: int) -> void:
-	print("DisplaySection: VSync mode selected: ", mode)
-	var current_mode: int = GlobalSettings.get_setting_int(
+## Selects the dropdown entry matching [param fps_cap].
+func _select_fps_option(fps_cap: int) -> void:
+	for idx: int in range(fps_options.get_item_count()):
+		var label: String = fps_options.get_item_text(idx)
+		if VideoConfig.FPS_LIMITS.get(label, -1) == fps_cap:
+			fps_options.select(idx)
+			return
+
+
+## Selects the dropdown item matching [param target_text].
+func _select_dropdown_text(dropdown: OptionButton, target_text: String) -> void:
+	for idx: int in range(dropdown.get_item_count()):
+		if dropdown.get_item_text(idx) == target_text:
+			dropdown.select(idx)
+			return
+
+
+## Handles display mode button selection and updates [GraphicsManager].
+func _on_display_mode_selected(mode: int) -> void:
+	print("DisplaySection: Player selected display mode -> ", mode)
+	_update_display_mode_buttons(mode)
+	var cur_vsync: int = GlobalSettings.get_setting_int(
 		"Settings", "vsync_mode", VideoConfig.DEFAULT_VSYNC
 	)
-	_update_vsync_ui(mode)
-	if current_mode != mode:
-		GlobalSettings.save_setting("Settings", "vsync_mode", mode)
-		display_settings_changed.emit()
+	_update_vsync_buttons(cur_vsync, mode)
+	GraphicsManager.set_setting("display_mode", mode)
+	display_settings_changed.emit()
 
 
-## Populates a single [OptionButton] with keys from a dictionary.
-func _fill_dropdown(dropdown: OptionButton, data_dict: Dictionary) -> void:
-	print("DisplaySection: Populating dropdown entries.")
-	dropdown.clear()
-	for key: Variant in data_dict.keys():
-		dropdown.add_item(str(key))
-
-
-## Selects an [OptionButton] item matching target label text.
-func _select_dropdown_text(dropdown: OptionButton, target_text: String) -> void:
-	print("DisplaySection: Selecting dropdown item by label: ", target_text)
-	for i: int in range(dropdown.get_item_count()):
-		if dropdown.get_item_text(i) == target_text:
-			dropdown.select(i)
-			return
-
-
-## Matches a saved setting value to an item in an [OptionButton].
-func _sync_dropdown(
-	dropdown: OptionButton, dict: Dictionary, key: String, default_val: Variant
-) -> void:
-	print("DisplaySection: Syncing dropdown option with config key: ", key)
-	var saved_val: Variant = GlobalSettings.get_setting("Settings", key, default_val)
-	var saved_str: String = str(saved_val)
-
-	for i: int in range(dropdown.get_item_count()):
-		var item_text: String = dropdown.get_item_text(i)
-		if item_text == saved_str:
-			dropdown.select(i)
-			return
-		if dict.has(item_text) and str(dict[item_text]) == saved_str:
-			dropdown.select(i)
-			return
-
-
-## Handles target monitor changes and notifies listeners if modified.
-func _on_monitor_selected(index: int) -> void:
-	print("DisplaySection: Monitor selected: ", index)
-	var current_screen: int = GlobalSettings.get_setting_int("Settings", "screen_index", 0)
-	if current_screen != index:
-		GlobalSettings.save_setting("Settings", "screen_index", index)
-		display_settings_changed.emit()
-
-
-## Handles resolution changes and bulk-saves coordinates if modified.
-func _on_resolution_selected(index: int) -> void:
-	print("DisplaySection: Resolution selected: ", index)
-	var text: String = resolution_options.get_item_text(index)
-	var res_default: Vector2i = Vector2i(1920, 1080)
-	var res: Vector2i = res_default
-	if VideoConfig.RESOLUTIONS.has(text):
-		var raw_res: Variant = VideoConfig.RESOLUTIONS[text]
-		if raw_res is Vector2i:
-			res = raw_res
-
-	var cur_x: int = GlobalSettings.get_setting_int("Settings", "resolution_x", 1920)
-	var cur_y: int = GlobalSettings.get_setting_int("Settings", "resolution_y", 1080)
-
-	if cur_x != res.x or cur_y != res.y:
-		GlobalSettings.save_settings_bulk(
-			"Settings", {"resolution_x": res.x, "resolution_y": res.y}
-		)
-		display_settings_changed.emit()
-
-
-## Handles engine framerate cap limit changes.
-func _on_fps_selected(index: int) -> void:
-	print("DisplaySection: FPS limit selected: ", index)
-	var text: String = fps_options.get_item_text(index)
-	var limit: int = VideoConfig.DEFAULT_FPS
-	if VideoConfig.FPS_LIMITS.has(text):
-		var raw_limit: Variant = VideoConfig.FPS_LIMITS[text]
-		if raw_limit is int:
-			limit = raw_limit
-
-	var current_limit: int = GlobalSettings.get_setting_int(
-		"Settings", "fps_limit", VideoConfig.DEFAULT_FPS
+## Handles VSync mode button selection and updates [GraphicsManager].
+func _on_vsync_mode_selected(mode: int) -> void:
+	print("DisplaySection: Player selected VSync mode -> ", mode)
+	var cur_display: int = GlobalSettings.get_setting_int(
+		"Settings", "display_mode", VideoConfig.DEFAULT_DISPLAY
 	)
-	if current_limit != limit:
-		GlobalSettings.save_setting("Settings", "fps_limit", limit)
-		display_settings_changed.emit()
+	_update_vsync_buttons(mode, cur_display)
+	GraphicsManager.set_setting("vsync_mode", mode)
+	display_settings_changed.emit()
 
 
-## Tests and disables the Adaptive VSync button safely without driver desync.
-func _check_adaptive_vsync_support() -> void:
-	print("DisplaySection: Checking Adaptive VSync driver support.")
-	var active_vsync: DisplayServer.VSyncMode = DisplayServer.window_get_vsync_mode()
-	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ADAPTIVE)
-	var is_supported: bool = DisplayServer.window_get_vsync_mode() == DisplayServer.VSYNC_ADAPTIVE
-	DisplayServer.window_set_vsync_mode(active_vsync)
+## Handles target monitor selection and updates [GraphicsManager].
+func _on_monitor_selected(index: int) -> void:
+	print("DisplaySection: Player selected monitor index -> ", index)
+	GraphicsManager.set_setting("screen_index", index)
+	display_settings_changed.emit()
 
-	vsync_adaptive_button.disabled = not is_supported
-	if not is_supported:
-		vsync_adaptive_button.tooltip_text = ("Adaptive V-Sync is not supported by your GPU/driver.")
+
+## Handles screen resolution selection and updates [GraphicsManager].
+func _on_resolution_selected(index: int) -> void:
+	var label: String = resolution_options.get_item_text(index)
+	var res: Vector2i = VideoConfig.RESOLUTIONS.get(label, Vector2i(1920, 1080))
+	print("DisplaySection: Player selected resolution -> ", res)
+	GraphicsManager.set_setting("resolution_x", res.x, false)
+	GraphicsManager.set_setting("resolution_y", res.y, true)
+	display_settings_changed.emit()
+
+
+## Handles framerate limit selection and updates [GraphicsManager].
+func _on_fps_selected(index: int) -> void:
+	var label: String = fps_options.get_item_text(index)
+	var limit: int = VideoConfig.FPS_LIMITS.get(label, VideoConfig.DEFAULT_FPS)
+	print("DisplaySection: Player selected FPS cap -> ", limit)
+	GraphicsManager.set_setting("fps_limit", limit)
+	display_settings_changed.emit()

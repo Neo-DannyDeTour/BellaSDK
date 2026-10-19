@@ -1,49 +1,33 @@
-## Controls GPU device selection, backend drivers, and benchmark runs.
+## Controls GPU adapter selection and backend rendering driver configuration.
 class_name HardwareSection
 extends VBoxContainer
 
-# --------------------------------------
-# SIGNALS
-# --------------------------------------
-## Emitted when changing GPU or renderer backend to request confirmation.
+## Emitted when changing GPU adapter or rendering driver requires an application restart.
 @warning_ignore("unused_signal")
 signal restart_required(message: String, renderer_key: String, gpu_idx: int)
 
-## Emitted when the user starts the automated 60 FPS tuning benchmark pass.
-@warning_ignore("unused_signal")
-signal auto_tune_requested
-
-# --------------------------------------
-# RUNTIME LOOKUP MAPPINGS
-# --------------------------------------
-## Map storing GPU adapter names mapped to their physical hardware index.
+## Map associating GPU adapter display labels with physical hardware indices.
 var _available_gpus: Dictionary[String, int] = {}
 
-## Lookup map associating renderer keys with toggle buttons.
+## Map associating renderer backend identifiers with their toggle buttons.
 var _renderer_btn_map: Dictionary[String, Button] = {}
 
-# --------------------------------------
-# NODE REFERENCES
-# --------------------------------------
-## Reference to the video card selection [OptionButton].
+## Graphics card adapter selection [OptionButton].
 @onready var gpu_options: OptionButton = %GPUAdapterOptionButton
 
-## Forward+ renderer toggle [Button].
+## Forward+ (Vulkan High-End) renderer toggle [Button].
 @onready var renderer_forward_button: Button = %RendererForwardButton
 
-## Mobile renderer toggle [Button].
+## Mobile (Vulkan Mobile) renderer toggle [Button].
 @onready var renderer_mobile_button: Button = %RendererMobileButton
 
-## Compatibility renderer toggle [Button].
+## Compatibility (OpenGL Low-End) renderer toggle [Button].
 @onready var renderer_compat_button: Button = %RendererCompatButton
 
-## Reference to the auto-optimization benchmark [Button].
-@onready var auto_tune_button: Button = %AutoTuneButton
 
-
-## Lifecycle method initializing hardware widgets and connecting signals.
+## Initializes hardware selector dropdowns, renderer button group, and signal bindings.
 func _ready() -> void:
-	print("HardwareSection: Initializing hardware settings.")
+	print("HardwareSection: Initializing hardware settings UI.")
 	set_process(false)
 	set_physics_process(false)
 	_setup_renderer_buttons()
@@ -52,79 +36,9 @@ func _ready() -> void:
 	load_settings()
 
 
-## Configures button groups and visual styles for renderer buttons.
-func _setup_renderer_buttons() -> void:
-	print("HardwareSection: Configuring renderer toggle buttons.")
-	_renderer_btn_map = {
-		"forward_plus": renderer_forward_button,
-		"mobile": renderer_mobile_button,
-		"gl_compatibility": renderer_compat_button,
-	}
-	_setup_group(_renderer_btn_map)
-
-
-## Assigns a unified [ButtonGroup] and pressed visual styles to buttons.
-func _setup_group(mapping: Dictionary[String, Button]) -> void:
-	var group: ButtonGroup = ButtonGroup.new()
-
-	var pressed_style: StyleBoxFlat = StyleBoxFlat.new()
-	pressed_style.bg_color = Color(0.06, 0.06, 0.07, 1.0)
-	pressed_style.border_color = Color(0.3, 0.3, 0.35, 1.0)
-	pressed_style.set_border_width_all(1)
-	pressed_style.set_corner_radius_all(3)
-
-	for btn: Button in mapping.values():
-		if not is_instance_valid(btn):
-			continue
-		btn.toggle_mode = true
-		btn.button_group = group
-		btn.add_theme_stylebox_override("pressed", pressed_style)
-		btn.add_theme_stylebox_override("hover_pressed", pressed_style)
-		btn.add_theme_color_override("font_pressed_color", Color(0.7, 0.7, 0.7, 1.0))
-
-
-## Queries available hardware devices and populates dropdown selectors.
-func _populate_dropdowns() -> void:
-	print("HardwareSection: Populating GPU adapter list.")
-	gpu_options.clear()
-	_available_gpus.clear()
-
-	var rd: RenderingDevice = RenderingServer.get_rendering_device()
-	var adapter_name: String = ""
-	if is_instance_valid(rd):
-		adapter_name = rd.get_device_name()
-	else:
-		adapter_name = RenderingServer.get_video_adapter_name()
-
-	if adapter_name.is_empty():
-		adapter_name = "Default Graphics Adapter"
-
-	var display_text: String = adapter_name + " (Active Device)"
-	_available_gpus[display_text] = 0
-	gpu_options.add_item(display_text)
-	gpu_options.select(0)
-
-
-## Connects all widget selection signals to their corresponding handlers.
-func _connect_signals() -> void:
-	print("HardwareSection: Connecting hardware widget signals.")
-	gpu_options.item_selected.connect(_on_gpu_selected)
-	auto_tune_button.pressed.connect(_on_auto_tune_pressed)
-
-	renderer_forward_button.pressed.connect(
-		_on_renderer_pressed.bind("forward_plus", "Forward+ (Vulkan High-End)")
-	)
-	renderer_mobile_button.pressed.connect(
-		_on_renderer_pressed.bind("mobile", "Mobile (Vulkan Mobile)")
-	)
-	renderer_compat_button.pressed.connect(
-		_on_renderer_pressed.bind("gl_compatibility", "Compatibility (OpenGL Low-End)")
-	)
-
-
-## Synchronizes renderer and GPU selections with stored settings silently.
+## Synchronizes renderer buttons and GPU selector with stored settings without emitting signals.
 func load_settings() -> void:
-	print("HardwareSection: Loading hardware settings from configuration.")
+	print("HardwareSection: Synchronizing hardware UI with active configuration.")
 	var raw_renderer: Variant = GlobalSettings.get_setting("Settings", "renderer", "forward_plus")
 	var cur_renderer: String = raw_renderer if raw_renderer is String else "forward_plus"
 	for key: String in _renderer_btn_map.keys():
@@ -137,14 +51,65 @@ func load_settings() -> void:
 		gpu_options.select(saved_gpu)
 
 
-## Updates benchmark button visual state during automated passes.
-func set_benchmark_state(is_running: bool) -> void:
-	print("HardwareSection: Updating auto-tune button state: ", is_running)
-	auto_tune_button.disabled = is_running
-	auto_tune_button.text = "Benchmarking..." if is_running else "Auto-Tune for 60 FPS"
+## Configures unified [ButtonGroup] and pressed visual styles for renderer buttons.
+func _setup_renderer_buttons() -> void:
+	_renderer_btn_map = {
+		"forward_plus": renderer_forward_button,
+		"mobile": renderer_mobile_button,
+		"gl_compatibility": renderer_compat_button,
+	}
+
+	var group: ButtonGroup = ButtonGroup.new()
+	var pressed_style: StyleBoxFlat = StyleBoxFlat.new()
+	pressed_style.bg_color = Color(0.06, 0.06, 0.07, 1.0)
+	pressed_style.border_color = Color(0.3, 0.3, 0.35, 1.0)
+	pressed_style.set_border_width_all(1)
+	pressed_style.set_corner_radius_all(3)
+
+	for btn: Button in _renderer_btn_map.values():
+		if not is_instance_valid(btn):
+			continue
+		btn.toggle_mode = true
+		btn.button_group = group
+		btn.add_theme_stylebox_override("pressed", pressed_style)
+		btn.add_theme_stylebox_override("hover_pressed", pressed_style)
+		btn.add_theme_color_override("font_pressed_color", Color(0.7, 0.7, 0.7, 1.0))
 
 
-## Handles GPU adapter selection and dispatches restart confirmation.
+## Populates the GPU adapter dropdown with the active rendering device name.
+func _populate_dropdowns() -> void:
+	gpu_options.clear()
+	_available_gpus.clear()
+
+	var rd: RenderingDevice = RenderingServer.get_rendering_device()
+	var adapter_name: String = (
+		rd.get_device_name() if is_instance_valid(rd) else RenderingServer.get_video_adapter_name()
+	)
+	if adapter_name.is_empty():
+		adapter_name = "Default Graphics Adapter"
+
+	var display_text: String = adapter_name + " (Active Device)"
+	_available_gpus[display_text] = 0
+	gpu_options.add_item(display_text)
+	gpu_options.select(0)
+
+
+## Connects GPU dropdown and renderer buttons using typed Callables.
+func _connect_signals() -> void:
+	gpu_options.item_selected.connect(_on_gpu_selected)
+
+	renderer_forward_button.pressed.connect(
+		_on_renderer_pressed.bind("forward_plus", "Forward+ (Vulkan High-End)")
+	)
+	renderer_mobile_button.pressed.connect(
+		_on_renderer_pressed.bind("mobile", "Mobile (Vulkan Mobile)")
+	)
+	renderer_compat_button.pressed.connect(
+		_on_renderer_pressed.bind("gl_compatibility", "Compatibility (OpenGL Low-End)")
+	)
+
+
+## Handles GPU adapter selection and requests restart confirmation if changed.
 func _on_gpu_selected(index: int) -> void:
 	var label: String = gpu_options.get_item_text(index)
 	var gpu_idx: int = _available_gpus.get(label, 0)
@@ -152,7 +117,7 @@ func _on_gpu_selected(index: int) -> void:
 	if current_gpu == gpu_idx:
 		return
 
-	print("HardwareSection: Selected GPU adapter index: ", gpu_idx)
+	print("HardwareSection: Player selected GPU adapter index -> ", gpu_idx)
 	var msg: String = (
 		"Switching GPU adapter to '"
 		+ label
@@ -161,14 +126,14 @@ func _on_gpu_selected(index: int) -> void:
 	restart_required.emit(msg, "", gpu_idx)
 
 
-## Handles renderer toggle and dispatches restart confirmation signal.
+## Handles renderer backend button selection and requests restart confirmation.
 func _on_renderer_pressed(rend_key: String, label: String) -> void:
-	print("HardwareSection: Selected rendering engine: ", rend_key)
 	var raw_rend: Variant = GlobalSettings.get_setting("Settings", "renderer", "forward_plus")
 	var current_rend: String = raw_rend if raw_rend is String else "forward_plus"
 	if current_rend == rend_key:
 		return
 
+	print("HardwareSection: Player selected renderer backend -> ", rend_key)
 	for key: String in _renderer_btn_map.keys():
 		var btn: Button = _renderer_btn_map[key]
 		if is_instance_valid(btn):
@@ -180,9 +145,3 @@ func _on_renderer_pressed(rend_key: String, label: String) -> void:
 		+ "' requires restarting the game.\n\nRestart now?"
 	)
 	restart_required.emit(msg, rend_key, -1)
-
-
-## Handles auto-tune benchmark trigger button.
-func _on_auto_tune_pressed() -> void:
-	print("HardwareSection: Auto-tune button pressed.")
-	auto_tune_requested.emit()

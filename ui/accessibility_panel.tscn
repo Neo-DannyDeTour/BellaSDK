@@ -706,6 +706,17 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 
+[node name="InfiniteAmmoLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Controls/ControlsSection" unique_id=83719462]
+layout_mode = 2
+text = "Infinite Ammo"
+
+[node name="Spacer_InfiniteAmmo" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Controls/ControlsSection" unique_id=83719463]
+layout_mode = 2
+
+[node name="InfiniteAmmoToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Controls/ControlsSection" unique_id=83719464]
+unique_name_in_owner = true
+layout_mode = 2
+
 [node name="Audio & Subs" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs" unique_id=1331059279]
 visible = false
 layout_mode = 2

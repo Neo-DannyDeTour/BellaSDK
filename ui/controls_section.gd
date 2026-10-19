@@ -35,6 +35,9 @@ const DEFAULT_CANCEL_CROUCH_ON_JUMP: bool = true
 ## Default constant value for infinite swim accessibility toggle.
 const DEFAULT_INFINITE_SWIM: bool = false
 
+## Default constant value for infinite ammo accessibility toggle.
+const DEFAULT_INFINITE_AMMO: bool = false
+
 # --------------------------------------
 # NODE REFERENCES
 # --------------------------------------
@@ -77,12 +80,24 @@ const DEFAULT_INFINITE_SWIM: bool = false
 ## Toggle switch for unlimited underwater oxygen.
 @onready var infinite_swim_toggle: CheckButton = _resolve_swim_toggle()
 
+## Toggle switch for infinite reserve ammunition.
+@onready var infinite_ammo_toggle: CheckButton = _resolve_ammo_toggle()
+
 
 ## Lifecycle initialization method connecting controls inputs and loading preferences.
 func _ready() -> void:
 	print("UI: Initializing Controls Section.")
 	_connect_signals()
 	load_settings()
+
+
+## Cleans up external event subscriptions on exit tree.
+func _exit_tree() -> void:
+	if (
+		Events.has_signal("infinite_ammo_toggled")
+		and Events.infinite_ammo_toggled.is_connected(_on_external_infinite_ammo_toggled)
+	):
+		Events.infinite_ammo_toggled.disconnect(_on_external_infinite_ammo_toggled)
 
 
 ## Resolves the infinite swim CheckButton with fallback searching.
@@ -99,6 +114,23 @@ func _resolve_swim_toggle() -> CheckButton:
 
 	if not is_instance_valid(btn):
 		push_error("AccessibilityControlsSection: Could not find InfiniteSwimToggle node!")
+	return btn
+
+
+## Resolves the infinite ammo CheckButton with fallback searching.
+func _resolve_ammo_toggle() -> CheckButton:
+	var unique_node: Node = get_node_or_null("%InfiniteAmmoToggle")
+	var btn: CheckButton = null
+	if unique_node is CheckButton:
+		btn = unique_node
+
+	if not is_instance_valid(btn):
+		var found_child: Node = find_child("InfiniteAmmoToggle", true, false)
+		if found_child is CheckButton:
+			btn = found_child
+
+	if not is_instance_valid(btn):
+		push_error("AccessibilityControlsSection: Could not find InfiniteAmmoToggle node!")
 	return btn
 
 
@@ -136,6 +168,13 @@ func _connect_signals() -> void:
 	if is_instance_valid(infinite_swim_toggle):
 		if not infinite_swim_toggle.toggled.is_connected(_on_infinite_swim_toggled):
 			infinite_swim_toggle.toggled.connect(_on_infinite_swim_toggled)
+	if is_instance_valid(infinite_ammo_toggle):
+		if not infinite_ammo_toggle.toggled.is_connected(_on_infinite_ammo_toggled):
+			infinite_ammo_toggle.toggled.connect(_on_infinite_ammo_toggled)
+
+	if Events.has_signal("infinite_ammo_toggled"):
+		if not Events.infinite_ammo_toggled.is_connected(_on_external_infinite_ammo_toggled):
+			Events.infinite_ammo_toggled.connect(_on_external_infinite_ammo_toggled)
 
 
 ## Loads stored control preferences from [GlobalSettings] silently.
@@ -206,6 +245,12 @@ func load_settings() -> void:
 			"Accessibility", "infinite_swim", DEFAULT_INFINITE_SWIM
 		)
 		infinite_swim_toggle.set_pressed_no_signal(inf_swim)
+
+	if is_instance_valid(infinite_ammo_toggle):
+		var inf_ammo: bool = GlobalSettings.get_setting_bool(
+			"Accessibility", "infinite_ammo", DEFAULT_INFINITE_AMMO
+		)
+		infinite_ammo_toggle.set_pressed_no_signal(inf_ammo)
 
 
 ## Connects slider and [LineEdit] pairs with throttled commit logic.
@@ -415,3 +460,24 @@ func _on_infinite_swim_toggled(toggled_on: bool) -> void:
 	var events_node: Node = get_node_or_null("/root/Events")
 	if is_instance_valid(events_node) and events_node.has_signal("infinite_swim_toggled"):
 		events_node.emit_signal("infinite_swim_toggled", toggled_on)
+
+
+## Handles infinite ammo toggle updates and broadcasts state changes.
+func _on_infinite_ammo_toggled(toggled_on: bool) -> void:
+	var current: bool = GlobalSettings.get_setting_bool(
+		"Accessibility", "infinite_ammo", DEFAULT_INFINITE_AMMO
+	)
+	if current == toggled_on:
+		return
+
+	print("Player toggled Infinite Ammo to: ", toggled_on)
+	GlobalSettings.save_setting("Accessibility", "infinite_ammo", toggled_on, true)
+	var events_node: Node = get_node_or_null("/root/Events")
+	if is_instance_valid(events_node) and events_node.has_signal("infinite_ammo_toggled"):
+		events_node.emit_signal("infinite_ammo_toggled", toggled_on)
+
+
+## Updates toggle state when changed externally via console.
+func _on_external_infinite_ammo_toggled(enabled: bool) -> void:
+	if is_instance_valid(infinite_ammo_toggle) and infinite_ammo_toggle.button_pressed != enabled:
+		infinite_ammo_toggle.set_pressed_no_signal(enabled)

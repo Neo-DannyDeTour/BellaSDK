@@ -66,6 +66,7 @@ var toggle_states: Dictionary = {
 	"god": false,
 	"hidehud": false,
 	"highcontrast": false,
+	"infinite_ammo": false,
 	"mono_audio": false,
 	"noclip": false,
 	"noshake": false,
@@ -143,12 +144,20 @@ func _connect_event_bus() -> void:
 		Events.console_toggle_requested.connect(_on_console_toggle_requested)
 	if Events.has_signal(&"noclip_toggled"):
 		Events.noclip_toggled.connect(_on_external_noclip_toggled)
+	if Events.has_signal(&"infinite_ammo_toggled"):
+		Events.infinite_ammo_toggled.connect(_on_external_infinite_ammo_toggled)
 
 
 ## Keeps internal noclip toggle state synchronized with external events.
 func _on_external_noclip_toggled(is_active: bool) -> void:
 	print("InGameConsole: External noclip state updated -> ", is_active)
 	toggle_states["noclip"] = is_active
+
+
+## Keeps internal infinite ammo toggle state synchronized with external events.
+func _on_external_infinite_ammo_toggled(is_active: bool) -> void:
+	print("InGameConsole: External infinite ammo state updated -> ", is_active)
+	toggle_states["infinite_ammo"] = is_active
 
 
 ## Intercepts Escape and UI cancellation inputs to dismiss terminal.
@@ -396,6 +405,27 @@ func _get_enemy_options() -> Array[String]:
 	return keys
 
 
+## Parses boolean toggle argument from input tokens.
+## Returns target boolean value, or null if arguments are invalid.
+func _parse_toggle_arg(args: PackedStringArray, current_state: bool, cmd_name: String) -> Variant:
+	if args.is_empty():
+		return not current_state
+
+	var token: String = args[0].to_lower()
+	if token in ["1", "on", "true", "enable", "enabled"]:
+		return true
+	if token in ["0", "off", "false", "disable", "disabled"]:
+		return false
+
+	write("Usage: " + cmd_name + " [on/off | 1/0]", "yellow")
+	return null
+
+
+## Returns autocomplete candidates for boolean toggle commands.
+func _get_toggle_options() -> Array[String]:
+	return ["on", "off", "1", "0"]
+
+
 ## Displays all valid registered console commands.
 func _cmd_help(_args: PackedStringArray) -> void:
 	print("InGameConsole: _cmd_help called.")
@@ -452,20 +482,32 @@ func _register_default_commands() -> void:
 		)
 	)
 	registry.register_command(
-		ConsoleCommand.new("highcontrast", "Toggles high contrast overlay mode.", _cmd_highcontrast)
+		ConsoleCommand.new(
+			"highcontrast",
+			"Toggles high contrast overlay mode.",
+			_cmd_highcontrast,
+			_get_toggle_options
+		)
 	)
 	registry.register_command(
 		ConsoleCommand.new("screenshake", "Triggers a screenshake event.", _cmd_screenshake)
 	)
 	registry.register_command(
-		ConsoleCommand.new("subtitles", "Toggles dialogue subtitles.", _cmd_subtitles)
-	)
-	registry.register_command(
-		ConsoleCommand.new("mono_audio", "Toggles mono audio downmixing.", _cmd_mono_audio)
+		ConsoleCommand.new(
+			"subtitles", "Toggles dialogue subtitles.", _cmd_subtitles, _get_toggle_options
+		)
 	)
 	registry.register_command(
 		ConsoleCommand.new(
-			"photosensitivity", "Toggles photosensitive safety filter.", _cmd_photosensitivity
+			"mono_audio", "Toggles mono audio downmixing.", _cmd_mono_audio, _get_toggle_options
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"photosensitivity",
+			"Toggles photosensitive safety filter.",
+			_cmd_photosensitivity,
+			_get_toggle_options
 		)
 	)
 	registry.register_command(
@@ -484,11 +526,13 @@ func _register_default_commands() -> void:
 			"visionassist",
 			"Configures vision assist highlights.",
 			_cmd_visionassist,
-			func() -> Array[String]: return ["mode", "color"]
+			func() -> Array[String]: return ["on", "off", "1", "0", "mode", "color"]
 		)
 	)
 	registry.register_command(
-		ConsoleCommand.new("wolfvision", "Toggles wolf vision mode.", _cmd_wolfvision)
+		ConsoleCommand.new(
+			"wolfvision", "Toggles wolf vision mode.", _cmd_wolfvision, _get_toggle_options
+		)
 	)
 	registry.register_command(
 		ConsoleCommand.new("uiscale", "Scales the user interface.", _cmd_uiscale)
@@ -498,37 +542,39 @@ func _register_default_commands() -> void:
 	)
 	registry.register_command(
 		ConsoleCommand.new(
-			"shadows",
-			"Toggles global shadow casting.",
-			_cmd_shadows,
-			func() -> Array[String]: return ["on", "off"]
+			"shadows", "Toggles global shadow casting.", _cmd_shadows, _get_toggle_options
 		)
 	)
 	registry.register_command(
 		ConsoleCommand.new(
-			"vsync",
-			"Toggles vertical synchronization mode.",
-			_cmd_vsync,
-			func() -> Array[String]: return ["on", "off"]
+			"vsync", "Toggles vertical synchronization mode.", _cmd_vsync, _get_toggle_options
 		)
 	)
 	registry.register_command(
-		ConsoleCommand.new("hidehud", "Toggles HUD visibility.", _cmd_hidehud)
+		ConsoleCommand.new("hidehud", "Toggles HUD visibility.", _cmd_hidehud, _get_toggle_options)
 	)
 	registry.register_command(
 		ConsoleCommand.new("gamma", "Adjusts environment tonemap exposure.", _cmd_gamma)
 	)
 	registry.register_command(
-		ConsoleCommand.new("noshake", "Disables camera screenshake triggers.", _cmd_noshake)
-	)
-	registry.register_command(
 		ConsoleCommand.new(
-			"togglecrouch", "Switches crouch input between hold and toggle.", _cmd_togglecrouch
+			"noshake", "Disables camera screenshake triggers.", _cmd_noshake, _get_toggle_options
 		)
 	)
 	registry.register_command(
 		ConsoleCommand.new(
-			"togglesprint", "Switches sprint input between hold and toggle.", _cmd_togglesprint
+			"togglecrouch",
+			"Switches crouch input between hold and toggle.",
+			_cmd_togglecrouch,
+			_get_toggle_options
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"togglesprint",
+			"Switches sprint input between hold and toggle.",
+			_cmd_togglesprint,
+			_get_toggle_options
 		)
 	)
 	registry.register_command(
@@ -536,7 +582,7 @@ func _register_default_commands() -> void:
 			"aimassist",
 			"Toggles controller aim friction and magnetism.",
 			_cmd_aimassist,
-			func() -> Array[String]: return ["on", "off"]
+			_get_toggle_options
 		)
 	)
 	registry.register_command(
@@ -549,11 +595,16 @@ func _register_default_commands() -> void:
 			"audio_spatial",
 			"Toggles positional 3D audio downmixing.",
 			_cmd_audio_spatial,
-			func() -> Array[String]: return ["on", "off"]
+			_get_toggle_options
 		)
 	)
 	registry.register_command(
-		ConsoleCommand.new("wolfmode", "Toggles player wolf form transformation.", _cmd_wolfmode)
+		ConsoleCommand.new(
+			"wolfmode",
+			"Toggles player wolf form transformation.",
+			_cmd_wolfmode,
+			_get_toggle_options
+		)
 	)
 	_register_debug_commands()
 	_register_easter_egg_commands()
@@ -588,7 +639,7 @@ func _register_debug_commands() -> void:
 			"showtrigger",
 			"Toggles trigger visualizer mesh visibility.",
 			_cmd_showtrigger,
-			func() -> Array[String]: return ["on", "off"],
+			_get_toggle_options,
 			true
 		)
 	)
@@ -603,7 +654,7 @@ func _register_debug_commands() -> void:
 	)
 	registry.register_command(
 		ConsoleCommand.new(
-			"noclip", "Toggles noclip collision mode.", _cmd_noclip, Callable(), true
+			"noclip", "Toggles noclip collision mode.", _cmd_noclip, _get_toggle_options, true
 		)
 	)
 	registry.register_command(
@@ -611,13 +662,17 @@ func _register_debug_commands() -> void:
 			"fullbright",
 			"Toggles fullbright unshaded render mode.",
 			_cmd_fullbright,
-			Callable(),
+			_get_toggle_options,
 			true
 		)
 	)
 	registry.register_command(
 		ConsoleCommand.new(
-			"wireframe", "Toggles wireframe rendering mode.", _cmd_wireframe, Callable(), true
+			"wireframe",
+			"Toggles wireframe rendering mode.",
+			_cmd_wireframe,
+			_get_toggle_options,
+			true
 		)
 	)
 	registry.register_command(
@@ -625,7 +680,7 @@ func _register_debug_commands() -> void:
 			"wireframeoverlay",
 			"Toggles green wireframe overlay.",
 			_cmd_wireframe_overlay,
-			Callable(),
+			_get_toggle_options,
 			true
 		)
 	)
@@ -634,7 +689,7 @@ func _register_debug_commands() -> void:
 			"collision",
 			"Toggles debug collision shape visibility.",
 			_cmd_collision,
-			Callable(),
+			_get_toggle_options,
 			true
 		)
 	)
@@ -655,11 +710,17 @@ func _register_debug_commands() -> void:
 	)
 	registry.register_command(
 		ConsoleCommand.new(
-			"showfps", "Toggles performance diagnostic HUD.", _cmd_showfps, Callable(), true
+			"showfps",
+			"Toggles performance diagnostic HUD.",
+			_cmd_showfps,
+			_get_toggle_options,
+			true
 		)
 	)
 	registry.register_command(
-		ConsoleCommand.new("stat_fps", "Alias for showfps command.", _cmd_showfps, Callable(), true)
+		ConsoleCommand.new(
+			"stat_fps", "Alias for showfps command.", _cmd_showfps, _get_toggle_options, true
+		)
 	)
 	registry.register_command(
 		ConsoleCommand.new(
@@ -681,15 +742,19 @@ func _register_debug_commands() -> void:
 			"showcolliders",
 			"Toggles collision shape debug visualization.",
 			_cmd_showcolliders,
-			Callable(),
+			_get_toggle_options,
 			true
 		)
 	)
 	registry.register_command(
-		ConsoleCommand.new("fly", "Toggles flight navigation mode.", _cmd_fly, Callable(), true)
+		ConsoleCommand.new(
+			"fly", "Toggles flight navigation mode.", _cmd_fly, _get_toggle_options, true
+		)
 	)
 	registry.register_command(
-		ConsoleCommand.new("god", "Toggles godmode invulnerability.", _cmd_god, Callable(), true)
+		ConsoleCommand.new(
+			"god", "Toggles godmode invulnerability.", _cmd_god, _get_toggle_options, true
+		)
 	)
 	registry.register_command(
 		ConsoleCommand.new("die", "Kills player instantly.", _cmd_die, Callable(), true)
@@ -710,6 +775,24 @@ func _register_debug_commands() -> void:
 			"Adds specified ammo type into inventory.",
 			_cmd_give_ammo,
 			func() -> Array[String]: return ["bullet", "energy", "shell", "rocket"],
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"infinite_ammo",
+			"Toggles infinite reserve ammunition.",
+			_cmd_infinite_ammo,
+			_get_toggle_options,
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"inf_ammo",
+			"Toggles infinite reserve ammunition (alias).",
+			_cmd_infinite_ammo,
+			_get_toggle_options,
 			true
 		)
 	)
@@ -880,9 +963,12 @@ func _cmd_colorblind(args: PackedStringArray) -> void:
 
 
 ## Handles high contrast command toggling.
-func _cmd_highcontrast(_args: PackedStringArray) -> void:
-	toggle_states["highcontrast"] = not toggle_states["highcontrast"]
-	var active: bool = toggle_states["highcontrast"]
+func _cmd_highcontrast(args: PackedStringArray) -> void:
+	var parsed: Variant = _parse_toggle_arg(args, toggle_states["highcontrast"], "highcontrast")
+	if parsed == null:
+		return
+	var active: bool = parsed as bool
+	toggle_states["highcontrast"] = active
 	print("InGameConsole: Toggled highcontrast to: ", active)
 	Events.high_contrast_toggled.emit(active)
 	write("High contrast " + ("activated." if active else "deactivated."), "green")
@@ -917,26 +1003,37 @@ func _cmd_screenshake(args: PackedStringArray) -> void:
 
 
 ## Handles subtitle toggling.
-func _cmd_subtitles(_args: PackedStringArray) -> void:
-	toggle_states["subtitles"] = not toggle_states["subtitles"]
-	var active: bool = toggle_states["subtitles"]
+func _cmd_subtitles(args: PackedStringArray) -> void:
+	var parsed: Variant = _parse_toggle_arg(args, toggle_states["subtitles"], "subtitles")
+	if parsed == null:
+		return
+	var active: bool = parsed as bool
+	toggle_states["subtitles"] = active
 	print("InGameConsole: Toggled subtitles to: ", active)
 	Events.subtitles_toggled.emit(active)
 	write("Subtitles " + ("activated." if active else "deactivated."), "green")
 
 
 ## Handles mono audio downmixing toggling.
-func _cmd_mono_audio(_args: PackedStringArray) -> void:
-	toggle_states["mono_audio"] = not toggle_states["mono_audio"]
-	var active: bool = toggle_states["mono_audio"]
+func _cmd_mono_audio(args: PackedStringArray) -> void:
+	var parsed: Variant = _parse_toggle_arg(args, toggle_states["mono_audio"], "mono_audio")
+	if parsed == null:
+		return
+	var active: bool = parsed as bool
+	toggle_states["mono_audio"] = active
 	print("InGameConsole: Toggled mono_audio to: ", active)
 	write("Mono audio " + ("activated." if active else "deactivated."), "green")
 
 
 ## Handles photosensitivity mode toggling.
-func _cmd_photosensitivity(_args: PackedStringArray) -> void:
-	toggle_states["photosensitivity"] = not toggle_states["photosensitivity"]
-	var active: bool = toggle_states["photosensitivity"]
+func _cmd_photosensitivity(args: PackedStringArray) -> void:
+	var parsed: Variant = _parse_toggle_arg(
+		args, toggle_states["photosensitivity"], "photosensitivity"
+	)
+	if parsed == null:
+		return
+	var active: bool = parsed as bool
+	toggle_states["photosensitivity"] = active
 	print("InGameConsole: Toggled photosensitivity to: ", active)
 	Events.photosensitivity_mode_toggled.emit(active)
 	var status_str: String = "activated." if active else "deactivated."
@@ -986,9 +1083,18 @@ func _cmd_screenfilter(args: PackedStringArray) -> void:
 ## Handles visionassist command configurations and toggles.
 func _cmd_visionassist(args: PackedStringArray) -> void:
 	print("InGameConsole: _cmd_visionassist called with args: ", args)
-	if args.is_empty():
-		toggle_states["visionassist"] = not toggle_states["visionassist"]
-		var active: bool = toggle_states["visionassist"]
+	if (
+		args.is_empty()
+		or (
+			args[0].to_lower()
+			in ["1", "on", "true", "enable", "enabled", "0", "off", "false", "disable", "disabled"]
+		)
+	):
+		var parsed: Variant = _parse_toggle_arg(args, toggle_states["visionassist"], "visionassist")
+		if parsed == null:
+			return
+		var active: bool = parsed as bool
+		toggle_states["visionassist"] = active
 		print("InGameConsole: Vision assist toggled to: ", active)
 		Events.vision_assist_toggled.emit(active)
 		var stat: String = "activated." if active else "deactivated."
@@ -1012,51 +1118,70 @@ func _cmd_visionassist(args: PackedStringArray) -> void:
 		write(msg, "green")
 	else:
 		var hint: String = (
-			"Usage: visionassist OR visionassist mode <mode> OR "
+			"Usage: visionassist [on/off | 1/0] OR visionassist mode <mode> OR "
 			+ "visionassist color <group> <color>"
 		)
 		write(hint, "yellow")
 
 
 ## Handles wolfvision toggling.
-func _cmd_wolfvision(_args: PackedStringArray) -> void:
-	toggle_states["wolfvision"] = not toggle_states["wolfvision"]
-	var active: bool = toggle_states["wolfvision"]
+func _cmd_wolfvision(args: PackedStringArray) -> void:
+	var parsed: Variant = _parse_toggle_arg(args, toggle_states["wolfvision"], "wolfvision")
+	if parsed == null:
+		return
+	var active: bool = parsed as bool
+	toggle_states["wolfvision"] = active
 	print("InGameConsole: Wolf vision toggled to: ", active)
 	Events.wolf_vision_toggled.emit(active)
 	write("Wolf vision " + ("activated." if active else "deactivated."), "green")
 
 
 ## Handles noclip command toggling.
-func _cmd_noclip(_args: PackedStringArray) -> void:
+func _cmd_noclip(args: PackedStringArray) -> void:
 	print("InGameConsole: Action toggling noclip.")
-	Events.noclip_ui_button_pressed.emit()
-	var active: bool = not toggle_states.get("noclip", false)
+	var current: bool = toggle_states.get("noclip", false)
+	var parsed: Variant = _parse_toggle_arg(args, current, "noclip")
+	if parsed == null:
+		return
+	var active: bool = parsed as bool
+	if active != current:
+		Events.noclip_ui_button_pressed.emit()
 	write("Noclip " + ("activated." if active else "deactivated."), "green")
 
 
 ## Handles fullbright render mode toggling.
-func _cmd_fullbright(_args: PackedStringArray) -> void:
-	toggle_states["fullbright"] = not toggle_states["fullbright"]
-	var active: bool = toggle_states["fullbright"]
+func _cmd_fullbright(args: PackedStringArray) -> void:
+	var parsed: Variant = _parse_toggle_arg(args, toggle_states["fullbright"], "fullbright")
+	if parsed == null:
+		return
+	var active: bool = parsed as bool
+	toggle_states["fullbright"] = active
 	print("InGameConsole: Toggled fullbright to: ", active)
 	Events.fullbright_toggled.emit(active)
 	write("Fullbright " + ("activated." if active else "deactivated."), "green")
 
 
 ## Handles wireframe render mode toggling.
-func _cmd_wireframe(_args: PackedStringArray) -> void:
-	toggle_states["wireframe"] = not toggle_states["wireframe"]
-	var active: bool = toggle_states["wireframe"]
+func _cmd_wireframe(args: PackedStringArray) -> void:
+	var parsed: Variant = _parse_toggle_arg(args, toggle_states["wireframe"], "wireframe")
+	if parsed == null:
+		return
+	var active: bool = parsed as bool
+	toggle_states["wireframe"] = active
 	print("InGameConsole: Toggled wireframe to: ", active)
 	Events.wireframe_toggled.emit(active)
 	write("Wireframe " + ("activated." if active else "deactivated."), "green")
 
 
 ## Handles wireframe overlay material toggling.
-func _cmd_wireframe_overlay(_args: PackedStringArray) -> void:
-	toggle_states["wireframeoverlay"] = not toggle_states["wireframeoverlay"]
-	var active: bool = toggle_states["wireframeoverlay"]
+func _cmd_wireframe_overlay(args: PackedStringArray) -> void:
+	var parsed: Variant = _parse_toggle_arg(
+		args, toggle_states["wireframeoverlay"], "wireframeoverlay"
+	)
+	if parsed == null:
+		return
+	var active: bool = parsed as bool
+	toggle_states["wireframeoverlay"] = active
 	print("InGameConsole: Toggled wireframe overlay to: ", active)
 	Events.wireframe_overlay_toggled.emit(active)
 	var status_str: String = "activated." if active else "deactivated."
@@ -1064,9 +1189,12 @@ func _cmd_wireframe_overlay(_args: PackedStringArray) -> void:
 
 
 ## Handles debug collision shape visibility toggling.
-func _cmd_collision(_args: PackedStringArray) -> void:
-	toggle_states["collision"] = not toggle_states["collision"]
-	var active: bool = toggle_states["collision"]
+func _cmd_collision(args: PackedStringArray) -> void:
+	var parsed: Variant = _parse_toggle_arg(args, toggle_states["collision"], "collision")
+	if parsed == null:
+		return
+	var active: bool = parsed as bool
+	toggle_states["collision"] = active
 	print("InGameConsole: Toggled collisions to: ", active)
 	get_tree().debug_collisions_hint = active
 	var colliders: Array[Node] = get_tree().get_nodes_in_group(&"debug_colliders")
@@ -1159,9 +1287,12 @@ func _cmd_sethealth(args: PackedStringArray) -> void:
 
 
 ## Toggles the on-screen FPS and performance diagnostic HUD.
-func _cmd_showfps(_args: PackedStringArray) -> void:
-	toggle_states["showfps"] = not toggle_states["showfps"]
-	var active: bool = toggle_states["showfps"]
+func _cmd_showfps(args: PackedStringArray) -> void:
+	var parsed: Variant = _parse_toggle_arg(args, toggle_states["showfps"], "showfps")
+	if parsed == null:
+		return
+	var active: bool = parsed as bool
+	toggle_states["showfps"] = active
 	print("InGameConsole: Toggled showfps -> ", active)
 	Events.metrics_panel_toggle_requested.emit()
 	write("FPS monitor " + ("enabled." if active else "disabled."), "green")
@@ -1213,18 +1344,24 @@ func _cmd_showcolliders(args: PackedStringArray) -> void:
 
 
 ## Toggles gravity-free flight navigation mode via event bus.
-func _cmd_fly(_args: PackedStringArray) -> void:
-	toggle_states["fly"] = not toggle_states["fly"]
-	var active: bool = toggle_states["fly"]
+func _cmd_fly(args: PackedStringArray) -> void:
+	var parsed: Variant = _parse_toggle_arg(args, toggle_states["fly"], "fly")
+	if parsed == null:
+		return
+	var active: bool = parsed as bool
+	toggle_states["fly"] = active
 	print("InGameConsole: Toggled fly mode -> ", active)
 	Events.flight_mode_toggled.emit(active)
 	write("Fly mode " + ("activated." if active else "deactivated."), "green")
 
 
 ## Toggles godmode invulnerability on the active player.
-func _cmd_god(_args: PackedStringArray) -> void:
-	toggle_states["god"] = not toggle_states["god"]
-	var active: bool = toggle_states["god"]
+func _cmd_god(args: PackedStringArray) -> void:
+	var parsed: Variant = _parse_toggle_arg(args, toggle_states["god"], "god")
+	if parsed == null:
+		return
+	var active: bool = parsed as bool
+	toggle_states["god"] = active
 	print("InGameConsole: Toggled godmode -> ", active)
 	Events.set(&"is_godmode", active)
 	Events.godmode_toggled.emit(active)
@@ -1255,6 +1392,22 @@ func _cmd_give_ammo(args: PackedStringArray) -> void:
 	var amount: int = args[1].to_int() if args.size() > 1 else 30
 	Events.ammo_collected.emit(StringName(ammo_type), amount)
 	write("Given %d x '%s' ammo." % [amount, ammo_type], "green")
+
+
+## Toggles infinite reserve ammunition via accessibility settings.
+func _cmd_infinite_ammo(args: PackedStringArray) -> void:
+	print("InGameConsole: _cmd_infinite_ammo called with args: ", args)
+	var parsed: Variant = _parse_toggle_arg(
+		args, toggle_states.get("infinite_ammo", false), "infinite_ammo"
+	)
+	if parsed == null:
+		return
+	var active: bool = parsed as bool
+	toggle_states["infinite_ammo"] = active
+	GlobalSettings.save_setting("Accessibility", "infinite_ammo", active, true)
+	if Events.has_signal(&"infinite_ammo_toggled"):
+		Events.infinite_ammo_toggled.emit(active)
+	write("Infinite ammo " + ("activated." if active else "deactivated."), "green")
 
 
 ## Spawns an enemy instance in front of player orientation.
@@ -1368,10 +1521,10 @@ func _cmd_fov(args: PackedStringArray) -> void:
 ## Configures runtime shadow rendering across 3D lights.
 func _cmd_shadows(args: PackedStringArray) -> void:
 	print("InGameConsole: _cmd_shadows called with args: ", args)
-	var active: bool = not toggle_states["shadows"]
-	if not args.is_empty():
-		active = args[0].to_lower() == "on" or args[0] == "1"
-
+	var parsed: Variant = _parse_toggle_arg(args, toggle_states["shadows"], "shadows")
+	if parsed == null:
+		return
+	var active: bool = parsed as bool
 	toggle_states["shadows"] = active
 	var lights: Array[Node] = get_tree().get_nodes_in_group(&"lights")
 	for light_node: Node in lights:
@@ -1384,11 +1537,13 @@ func _cmd_shadows(args: PackedStringArray) -> void:
 ## Configures runtime V-Sync display mode.
 func _cmd_vsync(args: PackedStringArray) -> void:
 	print("InGameConsole: _cmd_vsync called with args: ", args)
-	var is_disabled: bool = DisplayServer.window_get_vsync_mode() == DisplayServer.VSYNC_DISABLED
-	var enable: bool = is_disabled
-	if not args.is_empty():
-		enable = args[0].to_lower() == "on" or args[0] == "1"
-
+	var current_enabled: bool = (
+		DisplayServer.window_get_vsync_mode() != DisplayServer.VSYNC_DISABLED
+	)
+	var parsed: Variant = _parse_toggle_arg(args, current_enabled, "vsync")
+	if parsed == null:
+		return
+	var enable: bool = parsed as bool
 	var mode: DisplayServer.VSyncMode = (
 		DisplayServer.VSYNC_ENABLED if enable else DisplayServer.VSYNC_DISABLED
 	)
@@ -1397,9 +1552,12 @@ func _cmd_vsync(args: PackedStringArray) -> void:
 
 
 ## Toggles player HUD layer node visibility via event bus.
-func _cmd_hidehud(_args: PackedStringArray) -> void:
-	toggle_states["hidehud"] = not toggle_states["hidehud"]
-	var is_hidden: bool = toggle_states["hidehud"]
+func _cmd_hidehud(args: PackedStringArray) -> void:
+	var parsed: Variant = _parse_toggle_arg(args, toggle_states["hidehud"], "hidehud")
+	if parsed == null:
+		return
+	var is_hidden: bool = parsed as bool
+	toggle_states["hidehud"] = is_hidden
 	print("InGameConsole: Toggled hidehud -> ", is_hidden)
 	Events.ui_visibility_toggle_requested.emit()
 	write("HUD " + ("hidden." if is_hidden else "revealed."), "green")
@@ -1438,17 +1596,23 @@ func _cmd_gamma(args: PackedStringArray) -> void:
 
 
 ## Prevents screenshake events from firing on the event bus.
-func _cmd_noshake(_args: PackedStringArray) -> void:
-	toggle_states["noshake"] = not toggle_states["noshake"]
-	var active: bool = toggle_states["noshake"]
+func _cmd_noshake(args: PackedStringArray) -> void:
+	var parsed: Variant = _parse_toggle_arg(args, toggle_states["noshake"], "noshake")
+	if parsed == null:
+		return
+	var active: bool = parsed as bool
+	toggle_states["noshake"] = active
 	print("InGameConsole: Toggled noshake -> ", active)
 	write("Screenshake suppression " + ("enabled." if active else "disabled."), "green")
 
 
 ## Toggles crouch input behavior between hold and toggle.
-func _cmd_togglecrouch(_args: PackedStringArray) -> void:
-	toggle_states["togglecrouch"] = not toggle_states["togglecrouch"]
-	var active: bool = toggle_states["togglecrouch"]
+func _cmd_togglecrouch(args: PackedStringArray) -> void:
+	var parsed: Variant = _parse_toggle_arg(args, toggle_states["togglecrouch"], "togglecrouch")
+	if parsed == null:
+		return
+	var active: bool = parsed as bool
+	toggle_states["togglecrouch"] = active
 	print("InGameConsole: Toggled togglecrouch -> ", active)
 	if is_instance_valid(GlobalSettings):
 		GlobalSettings.save_setting("Controls", "toggle_crouch", active)
@@ -1457,9 +1621,12 @@ func _cmd_togglecrouch(_args: PackedStringArray) -> void:
 
 
 ## Toggles sprint input behavior between hold and toggle.
-func _cmd_togglesprint(_args: PackedStringArray) -> void:
-	toggle_states["togglesprint"] = not toggle_states["togglesprint"]
-	var active: bool = toggle_states["togglesprint"]
+func _cmd_togglesprint(args: PackedStringArray) -> void:
+	var parsed: Variant = _parse_toggle_arg(args, toggle_states["togglesprint"], "togglesprint")
+	if parsed == null:
+		return
+	var active: bool = parsed as bool
+	toggle_states["togglesprint"] = active
 	print("InGameConsole: Toggled togglesprint -> ", active)
 	if is_instance_valid(GlobalSettings):
 		GlobalSettings.save_setting("Controls", "toggle_sprint", active)
@@ -1470,10 +1637,10 @@ func _cmd_togglesprint(_args: PackedStringArray) -> void:
 ## Toggles controller aim friction and magnetism assists.
 func _cmd_aimassist(args: PackedStringArray) -> void:
 	print("InGameConsole: _cmd_aimassist called with args: ", args)
-	var active: bool = not toggle_states["aimassist"]
-	if not args.is_empty():
-		active = args[0].to_lower() == "on" or args[0] == "1"
-
+	var parsed: Variant = _parse_toggle_arg(args, toggle_states["aimassist"], "aimassist")
+	if parsed == null:
+		return
+	var active: bool = parsed as bool
 	toggle_states["aimassist"] = active
 	if is_instance_valid(GlobalSettings):
 		GlobalSettings.save_setting("Accessibility", "aim_assist", active)
@@ -1496,10 +1663,10 @@ func _cmd_textspeed(args: PackedStringArray) -> void:
 ## Configures 3D spatial audio downmixing to stereo 2D.
 func _cmd_audio_spatial(args: PackedStringArray) -> void:
 	print("InGameConsole: _cmd_audio_spatial called with args: ", args)
-	var active: bool = not toggle_states["audio_spatial"]
-	if not args.is_empty():
-		active = args[0].to_lower() == "on" or args[0] == "1"
-
+	var parsed: Variant = _parse_toggle_arg(args, toggle_states["audio_spatial"], "audio_spatial")
+	if parsed == null:
+		return
+	var active: bool = parsed as bool
 	toggle_states["audio_spatial"] = active
 	if is_instance_valid(GlobalSettings):
 		GlobalSettings.save_setting("Audio", "spatial_audio", active)
@@ -1510,10 +1677,12 @@ func _cmd_audio_spatial(args: PackedStringArray) -> void:
 ## Toggles or explicitly sets visibility of trigger visualizers.
 func _cmd_showtrigger(args: PackedStringArray) -> void:
 	print("InGameConsole: _cmd_showtrigger called with args: ", args)
-	var active: bool = not toggle_states.get("showtrigger", false)
-	if not args.is_empty():
-		active = args[0].to_lower() == "on" or args[0] == "1"
-	_set_trigger_visibility(active)
+	var parsed: Variant = _parse_toggle_arg(
+		args, toggle_states.get("showtrigger", false), "showtrigger"
+	)
+	if parsed == null:
+		return
+	_set_trigger_visibility(parsed as bool)
 
 
 ## Explicitly hides all trigger visualizer meshes in the world.
@@ -1535,9 +1704,12 @@ func _set_trigger_visibility(active: bool) -> void:
 
 
 ## Toggles player wolf mode state and broadcasts to event bus.
-func _cmd_wolfmode(_args: PackedStringArray) -> void:
-	toggle_states["wolfmode"] = not toggle_states["wolfmode"]
-	var active: bool = toggle_states["wolfmode"]
+func _cmd_wolfmode(args: PackedStringArray) -> void:
+	var parsed: Variant = _parse_toggle_arg(args, toggle_states["wolfmode"], "wolfmode")
+	if parsed == null:
+		return
+	var active: bool = parsed as bool
+	toggle_states["wolfmode"] = active
 	print("InGameConsole: Toggled wolfmode -> ", active)
 	Events.wolf_mode_toggled.emit(active)
 	var stat: String = "activated." if active else "deactivated."

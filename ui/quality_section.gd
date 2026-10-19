@@ -1,39 +1,30 @@
-## Controls graphics presets, shadow maps, scaling filters, and mesh LOD.
+## Controls graphics presets, shadow quality, distances, scaling, anti-aliasing, and LOD.
 class_name QualitySection
 extends VBoxContainer
 
-# --------------------------------------
-# SIGNALS
-# --------------------------------------
-## Emitted when the master preset selection changes. Passes [param preset_name].
+## Emitted when the player selects a master quality preset ("Low", "Medium", "High", "Ultra").
 @warning_ignore("unused_signal")
 signal preset_changed(preset_name: String)
 
-## Emitted when individual graphics quality options change.
+## Emitted when any individual quality setting is adjusted.
 @warning_ignore("unused_signal")
 signal quality_settings_changed
 
-# --------------------------------------
-# RUNTIME LOOKUP MAPPINGS
-# --------------------------------------
-## Lookup map associating preset names with toggle buttons.
+## Map associating master preset names with their toggle buttons.
 var _preset_btn_map: Dictionary[String, Button] = {}
 
-## Lookup map associating shadow quality names with toggle buttons.
+## Map associating shadow quality tier names with their toggle buttons.
 var _shadow_btn_map: Dictionary[String, Button] = {}
 
-## Lookup map associating shadow filter names with toggle buttons.
+## Map associating shadow filter tier names with their toggle buttons.
 var _shadow_filter_btn_map: Dictionary[String, Button] = {}
 
-## Lookup map associating texture filter names with toggle buttons.
+## Map associating texture filter mode names with their toggle buttons.
 var _texture_filter_btn_map: Dictionary[String, Button] = {}
 
-## Lookup map associating FSR mode names with toggle buttons.
+## Map associating FSR 2 mode names with their toggle buttons.
 var _fsr_btn_map: Dictionary[String, Button] = {}
 
-# --------------------------------------
-# NODE REFERENCES
-# --------------------------------------
 ## Preset "Low" toggle [Button].
 @onready var preset_low_button: Button = %PresetLowButton
 
@@ -58,7 +49,7 @@ var _fsr_btn_map: Dictionary[String, Button] = {}
 ## Shadow quality "High" toggle [Button].
 @onready var shadow_high_button: Button = %ShadowHighButton
 
-## Reference to dynamic light shadow toggle [CheckBox].
+## Dynamic light shadow casting toggle [CheckBox].
 @onready var dynamic_shadows_checkbox: CheckBox = %DynamicShadowsCheckBox
 
 ## Shadow filter "Hard" toggle [Button].
@@ -73,22 +64,22 @@ var _fsr_btn_map: Dictionary[String, Button] = {}
 ## Shadow filter "Soft High" toggle [Button].
 @onready var shadow_filter_high_button: Button = %ShadowFilterHighButton
 
-## Reference to positional shadow distance input [LineEdit].
+## Positional shadow distance numerical input [LineEdit].
 @onready var pos_dist_line: LineEdit = %PositionalShadowDistanceLine
 
-## Reference to positional shadow distance slider [HSlider].
+## Positional shadow distance [HSlider].
 @onready var pos_dist_slider: HSlider = %PositionalShadowDistanceSlider
 
-## Reference to directional shadow distance input [LineEdit].
+## Directional shadow distance numerical input [LineEdit].
 @onready var dir_dist_line: LineEdit = %DirectionalShadowDistanceLine
 
-## Reference to directional shadow distance slider [HSlider].
+## Directional shadow distance [HSlider].
 @onready var dir_dist_slider: HSlider = %DirectionalShadowDistanceSlider
 
-## Reference to occlusion culling toggle [CheckBox].
+## Occlusion culling toggle [CheckBox].
 @onready var occlusion_checkbox: CheckBox = %OcclusionCullingCheckBox
 
-## Reference to the VRS mode [OptionButton].
+## Variable Rate Shading mode [OptionButton].
 @onready var vrs_options: OptionButton = %VRSOptionButton
 
 ## Texture filter "Nearest" toggle [Button].
@@ -103,13 +94,13 @@ var _fsr_btn_map: Dictionary[String, Button] = {}
 ## Texture filter "Nearest Mipmap" toggle [Button].
 @onready var tex_filter_near_mip_button: Button = %TexFilterNearMipButton
 
-## Reference to resolution scale input [LineEdit].
+## 3D resolution scale numerical input [LineEdit].
 @onready var res_scale_line: LineEdit = %ResolutionScaleLine
 
-## Reference to resolution scale slider [HSlider].
+## 3D resolution scale [HSlider].
 @onready var res_scale_slider: HSlider = %ResolutionScaleSlider
 
-## Reference to anti-aliasing configuration [OptionButton].
+## Anti-aliasing mode [OptionButton].
 @onready var aa_options: OptionButton = %AAOptionButton
 
 ## FSR "Native" toggle [Button].
@@ -124,19 +115,19 @@ var _fsr_btn_map: Dictionary[String, Button] = {}
 ## FSR "Performance" toggle [Button].
 @onready var fsr_perf_button: Button = %FSRPerfButton
 
-## Reference to anisotropic filtering level [OptionButton].
+## Anisotropic filtering level [OptionButton].
 @onready var anisotropy_options: OptionButton = %AnisotropyOptionButton
 
-## Reference to the Mesh LOD slider [HSlider].
+## Mesh LOD threshold [HSlider].
 @onready var mesh_lod_slider: HSlider = %MeshLODSlider
 
-## Reference to the Mesh LOD input [LineEdit].
+## Mesh LOD threshold numerical input [LineEdit].
 @onready var mesh_lod_line: LineEdit = %MeshLODLine
 
 
-## Populates dropdown entries and connects widgets to listeners.
+## Initializes quality button groups, dropdowns, and live signal bindings.
 func _ready() -> void:
-	print("QualitySection: Initializing quality section UI.")
+	print("QualitySection: Initializing quality settings UI.")
 	set_process(false)
 	set_physics_process(false)
 	_setup_button_mappings()
@@ -145,9 +136,107 @@ func _ready() -> void:
 	load_settings()
 
 
-## Configures [ButtonGroup] instances and dictionary mappings for quality rows.
+## Synchronizes all quality widgets with saved settings without emitting signals.
+func load_settings() -> void:
+	print("QualitySection: Synchronizing quality UI with active configuration.")
+	_sync_button_row(_preset_btn_map, "preset", VideoConfig.DEFAULT_PRESET)
+	_sync_button_row(_shadow_btn_map, "shadow_quality", VideoConfig.DEFAULT_SHADOW_QUALITY)
+	_sync_button_row(_shadow_filter_btn_map, "shadow_filter", VideoConfig.DEFAULT_SHADOW_FILTER)
+	_sync_button_row(_texture_filter_btn_map, "texture_filter", VideoConfig.DEFAULT_TEXTURE_FILTER)
+	_sync_button_row(_fsr_btn_map, "fsr_mode", VideoConfig.DEFAULT_FSR_MODE)
+
+	var dyn_shadows: bool = GlobalSettings.get_setting_bool(
+		"Settings", "dynamic_light_shadows", VideoConfig.DEFAULT_DYNAMIC_LIGHT_SHADOWS
+	)
+	dynamic_shadows_checkbox.set_pressed_no_signal(dyn_shadows)
+
+	var p_dist: float = GlobalSettings.get_setting_float(
+		"Settings", "positional_shadow_distance", VideoConfig.DEFAULT_POSITIONAL_SHADOW_DISTANCE
+	)
+	pos_dist_slider.set_value_no_signal(p_dist)
+	pos_dist_line.text = str(int(p_dist))
+
+	var d_dist: float = GlobalSettings.get_setting_float(
+		"Settings", "directional_shadow_distance", VideoConfig.DEFAULT_DIRECTIONAL_SHADOW_DISTANCE
+	)
+	dir_dist_slider.set_value_no_signal(d_dist)
+	dir_dist_line.text = str(int(d_dist))
+
+	var occ_cull: bool = GlobalSettings.get_setting_bool(
+		"Settings", "occlusion_culling", VideoConfig.DEFAULT_OCCLUSION_CULLING
+	)
+	occlusion_checkbox.set_pressed_no_signal(occ_cull)
+
+	var vrs_str: String = str(
+		GlobalSettings.get_setting("Settings", "vrs_mode", VideoConfig.DEFAULT_VRS_MODE)
+	)
+	_select_dropdown_text(vrs_options, vrs_str)
+
+	var r_scale: float = GlobalSettings.get_setting_float(
+		"Settings", "resolution_scale", VideoConfig.DEFAULT_RESOLUTION_SCALE
+	)
+	res_scale_slider.set_value_no_signal(r_scale)
+	res_scale_line.text = "%.1f" % r_scale
+
+	var aa_str: String = str(
+		GlobalSettings.get_setting("Settings", "aa_mode", VideoConfig.DEFAULT_AA_MODE)
+	)
+	_select_dropdown_text(aa_options, aa_str)
+
+	var aniso_str: String = str(
+		GlobalSettings.get_setting("Settings", "anisotropy", VideoConfig.DEFAULT_ANISOTROPY)
+	)
+	_select_dropdown_text(anisotropy_options, aniso_str)
+
+	var lod: float = GlobalSettings.get_setting_float(
+		"Settings", "mesh_lod_threshold", VideoConfig.DEFAULT_MESH_LOD
+	)
+	mesh_lod_slider.set_value_no_signal(lod)
+	mesh_lod_line.text = "%.2f" % lod
+
+
+## Updates local quality widgets from a preset dictionary without emitting signals.
+func apply_preset_dict(data: Dictionary) -> void:
+	if data.has("preset"):
+		_set_group_button_silent(_preset_btn_map, str(data["preset"]))
+	if data.has("shadow_quality"):
+		_set_group_button_silent(_shadow_btn_map, str(data["shadow_quality"]))
+	if data.has("dynamic_light_shadows"):
+		dynamic_shadows_checkbox.set_pressed_no_signal(
+			VideoApplier._get_bool(data, "dynamic_light_shadows", true)
+		)
+	if data.has("shadow_filter"):
+		_set_group_button_silent(_shadow_filter_btn_map, str(data["shadow_filter"]))
+	if data.has("positional_shadow_distance"):
+		var p_d: float = VideoApplier._get_float(data, "positional_shadow_distance", 32.0)
+		pos_dist_slider.set_value_no_signal(p_d)
+		pos_dist_line.text = str(int(p_d))
+	if data.has("directional_shadow_distance"):
+		var d_d: float = VideoApplier._get_float(data, "directional_shadow_distance", 64.0)
+		dir_dist_slider.set_value_no_signal(d_d)
+		dir_dist_line.text = str(int(d_d))
+	if data.has("occlusion_culling"):
+		occlusion_checkbox.set_pressed_no_signal(
+			VideoApplier._get_bool(data, "occlusion_culling", true)
+		)
+	if data.has("vrs_mode"):
+		_select_dropdown_text(vrs_options, str(data["vrs_mode"]))
+	if data.has("texture_filter"):
+		_set_group_button_silent(_texture_filter_btn_map, str(data["texture_filter"]))
+	if data.has("fsr_mode"):
+		_set_group_button_silent(_fsr_btn_map, str(data["fsr_mode"]))
+	if data.has("resolution_scale"):
+		var r_s: float = VideoApplier._get_float(data, "resolution_scale", 1.0)
+		res_scale_slider.set_value_no_signal(r_s)
+		res_scale_line.text = "%.1f" % r_s
+	if data.has("mesh_lod_threshold"):
+		var lod_v: float = VideoApplier._get_float(data, "mesh_lod_threshold", 4.0)
+		mesh_lod_slider.set_value_no_signal(lod_v)
+		mesh_lod_line.text = "%.2f" % lod_v
+
+
+## Configures button group mappings for preset, shadow, texture filter, and FSR rows.
 func _setup_button_mappings() -> void:
-	print("QualitySection: Configuring button groups and mapping lookups.")
 	_preset_btn_map = {
 		"Low": preset_low_button,
 		"Medium": preset_medium_button,
@@ -189,10 +278,9 @@ func _setup_button_mappings() -> void:
 	_setup_group(_fsr_btn_map)
 
 
-## Assigns a unified [ButtonGroup] and pressed visual styles to buttons.
+## Assigns a unified [ButtonGroup] and pressed visual styles to a button dictionary.
 func _setup_group(mapping: Dictionary[String, Button]) -> void:
 	var group: ButtonGroup = ButtonGroup.new()
-
 	var pressed_style: StyleBoxFlat = StyleBoxFlat.new()
 	pressed_style.bg_color = Color(0.06, 0.06, 0.07, 1.0)
 	pressed_style.border_color = Color(0.3, 0.3, 0.35, 1.0)
@@ -209,17 +297,23 @@ func _setup_group(mapping: Dictionary[String, Button]) -> void:
 		btn.add_theme_color_override("font_pressed_color", Color(0.7, 0.7, 0.7, 1.0))
 
 
-## Populates dropdown buttons with keys defined in [VideoConfig].
+## Populates VRS, AA, and Anisotropy dropdown menus from [VideoConfig].
 func _populate_dropdowns() -> void:
-	print("QualitySection: Populating remaining dropdown items.")
-	_fill_dropdown(vrs_options, VideoConfig.VRS_MODES)
-	_fill_dropdown(aa_options, VideoConfig.AA_MODES)
-	_fill_dropdown(anisotropy_options, VideoConfig.ANISOTROPY_LEVELS)
+	vrs_options.clear()
+	for key: String in VideoConfig.VRS_MODES.keys():
+		vrs_options.add_item(key)
+
+	aa_options.clear()
+	for key: String in VideoConfig.AA_MODES.keys():
+		aa_options.add_item(key)
+
+	anisotropy_options.clear()
+	for key: String in VideoConfig.ANISOTROPY_LEVELS.keys():
+		anisotropy_options.add_item(key)
 
 
-## Connects all widget selection signals to their corresponding handlers.
+## Connects all quality buttons, checkboxes, dropdowns, and sliders.
 func _connect_signals() -> void:
-	print("QualitySection: Connecting quality section signals.")
 	for preset_name: String in _preset_btn_map.keys():
 		var btn: Button = _preset_btn_map[preset_name]
 		if is_instance_valid(btn):
@@ -231,21 +325,22 @@ func _connect_signals() -> void:
 	_connect_button_row(_fsr_btn_map, "fsr_mode")
 
 	dynamic_shadows_checkbox.toggled.connect(_on_dynamic_shadows_toggled)
-	_connect_slider(
-		pos_dist_slider, pos_dist_line, "positional_shadow_distance", 8.0, 64.0, 1.0, true
-	)
-	_connect_slider(
-		dir_dist_slider, dir_dist_line, "directional_shadow_distance", 16.0, 150.0, 1.0, true
-	)
 	occlusion_checkbox.toggled.connect(_on_occlusion_toggled)
 	vrs_options.item_selected.connect(_on_vrs_selected)
-	_connect_slider(res_scale_slider, res_scale_line, "resolution_scale", 0.1, 1.0, 0.1, false)
 	aa_options.item_selected.connect(_on_aa_selected)
 	anisotropy_options.item_selected.connect(_on_anisotropy_selected)
-	_connect_slider(mesh_lod_slider, mesh_lod_line, "mesh_lod_threshold", 0.0, 64.0, 0.5, false)
+
+	_connect_slider(
+		pos_dist_slider, pos_dist_line, "positional_shadow_distance", 16.0, 40.0, 1.0, true
+	)
+	_connect_slider(
+		dir_dist_slider, dir_dist_line, "directional_shadow_distance", 32.0, 80.0, 1.0, true
+	)
+	_connect_slider(res_scale_slider, res_scale_line, "resolution_scale", 0.5, 1.0, 0.1, false)
+	_connect_slider(mesh_lod_slider, mesh_lod_line, "mesh_lod_threshold", 1.0, 32.0, 0.5, false)
 
 
-## Connects pressed events for each button in a dictionary to settings.
+## Connects button presses in [param mapping] to [param config_key].
 func _connect_button_row(mapping: Dictionary[String, Button], config_key: String) -> void:
 	for mode_key: String in mapping.keys():
 		var btn: Button = mapping[mode_key]
@@ -253,7 +348,7 @@ func _connect_button_row(mapping: Dictionary[String, Button], config_key: String
 			btn.pressed.connect(_on_quality_button_pressed.bind(config_key, mode_key))
 
 
-## Connects slider and [LineEdit] pairs with throttled commit and live labels.
+## Connects an [HSlider] and [LineEdit] pair for instant real-time diorama updates.
 func _connect_slider(
 	slider: HSlider,
 	line: LineEdit,
@@ -278,15 +373,7 @@ func _connect_slider(
 					if is_int
 					else ("%.1f" % val if is_equal_approx(step_val, 0.1) else "%.2f" % val)
 				)
-			if not Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT):
-				_commit_slider_value(key, val)
-	)
-
-	slider.drag_ended.connect(
-		func(value_changed: bool) -> void:
-			if value_changed:
-				print("QualitySection: Drag ended for ", key, " -> ", slider.value)
-				_commit_slider_value(key, slider.value)
+			_commit_slider_value(key, val)
 	)
 
 	line.focus_entered.connect(
@@ -306,17 +393,13 @@ func _connect_slider(
 	)
 
 
-## Persists slider value and emits pipeline notification if changed.
+## Commits a slider value directly to [GraphicsManager] for synchronous feedback.
 func _commit_slider_value(key: String, val: float) -> void:
-	var raw_val: Variant = GlobalSettings.get_setting("Settings", key, -999.0)
-	var current: float = raw_val if (raw_val is float or raw_val is int) else -999.0
-	if not is_equal_approx(current, val):
-		print("QualitySection: Persisting ", key, " -> ", val)
-		GlobalSettings.save_setting("Settings", key, val)
-		quality_settings_changed.emit()
+	GraphicsManager.set_setting(key, val)
+	quality_settings_changed.emit()
 
 
-## Commits manual text input value to slider and settings without double-emitting.
+## Validates and commits manual [LineEdit] numerical input.
 func _commit_slider_line(
 	slider: HSlider,
 	line: LineEdit,
@@ -332,98 +415,19 @@ func _commit_slider_line(
 		line.text = fallback
 		return
 
-	var c_val: float = clampf(trimmed.to_float(), min_v, max_v)
-	var s_val: float = snappedf(c_val, step_val)
-	var formatted_text: String = (
-		str(int(s_val))
+	var clamped: float = snappedf(clampf(trimmed.to_float(), min_v, max_v), step_val)
+	var formatted: String = (
+		str(int(clamped))
 		if is_int
-		else ("%.1f" % s_val if is_equal_approx(step_val, 0.1) else "%.2f" % s_val)
+		else ("%.1f" % clamped if is_equal_approx(step_val, 0.1) else "%.2f" % clamped)
 	)
-	line.text = formatted_text
-	line.set_meta("pre_focus_text", formatted_text)
-
-	var raw_val: Variant = GlobalSettings.get_setting("Settings", key, -999.0)
-	var current_saved: float = raw_val if (raw_val is float or raw_val is int) else -999.0
-	slider.set_value_no_signal(s_val)
-
-	if not is_equal_approx(current_saved, s_val):
-		print("QualitySection: Committed new ", key, " text input: ", s_val)
-		GlobalSettings.save_setting("Settings", key, s_val)
-		quality_settings_changed.emit()
+	line.text = formatted
+	line.set_meta("pre_focus_text", formatted)
+	slider.set_value_no_signal(clamped)
+	_commit_slider_value(key, clamped)
 
 
-## Synchronizes UI widgets with saved configuration values.
-func load_settings() -> void:
-	print("QualitySection: Loading quality parameters from config.")
-	_sync_button_row(_preset_btn_map, "preset", VideoConfig.DEFAULT_PRESET)
-	_sync_button_row(_shadow_btn_map, "shadow_quality", "High (Smooth)")
-
-	var raw_dyn: Variant = GlobalSettings.get_setting(
-		"Settings", "dynamic_light_shadows", VideoConfig.DEFAULT_DYNAMIC_LIGHT_SHADOWS
-	)
-	var dyn_val: bool = raw_dyn if raw_dyn is bool else VideoConfig.DEFAULT_DYNAMIC_LIGHT_SHADOWS
-	dynamic_shadows_checkbox.set_pressed_no_signal(dyn_val)
-
-	_sync_button_row(_shadow_filter_btn_map, "shadow_filter", VideoConfig.DEFAULT_SHADOW_FILTER)
-
-	var raw_p_dist: Variant = GlobalSettings.get_setting(
-		"Settings", "positional_shadow_distance", VideoConfig.DEFAULT_POSITIONAL_SHADOW_DISTANCE
-	)
-	var p_dist: float = (
-		raw_p_dist
-		if (raw_p_dist is float or raw_p_dist is int)
-		else VideoConfig.DEFAULT_POSITIONAL_SHADOW_DISTANCE
-	)
-	pos_dist_slider.set_value_no_signal(p_dist)
-	pos_dist_line.text = str(int(p_dist))
-
-	var raw_d_dist: Variant = GlobalSettings.get_setting(
-		"Settings", "directional_shadow_distance", VideoConfig.DEFAULT_DIRECTIONAL_SHADOW_DISTANCE
-	)
-	var d_dist: float = (
-		raw_d_dist
-		if (raw_d_dist is float or raw_d_dist is int)
-		else VideoConfig.DEFAULT_DIRECTIONAL_SHADOW_DISTANCE
-	)
-	dir_dist_slider.set_value_no_signal(d_dist)
-	dir_dist_line.text = str(int(d_dist))
-
-	var raw_occ: Variant = GlobalSettings.get_setting(
-		"Settings", "occlusion_culling", VideoConfig.DEFAULT_OCCLUSION_CULLING
-	)
-	var occ_val: bool = raw_occ if raw_occ is bool else VideoConfig.DEFAULT_OCCLUSION_CULLING
-	occlusion_checkbox.set_pressed_no_signal(occ_val)
-
-	_sync_dropdown(vrs_options, VideoConfig.VRS_MODES, "vrs_mode", VideoConfig.DEFAULT_VRS_MODE)
-	_sync_button_row(_texture_filter_btn_map, "texture_filter", VideoConfig.DEFAULT_TEXTURE_FILTER)
-
-	var raw_r_scale: Variant = GlobalSettings.get_setting(
-		"Settings", "resolution_scale", VideoConfig.DEFAULT_RESOLUTION_SCALE
-	)
-	var r_scale: float = (
-		raw_r_scale
-		if (raw_r_scale is float or raw_r_scale is int)
-		else VideoConfig.DEFAULT_RESOLUTION_SCALE
-	)
-	res_scale_slider.set_value_no_signal(r_scale)
-	res_scale_line.text = "%.1f" % r_scale
-
-	_sync_dropdown(aa_options, VideoConfig.AA_MODES, "aa_mode", VideoConfig.DEFAULT_AA_MODE)
-	_sync_button_row(_fsr_btn_map, "fsr_mode", VideoConfig.DEFAULT_FSR_MODE)
-	_sync_dropdown(
-		anisotropy_options,
-		VideoConfig.ANISOTROPY_LEVELS,
-		"anisotropy",
-		VideoConfig.DEFAULT_ANISOTROPY
-	)
-
-	var raw_lod: Variant = GlobalSettings.get_setting("Settings", "mesh_lod_threshold", 1.0)
-	var lod: float = raw_lod if (raw_lod is float or raw_lod is int) else 1.0
-	mesh_lod_slider.set_value_no_signal(lod)
-	mesh_lod_line.text = "%.2f" % lod
-
-
-## Reads a persisted setting and activates the corresponding toggle button silently.
+## Syncs a button row with saved settings silently.
 func _sync_button_row(
 	mapping: Dictionary[String, Button], config_key: String, default_val: String
 ) -> void:
@@ -432,7 +436,7 @@ func _sync_button_row(
 	_set_group_button_silent(mapping, resolved)
 
 
-## Sets the active button in [param mapping] matching [param target_key] silently.
+## Activates the button matching [param target_key] without firing signals.
 func _set_group_button_silent(mapping: Dictionary[String, Button], target_key: String) -> void:
 	for key: String in mapping.keys():
 		var btn: Button = mapping[key]
@@ -440,148 +444,61 @@ func _set_group_button_silent(mapping: Dictionary[String, Button], target_key: S
 			btn.set_pressed_no_signal(key == target_key)
 
 
-## Updates local quality controls without firing redundant signals.
-func apply_preset_dict(data: Dictionary) -> void:
-	print("QualitySection: Applying preset quality dictionary.")
-	if data.has("shadow_quality"):
-		_set_group_button_silent(_shadow_btn_map, str(data["shadow_quality"]))
-	if data.has("dynamic_light_shadows"):
-		var raw_dyn: Variant = data["dynamic_light_shadows"]
-		var dyn_state: bool = raw_dyn == true or raw_dyn == 1
-		dynamic_shadows_checkbox.set_pressed_no_signal(dyn_state)
-	if data.has("shadow_filter"):
-		_set_group_button_silent(_shadow_filter_btn_map, str(data["shadow_filter"]))
-	if data.has("positional_shadow_distance"):
-		var raw_p_d: Variant = data["positional_shadow_distance"]
-		var p_d: float = raw_p_d if (raw_p_d is float or raw_p_d is int) else 0.0
-		pos_dist_slider.set_value_no_signal(p_d)
-		pos_dist_line.text = str(int(p_d))
-	if data.has("directional_shadow_distance"):
-		var raw_d_d: Variant = data["directional_shadow_distance"]
-		var d_d: float = raw_d_d if (raw_d_d is float or raw_d_d is int) else 0.0
-		dir_dist_slider.set_value_no_signal(d_d)
-		dir_dist_line.text = str(int(d_d))
-	if data.has("occlusion_culling"):
-		var raw_occ: Variant = data["occlusion_culling"]
-		var occ_state: bool = raw_occ == true or raw_occ == 1
-		occlusion_checkbox.set_pressed_no_signal(occ_state)
-	if data.has("vrs_mode"):
-		_select_dropdown_text(vrs_options, str(data["vrs_mode"]))
-	if data.has("texture_filter"):
-		_set_group_button_silent(_texture_filter_btn_map, str(data["texture_filter"]))
-	if data.has("resolution_scale"):
-		var raw_r_s: Variant = data["resolution_scale"]
-		var r_s: float = raw_r_s if (raw_r_s is float or raw_r_s is int) else 1.0
-		res_scale_slider.set_value_no_signal(r_s)
-		res_scale_line.text = "%.1f" % r_s
-	if data.has("mesh_lod_threshold"):
-		var raw_lod: Variant = data["mesh_lod_threshold"]
-		var lod_val: float = raw_lod if (raw_lod is float or raw_lod is int) else 1.0
-		mesh_lod_slider.set_value_no_signal(lod_val)
-		mesh_lod_line.text = "%.2f" % lod_val
-
-
-## Populates a single dropdown menu with keys from a dictionary.
-func _fill_dropdown(dropdown: OptionButton, data_dict: Dictionary) -> void:
-	print("QualitySection: Populating dropdown entries.")
-	dropdown.clear()
-	for key: String in data_dict.keys():
-		dropdown.add_item(key)
-
-
-## Selects a dropdown item matching target label text.
+## Selects the dropdown item matching [param target_text].
 func _select_dropdown_text(dropdown: OptionButton, target_text: String) -> void:
-	print("QualitySection: Selecting dropdown entry: ", target_text)
-	for i: int in range(dropdown.get_item_count()):
-		if dropdown.get_item_text(i) == target_text:
-			dropdown.select(i)
+	for idx: int in range(dropdown.get_item_count()):
+		if dropdown.get_item_text(idx) == target_text:
+			dropdown.select(idx)
 			return
 
 
-## Matches a saved value to an item in [param dropdown] using [param dict].
-func _sync_dropdown(
-	dropdown: OptionButton, dict: Dictionary, key: String, default_val: Variant
-) -> void:
-	print("QualitySection: Syncing dropdown option with config key: ", key)
-	var saved_val: Variant = GlobalSettings.get_setting("Settings", key, default_val)
-	var saved_str: String = str(saved_val)
-
-	for i: int in range(dropdown.get_item_count()):
-		var item_text: String = dropdown.get_item_text(i)
-		if item_text == saved_str:
-			dropdown.select(i)
-			return
-		if dict.has(item_text) and str(dict[item_text]) == saved_str:
-			dropdown.select(i)
-			return
+## Handles master quality preset button selection.
+func _on_preset_pressed(preset_name: String) -> void:
+	print("QualitySection: Player selected preset -> ", preset_name)
+	_set_group_button_silent(_preset_btn_map, preset_name)
+	preset_changed.emit(preset_name)
 
 
-## Handles master preset button press and delegates bulk apply to [VideoOptions].
-func _on_preset_pressed(preset: String) -> void:
-	print("QualitySection: Preset button pressed: ", preset)
-	_set_group_button_silent(_preset_btn_map, preset)
-	GlobalSettings.save_setting("Settings", "preset", preset)
-	preset_changed.emit(preset)
-
-
-## Handles dynamic light shadows toggle state changes.
-func _on_dynamic_shadows_toggled(toggled_on: bool) -> void:
-	print("QualitySection: Dynamic shadows toggled: ", toggled_on)
-	var raw_val: Variant = GlobalSettings.get_setting(
-		"Settings", "dynamic_light_shadows", not toggled_on
-	)
-	var current: bool = raw_val if raw_val is bool else not toggled_on
-	if current != toggled_on:
-		GlobalSettings.save_setting("Settings", "dynamic_light_shadows", toggled_on)
-		quality_settings_changed.emit()
-
-
-## Handles occlusion culling toggle state changes.
-func _on_occlusion_toggled(toggled_on: bool) -> void:
-	print("QualitySection: Occlusion culling toggled: ", toggled_on)
-	var raw_val: Variant = GlobalSettings.get_setting(
-		"Settings", "occlusion_culling", not toggled_on
-	)
-	var current: bool = raw_val if raw_val is bool else not toggled_on
-	if current != toggled_on:
-		GlobalSettings.save_setting("Settings", "occlusion_culling", toggled_on)
-		quality_settings_changed.emit()
-
-
-## Handles VRS dropdown selection.
-func _on_vrs_selected(index: int) -> void:
-	var text: String = vrs_options.get_item_text(index)
-	print("QualitySection: VRS mode selected: ", text)
-	var current: String = str(GlobalSettings.get_setting("Settings", "vrs_mode", ""))
-	if current != text:
-		GlobalSettings.save_setting("Settings", "vrs_mode", text)
-		quality_settings_changed.emit()
-
-
-## Handles Anti-Aliasing pipeline changes.
-func _on_aa_selected(index: int) -> void:
-	var text: String = aa_options.get_item_text(index)
-	print("QualitySection: Anti-aliasing mode changed: ", text)
-	var current: String = str(GlobalSettings.get_setting("Settings", "aa_mode", ""))
-	if current != text:
-		GlobalSettings.save_setting("Settings", "aa_mode", text)
-		quality_settings_changed.emit()
-
-
-## Handles texture anisotropic filtering level changes.
-func _on_anisotropy_selected(index: int) -> void:
-	var text: String = anisotropy_options.get_item_text(index)
-	print("QualitySection: Anisotropic filtering changed: ", text)
-	var current: String = str(GlobalSettings.get_setting("Settings", "anisotropy", ""))
-	if current != text:
-		GlobalSettings.save_setting("Settings", "anisotropy", text)
-		quality_settings_changed.emit()
-
-
-## Handles any quality button press, saving setting and notifying pipeline.
+## Handles quality button row selection.
 func _on_quality_button_pressed(config_key: String, mode_key: String) -> void:
-	print("QualitySection: Pressed ", config_key, " -> ", mode_key)
-	var current_val: String = str(GlobalSettings.get_setting("Settings", config_key, ""))
-	if current_val != mode_key:
-		GlobalSettings.save_setting("Settings", config_key, mode_key)
-		quality_settings_changed.emit()
+	print("QualitySection: Player selected ", config_key, " -> ", mode_key)
+	GraphicsManager.set_setting(config_key, mode_key)
+	quality_settings_changed.emit()
+
+
+## Handles dynamic light shadows checkbox toggle.
+func _on_dynamic_shadows_toggled(toggled_on: bool) -> void:
+	print("QualitySection: Player toggled dynamic shadows -> ", toggled_on)
+	GraphicsManager.set_setting("dynamic_light_shadows", toggled_on)
+	quality_settings_changed.emit()
+
+
+## Handles occlusion culling checkbox toggle.
+func _on_occlusion_toggled(toggled_on: bool) -> void:
+	print("QualitySection: Player toggled occlusion culling -> ", toggled_on)
+	GraphicsManager.set_setting("occlusion_culling", toggled_on)
+	quality_settings_changed.emit()
+
+
+## Handles Variable Rate Shading dropdown selection.
+func _on_vrs_selected(index: int) -> void:
+	var label: String = vrs_options.get_item_text(index)
+	print("QualitySection: Player selected VRS mode -> ", label)
+	GraphicsManager.set_setting("vrs_mode", label)
+	quality_settings_changed.emit()
+
+
+## Handles Anti-Aliasing dropdown selection.
+func _on_aa_selected(index: int) -> void:
+	var label: String = aa_options.get_item_text(index)
+	print("QualitySection: Player selected AA mode -> ", label)
+	GraphicsManager.set_setting("aa_mode", label)
+	quality_settings_changed.emit()
+
+
+## Handles Anisotropic Filtering dropdown selection.
+func _on_anisotropy_selected(index: int) -> void:
+	var label: String = anisotropy_options.get_item_text(index)
+	print("QualitySection: Player selected anisotropy -> ", label)
+	GraphicsManager.set_setting("anisotropy", label)
+	quality_settings_changed.emit()

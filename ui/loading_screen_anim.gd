@@ -303,13 +303,8 @@ func _finalize_scene_transition() -> void:
 		return
 
 	var world_env: WorldEnvironment = _find_world_environment(new_scene)
-	var target_env: Environment = null
-
 	if is_instance_valid(world_env) and is_instance_valid(world_env.environment):
 		world_env.environment = world_env.environment.duplicate()
-		target_env = world_env.environment
-		target_env.sdfgi_enabled = false
-		print("LoadingScreen: Initialized environment with SDFGI staged off.")
 
 	root.add_child(new_scene)
 	get_tree().current_scene = new_scene
@@ -320,13 +315,6 @@ func _finalize_scene_transition() -> void:
 	if is_instance_valid(chunker):
 		print("LoadingScreen: Waiting for WorldChunkManager initial zone...")
 		await chunker.initial_zone_ready
-
-	if not is_instance_valid(world_env):
-		world_env = _find_world_environment(new_scene)
-		if is_instance_valid(world_env) and is_instance_valid(world_env.environment):
-			world_env.environment = world_env.environment.duplicate()
-			target_env = world_env.environment
-			target_env.sdfgi_enabled = false
 
 	var player_node: CharacterBody3D = (
 		new_scene.find_child("Player", true, false) as CharacterBody3D
@@ -346,23 +334,10 @@ func _finalize_scene_transition() -> void:
 		if player_node.has_method(&"activate_gameplay_camera"):
 			player_node.call(&"activate_gameplay_camera")
 
-	print("LoadingScreen: Synchronizing viewport pipeline prior to GI activation.")
-	await _reapply_active_video_settings()
+	print("LoadingScreen: Synchronizing viewport pipeline with active user video settings.")
+	_reapply_active_video_settings()
 
 	for _frame_idx: int in range(SETTLING_FRAMES):
-		await get_tree().process_frame
-
-	var sdfgi_setting: String = _get_setting_string(
-		"Settings", "sdfgi", str(VideoConfig.DEFAULT_SDFGI)
-	)
-	var sdfgi_dict: Dictionary = _get_config_dict(VideoConfig.SDFGI_MODES, sdfgi_setting)
-	var should_enable_raw: Variant = sdfgi_dict.get("enabled", false)
-	var should_enable_sdfgi: bool = should_enable_raw == true
-
-	if is_instance_valid(target_env) and should_enable_sdfgi:
-		target_env.sdfgi_enabled = true
-		print("LoadingScreen: SDFGI enabled smoothly.")
-		await get_tree().process_frame
 		await get_tree().process_frame
 
 	var cam_controller: CameraController = _get_camera_controller(player_node)
@@ -387,109 +362,11 @@ func _finalize_scene_transition() -> void:
 	queue_free()
 
 
-## Applies saved video settings from [GlobalSettings] to the new scene tree.
-@warning_ignore("unsafe_method_access")
+## Applies saved video settings from [GraphicsManager] to the new scene tree synchronously.
 func _reapply_active_video_settings() -> void:
-	print("LoadingScreen: Re-applying active user video settings to new scene.")
-	var shadow_key: String = _get_setting_string("Settings", "shadow_quality", "High (Smooth)")
-	var shadow_data: Dictionary = _get_config_dict(VideoConfig.SHADOW_QUALITIES, shadow_key)
-	var fsr_key: String = _get_setting_string(
-		"Settings", "fsr_mode", str(VideoConfig.DEFAULT_FSR_MODE)
-	)
-	var aa_key: String = _get_setting_string(
-		"Settings", "aa_mode", str(VideoConfig.DEFAULT_AA_MODE)
-	)
-	var vrs_key: String = _get_setting_string(
-		"Settings", "vrs_mode", str(VideoConfig.DEFAULT_VRS_MODE)
-	)
-	var tex_filter: String = _get_setting_string(
-		"Settings", "texture_filter", str(VideoConfig.DEFAULT_TEXTURE_FILTER)
-	)
-	var ssao_key: String = _get_setting_string("Settings", "ssao", str(VideoConfig.DEFAULT_SSAO))
-	var ssi_key: String = _get_setting_string("Settings", "ssi", str(VideoConfig.DEFAULT_SSI))
-	var ssr_key: String = _get_setting_string("Settings", "ssr", str(VideoConfig.DEFAULT_SSR))
-	var sdfgi_key: String = _get_setting_string("Settings", "sdfgi", str(VideoConfig.DEFAULT_SDFGI))
-	var fog_key: String = _get_setting_string(
-		"Settings", "volumetric_fog", str(VideoConfig.DEFAULT_FOG)
-	)
-	var glow_key: String = _get_setting_string("Settings", "glow", str(VideoConfig.DEFAULT_GLOW))
-
-	var raw_fsr: Variant = VideoConfig.FSR_MODES.get(fsr_key, 1.0)
-	var fsr_scale: float = raw_fsr if raw_fsr is float else 1.0
-
-	var raw_atlas: Variant = shadow_data.get("atlas_size", 4096)
-	var shadow_atlas: int = raw_atlas if raw_atlas is int else 4096
-
-	var shadow_filter_str: String = _get_setting_string("Settings", "shadow_filter", "Soft Medium")
-	var tonemap_str: String = _get_setting_string("Settings", "tonemap_mode", "Filmic")
-
-	var user_sdfgi_dict: Dictionary = (
-		_get_config_dict(VideoConfig.SDFGI_MODES, sdfgi_key).duplicate()
-	)
-	var sdfgi_target_enabled: bool = user_sdfgi_dict.get("enabled", false) == true
-	user_sdfgi_dict["enabled"] = false
-
-	var config: Dictionary = {
-		"fsr_scale": fsr_scale,
-		"aa_settings": _get_config_dict(VideoConfig.AA_MODES, aa_key),
-		"shadow_atlas": shadow_atlas,
-		"dynamic_light_shadows": _get_setting_bool("Settings", "dynamic_light_shadows", true),
-		"shadow_filter": shadow_filter_str,
-		"positional_shadow_distance":
-		_get_setting_float("Settings", "positional_shadow_distance", 32.0),
-		"directional_shadow_distance":
-		_get_setting_float("Settings", "directional_shadow_distance", 64.0),
-		"occlusion_culling": _get_setting_bool("Settings", "occlusion_culling", true),
-		"vrs_mode": VideoConfig.VRS_MODES.get(vrs_key, Viewport.VRS_DISABLED),
-		"texture_filter": VideoConfig.TEXTURE_FILTER_MODES.get(tex_filter, 2),
-		"resolution_scale": _get_setting_float("Settings", "resolution_scale", 1.0),
-		"exposure": _get_setting_float("Settings", "exposure", 1.0),
-		"motion_blur": _get_setting_float("Settings", "motion_blur", 0.0),
-		"mesh_lod": _get_setting_float("Settings", "mesh_lod_threshold", 1.0),
-		"debanding": _get_setting_bool("Settings", "debanding", true),
-		"tonemap_key": tonemap_str,
-		"dof_amount": _get_setting_float("Settings", "dof_amount", 0.0),
-		"dof_enabled": _get_setting_bool("Settings", "dof_enabled", false),
-		"ssao": _get_config_dict(VideoConfig.SSAO_MODES, ssao_key),
-		"ssi": _get_config_dict(VideoConfig.SSI_MODES, ssi_key),
-		"ssr": _get_config_dict(VideoConfig.SSR_MODES, ssr_key),
-		"sdfgi": user_sdfgi_dict,
-		"sdfgi_will_enable": sdfgi_target_enabled,
-		"fog": _get_config_dict(VideoConfig.FOG_MODES, fog_key),
-		"glow": _get_config_dict(VideoConfig.GLOW_MODES, glow_key),
-	}
-	await VideoApplier.apply_viewport_pipeline(get_tree(), get_viewport(), config)
-
-
-## Safely extracts a string setting from persistent [GlobalSettings].
-@warning_ignore("unsafe_method_access")
-func _get_setting_string(category: String, key: String, default_value: String) -> String:
-	var raw: Variant = GlobalSettings.call(&"get_setting", category, key, default_value)
-	var result: String = raw if raw is String else default_value
-	return result
-
-
-## Safely extracts a boolean setting from persistent [GlobalSettings].
-@warning_ignore("unsafe_method_access")
-func _get_setting_bool(category: String, key: String, default_value: bool) -> bool:
-	var raw: Variant = GlobalSettings.call(&"get_setting_bool", category, key, default_value)
-	var result: bool = raw if raw is bool else default_value
-	return result
-
-
-## Safely extracts a float setting from persistent [GlobalSettings].
-@warning_ignore("unsafe_method_access")
-func _get_setting_float(category: String, key: String, default_value: float) -> float:
-	var raw: Variant = GlobalSettings.call(&"get_setting_float", category, key, default_value)
-	var result: float = raw if raw is float else default_value
-	return result
-
-
-## Safely extracts a [Dictionary] configuration block by key.
-func _get_config_dict(source: Dictionary, key: String) -> Dictionary:
-	var raw: Variant = source.get(key, {})
-	var result: Dictionary = raw if raw is Dictionary else {}
-	return result
+	print("LoadingScreen: Committing active user video settings via GraphicsManager.")
+	GraphicsManager.set_diorama_mode(false)
+	GraphicsManager.commit_gameplay_pipeline()
 
 
 ## Locates [WorldEnvironment] safely while ignoring preview diorama nodes.

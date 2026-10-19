@@ -781,16 +781,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Compatibility"
 
-[node name="AutoTuneLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/HardwareSection/GridContainer" unique_id=355278480]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Auto Tune"
-
-[node name="AutoTuneButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/HardwareSection/GridContainer" unique_id=1119118289]
-unique_name_in_owner = true
-layout_mode = 2
-text = "Auto-Tune for 60 FPS"
-
 [node name="VideoDioramaSocket" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer" unique_id=624873472]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(640, 480)

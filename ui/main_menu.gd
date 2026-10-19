@@ -79,7 +79,7 @@ func _ready() -> void:
 	_return_to_main_buttons()
 
 	# Sleep diorama rendering on boot until options are opened
-	VideoApplier.set_diorama_active(get_tree(), false)
+	GraphicsManager.set_diorama_mode(false)
 
 
 ## Scans and registers all options panels into the highlight controller.
@@ -191,7 +191,7 @@ func _stop_main_theme() -> void:
 ## Restores the primary navigation view and closes overlays.
 func _return_to_main_buttons() -> void:
 	print("UI: Restoring root menu view.")
-	VideoApplier.set_diorama_active(get_tree(), false)
+	GraphicsManager.set_diorama_mode(false)
 	if is_instance_valid(highlighter):
 		highlighter.clear_highlight()
 	if is_instance_valid(game_name_label):
@@ -223,7 +223,7 @@ func _on_resume_pressed() -> void:
 func _on_new_game_pressed() -> void:
 	print("UI: Player clicked New Game.")
 	_stop_main_theme()
-	VideoApplier.set_diorama_active(get_tree(), false)
+	GraphicsManager.set_diorama_mode(false)
 	if is_instance_valid(options_router):
 		options_router.teardown_diorama()
 	if not has_calibrated:
@@ -242,7 +242,7 @@ func _on_new_game_pressed() -> void:
 func prepare_for_level_transition() -> void:
 	print("UI: Preparing main menu for level transition.")
 	_stop_main_theme()
-	VideoApplier.set_diorama_active(get_tree(), false)
+	GraphicsManager.set_diorama_mode(false)
 
 	if is_instance_valid(options_router):
 		options_router.teardown_diorama()
@@ -291,7 +291,7 @@ func _on_options_pressed() -> void:
 	if is_instance_valid(options_router):
 		options_router.select_tab_by_index(0)
 
-	VideoApplier.set_diorama_active(get_tree(), true)
+	GraphicsManager.set_diorama_mode(true)
 
 
 ## Opens the save/load menu overlay.

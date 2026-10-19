@@ -113,7 +113,7 @@ func _rebuild_material_for_group(group_name: String) -> void:
 	mat.set_shader_parameter("highlight_color", group_colors[group_name])
 	mat.render_priority = 100
 	_group_materials[group_name] = mat
-	print("VisionAssistManager: Rebuilt material for group -> ", group_name)
+	#print("VisionAssistManager: Rebuilt material for group -> ", group_name)
 
 
 ## Controls whether silhouette overlays render in the diorama viewport.

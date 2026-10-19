@@ -37,6 +37,7 @@
 [ext_resource type="Script" uid="uid://dvlg5io1bfsi1" path="res://ui/debug_overlay.gd" id="24_c74r5"]
 [ext_resource type="Texture2D" uid="uid://c7vwr52lcnsge" path="res://assets/images/UI_icon_fire_damage.jpeg" id="24_qu0m5"]
 [ext_resource type="Script" uid="uid://th5tgjsebcpu" path="res://ui/ammo_hud.gd" id="34_p762i"]
+[ext_resource type="Shader" path="res://vfx/glasses_condensation.gdshader" id="35_cndsh"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_p7vwb"]
 shader = ExtResource("5_8dubc")
@@ -79,6 +80,16 @@ shader = ExtResource("9_3hdvn")
 shader_parameter/effect_strength = 1.0
 shader_parameter/brightness_boost = 1.25
 shader_parameter/blur_amount = 0.8
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_cnd01"]
+shader = ExtResource("35_cndsh")
+shader_parameter/full_lens_fog = 0.0
+shader_parameter/edge_condensation = 0.0
+shader_parameter/droplet_density = 1.0
+shader_parameter/blur_strength = 2.6
+shader_parameter/vapor_tint = Color(0.84, 0.88, 0.92, 0.48)
+shader_parameter/edge_softness = 0.28
+shader_parameter/bridge_width = 0.08
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_yev5y"]
 shader = ExtResource("2_x4jx1")
@@ -198,6 +209,17 @@ mouse_filter = 2
 [node name="WolfVisionOverlay" type="ColorRect" parent="ScreenEffectsManager" unique_id=1394655530]
 visible = false
 material = SubResource("ShaderMaterial_534t5")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="CondensationOverlay" type="ColorRect" parent="ScreenEffectsManager" unique_id=1584920314]
+visible = false
+material = SubResource("ShaderMaterial_cnd01")
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
