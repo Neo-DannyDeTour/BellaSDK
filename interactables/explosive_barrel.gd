@@ -66,6 +66,11 @@ func explode() -> void:
 	_apply_screen_shake_and_audio()
 	_apply_aoe_physics()
 
+	var smoke_mgr: Node = get_node_or_null("/root/SmokeManager")
+	if is_instance_valid(smoke_mgr) and smoke_mgr.has_method(&"carve_explosion"):
+		var carve_rad: float = maxf(max_distance, shockwave_radius)
+		smoke_mgr.call(&"carve_explosion", global_position, carve_rad, 3.5)
+
 	queue_free()
 
 

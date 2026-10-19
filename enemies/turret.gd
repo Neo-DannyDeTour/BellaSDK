@@ -329,14 +329,20 @@ func _aim_at_target(delta: float) -> void:
 	head.global_transform.basis = Basis(cur_q.slerp(tgt_q, turn_speed * delta))
 
 
-## Performs space state raycast to confirm clear line of sight.
+## Performs space state raycast and volumetric smoke check to confirm clear line of sight.
 func _has_line_of_sight() -> bool:
 	if not is_instance_valid(target):
 		return false
 
-	var space: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var start_pos: Vector3 = hitscan_ray.global_position
 	var end_pos: Vector3 = target.global_position + _get_actual_aim_offset()
+
+	var smoke_mgr: Node = get_node_or_null("/root/SmokeManager")
+	if is_instance_valid(smoke_mgr) and smoke_mgr.has_method(&"is_line_of_sight_obscured"):
+		if smoke_mgr.call(&"is_line_of_sight_obscured", start_pos, end_pos):
+			return false
+
+	var space: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 
 	var mask: int = (
 		CollisionLayers.MASK_ENVIRONMENT

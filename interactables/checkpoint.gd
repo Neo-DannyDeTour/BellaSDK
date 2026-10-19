@@ -177,7 +177,7 @@ var original_base_color: Color = Color(0.0, 0.2, 0.8, 0.1)
 
 ## Initializes shape, syncs visualizer and hologram, and connects callbacks.
 func _ready() -> void:
-	print("Checkpoint: Initializing checkpoint instance at ", name)
+	#print("Checkpoint: Initializing checkpoint instance at ", name)
 	_update_trigger_shape()
 	_update_visualizer()
 	_update_hologram()

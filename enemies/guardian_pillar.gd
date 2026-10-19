@@ -106,14 +106,19 @@ func _detect_player_in_cone() -> void:
 					return
 
 
-## Raycasts toward target using [CollisionLayers] to confirm line of sight.
+## Raycasts toward target using [CollisionLayers] and [SmokeManager] to confirm line of sight.
 func _has_line_of_sight(target: Node3D) -> bool:
-	print("GuardianPillar: Checking line of sight to target.")
+	var start_pos: Vector3 = head.global_position
+	var end_pos: Vector3 = target.global_position
+
+	var smoke_mgr: Node = get_node_or_null("/root/SmokeManager")
+	if is_instance_valid(smoke_mgr) and smoke_mgr.has_method(&"is_line_of_sight_obscured"):
+		if smoke_mgr.call(&"is_line_of_sight_obscured", start_pos, end_pos):
+			return false
+
 	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
 	var query: PhysicsRayQueryParameters3D = PhysicsRayQueryParameters3D.create(
-		head.global_position,
-		target.global_position,
-		CollisionLayers.MASK_ENVIRONMENT | CollisionLayers.MASK_PLAYER
+		start_pos, end_pos, CollisionLayers.MASK_ENVIRONMENT | CollisionLayers.MASK_PLAYER
 	)
 	query.exclude = [get_rid()]
 
@@ -123,8 +128,7 @@ func _has_line_of_sight(target: Node3D) -> bool:
 
 ## Adjusts head to track active target and scales laser beam.
 func _process_targeting() -> void:
-	if is_friendly or not is_instance_valid(target_player):
-		# print("GuardianPillar: Target missing or disabled. Resuming scan.")
+	if is_friendly or not is_instance_valid(target_player) or not _has_line_of_sight(target_player):
 		_change_state(GuardianPillar.State.SCANNING)
 		return
 

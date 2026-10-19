@@ -383,6 +383,10 @@ signal oxygen_timer_stopped
 @warning_ignore("unused_signal")
 signal infinite_swim_toggled(is_enabled: bool)
 
+## Emitted when infinite ammo mode is toggled in accessibility settings or console.
+@warning_ignore("unused_signal")
+signal infinite_ammo_toggled(is_enabled: bool)
+
 ## Emitted when a weapon tag popup is triggered for [param weapon_id].
 @warning_ignore("unused_signal")
 signal weapon_tag_displayed(weapon_id: String)
@@ -414,6 +418,14 @@ signal godmode_toggled(is_active: bool)
 ## Emitted when player enters or stops taking steam hazard damage.
 @warning_ignore("unused_signal")
 signal steam_hazard_toggled(is_active: bool)
+
+## Emitted when player enters or exits a volumetric smoke hazard.
+@warning_ignore("unused_signal")
+signal smoke_hazard_changed(is_inside: bool, density: float)
+
+## Emitted when player suffocation exposure changes inside a volumetric smoke hazard.
+@warning_ignore("unused_signal")
+signal smoke_exposure_changed(exposure: float)
 
 ## Emitted when player enters or stops taking fire hazard damage.
 @warning_ignore("unused_signal")
@@ -588,9 +600,14 @@ func _on_font_changed(font_name: String) -> void:
 	if not _is_cached:
 		_load_registered_fonts()
 
-	var target_font: Font = fonts.get(font_name, engine_fallback_font)
+	var lookup_key: String = (
+		"kramola" if (font_name.is_empty() or font_name == "default") else font_name
+	)
+	var target_font: Font = fonts.get(lookup_key, null)
 	if not is_instance_valid(target_font):
-		target_font = engine_fallback_font
+		target_font = fonts.get("kramola", null)
+	if not is_instance_valid(target_font):
+		return
 
 	var root_window: Window = get_tree().root
 	if not is_instance_valid(root_window):
@@ -607,7 +624,7 @@ func _on_font_changed(font_name: String) -> void:
 
 	_apply_font_override_recursive(root_window, target_font)
 	get_tree().call_group(&"3d_text", "set", "font", target_font)
-	print("Events: Global font changed to '", font_name, "'.")
+	print("Events: Global font changed to '", lookup_key, "'.")
 
 
 ## Dynamically iterates the GlobalSettings font registry and caches resources.
@@ -616,7 +633,6 @@ func _load_registered_fonts() -> void:
 		return
 
 	engine_fallback_font = ThemeDB.fallback_font
-	fonts["default"] = engine_fallback_font
 
 	var global_settings_node: Node = get_node_or_null("/root/GlobalSettings")
 	if not is_instance_valid(global_settings_node):
@@ -634,10 +650,10 @@ func _load_registered_fonts() -> void:
 		var font_id: String = str(entry.get("id", ""))
 		var font_path: String = str(entry.get("path", ""))
 
-		if font_id.is_empty() or font_id == "default":
+		if font_id.is_empty() or font_path.is_empty():
 			continue
 
-		if not font_path.is_empty() and ResourceLoader.exists(font_path):
+		if ResourceLoader.exists(font_path):
 			var loaded_res: Resource = load(font_path)
 			if loaded_res is Font:
 				fonts[font_id] = loaded_res as Font
@@ -645,6 +661,9 @@ func _load_registered_fonts() -> void:
 				push_warning("Events: Resource at " + font_path + " is not Font.")
 		else:
 			push_warning("Events: Font file path does not exist: " + font_path)
+
+	if fonts.has("kramola"):
+		fonts["default"] = fonts["kramola"]
 
 	_is_cached = true
 

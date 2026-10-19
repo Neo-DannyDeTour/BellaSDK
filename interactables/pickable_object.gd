@@ -247,7 +247,7 @@ func _on_item_prompts_toggled(enabled: bool) -> void:
 
 ## Updates flight state cache when noclip mode is toggled.
 func _on_noclip_toggled(is_flying: bool) -> void:
-	print("PickableObject: Noclip state updated -> ", is_flying)
+	#print("PickableObject: Noclip state updated -> ", is_flying)
 	_is_player_flying = is_flying
 
 
@@ -473,7 +473,8 @@ func set_model_transparency(parent_node: Node, alpha: float) -> void:
 		return
 
 	if parent_node == self:
-		print("PickableObject: Setting model transparency to ", alpha)
+		#print("PickableObject: Setting model transparency to ", alpha)
+		pass
 
 	if parent_node is GeometryInstance3D:
 		var geom: GeometryInstance3D = parent_node if parent_node is GeometryInstance3D else null

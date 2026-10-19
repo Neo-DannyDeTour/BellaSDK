@@ -10,7 +10,7 @@ const SAVE_DEBOUNCE_DELAY: float = 0.35
 
 ## Single source of truth for all typography font assets and metadata.
 const FONT_REGISTRY: Array[Dictionary] = [
-	{"id": "default", "name": "Default", "path": ""},
+	{"id": "kramola", "name": "Kramola", "path": "res://assets/fonts/kramola/Kramola.otf"},
 	{
 		"id": "dyslexic",
 		"name": "Dyslexic",
@@ -18,7 +18,6 @@ const FONT_REGISTRY: Array[Dictionary] = [
 	},
 	{"id": "papyrus", "name": "Papyrus", "path": "res://assets/fonts/papyrus-font/papyrus.ttf"},
 	{"id": "comic", "name": "Comic Sans", "path": "res://assets/fonts/Comic Sans MS.ttf"},
-	{"id": "kramola", "name": "Kramola", "path": "res://assets/fonts/kramola/Kramola.otf"},
 	{
 		"id": "futura",
 		"name": "Futura Handwritten",
@@ -308,6 +307,11 @@ func _apply_boot_settings() -> void:
 			var inf_swim_raw: Variant = get_setting("Accessibility", "infinite_swim", false)
 			var inf_swim: bool = inf_swim_raw == true
 			events.emit_signal("infinite_swim_toggled", inf_swim)
+
+		if events.has_signal("infinite_ammo_toggled"):
+			var inf_ammo_raw: Variant = get_setting("Accessibility", "infinite_ammo", false)
+			var inf_ammo: bool = inf_ammo_raw == true
+			events.emit_signal("infinite_ammo_toggled", inf_ammo)
 
 
 ## Overwrites the default Godot [InputMap] with any saved keybind overrides.
