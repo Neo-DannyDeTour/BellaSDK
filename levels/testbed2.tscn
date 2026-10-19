@@ -29,7 +29,7 @@
 [ext_resource type="PackedScene" uid="uid://b0h28ew50m1nm" path="res://interactables/draw_bridge_system.tscn" id="27_b6yp8"]
 [ext_resource type="PackedScene" uid="uid://ijiwot5majtv" path="res://interactables/gate.tscn" id="28_85n4y"]
 [ext_resource type="PackedScene" uid="uid://ep02e3j752sd" path="res://environment/ventilator.tscn" id="29_eqgbi"]
-[ext_resource type="PackedScene" uid="uid://dg62o2u1p8i7i" path="res://environment/updraft_volume.tscn" id="30_03ucp"]
+[ext_resource type="PackedScene" uid="uid://cx8r7j3t4k2l1" path="res://environment/updraft_vent.tscn" id="30_03ucp"]
 [ext_resource type="PackedScene" uid="uid://dudx3baxpmytw" path="res://interactables/valve_base.tscn" id="31_v5sog"]
 [ext_resource type="PackedScene" uid="uid://ducdt15ffnmg4" path="res://interactables/pickable_valve.tscn" id="32_3n30j"]
 [ext_resource type="PackedScene" uid="uid://bwx87famw5p7u" path="res://interactables/pickable_box.tscn" id="33_lfxbi"]
@@ -4782,10 +4782,8 @@ open_offset = Vector3(0, 0, 4)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.6718683, 11.039263, -63.830284)
 speed = 20.0
 
-[node name="UpdraftVolume" parent="InteractiveObjects" unique_id=794249437 instance=ExtResource("30_03ucp")]
+[node name="UpdraftVent" parent="InteractiveObjects" unique_id=794249437 instance=ExtResource("30_03ucp")]
 transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 1.7757654, 17.163687, -64.04922)
-column_scroll_speed = 2.5999999999999996
-column_opacity = 0.01
 
 [node name="dev_cylinder3" parent="InteractiveObjects" unique_id=919634728 instance=ExtResource("23_i7r5n")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.2782054, 0.049990226, 19.68423)
@@ -11419,21 +11417,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.6027517, 21.364052, -111.70
 ammo_type = 1
 
 [node name="SmokeHazard" parent="." unique_id=761632134 instance=ExtResource("206_8p02p")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.0345335, 20.70082, -95.40432)
-damage_per_tick = 50.0
-tick_rate = 0.25
-visualizer_size = Vector3(1, 2, 1)
-hazard_offset = Vector3(0, 1, 0)
-show_visualizer_in_game = true
-visualizer_color = Color(0.9, 0.2, 0.1, 0.3)
-x_ray_mode = false
-show_orientation = true
-particle_lifetime = 0.2
-particle_speed = 8.0
-velocity_min = 4.0
-velocity_max = 8.0
-spread = 15.0
-scale_min = 0.4
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.0345335, 21.70082, -95.40432)
+size = Vector3(4, 3, 4)
+max_damage_per_tick = 25.0
+tick_rate = 0.5
+show_visualizer_in_game = false
 
 [node name="3DShockwave" parent="." unique_id=1451759977 instance=ExtResource("207_m1ok5")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 18, 30, -140)

@@ -136,6 +136,11 @@ func detonate() -> void:
 		_spark_particles.restart()
 		_spark_particles.emitting = true
 
+	if not Engine.is_editor_hint():
+		var smoke_mgr: Node = get_node_or_null("/root/SmokeManager")
+		if is_instance_valid(smoke_mgr) and smoke_mgr.has_method(&"carve_explosion"):
+			smoke_mgr.call(&"carve_explosion", global_position, blast_radius, 3.5)
+
 	_start_detonation_tween()
 	set_physics_process(true)
 
@@ -236,7 +241,7 @@ func _finish_explosion() -> void:
 		_shockwave_mesh.visible = false
 	if is_instance_valid(_blast_light):
 		_blast_light.visible = false
-	print("ControlExplosion: Detonation sequence finished.")
+	#print("ControlExplosion: Detonation sequence finished.")
 	explosion_finished.emit(self)
 
 	if loop and is_inside_tree():

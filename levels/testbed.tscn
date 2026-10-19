@@ -26,7 +26,7 @@
 [ext_resource type="PackedScene" uid="uid://ca0wevg1lb4rx" path="res://environment/water_body.tscn" id="21_2dnug"]
 [ext_resource type="PackedScene" uid="uid://ep02e3j752sd" path="res://environment/ventilator.tscn" id="24_ue7dh"]
 [ext_resource type="PackedScene" uid="uid://uwhga6c4q51o" path="res://player/zipline.tscn" id="24_xj7km"]
-[ext_resource type="PackedScene" uid="uid://dg62o2u1p8i7i" path="res://environment/updraft_volume.tscn" id="25_jgmty"]
+[ext_resource type="PackedScene" uid="uid://cx8r7j3t4k2l1" path="res://environment/updraft_vent.tscn" id="25_jgmty"]
 [ext_resource type="PackedScene" uid="uid://q22xc6i00ls" path="res://tools/dev_cylinder.tscn" id="25_m0e1v"]
 [ext_resource type="PackedScene" path="res://interactables/plug_and_cable.tscn" id="27_erim8"]
 [ext_resource type="Shader" uid="uid://6nbh24t00hff" path="res://vfx/caustics_shader.gdshader" id="27_f3k8r"]
@@ -3624,7 +3624,7 @@ open_offset = Vector3(0, 0, 4)
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1.6718683, 11.039263, -63.830284)
 speed = 20.0
 
-[node name="UpdraftVolume" parent="InteractiveObjects" unique_id=794249437 instance=ExtResource("25_jgmty")]
+[node name="UpdraftVent" parent="InteractiveObjects" unique_id=794249437 instance=ExtResource("25_jgmty")]
 transform = Transform3D(5, 0, 0, 0, 5, 0, 0, 0, 5, 1.7757654, 17.163687, -64.04922)
 
 [node name="Ladder2" parent="InteractiveObjects" unique_id=273226209 instance=ExtResource("19_s52xd")]

@@ -104,7 +104,7 @@ var _instruction_label: Label = null
 
 ## Pre-allocates inspection quads, materials, and HUD elements on load.
 func _ready() -> void:
-	print("NoteReader: Initializing zero-allocation inspection hierarchy.")
+	#print("NoteReader: Initializing zero-allocation inspection hierarchy.")
 	_setup_proxy_hierarchy()
 	_setup_dimmer()
 	_setup_instruction_ui()

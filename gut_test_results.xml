@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites name="GutTests" failures="0" tests="7" >
+  <testsuite name="test/unit/test_in_game_console.gd" tests="7" failures="0" skipped="0" time="0.004095" >
+      <testcase name="test_update_suggestion_ui_formatting" assertions="2" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000722" >
+      </testcase>
+      <testcase name="test_update_suggestion_ui_empty" assertions="2" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000495" >
+      </testcase>
+      <testcase name="test_infinite_ammo_console_command" assertions="3" status="pass" classname="test/unit/test_in_game_console.gd" time="0.00101" >
+      </testcase>
+      <testcase name="test_toggle_command_double_invocation" assertions="2" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000483" >
+      </testcase>
+      <testcase name="test_toggle_command_boolean_tokens" assertions="4" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000491" >
+      </testcase>
+      <testcase name="test_toggle_command_invalid_argument" assertions="1" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000428" >
+      </testcase>
+      <testcase name="test_toggle_command_autocomplete_suggestions" assertions="5" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000466" >
+      </testcase>
+  </testsuite>
+</testsuites>

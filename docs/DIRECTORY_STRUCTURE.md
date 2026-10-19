@@ -64,7 +64,7 @@ Hostile AI agents and combat entities:
 
 ### 4. `environment/`
 World decoration, interactive dynamic environment volumes, and terrain systems:
-- Dynamic volumes: `updraft_volume.*`, `mannequin_volume.*`, `target_volume.*`.
+- Dynamic volumes: `updraft_vent.*`, `mannequin_volume.*`, `target_volume.*`.
 - Environmental props: `ventilator.*`, `cloth.*`, `flag_waving.*`, `torch.*`.
 - Weather & atmosphere: `box_clouds.*`, `snow_environment.*`, `ocean.*`, `water_body.*`.
 - Soundscapes: `soundscape_zone.*`, `soundscape_data.gd`, ambient audio resources.
