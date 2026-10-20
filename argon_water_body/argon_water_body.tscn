@@ -1,0 +1,144 @@
+[gd_scene load_steps=15 format=3 uid="uid://c8w4t3rb0dy4x"]
+
+[ext_resource type="Script" path="res://argon_water_body/argon_water_body.gd" id="1_water_body"]
+[ext_resource type="Shader" path="res://argon_water_body/argon_water.gdshader" id="2_water_shader"]
+[ext_resource type="Script" path="res://argon_water_body/argon_underwater_fog_volume.gd" id="3_underwater_fog"]
+[ext_resource type="Shader" path="res://argon_water_body/argon_fog_fade.gdshader" id="4_fog_shader"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_norm_a"]
+noise_type = 3
+seed = 104
+frequency = 0.025
+fractal_type = 2
+fractal_octaves = 3
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_norm_a"]
+width = 256
+height = 256
+seamless = true
+as_normal_map = true
+bump_strength = 6.0
+noise = SubResource("FastNoiseLite_norm_a")
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_norm_b"]
+noise_type = 3
+seed = 772
+frequency = 0.032
+fractal_type = 2
+fractal_octaves = 3
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_norm_b"]
+width = 256
+height = 256
+seamless = true
+as_normal_map = true
+bump_strength = 5.0
+noise = SubResource("FastNoiseLite_norm_b")
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_foam"]
+noise_type = 2
+seed = 409
+frequency = 0.045
+cellular_distance_function = 1
+cellular_return_type = 1
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_foam"]
+width = 256
+height = 256
+seamless = true
+noise = SubResource("FastNoiseLite_foam")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_water"]
+render_priority = 0
+shader = ExtResource("2_water_shader")
+shader_parameter/water_time = 0.0
+shader_parameter/wave_amplitude = 0.14
+shader_parameter/wave_frequency = 1.15
+shader_parameter/wave_speed = 1.6
+shader_parameter/wave_steepness = 0.45
+shader_parameter/ripple_frequency = 10.0
+shader_parameter/ripple_speed = 4.5
+shader_parameter/ripple_decay = 1.8
+shader_parameter/ripple_spatial_decay = 0.85
+shader_parameter/shallow_color = Color(0.11, 0.27, 0.29, 1)
+shader_parameter/deep_color = Color(0.02, 0.06, 0.08, 1)
+shader_parameter/beer_factor = 0.75
+shader_parameter/max_visibility_depth = 5.5
+shader_parameter/refraction_strength = 0.04
+shader_parameter/fresnel_power = 5.0
+shader_parameter/roughness_val = 0.05
+shader_parameter/specular_val = 0.85
+shader_parameter/normal_map_a = SubResource("NoiseTexture2D_norm_a")
+shader_parameter/normal_map_b = SubResource("NoiseTexture2D_norm_b")
+shader_parameter/normal_scale = 0.45
+shader_parameter/normal_uv_scale = 0.14
+shader_parameter/normal_scroll_a = Vector2(0.035, 0.025)
+shader_parameter/normal_scroll_b = Vector2(-0.028, 0.032)
+shader_parameter/foam_noise = SubResource("NoiseTexture2D_foam")
+shader_parameter/foam_color = Color(0.88, 0.94, 0.96, 1)
+shader_parameter/foam_edge_distance = 0.42
+shader_parameter/foam_crest_threshold = 0.65
+shader_parameter/foam_intensity = 0.85
+shader_parameter/foam_uv_scale = 0.28
+
+[sub_resource type="BoxMesh" id="BoxMesh_water"]
+size = Vector3(16, 4, 16)
+subdivide_width = 16
+subdivide_depth = 16
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_volume"]
+size = Vector3(16, 4, 16)
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_cam"]
+radius = 0.18
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_fog"]
+shader = ExtResource("4_fog_shader")
+shader_parameter/density = 0.12
+shader_parameter/albedo = Color(0.06, 0.18, 0.21, 1)
+shader_parameter/emission = Color(0.01, 0.04, 0.05, 1)
+shader_parameter/height_falloff = 0.0
+shader_parameter/edge_fade = 0.1
+shader_parameter/fade_plane = Vector4(0, 1, 0, -999)
+
+[node name="ArgonWaterBody" type="MeshInstance3D"]
+layers = 4
+material_override = SubResource("ShaderMaterial_water")
+custom_aabb = AABB(-8, -2.93, -8, 16, 5.86, 16)
+mesh = SubResource("BoxMesh_water")
+script = ExtResource("1_water_body")
+
+[node name="SwimmableArea3D" type="Area3D" parent="." groups=["water_area"]]
+unique_name_in_owner = true
+collision_layer = 4
+collision_mask = 6
+monitorable = true
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SwimmableArea3D"]
+unique_name_in_owner = true
+shape = SubResource("BoxShape3D_volume")
+
+[node name="CameraPosShapeCast3D" type="ShapeCast3D" parent="."]
+unique_name_in_owner = true
+shape = SubResource("SphereShape3D_cam")
+target_position = Vector3(0, 0, 0)
+max_results = 4
+collision_mask = 6
+collide_with_areas = true
+collide_with_bodies = false
+
+[node name="FogVolume" type="FogVolume" parent="."]
+unique_name_in_owner = true
+layers = 512
+size = Vector3(16, 4, 16)
+material = SubResource("ShaderMaterial_fog")
+script = ExtResource("3_underwater_fog")
+
+[node name="SurfaceAudio" type="AudioStreamPlayer3D" parent="."]
+unique_name_in_owner = true
+autoplay = true
+max_distance = 10.0
+
+[node name="UnderwaterAudio" type="AudioStreamPlayer3D" parent="."]
+unique_name_in_owner = true
+pitch_scale = 0.5
