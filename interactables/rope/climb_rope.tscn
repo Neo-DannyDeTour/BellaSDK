@@ -7,6 +7,7 @@
 [ext_resource type="AudioStream" uid="uid://dgnxwid3n7ce3" path="res://assets/sounds/ClimbRope.wav" id="5_climb"]
 [ext_resource type="AudioStream" uid="uid://b81edi4tvhu8f" path="res://assets/sounds/Zipline.wav" id="6_slide"]
 [ext_resource type="AudioStream" uid="uid://jscbwsu1hyh1" path="res://assets/sounds/RopeSwing.wav" id="7_swing"]
+[ext_resource type="AudioStream" uid="uid://bjuxiniqehko4" path="res://assets/sounds/chain_climb.mp3" id="8_chain"]
 
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_grab"]
 resource_local_to_scene = true
@@ -30,6 +31,7 @@ shader_parameter/alpha_scissor_threshold = 0.5
 [node name="ClimbRope3D" type="Node3D" groups=["interactable", "interactables"]]
 script = ExtResource("1_rope")
 climb_stream = ExtResource("5_climb")
+chain_climb_stream = ExtResource("8_chain")
 slide_stream = ExtResource("6_slide")
 swing_stream = ExtResource("7_swing")
 
@@ -71,7 +73,7 @@ font_size = 16
 outline_size = 8
 
 [node name="ClimbAudio" type="AudioStreamPlayer3D" parent="."]
-stream = ExtResource("5_climb")
+stream = ExtResource("8_chain")
 volume_db = -10.0
 
 [node name="SlideAudio" type="AudioStreamPlayer3D" parent="."]

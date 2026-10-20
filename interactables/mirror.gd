@@ -183,6 +183,7 @@ func _process(_delta: float) -> void:
 func _setup_mirror() -> void:
 	print("Mirror: Configuring camera, pipeline, and material for: ", name)
 	if is_instance_valid(mirror_camera):
+		mirror_camera.add_to_group(&"ignore_global_video_settings")
 		mirror_camera.current = true
 		mirror_camera.cull_mask = cull_mask
 		_isolate_mirror_camera_compositor()
@@ -209,6 +210,8 @@ func _configure_viewport_pipeline() -> void:
 	print("Mirror: Stripping heavy rendering passes from SubViewport on: ", name)
 	if not is_instance_valid(mirror_viewport):
 		return
+
+	mirror_viewport.add_to_group(&"ignore_global_video_settings")
 
 	mirror_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 	mirror_viewport.positional_shadow_atlas_size = 0

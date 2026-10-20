@@ -23,7 +23,7 @@ var _beat_tween: Tween
 
 ## Disables the prompt label and connects all required signals from the [member interact_component].
 func _ready() -> void:
-	print("HealthUpgrade: _ready() - Initializing upgrade.")
+	#print("HealthUpgrade: _ready() - Initializing upgrade.")
 
 	if is_instance_valid(prompt_label):
 		prompt_label.hide()

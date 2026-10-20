@@ -257,7 +257,7 @@ func _update_multimesh_transforms() -> void:
 
 ## Synchronizes tether parameters if endpoints implement plug interface contracts.
 func _configure_plug_tether() -> void:
-	print("PhysicsCable3D: Configuring plug endpoints.")
+	#print("PhysicsCable3D: Configuring plug endpoints.")
 	if "max_cable_length" in end_plug:
 		end_plug.set("max_cable_length", cable_length_meters)
 	if "anchor_point" in end_plug:

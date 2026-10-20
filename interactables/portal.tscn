@@ -47,7 +47,7 @@ mesh = SubResource("QuadMesh_gh40b")
 render_target_update_mode = 0
 
 [node name="PortalCamera" type="Camera3D" parent="PortalSubViewport" unique_id=917421883]
-cull_mask = 1047559
+cull_mask = 7
 environment = SubResource("Environment_0b0md")
 compositor = SubResource("Compositor_g6j5g")
 far = 1500.0

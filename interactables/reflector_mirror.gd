@@ -61,7 +61,7 @@ var interact_comp: InteractComponent = get_node_or_null("InteractComponent") as 
 
 ## Initializes mirror group memberships and binds interaction events.
 func _ready() -> void:
-	print("ReflectorMirror: Initializing mirror stand and groups.")
+	#print("ReflectorMirror: Initializing mirror stand and groups.")
 	add_to_group(&"mirror")
 	_mark_children_as_mirrors(self)
 

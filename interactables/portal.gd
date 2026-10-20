@@ -54,6 +54,7 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(_on_body_exited)
 
+	portal_camera.add_to_group(&"ignore_global_video_settings")
 	portal_camera.current = true
 	_configure_sub_viewport()
 	_isolate_portal_camera_compositor()
@@ -83,6 +84,7 @@ func _configure_sub_viewport() -> void:
 	print("Portal: Configuring SubViewport graphics limits for: ", name)
 	if not is_instance_valid(sub_viewport):
 		return
+	sub_viewport.add_to_group(&"ignore_global_video_settings")
 	sub_viewport.positional_shadow_atlas_size = 0
 	sub_viewport.msaa_3d = Viewport.MSAA_DISABLED
 	sub_viewport.screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED

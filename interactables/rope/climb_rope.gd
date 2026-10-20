@@ -164,12 +164,19 @@ static var _default_rope_material: StandardMaterial3D = null
 
 @export_category("Audio Streams")
 
-## Looping sound effect played while actively climbing up or down.
+## Looping sound effect played while actively climbing up or down in SWING mode.
 @export var climb_stream: AudioStream:
 	set(value):
 		climb_stream = value
 		if is_instance_valid(self) and is_inside_tree() and is_instance_valid(_climb_audio):
-			_climb_audio.stream = climb_stream
+			_climb_audio.stream = _resolve_climb_stream()
+
+## Looping sound effect played while actively climbing up or down in CHAIN mode.
+@export var chain_climb_stream: AudioStream:
+	set(value):
+		chain_climb_stream = value
+		if is_instance_valid(self) and is_inside_tree() and is_instance_valid(_climb_audio):
+			_climb_audio.stream = _resolve_climb_stream()
 
 ## Looping sound effect played during fast downward sliding.
 @export var slide_stream: AudioStream:
@@ -308,8 +315,8 @@ func _ready() -> void:
 	add_to_group(&"interactable")
 	add_to_group(&"interactables")
 
-	if is_instance_valid(_climb_audio) and climb_stream != null:
-		_climb_audio.stream = climb_stream
+	if is_instance_valid(_climb_audio):
+		_climb_audio.stream = _resolve_climb_stream()
 	if is_instance_valid(_slide_audio) and slide_stream != null:
 		_slide_audio.stream = slide_stream
 	if is_instance_valid(_swing_audio) and swing_stream != null:
@@ -758,6 +765,8 @@ func _rebuild_rope() -> void:
 		_build_swing_rope(mm)
 
 	_apply_active_material()
+	if is_instance_valid(_climb_audio):
+		_climb_audio.stream = _resolve_climb_stream()
 	_multimesh_instance.custom_aabb = AABB(
 		Vector3(-length, -length - 1.0, -length), Vector3(length * 2.0, length + 2.0, length * 2.0)
 	)
@@ -922,6 +931,13 @@ func _apply_active_material() -> void:
 				_default_rope_material.albedo_color = Color(0.56, 0.44, 0.28)
 				_default_rope_material.roughness = 0.88
 			_multimesh_instance.material_override = _default_rope_material
+
+
+## Returns active climb audio stream corresponding to current [member mode].
+func _resolve_climb_stream() -> AudioStream:
+	if mode == Mode.CHAIN and chain_climb_stream != null:
+		return chain_climb_stream
+	return climb_stream
 
 
 ## Builds and caches the procedural elongated stadium-oval chain link [ArrayMesh].
