@@ -1,24 +1,20 @@
 @tool
 @icon("res://addons/SunshineClouds2/CloudsDriverIcon.svg")
-## Driver node orchestrating scene lights, wind motion, visibility, and compositor sync.
+extends Node
 class_name SunshineCloudsDriverGD
-extends Node3D
 
-## Enables continuous real-time wind coordinate integration and light tracking updates.
 @export var update_continuously: bool = false:
 	get:
 		return update_continuously
 	set(value):
 		update_continuously = value
-		if is_inside_tree():
-			retrieve_texture_data()
+		retrieve_texture_data()
 
-## Triggers generation and automatic binding of a new [SunshineCloudsGD] resource.
-@export_tool_button("Generate Clouds Resource", "Add")
-var generate_action: Callable = build_new_clouds
+@export_tool_button("Generate Clouds Resource", "Add") var generate_action = build_new_clouds
+#@export_tool_button("Test Clouds Position Sample", "Add") var position_sample = sample_clouds
+
 
 @export_group("Compositor Resource")
-## The active [SunshineCloudsGD] compositor resource driven by this node.
 @export var clouds_resource: SunshineCloudsGD:
 	get:
 		return clouds_resource
@@ -26,420 +22,312 @@ var generate_action: Callable = build_new_clouds
 		clouds_res_removed()
 		clouds_resource = value
 		clouds_res_added()
-		_sync_visibility()
-
 @export_group("Optional World Environment")
-## Optional environment from which background fog colors are sampled.
 @export var ambience_sample_environment: Environment
-
 @export_group("Light Controls")
-## Directional lights illuminating the cloud volume and casting light shafts.
 @export var tracked_directional_lights: Array[DirectionalLight3D] = []:
 	get:
 		return tracked_directional_lights
 	set(value):
 		tracked_directional_lights = value
-		if is_inside_tree():
-			retrieve_texture_data()
+		retrieve_texture_data()
 
-## Raymarching shadow step counts evaluated for each tracked directional light.
 @export var tracked_directional_light_shadow_steps: Array[int] = []:
 	get:
 		return tracked_directional_light_shadow_steps
 	set(value):
 		tracked_directional_light_shadow_steps = value
-		if is_inside_tree():
-			retrieve_texture_data()
+		retrieve_texture_data()
 
-## Point and omni lights casting local illumination within the cloud volume.
 @export var tracked_point_lights: Array[OmniLight3D] = []:
 	get:
 		return tracked_point_lights
 	set(value):
 		tracked_point_lights = value
-		if is_inside_tree():
-			retrieve_texture_data()
+		retrieve_texture_data()
 
-## Local density effectors pushing or carving holes into the cloud volume.
 @export var tracked_point_effectors: Array[SunshineCloudsEffector] = []:
 	get:
 		return tracked_point_effectors
 	set(value):
 		tracked_point_effectors = value
-		if is_inside_tree():
-			retrieve_texture_data()
+		retrieve_texture_data()
 
-## Global power multiplier applied to all tracked directional lights.
-@export_range(0.0, 10.0, 0.05) var directional_light_power_multiplier: float = 1.0
-
-## Global power multiplier applied to all tracked point lights.
-@export_range(0.0, 10.0, 0.05) var point_light_power_multiplier: float = 1.0
-
+@export var directional_light_power_multiplier: float = 1.0
+@export var point_light_power_multiplier: float = 1.0
 @export_group("Wind Controls")
-## World-space translation offset applied to the entire cloud volume.
-@export var origin_offset: Vector3 = Vector3.ZERO
-
-## Normalized horizontal wind movement direction vector.
+@export var origin_offset : Vector3 = Vector3.ZERO
 @export var wind_direction: Vector3 = Vector3(1.0, 0.0, 1.0)
-
-## Movement speed in meters per second for extra-large macro noise structures.
-@export_range(0.0, 1000.0, 1.0, "suffix:m/s")
-var extra_large_structures_wind_speed: float = 140.0
-
-## Movement speed in meters per second for large primary cloud shape structures.
-@export_range(0.0, 1000.0, 1.0, "suffix:m/s")
-var large_structures_wind_speed: float = 100.0
-
-## Movement speed in meters per second for medium erosion noise structures.
-@export_range(0.0, 500.0, 1.0, "suffix:m/s")
-var medium_structures_wind_speed: float = 40.0
-
-## Movement speed in meters per second for small detail noise structures.
-@export_range(0.0, 200.0, 1.0, "suffix:m/s")
-var small_structures_wind_speed: float = 12.0
-
+@export var extra_large_structures_wind_speed: float = 140.0
+@export var large_structures_wind_speed: float = 100.0
+@export var medium_structures_wind_speed: float = 40.0
+@export var small_structures_wind_speed: float = 12.0
 @export_group("Internal Use")
-## Accumulated offset for extra-large scale noise sampling.
 var extra_large_clouds_pos: Vector3 = Vector3.ZERO
-
-## Accumulated offset for large scale noise sampling.
 var large_clouds_pos: Vector3 = Vector3.ZERO
-
-## Accumulated offset for medium scale noise sampling.
 var medium_clouds_pos: Vector3 = Vector3.ZERO
-
-## Accumulated offset for small detail noise sampling.
 var small_clouds_pos: Vector3 = Vector3.ZERO
 
-## Domain wrapping boundary for extra-large noise coordinates.
 var _extralarge_clouds_domain: float = 0.0
-
-## Domain wrapping boundary for large noise coordinates.
 var _large_clouds_domain: float = 0.0
-
-## Domain wrapping boundary for medium noise coordinates.
 var _medium_clouds_domain: float = 0.0
-
-## Domain wrapping boundary for small noise coordinates.
 var _small_clouds_domain: float = 0.0
 
-## Mutex flag preventing concurrent texture and uniform updates.
 var _updating_settings: bool = false
 
+# --- Multi-threaded rendering fix (thread_model = 2) --------------------------
+# clouds_resource IS the compositor effect: its fields are written here from
+# _process (main thread) and read in _render_callback (render thread). In Safe
+# mode that is the same thread and all is well; in threaded mode, the clear()
+# followed by the append()s in retrieve_texture_data opened a window where the
+# render thread could read an EMPTY light array — black clouds with a fringe
+# along the edge of the geometry.
+#
+# Fix: build the arrays in locals (node access has to stay on the main thread),
+# then hand them over to the effect from the render thread. The swap is thereby
+# serialised against _render_callback. In Safe mode call_on_render_thread runs
+# immediately: behaviour unchanged.
+#
+# The copies below are what _process compares against, so the main thread never
+# reads clouds_resource's arrays at all.
+var _dir_data_cache : Array[Vector4] = []
+var _point_data_cache : Array[Vector4] = []
+var _effector_data_cache : Array[Vector4] = []
 
-## Connects visibility tracking when entering the scene tree.
-func _enter_tree() -> void:
-	if not visibility_changed.is_connected(_on_visibility_changed):
-		visibility_changed.connect(_on_visibility_changed)
-	_sync_visibility()
+func _apply_lights_data(dir_data : Array[Vector4], point_data : Array[Vector4], effector_data : Array[Vector4]):
+	if clouds_resource == null:
+		return
+	clouds_resource.directional_lights_data = dir_data
+	clouds_resource.point_lights_data = point_data
+	clouds_resource.point_effector_data = effector_data
+	clouds_resource.lights_updated = true
 
-
-## Initializes light tracking, rebinds live environment, and schedules texture sync.
-func _ready() -> void:
-	print("SunshineCloudsDriver: Initializing cloud driver components.")
-	_sync_world_environment()
-	_sync_active_viewport()
-	_sync_visibility()
+func _ready():
+	
 	if update_continuously:
+		
 		if clouds_resource == null:
 			update_continuously = false
 			return
-		call_deferred(&"retrieve_texture_data")
+		call_deferred("retrieve_texture_data")
 
 
-## Synchronizes node visibility state with [member SunshineCloudsGD.enabled].
-func _on_visibility_changed() -> void:
-	var vis: bool = is_visible_in_tree()
-	print("SunshineCloudsDriver: Visibility changed to ", vis)
-	_sync_visibility()
-
-
-## Applies current tree visibility state to [member clouds_resource].
-func _sync_visibility() -> void:
-	if is_instance_valid(clouds_resource) and is_inside_tree():
-		clouds_resource.enabled = is_visible_in_tree()
-
-
-## Synchronizes the target viewport RID for runtime and 3D editor rendering.
-func _sync_active_viewport() -> void:
-	if not is_instance_valid(clouds_resource) or not is_inside_tree():
-		return
-	var vp: Viewport = get_viewport()
-	if is_instance_valid(vp):
-		clouds_resource.main_viewport_rid = vp.get_viewport_rid()
-
-
-## Returns the appropriate root node for searching the active scene hierarchy.
-func _get_search_root() -> Node:
-	if Engine.is_editor_hint() and is_instance_valid(get_tree().edited_scene_root):
-		return get_tree().edited_scene_root
-	return get_tree().root
-
-
-## Locates live [WorldEnvironment] and updates [member ambience_sample_environment].
-func _sync_world_environment() -> void:
-	var env_node: WorldEnvironment = recursively_find_env(_get_search_root())
-	if is_instance_valid(env_node) and is_instance_valid(env_node.environment):
-		ambience_sample_environment = env_node.environment
-		print("SunshineCloudsDriver: Rebound to active runtime Environment.")
-
-
-## Integrates continuous wind displacement and synchronizes parameters every frame.
-func _process(delta: float) -> void:
-	if clouds_resource == null:
-		update_continuously = false
-		return
-
-	if not is_visible_in_tree():
-		if clouds_resource.enabled:
-			clouds_resource.enabled = false
-		return
-
-	if not clouds_resource.enabled:
-		clouds_resource.enabled = true
-
-	if not clouds_resource.main_viewport_rid.is_valid():
-		_sync_active_viewport()
-
-	clouds_resource.current_time = wrapf(
-		clouds_resource.current_time + delta * clouds_resource.dither_speed,
-		0.0,
-		clouds_resource.dither_speed * 64.0
-	)
-
-	if update_continuously:
-		_updating_settings = false
-
-		extra_large_clouds_pos = wrap_vector(
-			extra_large_clouds_pos + wind_direction * extra_large_structures_wind_speed * delta,
-			_extralarge_clouds_domain
-		)
-		large_clouds_pos = wrap_vector(
-			large_clouds_pos + wind_direction * large_structures_wind_speed * delta,
-			_large_clouds_domain
-		)
-		medium_clouds_pos = wrap_vector(
-			medium_clouds_pos + wind_direction * medium_structures_wind_speed * delta,
-			_medium_clouds_domain
-		)
-
-		var small_wind_vel: Vector3 = (
-			(wind_direction * small_structures_wind_speed)
-			+ (Vector3.UP * absf(small_structures_wind_speed))
-		)
-		small_clouds_pos = wrap_vector(
-			small_clouds_pos + small_wind_vel * delta,
-			_small_clouds_domain
-		)
-
-		clouds_resource.origin_offset = origin_offset
-		clouds_resource.extra_large_scale_clouds_position = origin_offset + extra_large_clouds_pos
-		clouds_resource.large_scale_clouds_position = origin_offset + large_clouds_pos
-		clouds_resource.medium_scale_clouds_position = origin_offset + medium_clouds_pos
-		clouds_resource.detail_clouds_position = origin_offset + small_clouds_pos
-		clouds_resource.wind_direction = wind_direction
-
-		if (
-			clouds_resource.use_environment_fog > 0.0
-			and is_instance_valid(ambience_sample_environment)
-		):
-			clouds_resource.sampled_environment_fog_color = (
-				ambience_sample_environment.fog_light_color
-			)
-
-
-## Updates the cloud coordinate system origin offset [param new_offset].
-func update_origin_offset(new_offset: Vector3) -> void:
-	print("SunshineCloudsDriver: Updating origin offset to ", new_offset)
-	origin_offset = new_offset
-
-
-## Updates the horizontal wind velocity direction vector [param new_direction].
-func update_wind_direction(new_direction: Vector3) -> void:
-	print("SunshineCloudsDriver: Updating wind direction to ", new_direction)
-	wind_direction = new_direction.normalized()
-
-
-## Forces an immediate repack and GPU upload of all tracked light buffers.
-func force_light_update() -> void:
-	print("SunshineCloudsDriver: Explicit light update requested by player/system.")
-	retrieve_texture_data()
-
-
-## Enqueues a batch of 32 diagnostic cloud density queries across altitude levels.
-func sample_clouds() -> void:
-	print("SunshineCloudsDriver: Sampling clouds data.")
-	if clouds_resource == null:
-		return
-	for i: int in range(SunshineCloudsGD.MAX_SAMPLE_QUERIES):
-		clouds_resource.add_sample(
-			return_data.bind(), Vector3(i * 1000.0, 6000.0, 0.0)
-		)
-
-
-## Diagnostic callback receiving sampled world [param position] and [param sampledensity].
-func return_data(position: Vector3, sampledensity: float) -> void:
-	print("Cloud Sample Output - Position: ", position, " Density: ", sampledensity)
-
-
-## Instantiates a new [SunshineCloudsGD] resource and attaches it to [WorldEnvironment].
-func build_new_clouds() -> void:
-	if not is_inside_tree():
-		return
-
-	var env: WorldEnvironment = recursively_find_env(_get_search_root())
-	if env != null:
-		if not ambience_sample_environment:
-			ambience_sample_environment = env.environment
-		clouds_resource = SunshineCloudsGD.new()
-		_sync_active_viewport()
-		_sync_visibility()
-		update_continuously = true
-		print("SunshineCloudsDriver: Generated new clouds resource.")
+func _process(delta : float):
+	if clouds_resource != null:
+		clouds_resource.current_time = wrap(clouds_resource.current_time + delta * clouds_resource.dither_speed, 0.0, clouds_resource.dither_speed * 64.0)
+		
+		if update_continuously:
+			_updating_settings = false
+			extra_large_clouds_pos += wind_direction * extra_large_structures_wind_speed * delta
+			extra_large_clouds_pos = wrap_vector(extra_large_clouds_pos, _extralarge_clouds_domain)
+			large_clouds_pos += wind_direction * large_structures_wind_speed * delta
+			large_clouds_pos = wrap_vector(large_clouds_pos, _large_clouds_domain)
+			medium_clouds_pos += wind_direction * medium_structures_wind_speed * delta
+			medium_clouds_pos = wrap_vector(medium_clouds_pos, _medium_clouds_domain)
+			small_clouds_pos += ((wind_direction * small_structures_wind_speed) + (Vector3.UP * abs(small_structures_wind_speed))) * delta
+			small_clouds_pos = wrap_vector(small_clouds_pos, _small_clouds_domain)
+			
+			clouds_resource.origin_offset = origin_offset
+			clouds_resource.extra_large_scale_clouds_position = origin_offset + extra_large_clouds_pos
+			clouds_resource.large_scale_clouds_position = origin_offset + large_clouds_pos
+			clouds_resource.medium_scale_clouds_position = origin_offset + medium_clouds_pos
+			clouds_resource.detail_clouds_position = origin_offset + small_clouds_pos
+			
+			clouds_resource.wind_direction = wind_direction
+			
+			if clouds_resource.use_environment_fog > 0.0 and ambience_sample_environment != null:
+				clouds_resource.sampled_environment_fog_color = ambience_sample_environment.fog_light_color
+				#clouds_resource.cloud_ambient_color = ambience_sample_environment.fog_light_color
+			
+			# Comparisons run against the driver's own copies, never against
+			# clouds_resource's arrays: those now belong to the render thread.
+			if (tracked_directional_lights.size() * 2.0 != _dir_data_cache.size() \
+			or tracked_point_lights.size() * 2.0 != _point_data_cache.size()\
+			or tracked_directional_lights.size() != tracked_directional_light_shadow_steps.size()):
+				
+				retrieve_texture_data()
+				return
+			
+			for i in range(tracked_directional_lights.size()):
+				if tracked_directional_lights[i] == null:
+					continue
+				if direction_light_data_changed(tracked_directional_lights[i], tracked_directional_light_shadow_steps[i], _dir_data_cache[i * 2], _dir_data_cache[i * 2 + 1]):
+					retrieve_texture_data()
+					return
+			
+			for i in range(tracked_point_lights.size()):
+				if tracked_point_lights[i] == null:
+					continue
+				if point_light_data_changed(tracked_point_lights[i], _point_data_cache[i * 2], _point_data_cache[i * 2 + 1]):
+					retrieve_texture_data()
+					return
+			
+			for i in range(tracked_point_effectors.size()):
+				if tracked_point_effectors[i] == null:
+					continue
+				if point_effector_data_changed(tracked_point_effectors[i], _effector_data_cache[i * 2], _effector_data_cache[i * 2 + 1]):
+					retrieve_texture_data()
+					return
+			
 	else:
-		printerr("SunshineCloudsDriver: No WorldEnvironment found in scene tree.")
+		update_continuously = false
 
+func sample_clouds():
+	for i in range(64):
+		clouds_resource.add_sample(return_data.bind(), Vector3(i * 1000, 6000.0, 0.0))
 
-## Detaches the active [SunshineCloudsGD] compositor effect from [WorldEnvironment].
-func clouds_res_removed() -> void:
-	if clouds_resource and is_inside_tree():
-		var env: WorldEnvironment = recursively_find_env(_get_search_root())
-		if env and env.compositor != null:
-			var effects: Array[CompositorEffect] = env.compositor.compositor_effects
-			if effects.has(clouds_resource):
-				effects.erase(clouds_resource)
-				env.compositor.compositor_effects = effects
+func return_data(position : Vector3, sampledensity : float):
+	print(position, " ", sampledensity)
+	pass
 
+func build_new_clouds():
+	if (is_inside_tree()):
+		var env : WorldEnvironment = recursively_find_env(get_tree().root)
+		if (env):
+			if not ambience_sample_environment:
+				ambience_sample_environment = env.environment
+			
+			clouds_resource = SunshineCloudsGD.new()
+			
+			#if not env.compositor:
+				#env.compositor = Compositor.new()
+			#env.compositor.compositor_effects = [clouds_resource]
+			
+			update_continuously = true
+		else:
+			printerr("No world environment found.")
 
-## Attaches the active [SunshineCloudsGD] compositor effect to [WorldEnvironment].
-func clouds_res_added() -> void:
-	if clouds_resource and is_inside_tree():
-		_sync_active_viewport()
-		var env: WorldEnvironment = recursively_find_env(_get_search_root())
-		if env != null:
+#Disables the previous clouds when removing them.
+func clouds_res_removed():
+	if clouds_resource && is_inside_tree():
+		var env : WorldEnvironment = recursively_find_env(get_tree().root)
+		if env && env.compositor != null:
+			var effects = env.compositor.compositor_effects
+			effects.erase(clouds_resource)
+			env.compositor.compositor_effects = effects
+
+#Enables new clouds when adding them
+func clouds_res_added():
+	if clouds_resource && is_inside_tree():
+		var env : WorldEnvironment = recursively_find_env(get_tree().root)
+		if env:
 			if not env.compositor:
 				env.compositor = Compositor.new()
 				env.compositor.compositor_effects = [clouds_resource]
 			else:
-				var effects: Array[CompositorEffect] = env.compositor.compositor_effects
-				if not effects.has(clouds_resource):
-					effects.append(clouds_resource)
-					env.compositor.compositor_effects = effects
+				var effects = env.compositor.compositor_effects
+				effects.append(clouds_resource)
+				env.compositor.compositor_effects = effects
 
-
-## Recursively searches down scene tree node [param this_node] for a [WorldEnvironment].
-func recursively_find_env(this_node: Node) -> WorldEnvironment:
-	if not is_instance_valid(this_node):
-		return null
-	for child: Node in this_node.get_children():
+func recursively_find_env(thisNode: Node) -> WorldEnvironment:
+	for child in thisNode.get_children():
 		if child is WorldEnvironment:
-			return child as WorldEnvironment
-		var result: WorldEnvironment = recursively_find_env(child)
-		if result != null:
-			return result
+			return child
+		else:
+			var result = recursively_find_env(child)
+			if (result):
+				return result
+	
 	return null
 
-
-## Repacks directional lights, point lights, and effectors into [SunshineCloudsGD].
-func retrieve_texture_data() -> void:
-	if _updating_settings or not is_inside_tree() or clouds_resource == null:
+func retrieve_texture_data():
+	if _updating_settings || !is_inside_tree():
 		return
-
 	_updating_settings = true
-	_sync_active_viewport()
+	if clouds_resource != null:
+		_extralarge_clouds_domain = clouds_resource.extra_large_noise_scale / 2.0
+		_large_clouds_domain = clouds_resource.large_noise_scale / 2.0
+		_medium_clouds_domain = clouds_resource.medium_noise_scale / 2.0
+		_small_clouds_domain = clouds_resource.small_noise_scale / 2.0
+		
+		# Arrays built LOCALLY: until they are handed over to the effect, the render
+		# thread keeps seeing the old, complete ones. No empty window.
+		var new_dir_data : Array[Vector4] = []
+		var new_point_data : Array[Vector4] = []
+		var new_effector_data : Array[Vector4] = []
+		
+		if not tracked_directional_light_shadow_steps:
+			tracked_directional_light_shadow_steps = []
+		
+		if tracked_directional_light_shadow_steps.size() < tracked_directional_lights.size():
+			for i in range(tracked_directional_lights.size() - tracked_directional_light_shadow_steps.size()):
+				tracked_directional_light_shadow_steps.append(12)
+		
+		for i in range(tracked_directional_lights.size()):
+			if tracked_directional_lights[i] != null:
+				var light = tracked_directional_lights[i]
+				var look_dir = light.global_transform.basis.z.normalized()
+				new_dir_data.append(Vector4(look_dir.x, look_dir.y, look_dir.z, tracked_directional_light_shadow_steps[i]))
+				new_dir_data.append(Vector4(light.light_color.r, light.light_color.g, light.light_color.b, round(light.light_color.a * light.light_energy * directional_light_power_multiplier * 10.0) / 10.0))
+		
+		for i in range(tracked_point_lights.size()):
+			if tracked_point_lights[i] != null:
+				var light = tracked_point_lights[i]
+				var light_pos = light.global_position
+				new_point_data.append(Vector4(light_pos.x, light_pos.y, light_pos.z, light.omni_range))
+				new_point_data.append(Vector4(light.light_color.r, light.light_color.g, light.light_color.b, round(light.light_color.a * light.light_energy * point_light_power_multiplier * 10.0) / 10.0))
+		
+		
+		for i in range(tracked_point_effectors.size()):
+			if tracked_point_effectors[i] != null:
+				var node = tracked_point_effectors[i]
+				var node_pos = node.global_position
+				new_effector_data.append(Vector4(node_pos.x, node_pos.y, node_pos.z, node.Radius))
+				new_effector_data.append(Vector4(node.Power, 0.0, 0.0, 0.0))
+		
+		
+		# Driver-side copies, for _process's comparisons (main thread).
+		_dir_data_cache = new_dir_data.duplicate()
+		_point_data_cache = new_point_data.duplicate()
+		_effector_data_cache = new_effector_data.duplicate()
 
-	_extralarge_clouds_domain = clouds_resource.extra_large_noise_scale * 0.5
-	_large_clouds_domain = clouds_resource.large_noise_scale * 0.5
-	_medium_clouds_domain = clouds_resource.medium_noise_scale * 0.5
-	_small_clouds_domain = clouds_resource.small_noise_scale * 0.5
-
-	var dir_count: int = tracked_directional_lights.size()
-	var pt_count: int = tracked_point_lights.size()
-	var eff_count: int = tracked_point_effectors.size()
-
-	clouds_resource.directional_lights_data.resize(dir_count * 2)
-	clouds_resource.point_lights_data.resize(pt_count * 2)
-	clouds_resource.point_effector_data.resize(eff_count * 2)
-
-	while tracked_directional_light_shadow_steps.size() < dir_count:
-		tracked_directional_light_shadow_steps.append(12)
-
-	for i: int in range(dir_count):
-		var light: DirectionalLight3D = tracked_directional_lights[i]
-		if not is_instance_valid(light) or not light.is_visible_in_tree():
-			clouds_resource.directional_lights_data[i * 2] = Vector4.ZERO
-			clouds_resource.directional_lights_data[(i * 2) + 1] = Vector4.ZERO
-			continue
-
-		var look_dir: Vector3 = light.global_transform.basis.z.normalized()
-		clouds_resource.directional_lights_data[i * 2] = Vector4(
-			look_dir.x,
-			look_dir.y,
-			look_dir.z,
-			float(tracked_directional_light_shadow_steps[i])
-		)
-
-		var intensity: float = (
-			light.light_color.a
-			* light.light_energy
-			* directional_light_power_multiplier
-		)
-		clouds_resource.directional_lights_data[(i * 2) + 1] = Vector4(
-			light.light_color.r,
-			light.light_color.g,
-			light.light_color.b,
-			snappedf(intensity, 0.1)
-		)
-
-	for i: int in range(pt_count):
-		var light: OmniLight3D = tracked_point_lights[i]
-		if not is_instance_valid(light) or not light.is_visible_in_tree():
-			clouds_resource.point_lights_data[i * 2] = Vector4.ZERO
-			clouds_resource.point_lights_data[(i * 2) + 1] = Vector4.ZERO
-			continue
-
-		var light_pos: Vector3 = light.global_position
-		clouds_resource.point_lights_data[i * 2] = Vector4(
-			light_pos.x, light_pos.y, light_pos.z, light.omni_range
-		)
-
-		var intensity: float = (
-			light.light_color.a
-			* light.light_energy
-			* point_light_power_multiplier
-		)
-		clouds_resource.point_lights_data[(i * 2) + 1] = Vector4(
-			light.light_color.r,
-			light.light_color.g,
-			light.light_color.b,
-			snappedf(intensity, 0.1)
-		)
-
-	for i: int in range(eff_count):
-		var effector: SunshineCloudsEffector = tracked_point_effectors[i]
-		if not is_instance_valid(effector) or not effector.is_visible_in_tree():
-			clouds_resource.point_effector_data[i * 2] = Vector4.ZERO
-			clouds_resource.point_effector_data[(i * 2) + 1] = Vector4.ZERO
-			continue
-
-		var eff_pos: Vector3 = effector.global_position
-		clouds_resource.point_effector_data[i * 2] = Vector4(
-			eff_pos.x, eff_pos.y, eff_pos.z, effector.radius
-		)
-		clouds_resource.point_effector_data[(i * 2) + 1] = Vector4(
-			effector.power, effector.attenuation, 0.0, 0.0
-		)
-
-	clouds_resource.lights_updated = true
+		# Handed to the effect from the render thread: serialised with _render_callback.
+		RenderingServer.call_on_render_thread(_apply_lights_data.bind(new_dir_data, new_point_data, new_effector_data))
+	
 	_updating_settings = false
 
+func wrap_vector(target, domain_size):
+	if target.x > domain_size:
+		target.x -= domain_size * 2.0
+	elif target.x < -domain_size:
+		target.x += domain_size * 2.0
 
-## Smoothly wraps vector [param target] within symmetric boundary [param domain_size].
-func wrap_vector(target: Vector3, domain_size: float) -> Vector3:
-	if domain_size <= 0.001:
-		return target
-	return Vector3(
-		wrapf(target.x, -domain_size, domain_size),
-		wrapf(target.y, -domain_size, domain_size),
-		wrapf(target.z, -domain_size, domain_size)
-	)
+	if target.y > domain_size:
+		target.y -= domain_size * 2.0
+	elif target.y < -domain_size:
+		target.y += domain_size * 2.0
+
+	if target.z > domain_size:
+		target.z -= domain_size * 2.0
+	elif target.z < -domain_size:
+		target.z += domain_size * 2.0
+
+	return target
+
+func direction_light_data_changed(light : DirectionalLight3D, shadowCount : int, dirData : Vector4, colorData : Vector4):
+	return light.global_transform.basis.z.x != dirData.x \
+		or light.global_transform.basis.z.y != dirData.y \
+		or light.global_transform.basis.z.z != dirData.z \
+		or float(shadowCount) != dirData.w \
+		or light.light_color.r != colorData.x \
+		or light.light_color.g != colorData.y \
+		or light.light_color.b != colorData.z \
+		or round(light.light_color.a * light.light_energy * directional_light_power_multiplier * 10.0) / 10.0 != round(colorData.w * 10.0) / 10.0
+
+
+func point_light_data_changed(light : OmniLight3D, dirData : Vector4, colorData : Vector4):
+	return light.global_position.x != dirData.x \
+		or light.global_position.y != dirData.y \
+		or light.global_position.z != dirData.z \
+		or light.omni_range != dirData.w \
+		or light.light_color.r != colorData.x \
+		or light.light_color.g != colorData.y \
+		or light.light_color.b != colorData.z \
+		or round(light.light_color.a * light.light_energy * point_light_power_multiplier * 10.0) / 10.0 != round(colorData.w * 10.0) / 10.0
+
+func point_effector_data_changed(node : SunshineCloudsEffector, dirData : Vector4, colorData : Vector4):
+	return node.global_position.x != dirData.x \
+		or node.global_position.y != dirData.y \
+		or node.global_position.z != dirData.z \
+		or node.Radius != dirData.w \
+		or node.Power != colorData.x
