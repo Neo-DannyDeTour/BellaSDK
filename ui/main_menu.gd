@@ -250,6 +250,12 @@ func prepare_for_level_transition() -> void:
 	# Allow one full frame for Vulkan pipelines to drain and stop referencing diorama buffers
 	await get_tree().process_frame
 
+	var tree: SceneTree = get_tree()
+	if is_instance_valid(tree) and is_instance_valid(tree.root):
+		tree.root.disable_3d = false
+	if is_instance_valid(tree) and is_instance_valid(tree.current_scene):
+		tree.current_scene.process_mode = Node.PROCESS_MODE_INHERIT
+
 
 ## Reloads active level using [LoadingScreen] on start button trigger.
 func _on_start_game_pressed() -> void:

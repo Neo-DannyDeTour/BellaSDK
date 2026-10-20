@@ -45,7 +45,7 @@ var _shader_material: ShaderMaterial
 
 ## Initializes collision masks and sets top level coordinates.
 func _ready() -> void:
-	print("Particle: Initializing particle instance.")
+	#print("Particle: Initializing particle instance.")
 	current_radius = initial_radius
 	set_as_top_level(true)
 
@@ -135,7 +135,7 @@ func update_n_particles(n: int) -> void:
 func update_shader_params(
 	p_color: Color, p_opacity: float, p_roughness: float, p_metallic: float, p_k_blend: float
 ) -> void:
-	print("Particle: Updating shader visual parameters.")
+	#print("Particle: Updating shader visual parameters.")
 	var mat: ShaderMaterial = _get_shader_material()
 	if mat != null:
 		mat.set_shader_parameter(&"color", p_color)

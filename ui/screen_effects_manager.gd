@@ -92,8 +92,13 @@ var _current_edge_condensation: float = 0.0
 ## ColorRect applying a fisheye distortion effect when zooming.
 @onready var fisheye_zoom: ColorRect = $FisheyeZoom
 
-## ColorRect applying full-screen water distortion, wipe, and raindrops.
+## ColorRect applying full-screen water distortion and ambient raindrops.
 @onready var water_vfx_overlay: ColorRect = $WaterVFXOverlay
+
+## Dedicated controller node applying the Dishonored-style meniscus water sheet wipe.
+@onready var water_wipe_overlay: WaterWipeController = (
+	get_node_or_null("WaterWipeOverlay") as WaterWipeController
+)
 
 ## ColorRect applying full-screen canine dichromatic color and acuity filtering.
 @onready var wolf_vision_overlay: ColorRect = $WolfVisionOverlay
@@ -129,8 +134,8 @@ func _process(delta: float) -> void:
 	var has_active_vignette: bool = false
 	if is_instance_valid(vignette) and vignette.material is ShaderMaterial:
 		var target_vignette_opacity: float = 0.8 if is_player_crouching else 0.0
-		var mat: ShaderMaterial = vignette.material if vignette.material is ShaderMaterial else null
-		var current_opacity: float = mat.get_shader_parameter(&"vignette_opacity")
+		var mat: ShaderMaterial = vignette.material as ShaderMaterial
+		var current_opacity: float = mat.get_shader_parameter(&"vignette_opacity") as float
 		var new_opacity: float = lerpf(
 			current_opacity, target_vignette_opacity, delta * ui_lerp_speed
 		)
@@ -185,9 +190,7 @@ func trigger_heal_effect() -> void:
 	if heal_vignette.material is ShaderMaterial:
 		heal_tween.tween_method(
 			func(val: float) -> void:
-				var mat: ShaderMaterial = (
-					heal_vignette.material if heal_vignette.material is ShaderMaterial else null
-				)
+				var mat: ShaderMaterial = heal_vignette.material as ShaderMaterial
 				mat.set_shader_parameter(&"intensity", val)
 				heal_vignette.queue_redraw(),
 			0.8,
@@ -210,9 +213,7 @@ func set_water_vfx_state(mode: int, drops: float, wash: float, clear_prog: float
 	water_vfx_overlay.visible = is_active
 
 	if is_active and water_vfx_overlay.material is ShaderMaterial:
-		var mat: ShaderMaterial = (
-			water_vfx_overlay.material if water_vfx_overlay.material is ShaderMaterial else null
-		)
+		var mat: ShaderMaterial = water_vfx_overlay.material as ShaderMaterial
 		mat.set_shader_parameter(&"effect_mode", mode)
 		mat.set_shader_parameter(&"drop_intensity", drops)
 		mat.set_shader_parameter(&"wash_intensity", wash)
@@ -336,6 +337,7 @@ func _setup_fullscreen_layout() -> void:
 		glitch_overlay,
 		fisheye_zoom,
 		water_vfx_overlay,
+		water_wipe_overlay,
 		wolf_vision_overlay,
 		condensation_overlay,
 		fade_overlay
@@ -365,11 +367,7 @@ func _initialize_overlays() -> void:
 		glitch_overlay.hide()
 
 	if is_instance_valid(electricity_vignette) and electricity_vignette.material is ShaderMaterial:
-		var mat: ShaderMaterial = (
-			electricity_vignette.material
-			if electricity_vignette.material is ShaderMaterial
-			else null
-		)
+		var mat: ShaderMaterial = electricity_vignette.material as ShaderMaterial
 		mat.set_shader_parameter(&"intensity", 0.0)
 		electricity_vignette.hide()
 
@@ -390,11 +388,7 @@ func _initialize_overlays() -> void:
 
 	if is_instance_valid(wolf_vision_overlay):
 		if wolf_vision_overlay.material is ShaderMaterial:
-			var mat: ShaderMaterial = (
-				wolf_vision_overlay.material
-				if wolf_vision_overlay.material is ShaderMaterial
-				else null
-			)
+			var mat: ShaderMaterial = wolf_vision_overlay.material as ShaderMaterial
 			mat.set_shader_parameter(&"effect_strength", 0.0)
 		wolf_vision_overlay.hide()
 
@@ -476,11 +470,9 @@ func _on_player_zoomed(is_zooming: bool) -> void:
 	if fisheye_tween and fisheye_tween.is_valid():
 		fisheye_tween.kill()
 
-	var mat: ShaderMaterial = (
-		fisheye_zoom.material if fisheye_zoom.material is ShaderMaterial else null
-	)
+	var mat: ShaderMaterial = fisheye_zoom.material as ShaderMaterial
 	var target_strength: float = 1.0 if is_zooming else 0.0
-	var current_strength: float = mat.get_shader_parameter(&"effect_strength")
+	var current_strength: float = mat.get_shader_parameter(&"effect_strength") as float
 
 	fisheye_zoom.show()
 	fisheye_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
@@ -517,9 +509,7 @@ func _on_player_electrocuted() -> void:
 		glitch_tween = create_tween().set_trans(Tween.TRANS_BOUNCE).set_ease(Tween.EASE_OUT)
 		glitch_tween.tween_method(
 			func(val: float) -> void:
-				var mat: ShaderMaterial = (
-					glitch_overlay.material if glitch_overlay.material is ShaderMaterial else null
-				)
+				var mat: ShaderMaterial = glitch_overlay.material as ShaderMaterial
 				mat.set_shader_parameter(&"intensity", val)
 				glitch_overlay.queue_redraw(),
 			0.6,
@@ -536,11 +526,7 @@ func _on_player_electrocuted() -> void:
 		electro_tween = create_tween().set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 		electro_tween.tween_method(
 			func(val: float) -> void:
-				var mat: ShaderMaterial = (
-					electricity_vignette.material
-					if electricity_vignette.material is ShaderMaterial
-					else null
-				)
+				var mat: ShaderMaterial = electricity_vignette.material as ShaderMaterial
 				mat.set_shader_parameter(&"intensity", val)
 				electricity_vignette.queue_redraw(),
 			1.0,
@@ -550,53 +536,51 @@ func _on_player_electrocuted() -> void:
 		electro_tween.finished.connect(electricity_vignette.hide)
 
 
-## Modulates rain droplet intensity based on camera pitch angle and manages drying transitions.
+## Modulates rain droplet intensity and storm wash based on camera pitch and storm strength.
 func _process_rain_pitch_and_vfx(delta: float) -> void:
 	if _is_underwater_active or _is_waterfall_active or _is_surfacing_active:
 		return
 
 	var pitch_factor: float = 1.0
 	var viewport: Viewport = get_viewport()
-	var camera: Camera3D = viewport.get_camera_3d() if viewport else null
+	var camera: Camera3D = viewport.get_camera_3d() if is_instance_valid(viewport) else null
 
+	# Swirling storms (>0.85 intensity) whip droplets into eyes even when looking slightly down
+	var storm_floor: float = clampf(
+		remap(_target_rain_intensity, 0.8, 1.35, 0.35, 0.85), 0.35, 0.85
+	)
 	if is_instance_valid(camera):
 		var cam_forward: Vector3 = -camera.global_transform.basis.z
 		var up_dot: float = cam_forward.dot(Vector3.UP)
-		pitch_factor = clampf(remap(up_dot, -0.35, 0.75, 0.0, 1.8), 0.0, 2.0)
+		pitch_factor = clampf(remap(up_dot, -0.55, 0.65, storm_floor, 1.85), storm_floor, 2.0)
 
 	var target_val: float = _target_rain_intensity * pitch_factor
 	_current_rain_intensity = lerpf(_current_rain_intensity, target_val, delta * 6.0)
 
 	if _current_rain_intensity > 0.001 or _target_rain_intensity > 0.001:
-		set_water_vfx_state(0, _current_rain_intensity, 0.0, 1.5)
+		var storm_wash: float = clampf((_current_rain_intensity - 0.85) * 0.45, 0.0, 0.35)
+		set_water_vfx_state(0, _current_rain_intensity, storm_wash, 1.5)
 	elif is_instance_valid(water_vfx_overlay) and water_vfx_overlay.visible:
 		set_water_vfx_state(0, 0.0, 0.0, 1.5)
 
 
-## Handles underwater and lingering droplet transitions emitted by WaterBody.
+## Handles continuous underwater distortion emitted by WaterBody.
 func _on_underwater_vfx_toggled(
-	is_submerged: bool, wash_intensity: float, drop_intensity: float, clear_prog: float
+	is_submerged: bool, wash_intensity: float, drop_intensity: float, _clear_prog: float
 ) -> void:
 	_is_underwater_active = is_submerged
+	_is_surfacing_active = false
 	if is_submerged:
-		_is_surfacing_active = false
 		set_water_vfx_state(0, drop_intensity, wash_intensity, 0.0)
 	else:
-		if drop_intensity > 0.001:
-			_is_surfacing_active = true
-			set_water_vfx_state(0, drop_intensity, 0.0, clear_prog)
-		else:
-			_is_surfacing_active = false
-			set_water_vfx_state(0, 0.0, 0.0, 1.5)
+		set_water_vfx_state(0, 0.0, 0.0, 1.5)
 
 
-## Handles waterfall screen wash and wipe transitions emitted by WaterfallStream.
-func _on_waterfall_vfx_toggled(is_active: bool, wash_intensity: float, clear_prog: float) -> void:
+## Tracks waterfall active state to pause ambient rain while WaterWipeController handles wash.
+func _on_waterfall_vfx_toggled(is_active: bool, _wash_intensity: float, _clear_prog: float) -> void:
 	_is_waterfall_active = is_active
 	if is_active:
-		set_water_vfx_state(2, 0.6, wash_intensity, clear_prog)
-	else:
-		set_water_vfx_state(2, 0.0, 0.0, 1.5)
+		set_water_vfx_state(0, 0.0, 0.0, 1.5)
 
 
 ## Handles screen rain droplet volume transitions and starts drying timer on exit.
@@ -626,10 +610,8 @@ func _on_wolf_vision_toggled(is_active: bool) -> void:
 	if wolf_vision_tween and wolf_vision_tween.is_valid():
 		wolf_vision_tween.kill()
 
-	var mat: ShaderMaterial = (
-		wolf_vision_overlay.material if wolf_vision_overlay.material is ShaderMaterial else null
-	)
-	var current_strength: float = mat.get_shader_parameter(&"effect_strength")
+	var mat: ShaderMaterial = wolf_vision_overlay.material as ShaderMaterial
+	var current_strength: float = mat.get_shader_parameter(&"effect_strength") as float
 	var target_strength: float = 1.0 if is_active else 0.0
 
 	wolf_vision_overlay.show()

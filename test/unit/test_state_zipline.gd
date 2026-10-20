@@ -2,8 +2,6 @@
 class_name TestStateZipline
 extends GutTest
 
-const STATE_ZIPLINE_SCRIPT: GDScript = preload("res://player/state_zipline.gd")
-
 ## The zipline state instance under test.
 var state_zipline: StateZipline = null
 
@@ -45,9 +43,7 @@ func before_each() -> void:
 	state_machine = PlayerStateMachine.new()
 	mock_player.add_child(state_machine)
 
-	@warning_ignore("unsafe_method_access")
-	@warning_ignore("unsafe_cast")
-	state_zipline = STATE_ZIPLINE_SCRIPT.new() as StateZipline
+	state_zipline = StateZipline.new()
 	state_zipline.name = "Zipline"
 	state_machine.add_child(state_zipline)
 

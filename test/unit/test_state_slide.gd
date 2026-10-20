@@ -2,8 +2,6 @@
 class_name TestStateSlide
 extends GutTest
 
-const STATE_SLIDE_SCRIPT: GDScript = preload("res://player/state_slide.gd")
-
 ## The slide state instance under test.
 var state_slide: StateSlide = null
 
@@ -49,9 +47,7 @@ func before_each() -> void:
 	state_machine = PlayerStateMachine.new()
 	mock_player.add_child(state_machine)
 
-	@warning_ignore("unsafe_method_access")
-	@warning_ignore("unsafe_cast")
-	state_slide = STATE_SLIDE_SCRIPT.new() as StateSlide
+	state_slide = StateSlide.new()
 	state_machine.add_child(state_slide)
 
 	state_slide.state_machine = state_machine

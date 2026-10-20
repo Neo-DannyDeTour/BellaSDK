@@ -2,8 +2,6 @@
 class_name TestLadder
 extends GutTest
 
-const LADDER_SCRIPT: GDScript = preload("res://interactables/ladder.gd")
-
 ## The ladder instance under test.
 var ladder: Ladder = null
 
@@ -32,9 +30,7 @@ class MockClimber:
 ## Creates a clean ladder instance before each test.
 func before_each() -> void:
 	print("TestLadder: before_each() setup.")
-	@warning_ignore("unsafe_method_access")
-	@warning_ignore("unsafe_cast")
-	ladder = LADDER_SCRIPT.new() as Ladder
+	ladder = Ladder.new()
 	add_child_autofree(ladder)
 
 

@@ -278,3 +278,15 @@ wind_speed={
 "type": "float",
 "value": 1.0
 }
+rain_wetness={
+"type": "float",
+"value": 0.0
+}
+rain_ripple_intensity={
+"type": "float",
+"value": 0.0
+}
+rain_wind_dir={
+"type": "vec2",
+"value": Vector2(1, 0)
+}

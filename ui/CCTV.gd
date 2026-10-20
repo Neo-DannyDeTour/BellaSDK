@@ -167,6 +167,7 @@ func _ready() -> void:
 	_configure_cctv_viewport()
 
 	if is_instance_valid(cctv_camera):
+		cctv_camera.add_to_group(&"ignore_global_video_settings")
 		cctv_camera.far = camera_far_distance
 		target_fov = cctv_camera.fov
 		_isolate_cctv_compositor()
@@ -188,6 +189,7 @@ func _configure_cctv_viewport() -> void:
 	if not is_instance_valid(camera_vp):
 		return
 
+	camera_vp.add_to_group(&"ignore_global_video_settings")
 	camera_vp.size = internal_resolution
 	camera_vp.render_target_update_mode = SubViewport.UPDATE_ONCE
 	camera_vp.positional_shadow_atlas_size = 0

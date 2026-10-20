@@ -2,8 +2,6 @@
 class_name TestAmmoBox
 extends GutTest
 
-const AMMO_BOX_SCRIPT: GDScript = preload("res://assets/weapons/ammo_box.gd")
-
 ## The ammo pickup instance under test.
 var ammo_box: AmmoBox = null
 
@@ -17,7 +15,7 @@ var mock_player: CharacterBody3D = null
 var inventory: WeaponInventoryComponent = null
 
 ## Mock gun slotted in inventory to receive ammunition.
-var mock_gun: Node3D = null
+var mock_gun: MockHeldGun = null
 
 
 ## Mock weapon class satisfying inventory ammo replenishment protocol.
@@ -41,9 +39,7 @@ class MockHeldGun:
 ## Prepares an isolated AmmoBox, prompt label, and mock player before each test.
 func before_each() -> void:
 	print("TestAmmoBox: before_each() setup started.")
-	@warning_ignore("unsafe_method_access")
-	@warning_ignore("unsafe_cast")
-	ammo_box = AMMO_BOX_SCRIPT.new() as AmmoBox
+	ammo_box = AmmoBox.new()
 	add_child_autofree(ammo_box)
 
 	prompt_label = Label3D.new()
@@ -69,8 +65,7 @@ func test_default_properties() -> void:
 		ammo_box.ammo_type, AmmoBox.AmmoArchetype.REVOLVER, "Default archetype should be REVOLVER."
 	)
 	assert_eq(ammo_box.ammo_amount, 6, "Default ammo amount should be 6.")
-	@warning_ignore("unsafe_cast")
-	var resolved_id: StringName = ammo_box.get("_resolved_ammo_id") as StringName
+	var resolved_id: StringName = StringName(ammo_box.get("_resolved_ammo_id"))
 	assert_eq(resolved_id, &"revolver", "Resolved ID should be revolver.")
 
 
@@ -78,13 +73,11 @@ func test_default_properties() -> void:
 func test_archetype_mutation_updates_resolved_id() -> void:
 	print("TestAmmoBox: test_archetype_mutation_updates_resolved_id() called.")
 	ammo_box.ammo_type = AmmoBox.AmmoArchetype.SHOTGUN
-	@warning_ignore("unsafe_cast")
-	var shotgun_id: StringName = ammo_box.get("_resolved_ammo_id") as StringName
+	var shotgun_id: StringName = StringName(ammo_box.get("_resolved_ammo_id"))
 	assert_eq(shotgun_id, &"shotgun", "Should resolve to shotgun ID.")
 
 	ammo_box.ammo_type = AmmoBox.AmmoArchetype.REVOLVER
-	@warning_ignore("unsafe_cast")
-	var revolver_id: StringName = ammo_box.get("_resolved_ammo_id") as StringName
+	var revolver_id: StringName = StringName(ammo_box.get("_resolved_ammo_id"))
 	assert_eq(revolver_id, &"revolver", "Should resolve back to revolver ID.")
 
 
@@ -104,7 +97,6 @@ func test_interaction_replenishes_ammo_and_frees_box() -> void:
 	ammo_box.ammo_amount = 8
 	ammo_box._on_interact_component_interacted(mock_player)
 
-	@warning_ignore("unsafe_cast")
-	var current_res: int = mock_gun.get("reserve_ammo") as int
+	var current_res: int = mock_gun.reserve_ammo
 	assert_eq(current_res, 18, "Reserve ammo should increase by ammo_amount.")
 	assert_true(ammo_box.is_queued_for_deletion(), "Ammo box must queue free after consumption.")

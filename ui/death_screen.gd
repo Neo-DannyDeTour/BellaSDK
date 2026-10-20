@@ -571,7 +571,7 @@ func _trigger_flatline() -> void:
 func _generate_tone(
 	freq: float, duration: float, loop: bool, volume: float = 1.0
 ) -> AudioStreamWAV:
-	print("DeathScreen: _generate_tone() generating procedural audio tone.")
+	#print("DeathScreen: _generate_tone() generating procedural audio tone.")
 	var stream: AudioStreamWAV = AudioStreamWAV.new()
 	stream.format = AudioStreamWAV.FORMAT_16_BITS
 	stream.mix_rate = 44100
@@ -606,7 +606,7 @@ func _generate_tone(
 
 ## Procedurally synthesizes a white noise [AudioStreamWAV] buffer.
 func _generate_white_noise(duration: float, loop: bool, volume: float = 1.0) -> AudioStreamWAV:
-	print("DeathScreen: _generate_white_noise() generating procedural white noise.")
+	#print("DeathScreen: _generate_white_noise() generating procedural white noise.")
 	var stream: AudioStreamWAV = AudioStreamWAV.new()
 	stream.format = AudioStreamWAV.FORMAT_16_BITS
 	stream.mix_rate = 44100

@@ -2,8 +2,6 @@
 class_name TestStateVault
 extends GutTest
 
-const STATE_VAULT_SCRIPT: GDScript = preload("res://player/state_vault.gd")
-
 ## The vault state instance under test.
 var state_vault: StateVault = null
 
@@ -58,9 +56,7 @@ func before_each() -> void:
 	state_machine = PlayerStateMachine.new()
 	mock_player.add_child(state_machine)
 
-	@warning_ignore("unsafe_method_access")
-	@warning_ignore("unsafe_cast")
-	state_vault = STATE_VAULT_SCRIPT.new() as StateVault
+	state_vault = StateVault.new()
 	state_vault.name = "Vault"
 	state_machine.add_child(state_vault)
 

@@ -78,7 +78,7 @@ func rebuild_mesh() -> void:
 
 ## Appends the subdivided vertical bolt ribbon as surface 0 on [param mesh].
 func _append_bolt_surface(mesh: ArrayMesh) -> void:
-	print("LightningStrikeVFX: Generating surface 0 (bolt ribbon).")
+	#print("LightningStrikeVFX: Generating surface 0 (bolt ribbon).")
 	var st: SurfaceTool = SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 
@@ -116,7 +116,7 @@ func _append_bolt_surface(mesh: ArrayMesh) -> void:
 
 ## Appends the horizontal ground mark quad as surface 1 on [param mesh].
 func _append_mark_surface(mesh: ArrayMesh) -> void:
-	print("LightningStrikeVFX: Generating surface 1 (ground impact mark).")
+	#print("LightningStrikeVFX: Generating surface 1 (ground impact mark).")
 	var st: SurfaceTool = SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 
@@ -151,7 +151,7 @@ func _append_mark_surface(mesh: ArrayMesh) -> void:
 
 ## Appends the open tapered shockwave cylinder as surface 2 on [param mesh].
 func _append_wave_surface(mesh: ArrayMesh) -> void:
-	print("LightningStrikeVFX: Generating surface 2 (shockwave cylinder).")
+	#print("LightningStrikeVFX: Generating surface 2 (shockwave cylinder).")
 	var st: SurfaceTool = SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 

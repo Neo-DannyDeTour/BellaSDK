@@ -37,7 +37,9 @@
 [ext_resource type="Script" uid="uid://dvlg5io1bfsi1" path="res://ui/debug_overlay.gd" id="24_c74r5"]
 [ext_resource type="Texture2D" uid="uid://c7vwr52lcnsge" path="res://assets/images/UI_icon_fire_damage.jpeg" id="24_qu0m5"]
 [ext_resource type="Script" uid="uid://th5tgjsebcpu" path="res://ui/ammo_hud.gd" id="34_p762i"]
-[ext_resource type="Shader" path="res://vfx/glasses_condensation.gdshader" id="35_cndsh"]
+[ext_resource type="Shader" uid="uid://by6dppd87hf5g" path="res://vfx/glasses_condensation.gdshader" id="35_cndsh"]
+[ext_resource type="Shader" uid="uid://sgrhpkqbyiwb" path="res://vfx/water_sheet_wipe.gdshader" id="35_wwipe"]
+[ext_resource type="Script" uid="uid://gpy2b8yh1evg" path="res://ui/water_wipe_controller.gd" id="36_wwctrl"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_p7vwb"]
 shader = ExtResource("5_8dubc")
@@ -75,6 +77,21 @@ shader_parameter/drop_intensity = 0.0
 shader_parameter/wash_intensity = 0.0
 shader_parameter/clear_progress = 0.0
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_wwipe"]
+shader = ExtResource("35_wwipe")
+shader_parameter/wipe_progress = 0.0
+shader_parameter/wash_intensity = 0.3110000147725
+shader_parameter/visibility = 1.0
+shader_parameter/angular_yaw_delta = -0.68
+shader_parameter/pitch_gravity_mod = 1.08
+shader_parameter/distortion_strength = 0.126000005985
+shader_parameter/meniscus_strength = 0.068
+shader_parameter/chromatic_aberration = 0.028
+shader_parameter/flow_speed = 3.0000000447036004
+shader_parameter/ripple_scale = 3.10000003129252
+shader_parameter/specular_intensity = 0.42
+shader_parameter/water_tint = Color(0.62, 0.86, 0.92, 0.18)
+
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_534t5"]
 shader = ExtResource("9_3hdvn")
 shader_parameter/effect_strength = 1.0
@@ -85,11 +102,9 @@ shader_parameter/blur_amount = 0.8
 shader = ExtResource("35_cndsh")
 shader_parameter/full_lens_fog = 0.0
 shader_parameter/edge_condensation = 0.0
-shader_parameter/droplet_density = 1.0
-shader_parameter/blur_strength = 2.6
 shader_parameter/vapor_tint = Color(0.84, 0.88, 0.92, 0.48)
-shader_parameter/edge_softness = 0.28
-shader_parameter/bridge_width = 0.08
+shader_parameter/max_blur_lod = 2.6
+shader_parameter/droplet_density = 1.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_yev5y"]
 shader = ExtResource("2_x4jx1")
@@ -205,6 +220,18 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+
+[node name="WaterWipeOverlay" type="ColorRect" parent="ScreenEffectsManager" unique_id=2142477502]
+visible = false
+material = SubResource("ShaderMaterial_wwipe")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("36_wwctrl")
 
 [node name="WolfVisionOverlay" type="ColorRect" parent="ScreenEffectsManager" unique_id=1394655530]
 visible = false

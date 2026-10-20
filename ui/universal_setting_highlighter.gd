@@ -114,7 +114,7 @@ func _is_leaf_setting_row(control: Control) -> bool:
 
 ## Registers grouped setting rows inside a [GridContainer].
 func _register_grid(grid: GridContainer) -> void:
-	print("UniversalSettingHighlighter: Scanning GridContainer: ", grid.name)
+	#print("UniversalSettingHighlighter: Scanning GridContainer: ", grid.name)
 	var cols: int = maxi(grid.columns, 1)
 	var children: Array[Node] = grid.get_children()
 	var total: int = children.size()

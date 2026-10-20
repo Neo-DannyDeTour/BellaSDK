@@ -11,9 +11,6 @@ const VOLUMETRIC_LAYER_MASK: int = 1 << 9
 ## Visual layer bitmask for primary static world geometry (3D Render Layer 1).
 const ENVIRONMENT_LAYER_MASK: int = 1 << 0
 
-## Default fallback density when volumetric fog is enabled on a zero-density environment.
-const DEFAULT_MAIN_FOG_DENSITY: float = 0.015
-
 ## Fixed diorama viewport resolution width and height.
 const DIORAMA_SIZE: Vector2i = Vector2i(640, 480)
 
@@ -92,15 +89,20 @@ static func configure_diorama_sandbox(diorama_vp: SubViewport) -> void:
 	if diorama_vp.size != DIORAMA_SIZE:
 		diorama_vp.size = DIORAMA_SIZE
 
-	if not is_instance_valid(diorama_vp.world_3d):
-		diorama_vp.world_3d = World3D.new()
-	diorama_vp.own_world_3d = true
+	if not diorama_vp.own_world_3d:
+		diorama_vp.own_world_3d = true
 
-	if not is_instance_valid(diorama_vp.world_3d.environment):
+	var dio_world: World3D = diorama_vp.find_world_3d()
+	if not is_instance_valid(dio_world):
+		if not is_instance_valid(diorama_vp.world_3d):
+			diorama_vp.world_3d = World3D.new()
+		dio_world = diorama_vp.find_world_3d()
+
+	if is_instance_valid(dio_world) and not is_instance_valid(dio_world.environment):
 		var dio_env: Environment = Environment.new()
 		dio_env.background_mode = Environment.BG_COLOR
 		dio_env.background_color = Color(0.12, 0.12, 0.14, 1.0)
-		diorama_vp.world_3d.environment = dio_env
+		dio_world.environment = dio_env
 
 	if diorama_vp.positional_shadow_atlas_size != DIORAMA_SHADOW_ATLAS_SIZE:
 		diorama_vp.positional_shadow_atlas_size = DIORAMA_SHADOW_ATLAS_SIZE
@@ -221,13 +223,26 @@ static func apply_to_light(light: Light3D, config: Dictionary, is_diorama: bool)
 		light.light_cull_mask = preview_mask if is_diorama else main_mask
 
 
+## Returns true if [param cam] represents the primary player gameplay camera.
+static func is_player_camera(cam: Camera3D) -> bool:
+	if not is_instance_valid(cam):
+		return false
+	if cam.is_in_group(&"ignore_global_video_settings"):
+		return false
+	if cam.is_in_group(&"player_camera") or cam.is_in_group(&"main_camera"):
+		return true
+	if cam is ExtendedCamera3D:
+		return (cam as ExtendedCamera3D).is_player_camera
+	var vp: Viewport = cam.get_viewport()
+	if vp is SubViewport:
+		return false
+	return cam.current
+
+
 ## Synchronously applies DoF and motion blur settings to a single [Camera3D].
-static func apply_to_camera(cam: Camera3D, config: Dictionary, is_diorama: bool) -> void:
+static func apply_to_camera(cam: Camera3D, config: Dictionary, _is_diorama: bool) -> void:
 	if not is_instance_valid(cam):
 		return
-
-	if is_instance_valid(cam.environment):
-		_populate_environment(cam.environment, config, is_diorama)
 
 	var dof_enabled: bool = _get_bool(config, "dof_enabled", VideoConfig.DEFAULT_DOF)
 	var dof_amount: float = _get_float(config, "dof_amount", VideoConfig.DEFAULT_DOF_AMOUNT)
@@ -407,32 +422,63 @@ static func _apply_gameplay_viewport_properties(
 		main_viewport.vrs_texture = null
 
 
-## Applies environment parameters strictly to gameplay [WorldEnvironment] nodes.
+## Applies environment parameters strictly to the canonical level [WorldEnvironment].
 static func _apply_gameplay_environments(
 	tree: SceneTree, diorama_vp: SubViewport, config: Dictionary
 ) -> void:
 	var updated_envs: Array[Environment] = []
-	var we_nodes: Array[Node] = tree.root.find_children("*", "WorldEnvironment", true, false)
+	var target_we: WorldEnvironment = (
+		tree.get_first_node_in_group(&"level_environment") as WorldEnvironment
+	)
+	var active_level_env: Environment = null
 
-	for node: Node in we_nodes:
-		var we: WorldEnvironment = node as WorldEnvironment
-		if not is_instance_valid(we) or we.is_in_group(&"ignore_global_video_settings"):
-			continue
-		if is_instance_valid(diorama_vp) and diorama_vp.is_ancestor_of(we):
-			continue
-		if is_instance_valid(we.environment) and we.environment not in updated_envs:
-			_populate_environment(we.environment, config, false)
-			updated_envs.append(we.environment)
-
-	var root_w: World3D = tree.root.find_world_3d()
-	if is_instance_valid(root_w) and is_instance_valid(root_w.environment):
-		var dio_env: Environment = (
-			diorama_vp.find_world_3d().environment
-			if (is_instance_valid(diorama_vp) and is_instance_valid(diorama_vp.find_world_3d()))
-			else null
+	if is_instance_valid(target_we) and not target_we.is_in_group(&"ignore_global_video_settings"):
+		if is_instance_valid(target_we.environment):
+			_populate_environment(target_we.environment, config, false)
+			updated_envs.append(target_we.environment)
+			active_level_env = target_we.environment
+	else:
+		var search_root: Node = (
+			tree.current_scene if is_instance_valid(tree.current_scene) else tree.root
 		)
-		if root_w.environment != dio_env and root_w.environment not in updated_envs:
-			_populate_environment(root_w.environment, config, false)
+		var we_nodes: Array[Node] = search_root.find_children("*", "WorldEnvironment", true, false)
+		for node: Node in we_nodes:
+			var we: WorldEnvironment = node as WorldEnvironment
+			if not is_instance_valid(we) or we.is_in_group(&"ignore_global_video_settings"):
+				continue
+			if is_instance_valid(diorama_vp) and diorama_vp.is_ancestor_of(we):
+				continue
+			if is_instance_valid(we.environment) and we.environment not in updated_envs:
+				_populate_environment(we.environment, config, false)
+				updated_envs.append(we.environment)
+				active_level_env = we.environment
+				break
+
+	if active_level_env == null:
+		var root_w: World3D = tree.root.find_world_3d()
+		if is_instance_valid(root_w) and is_instance_valid(root_w.environment):
+			var dio_env: Environment = (
+				diorama_vp.find_world_3d().environment
+				if (is_instance_valid(diorama_vp) and is_instance_valid(diorama_vp.find_world_3d()))
+				else null
+			)
+			if root_w.environment != dio_env and root_w.environment not in updated_envs:
+				_populate_environment(root_w.environment, config, false)
+				active_level_env = root_w.environment
+
+	if is_instance_valid(active_level_env):
+		print(
+			(
+				"[Pipeline] Level Env Applied -> SDFGI: %s | Fog: %s (density=%.4f) | SSR: %s | SSIL: %s"
+				% [
+					active_level_env.sdfgi_enabled,
+					active_level_env.volumetric_fog_enabled,
+					active_level_env.volumetric_fog_density,
+					active_level_env.ssr_enabled,
+					active_level_env.ssil_enabled,
+				]
+			)
+		)
 
 
 ## Applies shadow parameters strictly to gameplay [Light3D] nodes.
@@ -449,16 +495,18 @@ static func _apply_gameplay_lights(
 		apply_to_light(light, config, false)
 
 
-## Applies DoF and motion blur parameters strictly to gameplay [Camera3D] nodes.
+## Applies DoF and motion blur parameters strictly to primary gameplay [Camera3D] nodes.
 static func _apply_gameplay_cameras(
 	tree: SceneTree, diorama_vp: SubViewport, config: Dictionary
 ) -> void:
 	var cameras: Array[Node] = tree.root.find_children("*", "Camera3D", true, false)
 	for node: Node in cameras:
 		var cam: Camera3D = node as Camera3D
-		if not is_instance_valid(cam):
+		if not is_instance_valid(cam) or cam.is_in_group(&"ignore_global_video_settings"):
 			continue
 		if is_instance_valid(diorama_vp) and diorama_vp.is_ancestor_of(cam):
+			continue
+		if not is_player_camera(cam):
 			continue
 		apply_to_camera(cam, config, false)
 
@@ -524,13 +572,15 @@ static func _populate_environment(env: Environment, config: Dictionary, is_previ
 	var fog_key: String = _get_str(config, "volumetric_fog", VideoConfig.DEFAULT_FOG)
 	var fog_dict: Dictionary = _get_dict(VideoConfig.FOG_MODES, fog_key)
 	var fog_on: bool = _get_bool(fog_dict, "enabled", false)
-	env.volumetric_fog_enabled = fog_on
-	if fog_on:
-		if is_preview:
+	if is_preview:
+		env.volumetric_fog_enabled = fog_on
+		if fog_on:
 			env.volumetric_fog_density = 0.02
 			env.volumetric_fog_albedo = Color(0.85, 0.9, 0.95)
-		elif env.volumetric_fog_density <= 0.0001:
-			env.volumetric_fog_density = DEFAULT_MAIN_FOG_DENSITY
+	else:
+		# Quality ceiling: only allow fog if level authored density > 0 and didn't disable it
+		var has_level_fog: bool = env.volumetric_fog_enabled and env.volumetric_fog_density > 0.0001
+		env.volumetric_fog_enabled = fog_on and has_level_fog
 
 	var glow_key: String = _get_str(config, "glow", VideoConfig.DEFAULT_GLOW)
 	var glow_dict: Dictionary = _get_dict(VideoConfig.GLOW_MODES, glow_key)

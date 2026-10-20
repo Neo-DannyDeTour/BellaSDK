@@ -50,27 +50,22 @@ func _ready() -> void:
 
 	for i: int in range(chapters.size()):
 		var chapter: ChapterData = chapters[i]
-		var item: Control = (
-			chapter_button_template.duplicate()
-			if chapter_button_template.duplicate() is Control
-			else null
-		)
+		var item: Control = chapter_button_template.duplicate() as Control
+		if not is_instance_valid(item):
+			continue
 		item.show()
 
-		var btn: HorrorButton = (
-			item.get_node("HorrorButton") if item.get_node("HorrorButton") is HorrorButton else null
-		)
-		var label: Label = (
-			item.get_node("ChapterTitle") if item.get_node("ChapterTitle") is Label else null
-		)
+		var btn: HorrorButton = item.get_node("HorrorButton") as HorrorButton
+		var label: Label = item.get_node("ChapterTitle") as Label
 
-		label.text = str(i + 1) + ". " + chapter.chapter_name
-		btn.setup_chapter_card(chapter)
-
-		btn.mouse_entered.connect(_on_chapter_hovered.bind(chapter))
-		btn.mouse_exited.connect(_on_chapter_unhovered)
-		btn.pressed.connect(_on_chapter_clicked.bind(chapter))
-		btn.gui_input.connect(_on_image_gui_input.bind(chapter))
+		if is_instance_valid(label):
+			label.text = str(i + 1) + ". " + chapter.chapter_name
+		if is_instance_valid(btn):
+			btn.setup_chapter_card(chapter)
+			btn.mouse_entered.connect(_on_chapter_hovered.bind(chapter))
+			btn.mouse_exited.connect(_on_chapter_unhovered)
+			btn.pressed.connect(_on_chapter_clicked.bind(chapter))
+			btn.gui_input.connect(_on_image_gui_input.bind(chapter))
 
 		chapter_list.add_child(item)
 
@@ -130,7 +125,7 @@ func _on_play_pressed() -> void:
 
 	var raw_loader: Node = LOADING_SCREEN_SCENE.instantiate()
 	if raw_loader is LoadingScreen:
-		var loader: LoadingScreen = raw_loader if raw_loader is LoadingScreen else null
+		var loader: LoadingScreen = raw_loader as LoadingScreen
 		loader.level_scene_path = selected_chapter.scene_path
 		get_tree().root.add_child(loader)
 	else:

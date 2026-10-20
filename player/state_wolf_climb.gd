@@ -36,8 +36,7 @@ func enter(msg: Dictionary = {}) -> void:
 
 	var raw_surface: Variant = msg.get(&"climb_surface", null)
 	if raw_surface is WolfClimbSurface:
-		@warning_ignore("unsafe_cast")
-		active_surface = raw_surface as WolfClimbSurface
+		active_surface = raw_surface
 	else:
 		active_surface = null
 

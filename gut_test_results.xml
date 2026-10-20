@@ -1,19 +1,67 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="GutTests" failures="0" tests="7" >
-  <testsuite name="test/unit/test_in_game_console.gd" tests="7" failures="0" skipped="0" time="0.004095" >
-      <testcase name="test_update_suggestion_ui_formatting" assertions="2" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000722" >
+<testsuites name="GutTests" failures="0" tests="26" >
+  <testsuite name="test/unit/test_state_air.gd" tests="6" failures="0" skipped="0" time="6.033106" >
+      <testcase name="test_enter_defaults" assertions="4" status="pass" classname="test/unit/test_state_air.gd" time="3.447024" >
       </testcase>
-      <testcase name="test_update_suggestion_ui_empty" assertions="2" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000495" >
+      <testcase name="test_enter_with_jump_flag" assertions="1" status="pass" classname="test/unit/test_state_air.gd" time="0.528855" >
       </testcase>
-      <testcase name="test_infinite_ammo_console_command" assertions="3" status="pass" classname="test/unit/test_in_game_console.gd" time="0.00101" >
+      <testcase name="test_enter_with_knockback" assertions="3" status="pass" classname="test/unit/test_state_air.gd" time="0.512987" >
       </testcase>
-      <testcase name="test_toggle_command_double_invocation" assertions="2" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000483" >
+      <testcase name="test_enter_with_launch_payload" assertions="4" status="pass" classname="test/unit/test_state_air.gd" time="0.516576" >
       </testcase>
-      <testcase name="test_toggle_command_boolean_tokens" assertions="4" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000491" >
+      <testcase name="test_enter_with_wall_coyote" assertions="3" status="pass" classname="test/unit/test_state_air.gd" time="0.515599" >
       </testcase>
-      <testcase name="test_toggle_command_invalid_argument" assertions="1" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000428" >
+      <testcase name="test_enter_with_coyote_time" assertions="1" status="pass" classname="test/unit/test_state_air.gd" time="0.512065" >
       </testcase>
-      <testcase name="test_toggle_command_autocomplete_suggestions" assertions="5" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000466" >
+  </testsuite>
+  <testsuite name="test/unit/test_state_ground.gd" tests="2" failures="0" skipped="0" time="0.1169" >
+      <testcase name="test_enter" assertions="2" status="pass" classname="test/unit/test_state_ground.gd" time="0.001628" >
+      </testcase>
+      <testcase name="test_jump_buffered" assertions="2" status="pass" classname="test/unit/test_state_ground.gd" time="0.115272" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_state_machine.gd" tests="7" failures="0" skipped="0" time="0.00265" >
+      <testcase name="test_initialization_with_initial_state" assertions="2" status="pass" classname="test/unit/test_state_machine.gd" time="0.000567" >
+      </testcase>
+      <testcase name="test_initialization_fallback" assertions="2" status="pass" classname="test/unit/test_state_machine.gd" time="0.000364" >
+      </testcase>
+      <testcase name="test_state_lifecycle_updates" assertions="3" status="pass" classname="test/unit/test_state_machine.gd" time="0.000237" >
+      </testcase>
+      <testcase name="test_change_state_success" assertions="5" status="pass" classname="test/unit/test_state_machine.gd" time="0.000603" >
+      </testcase>
+      <testcase name="test_change_state_locked" assertions="3" status="pass" classname="test/unit/test_state_machine.gd" time="0.000317" >
+      </testcase>
+      <testcase name="test_change_state_not_found" assertions="1" status="pass" classname="test/unit/test_state_machine.gd" time="0.000265" >
+      </testcase>
+      <testcase name="test_transition_requested_signal" assertions="1" status="pass" classname="test/unit/test_state_machine.gd" time="0.000297" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_state_slide.gd" tests="3" failures="0" skipped="0" time="1.557904" >
+      <testcase name="test_default_properties" assertions="3" status="pass" classname="test/unit/test_state_slide.gd" time="0.514119" >
+      </testcase>
+      <testcase name="test_enter_swaps_to_crouching_collision" assertions="3" status="pass" classname="test/unit/test_state_slide.gd" time="0.518269" >
+      </testcase>
+      <testcase name="test_exit_restores_standing_collision_when_clear" assertions="3" status="pass" classname="test/unit/test_state_slide.gd" time="0.525516" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_state_vault.gd" tests="4" failures="0" skipped="0" time="2.094744" >
+      <testcase name="test_enter_zeroes_velocity_and_binds_signal" assertions="2" status="pass" classname="test/unit/test_state_vault.gd" time="0.521811" >
+      </testcase>
+      <testcase name="test_exit_disconnects_signal" assertions="1" status="pass" classname="test/unit/test_state_vault.gd" time="0.525167" >
+      </testcase>
+      <testcase name="test_physics_update_maintains_zero_velocity" assertions="1" status="pass" classname="test/unit/test_state_vault.gd" time="0.522097" >
+      </testcase>
+      <testcase name="test_on_vault_finished_transitions_to_air" assertions="2" status="pass" classname="test/unit/test_state_vault.gd" time="0.525669" >
+      </testcase>
+  </testsuite>
+  <testsuite name="test/unit/test_state_zipline.gd" tests="4" failures="0" skipped="0" time="2.110882" >
+      <testcase name="test_constants" assertions="3" status="pass" classname="test/unit/test_state_zipline.gd" time="0.520768" >
+      </testcase>
+      <testcase name="test_enter_missing_payload_transitions_to_air" assertions="1" status="pass" classname="test/unit/test_state_zipline.gd" time="0.52093" >
+      </testcase>
+      <testcase name="test_enter_valid_payload_configures_kinematics" assertions="6" status="pass" classname="test/unit/test_state_zipline.gd" time="0.542159" >
+      </testcase>
+      <testcase name="test_exit_cleans_up_state" assertions="3" status="pass" classname="test/unit/test_state_zipline.gd" time="0.527025" >
       </testcase>
   </testsuite>
 </testsuites>

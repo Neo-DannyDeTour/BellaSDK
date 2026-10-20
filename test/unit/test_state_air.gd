@@ -2,8 +2,6 @@
 class_name TestStateAir
 extends GutTest
 
-const STATE_AIR_SCRIPT: GDScript = preload("res://player/state_air.gd")
-
 ## The airborne state instance under test.
 var state_air: StateAir = null
 
@@ -23,9 +21,7 @@ func before_each() -> void:
 	state_machine = PlayerStateMachine.new()
 	mock_player.add_child(state_machine)
 
-	@warning_ignore("unsafe_method_access")
-	@warning_ignore("unsafe_cast")
-	state_air = STATE_AIR_SCRIPT.new() as StateAir
+	state_air = StateAir.new()
 	state_machine.add_child(state_air)
 
 	state_air.state_machine = state_machine

@@ -36,7 +36,6 @@ func _ready() -> void:
 	if is_instance_valid(restart_dialog):
 		restart_dialog.hide()
 
-	visibility_changed.connect(_on_visibility_changed)
 	display_section.display_settings_changed.connect(_on_display_settings_changed)
 	quality_section.preset_changed.connect(_on_preset_changed)
 	quality_section.quality_settings_changed.connect(_on_pipeline_settings_changed)
@@ -46,9 +45,6 @@ func _ready() -> void:
 
 	if not GraphicsManager.settings_changed.is_connected(_on_external_settings_changed):
 		GraphicsManager.settings_changed.connect(_on_external_settings_changed)
-
-	if is_visible_in_tree():
-		GraphicsManager.set_diorama_mode(true)
 
 
 ## Disconnects global signals and ensures diorama sleeps when removed from scene tree.
@@ -68,23 +64,6 @@ func reset_to_defaults() -> void:
 	effects_section.load_settings()
 	hardware_section.load_settings()
 	_is_applying_batch = false
-
-
-## Synchronizes diorama preview state when panel visibility changes.
-func _on_visibility_changed() -> void:
-	if not is_inside_tree():
-		return
-
-	if is_visible_in_tree():
-		print("VideoOptions: Panel visible; activating isolated diorama preview.")
-		GraphicsManager.set_diorama_mode(true)
-	else:
-		var parent_router: CanvasItem = get_parent() as CanvasItem
-		var keep_diorama: bool = (
-			is_instance_valid(parent_router) and parent_router.is_visible_in_tree()
-		)
-		if not keep_diorama:
-			GraphicsManager.set_diorama_mode(false)
 
 
 ## Handles display setting updates from [DisplaySection].

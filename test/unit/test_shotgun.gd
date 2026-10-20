@@ -2,8 +2,6 @@
 class_name TestShotgun
 extends GutTest
 
-const SHOTGUN_SCRIPT: GDScript = preload("res://assets/weapons/shotgun.gd")
-
 ## The shotgun instance under test.
 var shotgun: Shotgun = null
 
@@ -14,9 +12,7 @@ var camera: Camera3D = null
 ## Prepares an isolated Shotgun and Camera3D before each test.
 func before_each() -> void:
 	print("TestShotgun: before_each() setup started.")
-	@warning_ignore("unsafe_method_access")
-	@warning_ignore("unsafe_cast")
-	shotgun = SHOTGUN_SCRIPT.new() as Shotgun
+	shotgun = Shotgun.new()
 	add_child_autofree(shotgun)
 
 	camera = Camera3D.new()

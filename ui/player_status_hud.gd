@@ -281,7 +281,7 @@ func _connect_signals() -> void:
 
 ## Slices the heart atlas and builds initial health representations.
 func _initialize_hearts() -> void:
-	print("PlayerStatusHUD: _initialize_hearts() called.")
+	#print("PlayerStatusHUD: _initialize_hearts() called.")
 	if not hearts_atlas:
 		push_warning("Hearts atlas not assigned in PlayerStatusHUD inspector!")
 		return

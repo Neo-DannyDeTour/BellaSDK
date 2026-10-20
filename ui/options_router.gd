@@ -93,7 +93,6 @@ func _ready() -> void:
 	set_physics_process(false)
 
 	_isolate_viewport_scenario()
-	_prewarm_diorama()
 	_connect_tab_buttons()
 
 	if is_instance_valid(master_back_button):
@@ -138,37 +137,77 @@ func select_tab_by_index(index: int) -> void:
 		_on_tab_pressed(panels[index] as Panel)
 
 
-## Puts the diorama sandbox into dormant sleep and restores gameplay rendering.
+## Puts the diorama sandbox into dormant sleep and purges it from memory.
 func teardown_diorama() -> void:
-	print("OptionsRouter: Putting diorama sandbox to sleep.")
-	_deactivate_all_diorama_cameras()
-	_set_preview_shader_active(false)
-	GraphicsManager.set_diorama_mode(false)
+	_purge_diorama()
 
 
-## Configures the diorama [SubViewport] with fixed buffers and an isolated [World3D].
+## Configures the diorama [SubViewport] to completely dormant state.
 func _isolate_viewport_scenario() -> void:
 	if not is_instance_valid(diorama_viewport):
 		return
-	VideoApplier.configure_diorama_sandbox(diorama_viewport)
+	if not is_instance_valid(diorama_viewport.world_3d):
+		diorama_viewport.world_3d = World3D.new()
+	diorama_viewport.own_world_3d = true
+	var dio_w: World3D = diorama_viewport.find_world_3d()
+	if is_instance_valid(dio_w):
+		dio_w.environment = null
+	diorama_viewport.disable_3d = true
+	diorama_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	diorama_viewport.process_mode = Node.PROCESS_MODE_DISABLED
 
 
-## Instantiates or binds the 3D diorama scene and neutralizes physics collisions.
-func _prewarm_diorama() -> void:
+## Instantiates the 3D diorama scene from scratch and neutralizes physics collisions.
+func _rebuild_diorama() -> void:
 	if not is_instance_valid(diorama_viewport):
 		return
+	if is_instance_valid(_instantiated_diorama):
+		return
 
-	_instantiated_diorama = diorama_viewport.get_node_or_null("SettingsLevel") as Node3D
-	if not is_instance_valid(_instantiated_diorama):
-		var raw_instance: Node = SETTINGS_LEVEL_SCENE.instantiate()
-		if raw_instance is Node3D:
-			_instantiated_diorama = raw_instance as Node3D
-			diorama_viewport.add_child(_instantiated_diorama)
-		elif is_instance_valid(raw_instance):
-			raw_instance.queue_free()
+	print("OptionsRouter: Building fresh diorama sandbox from scratch.")
+	if not is_instance_valid(diorama_viewport.world_3d):
+		diorama_viewport.world_3d = World3D.new()
+	diorama_viewport.own_world_3d = true
+
+	VideoApplier.configure_diorama_sandbox(diorama_viewport)
+
+	#var raw_instance: Node = SETTINGS_LEVEL_SCENE.instantiate()
+	#if raw_instance is Node3D:
+	#	_instantiated_diorama = raw_instance as Node3D
+	#	diorama_viewport.add_child(_instantiated_diorama)
+	#elif is_instance_valid(raw_instance):
+	#	raw_instance.queue_free()
 
 	_neutralize_diorama_hotspots()
 	_bind_diorama_textures()
+	diorama_viewport.disable_3d = false
+	diorama_viewport.process_mode = Node.PROCESS_MODE_ALWAYS
+	diorama_viewport.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
+
+
+## Destroys the diorama level, nullifies environment, and purges all GPU resources.
+func _purge_diorama() -> void:
+	print("OptionsRouter: Purging diorama sandbox from memory and GPU.")
+	_deactivate_all_diorama_cameras()
+	_set_preview_shader_active(false)
+
+	if is_instance_valid(_instantiated_diorama):
+		_instantiated_diorama.queue_free()
+		_instantiated_diorama = null
+
+	_graphics_camera = null
+	_all_diorama_cameras.clear()
+	_vision_meshes.clear()
+
+	if is_instance_valid(diorama_viewport):
+		diorama_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+		diorama_viewport.process_mode = Node.PROCESS_MODE_DISABLED
+		diorama_viewport.disable_3d = true
+		var dio_w: World3D = diorama_viewport.find_world_3d()
+		if is_instance_valid(dio_w):
+			dio_w.environment = null
+
+	GraphicsManager.set_diorama_mode(false)
 
 
 ## Binds the shared diorama [ViewportTexture] to the video and accessibility display rects.
@@ -321,15 +360,11 @@ func _evaluate_diorama_state() -> void:
 	var should_render: bool = is_visible_in_tree() and is_preview_tab
 
 	if should_render:
+		_rebuild_diorama()
 		GraphicsManager.set_diorama_mode(true)
 		_route_diorama_view(_current_panel)
 	else:
-		_deactivate_all_diorama_cameras()
-		if is_visible_in_tree():
-			diorama_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
-			diorama_viewport.process_mode = Node.PROCESS_MODE_DISABLED
-		else:
-			GraphicsManager.set_diorama_mode(false)
+		_purge_diorama()
 
 	_set_preview_shader_active(should_render)
 
@@ -352,8 +387,10 @@ func _deactivate_all_diorama_cameras() -> void:
 	for cam: Camera3D in _all_diorama_cameras:
 		if is_instance_valid(cam):
 			cam.current = false
+			cam.process_mode = Node.PROCESS_MODE_DISABLED
 	if is_instance_valid(_graphics_camera):
 		_graphics_camera.current = false
+		_graphics_camera.process_mode = Node.PROCESS_MODE_DISABLED
 
 
 ## Toggles the preview post-process shader layer inside the diorama.

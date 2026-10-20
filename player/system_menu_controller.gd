@@ -220,6 +220,13 @@ func toggle_pause() -> void:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 		if is_instance_valid(camera):
 			camera.current = true
+		if is_instance_valid(GraphicsManager):
+			var tree: SceneTree = get_tree()
+			if is_instance_valid(tree) and is_instance_valid(tree.root):
+				tree.root.disable_3d = false
+			if is_instance_valid(tree) and is_instance_valid(tree.current_scene):
+				tree.current_scene.process_mode = Node.PROCESS_MODE_INHERIT
+			GraphicsManager.commit_gameplay_pipeline()
 
 	pause_toggled.emit(is_paused)
 

@@ -6,4 +6,4 @@
 [node name="TestbedLoader" type="Node" unique_id=666233700]
 script = ExtResource("1_vjvmr")
 loading_screen_scene = ExtResource("2_i1e1o")
-testbed_path = "uid://omwvkueo82i7"
+testbed_path = "uid://bex2jknm3sabe"

@@ -90,7 +90,7 @@ var _label: Label3D
 
 ## Lifecycle initialization building meshes, materials, and runtime signal links.
 func _ready() -> void:
-	print("EditorTriggerVisualizer: Initializing visualizer at ", name)
+	#print("EditorTriggerVisualizer: Initializing visualizer at ", name)
 	_ensure_child_nodes()
 	_rebuild_all()
 	add_to_group(&"trigger_visualizers")

@@ -29,15 +29,13 @@ func test_enter_terminal_mode() -> void:
 	var in_mode_val: Variant = scanner.get("is_in_terminal_mode")
 	var is_in_mode: bool = false
 	if in_mode_val is bool:
-		@warning_ignore("unsafe_cast")
-		is_in_mode = in_mode_val as bool
+		is_in_mode = bool(in_mode_val)
 	assert_true(is_in_mode, "Scanner should be in terminal mode.")
 
 	var active_val: Variant = scanner.get("active_terminal")
 	var active_node: Node3D = null
 	if active_val is Node3D:
-		@warning_ignore("unsafe_cast")
-		active_node = active_val as Node3D
+		active_node = active_val
 	assert_eq(active_node, terminal, "Active terminal reference should be stored.")
 	assert_signal_emitted_with_parameters(scanner, "terminal_mode_toggled", [true])
 
@@ -55,15 +53,13 @@ func test_exit_terminal_mode() -> void:
 	var in_mode_val: Variant = scanner.get("is_in_terminal_mode")
 	var is_in_mode: bool = true
 	if in_mode_val is bool:
-		@warning_ignore("unsafe_cast")
-		is_in_mode = in_mode_val as bool
+		is_in_mode = bool(in_mode_val)
 	assert_false(is_in_mode, "Scanner should have exited terminal mode.")
 
 	var active_val: Variant = scanner.get("active_terminal")
 	var active_node: Node3D = null
 	if active_val is Node3D:
-		@warning_ignore("unsafe_cast")
-		active_node = active_val as Node3D
+		active_node = active_val
 	assert_null(active_node, "Terminal reference should be cleared.")
 	assert_signal_emitted_with_parameters(scanner, "terminal_mode_toggled", [false])
 
@@ -79,6 +75,5 @@ func test_setup_master_link() -> void:
 	var master_val: Variant = scanner.get("master_component")
 	var master_node: PlayerInteractionComponent = null
 	if master_val is PlayerInteractionComponent:
-		@warning_ignore("unsafe_cast")
-		master_node = master_val as PlayerInteractionComponent
+		master_node = master_val
 	assert_eq(master_node, master, "Scanner should properly link its Master reference.")

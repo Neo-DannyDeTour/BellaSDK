@@ -111,7 +111,7 @@ var current_healing_target: Node3D = null
 
 ## Initializes node references, visual elements, and starting task.
 func _ready() -> void:
-	print("ElfDrone: Initializing drone actor on ", name)
+	#print("ElfDrone: Initializing drone actor on ", name)
 	motion_mode = CharacterBody3D.MOTION_MODE_FLOATING
 	target_position = global_position
 	bash_anchor = global_position
@@ -188,7 +188,7 @@ func _pick_new_explore_target() -> void:
 	)
 	var random_dist: float = randf_range(3.0, explore_radius)
 	target_position = explore_anchor + (random_dir * random_dist)
-	print("ElfDrone: New explore destination picked: ", target_position)
+	#print("ElfDrone: New explore destination picked: ", target_position)
 
 
 ## Steers drone toward [member target_waypoint] and advances chain.

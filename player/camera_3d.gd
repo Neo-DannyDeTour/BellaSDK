@@ -51,7 +51,7 @@ var _has_prev_rot: bool = false
 
 ## Initializes audio listeners, motion blur passes, and screen shake listeners.
 func _ready() -> void:
-	print("ExtendedCamera3D: Initializing camera components for: ", name)
+	#print("ExtendedCamera3D: Initializing camera components for: ", name)
 	_resolve_vision_mesh()
 	_cache_vision_material()
 	_setup_motion_blur_quad()

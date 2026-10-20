@@ -2,8 +2,6 @@
 class_name TestHitscanWeapon
 extends GutTest
 
-const WEAPON_SCRIPT: GDScript = preload("res://assets/weapons/hitscan_weapon.gd")
-
 ## The weapon instance under test.
 var weapon: HitscanWeapon = null
 
@@ -14,9 +12,7 @@ var camera: Camera3D = null
 ## Prepares an isolated HitscanWeapon and Camera3D before each test.
 func before_each() -> void:
 	print("TestHitscanWeapon: before_each() setup started.")
-	@warning_ignore("unsafe_method_access")
-	@warning_ignore("unsafe_cast")
-	weapon = WEAPON_SCRIPT.new() as HitscanWeapon
+	weapon = HitscanWeapon.new()
 	add_child_autofree(weapon)
 
 	camera = Camera3D.new()

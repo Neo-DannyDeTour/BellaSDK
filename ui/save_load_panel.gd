@@ -81,20 +81,14 @@ func _create_save_slot(file_name: String) -> void:
 	if not is_instance_valid(save_list_container):
 		return
 
-	var new_slot: Control = (
-		save_slot_template.duplicate() if save_slot_template.duplicate() is Control else null
-	)
+	var new_slot: Control = save_slot_template.duplicate() as Control
 	if not is_instance_valid(new_slot):
 		return
 	new_slot.show()
 
-	var name_node: Node = new_slot.find_child("SaveNameLabel", true, false)
-	var load_node: Node = new_slot.find_child("LoadButton", true, false)
-	var del_node: Node = new_slot.find_child("DeleteButton", true, false)
-
-	var name_label: Label = name_node if name_node is Label else null
-	var load_btn: Button = load_node if load_node is Button else null
-	var del_btn: Button = del_node if del_node is Button else null
+	var name_label: Label = new_slot.find_child("SaveNameLabel", true, false) as Label
+	var load_btn: Button = new_slot.find_child("LoadButton", true, false) as Button
+	var del_btn: Button = new_slot.find_child("DeleteButton", true, false) as Button
 
 	if is_instance_valid(name_label):
 		name_label.text = file_name.get_basename()

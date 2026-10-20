@@ -108,7 +108,7 @@ var _is_within_lod_range: bool = true
 
 ## Caches node references, initializes unique meshes, and arms the trip mine.
 func _ready() -> void:
-	print("TripMine: Initializing trip mine at ", global_position)
+	#print("TripMine: Initializing trip mine at ", global_position)
 	_setup_laser_geometry()
 	_setup_blast_area()
 	laser_state_changed.emit(true)
@@ -141,7 +141,7 @@ func _update_distance_lod() -> void:
 
 ## Duplicates cylinder mesh to allow independent per-instance height updates.
 func _setup_laser_geometry() -> void:
-	print("TripMine: Configuring unique laser geometry and materials.")
+	#print("TripMine: Configuring unique laser geometry and materials.")
 	if is_instance_valid(laser_beam_mesh) and laser_beam_mesh.mesh is CylinderMesh:
 		_unique_cylinder_mesh = laser_beam_mesh.mesh.duplicate() as CylinderMesh
 		laser_beam_mesh.mesh = _unique_cylinder_mesh
@@ -152,7 +152,7 @@ func _setup_laser_geometry() -> void:
 
 ## Configures the blast collision shape radius based on [member blast_radius].
 func _setup_blast_area() -> void:
-	print("TripMine: Setting up blast radius: ", blast_radius, " meters.")
+	#print("TripMine: Setting up blast radius: ", blast_radius, " meters.")
 	var col_shape: CollisionShape3D = blast_area.get_node_or_null("BlastShape") as CollisionShape3D
 	if is_instance_valid(col_shape) and col_shape.shape is SphereShape3D:
 		var sphere: SphereShape3D = col_shape.shape.duplicate() as SphereShape3D
