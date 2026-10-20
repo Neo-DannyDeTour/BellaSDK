@@ -31,20 +31,12 @@ height = 6.0
 radial_segments = 32
 rings = 16
 
-[sub_resource type="Environment" id="Environment_sm02r"]
-glow_enabled = true
-glow_intensity = 1.5
-glow_hdr_threshold = 2.5
-
 [node name="Node3D" type="Node3D" unique_id=1568538133]
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=887385367]
 mesh = SubResource("SphereMesh_ftxw1")
 script = ExtResource("1_f2eow")
 overload_multiplier = 30.0
-
-[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=1980755794]
-environment = SubResource("Environment_sm02r")
 
 [node name="OmniLight3D" type="OmniLight3D" parent="." unique_id=1668644893]
 light_color = Color(0.41568628, 0.7490196, 1, 1)

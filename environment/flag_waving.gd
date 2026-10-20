@@ -59,14 +59,14 @@ var _unique_material: ShaderMaterial
 
 ## Initializes material instance and applies configured flag properties.
 func _ready() -> void:
-	print("FlagController: Initializing flag controller in _ready().")
+	#print("FlagController: Initializing flag controller in _ready().")
 	_initialize_material()
 	_apply_all_settings()
 
 
 ## Retrieves or caches unique [ShaderMaterial] via [MaterialCache].
 func _initialize_material() -> void:
-	print("FlagController: Initializing unique material via MaterialCache.")
+	#print("FlagController: Initializing unique material via MaterialCache.")
 	if not is_instance_valid(front_mesh):
 		var found_front: Node = NodeQuery.find_first_child_of_type(self, MeshInstance3D)
 		if found_front is MeshInstance3D:

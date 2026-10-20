@@ -8,9 +8,12 @@
 
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_col"]
 height = 4.0
+radius = 1.0
 
 [sub_resource type="CylinderMesh" id="CylinderMesh_debug"]
 material = ExtResource("2_dev_mat")
+top_radius = 1.0
+bottom_radius = 1.0
 height = 4.0
 radial_segments = 16
 rings = 1
@@ -22,36 +25,17 @@ colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 0.8, 1, 1, 1, 0.8, 1, 1, 1, 0)
 [sub_resource type="GradientTexture1D" id="GradientTexture1D_fade"]
 gradient = SubResource("Gradient_particle_fade")
 
-[sub_resource type="FastNoiseLite" id="FastNoiseLite_wind"]
-noise_type = 3
-frequency = 0.025
-fractal_octaves = 3
-
-[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_wind"]
-seamless = true
-noise = SubResource("FastNoiseLite_wind")
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_wind_lines"]
-render_priority = 1
-shader = ExtResource("3_wind_lines_shader")
-shader_parameter/line_color = Color(0.82, 0.94, 1, 0.88)
-shader_parameter/noise_texture = SubResource("NoiseTexture2D_wind")
-shader_parameter/uv_scale = Vector2(1, 1.8)
-shader_parameter/flow_speed = 4.5
-shader_parameter/line_sharpness = 1.6
-shader_parameter/edge_fade_x = 0.3
-shader_parameter/edge_fade_y = 0.22
-
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_wind"]
 emission_shape = 6
 emission_ring_axis = Vector3(0, 1, 0)
-emission_ring_height = 0.35
+emission_ring_height = 0.24
 emission_ring_radius = 0.85
-emission_ring_inner_radius = 0.12
+emission_ring_inner_radius = 0.0
+emission_ring_cone_angle = 90.0
 direction = Vector3(0, 1, 0)
 spread = 6.0
-initial_velocity_min = 7.5
-initial_velocity_max = 10.5
+initial_velocity_min = 7.65
+initial_velocity_max = 10.35
 gravity = Vector3(0, 0, 0)
 radial_accel_min = -1.8
 radial_accel_max = -0.4
@@ -66,16 +50,50 @@ turbulence_influence_min = 0.06
 turbulence_influence_max = 0.16
 
 [sub_resource type="Curve" id="Curve_wind_trail"]
-_data = [Vector2(0, 0.12), 0.0, 2.8, 0, 0, Vector2(0.25, 1), 0.0, 0.0, 0, 0, Vector2(1, 0), -1.6, 0.0, 0, 0]
+_data = [Vector2(0, 0.12), 0.0, 2.8, 0, 0, Vector2(0.29429725, 1), 0.96749043, 0.96749043, 0, 0, Vector2(1, 0), -1.6, 0.0, 0, 0]
 point_count = 3
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_wind"]
+noise_type = 3
+frequency = 0.025
+fractal_octaves = 3
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_wind"]
+noise = SubResource("FastNoiseLite_wind")
+seamless = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_wind_lines"]
+render_priority = 1
+shader = ExtResource("3_wind_lines_shader")
+shader_parameter/line_color = Color(0.82, 0.94, 1, 0.88)
+shader_parameter/noise_texture = SubResource("NoiseTexture2D_wind")
+shader_parameter/uv_scale = Vector2(1, 1.8)
+shader_parameter/flow_speed = 4.5
+shader_parameter/line_sharpness = 1.6
+shader_parameter/edge_fade_x = 0.3
+shader_parameter/edge_fade_y = 0.22
 
 [sub_resource type="RibbonTrailMesh" id="RibbonTrailMesh_wind_line"]
 material = SubResource("ShaderMaterial_wind_lines")
-size = 0.14
+size = 0.01
 sections = 8
 section_length = 0.18
 section_segments = 4
 curve = SubResource("Curve_wind_trail")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_dust"]
+emission_shape = 6
+emission_ring_axis = Vector3(0, 1, 0)
+emission_ring_height = 0.24
+emission_ring_radius = 0.8
+emission_ring_inner_radius = 0.0
+emission_ring_cone_angle = 90.0
+direction = Vector3(0, 1, 0)
+spread = 4.0
+initial_velocity_min = 8.16
+initial_velocity_max = 11.04
+gravity = Vector3(0, 0.2, 0)
+color_ramp = SubResource("GradientTexture1D_fade")
 
 [sub_resource type="Gradient" id="Gradient_dust_dot"]
 offsets = PackedFloat32Array(0, 0.45, 1)
@@ -99,42 +117,9 @@ particles_anim_loop = false
 proximity_fade_enabled = true
 proximity_fade_distance = 0.2
 
-[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_dust"]
-emission_shape = 6
-emission_ring_axis = Vector3(0, 1, 0)
-emission_ring_height = 0.05
-emission_ring_radius = 0.8
-emission_ring_inner_radius = 0.0
-direction = Vector3(0, 1, 0)
-spread = 4.0
-initial_velocity_min = 9.0
-initial_velocity_max = 13.0
-gravity = Vector3(0, 0.2, 0)
-color_ramp = SubResource("GradientTexture1D_fade")
-
 [sub_resource type="QuadMesh" id="QuadMesh_dust"]
 material = SubResource("StandardMaterial3D_dust")
 size = Vector2(0.045, 0.045)
-
-[sub_resource type="FastNoiseLite" id="FastNoiseLite_smoke"]
-noise_type = 3
-frequency = 0.022
-fractal_octaves = 4
-fractal_lacunarity = 2.1
-fractal_gain = 0.55
-
-[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_smoke"]
-seamless = true
-noise = SubResource("FastNoiseLite_smoke")
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_smoke"]
-render_priority = 0
-shader = ExtResource("4_smoke_shader")
-shader_parameter/smoke_color = Color(0.78, 0.8, 0.83, 0.55)
-shader_parameter/noise_texture = SubResource("NoiseTexture2D_smoke")
-shader_parameter/swirl_speed = 0.85
-shader_parameter/softness = 0.35
-shader_parameter/proximity_fade_distance = 0.35
 
 [sub_resource type="Gradient" id="Gradient_smoke_greys"]
 offsets = PackedFloat32Array(0, 0.35, 0.7, 1)
@@ -153,15 +138,16 @@ curve = SubResource("Curve_smoke_scale")
 [sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_smoke"]
 emission_shape = 6
 emission_ring_axis = Vector3(0, 1, 0)
-emission_ring_height = 0.2
+emission_ring_height = 0.24
 emission_ring_radius = 0.65
 emission_ring_inner_radius = 0.0
+emission_ring_cone_angle = 90.0
 angle_min = -180.0
 angle_max = 180.0
 direction = Vector3(0, 1, 0)
 spread = 9.0
-initial_velocity_min = 3.2
-initial_velocity_max = 5.2
+initial_velocity_min = 3.57
+initial_velocity_max = 4.83
 angular_velocity_min = -32.0
 angular_velocity_max = 32.0
 gravity = Vector3(0, 0, 0)
@@ -176,13 +162,32 @@ turbulence_enabled = true
 turbulence_noise_strength = 1.1
 turbulence_noise_scale = 3.0
 turbulence_influence_min = 0.03
-turbulence_influence_max = 0.1
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_smoke"]
+noise_type = 3
+frequency = 0.022
+fractal_octaves = 4
+fractal_lacunarity = 2.1
+fractal_gain = 0.55
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_smoke"]
+noise = SubResource("FastNoiseLite_smoke")
+seamless = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_smoke"]
+render_priority = 0
+shader = ExtResource("4_smoke_shader")
+shader_parameter/smoke_color = Color(0.78, 0.8, 0.83, 0.55)
+shader_parameter/noise_texture = SubResource("NoiseTexture2D_smoke")
+shader_parameter/swirl_speed = 0.85
+shader_parameter/softness = 0.35
+shader_parameter/proximity_fade_distance = 0.35
 
 [sub_resource type="QuadMesh" id="QuadMesh_smoke"]
 material = SubResource("ShaderMaterial_smoke")
 size = Vector2(1.15, 1.15)
 
-[node name="UpdraftVent" type="Area3D" unique_id=2849102831]
+[node name="UpdraftVent" type="Area3D" unique_id=-1445864465]
 collision_mask = 6
 script = ExtResource("1_vent_script")
 
@@ -199,10 +204,10 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
 visibility_range_end = 40.0
 visibility_range_end_margin = 5.0
 amount = 32
-lifetime = 0.65
-visibility_aabb = AABB(-4, -1, -4, 8, 12, 8)
+lifetime = 0.4444444444444444
+visibility_aabb = AABB(-2.5, -1, -2.5, 5, 6.5, 5)
 trail_enabled = true
-trail_lifetime = 0.35
+trail_lifetime = 0.24444444444444446
 process_material = SubResource("ParticleProcessMaterial_wind")
 draw_pass_1 = SubResource("RibbonTrailMesh_wind_line")
 
@@ -211,18 +216,19 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
 visibility_range_end = 40.0
 visibility_range_end_margin = 5.0
 amount = 40
-lifetime = 0.55
-visibility_aabb = AABB(-4, -1, -4, 8, 12, 8)
+lifetime = 0.41666666666666663
+visibility_aabb = AABB(-2.5, -1, -2.5, 5, 6.5, 5)
 process_material = SubResource("ParticleProcessMaterial_dust")
 draw_pass_1 = SubResource("QuadMesh_dust")
 
 [node name="SmokeParticles" type="GPUParticles3D" parent="." unique_id=1849102836]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.05, 0)
+visible = false
 visibility_range_end = 40.0
 visibility_range_end_margin = 5.0
 amount = 30
-lifetime = 1.1
-visibility_aabb = AABB(-4, -1, -4, 8, 12, 8)
+lifetime = 0.6857142857142858
+visibility_aabb = AABB(-2.5, -1, -2.5, 5, 6.5, 5)
 process_material = SubResource("ParticleProcessMaterial_smoke")
 draw_pass_1 = SubResource("QuadMesh_smoke")
 
@@ -230,6 +236,7 @@ draw_pass_1 = SubResource("QuadMesh_smoke")
 
 [node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="." unique_id=1849102838]
 stream = ExtResource("5_fan_sound")
+pitch_scale = 0.992
 autoplay = true
 max_distance = 18.0
 

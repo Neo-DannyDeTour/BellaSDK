@@ -181,7 +181,7 @@ func _build_buttresses(st: SurfaceTool, aisle_w: float, aisle_h: float) -> void:
 
 ## Appends an axis-aligned box to the provided [SurfaceTool].
 func _add_box(st: SurfaceTool, center: Vector3, size: Vector3) -> void:
-	print("GothicCathedral: Adding box geometry at ", center)
+	#print("GothicCathedral: Adding box geometry at ", center)
 	var hs: Vector3 = size * 0.5
 	var v0: Vector3 = center + Vector3(-hs.x, -hs.y, -hs.z)
 	var v1: Vector3 = center + Vector3(hs.x, -hs.y, -hs.z)
@@ -201,7 +201,7 @@ func _add_box(st: SurfaceTool, center: Vector3, size: Vector3) -> void:
 
 ## Appends a pitched triangular prism roof to the [SurfaceTool].
 func _add_roof(st: SurfaceTool, base_center: Vector3, size: Vector3, along_x: bool) -> void:
-	print("GothicCathedral: Adding pitched roof at ", base_center)
+	#print("GothicCathedral: Adding pitched roof at ", base_center)
 	var hx: float = size.x * 0.5
 	var hz: float = size.z * 0.5
 	var h: float = size.y
@@ -229,7 +229,7 @@ func _add_roof(st: SurfaceTool, base_center: Vector3, size: Vector3, along_x: bo
 
 ## Appends an 8-sided octagonal spire cone to the [SurfaceTool].
 func _add_spire(st: SurfaceTool, base_center: Vector3, radius: float, height: float) -> void:
-	print("GothicCathedral: Adding octagonal spire at ", base_center)
+	#print("GothicCathedral: Adding octagonal spire at ", base_center)
 	var sides: int = 8
 	var tip: Vector3 = base_center + Vector3(0.0, height, 0.0)
 	for i: int in range(sides):
@@ -244,7 +244,7 @@ func _add_spire(st: SurfaceTool, base_center: Vector3, radius: float, height: fl
 func _add_strut(
 	st: SurfaceTool, p_start: Vector3, p_end: Vector3, width: float, thickness: float
 ) -> void:
-	print("GothicCathedral: Adding flying buttress strut from ", p_start)
+	#print("GothicCathedral: Adding flying buttress strut from ", p_start)
 	var hw: float = width * 0.5
 	var ht: float = thickness * 0.5
 	var s0: Vector3 = p_start + Vector3(0.0, -ht, -hw)

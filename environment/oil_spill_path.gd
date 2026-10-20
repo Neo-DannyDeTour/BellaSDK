@@ -116,7 +116,7 @@ func _get_shape_node() -> CollisionShape3D:
 
 ## Initializes curve listeners, material, and geometry via [MaterialCache].
 func _ready() -> void:
-	print("OilSpillPath: Initializing oil spill instance.")
+	#print("OilSpillPath: Initializing oil spill instance.")
 	_ensure_curve_listener()
 
 	var mesh_node: MeshInstance3D = _get_mesh_node()

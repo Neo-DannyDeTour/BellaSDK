@@ -367,7 +367,7 @@ const SWIM_COLLISION_MASK: int = 6
 @export var foam_noise: Texture2D = null:
 	set(value):
 		foam_noise = value
-		if is_inside_tree() and is_instance_valid(foam_noise):
+		if is_inside_tree():
 			_set_shader_param(PARAM_FOAM_NOISE, foam_noise)
 
 ## Albedo color and opacity of surface foam.
@@ -410,7 +410,7 @@ const SWIM_COLLISION_MASK: int = 6
 ## Audio stream played via [AudioPool] upon high-velocity water entry or exit.
 @export var splash_sound: AudioStream = null
 
-## Maximum distance from the active camera in meters before wave updates are gated.
+## Maximum distance from active camera in meters before wave updates are gated.
 @export_range(10.0, 500.0, 1.0) var max_simulation_distance: float = 95.0
 
 ## Accumulated simulation time in seconds synchronized between CPU and GPU.
@@ -440,25 +440,22 @@ var _submerged_characters: Array[CharacterBody3D] = []
 ## Maps body instance ID to the last [_water_time] a movement ripple was spawned.
 var _body_last_ripple_time: Dictionary[int, float] = {}
 
-## Maps body instance ID to the last horizontal XZ position a movement ripple was spawned.
+## Maps body instance ID to last horizontal XZ position movement ripple was spawned.
 var _body_last_ripple_pos: Dictionary[int, Vector2] = {}
 
-## Tracks whether the active viewport camera is currently submerged below the wave surface.
+## Tracks whether active viewport camera is currently submerged below wave surface.
 var _is_camera_submerged: bool = false
 
-## Previous frame's global Y coordinate of the active camera for surfacing speed calculation.
+## Previous frame's global Y coordinate of active camera for surfacing speed calculation.
 var _last_camera_y: float = 0.0
 
 ## Indicates whether [member _last_camera_y] holds a valid sample.
 var _has_last_camera_y: bool = false
 
-## Cached reference to the active viewport [Camera3D].
+## Cached reference to active viewport [Camera3D].
 var _cached_camera: Camera3D = null
 
-## Active [Tween] orchestrating the two-phase camera surfacing screen wipe.
-var _surface_wipe_tween: Tween = null
-
-## Tracks whether fallback non-volumetric environment depth fog is currently forced on.
+## Tracks whether fallback non-volumetric environment depth fog is currently active.
 var _fallback_fog_active: bool = false
 
 ## Cached [Environment] resource modified during fallback underwater fog.
@@ -479,15 +476,15 @@ var _orig_fog_sky_affect: float = 1.0
 ## Child [Area3D] registered in group `water_area` for swim and buoyancy detection.
 @onready var _swimmable_area: Area3D = get_node_or_null("%SwimmableArea3D") as Area3D
 
-## Child [CollisionShape3D] defining the physical bounds of [member _swimmable_area].
+## Child [CollisionShape3D] defining physical bounds of [member _swimmable_area].
 @onready
 var _collision_shape: CollisionShape3D = get_node_or_null("%CollisionShape3D") as CollisionShape3D
 
-## Child [ShapeCast3D] positioned at the camera to verify spatial overlap with water areas.
+## Child [ShapeCast3D] positioned at camera to verify spatial overlap with water areas.
 @onready
 var _camera_shape_cast: ShapeCast3D = get_node_or_null("%CameraPosShapeCast3D") as ShapeCast3D
 
-## Child [FogVolume] providing volumetric underwater scattering when volumetric fog is enabled.
+## Child [FogVolume] providing volumetric underwater scattering when volumetric fog enabled.
 @onready var _fog_volume: FogVolume = get_node_or_null("%FogVolume") as FogVolume
 
 ## Child [AudioStreamPlayer3D] playing ambient surface water audio.
@@ -539,12 +536,8 @@ func _ready() -> void:
 	set_process(true)
 
 
-## Disconnects signals, kills active tweens, and restores environment fog on tree exit.
+## Disconnects signals and restores environment fog on tree exit.
 func _exit_tree() -> void:
-	if _surface_wipe_tween and _surface_wipe_tween.is_valid():
-		_surface_wipe_tween.kill()
-		_surface_wipe_tween = null
-
 	if not Engine.is_editor_hint():
 		_restore_fallback_environment_fog()
 		if (
@@ -579,7 +572,7 @@ func _process(delta: float) -> void:
 		_evaluate_camera_submersion(cam, delta)
 
 
-## Applies buoyancy forces, drag damping, and wake ripples to bodies inside the volume.
+## Applies buoyancy forces, drag damping, and wake ripples to bodies inside volume.
 func _physics_process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		set_physics_process(false)
@@ -595,11 +588,11 @@ func _physics_process(delta: float) -> void:
 
 ## Supports legacy scene property overrides (`size` and `material` in testbed.tscn).
 func _set(property: StringName, value: Variant) -> bool:
-	if property == PROP_LEGACY_SIZE and value is Vector3:
-		water_size = value as Vector3
+	if property == PROP_LEGACY_SIZE and typeof(value) == TYPE_VECTOR3:
+		water_size = value
 		return true
 	if property == PROP_LEGACY_MATERIAL and value is Material:
-		material_override = value as Material
+		material_override = value
 		_cache_material_rid()
 		_sync_all_shader_parameters()
 		return true
@@ -615,8 +608,7 @@ func _get(property: StringName) -> Variant:
 	return null
 
 
-## Returns the exact global Y height of the water surface at [param global_pos].
-## Matches the GPU vertex shader 3-octave wave cascade and 16-slot ripple ring buffer.
+## Returns exact global Y height of water surface at [param global_pos].
 func get_wave_height_at_pos(global_pos: Vector3) -> float:
 	var base_y: float = global_position.y + (water_size.y * 0.5)
 	var disp: Vector3 = _evaluate_surface_displacement(
@@ -625,7 +617,7 @@ func get_wave_height_at_pos(global_pos: Vector3) -> float:
 	return base_y + disp.x
 
 
-## Returns the normalized 3D surface normal vector at [param global_pos].
+## Returns normalized 3D surface normal vector at [param global_pos].
 func get_water_surface_normal(global_pos: Vector3) -> Vector3:
 	var disp: Vector3 = _evaluate_surface_displacement(
 		Vector2(global_pos.x, global_pos.z), _water_time
@@ -663,7 +655,7 @@ func spawn_ripple(global_pos: Vector3, impact_strength: float) -> void:
 	_set_shader_param(PARAM_RIPPLES, _ripples)
 
 
-## Returns true if the active [Camera3D] is inside the water bounds and below the wave surface.
+## Returns true if active [Camera3D] is inside water bounds and below wave surface.
 func should_draw_camera_underwater_effect() -> bool:
 	var cam: Camera3D = _get_active_camera()
 	if not is_instance_valid(cam):
@@ -713,8 +705,7 @@ func _evaluate_wave_octave(
 	return Vector3(h, dir.x * dtheta, dir.y * dtheta)
 
 
-## Evaluates the 3-octave wave cascade and 16-slot ripple ring buffer on CPU.
-## Returns `Vector3(total_height, dh_dx, dh_dz)` matching `water_body.gdshader`.
+## Evaluates 3-octave wave cascade and 16-slot ripple ring buffer on CPU.
 func _evaluate_surface_displacement(world_xz: Vector2, t: float) -> Vector3:
 	var total_h: float = 0.0
 	var slope_x: float = 0.0
@@ -807,13 +798,13 @@ func _clear_expired_ripples() -> void:
 	_set_shader_param(PARAM_RIPPLES, _ripples)
 
 
-## Caches the [RID] of the active [ShaderMaterial] on this mesh instance.
+## Caches the [RID] of active [ShaderMaterial] on this mesh instance.
 func _cache_material_rid() -> void:
 	var mat: ShaderMaterial = _get_shader_material()
 	_material_rid = mat.get_rid() if is_instance_valid(mat) else RID()
 
 
-## Resolves the active [ShaderMaterial] from `material_override` or surface slot 0.
+## Resolves active [ShaderMaterial] from `material_override` or surface slot 0.
 func _get_shader_material() -> ShaderMaterial:
 	if material_override is ShaderMaterial:
 		return material_override as ShaderMaterial
@@ -824,12 +815,16 @@ func _get_shader_material() -> ShaderMaterial:
 	return null
 
 
-## Sets a shader parameter directly through [RenderingServer] to avoid Variant overhead.
+## Sets a shader parameter directly through [RenderingServer], converting resources to RIDs.
 func _set_shader_param(param: StringName, value: Variant) -> void:
 	if not _material_rid.is_valid():
 		_cache_material_rid()
 	if _material_rid.is_valid():
-		RenderingServer.material_set_param(_material_rid, param, value)
+		var param_val: Variant = value
+		if value is Resource:
+			var res: Resource = value
+			param_val = res.get_rid() if is_instance_valid(res) else RID()
+		RenderingServer.material_set_param(_material_rid, param, param_val)
 
 
 ## Pushes all exported optical and wave parameters to the shader once on initialization.
@@ -1022,7 +1017,7 @@ func _notify_actor_water_transition(actor: CharacterBody3D, is_entering: bool) -
 	if PROP_ENV_COMPONENT in actor:
 		var env_val: Variant = actor.get(PROP_ENV_COMPONENT)
 		if env_val is Node:
-			var env_node: Node = env_val as Node
+			var env_node: Node = env_val
 			if is_instance_valid(env_node) and env_node.has_method(method_name):
 				env_node.call(method_name, self)
 
@@ -1074,7 +1069,8 @@ func _has_custom_multi_probe_buoyancy(body: RigidBody3D) -> bool:
 	if PROP_PROBES in body and PROP_IS_IN_WATER in body:
 		var probes_val: Variant = body.get(PROP_PROBES)
 		if probes_val is Array:
-			return not (probes_val as Array).is_empty()
+			var probes_arr: Array = probes_val
+			return not probes_arr.is_empty()
 	return false
 
 
@@ -1126,7 +1122,7 @@ func _on_camera_registered(camera: Camera3D) -> void:
 	_cached_camera = camera
 
 
-## Retrieves the active viewport [Camera3D], refreshing the cached reference if invalidated.
+## Retrieves active viewport [Camera3D], refreshing cached reference if invalidated.
 func _get_active_camera() -> Camera3D:
 	if is_instance_valid(_cached_camera) and _cached_camera.is_inside_tree():
 		return _cached_camera
@@ -1135,7 +1131,7 @@ func _get_active_camera() -> Camera3D:
 	return _cached_camera
 
 
-## Evaluates whether the active camera crossed the water surface and triggers audio/VFX transitions.
+## Evaluates whether active camera crossed water surface and triggers audio/VFX transitions.
 func _evaluate_camera_submersion(cam: Camera3D, delta: float) -> void:
 	var cam_y: float = cam.global_position.y
 	var cam_vert_speed: float = (
@@ -1158,10 +1154,6 @@ func _evaluate_camera_submersion(cam: Camera3D, delta: float) -> void:
 ## Orchestrates audio, fog volume, fallback depth fog, and screen VFX on camera submersion.
 func _handle_camera_submerged() -> void:
 	print("WaterBody: Camera submerged below surface.")
-	if _surface_wipe_tween and _surface_wipe_tween.is_valid():
-		_surface_wipe_tween.kill()
-		_surface_wipe_tween = null
-
 	if is_instance_valid(Events):
 		Events.waterfall_vfx_toggled.emit(false, 0.0, 1.5)
 		Events.underwater_vfx_toggled.emit(true, 0.85, 0.0, 0.0)
@@ -1177,7 +1169,7 @@ func _handle_camera_submerged() -> void:
 	_apply_fallback_environment_fog()
 
 
-## Orchestrates audio, two-phase screen wipe tween, and splash audio when camera surfaces.
+## Orchestrates audio, splash audio, and triggers the surfacing water sheet meniscus wipe.
 func _handle_camera_surfaced(cam_pos: Vector3, vertical_speed: float) -> void:
 	print("WaterBody: Camera surfaced from water (speed=", vertical_speed, ").")
 	if is_instance_valid(_underwater_audio):
@@ -1194,48 +1186,9 @@ func _handle_camera_surfaced(cam_pos: Vector3, vertical_speed: float) -> void:
 		play_splash_sound(cam_pos, vertical_speed)
 		spawn_ripple(cam_pos, clampf(vertical_speed * 0.2, 0.35, 1.5))
 
-	if _surface_wipe_tween and _surface_wipe_tween.is_valid():
-		_surface_wipe_tween.kill()
-
-	_surface_wipe_tween = create_tween()
-	# Phase 1 (0.0 to 0.9s): Cubic ease-out screen wash wipe
-	(
-		_surface_wipe_tween
-		. tween_method(_on_surface_wipe_phase_1, 0.0, 1.0, 0.9)
-		. set_trans(Tween.TRANS_CUBIC)
-		. set_ease(Tween.EASE_OUT)
-	)
-	# Phase 2 (2.5s): Kill wash and fade lingering droplets
-	_surface_wipe_tween.tween_callback(_on_surface_wipe_phase_2_start)
-	(
-		_surface_wipe_tween
-		. tween_method(_on_surface_wipe_phase_2, 0.85, 0.0, 2.5)
-		. set_trans(Tween.TRANS_SINE)
-		. set_ease(Tween.EASE_OUT)
-	)
-
-
-## Tween callback for Phase 1 of camera surfacing wipe (0.0 to 0.9s).
-func _on_surface_wipe_phase_1(progress: float) -> void:
-	if not is_instance_valid(Events):
-		return
-	var wash: float = 1.0 - progress
-	var clear_prog: float = progress * 1.5
-	Events.waterfall_vfx_toggled.emit(true, wash, clear_prog)
-
-
-## Transition callback between Phase 1 and Phase 2 of the surfacing wipe.
-func _on_surface_wipe_phase_2_start() -> void:
-	if not is_instance_valid(Events):
-		return
-	Events.waterfall_vfx_toggled.emit(false, 0.0, 1.5)
-
-
-## Tween callback for Phase 2 of camera surfacing wipe, fading lingering droplets over 2.5s.
-func _on_surface_wipe_phase_2(droplets: float) -> void:
-	if not is_instance_valid(Events):
-		return
-	Events.underwater_vfx_toggled.emit(false, 0.0, droplets, 1.5)
+	if is_instance_valid(Events):
+		Events.underwater_vfx_toggled.emit(false, 0.0, 0.0, 1.5)
+		Events.water_sheet_wipe_requested.emit(1.2)
 
 
 ## Updates `%FogVolume` density and edge fade on camera submersion state changes.
@@ -1259,7 +1212,6 @@ func _apply_fallback_environment_fog() -> void:
 	if not is_instance_valid(env):
 		return
 
-	# Always guarantee murky underwater depth fog when Volumetric Fog is disabled
 	if not env.volumetric_fog_enabled and not _fallback_fog_active:
 		_cached_env = env
 		_orig_fog_enabled = env.fog_enabled

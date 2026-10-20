@@ -102,6 +102,9 @@ var _active_pickables: Array[RigidBody3D] = []
 ## Material shared across dynamically constructed paper strip meshes.
 var _strip_material: ShaderMaterial = null
 
+## Particle system emitting Nolkaloid 3D wind lines.
+var wind_particles: GPUParticles3D
+
 # ------------------------------------------------------------------------------
 # ONREADY VARIABLES
 # ------------------------------------------------------------------------------
@@ -111,10 +114,6 @@ var collision_shape: CollisionShape3D = get_node_or_null("CollisionShape3D") as 
 
 ## Editor-only visual cylinder aid representing the volume bounds.
 @onready var debug_mesh: MeshInstance3D = get_node_or_null("DebugCylinderMesh") as MeshInstance3D
-
-## Particle system emitting Nolkaloid 3D wind lines.
-@onready
-var wind_particles: GPUParticles3D = get_node_or_null(&"WindLineParticles") as GPUParticles3D
 
 ## Particle system emitting dust motes rising with the draft.
 @onready var dust_particles: GPUParticles3D = get_node_or_null("DustParticles") as GPUParticles3D
@@ -155,6 +154,8 @@ func _ready() -> void:
 	if not body_exited.is_connected(_on_body_exited):
 		body_exited.connect(_on_body_exited)
 
+	wind_particles = get_node_or_null("WindLineParticles") as GPUParticles3D
+
 
 ## Applies damped vertical lift and centering forces to active pickables.
 func _physics_process(delta: float) -> void:
@@ -177,7 +178,7 @@ func _physics_process(delta: float) -> void:
 			continue
 
 		# Skip carrying updates while held by the player
-		if "is_held" in pickable and bool(pickable.get(&"is_held")):
+		if "is_held" in pickable and pickable.get(&"is_held") == true:
 			_active_pickables[write_index] = pickable
 			write_index += 1
 			continue

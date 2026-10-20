@@ -1,0 +1,59 @@
+[gd_scene format=3 uid="uid://c8rainctrl001"]
+
+[ext_resource type="Script" uid="uid://m8lcush6yvuq" path="res://environment/rain_controller.gd" id="1_controller"]
+[ext_resource type="Shader" uid="uid://cwdsgm44k6cmj" path="res://shaders/rain_process.gdshader" id="2_process"]
+[ext_resource type="Shader" uid="uid://hb6ejpt478a5" path="res://shaders/rain_drop.gdshader" id="3_drop"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_process"]
+shader = ExtResource("2_process")
+shader_parameter/box_extents = Vector3(15, 10, 15)
+shader_parameter/fall_speed = 22.0
+shader_parameter/wind_velocity = Vector3(4.24, 0, 2.12)
+shader_parameter/swirl_intensity = 0.32
+shader_parameter/swirl_frequency = 0.25
+shader_parameter/swirl_strength = 8.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_drop"]
+render_priority = 0
+shader = ExtResource("3_drop")
+shader_parameter/drop_color = Color(0.75, 0.82, 0.9, 0.35)
+
+[sub_resource type="QuadMesh" id="QuadMesh_streak"]
+material = SubResource("ShaderMaterial_drop")
+size = Vector2(0.05, 0.5)
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_splash"]
+direction = Vector3(0, 1, 0)
+initial_velocity_min = 1.0
+initial_velocity_max = 3.0
+color = Color(0.75, 0.82, 0.9, 0.35)
+
+[sub_resource type="QuadMesh" id="QuadMesh_splash"]
+size = Vector2(0.04, 0.04)
+
+[node name="RainController" type="Node3D" unique_id=1321792013]
+script = ExtResource("1_controller")
+intensity = 1.0
+swirl = 0.51
+process_shader = ExtResource("2_process")
+drop_shader = ExtResource("3_drop")
+
+[node name="RainParticles" type="GPUParticles3D" parent="." unique_id=111712293]
+emitting = false
+amount = 3000
+sub_emitter = NodePath("../SplashParticles")
+lifetime = 1.5
+visibility_aabb = AABB(-15, -10, -15, 30, 20, 30)
+process_material = SubResource("ShaderMaterial_process")
+draw_pass_1 = SubResource("QuadMesh_streak")
+
+[node name="HeightfieldCollision" type="GPUParticlesCollisionHeightField3D" parent="." unique_id=1258783874]
+cull_mask = 1
+size = Vector3(30, 20, 30)
+
+[node name="SplashParticles" type="GPUParticles3D" parent="." unique_id=533954332]
+emitting = false
+amount = 1000
+lifetime = 0.3
+process_material = SubResource("ParticleProcessMaterial_splash")
+draw_pass_1 = SubResource("QuadMesh_splash")

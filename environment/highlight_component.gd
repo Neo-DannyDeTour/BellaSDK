@@ -103,7 +103,7 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 
-	print("HighlightComponent: Initializing component.")
+	#print("HighlightComponent: Initializing component.")
 
 	if not is_instance_valid(interact_component):
 		var parent: Node = get_parent()
@@ -389,7 +389,7 @@ func _on_outline_duration_changed(duration: float) -> void:
 
 ## Applies active outline parameters directly to the [ShaderMaterial].
 func _apply_shader_parameters() -> void:
-	print("HighlightComponent: Applying outline shader uniforms.")
+	#print("HighlightComponent: Applying outline shader uniforms.")
 	if not is_instance_valid(outline_material):
 		return
 

@@ -64,6 +64,7 @@ parameters = Array[ExtResource("4_yo2dh")]([SubResource("Resource_adqv5"), SubRe
 material_override = SubResource("ShaderMaterial_ds3o1")
 cast_shadow = 0
 custom_aabb = AABB(-250, -20, -250, 500, 40, 500)
+gi_mode = 0
 amount = 1600
 lifetime = 6.0
 process_material = ExtResource("7_vu4gk")

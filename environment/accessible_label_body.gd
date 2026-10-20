@@ -120,7 +120,7 @@ func _resolve_collision_shape() -> CollisionShape3D:
 
 ## Resolves and returns the child [Label3D] using cached reference or [NodeQuery].
 func _get_label_node() -> Label3D:
-	print("AccessibleLabel: Resolving [Label3D] reference.")
+	#print("AccessibleLabel: Resolving [Label3D] reference.")
 	if not is_instance_valid(_label_node):
 		_label_node = _resolve_label_node()
 	return _label_node
@@ -128,7 +128,7 @@ func _get_label_node() -> Label3D:
 
 ## Resolves and returns the child [CollisionShape3D] using cache or [NodeQuery].
 func _get_collision_shape() -> CollisionShape3D:
-	print("AccessibleLabel: Resolving [CollisionShape3D] reference.")
+	#print("AccessibleLabel: Resolving [CollisionShape3D] reference.")
 	if not is_instance_valid(_col_shape):
 		_col_shape = _resolve_collision_shape()
 	return _col_shape
@@ -136,7 +136,7 @@ func _get_collision_shape() -> CollisionShape3D:
 
 ## Resolves and returns the interaction component using cached reference.
 func _get_interact_component() -> Node:
-	print("AccessibleLabel: Resolving interaction component reference.")
+	#print("AccessibleLabel: Resolving interaction component reference.")
 	if not is_instance_valid(_interact_comp):
 		_interact_comp = _resolve_interact_component()
 	return _interact_comp
@@ -144,7 +144,7 @@ func _get_interact_component() -> Node:
 
 ## Locates the interaction component child node without string path lookups.
 func _resolve_interact_component() -> Node:
-	print("AccessibleLabel: Resolving child interaction component.")
+	#print("AccessibleLabel: Resolving child interaction component.")
 	for child: Node in get_children():
 		if child.name == &"InteractComponent" or child.is_class("InteractComponent"):
 			return child

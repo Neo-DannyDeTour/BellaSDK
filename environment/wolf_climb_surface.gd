@@ -71,7 +71,7 @@ func update_surface_geometry() -> void:
 		return
 
 	_is_updating_geometry = true
-	print("WolfClimbSurface: update_surface_geometry() adjusting shapes.")
+	#print("WolfClimbSurface: update_surface_geometry() adjusting shapes.")
 
 	var current_scale: Vector3 = scale
 	if (
@@ -144,7 +144,7 @@ func _notification(what: int) -> void:
 
 ## Registers groups, connects triggers, and synchronizes dimensions.
 func _ready() -> void:
-	print("WolfClimbSurface: Initializing climbable surface on: ", name)
+	#print("WolfClimbSurface: Initializing climbable surface on: ", name)
 	add_to_group(GROUP_WOLF_CLIMBABLE)
 	set_notify_transform(true)
 	update_surface_geometry()
@@ -238,8 +238,7 @@ func _on_detection_area_body_exited(body: Node3D) -> void:
 	if not (raw_sm is StateMachine and is_instance_valid(raw_sm)):
 		return
 
-	@warning_ignore("unsafe_cast")
-	var sm: StateMachine = raw_sm as StateMachine
+	var sm: StateMachine = raw_sm
 	if sm.is_in_state(&"WolfClimb") or sm.is_in_state(&"WolfWallRun"):
 		print("WolfClimbSurface: Player exited surface area. Falling to ground.")
 		sm.transition_to(&"Air")
@@ -283,8 +282,7 @@ func _can_character_climb(character: Node, _current_time: int) -> bool:
 
 	var raw_sm: Variant = character.get(&"state_machine")
 	if raw_sm is StateMachine and is_instance_valid(raw_sm):
-		@warning_ignore("unsafe_cast")
-		var sm: StateMachine = raw_sm as StateMachine
+		var sm: StateMachine = raw_sm
 		if sm.is_in_state(&"WolfClimb") or sm.is_in_state(&"WolfWallRun"):
 			return false
 
@@ -314,8 +312,7 @@ func _attach_player(p: CharacterBody3D, wall_norm: Vector3, force_climb: bool = 
 	if not (raw_sm is StateMachine and is_instance_valid(raw_sm)):
 		return
 
-	@warning_ignore("unsafe_cast")
-	var sm: StateMachine = raw_sm as StateMachine
+	var sm: StateMachine = raw_sm
 
 	if force_climb:
 		print("WolfClimbSurface: Forced climb selected.")
@@ -325,8 +322,7 @@ func _attach_player(p: CharacterBody3D, wall_norm: Vector3, force_climb: bool = 
 	var cam_fwd: Vector3 = -p.global_transform.basis.z.normalized()
 	var raw_cam: Variant = p.get(&"camera_controller")
 	if raw_cam is CameraController and is_instance_valid(raw_cam):
-		@warning_ignore("unsafe_cast")
-		var cam_ctrl: CameraController = raw_cam as CameraController
+		var cam_ctrl: CameraController = raw_cam
 		cam_fwd = cam_ctrl.get_camera_look_dir().normalized()
 
 	var dot_inward: float = cam_fwd.dot(-wall_norm)

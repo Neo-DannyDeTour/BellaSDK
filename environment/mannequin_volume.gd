@@ -296,7 +296,7 @@ func _process_posture_and_walls(
 	climb_xforms: Array[Transform3D],
 	jump_climb_xforms: Array[Transform3D]
 ) -> void:
-	print("Processing posture constraints and resolving wall clearance...")
+	#print("Processing posture constraints and resolving wall clearance...")
 
 	# Crouch Check: Raycast up from crouch height to standing height
 	var ceil_start: Vector3 = global_floor + Vector3(0.0, _crouch_height, 0.0)
