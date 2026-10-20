@@ -15,6 +15,9 @@ var active_config: Dictionary = {}
 ## Tracks whether the options menu diorama preview is currently active.
 var is_diorama_active: bool = false
 
+## Override flag allowing developer or player to completely inhibit the diorama preview.
+var is_diorama_killed: bool = false
+
 
 ## Initializes the central video controller, loads saved settings, and hooks SceneTree events.
 func _ready() -> void:
@@ -207,6 +210,24 @@ func set_diorama_mode(active: bool) -> void:
 	var tree: SceneTree = get_tree()
 	var root_vp: Window = tree.root
 	var diorama_vp: SubViewport = VideoApplier.resolve_diorama_viewport(tree)
+	var scene_name: StringName = (
+		tree.current_scene.name if is_instance_valid(tree.current_scene) else &"Unknown"
+	)
+
+	if active and is_diorama_killed:
+		is_diorama_active = false
+		print("[Pipeline] DIORAMA KILLED: Preview suppressed. Main (", scene_name, ") active.")
+		if is_instance_valid(diorama_vp):
+			_disable_diorama_gi(diorama_vp)
+			diorama_vp.disable_3d = true
+			diorama_vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
+			diorama_vp.process_mode = Node.PROCESS_MODE_DISABLED
+		if is_instance_valid(root_vp):
+			root_vp.disable_3d = false
+		if is_instance_valid(tree.current_scene) and tree.current_scene != diorama_vp:
+			tree.current_scene.process_mode = Node.PROCESS_MODE_INHERIT
+		diorama_mode_changed.emit(false)
+		return
 
 	if is_diorama_active == active and is_instance_valid(diorama_vp):
 		if active:
@@ -214,27 +235,68 @@ func set_diorama_mode(active: bool) -> void:
 		return
 
 	is_diorama_active = active
-	print("GraphicsManager: Switching diorama isolation mode -> ", active)
 
 	if active:
+		print(
+			"[Pipeline] MAIN LEVEL (",
+			scene_name,
+			") FROZEN (process_mode=DISABLED) | DIORAMA ACTIVE (update=WHEN_VISIBLE)"
+		)
 		_suspend_gameplay_gi(tree, diorama_vp)
 		if is_instance_valid(root_vp):
 			root_vp.disable_3d = true
+		if is_instance_valid(tree.current_scene) and tree.current_scene != diorama_vp:
+			tree.current_scene.process_mode = Node.PROCESS_MODE_DISABLED
 		if is_instance_valid(diorama_vp):
 			VideoApplier.configure_diorama_sandbox(diorama_vp)
+			diorama_vp.disable_3d = false
 			diorama_vp.process_mode = Node.PROCESS_MODE_ALWAYS
 			diorama_vp.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
 			VideoApplier.apply_diorama_preview(diorama_vp, active_config)
 	else:
 		if is_instance_valid(diorama_vp):
 			_disable_diorama_gi(diorama_vp)
+			diorama_vp.disable_3d = true
 			diorama_vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
 			diorama_vp.process_mode = Node.PROCESS_MODE_DISABLED
-		if is_instance_valid(root_vp):
-			root_vp.disable_3d = false
-		commit_gameplay_pipeline()
+			var dio_cams: Array[Node] = diorama_vp.find_children("*", "Camera3D", true, false)
+			for c_node: Node in dio_cams:
+				var c: Camera3D = c_node as Camera3D
+				if is_instance_valid(c):
+					c.current = false
+					c.process_mode = Node.PROCESS_MODE_DISABLED
 
+		var menu_open: bool = _is_menu_visible()
+		if menu_open:
+			print(
+				"[Pipeline] DIORAMA SLEEPING | MAIN LEVEL (", scene_name, ") KEPT FROZEN (in menu)"
+			)
+			if is_instance_valid(root_vp):
+				root_vp.disable_3d = true
+			if is_instance_valid(tree.current_scene) and tree.current_scene != diorama_vp:
+				tree.current_scene.process_mode = Node.PROCESS_MODE_DISABLED
+		else:
+			print(
+				"[Pipeline] DIORAMA SLEEPING (update=DISABLED) | MAIN LEVEL (",
+				scene_name,
+				") RESUMED"
+			)
+			if is_instance_valid(root_vp):
+				root_vp.disable_3d = false
+			if is_instance_valid(tree.current_scene) and tree.current_scene != diorama_vp:
+				tree.current_scene.process_mode = Node.PROCESS_MODE_INHERIT
+			commit_gameplay_pipeline()
+
+	_assert_single_sdfgi_invariant()
 	diorama_mode_changed.emit(active)
+
+
+## Sets the diorama kill override switch.
+func set_diorama_killed(killed: bool) -> void:
+	is_diorama_killed = killed
+	print("GraphicsManager: set_diorama_killed -> ", killed)
+	if killed and is_diorama_active:
+		set_diorama_mode(false)
 
 
 ## Configures Variable Rate Shading state on the root gameplay [Viewport].
@@ -257,6 +319,7 @@ func _suspend_gameplay_gi(tree: SceneTree, diorama_vp: SubViewport) -> void:
 
 ## Disables SDFGI and volumetric fog on the diorama environment when sleeping.
 func _disable_diorama_gi(diorama_vp: SubViewport) -> void:
+	diorama_vp.disable_3d = true
 	var dio_w: World3D = diorama_vp.find_world_3d()
 	if is_instance_valid(dio_w) and is_instance_valid(dio_w.environment):
 		dio_w.environment.sdfgi_enabled = false
@@ -270,6 +333,32 @@ func _disable_diorama_gi(diorama_vp: SubViewport) -> void:
 			we.environment.volumetric_fog_enabled = false
 
 
+## Asserts that gameplay SDFGI and diorama SDFGI are never active concurrently.
+func _assert_single_sdfgi_invariant() -> void:
+	var tree: SceneTree = get_tree()
+	if not is_instance_valid(tree) or not is_instance_valid(tree.root):
+		return
+	var diorama_vp: SubViewport = VideoApplier.resolve_diorama_viewport(tree)
+	var diorama_sdfgi: bool = false
+	if is_instance_valid(diorama_vp) and not diorama_vp.disable_3d:
+		var dio_w: World3D = diorama_vp.find_world_3d()
+		if is_instance_valid(dio_w) and is_instance_valid(dio_w.environment):
+			diorama_sdfgi = dio_w.environment.sdfgi_enabled
+
+	var gameplay_sdfgi: bool = false
+	if not tree.root.disable_3d:
+		var target_we: WorldEnvironment = (
+			tree.get_first_node_in_group(&"level_environment") as WorldEnvironment
+		)
+		if is_instance_valid(target_we) and is_instance_valid(target_we.environment):
+			gameplay_sdfgi = target_we.environment.sdfgi_enabled
+
+	assert(
+		not (diorama_sdfgi and gameplay_sdfgi),
+		"GraphicsManager: Concurrent SDFGI invariant violated!"
+	)
+
+
 ## SceneTree observer ensuring newly added gameplay environments, lights, and cameras
 ## inherit parity.
 func _on_node_added(node: Node) -> void:
@@ -280,6 +369,12 @@ func _on_node_added(node: Node) -> void:
 		var we: WorldEnvironment = node as WorldEnvironment
 		if we.is_in_group(&"ignore_global_video_settings") or _is_inside_diorama(we):
 			return
+		var is_level_env: bool = we.is_in_group(&"level_environment")
+		if not is_level_env:
+			var tree: SceneTree = get_tree()
+			var current: Node = tree.current_scene if is_instance_valid(tree) else null
+			if not is_instance_valid(current) or we.get_parent() != current:
+				return
 		print("GraphicsManager: Gameplay WorldEnvironment entered tree -> ", we.name)
 		VideoApplier.apply_to_world_environment(we, active_config)
 		if is_diorama_active and is_instance_valid(we.environment):
@@ -292,7 +387,8 @@ func _on_node_added(node: Node) -> void:
 	elif node is Camera3D:
 		var cam: Camera3D = node as Camera3D
 		var is_dio: bool = _is_inside_diorama(cam)
-		VideoApplier.apply_to_camera(cam, active_config, is_dio)
+		if is_dio or VideoApplier.is_player_camera(cam):
+			VideoApplier.apply_to_camera(cam, active_config, is_dio)
 
 
 ## Returns true if [param node] resides inside the preview diorama [SubViewport].
@@ -300,3 +396,18 @@ func _is_inside_diorama(node: Node) -> bool:
 	if not is_instance_valid(node):
 		return false
 	return node.find_parent("DioramaViewport") != null
+
+
+## Returns true if the main or pause menu is currently present and visible in the tree.
+func _is_menu_visible() -> bool:
+	if not is_inside_tree():
+		return false
+	var tree: SceneTree = get_tree()
+	if not is_instance_valid(tree) or not is_instance_valid(tree.root):
+		return false
+	var menu_nodes: Array[Node] = tree.root.find_children("*", "MainMenu", true, false)
+	for m_node: Node in menu_nodes:
+		var menu: CanvasLayer = m_node as CanvasLayer
+		if is_instance_valid(menu) and menu.visible:
+			return true
+	return false

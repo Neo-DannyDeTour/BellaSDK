@@ -43,7 +43,7 @@ static func get_variant(base_material: Material, variant_key: String) -> Materia
 		base_material.duplicate() if base_material.duplicate() is Material else null
 	)
 	_material_cache[composite_key] = new_inst
-	print("[MaterialCache] Cached new variant [%s]" % composite_key)
+	#print("[MaterialCache] Cached new variant [%s]" % composite_key)
 	return new_inst
 
 

@@ -370,7 +370,7 @@ func _ensure_default_weapon_actions() -> void:
 
 ## Retrieves a boolean setting from the cached config file.
 func get_setting_bool(category: String, key: String, default_value: bool = false) -> bool:
-	print("GlobalSettings: Fetching bool setting -> [", category, "] ", key)
+	#print("GlobalSettings: Fetching bool setting -> [", category, "] ", key)
 	var val: Variant = get_setting(category, key, default_value)
 	if val is bool:
 		return val
@@ -379,7 +379,7 @@ func get_setting_bool(category: String, key: String, default_value: bool = false
 
 ## Retrieves an integer setting from the cached config file.
 func get_setting_int(category: String, key: String, default_value: int = 0) -> int:
-	print("GlobalSettings: Fetching int setting -> [", category, "] ", key)
+	#print("GlobalSettings: Fetching int setting -> [", category, "] ", key)
 	var val: Variant = get_setting(category, key, default_value)
 	if val is int:
 		return val

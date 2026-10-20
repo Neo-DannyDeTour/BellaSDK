@@ -115,6 +115,10 @@ signal rain_vfx_toggled(intensity: float)
 @warning_ignore("unused_signal")
 signal waterfall_vfx_toggled(is_active: bool, wash_intensity: float, clear_progress: float)
 
+## Emitted when the camera surfaces from water or exits a waterfall to play the meniscus wipe.
+@warning_ignore("unused_signal")
+signal water_sheet_wipe_requested(duration: float)
+
 # --------------------------------------
 # CHEAT & DEBUG SIGNALS
 # --------------------------------------

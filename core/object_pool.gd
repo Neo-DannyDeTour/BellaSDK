@@ -65,7 +65,7 @@ func _preallocate_instances() -> void:
 
 ## Instantiates a single node from [member template_scene] and prepares it.
 func _create_instance() -> Node:
-	print("[ObjectPool] Instantiating new entity from template scene.")
+	#print("[ObjectPool] Instantiating new entity from template scene.")
 	if template_scene == null:
 		return null
 

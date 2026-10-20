@@ -18,7 +18,8 @@ var hostile_mask: int = 1
 
 ## Initializes component state and logs registration details to output.
 func _ready() -> void:
-	print("FactionComponent: Initialized on ", get_parent().name, " as faction ", faction)
+	#print("FactionComponent: Initialized on ", get_parent().name, " as faction ", faction)
+	pass
 
 
 ## Returns true if [param other] matches [member hostile_mask] and is active.

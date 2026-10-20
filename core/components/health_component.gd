@@ -29,7 +29,7 @@ var current_health: int = 100
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
-	print("HealthComponent: _ready() - Initializing health component.")
+	#print("HealthComponent: _ready() - Initializing health component.")
 	current_health = max_health
 	add_to_group(&"damageable")
 

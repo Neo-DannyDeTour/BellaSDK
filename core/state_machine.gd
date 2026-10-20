@@ -55,7 +55,7 @@ func _collect_states() -> void:
 			state_node.state_machine = self
 			state_node.transition_requested.connect(_on_transition_requested)
 			_states[state_node.name] = state_node
-			print("StateMachine: Registered state: ", state_node.name)
+			#print("StateMachine: Registered state: ", state_node.name)
 
 
 ## Forwards process frame tick to active [State] update hook.
