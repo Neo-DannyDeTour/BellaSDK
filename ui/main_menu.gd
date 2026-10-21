@@ -235,7 +235,8 @@ func _on_new_game_pressed() -> void:
 		main_buttons.hide()
 
 	var chapter_window: Node = CHAPTER_SCREEN.instantiate()
-	add_child(chapter_window)
+	if is_instance_valid(chapter_window):
+		add_child(chapter_window)
 
 
 ## Prepares the scene tree and GPU state before switching to a level or resuming.

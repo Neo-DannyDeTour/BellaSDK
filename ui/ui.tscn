@@ -80,17 +80,15 @@ shader_parameter/clear_progress = 0.0
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_wwipe"]
 shader = ExtResource("35_wwipe")
 shader_parameter/wipe_progress = 0.0
-shader_parameter/wash_intensity = 0.3110000147725
+shader_parameter/wash_intensity = 0.3
 shader_parameter/visibility = 1.0
-shader_parameter/angular_yaw_delta = -0.68
-shader_parameter/pitch_gravity_mod = 1.08
-shader_parameter/distortion_strength = 0.126000005985
-shader_parameter/meniscus_strength = 0.068
-shader_parameter/chromatic_aberration = 0.028
-shader_parameter/flow_speed = 3.0000000447036004
-shader_parameter/ripple_scale = 3.10000003129252
-shader_parameter/specular_intensity = 0.42
-shader_parameter/water_tint = Color(0.62, 0.86, 0.92, 0.18)
+shader_parameter/distortion_strength = 0.052
+shader_parameter/meniscus_strength = 0.15000000596046
+shader_parameter/chromatic_aberration = 0.10000000475
+shader_parameter/flow_speed = 8.0
+shader_parameter/ripple_scale = 4.8
+shader_parameter/specular_intensity = 0.32
+shader_parameter/water_tint = Color(0.62, 0.86, 0.92, 0.14)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_534t5"]
 shader = ExtResource("9_3hdvn")

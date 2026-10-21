@@ -273,13 +273,28 @@ func _get_diorama_instance() -> Node:
 	return inst
 
 
+## Tracks whether diorama cameras have already been discovered and cached.
+var _cameras_cached: bool = false
+
+
+## Invalidates the cached diorama camera references when diorama scene changes.
+func invalidate_camera_cache() -> void:
+	_cameras_cached = false
+	_diorama_cameras.clear()
+	_active_diorama_camera = null
+
+
 ## Discovers and caches all [Camera3D] instances present in the docked diorama.
 func cache_diorama_cameras() -> void:
+	if _cameras_cached:
+		return
 	print("UI: Caching diorama camera nodes.")
 	_diorama_cameras.clear()
 	var diorama_root: Node = _get_diorama_instance()
 	if not is_instance_valid(diorama_root):
 		return
+
+	_cameras_cached = true
 
 	var mode_val: Variant = GlobalSettings.get_setting(
 		"VisionAssist", "mode", DEFAULT_VISION_ASSIST_MODE

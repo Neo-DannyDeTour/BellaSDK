@@ -339,7 +339,7 @@ func _load_audio_settings() -> void:
 func _apply_and_set(bus_name: String, slider: HSlider, input_box: LineEdit) -> void:
 	var vol: float = GlobalSettings.get_setting_float("Audio", bus_name, DEFAULT_VOLUME)
 	if is_instance_valid(slider):
-		slider.value = vol
+		slider.set_value_no_signal(vol)
 	if is_instance_valid(input_box):
 		input_box.text = str(int(vol))
 	_set_bus_volume(bus_name, vol)

@@ -135,7 +135,9 @@ func _process(delta: float) -> void:
 	if is_instance_valid(vignette) and vignette.material is ShaderMaterial:
 		var target_vignette_opacity: float = 0.8 if is_player_crouching else 0.0
 		var mat: ShaderMaterial = vignette.material as ShaderMaterial
-		var current_opacity: float = mat.get_shader_parameter(&"vignette_opacity") as float
+		var current_opacity: float = type_convert(
+			mat.get_shader_parameter(&"vignette_opacity"), TYPE_FLOAT
+		)
 		var new_opacity: float = lerpf(
 			current_opacity, target_vignette_opacity, delta * ui_lerp_speed
 		)
@@ -472,7 +474,9 @@ func _on_player_zoomed(is_zooming: bool) -> void:
 
 	var mat: ShaderMaterial = fisheye_zoom.material as ShaderMaterial
 	var target_strength: float = 1.0 if is_zooming else 0.0
-	var current_strength: float = mat.get_shader_parameter(&"effect_strength") as float
+	var current_strength: float = type_convert(
+		mat.get_shader_parameter(&"effect_strength"), TYPE_FLOAT
+	)
 
 	fisheye_zoom.show()
 	fisheye_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
@@ -611,7 +615,9 @@ func _on_wolf_vision_toggled(is_active: bool) -> void:
 		wolf_vision_tween.kill()
 
 	var mat: ShaderMaterial = wolf_vision_overlay.material as ShaderMaterial
-	var current_strength: float = mat.get_shader_parameter(&"effect_strength") as float
+	var current_strength: float = type_convert(
+		mat.get_shader_parameter(&"effect_strength"), TYPE_FLOAT
+	)
 	var target_strength: float = 1.0 if is_active else 0.0
 
 	wolf_vision_overlay.show()

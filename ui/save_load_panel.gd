@@ -56,6 +56,7 @@ func _refresh_save_list() -> void:
 
 	for child: Node in save_list_container.get_children():
 		if child != save_slot_template:
+			save_list_container.remove_child(child)
 			child.queue_free()
 
 	if not DirAccess.dir_exists_absolute(SAVES_DIR):
