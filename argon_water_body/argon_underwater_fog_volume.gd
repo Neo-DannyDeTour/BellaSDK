@@ -90,8 +90,8 @@ func _cache_player_reference() -> void:
 	_flashlight_obj = null
 	if is_instance_valid(_player_node):
 		var raw_ctrl: Variant = _player_node.get(PROP_FLASHLIGHT_CTRL)
-		if typeof(raw_ctrl) == TYPE_OBJECT:
-			_flashlight_obj = raw_ctrl as Object
+		if raw_ctrl is Object:
+			_flashlight_obj = raw_ctrl
 
 
 ## Returns true when the player's flashlight controller exists and is currently visible/on.
@@ -100,11 +100,11 @@ func _is_flashlight_visible() -> bool:
 		return false
 	if _flashlight_obj.has_method(METHOD_IS_ON):
 		var res: Variant = _flashlight_obj.call(METHOD_IS_ON)
-		if typeof(res) == TYPE_BOOL:
-			return bool(res)
+		if res is bool:
+			return res == true
 	var vis_val: Variant = _flashlight_obj.get(PROP_VISIBLE)
-	if typeof(vis_val) == TYPE_BOOL:
-		return bool(vis_val)
+	if vis_val is bool:
+		return vis_val == true
 	return false
 
 

@@ -415,9 +415,11 @@ func _detach_stick() -> void:
 	if not is_instance_valid(player):
 		return
 
-	var raw_stick_inst: Variant = pickable_stick_scene.instantiate()
-	var spawned_stick: Node3D = raw_stick_inst if raw_stick_inst is Node3D else null
+	var raw_stick_inst: Node = pickable_stick_scene.instantiate()
+	var spawned_stick: Node3D = raw_stick_inst as Node3D
 	if not is_instance_valid(spawned_stick):
+		if is_instance_valid(raw_stick_inst):
+			raw_stick_inst.queue_free()
 		return
 
 	if is_instance_valid(outline_material) and "outline_material" in spawned_stick:

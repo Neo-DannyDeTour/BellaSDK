@@ -74,6 +74,7 @@ func _ready() -> void:
 	_on_viewport_size_changed()
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
 	sub_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	set_physics_process(false)
 
 	if not is_instance_valid(player_camera):
 		_find_and_assign_player_camera()
@@ -121,13 +122,13 @@ func _configure_portal_environment() -> void:
 	portal_camera.environment = env
 
 
-## Culls portal and volumetric layers from [member portal_camera] mask.
+## Culls portal, volumetric, and diorama preview layers from [member portal_camera] mask.
 func _configure_portal_camera_cull_mask() -> void:
 	print("Portal: Configuring camera cull mask for: ", portal_camera.name)
 	if not is_instance_valid(portal_camera):
 		return
-	# Layer 4 (Portals = 8) and Layer 10 (Volumetrics = 512): ~520
-	portal_camera.cull_mask = portal_camera.cull_mask & ~520
+	# Layer 4 (Portals = 8), Layer 10 (Volumetrics = 512), Layer 11 (Diorama = 1024): ~1544
+	portal_camera.cull_mask = portal_camera.cull_mask & ~1544
 
 
 ## Sets up a [VisibleOnScreenNotifier3D] to cull updates when out of view.
@@ -233,21 +234,31 @@ func _process(_delta: float) -> void:
 
 ## Checks crossed bodies and performs portal teleportation.
 func _physics_process(_delta: float) -> void:
-	var keys: Array = _tracked_bodies.keys()
-	for body: Node3D in keys:
-		if not is_instance_valid(body):
-			_tracked_bodies.erase(body)
+	if _tracked_bodies.is_empty():
+		set_physics_process(false)
+		return
+
+	var to_erase: Array[Node3D] = []
+	for body_ref: Variant in _tracked_bodies:
+		var tracked_body: Node3D = body_ref as Node3D
+		if not is_instance_valid(tracked_body):
+			to_erase.append(tracked_body)
 			continue
 
-		var current_side: float = _get_side(body.global_position)
-		var previous_side: float = _tracked_bodies[body]
+		var current_side: float = _get_side(tracked_body.global_position)
+		var previous_side: float = float(_tracked_bodies[tracked_body])
 
 		if signf(current_side) != signf(previous_side):
-			# print("Portal: Teleporting body: ", body.name)
-			_teleport_body(body)
-			_tracked_bodies.erase(body)
+			_teleport_body(tracked_body)
+			to_erase.append(tracked_body)
 		else:
-			_tracked_bodies[body] = current_side
+			_tracked_bodies[tracked_body] = current_side
+
+	for dead_body: Node3D in to_erase:
+		_tracked_bodies.erase(dead_body)
+
+	if _tracked_bodies.is_empty():
+		set_physics_process(false)
 
 
 ## Calculates which side of portal plane a position resides on.
@@ -282,6 +293,7 @@ func _on_body_entered(body: Node3D) -> void:
 	if body is CharacterBody3D or body is RigidBody3D:
 		print("Portal: Tracking body entered zone: ", body.name)
 		_tracked_bodies[body] = _get_side(body.global_position)
+		set_physics_process(true)
 
 
 ## Deregisters exiting physics bodies from tracking.
@@ -289,6 +301,8 @@ func _on_body_exited(body: Node3D) -> void:
 	if _tracked_bodies.has(body):
 		print("Portal: Body exited zone: ", body.name)
 		_tracked_bodies.erase(body)
+		if _tracked_bodies.is_empty():
+			set_physics_process(false)
 
 
 ## Enables processing when portal bounds enter camera frustum.

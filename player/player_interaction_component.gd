@@ -75,9 +75,16 @@ func initialize(p_player: CharacterBody3D) -> void:
 	player = p_player
 
 	if not is_instance_valid(weapon_inventory) and is_instance_valid(player):
-		weapon_inventory = (
-			player.find_child("WeaponInventoryComponent", true, false) as WeaponInventoryComponent
-		)
+		if "weapon_inventory" in player:
+			var raw_inv: Variant = player.get("weapon_inventory")
+			if raw_inv is WeaponInventoryComponent:
+				weapon_inventory = raw_inv
+		if not is_instance_valid(weapon_inventory):
+			var found_inv: Node = NodeQuery.find_first_child_of_type(
+				player, WeaponInventoryComponent
+			)
+			if found_inv is WeaponInventoryComponent:
+				weapon_inventory = found_inv
 
 	if (
 		is_instance_valid(interaction_scanner)

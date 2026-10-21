@@ -12,7 +12,12 @@ var _console: CanvasLayer = null
 ## Set up test instance before each test method.
 func before_each() -> void:
 	print("TestInGameConsole: Instantiating InGameConsole for test.")
-	_console = CONSOLE_SCENE.instantiate() as CanvasLayer
+	var raw_node: Node = CONSOLE_SCENE.instantiate()
+	_console = raw_node as CanvasLayer
+	if not is_instance_valid(_console):
+		if is_instance_valid(raw_node):
+			raw_node.queue_free()
+		return
 	add_child_autofree(_console)
 
 

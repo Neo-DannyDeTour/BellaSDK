@@ -198,15 +198,22 @@ func _resolve_health_node(body: Node3D) -> HealthComponent:
 			var typed_comp: HealthComponent = comp
 			return typed_comp
 
+	var direct_path_comp: Node = body.get_node_or_null("Components/HealthComponent")
+	if direct_path_comp is HealthComponent:
+		var typed_path: HealthComponent = direct_path_comp
+		return typed_path
+
 	var child_comp: Node = NodeQuery.find_first_child_of_type(body, HealthComponent)
 	if child_comp is HealthComponent:
 		var typed_child: HealthComponent = child_comp
 		return typed_child
 
-	var found: Node = body.find_child("*HealthComponent*", true, false)
-	if found is HealthComponent:
-		var typed_found: HealthComponent = found
-		return typed_found
+	var comp_folder: Node = body.get_node_or_null("Components")
+	if is_instance_valid(comp_folder):
+		var folder_comp: Node = NodeQuery.find_first_child_of_type(comp_folder, HealthComponent)
+		if folder_comp is HealthComponent:
+			var typed_folder: HealthComponent = folder_comp
+			return typed_folder
 
 	return null
 

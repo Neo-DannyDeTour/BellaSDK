@@ -171,6 +171,13 @@ func _ready() -> void:
 	if not is_instance_valid(ui_controller):
 		ui_controller = get_node_or_null("UI") as UIController
 
+	if is_instance_valid(system_menu):
+		system_menu.process_mode = Node.PROCESS_MODE_ALWAYS
+	if is_instance_valid(ui_controller):
+		ui_controller.process_mode = Node.PROCESS_MODE_ALWAYS
+	if is_instance_valid(in_game_console):
+		in_game_console.process_mode = Node.PROCESS_MODE_ALWAYS
+
 	if is_instance_valid(locomotion_component):
 		locomotion_component.initialize(self)
 	if is_instance_valid(interaction_component):

@@ -1,63 +1,72 @@
-## Handles aquatic locomotion, buoyancy, and underwater VFX in [StateSwim].
 class_name StateSwim
 extends PlayerState
+## Handles aquatic locomotion, wave-locked buoyancy, diving, and oxygen depletion.
 
-## Constant vertical velocity applied when head is submerged and idle.
-const SINK_SPEED: float = -1.8
-
-## Constant vertical velocity applied when plunging into water before buoyancy normalizes.
-const PLUNGE_SPEED: float = -5.0
-
-## Interval in seconds between consecutive drowning damage ticks once oxygen depletes.
+## Constant downward velocity applied when completely submerged and idle.
+const SINK_SPEED: float = -1.6
+## Constant downward velocity applied upon initial water plunge.
+const PLUNGE_SPEED: float = -4.5
+## Upward swim speed applied when pressing jump while head is submerged.
+const SWIM_UP_SPEED: float = 3.8
+## Downward dive speed applied when pressing crouch or pitching down.
+const SWIM_DOWN_SPEED: float = -3.2
+## Vertical spring stiffness locking chest elevation to wave height while treading.
+const SURFACE_SPRING_STIFFNESS: float = 5.5
+## Maximum vertical clamping speed for wave-following spring bobbing.
+const MAX_SURFACE_BOB_SPEED: float = 3.2
+## Interval in seconds between consecutive drowning damage ticks.
 const DROWN_TICK_INTERVAL: float = 0.5
-
-## Amount of damage dealt to player health per drowning damage tick.
+## Amount of health damage dealt per drowning tick.
 const DROWN_DAMAGE_PER_TICK: int = 25
+## Eye offset above player origin in meters.
+const EYE_HEIGHT_OFFSET: float = 1.65
+## Chest offset above player origin in meters.
+const CHEST_HEIGHT_OFFSET: float = 0.95
+## Distance above surface camera must clear to exit submersion hysteresis.
+const SURFACE_EXIT_HYSTERESIS: float = 0.18
+## Minimum vertical speed required to trigger exit splash sound when surfacing.
+const MIN_SPLASH_EXIT_SPEED: float = 1.8
 
-## Maximum duration in seconds the player can remain submerged before drowning.
+## Method name for querying wave height on active water body.
+const METHOD_GET_WAVE_HEIGHT: StringName = &"get_wave_height_at_pos"
+## Method name for triggering spatial water exit sound.
+const METHOD_PLAY_SPLASH: StringName = &"play_splash_sound"
+
+## Maximum submerged duration in seconds before oxygen runs out.
 @export var max_swim_duration: float = 10.0
 
-## Tracks if the player's camera viewpoint is currently below water surface.
+## Tracks if player viewpoint is submerged beneath wave crests.
 var head_in_water: bool = false
-
-## Tracks if the player's chest is currently below water surface.
+## Tracks if player chest is submerged beneath wave crests.
 var chest_in_water: bool = false
-
-## Stores the previous frame's [member head_in_water] state to detect surface breaks.
+## Stores previous frame submersion state to detect surface crossings.
 var was_head_in_water: bool = false
-
-## Flag indicating if player initiated water jump, suppressing buoyancy.
+## Flag indicating water jump was performed, suppressing buoyancy damping.
 var just_water_jumped: bool = false
-
-## Accumulates elapsed time while submerged to determine when oxygen depletes.
+## Elapsed time in seconds while head remains submerged.
 var oxygen_timer: float = 0.0
-
-## Accumulates elapsed time between drowning damage ticks once out of oxygen.
+## Elapsed time in seconds between consecutive drowning damage ticks.
 var drown_tick_timer: float = 0.0
-
-## Tracks if infinite swim mode is enabled via accessibility options.
+## Accessibility toggle bypassing oxygen depletion.
 var is_infinite_swim: bool = false
 
-## Cached point query parameter to eliminate per-frame heap allocations.
 var _point_query: PhysicsPointQueryParameters3D = null
 
 
-## Initializes query parameters and connects to accessibility event bus.
+## Initializes fallback point query and binds accessibility toggle.
 func _ready() -> void:
-	print("StateSwim: _ready() called. Binding event bus listeners.")
 	_point_query = PhysicsPointQueryParameters3D.new()
 	_point_query.collide_with_areas = true
 	_point_query.collide_with_bodies = false
-	_point_query.collision_mask = CollisionLayers.MASK_ENVIRONMENT
+	_point_query.collision_mask = 6
 
 	is_infinite_swim = GlobalSettings.get_setting_bool("Accessibility", "infinite_swim", false)
 	if not Events.infinite_swim_toggled.is_connected(_on_infinite_swim_toggled):
 		Events.infinite_swim_toggled.connect(_on_infinite_swim_toggled)
 
 
-## Configures water collisions and resets oxygen and buoyancy timers.
+## Enforces standing collision shape, resets submersion flags, and zeroes oxygen timer.
 func enter(_msg: Dictionary = {}) -> void:
-	print("StateSwim: enter() called. Setting up water physics.")
 	is_infinite_swim = GlobalSettings.get_setting_bool("Accessibility", "infinite_swim", false)
 
 	var loco: PlayerLocomotionComponent = _get_locomotion()
@@ -73,15 +82,9 @@ func enter(_msg: Dictionary = {}) -> void:
 	drown_tick_timer = 0.0
 
 
-## Restores camera roll, halts oxygen timers, and cleans up water screen VFX.
+## Resets camera roll, stops HUD oxygen timer, and restores flashlight base energy.
 func exit() -> void:
-	print("StateSwim: exit() called. Cleaning up water state.")
 	if head_in_water:
-		var env: PlayerEnvironmentComponent = _get_environment()
-		var vfx: Node = env.vfx_manager if is_instance_valid(env) else null
-		if is_instance_valid(vfx) and vfx.has_method(&"trigger_surface_wipe"):
-			vfx.call(&"trigger_surface_wipe")
-
 		_update_flashlight_underwater(false, 1.0)
 		Events.oxygen_timer_stopped.emit()
 
@@ -94,18 +97,17 @@ func exit() -> void:
 	var cam_ctrl: Node = _get_camera_controller()
 	if is_instance_valid(cam_ctrl):
 		var raw_eyes: Variant = cam_ctrl.get(&"eyes")
-		var eyes: Node3D = raw_eyes if raw_eyes is Node3D else null
-		if is_instance_valid(eyes):
+		if raw_eyes is Node3D:
+			var eyes: Node3D = raw_eyes
 			eyes.rotation.z = 0.0
 
 
-## Evaluates water depth, applies swim velocity, and checks transitions.
+## Calculates water wave depth, applies fluid forces, and evaluates transitions.
 func physics_update(delta: float) -> void:
-	print("StateSwim: physics_update() processing aquatic tick.")
 	_calculate_water_depth()
 
 	var input_dir: Vector2 = GestureInputManager.get_vector(
-		&"left", &"right", &"forward", &"backward"
+		ACTION_LEFT, ACTION_RIGHT, ACTION_FORWARD, ACTION_BACKWARD
 	)
 
 	_apply_swim_velocity(delta, input_dir)
@@ -116,21 +118,18 @@ func physics_update(delta: float) -> void:
 	_check_transitions()
 
 
-## Updates accessibility infinite swim setting and adjusts oxygen countdown.
+## Updates infinite swim state and syncs HUD oxygen bar countdown.
 func _on_infinite_swim_toggled(enabled: bool) -> void:
-	print("StateSwim: Infinite swim mode updated -> ", enabled)
 	is_infinite_swim = enabled
 	oxygen_timer = 0.0
 	drown_tick_timer = 0.0
 
 	if head_in_water and not is_infinite_swim:
-		print("StateSwim: Resumed oxygen countdown while submerged.")
 		Events.oxygen_timer_started.emit(max_swim_duration)
 
 
-## Tracks submerged duration and applies recurring drowning damage ticks.
+## Accumulates oxygen timer while head is submerged and executes damage ticks.
 func _process_drowning(delta: float) -> void:
-	print("StateSwim: _process_drowning() evaluating submerged oxygen timer.")
 	if is_infinite_swim or not head_in_water:
 		oxygen_timer = 0.0
 		drown_tick_timer = 0.0
@@ -146,11 +145,9 @@ func _process_drowning(delta: float) -> void:
 		_apply_drowning_damage()
 
 
-## Resolves player health component and applies drowning damage tick.
+## Resolves player health component and applies drowning damage.
 func _apply_drowning_damage() -> void:
-	print("StateSwim: Applying drowning damage tick.")
 	var health_comp: HealthComponent = null
-
 	var health_val: Variant = player.get(&"health_component")
 	if health_val is HealthComponent:
 		health_comp = health_val
@@ -166,47 +163,58 @@ func _apply_drowning_damage() -> void:
 		health_comp.take_damage(DROWN_DAMAGE_PER_TICK)
 
 
-## Performs zero-allocation point queries to check head and chest submersion.
+## Evaluates head and chest submersion using wave height from active WaterBody.
 func _calculate_water_depth() -> void:
-	print("StateSwim: _calculate_water_depth() polling water body areas.")
 	was_head_in_water = head_in_water
-	head_in_water = false
-	chest_in_water = false
 
-	var space_state: PhysicsDirectSpaceState3D = player.get_world_3d().direct_space_state
+	var env: PlayerEnvironmentComponent = _get_environment()
+	var water_node: Node3D = env.current_water_node if is_instance_valid(env) else null
 	var cam: Camera3D = _get_camera()
-	if space_state == null or _point_query == null or not is_instance_valid(cam):
-		return
+	var cam_pos: Vector3 = (
+		cam.global_position
+		if is_instance_valid(cam)
+		else (player.global_position + Vector3(0.0, EYE_HEIGHT_OFFSET, 0.0))
+	)
 
-	var cam_pos: Vector3 = cam.global_position
+	if is_instance_valid(water_node) and water_node.has_method(METHOD_GET_WAVE_HEIGHT):
+		var raw_surf_y: Variant = water_node.call(METHOD_GET_WAVE_HEIGHT, cam_pos)
+		var surf_y: float = raw_surf_y if raw_surf_y is float else 0.0
+		var chest_y: float = player.global_position.y + CHEST_HEIGHT_OFFSET
 
-	_point_query.position = cam_pos - Vector3(0.0, 0.2, 0.0)
-	var head_results: Array[Dictionary] = space_state.intersect_point(_point_query, 4)
-	for result: Dictionary in head_results:
-		var collider: Object = result.get(&"collider")
-		if collider is Area3D and (collider as Area3D).is_in_group(&"water_area"):
-			head_in_water = true
-			break
+		if head_in_water:
+			head_in_water = cam_pos.y < (surf_y + SURFACE_EXIT_HYSTERESIS)
+		else:
+			head_in_water = cam_pos.y < surf_y
 
-	_point_query.position = cam_pos - Vector3(0.0, 1.0, 0.0)
-	var chest_results: Array[Dictionary] = space_state.intersect_point(_point_query, 4)
-	for result: Dictionary in chest_results:
-		var collider: Object = result.get(&"collider")
-		if collider is Area3D and (collider as Area3D).is_in_group(&"water_area"):
-			chest_in_water = true
-			break
+		chest_in_water = chest_y < surf_y
+	else:
+		_calculate_water_depth_fallback(cam_pos)
 
 	if head_in_water and not was_head_in_water:
-		print("StateSwim: Head submerged. Showing swim debuff HUD.")
 		Events.oxygen_timer_started.emit(max_swim_duration)
 	elif was_head_in_water and not head_in_water:
-		print("StateSwim: Head surfaced. Hiding swim debuff HUD.")
 		Events.oxygen_timer_stopped.emit()
 
 
-## Computes horizontal swim velocity, vertical buoyancy, and water jumps.
+## Fallback point query when active water node does not expose wave evaluation.
+func _calculate_water_depth_fallback(cam_pos: Vector3) -> void:
+	var space_state: PhysicsDirectSpaceState3D = player.get_world_3d().direct_space_state
+	if space_state == null or _point_query == null:
+		head_in_water = false
+		chest_in_water = false
+		return
+
+	_point_query.position = cam_pos - Vector3(0.0, 0.15, 0.0)
+	var head_results: Array[Dictionary] = space_state.intersect_point(_point_query, 2)
+	head_in_water = not head_results.is_empty()
+
+	_point_query.position = player.global_position + Vector3(0.0, CHEST_HEIGHT_OFFSET, 0.0)
+	var chest_results: Array[Dictionary] = space_state.intersect_point(_point_query, 2)
+	chest_in_water = not chest_results.is_empty()
+
+
+## Computes horizontal swimming, wave-locked surface bobbing, and diving motion.
 func _apply_swim_velocity(delta: float, input_dir: Vector2) -> void:
-	print("StateSwim: _apply_swim_velocity() applying fluid forces.")
 	var loco: PlayerLocomotionComponent = _get_locomotion()
 	var cam: Camera3D = _get_camera()
 	if not is_instance_valid(loco) or not is_instance_valid(cam):
@@ -222,39 +230,58 @@ func _apply_swim_velocity(delta: float, input_dir: Vector2) -> void:
 	var actively_swimming_vertical: bool = false
 	just_water_jumped = false
 
-	if GestureInputManager.is_action_just_pressed(&"jump") and not head_in_water:
+	# Ledge Vaulting or Shallow Water Exit Jump
+	if GestureInputManager.is_action_just_pressed(ACTION_JUMP) and not head_in_water:
 		var env: PlayerEnvironmentComponent = _get_environment()
 		var vault_ctrl: Node = env.vault_controller if is_instance_valid(env) else null
 		if is_instance_valid(vault_ctrl):
 			vault_ctrl.call(&"process_vault_scan")
 			if vault_ctrl.get(&"can_vault_current_ledge") == true:
 				if vault_ctrl.call(&"try_vault", loco.crouching) == true:
-					print("StateSwim: Vault successful. Transitioning to Vault.")
 					actively_swimming_vertical = true
 					just_water_jumped = true
 					state_machine.transition_to(&"Vault")
 					return
 
 		if player.is_on_floor() and not chest_in_water:
-			print("StateSwim: Shallow water jump. Transitioning to Air.")
 			target_velocity.y = 4.5
 			actively_swimming_vertical = true
 			just_water_jumped = true
 			state_machine.transition_to(&"Air")
 			return
 
-	if GestureInputManager.is_action_pressed(&"jump") and head_in_water:
-		target_velocity.y = loco.swim_up_speed
+	# Submerged Swimming: Up/Down Control
+	if GestureInputManager.is_action_pressed(ACTION_JUMP) and head_in_water:
+		target_velocity.y = SWIM_UP_SPEED
 		actively_swimming_vertical = true
-	elif GestureInputManager.is_action_pressed(&"crouch") and (head_in_water or chest_in_water):
-		target_velocity.y = -loco.swim_up_speed
+	elif GestureInputManager.is_action_pressed(ACTION_CROUCH):
+		target_velocity.y = SWIM_DOWN_SPEED
+		actively_swimming_vertical = true
+	elif input_dir.y < -0.1 and swim_dir.y < -0.32:
+		target_velocity.y = swim_dir.y * loco.swimming_speed
 		actively_swimming_vertical = true
 
+	# Surface Treading & Wave Bobbing
 	if not actively_swimming_vertical:
 		if head_in_water:
 			target_velocity.y = SINK_SPEED
 		elif chest_in_water:
-			target_velocity.y = 0.0
+			var env: PlayerEnvironmentComponent = _get_environment()
+			var water_node: Node3D = env.current_water_node if is_instance_valid(env) else null
+			if is_instance_valid(water_node) and water_node.has_method(METHOD_GET_WAVE_HEIGHT):
+				var raw_surf: Variant = water_node.call(
+					METHOD_GET_WAVE_HEIGHT, player.global_position
+				)
+				var surf_y: float = raw_surf if raw_surf is float else 0.0
+				var desired_chest_y: float = surf_y - 0.25
+				var actual_chest_y: float = player.global_position.y + CHEST_HEIGHT_OFFSET
+				var displacement: float = desired_chest_y - actual_chest_y
+				var spring_force: float = displacement * SURFACE_SPRING_STIFFNESS
+				target_velocity.y = clampf(
+					spring_force, -MAX_SURFACE_BOB_SPEED, MAX_SURFACE_BOB_SPEED
+				)
+			else:
+				target_velocity.y = 0.0
 		else:
 			if player.velocity.y < -1.0:
 				target_velocity.y = player.velocity.y
@@ -269,12 +296,11 @@ func _apply_swim_velocity(delta: float, input_dir: Vector2) -> void:
 	player.velocity.z = current_xz.y
 
 	if not just_water_jumped:
-		player.velocity.y = MathUtils.damp(player.velocity.y, target_velocity.y, 4.0, delta)
+		player.velocity.y = MathUtils.damp(player.velocity.y, target_velocity.y, 5.0, delta)
 
 
-## Manages procedural camera banking during strafing and triggers splash VFX.
+## Applies procedural camera strafe banking and boosts flashlight intensity.
 func _handle_camera_and_vfx(delta: float, input_dir: Vector2) -> void:
-	print("StateSwim: _handle_camera_and_vfx() updating visual effects.")
 	var target_tilt: float = 0.0
 	var loco: PlayerLocomotionComponent = _get_locomotion()
 	var cam_ctrl: Node = _get_camera_controller()
@@ -301,26 +327,17 @@ func _handle_camera_and_vfx(delta: float, input_dir: Vector2) -> void:
 
 	_update_flashlight_underwater(head_in_water, delta)
 
-	var env: PlayerEnvironmentComponent = _get_environment()
-	var vfx: Node = env.vfx_manager if is_instance_valid(env) else null
-	if is_instance_valid(vfx):
-		if head_in_water and not was_head_in_water:
-			if vfx.has_method(&"set_underwater_state"):
-				vfx.call(&"set_underwater_state", true)
-		elif was_head_in_water and not head_in_water:
-			if vfx.has_method(&"trigger_surface_wipe"):
-				vfx.call(&"trigger_surface_wipe")
-
-			var water_node: Node = env.current_water_node if is_instance_valid(env) else null
-			if is_instance_valid(water_node) and water_node.has_method(&"play_splash_sound"):
-				print("StateSwim: Head broke surface. Triggering splash sound.")
-				var exit_speed: float = maxf(absf(player.velocity.y), 10.0)
-				water_node.call(&"play_splash_sound", player.global_position, exit_speed)
+	if was_head_in_water and not head_in_water:
+		var env: PlayerEnvironmentComponent = _get_environment()
+		var water_node: Node3D = env.current_water_node if is_instance_valid(env) else null
+		var exit_spd: float = absf(player.velocity.y)
+		if is_instance_valid(water_node) and water_node.has_method(METHOD_PLAY_SPLASH):
+			if exit_spd >= MIN_SPLASH_EXIT_SPEED:
+				water_node.call(METHOD_PLAY_SPLASH, player.global_position, exit_spd)
 
 
-## Adjusts flashlight intensity underwater to compensate for light falloff.
+## Boosts flashlight beam energy to 4x baseline when submerged to overcome water murk.
 func _update_flashlight_underwater(is_submerged: bool, delta: float) -> void:
-	print("StateSwim: _update_flashlight_underwater() adjusting beam energy.")
 	var flash_ctrl: Node = null
 	var direct_ctrl: Variant = player.get(&"flashlight_controller")
 	if direct_ctrl is Node:
@@ -344,17 +361,14 @@ func _update_flashlight_underwater(is_submerged: bool, delta: float) -> void:
 			light.light_energy = MathUtils.damp(light.light_energy, target_energy, 4.0, delta)
 
 
-## Evaluates water exit criteria to transition to [StateAir] or [StateGround].
+## Evaluates state transitions to [StateAir] or [StateGround].
 func _check_transitions() -> void:
-	print("StateSwim: _check_transitions() validating environment state.")
 	var env: PlayerEnvironmentComponent = _get_environment()
 	if not is_instance_valid(env) or env.current_water_node == null:
-		print("StateSwim: No active water node. Transitioning to Air.")
 		state_machine.transition_to(&"Air")
 		return
 
 	if player.is_on_floor() and not chest_in_water and not head_in_water:
-		print("StateSwim: Exiting shallow water. Transitioning to Ground.")
 		state_machine.transition_to(&"Ground")
 
 
@@ -364,9 +378,7 @@ func _get_locomotion() -> PlayerLocomotionComponent:
 		return null
 	var val: Variant = player.get(&"locomotion_component")
 	if val is PlayerLocomotionComponent:
-		var comp: PlayerLocomotionComponent = val
-		if is_instance_valid(comp):
-			return comp
+		return val
 	return null
 
 
@@ -376,9 +388,7 @@ func _get_environment() -> PlayerEnvironmentComponent:
 		return null
 	var val: Variant = player.get(&"environment_component")
 	if val is PlayerEnvironmentComponent:
-		var comp: PlayerEnvironmentComponent = val
-		if is_instance_valid(comp):
-			return comp
+		return val
 	return null
 
 
@@ -388,19 +398,15 @@ func _get_camera_controller() -> Node:
 		return null
 	var ctrl: Variant = player.get(&"camera_controller")
 	if ctrl is Node:
-		var node_ctrl: Node = ctrl
-		if is_instance_valid(node_ctrl):
-			return node_ctrl
+		return ctrl
 	return null
 
 
-## Safely retrieves the player [Camera3D] node.
+## Safely retrieves the active player Camera3D node.
 func _get_camera() -> Camera3D:
 	var ctrl: Node = _get_camera_controller()
 	if is_instance_valid(ctrl):
 		var cam: Variant = ctrl.get(&"camera")
 		if cam is Camera3D:
-			var cam_node: Camera3D = cam
-			if is_instance_valid(cam_node):
-				return cam_node
+			return cam
 	return null

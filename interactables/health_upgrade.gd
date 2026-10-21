@@ -115,7 +115,13 @@ func _on_unfocused() -> void:
 func _on_interacted(character: CharacterBody3D) -> void:
 	print("HealthUpgrade: _on_interacted() - Signal received. Searching for HealthComp...")
 
-	var health_comp: Node = character.find_child("HealthComponent", true, false)
+	var health_comp: Node = null
+	if "health_component" in character:
+		var raw_comp: Variant = character.get("health_component")
+		if raw_comp is Node:
+			health_comp = raw_comp
+	if not is_instance_valid(health_comp):
+		health_comp = NodeQuery.find_first_child_of_type(character, HealthComponent)
 
 	if is_instance_valid(health_comp) and health_comp.has_method("increase_max_health"):
 		print("HealthUpgrade: _on_interacted() - Success! Granting ", health_bonus, " max hp.")

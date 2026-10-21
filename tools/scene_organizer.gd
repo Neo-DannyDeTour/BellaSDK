@@ -223,10 +223,17 @@ func _apply_layers(node: Node, physics_layer: int, render_layer: int) -> void:
 
 
 ## Finds or instantiates an identity container [Node3D] under [param parent].
-func _get_or_create_container(parent: Node, container_name: String) -> Node3D:
+func _get_or_create_container(
+	parent: Node, container_name: String, clear_existing: bool = false
+) -> Node3D:
 	var existing: Node = parent.get_node_or_null(container_name)
 	if is_instance_valid(existing) and existing is Node3D:
-		return existing as Node3D
+		var existing_container: Node3D = existing as Node3D
+		if clear_existing:
+			for child: Node in existing_container.get_children():
+				existing_container.remove_child(child)
+				child.queue_free()
+		return existing_container
 
 	var container: Node3D = Node3D.new()
 	container.name = container_name

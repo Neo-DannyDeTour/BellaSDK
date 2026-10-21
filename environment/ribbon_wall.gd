@@ -100,6 +100,12 @@ signal colors_changed(color_a: Color, color_b: Color)
 		alpha_threshold = value
 		_set_shader_param(&"alpha_threshold", value)
 
+## Maximum distance from camera in meters to allow SubViewport rendering updates.
+@export var max_render_distance: float = 35.0:
+	set(value):
+		max_render_distance = maxf(value, 1.0)
+		_max_render_distance_sq = max_render_distance * max_render_distance
+
 ## Visual mesh instance used for the wall surface.
 @onready var _wall_mesh: MeshInstance3D = $WallMesh
 
@@ -124,10 +130,17 @@ var _editor_time: float = 0.0
 ## Frustum visibility notifier gating SubViewport updates at runtime.
 var _visibility_notifier: VisibleOnScreenNotifier3D = null
 
+## Cached squared maximum render distance avoiding runtime sqrt calls.
+var _max_render_distance_sq: float = 1225.0
+
+## Tracks if ribbon wall is currently inside camera frustum.
+var _is_on_screen: bool = false
+
 
 ## Initializes node links, sizes, and flushes shader values.
 func _ready() -> void:
 	print("RibbonWall: Initializing ribbon wall node -> ", name)
+	_max_render_distance_sq = max_render_distance * max_render_distance
 	set_process(Engine.is_editor_hint())
 	_ensure_nodes()
 
@@ -147,25 +160,52 @@ func _ready() -> void:
 		_set_shader_param(&"custom_time", -1.0)
 
 
-## Enables SubViewport rendering when the wall enters the camera frustum.
+## Enables distance checking when the wall enters the camera frustum.
 func _on_screen_entered() -> void:
-	if is_instance_valid(_viewport):
-		_viewport.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
+	_is_on_screen = true
+	if not Engine.is_editor_hint():
+		set_process(true)
+		_update_render_gating()
 
 
 ## Disables SubViewport rendering when the wall leaves the camera frustum.
 func _on_screen_exited() -> void:
-	if is_instance_valid(_viewport):
-		_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	_is_on_screen = false
+	if not Engine.is_editor_hint():
+		set_process(false)
+		if is_instance_valid(_viewport):
+			_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 
 
-## Advances shader time continuously while working inside the editor.
+## Advances shader time in editor or evaluates proximity gating at runtime.
 func _process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		_editor_time += delta * speed
 		_set_shader_param(&"custom_time", _editor_time)
 	else:
-		set_process(false)
+		_update_render_gating()
+
+
+## Evaluates camera proximity to toggle SubViewport between UPDATE_WHEN_VISIBLE and UPDATE_DISABLED.
+func _update_render_gating() -> void:
+	if not is_instance_valid(_viewport):
+		return
+	if not _is_on_screen:
+		if _viewport.render_target_update_mode != SubViewport.UPDATE_DISABLED:
+			_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+		return
+
+	var cam: Camera3D = get_viewport().get_camera_3d() if is_inside_tree() else null
+	if not is_instance_valid(cam):
+		return
+
+	var dist_sq: float = global_position.distance_squared_to(cam.global_position)
+	var should_render: bool = dist_sq <= _max_render_distance_sq
+	var target_mode: SubViewport.UpdateMode = (
+		SubViewport.UPDATE_WHEN_VISIBLE if should_render else SubViewport.UPDATE_DISABLED
+	)
+	if _viewport.render_target_update_mode != target_mode:
+		_viewport.render_target_update_mode = target_mode
 
 
 ## Finds child references safely without deserialization errors.
@@ -200,7 +240,7 @@ func _setup_viewport_texture() -> void:
 	if not is_instance_valid(_viewport) or not is_instance_valid(_surface_mat):
 		return
 
-	_viewport.render_target_update_mode = SubViewport.UPDATE_WHEN_VISIBLE
+	_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
 
 	var vp_tex: ViewportTexture = _viewport.get_texture()
 	_surface_mat.albedo_texture = vp_tex
