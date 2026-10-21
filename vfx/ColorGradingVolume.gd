@@ -210,8 +210,16 @@ var _original_glow_intensity: float = 0.0
 ## Cached original glow bloom value of target [WorldEnvironment].
 var _original_glow_bloom: float = 0.0
 
+## Cached original glow enabled state of target [WorldEnvironment].
+var _original_glow_enabled: bool = false
+
 ## Cached collision shape child node defining volume trigger area.
 var _collision_shape: CollisionShape3D = null
+
+
+## Restores environment settings and stops active tweens upon tree exit.
+func _exit_tree() -> void:
+	reset_to_default()
 
 
 ## Configures player collision masks, caches baseline bloom, and sets up UI.
@@ -230,9 +238,11 @@ func _ready() -> void:
 			body_exited.connect(_on_body_exited)
 
 		if is_instance_valid(target_environment) and target_environment.environment != null:
+			_original_glow_enabled = target_environment.environment.glow_enabled
 			_original_glow_intensity = target_environment.environment.glow_intensity
 			_original_glow_bloom = target_environment.environment.glow_bloom
-			target_environment.environment.glow_enabled = true
+			if volume_bloom_intensity > 0.0:
+				target_environment.environment.glow_enabled = true
 
 	print("ColorGradingVolume3D: Initializing post-processing volume: ", name)
 	_setup_screen_ui()
@@ -492,3 +502,4 @@ func reset_to_default() -> void:
 
 	if is_instance_valid(target_environment) and target_environment.environment != null:
 		target_environment.environment.glow_bloom = _original_glow_bloom
+		target_environment.environment.glow_enabled = _original_glow_enabled

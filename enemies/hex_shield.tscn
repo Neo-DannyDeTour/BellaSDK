@@ -1,0 +1,45 @@
+[gd_scene format=3 uid="uid://brl8iekispks4"]
+
+[ext_resource type="Script" uid="uid://bjhfmxbbohnd5" path="res://enemies/hex_shield.gd" id="1_sh6lr"]
+[ext_resource type="Shader" uid="uid://buy3w7dlqly8c" path="res://vfx/hex_shield.gdshader" id="2_142wb"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_tdfix"]
+render_priority = 0
+shader = ExtResource("2_142wb")
+shader_parameter/base_color = Color(0.05, 0.55, 1, 1)
+shader_parameter/rim_color = Color(0.35, 0.85, 1, 1)
+shader_parameter/hit_color = Color(1, 0.08, 0.04, 1)
+shader_parameter/hex_density = 3.8
+shader_parameter/emission_energy = 3.2
+shader_parameter/corner_radius = 0.08
+shader_parameter/border_wave_reach = 0.16
+shader_parameter/border_wave_freq = 5.5
+shader_parameter/border_wave_speed = 3.2
+shader_parameter/hit_ring_max_radius = 2.2
+shader_parameter/hit_ring_width = 0.18
+shader_parameter/scatter_distance = 2.8
+
+[sub_resource type="QuadMesh" id="QuadMesh_m538p"]
+material = SubResource("ShaderMaterial_tdfix")
+size = Vector2(3, 2)
+subdivide_width = 16
+subdivide_depth = 16
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_142wb"]
+size = Vector3(3, 2, 0.15)
+
+[node name="HexShield" type="StaticBody3D" unique_id=1916583413]
+collision_layer = 16
+collision_mask = 0
+script = ExtResource("1_sh6lr")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=477564866]
+instance_shader_parameters/canvas_size = Vector2(3, 2)
+instance_shader_parameters/hit_local_pos = Vector3(0, 0, 0)
+instance_shader_parameters/hit_progress = 1.0
+instance_shader_parameters/shatter_progress = 0.0
+instance_shader_parameters/shield_size = Vector2(3, 2)
+mesh = SubResource("QuadMesh_m538p")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=608780053]
+shape = SubResource("BoxShape3D_142wb")

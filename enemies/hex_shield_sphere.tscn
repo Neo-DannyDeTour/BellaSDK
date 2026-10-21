@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://3tp5k0a44huq"]
+
+[ext_resource type="Script" uid="uid://bac78203phrrl" path="res://enemies/hex_shield_sphere.gd" id="1_shield"]
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_editor_stub"]
+radius = 0.001
+
+[node name="HexShieldSphere" type="StaticBody3D" unique_id=1732833841]
+collision_layer = 16
+collision_mask = 0
+script = ExtResource("1_shield")
+
+[node name="EditorPlaceholderShape" type="CollisionShape3D" parent="." unique_id=423660978]
+shape = SubResource("SphereShape3D_editor_stub")
+disabled = true
