@@ -12,13 +12,13 @@ const DEFAULT_FPS: int = 60
 const DEFAULT_FSR_MODE: String = "Disabled (Native)"
 
 ## Default anti-aliasing mode label.
-const DEFAULT_AA_MODE: String = "TAA (Smooth)"
+const DEFAULT_AA_MODE: String = "MSAA 4x"
 
 ## Default vertical synchronization mode.
 const DEFAULT_VSYNC: int = DisplayServer.VSYNC_ENABLED
 
 ## Default master quality preset name.
-const DEFAULT_PRESET: String = "High"
+const DEFAULT_PRESET: String = "Ultra"
 
 ## Default tonemapping algorithm label.
 const DEFAULT_TONEMAP: String = "Filmic"
@@ -26,38 +26,38 @@ const DEFAULT_TONEMAP: String = "Filmic"
 ## Default anisotropic filtering level label.
 const DEFAULT_ANISOTROPY: String = "4x"
 
-## Default screen-space ambient occlusion tier ("High" preset default).
-const DEFAULT_SSAO: String = "Medium"
+## Default screen-space ambient occlusion tier ("Ultra" preset default).
+const DEFAULT_SSAO: String = "High"
 
-## Default screen-space indirect lighting tier ("High" preset default).
-const DEFAULT_SSI: String = "Low"
+## Default screen-space indirect lighting tier ("Ultra" preset default).
+const DEFAULT_SSI: String = "High"
 
-## Default screen-space reflections tier ("High" preset default).
-const DEFAULT_SSR: String = "Low"
+## Default screen-space reflections tier ("Ultra" preset default).
+const DEFAULT_SSR: String = "High"
 
-## Default signed distance field global illumination tier ("High" preset default).
-const DEFAULT_SDFGI: String = "Low"
+## Default signed distance field global illumination tier ("Ultra" preset default).
+const DEFAULT_SDFGI: String = "High"
 
-## Default volumetric fog quality tier ("High" preset default).
-const DEFAULT_FOG: String = "Off"
+## Default volumetric fog quality tier ("Ultra" preset default).
+const DEFAULT_FOG: String = "High"
 
-## Default glow/bloom quality tier ("High" preset default).
+## Default glow/bloom quality tier ("Ultra" preset default).
 const DEFAULT_GLOW: String = "High"
 
-## Default shadow quality tier ("High" preset default).
+## Default shadow quality tier ("Ultra" preset default).
 const DEFAULT_SHADOW_QUALITY: String = "High (Smooth)"
 
-## Default dynamic light shadow casting state ("High" preset default).
+## Default dynamic light shadow casting state ("Ultra" preset default).
 const DEFAULT_DYNAMIC_LIGHT_SHADOWS: bool = true
 
-## Default positional shadow filtering tier ("High" preset default).
-const DEFAULT_SHADOW_FILTER: String = "Soft Medium"
+## Default positional shadow filtering tier ("Ultra" preset default).
+const DEFAULT_SHADOW_FILTER: String = "Soft High"
 
-## Default positional light shadow fade distance in meters ("High" preset default).
-const DEFAULT_POSITIONAL_SHADOW_DISTANCE: float = 32.0
+## Default positional light shadow fade distance in meters ("Ultra" preset default).
+const DEFAULT_POSITIONAL_SHADOW_DISTANCE: float = 40.0
 
-## Default directional light shadow max distance in meters ("High" preset default).
-const DEFAULT_DIRECTIONAL_SHADOW_DISTANCE: float = 64.0
+## Default directional light shadow max distance in meters ("Ultra" preset default).
+const DEFAULT_DIRECTIONAL_SHADOW_DISTANCE: float = 80.0
 
 ## Default occlusion culling state.
 const DEFAULT_OCCLUSION_CULLING: bool = true
@@ -74,17 +74,17 @@ const DEFAULT_RESOLUTION_SCALE: float = 1.0
 ## Default tonemapper exposure multiplier.
 const DEFAULT_EXPOSURE: float = 1.0
 
-## Default Depth of Field enabled state ("High" preset default).
-const DEFAULT_DOF: bool = true
+## Default Depth of Field enabled state ("Ultra" preset default).
+const DEFAULT_DOF: bool = false
 
-## Default Depth of Field blur amount when enabled ("High" preset default).
-const DEFAULT_DOF_AMOUNT: float = 0.15
+## Default Depth of Field blur amount when enabled ("Ultra" preset default).
+const DEFAULT_DOF_AMOUNT: float = 0.0
 
-## Default camera motion blur strength ("High" preset default).
-const DEFAULT_MOTION_BLUR: float = 0.50
+## Default camera motion blur strength ("Ultra" preset default).
+const DEFAULT_MOTION_BLUR: float = 0.0
 
-## Default mesh LOD threshold ("High" preset default).
-const DEFAULT_MESH_LOD: float = 4.0
+## Default mesh LOD threshold ("Ultra" preset default).
+const DEFAULT_MESH_LOD: float = 1.0
 
 ## Default color debanding state.
 const DEFAULT_DEBANDING: bool = true
@@ -374,21 +374,21 @@ const PRESETS: Dictionary = {
 		"texture_filter": "Linear Mipmap",
 		"fsr_mode": "Disabled (Native)",
 		"resolution_scale": 1.0,
-		"dof_enabled": true,
-		"dof_amount": 0.15,
-		"motion_blur": 0.75,
+		"dof_enabled": false,
+		"dof_amount": 0.0,
+		"motion_blur": 0.0,
 		"ssao": "High",
-		"ssi": "Medium",
-		"ssr": "Medium",
-		"sdfgi": "Medium",
-		"volumetric_fog": "Medium",
+		"ssi": "High",
+		"ssr": "High",
+		"sdfgi": "High",
+		"volumetric_fog": "High",
 		"glow": "High",
 		"mesh_lod_threshold": 1.0,
 	},
 }
 
 
-## Returns a complete default settings dictionary built from the "High" preset.
+## Returns a complete default settings dictionary built from the "Ultra" preset.
 static func get_default_settings_dict() -> Dictionary:
 	var base: Dictionary = {
 		"display_mode": DEFAULT_DISPLAY,
@@ -407,7 +407,7 @@ static func get_default_settings_dict() -> Dictionary:
 		"renderer": "forward_plus",
 		"gpu_adapter_index": 0,
 	}
-	var high_preset: Dictionary = PRESETS["High"] as Dictionary
-	for key: Variant in high_preset.keys():
-		base[key] = high_preset[key]
+	var ultra_preset: Dictionary = PRESETS["Ultra"] as Dictionary
+	for key: Variant in ultra_preset.keys():
+		base[key] = ultra_preset[key]
 	return base

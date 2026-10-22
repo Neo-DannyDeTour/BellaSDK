@@ -311,6 +311,14 @@ func _physics_process(delta: float) -> void:
 		if is_instance_valid(locomotion_component):
 			locomotion_component.set_physics_active(false)
 		system_menu.process_noclip(delta)
+		if is_instance_valid(camera_controller):
+			var noclip_input: Vector2 = GestureInputManager.get_vector(
+				"left", "right", "forward", "backward"
+			)
+			var is_sprint: bool = GestureInputManager.is_action_pressed("sprint")
+			camera_controller.update_noclip_camera(delta, noclip_input, is_sprint)
+		if is_instance_valid(interaction_component):
+			interaction_component.process_interaction(delta)
 		return
 
 	if is_instance_valid(locomotion_component):

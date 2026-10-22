@@ -17,9 +17,10 @@ extends Node3D
 @export var enable_auto_light: bool = false
 
 ## Component handling raycast detection and interaction prompts.
-@onready var interact_comp: InteractComponent = $InteractComponent
+@onready
+var interact_comp: InteractComponent = get_node_or_null("InteractComponent") as InteractComponent
 ## Optional spotlight illuminating the lock during interaction.
-@onready var puzzle_light: SpotLight3D = $SpotLight3D
+@onready var puzzle_light: SpotLight3D = get_node_or_null("SpotLight3D") as SpotLight3D
 
 ## Active instance of the spawned [MachineLockUI] overlay.
 var active_ui: MachineLockUI

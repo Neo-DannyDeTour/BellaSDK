@@ -125,11 +125,21 @@ static func apply_diorama_preview(diorama_vp: SubViewport, config: Dictionary) -
 	var debanding: bool = _get_bool(config, "debanding", VideoConfig.DEFAULT_DEBANDING)
 	diorama_vp.use_debanding = debanding
 
+	var fsr_key: String = _get_str(config, "fsr_mode", VideoConfig.DEFAULT_FSR_MODE)
+	var res_scale: float = _get_float(
+		config, "resolution_scale", VideoConfig.DEFAULT_RESOLUTION_SCALE
+	)
+	var use_fsr2: bool = fsr_key != "Disabled (Native)"
+	diorama_vp.scaling_3d_mode = (
+		Viewport.SCALING_3D_MODE_FSR2 if use_fsr2 else Viewport.SCALING_3D_MODE_BILINEAR
+	)
+	diorama_vp.scaling_3d_scale = res_scale
+
 	var aa_key: String = _get_str(config, "aa_mode", VideoConfig.DEFAULT_AA_MODE)
 	var aa_dict: Dictionary = _get_dict(VideoConfig.AA_MODES, aa_key)
 	var taa_on: bool = _get_bool(aa_dict, "taa", true)
 	var fxaa_val: int = _get_int(aa_dict, "fxaa", Viewport.SCREEN_SPACE_AA_DISABLED)
-	diorama_vp.use_taa = taa_on
+	diorama_vp.use_taa = (not use_fsr2) and taa_on
 	diorama_vp.screen_space_aa = fxaa_val as Viewport.ScreenSpaceAA
 	diorama_vp.msaa_3d = Viewport.MSAA_DISABLED
 
@@ -378,16 +388,14 @@ static func _apply_gameplay_viewport_properties(
 	)
 
 	var fsr_key: String = _get_str(config, "fsr_mode", VideoConfig.DEFAULT_FSR_MODE)
-	var fsr_scale: float = VideoConfig.FSR_MODES.get(fsr_key, 1.0)
 	var res_scale: float = _get_float(
 		config, "resolution_scale", VideoConfig.DEFAULT_RESOLUTION_SCALE
 	)
-	var active_scale: float = fsr_scale if fsr_scale < 1.0 else res_scale
-	var use_fsr2: bool = active_scale < 1.0
+	var use_fsr2: bool = fsr_key != "Disabled (Native)"
 	main_viewport.scaling_3d_mode = (
 		Viewport.SCALING_3D_MODE_FSR2 if use_fsr2 else Viewport.SCALING_3D_MODE_BILINEAR
 	)
-	main_viewport.scaling_3d_scale = active_scale
+	main_viewport.scaling_3d_scale = res_scale
 
 	var aa_key: String = _get_str(config, "aa_mode", VideoConfig.DEFAULT_AA_MODE)
 	var aa_dict: Dictionary = _get_dict(VideoConfig.AA_MODES, aa_key)
@@ -578,9 +586,7 @@ static func _populate_environment(env: Environment, config: Dictionary, is_previ
 			env.volumetric_fog_density = 0.02
 			env.volumetric_fog_albedo = Color(0.85, 0.9, 0.95)
 	else:
-		# Quality ceiling: only allow fog if level authored density > 0 and didn't disable it
-		var has_level_fog: bool = env.volumetric_fog_enabled and env.volumetric_fog_density > 0.0001
-		env.volumetric_fog_enabled = fog_on and has_level_fog
+		env.volumetric_fog_enabled = fog_on
 
 	var glow_key: String = _get_str(config, "glow", VideoConfig.DEFAULT_GLOW)
 	var glow_dict: Dictionary = _get_dict(VideoConfig.GLOW_MODES, glow_key)

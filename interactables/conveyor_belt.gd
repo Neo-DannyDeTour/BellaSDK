@@ -44,15 +44,19 @@ extends StaticBody3D
 			_update_visuals()
 
 ## The visual mesh representing the belt surface.
-@onready var mesh: MeshInstance3D = $MeshInstance3D
+var mesh: MeshInstance3D = null
 ## The physical bounds of the conveyor platform.
-@onready var collision_shape: CollisionShape3D = $CollisionShape3D
+var collision_shape: CollisionShape3D = null
 ## An editor-only debug arrow indicating flow direction.
-@onready var direction_arrow: Node3D = $DirectionArrow
+var direction_arrow: Node3D = null
 
 
 ## Hides editor helpers and performs initial parameter synchronization.
 func _ready() -> void:
+	mesh = get_node_or_null("MeshInstance3D") as MeshInstance3D
+	collision_shape = get_node_or_null("CollisionShape3D") as CollisionShape3D
+	direction_arrow = get_node_or_null("DirectionArrow") as Node3D
+
 	if not Engine.is_editor_hint():
 		if is_instance_valid(direction_arrow):
 			direction_arrow.hide()
@@ -73,12 +77,6 @@ func _update_physics() -> void:
 	if not is_node_ready():
 		return
 
-	# if not Engine.is_editor_hint():
-	# 	print(
-	# 		"ConveyorBelt: _update_physics() called. Velocity: ",
-	# 		move_direction.normalized() * speed
-	# 	)
-
 	constant_linear_velocity = move_direction.normalized() * speed
 
 
@@ -86,9 +84,6 @@ func _update_physics() -> void:
 func _update_visuals() -> void:
 	if not is_node_ready():
 		return
-
-	# if not Engine.is_editor_hint():
-	# 	print("ConveyorBelt: _update_visuals() called. Speed: ", speed)
 
 	var angle: float = 0.0
 
@@ -98,8 +93,8 @@ func _update_visuals() -> void:
 		angle = deg_to_rad(manual_texture_rotation)
 
 	if is_instance_valid(mesh):
-		mesh.set_instance_shader_parameter("rotation_angle", angle)
-		mesh.set_instance_shader_parameter("scroll_speed", speed)
+		mesh.set_instance_shader_parameter(&"rotation_angle", angle)
+		mesh.set_instance_shader_parameter(&"scroll_speed", speed)
 
 
 ## Rotates debug arrow node to face exact trajectory of current move_direction.
@@ -125,19 +120,16 @@ func _update_size() -> void:
 	if not is_node_ready():
 		return
 
-	# if not Engine.is_editor_hint():
-	# 	print("ConveyorBelt: _update_size() called. Size: ", conveyor_size)
-
 	if is_instance_valid(mesh):
-		if mesh.mesh is BoxMesh:
-			var box_mesh: BoxMesh = mesh.mesh if mesh.mesh is BoxMesh else null
+		var box_mesh: BoxMesh = mesh.mesh as BoxMesh
+		if box_mesh:
 			box_mesh.size = Vector3(conveyor_size.x, 0.1, conveyor_size.y)
-		elif mesh.mesh is PlaneMesh:
-			var plane_mesh: PlaneMesh = mesh.mesh if mesh.mesh is PlaneMesh else null
-			plane_mesh.size = Vector2(conveyor_size.x, conveyor_size.y)
+		else:
+			var plane_mesh: PlaneMesh = mesh.mesh as PlaneMesh
+			if plane_mesh:
+				plane_mesh.size = Vector2(conveyor_size.x, conveyor_size.y)
 
-	if is_instance_valid(collision_shape) and collision_shape.shape is BoxShape3D:
-		var box_shape: BoxShape3D = (
-			collision_shape.shape if collision_shape.shape is BoxShape3D else null
-		)
-		box_shape.size = Vector3(conveyor_size.x, 0.1, conveyor_size.y)
+	if is_instance_valid(collision_shape):
+		var box_shape: BoxShape3D = collision_shape.shape as BoxShape3D
+		if box_shape:
+			box_shape.size = Vector3(conveyor_size.x, 0.1, conveyor_size.y)

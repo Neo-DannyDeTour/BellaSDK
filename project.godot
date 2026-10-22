@@ -48,6 +48,7 @@ AudioPool="*res://core/audio_pool.gd"
 AudioManager="*res://core/audio_manager.gd"
 SceneTransition="*res://core/scene_transition.gd"
 SmokeManager="*uid://cux76orvhr6t8"
+BloodManager="*uid://bbth1832rodw7"
 
 [debug]
 

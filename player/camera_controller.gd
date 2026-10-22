@@ -158,6 +158,27 @@ func update_camera(
 	_update_stair_smoothing(delta, player_velocity)
 
 
+## Updates camera FOV and roll tilt during noclip flight, suppressing headbob.
+## [param delta] Frame delta time in seconds.
+## [param input_dir] Current horizontal locomotion input vector.
+## [param is_sprinting] Sprint locomotion state flag.
+func update_noclip_camera(delta: float, input_dir: Vector2, is_sprinting: bool) -> void:
+	if (
+		GestureInputManager.is_action_just_pressed("zoom")
+		or GestureInputManager.is_action_just_pressed("sprint")
+	):
+		print("CameraController: update_noclip_camera() processing state change.")
+
+	_update_fov(delta, is_sprinting, true, input_dir)
+	_update_tilt(delta, input_dir)
+
+	headbob_offset.y = lerpf(headbob_offset.y, 0.0, delta * lerp_speed)
+	headbob_offset.x = lerpf(headbob_offset.x, 0.0, delta * lerp_speed)
+	if is_instance_valid(eyes):
+		eyes.position.y = headbob_offset.y
+		eyes.position.x = headbob_offset.x
+
+
 ## Calculates FOV goals based on zooming, sprint states, and interpolates camera FOV.
 ## [param delta] Frame delta time in seconds.
 ## [param is_sprinting] Sprint locomotion state flag.
@@ -168,8 +189,12 @@ func _update_fov(delta: float, is_sprinting: bool, is_grounded: bool, input_dir:
 		(is_sprinting and input_dir.length() > 0.1)
 		or (not is_grounded and target_fov == sprint_fov)
 	)
+	var is_zoom_pressed: bool = (
+		(is_instance_valid(GestureInputManager) and GestureInputManager.is_action_pressed("zoom"))
+		or Input.is_action_pressed(&"zoom")
+	)
 
-	if GestureInputManager.is_action_pressed("zoom"):
+	if is_zoom_pressed:
 		target_fov = zoom_fov
 		mouse_sensitivity = mouse_sensitivity_base / 10.0
 		if not is_using_zoom:

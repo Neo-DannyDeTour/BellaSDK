@@ -83,6 +83,9 @@ var _cached_camera_env: Environment = null
 ## Reference to the active developer console instance.
 var _in_game_console: CanvasLayer = null
 
+## Tracks whether sprint is actively held in noclip mode.
+var _is_noclip_sprinting: bool = false
+
 
 ## Lifecycle initialization connecting debug events and instantiating menus.
 func _ready() -> void:
@@ -174,13 +177,19 @@ func _unhandled_input(event: InputEvent) -> void:
 		if mouse_event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			noclip_speed_multiplier = minf(100.0, noclip_speed_multiplier * 1.1)
 			print("SystemMenuController: Noclip speed increased to ", noclip_speed_multiplier)
-			Events.noclip_speed_changed.emit(noclip_speed_multiplier)
+			var effective_speed: float = (
+				noclip_speed_multiplier * (2.0 if _is_noclip_sprinting else 1.0)
+			)
+			Events.noclip_speed_changed.emit(effective_speed)
 			get_viewport().set_input_as_handled()
 			return
 		if mouse_event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
 			noclip_speed_multiplier = maxf(0.1, noclip_speed_multiplier * 0.9)
 			print("SystemMenuController: Noclip speed decreased to ", noclip_speed_multiplier)
-			Events.noclip_speed_changed.emit(noclip_speed_multiplier)
+			var effective_speed: float = (
+				noclip_speed_multiplier * (2.0 if _is_noclip_sprinting else 1.0)
+			)
+			Events.noclip_speed_changed.emit(effective_speed)
 			get_viewport().set_input_as_handled()
 			return
 
@@ -197,6 +206,14 @@ func _is_console_active() -> bool:
 	if not is_instance_valid(_in_game_console):
 		_find_console_reference()
 	return is_instance_valid(_in_game_console) and _in_game_console.visible
+
+
+## Checks if sprint input action is currently held down.
+## Returns [code]true[/code] if sprint action is actively pressed.
+func _is_sprint_active() -> bool:
+	if is_instance_valid(GestureInputManager) and GestureInputManager.is_action_pressed("sprint"):
+		return true
+	return Input.is_action_pressed(&"sprint")
 
 
 # --------------------------------------
@@ -299,7 +316,13 @@ func toggle_noclip() -> void:
 
 	Events.noclip_toggled.emit(flying)
 	if flying:
-		Events.noclip_speed_changed.emit(noclip_speed_multiplier)
+		_is_noclip_sprinting = _is_sprint_active()
+		var effective_speed: float = (
+			noclip_speed_multiplier * (2.0 if _is_noclip_sprinting else 1.0)
+		)
+		Events.noclip_speed_changed.emit(effective_speed)
+	else:
+		_is_noclip_sprinting = false
 	noclip_toggled.emit(flying)
 
 
@@ -308,6 +331,15 @@ func toggle_noclip() -> void:
 func process_noclip(delta: float) -> void:
 	if not flying or not is_instance_valid(player_body):
 		return
+
+	var is_sprint: bool = _is_sprint_active()
+	if is_sprint != _is_noclip_sprinting:
+		_is_noclip_sprinting = is_sprint
+		var effective_speed: float = (
+			noclip_speed_multiplier * (2.0 if _is_noclip_sprinting else 1.0)
+		)
+		print("SystemMenuController: Noclip sprint state changed -> ", _is_noclip_sprinting)
+		Events.noclip_speed_changed.emit(effective_speed)
 
 	var input_dir: Vector2 = GestureInputManager.get_vector("left", "right", "forward", "backward")
 	var basis: Basis = camera.global_transform.basis
@@ -318,20 +350,12 @@ func process_noclip(delta: float) -> void:
 	fly_dir += Vector3.UP * vertical_input
 	fly_dir = fly_dir.normalized()
 
-	var current_speed: float = base_sprinting_speed * noclip_speed_multiplier
+	var current_multiplier: float = noclip_speed_multiplier * (2.0 if _is_noclip_sprinting else 1.0)
+	var current_speed: float = base_sprinting_speed * current_multiplier
 
 	if fly_dir.length() > 0.0:
 		player_body.velocity = fly_dir * current_speed
 	else:
 		player_body.velocity = Vector3.ZERO
-
-	if GestureInputManager.is_action_pressed("left"):
-		var target_tilt: float = deg_to_rad(camera_tilt_amount)
-		eyes.rotation.z = lerpf(eyes.rotation.z, target_tilt, delta * lerp_speed)
-	elif GestureInputManager.is_action_pressed("right"):
-		var target_tilt: float = deg_to_rad(-camera_tilt_amount)
-		eyes.rotation.z = lerpf(eyes.rotation.z, target_tilt, delta * lerp_speed)
-	else:
-		eyes.rotation.z = lerpf(eyes.rotation.z, 0.0, delta * lerp_speed)
 
 	player_body.global_position += player_body.velocity * delta

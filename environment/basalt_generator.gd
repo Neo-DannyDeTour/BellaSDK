@@ -1,7 +1,19 @@
 @tool
 ## Generates a procedural field of basalt columns in the editor with magnet support.
+##
+## Offloads visual rendering to a single [MultiMeshInstance3D] and static collisions
+## to a single [StaticBody3D] with an aggregated [ConcavePolygonShape3D].
 class_name BasaltGenerator
 extends Node3D
+
+## Name assigned to the generated [MultiMeshInstance3D] child node.
+const MULTI_MESH_NAME: StringName = &"BasaltMultiMesh"
+
+## Name assigned to the generated [StaticBody3D] child node.
+const STATIC_BODY_NAME: StringName = &"BasaltStaticBody"
+
+## Name assigned to the generated [CollisionShape3D] child node.
+const COLLISION_SHAPE_NAME: StringName = &"BasaltCollisionShape"
 
 ## Toggles the manual generation of basalt columns.
 @export_group("Generation Trigger")
@@ -31,6 +43,12 @@ extends Node3D
 		_queue_generation()
 
 @export_group("Basalt Properties")
+
+## Material applied to all basalt columns rendered through the MultiMesh.
+@export var material: Material = null:
+	set(value):
+		material = value
+		_update_active_material()
 
 ## The number of sides for each generated basalt column.
 @export var sides: int = 6:
@@ -79,8 +97,10 @@ var generated_group_name: String = "generated_basalt"
 
 ## Tracks whether a new generation pass has been requested.
 var _needs_generation: bool = false
+
 ## The timestamp of the last parameter edit.
 var _last_edit_time: int = 0
+
 ## The delay in milliseconds before generating after an edit to debounce inputs.
 var _debounce_delay_ms: int = 1000
 
@@ -100,47 +120,84 @@ func _queue_generation() -> void:
 		_last_edit_time = Time.get_ticks_msec()
 
 
-## Clears existing geometry and generates positioned basalt column instances.
+## Applies updated material directly to active [MultiMeshInstance3D] if present.
+func _update_active_material() -> void:
+	var multi_node: Node = get_node_or_null(NodePath(MULTI_MESH_NAME))
+	if multi_node is MultiMeshInstance3D:
+		var multi_inst: MultiMeshInstance3D = multi_node as MultiMeshInstance3D
+		multi_inst.material_override = _resolve_material()
+
+
+## Resolves active material, creating a vertex-shaded fallback if unspecified.
+func _resolve_material() -> Material:
+	if is_instance_valid(material):
+		return material
+	var default_mat: StandardMaterial3D = StandardMaterial3D.new()
+	default_mat.shading_mode = BaseMaterial3D.SHADING_MODE_PER_VERTEX
+	return default_mat
+
+
+## Clears legacy and active generated nodes from scene hierarchy.
+func _clear_previous_generation() -> void:
+	for child: Node in get_children():
+		if not is_instance_valid(child):
+			continue
+		var child_name: String = child.name
+		if (
+			child.is_in_group(StringName(generated_group_name))
+			or child_name == MULTI_MESH_NAME
+			or child_name == STATIC_BODY_NAME
+			or child_name.begins_with("BasaltColumn_")
+			or child_name.begins_with("@MeshInstance3D")
+			or child_name.begins_with("@StaticBody3D")
+		):
+			child.queue_free()
+
+
+## Clears existing geometry and generates unified MultiMesh and static trimesh.
 func _generate() -> void:
 	if not is_inside_tree():
 		return
 
-	# 1. Clear previous generation
-	for child: Node in get_children():
-		if child.is_in_group(generated_group_name) or child.name.begins_with("BasaltColumn_"):
-			child.queue_free()
+	_clear_previous_generation()
 
-	# Wait a frame for cleanup (important in tool scripts)
+	# Wait a frame for queue_free cleanup to complete cleanly
 	await get_tree().process_frame
 
 	if not is_inside_tree():
 		return
 
-	# Find magnets as Node3D instances
 	var magnets: Array[Node3D] = []
 	for child: Node in get_children():
 		if child is Node3D and "push_force" in child and "effect_radius" in child:
 			magnets.append(child as Node3D)
 
 	var placed_positions: Array[Vector2] = []
+	var column_transforms: Array[Transform3D] = []
+	var max_attempts: int = 50
 
-	# 2. Generate new columns
+	var base_mesh: CylinderMesh = CylinderMesh.new()
+	base_mesh.radial_segments = maxi(4, sides)
+	base_mesh.rings = rings
+	base_mesh.bottom_radius = column_radius
+	base_mesh.top_radius = column_radius
+	base_mesh.height = 1.0
+
 	for i: int in range(amount):
 		var valid_position: bool = false
 		var col_position: Vector3 = Vector3.ZERO
 		var attempts: int = 0
-		var max_attempts: int = 50
 
 		while not valid_position and attempts < max_attempts:
 			attempts += 1
-			var x_pos: float = randf_range(-field_width / 2.0, field_width / 2.0)
-			var z_pos: float = randf_range(-field_depth / 2.0, field_depth / 2.0)
+			var x_pos: float = randf_range(-field_width * 0.5, field_width * 0.5)
+			var z_pos: float = randf_range(-field_depth * 0.5, field_depth * 0.5)
 
 			x_pos += randf_range(-chaos, chaos)
 			z_pos += randf_range(-chaos, chaos)
 
-			var max_x: float = max(0.0, (field_width / 2.0) - column_radius)
-			var max_z: float = max(0.0, (field_depth / 2.0) - column_radius)
+			var max_x: float = maxf(0.0, (field_width * 0.5) - column_radius)
+			var max_z: float = maxf(0.0, (field_depth * 0.5) - column_radius)
 
 			x_pos = clampf(x_pos, -max_x, max_x)
 			z_pos = clampf(z_pos, -max_z, max_z)
@@ -161,25 +218,15 @@ func _generate() -> void:
 		if not valid_position:
 			continue
 
-		var column: MeshInstance3D = MeshInstance3D.new()
-		column.gi_mode = GeometryInstance3D.GI_MODE_DISABLED
-		var mesh: CylinderMesh = CylinderMesh.new()
-
-		mesh.radial_segments = max(4, sides)
-		mesh.rings = int(rings)
-		mesh.bottom_radius = column_radius
-		mesh.top_radius = column_radius
-
 		var final_height: float = base_height
 		var col_global_pos: Vector3 = to_global(col_position)
 
-		# Apply Magnets
 		for magnet: Node3D in magnets:
 			if not is_instance_valid(magnet):
 				continue
 
-			var magnet_radius: float = magnet.get("effect_radius")
-			var magnet_push: float = magnet.get("push_force")
+			var magnet_radius: float = float(magnet.get("effect_radius"))
+			var magnet_push: float = float(magnet.get("push_force"))
 			var magnet_pos: Vector3 = magnet.global_position
 
 			var dist_sq: float = Vector2(col_global_pos.x, col_global_pos.z).distance_squared_to(
@@ -193,35 +240,74 @@ func _generate() -> void:
 				influence = smoothstep(0.0, 1.0, influence)
 				final_height += magnet_push * influence
 
-		mesh.height = max(0.1, final_height)
-		column.mesh = mesh
-		column.position = Vector3(col_position.x, mesh.height / 2.0, col_position.z)
+		var clamped_height: float = maxf(0.1, final_height)
+		var rot_euler: Vector3 = Vector3(
+			randf_range(-chaos * 0.2, chaos * 0.2),
+			randf_range(-chaos, chaos),
+			randf_range(-chaos * 0.2, chaos * 0.2)
+		)
+		var rot_basis: Basis = Basis.from_euler(rot_euler)
+		var scale_vec: Vector3 = Vector3(1.0, clamped_height, 1.0)
+		var col_basis: Basis = rot_basis.scaled(scale_vec)
+		var col_origin: Vector3 = Vector3(col_position.x, clamped_height * 0.5, col_position.z)
 
-		column.rotation.y = randf_range(-chaos, chaos)
-		column.rotation.x = randf_range(-chaos * 0.2, chaos * 0.2)
-		column.rotation.z = randf_range(-chaos * 0.2, chaos * 0.2)
+		column_transforms.append(Transform3D(col_basis, col_origin))
 
-		var material: StandardMaterial3D = StandardMaterial3D.new()
-		material.shading_mode = BaseMaterial3D.SHADING_MODE_PER_VERTEX
-		column.set_surface_override_material(0, material)
+	if column_transforms.is_empty():
+		return
 
-		column.add_to_group(generated_group_name, true)
-		column.name = "BasaltColumn_" + str(i)
-		add_child(column)
+	# Build single MultiMeshInstance3D for 1-draw-call visual rendering
+	var multi_inst: MultiMeshInstance3D = MultiMeshInstance3D.new()
+	multi_inst.name = MULTI_MESH_NAME
+	multi_inst.gi_mode = GeometryInstance3D.GI_MODE_DISABLED
+	multi_inst.add_to_group(StringName(generated_group_name), true)
 
-		var static_body: StaticBody3D = StaticBody3D.new()
-		var collision_shape: CollisionShape3D = CollisionShape3D.new()
+	var multi_mesh: MultiMesh = MultiMesh.new()
+	multi_mesh.transform_format = MultiMesh.TRANSFORM_3D
+	multi_mesh.use_colors = false
+	multi_mesh.use_custom_data = false
+	multi_mesh.mesh = base_mesh
+	multi_mesh.instance_count = column_transforms.size()
 
-		if surface_group != "":
-			static_body.add_to_group(surface_group, true)
+	for idx: int in range(column_transforms.size()):
+		multi_mesh.set_instance_transform(idx, column_transforms[idx])
 
-		collision_shape.shape = mesh.create_convex_shape()
-		static_body.add_child(collision_shape)
-		column.add_child(static_body)
+	multi_inst.multimesh = multi_mesh
+	multi_inst.material_override = _resolve_material()
+	add_child(multi_inst)
 
-		if Engine.is_editor_hint():
-			var root: Node = get_tree().edited_scene_root
-			if is_instance_valid(root):
-				column.owner = root
-				static_body.owner = root
-				collision_shape.owner = root
+	# Build single StaticBody3D with concatenated ConcavePolygonShape3D trimesh
+	var static_body: StaticBody3D = StaticBody3D.new()
+	static_body.name = STATIC_BODY_NAME
+	static_body.collision_layer = 1
+	static_body.collision_mask = 0
+	static_body.add_to_group(StringName(generated_group_name), true)
+	if surface_group != "":
+		static_body.add_to_group(StringName(surface_group), true)
+
+	var unit_faces: PackedVector3Array = base_mesh.get_faces()
+	var total_faces: PackedVector3Array = PackedVector3Array()
+	total_faces.resize(column_transforms.size() * unit_faces.size())
+
+	var write_idx: int = 0
+	for t: Transform3D in column_transforms:
+		for v: Vector3 in unit_faces:
+			total_faces[write_idx] = t * v
+			write_idx += 1
+
+	var concave_shape: ConcavePolygonShape3D = ConcavePolygonShape3D.new()
+	concave_shape.set_faces(total_faces)
+
+	var collision_shape: CollisionShape3D = CollisionShape3D.new()
+	collision_shape.name = COLLISION_SHAPE_NAME
+	collision_shape.shape = concave_shape
+	static_body.add_child(collision_shape)
+	add_child(static_body)
+
+	# Assign owners in editor mode so nodes serialize into the scene file
+	if Engine.is_editor_hint():
+		var scene_root: Node = get_tree().edited_scene_root
+		if is_instance_valid(scene_root):
+			multi_inst.owner = scene_root
+			static_body.owner = scene_root
+			collision_shape.owner = scene_root

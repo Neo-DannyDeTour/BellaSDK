@@ -54,9 +54,9 @@ func _exit_tree() -> void:
 		GraphicsManager.settings_changed.disconnect(_on_external_settings_changed)
 
 
-## Resets all video settings to the default "High" preset and refreshes all sub-sections.
+## Resets all video settings to the default "Ultra" preset and refreshes all sub-sections.
 func reset_to_defaults() -> void:
-	print("VideoOptions: Resetting video settings to 'High' defaults.")
+	print("VideoOptions: Resetting video settings to 'Ultra' defaults.")
 	_is_applying_batch = true
 	GraphicsManager.reset_to_defaults()
 	display_section.load_settings()

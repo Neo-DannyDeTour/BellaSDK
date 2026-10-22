@@ -37,7 +37,7 @@ func _exit_tree() -> void:
 		get_tree().node_added.disconnect(_on_node_added)
 
 
-## Loads all video settings from [GlobalSettings], defaulting missing keys to "High" preset.
+## Loads all video settings from [GlobalSettings], defaulting missing keys to "Ultra" preset.
 func load_from_disk() -> void:
 	print("GraphicsManager: Loading video configuration into state cache.")
 	var defaults: Dictionary = VideoConfig.get_default_settings_dict()
@@ -115,7 +115,7 @@ func apply_preset(preset_name: String) -> void:
 		active_config[key] = preset_dict[key]
 		bulk_save[key] = preset_dict[key]
 
-	GlobalSettings.save_settings_bulk("Settings", bulk_save)
+	GlobalSettings.save_settings_bulk("Settings", bulk_save, true)
 
 	if is_diorama_active:
 		update_diorama_preview()
@@ -125,12 +125,12 @@ func apply_preset(preset_name: String) -> void:
 	settings_changed.emit(active_config)
 
 
-## Resets all video settings to the canonical "High" preset and default display values.
+## Resets all video settings to the canonical "Ultra" preset and default display values.
 func reset_to_defaults() -> void:
-	print("GraphicsManager: Resetting all video settings to 'High' defaults.")
+	print("GraphicsManager: Resetting all video settings to 'Ultra' defaults.")
 	var defaults: Dictionary = VideoConfig.get_default_settings_dict()
 	active_config = defaults.duplicate(true)
-	GlobalSettings.save_settings_bulk("Settings", active_config)
+	GlobalSettings.save_settings_bulk("Settings", active_config, true)
 
 	apply_display_settings()
 	if is_diorama_active:

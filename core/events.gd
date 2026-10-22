@@ -8,7 +8,7 @@ extends Node
 @warning_ignore("unused_signal")
 signal sfx_2d_requested(stream: AudioStream, bus: StringName)
 
-## Emitted to play a 3D spatial sound. Passes [param stream], [param pos], [param bus].
+## Emitted to play a 3D spatial sound. Passes [param stream], [param global_pos], [param bus].
 @warning_ignore("unused_signal")
 signal sfx_3d_requested(stream: AudioStream, global_pos: Vector3, bus: StringName)
 
@@ -46,7 +46,7 @@ signal wave_completed(wave_number: int)
 @warning_ignore("unused_signal")
 signal enemy_spawned(enemy_node: Node3D)
 
-## Emitted when an enemy is slain. Passes [param enemy_node] and killer node.
+## Emitted when an enemy is slain. Passes [param enemy_node] and [param killer_node].
 @warning_ignore("unused_signal")
 signal enemy_killed(enemy_node: Node3D, killer_node: Node3D)
 
@@ -69,7 +69,7 @@ signal player_health_set_requested(health_amount: int)
 @warning_ignore("unused_signal")
 signal player_kill_requested
 
-## Emitted to grant an item to inventory. Passes [param item_name] and amount.
+## Emitted to grant an item to inventory. Passes [param item_name] and [param amount].
 @warning_ignore("unused_signal")
 signal inventory_item_given(item_name: String, amount: int)
 
@@ -208,6 +208,10 @@ signal tts_state_changed(enabled: bool)
 # --------------------------------------
 # GAMEPLAY FEEDBACK & UI SIGNALS
 # --------------------------------------
+## Emitted when directional blood spray, mist, and surface decals are requested.
+@warning_ignore("unused_signal")
+signal blood_fx_requested(hit_position: Vector3, shot_direction: Vector3, is_fatal: bool)
+
 ## Emitted when a screen fade transition is requested by a trigger or console.
 @warning_ignore("unused_signal")
 signal screen_fade_requested(
@@ -407,7 +411,7 @@ signal weapon_ammo_changed(current: int, reserve: int, capacity: int)
 @warning_ignore("unused_signal")
 signal weapon_reloaded(weapon_tag: String)
 
-## Emitted when an ammo box is gathered. Passes [param ammo_type] and amount.
+## Emitted when an ammo box is gathered. Passes [param ammo_type] and [param amount].
 @warning_ignore("unused_signal")
 signal ammo_collected(ammo_type: StringName, amount: int)
 

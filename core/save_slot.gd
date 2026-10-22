@@ -55,16 +55,16 @@ func _ready() -> void:
 ## [param data] The parsed metadata JSON.
 ## [param is_saving] Determines if the action button says 'Load' or 'Overwrite'.
 func setup(data: Dictionary, is_saving: bool) -> void:
-	_base_path = data.get("base_path", "")
-	_save_id = data.get("id", "")
+	_base_path = str(data.get("base_path", ""))
+	_save_id = str(data.get("id", ""))
 
-	name_input.text = data.get("name", "Unknown Save")
-	date_label.text = data.get("timestamp", "Unknown Date")
+	name_input.text = str(data.get("name", "Unknown Save"))
+	date_label.text = str(data.get("timestamp", "Unknown Date"))
 
-	var is_fav: bool = data.get("is_favorite", false)
+	var raw_fav: Variant = data.get("is_favorite", false)
+	var is_fav: bool = raw_fav == true
 	fav_button.set_pressed_no_signal(is_fav)
 
-	# Apply the visual state immediately on load
 	_update_visuals(is_fav)
 
 	if is_saving:
@@ -85,29 +85,29 @@ func _on_action_button_pressed() -> void:
 
 
 ## Triggers a metadata update when the user hits 'Enter' in the line edit.
-## [param _new_text] The new string, though we pull from the UI directly anyway.
+## [param _new_text] Unused text payload from LineEdit submission.
 func _on_name_submitted(_new_text: String) -> void:
 	name_input.release_focus()
-	_emit_meta_update()
+	_emit_meta_update(fav_button.button_pressed)
 
 
 ## Triggers a metadata update when the user clicks away from the line edit.
 func _on_name_focus_exited() -> void:
-	_emit_meta_update()
+	_emit_meta_update(fav_button.button_pressed)
 
 
 ## Triggers a metadata update and visual refresh when the favorite button is clicked.
 ## [param toggled_on] The new boolean state of the toggle button.
 func _on_fav_toggled(toggled_on: bool) -> void:
 	_update_visuals(toggled_on)
-	_emit_meta_update()
+	_emit_meta_update(toggled_on)
 
 
-## Internal helper to extract the current text/toggle states and emit the update signal.
-func _emit_meta_update() -> void:
+## Internal helper to extract current name and emit the update signal with target state.
+## [param target_favorite_state] Explicit boolean favorite state.
+func _emit_meta_update(target_favorite_state: bool) -> void:
 	var current_name: String = name_input.text.strip_edges()
-	var is_fav: bool = fav_button.button_pressed
-	meta_updated.emit(_save_id, current_name, is_fav)
+	meta_updated.emit(_save_id, current_name, target_favorite_state)
 
 
 ## Emits the deletion signal containing the ID and file path.
@@ -118,7 +118,7 @@ func _on_delete_button_pressed() -> void:
 ## Intercepts raw GUI input to detect double-click events on the panel.
 ## [param event] The generic [InputEvent] entering the control node.
 func _gui_input(event: InputEvent) -> void:
-	var mouse_event: InputEventMouseButton = event if event is InputEventMouseButton else null
+	var mouse_event: InputEventMouseButton = event as InputEventMouseButton
 	if mouse_event and mouse_event.button_index == MOUSE_BUTTON_LEFT and mouse_event.double_click:
 		accept_event()
 		action_pressed.emit(_base_path)

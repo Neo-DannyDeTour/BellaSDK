@@ -396,6 +396,15 @@ func _connect_slider(
 ## Commits a slider value directly to [GraphicsManager] for synchronous feedback.
 func _commit_slider_value(key: String, val: float) -> void:
 	GraphicsManager.set_setting(key, val)
+	if key == "resolution_scale":
+		var matched_fsr: String = ""
+		for mode: String in VideoConfig.FSR_MODES.keys():
+			if is_equal_approx(VideoConfig.FSR_MODES[mode], val):
+				matched_fsr = mode
+				break
+		if not matched_fsr.is_empty():
+			_set_group_button_silent(_fsr_btn_map, matched_fsr)
+			GraphicsManager.set_setting("fsr_mode", matched_fsr, false)
 	quality_settings_changed.emit()
 
 
@@ -463,6 +472,11 @@ func _on_preset_pressed(preset_name: String) -> void:
 func _on_quality_button_pressed(config_key: String, mode_key: String) -> void:
 	print("QualitySection: Player selected ", config_key, " -> ", mode_key)
 	GraphicsManager.set_setting(config_key, mode_key)
+	if config_key == "fsr_mode":
+		var target_scale: float = VideoConfig.FSR_MODES.get(mode_key, 1.0)
+		res_scale_slider.set_value_no_signal(target_scale)
+		res_scale_line.text = "%.1f" % target_scale
+		GraphicsManager.set_setting("resolution_scale", target_scale)
 	quality_settings_changed.emit()
 
 
