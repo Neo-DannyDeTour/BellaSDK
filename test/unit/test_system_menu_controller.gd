@@ -91,3 +91,56 @@ func test_fullbright_toggled() -> void:
 	assert_eq(
 		env_after_false, initial_env, "Camera environment should revert to initial environment."
 	)
+
+
+func test_noclip_wheel_speed_scaling() -> void:
+	print("TestSystemMenuController: test_noclip_wheel_speed_scaling() running.")
+	controller.set("is_debug_allowed", true)
+	controller.call("toggle_noclip")
+	assert_true(controller.get("flying"), "Controller should be flying.")
+
+	var initial_mult: float = float(controller.get("noclip_speed_multiplier"))
+	var wheel_up_event: InputEventMouseButton = InputEventMouseButton.new()
+	wheel_up_event.button_index = MOUSE_BUTTON_WHEEL_UP
+	wheel_up_event.pressed = true
+
+	controller.call("_unhandled_input", wheel_up_event)
+	var new_mult: float = float(controller.get("noclip_speed_multiplier"))
+	assert_gt(new_mult, initial_mult, "Wheel up should increase speed multiplier.")
+
+	var wheel_down_event: InputEventMouseButton = InputEventMouseButton.new()
+	wheel_down_event.button_index = MOUSE_BUTTON_WHEEL_DOWN
+	wheel_down_event.pressed = true
+
+	controller.call("_unhandled_input", wheel_down_event)
+	var reverted_mult: float = float(controller.get("noclip_speed_multiplier"))
+	assert_lt(reverted_mult, new_mult, "Wheel down should decrease speed multiplier.")
+
+
+func test_noclip_sprint_velocity_scaling() -> void:
+	print("TestSystemMenuController: test_noclip_sprint_velocity_scaling() running.")
+	controller.set("is_debug_allowed", true)
+	controller.call("toggle_noclip")
+
+	Input.action_press(&"forward")
+	controller.call("process_noclip", 0.016)
+	var base_vel: Vector3 = mock_player.velocity
+
+	Input.action_press(&"sprint")
+	controller.call("process_noclip", 0.016)
+	var sprint_vel: Vector3 = mock_player.velocity
+
+	assert_gt(
+		sprint_vel.length(),
+		base_vel.length(),
+		"Sprinting in noclip should produce higher velocity."
+	)
+	assert_almost_eq(
+		sprint_vel.length(),
+		base_vel.length() * 2.0,
+		0.01,
+		"Sprinting velocity should be exactly double base noclip speed."
+	)
+
+	Input.action_release(&"sprint")
+	Input.action_release(&"forward")

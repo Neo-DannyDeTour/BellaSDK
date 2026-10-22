@@ -112,6 +112,25 @@ extends PlayerStatsComponent
 			health_node.name = "HealthComponent"
 			components_node.add_child(health_node)
 
+	var cam_script: GDScript = GDScript.new()
+	cam_script.source_code = """
+extends CameraController
+
+func _ready() -> void:
+	pass
+"""
+	cam_script.reload()
+	var raw_cam: Variant = cam_script.new()
+	if raw_cam is CameraController:
+		var cam_ctrl: CameraController = raw_cam
+		cam_ctrl.name = "CameraController"
+		var dummy_cam: Camera3D = Camera3D.new()
+		dummy_cam.name = "Camera3D"
+		cam_ctrl.add_child(dummy_cam)
+		cam_ctrl.camera = dummy_cam
+		mock_player.camera_controller = cam_ctrl
+		mock_player.add_child(cam_ctrl)
+
 	add_child_autoqfree(mock_player)
 
 	mock_state_machine = StateMachine.new()

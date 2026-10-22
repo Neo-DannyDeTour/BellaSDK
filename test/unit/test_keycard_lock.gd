@@ -13,16 +13,22 @@ var _label: Label3D
 ## Instantiates a clean KeycardLock node before each test.
 func before_each() -> void:
 	print("Setting up KeycardLock instance for testing.")
-	_lock = KEYCARD_LOCK_SCRIPT.new() as KeycardLock
+	var instance: Variant = KEYCARD_LOCK_SCRIPT.new()
+	if instance is KeycardLock:
+		_lock = instance
 	_label = Label3D.new()
 	_lock.status_label = _label
 	_lock.add_child(_label)
 	add_child_autofree(_lock)
 
 
-## Cleans up KeycardLock instance after test execution.
+## Cleans up KeycardLock instance and card inventory after test execution.
 func after_each() -> void:
 	print("Tearing down KeycardLock test instance.")
+	KeycardSystem.consume_card(&"SecurityAlpha")
+	KeycardSystem.consume_card(&"AdminCard")
+	KeycardSystem.consume_card(&"A1")
+	KeycardSystem.consume_card(&"R")
 	_lock = null
 	_label = null
 
@@ -37,8 +43,8 @@ func test_default_required_card_id() -> void:
 func test_on_focused_updates_label() -> void:
 	print("Testing KeycardLock _on_focused label update.")
 	_lock.required_card_id = &"A1"
-	_lock.call("_ready")
-	_lock.call("_on_focused")
+	_lock.call(&"_ready")
+	_lock.call(&"_on_focused")
 
 	assert_eq(
 		_label.text,
@@ -51,9 +57,9 @@ func test_on_focused_updates_label() -> void:
 func test_on_unfocused_clears_label() -> void:
 	print("Testing KeycardLock _on_unfocused label clearing.")
 	_lock.required_card_id = &"A1"
-	_lock.call("_ready")
-	_lock.call("_on_focused")
-	_lock.call("_on_unfocused")
+	_lock.call(&"_ready")
+	_lock.call(&"_on_focused")
+	_lock.call(&"_on_unfocused")
 
 	assert_eq(_label.text, "", "Unfocusing lock should clear status label text.")
 
@@ -62,11 +68,11 @@ func test_on_unfocused_clears_label() -> void:
 func test_interacted_without_card_denies_access() -> void:
 	print("Testing KeycardLock interaction without required keycard.")
 	_lock.required_card_id = &"AdminCard"
-	_lock.call("_ready")
+	_lock.call(&"_ready")
 	var dummy_player: CharacterBody3D = CharacterBody3D.new()
 	add_child_autofree(dummy_player)
 
-	_lock.call("_on_interacted", dummy_player)
+	_lock.call(&"_on_interacted", dummy_player)
 
 	assert_eq(_label.text, "DENIED", "Interaction without card should set status label to DENIED.")
 
@@ -75,14 +81,14 @@ func test_interacted_without_card_denies_access() -> void:
 func test_interacted_with_card_grants_access() -> void:
 	print("Testing KeycardLock interaction with required keycard.")
 	_lock.required_card_id = &"SecurityAlpha"
-	_lock.call("_ready")
+	_lock.call(&"_ready")
 	watch_signals(_lock)
 
-	KeycardSystem.grant_card(&"SecurityAlpha")
+	KeycardSystem.add_card(&"SecurityAlpha")
 	var dummy_player: CharacterBody3D = CharacterBody3D.new()
 	add_child_autofree(dummy_player)
 
-	_lock.call("_on_interacted", dummy_player)
+	_lock.call(&"_on_interacted", dummy_player)
 
 	assert_signal_emitted(_lock, "access_granted", "Access granted signal should be emitted.")
 	assert_eq(_label.text, "GRANTED", "Status label should display GRANTED upon successful unlock.")

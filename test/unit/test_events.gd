@@ -37,22 +37,13 @@ func test_dynamic_signals_can_be_emitted() -> void:
 	watch_signals(_events_instance)
 
 	_events_instance.player_damaged.emit(10)
-	assert_signal_emitted_with_parameters(
-		_events_instance, "player_damaged", [10], "Should emit player_damaged successfully."
-	)
+	assert_signal_emitted_with_parameters(_events_instance, "player_damaged", [10])
 
 	_events_instance.godmode_toggled.emit(true)
-	assert_signal_emitted_with_parameters(
-		_events_instance, "godmode_toggled", [true], "Should emit godmode_toggled successfully."
-	)
+	assert_signal_emitted_with_parameters(_events_instance, "godmode_toggled", [true])
 
 	_events_instance.active_weapon_changed.emit("pistol")
-	assert_signal_emitted_with_parameters(
-		_events_instance,
-		"active_weapon_changed",
-		["pistol"],
-		"Should emit active_weapon_changed successfully."
-	)
+	assert_signal_emitted_with_parameters(_events_instance, "active_weapon_changed", ["pistol"])
 
 
 ## Verifies fallback font registration within the internal font registry.

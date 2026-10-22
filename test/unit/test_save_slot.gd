@@ -82,12 +82,7 @@ func test_action_button_pressed_signal() -> void:
 
 	_save_slot.action_button.pressed.emit()
 
-	assert_signal_emitted_with_parameters(
-		_save_slot,
-		"action_pressed",
-		["user://saves/slot_01"],
-		"action_pressed signal should pass base_path."
-	)
+	assert_signal_emitted_with_parameters(_save_slot, "action_pressed", ["user://saves/slot_01"])
 
 
 ## Verifies signal emission when favorite status is toggled.
@@ -105,12 +100,7 @@ func test_favorite_toggled_signal() -> void:
 
 	_save_slot.fav_button.toggled.emit(true)
 
-	assert_signal_emitted_with_parameters(
-		_save_slot,
-		"meta_updated",
-		["slot_02", "Slot 2", true],
-		"meta_updated signal should report new favorite state."
-	)
+	assert_signal_emitted_with_parameters(_save_slot, "meta_updated", ["slot_02", "Slot 2", true])
 
 
 ## Verifies signal emission when delete button is pressed.
@@ -129,8 +119,5 @@ func test_delete_button_pressed_signal() -> void:
 	_save_slot.delete_button.pressed.emit()
 
 	assert_signal_emitted_with_parameters(
-		_save_slot,
-		"delete_pressed",
-		["slot_03", "user://saves/slot_03"],
-		"delete_pressed signal should pass ID and path."
+		_save_slot, "delete_pressed", ["slot_03", "user://saves/slot_03"]
 	)
