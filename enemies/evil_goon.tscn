@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://bx5x61wsep5vy" path="res://enemies/evil_goon.gd" id="1_u0qif"]
 [ext_resource type="Texture2D" uid="uid://dh00yxaaufnxh" path="res://assets/textures/evil_goon.png" id="2_u0qif"]
 [ext_resource type="Script" uid="uid://cbwy13aembb7w" path="res://core/components/health_component.gd" id="3_pjr23"]
+[ext_resource type="Script" uid="uid://q7rcgal41c7b" path="res://core/components/faction_component.gd" id="4_fcomp"]
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_m0v7c"]
 
@@ -15,11 +16,12 @@ material = SubResource("StandardMaterial3D_kjjkj")
 radial_segments = 32
 rings = 4
 
-[node name="EvilGoon" type="RigidBody3D" unique_id=767490549 node_paths=PackedStringArray("health_component") groups=["enemy"]]
+[node name="EvilGoon" type="RigidBody3D" unique_id=767490549 node_paths=PackedStringArray("health_component", "faction_component") groups=["enemy"]]
 collision_layer = 16
 collision_mask = 23
 script = ExtResource("1_u0qif")
 health_component = NodePath("HealthComponent")
+faction_component = NodePath("FactionComponent")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=199191476]
 shape = SubResource("CapsuleShape3D_m0v7c")
@@ -30,3 +32,10 @@ mesh = SubResource("CapsuleMesh_nxobc")
 [node name="HealthComponent" type="Node" parent="." unique_id=1503028368]
 script = ExtResource("3_pjr23")
 metadata/_custom_type_script = "uid://cbwy13aembb7w"
+
+[node name="FactionComponent" type="Node" parent="." unique_id=1503028369]
+script = ExtResource("4_fcomp")
+faction = 2
+hostile_mask = 1
+is_passive = false
+metadata/_custom_type_script = "uid://q7rcgal41c7b"

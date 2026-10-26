@@ -419,6 +419,14 @@ signal ammo_collected(ammo_type: StringName, amount: int)
 @warning_ignore("unused_signal")
 signal wolf_vision_toggled(is_active: bool)
 
+## Emitted when wolf wall run begins or ends to drive anime speed lines VFX.
+@warning_ignore("unused_signal")
+signal wolf_wall_run_vfx_toggled(is_active: bool)
+
+## Emitted when wolf claw target availability or 3D world position updates.
+@warning_ignore("unused_signal")
+signal claw_target_updated(is_available: bool, world_pos: Vector3)
+
 ## Emitted when god mode invincibility is toggled. Passes [param is_active].
 @warning_ignore("unused_signal")
 signal godmode_toggled(is_active: bool)

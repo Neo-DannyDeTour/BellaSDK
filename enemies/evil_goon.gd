@@ -11,6 +11,9 @@ const HIT_HEIGHT_CLAMP: float = 0.6
 ## Injected [HealthComponent] managing entity life points and death handling.
 @export var health_component: HealthComponent
 
+## Injected [FactionComponent] governing allegiance and hostility rules.
+@export var faction_component: FactionComponent
+
 ## The impulse force applied to the dummy when struck by attacks.
 @export var knockback_force: float = 0.5
 
@@ -62,6 +65,18 @@ func _ready() -> void:
 		health_component.use_pooling = false
 		health_component.died.connect(_on_health_component_died)
 		print("EvilGoon: Bound to HealthComponent with ", health_component.current_health, " HP.")
+
+	if not is_instance_valid(faction_component):
+		faction_component = get_node_or_null("FactionComponent") as FactionComponent
+
+	if not is_instance_valid(faction_component):
+		faction_component = find_child("FactionComponent", false, false) as FactionComponent
+
+	assert(is_instance_valid(faction_component), "EvilGoon: FactionComponent is mandatory.")
+	if is_instance_valid(faction_component):
+		faction_component.faction = Types.Faction.ENEMY
+		faction_component.hostile_mask = int(Types.Faction.PLAYER)
+		faction_component.is_passive = false
 
 
 ## Applies oscillatory vertical bobbing force on the physics body.

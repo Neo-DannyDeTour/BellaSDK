@@ -121,7 +121,7 @@ func strike_between_markers(start_idx: int, end_idx: int) -> void:
 
 ## Triggers a lightning strike between two arbitrary world-space coordinates.
 func strike_custom(start_pos: Vector3, end_pos: Vector3) -> void:
-	print("Lightning strike: ", start_pos, " -> ", end_pos)
+	#print("Lightning strike: ", start_pos, " -> ", end_pos)
 	_generate_bolt(start_pos, end_pos)
 	_schedule_thunder(end_pos)
 

@@ -1,15 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="GutTests" failures="0" tests="5" >
-  <testsuite name="test/unit/test_graphics_manager.gd" tests="5" failures="0" skipped="0" time="0.003223" >
-      <testcase name="test_reset_to_defaults_loads_ultra_preset" assertions="6" status="pass" classname="test/unit/test_graphics_manager.gd" time="0.000706" >
+<testsuites name="GutTests" failures="0" tests="3" >
+  <testsuite name="test/unit/test_mannequin_attractor.gd" tests="3" failures="0" skipped="0" time="0.00967" >
+      <testcase name="test_target_arrival_box_containment" assertions="4" status="pass" classname="test/unit/test_mannequin_attractor.gd" time="0.002703" >
       </testcase>
-      <testcase name="test_apply_preset_updates_active_config" assertions="5" status="pass" classname="test/unit/test_graphics_manager.gd" time="0.000649" >
+      <testcase name="test_attractor_preset_switching" assertions="4" status="pass" classname="test/unit/test_mannequin_attractor.gd" time="0.000978" >
       </testcase>
-      <testcase name="test_set_diorama_mode_toggles_isolation" assertions="2" status="pass" classname="test/unit/test_graphics_manager.gd" time="0.000684" >
-      </testcase>
-      <testcase name="test_volumetric_fog_retains_zero_density_when_enabled" assertions="3" status="pass" classname="test/unit/test_graphics_manager.gd" time="0.000612" >
-      </testcase>
-      <testcase name="test_resolution_scale_applies_correctly" assertions="2" status="pass" classname="test/unit/test_graphics_manager.gd" time="0.000572" >
+      <testcase name="test_attractor_sequence_flow" assertions="9" status="pass" classname="test/unit/test_mannequin_attractor.gd" time="0.005989" >
       </testcase>
   </testsuite>
 </testsuites>
