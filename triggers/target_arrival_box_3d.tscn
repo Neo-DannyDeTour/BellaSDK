@@ -1,0 +1,36 @@
+[gd_scene format=3 uid="uid://bkwextw50vajj"]
+
+[ext_resource type="Script" uid="uid://bdq4tfbj3vsqd" path="res://triggers/target_arrival_box_3d.gd" id="1_tab3d"]
+[ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://triggers/editor_trigger_visualizer.gd" id="2_etv3d"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_cyeds"]
+resource_local_to_scene = true
+size = Vector3(2, 2, 2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_twk83"]
+transparency = 1
+shading_mode = 0
+albedo_color = Color(0.1, 0.85, 0.4, 0.25)
+
+[sub_resource type="BoxMesh" id="BoxMesh_c8rtd"]
+material = SubResource("StandardMaterial3D_twk83")
+size = Vector3(2, 2, 2)
+
+[node name="TargetArrivalBox3D" type="Area3D" unique_id=1611215608]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("1_tab3d")
+trigger_color = Color(0.1, 0.85, 0.4, 0.25)
+outline_color = Color(0.2, 1, 0.5, 0.9)
+trigger_text = "DESTINATION"
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1041870251]
+shape = SubResource("BoxShape3D_cyeds")
+
+[node name="EditorTriggerVisualizer" type="MeshInstance3D" parent="." unique_id=2018820604]
+mesh = SubResource("BoxMesh_c8rtd")
+script = ExtResource("2_etv3d")
+trigger_color = Color(0.1, 0.85, 0.4, 0.25)
+outline_color = Color(0.2, 1, 0.5, 0.9)
+trigger_text = "DESTINATION"
+metadata/_custom_type_script = "uid://q4v42nidwdr2"
