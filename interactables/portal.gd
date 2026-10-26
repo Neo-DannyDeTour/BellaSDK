@@ -21,7 +21,7 @@ var player_camera: Camera3D
 @onready var portal_mesh: MeshInstance3D = $PortalMesh
 
 ## Dictionary storing tracked bodies and their last known side.
-var _tracked_bodies: Dictionary = {}
+var _tracked_bodies: Dictionary[Node3D, float] = {}
 
 ## On-screen visibility notifier used to cull off-screen portal render passes.
 var _screen_notifier: VisibleOnScreenNotifier3D = null
@@ -239,14 +239,13 @@ func _physics_process(_delta: float) -> void:
 		return
 
 	var to_erase: Array[Node3D] = []
-	for body_ref: Variant in _tracked_bodies:
-		var tracked_body: Node3D = body_ref as Node3D
+	for tracked_body: Node3D in _tracked_bodies.keys():
 		if not is_instance_valid(tracked_body):
 			to_erase.append(tracked_body)
 			continue
 
 		var current_side: float = _get_side(tracked_body.global_position)
-		var previous_side: float = float(_tracked_bodies[tracked_body])
+		var previous_side: float = _tracked_bodies[tracked_body]
 
 		if signf(current_side) != signf(previous_side):
 			_teleport_body(tracked_body)

@@ -1,0 +1,10 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://b5qf204vll0yr" path="res://interactables/mannequin_ragdoll.gd" id="1_ragdoll"]
+[ext_resource type="PackedScene" uid="uid://csamvfukce7np" path="res://assets/models/mannequin_ragdoll/mannequin_ragdoll.glb" id="2_model"]
+
+[node name="MannequinRagdoll" type="Node3D"]
+script = ExtResource("1_ragdoll")
+start_active = true
+
+[node name="MannequinModel" parent="." instance=ExtResource("2_model")]

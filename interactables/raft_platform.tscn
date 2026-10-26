@@ -1,0 +1,104 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" uid="uid://mqae3mth7tfx" path="res://interactables/pickable_object.tscn" id="1_base"]
+[ext_resource type="Script" path="res://interactables/raft_platform.gd" id="2_raft"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_deck"]
+albedo_color = Color(0.52, 0.37, 0.23, 1)
+roughness = 0.85
+
+[sub_resource type="BoxMesh" id="BoxMesh_deck"]
+material = SubResource("StandardMaterial3D_deck")
+size = Vector3(2.5, 0.15, 4)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_barrel"]
+albedo_color = Color(0.18, 0.38, 0.65, 1)
+metallic = 0.2
+roughness = 0.45
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_barrel"]
+material = SubResource("StandardMaterial3D_barrel")
+top_radius = 0.35
+bottom_radius = 0.35
+height = 1.2
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_deck"]
+size = Vector3(2.5, 0.15, 4)
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_barrel"]
+height = 1.2
+radius = 0.35
+
+[node name="RaftPlatform" node_paths=PackedStringArray("mesh") instance=ExtResource("1_base")]
+mass = 60.0
+center_of_mass_mode = 1
+center_of_mass = Vector3(0, -0.35, 0)
+script = ExtResource("2_raft")
+mesh = NodePath("Raft")
+float_force = 2.4
+water_drag = 3.5
+water_angular_drag = 4.0
+hold_distance_offset = -1.6
+max_detach_distance = 3.6
+lock_on_player_stand = false
+
+[node name="MeshInstance3D" parent="." index="2"]
+visible = false
+
+[node name="CollisionShape3D" parent="." index="3"]
+shape = SubResource("BoxShape3D_deck")
+
+[node name="Label3D" parent="." index="4"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.8, 0)
+
+[node name="PromptIcon" parent="." index="5"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+
+[node name="Marker3D" parent="ProbeContainer" index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.85, -0.425, -1.1)
+
+[node name="Marker3D2" parent="ProbeContainer" index="1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.85, -0.425, 1.1)
+
+[node name="Marker3D3" parent="ProbeContainer" index="2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.85, -0.425, -1.1)
+
+[node name="Marker3D4" parent="ProbeContainer" index="3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.85, -0.425, 1.1)
+
+[node name="CollisionShape_FL" type="CollisionShape3D" parent="." index="7"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, -0.85, -0.425, -1.1)
+shape = SubResource("CylinderShape3D_barrel")
+
+[node name="CollisionShape_BL" type="CollisionShape3D" parent="." index="8"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, -0.85, -0.425, 1.1)
+shape = SubResource("CylinderShape3D_barrel")
+
+[node name="CollisionShape_FR" type="CollisionShape3D" parent="." index="9"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0.85, -0.425, -1.1)
+shape = SubResource("CylinderShape3D_barrel")
+
+[node name="CollisionShape_BR" type="CollisionShape3D" parent="." index="10"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0.85, -0.425, 1.1)
+shape = SubResource("CylinderShape3D_barrel")
+
+[node name="Raft" type="Node3D" parent="." index="11"]
+
+[node name="DeckMesh" type="MeshInstance3D" parent="Raft"]
+mesh = SubResource("BoxMesh_deck")
+
+[node name="Barrel_FL" type="MeshInstance3D" parent="Raft"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, -0.85, -0.425, -1.1)
+mesh = SubResource("CylinderMesh_barrel")
+
+[node name="Barrel_BL" type="MeshInstance3D" parent="Raft"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, -0.85, -0.425, 1.1)
+mesh = SubResource("CylinderMesh_barrel")
+
+[node name="Barrel_FR" type="MeshInstance3D" parent="Raft"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0.85, -0.425, -1.1)
+mesh = SubResource("CylinderMesh_barrel")
+
+[node name="Barrel_BR" type="MeshInstance3D" parent="Raft"]
+transform = Transform3D(1, 0, 0, 0, 0, -1, 0, 1, 0, 0.85, -0.425, 1.1)
+mesh = SubResource("CylinderMesh_barrel")

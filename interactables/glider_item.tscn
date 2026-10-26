@@ -1,4 +1,4 @@
-[gd_scene format=3 uid="uid://b55ogt2gevlr7"]
+[gd_scene format=4 uid="uid://b55ogt2gevlr7"]
 
 [ext_resource type="Script" uid="uid://bx4xvxuxackvg" path="res://interactables/glider_item.gd" id="1_s5xsx"]
 [ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="2_4dxby"]
@@ -6,12 +6,7 @@
 [ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="4_dnr4k"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_kw1l2"]
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4dxby"]
-albedo_color = Color(0.46666667, 0.92156863, 0.13725491, 1)
-
-[sub_resource type="PrismMesh" id="PrismMesh_84l6x"]
-material = SubResource("StandardMaterial3D_4dxby")
+size = Vector3(8, 0.2, 6)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_j8qkd"]
 render_priority = 0
@@ -23,14 +18,13 @@ shader_parameter/max_intensity = 0.050000002375
 shader_parameter/alpha_scissor_threshold = 0.5
 
 [node name="GliderItem" type="RigidBody3D" unique_id=477486293]
+collision_layer = 4
 script = ExtResource("1_s5xsx")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1529658471]
 shape = SubResource("BoxShape3D_kw1l2")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="." unique_id=2071847474]
-transform = Transform3D(3, 0, 0, 0, 0.1, 0, 0, 0, 2, 0, 0, 0)
-mesh = SubResource("PrismMesh_84l6x")
 
 [node name="PlayerAnchor" type="Marker3D" parent="." unique_id=319586467]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1, 0)

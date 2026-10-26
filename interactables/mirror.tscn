@@ -25,7 +25,7 @@ shader_parameter/tex = SubResource("ViewportTexture_8mm88")
 ambient_light_source = 2
 ambient_light_color = Color(0.2, 0.22, 0.28, 1)
 
-[sub_resource type="Compositor" id="Compositor_ngsht"]
+[sub_resource type="Compositor" id="Compositor_i25o7"]
 
 [node name="Mirror" type="Node3D" unique_id=2122574524 node_paths=PackedStringArray("mirror_viewport", "mirror_camera", "mirror_quad")]
 script = ExtResource("1_652kc")
@@ -39,6 +39,7 @@ mesh = SubResource("QuadMesh_652kc")
 surface_material_override/0 = SubResource("ShaderMaterial_ngsht")
 
 [node name="MirrorSubViewport" type="SubViewport" parent="." unique_id=1790894113]
+own_world_3d = true
 mesh_lod_threshold = 2.0
 positional_shadow_atlas_size = 0
 canvas_cull_mask = 4294966783
@@ -49,7 +50,7 @@ render_target_update_mode = 0
 transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 1.682942, 1.9177022, -3.0806046)
 cull_mask = 7
 environment = SubResource("Environment_ngsht")
-compositor = SubResource("Compositor_ngsht")
+compositor = SubResource("Compositor_i25o7")
 projection = 2
 current = true
 fov = 70.01

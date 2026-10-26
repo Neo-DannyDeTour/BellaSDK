@@ -28,7 +28,6 @@ func _update_cable() -> void:
 		curve.remove_point(curve.get_point_count() - 1)
 
 	var mesh_node: MeshInstance3D = _find_mesh_instance(self)
-	var col_node: CollisionShape3D = _find_collision_shape(self)
 
 	var global_start: Vector3 = to_global(curve.get_point_position(0))
 	var global_end: Vector3 = to_global(curve.get_point_position(1))
@@ -38,9 +37,9 @@ func _update_cable() -> void:
 		global_start, global_end
 	)
 
-	if mesh_node:
+	if is_instance_valid(mesh_node):
 		var cyl_mesh: CylinderMesh = mesh_node.mesh as CylinderMesh
-		if not cyl_mesh:
+		if not is_instance_valid(cyl_mesh):
 			cyl_mesh = CylinderMesh.new()
 			mesh_node.mesh = cyl_mesh
 
@@ -49,14 +48,24 @@ func _update_cable() -> void:
 		cyl_mesh.bottom_radius = 0.05
 		mesh_node.global_transform = span_xform
 
-	if col_node:
+	_update_collision_shapes(distance, span_xform)
+
+
+## Updates height and transform for all child [CollisionShape3D] nodes.
+func _update_collision_shapes(distance: float, span_xform: Transform3D) -> void:
+	var col_nodes: Array[Node] = find_children("*", "CollisionShape3D", true, false)
+	for node: Node in col_nodes:
+		var col_node: CollisionShape3D = node as CollisionShape3D
+		if not is_instance_valid(col_node):
+			continue
+
 		var cyl_shape: CylinderShape3D = col_node.shape as CylinderShape3D
-		if not cyl_shape:
+		if not is_instance_valid(cyl_shape):
 			cyl_shape = CylinderShape3D.new()
+			cyl_shape.radius = 0.05
 			col_node.shape = cyl_shape
 
 		cyl_shape.height = distance
-		cyl_shape.radius = 0.05
 		col_node.global_transform = span_xform
 
 

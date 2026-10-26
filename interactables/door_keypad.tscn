@@ -53,6 +53,7 @@ transform = Transform3D(-4.371139e-08, 0, 1, 0, 1, 0, -1, 0, -4.371139e-08, 0, 0
 shape = SubResource("BoxShape3D_koi6h")
 
 [node name="DoorKeypadSubViewport" type="SubViewport" parent="." unique_id=1935440404]
+disable_3d = true
 
 [node name="KeypadAudio" type="AudioStreamPlayer3D" parent="." unique_id=1237021702]
 stream = ExtResource("6_jyx7n")

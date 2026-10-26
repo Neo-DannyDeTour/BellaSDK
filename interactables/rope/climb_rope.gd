@@ -60,13 +60,16 @@ const ROPE_SEGMENT_LEN: float = 0.25
 const ROPE_RADIUS: float = 0.028
 
 ## Downward gravity acceleration (m/s^2) applied to free Verlet rope points.
-const VERLET_GRAVITY: float = 18.0
+const VERLET_GRAVITY: float = 32.0
 
 ## Velocity retention factor per frame when the Verlet rope swings freely.
-const VERLET_DAMPING: float = 0.985
+const VERLET_DAMPING: float = 0.92
 
 ## Velocity retention factor per frame while pinned to the player's hands.
-const VERLET_PINNED_DAMPING: float = 0.92
+const VERLET_PINNED_DAMPING: float = 0.85
+
+## Exponential horizontal restoring rate (1/s) pulling unpinned nodes to the vertical axis.
+const VERLET_RESTORE_RATE: float = 6.5
 
 ## Distance constraint relaxation iterations executed per frame in swing mode.
 const VERLET_ITERATIONS: int = 8
@@ -75,7 +78,7 @@ const VERLET_ITERATIONS: int = 8
 const VERLET_SLEEP_EPSILON_SQ: float = 0.000004
 
 ## Consecutive settled frames required before the Verlet strand goes to sleep.
-const VERLET_SLEEP_FRAMES: int = 30
+const VERLET_SLEEP_FRAMES: int = 15
 
 ## Squared camera distance (30m) beyond which idle visual updates are skipped.
 const CULL_DISTANCE_SQUARED: float = 900.0
@@ -816,6 +819,7 @@ func _step_verlet(delta: float) -> void:
 	var dt: float = minf(delta, 0.033)
 	var grav_step: Vector3 = Vector3(0.0, -VERLET_GRAVITY * dt * dt, 0.0)
 	var damp: float = VERLET_PINNED_DAMPING if _has_hand_point else VERLET_DAMPING
+	var restore_alpha: float = 0.0 if _has_hand_point else (1.0 - exp(-VERLET_RESTORE_RATE * dt))
 	var anchor_pos: Vector3 = global_position
 
 	var seg_count: int = point_count - 1
@@ -828,7 +832,11 @@ func _step_verlet(delta: float) -> void:
 		var cur: Vector3 = _verlet_pos[i]
 		var vel: Vector3 = (cur - _verlet_prev[i]) * damp
 		_verlet_prev[i] = cur
-		_verlet_pos[i] = cur + vel + grav_step
+		var next_pos: Vector3 = cur + vel + grav_step
+		if restore_alpha > 0.0:
+			next_pos.x = lerpf(next_pos.x, anchor_pos.x, restore_alpha)
+			next_pos.z = lerpf(next_pos.z, anchor_pos.z, restore_alpha)
+		_verlet_pos[i] = next_pos
 
 	_verlet_pos[0] = anchor_pos
 	_verlet_prev[0] = anchor_pos
