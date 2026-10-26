@@ -107,6 +107,15 @@ func select_slot(index: int) -> void:
 		print("WeaponInventoryComponent: Slot ", index + 1, " is empty.")
 		return
 	if current_slot_index == index:
+		var current_gun: Node3D = slots[current_slot_index]
+		var current_tag_val: Variant = current_gun.get("weapon_tag")
+		var current_tag: String = (
+			str(current_tag_val) if current_tag_val != null else String(current_gun.name)
+		)
+		if is_instance_valid(Events) and Events.has_signal("active_weapon_changed"):
+			Events.active_weapon_changed.emit(current_tag)
+		if current_gun.has_method("sync_ammo_ui"):
+			current_gun.call("sync_ammo_ui")
 		return
 
 	print("WeaponInventoryComponent: Switching to slot ", index + 1)
@@ -177,3 +186,16 @@ func add_ammo(target_ammo_type: StringName, amount: int) -> bool:
 	if is_instance_valid(Events) and Events.has_signal("ammo_collected"):
 		Events.ammo_collected.emit(target_ammo_type, amount)
 	return applied
+
+
+## Performs a quick throw using a registered [ThrowableWeapon] without swapping active slot.
+func quick_throw_grenade() -> bool:
+	if not can_fire:
+		return false
+	for weapon: Node3D in slots:
+		if is_instance_valid(weapon) and weapon is ThrowableWeapon:
+			var throwable: ThrowableWeapon = weapon as ThrowableWeapon
+			if throwable.current_ammo > 0:
+				print("WeaponInventoryComponent: Quick-throwing grenade: ", throwable.weapon_tag)
+				return throwable.shoot(camera)
+	return false

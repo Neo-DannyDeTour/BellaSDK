@@ -234,12 +234,12 @@ func _handle_jump_input(p: Player, loco: PlayerLocomotionComponent) -> void:
 			Events.hint_requested.emit("Cannot jump while carrying a heavy object.", 2.0)
 			return
 
-		if wall_coyote_timer > 0.0:
+		if p.is_wolf_mode and not has_wolf_double_jumped:
+			_perform_wolf_double_jump(p, loco)
+		elif wall_coyote_timer > 0.0:
 			_perform_wall_coyote_jump(p)
 		elif coyote_timer > 0.0 and not has_jumped:
 			_perform_coyote_jump(p, loco)
-		elif p.is_wolf_mode and not has_wolf_double_jumped:
-			_perform_wolf_double_jump(p, loco)
 		else:
 			print("StateAir: Jump input buffered.")
 			jump_buffer_timer = loco.jump_buffer_duration
@@ -278,6 +278,8 @@ func _perform_wolf_double_jump(p: Player, loco: PlayerLocomotionComponent) -> vo
 	print("StateAir: Executing wolf form mid-air double jump!")
 	has_wolf_double_jumped = true
 	has_jumped = true
+	coyote_timer = 0.0
+	wall_coyote_timer = 0.0
 	is_launched = false
 	launch_timer = 0.0
 

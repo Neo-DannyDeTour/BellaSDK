@@ -3,38 +3,82 @@
 class_name Zipline
 extends UniversalCable3D
 
+# --------------------------------------
+# CONSTANTS
+# --------------------------------------
+## Canonical group name registering this entity as an interactable volume.
+const GROUP_INTERACTABLE: StringName = &"interactable"
+
+# --------------------------------------
+# EXPORTS
+# --------------------------------------
 ## Vertical offset positioning dynamic 3D interaction label near cable hit point.
 @export var label_offset_amount: float = 0.35
 
+# --------------------------------------
+# PUBLIC VARIABLES
+# --------------------------------------
+## Indicates whether a player character is currently mounted on this zipline.
 var player_on_zipline: bool = false
+
+## Reference to the mounted character entity.
 var current_player: CharacterBody3D = null
+
+## Cached world coordinate of mounted character from preceding physics frame.
 var last_player_pos: Vector3 = Vector3.ZERO
+
+## Estimated linear transit velocity calculated across physics frames.
 var current_travel_velocity: Vector3 = Vector3.ZERO
+
+# --------------------------------------
+# PRIVATE VARIABLES
+# --------------------------------------
+## Cached active camera reference from the main viewport.
 var _cached_camera: Camera3D = null
 
+# --------------------------------------
+# ONREADY REFERENCES
+# --------------------------------------
+## Crosshair interaction component child of interact area.
 @onready var interact_component: InteractComponent = (
 	$InteractArea/InteractComponent
 	if $InteractArea/InteractComponent is InteractComponent
 	else null
 )
+
+## Visual outline shader component managing focus effects.
 @onready var highlight_component: HighlightComponent = (
 	$InteractArea/HighlightComponent
 	if $InteractArea/HighlightComponent is HighlightComponent
 	else null
 )
+
+## 3D billboard text label displaying interaction key hints.
 @onready
 var interact_label: Label3D = $InteractArea/Label3D if $InteractArea/Label3D is Label3D else null
 
+## Airborne proximity area detecting player body entries.
+@onready var proximity_area: Area3D = get_node_or_null("ProximityArea") as Area3D
+
+## 3D audio player for downhill slide whoosh sounds.
 @onready
 var slide_audio: AudioStreamPlayer3D = $SlideAudio if $SlideAudio is AudioStreamPlayer3D else null
+
+## 3D audio player for uphill hand climbing sounds.
 @onready
 var climb_audio: AudioStreamPlayer3D = $ClimbAudio if $ClimbAudio is AudioStreamPlayer3D else null
 
 
-## Initializes input action label and binds interaction component signals.
+# --------------------------------------
+# LIFECYCLE METHODS
+# --------------------------------------
+## Initializes groups, input action labels, and binds interaction and proximity signals.
 func _ready() -> void:
 	print("Zipline: _ready() - Initializing zipline interactable.")
 	super._ready()
+
+	add_to_group(GROUP_INTERACTABLE)
+	add_to_group(&"interactables")
 
 	if Engine.is_editor_hint():
 		return
@@ -60,6 +104,20 @@ func _ready() -> void:
 		interact_component.focused.connect(_on_focused)
 	if not interact_component.unfocused.is_connected(_on_unfocused):
 		interact_component.unfocused.connect(_on_unfocused)
+
+	if is_instance_valid(proximity_area):
+		if not proximity_area.body_entered.is_connected(_on_proximity_body_entered):
+			proximity_area.body_entered.connect(_on_proximity_body_entered)
+
+
+## Disconnects proximity signals and cleans up on tree exit.
+func _exit_tree() -> void:
+	if Engine.is_editor_hint():
+		return
+
+	if is_instance_valid(proximity_area):
+		if proximity_area.body_entered.is_connected(_on_proximity_body_entered):
+			proximity_area.body_entered.disconnect(_on_proximity_body_entered)
 
 
 ## Tracks player travel velocity, adjusts audio playback, and updates hint label.
@@ -116,44 +174,9 @@ func _physics_process(delta: float) -> void:
 			interact_label.global_position = final_pos
 
 
-## Displays interact prompt label when player focuses zipline volume.
-func _on_focused() -> void:
-	if not player_on_zipline and is_instance_valid(interact_label):
-		interact_label.show()
-
-
-## Hides interact prompt label when player looks away from zipline volume.
-func _on_unfocused() -> void:
-	if is_instance_valid(interact_label):
-		interact_label.hide()
-
-
-## Handles interact component interaction signal to mount player to zipline.
-func _on_interact_component_interacted(player: CharacterBody3D) -> void:
-	print("Zipline: _on_interact_component_interacted() called.")
-	force_grab_zipline(player)
-
-
-## Cleans up active player references, stops audio, and un-suppresses outlines.
-func on_player_released() -> void:
-	print("Zipline: on_player_released() called. Resetting zipline state.")
-	player_on_zipline = false
-	current_player = null
-
-	if is_instance_valid(slide_audio) and slide_audio.playing:
-		slide_audio.stop()
-	if is_instance_valid(climb_audio) and climb_audio.playing:
-		climb_audio.stop()
-
-	if is_instance_valid(highlight_component):
-		highlight_component.suppress(false)
-
-
-## Returns estimated linear transit velocity calculated across frames.
-func get_current_travel_velocity() -> Vector3:
-	return current_travel_velocity
-
-
+# --------------------------------------
+# PUBLIC METHODS
+# --------------------------------------
 ## Validates player cooldown and initializes zipline attachment kinematics.
 func force_grab_zipline(player: CharacterBody3D) -> void:
 	print("Zipline: force_grab_zipline() called for ", player.name)
@@ -184,6 +207,74 @@ func force_grab_zipline(player: CharacterBody3D) -> void:
 
 		if is_instance_valid(highlight_component):
 			highlight_component.suppress(true)
+
+
+## Passes manual interaction call directly into zipline attachment flow.
+func interact_with(character: CharacterBody3D) -> void:
+	print("Zipline: interact_with() called.")
+	force_grab_zipline(character)
+
+
+## Cleans up active player references, stops audio, and un-suppresses outlines.
+func on_player_released() -> void:
+	print("Zipline: on_player_released() called. Resetting zipline state.")
+	player_on_zipline = false
+	current_player = null
+
+	if is_instance_valid(slide_audio) and slide_audio.playing:
+		slide_audio.stop()
+	if is_instance_valid(climb_audio) and climb_audio.playing:
+		climb_audio.stop()
+
+	if is_instance_valid(highlight_component):
+		highlight_component.suppress(false)
+
+
+## Returns estimated linear transit velocity calculated across frames.
+func get_current_travel_velocity() -> Vector3:
+	return current_travel_velocity
+
+
+# --------------------------------------
+# PRIVATE METHODS
+# --------------------------------------
+## Displays interact prompt label when player focuses zipline volume.
+func _on_focused() -> void:
+	if not player_on_zipline and is_instance_valid(interact_label):
+		interact_label.show()
+
+
+## Hides interact prompt label when player looks away from zipline volume.
+func _on_unfocused() -> void:
+	if is_instance_valid(interact_label):
+		interact_label.hide()
+
+
+## Handles interact component interaction signal to mount player to zipline.
+func _on_interact_component_interacted(player: CharacterBody3D) -> void:
+	print("Zipline: _on_interact_component_interacted() called.")
+	force_grab_zipline(player)
+
+
+## Handles airborne player entering proximity area to trigger auto-grab.
+func _on_proximity_body_entered(body: Node3D) -> void:
+	if not is_instance_valid(body) or player_on_zipline:
+		return
+
+	var character: CharacterBody3D = body as CharacterBody3D
+	if not is_instance_valid(character):
+		return
+
+	var is_floor_val: Variant = character.call(&"is_on_floor")
+	if is_floor_val == true or character.is_on_floor():
+		return
+
+	if character.has_method(&"has_zipline_cooldown"):
+		var cooldown_val: Variant = character.call(&"has_zipline_cooldown")
+		if cooldown_val == true:
+			return
+
+	force_grab_zipline.call_deferred(character)
 
 
 ## Caches and returns active player [Camera3D] from current viewport.

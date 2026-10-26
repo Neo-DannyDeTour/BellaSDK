@@ -48,6 +48,18 @@ const HEAD_BOBBING_IDLE_INTENSITY: float = 0.02
 ## Roll angle tilt magnitude applied during strafing movements.
 @export var camera_tilt_amount: float = 3.0
 
+@export_category("Wolf Mode Jitter")
+## Idle bobbing speed multiplier applied when in wolf form.
+@export var wolf_idle_bob_speed_scale: float = 2.0
+## Translational noise displacement intensity in meters for wolf idle jitter.
+@export var wolf_idle_jitter_pos_intensity: float = 0.003
+## Rotational noise displacement intensity in radians for wolf idle pitch/yaw/roll.
+@export var wolf_idle_jitter_rot_intensity: float = 0.002
+## Frequency rate driving wolf idle simplex noise progression over time.
+@export var wolf_idle_noise_frequency: float = 24.0
+## Interpolation speed for blending wolf idle jitter weight in and out.
+@export var wolf_idle_blend_speed: float = 4.0
+
 ## Active mouse sensitivity scalar used for real-time input evaluation.
 var mouse_sensitivity: float = 0.05
 ## Target FOV degree goal for interpolation.
@@ -73,6 +85,15 @@ var invert_y: bool = false
 ## Whether screen motion and camera head bobbing are reduced.
 var reduce_motion: bool = false
 
+## Pre-allocated simplex noise generator driving erratic wolf idle twitching.
+var _wolf_noise: FastNoiseLite = FastNoiseLite.new()
+## Time progression accumulator for wolf idle noise sampling.
+var _wolf_noise_time: float = 0.0
+## Active blend weight transitioning wolf idle jitter in and out.
+var _wolf_idle_blend: float = 0.0
+## Current wolf transformation state received from event bus.
+var _is_wolf_mode: bool = false
+
 
 ## Lifecycle initialization method loading saved preferences and camera state.
 func _ready() -> void:
@@ -86,6 +107,25 @@ func _ready() -> void:
 
 	mouse_sensitivity = mouse_sensitivity_base
 	target_fov = base_fov
+
+	_wolf_noise.seed = randi()
+	_wolf_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
+	_wolf_noise.frequency = 0.5
+
+	if Events.has_signal(&"wolf_mode_toggled"):
+		Events.wolf_mode_toggled.connect(_on_wolf_mode_toggled)
+
+	if is_instance_valid(player_body) and player_body.get(&"is_wolf_mode") == true:
+		_is_wolf_mode = true
+
+
+## Cleans up event listeners when removed from the scene tree.
+func _exit_tree() -> void:
+	if (
+		Events.has_signal(&"wolf_mode_toggled")
+		and Events.wolf_mode_toggled.is_connected(_on_wolf_mode_toggled)
+	):
+		Events.wolf_mode_toggled.disconnect(_on_wolf_mode_toggled)
 
 
 ## Sets base mouse sensitivity multiplier and syncs live sensitivity.
@@ -155,6 +195,7 @@ func update_camera(
 	_update_fov(delta, is_sprinting, is_grounded, input_dir)
 	_update_tilt(delta, input_dir)
 	_update_headbob(delta, input_dir, is_sprinting, is_crouching)
+	_update_wolf_jitter(delta, input_dir)
 	_update_stair_smoothing(delta, player_velocity)
 
 
@@ -172,11 +213,58 @@ func update_noclip_camera(delta: float, input_dir: Vector2, is_sprinting: bool) 
 	_update_fov(delta, is_sprinting, true, input_dir)
 	_update_tilt(delta, input_dir)
 
+	_wolf_idle_blend = 0.0
 	headbob_offset.y = lerpf(headbob_offset.y, 0.0, delta * lerp_speed)
 	headbob_offset.x = lerpf(headbob_offset.x, 0.0, delta * lerp_speed)
 	if is_instance_valid(eyes):
 		eyes.position.y = headbob_offset.y
 		eyes.position.x = headbob_offset.x
+		eyes.rotation.x = 0.0
+		eyes.rotation.y = 0.0
+
+
+## Injects step displacement offset when navigating step height changes.
+## [param snap_amount] Step displacement distance in meters.
+func add_stair_offset(snap_amount: float) -> void:
+	print("CameraController: Applying stair snap offset: ", snap_amount)
+	stair_offset -= snap_amount
+	stair_offset = clampf(stair_offset, -0.5, 0.5)
+
+
+## Calculates normalized forward look vector from active camera.
+## [return] The unit forward [Vector3].
+func get_camera_look_dir() -> Vector3:
+	if is_instance_valid(camera):
+		return -camera.global_transform.basis.z
+	return Vector3.FORWARD
+
+
+## Calculates normalized right view vector from active camera.
+## [return] The unit right [Vector3].
+func get_camera_right_dir() -> Vector3:
+	if is_instance_valid(camera):
+		return camera.global_transform.basis.x
+	return Vector3.RIGHT
+
+
+## Forces pitch and yaw rotation values directly to camera components.
+## [param pitch] Camera vertical pitch in radians.
+## [param yaw] Body horizontal yaw in radians.
+func apply_saved_rotation(pitch: float, yaw: float) -> void:
+	print("CameraController: apply_saved_rotation() called.")
+	global_rotation = Vector3(pitch, yaw, 0.0)
+
+	if is_instance_valid(head):
+		head.rotation.x = pitch
+
+	if is_instance_valid(player_body):
+		player_body.rotation.y = yaw
+
+
+## Resets head yaw rotation back to zero alignment with player body.
+func reset_head_yaw() -> void:
+	if is_instance_valid(head):
+		head.rotation.y = 0.0
 
 
 ## Calculates FOV goals based on zooming, sprint states, and interpolates camera FOV.
@@ -218,15 +306,17 @@ func _update_fov(delta: float, is_sprinting: bool, is_grounded: bool, input_dir:
 			print("CameraController: Camera FOV zoom deactivated.")
 			Events.player_zoomed.emit(false)
 
-	camera.fov = lerpf(camera.fov, target_fov, delta * fov_change_speed)
+	if is_instance_valid(camera):
+		camera.fov = lerpf(camera.fov, target_fov, delta * fov_change_speed)
 
 
 ## Smoothly rolls the camera roll axis when strafing.
 ## [param delta] Frame delta time in seconds.
 ## [param input_dir] Current movement vector.
 func _update_tilt(delta: float, input_dir: Vector2) -> void:
-	var target_tilt: float = 0.0 if reduce_motion else input_dir.x * camera_tilt_amount
-	eyes.rotation.z = lerpf(eyes.rotation.z, deg_to_rad(-target_tilt), delta * lerp_speed)
+	if is_instance_valid(eyes):
+		var target_tilt: float = 0.0 if reduce_motion else input_dir.x * camera_tilt_amount
+		eyes.rotation.z = lerpf(eyes.rotation.z, deg_to_rad(-target_tilt), delta * lerp_speed)
 
 
 ## Updates procedural sine-wave head bobbing offsets for active movement.
@@ -242,6 +332,9 @@ func _update_headbob(
 	is_crouching: bool,
 	intensity_modifier: float = 1.0
 ) -> void:
+	if not is_instance_valid(eyes):
+		return
+
 	if reduce_motion:
 		headbob_offset = Vector2.ZERO
 		eyes.position.y = stair_offset
@@ -262,6 +355,11 @@ func _update_headbob(
 			head_bobbing_current_intensity = HEAD_BOBBING_WALKING_INTENSITY
 	else:
 		head_bobbing_current_intensity = HEAD_BOBBING_IDLE_INTENSITY
+		if _is_wolf_mode:
+			bob_speed = (
+				HEAD_BOBBING_IDLE_SPEED
+				* (1.0 + (_wolf_idle_blend * (wolf_idle_bob_speed_scale - 1.0)))
+			)
 
 	var movement_multiplier: float = 1.0 if input_dir.length() > 0.1 else 0.5
 	head_bobbing_index += bob_speed * delta * movement_multiplier
@@ -280,12 +378,39 @@ func _update_headbob(
 	eyes.position.x = headbob_offset.x
 
 
-## Injects step displacement offset when navigating step height changes.
-## [param snap_amount] Step displacement distance in meters.
-func add_stair_offset(snap_amount: float) -> void:
-	print("CameraController: Applying stair snap offset: ", snap_amount)
-	stair_offset -= snap_amount
-	stair_offset = clampf(stair_offset, -0.5, 0.5)
+## Computes high-frequency erratic jitter on camera position and rotation during wolf idle.
+## [param delta] Physics frame delta time in seconds.
+## [param input_dir] Current horizontal locomotion input vector.
+func _update_wolf_jitter(delta: float, input_dir: Vector2) -> void:
+	if not is_instance_valid(eyes):
+		return
+
+	var is_idle: bool = _is_wolf_mode and input_dir == Vector2.ZERO and not reduce_motion
+	var target_blend: float = 1.0 if is_idle else 0.0
+	_wolf_idle_blend = move_toward(_wolf_idle_blend, target_blend, delta * wolf_idle_blend_speed)
+
+	if _wolf_idle_blend <= 0.0:
+		eyes.rotation.x = 0.0
+		eyes.rotation.y = 0.0
+		return
+
+	_wolf_noise_time += delta * wolf_idle_noise_frequency
+
+	var sample_pos_x: float = _wolf_noise.get_noise_2d(_wolf_noise_time, 0.0)
+	var sample_pos_y: float = _wolf_noise.get_noise_2d(0.0, _wolf_noise_time)
+	var sample_rot_x: float = _wolf_noise.get_noise_2d(_wolf_noise_time, 100.0)
+	var sample_rot_y: float = _wolf_noise.get_noise_2d(100.0, _wolf_noise_time)
+	var sample_rot_z: float = _wolf_noise.get_noise_2d(_wolf_noise_time, _wolf_noise_time)
+
+	var current_pos_intensity: float = wolf_idle_jitter_pos_intensity * _wolf_idle_blend
+	var current_rot_intensity: float = wolf_idle_jitter_rot_intensity * _wolf_idle_blend
+
+	eyes.position.x += sample_pos_x * current_pos_intensity
+	eyes.position.y += sample_pos_y * current_pos_intensity
+
+	eyes.rotation.x = sample_rot_x * current_rot_intensity
+	eyes.rotation.y = sample_rot_y * current_rot_intensity
+	eyes.rotation.z += sample_rot_z * current_rot_intensity
 
 
 ## Decays stair displacement back to zero over time.
@@ -299,31 +424,8 @@ func _update_stair_smoothing(delta: float, player_velocity: float) -> void:
 	stair_offset = move_toward(stair_offset, 0.0, move_amount)
 
 
-## Calculates normalized forward look vector from active camera.
-## [return] The unit forward [Vector3].
-func get_camera_look_dir() -> Vector3:
-	if is_instance_valid(camera):
-		return -camera.global_transform.basis.z
-	return Vector3.FORWARD
-
-
-## Calculates normalized right view vector from active camera.
-## [return] The unit right [Vector3].
-func get_camera_right_dir() -> Vector3:
-	if is_instance_valid(camera):
-		return camera.global_transform.basis.x
-	return Vector3.RIGHT
-
-
-## Forces pitch and yaw rotation values directly to camera components.
-## [param pitch] Camera vertical pitch in radians.
-## [param yaw] Body horizontal yaw in radians.
-func apply_saved_rotation(pitch: float, yaw: float) -> void:
-	print("CameraController: apply_saved_rotation() called.")
-	global_rotation = Vector3(pitch, yaw, 0.0)
-
-	if is_instance_valid(head):
-		head.rotation.x = pitch
-
-	if is_instance_valid(player_body):
-		player_body.rotation.y = yaw
+## Handles wolf form toggle event to activate idle jitter styling.
+## [param is_active] True when entering wolf form; false otherwise.
+func _on_wolf_mode_toggled(is_active: bool) -> void:
+	print("CameraController: _on_wolf_mode_toggled() -> ", is_active)
+	_is_wolf_mode = is_active

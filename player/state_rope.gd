@@ -25,27 +25,48 @@ const CHAIN_JUMP_HORIZONTAL: float = 7.0
 ## Vertical hop velocity applied when jumping off a chain.
 const CHAIN_JUMP_VERTICAL: float = 4.5
 
+## Vertical climb speed along a swing rope in meters per second when looking up or down.
+const SWING_CLIMB_SPEED: float = 1.6
+
+## Camera look-Y threshold (sin 20 deg ~= 0.35) activating pitch-relative rope climbing.
+const SWING_CLIMB_PITCH_THRESHOLD: float = 0.55
+
 ## Downward slide speed along a swing rope in meters per second.
 const SWING_SLIDE_SPEED: float = 4.0
 
+## Gravity multiplier applied to the swing pendulum for a heavier, grounded arc.
+const SWING_GRAVITY_SCALE: float = 1.85
+
 ## Tangential pump acceleration (m/s^2) when driving a swing with WASD.
 # shortcut: fixed constant, promote to ClimbRope3D export if per-rope pump tuning is needed
-const SWING_PUMP_ACCEL: float = 14.0
+const SWING_PUMP_ACCEL: float = 11.0
 
-## Maximum swing angle in radians (75 deg) beyond which WASD pumping cuts off.
-const SWING_MAX_PUMP_ANGLE_RAD: float = 1.3089969
+## Maximum swing angle in radians (50 deg) beyond which WASD pumping cuts off.
+const SWING_MAX_PUMP_ANGLE_RAD: float = 0.8726646
 
-## Passive angular velocity damping rate for the swing pendulum.
-const SWING_DAMPING: float = 0.35
+## Active angular velocity damping rate while pumping the swing pendulum.
+const SWING_DAMPING: float = 0.8
+
+## Stronger damping rate applied when no pump input is held so the rope settles quickly.
+const SWING_IDLE_DAMPING: float = 3.2
+
+## Extra damping rate applied while actively climbing up or down the swing rope.
+const SWING_CLIMB_BRAKE_DAMPING: float = 4.5
+
+## Quadratic air drag coefficient opposing high-speed pendulum motion.
+const SWING_AIR_DRAG: float = 0.02
 
 ## Forward velocity boost added along flat camera look when launching from a swing.
-const SWING_JUMP_FWD_BOOST: float = 5.5
+const SWING_JUMP_FWD_BOOST: float = 4.0
+
+## Maximum horizontal speed (m/s) allowed when launching off a swing rope.
+const SWING_JUMP_MAX_HORIZ_SPEED: float = 9.5
 
 ## Base upward velocity added when launching from a swing rope.
-const SWING_JUMP_BASE_UP: float = 4.2
+const SWING_JUMP_BASE_UP: float = 4.0
 
 ## Additional upward velocity scaled by upward camera pitch on swing launch.
-const SWING_JUMP_PITCH_UP: float = 2.8
+const SWING_JUMP_PITCH_UP: float = 2.0
 
 ## Maximum swing speed (m/s) below which the player is still enough to fire a weapon.
 const SWING_STILL_SPEED_THRESHOLD: float = 0.75
@@ -297,14 +318,29 @@ func _update_chain_mode(p: Player, delta: float, input_dir: Vector2, is_sliding:
 # --------------------------------------
 
 
-## Processes analytic spherical pendulum motion, wall impacts, and camera roll.
+## Processes analytic spherical pendulum motion, pitch-relative climbing, and camera roll.
 func _update_swing_mode(p: Player, delta: float, input_dir: Vector2, is_sliding: bool) -> void:
 	var min_dist: float = ClimbRope3D.MIN_GRAB_OFFSET
 	var max_dist: float = maxf(min_dist, _rope.length - ClimbRope3D.BOTTOM_GRAB_MARGIN)
 	var prev_dist: float = _grab_distance
 
+	var look_dir: Vector3 = _get_camera_look_dir(p)
+	var pitch_climb_mode: bool = absf(look_dir.y) >= SWING_CLIMB_PITCH_THRESHOLD
+	var is_actively_climbing: bool = false
+
 	if is_sliding:
 		_grab_distance = minf(max_dist, _grab_distance + SWING_SLIDE_SPEED * delta)
+	elif pitch_climb_mode and absf(input_dir.y) > 0.05:
+		# Looking up (look_dir.y > 0): FORWARD (input_dir.y < 0) decreases grab_distance (climbs up),
+		# BACKWARD (input_dir.y > 0) increases grab_distance (climbs down).
+		# Looking down (look_dir.y < 0): FORWARD (input_dir.y < 0) increases grab_distance (climbs down),
+		# BACKWARD (input_dir.y > 0) decreases grab_distance (climbs up).
+		var pitch_sign: float = 1.0 if look_dir.y >= 0.0 else -1.0
+		var climb_dir: float = input_dir.y * pitch_sign
+		_grab_distance = clampf(
+			_grab_distance + (climb_dir * SWING_CLIMB_SPEED * delta), min_dist, max_dist
+		)
+		is_actively_climbing = true
 
 	var anchor: Vector3 = _rope.global_position
 	var hand_offset: Vector3 = Vector3(0.0, HAND_HEIGHT_OFFSET, 0.0)
@@ -316,22 +352,37 @@ func _update_swing_mode(p: Player, delta: float, input_dir: Vector2, is_sliding:
 	var radial_dir: Vector3 = rel.normalized()
 	var swing_angle: float = acos(clampf(radial_dir.dot(Vector3.DOWN), -1.0, 1.0))
 
-	var grav: float = _get_gravity(p)
+	var grav: float = _get_gravity(p) * SWING_GRAVITY_SCALE
 	_swing_velocity.y -= grav * delta
 
-	if (
+	# When looking up/down past the climb threshold, W/S climbs while A/D still steers laterally.
+	var pump_input: Vector2 = Vector2(input_dir.x, 0.0) if pitch_climb_mode else input_dir
+	var is_pumping: bool = (
 		not is_sliding
-		and input_dir.length_squared() > 0.001
+		and not is_actively_climbing
+		and pump_input.length_squared() > 0.0025
 		and swing_angle < SWING_MAX_PUMP_ANGLE_RAD
-	):
+	)
+
+	if is_pumping:
 		var cam_fwd: Vector3 = _get_flat_camera_forward(p)
 		var cam_right: Vector3 = _get_flat_camera_right(p)
-		var wish_dir: Vector3 = ((cam_fwd * -input_dir.y) + (cam_right * input_dir.x)).normalized()
+		var wish_dir: Vector3 = (
+			((cam_fwd * -pump_input.y) + (cam_right * pump_input.x)).normalized()
+		)
 		var tangent_wish: Vector3 = wish_dir - radial_dir * wish_dir.dot(radial_dir)
 		if tangent_wish.length_squared() > 0.0001:
-			_swing_velocity += tangent_wish.normalized() * (SWING_PUMP_ACCEL * delta)
+			var angle_ratio: float = clampf(swing_angle / SWING_MAX_PUMP_ANGLE_RAD, 0.0, 1.0)
+			var authority: float = cos(angle_ratio * PI * 0.5)
+			_swing_velocity += (tangent_wish.normalized() * (SWING_PUMP_ACCEL * authority * delta))
 
-	_swing_velocity *= maxf(0.0, 1.0 - (SWING_DAMPING * delta))
+	var active_damping: float = SWING_DAMPING if is_pumping else SWING_IDLE_DAMPING
+	if is_actively_climbing:
+		active_damping = maxf(active_damping, SWING_CLIMB_BRAKE_DAMPING)
+
+	var speed: float = _swing_velocity.length()
+	var total_decay: float = active_damping + (SWING_AIR_DRAG * speed)
+	_swing_velocity *= exp(-total_decay * delta)
 	_swing_velocity -= radial_dir * _swing_velocity.dot(radial_dir)
 
 	var predicted_hand: Vector3 = hand_pos + (_swing_velocity * delta)
@@ -340,8 +391,8 @@ func _update_swing_mode(p: Player, delta: float, input_dir: Vector2, is_sliding:
 		new_rel = Vector3.DOWN * _grab_distance
 
 	var new_radial_dir: Vector3 = new_rel.normalized()
-	if new_radial_dir.y > -0.05:
-		new_radial_dir.y = -0.05
+	if new_radial_dir.y > -0.20:
+		new_radial_dir.y = -0.20
 		new_radial_dir = new_radial_dir.normalized()
 
 	var constrained_hand: Vector3 = anchor + (new_radial_dir * _grab_distance)
@@ -372,10 +423,16 @@ func _update_swing_mode(p: Player, delta: float, input_dir: Vector2, is_sliding:
 	_rope.set_hand_point(actual_hand, _grab_distance)
 
 	var swing_speed: float = _swing_velocity.length()
-	var is_sliding_now: bool = is_sliding and absf(_grab_distance - prev_dist) > 0.0005
-	_rope.set_audio(false, is_sliding_now, swing_speed)
+	var moved_vertically: bool = absf(_grab_distance - prev_dist) > 0.0005
+	var is_climbing_now: bool = (not is_sliding) and is_actively_climbing and moved_vertically
+	var is_sliding_now: bool = is_sliding and moved_vertically
+	_rope.set_audio(is_climbing_now, is_sliding_now, swing_speed)
 
-	var can_shoot_now: bool = (not is_sliding) and (swing_speed < SWING_STILL_SPEED_THRESHOLD)
+	var can_shoot_now: bool = (
+		(not is_sliding)
+		and (not is_actively_climbing)
+		and (swing_speed < SWING_STILL_SPEED_THRESHOLD)
+	)
 	_set_weapon_can_fire(p, can_shoot_now)
 
 	var rope_up: Vector3 = (anchor - actual_hand).normalized()
@@ -384,7 +441,8 @@ func _update_swing_mode(p: Player, delta: float, input_dir: Vector2, is_sliding:
 	var raw_roll_deg: float = clampf(
 		rad_to_deg(asin(side_dot)), -MAX_SWING_ROLL_DEG, MAX_SWING_ROLL_DEG
 	)
-	_update_camera_and_roll(p, delta, Vector2.ZERO, deg_to_rad(raw_roll_deg))
+	var bob_input: Vector2 = Vector2(0.0, input_dir.y) if is_climbing_now else Vector2.ZERO
+	_update_camera_and_roll(p, delta, bob_input, deg_to_rad(raw_roll_deg))
 
 	if is_sliding and _grab_distance >= max_dist - 0.01:
 		_bottom_slide_timer += delta
@@ -418,8 +476,12 @@ func _check_dismount(p: Player) -> bool:
 			var look_dir: Vector3 = _get_camera_look_dir(p)
 			var pitch_up: float = clampf(look_dir.y, 0.0, 1.0) * SWING_JUMP_PITCH_UP
 			var up_vel: float = SWING_JUMP_BASE_UP + pitch_up
-			var swing_vel: Vector3 = (
-				_swing_velocity + (flat_fwd * SWING_JUMP_FWD_BOOST) + Vector3(0.0, up_vel, 0.0)
+			var raw_launch: Vector3 = _swing_velocity + (flat_fwd * SWING_JUMP_FWD_BOOST)
+			var horiz_launch: Vector3 = Vector3(raw_launch.x, 0.0, raw_launch.z)
+			if horiz_launch.length() > SWING_JUMP_MAX_HORIZ_SPEED:
+				horiz_launch = horiz_launch.normalized() * SWING_JUMP_MAX_HORIZ_SPEED
+			var swing_vel: Vector3 = Vector3(
+				horiz_launch.x, clampf(raw_launch.y, -4.0, 4.0) + up_vel, horiz_launch.z
 			)
 			p.global_position += flat_fwd * DISMOUNT_SEPARATION
 			_dismount_jump(p, swing_vel, flat_fwd)

@@ -66,9 +66,18 @@ func exit() -> void:
 			weapon_holder.rotation.y = 0.0
 
 	var cam_ctrl: CameraController = p.camera_controller
-	if is_instance_valid(cam_ctrl) and is_instance_valid(cam_ctrl.camera):
-		cam_ctrl.camera.rotation.y = 0.0
-		cam_ctrl.camera.rotation.z = 0.0
+	if is_instance_valid(cam_ctrl):
+		if is_instance_valid(cam_ctrl.camera):
+			cam_ctrl.camera.rotation.y = 0.0
+			cam_ctrl.camera.rotation.z = 0.0
+		if is_instance_valid(cam_ctrl.head):
+			cam_ctrl.head.rotation.y = 0.0
+
+	var loco: PlayerLocomotionComponent = (
+		p.locomotion_component if p.locomotion_component is PlayerLocomotionComponent else null
+	)
+	if is_instance_valid(loco):
+		loco.set_direction(Vector3.ZERO)
 
 
 ## Executes glide physics, banking, input steering, and transitions.

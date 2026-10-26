@@ -26,7 +26,12 @@ rings = 0
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_1tsh7"]
 resource_local_to_scene = true
 height = 11.301482
-radius = 0.05
+radius = 0.25
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_prox"]
+resource_local_to_scene = true
+height = 11.301482
+radius = 0.65
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_6k1gw"]
 render_priority = 0
@@ -67,6 +72,14 @@ metadata/_custom_type_script = "uid://dgig0tamvkdxx"
 billboard = 1
 double_sided = false
 no_depth_test = true
+
+[node name="ProximityArea" type="Area3D" parent="." unique_id=1738491024]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ProximityArea" unique_id=1738491025]
+transform = Transform3D(-0.9340086, -0.06616887, -0.35106927, 0, 0.98269767, -0.18521698, 0.35725054, -0.17299426, -0.91784805, -0.12947512, 2.2972713, -0.4120679)
+shape = SubResource("CylinderShape3D_prox")
 
 [node name="SlideAudio" type="AudioStreamPlayer3D" parent="." unique_id=879196766]
 stream = ExtResource("5_um8yc")

@@ -14,6 +14,12 @@ const MAX_WALL_RUN_TIME: float = 2.5
 ## Lateral impulse applied when jumping off the wall (15m jump).
 const WALL_JUMP_KICK_IMPULSE: float = 20.0
 
+## Maximum forward raycast reach in meters for surface-to-surface jump transfers.
+const SURFACE_TRANSFER_REACH: float = 18.0
+
+## Launch speed in meters per second when leaping toward another climbable surface.
+const SURFACE_TRANSFER_SPEED: float = 22.0
+
 ## Camera roll tilt angle in degrees during wall run.
 const CAMERA_ROLL_ANGLE: float = 14.0
 
@@ -26,22 +32,31 @@ var wall_run_dir: Vector3 = Vector3.ZERO
 ## Elapsed time on the current wall segment.
 var wall_run_timer: float = 0.0
 
-## Grace timer preventing premature ejection before wall contact.
-var _wall_lost_time: float = 0.0
-
 ## Wall side sign multiplier (-1 left, 1 right).
 var wall_side: float = 1.0
 
 ## Reference to active [WolfClimbSurface].
 var active_surface: WolfClimbSurface = null
 
+## Grace timer preventing premature ejection before wall contact.
+var _wall_lost_time: float = 0.0
+
 ## Reusable transition payload dictionary.
 var _transition_msg: Dictionary = {}
+
+## Reusable RID array for forward surface transfer raycasts.
+var _transfer_exclude_rids: Array[RID] = []
+
+
+## Cleans up active wall run visual effects when removed from scene tree.
+func _exit_tree() -> void:
+	Events.wolf_wall_run_vfx_toggled.emit(false)
 
 
 ## Initializes wall run direction, speed, and camera roll.
 func enter(msg: Dictionary = {}) -> void:
 	print("StateWolfWallRun: enter() called. Initializing wall run.")
+	Events.wolf_wall_run_vfx_toggled.emit(true)
 	var p: Player = _get_player()
 	if not is_instance_valid(p):
 		return
@@ -79,12 +94,27 @@ func physics_update(delta: float) -> void:
 	if not is_instance_valid(p):
 		return
 
+	var is_interact_pressed: bool = (
+		GestureInputManager.is_action_just_triggered(ACTION_INTERACT)
+		or GestureInputManager.is_action_just_pressed(ACTION_INTERACT)
+	)
+	if is_interact_pressed:
+		print("StateWolfWallRun: Interact pressed. Stopping wall run to hang.")
+		_transition_msg.clear()
+		_transition_msg[&"wall_normal"] = current_wall_normal
+		_transition_msg[&"climb_surface"] = active_surface
+		_transition_msg[&"hang_mode"] = true
+		state_machine.transition_to(&"WolfClimb", _transition_msg)
+		return
+
 	var is_jump_pressed: bool = (
 		GestureInputManager.is_action_just_triggered(ACTION_JUMP)
 		or GestureInputManager.is_action_just_pressed(ACTION_JUMP)
 	)
 
 	if is_jump_pressed:
+		if _try_surface_transfer_jump(p):
+			return
 		_perform_wall_jump(p)
 		return
 
@@ -125,6 +155,7 @@ func physics_update(delta: float) -> void:
 ## Restores camera roll angle to zero on state exit.
 func exit() -> void:
 	print("StateWolfWallRun: exit() resetting camera roll angle.")
+	Events.wolf_wall_run_vfx_toggled.emit(false)
 	var p: Player = _get_player()
 	if is_instance_valid(p) and is_instance_valid(p.camera_controller):
 		p.camera_controller.eyes.rotation.z = 0.0
@@ -172,3 +203,66 @@ func _perform_wall_jump(p: Player) -> void:
 	_transition_msg[&"wall_jump_launch"] = true
 	_transition_msg[&"launch_duration"] = 0.85
 	state_machine.transition_to(&"Air", _transition_msg)
+
+
+## Raycasts along camera look vector and leaps toward another climbable surface if found.
+func _try_surface_transfer_jump(p: Player) -> bool:
+	if not is_instance_valid(p.camera_controller):
+		return false
+
+	var cam_ctrl: CameraController = p.camera_controller
+	var start_pos: Vector3 = (
+		cam_ctrl.camera.global_position
+		if is_instance_valid(cam_ctrl.camera)
+		else p.global_position + Vector3(0.0, 1.5, 0.0)
+	)
+	var look_dir: Vector3 = cam_ctrl.get_camera_look_dir().normalized()
+	var end_pos: Vector3 = start_pos + (look_dir * SURFACE_TRANSFER_REACH)
+
+	_transfer_exclude_rids.clear()
+	_transfer_exclude_rids.append(p.get_rid())
+	if is_instance_valid(active_surface):
+		_transfer_exclude_rids.append(active_surface.get_rid())
+
+	var space: PhysicsDirectSpaceState3D = p.get_world_3d().direct_space_state
+	var mask: int = CollisionLayers.MASK_ENVIRONMENT | CollisionLayers.MASK_INTERACTIVE
+	var hit: Dictionary = NodeQuery.cast_ray(
+		space, start_pos, end_pos, mask, _transfer_exclude_rids
+	)
+	if hit.is_empty():
+		return false
+
+	var collider: Object = hit.get("collider")
+	var col_node: Node = collider as Node
+	if not is_instance_valid(col_node) or not _is_climbable_node(col_node):
+		return false
+
+	print("StateWolfWallRun: Surface-to-surface transfer jump to ", col_node.name)
+	if is_instance_valid(active_surface):
+		active_surface.set_dismount_cooldown(p, 600)
+
+	var hit_pos: Vector3 = hit.get("position", end_pos)
+	p.global_position += current_wall_normal * 0.35
+	var to_target: Vector3 = hit_pos - p.global_position
+	var dist: float = maxf(to_target.length(), 1.0)
+	var flight_time: float = clampf(dist / SURFACE_TRANSFER_SPEED, 0.15, 0.85)
+	var launch_vel: Vector3 = to_target / flight_time
+	launch_vel.y += 0.5 * 9.8 * flight_time
+	p.velocity = launch_vel
+
+	_transition_msg.clear()
+	_transition_msg[&"jump"] = true
+	_transition_msg[&"wall_jump_launch"] = true
+	_transition_msg[&"launch_duration"] = flight_time
+	state_machine.transition_to(&"Air", _transition_msg)
+	return true
+
+
+## Checks whether [param node] or its ancestors belong to [constant GROUP_WOLF_CLIMBABLE].
+func _is_climbable_node(node: Node) -> bool:
+	var curr: Node = node
+	while is_instance_valid(curr):
+		if curr.is_in_group(GROUP_WOLF_CLIMBABLE):
+			return true
+		curr = curr.get_parent()
+	return false

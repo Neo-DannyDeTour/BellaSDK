@@ -41,6 +41,12 @@ var zipline_grace_timer: float = 0.0
 ## Reusable transition payload dictionary to avoid runtime allocations.
 var _transition_msg: Dictionary = {}
 
+## Initial scalar progress along cable when player first attached.
+var _initial_progress: float = 0.0
+
+## Indicates whether player has departed sufficiently far from the attachment point.
+var _has_departed_start: bool = false
+
 
 ## Attaches player to zipline and initializes cable progression metrics.
 func enter(msg: Dictionary = {}) -> void:
@@ -62,8 +68,10 @@ func enter(msg: Dictionary = {}) -> void:
 	zipline_length = zipline_start.distance_to(zipline_end)
 	zipline_grace_timer = 0.0
 	is_zipline_transitioning = true
+	_has_departed_start = false
 
 	_calculate_initial_progress()
+	_initial_progress = zipline_progress
 	_perform_attach_tween()
 
 
@@ -72,6 +80,7 @@ func exit() -> void:
 	print("StateZipline: exit() called. Player dismounting zipline.")
 	current_zipline = null
 	is_zipline_transitioning = false
+	_has_departed_start = false
 	player.scale = Vector3.ONE
 
 	var p: Player = player if player is Player else null
@@ -102,6 +111,8 @@ func physics_update(delta: float) -> void:
 	)
 
 	_calculate_movement(delta, input_dir)
+	if not _has_departed_start and absf(zipline_progress - _initial_progress) > 0.05:
+		_has_departed_start = true
 	_apply_position()
 
 	var p: Player = player if player is Player else null
@@ -230,9 +241,13 @@ func _apply_position() -> void:
 ## Evaluates cable termination and player input triggers for dismount.
 func _check_dismount_conditions() -> void:
 	print("StateZipline: _check_dismount_conditions() polling exit inputs.")
-	var hit_end: bool = (
-		zipline_grace_timer > 0.5 and (zipline_progress >= 0.999 or zipline_progress <= 0.001)
+	var at_end_terminus: bool = (
+		zipline_progress >= 0.999 and (_initial_progress < 0.95 or _has_departed_start)
 	)
+	var at_start_terminus: bool = (
+		zipline_progress <= 0.001 and (_initial_progress > 0.05 or _has_departed_start)
+	)
+	var hit_end: bool = zipline_grace_timer > 0.5 and (at_end_terminus or at_start_terminus)
 	var pressed_jump: bool = GestureInputManager.is_action_just_pressed(&"jump")
 	var pressed_crouch: bool = GestureInputManager.is_action_just_pressed(&"crouch")
 
