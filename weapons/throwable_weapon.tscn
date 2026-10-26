@@ -1,0 +1,52 @@
+[gd_scene format=3 uid="uid://b8throwablewpn01"]
+
+[ext_resource type="Script" path="res://weapons/throwable_weapon.gd" id="1_throw"]
+[ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="2_interact"]
+[ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="3_highlight"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="4_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_outline"]
+render_priority = 0
+shader = ExtResource("4_shader")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.2
+shader_parameter/max_intensity = 1.0
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[node name="ThrowableWeapon" type="Node3D" node_paths=PackedStringArray("throw_audio", "label", "prompt_icon")]
+script = ExtResource("1_throw")
+throw_audio = NodePath("ThrowAudio")
+label = NodePath("Label3D")
+prompt_icon = NodePath("PromptIcon")
+
+[node name="MuzzlePoint" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.55)
+
+[node name="StaticBody3D" type="StaticBody3D" parent="."]
+collision_layer = 4
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D"]
+
+[node name="InteractComponent" type="Node" parent="StaticBody3D"]
+script = ExtResource("2_interact")
+metadata/_custom_type_script = "uid://cqawbvidns1th"
+
+[node name="HighlightComponent" type="Node" parent="." node_paths=PackedStringArray("interact_component")]
+script = ExtResource("3_highlight")
+outline_material = SubResource("ShaderMaterial_outline")
+interact_component = NodePath("../StaticBody3D/InteractComponent")
+metadata/_custom_type_script = "uid://dgig0tamvkdxx"
+
+[node name="Label3D" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.28, 0)
+billboard = 1
+text = "Press [E] to grab"
+font_size = 24
+
+[node name="PromptIcon" type="Sprite3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.28, 0)
+visible = false
+billboard = 1
+
+[node name="ThrowAudio" type="AudioStreamPlayer3D" parent="."]

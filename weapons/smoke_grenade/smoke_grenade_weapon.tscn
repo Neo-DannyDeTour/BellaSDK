@@ -1,0 +1,26 @@
+[gd_scene format=3 uid="uid://c8smkwpn00003"]
+
+[ext_resource type="PackedScene" uid="uid://c2t2nmwv1e1ou" path="res://weapons/throwable_weapon.tscn" id="1_base"]
+[ext_resource type="Script" uid="uid://u5hi8m8vlbh2" path="res://weapons/smoke_grenade/smoke_grenade_weapon.gd" id="2_wpn"]
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_view"]
+top_radius = 0.05
+bottom_radius = 0.05
+height = 0.2
+radial_segments = 12
+rings = 1
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_pickup"]
+size = Vector3(0.3, 0.3, 0.3)
+
+[node name="SmokeGrenadeWeapon" unique_id=1412387156 instance=ExtResource("1_base")]
+script = ExtResource("2_wpn")
+weapon_tag = "smoke_grenade"
+ammo_type = &"smoke_grenade"
+
+[node name="ViewModelMesh" type="MeshInstance3D" parent="." index="0" unique_id=1603269082]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.22, -0.18, -0.35)
+mesh = SubResource("CylinderMesh_view")
+
+[node name="CollisionShape3D" parent="StaticBody3D" index="0"]
+shape = SubResource("BoxShape3D_pickup")

@@ -1,0 +1,32 @@
+[gd_scene format=4 uid="uid://c8smkcloud001"]
+
+[ext_resource type="Script" uid="uid://ujsyxrnqcov8" path="res://weapons/smoke_grenade/smoke_grenade_cloud.gd" id="1_cloud"]
+[ext_resource type="Shader" uid="uid://bb35hxq5tpqfi" path="res://weapons/smoke_grenade/smoke_grenade_cloud.gdshader" id="2_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_cloud"]
+shader = ExtResource("2_shader")
+shader_parameter/smoke_albedo = Color(0.68, 0.72, 0.76, 1)
+shader_parameter/emission_color = Color(0.05, 0.07, 0.09, 1)
+shader_parameter/base_density = 6.5
+shader_parameter/clump_scale = 0.95
+shader_parameter/clump_contrast = 1.35
+shader_parameter/wave_speed = 0.48
+shader_parameter/curl_advection_strength = 1.45
+shader_parameter/expansion_progress = 1.0
+shader_parameter/dissipation_alpha = 1.0
+shader_parameter/lobe_spheres = PackedVector4Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+shader_parameter/active_ray_count = 0
+shader_parameter/ray_starts = PackedVector4Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+shader_parameter/ray_ends = PackedVector4Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+shader_parameter/active_actor_count = 0
+shader_parameter/actor_positions = PackedVector4Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+shader_parameter/actor_velocities = PackedVector4Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+
+[node name="SmokeGrenadeCloud" type="FogVolume" unique_id=1871857559]
+layers = 512
+size = Vector3(11, 7, 11)
+material = SubResource("ShaderMaterial_cloud")
+script = ExtResource("1_cloud")
+
+[node name="VisibleOnScreenNotifier3D" type="VisibleOnScreenNotifier3D" parent="." unique_id=888224350]
+aabb = AABB(-5.5, -3.5, -5.5, 11, 7, 11)
