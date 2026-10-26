@@ -32,6 +32,23 @@ func before_each() -> void:
 	add_child_autofree(tag_hud)
 
 
+## Teardown hook sweeping root-level projectile spawns and resetting SmokeManager.
+func after_each() -> void:
+	var root: Window = get_tree().root
+	for child: Node in root.get_children():
+		if child.name.begins_with("SmokeGrenade") or child is FogVolume:
+			child.queue_free()
+
+	var smoke_manager: Node = root.get_node_or_null("SmokeManager")
+	if is_instance_valid(smoke_manager) and smoke_manager.has_method(&"clear_all"):
+		smoke_manager.call(&"clear_all")
+
+	grenade = null
+	tag_hud = null
+	mock_player = null
+	inventory = null
+
+
 ## Verifies that equipping SmokeGrenadeWeapon emits weapon_tag_displayed with 'smoke_grenade'.
 func test_pickup_emits_weapon_tag_displayed() -> void:
 	print("TestSmokeGrenadePickup: test_pickup_emits_weapon_tag_displayed() executing.")

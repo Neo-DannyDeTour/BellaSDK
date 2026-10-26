@@ -25,6 +25,7 @@ access_resolved_depth = true
 needs_motion_vectors = true
 needs_normal_roughness = false
 script = ExtResource("12_yfdjm")
+resolution_scale = 0
 dither_noise = ExtResource("5_2nsow")
 height_gradient = ExtResource("7_j1j28")
 extra_large_noise_patterns = ExtResource("6_wemsp")
@@ -36,7 +37,6 @@ pre_pass_compute_shader = ExtResource("11_wjppe")
 compute_shader = ExtResource("3_d571b")
 post_pass_compute_shader = ExtResource("10_b21e6")
 wind_direction = Vector3(1, 0, 1)
-directional_lights_data = Array[Vector4]([Vector4(0.5, 1, 0.5, 16), Vector4(1, 1, 1, 1)])
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_b2puq"]
 sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
@@ -86,6 +86,11 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9.547791, 0, -9.320801)
 use_collision = true
 size = Vector3(20.095581, 1, 19.641602)
 
+[node name="CSGBox3D2" type="CSGBox3D" parent="." unique_id=1974905111]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.691803, 1.5246582, -15.398193)
+use_collision = true
+size = Vector3(3.8075562, 4.0493164, 7.4868164)
+
 [node name="Player" parent="." unique_id=1502339238 instance=ExtResource("1_vkqct")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.4392877, 1.0000005, -9.467312)
 
@@ -100,8 +105,12 @@ metadata/_custom_type_script = "uid://djusduuxf0voj"
 environment = SubResource("Environment_534t5")
 compositor = SubResource("Compositor_tx8to")
 
-[node name="Portal" parent="." unique_id=1893124656 instance=ExtResource("14_d571b")]
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="WorldEnvironment" unique_id=2103680662]
+transform = Transform3D(1, 0, 0, 0, 0.8636075, 0.5041648, 0, -0.5041648, 0.8636075, -2.4875278, 21.824781, 45.91759)
+
+[node name="Portal" parent="." unique_id=1893124656 node_paths=PackedStringArray("linked_portal") instance=ExtResource("14_d571b")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.951725, 2.153418, -14.402775)
+linked_portal = NodePath("../Portal2")
 
 [node name="Portal2" parent="." unique_id=777990750 node_paths=PackedStringArray("linked_portal") instance=ExtResource("14_d571b")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.695472, 2.1534185, -16.11821)

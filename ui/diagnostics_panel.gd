@@ -589,9 +589,12 @@ func _build_performance_report() -> String:
 
 	var sdfgi_records: Array[Dictionary] = _audit_sdfgi_instances()
 	var sdfgi_banner: String = _format_sdfgi_summary_banner(sdfgi_records)
+	var fog_records: Array[Dictionary] = _audit_volumetric_fog_instances()
+	var fog_banner: String = _format_volumetric_fog_summary_banner(fog_records)
 
 	return (
 		sdfgi_banner
+		+ fog_banner
 		+ "\n"
 		+ (
 			"""=== PRIMARY BOTTLENECK ===
@@ -741,6 +744,8 @@ func _audit_sdfgi_instances() -> Array[Dictionary]:
 	for sub_vp: SubViewport in sub_viewports:
 		all_viewports.append(sub_vp)
 
+	var current_scene: Node = tree.current_scene
+
 	for vp: Viewport in all_viewports:
 		if not is_instance_valid(vp):
 			continue
@@ -748,11 +753,21 @@ func _audit_sdfgi_instances() -> Array[Dictionary]:
 		var is_sub: bool = vp is SubViewport
 		var sub_vp: SubViewport = vp as SubViewport if is_sub else null
 
+		var is_active: bool = true
+		var reason: String = "active"
+
 		if is_sub:
 			if sub_vp.disable_3d:
-				continue
-			if sub_vp.render_target_update_mode == SubViewport.UPDATE_DISABLED:
-				continue
+				is_active = false
+				reason = "viewport disable_3d=true"
+			elif sub_vp.render_target_update_mode == SubViewport.UPDATE_DISABLED:
+				is_active = false
+				reason = "update_mode=DISABLED"
+		else:
+			var win_vp: Window = vp as Window
+			if win_vp.disable_3d:
+				is_active = false
+				reason = "window disable_3d=true"
 
 		var active_env: Environment = null
 		var cam: Camera3D = vp.get_camera_3d()
@@ -766,17 +781,127 @@ func _audit_sdfgi_instances() -> Array[Dictionary]:
 		if not is_instance_valid(active_env) or not active_env.sdfgi_enabled:
 			continue
 
-		var vp_name: String = str(vp.name)
-		var vp_path: String = str(vp.get_path())
+		var display_name: String = ""
+		if vp == root_vp:
+			var scene_title: String = (
+				current_scene.name if is_instance_valid(current_scene) else "root"
+			)
+			display_name = "Main Window [%s]" % scene_title
+		else:
+			display_name = "SubViewport [%s]" % str(vp.name)
 
-		results.append(
-			{
-				"name": "Viewport (%s)" % vp_name,
-				"path": vp_path,
-				"cascades": active_env.sdfgi_cascades,
-				"is_active": true,
-				"reason": "Rendering 3D with SDFGI"
-			}
+		(
+			results
+			. append(
+				{
+					"name": display_name,
+					"path": str(vp.get_path()),
+					"cascades": active_env.sdfgi_cascades,
+					"is_active": is_active,
+					"reason": reason,
+				}
+			)
+		)
+
+	return results
+
+
+## Formats a high-level Volumetric Fog status summary banner for diagnostics reports.
+func _format_volumetric_fog_summary_banner(records: Array[Dictionary]) -> String:
+	var active_count: int = 0
+	var dormant_count: int = 0
+	for rec: Dictionary in records:
+		var is_active_val: Variant = rec.get("is_active", false)
+		if is_active_val is bool and is_active_val:
+			active_count += 1
+		else:
+			dormant_count += 1
+
+	if active_count > 1:
+		return (
+			"[color=red][b]V-FOG STATUS: [CRITICAL: %d ACTIVE COMPUTE FROXELS] (%d dormant)[/b][/color]\n"
+			% [active_count, dormant_count]
+		)
+	if active_count == 1:
+		var dormant_suffix: String = (" (%d dormant)" % dormant_count) if dormant_count > 0 else ""
+		return "[color=green][b]V-FOG STATUS: 1 Active Compute%s[/b][/color]\n" % dormant_suffix
+	if dormant_count > 0:
+		return "[color=yellow]V-FOG STATUS: 0 Active (%d dormant in tree)[/color]\n" % dormant_count
+	return "[color=gray]V-FOG STATUS: Off (0 active)[/color]\n"
+
+
+## Audits scene tree and viewports for genuine active volumetric fog froxel grids.
+func _audit_volumetric_fog_instances() -> Array[Dictionary]:
+	var results: Array[Dictionary] = []
+	var tree: SceneTree = get_tree()
+	if not is_instance_valid(tree) or not is_instance_valid(tree.root):
+		return results
+
+	var root_vp: Window = tree.root
+	var sub_viewports: Array[SubViewport] = []
+	_collect_subviewports(root_vp, sub_viewports)
+
+	var all_viewports: Array[Viewport] = [root_vp]
+	for sub_vp: SubViewport in sub_viewports:
+		all_viewports.append(sub_vp)
+
+	var current_scene: Node = tree.current_scene
+
+	for vp: Viewport in all_viewports:
+		if not is_instance_valid(vp):
+			continue
+
+		var is_sub: bool = vp is SubViewport
+		var sub_vp: SubViewport = vp as SubViewport if is_sub else null
+
+		var is_active: bool = true
+		var reason: String = "active"
+
+		if is_sub:
+			if sub_vp.disable_3d:
+				is_active = false
+				reason = "viewport disable_3d=true"
+			elif sub_vp.render_target_update_mode == SubViewport.UPDATE_DISABLED:
+				is_active = false
+				reason = "update_mode=DISABLED"
+		else:
+			var win_vp: Window = vp as Window
+			if win_vp.disable_3d:
+				is_active = false
+				reason = "window disable_3d=true"
+
+		var active_env: Environment = null
+		var cam: Camera3D = vp.get_camera_3d()
+		if is_instance_valid(cam) and is_instance_valid(cam.environment):
+			active_env = cam.environment
+		else:
+			var w3d: World3D = vp.find_world_3d()
+			if is_instance_valid(w3d) and is_instance_valid(w3d.environment):
+				active_env = w3d.environment
+
+		if not is_instance_valid(active_env) or not active_env.volumetric_fog_enabled:
+			continue
+
+		var display_name: String = ""
+		if vp == root_vp:
+			var scene_title: String = (
+				current_scene.name if is_instance_valid(current_scene) else "root"
+			)
+			display_name = "Main Window [%s]" % scene_title
+		else:
+			display_name = "SubViewport [%s]" % str(vp.name)
+
+		(
+			results
+			. append(
+				{
+					"name": display_name,
+					"path": str(vp.get_path()),
+					"density": active_env.volumetric_fog_density,
+					"is_active": is_active,
+					"reason": reason,
+				}
+			)
 		)
 
 	return results
@@ -786,9 +911,13 @@ func _audit_sdfgi_instances() -> Array[Dictionary]:
 func _build_pipeline_report() -> String:
 	var sdfgi_records: Array[Dictionary] = _audit_sdfgi_instances()
 	var sdfgi_banner: String = _format_sdfgi_summary_banner(sdfgi_records)
+	var fog_records: Array[Dictionary] = _audit_volumetric_fog_instances()
+	var fog_banner: String = _format_volumetric_fog_summary_banner(fog_records)
 
 	var text: String = (
-		sdfgi_banner + "\n[b][color=yellow]=== VIEWPORT & RENDER PIPELINE ===[/color][/b]\n"
+		sdfgi_banner
+		+ fog_banner
+		+ "\n[b][color=yellow]=== VIEWPORT & RENDER PIPELINE ===[/color][/b]\n"
 	)
 	var root_vp: Window = get_tree().root
 	var root_effects: PackedStringArray = _detect_viewport_environment_effects(root_vp)
@@ -850,6 +979,27 @@ func _build_pipeline_report() -> String:
 			text += (
 				"* %s -> %s | %d Cascades\n  └─ Path: [color=cyan]%s[/color]\n"
 				% [name_str, status_badge, cascades, path_str]
+			)
+
+	text += "\n[b][color=yellow]=== VOLUMETRIC FOG INSTANCE AUDIT ===[/color][/b]\n"
+	if fog_records.is_empty():
+		text += "[color=gray]  No Volumetric Fog environments detected in tree.[/color]\n"
+	else:
+		for rec: Dictionary in fog_records:
+			var name_str: String = str(rec.get("name", "Unknown"))
+			var is_act_val: Variant = rec.get("is_active", false)
+			var is_act: bool = is_act_val is bool and is_act_val
+			var status_badge: String = (
+				"[color=green][ACTIVE COMPUTE][/color]"
+				if is_act
+				else ("[color=yellow][DORMANT: %s][/color]" % str(rec.get("reason", "asleep")))
+			)
+			var density_val: Variant = rec.get("density", 0.0)
+			var density: float = density_val if density_val is float else 0.0
+			var path_str: String = str(rec.get("path", ""))
+			text += (
+				"* %s -> %s | Density: %.4f\n  └─ Path: [color=cyan]%s[/color]\n"
+				% [name_str, status_badge, density, path_str]
 			)
 
 	return text
@@ -1149,10 +1299,22 @@ func sync_toggle_button_labels() -> void:
 			sdfgi_toggle_button.text = "SDFGI %s" % ("on" if is_sdfgi else "off")
 
 	if is_instance_valid(fog_toggle_button):
-		var is_fog: bool = false
-		if is_instance_valid(env):
-			is_fog = env.fog_enabled or env.volumetric_fog_enabled
-		fog_toggle_button.text = "Fog %s" % ("on" if is_fog else "off")
+		var fog_records: Array[Dictionary] = _audit_volumetric_fog_instances()
+		var fog_active_count: int = 0
+		for rec: Dictionary in fog_records:
+			var is_active_val: Variant = rec.get("is_active", false)
+			if is_active_val is bool and is_active_val:
+				fog_active_count += 1
+
+		if fog_active_count > 1:
+			fog_toggle_button.text = "Fog (%d ACTIVE!)" % fog_active_count
+		elif fog_active_count == 1:
+			fog_toggle_button.text = "Fog on"
+		else:
+			var is_fog: bool = false
+			if is_instance_valid(env):
+				is_fog = env.fog_enabled or env.volumetric_fog_enabled
+			fog_toggle_button.text = "Fog %s" % ("on" if is_fog else "off")
 
 	if is_instance_valid(shadows_toggle_button):
 		var curr_scene: Node = get_tree().current_scene
@@ -1215,8 +1377,7 @@ func _on_fog_toggled() -> void:
 	env.volumetric_fog_enabled = new_state
 	var state_str: String = "on" if new_state else "off"
 	print("RenderDiagnosticsPanel: Fog %s" % state_str)
-	if is_instance_valid(fog_toggle_button):
-		fog_toggle_button.text = "Fog %s" % state_str
+	sync_toggle_button_labels()
 	_refresh_diagnostics_display()
 
 

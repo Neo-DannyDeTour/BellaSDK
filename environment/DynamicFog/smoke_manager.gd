@@ -26,6 +26,16 @@ func _ready() -> void:
 	print("[SmokeManager] Ready and listening for fog zone and grenade cloud registrations.")
 
 
+## Force-clears all tracked references and frees orphaned clouds for test isolation.
+func clear_all() -> void:
+	for i: int in range(_grenade_clouds.size() - 1, -1, -1):
+		var cloud: SmokeGrenadeCloud = _grenade_clouds[i]
+		if is_instance_valid(cloud) and not cloud.is_queued_for_deletion():
+			cloud.queue_free()
+	_grenade_clouds.clear()
+	_zones.clear()
+
+
 ## Registers an active [FogVolume] ([DynamicFogZone] or [SmokeHazard]) for carving and LoS.
 func register_zone(zone: FogVolume) -> void:
 	if not is_instance_valid(zone) or _zones.has(zone):
