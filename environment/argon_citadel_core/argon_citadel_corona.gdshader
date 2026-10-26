@@ -6,8 +6,8 @@ instance uniform float pulse_phase : hint_range(0.0, 1.0) = 0.0;
 uniform vec4 orange_energy : source_color = vec4(1.0, 0.45, 0.08, 1.0);
 uniform float expansion_scale : hint_range(0.0, 1.0, 0.01) = 1.0;
 uniform float noise_scale : hint_range(0.5, 6.0, 0.1) = 6.0;
-uniform float ring_thickness : hint_range(0.02, 0.35, 0.01) = 0.14;
-uniform float liquid_warp_strength : hint_range(0.0, 0.4, 0.01) = 0.16;
+uniform float ring_thickness : hint_range(0.02, 0.35, 0.01) = 0.35;
+uniform float liquid_warp_strength : hint_range(0.0, 0.4, 0.01) = 0.0;
 
 varying vec3 v_obj_pos;
 
@@ -86,8 +86,13 @@ void fragment() {
 	float hdr_energy = mix(3.8, 14.0, peak_boost) + n * mix(2.2, 5.5, peak_boost);
 	vec3 final_rgb = orange_energy.rgb * hdr_energy;
 
-	// Fades to 0.0 at max expansion (ring_size == 1.0) and holds invisible for [0.75, 1.00].
-	float final_alpha = clamp(thin_ring * (0.75 + n * 0.35) * peak_boost, 0.0, 1.0);
+	// Visible for [0.00, 0.75] (75% of cycle); fluid fade-out approaching max diameter [0.68, 0.75]
+	// and fluid re-entry [0.95, 1.00] to avoid pop at loop wrap.
+	float fade_out = 1.0 - smoothstep(0.68, 0.75, pulse_phase);
+	float fade_in = smoothstep(0.95, 1.0, pulse_phase);
+	float vis_window = clamp(fade_out + fade_in, 0.0, 1.0);
+
+	float final_alpha = clamp(thin_ring * (0.75 + n * 0.35) * vis_window, 0.0, 1.0);
 
 	ALBEDO = final_rgb * final_alpha;
 	ALPHA = final_alpha;

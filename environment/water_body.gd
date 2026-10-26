@@ -6,6 +6,18 @@ extends MeshInstance3D
 ## Emitted when a physical body enters or exits the water volume at high vertical speed.
 signal splashed(global_pos: Vector3, velocity: float)
 
+## Emitted when a water level transition begins.
+signal water_level_transition_started(is_lowered: bool)
+
+## Emitted when a water level transition completes.
+signal water_level_transition_finished(is_lowered: bool)
+
+## Operational modes governing how water level responds to power triggers.
+enum WaterLevelMode {
+	TOGGLE = 0,
+	ONE_SHOT = 1,
+}
+
 ## Group identifier required by [StateSwim] for point-intersection submersion queries.
 const GROUP_WATER_AREA: StringName = &"water_area"
 
@@ -413,6 +425,37 @@ const SWIM_COLLISION_MASK: int = 6
 ## Maximum distance from active camera in meters before wave updates are gated.
 @export_range(10.0, 500.0, 1.0) var max_simulation_distance: float = 95.0
 
+@export_category("Water Level Control")
+## Determines whether water level toggles back and forth or fires only once.
+@export var water_level_mode: WaterLevelMode = WaterLevelMode.TOGGLE
+
+## Vertical water level offset in meters relative to baseline (negative = lower, positive = raise).
+@export var target_level_delta: float = -20.0
+
+## Duration of water level transition in seconds.
+@export_range(0.1, 120.0, 0.1) var level_change_duration: float = 5.0
+
+## Easing curve applied to water level transition.
+@export var level_transition_type: Tween.TransitionType = Tween.TRANS_SINE
+
+## Easing direction applied to water level transition.
+@export var level_ease_type: Tween.EaseType = Tween.EASE_IN_OUT
+
+## Baseline local Y position recorded at initialization for floor-anchored transitions.
+var _default_position_y: float = 0.0
+
+## Baseline vertical water volume height recorded at initialization.
+var _default_water_size_y: float = 1.0
+
+## Active [Tween] animating water surface and position transitions.
+var _level_tween: Tween = null
+
+## Tracks whether water level is currently transitioning or settled at lowered target.
+var _is_water_lowered: bool = false
+
+## Indicates whether a one-shot water level sequence has already fired.
+var _has_fired_one_shot: bool = false
+
 ## Accumulated simulation time in seconds synchronized between CPU and GPU.
 var _water_time: float = 0.0
 
@@ -505,6 +548,9 @@ func _ready() -> void:
 	_sync_all_shader_parameters()
 	_sync_reflection_probe()
 
+	_default_position_y = position.y
+	_default_water_size_y = water_size.y
+
 	if Engine.is_editor_hint():
 		set_physics_process(false)
 		set_process(true)
@@ -538,6 +584,10 @@ func _ready() -> void:
 
 ## Disconnects signals and restores environment fog on tree exit.
 func _exit_tree() -> void:
+	if _level_tween and _level_tween.is_valid():
+		_level_tween.kill()
+		_level_tween = null
+
 	if not Engine.is_editor_hint():
 		_restore_fallback_environment_fog()
 		if (
@@ -679,6 +729,67 @@ func should_draw_camera_underwater_effect() -> bool:
 
 	var surface_y: float = get_wave_height_at_pos(cam_pos)
 	return cam_pos.y < surface_y
+
+
+## Energizes water volume via [OutputTransmitter3D], triggering water level change.
+func power_on() -> void:
+	if water_level_mode == WaterLevelMode.ONE_SHOT and _has_fired_one_shot:
+		return
+	if water_level_mode == WaterLevelMode.ONE_SHOT:
+		_has_fired_one_shot = true
+	change_water_level(true)
+
+
+## De-energizes water volume via [OutputTransmitter3D], restoring baseline level if in toggle mode.
+func power_off() -> void:
+	if water_level_mode == WaterLevelMode.ONE_SHOT:
+		return
+	change_water_level(false)
+
+
+## Toggles water level between baseline and target offset.
+func toggle_water_level() -> void:
+	if water_level_mode == WaterLevelMode.ONE_SHOT and _has_fired_one_shot:
+		return
+	if water_level_mode == WaterLevelMode.ONE_SHOT:
+		_has_fired_one_shot = true
+	change_water_level(not _is_water_lowered)
+
+
+## Transitions water volume to either lowered target or baseline size and position.
+func change_water_level(to_lowered: bool) -> void:
+	if Engine.is_editor_hint():
+		return
+
+	if _level_tween and _level_tween.is_valid():
+		_level_tween.kill()
+		_level_tween = null
+
+	_is_water_lowered = to_lowered
+	print("WaterBody: Transitioning water level -> to_lowered=", to_lowered)
+	water_level_transition_started.emit(_is_water_lowered)
+
+	var target_size_y: float = _default_water_size_y
+	var target_pos_y: float = _default_position_y
+
+	if to_lowered:
+		target_size_y = maxf(_default_water_size_y + target_level_delta, 0.1)
+		var eff_delta: float = target_size_y - _default_water_size_y
+		target_pos_y = _default_position_y + (eff_delta * 0.5)
+
+	var total_span: float = maxf(absf(target_level_delta), 0.1)
+	var remaining_dist: float = absf(water_size.y - target_size_y)
+	var duration_ratio: float = clampf(remaining_dist / total_span, 0.05, 1.0)
+	var active_duration: float = maxf(level_change_duration * duration_ratio, 0.05)
+
+	var target_size: Vector3 = Vector3(water_size.x, target_size_y, water_size.z)
+
+	_level_tween = create_tween()
+	_level_tween.set_trans(level_transition_type)
+	_level_tween.set_ease(level_ease_type)
+	_level_tween.tween_property(self, "position:y", target_pos_y, active_duration)
+	_level_tween.parallel().tween_property(self, "water_size", target_size, active_duration)
+	_level_tween.finished.connect(_on_level_tween_finished.bind(_is_water_lowered))
 
 
 ## Evaluates a single trochoidal wave octave, returning `Vector3(height, dh_dx, dh_dz)`.
@@ -1238,3 +1349,10 @@ func _restore_fallback_environment_fog() -> void:
 		_cached_env.fog_sky_affect = _orig_fog_sky_affect
 	_cached_env = null
 	_fallback_fog_active = false
+
+
+## Emits completion signal and cleans up active tween reference.
+func _on_level_tween_finished(is_lowered: bool) -> void:
+	_level_tween = null
+	water_level_transition_finished.emit(is_lowered)
+	print("WaterBody: Water level transition complete -> is_lowered=", is_lowered)

@@ -154,6 +154,13 @@ func _clear_previous_generation() -> void:
 			child.queue_free()
 
 
+## Safely extracts a float from an untyped Variant without triggering unsafe cast warnings.
+static func _to_safe_float(val: Variant) -> float:
+	if typeof(val) == TYPE_FLOAT or typeof(val) == TYPE_INT:
+		return str(val).to_float()
+	return 0.0
+
+
 ## Clears existing geometry and generates unified MultiMesh and static trimesh.
 func _generate() -> void:
 	if not is_inside_tree():
@@ -167,9 +174,12 @@ func _generate() -> void:
 	if not is_inside_tree():
 		return
 
+	var prop_push: StringName = &"push_force"
+	var prop_rad: StringName = &"effect_radius"
+
 	var magnets: Array[Node3D] = []
 	for child: Node in get_children():
-		if child is Node3D and "push_force" in child and "effect_radius" in child:
+		if child is Node3D and prop_push in child and prop_rad in child:
 			magnets.append(child as Node3D)
 
 	var placed_positions: Array[Vector2] = []
@@ -183,6 +193,12 @@ func _generate() -> void:
 	base_mesh.top_radius = column_radius
 	base_mesh.height = 1.0
 
+	var half_width: float = field_width * 0.5
+	var half_depth: float = field_depth * 0.5
+	var max_x: float = maxf(0.0, half_width - column_radius)
+	var max_z: float = maxf(0.0, half_depth - column_radius)
+	var min_spacing_sq: float = min_spacing * min_spacing
+
 	for i: int in range(amount):
 		var valid_position: bool = false
 		var col_position: Vector3 = Vector3.ZERO
@@ -190,14 +206,11 @@ func _generate() -> void:
 
 		while not valid_position and attempts < max_attempts:
 			attempts += 1
-			var x_pos: float = randf_range(-field_width * 0.5, field_width * 0.5)
-			var z_pos: float = randf_range(-field_depth * 0.5, field_depth * 0.5)
+			var x_pos: float = randf_range(-half_width, half_width)
+			var z_pos: float = randf_range(-half_depth, half_depth)
 
 			x_pos += randf_range(-chaos, chaos)
 			z_pos += randf_range(-chaos, chaos)
-
-			var max_x: float = maxf(0.0, (field_width * 0.5) - column_radius)
-			var max_z: float = maxf(0.0, (field_depth * 0.5) - column_radius)
 
 			x_pos = clampf(x_pos, -max_x, max_x)
 			z_pos = clampf(z_pos, -max_z, max_z)
@@ -206,7 +219,7 @@ func _generate() -> void:
 			var is_far_enough: bool = true
 
 			for placed: Vector2 in placed_positions:
-				if test_pos.distance_squared_to(placed) < (min_spacing * min_spacing):
+				if test_pos.distance_squared_to(placed) < min_spacing_sq:
 					is_far_enough = false
 					break
 
@@ -220,21 +233,21 @@ func _generate() -> void:
 
 		var final_height: float = base_height
 		var col_global_pos: Vector3 = to_global(col_position)
+		var col_flat: Vector2 = Vector2(col_global_pos.x, col_global_pos.z)
 
 		for magnet: Node3D in magnets:
 			if not is_instance_valid(magnet):
 				continue
 
-			var magnet_radius: float = float(magnet.get("effect_radius"))
-			var magnet_push: float = float(magnet.get("push_force"))
+			var magnet_radius: float = _to_safe_float(magnet.get(prop_rad))
+			var magnet_push: float = _to_safe_float(magnet.get(prop_push))
 			var magnet_pos: Vector3 = magnet.global_position
+			var mag_flat: Vector2 = Vector2(magnet_pos.x, magnet_pos.z)
 
-			var dist_sq: float = Vector2(col_global_pos.x, col_global_pos.z).distance_squared_to(
-				Vector2(magnet_pos.x, magnet_pos.z)
-			)
+			var dist_sq: float = col_flat.distance_squared_to(mag_flat)
 			var effect_rad_sq: float = magnet_radius * magnet_radius
 
-			if dist_sq < effect_rad_sq:
+			if dist_sq < effect_rad_sq and magnet_radius > 0.0:
 				var dist: float = sqrt(dist_sq)
 				var influence: float = 1.0 - (dist / magnet_radius)
 				influence = smoothstep(0.0, 1.0, influence)

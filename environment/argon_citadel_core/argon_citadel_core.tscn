@@ -6,6 +6,7 @@
 [ext_resource type="Shader" uid="uid://mayjht0dps38" path="res://environment/argon_citadel_core/argon_citadel_corona.gdshader" id="4_corona_shader"]
 [ext_resource type="Shader" uid="uid://b4ht5mtioi713" path="res://environment/argon_citadel_core/argon_citadel_energy.gdshader" id="5_energy_shader"]
 [ext_resource type="Shader" uid="uid://dyape4cobps0t" path="res://environment/argon_citadel_core/argon_citadel_corona_waves.gdshader" id="6_corona_waves_shader"]
+[ext_resource type="Shader" uid="uid://crkai11an68b2" path="res://environment/argon_citadel_core/argon_citadel_heat_wave.gdshader" id="7_5giu7"]
 
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_pedestal"]
 radius = 2.2
@@ -39,8 +40,9 @@ shader_parameter/orange_edge_color = Color(1, 0.45, 0.08, 1)
 shader_parameter/cyan_edge_color = Color(0.2, 0.88, 1, 1)
 shader_parameter/noise_scale = 2.6
 shader_parameter/displacement_strength = 0.12
-shader_parameter/edge_tightness = 5.2
-shader_parameter/edge_intensity = 2.2
+shader_parameter/instability_scale = 0.39600001881
+shader_parameter/edge_tightness = 10.0
+shader_parameter/edge_intensity = 6.0
 
 [sub_resource type="SphereMesh" id="SphereMesh_inner_core"]
 material = SubResource("ShaderMaterial_inner_core")
@@ -91,10 +93,10 @@ render_priority = 2
 shader = ExtResource("6_corona_waves_shader")
 shader_parameter/orange_wave_color = Color(1, 0.42, 0.06, 1)
 shader_parameter/blue_wave_color = Color(0.12, 0.78, 1, 1)
-shader_parameter/wave_frequency = 16.0
-shader_parameter/wave_speed = 7.5
-shader_parameter/noise_scale = 3.2
-shader_parameter/liquid_warp_strength = 0.18
+shader_parameter/wave_frequency = 63.0
+shader_parameter/wave_speed = 15.0
+shader_parameter/noise_scale = 8.0
+shader_parameter/liquid_warp_strength = 0.3999999910592
 
 [sub_resource type="SphereMesh" id="SphereMesh_corona_waves"]
 material = SubResource("ShaderMaterial_corona_waves")
@@ -129,6 +131,20 @@ shader_parameter/arc_half_length = 2.1
 material = SubResource("ShaderMaterial_arc")
 size = Vector3(0.08, 0.08, 4.2)
 subdivide_depth = 32
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_heat_wave"]
+shader = ExtResource("7_5giu7")
+shader_parameter/heat_intensity = 0.0
+shader_parameter/immersion_weight = 0.0
+shader_parameter/plume_mask_weight = 1.0
+shader_parameter/pulse_phase = 0.0
+shader_parameter/core_screen_uv = Vector2(0.5, 0.5)
+shader_parameter/plume_radius = 0.44
+shader_parameter/distortion_scale = 0.013
+shader_parameter/convection_speed = 3.4
+shader_parameter/chromatic_fringe = 0.0045
+shader_parameter/orange_tint = Color(1, 0.45, 0.08, 1)
+shader_parameter/cyan_tint = Color(0.2, 0.88, 1, 1)
 
 [node name="CitadelCore" type="Node3D" unique_id=1225664957]
 script = ExtResource("1_core_script")
@@ -170,53 +186,66 @@ mesh = SubResource("CylinderMesh_emitter")
 
 [node name="InnerCore" type="MeshInstance3D" parent="." unique_id=170957906]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
-instance_shader_parameters/pulse_phase = 0.22012489
+instance_shader_parameters/pulse_phase = 0.7564042024314404
 mesh = SubResource("SphereMesh_inner_core")
 
 [node name="OuterShell" type="MeshInstance3D" parent="." unique_id=2045021998]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
-instance_shader_parameters/pulse_phase = 0.22012489
+instance_shader_parameters/pulse_phase = 0.7564042024314404
 mesh = SubResource("SphereMesh_outer_shell")
 
 [node name="CoronaHalo" type="MeshInstance3D" parent="." unique_id=1058037227]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
 layers = 512
-instance_shader_parameters/pulse_phase = 0.22012489
+instance_shader_parameters/pulse_phase = 0.7564042024314404
 mesh = SubResource("SphereMesh_corona")
 
 [node name="CoronaWaves" type="MeshInstance3D" parent="." unique_id=216945582]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
 layers = 512
-instance_shader_parameters/pulse_phase = 0.22012489
+instance_shader_parameters/pulse_phase = 0.7564042024314404
 mesh = SubResource("SphereMesh_corona_waves")
 
 [node name="AxialBeam" type="MeshInstance3D" parent="." unique_id=884278360]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
 layers = 512
-instance_shader_parameters/pulse_phase = 0.22012489
+instance_shader_parameters/pulse_phase = 0.7564042024314404
 mesh = SubResource("CylinderMesh_beam")
 
 [node name="ArcRibbonA" type="MeshInstance3D" parent="." unique_id=2032077801]
-transform = Transform3D(-1, -4.577161e-08, -7.448289e-08, 0, 0.851985, -0.5235662, 8.742278e-08, -0.5235662, -0.851985, 0, 5.1, 1.79)
+transform = Transform3D(-4.371139e-08, 0.4280863, -0.90373784, 0, 0.90373784, 0.4280863, 1, 1.8712248e-08, -3.9503636e-08, 1.9, 3.1, 0)
 layers = 512
-instance_shader_parameters/arc_seed = 242.2
-instance_shader_parameters/pulse_phase = 0.0
+instance_shader_parameters/arc_seed = 124.56
+instance_shader_parameters/pulse_phase = 0.9436090216040611
 mesh = SubResource("BoxMesh_arc")
 
 [node name="ArcRibbonB" type="MeshInstance3D" parent="." unique_id=671306258]
-transform = Transform3D(-4.371139e-08, -0.42808628, 0.9037378, 0, 0.9037378, 0.42808628, -1, 1.8712246e-08, -3.9503632e-08, -1.9, 3.1, 0)
+transform = Transform3D(-4.371139e-08, -0.52356607, -0.8519848, 0, 0.8519848, -0.52356607, 1, -2.28858e-08, -3.724144e-08, 1.79, 5.1, 0)
 layers = 512
-instance_shader_parameters/arc_seed = 242.2
-instance_shader_parameters/pulse_phase = 0.0
+instance_shader_parameters/arc_seed = 124.56
+instance_shader_parameters/pulse_phase = 0.9436090216040611
 mesh = SubResource("BoxMesh_arc")
 
 [node name="CoreLight" type="OmniLight3D" parent="." unique_id=1058914172]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 4, 0)
 layers = 513
-light_color = Color(0.8900596, 0.44892988, 0.1474851, 1)
-light_energy = 7.4590974
+light_color = Color(0.19692598, 0.8630929, 0.9833491, 1)
+light_energy = 4.728273
 omni_range = 18.0
 omni_attenuation = 1.35
 
 [node name="VisibilityNotifier" type="VisibleOnScreenNotifier3D" parent="." unique_id=1200615437]
-aabb = AABB(-6, -8, -6, 12, 24, 12)
+aabb = AABB(-30, -16, -30, 60, 40, 60)
+
+[node name="HeatWaveLayer" type="CanvasLayer" parent="." unique_id=1490823741]
+layer = 0
+visible = false
+
+[node name="HeatWaveRect" type="ColorRect" parent="HeatWaveLayer" unique_id=1892374612]
+material = SubResource("ShaderMaterial_heat_wave")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2

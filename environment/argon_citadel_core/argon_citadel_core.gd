@@ -1,6 +1,6 @@
 @tool
 ## Event-driven controller for the Combine Citadel Core reactor assembly.
-## Synchronizes shader instance uniforms, light intensity, and plasma arcs via [Tween].
+## Synchronizes shader instance uniforms, light intensity, plasma arcs, and 30m heat shimmer.
 class_name ArgonCitadelCore
 extends Node3D
 
@@ -8,6 +8,14 @@ extends Node3D
 const PARAM_PULSE_PHASE: StringName = &"pulse_phase"
 ## Per-instance shader uniform seeding plasma arc vertex displacement.
 const PARAM_ARC_SEED: StringName = &"arc_seed"
+## Post-process shader uniform controlling distance and surge scaled heat distortion.
+const PARAM_HEAT_INTENSITY: StringName = &"heat_intensity"
+## Post-process shader uniform blending directional plume into full-screen immersion.
+const PARAM_IMMERSION_WEIGHT: StringName = &"immersion_weight"
+## Post-process shader uniform gating directional plume when core is in front of camera.
+const PARAM_PLUME_MASK_WEIGHT: StringName = &"plume_mask_weight"
+## Post-process shader uniform storing projected screen UV of [member CORE_ORIGIN].
+const PARAM_CORE_SCREEN_UV: StringName = &"core_screen_uv"
 ## Full duration of one expansion-collapse pulse cycle in seconds.
 const CYCLE_DURATION: float = 4.0
 ## Duration of each quarter-phase stage (shrink, small-hold, expand, huge-hold) in seconds.
@@ -16,6 +24,12 @@ const QUARTER_DURATION: float = 1.0
 const ARC_DURATION: float = 0.38
 ## Maximum squared camera distance (45m) before skipping high-frequency arc sub-tweens.
 const MAX_ARC_DIST_SQ: float = 2025.0
+## Maximum squared camera distance (30m) from [member CORE_ORIGIN] for thermal shimmer.
+const MAX_HEAT_DIST_SQ: float = 900.0
+## Squared camera distance (12m) where directional plume blends into full-screen shimmer.
+const FULL_IMMERSION_DIST_SQ: float = 144.0
+## Inner squared camera distance (4m) where thermal distortion reaches maximum saturation.
+const MIN_HEAT_DIST_SQ: float = 16.0
 ## Local center of the suspended ferrofluid core sphere.
 const CORE_ORIGIN: Vector3 = Vector3(0.0, 4.0, 0.0)
 ## Orange expansion light color.
@@ -38,6 +52,8 @@ var _pulse_tween: Tween = null
 var _arc_tween_a: Tween = null
 var _arc_tween_b: Tween = null
 var _burst_counter: int = 0
+var _heat_material: ShaderMaterial = null
+var _is_heat_active: bool = false
 
 @onready var _inner_core: MeshInstance3D = $InnerCore as MeshInstance3D
 @onready var _outer_shell: MeshInstance3D = $OuterShell as MeshInstance3D
@@ -50,6 +66,8 @@ var _burst_counter: int = 0
 @onready var _visibility_notifier: VisibleOnScreenNotifier3D = (
 	$VisibilityNotifier as VisibleOnScreenNotifier3D
 )
+@onready var _heat_wave_layer: CanvasLayer = $HeatWaveLayer as CanvasLayer
+@onready var _heat_wave_rect: ColorRect = $HeatWaveLayer/HeatWaveRect as ColorRect
 
 
 ## Validates child nodes, disables per-frame polling, and starts the reactor cycle.
@@ -65,8 +83,14 @@ func _ready() -> void:
 	assert(is_instance_valid(_arc_ribbon_a), "ArgonCitadelCore: ArcRibbonA missing.")
 	assert(is_instance_valid(_arc_ribbon_b), "ArgonCitadelCore: ArcRibbonB missing.")
 	assert(is_instance_valid(_core_light), "ArgonCitadelCore: CoreLight missing.")
-	assert(is_instance_valid(_visibility_notifier), "ArgonCitadelCore: VisibilityNotifier missing.")
+	assert(is_instance_valid(_visibility_notifier), "ArgonCitadelCore: Notifier missing.")
+	assert(is_instance_valid(_heat_wave_layer), "ArgonCitadelCore: HeatWaveLayer missing.")
+	assert(is_instance_valid(_heat_wave_rect), "ArgonCitadelCore: HeatWaveRect missing.")
 
+	_heat_material = _heat_wave_rect.material as ShaderMaterial
+	assert(is_instance_valid(_heat_material), "ArgonCitadelCore: HeatMaterial missing.")
+
+	_heat_wave_layer.visible = false
 	_arc_ribbon_a.set_instance_shader_parameter(PARAM_PULSE_PHASE, 0.0)
 	_arc_ribbon_b.set_instance_shader_parameter(PARAM_PULSE_PHASE, 0.0)
 
@@ -106,7 +130,7 @@ func _start_core_cycle() -> void:
 	_pulse_tween.tween_method(_apply_pulse_phase, 0.75, 1.0, QUARTER_DURATION)
 
 
-## Kills all active pulse and lightning arc [Tween] instances.
+## Kills all active pulse and lightning arc [Tween] instances and hides heat overlay.
 func _stop_core_cycle() -> void:
 	if _pulse_tween and _pulse_tween.is_valid():
 		_pulse_tween.kill()
@@ -120,8 +144,10 @@ func _stop_core_cycle() -> void:
 		_arc_tween_b.kill()
 	_arc_tween_b = null
 
+	_deactivate_heat_wave()
 
-## Updates per-instance shader phase and interpolates [member _core_light] energy.
+
+## Updates per-instance shader phase, [member _core_light] energy, and 30m heat distortion.
 func _apply_pulse_phase(phase: float) -> void:
 	if not is_inside_tree() or not is_instance_valid(_inner_core):
 		return
@@ -147,6 +173,79 @@ func _apply_pulse_phase(phase: float) -> void:
 		var weight_quench: float = (phase - 0.75) * 4.0
 		_core_light.light_color = COLOR_CYAN.lerp(COLOR_DARK, weight_quench)
 		_core_light.light_energy = lerpf(4.8, 2.0, weight_quench)
+
+	_update_heat_wave(phase)
+
+
+## Evaluates 30m squared distance and updates screen-projected heat shimmer uniforms.
+func _update_heat_wave(phase: float) -> void:
+	if Engine.is_editor_hint() or not is_instance_valid(_heat_wave_layer):
+		_deactivate_heat_wave()
+		return
+	if not is_instance_valid(_heat_material):
+		return
+
+	var viewport: Viewport = get_viewport()
+	if not is_instance_valid(viewport):
+		_deactivate_heat_wave()
+		return
+	var cam: Camera3D = viewport.get_camera_3d()
+	if not is_instance_valid(cam):
+		_deactivate_heat_wave()
+		return
+
+	var world_core: Vector3 = to_global(CORE_ORIGIN)
+	var dist_sq: float = world_core.distance_squared_to(cam.global_position)
+	if dist_sq > MAX_HEAT_DIST_SQ:
+		_deactivate_heat_wave()
+		return
+
+	if not _is_heat_active:
+		_is_heat_active = true
+		_heat_wave_layer.visible = true
+		print("ArgonCitadelCore: Entered 30m thermal zone -> heat waves active.")
+
+	var dist_span: float = MAX_HEAT_DIST_SQ - MIN_HEAT_DIST_SQ
+	var dist_weight: float = clampf((MAX_HEAT_DIST_SQ - dist_sq) / dist_span, 0.0, 1.0)
+
+	var surge: float = 1.0
+	if phase < 0.25:
+		surge = lerpf(1.0, 1.6, phase * 4.0)
+	elif phase < 0.50:
+		surge = 1.6
+	elif phase < 0.75:
+		surge = lerpf(1.6, 1.15, (phase - 0.50) * 4.0)
+	else:
+		surge = lerpf(1.15, 1.0, (phase - 0.75) * 4.0)
+
+	var immersion_span: float = FULL_IMMERSION_DIST_SQ - MIN_HEAT_DIST_SQ
+	var immersion: float = clampf((FULL_IMMERSION_DIST_SQ - dist_sq) / immersion_span, 0.0, 1.0)
+
+	var plume_weight: float = 0.0
+	var core_uv: Vector2 = Vector2(0.5, 0.5)
+	if not cam.is_position_behind(world_core):
+		var rect_size: Vector2 = viewport.get_visible_rect().size
+		if rect_size.x > 0.0 and rect_size.y > 0.0:
+			var screen_pos: Vector2 = cam.unproject_position(world_core)
+			core_uv = Vector2(screen_pos.x / rect_size.x, screen_pos.y / rect_size.y)
+			plume_weight = 1.0
+
+	_heat_material.set_shader_parameter(PARAM_HEAT_INTENSITY, dist_weight * surge)
+	_heat_material.set_shader_parameter(PARAM_IMMERSION_WEIGHT, immersion)
+	_heat_material.set_shader_parameter(PARAM_PLUME_MASK_WEIGHT, plume_weight)
+	_heat_material.set_shader_parameter(PARAM_CORE_SCREEN_UV, core_uv)
+	_heat_material.set_shader_parameter(PARAM_PULSE_PHASE, phase)
+
+
+## Disables [member _heat_wave_layer] visibility when exiting the 30m thermal radius.
+func _deactivate_heat_wave() -> void:
+	if _is_heat_active:
+		_is_heat_active = false
+		if is_instance_valid(_heat_wave_layer):
+			_heat_wave_layer.visible = false
+		print("ArgonCitadelCore: Exited 30m thermal zone -> heat waves inactive.")
+	elif is_instance_valid(_heat_wave_layer) and _heat_wave_layer.visible:
+		_heat_wave_layer.visible = false
 
 
 ## Logs discrete transition into the orange outward-wave eruption stage.

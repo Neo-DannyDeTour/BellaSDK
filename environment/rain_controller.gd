@@ -19,15 +19,6 @@ const _PARAM_WIND: StringName = &"wind_velocity"
 ## Shader uniform name for radial camera-proximity spawn concentration.
 const _PARAM_NEAR_BIAS: StringName = &"near_camera_bias"
 
-## Global shader uniform name for surface porosity wetness.
-const _GLOBAL_WETNESS: StringName = &"rain_wetness"
-
-## Global shader uniform name for upward surface puddle ripples.
-const _GLOBAL_RIPPLES: StringName = &"rain_ripple_intensity"
-
-## Global shader uniform name for 2D wind direction.
-const _GLOBAL_WIND_DIR: StringName = &"rain_wind_dir"
-
 ## Minimum squared camera movement (1.5m) before snapping volume and re-testing roof occlusion.
 const _SNAP_DIST_SQ: float = 2.25
 
@@ -115,8 +106,6 @@ var _zone_area: Area3D
 var _zone_shape: CollisionShape3D
 var _process_mat: ShaderMaterial
 var _weather_tween: Tween
-var _wetness_tween: Tween
-var _current_wetness: float = 0.0
 var _active_camera: Camera3D
 var _player_body: Node3D
 var _is_player_inside_zone: bool = false
@@ -130,7 +119,6 @@ func _ready() -> void:
 	assert(is_instance_valid(_particles), "RainController: _particles failed to initialize.")
 	assert(is_instance_valid(_heightfield), "RainController: _heightfield failed to initialize.")
 	assert(is_instance_valid(_zone_area), "RainController: _zone_area failed to initialize.")
-	_current_wetness = intensity if enabled else 0.0
 	_sync_volume()
 	_sync_state()
 
@@ -139,8 +127,6 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	if is_instance_valid(_weather_tween):
 		_weather_tween.kill()
-	if is_instance_valid(_wetness_tween):
-		_wetness_tween.kill()
 	if not Engine.is_editor_hint() and _last_emitted_vfx > 0.0:
 		Events.rain_vfx_toggled.emit(0.0)
 		if is_instance_valid(_player_body) and _player_body.has_method(&"exit_rain_volume"):
@@ -168,7 +154,7 @@ func _process(_delta: float) -> void:
 		_update_screen_rain_vfx()
 
 
-## Smoothly transitions rain intensity, storm swirl, and wetness over [param duration].
+## Smoothly transitions rain intensity and storm swirl over [param duration].
 func set_weather(target_intensity: float, target_swirl: float, duration: float = 4.0) -> void:
 	var clamped_int: float = clampf(target_intensity, 0.0, 1.0)
 	var clamped_swirl: float = clampf(target_swirl, 0.0, 1.0)
@@ -184,12 +170,6 @@ func set_weather(target_intensity: float, target_swirl: float, duration: float =
 		_apply_tween_step, Vector2(intensity, swirl), Vector2(clamped_int, clamped_swirl), duration
 	)
 	_weather_tween.chain().tween_callback(_on_weather_tween_finished.bind(clamped_int))
-
-	var wet_dur: float = duration if clamped_int >= _current_wetness else duration * 3.0
-	if is_instance_valid(_wetness_tween):
-		_wetness_tween.kill()
-	_wetness_tween = create_tween().set_trans(Tween.TRANS_QUAD)
-	_wetness_tween.tween_method(_apply_wetness_step, _current_wetness, clamped_int, wet_dur)
 
 
 ## Creates or retrieves internal particle, heightfield, and player trigger zone nodes.
@@ -291,7 +271,7 @@ func _sync_volume() -> void:
 		_process_mat.set_shader_parameter(_PARAM_EXTENTS, half_extents)
 
 
-## Synchronizes emission state, shader uniforms, global wetness, and player screen droplets.
+## Synchronizes emission state, particle shader uniforms, and player screen droplets.
 func _sync_state() -> void:
 	if not is_instance_valid(_particles) or not is_instance_valid(_process_mat):
 		return
@@ -303,12 +283,6 @@ func _sync_state() -> void:
 	_process_mat.set_shader_parameter(_PARAM_SWIRL, swirl)
 	_process_mat.set_shader_parameter(_PARAM_WIND, wind_vec)
 	_process_mat.set_shader_parameter(_PARAM_NEAR_BIAS, near_camera_bias if follow_camera else 0.0)
-
-	var eff_intensity: float = intensity if active_rain else 0.0
-	var wind_dir_2d: Vector2 = Vector2(wind_vec.x, wind_vec.z).normalized()
-	RenderingServer.global_shader_parameter_set(_GLOBAL_RIPPLES, eff_intensity)
-	RenderingServer.global_shader_parameter_set(_GLOBAL_WIND_DIR, wind_dir_2d)
-	RenderingServer.global_shader_parameter_set(_GLOBAL_WETNESS, eff_intensity)
 
 	if not Engine.is_editor_hint():
 		_update_screen_rain_vfx()
@@ -395,12 +369,6 @@ func _is_camera_under_roof() -> bool:
 func _apply_tween_step(state: Vector2) -> void:
 	intensity = state.x
 	swirl = state.y
-
-
-## Updates global surface wetness uniform during runtime Tween transitions.
-func _apply_wetness_step(wetness: float) -> void:
-	_current_wetness = wetness
-	RenderingServer.global_shader_parameter_set(_GLOBAL_WETNESS, _current_wetness)
 
 
 ## Halts particle emission when a transition Tween reaches zero intensity.

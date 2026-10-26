@@ -5,7 +5,7 @@ instance uniform float pulse_phase : hint_range(0.0, 1.0) = 0.0;
 
 uniform vec4 orange_wave_color : source_color = vec4(1.0, 0.42, 0.06, 1.0);
 uniform vec4 blue_wave_color : source_color = vec4(0.12, 0.78, 1.0, 1.0);
-uniform float wave_frequency : hint_range(4.0, 30.0, 0.5) = 16.0;
+uniform float wave_frequency : hint_range(4.0, 130.0, 0.5) = 63.0;
 uniform float wave_speed : hint_range(1.0, 15.0, 0.5) = 7.5;
 uniform float noise_scale : hint_range(0.5, 8.0, 0.1) = 3.2;
 uniform float liquid_warp_strength : hint_range(0.0, 0.4, 0.01) = 0.18;

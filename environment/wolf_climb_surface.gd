@@ -240,8 +240,11 @@ func _on_detection_area_body_exited(body: Node3D) -> void:
 
 	var sm: StateMachine = raw_sm
 	if sm.is_in_state(&"WolfClimb") or sm.is_in_state(&"WolfWallRun"):
-		print("WolfClimbSurface: Player exited surface area. Falling to ground.")
-		sm.transition_to(&"Air")
+		var cur_st: State = sm.current_state
+		var cur_surf: Variant = cur_st.get(&"active_surface") if is_instance_valid(cur_st) else null
+		if cur_surf == null or cur_surf == self:
+			print("WolfClimbSurface: Player exited active surface area. Falling to ground.")
+			sm.transition_to(&"Air")
 
 
 ## Evaluates whether [param character] is within surface bounds.

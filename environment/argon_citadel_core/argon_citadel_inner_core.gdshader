@@ -7,6 +7,7 @@ uniform vec4 orange_edge_color : source_color = vec4(1.0, 0.45, 0.08, 1.0);
 uniform vec4 cyan_edge_color : source_color = vec4(0.2, 0.88, 1.0, 1.0);
 uniform float noise_scale : hint_range(0.5, 8.0) = 2.6;
 uniform float displacement_strength : hint_range(0.0, 0.5) = 0.12;
+uniform float instability_scale : hint_range(0.0, 0.6) = 0.28;
 uniform float edge_tightness : hint_range(2.0, 10.0) = 5.2;
 uniform float edge_intensity : hint_range(0.0, 6.0) = 2.2;
 
@@ -48,13 +49,33 @@ float fbm3d(vec3 p) {
 	return val;
 }
 
+// 0.00->0.25: shrink (1->0) | 0.25->0.50: hold 0 | 0.50->0.75: expand (0->1) | 0.75->1.00: hold 1
+float get_core_envelope(float phase) {
+	float shrink_t = clamp(phase * 4.0, 0.0, 1.0);
+	float expand_t = clamp((phase - 0.5) * 4.0, 0.0, 1.0);
+	float shrink_curve = 0.5 + 0.5 * cos(shrink_t * 3.14159265);
+	float expand_curve = 0.5 - 0.5 * cos(expand_t * 3.14159265);
+	return shrink_curve + expand_curve;
+}
+
 void vertex() {
 	v_obj_pos = VERTEX;
+	float env = get_core_envelope(pulse_phase);
+
 	vec3 warp_coord = VERTEX * noise_scale + vec3(0.0, TIME * 0.45, TIME * 0.25);
 	float warp = fbm3d(warp_coord);
 	float secondary = fbm3d(warp_coord + vec3(warp * 2.0));
-	float pulse_amp = 1.0 + sin(pulse_phase * 3.14159265) * 0.55;
-	VERTEX += NORMAL * (secondary - 0.5) * displacement_strength * pulse_amp;
+
+	// Decoupled axis noise for unstable, uneven radius vs height expansion.
+	float rad_n = fbm3d(VERTEX * 0.85 + vec3(TIME * 1.35, -TIME * 0.9, 0.0));
+	float hgt_n = fbm3d(VERTEX * 0.85 + vec3(-TIME * 0.95, TIME * 1.55, 4.7));
+
+	float rad_scale = 1.0 + env * instability_scale * (0.25 + 0.95 * rad_n);
+	float hgt_scale = 1.0 + env * instability_scale * (0.25 + 0.95 * hgt_n);
+
+	VERTEX.xz *= rad_scale;
+	VERTEX.y *= hgt_scale;
+	VERTEX += NORMAL * (secondary - 0.5) * displacement_strength * env;
 }
 
 void fragment() {

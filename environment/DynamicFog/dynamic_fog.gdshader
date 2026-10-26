@@ -104,7 +104,7 @@ void fog() {
 	float carve_transmittance = 1.0;
 	float rim_compression = 0.0;
 
-	// 1. CS2-style bullet trajectory tunnels with radial curl advection and rim bunching.
+	// 1. CS2 radial-closing bullet trajectory tunnels and explosion shockwaves.
 	for (int i = 0; i < 8; i++) {
 		if (i >= active_ray_count) {
 			break;
@@ -127,27 +127,27 @@ void fog() {
 			float dist = sqrt(max(dist_sq, 0.0001));
 			vec3 radial_dir = radial_vec / dist;
 
-			// Perturb tunnel wall with curl vector so holes swirl shut organically.
-			float wall_warp = dot(curl_vec, radial_dir) * radius * 0.45 * (1.5 - life_strength);
+			float hold_curve = smoothstep(0.0, 0.38, life_strength);
+			float active_r = radius * hold_curve;
+
+			float core_guard = smoothstep(active_r * 0.25, active_r * 0.85, dist);
+			float wall_warp = dot(curl_vec, radial_dir) * active_r * 0.42 * core_guard * (1.35 - 0.85 * hold_curve);
 			float warped_dist = max(0.0, dist + wall_warp);
 
-			float expand_phase = smoothstep(0.0, 0.12, life_strength);
-			float active_r = radius * expand_phase * (0.55 + 0.45 * life_strength);
-
-			float push_mask = (1.0 - smoothstep(0.0, active_r * 2.1, warped_dist)) * life_strength;
+			float push_mask = (1.0 - smoothstep(0.0, active_r * 2.1, warped_dist)) * hold_curve;
 			advected_pos -= radial_dir * (push_mask * active_r * curl_advection_strength);
 			advected_pos += cross(radial_dir, curl_vec) * (push_mask * 0.65);
 
-			float hole_core = smoothstep(active_r * 0.35, active_r * 1.15, warped_dist);
-			carve_transmittance *= mix(1.0, hole_core, life_strength);
+			float hole_core = smoothstep(active_r * 0.68, active_r * 1.15, warped_dist);
+			carve_transmittance *= hole_core;
 
-			float inner_rim = smoothstep(active_r * 0.6, active_r * 1.1, warped_dist);
+			float inner_rim = smoothstep(active_r * 0.65, active_r * 1.1, warped_dist);
 			float outer_rim = 1.0 - smoothstep(active_r * 1.1, active_r * 2.0, warped_dist);
-			rim_compression += inner_rim * outer_rim * life_strength * 1.35;
+			rim_compression += inner_rim * outer_rim * hold_curve * 1.4;
 		}
 	}
 
-	// 2. Arkham Knight-style body displacement and trailing velocity wakes.
+	// 2. APEX/Arkham-style body displacement and trailing velocity wakes.
 	for (int i = 0; i < 8; i++) {
 		if (i >= active_actor_count) {
 			break;
@@ -160,7 +160,6 @@ void fog() {
 		vec3 tail_end = act_pos - act_vel * wake_mult;
 		vec3 wake_pt = closest_point_on_segment(WORLD_POSITION, act_pos, tail_end);
 
-		// Stretch vertical interaction for standing character capsules.
 		vec3 delta_vec = WORLD_POSITION - wake_pt;
 		delta_vec.y *= 0.62;
 		float dist_sq = dot(delta_vec, delta_vec);
@@ -174,7 +173,6 @@ void fog() {
 			float warp_dist = max(0.0, dist + dot(curl_vec, push_dir) * act_radius * 0.4);
 			float displace_weight = 1.0 - smoothstep(0.0, act_radius * 2.2, warp_dist);
 
-			// Swirl displaced fog outward and into a trailing vortex behind the actor.
 			vec3 vortex_dir = cross(push_dir, normalize(act_vel + vec3(0.0, 0.01, 0.0)));
 			advected_pos -= push_dir * (displace_weight * act_radius * curl_advection_strength);
 			advected_pos += vortex_dir * (displace_weight * speed_factor * curl_advection_strength);

@@ -1,5 +1,5 @@
 ## Global coordinator routing weapon trajectories, blasts, and AI vision queries
-## to volumetric fog zones.
+## to volumetric fog zones and active smoke grenade clouds.
 # class_name SmokeManager
 extends Node
 
@@ -15,12 +15,15 @@ const LOS_OPTICAL_DEPTH_THRESHOLD: float = 1.15
 ## Active environmental fog and smoke volumes currently registered in the scene tree.
 var _zones: Array[FogVolume] = []
 
+## Active smoke grenade clouds currently registered in the scene tree.
+var _grenade_clouds: Array[SmokeGrenadeCloud] = []
+
 
 ## Disables per-frame processing on startup; runs strictly on weapon/zone events.
 func _ready() -> void:
 	set_process(false)
 	set_physics_process(false)
-	print("[SmokeManager] Ready and listening for fog zone registrations.")
+	print("[SmokeManager] Ready and listening for fog zone and grenade cloud registrations.")
 
 
 ## Registers an active [FogVolume] ([DynamicFogZone] or [SmokeHazard]) for carving and LoS.
@@ -39,6 +42,22 @@ func unregister_zone(zone: FogVolume) -> void:
 		print("[SmokeManager] Unregistered volumetric zone: ", zone.name)
 
 
+## Registers an active [SmokeGrenadeCloud] to receive bullet and blast carve events.
+func register_cloud(cloud: SmokeGrenadeCloud) -> void:
+	if not is_instance_valid(cloud) or _grenade_clouds.has(cloud):
+		return
+	_grenade_clouds.append(cloud)
+	print("[SmokeManager] Registered SmokeGrenadeCloud: ", cloud.name)
+
+
+## Unregisters a [SmokeGrenadeCloud] when it expires or exits the scene tree.
+func unregister_cloud(cloud: SmokeGrenadeCloud) -> void:
+	var idx: int = _grenade_clouds.find(cloud)
+	if idx != -1:
+		_grenade_clouds.remove_at(idx)
+		print("[SmokeManager] Unregistered SmokeGrenadeCloud: ", cloud.name)
+
+
 ## Legacy-compatible entrypoint called directly by [HitscanWeapon._execute_shot_rays].
 func add_bullet_hole(
 	origin: Vector3,
@@ -54,11 +73,18 @@ func add_bullet_hole(
 	carve_segment(origin, end_pos, effective_radius)
 
 
+## Backward-compatibility entrypoint routing bullet trajectories to active zones and clouds.
+func process_bullet_trajectory(
+	start_pos: Vector3, end_pos: Vector3, hole_radius: float = DEFAULT_BULLET_RADIUS
+) -> void:
+	carve_segment(start_pos, end_pos, hole_radius)
+
+
 ## Carves a 3D cylindrical tunnel between [param start_pos] and [param end_pos] in matching zones.
 func carve_segment(
 	start_pos: Vector3, end_pos: Vector3, radius: float = DEFAULT_BULLET_RADIUS
 ) -> void:
-	if _zones.is_empty():
+	if _zones.is_empty() and _grenade_clouds.is_empty():
 		return
 
 	var seg_min: Vector3 = start_pos.min(end_pos) - Vector3(radius, radius, radius)
@@ -77,10 +103,18 @@ func carve_segment(
 			if zone.has_method(&"carve_bullet_ray"):
 				zone.call(&"carve_bullet_ray", start_pos, end_pos, radius)
 
+	for i: int in range(_grenade_clouds.size() - 1, -1, -1):
+		var cloud: SmokeGrenadeCloud = _grenade_clouds[i]
+		if not is_instance_valid(cloud):
+			_grenade_clouds.remove_at(i)
+			continue
+		if cloud.intersects_world_aabb(seg_aabb):
+			cloud.carve_bullet_ray(start_pos, end_pos, radius)
 
-## Carves a spherical explosion blast cavity in all overlapping volumetric zones.
+
+## Carves a spherical explosion blast cavity in all overlapping volumetric zones and clouds.
 func carve_explosion(center: Vector3, radius: float, duration: float = 3.5) -> void:
-	if _zones.is_empty():
+	if _zones.is_empty() and _grenade_clouds.is_empty():
 		return
 
 	var extent: Vector3 = Vector3(radius, radius, radius)
@@ -105,11 +139,24 @@ func carve_explosion(center: Vector3, radius: float, duration: float = 3.5) -> v
 					radius
 				)
 
+	for i: int in range(_grenade_clouds.size() - 1, -1, -1):
+		var cloud: SmokeGrenadeCloud = _grenade_clouds[i]
+		if not is_instance_valid(cloud):
+			_grenade_clouds.remove_at(i)
+			continue
+		if cloud.intersects_world_aabb(blast_aabb):
+			if cloud.has_method(&"carve_explosion_sphere"):
+				cloud.call(&"carve_explosion_sphere", center, radius, duration)
+			elif cloud.has_method(&"carve_bullet_ray"):
+				cloud.carve_bullet_ray(
+					center - Vector3(0.0, 0.05, 0.0), center + Vector3(0.0, 0.05, 0.0), radius
+				)
+
 
 ## Returns true if cumulative volumetric optical depth between [param from]
 ## and [param to] blocks AI sight.
 func is_line_of_sight_obscured(from: Vector3, to: Vector3) -> bool:
-	if _zones.is_empty():
+	if _zones.is_empty() and _grenade_clouds.is_empty():
 		return false
 
 	var seg_min: Vector3 = from.min(to)
@@ -135,5 +182,16 @@ func is_line_of_sight_obscured(from: Vector3, to: Vector3) -> bool:
 				total_optical_depth += depth_val
 				if total_optical_depth >= LOS_OPTICAL_DEPTH_THRESHOLD:
 					return true
+
+	for i: int in range(_grenade_clouds.size() - 1, -1, -1):
+		var cloud: SmokeGrenadeCloud = _grenade_clouds[i]
+		if not is_instance_valid(cloud):
+			_grenade_clouds.remove_at(i)
+			continue
+		if not cloud.visible:
+			continue
+		if cloud.intersects_world_aabb(ray_aabb):
+			if cloud.is_line_of_sight_obscured(from, to):
+				return true
 
 	return false

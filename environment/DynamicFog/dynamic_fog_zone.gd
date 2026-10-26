@@ -1,4 +1,4 @@
-## Interactive volumetric fog volume supporting CS2 bullet holes and Arkham-style wakes.
+## Interactive volumetric fog volume supporting CS2 bullet holes, blasts, and APEX wakes.
 @tool
 class_name DynamicFogZone
 extends FogVolume
@@ -10,7 +10,7 @@ enum FogMode {
 	CUSTOM,
 }
 
-## Maximum simultaneous bullet trajectories tracked in the shader ring buffer.
+## Maximum simultaneous bullet or explosion trajectories tracked in the ring buffer.
 const MAX_RAYS: int = 8
 
 ## Maximum simultaneous physics bodies displacing the fog volume.
@@ -18,6 +18,9 @@ const MAX_ACTORS: int = 8
 
 ## Render Layer 10 bitmask reserved for volumetric effects.
 const RENDER_LAYER_VOLUMETRICS: int = 1 << 9
+
+## Squared minimum actor speed (0.5 m/s) required to inject wake turbulence.
+const MIN_WAKE_SPEED_SQ: float = 0.25
 
 ## Physics bitmask detecting Player (2), Interactive (3), Debris (4), and Enemies (5).
 const ACTOR_COLLISION_MASK: int = (
@@ -124,7 +127,7 @@ const PARAM_ACTOR_VEL: StringName = &"actor_velocities"
 
 @export_category("Interaction & Performance")
 ## Time in seconds for a carved bullet tunnel to swirl shut.
-@export_range(0.3, 8.0, 0.1) var hole_regen_time: float = 2.4
+@export_range(0.3, 8.0, 0.1) var hole_regen_time: float = 3.8
 
 ## Physical clearing radius around walking characters and rigid bodies in meters.
 @export_range(0.2, 3.0, 0.05) var actor_carve_radius: float = 0.85
@@ -153,8 +156,11 @@ var _ray_starts: PackedVector4Array = PackedVector4Array()
 ## Pre-allocated uniform array storing bullet end positions and tunnel radius in W.
 var _ray_ends: PackedVector4Array = PackedVector4Array()
 
-## Remaining seconds for each of the 8 bullet ray slots.
+## Remaining seconds for each of the 8 bullet/blast ray slots.
 var _ray_timers: PackedFloat32Array = PackedFloat32Array()
+
+## Initial duration for each of the 8 ray slots used to normalize decay progress.
+var _ray_durations: PackedFloat32Array = PackedFloat32Array()
 
 ## Pre-allocated uniform array storing actor world positions and carve radius in W.
 var _actor_positions: PackedVector4Array = PackedVector4Array()
@@ -162,11 +168,14 @@ var _actor_positions: PackedVector4Array = PackedVector4Array()
 ## Pre-allocated uniform array storing actor velocities and wake trail scale in W.
 var _actor_velocities: PackedVector4Array = PackedVector4Array()
 
-## Ring-buffer write index for incoming bullet trajectories.
+## Ring-buffer write index for incoming bullet or explosion trajectories.
 var _next_ray_slot: int = 0
 
-## Count of bullet trajectories currently decaying.
+## Count of bullet or explosion trajectories currently decaying.
 var _live_ray_count: int = 0
+
+## Cached count of moving actors uploaded on the previous frame to skip redundant uploads.
+var _prev_active_actors: int = 0
 
 ## True when [member visibility_notifier] reports this volume is within a camera frustum.
 var _is_on_screen: bool = true
@@ -234,10 +243,27 @@ func _ready() -> void:
 	print("[DynamicFogZone] Initialized zone: ", name, " size: ", size)
 
 
-## Unregisters this fog volume from the global [SmokeManager] when removed from the tree.
+## Disconnects physics/visibility signals and unregisters from [SmokeManager] on tree exit.
 func _exit_tree() -> void:
 	if Engine.is_editor_hint():
 		return
+
+	if is_instance_valid(interaction_area):
+		if interaction_area.body_entered.is_connected(_on_body_entered):
+			interaction_area.body_entered.disconnect(_on_body_entered)
+		if interaction_area.body_exited.is_connected(_on_body_exited):
+			interaction_area.body_exited.disconnect(_on_body_exited)
+
+	if is_instance_valid(visibility_notifier):
+		if visibility_notifier.screen_entered.is_connected(_on_screen_entered):
+			visibility_notifier.screen_entered.disconnect(_on_screen_entered)
+		if visibility_notifier.screen_exited.is_connected(_on_screen_exited):
+			visibility_notifier.screen_exited.disconnect(_on_screen_exited)
+
+	_tracked_bodies.clear()
+	_prev_positions.clear()
+	_smoothed_velocities.clear()
+
 	var smoke_mgr: Node = get_node_or_null("/root/SmokeManager")
 	if is_instance_valid(smoke_mgr) and smoke_mgr.has_method("unregister_zone"):
 		smoke_mgr.call(&"unregister_zone", self)
@@ -262,7 +288,6 @@ func _physics_process(delta: float) -> void:
 
 	if _live_ray_count == 0 and _tracked_bodies.is_empty():
 		set_physics_process(false)
-		# print("[DynamicFogZone] Idle state reached; sleeping physics on: ", name)
 
 
 ## Returns true if [param world_aabb] overlaps this fog volume's world-space bounding box.
@@ -272,25 +297,46 @@ func intersects_world_aabb(world_aabb: AABB) -> bool:
 	return zone_world_aabb.intersects(world_aabb)
 
 
+## Computes optical depth along segment [param from] to [param to] for AI line-of-sight checks.
+func get_segment_optical_depth(from: Vector3, to: Vector3) -> float:
+	if not visible or base_density <= 0.05:
+		return 0.0
+	var inv_xform: Transform3D = global_transform.affine_inverse()
+	var local_a: Vector3 = inv_xform * from
+	var local_b: Vector3 = inv_xform * to
+	var half_ext: Vector3 = size * 0.5
+	var local_box: AABB = AABB(-half_ext, size)
+	var hit: Variant = local_box.intersects_segment(local_a, local_b)
+	if hit == null:
+		return 0.0
+	var mid_y: float = clampf(((local_a.y + local_b.y) * 0.5 / maxf(size.y, 0.1)) + 0.5, 0.0, 1.0)
+	var ground_h: float = 0.25 if fog_mode == FogMode.GROUND_HUGGING else 0.95
+	if fog_mode == FogMode.CUSTOM:
+		ground_h = custom_ground_height
+	if mid_y > ground_h + 0.2:
+		return 0.0
+	var dist: float = local_a.distance_to(local_b)
+	return clampf(dist * base_density * 0.18, 0.0, 2.5)
+
+
 ## Records a new bullet trajectory into the 8-slot ring buffer and wakes decay processing.
-func carve_bullet_ray(start_pos: Vector3, end_pos: Vector3, radius: float = 0.55) -> void:
+func carve_bullet_ray(start_pos: Vector3, end_pos: Vector3, radius: float = 0.85) -> void:
 	if not is_instance_valid(_shader_mat):
 		return
+	var scaled_r: float = clampf(maxf(radius * 1.55, 0.85), 0.85, 1.8)
+	_record_carve_segment(start_pos, end_pos, scaled_r, hole_regen_time)
+	print("[DynamicFogZone] Carved bullet tunnel in ", name, " slot: ", _next_ray_slot)
 
-	var slot: int = _next_ray_slot
-	_next_ray_slot = (_next_ray_slot + 1) % MAX_RAYS
 
-	_ray_timers[slot] = hole_regen_time
-	_ray_starts[slot] = Vector4(start_pos.x, start_pos.y, start_pos.z, 1.0)
-	_ray_ends[slot] = Vector4(end_pos.x, end_pos.y, end_pos.z, radius)
-
-	_live_ray_count = mini(_live_ray_count + 1, MAX_RAYS)
-	_shader_mat.set_shader_parameter(PARAM_ACTIVE_RAYS, MAX_RAYS)
-	_shader_mat.set_shader_parameter(PARAM_RAY_STARTS, _ray_starts)
-	_shader_mat.set_shader_parameter(PARAM_RAY_ENDS, _ray_ends)
-
-	print("[DynamicFogZone] Carved bullet tunnel in ", name, " slot: ", slot)
-	_refresh_processing_state()
+## Carves a spherical explosion blast cavity and radial shockwave in the fog volume.
+func carve_explosion_sphere(center: Vector3, radius: float, duration: float = 4.0) -> void:
+	if not is_instance_valid(_shader_mat):
+		return
+	var blast_r: float = clampf(radius * 0.9, 1.2, 5.0)
+	var blast_start: Vector3 = center - Vector3(0.0, 0.05, 0.0)
+	var blast_end: Vector3 = center + Vector3(0.0, 0.05, 0.0)
+	_record_carve_segment(blast_start, blast_end, blast_r, maxf(duration, 0.3))
+	print("[DynamicFogZone] Carved explosion blast in ", name, " slot: ", _next_ray_slot)
 
 
 ## Pre-allocates fixed-size uniform arrays once on startup to guarantee zero frame allocations.
@@ -298,6 +344,7 @@ func _init_buffers() -> void:
 	_ray_starts.resize(MAX_RAYS)
 	_ray_ends.resize(MAX_RAYS)
 	_ray_timers.resize(MAX_RAYS)
+	_ray_durations.resize(MAX_RAYS)
 	_actor_positions.resize(MAX_ACTORS)
 	_actor_velocities.resize(MAX_ACTORS)
 
@@ -305,10 +352,53 @@ func _init_buffers() -> void:
 		_ray_starts[i] = Vector4.ZERO
 		_ray_ends[i] = Vector4.ZERO
 		_ray_timers[i] = 0.0
+		_ray_durations[i] = 1.0
 
 	for i: int in range(MAX_ACTORS):
 		_actor_positions[i] = Vector4.ZERO
 		_actor_velocities[i] = Vector4.ZERO
+
+
+## Writes or coalesces a carve segment in the ring buffer and uploads to the shader.
+func _record_carve_segment(
+	start_pos: Vector3, end_pos: Vector3, radius: float, duration: float
+) -> void:
+	for i: int in range(MAX_RAYS):
+		if _is_fresh_matching_ray(i, start_pos, end_pos):
+			var cur_end: Vector4 = _ray_ends[i]
+			cur_end.w = minf(cur_end.w + 0.12, 2.0)
+			_ray_ends[i] = cur_end
+			_ray_timers[i] = maxf(_ray_timers[i], duration)
+			_shader_mat.set_shader_parameter(PARAM_RAY_ENDS, _ray_ends)
+			return
+
+	var slot: int = _next_ray_slot
+	_next_ray_slot = (_next_ray_slot + 1) % MAX_RAYS
+
+	_ray_durations[slot] = maxf(duration, 0.1)
+	_ray_timers[slot] = _ray_durations[slot]
+	_ray_starts[slot] = Vector4(start_pos.x, start_pos.y, start_pos.z, 1.0)
+	_ray_ends[slot] = Vector4(end_pos.x, end_pos.y, end_pos.z, radius)
+
+	_live_ray_count = mini(_live_ray_count + 1, MAX_RAYS)
+	_shader_mat.set_shader_parameter(PARAM_ACTIVE_RAYS, MAX_RAYS)
+	_shader_mat.set_shader_parameter(PARAM_RAY_STARTS, _ray_starts)
+	_shader_mat.set_shader_parameter(PARAM_RAY_ENDS, _ray_ends)
+	_refresh_processing_state()
+
+
+## Returns true if slot [param idx] was carved this frame along a near-identical trajectory.
+func _is_fresh_matching_ray(idx: int, start_pos: Vector3, end_pos: Vector3) -> bool:
+	var start_vec: Vector4 = _ray_starts[idx]
+	if start_vec.w < 0.96:
+		return false
+	var existing_start: Vector3 = Vector3(start_vec.x, start_vec.y, start_vec.z)
+	if existing_start.distance_squared_to(start_pos) > 0.25:
+		return false
+	var end_vec: Vector4 = _ray_ends[idx]
+	var existing_end: Vector3 = Vector3(end_vec.x, end_vec.y, end_vec.z)
+	var closest: Vector3 = Geometry3D.get_closest_point_to_segment(existing_end, start_pos, end_pos)
+	return existing_end.distance_squared_to(closest) <= 0.65
 
 
 ## Resizes child [CollisionShape3D] and [VisibleOnScreenNotifier3D] to match [member size].
@@ -364,10 +454,9 @@ func _sync_static_uniforms() -> void:
 	_shader_mat.set_shader_parameter(PARAM_CURL_STRENGTH, curl_advection_strength)
 
 
-## Steps bullet hole timers and uploads updated strengths to the shader.
+## Steps bullet and blast hole timers and uploads updated normalized strengths to the shader.
 func _step_ray_decay(delta: float) -> void:
 	var active_remaining: int = 0
-	var inv_regen: float = 1.0 / maxf(hole_regen_time, 0.1)
 
 	for i: int in range(MAX_RAYS):
 		var remaining: float = _ray_timers[i]
@@ -375,7 +464,7 @@ func _step_ray_decay(delta: float) -> void:
 			remaining = maxf(0.0, remaining - delta)
 			_ray_timers[i] = remaining
 			var start_vec: Vector4 = _ray_starts[i]
-			start_vec.w = remaining * inv_regen
+			start_vec.w = remaining / _ray_durations[i]
 			_ray_starts[i] = start_vec
 			if remaining > 0.0:
 				active_remaining += 1
@@ -387,7 +476,7 @@ func _step_ray_decay(delta: float) -> void:
 		_shader_mat.set_shader_parameter(PARAM_RAY_STARTS, _ray_starts)
 
 
-## Computes smoothed actor velocities and uploads up to 8 wakes to the shader.
+## Computes smoothed actor velocities (gated at > 0.5 m/s) and skips idle uniform uploads.
 func _step_actor_wakes(delta: float) -> void:
 	var inv_delta: float = 1.0 / maxf(delta, 0.001)
 	var count: int = mini(_tracked_bodies.size(), MAX_ACTORS)
@@ -408,9 +497,15 @@ func _step_actor_wakes(delta: float) -> void:
 		_prev_positions[inst_id] = cur_pos
 
 		var raw_vel: Vector3 = (cur_pos - prev_pos) * inv_delta
+		var target_vel: Vector3 = (
+			raw_vel if raw_vel.length_squared() >= MIN_WAKE_SPEED_SQ else Vector3.ZERO
+		)
 		var prev_vel: Vector3 = _smoothed_velocities.get(inst_id, Vector3.ZERO)
-		var smooth_vel: Vector3 = prev_vel.lerp(raw_vel, clampf(delta * 8.0, 0.0, 1.0))
+		var smooth_vel: Vector3 = prev_vel.lerp(target_vel, clampf(delta * 8.0, 0.0, 1.0))
 		_smoothed_velocities[inst_id] = smooth_vel
+
+		if smooth_vel.length_squared() < 0.02:
+			continue
 
 		_actor_positions[valid_slot] = Vector4(cur_pos.x, cur_pos.y, cur_pos.z, actor_carve_radius)
 		_actor_velocities[valid_slot] = Vector4(
@@ -418,10 +513,12 @@ func _step_actor_wakes(delta: float) -> void:
 		)
 		valid_slot += 1
 
-	if is_instance_valid(_shader_mat):
+	if is_instance_valid(_shader_mat) and (valid_slot > 0 or _prev_active_actors > 0):
 		_shader_mat.set_shader_parameter(PARAM_ACTIVE_ACTORS, valid_slot)
-		_shader_mat.set_shader_parameter(PARAM_ACTOR_POS, _actor_positions)
-		_shader_mat.set_shader_parameter(PARAM_ACTOR_VEL, _actor_velocities)
+		if valid_slot > 0:
+			_shader_mat.set_shader_parameter(PARAM_ACTOR_POS, _actor_positions)
+			_shader_mat.set_shader_parameter(PARAM_ACTOR_VEL, _actor_velocities)
+	_prev_active_actors = valid_slot
 
 
 ## Checks squared distance from the active camera to gate distant fog physics.
@@ -469,6 +566,7 @@ func _on_body_exited(body: Node3D) -> void:
 
 	if _tracked_bodies.is_empty() and is_instance_valid(_shader_mat):
 		_shader_mat.set_shader_parameter(PARAM_ACTIVE_ACTORS, 0)
+		_prev_active_actors = 0
 	_refresh_processing_state()
 
 

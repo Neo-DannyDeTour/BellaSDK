@@ -1,0 +1,43 @@
+[gd_scene format=3 uid="uid://3r7uhvuqww4i"]
+
+[ext_resource type="Shader" uid="uid://khruxw6kqihp" path="res://vfx/aurora_borealis.gdshader" id="1_55drd"]
+[ext_resource type="Script" uid="uid://wkwa7avsig5e" path="res://environment/aurora_ribbon.gd" id="1_nedx3"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_872hv"]
+noise_type = 3
+frequency = 0.0115
+fractal_type = 0
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_55drd"]
+noise = SubResource("FastNoiseLite_872hv")
+seamless = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_55drd"]
+render_priority = 0
+shader = ExtResource("1_55drd")
+shader_parameter/noise_tex = SubResource("NoiseTexture2D_55drd")
+shader_parameter/noise_tiling = Vector2(7, 0.1)
+shader_parameter/primary_speed = Vector2(0.04, 0.01)
+shader_parameter/secondary_speed = Vector2(0.045, 0.015)
+shader_parameter/secondary_scale_offset = 1.18
+shader_parameter/dissolve_power = 2.0
+shader_parameter/horizontal_fade_power = 1.5
+shader_parameter/vertical_falloff_power = 2.2
+shader_parameter/bottom_sharpness = 0.15
+shader_parameter/wave_amplitude = 8.0
+shader_parameter/wave_frequency = 0.04
+shader_parameter/wave_speed = 0.6
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_534t5"]
+material = SubResource("ShaderMaterial_55drd")
+size = Vector2(200, 40)
+subdivide_width = 64
+subdivide_depth = 1
+orientation = 2
+
+[node name="AuroraBorealis" type="MeshInstance3D" unique_id=487410922]
+mesh = SubResource("PlaneMesh_534t5")
+script = ExtResource("1_nedx3")
+
+[node name="VisibleOnScreenNotifier3D" type="VisibleOnScreenNotifier3D" parent="." unique_id=48726379]
+aabb = AABB(-100, -20, -25, 200, 40, 50)
