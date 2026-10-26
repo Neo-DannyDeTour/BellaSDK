@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://ypittibtpcmp"]
 
-[ext_resource type="Script" uid="uid://du6rn5aii4844" path="res://effects/control_explosion.gd" id="1_jor4l"]
+[ext_resource type="Script" uid="uid://du6rn5aii4844" path="res://vfx/effects/control_explosion.gd" id="1_jor4l"]
 [ext_resource type="Shader" uid="uid://bple6i88i48ug" path="res://vfx/explosion_liquid_droplet.gdshader" id="2_wxeh2"]
 [ext_resource type="Shader" uid="uid://devai1bkpyfep" path="res://vfx/explosion_volumetric_smoke.gdshader" id="3_d5m0g"]
 [ext_resource type="Shader" uid="uid://dbuao7wa4enfq" path="res://vfx/explosion_shockwave.gdshader" id="4_58ljl"]
