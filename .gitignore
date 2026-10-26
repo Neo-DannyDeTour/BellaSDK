@@ -25,6 +25,7 @@ assets/images
 assets/props
 assets/sounds
 assets/textures
+!assets/textures/dev_material_area.tres*
 assets/VisTEST
 assets/weapons
 
