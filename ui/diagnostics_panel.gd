@@ -587,8 +587,14 @@ func _build_performance_report() -> String:
 	var max_time: float = gpu_ms if is_gpu else total_cpu_ms
 	var budget_pct: float = (max_time / TARGET_FRAME_BUDGET_MS) * 100.0
 
+	var sdfgi_records: Array[Dictionary] = _audit_sdfgi_instances()
+	var sdfgi_banner: String = _format_sdfgi_summary_banner(sdfgi_records)
+
 	return (
-		"""=== PRIMARY BOTTLENECK ===
+		sdfgi_banner
+		+ "\n"
+		+ (
+			"""=== PRIMARY BOTTLENECK ===
 Status: [%s] (%.2f ms | %.1f%% budget)
 
 === TIME BREAKDOWN ===
@@ -614,24 +620,25 @@ Status: [%s] (%.2f ms | %.1f%% budget)
 * Active Nodes        : %d
 * Orphan Nodes        : %d (Press [Scan Orphans] to dump)
 """
-		% [
-			"GPU BOUND" if is_gpu else "CPU BOUND",
-			max_time,
-			budget_pct,
-			gpu_ms,
-			cpu_script_ms,
-			cpu_prep_ms,
-			cpu_phys_ms,
-			draw_calls,
-			objects_drawn,
-			primitives,
-			pipe_mesh,
-			pipe_canvas,
-			phys_pairs,
-			phys_islands,
-			total_nodes,
-			orphan_nodes,
-		]
+			% [
+				"GPU BOUND" if is_gpu else "CPU BOUND",
+				max_time,
+				budget_pct,
+				gpu_ms,
+				cpu_script_ms,
+				cpu_prep_ms,
+				cpu_phys_ms,
+				draw_calls,
+				objects_drawn,
+				primitives,
+				pipe_mesh,
+				pipe_canvas,
+				phys_pairs,
+				phys_islands,
+				total_nodes,
+				orphan_nodes,
+			]
+		)
 	)
 
 
@@ -695,9 +702,94 @@ func _format_effects_bbcode(effects: PackedStringArray) -> String:
 	return ", ".join(colored_tokens)
 
 
+## Formats a high-level SDFGI status summary banner for diagnostics reports.
+func _format_sdfgi_summary_banner(records: Array[Dictionary]) -> String:
+	var active_count: int = 0
+	var dormant_count: int = 0
+	for rec: Dictionary in records:
+		var is_active_val: Variant = rec.get("is_active", false)
+		if is_active_val is bool and is_active_val:
+			active_count += 1
+		else:
+			dormant_count += 1
+
+	if active_count > 1:
+		return (
+			"[color=red][b]SDFGI STATUS: [CRITICAL: %d ACTIVE COMPUTE CASCADES] (%d dormant)[/b][/color]\n"
+			% [active_count, dormant_count]
+		)
+	if active_count == 1:
+		var dormant_suffix: String = (" (%d dormant)" % dormant_count) if dormant_count > 0 else ""
+		return "[color=green][b]SDFGI STATUS: 1 Active Compute%s[/b][/color]\n" % dormant_suffix
+	if dormant_count > 0:
+		return "[color=yellow]SDFGI STATUS: 0 Active (%d dormant in tree)[/color]\n" % dormant_count
+	return "[color=gray]SDFGI STATUS: Off (0 active)[/color]\n"
+
+
+## Audits scene tree and viewports for genuine active SDFGI compute cascades.
+func _audit_sdfgi_instances() -> Array[Dictionary]:
+	var results: Array[Dictionary] = []
+	var tree: SceneTree = get_tree()
+	if not is_instance_valid(tree) or not is_instance_valid(tree.root):
+		return results
+
+	var root_vp: Window = tree.root
+	var sub_viewports: Array[SubViewport] = []
+	_collect_subviewports(root_vp, sub_viewports)
+
+	var all_viewports: Array[Viewport] = [root_vp]
+	for sub_vp: SubViewport in sub_viewports:
+		all_viewports.append(sub_vp)
+
+	for vp: Viewport in all_viewports:
+		if not is_instance_valid(vp):
+			continue
+
+		var is_sub: bool = vp is SubViewport
+		var sub_vp: SubViewport = vp as SubViewport if is_sub else null
+
+		if is_sub:
+			if sub_vp.disable_3d:
+				continue
+			if sub_vp.render_target_update_mode == SubViewport.UPDATE_DISABLED:
+				continue
+
+		var active_env: Environment = null
+		var cam: Camera3D = vp.get_camera_3d()
+		if is_instance_valid(cam) and is_instance_valid(cam.environment):
+			active_env = cam.environment
+		else:
+			var w3d: World3D = vp.find_world_3d()
+			if is_instance_valid(w3d) and is_instance_valid(w3d.environment):
+				active_env = w3d.environment
+
+		if not is_instance_valid(active_env) or not active_env.sdfgi_enabled:
+			continue
+
+		var vp_name: String = str(vp.name)
+		var vp_path: String = str(vp.get_path())
+
+		results.append(
+			{
+				"name": "Viewport (%s)" % vp_name,
+				"path": vp_path,
+				"cascades": active_env.sdfgi_cascades,
+				"is_active": true,
+				"reason": "Rendering 3D with SDFGI"
+			}
+		)
+
+	return results
+
+
 ## Generates hierarchical breakdown of active [SubViewport] nodes.
 func _build_pipeline_report() -> String:
-	var text: String = "[b][color=yellow]=== VIEWPORT & RENDER PIPELINE ===[/color][/b]\n"
+	var sdfgi_records: Array[Dictionary] = _audit_sdfgi_instances()
+	var sdfgi_banner: String = _format_sdfgi_summary_banner(sdfgi_records)
+
+	var text: String = (
+		sdfgi_banner + "\n[b][color=yellow]=== VIEWPORT & RENDER PIPELINE ===[/color][/b]\n"
+	)
 	var root_vp: Window = get_tree().root
 	var root_effects: PackedStringArray = _detect_viewport_environment_effects(root_vp)
 	var root_effects_str: String = _format_effects_bbcode(root_effects)
@@ -739,6 +831,27 @@ func _build_pipeline_report() -> String:
 				]
 			)
 
+	text += "\n[b][color=yellow]=== SDFGI INSTANCE AUDIT ===[/color][/b]\n"
+	if sdfgi_records.is_empty():
+		text += "[color=gray]  No SDFGI-enabled environments detected in tree.[/color]\n"
+	else:
+		for rec: Dictionary in sdfgi_records:
+			var name_str: String = str(rec.get("name", "Unknown"))
+			var is_act_val: Variant = rec.get("is_active", false)
+			var is_act: bool = is_act_val is bool and is_act_val
+			var status_badge: String = (
+				"[color=green][ACTIVE COMPUTE][/color]"
+				if is_act
+				else ("[color=yellow][DORMANT: %s][/color]" % str(rec.get("reason", "asleep")))
+			)
+			var cascades_val: Variant = rec.get("cascades", 0)
+			var cascades: int = cascades_val if cascades_val is int else 0
+			var path_str: String = str(rec.get("path", ""))
+			text += (
+				"* %s -> %s | %d Cascades\n  └─ Path: [color=cyan]%s[/color]\n"
+				% [name_str, status_badge, cascades, path_str]
+			)
+
 	return text
 
 
@@ -776,12 +889,12 @@ func _on_live_isolator_pressed() -> void:
 			cam.cull_mask = 0xFFFFF
 
 
-## Dumps scene tree, orphan nodes, and performance metrics to debugger console.
 func _on_dump_audit_pressed() -> void:
 	print("RenderDiagnosticsPanel: Dump audit triggered.")
 	scan_scene_geometry()
 	var report: String = _build_performance_report()
 	print(report)
+	print(_build_pipeline_report())
 	if is_instance_valid(survey_label):
 		print(_cached_branch_survey)
 	Node.print_orphan_nodes()
@@ -861,7 +974,7 @@ func _flush_render_and_cloud_buffers(lines: PackedStringArray) -> void:
 	vp.scaling_3d_scale = clampf(orig_scale - 0.01, 0.5, 1.0)
 	lines.append("  |- Viewport Buffers: Triggered 1-frame scale jitter & TAA reset.")
 	lines.append(
-		"  [i]If the diagonal lines vanished, history buffer NaN poisoning " + "was the cause![/i]"
+		"  [i]If the diagonal lines vanished, history buffer NaN poisoning was the cause![/i]"
 	)
 
 	await get_tree().process_frame
@@ -1020,8 +1133,20 @@ func sync_toggle_button_labels() -> void:
 	var env: Environment = _get_active_environment()
 
 	if is_instance_valid(sdfgi_toggle_button):
-		var is_sdfgi: bool = env.sdfgi_enabled if is_instance_valid(env) else false
-		sdfgi_toggle_button.text = "SDFGI %s" % ("on" if is_sdfgi else "off")
+		var records: Array[Dictionary] = _audit_sdfgi_instances()
+		var active_count: int = 0
+		for rec: Dictionary in records:
+			var is_active_val: Variant = rec.get("is_active", false)
+			if is_active_val is bool and is_active_val:
+				active_count += 1
+
+		if active_count > 1:
+			sdfgi_toggle_button.text = "SDFGI (%d ACTIVE!)" % active_count
+		elif active_count == 1:
+			sdfgi_toggle_button.text = "SDFGI on"
+		else:
+			var is_sdfgi: bool = env.sdfgi_enabled if is_instance_valid(env) else false
+			sdfgi_toggle_button.text = "SDFGI %s" % ("on" if is_sdfgi else "off")
 
 	if is_instance_valid(fog_toggle_button):
 		var is_fog: bool = false
@@ -1072,8 +1197,7 @@ func _on_sdfgi_toggled() -> void:
 	env.sdfgi_enabled = not env.sdfgi_enabled
 	var state_str: String = "on" if env.sdfgi_enabled else "off"
 	print("RenderDiagnosticsPanel: SDFGI %s" % state_str)
-	if is_instance_valid(sdfgi_toggle_button):
-		sdfgi_toggle_button.text = "SDFGI %s" % state_str
+	sync_toggle_button_labels()
 	_refresh_diagnostics_display()
 
 

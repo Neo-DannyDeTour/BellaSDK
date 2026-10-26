@@ -171,12 +171,12 @@ func _rebuild_diorama() -> void:
 
 	VideoApplier.configure_diorama_sandbox(diorama_viewport)
 
-	#var raw_instance: Node = SETTINGS_LEVEL_SCENE.instantiate()
-	#if raw_instance is Node3D:
-	#	_instantiated_diorama = raw_instance as Node3D
-	#	diorama_viewport.add_child(_instantiated_diorama)
-	#elif is_instance_valid(raw_instance):
-	#	raw_instance.queue_free()
+	var raw_instance: Node = SETTINGS_LEVEL_SCENE.instantiate()
+	if raw_instance is Node3D:
+		_instantiated_diorama = raw_instance as Node3D
+		diorama_viewport.add_child(_instantiated_diorama)
+	elif is_instance_valid(raw_instance):
+		raw_instance.queue_free()
 
 	_neutralize_diorama_hotspots()
 	_bind_diorama_textures()

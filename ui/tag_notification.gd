@@ -3,49 +3,77 @@ class_name TagNotification
 extends Control
 
 ## Textures registry mapping weapon tags to UI assets.
-const TAG_TEXTURES: Dictionary = {
+const TAG_TEXTURES: Dictionary[String, Texture2D] = {
 	"shotgun": preload("res://assets/weapons_ui_icons/tag_shotgun.png"),
-	"revolver": preload("res://assets/weapons_ui_icons/tag_revolver.png")
+	"revolver": preload("res://assets/weapons_ui_icons/tag_revolver.png"),
+	"smoke_grenade": preload("res://assets/weapons_ui_icons/tag_smoke_grenade.png"),
 }
 
 ## Horizontal spacing between background dogtags in pixels.
 const TAG_SPREAD_X: float = 48.0
+
 ## Vertical drop position for the active foreground dogtag.
 const ACTIVE_Y: float = 65.0
+
 ## Resting Y position for background stacked tags.
 const BACKGROUND_Y: float = 40.0
+
 ## Duration in seconds tags remain displayed before retracting off-screen.
 const DISPLAY_DURATION: float = 2.5
 
-## Dictionary holding spawned TextureRect instances by tag key.
-var _spawned_tags: Dictionary = {}
-## Array tracking the display order of collected tags.
+## Dictionary holding spawned [TextureRect] instances keyed by weapon tag.
+var _spawned_tags: Dictionary[String, TextureRect] = {}
+
+## Array tracking the display order of collected weapon tags.
 var _collected_order: Array[String] = []
+
 ## String tag of the currently equipped weapon.
 var _active_weapon: String = ""
+
 ## Active tween coordinating entrance and dismissal animations.
 var _stack_tween: Tween = null
+
 ## Timer managing the auto-retract sequence after display duration elapses.
-var _dismiss_timer: SceneTreeTimer = null
+var _dismiss_timer: Timer = null
 
 
-## Initializes tag overlay and connects bus signals.
+## Initializes tag overlay and connects global weapon event signals.
 func _ready() -> void:
+	set_process(false)
+	set_physics_process(false)
 	print("TagNotification: Initializing stacked dogtag HUD.")
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 	for child: Node in get_children():
 		child.queue_free()
 
+	_dismiss_timer = Timer.new()
+	_dismiss_timer.name = "DismissTimer"
+	_dismiss_timer.one_shot = true
+	_dismiss_timer.timeout.connect(_on_dismiss_timeout)
+	add_child(_dismiss_timer)
+
 	if not Events.weapon_tag_displayed.is_connected(_on_weapon_collected):
 		Events.weapon_tag_displayed.connect(_on_weapon_collected)
-	if Events.has_signal("active_weapon_changed"):
-		if not Events.active_weapon_changed.is_connected(_on_weapon_swapped):
-			Events.active_weapon_changed.connect(_on_weapon_swapped)
+	if not Events.active_weapon_changed.is_connected(_on_weapon_swapped):
+		Events.active_weapon_changed.connect(_on_weapon_swapped)
 
 
-## Handles weapon pickup, registering new tags and rearranging the stack.
+## Disconnects global signals and kills active tweens when removed from the tree.
+func _exit_tree() -> void:
+	if Events.weapon_tag_displayed.is_connected(_on_weapon_collected):
+		Events.weapon_tag_displayed.disconnect(_on_weapon_collected)
+	if Events.active_weapon_changed.is_connected(_on_weapon_swapped):
+		Events.active_weapon_changed.disconnect(_on_weapon_swapped)
+	Utilities.safe_kill_tween(_stack_tween)
+	if is_instance_valid(_dismiss_timer):
+		_dismiss_timer.stop()
+
+
+## Handles weapon pickup, registering valid dogtag textures and rearranging the stack.
 func _on_weapon_collected(weapon_id: String) -> void:
+	if not TAG_TEXTURES.has(weapon_id):
+		return
 	print("TagNotification: Weapon tag registered -> ", weapon_id)
 	if not _collected_order.has(weapon_id):
 		_collected_order.append(weapon_id)
@@ -58,38 +86,52 @@ func _on_weapon_collected(weapon_id: String) -> void:
 
 ## Rearranges tags on hotkey weapon swap without bounce drop animation.
 func _on_weapon_swapped(weapon_id: String) -> void:
+	if not TAG_TEXTURES.has(weapon_id):
+		return
 	print("TagNotification: Weapon swapped to -> ", weapon_id)
-	if _active_weapon == weapon_id:
+	if not _collected_order.has(weapon_id):
 		return
 	_active_weapon = weapon_id
 	_rearrange_stack(false)
 	_start_dismiss_timer()
 
 
-## Starts or restarts the auto-dismiss timer.
+## Starts or restarts the auto-dismiss timer for the active weapon tag.
 func _start_dismiss_timer() -> void:
+	if not is_inside_tree() or not is_instance_valid(_dismiss_timer):
+		return
 	print("TagNotification: Starting dismissal timer (", DISPLAY_DURATION, "s).")
-	var current_weapon: String = _active_weapon
-	_dismiss_timer = get_tree().create_timer(DISPLAY_DURATION)
-	_dismiss_timer.timeout.connect(
-		func() -> void:
-			if _active_weapon == current_weapon:
-				_dismiss_stack()
-	)
+	_dismiss_timer.start(DISPLAY_DURATION)
 
 
-## Retracts all dogtag nodes upwards past the top screen boundary.
+## Triggers stack retraction when display duration elapses without weapon input.
+func _on_dismiss_timeout() -> void:
+	if is_inside_tree():
+		_dismiss_stack()
+
+
+## Retracts all active dogtag nodes upwards past the top screen boundary.
 func _dismiss_stack() -> void:
+	Utilities.safe_kill_tween(_stack_tween)
+	if is_instance_valid(_dismiss_timer):
+		_dismiss_timer.stop()
+	if _spawned_tags.is_empty() or not is_inside_tree():
+		return
+
 	print("TagNotification: Dismissing dogtags off-screen.")
-	if is_instance_valid(_stack_tween) and _stack_tween.is_running():
-		_stack_tween.kill()
+	var has_valid_rect: bool = false
+	for weapon_id: String in _collected_order:
+		var candidate: TextureRect = _spawned_tags.get(weapon_id, null)
+		if is_instance_valid(candidate):
+			has_valid_rect = true
+			break
+
+	if not has_valid_rect:
+		return
 
 	_stack_tween = create_tween().set_parallel(true)
-
 	for weapon_id: String in _collected_order:
-		var rect: TextureRect = (
-			_spawned_tags.get(weapon_id) if _spawned_tags.get(weapon_id) is TextureRect else null
-		)
+		var rect: TextureRect = _spawned_tags.get(weapon_id, null)
 		if not is_instance_valid(rect):
 			continue
 
@@ -103,14 +145,10 @@ func _dismiss_stack() -> void:
 		_stack_tween.tween_property(rect, "modulate:a", 0.0, 0.35)
 
 
-## Spawns and configures a TextureRect node for a weapon tag.
+## Spawns and configures a [TextureRect] node for a registered weapon tag.
 func _create_tag_node(weapon_id: String) -> void:
-	var tex: Texture2D = (
-		TAG_TEXTURES.get(weapon_id, null)
-		if TAG_TEXTURES.get(weapon_id, null) is Texture2D
-		else null
-	)
-	if tex == null:
+	var tex: Texture2D = TAG_TEXTURES.get(weapon_id, null)
+	if not is_instance_valid(tex):
 		return
 
 	var rect: TextureRect = TextureRect.new()
@@ -129,25 +167,32 @@ func _create_tag_node(weapon_id: String) -> void:
 	_spawned_tags[weapon_id] = rect
 
 
-## Animates the tag hierarchy so active is in front and others are layered behind.
+## Animates the tag hierarchy so the active weapon is foregrounded and others layer behind.
 func _rearrange_stack(is_pickup_drop: bool) -> void:
+	Utilities.safe_kill_tween(_stack_tween)
+	if _spawned_tags.is_empty() or not is_inside_tree():
+		return
+
+	var has_valid_rect: bool = false
+	for weapon_id: String in _collected_order:
+		var candidate: TextureRect = _spawned_tags.get(weapon_id, null)
+		if is_instance_valid(candidate):
+			has_valid_rect = true
+			break
+
+	if not has_valid_rect:
+		return
+
 	var screen_center_x: float = size.x * 0.5
 	var bg_index: int = 0
-
-	if is_instance_valid(_stack_tween) and _stack_tween.is_running():
-		_stack_tween.kill()
-
 	_stack_tween = create_tween().set_parallel(true)
 
 	for weapon_id: String in _collected_order:
-		var rect: TextureRect = (
-			_spawned_tags.get(weapon_id) if _spawned_tags.get(weapon_id) is TextureRect else null
-		)
+		var rect: TextureRect = _spawned_tags.get(weapon_id, null)
 		if not is_instance_valid(rect):
 			continue
 
 		var is_active: bool = weapon_id == _active_weapon
-
 		if is_active:
 			move_child(rect, get_child_count() - 1)
 			var target_pos: Vector2 = Vector2(screen_center_x - (rect.size.x * 0.5), ACTIVE_Y)

@@ -2,11 +2,18 @@
 class_name NotificationHUD
 extends Control
 
+## Texture asset displayed at the center of a wolf claw attack target.
+const CLAW_ATTACK_TEXTURE: Texture2D = preload("res://assets/images/claw_attack_UI.png")
+## Shader resource rendering the animated fire outline around the claw mark.
+const CLAW_FIRE_SHADER: Shader = preload("res://ui/claw_fire_outline.gdshader")
+
 @export_category("Vault Prompt Settings")
 ## Display size for the Kenney jump prompt icon widget.
 @export var prompt_size: Vector2 = Vector2(64.0, 64.0)
 ## Vertical pixel offset positioning the prompt below the center crosshair.
 @export var center_dot_offset_y: float = 40.0
+## Display size for the wolf claw attack target mark widget.
+@export var claw_mark_size: Vector2 = Vector2(128.0, 128.0)
 
 ## Container used to control warning label opacity and layout position.
 @onready var warning_container: Control = $WarningContainer
@@ -25,6 +32,12 @@ extends Control
 var warning_tween: Tween
 ## Animates visibility fade transitions for the vault prompt.
 var vault_prompt_tween: Tween
+## Animates visibility fade transitions for the claw mark overlay.
+var claw_mark_tween: Tween
+## Dynamic container holding the wolf claw mark icon over targeted enemies.
+var claw_mark_container: Control = null
+## TextureRect rendering claw_attack_UI.png with fire outline shader.
+var claw_mark_icon: TextureRect = null
 ## Target 2D screen coordinate actively interpolated by the prompt container.
 var _target_prompt_pos: Vector2 = Vector2.ZERO
 ## World coordinate of the active ledge target edge.
@@ -35,6 +48,12 @@ var _is_vault_available: bool = false
 var _is_prompt_showing: bool = false
 ## Tracks whether the player is currently holding an object.
 var _is_holding_item: bool = false
+## World coordinate of the active wolf claw target center.
+var _claw_target_world_pos: Vector3 = Vector3.ZERO
+## Tracks whether a wolf claw target is currently locked.
+var _is_claw_target_available: bool = false
+## Tracks whether the wolf claw mark widget is currently visible.
+var _is_claw_mark_showing: bool = false
 
 
 ## Initializes UI components and binds global bus listeners.
@@ -57,12 +76,15 @@ func _ready() -> void:
 		vault_prompt_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_update_vault_key_icon()
 
+	_setup_claw_mark_ui()
 	_connect_signals()
 
 
 ## Interpolates prompt position across 2D viewport coordinates.
 ## [param delta] Elapsed frame delta time in seconds.
 func _process(delta: float) -> void:
+	_process_claw_mark()
+
 	if not _is_prompt_showing and not _is_vault_available:
 		return
 	if not is_instance_valid(vault_prompt_container):
@@ -106,6 +128,97 @@ func _connect_signals() -> void:
 		Events.vault_prompt_updated.connect(_on_vault_prompt_updated)
 	if not Events.held_item_changed.is_connected(_on_held_item_changed):
 		Events.held_item_changed.connect(_on_held_item_changed)
+	if (
+		Events.has_signal(&"claw_target_updated")
+		and not Events.claw_target_updated.is_connected(_on_claw_target_updated)
+	):
+		Events.claw_target_updated.connect(_on_claw_target_updated)
+
+
+## Builds the wolf claw attack mark UI overlay with fire outline shader.
+func _setup_claw_mark_ui() -> void:
+	claw_mark_container = get_node_or_null("ClawMarkContainer") as Control
+	if not is_instance_valid(claw_mark_container):
+		claw_mark_container = Control.new()
+		claw_mark_container.name = "ClawMarkContainer"
+		add_child(claw_mark_container)
+
+	claw_mark_container.top_level = true
+	claw_mark_container.custom_minimum_size = claw_mark_size
+	claw_mark_container.size = claw_mark_size
+	claw_mark_container.pivot_offset = claw_mark_size * 0.5
+	claw_mark_container.modulate.a = 0.0
+	claw_mark_container.visible = false
+	claw_mark_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	claw_mark_icon = claw_mark_container.get_node_or_null("ClawMarkIcon") as TextureRect
+	if not is_instance_valid(claw_mark_icon):
+		claw_mark_icon = TextureRect.new()
+		claw_mark_icon.name = "ClawMarkIcon"
+		claw_mark_container.add_child(claw_mark_icon)
+
+	claw_mark_icon.set_anchors_preset(Control.PRESET_FULL_RECT)
+	claw_mark_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	claw_mark_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	claw_mark_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	claw_mark_icon.texture = CLAW_ATTACK_TEXTURE
+
+	var fire_mat: ShaderMaterial = ShaderMaterial.new()
+	fire_mat.shader = CLAW_FIRE_SHADER
+	claw_mark_icon.material = fire_mat
+
+
+## Updates 2D screen position of the claw mark over the locked enemy center.
+func _process_claw_mark() -> void:
+	if not _is_claw_mark_showing and not _is_claw_target_available:
+		return
+	if not is_instance_valid(claw_mark_container):
+		return
+
+	var camera: Camera3D = get_viewport().get_camera_3d()
+	if is_instance_valid(camera) and _claw_target_world_pos != Vector3.ZERO:
+		var is_behind: bool = camera.is_position_behind(_claw_target_world_pos)
+		if is_behind:
+			claw_mark_container.visible = false
+			return
+		claw_mark_container.visible = true
+		var screen_2d: Vector2 = camera.unproject_position(_claw_target_world_pos)
+		claw_mark_container.global_position = screen_2d - (claw_mark_container.size * 0.5)
+
+
+## Receives wolf claw target availability and 3D world center updates.
+func _on_claw_target_updated(is_available: bool, world_pos: Vector3) -> void:
+	if not is_instance_valid(claw_mark_container):
+		return
+
+	_is_claw_target_available = is_available
+	_claw_target_world_pos = world_pos
+
+	if _is_claw_target_available:
+		_process_claw_mark()
+		if not _is_claw_mark_showing:
+			_is_claw_mark_showing = true
+			claw_mark_container.visible = true
+			_fade_claw_mark(1.0)
+	else:
+		if _is_claw_mark_showing:
+			_is_claw_mark_showing = false
+			_fade_claw_mark(0.0)
+
+
+## Smoothly animates the alpha opacity of the wolf claw mark widget.
+func _fade_claw_mark(target_alpha: float) -> void:
+	if is_instance_valid(claw_mark_tween) and claw_mark_tween.is_valid():
+		claw_mark_tween.kill()
+
+	claw_mark_tween = create_tween().set_trans(Tween.TRANS_SINE)
+	claw_mark_tween.tween_property(claw_mark_container, "modulate:a", target_alpha, 0.1)
+	if is_zero_approx(target_alpha):
+		claw_mark_tween.tween_callback(
+			func() -> void:
+				if is_instance_valid(claw_mark_container) and not _is_claw_target_available:
+					claw_mark_container.visible = false
+		)
 
 
 ## Refreshes the vault icon texture matching the jump action.

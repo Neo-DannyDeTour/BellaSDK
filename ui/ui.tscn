@@ -40,6 +40,7 @@
 [ext_resource type="Shader" uid="uid://by6dppd87hf5g" path="res://vfx/glasses_condensation.gdshader" id="35_cndsh"]
 [ext_resource type="Shader" uid="uid://sgrhpkqbyiwb" path="res://vfx/water_sheet_wipe.gdshader" id="35_wwipe"]
 [ext_resource type="Script" uid="uid://gpy2b8yh1evg" path="res://ui/water_wipe_controller.gd" id="36_wwctrl"]
+[ext_resource type="Shader" uid="uid://drg4qmix2luaa" path="res://ui/anime_speed_lines.gdshader" id="37_speed"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_p7vwb"]
 shader = ExtResource("5_8dubc")
@@ -95,6 +96,15 @@ shader = ExtResource("9_3hdvn")
 shader_parameter/effect_strength = 1.0
 shader_parameter/brightness_boost = 1.25
 shader_parameter/blur_amount = 0.8
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_spdl0"]
+shader = ExtResource("37_speed")
+shader_parameter/line_color = Color(1, 1, 1, 0.85)
+shader_parameter/center_radius = 0.38
+shader_parameter/feather = 0.18
+shader_parameter/line_density = 90.0
+shader_parameter/jitter_speed = 24.0
+shader_parameter/effect_alpha = 0.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_cnd01"]
 shader = ExtResource("35_cndsh")
@@ -234,6 +244,17 @@ script = ExtResource("36_wwctrl")
 [node name="WolfVisionOverlay" type="ColorRect" parent="ScreenEffectsManager" unique_id=1394655530]
 visible = false
 material = SubResource("ShaderMaterial_534t5")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="SpeedLinesOverlay" type="ColorRect" parent="ScreenEffectsManager" unique_id=1394655531]
+visible = false
+material = SubResource("ShaderMaterial_spdl0")
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0

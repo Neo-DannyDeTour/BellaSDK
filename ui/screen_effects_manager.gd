@@ -8,8 +8,14 @@ const PARAM_FULL_LENS_FOG: StringName = &"full_lens_fog"
 ## Pre-allocated [StringName] uniform for persistent lens-edge condensation rim.
 const PARAM_EDGE_CONDENSATION: StringName = &"edge_condensation"
 
+## Pre-allocated [StringName] uniform for speed lines vignette master alpha.
+const PARAM_SPEED_LINES_ALPHA: StringName = &"effect_alpha"
+
 ## Animates smooth strength transitions when toggling wolf vision.
 var wolf_vision_tween: Tween
+
+## Animates smooth alpha transitions for anime speed lines vignette.
+var speed_lines_tween: Tween
 
 ## Active [Tween] animating full-screen fade and blink transitions.
 var fade_tween: Tween
@@ -103,6 +109,9 @@ var _current_edge_condensation: float = 0.0
 ## ColorRect applying full-screen canine dichromatic color and acuity filtering.
 @onready var wolf_vision_overlay: ColorRect = $WolfVisionOverlay
 
+## ColorRect applying procedural anime speed lines vignette during wolf wall runs.
+@onready var speed_lines_overlay: ColorRect = get_node_or_null("SpeedLinesOverlay") as ColorRect
+
 ## ColorRect applying Bella's glasses steam/smoke condensation effect.
 @onready var condensation_overlay: ColorRect = get_node_or_null("CondensationOverlay") as ColorRect
 
@@ -121,8 +130,13 @@ func _ready() -> void:
 
 ## Disconnects global event bus signals and kills active tweens on tree exit.
 func _exit_tree() -> void:
+	if is_instance_valid(speed_lines_tween):
+		speed_lines_tween.kill()
 	if is_instance_valid(_condensation_tween):
 		_condensation_tween.kill()
+	if Events.has_signal(&"wolf_wall_run_vfx_toggled"):
+		if Events.wolf_wall_run_vfx_toggled.is_connected(_on_wolf_wall_run_vfx_toggled):
+			Events.wolf_wall_run_vfx_toggled.disconnect(_on_wolf_wall_run_vfx_toggled)
 	if Events.smoke_hazard_changed.is_connected(_on_smoke_hazard_changed):
 		Events.smoke_hazard_changed.disconnect(_on_smoke_hazard_changed)
 	if Events.smoke_exposure_changed.is_connected(_on_smoke_exposure_changed):
@@ -341,6 +355,7 @@ func _setup_fullscreen_layout() -> void:
 		water_vfx_overlay,
 		water_wipe_overlay,
 		wolf_vision_overlay,
+		speed_lines_overlay,
 		condensation_overlay,
 		fade_overlay
 	]
@@ -393,6 +408,12 @@ func _initialize_overlays() -> void:
 			var mat: ShaderMaterial = wolf_vision_overlay.material as ShaderMaterial
 			mat.set_shader_parameter(&"effect_strength", 0.0)
 		wolf_vision_overlay.hide()
+
+	if is_instance_valid(speed_lines_overlay):
+		if speed_lines_overlay.material is ShaderMaterial:
+			var spd_mat: ShaderMaterial = speed_lines_overlay.material as ShaderMaterial
+			spd_mat.set_shader_parameter(PARAM_SPEED_LINES_ALPHA, 0.0)
+		speed_lines_overlay.hide()
 
 	if is_instance_valid(condensation_overlay):
 		if condensation_overlay.material is ShaderMaterial:
@@ -450,6 +471,9 @@ func _connect_signals() -> void:
 	if Events.has_signal(&"wolf_vision_toggled"):
 		if not Events.wolf_vision_toggled.is_connected(_on_wolf_vision_toggled):
 			Events.wolf_vision_toggled.connect(_on_wolf_vision_toggled)
+	if Events.has_signal(&"wolf_wall_run_vfx_toggled"):
+		if not Events.wolf_wall_run_vfx_toggled.is_connected(_on_wolf_wall_run_vfx_toggled):
+			Events.wolf_wall_run_vfx_toggled.connect(_on_wolf_wall_run_vfx_toggled)
 	if not Events.smoke_hazard_changed.is_connected(_on_smoke_hazard_changed):
 		Events.smoke_hazard_changed.connect(_on_smoke_hazard_changed)
 	if not Events.smoke_exposure_changed.is_connected(_on_smoke_exposure_changed):
@@ -636,6 +660,44 @@ func _on_wolf_vision_toggled(is_active: bool) -> void:
 			func() -> void:
 				if not is_active:
 					wolf_vision_overlay.hide()
+		)
+
+
+## Smoothly blends anime speed lines vignette in and out during wolf wall running.
+func _on_wolf_wall_run_vfx_toggled(is_active: bool) -> void:
+	print("ScreenEffectsManager: _on_wolf_wall_run_vfx_toggled() -> ", is_active)
+	if not is_instance_valid(speed_lines_overlay):
+		return
+
+	if not (speed_lines_overlay.material is ShaderMaterial):
+		speed_lines_overlay.visible = is_active
+		return
+
+	if speed_lines_tween and speed_lines_tween.is_valid():
+		speed_lines_tween.kill()
+
+	var mat: ShaderMaterial = speed_lines_overlay.material as ShaderMaterial
+	var current_strength: float = type_convert(
+		mat.get_shader_parameter(PARAM_SPEED_LINES_ALPHA), TYPE_FLOAT
+	)
+	var target_strength: float = 1.0 if is_active else 0.0
+
+	speed_lines_overlay.show()
+	speed_lines_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	speed_lines_tween.tween_method(
+		func(val: float) -> void:
+			mat.set_shader_parameter(PARAM_SPEED_LINES_ALPHA, val)
+			speed_lines_overlay.queue_redraw(),
+		current_strength,
+		target_strength,
+		0.12
+	)
+
+	if not is_active:
+		speed_lines_tween.finished.connect(
+			func() -> void:
+				if not is_active and is_instance_valid(speed_lines_overlay):
+					speed_lines_overlay.hide()
 		)
 
 
