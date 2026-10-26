@@ -1,0 +1,65 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://crainmat0001"]
+
+[ext_resource type="Texture2D" uid="uid://cdwilnc41g6jq" path="res://lex_partizan_rain/Road005_2K_Roughness.jpg" id="1_rough"]
+[ext_resource type="Texture2D" uid="uid://7nublr4e6xqd" path="res://lex_partizan_rain/drops512.png" id="2_drops"]
+[ext_resource type="Texture2D" uid="uid://d0yp6k4tjbvjf" path="res://lex_partizan_rain/ripples512.png" id="3_ripples"]
+[ext_resource type="Texture2D" uid="uid://b1ipxds3ilyap" path="res://lex_partizan_rain/streaks512.png" id="4_streaks"]
+[ext_resource type="Texture2D" uid="uid://0k4m0ysx7xrk" path="res://lex_partizan_rain/Snow005_2K_Normal.jpg" id="5_snownorm"]
+[ext_resource type="Shader" uid="uid://c0wquhweyi7nd" path="res://lex_partizan_rain/rain.gdshader" id="6_shader"]
+[ext_resource type="Texture2D" uid="uid://droofcamtex01" path="res://lex_partizan_rain/roof_cam.tres" id="7_roof"]
+[ext_resource type="Texture2D" uid="uid://dculpby7luo66" path="res://lex_partizan_rain/Road005_2K_Color.jpg" id="8_albedo"]
+[ext_resource type="Texture2D" uid="uid://b2q0ljpx1brdi" path="res://lex_partizan_rain/simple_noise.png" id="9_noise"]
+[ext_resource type="Texture2D" uid="uid://byi06vwebe7j" path="res://lex_partizan_rain/Road005_2K_Normal.jpg" id="10_norm"]
+[ext_resource type="Texture2D" uid="uid://144rkjsmgm4r" path="res://lex_partizan_rain/Road005_2K_Displacement.jpg" id="11_height"]
+
+[resource]
+resource_local_to_scene = true
+render_priority = 0
+shader = ExtResource("6_shader")
+shader_parameter/Material_Albedo = ExtResource("8_albedo")
+shader_parameter/Material_Norm = ExtResource("10_norm")
+shader_parameter/Material_Rough = ExtResource("1_rough")
+shader_parameter/Material_Height = ExtResource("11_height")
+shader_parameter/scale_UV_material = 1.0
+shader_parameter/normal_strength = 1.0
+shader_parameter/wet_level = 0.7
+shader_parameter/porosity_strength = 0.85
+shader_parameter/wet_darkening = 0.8
+shader_parameter/water_roughness = 0.05
+shader_parameter/water_specular = 0.8
+shader_parameter/water_metallnes = 0.0
+shader_parameter/rain_amount = 0.85
+shader_parameter/rain = true
+shader_parameter/scale_UV_rain = 5.0
+shader_parameter/world_space_rain_uv = false
+shader_parameter/dry_angle = -0.15
+shader_parameter/streaks_angle = 0.85
+shader_parameter/puddle_angle = 0.92
+shader_parameter/angle_blend_softness = 0.12
+shader_parameter/triplanar_sharpness = 4.0
+shader_parameter/drops_tex = ExtResource("2_drops")
+shader_parameter/drops_size = 1.0
+shader_parameter/drops_speed = 1.0
+shader_parameter/drops_intensity = 1.2
+shader_parameter/static_drops_amount = 1.0
+shader_parameter/streaks_tex = ExtResource("4_streaks")
+shader_parameter/streaks_length = 0.65
+shader_parameter/streaks_speed = 1.0
+shader_parameter/streaks_intensity = 1.2
+shader_parameter/puddle_coverage = 0.75
+shader_parameter/puddle_cavity_depth = 0.65
+shader_parameter/puddles_noise = true
+shader_parameter/noise_tex = ExtResource("9_noise")
+shader_parameter/ripples_tex = ExtResource("3_ripples")
+shader_parameter/ripple_density = 0.15
+shader_parameter/ripple_speed = 1.0
+shader_parameter/ripple_intensity = 1.2
+shader_parameter/use_roof_occlusion = true
+shader_parameter/roofing_height = ExtResource("7_roof")
+shader_parameter/cam_heightmap_world_position = Vector3(0, 20, 0)
+shader_parameter/cam_heightmap_size = 30.0
+shader_parameter/occlusion_bias = 0.25
+shader_parameter/snow_amount = 0.0
+shader_parameter/without_snow_angle = 0.3
+shader_parameter/snow_brightness = 0.85
+shader_parameter/snow_norm = ExtResource("5_snownorm")
