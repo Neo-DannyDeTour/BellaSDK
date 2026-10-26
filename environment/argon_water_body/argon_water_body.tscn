@@ -1,9 +1,9 @@
 [gd_scene load_steps=15 format=3 uid="uid://c8w4t3rb0dy4x"]
 
-[ext_resource type="Script" path="res://argon_water_body/argon_water_body.gd" id="1_water_body"]
-[ext_resource type="Shader" path="res://argon_water_body/argon_water.gdshader" id="2_water_shader"]
-[ext_resource type="Script" path="res://argon_water_body/argon_underwater_fog_volume.gd" id="3_underwater_fog"]
-[ext_resource type="Shader" path="res://argon_water_body/argon_fog_fade.gdshader" id="4_fog_shader"]
+[ext_resource type="Script" path="res://environment/argon_water_body/argon_water_body.gd" id="1_water_body"]
+[ext_resource type="Shader" path="res://environment/argon_water_body/argon_water.gdshader" id="2_water_shader"]
+[ext_resource type="Script" path="res://environment/argon_water_body/argon_underwater_fog_volume.gd" id="3_underwater_fog"]
+[ext_resource type="Shader" path="res://environment/argon_water_body/argon_fog_fade.gdshader" id="4_fog_shader"]
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_norm_a"]
 noise_type = 3

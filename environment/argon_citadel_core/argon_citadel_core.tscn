@@ -1,11 +1,11 @@
 [gd_scene format=3 uid="uid://c8x4m2rav5n1p"]
 
-[ext_resource type="Script" uid="uid://tg4hnj2sebik" path="res://argon_citadel_core/argon_citadel_core.gd" id="1_core_script"]
-[ext_resource type="Shader" uid="uid://b7b65p6p8i8li" path="res://argon_citadel_core/argon_citadel_inner_core.gdshader" id="2_inner_shader"]
-[ext_resource type="Shader" uid="uid://c7574nelo1hh0" path="res://argon_citadel_core/argon_citadel_outer_shell.gdshader" id="3_outer_shader"]
-[ext_resource type="Shader" uid="uid://mayjht0dps38" path="res://argon_citadel_core/argon_citadel_corona.gdshader" id="4_corona_shader"]
-[ext_resource type="Shader" uid="uid://b4ht5mtioi713" path="res://argon_citadel_core/argon_citadel_energy.gdshader" id="5_energy_shader"]
-[ext_resource type="Shader" uid="uid://dyape4cobps0t" path="res://argon_citadel_core/argon_citadel_corona_waves.gdshader" id="6_corona_waves_shader"]
+[ext_resource type="Script" uid="uid://tg4hnj2sebik" path="res://environment/argon_citadel_core/argon_citadel_core.gd" id="1_core_script"]
+[ext_resource type="Shader" uid="uid://b7b65p6p8i8li" path="res://environment/argon_citadel_core/argon_citadel_inner_core.gdshader" id="2_inner_shader"]
+[ext_resource type="Shader" uid="uid://c7574nelo1hh0" path="res://environment/argon_citadel_core/argon_citadel_outer_shell.gdshader" id="3_outer_shader"]
+[ext_resource type="Shader" uid="uid://mayjht0dps38" path="res://environment/argon_citadel_core/argon_citadel_corona.gdshader" id="4_corona_shader"]
+[ext_resource type="Shader" uid="uid://b4ht5mtioi713" path="res://environment/argon_citadel_core/argon_citadel_energy.gdshader" id="5_energy_shader"]
+[ext_resource type="Shader" uid="uid://dyape4cobps0t" path="res://environment/argon_citadel_core/argon_citadel_corona_waves.gdshader" id="6_corona_waves_shader"]
 
 [sub_resource type="CylinderShape3D" id="CylinderShape3D_pedestal"]
 radius = 2.2
