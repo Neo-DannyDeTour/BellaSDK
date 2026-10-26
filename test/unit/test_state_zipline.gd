@@ -122,3 +122,35 @@ func test_exit_cleans_up_state() -> void:
 	assert_null(state_zipline.current_zipline, "Zipline node should be cleared on exit.")
 	assert_false(state_zipline.is_zipline_transitioning, "Transition flag should be reset.")
 	assert_eq(mock_player.scale, Vector3.ONE, "Player scale should be reset to Vector3.ONE.")
+
+
+## Verifies attaching at start boundary does not eject immediately upon grace timer expiry.
+func test_start_boundary_no_instant_eject() -> void:
+	print("TestStateZipline: test_start_boundary_no_instant_eject() called.")
+	var start_pt: Vector3 = Vector3(0.0, 10.0, 0.0)
+	var end_pt: Vector3 = Vector3(0.0, 0.0, 20.0)
+	mock_player.global_position = start_pt
+
+	(
+		state_zipline
+		. enter(
+			{
+				&"zipline_node": mock_zip_node,
+				&"start_pos": start_pt,
+				&"end_pos": end_pt,
+			}
+		)
+	)
+
+	state_zipline._on_attach_tween_finished()
+	assert_false(state_zipline.is_zipline_transitioning, "Transition must be finished.")
+	assert_almost_eq(state_zipline.zipline_progress, 0.0, 0.01, "Should be at start of cable.")
+
+	state_zipline.physics_update(0.6)
+	assert_false(
+		air_state.entered, "Player must not be ejected at start terminus without departing."
+	)
+
+	state_zipline.zipline_progress = 0.999
+	state_zipline.physics_update(0.1)
+	assert_true(air_state.entered, "Player must dismount upon reaching opposite terminus.")

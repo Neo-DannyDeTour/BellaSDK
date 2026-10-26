@@ -106,6 +106,17 @@ func test_select_slot() -> void:
 	assert_eq(inventory.previous_slot_index, 0, "Previous slot index should be 0.")
 
 
+## Verifies selecting already active slot re-broadcasts active_weapon_changed event.
+func test_select_same_slot_re_emits_event() -> void:
+	print("TestWeaponInventoryComponent: test_select_same_slot_re_emits_event() running.")
+	inventory.register_weapon(mock_weapon_1)
+	watch_signals(Events)
+
+	# mock_weapon_1 is currently active at slot 0. Re-selecting slot 0:
+	inventory.select_slot(0)
+	assert_signal_emitted_with_parameters(Events, "active_weapon_changed", ["weapon_1"])
+
+
 ## Verifies [method WeaponInventoryComponent.add_ammo] increases reserve pool.
 func test_add_ammo() -> void:
 	print("TestWeaponInventoryComponent: test_add_ammo() running.")
