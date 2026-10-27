@@ -9,6 +9,9 @@ signal settings_changed(active_config: Dictionary)
 @warning_ignore("unused_signal")
 signal diorama_mode_changed(is_active: bool)
 
+## Shared empty [Compositor] assigned to [SubViewport] cameras to strip world compositor effects.
+static var _empty_subviewport_compositor: Compositor = null
+
 ## In-memory normalized dictionary storing the player's active video configuration.
 var active_config: Dictionary = {}
 
@@ -17,6 +20,13 @@ var is_diorama_active: bool = false
 
 ## Override flag allowing developer or player to completely inhibit the diorama preview.
 var is_diorama_killed: bool = false
+
+
+## Returns the shared static empty [Compositor] instance used to isolate [SubViewport] cameras.
+static func get_empty_subviewport_compositor() -> Compositor:
+	if not is_instance_valid(_empty_subviewport_compositor):
+		_empty_subviewport_compositor = Compositor.new()
+	return _empty_subviewport_compositor
 
 
 ## Initializes the central video controller, loads saved settings, and hooks SceneTree events.
@@ -92,6 +102,8 @@ func set_setting(key: String, value: Variant, apply_immediately: bool = true) ->
 			apply_display_settings()
 		elif is_diorama_active:
 			update_diorama_preview()
+			if key == "clouds" and is_inside_tree():
+				VideoApplier._apply_gameplay_clouds(get_tree(), active_config)
 		else:
 			commit_gameplay_pipeline()
 
@@ -119,6 +131,8 @@ func apply_preset(preset_name: String) -> void:
 
 	if is_diorama_active:
 		update_diorama_preview()
+		if is_inside_tree():
+			VideoApplier._apply_gameplay_clouds(get_tree(), active_config)
 	else:
 		commit_gameplay_pipeline()
 
@@ -135,6 +149,8 @@ func reset_to_defaults() -> void:
 	apply_display_settings()
 	if is_diorama_active:
 		update_diorama_preview()
+		if is_inside_tree():
+			VideoApplier._apply_gameplay_clouds(get_tree(), active_config)
 	else:
 		commit_gameplay_pipeline()
 
@@ -217,6 +233,7 @@ func set_diorama_mode(active: bool) -> void:
 	if active and is_diorama_killed:
 		is_diorama_active = false
 		print("[Pipeline] DIORAMA KILLED: Preview suppressed. Main (", scene_name, ") active.")
+		tree.call_group(&"sunshine_clouds", &"set_suspended", false)
 		if is_instance_valid(diorama_vp):
 			_disable_diorama_gi(diorama_vp)
 			diorama_vp.disable_3d = true
@@ -230,11 +247,13 @@ func set_diorama_mode(active: bool) -> void:
 		return
 
 	if is_diorama_active == active and is_instance_valid(diorama_vp):
+		tree.call_group(&"sunshine_clouds", &"set_suspended", active)
 		if active:
 			update_diorama_preview()
 		return
 
 	is_diorama_active = active
+	tree.call_group(&"sunshine_clouds", &"set_suspended", active)
 
 	if active:
 		print(
@@ -359,11 +378,20 @@ func _assert_single_sdfgi_invariant() -> void:
 	)
 
 
-## SceneTree observer ensuring newly added gameplay environments, lights, and cameras
-## inherit parity.
+## SceneTree observer ensuring newly added gameplay environments, lights, cameras,
+## and cloud drivers inherit parity and SubViewport isolation.
 func _on_node_added(node: Node) -> void:
 	if not is_instance_valid(node):
 		return
+
+	if node.is_in_group(&"sunshine_clouds"):
+		var clouds_tier: StringName = StringName(
+			VideoApplier._get_str(active_config, "clouds", VideoConfig.DEFAULT_CLOUDS)
+		)
+		if node.has_method(&"set_quality_tier"):
+			node.call(&"set_quality_tier", clouds_tier)
+		if node.has_method(&"set_suspended"):
+			node.call(&"set_suspended", is_diorama_active)
 
 	if node is WorldEnvironment:
 		var we: WorldEnvironment = node as WorldEnvironment
@@ -386,6 +414,9 @@ func _on_node_added(node: Node) -> void:
 		VideoApplier.apply_to_light(light, active_config, is_dio)
 	elif node is Camera3D:
 		var cam: Camera3D = node as Camera3D
+		var vp: Viewport = cam.get_viewport()
+		if vp is SubViewport and cam.compositor == null:
+			cam.compositor = get_empty_subviewport_compositor()
 		var is_dio: bool = _is_inside_diorama(cam)
 		if is_dio or VideoApplier.is_player_camera(cam):
 			VideoApplier.apply_to_camera(cam, active_config, is_dio)

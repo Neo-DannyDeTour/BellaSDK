@@ -25,6 +25,8 @@ const DEFAULT_RAGDOLL_MASK: int = (
 const DEFAULT_LINEAR_DAMP: float = 0.45
 ## Default angular damping applied to ragdoll joints to prevent jitter.
 const DEFAULT_ANGULAR_DAMP: float = 2.20
+## Maximum physics frame poll attempts waiting for Jolt space registration.
+const MAX_SPACE_POLL_ATTEMPTS: int = 10
 
 ## Starts limp ragdoll physics immediately on [method _ready] when enabled.
 @export var start_active: bool = false
@@ -190,9 +192,8 @@ func _setup_model_and_skeleton() -> void:
 	assert(_skeleton != null, "MannequinRagdoll: Skeleton3D missing from mannequin model.")
 
 	_mesh_instance = _find_mesh_recursive(self)
-	assert(_mesh_instance != null, "MannequinRagdoll: MeshInstance3D missing from mannequin model.")
+	assert(_mesh_instance != null, "MannequinRagdoll: MeshInstance3D missing from model.")
 
-	# Enforce Layer 3 (Interactive) on visual mesh per project layer conventions
 	_mesh_instance.layers = CollisionLayers.RENDER_MASK_INTERACTIVE
 
 	for i: int in range(_skeleton.get_bone_count()):
@@ -267,6 +268,7 @@ func _create_bone_collider(
 	phys_bone.collision_layer = CollisionLayers.MASK_INTERACTIVE
 	phys_bone.collision_mask = DEFAULT_RAGDOLL_MASK
 	phys_bone.body_offset = Transform3D(Basis.IDENTITY, Vector3(0.0, bone_len * 0.5, 0.0))
+	phys_bone.transform = _skeleton.get_bone_global_pose(bone_idx)
 
 	var col_shape: CollisionShape3D = CollisionShape3D.new()
 	col_shape.name = "CollisionShape3D"
@@ -316,9 +318,27 @@ func _apply_simulation_and_impulse(
 			if hit_position.length_squared() > 0.0001
 			else Vector3.ZERO
 		)
-		pb.apply_impulse(impulse, offset)
+		if PhysicsServer3D.body_get_space(pb.get_rid()).is_valid():
+			pb.apply_impulse(impulse, offset)
+		else:
+			_apply_impulse_on_physics_frame(pb, impulse, offset)
 
 	ragdoll_activated.emit(resolved_bone, impulse)
+
+
+## Defers impulse injection until Jolt integrates bone bodies into physics space.
+func _apply_impulse_on_physics_frame(
+	target_pb: PhysicalBone3D, impulse: Vector3, offset: Vector3
+) -> void:
+	if not is_inside_tree():
+		return
+	var attempts: int = 0
+	while is_instance_valid(target_pb) and is_ragdoll_active and attempts < MAX_SPACE_POLL_ATTEMPTS:
+		await get_tree().physics_frame
+		attempts += 1
+		if PhysicsServer3D.body_get_space(target_pb.get_rid()).is_valid():
+			target_pb.apply_impulse(impulse, offset)
+			return
 
 
 ## Deferred helper that halts physical bone simulation and restores initial bone transforms.
@@ -343,7 +363,15 @@ func _find_closest_bone_name(world_pos: Vector3) -> StringName:
 	var best_dist_sq: float = INF
 	for b_name: StringName in _physical_bones.keys():
 		var pb: PhysicalBone3D = _physical_bones[b_name]
-		var d_sq: float = pb.global_position.distance_squared_to(world_pos)
+		var bone_world_pos: Vector3 = pb.global_position
+		if not is_ragdoll_active and _skeleton != null:
+			var bone_idx: int = _skeleton.find_bone(String(b_name))
+			if bone_idx >= 0:
+				bone_world_pos = (
+					_skeleton.global_transform
+					* (_skeleton.get_bone_global_pose(bone_idx) * pb.body_offset).origin
+				)
+		var d_sq: float = bone_world_pos.distance_squared_to(world_pos)
 		if d_sq < best_dist_sq:
 			best_dist_sq = d_sq
 			best_name = b_name

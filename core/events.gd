@@ -205,6 +205,14 @@ signal vision_assist_color_changed(target_group: String, color_name: String)
 @warning_ignore("unused_signal")
 signal tts_state_changed(enabled: bool)
 
+## Emitted when aim assist mode is modified. Passes [param mode] (0=Off, 1=Mid, 2=Full).
+@warning_ignore("unused_signal")
+signal aim_assist_mode_changed(mode: int)
+
+## Emitted when a target enters or exits the aim assist lock range. Passes [param has_target].
+@warning_ignore("unused_signal")
+signal aim_assist_target_acquired(has_target: bool)
+
 # --------------------------------------
 # GAMEPLAY FEEDBACK & UI SIGNALS
 # --------------------------------------
@@ -518,6 +526,10 @@ signal screen_blackout_instant_requested(is_black: bool, blur: float, fade_color
 ## Emitted when wolf form state changes. Passes [param is_active].
 @warning_ignore("unused_signal")
 signal wolf_mode_toggled(is_active: bool)
+
+## Emitted when a level or gameplay trigger requests a volumetric cloud weather transition.
+@warning_ignore("unused_signal")
+signal weather_changed(weather: Resource, duration: float)
 
 ## Emitted to request wake-up eyelid opening and blur clear transition.
 @warning_ignore("unused_signal")

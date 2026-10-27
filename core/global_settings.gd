@@ -313,6 +313,10 @@ func _apply_boot_settings() -> void:
 			var inf_ammo: bool = inf_ammo_raw == true
 			events.emit_signal("infinite_ammo_toggled", inf_ammo)
 
+		if events.has_signal("aim_assist_mode_changed"):
+			var assist_mode: int = get_setting_int("Gameplay", "aim_assist_mode", 1)
+			events.emit_signal("aim_assist_mode_changed", assist_mode)
+
 
 ## Overwrites the default Godot [InputMap] with any saved keybind overrides.
 func _apply_input_mappings() -> void:

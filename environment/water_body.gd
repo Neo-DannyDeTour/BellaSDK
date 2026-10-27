@@ -758,9 +758,6 @@ func toggle_water_level() -> void:
 
 ## Transitions water volume to either lowered target or baseline size and position.
 func change_water_level(to_lowered: bool) -> void:
-	if Engine.is_editor_hint():
-		return
-
 	if _level_tween and _level_tween.is_valid():
 		_level_tween.kill()
 		_level_tween = null
@@ -790,6 +787,11 @@ func change_water_level(to_lowered: bool) -> void:
 	_level_tween.tween_property(self, "position:y", target_pos_y, active_duration)
 	_level_tween.parallel().tween_property(self, "water_size", target_size, active_duration)
 	_level_tween.finished.connect(_on_level_tween_finished.bind(_is_water_lowered))
+
+
+## Returns true if no water level transition tween is currently active.
+func is_level_transition_complete() -> bool:
+	return _level_tween == null or not _level_tween.is_valid()
 
 
 ## Evaluates a single trochoidal wave octave, returning `Vector3(height, dh_dx, dh_dz)`.

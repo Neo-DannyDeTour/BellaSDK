@@ -94,6 +94,19 @@ var _wolf_idle_blend: float = 0.0
 ## Current wolf transformation state received from event bus.
 var _is_wolf_mode: bool = false
 
+## Active aim assist operational mode (0=Off, 1=Mid [Friction/Glue], 2=Full).
+var aim_assist_mode: int = 1
+## Aim assist strength multiplier (0.0 to 1.0).
+var aim_assist_amount: float = 0.5
+## Maximum assist range in meters.
+var aim_assist_max_range: float = 50.0
+## Current active locked target for assist stickiness.
+var _current_assist_target: Node3D = null
+## Timestamp for last target acquisition to stabilize lock.
+var _target_acquired_time: float = 0.0
+## Cached state flag indicating if target is acquired.
+var _has_acquired_target: bool = false
+
 
 ## Lifecycle initialization method loading saved preferences and camera state.
 func _ready() -> void:
@@ -108,12 +121,17 @@ func _ready() -> void:
 	mouse_sensitivity = mouse_sensitivity_base
 	target_fov = base_fov
 
+	aim_assist_mode = GlobalSettings.get_setting_int("Gameplay", "aim_assist_mode", 1)
+	aim_assist_amount = GlobalSettings.get_setting_float("Gameplay", "aim_assist_amount", 0.5)
+
 	_wolf_noise.seed = randi()
 	_wolf_noise.noise_type = FastNoiseLite.TYPE_SIMPLEX
 	_wolf_noise.frequency = 0.5
 
 	if Events.has_signal(&"wolf_mode_toggled"):
 		Events.wolf_mode_toggled.connect(_on_wolf_mode_toggled)
+	if Events.has_signal(&"aim_assist_mode_changed"):
+		Events.aim_assist_mode_changed.connect(_on_aim_assist_mode_changed)
 
 	if is_instance_valid(player_body) and player_body.get(&"is_wolf_mode") == true:
 		_is_wolf_mode = true
@@ -126,6 +144,11 @@ func _exit_tree() -> void:
 		and Events.wolf_mode_toggled.is_connected(_on_wolf_mode_toggled)
 	):
 		Events.wolf_mode_toggled.disconnect(_on_wolf_mode_toggled)
+	if (
+		Events.has_signal(&"aim_assist_mode_changed")
+		and Events.aim_assist_mode_changed.is_connected(_on_aim_assist_mode_changed)
+	):
+		Events.aim_assist_mode_changed.disconnect(_on_aim_assist_mode_changed)
 
 
 ## Sets base mouse sensitivity multiplier and syncs live sensitivity.
@@ -155,6 +178,11 @@ func handle_mouse_input(
 	var pitch_input: float = event.relative.y * active_sens * y_multiplier
 	var yaw_input: float = event.relative.x * active_sens
 
+	if not is_terminal_mode and not is_heavy_lifting and aim_assist_mode > 0:
+		var assist_result: Vector2 = _evaluate_aim_assist_adjustments(yaw_input, pitch_input)
+		yaw_input = assist_result.x
+		pitch_input = assist_result.y
+
 	if is_heavy_lifting:
 		head.rotation.y = clampf(
 			head.rotation.y - deg_to_rad(yaw_input), deg_to_rad(-15.0), deg_to_rad(15.0)
@@ -169,6 +197,128 @@ func handle_mouse_input(
 		)
 
 	head.rotation.z = 0.0
+
+
+## Calculates Halo-style friction slowdown and adhesion pull towards nearby enemy targets.
+func _evaluate_aim_assist_adjustments(yaw_in: float, pitch_in: float) -> Vector2:
+	if not is_instance_valid(camera):
+		return Vector2(yaw_in, pitch_in)
+
+	var target_data: Dictionary = find_best_aim_assist_target(deg_to_rad(8.0))
+	var best_enemy: Node3D = target_data.get("target", null) as Node3D
+
+	var acquired: bool = is_instance_valid(best_enemy)
+	if acquired != _has_acquired_target:
+		_has_acquired_target = acquired
+		if Events.has_signal(&"aim_assist_target_acquired"):
+			Events.aim_assist_target_acquired.emit(_has_acquired_target)
+
+	if not acquired:
+		return Vector2(yaw_in, pitch_in)
+
+	var angle_delta: float = float(target_data.get("angle", 0.0))
+	var target_pos: Vector3 = target_data.get("aim_pos", best_enemy.global_position) as Vector3
+	var strength: float = clampf(aim_assist_amount, 0.1, 1.0)
+
+	# 1. Halo Reticle Friction: Slow down camera panning over the enemy
+	var friction_factor: float = clampf(1.0 - (0.55 * strength), 0.35, 1.0)
+	var out_yaw: float = yaw_in * friction_factor
+	var out_pitch: float = pitch_in * friction_factor
+
+	# 2. Halo Adhesion / Glue: Nudge camera yaw and pitch towards the target if player is aiming
+	var cam_pos: Vector3 = camera.global_position
+	var to_target: Vector3 = (target_pos - cam_pos).normalized()
+	var cam_forward: Vector3 = -camera.global_transform.basis.z.normalized()
+	var cam_right: Vector3 = camera.global_transform.basis.x.normalized()
+	var cam_up: Vector3 = camera.global_transform.basis.y.normalized()
+
+	var yaw_diff: float = rad_to_deg(cam_right.dot(to_target))
+	var pitch_diff: float = rad_to_deg(cam_up.dot(to_target))
+
+	# Glue pulls towards target proportional to user movement (moving circle towards enemy)
+	var move_mag: float = Vector2(yaw_in, pitch_in).length()
+	if move_mag > 0.001:
+		var glue_strength: float = 0.28 * strength
+		var max_yaw_pull: float = absf(yaw_in) * 0.8
+		var max_pitch_pull: float = absf(pitch_in) * 0.8
+		var pull_yaw: float = clampf(yaw_diff * glue_strength, -max_yaw_pull, max_yaw_pull)
+		var pull_pitch: float = clampf(-pitch_diff * glue_strength, -max_pitch_pull, max_pitch_pull)
+		out_yaw += pull_yaw
+		out_pitch += pull_pitch
+
+	return Vector2(out_yaw, out_pitch)
+
+
+## Locates the best unoccluded enemy target within an angular cone from camera center.
+func find_best_aim_assist_target(max_angle_rad: float) -> Dictionary:
+	if not is_instance_valid(camera):
+		return {}
+
+	var enemies: Array[Node] = get_tree().get_nodes_in_group(&"enemy")
+	if enemies.is_empty():
+		return {}
+
+	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
+	if not is_instance_valid(space_state):
+		return {}
+
+	var cam_pos: Vector3 = camera.global_position
+	var cam_forward: Vector3 = -camera.global_transform.basis.z.normalized()
+	var max_dist_sq: float = aim_assist_max_range * aim_assist_max_range
+
+	var best_node: Node3D = null
+	var min_score: float = 999999.0
+	var best_aim_pos: Vector3 = Vector3.ZERO
+
+	var exclude: Array[RID] = []
+	if is_instance_valid(player_body):
+		exclude.append(player_body.get_rid())
+
+	for node: Node in enemies:
+		if not is_instance_valid(node) or not (node is Node3D):
+			continue
+		var enemy: Node3D = node as Node3D
+		if enemy.is_queued_for_deletion():
+			continue
+
+		var aim_pos: Vector3 = enemy.global_position + Vector3(0.0, 0.4, 0.0)
+		var to_enemy: Vector3 = aim_pos - cam_pos
+		var dist_sq: float = to_enemy.length_squared()
+		if dist_sq > max_dist_sq or dist_sq < 0.2:
+			continue
+
+		var dir_to_enemy: Vector3 = to_enemy.normalized()
+		var dot: float = cam_forward.dot(dir_to_enemy)
+		if dot <= 0.0:
+			continue
+
+		var angle: float = acos(clampf(dot, -1.0, 1.0))
+		if angle > max_angle_rad:
+			continue
+
+		# Check line of sight occlusion against solid environment
+		var hit: Dictionary = Utilities.raycast_3d(
+			space_state, cam_pos, aim_pos, Types.MASK_SOLID_WORLD, exclude
+		)
+		if not hit.is_empty():
+			continue
+
+		# Score combines angle with slight distance weighting and sticky hysteresis
+		var score: float = angle + (sqrt(dist_sq) / aim_assist_max_range * 0.1)
+		if enemy == _current_assist_target:
+			score *= 0.7  # Stickiness bonus to reduce target jitter
+
+		if score < min_score:
+			min_score = score
+			best_node = enemy
+			best_aim_pos = aim_pos
+
+	if is_instance_valid(best_node):
+		_current_assist_target = best_node
+		return {"target": best_node, "aim_pos": best_aim_pos, "angle": min_score}
+
+	_current_assist_target = null
+	return {}
 
 
 ## Master frame update routing FOV, tilting, headbobbing, and stair smoothing.
@@ -429,3 +579,13 @@ func _update_stair_smoothing(delta: float, player_velocity: float) -> void:
 func _on_wolf_mode_toggled(is_active: bool) -> void:
 	print("CameraController: _on_wolf_mode_toggled() -> ", is_active)
 	_is_wolf_mode = is_active
+
+
+## Handles external aim assist mode changes from the global event bus.
+func _on_aim_assist_mode_changed(mode: int) -> void:
+	print("CameraController: _on_aim_assist_mode_changed() -> ", mode)
+	aim_assist_mode = mode
+	if aim_assist_mode == 0 and _has_acquired_target:
+		_has_acquired_target = false
+		if Events.has_signal(&"aim_assist_target_acquired"):
+			Events.aim_assist_target_acquired.emit(false)

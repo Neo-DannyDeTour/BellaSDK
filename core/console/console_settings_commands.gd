@@ -746,19 +746,41 @@ func _cmd_togglesprint(args: PackedStringArray) -> void:
 	context.write("Toggle sprint " + stat, "green")
 
 
-## Toggles controller aim friction and magnetism assists.
+## Configures aim friction and bullet magnetism assists (0=off, 1=mid, 2=full).
 func _cmd_aimassist(args: PackedStringArray) -> void:
 	print("ConsoleSettingsCommands: _cmd_aimassist called with args: ", args)
-	var parsed: Variant = context.parse_toggle_arg(
-		args, context.get_toggle_state("aimassist", false), "aimassist"
-	)
-	if parsed == null:
-		return
-	var active: bool = parsed == true
-	context.toggle_states["aimassist"] = active
+	var current_mode: int = 1
 	if is_instance_valid(GlobalSettings):
-		GlobalSettings.save_setting("Accessibility", "aim_assist", active)
-	context.write("Aim assist " + ("enabled." if active else "disabled."), "green")
+		current_mode = GlobalSettings.get_setting_int("Gameplay", "aim_assist_mode", 1)
+
+	var target_mode: int = current_mode
+	if args.is_empty():
+		target_mode = 0 if current_mode > 0 else 1
+	else:
+		var arg_str: String = args[0].to_lower()
+		match arg_str:
+			"0", "off", "disable", "false":
+				target_mode = 0
+			"1", "mid", "friction", "glue":
+				target_mode = 1
+			"2", "full", "magnetism", "bullet", "true":
+				target_mode = 2
+			_:
+				context.write("Usage: aimassist <off|mid|full|0|1|2>", "yellow")
+				return
+
+	if is_instance_valid(GlobalSettings):
+		GlobalSettings.save_setting("Gameplay", "aim_assist_mode", target_mode)
+		GlobalSettings.save_setting("Gameplay", "aim_assist", target_mode > 0)
+	if Events.has_signal(&"aim_assist_mode_changed"):
+		Events.aim_assist_mode_changed.emit(target_mode)
+
+	var mode_name: String = "disabled (off)."
+	if target_mode == 1:
+		mode_name = "enabled (mid - friction/glue)."
+	elif target_mode == 2:
+		mode_name = "enabled (full - bullet magnetism)."
+	context.write("Aim assist " + mode_name, "green")
 
 
 ## Sets subtitle text reveal speed rate.

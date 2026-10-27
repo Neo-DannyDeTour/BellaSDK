@@ -14,44 +14,7 @@
 [ext_resource type="Script" uid="uid://dnblgqynq1t7l" path="res://addons/SunshineClouds2/SunshineClouds.gd" id="12_yfdjm"]
 [ext_resource type="NoiseTexture3D" uid="uid://bnck2kxeg5bkg" path="res://addons/SunshineClouds2/NoiseTextures/SmallScaleNoise.tres" id="13_ssefq"]
 [ext_resource type="PackedScene" uid="uid://viaarbcifqjx" path="res://interactables/portal.tscn" id="14_d571b"]
-
-[sub_resource type="CompositorEffect" id="CompositorEffect_emysn"]
-resource_local_to_scene = false
-resource_name = ""
-enabled = true
-effect_callback_type = 3
-access_resolved_color = true
-access_resolved_depth = true
-needs_motion_vectors = true
-needs_normal_roughness = false
-script = ExtResource("12_yfdjm")
-resolution_scale = 0
-dither_noise = ExtResource("5_2nsow")
-height_gradient = ExtResource("7_j1j28")
-extra_large_noise_patterns = ExtResource("6_wemsp")
-large_scale_noise = ExtResource("8_lbhc7")
-medium_scale_noise = ExtResource("9_ejwc1")
-small_scale_noise = ExtResource("13_ssefq")
-curl_noise = ExtResource("4_6gfq5")
-pre_pass_compute_shader = ExtResource("11_wjppe")
-compute_shader = ExtResource("3_d571b")
-post_pass_compute_shader = ExtResource("10_b21e6")
-wind_direction = Vector3(1, 0, 1)
-
-[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_b2puq"]
-sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
-ground_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
-
-[sub_resource type="Sky" id="Sky_2ekf6"]
-sky_material = SubResource("ProceduralSkyMaterial_b2puq")
-
-[sub_resource type="Environment" id="Environment_ug347"]
-background_mode = 2
-sky = SubResource("Sky_2ekf6")
-glow_enabled = true
-
-[sub_resource type="Environment" id="Environment_534t5"]
-background_mode = 2
+[ext_resource type="PackedScene" uid="uid://c4jdpcnpsoerv" path="res://interactables/mirror.tscn" id="15_ii71u"]
 
 [sub_resource type="CompositorEffect" id="CompositorEffect_7lgc2"]
 resource_local_to_scene = false
@@ -73,8 +36,24 @@ curl_noise = ExtResource("4_6gfq5")
 pre_pass_compute_shader = ExtResource("11_wjppe")
 compute_shader = ExtResource("3_d571b")
 post_pass_compute_shader = ExtResource("10_b21e6")
-directional_lights_data = Array[Vector4]([Vector4(0.5, 1, 0.5, 16), Vector4(1, 1, 1, 1)])
+wind_direction = Vector3(1, 0, 1)
+directional_lights_data = Array[Vector4]([Vector4(0, 0.5041648, 0.8636075, 12), Vector4(1, 1, 1, 1)])
 metadata/_custom_type_script = "uid://dnblgqynq1t7l"
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_b2puq"]
+sky_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+ground_horizon_color = Color(0.66224277, 0.6717428, 0.6867428, 1)
+
+[sub_resource type="Sky" id="Sky_2ekf6"]
+sky_material = SubResource("ProceduralSkyMaterial_b2puq")
+
+[sub_resource type="Environment" id="Environment_ug347"]
+background_mode = 2
+sky = SubResource("Sky_2ekf6")
+glow_enabled = true
+
+[sub_resource type="Environment" id="Environment_534t5"]
+background_mode = 2
 
 [sub_resource type="Compositor" id="Compositor_tx8to"]
 compositor_effects = Array[CompositorEffect]([SubResource("CompositorEffect_7lgc2")])
@@ -94,11 +73,13 @@ size = Vector3(3.8075562, 4.0493164, 7.4868164)
 [node name="Player" parent="." unique_id=1502339238 instance=ExtResource("1_vkqct")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 6.4392877, 1.0000005, -9.467312)
 
-[node name="SunshineCloudsDriverGD" type="Node" parent="." unique_id=777879204]
+[node name="SunshineCloudsDriverGD" type="Node3D" parent="." unique_id=777879204 node_paths=PackedStringArray("tracked_directional_lights")]
 script = ExtResource("2_jr8ca")
 update_continuously = true
-clouds_resource = SubResource("CompositorEffect_emysn")
+clouds_resource = SubResource("CompositorEffect_7lgc2")
 ambience_sample_environment = SubResource("Environment_ug347")
+tracked_directional_lights = [NodePath("../WorldEnvironment/DirectionalLight3D")]
+tracked_directional_light_shadow_steps = Array[int]([12])
 metadata/_custom_type_script = "uid://djusduuxf0voj"
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=270520398]
@@ -115,3 +96,7 @@ linked_portal = NodePath("../Portal2")
 [node name="Portal2" parent="." unique_id=777990750 node_paths=PackedStringArray("linked_portal") instance=ExtResource("14_d571b")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.695472, 2.1534185, -16.11821)
 linked_portal = NodePath("../Portal")
+
+[node name="Mirror" parent="." unique_id=2122574524 instance=ExtResource("15_ii71u")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.533382, 2.1664202, -11.653148)
+size = Vector2(2.98, 1)

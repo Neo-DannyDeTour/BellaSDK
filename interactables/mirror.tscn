@@ -39,7 +39,6 @@ mesh = SubResource("QuadMesh_652kc")
 surface_material_override/0 = SubResource("ShaderMaterial_ngsht")
 
 [node name="MirrorSubViewport" type="SubViewport" parent="." unique_id=1790894113]
-own_world_3d = true
 mesh_lod_threshold = 2.0
 positional_shadow_atlas_size = 0
 canvas_cull_mask = 4294966783
