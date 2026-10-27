@@ -44,6 +44,9 @@ const DEFAULT_FOG: String = "High"
 ## Default glow/bloom quality tier ("Ultra" preset default).
 const DEFAULT_GLOW: String = "High"
 
+## Default volumetric clouds quality tier ("Ultra" preset default).
+const DEFAULT_CLOUDS: String = "High"
+
 ## Default shadow quality tier ("Ultra" preset default).
 const DEFAULT_SHADOW_QUALITY: String = "High (Smooth)"
 
@@ -291,6 +294,36 @@ const GLOW_MODES: Dictionary = {
 	"High": {"enabled": true, "bicubic": true},
 }
 
+## Map of volumetric clouds quality tiers to resolution scale,
+## raymarch step limits, and shadow steps.
+const CLOUDS_MODES: Dictionary = {
+	"Off": {"enabled": false},
+	"Low":
+	{
+		"enabled": true,
+		"resolution_scale": 2,
+		"max_step_count": 96.0,
+		"max_lighting_steps": 8.0,
+		"shadow_steps": 0,
+	},
+	"Medium":
+	{
+		"enabled": true,
+		"resolution_scale": 1,
+		"max_step_count": 160.0,
+		"max_lighting_steps": 16.0,
+		"shadow_steps": 4,
+	},
+	"High":
+	{
+		"enabled": true,
+		"resolution_scale": 1,
+		"max_step_count": 300.0,
+		"max_lighting_steps": 32.0,
+		"shadow_steps": 6,
+	},
+}
+
 ## Master quality preset matrix mapping preset names to feature configurations.
 const PRESETS: Dictionary = {
 	"Low":
@@ -314,6 +347,7 @@ const PRESETS: Dictionary = {
 		"sdfgi": "Off",
 		"volumetric_fog": "Off",
 		"glow": "Off",
+		"clouds": "Low",
 		"mesh_lod_threshold": 32.0,
 	},
 	"Medium":
@@ -337,6 +371,7 @@ const PRESETS: Dictionary = {
 		"sdfgi": "Off",
 		"volumetric_fog": "Off",
 		"glow": "Low",
+		"clouds": "Medium",
 		"mesh_lod_threshold": 16.0,
 	},
 	"High":
@@ -360,6 +395,7 @@ const PRESETS: Dictionary = {
 		"sdfgi": "Low",
 		"volumetric_fog": "Off",
 		"glow": "High",
+		"clouds": "High",
 		"mesh_lod_threshold": 4.0,
 	},
 	"Ultra":
@@ -383,6 +419,7 @@ const PRESETS: Dictionary = {
 		"sdfgi": "High",
 		"volumetric_fog": "High",
 		"glow": "High",
+		"clouds": "High",
 		"mesh_lod_threshold": 1.0,
 	},
 }

@@ -179,6 +179,7 @@ static func apply_gameplay_pipeline(
 	_apply_gameplay_environments(tree, diorama_vp, config)
 	_apply_gameplay_lights(tree, diorama_vp, config)
 	_apply_gameplay_cameras(tree, diorama_vp, config)
+	_apply_gameplay_clouds(tree, config)
 
 
 ## Synchronously applies active settings to a single newly added gameplay [WorldEnvironment].
@@ -517,6 +518,15 @@ static func _apply_gameplay_cameras(
 		if not is_player_camera(cam):
 			continue
 		apply_to_camera(cam, config, false)
+
+
+## Applies the active volumetric clouds quality tier to all [SunshineCloudsDriverGD] nodes.
+static func _apply_gameplay_clouds(tree: SceneTree, config: Dictionary) -> void:
+	var clouds_tier: StringName = StringName(_get_str(config, "clouds", VideoConfig.DEFAULT_CLOUDS))
+	var drivers: Array[Node] = tree.get_nodes_in_group(&"sunshine_clouds")
+	for node: Node in drivers:
+		if is_instance_valid(node) and node.has_method(&"set_quality_tier"):
+			node.call(&"set_quality_tier", clouds_tier)
 
 
 ## Updates all [Light3D] nodes inside a specific subtree.

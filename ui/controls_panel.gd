@@ -57,8 +57,8 @@ const CHORD_COMPLETION_WINDOW: float = 0.25
 ## CheckButton for vertical axis inversion.
 @onready var invert_y_toggle: CheckButton = %InvertYToggle
 
-## CheckButton for enabling aim assist.
-@onready var aim_assist_toggle: CheckButton = %AimAssistToggle
+## OptionButton for selecting aim assist mode.
+@onready var aim_assist_option: OptionButton = %AimAssistOption
 
 ## Slider for adjusting aim assist strength.
 @onready var aim_assist_slider: HSlider = %AimAssistSlider
@@ -212,14 +212,29 @@ func _setup_mouse_aim_controls() -> void:
 				_apply_invert_y(toggled_on)
 		)
 
-	if is_instance_valid(aim_assist_toggle):
-		var aim: bool = GlobalSettings.get_setting_bool("Gameplay", "aim_assist", true)
-		aim_assist_toggle.set_pressed_no_signal(aim)
-		aim_assist_toggle.toggled.connect(
-			func(toggled_on: bool) -> void:
-				print("Controls: Aim Assist changed -> ", toggled_on)
-				GlobalSettings.save_setting("Gameplay", "aim_assist", toggled_on)
+	if is_instance_valid(aim_assist_option):
+		aim_assist_option.clear()
+		aim_assist_option.add_item("Off", 0)
+		aim_assist_option.add_item("Mid (Friction / Glue)", 1)
+		aim_assist_option.add_item("Full (Bullet Magnetism)", 2)
+		var mode: int = GlobalSettings.get_setting_int("Gameplay", "aim_assist_mode", 1)
+		aim_assist_option.selected = clampi(mode, 0, 2)
+		aim_assist_option.item_selected.connect(
+			func(idx: int) -> void:
+				print("Controls: Aim Assist Mode changed -> ", idx)
+				GlobalSettings.save_setting("Gameplay", "aim_assist_mode", idx)
+				GlobalSettings.save_setting("Gameplay", "aim_assist", idx > 0)
+				if is_instance_valid(aim_assist_slider):
+					aim_assist_slider.editable = (idx > 0)
+				if is_instance_valid(aim_assist_input):
+					aim_assist_input.editable = (idx > 0)
+				if Events.has_signal(&"aim_assist_mode_changed"):
+					Events.aim_assist_mode_changed.emit(idx)
 		)
+		if is_instance_valid(aim_assist_slider):
+			aim_assist_slider.editable = (mode > 0)
+		if is_instance_valid(aim_assist_input):
+			aim_assist_input.editable = (mode > 0)
 
 	_load_slider(mouse_sens_slider, mouse_sens_input, "mouse_sensitivity", 1.0, "Controls")
 	_load_slider(aim_assist_slider, aim_assist_input, "aim_assist_amount", 0.5, "Gameplay")

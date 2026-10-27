@@ -680,7 +680,7 @@ text = "Aim Assist"
 [node name="Spacer_AimAssist" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Controls/ControlsSection" unique_id=1349499590]
 layout_mode = 2
 
-[node name="AimAssistToggle" type="CheckButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Controls/ControlsSection" unique_id=328161055]
+[node name="AimAssistOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Controls/ControlsSection" unique_id=328161055]
 unique_name_in_owner = true
 layout_mode = 2
 

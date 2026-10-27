@@ -53,6 +53,24 @@ func _connect_signals() -> void:
 		Events.player_zoomed.connect(_on_player_zoomed)
 	if not Events.terminal_mode_toggled.is_connected(_on_terminal_mode_toggled):
 		Events.terminal_mode_toggled.connect(_on_terminal_mode_toggled)
+	if Events.has_signal(&"aim_assist_target_acquired"):
+		if not Events.aim_assist_target_acquired.is_connected(_on_aim_assist_target_acquired):
+			Events.aim_assist_target_acquired.connect(_on_aim_assist_target_acquired)
+
+
+## Cleans up event connections on tree exit.
+func _exit_tree() -> void:
+	if Events.has_signal(&"aim_assist_target_acquired"):
+		if Events.aim_assist_target_acquired.is_connected(_on_aim_assist_target_acquired):
+			Events.aim_assist_target_acquired.disconnect(_on_aim_assist_target_acquired)
+
+
+## Tints reticle red when aim assist locks onto a valid enemy target.
+func _on_aim_assist_target_acquired(has_target: bool) -> void:
+	if not is_instance_valid(center_dot):
+		return
+	var target_color: Color = Color(1.0, 0.2, 0.2, 1.0) if has_target else Color.WHITE
+	center_dot.modulate = target_color
 
 
 ## Tweens reticle rings when entering or exiting aim zoom.

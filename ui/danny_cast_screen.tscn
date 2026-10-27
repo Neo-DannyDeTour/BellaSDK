@@ -16,6 +16,7 @@ video_stream = SubResource("VideoStreamTheora_qm3kc")
 mesh = SubResource("QuadMesh_qm3kc")
 
 [node name="VideoViewport" type="SubViewport" parent="." unique_id=1108541622]
+disable_3d = true
 size = Vector2i(640, 480)
 render_target_update_mode = 0
 

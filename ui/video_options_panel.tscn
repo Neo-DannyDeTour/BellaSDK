@@ -735,6 +735,41 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "High"
 
+[node name="CloudsLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=1535427845]
+layout_mode = 2
+text = "Clouds"
+
+[node name="Control11" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=161550918]
+layout_mode = 2
+
+[node name="CloudsButtons" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer" unique_id=2087257756]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CloudsOffButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/CloudsButtons" unique_id=184070001]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Off"
+
+[node name="CloudsLowButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/CloudsButtons" unique_id=184070002]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Low"
+
+[node name="CloudsMediumButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/CloudsButtons" unique_id=184070003]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Med"
+
+[node name="CloudsHighButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/EffectsSection/GridContainer/CloudsButtons" unique_id=184070004]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "High"
+
 [node name="HardwareSection" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs" unique_id=881455893]
 unique_name_in_owner = true
 visible = false

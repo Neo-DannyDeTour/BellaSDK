@@ -17,8 +17,8 @@ const DEFAULT_VIBRATION: float = 1.0
 ## Default constant value for aim assistance strength.
 const DEFAULT_AIM_ASSIST_AMOUNT: float = 0.5
 
-## Default constant value for aim assistance toggle.
-const DEFAULT_AIM_ASSIST: bool = true
+## Default constant value for aim assistance mode (0=Off, 1=Mid, 2=Full).
+const DEFAULT_AIM_ASSIST_MODE: int = 1
 
 ## Default constant value for vertical camera look inversion.
 const DEFAULT_INVERT_Y: bool = false
@@ -59,8 +59,8 @@ const DEFAULT_INFINITE_AMMO: bool = false
 ## Toggle switch for canceling crouch when jumping.
 @onready var cancel_crouch_jump_button: CheckButton = get_node_or_null("%CancelCrouchOnJumpButton")
 
-## Toggle switch for aim assistance enabling.
-@onready var aim_assist_toggle: CheckButton = get_node_or_null("%AimAssistToggle")
+## OptionButton for selecting aim assist mode.
+@onready var aim_assist_option: OptionButton = get_node_or_null("%AimAssistOption")
 
 ## Slider for adjusting aim assistance strength.
 @onready var aim_assist_slider: HSlider = get_node_or_null("%AimAssistSlider")
@@ -161,8 +161,8 @@ func _connect_signals() -> void:
 		toggle_sprint_button.toggled.connect(_on_toggle_sprint_toggled)
 	if is_instance_valid(cancel_crouch_jump_button):
 		cancel_crouch_jump_button.toggled.connect(_on_cancel_crouch_jump_toggled)
-	if is_instance_valid(aim_assist_toggle):
-		aim_assist_toggle.toggled.connect(_on_aim_assist_toggled)
+	if is_instance_valid(aim_assist_option):
+		aim_assist_option.item_selected.connect(_on_aim_assist_mode_selected)
 	if is_instance_valid(reduce_motion_toggle):
 		reduce_motion_toggle.toggled.connect(_on_reduce_motion_toggled)
 	if is_instance_valid(infinite_swim_toggle):
@@ -217,11 +217,16 @@ func load_settings() -> void:
 		)
 		cancel_crouch_jump_button.set_pressed_no_signal(cancel_jump)
 
-	if is_instance_valid(aim_assist_toggle):
-		var aim: bool = GlobalSettings.get_setting_bool(
-			"Gameplay", "aim_assist", DEFAULT_AIM_ASSIST
+	if is_instance_valid(aim_assist_option):
+		aim_assist_option.clear()
+		aim_assist_option.add_item("Off", 0)
+		aim_assist_option.add_item("Mid (Friction / Glue)", 1)
+		aim_assist_option.add_item("Full (Bullet Magnetism)", 2)
+		var mode: int = GlobalSettings.get_setting_int(
+			"Gameplay", "aim_assist_mode", DEFAULT_AIM_ASSIST_MODE
 		)
-		aim_assist_toggle.set_pressed_no_signal(aim)
+		aim_assist_option.selected = clampi(mode, 0, 2)
+		_update_aim_assist_slider_state(mode > 0)
 
 	_load_slider(
 		aim_assist_slider,
@@ -420,16 +425,22 @@ func _on_cancel_crouch_jump_toggled(toggled_on: bool) -> void:
 	GlobalSettings.save_setting("Gameplay", "cancel_crouch_on_jump", toggled_on)
 
 
-## Handles aim assistance system toggling.
-func _on_aim_assist_toggled(toggled_on: bool) -> void:
-	var current: bool = GlobalSettings.get_setting_bool(
-		"Gameplay", "aim_assist", DEFAULT_AIM_ASSIST
-	)
-	if current == toggled_on:
-		return
+## Handles aim assistance mode selection (0=Off, 1=Mid, 2=Full).
+func _on_aim_assist_mode_selected(index: int) -> void:
+	print("Player selected Aim Assist mode: ", index)
+	GlobalSettings.save_setting("Gameplay", "aim_assist_mode", index)
+	GlobalSettings.save_setting("Gameplay", "aim_assist", index > 0)
+	_update_aim_assist_slider_state(index > 0)
+	if Events.has_signal(&"aim_assist_mode_changed"):
+		Events.aim_assist_mode_changed.emit(index)
 
-	print("Player toggled Aim Assist to: ", toggled_on)
-	GlobalSettings.save_setting("Gameplay", "aim_assist", toggled_on)
+
+## Enables or disables aim assist strength slider based on active mode.
+func _update_aim_assist_slider_state(is_enabled: bool) -> void:
+	if is_instance_valid(aim_assist_slider):
+		aim_assist_slider.editable = is_enabled
+	if is_instance_valid(aim_assist_input):
+		aim_assist_input.editable = is_enabled
 
 
 ## Handles motion reduction toggle updates.

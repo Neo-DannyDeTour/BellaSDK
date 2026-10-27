@@ -27,6 +27,9 @@ var _fog_btn_map: Dictionary[String, Button] = {}
 ## Map associating glow/bloom tiers with their toggle buttons.
 var _glow_btn_map: Dictionary[String, Button] = {}
 
+## Map associating volumetric clouds tiers with their toggle buttons.
+var _clouds_btn_map: Dictionary[String, Button] = {}
+
 ## Tonemapper algorithm [OptionButton].
 @onready var tonemap_options: OptionButton = %TonemapOptionButton
 
@@ -123,12 +126,28 @@ var _glow_btn_map: Dictionary[String, Button] = {}
 ## Glow "High" toggle [Button].
 @onready var glow_high_button: Button = %GlowHighButton
 
+## Clouds "Off" toggle [Button].
+@onready var clouds_off_button: Button = %CloudsOffButton
+
+## Clouds "Low" toggle [Button].
+@onready var clouds_low_button: Button = %CloudsLowButton
+
+## Clouds "Medium" toggle [Button].
+@onready var clouds_medium_button: Button = %CloudsMediumButton
+
+## Clouds "High" toggle [Button].
+@onready var clouds_high_button: Button = %CloudsHighButton
+
 
 ## Initializes effect button groups, tonemap dropdown, and live signal listeners.
 func _ready() -> void:
 	print("EffectsSection: Initializing effects settings UI.")
 	set_process(false)
 	set_physics_process(false)
+	assert(is_instance_valid(clouds_off_button), "EffectsSection: Missing %CloudsOffButton.")
+	assert(is_instance_valid(clouds_low_button), "EffectsSection: Missing %CloudsLowButton.")
+	assert(is_instance_valid(clouds_medium_button), "EffectsSection: Missing %CloudsMediumButton.")
+	assert(is_instance_valid(clouds_high_button), "EffectsSection: Missing %CloudsHighButton.")
 	_setup_button_mappings()
 	_populate_dropdowns()
 	_connect_signals()
@@ -178,6 +197,7 @@ func load_settings() -> void:
 	_sync_button_row(_sdfgi_btn_map, "sdfgi", VideoConfig.DEFAULT_SDFGI)
 	_sync_button_row(_fog_btn_map, "volumetric_fog", VideoConfig.DEFAULT_FOG)
 	_sync_button_row(_glow_btn_map, "glow", VideoConfig.DEFAULT_GLOW)
+	_sync_button_row(_clouds_btn_map, "clouds", VideoConfig.DEFAULT_CLOUDS)
 
 
 ## Updates local effect widgets from a preset dictionary without emitting signals.
@@ -217,9 +237,11 @@ func apply_preset_dict(data: Dictionary) -> void:
 		_set_group_button_silent(_fog_btn_map, str(data["volumetric_fog"]))
 	if data.has("glow"):
 		_set_group_button_silent(_glow_btn_map, str(data["glow"]))
+	if data.has("clouds"):
+		_set_group_button_silent(_clouds_btn_map, str(data["clouds"]))
 
 
-## Configures button group mappings for SSAO, SSIL, SSR, SDFGI, Fog, and Glow rows.
+## Configures button group mappings for SSAO, SSIL, SSR, SDFGI, Fog, Glow, and Clouds rows.
 func _setup_button_mappings() -> void:
 	_ssao_btn_map = {
 		"Off": ssao_off_button,
@@ -269,6 +291,14 @@ func _setup_button_mappings() -> void:
 	}
 	_setup_group(_glow_btn_map)
 
+	_clouds_btn_map = {
+		"Off": clouds_off_button,
+		"Low": clouds_low_button,
+		"Medium": clouds_medium_button,
+		"High": clouds_high_button,
+	}
+	_setup_group(_clouds_btn_map)
+
 
 ## Assigns a unified [ButtonGroup] and pressed visual styles to a button dictionary.
 func _setup_group(mapping: Dictionary[String, Button]) -> void:
@@ -311,6 +341,7 @@ func _connect_signals() -> void:
 	_connect_button_row(_sdfgi_btn_map, "sdfgi")
 	_connect_button_row(_fog_btn_map, "volumetric_fog")
 	_connect_button_row(_glow_btn_map, "glow")
+	_connect_button_row(_clouds_btn_map, "clouds")
 
 
 ## Connects button presses in [param mapping] to [param config_key].

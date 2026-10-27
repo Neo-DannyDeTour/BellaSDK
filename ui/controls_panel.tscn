@@ -80,7 +80,7 @@ text = "Aim Assist"
 [node name="Spacer_AimAssist" type="Control" parent="MarginContainer/ContentVBox/MouseAimGrid" unique_id=2001001009]
 layout_mode = 2
 
-[node name="AimAssistToggle" type="CheckButton" parent="MarginContainer/ContentVBox/MouseAimGrid" unique_id=2001001010]
+[node name="AimAssistOption" type="OptionButton" parent="MarginContainer/ContentVBox/MouseAimGrid" unique_id=2001001010]
 unique_name_in_owner = true
 layout_mode = 2
 
