@@ -176,10 +176,6 @@ struct SceneData {
 		mat3x4 inv_view_matrix;
 		mat3x4 view_matrix;
 
-		//#ifdef USE_DOUBLE_PRECISION  --- ADD LATER IF YOU WANT DOUBLE PRECISION
-		//	vec4 inv_view_precision;
-		//#endif
-
 		// only used for multiview
 		mat4 projection_matrix_view[MAX_VIEWS];
 		mat4 inv_projection_matrix_view[MAX_VIEWS];
@@ -242,16 +238,7 @@ struct SceneData {
 	#endif
 };
 
-// Version-independent camera block. The stock addon read Godot's private
-// SceneData UBO (above), whose byte layout is mirrored per engine version and
-// has no 4.7 entry -> it breaks on 4.7. Instead we pack exactly the fields the
-// clouds shaders use from stable public API (get_cam_transform /
-// get_cam_projection) into our own UBO. Field names match what the shader body
-// already references so the raymarch/reprojection code is unchanged.
-//   inv_projection_matrix    : clip -> view
-//   main_cam_inv_view_matrix : view -> world (camera global transform)
-//   view_matrix              : world -> view
-//   projection_matrix        : view -> clip
+// Version-independent camera block.
 struct CameraData {
 	mat4 inv_projection_matrix;
 	mat4 main_cam_inv_view_matrix;
@@ -278,7 +265,7 @@ struct GenericData{
 	vec4 ambientLightColor;
 	vec4 ambientGroundLightColor;
 	vec4 ambientfogdistancecolor;
-	
+
 	float small_noise_scale;
 	float min_step_distance;
 	float max_step_distance;
@@ -307,8 +294,8 @@ struct GenericData{
 	float pointEffectorCount;
 	float windSweptRange;
 	float windSweptPower;
-    
-    vec2 raster_size;
+
+	vec2 raster_size;
 	float large_noise_scale;
 	float medium_noise_scale;
 
@@ -320,7 +307,11 @@ struct GenericData{
 	float cloud_lighting_power;
 	float accumilation_decay;
 	float isAccumulationA;
-    float resolutionscale;
+	float resolutionscale;
+
+	float shadow_steps;
+	float shadow_strength;
+	vec2 _shadow_pad;
 };
 
 struct DirectionalLight {

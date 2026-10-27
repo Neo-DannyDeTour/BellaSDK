@@ -109,9 +109,9 @@ mesh = SubResource("CapsuleMesh_nv18y")
 [node name="Label3D" type="Label3D" parent="." unique_id=133158045]
 transform = Transform3D(1, 0, 0, 0, 0.985589, 0.16916, 0, -0.16916, 0.985589, 0, 2.61482, -5.55018)
 modulate = Color(0, 0, 0, 1)
-text = "This is an example scene, 
-please note the quality settings are all set to high, 
-this is mostly just an example, 
+text = "This is an example scene,
+please note the quality settings are all set to high,
+this is mostly just an example,
 feel free to try turning down the settings."
 font_size = 128
 
@@ -135,7 +135,7 @@ Radius = 16000.0
 Power = -3.0
 metadata/_custom_type_script = "uid://bxlm4e5qfb7uu"
 
-[node name="SunshineCloudsDriverGD" type="Node" parent="." unique_id=1968101892 node_paths=PackedStringArray("tracked_directional_lights", "tracked_point_lights", "tracked_point_effectors")]
+[node name="SunshineCloudsDriverGD" type="Node3D" parent="." unique_id=1968101892 node_paths=PackedStringArray("tracked_directional_lights", "tracked_point_lights", "tracked_point_effectors")]
 script = ExtResource("3_unbdf")
 update_continuously = true
 clouds_resource = SubResource("CompositorEffect_g0kkk")

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="SunshineCloudsWeather" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://addons/SunshineClouds2/SunshineCloudsWeather.gd" id="1_wthr"]
+
+[resource]
+script = ExtResource("1_wthr")
+clouds_coverage = 0.25
+clouds_density = 0.06
+atmospheric_density = 0.25
+extra_large_structures_wind_speed = 60.0
+large_structures_wind_speed = 40.0
+medium_structures_wind_speed = 16.0
+small_structures_wind_speed = 5.0
