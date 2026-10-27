@@ -65,7 +65,7 @@ func test_default_properties() -> void:
 		ammo_box.ammo_type, AmmoBox.AmmoArchetype.REVOLVER, "Default archetype should be REVOLVER."
 	)
 	assert_eq(ammo_box.ammo_amount, 6, "Default ammo amount should be 6.")
-	var resolved_id: StringName = StringName(ammo_box.get("_resolved_ammo_id"))
+	var resolved_id: StringName = StringName(str(ammo_box.get(&"_resolved_ammo_id")))
 	assert_eq(resolved_id, &"revolver", "Resolved ID should be revolver.")
 
 
@@ -73,11 +73,11 @@ func test_default_properties() -> void:
 func test_archetype_mutation_updates_resolved_id() -> void:
 	print("TestAmmoBox: test_archetype_mutation_updates_resolved_id() called.")
 	ammo_box.ammo_type = AmmoBox.AmmoArchetype.SHOTGUN
-	var shotgun_id: StringName = StringName(ammo_box.get("_resolved_ammo_id"))
+	var shotgun_id: StringName = StringName(str(ammo_box.get(&"_resolved_ammo_id")))
 	assert_eq(shotgun_id, &"shotgun", "Should resolve to shotgun ID.")
 
 	ammo_box.ammo_type = AmmoBox.AmmoArchetype.REVOLVER
-	var revolver_id: StringName = StringName(ammo_box.get("_resolved_ammo_id"))
+	var revolver_id: StringName = StringName(str(ammo_box.get(&"_resolved_ammo_id")))
 	assert_eq(revolver_id, &"revolver", "Should resolve back to revolver ID.")
 
 

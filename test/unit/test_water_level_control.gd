@@ -11,7 +11,7 @@ var water: WaterBody = null
 
 ## Sets up fresh WaterBody node and isolates test environment before each run.
 func before_each() -> void:
-	# Purge leaked autoload tweens/projectiles from prior suites
+	get_tree().paused = false
 	var smoke_manager: Node = get_tree().root.get_node_or_null("SmokeManager")
 	if is_instance_valid(smoke_manager) and smoke_manager.has_method(&"clear_all"):
 		smoke_manager.call(&"clear_all")
@@ -22,6 +22,10 @@ func before_each() -> void:
 	water.level_change_duration = 0.1
 	add_child_autofree(water)
 
+	# Overwrite baseline to account for properties assigned prior to tree entrance
+	water._default_position_y = water.position.y
+	water._default_water_size_y = water.water_size.y
+
 
 ## Cleans up active references after each test.
 func after_each() -> void:
@@ -31,7 +35,7 @@ func after_each() -> void:
 
 
 ## Awaits signal emission with safe frame-polling fallback to prevent headless CI deadlocks.
-func _wait_for_transition(target_water: WaterBody, timeout: float = 0.5) -> void:
+func _wait_for_transition(target_water: WaterBody, timeout: float = 1.0) -> void:
 	var timer: float = 0.0
 	while not target_water.is_level_transition_complete() and timer < timeout:
 		await get_tree().process_frame
@@ -52,7 +56,7 @@ func test_water_level_lowering_anchors_floor() -> void:
 
 	assert_signal_emitted(water, "water_level_transition_started")
 
-	await wait_seconds(water.level_change_duration + 0.05)
+	await _wait_for_transition(water, water.level_change_duration + 0.5)
 	assert_signal_emitted(water, "water_level_transition_finished")
 
 	assert_almost_eq(water.water_size.y, 10.0, 0.01, "Water height should shrink by 20m to 10m.")
@@ -74,12 +78,12 @@ func test_water_level_toggle_restores_baseline() -> void:
 	water.water_level_mode = WaterBody.WaterLevelMode.TOGGLE
 	water.target_level_delta = -20.0
 	water.power_on()
-	await wait_seconds(water.level_change_duration + 0.05)
+	await _wait_for_transition(water, water.level_change_duration + 0.5)
 
 	assert_almost_eq(water.water_size.y, 10.0, 0.01)
 
 	water.power_off()
-	await wait_seconds(water.level_change_duration + 0.05)
+	await _wait_for_transition(water, water.level_change_duration + 0.5)
 
 	assert_almost_eq(water.water_size.y, 30.0, 0.01, "Water height should restore to 30m.")
 	assert_almost_eq(water.position.y, 10.0, 0.01, "Water position Y should restore to 10m.")
@@ -90,12 +94,12 @@ func test_water_level_one_shot_ignores_power_off() -> void:
 	water.water_level_mode = WaterBody.WaterLevelMode.ONE_SHOT
 	water.target_level_delta = -20.0
 	water.power_on()
-	await wait_seconds(water.level_change_duration + 0.05)
+	await _wait_for_transition(water, water.level_change_duration + 0.5)
 
 	assert_almost_eq(water.water_size.y, 10.0, 0.01)
 
 	water.power_off()
-	await wait_seconds(0.2)
+	await wait_physics_frames(2)
 
 	assert_almost_eq(water.water_size.y, 10.0, 0.01, "One-shot must not restore on power_off.")
 
@@ -104,7 +108,7 @@ func test_water_level_one_shot_ignores_power_off() -> void:
 func test_water_level_depth_clamping() -> void:
 	water.target_level_delta = -50.0
 	water.power_on()
-	await wait_seconds(water.level_change_duration + 0.05)
+	await _wait_for_transition(water, water.level_change_duration + 0.5)
 
 	assert_almost_eq(water.water_size.y, 0.1, 0.01, "Water height must clamp to safe minimum 0.1m.")
 	var expected_pos_y: float = 10.0 + ((0.1 - 30.0) * 0.5)

@@ -88,3 +88,21 @@ func test_platform_and_barrel_geometry() -> void:
 	var cyl_shape: CylinderShape3D = barrel_fl_col.shape as CylinderShape3D
 	assert_almost_eq(cyl_shape.radius, 0.35, 0.01, "Barrel radius should be 0.35m.")
 	assert_almost_eq(cyl_shape.height, 1.2, 0.01, "Barrel length should be 1.2m.")
+
+
+## Verifies that initial underwater placement wakes up buoyancy state.
+func test_initial_underwater_overlap() -> void:
+	print("Testing initial underwater overlap detection.")
+	var water_packed: PackedScene = load("res://environment/water_body.tscn") as PackedScene
+	var water_instance: Node = water_packed.instantiate()
+	var water_mesh: MeshInstance3D = water_instance as MeshInstance3D
+	water_mesh.set(&"water_size", Vector3(10.0, 10.0, 10.0))
+	add_child_autofree(water_mesh)
+	water_mesh.global_position = Vector3(0.0, 0.0, 0.0)
+
+	_raft.global_position = Vector3(0.0, -1.0, 0.0)
+	_raft.call(&"_check_initial_water_overlap_deferred")
+
+	assert_true(_raft.is_in_water, "Raft placed underwater should activate is_in_water.")
+	assert_eq(_raft.current_water_node, water_mesh, "Raft should bind current water body.")
+	assert_false(_raft.sleeping, "Raft should awaken from physics sleep when submerged.")

@@ -43,9 +43,15 @@ func test_mannequin_ragdoll_setup_and_activation() -> void:
 	)
 
 	ragdoll.take_damage(50.0, Vector3(0.0, 1.45, 0.0), Vector3.BACK)
-	await get_tree().process_frame
+	await get_tree().physics_frame
+	await get_tree().physics_frame
 	assert_true(ragdoll.is_ragdoll_active, "Ragdoll simulation must activate after taking damage.")
+	assert_gt(
+		chest_bone.linear_velocity.length_squared(),
+		0.001,
+		"Chest bone must register velocity from deferred impulse."
+	)
 
 	ragdoll.reset_ragdoll()
-	await get_tree().process_frame
+	await get_tree().physics_frame
 	assert_false(ragdoll.is_ragdoll_active, "Ragdoll must return to standing A-pose after reset.")

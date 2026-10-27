@@ -53,13 +53,16 @@ func after_each() -> void:
 ## Verifies that wolf mode toggle updates internal state via event bus.
 func test_wolf_mode_event_toggle() -> void:
 	print("TestCameraController: test_wolf_mode_event_toggle() executing.")
-	assert_false(_controller.get("_is_wolf_mode"), "Wolf mode should be false by default.")
+	var is_wolf_mode: bool = str(_controller.get(&"_is_wolf_mode")) == "true"
+	assert_false(is_wolf_mode, "Wolf mode should be false by default.")
 
 	Events.wolf_mode_toggled.emit(true)
-	assert_true(_controller.get("_is_wolf_mode"), "Wolf mode should be true after signal.")
+	is_wolf_mode = str(_controller.get(&"_is_wolf_mode")) == "true"
+	assert_true(is_wolf_mode, "Wolf mode should be true after signal.")
 
 	Events.wolf_mode_toggled.emit(false)
-	assert_false(_controller.get("_is_wolf_mode"), "Wolf mode should return to false.")
+	is_wolf_mode = str(_controller.get(&"_is_wolf_mode")) == "true"
+	assert_false(is_wolf_mode, "Wolf mode should return to false.")
 
 
 ## Verifies idle in wolf mode blends in jitter on position and rotation.
@@ -70,7 +73,7 @@ func test_wolf_mode_idle_jitter_active() -> void:
 	for index: int in 30:
 		_controller.update_camera(0.016, Vector2.ZERO, false, false, true, 0.0)
 
-	var blend: float = float(_controller.get("_wolf_idle_blend"))
+	var blend: float = str(_controller.get(&"_wolf_idle_blend")).to_float()
 	assert_gt(blend, 0.5, "Wolf idle blend weight should ramp up when stationary.")
 
 	var has_rotation_jitter: bool = (
@@ -92,7 +95,7 @@ func test_movement_suppresses_wolf_idle_jitter() -> void:
 	for index: int in 40:
 		_controller.update_camera(0.016, Vector2.UP, false, false, true, 5.0)
 
-	var blend: float = float(_controller.get("_wolf_idle_blend"))
+	var blend: float = str(_controller.get(&"_wolf_idle_blend")).to_float()
 	assert_eq(blend, 0.0, "Wolf idle blend weight should decay to 0 when moving.")
 	assert_eq(_eyes.rotation.x, 0.0, "Eyes pitch rotation should be zeroed when moving.")
 	assert_eq(_eyes.rotation.y, 0.0, "Eyes yaw rotation should be zeroed when moving.")
@@ -107,7 +110,7 @@ func test_reduce_motion_disables_wolf_idle_jitter() -> void:
 	for index: int in 30:
 		_controller.update_camera(0.016, Vector2.ZERO, false, false, true, 0.0)
 
-	var blend: float = float(_controller.get("_wolf_idle_blend"))
+	var blend: float = str(_controller.get(&"_wolf_idle_blend")).to_float()
 	assert_eq(blend, 0.0, "Wolf idle blend weight should remain 0 when reduce_motion is true.")
 	assert_eq(_eyes.rotation.x, 0.0, "Eyes pitch rotation should remain 0.")
 	assert_eq(_eyes.rotation.y, 0.0, "Eyes yaw rotation should remain 0.")

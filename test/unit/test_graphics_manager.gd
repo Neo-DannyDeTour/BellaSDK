@@ -23,6 +23,7 @@ func test_reset_to_defaults_loads_ultra_preset() -> void:
 	var preset: Variant = graphics.call("get_setting", "preset", "")
 	var sdfgi: Variant = graphics.call("get_setting", "sdfgi", "")
 	var ssao: Variant = graphics.call("get_setting", "ssao", "")
+	var clouds: Variant = graphics.call("get_setting", "clouds", "")
 	var aa_mode: Variant = graphics.call("get_setting", "aa_mode", "")
 	var motion_blur: Variant = graphics.call("get_setting", "motion_blur", -1.0)
 	var dof_enabled: Variant = graphics.call("get_setting", "dof_enabled", true)
@@ -30,6 +31,7 @@ func test_reset_to_defaults_loads_ultra_preset() -> void:
 	assert_eq(preset, "Ultra", "Default preset should be Ultra.")
 	assert_eq(sdfgi, "High", "Ultra preset SDFGI should default to High.")
 	assert_eq(ssao, "High", "Ultra preset SSAO should default to High.")
+	assert_eq(clouds, "High", "Ultra preset Clouds should default to High.")
 	assert_eq(aa_mode, "MSAA 4x", "Default AA mode should be MSAA 4x.")
 	assert_eq(motion_blur, 0.0, "Default motion blur should be 0.0.")
 	assert_eq(dof_enabled, false, "Default DoF should be disabled.")
@@ -47,12 +49,35 @@ func test_apply_preset_updates_active_config() -> void:
 		"High",
 		"Ultra Volumetric Fog should be High."
 	)
+	assert_eq(graphics.call("get_setting", "clouds", ""), "High", "Ultra Clouds should be High.")
 	assert_eq(
 		graphics.call("get_setting", "motion_blur", -1.0), 0.0, "Ultra Motion Blur should be 0.0."
 	)
 	assert_eq(
 		graphics.call("get_setting", "dof_enabled", true), false, "Ultra DoF should be disabled."
 	)
+
+
+## Verifies that every master preset in [VideoConfig] defines the expected "clouds" tier.
+func test_all_presets_contain_clouds_key() -> void:
+	print("TestGraphicsManager: test_all_presets_contain_clouds_key() called.")
+	var expected_map: Dictionary[String, String] = {
+		"Low": "Low",
+		"Medium": "Medium",
+		"High": "High",
+		"Ultra": "High",
+	}
+	for preset_name: String in expected_map.keys():
+		assert_true(VideoConfig.PRESETS.has(preset_name), "PRESETS must contain " + preset_name)
+		var preset_dict: Dictionary = VideoConfig.PRESETS[preset_name] as Dictionary
+		assert_true(
+			preset_dict.has("clouds"), "Preset " + preset_name + " must contain 'clouds' key."
+		)
+		assert_eq(
+			str(preset_dict["clouds"]),
+			expected_map[preset_name],
+			"Preset " + preset_name + " clouds tier should match spec."
+		)
 
 
 ## Verifies that toggling diorama mode updates the isolation state flag.
@@ -118,3 +143,40 @@ func test_resolution_scale_applies_correctly() -> void:
 		assert_almost_eq(
 			sub_vp.scaling_3d_scale, 0.7, 0.001, "Scaling scale should match resolution scale."
 		)
+
+
+## Verifies that a SubViewport Camera3D without a compositor gets an empty compositor assigned.
+func test_subviewport_camera_gets_empty_compositor() -> void:
+	print("TestGraphicsManager: test_subviewport_camera_gets_empty_compositor() called.")
+	var sub_vp: SubViewport = SubViewport.new()
+	add_child_autofree(sub_vp)
+
+	var cam: Camera3D = Camera3D.new()
+	sub_vp.add_child(cam)
+
+	assert_not_null(cam.compositor, "SubViewport camera should receive a non-null Compositor.")
+	assert_eq(
+		cam.compositor.compositor_effects.size(),
+		0,
+		"Assigned SubViewport camera compositor must have zero effects."
+	)
+
+
+## Verifies that a SubViewport Camera3D with its own compositor is left untouched.
+func test_subviewport_camera_with_custom_compositor_is_untouched() -> void:
+	print(
+		"TestGraphicsManager: test_subviewport_camera_with_custom_compositor_is_untouched() called."
+	)
+	var sub_vp: SubViewport = SubViewport.new()
+	add_child_autofree(sub_vp)
+
+	var custom_comp: Compositor = Compositor.new()
+	var cam: Camera3D = Camera3D.new()
+	cam.compositor = custom_comp
+	sub_vp.add_child(cam)
+
+	assert_same(
+		cam.compositor,
+		custom_comp,
+		"Camera with an existing custom Compositor must not be overwritten."
+	)
