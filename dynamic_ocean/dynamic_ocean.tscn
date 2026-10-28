@@ -1,54 +1,52 @@
 [gd_scene format=3 uid="uid://ck5j4wdfr0yqt"]
 
-[ext_resource type="Material" uid="uid://byumtcccq4ew3" path="res://environment/mat_ocean.tres" id="1_l0dr3"]
-[ext_resource type="ArrayMesh" uid="uid://ix4vp1y05f1s" path="res://assets/ocean_waves/ocean/clipmap_high.obj" id="2_wv76p"]
-[ext_resource type="Script" uid="uid://dekw7gvxuh5fq" path="res://environment/ocean.gd" id="3_6nay4"]
-[ext_resource type="Script" uid="uid://bxtxyvoqbohar" path="res://environment/wave_cascade_parameters.gd" id="4_yo2dh"]
-[ext_resource type="Shader" uid="uid://bmrd2qadcetx6" path="res://environment/ocean_spray.gdshader" id="5_ko302"]
-[ext_resource type="Texture2D" uid="uid://dtm5tyuh2slqt" path="res://environment/ocean_spray.png" id="7_hfc23"]
-[ext_resource type="Material" uid="uid://5xqyddws6rt5" path="res://environment/mat_spray.tres" id="7_vu4gk"]
+[ext_resource type="Material" uid="uid://byumtcccq4ew3" path="res://dynamic_ocean/materials/mat_ocean.tres" id="1_l0dr3"]
+[ext_resource type="ArrayMesh" uid="uid://ix4vp1y05f1s" path="res://dynamic_ocean/meshes/clipmap_high.obj" id="2_wv76p"]
+[ext_resource type="Script" uid="uid://dekw7gvxuh5fq" path="res://dynamic_ocean/ocean.gd" id="3_6nay4"]
+[ext_resource type="Script" uid="uid://bxtxyvoqbohar" path="res://dynamic_ocean/wave_cascade_parameters.gd" id="4_yo2dh"]
+[ext_resource type="Shader" uid="uid://bmrd2qadcetx6" path="res://dynamic_ocean/shaders/ocean_spray.gdshader" id="5_ko302"]
+[ext_resource type="Texture2D" uid="uid://dtm5tyuh2slqt" path="res://dynamic_ocean/textures/ocean_spray.png" id="7_hfc23"]
+[ext_resource type="Material" uid="uid://5xqyddws6rt5" path="res://dynamic_ocean/materials/mat_spray.tres" id="7_vu4gk"]
 
 [sub_resource type="Resource" id="Resource_adqv5"]
 script = ExtResource("4_yo2dh")
-tile_length = Vector2(88, 88)
+tile_length = Vector2(256, 256)
 wind_speed = 15.0
 wind_direction = 20.0
 foam_amount = 8.0
 
 [sub_resource type="Resource" id="Resource_luhq0"]
 script = ExtResource("4_yo2dh")
-tile_length = Vector2(57, 57)
+tile_length = Vector2(67, 67)
 displacement_scale = 0.75
-wind_speed = 5.0
-wind_direction = 15.0
+wind_speed = 6.5
+wind_direction = -15.0
 fetch_length = 150.0
-spread = 0.4
-foam_amount = 0.0
+spread = 0.45
+foam_amount = 2.0
 
 [sub_resource type="Resource" id="Resource_83u3u"]
 script = ExtResource("4_yo2dh")
-tile_length = Vector2(16, 16)
-displacement_scale = 0.0
-normal_scale = 0.25
-wind_direction = 20.0
-spread = 0.4
+tile_length = Vector2(17, 17)
+displacement_scale = 0.15
+normal_scale = 0.35
+wind_direction = 35.0
+spread = 0.5
 whitecap = 0.25
-foam_amount = 3.0
+foam_amount = 4.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_ds3o1"]
 render_priority = -1
 shader = ExtResource("5_ko302")
 shader_parameter/max_alpha = 0.666
 shader_parameter/brightness_multiplier = 1.7
-
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mv12o"]
-transparency = 1
-albedo_texture = ExtResource("7_hfc23")
+shader_parameter/albedo_texture = ExtResource("7_hfc23")
+shader_parameter/dissolve_texture = ExtResource("7_hfc23")
 
 [sub_resource type="QuadMesh" id="QuadMesh_50wyh"]
-material = SubResource("StandardMaterial3D_mv12o")
 
 [node name="Ocean" type="MeshInstance3D" unique_id=2118242669 node_paths=PackedStringArray("spray_particles")]
+layers = 512
 sorting_offset = 999.0
 material_override = ExtResource("1_l0dr3")
 cast_shadow = 0
@@ -56,16 +54,16 @@ extra_cull_margin = 150.0
 gi_mode = 0
 mesh = ExtResource("2_wv76p")
 script = ExtResource("3_6nay4")
-spray_spawn_radius = 40.0
+spray_spawn_radius = 300.0
 spray_particles = NodePath("WaterSprayEmitter")
 parameters = Array[ExtResource("4_yo2dh")]([SubResource("Resource_adqv5"), SubResource("Resource_luhq0"), SubResource("Resource_83u3u")])
+map_size = 512
 
 [node name="WaterSprayEmitter" type="GPUParticles3D" parent="." unique_id=1366948172]
 material_override = SubResource("ShaderMaterial_ds3o1")
 cast_shadow = 0
-custom_aabb = AABB(-250, -20, -250, 500, 40, 500)
 gi_mode = 0
 amount = 1600
-lifetime = 6.0
+lifetime = 3.0
 process_material = ExtResource("7_vu4gk")
 draw_pass_1 = SubResource("QuadMesh_50wyh")

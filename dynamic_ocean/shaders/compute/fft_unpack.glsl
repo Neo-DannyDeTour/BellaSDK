@@ -1,6 +1,6 @@
 #[compute]
 #version 460
-/** 
+/**
  * Unpacks the IFFT outputs from the modulation stage and creates
  * the output displacement and normal maps.
  */

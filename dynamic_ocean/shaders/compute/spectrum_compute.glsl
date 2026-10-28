@@ -93,7 +93,7 @@ float hasselmann_directional_spread(in float w, in float w_p, in float wind_spee
 float TMA_spectrum(in float w, in float w_p, in float alpha) {
     const float beta = 1.25;
     const float gamma = 3.3; // Spectral peak shape constant
-    
+
     float sigma = (w <= w_p) ? 0.07 : 0.09;
     float r = exp(-(w-w_p)*(w-w_p) / (2.0 * sigma*sigma * w_p*w_p));
     float jonswap_spectrum = (alpha * G*G) / pow(w, 5) * exp(-beta * pow(w_p/w, 4)) * pow(gamma, r);

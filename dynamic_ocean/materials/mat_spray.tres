@@ -1,0 +1,12 @@
+[gd_resource type="ShaderMaterial" format=4 uid="uid://5xqyddws6rt5"]
+
+[ext_resource type="Shader" uid="uid://c04intj7sf4jy" path="res://dynamic_ocean/shaders/ocean_spray_particle.gdshader" id="1_puvd8"]
+
+[resource]
+shader = ExtResource("1_puvd8")
+shader_parameter/num_particles = 1600
+shader_parameter/particle_scale = Vector3(20, 8.5, 20)
+shader_parameter/lifetime = 3.0
+shader_parameter/lifetime_randomness = 0.25
+shader_parameter/spawn_radius = 150.0
+shader_parameter/map_scales = PackedVector4Array(0.00390625, 0.00390625, 1, 1, 0.014925373, 0.014925373, 0.75, 1, 0.05882353, 0.05882353, 0.15, 0.35)

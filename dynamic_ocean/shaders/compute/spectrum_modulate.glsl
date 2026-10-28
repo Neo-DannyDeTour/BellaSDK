@@ -67,10 +67,10 @@ void main() {
 
     // --- WAVE SPECTRUM MODULATION ---
     vec4 h0 = imageLoad(spectrum, id); // xy=h0(k), zw=conj(h0(-k))
-    
+
     // 1. Calculate the base angular frequency
     float omega = dispersion_relation(k);
-    
+
     // 2. --- NEW: SNAP FREQUENCIES FOR PERFECT LOOPING ---
     // If the loop_period is greater than 0, we are currently baking.
     if (loop_period > 0.001) {
@@ -81,7 +81,7 @@ void main() {
 
     // 3. Apply time
     float dispersion = omega * time;
-    
+
     vec2 modulation = exp_complex(dispersion);
     // Note: h respects the complex conjugation property
     vec2 h = mul_complex(h0.xy, modulation) + mul_complex(h0.zw, conj_complex(modulation));

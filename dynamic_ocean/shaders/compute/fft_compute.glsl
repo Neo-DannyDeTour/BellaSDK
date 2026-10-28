@@ -1,7 +1,7 @@
 #[compute]
 #version 460
-/** 
- * A coalesced decimation-in-time Stockham FFT kernel. 
+/**
+ * A coalesced decimation-in-time Stockham FFT kernel.
  * Source: http://wwwa.pikara.ne.jp/okojisan/otfft-en/stockham3.html
  */
 
@@ -44,7 +44,7 @@ void main() {
 	const uvec3 id = uvec3(gl_GlobalInvocationID.xy, cascade_index); // col, row, cascade
 	const uint col = id.x;
 	const uint spectrum = gl_GlobalInvocationID.z; // The spectrum in the buffer to perform FFT on.
-	
+
 	if (gl_LocalInvocationID.x >= map_size) return;
 
 	ROW_SHARED(col, 0) = DATA_IN(id, spectrum);

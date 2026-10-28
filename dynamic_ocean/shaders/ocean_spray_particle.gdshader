@@ -12,11 +12,11 @@ render_mode disable_velocity;
 #define SCALE_FACTOR      (USERDATA3.z)
 #define HAS_STARTED       (USERDATA3.w)
 
-uniform uint num_particles;
-uniform vec3 particle_scale;
+uniform uint num_particles = 1600U;
+uniform vec3 particle_scale = vec3(20.0, 8.5, 20.0);
 uniform float lifetime = 3.0;
 uniform float lifetime_randomness : hint_range(0.0, 1.0) = 0.25;
-uniform float spawn_radius = 40.0;
+uniform float spawn_radius = 150.0;
 
 group_uniforms cascade_data;
 uniform vec4 map_scales[MAX_CASCADES];
@@ -39,23 +39,32 @@ void set_scale(inout mat4 transform, in vec3 scale) {
 	transform[2].xyz = normalize(transform[2].xyz + vec3(0.0, 0.0, 0.00001)) * safe_s.z;
 }
 
-void start() {
-	if (RESTART_POSITION) {
-		vec3 rand = hash32(uvec2(NUMBER, 1U) + uint(TIME) + RANDOM_SEED);
-		vec2 coords = (rand.xy - 0.5) * (spawn_radius * 2.0);
+void reset_candidate(
+	uint particle_id,
+	uint seed_offset,
+	float current_time,
+	vec3 emitter_origin,
+	float stagger_window,
+	inout mat4 transform,
+	inout vec4 custom_data,
+	inout vec4 userdata1,
+	inout vec4 userdata2,
+	inout vec4 userdata3
+) {
+	vec3 rand = hash32(uvec2(particle_id, seed_offset));
+	vec2 coords = (rand.xy - 0.5) * (spawn_radius * 2.0);
+	vec3 world_candidate = emitter_origin + vec3(coords.x, 0.0, coords.y);
 
-		TRANSFORM[3].xyz = vec3(coords.x, 0.0, coords.y);
-		TRANSFORM = EMISSION_TRANSFORM * TRANSFORM;
+	custom_data.z = rand.x;
+	custom_data.w = 0.0;
+	userdata2.w = max(lifetime - lifetime * lifetime_randomness * rand.y, 0.25);
+	userdata1.xyz = world_candidate;
+	userdata1.w = current_time + rand.z * stagger_window;
+	userdata3.z = 0.0;
+	userdata3.w = 0.0;
 
-		CUSTOM.z = rand.x;
-		PARTICLE_LIFETIME = max(lifetime - lifetime * lifetime_randomness * rand.y, 0.05);
-		START_POS = POSITION;
-		START_TIME = TIME + rand.z * max(LIFETIME - PARTICLE_LIFETIME, 0.0);
-
-		HAS_STARTED = 0.0;
-		POSITION = EMISSION_TRANSFORM[3].xyz - vec3(0.0, 100.0, 0.0);
-		set_scale(TRANSFORM, vec3(0.0001));
-	}
+	transform[3].xyz = emitter_origin - vec3(0.0, 100.0, 0.0);
+	set_scale(transform, vec3(0.0001));
 }
 
 float exp_impulse(float x, float k) {
@@ -63,12 +72,46 @@ float exp_impulse(float x, float k) {
 	return h * exp(1.0 - h);
 }
 
+void start() {
+	if (RESTART_POSITION) {
+		reset_candidate(
+			NUMBER,
+			RANDOM_SEED + uint(TIME * 60.0),
+			TIME,
+			EMISSION_TRANSFORM[3].xyz,
+			lifetime,
+			TRANSFORM,
+			CUSTOM,
+			USERDATA1,
+			USERDATA2,
+			USERDATA3
+		);
+	}
+}
+
 void process() {
-	if (TIME > START_TIME + PARTICLE_LIFETIME) {
-		ACTIVE = false;
-	} else if (HAS_STARTED == 1.0 && length(POSITION - EMISSION_TRANSFORM[3].xyz) > spawn_radius * 1.5) {
-		ACTIVE = false;
-	} else if (TIME >= START_TIME) {
+	vec3 emitter_origin = EMISSION_TRANSFORM[3].xyz;
+	bool expired = TIME > (START_TIME + PARTICLE_LIFETIME);
+	bool out_of_bounds = (
+		HAS_STARTED == 1.0 && length(START_POS.xz - emitter_origin.xz) > spawn_radius * 1.25
+	);
+
+	if (expired || out_of_bounds) {
+		reset_candidate(
+			NUMBER,
+			RANDOM_SEED + uint(TIME * 131.0),
+			TIME,
+			emitter_origin,
+			0.15,
+			TRANSFORM,
+			CUSTOM,
+			USERDATA1,
+			USERDATA2,
+			USERDATA3
+		);
+	}
+
+	if (TIME >= START_TIME) {
 		if (HAS_STARTED == 0.0) {
 			vec3 gradient = vec3(0.0);
 			for (int i = 0; i < num_cascades; ++i) {
@@ -81,27 +124,33 @@ void process() {
 
 			vec3 normal = normalize(vec3(-gradient.x, 1.0, -gradient.y));
 			float foam = gradient.z;
-			float normal_factor = mix(0.25, 1.0, smoothstep(0.92, 0.99, normal.y));
-			float foam_factor = mix(0.25, 1.0, smoothstep(0.9, 1.0, foam));
+			float normal_factor = mix(0.25, 1.0, smoothstep(0.88, 0.99, normal.y));
+			float foam_factor = mix(0.25, 1.0, smoothstep(0.45, 1.0, foam));
 
-			bool random_splash = CUSTOM.z > 0.7 && foam > 0.3;
-			bool should_spawn = (normal_factor >= 0.0 && normal_factor <= 1.0) && (foam > 0.75 || random_splash);
-
+			bool should_spawn = foam > 0.25 || (CUSTOM.z > 0.55 && foam > 0.1);
 			if (should_spawn) {
-				ACTIVE = true;
 				SCALE_FACTOR = normal_factor * mix(0.5, 1.0, foam_factor);
 				PARTICLE_SCALE = vec3(foam_factor) * vec3(1.0, normal_factor, 1.0) * particle_scale;
 				HAS_STARTED = 1.0;
 			} else {
-				POSITION = EMISSION_TRANSFORM[3].xyz - vec3(0.0, 100.0, 0.0);
-				HAS_STARTED = 1.0;
-				SCALE_FACTOR = 0.0;
+				reset_candidate(
+					NUMBER,
+					RANDOM_SEED + uint(TIME * 257.0) + 17U,
+					TIME,
+					emitter_origin,
+					0.1,
+					TRANSFORM,
+					CUSTOM,
+					USERDATA1,
+					USERDATA2,
+					USERDATA3
+				);
 			}
 		}
 
-		if (ACTIVE && SCALE_FACTOR > 0.0) {
+		if (HAS_STARTED == 1.0 && SCALE_FACTOR > 0.0) {
 			float t = clamp((TIME - START_TIME) / max(PARTICLE_LIFETIME, 0.001), 0.0, 1.0);
-			CUSTOM.a = exp_impulse(t, 10.0);
+			CUSTOM.w = exp_impulse(t, 10.0);
 
 			vec3 displacement = vec3(0.0);
 			for (int i = 0; i < num_cascades; ++i) {
@@ -121,7 +170,7 @@ void process() {
 			float size = PARTICLE_LIFETIME / max(lifetime, 0.001);
 			vec3 scale_modifier = vec3(size * size);
 			scale_modifier.y *= exp_impulse(t, 3.0);
-			scale_modifier.xz *= vec2(log(1.0 + t) + 0.01);
+			scale_modifier.xz *= vec2(log(1.0 + t) + 0.25);
 
 			set_scale(TRANSFORM, PARTICLE_SCALE * scale_modifier);
 		}

@@ -9,12 +9,12 @@ global uniform vec4 foam_color : source_color;
 uniform vec3 depth_color_consumption = vec3(22.0, 133.0, 168.0);
 
 uniform vec3 crest_color : source_color = vec3(0.0, 0.65, 0.85);
-uniform float crest_glow_intensity : hint_range(0.0, 2.0) = 0.2;
-uniform float aerated_foam_glow : hint_range(0.0, 2.0) = 0.3;
+uniform float crest_glow_intensity : hint_range(0.0, 2.0) = 0.8;
+uniform float aerated_foam_glow : hint_range(0.0, 2.0) = 0.5;
 
 uniform float roughness : hint_range(0.0, 1.0) = 0.4;
 uniform float normal_strength : hint_range(0.0, 1.0) = 1.0;
-uniform sampler2D foam_noise_tex : repeat_enable, filter_linear_mipmap;
+uniform sampler2D foam_noise_tex : hint_default_white, repeat_enable, filter_linear_mipmap;
 
 uniform sampler2D depth_texture : hint_depth_texture, filter_linear_mipmap;
 uniform sampler2D screen_texture : hint_screen_texture, filter_linear_mipmap;
@@ -28,6 +28,12 @@ global uniform sampler2DArray normals : hint_normal;
 varying float wave_height;
 varying float foam_factor;
 varying float fresnel;
+
+vec2 rotate_uv(vec2 uv, float angle) {
+	float s = sin(angle);
+	float c = cos(angle);
+	return mat2(vec2(c, -s), vec2(s, c)) * uv;
+}
 
 void vertex() {
 	UV = VERTEX.xz;
@@ -59,8 +65,10 @@ void fragment() {
 		vec4 scales = map_scales[i];
 		vec3 coords = vec3(UV * scales.xy, float(i));
 		gradient += texture(normals, coords).xyw * vec3(scales.ww, 1.0);
-		foam_alpha += texture(foam_noise_tex, UV * scales.xy * 1.0).r;
+		vec2 rotated_foam_uv = rotate_uv(UV * scales.xy, float(i) * 2.3999632);
+		foam_alpha += texture(foam_noise_tex, rotated_foam_uv).r;
 	}
+	foam_alpha /= max(float(num_cascades), 1.0);
 	foam_factor = smoothstep(0.0, 1.0, gradient.z * 0.75) * exp(-dist * 0.0075);
 
 	float depth_tex = texture(depth_texture, SCREEN_UV).r;
@@ -104,7 +112,7 @@ void fragment() {
 
 	vec3 water_with_glow = mix(depth_water_color, crest_color, total_subsurface);
 
-	float final_foam_mix = clamp(foam_factor * foam_alpha * foam_alpha, 0.0, 1.0);
+	float final_foam_mix = clamp(foam_factor * foam_alpha, 0.0, 1.0);
 	ALBEDO = mix(water_with_glow, foam_color.rgb, final_foam_mix);
 
 	gradient *= mix(0.015, normal_strength, exp(-dist * 0.0175));
