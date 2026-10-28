@@ -209,9 +209,13 @@ signal tts_state_changed(enabled: bool)
 @warning_ignore("unused_signal")
 signal aim_assist_mode_changed(mode: int)
 
-## Emitted when a target enters or exits the aim assist lock range. Passes [param has_target].
+## Emitted when target enters or exits aim assist lock range. Passes status and screen pos.
 @warning_ignore("unused_signal")
-signal aim_assist_target_acquired(has_target: bool)
+signal aim_assist_target_acquired(has_target: bool, screen_pos: Vector2)
+
+## Emitted when aim assist strength slider is adjusted. Passes [param amount] (0.0 to 1.0).
+@warning_ignore("unused_signal")
+signal aim_assist_amount_changed(amount: float)
 
 # --------------------------------------
 # GAMEPLAY FEEDBACK & UI SIGNALS

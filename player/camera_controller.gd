@@ -94,7 +94,7 @@ var _wolf_idle_blend: float = 0.0
 ## Current wolf transformation state received from event bus.
 var _is_wolf_mode: bool = false
 
-## Active aim assist operational mode (0=Off, 1=Mid [Friction/Glue], 2=Full).
+## Active aim assist operational mode (0=Off, 1=Mid [Friction], 2=Full [Friction+Adhesion]).
 var aim_assist_mode: int = 1
 ## Aim assist strength multiplier (0.0 to 1.0).
 var aim_assist_amount: float = 0.5
@@ -102,10 +102,10 @@ var aim_assist_amount: float = 0.5
 var aim_assist_max_range: float = 50.0
 ## Current active locked target for assist stickiness.
 var _current_assist_target: Node3D = null
-## Timestamp for last target acquisition to stabilize lock.
-var _target_acquired_time: float = 0.0
 ## Cached state flag indicating if target is acquired.
 var _has_acquired_target: bool = false
+## Target data evaluated per frame during update_camera().
+var _cached_target_data: Dictionary = {}
 
 
 ## Lifecycle initialization method loading saved preferences and camera state.
@@ -132,6 +132,8 @@ func _ready() -> void:
 		Events.wolf_mode_toggled.connect(_on_wolf_mode_toggled)
 	if Events.has_signal(&"aim_assist_mode_changed"):
 		Events.aim_assist_mode_changed.connect(_on_aim_assist_mode_changed)
+	if Events.has_signal(&"aim_assist_amount_changed"):
+		Events.aim_assist_amount_changed.connect(_on_aim_assist_amount_changed)
 
 	if is_instance_valid(player_body) and player_body.get(&"is_wolf_mode") == true:
 		_is_wolf_mode = true
@@ -149,6 +151,11 @@ func _exit_tree() -> void:
 		and Events.aim_assist_mode_changed.is_connected(_on_aim_assist_mode_changed)
 	):
 		Events.aim_assist_mode_changed.disconnect(_on_aim_assist_mode_changed)
+	if (
+		Events.has_signal(&"aim_assist_amount_changed")
+		and Events.aim_assist_amount_changed.is_connected(_on_aim_assist_amount_changed)
+	):
+		Events.aim_assist_amount_changed.disconnect(_on_aim_assist_amount_changed)
 
 
 ## Sets base mouse sensitivity multiplier and syncs live sensitivity.
@@ -199,52 +206,46 @@ func handle_mouse_input(
 	head.rotation.z = 0.0
 
 
-## Calculates Halo-style friction slowdown and adhesion pull towards nearby enemy targets.
+## Calculates Halo-style friction slowdown and adhesion pull using cached frame target.
 func _evaluate_aim_assist_adjustments(yaw_in: float, pitch_in: float) -> Vector2:
-	if not is_instance_valid(camera):
+	if not is_instance_valid(camera) or _cached_target_data.is_empty():
 		return Vector2(yaw_in, pitch_in)
 
-	var target_data: Dictionary = find_best_aim_assist_target(deg_to_rad(8.0))
-	var best_enemy: Node3D = target_data.get("target", null) as Node3D
-
-	var acquired: bool = is_instance_valid(best_enemy)
-	if acquired != _has_acquired_target:
-		_has_acquired_target = acquired
-		if Events.has_signal(&"aim_assist_target_acquired"):
-			Events.aim_assist_target_acquired.emit(_has_acquired_target)
-
-	if not acquired:
+	var target_enemy: Node3D = _cached_target_data.get("target", null) as Node3D
+	if not is_instance_valid(target_enemy):
 		return Vector2(yaw_in, pitch_in)
 
-	var angle_delta: float = float(target_data.get("angle", 0.0))
-	var target_pos: Vector3 = target_data.get("aim_pos", best_enemy.global_position) as Vector3
+	var target_pos: Vector3 = (
+		_cached_target_data.get("aim_pos", target_enemy.global_position) as Vector3
+	)
 	var strength: float = clampf(aim_assist_amount, 0.1, 1.0)
 
-	# 1. Halo Reticle Friction: Slow down camera panning over the enemy
+	# 1. Halo Reticle Friction (Active in Mid & Full): Slow down camera panning over target
 	var friction_factor: float = clampf(1.0 - (0.55 * strength), 0.35, 1.0)
 	var out_yaw: float = yaw_in * friction_factor
 	var out_pitch: float = pitch_in * friction_factor
 
-	# 2. Halo Adhesion / Glue: Nudge camera yaw and pitch towards the target if player is aiming
-	var cam_pos: Vector3 = camera.global_position
-	var to_target: Vector3 = (target_pos - cam_pos).normalized()
-	var cam_forward: Vector3 = -camera.global_transform.basis.z.normalized()
-	var cam_right: Vector3 = camera.global_transform.basis.x.normalized()
-	var cam_up: Vector3 = camera.global_transform.basis.y.normalized()
+	# 2. Halo Adhesion / Magnetism (Active in Full Mode only)
+	if aim_assist_mode >= 2:
+		var cam_pos: Vector3 = camera.global_position
+		var to_target: Vector3 = (target_pos - cam_pos).normalized()
+		var cam_right: Vector3 = camera.global_transform.basis.x.normalized()
+		var cam_up: Vector3 = camera.global_transform.basis.y.normalized()
 
-	var yaw_diff: float = rad_to_deg(cam_right.dot(to_target))
-	var pitch_diff: float = rad_to_deg(cam_up.dot(to_target))
+		var yaw_diff: float = rad_to_deg(cam_right.dot(to_target))
+		var pitch_diff: float = rad_to_deg(cam_up.dot(to_target))
 
-	# Glue pulls towards target proportional to user movement (moving circle towards enemy)
-	var move_mag: float = Vector2(yaw_in, pitch_in).length()
-	if move_mag > 0.001:
-		var glue_strength: float = 0.28 * strength
-		var max_yaw_pull: float = absf(yaw_in) * 0.8
-		var max_pitch_pull: float = absf(pitch_in) * 0.8
-		var pull_yaw: float = clampf(yaw_diff * glue_strength, -max_yaw_pull, max_yaw_pull)
-		var pull_pitch: float = clampf(-pitch_diff * glue_strength, -max_pitch_pull, max_pitch_pull)
-		out_yaw += pull_yaw
-		out_pitch += pull_pitch
+		var move_mag: float = Vector2(yaw_in, pitch_in).length()
+		if move_mag > 0.001:
+			var glue_strength: float = 0.28 * strength
+			var max_yaw_pull: float = absf(yaw_in) * 0.8
+			var max_pitch_pull: float = absf(pitch_in) * 0.8
+			var pull_yaw: float = clampf(yaw_diff * glue_strength, -max_yaw_pull, max_yaw_pull)
+			var pull_pitch: float = clampf(
+				-pitch_diff * glue_strength, -max_pitch_pull, max_pitch_pull
+			)
+			out_yaw += pull_yaw
+			out_pitch += pull_pitch
 
 	return Vector2(out_yaw, out_pitch)
 
@@ -282,12 +283,11 @@ func find_best_aim_assist_target(max_angle_rad: float) -> Dictionary:
 			continue
 
 		var aim_pos: Vector3 = enemy.global_position + Vector3(0.0, 0.4, 0.0)
-		var to_enemy: Vector3 = aim_pos - cam_pos
-		var dist_sq: float = to_enemy.length_squared()
+		var dist_sq: float = cam_pos.distance_squared_to(aim_pos)
 		if dist_sq > max_dist_sq or dist_sq < 0.2:
 			continue
 
-		var dir_to_enemy: Vector3 = to_enemy.normalized()
+		var dir_to_enemy: Vector3 = (aim_pos - cam_pos).normalized()
 		var dot: float = cam_forward.dot(dir_to_enemy)
 		if dot <= 0.0:
 			continue
@@ -296,17 +296,16 @@ func find_best_aim_assist_target(max_angle_rad: float) -> Dictionary:
 		if angle > max_angle_rad:
 			continue
 
-		# Check line of sight occlusion against solid environment
+		# Check line of sight occlusion against solid world geometry
 		var hit: Dictionary = Utilities.raycast_3d(
 			space_state, cam_pos, aim_pos, Types.MASK_SOLID_WORLD, exclude
 		)
 		if not hit.is_empty():
 			continue
 
-		# Score combines angle with slight distance weighting and sticky hysteresis
 		var score: float = angle + (sqrt(dist_sq) / aim_assist_max_range * 0.1)
 		if enemy == _current_assist_target:
-			score *= 0.7  # Stickiness bonus to reduce target jitter
+			score *= 0.7
 
 		if score < min_score:
 			min_score = score
@@ -321,7 +320,7 @@ func find_best_aim_assist_target(max_angle_rad: float) -> Dictionary:
 	return {}
 
 
-## Master frame update routing FOV, tilting, headbobbing, and stair smoothing.
+## Master frame update routing FOV, tilting, headbobbing, and aim assist scan.
 ## [param delta] Physics frame delta time in seconds.
 ## [param input_dir] Current horizontal locomotion input vector.
 ## [param is_sprinting] Sprint locomotion state flag.
@@ -342,6 +341,7 @@ func update_camera(
 	):
 		print("CameraController: update_camera() processing state change.")
 
+	_update_target_tracking()
 	_update_fov(delta, is_sprinting, is_grounded, input_dir)
 	_update_tilt(delta, input_dir)
 	_update_headbob(delta, input_dir, is_sprinting, is_crouching)
@@ -360,6 +360,7 @@ func update_noclip_camera(delta: float, input_dir: Vector2, is_sprinting: bool) 
 	):
 		print("CameraController: update_noclip_camera() processing state change.")
 
+	_update_target_tracking()
 	_update_fov(delta, is_sprinting, true, input_dir)
 	_update_tilt(delta, input_dir)
 
@@ -371,6 +372,36 @@ func update_noclip_camera(delta: float, input_dir: Vector2, is_sprinting: bool) 
 		eyes.position.x = headbob_offset.x
 		eyes.rotation.x = 0.0
 		eyes.rotation.y = 0.0
+
+
+## Continuous frame scan tracking target acquisition status independent of mouse motion.
+func _update_target_tracking() -> void:
+	if aim_assist_mode == 0 or not is_instance_valid(camera):
+		if _has_acquired_target:
+			_has_acquired_target = false
+			_cached_target_data.clear()
+			if Events.has_signal(&"aim_assist_target_acquired"):
+				Events.aim_assist_target_acquired.emit(false, Vector2.ZERO)
+		return
+
+	_cached_target_data = find_best_aim_assist_target(deg_to_rad(8.0))
+	var target_enemy: Node3D = _cached_target_data.get("target", null) as Node3D
+	var acquired: bool = is_instance_valid(target_enemy)
+	var screen_pos: Vector2 = Vector2.ZERO
+
+	if acquired:
+		var target_pos: Vector3 = (
+			_cached_target_data.get("aim_pos", target_enemy.global_position) as Vector3
+		)
+		if not camera.is_position_behind(target_pos):
+			screen_pos = camera.unproject_position(target_pos)
+		else:
+			acquired = false
+
+	if acquired != _has_acquired_target or (acquired and _has_acquired_target):
+		_has_acquired_target = acquired
+		if Events.has_signal(&"aim_assist_target_acquired"):
+			Events.aim_assist_target_acquired.emit(_has_acquired_target, screen_pos)
 
 
 ## Injects step displacement offset when navigating step height changes.
@@ -560,7 +591,7 @@ func _update_wolf_jitter(delta: float, input_dir: Vector2) -> void:
 
 	eyes.rotation.x = sample_rot_x * current_rot_intensity
 	eyes.rotation.y = sample_rot_y * current_rot_intensity
-	eyes.rotation.z += sample_rot_z * current_rot_intensity
+	eyes.rotation.z = sample_rot_z * current_rot_intensity
 
 
 ## Decays stair displacement back to zero over time.
@@ -587,5 +618,12 @@ func _on_aim_assist_mode_changed(mode: int) -> void:
 	aim_assist_mode = mode
 	if aim_assist_mode == 0 and _has_acquired_target:
 		_has_acquired_target = false
+		_cached_target_data.clear()
 		if Events.has_signal(&"aim_assist_target_acquired"):
-			Events.aim_assist_target_acquired.emit(false)
+			Events.aim_assist_target_acquired.emit(false, Vector2.ZERO)
+
+
+## Handles external aim assist strength changes from UI slider adjustments.
+func _on_aim_assist_amount_changed(amount: float) -> void:
+	print("CameraController: _on_aim_assist_amount_changed() -> ", amount)
+	aim_assist_amount = amount

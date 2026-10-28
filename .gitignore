@@ -30,17 +30,17 @@ assets/weapons
 
 addons/imgui-godot/
 
-assets/ocean_waves/ocean/clipmap_high_8k.obj
+dynamic_ocean/meshes/clipmap_high_8k.obj
 
-assets/ocean_waves/ocean/clipmap_high_8k.obj.import
+dynamic_ocean/meshes/clipmap_high_8k.obj.import
 
-assets/ocean_waves/ocean/clipmap_high.obj
+dynamic_ocean/meshes/clipmap_high.obj
 
-assets/ocean_waves/ocean/clipmap_low.obj
+dynamic_ocean/meshes/clipmap_low.obj
 
-assets/ocean_waves/ocean/clipmap_high.obj.import
+dynamic_ocean/meshes/clipmap_high.obj.import
 
-assets/ocean_waves/ocean/clipmap_low.obj.import
+dynamic_ocean/meshes/clipmap_low.obj.import
 
 diagnostic.sh
 
