@@ -1,14 +1,30 @@
-[gd_resource type="ShaderMaterial" format=4 uid="uid://byumtcccq4ew3"]
+[gd_resource type="ShaderMaterial" format=4 uid="uid://qnn07w78vx2u"]
 
-[ext_resource type="Shader" uid="uid://kroclfo5hgw" path="res://environment/ocean_water.gdshader" id="1_uffek"]
+[ext_resource type="Shader" path="res://environment/ocean_water.gdshader" id="1_uffek"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_foam"]
+noise_type = 2
+seed = 42
+frequency = 0.035
+fractal_type = 2
+fractal_octaves = 3
+cellular_distance_function = 1
+cellular_return_type = 6
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_foam"]
+width = 256
+height = 256
+noise = SubResource("FastNoiseLite_foam")
+seamless = true
 
 [resource]
 render_priority = -2
 shader = ExtResource("1_uffek")
 shader_parameter/depth_color_consumption = Vector3(22, 133, 168)
 shader_parameter/crest_color = Color(0, 0.65, 0.85, 1)
-shader_parameter/crest_glow_intensity = 0.2
-shader_parameter/aerated_foam_glow = 0.3
+shader_parameter/crest_glow_intensity = 0.8
+shader_parameter/aerated_foam_glow = 0.5
 shader_parameter/roughness = 0.4
 shader_parameter/normal_strength = 1.0
-shader_parameter/map_scales = PackedVector4Array(0.011363637, 0.011363637, 1, 1, 0.01754386, 0.01754386, 0.75, 1, 0.0625, 0.0625, 0, 0.25)
+shader_parameter/foam_noise_tex = SubResource("NoiseTexture2D_foam")
+shader_parameter/map_scales = PackedVector4Array(0.00390625, 0.00390625, 1, 1, 0.014925373, 0.014925373, 0.75, 1, 0.05882353, 0.05882353, 0.15, 0.35)

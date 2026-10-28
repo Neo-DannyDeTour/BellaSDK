@@ -1,0 +1,44 @@
+[gd_scene load_steps=6 format=3 uid="uid://b4g66w1fewdol"]
+
+[ext_resource type="Script" uid="uid://cx8m6apmkej2" path="res://environment/ribbon_wall.gd" id="1_1gle2"]
+[ext_resource type="Shader" uid="uid://b0kxkqmp3qvpc" path="res://environment/liquid_ribbon.gdshader" id="2_37qkp"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_534t5"]
+shader = ExtResource("2_37qkp")
+
+[sub_resource type="QuadMesh" id="QuadMesh_1gle2"]
+resource_local_to_scene = true
+material = SubResource("ShaderMaterial_534t5")
+size = Vector2(6, 3)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_rytp7"]
+resource_local_to_scene = true
+size = Vector3(6, 3, 0.2)
+
+[node name="RibbonWall" type="Node3D" unique_id=1115391137]
+script = ExtResource("1_1gle2")
+
+[node name="WallMesh" type="MeshInstance3D" parent="." unique_id=426469064]
+layers = 1
+cast_shadow = 0
+gi_mode = 0
+mesh = SubResource("QuadMesh_1gle2")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="." unique_id=311605422]
+collision_layer = 1
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D" unique_id=2055230286]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.0132751465)
+shape = SubResource("BoxShape3D_rytp7")
+
+[node name="RoomLight" type="OmniLight3D" parent="." unique_id=1658344070]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.5)
+light_color = Color(0.6, 0.45, 0.8, 1)
+light_energy = 1.2
+shadow_enabled = true
+distance_fade_enabled = true
+distance_fade_begin = 28.0
+distance_fade_shadow = 28.0
+distance_fade_length = 7.0
+omni_range = 9.0
