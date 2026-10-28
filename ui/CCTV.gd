@@ -52,6 +52,11 @@ extends StaticBody3D
 ## Screen mesh display instance mapping the CCTV render target.
 @onready var screen_mesh: MeshInstance3D = $ScreenMesh
 
+## Visibility notifier tracking player camera frustum intersection.
+@onready var screen_notifier: VisibleOnScreenNotifier3D = (
+	get_node_or_null("ScreenMesh/VisibleOnScreenNotifier3D") as VisibleOnScreenNotifier3D
+)
+
 ## Interaction component receiving activation trigger events.
 @onready var interact_comp: Node = $InteractComponent
 
@@ -124,10 +129,19 @@ var _idle_update_dist_sq: float = 64.0
 ## Empty compositor isolating CCTV camera from compute passes.
 var _empty_cctv_compositor: Compositor = null
 
+## Tracks whether monitor display mesh is currently visible on player screen.
+var _screen_is_visible: bool = false
+
 
 ## Lifecycle teardown restoring modified environment states and feeds.
 func _exit_tree() -> void:
 	print("CCTV: Restoring environment states on exit tree.")
+	if is_instance_valid(screen_notifier):
+		if screen_notifier.screen_entered.is_connected(_on_screen_entered):
+			screen_notifier.screen_entered.disconnect(_on_screen_entered)
+		if screen_notifier.screen_exited.is_connected(_on_screen_exited):
+			screen_notifier.screen_exited.disconnect(_on_screen_exited)
+
 	if is_instance_valid(cctv_camera):
 		if is_instance_valid(_original_cctv_env):
 			cctv_camera.environment = _original_cctv_env
@@ -145,6 +159,11 @@ func _exit_tree() -> void:
 func _ready() -> void:
 	print("CCTV: Initializing security terminal instance: ", name)
 	_idle_update_dist_sq = idle_update_distance * idle_update_distance
+
+	if is_instance_valid(screen_notifier):
+		screen_notifier.screen_entered.connect(_on_screen_entered)
+		screen_notifier.screen_exited.connect(_on_screen_exited)
+		_screen_is_visible = screen_notifier.is_on_screen()
 
 	if not is_instance_valid(camera_vp):
 		camera_vp = get_node_or_null("CCTVViewport") as SubViewport
@@ -191,7 +210,7 @@ func _configure_cctv_viewport() -> void:
 
 	camera_vp.add_to_group(&"ignore_global_video_settings")
 	camera_vp.size = internal_resolution
-	camera_vp.render_target_update_mode = SubViewport.UPDATE_ONCE
+	camera_vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
 	camera_vp.positional_shadow_atlas_size = 0
 	camera_vp.msaa_3d = Viewport.MSAA_DISABLED
 	camera_vp.screen_space_aa = Viewport.SCREEN_SPACE_AA_DISABLED
@@ -206,9 +225,10 @@ func _configure_cctv_viewport() -> void:
 ## Assigns empty compositor to isolate CCTV camera from compute passes.
 func _isolate_cctv_compositor() -> void:
 	print("CCTV: Isolating compositor for: ", cctv_camera.name)
-	_empty_cctv_compositor = Compositor.new()
-	_empty_cctv_compositor.compositor_effects = []
-	cctv_camera.compositor = _empty_cctv_compositor
+	if not is_instance_valid(cctv_camera.compositor):
+		_empty_cctv_compositor = Compositor.new()
+		_empty_cctv_compositor.compositor_effects = []
+		cctv_camera.compositor = _empty_cctv_compositor
 
 
 ## Excludes portal and volumetric layers from CCTV camera cull mask.
@@ -241,7 +261,7 @@ func _process(delta: float) -> void:
 
 ## Throttles in-world monitor screen refresh when not actively controlled.
 func _process_idle_screen(delta: float) -> void:
-	if not is_instance_valid(camera_vp) or idle_fps <= 0.0:
+	if not _screen_is_visible or not is_instance_valid(camera_vp) or idle_fps <= 0.0:
 		return
 
 	var player_node: Node3D = current_player
@@ -396,7 +416,7 @@ func _stop_controlling() -> void:
 			world_env.environment.volumetric_fog_enabled = _stored_volumetric_state
 
 	if is_instance_valid(camera_vp):
-		camera_vp.render_target_update_mode = SubViewport.UPDATE_ONCE
+		camera_vp.render_target_update_mode = SubViewport.UPDATE_DISABLED
 
 	if is_instance_valid(current_player):
 		if is_instance_valid(current_player.system_menu):
@@ -481,7 +501,7 @@ func _set_camera(index: int) -> void:
 	cctv_camera.rotation.x = current_pitch
 	cctv_camera.rotation.z = 0.0
 
-	if is_instance_valid(camera_vp):
+	if is_instance_valid(camera_vp) and (is_controlling or _screen_is_visible):
 		camera_vp.render_target_update_mode = SubViewport.UPDATE_ONCE
 
 
@@ -515,3 +535,15 @@ func _pan_camera(delta: float) -> void:
 func _handle_zoom(delta: float) -> void:
 	target_fov = clampf(target_fov, min_fov, max_fov)
 	cctv_camera.fov = lerpf(cctv_camera.fov, target_fov, 10.0 * delta)
+
+
+## Updates screen visibility state when monitor enters player view frustum.
+func _on_screen_entered() -> void:
+	_screen_is_visible = true
+
+
+## Clears screen visibility state when monitor exits player view frustum.
+func _on_screen_exited() -> void:
+	_screen_is_visible = false
+	if not is_controlling and is_instance_valid(camera_vp):
+		camera_vp.render_target_update_mode = SubViewport.UPDATE_DISABLED

@@ -54,7 +54,7 @@ horizontal_scroll_mode = 0
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-current_tab = 1
+current_tab = 3
 
 [node name="Vision & Contrast" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs" unique_id=984845854]
 visible = false
@@ -174,6 +174,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 
 [node name="Visuals & Shaders" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs" unique_id=1903507557]
+visible = false
 layout_mode = 2
 metadata/_tab_index = 1
 
@@ -182,7 +183,7 @@ layout_mode = 2
 theme_override_constants/separation = 12
 script = ExtResource("4_sr7p7")
 
-[node name="FiltersGrid" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=4001001001]
+[node name="FiltersGrid" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=-293966295]
 layout_mode = 2
 theme_override_constants/h_separation = 16
 theme_override_constants/v_separation = 8
@@ -212,10 +213,10 @@ unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="HSeparator1" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=4001001002]
+[node name="HSeparator1" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=-293966294]
 layout_mode = 2
 
-[node name="EnvironmentGrid" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=4001001003]
+[node name="EnvironmentGrid" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=-293966293]
 layout_mode = 2
 theme_override_constants/h_separation = 16
 theme_override_constants/v_separation = 8
@@ -305,10 +306,10 @@ size_flags_horizontal = 3
 max_value = 20.0
 step = 0.1
 
-[node name="HSeparator2" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=4001001004]
+[node name="HSeparator2" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=-293966292]
 layout_mode = 2
 
-[node name="ModesGrid" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=4001001005]
+[node name="ModesGrid" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=-293966291]
 layout_mode = 2
 theme_override_constants/h_separation = 16
 theme_override_constants/v_separation = 8
@@ -336,10 +337,10 @@ layout_mode = 2
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="HSeparator3" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=4001001006]
+[node name="HSeparator3" type="HSeparator" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=-293966290]
 layout_mode = 2
 
-[node name="OutlinesGrid" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=4001001007]
+[node name="OutlinesGrid" type="GridContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Visuals & Shaders/VisualsSection" unique_id=-293966289]
 layout_mode = 2
 theme_override_constants/h_separation = 16
 theme_override_constants/v_separation = 8
@@ -574,7 +575,6 @@ step = 0.01
 value = 1.0
 
 [node name="Controls" type="VBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs" unique_id=72797506]
-visible = false
 layout_mode = 2
 metadata/_tab_index = 3
 
@@ -680,9 +680,31 @@ text = "Aim Assist"
 [node name="Spacer_AimAssist" type="Control" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Controls/ControlsSection" unique_id=1349499590]
 layout_mode = 2
 
-[node name="AimAssistOption" type="OptionButton" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Controls/ControlsSection" unique_id=328161055]
+[node name="AimAssistButtonsContainer" type="HBoxContainer" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Controls/ControlsSection" unique_id=1349499591]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="AimAssistOffButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Controls/ControlsSection/AimAssistButtonsContainer" unique_id=328161055]
 unique_name_in_owner = true
 layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "Off"
+
+[node name="AimAssistMidButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Controls/ControlsSection/AimAssistButtonsContainer" unique_id=328161056]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "Mid"
+
+[node name="AimAssistFullButton" type="Button" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Controls/ControlsSection/AimAssistButtonsContainer" unique_id=328161057]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+toggle_mode = true
+text = "Full"
 
 [node name="ReduceMotionLabel" type="Label" parent="MarginContainer/VBoxContainer/HBoxContainer/SettingsScroll/SettingsTabs/Controls/ControlsSection" unique_id=15875538]
 layout_mode = 2

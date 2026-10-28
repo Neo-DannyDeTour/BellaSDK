@@ -116,15 +116,21 @@ shader_parameter/droplet_density = 1.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_yev5y"]
 shader = ExtResource("2_x4jx1")
+shader_parameter/target_tint = Color(1, 0.2, 0.2, 1)
+shader_parameter/target_tint_weight = 0.0
 
 [sub_resource type="CompressedTexture2D" id="CompressedTexture2D_xlq6p"]
 load_path = "res://.godot/imported/UI_Circle.svg-cd8c28fc9c5e0f9653f2a35a84217264.ctex"
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_gdt2y"]
 shader = ExtResource("2_x4jx1")
+shader_parameter/target_tint = Color(1, 0.2, 0.2, 1)
+shader_parameter/target_tint_weight = 0.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_8dubc"]
 shader = ExtResource("2_x4jx1")
+shader_parameter/target_tint = Color(1, 0.2, 0.2, 1)
+shader_parameter/target_tint_weight = 0.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_3tx63"]
 shader = ExtResource("17_0avjw")

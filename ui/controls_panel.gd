@@ -57,8 +57,10 @@ const CHORD_COMPLETION_WINDOW: float = 0.25
 ## CheckButton for vertical axis inversion.
 @onready var invert_y_toggle: CheckButton = %InvertYToggle
 
-## OptionButton for selecting aim assist mode.
-@onready var aim_assist_option: OptionButton = %AimAssistOption
+## Buttons for selecting aim assist mode.
+@onready var aim_assist_off_button: Button = %AimAssistOffButton
+@onready var aim_assist_mid_button: Button = %AimAssistMidButton
+@onready var aim_assist_full_button: Button = %AimAssistFullButton
 
 ## Slider for adjusting aim assist strength.
 @onready var aim_assist_slider: HSlider = %AimAssistSlider
@@ -199,7 +201,17 @@ func _setup_mouse_aim_controls() -> void:
 		"Controls",
 		_apply_mouse_sensitivity
 	)
-	_connect_slider(aim_assist_slider, aim_assist_input, "aim_assist_amount", 0.0, 1.0, "Gameplay")
+	_connect_slider(
+		aim_assist_slider,
+		aim_assist_input,
+		"aim_assist_amount",
+		0.0,
+		1.0,
+		"Gameplay",
+		func(val: float) -> void:
+			if Events.has_signal(&"aim_assist_amount_changed"):
+				Events.aim_assist_amount_changed.emit(val)
+	)
 	_connect_slider(vibration_slider, vibration_input, "vibration_strength", 0.0, 2.0, "Gameplay")
 
 	if is_instance_valid(invert_y_toggle):
@@ -212,29 +224,20 @@ func _setup_mouse_aim_controls() -> void:
 				_apply_invert_y(toggled_on)
 		)
 
-	if is_instance_valid(aim_assist_option):
-		aim_assist_option.clear()
-		aim_assist_option.add_item("Off", 0)
-		aim_assist_option.add_item("Mid (Friction / Glue)", 1)
-		aim_assist_option.add_item("Full (Bullet Magnetism)", 2)
-		var mode: int = GlobalSettings.get_setting_int("Gameplay", "aim_assist_mode", 1)
-		aim_assist_option.selected = clampi(mode, 0, 2)
-		aim_assist_option.item_selected.connect(
-			func(idx: int) -> void:
-				print("Controls: Aim Assist Mode changed -> ", idx)
-				GlobalSettings.save_setting("Gameplay", "aim_assist_mode", idx)
-				GlobalSettings.save_setting("Gameplay", "aim_assist", idx > 0)
-				if is_instance_valid(aim_assist_slider):
-					aim_assist_slider.editable = (idx > 0)
-				if is_instance_valid(aim_assist_input):
-					aim_assist_input.editable = (idx > 0)
-				if Events.has_signal(&"aim_assist_mode_changed"):
-					Events.aim_assist_mode_changed.emit(idx)
-		)
-		if is_instance_valid(aim_assist_slider):
-			aim_assist_slider.editable = (mode > 0)
-		if is_instance_valid(aim_assist_input):
-			aim_assist_input.editable = (mode > 0)
+	var mode: int = GlobalSettings.get_setting_int("Gameplay", "aim_assist_mode", 1)
+	_update_aim_assist_buttons(clampi(mode, 0, 2))
+
+	if is_instance_valid(aim_assist_off_button):
+		aim_assist_off_button.pressed.connect(func() -> void: _set_aim_assist_mode(0))
+	if is_instance_valid(aim_assist_mid_button):
+		aim_assist_mid_button.pressed.connect(func() -> void: _set_aim_assist_mode(1))
+	if is_instance_valid(aim_assist_full_button):
+		aim_assist_full_button.pressed.connect(func() -> void: _set_aim_assist_mode(2))
+
+	if is_instance_valid(aim_assist_slider):
+		aim_assist_slider.editable = (mode > 0)
+	if is_instance_valid(aim_assist_input):
+		aim_assist_input.editable = (mode > 0)
 
 	_load_slider(mouse_sens_slider, mouse_sens_input, "mouse_sensitivity", 1.0, "Controls")
 	_load_slider(aim_assist_slider, aim_assist_input, "aim_assist_amount", 0.5, "Gameplay")
@@ -271,6 +274,30 @@ func _apply_invert_y(inverted: bool) -> void:
 	var controller: CameraController = _get_camera_controller()
 	if is_instance_valid(controller):
 		controller.invert_y = inverted
+
+
+## Sets aim assist mode directly from button click (0=Off, 1=Mid, 2=Full).
+func _set_aim_assist_mode(mode: int) -> void:
+	print("Controls: Player clicked Aim Assist mode -> ", mode)
+	GlobalSettings.save_setting("Gameplay", "aim_assist_mode", mode)
+	GlobalSettings.save_setting("Gameplay", "aim_assist", mode > 0)
+	_update_aim_assist_buttons(mode)
+	if is_instance_valid(aim_assist_slider):
+		aim_assist_slider.editable = (mode > 0)
+	if is_instance_valid(aim_assist_input):
+		aim_assist_input.editable = (mode > 0)
+	if Events.has_signal(&"aim_assist_mode_changed"):
+		Events.aim_assist_mode_changed.emit(mode)
+
+
+## Updates toggle button active visual states for aim assist modes.
+func _update_aim_assist_buttons(active_mode: int) -> void:
+	if is_instance_valid(aim_assist_off_button):
+		aim_assist_off_button.set_pressed_no_signal(active_mode == 0)
+	if is_instance_valid(aim_assist_mid_button):
+		aim_assist_mid_button.set_pressed_no_signal(active_mode == 1)
+	if is_instance_valid(aim_assist_full_button):
+		aim_assist_full_button.set_pressed_no_signal(active_mode == 2)
 
 
 ## Connects companion slider and LineEdit pairs with synchronized validation.
