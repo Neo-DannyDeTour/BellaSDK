@@ -1,22 +1,22 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://d1yclpejwgyx2"]
 
-[ext_resource type="Script" path="res://triggers/mannequin_attractor_trigger.gd" id="1_mat3d"]
-[ext_resource type="Script" path="res://triggers/editor_trigger_visualizer.gd" id="2_etv3d"]
+[ext_resource type="Script" uid="uid://cxtgyu7dffffq" path="res://triggers/mannequin_attractor_trigger.gd" id="1_mat3d"]
+[ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://triggers/editor_trigger_visualizer.gd" id="2_etv3d"]
 
-[sub_resource type="BoxShape3D" id="BoxShape3D_mat"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_wadxe"]
 resource_local_to_scene = true
 size = Vector3(2, 2, 2)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mat"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_q685k"]
 transparency = 1
 shading_mode = 0
-albedo_color = Color(0.85, 0.15, 0.8, 0.8)
+albedo_color = Color(0.85, 0.15, 0.8, 0.25)
 
-[sub_resource type="BoxMesh" id="BoxMesh_mat"]
-material = SubResource("StandardMaterial3D_mat")
+[sub_resource type="BoxMesh" id="BoxMesh_84brd"]
+material = SubResource("StandardMaterial3D_q685k")
 size = Vector3(2, 2, 2)
 
-[node name="MannequinAttractorTrigger3D" type="Area3D"]
+[node name="MannequinAttractorTrigger3D" type="Area3D" unique_id=1298173903]
 collision_layer = 0
 collision_mask = 2
 script = ExtResource("1_mat3d")
@@ -24,11 +24,11 @@ trigger_color = Color(0.85, 0.15, 0.8, 0.25)
 outline_color = Color(0.95, 0.3, 0.9, 0.9)
 trigger_text = "ATTRACTOR"
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
-shape = SubResource("BoxShape3D_mat")
+[node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1253079819]
+shape = SubResource("BoxShape3D_wadxe")
 
-[node name="EditorTriggerVisualizer" type="MeshInstance3D" parent="."]
-mesh = SubResource("BoxMesh_mat")
+[node name="EditorTriggerVisualizer" type="MeshInstance3D" parent="." unique_id=1254476033]
+mesh = SubResource("BoxMesh_84brd")
 script = ExtResource("2_etv3d")
 trigger_color = Color(0.85, 0.15, 0.8, 0.25)
 outline_color = Color(0.95, 0.3, 0.9, 0.9)

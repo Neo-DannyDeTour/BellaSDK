@@ -1,13 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="GutTests" failures="0" tests="4" >
-  <testsuite name="test/unit/test_raft_platform.gd" tests="4" failures="0" skipped="0" time="0.026849" >
-      <testcase name="test_raft_physical_properties" assertions="6" status="pass" classname="test/unit/test_raft_platform.gd" time="0.001185" >
+<testsuites name="GutTests" failures="0" tests="2" >
+  <testsuite name="test/unit/test_sunshine_clouds_rebuild_decoupling.gd" tests="2" failures="0" skipped="0" time="0.000267" >
+      <testcase name="test_resolution_scale_setter_redundancy_guard" assertions="2" status="pass" classname="test/unit/test_sunshine_clouds_rebuild_decoupling.gd" time="0.000189" >
       </testcase>
-      <testcase name="test_buoyancy_probes" assertions="10" status="pass" classname="test/unit/test_raft_platform.gd" time="0.000424" >
-      </testcase>
-      <testcase name="test_platform_and_barrel_geometry" assertions="8" status="pass" classname="test/unit/test_raft_platform.gd" time="0.000378" >
-      </testcase>
-      <testcase name="test_initial_underwater_overlap" assertions="3" status="pass" classname="test/unit/test_raft_platform.gd" time="0.024862" >
+      <testcase name="test_temporal_accumulation_decoupling_logic" assertions="2" status="pass" classname="test/unit/test_sunshine_clouds_rebuild_decoupling.gd" time="0.000078" >
       </testcase>
   </testsuite>
 </testsuites>

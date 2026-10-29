@@ -182,6 +182,10 @@ func _ensure_nodes() -> void:
 
 	_heightfield = get_node_or_null("RoofHeightField") as GPUParticlesCollisionHeightField3D
 	if not is_instance_valid(_heightfield):
+		_heightfield = (
+			get_node_or_null("HeightfieldCollision") as GPUParticlesCollisionHeightField3D
+		)
+	if not is_instance_valid(_heightfield):
 		_heightfield = GPUParticlesCollisionHeightField3D.new()
 		_heightfield.name = "RoofHeightField"
 		add_child(_heightfield)

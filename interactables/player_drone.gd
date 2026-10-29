@@ -70,7 +70,7 @@ func possess_drone() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 	if is_instance_valid(original_player) and original_player.has_method("start_operating_machine"):
-		original_player.call(&"start_operating_machine")
+		original_player.call(&"start_operating_machine", true)
 
 
 ## Restores player camera control, hides HUD, and unfreezes player body.
@@ -90,6 +90,11 @@ func exit_drone() -> void:
 func _input(event: InputEvent) -> void:
 	if not is_possessed:
 		return
+
+	if event is InputEventMouseButton:
+		var mouse_event: InputEventMouseButton = event as InputEventMouseButton
+		if mouse_event.is_pressed() and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 	if event is InputEventMouseMotion:
 		_handle_mouse_look(event as InputEventMouseMotion)

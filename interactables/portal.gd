@@ -2,11 +2,18 @@
 class_name Portal
 extends Area3D
 
+@export_group("Portal Settings")
 ## The destination portal this [Portal] connects to.
 @export var linked_portal: Portal
 
 ## Maximum distance from player camera to update portal viewport.
 @export var max_render_distance: float = 30.0
+
+## Maximum resolution clamp for the portal viewport buffer.
+@export var max_viewport_size: Vector2i = Vector2i(512, 512)
+
+## Far-plane culling distance in meters for the portal proxy camera.
+@export var cull_far: float = 35.0
 
 ## The active player [Camera3D] tracked for calculating perspective offsets.
 var player_camera: Camera3D
@@ -27,7 +34,7 @@ var _tracked_bodies: Dictionary[Node3D, float] = {}
 var _screen_notifier: VisibleOnScreenNotifier3D = null
 
 ## Tracks if portal mesh is currently inside player camera frustum.
-var _is_on_screen: bool = true
+var _is_on_screen: bool = false
 
 ## Cached empty [Compositor] applied to isolate from compute effects.
 var _empty_compositor: Compositor = null
@@ -37,6 +44,12 @@ var _original_camera_environment: Environment = null
 
 ## Cached squared maximum render distance avoiding runtime sqrt calls.
 var _max_render_distance_sq: float = 900.0
+
+## Cached camera transform detecting static frames.
+var _last_cam_transform: Transform3D = Transform3D()
+
+## Frame-skipping flag to throttle update frequency to 30 FPS.
+var _skip_frame: bool = false
 
 
 ## Restores original camera environment on exit tree.
@@ -73,7 +86,8 @@ func _ready() -> void:
 
 	_on_viewport_size_changed()
 	get_viewport().size_changed.connect(_on_viewport_size_changed)
-	sub_viewport.render_target_update_mode = SubViewport.UPDATE_DISABLED
+	sub_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
+	set_process(false)
 	set_physics_process(false)
 
 	if not is_instance_valid(player_camera):
@@ -135,12 +149,20 @@ func _configure_portal_camera_cull_mask() -> void:
 func _setup_screen_notifier() -> void:
 	print("Portal: Setting up screen visibility notifier for: ", name)
 	_screen_notifier = VisibleOnScreenNotifier3D.new()
+	_screen_notifier.name = "PortalVisibilityNotifier"
 	add_child(_screen_notifier)
 
 	if portal_mesh and portal_mesh.mesh:
-		_screen_notifier.aabb = portal_mesh.mesh.get_aabb()
+		var base_aabb: AABB = portal_mesh.mesh.get_aabb()
+		_screen_notifier.aabb = (
+			AABB(
+				Vector3(base_aabb.position.x, base_aabb.position.y, -0.25),
+				Vector3(base_aabb.size.x, base_aabb.size.y, 0.5)
+			)
+			. grow(0.2)
+		)
 	else:
-		_screen_notifier.aabb = AABB(Vector3(-1.0, -1.0, -0.1), Vector3(2.0, 2.0, 0.2))
+		_screen_notifier.aabb = AABB(Vector3(-1.0, -1.5, -0.25), Vector3(2.0, 3.0, 0.5)).grow(0.2)
 
 	_screen_notifier.screen_entered.connect(_on_screen_entered)
 	_screen_notifier.screen_exited.connect(_on_screen_exited)
@@ -148,7 +170,6 @@ func _setup_screen_notifier() -> void:
 
 ## Assigns linked portal's viewport texture to mesh shader.
 func _update_mesh_texture() -> void:
-	print("Portal: Updating mesh texture binding for: ", name)
 	if not is_instance_valid(linked_portal) or not is_instance_valid(portal_mesh):
 		return
 
@@ -158,9 +179,11 @@ func _update_mesh_texture() -> void:
 
 	var mat: Material = portal_mesh.get_surface_override_material(0)
 	if mat is ShaderMaterial:
-		var shader_mat: ShaderMaterial = mat if mat is ShaderMaterial else null
-		var target_texture: ViewportTexture = target_vp.get_texture()
-		shader_mat.set_shader_parameter("viewport_texture", target_texture)
+		var shader_mat: ShaderMaterial = mat as ShaderMaterial
+		if shader_mat.get_shader_parameter("viewport_texture") == null:
+			print("Portal: Updating mesh texture binding for: ", name)
+			var target_texture: ViewportTexture = target_vp.get_texture()
+			shader_mat.set_shader_parameter("viewport_texture", target_texture)
 
 
 ## Automatically connects to primary player camera if unassigned.
@@ -186,15 +209,16 @@ func _on_player_camera_registered(cam: Camera3D) -> void:
 	player_camera = cam
 
 
-## Resizes [SubViewport] texture when window resolution changes.
+## Resizes [SubViewport] texture when window resolution changes, clamped to limits.
 func _on_viewport_size_changed() -> void:
 	print("Portal: Scaling SubViewport size.")
 	var vp_size: Vector2 = get_viewport().get_visible_rect().size
 	var half_size: Vector2i = Vector2i(vp_size * 0.5)
-	sub_viewport.size = half_size.max(Vector2i(256, 256))
+	var clamped_size: Vector2i = half_size.clamp(Vector2i(128, 128), max_viewport_size)
+	sub_viewport.size = clamped_size
 
 
-## Synchronizes linked portal camera with player perspective.
+## Synchronizes linked portal camera with player perspective using throttled updates.
 func _process(_delta: float) -> void:
 	if not is_instance_valid(player_camera):
 		var active_cam: Camera3D = get_viewport().get_camera_3d()
@@ -217,19 +241,29 @@ func _process(_delta: float) -> void:
 		linked_portal._set_viewport_mode(SubViewport.UPDATE_DISABLED)
 		return
 
-	linked_portal._set_viewport_mode(SubViewport.UPDATE_WHEN_VISIBLE)
-
 	var rel_trans: Transform3D = global_transform.affine_inverse() * player_camera.global_transform
 	var half_turn: Transform3D = Transform3D(Basis.from_euler(Vector3(0.0, PI, 0.0)), Vector3.ZERO)
+	var target_trans: Transform3D = linked_portal.global_transform * half_turn * rel_trans
 
-	var target_cam: Camera3D = linked_portal.portal_camera
-	target_cam.global_transform = (linked_portal.global_transform * half_turn * rel_trans)
-	target_cam.fov = player_camera.fov
-	target_cam.near = player_camera.near
-	target_cam.far = player_camera.far
-	target_cam.keep_aspect = player_camera.keep_aspect
-	target_cam.projection = player_camera.projection
-	target_cam.h_offset = 0.0005
+	if _last_cam_transform.is_equal_approx(target_trans):
+		linked_portal._set_viewport_mode(SubViewport.UPDATE_DISABLED)
+		return
+
+	_skip_frame = not _skip_frame
+	if _skip_frame:
+		linked_portal._set_viewport_mode(SubViewport.UPDATE_ONCE)
+		_last_cam_transform = target_trans
+
+		var target_cam: Camera3D = linked_portal.portal_camera
+		target_cam.global_transform = target_trans
+		target_cam.fov = player_camera.fov
+		target_cam.near = player_camera.near
+		target_cam.far = cull_far
+		target_cam.keep_aspect = player_camera.keep_aspect
+		target_cam.projection = player_camera.projection
+		target_cam.h_offset = 0.0005
+	else:
+		linked_portal._set_viewport_mode(SubViewport.UPDATE_DISABLED)
 
 
 ## Checks crossed bodies and performs portal teleportation.
@@ -309,6 +343,7 @@ func _on_screen_entered() -> void:
 	print("Portal: Entered camera frustum: ", name)
 	_is_on_screen = true
 	_update_mesh_texture()
+	set_process(true)
 
 
 ## Disables viewport updates when portal bounds leave camera frustum.
@@ -317,10 +352,11 @@ func _on_screen_exited() -> void:
 	_is_on_screen = false
 	if is_instance_valid(linked_portal):
 		linked_portal._set_viewport_mode(SubViewport.UPDATE_DISABLED)
+	set_process(false)
 
 
 ## Helper method to safely toggle [member SubViewport.render_target_update_mode].
 func _set_viewport_mode(mode: SubViewport.UpdateMode) -> void:
-	if sub_viewport.render_target_update_mode != mode:
+	if sub_viewport.render_target_update_mode != mode or mode == SubViewport.UPDATE_ONCE:
 		print("Portal: Setting update mode: ", mode)
 		sub_viewport.render_target_update_mode = mode

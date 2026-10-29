@@ -495,8 +495,8 @@ func set_machine_lock(locked: bool) -> void:
 
 
 ## Engages machine operation mode and zeroes velocity momentum.
-func start_operating_machine() -> void:
-	print("Player: Engaging machine operation.")
+func start_operating_machine(capture_mouse: bool = false) -> void:
+	print("Player: Engaging machine operation. capture_mouse: ", capture_mouse)
 	if is_instance_valid(interaction_component):
 		interaction_component.is_operating_machine = true
 
@@ -504,7 +504,8 @@ func start_operating_machine() -> void:
 		locomotion_component.reset_momentum()
 
 	if is_instance_valid(state_machine):
-		state_machine.transition_to(STATE_MACHINE_LOCK)
+		var msg: Dictionary = {"capture_mouse": capture_mouse}
+		state_machine.transition_to(STATE_MACHINE_LOCK, msg)
 
 
 ## Disengages machine operation mode and restores default controls.

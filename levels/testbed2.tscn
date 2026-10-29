@@ -2,17 +2,17 @@
 
 [ext_resource type="PackedScene" uid="uid://2db87kewe2f2" path="res://player/player.tscn" id="1_52jod"]
 [ext_resource type="Texture2D" uid="uid://bqru753kemdt6" path="res://assets/HDR/moon_night_2k.hdr" id="2_ot62w"]
-[ext_resource type="RDShaderFile" uid="uid://dx1y5cye1m1hu" path="res://addons/SunshineClouds2/SunshineCloudsCompute.glsl" id="3_esyl3"]
-[ext_resource type="CompressedTexture3D" uid="uid://dei12lsgrjpyu" path="res://addons/SunshineClouds2/NoiseTextures/curl_noise_varied.tga" id="4_b6yp8"]
-[ext_resource type="CompressedTexture3D" uid="uid://b3uyfsp4in821" path="res://addons/SunshineClouds2/NoiseTextures/bluenoise_Dither.png" id="5_85n4y"]
-[ext_resource type="Texture2D" uid="uid://de2nsujnhdlg0" path="res://addons/SunshineClouds2/NoiseTextures/ExtraLargeScaleNoise.tres" id="6_eqgbi"]
-[ext_resource type="Texture2D" uid="uid://g02m2ewpwusq" path="res://addons/SunshineClouds2/NoiseTextures/HeightGradient.tres" id="7_03ucp"]
-[ext_resource type="NoiseTexture3D" uid="uid://6ed3lvlpbqmg" path="res://addons/SunshineClouds2/NoiseTextures/LargeScaleNoise.tres" id="8_v5sog"]
-[ext_resource type="NoiseTexture3D" uid="uid://dxyewgt7o40m0" path="res://addons/SunshineClouds2/NoiseTextures/MediumScaleNoise.tres" id="9_3n30j"]
-[ext_resource type="RDShaderFile" uid="uid://cqhejbalsrvjp" path="res://addons/SunshineClouds2/SunshineCloudsPostCompute.glsl" id="10_lfxbi"]
-[ext_resource type="RDShaderFile" uid="uid://crfpk8ta4qxsk" path="res://addons/SunshineClouds2/SunshineCloudsPreCompute.glsl" id="11_6mhy7"]
-[ext_resource type="Script" uid="uid://dnblgqynq1t7l" path="res://addons/SunshineClouds2/SunshineClouds.gd" id="12_wdof6"]
-[ext_resource type="NoiseTexture3D" uid="uid://bnck2kxeg5bkg" path="res://addons/SunshineClouds2/NoiseTextures/SmallScaleNoise.tres" id="13_4gbbb"]
+[ext_resource type="RDShaderFile" uid="uid://dx1y5cye1m1hu" path="res://addons/SunshineClouds2/SunshineCloudsCompute.glsl" id="3_ot62w"]
+[ext_resource type="CompressedTexture3D" uid="uid://dei12lsgrjpyu" path="res://addons/SunshineClouds2/NoiseTextures/curl_noise_varied.tga" id="4_esyl3"]
+[ext_resource type="CompressedTexture3D" uid="uid://b3uyfsp4in821" path="res://addons/SunshineClouds2/NoiseTextures/bluenoise_Dither.png" id="5_b6yp8"]
+[ext_resource type="Texture2D" uid="uid://de2nsujnhdlg0" path="res://addons/SunshineClouds2/NoiseTextures/ExtraLargeScaleNoise.tres" id="6_85n4y"]
+[ext_resource type="Texture2D" uid="uid://g02m2ewpwusq" path="res://addons/SunshineClouds2/NoiseTextures/HeightGradient.tres" id="7_eqgbi"]
+[ext_resource type="NoiseTexture3D" uid="uid://6ed3lvlpbqmg" path="res://addons/SunshineClouds2/NoiseTextures/LargeScaleNoise.tres" id="8_03ucp"]
+[ext_resource type="NoiseTexture3D" uid="uid://dxyewgt7o40m0" path="res://addons/SunshineClouds2/NoiseTextures/MediumScaleNoise.tres" id="9_v5sog"]
+[ext_resource type="RDShaderFile" uid="uid://cqhejbalsrvjp" path="res://addons/SunshineClouds2/SunshineCloudsPostCompute.glsl" id="10_3n30j"]
+[ext_resource type="RDShaderFile" uid="uid://crfpk8ta4qxsk" path="res://addons/SunshineClouds2/SunshineCloudsPreCompute.glsl" id="11_lfxbi"]
+[ext_resource type="Script" uid="uid://dnblgqynq1t7l" path="res://addons/SunshineClouds2/SunshineClouds.gd" id="12_6mhy7"]
+[ext_resource type="NoiseTexture3D" uid="uid://bnck2kxeg5bkg" path="res://addons/SunshineClouds2/NoiseTextures/SmallScaleNoise.tres" id="13_wdof6"]
 [ext_resource type="PackedScene" uid="uid://cm0v3ely026rf" path="res://triggers/music_trigger.tscn" id="14_52jod"]
 [ext_resource type="PackedScene" uid="uid://bwkd1g0rbfurr" path="res://interactables/object_interact.tscn" id="14_ym1oq"]
 [ext_resource type="PackedScene" uid="uid://d1cr6vua8ilv3" path="res://triggers/teleport.tscn" id="15_bfeqt"]
@@ -155,7 +155,7 @@
 [ext_resource type="PackedScene" uid="uid://c2t21qbkevaof" path="res://interactables/dev_comment/DeveloperCommentary.tscn" id="155_6ehpd"]
 [ext_resource type="AudioStream" uid="uid://mxalx6u32lel" path="res://assets/sounds/most_fav_comment.mp3" id="156_lr20n"]
 [ext_resource type="PackedScene" uid="uid://f4suk10ex6ha" path="res://interactables/physics_magnet.tscn" id="157_5ped0"]
-[ext_resource type="PackedScene" uid="uid://cpcqqr5g0oqpp" path="res://vfx/ColorGradingVolume.tscn" id="158_1hdc2"]
+[ext_resource type="PackedScene" uid="uid://cpcqqr5g0oqpp" path="res://vfx/color_grading_volume.tscn" id="158_1hdc2"]
 [ext_resource type="PackedScene" uid="uid://c4g8uvpoc7rpw" path="res://interactables/pickable_pushwheel_stick.tscn" id="159_tg8tl"]
 [ext_resource type="PackedScene" uid="uid://cdvgjdonukhng" path="res://interactables/keycard_lock.tscn" id="160_yx0d0"]
 [ext_resource type="PackedScene" uid="uid://bt5hmrx4nu85y" path="res://interactables/keycard_pickup.tscn" id="161_2nkj6"]
@@ -256,8 +256,10 @@
 [ext_resource type="PackedScene" path="res://interactables/mannequin_ragdoll.tscn" id="257_vohli"]
 [ext_resource type="PackedScene" uid="uid://b4g66w1fewdol" path="res://environment/ribbon_wall.tscn" id="258_52jod"]
 [ext_resource type="PackedScene" uid="uid://ck5j4wdfr0yqt" path="res://dynamic_ocean/dynamic_ocean.tscn" id="258_i7r5n"]
-[ext_resource type="PackedScene" path="res://triggers/mannequin_attractor_trigger.tscn" id="258_qcgmd"]
-[ext_resource type="Script" uid="uid://djusduuxf0voj" path="res://addons/SunshineClouds2/SunshineCloudsDriver.gd" id="259_y3fya"]
+[ext_resource type="PackedScene" uid="uid://d1yclpejwgyx2" path="res://triggers/mannequin_attractor_trigger.tscn" id="258_qcgmd"]
+[ext_resource type="PackedScene" uid="uid://c8w4k2yap1m5v" path="res://vfx/water_leak.tscn" id="259_52jod"]
+[ext_resource type="Script" uid="uid://djusduuxf0voj" path="res://addons/SunshineClouds2/SunshineCloudsDriver.gd" id="260_4gbbb"]
+[ext_resource type="PackedScene" path="res://vfx/wind_wall.tscn" id="261_esyl3"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_amd4b"]
 panorama = ExtResource("2_ot62w")
@@ -275,7 +277,7 @@ volumetric_fog_gi_inject = 0.25
 volumetric_fog_length = 256.0
 volumetric_fog_sky_affect = 0.0
 
-[sub_resource type="CompositorEffect" id="CompositorEffect_ca2py"]
+[sub_resource type="CompositorEffect" id="CompositorEffect_ym1oq"]
 resource_local_to_scene = false
 resource_name = ""
 enabled = true
@@ -284,25 +286,22 @@ access_resolved_color = true
 access_resolved_depth = true
 needs_motion_vectors = true
 needs_normal_roughness = false
-script = ExtResource("12_wdof6")
-clouds_coverage = 0.745
-atmospheric_density = 0.791
-accumulation_decay = 0.8
-dither_noise = ExtResource("5_85n4y")
-height_gradient = ExtResource("7_03ucp")
-extra_large_noise_patterns = ExtResource("6_eqgbi")
-large_scale_noise = ExtResource("8_v5sog")
-medium_scale_noise = ExtResource("9_3n30j")
-small_scale_noise = ExtResource("13_4gbbb")
-curl_noise = ExtResource("4_b6yp8")
-pre_pass_compute_shader = ExtResource("11_6mhy7")
-compute_shader = ExtResource("3_esyl3")
-post_pass_compute_shader = ExtResource("10_lfxbi")
+script = ExtResource("12_6mhy7")
+dither_noise = ExtResource("5_b6yp8")
+height_gradient = ExtResource("7_eqgbi")
+extra_large_noise_patterns = ExtResource("6_85n4y")
+large_scale_noise = ExtResource("8_03ucp")
+medium_scale_noise = ExtResource("9_v5sog")
+small_scale_noise = ExtResource("13_wdof6")
+curl_noise = ExtResource("4_esyl3")
+pre_pass_compute_shader = ExtResource("11_lfxbi")
+compute_shader = ExtResource("3_ot62w")
+post_pass_compute_shader = ExtResource("10_3n30j")
 wind_direction = Vector3(1, 0, 1)
-directional_lights_data = Array[Vector4]([Vector4(-0.2538419, 0.9585969, 0.12905987, 12), Vector4(1, 1, 1, 1)])
+directional_lights_data = Array[Vector4]([Vector4(0.408, 0.816, 0.408, 16), Vector4(1, 1, 1, 1)])
 
 [sub_resource type="Compositor" id="Compositor_mv12o"]
-compositor_effects = Array[CompositorEffect]([SubResource("CompositorEffect_ca2py")])
+compositor_effects = Array[CompositorEffect]([SubResource("CompositorEffect_ym1oq")])
 
 [sub_resource type="GDScript" id="GDScript_4mrxx"]
 script/source = "extends StaticBody3D
@@ -5654,15 +5653,6 @@ trigger_size = Vector3(2, 3, 6.335)
 [node name="ragdoll_destination" type="Marker3D" parent="." unique_id=245457777]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.983325, 1.1920929e-07, -19.636383)
 
-[node name="SunshineCloudsDriverGD" type="Node3D" parent="." unique_id=805282993 node_paths=PackedStringArray("tracked_directional_lights")]
-script = ExtResource("259_y3fya")
-update_continuously = true
-clouds_resource = SubResource("CompositorEffect_ca2py")
-ambience_sample_environment = SubResource("Environment_amd4b")
-tracked_directional_lights = [NodePath("../WorldEnvironment/DirectionalLight3D")]
-tracked_directional_light_shadow_steps = Array[int]([12])
-metadata/_custom_type_script = "uid://djusduuxf0voj"
-
 [node name="MusicTrigger" parent="." unique_id=2127577534 instance=ExtResource("14_52jod")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -31.285717, 31.71167, 21.367403)
 audio_stream = ExtResource("15_ot62w")
@@ -5694,3 +5684,28 @@ world_env = NodePath("../WorldEnvironment")
 
 [node name="RibbonWall" parent="." unique_id=1115391137 instance=ExtResource("258_52jod")]
 transform = Transform3D(0.086927496, 0, -0.9962146, 0, 1, 0, 0.9962146, 0, 0.086927496, 21.896143, 1.5, 25.78656)
+
+[node name="WaterLeak" parent="." unique_id=1281721884 instance=ExtResource("259_52jod")]
+transform = Transform3D(-0.7808925, 0, 0.62466544, 0, 1, 0, -0.62466544, 0, -0.7808925, 255.60373, 49.99214, -217.45555)
+leak_speed = 1.1
+
+[node name="WaterLeak2" parent="." unique_id=1401065434 instance=ExtResource("259_52jod")]
+transform = Transform3D(-0.7808925, 0, 0.62466544, 0, 1, 0, -0.62466544, 0, -0.7808925, 256.50394, 49.573578, -216.8847)
+leak_speed = 0.5
+leak_amount = 16
+spurt_irregularity = 0.1
+screen_vfx_intensity = 0.55
+
+[node name="WindWall" parent="." unique_id=1789612619 instance=ExtResource("261_esyl3")]
+transform = Transform3D(-3.535534, 0, 3.535534, 0, 5, 0, -3.535534, 0, -3.535534, 259.6767, 48.86558, -224.8995)
+lifetime = 5.0
+travel_distance = 0.0
+fade_out_ratio = 0.0
+loop = true
+
+[node name="SunshineCloudsDriverGD" type="Node3D" parent="." unique_id=1375835233]
+script = ExtResource("260_4gbbb")
+update_continuously = true
+clouds_resource = SubResource("CompositorEffect_ym1oq")
+ambience_sample_environment = SubResource("Environment_amd4b")
+metadata/_custom_type_script = "uid://djusduuxf0voj"

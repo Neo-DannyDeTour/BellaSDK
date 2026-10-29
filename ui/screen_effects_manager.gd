@@ -11,6 +11,12 @@ const PARAM_EDGE_CONDENSATION: StringName = &"edge_condensation"
 ## Pre-allocated [StringName] uniform for speed lines vignette master alpha.
 const PARAM_SPEED_LINES_ALPHA: StringName = &"effect_alpha"
 
+## Pre-allocated [StringName] uniform for screen rain stochastic timing toggle.
+const PARAM_UNEVEN_TIMING: StringName = &"uneven_timing"
+
+## Pre-allocated [StringName] uniform for screen rain timing randomness variance.
+const PARAM_TIMING_RANDOMNESS: StringName = &"timing_randomness"
+
 ## Animates smooth strength transitions when toggling wolf vision.
 var wolf_vision_tween: Tween
 
@@ -235,6 +241,22 @@ func set_water_vfx_state(mode: int, drops: float, wash: float, clear_prog: float
 		mat.set_shader_parameter(&"wash_intensity", wash)
 		mat.set_shader_parameter(&"clear_progress", clear_prog)
 		water_vfx_overlay.queue_redraw()
+
+
+## Activates or halts the full-screen rain droplet effect directly on the UI overlay.
+func set_rain_screen_active(active: bool, intensity: float = 0.8) -> void:
+	var target_intensity: float = intensity if active else 0.0
+	_on_rain_vfx_toggled(target_intensity)
+
+
+## Configures whether screen raindrops use uneven stochastic hit timing and adjusts randomness.
+func set_rain_uneven_timing(enabled: bool, randomness: float = 0.75) -> void:
+	if not is_instance_valid(water_vfx_overlay):
+		return
+	if water_vfx_overlay.material is ShaderMaterial:
+		var mat: ShaderMaterial = water_vfx_overlay.material as ShaderMaterial
+		mat.set_shader_parameter(PARAM_UNEVEN_TIMING, enabled)
+		mat.set_shader_parameter(PARAM_TIMING_RANDOMNESS, clampf(randomness, 0.0, 1.0))
 
 
 ## Snaps overlay to solid color immediately with initial blur level.

@@ -1,0 +1,161 @@
+[gd_scene format=3 uid="uid://cly4l8enmvfe2"]
+
+[ext_resource type="PackedScene" uid="uid://2db87kewe2f2" path="res://player/player.tscn" id="1_m7j6i"]
+[ext_resource type="RDShaderFile" uid="uid://dx1y5cye1m1hu" path="res://addons/SunshineClouds2/SunshineCloudsCompute.glsl" id="2_7xuc1"]
+[ext_resource type="PackedScene" uid="uid://crfas2bkomdv6" path="res://interactables/player_drone.tscn" id="2_mhrra"]
+[ext_resource type="PackedScene" uid="uid://bkxrbjc7txin4" path="res://ui/CCTV.tscn" id="3_c8ysq"]
+[ext_resource type="CompressedTexture3D" uid="uid://dei12lsgrjpyu" path="res://addons/SunshineClouds2/NoiseTextures/curl_noise_varied.tga" id="3_kmgok"]
+[ext_resource type="PackedScene" uid="uid://ck5j4wdfr0yqt" path="res://dynamic_ocean/dynamic_ocean.tscn" id="4_c8ysq"]
+[ext_resource type="CompressedTexture3D" uid="uid://b3uyfsp4in821" path="res://addons/SunshineClouds2/NoiseTextures/bluenoise_Dither.png" id="4_m87fd"]
+[ext_resource type="PackedScene" uid="uid://c4jdpcnpsoerv" path="res://interactables/mirror.tscn" id="5_jdeir"]
+[ext_resource type="Texture2D" uid="uid://de2nsujnhdlg0" path="res://addons/SunshineClouds2/NoiseTextures/ExtraLargeScaleNoise.tres" id="5_mq654"]
+[ext_resource type="Texture2D" uid="uid://g02m2ewpwusq" path="res://addons/SunshineClouds2/NoiseTextures/HeightGradient.tres" id="6_2mdf1"]
+[ext_resource type="PackedScene" uid="uid://c8rainctrl001" path="res://environment/rain_controller.tscn" id="6_260ph"]
+[ext_resource type="NoiseTexture3D" uid="uid://6ed3lvlpbqmg" path="res://addons/SunshineClouds2/NoiseTextures/LargeScaleNoise.tres" id="7_ppqc1"]
+[ext_resource type="PackedScene" uid="uid://viaarbcifqjx" path="res://interactables/portal.tscn" id="7_ttaw3"]
+[ext_resource type="NoiseTexture3D" uid="uid://dxyewgt7o40m0" path="res://addons/SunshineClouds2/NoiseTextures/MediumScaleNoise.tres" id="8_bd1au"]
+[ext_resource type="PackedScene" uid="uid://c8w4t3rb0dy4x" path="res://environment/argon_water_body/argon_water_body.tscn" id="8_cef8n"]
+[ext_resource type="PackedScene" uid="uid://ca0wevg1lb4rx" path="res://environment/water_body.tscn" id="9_7unx1"]
+[ext_resource type="RDShaderFile" uid="uid://cqhejbalsrvjp" path="res://addons/SunshineClouds2/SunshineCloudsPostCompute.glsl" id="9_outsv"]
+[ext_resource type="RDShaderFile" uid="uid://crfpk8ta4qxsk" path="res://addons/SunshineClouds2/SunshineCloudsPreCompute.glsl" id="10_23aja"]
+[ext_resource type="PackedScene" uid="uid://c8x4m2rav5n1p" path="res://environment/argon_citadel_core/argon_citadel_core.tscn" id="10_bkru6"]
+[ext_resource type="Script" uid="uid://dnblgqynq1t7l" path="res://addons/SunshineClouds2/SunshineClouds.gd" id="11_ul614"]
+[ext_resource type="PackedScene" uid="uid://b2q17sc6ru25s" path="res://environment/citadel_core.tscn" id="11_xibtw"]
+[ext_resource type="NoiseTexture3D" uid="uid://bnck2kxeg5bkg" path="res://addons/SunshineClouds2/NoiseTextures/SmallScaleNoise.tres" id="12_6bvia"]
+[ext_resource type="PackedScene" uid="uid://3r7uhvuqww4i" path="res://environment/aurora_ribbon.tscn" id="12_cfna0"]
+[ext_resource type="PackedScene" uid="uid://b4g66w1fewdol" path="res://environment/ribbon_wall.tscn" id="13_gokd1"]
+[ext_resource type="PackedScene" uid="uid://ypittibtpcmp" path="res://vfx/effects/control_explosion.tscn" id="14_gokd1"]
+[ext_resource type="PackedScene" uid="uid://b6saw37qcvs0i" path="res://vfx/screenshake_effect.tscn" id="15_ccmmf"]
+[ext_resource type="PackedScene" uid="uid://cpcqqr5g0oqpp" path="res://vfx/color_grading_volume.tscn" id="16_ni0pb"]
+[ext_resource type="Script" uid="uid://djusduuxf0voj" path="res://addons/SunshineClouds2/SunshineCloudsDriver.gd" id="28_mi3xj"]
+[ext_resource type="PackedScene" uid="uid://c8smkwpn00003" path="res://weapons/smoke_grenade/smoke_grenade_weapon.tscn" id="29_kmgok"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_0ep84"]
+
+[sub_resource type="Sky" id="Sky_m7j6i"]
+sky_material = SubResource("ProceduralSkyMaterial_0ep84")
+
+[sub_resource type="Environment" id="Environment_534t5"]
+background_mode = 2
+sky = SubResource("Sky_m7j6i")
+
+[sub_resource type="CompositorEffect" id="CompositorEffect_0btyd"]
+resource_local_to_scene = false
+resource_name = ""
+enabled = true
+effect_callback_type = 3
+access_resolved_color = true
+access_resolved_depth = true
+needs_motion_vectors = true
+needs_normal_roughness = false
+script = ExtResource("11_ul614")
+dither_noise = ExtResource("4_m87fd")
+height_gradient = ExtResource("6_2mdf1")
+extra_large_noise_patterns = ExtResource("5_mq654")
+large_scale_noise = ExtResource("7_ppqc1")
+medium_scale_noise = ExtResource("8_bd1au")
+small_scale_noise = ExtResource("12_6bvia")
+curl_noise = ExtResource("3_kmgok")
+pre_pass_compute_shader = ExtResource("10_23aja")
+compute_shader = ExtResource("2_7xuc1")
+post_pass_compute_shader = ExtResource("9_outsv")
+wind_direction = Vector3(1, 0, 1)
+directional_lights_data = Array[Vector4]([Vector4(0.408, 0.816, 0.408, 16), Vector4(1, 1, 1, 1)])
+
+[sub_resource type="Compositor" id="Compositor_38p3k"]
+compositor_effects = Array[CompositorEffect]([SubResource("CompositorEffect_0btyd")])
+
+[sub_resource type="BoxMesh" id="BoxMesh_7xuc1"]
+resource_local_to_scene = true
+subdivide_width = 20
+subdivide_depth = 20
+
+[node name="FrameSpikeLevel" type="Node3D" unique_id=1769783216]
+
+[node name="CSGBox3D" type="CSGBox3D" parent="." unique_id=1751286677]
+use_collision = true
+size = Vector3(50, 1, 50)
+
+[node name="Player" parent="." unique_id=1502339238 instance=ExtResource("1_m7j6i")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.3516054, 0, 4.22371)
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="." unique_id=371219901]
+environment = SubResource("Environment_534t5")
+compositor = SubResource("Compositor_38p3k")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="WorldEnvironment" unique_id=195028257]
+transform = Transform3D(1, 0, 0, 0, 0.73211795, 0.6811779, 0, -0.6811779, 0.73211795, 0, 17.40293, 0)
+
+[node name="UsualSuspects" type="Node3D" parent="." unique_id=2008598148]
+
+[node name="PlayerDrone" parent="UsualSuspects" unique_id=654692039 instance=ExtResource("2_mhrra")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+
+[node name="TVScreen" parent="UsualSuspects" unique_id=2083472752 node_paths=PackedStringArray("camera_locations") instance=ExtResource("3_c8ysq")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, -1.6927032)
+camera_locations = [NodePath("../Marker3D")]
+
+[node name="Marker3D" type="Marker3D" parent="UsualSuspects" unique_id=541861350]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 10.413793, 0)
+
+[node name="Ocean" parent="UsualSuspects" unique_id=2118242669 instance=ExtResource("4_c8ysq")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 12.056307, -22.56474, 9.934282)
+
+[node name="Mirror" parent="UsualSuspects" unique_id=2122574524 instance=ExtResource("5_jdeir")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.5108204, 3.5905492, 0.69058037)
+
+[node name="RainController" parent="UsualSuspects" unique_id=1321792013 instance=ExtResource("6_260ph")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2.4479966, 10.499999, 1.3453321)
+
+[node name="Portal" parent="UsualSuspects" unique_id=1893124656 node_paths=PackedStringArray("linked_portal") instance=ExtResource("7_ttaw3")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -3.903438, 2.153418, 8.113521)
+linked_portal = NodePath("../Portal2")
+
+[node name="Portal2" parent="UsualSuspects" unique_id=891444350 node_paths=PackedStringArray("linked_portal") instance=ExtResource("7_ttaw3")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.72083735, 2.153418, 8.47273)
+linked_portal = NodePath("../Portal")
+
+[node name="ArgonWaterBody" parent="UsualSuspects" unique_id=262899944 instance=ExtResource("8_cef8n")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -22.343773, 2.5, 5.7269974)
+
+[node name="WaterBody" parent="UsualSuspects" unique_id=1898604217 instance=ExtResource("9_7unx1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -18.318748, 3.1248255, 21.829134)
+custom_aabb = AABB(-5.25, -1.64, -5.25, 10.5, 3.28, 10.5)
+mesh = SubResource("BoxMesh_7xuc1")
+water_size = Vector3(10, 1, 10)
+
+[node name="Suspects_2" type="Node3D" parent="." unique_id=18300146]
+
+[node name="CitadelCore" parent="Suspects_2" unique_id=1225664957 instance=ExtResource("10_bkru6")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.58560944, 0.5, -20.18222)
+
+[node name="CitadelCore2" parent="Suspects_2" unique_id=1957982287 instance=ExtResource("11_xibtw")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10.295367, 8.5, -20.550867)
+
+[node name="AuroraBorealis" parent="Suspects_2" unique_id=487410922 instance=ExtResource("12_cfna0")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 22.741375, 35.439545, -46.68766)
+instance_shader_parameters/intensity = 2.0
+instance_shader_parameters/phase_offset = 0.0
+instance_shader_parameters/tint_color = Color(0.1, 0.9, 0.4, 1)
+
+[node name="RibbonWall" parent="Suspects_2" unique_id=1115391137 instance=ExtResource("13_gokd1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 11.415733, 9.500004, 20.639116)
+
+[node name="ControlExplosion" parent="Suspects_2" unique_id=2091759308 instance=ExtResource("14_gokd1")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.528145, 0.5, -10.985088)
+
+[node name="screenshake_effect" parent="Suspects_2" unique_id=1581639647 instance=ExtResource("15_ccmmf")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 16.170738, 1.5, 3.3435507)
+
+[node name="ColorGradingVolume" parent="Suspects_2" unique_id=726107414 instance=ExtResource("16_ni0pb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8.889747, 2.499998, 5.7619333)
+
+[node name="SunshineCloudsDriverGD" type="Node3D" parent="." unique_id=63744070]
+script = ExtResource("28_mi3xj")
+update_continuously = true
+clouds_resource = SubResource("CompositorEffect_0btyd")
+ambience_sample_environment = SubResource("Environment_534t5")
+metadata/_custom_type_script = "uid://djusduuxf0voj"
+
+[node name="SmokeGrenadeWeapon" parent="." unique_id=1412387156 instance=ExtResource("29_kmgok")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -2.5854897, 0.78, 1.2578573)

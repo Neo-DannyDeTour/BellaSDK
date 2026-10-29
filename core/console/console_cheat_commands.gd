@@ -163,6 +163,15 @@ func register_commands(registry: ConsoleCommandRegistry) -> void:
 			true
 		)
 	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"rain_vfx",
+			"Toggles screen rain VFX intensity and uneven timing mode.",
+			_cmd_rain_vfx,
+			Callable(),
+			true
+		)
+	)
 	_register_easter_eggs(registry)
 
 
@@ -471,6 +480,43 @@ func _cmd_sv_gravity(args: PackedStringArray) -> void:
 		)
 	Events.gravity_override_requested.emit(grav)
 	context.write("Global physics gravity updated to: " + str(grav), "green")
+
+
+## Toggles or sets screen rain VFX intensity and uneven timing mode.
+func _cmd_rain_vfx(args: PackedStringArray) -> void:
+	print("ConsoleCheatCommands: _cmd_rain_vfx called with args: ", args)
+	var intensity: float = 0.8
+	var uneven: bool = true
+
+	if not args.is_empty():
+		var first_arg: String = args[0].to_lower()
+		if first_arg in ["0", "off", "false", "stop"]:
+			intensity = 0.0
+		elif first_arg in ["1", "on", "true"]:
+			intensity = 0.8
+		else:
+			intensity = clampf(first_arg.to_float(), 0.0, 2.0)
+
+	if args.size() > 1:
+		var second_arg: String = args[1].to_lower()
+		uneven = second_arg not in ["0", "false", "off", "even"]
+
+	var tree: SceneTree = context.get_tree()
+	if not is_instance_valid(tree):
+		return
+	var effects_mgr: ScreenEffectsManager = (
+		tree.root.find_child("ScreenEffectsManager", true, false) as ScreenEffectsManager
+	)
+	if is_instance_valid(effects_mgr):
+		effects_mgr.set_rain_uneven_timing(uneven)
+		effects_mgr.set_rain_screen_active(intensity > 0.001, intensity)
+	else:
+		Events.rain_vfx_toggled.emit(intensity)
+
+	var status: String = (
+		"Rain VFX set to intensity %.2f (uneven_timing: %s)" % [intensity, str(uneven)]
+	)
+	context.write(status, "green" if intensity > 0.0 else "yellow")
 
 
 ## Registers easter egg and cheat console commands.
