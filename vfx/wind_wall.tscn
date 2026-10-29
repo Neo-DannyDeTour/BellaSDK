@@ -1,0 +1,47 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://vfx/wind_wall.gd" id="1_script"]
+[ext_resource type="Shader" path="res://shaders/wind_wall.gdshader" id="2_shader"]
+[ext_resource type="Texture2D" path="res://vfx/wind_wall_noise.tres" id="3_noise"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_wind"]
+render_priority = 0
+shader = ExtResource("2_shader")
+shader_parameter/noise_tex = ExtResource("3_noise")
+shader_parameter/curvature = Vector2(0.35, -0.25)
+shader_parameter/edge_feather = Vector2(0.18, 0.22)
+
+[sub_resource type="PlaneMesh" id="PlaneMesh_wind"]
+material = SubResource("ShaderMaterial_wind")
+size = Vector2(3, 1.66)
+subdivide_width = 16
+subdivide_depth = 16
+orientation = 2
+center_offset = Vector3(0, 0.83, 0)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_hitbox"]
+size = Vector3(3, 1.66, 0.6)
+
+[node name="WindWall" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="MainLayer" type="MeshInstance3D" parent="."]
+mesh = SubResource("PlaneMesh_wind")
+
+[node name="BackLayer" type="MeshInstance3D" parent="."]
+mesh = SubResource("PlaneMesh_wind")
+
+[node name="ThickLayer" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1.2, 0, 0, 0, 0.8, 0, 0, 0)
+mesh = SubResource("PlaneMesh_wind")
+
+[node name="Hitbox" type="Area3D" parent="."]
+collision_layer = 4
+collision_mask = 24
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hitbox"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.83, 0)
+shape = SubResource("BoxShape3D_hitbox")
+
+[node name="ScreenNotifier" type="VisibleOnScreenNotifier3D" parent="."]
+aabb = AABB(-1.6, 0, -0.5, 3.2, 1.8, 1)

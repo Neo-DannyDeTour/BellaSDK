@@ -1,0 +1,139 @@
+[gd_scene load_steps=13 format=3 uid="uid://c8w4k2x9p1m5v"]
+
+[ext_resource type="Script" path="res://vfx/water_leak.gd" id="1_script"]
+[ext_resource type="Shader" path="res://vfx/water_particle.gdshader" id="2_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_water"]
+render_priority = 0
+shader = ExtResource("2_shader")
+shader_parameter/proximity_fade_distance = 0.25
+shader_parameter/softness = 2.0
+
+[sub_resource type="Gradient" id="Gradient_alpha_fade"]
+offsets = PackedFloat32Array(0, 0.12, 0.78, 1)
+colors = PackedColorArray(1, 1, 1, 0, 1, 1, 1, 1, 0.9, 0.96, 1, 0.75, 0.85, 0.95, 1, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_alpha"]
+gradient = SubResource("Gradient_alpha_fade")
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_jet"]
+resource_local_to_scene = true
+particle_flag_align_y = true
+direction = Vector3(0, 0, -1)
+spread = 3.5
+initial_velocity_min = 5.52
+initial_velocity_max = 6.48
+gravity = Vector3(0, -9.8, 0)
+damping_min = 0.2
+damping_max = 0.6
+scale_min = 0.8
+scale_max = 1.35
+color_ramp = SubResource("GradientTexture1D_alpha")
+
+[sub_resource type="QuadMesh" id="QuadMesh_jet"]
+material = SubResource("ShaderMaterial_water")
+size = Vector2(0.045, 0.34)
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_mist"]
+resource_local_to_scene = true
+emission_shape = 1
+emission_sphere_radius = 0.04
+direction = Vector3(0, 0, -1)
+spread = 22.0
+initial_velocity_min = 3.3
+initial_velocity_max = 5.1
+gravity = Vector3(0, -3.2, 0)
+damping_min = 3.5
+damping_max = 6.5
+scale_min = 0.7
+scale_max = 1.6
+color = Color(0.9, 0.96, 1, 0.45)
+color_ramp = SubResource("GradientTexture1D_alpha")
+turbulence_enabled = true
+turbulence_noise_strength = 0.45
+turbulence_noise_scale = 2.5
+turbulence_influence_min = 0.08
+turbulence_influence_max = 0.22
+
+[sub_resource type="QuadMesh" id="QuadMesh_mist"]
+material = SubResource("ShaderMaterial_water")
+size = Vector2(0.18, 0.18)
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_splash"]
+particle_flag_align_y = true
+emission_shape = 6
+emission_ring_axis = Vector3(0, 1, 0)
+emission_ring_height = 0.02
+emission_ring_radius = 0.14
+emission_ring_inner_radius = 0.02
+direction = Vector3(0, 1, 0)
+spread = 68.0
+initial_velocity_min = 1.4
+initial_velocity_max = 3.2
+gravity = Vector3(0, -9.8, 0)
+damping_min = 0.5
+damping_max = 1.5
+scale_min = 0.6
+scale_max = 1.25
+color_ramp = SubResource("GradientTexture1D_alpha")
+
+[sub_resource type="QuadMesh" id="QuadMesh_splash"]
+material = SubResource("ShaderMaterial_water")
+size = Vector2(0.04, 0.14)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_splash_zone"]
+size = Vector3(2, 4, 4)
+
+[node name="WaterLeak" type="Node3D"]
+notify_transform = true
+script = ExtResource("1_script")
+
+[node name="JetStream" type="GPUParticles3D" parent="."]
+layers = 1
+instance_shader_parameters/is_billboard = false
+instance_shader_parameters/leak_color = Color(0.4, 0.7, 0.9, 0.6)
+amount = 128
+lifetime = 1.0
+preprocess = 0.0
+visibility_aabb = AABB(-2.5, -6, -8, 5, 7, 9)
+process_material = SubResource("ParticleProcessMaterial_jet")
+draw_pass_1 = SubResource("QuadMesh_jet")
+
+[node name="MistSpray" type="GPUParticles3D" parent="."]
+layers = 1
+instance_shader_parameters/is_billboard = true
+instance_shader_parameters/leak_color = Color(0.4, 0.7, 0.9, 0.6)
+amount = 64
+lifetime = 0.85
+preprocess = 0.0
+visibility_aabb = AABB(-2.5, -6, -8, 5, 7, 9)
+process_material = SubResource("ParticleProcessMaterial_mist")
+draw_pass_1 = SubResource("QuadMesh_mist")
+
+[node name="ImpactSplash" type="GPUParticles3D" parent="."]
+layers = 1
+instance_shader_parameters/is_billboard = false
+instance_shader_parameters/leak_color = Color(0.4, 0.7, 0.9, 0.6)
+amount = 64
+lifetime = 0.45
+preprocess = 0.0
+visibility_aabb = AABB(-1.5, -0.5, -1.5, 3, 2.5, 3)
+process_material = SubResource("ParticleProcessMaterial_splash")
+draw_pass_1 = SubResource("QuadMesh_splash")
+
+[node name="LeakAudio" type="AudioStreamPlayer3D" parent="."]
+unit_size = 3.0
+max_db = 0.0
+max_distance = 18.0
+panning_strength = 1.0
+attenuation_filter_cutoff_hz = 5000.0
+
+[node name="ScreenNotifier" type="VisibleOnScreenNotifier3D" parent="."]
+aabb = AABB(-1, -4, -4, 2, 5, 5)
+
+[node name="SplashZone" type="Area3D" parent="."]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="SplashZone"]
+shape = SubResource("BoxShape3D_splash_zone")

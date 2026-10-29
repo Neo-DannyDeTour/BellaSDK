@@ -7,6 +7,8 @@ uniform int effect_mode : hint_range(0, 2) = 0;
 uniform float drop_intensity : hint_range(0.0, 1.0) = 0.0;
 uniform float wash_intensity : hint_range(0.0, 1.0) = 0.0;
 uniform float clear_progress : hint_range(0.0, 1.5) = 0.0;
+uniform bool uneven_timing = true;
+uniform float timing_randomness : hint_range(0.0, 1.0) = 0.75;
 
 const vec3 light_dir = vec3(0.5, 0.5, 1.0);
 
@@ -79,7 +81,29 @@ void fragment() {
 
                 float spawn_threshold = hash(cell_id + 5.0);
                 float final_speed = max(0.5, mix(1.0, 4.5, spawn_threshold));
-                float life = sin(TIME * final_speed + r1 * 6.28);
+                float life = 0.0;
+
+                if (uneven_timing) {
+                    float base_period = mix(1.8, 4.8, hash(cell_id + 13.7 * i));
+                    float rand_scale = 0.4 + 1.2 * hash(cell_id + 19.1 * i);
+                    float period = mix(base_period, base_period * rand_scale, timing_randomness);
+                    float phase = hash(cell_id + 31.4 * i) * 20.0;
+                    float cycle_time = TIME + phase;
+                    float cycle_idx = floor(cycle_time / period);
+                    float local_t = mod(cycle_time, period);
+
+                    float strike_time = hash(cell_id + cycle_idx * 7.91) * max(0.1, period - 0.9);
+                    float drop_dur = mix(0.6, 1.8, hash(cell_id + cycle_idx * 3.17));
+                    float elapsed = local_t - strike_time;
+
+                    if (elapsed >= 0.0 && elapsed < drop_dur) {
+                        float strike_attack = clamp(elapsed / 0.06, 0.0, 1.0);
+                        float decay = pow(clamp(1.0 - (elapsed / drop_dur), 0.0, 1.0), 1.6);
+                        life = strike_attack * decay;
+                    }
+                } else {
+                    life = sin(TIME * final_speed + r1 * 6.28);
+                }
 
                 float current_active_level = mix(0.15, 0.95, drop_intensity);
                 float visibility = smoothstep(spawn_threshold, spawn_threshold + 0.1, current_active_level);
