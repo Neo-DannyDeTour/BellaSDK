@@ -3,17 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://7nublr4e6xqd"
-path.s3tc="res://.godot/imported/drops512.png-a1fbb12525cc1c99f1e0d5ace87c7467.s3tc.ctex"
-path.etc2="res://.godot/imported/drops512.png-a1fbb12525cc1c99f1e0d5ace87c7467.etc2.ctex"
-metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
-}
+valid=false
 
 [deps]
 
 source_file="res://environment/lex_partizan_rain/drops512.png"
-dest_files=["res://.godot/imported/drops512.png-a1fbb12525cc1c99f1e0d5ace87c7467.s3tc.ctex", "res://.godot/imported/drops512.png-a1fbb12525cc1c99f1e0d5ace87c7467.etc2.ctex"]
 
 [params]
 

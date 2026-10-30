@@ -3,17 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cwywdu1ir53lc"
-path.s3tc="res://.godot/imported/snow_tex.jpg-411f03e509c39895625b9220cdafae3e.s3tc.ctex"
-path.etc2="res://.godot/imported/snow_tex.jpg-411f03e509c39895625b9220cdafae3e.etc2.ctex"
-metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
-}
+valid=false
 
 [deps]
 
 source_file="res://environment/lex_partizan_rain/snow_tex.jpg"
-dest_files=["res://.godot/imported/snow_tex.jpg-411f03e509c39895625b9220cdafae3e.s3tc.ctex", "res://.godot/imported/snow_tex.jpg-411f03e509c39895625b9220cdafae3e.etc2.ctex"]
 
 [params]
 

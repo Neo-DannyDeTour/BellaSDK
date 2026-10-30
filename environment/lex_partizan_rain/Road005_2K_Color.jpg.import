@@ -3,17 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dculpby7luo66"
-path.s3tc="res://.godot/imported/Road005_2K_Color.jpg-43633e0de6ff8f95fb60006709abe124.s3tc.ctex"
-path.etc2="res://.godot/imported/Road005_2K_Color.jpg-43633e0de6ff8f95fb60006709abe124.etc2.ctex"
-metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
-}
+valid=false
 
 [deps]
 
 source_file="res://environment/lex_partizan_rain/Road005_2K_Color.jpg"
-dest_files=["res://.godot/imported/Road005_2K_Color.jpg-43633e0de6ff8f95fb60006709abe124.s3tc.ctex", "res://.godot/imported/Road005_2K_Color.jpg-43633e0de6ff8f95fb60006709abe124.etc2.ctex"]
 
 [params]
 

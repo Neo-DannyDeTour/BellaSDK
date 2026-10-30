@@ -3,17 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b4f2b7k40v4gb"
-path.s3tc="res://.godot/imported/cobblestone-curved_normal-ogl.png-4675595236e678eb3154153921a9339e.s3tc.ctex"
-path.etc2="res://.godot/imported/cobblestone-curved_normal-ogl.png-4675595236e678eb3154153921a9339e.etc2.ctex"
-metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
-}
+valid=false
 
 [deps]
 
 source_file="res://environment/lex_partizan_rain/cobblestone-curved_normal-ogl.png"
-dest_files=["res://.godot/imported/cobblestone-curved_normal-ogl.png-4675595236e678eb3154153921a9339e.s3tc.ctex", "res://.godot/imported/cobblestone-curved_normal-ogl.png-4675595236e678eb3154153921a9339e.etc2.ctex"]
 
 [params]
 

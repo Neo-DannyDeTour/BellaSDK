@@ -3,15 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dbyn8xaiek2lj"
-path="res://.godot/imported/ripples.png-3e8e62318fdc0efc6cf74ea43adea798.ctex"
-metadata={
-"vram_texture": false
-}
+valid=false
 
 [deps]
 
 source_file="res://environment/lex_partizan_rain/ripples.png"
-dest_files=["res://.godot/imported/ripples.png-3e8e62318fdc0efc6cf74ea43adea798.ctex"]
 
 [params]
 

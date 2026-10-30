@@ -3,17 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b6s1dg0f4ais8"
-path.s3tc="res://.godot/imported/PavingStones090_2K_Normal.jpg-5a8ab9dc15ce8564f0ae27b9f7a7de6e.s3tc.ctex"
-path.etc2="res://.godot/imported/PavingStones090_2K_Normal.jpg-5a8ab9dc15ce8564f0ae27b9f7a7de6e.etc2.ctex"
-metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
-}
+valid=false
 
 [deps]
 
 source_file="res://environment/lex_partizan_rain/PavingStones090_2K_Normal.jpg"
-dest_files=["res://.godot/imported/PavingStones090_2K_Normal.jpg-5a8ab9dc15ce8564f0ae27b9f7a7de6e.s3tc.ctex", "res://.godot/imported/PavingStones090_2K_Normal.jpg-5a8ab9dc15ce8564f0ae27b9f7a7de6e.etc2.ctex"]
 
 [params]
 

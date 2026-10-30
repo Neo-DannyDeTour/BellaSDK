@@ -3,15 +3,11 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://vj135x4q5epg"
-path="res://.godot/imported/icon.png-b7e36a585493a85f9bfa320a3fe0fb54.ctex"
-metadata={
-"vram_texture": false
-}
+valid=false
 
 [deps]
 
 source_file="res://environment/lex_partizan_rain/icon.png"
-dest_files=["res://.godot/imported/icon.png-b7e36a585493a85f9bfa320a3fe0fb54.ctex"]
 
 [params]
 
