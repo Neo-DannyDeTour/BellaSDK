@@ -174,8 +174,8 @@ func _physics_process(delta: float) -> void:
 ## Controls free wandering within [member explore_radius].
 func _process_explore(delta: float) -> void:
 	explore_timer += delta
-	var dist: float = global_position.distance_to(target_position)
-	if explore_timer >= explore_interval or dist <= arrival_distance:
+	var dist_sq: float = global_position.distance_squared_to(target_position)
+	if explore_timer >= explore_interval or dist_sq <= (arrival_distance * arrival_distance):
 		explore_timer = 0.0
 		_pick_new_explore_target()
 
@@ -269,11 +269,11 @@ func _process_wait_at_waypoint() -> void:
 		cached_player = _find_player()
 		return
 
-	var dist_to_waypoint: float = cached_player.global_position.distance_to(
+	var dist_to_waypoint_sq: float = cached_player.global_position.distance_squared_to(
 		target_waypoint.global_position
 	)
 
-	if dist_to_waypoint <= player_waypoint_trigger_distance:
+	if dist_to_waypoint_sq <= (player_waypoint_trigger_distance * player_waypoint_trigger_distance):
 		print("ElfDrone: Player reached proximity threshold. Joining flock.")
 		join_flock()
 
@@ -284,9 +284,9 @@ func _process_join_flock() -> void:
 		return
 
 	target_position = flock_controller.global_position
-	var dist: float = global_position.distance_to(flock_controller.global_position)
+	var dist_sq: float = global_position.distance_squared_to(flock_controller.global_position)
 
-	if dist <= 2.5:
+	if dist_sq <= 6.25:
 		print("ElfDrone: Swarm reached. Adopting into controller.")
 		task_state = TaskState.FOLLOW_SWARM
 		flock_controller.adopt_drone(self)

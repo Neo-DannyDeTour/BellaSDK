@@ -158,6 +158,9 @@ func _ready() -> void:
 
 	spawn_timer = spawn_interval_seconds
 	_initialize_pool()
+	var players: Array[Node] = get_tree().get_nodes_in_group(&"player")
+	if not players.is_empty() and players[0] is Node3D:
+		_player_ref = players[0] as Node3D
 
 
 ## Frees remaining pooled targets on tree exit to prevent stranded nodes.

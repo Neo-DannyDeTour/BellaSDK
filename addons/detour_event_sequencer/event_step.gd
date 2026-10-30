@@ -1,119 +1,129 @@
-## Single sequence step executing method calls, signal listeners, or branching logic.
+## Single sequence step executing method calls or property assignments with flow control.
+@tool
 class_name EventStep
 extends Resource
 
-## Action type determining step execution behavior.
-enum StepType { CALL_METHOD, WAIT_SIGNAL, LOGIC_BRANCH }
+## Action operation type for this step.
+enum StepType {
+	CALL_METHOD,
+	SET_PROPERTY,
+}
 
-## Comparison operator used when evaluating logic branch conditions.
-enum ConditionOp { EQUAL, NOT_EQUAL, GREATER, LESS }
+## Flow control mode determining whether the sequence waits or continues immediately.
+enum ExecMode {
+	SEQUENTIAL,
+	PARALLEL,
+	WAIT_SIGNAL,
+}
 
-## Execution category for this event step.
+## Operation performed when this step runs.
 @export var step_type: StepType = StepType.CALL_METHOD
 
-## Target [NodePath] to invoke methods on or monitor for signals.
+## Concurrency and completion awaiting mode for this step.
+@export var exec_mode: ExecMode = ExecMode.SEQUENTIAL
+
+## If true, targets the entering body instead of [member target_path].
+@export var target_is_activator: bool = false
+
+## Target [NodePath] relative to the owning [EventSequenceTrigger].
 @export var target_path: NodePath = NodePath()
 
-## Target method or input name to call on [member target_path].
+## Method name (for CALL_METHOD) or property name (for SET_PROPERTY).
 @export var method_name: StringName = &""
 
-## Target signal name to await when [member step_type] is WAIT_SIGNAL.
+## Signal name awaited on target when [member exec_mode] is WAIT_SIGNAL.
 @export var signal_name: StringName = &""
 
-## Optional parameter string passed to the invoked method.
+## Serialized parameter passed to method call or property assignment.
 @export var parameter: String = ""
 
-## Delay in seconds before triggering this step or dispatching output.
+## Delay in seconds before this step executes its action.
 @export var delay: float = 0.0
 
-## Property name evaluated on target when [member step_type] is LOGIC_BRANCH.
-@export var condition_property: StringName = &""
-
-## Comparison operator applied to condition property value.
-@export var condition_operator: ConditionOp = ConditionOp.EQUAL
-
-## Expected value string compared against target property.
-@export var condition_value: String = "true"
-
-## Target step index to jump to when logic condition evaluates to true.
-@export var branch_jump_step: int = -1
-
-## If true, step executes only once and is ignored on repeat triggers.
+## If true, step executes only once per level session.
 @export var fire_once: bool = false
 
-## Internal flag tracking if step has executed previously.
-var _has_fired: bool = false
+## Runtime flag tracking if this step has already fired.
+var has_fired: bool = false
 
 
-## Dispatches method call on target entity, supporting optional arguments.
-func execute(caller: Node) -> void:
-	print("EventStep: Executing step on ", target_path, " -> ", method_name)
-	var target: Node = caller.get_node_or_null(target_path)
+## Resolves target [Node] using either [param activator] or [member target_path].
+func resolve_target(caller: Node, activator: Node3D) -> Node:
+	if target_is_activator:
+		return activator
+	if not is_instance_valid(caller) or target_path.is_empty():
+		return null
+	return caller.get_node_or_null(target_path)
+
+
+## Executes method call or property assignment on the resolved target node.
+func execute(caller: Node, activator: Node3D) -> void:
+	var target: Node = resolve_target(caller, activator)
 	if not is_instance_valid(target):
-		print("EventStep: Target node not found: ", target_path)
+		print("EventStep: Target invalid for path -> ", target_path)
+		return
+
+	if method_name.is_empty():
+		has_fired = true
 		return
 
 	var clean_param: String = parameter.strip_edges()
 	if clean_param == '""' or clean_param == "''":
 		clean_param = ""
 
-	var method_arg_count: int = 0
-	var method_found: bool = false
+	match step_type:
+		StepType.CALL_METHOD:
+			_execute_method(caller, target, clean_param)
+		StepType.SET_PROPERTY:
+			_execute_property(caller, target, clean_param)
+
+	has_fired = true
+
+
+## Invokes [member method_name] on [param target] with zero or one resolved argument.
+func _execute_method(caller: Node, target: Node, clean_param: String) -> void:
+	print("EventStep: Calling ", method_name, " on ", target.name)
+	var arg_count: int = 0
 	for m: Dictionary in target.get_method_list():
-		if m.get("name") == method_name:
-			method_arg_count = (m.get("args", []) as Array).size()
-			method_found = true
+		var raw_name: Variant = m.get("name")
+		if raw_name is String and StringName(str(raw_name)) == method_name:
+			var raw_args: Variant = m.get("args")
+			if raw_args is Array:
+				var args_array: Array = raw_args
+				arg_count = args_array.size()
 			break
 
-	if clean_param.is_empty():
-		if method_found and method_arg_count == 0:
-			target.call(method_name)
-		else:
-			target.call(method_name)
+	if clean_param.is_empty() or arg_count == 0:
+		target.call(method_name)
 	else:
 		var resolved_arg: Variant = _resolve_parameter(caller, clean_param)
 		target.call(method_name, resolved_arg)
-	_has_fired = true
 
 
-## Resolves parameter string into typed node, number, boolean, or string.
+## Assigns [member method_name] property on [param target] to resolved [param clean_param].
+func _execute_property(caller: Node, target: Node, clean_param: String) -> void:
+	var resolved_val: Variant = _resolve_parameter(caller, clean_param)
+	print("EventStep: Setting ", method_name, " = ", resolved_val, " on ", target.name)
+	target.set(method_name, resolved_val)
+
+
+## Converts raw parameter string into [bool], [int], [float], [Node], or [String].
 func _resolve_parameter(caller: Node, raw_param: String) -> Variant:
-	var node_lookup: Node = caller.get_node_or_null(NodePath(raw_param))
-	if not is_instance_valid(node_lookup) and caller.is_inside_tree():
-		node_lookup = caller.get_tree().get_root().find_child(raw_param, true, false)
-	if is_instance_valid(node_lookup):
-		return node_lookup
-
-	if raw_param.to_lower() == "true":
+	var lower: String = raw_param.to_lower()
+	if lower == "true":
 		return true
-	if raw_param.to_lower() == "false":
+	if lower == "false":
 		return false
 	if raw_param.is_valid_int():
 		return raw_param.to_int()
 	if raw_param.is_valid_float():
 		return raw_param.to_float()
 
+	if is_instance_valid(caller) and not raw_param.is_empty():
+		var node_lookup: Node = caller.get_node_or_null(NodePath(raw_param))
+		if not is_instance_valid(node_lookup) and caller.is_inside_tree():
+			node_lookup = caller.get_tree().get_root().find_child(raw_param, true, false)
+		if is_instance_valid(node_lookup):
+			return node_lookup
+
 	return raw_param
-
-
-## Evaluates condition property against expected value using comparison operator.
-func evaluate_condition(caller: Node) -> bool:
-	print("EventStep: Evaluating branch condition on ", target_path)
-	var target: Node = caller.get_node_or_null(target_path)
-	if not is_instance_valid(target):
-		return false
-
-	var current_val: Variant = target.get(condition_property)
-	var val_str: String = str(current_val).to_lower()
-	var expected_str: String = condition_value.strip_edges().to_lower()
-
-	match condition_operator:
-		ConditionOp.EQUAL:
-			return val_str == expected_str
-		ConditionOp.NOT_EQUAL:
-			return val_str != expected_str
-		ConditionOp.GREATER:
-			return val_str.to_float() > expected_str.to_float()
-		ConditionOp.LESS:
-			return val_str.to_float() < expected_str.to_float()
-	return false
