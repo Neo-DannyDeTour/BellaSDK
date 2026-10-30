@@ -494,6 +494,7 @@ func chip_glass(hit_position: Vector3, hit_dir: Vector3) -> void:
 		if is_instance_valid(sfx):
 			sfx.pitch_scale = randf_range(0.85, 1.15)
 
+	var shatter_rad_sq: float = shatter_radius * shatter_radius
 	for child: Node in shards_container.get_children():
 		if not (child is DestructibleGlassShard):
 			continue
@@ -502,8 +503,8 @@ func chip_glass(hit_position: Vector3, hit_dir: Vector3) -> void:
 		if not shard.freeze or shard.is_destroyed:
 			continue
 
-		var dist: float = shard.global_position.distance_to(hit_position)
-		if dist <= shatter_radius:
+		var dist_sq: float = shard.global_position.distance_squared_to(hit_position)
+		if dist_sq <= shatter_rad_sq:
 			shard.is_destroyed = true
 
 			if (

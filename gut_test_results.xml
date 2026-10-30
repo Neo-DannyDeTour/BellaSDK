@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="GutTests" failures="0" tests="2" >
-  <testsuite name="test/unit/test_sunshine_clouds_rebuild_decoupling.gd" tests="2" failures="0" skipped="0" time="0.000267" >
-      <testcase name="test_resolution_scale_setter_redundancy_guard" assertions="2" status="pass" classname="test/unit/test_sunshine_clouds_rebuild_decoupling.gd" time="0.000189" >
+<testsuites name="GutTests" failures="0" tests="4" >
+  <testsuite name="test/unit/test_save_manager.gd" tests="4" failures="0" skipped="0" time="0.353079" >
+      <testcase name="test_get_all_saves" assertions="2" status="pass" classname="test/unit/test_save_manager.gd" time="0.036336" >
       </testcase>
-      <testcase name="test_temporal_accumulation_decoupling_logic" assertions="2" status="pass" classname="test/unit/test_sunshine_clouds_rebuild_decoupling.gd" time="0.000078" >
+      <testcase name="test_has_saves_with_no_dir" assertions="1" status="pass" classname="test/unit/test_save_manager.gd" time="0.116659" >
+      </testcase>
+      <testcase name="test_sort_saves" assertions="4" status="pass" classname="test/unit/test_save_manager.gd" time="0.100042" >
+      </testcase>
+      <testcase name="test_load_save_game" assertions="1" status="pass" classname="test/unit/test_save_manager.gd" time="0.100042" >
       </testcase>
   </testsuite>
 </testsuites>
