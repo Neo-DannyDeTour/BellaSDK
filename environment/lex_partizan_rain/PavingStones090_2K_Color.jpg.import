@@ -2,16 +2,20 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cdj3p55cvp8ut"
-valid=false
+uid="uid://7djknx8mofhi"
+path="res://.godot/imported/PavingStones090_2K_Color.jpg-eb6a465d552e2de90cf369316919bc79.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://environment/lex_partizan_rain/PavingStones090_2K_Color.jpg"
+dest_files=["res://.godot/imported/PavingStones090_2K_Color.jpg-eb6a465d552e2de90cf369316919bc79.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -19,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""
@@ -33,4 +37,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=0
+detect_3d/compress_to=1

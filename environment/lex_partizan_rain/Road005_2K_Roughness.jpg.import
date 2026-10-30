@@ -2,16 +2,20 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cdwilnc41g6jq"
-valid=false
+uid="uid://d2sfc1r53iowo"
+path="res://.godot/imported/Road005_2K_Roughness.jpg-d85ad15446c5160770f1dca098abb49a.ctex"
+metadata={
+"vram_texture": false
+}
 
 [deps]
 
 source_file="res://environment/lex_partizan_rain/Road005_2K_Roughness.jpg"
+dest_files=["res://.godot/imported/Road005_2K_Roughness.jpg-d85ad15446c5160770f1dca098abb49a.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -19,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""
@@ -33,4 +37,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=0
+detect_3d/compress_to=1
