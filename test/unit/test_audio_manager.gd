@@ -14,7 +14,7 @@ var _dummy_stream: AudioStreamWAV = null
 ## Allocates persistent mock audio stream before entire test run.
 func before_all() -> void:
 	_dummy_stream = AudioStreamWAV.new()
-	_dummy_stream.take_over_path("res://SFX/mock_sound.wav")
+	_dummy_stream.take_over_path("res://core/audio/mock_sound.wav")
 
 
 ## Deallocates mock audio stream after entire test run.

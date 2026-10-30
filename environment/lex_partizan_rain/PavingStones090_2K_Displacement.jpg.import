@@ -2,9 +2,9 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://city062vsqwcr"
-path.s3tc="res://.godot/imported/cobblestone-curved_albedo.png-88e8d7e23320f02325b296bb74b674ca.s3tc.ctex"
-path.etc2="res://.godot/imported/cobblestone-curved_albedo.png-88e8d7e23320f02325b296bb74b674ca.etc2.ctex"
+uid="uid://bftnhucv2ei7g"
+path.s3tc="res://.godot/imported/PavingStones090_2K_Displacement.jpg-60f3ec88b245cf9232e1590fed5881df.s3tc.ctex"
+path.etc2="res://.godot/imported/PavingStones090_2K_Displacement.jpg-60f3ec88b245cf9232e1590fed5881df.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
@@ -12,8 +12,8 @@ metadata={
 
 [deps]
 
-source_file="res://lex_partizan_rain/cobblestone-curved_albedo.png"
-dest_files=["res://.godot/imported/cobblestone-curved_albedo.png-88e8d7e23320f02325b296bb74b674ca.s3tc.ctex", "res://.godot/imported/cobblestone-curved_albedo.png-88e8d7e23320f02325b296bb74b674ca.etc2.ctex"]
+source_file="res://environment/lex_partizan_rain/PavingStones090_2K_Displacement.jpg"
+dest_files=["res://.godot/imported/PavingStones090_2K_Displacement.jpg-60f3ec88b245cf9232e1590fed5881df.s3tc.ctex", "res://.godot/imported/PavingStones090_2K_Displacement.jpg-60f3ec88b245cf9232e1590fed5881df.etc2.ctex"]
 
 [params]
 

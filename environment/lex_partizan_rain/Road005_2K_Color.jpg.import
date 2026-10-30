@@ -2,9 +2,9 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cgwhy8mpfmk7a"
-path.s3tc="res://.godot/imported/cobblestone-curved_height.png-4bb27f9284d8329dc172d2a6f96cd1e6.s3tc.ctex"
-path.etc2="res://.godot/imported/cobblestone-curved_height.png-4bb27f9284d8329dc172d2a6f96cd1e6.etc2.ctex"
+uid="uid://dculpby7luo66"
+path.s3tc="res://.godot/imported/Road005_2K_Color.jpg-43633e0de6ff8f95fb60006709abe124.s3tc.ctex"
+path.etc2="res://.godot/imported/Road005_2K_Color.jpg-43633e0de6ff8f95fb60006709abe124.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
@@ -12,8 +12,8 @@ metadata={
 
 [deps]
 
-source_file="res://lex_partizan_rain/cobblestone-curved_height.png"
-dest_files=["res://.godot/imported/cobblestone-curved_height.png-4bb27f9284d8329dc172d2a6f96cd1e6.s3tc.ctex", "res://.godot/imported/cobblestone-curved_height.png-4bb27f9284d8329dc172d2a6f96cd1e6.etc2.ctex"]
+source_file="res://environment/lex_partizan_rain/Road005_2K_Color.jpg"
+dest_files=["res://.godot/imported/Road005_2K_Color.jpg-43633e0de6ff8f95fb60006709abe124.s3tc.ctex", "res://.godot/imported/Road005_2K_Color.jpg-43633e0de6ff8f95fb60006709abe124.etc2.ctex"]
 
 [params]
 

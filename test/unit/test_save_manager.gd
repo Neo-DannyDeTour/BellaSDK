@@ -27,7 +27,7 @@ class MockSaveManager:
 
 	## Simulates writing metadata without touching disk.
 	func _write_metadata(
-		_path: String, _display_name: String, _time_str: String, _fav: bool
+		_path: String, _display_name: String, _time_str: String, _fav: bool, _dat_path: String = ""
 	) -> void:
 		print("TestSaveManager: Mock _write_metadata() called.")
 		write_metadata_called = true

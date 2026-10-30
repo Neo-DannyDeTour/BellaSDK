@@ -4,6 +4,7 @@
   "description": "Workspace tooling for Godot 4: gdlint compliance, 60 FPS performance audits, and architecture verification.",
   "version": "1.0.0",
   "suggestedPrompts": [
+    "Run 60 FPS performance, render pipeline and scene misconfiguration audit",
     "Run a gdlint compliance check on modified GDScript files",
     "Audit 60 FPS performance and event architecture rules",
     "Stress-test Godot node design tree and signal coupling"

@@ -2,9 +2,9 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://0k4m0ysx7xrk"
-path.s3tc="res://.godot/imported/Snow005_2K_Normal.jpg-11287b52a04086bdda6323c183dbff73.s3tc.ctex"
-path.etc2="res://.godot/imported/Snow005_2K_Normal.jpg-11287b52a04086bdda6323c183dbff73.etc2.ctex"
+uid="uid://cf08x47fctk31"
+path.s3tc="res://.godot/imported/PavingStones090_2K_Roughness.jpg-a7881a6d92ddde52e87e9294d7efdede.s3tc.ctex"
+path.etc2="res://.godot/imported/PavingStones090_2K_Roughness.jpg-a7881a6d92ddde52e87e9294d7efdede.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
@@ -12,8 +12,8 @@ metadata={
 
 [deps]
 
-source_file="res://lex_partizan_rain/Snow005_2K_Normal.jpg"
-dest_files=["res://.godot/imported/Snow005_2K_Normal.jpg-11287b52a04086bdda6323c183dbff73.s3tc.ctex", "res://.godot/imported/Snow005_2K_Normal.jpg-11287b52a04086bdda6323c183dbff73.etc2.ctex"]
+source_file="res://environment/lex_partizan_rain/PavingStones090_2K_Roughness.jpg"
+dest_files=["res://.godot/imported/PavingStones090_2K_Roughness.jpg-a7881a6d92ddde52e87e9294d7efdede.s3tc.ctex", "res://.godot/imported/PavingStones090_2K_Roughness.jpg-a7881a6d92ddde52e87e9294d7efdede.etc2.ctex"]
 
 [params]
 
@@ -23,7 +23,7 @@ compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
-compress/normal_map=1
+compress/normal_map=0
 compress/channel_pack=0
 mipmaps/generate=true
 mipmaps/limit=-1

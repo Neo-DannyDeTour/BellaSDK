@@ -2,9 +2,9 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b4f2b7k40v4gb"
-path.s3tc="res://.godot/imported/cobblestone-curved_normal-ogl.png-7b7aa1bbdfa26c714e48100ffbc7a467.s3tc.ctex"
-path.etc2="res://.godot/imported/cobblestone-curved_normal-ogl.png-7b7aa1bbdfa26c714e48100ffbc7a467.etc2.ctex"
+uid="uid://b1ipxds3ilyap"
+path.s3tc="res://.godot/imported/streaks512.png-bcd13f91c9fe98364683a851368f81a3.s3tc.ctex"
+path.etc2="res://.godot/imported/streaks512.png-bcd13f91c9fe98364683a851368f81a3.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
@@ -12,8 +12,8 @@ metadata={
 
 [deps]
 
-source_file="res://lex_partizan_rain/cobblestone-curved_normal-ogl.png"
-dest_files=["res://.godot/imported/cobblestone-curved_normal-ogl.png-7b7aa1bbdfa26c714e48100ffbc7a467.s3tc.ctex", "res://.godot/imported/cobblestone-curved_normal-ogl.png-7b7aa1bbdfa26c714e48100ffbc7a467.etc2.ctex"]
+source_file="res://environment/lex_partizan_rain/streaks512.png"
+dest_files=["res://.godot/imported/streaks512.png-bcd13f91c9fe98364683a851368f81a3.s3tc.ctex", "res://.godot/imported/streaks512.png-bcd13f91c9fe98364683a851368f81a3.etc2.ctex"]
 
 [params]
 
@@ -23,7 +23,7 @@ compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
-compress/normal_map=1
+compress/normal_map=0
 compress/channel_pack=0
 mipmaps/generate=true
 mipmaps/limit=-1

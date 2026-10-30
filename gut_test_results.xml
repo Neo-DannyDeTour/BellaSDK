@@ -1,9 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="GutTests" failures="0" tests="2" >
-  <testsuite name="test/unit/test_sunshine_clouds_rebuild_decoupling.gd" tests="2" failures="0" skipped="0" time="0.000267" >
-      <testcase name="test_resolution_scale_setter_redundancy_guard" assertions="2" status="pass" classname="test/unit/test_sunshine_clouds_rebuild_decoupling.gd" time="0.000189" >
+<testsuites name="GutTests" failures="0" tests="4" >
+  <testsuite name="test/unit/test_save_integrity.gd" tests="4" failures="0" skipped="0" time="0.33684" >
+      <testcase name="test_compute_file_sha256" assertions="4" status="pass" classname="test/unit/test_save_integrity.gd" time="0.01972" >
       </testcase>
-      <testcase name="test_temporal_accumulation_decoupling_logic" assertions="2" status="pass" classname="test/unit/test_sunshine_clouds_rebuild_decoupling.gd" time="0.000078" >
+      <testcase name="test_level_path_validation" assertions="5" status="pass" classname="test/unit/test_save_integrity.gd" time="0.116582" >
+      </testcase>
+      <testcase name="test_validate_state_dictionary" assertions="4" status="pass" classname="test/unit/test_save_integrity.gd" time="0.100361" >
+      </testcase>
+      <testcase name="test_metadata_checksum_encoding" assertions="5" status="pass" classname="test/unit/test_save_integrity.gd" time="0.100177" >
       </testcase>
   </testsuite>
 </testsuites>

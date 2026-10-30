@@ -2,9 +2,9 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://cdj3p55cvp8ut"
-path.s3tc="res://.godot/imported/PavingStones090_2K_Color.jpg-4b8145bb938c6762a66a3ec7860817ce.s3tc.ctex"
-path.etc2="res://.godot/imported/PavingStones090_2K_Color.jpg-4b8145bb938c6762a66a3ec7860817ce.etc2.ctex"
+uid="uid://br14evs748vfl"
+path.s3tc="res://.godot/imported/cobblestone-curved_roughness.png-1b0b0350682910a5980e070c987d830f.s3tc.ctex"
+path.etc2="res://.godot/imported/cobblestone-curved_roughness.png-1b0b0350682910a5980e070c987d830f.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
@@ -12,8 +12,8 @@ metadata={
 
 [deps]
 
-source_file="res://lex_partizan_rain/PavingStones090_2K_Color.jpg"
-dest_files=["res://.godot/imported/PavingStones090_2K_Color.jpg-4b8145bb938c6762a66a3ec7860817ce.s3tc.ctex", "res://.godot/imported/PavingStones090_2K_Color.jpg-4b8145bb938c6762a66a3ec7860817ce.etc2.ctex"]
+source_file="res://environment/lex_partizan_rain/cobblestone-curved_roughness.png"
+dest_files=["res://.godot/imported/cobblestone-curved_roughness.png-1b0b0350682910a5980e070c987d830f.s3tc.ctex", "res://.godot/imported/cobblestone-curved_roughness.png-1b0b0350682910a5980e070c987d830f.etc2.ctex"]
 
 [params]
 

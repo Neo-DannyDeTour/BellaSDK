@@ -38,9 +38,7 @@ func _on_player_entered(_player_node: Node3D) -> void:
 		"' with style ID ",
 		animation_style
 	)
-	Events.chapter_triggered.emit(
-		chapter_name, animation_style as int, display_duration, text_color
-	)
+	Events.chapter_triggered.emit(chapter_name, int(animation_style), display_duration, text_color)
 
 
 ## Applies randomized styling parameters for demonstration scenarios.

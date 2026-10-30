@@ -9,7 +9,7 @@ core/export_presets.cfg
 
 *.exr
 
-bakes/
+levels/bakes/
 
 .godot/
 
@@ -79,4 +79,5 @@ GEMINI.md
 
 assets/models/
 
-lex_partizan_rain/bethnal_green_entrance_2k.hdr
+environment/lex_partizan_rain/bethnal_green_entrance_2k.hdr
+/shmup_env/

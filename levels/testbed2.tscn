@@ -42,20 +42,20 @@
 [ext_resource type="PackedScene" uid="uid://csh1x7wcjvejc" path="res://environment/gothic_energy_gate.tscn" id="38_riw2b"]
 [ext_resource type="PackedScene" uid="uid://2mam2k0fdeew" path="res://interactables/button.tscn" id="39_ca2cg"]
 [ext_resource type="Script" uid="uid://ftfgvb3emru" path="res://environment/procedural_fence_csg.gd" id="40_haddo"]
-[ext_resource type="Shader" uid="uid://c0wquhweyi7nd" path="res://lex_partizan_rain/rain.gdshader" id="41_lumu1"]
-[ext_resource type="Texture2D" uid="uid://city062vsqwcr" path="res://lex_partizan_rain/cobblestone-curved_albedo.png" id="42_1ksst"]
-[ext_resource type="Texture2D" uid="uid://cgwhy8mpfmk7a" path="res://lex_partizan_rain/cobblestone-curved_height.png" id="43_ogn5c"]
-[ext_resource type="Texture2D" uid="uid://b4f2b7k40v4gb" path="res://lex_partizan_rain/cobblestone-curved_normal-ogl.png" id="44_blafx"]
-[ext_resource type="Texture2D" uid="uid://br14evs748vfl" path="res://lex_partizan_rain/cobblestone-curved_roughness.png" id="45_vt30e"]
-[ext_resource type="Texture2D" uid="uid://7nublr4e6xqd" path="res://lex_partizan_rain/drops512.png" id="46_a4a5i"]
-[ext_resource type="Texture2D" uid="uid://b2q0ljpx1brdi" path="res://lex_partizan_rain/simple_noise.png" id="47_yaxg6"]
-[ext_resource type="Texture2D" uid="uid://d0yp6k4tjbvjf" path="res://lex_partizan_rain/ripples512.png" id="48_hamui"]
-[ext_resource type="Texture2D" uid="uid://0k4m0ysx7xrk" path="res://lex_partizan_rain/Snow005_2K_Normal.jpg" id="49_flri8"]
-[ext_resource type="Texture2D" uid="uid://b1ipxds3ilyap" path="res://lex_partizan_rain/streaks512.png" id="50_v665w"]
-[ext_resource type="Texture2D" uid="uid://cdj3p55cvp8ut" path="res://lex_partizan_rain/PavingStones090_2K_Color.jpg" id="51_1lggm"]
-[ext_resource type="Texture2D" uid="uid://bftnhucv2ei7g" path="res://lex_partizan_rain/PavingStones090_2K_Displacement.jpg" id="52_fiqku"]
-[ext_resource type="Texture2D" uid="uid://b6s1dg0f4ais8" path="res://lex_partizan_rain/PavingStones090_2K_Normal.jpg" id="53_2nur7"]
-[ext_resource type="Texture2D" uid="uid://cf08x47fctk31" path="res://lex_partizan_rain/PavingStones090_2K_Roughness.jpg" id="54_yw5cv"]
+[ext_resource type="Shader" uid="uid://c0wquhweyi7nd" path="res://environment/lex_partizan_rain/rain.gdshader" id="41_lumu1"]
+[ext_resource type="Texture2D" uid="uid://city062vsqwcr" path="res://environment/lex_partizan_rain/cobblestone-curved_albedo.png" id="42_1ksst"]
+[ext_resource type="Texture2D" uid="uid://cgwhy8mpfmk7a" path="res://environment/lex_partizan_rain/cobblestone-curved_height.png" id="43_ogn5c"]
+[ext_resource type="Texture2D" uid="uid://b4f2b7k40v4gb" path="res://environment/lex_partizan_rain/cobblestone-curved_normal-ogl.png" id="44_blafx"]
+[ext_resource type="Texture2D" uid="uid://br14evs748vfl" path="res://environment/lex_partizan_rain/cobblestone-curved_roughness.png" id="45_vt30e"]
+[ext_resource type="Texture2D" uid="uid://7nublr4e6xqd" path="res://environment/lex_partizan_rain/drops512.png" id="46_a4a5i"]
+[ext_resource type="Texture2D" uid="uid://b2q0ljpx1brdi" path="res://environment/lex_partizan_rain/simple_noise.png" id="47_yaxg6"]
+[ext_resource type="Texture2D" uid="uid://d0yp6k4tjbvjf" path="res://environment/lex_partizan_rain/ripples512.png" id="48_hamui"]
+[ext_resource type="Texture2D" uid="uid://0k4m0ysx7xrk" path="res://environment/lex_partizan_rain/Snow005_2K_Normal.jpg" id="49_flri8"]
+[ext_resource type="Texture2D" uid="uid://b1ipxds3ilyap" path="res://environment/lex_partizan_rain/streaks512.png" id="50_v665w"]
+[ext_resource type="Texture2D" uid="uid://cdj3p55cvp8ut" path="res://environment/lex_partizan_rain/PavingStones090_2K_Color.jpg" id="51_1lggm"]
+[ext_resource type="Texture2D" uid="uid://bftnhucv2ei7g" path="res://environment/lex_partizan_rain/PavingStones090_2K_Displacement.jpg" id="52_fiqku"]
+[ext_resource type="Texture2D" uid="uid://b6s1dg0f4ais8" path="res://environment/lex_partizan_rain/PavingStones090_2K_Normal.jpg" id="53_2nur7"]
+[ext_resource type="Texture2D" uid="uid://cf08x47fctk31" path="res://environment/lex_partizan_rain/PavingStones090_2K_Roughness.jpg" id="54_yw5cv"]
 [ext_resource type="PackedScene" uid="uid://c6vn1e6vovmwf" path="res://environment/target_volume.tscn" id="55_g31i8"]
 [ext_resource type="PackedScene" uid="uid://ce3hrp6sf7iyw" path="res://interactables/shooting_target.tscn" id="56_q3gc0"]
 [ext_resource type="PackedScene" uid="uid://74rrxocvc7yo" path="res://environment/basalt_generator.tscn" id="57_fsgrm"]
@@ -1395,6 +1395,10 @@ shader_parameter/ray_ends = PackedVector4Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
 shader_parameter/active_actor_count = 0
 shader_parameter/actor_positions = PackedVector4Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 shader_parameter/actor_velocities = PackedVector4Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+
+[sub_resource type="Resource" id="Resource_ot62w"]
+script = ExtResource("223_6vmqi")
+target_path = NodePath("..")
 
 [node name="Testbed" type="Node3D" unique_id=589896155]
 
@@ -5641,14 +5645,14 @@ transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 259.29193, 45.94133, -161.726
 transform = Transform3D(1, -3.821371e-15, 0, 0, 4.371139e-08, 1, -3.821371e-15, -1, 4.371139e-08, -6.990154, 0.16368914, -25.436563)
 
 [node name="MannequinAttractorTrigger3D" parent="." unique_id=1450102521 node_paths=PackedStringArray("target_mannequin", "target_destination") instance=ExtResource("258_qcgmd")]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.7934732, 1.5, -28.388248)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -5.7934732, 6.592075, -25.692863)
 target_mannequin = NodePath("../MannequinRagdoll")
 target_destination = NodePath("../ragdoll_destination")
 bone_preset = 3
 target_bones = Array[StringName]([&"Foot.L", &"Foot.R", &"LowerLeg.L", &"LowerLeg.R"])
 pull_speed = 5.0
 max_duration = 15.0
-trigger_size = Vector3(2, 3, 6.335)
+trigger_size = Vector3(0.1, 0.1, 0.1)
 
 [node name="ragdoll_destination" type="Marker3D" parent="." unique_id=245457777]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -6.983325, 1.1920929e-07, -19.636383)
@@ -5709,3 +5713,7 @@ update_continuously = true
 clouds_resource = SubResource("CompositorEffect_ym1oq")
 ambience_sample_environment = SubResource("Environment_amd4b")
 metadata/_custom_type_script = "uid://djusduuxf0voj"
+
+[node name="EventSequenceTrigger2" parent="." unique_id=318058229 instance=ExtResource("222_ympue")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -7.6839027, 0.99999976, -30.19969)
+steps = Array[ExtResource("223_6vmqi")]([SubResource("Resource_ot62w")])

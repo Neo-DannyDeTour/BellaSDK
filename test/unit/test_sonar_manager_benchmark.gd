@@ -3,7 +3,7 @@ class_name TestSonarManagerBenchmark
 extends GutTest
 
 ## Script reference for instantiating the unexposed SonarManager node.
-const SONAR_SCRIPT: GDScript = preload("res://SFX/SonarManager.gd")
+const SONAR_SCRIPT: GDScript = preload("res://core/audio/sonar_manager.gd")
 
 ## The SonarManager node instance under test.
 var _sonar_manager: Node = null

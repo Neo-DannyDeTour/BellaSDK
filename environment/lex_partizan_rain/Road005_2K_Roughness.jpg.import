@@ -3,8 +3,8 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cdwilnc41g6jq"
-path.s3tc="res://.godot/imported/Road005_2K_Roughness.jpg-de4dacb86356a31c15d0296a8d341636.s3tc.ctex"
-path.etc2="res://.godot/imported/Road005_2K_Roughness.jpg-de4dacb86356a31c15d0296a8d341636.etc2.ctex"
+path.s3tc="res://.godot/imported/Road005_2K_Roughness.jpg-d85ad15446c5160770f1dca098abb49a.s3tc.ctex"
+path.etc2="res://.godot/imported/Road005_2K_Roughness.jpg-d85ad15446c5160770f1dca098abb49a.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
@@ -12,8 +12,8 @@ metadata={
 
 [deps]
 
-source_file="res://lex_partizan_rain/Road005_2K_Roughness.jpg"
-dest_files=["res://.godot/imported/Road005_2K_Roughness.jpg-de4dacb86356a31c15d0296a8d341636.s3tc.ctex", "res://.godot/imported/Road005_2K_Roughness.jpg-de4dacb86356a31c15d0296a8d341636.etc2.ctex"]
+source_file="res://environment/lex_partizan_rain/Road005_2K_Roughness.jpg"
+dest_files=["res://.godot/imported/Road005_2K_Roughness.jpg-d85ad15446c5160770f1dca098abb49a.s3tc.ctex", "res://.godot/imported/Road005_2K_Roughness.jpg-d85ad15446c5160770f1dca098abb49a.etc2.ctex"]
 
 [params]
 

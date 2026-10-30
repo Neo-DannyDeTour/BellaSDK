@@ -77,6 +77,8 @@ shader_parameter/effect_mode = 0
 shader_parameter/drop_intensity = 0.0
 shader_parameter/wash_intensity = 0.0
 shader_parameter/clear_progress = 0.0
+shader_parameter/uneven_timing = true
+shader_parameter/timing_randomness = 0.75
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_wwipe"]
 shader = ExtResource("35_wwipe")

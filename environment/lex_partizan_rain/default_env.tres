@@ -1,6 +1,6 @@
 [gd_resource type="Environment" format=3 uid="uid://bkchy6onpbl0x"]
 
-[ext_resource type="Texture2D" uid="uid://c15gn1o0oxxhm" path="res://lex_partizan_rain/bethnal_green_entrance_2k.hdr" id="1_hdr"]
+[ext_resource type="Texture2D" uid="uid://c15gn1o0oxxhm" path="res://environment/lex_partizan_rain/bethnal_green_entrance_2k.hdr" id="1_hdr"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_1"]
 panorama = ExtResource("1_hdr")

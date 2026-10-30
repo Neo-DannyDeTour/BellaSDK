@@ -2,9 +2,9 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://byi06vwebe7j"
-path.s3tc="res://.godot/imported/Road005_2K_Normal.jpg-f7b51979377fe6e43e8b6351eaa82988.s3tc.ctex"
-path.etc2="res://.godot/imported/Road005_2K_Normal.jpg-f7b51979377fe6e43e8b6351eaa82988.etc2.ctex"
+uid="uid://cdj3p55cvp8ut"
+path.s3tc="res://.godot/imported/PavingStones090_2K_Color.jpg-eb6a465d552e2de90cf369316919bc79.s3tc.ctex"
+path.etc2="res://.godot/imported/PavingStones090_2K_Color.jpg-eb6a465d552e2de90cf369316919bc79.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
@@ -12,8 +12,8 @@ metadata={
 
 [deps]
 
-source_file="res://lex_partizan_rain/Road005_2K_Normal.jpg"
-dest_files=["res://.godot/imported/Road005_2K_Normal.jpg-f7b51979377fe6e43e8b6351eaa82988.s3tc.ctex", "res://.godot/imported/Road005_2K_Normal.jpg-f7b51979377fe6e43e8b6351eaa82988.etc2.ctex"]
+source_file="res://environment/lex_partizan_rain/PavingStones090_2K_Color.jpg"
+dest_files=["res://.godot/imported/PavingStones090_2K_Color.jpg-eb6a465d552e2de90cf369316919bc79.s3tc.ctex", "res://.godot/imported/PavingStones090_2K_Color.jpg-eb6a465d552e2de90cf369316919bc79.etc2.ctex"]
 
 [params]
 
@@ -23,7 +23,7 @@ compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
-compress/normal_map=1
+compress/normal_map=0
 compress/channel_pack=0
 mipmaps/generate=true
 mipmaps/limit=-1

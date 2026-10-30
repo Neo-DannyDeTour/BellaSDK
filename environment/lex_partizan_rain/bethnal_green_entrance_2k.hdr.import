@@ -2,9 +2,9 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b2q0ljpx1brdi"
-path.s3tc="res://.godot/imported/simple_noise.png-dc8a41dbff4df7199ee9a9b3f508e6b3.s3tc.ctex"
-path.etc2="res://.godot/imported/simple_noise.png-dc8a41dbff4df7199ee9a9b3f508e6b3.etc2.ctex"
+uid="uid://c15gn1o0oxxhm"
+path.bptc="res://.godot/imported/bethnal_green_entrance_2k.hdr-0e30b49f09ed38aadb815d508f7ed65f.bptc.ctex"
+path.astc="res://.godot/imported/bethnal_green_entrance_2k.hdr-0e30b49f09ed38aadb815d508f7ed65f.astc.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
@@ -12,8 +12,8 @@ metadata={
 
 [deps]
 
-source_file="res://lex_partizan_rain/simple_noise.png"
-dest_files=["res://.godot/imported/simple_noise.png-dc8a41dbff4df7199ee9a9b3f508e6b3.s3tc.ctex", "res://.godot/imported/simple_noise.png-dc8a41dbff4df7199ee9a9b3f508e6b3.etc2.ctex"]
+source_file="res://environment/lex_partizan_rain/bethnal_green_entrance_2k.hdr"
+dest_files=["res://.godot/imported/bethnal_green_entrance_2k.hdr-0e30b49f09ed38aadb815d508f7ed65f.bptc.ctex", "res://.godot/imported/bethnal_green_entrance_2k.hdr-0e30b49f09ed38aadb815d508f7ed65f.astc.ctex"]
 
 [params]
 

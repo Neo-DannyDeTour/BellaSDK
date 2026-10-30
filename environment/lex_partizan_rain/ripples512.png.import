@@ -2,9 +2,9 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bftnhucv2ei7g"
-path.s3tc="res://.godot/imported/PavingStones090_2K_Displacement.jpg-39083852658cf4153b1238180cf5148e.s3tc.ctex"
-path.etc2="res://.godot/imported/PavingStones090_2K_Displacement.jpg-39083852658cf4153b1238180cf5148e.etc2.ctex"
+uid="uid://d0yp6k4tjbvjf"
+path.s3tc="res://.godot/imported/ripples512.png-c677f91c241350ceea8b670aace6eda8.s3tc.ctex"
+path.etc2="res://.godot/imported/ripples512.png-c677f91c241350ceea8b670aace6eda8.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
@@ -12,8 +12,8 @@ metadata={
 
 [deps]
 
-source_file="res://lex_partizan_rain/PavingStones090_2K_Displacement.jpg"
-dest_files=["res://.godot/imported/PavingStones090_2K_Displacement.jpg-39083852658cf4153b1238180cf5148e.s3tc.ctex", "res://.godot/imported/PavingStones090_2K_Displacement.jpg-39083852658cf4153b1238180cf5148e.etc2.ctex"]
+source_file="res://environment/lex_partizan_rain/ripples512.png"
+dest_files=["res://.godot/imported/ripples512.png-c677f91c241350ceea8b670aace6eda8.s3tc.ctex", "res://.godot/imported/ripples512.png-c677f91c241350ceea8b670aace6eda8.etc2.ctex"]
 
 [params]
 

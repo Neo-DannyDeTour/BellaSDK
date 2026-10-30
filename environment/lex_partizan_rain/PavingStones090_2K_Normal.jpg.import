@@ -2,9 +2,9 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://7nublr4e6xqd"
-path.s3tc="res://.godot/imported/drops512.png-eae81ae87393ea6c01d8feb42f88dc43.s3tc.ctex"
-path.etc2="res://.godot/imported/drops512.png-eae81ae87393ea6c01d8feb42f88dc43.etc2.ctex"
+uid="uid://b6s1dg0f4ais8"
+path.s3tc="res://.godot/imported/PavingStones090_2K_Normal.jpg-5a8ab9dc15ce8564f0ae27b9f7a7de6e.s3tc.ctex"
+path.etc2="res://.godot/imported/PavingStones090_2K_Normal.jpg-5a8ab9dc15ce8564f0ae27b9f7a7de6e.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
@@ -12,8 +12,8 @@ metadata={
 
 [deps]
 
-source_file="res://lex_partizan_rain/drops512.png"
-dest_files=["res://.godot/imported/drops512.png-eae81ae87393ea6c01d8feb42f88dc43.s3tc.ctex", "res://.godot/imported/drops512.png-eae81ae87393ea6c01d8feb42f88dc43.etc2.ctex"]
+source_file="res://environment/lex_partizan_rain/PavingStones090_2K_Normal.jpg"
+dest_files=["res://.godot/imported/PavingStones090_2K_Normal.jpg-5a8ab9dc15ce8564f0ae27b9f7a7de6e.s3tc.ctex", "res://.godot/imported/PavingStones090_2K_Normal.jpg-5a8ab9dc15ce8564f0ae27b9f7a7de6e.etc2.ctex"]
 
 [params]
 
@@ -23,7 +23,7 @@ compress/lossy_quality=0.7
 compress/uastc_level=0
 compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
-compress/normal_map=0
+compress/normal_map=1
 compress/channel_pack=0
 mipmaps/generate=true
 mipmaps/limit=-1

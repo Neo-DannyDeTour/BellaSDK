@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dbyn8xaiek2lj"
-path="res://.godot/imported/ripples.png-194f1fc59394403360f859d9d0b44b46.ctex"
+uid="uid://vj135x4q5epg"
+path="res://.godot/imported/icon.png-b7e36a585493a85f9bfa320a3fe0fb54.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://lex_partizan_rain/ripples.png"
-dest_files=["res://.godot/imported/ripples.png-194f1fc59394403360f859d9d0b44b46.ctex"]
+source_file="res://environment/lex_partizan_rain/icon.png"
+dest_files=["res://.godot/imported/icon.png-b7e36a585493a85f9bfa320a3fe0fb54.ctex"]
 
 [params]
 
@@ -23,7 +23,7 @@ compress/rdo_quality_loss=0.0
 compress/hdr_compression=1
 compress/normal_map=0
 compress/channel_pack=0
-mipmaps/generate=true
+mipmaps/generate=false
 mipmaps/limit=-1
 roughness/mode=0
 roughness/src_normal=""

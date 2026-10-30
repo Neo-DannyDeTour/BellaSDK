@@ -2,9 +2,9 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dculpby7luo66"
-path.s3tc="res://.godot/imported/Road005_2K_Color.jpg-d15ba808e2bb4eb44d08c08563043ded.s3tc.ctex"
-path.etc2="res://.godot/imported/Road005_2K_Color.jpg-d15ba808e2bb4eb44d08c08563043ded.etc2.ctex"
+uid="uid://city062vsqwcr"
+path.s3tc="res://.godot/imported/cobblestone-curved_albedo.png-9e4c73e55ca5425137b1907eebf01da4.s3tc.ctex"
+path.etc2="res://.godot/imported/cobblestone-curved_albedo.png-9e4c73e55ca5425137b1907eebf01da4.etc2.ctex"
 metadata={
 "imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
@@ -12,8 +12,8 @@ metadata={
 
 [deps]
 
-source_file="res://lex_partizan_rain/Road005_2K_Color.jpg"
-dest_files=["res://.godot/imported/Road005_2K_Color.jpg-d15ba808e2bb4eb44d08c08563043ded.s3tc.ctex", "res://.godot/imported/Road005_2K_Color.jpg-d15ba808e2bb4eb44d08c08563043ded.etc2.ctex"]
+source_file="res://environment/lex_partizan_rain/cobblestone-curved_albedo.png"
+dest_files=["res://.godot/imported/cobblestone-curved_albedo.png-9e4c73e55ca5425137b1907eebf01da4.s3tc.ctex", "res://.godot/imported/cobblestone-curved_albedo.png-9e4c73e55ca5425137b1907eebf01da4.etc2.ctex"]
 
 [params]
 

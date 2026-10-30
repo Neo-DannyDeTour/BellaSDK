@@ -2,22 +2,20 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://144rkjsmgm4r"
-path.s3tc="res://.godot/imported/Road005_2K_Displacement.jpg-ab0f0bcb2717099917cd2f20c8d6578f.s3tc.ctex"
-path.etc2="res://.godot/imported/Road005_2K_Displacement.jpg-ab0f0bcb2717099917cd2f20c8d6578f.etc2.ctex"
+uid="uid://dbyn8xaiek2lj"
+path="res://.godot/imported/ripples.png-3e8e62318fdc0efc6cf74ea43adea798.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
-"vram_texture": true
+"vram_texture": false
 }
 
 [deps]
 
-source_file="res://lex_partizan_rain/Road005_2K_Displacement.jpg"
-dest_files=["res://.godot/imported/Road005_2K_Displacement.jpg-ab0f0bcb2717099917cd2f20c8d6578f.s3tc.ctex", "res://.godot/imported/Road005_2K_Displacement.jpg-ab0f0bcb2717099917cd2f20c8d6578f.etc2.ctex"]
+source_file="res://environment/lex_partizan_rain/ripples.png"
+dest_files=["res://.godot/imported/ripples.png-3e8e62318fdc0efc6cf74ea43adea798.ctex"]
 
 [params]
 
-compress/mode=2
+compress/mode=0
 compress/high_quality=false
 compress/lossy_quality=0.7
 compress/uastc_level=0
@@ -39,4 +37,4 @@ process/normal_map_invert_y=false
 process/hdr_as_srgb=false
 process/hdr_clamp_exposure=false
 process/size_limit=0
-detect_3d/compress_to=0
+detect_3d/compress_to=1
