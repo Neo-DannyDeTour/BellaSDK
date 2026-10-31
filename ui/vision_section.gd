@@ -63,6 +63,9 @@ var _active_diorama_camera: Camera3D
 ## Active tween interpolating preview camera movements.
 var _camera_tween: Tween
 
+## Tracks whether diorama cameras have already been discovered and cached.
+var _cameras_cached: bool = false
+
 
 ## Lifecycle initialization method populating options and binding controls.
 func _ready() -> void:
@@ -271,10 +274,6 @@ func _get_diorama_instance() -> Node:
 				inst = child
 				break
 	return inst
-
-
-## Tracks whether diorama cameras have already been discovered and cached.
-var _cameras_cached: bool = false
 
 
 ## Invalidates the cached diorama camera references when diorama scene changes.

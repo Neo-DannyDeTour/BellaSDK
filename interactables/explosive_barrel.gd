@@ -116,17 +116,17 @@ func _apply_screen_shake_and_audio() -> void:
 		print("ExplosiveBarrel: No active Camera3D found for screen shake.")
 		return
 
-	var distance: float = global_position.distance_to(cam.global_position)
+	var dist_sq: float = global_position.distance_squared_to(cam.global_position)
 	var intensity: float = 0.0
 	var shake_duration: float = 0.0
 	var tinnitus_duration: float = 0.0
 
-	if distance <= 2.0:
+	if dist_sq <= 4.0:
 		print("ExplosiveBarrel: Player is VERY close (<= 2m). Max shake and 5s tinnitus.")
 		intensity = 0.8
 		shake_duration = 4.0
 		tinnitus_duration = 5.0
-	elif distance <= 5.0:
+	elif dist_sq <= 25.0:
 		print("ExplosiveBarrel: Player is in mid-range (<= 5m). Medium shake and 3s tinnitus.")
 		intensity = 0.3
 		shake_duration = 2.0

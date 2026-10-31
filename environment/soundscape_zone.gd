@@ -4,6 +4,9 @@
 class_name SoundscapeZone
 extends Area3D
 
+## Debounce threshold in milliseconds preventing immediate re-triggering.
+const DEBOUNCE_MSEC: int = 100
+
 @export_group("Trigger Volume")
 ## Geometric shape type used for collision and visual debug bounds.
 @export var shape_type: EditorTriggerVisualizer.ShapeType = EditorTriggerVisualizer.ShapeType.BOX:
@@ -108,23 +111,15 @@ static var default_zone: SoundscapeZone = null
 var current_tween: Tween
 
 ## Primary audio stream player for background ambient music.
-@onready var ambient_player: AudioStreamPlayer = (
-	get_node_or_null("AmbientPlayer")
-	if get_node_or_null("AmbientPlayer") is AudioStreamPlayer
-	else null
-)
+@onready
+var ambient_player: AudioStreamPlayer = get_node_or_null("AmbientPlayer") as AudioStreamPlayer
 
 ## Internal timer used for scheduling random environmental one-shot sounds.
-@onready var timer: Timer = (
-	get_node_or_null("RandomSoundTimer") if get_node_or_null("RandomSoundTimer") is Timer else null
-)
+@onready var timer: Timer = get_node_or_null("RandomSoundTimer") as Timer
 
 ## Attached collision shape node defining trigger boundaries.
-@onready var collision_shape: CollisionShape3D = (
-	get_node_or_null("CollisionShape3D")
-	if get_node_or_null("CollisionShape3D") is CollisionShape3D
-	else null
-)
+@onready
+var collision_shape: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
 
 ## System timestamp in milliseconds tracking last exit time.
 var _last_exit_time: int = 0
@@ -132,75 +127,111 @@ var _last_exit_time: int = 0
 ## Guard tracking whether activate_once has been triggered.
 var _has_been_activated: bool = false
 
-## Debounce threshold in milliseconds preventing immediate re-triggering.
-const DEBOUNCE_MSEC: int = 100
-
 
 ## Initializes bounds, audio buses, and connections on ready.
 func _ready() -> void:
-	print("SoundscapeZone: Initializing: ", name)
+	print("SoundscapeZone: Initializing zone: ", name)
+	if is_default_soundscape:
+		default_zone = self
+		print("SoundscapeZone: Registered default soundscape: ", name)
+
+	add_to_group(&"soundscape_zones")
+
+	_ensure_child_nodes()
 	_update_bounds()
 
 	if Engine.is_editor_hint():
 		return
 
-	if is_instance_valid(ambient_player):
-		ambient_player.bus = &"Ambient"
-		ambient_player.volume_db = -80.0
-		if not ambient_player.finished.is_connected(_on_ambient_finished):
-			ambient_player.finished.connect(_on_ambient_finished)
-
-	if is_default_soundscape:
-		default_zone = self
-
-	add_to_group(&"soundscape_zones")
+	body_entered.connect(_on_body_entered)
+	body_exited.connect(_on_body_exited)
 
 	if is_instance_valid(timer):
-		if not timer.timeout.is_connected(_on_timer_timeout):
-			timer.timeout.connect(_on_timer_timeout)
+		timer.timeout.connect(_on_timer_timeout)
 
-	if not body_entered.is_connected(_on_body_entered):
-		body_entered.connect(_on_body_entered)
-	if not body_exited.is_connected(_on_body_exited):
-		body_exited.connect(_on_body_exited)
+	if is_instance_valid(ambient_player):
+		ambient_player.finished.connect(_on_ambient_finished)
+		ambient_player.bus = &"Ambient"
 
-	if is_default_soundscape:
-		call_deferred(&"_deferred_check_fallback")
+	if is_default_soundscape and current_active_zone == null:
+		_start_soundscape()
 
 
-## Rebuilds collision shapes and synchronizes debug visualizer properties.
+## Asserts and dynamically creates child nodes if missing.
+func _ensure_child_nodes() -> void:
+	if not is_instance_valid(collision_shape):
+		collision_shape = get_node_or_null("CollisionShape3D") as CollisionShape3D
+		if not is_instance_valid(collision_shape):
+			collision_shape = CollisionShape3D.new()
+			collision_shape.name = "CollisionShape3D"
+			add_child(collision_shape)
+			collision_shape.owner = self if Engine.is_editor_hint() else null
+
+	if not is_instance_valid(timer):
+		timer = get_node_or_null("RandomSoundTimer") as Timer
+		if not is_instance_valid(timer):
+			timer = Timer.new()
+			timer.name = "RandomSoundTimer"
+			timer.one_shot = true
+			add_child(timer)
+			timer.owner = self if Engine.is_editor_hint() else null
+
+	if not is_instance_valid(ambient_player):
+		ambient_player = get_node_or_null("AmbientPlayer") as AudioStreamPlayer
+		if not is_instance_valid(ambient_player):
+			ambient_player = AudioStreamPlayer.new()
+			ambient_player.name = "AmbientPlayer"
+			add_child(ambient_player)
+			ambient_player.owner = self if Engine.is_editor_hint() else null
+
+	var visual: EditorTriggerVisualizer = _get_visualizer()
+	if not is_instance_valid(visual):
+		visual = EditorTriggerVisualizer.new()
+		visual.name = "EditorTriggerVisualizer"
+		add_child(visual)
+		visual.owner = self if Engine.is_editor_hint() else null
+
+
+## Synchronizes dimensions with [CollisionShape3D] and [EditorTriggerVisualizer].
 func _update_bounds() -> void:
-	if not is_inside_tree():
+	var shape_node: CollisionShape3D = _get_collision_shape()
+	if not is_instance_valid(shape_node):
 		return
 
-	var shape_node: CollisionShape3D = _get_collision_shape()
-	if is_instance_valid(shape_node):
-		if shape_type == EditorTriggerVisualizer.ShapeType.BOX:
-			if not shape_node.shape is BoxShape3D:
-				shape_node.shape = BoxShape3D.new()
+	match shape_type:
+		EditorTriggerVisualizer.ShapeType.BOX:
+			var box: BoxShape3D
+			if shape_node.shape is BoxShape3D:
+				box = shape_node.shape as BoxShape3D
 			else:
-				shape_node.shape = shape_node.shape.duplicate()
-			shape_node.shape.resource_local_to_scene = true
-			var box_shape: BoxShape3D = shape_node.shape if shape_node.shape is BoxShape3D else null
-			box_shape.size = zone_size
-		elif shape_type == EditorTriggerVisualizer.ShapeType.SPHERE:
-			if not shape_node.shape is SphereShape3D:
-				shape_node.shape = SphereShape3D.new()
+				box = BoxShape3D.new()
+				shape_node.shape = box
+			box.size = zone_size
+		EditorTriggerVisualizer.ShapeType.SPHERE:
+			var sphere: SphereShape3D
+			if shape_node.shape is SphereShape3D:
+				sphere = shape_node.shape as SphereShape3D
 			else:
-				shape_node.shape = shape_node.shape.duplicate()
-			shape_node.shape.resource_local_to_scene = true
-			var sphere_shape: SphereShape3D = (
-				shape_node.shape if shape_node.shape is SphereShape3D else null
-			)
-			sphere_shape.radius = zone_size.x * 0.5
+				sphere = SphereShape3D.new()
+				shape_node.shape = sphere
+			sphere.radius = zone_size.x * 0.5
+		EditorTriggerVisualizer.ShapeType.CYLINDER:
+			var cyl: CylinderShape3D
+			if shape_node.shape is CylinderShape3D:
+				cyl = shape_node.shape as CylinderShape3D
+			else:
+				cyl = CylinderShape3D.new()
+				shape_node.shape = cyl
+			cyl.height = zone_size.y
+			cyl.radius = zone_size.x * 0.5
 
-		shape_node.position = zone_offset
+	shape_node.position = zone_offset
 
 	var visual: EditorTriggerVisualizer = _get_visualizer()
 	if is_instance_valid(visual):
 		visual.shape_type = shape_type
-		visual.trigger_size = zone_size
-		visual.trigger_color = zone_color
+		visual.zone_size = zone_size
+		visual.zone_color = zone_color
 		visual.outline_color = outline_color
 		visual.x_ray_mode = x_ray_mode
 		visual.show_orientation = show_orientation
@@ -214,15 +245,11 @@ func _update_bounds() -> void:
 func _get_collision_shape() -> CollisionShape3D:
 	if is_instance_valid(collision_shape):
 		return collision_shape
-	var col: CollisionShape3D = (
-		get_node_or_null("CollisionShape3D")
-		if get_node_or_null("CollisionShape3D") is CollisionShape3D
-		else null
-	)
+	var col: CollisionShape3D = get_node_or_null("CollisionShape3D") as CollisionShape3D
 	if not is_instance_valid(col):
 		for child: Node in get_children():
 			if child is CollisionShape3D:
-				col = child
+				col = child as CollisionShape3D
 				break
 	return col
 
@@ -326,13 +353,11 @@ func _fade_volume(
 	player_node: AudioStreamPlayer, target_vol: float, pause_on_finish: bool = false
 ) -> void:
 	print("SoundscapeZone: Fading volume on ", player_node.name, " to ", target_vol)
-	if current_tween and current_tween.is_running():
-		current_tween.kill()
+	current_tween = Utilities.reset_tween_ext(self, current_tween, Tween.TRANS_SINE, Tween.EASE_OUT)
+	if not is_instance_valid(current_tween):
+		return
 
-	current_tween = create_tween()
-	current_tween.tween_property(player_node, "volume_db", target_vol, fade_duration).set_trans(
-		Tween.TRANS_SINE
-	)
+	current_tween.tween_property(player_node, "volume_db", target_vol, fade_duration)
 
 	if pause_on_finish:
 		current_tween.tween_callback(func() -> void: player_node.stream_paused = true)

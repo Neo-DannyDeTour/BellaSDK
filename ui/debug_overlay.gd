@@ -271,9 +271,11 @@ func _on_render_diagnostic_button_pressed() -> void:
 	Events.render_diagnostics_toggle_requested.emit()
 
 
-## Synchronizes debug drawer visibility state from global events.
+## Synchronizes debug drawer visibility state from global events in debug builds.
 ## [param is_open] Target visibility state for the debug menu.
 func _on_debug_menu_toggled(is_open: bool) -> void:
+	if not OS.is_debug_build():
+		return
 	if is_instance_valid(debug_panel) and debug_panel.visible != is_open:
 		print("DebugOverlay: Syncing debug panel visibility -> ", is_open)
 		debug_panel.visible = is_open
@@ -282,6 +284,8 @@ func _on_debug_menu_toggled(is_open: bool) -> void:
 ## Synchronizes debug drawer panel visibility when console visibility changes.
 ## [param is_open] Target visibility state of the developer console.
 func _on_console_toggled(is_open: bool) -> void:
+	if not OS.is_debug_build():
+		return
 	if is_instance_valid(debug_panel):
 		print("DebugOverlay: Syncing debug panel with console state -> ", is_open)
 		debug_panel.visible = is_open

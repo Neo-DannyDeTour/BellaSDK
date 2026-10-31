@@ -67,22 +67,32 @@ func compute_file_sha256(path: String) -> String:
 	return digest.hex_encode()
 
 
-## Validates level path against allowed project resource prefixes.
+## Validates level path against allowed project resource prefixes and scene locations.
 func is_valid_level_path(level_path: String) -> bool:
 	if level_path.is_empty():
 		return true
-	return level_path.begins_with("res://") and not level_path.contains("..")
+	if (
+		not level_path.begins_with("res://")
+		or level_path.contains("..")
+		or not level_path.ends_with(".tscn")
+	):
+		return false
+	return (
+		level_path.begins_with("res://levels/")
+		or level_path == "res://test/vis_test.tscn"
+		or level_path == "res://player/settings_level.tscn"
+	)
 
 
 ## Validates game state dictionary structure ensuring only node path mappings.
 func validate_state_dictionary(state: Variant) -> bool:
 	if not (state is Dictionary):
 		return false
-	var dict_state: Dictionary = state as Dictionary
+	var dict_state: Dictionary = state if state is Dictionary else {}
 	for key: Variant in dict_state.keys():
 		if not (key is String):
 			return false
-		var path_str: String = String(key)
+		var path_str: String = str(key)
 		if not path_str.begins_with("/root/"):
 			return false
 		var val: Variant = dict_state[key]
@@ -189,7 +199,7 @@ func _threaded_write_data(path: String, data: Dictionary, count: int) -> void:
 		push_error("SaveManager: Encrypted write failed: " + path)
 
 
-## Reads encrypted or unencrypted file and applies state back to nodes.
+## Reads encrypted file and applies state back to nodes.
 func _load_game_state(path: String) -> void:
 	if not FileAccess.file_exists(path):
 		push_error("SaveManager: Target save missing: " + path)
@@ -199,10 +209,8 @@ func _load_game_state(path: String) -> void:
 		path, FileAccess.READ, ENCRYPTION_KEY
 	)
 	if not file:
-		file = FileAccess.open(path, FileAccess.READ)
-		if not file:
-			push_error("SaveManager: Cannot open save file: " + path)
-			return
+		push_error("SaveManager: Failed opening encrypted save file: " + path)
+		return
 
 	var loaded_data: Variant = file.get_var()
 	file.close()
@@ -211,14 +219,16 @@ func _load_game_state(path: String) -> void:
 		push_error("SaveManager: Corrupted or invalid state data structure in: " + path)
 		return
 
-	var total_state: Dictionary = loaded_data as Dictionary
+	var total_state: Dictionary = loaded_data if loaded_data is Dictionary else {}
 	var loaded_nodes_count: int = 0
 
 	for node_path_str: String in total_state.keys():
 		var node: Node = get_node_or_null(node_path_str)
 		if node:
 			if node.has_method("load_save_data"):
-				var node_data: Dictionary = total_state[node_path_str]
+				var node_data: Dictionary = (
+					total_state[node_path_str] if total_state[node_path_str] is Dictionary else {}
+				)
 				node.call("load_save_data", node_data)
 				loaded_nodes_count += 1
 			else:
@@ -248,7 +258,7 @@ func get_all_saves() -> Array[Dictionary]:
 				meta_file.close()
 				var parsed: Variant = JSON.parse_string(raw_text)
 				if parsed is Dictionary:
-					var data: Dictionary = parsed as Dictionary
+					var data: Dictionary = parsed if parsed is Dictionary else {}
 					data["base_path"] = base_path
 					data["id"] = file_name.replace("save_", "").replace(".meta", "")
 					saves.append(data)
@@ -285,7 +295,7 @@ func update_save_meta(save_id: String, new_name: String, is_favorite: bool) -> v
 
 	var parsed: Variant = JSON.parse_string(raw_text)
 	if parsed is Dictionary:
-		var data: Dictionary = parsed as Dictionary
+		var data: Dictionary = parsed if parsed is Dictionary else {}
 		var timestamp_str: String = str(data.get("timestamp", ""))
 		var dat_path: String = SAVES_DIR + "save_" + save_id + ".dat"
 		_write_metadata(path, new_name, timestamp_str, is_favorite, dat_path)
@@ -317,16 +327,17 @@ func load_save_game(base_path: String) -> void:
 	if not (parsed is Dictionary):
 		push_error("SaveManager: Invalid metadata JSON schema in: " + meta_path)
 		return
-	var meta_data: Dictionary = parsed as Dictionary
+	var meta_data: Dictionary = parsed if parsed is Dictionary else {}
 
 	var expected_checksum: String = str(meta_data.get("checksum", ""))
-	if expected_checksum != "":
-		var actual_checksum: String = compute_file_sha256(dat_path)
-		if actual_checksum != expected_checksum:
-			push_error(
-				"SaveManager: Checksum mismatch. Save file tampered or corrupted: " + dat_path
-			)
-			return
+	if expected_checksum.is_empty():
+		push_error("SaveManager: Missing or empty checksum in metadata: " + meta_path)
+		return
+
+	var actual_checksum: String = compute_file_sha256(dat_path)
+	if actual_checksum != expected_checksum:
+		push_error("SaveManager: Checksum mismatch. Save file tampered or corrupted: " + dat_path)
+		return
 
 	var level_path: String = str(meta_data.get("level_path", ""))
 	if not is_valid_level_path(level_path):

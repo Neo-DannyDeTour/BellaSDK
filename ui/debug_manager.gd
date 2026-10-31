@@ -14,10 +14,12 @@ func _ready() -> void:
 		Events.wireframe_toggled.connect(_on_events_wireframe_toggled)
 
 
-## Handles global wireframe rendering toggles.
+## Handles global wireframe rendering toggles in debug builds.
 ## [param is_on] The requested toggle state boolean.
 ## Returns void.
 func _on_events_wireframe_toggled(is_on: bool) -> void:
+	if not OS.is_debug_build():
+		return
 	print("Engine: Viewport wireframe rendering toggled to: ", is_on)
 	if is_on:
 		get_viewport().debug_draw = Viewport.DEBUG_DRAW_WIREFRAME

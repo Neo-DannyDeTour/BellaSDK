@@ -60,6 +60,13 @@ func launch_testbed() -> void:
 		push_error("DevTestbedLoader: No testbed_path configured!")
 		return
 
-	var loader_instance: LoadingScreen = target_scene.instantiate() as LoadingScreen
+	var raw_instance: Node = target_scene.instantiate()
+	var loader_instance: LoadingScreen = raw_instance as LoadingScreen
+	if not is_instance_valid(loader_instance):
+		if is_instance_valid(raw_instance):
+			raw_instance.queue_free()
+		push_error("DevTestbedLoader: Failed to cast instantiated scene to LoadingScreen!")
+		return
+
 	loader_instance.level_scene_path = testbed_path
 	get_tree().root.add_child(loader_instance)

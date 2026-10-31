@@ -54,6 +54,7 @@ shape = SubResource("BoxShape3D_koi6h")
 
 [node name="DoorKeypadSubViewport" type="SubViewport" parent="." unique_id=1935440404]
 disable_3d = true
+render_target_update_mode = 1
 
 [node name="KeypadAudio" type="AudioStreamPlayer3D" parent="." unique_id=1237021702]
 stream = ExtResource("6_jyx7n")

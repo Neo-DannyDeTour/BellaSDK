@@ -29,7 +29,7 @@ func register_commands(registry: ConsoleCommandRegistry) -> void:
 		ConsoleCommand.new("exit", "Exits the application immediately.", _cmd_quit)
 	)
 	registry.register_command(
-		ConsoleCommand.new("restart", "Reloads the active scene.", _cmd_restart)
+		ConsoleCommand.new("restart", "Reloads the active scene.", _cmd_restart, Callable(), true)
 	)
 	registry.register_command(
 		ConsoleCommand.new(

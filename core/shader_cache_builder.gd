@@ -60,9 +60,9 @@ func _process_file(res_path: String, array_ref: Array[Material]) -> void:
 		if res is Material:
 			_append_unique_material(res as Material, array_ref)
 	elif res_path.ends_with(".tscn"):
-		var scene: PackedScene = load(res_path) if load(res_path) is PackedScene else null
-		if scene:
-			_extract_scene_materials(scene, array_ref)
+		var loaded_res: Resource = load(res_path)
+		if loaded_res is PackedScene:
+			_extract_scene_materials(loaded_res as PackedScene, array_ref)
 
 
 ## Deep scans all nodes and sub-resources inside a PackedScene.
@@ -74,7 +74,7 @@ func _extract_scene_materials(scene: PackedScene, array_ref: Array[Material]) ->
 			if prop_val is Material:
 				_append_unique_material(prop_val as Material, array_ref)
 			elif prop_val is Mesh:
-				var mesh: Mesh = prop_val if prop_val is Mesh else null
+				var mesh: Mesh = prop_val as Mesh
 				for surf_idx: int in range(mesh.get_surface_count()):
 					var surf_mat: Material = mesh.surface_get_material(surf_idx)
 					if surf_mat:

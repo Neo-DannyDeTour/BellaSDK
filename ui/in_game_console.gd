@@ -412,8 +412,10 @@ func _on_command_submitted(text: String) -> void:
 		command_input.grab_focus()
 
 
-## Toggles console visibility, pause state, and mouse mode.
+## Toggles console visibility, pause state, and mouse mode in debug builds.
 func _on_console_toggle_requested() -> void:
+	if not OS.is_debug_build():
+		return
 	print("InGameConsole: _on_console_toggle_requested() received.")
 	visible = not visible
 

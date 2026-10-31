@@ -4,10 +4,17 @@
 ## and droplet darkness directly on the active [ShaderMaterial].
 extends MeshInstance3D
 
+## Shader parameter identifier for UV scroll speed.
+const PARAM_SCROLL_SPEED: StringName = &"scroll_speed"
+
+## Shader parameter identifier for UV tiling frequency.
+const PARAM_SIZE_MULTIPLIER: StringName = &"size_multiplier"
+
+## Shader parameter identifier for droplet blend darkness.
+const PARAM_BLACKNESS: StringName = &"blackness"
+
 ## The active material instance applied to surface 0.
-@onready var _rain_mat: ShaderMaterial = (
-	get_active_material(0) if get_active_material(0) is ShaderMaterial else null
-)
+@onready var _rain_mat: ShaderMaterial = get_active_material(0) as ShaderMaterial
 
 
 ## Initializes default heavy storm rain properties on scene load.
@@ -32,9 +39,9 @@ func set_rain_properties(y_speed: float, size: float, darkness: float) -> void:
 		)
 	)
 	if is_instance_valid(_rain_mat):
-		_rain_mat.set_shader_parameter("scroll_speed", Vector2(0.0, y_speed))
-		_rain_mat.set_shader_parameter("size_multiplier", size)
-		_rain_mat.set_shader_parameter("blackness", darkness)
+		_rain_mat.set_shader_parameter(PARAM_SCROLL_SPEED, Vector2(0.0, y_speed))
+		_rain_mat.set_shader_parameter(PARAM_SIZE_MULTIPLIER, size)
+		_rain_mat.set_shader_parameter(PARAM_BLACKNESS, darkness)
 
 
 ## Halts rain motion and renders the droplet overlay completely transparent.

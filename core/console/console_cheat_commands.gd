@@ -524,42 +524,68 @@ func _register_easter_eggs(registry: ConsoleCommandRegistry) -> void:
 	print("ConsoleCheatCommands: Registering easter egg commands.")
 	registry.register_command(
 		ConsoleCommand.new(
-			"iddqd", "", func(_a: PackedStringArray) -> void: context.write("good memory!", "gold")
+			"iddqd",
+			"",
+			func(_a: PackedStringArray) -> void: context.write("good memory!", "gold"),
+			Callable(),
+			true
 		)
 	)
 	registry.register_command(
 		ConsoleCommand.new(
 			"idkfa",
 			"",
-			func(_a: PackedStringArray) -> void: context.write("another classic", "gold")
+			func(_a: PackedStringArray) -> void: context.write("another classic", "gold"),
+			Callable(),
+			true
 		)
 	)
 	registry.register_command(
 		ConsoleCommand.new(
 			"kirov",
 			"",
-			func(_a: PackedStringArray) -> void: context.write("Kirov reporting!", "red")
+			func(_a: PackedStringArray) -> void: context.write("Kirov reporting!", "red"),
+			Callable(),
+			true
 		)
 	)
 	registry.register_command(
 		ConsoleCommand.new(
-			"soyuz", "", func(_a: PackedStringArray) -> void: context.write("Nerushimuy!")
+			"soyuz",
+			"",
+			func(_a: PackedStringArray) -> void: context.write("Nerushimuy!"),
+			Callable(),
+			true
 		)
 	)
-	registry.register_command(ConsoleCommand.new("motherlode", "", _cmd_motherlode))
-	registry.register_command(ConsoleCommand.new("konami", "", _cmd_konami))
 	registry.register_command(
-		ConsoleCommand.new("upupdowndownleftrightleftrightbastart", "", _cmd_upupdowndown)
+		ConsoleCommand.new("motherlode", "", _cmd_motherlode, Callable(), true)
 	)
-	registry.register_command(ConsoleCommand.new("showmethemoney", "", _cmd_showmethemoney))
-	registry.register_command(ConsoleCommand.new("thereisnocowlevel", "", _cmd_thereisnocowlevel))
-	registry.register_command(ConsoleCommand.new("whosyourdaddy", "", _cmd_whosyourdaddy))
-	registry.register_command(ConsoleCommand.new("dnkroz", "", _cmd_dnkroz))
-	registry.register_command(ConsoleCommand.new("hesoyam", "", _cmd_hesoyam))
-	registry.register_command(ConsoleCommand.new("leavemealone", "", _cmd_leavemealone))
-	registry.register_command(ConsoleCommand.new("thegodfather", "", _cmd_thegodfather))
-	registry.register_command(ConsoleCommand.new("sv_cheats", "", _cmd_sv_cheats))
-	registry.register_command(ConsoleCommand.new("impulse", "", _cmd_impulse))
+	registry.register_command(ConsoleCommand.new("konami", "", _cmd_konami, Callable(), true))
+	registry.register_command(
+		ConsoleCommand.new(
+			"upupdowndownleftrightleftrightbastart", "", _cmd_upupdowndown, Callable(), true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new("showmethemoney", "", _cmd_showmethemoney, Callable(), true)
+	)
+	registry.register_command(
+		ConsoleCommand.new("thereisnocowlevel", "", _cmd_thereisnocowlevel, Callable(), true)
+	)
+	registry.register_command(
+		ConsoleCommand.new("whosyourdaddy", "", _cmd_whosyourdaddy, Callable(), true)
+	)
+	registry.register_command(ConsoleCommand.new("dnkroz", "", _cmd_dnkroz, Callable(), true))
+	registry.register_command(ConsoleCommand.new("hesoyam", "", _cmd_hesoyam, Callable(), true))
+	registry.register_command(
+		ConsoleCommand.new("leavemealone", "", _cmd_leavemealone, Callable(), true)
+	)
+	registry.register_command(
+		ConsoleCommand.new("thegodfather", "", _cmd_thegodfather, Callable(), true)
+	)
+	registry.register_command(ConsoleCommand.new("sv_cheats", "", _cmd_sv_cheats, Callable(), true))
+	registry.register_command(ConsoleCommand.new("impulse", "", _cmd_impulse, Callable(), true))
 
 
 ## Easter egg handler for sv_cheats command.

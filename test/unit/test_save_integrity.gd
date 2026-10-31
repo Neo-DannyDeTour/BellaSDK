@@ -82,6 +82,10 @@ func test_level_path_validation() -> void:
 		save_manager.is_valid_level_path("res://levels/../../secret.txt"),
 		"Path traversal (..) should be rejected."
 	)
+	assert_false(
+		save_manager.is_valid_level_path("res://core/save_manager.gd"),
+		"Non-tscn files should be rejected."
+	)
 
 
 ## Verifies state dictionary validator rejects malformed, non-dictionary, or foreign node keys.
@@ -135,12 +139,12 @@ func test_metadata_checksum_encoding() -> void:
 
 	var parsed: Variant = JSON.parse_string(raw_text)
 	assert_true(parsed is Dictionary, "Metadata should parse to a Dictionary.")
-	var meta_dict: Dictionary = parsed as Dictionary
+	var meta_dict: Dictionary = parsed if parsed is Dictionary else {}
 	assert_true(meta_dict.has("checksum"), "Metadata must contain checksum field.")
 
 	var expected_hash: String = save_manager.compute_file_sha256(dat_path)
 	assert_eq(
-		String(meta_dict.get("checksum", "")),
+		str(meta_dict.get("checksum", "")),
 		expected_hash,
 		"Checksum in metadata must match computed dat hash."
 	)

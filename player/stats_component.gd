@@ -49,10 +49,12 @@ func get_save_data() -> Dictionary:
 	return {"health": health_val}
 
 
-## Deserializes and restores player health from saved data.
+## Deserializes and restores player health from saved data with boundary clamping.
 func load_save_data(data: Dictionary) -> void:
 	print("StatsComponent: load_save_data() called. Restoring health.")
 	if is_instance_valid(health_component):
-		var saved_health: int = data.get("health", 100)
-		health_component.current_health = saved_health
-		_on_health_changed(saved_health)
+		var max_hp: int = health_component.max_health
+		var raw_health: int = int(data.get("health", max_hp))
+		var safe_health: int = clampi(raw_health, 1, max_hp)
+		health_component.current_health = safe_health
+		_on_health_changed(safe_health)

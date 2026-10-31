@@ -22,11 +22,16 @@ const META_PART: StringName = &"generated_gate_part"
 ## Normalized vertical heights for the 3 side emitters on each pillar.
 const EMITTER_RATIOS: PackedFloat32Array = [0.22, 0.50, 0.78]
 
-## Physics mask for Player (2), Interactive (4), Debris (8), and Enemies (16).
-const FIELD_TRIGGER_MASK: int = 2 | 4 | 8 | 16
+## Physics mask for Player, Interactive, Debris, and Enemies.
+const FIELD_TRIGGER_MASK: int = (
+	CollisionLayers.MASK_PLAYER
+	| CollisionLayers.MASK_INTERACTIVE
+	| CollisionLayers.MASK_DEBRIS
+	| CollisionLayers.MASK_ENEMIES
+)
 
 ## Physics mask for Player (Layer 2) used by the proximity shock detector.
-const PLAYER_LAYER_MASK: int = 2
+const PLAYER_LAYER_MASK: int = CollisionLayers.MASK_PLAYER
 
 @export_group("Gate Dimensions")
 ## Inner horizontal width between the left and right Gothic pillars.
@@ -539,7 +544,7 @@ func _build_energy_field() -> void:
 	_field_area = Area3D.new()
 	_field_area.name = "EnergyFieldArea3D"
 	_field_area.set_meta(META_PART, true)
-	_field_area.collision_layer = 4
+	_field_area.collision_layer = CollisionLayers.MASK_INTERACTIVE
 	_field_area.collision_mask = FIELD_TRIGGER_MASK
 	_field_area.position = Vector3(0.0, total_h * 0.5, 0.0)
 	add_child(_field_area)
@@ -553,8 +558,8 @@ func _build_energy_field() -> void:
 	_blocker_body = StaticBody3D.new()
 	_blocker_body.name = "ClosedGateBlocker"
 	_blocker_body.set_meta(META_PART, true)
-	_blocker_body.collision_layer = 1
-	_blocker_body.collision_mask = 0
+	_blocker_body.collision_layer = CollisionLayers.MASK_ENVIRONMENT
+	_blocker_body.collision_mask = CollisionLayers.MASK_NONE
 	_blocker_body.position = Vector3(0.0, total_h * 0.5, 0.0)
 	add_child(_blocker_body)
 
@@ -567,7 +572,7 @@ func _build_energy_field() -> void:
 	_proximity_area = Area3D.new()
 	_proximity_area.name = "ProximityShockArea3D"
 	_proximity_area.set_meta(META_PART, true)
-	_proximity_area.collision_layer = 0
+	_proximity_area.collision_layer = CollisionLayers.MASK_NONE
 	_proximity_area.collision_mask = PLAYER_LAYER_MASK
 	_proximity_area.position = Vector3(0.0, total_h * 0.5, 0.0)
 	add_child(_proximity_area)

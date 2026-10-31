@@ -1,21 +1,29 @@
 ## A UI label that displays the current frames per second (FPS).
 ##
-## Changes text color dynamically based on framerate performance.
+## Changes text color dynamically based on framerate performance at a throttled rate.
 class_name FpsCounter
 extends Label
 
+## Update interval in seconds (4 Hz) to throttle string churn and canvas redraws.
+const UPDATE_INTERVAL: float = 0.25
 
-## Called every frame by the engine to update the text and color of the label.
-##
-## @param _delta The time elapsed since the previous frame. Not used in this script.
-func _process(_delta: float) -> void:
+## Accumulator timer tracking time elapsed since last UI text update.
+var _timer: float = 0.0
+
+
+## Called every frame by the engine; updates label text and color at throttled intervals.
+func _process(delta: float) -> void:
+	_timer += delta
+	if _timer < UPDATE_INTERVAL:
+		return
+	_timer = 0.0
+
 	var fps: float = Engine.get_frames_per_second()
+	text = "FPS: %d" % int(roundf(fps))
 
-	text = "FPS: " + str(fps)
-
-	if fps >= 60:
-		set("theme_override_colors/font_color", Color.GREEN)
-	elif fps >= 30:
-		set("theme_override_colors/font_color", Color.YELLOW)
+	if fps >= 60.0:
+		add_theme_color_override(&"font_color", Color.GREEN)
+	elif fps >= 30.0:
+		add_theme_color_override(&"font_color", Color.YELLOW)
 	else:
-		set("theme_override_colors/font_color", Color.RED)
+		add_theme_color_override(&"font_color", Color.RED)

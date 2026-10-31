@@ -141,14 +141,16 @@ func _update_stream_bounds() -> void:
 	var radius_cells: int = ceili(stream_radius / CELL_SIZE)
 	var desired_cells: Dictionary[Vector2i, bool] = {}
 
+	var stream_radius_sq: float = stream_radius * stream_radius
+	var p_pos_2d: Vector2 = Vector2(player_pos.x, player_pos.z)
+
 	for x: int in range(center_cell.x - radius_cells, center_cell.x + radius_cells + 1):
 		for z: int in range(center_cell.y - radius_cells, center_cell.y + radius_cells + 1):
 			var check_coord: Vector2i = Vector2i(x, z)
 			var cell_pos: Vector2 = Vector2(
 				(float(x) + 0.5) * CELL_SIZE, (float(z) + 0.5) * CELL_SIZE
 			)
-			var p_pos_2d: Vector2 = Vector2(player_pos.x, player_pos.z)
-			if p_pos_2d.distance_to(cell_pos) <= stream_radius:
+			if p_pos_2d.distance_squared_to(cell_pos) <= stream_radius_sq:
 				desired_cells[check_coord] = true
 				_request_chunk(check_coord, false)
 

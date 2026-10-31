@@ -226,8 +226,8 @@ func _setup_detector_area() -> void:
 	print("DroneSwarmController: _setup_detector_area() creating area.")
 	detector_area = Area3D.new()
 	detector_area.name = "PlayerDetectionArea"
-	detector_area.collision_layer = 0
-	detector_area.collision_mask = 2
+	detector_area.collision_layer = CollisionLayers.MASK_NONE
+	detector_area.collision_mask = CollisionLayers.MASK_PLAYER
 
 	var col_shape: CollisionShape3D = CollisionShape3D.new()
 	var sphere: SphereShape3D = SphereShape3D.new()

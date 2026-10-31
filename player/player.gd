@@ -743,11 +743,12 @@ func _on_zipline_grabbed(zipline_node: Node3D, start_pos: Vector3, end_pos: Vect
 		environment_component.enter_zipline(zipline_node, start_pos, end_pos)
 
 
-## Extracts a float value from a [Dictionary] safely handling [Variant] types.
+## Extracts a float value from a [Dictionary] safely handling [Variant] types and NaN/Inf guards.
 func _extract_float_from_dict(source: Dictionary, key: String, default_val: float) -> float:
 	var raw_val: Variant = source.get(key, default_val)
 	if raw_val is float:
-		return raw_val
+		var float_val: float = raw_val
+		return float_val if is_finite(float_val) else default_val
 	if raw_val is int:
 		var int_val: int = raw_val
 		return float(int_val)

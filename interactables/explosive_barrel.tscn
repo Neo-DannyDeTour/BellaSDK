@@ -26,7 +26,6 @@ collision_layer = 5
 mass = 10.0
 script = ExtResource("1_i7e6k")
 max_health = 10
-explosion_scene = null
 max_distance = 3.0
 max_force = 50.0
 chain_reaction_threshold = 1.5

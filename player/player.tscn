@@ -563,8 +563,6 @@ player_body = NodePath("..")
 camera = NodePath("../Head/Eyes/Camera3D")
 interact_shapecast = NodePath("../Head/Eyes/Camera3D/InteractionShapeCast")
 empty_interact_audio = NodePath("EmptyInteractAudio")
-base_reach = null
-floor_reach = null
 
 [node name="EmptyInteractAudio" type="AudioStreamPlayer" parent="InteractionScanner" unique_id=1912212616]
 stream = ExtResource("13_or4qq")

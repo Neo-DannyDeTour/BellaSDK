@@ -34,7 +34,28 @@ albedo_texture = ExtResource("6_7rave")
 uv1_triplanar = true
 
 [sub_resource type="BoxMesh" id="BoxMesh_hkbtf"]
+material = SubResource("StandardMaterial3D_7rave")
 size = Vector3(0.1, 0.1, 1.5)
+
+[sub_resource type="BoxMesh" id="BoxMesh_stick_x"]
+material = SubResource("StandardMaterial3D_7rave")
+size = Vector3(1.5, 0.1, 0.1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_stub_5"]
+material = SubResource("StandardMaterial3D_7rave")
+size = Vector3(0.1, 0.1, 0.040039063)
+
+[sub_resource type="BoxMesh" id="BoxMesh_stub_6"]
+material = SubResource("StandardMaterial3D_7rave")
+size = Vector3(0.10913086, 0.1, 0.1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_stub_7"]
+material = SubResource("StandardMaterial3D_7rave")
+size = Vector3(0.1, 0.1, 0.23413086)
+
+[sub_resource type="BoxMesh" id="BoxMesh_stub_8"]
+material = SubResource("StandardMaterial3D_7rave")
+size = Vector3(0.20117188, 0.1, 0.1)
 
 [node name="PushWheel" type="StaticBody3D" unique_id=1136326807 node_paths=PackedStringArray("transmitter", "wheel", "intact_sticks", "broken_stubs", "restored_handle") groups=["interactables"]]
 collision_layer = 5
@@ -77,60 +98,40 @@ mesh = SubResource("CylinderMesh_mfqgi")
 
 [node name="Intact_Sticks" type="Node3D" parent="Wheel/Visuals/Hub" unique_id=422595957]
 
-[node name="Stick_1" type="CSGBox3D" parent="Wheel/Visuals/Hub/Intact_Sticks" unique_id=1055498006]
+[node name="Stick_1" type="MeshInstance3D" parent="Wheel/Visuals/Hub/Intact_Sticks" unique_id=1055498006]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -1)
-collision_layer = 5
-collision_mask = 2
-size = Vector3(0.1, 0.1, 1.5)
-material = SubResource("StandardMaterial3D_7rave")
+mesh = SubResource("BoxMesh_hkbtf")
 
-[node name="Stick_2" type="CSGBox3D" parent="Wheel/Visuals/Hub/Intact_Sticks" unique_id=46382781]
+[node name="Stick_2" type="MeshInstance3D" parent="Wheel/Visuals/Hub/Intact_Sticks" unique_id=46382781]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0.5, 0)
-collision_layer = 5
-collision_mask = 2
-size = Vector3(1.5, 0.1, 0.1)
-material = SubResource("StandardMaterial3D_7rave")
+mesh = SubResource("BoxMesh_stick_x")
 
-[node name="Stick_3" type="CSGBox3D" parent="Wheel/Visuals/Hub/Intact_Sticks" unique_id=331262859]
+[node name="Stick_3" type="MeshInstance3D" parent="Wheel/Visuals/Hub/Intact_Sticks" unique_id=331262859]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 1)
-collision_layer = 5
-collision_mask = 2
-size = Vector3(0.1, 0.1, 1.5)
-material = SubResource("StandardMaterial3D_7rave")
+mesh = SubResource("BoxMesh_hkbtf")
 
-[node name="Stick_4" type="CSGBox3D" parent="Wheel/Visuals/Hub/Intact_Sticks" unique_id=1502675525]
+[node name="Stick_4" type="MeshInstance3D" parent="Wheel/Visuals/Hub/Intact_Sticks" unique_id=1502675525]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0.5, 0)
-collision_layer = 5
-collision_mask = 2
-size = Vector3(1.5, 0.1, 0.1)
-material = SubResource("StandardMaterial3D_7rave")
+mesh = SubResource("BoxMesh_stick_x")
 
 [node name="Broken_Stubs" type="Node3D" parent="Wheel/Visuals/Hub" unique_id=575020920]
 visible = false
 
-[node name="Stick_5" type="CSGBox3D" parent="Wheel/Visuals/Hub/Broken_Stubs" unique_id=1455100968]
+[node name="Stick_5" type="MeshInstance3D" parent="Wheel/Visuals/Hub/Broken_Stubs" unique_id=1455100968]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -0.27001953)
-collision_layer = 5
-collision_mask = 2
-size = Vector3(0.1, 0.1, 0.040039063)
+mesh = SubResource("BoxMesh_stub_5")
 
-[node name="Stick_6" type="CSGBox3D" parent="Wheel/Visuals/Hub/Broken_Stubs" unique_id=658296218]
+[node name="Stick_6" type="MeshInstance3D" parent="Wheel/Visuals/Hub/Broken_Stubs" unique_id=658296218]
 transform = Transform3D(0.95336264, 0.1607598, -0.25545275, -0.15528204, 0.98699355, 0.041607697, 0.25881907, 0, 0.96592593, 0.2640086, 0.5, -0.0053394064)
-collision_layer = 5
-collision_mask = 2
-size = Vector3(0.10913086, 0.1, 0.1)
+mesh = SubResource("BoxMesh_stub_6")
 
-[node name="Stick_7" type="CSGBox3D" parent="Wheel/Visuals/Hub/Broken_Stubs" unique_id=335700583]
+[node name="Stick_7" type="MeshInstance3D" parent="Wheel/Visuals/Hub/Broken_Stubs" unique_id=335700583]
 transform = Transform3D(1, 0, 0, 0, 0.9249844, 0.38000512, 0, -0.38000512, 0.9249844, 0, 0.48807845, 0.3066747)
-collision_layer = 5
-collision_mask = 2
-size = Vector3(0.1, 0.1, 0.23413086)
+mesh = SubResource("BoxMesh_stub_7")
 
-[node name="Stick_8" type="CSGBox3D" parent="Wheel/Visuals/Hub/Broken_Stubs" unique_id=1837165702]
+[node name="Stick_8" type="MeshInstance3D" parent="Wheel/Visuals/Hub/Broken_Stubs" unique_id=1837165702]
 transform = Transform3D(0.964516, -0.26402456, 0, 0.26402456, 0.964516, 0, 0, 0, 1, -0.30704516, 0.5, 0)
-collision_layer = 5
-collision_mask = 2
-size = Vector3(0.20117188, 0.1, 0.1)
+mesh = SubResource("BoxMesh_stub_8")
 
 [node name="Restored_Handle" type="MeshInstance3D" parent="Wheel/Visuals/Hub" unique_id=518647199]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, 1)

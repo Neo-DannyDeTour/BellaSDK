@@ -42,10 +42,10 @@ var active_tweens: Dictionary = {}
 @onready var right_label: Label3D = $DoorRight/Label3D2
 
 ## Interaction trigger receiver attached to left door panel.
-@onready var left_interact: Node = $DoorLeft/InteractComponent
+@onready var left_interact: InteractComponent = $DoorLeft/InteractComponent as InteractComponent
 
 ## Interaction trigger receiver attached to right door panel.
-@onready var right_interact: Node = $DoorRight/InteractComponent
+@onready var right_interact: InteractComponent = $DoorRight/InteractComponent as InteractComponent
 
 
 ## Caches initial door positions and connects interaction signals.
@@ -56,15 +56,17 @@ func _ready() -> void:
 
 	right_label.hide()
 	left_label.hide()
+	set_process(false)
 
-	left_interact.connect("interacted", _on_interact.bind("left"))
-	right_interact.connect("interacted", _on_interact.bind("right"))
+	if is_instance_valid(left_interact):
+		left_interact.interacted.connect(_on_interact.bind("left"))
+		left_interact.focused.connect(_on_focus.bind("left"))
+		left_interact.unfocused.connect(_on_unfocus.bind("left"))
 
-	left_interact.connect("focused", _on_focus.bind("left"))
-	left_interact.connect("unfocused", _on_unfocus.bind("left"))
-
-	right_interact.connect("focused", _on_focus.bind("right"))
-	right_interact.connect("unfocused", _on_unfocus.bind("right"))
+	if is_instance_valid(right_interact):
+		right_interact.interacted.connect(_on_interact.bind("right"))
+		right_interact.focused.connect(_on_focus.bind("right"))
+		right_interact.unfocused.connect(_on_unfocus.bind("right"))
 
 
 ## Keeps active 3D prompt labels anchored to player interaction points.
@@ -72,11 +74,11 @@ func _process(_delta: float) -> void:
 	var label_offset: Vector3 = Vector3(0.0, -0.15, 0.0)
 
 	if left_label.visible and is_instance_valid(left_interact):
-		var hit_pos: Vector3 = left_interact.get(&"last_hit_position")
+		var hit_pos: Vector3 = left_interact.last_hit_position
 		left_label.global_position = hit_pos + label_offset
 
 	if right_label.visible and is_instance_valid(right_interact):
-		var hit_pos: Vector3 = right_interact.get(&"last_hit_position")
+		var hit_pos: Vector3 = right_interact.last_hit_position
 		right_label.global_position = hit_pos + label_offset
 
 
@@ -99,6 +101,7 @@ func _on_focus(side: String) -> void:
 
 	target_label.text = ("[%s] to interact\nDouble [%s] to close" % [key_name, key_name])
 	target_label.show()
+	set_process(true)
 
 
 ## Hides prompt label when player looks away from door.
@@ -106,6 +109,8 @@ func _on_unfocus(side: String) -> void:
 	print("DoubleSlidingDoors: Focus lost on side -> ", side)
 	var target_label: Label3D = left_label if side == "left" else right_label
 	target_label.hide()
+	if not left_label.visible and not right_label.visible:
+		set_process(false)
 
 
 ## Processes single and double interaction events from player.

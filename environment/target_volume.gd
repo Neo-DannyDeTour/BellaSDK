@@ -186,9 +186,9 @@ func _process(delta: float) -> void:
 	if _dist_timer >= 0.5:
 		_dist_timer = 0.0
 		if not is_instance_valid(_player_ref):
-			var players: Array[Node] = get_tree().get_nodes_in_group(&"player")
-			if not players.is_empty() and players[0] is Node3D:
-				_player_ref = players[0] as Node3D
+			var player_node: Node = NodeQuery.get_single_node_in_group(get_tree(), &"player")
+			if player_node is Node3D:
+				_player_ref = player_node as Node3D
 
 		if is_instance_valid(_player_ref):
 			var p_pos: Vector3 = _player_ref.global_position
