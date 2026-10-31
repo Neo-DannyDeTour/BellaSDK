@@ -197,6 +197,7 @@ func _update_visuals() -> void:
 	if is_instance_valid(_line_visual):
 		_line_visual.visible = true
 		_line_visual.top_level = false
+		_line_visual.extra_cull_margin = 10000.0
 
 		var imm_mesh: ImmediateMesh = (
 			_line_visual.mesh if _line_visual.mesh is ImmediateMesh else null
@@ -230,6 +231,7 @@ func _update_visuals() -> void:
 	if is_instance_valid(_apex_visual):
 		_apex_visual.visible = true
 		_apex_visual.top_level = true
+		_apex_visual.extra_cull_margin = 10000.0
 		_apex_visual.global_position = _get_position_at_time(_t_up)
 
 
@@ -279,6 +281,7 @@ func _on_body_entered(body: Node3D) -> void:
 				"Air",
 				{
 					"jump_pad": true,
+					"launch_duration": _flight_time + 0.1,
 					"launch_gravity": _custom_gravity_up,
 					"launch_fall_gravity": _custom_gravity_down
 				}
@@ -338,12 +341,16 @@ func _create_default_nodes() -> void:
 		var line: MeshInstance3D = (
 			_get_or_create_internal_node("LineVisual", MeshInstance3D.new) as MeshInstance3D
 		)
-		line.top_level = true
+		line.top_level = false
+		line.extra_cull_margin = 10000.0
+		line.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 
 		var apex: MeshInstance3D = (
 			_get_or_create_internal_node("ApexVisual", MeshInstance3D.new) as MeshInstance3D
 		)
 		apex.top_level = true
+		apex.extra_cull_margin = 10000.0
+		apex.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		if not apex.mesh:
 			var apex_box: BoxMesh = BoxMesh.new()
 			apex_box.size = Vector3(1.0, 0.05, 1.0)

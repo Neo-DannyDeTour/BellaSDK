@@ -33,6 +33,19 @@ func before_each() -> void:
 	add_child_autofree(inventory)
 
 
+## Teardown hook sweeping root-level projectile spawns and resetting SmokeManager.
+func after_each() -> void:
+	var root: Window = get_tree().root
+	for child: Node in root.find_children("*", "SmokeGrenadeProjectile", true, false):
+		child.queue_free()
+	for child: Node in root.find_children("*", "FogVolume", true, false):
+		child.queue_free()
+
+	var smoke_manager: Node = root.get_node_or_null("SmokeManager")
+	if is_instance_valid(smoke_manager) and smoke_manager.has_method(&"clear_all"):
+		smoke_manager.call(&"clear_all")
+
+
 ## Verifies default tuning parameters and grenade stack limits.
 func test_default_properties() -> void:
 	print("TestThrowableWeapon: test_default_properties() called.")

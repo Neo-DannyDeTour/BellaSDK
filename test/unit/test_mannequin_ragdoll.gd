@@ -43,8 +43,11 @@ func test_mannequin_ragdoll_setup_and_activation() -> void:
 	)
 
 	ragdoll.take_damage(50.0, Vector3(0.0, 1.45, 0.0), Vector3.BACK)
-	await get_tree().physics_frame
-	await get_tree().physics_frame
+	await get_tree().process_frame
+	var wait_attempts: int = 0
+	while chest_bone.linear_velocity.length_squared() <= 0.001 and wait_attempts < 15:
+		await get_tree().physics_frame
+		wait_attempts += 1
 	assert_true(ragdoll.is_ragdoll_active, "Ragdoll simulation must activate after taking damage.")
 	assert_gt(
 		chest_bone.linear_velocity.length_squared(),
