@@ -4,7 +4,8 @@
 class_name EditorTriggerVisualizer
 extends MeshInstance3D
 
-enum ShapeType { BOX, SPHERE }
+## Geometric volume shapes supported by visualizer gizmo.
+enum ShapeType { BOX, SPHERE, CYLINDER }
 
 @export_category("Geometry & Shape")
 
@@ -152,6 +153,14 @@ func _update_fill_mesh() -> void:
 			mesh = mesh.duplicate()
 		(mesh as SphereMesh).radius = trigger_size.x / 2.0
 		(mesh as SphereMesh).height = trigger_size.x
+	elif shape_type == ShapeType.CYLINDER:
+		if mesh == null or not mesh is CylinderMesh:
+			mesh = CylinderMesh.new()
+		else:
+			mesh = mesh.duplicate()
+		(mesh as CylinderMesh).top_radius = trigger_size.x * 0.5
+		(mesh as CylinderMesh).bottom_radius = trigger_size.x * 0.5
+		(mesh as CylinderMesh).height = trigger_size.y
 
 
 ## Constructs an ImmediateMesh wireframe cage outlining the active shape.
@@ -201,6 +210,25 @@ func _update_wireframe_mesh() -> void:
 						p1 = Vector3(0.0, cos(a1), sin(a1)) * radius
 						p2 = Vector3(0.0, cos(a2), sin(a2)) * radius
 				_draw_line(imm_mesh, p1, p2)
+		imm_mesh.surface_end()
+	elif shape_type == ShapeType.CYLINDER:
+		var radius: float = trigger_size.x * 0.5
+		var half_h: float = trigger_size.y * 0.5
+		var segments: int = 24
+		imm_mesh.surface_begin(Mesh.PRIMITIVE_LINES)
+		for i: int in range(segments):
+			var a1: float = (float(i) / segments) * TAU
+			var a2: float = (float(i + 1) / segments) * TAU
+			var cos1: float = cos(a1) * radius
+			var sin1: float = sin(a1) * radius
+			var cos2: float = cos(a2) * radius
+			var sin2: float = sin(a2) * radius
+			_draw_line(imm_mesh, Vector3(cos1, half_h, sin1), Vector3(cos2, half_h, sin2))
+			_draw_line(imm_mesh, Vector3(cos1, -half_h, sin1), Vector3(cos2, -half_h, sin2))
+		_draw_line(imm_mesh, Vector3(radius, -half_h, 0.0), Vector3(radius, half_h, 0.0))
+		_draw_line(imm_mesh, Vector3(-radius, -half_h, 0.0), Vector3(-radius, half_h, 0.0))
+		_draw_line(imm_mesh, Vector3(0.0, -half_h, radius), Vector3(0.0, half_h, radius))
+		_draw_line(imm_mesh, Vector3(0.0, -half_h, -radius), Vector3(0.0, half_h, -radius))
 		imm_mesh.surface_end()
 
 	_wireframe_node.mesh = imm_mesh
@@ -287,6 +315,8 @@ func _update_text() -> void:
 			)
 		elif shape_type == ShapeType.SPHERE:
 			text_output += "\n[R: %.1fm]" % [trigger_size.x * 0.5]
+		elif shape_type == ShapeType.CYLINDER:
+			text_output += "\n[R: %.1fm × H: %.1fm]" % [trigger_size.x * 0.5, trigger_size.y]
 
 	_label.text = text_output
 	_label.position = Vector3(0.0, (trigger_size.y * 0.5) + 0.5, 0.0)

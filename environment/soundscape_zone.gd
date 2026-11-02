@@ -230,8 +230,8 @@ func _update_bounds() -> void:
 	var visual: EditorTriggerVisualizer = _get_visualizer()
 	if is_instance_valid(visual):
 		visual.shape_type = shape_type
-		visual.zone_size = zone_size
-		visual.zone_color = zone_color
+		visual.trigger_size = zone_size
+		visual.trigger_color = zone_color
 		visual.outline_color = outline_color
 		visual.x_ray_mode = x_ray_mode
 		visual.show_orientation = show_orientation
