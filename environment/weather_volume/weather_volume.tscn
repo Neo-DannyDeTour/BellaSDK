@@ -1,0 +1,96 @@
+[gd_scene load_steps=10 format=3 uid="uid://c8w4v2x9n5q1p"]
+
+[ext_resource type="Script" path="res://environment/weather_volume/weather_volume.gd" id="1_script"]
+[ext_resource type="Shader" path="res://environment/weather_volume/snow_particle.gdshader" id="2_snow_shader"]
+[ext_resource type="Shader" path="res://environment/weather_volume/dust_particle.gdshader" id="3_dust_shader"]
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_snow"]
+emission_shape = 3
+emission_box_extents = Vector3(5, 3, 5)
+direction = Vector3(0.5547, -0.801784, 0.22188)
+spread = 22.0
+initial_velocity_min = 0.31305
+initial_velocity_max = 0.6
+gravity = Vector3(0, -2.8, 0)
+scale_min = 0.6
+scale_max = 1.45
+turbulence_enabled = true
+turbulence_noise_strength = 0.35
+turbulence_noise_scale = 2.5
+turbulence_noise_speed = Vector3(0.2, -0.3, 0.15)
+turbulence_influence_min = 0.08
+turbulence_influence_max = 0.2
+collision_mode = 2
+collision_use_scale = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_snow"]
+render_priority = 0
+shader = ExtResource("2_snow_shader")
+shader_parameter/albedo_color = Color(0.95, 0.97, 1, 0.9)
+shader_parameter/flutter_speed = 3.2
+shader_parameter/flutter_amplitude = 0.035
+shader_parameter/proximity_fade_distance = 0.25
+
+[sub_resource type="QuadMesh" id="QuadMesh_snow"]
+material = SubResource("ShaderMaterial_snow")
+size = Vector2(0.08, 0.08)
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_dust"]
+emission_shape = 3
+emission_box_extents = Vector3(5, 3, 5)
+direction = Vector3(0.894427, 0, 0.447214)
+spread = 65.0
+initial_velocity_min = 0.134164
+initial_velocity_max = 0.357771
+gravity = Vector3(0, -0.12, 0)
+scale_min = 0.5
+scale_max = 1.6
+turbulence_enabled = true
+turbulence_noise_strength = 0.25
+turbulence_noise_scale = 1.8
+turbulence_noise_speed = Vector3(0.1, 0.05, 0.1)
+turbulence_influence_min = 0.15
+turbulence_influence_max = 0.35
+collision_mode = 1
+collision_friction = 0.2
+collision_bounce = 0.15
+collision_use_scale = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_dust"]
+render_priority = 0
+shader = ExtResource("3_dust_shader")
+shader_parameter/albedo_color = Color(0.82, 0.77, 0.68, 0.55)
+shader_parameter/drift_speed = 0.8
+shader_parameter/proximity_fade_distance = 0.3
+
+[sub_resource type="QuadMesh" id="QuadMesh_dust"]
+material = SubResource("ShaderMaterial_dust")
+size = Vector2(0.05, 0.05)
+
+[node name="WeatherVolume" type="Node3D"]
+script = ExtResource("1_script")
+
+[node name="SnowParticles" type="GPUParticles3D" parent="."]
+layers = 512
+amount = 4000
+lifetime = 6.0
+preprocess = 2.0
+local_coords = false
+collision_base_size = 0.05
+visibility_aabb = AABB(-5, -5.5, -5, 10, 8.5, 10)
+process_material = SubResource("ParticleProcessMaterial_snow")
+draw_pass_1 = SubResource("QuadMesh_snow")
+
+[node name="DustParticles" type="GPUParticles3D" parent="."]
+layers = 512
+amount = 2500
+lifetime = 8.0
+preprocess = 2.0
+local_coords = false
+collision_base_size = 0.03
+visibility_aabb = AABB(-5, -5.5, -5, 10, 8.5, 10)
+process_material = SubResource("ParticleProcessMaterial_dust")
+draw_pass_1 = SubResource("QuadMesh_dust")
+
+[node name="VisibleOnScreenNotifier3D" type="VisibleOnScreenNotifier3D" parent="."]
+aabb = AABB(-5, -5.5, -5, 10, 8.5, 10)
