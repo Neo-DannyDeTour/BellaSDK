@@ -14,7 +14,7 @@
 [ext_resource type="PackedScene" uid="uid://da3q2bu5xkp72" path="res://ui/GameplayPanel.tscn" id="10_bgtsx"]
 [ext_resource type="Shader" uid="uid://w674ybxmnkoi" path="res://vfx/diorama_post_process.gdshader" id="11_kaxbk"]
 [ext_resource type="Script" uid="uid://7t34h1kqmrcr" path="res://ui/diorama_post_process.gd" id="12_0nobx"]
-[ext_resource type="Shader" uid="uid://coifevcbmk5s2" path="res://ui/horror_glow_border.gdshader" id="16_iyrh0"]
+[ext_resource type="Shader" path="res://ui/setting_row_hover.gdshader" id="16_iyrh0"]
 [ext_resource type="Script" uid="uid://c2qxdkxabijvi" path="res://ui/universal_setting_highlighter.gd" id="17_8jgmr"]
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_50h1w"]
@@ -39,15 +39,16 @@ shader_parameter/grain_amount = 0.0
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_534t5"]
 shader = ExtResource("16_iyrh0")
-shader_parameter/ui_tilt = Vector2(0, 0)
-shader_parameter/perspective_strength = 0.15
-shader_parameter/line_color = Color(1, 1, 1, 1)
-shader_parameter/line_thickness = 2.0
-shader_parameter/corner_cut = 14.0
-shader_parameter/rect_size = Vector2(0, 0)
-shader_parameter/speed = 1.5
-shader_parameter/trail_length = 0.3
+shader_parameter/rect_size = Vector2(400, 48)
+shader_parameter/mouse_pos = Vector2(200, 24)
 shader_parameter/hover_intensity = 0.0
+shader_parameter/tile_color = Color(0.95, 0.05, 0.05, 0.92)
+shader_parameter/core_glow_color = Color(1, 0.35, 0.25, 1)
+shader_parameter/corner_cut = 10.0
+shader_parameter/tile_size = 9.0
+shader_parameter/effect_radius = 210.0
+shader_parameter/ripple_freq = 0.11
+shader_parameter/ripple_speed = 3.8
 
 [node name="MainMenu" type="CanvasLayer" unique_id=1244757478 node_paths=PackedStringArray("main_theme_player") groups=["hide_on_save"]]
 process_mode = 3
