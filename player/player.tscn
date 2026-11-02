@@ -71,6 +71,7 @@
 [ext_resource type="Script" uid="uid://34lx2eim448b" path="res://player/state_tube.gd" id="68_b2j0d"]
 [ext_resource type="Script" uid="uid://cpanucihj2fsj" path="res://player/state_wolf_wall_run.gd" id="70_j3r50"]
 [ext_resource type="Script" uid="uid://nmq3xe2f3kq1" path="res://player/state_wolf_climb.gd" id="71_utr5e"]
+[ext_resource type="Script" uid="uid://p5dlbr1nqemi" path="res://player/state_jib_crane.gd" id="72_jibcr"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_cw2d6"]
 radius = 0.1
@@ -728,6 +729,9 @@ script = ExtResource("70_j3r50")
 
 [node name="WolfClimb" type="Node" parent="StateMachine" unique_id=1814580864]
 script = ExtResource("71_utr5e")
+
+[node name="JibCrane" type="Node" parent="StateMachine" unique_id=1928374651]
+script = ExtResource("72_jibcr")
 
 [connection signal="area_entered" from="WaterDetector" to="." method="_on_water_detector_area_entered"]
 [connection signal="area_exited" from="WaterDetector" to="." method="_on_water_detector_area_exited"]
