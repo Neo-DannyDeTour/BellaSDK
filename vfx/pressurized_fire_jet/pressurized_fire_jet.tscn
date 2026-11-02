@@ -1,0 +1,71 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://vfx/pressurized_fire_jet/pressurized_fire_jet.gd" id="1_1kke2"]
+[ext_resource type="Shader" path="res://vfx/pressurized_fire_jet/pressurized_fire_jet.gdshader" id="2_5eu0r"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_qwa4h"]
+frequency = 0.025
+fractal_octaves = 4
+fractal_lacunarity = 2.1
+fractal_gain = 0.52
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_5n1ds"]
+noise = SubResource("FastNoiseLite_qwa4h")
+seamless = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_e8tnl"]
+render_priority = 0
+shader = ExtResource("2_5eu0r")
+shader_parameter/noise_tex = SubResource("NoiseTexture2D_5n1ds")
+shader_parameter/depth_fade_distance = 0.25
+shader_parameter/displacement_strength = 0.18
+shader_parameter/warp_strength = 0.28
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_jt8u2"]
+material = SubResource("ShaderMaterial_e8tnl")
+top_radius = 0.04
+bottom_radius = 0.22
+radial_segments = 32
+rings = 24
+cap_top = false
+cap_bottom = false
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_nnhry"]
+resource_local_to_scene = true
+height = 6.0
+radius = 0.22
+
+[node name="PressurizedFireJet" type="Node3D" unique_id=1147763158 node_paths=PackedStringArray("jet_mesh", "jet_light", "screen_notifier", "hazard_area", "hazard_shape")]
+script = ExtResource("1_1kke2")
+jet_mesh = NodePath("JetPivot/JetMesh")
+jet_light = NodePath("JetLight")
+screen_notifier = NodePath("ScreenNotifier")
+hazard_area = NodePath("HazardArea")
+hazard_shape = NodePath("HazardArea/HazardShape")
+
+[node name="JetPivot" type="Node3D" parent="." unique_id=1785987487]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, 0)
+
+[node name="JetMesh" type="MeshInstance3D" parent="JetPivot" unique_id=922174575]
+transform = Transform3D(1, 0, 0, 0, 3, 0, 0, 0, 1, 0, -3, 0)
+layers = 512
+mesh = SubResource("CylinderMesh_jt8u2")
+
+[node name="JetLight" type="OmniLight3D" parent="." unique_id=1492493082]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -0.3)
+light_color = Color(1, 0.62, 0.22, 1)
+light_energy = 3.5
+omni_range = 6.0
+omni_attenuation = 1.4
+
+[node name="ScreenNotifier" type="VisibleOnScreenNotifier3D" parent="." unique_id=1016257161]
+aabb = AABB(-0.5, -0.5, -6.4, 1, 1, 6.6)
+
+[node name="HazardArea" type="Area3D" parent="." unique_id=678583303]
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+
+[node name="HazardShape" type="CollisionShape3D" parent="HazardArea" unique_id=1428248398]
+transform = Transform3D(1, 0, 0, 0, -4.371139e-08, -1, 0, 1, -4.371139e-08, 0, 0, -3)
+shape = SubResource("CylinderShape3D_nnhry")
