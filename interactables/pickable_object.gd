@@ -170,7 +170,7 @@ var _standing_lock_ticks: int = 0
 func _ready() -> void:
 	print("PickableObject: _ready() called. Initializing ", name)
 	can_sleep = true
-	continuous_cd = false
+	continuous_cd = true
 	collision_layer = CollisionLayers.MASK_INTERACTIVE
 	collision_mask = (
 		CollisionLayers.MASK_ENVIRONMENT
@@ -307,6 +307,7 @@ func pick_up(target: Marker3D, player_node: Node3D) -> void:
 	angular_velocity = Vector3.ZERO
 	freeze = false
 	sleeping = false
+	continuous_cd = true
 	gravity_scale = 0.0
 
 	var alpha: float = (
@@ -354,6 +355,7 @@ func drop() -> void:
 
 	freeze = false
 	sleeping = false
+	continuous_cd = true
 	gravity_scale = 1.0
 
 	if is_instance_valid(holder):
@@ -392,6 +394,8 @@ func drop() -> void:
 ## Drops object and applies impulse vector [param impulse_vector].
 func throw(impulse_vector: Vector3) -> void:
 	print("PickableObject: throw() called with force: ", impulse_vector.length())
+	continuous_cd = true
+	_ensure_throw_clearance()
 	drop()
 	if not is_locked:
 		apply_central_impulse(impulse_vector)
@@ -506,6 +510,62 @@ func _get_upright_bottom_extent() -> float:
 		return (aabb.size.y * 0.5) - target_mesh.position.y
 
 	return 0.5
+
+
+## Adjusts object position to guarantee clearance from static colliders before throw.
+func _ensure_throw_clearance() -> void:
+	if not is_inside_tree():
+		return
+	var space_state: PhysicsDirectSpaceState3D = get_world_3d().direct_space_state
+	if not is_instance_valid(space_state):
+		return
+
+	var extent: float = _get_clearance_extent()
+	var cam: Camera3D = _get_camera()
+	var origin: Vector3 = (
+		cam.global_position
+		if is_instance_valid(cam)
+		else (holder.global_position if is_instance_valid(holder) else global_position)
+	)
+
+	var to_obj: Vector3 = global_position - origin
+	var dist: float = to_obj.length()
+	if dist > 0.05:
+		var hit: Dictionary = NodeQuery.cast_ray(
+			space_state,
+			origin,
+			global_position + to_obj.normalized() * extent,
+			CollisionLayers.MASK_ENVIRONMENT,
+			_cached_exclude_rids
+		)
+		if not hit.is_empty():
+			var hit_pos: Vector3 = hit.get("position", global_position)
+			var hit_norm: Vector3 = hit.get("normal", Vector3.UP)
+			global_position = hit_pos + hit_norm * (extent + 0.05)
+
+
+## Computes the maximum radial extent for environment collision clearance.
+func _get_clearance_extent() -> float:
+	if is_instance_valid(collision) and collision.shape != null:
+		var shape: Shape3D = collision.shape
+		if shape is CylinderShape3D:
+			var cyl: CylinderShape3D = shape as CylinderShape3D
+			return maxf(cyl.radius, cyl.height * 0.5)
+		if shape is CapsuleShape3D:
+			var cap: CapsuleShape3D = shape as CapsuleShape3D
+			return maxf(cap.radius, cap.height * 0.5)
+		if shape is BoxShape3D:
+			var box: BoxShape3D = shape as BoxShape3D
+			return maxf(box.size.x, maxf(box.size.y, box.size.z)) * 0.5
+		if shape is SphereShape3D:
+			return (shape as SphereShape3D).radius
+
+	var target_mesh: Node3D = _resolve_visual_mesh()
+	if target_mesh is VisualInstance3D:
+		var aabb: AABB = (target_mesh as VisualInstance3D).get_aabb()
+		return aabb.get_longest_axis_size() * 0.5
+
+	return 0.25
 
 
 ## Locks object into a static platform while player stands on it.

@@ -1,0 +1,74 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="PackedScene" uid="uid://mqae3mth7tfx" path="res://interactables/pickable_object.tscn" id="1_base"]
+[ext_resource type="Script" path="res://interactables/liquid_bottle/pickable_liquid_bottle.gd" id="2_script"]
+[ext_resource type="ArrayMesh" path="res://interactables/liquid_bottle/bottle.mesh" id="3_bottle_mesh"]
+[ext_resource type="Material" path="res://interactables/liquid_bottle/liquid_bottle_material.tres" id="4_liquid_mat"]
+[ext_resource type="ArrayMesh" path="res://interactables/liquid_bottle/cap.mesh" id="5_cap_mesh"]
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_bottle"]
+height = 0.524
+radius = 0.084
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_cap"]
+albedo_color = Color(0.16, 0.22, 0.35, 1)
+roughness = 0.35
+
+[node name="PickableLiquidBottle" node_paths=PackedStringArray("mesh") instance=ExtResource("1_base")]
+mass = 1.6
+script = ExtResource("2_script")
+liquid_mobility = 1.0
+fill = 0.55
+glass_thickness = 0.015
+gas = true
+liquid_color = Color(0.05, 0.82, 0.96, 0.45)
+mesh = NodePath("BottleMesh")
+float_force = 3.2
+hold_distance_offset = 0.55
+held_transparency = 0.25
+lock_on_player_stand = false
+
+[node name="HighlightComponent" parent="." index="1" node_paths=PackedStringArray("target_meshes", "visibility_notifier")]
+target_meshes = [NodePath("../BottleMesh"), NodePath("../BottleMesh/CapMesh")]
+visibility_notifier = NodePath("../LiquidVisibilityNotifier")
+
+[node name="MeshInstance3D" parent="." index="2"]
+visible = false
+
+[node name="CollisionShape3D" parent="." index="3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.262, 0)
+shape = SubResource("CylinderShape3D_bottle")
+
+[node name="Label3D" parent="." index="4"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.68, 0)
+
+[node name="PromptIcon" parent="." index="5"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.68, 0)
+
+[node name="Marker3D" parent="ProbeContainer" index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.06, 0.08, 0.06)
+
+[node name="Marker3D2" parent="ProbeContainer" index="1"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.06, 0.08, -0.06)
+
+[node name="Marker3D3" parent="ProbeContainer" index="2"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.04, 0.4, -0.04)
+
+[node name="Marker3D4" parent="ProbeContainer" index="3"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.04, 0.4, 0.04)
+
+[node name="BottleMesh" type="MeshInstance3D" parent="." index="7"]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0.236, 0)
+layers = 4
+mesh = ExtResource("3_bottle_mesh")
+surface_material_override/0 = ExtResource("4_liquid_mat")
+
+[node name="CapMesh" type="MeshInstance3D" parent="BottleMesh" index="0"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.12682, 0)
+layers = 4
+mesh = ExtResource("5_cap_mesh")
+surface_material_override/0 = SubResource("StandardMaterial3D_cap")
+
+[node name="LiquidVisibilityNotifier" type="VisibleOnScreenNotifier3D" parent="." index="8"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.26, 0)
+aabb = AABB(-0.12, -0.3, -0.12, 0.24, 0.6, 0.24)

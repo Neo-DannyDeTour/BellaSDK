@@ -1,0 +1,27 @@
+[gd_resource type="StandardMaterial3D" format=3 uid="uid://d1b0kt3u8rt2y"]
+
+[ext_resource type="Shader" uid="uid://dj0fyrb342r0p" path="res://interactables/liquid_bottle/liquid_bottle.gdshader" id="1_shader"]
+[ext_resource type="Texture2D" uid="uid://dn013mtxxijlp" path="res://interactables/liquid_bottle/worley.png" id="2_worley"]
+[ext_resource type="Texture2D" uid="uid://b2nj30qinow5l" path="res://interactables/liquid_bottle/noise.png" id="3_noise"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_liquid"]
+render_priority = 0
+shader = ExtResource("1_shader")
+shader_parameter/wave_intensity = 0.08
+shader_parameter/refraction_strength = 0.045
+shader_parameter/absorption_density = 12.0
+shader_parameter/meniscus_height = 0.08
+shader_parameter/roughness_value = 0.12
+shader_parameter/specular_value = 0.65
+shader_parameter/waves_noise = ExtResource("2_worley")
+shader_parameter/bubbles_tex = ExtResource("3_noise")
+
+[resource]
+next_pass = SubResource("ShaderMaterial_liquid")
+transparency = 1
+albedo_color = Color(0.95, 0.98, 1, 0.09)
+metallic_specular = 0.75
+roughness = 0.05
+rim_enabled = true
+rim = 0.25
+rim_tint = 0.2
