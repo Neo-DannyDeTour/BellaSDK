@@ -312,7 +312,9 @@ func _finalize_scene_transition() -> void:
 	var chunker: WorldChunkManager = (
 		new_scene.find_child("WorldChunkManager", true, false) as WorldChunkManager
 	)
-	if is_instance_valid(chunker):
+	if not is_instance_valid(chunker):
+		chunker = new_scene.find_child("VirtualChunkManager", true, false) as WorldChunkManager
+	if is_instance_valid(chunker) and not chunker.is_spawn_ready():
 		print("LoadingScreen: Waiting for WorldChunkManager initial zone...")
 		await chunker.initial_zone_ready
 
@@ -325,8 +327,10 @@ func _finalize_scene_transition() -> void:
 	if is_instance_valid(player_node):
 		player_node.velocity = Vector3.ZERO
 
-	await get_tree().physics_frame
-	await get_tree().physics_frame
+	# Wait for process frames before physics_frame so heavy scene instantiation delta cannot
+	# exceed max_physics_steps_per_frame and skip physics step on the mounting frame.
+	await get_tree().process_frame
+	await get_tree().process_frame
 	await get_tree().physics_frame
 
 	if is_instance_valid(player_node):

@@ -45,7 +45,12 @@ func _ready() -> void:
 	if is_instance_valid(player):
 		var spawn_cell: Vector2i = _world_to_cell(player.global_position)
 		_request_chunk(spawn_cell, true)
+		if not _is_spawn_ready:
+			_is_spawn_ready = true
+			initial_zone_ready.emit()
 	else:
+		_is_spawn_ready = true
+		initial_zone_ready.emit()
 		set_process(false)
 
 
@@ -56,6 +61,11 @@ func _process(_delta: float) -> void:
 
 	_poll_threaded_loads()
 	_update_stream_bounds()
+
+
+## Returns true if the initial player spawn zone has finished mounting or was skipped.
+func is_spawn_ready() -> bool:
+	return _is_spawn_ready
 
 
 ## Polls pending background resource loads and instantiates finished chunks.

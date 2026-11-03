@@ -49,8 +49,10 @@ func _on_interacted(_character: CharacterBody3D) -> void:
 			"FeedbackStation ERROR: URL must begin with 'https://'. Blocked: " + form_url
 		)
 		print(error_msg)
-		if InGameConsole:
-			InGameConsole.call("log_error", error_msg)
+		# Node path, not autoload identifier: identifier resolves on loader threads -> errors.
+		var console: Node = get_node_or_null(^"/root/InGameConsole")
+		if is_instance_valid(console):
+			console.call(&"log_error", error_msg)
 		return
 
 	# OS.shell_open safely boots the user's default web browser
