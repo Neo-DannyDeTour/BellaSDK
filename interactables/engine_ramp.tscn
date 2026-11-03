@@ -1,0 +1,90 @@
+[gd_scene load_steps=11 format=3]
+
+[ext_resource type="Script" path="res://interactables/engine_ramp.gd" id="1_ramp"]
+[ext_resource type="Texture2D" uid="uid://c8kwxoba4guv4" path="res://assets/images/dev_textures/dev_texture_purple_1024.png" id="2_tex_purple"]
+[ext_resource type="Texture2D" uid="uid://civnfn7yss1n" path="res://assets/images/dev_textures/dev_texture_green_1024.png" id="3_tex_green"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_base"]
+albedo_texture = ExtResource("3_tex_green")
+uv1_triplanar = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_base"]
+material = SubResource("StandardMaterial3D_base")
+size = Vector3(2.4, 1.2, 1.2)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_base"]
+size = Vector3(2.4, 1.2, 1.2)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_deck"]
+albedo_texture = ExtResource("2_tex_purple")
+uv1_triplanar = true
+
+[sub_resource type="BoxMesh" id="BoxMesh_deck"]
+material = SubResource("StandardMaterial3D_deck")
+size = Vector3(2.0, 0.2, 4.0)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_deck"]
+size = Vector3(2.0, 0.2, 4.0)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_gear"]
+material = SubResource("StandardMaterial3D_base")
+top_radius = 0.35
+bottom_radius = 0.35
+height = 0.15
+radial_segments = 12
+
+[node name="EngineRamp" type="Node3D" node_paths=PackedStringArray("engine_base", "hinge_pivot", "ramp_deck", "tip_marker_left", "tip_marker_right", "gear_a", "gear_b", "motor_loop_player")]
+script = ExtResource("1_ramp")
+engine_base = NodePath("EngineBase")
+hinge_pivot = NodePath("HingePivot")
+ramp_deck = NodePath("HingePivot/RampDeck")
+tip_marker_left = NodePath("HingePivot/RampDeck/TipMarkerLeft")
+tip_marker_right = NodePath("HingePivot/RampDeck/TipMarkerRight")
+gear_a = NodePath("GearA")
+gear_b = NodePath("GearB")
+motor_loop_player = NodePath("MotorLoopPlayer")
+
+[node name="EngineBase" type="StaticBody3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, -0.6)
+collision_layer = 5
+collision_mask = 0
+
+[node name="BaseMesh" type="MeshInstance3D" parent="EngineBase"]
+mesh = SubResource("BoxMesh_base")
+
+[node name="BaseCollision" type="CollisionShape3D" parent="EngineBase"]
+shape = SubResource("BoxShape3D_base")
+
+[node name="HingePivot" type="Node3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.258819, 0.965926, 0, -0.965926, 0.258819, 0, 0.2, 0)
+
+[node name="RampDeck" type="AnimatableBody3D" parent="HingePivot"]
+collision_layer = 1
+collision_mask = 0
+sync_to_physics = false
+
+[node name="DeckMesh" type="MeshInstance3D" parent="HingePivot/RampDeck"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2.0)
+mesh = SubResource("BoxMesh_deck")
+
+[node name="DeckCollision" type="CollisionShape3D" parent="HingePivot/RampDeck"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 2.0)
+shape = SubResource("BoxShape3D_deck")
+
+[node name="TipMarkerLeft" type="Marker3D" parent="HingePivot/RampDeck"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.95, 0, 4.0)
+
+[node name="TipMarkerRight" type="Marker3D" parent="HingePivot/RampDeck"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.95, 0, 4.0)
+
+[node name="GearA" type="MeshInstance3D" parent="."]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 1.28, 0.55, -0.3)
+mesh = SubResource("CylinderMesh_gear")
+
+[node name="GearB" type="MeshInstance3D" parent="."]
+transform = Transform3D(0, -1, 0, 1, 0, 0, 0, 0, 1, 1.28, 0.85, -0.82)
+mesh = SubResource("CylinderMesh_gear")
+
+[node name="MotorLoopPlayer" type="AudioStreamPlayer3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.5, -0.3)
+bus = &"SFX"

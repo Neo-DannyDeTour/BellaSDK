@@ -1,0 +1,21 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://bo3pmbdkrjsi3" path="res://environment/tagged_prop.gd" id="1_script"]
+
+[node name="TaggedProp" type="Node3D"]
+script = ExtResource("1_script")
+metadata/prop_tag = &"pillar"
+
+[node name="Shape" type="CSGBox3D" parent="."]
+use_collision = true
+collision_layer = 1
+collision_mask = 0
+metadata/prop_tag = &"pillar"
+
+[node name="Label3D" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
+billboard = 1
+no_depth_test = true
+text = "pillar"
+font_size = 32
+outline_size = 8
