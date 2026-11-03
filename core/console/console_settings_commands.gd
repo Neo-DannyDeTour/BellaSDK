@@ -155,6 +155,43 @@ func register_commands(registry: ConsoleCommandRegistry) -> void:
 			context.get_toggle_options
 		)
 	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"volume",
+			"Adjusts audio bus volume (0-100) or displays bus levels.",
+			_cmd_volume,
+			_get_volume_options
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"fullscreen",
+			"Toggles fullscreen display mode.",
+			_cmd_fullscreen,
+			context.get_toggle_options
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"resolution",
+			"Sets display resolution width and height.",
+			_cmd_resolution,
+			_get_resolution_options
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"res", "Sets display resolution (alias).", _cmd_resolution, _get_resolution_options
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"tts",
+			"Toggles text-to-speech accessibility narration.",
+			_cmd_tts,
+			context.get_toggle_options
+		)
+	)
 	_register_render_debug(registry)
 
 
@@ -213,6 +250,70 @@ func _register_render_debug(registry: ConsoleCommandRegistry) -> void:
 			_cmd_diorama,
 			_get_diorama_options,
 			false
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"render_diagnostics",
+			"Toggles in-game render diagnostics overlay panel.",
+			_cmd_render_diagnostics,
+			Callable(),
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"diagnostics",
+			"Toggles in-game render diagnostics overlay panel (alias).",
+			_cmd_render_diagnostics,
+			Callable(),
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"metrics", "Toggles on-screen developer metrics panel.", _cmd_metrics, Callable(), true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"stat_metrics",
+			"Toggles on-screen developer metrics panel (alias).",
+			_cmd_metrics,
+			Callable(),
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"fps_limit",
+			"Sets target engine max FPS (0 = uncapped).",
+			_cmd_fps_limit,
+			_get_fps_limit_options,
+			false
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"max_fps",
+			"Sets target engine max FPS (alias).",
+			_cmd_fps_limit,
+			_get_fps_limit_options,
+			false
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"stat_perf",
+			"Prints instantaneous hardware, geometry, and render performance snapshot.",
+			_cmd_stat_perf,
+			Callable(),
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"perf", "Prints performance snapshot (alias).", _cmd_stat_perf, Callable(), true
 		)
 	)
 
@@ -861,3 +962,201 @@ func _cmd_diorama(args: PackedStringArray) -> void:
 			context.write(
 				"Unknown argument. Usage: diorama <kill|live|0|1|disabled|enabled>", "yellow"
 			)
+
+
+## Toggles the render diagnostics panel via global event bus.
+func _cmd_render_diagnostics(_args: PackedStringArray) -> void:
+	print("ConsoleSettingsCommands: _cmd_render_diagnostics called.")
+	Events.render_diagnostics_toggle_requested.emit()
+	context.write("Render diagnostics panel toggled.", "cyan")
+
+
+## Toggles the developer metrics panel via global event bus.
+func _cmd_metrics(_args: PackedStringArray) -> void:
+	print("ConsoleSettingsCommands: _cmd_metrics called.")
+	Events.metrics_panel_toggle_requested.emit()
+	context.write("Developer metrics panel toggled.", "cyan")
+
+
+## Returns autocomplete candidates for the fps_limit command.
+func _get_fps_limit_options() -> Array[String]:
+	return ["0", "30", "60", "120", "144", "240"]
+
+
+## Sets and persists engine frame rate cap.
+func _cmd_fps_limit(args: PackedStringArray) -> void:
+	print("ConsoleSettingsCommands: _cmd_fps_limit called with args: ", args)
+	if args.is_empty():
+		var cur_cap: int = Engine.max_fps
+		context.write("Current FPS limit: " + str(cur_cap) + ". Usage: fps_limit <int>", "yellow")
+		return
+
+	var raw_str: String = args[0].strip_edges()
+	if not raw_str.is_valid_int():
+		context.write("Invalid FPS limit. Please provide an integer >= 0.", "red")
+		return
+
+	var limit: int = clampi(raw_str.to_int(), 0, 1000)
+	Engine.max_fps = limit
+	GlobalSettings.save_setting("Settings", "fps_limit", limit, true)
+	var label: String = "Uncapped (0)" if limit == 0 else str(limit) + " FPS"
+	context.write("Engine max FPS set to: " + label, "green")
+
+
+## Outputs an instantaneous performance snapshot to the console display.
+func _cmd_stat_perf(_args: PackedStringArray) -> void:
+	print("ConsoleSettingsCommands: _cmd_stat_perf called.")
+	var fps: float = Performance.get_monitor(Performance.TIME_FPS)
+	var p_time: float = Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0
+	var phys_time: float = Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0
+	var ram_mb: float = Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0
+	var vram_mb: float = Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0
+	var draws: int = roundi(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
+	var prims: int = roundi(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))
+	var objs: int = roundi(Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME))
+
+	context.write("--- Performance Snapshot ---", "cyan")
+	context.write(
+		"FPS: %d | Frame: %.2f ms | Physics: %.2f ms" % [roundi(fps), p_time, phys_time], "white"
+	)
+	context.write("RAM: %.2f MB | VRAM: %.2f MB" % [ram_mb, vram_mb], "white")
+	context.write("Draw Calls: %d | Primitives: %d | Objects: %d" % [draws, prims, objs], "white")
+
+
+## Returns autocomplete candidates for available audio buses.
+func _get_volume_options() -> Array[String]:
+	var count: int = AudioServer.bus_count
+	var list: Array[String] = []
+	for i: int in range(count):
+		list.append(AudioServer.get_bus_name(i).to_lower())
+	return list
+
+
+## Adjusts or queries audio bus volumes.
+func _cmd_volume(args: PackedStringArray) -> void:
+	print("ConsoleSettingsCommands: _cmd_volume called with args: ", args)
+	if args.is_empty():
+		context.write("--- Audio Bus Volumes ---", "cyan")
+		var count: int = AudioServer.bus_count
+		for i: int in range(count):
+			var b_name: String = AudioServer.get_bus_name(i)
+			var is_muted: bool = AudioServer.is_bus_mute(i)
+			var db: float = AudioServer.get_bus_volume_db(i)
+			var pct: float = db_to_linear(db) * 100.0 if not is_muted else 0.0
+			var mute_str: String = " [MUTED]" if is_muted else ""
+			context.write("  - %s: %.0f%% (%.1f dB)%s" % [b_name, pct, db, mute_str], "white")
+		return
+
+	var bus_arg: String = args[0].strip_edges()
+	var bus_idx: int = AudioServer.get_bus_index(bus_arg)
+	if bus_idx < 0:
+		var count: int = AudioServer.bus_count
+		for i: int in range(count):
+			if AudioServer.get_bus_name(i).to_lower() == bus_arg.to_lower():
+				bus_idx = i
+				break
+
+	if bus_idx < 0:
+		context.write("Audio bus '" + bus_arg + "' not found.", "red")
+		return
+
+	var canonical_name: String = AudioServer.get_bus_name(bus_idx)
+	if args.size() == 1:
+		var is_muted: bool = AudioServer.is_bus_mute(bus_idx)
+		var db: float = AudioServer.get_bus_volume_db(bus_idx)
+		var pct: float = db_to_linear(db) * 100.0 if not is_muted else 0.0
+		context.write("%s volume: %.0f%% (%.1f dB)" % [canonical_name, pct, db], "cyan")
+		return
+
+	var raw_pct: String = args[1].strip_edges()
+	if not raw_pct.is_valid_float():
+		context.write("Invalid volume level. Please specify 0-100.", "red")
+		return
+
+	var pct_val: float = clampf(raw_pct.to_float(), 0.0, 100.0)
+	var is_muted: bool = pct_val <= 0.1
+	var norm: float = maxf(pct_val / 100.0, 0.0001)
+	var target_db: float = linear_to_db(norm)
+
+	AudioServer.set_bus_mute(bus_idx, is_muted)
+	AudioServer.set_bus_volume_db(bus_idx, target_db)
+	GlobalSettings.save_setting("Audio", canonical_name, pct_val, true)
+	context.write("%s volume set to: %.0f%%" % [canonical_name, pct_val], "green")
+
+
+## Toggles fullscreen display mode on the active window.
+func _cmd_fullscreen(args: PackedStringArray) -> void:
+	print("ConsoleSettingsCommands: _cmd_fullscreen called with args: ", args)
+	var win: Window = context.get_viewport().get_window()
+	if not is_instance_valid(win):
+		context.write("Window reference unavailable.", "red")
+		return
+
+	var is_currently_fullscreen: bool = (
+		win.mode == Window.MODE_FULLSCREEN or win.mode == Window.MODE_EXCLUSIVE_FULLSCREEN
+	)
+	var parsed: Variant = context.parse_toggle_arg(args, is_currently_fullscreen, "fullscreen")
+	if parsed == null:
+		return
+	var set_full: bool = parsed == true
+	var target_mode: Window.Mode = (
+		Window.MODE_EXCLUSIVE_FULLSCREEN if set_full else Window.MODE_WINDOWED
+	)
+	win.mode = target_mode
+	GlobalSettings.save_setting("Settings", "display_mode", int(target_mode), true)
+	context.write("Fullscreen " + ("enabled." if set_full else "disabled."), "green")
+
+
+## Returns autocomplete candidates for common display resolutions.
+func _get_resolution_options() -> Array[String]:
+	return ["1280 720", "1920 1080", "2560 1440", "3840 2160"]
+
+
+## Adjusts active window or viewport content scale resolution.
+func _cmd_resolution(args: PackedStringArray) -> void:
+	print("ConsoleSettingsCommands: _cmd_resolution called with args: ", args)
+	var win: Window = context.get_viewport().get_window()
+	if not is_instance_valid(win):
+		context.write("Window reference unavailable.", "red")
+		return
+
+	if args.size() < 2:
+		var cur_res: Vector2i = win.size
+		context.write(
+			(
+				"Current window size: %dx%d. Usage: resolution <width> <height>"
+				% [cur_res.x, cur_res.y]
+			),
+			"yellow"
+		)
+		return
+
+	var w_str: String = args[0].strip_edges()
+	var h_str: String = args[1].strip_edges()
+	if not w_str.is_valid_int() or not h_str.is_valid_int():
+		context.write("Invalid resolution format. Specify positive integers.", "red")
+		return
+
+	var w: int = clampi(w_str.to_int(), 640, 7680)
+	var h: int = clampi(h_str.to_int(), 360, 4320)
+	var new_res: Vector2i = Vector2i(w, h)
+
+	VideoApplier.apply_window_settings(
+		win, win.mode as DisplayServer.WindowMode, win.current_screen, new_res
+	)
+	GlobalSettings.save_setting("Settings", "resolution_x", w, false)
+	GlobalSettings.save_setting("Settings", "resolution_y", h, true)
+	context.write("Resolution set to: %dx%d" % [w, h], "green")
+
+
+## Toggles text-to-speech accessibility narration via global event bus.
+func _cmd_tts(args: PackedStringArray) -> void:
+	print("ConsoleSettingsCommands: _cmd_tts called with args: ", args)
+	var cur_state: bool = GlobalSettings.get_setting_bool("Accessibility", "tts_enabled", false)
+	var parsed: Variant = context.parse_toggle_arg(args, cur_state, "tts")
+	if parsed == null:
+		return
+	var active: bool = parsed == true
+	GlobalSettings.save_setting("Accessibility", "tts_enabled", active, true)
+	Events.tts_state_changed.emit(active)
+	context.write("Text-to-Speech narration " + ("enabled." if active else "disabled."), "green")

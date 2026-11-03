@@ -17,6 +17,51 @@ const ENEMY_SCENE_PATHS: Dictionary[String, String] = {
 	"turret": "res://enemies/turret.tscn"
 }
 
+## Maps weapon identifier strings to their scene resource file paths.
+const WEAPON_SCENE_PATHS: Dictionary[String, String] = {
+	"grenade": "res://weapons/smoke_grenade/smoke_grenade_weapon.tscn",
+	"revolver": "res://assets/weapons/revolver.tscn",
+	"rocket": "res://weapons/signal_rocket/signal_rocket_weapon.tscn",
+	"shotgun": "res://assets/weapons/shotgun.tscn",
+	"signal_rocket": "res://weapons/signal_rocket/signal_rocket_weapon.tscn",
+	"smoke_grenade": "res://weapons/smoke_grenade/smoke_grenade_weapon.tscn",
+}
+
+## Maps physical item identifier strings to their scene resource file paths.
+const ITEM_SCENE_PATHS: Dictionary[String, String] = {
+	"glider": "res://interactables/glider_item.tscn",
+	"lever": "res://interactables/lever_stick_item.tscn",
+	"lever_stick": "res://interactables/lever_stick_item.tscn",
+}
+
+## Maps keycard identifier strings to system clearance identifier tokens.
+const KEYCARD_CLEARANCE_MAP: Dictionary[String, StringName] = {
+	"card_g": &"G",
+	"card_l": &"L",
+	"card_r": &"R",
+	"keycard_admin": &"AdminCard",
+	"keycard_alpha": &"SecurityAlpha",
+	"keycard_g": &"G",
+	"keycard_l": &"L",
+	"keycard_r": &"R",
+}
+
+## Maps ammunition alias names to canonical ammo StringName keys.
+const AMMO_TYPE_MAP: Dictionary[String, StringName] = {
+	"bullet": &"revolver",
+	"bullets": &"revolver",
+	"grenade": &"smoke_grenade",
+	"revolver": &"revolver",
+	"revolver_ammo": &"revolver",
+	"rocket": &"signal_rocket",
+	"shell": &"shotgun",
+	"shells": &"shotgun",
+	"shotgun": &"shotgun",
+	"shotgun_ammo": &"shotgun",
+	"signal_rocket": &"signal_rocket",
+	"smoke_grenade": &"smoke_grenade",
+}
+
 ## Context reference providing output logging and scene tree access.
 var context: ConsoleContext = null
 
@@ -114,15 +159,19 @@ func register_commands(registry: ConsoleCommandRegistry) -> void:
 	)
 	registry.register_command(
 		ConsoleCommand.new(
-			"give", "Adds an item into player inventory.", _cmd_give, Callable(), true
+			"give",
+			"Adds an item, weapon, or keycard into player inventory.",
+			_cmd_give,
+			_get_give_options,
+			true
 		)
 	)
 	registry.register_command(
 		ConsoleCommand.new(
 			"give_ammo",
-			"Adds specified ammo type into inventory.",
+			"Adds specified ammo type into player reserves.",
 			_cmd_give_ammo,
-			func() -> Array[String]: return ["bullet", "energy", "shell", "rocket"],
+			_get_ammo_options,
 			true
 		)
 	)
@@ -172,6 +221,69 @@ func register_commands(registry: ConsoleCommandRegistry) -> void:
 			true
 		)
 	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"infinite_swim",
+			"Toggles infinite swimming oxygen.",
+			_cmd_infinite_swim,
+			context.get_toggle_options,
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"inf_swim",
+			"Toggles infinite swimming oxygen (alias).",
+			_cmd_infinite_swim,
+			context.get_toggle_options,
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"noclip_speed",
+			"Sets noclip flight movement speed multiplier.",
+			_cmd_noclip_speed,
+			func() -> Array[String]: return ["1.0", "4.0", "8.0", "16.0", "32.0"],
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"playerspeed",
+			"Scales player movement velocities by a multiplier factor.",
+			_cmd_playerspeed,
+			func() -> Array[String]: return ["1.0", "1.5", "2.0", "3.0", "reset"],
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"speed",
+			"Scales player movement velocities (alias).",
+			_cmd_playerspeed,
+			func() -> Array[String]: return ["1.0", "1.5", "2.0", "3.0", "reset"],
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"giveall",
+			"Grants full weapon arsenal, max ammunition, and all keycards.",
+			_cmd_giveall,
+			Callable(),
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"allweapons",
+			"Grants full weapon arsenal, max ammunition, and all keycards (alias).",
+			_cmd_giveall,
+			Callable(),
+			true
+		)
+	)
 	_register_easter_eggs(registry)
 
 
@@ -181,6 +293,33 @@ func _get_enemy_options() -> Array[String]:
 	for k: String in ENEMY_SCENE_PATHS.keys():
 		keys.append(k)
 	return keys
+
+
+## Returns autocomplete candidates for the give command.
+func _get_give_options() -> Array[String]:
+	return [
+		"ammo",
+		"glider",
+		"grenade",
+		"keycard_admin",
+		"keycard_alpha",
+		"keycard_g",
+		"keycard_l",
+		"keycard_r",
+		"lever",
+		"revolver",
+		"revolver_ammo",
+		"rocket",
+		"shotgun",
+		"shotgun_ammo",
+		"signal_rocket",
+		"smoke_grenade",
+	]
+
+
+## Returns autocomplete candidates for the give_ammo command.
+func _get_ammo_options() -> Array[String]:
+	return ["bullet", "grenade", "revolver", "rocket", "shell", "shotgun", "signal_rocket"]
 
 
 ## Toggles godmode invulnerability on the active player.
@@ -355,15 +494,97 @@ func _set_trigger_visibility(active: bool) -> void:
 	context.write("Triggers set to " + stat, "green")
 
 
-## Grants an item directly to player inventory via event bus.
+## Grants an item, weapon, ammo, or keycard directly to the player.
 func _cmd_give(args: PackedStringArray) -> void:
 	print("ConsoleCheatCommands: _cmd_give called with args: ", args)
 	if args.is_empty():
-		context.write("Usage: give <item_name> [amount]", "yellow")
+		context.write("Usage: give <weapon | ammo | keycard | item> [amount]", "yellow")
 		return
 
 	var item_name: String = args[0].to_lower()
 	var amount: int = args[1].to_int() if args.size() > 1 else 1
+
+	if item_name == "ammo":
+		if args.size() < 2:
+			context.write("Usage: give ammo <type> [amount]", "yellow")
+			return
+		var ammo_type: String = args[1].to_lower()
+		var ammo_amount: int = args[2].to_int() if args.size() > 2 else 30
+		_apply_give_ammo(ammo_type, ammo_amount)
+		return
+
+	if WEAPON_SCENE_PATHS.has(item_name):
+		var player_node: Node3D = context.get_player()
+		if not is_instance_valid(player_node):
+			context.write("Player entity not found.", "red")
+			return
+		var inv: WeaponInventoryComponent = (
+			player_node.find_child("WeaponInventoryComponent", true, false)
+			as WeaponInventoryComponent
+		)
+		if not is_instance_valid(inv):
+			context.write("WeaponInventoryComponent not found on player.", "red")
+			return
+		var tree: SceneTree = context.get_tree()
+		if not is_instance_valid(tree) or not is_instance_valid(tree.current_scene):
+			context.write("Current scene tree invalid.", "red")
+			return
+		var reserve_grant: int = -1 if args.size() <= 1 else amount
+		_grant_or_topup_weapon(player_node, inv, tree, item_name, reserve_grant)
+		context.write("Granted weapon '%s' to player." % item_name, "green")
+		return
+
+	if AMMO_TYPE_MAP.has(item_name):
+		var ammo_count: int = amount if args.size() > 1 else 30
+		_apply_give_ammo(item_name, ammo_count)
+		return
+
+	if KEYCARD_CLEARANCE_MAP.has(item_name):
+		var clearance_id: StringName = KEYCARD_CLEARANCE_MAP[item_name]
+		var tree: SceneTree = context.get_tree()
+		if is_instance_valid(tree) and is_instance_valid(tree.root):
+			var keycard_sys: Node = tree.root.get_node_or_null("KeycardSystem")
+			if is_instance_valid(keycard_sys) and keycard_sys.has_method(&"add_card"):
+				keycard_sys.call(&"add_card", clearance_id)
+		Events.keycard_collected.emit(clearance_id)
+		context.write(
+			"Added keycard clearance '%s' to KeycardSystem." % String(clearance_id), "green"
+		)
+		return
+
+	if ITEM_SCENE_PATHS.has(item_name):
+		var player_node: Node3D = context.get_player()
+		if not is_instance_valid(player_node):
+			context.write("Player entity not found.", "red")
+			return
+		var tree: SceneTree = context.get_tree()
+		if not is_instance_valid(tree) or not is_instance_valid(tree.current_scene):
+			context.write("Current scene tree invalid.", "red")
+			return
+		var item_path: String = ITEM_SCENE_PATHS[item_name]
+		if not ResourceLoader.exists(item_path):
+			context.write("Scene file not found: " + item_path, "red")
+			return
+		var packed_item: PackedScene = load(item_path) as PackedScene
+		if not is_instance_valid(packed_item):
+			context.write("Failed to load scene: " + item_path, "red")
+			return
+		var item_instance: Node = packed_item.instantiate()
+		tree.current_scene.add_child(item_instance)
+		var grabbed: bool = false
+		if item_instance is RigidBody3D:
+			var interact_comp: Node = player_node.find_child("InteractionComponent", true, false)
+			if is_instance_valid(interact_comp) and interact_comp.has_method(&"force_grab_item"):
+				interact_comp.call(&"force_grab_item", item_instance as RigidBody3D)
+				grabbed = true
+		if not grabbed and item_instance is Node3D:
+			var forward_vec: Vector3 = -player_node.global_transform.basis.z.normalized()
+			(item_instance as Node3D).global_position = (
+				player_node.global_position + forward_vec * 1.5 + Vector3.UP * 0.5
+			)
+		context.write("Granted physical item '%s' to player." % item_name, "green")
+		return
+
 	Events.inventory_item_given.emit(item_name, amount)
 	context.write("Given %d x '%s' to player." % [amount, item_name], "green")
 
@@ -377,8 +598,109 @@ func _cmd_give_ammo(args: PackedStringArray) -> void:
 
 	var ammo_type: String = args[0].to_lower()
 	var amount: int = args[1].to_int() if args.size() > 1 else 30
-	Events.ammo_collected.emit(StringName(ammo_type), amount)
-	context.write("Given %d x '%s' ammo." % [amount, ammo_type], "green")
+	_apply_give_ammo(ammo_type, amount)
+
+
+## Adds reserve ammunition to matching weapons in the player inventory.
+func _apply_give_ammo(ammo_type_str: String, amount: int) -> void:
+	var player_node: Node3D = context.get_player()
+	if not is_instance_valid(player_node):
+		context.write("Player entity not found.", "red")
+		return
+
+	var inv: WeaponInventoryComponent = (
+		player_node.find_child("WeaponInventoryComponent", true, false) as WeaponInventoryComponent
+	)
+	if not is_instance_valid(inv):
+		context.write("WeaponInventoryComponent not found on player.", "red")
+		return
+
+	var resolved_key: StringName = AMMO_TYPE_MAP.get(ammo_type_str, StringName(ammo_type_str))
+	var applied: bool = inv.add_ammo(resolved_key, amount)
+	Events.ammo_collected.emit(resolved_key, amount)
+
+	if applied:
+		context.write(
+			"Given %d x '%s' ammo to player reserves." % [amount, String(resolved_key)], "green"
+		)
+	else:
+		context.write(
+			"No weapon found for ammo type '%s'. Ammo added to event bus." % String(resolved_key),
+			"yellow"
+		)
+
+
+## Grants a weapon to the player inventory or tops up its ammo if already present.
+func _grant_or_topup_weapon(
+	player: Node3D,
+	inv: WeaponInventoryComponent,
+	tree: SceneTree,
+	w_key: String,
+	reserve_amount: int
+) -> void:
+	var existing: Node3D = null
+	for slot_node: Node3D in inv.slots:
+		if not is_instance_valid(slot_node):
+			continue
+		var tag_val: Variant = slot_node.get("weapon_tag")
+		if tag_val != null and str(tag_val).to_lower() == w_key:
+			existing = slot_node
+			break
+
+	if is_instance_valid(existing):
+		_topup_weapon_ammo(existing, reserve_amount)
+		return
+
+	if not WEAPON_SCENE_PATHS.has(w_key):
+		return
+
+	var scene_path: String = WEAPON_SCENE_PATHS[w_key]
+	if not ResourceLoader.exists(scene_path):
+		return
+
+	var packed: PackedScene = load(scene_path) as PackedScene
+	if not is_instance_valid(packed):
+		return
+
+	var weapon_instance: Node = packed.instantiate()
+	if not (weapon_instance is Node3D):
+		return
+
+	tree.current_scene.add_child(weapon_instance)
+	if weapon_instance.has_method(&"equip_to_player") and player is CharacterBody3D:
+		weapon_instance.call(&"equip_to_player", player as CharacterBody3D)
+	elif is_instance_valid(inv.weapon_holder):
+		inv.weapon_holder.add_child(weapon_instance)
+		inv.register_weapon(weapon_instance as Node3D)
+
+	_topup_weapon_ammo(weapon_instance as Node3D, reserve_amount)
+
+
+## Tops up magazine and reserve ammunition on a weapon instance, clamping at 5x capacity.
+func _topup_weapon_ammo(weapon: Node3D, target_reserve: int) -> void:
+	if not is_instance_valid(weapon):
+		return
+
+	if weapon is HitscanWeapon:
+		var hw: HitscanWeapon = weapon as HitscanWeapon
+		var max_res: int = hw.ammo_capacity * 5
+		var res_to_set: int = hw.ammo_capacity * 2 if target_reserve < 0 else target_reserve
+		hw.current_ammo = hw.ammo_capacity
+		hw.reserve_ammo = clampi(res_to_set, 0, max_res)
+		hw.sync_ammo_ui()
+	elif weapon is ThrowableWeapon:
+		var tw: ThrowableWeapon = weapon as ThrowableWeapon
+		tw.current_ammo = tw.max_ammo
+		tw.sync_ammo_ui()
+	else:
+		var cap_val: Variant = weapon.get("ammo_capacity")
+		var cap: int = int(cap_val) if cap_val is int else 6
+		var max_res: int = cap * 5
+		var res_to_set: int = cap * 2 if target_reserve < 0 else target_reserve
+		weapon.set("current_ammo", cap)
+		weapon.set("reserve_ammo", clampi(res_to_set, 0, max_res))
+		if weapon.has_method(&"sync_ammo_ui"):
+			weapon.call(&"sync_ammo_ui")
 
 
 ## Toggles infinite reserve ammunition via accessibility settings.
@@ -519,6 +841,135 @@ func _cmd_rain_vfx(args: PackedStringArray) -> void:
 	context.write(status, "green" if intensity > 0.0 else "yellow")
 
 
+## Toggles infinite swimming oxygen via accessibility settings.
+func _cmd_infinite_swim(args: PackedStringArray) -> void:
+	print("ConsoleCheatCommands: _cmd_infinite_swim called with args: ", args)
+	var parsed: Variant = context.parse_toggle_arg(
+		args, context.get_toggle_state("infinite_swim", false), "infinite_swim"
+	)
+	if parsed == null:
+		return
+	var active: bool = parsed == true
+	context.toggle_states["infinite_swim"] = active
+	GlobalSettings.save_setting("Accessibility", "infinite_swim", active, true)
+	if Events.has_signal(&"infinite_swim_toggled"):
+		Events.infinite_swim_toggled.emit(active)
+	context.write("Infinite swim " + ("activated." if active else "deactivated."), "green")
+
+
+## Sets noclip flight speed multiplier on the player controller.
+func _cmd_noclip_speed(args: PackedStringArray) -> void:
+	print("ConsoleCheatCommands: _cmd_noclip_speed called with args: ", args)
+	if args.is_empty():
+		context.write("Usage: noclip_speed <float> (e.g. 1.0, 8.0, 16.0)", "yellow")
+		return
+
+	var raw_str: String = args[0].strip_edges()
+	if not raw_str.is_valid_float():
+		context.write("Invalid speed value. Please provide a positive float.", "red")
+		return
+
+	var speed: float = clampf(raw_str.to_float(), 0.1, 100.0)
+	var player: Node3D = context.get_player()
+	if is_instance_valid(player):
+		var smc: Node = player.get_node_or_null("SystemMenuController")
+		if is_instance_valid(smc):
+			smc.set("noclip_speed_multiplier", speed)
+
+	if Events.has_signal(&"noclip_speed_changed"):
+		Events.noclip_speed_changed.emit(speed)
+	context.write("Noclip speed set to: %.1f" % speed, "green")
+
+
+## Scales player movement speeds by a factor or resets them to defaults.
+func _cmd_playerspeed(args: PackedStringArray) -> void:
+	print("ConsoleCheatCommands: _cmd_playerspeed called with args: ", args)
+	var player: Node3D = context.get_player()
+	if not is_instance_valid(player):
+		context.write("Player node not found in scene tree.", "red")
+		return
+
+	var loco: Node = player.get_node_or_null("LocomotionComponent")
+	if not is_instance_valid(loco):
+		loco = player.get("locomotion_component") as Node
+	if not is_instance_valid(loco):
+		context.write("LocomotionComponent not found on player.", "red")
+		return
+
+	if args.is_empty():
+		var cur_walk: Variant = loco.get("walking_speed")
+		var cur_sprint: Variant = loco.get("sprinting_speed")
+		var walk_f: float = float(cur_walk) if cur_walk != null else 5.0
+		var sprint_f: float = float(cur_sprint) if cur_sprint != null else 6.5
+		context.write(
+			(
+				"Current speeds - Walk: %.1f | Sprint: %.1f. Usage: playerspeed <mult|reset>"
+				% [walk_f, sprint_f]
+			),
+			"yellow"
+		)
+		return
+
+	var token: String = args[0].strip_edges().to_lower()
+	if token == "reset" or token == "default":
+		loco.set("walking_speed", 5.0)
+		loco.set("sprinting_speed", 6.5)
+		loco.set("crouching_speed", 3.0)
+		context.write("Player movement speeds reset to defaults (Walk: 5.0, Sprint: 6.5).", "green")
+		return
+
+	if not token.is_valid_float():
+		context.write(
+			"Invalid speed multiplier. Provide a float (e.g. 1.5, 2.0) or 'reset'.", "red"
+		)
+		return
+
+	var mult: float = clampf(token.to_float(), 0.1, 10.0)
+	loco.set("walking_speed", 5.0 * mult)
+	loco.set("sprinting_speed", 6.5 * mult)
+	loco.set("crouching_speed", 3.0 * mult)
+	context.write(
+		"Player speed scaled by %.1fx (Walk: %.1f, Sprint: %.1f)." % [mult, 5.0 * mult, 6.5 * mult],
+		"green"
+	)
+
+
+## Grants all weapons, maximum ammunition reserves, and all keycards.
+func _cmd_giveall(_args: PackedStringArray) -> void:
+	print("ConsoleCheatCommands: _cmd_giveall called.")
+	for card_alias: String in KEYCARD_CLEARANCE_MAP:
+		var clearance_key: StringName = KEYCARD_CLEARANCE_MAP[card_alias]
+		KeycardSystem.add_card(clearance_key)
+
+	var player_node: Node3D = context.get_player()
+	if not is_instance_valid(player_node):
+		context.write("Keycards granted. Player entity not found for weapons.", "yellow")
+		return
+
+	var inv: WeaponInventoryComponent = (
+		player_node.find_child("WeaponInventoryComponent", true, false) as WeaponInventoryComponent
+	)
+	if not is_instance_valid(inv):
+		context.write("WeaponInventoryComponent not found on player.", "red")
+		return
+
+	var tree: SceneTree = context.get_tree()
+	if not is_instance_valid(tree) or not is_instance_valid(tree.current_scene):
+		context.write("Current scene tree invalid.", "red")
+		return
+
+	var weapon_keys: Array[String] = [
+		"revolver",
+		"shotgun",
+		"signal_rocket",
+		"smoke_grenade",
+	]
+	for w_key: String in weapon_keys:
+		_grant_or_topup_weapon(player_node, inv, tree, w_key, 9999)
+
+	context.write("giveall: Full arsenal, ammunition, and keycards granted.", "green")
+
+
 ## Registers easter egg and cheat console commands.
 func _register_easter_eggs(registry: ConsoleCommandRegistry) -> void:
 	print("ConsoleCheatCommands: Registering easter egg commands.")
@@ -597,11 +1048,38 @@ func _cmd_sv_cheats(args: PackedStringArray) -> void:
 		context.write("Usage: sv_cheats 1", "red")
 
 
-## Easter egg handler for impulse command.
+## Executes impulse cheat granting full weapons and ammunition max-out.
 func _cmd_impulse(args: PackedStringArray) -> void:
 	print("ConsoleCheatCommands: _cmd_impulse called with args: ", args)
 	if not args.is_empty() and args[0] == "101":
-		context.write("Bella is a trained professional.", "white")
+		var player_node: Node3D = context.get_player()
+		if not is_instance_valid(player_node):
+			context.write("Player entity not found.", "red")
+			return
+
+		var inv: WeaponInventoryComponent = (
+			player_node.find_child("WeaponInventoryComponent", true, false)
+			as WeaponInventoryComponent
+		)
+		if not is_instance_valid(inv):
+			context.write("WeaponInventoryComponent not found on player.", "red")
+			return
+
+		var tree: SceneTree = context.get_tree()
+		if not is_instance_valid(tree) or not is_instance_valid(tree.current_scene):
+			context.write("Current scene tree invalid.", "red")
+			return
+
+		var weapon_keys: Array[String] = [
+			"revolver",
+			"shotgun",
+			"signal_rocket",
+			"smoke_grenade",
+		]
+		for w_key: String in weapon_keys:
+			_grant_or_topup_weapon(player_node, inv, tree, w_key, 9999)
+
+		context.write("impulse 101: Arsenal granted with max ammunition.", "green")
 	else:
 		context.write("Usage: impulse 101", "red")
 
