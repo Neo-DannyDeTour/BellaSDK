@@ -1,0 +1,87 @@
+[gd_scene format=3 uid="uid://c6bovumfnmn2w"]
+
+[ext_resource type="Script" path="res://weapons/signal_rocket/signal_rocket_projectile.gd" id="1_proj"]
+[ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="2_interact"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_flare"]
+friction = 0.65
+bounce = 0.25
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_body"]
+height = 0.28
+radius = 0.025
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_casing"]
+albedo_color = Color(0.85, 0.15, 0.1, 1)
+roughness = 0.55
+emission_enabled = true
+emission = Color(1, 0.25, 0.05, 1)
+emission_energy_multiplier = 1.5
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_body"]
+material = SubResource("StandardMaterial3D_casing")
+top_radius = 0.022
+bottom_radius = 0.022
+height = 0.28
+radial_segments = 12
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_sparks"]
+direction = Vector3(0, 1, 0)
+spread = 35.0
+initial_velocity_min = 1.5
+initial_velocity_max = 3.8
+gravity = Vector3(0, -4.5, 0)
+scale_min = 0.5
+scale_max = 1.2
+color = Color(1, 0.35, 0.1, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_spark_quad"]
+transparency = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_color = Color(1, 0.45, 0.15, 0.9)
+billboard_mode = 3
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="QuadMesh" id="QuadMesh_spark"]
+material = SubResource("StandardMaterial3D_spark_quad")
+size = Vector2(0.04, 0.04)
+
+[node name="SignalRocketProjectile" type="RigidBody3D" node_paths=PackedStringArray("flare_light", "flare_particles")]
+collision_layer = 12
+collision_mask = 21
+mass = 0.35
+physics_material_override = SubResource("PhysicsMaterial_flare")
+continuous_cd = true
+script = ExtResource("1_proj")
+display_name = "Signal Rocket"
+burn_time = 18.0
+flare_light = NodePath("OmniLight3D")
+flare_particles = NodePath("GPUParticles3D")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("CylinderShape3D_body")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("CylinderMesh_body")
+
+[node name="OmniLight3D" type="OmniLight3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+light_color = Color(1, 0.25, 0.05, 1)
+light_energy = 3.5
+omni_range = 14.0
+omni_attenuation = 1.2
+
+[node name="GPUParticles3D" type="GPUParticles3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.15, 0)
+amount = 32
+lifetime = 0.65
+explosiveness = 0.1
+randomness = 0.4
+process_material = SubResource("ParticleProcessMaterial_sparks")
+draw_pass_1 = SubResource("QuadMesh_spark")
+
+[node name="InteractComponent" type="Node" parent="."]
+script = ExtResource("2_interact")

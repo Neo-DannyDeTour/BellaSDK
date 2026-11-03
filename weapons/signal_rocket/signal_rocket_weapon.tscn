@@ -1,0 +1,110 @@
+[gd_scene format=3 uid="uid://c3knmbymrtt41"]
+
+[ext_resource type="Script" path="res://weapons/signal_rocket/signal_rocket_weapon.gd" id="1_weap"]
+[ext_resource type="PackedScene" uid="uid://c6bovumfnmn2w" path="res://weapons/signal_rocket/signal_rocket_projectile.tscn" id="2_proj"]
+[ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="3_interact"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tube"]
+albedo_color = Color(0.85, 0.15, 0.1, 1)
+roughness = 0.55
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_tube"]
+material = SubResource("StandardMaterial3D_tube")
+top_radius = 0.022
+bottom_radius = 0.022
+height = 0.28
+radial_segments = 12
+
+[sub_resource type="ParticleProcessMaterial" id="ParticleProcessMaterial_held"]
+direction = Vector3(0, 1, 0)
+spread = 30.0
+initial_velocity_min = 1.2
+initial_velocity_max = 3.0
+gravity = Vector3(0, -3.5, 0)
+color = Color(1, 0.35, 0.1, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_held_quad"]
+transparency = 1
+shading_mode = 0
+vertex_color_use_as_albedo = true
+albedo_color = Color(1, 0.45, 0.15, 0.9)
+billboard_mode = 3
+particles_anim_h_frames = 1
+particles_anim_v_frames = 1
+particles_anim_loop = false
+
+[sub_resource type="QuadMesh" id="QuadMesh_held_spark"]
+material = SubResource("StandardMaterial3D_held_quad")
+size = Vector2(0.035, 0.035)
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_pickup"]
+height = 0.32
+radius = 0.06
+
+[node name="SignalRocketWeapon" type="Node3D" node_paths=PackedStringArray("flare_light", "flare_particles", "throw_audio", "label", "prompt_icon")]
+script = ExtResource("1_weap")
+burn_duration = 18.0
+flare_light = NodePath("MuzzlePoint/OmniLight3D")
+flare_particles = NodePath("MuzzlePoint/GPUParticles3D")
+weapon_tag = "signal_rocket"
+default_slot = 4
+projectile_scene = ExtResource("2_proj")
+throw_speed = 16.0
+upward_boost = 2.5
+fire_rate = 0.8
+throw_audio = NodePath("ThrowAudio")
+ammo_type = &"signal_rocket"
+current_ammo = 1
+max_ammo = 1
+label = NodePath("Label3D")
+prompt_icon = NodePath("PromptIcon")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.18, -0.15, -0.35)
+mesh = SubResource("CylinderMesh_tube")
+
+[node name="MuzzlePoint" type="Marker3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.18, -0.01, -0.35)
+
+[node name="OmniLight3D" type="OmniLight3D" parent="MuzzlePoint"]
+visible = false
+light_color = Color(1, 0.25, 0.05, 1)
+light_energy = 0.0
+omni_range = 14.0
+omni_attenuation = 1.2
+
+[node name="GPUParticles3D" type="GPUParticles3D" parent="MuzzlePoint"]
+emitting = false
+amount = 24
+lifetime = 0.55
+explosiveness = 0.1
+randomness = 0.35
+process_material = SubResource("ParticleProcessMaterial_held")
+draw_pass_1 = SubResource("QuadMesh_held_spark")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="."]
+collision_layer = 4
+collision_mask = 1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.18, -0.15, -0.35)
+shape = SubResource("CylinderShape3D_pickup")
+
+[node name="InteractComponent" type="Node" parent="StaticBody3D"]
+script = ExtResource("3_interact")
+
+[node name="Label3D" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.18, 0.15, -0.35)
+visible = false
+billboard = 1
+text = "Press [E] to grab"
+font_size = 24
+outline_size = 6
+
+[node name="PromptIcon" type="Sprite3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.18, 0.15, -0.35)
+visible = false
+pixel_size = 0.0025
+billboard = 1
+
+[node name="ThrowAudio" type="AudioStreamPlayer3D" parent="."]
