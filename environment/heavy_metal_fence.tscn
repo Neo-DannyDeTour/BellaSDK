@@ -1,0 +1,16 @@
+[gd_scene load_steps=5 format=3 uid="uid://c3q8f8p7km8y7"]
+
+[ext_resource type="PackedScene" uid="uid://d3m7pkwfce7nv" path="res://assets/models/props/heavy_metal_fence/heavy_metal_fence.glb" id="1_fence_glb"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_fence"]
+size = Vector3(3.2, 2.2, 0.12)
+
+[node name="HeavyMetalFence" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 0
+
+[node name="heavy_metal_fence" parent="." instance=ExtResource("1_fence_glb")]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.1, 0)
+shape = SubResource("BoxShape3D_fence")

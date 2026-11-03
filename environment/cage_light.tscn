@@ -1,0 +1,28 @@
+[gd_scene format=3 uid="uid://b1m7cglight01"]
+
+[ext_resource type="Script" uid="uid://bti5v4tlnmavx" path="res://environment/powered_light_3d.gd" id="1_4u3t6"]
+[ext_resource type="PackedScene" uid="uid://dijuh1x0pkr07" path="res://environment/models/cage_light.glb" id="2_cglgt"]
+[ext_resource type="Script" uid="uid://c6vsx15ci2q2y" path="res://core/components/powered_object.gd" id="3_v8x1j"]
+
+[node name="CageLight" type="Node3D" unique_id=88319401]
+script = ExtResource("1_4u3t6")
+light_color = Color(1, 0.941176, 0.819608, 1)
+base_energy = 2.5
+spot_range = 8.0
+spot_angle = 80.0
+emissive_mesh = NodePath("Model/Glass_Diffuser")
+base_emission_energy = 4.0
+
+[node name="Model" parent="." unique_id=88319402 instance=ExtResource("2_cglgt")]
+
+[node name="SpotLight3D" type="SpotLight3D" parent="." unique_id=88319403]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.02, -0.045)
+light_color = Color(1, 0.941176, 0.819608, 1)
+light_energy = 2.5
+spot_range = 8.0
+spot_angle = 80.0
+light_bake_mode = 1
+
+[node name="PowerComponent" type="Node3D" parent="." unique_id=88319404]
+script = ExtResource("3_v8x1j")
+metadata/_custom_type_script = "uid://c6vsx15ci2q2y"

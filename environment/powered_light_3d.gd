@@ -64,6 +64,7 @@ const PRESET_PATTERNS: Dictionary[int, String] = {
 	set(value):
 		light_color = value
 		_sync_light_properties()
+		_sync_emissive_properties()
 
 ## Baseline energy multiplier ('m' in Quake pattern = 100% of this value).
 @export_range(0.0, 64.0, 0.05) var base_energy: float = 1.0:
@@ -100,6 +101,27 @@ const PRESET_PATTERNS: Dictionary[int, String] = {
 	set(value):
 		shadows_enabled = value
 		_sync_light_properties()
+
+@export_group("Emissive Visual Sync")
+## Optional mesh instance whose material emission synchronizes with power and flicker.
+@export var emissive_mesh: MeshInstance3D = null:
+	set(value):
+		emissive_mesh = value
+		_setup_emissive_material()
+		_sync_emissive_properties()
+
+## Surface index on [member emissive_mesh] targeting glowing glass/bulb material.
+@export var emissive_surface_idx: int = 0:
+	set(value):
+		emissive_surface_idx = maxi(0, value)
+		_setup_emissive_material()
+		_sync_emissive_properties()
+
+## Baseline emission multiplier applied to [member emissive_mesh] material when fully lit.
+@export_range(0.0, 32.0, 0.1) var base_emission_energy: float = 3.0:
+	set(value):
+		base_emission_energy = maxf(0.0, value)
+		_sync_emissive_properties()
 
 @export_group("Flicker & Style")
 ## Active flicker animation style preset.
@@ -149,6 +171,9 @@ var _is_on_screen: bool = true
 ## Internal visibility notifier gating per-frame flicker math when off-screen.
 var _notifier: VisibleOnScreenNotifier3D = null
 
+## Runtime override material instance for emissive synchronization without asset pollution.
+var _bulb_material: BaseMaterial3D = null
+
 ## Child [PowerComponent] managing power counter thresholds.
 @onready var power_component: PowerComponent = get_node_or_null("PowerComponent") as PowerComponent
 
@@ -160,7 +185,9 @@ var _notifier: VisibleOnScreenNotifier3D = null
 func _ready() -> void:
 	set_physics_process(false)
 	_rebuild_pattern_cache()
+	_setup_emissive_material()
 	_sync_light_properties()
+	_sync_emissive_properties()
 
 	if Engine.is_editor_hint():
 		if is_instance_valid(light):
@@ -194,13 +221,19 @@ func _process(delta: float) -> void:
 	_phase += delta * flicker_fps
 
 	if flicker_preset == FlickerPreset.CUSTOM_CURVE and is_instance_valid(custom_curve):
-		var u: float = fposmod(_phase * 0.1, 1.0)
-		light.light_energy = base_energy * maxf(0.0, custom_curve.sample_baked(u))
+		var phase_unit: float = fposmod(_phase * 0.1, 1.0)
+		var curve_scale: float = maxf(0.0, custom_curve.sample_baked(phase_unit))
+		light.light_energy = base_energy * curve_scale
+		if is_instance_valid(_bulb_material):
+			_bulb_material.emission_energy_multiplier = base_emission_energy * curve_scale
 		return
 
 	var count: int = _pattern_scales.size()
 	if count <= 1:
-		light.light_energy = base_energy * (_pattern_scales[0] if count == 1 else 1.0)
+		var static_scale: float = _pattern_scales[0] if count == 1 else 1.0
+		light.light_energy = base_energy * static_scale
+		if is_instance_valid(_bulb_material):
+			_bulb_material.emission_energy_multiplier = base_emission_energy * static_scale
 		return
 
 	var wrapped: float = fposmod(_phase, float(count))
@@ -212,8 +245,12 @@ func _process(delta: float) -> void:
 		var frac: float = wrapped - float(idx_a)
 		var blended: float = lerpf(scale_a, _pattern_scales[idx_b], frac)
 		light.light_energy = base_energy * blended
+		if is_instance_valid(_bulb_material):
+			_bulb_material.emission_energy_multiplier = base_emission_energy * blended
 	else:
 		light.light_energy = base_energy * scale_a
+		if is_instance_valid(_bulb_material):
+			_bulb_material.emission_energy_multiplier = base_emission_energy * scale_a
 
 
 ## Supplies 1 unit of power to the internal [PowerComponent].
@@ -234,6 +271,9 @@ func turn_on() -> void:
 	if is_instance_valid(light):
 		light.visible = true
 		light.light_energy = base_energy
+	if is_instance_valid(_bulb_material):
+		_bulb_material.emission_enabled = true
+		_bulb_material.emission_energy_multiplier = base_emission_energy
 	_phase = 0.0
 	_update_process_state()
 	powered_on.emit()
@@ -245,6 +285,9 @@ func turn_off() -> void:
 	is_lit = false
 	if is_instance_valid(light):
 		light.visible = false
+	if is_instance_valid(_bulb_material):
+		_bulb_material.emission_enabled = false
+		_bulb_material.emission_energy_multiplier = 0.0
 	_update_process_state()
 	powered_off.emit()
 	print("PoweredLight3D: [", name, "] turned OFF.")
@@ -280,6 +323,49 @@ func _sync_light_properties() -> void:
 	spot.shadow_enabled = shadows_enabled
 
 
+## Duplicates active material once to prevent mutating shared project resources.
+func _setup_emissive_material() -> void:
+	if not is_instance_valid(emissive_mesh):
+		var candidate: MeshInstance3D = get_node_or_null("Model/Glass_Diffuser") as MeshInstance3D
+		if not is_instance_valid(candidate):
+			candidate = get_node_or_null("Glass_Diffuser") as MeshInstance3D
+		if is_instance_valid(candidate):
+			emissive_mesh = candidate
+		else:
+			_bulb_material = null
+			return
+
+	var mesh_res: Mesh = emissive_mesh.mesh
+	if not is_instance_valid(mesh_res):
+		_bulb_material = null
+		return
+	if emissive_surface_idx >= mesh_res.get_surface_count():
+		_bulb_material = null
+		return
+	var active_mat: Material = emissive_mesh.get_active_material(emissive_surface_idx)
+	if active_mat is BaseMaterial3D:
+		_bulb_material = (active_mat as BaseMaterial3D).duplicate() as BaseMaterial3D
+		emissive_mesh.set_surface_override_material(emissive_surface_idx, _bulb_material)
+	else:
+		_bulb_material = null
+
+
+## Synchronizes emission color and intensity on the override bulb material.
+func _sync_emissive_properties() -> void:
+	if not is_instance_valid(_bulb_material):
+		return
+	_bulb_material.emission = light_color
+	if is_lit or (Engine.is_editor_hint() and preview_in_editor):
+		_bulb_material.emission_enabled = true
+		_bulb_material.emission_energy_multiplier = base_emission_energy
+	elif Engine.is_editor_hint():
+		_bulb_material.emission_enabled = true
+		_bulb_material.emission_energy_multiplier = base_emission_energy
+	else:
+		_bulb_material.emission_enabled = false
+		_bulb_material.emission_energy_multiplier = 0.0
+
+
 ## Converts the active pattern string ('a'..'z') into normalized float multipliers.
 func _rebuild_pattern_cache() -> void:
 	var raw_str: String = (
@@ -310,16 +396,21 @@ func _update_process_state() -> void:
 
 	if Engine.is_editor_hint():
 		set_process(preview_in_editor and is_animated)
-		if not preview_in_editor and is_instance_valid(light):
-			light.light_energy = base_energy
+		if not preview_in_editor:
+			if is_instance_valid(light):
+				light.light_energy = base_energy
+			if is_instance_valid(_bulb_material):
+				_bulb_material.emission_energy_multiplier = base_emission_energy
 		return
 
 	var should_run: bool = is_lit and _is_on_screen and is_animated
 	set_process(should_run)
-	if is_lit and not is_animated and is_instance_valid(light):
-		light.light_energy = (
-			base_energy * (_pattern_scales[0] if _pattern_scales.size() > 0 else 1.0)
-		)
+	if is_lit and not is_animated:
+		var static_mult: float = _pattern_scales[0] if _pattern_scales.size() > 0 else 1.0
+		if is_instance_valid(light):
+			light.light_energy = base_energy * static_mult
+		if is_instance_valid(_bulb_material):
+			_bulb_material.emission_energy_multiplier = base_emission_energy * static_mult
 
 
 ## Creates a [VisibleOnScreenNotifier3D] bounding the spotlight range to gate `_process`.

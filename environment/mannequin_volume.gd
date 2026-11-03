@@ -138,13 +138,17 @@ func _ready() -> void:
 
 func _process(_delta: float) -> void:
 	if _update_queued:
-		_generate_references()
 		_update_queued = false
+		_generate_references()
+	if not Engine.is_editor_hint() and not _update_queued:
+		set_process(false)
 
 
 ## Flags the script to regenerate all visual instances on the next process frame.
 func _request_update() -> void:
 	_update_queued = true
+	if is_inside_tree():
+		set_process(true)
 
 
 ## Pulls relevant movement and dimension parameters by safely duck-typing a temporary player scene.
@@ -180,10 +184,14 @@ func _sync_with_target() -> void:
 
 		var max_jump_height: float = (pow(jump_velocity, 2.0)) / (2.0 * jump_gravity)
 
-		box_heights.clear()
-		box_heights.append(_crouch_height)
-		box_heights.append(_standing_height)
-		box_heights.append(_standing_height + max_jump_height)
+		var target_heights: Array[float] = [
+			_crouch_height, _standing_height, _standing_height + max_jump_height
+		]
+		if box_heights != target_heights:
+			box_heights = target_heights
+
+		# Clear update flag set by @export property setters during metric sync.
+		_update_queued = false
 
 	temp_player.queue_free()
 
