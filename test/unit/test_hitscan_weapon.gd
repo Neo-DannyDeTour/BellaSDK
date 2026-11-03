@@ -114,3 +114,20 @@ func test_sync_ammo_ui_emits_event() -> void:
 	weapon.sync_ammo_ui()
 
 	assert_signal_emitted_with_parameters(Events, &"weapon_ammo_changed", [4, 8, 6])
+
+
+## Verifies a processed hit dispatches bullet_impact_requested with position and normal.
+func test_process_hit_emits_bullet_impact() -> void:
+	print("TestHitscanWeapon: test_process_hit_emits_bullet_impact() called.")
+	watch_signals(Events)
+	var body: StaticBody3D = StaticBody3D.new()
+	add_child_autofree(body)
+	var result: Dictionary = {
+		"collider": body, "position": Vector3(0.0, 1.0, -5.0), "normal": Vector3.BACK
+	}
+
+	weapon.call(&"_process_hit", result, Vector3.FORWARD)
+
+	assert_signal_emitted_with_parameters(
+		Events, &"bullet_impact_requested", [Vector3(0.0, 1.0, -5.0), Vector3.BACK, body]
+	)

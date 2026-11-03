@@ -224,6 +224,10 @@ signal aim_assist_amount_changed(amount: float)
 @warning_ignore("unused_signal")
 signal blood_fx_requested(hit_position: Vector3, shot_direction: Vector3, is_fatal: bool)
 
+## Emitted per hitscan ray hit. Passes [param position], surface [param normal], [param collider].
+@warning_ignore("unused_signal")
+signal bullet_impact_requested(position: Vector3, normal: Vector3, collider: Object)
+
 ## Emitted when a screen fade transition is requested by a trigger or console.
 @warning_ignore("unused_signal")
 signal screen_fade_requested(

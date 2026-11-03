@@ -21,6 +21,9 @@ signal died
 ## Broadcasts updates directly to the global [Events] bus for player instances.
 @export var is_player_health: bool = false
 
+## Optional randomized [Vector2i(min, max)] health capacity rolled on spawn and reset.
+@export var random_health_range: Vector2i = Vector2i.ZERO
+
 ## The current internal health points remaining for this entity.
 var current_health: int = 100
 
@@ -30,7 +33,7 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 	#print("HealthComponent: _ready() - Initializing health component.")
-	current_health = max_health
+	_roll_initial_health()
 	add_to_group(&"damageable")
 
 
@@ -122,7 +125,7 @@ func die() -> void:
 ## Resets health to maximum and reactivates parent [Node3D] for pool reuse.
 func reset() -> void:
 	print("HealthComponent: reset() - Restoring health for next spawn.")
-	current_health = max_health
+	_roll_initial_health()
 
 	var target_node: Node = get_parent()
 	if target_node is Node3D:
@@ -131,3 +134,14 @@ func reset() -> void:
 		node_3d.process_mode = Node.PROCESS_MODE_INHERIT
 
 	health_changed.emit(current_health)
+
+
+## Rolls randomized health capacity if [member random_health_range] is configured.
+func _roll_initial_health() -> void:
+	if (
+		not is_player_health
+		and random_health_range.x > 0
+		and random_health_range.y >= random_health_range.x
+	):
+		max_health = randi_range(random_health_range.x, random_health_range.y)
+	current_health = max_health

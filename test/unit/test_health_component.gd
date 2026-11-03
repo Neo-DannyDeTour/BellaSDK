@@ -82,3 +82,33 @@ func test_increase_max_health() -> void:
 		health_comp.get("current_health"), 150, "Current health should scale with max health."
 	)
 	assert_signal_emitted_with_parameters(health_comp, "max_health_changed", [150])
+
+
+## Verifies that random_health_range rolls a value within the specified bounds.
+func test_random_health_roll() -> void:
+	print("TestHealthComponent: test_random_health_roll() called.")
+	@warning_ignore("unsafe_method_access")
+	var comp: Node = HEALTH_SCRIPT.new()
+	add_child_autofree(comp)
+	comp.set("random_health_range", Vector2i(45, 90))
+	comp.call("_ready")
+
+	var rolled_max: int = int(comp.get("max_health"))
+	var rolled_curr: int = int(comp.get("current_health"))
+	assert_true(rolled_max >= 45 and rolled_max <= 90, "Max health should be within bounds.")
+	assert_eq(rolled_curr, rolled_max, "Current health should match randomized max health.")
+
+
+## Verifies that reset re-rolls health within bounds.
+func test_random_health_reset_rerolls() -> void:
+	print("TestHealthComponent: test_random_health_reset_rerolls() called.")
+	@warning_ignore("unsafe_method_access")
+	var comp: Node = HEALTH_SCRIPT.new()
+	add_child_autofree(comp)
+	comp.set("random_health_range", Vector2i(45, 90))
+	comp.call("_ready")
+
+	comp.call("take_damage", 20)
+	comp.call("reset")
+	var reset_curr: int = int(comp.get("current_health"))
+	assert_true(reset_curr >= 45 and reset_curr <= 90, "Reset health should be within bounds.")
