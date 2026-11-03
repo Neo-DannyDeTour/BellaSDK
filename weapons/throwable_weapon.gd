@@ -91,6 +91,11 @@ var _excluded_rids: Array[RID] = []
 ## Physical collider body representing the pickup in the world.
 @onready var static_body: StaticBody3D = get_node_or_null("StaticBody3D") as StaticBody3D
 
+## Visual outline highlight component.
+@onready var highlight_comp: HighlightComponent = (
+	get_node_or_null("HighlightComponent") as HighlightComponent
+)
+
 
 # --------------------------------------
 # LIFECYCLE METHODS
@@ -153,6 +158,9 @@ func equip_to_player(player_body: CharacterBody3D) -> void:
 	if is_instance_valid(static_body):
 		static_body.process_mode = PROCESS_MODE_DISABLED
 		static_body.visible = false
+
+	if is_instance_valid(highlight_comp):
+		highlight_comp.suppress(true)
 
 	var inv: WeaponInventoryComponent = null
 	if is_instance_valid(player_body):

@@ -5,6 +5,14 @@ extends GutTest
 ## Preloaded weapon script avoiding global class resolution warning before project scan.
 const ROCKET_SCRIPT: GDScript = preload("res://weapons/signal_rocket/signal_rocket_weapon.gd")
 
+## Preloaded weapon scene validating scene node configuration.
+const WEAPON_SCENE: PackedScene = preload("res://weapons/signal_rocket/signal_rocket_weapon.tscn")
+
+## Preloaded projectile scene validating scene node configuration.
+const PROJECTILE_SCENE: PackedScene = preload(
+	"res://weapons/signal_rocket/signal_rocket_projectile.tscn"
+)
+
 ## The [WeaponInventoryComponent] instance under test.
 var inventory: WeaponInventoryComponent = null
 
@@ -136,3 +144,78 @@ func test_repick_thrown_rocket() -> void:
 	assert_eq(re_equipped.current_ammo, 1)
 	assert_gt(re_equipped.burn_duration, 0.0)
 	autofree(re_equipped)
+
+
+## Verifies interact_with called through interact_comp does not cause weapon duplication.
+func test_projectile_repick_no_duplication() -> void:
+	rocket.equip_to_player(player_body)
+	assert_true(rocket.is_equipped)
+
+	var fired: bool = rocket.shoot(camera)
+	assert_true(fired)
+
+	var proj: SignalRocketProjectile = null
+	for child: Node in get_tree().root.get_children():
+		if child is SignalRocketProjectile:
+			proj = child as SignalRocketProjectile
+			break
+
+	assert_not_null(proj, "SignalRocketProjectile must be spawned.")
+	autofree(proj)
+
+	# Simulate what InteractionScanner calls (interact_with on InteractComponent)
+	proj.interact_comp.interact_with(player_body)
+	await get_tree().process_frame
+
+	assert_false(is_instance_valid(proj), "Projectile must be freed after pickup.")
+
+	var count_projectiles: int = 0
+	for child: Node in get_tree().root.get_children():
+		if child is SignalRocketProjectile and is_instance_valid(child):
+			count_projectiles += 1
+	assert_eq(count_projectiles, 0, "No duplicate projectiles should exist on floor.")
+
+	var equipped_rocket: SignalRocketWeapon = (
+		inventory.slots[rocket.default_slot - 1] as SignalRocketWeapon
+	)
+	assert_not_null(equipped_rocket, "Exactly one rocket weapon should be equipped in slot 4.")
+	assert_true(equipped_rocket.is_equipped)
+	assert_eq(equipped_rocket.current_ammo, 1)
+	autofree(equipped_rocket)
+
+
+## Verifies projectile has prompt label, icon, and highlight components suppressed on burnout.
+func test_projectile_prompts_and_burnout() -> void:
+	var proj_inst: Node = PROJECTILE_SCENE.instantiate()
+	var proj: SignalRocketProjectile = proj_inst as SignalRocketProjectile
+	get_tree().root.add_child(proj)
+	autofree(proj)
+
+	assert_not_null(proj.label, "Projectile should have Label3D.")
+	assert_not_null(proj.prompt_icon, "Projectile should have PromptIcon.")
+	assert_not_null(proj.highlight_comp, "Projectile should have HighlightComponent.")
+	assert_false(proj.label.visible, "Label3D should start hidden.")
+
+	# Simulate hover focus
+	proj.interact_comp.focused.emit()
+	assert_true(proj.label.visible, "Label3D should be visible on focus.")
+
+	# Fast forward burnout
+	proj.arm(0.02)
+	await proj._burn_timer.timeout
+	await get_tree().process_frame
+
+	assert_false(proj.label.visible, "Label3D should hide on burnout.")
+	assert_false(proj.prompt_icon.visible, "PromptIcon should hide on burnout.")
+	assert_false(proj.interact_comp.is_enabled, "InteractComponent should be disabled on burnout.")
+
+
+## Verifies SignalRocketWeapon scene contains HighlightComponent for level pickup.
+func test_weapon_scene_has_highlight_component() -> void:
+	var wpn_inst: Node = WEAPON_SCENE.instantiate()
+	autofree(wpn_inst)
+	var hl: HighlightComponent = (
+		wpn_inst.get_node_or_null("HighlightComponent") as HighlightComponent
+	)
+	assert_not_null(hl, "SignalRocketWeapon scene must contain HighlightComponent.")
+	assert_not_null(hl.interact_component, "HighlightComponent must link to InteractComponent.")

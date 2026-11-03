@@ -174,17 +174,21 @@ func reload_active_weapon() -> void:
 			slots[current_slot_index].call("reload")
 
 
-## Adds reserve ammunition to weapons matching [param target_ammo_type].
+## Adds reserve ammunition to weapons matching [param target_ammo_type], clamped to 5x capacity.
 func add_ammo(target_ammo_type: StringName, amount: int) -> bool:
 	print("WeaponInventoryComponent: Adding ", amount, " rounds of ", target_ammo_type)
 	var applied: bool = false
 
 	for weapon: Node3D in slots:
 		if is_instance_valid(weapon) and weapon.get("ammo_type") == target_ammo_type:
-			var res_ammo: int = weapon.get("reserve_ammo") + amount
-			weapon.set("reserve_ammo", res_ammo)
+			var cap_val: Variant = weapon.get("ammo_capacity")
+			var max_res: int = int(cap_val) * 5 if cap_val is int else 30
+			var current_res_val: Variant = weapon.get("reserve_ammo")
+			var current_res: int = int(current_res_val) if current_res_val is int else 0
+			var new_res: int = clampi(current_res + amount, 0, max_res)
+			weapon.set("reserve_ammo", new_res)
 			var w_tag: String = str(weapon.get("weapon_tag"))
-			print(w_tag, ": New reserve ammo count -> ", res_ammo)
+			print(w_tag, ": New reserve ammo count -> ", new_res, " (max: ", max_res, ")")
 			if weapon.has_method("sync_ammo_ui"):
 				weapon.call("sync_ammo_ui")
 			applied = true

@@ -3,6 +3,17 @@
 [ext_resource type="Script" path="res://weapons/signal_rocket/signal_rocket_weapon.gd" id="1_weap"]
 [ext_resource type="PackedScene" uid="uid://c6bovumfnmn2w" path="res://weapons/signal_rocket/signal_rocket_projectile.tscn" id="2_proj"]
 [ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="3_interact"]
+[ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="4_highlight"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="5_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_outline"]
+render_priority = 0
+shader = ExtResource("5_shader")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.2
+shader_parameter/max_intensity = 1.0
+shader_parameter/alpha_scissor_threshold = 0.5
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tube"]
 albedo_color = Color(0.85, 0.15, 0.1, 1)
@@ -92,6 +103,11 @@ shape = SubResource("CylinderShape3D_pickup")
 
 [node name="InteractComponent" type="Node" parent="StaticBody3D"]
 script = ExtResource("3_interact")
+
+[node name="HighlightComponent" type="Node" parent="." node_paths=PackedStringArray("interact_component")]
+script = ExtResource("4_highlight")
+outline_material = SubResource("ShaderMaterial_outline")
+interact_component = NodePath("StaticBody3D/InteractComponent")
 
 [node name="Label3D" type="Label3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.18, 0.15, -0.35)

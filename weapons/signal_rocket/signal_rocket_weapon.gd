@@ -23,6 +23,9 @@ const DROP_FORWARD_SPEED: float = 2.5
 ## Upward velocity boost in meters per second applied when rocket is dropped on weapon switch.
 const DROP_UPWARD_BOOST: float = 0.5
 
+## Fallback projectile scene path used when [member projectile_scene] is unassigned in tests.
+const PROJECTILE_SCENE_PATH: String = "res://weapons/signal_rocket/signal_rocket_projectile.tscn"
+
 # --------------------------------------
 # EXPORTS
 # --------------------------------------
@@ -62,7 +65,8 @@ func _ready() -> void:
 	current_ammo = 1
 
 	if not is_instance_valid(projectile_scene):
-		projectile_scene = preload("res://weapons/signal_rocket/signal_rocket_projectile.tscn")
+		# Avoid compile-time preload() cycle with signal_rocket_projectile.gd on worker threads.
+		projectile_scene = ResourceLoader.load(PROJECTILE_SCENE_PATH) as PackedScene
 
 	if not is_instance_valid(flare_light):
 		flare_light = get_node_or_null("MuzzlePoint/OmniLight3D") as OmniLight3D

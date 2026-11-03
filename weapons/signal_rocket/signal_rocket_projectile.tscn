@@ -2,6 +2,8 @@
 
 [ext_resource type="Script" path="res://weapons/signal_rocket/signal_rocket_projectile.gd" id="1_proj"]
 [ext_resource type="Script" uid="uid://cqawbvidns1th" path="res://interactables/interact_component.gd" id="2_interact"]
+[ext_resource type="Script" uid="uid://dgig0tamvkdxx" path="res://environment/highlight_component.gd" id="3_highlight"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="4_shader"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_flare"]
 friction = 0.65
@@ -49,7 +51,16 @@ particles_anim_loop = false
 material = SubResource("StandardMaterial3D_spark_quad")
 size = Vector2(0.04, 0.04)
 
-[node name="SignalRocketProjectile" type="RigidBody3D" node_paths=PackedStringArray("flare_light", "flare_particles")]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_outline"]
+render_priority = 0
+shader = ExtResource("4_shader")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.2
+shader_parameter/max_intensity = 1.0
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[node name="SignalRocketProjectile" type="RigidBody3D" node_paths=PackedStringArray("flare_light", "flare_particles", "label", "prompt_icon", "highlight_comp")]
 collision_layer = 12
 collision_mask = 21
 mass = 0.35
@@ -60,6 +71,9 @@ display_name = "Signal Rocket"
 burn_time = 18.0
 flare_light = NodePath("OmniLight3D")
 flare_particles = NodePath("GPUParticles3D")
+label = NodePath("Label3D")
+prompt_icon = NodePath("PromptIcon")
+highlight_comp = NodePath("HighlightComponent")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 shape = SubResource("CylinderShape3D_body")
@@ -85,3 +99,22 @@ draw_pass_1 = SubResource("QuadMesh_spark")
 
 [node name="InteractComponent" type="Node" parent="."]
 script = ExtResource("2_interact")
+
+[node name="HighlightComponent" type="Node" parent="." node_paths=PackedStringArray("interact_component")]
+script = ExtResource("3_highlight")
+outline_material = SubResource("ShaderMaterial_outline")
+interact_component = NodePath("../InteractComponent")
+
+[node name="Label3D" type="Label3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.28, 0)
+visible = false
+billboard = 1
+text = "Press [E] to grab"
+font_size = 24
+outline_size = 6
+
+[node name="PromptIcon" type="Sprite3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.28, 0)
+visible = false
+pixel_size = 0.0025
+billboard = 1

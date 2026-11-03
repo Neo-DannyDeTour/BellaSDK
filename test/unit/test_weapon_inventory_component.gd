@@ -137,3 +137,16 @@ func test_add_ammo() -> void:
 
 	var false_result: bool = inventory.add_ammo(StringName("rockets"), 5)
 	assert_false(false_result, "Adding ammo should return false for unmatched ammo type.")
+
+
+## Verifies [method WeaponInventoryComponent.add_ammo] clamps reserve to 5x capacity.
+func test_add_ammo_clamps_at_max_reserve() -> void:
+	print("TestWeaponInventoryComponent: test_add_ammo_clamps_at_max_reserve() running.")
+	mock_weapon_1.set("ammo_capacity", 6)
+	inventory.register_weapon(mock_weapon_1)
+
+	var result: bool = inventory.add_ammo(StringName("bullets"), 50)
+	assert_true(result, "Adding ammo should succeed.")
+
+	var res_ammo: int = int(mock_weapon_1.get("reserve_ammo"))
+	assert_eq(res_ammo, 30, "Reserve ammo should be clamped to 30 (6 * 5).")
