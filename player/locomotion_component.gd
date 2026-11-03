@@ -20,6 +20,15 @@ const GROUP_SOCKET: StringName = &"socket"
 ## Signal identifier for heavy carry state changes.
 const SIG_HEAVY_CARRY: StringName = &"heavy_carry_toggled"
 
+## Signal identifier for sand surface hazard toggles.
+const SIG_SAND_SURFACE: StringName = &"sand_surface_toggled"
+
+## Signal identifier for ice surface hazard toggles.
+const SIG_ICE_SURFACE: StringName = &"ice_surface_toggled"
+
+## Signal identifier for sprint debuff events.
+const SIG_SPRINT_DEBUFF: StringName = &"sprint_debuff_applied"
+
 ## Method identifier for locking pickable floor platforms.
 const METHOD_REGISTER_STANDING: StringName = &"register_player_standing"
 
@@ -154,6 +163,15 @@ var _last_sprint_time: int = 0
 ## Internal vertical velocity tracking head stance spring animation.
 var _head_velocity_y: float = 0.0
 
+## Tracks whether an external sand or mucus floor hazard is active.
+var _sand_hazard_active: bool = false
+
+## Tracks whether an external ice or slippery floor hazard is active.
+var _ice_hazard_active: bool = false
+
+## Remaining duration in seconds of any active sprint debuff.
+var _sprint_debuff_time_left: float = 0.0
+
 
 ## Subscribes to global event bus signals and initializes state.
 func _ready() -> void:
@@ -162,6 +180,12 @@ func _ready() -> void:
 	print("LocomotionComponent: _ready() initialized.")
 	if Events.has_signal(SIG_HEAVY_CARRY):
 		Utilities.safe_connect(Events.heavy_carry_toggled, _on_heavy_carry_toggled)
+	if Events.has_signal(SIG_SAND_SURFACE):
+		Utilities.safe_connect(Events.sand_surface_toggled, _on_sand_surface_toggled)
+	if Events.has_signal(SIG_ICE_SURFACE):
+		Utilities.safe_connect(Events.ice_surface_toggled, _on_ice_surface_toggled)
+	if Events.has_signal(SIG_SPRINT_DEBUFF):
+		Utilities.safe_connect(Events.sprint_debuff_applied, _on_sprint_debuff_applied)
 
 
 ## Disconnects global signals when exiting the scene tree.
@@ -171,6 +195,21 @@ func _exit_tree() -> void:
 		and Events.heavy_carry_toggled.is_connected(_on_heavy_carry_toggled)
 	):
 		Events.heavy_carry_toggled.disconnect(_on_heavy_carry_toggled)
+	if (
+		Events.has_signal(SIG_SAND_SURFACE)
+		and Events.sand_surface_toggled.is_connected(_on_sand_surface_toggled)
+	):
+		Events.sand_surface_toggled.disconnect(_on_sand_surface_toggled)
+	if (
+		Events.has_signal(SIG_ICE_SURFACE)
+		and Events.ice_surface_toggled.is_connected(_on_ice_surface_toggled)
+	):
+		Events.ice_surface_toggled.disconnect(_on_ice_surface_toggled)
+	if (
+		Events.has_signal(SIG_SPRINT_DEBUFF)
+		and Events.sprint_debuff_applied.is_connected(_on_sprint_debuff_applied)
+	):
+		Events.sprint_debuff_applied.disconnect(_on_sprint_debuff_applied)
 
 
 ## Caches parent [CharacterBody3D] reference [param p_player].
@@ -189,6 +228,10 @@ func set_physics_active(active: bool) -> void:
 
 ## Executes floor weight application and head height interpolation.
 func process_movement(delta: float) -> void:
+	if _sprint_debuff_time_left > 0.0:
+		_sprint_debuff_time_left = maxf(0.0, _sprint_debuff_time_left - delta)
+		_refresh_sprint_permission()
+
 	if not is_active or not is_instance_valid(player):
 		return
 
@@ -228,7 +271,7 @@ func set_heavy_carry(active: bool, weight: float = 0.0) -> void:
 	print("LocomotionComponent: set_heavy_carry() -> ", active, " (mass: ", weight, "kg)")
 	is_heavy_carrying = active
 	carried_weight = weight if active else 0.0
-	can_sprint = not active
+	_refresh_sprint_permission()
 	can_jump = true if allow_heavy_carry_jump else not active
 
 
@@ -258,10 +301,50 @@ func get_effective_jump_velocity(base_jump_velocity: float) -> float:
 	return base_jump_velocity
 
 
+## Returns true if an external ice surface hazard (e.g. [SquidPuddle]) is active.
+func is_ice_hazard_active() -> bool:
+	return _ice_hazard_active
+
+
+## Returns true if an external sand or mucus floor hazard is active.
+func is_sand_hazard_active() -> bool:
+	return _sand_hazard_active
+
+
 ## Handles [signal Events.heavy_carry_toggled] state updates.
 func _on_heavy_carry_toggled(is_heavy: bool) -> void:
 	print("LocomotionComponent: _on_heavy_carry_toggled() received -> ", is_heavy)
 	set_heavy_carry(is_heavy, 15.0 if is_heavy else 0.0)
+
+
+## Handles [signal Events.sand_surface_toggled] hazard state updates.
+func _on_sand_surface_toggled(is_active_sand: bool) -> void:
+	print("LocomotionComponent: _on_sand_surface_toggled() -> ", is_active_sand)
+	_sand_hazard_active = is_active_sand
+	_refresh_sprint_permission()
+
+
+## Handles [signal Events.ice_surface_toggled] hazard state updates.
+func _on_ice_surface_toggled(is_active_ice: bool) -> void:
+	print("LocomotionComponent: _on_ice_surface_toggled() -> ", is_active_ice)
+	_ice_hazard_active = is_active_ice
+
+
+## Handles [signal Events.sprint_debuff_applied] timers.
+func _on_sprint_debuff_applied(duration: float) -> void:
+	print("LocomotionComponent: _on_sprint_debuff_applied() for ", duration, "s.")
+	_sprint_debuff_time_left = maxf(_sprint_debuff_time_left, duration)
+	_refresh_sprint_permission()
+
+
+## Recalculates sprint permission accounting for carry state, hazards, and debuff timers.
+func _refresh_sprint_permission() -> void:
+	var allowed: bool = (
+		not is_heavy_carrying and not _sand_hazard_active and _sprint_debuff_time_left <= 0.0
+	)
+	if can_sprint != allowed:
+		can_sprint = allowed
+		print("LocomotionComponent: Sprint permission updated -> ", can_sprint)
 
 
 ## Injects downward forces into floor bodies without rotational levering.

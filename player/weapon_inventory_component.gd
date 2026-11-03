@@ -119,8 +119,14 @@ func select_slot(index: int) -> void:
 		return
 
 	print("WeaponInventoryComponent: Switching to slot ", index + 1)
-	if current_slot_index != -1:
+	if current_slot_index != -1 and current_slot_index < slots.size():
+		var outgoing_gun: Node3D = slots[current_slot_index]
+		if is_instance_valid(outgoing_gun) and outgoing_gun.has_method(&"on_unequip"):
+			outgoing_gun.call(&"on_unequip")
 		previous_slot_index = current_slot_index
+
+	if index < 0 or index >= slots.size() or slots[index] == null:
+		return
 
 	current_slot_index = index
 
@@ -186,6 +192,31 @@ func add_ammo(target_ammo_type: StringName, amount: int) -> bool:
 	if is_instance_valid(Events) and Events.has_signal("ammo_collected"):
 		Events.ammo_collected.emit(target_ammo_type, amount)
 	return applied
+
+
+## Clears weapon reference from [param index] and updates slot selection if active.
+func clear_slot(index: int) -> void:
+	if index < 0 or index >= slots.size():
+		return
+	var weapon: Node3D = slots[index]
+	slots[index] = null
+	print("WeaponInventoryComponent: Cleared slot ", index + 1)
+	if current_slot_index == index:
+		current_slot_index = -1
+		if is_instance_valid(weapon):
+			weapon.visible = false
+			weapon.set_process(false)
+			weapon.set_physics_process(false)
+
+
+## Unregisters [param weapon] from its assigned inventory slot.
+func remove_weapon(weapon: Node3D) -> void:
+	if not is_instance_valid(weapon):
+		return
+	for i: int in range(slots.size()):
+		if slots[i] == weapon:
+			clear_slot(i)
+			return
 
 
 ## Performs a quick throw using a registered [ThrowableWeapon] without swapping active slot.

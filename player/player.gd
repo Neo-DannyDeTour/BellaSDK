@@ -783,8 +783,6 @@ func _update_floor_surface_detection() -> void:
 		is_on_sand_surface = on_sand
 		print("Player: Sand surface changed -> ", is_on_sand_surface)
 		Events.sand_surface_toggled.emit(is_on_sand_surface)
-		if is_instance_valid(locomotion_component):
-			locomotion_component.can_sprint = not is_on_sand_surface
 
 	if on_ice != is_on_ice_surface:
 		is_on_ice_surface = on_ice

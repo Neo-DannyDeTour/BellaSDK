@@ -129,6 +129,9 @@ func physics_update(delta: float) -> void:
 		if _is_collider_in_group(node_col, GROUP_SAFE_LANDING):
 			loco.on_safe_landing = true
 
+	if loco.is_sand_hazard_active():
+		loco.on_sand = true
+
 	var is_recently_stepped: bool = loco.stair_controller.time_since_step_up < 0.2
 	var snapped_last_frame: bool = (
 		loco.stair_controller.get(&"_snapped_to_stairs_last_frame") == true
@@ -357,7 +360,7 @@ func _update_components(
 	var fm: FootstepManager = loco.footstep_manager as FootstepManager
 	if is_instance_valid(fm):
 		fm.process_surface_and_footsteps(delta, true, vel_len, loco.sprint_active, loco.crouching)
-		loco.on_ice = fm.is_on_ice
+		loco.on_ice = fm.is_on_ice or loco.is_ice_hazard_active()
 
 	if is_instance_valid(interact) and is_instance_valid(interact.interaction_scanner):
 		interact.interaction_scanner.process_interaction(delta)
