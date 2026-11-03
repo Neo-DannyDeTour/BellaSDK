@@ -1,0 +1,20 @@
+[gd_scene format=3 uid="uid://2rh3qurlwp8k"]
+
+[ext_resource type="Script" uid="uid://85fx7sjytu1" path="res://enemies/squid/enemy_squid.gd" id="1_squid"]
+[ext_resource type="Script" uid="uid://cbwy13aembb7w" path="res://core/components/health_component.gd" id="2_health"]
+[ext_resource type="Script" uid="uid://q7rcgal41c7b" path="res://core/components/faction_component.gd" id="3_faction"]
+
+[node name="EnemySquid" type="CharacterBody3D" unique_id=243534397 node_paths=PackedStringArray("faction_component", "health_component") groups=["enemies", "enemy"]]
+collision_layer = 16
+collision_mask = 19
+script = ExtResource("1_squid")
+faction_component = NodePath("FactionComponent")
+health_component = NodePath("HealthComponent")
+
+[node name="HealthComponent" type="Node" parent="." unique_id=1103593109]
+script = ExtResource("2_health")
+use_pooling = false
+random_health_range = Vector2i(100, 200)
+
+[node name="FactionComponent" type="Node" parent="." unique_id=1978937899]
+script = ExtResource("3_faction")
