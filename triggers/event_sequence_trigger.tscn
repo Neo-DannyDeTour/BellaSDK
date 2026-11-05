@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://triggers/editor_trigger_visualizer.gd" id="2_as5r7"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_534t5"]
+resource_local_to_scene = true
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_3wg87"]
 transparency = 1
@@ -21,8 +22,11 @@ show_orientation = false
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1620342169]
 shape = SubResource("BoxShape3D_534t5")
+debug_color = Color(0, 0.59607846, 0.7019608, 1)
 
 [node name="EditorTriggerVisualizer" type="MeshInstance3D" parent="." unique_id=451896210]
 mesh = SubResource("BoxMesh_htm4c")
 script = ExtResource("2_as5r7")
+show_orientation = false
+trigger_text = "EVENT SEQUENCE"
 metadata/_custom_type_script = "uid://q4v42nidwdr2"

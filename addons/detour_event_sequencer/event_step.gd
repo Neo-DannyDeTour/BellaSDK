@@ -14,6 +14,7 @@ enum ExecMode {
 	SEQUENTIAL,
 	PARALLEL,
 	WAIT_SIGNAL,
+	WAIT_LOOK,
 }
 
 ## Operation performed when this step runs.
@@ -33,6 +34,12 @@ enum ExecMode {
 
 ## Signal name awaited on target when [member exec_mode] is WAIT_SIGNAL.
 @export var signal_name: StringName = &""
+
+## Required continuous gaze duration in seconds when [member exec_mode] is WAIT_LOOK.
+@export var look_time: float = 1.0
+
+## Cosine dot threshold for gaze accuracy when [member exec_mode] is WAIT_LOOK.
+@export_range(0.0, 1.0) var look_tolerance: float = 0.95
 
 ## Serialized parameter passed to method call or property assignment.
 @export var parameter: String = ""

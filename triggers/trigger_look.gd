@@ -30,12 +30,10 @@ var _player_inside: bool = false
 ## Accumulated gaze duration on the target node.
 var _current_look_time: float = 0.0
 
-## Cached viewport [Camera3D] node reference.
-var _cached_camera: Camera3D = null
-
 
 ## Initializes base trigger bounds and gates per-frame process evaluation.
 func _ready() -> void:
+	auto_consume_on_entry = false
 	super._ready()
 	set_process(false)
 
@@ -55,7 +53,7 @@ func _process(delta: float) -> void:
 		return
 
 	var dir_to_target: Vector3 = cam.global_position.direction_to(look_target.global_position)
-	var camera_forward: Vector3 = -cam.global_transform.basis.z
+	var camera_forward: Vector3 = -cam.global_transform.basis.z.normalized()
 	var dot_product: float = camera_forward.dot(dir_to_target)
 
 	if dot_product >= look_tolerance:
@@ -103,10 +101,9 @@ func _trigger_event() -> void:
 				comp.call(&"add_power")
 
 
-## Fetches and caches the active viewport [Camera3D] node.
+## Fetches the active viewport [Camera3D] node.
 func _get_camera() -> Camera3D:
-	if not is_instance_valid(_cached_camera):
-		var vp: Viewport = get_viewport()
-		if is_instance_valid(vp):
-			_cached_camera = vp.get_camera_3d()
-	return _cached_camera
+	var vp: Viewport = get_viewport()
+	if is_instance_valid(vp):
+		return vp.get_camera_3d()
+	return null

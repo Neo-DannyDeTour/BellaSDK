@@ -35,6 +35,9 @@ signal player_exited(player: Node3D)
 ## Determines if the trigger action should only fire on the first player entry.
 @export var trigger_once: bool = true
 
+## Controls whether player entry immediately consumes this trigger as spent.
+@export var auto_consume_on_entry: bool = true
+
 @export_group("Trigger Debug Visualizer")
 ## Determines if the trigger visualizer remains visible during active gameplay.
 @export var show_in_game: bool = false:
@@ -95,6 +98,8 @@ var _collision_shape: CollisionShape3D = null
 ## Initializes collision layers, connects signals, and prepares editor visuals.
 func _ready() -> void:
 	_collision_shape = _get_collision_shape()
+	_sync_from_collision_shape()
+	_ensure_visualizer()
 	_update_bounds()
 
 	if Engine.is_editor_hint():
@@ -102,11 +107,6 @@ func _ready() -> void:
 
 	collision_layer = CollisionLayers.MASK_NONE
 	collision_mask = CollisionLayers.MASK_PLAYER
-
-	if not show_in_game:
-		var editor_mesh: EditorTriggerVisualizer = _get_visualizer()
-		if is_instance_valid(editor_mesh):
-			editor_mesh.queue_free()
 
 	if not body_entered.is_connected(_on_body_entered):
 		body_entered.connect(_on_body_entered)
@@ -122,13 +122,6 @@ func _update_bounds() -> void:
 	var col: CollisionShape3D = _get_collision_shape()
 	var visual: EditorTriggerVisualizer = _get_visualizer()
 	if is_instance_valid(col):
-		if (
-			not is_instance_valid(visual)
-			and trigger_size == Vector3(2.0, 2.0, 2.0)
-			and trigger_offset == Vector3.ZERO
-		):
-			return
-
 		if shape_type == EditorTriggerVisualizer.ShapeType.BOX:
 			if not (col.shape is BoxShape3D):
 				col.shape = BoxShape3D.new()
@@ -145,6 +138,15 @@ func _update_bounds() -> void:
 			col.shape.resource_local_to_scene = true
 			var sphere_shape: SphereShape3D = col.shape as SphereShape3D
 			sphere_shape.radius = trigger_size.x * 0.5
+		elif shape_type == EditorTriggerVisualizer.ShapeType.CYLINDER:
+			if not (col.shape is CylinderShape3D):
+				col.shape = CylinderShape3D.new()
+			else:
+				col.shape = col.shape.duplicate()
+			col.shape.resource_local_to_scene = true
+			var cyl_shape: CylinderShape3D = col.shape as CylinderShape3D
+			cyl_shape.radius = trigger_size.x * 0.5
+			cyl_shape.height = trigger_size.y
 
 		col.position = trigger_offset
 
@@ -159,6 +161,48 @@ func _update_bounds() -> void:
 		visual.trigger_text = trigger_text
 		visual.show_in_game = show_in_game
 		visual.position = trigger_offset
+
+
+## Adopts geometry settings from existing child collision shape if trigger is uncustomized.
+func _sync_from_collision_shape() -> void:
+	var col: CollisionShape3D = _get_collision_shape()
+	if not is_instance_valid(col) or col.shape == null:
+		return
+
+	if (
+		trigger_size == Vector3(2.0, 2.0, 2.0)
+		and trigger_offset == Vector3.ZERO
+		and shape_type == EditorTriggerVisualizer.ShapeType.BOX
+	):
+		if col.shape is BoxShape3D:
+			var box_shape: BoxShape3D = col.shape as BoxShape3D
+			if box_shape.size != Vector3(2.0, 2.0, 2.0):
+				trigger_size = box_shape.size
+			if col.position != Vector3.ZERO:
+				trigger_offset = col.position
+		elif col.shape is SphereShape3D:
+			shape_type = EditorTriggerVisualizer.ShapeType.SPHERE
+			var sphere_shape: SphereShape3D = col.shape as SphereShape3D
+			var rad: float = sphere_shape.radius
+			trigger_size = Vector3(rad * 2.0, rad * 2.0, rad * 2.0)
+			if col.position != Vector3.ZERO:
+				trigger_offset = col.position
+		elif col.shape is CylinderShape3D:
+			shape_type = EditorTriggerVisualizer.ShapeType.CYLINDER
+			var cyl_shape: CylinderShape3D = col.shape as CylinderShape3D
+			trigger_size = Vector3(cyl_shape.radius * 2.0, cyl_shape.height, cyl_shape.radius * 2.0)
+			if col.position != Vector3.ZERO:
+				trigger_offset = col.position
+
+
+## Ensures an [EditorTriggerVisualizer] child node exists, instantiating one if missing.
+func _ensure_visualizer() -> EditorTriggerVisualizer:
+	var visual: EditorTriggerVisualizer = _get_visualizer()
+	if not is_instance_valid(visual):
+		visual = EditorTriggerVisualizer.new()
+		visual.name = "EditorTriggerVisualizer"
+		add_child(visual)
+	return visual
 
 
 ## Locates child [CollisionShape3D] safely across scene tree variants.
@@ -200,7 +244,8 @@ func _on_body_entered(body: Node3D) -> void:
 	if trigger_once and _has_triggered:
 		return
 
-	_has_triggered = true
+	if auto_consume_on_entry:
+		_has_triggered = true
 	print(name, ": Player entered volume -> ", body.name)
 	player_entered.emit(body)
 	_on_player_entered(body)

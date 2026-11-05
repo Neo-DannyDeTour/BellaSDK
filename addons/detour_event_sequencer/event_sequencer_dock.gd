@@ -63,6 +63,8 @@ var _cond_layer_opt: OptionButton = null
 var _cond_act_chk: CheckBox = null
 ## Button opening node picker for condition target.
 var _cond_target_btn: Button = null
+## Button assigning currently selected editor node to condition target.
+var _use_selected_cond_btn: Button = null
 ## Dropdown listing target properties for PROPERTY_COMPARE.
 var _cond_prop_opt: OptionButton = null
 ## Dropdown selecting comparison operator for PROPERTY_COMPARE.
@@ -82,6 +84,8 @@ var _type_opt: OptionButton = null
 var _step_act_chk: CheckBox = null
 ## Button opening node picker for step target.
 var _target_btn: Button = null
+## Button assigning currently selected editor node to step target.
+var _use_selected_target_btn: Button = null
 ## Checkbox toggling built-in engine methods in action dropdown.
 var _engine_chk: CheckBox = null
 ## Checkbox toggling fire_once on step.
@@ -100,15 +104,27 @@ var _param_enum_opt: OptionButton = null
 var _param_num_spin: SpinBox = null
 ## Node picker button input for Object/Node step parameter.
 var _param_node_btn: Button = null
+## Button assigning currently selected editor node to step parameter.
+var _use_selected_param_btn: Button = null
 ## Label preceding wait signal dropdown.
 var _wait_sig_label: Label = null
 ## Dropdown listing signals on target when mode is WAIT_SIGNAL.
 var _wait_sig_opt: OptionButton = null
+## Label preceding wait look duration spinbox.
+var _look_time_label: Label = null
+## SpinBox configuring required look duration.
+var _look_time_spin: SpinBox = null
+## Label preceding look tolerance spinbox.
+var _look_tol_label: Label = null
+## SpinBox configuring look tolerance cosine threshold.
+var _look_tol_spin: SpinBox = null
 ## SpinBox configuring step delay in seconds.
 var _delay_spin: SpinBox = null
 
 ## Modal dialog for selecting scene tree nodes.
 var _node_picker_dialog: ConfirmationDialog = null
+## Filter search bar inside node picker dialog.
+var _node_search_edit: LineEdit = null
 ## Tree inside modal dialog displaying current edited scene hierarchy.
 var _node_picker_tree: Tree = null
 
@@ -289,6 +305,12 @@ func _build_conditions_pane(parent: HSplitContainer) -> void:
 	_cond_target_btn.pressed.connect(_open_node_picker.bind(PickerMode.COND_TARGET))
 	_cond_editor_box.add_child(_cond_target_btn)
 
+	_use_selected_cond_btn = Button.new()
+	_use_selected_cond_btn.text = "Use Selected"
+	_use_selected_cond_btn.tooltip_text = "Assign selected node from editor scene or viewport"
+	_use_selected_cond_btn.pressed.connect(_on_use_selected_cond_pressed)
+	_cond_editor_box.add_child(_use_selected_cond_btn)
+
 	_cond_prop_opt = OptionButton.new()
 	_cond_prop_opt.item_selected.connect(_on_cond_prop_selected)
 	_cond_editor_box.add_child(_cond_prop_opt)
@@ -373,6 +395,7 @@ func _build_step_detail_editor(parent: VBoxContainer) -> void:
 	_mode_opt.add_item("Sequential", int(EventStep.ExecMode.SEQUENTIAL))
 	_mode_opt.add_item("Parallel (No Wait)", int(EventStep.ExecMode.PARALLEL))
 	_mode_opt.add_item("Wait Signal", int(EventStep.ExecMode.WAIT_SIGNAL))
+	_mode_opt.add_item("Wait Look", int(EventStep.ExecMode.WAIT_LOOK))
 	_mode_opt.item_selected.connect(_on_mode_opt_selected)
 	row1.add_child(_mode_opt)
 
@@ -392,6 +415,12 @@ func _build_step_detail_editor(parent: VBoxContainer) -> void:
 	_target_btn.text = "[Pick Target...]"
 	_target_btn.pressed.connect(_open_node_picker.bind(PickerMode.STEP_TARGET))
 	row1.add_child(_target_btn)
+
+	_use_selected_target_btn = Button.new()
+	_use_selected_target_btn.text = "Use Selected"
+	_use_selected_target_btn.tooltip_text = "Assign selected node from editor scene or viewport"
+	_use_selected_target_btn.pressed.connect(_on_use_selected_target_pressed)
+	row1.add_child(_use_selected_target_btn)
 
 	_engine_chk = CheckBox.new()
 	_engine_chk.text = "Engine Methods"
@@ -440,10 +469,32 @@ func _build_step_detail_editor(parent: VBoxContainer) -> void:
 	_param_node_btn.pressed.connect(_open_node_picker.bind(PickerMode.STEP_PARAM_NODE))
 	row2.add_child(_param_node_btn)
 
+	_use_selected_param_btn = Button.new()
+	_use_selected_param_btn.text = "Use Selected"
+	_use_selected_param_btn.tooltip_text = "Assign selected node from editor scene or viewport"
+	_use_selected_param_btn.pressed.connect(_on_use_selected_param_pressed)
+	row2.add_child(_use_selected_param_btn)
+
 	_wait_sig_label = _add_label(row2, "Await Signal:")
 	_wait_sig_opt = OptionButton.new()
 	_wait_sig_opt.item_selected.connect(_on_wait_sig_selected)
 	row2.add_child(_wait_sig_opt)
+
+	_look_time_label = _add_label(row2, "Look (s):")
+	_look_time_spin = SpinBox.new()
+	_look_time_spin.min_value = 0.1
+	_look_time_spin.max_value = 60.0
+	_look_time_spin.step = 0.1
+	_look_time_spin.value_changed.connect(_on_look_time_changed)
+	row2.add_child(_look_time_spin)
+
+	_look_tol_label = _add_label(row2, "Tol:")
+	_look_tol_spin = SpinBox.new()
+	_look_tol_spin.min_value = 0.0
+	_look_tol_spin.max_value = 1.0
+	_look_tol_spin.step = 0.01
+	_look_tol_spin.value_changed.connect(_on_look_tol_changed)
+	row2.add_child(_look_tol_spin)
 
 	_add_label(row2, "Delay (s):")
 	_delay_spin = SpinBox.new()
@@ -462,15 +513,28 @@ func _add_label(parent: Container, text_val: String) -> Label:
 	return lbl
 
 
-## Builds reusable scene hierarchy node picker modal dialog.
+## Builds reusable scene hierarchy node picker modal dialog with instant search filtering.
 func _build_picker_dialog() -> void:
 	_node_picker_dialog = ConfirmationDialog.new()
 	_node_picker_dialog.title = "Select Scene Node"
 	_node_picker_dialog.confirmed.connect(_on_node_picker_confirmed)
 
+	var vbox: VBoxContainer = VBoxContainer.new()
+	vbox.custom_minimum_size = Vector2(400, 460)
+	_node_picker_dialog.add_child(vbox)
+
+	_node_search_edit = LineEdit.new()
+	_node_search_edit.placeholder_text = "Filter nodes by name..."
+	_node_search_edit.clear_button_enabled = true
+	_node_search_edit.text_changed.connect(_on_node_search_changed)
+	vbox.add_child(_node_search_edit)
+
 	_node_picker_tree = Tree.new()
+	_node_picker_tree.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_node_picker_tree.custom_minimum_size = Vector2(360, 420)
-	_node_picker_dialog.add_child(_node_picker_tree)
+	_node_picker_tree.item_activated.connect(_on_node_picker_item_activated)
+	vbox.add_child(_node_picker_tree)
+
 	add_child(_node_picker_dialog)
 
 
@@ -515,7 +579,9 @@ func _load_condition_into_editor(idx: int) -> void:
 
 	_cond_layer_opt.visible = is_layer
 	_cond_act_chk.visible = is_prop
-	_cond_target_btn.visible = is_node or (is_prop and not cond.target_is_activator)
+	var target_vis: bool = is_node or (is_prop and not cond.target_is_activator)
+	_cond_target_btn.visible = target_vis
+	_use_selected_cond_btn.visible = target_vis
 	_cond_prop_opt.visible = is_prop
 	_cond_op_opt.visible = is_prop
 	_cond_val_edit.visible = is_prop
@@ -570,6 +636,8 @@ func _refresh_steps_tree() -> void:
 			flow_txt = "PARALLEL"
 		elif step.exec_mode == EventStep.ExecMode.WAIT_SIGNAL:
 			flow_txt = "WAIT:" + String(step.signal_name)
+		elif step.exec_mode == EventStep.ExecMode.WAIT_LOOK:
+			flow_txt = "LOOK(" + str(step.look_time) + "s)"
 		item.set_text(1, flow_txt)
 
 		item.set_text(2, "CALL" if step.step_type == EventStep.StepType.CALL_METHOD else "SET")
@@ -577,7 +645,8 @@ func _refresh_steps_tree() -> void:
 
 		var act_str: String = String(step.method_name)
 		if not step.parameter.is_empty():
-			act_str += "(" + step.parameter + ")"
+			var display_param: String = _format_step_param_display(step)
+			act_str += "(" + display_param + ")"
 		item.set_text(4, act_str)
 		item.set_text(5, str(step.delay))
 
@@ -595,6 +664,7 @@ func _load_step_into_editor(idx: int) -> void:
 	_type_opt.selected = int(step.step_type)
 	_step_act_chk.button_pressed = step.target_is_activator
 	_target_btn.visible = not step.target_is_activator
+	_use_selected_target_btn.visible = not step.target_is_activator
 	_target_btn.text = (
 		str(step.target_path) if not step.target_path.is_empty() else "[Pick Target...]"
 	)
@@ -604,6 +674,14 @@ func _load_step_into_editor(idx: int) -> void:
 	var wait_vis: bool = step.exec_mode == EventStep.ExecMode.WAIT_SIGNAL
 	_wait_sig_label.visible = wait_vis
 	_wait_sig_opt.visible = wait_vis
+
+	var wait_look_vis: bool = step.exec_mode == EventStep.ExecMode.WAIT_LOOK
+	_look_time_label.visible = wait_look_vis
+	_look_time_spin.visible = wait_look_vis
+	_look_time_spin.value = step.look_time
+	_look_tol_label.visible = wait_look_vis
+	_look_tol_spin.visible = wait_look_vis
+	_look_tol_spin.value = step.look_tolerance
 
 	_populate_step_actions_and_signals(step)
 
@@ -616,7 +694,7 @@ func _populate_step_actions_and_signals(step: EventStep) -> void:
 	var target: Node = current_trigger.get_node_or_null(step.target_path)
 	if not is_instance_valid(target):
 		_action_opt.add_item("(Select Target Node)")
-		_configure_param_widget({})
+		_configure_param_widget({}, null)
 		return
 
 	var id: int = 0
@@ -663,7 +741,7 @@ func _populate_step_actions_and_signals(step: EventStep) -> void:
 		step.method_name = StringName(first_meta.get("name", ""))
 		selected_meta = first_meta.get("arg", {})
 
-	_configure_param_widget(selected_meta)
+	_configure_param_widget(selected_meta, target)
 
 	var sig_id: int = 0
 	for s: Dictionary in target.get_signal_list():
@@ -677,35 +755,54 @@ func _populate_step_actions_and_signals(step: EventStep) -> void:
 
 
 ## Swaps parameter input widget to match the selected method argument or property type.
-func _configure_param_widget(arg_meta: Dictionary) -> void:
+func _configure_param_widget(arg_meta: Dictionary, target: Node = null) -> void:
 	_param_label.visible = false
 	_param_edit.visible = false
 	_param_bool_chk.visible = false
 	_param_enum_opt.visible = false
 	_param_num_spin.visible = false
 	_param_node_btn.visible = false
+	_use_selected_param_btn.visible = false
 
 	if arg_meta.is_empty() or active_editing_idx < 0:
 		return
 
 	var step: EventStep = current_trigger.steps[active_editing_idx]
-	var v_type: int = arg_meta.get("type", TYPE_NIL)
-	var hint: int = arg_meta.get("hint", PROPERTY_HINT_NONE)
-	var hint_str: String = arg_meta.get("hint_string", "")
+	var v_type: int = int(arg_meta.get("type", TYPE_NIL))
 
 	_param_label.visible = true
 
-	if v_type == TYPE_INT and hint == PROPERTY_HINT_ENUM and not hint_str.is_empty():
+	var target_node: Node = target
+	if not is_instance_valid(target_node) and is_instance_valid(current_trigger):
+		target_node = current_trigger.get_node_or_null(step.target_path)
+
+	var enum_opts: Dictionary[int, String] = _get_enum_options(target_node, arg_meta)
+	if not enum_opts.is_empty():
 		_param_enum_opt.visible = true
 		_param_enum_opt.clear()
-		var parts: PackedStringArray = hint_str.split(",")
-		for i: int in range(parts.size()):
-			var kv: PackedStringArray = parts[i].split(":")
-			var key_name: String = kv[0]
-			var val_int: int = kv[1].to_int() if kv.size() > 1 else i
+		var sorted_keys: Array[int] = []
+		for val_key: int in enum_opts.keys():
+			sorted_keys.append(val_key)
+		sorted_keys.sort()
+
+		var current_val: int = -1
+		if step.parameter.is_valid_int():
+			current_val = step.parameter.to_int()
+		elif step.parameter.is_valid_float():
+			current_val = int(step.parameter.to_float())
+
+		var selected_opt_idx: int = 0
+		for i: int in range(sorted_keys.size()):
+			var val_int: int = sorted_keys[i]
+			var key_name: String = enum_opts[val_int]
 			_param_enum_opt.add_item(key_name, val_int)
-			if step.parameter == str(val_int):
-				_param_enum_opt.selected = i
+			if current_val == val_int or step.parameter.to_lower() == key_name.to_lower():
+				selected_opt_idx = i
+
+		if not sorted_keys.is_empty():
+			_param_enum_opt.selected = selected_opt_idx
+			if step.parameter.is_empty():
+				step.parameter = str(sorted_keys[selected_opt_idx])
 		return
 
 	match v_type:
@@ -718,6 +815,7 @@ func _configure_param_widget(arg_meta: Dictionary) -> void:
 			_param_num_spin.value = step.parameter.to_float()
 		TYPE_OBJECT:
 			_param_node_btn.visible = true
+			_use_selected_param_btn.visible = true
 			_param_node_btn.text = (
 				step.parameter if not step.parameter.is_empty() else "[Pick Node...]"
 			)
@@ -726,16 +824,220 @@ func _configure_param_widget(arg_meta: Dictionary) -> void:
 			_param_edit.text = step.parameter
 
 
+## Resolves method parameter or property metadata dictionary for the given step action.
+func _resolve_step_arg_meta(target: Node, step: EventStep) -> Dictionary:
+	if not is_instance_valid(target) or step.method_name.is_empty():
+		return {}
+
+	if step.step_type == EventStep.StepType.CALL_METHOD:
+		var scr: GDScript = target.get_script() as GDScript
+		if is_instance_valid(scr):
+			for m: Dictionary in scr.get_script_method_list():
+				var raw_name: Variant = m.get("name")
+				if raw_name is String and StringName(str(raw_name)) == step.method_name:
+					var raw_args: Variant = m.get("args")
+					if raw_args is Array and not (raw_args as Array).is_empty():
+						var args_arr: Array = raw_args as Array
+						var first_arg: Variant = args_arr[0]
+						if first_arg is Dictionary:
+							return first_arg as Dictionary
+					return {}
+		for m: Dictionary in target.get_method_list():
+			var raw_name: Variant = m.get("name")
+			if raw_name is String and StringName(str(raw_name)) == step.method_name:
+				var raw_args: Variant = m.get("args")
+				if raw_args is Array and not (raw_args as Array).is_empty():
+					var args_arr: Array = raw_args as Array
+					var first_arg: Variant = args_arr[0]
+					if first_arg is Dictionary:
+						return first_arg as Dictionary
+				return {}
+	else:
+		for p: Dictionary in target.get_property_list():
+			var raw_name: Variant = p.get("name")
+			if raw_name is String and StringName(str(raw_name)) == step.method_name:
+				return p
+	return {}
+
+
+## Extracts enum integer to display label mapping from property hint or script class enum.
+func _get_enum_options(target: Node, arg_meta: Dictionary) -> Dictionary[int, String]:
+	var result: Dictionary[int, String] = {}
+	if arg_meta.is_empty():
+		return result
+
+	var hint: int = int(arg_meta.get("hint", PROPERTY_HINT_NONE))
+	var hint_str: String = str(arg_meta.get("hint_string", ""))
+
+	if hint == PROPERTY_HINT_ENUM and not hint_str.is_empty():
+		var parts: PackedStringArray = hint_str.split(",")
+		for i: int in range(parts.size()):
+			var kv: PackedStringArray = parts[i].split(":")
+			var key_name: String = kv[0]
+			var val_int: int = kv[1].to_int() if kv.size() > 1 else i
+			result[val_int] = key_name
+		return result
+
+	var raw_class_name: Variant = arg_meta.get("class_name")
+	var c_name: String = str(raw_class_name) if raw_class_name != null else ""
+	if c_name.is_empty() or not is_instance_valid(target):
+		return result
+
+	var enum_name: String = c_name
+	if "." in enum_name:
+		var dot_parts: PackedStringArray = enum_name.split(".")
+		enum_name = dot_parts[dot_parts.size() - 1]
+
+	var scr: GDScript = target.get_script() as GDScript
+	if not is_instance_valid(scr):
+		return result
+
+	var constants: Dictionary = scr.get_script_constant_map()
+	var raw_enum: Variant = constants.get(StringName(enum_name))
+	if raw_enum is Dictionary:
+		var enum_dict: Dictionary = raw_enum as Dictionary
+		for key: Variant in enum_dict.keys():
+			var val_int: int = int(enum_dict.get(key, 0))
+			result[val_int] = str(key).capitalize()
+
+	return result
+
+
+## Formats step parameter for tree display, resolving enum names when applicable.
+func _format_step_param_display(step: EventStep) -> String:
+	if not is_instance_valid(current_trigger) or step.parameter.is_empty():
+		return step.parameter
+
+	var target: Node = current_trigger.get_node_or_null(step.target_path)
+	if not is_instance_valid(target):
+		return step.parameter
+
+	var arg_meta: Dictionary = _resolve_step_arg_meta(target, step)
+	if arg_meta.is_empty():
+		return step.parameter
+
+	var enum_opts: Dictionary[int, String] = _get_enum_options(target, arg_meta)
+	if enum_opts.is_empty():
+		return step.parameter
+
+	var param_int: int = -1
+	if step.parameter.is_valid_int():
+		param_int = step.parameter.to_int()
+	elif step.parameter.is_valid_float():
+		param_int = int(step.parameter.to_float())
+
+	if enum_opts.has(param_int):
+		return enum_opts[param_int]
+
+	for opt_val: int in enum_opts.keys():
+		var opt_name: String = enum_opts[opt_val]
+		if step.parameter.to_lower() == opt_name.to_lower():
+			return opt_name
+
+	return step.parameter
+
+
 ## Opens scene tree node picker dialog for [param mode].
 func _open_node_picker(mode: PickerMode) -> void:
 	_picker_mode = mode
+	if is_instance_valid(_node_search_edit):
+		_node_search_edit.text = ""
 	_node_picker_tree.clear()
 	var scene_root: Node = EditorInterface.get_edited_scene_root()
 	if not is_instance_valid(scene_root):
 		return
 	var root_item: TreeItem = _node_picker_tree.create_item()
 	_populate_node_tree(scene_root, root_item)
-	_node_picker_dialog.popup_centered(Vector2i(420, 480))
+	_node_picker_dialog.popup_centered(Vector2i(460, 520))
+	if is_instance_valid(_node_search_edit):
+		_node_search_edit.grab_focus()
+
+
+## Filters node picker tree based on user search input.
+func _on_node_search_changed(query: String) -> void:
+	var root_item: TreeItem = _node_picker_tree.get_root()
+	if root_item == null:
+		return
+	var clean_query: String = query.strip_edges().to_lower()
+	_filter_tree_item(root_item, clean_query)
+
+
+## Recursively filters tree items and auto-expands branches matching [param query].
+func _filter_tree_item(item: TreeItem, query: String) -> bool:
+	if item == null:
+		return false
+
+	var node_text: String = item.get_text(0).to_lower()
+	var self_matches: bool = query.is_empty() or node_text.contains(query)
+	var any_child_matches: bool = false
+
+	for child: TreeItem in item.get_children():
+		if _filter_tree_item(child, query):
+			any_child_matches = true
+
+	var should_show: bool = self_matches or any_child_matches
+	item.visible = should_show
+	if any_child_matches and not query.is_empty():
+		item.collapsed = false
+
+	return should_show
+
+
+## Confirms selection when user double-clicks an item in the node picker tree.
+func _on_node_picker_item_activated() -> void:
+	_on_node_picker_confirmed()
+	_node_picker_dialog.hide()
+
+
+## Assigns currently selected editor node to active step target.
+func _on_use_selected_target_pressed() -> void:
+	if not is_instance_valid(current_trigger) or active_editing_idx < 0:
+		return
+	var selection: EditorSelection = EditorInterface.get_selection()
+	var nodes: Array[Node] = selection.get_selected_nodes()
+	if nodes.is_empty():
+		return
+	var picked: Node = nodes[0]
+	if not is_instance_valid(picked) or picked == current_trigger:
+		return
+	var rel_path: NodePath = current_trigger.get_path_to(picked)
+	current_trigger.steps[active_editing_idx].target_path = rel_path
+	EditorInterface.mark_scene_as_unsaved()
+	refresh_view()
+
+
+## Assigns currently selected editor node to active condition target.
+func _on_use_selected_cond_pressed() -> void:
+	if not is_instance_valid(current_trigger) or active_cond_idx < 0:
+		return
+	var selection: EditorSelection = EditorInterface.get_selection()
+	var nodes: Array[Node] = selection.get_selected_nodes()
+	if nodes.is_empty():
+		return
+	var picked: Node = nodes[0]
+	if not is_instance_valid(picked) or picked == current_trigger:
+		return
+	var rel_path: NodePath = current_trigger.get_path_to(picked)
+	current_trigger.conditions[active_cond_idx].target_path = rel_path
+	EditorInterface.mark_scene_as_unsaved()
+	refresh_view()
+
+
+## Assigns currently selected editor node to active step parameter.
+func _on_use_selected_param_pressed() -> void:
+	if not is_instance_valid(current_trigger) or active_editing_idx < 0:
+		return
+	var selection: EditorSelection = EditorInterface.get_selection()
+	var nodes: Array[Node] = selection.get_selected_nodes()
+	if nodes.is_empty():
+		return
+	var picked: Node = nodes[0]
+	if not is_instance_valid(picked):
+		return
+	var rel_path: NodePath = current_trigger.get_path_to(picked)
+	current_trigger.steps[active_editing_idx].parameter = str(rel_path)
+	EditorInterface.mark_scene_as_unsaved()
+	refresh_view()
 
 
 ## Recursively populates scene tree nodes into picker dialog.
@@ -1032,6 +1334,23 @@ func _on_wait_sig_selected(idx: int) -> void:
 	current_trigger.steps[active_editing_idx].signal_name = StringName(sig_name)
 	EditorInterface.mark_scene_as_unsaved()
 	refresh_view()
+
+
+## Updates required continuous gaze duration on active step.
+func _on_look_time_changed(val: float) -> void:
+	if _updating_ui or not is_instance_valid(current_trigger) or active_editing_idx < 0:
+		return
+	current_trigger.steps[active_editing_idx].look_time = val
+	EditorInterface.mark_scene_as_unsaved()
+	_refresh_steps_tree()
+
+
+## Updates look tolerance threshold on active step.
+func _on_look_tol_changed(val: float) -> void:
+	if _updating_ui or not is_instance_valid(current_trigger) or active_editing_idx < 0:
+		return
+	current_trigger.steps[active_editing_idx].look_tolerance = val
+	EditorInterface.mark_scene_as_unsaved()
 
 
 ## Updates delay duration on active step.

@@ -1,12 +1,19 @@
 [gd_scene format=3 uid="uid://b3nwdm8dlk16p"]
 
 [ext_resource type="Script" uid="uid://dlf2ts15n8j76" path="res://triggers/trigger_look.gd" id="1_k1ejm"]
+[ext_resource type="Script" uid="uid://q4v42nidwdr2" path="res://triggers/editor_trigger_visualizer.gd" id="2_v8km1"]
 
 [sub_resource type="BoxShape3D" id="BoxShape3D_hal7d"]
 
 [node name="TriggerLook" type="Area3D" unique_id=1996274554]
 collision_mask = 2
 script = ExtResource("1_k1ejm")
+trigger_text = "TRIGGER_LOOK"
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="." unique_id=1535163580]
 shape = SubResource("BoxShape3D_hal7d")
+
+[node name="EditorTriggerVisualizer" type="MeshInstance3D" parent="." unique_id=1841928374]
+script = ExtResource("2_v8km1")
+trigger_text = "TRIGGER_LOOK"
+metadata/_custom_type_script = "uid://q4v42nidwdr2"
