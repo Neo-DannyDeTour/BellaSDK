@@ -37,6 +37,16 @@ func register_commands(registry: ConsoleCommandRegistry) -> void:
 		)
 	)
 	registry.register_command(
+		ConsoleCommand.new(
+			"timescale", "Sets engine time scale factor (alias).", _cmd_gamespeed, Callable(), true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"pause", "Toggles game engine pause state.", _cmd_pause, Callable(), false
+		)
+	)
+	registry.register_command(
 		ConsoleCommand.new("uiscale", "Scales the user interface.", _cmd_uiscale)
 	)
 	registry.register_command(
@@ -58,11 +68,56 @@ func register_commands(registry: ConsoleCommandRegistry) -> void:
 	)
 	registry.register_command(
 		ConsoleCommand.new(
+			"quicksave",
+			"Saves state directly to quicksave slot.",
+			_cmd_quicksave,
+			Callable(),
+			false
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
 			"load",
 			"Loads an existing save file or lists available saves.",
 			_cmd_load,
 			_get_load_options,
 			false
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"quickload",
+			"Loads state directly from quicksave slot.",
+			_cmd_quickload,
+			Callable(),
+			false
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"chapter",
+			"Broadcasts narrative chapter title card.",
+			_cmd_chapter,
+			func() -> Array[String]: return ["1", "2", "3", "4", "5"],
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"bind", "Binds a key to a console command string.", _cmd_bind, Callable(), false
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new("unbind", "Removes a custom keybinding.", _cmd_unbind, Callable(), false)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"unbindall", "Removes all custom keybindings.", _cmd_unbindall, Callable(), false
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"bindlist", "Lists all custom keybindings.", _cmd_bindlist, Callable(), false
 		)
 	)
 
@@ -285,3 +340,110 @@ func _get_load_options() -> Array[String]:
 		if not sid.is_empty():
 			options.append(sid)
 	return options
+
+
+## Broadcasts narrative chapter title card event.
+func _cmd_chapter(args: PackedStringArray) -> void:
+	print("ConsoleSystemCommands: _cmd_chapter called with args: ", args)
+	var ch_num: String = args[0].strip_edges() if not args.is_empty() else "1"
+	var ch_name: String = "Chapter " + ch_num
+	Events.chapter_triggered.emit(ch_name, Events.ChapterAnimStyle.SIMPLE, 4.0, Color.WHITE)
+	context.write("Chapter sequence triggered: " + ch_name, "green")
+
+
+## Toggles the engine scene tree pause state.
+func _cmd_pause(_args: PackedStringArray) -> void:
+	print("ConsoleSystemCommands: _cmd_pause called.")
+	var tree: SceneTree = context.get_tree()
+	if not is_instance_valid(tree):
+		return
+	tree.paused = not tree.paused
+	var state_msg: String = "PAUSED" if tree.paused else "UNPAUSED"
+	context.write("Engine execution state: " + state_msg, "yellow" if tree.paused else "green")
+
+
+## Saves gameplay state directly to quicksave slot.
+func _cmd_quicksave(_args: PackedStringArray) -> void:
+	print("ConsoleSystemCommands: Executing quicksave.")
+	_cmd_save(PackedStringArray(["quicksave"]))
+
+
+## Loads gameplay state directly from quicksave slot.
+func _cmd_quickload(_args: PackedStringArray) -> void:
+	print("ConsoleSystemCommands: Executing quickload.")
+	_cmd_load(PackedStringArray(["quicksave"]))
+
+
+## Binds a physical key name to a console command or prints current binding.
+func _cmd_bind(args: PackedStringArray) -> void:
+	print("ConsoleSystemCommands: _cmd_bind called with args: ", args)
+	if args.is_empty():
+		context.write("Usage: bind <key> [command...]", "yellow")
+		return
+
+	var key_name: String = args[0].to_lower().strip_edges()
+	if args.size() == 1:
+		if is_instance_valid(context.host) and context.host.has_method(&"get_keybinds"):
+			var raw_binds: Variant = context.host.call(&"get_keybinds")
+			if raw_binds is Dictionary:
+				var binds_dict: Dictionary = raw_binds as Dictionary
+				if binds_dict.has(key_name):
+					context.write(
+						'"%s" is bound to: %s' % [key_name, str(binds_dict[key_name])], "cyan"
+					)
+					return
+		context.write('"' + key_name + '" is not bound.', "yellow")
+		return
+
+	var cmd_slice: PackedStringArray = args.slice(1)
+	var cmd_str: String = " ".join(cmd_slice).strip_edges()
+	if cmd_str.begins_with('"') and cmd_str.ends_with('"') and cmd_str.length() >= 2:
+		cmd_str = cmd_str.substr(1, cmd_str.length() - 2).strip_edges()
+
+	if is_instance_valid(context.host) and context.host.has_method(&"bind_key"):
+		context.host.call(&"bind_key", key_name, cmd_str)
+		context.write('Bound "%s" -> "%s"' % [key_name, cmd_str], "green")
+
+
+## Unbinds a custom command keybinding.
+func _cmd_unbind(args: PackedStringArray) -> void:
+	print("ConsoleSystemCommands: _cmd_unbind called with args: ", args)
+	if args.is_empty():
+		context.write("Usage: unbind <key>", "yellow")
+		return
+
+	var key_name: String = args[0].to_lower().strip_edges()
+	if is_instance_valid(context.host) and context.host.has_method(&"unbind_key"):
+		context.host.call(&"unbind_key", key_name)
+		context.write('Unbound key "' + key_name + '"', "green")
+
+
+## Removes all custom keybindings.
+func _cmd_unbindall(_args: PackedStringArray) -> void:
+	print("ConsoleSystemCommands: Executing unbindall.")
+	if is_instance_valid(context.host) and context.host.has_method(&"unbind_all_keys"):
+		context.host.call(&"unbind_all_keys")
+		context.write("All custom keybindings cleared.", "yellow")
+
+
+## Prints all active custom keybindings to terminal log.
+func _cmd_bindlist(_args: PackedStringArray) -> void:
+	print("ConsoleSystemCommands: Executing bindlist.")
+	if not is_instance_valid(context.host) or not context.host.has_method(&"get_keybinds"):
+		context.write("No custom keybindings active.", "yellow")
+		return
+
+	var raw_binds: Variant = context.host.call(&"get_keybinds")
+	if not (raw_binds is Dictionary):
+		context.write("No custom keybindings active.", "yellow")
+		return
+
+	var binds_dict: Dictionary = raw_binds as Dictionary
+	if binds_dict.is_empty():
+		context.write("No custom keybindings currently active.", "yellow")
+		return
+
+	context.write("Active keybindings (%d):" % binds_dict.size(), "cyan")
+	for k: Variant in binds_dict.keys():
+		var key_str: String = str(k)
+		context.write("  " + key_str + " : " + str(binds_dict[k]), "white")

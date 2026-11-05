@@ -192,6 +192,14 @@ func register_commands(registry: ConsoleCommandRegistry) -> void:
 			context.get_toggle_options
 		)
 	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"outline",
+			"Configures interactable outline mode (0=Off, 1=First Sight, 2=Periodic).",
+			_cmd_outline,
+			func() -> Array[String]: return ["0", "1", "2", "off", "simple", "pulse"]
+		)
+	)
 	_register_render_debug(registry)
 
 
@@ -1160,3 +1168,35 @@ func _cmd_tts(args: PackedStringArray) -> void:
 	GlobalSettings.save_setting("Accessibility", "tts_enabled", active, true)
 	Events.tts_state_changed.emit(active)
 	context.write("Text-to-Speech narration " + ("enabled." if active else "disabled."), "green")
+
+
+## Sets interactive outline highlight mode.
+func _cmd_outline(args: PackedStringArray) -> void:
+	print("ConsoleSettingsCommands: _cmd_outline called with args: ", args)
+	if args.is_empty():
+		var cur_mode: int = GlobalSettings.get_setting_int("Accessibility", "outline_mode", 2)
+		context.write(
+			"Current outline mode: %d. Usage: outline <0|1|2|off|simple|pulse>" % cur_mode, "yellow"
+		)
+		return
+
+	var token: String = args[0].strip_edges().to_lower()
+	var mode_val: int = 2
+	match token:
+		"0", "off", "disable", "disabled":
+			mode_val = 0
+		"1", "simple", "first_sight", "sight":
+			mode_val = 1
+		"2", "pulse", "periodic", "always":
+			mode_val = 2
+		_:
+			if token.is_valid_int():
+				mode_val = clampi(token.to_int(), 0, 2)
+			else:
+				context.write("Invalid mode. Usage: outline <0|1|2|off|simple|pulse>", "red")
+				return
+
+	GlobalSettings.save_setting("Accessibility", "outline_mode", mode_val, true)
+	Events.outline_mode_changed.emit(mode_val)
+	var labels: Array[String] = ["Disabled (0)", "First Sight (1)", "Periodic Pulse (2)"]
+	context.write("Outline highlight mode set to: " + labels[mode_val], "green")

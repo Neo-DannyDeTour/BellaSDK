@@ -42,6 +42,7 @@ var toggle_states: Dictionary = {
 	"showcolliders": false,
 	"showfps": false,
 	"showtrigger": false,
+	"showtriggers": false,
 	"subtitles": false,
 	"togglecrouch": false,
 	"togglesprint": false,
@@ -63,6 +64,9 @@ var cheat_commands: ConsoleCheatCommands = null
 
 ## Accessibility, audio, video, and render debug command registrar.
 var settings_commands: ConsoleSettingsCommands = null
+
+## Dictionary of user-bound physical keys mapped to console command strings.
+var custom_keybinds: Dictionary[String, String] = {}
 
 # --------------------------------------
 # NODE REFERENCES
@@ -133,6 +137,7 @@ func _ready() -> void:
 		output_log.newline()
 
 	_connect_event_bus()
+	_load_custom_keybinds()
 
 
 ## Cleanly disconnects global event bus subscriptions when exiting scene tree.
@@ -160,6 +165,19 @@ func _input(event: InputEvent) -> void:
 		print("InGameConsole: ui_cancel pressed. Closing console.")
 		_on_console_toggle_requested()
 		get_viewport().set_input_as_handled()
+		return
+
+	if not visible and event is InputEventKey:
+		var key_event: InputEventKey = event as InputEventKey
+		if key_event.is_pressed() and not key_event.is_echo():
+			var key_name: String = OS.get_keycode_string(key_event.physical_keycode).to_lower()
+			if key_name.is_empty():
+				key_name = OS.get_keycode_string(key_event.keycode).to_lower()
+			if key_name != "" and custom_keybinds.has(key_name):
+				var bound_cmd: String = custom_keybinds[key_name]
+				print("InGameConsole: Executing custom keybind: ", key_name, " -> ", bound_cmd)
+				_on_command_submitted(bound_cmd)
+				get_viewport().set_input_as_handled()
 
 
 # --------------------------------------
@@ -194,6 +212,49 @@ func log_warn(msg: String) -> void:
 func log_error(msg: String) -> void:
 	print("InGameConsole logging error: ", msg)
 	write("[ERROR] " + msg, "red")
+
+
+## Binds a physical key name to a console command and persists in settings.
+func bind_key(key_name: String, command_line: String) -> void:
+	var clean_key: String = key_name.to_lower().strip_edges()
+	var clean_cmd: String = command_line.strip_edges()
+	if clean_key.is_empty() or clean_cmd.is_empty():
+		return
+	custom_keybinds[clean_key] = clean_cmd
+	if is_instance_valid(GlobalSettings):
+		GlobalSettings.save_setting("Keybinds", clean_key, clean_cmd)
+	print("InGameConsole: Bound key '", clean_key, "' to '", clean_cmd, "'")
+
+
+## Removes binding for a specified physical key.
+func unbind_key(key_name: String) -> void:
+	var clean_key: String = key_name.to_lower().strip_edges()
+	if custom_keybinds.has(clean_key):
+		custom_keybinds.erase(clean_key)
+	if is_instance_valid(GlobalSettings):
+		if GlobalSettings.config.has_section_key("Keybinds", clean_key):
+			GlobalSettings.config.erase_section_key("Keybinds", clean_key)
+			GlobalSettings.flush_to_disk()
+	print("InGameConsole: Unbound key '", clean_key, "'")
+
+
+## Clears all custom key bindings from memory and persistent settings.
+func unbind_all_keys() -> void:
+	custom_keybinds.clear()
+	if is_instance_valid(GlobalSettings) and GlobalSettings.config.has_section("Keybinds"):
+		GlobalSettings.config.erase_section("Keybinds")
+		GlobalSettings.flush_to_disk()
+	print("InGameConsole: Cleared all custom keybindings.")
+
+
+## Returns a read-only copy of active custom keybindings.
+func get_keybinds() -> Dictionary[String, String]:
+	return custom_keybinds.duplicate()
+
+
+## Executes an arbitrary console command string directly.
+func execute_command_string(text: String) -> void:
+	_on_command_submitted(text)
 
 
 # --------------------------------------
@@ -241,6 +302,19 @@ func _connect_event_bus() -> void:
 		Events.noclip_toggled.connect(_on_external_noclip_toggled)
 	if Events.has_signal(&"infinite_ammo_toggled"):
 		Events.infinite_ammo_toggled.connect(_on_external_infinite_ammo_toggled)
+
+
+## Loads saved custom keybindings from GlobalSettings.
+func _load_custom_keybinds() -> void:
+	print("InGameConsole: Loading custom keybindings from GlobalSettings.")
+	if not is_instance_valid(GlobalSettings):
+		return
+	if GlobalSettings.config.has_section("Keybinds"):
+		for key_name: String in GlobalSettings.config.get_section_keys("Keybinds"):
+			var bound_val: Variant = GlobalSettings.config.get_value("Keybinds", key_name, "")
+			var bound_cmd: String = str(bound_val).strip_edges()
+			if bound_cmd != "":
+				custom_keybinds[key_name.to_lower()] = bound_cmd
 
 
 ## Keeps internal noclip toggle state synchronized with external events.

@@ -5,6 +5,9 @@ extends GutTest
 ## Preloaded scene reference for the in-game console under test.
 const CONSOLE_SCENE: PackedScene = preload("res://ui/in_game_console.tscn")
 
+## Preloaded script reference for the spectator freecam camera controller.
+const FREECAM_SCRIPT: GDScript = preload("res://core/console/freecam_controller.gd")
+
 ## Instance of the console UI under test.
 var _console: CanvasLayer = null
 
@@ -465,3 +468,245 @@ func test_tts_command() -> void:
 		GlobalSettings.get_setting_bool("Accessibility", "tts_enabled", false),
 		"TTS should be disabled in GlobalSettings."
 	)
+
+
+## Tests that freecam activates and deactivates cleanly without crashes.
+func test_freecam_command_toggle() -> void:
+	print("TestInGameConsole: Running test_freecam_command_toggle().")
+	var cheats: ConsoleCheatCommands = _console.get("cheat_commands") as ConsoleCheatCommands
+	assert_not_null(cheats, "ConsoleCheatCommands module should exist.")
+
+	cheats._cmd_freecam(PackedStringArray(["on"]))
+	cheats._cmd_freecam(PackedStringArray(["off"]))
+	assert_false(
+		cheats.context.get_toggle_state("freecam", false),
+		"Freecam should be false after turning off."
+	)
+
+
+## Tests that FreecamController initializes transform, responds to mouse look, and cleans up.
+func test_freecam_controller_lifecycle_and_input() -> void:
+	print("TestInGameConsole: Running test_freecam_controller_lifecycle_and_input().")
+	var dummy_cam: Camera3D = Camera3D.new()
+	var dummy_player: Node3D = Node3D.new()
+	dummy_cam.fov = 85.0
+	dummy_cam.rotation = Vector3(0.1, 0.2, 0.0)
+	add_child_autofree(dummy_cam)
+	add_child_autofree(dummy_player)
+
+	var freecam_obj: Object = FREECAM_SCRIPT.new()
+	var freecam: Camera3D = freecam_obj as Camera3D
+	assert_not_null(freecam, "Freecam instance should instantiate properly.")
+	add_child_autofree(freecam)
+
+	freecam.call(&"setup", dummy_cam, dummy_player)
+	assert_eq(freecam.fov, 85.0, "Freecam should copy original camera FOV.")
+	assert_true(freecam.current, "Freecam should be active camera.")
+
+	var motion: InputEventMouseMotion = InputEventMouseMotion.new()
+	motion.relative = Vector2(100.0, 50.0)
+	freecam._input(motion)
+	freecam._process(0.016)
+
+	freecam.call(&"restore_and_exit")
+	assert_true(freecam.is_queued_for_deletion(), "Freecam should queue free on exit.")
+
+
+## Tests that damage and heal commands broadcast event signals.
+func test_damage_and_heal_commands() -> void:
+	print("TestInGameConsole: Running test_damage_and_heal_commands().")
+	var cheats: ConsoleCheatCommands = _console.get("cheat_commands") as ConsoleCheatCommands
+	assert_not_null(cheats, "ConsoleCheatCommands module should exist.")
+
+	watch_signals(Events)
+	cheats._cmd_damage(PackedStringArray(["25"]))
+	assert_signal_emitted(Events, "player_damaged")
+
+	cheats._cmd_heal(PackedStringArray(["30"]))
+	assert_signal_emitted(Events, "player_healed")
+
+
+## Tests that water_wipe and shockwave commands broadcast their signals.
+func test_water_wipe_and_shockwave_commands() -> void:
+	print("TestInGameConsole: Running test_water_wipe_and_shockwave_commands().")
+	var cheats: ConsoleCheatCommands = _console.get("cheat_commands") as ConsoleCheatCommands
+	assert_not_null(cheats, "ConsoleCheatCommands module should exist.")
+
+	watch_signals(Events)
+	cheats._cmd_water_wipe(PackedStringArray(["1.5"]))
+	assert_signal_emitted(Events, "water_sheet_wipe_requested")
+
+	cheats._cmd_shockwave(PackedStringArray(["20.0", "30.0"]))
+	assert_signal_emitted(Events, "shockwave_requested")
+
+
+## Tests that outline command validates modes and emits outline_mode_changed.
+func test_outline_command() -> void:
+	print("TestInGameConsole: Running test_outline_command().")
+	var settings: ConsoleSettingsCommands = (
+		_console.get("settings_commands") as ConsoleSettingsCommands
+	)
+	assert_not_null(settings, "ConsoleSettingsCommands module should exist.")
+
+	watch_signals(Events)
+	settings._cmd_outline(PackedStringArray(["pulse"]))
+	assert_signal_emitted(Events, "outline_mode_changed")
+	assert_eq(
+		GlobalSettings.get_setting_int("Accessibility", "outline_mode", 0),
+		2,
+		"Outline mode should be 2 for pulse."
+	)
+
+	settings._cmd_outline(PackedStringArray(["off"]))
+	assert_eq(
+		GlobalSettings.get_setting_int("Accessibility", "outline_mode", 2),
+		0,
+		"Outline mode should be 0 for off."
+	)
+
+
+## Tests that chapter command broadcasts chapter_triggered signal.
+func test_chapter_command() -> void:
+	print("TestInGameConsole: Running test_chapter_command().")
+	var sys: ConsoleSystemCommands = _console.get("system_commands") as ConsoleSystemCommands
+	assert_not_null(sys, "ConsoleSystemCommands module should exist.")
+
+	watch_signals(Events)
+	sys._cmd_chapter(PackedStringArray(["3"]))
+	assert_signal_emitted(Events, "chapter_triggered")
+
+
+## Tests that FreecamController supports mouse-wheel speed scaling and teleportation.
+func test_freecam_wheel_scaling_and_teleport() -> void:
+	print("TestInGameConsole: Running test_freecam_wheel_scaling_and_teleport().")
+	var dummy_cam: Camera3D = Camera3D.new()
+	var dummy_player: Node3D = Node3D.new()
+	add_child_autofree(dummy_cam)
+	add_child_autofree(dummy_player)
+	dummy_player.position = Vector3(0.0, 0.0, 0.0)
+
+	var freecam_obj: Object = FREECAM_SCRIPT.new()
+	var freecam: Camera3D = freecam_obj as Camera3D
+	add_child_autofree(freecam)
+	freecam.call(&"setup", dummy_cam, dummy_player)
+	freecam.position = Vector3(10.0, 20.0, 30.0)
+
+	var wheel_up: InputEventMouseButton = InputEventMouseButton.new()
+	wheel_up.button_index = MOUSE_BUTTON_WHEEL_UP
+	wheel_up.pressed = true
+	freecam._input(wheel_up)
+	var speed_mult: float = freecam.get("speed_multiplier") as float
+	assert_gt(speed_mult, 1.0, "Wheel up should increase speed multiplier.")
+
+	var wheel_down: InputEventMouseButton = InputEventMouseButton.new()
+	wheel_down.button_index = MOUSE_BUTTON_WHEEL_DOWN
+	wheel_down.pressed = true
+	freecam._input(wheel_down)
+	freecam._input(wheel_down)
+	speed_mult = freecam.get("speed_multiplier") as float
+	assert_lt(speed_mult, 1.1, "Wheel down should decrease speed multiplier.")
+
+	freecam.call(&"teleport_player_and_exit")
+	assert_eq(
+		dummy_player.position,
+		Vector3(10.0, 20.0, 30.0),
+		"Player should teleport to freecam location."
+	)
+
+
+## Tests that notarget and ai_disable cheats toggle state and emit expected signals.
+func test_notarget_and_ai_disable_commands() -> void:
+	print("TestInGameConsole: Running test_notarget_and_ai_disable_commands().")
+	var cheats: ConsoleCheatCommands = _console.get("cheat_commands") as ConsoleCheatCommands
+	assert_not_null(cheats, "ConsoleCheatCommands module should exist.")
+
+	watch_signals(Events)
+	cheats._cmd_notarget(PackedStringArray(["on"]))
+	assert_signal_emitted(Events, "player_notarget_toggled")
+	assert_true(
+		cheats.context.get_toggle_state("notarget", false), "notarget state should be true."
+	)
+
+	cheats._cmd_notarget(PackedStringArray(["off"]))
+	assert_false(
+		cheats.context.get_toggle_state("notarget", true), "notarget state should be false."
+	)
+
+	cheats._cmd_ai_disable(PackedStringArray(["on"]))
+	assert_true(
+		cheats.context.get_toggle_state("ai_disable", false), "ai_disable state should be true."
+	)
+
+	cheats._cmd_ai_disable(PackedStringArray(["off"]))
+	assert_false(
+		cheats.context.get_toggle_state("ai_disable", true), "ai_disable state should be false."
+	)
+
+
+## Tests keybinding engine and shortcut commands.
+func test_shortcuts_and_keybinds() -> void:
+	print("TestInGameConsole: Running test_shortcuts_and_keybinds().")
+	var sys: ConsoleSystemCommands = _console.get("system_commands") as ConsoleSystemCommands
+	assert_not_null(sys, "ConsoleSystemCommands module should exist.")
+
+	sys._cmd_pause(PackedStringArray())
+	assert_true(get_tree().paused, "pause command should toggle paused tree state.")
+	sys._cmd_pause(PackedStringArray())
+	assert_false(get_tree().paused, "pause command should unpause tree state.")
+
+	sys._cmd_bind(PackedStringArray(["v", "noclip"]))
+	var keybinds: Dictionary[String, String] = _get_console_keybinds()
+	assert_true(keybinds.has("v"), "Custom keybind 'v' should exist.")
+	assert_eq(keybinds.get("v", ""), "noclip", "Key 'v' should map to 'noclip'.")
+
+	sys._cmd_bindlist(PackedStringArray())
+
+	sys._cmd_unbind(PackedStringArray(["v"]))
+	keybinds = _get_console_keybinds()
+	assert_false(keybinds.has("v"), "Key 'v' should be unbound.")
+
+	sys._cmd_bind(PackedStringArray(["k", "killall"]))
+	sys._cmd_unbindall(PackedStringArray())
+	keybinds = _get_console_keybinds()
+	assert_true(keybinds.is_empty(), "All custom keybinds should be cleared.")
+
+
+## Tests showtrigger, showtriggers, hidetrigger, and hidetriggers console commands.
+func test_showtriggers_and_hidetriggers_commands() -> void:
+	print("TestInGameConsole: Running test_showtriggers_and_hidetriggers_commands().")
+	var trigger: BaseTriggerArea3D = BaseTriggerArea3D.new()
+	var col: CollisionShape3D = CollisionShape3D.new()
+	col.name = "CollisionShape3D"
+	trigger.add_child(col)
+	add_child_autoqfree(trigger)
+
+	var visual: EditorTriggerVisualizer = trigger._get_visualizer()
+	assert_not_null(visual, "BaseTriggerArea3D must retain an EditorTriggerVisualizer child.")
+
+	_console.call("execute_command_string", "showtriggers on")
+	assert_true(EditorTriggerVisualizer.debug_force_visible, "debug_force_visible should be true.")
+	assert_true(visual.visible, "Visualizer should become visible when showtriggers is enabled.")
+
+	_console.call("execute_command_string", "hidetriggers")
+	assert_false(EditorTriggerVisualizer.debug_force_visible, "debug_force_visible must be false.")
+	assert_false(visual.visible, "Visualizer should be hidden when hidetriggers is called.")
+
+	_console.call("execute_command_string", "showtrigger on")
+	assert_true(EditorTriggerVisualizer.debug_force_visible, "debug_force_visible should be true.")
+	assert_true(visual.visible, "Visualizer should become visible via singular showtrigger.")
+
+	_console.call("execute_command_string", "hidetrigger")
+	assert_false(EditorTriggerVisualizer.debug_force_visible, "debug_force_visible must be false.")
+	assert_false(visual.visible, "Visualizer should be hidden via singular hidetrigger.")
+
+
+## Helper retrieving custom keybinds dictionary from console under test.
+func _get_console_keybinds() -> Dictionary[String, String]:
+	var keybinds: Dictionary[String, String] = {}
+	if is_instance_valid(_console) and _console.has_method(&"get_keybinds"):
+		var raw: Variant = _console.call(&"get_keybinds")
+		if raw is Dictionary:
+			var dict_val: Dictionary = raw as Dictionary
+			for k: Variant in dict_val.keys():
+				keybinds[str(k)] = str(dict_val[k])
+	return keybinds

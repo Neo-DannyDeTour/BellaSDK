@@ -62,6 +62,9 @@ const AMMO_TYPE_MAP: Dictionary[String, StringName] = {
 	"smoke_grenade": &"smoke_grenade",
 }
 
+## Preloaded spectator camera controller script for freecam command.
+const FREECAM_SCRIPT: GDScript = preload("res://core/console/freecam_controller.gd")
+
 ## Context reference providing output logging and scene tree access.
 var context: ConsoleContext = null
 
@@ -150,8 +153,26 @@ func register_commands(registry: ConsoleCommandRegistry) -> void:
 	)
 	registry.register_command(
 		ConsoleCommand.new(
+			"showtriggers",
+			"Toggles trigger visualizer mesh visibility (alias).",
+			_cmd_showtrigger,
+			context.get_toggle_options,
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
 			"hidetrigger",
 			"Hides all trigger visualizer meshes.",
+			_cmd_hidetrigger,
+			Callable(),
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"hidetriggers",
+			"Hides all trigger visualizer meshes (alias).",
 			_cmd_hidetrigger,
 			Callable(),
 			true
@@ -281,6 +302,88 @@ func register_commands(registry: ConsoleCommandRegistry) -> void:
 			"Grants full weapon arsenal, max ammunition, and all keycards (alias).",
 			_cmd_giveall,
 			Callable(),
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"freecam",
+			"Toggles detached spectator flying camera.",
+			_cmd_freecam,
+			context.get_toggle_options,
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"damage", "Inflicts damage amount to the player entity.", _cmd_damage, Callable(), true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"heal", "Restores health amount to the player entity.", _cmd_heal, Callable(), true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"water_wipe",
+			"Triggers screen-space water sheet wipe VFX.",
+			_cmd_water_wipe,
+			func() -> Array[String]: return ["0.5", "1.0", "1.5", "2.0"],
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"shockwave",
+			"Spawns radial shockwave effect at player position.",
+			_cmd_shockwave,
+			Callable(),
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"freecam_teleport",
+			"Teleports player to active freecam location and exits spectator.",
+			_cmd_freecam_teleport,
+			Callable(),
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"tptocam",
+			"Teleports player to active freecam location (alias).",
+			_cmd_freecam_teleport,
+			Callable(),
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"notarget",
+			"Toggles whether hostile entities ignore the player.",
+			_cmd_notarget,
+			context.get_toggle_options,
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"ai_disable",
+			"Freezes all enemy AI and state processing.",
+			_cmd_ai_disable,
+			context.get_toggle_options,
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"freeze_ai",
+			"Freezes all enemy AI and state processing (alias).",
+			_cmd_ai_disable,
+			context.get_toggle_options,
 			true
 		)
 	)
@@ -484,6 +587,7 @@ func _cmd_hidetrigger(_args: PackedStringArray) -> void:
 func _set_trigger_visibility(active: bool) -> void:
 	print("ConsoleCheatCommands: Setting trigger visibility to: ", active)
 	context.toggle_states["showtrigger"] = active
+	context.toggle_states["showtriggers"] = active
 	EditorTriggerVisualizer.set_global_debug_visibility(active)
 	Events.trigger_visibility_toggled.emit(active)
 	var tree: SceneTree = context.get_tree()
@@ -752,6 +856,8 @@ func _cmd_spawnenemy(args: PackedStringArray) -> void:
 
 	var tree: SceneTree = context.get_tree()
 	if is_instance_valid(tree) and is_instance_valid(tree.current_scene):
+		if context.get_toggle_state("ai_disable", false):
+			enemy_node.process_mode = Node.PROCESS_MODE_DISABLED
 		tree.current_scene.add_child(enemy_node)
 	context.write("Spawned enemy '" + enemy_key + "' successfully.", "green")
 
@@ -968,6 +1074,225 @@ func _cmd_giveall(_args: PackedStringArray) -> void:
 		_grant_or_topup_weapon(player_node, inv, tree, w_key, 9999)
 
 	context.write("giveall: Full arsenal, ammunition, and keycards granted.", "green")
+
+
+## Toggles detached spectator freecam mode.
+func _cmd_freecam(args: PackedStringArray) -> void:
+	print("ConsoleCheatCommands: _cmd_freecam called with args: ", args)
+	var current_active: bool = context.get_toggle_state("freecam", false)
+	var parsed: Variant = context.parse_toggle_arg(args, current_active, "freecam")
+	if parsed == null:
+		return
+	var active: bool = parsed == true
+	context.toggle_states["freecam"] = active
+
+	var existing_cam: Camera3D = context.toggle_states.get("_freecam_instance") as Camera3D
+
+	if not active:
+		if is_instance_valid(existing_cam) and existing_cam.has_method(&"restore_and_exit"):
+			existing_cam.call(&"restore_and_exit")
+		context.toggle_states["_freecam_instance"] = null
+		context.write("Freecam deactivated. Player control restored.", "green")
+		return
+
+	if is_instance_valid(existing_cam) and existing_cam.has_method(&"restore_and_exit"):
+		existing_cam.call(&"restore_and_exit")
+		context.toggle_states["_freecam_instance"] = null
+
+	var player_node: Node3D = context.get_player()
+	if not is_instance_valid(player_node):
+		context.write("Player entity not found for freecam attachment.", "red")
+		context.toggle_states["freecam"] = false
+		return
+
+	var orig_cam: Camera3D = null
+	var found_cam: Node = player_node.find_child("Camera3D", true, false)
+	if found_cam is Camera3D:
+		orig_cam = found_cam as Camera3D
+
+	var tree: SceneTree = context.get_tree()
+	if not is_instance_valid(tree) or not is_instance_valid(tree.current_scene):
+		context.write("Current scene tree invalid.", "red")
+		context.toggle_states["freecam"] = false
+		return
+
+	var freecam_obj: Object = FREECAM_SCRIPT.new()
+	var freecam: Camera3D = freecam_obj as Camera3D
+	if not is_instance_valid(freecam):
+		context.write("Failed instantiating freecam.", "red")
+		context.toggle_states["freecam"] = false
+		return
+
+	freecam.name = "ConsoleFreecamInstance"
+	tree.current_scene.add_child(freecam)
+	if freecam.has_method(&"setup"):
+		freecam.call(&"setup", orig_cam, player_node)
+	context.toggle_states["_freecam_instance"] = freecam
+
+	if is_instance_valid(context.host) and context.host.has_method(&"_on_console_toggle_requested"):
+		context.host.call(&"_on_console_toggle_requested")
+
+	context.write("Freecam activated. WASD/Space/Ctrl to fly, mouse to look.", "green")
+
+
+## Inflicts damage to the player character.
+func _cmd_damage(args: PackedStringArray) -> void:
+	print("ConsoleCheatCommands: _cmd_damage called with args: ", args)
+	if args.is_empty():
+		context.write("Usage: damage <amount>", "yellow")
+		return
+
+	var raw_str: String = args[0].strip_edges()
+	if not raw_str.is_valid_int():
+		context.write("Invalid damage amount. Please provide an integer > 0.", "red")
+		return
+
+	var amount: int = maxi(1, raw_str.to_int())
+	var player_node: Node3D = context.get_player()
+	if is_instance_valid(player_node):
+		var health_comp: HealthComponent = (
+			player_node.find_child("HealthComponent", true, false) as HealthComponent
+		)
+		if is_instance_valid(health_comp):
+			health_comp.take_damage(amount)
+			context.write("Inflicted %d damage to player." % amount, "green")
+			return
+
+	Events.player_damaged.emit(amount)
+	context.write("Broadcast player_damaged event with amount: %d" % amount, "yellow")
+
+
+## Restores health to the player character.
+func _cmd_heal(args: PackedStringArray) -> void:
+	print("ConsoleCheatCommands: _cmd_heal called with args: ", args)
+	if args.is_empty():
+		context.write("Usage: heal <amount>", "yellow")
+		return
+
+	var raw_str: String = args[0].strip_edges()
+	if not raw_str.is_valid_int():
+		context.write("Invalid heal amount. Please provide an integer > 0.", "red")
+		return
+
+	var amount: int = maxi(1, raw_str.to_int())
+	var player_node: Node3D = context.get_player()
+	if is_instance_valid(player_node):
+		var health_comp: HealthComponent = (
+			player_node.find_child("HealthComponent", true, false) as HealthComponent
+		)
+		if is_instance_valid(health_comp):
+			health_comp.heal(amount)
+			context.write("Restored %d health to player." % amount, "green")
+			return
+
+	Events.player_healed.emit(amount)
+	context.write("Broadcast player_healed event with amount: %d" % amount, "yellow")
+
+
+## Triggers a screen-space water sheet wipe transition.
+func _cmd_water_wipe(args: PackedStringArray) -> void:
+	print("ConsoleCheatCommands: _cmd_water_wipe called with args: ", args)
+	var duration: float = 1.2
+	if not args.is_empty() and args[0].strip_edges().is_valid_float():
+		duration = clampf(args[0].to_float(), 0.1, 10.0)
+
+	Events.water_sheet_wipe_requested.emit(duration)
+	context.write("Water sheet wipe triggered (duration: %.1fs)." % duration, "green")
+
+
+## Spawns a radial shockwave VFX at the player world position.
+func _cmd_shockwave(args: PackedStringArray) -> void:
+	print("ConsoleCheatCommands: _cmd_shockwave called with args: ", args)
+	var radius: float = 15.0
+	var speed: float = 20.0
+	if args.size() > 0 and args[0].strip_edges().is_valid_float():
+		radius = clampf(args[0].to_float(), 1.0, 100.0)
+	if args.size() > 1 and args[1].strip_edges().is_valid_float():
+		speed = clampf(args[1].to_float(), 1.0, 100.0)
+
+	var origin: Vector3 = Vector3.ZERO
+	var player_node: Node3D = context.get_player()
+	if is_instance_valid(player_node):
+		origin = player_node.global_position
+
+	Events.shockwave_requested.emit(origin, radius, speed)
+	context.write(
+		"Shockwave emitted at %s (radius: %.1f, speed: %.1f)." % [str(origin), radius, speed],
+		"green"
+	)
+
+
+## Teleports player to current freecam coordinates and restores gameplay control.
+func _cmd_freecam_teleport(_args: PackedStringArray) -> void:
+	print("ConsoleCheatCommands: Executing freecam_teleport.")
+	var active: bool = context.get_toggle_state("freecam", false)
+	var cam: Camera3D = context.toggle_states.get("_freecam_instance") as Camera3D
+	if not active or not is_instance_valid(cam):
+		context.write("Freecam is not currently active.", "yellow")
+		return
+
+	if cam.has_method(&"teleport_player_and_exit"):
+		cam.call(&"teleport_player_and_exit")
+	context.toggle_states["freecam"] = false
+	context.toggle_states["_freecam_instance"] = null
+	context.write("Teleported player to freecam position. Control restored.", "green")
+
+
+## Toggles whether enemies ignore the player.
+func _cmd_notarget(args: PackedStringArray) -> void:
+	print("ConsoleCheatCommands: _cmd_notarget called with args: ", args)
+	var current_active: bool = context.get_toggle_state("notarget", false)
+	var parsed: Variant = context.parse_toggle_arg(args, current_active, "notarget")
+	if parsed == null:
+		return
+	var active: bool = parsed == true
+	context.toggle_states["notarget"] = active
+
+	var player_node: Node3D = context.get_player()
+	if is_instance_valid(player_node):
+		player_node.set_meta(&"notarget", active)
+
+	if Events.has_signal(&"player_notarget_toggled"):
+		Events.player_notarget_toggled.emit(active)
+
+	var msg: String = (
+		"Notarget enabled: Enemies will ignore player."
+		if active
+		else "Notarget disabled: Enemies will target player."
+	)
+	context.write(msg, "green" if active else "white")
+
+
+## Toggles whether enemy AI process execution is frozen across all active enemies.
+func _cmd_ai_disable(args: PackedStringArray) -> void:
+	print("ConsoleCheatCommands: _cmd_ai_disable called with args: ", args)
+	var current_active: bool = context.get_toggle_state("ai_disable", false)
+	var parsed: Variant = context.parse_toggle_arg(args, current_active, "ai_disable")
+	if parsed == null:
+		return
+	var active: bool = parsed == true
+	context.toggle_states["ai_disable"] = active
+
+	var tree: SceneTree = context.get_tree()
+	var count: int = 0
+	if is_instance_valid(tree):
+		var target_mode: Node.ProcessMode = (
+			Node.PROCESS_MODE_DISABLED if active else Node.PROCESS_MODE_INHERIT
+		)
+		var group_names: Array[StringName] = [&"enemies", &"enemy"]
+		for g_name: StringName in group_names:
+			var nodes: Array[Node] = tree.get_nodes_in_group(g_name)
+			for entity: Node in nodes:
+				if is_instance_valid(entity) and not entity.is_in_group(&"player"):
+					entity.process_mode = target_mode
+					count += 1
+
+	var msg: String = (
+		"AI processing disabled across %d enemies." % count
+		if active
+		else "AI processing enabled across %d enemies." % count
+	)
+	context.write(msg, "green" if active else "white")
 
 
 ## Registers easter egg and cheat console commands.
