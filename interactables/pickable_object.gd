@@ -59,6 +59,18 @@ const MIN_HOLD_DISTANCE: float = 1.2
 ## Additional distance offset pulling held object closer to the player.
 @export var hold_distance_offset: float = 0.0
 
+## When enabled, anchors the object at chest height instead of floor-hovering.
+@export var hold_at_chest: bool = false
+
+## Explicit hold distance in meters. Values >= 0.0 override default distance limits.
+@export var custom_hold_distance: float = -1.0
+
+## Vertical elevation offset in meters added to the hold target position.
+@export var hold_vertical_offset: float = 0.0
+
+## Euler rotation offset in degrees applied relative to the player's view yaw.
+@export var hold_rotation_offset_deg: Vector3 = Vector3.ZERO
+
 ## Maximum separation distance before object automatically drops when stuck.
 @export var max_detach_distance: float = 1.3
 
@@ -715,9 +727,13 @@ func _process_standard_hold(_delta: float) -> void:
 
 	var is_heavy: bool = mass >= heavy_mass_threshold
 
-	if is_heavy:
+	if is_heavy and not hold_at_chest:
 		var flat_forward: Vector3 = Vector3(cam_forward.x, 0.0, cam_forward.z).normalized()
-		var carry_dist: float = maxf(MIN_HOLD_DISTANCE - hold_distance_offset, 1.1)
+		var carry_dist: float = (
+			custom_hold_distance
+			if custom_hold_distance >= 0.0
+			else maxf(MIN_HOLD_DISTANCE - hold_distance_offset, 1.1)
+		)
 		target_pos = holder.global_position + (flat_forward * carry_dist)
 
 		var bottom_extent: float = _get_upright_bottom_extent()
@@ -737,13 +753,34 @@ func _process_standard_hold(_delta: float) -> void:
 			target_pos.y = (
 				holder.global_position.y + bottom_extent + heavy_floor_clearance - heavy_y_drop
 			)
+		target_pos.y += hold_vertical_offset
+	elif hold_at_chest:
+		var flat_forward: Vector3 = Vector3(cam_forward.x, 0.0, cam_forward.z).normalized()
+		var carry_dist: float = (
+			custom_hold_distance
+			if custom_hold_distance >= 0.0
+			else maxf(MIN_HOLD_DISTANCE - hold_distance_offset, 0.5)
+		)
+		var chest_height: float = (
+			cam_origin.y - 0.35 if is_instance_valid(cam) else holder.global_position.y + 0.9
+		)
+		target_pos = Vector3(
+			holder.global_position.x + (flat_forward.x * carry_dist),
+			chest_height + hold_vertical_offset,
+			holder.global_position.z + (flat_forward.z * carry_dist)
+		)
 	else:
 		var to_target: Vector3 = target_pos - cam_origin
 		var forward_projection: float = to_target.dot(cam_forward)
-		var required_dist: float = maxf(MIN_HOLD_DISTANCE - hold_distance_offset, 0.8)
+		var required_dist: float = (
+			custom_hold_distance
+			if custom_hold_distance >= 0.0
+			else maxf(MIN_HOLD_DISTANCE - hold_distance_offset, 0.8)
+		)
 
 		if forward_projection < required_dist:
 			target_pos += cam_forward * (required_dist - forward_projection)
+		target_pos.y += hold_vertical_offset
 
 	var dist_sq: float = global_position.distance_squared_to(target_pos)
 	var has_grab_settled: bool = (Time.get_ticks_msec() - _grab_time) > 250
@@ -760,7 +797,7 @@ func _process_standard_hold(_delta: float) -> void:
 			holder_velocity = raw_vel
 
 	var distance_vector: Vector3 = target_pos - global_position
-	var pos_stiffness: float = 14.0 if is_heavy else 20.0
+	var pos_stiffness: float = 22.0 if hold_at_chest else (14.0 if is_heavy else 20.0)
 	linear_velocity = holder_velocity + (distance_vector * pos_stiffness)
 
 	var cam_yaw: float = (
@@ -773,6 +810,13 @@ func _process_standard_hold(_delta: float) -> void:
 	var current_held_yaw: float = lerpf(_held_relative_yaw, 0.0, elapsed_ratio)
 	var target_yaw: float = cam_yaw + current_held_yaw
 	var target_basis: Basis = Basis.from_euler(Vector3(0.0, target_yaw, 0.0))
+	if not hold_rotation_offset_deg.is_zero_approx():
+		var rot_rad: Vector3 = Vector3(
+			deg_to_rad(hold_rotation_offset_deg.x),
+			deg_to_rad(hold_rotation_offset_deg.y),
+			deg_to_rad(hold_rotation_offset_deg.z)
+		)
+		target_basis = target_basis * Basis.from_euler(rot_rad)
 
 	var q_target: Quaternion = target_basis.get_rotation_quaternion()
 	var q_current: Quaternion = global_basis.get_rotation_quaternion()
@@ -783,7 +827,7 @@ func _process_standard_hold(_delta: float) -> void:
 	var angle: float = 2.0 * acos(clampf(q_diff.w, -1.0, 1.0))
 	var axis_len_sq: float = q_diff.x * q_diff.x + q_diff.y * q_diff.y + q_diff.z * q_diff.z
 
-	var rot_stiffness: float = 8.0 if is_heavy else 18.0
+	var rot_stiffness: float = 20.0 if hold_at_chest else (8.0 if is_heavy else 18.0)
 	if axis_len_sq > 0.0001:
 		var axis: Vector3 = Vector3(q_diff.x, q_diff.y, q_diff.z) / sqrt(axis_len_sq)
 		angular_velocity = axis * (angle * rot_stiffness)

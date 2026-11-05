@@ -84,7 +84,7 @@ func _ready() -> void:
 	_ray.hit_from_inside = false
 
 	_label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	_label.text = "Idle"
+	_label.text = tr("Idle")
 
 	_scan_timer.wait_time = scan_interval
 	_scan_timer.one_shot = false
@@ -118,7 +118,7 @@ func _on_scan_timer_timeout() -> void:
 		if _in_range:
 			_in_range = false
 			set_physics_process(false)
-			_label.text = "Out of range"
+			_label.text = tr("Out of range")
 			_last_state_key = "out_of_range"
 			print("SensorTurret: Player out of range")
 		return
@@ -177,19 +177,37 @@ func _evaluate_cover(player_pos: Vector3, pelvis_pos: Vector3, head_pos: Vector3
 
 	if pelvis_blocked and head_blocked:
 		var full_tag: StringName = _select_best_tag(pelvis_tag, head_tag, near_tag)
-		return "behind %s" % String(full_tag)
+		var phrase_key: StringName = StringName("behind_" + String(full_tag).replace(" ", "_"))
+		var localized_phrase: String = tr(phrase_key)
+		if localized_phrase != String(phrase_key):
+			return localized_phrase
+		return tr("behind %s") % tr(String(full_tag))
 
 	if pelvis_blocked or head_blocked:
 		var raw_tag: StringName = pelvis_tag if pelvis_blocked else head_tag
 		var partial_tag: StringName = _select_best_tag(raw_tag, &"", near_tag)
+		var tag_str: String = String(partial_tag).replace(" ", "_")
 		if partial_tag != DEFAULT_COVER_TAG:
-			return "near %s, partially behind" % String(partial_tag)
-		return "partially behind %s" % String(partial_tag)
+			var near_part_key: StringName = StringName("near_partially_behind_" + tag_str)
+			var localized_near_part: String = tr(near_part_key)
+			if localized_near_part != String(near_part_key):
+				return localized_near_part
+			return tr("near %s, partially behind") % tr(String(partial_tag))
+		var part_key: StringName = StringName("partially_behind_" + tag_str)
+		var localized_part: String = tr(part_key)
+		if localized_part != String(part_key):
+			return localized_part
+		return tr("partially behind %s") % tr(String(partial_tag))
 
 	if near_tag != &"":
-		return "near %s, exposed" % String(near_tag)
+		var near_tag_str: String = String(near_tag).replace(" ", "_")
+		var near_exp_key: StringName = StringName("near_exposed_" + near_tag_str)
+		var localized_near_exp: String = tr(near_exp_key)
+		if localized_near_exp != String(near_exp_key):
+			return localized_near_exp
+		return tr("near %s, exposed") % tr(String(near_tag))
 
-	return "exposed"
+	return tr("exposed")
 
 
 ## Prioritizes specific prop tags over the generic fallback cover tag.
@@ -367,16 +385,16 @@ func _extract_prop_tag(target: Object) -> StringName:
 ## Maps meter distance to tactical band string.
 func _get_distance_band(dist: float) -> String:
 	if dist < DIST_CLOSE:
-		return "close"
+		return tr("close")
 	if dist <= DIST_MEDIUM:
-		return "medium"
-	return "far away"
+		return tr("medium")
+	return tr("far away")
 
 
 ## Maps vertical delta in meters to elevation string.
 func _get_elevation_band(dy: float) -> String:
 	if dy > ELEVATION_THRESHOLD:
-		return "above"
+		return tr("above")
 	if dy < -ELEVATION_THRESHOLD:
-		return "below"
-	return "level"
+		return tr("below")
+	return tr("level")

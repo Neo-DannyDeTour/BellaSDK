@@ -148,11 +148,6 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 
-	var editor_mesh: EditorTriggerVisualizer = _get_visualizer()
-	if is_instance_valid(editor_mesh) and not show_visualizer_in_game:
-		print("TargetVolume: Removing editor visualizer for gameplay.")
-		editor_mesh.queue_free()
-
 	collision_layer = 0
 	collision_mask = 0
 

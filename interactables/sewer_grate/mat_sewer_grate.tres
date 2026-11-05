@@ -1,0 +1,28 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://c2t6vpftxd4jf"]
+
+[ext_resource type="Shader" uid="uid://bkcrpd3us7yn" path="res://interactables/sewer_grate/sewer_grate.gdshader" id="1_sewer_shader"]
+
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_rust"]
+noise_type = 3
+seed = 101
+frequency = 0.04
+fractal_octaves = 4
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_rust"]
+noise = SubResource("FastNoiseLite_rust")
+seamless = true
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_sewer_shader")
+shader_parameter/base_iron_color = Color(0.18, 0.19, 0.2, 1)
+shader_parameter/rust_color = Color(0.38, 0.16, 0.08, 1)
+shader_parameter/grime_color = Color(0.06, 0.07, 0.05, 1)
+shader_parameter/rust_noise = SubResource("NoiseTexture2D_rust")
+shader_parameter/triplanar_scale = 1.6
+shader_parameter/triplanar_sharpness = 4.0
+shader_parameter/rust_threshold = 0.42
+shader_parameter/rust_contrast = 0.18
+shader_parameter/bump_strength = 0.35
+shader_parameter/weld_grime_radius = 0.14
+shader_parameter/bottom_damp_strength = 0.65

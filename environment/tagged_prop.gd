@@ -108,7 +108,7 @@ func _update_tag() -> void:
 	if not is_instance_valid(_label):
 		_label = get_node_or_null("Label3D") as Label3D
 	if is_instance_valid(_label):
-		_label.text = clean_tag
+		_label.text = tr(clean_tag)
 
 
 ## Sets the per-instance color shader uniform on the active CSG primitive.

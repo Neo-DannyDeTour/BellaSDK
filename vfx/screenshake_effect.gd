@@ -105,11 +105,6 @@ func _ready() -> void:
 	collision_layer = CollisionLayers.MASK_NONE
 	collision_mask = CollisionLayers.MASK_PLAYER
 
-	if not show_in_game:
-		var editor_mesh: EditorTriggerVisualizer = _get_visualizer()
-		if is_instance_valid(editor_mesh):
-			editor_mesh.queue_free()
-
 	Utilities.safe_connect(body_entered, _on_body_entered)
 
 

@@ -1,0 +1,60 @@
+[gd_scene format=3 uid="uid://c8q1m4w5he2l0"]
+
+[ext_resource type="PackedScene" uid="uid://mqae3mth7tfx" path="res://interactables/pickable_object.tscn" id="1_aapj8"]
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="2_425a4"]
+[ext_resource type="PackedScene" uid="uid://r0uhmfpit8rc" path="res://assets/models/props/wheel/hl2_wheel.glb" id="3_wheel"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_u0s6k"]
+render_priority = 0
+shader = ExtResource("2_425a4")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.00000038
+shader_parameter/min_intensity = 0.2
+shader_parameter/max_intensity = 1.0
+shader_parameter/alpha_scissor_threshold = 0.5
+
+[sub_resource type="CylinderShape3D" id="CylinderShape3D_wheel"]
+height = 0.216
+radius = 0.33
+
+[node name="PickableWheel" unique_id=325198482 node_paths=PackedStringArray("mesh") groups=["magnetizable"] instance=ExtResource("1_aapj8")]
+mass = 10.0
+mesh = NodePath("hl2_wheel")
+float_force = 1.0
+water_drag = 4.0
+water_angular_drag = 3.0
+hold_at_chest = true
+custom_hold_distance = 0.15
+hold_vertical_offset = -0.45
+held_transparency = 0.75
+
+[node name="HighlightComponent" parent="." index="1" unique_id=1233358358]
+outline_material = SubResource("ShaderMaterial_u0s6k")
+
+[node name="MeshInstance3D" parent="." index="2" unique_id=1239371319]
+visible = false
+
+[node name="CollisionShape3D" parent="." index="3" unique_id=1677444331]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0.33, 0)
+shape = SubResource("CylinderShape3D_wheel")
+
+[node name="Label3D" parent="." index="4" unique_id=1035008069]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
+
+[node name="PromptIcon" parent="." index="5" unique_id=931149645]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.85, 0)
+
+[node name="Marker3D" parent="ProbeContainer" parent_id_path=PackedInt32Array(719013281) index="0" unique_id=1977258969]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.25, 0.33, 0)
+
+[node name="Marker3D2" parent="ProbeContainer" parent_id_path=PackedInt32Array(719013281) index="1" unique_id=1466183085]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.25, 0.33, 0)
+
+[node name="Marker3D3" parent="ProbeContainer" parent_id_path=PackedInt32Array(719013281) index="2" unique_id=865436627]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.33, 0.25)
+
+[node name="Marker3D4" parent="ProbeContainer" parent_id_path=PackedInt32Array(719013281) index="3" unique_id=1857240385]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.33, -0.25)
+
+[node name="hl2_wheel" parent="." index="7" unique_id=1018090182 instance=ExtResource("3_wheel")]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0.33, -0.108)
