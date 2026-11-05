@@ -591,11 +591,20 @@ func _build_performance_report() -> String:
 	var sdfgi_banner: String = _format_sdfgi_summary_banner(sdfgi_records)
 	var fog_records: Array[Dictionary] = _audit_volumetric_fog_instances()
 	var fog_banner: String = _format_volumetric_fog_summary_banner(fog_records)
+	var clouds_records: Array[Dictionary] = _audit_clouds_instances()
+	var clouds_banner: String = _format_clouds_summary_banner(clouds_records)
+
+	var spike_audit: String = _audit_spike_root_causes(
+		gpu_ms, cpu_script_ms, cpu_prep_ms, primitives, draw_calls, clouds_records
+	)
 
 	return (
 		sdfgi_banner
 		+ fog_banner
+		+ clouds_banner
 		+ "\n"
+		+ spike_audit
+		+ "\n\n"
 		+ (
 			"""=== PRIMARY BOTTLENECK ===
 Status: [%s] (%.2f ms | %.1f%% budget)
@@ -907,16 +916,328 @@ func _audit_volumetric_fog_instances() -> Array[Dictionary]:
 	return results
 
 
+## Formats a high-level Volumetric Clouds status summary banner for diagnostics reports.
+func _format_clouds_summary_banner(records: Array[Dictionary]) -> String:
+	var active_count: int = 0
+	var dormant_count: int = 0
+	for rec: Dictionary in records:
+		var is_active_val: Variant = rec.get("is_active", false)
+		if is_active_val is bool and is_active_val:
+			active_count += 1
+		else:
+			dormant_count += 1
+
+	if active_count > 1:
+		return (
+			"[color=red][b]CLOUDS STATUS: [CRITICAL: %d ACTIVE COMPUTE PASSES] (%d dormant)[/b][/color]\n"
+			% [active_count, dormant_count]
+		)
+	if active_count == 1:
+		var dormant_suffix: String = (" (%d dormant)" % dormant_count) if dormant_count > 0 else ""
+		return "[color=green][b]CLOUDS STATUS: 1 Active Compute%s[/b][/color]\n" % dormant_suffix
+	if dormant_count > 0:
+		return (
+			"[color=yellow]CLOUDS STATUS: 0 Active (%d dormant in tree)[/color]\n" % dormant_count
+		)
+	return "[color=gray]CLOUDS STATUS: Off (0 active)[/color]\n"
+
+
+## Audits scene tree, viewports, and compositors for genuine active volumetric cloud passes.
+func _audit_clouds_instances() -> Array[Dictionary]:
+	var results: Array[Dictionary] = []
+	if not is_inside_tree():
+		return results
+	var tree: SceneTree = get_tree()
+	if not is_instance_valid(tree) or not is_instance_valid(tree.root):
+		return results
+
+	var root_vp: Window = tree.root
+	var sub_viewports: Array[SubViewport] = []
+	_collect_subviewports(root_vp, sub_viewports)
+
+	var all_viewports: Array[Viewport] = [root_vp]
+	for sub_vp: SubViewport in sub_viewports:
+		all_viewports.append(sub_vp)
+
+	var seen_effects: Array[CompositorEffect] = []
+
+	for vp: Viewport in all_viewports:
+		if not is_instance_valid(vp):
+			continue
+
+		var is_sub: bool = vp is SubViewport
+		var sub_vp: SubViewport = vp as SubViewport if is_sub else null
+
+		var vp_active: bool = true
+		var vp_reason: String = "active"
+
+		if is_sub:
+			if sub_vp.disable_3d:
+				vp_active = false
+				vp_reason = "viewport disable_3d=true"
+			elif sub_vp.render_target_update_mode == SubViewport.UPDATE_DISABLED:
+				vp_active = false
+				vp_reason = "update_mode=DISABLED"
+		else:
+			var win_vp: Window = vp as Window
+			if win_vp.disable_3d:
+				vp_active = false
+				vp_reason = "window disable_3d=true"
+
+		var cam: Camera3D = vp.get_camera_3d()
+		if is_instance_valid(cam) and is_instance_valid(cam.compositor):
+			for fx: CompositorEffect in cam.compositor.compositor_effects:
+				if fx is SunshineCloudsGD and not seen_effects.has(fx):
+					seen_effects.append(fx)
+					var clouds_eff: SunshineCloudsGD = fx as SunshineCloudsGD
+					var is_act: bool = vp_active and clouds_eff.enabled
+					var reason: String = vp_reason
+					if vp_active:
+						reason = "active" if clouds_eff.enabled else "effect.enabled=false"
+					(
+						results
+						. append(
+							{
+								"name": "Camera [%s] (%s)" % [cam.name, vp.name],
+								"path": str(cam.get_path()),
+								"is_active": is_act,
+								"reason": reason,
+								"resolution_scale": clouds_eff.resolution_scale,
+								"max_step_count": clouds_eff.max_step_count,
+							}
+						)
+					)
+
+	var we_nodes: Array[Node] = tree.root.find_children("*", "WorldEnvironment", true, false)
+	for node: Node in we_nodes:
+		var we: WorldEnvironment = node as WorldEnvironment
+		if not is_instance_valid(we) or not is_instance_valid(we.compositor):
+			continue
+
+		var is_in_dio: bool = we.find_parent("DioramaViewport") != null
+		var we_active: bool = true
+		var we_reason: String = "active"
+		if is_in_dio:
+			we_active = false
+			we_reason = "inside diorama"
+
+		for fx: CompositorEffect in we.compositor.compositor_effects:
+			if fx is SunshineCloudsGD and not seen_effects.has(fx):
+				seen_effects.append(fx)
+				var clouds_eff: SunshineCloudsGD = fx as SunshineCloudsGD
+				var is_act: bool = we_active and clouds_eff.enabled
+				var reason: String = we_reason
+				if we_active:
+					reason = "active" if clouds_eff.enabled else "effect.enabled=false"
+				(
+					results
+					. append(
+						{
+							"name": "WorldEnv [%s]" % we.name,
+							"path": str(we.get_path()),
+							"is_active": is_act,
+							"reason": reason,
+							"resolution_scale": clouds_eff.resolution_scale,
+							"max_step_count": clouds_eff.max_step_count,
+						}
+					)
+				)
+
+	var driver_nodes: Array[Node] = tree.get_nodes_in_group(&"sunshine_clouds")
+	for d_node: Node in driver_nodes:
+		var driver: SunshineCloudsDriverGD = d_node as SunshineCloudsDriverGD
+		if not is_instance_valid(driver) or not is_instance_valid(driver.clouds_resource):
+			continue
+		if not seen_effects.has(driver.clouds_resource):
+			seen_effects.append(driver.clouds_resource)
+			(
+				results
+				. append(
+					{
+						"name": "Driver [%s]" % driver.name,
+						"path": str(driver.get_path()),
+						"is_active": false,
+						"reason": "unattached to compositor",
+						"resolution_scale": driver.clouds_resource.resolution_scale,
+						"max_step_count": driver.clouds_resource.max_step_count,
+					}
+				)
+			)
+
+	return results
+
+
+## Recursively counts nodes with active process or physics process loops.
+func _count_processing_nodes(node: Node) -> int:
+	if not is_instance_valid(node):
+		return 0
+	var count: int = 1 if (node.is_processing() or node.is_physics_processing()) else 0
+	for child: Node in node.get_children():
+		count += _count_processing_nodes(child)
+	return count
+
+
+## Audits telemetry vectors and scene tree branches to identify exact root causes for frame drops.
+func _audit_spike_root_causes(
+	gpu_ms: float,
+	cpu_script_ms: float,
+	_cpu_prep_ms: float,
+	primitives: int,
+	draw_calls: int,
+	clouds_records: Array[Dictionary]
+) -> String:
+	var lines: PackedStringArray = PackedStringArray()
+	lines.append("[b][color=yellow]=== SPIKE ROOT CAUSE AUDIT ===[/color][/b]")
+
+	var has_findings: bool = false
+	var tree: SceneTree = get_tree() if is_inside_tree() else null
+
+	var active_clouds: int = 0
+	for c_rec: Dictionary in clouds_records:
+		var is_c_act: Variant = c_rec.get("is_active", false)
+		if is_c_act is bool and is_c_act:
+			active_clouds += 1
+
+	if active_clouds > 0 and gpu_ms > TARGET_FRAME_BUDGET_MS:
+		has_findings = true
+		lines.append(
+			(
+				(
+					"[color=red]* [CLOUDS COMPUTE OVERLOAD][/color] %d Active Cloud Pass(es) "
+					+ "consuming %.1f ms GPU. -> Reduce tier in Video settings."
+				)
+				% [active_clouds, gpu_ms]
+			)
+		)
+
+	if gpu_ms > 20.0 and cpu_script_ms > 20.0:
+		has_findings = true
+		(
+			lines
+			. append(
+				(
+					(
+						"[color=yellow]* [VULKAN FENCE STALL][/color] CPU Script time (%.1f ms) is inflated "
+						+ "waiting on GPU finish/swapchain."
+					)
+					% cpu_script_ms
+				)
+			)
+		)
+
+	if is_instance_valid(tree) and is_instance_valid(tree.root):
+		var sub_viewports: Array[SubViewport] = []
+		_collect_subviewports(tree.root, sub_viewports)
+		var active_sub_names: PackedStringArray = PackedStringArray()
+		for sub_vp: SubViewport in sub_viewports:
+			if (
+				not sub_vp.disable_3d
+				and sub_vp.render_target_update_mode != SubViewport.UPDATE_DISABLED
+			):
+				active_sub_names.append(str(sub_vp.name))
+
+		if active_sub_names.size() > 1:
+			has_findings = true
+			lines.append(
+				(
+					(
+						"[color=red]* [SUBVIEWPORT RECURSION][/color] %d Active SubViewports (%s) "
+						+ "rendering separate 3D passes."
+					)
+					% [active_sub_names.size(), ", ".join(active_sub_names)]
+				)
+			)
+
+	if primitives > 200000:
+		has_findings = true
+		(
+			lines
+			. append(
+				(
+					(
+						"[color=red]* [GEOMETRY OVERLOAD][/color] %d primitives in frame (Budget: < 150k). "
+						+ "High-poly mesh / clipmap active."
+					)
+					% primitives
+				)
+			)
+		)
+	elif primitives > 100000:
+		has_findings = true
+		lines.append(
+			"[color=yellow]* [HIGH POLYGON COUNT][/color] %d primitives in frame." % primitives
+		)
+
+	if draw_calls > 600:
+		has_findings = true
+		(
+			lines
+			. append(
+				(
+					(
+						"[color=red]* [DRAW CALL OVERLOAD][/color] %d draw calls in frame (Budget: < 600). "
+						+ "Check unbatched meshes / lights."
+					)
+					% draw_calls
+				)
+			)
+		)
+
+	if is_instance_valid(tree) and is_instance_valid(tree.current_scene):
+		var branch_items: Array[Dictionary] = []
+		for child: Node in tree.current_scene.get_children():
+			var p_count: int = _count_processing_nodes(child)
+			if p_count > 0:
+				branch_items.append({"name": str(child.name), "count": p_count})
+
+		branch_items.sort_custom(
+			func(a: Dictionary, b: Dictionary) -> bool:
+				return int(a.get("count", 0)) > int(b.get("count", 0))
+		)
+
+		if not branch_items.is_empty():
+			var top_strs: PackedStringArray = PackedStringArray()
+			var max_show: int = mini(3, branch_items.size())
+			for i: int in range(max_show):
+				var item: Dictionary = branch_items[i]
+				top_strs.append(
+					"%s (%d nodes)" % [str(item.get("name", "")), int(item.get("count", 0))]
+				)
+
+			if cpu_script_ms > TARGET_FRAME_BUDGET_MS:
+				has_findings = true
+				lines.append(
+					(
+						"[color=red]* [CPU SCRIPT HOGS][/color] Top processing branches: %s"
+						% ", ".join(top_strs)
+					)
+				)
+			else:
+				lines.append(
+					"[color=gray]* Active processing branches: %s[/color]" % ", ".join(top_strs)
+				)
+
+	if not has_findings:
+		lines.append(
+			"[color=green]* All telemetry channels nominal (within 16.6ms budget).[/color]"
+		)
+
+	return "\n".join(lines)
+
+
 ## Generates hierarchical breakdown of active [SubViewport] nodes.
 func _build_pipeline_report() -> String:
 	var sdfgi_records: Array[Dictionary] = _audit_sdfgi_instances()
 	var sdfgi_banner: String = _format_sdfgi_summary_banner(sdfgi_records)
 	var fog_records: Array[Dictionary] = _audit_volumetric_fog_instances()
 	var fog_banner: String = _format_volumetric_fog_summary_banner(fog_records)
+	var clouds_records: Array[Dictionary] = _audit_clouds_instances()
+	var clouds_banner: String = _format_clouds_summary_banner(clouds_records)
 
 	var text: String = (
 		sdfgi_banner
 		+ fog_banner
+		+ clouds_banner
 		+ "\n[b][color=yellow]=== VIEWPORT & RENDER PIPELINE ===[/color][/b]\n"
 	)
 	var root_vp: Window = get_tree().root
@@ -1000,6 +1321,29 @@ func _build_pipeline_report() -> String:
 			text += (
 				"* %s -> %s | Density: %.4f\n  └─ Path: [color=cyan]%s[/color]\n"
 				% [name_str, status_badge, density, path_str]
+			)
+
+	text += "\n[b][color=yellow]=== VOLUMETRIC CLOUDS INSTANCE AUDIT ===[/color][/b]\n"
+	if clouds_records.is_empty():
+		text += "[color=gray]  No Volumetric Clouds effects detected in tree.[/color]\n"
+	else:
+		for rec: Dictionary in clouds_records:
+			var name_str: String = str(rec.get("name", "Unknown"))
+			var is_act_val: Variant = rec.get("is_active", false)
+			var is_act: bool = is_act_val is bool and is_act_val
+			var status_badge: String = (
+				"[color=green][ACTIVE COMPUTE][/color]"
+				if is_act
+				else ("[color=yellow][DORMANT: %s][/color]" % str(rec.get("reason", "asleep")))
+			)
+			var scale_val: Variant = rec.get("resolution_scale", 1)
+			var scale_num: int = scale_val if scale_val is int else 1
+			var steps_val: Variant = rec.get("max_step_count", 0.0)
+			var steps_num: float = steps_val if steps_val is float else 0.0
+			var path_str: String = str(rec.get("path", ""))
+			text += (
+				"* %s -> %s | Scale: 1/%d | Steps: %.0f\n  └─ Path: [color=cyan]%s[/color]\n"
+				% [name_str, status_badge, scale_num, steps_num, path_str]
 			)
 
 	return text

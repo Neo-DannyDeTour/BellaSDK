@@ -553,6 +553,10 @@ signal screen_wake_up_requested(
 @warning_ignore("unused_signal")
 signal wake_up_text_requested(text: String, fade_in: float, hold: float, fade_out: float)
 
+## Emitted when notarget cheat is toggled to ignore or detect player entity.
+@warning_ignore("unused_signal")
+signal player_notarget_toggled(active: bool)
+
 # --------------------------------------
 # ENUMS
 # --------------------------------------

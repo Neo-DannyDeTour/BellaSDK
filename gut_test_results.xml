@@ -1,53 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="GutTests" failures="0" tests="24" >
-  <testsuite name="test/unit/test_in_game_console.gd" tests="24" failures="0" skipped="0" time="0.020724" >
-      <testcase name="test_update_suggestion_ui_formatting" assertions="2" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000829" >
+<testsuites name="GutTests" failures="0" tests="4" >
+  <testsuite name="test/unit/test_sewer_grate.gd" tests="4" failures="0" skipped="0" time="0.043771" >
+      <testcase name="test_initial_hierarchy_and_components" assertions="7" status="pass" classname="test/unit/test_sewer_grate.gd" time="0.005659" >
       </testcase>
-      <testcase name="test_update_suggestion_ui_empty" assertions="2" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000627" >
+      <testcase name="test_player_interaction_and_permission" assertions="3" status="pass" classname="test/unit/test_sewer_grate.gd" time="0.002897" >
       </testcase>
-      <testcase name="test_infinite_ammo_console_command" assertions="3" status="pass" classname="test/unit/test_in_game_console.gd" time="0.002376" >
+      <testcase name="test_event_sequencer_methods_and_signals" assertions="3" status="pass" classname="test/unit/test_sewer_grate.gd" time="0.003094" >
       </testcase>
-      <testcase name="test_toggle_command_double_invocation" assertions="2" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000565" >
-      </testcase>
-      <testcase name="test_toggle_command_boolean_tokens" assertions="4" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000505" >
-      </testcase>
-      <testcase name="test_toggle_command_invalid_argument" assertions="1" status="pass" classname="test/unit/test_in_game_console.gd" time="0.00046" >
-      </testcase>
-      <testcase name="test_toggle_command_autocomplete_suggestions" assertions="5" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000483" >
-      </testcase>
-      <testcase name="test_give_command_autocomplete_suggestions" assertions="5" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000502" >
-      </testcase>
-      <testcase name="test_give_ammo_command_autocomplete_suggestions" assertions="3" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000489" >
-      </testcase>
-      <testcase name="test_give_keycard_clearance" assertions="2" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000513" >
-      </testcase>
-      <testcase name="test_weapon_ammo_defaults_and_clamp" assertions="5" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000547" >
-      </testcase>
-      <testcase name="test_map_command_autocomplete" assertions="3" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000543" >
-      </testcase>
-      <testcase name="test_checkpoint_command_unset_and_set" assertions="3" status="pass" classname="test/unit/test_in_game_console.gd" time="0.00056" >
-      </testcase>
-      <testcase name="test_save_and_load_commands" assertions="1" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000707" >
-      </testcase>
-      <testcase name="test_telemetry_commands_emit_signals" assertions="3" status="pass" classname="test/unit/test_in_game_console.gd" time="0.001752" >
-      </testcase>
-      <testcase name="test_fps_limit_command" assertions="6" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000903" >
-      </testcase>
-      <testcase name="test_stat_perf_command" assertions="2" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000523" >
-      </testcase>
-      <testcase name="test_infinite_swim_command" assertions="4" status="pass" classname="test/unit/test_in_game_console.gd" time="0.00171" >
-      </testcase>
-      <testcase name="test_noclip_speed_command" assertions="4" status="pass" classname="test/unit/test_in_game_console.gd" time="0.001566" >
-      </testcase>
-      <testcase name="test_giveall_keycard_grants" assertions="6" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000599" >
-      </testcase>
-      <testcase name="test_volume_command" assertions="5" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000768" >
-      </testcase>
-      <testcase name="test_fullscreen_command" assertions="3" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000772" >
-      </testcase>
-      <testcase name="test_resolution_command" assertions="5" status="pass" classname="test/unit/test_in_game_console.gd" time="0.000766" >
-      </testcase>
-      <testcase name="test_tts_command" assertions="4" status="pass" classname="test/unit/test_in_game_console.gd" time="0.001659" >
+      <testcase name="test_detach_leaf_breakaway" assertions="2" status="pass" classname="test/unit/test_sewer_grate.gd" time="0.032121" >
       </testcase>
   </testsuite>
 </testsuites>

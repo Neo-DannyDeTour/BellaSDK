@@ -30,7 +30,7 @@ func _run() -> void:
 	var children_to_process: Array[Node] = []
 	for child: Node in root.get_children():
 		# Do not touch core managers, player, or the folders themselves
-		if child in [landmarks, entities] or child.name == "VirtualChunkManager":
+		if child in [landmarks, entities]:
 			continue
 		if child is WorldEnvironment or child is DirectionalLight3D or child.name == "Player":
 			continue

@@ -11,6 +11,15 @@ const MAX_WARMUP_TIME_MS: int = 12
 ## Number of idle frames to wait for camera transform settling before SDFGI.
 const SETTLING_FRAMES: int = 4
 
+## Maximum visual progress bar fill rate per second to avoid jarring jumps.
+const FILL_RATE_MAX: float = 75.0
+
+## Smoothing speed multiplier for visual progress interpolation.
+const SMOOTHING_SPEED: float = 6.0
+
+## Minimum fill rate per second when approaching target progress.
+const MIN_FILL_RATE: float = 12.0
+
 ## The file path to the level scene that needs to be loaded in the background.
 @export_file("*.tscn", "*.scn") var level_scene_path: String = ""
 
@@ -29,11 +38,17 @@ var _progress_array: Array[float] = [0.0]
 ## Tracks loading status returned by [ResourceLoader].
 var _status: ResourceLoader.ThreadLoadStatus = ResourceLoader.THREAD_LOAD_INVALID_RESOURCE
 
+## Target progress percentage budgeted across loading phases (0.0 to 100.0).
+var _target_progress: float = 0.0
+
 ## Flag indicating whether background disk streaming has finished.
 var _is_resource_loaded: bool = false
 
 ## Flag indicating whether shader warmup has completed.
 var _is_warmup_complete: bool = false
+
+## Flag preventing duplicate transition execution.
+var _is_transitioning_scene: bool = false
 
 ## Tracks the current material index being processed during warmup.
 var _compile_index: int = 0
@@ -120,17 +135,24 @@ func _exit_tree() -> void:
 
 
 ## Monitors loading progress and coordinates the transition pipeline.
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
+	_update_progress_bar_visual(delta)
+
 	if not _is_resource_loaded:
 		_status = ResourceLoader.load_threaded_get_status(level_scene_path, _progress_array)
 
+		var has_shader_cache: bool = (
+			is_instance_valid(baked_shader_cache) and not baked_shader_cache.materials.is_empty()
+		)
+		var disk_max: float = 30.0 if has_shader_cache else 40.0
+
 		match _status:
 			ResourceLoader.THREAD_LOAD_IN_PROGRESS:
-				var target_val: float = _progress_array[0] * 70.0
-				progress_bar.value = target_val
+				_target_progress = clampf(_progress_array[0] * disk_max, 0.0, disk_max)
 
 			ResourceLoader.THREAD_LOAD_LOADED:
 				_is_resource_loaded = true
+				_target_progress = disk_max
 				print("LoadingScreen: Disk streaming finished. Starting warmup.")
 				_start_shader_warmup()
 
@@ -146,14 +168,27 @@ func _process(_delta: float) -> void:
 				_cleanup_warmup_viewport()
 				push_error("LoadingScreen: Invalid scene path provided.")
 
-	elif _is_warmup_complete:
+	elif _is_warmup_complete and not _is_transitioning_scene:
+		_is_transitioning_scene = true
 		_finalize_scene_transition()
+
+
+## Smoothly steps the visual progress bar towards [member _target_progress].
+func _update_progress_bar_visual(delta: float) -> void:
+	if not is_instance_valid(progress_bar):
+		return
+	var remaining: float = _target_progress - progress_bar.value
+	if remaining > 0.001:
+		var speed: float = maxf(remaining * SMOOTHING_SPEED, MIN_FILL_RATE)
+		var step: float = minf(speed * delta, FILL_RATE_MAX * delta)
+		progress_bar.value = clampf(progress_bar.value + step, 0.0, _target_progress)
 
 
 ## Sets up the isolated warmup viewport and begins pipeline compilation.
 func _start_shader_warmup() -> void:
 	if not baked_shader_cache or baked_shader_cache.materials.is_empty():
 		print("LoadingScreen: No shader cache found. Skipping warmup phase.")
+		_target_progress = maxf(_target_progress, 40.0)
 		_is_warmup_complete = true
 		return
 
@@ -223,7 +258,7 @@ func _compile_materials_budgeted() -> void:
 			_compile_index += 1
 
 			var warmup_ratio: float = float(_compile_index) / float(total_mats)
-			progress_bar.value = 70.0 + (warmup_ratio * 30.0)
+			_target_progress = 30.0 + (warmup_ratio * 15.0)
 
 			if (Time.get_ticks_msec() - start_time) >= MAX_WARMUP_TIME_MS:
 				break
@@ -232,6 +267,7 @@ func _compile_materials_budgeted() -> void:
 
 	print("LoadingScreen: Shader warmup completed. Freeing warmup viewport.")
 	_cleanup_warmup_viewport()
+	_target_progress = 45.0
 	_is_warmup_complete = true
 
 
@@ -272,9 +308,7 @@ func _cleanup_warmup_viewport() -> void:
 ## Finalizes scene switch, sweeps camera to compile PSOs, and stages SDFGI.
 func _finalize_scene_transition() -> void:
 	print("LoadingScreen: Evicting previous levels and mounting new scene.")
-	set_process(false)
-	progress_bar.value = 100.0
-	audio_player.stop()
+	_target_progress = 45.0
 
 	var loaded_scene: PackedScene = (
 		ResourceLoader.load_threaded_get(level_scene_path) as PackedScene
@@ -296,11 +330,13 @@ func _finalize_scene_transition() -> void:
 
 	await get_tree().process_frame
 	await get_tree().process_frame
+	_target_progress = 50.0
 
 	var new_scene: Node = loaded_scene.instantiate()
 	if not is_instance_valid(new_scene):
 		push_error("LoadingScreen: Failed to instantiate PackedScene.")
 		return
+	_target_progress = 60.0
 
 	var world_env: WorldEnvironment = _find_world_environment(new_scene)
 	if is_instance_valid(world_env) and is_instance_valid(world_env.environment):
@@ -308,15 +344,7 @@ func _finalize_scene_transition() -> void:
 
 	root.add_child(new_scene)
 	get_tree().current_scene = new_scene
-
-	var chunker: WorldChunkManager = (
-		new_scene.find_child("WorldChunkManager", true, false) as WorldChunkManager
-	)
-	if not is_instance_valid(chunker):
-		chunker = new_scene.find_child("VirtualChunkManager", true, false) as WorldChunkManager
-	if is_instance_valid(chunker) and not chunker.is_spawn_ready():
-		print("LoadingScreen: Waiting for WorldChunkManager initial zone...")
-		await chunker.initial_zone_ready
+	_target_progress = 70.0
 
 	var player_node: CharacterBody3D = (
 		new_scene.find_child("Player", true, false) as CharacterBody3D
@@ -332,27 +360,46 @@ func _finalize_scene_transition() -> void:
 	await get_tree().process_frame
 	await get_tree().process_frame
 	await get_tree().physics_frame
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	_target_progress = 78.0
 
 	if is_instance_valid(player_node):
 		_snap_player_to_floor(player_node)
 		if player_node.has_method(&"activate_gameplay_camera"):
 			player_node.call(&"activate_gameplay_camera")
+	_target_progress = 82.0
 
 	print("LoadingScreen: Synchronizing viewport pipeline with active user video settings.")
 	_reapply_active_video_settings()
 
-	for _frame_idx: int in range(SETTLING_FRAMES):
+	for frame_idx: int in range(SETTLING_FRAMES):
 		await get_tree().process_frame
+	_target_progress = 85.0
 
 	var cam_controller: CameraController = _get_camera_controller(player_node)
 	if is_instance_valid(player_node) and is_instance_valid(cam_controller):
 		print("LoadingScreen: Sweeping frustum 360 deg to cache pipeline states.")
 		var original_rot: float = player_node.rotation.y
-		for angle_deg: float in [90.0, 180.0, 270.0, 0.0]:
+		var sweep_angles: Array[float] = [90.0, 180.0, 270.0, 0.0]
+		var sweep_step: float = (95.0 - 85.0) / float(sweep_angles.size())
+		for sweep_idx: int in range(sweep_angles.size()):
+			var angle_deg: float = sweep_angles[sweep_idx]
 			player_node.rotation.y = original_rot + deg_to_rad(angle_deg)
 			await get_tree().process_frame
+			_target_progress = 85.0 + (sweep_step * float(sweep_idx + 1))
 		player_node.rotation.y = original_rot
 		await get_tree().process_frame
+	else:
+		_target_progress = 95.0
+
+	_target_progress = 100.0
+
+	while progress_bar.value < 99.5:
+		await get_tree().process_frame
+	progress_bar.value = 100.0
+
+	audio_player.stop()
 
 	var fade_tween: Tween = create_tween()
 	fade_tween.tween_property(visual_root, "modulate:a", 0.0, 0.25)
@@ -363,6 +410,7 @@ func _finalize_scene_transition() -> void:
 		print("LoadingScreen: Re-enabled player locomotion after visual fade.")
 
 	print("LoadingScreen: Transition complete. Freeing loading screen.")
+	set_process(false)
 	queue_free()
 
 
