@@ -1,12 +1,12 @@
-## Manages async scene loading, shader warmup, and staged SDFGI activation.
+## Manages async scene loading, dynamic SpriteFrames loading, adaptive shader warmup, and SDFGI.
 class_name LoadingScreen
 extends CanvasLayer
 
-## Tracks whether an active loading screen transition is currently in flight.
-static var is_transition_active: bool = false
+## Maximum number of materials compiled concurrently in a single frame.
+const WARMUP_POOL_SIZE: int = 4
 
-## Maximum milliseconds budgeted per frame for material warmup.
-const MAX_WARMUP_TIME_MS: int = 12
+## Frame delta threshold in seconds above which warmup throttles to 1 slot.
+const WARMUP_FRAME_BUDGET_SEC: float = 0.018
 
 ## Number of idle frames to wait for camera transform settling before SDFGI.
 const SETTLING_FRAMES: int = 4
@@ -20,8 +20,33 @@ const SMOOTHING_SPEED: float = 6.0
 ## Minimum fill rate per second when approaching target progress.
 const MIN_FILL_RATE: float = 12.0
 
+## Animation name for the Bella Wrench loading sequence.
+const ANIM_BELLA_WRENCH: StringName = &"bella_wrench"
+
+## Animation name for the Priestess Two-Face loading sequence.
+const ANIM_PRIESTESS_TWOFACE: StringName = &"priestess_twoface"
+
+## Method name invoked on the player entity to activate its gameplay camera.
+const METHOD_ACTIVATE_CAMERA: StringName = &"activate_gameplay_camera"
+
+## Property name for the player's locomotion component reference.
+const PROP_LOCOMOTION: StringName = &"locomotion_component"
+
+## Property name for the player's camera controller reference.
+const PROP_CAMERA_CONTROLLER: StringName = &"camera_controller"
+
+## Tracks whether an active loading screen transition is currently in flight.
+static var is_transition_active: bool = false
+
 ## The file path to the level scene that needs to be loaded in the background.
 @export_file("*.tscn", "*.scn") var level_scene_path: String = ""
+
+## File path to the bella wrench sprite frames resource.
+@export_file("*.tres") var bella_wrench_frames_path: String = "res://ui/bella_wrench_frames.tres"
+
+## File path to the priestess two-face sprite frames resource.
+@export_file("*.tres")
+var priestess_twoface_frames_path: String = "res://ui/priestess_twoface_frames.tres"
 
 ## A custom resource containing a list of materials to precompile.
 @export var baked_shader_cache: ShaderCache
@@ -41,7 +66,16 @@ var _status: ResourceLoader.ThreadLoadStatus = ResourceLoader.THREAD_LOAD_INVALI
 ## Target progress percentage budgeted across loading phases (0.0 to 100.0).
 var _target_progress: float = 0.0
 
-## Flag indicating whether background disk streaming has finished.
+## File path of the selected animation's SpriteFrames resource.
+var _selected_frames_path: String = ""
+
+## Cached name of the randomly chosen animation.
+var _selected_anim_name: StringName = &""
+
+## Flag indicating whether the SpriteFrames resource has finished loading.
+var _is_frames_loaded: bool = false
+
+## Flag indicating whether background level disk streaming has finished.
 var _is_resource_loaded: bool = false
 
 ## Flag indicating whether shader warmup has completed.
@@ -62,14 +96,17 @@ var _warmup_container_3d: Node3D = null
 ## Node container holding temporary 2D elements inside the warmup viewport.
 var _warmup_container_2d: Control = null
 
-## Reusable dummy mesh instance used to warm up 3D materials.
-var _warmup_mesh_instance: MeshInstance3D = null
+## Pooled dummy mesh instances arranged in a 2x2 grid for 3D material warmup.
+var _warmup_mesh_pool: Array[MeshInstance3D] = []
 
-## Reusable dummy color rect used to warm up 2D canvas materials.
-var _warmup_color_rect: ColorRect = null
+## Pooled dummy color rects arranged in a 2x2 grid for 2D canvas warmup.
+var _warmup_rect_pool: Array[ColorRect] = []
 
 ## Reusable quad geometry shared across 3D material warmup steps.
 var _warmup_quad_mesh: QuadMesh = null
+
+## Active tween fading out the visual root container at transition end.
+var _fade_tween: Tween = null
 
 ## The visual indicator container to fade smoothly without breaking root layout.
 @onready var visual_root: Control = $VisualRoot
@@ -84,8 +121,13 @@ var _warmup_quad_mesh: QuadMesh = null
 @onready var audio_player: AudioStreamPlayer = $VisualRoot/AudioStreamPlayer
 
 
-## Initializes background scene loading, animations, and sound playback.
+## Initializes background animation asset loading and transition guards.
 func _ready() -> void:
+	assert(is_instance_valid(visual_root), "LoadingScreen: visual_root missing.")
+	assert(is_instance_valid(animation), "LoadingScreen: animation missing.")
+	assert(is_instance_valid(progress_bar), "LoadingScreen: progress_bar missing.")
+	assert(is_instance_valid(audio_player), "LoadingScreen: audio_player missing.")
+
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
 	if is_transition_active:
@@ -99,46 +141,58 @@ func _ready() -> void:
 		set_process(false)
 		return
 
-	print("LoadingScreen: Starting background load for: ", level_scene_path)
 	_select_random_presentation()
 
-	var error: Error = ResourceLoader.load_threaded_request(level_scene_path, "", true)
-	if error != OK:
-		push_error("LoadingScreen: Request failed: " + error_string(error))
-		_cleanup_warmup_viewport()
+	# Threaded request for ONLY the selected animation's SpriteFrames resource first.
+	var frame_error: Error = ResourceLoader.load_threaded_request(_selected_frames_path, "", false)
+	if frame_error != OK:
+		push_error("LoadingScreen: SpriteFrames request failed: " + error_string(frame_error))
 		set_process(false)
 		return
 
-	_status = ResourceLoader.load_threaded_get_status(level_scene_path)
 
-
-## Selects and starts a random animation alongside its matching audio track.
-func _select_random_presentation() -> void:
-	print("LoadingScreen: Selecting random presentation pair.")
-	var anim_options: PackedStringArray = PackedStringArray(["bella_wrench", "priestess_twoface"])
-	var picked_anim: String = anim_options[randi() % anim_options.size()]
-	animation.play(picked_anim)
-
-	if picked_anim == "bella_wrench" and is_instance_valid(audio_bella_wrench):
-		audio_player.stream = audio_bella_wrench
-		audio_player.play()
-	elif picked_anim == "priestess_twoface" and is_instance_valid(audio_priestess_twoface):
-		audio_player.stream = audio_priestess_twoface
-		audio_player.play()
-
-
-## Cleans up allocated warmup resources when the node is removed from the tree.
+## Cleans up allocated warmup resources and tweens when removed from the tree.
 func _exit_tree() -> void:
 	print("LoadingScreen: Cleaning up resources on tree exit.")
 	is_transition_active = false
+	if is_instance_valid(_fade_tween):
+		_fade_tween.kill()
+		_fade_tween = null
 	_cleanup_warmup_viewport()
 
 
-## Monitors loading progress and coordinates the transition pipeline.
+## Monitors loading progress for SpriteFrames, levels, and coordinates pipeline.
 func _process(delta: float) -> void:
 	_update_progress_bar_visual(delta)
 
-	if not _is_resource_loaded:
+	if not _is_frames_loaded:
+		var frame_status: ResourceLoader.ThreadLoadStatus = ResourceLoader.load_threaded_get_status(
+			_selected_frames_path
+		)
+		match frame_status:
+			ResourceLoader.THREAD_LOAD_LOADED:
+				var loaded_frames: SpriteFrames = (
+					ResourceLoader.load_threaded_get(_selected_frames_path) as SpriteFrames
+				)
+				if is_instance_valid(loaded_frames):
+					animation.sprite_frames = loaded_frames
+					animation.play(_selected_anim_name)
+					_is_frames_loaded = true
+					print("LoadingScreen: SpriteFrames loaded. Starting background level load.")
+
+					var level_error: Error = ResourceLoader.load_threaded_request(
+						level_scene_path, "", false
+					)
+					if level_error != OK:
+						push_error(
+							"LoadingScreen: Level request failed: " + error_string(level_error)
+						)
+						set_process(false)
+			ResourceLoader.THREAD_LOAD_FAILED, ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
+				set_process(false)
+				push_error("LoadingScreen: Failed loading selected SpriteFrames resource.")
+
+	elif not _is_resource_loaded:
 		_status = ResourceLoader.load_threaded_get_status(level_scene_path, _progress_array)
 
 		var has_shader_cache: bool = (
@@ -173,6 +227,24 @@ func _process(delta: float) -> void:
 		_finalize_scene_transition()
 
 
+## Selects a random presentation pair and queues its isolated resource path.
+func _select_random_presentation() -> void:
+	print("LoadingScreen: Selecting random presentation pair.")
+	var anim_options: Array[StringName] = [ANIM_BELLA_WRENCH, ANIM_PRIESTESS_TWOFACE]
+	_selected_anim_name = anim_options[randi() % anim_options.size()]
+
+	if _selected_anim_name == ANIM_BELLA_WRENCH:
+		_selected_frames_path = bella_wrench_frames_path
+		if is_instance_valid(audio_bella_wrench):
+			audio_player.stream = audio_bella_wrench
+			audio_player.play()
+	elif _selected_anim_name == ANIM_PRIESTESS_TWOFACE:
+		_selected_frames_path = priestess_twoface_frames_path
+		if is_instance_valid(audio_priestess_twoface):
+			audio_player.stream = audio_priestess_twoface
+			audio_player.play()
+
+
 ## Smoothly steps the visual progress bar towards [member _target_progress].
 func _update_progress_bar_visual(delta: float) -> void:
 	if not is_instance_valid(progress_bar):
@@ -186,7 +258,7 @@ func _update_progress_bar_visual(delta: float) -> void:
 
 ## Sets up the isolated warmup viewport and begins pipeline compilation.
 func _start_shader_warmup() -> void:
-	if not baked_shader_cache or baked_shader_cache.materials.is_empty():
+	if not is_instance_valid(baked_shader_cache) or baked_shader_cache.materials.is_empty():
 		print("LoadingScreen: No shader cache found. Skipping warmup phase.")
 		_target_progress = maxf(_target_progress, 40.0)
 		_is_warmup_complete = true
@@ -227,41 +299,70 @@ func _start_shader_warmup() -> void:
 	_compile_materials_budgeted()
 
 
-## Prepares reusable dummy nodes to warm shaders without allocations.
+## Prepares a 4-slot 2x2 non-overlapping grid of 3D and 2D nodes for shader warmup.
 func _setup_warmup_pipeline_nodes() -> void:
-	print("LoadingScreen: Pre-allocating pooled nodes for shader warmup.")
+	print("LoadingScreen: Pre-allocating 4-slot pooled nodes for shader warmup.")
 	_warmup_quad_mesh = QuadMesh.new()
 	_warmup_quad_mesh.size = Vector2(0.2, 0.2)
 
-	_warmup_mesh_instance = MeshInstance3D.new()
-	_warmup_mesh_instance.mesh = _warmup_quad_mesh
-	_warmup_mesh_instance.layers = 1
-	_warmup_container_3d.add_child(_warmup_mesh_instance)
+	_warmup_mesh_pool.clear()
+	_warmup_rect_pool.clear()
 
-	_warmup_color_rect = ColorRect.new()
-	_warmup_color_rect.size = Vector2(16.0, 16.0)
-	_warmup_container_2d.add_child(_warmup_color_rect)
+	var offsets_3d: Array[Vector3] = [
+		Vector3(-0.25, 0.25, 0.0),
+		Vector3(0.25, 0.25, 0.0),
+		Vector3(-0.25, -0.25, 0.0),
+		Vector3(0.25, -0.25, 0.0),
+	]
+	var offsets_2d: Array[Vector2] = [
+		Vector2(0.0, 0.0),
+		Vector2(16.0, 0.0),
+		Vector2(0.0, 16.0),
+		Vector2(16.0, 16.0),
+	]
+
+	for slot_idx: int in range(WARMUP_POOL_SIZE):
+		var mesh_inst: MeshInstance3D = MeshInstance3D.new()
+		mesh_inst.mesh = _warmup_quad_mesh
+		mesh_inst.layers = 1
+		mesh_inst.position = offsets_3d[slot_idx]
+		mesh_inst.visible = false
+		_warmup_container_3d.add_child(mesh_inst)
+		_warmup_mesh_pool.append(mesh_inst)
+
+		var color_rect: ColorRect = ColorRect.new()
+		color_rect.size = Vector2(16.0, 16.0)
+		color_rect.position = offsets_2d[slot_idx]
+		color_rect.visible = false
+		_warmup_container_2d.add_child(color_rect)
+		_warmup_rect_pool.append(color_rect)
 
 
-## Processes materials across frames within [constant MAX_WARMUP_TIME_MS].
+## Processes materials across frames using previous-frame delta throttling.
 func _compile_materials_budgeted() -> void:
 	print("LoadingScreen: Compiling cached shader pipelines...")
 	var total_mats: int = baked_shader_cache.materials.size()
 
 	while _compile_index < total_mats:
-		var start_time: int = Time.get_ticks_msec()
+		if not is_inside_tree():
+			return
 
-		while _compile_index < total_mats:
+		var frame_delta: float = get_process_delta_time()
+		var batch_limit: int = WARMUP_POOL_SIZE if frame_delta <= WARMUP_FRAME_BUDGET_SEC else 1
+		var used_slots: int = 0
+
+		while _compile_index < total_mats and used_slots < batch_limit:
 			var res: Resource = baked_shader_cache.materials[_compile_index]
 			if res is Material:
-				_warmup_material(res as Material)
+				if _assign_warmup_slot(used_slots, res as Material):
+					used_slots += 1
 			_compile_index += 1
 
-			var warmup_ratio: float = float(_compile_index) / float(total_mats)
-			_target_progress = 30.0 + (warmup_ratio * 15.0)
+		for slot_idx: int in range(used_slots, WARMUP_POOL_SIZE):
+			_disable_warmup_slot(slot_idx)
 
-			if (Time.get_ticks_msec() - start_time) >= MAX_WARMUP_TIME_MS:
-				break
+		var warmup_ratio: float = float(_compile_index) / float(total_mats)
+		_target_progress = 30.0 + (warmup_ratio * 15.0)
 
 		await get_tree().process_frame
 
@@ -271,41 +372,54 @@ func _compile_materials_budgeted() -> void:
 	_is_warmup_complete = true
 
 
-## Applies [param mat] to dummy nodes to trigger GPU shader compilation.
-func _warmup_material(mat: Material) -> void:
+## Assigns [param mat] to pool [param slot_idx] and returns true if scheduled for draw.
+func _assign_warmup_slot(slot_idx: int, mat: Material) -> bool:
 	var is_2d: bool = mat is CanvasItemMaterial
 
 	if mat is ShaderMaterial:
 		var s_mat: ShaderMaterial = mat as ShaderMaterial
 		if not is_instance_valid(s_mat.shader):
-			return
+			return false
 		if s_mat.shader.get_mode() == Shader.MODE_CANVAS_ITEM:
 			is_2d = true
 
+	var mesh_inst: MeshInstance3D = _warmup_mesh_pool[slot_idx]
+	var color_rect: ColorRect = _warmup_rect_pool[slot_idx]
+
 	if is_2d:
-		_warmup_color_rect.visible = true
-		_warmup_mesh_instance.visible = false
-		_warmup_color_rect.material = mat
+		color_rect.material = mat
+		color_rect.visible = true
+		mesh_inst.visible = false
 	else:
-		_warmup_color_rect.visible = false
-		_warmup_mesh_instance.visible = true
-		_warmup_mesh_instance.material_override = mat
+		mesh_inst.material_override = mat
+		mesh_inst.visible = true
+		color_rect.visible = false
+
+	return true
 
 
-## Explicitly frees the warmup [SubViewport] and nullifies references.
+## Hides both 2D and 3D warmup nodes at [param slot_idx].
+func _disable_warmup_slot(slot_idx: int) -> void:
+	if slot_idx < _warmup_mesh_pool.size() and is_instance_valid(_warmup_mesh_pool[slot_idx]):
+		_warmup_mesh_pool[slot_idx].visible = false
+	if slot_idx < _warmup_rect_pool.size() and is_instance_valid(_warmup_rect_pool[slot_idx]):
+		_warmup_rect_pool[slot_idx].visible = false
+
+
+## Explicitly frees the warmup [SubViewport] and nullifies pooled references.
 func _cleanup_warmup_viewport() -> void:
 	print("LoadingScreen: Cleaning up warmup viewport instances.")
+	_warmup_mesh_pool.clear()
+	_warmup_rect_pool.clear()
+	_warmup_quad_mesh = null
+	_warmup_container_3d = null
+	_warmup_container_2d = null
 	if is_instance_valid(_warmup_viewport):
 		_warmup_viewport.queue_free()
 		_warmup_viewport = null
-		_warmup_container_3d = null
-		_warmup_container_2d = null
-		_warmup_mesh_instance = null
-		_warmup_color_rect = null
-		_warmup_quad_mesh = null
 
 
-## Finalizes scene switch, sweeps camera to compile PSOs, and stages SDFGI.
+## Finalizes scene switch with frame-spaced mounting, PSO sweep, and SDFGI staging.
 func _finalize_scene_transition() -> void:
 	print("LoadingScreen: Evicting previous levels and mounting new scene.")
 	_target_progress = 45.0
@@ -336,27 +450,31 @@ func _finalize_scene_transition() -> void:
 	if not is_instance_valid(new_scene):
 		push_error("LoadingScreen: Failed to instantiate PackedScene.")
 		return
-	_target_progress = 60.0
+	_target_progress = 58.0
+
+	await get_tree().process_frame
 
 	var world_env: WorldEnvironment = _find_world_environment(new_scene)
 	if is_instance_valid(world_env) and is_instance_valid(world_env.environment):
 		world_env.environment = world_env.environment.duplicate()
 
+	var player_node: CharacterBody3D = (
+		new_scene.find_child("Player", true, false) as CharacterBody3D
+	)
+	_target_progress = 64.0
+
+	await get_tree().process_frame
+
 	root.add_child(new_scene)
 	get_tree().current_scene = new_scene
 	_target_progress = 70.0
 
-	var player_node: CharacterBody3D = (
-		new_scene.find_child("Player", true, false) as CharacterBody3D
-	)
 	var locomotion: PlayerLocomotionComponent = _get_player_locomotion(player_node)
 	if is_instance_valid(locomotion):
 		locomotion.set_physics_active(false)
 	if is_instance_valid(player_node):
 		player_node.velocity = Vector3.ZERO
 
-	# Wait for process frames before physics_frame so heavy scene instantiation delta cannot
-	# exceed max_physics_steps_per_frame and skip physics step on the mounting frame.
 	await get_tree().process_frame
 	await get_tree().process_frame
 	await get_tree().physics_frame
@@ -366,9 +484,11 @@ func _finalize_scene_transition() -> void:
 
 	if is_instance_valid(player_node):
 		_snap_player_to_floor(player_node)
-		if player_node.has_method(&"activate_gameplay_camera"):
-			player_node.call(&"activate_gameplay_camera")
+		if player_node.has_method(METHOD_ACTIVATE_CAMERA):
+			player_node.call(METHOD_ACTIVATE_CAMERA)
 	_target_progress = 82.0
+
+	await get_tree().process_frame
 
 	print("LoadingScreen: Synchronizing viewport pipeline with active user video settings.")
 	_reapply_active_video_settings()
@@ -395,15 +515,18 @@ func _finalize_scene_transition() -> void:
 
 	_target_progress = 100.0
 
-	while progress_bar.value < 99.5:
+	while is_instance_valid(progress_bar) and progress_bar.value < 99.5:
 		await get_tree().process_frame
-	progress_bar.value = 100.0
+	if is_instance_valid(progress_bar):
+		progress_bar.value = 100.0
 
 	audio_player.stop()
 
-	var fade_tween: Tween = create_tween()
-	fade_tween.tween_property(visual_root, "modulate:a", 0.0, 0.25)
-	await fade_tween.finished
+	if is_instance_valid(_fade_tween):
+		_fade_tween.kill()
+	_fade_tween = create_tween()
+	_fade_tween.tween_property(visual_root, "modulate:a", 0.0, 0.25)
+	await _fade_tween.finished
 
 	if is_instance_valid(locomotion):
 		locomotion.set_physics_active(true)
@@ -468,7 +591,7 @@ func _snap_player_to_floor(player: CharacterBody3D) -> void:
 func _get_player_locomotion(p_player: Node) -> PlayerLocomotionComponent:
 	if not is_instance_valid(p_player):
 		return null
-	var raw: Variant = p_player.get(&"locomotion_component")
+	var raw: Variant = p_player.get(PROP_LOCOMOTION)
 	if raw is PlayerLocomotionComponent and is_instance_valid(raw):
 		var locomotion: PlayerLocomotionComponent = raw
 		return locomotion
@@ -479,7 +602,7 @@ func _get_player_locomotion(p_player: Node) -> PlayerLocomotionComponent:
 func _get_camera_controller(p_player: Node) -> CameraController:
 	if not is_instance_valid(p_player):
 		return null
-	var raw: Variant = p_player.get(&"camera_controller")
+	var raw: Variant = p_player.get(PROP_CAMERA_CONTROLLER)
 	if raw is CameraController and is_instance_valid(raw):
 		var controller: CameraController = raw
 		return controller
