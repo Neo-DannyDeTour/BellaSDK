@@ -1,0 +1,20 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://dm7yhcn0lsva2"]
+
+[ext_resource type="Shader" uid="uid://dinsp33stp8kj" path="res://shaders/dumpster_weathered.gdshader" id="1_dumpster_shader"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_dumpster_shader")
+shader_parameter/base_color = Color(0.07, 0.08, 0.07, 1)
+shader_parameter/metallic_base = 0.1
+shader_parameter/roughness_base = 0.85
+shader_parameter/rust_color = Color(0.28, 0.13, 0.07, 1)
+shader_parameter/grime_color = Color(0.05, 0.06, 0.05, 1)
+shader_parameter/edge_wear_color = Color(0.46, 0.49, 0.47, 1)
+shader_parameter/rust_amount = 0.35
+shader_parameter/edge_wear_strength = 1.0
+shader_parameter/edge_metallic = 0.75
+shader_parameter/edge_roughness = 0.42
+shader_parameter/grime_height = 0.2
+shader_parameter/noise_scale = 5.0
+shader_parameter/bump_strength = 0.012

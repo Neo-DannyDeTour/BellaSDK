@@ -22,11 +22,14 @@ const DEFAULT_OUTLINE_INTERVAL: float = 10.0
 ## Default constant value for outline temporary pulse duration.
 const DEFAULT_OUTLINE_DURATION: float = 3.0
 
+## Default shared outline shader material applied when none is assigned.
+const DEFAULT_OUTLINE_MATERIAL: ShaderMaterial = preload("res://vfx/unlit_outline_material.tres")
+
 # --------------------------------------
 # EXPORTS
 # --------------------------------------
 ## The shader material applied as an outline when the target is focused.
-@export var outline_material: ShaderMaterial
+@export var outline_material: ShaderMaterial = DEFAULT_OUTLINE_MATERIAL
 
 ## Array of specific meshes to highlight. Leave empty to auto-detect nodes.
 @export var target_meshes: Array[GeometryInstance3D]
@@ -104,6 +107,9 @@ func _ready() -> void:
 		return
 
 	#print("HighlightComponent: Initializing component.")
+
+	if not is_instance_valid(outline_material):
+		outline_material = DEFAULT_OUTLINE_MATERIAL
 
 	if not is_instance_valid(interact_component):
 		var parent: Node = get_parent()

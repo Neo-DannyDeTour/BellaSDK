@@ -1,0 +1,12 @@
+[gd_resource type="ShaderMaterial" format=3 uid="uid://cxvh8cxg2n0j2"]
+
+[ext_resource type="Shader" uid="uid://f54os6ddxea8" path="res://vfx/unlit_outline_material.gdshader" id="1_unlit"]
+
+[resource]
+render_priority = 0
+shader = ExtResource("1_unlit")
+shader_parameter/highlight_color = Color(0, 1, 0.5, 1)
+shader_parameter/blink_speed = 8.0
+shader_parameter/min_intensity = 0.2
+shader_parameter/max_intensity = 1.0
+shader_parameter/alpha_scissor_threshold = 0.5
