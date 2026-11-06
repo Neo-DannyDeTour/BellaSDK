@@ -1,0 +1,19 @@
+[gd_resource type="ORMMaterial3D" format=3 uid="uid://5n1h1qe3ugur"]
+
+[ext_resource type="Texture2D" uid="uid://4ln17y77dpns" path="res://assets/materials/stone_wall_masonry/textures/stone_wall_masonry_albedo.png" id="1_albedo"]
+[ext_resource type="Texture2D" uid="uid://dpn3c7htccn08" path="res://assets/materials/stone_wall_masonry/textures/stone_wall_masonry_orm.png" id="2_orm"]
+[ext_resource type="Texture2D" uid="uid://dqy4mch21unym" path="res://assets/materials/stone_wall_masonry/textures/stone_wall_masonry_normal.png" id="3_normal"]
+[ext_resource type="Texture2D" uid="uid://sha8sn6g14yr" path="res://assets/materials/stone_wall_masonry/textures/stone_wall_masonry_height.png" id="4_height"]
+
+[resource]
+resource_name = "stone_wall_masonry"
+albedo_texture = ExtResource("1_albedo")
+orm_texture = ExtResource("2_orm")
+normal_enabled = true
+normal_scale = -0.1
+normal_texture = ExtResource("3_normal")
+heightmap_enabled = true
+heightmap_scale = 0.235
+heightmap_texture = ExtResource("4_height")
+uv1_scale = Vector3(0.5, 0.5, 0.5)
+uv1_triplanar = true
