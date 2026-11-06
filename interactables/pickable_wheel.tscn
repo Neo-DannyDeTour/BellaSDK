@@ -23,9 +23,6 @@ mesh = NodePath("hl2_wheel")
 float_force = 1.0
 water_drag = 4.0
 water_angular_drag = 3.0
-hold_at_chest = true
-custom_hold_distance = 0.15
-hold_vertical_offset = -0.45
 held_transparency = 0.75
 
 [node name="HighlightComponent" parent="." index="1" unique_id=1233358358]

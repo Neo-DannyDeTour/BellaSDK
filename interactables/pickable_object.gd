@@ -60,13 +60,13 @@ const MIN_HOLD_DISTANCE: float = 1.2
 @export var hold_distance_offset: float = 0.0
 
 ## When enabled, anchors the object at chest height instead of floor-hovering.
-@export var hold_at_chest: bool = false
+@export var hold_at_chest: bool = true
 
 ## Explicit hold distance in meters. Values >= 0.0 override default distance limits.
-@export var custom_hold_distance: float = -1.0
+@export var custom_hold_distance: float = 0.15
 
 ## Vertical elevation offset in meters added to the hold target position.
-@export var hold_vertical_offset: float = 0.0
+@export var hold_vertical_offset: float = -0.45
 
 ## Euler rotation offset in degrees applied relative to the player's view yaw.
 @export var hold_rotation_offset_deg: Vector3 = Vector3.ZERO

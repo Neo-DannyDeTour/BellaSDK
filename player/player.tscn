@@ -530,6 +530,7 @@ disabled = true
 
 [node name="CrouchCast" type="RayCast3D" parent="." unique_id=1427954589]
 target_position = Vector3(0, 2, 0)
+collision_mask = 5
 
 [node name="StairsAheadCast" type="RayCast3D" parent="." unique_id=1957762492]
 unique_name_in_owner = true

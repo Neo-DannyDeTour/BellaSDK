@@ -135,7 +135,7 @@ func process_vault_scan(max_reach: float = 2.1) -> void:
 	forward_dir = forward_dir.normalized()
 
 	# 1. FORWARD CAST (Multi-Height Wall Check against Layer 1 Environment and Layer 3 Interactive)
-	var heights_to_check: Array[float] = [0.5, 1.0, 1.5]
+	var heights_to_check: Array[float] = [1.5, 1.0, 0.5]
 	var forward_result: Dictionary = {}
 	var mask: int = (1 << 0) | (1 << 2)
 
@@ -165,15 +165,25 @@ func process_vault_scan(max_reach: float = 2.1) -> void:
 	var hit_normal: Vector3 = forward_result.get("normal", Vector3.ZERO)
 
 	# 2. DOWNWARD CAST (Find Ledge Top)
-	var down_start: Vector3 = highest_hit - (hit_normal * 0.15)
-	down_start.y = player_body.global_position.y + max_reach
-	var down_end: Vector3 = down_start + Vector3(0.0, -max_reach - 0.5, 0.0)
+	var down_result: Dictionary = {}
+	var down_offsets: Array[float] = [0.15, 0.08]
+	for offset: float in down_offsets:
+		var down_start: Vector3 = highest_hit - (hit_normal * offset)
+		down_start.y = player_body.global_position.y + max_reach
+		var down_end: Vector3 = down_start + Vector3(0.0, -max_reach - 0.5, 0.0)
 
-	var down_result: Dictionary = Utilities.raycast_3d(
-		space_state, down_start, down_end, mask, exclude_rids
-	)
-	var down_norm: Vector3 = down_result.get("normal", Vector3.ZERO)
-	if down_result.is_empty() or down_norm.y < 0.7:
+		var candidate: Dictionary = Utilities.raycast_3d(
+			space_state, down_start, down_end, mask, exclude_rids
+		)
+		var norm: Vector3 = candidate.get("normal", Vector3.ZERO)
+		if not candidate.is_empty() and norm.y >= 0.7:
+			var candidate_pos: Vector3 = candidate.get("position", Vector3.ZERO)
+			var h: float = candidate_pos.y - player_body.global_position.y
+			if h > max_step_height and h <= max_reach:
+				down_result = candidate
+				break
+
+	if down_result.is_empty():
 		Events.vault_prompt_updated.emit(false, Vector3.ZERO)
 		return
 
@@ -184,10 +194,6 @@ func process_vault_scan(max_reach: float = 2.1) -> void:
 
 	var ledge_point: Vector3 = down_result.get("position", Vector3.ZERO)
 	var vault_height: float = ledge_point.y - player_body.global_position.y
-
-	if vault_height <= max_step_height or vault_height > max_reach:
-		Events.vault_prompt_updated.emit(false, Vector3.ZERO)
-		return
 
 	# 3. CLEARANCE CAST (Headroom Check)
 	var clearance_start: Vector3 = ledge_point + (forward_dir * 0.15) + Vector3(0.0, 0.05, 0.0)

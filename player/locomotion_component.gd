@@ -178,6 +178,8 @@ func _ready() -> void:
 	set_process(false)
 	set_physics_process(false)
 	print("LocomotionComponent: _ready() initialized.")
+	if is_instance_valid(crouch_cast_check):
+		crouch_cast_check.collision_mask = CollisionLayers.MASK_SOLID_WORLD
 	if Events.has_signal(SIG_HEAVY_CARRY):
 		Utilities.safe_connect(Events.heavy_carry_toggled, _on_heavy_carry_toggled)
 	if Events.has_signal(SIG_SAND_SURFACE):
