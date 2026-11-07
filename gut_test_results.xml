@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <testsuites name="GutTests" failures="0" tests="4" >
-  <testsuite name="test/unit/test_state_vault.gd" tests="4" failures="0" skipped="0" time="12.505168" >
-      <testcase name="test_enter_zeroes_velocity_and_binds_signal" assertions="2" status="pass" classname="test/unit/test_state_vault.gd" time="5.452198" >
+  <testsuite name="test/unit/test_water_level_control.gd" tests="4" failures="0" skipped="0" time="0.594788" >
+      <testcase name="test_water_level_lowering_anchors_floor" assertions="9" status="pass" classname="test/unit/test_water_level_control.gd" time="0.067021" >
       </testcase>
-      <testcase name="test_exit_disconnects_signal" assertions="1" status="pass" classname="test/unit/test_state_vault.gd" time="2.280989" >
+      <testcase name="test_water_level_toggle_restores_baseline" assertions="3" status="pass" classname="test/unit/test_water_level_control.gd" time="0.26095" >
       </testcase>
-      <testcase name="test_physics_update_maintains_zero_velocity" assertions="1" status="pass" classname="test/unit/test_state_vault.gd" time="2.431713" >
+      <testcase name="test_water_level_one_shot_ignores_power_off" assertions="2" status="pass" classname="test/unit/test_water_level_control.gd" time="0.183412" >
       </testcase>
-      <testcase name="test_on_vault_finished_transitions_to_air" assertions="2" status="pass" classname="test/unit/test_state_vault.gd" time="2.340268" >
+      <testcase name="test_water_level_depth_clamping" assertions="2" status="pass" classname="test/unit/test_water_level_control.gd" time="0.083405" >
       </testcase>
   </testsuite>
 </testsuites>
