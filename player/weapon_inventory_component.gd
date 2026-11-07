@@ -169,9 +169,28 @@ func shoot_active_weapon() -> void:
 ## Triggers reload on the currently equipped weapon in [member slots].
 func reload_active_weapon() -> void:
 	print("WeaponInventoryComponent: reload_active_weapon() called.")
+	var player_node: Node = NodeQuery.find_ancestor_in_group(self, &"player")
+	if is_instance_valid(player_node):
+		var loc: Variant = player_node.get(&"locomotion_component")
+		if loc is PlayerLocomotionComponent and (loc as PlayerLocomotionComponent).sprint_active:
+			print("WeaponInventoryComponent: Reload blocked - player sprinting.")
+			return
+
 	if current_slot_index >= 0 and is_instance_valid(slots[current_slot_index]):
 		if slots[current_slot_index].has_method("reload"):
 			slots[current_slot_index].call("reload")
+
+
+## Triggers procedural weapon inspection on the currently equipped weapon.
+func inspect_active_weapon() -> bool:
+	print("WeaponInventoryComponent: inspect_active_weapon() called.")
+	if current_slot_index >= 0 and is_instance_valid(slots[current_slot_index]):
+		var active_gun: Node3D = slots[current_slot_index]
+		if active_gun.has_method(&"inspect"):
+			return bool(active_gun.call(&"inspect"))
+	if is_instance_valid(weapon_holder) and weapon_holder.has_method(&"inspect"):
+		return bool(weapon_holder.call(&"inspect"))
+	return false
 
 
 ## Adds reserve ammunition to weapons matching [param target_ammo_type], clamped to 5x capacity.

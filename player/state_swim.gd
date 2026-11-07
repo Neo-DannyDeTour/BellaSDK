@@ -58,7 +58,7 @@ func _ready() -> void:
 	_point_query = PhysicsPointQueryParameters3D.new()
 	_point_query.collide_with_areas = true
 	_point_query.collide_with_bodies = false
-	_point_query.collision_mask = 6
+	_point_query.collision_mask = (CollisionLayers.MASK_PLAYER | CollisionLayers.MASK_INTERACTIVE)
 
 	is_infinite_swim = GlobalSettings.get_setting_bool("Accessibility", "infinite_swim", false)
 	if not Events.infinite_swim_toggled.is_connected(_on_infinite_swim_toggled):

@@ -35,38 +35,38 @@ const SWING_CLIMB_PITCH_THRESHOLD: float = 0.55
 const SWING_SLIDE_SPEED: float = 4.0
 
 ## Gravity multiplier applied to the swing pendulum for a heavier, grounded arc.
-const SWING_GRAVITY_SCALE: float = 1.85
+const SWING_GRAVITY_SCALE: float = 2.1
 
 ## Tangential pump acceleration (m/s^2) when driving a swing with WASD.
 # shortcut: fixed constant, promote to ClimbRope3D export if per-rope pump tuning is needed
-const SWING_PUMP_ACCEL: float = 11.0
+const SWING_PUMP_ACCEL: float = 16.5
 
-## Maximum swing angle in radians (50 deg) beyond which WASD pumping cuts off.
-const SWING_MAX_PUMP_ANGLE_RAD: float = 0.8726646
+## Maximum swing angle in radians (60 deg) beyond which WASD pumping cuts off.
+const SWING_MAX_PUMP_ANGLE_RAD: float = 1.0471976
 
 ## Active angular velocity damping rate while pumping the swing pendulum.
-const SWING_DAMPING: float = 0.8
+const SWING_DAMPING: float = 0.45
 
 ## Stronger damping rate applied when no pump input is held so the rope settles quickly.
-const SWING_IDLE_DAMPING: float = 3.2
+const SWING_IDLE_DAMPING: float = 2.4
 
 ## Extra damping rate applied while actively climbing up or down the swing rope.
 const SWING_CLIMB_BRAKE_DAMPING: float = 4.5
 
 ## Quadratic air drag coefficient opposing high-speed pendulum motion.
-const SWING_AIR_DRAG: float = 0.02
+const SWING_AIR_DRAG: float = 0.005
 
 ## Forward velocity boost added along flat camera look when launching from a swing.
-const SWING_JUMP_FWD_BOOST: float = 4.0
+const SWING_JUMP_FWD_BOOST: float = 6.0
 
 ## Maximum horizontal speed (m/s) allowed when launching off a swing rope.
-const SWING_JUMP_MAX_HORIZ_SPEED: float = 9.5
+const SWING_JUMP_MAX_HORIZ_SPEED: float = 16.5
 
 ## Base upward velocity added when launching from a swing rope.
-const SWING_JUMP_BASE_UP: float = 4.0
+const SWING_JUMP_BASE_UP: float = 5.2
 
 ## Additional upward velocity scaled by upward camera pitch on swing launch.
-const SWING_JUMP_PITCH_UP: float = 2.0
+const SWING_JUMP_PITCH_UP: float = 4.2
 
 ## Maximum swing speed (m/s) below which the player is still enough to fire a weapon.
 const SWING_STILL_SPEED_THRESHOLD: float = 0.75
@@ -372,9 +372,13 @@ func _update_swing_mode(p: Player, delta: float, input_dir: Vector2, is_sliding:
 		)
 		var tangent_wish: Vector3 = wish_dir - radial_dir * wish_dir.dot(radial_dir)
 		if tangent_wish.length_squared() > 0.0001:
+			var tangent_norm: Vector3 = tangent_wish.normalized()
+			# Auto-phase backswing: continuous W pumping follows existing motion instead of braking
+			if _swing_velocity.length_squared() > 0.25 and tangent_norm.dot(_swing_velocity) < 0.0:
+				tangent_norm = -tangent_norm
 			var angle_ratio: float = clampf(swing_angle / SWING_MAX_PUMP_ANGLE_RAD, 0.0, 1.0)
-			var authority: float = cos(angle_ratio * PI * 0.5)
-			_swing_velocity += (tangent_wish.normalized() * (SWING_PUMP_ACCEL * authority * delta))
+			var authority: float = clampf(cos(angle_ratio * PI * 0.5), 0.25, 1.0)
+			_swing_velocity += tangent_norm * (SWING_PUMP_ACCEL * authority * delta)
 
 	var active_damping: float = SWING_DAMPING if is_pumping else SWING_IDLE_DAMPING
 	if is_actively_climbing:
@@ -481,7 +485,7 @@ func _check_dismount(p: Player) -> bool:
 			if horiz_launch.length() > SWING_JUMP_MAX_HORIZ_SPEED:
 				horiz_launch = horiz_launch.normalized() * SWING_JUMP_MAX_HORIZ_SPEED
 			var swing_vel: Vector3 = Vector3(
-				horiz_launch.x, clampf(raw_launch.y, -4.0, 4.0) + up_vel, horiz_launch.z
+				horiz_launch.x, clampf(raw_launch.y, -2.0, 6.5) + up_vel, horiz_launch.z
 			)
 			p.global_position += flat_fwd * DISMOUNT_SEPARATION
 			_dismount_jump(p, swing_vel, flat_fwd)
@@ -622,3 +626,8 @@ func _ease_camera_roll_to_zero(p: Player) -> void:
 		. set_trans(Tween.TRANS_SINE)
 		. set_ease(Tween.EASE_OUT)
 	)
+
+
+## Safely resolves the owning [Player] instance.
+func _get_player() -> Player:
+	return player if player is Player else null

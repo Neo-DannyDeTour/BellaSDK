@@ -101,6 +101,12 @@ var _claw_exclude_rids: Array[RID] = []
 ## Reusable transition payload dictionary for claw lunge air state transition.
 var _claw_transition_msg: Dictionary = {&"jump": true}
 
+## Tracks continuous hold duration in seconds on the reload action button.
+var _reload_hold_time: float = 0.0
+
+## Indicates whether hold reload triggered inspect on current press.
+var _reload_hold_inspect_triggered: bool = false
+
 
 ## Initializes component, caches player, and binds scanner and event listeners.
 func initialize(p_player: CharacterBody3D) -> void:
@@ -192,13 +198,40 @@ func process_interaction(delta: float) -> void:
 			elif is_instance_valid(interaction_scanner):
 				interaction_scanner.handle_shoot_input()
 
+		var is_inspect_triggered: bool = (
+			GestureInputManager.consume_buffered_action("weapon_inspect")
+			or GestureInputManager.is_action_just_triggered("weapon_inspect")
+		)
+
+		if InputMap.has_action("reload") and Input.is_action_pressed("reload"):
+			_reload_hold_time += delta
+			if _reload_hold_time >= 0.45 and not _reload_hold_inspect_triggered:
+				_reload_hold_inspect_triggered = true
+				is_inspect_triggered = true
+				print("InteractionComponent: Held reload detected -> triggering inspect.")
+		else:
+			_reload_hold_time = 0.0
+			_reload_hold_inspect_triggered = false
+
+		if is_inspect_triggered and is_instance_valid(weapon_inventory):
+			print("InteractionComponent: Triggering weapon inspect.")
+			weapon_inventory.inspect_active_weapon()
+
 		var is_reload_triggered: bool = GestureInputManager.consume_buffered_action("reload")
-		if is_reload_triggered:
-			print("InteractionComponent: Processing reload trigger.")
-			if is_instance_valid(weapon_inventory):
-				weapon_inventory.reload_active_weapon()
-			elif is_instance_valid(interaction_scanner):
-				interaction_scanner.handle_reload_input()
+		if is_reload_triggered and not _reload_hold_inspect_triggered:
+			var is_sprinting: bool = false
+			if is_instance_valid(player):
+				var loc: Variant = player.get(&"locomotion_component")
+				if loc is PlayerLocomotionComponent:
+					is_sprinting = (loc as PlayerLocomotionComponent).sprint_active
+			if is_sprinting:
+				print("InteractionComponent: Reload blocked while sprinting.")
+			else:
+				print("InteractionComponent: Processing reload trigger.")
+				if is_instance_valid(weapon_inventory):
+					weapon_inventory.reload_active_weapon()
+				elif is_instance_valid(interaction_scanner):
+					interaction_scanner.handle_reload_input()
 
 
 ## Evaluates unhandled input events for gesture-resolved input routing.

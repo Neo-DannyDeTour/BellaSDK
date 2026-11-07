@@ -251,8 +251,8 @@ func _build_collision_ramp(ramp_points: PackedVector2Array) -> void:
 			add_child(ramp_body)
 
 	# Physics Layer 1: Environment
-	ramp_body.collision_layer = 1
-	ramp_body.collision_mask = 0
+	ramp_body.collision_layer = CollisionLayers.MASK_ENVIRONMENT
+	ramp_body.collision_mask = CollisionLayers.MASK_NONE
 
 	if not is_instance_valid(ramp_collision):
 		ramp_collision = ramp_body.get_node_or_null("RampCollision") as CollisionPolygon3D

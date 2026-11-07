@@ -12,6 +12,12 @@ signal pause_toggled(is_paused: bool)
 signal noclip_toggled(is_flying: bool)
 
 # --------------------------------------
+# CONSTANTS
+# --------------------------------------
+## Fallback preloaded system menu packed scene avoiding runtime load stalls.
+const DEFAULT_MENU_SCENE: PackedScene = preload("res://ui/main_menu.tscn")
+
+# --------------------------------------
 # EXPORTS
 # --------------------------------------
 @export_category("Node References")
@@ -114,13 +120,8 @@ func _find_console_reference() -> void:
 ## Instantiates the menu scene and attaches it to the viewport root safely.
 func _setup_menu() -> void:
 	print("SystemMenuController: Setting up system menu scene.")
-	if not menu_scene:
-		if ResourceLoader.exists("res://ui/main_menu.tscn"):
-			menu_scene = load("res://ui/main_menu.tscn") as PackedScene
-
-	if not menu_scene:
-		print("SystemMenuController: menu_scene is null or not assigned.")
-		return
+	if not is_instance_valid(menu_scene):
+		menu_scene = DEFAULT_MENU_SCENE
 
 	var scene_node: Node = menu_scene.instantiate()
 	if not is_instance_valid(scene_node):

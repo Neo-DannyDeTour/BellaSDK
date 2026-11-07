@@ -72,6 +72,7 @@
 [ext_resource type="Script" uid="uid://cpanucihj2fsj" path="res://player/state_wolf_wall_run.gd" id="70_j3r50"]
 [ext_resource type="Script" uid="uid://nmq3xe2f3kq1" path="res://player/state_wolf_climb.gd" id="71_utr5e"]
 [ext_resource type="Script" uid="uid://p5dlbr1nqemi" path="res://player/state_jib_crane.gd" id="72_jibcr"]
+[ext_resource type="Script" path="res://player/weapon_procedural_animator.gd" id="73_animator"]
 
 [sub_resource type="SphereShape3D" id="SphereShape3D_cw2d6"]
 radius = 0.1
@@ -482,7 +483,8 @@ spot_angle_attenuation = 20.0
 
 [node name="WeaponHolder" type="Node3D" parent="Head/Eyes/Camera3D" unique_id=22330715]
 unique_name_in_owner = true
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.3, -0.3, -0.5)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.22, -0.22, -0.45)
+script = ExtResource("73_animator")
 
 [node name="OmniLight3D" type="OmniLight3D" parent="Head/Eyes/Camera3D" unique_id=846997547]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.1)
