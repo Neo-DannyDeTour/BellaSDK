@@ -433,6 +433,8 @@ func initialize_raster_pipelines(color_texture: RID, depth_texture: RID):
 	var pipeline_colorblend_state_attachment := RDPipelineColorBlendStateAttachment.new()
 	pipeline_colorblend_state.attachments.append(pipeline_colorblend_state_attachment)
 
+	if display_pipeline.is_valid():
+		rd.free_rid(display_pipeline)
 	display_pipeline = rd.render_pipeline_create(display_shader, framebuffer_format, display_vertex_format, RenderingDevice.RenderPrimitive.RENDER_PRIMITIVE_TRIANGLES, pipeline_rasterization_state, pipeline_multisample_state, pipeline_depthstencil_state, pipeline_colorblend_state)
 
 func _render_callback(effect_callback_type, render_data):
@@ -454,9 +456,13 @@ func _render_callback(effect_callback_type, render_data):
 			var rendersceneData: RenderSceneData = render_data.get_render_scene_data()
 
 			if size != last_size or uniform_sets == null or uniform_sets.size() != view_count * 4 or color_images.size() == 0 or color_images[0] != buffers.get_color_layer(0) or blit_screen_images.size() == 0 or msaa_mode != last_msaa_mode:
-				initialize_compute()
+				if msaa_mode != last_msaa_mode or not pipeline.is_valid():
+					initialize_compute()
 				initialize_raster_pipelines(buffers.get_color_layer(0, is_msaa_on), buffers.get_depth_layer(0, is_msaa_on))
 
+				for item in accumulation_textures:
+					if item.is_valid():
+						rd.free_rid(item)
 				accumulation_textures.clear()
 				uniform_sets.clear()
 
@@ -466,36 +472,62 @@ func _render_callback(effect_callback_type, render_data):
 						rd.free_rid(item)
 				blit_screen_images.clear()
 
+				if resized_depth.is_valid():
+					rd.free_rid(resized_depth)
+					resized_depth = RID()
+				if general_data_buffer.is_valid():
+					rd.free_rid(general_data_buffer)
+					general_data_buffer = RID()
+				if light_data_buffer.is_valid():
+					rd.free_rid(light_data_buffer)
+					light_data_buffer = RID()
+				if point_sample_data_buffer.is_valid():
+					rd.free_rid(point_sample_data_buffer)
+					point_sample_data_buffer = RID()
+				if camera_override_buffer.is_valid():
+					rd.free_rid(camera_override_buffer)
+					camera_override_buffer = RID()
+
 				for view in range(view_count):
 					color_images.append(buffers.get_color_layer(view, false))
 
 					var depth_image: RID = buffers.get_depth_layer(view, false)
 
-					var blankImageData: PackedByteArray = []
-					blankImageData.resize(new_size.x * new_size.y * 4 * 4)
-
-					var base_colorformat: RDTextureFormat = rd.texture_get_format(color_images[view])
+					var data_tex_format: RDTextureFormat = rd.texture_get_format(color_images[view])
+					var color_tex_format: RDTextureFormat = rd.texture_get_format(color_images[view])
 
 					var blit_screen_format: RDTextureFormat = rd.texture_get_format(buffers.get_color_layer(view, is_msaa_on))
 					blit_screen_format.usage_bits |= RenderingDevice.TEXTURE_USAGE_STORAGE_BIT | RenderingDevice.TEXTURE_USAGE_SAMPLING_BIT
 					blit_screen_images.append(rd.texture_create(blit_screen_format, RDTextureView.new()))
 
-					base_colorformat.format = RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT
-					base_colorformat.width = new_size.x
-					base_colorformat.height = new_size.y
+					data_tex_format.format = RenderingDevice.DATA_FORMAT_R32G32B32A32_SFLOAT
+					data_tex_format.width = new_size.x
+					data_tex_format.height = new_size.y
+					data_tex_format.usage_bits |= RenderingDevice.TEXTURE_USAGE_STORAGE_BIT | RenderingDevice.TEXTURE_USAGE_SAMPLING_BIT | RenderingDevice.TEXTURE_USAGE_CAN_COPY_TO_BIT
 
-					accumulation_textures.append(rd.texture_create(base_colorformat, RDTextureView.new(), [blankImageData]))
-					accumulation_textures.append(rd.texture_create(base_colorformat, RDTextureView.new(), [blankImageData]))
-					accumulation_textures.append(rd.texture_create(base_colorformat, RDTextureView.new(), [blankImageData]))
-					accumulation_textures.append(rd.texture_create(base_colorformat, RDTextureView.new(), [blankImageData]))
-					accumulation_textures.append(rd.texture_create(base_colorformat, RDTextureView.new(), [blankImageData]))
-					accumulation_textures.append(rd.texture_create(base_colorformat, RDTextureView.new(), [blankImageData]))
+					color_tex_format.format = RenderingDevice.DATA_FORMAT_R16G16B16A16_SFLOAT
+					color_tex_format.width = new_size.x
+					color_tex_format.height = new_size.y
+					color_tex_format.usage_bits |= RenderingDevice.TEXTURE_USAGE_STORAGE_BIT | RenderingDevice.TEXTURE_USAGE_SAMPLING_BIT | RenderingDevice.TEXTURE_USAGE_CAN_COPY_TO_BIT
 
-					#reflections
-					accumulation_textures.append(rd.texture_create(base_colorformat, RDTextureView.new(), [blankImageData]))
+					var view_tex_rids: Array[RID] = [
+						rd.texture_create(data_tex_format, RDTextureView.new(), []),
+						rd.texture_create(color_tex_format, RDTextureView.new(), []),
+						rd.texture_create(color_tex_format, RDTextureView.new(), []),
+						rd.texture_create(color_tex_format, RDTextureView.new(), []),
+						rd.texture_create(data_tex_format, RDTextureView.new(), []),
+						rd.texture_create(data_tex_format, RDTextureView.new(), []),
+						rd.texture_create(color_tex_format, RDTextureView.new(), []),
+					]
+					for tex_rid: RID in view_tex_rids:
+						rd.texture_clear(tex_rid, Color(0.0, 0.0, 0.0, 0.0), 0, 1, 0, 1)
+						accumulation_textures.append(tex_rid)
 
-					general_data_buffer = rd.uniform_buffer_create(GENERIC_DATA_UBO_BYTES)
+					if not general_data_buffer.is_valid():
+						general_data_buffer = rd.uniform_buffer_create(GENERIC_DATA_UBO_BYTES)
 
+					if resized_depth.is_valid():
+						rd.free_rid(resized_depth)
 					var depthformat: RDTextureFormat = rd.texture_get_format(depth_image)
 					depthformat.width = new_size.x
 					depthformat.height = new_size.y
@@ -635,23 +667,26 @@ func _render_callback(effect_callback_type, render_data):
 					camera_uniform.add_id(general_data_buffer)
 					uniforms_array.append(camera_uniform)
 
-					light_data_buffer = rd.uniform_buffer_create(6272)
+					if not light_data_buffer.is_valid():
+						light_data_buffer = rd.uniform_buffer_create(6272)
 					var light_data_uniform = RDUniform.new()
 					light_data_uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_UNIFORM_BUFFER
 					light_data_uniform.binding = 15
 					light_data_uniform.add_id(light_data_buffer)
 					uniforms_array.append(light_data_uniform)
 
-					var sampleData: PackedByteArray = []
-					sampleData.resize(512)
-					point_sample_data_buffer = rd.storage_buffer_create(512, sampleData)
+					if not point_sample_data_buffer.is_valid():
+						var sampleData: PackedByteArray = []
+						sampleData.resize(512)
+						point_sample_data_buffer = rd.storage_buffer_create(512, sampleData)
 					var point_sample_data_uniform = RDUniform.new()
 					point_sample_data_uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_STORAGE_BUFFER
 					point_sample_data_uniform.binding = 16
 					point_sample_data_uniform.add_id(point_sample_data_buffer)
 					uniforms_array.append(point_sample_data_uniform)
 
-					camera_override_buffer = rd.uniform_buffer_create(CAMERA_UBO_BYTES)
+					if not camera_override_buffer.is_valid():
+						camera_override_buffer = rd.uniform_buffer_create(CAMERA_UBO_BYTES)
 					var cameraData = camera_override_buffer
 					var camera_data_uniform = RDUniform.new()
 					camera_data_uniform.uniform_type = RenderingDevice.UNIFORM_TYPE_UNIFORM_BUFFER

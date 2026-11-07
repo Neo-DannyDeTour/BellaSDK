@@ -8,11 +8,11 @@
 // Invocations in the (x, y, z) dimension
 layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
 
-layout(rgba16f, binding = 0) uniform image2D output_data_image;
+layout(rgba32f, binding = 0) uniform image2D output_data_image;
 layout(rgba16f, binding = 1) uniform image2D output_color_image;
 
-layout(rgba32f, binding = 2) uniform image2D accum_1A_image;
-layout(rgba32f, binding = 3) uniform image2D accum_1B_image;
+layout(rgba16f, binding = 2) uniform image2D accum_1A_image;
+layout(rgba16f, binding = 3) uniform image2D accum_1B_image;
 
 layout(rgba32f, binding = 4) uniform image2D accum_2A_image;
 layout(rgba32f, binding = 5) uniform image2D accum_2B_image;
@@ -141,8 +141,6 @@ float sampleScene(
 	float edgeFade = min(smoothstep(0.0, 0.1, clampedWorldHeight), smoothstep(1.0, 0.9, clampedWorldHeight));
 	float extraLargeShape = extralargeNoiseValue * gradientSample.b;
 
-	float smallShape = texture(noise_small, (worldPosition - smallNoisePos) / smallnoisescale).r;
-
 	float curlHeightSample = (1.0 - gradientSample.a);
 
 	float effectorAdditive = 0.0;
@@ -154,20 +152,31 @@ float sampleScene(
 
 		if (!ambientsample && curlHeightSample > 0.0 && min(curlPower, lod) > 0.5){
 			float curlLod = remap(lod, 0.5, 1.0, 0.0, 1.0);
-			worldPosition += (((texture(curl_noise, (worldPosition - mediumNoisePos) / mediumnoisescale).xyz * 2.0) - 1.0) * vec3(1.0, 0.2, 1.0) + vec3(WindDirection.x, 0.0, WindDirection.y) * 0.9) * curlPower * curlHeightSample * curlLod;
-			worldPosition += (((texture(curl_noise, (worldPosition - mediumNoisePos) / mediumnoisescale).xyz * 2.0) - 1.0) * vec3(1.0, 0.2, 1.0) + vec3(WindDirection.x, 0.0, WindDirection.y) * 0.9) * curlPower * curlHeightSample * curlLod;
-			worldPosition += (((texture(curl_noise, (worldPosition - mediumNoisePos) / mediumnoisescale).xyz * 2.0) - 1.0) * vec3(1.0, 0.2, 1.0) + vec3(WindDirection.x, 0.0, WindDirection.y) * 0.9) * curlPower * curlHeightSample * curlLod;
+			vec3 curlOffset = (((texture(curl_noise, (worldPosition - mediumNoisePos) / mediumnoisescale).xyz * 2.0) - 1.0) * vec3(1.0, 0.2, 1.0) + vec3(WindDirection.x, 0.0, WindDirection.y) * 0.9) * curlPower * curlHeightSample * curlLod;
+			worldPosition += curlOffset * 3.0;
 
 			clampedWorldHeight = remap(worldPosition.y, cloudfloor, cloudceiling, 0.0, 1.0);
 			gradientSample = texture(heightmask, vec2(clampedWorldHeight, 0.5)).rgba;
 		}
 	}
 
+	if (extraLargeShape <= 0.0001 && effectorAdditive <= 0.0){
+		return 0.0;
+	}
+
 	float largeShape = texture(large_noise, (worldPosition - largeNoisePos) / largenoisescale).r * extraLargeShape;
 	largeShape = smoothstep(coverage , coverage - 0.1, 1.0 - (largeShape * gradientSample.r)) + max(effectorAdditive, 0.0);
+	if (largeShape <= 0.0001 && effectorAdditive <= 0.0){
+		return 0.0;
+	}
+
 	vec4 mediumShapes = texture(noise_medium, (worldPosition - mediumNoisePos) / mediumnoisescale).rgba;
 	float mediumshape = 1.0 - mediumShapes.b;
-	smallShape = smallShape * gradientSample.g * pow((1.0 - mediumshape), smallscalePower);
+	float smallShape = 0.0;
+	if (!ambientsample && smallscalePower > 0.001 && gradientSample.g > 0.001){
+		smallShape = texture(noise_small, (worldPosition - smallNoisePos) / smallnoisescale).r;
+		smallShape = smallShape * gradientSample.g * pow((1.0 - mediumshape), smallscalePower);
+	}
 
 	float shape = mediumshape + max(effectorAdditive, 0.0);
 	shape = clamp(remap(shape, 1.0 - largeShape, 1.0, 0.0, 1.0), 0.0, 1.0);
@@ -175,6 +184,23 @@ float sampleScene(
 	shape += min(effectorAdditive, 0.0);
 
 	return clamp((shape * edgeFade), 0.0, 1.0);
+}
+
+vec2 getCloudLayerIntersections(vec3 origin, vec3 direction, float cloudfloor, float cloudceiling) {
+	if (abs(direction.y) < 0.0001) {
+		if (origin.y >= cloudfloor && origin.y <= cloudceiling) {
+			return vec2(0.0, 100000.0);
+		}
+		return vec2(-1.0, -1.0);
+	}
+	float t0 = (cloudfloor - origin.y) / direction.y;
+	float t1 = (cloudceiling - origin.y) / direction.y;
+	float tMin = min(t0, t1);
+	float tMax = max(t0, t1);
+	if (tMax < 0.0) {
+		return vec2(-1.0, -1.0);
+	}
+	return vec2(max(0.0, tMin), tMax);
 }
 
 float sampleSceneCoarse(
@@ -253,7 +279,7 @@ float sampleLighting(
 			heightGradient = clamp(smoothstep(sunUpValue - 0.1, sunUpValue, heightGradient), 0.0, 1.0);
 			float extraLargeShape = texture(extra_large_noise, (curPos.xz - extralargeNoisePos.xz) / extralargenoisescale).a;
 
-			thisDensity = sampleScene(largeNoisePos, mediumNoisePos, smallNoisePos, curPos, cloudceiling, cloudfloor, extraLargeShape, largenoisescale, mediumnoisescale, smallnoisescale, coverage, smallscalePower, curlPower, lod, true) * densityMultiplier * eachStepWeight;
+			thisDensity = sampleSceneCoarse(largeNoisePos, curPos, cloudceiling, cloudfloor, extraLargeShape, largenoisescale, coverage, lod) * densityMultiplier * eachStepWeight;
 			density += mix(1.0, thisDensity, heightGradient);
 		}
 		else{
@@ -526,9 +552,22 @@ void main() {
 		}
 	}
 
-	for (int i = 0; i < stepCount; i++) {
-		if (traveledDistance > linear_depth){
-			depthBreak = true;
+	vec2 cloudLayerBounds = getCloudLayerIntersections(rayOrigin, raydirection, cloudfloor, cloudceiling);
+	int activeStepCount = stepCount;
+	if (cloudLayerBounds.y < 0.0) {
+		traveledDistance = min(maxTheoreticalStep, linear_depth);
+		activeStepCount = 0;
+	} else if (cloudLayerBounds.x > 0.0) {
+		traveledDistance = min(cloudLayerBounds.x + newStep, maxTheoreticalStep);
+	}
+
+	for (int i = 0; i < activeStepCount; i++) {
+		if (traveledDistance > linear_depth || traveledDistance > cloudLayerBounds.y){
+			depthBreak = (traveledDistance > linear_depth);
+			if (traveledDistance > cloudLayerBounds.y && !depthBreak) {
+				traveledDistance = min(maxTheoreticalStep, linear_depth);
+				break;
+			}
 		}
 
 		curPos = rayOrigin + raydirection * traveledDistance;

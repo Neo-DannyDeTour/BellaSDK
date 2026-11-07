@@ -191,7 +191,7 @@ vec4 radialBlurColor(vec4 startColor, sampler2D colorImage, sampler2D depthImage
 		for(float i=1.0/Quality; i<=1.0; i+=1.0/Quality)
 		{
 			newUV = uv + vec2(cos(d) * blurHorizontal * i, sin(d) * blurVertical * i);
-			Color += texture2D_bicubic(colorImage, newUV, size);
+			Color += texture(colorImage, newUV);
 			count += 1.0;
 		}
 	}
@@ -404,7 +404,7 @@ void main() {
 		vec3 physicalFogColor = color.rgb;
 		float fogweight = 0.0;
 
-		if (directionalLightCount > 0.0){
+		if (directionalLightCount > 0.0 && density < 0.999 && atmosphericDensity > 0.001 && groundLinearFade > 0.001){
 			for (float i = 0.0; i < directionalLightCount; i++){
 				DirectionalLight light = directionalLights[int(i)];
 				vec3 sundir = normalize(light.direction.xyz);
@@ -412,7 +412,7 @@ void main() {
 				float sundensityaffect = clamp(dot(sundir, raydirection), 0.0, 1.0);
 				sundensityaffect = min(clamp(1.0 - (sundensityaffect * density), 0.0, 1.0), 1.0 - (sundensityaffect * clamp(maxTheoreticalStep - linear_depth, 0.0, 1.0)));
 				float lightPower = light.color.a * sunUpWeight * sundensityaffect;
-				vec4 atmosphericData = sampleAllAtmospherics(rayOrigin, raydirection, linear_depth, traveledDistance, 0.0, min(linear_depth, maxTheoreticalStep) / 10.0, 10.0, atmosphericDensity, sundir, light.color.rgb * lightPower, ambientfogdistancecolor);
+				vec4 atmosphericData = sampleAllAtmospherics(rayOrigin, raydirection, linear_depth, traveledDistance, 0.0, min(linear_depth, maxTheoreticalStep) / 2.0, 2.0, atmosphericDensity, sundir, light.color.rgb * lightPower, ambientfogdistancecolor);
 
 				physicalFogColor = mix(physicalFogColor, atmosphericData.rgb, clamp(atmosphericData.a * groundLinearFade, 0.0, 1.0));
 				fogweight += clamp(atmosphericData.a * groundLinearFade, 0.0, 1.0);
