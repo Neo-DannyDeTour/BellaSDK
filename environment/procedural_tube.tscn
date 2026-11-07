@@ -1,0 +1,37 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/procedural_tube.gd" id="1_script"]
+[ext_resource type="Material" path="res://materials/tube_opaque.tres" id="2_mat"]
+
+[sub_resource type="Curve3D" id="Curve3D_tube"]
+resource_local_to_scene = true
+_data = {
+"points": PackedVector3Array(0, 0, 0, 0.5, 1, 0, 0, 0, 0, -0.5, -1, 0, 0, 0, 0, 0, 2, 0),
+"tilts": PackedFloat32Array(0, 0)
+}
+point_count = 2
+
+[node name="ProceduralTube" type="Path3D"]
+curve = SubResource("Curve3D_tube")
+script = ExtResource("1_script")
+
+[node name="CSGPolygon3D" type="CSGPolygon3D" parent="."]
+use_collision = true
+collision_mask = 0
+polygon = PackedVector2Array(0.1, 0, 0.092388, 0.0382683, 0.0707107, 0.0707107, 0.0382683, 0.092388, 0, 0.1, -0.0382683, 0.092388, -0.0707107, 0.0707107, -0.092388, 0.0382683, -0.1, 0, -0.092388, -0.0382683, -0.0707107, -0.0707107, -0.0382683, -0.092388, 0, -0.1, 0.0382683, -0.092388, 0.0707107, -0.0707107, 0.092388, -0.0382683)
+mode = 2
+path_node = NodePath("..")
+path_interval_type = 0
+path_interval = 0.05
+path_simplify_angle = 0.0
+path_rotation = 2
+path_local = true
+path_continuous_u = true
+path_u_distance = 1.0
+path_joined = false
+smooth_faces = true
+material = ExtResource("2_mat")
+instance_shader_parameters/albedo_color = Color(0.85, 0.85, 0.85, 1)
+instance_shader_parameters/fresnel_power = 3.0
+instance_shader_parameters/metallic = 0.0
+instance_shader_parameters/roughness = 0.35

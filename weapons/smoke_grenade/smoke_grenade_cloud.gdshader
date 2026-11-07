@@ -2,7 +2,7 @@ shader_type fog;
 
 uniform vec4 smoke_albedo : source_color = vec4(0.68, 0.72, 0.76, 1.0);
 uniform vec4 emission_color : source_color = vec4(0.05, 0.07, 0.09, 1.0);
-uniform float base_density : hint_range(0.5, 12.0) = 6.5;
+uniform float base_density : hint_range(0.5, 24.0) = 12.0;
 uniform float clump_scale : hint_range(0.2, 4.0) = 0.95;
 uniform float clump_contrast : hint_range(0.3, 3.0) = 1.35;
 uniform float wave_speed : hint_range(0.0, 3.0) = 0.48;
@@ -117,7 +117,8 @@ void fog() {
 	}
 
 	float billow_disp = (fbm3(advected_pos * clump_scale + vec3(0.0, -TIME * wave_speed * 0.3, 0.0)) - 0.5) * 0.85;
-	float plume_shell = 1.0 - smoothstep(-0.65, 0.45, sdf_dist + billow_disp * expand);
+	float plume_shell = 1.0 - smoothstep(-0.35, 0.35, sdf_dist + billow_disp * expand);
+	float core_opacity_boost = 1.0 + (1.0 - smoothstep(-1.1, -0.15, sdf_dist)) * 0.85;
 
 	if (plume_shell <= 0.001) {
 		DENSITY = 0.0;
@@ -208,13 +209,14 @@ void fog() {
 
 		vec3 sample_uvw = advected_pos * clump_scale + vec3(0.0, -TIME * wave_speed * 0.22, 0.0);
 		float raw_clumps = fbm3(sample_uvw);
-		float sculpted_clumps = clamp(pow(raw_clumps * 1.35, clump_contrast), 0.25, 1.65);
+		float sculpted_clumps = clamp(pow(raw_clumps * 1.35, clump_contrast), 0.65, 1.75);
 
-		float final_density = base_density * plume_shell * bounds_mask * dissipation_alpha;
+		float final_density = base_density * plume_shell * core_opacity_boost * bounds_mask * dissipation_alpha;
 		final_density *= (sculpted_clumps + rim_compression * 0.8) * carve_transmittance;
 
 		DENSITY = max(0.0, final_density);
 		ALBEDO = smoke_albedo.rgb * mix(0.82, 1.08, raw_clumps);
-		EMISSION = emission_color.rgb * (1.0 + rim_compression * 0.45);
+		EMISSION = smoke_albedo.rgb * mix(0.38, 0.68, raw_clumps) +
+				emission_color.rgb * (1.0 + rim_compression * 0.45);
 	}
 }

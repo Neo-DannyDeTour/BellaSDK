@@ -7,7 +7,7 @@
 shader = ExtResource("2_shader")
 shader_parameter/smoke_albedo = Color(0.68, 0.72, 0.76, 1)
 shader_parameter/emission_color = Color(0.05, 0.07, 0.09, 1)
-shader_parameter/base_density = 6.5
+shader_parameter/base_density = 12.0
 shader_parameter/clump_scale = 0.95
 shader_parameter/clump_contrast = 1.35
 shader_parameter/wave_speed = 0.48

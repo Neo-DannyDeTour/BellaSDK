@@ -41,6 +41,7 @@ func register_zone(zone: FogVolume) -> void:
 	if not is_instance_valid(zone) or _zones.has(zone):
 		return
 	_zones.append(zone)
+	_ensure_sky_affect_for_local_fog(zone)
 	print("[SmokeManager] Registered volumetric zone: ", zone.name)
 
 
@@ -57,6 +58,7 @@ func register_cloud(cloud: SmokeGrenadeCloud) -> void:
 	if not is_instance_valid(cloud) or _grenade_clouds.has(cloud):
 		return
 	_grenade_clouds.append(cloud)
+	_ensure_sky_affect_for_local_fog(cloud)
 	print("[SmokeManager] Registered SmokeGrenadeCloud: ", cloud.name)
 
 
@@ -205,3 +207,23 @@ func is_line_of_sight_obscured(from: Vector3, to: Vector3) -> bool:
 				return true
 
 	return false
+
+
+## Enforces volumetric fog and sky affect on zero-density environments so local
+## [FogVolume] nodes occlude background and sky.
+func _ensure_sky_affect_for_local_fog(volume: FogVolume) -> void:
+	if not is_instance_valid(volume) or not volume.is_inside_tree():
+		return
+	var world: World3D = volume.get_world_3d()
+	if not is_instance_valid(world) or not is_instance_valid(world.environment):
+		return
+	var env: Environment = world.environment
+	if not env.volumetric_fog_enabled:
+		env.volumetric_fog_enabled = true
+		print("[SmokeManager] Enabled volumetric_fog_enabled for local FogVolume.")
+	if is_zero_approx(env.volumetric_fog_density):
+		if env.volumetric_fog_sky_affect < 1.0:
+			env.volumetric_fog_sky_affect = 1.0
+			print("[SmokeManager] Enforced volumetric_fog_sky_affect = 1.0 for zero-density env.")
+		if env.volumetric_fog_ambient_inject < 1.0:
+			env.volumetric_fog_ambient_inject = 1.0
