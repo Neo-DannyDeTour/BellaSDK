@@ -148,7 +148,6 @@
 [ext_resource type="PackedScene" uid="uid://crfas2bkomdv6" path="res://interactables/player_drone.tscn" id="148_wulwi"]
 [ext_resource type="PackedScene" uid="uid://u03hpjl4b83a" path="res://interactables/conveyor_belt.tscn" id="149_tuq0s"]
 [ext_resource type="PackedScene" uid="uid://bkxrbjc7txin4" path="res://ui/CCTV.tscn" id="150_rmtv5"]
-[ext_resource type="PackedScene" uid="uid://c3qg02p76y4a8" path="res://interactables/destructible_glass/destructible_glass.tscn" id="151_wpcei"]
 [ext_resource type="PackedScene" uid="uid://dkwgx5rjoegaa" path="res://interactables/spike_trap.tscn" id="152_wnq46"]
 [ext_resource type="PackedScene" uid="uid://b3622m00bjqxf" path="res://environment/torch.tscn" id="153_xd6xl"]
 [ext_resource type="PackedScene" uid="uid://lt3im032pfmx" path="res://interactables/burnable_obstacle.tscn" id="154_uvifi"]
@@ -294,10 +293,12 @@ background_mode = 2
 sky = SubResource("Sky_spvsq")
 sky_rotation = Vector3(0, 1.1519173, 0)
 sdfgi_min_cell_size = 1.0
+volumetric_fog_enabled = true
 volumetric_fog_density = 0.0
 volumetric_fog_gi_inject = 0.25
 volumetric_fog_length = 256.0
-volumetric_fog_sky_affect = 0.0
+volumetric_fog_ambient_inject = 1.0
+volumetric_fog_sky_affect = 1.0
 
 [sub_resource type="CompositorEffect" id="CompositorEffect_ym1oq"]
 resource_local_to_scene = false
@@ -4731,15 +4732,9 @@ conveyor_size = Vector2(2, 20)
 auto_sync_visuals = false
 manual_texture_rotation = 360.0
 
-[node name="DestructibleGlass" parent="." unique_id=1120620225 instance=ExtResource("151_wpcei")]
+[node name="DestructibleGlass" parent="." unique_id=1120620225 instance=ExtResource("144_a52dg")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 30.373, 7.2, 4.914)
-glass_size = Vector2(8, 3)
-glass_thickness = 0.01
-shard_rows = 16
-shard_cols = 16
-glass_color = Color(0.35000002, 0.675, 1, 0.4)
-net_color = Color(0.85, 0.85, 0.85, 1)
-net_scale = 30.0
+size = Vector2(8, 3)
 
 [node name="SpikeTrap" parent="." unique_id=1966813817 instance=ExtResource("152_wnq46")]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 28.467642, -1.485083, 30.299103)

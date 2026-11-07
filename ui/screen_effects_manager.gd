@@ -121,6 +121,10 @@ var _current_edge_condensation: float = 0.0
 ## ColorRect applying Bella's glasses steam/smoke condensation effect.
 @onready var condensation_overlay: ColorRect = get_node_or_null("CondensationOverlay") as ColorRect
 
+## ColorRect applying HL2 Episode Two Advisor psychic attack distortion effect.
+@onready
+var advisor_psychic_overlay: ColorRect = get_node_or_null("AdvisorPsychicOverlay") as ColorRect
+
 ## ColorRect applying full-screen fade transitions and color flashes.
 @onready var fade_overlay: ColorRect = $FadeOverlay
 
@@ -379,6 +383,7 @@ func _setup_fullscreen_layout() -> void:
 		wolf_vision_overlay,
 		speed_lines_overlay,
 		condensation_overlay,
+		advisor_psychic_overlay,
 		fade_overlay
 	]
 
@@ -443,6 +448,9 @@ func _initialize_overlays() -> void:
 			cnd_mat.set_shader_parameter(PARAM_FULL_LENS_FOG, 0.0)
 			cnd_mat.set_shader_parameter(PARAM_EDGE_CONDENSATION, 0.0)
 		condensation_overlay.hide()
+
+	if is_instance_valid(advisor_psychic_overlay):
+		advisor_psychic_overlay.hide()
 
 
 ## Verifies material presence and instantiates fallback transition shader.

@@ -17,7 +17,6 @@
 - vfx/emitter.gd
 - vfx/3Dshockwave_manager.gd
 - vfx/phys_explosion_3d.gd
-- interactables/destructible_glass/destructible_glass.gd
 - player/procedural_spiral_stairs_csg.gd
 - texture_baker.gd
 - environment/water_maker3_d.gd

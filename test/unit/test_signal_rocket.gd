@@ -54,6 +54,14 @@ func before_each() -> void:
 	autofree(rocket)
 
 
+## Cleans up spawned projectiles and references from root scene tree.
+func after_each() -> void:
+	var root: Window = get_tree().root
+	for child: Node in root.find_children("*", "SignalRocketProjectile", true, false):
+		if is_instance_valid(child) and not child.is_queued_for_deletion():
+			child.queue_free()
+
+
 ## Verifies equipping signal rocket auto-ignites the fuse and starts burn timer.
 func test_equip_ignites_flare() -> void:
 	rocket.equip_to_player(player_body)
@@ -148,6 +156,7 @@ func test_repick_thrown_rocket() -> void:
 
 ## Verifies interact_with called through interact_comp does not cause weapon duplication.
 func test_projectile_repick_no_duplication() -> void:
+	var slot_index: int = rocket.default_slot - 1
 	rocket.equip_to_player(player_body)
 	assert_true(rocket.is_equipped)
 
@@ -175,9 +184,7 @@ func test_projectile_repick_no_duplication() -> void:
 			count_projectiles += 1
 	assert_eq(count_projectiles, 0, "No duplicate projectiles should exist on floor.")
 
-	var equipped_rocket: SignalRocketWeapon = (
-		inventory.slots[rocket.default_slot - 1] as SignalRocketWeapon
-	)
+	var equipped_rocket: SignalRocketWeapon = inventory.slots[slot_index] as SignalRocketWeapon
 	assert_not_null(equipped_rocket, "Exactly one rocket weapon should be equipped in slot 4.")
 	assert_true(equipped_rocket.is_equipped)
 	assert_eq(equipped_rocket.current_ammo, 1)
@@ -213,7 +220,7 @@ func test_projectile_prompts_and_burnout() -> void:
 ## Verifies SignalRocketWeapon scene contains HighlightComponent for level pickup.
 func test_weapon_scene_has_highlight_component() -> void:
 	var wpn_inst: Node = WEAPON_SCENE.instantiate()
-	autofree(wpn_inst)
+	add_child_autofree(wpn_inst)
 	var hl: HighlightComponent = (
 		wpn_inst.get_node_or_null("HighlightComponent") as HighlightComponent
 	)

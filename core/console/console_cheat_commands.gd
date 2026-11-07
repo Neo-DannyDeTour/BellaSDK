@@ -335,6 +335,33 @@ func register_commands(registry: ConsoleCommandRegistry) -> void:
 	)
 	registry.register_command(
 		ConsoleCommand.new(
+			"psychic_pulse",
+			"Triggers Advisor psychic attack screen distortion pulse.",
+			_cmd_psychic_pulse,
+			func() -> Array[String]: return ["1.2", "0.8", "2.0", "3.0"],
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"advisor_pulse",
+			"Triggers Advisor psychic attack screen distortion pulse (alias).",
+			_cmd_psychic_pulse,
+			func() -> Array[String]: return ["1.2", "0.8", "2.0", "3.0"],
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
+			"psychic_vfx",
+			"Sets or clears sustained Advisor psychic screen distortion intensity.",
+			_cmd_psychic_vfx,
+			func() -> Array[String]: return ["0.0", "0.5", "1.0", "off"],
+			true
+		)
+	)
+	registry.register_command(
+		ConsoleCommand.new(
 			"shockwave",
 			"Spawns radial shockwave effect at player position.",
 			_cmd_shockwave,
@@ -1198,6 +1225,60 @@ func _cmd_water_wipe(args: PackedStringArray) -> void:
 
 	Events.water_sheet_wipe_requested.emit(duration)
 	context.write("Water sheet wipe triggered (duration: %.1fs)." % duration, "green")
+
+
+## Triggers an Advisor psychic distortion wave pulse via [Events].
+func _cmd_psychic_pulse(args: PackedStringArray) -> void:
+	print("ConsoleCheatCommands: _cmd_psychic_pulse called with args: ", args)
+	var duration: float = 1.2
+	var peak: float = 1.0
+	var center_uv: Vector2 = Vector2(0.5, 0.5)
+
+	if args.size() > 0 and args[0].strip_edges().is_valid_float():
+		duration = clampf(args[0].to_float(), 0.1, 15.0)
+	if args.size() > 1 and args[1].strip_edges().is_valid_float():
+		peak = clampf(args[1].to_float(), 0.0, 1.0)
+	if (
+		args.size() > 3
+		and args[2].strip_edges().is_valid_float()
+		and args[3].strip_edges().is_valid_float()
+	):
+		center_uv = Vector2(
+			clampf(args[2].to_float(), 0.0, 1.0), clampf(args[3].to_float(), 0.0, 1.0)
+		)
+
+	if Events.has_signal(&"advisor_psychic_pulse_requested"):
+		Events.advisor_psychic_pulse_requested.emit(duration, peak, center_uv)
+	context.write(
+		"Advisor psychic pulse triggered (duration: %.2fs, peak: %.2f)." % [duration, peak], "green"
+	)
+
+
+## Sets sustained Advisor psychic screen distortion intensity or clears it.
+func _cmd_psychic_vfx(args: PackedStringArray) -> void:
+	print("ConsoleCheatCommands: _cmd_psychic_vfx called with args: ", args)
+	var intensity: float = 0.0
+	if not args.is_empty():
+		var token: String = args[0].strip_edges().to_lower()
+		if token in ["0", "off", "false", "stop", "clear"]:
+			intensity = 0.0
+		elif token in ["1", "on", "true"]:
+			intensity = 1.0
+		elif token.is_valid_float():
+			intensity = clampf(token.to_float(), 0.0, 1.0)
+		else:
+			context.write("Usage: psychic_vfx <0.0..1.0 | off>", "yellow")
+			return
+	else:
+		context.write("Usage: psychic_vfx <0.0..1.0 | off>", "yellow")
+		return
+
+	if Events.has_signal(&"advisor_psychic_intensity_requested"):
+		Events.advisor_psychic_intensity_requested.emit(intensity)
+	context.write(
+		"Advisor psychic VFX intensity set to: %.2f" % intensity,
+		"green" if intensity > 0.0 else "yellow"
+	)
 
 
 ## Spawns a radial shockwave VFX at the player world position.

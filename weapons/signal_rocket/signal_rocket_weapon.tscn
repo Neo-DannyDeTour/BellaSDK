@@ -107,7 +107,7 @@ script = ExtResource("3_interact")
 [node name="HighlightComponent" type="Node" parent="." node_paths=PackedStringArray("interact_component")]
 script = ExtResource("4_highlight")
 outline_material = SubResource("ShaderMaterial_outline")
-interact_component = NodePath("StaticBody3D/InteractComponent")
+interact_component = NodePath("../StaticBody3D/InteractComponent")
 
 [node name="Label3D" type="Label3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.18, 0.15, -0.35)

@@ -1,58 +1,66 @@
-[gd_scene format=3 uid="uid://c4jdpcnpsoerv"]
+[gd_scene load_steps=7 format=3 uid="uid://c4jdpcnpsoerv"]
 
-[ext_resource type="Shader" uid="uid://osbd746w7ix2" path="res://interactables/mirror.gdshader" id="1_5o7h0"]
-[ext_resource type="Script" uid="uid://x4jmthy5clv" path="res://interactables/mirror.gd" id="1_652kc"]
+[ext_resource type="Script" uid="uid://x4jmthy5clv" path="res://interactables/mirror.gd" id="1_mirror_script"]
+[ext_resource type="Shader" uid="uid://osbd746w7ix2" path="res://interactables/mirror.gdshader" id="2_mirror_shader"]
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_nha6m"]
-resource_local_to_scene = true
-render_priority = 0
-shader = ExtResource("1_5o7h0")
-
-[sub_resource type="QuadMesh" id="QuadMesh_652kc"]
-resource_local_to_scene = true
-material = SubResource("ShaderMaterial_nha6m")
-
-[sub_resource type="ViewportTexture" id="ViewportTexture_8mm88"]
+[sub_resource type="ViewportTexture" id="ViewportTexture_refl"]
 viewport_path = NodePath("MirrorSubViewport")
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_ngsht"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_mirror"]
 resource_local_to_scene = true
 render_priority = 0
-shader = ExtResource("1_5o7h0")
-shader_parameter/tex = SubResource("ViewportTexture_8mm88")
+shader = ExtResource("2_mirror_shader")
+shader_parameter/reflection_texture = SubResource("ViewportTexture_refl")
+shader_parameter/glass_tint = Color(0.88, 0.94, 0.92, 1)
+shader_parameter/cage_color = Color(0.18, 0.2, 0.22, 1)
+shader_parameter/cage_density = 22.0
+shader_parameter/cage_thickness = 0.055
+shader_parameter/cage_depth = 0.012
+shader_parameter/crack_refraction = 0.028
+shader_parameter/base_roughness = 0.04
 
-[sub_resource type="Environment" id="Environment_ngsht"]
-ambient_light_source = 2
-ambient_light_color = Color(0.2, 0.22, 0.28, 1)
+[sub_resource type="QuadMesh" id="QuadMesh_mirror"]
+resource_local_to_scene = true
+material = SubResource("ShaderMaterial_mirror")
+size = Vector2(1.5, 2)
 
-[sub_resource type="Compositor" id="Compositor_i25o7"]
+[sub_resource type="BoxShape3D" id="BoxShape3D_armor"]
+resource_local_to_scene = true
+size = Vector3(1.5, 2, 0.06)
 
-[node name="Mirror" type="Node3D" unique_id=2122574524 node_paths=PackedStringArray("mirror_viewport", "mirror_camera", "mirror_quad")]
-script = ExtResource("1_652kc")
-cull_mask = 7
-mirror_viewport = NodePath("MirrorSubViewport")
-mirror_camera = NodePath("MirrorSubViewport/Camera3D")
-mirror_quad = NodePath("Quad")
+[node name="Mirror" type="Node3D"]
+script = ExtResource("1_mirror_script")
 
-[node name="Quad" type="MeshInstance3D" parent="." unique_id=644621512]
-mesh = SubResource("QuadMesh_652kc")
-surface_material_override/0 = SubResource("ShaderMaterial_ngsht")
+[node name="Quad" type="MeshInstance3D" parent="."]
+layers = 4
+cast_shadow = 0
+mesh = SubResource("QuadMesh_mirror")
 
-[node name="MirrorSubViewport" type="SubViewport" parent="." unique_id=1790894113]
+[node name="MirrorSubViewport" type="SubViewport" parent="."]
+handle_input_locally = false
+msaa_3d = 0
+screen_space_aa = 0
+use_taa = false
+use_debanding = false
 mesh_lod_threshold = 2.0
 positional_shadow_atlas_size = 0
-canvas_cull_mask = 4294966783
-size = Vector2i(50, 50)
+size = Vector2i(96, 128)
 render_target_update_mode = 0
 
-[node name="Camera3D" type="Camera3D" parent="MirrorSubViewport" unique_id=1441297324]
-transform = Transform3D(-1, 0, 0, 0, 1, 0, 0, 0, -1, 1.682942, 1.9177022, -3.0806046)
+[node name="Camera3D" type="Camera3D" parent="MirrorSubViewport"]
+keep_aspect = 0
 cull_mask = 7
-environment = SubResource("Environment_ngsht")
-compositor = SubResource("Compositor_i25o7")
 projection = 2
-current = true
-fov = 70.01
-frustum_offset = Vector2(1.682942, -1.9177022)
-near = 3.1306045
-far = 24.0
+size = 1.5
+near = 0.05
+far = 40.0
+
+[node name="MirrorVisibilityNotifier" type="VisibleOnScreenNotifier3D" parent="."]
+aabb = AABB(-0.75, -1, -0.05, 1.5, 2, 0.1)
+
+[node name="ArmorBody" type="StaticBody3D" parent="."]
+collision_layer = 4
+collision_mask = 0
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="ArmorBody"]
+shape = SubResource("BoxShape3D_armor")

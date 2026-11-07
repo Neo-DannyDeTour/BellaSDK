@@ -15,6 +15,8 @@ func before_each() -> void:
 	var root: Window = get_tree().root
 	for child: Node in root.find_children("*", "SmokeGrenadeProjectile", true, false):
 		child.queue_free()
+	for child: Node in root.find_children("*", "SignalRocketProjectile", true, false):
+		child.queue_free()
 	for child: Node in root.find_children("*", "FogVolume", true, false):
 		child.queue_free()
 
@@ -40,13 +42,10 @@ func after_each() -> void:
 	water = null
 
 
-## Awaits signal emission by waiting directly for the level tween to finish.
+## Awaits signal emission with safe timeout ceiling to prevent test execution hangs.
 func _wait_for_transition(target_water: WaterBody) -> void:
-	if (
-		not target_water.is_level_transition_complete()
-		and is_instance_valid(target_water._level_tween)
-	):
-		await target_water._level_tween.finished
+	if not target_water.is_level_transition_complete():
+		await wait_for_signal(target_water.water_level_transition_finished, 2.0)
 
 
 ## Tests baseline recording and floor anchoring when lowering water level.

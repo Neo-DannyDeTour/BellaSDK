@@ -2,6 +2,10 @@
 class_name Player
 extends CharacterBody3D
 
+## Emitted when an Advisor psychic distortion pulse finishes on the player UI.
+@warning_ignore("unused_signal")
+signal psychic_pulse_finished
+
 ## Group name identifier for detecting sand ground surfaces.
 const GROUP_SAND: StringName = &"sand"
 
@@ -67,6 +71,9 @@ const SIG_CINEMATIC_LOCK: StringName = &"player_cinematic_lock_requested"
 
 ## Signal identifier for wolf mode transformation.
 const SIG_WOLF_TOGGLED: StringName = &"wolf_mode_toggled"
+
+## Signal identifier for Advisor psychic pulse completion.
+const SIG_PSYCHIC_FINISHED: StringName = &"advisor_psychic_pulse_finished"
 
 @export_category("Core Modules")
 
@@ -202,6 +209,10 @@ func _ready() -> void:
 		Utilities.safe_connect(Events.player_cinematic_lock_requested, _on_cinematic_lock_requested)
 	if Events.has_signal(SIG_WOLF_TOGGLED):
 		Utilities.safe_connect(Events.wolf_mode_toggled, set_wolf_mode)
+	if Events.has_signal(SIG_PSYCHIC_FINISHED):
+		Utilities.safe_connect(
+			Events.advisor_psychic_pulse_finished, _on_advisor_psychic_pulse_finished
+		)
 
 
 ## Disconnects global event bus signals when removed from the scene tree.
@@ -230,6 +241,11 @@ func _exit_tree() -> void:
 		Events.player_cinematic_lock_requested.disconnect(_on_cinematic_lock_requested)
 	if Events.has_signal(SIG_WOLF_TOGGLED) and Events.wolf_mode_toggled.is_connected(set_wolf_mode):
 		Events.wolf_mode_toggled.disconnect(set_wolf_mode)
+	if (
+		Events.has_signal(SIG_PSYCHIC_FINISHED)
+		and Events.advisor_psychic_pulse_finished.is_connected(_on_advisor_psychic_pulse_finished)
+	):
+		Events.advisor_psychic_pulse_finished.disconnect(_on_advisor_psychic_pulse_finished)
 
 
 ## Routes mouse motion events to the [CameraController].
@@ -679,6 +695,27 @@ func can_interact_with_machinery() -> bool:
 	return true
 
 
+## Triggers an Advisor psychic attack distortion pulse across the player UI.
+func trigger_psychic_pulse(duration: float = 1.2) -> void:
+	print("Player: Triggering Advisor psychic pulse (duration=", duration, ").")
+	if Events.has_signal(&"advisor_psychic_pulse_requested"):
+		Events.advisor_psychic_pulse_requested.emit(duration, 1.0, Vector2(0.5, 0.5))
+
+
+## Triggers an Advisor psychic attack pulse anchored to [param source_node] in 3D space.
+func trigger_psychic_pulse_from(source_node: Node3D) -> void:
+	print("Player: Triggering Advisor psychic pulse from node: ", source_node)
+	if Events.has_signal(&"advisor_psychic_pulse_from_requested"):
+		Events.advisor_psychic_pulse_from_requested.emit(source_node, 1.2, 1.0)
+
+
+## Sets sustained Advisor psychic distortion [param intensity] on the player UI.
+func set_psychic_intensity(intensity: float) -> void:
+	print("Player: Setting sustained Advisor psychic intensity -> ", intensity)
+	if Events.has_signal(&"advisor_psychic_intensity_requested"):
+		Events.advisor_psychic_intensity_requested.emit(intensity)
+
+
 ## Captures and locks the mouse cursor for first-person gameplay.
 func _capture_mouse() -> void:
 	print("Player: Capturing mouse cursor.")
@@ -831,3 +868,8 @@ func _on_cinematic_lock_requested(locked: bool) -> void:
 			locomotion_component.set_physics_active(false)
 	elif is_instance_valid(locomotion_component):
 		locomotion_component.set_physics_active(true)
+
+
+## Relays Advisor psychic pulse completion for [EventSequenceTrigger] WAIT_SIGNAL steps.
+func _on_advisor_psychic_pulse_finished() -> void:
+	psychic_pulse_finished.emit()

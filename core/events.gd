@@ -119,6 +119,22 @@ signal waterfall_vfx_toggled(is_active: bool, wash_intensity: float, clear_progr
 @warning_ignore("unused_signal")
 signal water_sheet_wipe_requested(duration: float)
 
+## Emitted to trigger an Advisor psychic distortion wave pulse across the screen.
+@warning_ignore("unused_signal")
+signal advisor_psychic_pulse_requested(duration: float, peak: float, center_uv: Vector2)
+
+## Emitted to trigger an Advisor psychic pulse anchored to [param source_node] in 3D space.
+@warning_ignore("unused_signal")
+signal advisor_psychic_pulse_from_requested(source_node: Node3D, duration: float, peak: float)
+
+## Emitted to set sustained Advisor psychic screen distortion [param intensity] directly.
+@warning_ignore("unused_signal")
+signal advisor_psychic_intensity_requested(intensity: float)
+
+## Emitted when an Advisor psychic distortion pulse animation finishes.
+@warning_ignore("unused_signal")
+signal advisor_psychic_pulse_finished
+
 # --------------------------------------
 # CHEAT & DEBUG SIGNALS
 # --------------------------------------

@@ -539,6 +539,12 @@ func test_water_wipe_and_shockwave_commands() -> void:
 	cheats._cmd_shockwave(PackedStringArray(["20.0", "30.0"]))
 	assert_signal_emitted(Events, "shockwave_requested")
 
+	cheats._cmd_psychic_pulse(PackedStringArray(["1.5", "0.9"]))
+	assert_signal_emitted(Events, "advisor_psychic_pulse_requested")
+
+	cheats._cmd_psychic_vfx(PackedStringArray(["0.65"]))
+	assert_signal_emitted(Events, "advisor_psychic_intensity_requested")
+
 
 ## Tests that outline command validates modes and emits outline_mode_changed.
 func test_outline_command() -> void:

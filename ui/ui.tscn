@@ -41,6 +41,8 @@
 [ext_resource type="Shader" uid="uid://sgrhpkqbyiwb" path="res://vfx/water_sheet_wipe.gdshader" id="35_wwipe"]
 [ext_resource type="Script" uid="uid://gpy2b8yh1evg" path="res://ui/water_wipe_controller.gd" id="36_wwctrl"]
 [ext_resource type="Shader" uid="uid://drg4qmix2luaa" path="res://ui/anime_speed_lines.gdshader" id="37_speed"]
+[ext_resource type="Shader" path="res://vfx/advisor_psychic.gdshader" id="38_advsh"]
+[ext_resource type="Script" path="res://ui/advisor_psychic_effect.gd" id="39_advfx"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_p7vwb"]
 shader = ExtResource("5_8dubc")
@@ -115,6 +117,15 @@ shader_parameter/edge_condensation = 0.0
 shader_parameter/vapor_tint = Color(0.84, 0.88, 0.92, 0.48)
 shader_parameter/max_blur_lod = 2.6
 shader_parameter/droplet_density = 1.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_adv01"]
+shader = ExtResource("38_advsh")
+shader_parameter/intensity = 0.0
+shader_parameter/center_uv = Vector2(0.5, 0.5)
+shader_parameter/blur_strength = 0.08
+shader_parameter/aberration_strength = 0.03
+shader_parameter/jitter_amount = 0.008
+shader_parameter/vignette_power = 2.2
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_yev5y"]
 shader = ExtResource("2_x4jx1")
@@ -281,6 +292,18 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+
+[node name="AdvisorPsychicOverlay" type="ColorRect" parent="ScreenEffectsManager" unique_id=1584920315]
+visible = false
+material = SubResource("ShaderMaterial_adv01")
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("39_advfx")
 
 [node name="FadeOverlay" type="ColorRect" parent="ScreenEffectsManager" unique_id=1066162705]
 visible = false
