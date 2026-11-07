@@ -18,6 +18,12 @@ const RENDER_LAYER_VOLUMETRICS: int = 512
 ## Combined light cull mask targeting render layers 1, 3, and 10.
 const LIGHT_CULL_MASK_COMBINED: int = 517
 
+## Preloaded orb core shader avoiding runtime load stalls.
+const ORB_SHADER: Shader = preload("res://environment/lightning_orb.gdshader")
+
+## Preloaded electric arc ribbon shader avoiding runtime load stalls.
+const ARC_SHADER: Shader = preload("res://environment/lightning_orb_arc.gdshader")
+
 ## Vertical hovering amplitude along the Y-axis.
 @export var hover_amplitude: float = 0.25
 
@@ -125,12 +131,10 @@ func _resolve_or_create_components() -> void:
 		_core_mesh.mesh = sphere
 		_orb_container.add_child(_core_mesh)
 
-	var orb_shader: Shader = load("res://environment/lightning_orb.gdshader") as Shader
-	if is_instance_valid(orb_shader):
-		if not (_core_mesh.material_override is ShaderMaterial):
-			var orb_mat: ShaderMaterial = ShaderMaterial.new()
-			orb_mat.shader = orb_shader
-			_core_mesh.material_override = orb_mat
+	if not (_core_mesh.material_override is ShaderMaterial):
+		var orb_mat: ShaderMaterial = ShaderMaterial.new()
+		orb_mat.shader = ORB_SHADER
+		_core_mesh.material_override = orb_mat
 
 	_orb_light = _orb_container.find_child("OrbLight", true, false) as OmniLight3D
 	if not is_instance_valid(_orb_light):
@@ -161,11 +165,9 @@ func _resolve_or_create_components() -> void:
 		_immediate_mesh = _arc_instance.mesh as ImmediateMesh
 
 	if not (_arc_instance.material_override is ShaderMaterial):
-		var arc_shader: Shader = load("res://environment/lightning_orb_arc.gdshader") as Shader
-		if is_instance_valid(arc_shader):
-			var arc_mat: ShaderMaterial = ShaderMaterial.new()
-			arc_mat.shader = arc_shader
-			_arc_instance.material_override = arc_mat
+		var arc_mat: ShaderMaterial = ShaderMaterial.new()
+		arc_mat.shader = ARC_SHADER
+		_arc_instance.material_override = arc_mat
 
 	_impact_light = _orb_container.find_child("ImpactLight", true, false) as OmniLight3D
 	if not is_instance_valid(_impact_light):

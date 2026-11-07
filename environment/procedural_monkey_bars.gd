@@ -17,14 +17,15 @@ func _ready() -> void:
 
 	if not Engine.is_editor_hint():
 		visible = false
+		set_process(false)
 
 	if not interact_area or not is_instance_valid(interact_area):
 		interact_area = get_node_or_null("InteractArea") as Area3D
 		if not interact_area:
 			interact_area = Area3D.new()
 			interact_area.name = "InteractArea"
-			interact_area.collision_layer = 0
-			interact_area.collision_mask = 2
+			interact_area.collision_layer = CollisionLayers.MASK_NONE
+			interact_area.collision_mask = CollisionLayers.MASK_PLAYER
 			add_child(interact_area)
 
 			col_shape = CollisionShape3D.new()

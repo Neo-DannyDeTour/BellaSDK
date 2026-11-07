@@ -39,10 +39,14 @@ var _points: Array[Vector3] = []
 ## Timestamp buffer tracking age of each recorded position point.
 var _times: Array[float] = []
 
+## Cached parent Node3D reference avoiding per-frame scene tree lookups.
+var _parent_node: Node3D = null
+
 
 ## Configures unshaded material and initializes dynamic immediate mesh.
 func _ready() -> void:
 	print("Trail3D: Initializing ribbon trail system.")
+	_parent_node = get_parent() as Node3D
 	top_level = true
 	global_transform = Transform3D.IDENTITY
 
@@ -66,9 +70,8 @@ func _process(delta: float) -> void:
 		_times.pop_back()
 		_points.pop_back()
 
-	var target_node: Node3D = get_parent() as Node3D
-	if is_emitting and is_instance_valid(target_node):
-		var current_pos: Vector3 = target_node.global_transform * target_offset
+	if is_emitting and is_instance_valid(_parent_node):
+		var current_pos: Vector3 = _parent_node.global_transform * target_offset
 		if (
 			_points.is_empty()
 			or (current_pos.distance_squared_to(_points[0]) >= (min_distance * min_distance))

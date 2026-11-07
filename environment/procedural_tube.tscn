@@ -1,7 +1,7 @@
 [gd_scene load_steps=4 format=3]
 
-[ext_resource type="Script" path="res://scripts/procedural_tube.gd" id="1_script"]
-[ext_resource type="Material" path="res://materials/tube_opaque.tres" id="2_mat"]
+[ext_resource type="Script" path="res://environment/procedural_tube.gd" id="1_script"]
+[ext_resource type="Material" path="res://environment/materials/tube_opaque.tres" id="2_mat"]
 
 [sub_resource type="Curve3D" id="Curve3D_tube"]
 resource_local_to_scene = true

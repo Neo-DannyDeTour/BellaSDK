@@ -105,10 +105,19 @@ var _is_sleeping: bool = false
 ## Flag indicating whether turret bounding box is inside camera view.
 var _is_on_screen: bool = false
 
+## Timer used for low-frequency proximity polling when turret is asleep offscreen.
+var _sleep_proximity_timer: Timer = null
+
 
 ## Initializes collision shapes, caches references, and binds screen visibility.
 func _ready() -> void:
 	print("Turret: Initializing turret instance: ", name)
+	_sleep_proximity_timer = Timer.new()
+	_sleep_proximity_timer.name = "SleepProximityTimer"
+	_sleep_proximity_timer.one_shot = false
+	_sleep_proximity_timer.wait_time = proximity_interval
+	_sleep_proximity_timer.timeout.connect(_evaluate_sleep_state)
+	add_child(_sleep_proximity_timer)
 	var raw_viz: Node = get_node_or_null("EditorTriggerVisualizer")
 	var visualizer: EditorTriggerVisualizer = (
 		raw_viz if raw_viz is EditorTriggerVisualizer else null
@@ -173,6 +182,9 @@ func _evaluate_sleep_state() -> void:
 ## Puts turret to sleep, disabling area monitoring and particles.
 func _enter_sleep() -> void:
 	print("Turret: Entering sleep mode: ", name)
+	set_process(false)
+	if is_instance_valid(_sleep_proximity_timer):
+		_sleep_proximity_timer.start(proximity_interval)
 	detection_area.monitoring = false
 	bullet_particles.emitting = false
 	if target != null:
@@ -183,6 +195,9 @@ func _enter_sleep() -> void:
 ## Wakes turret from sleep, reenabling monitoring and scanning.
 func _wake_up() -> void:
 	print("Turret: Waking up from sleep mode: ", name)
+	if is_instance_valid(_sleep_proximity_timer):
+		_sleep_proximity_timer.stop()
+	set_process(true)
 	detection_area.monitoring = true
 	_acquire_new_target()
 
@@ -211,9 +226,11 @@ func _process(delta: float) -> void:
 		_proximity_timer = 0.0
 		_evaluate_sleep_state()
 
-	if _is_sleeping or is_friendly:
-		if not _is_sleeping and is_friendly:
-			_process_scanning(delta)
+	if _is_sleeping:
+		return
+
+	if is_friendly:
+		_process_scanning(delta)
 		return
 
 	match current_state:

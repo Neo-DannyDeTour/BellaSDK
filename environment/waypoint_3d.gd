@@ -255,8 +255,8 @@ func _update_detector() -> void:
 	if not is_instance_valid(_detector_area):
 		_detector_area = Area3D.new()
 		_detector_area.name = "PlayerDetectionArea"
-		_detector_area.collision_layer = 0
-		_detector_area.collision_mask = 2
+		_detector_area.collision_layer = CollisionLayers.MASK_NONE
+		_detector_area.collision_mask = CollisionLayers.MASK_PLAYER
 		add_child(_detector_area)
 		_detector_area.body_entered.connect(_on_detector_body_entered)
 
@@ -297,7 +297,9 @@ func is_reached(actor_or_pos: Variant) -> bool:
 		return false
 
 	var center: Vector3 = global_position + trigger_offset
-	var reached_flag: bool = center.distance_to(check_pos) <= arrival_radius
+	var reached_flag: bool = (
+		center.distance_squared_to(check_pos) <= arrival_radius * arrival_radius
+	)
 	if reached_flag and actor_or_pos is Node3D:
 		var node_actor: Node3D = actor_or_pos if actor_or_pos is Node3D else null
 		print("Waypoint3D: [", name, "] reached by ", node_actor.name)

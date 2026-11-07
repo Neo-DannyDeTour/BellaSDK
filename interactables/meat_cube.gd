@@ -21,11 +21,17 @@ var _is_resetting: bool = false
 var _initial_height: float = 0.0
 ## Accumulates delta time to print debug information periodically instead of every frame.
 var _debug_timer: float = 0.0
+## Cached packed scene reference avoiding repeated synchronous disk IO during respawns.
+var _cached_packed_scene: PackedScene = null
 
 
 ## Defers the initialization of the baseline geometry height until physics are settled.
 func _ready() -> void:
 	print("Meat cube interactor initialized. Waiting to record initial geometry...")
+	if not meat_cube_scene_path.is_empty() and ResourceLoader.exists(meat_cube_scene_path):
+		var loaded_res: Resource = ResourceLoader.load(meat_cube_scene_path)
+		if loaded_res is PackedScene:
+			_cached_packed_scene = loaded_res as PackedScene
 	call_deferred("_record_initial_height")
 
 
@@ -82,17 +88,20 @@ func trigger_1_second_reset() -> void:
 func _respawn_cube() -> void:
 	print("Respawning a fresh meat cube to restore initial form.")
 
-	if meat_cube_scene_path.is_empty():
-		print("Error: meat_cube_scene_path is empty. Assign it in Inspector.")
-		return
+	if not is_instance_valid(_cached_packed_scene):
+		if meat_cube_scene_path.is_empty():
+			print("Error: meat_cube_scene_path is empty. Assign it in Inspector.")
+			return
+		if ResourceLoader.exists(meat_cube_scene_path):
+			var loaded_res: Resource = ResourceLoader.load(meat_cube_scene_path)
+			if loaded_res is PackedScene:
+				_cached_packed_scene = loaded_res as PackedScene
 
-	var loaded_res: Resource = load(meat_cube_scene_path)
-	if not (loaded_res is PackedScene):
+	if not is_instance_valid(_cached_packed_scene):
 		print("Error: Failed to load PackedScene at: ", meat_cube_scene_path)
 		return
 
-	var meat_cube_scene: PackedScene = loaded_res if loaded_res is PackedScene else null
-	var raw_instance: Node = meat_cube_scene.instantiate()
+	var raw_instance: Node = _cached_packed_scene.instantiate()
 	if not (raw_instance is Node3D):
 		if is_instance_valid(raw_instance):
 			raw_instance.queue_free()

@@ -2,6 +2,9 @@
 class_name SupplyShell
 extends AnimatableBody3D
 
+## Fallback preloaded ammo box packed scene avoiding runtime load stalls.
+const DEFAULT_AMMO_BOX_SCENE: PackedScene = preload("res://assets/weapons/ammo_box.tscn")
+
 @export_group("Trajectory")
 ## Distance in meters along approach heading where canister spawns.
 @export var approach_distance: float = 70.0
@@ -227,8 +230,16 @@ func _on_touchdown() -> void:
 ## Instantiates configured [AmmoBox] crates around landing zone.
 func _deploy_ammo_cargo() -> void:
 	var scene_to_spawn: PackedScene = ammo_box_scene
-	if not is_instance_valid(scene_to_spawn) and ResourceLoader.exists(default_ammo_box_path):
-		scene_to_spawn = load(default_ammo_box_path) as PackedScene
+	if not is_instance_valid(scene_to_spawn):
+		if not default_ammo_box_path.is_empty() and ResourceLoader.exists(default_ammo_box_path):
+			if default_ammo_box_path == "res://assets/weapons/ammo_box.tscn":
+				scene_to_spawn = DEFAULT_AMMO_BOX_SCENE
+			else:
+				var res: Resource = ResourceLoader.load(default_ammo_box_path)
+				if res is PackedScene:
+					scene_to_spawn = res as PackedScene
+		else:
+			scene_to_spawn = DEFAULT_AMMO_BOX_SCENE
 
 	if not is_instance_valid(scene_to_spawn):
 		print("SupplyShell: ammo_box_scene not assigned or found. Cargo skipped.")

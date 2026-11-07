@@ -117,7 +117,10 @@ func _ready() -> void:
 
 	# shortcut: FogVolume is not a GeometryInstance3D, so instance uniforms are unavailable.
 	if material is ShaderMaterial:
-		_shader_mat = (material as ShaderMaterial).duplicate() as ShaderMaterial
+		var variant_key: String = "smoke_cloud_%d" % (get_instance_id() % 8)
+		_shader_mat = (
+			MaterialCache.get_variant(material as ShaderMaterial, variant_key) as ShaderMaterial
+		)
 	else:
 		_shader_mat = ShaderMaterial.new()
 		_shader_mat.shader = SMOKE_SHADER

@@ -422,6 +422,7 @@ func _preview_player_stop() -> void:
 func _create_audio_player(player_name: String) -> AudioStreamPlayer:
 	var player: AudioStreamPlayer = AudioPool.get_pooled_player_2d()
 	if not is_instance_valid(player):
+		# shortcut: unpooled fallback if AudioPool unready or in isolated test harness
 		player = AudioStreamPlayer.new()
 		player.name = player_name
 		add_child(player)

@@ -10,6 +10,7 @@ const ACTION_CATEGORIES: Dictionary = {
 		"interact",
 		"shoot",
 		"reload",
+		"weapon_inspect",
 		"flashlight",
 		"zoom",
 		"weapon_slot_1",
@@ -31,7 +32,7 @@ const ACTION_CATEGORIES: Dictionary = {
 const ICON_BASE_PATH: String = "res://assets/kenney_input-prompts_1.5/Keyboard & Mouse/Default/"
 
 ## Actions requiring continuous key holding.
-const HOLD_ACTIONS: Array[String] = ["ttsandy", "describe_surroundings"]
+const HOLD_ACTIONS: Array[String] = ["ttsandy", "describe_surroundings", "weapon_inspect"]
 
 ## Minimum hold threshold duration in seconds.
 const HOLD_TIME_THRESHOLD: float = 0.45

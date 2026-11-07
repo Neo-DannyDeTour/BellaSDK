@@ -9,7 +9,7 @@ var input_manager: Node = null
 ## Pre-test setup instantiating manager and configuring test input action map.
 func before_each() -> void:
 	print("TestGestureInputManager: before_each() setup.")
-	var script: GDScript = load("res://core/GestureInputManager.gd") as GDScript
+	var script: GDScript = load("res://core/gesture_input_manager.gd") as GDScript
 	var raw_manager: Object = script.new()
 	if raw_manager is Node:
 		input_manager = raw_manager

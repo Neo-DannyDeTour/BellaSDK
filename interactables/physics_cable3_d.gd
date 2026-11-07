@@ -167,8 +167,9 @@ func _physics_process(delta: float) -> void:
 				if (i + 1) != last_idx:
 					_positions[i + 1] -= correction
 
-	var total_dist: float = start_pos.distance_to(end_pos)
-	if total_dist > cable_length_meters:
+	var dist_sq: float = start_pos.distance_squared_to(end_pos)
+	if dist_sq > (cable_length_meters * cable_length_meters):
+		var total_dist: float = sqrt(dist_sq)
 		var stretch: float = total_dist - cable_length_meters
 		var pull_dir: Vector3 = (start_pos - end_pos).normalized()
 		end_plug.apply_central_force(pull_dir * (stretch * tension_force))

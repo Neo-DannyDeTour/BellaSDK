@@ -213,7 +213,11 @@ func _find_row_at_point(panel_root: Control, mouse_global: Vector2) -> Array[Con
 	for raw_row: Variant in rows:
 		if not (raw_row is Array):
 			continue
-		var row_controls: Array[Control] = raw_row as Array[Control]
+		var raw_arr: Array = raw_row
+		var row_controls: Array[Control] = []
+		for ctrl: Variant in raw_arr:
+			if ctrl is Control:
+				row_controls.append(ctrl as Control)
 		var row_rect: Rect2 = _compute_row_rect(row_controls)
 		if (
 			row_rect.size.x > 0.0

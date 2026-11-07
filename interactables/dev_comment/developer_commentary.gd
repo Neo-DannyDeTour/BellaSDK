@@ -88,6 +88,7 @@ func _ready() -> void:
 		audio_player.finished.connect(_on_audio_finished)
 
 	_initialize_audio_spectrum()
+	set_process(false)
 
 
 ## Updates the sprite rotation and delegates shader equalizer updates per frame.
@@ -97,7 +98,8 @@ func _process(delta: float) -> void:
 		# Rotate Y so it spins horizontally instead of tumbling vertically
 		sprite.rotate_x(spin_speed * delta)
 
-	_update_equalizer(delta)
+	if audio_player and audio_player.playing:
+		_update_equalizer(delta)
 
 
 ## Connects to the designated audio bus to sample live frequency data.
@@ -145,9 +147,9 @@ func _update_equalizer(delta: float) -> void:
 			_audio_data[i] = lerpf(_audio_data[i], raw_energy, 15.0 * delta)
 			prev_hz = hz
 
-		mat.set_shader_parameter("audio_data", _audio_data)
+		mat.set_shader_parameter(&"audio_data", _audio_data)
 
-	mat.set_shader_parameter("is_playing", audio_player.playing)
+	mat.set_shader_parameter(&"is_playing", audio_player.playing)
 
 
 ## Toggles the commentary state when the player interacts with the object.
@@ -165,6 +167,7 @@ func _on_interacted(player: CharacterBody3D) -> void:
 func open_commentary() -> void:
 	print("DeveloperCommentary: Opening UI, showing equalizer, playing audio, and spinning sprite.")
 	is_open = true
+	set_process(true)
 
 	# Stop jumping and reset to baseline instantly when activated
 	_stop_and_reset_jump()
@@ -175,7 +178,7 @@ func open_commentary() -> void:
 	if active_player:
 		var target_pos: Vector3 = active_player.global_position
 		target_pos.y = sprite.global_position.y
-		if sprite.global_position.distance_to(target_pos) > 0.01:
+		if sprite.global_position.distance_squared_to(target_pos) > 0.0001:
 			sprite.look_at(target_pos, Vector3.UP, true)
 
 	sprite.billboard = BaseMaterial3D.BILLBOARD_DISABLED as BaseMaterial3D.BillboardMode
@@ -198,8 +201,17 @@ func close_commentary() -> void:
 		"DeveloperCommentary: Closing UI, hiding equalizer, stopping audio, and resetting sprite."
 	)
 	is_open = false
+	set_process(false)
 	commentary_ui.hide()
 	equalizer_mesh.hide()
+
+	var mat: ShaderMaterial = (
+		equalizer_mesh.material_override
+		if equalizer_mesh.material_override is ShaderMaterial
+		else null
+	)
+	if is_instance_valid(mat):
+		mat.set_shader_parameter(&"is_playing", false)
 
 	sprite.rotation = Vector3.ZERO
 	sprite.billboard = _initial_billboard_mode

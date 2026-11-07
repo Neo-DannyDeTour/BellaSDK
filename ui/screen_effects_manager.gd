@@ -17,6 +17,9 @@ const PARAM_UNEVEN_TIMING: StringName = &"uneven_timing"
 ## Pre-allocated [StringName] uniform for screen rain timing randomness variance.
 const PARAM_TIMING_RANDOMNESS: StringName = &"timing_randomness"
 
+## Preloaded screen transition shader avoiding runtime load stalls.
+const SCREEN_TRANSITION_SHADER: Shader = preload("res://shaders/screen_transition.gdshader")
+
 ## Animates smooth strength transitions when toggling wolf vision.
 var wolf_vision_tween: Tween
 
@@ -462,16 +465,9 @@ func _ensure_fade_material() -> void:
 		_fade_material = fade_overlay.material as ShaderMaterial
 		return
 
-	const SHADER_PATH: String = "res://shaders/screen_transition.gdshader"
-	if ResourceLoader.exists(SHADER_PATH):
-		var loaded_res: Resource = load(SHADER_PATH)
-		var shader: Shader = loaded_res as Shader
-		if is_instance_valid(shader):
-			_fade_material = ShaderMaterial.new()
-			_fade_material.shader = shader
-			fade_overlay.material = _fade_material
-	else:
-		push_warning("ScreenEffectsManager: Shader file not found at " + SHADER_PATH)
+	_fade_material = ShaderMaterial.new()
+	_fade_material.shader = SCREEN_TRANSITION_SHADER
+	fade_overlay.material = _fade_material
 
 
 ## Safely binds overlay events from the global [Events] bus.
@@ -533,6 +529,8 @@ func _on_player_zoomed(is_zooming: bool) -> void:
 	)
 
 	fisheye_zoom.show()
+	if is_instance_valid(fisheye_tween) and fisheye_tween.is_valid():
+		fisheye_tween.kill()
 	fisheye_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	fisheye_tween.tween_method(
 		func(val: float) -> void:
@@ -647,6 +645,9 @@ func _on_rain_vfx_toggled(intensity: float) -> void:
 	if _rain_fade_tween and _rain_fade_tween.is_valid():
 		_rain_fade_tween.kill()
 
+	if is_instance_valid(_rain_fade_tween) and _rain_fade_tween.is_valid():
+		_rain_fade_tween.kill()
+
 	if intensity > 0.0:
 		_target_rain_intensity = intensity
 	else:
@@ -675,6 +676,8 @@ func _on_wolf_vision_toggled(is_active: bool) -> void:
 	var target_strength: float = 1.0 if is_active else 0.0
 
 	wolf_vision_overlay.show()
+	if is_instance_valid(wolf_vision_tween) and wolf_vision_tween.is_valid():
+		wolf_vision_tween.kill()
 	wolf_vision_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	wolf_vision_tween.tween_method(
 		func(val: float) -> void:
@@ -713,6 +716,8 @@ func _on_wolf_wall_run_vfx_toggled(is_active: bool) -> void:
 	var target_strength: float = 1.0 if is_active else 0.0
 
 	speed_lines_overlay.show()
+	if is_instance_valid(speed_lines_tween) and speed_lines_tween.is_valid():
+		speed_lines_tween.kill()
 	speed_lines_tween = create_tween().set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
 	speed_lines_tween.tween_method(
 		func(val: float) -> void:

@@ -262,8 +262,8 @@ func _pickup_rocket(character: CharacterBody3D) -> void:
 	if is_instance_valid(interact_comp):
 		interact_comp.is_enabled = false
 
-	collision_layer = 0
-	collision_mask = 0
+	collision_layer = CollisionLayers.MASK_NONE
+	collision_mask = CollisionLayers.MASK_NONE
 
 	if is_instance_valid(label):
 		label.hide()

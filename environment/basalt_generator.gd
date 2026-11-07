@@ -292,8 +292,8 @@ func _generate() -> void:
 	# Build single StaticBody3D with concatenated ConcavePolygonShape3D trimesh
 	var static_body: StaticBody3D = StaticBody3D.new()
 	static_body.name = STATIC_BODY_NAME
-	static_body.collision_layer = 1
-	static_body.collision_mask = 0
+	static_body.collision_layer = CollisionLayers.MASK_ENVIRONMENT
+	static_body.collision_mask = CollisionLayers.MASK_NONE
 	static_body.add_to_group(StringName(generated_group_name), true)
 	if surface_group != "":
 		static_body.add_to_group(StringName(surface_group), true)

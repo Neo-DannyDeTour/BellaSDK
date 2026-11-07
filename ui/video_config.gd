@@ -444,7 +444,7 @@ static func get_default_settings_dict() -> Dictionary:
 		"renderer": "forward_plus",
 		"gpu_adapter_index": 0,
 	}
-	var ultra_preset: Dictionary = PRESETS["Ultra"] as Dictionary
+	var ultra_preset: Dictionary = Dictionary(PRESETS["Ultra"])
 	for key: Variant in ultra_preset.keys():
 		base[key] = ultra_preset[key]
 	return base

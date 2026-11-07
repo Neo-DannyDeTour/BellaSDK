@@ -228,8 +228,8 @@ func _ready() -> void:
 	_update_visuals()
 
 	if not Engine.is_editor_hint():
-		collision_layer = 0
-		collision_mask = 2
+		collision_layer = CollisionLayers.MASK_NONE
+		collision_mask = CollisionLayers.MASK_PLAYER
 		add_to_group(&"color_grading_volumes")
 
 		if not body_entered.is_connected(_on_body_entered):

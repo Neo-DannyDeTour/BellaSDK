@@ -96,8 +96,8 @@ var _motion_timer: float = 0.0
 ## State flag preventing multiple detonation executions.
 var _is_detonated: bool = false
 
-## Local unique duplicate of the laser cylinder mesh resource.
-var _unique_cylinder_mesh: CylinderMesh = null
+## Active tween driving explosion light fade animation.
+var _explosion_tween: Tween = null
 
 ## Distance check interval timer to minimize Vector3 distance calls.
 var _distance_check_timer: float = 0.0
@@ -139,13 +139,8 @@ func _update_distance_lod() -> void:
 	laser_ray_cast.enabled = _is_within_lod_range
 
 
-## Duplicates cylinder mesh to allow independent per-instance height updates.
+## Configures raycast distances and collision masks for laser tracking.
 func _setup_laser_geometry() -> void:
-	#print("TripMine: Configuring unique laser geometry and materials.")
-	if is_instance_valid(laser_beam_mesh) and laser_beam_mesh.mesh is CylinderMesh:
-		_unique_cylinder_mesh = laser_beam_mesh.mesh.duplicate() as CylinderMesh
-		laser_beam_mesh.mesh = _unique_cylinder_mesh
-
 	laser_ray_cast.target_position = Vector3(0.0, 0.0, -max_laser_range)
 	laser_ray_cast.collision_mask = (CollisionLayers.MASK_ENVIRONMENT | CollisionLayers.MASK_PLAYER)
 
@@ -242,9 +237,7 @@ func _update_beam_geometry() -> void:
 	else:
 		laser_dot_mesh.visible = false
 
-	if is_instance_valid(_unique_cylinder_mesh):
-		_unique_cylinder_mesh.height = current_length
-
+	laser_beam_mesh.scale.y = current_length
 	laser_beam_mesh.position = Vector3(0.0, 0.0, -current_length * 0.5)
 	laser_beam_mesh.set_instance_shader_parameter(&"segment_length", current_length)
 
@@ -306,9 +299,9 @@ func detonate() -> void:
 
 ## Measures spatial distance from explosion center to the active player.
 func _resolve_player_distance() -> float:
-	var player_nodes: Array[Node] = get_tree().get_nodes_in_group(&"player")
-	if not player_nodes.is_empty() and player_nodes[0] is Node3D:
-		return global_position.distance_to((player_nodes[0] as Node3D).global_position)
+	var player_node: Node = NodeQuery.get_single_node_in_group(get_tree(), &"player")
+	if is_instance_valid(player_node) and player_node is Node3D:
+		return global_position.distance_to((player_node as Node3D).global_position)
 
 	var active_cam: Camera3D = get_viewport().get_camera_3d()
 	if is_instance_valid(active_cam):
@@ -337,8 +330,8 @@ func _process_damage_receiver(actor: Node, processed_list: Array[Node]) -> void:
 		return
 
 	var target_3d: Node3D = actor as Node3D
-	var distance: float = global_position.distance_to(target_3d.global_position)
-	if distance > blast_radius:
+	var dist_sq: float = global_position.distance_squared_to(target_3d.global_position)
+	if dist_sq > blast_radius * blast_radius:
 		return
 
 	if _is_occluded_by_environment(target_3d.global_position):
@@ -346,6 +339,7 @@ func _process_damage_receiver(actor: Node, processed_list: Array[Node]) -> void:
 		return
 
 	var health_comp: HealthComponent = _find_health_component(actor)
+	var distance: float = sqrt(dist_sq)
 	var damage_val: int = _calculate_damage(distance)
 
 	if is_instance_valid(health_comp):
@@ -430,8 +424,11 @@ func _trigger_explosion_effects() -> void:
 	if is_instance_valid(explosion_light):
 		explosion_light.light_energy = 8.0
 		explosion_light.visible = true
-		var tween: Tween = create_tween()
-		tween.tween_property(explosion_light, "light_energy", 0.0, 0.25).set_trans(Tween.TRANS_QUAD)
+		_explosion_tween = Utilities.reset_tween(self, _explosion_tween)
+		if is_instance_valid(_explosion_tween):
+			_explosion_tween.tween_property(explosion_light, "light_energy", 0.0, 0.25).set_trans(
+				Tween.TRANS_QUAD
+			)
 
 	if is_instance_valid(explosion_audio) and explosion_audio.stream != null:
 		explosion_audio.play()

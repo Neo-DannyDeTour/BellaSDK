@@ -12,9 +12,9 @@ enum TubeStyle {
 }
 
 ## Shared opaque [ShaderMaterial] resource for plastic and metal tube styles.
-const MAT_OPAQUE: ShaderMaterial = preload("res://materials/tube_opaque.tres")
+const MAT_OPAQUE: ShaderMaterial = preload("res://environment/materials/tube_opaque.tres")
 ## Shared transparent [ShaderMaterial] resource supporting internal UV liquid flow.
-const MAT_TRANSPARENT: ShaderMaterial = preload("res://materials/tube_transparent.tres")
+const MAT_TRANSPARENT: ShaderMaterial = preload("res://environment/materials/tube_transparent.tres")
 
 ## Per-instance shader parameter name for surface albedo color.
 const PARAM_ALBEDO: StringName = &"albedo_color"

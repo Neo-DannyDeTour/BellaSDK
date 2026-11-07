@@ -15,6 +15,9 @@ enum Formation { CIRCLE, SQUARE, CROSS }
 ## Operational behavioral modes for swarm.
 enum Mode { IDLE, PATH_FOLLOW, FORMATION, HEAL_PLAYER, EXPLORE }
 
+## Update interval in seconds (5 Hz) throttling player health scans.
+const HEALTH_CHECK_INTERVAL: float = 0.2
+
 ## Drone packed scene instantiated in swarm.
 @export var drone_scene: PackedScene:
 	set(value):
@@ -119,6 +122,12 @@ var detected_player: Node3D = null
 ## Detection area sensing nearby player body.
 var detector_area: Area3D = null
 
+## Interval accumulator throttling player health scan frequency.
+var _health_check_timer: float = 0.0
+
+## Cached HealthComponent reference for active player.
+var _cached_health_comp: HealthComponent = null
+
 
 ## Cleans up spawned preview drones when leaving tree.
 func _exit_tree() -> void:
@@ -144,12 +153,13 @@ func _physics_process(delta: float) -> void:
 	var center_pos: Vector3 = global_position
 
 	if not Engine.is_editor_hint():
-		if is_instance_valid(detector_area) and detected_player == null:
-			for body: Node3D in detector_area.get_overlapping_bodies():
-				if _is_player(body):
-					detected_player = body
-					break
-		_check_player_health_and_state(delta)
+		if mode == Mode.HEAL_PLAYER:
+			_check_player_health_and_state(delta)
+		else:
+			_health_check_timer += delta
+			if _health_check_timer >= HEALTH_CHECK_INTERVAL:
+				_health_check_timer = 0.0
+				_check_player_health_and_state(HEALTH_CHECK_INTERVAL)
 
 	if auto_cycle_formations and mode != Mode.HEAL_PLAYER and mode != Mode.EXPLORE:
 		_process_auto_cycling(delta)
@@ -240,6 +250,11 @@ func _setup_detector_area() -> void:
 	detector_area.body_entered.connect(_on_detector_body_entered)
 	detector_area.body_exited.connect(_on_detector_body_exited)
 
+	for body: Node3D in detector_area.get_overlapping_bodies():
+		if _is_player(body):
+			detected_player = body
+			break
+
 
 ## Handles body entered event on [Area3D].
 func _on_detector_body_entered(body: Node3D) -> void:
@@ -255,6 +270,7 @@ func _on_detector_body_exited(body: Node3D) -> void:
 		if mode == Mode.HEAL_PLAYER:
 			stop_healing_player()
 		detected_player = null
+		_cached_health_comp = null
 
 
 ## Handles global player damage notification from [Events].
@@ -317,23 +333,25 @@ func _check_player_health_and_state(delta: float) -> void:
 	if target == null:
 		return
 
-	var dist_to_player: float = global_position.distance_to(target.global_position)
-	if dist_to_player > detection_radius and mode != Mode.HEAL_PLAYER:
+	var dist_sq: float = global_position.distance_squared_to(target.global_position)
+	if dist_sq > (detection_radius * detection_radius) and mode != Mode.HEAL_PLAYER:
 		return
 
-	var health_comp: HealthComponent = _get_health_component(target)
-	if health_comp == null:
-		var dmg_nodes: Array[Node] = get_tree().get_nodes_in_group(&"damageable")
-		for d: Node in dmg_nodes:
-			if d is HealthComponent:
-				var hc_node: HealthComponent = d
-				if hc_node.is_player_health:
-					health_comp = hc_node
-					break
+	if not is_instance_valid(_cached_health_comp):
+		_cached_health_comp = _get_health_component(target)
+		if _cached_health_comp == null:
+			var dmg_nodes: Array[Node] = get_tree().get_nodes_in_group(&"damageable")
+			for d: Node in dmg_nodes:
+				if d is HealthComponent:
+					var hc_node: HealthComponent = d
+					if hc_node.is_player_health:
+						_cached_health_comp = hc_node
+						break
 
-	if health_comp == null:
+	if not is_instance_valid(_cached_health_comp):
 		return
 
+	var health_comp: HealthComponent = _cached_health_comp
 	if health_comp.current_health < health_comp.max_health:
 		if mode != Mode.HEAL_PLAYER:
 			start_healing_player(target)

@@ -11,14 +11,12 @@ func before_each() -> void:
 	print("TestDumpster: Setting up test fixture.")
 	var sc: PackedScene = load("res://interactables/dumpster/dumpster.tscn") as PackedScene
 	_dumpster = sc.instantiate() as Dumpster
-	add_child(_dumpster)
+	add_child_autofree(_dumpster)
 
 
 ## Frees test fixture after each test run.
 func after_each() -> void:
 	print("TestDumpster: Tearing down test fixture.")
-	if is_instance_valid(_dumpster):
-		_dumpster.queue_free()
 	_dumpster = null
 
 

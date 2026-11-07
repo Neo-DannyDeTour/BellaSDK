@@ -360,6 +360,7 @@ func _ensure_default_weapon_actions() -> void:
 		"weapon_slot_4": KEY_4,
 		"weapon_slot_5": KEY_5,
 		"last_weapon": KEY_X,
+		"weapon_inspect": KEY_R,
 	}
 
 	for action: String in defaults:
@@ -369,6 +370,8 @@ func _ensure_default_weapon_actions() -> void:
 			var key_val: Key = defaults[action]
 			key_ev.keycode = key_val
 			key_ev.physical_keycode = key_val
+			if action == "weapon_inspect":
+				key_ev.set_meta("gesture", "hold")
 			InputMap.action_add_event(action, key_ev)
 
 

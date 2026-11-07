@@ -344,7 +344,13 @@ func _setup_emissive_material() -> void:
 		return
 	var active_mat: Material = emissive_mesh.get_active_material(emissive_surface_idx)
 	if active_mat is BaseMaterial3D:
-		_bulb_material = (active_mat as BaseMaterial3D).duplicate() as BaseMaterial3D
+		if flicker_preset == FlickerPreset.NORMAL and not custom_curve:
+			var variant_key: String = (
+				"%s_%s" % [light_color.to_html(), snappedf(base_emission_energy, 0.01)]
+			)
+			_bulb_material = MaterialCache.get_variant(active_mat, variant_key) as BaseMaterial3D
+		else:
+			_bulb_material = (active_mat as BaseMaterial3D).duplicate() as BaseMaterial3D
 		emissive_mesh.set_surface_override_material(emissive_surface_idx, _bulb_material)
 	else:
 		_bulb_material = null

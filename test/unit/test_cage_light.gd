@@ -11,14 +11,12 @@ func before_each() -> void:
 	print("TestCageLight: Setting up test fixture.")
 	var sc: PackedScene = load("res://environment/cage_light.tscn") as PackedScene
 	_light = sc.instantiate() as PoweredLight3D
-	add_child(_light)
+	add_child_autofree(_light)
 
 
 ## Frees test fixture after each test run.
 func after_each() -> void:
 	print("TestCageLight: Tearing down test fixture.")
-	if is_instance_valid(_light):
-		_light.queue_free()
 	_light = null
 
 
