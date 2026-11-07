@@ -97,3 +97,46 @@ func test_spike_root_causes_detection() -> void:
 	assert_true(
 		spiked.contains("GEOMETRY OVERLOAD"), "Primitives > 200k should flag GEOMETRY OVERLOAD."
 	)
+
+
+## Verifies 60 FPS false-positive suppression for geometry and VSync CPU jitter, plus cloud details.
+func test_60fps_false_positive_suppression_and_cloud_details() -> void:
+	print("TestDiagnosticsCloudsAudit: test_60fps_false_positive_suppression_and_cloud_details()")
+	var panel: RenderDiagnosticsPanel = RenderDiagnosticsPanel.new()
+	autofree(panel)
+
+	var clouds_rec: Array[Dictionary] = [
+		{
+			"name": "WorldEnv [WorldEnvironment]",
+			"owner_scene": "main.tscn",
+			"is_active": true,
+			"res_div": 2,
+			"max_step_count": 300.0,
+			"lighting_steps": 32.0,
+			"shadow_steps": 6,
+			"dir_lights": 1,
+			"point_lights": 0,
+			"effectors": 0,
+		}
+	]
+	var report_60fps: String = panel._audit_spike_root_causes(
+		6.84, 17.18, 1.23, 710708, 374, clouds_rec
+	)
+	assert_false(
+		report_60fps.contains("[GEOMETRY OVERLOAD]"),
+		"710k primitives at 6.84 ms GPU must not trigger red GEOMETRY OVERLOAD."
+	)
+	assert_false(
+		report_60fps.contains("[CPU SCRIPT HOGS]"),
+		"17.18 ms VSync jitter must not trigger red CPU SCRIPT HOGS."
+	)
+	assert_true(report_60fps.contains("nominal"), "60 FPS metrics must report nominal status.")
+
+	var banner: String = panel._format_clouds_summary_banner(clouds_rec)
+	assert_true(
+		banner.contains("300 March x 32 Light steps"),
+		"Clouds banner must detail primary raymarch and lighting step counts."
+	)
+	assert_true(
+		banner.contains("6 GroundShadow steps"), "Clouds banner must detail ground shadow steps."
+	)

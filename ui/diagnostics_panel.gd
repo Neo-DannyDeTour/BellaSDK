@@ -18,6 +18,9 @@ const UPDATE_INTERVAL: float = 0.25
 ## Strict 60 FPS frame budget limit in milliseconds (1000.0 / 60.0).
 const TARGET_FRAME_BUDGET_MS: float = 16.666
 
+## CPU process time threshold in ms above VSync boundary jitter before flagging overload.
+const CPU_OVERLOAD_THRESHOLD_MS: float = 18.0
+
 ## Minimum time threshold in ms for a subsystem to be listed under offenders.
 const OFFENDER_THRESHOLD_MS: float = 0.5
 
@@ -566,7 +569,6 @@ func _build_performance_report() -> String:
 	var cpu_script_ms: float = Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0
 	var cpu_phys_ms: float = Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0
 
-	var total_cpu_ms: float = cpu_script_ms + cpu_phys_ms + cpu_prep_ms
 	var draw_calls: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME))
 	var objects_drawn: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME))
 	var primitives: int = int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))
@@ -583,19 +585,35 @@ func _build_performance_report() -> String:
 	var total_nodes: int = int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT))
 	var orphan_nodes: int = int(Performance.get_monitor(Performance.OBJECT_ORPHAN_NODE_COUNT))
 
-	var is_gpu: bool = gpu_ms > total_cpu_ms
-	var max_time: float = gpu_ms if is_gpu else total_cpu_ms
+	var is_gpu_over: bool = gpu_ms > TARGET_FRAME_BUDGET_MS
+	var is_cpu_over: bool = cpu_script_ms > CPU_OVERLOAD_THRESHOLD_MS and gpu_ms <= 20.0
+	var max_time: float = maxf(gpu_ms, cpu_script_ms)
+	var status_label: String = "NOMINAL 60 FPS"
+	if is_gpu_over or (gpu_ms > 20.0 and cpu_script_ms > 20.0):
+		status_label = "GPU BOUND"
+		max_time = gpu_ms
+	elif is_cpu_over:
+		status_label = "CPU BOUND"
+		max_time = cpu_script_ms
+	else:
+		max_time = minf(max_time, TARGET_FRAME_BUDGET_MS)
 	var budget_pct: float = (max_time / TARGET_FRAME_BUDGET_MS) * 100.0
 
-	var sdfgi_records: Array[Dictionary] = _audit_sdfgi_instances()
+	var sub_viewports: Array[SubViewport] = []
+	var world_envs: Array[WorldEnvironment] = []
+	var tree: SceneTree = get_tree() if is_inside_tree() else null
+	if is_instance_valid(tree) and is_instance_valid(tree.root):
+		_collect_tree_audit_nodes(tree.root, sub_viewports, world_envs)
+
+	var sdfgi_records: Array[Dictionary] = _audit_sdfgi_instances(sub_viewports)
 	var sdfgi_banner: String = _format_sdfgi_summary_banner(sdfgi_records)
-	var fog_records: Array[Dictionary] = _audit_volumetric_fog_instances()
+	var fog_records: Array[Dictionary] = _audit_volumetric_fog_instances(sub_viewports)
 	var fog_banner: String = _format_volumetric_fog_summary_banner(fog_records)
-	var clouds_records: Array[Dictionary] = _audit_clouds_instances()
+	var clouds_records: Array[Dictionary] = _audit_clouds_instances(sub_viewports, world_envs)
 	var clouds_banner: String = _format_clouds_summary_banner(clouds_records)
 
 	var spike_audit: String = _audit_spike_root_causes(
-		gpu_ms, cpu_script_ms, cpu_prep_ms, primitives, draw_calls, clouds_records
+		gpu_ms, cpu_script_ms, cpu_prep_ms, primitives, draw_calls, clouds_records, sub_viewports
 	)
 
 	return (
@@ -633,7 +651,7 @@ Status: [%s] (%.2f ms | %.1f%% budget)
 * Orphan Nodes        : %d (Press [Scan Orphans] to dump)
 """
 			% [
-				"GPU BOUND" if is_gpu else "CPU BOUND",
+				status_label,
 				max_time,
 				budget_pct,
 				gpu_ms,
@@ -739,15 +757,18 @@ func _format_sdfgi_summary_banner(records: Array[Dictionary]) -> String:
 
 
 ## Audits scene tree and viewports for genuine active SDFGI compute cascades.
-func _audit_sdfgi_instances() -> Array[Dictionary]:
+func _audit_sdfgi_instances(p_sub_viewports: Array[SubViewport] = []) -> Array[Dictionary]:
 	var results: Array[Dictionary] = []
+	if not is_inside_tree():
+		return results
 	var tree: SceneTree = get_tree()
 	if not is_instance_valid(tree) or not is_instance_valid(tree.root):
 		return results
 
 	var root_vp: Window = tree.root
-	var sub_viewports: Array[SubViewport] = []
-	_collect_subviewports(root_vp, sub_viewports)
+	var sub_viewports: Array[SubViewport] = p_sub_viewports
+	if sub_viewports.is_empty():
+		_collect_subviewports(root_vp, sub_viewports)
 
 	var all_viewports: Array[Viewport] = [root_vp]
 	for sub_vp: SubViewport in sub_viewports:
@@ -840,15 +861,18 @@ func _format_volumetric_fog_summary_banner(records: Array[Dictionary]) -> String
 
 
 ## Audits scene tree and viewports for genuine active volumetric fog froxel grids.
-func _audit_volumetric_fog_instances() -> Array[Dictionary]:
+func _audit_volumetric_fog_instances(p_sub_viewports: Array[SubViewport] = []) -> Array[Dictionary]:
 	var results: Array[Dictionary] = []
+	if not is_inside_tree():
+		return results
 	var tree: SceneTree = get_tree()
 	if not is_instance_valid(tree) or not is_instance_valid(tree.root):
 		return results
 
 	var root_vp: Window = tree.root
-	var sub_viewports: Array[SubViewport] = []
-	_collect_subviewports(root_vp, sub_viewports)
+	var sub_viewports: Array[SubViewport] = p_sub_viewports
+	if sub_viewports.is_empty():
+		_collect_subviewports(root_vp, sub_viewports)
 
 	var all_viewports: Array[Viewport] = [root_vp]
 	for sub_vp: SubViewport in sub_viewports:
@@ -920,21 +944,33 @@ func _audit_volumetric_fog_instances() -> Array[Dictionary]:
 func _format_clouds_summary_banner(records: Array[Dictionary]) -> String:
 	var active_count: int = 0
 	var dormant_count: int = 0
+	var detail_lines: PackedStringArray = PackedStringArray()
 	for rec: Dictionary in records:
 		var is_active_val: Variant = rec.get("is_active", false)
 		if is_active_val is bool and is_active_val:
 			active_count += 1
+			if rec.has("max_step_count"):
+				detail_lines.append("  └─ " + _format_cloud_record_workload(rec))
 		else:
 			dormant_count += 1
 
+	var suffix_block: String = (
+		("\n" + "\n".join(detail_lines)) if not detail_lines.is_empty() else ""
+	)
 	if active_count > 1:
 		return (
-			"[color=red][b]CLOUDS STATUS: [CRITICAL: %d ACTIVE COMPUTE PASSES] (%d dormant)[/b][/color]\n"
-			% [active_count, dormant_count]
+			(
+				"[color=red][b]CLOUDS STATUS: [CRITICAL: %d ACTIVE COMPUTE PASSES] "
+				+ "(%d dormant)[/b][/color]%s\n"
+			)
+			% [active_count, dormant_count, suffix_block]
 		)
 	if active_count == 1:
 		var dormant_suffix: String = (" (%d dormant)" % dormant_count) if dormant_count > 0 else ""
-		return "[color=green][b]CLOUDS STATUS: 1 Active Compute%s[/b][/color]\n" % dormant_suffix
+		return (
+			"[color=green][b]CLOUDS STATUS: 1 Active Compute%s[/b][/color]%s\n"
+			% [dormant_suffix, suffix_block]
+		)
 	if dormant_count > 0:
 		return (
 			"[color=yellow]CLOUDS STATUS: 0 Active (%d dormant in tree)[/color]\n" % dormant_count
@@ -942,8 +978,81 @@ func _format_clouds_summary_banner(records: Array[Dictionary]) -> String:
 	return "[color=gray]CLOUDS STATUS: Off (0 active)[/color]\n"
 
 
+## Formats a single cloud compute record into a detailed workload breakdown line.
+func _format_cloud_record_workload(rec: Dictionary) -> String:
+	var name_str: String = str(rec.get("name", "Clouds"))
+	var scene_str: String = str(rec.get("owner_scene", ""))
+	var owner_tag: String = (
+		("%s [%s]" % [name_str, scene_str]) if not scene_str.is_empty() else name_str
+	)
+	var res_div_val: Variant = rec.get("res_div", 2)
+	var res_div: int = res_div_val if res_div_val is int else 2
+	var steps_val: Variant = rec.get("max_step_count", 300.0)
+	var steps: float = steps_val if steps_val is float else 300.0
+	var light_val: Variant = rec.get("lighting_steps", 32.0)
+	var light_steps: float = light_val if light_val is float else 32.0
+	var shad_val: Variant = rec.get("shadow_steps", 0)
+	var shad_steps: int = shad_val if shad_val is int else 0
+	var dir_l_val: Variant = rec.get("dir_lights", 1)
+	var dir_l: int = dir_l_val if dir_l_val is int else 1
+	var pt_l_val: Variant = rec.get("point_lights", 0)
+	var pt_l: int = pt_l_val if pt_l_val is int else 0
+	var eff_val: Variant = rec.get("effectors", 0)
+	var eff_c: int = eff_val if eff_val is int else 0
+	var max_evals: int = int(steps * (1.0 + light_steps * float(maxi(dir_l, 1))))
+	return (
+		(
+			"%s: Res 1/%d | %.0f March x %.0f Light steps (up to %d 3D noise taps/ray) "
+			+ "| %d GroundShadow steps | %d Dir/%d Pt/%d Eff | 4-Pass RD"
+		)
+		% [owner_tag, res_div, steps, light_steps, max_evals, shad_steps, dir_l, pt_l, eff_c]
+	)
+
+
+## Builds a standardized telemetry dictionary for a [SunshineCloudsGD] compositor effect.
+func _build_cloud_record(
+	name_str: String,
+	path_str: String,
+	owner_scene: String,
+	is_act: bool,
+	reason: String,
+	clouds_eff: SunshineCloudsGD
+) -> Dictionary:
+	var scale_idx: int = int(clouds_eff.resolution_scale)
+	var res_div: int = int(pow(2.0, float(scale_idx)))
+	return {
+		"name": name_str,
+		"path": path_str,
+		"owner_scene": owner_scene,
+		"is_active": is_act,
+		"reason": reason,
+		"resolution_scale": scale_idx,
+		"res_div": res_div,
+		"max_step_count": clouds_eff.max_step_count,
+		"lighting_steps": clouds_eff.max_lighting_steps,
+		"shadow_steps": clouds_eff.shadow_steps,
+		"dir_lights": int(clouds_eff.directional_lights_data.size() / 4),
+		"point_lights": int(clouds_eff.point_lights_data.size() / 2),
+		"effectors": int(clouds_eff.point_effector_data.size()),
+		"blur_power": clouds_eff.blur_power,
+		"blur_quality": clouds_eff.blur_quality,
+	}
+
+
+## Resolves the nearest `.tscn` scene file basename or path owning a node.
+func _resolve_node_scene_label(node: Node) -> String:
+	var cur: Node = node
+	while is_instance_valid(cur):
+		if not cur.scene_file_path.is_empty():
+			return cur.scene_file_path.get_file()
+		cur = cur.get_parent()
+	return ""
+
+
 ## Audits scene tree, viewports, and compositors for genuine active volumetric cloud passes.
-func _audit_clouds_instances() -> Array[Dictionary]:
+func _audit_clouds_instances(
+	p_sub_viewports: Array[SubViewport] = [], p_world_envs: Array[WorldEnvironment] = []
+) -> Array[Dictionary]:
 	var results: Array[Dictionary] = []
 	if not is_inside_tree():
 		return results
@@ -952,8 +1061,10 @@ func _audit_clouds_instances() -> Array[Dictionary]:
 		return results
 
 	var root_vp: Window = tree.root
-	var sub_viewports: Array[SubViewport] = []
-	_collect_subviewports(root_vp, sub_viewports)
+	var sub_viewports: Array[SubViewport] = p_sub_viewports
+	var world_envs: Array[WorldEnvironment] = p_world_envs
+	if sub_viewports.is_empty() and world_envs.is_empty():
+		_collect_tree_audit_nodes(root_vp, sub_viewports, world_envs)
 
 	var all_viewports: Array[Viewport] = [root_vp]
 	for sub_vp: SubViewport in sub_viewports:
@@ -994,23 +1105,18 @@ func _audit_clouds_instances() -> Array[Dictionary]:
 					var reason: String = vp_reason
 					if vp_active:
 						reason = "active" if clouds_eff.enabled else "effect.enabled=false"
-					(
-						results
-						. append(
-							{
-								"name": "Camera [%s] (%s)" % [cam.name, vp.name],
-								"path": str(cam.get_path()),
-								"is_active": is_act,
-								"reason": reason,
-								"resolution_scale": clouds_eff.resolution_scale,
-								"max_step_count": clouds_eff.max_step_count,
-							}
+					results.append(
+						_build_cloud_record(
+							"Camera [%s] (%s)" % [cam.name, vp.name],
+							str(cam.get_path()),
+							_resolve_node_scene_label(cam),
+							is_act,
+							reason,
+							clouds_eff
 						)
 					)
 
-	var we_nodes: Array[Node] = tree.root.find_children("*", "WorldEnvironment", true, false)
-	for node: Node in we_nodes:
-		var we: WorldEnvironment = node as WorldEnvironment
+	for we: WorldEnvironment in world_envs:
 		if not is_instance_valid(we) or not is_instance_valid(we.compositor):
 			continue
 
@@ -1029,17 +1135,14 @@ func _audit_clouds_instances() -> Array[Dictionary]:
 				var reason: String = we_reason
 				if we_active:
 					reason = "active" if clouds_eff.enabled else "effect.enabled=false"
-				(
-					results
-					. append(
-						{
-							"name": "WorldEnv [%s]" % we.name,
-							"path": str(we.get_path()),
-							"is_active": is_act,
-							"reason": reason,
-							"resolution_scale": clouds_eff.resolution_scale,
-							"max_step_count": clouds_eff.max_step_count,
-						}
+				results.append(
+					_build_cloud_record(
+						"WorldEnv [%s]" % we.name,
+						str(we.get_path()),
+						_resolve_node_scene_label(we),
+						is_act,
+						reason,
+						clouds_eff
 					)
 				)
 
@@ -1050,17 +1153,14 @@ func _audit_clouds_instances() -> Array[Dictionary]:
 			continue
 		if not seen_effects.has(driver.clouds_resource):
 			seen_effects.append(driver.clouds_resource)
-			(
-				results
-				. append(
-					{
-						"name": "Driver [%s]" % driver.name,
-						"path": str(driver.get_path()),
-						"is_active": false,
-						"reason": "unattached to compositor",
-						"resolution_scale": driver.clouds_resource.resolution_scale,
-						"max_step_count": driver.clouds_resource.max_step_count,
-					}
+			results.append(
+				_build_cloud_record(
+					"Driver [%s]" % driver.name,
+					str(driver.get_path()),
+					_resolve_node_scene_label(driver),
+					false,
+					"unattached to compositor",
+					driver.clouds_resource
 				)
 			)
 
@@ -1077,6 +1177,23 @@ func _count_processing_nodes(node: Node) -> int:
 	return count
 
 
+## Recursively collects active processing node count and visible mesh count in a single pass.
+func _collect_branch_stats(node: Node) -> Vector2i:
+	if not is_instance_valid(node):
+		return Vector2i.ZERO
+	var proc_count: int = 1 if (node.is_processing() or node.is_physics_processing()) else 0
+	var mesh_count: int = 0
+	if node is GeometryInstance3D:
+		var geom: GeometryInstance3D = node as GeometryInstance3D
+		if geom.is_visible_in_tree():
+			mesh_count = 1
+	for child: Node in node.get_children():
+		var sub_stats: Vector2i = _collect_branch_stats(child)
+		proc_count += sub_stats.x
+		mesh_count += sub_stats.y
+	return Vector2i(proc_count, mesh_count)
+
+
 ## Audits telemetry vectors and scene tree branches to identify exact root causes for frame drops.
 func _audit_spike_root_causes(
 	gpu_ms: float,
@@ -1084,7 +1201,8 @@ func _audit_spike_root_causes(
 	_cpu_prep_ms: float,
 	primitives: int,
 	draw_calls: int,
-	clouds_records: Array[Dictionary]
+	clouds_records: Array[Dictionary],
+	p_sub_viewports: Array[SubViewport] = []
 ) -> String:
 	var lines: PackedStringArray = PackedStringArray()
 	lines.append("[b][color=yellow]=== SPIKE ROOT CAUSE AUDIT ===[/color][/b]")
@@ -1093,10 +1211,13 @@ func _audit_spike_root_causes(
 	var tree: SceneTree = get_tree() if is_inside_tree() else null
 
 	var active_clouds: int = 0
+	var cloud_details: PackedStringArray = PackedStringArray()
 	for c_rec: Dictionary in clouds_records:
 		var is_c_act: Variant = c_rec.get("is_active", false)
 		if is_c_act is bool and is_c_act:
 			active_clouds += 1
+			if c_rec.has("max_step_count"):
+				cloud_details.append("  └─ Culprit: " + _format_cloud_record_workload(c_rec))
 
 	if active_clouds > 0 and gpu_ms > TARGET_FRAME_BUDGET_MS:
 		has_findings = true
@@ -1109,6 +1230,8 @@ func _audit_spike_root_causes(
 				% [active_clouds, gpu_ms]
 			)
 		)
+		for c_line: String in cloud_details:
+			lines.append("[color=yellow]%s[/color]" % c_line)
 
 	if gpu_ms > 20.0 and cpu_script_ms > 20.0:
 		has_findings = true
@@ -1126,15 +1249,22 @@ func _audit_spike_root_causes(
 		)
 
 	if is_instance_valid(tree) and is_instance_valid(tree.root):
-		var sub_viewports: Array[SubViewport] = []
-		_collect_subviewports(tree.root, sub_viewports)
+		var sub_viewports: Array[SubViewport] = p_sub_viewports
+		if sub_viewports.is_empty():
+			_collect_subviewports(tree.root, sub_viewports)
 		var active_sub_names: PackedStringArray = PackedStringArray()
 		for sub_vp: SubViewport in sub_viewports:
 			if (
 				not sub_vp.disable_3d
 				and sub_vp.render_target_update_mode != SubViewport.UPDATE_DISABLED
 			):
-				active_sub_names.append(str(sub_vp.name))
+				var vp_scene: String = _resolve_node_scene_label(sub_vp)
+				var vp_label: String = (
+					("%s [%s]" % [sub_vp.name, vp_scene])
+					if not vp_scene.is_empty()
+					else str(sub_vp.name)
+				)
+				active_sub_names.append(vp_label)
 
 		if active_sub_names.size() > 1:
 			has_findings = true
@@ -1148,27 +1278,75 @@ func _audit_spike_root_causes(
 				)
 			)
 
-	if primitives > 200000:
-		has_findings = true
-		(
-			lines
-			. append(
-				(
-					(
-						"[color=red]* [GEOMETRY OVERLOAD][/color] %d primitives in frame (Budget: < 150k). "
-						+ "High-poly mesh / clipmap active."
-					)
-					% primitives
-				)
+	var branch_proc_items: Array[Dictionary] = []
+	var branch_mesh_items: Array[Dictionary] = []
+	if is_instance_valid(tree) and is_instance_valid(tree.current_scene):
+		for child: Node in tree.current_scene.get_children():
+			var stats: Vector2i = _collect_branch_stats(child)
+			var scene_tag: String = child.scene_file_path.get_file()
+			var label_str: String = (
+				("%s [%s]" % [child.name, scene_tag])
+				if not scene_tag.is_empty()
+				else str(child.name)
 			)
+			if stats.x > 0:
+				branch_proc_items.append({"label": label_str, "count": stats.x})
+			if stats.y > 0:
+				branch_mesh_items.append({"label": label_str, "meshes": stats.y})
+
+		branch_proc_items.sort_custom(
+			func(a: Dictionary, b: Dictionary) -> bool:
+				return int(a.get("count", 0)) > int(b.get("count", 0))
 		)
-	elif primitives > 100000:
-		has_findings = true
-		lines.append(
-			"[color=yellow]* [HIGH POLYGON COUNT][/color] %d primitives in frame." % primitives
+		branch_mesh_items.sort_custom(
+			func(a: Dictionary, b: Dictionary) -> bool:
+				return int(a.get("meshes", 0)) > int(b.get("meshes", 0))
 		)
 
-	if draw_calls > 600:
+	var top_mesh_strs: PackedStringArray = PackedStringArray()
+	var max_mesh_show: int = mini(3, branch_mesh_items.size())
+	for i: int in range(max_mesh_show):
+		var m_item: Dictionary = branch_mesh_items[i]
+		top_mesh_strs.append(
+			"%s (%d meshes)" % [str(m_item.get("label", "")), int(m_item.get("meshes", 0))]
+		)
+	var mesh_scene_suffix: String = (
+		(" | Top scene branches: " + ", ".join(top_mesh_strs))
+		if not top_mesh_strs.is_empty()
+		else ""
+	)
+
+	if primitives > 200000 and gpu_ms > TARGET_FRAME_BUDGET_MS:
+		has_findings = true
+		lines.append(
+			(
+				(
+					"[color=red]* [GEOMETRY OVERLOAD][/color] %d primitives in frame "
+					+ "(Budget: < 150k, GPU %.1f ms). High-poly mesh / clipmap active%s"
+				)
+				% [primitives, gpu_ms, mesh_scene_suffix]
+			)
+		)
+	elif primitives > 200000:
+		lines.append(
+			(
+				"[color=gray]* Active geometry: %d primitives (GPU %.1f ms nominal)%s[/color]"
+				% [primitives, gpu_ms, mesh_scene_suffix]
+			)
+		)
+	elif primitives > 100000 and gpu_ms > TARGET_FRAME_BUDGET_MS:
+		has_findings = true
+		lines.append(
+			(
+				"[color=yellow]* [HIGH POLYGON COUNT][/color] %d primitives in frame%s"
+				% [primitives, mesh_scene_suffix]
+			)
+		)
+
+	if (
+		draw_calls > 600
+		and (gpu_ms > TARGET_FRAME_BUDGET_MS or cpu_script_ms > CPU_OVERLOAD_THRESHOLD_MS)
+	):
 		has_findings = true
 		(
 			lines
@@ -1176,46 +1354,34 @@ func _audit_spike_root_causes(
 				(
 					(
 						"[color=red]* [DRAW CALL OVERLOAD][/color] %d draw calls in frame (Budget: < 600). "
-						+ "Check unbatched meshes / lights."
+						+ "Check unbatched meshes / lights%s"
 					)
-					% draw_calls
+					% [draw_calls, mesh_scene_suffix]
 				)
 			)
 		)
 
-	if is_instance_valid(tree) and is_instance_valid(tree.current_scene):
-		var branch_items: Array[Dictionary] = []
-		for child: Node in tree.current_scene.get_children():
-			var p_count: int = _count_processing_nodes(child)
-			if p_count > 0:
-				branch_items.append({"name": str(child.name), "count": p_count})
+	if not branch_proc_items.is_empty():
+		var top_strs: PackedStringArray = PackedStringArray()
+		var max_show: int = mini(3, branch_proc_items.size())
+		for i: int in range(max_show):
+			var item: Dictionary = branch_proc_items[i]
+			top_strs.append(
+				"%s (%d nodes)" % [str(item.get("label", "")), int(item.get("count", 0))]
+			)
 
-		branch_items.sort_custom(
-			func(a: Dictionary, b: Dictionary) -> bool:
-				return int(a.get("count", 0)) > int(b.get("count", 0))
-		)
-
-		if not branch_items.is_empty():
-			var top_strs: PackedStringArray = PackedStringArray()
-			var max_show: int = mini(3, branch_items.size())
-			for i: int in range(max_show):
-				var item: Dictionary = branch_items[i]
-				top_strs.append(
-					"%s (%d nodes)" % [str(item.get("name", "")), int(item.get("count", 0))]
+		if cpu_script_ms > CPU_OVERLOAD_THRESHOLD_MS and gpu_ms <= 20.0:
+			has_findings = true
+			lines.append(
+				(
+					"[color=red]* [CPU SCRIPT HOGS][/color] (%.1f ms CPU) Top scene branches: %s"
+					% [cpu_script_ms, ", ".join(top_strs)]
 				)
-
-			if cpu_script_ms > TARGET_FRAME_BUDGET_MS:
-				has_findings = true
-				lines.append(
-					(
-						"[color=red]* [CPU SCRIPT HOGS][/color] Top processing branches: %s"
-						% ", ".join(top_strs)
-					)
-				)
-			else:
-				lines.append(
-					"[color=gray]* Active processing branches: %s[/color]" % ", ".join(top_strs)
-				)
+			)
+		else:
+			lines.append(
+				"[color=gray]* Active processing branches: %s[/color]" % ", ".join(top_strs)
+			)
 
 	if not has_findings:
 		lines.append(
@@ -1227,11 +1393,16 @@ func _audit_spike_root_causes(
 
 ## Generates hierarchical breakdown of active [SubViewport] nodes.
 func _build_pipeline_report() -> String:
-	var sdfgi_records: Array[Dictionary] = _audit_sdfgi_instances()
+	var root_vp: Window = get_tree().root
+	var sub_viewports: Array[SubViewport] = []
+	var world_envs: Array[WorldEnvironment] = []
+	_collect_tree_audit_nodes(root_vp, sub_viewports, world_envs)
+
+	var sdfgi_records: Array[Dictionary] = _audit_sdfgi_instances(sub_viewports)
 	var sdfgi_banner: String = _format_sdfgi_summary_banner(sdfgi_records)
-	var fog_records: Array[Dictionary] = _audit_volumetric_fog_instances()
+	var fog_records: Array[Dictionary] = _audit_volumetric_fog_instances(sub_viewports)
 	var fog_banner: String = _format_volumetric_fog_summary_banner(fog_records)
-	var clouds_records: Array[Dictionary] = _audit_clouds_instances()
+	var clouds_records: Array[Dictionary] = _audit_clouds_instances(sub_viewports, world_envs)
 	var clouds_banner: String = _format_clouds_summary_banner(clouds_records)
 
 	var text: String = (
@@ -1240,7 +1411,6 @@ func _build_pipeline_report() -> String:
 		+ clouds_banner
 		+ "\n[b][color=yellow]=== VIEWPORT & RENDER PIPELINE ===[/color][/b]\n"
 	)
-	var root_vp: Window = get_tree().root
 	var root_effects: PackedStringArray = _detect_viewport_environment_effects(root_vp)
 	var root_effects_str: String = _format_effects_bbcode(root_effects)
 	text += (
@@ -1249,8 +1419,6 @@ func _build_pipeline_report() -> String:
 	)
 
 	text += "[b][color=yellow]=== ACTIVE SUBVIEWPORTS ===[/color][/b]\n"
-	var sub_viewports: Array[SubViewport] = []
-	_collect_subviewports(root_vp, sub_viewports)
 
 	if sub_viewports.is_empty():
 		text += "[color=gray]  No active SubViewports found in tree.[/color]\n"
@@ -1336,17 +1504,27 @@ func _build_pipeline_report() -> String:
 				if is_act
 				else ("[color=yellow][DORMANT: %s][/color]" % str(rec.get("reason", "asleep")))
 			)
-			var scale_val: Variant = rec.get("resolution_scale", 1)
-			var scale_num: int = scale_val if scale_val is int else 1
-			var steps_val: Variant = rec.get("max_step_count", 0.0)
-			var steps_num: float = steps_val if steps_val is float else 0.0
 			var path_str: String = str(rec.get("path", ""))
+			var workload_str: String = _format_cloud_record_workload(rec)
 			text += (
-				"* %s -> %s | Scale: 1/%d | Steps: %.0f\n  └─ Path: [color=cyan]%s[/color]\n"
-				% [name_str, status_badge, scale_num, steps_num, path_str]
+				"* %s -> %s\n  ├─ Load: %s\n  └─ Path: [color=cyan]%s[/color]\n"
+				% [name_str, status_badge, workload_str, path_str]
 			)
 
 	return text
+
+
+## Recursively collects all [SubViewport] and [WorldEnvironment] nodes in a single pass.
+func _collect_tree_audit_nodes(
+	current_node: Node, out_viewports: Array[SubViewport], out_world_envs: Array[WorldEnvironment]
+) -> void:
+	if current_node is SubViewport:
+		out_viewports.append(current_node as SubViewport)
+	elif current_node is WorldEnvironment:
+		out_world_envs.append(current_node as WorldEnvironment)
+
+	for child: Node in current_node.get_children(true):
+		_collect_tree_audit_nodes(child, out_viewports, out_world_envs)
 
 
 ## Recursively collects all [SubViewport] instances inside a parent node.

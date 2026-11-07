@@ -6,6 +6,9 @@ extends Node3D
 ## Maximum number of simultaneous particles supported in the object pool.
 const MAX_PARTICLES: int = 50
 
+## Width in texels of the 1D GPU particle data texture.
+const DATA_TEXTURE_WIDTH: int = 64
+
 @export_group("Shader & Particle Parameters")
 
 ## Albedo tint color passed to [Particle] shader materials.
@@ -67,7 +70,7 @@ var particle_pool: Array[Particle] = []
 var first_decal: Node3D = null
 
 ## Raw image buffer storing active particle position and radius vectors.
-var data_texture: Image = Image.create(1024, 1, false, Image.FORMAT_RGBAF)
+var data_texture: Image = Image.create(DATA_TEXTURE_WIDTH, 1, false, Image.FORMAT_RGBAF)
 
 ## Hardware texture resource displaying [member data_texture].
 var tc: ImageTexture
@@ -96,6 +99,9 @@ var current_spawn_wait: float = 0.0
 ## Particle emitter node triggered when a gel splat impacts surfaces.
 var emitter: GPUParticles3D
 
+## Tracks whether [member splat_pos] has pending changes to upload.
+var _splat_dirty: bool = false
+
 
 ## Cleans up editor duplicates, initializes GPU textures, and defers pool setup.
 func _ready() -> void:
@@ -108,7 +114,7 @@ func _ready() -> void:
 	tc = ImageTexture.create_from_image(data_texture)
 	splat_tex = ImageTexture.create_from_image(splat_pos)
 
-	particle_data.resize(1024 * 4)
+	particle_data.resize(DATA_TEXTURE_WIDTH * 4)
 
 	var emitter_node: Node = get_node_or_null("%splat_emitter")
 	emitter = emitter_node if emitter_node is GPUParticles3D else null
@@ -201,9 +207,12 @@ func spawn_splat(pos: Vector3) -> void:
 ## Writes a new decal hit position to the splat position texture.
 func spawn_decal(pos: Vector3) -> void:
 	print("GelEmitter: spawn_decal() called at: ", pos)
+	if splat_count >= 1024:
+		return
 	var dec_color: Color = Color(pos.x, pos.y, pos.z, time)
 	splat_pos.set_pixel(splat_count, 0, dec_color)
 	splat_count += 1
+	_splat_dirty = true
 
 
 ## Serializes active particle positions to texture and updates decals.
@@ -230,10 +239,11 @@ func update_data_texture() -> void:
 
 	if active_count > 0:
 		var byte_data: PackedByteArray = particle_data.to_byte_array()
-		data_texture.set_data(1024, 1, false, Image.FORMAT_RGBAF, byte_data)
+		data_texture.set_data(DATA_TEXTURE_WIDTH, 1, false, Image.FORMAT_RGBAF, byte_data)
 		tc.update(data_texture)
 
-	if first_decal != null:
+	if first_decal != null and _splat_dirty:
+		_splat_dirty = false
 		splat_tex.update(splat_pos)
 		if first_decal.has_method(&"set_n_decals"):
 			first_decal.call(&"set_n_decals", splat_count)

@@ -51,22 +51,37 @@ func _ready() -> void:
 
 	if area_3d != null:
 		area_3d.collision_layer = CollisionLayers.MASK_NONE
-		area_3d.collision_mask = CollisionLayers.MASK_ENVIRONMENT
+		area_3d.collision_mask = (
+			CollisionLayers.MASK_ENVIRONMENT
+			| CollisionLayers.MASK_PLAYER
+			| CollisionLayers.MASK_INTERACTIVE
+		)
+		area_3d.monitoring = is_active
 
 	if not Engine.is_editor_hint():
 		if area_3d != null:
 			area_3d.body_entered.connect(_on_area_body_entered)
 
+	set_process(is_active)
+
 
 ## Processes falling translation and floor melting.
 func _process(delta: float) -> void:
 	if not is_active:
+		set_process(false)
 		return
 
 	alive_time += delta
 
-	if Engine.is_editor_hint() and not is_melting:
-		if global_position.y <= editor_floor_y:
+	if not is_melting:
+		if Engine.is_editor_hint() and global_position.y <= editor_floor_y:
+			is_melting = true
+		elif (
+			alive_time >= GRACE_PERIOD
+			and area_3d != null
+			and area_3d.monitoring
+			and area_3d.has_overlapping_bodies()
+		):
 			is_melting = true
 
 	if is_melting:
@@ -88,6 +103,9 @@ func reset_particle() -> void:
 	current_radius = initial_radius
 	alive_time = 0.0
 	visible = true
+	set_process(true)
+	if area_3d != null:
+		area_3d.set_deferred("monitoring", true)
 	force_update_transform()
 
 
@@ -96,6 +114,9 @@ func deactivate() -> void:
 	is_active = false
 	is_melting = false
 	visible = false
+	set_process(false)
+	if area_3d != null:
+		area_3d.set_deferred("monitoring", false)
 	global_position = Vector3(0.0, -1000.0, 0.0)
 
 
