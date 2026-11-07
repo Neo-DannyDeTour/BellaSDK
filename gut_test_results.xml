@@ -1,13 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="GutTests" failures="0" tests="4" >
-  <testsuite name="test/unit/test_water_level_control.gd" tests="4" failures="0" skipped="0" time="0.594788" >
-      <testcase name="test_water_level_lowering_anchors_floor" assertions="9" status="pass" classname="test/unit/test_water_level_control.gd" time="0.067021" >
+<testsuites name="GutTests" failures="0" tests="5" >
+  <testsuite name="test/unit/test_system_menu_controller.gd" tests="5" failures="0" skipped="0" time="10.807642" >
+      <testcase name="test_toggle_pause" assertions="5" status="pass" classname="test/unit/test_system_menu_controller.gd" time="2.170337" >
       </testcase>
-      <testcase name="test_water_level_toggle_restores_baseline" assertions="3" status="pass" classname="test/unit/test_water_level_control.gd" time="0.26095" >
+      <testcase name="test_toggle_noclip" assertions="3" status="pass" classname="test/unit/test_system_menu_controller.gd" time="2.157515" >
       </testcase>
-      <testcase name="test_water_level_one_shot_ignores_power_off" assertions="2" status="pass" classname="test/unit/test_water_level_control.gd" time="0.183412" >
+      <testcase name="test_fullbright_toggled" assertions="3" status="pass" classname="test/unit/test_system_menu_controller.gd" time="2.155838" >
       </testcase>
-      <testcase name="test_water_level_depth_clamping" assertions="2" status="pass" classname="test/unit/test_water_level_control.gd" time="0.083405" >
+      <testcase name="test_noclip_wheel_speed_scaling" assertions="3" status="pass" classname="test/unit/test_system_menu_controller.gd" time="2.153402" >
+      </testcase>
+      <testcase name="test_noclip_sprint_velocity_scaling" assertions="2" status="pass" classname="test/unit/test_system_menu_controller.gd" time="2.17055" >
       </testcase>
   </testsuite>
 </testsuites>
